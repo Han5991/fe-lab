@@ -1,0 +1,45 @@
+# 빌드 결과물
+dist
+build
+out
+.next
+coverage
+
+# 의존성 디렉토리
+node_modules
+.pnpm-store
+
+# 캐시 디렉토리
+.turbo
+.cache
+.eslintcache
+
+# 환경 설정 파일
+.env
+.env.*
+
+# 로그 파일
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# IDE 관련
+.idea
+.vscode
+*.swp
+*.swo
+
+# 시스템 파일
+.DS_Store
+Thumbs.db
+
+# 패키지 잠금 파일
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# 기타 불필요한 파일
+*.min.js
+*.min.css
