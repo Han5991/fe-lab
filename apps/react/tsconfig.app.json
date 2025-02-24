@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-	"types": ["vitest/globals"],
+    "types": ["vitest/globals"],
     "target": "ES2020",
     "useDefineForClassFields": true,
     "esModuleInterop": true,
@@ -22,7 +22,9 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
-      "@pages/*": ["./src/pages/*"]
+      "@pages/*": ["./src/pages/*"],
+      "@components/*": ["./src/components/*"],
+      "@hooks/*": ["./src/hooks/*"]
     }
   },
   "include": ["src", "**/*.ts", "**/*.tsx", "declaration.d.ts"]
