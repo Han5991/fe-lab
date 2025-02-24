@@ -29,9 +29,6 @@ export const useSimpleQuery = <T>({
       } catch (error) {
         if (error instanceof Error) {
           setState({ data: null, error, isLoading: false });
-          if (throwOnError) {
-            throw error; // 여기서 에러를 던집니다
-          }
         }
       }
     };
