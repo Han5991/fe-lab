@@ -64,7 +64,6 @@ describe("useSimpleQuery", () => {
 
     await expect(
       waitFor(() => {
-        console.log(result);
         if (!result.current.isLoading) {
           // 에러 발생 시 실제로 throw되어 waitFor가 reject됨
 
