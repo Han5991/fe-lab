@@ -24,33 +24,33 @@ describe("error test", () => {
     expect(NotThrowError2).toThrow();
   });
 
-  it("should throw async error", async () => {
+  it("비동기 에러 처리", async () => {
     await expect(asyncError).rejects.toThrow();
   });
 
-  it("should catch async error", async () => {
+  it("비동기 인대 try catch 잡고 던지지 않음", async () => {
     await expect(asyncNotThrowError()).resolves.not.toThrow();
   });
 
-  it("should not catch async error", async () => {
+  it("비동기 에러 처리", async () => {
     await expect(asyncNotThrowError2).rejects.toThrow();
   });
 
-  it("should catch async error with wrapper", async () => {
+  it("래퍼로 비동기 오류를 포착해야합니다", async () => {
     await expect(
       asyncErrorWrapper(new Promise((_, reject) => reject(new Error("error")))),
     ).resolves.not.toThrow();
   });
 
-  it("should handle multiple async errors", async () => {
+  it("비동기 여러개 에러 처리 안 함", async () => {
     await expect(handleMultipleAsyncErrors()).resolves.not.toThrow();
   });
 
-  it("should handle specific errors", () => {
+  it("커스텀 에러 처리", () => {
     expect(handleSpecificErrors).not.toThrow();
   });
 
-  it("should handle chained error handlers", async () => {
+  it("비동기 에러 처리2", async () => {
     await expect(chainedErrorHandler).rejects.toThrow();
   });
 });
