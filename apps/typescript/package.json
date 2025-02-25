@@ -1,0 +1,23 @@
+{
+  "name": "typescript",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "tsc -watch",
+    "build": "echo 'Add build script here'",
+    "test": "jest",
+    "lint": "echo 'Add lint script here'"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.26.9",
+    "@babel/preset-env": "^7.26.9",
+    "@babel/preset-typescript": "^7.26.0",
+    "@jest/globals": "^29.7.0",
+    "@types/jest": "^29.5.14",
+    "babel-jest": "^29.7.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.6",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.3"
+  }
+}
