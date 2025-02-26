@@ -93,3 +93,8 @@ export const asyncErrorWrapper = async <T>(
     return [null, error instanceof Error ? error : new Error(String(error))];
   }
 };
+
+export const executeTest = () => {
+  testError();
+  console.log("test");
+};

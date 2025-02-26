@@ -9,6 +9,7 @@ import {
   NotThrowError,
   NotThrowError2,
   testError,
+  executeTest,
 } from "./error";
 
 describe("error test", () => {
@@ -52,5 +53,12 @@ describe("error test", () => {
 
   it("비동기 에러 처리2", async () => {
     await expect(chainedErrorHandler).rejects.toThrow();
+  });
+
+  it("에러가 던져지면 콘솔로그가 실행되지 않음", () => {
+    const consoleSpy = jest.spyOn(console, "log");
+    expect(executeTest).toThrow();
+    expect(consoleSpy).not.toHaveBeenCalled();
+    consoleSpy.mockRestore();
   });
 });
