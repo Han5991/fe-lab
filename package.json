@@ -8,7 +8,8 @@
     "lint": "turbo run lint",
     "check-types": "turbo run check-types",
     "react": "turbo run dev --filter=react",
-    "typescript": "turbo run dev --filter=typescript"
+    "typescript": "turbo run dev --filter=typescript",
+    "next": "turbo run dev --filter=next.js"
   },
   "devDependencies": {
     "prettier": "^3.5.0",
