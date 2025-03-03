@@ -34,6 +34,7 @@ export const useSimpleQuery = <T>({
     };
 
     fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (state.error && throwOnError) {
