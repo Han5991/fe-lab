@@ -9,7 +9,7 @@ exports[`renders homepage unchanged 1`] = `
     <a
       href="/about"
     >
-      About
+      link
     </a>
   </div>
 </div>

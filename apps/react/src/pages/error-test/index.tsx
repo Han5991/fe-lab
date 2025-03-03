@@ -43,7 +43,7 @@ const ErrorTest = () => {
       </button>
       <button
         onClick={() => {
-          throw new Error("not error button");
+          new Error("not error button");
         }}
       >
         not error button
