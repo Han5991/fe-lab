@@ -7,7 +7,7 @@
     "test": "turbo run test",
     "lint": "turbo run lint",
     "check-types": "turbo run check-types",
-    "react": "turbo run dev --filter=react",
+    "react": "turbo run dev --filter=react --filter=@design-system/ui",
     "typescript": "turbo run dev --filter=typescript",
     "next": "turbo run dev --filter=next.js"
   },

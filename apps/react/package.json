@@ -8,8 +8,7 @@
     "build": "tsc -b && vite build",
     "test": "vitest",
     "lint": "eslint .",
-    "preview": "vite preview",
-    "prepare": "panda codegen"
+    "preview": "vite preview"
   },
   "dependencies": {
     "react": "^19.0.0",

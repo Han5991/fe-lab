@@ -1,9 +1,10 @@
 import { defineConfig } from "@pandacss/dev";
 
 export default defineConfig({
-  presets: ["@pandacss/dev/presets"],
+  presets: ["@pandacss/dev/presets", "@design-system/ui/preset"],
   // Whether to use css reset
   preflight: true,
+  lightningcss: true,
 
   // Where to look for your css declarations
   include: [
@@ -11,17 +12,9 @@ export default defineConfig({
     "./node_modules/@design-system/ui/src/**/*.{js,jsx,ts,tsx}",
   ],
 
-  // Files to exclude
-  exclude: [],
-
-  // Useful for theme customization
-  theme: {
-    extend: {},
-  },
   jsxFramework: "react",
 
-  // The output directory for your css system
-  outdir: "../../packages/design-system/ui-lib",
+  strictPropertyValues: true,
   importMap: {
     css: "@design-system/ui-lib/css",
     recipes: "@design-system/ui-lib/recipes",
