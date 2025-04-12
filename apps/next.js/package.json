@@ -12,21 +12,23 @@
   },
   "dependencies": {
     "next": "15.2.0",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react": "catalog:react19",
+    "react-dom": "catalog:react19",
+    "@design-system/ui": "workspace:^",
+    "@design-system/ui-lib": "workspace:^"
   },
   "devDependencies": {
+    "@pandacss/dev": "catalog:",
     "@eslint/eslintrc": "^3",
     "@next/eslint-plugin-next": "^15.2.0",
-    "@tailwindcss/postcss": "^4",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.2.0",
     "@testing-library/user-event": "^14.6.1",
     "@types/jest": "^29.5.14",
     "@types/node": "^22.13.8",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
+    "@types/react": "catalog:react19",
+    "@types/react-dom": "catalog:react19",
     "eslint": "^9",
     "eslint-config-next": "15.2.0",
     "eslint-plugin-react": "^7.37.4",
@@ -34,7 +36,6 @@
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
     "next-router-mock": "^0.9.13",
-    "tailwindcss": "^4",
     "ts-node": "^10.9.2",
     "typescript": "^5.7.3"
   }
