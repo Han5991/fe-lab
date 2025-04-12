@@ -1,0 +1,55 @@
+{
+  "name": "@design-system/ui",
+  "version": "0.0.1",
+  "private": true,
+  "types": "./dist/index.d.ts",
+  "main": "./dist/index.js",
+  "exports": {
+    ".": {
+      "source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": "./dist/index.js"
+    },
+    "./preset": {
+      "source": "./src/preset.ts",
+      "types": "./dist/preset.d.ts",
+      "import": {
+        "types": "./dist/preset.d.mts",
+        "default": "./dist/preset.mjs"
+      },
+      "require": "./dist/preset.js"
+    }
+  },
+  "scripts": {
+    "prepare": "pnpm panda codegen",
+    "build": "tsup",
+    "release": "pnpm panda prepare && pnpm build && pnpm publish",
+    "build-fast": "tsup --no-dts",
+    "dev": "pnpm build-fast --watch",
+    "fmt": "prettier --write ."
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@design-system/ui-lib": "workspace:^",
+    "tsup": "8.4.0",
+    "typescript": "5.8.3"
+  },
+  "packageManager": "pnpm@8.6.4",
+  "devDependencies": {
+    "@pandacss/dev": "catalog:",
+    "@types/react": "^18.2.15",
+    "@types/react-dom": "^18.2.7",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "peerDependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  }
+}

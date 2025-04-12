@@ -1,2 +1,6 @@
 packages:
   - "apps/*"
+  - 'packages/**/*'
+
+catalog:
+  "@pandacss/dev": 0.53.3

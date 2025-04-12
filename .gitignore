@@ -36,3 +36,10 @@ yarn-error.log*
 # Misc
 .DS_Store
 *.pem
+
+/packages/design-system/ui-lib/css/
+/packages/design-system/ui-lib/jsx/
+/packages/design-system/ui-lib/patterns/
+/packages/design-system/ui-lib/tokens/
+/packages/design-system/ui-lib/types/
+/packages/design-system/ui-lib/helpers.mjs
