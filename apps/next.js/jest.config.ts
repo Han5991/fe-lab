@@ -92,7 +92,17 @@ const config: Config = {
   // A map from regular expressions to module names or to arrays of module names that allow to stub out resources with a single module
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/src/$1",
+    // Mock the design system components to avoid React version issues
+    "@design-system/ui": "<rootDir>/test/__mocks__/designSystemMock.js",
+    "@design-system/ui-lib/css": "<rootDir>/test/__mocks__/cssMock.js",
+    "next/link": "<rootDir>/test/__mocks__/nextLinkMock.js",
   },
+
+  // Use mock implementations for specific modules
+  moduleDirectories: ["node_modules", "src"],
+
+  // Tell Jest to mock any file inside the __mocks__ directory
+  modulePathIgnorePatterns: [],
 
   // An array of regexp pattern strings, matched against all module paths before considered 'visible' to the module loader
   // modulePathIgnorePatterns: [],
