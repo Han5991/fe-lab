@@ -109,12 +109,11 @@ const [_value, setValue] = useUncontrolled({
 
 ```tsx
 export function useUncontrolled<T>({
-                                     value,
-                                     defaultValue,
-                                     finalValue,
-                                     onChange = () => {
-                                     },
-                                   }: UseUncontrolledInput<T>): [T, (value: T, ...payload: any[]) => void, boolean] {
+  value,
+  defaultValue,
+  finalValue,
+  onChange = () => {},
+}: UseUncontrolledInput<T>): [T, (value: T, ...payload: any[]) => void, boolean] {
   const [uncontrolledValue, setUncontrolledValue] = useState(
     defaultValue !== undefined ? defaultValue : finalValue
   );
