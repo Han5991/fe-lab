@@ -26,11 +26,7 @@ export class ErrorBoundary extends Component<
 
   render() {
     if (this.state.hasError) {
-      return (
-        <div>
-          <h1>{this.state.error && <p>{this.state.error.message}</p>}</h1>
-        </div>
-      );
+      return <h1>{this.state.error && this.state.error.message}</h1>;
     }
 
     // 에러가 없으면 자식 컴포넌트를 그대로 렌더링합니다.

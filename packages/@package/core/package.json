@@ -1,0 +1,17 @@
+{
+  "name": "@package/core",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.4.1",
+  "devDependencies": {
+    "typescript": "catalog:typescript5",
+    "@package/config": "workspace:*"
+  }
+}

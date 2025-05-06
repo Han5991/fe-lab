@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from "react";
 
-interface QueryOptions<T> {
+type QueryOptions<T> = {
   queryFn: () => Promise<T>;
   throwOnError?: boolean;
-}
+};
 
 export const useSimpleQuery = <T>({
   queryFn,
