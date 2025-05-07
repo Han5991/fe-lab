@@ -22,7 +22,7 @@ export class Http {
   }
 
   private async request<T = any, D = any>(
-    method: string,
+    method: 'GET' | 'POST' | 'PUT' | 'DELETE',
     url: string,
     config: RequestConfig<D> = {},
   ): Promise<HttpResponse<T>> {
