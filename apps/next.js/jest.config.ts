@@ -1,9 +1,9 @@
-import type { Config } from "jest";
-import nextJest from "next/jest.js";
+import type { Config } from 'jest';
+import nextJest from 'next/jest.js';
 
 const createJestConfig = nextJest({
   // Provide the path to your Next.js app to load next.config.js and .env files in your test environment
-  dir: "./",
+  dir: './',
 });
 const config: Config = {
   // All imported modules in your tests should be mocked automatically
@@ -25,7 +25,7 @@ const config: Config = {
   // collectCoverageFrom: undefined,
 
   // The directory where Jest should output its coverage files
-  coverageDirectory: "coverage",
+  coverageDirectory: 'coverage',
 
   // An array of regexp pattern strings used to skip coverage collection
   // coveragePathIgnorePatterns: [
@@ -33,7 +33,7 @@ const config: Config = {
   // ],
 
   // Indicates which provider should be used to instrument code for coverage
-  coverageProvider: "v8",
+  coverageProvider: 'v8',
 
   // A list of reporter names that Jest uses when writing coverage reports
   // coverageReporters: [
@@ -91,15 +91,15 @@ const config: Config = {
 
   // A map from regular expressions to module names or to arrays of module names that allow to stub out resources with a single module
   moduleNameMapper: {
-    "^@/(.*)$": "<rootDir>/src/$1",
+    '^@/(.*)$': '<rootDir>/src/$1',
     // Mock the design system components to avoid React version issues
-    "@design-system/ui": "<rootDir>/test/__mocks__/designSystemMock.js",
-    "@design-system/ui-lib/css": "<rootDir>/test/__mocks__/cssMock.js",
-    "next/link": "<rootDir>/test/__mocks__/nextLinkMock.js",
+    '@design-system/ui': '<rootDir>/test/__mocks__/designSystemMock.js',
+    '@design-system/ui-lib/css': '<rootDir>/test/__mocks__/cssMock.js',
+    'next/link': '<rootDir>/test/__mocks__/nextLinkMock.js',
   },
 
   // Use mock implementations for specific modules
-  moduleDirectories: ["node_modules", "src"],
+  moduleDirectories: ['node_modules', 'src'],
 
   // Tell Jest to mock any file inside the __mocks__ directory
   modulePathIgnorePatterns: [],
@@ -149,7 +149,7 @@ const config: Config = {
   // setupFiles: [],
 
   // A list of paths to modules that run some code to configure or set up the testing framework before each test
-  setupFilesAfterEnv: ["<rootDir>/jest.setup.ts"],
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
 
   // The number of seconds after which a test is considered as slow and reported as such in the results.
   // slowTestThreshold: 5,
@@ -158,7 +158,7 @@ const config: Config = {
   // snapshotSerializers: [],
 
   // The test environment that will be used for testing
-  testEnvironment: "jsdom",
+  testEnvironment: 'jsdom',
 
   // Options that will be passed to the testEnvironment
   // testEnvironmentOptions: {},

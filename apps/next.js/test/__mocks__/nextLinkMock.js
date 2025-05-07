@@ -1,9 +1,9 @@
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const mockRouter = require("next-router-mock").default;
+const mockRouter = require('next-router-mock').default;
 
 // Create a mock Link component that updates the router when clicked
 module.exports = ({ href, children, ...props }) => {
-  const handleClick = (e) => {
+  const handleClick = e => {
     e.preventDefault();
     mockRouter.push(href);
     if (props.onClick) {
@@ -12,7 +12,7 @@ module.exports = ({ href, children, ...props }) => {
   };
 
   return {
-    type: "a",
+    type: 'a',
     props: {
       href,
       ...props,

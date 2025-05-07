@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import React, { Component, type ReactNode } from "react";
+import React, { Component, type ReactNode } from 'react';
 
 interface ErrorBoundaryState {
   hasError: boolean;
@@ -18,7 +18,7 @@ export class ErrorBoundary extends Component<
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     // 에러 로깅 서비스에 에러를 기록합니다.
-    console.error("Error caught by ErrorBoundary:", error, errorInfo);
+    console.error('Error caught by ErrorBoundary:', error, errorInfo);
   }
 
   // 에러가 발생하면 state에 에러 정보를 저장합니다.

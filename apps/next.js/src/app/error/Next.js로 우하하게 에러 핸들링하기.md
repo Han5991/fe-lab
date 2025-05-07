@@ -1,15 +1,16 @@
 ## 0. 프롤로그
 
->이전까지는 javascript의 try catch과 React의 ErrorBoundary로 error 객체의 전파와 핸들링하는 방법에 대해 알아 보았습니다.
-><br/>이번글에서는 Next.js의 error.js와 동작 방법에 대해 알아보겠습니다.
+> 이전까지는 javascript의 try catch과 React의 ErrorBoundary로 error 객체의 전파와 핸들링하는 방법에 대해 알아 보았습니다.
+> <br/>이번글에서는 Next.js의 error.js와 동작 방법에 대해 알아보겠습니다.
 
 ---
 
 ## 1. Next.js error.js란? [공식홈피](https://nextjs.org/docs/app/api-reference/file-conventions/error)
+
 - Next.js 13부터 제공되는 기능으로, 애플리케이션의 에러를 처리하는 데 사용됩니다.
 - 애플리케이션의 모든 에러를 처리할 수 있는 global-error 와 특정 페이지의 에러를 처리할 수 있는 error로 나뉘어 집니다.
 
-1. Next.js의 기본 에러 처리 흐름 
+1. Next.js의 기본 에러 처리 흐름
    1. 서버를 시작 하면 각 경계의 error.tsx를 찾아 AppRouter에 넣어줍니다. [next.js app-router](https://github.com/vercel/next.js/blob/canary/packages/next/src/client/components/app-router.tsx#L690C1-L714C2)
       - ErrorBoundary next.js [참조](https://github.com/vercel/next.js/blob/canary/packages/next/src/client/components/error-boundary.tsx#L66C1-L145C2)
    2. 각 layout에서 사용할 provider를 설정해줍니다. [참조](https://github.com/vercel/next.js/blob/canary/packages/next/src/client/components/app-router.tsx#L669)
@@ -49,11 +50,11 @@ export default function Error({ error, reset }) {
 다음은 React의 `ErrorBoundary`를 사용하여 컴포넌트 단위의 에러 처리를 구현하는 예제입니다:
 
 ```tsx
-import { notFound } from "next/navigation";
-import type { Post } from "../page";
-import Page1 from "./Page1";
-import Page2 from "./Page2";
-import { ErrorBoundary } from "@/components";
+import { notFound } from 'next/navigation';
+import type { Post } from '../page';
+import Page1 from './Page1';
+import Page2 from './Page2';
+import { ErrorBoundary } from '@/components';
 
 type PostProps = {
   params: Promise<{ id: string }>;
@@ -90,6 +91,7 @@ export default Post;
 
 - **통합 접근**:
   Next.js error.js와 React ErrorBoundary는 상호 보완적인 역할을 수행할 수 있습니다.
+
   - 전역 또는 페이지 수준에서는 error.js를 통해 큰 틀의 에러 핸들링을 관리하며,
   - 세부 컴포넌트 수준에서는 ErrorBoundary를 사용해 특정 영역의 예외 상황에 대해 상세하게 대응하는 방식이 효과적입니다.
 
@@ -104,6 +106,7 @@ Next.js의 error.js와 React의 ErrorBoundary는 개별적으로 사용될 수�
 ## 3. 결론
 
 Next.js의 error.js 기능을 통해, 애플리케이션 전반에 걸친 에러 관리가 한층 체계적이고 유연하게 구현될 수 있음을 확인할 수 있습니다.
+
 - **글로벌 및 페이지별 에러 처리**
   Next.js는 전역적으로 발생하는 에러와 특정 페이지에서 발생하는 에러를 구분하여 처리할 수 있도록 지원합니다. 이를 통해, 전체 애플리케이션에 영향을 주지 않으면서도 특정 페이지의 문제를 독립적으로 해결할 수 있습니다.
 - **React ErrorBoundary와의 차별화**

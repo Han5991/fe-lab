@@ -4,11 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "DEBUG=vite-tsconfig-pathsiu vite",
-    "build": "tsc -b && vite build",
-    "test": "vitest",
-    "lint": "eslint .",
-    "preview": "vite preview"
+    "test": "vitest --run"
   },
   "dependencies": {
     "react": "catalog:react19",

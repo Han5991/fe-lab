@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState } from 'react';
 
 type SimpleButtonProps = {
   initialText?: string;
@@ -6,7 +6,7 @@ type SimpleButtonProps = {
 };
 
 export const SimpleButton = ({
-  initialText = "Click me",
+  initialText = 'Click me',
   onClick,
 }: SimpleButtonProps) => {
   const [clicked, setClicked] = useState(false);
@@ -18,7 +18,7 @@ export const SimpleButton = ({
 
   return (
     <button onClick={handleClick} data-testid="simple-button">
-      {clicked ? "Clicked!" : initialText}
+      {clicked ? 'Clicked!' : initialText}
     </button>
   );
 };

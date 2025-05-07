@@ -1,10 +1,10 @@
-import { ComponentPropsWithoutRef } from "react";
-import { button, ButtonVariantProps } from "@design-system/ui-lib/recipes";
-import { cx } from "@design-system/ui-lib/css";
+import { ComponentPropsWithoutRef } from 'react';
+import { button, ButtonVariantProps } from '@design-system/ui-lib/recipes';
+import { cx } from '@design-system/ui-lib/css';
 
 export interface ButtonProps
   extends ButtonVariantProps,
-    ComponentPropsWithoutRef<"button"> {}
+    ComponentPropsWithoutRef<'button'> {}
 
 export const Button = (props: ButtonProps) => {
   const [variantProps, localProps] = button.splitVariantProps(props);

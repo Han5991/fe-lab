@@ -1,8 +1,8 @@
-import { notFound } from "next/navigation";
-import type { Post } from "../page";
-import Page1 from "./Page1";
-import Page2 from "./Page2";
-import { ErrorBoundary } from "@/components";
+import { notFound } from 'next/navigation';
+import type { Post } from '../page';
+import Page1 from './Page1';
+import Page2 from './Page2';
+import { ErrorBoundary } from '@/components';
 
 type PostProps = {
   params: Promise<{ id: string }>;

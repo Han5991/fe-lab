@@ -12,18 +12,20 @@ This document provides guidelines and instructions for developing and testing ap
 ### Setup
 
 1. Install dependencies:
+
    ```bash
    pnpm install
    ```
 
 2. Start development server for a specific application:
+
    ```bash
    # For React application
    pnpm react
-   
+
    # For Next.js application
    pnpm next
-   
+
    # For TypeScript application
    pnpm typescript
    ```
@@ -53,11 +55,13 @@ The project uses Vitest as the testing framework with React Testing Library for 
 ### Running Tests
 
 To run tests for all applications:
+
 ```bash
 pnpm test
 ```
 
 To run tests for a specific application:
+
 ```bash
 cd apps/react && pnpm test
 ```
@@ -70,25 +74,25 @@ For React components, create a `.test.tsx` file next to the component file. Exam
 
 ```tsx
 // SimpleButton.test.tsx
-import { render, screen, fireEvent } from "@testing-library/react";
-import { SimpleButton } from "./SimpleButton";
-import { vi } from "vitest";
+import { render, screen, fireEvent } from '@testing-library/react';
+import { SimpleButton } from './SimpleButton';
+import { vi } from 'vitest';
 
-describe("SimpleButton", () => {
-  test("renders with default text", () => {
+describe('SimpleButton', () => {
+  test('renders with default text', () => {
     render(<SimpleButton />);
-    const buttonElement = screen.getByTestId("simple-button");
+    const buttonElement = screen.getByTestId('simple-button');
     expect(buttonElement).toBeInTheDocument();
-    expect(buttonElement.textContent).toBe("Click me");
+    expect(buttonElement.textContent).toBe('Click me');
   });
 
-  test("calls onClick callback when clicked", () => {
+  test('calls onClick callback when clicked', () => {
     const handleClick = vi.fn();
     render(<SimpleButton onClick={handleClick} />);
-    const buttonElement = screen.getByTestId("simple-button");
-    
+    const buttonElement = screen.getByTestId('simple-button');
+
     fireEvent.click(buttonElement);
-    
+
     expect(handleClick).toHaveBeenCalledTimes(1);
   });
 });
@@ -100,12 +104,12 @@ For custom hooks, create a `.test.ts` file next to the hook file. Example:
 
 ```tsx
 // useSimpleQuery.test.ts
-import { renderHook, waitFor } from "@testing-library/react";
-import { useSimpleQuery } from "./useSimpleQuery";
+import { renderHook, waitFor } from '@testing-library/react';
+import { useSimpleQuery } from './useSimpleQuery';
 
-describe("useSimpleQuery", () => {
-  test("successfully fetches data", async () => {
-    const mockData = { message: "success" };
+describe('useSimpleQuery', () => {
+  test('successfully fetches data', async () => {
+    const mockData = { message: 'success' };
     const mockQueryFn = vi.fn().mockResolvedValue(mockData);
 
     const { result } = renderHook(() =>
@@ -150,11 +154,13 @@ The project uses ESLint for code linting with the following configuration:
 - Consistent type imports with preference for type-imports
 
 To run linting:
+
 ```bash
 pnpm lint
 ```
 
 To check TypeScript types:
+
 ```bash
 pnpm check-types
 ```
