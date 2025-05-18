@@ -125,6 +125,9 @@ importers:
       '@design-system/ui-lib':
         specifier: workspace:^
         version: link:../../packages/@design-system/ui-lib
+      '@package/core':
+        specifier: workspace:*
+        version: link:../../packages/@package/core
       react:
         specifier: catalog:react19
         version: 19.1.0
@@ -177,6 +180,9 @@ importers:
       jsdom:
         specifier: ^26.0.0
         version: 26.0.0
+      msw:
+        specifier: ^2.7.6
+        version: 2.7.6(@types/node@22.13.8)(typescript@5.8.3)
       typescript:
         specifier: catalog:typescript5
         version: 5.8.3
