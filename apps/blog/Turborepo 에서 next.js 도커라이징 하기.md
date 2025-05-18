@@ -1,5 +1,5 @@
 ## 0. 프롤로그
- 
+
 > 이 글은 뮤즈라이브에서 웹 서비스 3개를 모노레포 구조에서 Turborepo의 공식 문서를 참조하여 Next.js의 standalone 모드와 Docker를 활용한 모노레포 환경 설정 및 최적화 방법을 설명합니다.
 
 ### 목표
@@ -25,8 +25,8 @@ Next.js standalone 모드는 애플리케이션을 컴파일하여 런타임에 
 
 이 모드를 활용하면 Next.js 애플리케이션 배포 및 운영 관리를 더욱 효율적으로 할 수 있습니다.
 
-
 ## 2. 프로젝트 구조
+
 ```
     📂 apps
     ├── 📂 web1
@@ -47,10 +47,12 @@ Next.js standalone 모드는 애플리케이션을 컴파일하여 런타임에 
 `packages` 폴더는 재사용 가능한 패키지들이 위치하는 디렉토리입니다. 이곳에는 `ui` 같은 공통으로 사용 가능한 모듈이나 라이브러리가 포함됩니다.
 
 - **`apps/web`**: 애플리케이션이 위치한 폴더로, Next.js 또는 다른 프레임워크 기반의 프로젝트가 포함될 수 있습니다.
-    - `package.json`: 해당 애플리케이션의 종속성을 정의하는 파일입니다.
+
+  - `package.json`: 해당 애플리케이션의 종속성을 정의하는 파일입니다.
 
 - **`packages/ui`**: 공유 가능한 UI 컴포넌트 또는 유틸리티가 포함된 폴더입니다.
-    - `package.json`: 공통 패키지의 종속성을 정의하는 파일입니다.
+
+  - `package.json`: 공통 패키지의 종속성을 정의하는 파일입니다.
 
 - **최상위 `package.json` 및 `package-lock.json`**: 프로젝트 전체를 관리하기 위한 종속성 정의 및 고정 파일들입니다.
 
@@ -62,23 +64,23 @@ Next.js standalone 모드는 애플리케이션을 컴파일하여 런타임에 
 
 ```dockerfile
 FROM node:20
- 
+
 WORKDIR /usr/src/app
- 
+
 # Copy root package.json and lockfile
 COPY package.json ./
 COPY package-lock.json ./
- 
+
 # Copy the docs package.json
 COPY apps/web1/package.json ./apps/web1/package.json
- 
+
 RUN npm install
- 
+
 # Copy app source
 COPY . .
- 
+
 EXPOSE 8080
- 
+
 CMD [ "node", "apps/docs/server.js" ]
 ```
 
@@ -88,14 +90,15 @@ CMD [ "node", "apps/docs/server.js" ]
 - **의존성 충돌**: 여러 패키지가 같은 의존성을 다르게 요구하는 경우, 루트에서 설치된 의존성과 앱별 의존성이 충돌할 가능성이 있습니다.
 
 - **해결책**
-- 
-Dockerfile에 대한 입력을 엄격히 필요한 것으로만 정리하는 것입니다. Turborepo는 간단한 솔루션을 제공합니다
+- Dockerfile에 대한 입력을 엄격히 필요한 것으로만 정리하는 것입니다. Turborepo는 간단한 솔루션을 제공합니다
+
 ```bash
   pnpm turbo prune --scope=web1 --docker
 ```
->이 명령을 실행하면 모노레포의 정리된 버전이 생성되어, ./out 디렉토리에 docs 이후에 달라지는 작업 공간만 포함됩니다.
->핵심은 잠금 파일을 정리하여 필요한 파일만 node_modules에 다운로드되도록 하는 것입니다. 기본적으로 turbo prune은 모든 관련 파일을 ./out에 넣지만,
->Docker 캐시 최적화를 위해 이상적으로는 파일을 두 단계로 복사합니다.
+
+> 이 명령을 실행하면 모노레포의 정리된 버전이 생성되어, ./out 디렉토리에 docs 이후에 달라지는 작업 공간만 포함됩니다.
+> 핵심은 잠금 파일을 정리하여 필요한 파일만 node_modules에 다운로드되도록 하는 것입니다. 기본적으로 turbo prune은 모든 관련 파일을 ./out에 넣지만,
+> Docker 캐시 최적화를 위해 이상적으로는 파일을 두 단계로 복사합니다.
 
 ```
     out
@@ -129,48 +132,48 @@ WORKDIR /app
 RUN pnpm global add turbo
 COPY . .
 RUN turbo prune --scope=web1 --docker
- 
+
 # Add lockfile and package.json's of isolated subworkspace
 FROM node:alpine AS installer
 RUN apk add --no-cache libc6-compat
 RUN apk update
 WORKDIR /app
- 
+
 # First install the dependencies (as they change less often)
 COPY .gitignore .gitignore
 COPY --from=builder /app/out/json/ .
 COPY --from=builder /app/out/pnpm.lock ./pnpm.lock
 RUN pnpm install
- 
+
 # Build the project
 COPY --from=builder /app/out/full/ .
 COPY turbo.json turbo.json
 RUN pnpm turbo run build --filter=web1...
- 
+
 FROM node:alpine AS runner
 WORKDIR /app
- 
+
 # Don't run production as root
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 USER nextjs
- 
+
 COPY --from=installer /app/apps/web1/next.config.js .
 COPY --from=installer /app/apps/web1/package.json .
- 
+
 # Automatically leverage output traces to reduce image size
 # https://nextjs.org/docs/advanced-features/output-file-tracing
 COPY --from=installer --chown=nextjs:nodejs /app/apps/web1/.next/standalone ./
 COPY --from=installer --chown=nextjs:nodejs /app/apps/web1/.next/static ./apps/web1/.next/static
- 
+
 CMD node apps/web1/server.js
 ```
 
 ### static s3 upload
 
 > 빌드 과정에서 나오는 css, js, html을 cdn으로 올려
-static 파일을 Amazon S3에 업로드하면, 빠르고 안정적으로 해당 리소스를 제공할 수 있습니다. 이를 통해 서버 부하를 줄이고, 클라이언트가 가까운 CDN 엣지에서 파일을
-다운로드하도록 최적화할 수 있습니다.
+> static 파일을 Amazon S3에 업로드하면, 빠르고 안정적으로 해당 리소스를 제공할 수 있습니다. 이를 통해 서버 부하를 줄이고, 클라이언트가 가까운 CDN 엣지에서 파일을
+> 다운로드하도록 최적화할 수 있습니다.
 
 ### S3 업로드 예시
 
@@ -189,7 +192,7 @@ RUN rm -rf /app/apps/web1/.next/static
 - `./out/apps/web1/.next/static`: Next.js 빌드 시 생성된 정적 파일들이 위치하는 디렉토리입니다.
 - `./out/apps/web1/public`: 퍼블릭 폴더에 포함된 정적 리소스 파일들입니다.
 - `s3://your-cdn-bucket-name`: 대상 S3 버킷 이름으로 적절히 변경합니다.
-  해당 파일들은 클라이언트에서 CDN URL을 통해 접근할 수 있으므로, Next.js 설정에서 `assetPrefix`를 활용해 빌드된 출력물을 S3를 통해 제공받도록 수정해야 ******your-cdn-bucket-name******합니다.
+  해당 파일들은 클라이언트에서 CDN URL을 통해 접근할 수 있으므로, Next.js 설정에서 `assetPrefix`를 활용해 빌드된 출력물을 S3를 통해 제공받도록 수정해야 **\*\***your-cdn-bucket-name**\*\***합니다.
 
 ### Next.js `assetPrefix` 설정 추가
 
@@ -215,4 +218,4 @@ module.exports = {
 3. **CDN을 활용한 정적 파일 최적화**: 정적 파일을 S3로 업로드하고, `assetPrefix`를 사용해 Next.js 설정을 최적화하여 빠르고 안정적인 파일 제공이
    가능해졌습니다.
 
-다음은 ecs와 code deploy를 활용한 배포 방식에대해 설명드리겠습니다. 
+다음은 ecs와 code deploy를 활용한 배포 방식에대해 설명드리겠습니다.

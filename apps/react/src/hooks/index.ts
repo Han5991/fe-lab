@@ -1,1 +1,1 @@
-export * from "./useSimpleQuery";
+export * from './useSimpleQuery';

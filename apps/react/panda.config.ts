@@ -1,25 +1,25 @@
-import { defineConfig } from "@pandacss/dev";
+import { defineConfig } from '@pandacss/dev';
 
 export default defineConfig({
-  presets: ["@pandacss/dev/presets", "@design-system/ui/preset"],
+  presets: ['@pandacss/dev/presets', '@design-system/ui/preset'],
   // Whether to use css reset
   preflight: true,
   lightningcss: true,
 
   // Where to look for your css declarations
   include: [
-    "./src/**/*.{js,jsx,ts,tsx}",
-    "./node_modules/@design-system/ui/src/**/*.{js,jsx,ts,tsx}",
+    './src/**/*.{js,jsx,ts,tsx}',
+    './node_modules/@design-system/ui/src/**/*.{js,jsx,ts,tsx}',
   ],
 
-  jsxFramework: "react",
+  jsxFramework: 'react',
 
-  outdir: "../../packages/design-system/ui-lib",
+  outdir: '../../packages/design-system/ui-lib',
   strictPropertyValues: true,
   importMap: {
-    css: "@design-system/ui-lib/css",
-    recipes: "@design-system/ui-lib/recipes",
-    patterns: "@design-system/ui-lib/patterns",
-    jsx: "@design-system/ui-lib/jsx",
+    css: '@design-system/ui-lib/css',
+    recipes: '@design-system/ui-lib/recipes',
+    patterns: '@design-system/ui-lib/patterns',
+    jsx: '@design-system/ui-lib/jsx',
   },
 });

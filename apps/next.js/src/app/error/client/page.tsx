@@ -1,14 +1,14 @@
-"use client";
+'use client';
 
-import { useActionState } from "react";
-import { createPost } from "./action";
+import { useActionState } from 'react';
+import { createPost } from './action';
 
 export type InitialState = {
   message: string;
 };
 
 const initialState: InitialState = {
-  message: "",
+  message: '',
 };
 
 const Client = () => {

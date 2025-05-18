@@ -1,10 +1,10 @@
-import { use } from "react";
+import { use } from 'react';
 
 const asyncError = () => {
   if (Math.random() < 0.5) {
-    return Promise.reject(new Error("asyncError"));
+    return Promise.reject(new Error('asyncError'));
   }
-  return Promise.resolve({ message: "Success!" });
+  return Promise.resolve({ message: 'Success!' });
 };
 
 type AsyncErrorProps = {

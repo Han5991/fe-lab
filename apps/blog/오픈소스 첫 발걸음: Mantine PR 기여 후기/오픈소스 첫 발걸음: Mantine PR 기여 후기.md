@@ -9,7 +9,7 @@
 ## 1. 상황 설명
 
 > 저희 팀은 작년부터 자체 디자인 시스템을 구축하여 사용하고 있습니다.
-[Mantine + panda-css](https://velog.io/@rewq5991/%EB%94%94%EC%9E%90%EC%9D%B8-%EC%8B%9C%EC%8A%A4%ED%85%9C-%EC%8B%9C%EC%9E%91%ED%95%B4%EB%B3%B4%EA%B8%B0)
+> [Mantine + panda-css](https://velog.io/@rewq5991/%EB%94%94%EC%9E%90%EC%9D%B8-%EC%8B%9C%EC%8A%A4%ED%85%9C-%EC%8B%9C%EC%9E%91%ED%95%B4%EB%B3%B4%EA%B8%B0)
 > 를 조합하여 사용 합니다.  
 > 따라서 디자인은 디자인 시스템의 컴포넌트를 활용하거나, mantine 공식 홈페이지를 참고하여 구현합니다.
 >
@@ -39,21 +39,22 @@
 - **문제 현상**: 상태 변경과 함께 `onChangeEnd` 콜백이 제대로 업데이트되지 않음
 - **발생 환경**: Slider를 제어 컴포넌트(controlled component)로 사용할 때 발생
 - **특이사항**:
-    - 마우스로 슬라이더를 조작할 때만 문제 발생
-    - 키보드로 조작할 때는 정상 작동
-    - 비제어 컴포넌트(uncontrolled)로 만들면 문제가 해결됨
+
+  - 마우스로 슬라이더를 조작할 때만 문제 발생
+  - 키보드로 조작할 때는 정상 작동
+  - 비제어 컴포넌트(uncontrolled)로 만들면 문제가 해결됨
 
 - **원인 분석**: Slider 컴포넌트 내부에서 상태 업데이트와 이벤트 핸들러 간의 동기화 문제로, React의 closure 특성과 관련된 이슈로 판단됨
 
 ```tsx
-import "@mantine/core/styles.css";
-import {MantineProvider, Slider, Button, Stack} from "@mantine/core";
-import {useCallback, useState} from "react";
+import '@mantine/core/styles.css';
+import { MantineProvider, Slider, Button, Stack } from '@mantine/core';
+import { useCallback, useState } from 'react';
 
 export default function App() {
   return (
     <MantineProvider>
-      <Demo/>
+      <Demo />
     </MantineProvider>
   );
 }
@@ -73,8 +74,8 @@ function Demo() {
     <Stack p="lg">
       <p>Increase the state then try changing the slider</p>
       {/* value와 onChange를 통해 제어 컴포넌트로 사용 */}
-      <Slider value={value} onChange={setValue} onChangeEnd={handleChangeEnd}/>
-      <Button onClick={() => setState((prev) => prev + 1)}>
+      <Slider value={value} onChange={setValue} onChangeEnd={handleChangeEnd} />
+      <Button onClick={() => setState(prev => prev + 1)}>
         Increase state ({state})
       </Button>
     </Stack>
@@ -101,7 +102,10 @@ Mantine의 Slider 컴포넌트는 내부적으로 useUncontrolled Hook을 사용
 // Slider.tsx
 const [_value, setValue] = useUncontrolled({
   value: typeof value === 'number' ? clamp(value, min!, max!) : value,
-  defaultValue: typeof defaultValue === 'number' ? clamp(defaultValue, min!, max!) : defaultValue,
+  defaultValue:
+    typeof defaultValue === 'number'
+      ? clamp(defaultValue, min!, max!)
+      : defaultValue,
   finalValue: clamp(0, min!, max!),
   onChange,
 });
@@ -113,9 +117,13 @@ export function useUncontrolled<T>({
   defaultValue,
   finalValue,
   onChange = () => {},
-}: UseUncontrolledInput<T>): [T, (value: T, ...payload: any[]) => void, boolean] {
+}: UseUncontrolledInput<T>): [
+  T,
+  (value: T, ...payload: any[]) => void,
+  boolean,
+] {
   const [uncontrolledValue, setUncontrolledValue] = useState(
-    defaultValue !== undefined ? defaultValue : finalValue
+    defaultValue !== undefined ? defaultValue : finalValue,
   );
 
   const handleUncontrolledChange = (val: T, ...payload: any[]) => {
@@ -171,6 +179,7 @@ useEffect(() => {
 ## 5. 느낀점
 
 > 첫 오픈소스 기여를 통해 정말 많은 것을 배우고 경험했습니다.
+>
 > - 오픈소스를 로컬 환경에 `포크하여 개발 환경을 구축`하는 과정
 > - GitHub에서 다른 개발자들과 `이슈를 통해 의견을 나누고 소통`하는 경험
 > - PR 승인을 위해 `디스코드 커뮤니티까지 찾아가 적극적으로 소통`했던 여정

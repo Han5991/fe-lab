@@ -1,9 +1,10 @@
 ## 0. 프롤로그
 
 > React 애플리케이션에서 예기치 않은 에러는 사용자 경험에 치명적인 영향을 미칠 수 있습니다.
-이 글에서는 **ErrorBoundary**와 같은 에러 관리 기법을 바탕으로, 비동기 코드에서 발생하는 에러를 어떻게 처리하고, 의도적인 에러와 의도하지 않은 에러를 구분하여 다루는지 살펴봅니다.
-에러를 명확히 구분하고, 이를 안전하게 캐치하는 전략은 더욱 견고한 애플리케이션 구축의 첫걸음이 될 것입니다.
-[예제 코드](https://github.com/Han5991/fe-lab/blob/main/apps/react/src/pages/error-test/index.tsx)
+> 이 글에서는 **ErrorBoundary**와 같은 에러 관리 기법을 바탕으로, 비동기 코드에서 발생하는 에러를 어떻게 처리하고, 의도적인 에러와 의도하지 않은 에러를 구분하여
+> 다루는지 살펴봅니다.
+> 에러를 명확히 구분하고, 이를 안전하게 캐치하는 전략은 더욱 견고한 애플리케이션 구축의 첫걸음이 될 것입니다.
+> [예제 코드](https://github.com/Han5991/fe-lab/blob/main/apps/react/src/pages/error-test/index.tsx)
 
 ## 1. ErrorBoundary 란? [공식홈피](https://ko.react.dev/reference/react/Component#catching-rendering-errors-with-an-error-boundary)
 
@@ -44,7 +45,7 @@ const ButtonError = () => {
 
   // 에러가 발생 하면 리턴 하기 전에 에러를 에러바운더리까지 전달합니다.
   if (error instanceof Error) {
-    throw error
+    throw error;
   }
 
   return <button onClick={handleClick}>버튼</button>;
@@ -55,7 +56,8 @@ const ButtonError = () => {
 
 #### 2-2-1. useState 사용하기
 
-api 요청을 하는 함수가 있다고 정의 해봅시다. 이 역시 위의 방법과 비슷합니다. useState에 Error를 선언 후 에러를 잡아줍니다. 다른점이 있다면 throwOnError 옵션을 넣어 에러를 더 위로 올릴 것인지 여기서 처리할 건지 선택이 가능 합니다.
+api 요청을 하는 함수가 있다고 정의 해봅시다. 이 역시 위의 방법과 비슷합니다. useState에 Error를 선언 후 에러를 잡아줍니다. 다른점이 있다면
+throwOnError 옵션을 넣어 에러를 더 위로 올릴 것인지 여기서 처리할 건지 선택이 가능 합니다.
 
 ```typescript
 const useSimpleQuery = <T>({
@@ -76,10 +78,10 @@ const useSimpleQuery = <T>({
     const fetchData = async () => {
       try {
         const data = await queryFn();
-        setState({data, error: null, isLoading: false});
+        setState({ data, error: null, isLoading: false });
       } catch (error) {
         if (error instanceof Error) {
-          setState({data: null, error, isLoading: false});
+          setState({ data: null, error, isLoading: false });
         }
       }
     };
@@ -100,14 +102,15 @@ const useSimpleQuery = <T>({
 
 #### 2-2-2. useTransition 사용하기
 
-useTransition을 사용하여 비동기 에러를 잡아줄 수 있습니다. useTransition은 React 18에서 도입된 기능으로, UI 업데이트를 지연시켜 사용자 경험을 개선하는 데 도움을 줍니다.
+useTransition을 사용하여 비동기 에러를 잡아줄 수 있습니다. useTransition은 React 18에서 도입된 기능으로, UI 업데이트를 지연시켜 사용자 경험을
+개선하는 데 도움을 줍니다.
 이 기능을 활용하여 사용자의 인터렉션 관련 비동기 작업의 에러를 처리할 수 있습니다.
 
 ```tsx
 const addComment = (comment: string | null) => {
   // For demonstration purposes to show Error Boundary
   if (comment === null) {
-    throw new Error("Add Comment");
+    throw new Error('Add Comment');
   }
 };
 
@@ -128,17 +131,20 @@ const ErrorTest = () => {
         Add Comment
       </button>
     </div>
-  )
+  );
 };
 ```
 
 #### 2-2-3. use 사용하기
 
-use는 React 19에서 도입된 기능으로, 페이지에서 직접 호출하는 비동기 함수의 에러를 처리할 수 있습니다. 앞서 소개한 두 hook과 달리 이 방식은 Suspense를 반드시 사용해야 하는 것이 특징입니다. 또한, 간결한 문법을 통해 비동기 에러 핸들링을 보다 쉽게 구현할 수 있습니다. [참고 링크](https://ko.react.dev/reference/react/use#dealing-with-rejected-promises)
+use는 React 19에서 도입된 기능으로, 페이지에서 직접 호출하는 비동기 함수의 에러를 처리할 수 있습니다. 앞서 소개한 두 hook과 달리 이 방식은 Suspense를
+반드시 사용해야 하는 것이 특징입니다. 또한, 간결한 문법을 통해 비동기 에러 핸들링을 보다 쉽게 구현할 수
+있습니다. [참고 링크](https://ko.react.dev/reference/react/use#dealing-with-rejected-promises)
+
 ```tsx
 <Suspense fallback={<div>Loading...</div>}>
   <AsyncErrorPage />
-</Suspense>
+</Suspense>;
 
 const AsyncErrorPage = () => {
   const data = use(fetchData());
@@ -148,8 +154,9 @@ const AsyncErrorPage = () => {
 
 ## 3. 의도하지 않은 에러
 
->런타임 중 발생하는 의도치 않은 에러는 보통 예상하지 못한 상황(네트워크 문제, 서버 오류, 버그 등)에서 발생합니다. 이러한 에러는 전역적으로 에러바운더리를 통해 캐치하여 fallback UI를 보여줌으로써 애플리케이션이 완전히 중단되지 않도록 할 수 있습니다.
-또한, 에러 로깅 시스템(예: Sentry, LogRocket 등)을 사용하여 서버에 에러 로그를 전송하거나, 개발자 콘솔에 자세한 정보를 기록하는 것이 좋습니다.
+> 런타임 중 발생하는 의도치 않은 에러는 보통 예상하지 못한 상황(네트워크 문제, 서버 오류, 버그 등)에서 발생합니다. 이러한 에러는 전역적으로 에러바운더리를 통해 캐치하여
+> fallback UI를 보여줌으로써 애플리케이션이 완전히 중단되지 않도록 할 수 있습니다.
+> 또한, 에러 로깅 시스템(예: Sentry, LogRocket 등)을 사용하여 서버에 에러 로그를 전송하거나, 개발자 콘솔에 자세한 정보를 기록하는 것이 좋습니다.
 
 ```tsx
 // ErrorBoundary.tsx
@@ -164,7 +171,10 @@ interface ErrorBoundaryState {
   error?: Error;
 }
 
-export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+export class ErrorBoundary extends Component<
+  ErrorBoundaryProps,
+  ErrorBoundaryState
+> {
   constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = {
@@ -179,7 +189,11 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     // 에러 로깅 서비스나 개발자 디버깅용 콘솔에 에러 정보를 전송합니다.
-    console.error("Unexpected Error Caught by ErrorBoundary:", error, errorInfo);
+    console.error(
+      'Unexpected Error Caught by ErrorBoundary:',
+      error,
+      errorInfo,
+    );
     // ex) Sentry.captureException(error, { extra: errorInfo });
   }
 
@@ -194,11 +208,11 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 }
 ```
 
-
 ## 4. 의도한 에러
->비즈니스 로직 내에서 발생하는 의도한 에러는 개발자가 예측할 수 있는 상황(사용자 입력 오류, 인증 실패, 데이터 유효성 검사 실패 등)입니다.
-이 경우, 에러를 전파하기보다는 UI 요소(예: toast나 alert)를 통해 사용자에게 안내하는 것이 UX 측면에서 좋습니다.
-또한, 에러가 발생한 시점에 추가적인 로깅이나 사용자 행동 기록을 남길 수 있습니다.
+
+> 비즈니스 로직 내에서 발생하는 의도한 에러는 개발자가 예측할 수 있는 상황(사용자 입력 오류, 인증 실패, 데이터 유효성 검사 실패 등)입니다.
+> 이 경우, 에러를 전파하기보다는 UI 요소(예: toast나 alert)를 통해 사용자에게 안내하는 것이 UX 측면에서 좋습니다.
+> 또한, 에러가 발생한 시점에 추가적인 로깅이나 사용자 행동 기록을 남길 수 있습니다.
 
 ```tsx
 // BusinessOperation.tsx
@@ -207,8 +221,8 @@ import React, { useState } from 'react';
 const fakeApiCall = async (value: string): Promise<string> => {
   return new Promise((resolve, reject) => {
     setTimeout(() => {
-      if (value.trim() === "") {
-        reject(new Error("입력값이 비어 있습니다."));
+      if (value.trim() === '') {
+        reject(new Error('입력값이 비어 있습니다.'));
       } else {
         resolve(`성공: ${value}`);
       }
@@ -217,11 +231,11 @@ const fakeApiCall = async (value: string): Promise<string> => {
 };
 
 export const BusinessOperation = () => {
-  const [result, setResult] = useState<string>("");
-  
+  const [result, setResult] = useState<string>('');
+
   const handleAction = async () => {
     try {
-      const response = await fakeApiCall("");
+      const response = await fakeApiCall('');
       setResult(response);
     } catch (error) {
       // 의도한 에러 처리: alert 또는 toast를 통해 사용자에게 안내
@@ -229,7 +243,7 @@ export const BusinessOperation = () => {
         alert(`에러가 발생했습니다: ${error.message}`);
       }
       // 필요한 경우, 에러 로깅 코드 추가
-      console.error("Business logic error:", error);
+      console.error('Business logic error:', error);
     }
   };
 
@@ -248,10 +262,11 @@ export const BusinessOperation = () => {
 
 useState를 활용한 방식은 직접 사용하기보다는, tanstack-query와 같이 이미 구현된 라이브러리를 활용하는 것이 더 효율적일 것으로 보입니다.
 
-useTransition은 사용자와의 인터랙션 과정에서 발생하는 비동기 작업의 에러를 처리하는 데 유용하며, use는 페이지에서 직접 호출되는 비동기 함수의 에러를 간편하게 처리할 수 있습니다.
+useTransition은 사용자와의 인터랙션 과정에서 발생하는 비동기 작업의 에러를 처리하는 데 유용하며, use는 페이지에서 직접 호출되는 비동기 함수의 에러를 간편하게 처리할
+수 있습니다.
 
->런타임중 **의도치 않은 에러**들은 에러바운더리에서 처리 할 수 있도록 하는 것이 맞지만
-**의도한 에러** 같은 경우에는 비즈니스 로직에서 에러를 던지지 않고 직접 잡아 toast 나 alert 같은 UI를 통해 상황에 맞게 처리하는 것이 바람직합니다.
+> 런타임중 **의도치 않은 에러**들은 에러바운더리에서 처리 할 수 있도록 하는 것이 맞지만
+> **의도한 에러** 같은 경우에는 비즈니스 로직에서 에러를 던지지 않고 직접 잡아 toast 나 alert 같은 UI를 통해 상황에 맞게 처리하는 것이 바람직합니다.
 
 이처럼 다양한 에러 처리 기법을 상황에 맞게 적절히 적용하여, 보다 견고하고 안정적인 애플리케이션을 구축해 보시길 바랍니다.
 

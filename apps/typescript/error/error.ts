@@ -1,5 +1,5 @@
 export const testError = () => {
-  throw new Error("error");
+  throw new Error('error');
 };
 
 export const NotThrowError = () => {
@@ -15,7 +15,7 @@ export const NotThrowError2 = () => {
 };
 
 export const asyncError = async () => {
-  throw new Error("error");
+  throw new Error('error');
 };
 
 export const asyncNotThrowError = async () => {
@@ -34,14 +34,14 @@ export const asyncNotThrowError2 = async () => {
 class CustomError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = "CustomError";
+    this.name = 'CustomError';
   }
 }
 
 class ValidationError extends CustomError {
   constructor(message: string) {
     super(message);
-    this.name = "ValidationError";
+    this.name = 'ValidationError';
   }
 }
 
@@ -51,16 +51,16 @@ export const handleSpecificErrors = () => {
   } catch (e) {
     if (e instanceof ValidationError) {
       // 유효성 검증 에러 처리
-      console.error("Validation error:", e.message);
+      console.error('Validation error:', e.message);
     } else if (e instanceof CustomError) {
       // 커스텀 에러 처리
-      console.error("Custom error:", e.message);
+      console.error('Custom error:', e.message);
     } else if (e instanceof Error) {
       // 기본 에러 처리
-      console.error("Generic error:", e.message);
+      console.error('Generic error:', e.message);
     } else {
       // 알 수 없는 에러 처리
-      console.error("Unknown error:", e);
+      console.error('Unknown error:', e);
     }
   }
 };
@@ -70,7 +70,7 @@ export const handleMultipleAsyncErrors = async () => {
     await Promise.all([asyncError(), asyncError(), asyncError()]);
   } catch (e) {
     // Promise.all의 에러 처리
-    console.error("One of the promises failed:", e);
+    console.error('One of the promises failed:', e);
   }
 };
 
@@ -96,5 +96,5 @@ export const asyncErrorWrapper = async <T>(
 
 export const executeTest = () => {
   testError();
-  console.log("test");
+  console.log('test');
 };
