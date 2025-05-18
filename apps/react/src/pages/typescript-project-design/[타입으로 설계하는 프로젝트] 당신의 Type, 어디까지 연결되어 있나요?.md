@@ -234,7 +234,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({ userId }) => {
 
 ---
 
-✍️ 정리하며
+## ✍️ 정리하며
 
 타입은 단순히 오류를 막는 보조 도구가 아닙니다.
 **설계의 일부분이자, 유지보수성과 확장성을 위한 핵심 수단입니다.**
