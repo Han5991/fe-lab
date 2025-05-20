@@ -9,19 +9,22 @@ const handler = [
       name: 'Alice',
     }),
   ),
-  http.post('http://localhost/api/login', async ({ request }) => {
-    const { username, password } = (await request.json()) as LoginRequest;
+  http.post<never, LoginRequest>(
+    'http://localhost/api/login',
+    async ({ request }) => {
+      const { username, password } = await request.json();
 
-    if (username === 'user' && password === 'pass') {
-      return HttpResponse.json({
-        token: 'secret-token',
-      });
-    }
-    return HttpResponse.json(
-      { error: 'Invalid credentials' },
-      { status: HttpStatusCode.Unauthorized },
-    );
-  }),
+      if (username === 'user' && password === 'pass') {
+        return HttpResponse.json({
+          token: 'secret-token',
+        });
+      }
+      return HttpResponse.json(
+        { error: 'Invalid credentials' },
+        { status: HttpStatusCode.Unauthorized },
+      );
+    },
+  ),
 ];
 
 const server = setupServer(...handler);
