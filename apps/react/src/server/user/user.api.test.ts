@@ -6,7 +6,12 @@ import { userServer } from '@/server/user/api';
 const server = setupServer(
   http.post('http://localhost/api/user', async ({ request }) => {
     const user = (await request.json()) as UserReq;
-    return HttpResponse.json({ id: user.id, name: 'New User' } as UserRes);
+    return HttpResponse.json<UserRes>({
+      id: user.id,
+      name: 'New User',
+      email: 'test@test.com',
+      createdAt: new Date(),
+    });
   }),
 );
 
@@ -19,6 +24,13 @@ describe('UserServerImpl', () => {
     const userReq: UserReq = { id: '1' };
     const response = await userServer.createUser(userReq);
 
-    expect(response).toEqual({ id: '1', name: 'New User' });
+    expect(response).toEqual({
+      id: userReq.id,
+      name: 'New User',
+      email: 'test@test.com',
+      createdAt: expect.stringMatching(
+        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/,
+      ),
+    });
   });
 });
