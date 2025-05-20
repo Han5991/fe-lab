@@ -4,15 +4,18 @@ import type { UserReq, UserRes } from '@/server/user/types';
 import { userServer } from '@/server/user/api';
 
 const server = setupServer(
-  http.post('http://localhost/api/user', async ({ request }) => {
-    const user = (await request.json()) as UserReq;
-    return HttpResponse.json<UserRes>({
-      id: user.id,
-      name: 'New User',
-      email: 'test@test.com',
-      createdAt: new Date(),
-    });
-  }),
+  http.post<never, UserReq>(
+    'http://localhost/api/user',
+    async ({ request }) => {
+      const user = await request.json();
+      return HttpResponse.json<UserRes>({
+        id: user.id,
+        name: 'New User',
+        email: 'test@test.com',
+        createdAt: new Date(),
+      });
+    },
+  ),
 );
 
 beforeAll(() => server.listen());
