@@ -262,72 +262,46 @@ export type UserRes = User;
    - `UserReq`: 요청 타입
    - `UserRes`: 응답 타입
 
-### HTTP 클라이언트 인스턴스 생성
-
-```typescript
-// 📁 apps/react/src/shared/http.ts
-import { Http } from '@package/core';
-
-// HTTP 클라이언트 인스턴스 생성
-export const httpClient = new Http('http://localhost:3000');
-```
+### 도메인별 API 클라이언트
 
 ```typescript
 // 📁 apps/react/src/server/user/api.ts
-import type { UserRes, CreateUserReq, GetUsersReq, GetUsersRes } from './types';
-import { httpClient } from '@/shared/http';
+import type { UserRes, UserReq } from './types';
+import type { Http } from '@package/core';
+import { instance } from '@/shared';
 
-// 사용자 생성 API
-export const createUser = async (user: CreateUserReq): Promise<UserRes> => {
-  const response = await httpClient.post<UserRes, CreateUserReq>(
-    '/api/users',
-    user,
-  );
-  return response.data;
-};
+// 사용자 관련 API 인터페이스 정의
+interface UserServer {
+  createUser: (user: UserReq) => Promise<UserRes>;
+}
 
-// 사용자 목록 조회 API
-export const getUsers = async (params?: GetUsersReq): Promise<GetUsersRes> => {
-  const response = await httpClient.get<GetUsersRes>('/api/users', { params });
-  return response.data;
-};
+// 인터페이스 구현체
+class UserServerImpl implements UserServer {
+  constructor(private api: Http) {} // Http 클라이언트 주입받음
 
-// 특정 사용자 조회 API
-export const getUserById = async (id: string): Promise<UserRes> => {
-  const response = await httpClient.get<UserRes>(`/api/users/${id}`);
-  return response.data;
-};
+  // 사용자 생성 API 호출 메서드
+  async createUser(user: UserReq): Promise<UserRes> {
+    const response = await this.api.post<UserRes, UserReq>('/api/user', user);
+    return response.data; // 응답 데이터만 추출하여 반환
+  }
+}
 
-// 사용자 정보 수정 API
-export const updateUser = async (
-  id: string,
-  user: Partial<CreateUserReq>,
-): Promise<UserRes> => {
-  const response = await httpClient.put<UserRes, Partial<CreateUserReq>>(
-    `/api/users/${id}`,
-    user,
-  );
-  return response.data;
-};
-
-// 사용자 삭제 API
-export const deleteUser = async (id: string): Promise<void> => {
-  await httpClient.delete(`/api/users/${id}`);
-};
+// 싱글톤 인스턴스 생성 및 내보내기
+export const userServer = new UserServerImpl(instance);
 ```
 
-API 함수들의 특징:
+API 클라이언트의 특징:
 
-1. **함수형 접근**
+1. **인터페이스 기반 설계**:
 
-   - 각 API 엔드포인트를 개별 함수로 정의하여 사용하기 쉽습니다.
+   - `UserServer` 인터페이스를 통해 API 메서드를 명확히 정의합니다.
+   - 구현체(`UserServerImpl`)는 인터페이스를 준수합니다.
 
-2. **타입 안전성**
+2. **의존성 주입**:
 
-   - 요청과 응답 타입이 명확히 정의되어 타입 안전성이 보장됩니다.
-   - 함수 시그니처만 봐도 어떤 데이터가 필요하고 무엇을 반환하는지 알 수 있습니다.
+   - HTTP 클라이언트를 생성자를 통해 주입받아 테스트 용이성을 높입니다.
 
-3. **응답 데이터 추출**
+3. **응답 데이터 추출**:
    - `response.data`를 반환하여 호출자가 HTTP 응답 구조를 알 필요가 없게 합니다.
 
 ### 🧪 테스트 용이성
@@ -338,51 +312,24 @@ API 함수들의 특징:
 // 📁 apps/react/src/server/user/user.api.test.ts
 import { setupServer } from 'msw/node';
 import { http, HttpResponse } from 'msw';
-import type { CreateUserReq, UserRes } from './types';
-import { createUser, getUsers } from './api';
+import type { UserReq, UserRes } from '@/server/user/types';
+import { userServer } from '@/server/user/api';
 
 // MSW 서버 설정 - API 요청을 가로채서 모의 응답 제공
 const server = setupServer(
-  // 사용자 생성 API 모킹
-  http.post<never, CreateUserReq>(
-    'http://localhost:3000/api/users',
+  http.post<never, UserReq>(
+    'http://localhost/api/user',
     async ({ request }) => {
-      const user = await request.json();
-
+      const user = await request.json(); // 요청 본문 추출
       // 모의 응답 생성 - 타입 안전하게 UserRes 형태로 반환
-      const mockUser: UserRes = {
-        id: '1',
-        name: user.name,
-        email: user.email,
+      return HttpResponse.json<UserRes>({
+        id: user.id,
+        name: 'New User',
+        email: 'test@test.com',
         createdAt: new Date(),
-      };
-
-      return HttpResponse.json(mockUser);
+      });
     },
   ),
-
-  // 사용자 목록 조회 API 모킹
-  http.get('http://localhost:3000/api/users', () => {
-    return HttpResponse.json({
-      users: [
-        {
-          id: '1',
-          name: 'User 1',
-          email: 'user1@test.com',
-          createdAt: new Date(),
-        },
-        {
-          id: '2',
-          name: 'User 2',
-          email: 'user2@test.com',
-          createdAt: new Date(),
-        },
-      ],
-      total: 2,
-      page: 1,
-      limit: 10,
-    });
-  }),
 );
 
 // 테스트 환경 설정
@@ -390,37 +337,21 @@ beforeAll(() => server.listen());
 afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 
-describe('User API', () => {
+describe('UserServerImpl', () => {
   it('사용자를 생성할 수 있다', async () => {
     // 테스트용 요청 데이터 생성
-    const userReq: CreateUserReq = {
-      name: 'Test User',
-      email: 'test@test.com',
-    };
-
+    const userReq: UserReq = { id: '1' };
     // API 호출
-    const response = await createUser(userReq);
-
-    // 응답 검증 - 타입 안전성 보장
-    expect(response).toEqual({
-      id: '1',
-      name: userReq.name,
-      email: userReq.email,
-      createdAt: expect.any(Date),
-    });
-  });
-
-  it('사용자 목록을 조회할 수 있다', async () => {
-    // API 호출
-    const response = await getUsers({ page: 1, limit: 10 });
+    const response = await userServer.createUser(userReq);
 
     // 응답 검증
-    expect(response.users).toHaveLength(2);
-    expect(response.total).toBe(2);
-    expect(response.users[0]).toMatchObject({
-      id: expect.any(String),
-      name: expect.any(String),
-      email: expect.any(String),
+    expect(response).toEqual({
+      id: userReq.id,
+      name: 'New User',
+      email: 'test@test.com',
+      createdAt: expect.stringMatching(
+        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/,
+      ),
     });
   });
 });
