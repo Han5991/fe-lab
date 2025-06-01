@@ -244,11 +244,26 @@ export class Http {
 // 📁 apps/react/src/server/user/types.ts
 import type { User } from '@/shared';
 
-// 요청 타입: User 타입에서 id만 선택
-export type UserReq = Pick<User, 'id'>;
+// 요청 타입: User 타입에서 필요한 필드만 선택
+export type CreateUserReq = Omit<User, 'id' | 'createdAt'>;
 
 // 응답 타입: 전체 User 객체
 export type UserRes = User;
+
+// 사용자 목록 조회 요청 타입
+export type GetUsersReq = {
+  page?: number;
+  limit?: number;
+  search?: string;
+};
+
+// 사용자 목록 응답 타입
+export type GetUsersRes = {
+  users: User[];
+  total: number;
+  page: number;
+  limit: number;
+};
 ```
 
 타입 정의의 특징:
