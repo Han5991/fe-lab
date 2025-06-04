@@ -8,7 +8,8 @@
 
 > **어떻게 하면 이런 로직을 재활용하기 쉽게 만들 수 없을까? 지난번 API도 구조적으로 설계 했는대 이것도 그렇게 할 수 있지 않을까?**
 
-[이전글](https://velog.io/@rewq5991/typescript-project-api-di-design)에서는 Type-Safe Http class을 설계하고 Type을 구조적으로 설계하는 것에 대해 이야기 했습니다.
+[이전글](https://velog.io/@rewq5991/typescript-project-api-di-design)에서는 Type-Safe Http class을 설계하고
+Type을 구조적으로 설계하는 것에 대해 이야기 했습니다.
 
 이번글에서는 프론트에서 쓰이는 비즈니스 로직을 분리하는 부분에 관하여 이야기해 볼까 합니다.
 
@@ -318,7 +319,14 @@ describe('userService', () => {
 });
 ```
 
-### 4. Service Layer의 진짜 강점: 도메인 로직과 API의 조합
+### 4. Service Layer의 강점: 도메인 로직과 API의 조합
+
+[BFF란?](https://tech.kakaoent.com/front-end/2022/220310-kakaopage-bff/)
+
+> bff 패턴: 비즈니스 로직을 Backend For Frontend에 위임  
+> 프론트엔드가 필요한 데이터를Backend For Frontend에 요청  
+> Backend For Frontend가 비즈니스 로직을 처리하고 데이터를 반환  
+> 프론트엔드는 받은 데이터를 그대로 사용
 
 > Service Layer의 가장 큰 강점 중 하나는 **여러 서비스의 로직을 조합해서 새로운 도메인 기능을 만들어낼 수 있다**는 점입니다.  
 > 더 나아가 **여러 API 호출을 조합**해서 프론트엔드에 최적화된 데이터를 제공할 수도 있습니다.  
@@ -459,8 +467,6 @@ export const Dashboard = ({ userId }: { userId: string }) => {
 - **도메인 기능 조합**: 여러 서비스의 로직을 조합해서 새로운 도메인 기능 생성
 - **API 조합 및 최적화**: 여러 API 호출을 조합하고 에러 처리, 캐싱 전략 구현
 
-🚀 앞으로의 여정
-
 > 이제 기획자가 **"별거 없어요!"**라고 말할 때, 정말로 별거 없게 만들 수 있는 코드 구조를 갖추었습니다.  
 > 더 나아가 여러 도메인의 로직을 자유자재로 조합하고,  
 > 여러 API를 조합해서 BFF 패턴을 코드 레벨에서 구현할 수 있게 되어 복잡한 비즈니스 요구사항도 깔끔하게 해결할 수 있게 되었습니다.
@@ -472,6 +478,6 @@ export const Dashboard = ({ userId }: { userId: string }) => {
 
 이 모든 것이 `가능`해졌습니다!
 
-다음 글에서는 Domain 포함되는 요소들과 이를 통해 어떻게 활용할 수 있는지에 대해 알아보겠습니다.
-
 > "원래 있던 기능이니 금방 하시죠?" → "네, 기존 로직들을 조합하고 필요한 API들을 묶어서 정말 금방 할 수 있습니다!" 🎉
+
+**다음 글에서는 Domain 포함되는 요소들과 이를 통해 어떻게 활용할 수 있는지에 대해 알아보겠습니다.**
