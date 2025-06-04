@@ -323,7 +323,7 @@ describe('userService', () => {
 
 [BFF란?](https://tech.kakaoent.com/front-end/2022/220310-kakaopage-bff/)
 
-> bff 패턴: 비즈니스 로직을 Backend For Frontend에 위임  
+> BFF 패턴: 비즈니스 로직을 Backend For Frontend에 위임  
 > 프론트엔드가 필요한 데이터를Backend For Frontend에 요청  
 > Backend For Frontend가 비즈니스 로직을 처리하고 데이터를 반환  
 > 프론트엔드는 받은 데이터를 그대로 사용
@@ -373,7 +373,7 @@ export const getUserDashboardData = (user: UserRes): UserDashboardData => {
 // 🟢 여러 API를 조합해서 프론트엔드 최적화된 데이터 제공 (BFF와 유사)
 
 export const getUserDashboardAggregatedData = async (
-  userId: string,
+  userId: User['id'],
 ): Promise<UserDashboardAggregatedData> => {
   // 1. 여러 API를 병렬로 호출 (네트워크 최적화)
   const [user, projects, notifications, analytics] = await Promise.allSettled([
@@ -414,7 +414,6 @@ export const useAggregatedDashboard = (userId: string) => {
   return useQuery({
     queryKey: ['dashboard-aggregated', userId],
     queryFn: () => getUserDashboardAggregatedData(userId),
-    staleTime: 5 * 60 * 1000, // 5분간 캐시
   });
 };
 ```
@@ -442,7 +441,6 @@ export const Dashboard = ({ userId }: { userId: string }) => {
 - 네트워크 최적화: 여러 API를 병렬로 호출해서 총 로딩 시간 단축
 - 프론트엔드 최적화: UI에 필요한 형태로 데이터를 미리 가공
 - 에러 처리 중앙화: 각 API 실패에 대한 처리를 한 곳에서 관리
-- 서버 개발 없이도 마이크로서비스들의 데이터를 자유자재로 조합
 
 ## 🔮 결론
 
@@ -450,11 +448,10 @@ export const Dashboard = ({ userId }: { userId: string }) => {
 
 ✅ 해결된 문제들
 
-- **재사용성 극대화**: getUserStatus 함수 하나로 모든 곳에서 일관된 사용자 상태 판단
+- **재사용성 극대화**: `getUserStatus` 함수 하나로 모든 곳에서 일관된 사용자 상태 판단
 - **관심사 분리**: 비즈니스 로직, 스타일링, UI 렌더링이 각각의 책임에만 집중
 - **테스트 용이성**: 비즈니스 로직을 독립적으로 테스트할 수 있어 버그 발견과 수정이 쉬워짐
 - **유지보수성 향상**: 로직 변경 시 Service 파일 하나만 수정하면 모든 곳에 적용
-- **타입 안전성**: TypeScript의 타입 시스템을 활용해 컴파일 타임에 오류 방지
 - **도메인 로직의 조합**: 여러 서비스를 레고 블록처럼 조합해서 복잡한 비즈니스 요구사항 해결
 - **API 조합을 통한 BFF 구현**: 여러 API를 조합해서 프론트엔드 최적화된 데이터 제공
 
