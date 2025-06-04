@@ -2,7 +2,7 @@ import type { UserRes, UserReq } from './types';
 import type { Http } from '@package/core';
 import { instance } from '@/shared';
 
-interface UserServer {
+export interface UserServer {
   createUser: (user: UserReq) => Promise<UserRes>;
 }
 

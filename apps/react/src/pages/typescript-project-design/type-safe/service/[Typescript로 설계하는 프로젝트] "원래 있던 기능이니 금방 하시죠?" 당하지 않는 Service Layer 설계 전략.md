@@ -8,7 +8,7 @@
 
 > **어떻게 하면 이런 로직을 재활용하기 쉽게 만들 수 없을까? 지난번 API도 구조적으로 설계 했는대 이것도 그렇게 할 수 있지 않을까?**
 
-[이전글](https://velog.io/@rewq5991/typescript-project-api-di-design)에서는 Type-Safe Http class을 설계하고
+[이전글](https://velog.io/@rewq5991/typescript-project-api-design)에서는 Type-Safe Http class을 설계하고
 Type을 구조적으로 설계하는 것에 대해 이야기 했습니다.
 
 이번글에서는 프론트에서 쓰이는 비즈니스 로직을 분리하는 부분에 관하여 이야기해 볼까 합니다.

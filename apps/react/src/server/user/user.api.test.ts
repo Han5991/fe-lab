@@ -13,6 +13,9 @@ const server = setupServer(
         name: 'New User',
         email: 'test@test.com',
         createdAt: new Date(),
+        isPremium: false,
+        lastLoginDate: new Date(),
+        subscriptionStatus: 'inactive',
       });
     },
   ),
