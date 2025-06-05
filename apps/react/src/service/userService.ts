@@ -2,7 +2,17 @@ import type { UserReq, UserRes, UserServer } from '@/server';
 import { userServer } from '@/server';
 import type { UserStatus } from '@/shared';
 
-export class UserService {
+interface IUserService {
+  createUser(user: UserReq): Promise<UserRes>;
+
+  getUserStatus(user: UserRes): UserStatus;
+
+  isUserPremiumActive(user: UserRes): boolean;
+
+  canAccessPremiumFeatures(user: UserRes): boolean;
+}
+
+export class UserService implements IUserService {
   constructor(protected user: UserServer) {}
 
   createUser(user: UserReq): Promise<UserRes> {

@@ -1,21 +1,26 @@
 ## 들어가며
 
 > 겨우 백엔드의 요청을 쳐내고 다시 피곤함에전 모습으로 테스크를 마무리하려는 순간 이번엔 제 슬랙이 울립니다.  
-> [기획자]: "급하게 기획이 바뀌어서요. 이거 프론트에서 추가로 수정해 주셔야 할 것 같아. 아직 마무리 다 안 하신 거 맞죠?"  
+> [기획자]: "급하게 기획이 바뀌어서요. 이거 프론트에서 추가로 수정해 주셔야 할 것 같아요. 아직 마무리 다 안 하신 거 맞죠?"  
 > [나]: "네 아직 마무리 안 했어요 수정 사항이 뭔가요?'  
 > [기획자]: "별거 없어요! 다른 쪽에 만든 기능이긴 한대 대신에 사용자의 데이터가 특정 조건에 따라 카드의 색깔이 바뀌어야 합니다. 원래 있던 기능이니 금방 하시죠?"  
 > [나]: (그거 거기에만 쓴다며... 그래서 그쪽 로직하고 딱 붙여 놓은건대... ) "네 하지만 시간은 좀 걸릴 것 같아요 PM 하고 이야기는 하고 오신 거죠?"
 
 > **어떻게 하면 이런 로직을 재활용하기 쉽게 만들 수 없을까? 지난번 API도 구조적으로 설계 했는대 이것도 그렇게 할 수 있지 않을까?**
 
-[이전글](https://velog.io/@rewq5991/typescript-project-api-di-design)에서는 Type-Safe Http class을 설계하고
-Type을 구조적으로 설계하는 것에 대해 이야기 했습니다.
+[이전글](https://velog.io/@rewq5991/typescript-project-api-di-design)에서는 Type-Safe Http class을 설계하고 Type을 구조적으로 설계하는 것에 대해 이야기 했습니다.  
+해당 글에서는 서버 API Type을 설계하고 제네릭을 활용한 HTTP 클래스를 통해 타입 안전성을 확보하는 방법을 다루었습니다.  
+특히 DI을 활용하여 HTTP 클라이언트를 추상화하고 테스트하기 쉬운 코드를 작성하는 방법을 설명했습니다.
 
-이번글에서는 프론트에서 쓰이는 비즈니스 로직을 분리하는 부분에 관하여 이야기해 볼까 합니다.
+**의존성 주입(DI)** 이란 무엇일까요? 간단히 말하면, 한 객체가 다른 객체를 직접 생성하거나 참조하는 대신, 외부에서 필요한 객체를 전달받는 디자인 패턴입니다.  
+이는 코드의 결합도를 낮추고 재사용성과 테스트 용이성을 높여줍니다.  
+예를 들어, HTTP 클라이언트가 필요한 서비스 클래스는 직접 HTTP 클라이언트를 생성하는 대신, 생성자나 메서드 인자로 전달받을 수 있습니다.
+
+이번글에서는 프론트에서 쓰이는 비즈니스 로직을 분리하여 Service Layer를 구성하고, 의존성 주입을 통해 재사용 가능하고 테스트하기 쉬운 코드를 작성하는 방법에 대해 이야기해 볼까 합니다.
 
 여러분이 여기까지 따라오셨다면 이미 http와 Api 호출부를 나누어 놓았을 것입니다.  
 **🎉 축하합니다!** 레이어를 나누신거고 그럼 그 이후에 로직을 붙여 나가는건 별로 어렵지 않습니다.  
-대신에 이번 레이어를 저는 Service Layer라고 부르고 이 레이어가 가지는 장점에 대해서 설명드리겠습니다.
+대신에 이번 레이어를 저는 Service Layer라고 부르고 이 Layer가 가지는 장점에 대해서 설명드리겠습니다.
 
 ## 🔨 기존 Api + Business logic의 문제점
 
@@ -69,55 +74,82 @@ export const UserProfileCard = ({ userId }: { userId: string }) => {
 
 ## 🛠️ 비즈니스 로직을 서비스 함수로 분리
 
-> 이제 이런 문제들을 해결하기 위해 Service 레이어를 설계 방법을 알아보겠습니다.
+> 이제 이런 문제들을 해결하기 위해 Service Layer를 설계 방법을 알아보겠습니다.
 
 ### 1. 관심사 분리/재사용성 증가
 
 1. **비즈니스 로직** -> 비즈니스 로직에만 관심을 가집니다.
 
    ```typescript
-   // 📁 service/userService.ts
+   // 📝 service/userService.ts
    // 🟢 비즈니스 로직: 사용자 상태만 판단
-   export type UserStatus = 'premium-active' | 'active' | 'new' | 'inactive';
+   import type { UserReq, UserRes, UserServer } from '@/server';
+   import { userServer } from '@/server';
+   import type { UserStatus } from '@/shared';
 
-   export const getUserStatus = (user: UserRes): UserStatus => {
-     const now = Date.now();
-     const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
-     const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000;
+   interface IUserService {
+     createUser(user: UserReq): Promise<UserRes>;
 
-     if (user.isPremium && user.lastLoginDate > sevenDaysAgo) {
-       return 'premium-active';
+     getUserStatus(user: UserRes): UserStatus;
+
+     isUserPremiumActive(user: UserRes): boolean;
+
+     canAccessPremiumFeatures(user: UserRes): boolean;
+   }
+
+   export class UserService {
+     constructor(protected user: UserServer) {}
+
+     getUserStatus(user: UserRes): UserStatus {
+       const now = Date.now();
+       const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
+       const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000;
+
+       if (user.isPremium && user.lastLoginDate.getTime() > sevenDaysAgo) {
+         return 'premium-active';
+       }
+
+       if (user.subscriptionStatus === 'active') {
+         return 'active';
+       }
+
+       if (user.createdAt.getTime() > thirtyDaysAgo) {
+         return 'new';
+       }
+
+       return 'inactive';
      }
 
-     if (user.subscriptionStatus === 'active') {
-       return 'active';
+     /**
+      * 직접 getUserStatus를 가져다가 사용하지 않고 이렇게 필요한 부분만 만들어서 관리 가능
+      * 추가적인 부분만 구현하면 되지 좀 더 세밀한 관심사 분리 가능
+      */
+     isUserPremiumActive(user: UserRes): boolean {
+       return this.getUserStatus(user) === 'premium-active';
      }
 
-     if (user.createdAt > thirtyDaysAgo) {
-       return 'new';
+     canAccessPremiumFeatures(user: UserRes): boolean {
+       const status = this.getUserStatus(user);
+       return status === 'premium-active' || status === 'active';
      }
 
-     return 'inactive';
-   };
+     createUser(user: UserReq): Promise<UserRes> {
+       return this.user.createUser(user);
+     }
+   }
 
-   // 추가 비즈니스 로직들
-   export const isUserPremiumActive = (user: UserRes): boolean => {
-     return getUserStatus(user) === 'premium-active';
-   };
-
-   export const canAccessPremiumFeatures = (user: UserRes): boolean => {
-     const status = getUserStatus(user);
-     return status === 'premium-active' || status === 'active';
-   };
+   // 싱글턴 인스턴스로 내보내기
+   // DI를 통한 구현
+   export const userService = new UserService(userServer);
    ```
 
 2. **CSS** -> 스타일링에만 관심을 가집니다.
 
    ```typescript
-   // 📁 components/ui/UserCard/UserCard.styles.ts
+   // 📝 components/ui/UserCard/UserCard.styles.ts
    // 🟢 UserStatus 타입을 기반으로 한 타입 안전한 스타일 매핑
 
-   import type { UserStatus } from '@/services/userService';
+   import type { UserStatus } from '@/service/userService';
 
    type CardStyles = {
      cardColor: string;
@@ -169,11 +201,11 @@ export const UserProfileCard = ({ userId }: { userId: string }) => {
 3. **UI** -> 렌더링에만 관심을 가집니다.
 
    ```tsx
-   // 📁 features/userProfile/UserProfileCard.tsx
+   // 📝 features/userProfile/UserProfileCard.tsx
    // 🟢 컴포넌트: 비즈니스 로직과 UI 로직이 분리됨
 
-   import { getUserStatus } from '@/services/userService';
-   import { getUserCardStyles } from '@/components/ui/UserCard/UserCard.styles';
+   import { userService } from '@/service/userService';
+   import { userCardStyleService } from '@/components/ui/UserCard/UserCard.styles';
 
    export const UserProfileCard = ({ userId }: { userId: string }) => {
      const { data: user, isLoading } = useQuery<UserRes>({
@@ -183,8 +215,8 @@ export const UserProfileCard = ({ userId }: { userId: string }) => {
 
      if (isLoading || !user) return <div>Loading...</div>;
 
-     // 비즈니스 로직: 사용자 상태 판단
-     const userStatus = getUserStatus(user);
+     // 비즈니스 로직: 사용자 상태 판단 (서비스 클래스 사용)
+     const userStatus = userService.getUserStatus(user);
 
      // UI 로직: 상태에 따른 스타일 결정
      const styles = getUserCardStyles(userStatus);
@@ -206,10 +238,12 @@ export const UserProfileCard = ({ userId }: { userId: string }) => {
 이제 기획자가 **"다른 곳에서도 같은 로직을 써주세요"** 라고 했을 때, 정말 간단하게 해결할 수 있는지 확인해 보겠습니다.
 
 ```tsx
-// 📁 features/dashboard/DashboardUserList.tsx
+// 📝 features/dashboard/DashboardUserList.tsx
 // 🟢 동일한 비즈니스 로직을 다른 UI로 재사용
 
-import { getUserStatus } from '@/services/userService';
+import { userService } from '@/service/userService';
+import type { UserStatus } from '@/service/userService';
+import type { GetUsersRes } from '@/server';
 
 export const DashboardUserList = () => {
   const { data, isLoading } = useQuery<GetUsersRes>({
@@ -222,10 +256,11 @@ export const DashboardUserList = () => {
   return (
     <div className="space-y-2">
       {data.users.map(user => {
-        // 동일한 비즈니스 로직 재사용!
-        const userStatus = getUserStatus(user);
+        // 서비스 클래스의 인스턴스를 직접 사용
+        const userStatus = userService.getUserStatus(user);
 
         // 하지만 다른 UI 표현 방식 사용
+        // 여기도 새로 만들어서 하는게 좀 더 깔끔하게 보이겠지만 이해를 위해서 바로 구현
         const getDotColor = (status: UserStatus) => {
           switch (status) {
             case 'premium-active':
@@ -259,61 +294,148 @@ export const DashboardUserList = () => {
 };
 ```
 
-코드 복사 없이 `getUserStatus` 함수만 import해서 즉시 사용 가능! 정말 **"별거 없게"** 되었습니다.
+코드 복사 없이 `userService` 서비스 클래스만 import해서 즉시 사용 가능! 정말 **"별거 없게"** 되었습니다.
 
 ### 3. 테스트 코드 작성 용이성
 
 비즈니스 로직이 분리되어 간단한 mock 객체 하나만으로도 독립적인 테스트 코드 작성이 가능합니다.
 
 ```typescript
-// 📁 services/userService.test.ts
-// 🟢 비즈니스 로직 테스트 (CSS와 무관하게)
+// 📝 service/userService.test.ts
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { userService } from './userService';
+import { userServer } from '@/server';
+import type { UserReq, UserRes } from '@/server';
 
-import { getUserStatus, isUserPremiumActive } from './userService';
-import type { UserRes } from '@/server/user/types';
+// userServer 모킹
+vi.mock('@/server', () => ({
+  userServer: {
+    createUser: vi.fn(),
+  },
+}));
 
-const createMockUser = (overrides: Partial<UserRes> = {}): UserRes => ({
-  id: '1',
-  name: 'Test User',
-  email: 'test@test.com',
-  isPremium: false,
-  subscriptionStatus: 'inactive',
-  lastLoginDate: Date.now() - 10 * 24 * 60 * 60 * 1000,
-  createdAt: Date.now() - 60 * 24 * 60 * 60 * 1000,
-  ...overrides,
-});
+describe('UserService', () => {
+  // 각 테스트 전에 모킹된 함수 초기화
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
 
-describe('userService', () => {
+  describe('createUser', () => {
+    it('should call userServer.createUser with the provided user data', async () => {
+      // Arrange
+      const mockUserReq: UserReq = {
+        id: '123',
+      };
+      const mockUserRes: UserRes = {
+        id: '123',
+        name: '테스트 사용자',
+        email: 'test@example.com',
+        isPremium: false,
+        subscriptionStatus: 'inactive',
+        lastLoginDate: new Date(),
+        createdAt: new Date(),
+      };
+
+      (userServer.createUser as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockUserRes,
+      );
+
+      // Act
+      const result = await userService.createUser(mockUserReq);
+
+      // Assert
+      expect(userServer.createUser).toHaveBeenCalledWith(mockUserReq);
+      expect(result).toEqual(mockUserRes);
+    });
+  });
+
   describe('getUserStatus', () => {
-    it('프리미엄이고 최근 로그인한 사용자는 premium-active 상태를 반환한다', () => {
-      const user = createMockUser({
+    it('should return "premium-active" for premium users who logged in within the last 7 days', () => {
+      // Arrange
+      const now = Date.now();
+      const threeDaysAgo = new Date(now - 3 * 24 * 60 * 60 * 1000);
+      const user: UserRes = {
+        id: '123',
+        name: '프리미엄 사용자',
+        email: 'premium@example.com',
         isPremium: true,
-        lastLoginDate: Date.now() - 3 * 24 * 60 * 60 * 1000,
-      });
-
-      expect(getUserStatus(user)).toBe('premium-active');
-    });
-
-    it('신규 가입 사용자는 new 상태를 반환한다', () => {
-      const user = createMockUser({
-        createdAt: Date.now() - 15 * 24 * 60 * 60 * 1000,
-      });
-
-      expect(getUserStatus(user)).toBe('new');
-    });
-
-    it('활성 구독 사용자는 active 상태를 반환한다', () => {
-      const user = createMockUser({
         subscriptionStatus: 'active',
-      });
+        lastLoginDate: threeDaysAgo,
+        createdAt: new Date(now - 60 * 24 * 60 * 60 * 1000),
+      };
 
-      expect(getUserStatus(user)).toBe('active');
+      // Act
+      const status = userService.getUserStatus(user);
+
+      // Assert
+      expect(status).toBe('premium-active');
     });
 
-    it('기본 사용자는 inactive 상태를 반환한다', () => {
-      const user = createMockUser();
+    it('should return "active" for users with active subscription status', () => {
+      // Arrange
+      const now = Date.now();
+      const tenDaysAgo = new Date(now - 10 * 24 * 60 * 60 * 1000);
+      const user: UserRes = {
+        id: '123',
+        name: '활성 사용자',
+        email: 'active@example.com',
+        isPremium: false, // 프리미엄이 아님
+        subscriptionStatus: 'active',
+        lastLoginDate: tenDaysAgo, // 7일 이내 로그인하지 않음
+        createdAt: new Date(now - 60 * 24 * 60 * 60 * 1000),
+      };
 
-      expect(getUserStatus(user)).toBe('inactive');
+      // Act
+      const status = userService.getUserStatus(user);
+
+      // Assert
+      expect(status).toBe('active');
+    });
+  });
+
+  describe('isUserPremiumActive', () => {
+    it('should return true for premium-active users', () => {
+      // Arrange
+      const now = Date.now();
+      const threeDaysAgo = new Date(now - 3 * 24 * 60 * 60 * 1000);
+      const user: UserRes = {
+        id: '123',
+        name: '프리미엄 활성 사용자',
+        email: 'premium@example.com',
+        isPremium: true,
+        subscriptionStatus: 'active',
+        lastLoginDate: threeDaysAgo,
+        createdAt: new Date(now - 60 * 24 * 60 * 60 * 1000),
+      };
+
+      // Act
+      const isPremiumActive = userService.isUserPremiumActive(user);
+
+      // Assert
+      expect(isPremiumActive).toBe(true);
+    });
+  });
+
+  describe('canAccessPremiumFeatures', () => {
+    it('should return true for premium-active users', () => {
+      // Arrange
+      const now = Date.now();
+      const threeDaysAgo = new Date(now - 3 * 24 * 60 * 60 * 1000);
+      const user: UserRes = {
+        id: '123',
+        name: '프리미엄 활성 사용자',
+        email: 'premium@example.com',
+        isPremium: true,
+        subscriptionStatus: 'active',
+        lastLoginDate: threeDaysAgo,
+        createdAt: new Date(now - 60 * 24 * 60 * 60 * 1000),
+      };
+
+      // Act
+      const canAccess = userService.canAccessPremiumFeatures(user);
+
+      // Assert
+      expect(canAccess).toBe(true);
     });
   });
 });
@@ -335,94 +457,203 @@ describe('userService', () => {
 #### 4-1. 도메인 로직의 조합
 
 ```typescript
-// 📁 services/notificationService.ts
-export const shouldSendWelcomeEmail = (user: UserRes): boolean => {
-  const threeDaysAgo = Date.now() - 3 * 24 * 60 * 60 * 1000;
-  return user.createdAt > threeDaysAgo && !user.hasReceivedWelcomeEmail;
-};
+// 📝 service/notificationService.ts
+export interface INotificationService {
+  shouldSendWelcomeEmail(user: UserRes): boolean;
+}
 
-// 📁 services/subscriptionService.ts
-export const getSubscriptionTier = (user: UserRes): SubscriptionTier => {
-  if (user.subscriptionType === 'enterprise') return 'enterprise';
-  if (user.isPremium) return 'premium';
-  if (user.subscriptionStatus === 'active') return 'basic';
-  return 'free';
-};
+export class NotificationService implements INotificationService {
+  shouldSendWelcomeEmail(user: UserRes): boolean {
+    const threeDaysAgo = Date.now() - 3 * 24 * 60 * 60 * 1000;
+    return (
+      user.createdAt.getTime() > threeDaysAgo && !user.hasReceivedWelcomeEmail
+    );
+  }
+}
 
-// 📁 services/dashboardService.ts
+// 싱글턴 인스턴스 생성
+export const notificationService = new NotificationService();
+
+// 📝 service/subscriptionService.ts
+export type SubscriptionTier = 'enterprise' | 'premium' | 'basic' | 'free';
+
+export interface ISubscriptionService {
+  getSubscriptionTier(user: UserRes): SubscriptionTier;
+}
+
+export class SubscriptionService implements ISubscriptionService {
+  getSubscriptionTier(user: UserRes): SubscriptionTier {
+    if (user.subscriptionType === 'enterprise') return 'enterprise';
+    if (user.isPremium) return 'premium';
+    if (user.subscriptionStatus === 'active') return 'basic';
+    return 'free';
+  }
+}
+
+// 싱글턴 인스턴스 생성
+export const subscriptionService = new SubscriptionService();
+
+// 📝 service/dashboardService.ts
 // 🟢 여러 서비스를 조합해서 새로운 도메인 기능 생성
-export const getUserDashboardData = (user: UserRes): UserDashboardData => {
-  // 기존 서비스들을 레고 블록처럼 조합
-  const userStatus = getUserStatus(user);
-  const subscriptionTier = getSubscriptionTier(user);
-  const shouldShowWelcome = shouldSendWelcomeEmail(user);
+import { userService, type UserStatus } from './userService';
+import {
+  subscriptionService,
+  type SubscriptionTier,
+} from './subscriptionService';
+import { notificationService } from './notificationService';
+import type { UserRes } from '@/server';
 
-  return {
-    userStatus,
-    subscriptionTier,
-    shouldShowWelcome,
-    // ... 기타 조합된 로직들
-  };
-};
+export interface UserDashboardData {
+  userStatus: UserStatus;
+  subscriptionTier: SubscriptionTier;
+  shouldShowWelcome: boolean;
+  // ... 기타 필요한 데이터
+}
+
+export interface IDashboardService {
+  getUserDashboardData(user: UserRes): UserDashboardData;
+}
+
+export class DashboardService implements IDashboardService {
+  constructor(
+    private readonly userService: typeof userService,
+    private readonly subscriptionService: typeof subscriptionService,
+    private readonly notificationService: typeof notificationService,
+  ) {}
+
+  getUserDashboardData(user: UserRes): UserDashboardData {
+    // 기존 서비스들을 레고 블록처럼 조합
+    const userStatus = this.userService.getUserStatus(user);
+    const subscriptionTier = this.subscriptionService.getSubscriptionTier(user);
+    const shouldShowWelcome =
+      this.notificationService.shouldSendWelcomeEmail(user);
+
+    return {
+      userStatus,
+      subscriptionTier,
+      shouldShowWelcome,
+      // ... 기타 조합된 로직들
+    };
+  }
+}
+
+// 싱글턴 인스턴스 생성 - 다른 서비스 디펜던시 주입
+export const dashboardService = new DashboardService(
+  userService,
+  subscriptionService,
+  notificationService,
+);
 ```
 
 #### 4-2. 여러 API 조합: BFF 패턴의 코드 레벨 구현
 
 ```typescript
-// 📁 services/aggregatedDataService.ts
+// 📝 service/aggregatedDataService.ts
 // 🟢 여러 API를 조합해서 프론트엔드 최적화된 데이터 제공 (BFF와 유사)
+import { dashboardService } from './dashboardService';
+import type { UserDashboardData } from './dashboardService';
+import type {
+  UserServer,
+  UserRes,
+  UserProjectsRes,
+  UserNotificationRes,
+  UserAnalyticsRes,
+} from '@/server';
 
-export const getUserDashboardAggregatedData = async (
-  userId: User['id'],
-): Promise<UserDashboardAggregatedData> => {
-  // 1. 여러 API를 병렬로 호출 (네트워크 최적화)
-  const [user, projects, notifications, analytics] = await Promise.allSettled([
-    getUserById(userId),
-    getUserProjects(userId, { limit: 5 }),
-    getUserNotifications(userId, { unreadOnly: true }),
-    getUserAnalytics(userId, { period: '30d' }),
-  ]);
+export interface UserDashboardAggregatedData {
+  user: UserRes;
+  recentProjects: UserProjectsRes[];
+  unreadNotifications: UserNotificationRes[];
+  dashboardConfig: UserDashboardData;
+  hasUnreadNotifications: boolean;
+}
 
-  // 2. 실패한 API 호출 처리
-  const userData = user.status === 'fulfilled' ? user.value : null;
-  const projectsData =
-    projects.status === 'fulfilled' ? projects.value.data : [];
-  const notificationsData =
-    notifications.status === 'fulfilled' ? notifications.value.data : [];
+export interface IAggregatedDataService {
+  getUserDashboardAggregatedData(
+    userId: string,
+  ): Promise<UserDashboardAggregatedData>;
+}
 
-  if (!userData) throw new Error('Failed to load user data');
+export class AggregatedDataService implements IAggregatedDataService {
+  constructor(
+    private readonly userServer: UserServer,
+    private readonly dashboardService: typeof dashboardService,
+  ) {}
 
-  // 3. 기존 도메인 로직 조합
-  const dashboardConfig = getUserDashboardData(userData);
+  async getUserDashboardAggregatedData(
+    userId: string,
+  ): Promise<UserDashboardAggregatedData> {
+    // 1. 여러 API를 병렬로 호출 (네트워크 최적화)
+    const [user, projects, notifications, analytics] = await Promise.allSettled(
+      [
+        this.userServer.getUser(userId),
+        this.userServer.getUserProjects(userId, { limit: 5 }),
+        this.userServer.getUserNotifications(userId, { unreadOnly: true }),
+        this.userServer.getUserAnalytics(userId, { period: '30d' }),
+      ],
+    );
 
-  // 4. 프론트엔드 최적화된 데이터 구조로 조합
-  return {
-    user: userData,
-    recentProjects: projectsData,
-    unreadNotifications: notificationsData,
-    dashboardConfig,
-    hasUnreadNotifications: notificationsData.length > 0,
-  };
-};
+    // 2. 실패한 API 호출 처리
+    const userData = user.status === 'fulfilled' ? user.value : null;
+    const projectsData =
+      projects.status === 'fulfilled' ? projects.value.data : [];
+    const notificationsData =
+      notifications.status === 'fulfilled' ? notifications.value.data : [];
+
+    if (!userData) throw new Error('Failed to load user data');
+
+    // 3. 기존 도메인 로직 조합 - 이미 주입된 dashboardService 사용
+    const dashboardConfig =
+      this.dashboardService.getUserDashboardData(userData);
+
+    // 4. 프론트엔드 최적화된 데이터 구조로 조합
+    return {
+      user: userData,
+      recentProjects: projectsData,
+      unreadNotifications: notificationsData,
+      dashboardConfig,
+      hasUnreadNotifications: notificationsData.length > 0,
+    };
+  }
+}
+
+import { userServer } from '@/server';
+
+// 싱글턴 인스턴스 생성 - 서버와 다른 서비스 디펜던시 주입
+export const aggregatedDataService = new AggregatedDataService(
+  userServer,
+  dashboardService,
+);
 ```
 
 #### 4-3. 실제 사용: Hook과 컴포넌트
 
 ```typescript
-// 📁 hooks/useAggregatedDashboard.ts
+// 📝 hooks/useAggregatedDashboard.ts
+import { aggregatedDataService } from '@/service/aggregatedDataService';
+import type { UserDashboardAggregatedData } from '@/service/aggregatedDataService';
+
 export const useAggregatedDashboard = (userId: string) => {
-  return useQuery({
+  return useQuery<UserDashboardAggregatedData>({
     queryKey: ['dashboard-aggregated', userId],
-    queryFn: () => getUserDashboardAggregatedData(userId),
+    queryFn: () => aggregatedDataService.getUserDashboardAggregatedData(userId),
   });
 };
 ```
 
 ```tsx
-// 📁 features/dashboard/Dashboard.tsx
-export const Dashboard = ({ userId }: { userId: string }) => {
+// 📝 features/dashboard/Dashboard.tsx
+import { useAggregatedDashboard } from '@/hooks/useAggregatedDashboard';
+import { DashboardSkeleton } from '@/components/ui/Skeleton';
+import { WelcomeMessage } from '@/components/ui/WelcomeMessage';
+import { NotificationBanner } from '@/components/ui/NotificationBanner';
+import { ProjectsWidget } from '@/components/ui/ProjectsWidget';
+import type { User } from '@/shared';
+
+export const Dashboard = ({ id }: Pick<User, 'id'>) => {
   // 한 번의 호출로 대시보드에 필요한 모든 데이터를 가져옴
-  const { data, isLoading } = useAggregatedDashboard(userId);
+  // aggregatedDataService가 주입받은 다른 서비스들을 통해 모든 데이터를 처리
+  const { data, isLoading } = useAggregatedDashboard(id);
 
   if (isLoading || !data) return <DashboardSkeleton />;
 
