@@ -240,7 +240,7 @@ export class UserService {
 
     // 2. 외부 서비스와의 협력
     if (status === 'new' && !user.hasReceivedWelcomeEmail) {
-      await this.notificationService.sendWelcomeEmail(user.getEmail());
+      await this.notificationService.sendWelcomeEmail(user.email);
     }
   }
 }
@@ -410,20 +410,19 @@ export class UserService {
 ```typescript
 // ✅ 함수형이 좋은 경우들
 // 1. 단순한 계산/변환 로직
-export const calculateDiscount = (user: User, order: Order): number => {
-  const userTier = getUserTier(user);
-  const orderAmount = getOrderTotal(order);
-  return applyTierDiscount(userTier, orderAmount);
+export const calculateUserDiscount = (user: User): number => {
+  const daysSinceJoin = getDaysSince(user.createdAt);
+  const loyaltyMultiplier = user.isPremium ? 1.2 : 1.0;
+  return Math.min(daysSinceJoin * 0.01 * loyaltyMultiplier, 0.3);
 };
 
 // 2. 상태가 없는 검증 로직
-export const isValidEmailFormat = (email: string): boolean => {
+export const isValidUserEmail = (email: string): boolean => {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 };
 
-// 3. 데이터 변환 파이프라인
-export const transformUserForDisplay = (user: User): DisplayUser => {
-  return pipe(user, addUserStatus, addPermissions, formatForUI);
+export const isValidUserAge = (age: number): boolean => {
+  return age >= 14 && age <= 120;
 };
 ```
 
@@ -441,75 +440,119 @@ export const transformUserForDisplay = (user: User): DisplayUser => {
 ```typescript
 // ✅ 객체지향이 좋은 경우들
 // 1. 복잡한 상태를 가진 엔티티
-export class ShoppingCart {
-  private items: CartItem[] = [];
+export class User {
+  private notifications: Notification[] = [];
+  private loginHistory: LoginRecord[] = [];
 
-  addItem(product: Product, quantity: number): void {
-    // 복잡한 장바구니 로직
+  addNotification(message: string): void {
+    // 복잡한 알림 로직 - 중복 방지, 우선순위 등
+    const existingNotification = this.notifications.find(
+      n => n.message === message && !n.isRead,
+    );
+
+    if (!existingNotification) {
+      this.notifications.push({
+        id: generateId(),
+        message,
+        createdAt: new Date(),
+        isRead: false,
+      });
+    }
   }
 
-  removeItem(productId: string): void {
-    // 아이템 제거 로직
+  markAllNotificationsAsRead(): void {
+    this.notifications.forEach(n => (n.isRead = true));
   }
 
-  calculateTotal(): Money {
-    // 총액 계산 로직
+  getUnreadCount(): number {
+    return this.notifications.filter(n => !n.isRead).length;
   }
 }
 
-// 2. 여러 행동을 가진 도메인 객체
+// 2. 여러 행동을 가진 도메인 객체 (같은 User 클래스 확장)
 export class User {
   upgrade(): void {
-    /* 등급 업그레이드 */
+    if (this.canUpgrade()) {
+      this.isPremium = true;
+      this.addNotification('프리미엄으로 업그레이드되었습니다!');
+    }
   }
 
-  subscribe(plan: Plan): void {
-    /* 구독 */
+  subscribe(plan: SubscriptionPlan): void {
+    this.subscriptionStatus = 'active';
+    this.subscriptionPlan = plan;
+    this.addNotification(`${plan} 구독이 시작되었습니다.`);
   }
 
-  sendNotification(message: string): void {
-    /* 알림 */
+  recordLogin(): void {
+    this.loginHistory.push({
+      timestamp: new Date(),
+      ipAddress: getCurrentIP(),
+    });
+    this.lastLoginDate = new Date();
+  }
+
+  private canUpgrade(): boolean {
+    const status = this.getStatus();
+    return status === 'active' && !this.isPremium;
   }
 }
 
-// 3. 다형성이 필요한 경우
-export interface PaymentMethod {
-  process(amount: Money): Promise<PaymentResult>;
+// 3. 다형성이 필요한 경우 (User 권한 시스템)
+export interface UserPermission {
+  canAccess(resource: string): boolean;
+  getPermissionLevel(): number;
 }
 
-export class CreditCardPayment implements PaymentMethod {
-  process(amount: Money): Promise<PaymentResult> {
-    // 신용카드 결제 로직
+export class BasicUserPermission implements UserPermission {
+  canAccess(resource: string): boolean {
+    const basicResources = ['profile', 'posts', 'comments'];
+    return basicResources.includes(resource);
+  }
+
+  getPermissionLevel(): number {
+    return 1;
   }
 }
 
-export class PayPalPayment implements PaymentMethod {
-  process(amount: Money): Promise<PaymentResult> {
-    // PayPal 결제 로직
+export class PremiumUserPermission implements UserPermission {
+  canAccess(resource: string): boolean {
+    const premiumResources = [
+      'profile',
+      'posts',
+      'comments',
+      'premium-content',
+      'analytics',
+    ];
+    return premiumResources.includes(resource);
+  }
+
+  getPermissionLevel(): number {
+    return 2;
   }
 }
 
 // 4. 인터페이스 확장이 필요한 경우
-// 💡 기본 기능에 추가 기능이 필요할 때 사용
-export interface PremiumPaymentMethod extends PaymentMethod {
-  // 기본 결제 기능에 추가 기능
-  applyLoyaltyDiscount(): number;
-
-  generateReceipt(): Receipt;
+export interface AdminUserPermission extends UserPermission {
+  canManageUsers(): boolean;
+  canAccessAdminPanel(): boolean;
 }
 
-export class PremiumCreditCardPayment implements PremiumPaymentMethod {
-  process(amount: Money): Promise<PaymentResult> {
-    // 프리미엄 신용카드 결제 로직
+export class AdminUser implements AdminUserPermission {
+  canAccess(resource: string): boolean {
+    return true; // 관리자는 모든 리소스 접근 가능
   }
 
-  applyLoyaltyDiscount(): number {
-    // 충성도 할인 적용
-    return 0.1;
+  getPermissionLevel(): number {
+    return 10;
   }
 
-  generateReceipt(): Receipt {
-    // 상세 영수증 생성
+  canManageUsers(): boolean {
+    return true;
+  }
+
+  canAccessAdminPanel(): boolean {
+    return true;
   }
 }
 ```
@@ -532,25 +575,68 @@ export class PremiumCreditCardPayment implements PremiumPaymentMethod {
 // 📁 domains/user/userDomain.ts
 // ✅ 간단한 로직은 함수형으로
 export const getUserStatus = (user: UserData): UserStatus => {
-  // 순수 계산 로직
+  const now = Date.now();
+  const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
+  const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000;
+
+  if (user.isPremium && user.lastLoginDate.getTime() > sevenDaysAgo) {
+    return 'premium-active';
+  }
+  if (user.subscriptionStatus === 'active') {
+    return 'active';
+  }
+  if (user.createdAt.getTime() > thirtyDaysAgo) {
+    return 'new';
+  }
+  return 'inactive';
 };
 
-export const isEmailValid = (email: string): boolean => {
-  // 단순 검증 로직
+export const canUserPerformAction = (
+  user: UserData,
+  action: string,
+): boolean => {
+  const status = getUserStatus(user);
+  const permissions = {
+    'write-post': status !== 'inactive',
+    comment: true,
+    'upload-file': status === 'premium-active' || status === 'active',
+  };
+  return permissions[action] || false;
 };
 
-// 📁 domains/order/Order.ts
+// 📁 domains/user/User.ts
 // ✅ 복잡한 상태는 클래스로
-export class Order {
-  private items: OrderItem[] = [];
-  private status: OrderStatus = 'draft';
+export class User {
+  private notifications: Notification[] = [];
+  private preferences: UserPreferences = {};
+  private status: UserStatus;
 
-  addItem(item: OrderItem): void {
-    // 복잡한 주문 로직
+  updatePreferences(newPreferences: Partial<UserPreferences>): void {
+    // 복잡한 설정 변경 로직 - 검증, 변경 추적, 알림 등
+    const validatedPreferences = this.validatePreferences(newPreferences);
+    const changes = this.detectChanges(this.preferences, validatedPreferences);
+
+    this.preferences = { ...this.preferences, ...validatedPreferences };
+
+    if (changes.length > 0) {
+      this.addNotification('설정이 변경되었습니다.');
+      this.trackPreferenceChanges(changes);
+    }
   }
 
-  confirm(): void {
-    // 상태 변경과 검증 로직
+  private validatePreferences(
+    prefs: Partial<UserPreferences>,
+  ): UserPreferences {
+    // 설정 검증 로직
+    return prefs as UserPreferences;
+  }
+
+  private detectChanges(
+    old: UserPreferences,
+    updated: UserPreferences,
+  ): string[] {
+    // 변경 사항 감지
+    return [];
   }
 }
 ```
@@ -617,22 +703,52 @@ export class ShoppingCart {
 **권장: 하이브리드 접근**
 
 ```typescript
-// ✅ 도메인별로 적절한 방식 선택
-// 📁 domains/user/ (함수형 중심)
+// ✅ User 도메인에서 적절한 방식 선택
+// 📁 domains/user/userFunctions.ts (함수형 중심)
 export const userDomain = {
   getUserStatus,
-  canUserAccess,
-  calculateUserScore,
+  canUserPerformAction,
+  calculateUserLoyaltyScore,
+  validateUserEmail,
+  transformUserForAPI,
 };
 
-// 📁 domains/order/ (클래스 중심)
-export class Order {
-  // 복잡한 비즈니스 로직은 클래스로
+// 📁 domains/user/User.ts (클래스 중심)
+export class User {
+  // 복잡한 사용자 상태 관리
+  updateProfile(profileData: ProfileData): void {
+    /* */
+  }
+  manageNotifications(): void {
+    /* */
+  }
+  trackUserActivity(): void {
+    /* */
+  }
 }
 
-// 📁 services/ (DI 활용)
+// 📁 services/userService.ts (DI 활용)
 export class UserService {
-  constructor(private deps: Dependencies) {}
+  constructor(
+    private userRepository: UserRepository,
+    private notificationService: NotificationService,
+    private analyticsService: AnalyticsService,
+  ) {}
+
+  // 함수형 도메인 로직과 클래스 도메인 모델을 조합
+  async processUserAction(user: User, action: string): Promise<void> {
+    // 1. 함수형 도메인 로직으로 권한 확인
+    const userData = user.toData();
+    if (!userDomain.canUserPerformAction(userData, action)) {
+      throw new Error('권한이 없습니다');
+    }
+
+    // 2. 클래스 도메인 모델로 상태 변경
+    user.trackUserActivity();
+
+    // 3. 외부 서비스와 협력
+    await this.analyticsService.trackAction(user.getId(), action);
+  }
 }
 ```
 
