@@ -421,8 +421,15 @@ export const isValidUserEmail = (email: string): boolean => {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 };
 
-export const isValidUserAge = (age: number): boolean => {
-  return age >= 14 && age <= 120;
+// 3. 기타 순수 함수들
+export const isValidUserAge = (age: number) => {
+  /* 나이 검증 */
+};
+export const transformUserForDisplay = (user: User) => {
+  /* UI 변환 */
+};
+export const getUserPermissions = (user: User) => {
+  /* 권한 목록 */
 };
 ```
 
@@ -442,63 +449,33 @@ export const isValidUserAge = (age: number): boolean => {
 // 1. 복잡한 상태를 가진 엔티티
 export class User {
   private notifications: Notification[] = [];
-  private loginHistory: LoginRecord[] = [];
+  private preferences: UserPreferences = {};
 
   addNotification(message: string): void {
-    // 복잡한 알림 로직 - 중복 방지, 우선순위 등
-    const existingNotification = this.notifications.find(
+    // 복잡한 알림 로직 - 중복 방지, 우선순위, 읽음 상태 등
+    const exists = this.notifications.find(
       n => n.message === message && !n.isRead,
     );
-
-    if (!existingNotification) {
+    if (!exists) {
       this.notifications.push({
-        id: generateId(),
-        message,
-        createdAt: new Date(),
-        isRead: false,
+        /* 알림 객체 */
       });
     }
   }
 
-  markAllNotificationsAsRead(): void {
-    this.notifications.forEach(n => (n.isRead = true));
+  // 기타 상태 관리 메서드들
+  updatePreferences(prefs: Partial<UserPreferences>) {
+    /* 설정 변경 */
   }
-
-  getUnreadCount(): number {
-    return this.notifications.filter(n => !n.isRead).length;
+  upgrade() {
+    /* 등급 업그레이드 */
   }
-}
-
-// 2. 여러 행동을 가진 도메인 객체 (같은 User 클래스 확장)
-export class User {
-  upgrade(): void {
-    if (this.canUpgrade()) {
-      this.isPremium = true;
-      this.addNotification('프리미엄으로 업그레이드되었습니다!');
-    }
-  }
-
-  subscribe(plan: SubscriptionPlan): void {
-    this.subscriptionStatus = 'active';
-    this.subscriptionPlan = plan;
-    this.addNotification(`${plan} 구독이 시작되었습니다.`);
-  }
-
-  recordLogin(): void {
-    this.loginHistory.push({
-      timestamp: new Date(),
-      ipAddress: getCurrentIP(),
-    });
-    this.lastLoginDate = new Date();
-  }
-
-  private canUpgrade(): boolean {
-    const status = this.getStatus();
-    return status === 'active' && !this.isPremium;
+  recordLogin() {
+    /* 로그인 기록 */
   }
 }
 
-// 3. 다형성이 필요한 경우 (User 권한 시스템)
+// 2. 다형성이 필요한 경우 (User 권한 시스템)
 export interface UserPermission {
   canAccess(resource: string): boolean;
   getPermissionLevel(): number;
@@ -509,49 +486,24 @@ export class BasicUserPermission implements UserPermission {
     const basicResources = ['profile', 'posts', 'comments'];
     return basicResources.includes(resource);
   }
-
-  getPermissionLevel(): number {
+  getPermissionLevel() {
     return 1;
   }
 }
 
-export class PremiumUserPermission implements UserPermission {
-  canAccess(resource: string): boolean {
-    const premiumResources = [
-      'profile',
-      'posts',
-      'comments',
-      'premium-content',
-      'analytics',
-    ];
-    return premiumResources.includes(resource);
-  }
-
-  getPermissionLevel(): number {
-    return 2;
-  }
-}
-
-// 4. 인터페이스 확장이 필요한 경우
-export interface AdminUserPermission extends UserPermission {
+// 3. 인터페이스 확장
+export interface AdminPermission extends UserPermission {
   canManageUsers(): boolean;
-  canAccessAdminPanel(): boolean;
 }
 
-export class AdminUser implements AdminUserPermission {
-  canAccess(resource: string): boolean {
-    return true; // 관리자는 모든 리소스 접근 가능
-  }
-
-  getPermissionLevel(): number {
+export class AdminUser implements AdminPermission {
+  canAccess() {
+    return true;
+  } // 모든 리소스 접근
+  getPermissionLevel() {
     return 10;
   }
-
-  canManageUsers(): boolean {
-    return true;
-  }
-
-  canAccessAdminPanel(): boolean {
+  canManageUsers() {
     return true;
   }
 }
@@ -708,22 +660,21 @@ export class ShoppingCart {
 export const userDomain = {
   getUserStatus,
   canUserPerformAction,
-  calculateUserLoyaltyScore,
-  validateUserEmail,
-  transformUserForAPI,
+  calculateUserLoyaltyScore, // 점수 계산
+  validateUserEmail, // 이메일 검증
+  transformUserForAPI, // API 변환
 };
 
 // 📁 domains/user/User.ts (클래스 중심)
 export class User {
-  // 복잡한 사용자 상태 관리
-  updateProfile(profileData: ProfileData): void {
-    /* */
+  updateProfile(data: ProfileData) {
+    /* 프로필 변경 */
   }
-  manageNotifications(): void {
-    /* */
+  manageNotifications() {
+    /* 알림 관리 */
   }
-  trackUserActivity(): void {
-    /* */
+  trackUserActivity() {
+    /* 활동 추적 */
   }
 }
 
@@ -732,14 +683,11 @@ export class UserService {
   constructor(
     private userRepository: UserRepository,
     private notificationService: NotificationService,
-    private analyticsService: AnalyticsService,
   ) {}
 
-  // 함수형 도메인 로직과 클래스 도메인 모델을 조합
   async processUserAction(user: User, action: string): Promise<void> {
     // 1. 함수형 도메인 로직으로 권한 확인
-    const userData = user.toData();
-    if (!userDomain.canUserPerformAction(userData, action)) {
+    if (!userDomain.canUserPerformAction(user.toData(), action)) {
       throw new Error('권한이 없습니다');
     }
 
