@@ -1,5 +1,3 @@
-# 타입에서 클래스로: 프론트엔드 도메인 모델의 점진적 진화
-
 ## 들어가며
 
 > **오후 4시, 또 다시 울리는 슬랙 알림...**
@@ -16,9 +14,10 @@
 
 **이런 상황, 어떻게 해결하시겠어요?**
 
-[지난 글](https://velog.io/@rewq5991/frontend-service-layer-design)에서는 Service Layer를 통해 비즈니스 로직을 분리하고 재사용 가능한 구조를 만드는 방법을 다뤘습니다. 하지만 프로젝트가 복잡해질수록 Service에 모든 로직을 넣는 것만으로는 한계가 있습니다.
+[지난 글](https://velog.io/@rewq5991/typescript-project-service-di-design)에서는 Service Layer를 통해 비즈니스 로직을 분리하고 재사용 가능한 구조를 만드는 방법을 다뤘습니다.  
+하지만 프로젝트가 복잡해질수록 Service에 모든 로직을 넣는 것만으로는 한계가 있습니다.
 
-오늘은 **Type으로 시작해서 점진적으로 Domain으로 발전시키는 방법**과, **함수형 접근 방식과 객체지향 접근 방식의 선택 기준**에 대해 알아보겠습니다.
+이번글에선 **Type으로 시작해서 점진적으로 Domain으로 발전시키는 방법**과, **함수형 접근 방식과 객체지향 접근 방식의 선택 기준**에 대해 알아보겠습니다.
 
 ---
 
@@ -27,7 +26,7 @@
 ### 지금까지 우리가 사용한 방식
 
 ```typescript
-// 📁 shared/types/user.ts
+// 📁 shared/domain/user.ts
 // 🟡 현재: 순수 타입으로만 정의
 export type UserStatus = 'premium-active' | 'active' | 'new' | 'inactive';
 
@@ -97,7 +96,7 @@ export const canUserUploadFile = (user: User): boolean => {
 ### 1단계: 타입에서 시작 (현재 상태)
 
 ```typescript
-// 📁 shared/types/user.ts
+// 📁 shared/domain/user.ts
 // ✅ 1단계: 순수 타입으로 시작 (지금까지 우리가 한 방식)
 export type User = {
   id: string;
@@ -110,11 +109,45 @@ export type User = {
   hasReceivedWelcomeEmail: boolean;
 };
 
+export type UserStatus = 'premium-active' | 'active' | 'new' | 'inactive';
+
 // 📁 services/userService.ts
+import type { User, UserStatus } from '@/shared/domain/user';
+
 export const getUserStatus = (user: User): UserStatus => {
   // 기존 로직...
 };
 ```
+
+### 💡 **왜 shared/domain에 타입을 중앙 집중화해야 할까요?**
+
+> **타입 중복과 불일치 문제의 심각성**
+
+실제 프로젝트에서 가장 흔히 발생하는 문제는 동일한 데이터에 대해 여러 개발자가 서로 다른 타입을 정의하면서 생기는 혼란입니다. 한 컴포넌트에서는 `User` 타입으로, API 레이어에서는 `UserData` 타입으로, 서비스에서는 또 다른 이름으로 동일한 사용자 데이터를 다르게 정의하면서 런타임 오류와 개발 생산성 저하를 초래하게 됩니다. 더 심각한 것은 API가 변경될 때 모든 타입 정의를 찾아서 일일이 수정해야 한다는 점입니다.
+
+> **shared/domain을 통한 도메인 모델 중앙 집중화**
+
+이런 문제를 해결하기 위해 `shared/domain` 디렉토리에 핵심 엔티티들을 중앙 집중화하여 정의합니다. 이를 통해 모든 레이어에서 동일한 타입을 사용하게 되어 일관성을 보장할 수 있습니다.  
+[Service Layer 글](https://velog.io/@rewq5991/frontend-service-layer-design)에서 보았듯이, Service 레이어에서 비즈니스 로직을 처리할 때도 중앙 집중화된 타입을 활용하여 로직의 재사용성과 테스트 용이성을 확보할 수 있습니다.
+
+> **여러 레이어에서의 타입 활용 패턴**
+
+HTTP 레이어에서는 제네릭을 활용한 타입 안전한 API 클라이언트를 구성하여 컴파일 타임에 타입 오류를 방지하고, Service 레이어에서는 비즈니스 로직과 데이터 변환 과정에서 중앙 집중화된 타입을 활용하여 안전한 데이터 조작을 보장합니다.  
+그리고 이번 글에서 다루는 Domain 레이어에서는 이런 타입들을 기반으로 점진적으로 도메인 클래스로 발전시키면서 복잡한 비즈니스 규칙을 캡슐화할 수 있습니다.
+
+> **Type-Driven Development의 실현**
+
+중앙 집중화된 타입 시스템은 Type-Driven Development를 가능하게 합니다.  
+백엔드 개발자가 "User 스키마에서 name 필드가 제거될 예정"이라고 알려주면, 중앙의 `User` 타입만 수정하면 TypeScript 컴파일러가 관련된 모든 코드에서 타입 오류를 표시해주어 `누락 없이 모든 변경점을 찾아낼 수 있습니다.`  
+이는 "별거 없는" 변경 요청을 정말로 "별거 없게" 만들어주는 핵심 메커니즘입니다.
+
+> **BFF 패턴에서의 타입 조합**
+
+복잡한 프론트엔드 요구사항을 해결하기 위해 여러 API를 조합하는 BFF 패턴에서도 중앙 집중화된 타입이 중요한 역할을 합니다.  
+Service Layer에서 여러 도메인의 타입을 조합하여 프론트엔드 최적화된 데이터 구조를 만들 때, 각 도메인이 명확한 타입을 가지고 있어야 안전한 조합이 가능합니다.
+
+결론적으로, `shared/domain`을 통한 타입 중앙 집중화는 단순히 코드 중복을 줄이는 것을 넘어서 **전체 애플리케이션의 타입 안정성, 유지보수성, 확장성을 보장하는 핵심 아키텍처 전략**입니다.  
+이를 통해 개발자는 "원래 있던 기능이니 금방 하시죠?"라는 요청에 대해 정말로 빠르고 안전하게 대응할 수 있는 코드 구조를 구축할 수 있습니다.
 
 ### 2단계: 책임 분리하기
 
@@ -813,7 +846,7 @@ export class User {
 ### 🔗 관련 시리즈
 
 1. [Type-Safe HTTP API 설계](https://velog.io/@rewq5991/typescript-project-api-design)
-2. [Service Layer로 비즈니스 로직 분리](https://velog.io/@rewq5991/frontend-service-layer-design)
+2. [Service Layer로 비즈니스 로직 분리](https://velog.io/@rewq5991/typescript-project-service-design)
 3. **타입에서 클래스로: 도메인 모델의 점진적 진화** (현재 글)
 
 ---
