@@ -14,10 +14,16 @@
 
 **이런 상황, 어떻게 해결하시겠어요?**
 
-[지난 글](https://velog.io/@rewq5991/typescript-project-service-di-design)에서는 Service Layer를 통해 비즈니스 로직을 분리하고 재사용 가능한 구조를 만드는 방법을 다뤘습니다.  
-하지만 프로젝트가 복잡해질수록 Service에 모든 로직을 넣는 것만으로는 한계가 있습니다.
+[지난 글](https://velog.io/@rewq5991/typescript-project-service-di-design)에서는 Service Layer를 통해 비즈니스 로직을 분리하고 재사용 가능한 구조를 만드는 방법을 다뤘습니다.
 
-이번글에선 **Type으로 시작해서 점진적으로 Domain으로 발전시키는 방법**과, **함수형 접근 방식과 객체지향 접근 방식의 선택 기준**에 대해 알아보겠습니다.
+하지만 실제 프로젝트에서는 이런 상황을 만나게 됩니다:
+
+- Service 파일이 수백 줄로 비대해짐
+- `사용자` 관련 함수들이 여기저기 흩어져 있음
+- 새로운 `사용자` 기능 추가할 때마다 어디에 코드를 넣어야 할지 고민됨
+- "`사용자`가 할 수 있는 것"에 대한 로직이 한 곳에 모여있지 않음
+
+이번글에선 이런 문제를 해결하기 위해 **Type으로 시작해서 점진적으로 Domain으로 발전시키는 방법**과, **함수형 접근 방식과 객체지향 접근 방식의 선택 기준**에 대해 알아보겠습니다.
 
 ---
 
@@ -77,17 +83,13 @@ export const canUserUploadFile = (user: User): boolean => {
 
 ### 이 방식의 문제점
 
-**1. Service 비대화**
-사용자와 관련된 모든 로직이 Service에 집중되어 파일이 거대해집니다.
+**1. Service 비대화** - 사용자와 관련된 모든 로직이 Service에 집중되어 파일이 거대해집니다.
 
-**2. 응집도 부족**
-사용자의 속성과 그 속성을 다루는 로직이 분리되어 있어 관련성을 파악하기 어렵습니다.
+**2. 응집도 부족** - 사용자의 속성과 그 속성을 다루는 로직이 분리되어 있어 관련성을 파악하기 어렵습니다.
 
-**3. 확장성 제한**
-새로운 사용자 관련 기능이 추가될 때마다 Service 파일을 수정해야 합니다.
+**3. 확장성 제한** - 새로운 사용자 관련 기능이 추가될 때마다 Service 파일을 수정해야 합니다.
 
-**4. 도메인 지식 분산**
-"사용자가 할 수 있는 것"에 대한 지식이 여러 곳에 흩어져 있습니다.
+**4. 도메인 지식 분산** - "사용자가 할 수 있는 것"에 대한 도메인 지식이 여러 곳에 흩어져 있습니다.
 
 ---
 
@@ -98,6 +100,9 @@ export const canUserUploadFile = (user: User): boolean => {
 ```typescript
 // 📁 shared/domain/user.ts
 // ✅ 1단계: 순수 타입으로 시작 (지금까지 우리가 한 방식)
+
+export type UserStatus = 'premium-active' | 'active' | 'new' | 'inactive';
+
 export type User = {
   id: string;
   name: string;
@@ -108,8 +113,6 @@ export type User = {
   createdAt: Date;
   hasReceivedWelcomeEmail: boolean;
 };
-
-export type UserStatus = 'premium-active' | 'active' | 'new' | 'inactive';
 
 // 📁 services/userService.ts
 import type { User, UserStatus } from '@/shared/domain/user';
@@ -123,7 +126,9 @@ export const getUserStatus = (user: User): UserStatus => {
 
 > **타입 중복과 불일치 문제의 심각성**
 
-실제 프로젝트에서 가장 흔히 발생하는 문제는 동일한 데이터에 대해 여러 개발자가 서로 다른 타입을 정의하면서 생기는 혼란입니다. 한 컴포넌트에서는 `User` 타입으로, API 레이어에서는 `UserData` 타입으로, 서비스에서는 또 다른 이름으로 동일한 사용자 데이터를 다르게 정의하면서 런타임 오류와 개발 생산성 저하를 초래하게 됩니다. 더 심각한 것은 API가 변경될 때 모든 타입 정의를 찾아서 일일이 수정해야 한다는 점입니다.
+실제 프로젝트에서 가장 흔히 발생하는 문제는 동일한 데이터에 대해 여러 개발자가 서로 다른 타입을 정의하면서 생기는 혼란입니다.  
+한 컴포넌트에서는 `User` 타입으로, API 레이어에서는 `UserData` 타입으로, 서비스에서는 또 다른 이름으로 동일한 사용자 데이터를 다르게 정의하면서 런타임 오류와 개발 생산성 저하를 초래하게 됩니다.  
+더 심각한 것은 API가 변경될 때 모든 타입 정의를 찾아서 일일이 수정해야 한다는 점입니다.
 
 > **shared/domain을 통한 도메인 모델 중앙 집중화**
 
@@ -133,12 +138,12 @@ export const getUserStatus = (user: User): UserStatus => {
 > **여러 레이어에서의 타입 활용 패턴**
 
 HTTP 레이어에서는 제네릭을 활용한 타입 안전한 API 클라이언트를 구성하여 컴파일 타임에 타입 오류를 방지하고, Service 레이어에서는 비즈니스 로직과 데이터 변환 과정에서 중앙 집중화된 타입을 활용하여 안전한 데이터 조작을 보장합니다.  
-그리고 이번 글에서 다루는 Domain 레이어에서는 이런 타입들을 기반으로 점진적으로 도메인 클래스로 발전시키면서 복잡한 비즈니스 규칙을 캡슐화할 수 있습니다.
+그리고 이번 글에서 다루는 도메인에서는 이런 타입들을 기반으로 점진적으로 도메인 모델로 발전시키면서 복잡한 비즈니스 규칙을 캡슐화할 수 있습니다.
 
 > **Type-Driven Development의 실현**
 
 중앙 집중화된 타입 시스템은 Type-Driven Development를 가능하게 합니다.  
-백엔드 개발자가 "User 스키마에서 name 필드가 제거될 예정"이라고 알려주면, 중앙의 `User` 타입만 수정하면 TypeScript 컴파일러가 관련된 모든 코드에서 타입 오류를 표시해주어 `누락 없이 모든 변경점을 찾아낼 수 있습니다.`  
+백엔드 개발자가 "User 스키마에서 name 필드가 제거될 예정"이라고 알려주면, 중앙의 `User` 타입만 수정하면 TypeScript 컴파일러가 관련된 모든 코드에서 타입 오류를 표시해주어 `누락 없이 모든 변경점을 찾아낼 수 있습니다.`.  
 이는 "별거 없는" 변경 요청을 정말로 "별거 없게" 만들어주는 핵심 메커니즘입니다.
 
 > **BFF 패턴에서의 타입 조합**
@@ -251,7 +256,7 @@ export class UserService {
 // 📁 domains/user/userDomain.ts
 // ✅ 함수형: 순수 함수로 도메인 로직 구성
 
-export interface UserData {
+export type User = {
   id: string;
   name: string;
   email: string;
@@ -260,10 +265,10 @@ export interface UserData {
   lastLoginDate: Date;
   createdAt: Date;
   hasReceivedWelcomeEmail: boolean;
-}
+};
 
 // 도메인 로직을 순수 함수로 분리
-export const getUserStatus = (user: UserData): UserStatus => {
+export const getUserStatus = (user: User): UserStatus => {
   const now = Date.now();
   const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
   const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000;
@@ -280,12 +285,12 @@ export const getUserStatus = (user: UserData): UserStatus => {
   return 'inactive';
 };
 
-export const canUserWritePost = (user: UserData): boolean => {
+export const canUserWritePost = (user: User): boolean => {
   const status = getUserStatus(user);
   return status !== 'inactive';
 };
 
-export const canUserUploadFile = (user: UserData): boolean => {
+export const canUserUploadFile = (user: User): boolean => {
   const status = getUserStatus(user);
   return status === 'premium-active' || status === 'active';
 };
@@ -405,7 +410,7 @@ export class UserService {
 ```typescript
 // ✅ 함수형이 좋은 경우들
 // 1. 단순한 계산/변환 로직
-export const calculateDiscount = (user: UserData, order: OrderData): number => {
+export const calculateDiscount = (user: User, order: Order): number => {
   const userTier = getUserTier(user);
   const orderAmount = getOrderTotal(order);
   return applyTierDiscount(userTier, orderAmount);
@@ -417,7 +422,7 @@ export const isValidEmailFormat = (email: string): boolean => {
 };
 
 // 3. 데이터 변환 파이프라인
-export const transformUserForDisplay = (user: UserData): DisplayUser => {
+export const transformUserForDisplay = (user: User): DisplayUser => {
   return pipe(user, addUserStatus, addPermissions, formatForUI);
 };
 ```
@@ -457,22 +462,54 @@ export class User {
   upgrade(): void {
     /* 등급 업그레이드 */
   }
+
   subscribe(plan: Plan): void {
     /* 구독 */
   }
+
   sendNotification(message: string): void {
     /* 알림 */
   }
 }
 
 // 3. 다형성이 필요한 경우
-export abstract class PaymentMethod {
-  abstract process(amount: Money): Promise<PaymentResult>;
+export interface PaymentMethod {
+  process(amount: Money): Promise<PaymentResult>;
 }
 
-export class CreditCardPayment extends PaymentMethod {
+export class CreditCardPayment implements PaymentMethod {
   process(amount: Money): Promise<PaymentResult> {
     // 신용카드 결제 로직
+  }
+}
+
+export class PayPalPayment implements PaymentMethod {
+  process(amount: Money): Promise<PaymentResult> {
+    // PayPal 결제 로직
+  }
+}
+
+// 4. 인터페이스 확장이 필요한 경우
+// 💡 기본 기능에 추가 기능이 필요할 때 사용
+export interface PremiumPaymentMethod extends PaymentMethod {
+  // 기본 결제 기능에 추가 기능
+  applyLoyaltyDiscount(): number;
+
+  generateReceipt(): Receipt;
+}
+
+export class PremiumCreditCardPayment implements PremiumPaymentMethod {
+  process(amount: Money): Promise<PaymentResult> {
+    // 프리미엄 신용카드 결제 로직
+  }
+
+  applyLoyaltyDiscount(): number {
+    // 충성도 할인 적용
+    return 0.1;
+  }
+
+  generateReceipt(): Receipt {
+    // 상세 영수증 생성
   }
 }
 ```
@@ -619,82 +656,6 @@ export interface UserRepository {
 export class UserService {
   // 의존성 주입을 통한 느슨한 결합
 }
-
-// 📁 infrastructure/di/
-export const container = {
-  // 의존성 컨테이너 구성
-};
-```
-
----
-
-## 마이그레이션 전략: 안전한 전환 방법
-
-### 🔄 점진적 전환 프로세스
-
-#### 1단계: 현재 상태 분석
-
-```typescript
-// 📁 current-analysis.ts
-// 🔍 기존 코드 분석
-const currentUserFunctions = [
-  'getUserStatus',
-  'canUserWritePost',
-  'canUserComment',
-  'canUserUploadFile',
-  'isUserPremium',
-  // ... 현재 함수들 나열
-];
-
-// 질문: 이 중에서 어떤 것들이 User 자체의 책임인가?
-// 답변: User의 상태나 기본 권한 관련 로직들
-```
-
-#### 2단계: 후보 선정
-
-```typescript
-// 📁 migration-candidates.ts
-// ✅ 도메인 모델로 옮길 후보들
-const userDomainCandidates = [
-  'getUserStatus', // ✅ User 자체의 상태
-  'canUserWritePost', // ✅ User의 기본 권한
-  'canUserComment', // ✅ User의 기본 권한
-  'isEmailValid', // ✅ User 데이터 검증
-];
-
-// ❌ Service에 남겨둘 것들
-const serviceCandidates = [
-  'sendWelcomeEmail', // 외부 서비스 호출
-  'checkSubscriptionValidity', // 외부 API 확인
-  'getUserRecommendations', // 여러 도메인 조합
-];
-```
-
-#### 3단계: 안전한 전환
-
-```typescript
-// 📁 safe-migration.ts
-// ✅ 기존 함수를 유지하면서 클래스 도입
-
-// 새로운 User 클래스
-export class User {
-  constructor(private data: UserData) {}
-
-  getStatus(): UserStatus {
-    return getUserStatus(this.data); // 기존 함수 재활용
-  }
-}
-
-// 기존 함수는 deprecated로 표시하고 유지
-/** @deprecated Use User.getStatus() instead */
-export const getUserStatus = (user: UserData): UserStatus => {
-  // 기존 구현 유지
-};
-
-// 점진적으로 교체
-export const getUserStatusV2 = (user: User): UserStatus => {
-  return user.getStatus();
-};
 ```
 
 ---
