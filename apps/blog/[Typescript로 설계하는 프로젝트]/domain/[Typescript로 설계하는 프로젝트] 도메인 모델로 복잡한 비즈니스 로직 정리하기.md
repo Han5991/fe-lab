@@ -29,6 +29,12 @@
 
 ## 현재 상황: 타입 기반 설계의 한계
 
+> **💡 핵심 요약**
+>
+> - **문제점**: Service에 모든 로직 집중 → 파일 비대화, 응집도 부족, 확장성 제한
+> - **근본 원인**: 타입과 로직이 분리되어 도메인 로직이 분산됨
+> - **해결 방향**: 점진적으로 도메인 모델을 도입하여 관련 로직을 응집
+
 ### 지금까지 우리가 사용한 방식
 
 ```typescript
@@ -155,6 +161,12 @@ Service Layer에서 여러 도메인의 타입을 조합하여 프론트엔드 �
 이를 통해 개발자는 **"원래 있던 기능이니 금방 하시죠?"** 라는 요청에 대해 정말로 빠르고 안전하게 대응할 수 있는 코드 구조를 구축할 수 있습니다.
 
 ### 2단계: 책임 분리하기
+
+> **💡 핵심 요약**
+>
+> - **도메인 모델로 옮길 로직**: 엔티티 자체의 상태 판단, 기본 권한 검증
+> - **Service에 남길 로직**: 외부 의존성 필요한 로직, 여러 도메인 협력 로직
+> - **핵심 원칙**: 데이터와 그 데이터를 다루는 로직을 함께 배치
 
 **어떤 로직을 도메인 모델로 옮겨야 할까요?**
 
@@ -288,43 +300,30 @@ export class UserMapper {
 }
 ```
 
-### 3단계: 함수형 vs 객체지향 선택하기
+### 3단계: 상황에 맞는 접근 방식 선택
 
-**상황에 따른 선택 기준을 제시하겠습니다.**
+> **💡 핵심 요약**
+>
+> - **함수형**: 단순한 계산/검증 로직, 팀이 함수형에 익숙한 경우
+> - **객체지향**: 복잡한 상태 관리, 도메인 로직이 많은 경우, 확장성이 중요한 경우
+> - **하이브리드**: 실제 대부분의 프로젝트에서 권장
 
-#### 🔧 함수형 접근 방식 (현재 방식 유지)
+**어떤 방식을 선택할지 판단하는 기준을 알아보겠습니다.**
+
+#### 🔧 함수형 접근이 적합한 경우
+
+**장점:** 학습 비용 낮음, 테스트 용이, 불변성 보장, 함수 조합 용이
+
+**적합한 상황:**
+
+- 단순한 계산/변환 로직
+- 상태가 없는 검증 로직
+- 팀이 함수형에 익숙한 경우
 
 ```typescript
-// 📁 domains/user/userDomain.ts
-// ✅ 함수형: 순수 함수로 도메인 로직 구성
-
-export type User = {
-  id: string;
-  name: string;
-  email: string;
-  isPremium: boolean;
-  subscriptionStatus: 'active' | 'inactive';
-  lastLoginDate: Date;
-  createdAt: Date;
-  hasReceivedWelcomeEmail: boolean;
-};
-
-// 도메인 로직을 순수 함수로 분리
+// 📁 domains/user/userDomain.ts - 함수형 방식
 export const getUserStatus = (user: User): UserStatus => {
-  const now = Date.now();
-  const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
-  const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000;
-
-  if (user.isPremium && user.lastLoginDate.getTime() > sevenDaysAgo) {
-    return 'premium-active';
-  }
-  if (user.subscriptionStatus === 'active') {
-    return 'active';
-  }
-  if (user.createdAt.getTime() > thirtyDaysAgo) {
-    return 'new';
-  }
-  return 'inactive';
+  // 상태 계산 로직...
 };
 
 export const canUserWritePost = (user: User): boolean => {
@@ -332,445 +331,151 @@ export const canUserWritePost = (user: User): boolean => {
   return status !== 'inactive';
 };
 
-export const canUserUploadFile = (user: User): boolean => {
-  const status = getUserStatus(user);
-  return status === 'premium-active' || status === 'active';
-};
-
-// 📁 services/userService.ts
-// Service에서 도메인 함수들을 조합
-import * as UserDomain from '@/domains/user/userDomain';
-
-export const createUserService = (
-  userRepository: UserRepository,
-  notificationService: NotificationService,
-) => ({
-  async canUserCreatePremiumContent(
-    user: UserDomain.UserData,
-  ): Promise<boolean> {
-    // 도메인 로직 사용
-    if (!UserDomain.canUserWritePost(user)) {
-      return false;
-    }
-
-    // 외부 의존성 처리
-    const hasValidSubscription = await userRepository.checkSubscription(
-      user.id,
-    );
-    return hasValidSubscription;
-  },
-
-  async sendWelcomeEmailIfNeeded(user: UserDomain.UserData): Promise<void> {
-    const status = UserDomain.getUserStatus(user);
-
-    if (status === 'new' && !user.hasReceivedWelcomeEmail) {
-      await notificationService.sendWelcomeEmail(user.email);
-    }
+// Service에서 함수들을 조합
+export const createUserService = deps => ({
+  async canUserCreatePremiumContent(user: User): Promise<boolean> {
+    if (!canUserWritePost(user)) return false;
+    return await deps.userRepository.checkSubscription(user.id);
   },
 });
 ```
 
-#### 🏗️ 객체지향 접근 방식 (DI 활용)
+#### 🏗️ 객체지향 접근이 적합한 경우
+
+**장점:** 관련 로직 응집, 캡슐화, 확장성, 직관적 모델링
+
+**적합한 상황:**
+
+- 복잡한 상태를 가진 엔티티
+- 도메인 로직이 많고 확장 가능성이 높은 경우
+- 다형성이 필요한 경우
 
 ```typescript
-// 📁 domains/user/User.ts
-// ✅ 객체지향: 클래스로 상태와 행동을 캡슐화
-
+// 📁 domains/user/User.ts - 객체지향 방식
 export class User {
-  constructor(
-    private readonly id: string,
-    private readonly name: string,
-    private readonly email: string,
-    private readonly isPremium: boolean,
-    private readonly subscriptionStatus: 'active' | 'inactive',
-    private readonly lastLoginDate: Date,
-    private readonly createdAt: Date,
-    private readonly hasReceivedWelcomeEmail: boolean,
-  ) {}
+  constructor(/* 속성들 */) {}
 
   getStatus(): UserStatus {
-    // 구현 동일
+    // 상태 계산 로직을 내부에 캡슐화
   }
 
   canWritePost(): boolean {
-    const status = this.getStatus();
-    return status !== 'inactive';
+    return this.getStatus() !== 'inactive';
   }
 
-  canUploadFile(): boolean {
-    const status = this.getStatus();
-    return status === 'premium-active' || status === 'active';
-  }
+  // 다른 도메인 로직들...
 }
 
-// 📁 services/userService.ts
-import { UserRepository } from './UserRepository';
-import { NotificationService } from './NotificationService';
-
+// Service는 도메인 모델을 활용
 export class UserService {
-  constructor(
-    private readonly userRepository: UserRepository,
-    private readonly notificationService: NotificationService,
-  ) {}
-
   async canUserCreatePremiumContent(user: User): Promise<boolean> {
-    if (!user.canWritePost()) {
-      return false;
-    }
-
-    const hasValidSubscription = await this.userRepository.checkSubscription(
-      user.getId(),
-    );
-    return hasValidSubscription;
-  }
-
-  async sendWelcomeEmailIfNeeded(user: User): Promise<void> {
-    const status = user.getStatus();
-
-    if (status === 'new' && !user.hasReceivedWelcomeEmail) {
-      await this.notificationService.sendWelcomeEmail(user.email);
-    }
+    if (!user.canWritePost()) return false;
+    return await this.userRepository.checkSubscription(user.id);
   }
 }
-
-// Service는 DI를 통해 의존성 주입
-const userService = new UserService(userRepository, notificationService);
 ```
 
 ---
 
-## 언제 어떤 방식을 선택해야 할까?
+## 실무 적용 가이드
 
-### ⚖️ 함수형 vs 객체지향 선택 기준
+> **💡 핵심 요약**
+>
+> - **1-2명 소규모**: 함수형 위주로 시작, 필요시 점진적 확장
+> - **3-8명 중규모**: 하이브리드 접근으로 상황에 맞게 선택
+> - **8명+ 대규모**: 객체지향 중심으로 체계적 설계
 
-#### 🔧 함수형 접근이 적합한 경우
+### 🚀 단계별 적용 전략
 
-**장점:**
-
-- **학습 비용 낮음**: 기존 팀이 함수형에 익숙함
-- **테스트 용이**: 순수 함수라 입력-출력만 테스트
-- **불변성 보장**: 데이터 변경 없이 안전한 계산
-- **함수 조합 용이**: 함수들을 레고처럼 조합 가능
-
-**적합한 상황:**
+#### 1단계: 현재 상황 진단
 
 ```typescript
-// ✅ 함수형이 좋은 경우들
-// 1. 단순한 계산/변환 로직
-export const calculateUserDiscount = (user: User): number => {
-  const daysSinceJoin = getDaysSince(user.createdAt);
-  const loyaltyMultiplier = user.isPremium ? 1.2 : 1.0;
-  return Math.min(daysSinceJoin * 0.01 * loyaltyMultiplier, 0.3);
+// ✅ 현재 코드가 이런 상태라면?
+export const getUserData = (id: string) => {
+  /* API 호출 */
+};
+export const validateUser = (user: any) => {
+  /* 검증 */
+};
+export const updateUserProfile = (data: any) => {
+  /* 업데이트 */
 };
 
-// 2. 상태가 없는 검증 로직
-export const isValidUserEmail = (email: string): boolean => {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-};
-
-// 3. 기타 순수 함수들
-export const isValidUserAge = (age: number) => {
-  /* 나이 검증 */
-};
-export const transformUserForDisplay = (user: User) => {
-  /* UI 변환 */
-};
-export const getUserPermissions = (user: User) => {
-  /* 권한 목록 */
-};
+// 🎯 문제점: 타입 안정성 부족, 로직 분산
 ```
 
-#### 🏗️ 객체지향 접근이 적합한 경우
+**진단 체크리스트:**
 
-**장점:**
+- [ ] 사용자 관련 함수가 여러 파일에 흩어져 있나?
+- [ ] any 타입이 많이 사용되고 있나?
+- [ ] 비슷한 로직이 반복되고 있나?
 
-- **관련 로직 응집**: 데이터와 행동이 함께 위치
-- **캡슐화**: 내부 구현을 숨기고 인터페이스만 노출
-- **확장성**: 상속/다형성을 통한 기능 확장
-- **직관적 모델링**: 실제 도메인을 자연스럽게 표현
-
-**적합한 상황:**
+#### 2단계: 점진적 개선
 
 ```typescript
-// ✅ 객체지향이 좋은 경우들
-// 1. 복잡한 상태를 가진 엔티티
+// 📁 1. 타입 정의부터 시작
+export interface User {
+  id: string;
+  name: string;
+  // ... 필요한 속성들
+}
+
+// 📁 2. 핵심 함수 분리
+export const getUserStatus = (user: User): UserStatus => {
+  // 핵심 비즈니스 로직
+};
+
+// 📁 3. 필요시 클래스로 확장
 export class User {
-  private notifications: Notification[] = [];
-  private preferences: UserPreferences = {};
-
-  addNotification(message: string): void {
-    // 복잡한 알림 로직 - 중복 방지, 우선순위, 읽음 상태 등
-    const exists = this.notifications.find(
-      n => n.message === message && !n.isRead,
-    );
-    if (!exists) {
-      this.notifications.push({
-        /* 알림 객체 */
-      });
-    }
-  }
-
-  // 기타 상태 관리 메서드들
-  updatePreferences(prefs: Partial<UserPreferences>) {
-    /* 설정 변경 */
-  }
-  upgrade() {
-    /* 등급 업그레이드 */
-  }
-  recordLogin() {
-    /* 로그인 기록 */
-  }
-}
-
-// 2. 다형성이 필요한 경우 (User 권한 시스템)
-export interface UserPermission {
-  canAccess(resource: string): boolean;
-  getPermissionLevel(): number;
-}
-
-export class BasicUserPermission implements UserPermission {
-  canAccess(resource: string): boolean {
-    const basicResources = ['profile', 'posts', 'comments'];
-    return basicResources.includes(resource);
-  }
-  getPermissionLevel() {
-    return 1;
-  }
-}
-
-// 3. 인터페이스 확장
-export interface AdminPermission extends UserPermission {
-  canManageUsers(): boolean;
-}
-
-export class AdminUser implements AdminPermission {
-  canAccess() {
-    return true;
-  } // 모든 리소스 접근
-  getPermissionLevel() {
-    return 10;
-  }
-  canManageUsers() {
-    return true;
+  getStatus(): UserStatus {
+    return getUserStatus(this.toPlainObject());
   }
 }
 ```
 
-### 🎯 단계별 선택 가이드
+### 🎯 팀 규모별 권장 접근
 
-#### 1단계: 프로젝트 특성 파악
-
-**질문해보세요**
-
-- [ ] 팀의 기술 스택과 선호도는?
-- [ ] 도메인의 복잡도는?
-- [ ] 상태 관리가 복잡한가?
-- [ ] 확장 계획은?
-
-#### 2단계: 하이브리드 접근
+#### 👥 소규모 팀 (1-3명)
 
 ```typescript
-// 📁 domains/user/userDomain.ts
-// ✅ 간단한 로직은 함수형으로
-export const getUserStatus = (user: UserData): UserStatus => {
-  const now = Date.now();
-  const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
-  const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000;
-
-  if (user.isPremium && user.lastLoginDate.getTime() > sevenDaysAgo) {
-    return 'premium-active';
-  }
-  if (user.subscriptionStatus === 'active') {
-    return 'active';
-  }
-  if (user.createdAt.getTime() > thirtyDaysAgo) {
-    return 'new';
-  }
-  return 'inactive';
-};
-
-export const canUserPerformAction = (
-  user: UserData,
-  action: string,
-): boolean => {
-  const status = getUserStatus(user);
-  const permissions = {
-    'write-post': status !== 'inactive',
-    comment: true,
-    'upload-file': status === 'premium-active' || status === 'active',
-  };
-  return permissions[action] || false;
-};
-
-// 📁 domains/user/User.ts
-// ✅ 복잡한 상태는 클래스로
-export class User {
-  private notifications: Notification[] = [];
-  private preferences: UserPreferences = {};
-  private status: UserStatus;
-
-  updatePreferences(newPreferences: Partial<UserPreferences>): void {
-    // 복잡한 설정 변경 로직 - 검증, 변경 추적, 알림 등
-    const validatedPreferences = this.validatePreferences(newPreferences);
-    const changes = this.detectChanges(this.preferences, validatedPreferences);
-
-    this.preferences = { ...this.preferences, ...validatedPreferences };
-
-    if (changes.length > 0) {
-      this.addNotification('설정이 변경되었습니다.');
-      this.trackPreferenceChanges(changes);
-    }
-  }
-
-  private validatePreferences(
-    prefs: Partial<UserPreferences>,
-  ): UserPreferences {
-    // 설정 검증 로직
-    return prefs as UserPreferences;
-  }
-
-  private detectChanges(
-    old: UserPreferences,
-    updated: UserPreferences,
-  ): string[] {
-    // 변경 사항 감지
-    return [];
-  }
-}
-```
-
-#### 3단계: 점진적 마이그레이션
-
-```typescript
-// 📁 migration-example.ts
-// ✅ 기존 함수형 코드를 점진적으로 클래스로 변환
-
-// Before: 함수형
-export const getUserPermissions = (user: UserData): Permission[] => {
-  // 기존 로직
-};
-
-// After: 클래스로 점진적 변환
-export class User {
-  // 새로운 기능은 클래스 메서드로
-  getPermissions(): Permission[] {
-    // 기존 함수 재활용 가능
-    return getUserPermissions(this.toData());
-  }
-
-  private toData(): UserData {
-    return {
-      id: this.id,
-      name: this.name,
-      // ... 변환 로직
-    };
-  }
-}
-
-// 기존 함수도 유지하여 호환성 보장
-export const getUserPermissionsLegacy = getUserPermissions;
-```
-
----
-
-## 실전 가이드: 프로젝트 규모별 권장사항
-
-### 🏃‍♂️ 소규모 프로젝트 (1-3명, 3개월 이하)
-
-**권장: 함수형 위주 + 필요시 클래스**
-
-```typescript
-// ✅ 대부분 함수형으로 빠르게 개발
-// 📁 domains/user.ts
-export const getUserStatus = (user: UserData) => {
-  /* ... */
-};
-export const canUserAccess = (user: UserData, resource: string) => {
-  /* ... */
-};
-
-// ✅ 복잡한 상태만 클래스로
-// 📁 domains/ShoppingCart.ts
-export class ShoppingCart {
-  // 상태가 복잡한 경우에만
-}
-```
-
-### 🚶‍♂️ 중규모 프로젝트 (3-8명, 6개월-1년)
-
-**권장: 하이브리드 접근**
-
-```typescript
-// ✅ User 도메인에서 적절한 방식 선택
-// 📁 domains/user/userFunctions.ts (함수형 중심)
+// ✅ 함수형 중심, 타입 안전성 확보
 export const userDomain = {
   getUserStatus,
   canUserPerformAction,
-  calculateUserLoyaltyScore, // 점수 계산
-  validateUserEmail, // 이메일 검증
-  transformUserForAPI, // API 변환
+  validateUserEmail,
 };
+```
 
-// 📁 domains/user/User.ts (클래스 중심)
+#### 👥 중규모 팀 (3-8명)
+
+```typescript
+// ✅ 하이브리드: 간단한 건 함수형, 복잡한 건 클래스
+export const userFunctions = {
+  /* 계산 함수들 */
+};
 export class User {
-  updateProfile(data: ProfileData) {
-    /* 프로필 변경 */
-  }
-  manageNotifications() {
-    /* 알림 관리 */
-  }
-  trackUserActivity() {
-    /* 활동 추적 */
-  }
-}
-
-// 📁 services/userService.ts (DI 활용)
-export class UserService {
-  constructor(
-    private userRepository: UserRepository,
-    private notificationService: NotificationService,
-  ) {}
-
-  async processUserAction(user: User, action: string): Promise<void> {
-    // 1. 함수형 도메인 로직으로 권한 확인
-    if (!userDomain.canUserPerformAction(user.toData(), action)) {
-      throw new Error('권한이 없습니다');
-    }
-
-    // 2. 클래스 도메인 모델로 상태 변경
-    user.trackUserActivity();
-
-    // 3. 외부 서비스와 협력
-    await this.analyticsService.trackAction(user.getId(), action);
-  }
+  /* 상태 관리 */
 }
 ```
 
-### 🏃‍♀️ 대규모 프로젝트 (8명 이상, 1년 이상)
-
-**권장: 객체지향 중심 + DI 활용**
+#### 👥 대규모 팀 (8명+)
 
 ```typescript
-// ✅ 체계적인 도메인 모델링
-// 📁 domains/user/User.ts
-export class User {
-  // 풍부한 도메인 모델
-}
-
-// 📁 domains/user/UserRepository.ts
-export interface UserRepository {
-  // 명확한 인터페이스 정의
-}
-
-// 📁 services/
-export class UserService {
-  // 의존성 주입을 통한 느슨한 결합
+// ✅ 객체지향 중심, 명확한 인터페이스
+export class User implements UserDomain {
+  // 체계적인 도메인 모델
 }
 ```
 
 ---
 
 ## 트레이드오프 분석
+
+> **💡 핵심 요약**
+>
+> - **함수형**: 학습 용이, 테스트 간편 vs 로직 분산, 상태 관리 어려움
+> - **객체지향**: 로직 응집, 확장성 우수 vs 러닝 커브, 추상화 복잡도
+> - **선택 기준**: 팀 역량, 프로젝트 복잡도, 장기 유지보수 계획 고려
 
 ### ⚖️ 함수형 접근 방식
 
