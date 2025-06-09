@@ -23,7 +23,7 @@
 - 새로운 `사용자` 기능 추가할 때마다 어디에 코드를 넣어야 할지 고민됨
 - "`사용자`가 할 수 있는 것"에 대한 로직이 한 곳에 모여있지 않음
 
-이번글에선 이런 문제를 해결하기 위해 **Type으로 시작해서 점진적으로 Domain으로 발전시키는 방법**과, **함수형 접근 방식과 객체지향 접근 방식의 선택 기준**에 대해 알아보겠습니다.
+이번글에선 이런 문제를 해결하기 위해 **Type으로 시작해서 점진적으로 도메일 모델로 발전시키는 방법**과, **함수형 접근 방식과 객체지향 접근 방식의 선택 기준**에 대해 알아보겠습니다.
 
 ---
 
@@ -133,7 +133,7 @@ export const getUserStatus = (user: User): UserStatus => {
 > **shared/domain을 통한 도메인 모델 중앙 집중화**
 
 이런 문제를 해결하기 위해 `shared/domain` 디렉토리에 핵심 엔티티들을 중앙 집중화하여 정의합니다. 이를 통해 모든 레이어에서 동일한 타입을 사용하게 되어 일관성을 보장할 수 있습니다.  
-[Service Layer 글](https://velog.io/@rewq5991/frontend-service-layer-design)에서 보았듯이, Service 레이어에서 비즈니스 로직을 처리할 때도 중앙 집중화된 타입을 활용하여 로직의 재사용성과 테스트 용이성을 확보할 수 있습니다.
+[Service Layer 글](https://velog.io/@rewq5991/typescript-project-service-di-design)에서 보았듯이, Service 레이어에서 비즈니스 로직을 처리할 때도 중앙 집중화된 타입을 활용하여 로직의 재사용성과 테스트 용이성을 확보할 수 있습니다.
 
 > **여러 레이어에서의 타입 활용 패턴**
 
@@ -143,8 +143,8 @@ HTTP 레이어에서는 제네릭을 활용한 타입 안전한 API 클라이언
 > **Type-Driven Development의 실현**
 
 중앙 집중화된 타입 시스템은 Type-Driven Development를 가능하게 합니다.  
-백엔드 개발자가 "User 스키마에서 name 필드가 제거될 예정"이라고 알려주면, 중앙의 `User` 타입만 수정하면 TypeScript 컴파일러가 관련된 모든 코드에서 타입 오류를 표시해주어 `누락 없이 모든 변경점을 찾아낼 수 있습니다.`.  
-이는 "별거 없는" 변경 요청을 정말로 "별거 없게" 만들어주는 핵심 메커니즘입니다.
+백엔드 개발자가 `User` 스키마에서 name 필드가 제거될 예정"이라고 알려주면, 중앙의 `User` 타입만 수정하면 TypeScript 컴파일러가 관련된 모든 코드에서 타입 오류를 표시해주어 `누락 없이 모든 변경점을 찾아낼 수 있습니다.`.  
+이는 **"별거 없는"** 변경 요청을 정말로 "별거 없게" 만들어주는 핵심 메커니즘입니다.
 
 > **BFF 패턴에서의 타입 조합**
 
@@ -152,7 +152,7 @@ HTTP 레이어에서는 제네릭을 활용한 타입 안전한 API 클라이언
 Service Layer에서 여러 도메인의 타입을 조합하여 프론트엔드 최적화된 데이터 구조를 만들 때, 각 도메인이 명확한 타입을 가지고 있어야 안전한 조합이 가능합니다.
 
 결론적으로, `shared/domain`을 통한 타입 중앙 집중화는 단순히 코드 중복을 줄이는 것을 넘어서 **전체 애플리케이션의 타입 안정성, 유지보수성, 확장성을 보장하는 핵심 아키텍처 전략**입니다.  
-이를 통해 개발자는 "원래 있던 기능이니 금방 하시죠?"라는 요청에 대해 정말로 빠르고 안전하게 대응할 수 있는 코드 구조를 구축할 수 있습니다.
+이를 통해 개발자는 **"원래 있던 기능이니 금방 하시죠?"** 라는 요청에 대해 정말로 빠르고 안전하게 대응할 수 있는 코드 구조를 구축할 수 있습니다.
 
 ### 2단계: 책임 분리하기
 
@@ -233,7 +233,6 @@ export class UserService {
     return hasValidSubscription && isNotBanned;
   }
 
-  // 🎯 여러 API 조합이 필요한 로직 (Service)
   async sendWelcomeEmailIfNeeded(user: User): Promise<void> {
     // 1. 도메인 모델의 상태 확인
     const status = user.getStatus();
@@ -242,6 +241,49 @@ export class UserService {
     if (status === 'new' && !user.hasReceivedWelcomeEmail) {
       await this.notificationService.sendWelcomeEmail(user.email);
     }
+  }
+}
+```
+
+> 혹시 Dto를 고민 하고 계시다면 요렇게 써보는 걸 추천 합니다.
+
+**매퍼의 장점**
+
+1. **명확한 관심사 분리**
+
+   - 도메인 모델: 비즈니스 로직 캡슐화
+   - DTO: 외부 통신용 데이터 구조 정의
+   - 매퍼: 변환 책임을 전담하는 단일 책임
+
+2. **의존성 방향 개선**
+
+   - 도메인은 외부 계층(API/UI)에 의존하지 않음
+   - 매퍼가 양방향 변환을 담당하여 계층 간 경계 명확화
+
+3. **유지보수성 향상**
+   - 도메인 로직 수정 시 매퍼만 함께 수정하면 됨
+   - 각 계층이 본연의 책임에 집중할 수 있음
+
+```typescript
+// 📁 apis/dtos/userDto.ts - API 계층의 DTO
+export interface UserRes {
+  id: string;
+  name: string;
+  // ...
+}
+
+// 📁 mappers/userMapper.ts - 도메인 모델 <-> DTO 변환
+export class UserMapper {
+  static toDto(user: User): UserRes {
+    return {
+      id: user.id,
+      name: user.name,
+      // ...
+    };
+  }
+
+  static toDomain(dto: UserRes): User {
+    // DTO -> 도메인 모델 변환
   }
 }
 ```
@@ -362,7 +404,9 @@ export class User {
 }
 
 // 📁 services/userService.ts
-// Service는 DI를 통해 의존성 주입
+import { UserRepository } from './UserRepository';
+import { NotificationService } from './NotificationService';
+
 export class UserService {
   constructor(
     private readonly userRepository: UserRepository,
@@ -388,6 +432,9 @@ export class UserService {
     }
   }
 }
+
+// Service는 DI를 통해 의존성 주입
+const userService = new UserService(userRepository, notificationService);
 ```
 
 ---
@@ -513,13 +560,12 @@ export class AdminUser implements AdminPermission {
 
 #### 1단계: 프로젝트 특성 파악
 
-```typescript
-// 질문해보세요:
-// 1. 팀의 기술 스택과 선호도는?
-// 2. 도메인의 복잡도는?
-// 3. 상태 관리가 복잡한가?
-// 4. 확장 계획은?
-```
+**질문해보세요**
+
+- [ ] 팀의 기술 스택과 선호도는?
+- [ ] 도메인의 복잡도는?
+- [ ] 상태 관리가 복잡한가?
+- [ ] 확장 계획은?
 
 #### 2단계: 하이브리드 접근
 
@@ -875,6 +921,6 @@ export class User {
 
 ---
 
-이제 여러분의 프론트엔드 코드는 단순한 컴포넌트 모음이 아닌, **체계적인 도메인 지식을 담은 소프트웨어**로 발전했습니다.
+이제 여러분의 프론트엔드 코드는 단순한 컴포넌트 모음이 아닌, **체계적인 도메인 모델을 담은 소프트웨어**로 발전했습니다.
 
 **"별거 없어요!"** 라는 기획 변경 요청이 정말로 **"별거 없게"** 되는 그날까지, 함께 발전해 나가겠습니다! 🚀
