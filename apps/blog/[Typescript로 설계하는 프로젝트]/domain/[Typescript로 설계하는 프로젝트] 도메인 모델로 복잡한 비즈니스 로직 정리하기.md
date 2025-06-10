@@ -99,34 +99,26 @@ export const canUserUploadFile = (user: User): boolean => {
 
 ---
 
-## 해결책: 점진적 도메인 모델 도입
+## 지금까지의 여정: 타입 중심 설계에서 도메인 모델로
 
-### 1단계: 타입에서 시작 (현재 상태)
+**한**: 잠깐, 도메인 모델 얘기하기 전에 한 가지 짚고 넘어가야 할 게 있어요.
+
+**독자**: 뭔가요?
+
+**한**: 지금까지 우리가 HTTP API 설계, Service Layer 설계를 하면서 계속 `@/shared`에서 타입을 import 해왔잖아요?
+
+**독자**: 맞아요! HTTP 설계 글에서 이런 코드 봤죠:
 
 ```typescript
-// 📁 shared/domain/user.ts
-// ✅ 1단계: 순수 타입으로 시작 (지금까지 우리가 한 방식)
-
-export type UserStatus = 'premium-active' | 'active' | 'new' | 'inactive';
-
-export type User = {
-  id: string;
-  name: string;
-  email: string;
-  isPremium: boolean;
-  subscriptionStatus: 'active' | 'inactive';
-  lastLoginDate: Date;
-  createdAt: Date;
-  hasReceivedWelcomeEmail: boolean;
-};
-
-// 📁 services/userService.ts
-import type { User, UserStatus } from '@/shared/domain/user';
-
-export const getUserStatus = (user: User): UserStatus => {
-  // 기존 로직...
-};
+// 📁 apps/react/src/server/user/types.ts
+import type { User } from '@/shared';
 ```
+
+**한**: 정확히 그거예요! 그리고 그때 "**도메인 모델 재사용**"이라는 용어도 나왔고요.
+
+**독자**: 그런데 그게 왜 중요한건지 깊이 생각해본 적은 없었어요.
+
+**한**: 바로 그거예요! 이제 그 이유를 명확히 하고, 한 단계 더 발전시켜보려고 해요.
 
 ### 💡 **왜 shared/domain에 타입을 중앙 집중화해야 할까요?**
 
@@ -159,6 +151,77 @@ Service Layer에서 여러 도메인의 타입을 조합하여 프론트엔드 �
 
 결론적으로, `shared/domain`을 통한 타입 중앙 집중화는 단순히 코드 중복을 줄이는 것을 넘어서 **전체 애플리케이션의 타입 안정성, 유지보수성, 확장성을 보장하는 핵심 아키텍처 전략**입니다.  
 이를 통해 개발자는 **"원래 있던 기능이니 금방 하시죠?"** 라는 요청에 대해 정말로 빠르고 안전하게 대응할 수 있는 코드 구조를 구축할 수 있습니다.
+
+### 🎯 타입 중앙 집중화가 도메인 모델의 시작점인 이유
+
+**한**: 우리가 계속 `shared/domain`에 타입을 모아두는 게 단순히 코드 중복을 줄이려는 게 아니에요.
+
+**독자**: 그럼 뭔가요?
+
+**한**: 이게 사실 **도메인 지식을 중앙 집중화**하는 첫 번째 단계거든요.
+
+#### 타입 중복과 불일치 문제의 심각성
+
+실제 프로젝트에서 가장 흔히 발생하는 문제는 동일한 데이터에 대해 여러 개발자가 서로 다른 타입을 정의하면서 생기는 혼란입니다.
+
+한 컴포넌트에서는 `User` 타입으로, API 레이어에서는 `UserData` 타입으로, 서비스에서는 또 다른 이름으로 동일한 사용자 데이터를 다르게 정의하면서 런타임 오류와 개발 생산성 저하를 초래하게 됩니다.
+
+#### shared/domain을 통한 도메인 모델 중앙 집중화
+
+**한**: 이런 문제를 해결하기 위해 `shared/domain` 디렉토리에 핵심 엔티티들을 중앙 집중화하여 정의하는 거예요.
+
+**독자**: 아, 그래서 [Service Layer 글](https://velog.io/@rewq5991/typescript-project-service-di-design)에서도 비즈니스 로직 처리할 때 중앙 집중화된 타입을 활용했군요!
+
+**한**: 맞아요! HTTP 레이어에서는 제네릭을 활용한 타입 안전한 API 클라이언트를 구성했고, Service 레이어에서는 비즈니스 로직과 데이터 변환 과정에서 중앙 집중화된 타입을 활용했죠.
+
+그리고 이번 글에서 다루는 도메인에서는 이런 타입들을 기반으로 점진적으로 도메인 모델로 발전시키면서 복잡한 비즈니스 규칙을 캡슐화할 수 있어요.
+
+#### Type-Driven Development의 실현
+
+**한**: 중앙 집중화된 타입 시스템은 Type-Driven Development를 가능하게 해요.
+
+**독자**: 어떻게요?
+
+**한**: 백엔드 개발자가 "User 스키마에서 name 필드가 제거될 예정"이라고 알려주면, 중앙의 `User` 타입만 수정하면 TypeScript 컴파일러가 관련된 모든 코드에서 타입 오류를 표시해주거든요.
+
+**독자**: 아! 그래서 누락 없이 모든 변경점을 찾아낼 수 있는 거네요.
+
+**한**: 맞아요! 이게 바로 **"별거 없는"** 변경 요청을 정말로 "별거 없게" 만들어주는 핵심 메커니즘이에요.
+
+결론적으로, `shared/domain`을 통한 타입 중앙 집중화는 단순히 코드 중복을 줄이는 것을 넘어서 **전체 애플리케이션의 타입 안정성, 유지보수성, 확장성을 보장하는 핵심 아키텍처 전략**인 거죠.
+
+**독자**: 이제 왜 타입 중앙화가 도메인 모델의 전제조건인지 이해가 되네요!
+
+---
+
+## 해결책: 점진적 도메인 모델 도입
+
+### 1단계: 타입에서 시작 (현재 상태)
+
+```typescript
+// 📁 shared/domain/user.ts
+// ✅ 1단계: 순수 타입으로 시작 (지금까지 우리가 한 방식)
+
+export type UserStatus = 'premium-active' | 'active' | 'new' | 'inactive';
+
+export type User = {
+  id: string;
+  name: string;
+  email: string;
+  isPremium: boolean;
+  subscriptionStatus: 'active' | 'inactive';
+  lastLoginDate: Date;
+  createdAt: Date;
+  hasReceivedWelcomeEmail: boolean;
+};
+
+// 📁 services/userService.ts
+import type { User, UserStatus } from '@/shared/domain/user';
+
+export const getUserStatus = (user: User): UserStatus => {
+  // 기존 로직...
+};
+```
 
 ### 2단계: 책임 분리하기
 
