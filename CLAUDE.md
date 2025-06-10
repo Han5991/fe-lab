@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+If the user's prompt starts with “EP:”, then the user wants to enhance the prompt. Read the PROMPT_ENHANCER.md file and follow the guidelines to enhance the user's prompt. Show the user the enhancement and get their permission to run it before taking action on the enhanced prompt.
+
+The enhanced prompts will follow the language of the original prompt (e.g., Korean prompt input will output Korean prompt enhancements, English prompt input will output English prompt enhancements, etc.)
+
 ## Repository Overview
 
 This is a Turborepo monorepo containing multiple frontend applications and shared packages for experimenting with different frontend technologies and design patterns.
@@ -40,7 +44,7 @@ pnpm dev
 
 # Start specific applications
 pnpm react    # React app + design system
-pnpm next     # Next.js app + design system  
+pnpm next     # Next.js app + design system
 pnpm typescript # TypeScript app
 ```
 
@@ -77,6 +81,7 @@ pnpm check-types
 ### Workspace Dependencies
 
 Use `workspace:` protocol for internal package dependencies:
+
 ```json
 {
   "dependencies": {
@@ -88,6 +93,7 @@ Use `workspace:` protocol for internal package dependencies:
 ### Component Structure
 
 Components follow this pattern:
+
 ```
 components/ComponentName/
 ├── ComponentName.tsx
@@ -106,6 +112,7 @@ Use `data-testid` attributes for test element selection and mock external depend
 ### Styling System
 
 Uses Panda CSS with:
+
 - Generated CSS utilities in `@design-system/ui-lib`
 - Component recipes for consistent styling
 - JSX patterns for layout components (Box, Flex, Stack, etc.)
