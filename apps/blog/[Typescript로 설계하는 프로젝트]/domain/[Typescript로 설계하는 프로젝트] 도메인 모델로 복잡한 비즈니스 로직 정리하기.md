@@ -18,7 +18,7 @@
 [지난 글](https://velog.io/@rewq5991/typescript-project-service-di-design)에서는 Service Layer를 통해 비즈니스
 로직을 분리하고 재사용 가능한 구조를 만드는 방법을 다뤘습니다.
 
-하지만 실제 프로젝트에서는 이런 상황을 만나게 됩니다:
+하지만 실제 프로젝트에서는 이런 상황을 만나게 됩니다.
 
 - Service 파일이 수백 줄로 비대해짐
 - `사용자` 관련 함수들이 여기저기 흩어져 있음
@@ -110,7 +110,7 @@ export const canUserUploadFile = (user: User): boolean => {
 >
 > **[나]**: 지금까지 우리가 HTTP API 설계, Service Layer 설계를 하면서 계속 `@/shared`에서 타입을 import 해왔잖아요?
 >
-> **[독자]**: 맞아요! HTTP 설계 글에서 이런 코드 봤죠:
+> **[독자]**: 맞아요! [HTTP 설계 글](https://velog.io/@rewq5991/typescript-project-api-design)에서 이런 코드 봤죠.
 >
 > ```typescript
 > // 📁 apps/react/src/server/user/types.ts
@@ -351,7 +351,7 @@ export class UserService {
   }
   ```
 
-**`Mapper`의 예시**
+**`Mapper`의 예시 코드**
 
 ```typescript
 // 📁 apis/dtos/userDto.ts - API 계층의 DTO
@@ -454,99 +454,6 @@ export class UserService {
 
 ---
 
-## 실무 적용 가이드
-
-> **💡 핵심 요약**
->
-> - **1-2명 소규모**: 함수형 위주로 시작, 필요시 점진적 확장
-> - **3-8명 중규모**: 하이브리드 접근으로 상황에 맞게 선택
-> - **8명+ 대규모**: 객체지향 중심으로 체계적 설계
-
-### 🚀 단계별 적용 전략
-
-#### 1단계: 현재 상황 진단
-
-```typescript
-// ✅ 현재 코드가 이런 상태라면?
-export const getUserData = (id: string) => {
-  /* API 호출 */
-};
-export const validateUser = (user: any) => {
-  /* 검증 */
-};
-export const updateUserProfile = (data: any) => {
-  /* 업데이트 */
-};
-
-// 🎯 문제점: 타입 안정성 부족, 로직 분산
-```
-
-**진단 체크리스트:**
-
-- [ ] 사용자 관련 함수가 여러 파일에 흩어져 있나?
-- [ ] any 타입이 많이 사용되고 있나?
-- [ ] 비슷한 로직이 반복되고 있나?
-
-#### 2단계: 점진적 개선
-
-```typescript
-// 📁 1. 타입 정의부터 시작
-export interface User {
-  id: string;
-  name: string;
-  // ... 필요한 속성들
-}
-
-// 📁 2. 핵심 함수 분리
-export const getUserStatus = (user: User): UserStatus => {
-  // 핵심 비즈니스 로직
-};
-
-// 📁 3. 필요시 클래스로 확장
-export class User {
-  getStatus(): UserStatus {
-    return getUserStatus(this.toPlainObject());
-  }
-}
-```
-
-### 🎯 팀 규모별 권장 접근
-
-#### 👥 소규모 팀 (1-3명)
-
-```typescript
-// ✅ 함수형 중심, 타입 안전성 확보
-export const userDomain = {
-  getUserStatus,
-  canUserPerformAction,
-  validateUserEmail,
-};
-```
-
-#### 👥 중규모 팀 (3-8명)
-
-```typescript
-// ✅ 하이브리드: 간단한 건 함수형, 복잡한 건 클래스
-export const userFunctions = {
-  /* 계산 함수들 */
-};
-
-export class User {
-  /* 상태 관리 */
-}
-```
-
-#### 👥 대규모 팀 (8명+)
-
-```typescript
-// ✅ 객체지향 중심, 명확한 인터페이스
-export class User implements UserDomain {
-  // 체계적인 도메인 모델
-}
-```
-
----
-
 ## 트레이드오프 분석
 
 > **💡 핵심 요약**
@@ -623,12 +530,6 @@ export class User {
 }
 ```
 
-#### 3. 팀과 프로젝트에 맞는 선택
-
-- **함수형**: 간단한 프로젝트, 함수형에 익숙한 팀
-- **객체지향**: 복잡한 도메인, 장기 프로젝트, 확장성 중요
-- **하이브리드**: 대부분의 실제 프로젝트
-
 ### 🚀 다음 단계
 
 이제 여러분은 다음과 같은 능력을 갖추었습니다:
@@ -637,7 +538,7 @@ export class User {
 2. **함수형과 객체지향 중에서 상황에 맞게 선택**하기
 3. **안전한 마이그레이션 전략**으로 기존 코드를 개선하기
 
-> **기획자**: "사용자 권한 로직 추가해 주세요!"
+> **[기획자]**: "사용자 권한 로직 추가해 주세요!"
 >
 > **[나]**: "네, 기존 User 도메인 모델에 권한 관련 메서드 추가하면 금방 할 수 있어요!"
 >
@@ -701,11 +602,11 @@ export class User {
 ### 🔗 관련 시리즈
 
 1. [Type-Safe HTTP API 설계](https://velog.io/@rewq5991/typescript-project-api-design)
-2. [Service Layer로 비즈니스 로직 분리](https://velog.io/@rewq5991/typescript-project-service-design)
+2. [Service Layer로 비즈니스 로직 분리](https://velog.io/@rewq5991/typescript-project-service-di-design)
 3. **타입에서 클래스로: 도메인 모델의 점진적 진화** (현재 글)
 
 ---
 
-이제 여러분의 프론트엔드 코드는 단순한 컴포넌트 모음이 아닌, **체계적인 도메인 모델을 담은 소프트웨어**로 발전했습니다.
+이제 여러분의 프론트엔드 코드는 단순한 컴포넌트 모음이 아닌, **체계적인 도메인 모델을 담은 프로젝트**로 발전했습니다.
 
 **"별거 없어요!"** 라는 기획 변경 요청이 정말로 **"별거 없게"** 되는 그날까지, 함께 발전해 나가겠습니다! 🚀
