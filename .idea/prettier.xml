@@ -5,5 +5,6 @@
     <option name="myRunOnSave" value="true" />
     <option name="myFilesPattern" value="**/*.{js,ts,jsx,tsx,cjs,cts,mjs,mts,vue,astro,json,html,css,md}" />
     <option name="formatFilesOutsideDependencyScope" value="false" />
+    <option name="codeStyleSettingsModifierEnabled" value="false" />
   </component>
 </project>
