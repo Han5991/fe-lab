@@ -1,0 +1,709 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>오픈소스 밥상차리기: 환경설정과 디버깅편</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+          'Helvetica Neue', Arial, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        overflow: hidden;
+        height: 100vh;
+      }
+
+      .presentation-container {
+        position: relative;
+        width: 100%;
+        height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .slide {
+        display: none;
+        width: 90%;
+        max-width: 1000px;
+        background: rgba(255, 255, 255, 0.95);
+        color: #333;
+        border-radius: 20px;
+        padding: 60px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        text-align: center;
+        animation: slideIn 0.5s ease-out;
+      }
+
+      .slide.active {
+        display: block;
+      }
+
+      @keyframes slideIn {
+        from {
+          opacity: 0;
+          transform: translateY(30px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      h1 {
+        font-size: 3em;
+        margin-bottom: 30px;
+        color: #2c3e50;
+        font-weight: 700;
+      }
+
+      h2 {
+        font-size: 2.2em;
+        margin-bottom: 25px;
+        color: #34495e;
+        font-weight: 600;
+      }
+
+      h3 {
+        font-size: 1.8em;
+        margin-bottom: 20px;
+        color: #34495e;
+        font-weight: 500;
+      }
+
+      p {
+        font-size: 1.3em;
+        line-height: 1.6;
+        margin-bottom: 20px;
+        color: #555;
+      }
+
+      .subtitle {
+        font-size: 1.5em;
+        color: #7f8c8d;
+        margin-bottom: 40px;
+      }
+
+      ul {
+        text-align: left;
+        font-size: 1.2em;
+        line-height: 1.8;
+        margin: 0 auto;
+        max-width: 800px;
+      }
+
+      li {
+        margin-bottom: 15px;
+        color: #555;
+      }
+
+      .navigation {
+        position: fixed;
+        bottom: 30px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 20px;
+        z-index: 1000;
+      }
+
+      .nav-btn {
+        background: rgba(255, 255, 255, 0.9);
+        border: none;
+        padding: 12px 24px;
+        border-radius: 25px;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: 500;
+        color: #333;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      }
+
+      .nav-btn:hover {
+        background: white;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+      }
+
+      .nav-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .slide-counter {
+        position: fixed;
+        top: 30px;
+        right: 30px;
+        background: rgba(255, 255, 255, 0.9);
+        padding: 10px 20px;
+        border-radius: 20px;
+        font-weight: 500;
+        color: #333;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      }
+
+      .highlight {
+        background: linear-gradient(120deg, #a8edea 0%, #fed6e3 100%);
+        color: #2c3e50;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-weight: 600;
+      }
+
+      .code-block {
+        background: #2c3e50;
+        color: #ecf0f1;
+        padding: 20px;
+        border-radius: 10px;
+        font-family: 'Courier New', monospace;
+        font-size: 1.1em;
+        text-align: left;
+        margin: 20px 0;
+        overflow-x: auto;
+      }
+
+      .emoji {
+        font-size: 1.5em;
+        margin-right: 10px;
+      }
+
+      .title-slide {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+      }
+
+      .title-slide h1 {
+        color: white;
+        font-size: 3.5em;
+      }
+
+      .title-slide .subtitle {
+        color: rgba(255, 255, 255, 0.9);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="presentation-container">
+      <!-- Slide 1: Title -->
+      <div class="slide active title-slide">
+        <h1>🍽️ 오픈소스 밥상차리기</h1>
+        <p class="subtitle">환경설정과 디버깅편</p>
+        <p
+          style="
+            font-size: 1.2em;
+            margin-top: 40px;
+            color: rgba(255, 255, 255, 0.8);
+          "
+        >
+          처음으로 오픈소스에 기여해보고 싶은 프론트엔드 개발자를 위한 실용
+          가이드
+        </p>
+      </div>
+
+      <!-- Slide 2: Target Audience -->
+      <div class="slide">
+        <h2>🎯 목표 청중</h2>
+        <ul>
+          <li>
+            <span class="emoji">🔰</span>처음으로 오픈 소스에 기여를 해보고 싶은
+            프론트엔드 개발자
+          </li>
+          <li>
+            <span class="emoji">🛠️</span>시도는 해보았지만 환경 구축과 디버깅에
+            어려움을 느낀 개발자
+          </li>
+          <li>
+            <span class="emoji">📚</span>평소 오픈소스 코드로 학습을 해보고 싶은
+            개발자
+          </li>
+        </ul>
+      </div>
+
+      <!-- Slide 3: Goals -->
+      <div class="slide">
+        <h2>🎯 발표 목표</h2>
+        <ul>
+          <li>
+            <span class="emoji">💡</span>오픈 소스 코드를 읽는 것이 왜 유익한지
+            알린다
+          </li>
+          <li>
+            <span class="emoji">🔧</span>오픈 소스 코드를 읽는 구체적이고
+            실용적인 방법을 제시한다
+          </li>
+          <li>
+            <span class="emoji">🚀</span>오픈 소스에 코드를 기여하는 것에
+            두려움을 느끼지 않고 흥미로워지도록 한다
+          </li>
+          <li>
+            <span class="emoji">✨</span>청중이 직접 오픈 소스를 살펴보고 싶도록
+            만든다
+          </li>
+        </ul>
+      </div>
+
+      <!-- Slide 4: Table of Contents -->
+      <div class="slide">
+        <h2>📋 목차</h2>
+        <ul>
+          <li>들어가며</li>
+          <li>왜 오픈 소스를 읽어야 할까?</li>
+          <li>주니어 프론트 입장에서 어떤 오픈소스가 좋을까?</li>
+          <li>개발환경 구축 및 디버깅</li>
+          <li>마무리</li>
+        </ul>
+      </div>
+
+      <!-- Slide 5: Opening Question -->
+      <div class="slide">
+        <h1 style="font-size: 2.5em; color: #e74c3c">💭</h1>
+        <h2>
+          "오픈소스에 기여하고 싶은데<br />어디서부터 시작해야 할지 모르겠어요."
+        </h2>
+        <p style="font-size: 1.5em; margin-top: 40px; color: #7f8c8d">
+          이 말을 주변 개발자들에게 정말 많이 들었습니다.
+        </p>
+      </div>
+
+      <!-- Slide 6: Personal Experience 1 -->
+      <div class="slide">
+        <h2>🤔 저도 똑같은 고민을 했습니다</h2>
+        <p>GitHub에서 유명한 프로젝트를 clone 받아보려 했지만...</p>
+        <ul>
+          <li>수천 개의 파일과 복잡한 설정에 압도</li>
+          <li>어디서부터 시작해야 할지 막막함</li>
+          <li>결국 조용히 창을 닫기...</li>
+        </ul>
+      </div>
+
+      <!-- Slide 7: Personal Experience 2 -->
+      <div class="slide">
+        <h2>💡 전환점이 된 경험</h2>
+        <p>
+          업무 중에
+          <span class="highlight">React Hook Form의 useWatch</span> 함수가
+          예상과 다르게 동작하는 상황을 만났습니다.
+        </p>
+        <p style="margin-top: 30px">
+          공식 문서만으로는 이해가 안 되서 결국 GitHub에서 해당 함수의 구현을
+          찾아보게 되었죠.
+        </p>
+      </div>
+
+      <!-- Slide 8: Realization -->
+      <div class="slide">
+        <h1 style="font-size: 2em; color: #27ae60">✨ 깨달음</h1>
+        <h2>
+          "아, 거대한 프로젝트 전체를 이해하려고 하지 말고,<br /><span
+            class="highlight"
+            >내가 궁금한 부분만 찾아보면 되는구나!</span
+          >"
+        </h2>
+      </div>
+
+      <!-- Slide 9: Why Read Open Source -->
+      <div class="slide">
+        <h2>🤷‍♂️ 왜 오픈소스 코드를 읽어야 할까?</h2>
+        <p>우리는 매일 수십 개의 오픈소스 라이브러리를 사용합니다.</p>
+        <p>
+          <span class="code-block"
+            >npm install → import → 문서 보기 → API 익히기</span
+          >
+        </p>
+        <p>
+          하지만 정작 그 안에 어떤 코드가 들어있는지는 거의 들여다보지 않습니다.
+        </p>
+      </div>
+
+      <!-- Slide 10: Reason 1 -->
+      <div class="slide">
+        <h2>1️⃣ "이 기능이 왜 이렇게 동작하지?"</h2>
+        <p style="font-size: 1.5em; color: #e67e22">
+          📖 문서에 없는 답이 코드에 있습니다
+        </p>
+        <ul>
+          <li>내부 동작 원리 이해</li>
+          <li>예상과 다른 동작의 이유 파악</li>
+          <li>숨겨진 기능이나 옵션 발견</li>
+        </ul>
+      </div>
+
+      <!-- Slide 11: Reason 2 -->
+      <div class="slide">
+        <h2>2️⃣ "이렇게 구현하는구나!"</h2>
+        <p style="font-size: 1.5em; color: #9b59b6">
+          🏆 실력 있는 개발자들의 코드를 무료로 볼 수 있는 기회
+        </p>
+        <ul>
+          <li>모노레포 구성 방법</li>
+          <li>디자인 시스템 구성</li>
+          <li>테스트 코드 구성</li>
+          <li>최신 기술 및 베스트 프랙티스</li>
+        </ul>
+      </div>
+
+      <!-- Slide 12: Reason 3 -->
+      <div class="slide">
+        <h2>3️⃣ "어, 이건 버그 아닌가?"</h2>
+        <p style="font-size: 1.5em; color: #e74c3c">
+          🔍 코드를 읽다 보면 자연스럽게 개선점이 보입니다
+        </p>
+        <ul>
+          <li>다양한 이슈를 접하고 풀어가는 경험</li>
+          <li>문제 해결 능력 향상</li>
+          <li>버그 발견과 수정 기여</li>
+        </ul>
+      </div>
+
+      <!-- Slide 13: Reason 4 -->
+      <div class="slide">
+        <h2>4️⃣ "나도 할 수 있겠는데?"</h2>
+        <p style="font-size: 1.5em; color: #27ae60">
+          💪 생각보다 특별하지 않은 코드들이 많습니다
+        </p>
+        <ul>
+          <li>커뮤니티 기여의 첫걸음</li>
+          <li>오픈소스 생태계 참여</li>
+          <li>개발자로서의 성장</li>
+        </ul>
+      </div>
+
+      <!-- Slide 14: Reason 5 -->
+      <div class="slide">
+        <h2>5️⃣ 자신감이 넘쳐 흐릅니다!</h2>
+        <p style="font-size: 1.5em; color: #f39c12">
+          🚀 전 세계 개발자들이 사용하는 도구에 기여한다는 뿌듯함
+        </p>
+        <ul>
+          <li>내 코드가 수많은 프로젝트에 영향</li>
+          <li>개발자 커뮤니티에서의 인정</li>
+          <li>더 나은 개발자로 성장</li>
+        </ul>
+      </div>
+
+      <!-- Slide 15: Which Open Source -->
+      <div class="slide">
+        <h2>🤔 주니어 입장에서 어떤 오픈소스가 좋을까?</h2>
+        <p>나에게 맞는 프로젝트 찾기가 중요합니다</p>
+      </div>
+
+      <!-- Slide 16: Project Selection Criteria -->
+      <div class="slide">
+        <h2>📝 프로젝트 선택 기준</h2>
+        <ul>
+          <li>
+            <span class="highlight">관심 분야/주력 기술:</span> 내가 자주
+            사용하고 잘 아는 라이브러리/프레임워크부터 시작
+          </li>
+          <li>
+            <span class="highlight">프로젝트 규모/활성도:</span> 문서화가 잘
+            되어 있고 커뮤니티가 활발한 프로젝트
+          </li>
+          <li>
+            <span class="highlight">예시:</span> Mantine, React Hook Form 등
+          </li>
+        </ul>
+      </div>
+
+      <!-- Slide 17: First Steps -->
+      <div class="slide">
+        <h2>👶 첫 걸음</h2>
+        <ul>
+          <li>
+            <span class="emoji">📖</span
+            ><span class="highlight">README.md</span> 정독
+          </li>
+          <li>
+            <span class="emoji">🤝</span
+            ><span class="highlight">CONTRIBUTING.md</span> 정독
+          </li>
+          <li><span class="emoji">📁</span>폴더 구조 훑어보기</li>
+          <li>
+            <span class="emoji">🐛</span>이슈 목록 살펴보기: 다른 사람들이 어떤
+            문제를 보고하고 있는지 확인
+          </li>
+        </ul>
+      </div>
+
+      <!-- Slide 18: Environment Setup Overview -->
+      <div class="slide">
+        <h2>🛠️ 개발환경 구축</h2>
+        <p style="font-size: 1.3em; color: #34495e; margin-bottom: 40px">
+          목표: <span class="highlight">node_modules 성공적으로 설치하기</span>
+        </p>
+        <ul>
+          <li>package.json 읽기</li>
+          <li>CONTRIBUTING.md 정독</li>
+          <li>자주 발생하는 문제와 해결책</li>
+        </ul>
+      </div>
+
+      <!-- Slide 19: Reading package.json -->
+      <div class="slide">
+        <h2>📦 package.json 읽기</h2>
+        <ul>
+          <li>
+            <span class="emoji">📌</span>사용하는
+            <span class="highlight">Node 버전</span> 확인
+          </li>
+          <li>
+            <span class="emoji">📦</span>사용하는
+            <span class="highlight">Package Manager</span> 확인 (npm, pnpm,
+            yarn)
+          </li>
+          <li>
+            <span class="emoji">🏗️</span>전체 프로젝트 구조 파악 (모노레포 vs
+            모놀로그)
+          </li>
+          <li>
+            <span class="emoji">📜</span>필요한 스크립트 찾아서 실행해보기
+          </li>
+        </ul>
+      </div>
+
+      <!-- Slide 20: Reading CONTRIBUTING.md -->
+      <div class="slide">
+        <h2>📋 CONTRIBUTING.md 정독</h2>
+        <p>설명대로 하나하나 명령어를 실행해보기</p>
+        <div class="code-block">
+          # 예시: React Hook Form 개발 환경 구축 npm install npm run build npm
+          run test npm run storybook
+        </div>
+        <p style="margin-top: 20px">
+          🤖 <span class="highlight">AI에게 도움 요청하기:</span> package.json,
+          README, CONTRIBUTING를 학습시켜서 질문하기
+        </p>
+      </div>
+
+      <!-- Slide 21: Common Problem 1 -->
+      <div class="slide">
+        <h2>❌ 자주 발생하는 문제 1: 노드 버전 불일치</h2>
+        <p style="color: #e74c3c; font-weight: 600">
+          문제: "This module requires Node.js version X.Y.Z"
+        </p>
+        <div class="code-block">
+          # 해결: nvm을 사용하여 필요한 Node 버전 설치 nvm install 20 nvm use 20
+        </div>
+      </div>
+
+      <!-- Slide 22: Common Problem 2 -->
+      <div class="slide">
+        <h2>❌ 자주 발생하는 문제 2: 패키지 매니저 충돌</h2>
+        <p style="color: #e74c3c; font-weight: 600">
+          문제: yarn.lock이 있는데 npm으로 설치할 때 발생하는 의존성 문제
+        </p>
+        <div class="code-block">
+          # 해결: 프로젝트에서 지정한 패키지 매니저만 사용 # corepack을 사용하여
+          yarn 활성화 corepack enable
+        </div>
+      </div>
+
+      <!-- Slide 23: Common Problem 3 -->
+      <div class="slide">
+        <h2>❌ 자주 발생하는 문제 3: 모노레포 세팅 문제</h2>
+        <p style="color: #e74c3c; font-weight: 600">
+          문제: 특정 패키지만 빌드하려고 할 때 의존성 오류
+        </p>
+        <div class="code-block">
+          # 해결: 루트 디렉토리에서 모든 의존성 설치 후 진행 pnpm install
+        </div>
+      </div>
+
+      <!-- Slide 24: Debugging Overview -->
+      <div class="slide">
+        <h2>🐛 디버깅</h2>
+        <p>효과적인 디버깅을 위한 전략</p>
+        <ul>
+          <li>스토리북/Jest 실행 방법 찾기</li>
+          <li>문제 재현하기</li>
+          <li>코드 탐색 팁</li>
+        </ul>
+      </div>
+
+      <!-- Slide 25: Debugging Strategy 1 -->
+      <div class="slide">
+        <h2>🔍 디버깅 전략 1: 문제 재현</h2>
+        <ul>
+          <li>
+            <span class="emoji">📝</span>해당 이슈를 정독 후 문제를 재현해보기
+          </li>
+          <li>
+            <span class="emoji">🧪</span>가능하면 테스트 코드나 스토리북으로
+            구현
+          </li>
+          <li>
+            <span class="emoji">📚</span>작성하기 어렵다면 다시 CONTRIBUTING
+            살펴보기
+          </li>
+          <li>
+            <span class="emoji">🔗</span>이슈에서 힌트 찾기, 의심가는 파일의 git
+            history 살펴보기
+          </li>
+        </ul>
+      </div>
+
+      <!-- Slide 26: Debugging Strategy 2 -->
+      <div class="slide">
+        <h2>🧪 디버깅 전략 2: 테스트 코드로 재현</h2>
+        <p>테스트 코드를 작성하면 문제를 명확하게 이해할 수 있습니다</p>
+        <ul>
+          <li>기존 테스트 코드 패턴 따라하기</li>
+          <li>최소한의 재현 케이스 만들기</li>
+          <li>예상 결과와 실제 결과 비교</li>
+        </ul>
+      </div>
+
+      <!-- Slide 27: Code Exploration Tips -->
+      <div class="slide">
+        <h2>💡 코드 탐색 팁</h2>
+        <div class="code-block">
+          // 1. 관심 있는 컴포넌트에 console.log 추가 export const Select =
+          props => { console.log('Select rendered with props:', props); // ...
+          }; // 2. debugger 구문 활용 const handleChange = newValue => {
+          debugger; // 브라우저 개발자 도구에서 중단점 역할 onChange(newValue);
+          };
+        </div>
+      </div>
+
+      <!-- Slide 28: Key Messages -->
+      <div class="slide">
+        <h2>🎯 핵심 메시지</h2>
+        <ul>
+          <li>
+            <span class="emoji">🏁</span
+            ><span class="highlight">시작이 반이다:</span> 첫 PR은 어렵지만, 그
+            다음부터는 훨씬 쉬워집니다
+          </li>
+          <li>
+            <span class="emoji">🐣</span
+            ><span class="highlight">작은 것부터:</span> 문서 오타 수정, 간단한
+            버그 수정처럼 작은 것부터 시작
+          </li>
+          <li>
+            <span class="emoji">🤝</span
+            ><span class="highlight">커뮤니티의 힘:</span> 질문하고, 배우고,
+            공유하는 과정에서 성장
+          </li>
+        </ul>
+      </div>
+
+      <!-- Slide 29: Next Steps -->
+      <div class="slide">
+        <h2>🚀 다음 단계</h2>
+        <ul>
+          <li>
+            <span class="emoji">🔍</span>자주 사용하는 라이브러리 하나를 선택해
+            GitHub 저장소 살펴보기
+          </li>
+          <li>
+            <span class="emoji">📝</span>문서 개선이나 간단한 버그 수정으로 첫
+            PR 만들어보기
+          </li>
+          <li>
+            <span class="emoji">👥</span>오픈소스 기여자 모임이나 온라인
+            커뮤니티에 참여하기
+          </li>
+        </ul>
+        <p style="margin-top: 40px; font-size: 1.3em; color: #e67e22">
+          이제 여러분의 차례입니다! 🎉
+        </p>
+      </div>
+
+      <!-- Slide 30: Q&A -->
+      <div class="slide">
+        <h1 style="font-size: 4em">❓</h1>
+        <h2>질문과 답변</h2>
+        <p style="font-size: 1.3em; margin-top: 40px; color: #7f8c8d">
+          오픈소스 기여에 대한<br />
+          궁금한 점이 있으시면 언제든 질문해주세요!
+        </p>
+      </div>
+    </div>
+
+    <div class="slide-counter">
+      <span id="current-slide">1</span> / <span id="total-slides">30</span>
+    </div>
+
+    <div class="navigation">
+      <button class="nav-btn" id="prev-btn" onclick="previousSlide()">
+        ← 이전
+      </button>
+      <button class="nav-btn" id="next-btn" onclick="nextSlide()">
+        다음 →
+      </button>
+    </div>
+
+    <script>
+      let currentSlide = 0;
+      const slides = document.querySelectorAll('.slide');
+      const totalSlides = slides.length;
+
+      document.getElementById('total-slides').textContent = totalSlides;
+
+      function showSlide(n) {
+        slides[currentSlide].classList.remove('active');
+        currentSlide = (n + totalSlides) % totalSlides;
+        slides[currentSlide].classList.add('active');
+
+        document.getElementById('current-slide').textContent = currentSlide + 1;
+
+        // Update navigation buttons
+        document.getElementById('prev-btn').disabled = currentSlide === 0;
+        document.getElementById('next-btn').disabled =
+          currentSlide === totalSlides - 1;
+      }
+
+      function nextSlide() {
+        if (currentSlide < totalSlides - 1) {
+          showSlide(currentSlide + 1);
+        }
+      }
+
+      function previousSlide() {
+        if (currentSlide > 0) {
+          showSlide(currentSlide - 1);
+        }
+      }
+
+      // Keyboard navigation
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'ArrowRight' || e.key === ' ') {
+          e.preventDefault();
+          nextSlide();
+        } else if (e.key === 'ArrowLeft') {
+          e.preventDefault();
+          previousSlide();
+        }
+      });
+
+      // Click navigation
+      document.addEventListener('click', function (e) {
+        if (
+          e.target.closest('.nav-btn') ||
+          e.target.closest('.slide-counter')
+        ) {
+          return;
+        }
+
+        const rect = window.innerWidth;
+        if (e.clientX > rect / 2) {
+          nextSlide();
+        } else {
+          previousSlide();
+        }
+      });
+
+      // Initialize
+      showSlide(0);
+    </script>
+  </body>
+</html>
