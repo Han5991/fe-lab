@@ -1,0 +1,290 @@
+<svg viewBox="0 0 1200 1600" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <linearGradient id="headerGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+        </linearGradient>
+        <linearGradient id="sectionGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" style="stop-color:#4facfe;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#00f2fe;stop-opacity:1" />
+        </linearGradient>
+        <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+            <feDropShadow dx="2" dy="2" stdDeviation="3" flood-color="#000" flood-opacity="0.2"/>
+        </filter>
+    </defs>
+
+    <!-- Background -->
+    <rect width="1200" height="1600" fill="#f8fafc"/>
+
+    <!-- Header -->
+    <rect x="50" y="30" width="1100" height="120" rx="15" fill="url(#headerGradient)" filter="url(#shadow)"/>
+    <text x="600" y="70" text-anchor="middle" fill="white" font-size="28" font-weight="bold" font-family="Arial, sans-serif">
+        🍽️ 오픈소스 밥상차리기
+    </text>
+    <text x="600" y="105" text-anchor="middle" fill="white" font-size="18" font-family="Arial, sans-serif">
+        환경설정과 디버깅편
+    </text>
+
+    <!-- Target Audience -->
+    <rect x="50" y="180" width="350" height="150" rx="10" fill="#e2e8f0" stroke="#cbd5e1" stroke-width="2"/>
+    <text x="225" y="210" text-anchor="middle" fill="#334155" font-size="16" font-weight="bold" font-family="Arial, sans-serif">
+        🎯 목표 청중
+    </text>
+    <text x="70" y="235" fill="#475569" font-size="13" font-family="Arial, sans-serif">
+        • 오픈소스 첫 기여 희망자
+    </text>
+    <text x="70" y="255" fill="#475569" font-size="13" font-family="Arial, sans-serif">
+        • 환경구축에 어려움을 느낀 개발자
+    </text>
+    <text x="70" y="275" fill="#475569" font-size="13" font-family="Arial, sans-serif">
+        • 오픈소스로 학습하고 싶은 개발자
+    </text>
+
+    <!-- Goals -->
+    <rect x="450" y="180" width="350" height="150" rx="10" fill="#e2e8f0" stroke="#cbd5e1" stroke-width="2"/>
+    <text x="625" y="210" text-anchor="middle" fill="#334155" font-size="16" font-weight="bold" font-family="Arial, sans-serif">
+        🎯 발표 목표
+    </text>
+    <text x="470" y="235" fill="#475569" font-size="13" font-family="Arial, sans-serif">
+        • 오픈소스 코드 읽기의 유익함
+    </text>
+    <text x="470" y="255" fill="#475569" font-size="13" font-family="Arial, sans-serif">
+        • 실용적인 코드 읽기 방법 제시
+    </text>
+    <text x="470" y="275" fill="#475569" font-size="13" font-family="Arial, sans-serif">
+        • 기여에 대한 두려움 해소
+    </text>
+
+    <!-- Why Open Source? -->
+    <rect x="850" y="180" width="300" height="150" rx="10" fill="#fef3c7" stroke="#f59e0b" stroke-width="2"/>
+    <text x="1000" y="210" text-anchor="middle" fill="#92400e" font-size="16" font-weight="bold" font-family="Arial, sans-serif">
+        🤔 왜 오픈소스인가?
+    </text>
+    <text x="870" y="235" fill="#92400e" font-size="13" font-family="Arial, sans-serif">
+        • 도구의 내부 동작 이해
+    </text>
+    <text x="870" y="255" fill="#92400e" font-size="13" font-family="Arial, sans-serif">
+        • 베스트 프랙티스 학습
+    </text>
+    <text x="870" y="275" fill="#92400e" font-size="13" font-family="Arial, sans-serif">
+        • 문제 해결 능력 향상
+    </text>
+
+    <!-- Main Flow -->
+    <text x="600" y="390" text-anchor="middle" fill="#1e293b" font-size="22" font-weight="bold" font-family="Arial, sans-serif">
+        📋 오픈소스 기여 프로세스
+    </text>
+
+    <!-- Step 1: Project Selection -->
+    <rect x="100" y="420" width="200" height="100" rx="15" fill="url(#sectionGradient)" filter="url(#shadow)"/>
+    <text x="200" y="455" text-anchor="middle" fill="white" font-size="16" font-weight="bold" font-family="Arial, sans-serif">
+        1️⃣ 프로젝트 선택
+    </text>
+    <text x="200" y="475" text-anchor="middle" fill="white" font-size="12" font-family="Arial, sans-serif">
+        관심분야 &amp; 주력기술
+    </text>
+    <text x="200" y="490" text-anchor="middle" fill="white" font-size="12" font-family="Arial, sans-serif">
+        README.md 정독
+    </text>
+    <text x="200" y="505" text-anchor="middle" fill="white" font-size="12" font-family="Arial, sans-serif">
+        CONTRIBUTING.md 확인
+    </text>
+
+    <!-- Arrow 1 -->
+    <path d="M 320 470 L 380 470" stroke="#64748b" stroke-width="3" marker-end="url(#arrowhead)" fill="none"/>
+
+    <!-- Step 2: Environment Setup -->
+    <rect x="400" y="420" width="200" height="100" rx="15" fill="url(#sectionGradient)" filter="url(#shadow)"/>
+    <text x="500" y="455" text-anchor="middle" fill="white" font-size="16" font-weight="bold" font-family="Arial, sans-serif">
+        2️⃣ 환경 구축
+    </text>
+    <text x="500" y="475" text-anchor="middle" fill="white" font-size="12" font-family="Arial, sans-serif">
+        package.json 파악
+    </text>
+    <text x="500" y="490" text-anchor="middle" fill="white" font-size="12" font-family="Arial, sans-serif">
+        Node 버전 &amp; 패키지매니저
+    </text>
+    <text x="500" y="505" text-anchor="middle" fill="white" font-size="12" font-family="Arial, sans-serif">
+        스크립트 실행
+    </text>
+
+    <!-- Arrow 2 -->
+    <path d="M 620 470 L 680 470" stroke="#64748b" stroke-width="3" marker-end="url(#arrowhead)" fill="none"/>
+
+    <!-- Step 3: Debugging -->
+    <rect x="700" y="420" width="200" height="100" rx="15" fill="url(#sectionGradient)" filter="url(#shadow)"/>
+    <text x="800" y="455" text-anchor="middle" fill="white" font-size="16" font-weight="bold" font-family="Arial, sans-serif">
+        3️⃣ 디버깅
+    </text>
+    <text x="800" y="475" text-anchor="middle" fill="white" font-size="12" font-family="Arial, sans-serif">
+        Jest &amp; Storybook
+    </text>
+    <text x="800" y="490" text-anchor="middle" fill="white" font-size="12" font-family="Arial, sans-serif">
+        이슈 재현
+    </text>
+    <text x="800" y="505" text-anchor="middle" fill="white" font-size="12" font-family="Arial, sans-serif">
+        테스트 코드 작성
+    </text>
+
+    <!-- Common Issues Section -->
+    <text x="600" y="580" text-anchor="middle" fill="#1e293b" font-size="20" font-weight="bold" font-family="Arial, sans-serif">
+        ⚠️ 자주 발생하는 문제와 해결책
+    </text>
+
+    <!-- Issue 1 -->
+    <rect x="50" y="610" width="350" height="120" rx="10" fill="#fee2e2" stroke="#ef4444" stroke-width="2"/>
+    <text x="225" y="640" text-anchor="middle" fill="#991b1b" font-size="16" font-weight="bold" font-family="Arial, sans-serif">
+        🔧 Node 버전 불일치
+    </text>
+    <text x="70" y="665" fill="#991b1b" font-size="13" font-family="Arial, sans-serif">
+        문제: "This module requires Node.js version X.Y.Z"
+    </text>
+    <text x="70" y="685" fill="#991b1b" font-size="13" font-family="Arial, sans-serif">
+        해결: nvm install 20 &amp;&amp; nvm use 20
+    </text>
+    <text x="70" y="705" fill="#991b1b" font-size="13" font-family="Arial, sans-serif">
+        또는: .nvmrc 파일 확인
+    </text>
+
+    <!-- Issue 2 -->
+    <rect x="425" y="610" width="350" height="120" rx="10" fill="#fef3c7" stroke="#f59e0b" stroke-width="2"/>
+    <text x="600" y="640" text-anchor="middle" fill="#92400e" font-size="16" font-weight="bold" font-family="Arial, sans-serif">
+        📦 패키지 매니저 충돌
+    </text>
+    <text x="445" y="665" fill="#92400e" font-size="13" font-family="Arial, sans-serif">
+        문제: yarn.lock + npm install 충돌
+    </text>
+    <text x="445" y="685" fill="#92400e" font-size="13" font-family="Arial, sans-serif">
+        해결: 프로젝트 지정 패키지매니저 사용
+    </text>
+    <text x="445" y="705" fill="#92400e" font-size="13" font-family="Arial, sans-serif">
+        corepack enable으로 yarn 활성화
+    </text>
+
+    <!-- Issue 3 -->
+    <rect x="800" y="610" width="350" height="120" rx="10" fill="#ddd6fe" stroke="#8b5cf6" stroke-width="2"/>
+    <text x="975" y="640" text-anchor="middle" fill="#5b21b6" font-size="16" font-weight="bold" font-family="Arial, sans-serif">
+        🏗️ 모노레포 세팅 문제
+    </text>
+    <text x="820" y="665" fill="#5b21b6" font-size="13" font-family="Arial, sans-serif">
+        문제: 특정 패키지만 빌드시 의존성 오류
+    </text>
+    <text x="820" y="685" fill="#5b21b6" font-size="13" font-family="Arial, sans-serif">
+        해결: 루트에서 모든 의존성 설치
+    </text>
+    <text x="820" y="705" fill="#5b21b6" font-size="13" font-family="Arial, sans-serif">
+        pnpm install 후 진행
+    </text>
+
+    <!-- Debugging Strategy -->
+    <text x="600" y="790" text-anchor="middle" fill="#1e293b" font-size="20" font-weight="bold" font-family="Arial, sans-serif">
+        🔍 효과적인 디버깅 전략
+    </text>
+
+    <!-- Debug Steps -->
+    <rect x="100" y="820" width="200" height="120" rx="10" fill="#ecfdf5" stroke="#10b981" stroke-width="2"/>
+    <text x="200" y="850" text-anchor="middle" fill="#047857" font-size="14" font-weight="bold" font-family="Arial, sans-serif">
+        📝 이슈 재현
+    </text>
+    <text x="120" y="875" fill="#047857" font-size="12" font-family="Arial, sans-serif">
+        • 테스트 코드로 구현
+    </text>
+    <text x="120" y="895" fill="#047857" font-size="12" font-family="Arial, sans-serif">
+        • Storybook 활용
+    </text>
+    <text x="120" y="915" fill="#047857" font-size="12" font-family="Arial, sans-serif">
+        • 실행 스크립트 찾기
+    </text>
+
+    <rect x="350" y="820" width="200" height="120" rx="10" fill="#f0f9ff" stroke="#0ea5e9" stroke-width="2"/>
+    <text x="450" y="850" text-anchor="middle" fill="#0369a1" font-size="14" font-weight="bold" font-family="Arial, sans-serif">
+        🔍 코드 탐색
+    </text>
+    <text x="370" y="875" fill="#0369a1" font-size="12" font-family="Arial, sans-serif">
+        • console.log 추가
+    </text>
+    <text x="370" y="895" fill="#0369a1" font-size="12" font-family="Arial, sans-serif">
+        • debugger 구문 활용
+    </text>
+    <text x="370" y="915" fill="#0369a1" font-size="12" font-family="Arial, sans-serif">
+        • React DevTools
+    </text>
+
+    <rect x="600" y="820" width="200" height="120" rx="10" fill="#fdf4ff" stroke="#c084fc" stroke-width="2"/>
+    <text x="700" y="850" text-anchor="middle" fill="#7c3aed" font-size="14" font-weight="bold" font-family="Arial, sans-serif">
+        🎯 문제 해결
+    </text>
+    <text x="620" y="875" fill="#7c3aed" font-size="12" font-family="Arial, sans-serif">
+        • Git history 살펴보기
+    </text>
+    <text x="620" y="895" fill="#7c3aed" font-size="12" font-family="Arial, sans-serif">
+        • 관련 이슈 찾기
+    </text>
+    <text x="620" y="915" fill="#7c3aed" font-size="12" font-family="Arial, sans-serif">
+        • AI 도구 활용
+    </text>
+
+    <!-- Examples Section -->
+    <text x="600" y="1000" text-anchor="middle" fill="#1e293b" font-size="20" font-weight="bold" font-family="Arial, sans-serif">
+        💡 추천 프로젝트 예시
+    </text>
+
+    <!-- Easy Projects -->
+    <rect x="150" y="1030" width="200" height="100" rx="10" fill="#dcfce7" stroke="#22c55e" stroke-width="2"/>
+    <text x="250" y="1060" text-anchor="middle" fill="#15803d" font-size="16" font-weight="bold" font-family="Arial, sans-serif">
+        🟢 쉬움
+    </text>
+    <text x="250" y="1080" text-anchor="middle" fill="#15803d" font-size="14" font-family="Arial, sans-serif">
+        Mantine
+    </text>
+    <text x="250" y="1100" text-anchor="middle" fill="#15803d" font-size="14" font-family="Arial, sans-serif">
+        React Hook Form
+    </text>
+
+    <!-- Hard Projects -->
+    <rect x="450" y="1030" width="200" height="100" rx="10" fill="#fef2f2" stroke="#ef4444" stroke-width="2"/>
+    <text x="550" y="1060" text-anchor="middle" fill="#dc2626" font-size="16" font-weight="bold" font-family="Arial, sans-serif">
+        🔴 어려움
+    </text>
+    <text x="550" y="1080" text-anchor="middle" fill="#dc2626" font-size="14" font-family="Arial, sans-serif">
+        Next.js
+    </text>
+    <text x="550" y="1100" text-anchor="middle" fill="#dc2626" font-size="14" font-family="Arial, sans-serif">
+        React
+    </text>
+
+    <!-- Key Messages -->
+    <rect x="50" y="1180" width="1100" height="150" rx="15" fill="#1e293b" filter="url(#shadow)"/>
+    <text x="600" y="1220" text-anchor="middle" fill="white" font-size="20" font-weight="bold" font-family="Arial, sans-serif">
+        🎯 핵심 메시지
+    </text>
+    <text x="600" y="1250" text-anchor="middle" fill="#cbd5e1" font-size="16" font-family="Arial, sans-serif">
+        1️⃣ 시작이 반이다 - 첫 PR은 어렵지만 그 다음은 쉬워집니다
+    </text>
+    <text x="600" y="1275" text-anchor="middle" fill="#cbd5e1" font-size="16" font-family="Arial, sans-serif">
+        2️⃣ 작은 것부터 - 문서 오타, 간단한 버그 수정부터 시작하세요
+    </text>
+    <text x="600" y="1300" text-anchor="middle" fill="#cbd5e1" font-size="16" font-family="Arial, sans-serif">
+        3️⃣ 커뮤니티의 힘 - 질문하고, 배우고, 공유하는 과정에서 성장합니다
+    </text>
+
+    <!-- Next Steps -->
+    <text x="600" y="1380" text-anchor="middle" fill="#1e293b" font-size="18" font-weight="bold" font-family="Arial, sans-serif">
+        📋 다음 단계
+    </text>
+    <text x="600" y="1410" text-anchor="middle" fill="#475569" font-size="14" font-family="Arial, sans-serif">
+        자주 사용하는 라이브러리 선택 → GitHub 저장소 살펴보기 → 첫 PR 만들기 → 커뮤니티 참여
+    </text>
+
+    <!-- Arrow marker definition -->
+    <defs>
+        <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#64748b"/>
+        </marker>
+    </defs>
+
+    <!-- Footer -->
+    <text x="600" y="1550" text-anchor="middle" fill="#94a3b8" font-size="14" font-style="italic" font-family="Arial, sans-serif">
+        "여러분의 작은 기여가 전 세계 개발자들이 사용하는 도구를 개선합니다" 🌟
+    </text>
+</svg>
