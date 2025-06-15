@@ -4,7 +4,7 @@ const nextConfig: NextConfig = {
   /* config options here */
   reactStrictMode: true,
   output: 'export',
-  trailingSlash: true,
+  basePath: process.env.PAGES_BASE_PATH,
   images: {
     unoptimized: true,
   },
