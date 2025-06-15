@@ -48,14 +48,14 @@
 
 - **TypeScript 프로젝트 설계 시리즈**
 
-  - [도메인 모델로 복잡한 비즈니스 로직 정리하기](./apps/blog/[Typescript로%20설계하는%20프로젝트]/domain/)
-  - [견고한 서버 API Type 설계하기](./apps/blog/[Typescript로%20설계하는%20프로젝트]/http/)
-  - [Service Layer 설계 전략](./apps/blog/[Typescript로%20설계하는%20프로젝트]/service/)
+  - [도메인 모델로 복잡한 비즈니스 로직 정리하기](apps/blog/[Typescript로%20설계하는%20프로젝트]/domain/)
+  - [견고한 서버 API Type 설계하기](apps/blog/[Typescript로%20설계하는%20프로젝트]/http/)
+  - [Service Layer 설계 전략](apps/blog/[Typescript로%20설계하는%20프로젝트]/service/)
 
 - **실무 경험 기반 기술 아티클**
-  - [Panda CSS 1년 사용기](./apps/blog/Panda%20CSS%201년%20사용기.md)
-  - [pnpm 10 업그레이드 이슈 해결](./apps/blog/pnpm%2010%20업그레이드%20후/)
-  - [Next.js 배포 및 장애 대응](./apps/blog/nextjs%20deploy/)
+  - [Panda CSS 1년 사용기](apps/blog/Panda%20CSS%201년%20사용기.md)
+  - [pnpm 10 업그레이드 이슈 해결](apps/blog/pnpm%2010%20업그레이드%20후/)
+  - [Next.js 배포 및 장애 대응](apps/blog/nextjs%20deploy/)
 
 ### **공유 패키지** (`packages/`)
 
@@ -132,9 +132,9 @@ pnpm build
 
 ### **추천 읽기 순서**
 
-1. [타입 설계의 시작](./apps/blog/[Typescript로%20설계하는%20프로젝트]/http/) - HTTP API 타입 안전성
-2. [Service Layer 설계](./apps/blog/[Typescript로%20설계하는%20프로젝트]/service/) - 비즈니스 로직 분리
-3. [도메인 모델링](./apps/blog/[Typescript로%20설계하는%20프로젝트]/domain/) - 복잡한 로직 정리
+1. [타입 설계의 시작](apps/blog/[Typescript로%20설계하는%20프로젝트]/http/) - HTTP API 타입 안전성
+2. [Service Layer 설계](apps/blog/[Typescript로%20설계하는%20프로젝트]/service/) - 비즈니스 로직 분리
+3. [도메인 모델링](apps/blog/[Typescript로%20설계하는%20프로젝트]/domain/) - 복잡한 로직 정리
 
 ---
 

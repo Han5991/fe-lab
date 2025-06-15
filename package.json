@@ -9,7 +9,8 @@
     "check-types": "turbo run check-types",
     "react": "turbo run dev --filter=react --filter=@design-system/ui",
     "typescript": "turbo run dev --filter=typescript",
-    "next": "turbo run dev --filter=next.js --filter=@design-system/ui"
+    "next": "turbo run dev --filter=next.js --filter=@design-system/ui",
+    "blog-web": "turbo run dev --filter=@blog/web --filter=@design-system/ui"
   },
   "devDependencies": {
     "prettier": "^3.5.0",

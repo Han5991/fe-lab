@@ -15,7 +15,7 @@ export default defineConfig({
   jsxFramework: 'react',
 
   strictPropertyValues: true,
-  outdir: '../../packages/design-system/ui-lib',
+  outdir: '../../packages/@design-system/ui-lib',
   importMap: {
     css: '@design-system/ui-lib/css',
     recipes: '@design-system/ui-lib/recipes',
