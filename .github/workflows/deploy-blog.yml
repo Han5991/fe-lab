@@ -1,13 +1,16 @@
 name: Deploy Blog to GitHub Pages
 
+env:
+  BASE_PATH: "."
+  INDEX_APP_PATH: "./app"
+  SUBPACKAGES_PATH: "./packages"
+
 on:
   push:
     branches: [ main ]
     paths:
       - 'apps/blog/**'
-      - 'packages/**'
-      - 'package.json'
-      - 'pnpm-lock.yaml'
+
   workflow_dispatch:
 
 permissions:
@@ -29,7 +32,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version-file: './tool-version'
+          cache: 'pnpm'
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -42,16 +46,24 @@ jobs:
       - name: Build blog
         run: pnpm build --filter=@blog/web
 
-      - name: Add .nojekyll file
-        run: touch ./apps/blog/web/out/.nojekyll
+      - name: Ensure dist dir
+        run: mkdir -p ${{ env.BASE_PATH }}/dist
+      - name: Move index-package's builds to root
+        run: mv ${{ env.INDEX_APP_PATH }}/dist ${{ env.BASE_PATH }}/dist
+      - name: Move sub-packages' builds to root
+        run: |
+          find ${{ env.SUBPACKAGES_PATH }} -type d -name dist | while read dir; do \
+            package_name=$(basename $(dirname "$dir"))
+            mv "$dir" "${{ env.BASE_PATH }}/dist/$package_name"
+          done
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
-      - name: Upload artifact
+      - name: Upload to pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: './apps/blog/web/out'
+          path: ${{ env.BASE_PATH }}/dist
 
   deploy:
     environment:
