@@ -1,0 +1,28 @@
+{
+  "name": "@blog/web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "react": "^19.2.0-canary-f9ae0a4c-20250527",
+    "react-dom": "^19.2.0-canary-f9ae0a4c-20250527",
+    "next": "15.4.0-canary.83",
+    "@design-system/ui": "workspace:^",
+    "@design-system/ui-lib": "workspace:^"
+  },
+  "devDependencies": {
+    "@pandacss/dev": "catalog:",
+    "typescript": "catalog:typescript5",
+    "@types/node": "^22.15.31",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "15.3.3",
+    "@eslint/eslintrc": "^3"
+  }
+}
