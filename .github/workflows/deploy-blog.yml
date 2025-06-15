@@ -42,6 +42,9 @@ jobs:
       - name: Build blog
         run: pnpm build --filter=@blog/web
 
+      - name: Add .nojekyll file
+        run: touch ./apps/blog/web/out/.nojekyll
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
