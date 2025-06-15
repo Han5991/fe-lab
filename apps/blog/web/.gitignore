@@ -41,5 +41,5 @@ yarn-error.log*
 next-env.d.ts
 
 ## Panda
-../../../packages/design-system/ui-lib
-../../../packages/design-system/ui-lib-studio
+../../../packages/@design-system/ui-lib
+../../../packages/@design-system/ui-lib-studio
