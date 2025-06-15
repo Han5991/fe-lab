@@ -28,7 +28,7 @@ Next.js는 페이지별로 에러 처리를 할 수 있는 기능을 제공합�
 다음은 Next.js에서 페이지별 에러 처리를 구현하는 예제입니다:
 
 ```tsx
-// app/blog/error.js
+// app/web/error.js
 'use client';
 
 export default function Error({ error, reset }) {
