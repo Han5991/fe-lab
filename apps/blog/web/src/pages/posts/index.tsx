@@ -1,4 +1,5 @@
 import { GetStaticProps } from 'next';
+import Head from 'next/head';
 import Link from 'next/link';
 import { getAllPosts, PostData } from '../../../lib/posts';
 
@@ -8,8 +9,20 @@ interface PostsPageProps {
 
 export default function PostsPage({ posts }: PostsPageProps) {
   return (
-    <div style={{ maxWidth: '800px', margin: '0 auto', padding: '2rem' }}>
-      <h1>블로그 포스트</h1>
+    <>
+      <Head>
+        <title>블로그 포스트 | Frontend Lab Blog</title>
+        <meta name="description" content="프론트엔드 기술 실험과 학습 내용을 공유하는 블로그입니다." />
+        <meta property="og:title" content="블로그 포스트 | Frontend Lab Blog" />
+        <meta property="og:description" content="프론트엔드 기술 실험과 학습 내용을 공유하는 블로그입니다." />
+        <meta property="og:type" content="website" />
+        <meta name="twitter:card" content="summary" />
+        <meta name="twitter:title" content="블로그 포스트 | Frontend Lab Blog" />
+        <meta name="twitter:description" content="프론트엔드 기술 실험과 학습 내용을 공유하는 블로그입니다." />
+      </Head>
+      
+      <div style={{ maxWidth: '800px', margin: '0 auto', padding: '2rem' }}>
+        <h1>블로그 포스트</h1>
       <div style={{ marginTop: '2rem' }}>
         {posts.map(post => (
           <article
@@ -50,7 +63,8 @@ export default function PostsPage({ posts }: PostsPageProps) {
           </article>
         ))}
       </div>
-    </div>
+      </div>
+    </>
   );
 }
 

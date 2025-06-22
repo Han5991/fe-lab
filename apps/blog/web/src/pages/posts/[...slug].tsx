@@ -1,4 +1,5 @@
 import type { GetStaticPaths, GetStaticProps } from 'next';
+import Head from 'next/head';
 import Link from 'next/link';
 import ReactMarkdown from 'react-markdown';
 import {
@@ -13,7 +14,20 @@ interface PostPageProps {
 
 export default function PostPage({ post }: PostPageProps) {
   return (
-    <article style={{ maxWidth: '800px', margin: '0 auto', padding: '2rem' }}>
+    <>
+      <Head>
+        <title>{post.title} | Frontend Lab Blog</title>
+        <meta name="description" content={post.excerpt || post.content.slice(0, 160) + '...'} />
+        <meta property="og:title" content={post.title} />
+        <meta property="og:description" content={post.excerpt || post.content.slice(0, 160) + '...'} />
+        <meta property="og:type" content="article" />
+        {post.date && <meta property="article:published_time" content={post.date} />}
+        <meta name="twitter:card" content="summary" />
+        <meta name="twitter:title" content={post.title} />
+        <meta name="twitter:description" content={post.excerpt || post.content.slice(0, 160) + '...'} />
+      </Head>
+      
+      <article style={{ maxWidth: '800px', margin: '0 auto', padding: '2rem' }}>
       <header style={{ marginBottom: '2rem' }}>
         <h1
           style={{
@@ -128,7 +142,8 @@ export default function PostPage({ post }: PostPageProps) {
           ← 목록으로 돌아가기
         </Link>
       </footer>
-    </article>
+      </article>
+    </>
   );
 }
 

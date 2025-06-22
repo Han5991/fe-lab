@@ -1,8 +1,21 @@
+import Head from 'next/head';
 import Link from 'next/link';
 
 export default function HomePage() {
   return (
-    <div
+    <>
+      <Head>
+        <title>Frontend Lab Blog</title>
+        <meta name="description" content="프론트엔드 기술 실험과 학습 내용을 공유합니다" />
+        <meta property="og:title" content="Frontend Lab Blog" />
+        <meta property="og:description" content="프론트엔드 기술 실험과 학습 내용을 공유합니다" />
+        <meta property="og:type" content="website" />
+        <meta name="twitter:card" content="summary" />
+        <meta name="twitter:title" content="Frontend Lab Blog" />
+        <meta name="twitter:description" content="프론트엔드 기술 실험과 학습 내용을 공유합니다" />
+      </Head>
+      
+      <div
       style={{
         maxWidth: '800px',
         margin: '0 auto',
@@ -36,6 +49,7 @@ export default function HomePage() {
           블로그 포스트 보기 →
         </Link>
       </div>
-    </div>
+      </div>
+    </>
   );
 }
