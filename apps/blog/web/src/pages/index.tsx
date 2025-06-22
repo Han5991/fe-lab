@@ -17,7 +17,7 @@ export default function Home() {
         })}
       >
         ㅁㅁ
-        <Button>test</Button>
+        <Button>count</Button>
       </div>
     </>
   );

@@ -1,10 +1,12 @@
 import type { NextConfig } from 'next';
 
+const isDev = process.env.NODE_ENV === 'development';
+
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   output: 'export',
-  basePath: process.env.PAGES_BASE_PATH || '/fe-lab',
-  assetPrefix: process.env.PAGES_BASE_PATH || '/fe-lab',
+  basePath: isDev ? undefined : process.env.PAGES_BASE_PATH || '/fe-lab',
+  assetPrefix: isDev ? undefined : process.env.PAGES_BASE_PATH || '/fe-lab',
   trailingSlash: true,
   images: {
     unoptimized: true,
