@@ -1,5 +1,6 @@
 import Head from 'next/head';
 import { css } from '@design-system/ui-lib/css';
+import { Button } from '@design-system/ui';
 
 export default function Home() {
   return (
@@ -16,6 +17,7 @@ export default function Home() {
         })}
       >
         ㅁㅁ
+        <Button>test</Button>
       </div>
     </>
   );

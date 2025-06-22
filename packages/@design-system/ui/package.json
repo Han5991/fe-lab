@@ -22,7 +22,16 @@
         "default": "./dist/preset.mjs"
       },
       "require": "./dist/preset.js"
-    }
+    },
+	"./Button": {
+	  "source": "./src/button.tsx",
+      "types": "./dist/button.d.ts",
+      "import": {
+        "types": "./dist/button.d.mts",
+        "default": "./dist/button.mjs"
+      },
+      "require": "./dist/button.js"
+	}
   },
   "scripts": {
     "prepare": "pnpm panda codegen && pnpm build",
