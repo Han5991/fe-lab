@@ -48,13 +48,13 @@ importers:
         version: link:../../../packages/@design-system/ui-lib
       next:
         specifier: 15.4.0-canary.83
-        version: 15.4.0-canary.83(react-dom@19.2.0-canary-f9ae0a4c-20250527(react@19.2.0-canary-f9ae0a4c-20250527))(react@19.2.0-canary-f9ae0a4c-20250527)
+        version: 15.4.0-canary.83(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       react:
-        specifier: ^19.2.0-canary-f9ae0a4c-20250527
-        version: 19.2.0-canary-f9ae0a4c-20250527
+        specifier: catalog:react19
+        version: 19.1.0
       react-dom:
-        specifier: ^19.2.0-canary-f9ae0a4c-20250527
-        version: 19.2.0-canary-f9ae0a4c-20250527(react@19.2.0-canary-f9ae0a4c-20250527)
+        specifier: catalog:react19
+        version: 19.1.0(react@19.1.0)
     devDependencies:
       '@eslint/eslintrc':
         specifier: ^3
@@ -66,10 +66,10 @@ importers:
         specifier: ^22.15.31
         version: 22.15.31
       '@types/react':
-        specifier: ^19
+        specifier: catalog:react19
         version: 19.0.10
       '@types/react-dom':
-        specifier: ^19
+        specifier: catalog:react19
         version: 19.0.4(@types/react@19.0.10)
       eslint:
         specifier: ^9
@@ -4327,11 +4327,6 @@ packages:
     peerDependencies:
       react: ^19.1.0
 
-  react-dom@19.2.0-canary-f9ae0a4c-20250527:
-    resolution: {integrity: sha512-rTuPf4HiwQl82LzqoeyyszDyf64hW3uqywM4KJhi7fHsZfOrrguojy9rN9Se3ntjmnQhXqjPOHVmX0M28fQrnw==}
-    peerDependencies:
-      react: 19.2.0-canary-f9ae0a4c-20250527
-
   react-is@16.13.1:
     resolution: {integrity: sha512-24e6ynE2H+OKt4kqsOvNd8kBpV65zoxbA4BVsEOB3ARVWQki/DHzaUoC5KuON/BiccDaCCTZBuOcfZs70kR8bQ==}
 
@@ -4361,10 +4356,6 @@ packages:
 
   react@19.1.0:
     resolution: {integrity: sha512-FS+XFBNvn3GTAWq26joslQgWNoFu08F4kl0J4CgdNKADkdSGXQyTCnKteIAJy96Br6YbpEU1LSzV5dYtjMkMDg==}
-    engines: {node: '>=0.10.0'}
-
-  react@19.2.0-canary-f9ae0a4c-20250527:
-    resolution: {integrity: sha512-8QL4O/IwtegqjkC8joEsfxvTePHWwmcecha4VPe7S0XkHSqchq8NRHgkolOVJcuCvbNmSVbbZ8Hg7UJ8fUujoA==}
     engines: {node: '>=0.10.0'}
 
   readdirp@4.1.2:
@@ -4487,9 +4478,6 @@ packages:
 
   scheduler@0.26.0:
     resolution: {integrity: sha512-NlHwttCI/l5gCPR3D1nNXtWABUmBwvZpEQiD4IXSbIDq8BzLIK/7Ir5gTFSGZDUu37K5cMNp0hFtzO38sC7gWA==}
-
-  scheduler@0.27.0-canary-f9ae0a4c-20250527:
-    resolution: {integrity: sha512-G3WBOOwyVWbL/J6rfX99w2pjqJAklhEk4hgJqUD+ynMkmbbAmx2m4gLtkiEHvDAeg+oC/l+nZJB9W3SqGJX0cA==}
 
   semver@6.3.1:
     resolution: {integrity: sha512-BR7VvDCVHO+q2xBEWskxS6DJE1qRnb7DxzUrogb71CWoSficBxYsiAGd+Kl0mmq/MprG9yArRkyrQxTO6XjMzA==}
@@ -8254,7 +8242,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-module-utils@2.12.0(@typescript-eslint/parser@8.32.0(eslint@9.27.0(jiti@2.4.2))(typescript@5.8.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.8.3(eslint-plugin-import@2.31.0)(eslint@9.27.0(jiti@2.4.2)))(eslint@9.27.0(jiti@2.4.2)):
+  eslint-module-utils@2.12.0(@typescript-eslint/parser@8.32.0(eslint@9.27.0(jiti@2.4.2))(typescript@5.8.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.8.3)(eslint@9.27.0(jiti@2.4.2)):
     dependencies:
       debug: 3.2.7
     optionalDependencies:
@@ -8265,7 +8253,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-module-utils@2.12.0(@typescript-eslint/parser@8.32.1(eslint@9.27.0(jiti@2.4.2))(typescript@5.8.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.8.3(eslint-plugin-import@2.31.0)(eslint@9.27.0(jiti@2.4.2)))(eslint@9.27.0(jiti@2.4.2)):
+  eslint-module-utils@2.12.0(@typescript-eslint/parser@8.32.1(eslint@9.27.0(jiti@2.4.2))(typescript@5.8.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.8.3)(eslint@9.27.0(jiti@2.4.2)):
     dependencies:
       debug: 3.2.7
     optionalDependencies:
@@ -8287,7 +8275,7 @@ snapshots:
       doctrine: 2.1.0
       eslint: 9.27.0(jiti@2.4.2)
       eslint-import-resolver-node: 0.3.9
-      eslint-module-utils: 2.12.0(@typescript-eslint/parser@8.32.0(eslint@9.27.0(jiti@2.4.2))(typescript@5.8.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.8.3(eslint-plugin-import@2.31.0)(eslint@9.27.0(jiti@2.4.2)))(eslint@9.27.0(jiti@2.4.2))
+      eslint-module-utils: 2.12.0(@typescript-eslint/parser@8.32.0(eslint@9.27.0(jiti@2.4.2))(typescript@5.8.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.8.3)(eslint@9.27.0(jiti@2.4.2))
       hasown: 2.0.2
       is-core-module: 2.16.1
       is-glob: 4.0.3
@@ -8316,7 +8304,7 @@ snapshots:
       doctrine: 2.1.0
       eslint: 9.27.0(jiti@2.4.2)
       eslint-import-resolver-node: 0.3.9
-      eslint-module-utils: 2.12.0(@typescript-eslint/parser@8.32.1(eslint@9.27.0(jiti@2.4.2))(typescript@5.8.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.8.3(eslint-plugin-import@2.31.0)(eslint@9.27.0(jiti@2.4.2)))(eslint@9.27.0(jiti@2.4.2))
+      eslint-module-utils: 2.12.0(@typescript-eslint/parser@8.32.1(eslint@9.27.0(jiti@2.4.2))(typescript@5.8.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.8.3)(eslint@9.27.0(jiti@2.4.2))
       hasown: 2.0.2
       is-core-module: 2.16.1
       is-glob: 4.0.3
@@ -9809,15 +9797,15 @@ snapshots:
       - '@babel/core'
       - babel-plugin-macros
 
-  next@15.4.0-canary.83(react-dom@19.2.0-canary-f9ae0a4c-20250527(react@19.2.0-canary-f9ae0a4c-20250527))(react@19.2.0-canary-f9ae0a4c-20250527):
+  next@15.4.0-canary.83(react-dom@19.1.0(react@19.1.0))(react@19.1.0):
     dependencies:
       '@next/env': 15.4.0-canary.83
       '@swc/helpers': 0.5.15
       caniuse-lite: 1.0.30001718
       postcss: 8.4.31
-      react: 19.2.0-canary-f9ae0a4c-20250527
-      react-dom: 19.2.0-canary-f9ae0a4c-20250527(react@19.2.0-canary-f9ae0a4c-20250527)
-      styled-jsx: 5.1.6(react@19.2.0-canary-f9ae0a4c-20250527)
+      react: 19.1.0
+      react-dom: 19.1.0(react@19.1.0)
+      styled-jsx: 5.1.6(@babel/core@7.27.1)(react@19.1.0)
     optionalDependencies:
       '@next/swc-darwin-arm64': 15.4.0-canary.83
       '@next/swc-darwin-x64': 15.4.0-canary.83
@@ -10125,11 +10113,6 @@ snapshots:
       react: 19.1.0
       scheduler: 0.26.0
 
-  react-dom@19.2.0-canary-f9ae0a4c-20250527(react@19.2.0-canary-f9ae0a4c-20250527):
-    dependencies:
-      react: 19.2.0-canary-f9ae0a4c-20250527
-      scheduler: 0.27.0-canary-f9ae0a4c-20250527
-
   react-is@16.13.1: {}
 
   react-is@17.0.2: {}
@@ -10152,8 +10135,6 @@ snapshots:
       loose-envify: 1.4.0
 
   react@19.1.0: {}
-
-  react@19.2.0-canary-f9ae0a4c-20250527: {}
 
   readdirp@4.1.2: {}
 
@@ -10324,8 +10305,6 @@ snapshots:
       loose-envify: 1.4.0
 
   scheduler@0.26.0: {}
-
-  scheduler@0.27.0-canary-f9ae0a4c-20250527: {}
 
   semver@6.3.1: {}
 
@@ -10563,11 +10542,6 @@ snapshots:
       react: 19.1.0
     optionalDependencies:
       '@babel/core': 7.27.1
-
-  styled-jsx@5.1.6(react@19.2.0-canary-f9ae0a4c-20250527):
-    dependencies:
-      client-only: 0.0.1
-      react: 19.2.0-canary-f9ae0a4c-20250527
 
   sucrase@3.35.0:
     dependencies:

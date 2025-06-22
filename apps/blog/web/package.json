@@ -9,8 +9,8 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "react": "^19.2.0-canary-f9ae0a4c-20250527",
-    "react-dom": "^19.2.0-canary-f9ae0a4c-20250527",
+    "react": "catalog:react19",
+    "react-dom": "catalog:react19", 
     "next": "15.4.0-canary.83",
     "@design-system/ui": "workspace:^",
     "@design-system/ui-lib": "workspace:^"
@@ -19,8 +19,8 @@
     "@pandacss/dev": "catalog:",
     "typescript": "catalog:typescript5",
     "@types/node": "^22.15.31",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
+    "@types/react": "catalog:react19",
+    "@types/react-dom": "catalog:react19",
     "eslint": "^9",
     "eslint-config-next": "15.3.3",
     "@eslint/eslintrc": "^3"
