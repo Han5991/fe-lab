@@ -1,4 +1,5 @@
 import type { GetStaticPaths, GetStaticProps } from 'next';
+import Link from 'next/link';
 import ReactMarkdown from 'react-markdown';
 import {
   getAllPostSlugs,
@@ -123,9 +124,9 @@ export default function PostPage({ post }: PostPageProps) {
           borderTop: '1px solid #e5e5e5',
         }}
       >
-        <a href="/posts" style={{ color: '#0070f3', textDecoration: 'none' }}>
+        <Link href="/posts" style={{ color: '#0070f3', textDecoration: 'none' }}>
           ← 목록으로 돌아가기
-        </a>
+        </Link>
       </footer>
     </article>
   );

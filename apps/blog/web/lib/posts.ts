@@ -1,8 +1,8 @@
-import fs from 'fs';
-import path from 'path';
+import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { join } from 'node:path';
 import matter from 'gray-matter';
 
-const postsDirectory = path.join(process.cwd(), '..', 'posts');
+const postsDirectory = join(process.cwd(), '..', 'posts');
 
 export interface PostData {
   slug: string;
@@ -17,23 +17,21 @@ export function getAllPosts(): PostData[] {
   const posts: PostData[] = [];
 
   function readDirectory(dirPath: string, currentPath: string = ''): void {
-    const items = fs.readdirSync(dirPath);
+    const items = readdirSync(dirPath);
 
     for (const item of items) {
-      const fullPath = path.join(dirPath, item);
-      const stat = fs.statSync(fullPath);
+      const fullPath = join(dirPath, item);
+      const stat = statSync(fullPath);
 
       if (stat.isDirectory()) {
-        readDirectory(fullPath, path.join(currentPath, item));
+        readDirectory(fullPath, join(currentPath, item));
       } else if (item.endsWith('.md')) {
-        const fileContents = fs.readFileSync(fullPath, 'utf8');
+        const fileContents = readFileSync(fullPath, 'utf8');
         const { data, content } = matter(fileContents);
 
         const fileName = item.replace(/\.md$/, '');
-        const rawSlug = currentPath
-          ? `${currentPath}/${fileName}`
-          : fileName;
-        
+        const rawSlug = currentPath ? `${currentPath}/${fileName}` : fileName;
+
         // URL-safe slug 생성
         const slug = rawSlug
           .replace(/\s+/g, '-')

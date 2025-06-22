@@ -55,9 +55,6 @@ importers:
       '@next/mdx':
         specifier: ^15.3.4
         version: 15.3.4(@mdx-js/loader@3.1.0(acorn@8.14.0))(@mdx-js/react@3.1.0(@types/react@19.0.10)(react@19.1.0))
-      '@types/mdx':
-        specifier: ^2.0.13
-        version: 2.0.13
       gray-matter:
         specifier: ^4.0.3
         version: 4.0.3
@@ -80,6 +77,9 @@ importers:
       '@pandacss/dev':
         specifier: 'catalog:'
         version: 0.53.3(jsdom@26.1.0)(typescript@5.8.3)
+      '@types/mdx':
+        specifier: ^2.0.13
+        version: 2.0.13
       '@types/node':
         specifier: ^22.15.31
         version: 22.15.31
