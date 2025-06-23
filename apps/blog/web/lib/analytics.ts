@@ -212,7 +212,7 @@ export async function getViewCount(slug: string): Promise<number> {
     }
 
     return data.total_views;
-  } catch (error) {
+  } catch {
     return 0;
   }
 }
@@ -239,7 +239,7 @@ export async function getAllViewCounts(): Promise<Record<string, number>> {
       },
       {} as Record<string, number>,
     );
-  } catch (error) {
+  } catch {
     return {};
   }
 }
@@ -264,7 +264,7 @@ export async function getDailyViewTrend(
     }
 
     return data;
-  } catch (error) {
+  } catch {
     return [];
   }
 }
@@ -289,7 +289,7 @@ export async function getMonthlyViewTrend(
     }
 
     return data;
-  } catch (error) {
+  } catch {
     return [];
   }
 }
@@ -314,7 +314,7 @@ export async function getPopularPosts(
     }
 
     return data;
-  } catch (error) {
+  } catch {
     return [];
   }
 }
