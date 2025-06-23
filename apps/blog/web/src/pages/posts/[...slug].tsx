@@ -1,18 +1,43 @@
 import type { GetStaticPaths, GetStaticProps } from 'next';
 import Head from 'next/head';
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import {
   getAllPostSlugs,
   getPostBySlug,
   type PostData,
 } from '../../../lib/posts';
+import { incrementViewCount, getViewCount } from '../../../lib/analytics';
 
 interface PostPageProps {
   post: PostData;
 }
 
 export default function PostPage({ post }: PostPageProps) {
+  const [viewCount, setViewCount] = useState<number>(0);
+
+  useEffect(() => {
+    // 조회수 증가 및 현재 조회수 가져오기
+    const handleViewCount = async () => {
+      try {
+        const newViewCount = await incrementViewCount(post.slug);
+        setViewCount(newViewCount);
+      } catch (error) {
+        console.error('Failed to update view count:', error);
+        // 실패해도 기존 조회수라도 가져오기 시도
+        try {
+          const currentViewCount = await getViewCount(post.slug);
+          setViewCount(currentViewCount);
+        } catch (fallbackError) {
+          console.error('Failed to get view count:', fallbackError);
+        }
+      }
+    };
+
+    handleViewCount();
+  }, [post.slug]);
+
   return (
     <>
       <Head>
@@ -38,11 +63,16 @@ export default function PostPage({ post }: PostPageProps) {
         >
           {post.title}
         </h1>
-        {post.date && (
-          <p style={{ color: '#666', fontSize: '1rem', marginBottom: '1rem' }}>
-            {new Date(post.date).toLocaleDateString('ko-KR')}
-          </p>
-        )}
+        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', color: '#666', fontSize: '1rem', marginBottom: '1rem' }}>
+          {post.date && (
+            <span>
+              {new Date(post.date).toLocaleDateString('ko-KR')}
+            </span>
+          )}
+          <span>
+            조회수 {viewCount.toLocaleString()}회
+          </span>
+        </div>
       </header>
 
       <div style={{ lineHeight: '1.8', fontSize: '1.1rem' }}>
