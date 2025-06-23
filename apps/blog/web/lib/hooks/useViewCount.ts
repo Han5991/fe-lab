@@ -30,7 +30,7 @@ export function usePostViewCount(slug: string) {
   const incrementMutation = useIncrementViewCount();
 
   // 조회수 증가 실행 (한 번만)
-  const incrementOnce = () => {
+  const incrementOnce = (): void => {
     if (incrementMutation.isPending || incrementMutation.isSuccess) {
       return;
     }

@@ -147,12 +147,42 @@ export function debugViewCooldowns(): void {
   console.log('==========================================');
 }
 
+// 클라이언트 사이드 폴백 카운팅 (localStorage 기반)
+function getClientSideViewCount(slug: string): number {
+  if (typeof window === 'undefined') return 0;
+
+  try {
+    const counts = JSON.parse(
+      localStorage.getItem('client_view_counts') || '{}',
+    );
+    return counts[slug] || 0;
+  } catch {
+    return 0;
+  }
+}
+
+function setClientSideViewCount(slug: string, count: number): void {
+  if (typeof window === 'undefined') return;
+
+  try {
+    const counts = JSON.parse(
+      localStorage.getItem('client_view_counts') || '{}',
+    );
+    counts[slug] = count;
+    localStorage.setItem('client_view_counts', JSON.stringify(counts));
+    console.log(`[Analytics] 💾 Client-side count saved: ${slug} = ${count}`);
+  } catch (error) {
+    console.error('[Analytics] Failed to save client-side count:', error);
+  }
+}
+
 // 조회수 증가 (12시간 쿨다운 포함, React Query가 중복 방지)
 export async function incrementViewCount(slug: string): Promise<number> {
   if (!useSupabase) {
     console.warn('Supabase not configured, view count not tracked');
     return 0;
   }
+
   try {
     console.log(`[Analytics] Checking view count for slug: ${slug}`);
 
@@ -168,50 +198,135 @@ export async function incrementViewCount(slug: string): Promise<number> {
       return await getViewCount(slug);
     }
 
-    // Supabase 함수 호출 (서버에서 처리)
-    const { data, error } = await supabase.rpc('increment_post_views', {
-      post_slug: slug,
-      visitor_session_id: visitorId,
-      visitor_user_agent: userAgent,
-      visitor_referrer: referrer,
-    });
+    // 새로운 테이블/함수 사용 시도
+    try {
+      console.log('[Analytics] Trying new analytics system...');
+      const { data, error } = await supabase.rpc('increment_post_views', {
+        post_slug: slug,
+        visitor_session_id: visitorId,
+        visitor_user_agent: userAgent,
+        visitor_referrer: referrer,
+      });
 
-    if (error) {
-      const { data: analytics } = await supabase
-        .from('post_analytics')
-        .select('total_views')
-        .eq('slug', slug)
-        .single();
+      if (!error) {
+        // 조회수 증가 성공 시 쿨다운 설정
+        setViewCooldown(slug);
+        console.log('[Analytics] ✅ New analytics system working');
+        return data || 0;
+      }
 
-      return analytics?.total_views || 0;
+      throw new Error('New system not available');
+    } catch {
+      console.log('[Analytics] ⚠️ New system not available, using fallback...');
+
+      // 기존 시스템으로 폴백 (프로덕션 호환)
+      return await legacyIncrementViewCount(slug);
     }
-
-    // 조회수 증가 성공 시 쿨다운 설정
-    setViewCooldown(slug);
-    return data || 0;
-  } catch {
+  } catch (error) {
+    console.error('[Analytics] Error in incrementViewCount:', error);
     return 0;
   }
 }
 
-// 조회수 가져오기
+// 기존 시스템과 호환되는 폴백 함수
+async function legacyIncrementViewCount(slug: string): Promise<number> {
+  try {
+    // 기존 post_analytics 테이블 확인 (프로덕션에 있을 가능성)
+    const { data: existing } = await supabase
+      .from('post_analytics')
+      .select('views')
+      .eq('slug', slug)
+      .single();
+
+    if (existing && 'views' in existing && typeof existing.views === 'number') {
+      // 기존 레코드 업데이트
+      const { data, error } = await supabase
+        .from('post_analytics')
+        .update({
+          views: existing.views + 1,
+          last_viewed: new Date().toISOString(),
+        })
+        .eq('slug', slug)
+        .select('views')
+        .single();
+
+      if (!error && data && 'views' in data && typeof data.views === 'number') {
+        setViewCooldown(slug);
+        console.log('[Analytics] ✅ Legacy system: view count updated');
+        return data.views;
+      }
+      
+      // 업데이트 실패 시 기존 값 반환
+      return existing.views;
+    } else {
+      // 새 레코드 생성
+      const { data, error } = await supabase
+        .from('post_analytics')
+        .insert([
+          {
+            slug,
+            views: 1,
+            last_viewed: new Date().toISOString(),
+          },
+        ])
+        .select('views')
+        .single();
+
+      if (!error && data && 'views' in data && typeof data.views === 'number') {
+        setViewCooldown(slug);
+        console.log('[Analytics] ✅ Legacy system: new record created');
+        return data.views;
+      }
+    }
+
+    // 모든 시도 실패 시 클라이언트 사이드 카운팅
+    console.log(
+      '[Analytics] ⚠️ All systems failed, using client-side counting',
+    );
+    const clientCount = getClientSideViewCount(slug);
+    setClientSideViewCount(slug, clientCount + 1);
+    setViewCooldown(slug);
+    return clientCount + 1;
+  } catch (error) {
+    console.error('[Analytics] Legacy system error:', error);
+    return 0;
+  }
+}
+
+// 조회수 가져오기 (프로덕션 호환)
 export async function getViewCount(slug: string): Promise<number> {
   if (!useSupabase) {
     return 0;
   }
 
   try {
+    // 새로운 테이블 구조 시도
     const { data, error } = await supabase
       .from('post_analytics')
       .select('total_views')
       .eq('slug', slug)
       .single();
 
-    if (error || !data) {
-      return 0;
+    if (!error && data?.total_views !== undefined) {
+      return data.total_views;
     }
 
-    return data.total_views;
+    // 기존 테이블 구조로 폴백
+    console.log('[Analytics] ⚠️ Trying legacy table structure...');
+    const legacyResult = await supabase
+      .from('post_analytics')
+      .select('views')
+      .eq('slug', slug)
+      .single();
+
+    if (!legacyResult.error && legacyResult.data && 'views' in legacyResult.data && typeof legacyResult.data.views === 'number') {
+      console.log('[Analytics] ✅ Legacy structure working');
+      return legacyResult.data.views;
+    }
+
+    // 완전 폴백: 클라이언트 사이드 카운트
+    console.log('[Analytics] ⚠️ Using client-side fallback count');
+    return getClientSideViewCount(slug);
   } catch {
     return 0;
   }
@@ -234,7 +349,9 @@ export async function getAllViewCounts(): Promise<Record<string, number>> {
 
     return data.reduce(
       (acc, item) => {
-        acc[item.slug] = item.total_views;
+        if (item.slug && typeof item.total_views === 'number') {
+          acc[item.slug] = item.total_views;
+        }
         return acc;
       },
       {} as Record<string, number>,
