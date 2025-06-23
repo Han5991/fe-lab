@@ -9,20 +9,30 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "react": "catalog:react19",
-    "react-dom": "catalog:react19", 
-    "next": "15.4.0-canary.83",
     "@design-system/ui": "workspace:^",
-    "@design-system/ui-lib": "workspace:^"
+    "@design-system/ui-lib": "workspace:^",
+    "@mdx-js/loader": "^3.1.0",
+    "@mdx-js/react": "^3.1.0",
+    "@next/mdx": "^15.3.4",
+    "@next/third-parties": "^15.3.4",
+    "@supabase/supabase-js": "^2.50.0",
+    "@tanstack/react-query": "^5.81.2",
+    "gray-matter": "^4.0.3",
+    "next": "15.4.0-canary.83",
+    "react": "catalog:react19",
+    "react-dom": "catalog:react19",
+    "react-markdown": "^10.1.0"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3",
     "@pandacss/dev": "catalog:",
-    "typescript": "catalog:typescript5",
+    "@types/mdx": "^2.0.13",
     "@types/node": "^22.15.31",
     "@types/react": "catalog:react19",
     "@types/react-dom": "catalog:react19",
     "eslint": "^9",
     "eslint-config-next": "15.3.3",
-    "@eslint/eslintrc": "^3"
+    "supabase": "^2.26.9",
+    "typescript": "catalog:typescript5"
   }
 }
