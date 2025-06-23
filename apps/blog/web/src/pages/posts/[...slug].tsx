@@ -1,42 +1,28 @@
 import type { GetStaticPaths, GetStaticProps } from 'next';
 import Head from 'next/head';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import {
   getAllPostSlugs,
   getPostBySlug,
   type PostData,
 } from '../../../lib/posts';
-import { incrementViewCount, getViewCount } from '../../../lib/analytics';
+import { debugViewCooldowns } from '../../../lib/analytics';
+import { usePostViewCount } from '../../../lib/hooks/useViewCount';
 
 interface PostPageProps {
   post: PostData;
 }
 
 export default function PostPage({ post }: PostPageProps) {
-  const [viewCount, setViewCount] = useState<number>(0);
+  const { viewCount, isLoading, incrementOnce, isIncrementing } = usePostViewCount(post.slug);
 
   useEffect(() => {
-    // 조회수 증가 및 현재 조회수 가져오기
-    const handleViewCount = async () => {
-      try {
-        const newViewCount = await incrementViewCount(post.slug);
-        setViewCount(newViewCount);
-      } catch (error) {
-        console.error('Failed to update view count:', error);
-        // 실패해도 기존 조회수라도 가져오기 시도
-        try {
-          const currentViewCount = await getViewCount(post.slug);
-          setViewCount(currentViewCount);
-        } catch (fallbackError) {
-          console.error('Failed to get view count:', fallbackError);
-        }
-      }
-    };
-
-    handleViewCount();
-  }, [post.slug]);
+    // 컴포넌트 마운트 시 한 번만 조회수 증가
+    console.log(`[PostPage] Attempting to increment view count for: ${post.slug}`);
+    incrementOnce();
+  }, [post.slug, incrementOnce]);
 
   return (
     <>
@@ -70,8 +56,25 @@ export default function PostPage({ post }: PostPageProps) {
             </span>
           )}
           <span>
-            조회수 {viewCount.toLocaleString()}회
+            조회수 {isLoading ? '...' : viewCount.toLocaleString()}회
+            {isIncrementing && ' 📈'}
           </span>
+          {/* 개발 환경에서만 디버깅 버튼 표시 */}
+          {process.env.NODE_ENV === 'development' && (
+            <button 
+              onClick={() => debugViewCooldowns()}
+              style={{ 
+                padding: '4px 8px', 
+                fontSize: '12px', 
+                backgroundColor: '#f0f0f0', 
+                border: '1px solid #ccc',
+                borderRadius: '4px',
+                cursor: 'pointer'
+              }}
+            >
+              🔍 쿨다운 확인
+            </button>
+          )}
         </div>
       </header>
 
