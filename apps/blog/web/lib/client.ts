@@ -8,7 +8,7 @@ if (!supabaseUrl || !supabaseKey) {
   throw new Error('Missing Supabase environment variables');
 }
 
-export const supabase = createClient<Database>(supabaseUrl, supabaseKey);
+export const client = createClient<Database>(supabaseUrl, supabaseKey);
 
 export interface SupabasePostData {
   id: string;

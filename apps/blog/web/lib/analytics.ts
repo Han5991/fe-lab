@@ -7,12 +7,8 @@ import type {
   PostAnalytics,
   PostViewLog,
   WeeklyTrafficPattern,
-} from './supabase';
-import { supabase } from './supabase';
-
-const useSupabase =
-  process.env.NEXT_PUBLIC_SUPABASE_URL &&
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+} from './client';
+import { client } from './client';
 
 // 쿠키 유틸리티 함수
 function setCookie(name: string, value: string, days: number): void {
@@ -22,26 +18,20 @@ function setCookie(name: string, value: string, days: number): void {
 }
 
 function getCookie(name: string): string | null {
-  if (typeof document === 'undefined') return null;
-
   const nameEQ = name + '=';
   const ca = document.cookie.split(';');
 
-  ca.forEach(c => {
+  for (let i = 0; i < ca.length; i++) {
+    let c = ca[i];
     while (c.charAt(0) === ' ') c = c.substring(1, c.length);
     if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
-  });
+  }
   return null;
 }
 
-function generateVisitorId(): string {
-  if (typeof window === 'undefined') return 'ssr_visitor';
-
-  // 쿠키에서 기존 visitor_id 확인
+function generateVisitorId() {
   const existingId = getCookie('visitor_id');
-  if (existingId) {
-    return existingId;
-  }
+  if (existingId) return existingId;
 
   // 새로운 visitor_id 생성 (간단한 랜덤 ID)
   const timestamp = Date.now().toString(36);
@@ -54,11 +44,14 @@ function generateVisitorId(): string {
   return visitorId;
 }
 
+function generateCookieKey(preFix: string, slug: string) {
+  return `${preFix}_${slug.replace(/[^a-zA-Z0-9]/g, '_')}`;
+}
+
 // 12시간 쿨다운 체크 함수 (포스트별 독립적)
 function checkViewCooldown(slug: string): boolean {
-  const cooldownKey = `last_view_${slug.replace(/[^a-zA-Z0-9]/g, '_')}`;
+  const cooldownKey = generateCookieKey('last_view', slug);
   const lastViewTime = getCookie(cooldownKey);
-
   if (!lastViewTime) return true;
 
   const lastView = parseInt(lastViewTime);
@@ -69,9 +62,8 @@ function checkViewCooldown(slug: string): boolean {
   return remainingTime <= 0;
 }
 
-// 조회수 기록 쿠키 설정 (포스트별 독립적)
 function setViewCooldown(slug: string) {
-  const cooldownKey = `last_view_${slug.replace(/[^a-zA-Z0-9]/g, '_')}`;
+  const cooldownKey = generateCookieKey('last_view', slug);
   const now = Date.now().toString();
   setCookie(cooldownKey, now, 1);
 }
@@ -142,27 +134,16 @@ function setClientSideViewCount(slug: string, count: number): void {
   }
 }
 
-// 조회수 증가 (12시간 쿨다운 포함, React Query가 중복 방지)
 export async function incrementViewCount(slug: string) {
-  if (!useSupabase) {
-    console.warn('Supabase not configured, view count not tracked');
-    return 0;
-  }
-
   try {
     const visitorId = generateVisitorId();
     const userAgent =
       typeof navigator !== 'undefined' ? navigator.userAgent : '';
     const referrer = typeof document !== 'undefined' ? document.referrer : '';
-
     const canIncrement = checkViewCooldown(slug);
-
-    if (!canIncrement) {
-      return await getViewCount(slug);
-    }
-
+    if (!canIncrement) return await getViewCount(slug);
     try {
-      const { data, error } = await supabase.rpc('increment_post_views', {
+      const { data, error } = await client.rpc('increment_post_views', {
         post_slug: slug,
         visitor_session_id: visitorId,
         visitor_user_agent: userAgent,
@@ -184,11 +165,10 @@ export async function incrementViewCount(slug: string) {
   }
 }
 
-// 기존 시스템과 호환되는 폴백 함수
 async function legacyIncrementViewCount(slug: string) {
   try {
     // 기존 post_analytics 테이블 확인 (프로덕션에 있을 가능성)
-    const { data: existing } = await supabase
+    const { data: existing } = await client
       .from('post_analytics')
       .select('total_views')
       .eq('slug', slug)
@@ -200,7 +180,7 @@ async function legacyIncrementViewCount(slug: string) {
       typeof existing.total_views === 'number'
     ) {
       // 기존 레코드 업데이트
-      const { data, error } = await supabase
+      const { data, error } = await client
         .from('post_analytics')
         .update({
           total_views: existing.total_views + 1,
@@ -225,7 +205,7 @@ async function legacyIncrementViewCount(slug: string) {
       return existing.total_views;
     } else {
       // 새 레코드 생성
-      const { data, error } = await supabase
+      const { data, error } = await client
         .from('post_analytics')
         .insert([
           {
@@ -244,34 +224,24 @@ async function legacyIncrementViewCount(slug: string) {
         typeof data.total_views === 'number'
       ) {
         setViewCooldown(slug);
-        console.log('[Analytics] ✅ Legacy system: new record created');
         return data.total_views;
       }
     }
 
-    // 모든 시도 실패 시 클라이언트 사이드 카운팅
-    console.log(
-      '[Analytics] ⚠️ All systems failed, using client-side counting',
-    );
     const clientCount = getClientSideViewCount(slug);
     setClientSideViewCount(slug, clientCount + 1);
     setViewCooldown(slug);
     return clientCount + 1;
-  } catch (error) {
-    console.error('[Analytics] Legacy system error:', error);
+  } catch {
     return 0;
   }
 }
 
 // 조회수 가져오기 (프로덕션 호환)
 export async function getViewCount(slug: string): Promise<number> {
-  if (!useSupabase) {
-    return 0;
-  }
-
   try {
     // 새로운 테이블 구조 시도
-    const { data, error } = await supabase
+    const { data, error } = await client
       .from('post_analytics')
       .select('total_views')
       .eq('slug', slug)
@@ -285,9 +255,7 @@ export async function getViewCount(slug: string): Promise<number> {
       return data.total_views;
     }
 
-    // 기존 테이블 구조로 폴백
-    console.log('[Analytics] ⚠️ Trying legacy table structure...');
-    const legacyResult = await supabase
+    const legacyResult = await client
       .from('post_analytics')
       .select('views')
       .eq('slug', slug)
@@ -299,12 +267,9 @@ export async function getViewCount(slug: string): Promise<number> {
       'views' in legacyResult.data &&
       typeof legacyResult.data.views === 'number'
     ) {
-      console.log('[Analytics] ✅ Legacy structure working');
       return legacyResult.data.views;
     }
 
-    // 완전 폴백: 클라이언트 사이드 카운트
-    console.log('[Analytics] ⚠️ Using client-side fallback count');
     return getClientSideViewCount(slug);
   } catch {
     return 0;
@@ -313,12 +278,8 @@ export async function getViewCount(slug: string): Promise<number> {
 
 // 모든 포스트의 조회수 가져오기
 export async function getAllViewCounts(): Promise<Record<string, number>> {
-  if (!useSupabase) {
-    return {};
-  }
-
   try {
-    const { data, error } = await supabase
+    const { data, error } = await client
       .from('post_analytics')
       .select('slug, total_views');
 
@@ -345,12 +306,8 @@ export async function getDailyViewTrend(
   daysBack: number = 30,
   targetSlug?: string,
 ): Promise<DailyViewTrend[]> {
-  if (!useSupabase) {
-    return [];
-  }
-
   try {
-    const { data, error } = await supabase.rpc('get_daily_view_trend', {
+    const { data, error } = await client.rpc('get_daily_view_trend', {
       days_back: daysBack,
       target_slug: targetSlug,
     });
@@ -370,12 +327,8 @@ export async function getMonthlyViewTrend(
   monthsBack: number = 12,
   targetSlug?: string,
 ): Promise<MonthlyViewTrend[]> {
-  if (!useSupabase) {
-    return [];
-  }
-
   try {
-    const { data, error } = await supabase.rpc('get_monthly_view_trend', {
+    const { data, error } = await client.rpc('get_monthly_view_trend', {
       months_back: monthsBack,
       target_slug: targetSlug,
     });
@@ -395,12 +348,8 @@ export async function getPopularPosts(
   daysBack: number = 30,
   limit: number = 10,
 ): Promise<PopularPost[]> {
-  if (!useSupabase) {
-    return [];
-  }
-
   try {
-    const { data, error } = await supabase.rpc('get_popular_posts', {
+    const { data, error } = await client.rpc('get_popular_posts', {
       days_back: daysBack,
       limit_count: limit,
     });
@@ -419,12 +368,8 @@ export async function getPopularPosts(
 export async function getWeeklyTrafficPattern(
   daysBack: number = 30,
 ): Promise<WeeklyTrafficPattern[]> {
-  if (!useSupabase) {
-    return [];
-  }
-
   try {
-    const { data, error } = await supabase.rpc('get_weekly_traffic_pattern', {
+    const { data, error } = await client.rpc('get_weekly_traffic_pattern', {
       days_back: daysBack,
     });
 
@@ -442,12 +387,8 @@ export async function getWeeklyTrafficPattern(
 export async function getHourlyTrafficPattern(
   daysBack: number = 7,
 ): Promise<HourlyTrafficPattern[]> {
-  if (!useSupabase) {
-    return [];
-  }
-
   try {
-    const { data, error } = await supabase.rpc('get_hourly_traffic_pattern', {
+    const { data, error } = await client.rpc('get_hourly_traffic_pattern', {
       days_back: daysBack,
     });
 
@@ -514,19 +455,11 @@ export async function getPostAnalytics(slug: string): Promise<{
   dailyTrend: DailyViewTrend[];
   recentViews: PostViewLog[];
 }> {
-  if (!useSupabase) {
-    return {
-      analytics: null,
-      dailyTrend: [],
-      recentViews: [],
-    };
-  }
-
   try {
     const [analyticsResult, dailyTrend, recentViewsResult] = await Promise.all([
-      supabase.from('post_analytics').select('*').eq('slug', slug).single(),
+      client.from('post_analytics').select('*').eq('slug', slug).single(),
       getDailyViewTrend(30, slug),
-      supabase
+      client
         .from('post_view_logs')
         .select('*')
         .eq('slug', slug)
@@ -549,27 +482,13 @@ export async function getPostAnalytics(slug: string): Promise<{
   }
 }
 
-// 일별 통계 집계 실행 (관리자용)
-export async function aggregateDailyStats(
-  targetDate?: string,
-): Promise<boolean> {
-  if (!useSupabase) {
-    return false;
-  }
-
+export async function aggregateDailyStats(targetDate?: string) {
   try {
-    const { error } = await supabase.rpc('aggregate_daily_stats', {
+    const { error } = await client.rpc('aggregate_daily_stats', {
       target_date: targetDate,
     });
-
-    if (error) {
-      console.error('[Analytics] Error aggregating daily stats:', error);
-      return false;
-    }
-
-    return true;
-  } catch (error) {
-    console.error('[Analytics] Error in aggregateDailyStats:', error);
+    return !error;
+  } catch {
     return false;
   }
 }
