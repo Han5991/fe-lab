@@ -18,14 +18,14 @@ function setCookie(name: string, value: string, days: number): void {
 }
 
 function getCookie(name: string): string | null {
-  const nameEQ = name + '=';
-  const ca = document.cookie.split(';');
+  const nameWithEqual = name + '=';
+  const cookies = document.cookie.split(';');
+  const foundCookie = cookies.find(cookie => {
+    const trimmedCookie = cookie.trim();
+    return trimmedCookie.startsWith(nameWithEqual);
+  });
 
-  for (let i = 0; i < ca.length; i++) {
-    let c = ca[i];
-    while (c.charAt(0) === ' ') c = c.substring(1, c.length);
-    if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
-  }
+  if (foundCookie) return foundCookie.substring(nameWithEqual.length);
   return null;
 }
 

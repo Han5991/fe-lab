@@ -3,13 +3,9 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
-import {
-  getAllPostSlugs,
-  getPostBySlug,
-  type PostData,
-} from '../../../lib/posts';
-import { debugViewCooldowns } from '../../../lib/analytics';
-import { usePostViewCount } from '../../../lib/hooks/useViewCount';
+import { getAllPostSlugs, getPostBySlug, type PostData } from '@/lib/posts';
+import { debugViewCooldowns } from '@/lib/analytics';
+import { usePostViewCount } from '@/lib/hooks/useViewCount';
 
 interface PostPageProps {
   post: PostData;
@@ -21,6 +17,7 @@ export default function PostPage({ post }: PostPageProps) {
 
   useEffect(() => {
     incrementOnce();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
