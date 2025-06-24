@@ -16,9 +16,8 @@ export function useIncrementViewCount() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (slug: string) => incrementViewCount(slug),
+    mutationFn: incrementViewCount,
     onSuccess: (newViewCount, slug) => {
-      // 캐시 업데이트: 조회수 증가 후 즉시 UI 반영
       queryClient.setQueryData(['viewCount', slug], newViewCount);
     },
   });

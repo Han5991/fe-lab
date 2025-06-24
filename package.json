@@ -27,5 +27,8 @@
       "sharp",
       "supabase"
     ]
+  },
+  "dependencies": {
+    "concurrently": "^9.2.0"
   }
 }

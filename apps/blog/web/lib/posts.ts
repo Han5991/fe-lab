@@ -25,11 +25,11 @@ export function getAllPosts(): PostData[] {
 
       if (stat.isDirectory()) {
         readDirectory(fullPath, join(currentPath, item));
-      } else if (item.endsWith('.md')) {
+      } else if (item.endsWith('.md') || item.endsWith('.mdx')) {
         const fileContents = readFileSync(fullPath, 'utf8');
         const { data, content } = matter(fileContents);
 
-        const fileName = item.replace(/\.md$/, '');
+        const fileName = item.replace(/\.md|mdx$/, '');
         const rawSlug = currentPath ? `${currentPath}/${fileName}` : fileName;
 
         // URL-safe slug 생성
@@ -41,7 +41,7 @@ export function getAllPosts(): PostData[] {
         posts.push({
           slug,
           originalSlug: rawSlug,
-          title: data.title || item.replace(/\.md$/, ''),
+          title: data.title || item.replace(/\.md|mdx$/, ''),
           date: data.date || null,
           content,
           excerpt: data.excerpt || content.slice(0, 200) + '...',
