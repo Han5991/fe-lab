@@ -6,7 +6,7 @@ env:
   SUBPACKAGES_PATH: "./packages"
 
 on:
-  push:
+  pull_request:
     branches: [ main ]
     paths:
       - 'apps/blog/**'
