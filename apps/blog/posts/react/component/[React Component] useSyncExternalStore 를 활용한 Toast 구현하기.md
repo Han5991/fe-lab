@@ -499,13 +499,153 @@ const handleUpload = async (file: File) => {
 3. **Type-Driven Development**: 타입 시스템이 API 설계를 주도
 4. **Performance by Design**: React 18의 동시성 기능 활용
 
-### 확장 가능성
+### 확장 가능성: Store Core의 진정한 힘
 
-이런 패턴은 Toast뿐만 아니라 다른 전역 UI 요소에도 적용할 수 있습니다:
+**우리가 Toast를 위해 만든 `createStore` 시스템의 진정한 가치는 확장성에 있습니다.**
 
-- **Modal 시스템**: `modals.open({ type: 'confirm', ... })`
-- **Notification 센터**: `notifications.push({ category: 'email', ... })`
-- **Loading 상태**: `loading.start('api-call')` / `loading.finish('api-call')`
+#### 추상화된 Core의 장점
 
-이런 패턴을 통해 React 애플리케이션의 상태 관리를 한 단계 끌어올릴 수 있습니다.  
-단순히 라이브러리를 사용하는 것을 넘어서, 도메인을 완전히 추상화한 시스템을 만드는 것이 현대 프론트엔드 개발의 핵심이라고 생각합니다.
+Toast 구현 과정에서 우리는 단순히 알림 시스템을 만든 것이 아니라, **범용적인 상태 관리 엔진**을 구축했습니다. 이 Core 시스템은 다음과 같은 강력한 특성을 가집니다:
+
+1. **도메인 독립성**
+
+   - Store 엔진이 Toast에 종속되지 않음
+   - 어떤 종류의 전역 상태든 동일한 패턴으로 관리
+   - 비즈니스 로직과 상태 관리 로직의 완전한 분리
+
+2. **일관된 개발 경험**
+
+   - 새로운 전역 컴포넌트 추가 시 학습 비용 Zero
+   - 팀 전체가 동일한 패턴으로 개발
+   - 코드 리뷰와 유지보수 효율성 극대화
+
+3. **타입 시스템의 힘**
+   - 각 도메인별 완벽한 타입 추론
+   - 컴파일 타임에 모든 오류 검출
+   - IDE에서 완벽한 자동완성 지원
+
+#### 실제 적용 가능한 컴포넌트들
+
+동일한 Core 로직으로 구현 가능한 전역 UI 컴포넌트들:
+
+**Modal & Dialog 시스템**
+
+```typescript
+// 단 3줄로 Modal 스토어 완성
+const modalsStore = createStore({ modals: [], stackLimit: 3 });
+const modals = { open, close, closeAll };
+// 사용: modals.open({ title: '확인', type: 'confirm' })
+```
+
+**Loading & Progress 관리**
+
+```typescript
+// 복수 작업 동시 추적
+const loading = { start, finish, isLoading };
+// 사용: loading.start('upload'), loading.finish('upload')
+```
+
+**Notification Center**
+
+```typescript
+// 읽음/안읽음, 카테고리별 필터링
+const notifications = { push, markAsRead, clear };
+// 사용: notifications.push({ title: '새 메시지', category: 'email' })
+```
+
+**Form Validation 상태**
+
+```typescript
+// 전역 폼 검증 상태 관리
+const validation = { setError, clearError, isValid };
+// 사용: validation.setError('email', '올바른 이메일을 입력하세요')
+```
+
+#### 아키텍처 레벨의 이점
+
+**1. 예측 가능한 상태 흐름**
+
+- 모든 전역 상태가 동일한 패턴으로 동작
+- 디버깅 시 일관된 접근 방식
+- 상태 변화 추적과 로깅 용이
+
+**2. 성능 최적화**
+
+- 필요한 컴포넌트만 리렌더링
+- React 18 Concurrent Features 완벽 호환
+- 메모리 누수 방지 시스템 내장
+
+**3. 테스트 친화적**
+
+- 순수 함수로 구성된 비즈니스 로직
+- React 없이도 독립적 테스트 가능
+- Mock과 Stub 구성 간단
+
+#### 팀 개발에서의 위력
+
+**신입 개발자 온보딩**
+
+```typescript
+// 패턴 한 번 익히면 모든 컴포넌트 동일
+const newFeatureStore = createStore(initialState);
+const newFeature = { action1, action2, action3 };
+```
+
+**코드 리뷰 효율성**
+
+- 동일한 패턴이므로 리뷰 포인트 명확
+- 버그 발생 패턴 예측 가능
+- 베스트 프랙티스 자동 적용
+
+**레거시 마이그레이션**
+
+- 기존 Context API나 Redux 코드를 점진적 교체
+- 각 도메인별로 독립적 마이그레이션
+- 사이드 이펙트 최소화
+
+#### 실제 개발 시나리오
+
+**복잡한 사용자 플로우**
+
+```typescript
+const handleComplexUserFlow = async () => {
+  loading.start('user-flow');
+
+  try {
+    const result = await processUserData();
+    toasts.show({ message: '처리 완료', type: 'success' });
+    notifications.push({ title: '작업 완료', category: 'system' });
+  } catch (error) {
+    modals.open({ title: '오류', content: error.message, type: 'alert' });
+  } finally {
+    loading.finish('user-flow');
+  }
+};
+```
+
+**멀티 스텝 폼 처리**
+
+```typescript
+const handleFormStep = stepData => {
+  validation.clearErrors();
+  if (isLastStep) {
+    loading.start('submit');
+    // 최종 제출 로직
+  } else {
+    toasts.show({ message: '다음 단계로 이동합니다' });
+  }
+};
+```
+
+#### 핵심 인사이트
+
+**"Toast 하나를 제대로 만들면, 전체 앱의 상태 관리 아키텍처가 완성된다"**
+
+이것이 바로 **추상화의 힘**입니다.
+
+- 하나의 도메인을 깊이 파면서 범용적 패턴 발견
+- 작은 컴포넌트에서 시작해 전체 시스템으로 확장
+- 구체적 문제 해결에서 추상적 해결책 도출
+
+이런 접근 방식이 현대 프론트엔드 개발에서 **진짜 시니어 개발자**가 되는 길이라고 생각합니다.  
+단순히 라이브러리를 가져다 쓰는 것이 아니라, 문제의 본질을 파악하고 범용적 해결책을 만드는 것 말입니다.
