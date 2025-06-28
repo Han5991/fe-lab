@@ -22,7 +22,7 @@ This is a Turborepo monorepo containing multiple frontend applications and share
 - `apps/next.js/`: Next.js application with App Router, Jest testing, and Turbopack for development
 - `apps/react/`: React SPA using Vite, Vitest for testing, and React Router for navigation
 - `apps/typescript/`: Pure TypeScript application for experimenting with type design patterns
-- `apps/blog/`: Markdown blog content and technical articles
+- `apps/blog/web/`: Next.js-based blog with MDX support, Supabase analytics, and React Query for data fetching
 
 ### Shared Packages
 
@@ -46,6 +46,7 @@ pnpm dev
 pnpm react    # React app + design system
 pnpm next     # Next.js app + design system
 pnpm typescript # TypeScript app
+pnpm blog-web # Blog app + design system
 ```
 
 ### Testing
@@ -74,6 +75,9 @@ pnpm lint
 
 # Type checking
 pnpm check-types
+
+# Blog-specific commands
+pnpm blog-build  # Build blog application
 ```
 
 ## Key Design Patterns
@@ -89,6 +93,16 @@ Use `workspace:` protocol for internal package dependencies:
   }
 }
 ```
+
+### Catalog Dependencies
+
+The project uses pnpm catalog feature for consistent version management across apps:
+
+- `catalog:react19` - React 19.1.0 and related types
+- `catalog:typescript5` - TypeScript 5.8.3
+- `catalog:` - Panda CSS dev dependencies
+
+Reference in package.json as `"react": "catalog:react19"`
 
 ### Component Structure
 
@@ -116,6 +130,18 @@ Uses Panda CSS with:
 - Generated CSS utilities in `@design-system/ui-lib`
 - Component recipes for consistent styling
 - JSX patterns for layout components (Box, Flex, Stack, etc.)
+
+### Blog Architecture
+
+The blog application (`apps/blog/web/`) features:
+
+- **Content Management**: MDX files in `apps/blog/posts/` with frontmatter metadata
+- **Analytics**: Supabase integration for view tracking with client-side fallback
+- **Data Fetching**: React Query hooks (`useViewCount`) for analytics data
+- **Static Generation**: Next.js static export for deployment
+- **Database**: Supabase with migration files in `supabase/migrations/`
+
+Blog content is organized by categories and includes Korean technical articles on TypeScript design patterns, architecture, and frontend development practices.
 
 ## Prerequisites
 

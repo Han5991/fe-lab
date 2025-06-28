@@ -44,3 +44,4 @@ yarn-error.log*
 /packages/@design-system/ui-lib/types/
 /packages/@design-system/ui-lib/helpers.mjs
 /packages/@design-system/ui-lib/recipes/
+/.idea/
