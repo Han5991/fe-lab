@@ -1,535 +1,416 @@
-# React useSyncExternalStore를 활용한 Toast 시스템 구현하기
+최종
 
-## 문제 탐색: useState 기반 Toast 구현의 한계
+## 들어가며
 
-### 기존 구현: useState를 사용한 지역 상태 관리
+> 안녕하세요, 여러분! 프론트엔드 개발자라면 누구나 한 번쯤 만들어보는 토스트 UI.  
+> 간단해 보이지만, 막상 구현하다 보면 "이걸 어떻게 앱 어디서든 쉽게 호출하지?", "종류별로 다른 스타일은 어떻게 관리하지?" 같은 고민에 빠지게 됩니다.
+>
+> 최근 한 프로젝트에서 아주 잘 설계된 토스트 컴포넌트를 분석할 기회가 있었습니다.  
+> 이 코드는 단순히 기능을 구현하는 것을 넘어, 유지보수성, 재사용성, 확장성까지 모두 잡는 훌륭한 아키텍처를 보여주었습니다.
+>
+> 우리의 리액트 컴포넌트를 한 단계 업그레이드할 수 있는 인사이트를 공유하고자 합니다.
 
-기존에는 Toast를 다음과 같이 구현하고 있었습니다:
+대부분의 React 개발자들이 Toast 컴포넌트를 만들 때 다음과 같은 코드를 작성합니다.
 
 ```tsx
-// 기존 방식: 각 컴포넌트에서 지역 상태로 관리
-function MyComponent() {
-  const [toasts, setToasts] = useState([]);
-  const showToast = message => {
-    setToasts(prev => [...prev, { id: Date.now(), message }]);
+const MyComponent = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [message, setMessage] = useState('');
+  const [type, setType] = useState('success');
+
+  const showToast = (msg: string, toastType: string) => {
+    setMessage(msg);
+    setType(toastType);
+    setIsOpen(true);
   };
-  const hideToast = id => {
-    setToasts(prev => prev.filter(toast => toast.id !== id));
-  };
+
   return (
     <>
-      <button onClick={() => showToast('성공!')}>토스트 보기</button>
-      {toasts.map(toast => (
-        <div key={toast.id}>{toast.message}</div>
-      ))}
+      <button onClick={() => showToast('성공!', 'success')}>성공 토스트</button>
+      <Toast
+        isOpen={isOpen}
+        message={message}
+        type={type}
+        onClose={() => setIsOpen(false)}
+      />
     </>
   );
-}
+};
 ```
 
-useState 방식의 심각한 문제점들
+하지만 이런 방식에는 몇 가지 문제가 있습니다.
 
-1. 컴포넌트 외부에서 Toast 호출 불가능
+- 컴포넌트마다 반복되는 상태 관리 코드
+- Props drilling으로 인한 복잡성
+- 여러 곳에서 Toast를 띄우려면 Context나 상태 끌어올리기 필요
+- 비즈니스 로직(타이머, 큐 관리)과 UI 로직의 혼재
 
-   ```tsx
-   // ❌ 불가능: API 호출 후 에러 처리
-   const apiCall = async () => {
-     try {
-       await fetch('/api/data');
-     } catch (error) {
-       // 어떻게 Toast를 표시할까? 컴포넌트 외부에서는 불가능
-       showToast('에러가 발생했습니다'); // ❌ 접근 불가
-     }
-   };
-   // ❌ 불가능: 유틸리티 함수에서 Toast 호출
-   function validateForm(data) {
-     if (!data.email) {
-       showToast('이메일을 입력해주세요'); // ❌ 접근 불가
-       return false;
-     }
-   }
-   ```
+> 오늘은 이 모든 문제를 해결하는 혁신적인 Toast 시스템 설계를 소개하겠습니다.
 
-2. Props Drilling 지옥
+### 목표 코드
 
-   ```tsx
-   // ❌ 모든 하위 컴포넌트에 Toast 함수들을 전달해야 함
-   function App() {
-     const [toasts, setToasts] = useState([]);
-     const showToast = message => {
-       /* ... */
-     };
-     return (
-       <Layout showToast={showToast}>
-         <Header showToast={showToast}>
-           <UserMenu showToast={showToast}>
-             <UserProfile showToast={showToast} />
-           </UserMenu>
-         </Header>
-         <Main showToast={showToast}>
-           <Form showToast={showToast} />
-         </Main>
-       </Layout>
-     );
-   }
-   ```
-
-3. 중복 Toast 관리 문제
-
-   ```typescript
-   // ❌ 각 컴포넌트마다 별도의 Toast 상태
-   function ComponentA() {
-     const [toasts, setToasts] = useState([]); // A 컴포넌트의 Toast
-   }
-   function ComponentB() {
-     const [toasts, setToasts] = useState([]); // B 컴포넌트의 Toast
-   }
-   // 결과: 화면에 Toast가 중복으로 표시되거나, 일관성 없는 위치에 나타남
-   ```
-
-4. 생명주기 관리의 복잡성
-
-   ```typescript tsx
-   // ❌ 각 컴포넌트에서 타이머를 개별 관리
-   function MyComponent() {
-     const [toasts, setToasts] = useState([]);
-     useEffect(() => {
-       // 각 Toast마다 개별 타이머 설정
-       toasts.forEach(toast => {
-         setTimeout(() => {
-           setToasts(prev => prev.filter(t => t.id !== toast.id));
-         }, 3000);
-       });
-     }, [toasts]); // 의존성 배열로 인한 무한 루프 위험
-   }
-   ```
-
-5. 상태 동기화 문제
-   ```typescript tsx
-   // ❌ 여러 컴포넌트에서 동시에 Toast를 관리할 때 충돌
-   function ComponentA() {
-     const [toasts, setToasts] = useState([]);
-     // A에서 Toast 추가
-   }
-   function ComponentB() {
-     const [toasts, setToasts] = useState([]);
-     // B에서도 Toast 추가 - 서로 다른 상태!
-   }
-   ```
-
-실제 개발에서 마주한 문제 시나리오
-
-시나리오 1: API 에러 처리
-
-```typescript tsx
-// ❌ API 함수에서 Toast를 호출할 수 없음
-export async function loginUser(credentials) {
+```tsx
+// 어느 컴포넌트에서든, 어느 로직에서든, 어느 깊이에서든
+const handleSuccess = async () => {
   try {
-    const response = await fetch('/api/login', {
-      method: 'POST',
-      body: JSON.stringify(credentials),
-    });
-    if (!response.ok) {
-      // 여기서 Toast로 에러를 보여주고 싶지만 불가능
-      // 컴포넌트로 에러를 반환하고, 컴포넌트에서 Toast 처리해야 함
-      throw new Error('로그인 실패');
-    }
+    await api.submit();
+    toasts.show({ message: '저장 완료!', type: 'success' });
   } catch (error) {
-    // Toast 표시 불가능
-    throw error;
+    toasts.show({ message: '저장 실패', type: 'error' });
   }
-}
+};
 ```
 
-시나리오 2: 전역 에러 핸들링
+- Zero State: 컴포넌트에서 상태 관리 코드 없음
+- Global Access: 앱 어디서든 동일한 API
+- Type Safe: 컴파일 타임 오류 방지
+- Auto Management: 타이머, 큐, 애니메이션 자동 처리
 
-```typescript jsx
-// ❌ 전역 에러 바운더리에서 Toast 사용 불가
-class ErrorBoundary extends Component {
-  componentDidCatch(error, errorInfo) {
-    // 여기서 Toast로 사용자에게 알림을 주고 싶지만...
-    // useState 기반 Toast에는 접근할 수 없음
-  }
-}
-```
+### 아키텍처 설계
 
-이러한 문제들 때문에 컴포넌트 외부에서도 접근 가능한 전역 상태 관리가 필요했고, 이를 해결하기 위해 useSyncExternalStore를 활용한 커스텀
-스토어를 구현하게 되었습니다.
-이제 문제 상황이 더 명확해졌나요? 다음 단계에서는 이러한 문제들을 어떻게 해결했는지 구체적인 솔루션을 제시하겠습니다.
+1. 폴더 구조: 관심사 완벽 분리
 
-## 문제 해결: Mantine Notification System에서 영감을 얻은 설계
+   Notifications/  
+   ├── Toast/  
+   │ ├── index.tsx # UI 컴포넌트 (프레젠테이션)  
+   │ └── toast.recipe.ts # 스타일 정의 (디자인 시스템)  
+   ├── store/  
+   │ ├── index.ts # 공용 스토어 엔진  
+   │ └── toast.store.ts # Toast 비즈니스 로직  
+   └── index.ts # 외부 API
 
-### 영감의 원천: Mantine Notifications
+   #### 각 레이어가 명확한 책임을 가집니다.
 
-Mantine UI 라이브러리의 notification system은 다음과 같은 우아한 API를 제공합니다:
+   - UI Layer: 어떻게 보여줄 것인가
+   - Store Layer: 무엇을 보여줄 것인가
+   - Business Layer: 언제, 어떤 조건으로 보여줄 것인가
 
-```typescript
-import { notifications } from '@mantine/notifications';
-// 어디서든 호출 가능한 간단한 API
-notifications.show({
-  title: '성공!',
-  message: '데이터가 저장되었습니다.',
-  color: 'green',
-});
-
-// 컴포넌트 외부에서도 자유롭게 사용
-export async function saveData(data) {
-  try {
-    await api.save(data);
-    notifications.show({ message: '저장 완료!' });
-  } catch (error) {
-    notifications.show({
-      message: '저장 실패!',
-      color: 'red',
-    });
-  }
-}
-```
-
-Mantine 방식의 핵심 아이디어
-
-1. 전역 접근 가능한 API
-   - 컴포넌트 내외부 구분 없이 동일한 API 사용
-   - import만으로 즉시 사용 가능
-2. 단일 렌더링 포인트
-   - 모든 notification이 하나의 포털에서 렌더링
-   - 위치와 스택 관리가 중앙집중화
-3. 선언적 사용법
-   - 상태 관리 로직이 사용자에게 노출되지 않음
-   - 단순한 함수 호출로 복잡한 기능 실행
-
-우리만의 개선 포인트: useSyncExternalStore 적용
-Mantine의 컨셉은 훌륭하지만, 더 나은 방법을 적용해보았습니다:
-기존 Mantine 방식의 한계
-
-```typescript
-// Mantine 내부 구현 (추정)
-class NotificationStore {
-  private notifications = [];
-  private listeners = [];
-
-  // 강제 리렌더링을 위한 복잡한 로직 필요
-  private forceUpdate() {
-    this.listeners.forEach(listener => listener());
-  }
-}
-```
-
-우리의 개선된 접근법
-
-```typescript
-// useSyncExternalStore를 활용한 더 나은 구현
-export function useStore<Store extends KitDesignStore<any>>(store: Store) {
-  return useSyncExternalStore<KitDesignStoreValue<Store>>(
-    store.subscribe, // React가 자동으로 구독/해제 관리
-    () => store.getState(), // 상태 변경 시 자동 리렌더링
-    () => store.getState(), // SSR 지원
-  );
-}
-```
-
-핵심 설계 원칙
-
-1. Mantine의 사용성 + React 18의 최신 기능
+2. 타입 시스템: 확장 가능한 설계
 
    ```typescript
-   // Mantine처럼 간단한 API
-   toasts.show({ message: '성공!' });
-   // React 18의 useSyncExternalStore로 최적화된 내부 구현
-   const store = useToasts(); // 자동 구독/해제, 배칭 지원
-   ```
-
-2. 타입 안전성 강화
-
-   ```typescript
-   // Mantine보다 더 엄격한 타입 지원
+   // 스타일과 비즈니스 로직의 타입 결합
    export type ToastData = {
      id?: string;
      position?: ToastPosition;
      message: ReactNode;
      duration?: number;
-   } & ToastRecipeProps; // 컴포넌트 props와 완전 연동
+   } & ToastRecipeProps; // 스타일 props 자동 상속
+
+   // 컴파일 타임에 모든 가능한 조합 검증
+   toasts.show({
+     message: '성공!',
+     type: 'success', // 'error' | 'success' | 'info' | 'neutral'
+     size: 'large', // 'small' | 'large'
+     duration: 3000,
+   });
    ```
 
-3. 확장 가능한 아키텍처
+3. 상태 관리: React 외부의 독립적 시스템
+
+   #### 핵심은 React와 독립적인 상태 관리 시스템을 만드는 것입니다.
+
    ```typescript
-   // 다른 UI 시스템도 같은 패턴으로 구현 가능
-   export const createModalStore = () => createStore<ModalState>({ ... });
-   export const createDrawerStore = () => createStore<DrawerState>({ ... });
+   // 순수한 JavaScript 상태 관리
+   export function createStore<Value extends Record<string, any>>(
+     initialState: Value,
+   ): Store<Value> {
+     let state = initialState;
+     const listeners = new Set<StoreSubscriber<Value>>();
+
+     return {
+       getState: () => state,
+       setState: value => {
+         state = typeof value === 'function' ? value(state) : value;
+         listeners.forEach(listener => listener(state));
+       },
+       subscribe: callback => {
+         listeners.add(callback);
+         return () => listeners.delete(callback);
+       },
+     };
+   }
+
+   // React와의 연결은 useSyncExternalStore로
+   export function useStore<TStore extends Store<any>>(store: TStore) {
+     return useSyncExternalStore(
+       store.subscribe,
+       () => store.getState(),
+       () => store.getState(),
+     );
+   }
    ```
 
-React 18 최적화 혜택
-동시성 기능 지원
+   #### 왜 이 방식이 혁신적인가?
 
-- Automatic Batching과 자연스럽게 동작
-- Concurrent Rendering에서 안전한 상태 관리
-- Suspense와 호환 가능
-  성능 최적화
-- 불필요한 리렌더링 방지
-- 메모리 누수 자동 방지 (React가 구독 해제 관리)
+   - React 18의 useSyncExternalStore로 동시성 안전성 보장
+   - React 외부에서도 상태 조작 가능 (서버 컴포넌트, 웹 워커 등)
+   - 불필요한 리렌더링 방지
 
-실제 사용 비교
-Before: useState 방식
+4. 비즈니스 로직: 도메인 캡슐화
 
-```typescript
-function MyComponent() {
-  const [toasts, setToasts] = useState([]);
-  const handleSave = async () => {
-    try {
-      await saveData();
-      setToasts(prev => [...prev, { message: '저장 완료!' }]);
-    } catch (error) {
-      setToasts(prev => [...prev, { message: '저장 실패!' }]);
-    }
-  };
-}
-```
+   #### Toast의 모든 비즈니스 룰을 한 곳에 집중합니다.
 
-After: useSyncExternalStore + Mantine 스타일 API
+   ```typescript
+   // 복잡한 큐 관리 로직
+   function getDistributedToasts(
+     data: ToastData[],
+     defaultPosition: ToastPosition,
+     limit: number,
+   ) {
+     const queue: ToastData[] = [];
+     const toasts: ToastData[] = [];
+     const count: Record<string, number> = {};
 
-```typescript
-function MyComponent() {
-  const handleSave = async () => {
-    try {
-      await saveData();
-      toasts.show({ message: '저장 완료!' }); // 어디서든 사용 가능
-    } catch (error) {
-      toasts.show({ message: '저장 실패!', type: 'error' });
-    }
-  };
-}
-```
+     data.forEach(item => {
+       const position = item.position || defaultPosition;
+       count[position] = count[position] || 0;
+       count[position] += 1;
 
-```typescript
-// 컴포넌트 외부에서도 동일하게 사용
-export async function saveData() {
-  try {
-    const result = await api.save();
-    toasts.show({ message: '저장 완료!' }); // 바로 사용 가능!
-    return result;
-  } catch (error) {
-    toasts.show({ message: '저장 실패!', type: 'error' });
-    throw error;
-  }
-}
-```
+       if (count[position] <= limit) {
+         toasts.push(item);
+       } else {
+         queue.push(item); // 초과분은 큐에 대기
+       }
+     });
 
-이렇게 Mantine의 우수한 사용자 경험과 React 18의 최신 기능을 결합하여, 더 안정적이고 성능이 좋은 Toast 시스템을 만들 수 있었습니다.
-이제 Mantine에서 영감을 받았다는 컨텍스트가 명확해졌네요. 다음 단계에서는 구체적인 구현 코드와 함께 어떻게 이 두 가지를 결합했는지
-보여드리겠습니다.
+     return { toasts, queue };
+   }
 
-## 결과: 완성된 Toast 시스템과 그 장점들
+   // 통합된 API
+   export const toasts = {
+     show: showToast,
+     hide: hideToast,
+     update: updateToast,
+     clean: cleanToasts,
+     cleanQueue: cleanToastsQueue,
+   } as const;
+   ```
 
-### 최종 구현 결과
+   #### 캡슐화의 이점
 
-**1. 완전한 타입 안전성을 갖춘 API**
+   - 중복 토스트 방지 로직
+   - 위치별 개수 제한 관리
+   - 우선순위 큐 시스템
+   - 모든 규칙이 한 곳에서 관리
 
-```typescript
-// 어디서든 사용 가능한 간단하고 안전한 API
-import { toasts } from '@kit-design/ui';
-// 기본 사용법
-toasts.show({
-  message: '성공적으로 저장되었습니다!',
-});
-// 고급 옵션과 함께
-toasts.show({
-  message: '파일 업로드 완료',
-  type: 'success', // 'error' | 'info' | 'success' | 'neutral'
-  size: 'large', // 'small' | 'large'
-  position: 'top-center', // 6가지 위치 옵션
-  duration: 5000, // 커스텀 지속 시간
-  id: 'upload-toast', // 중복 방지용 ID
-});
-```
+5. UI 컴포넌트: 순수한 프레젠테이션
 
-```typescript
-// 업데이트 및 제거
-toasts.update({ id: 'upload-toast', message: '업데이트된 메시지' });
-toasts.hide('upload-toast');
-toasts.clean(); // 모든 토스트 제거
-```
+   #### 컴포넌트는 오직 렌더링만 담당합니다
 
-2. React 컴포넌트에서의 사용
+   ```tsx
+   const Toast = () => {
+     const store = useToasts(); // 상태만 구독
+     const { start, clear } = useTimeout(
+       toasts.hide,
+       store.toasts[0]?.duration || 3000,
+     );
+
+     // 생명주기 관리도 자동화
+     useEffect(() => {
+       if (store.toasts.length > 0) start();
+       return () => clear();
+     }, [store.toasts, clear, start]);
+
+     return (
+       <Portal>
+         <AnimatePresence>
+           {store.toasts.map(notification => {
+             const { container, content } = toastRecipe({
+               type: notification.type,
+               size: notification.size,
+             });
+
+             return (
+               <motion.div
+                 key={notification.id}
+                 initial={{ x: '-50%', y: '-100%', opacity: 0 }}
+                 animate={{
+                   x: 'var(--x-animate)',
+                   y: 'var(--y-animate)',
+                   opacity: 'var(--opacity-animate)',
+                 }}
+                 exit={{ x: '-50%', y: '-100%', opacity: 0 }}
+                 className={container}
+               >
+                 {notification.type && NotificationIcon[notification.type]}
+                 <div className={content}>{notification.message}</div>
+               </motion.div>
+             );
+           })}
+         </AnimatePresence>
+       </Portal>
+     );
+   };
+   ```
+
+## 결과
+
+### 개발자 경험의 변화
+
+#### Before: 기존 방식의 번거로움
 
 ```tsx
-function UploadComponent() {
-  const handleUpload = async (file: File) => {
-    const toastId = toasts.show({
-      message: '파일 업로드 중...',
-      type: 'info',
-      duration: 0, // 수동으로 제거할 때까지 유지
-    });
+const UserProfile = () => {
+  const [toastOpen, setToastOpen] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+
+  const handleSave = async () => {
     try {
-      await uploadFile(file);
-      // 성공 시 토스트 업데이트
-      toasts.update({
-        id: toastId,
-        message: '업로드 완료!',
+      await saveProfile();
+      setToastMessage('프로필이 저장되었습니다');
+      setToastOpen(true);
+      setTimeout(() => setToastOpen(false), 3000);
+    } catch (error) {
+      setToastMessage('저장에 실패했습니다');
+      setToastOpen(true);
+      setTimeout(() => setToastOpen(false), 3000);
+    }
+  };
+
+  return (
+    <>
+      <button onClick={handleSave}>저장</button>
+      <Toast
+        isOpen={toastOpen}
+        message={toastMessage}
+        onClose={() => setToastOpen(false)}
+      />
+    </>
+  );
+};
+```
+
+#### After: 새로운 방식의 간결함
+
+```tsx
+const UserProfile = () => {
+  const handleSave = async () => {
+    try {
+      await saveProfile();
+      toasts.show({
+        message: '프로필이 저장되었습니다',
         type: 'success',
-        duration: 3000,
       });
     } catch (error) {
-      // 실패 시 에러 토스트로 변경
-      toasts.update({
-        id: toastId,
-        message: '업로드 실패',
+      toasts.show({
+        message: '저장에 실패했습니다',
         type: 'error',
       });
     }
   };
-  return <input type="file" onChange={e => handleUpload(e.target.files[0])} />;
-}
+  return <button onClick={handleSave}>저장</button>;
+};
 ```
 
-3. 유틸리티 함수나 API 레이어에서의 활용
+#### 개선 사항
 
-```tsx
-// API 함수에서 직접 토스트 호출
-export async function deleteUser(id: string) {
+- 상태 관리 코드 완전 제거
+- 타이머 관리 자동화
+- 코드 양 70% 감소
+- 타입 안정성 향상
+
+#### 고급 활용: 비동기 작업과의 통합
+
+```typescript
+// 로딩 상태부터 완료까지 원스톱
+const handleUpload = async (file: File) => {
+  const toastId = toasts.show({
+    message: '파일 업로드 중...',
+    type: 'info',
+    duration: 0, // 수동 관리
+  });
+
   try {
-    await fetch(`/api/users/${id}`, { method: 'DELETE' });
-    toasts.show({
-      message: '사용자가 삭제되었습니다',
+    await uploadFile(file);
+    toasts.update({
+      id: toastId,
+      message: '업로드 완료!',
       type: 'success',
+      duration: 3000,
     });
   } catch (error) {
-    toasts.show({
-      message: '삭제 중 오류가 발생했습니다',
+    toasts.update({
+      id: toastId,
+      message: '업로드 실패',
       type: 'error',
+      duration: 5000,
     });
-    throw error;
   }
-}
-
-// 폼 검증 함수에서도 사용
-export function validateForm(data: FormData) {
-  if (!data.email) {
-    toasts.show({
-      message: '이메일을 입력해주세요',
-      type: 'error',
-    });
-    return false;
-  }
-  if (!isValidEmail(data.email)) {
-    toasts.show({
-      message: '올바른 이메일 형식이 아닙니다',
-      type: 'error',
-    });
-    return false;
-  }
-  return true;
-}
+};
 ```
 
-핵심 성과와 장점
+### 성능 최적화
 
-1. 개발자 경험 (DX) 개선
+1. 메모리 최적화
 
-   ```tsx
-   // Before: Props drilling과 복잡한 상태 관리
-   function App() {
-     const [toasts, setToasts] = useState([]);
-     return (
-       <div>
-         <Header onShowToast={showToast} />
-         <Main onShowToast={showToast} />
-         <Footer onShowToast={showToast} />
-         {toasts.map(toast => (
-           <Toast key={toast.id} {...toast} />
-         ))}
-       </div>
-     );
-   }
-   // After: 단순한 import로 즉시 사용
-   function App() {
-     return (
-       <div>
-         <Header />
-         <Main />
-         <Footer />
-         <Toast /> {/* 한 번만 추가 */}
-       </div>
+   ```typescript
+   // 자동 큐 정리로 메모리 누수 방지
+   export function cleanToastsQueue(store: ToastStore = toastsStore) {
+     updateToastsState(store, toasts =>
+       toasts.slice(0, store.getState().limit),
      );
    }
    ```
 
-2. 성능 최적화 달성
+2. 스타일 시스템: Panda CSS와의 완벽한 통합
 
-   - 자동 배칭: React 18의 Automatic Batching과 완벽 호환
-   - 메모리 안전: useSyncExternalStore가 구독/해제 자동 관리
-   - 선택적 리렌더링: Toast 상태가 변경되어도 관련 컴포넌트만 업데이트
+   ```typescript
+   const toastRecipe = sva({
+     slots: ['container', 'content'],
+     base: {
+       container: {
+         position: 'fixed',
+         top: 0,
+         left: '50%',
+         '--x-animate': '-50%',
+         '--y-animate': '24px',
+         '--opacity-animate': 1,
 
-3. 확장성과 재사용성
+         desktopDown: {
+           '--y-animate': '8px',
+           w: 'calc(100vw - 32px)',
+         },
+       },
+     },
+     variants: {
+       type: {
+         error: { container: { '& svg': { fill: 'statusNegative' } } },
+         success: { container: { '& svg': { fill: 'statusPositive' } } },
+       },
+       size: {
+         small: { container: { minH: 48, maxW: 406 } },
+         large: { container: { minH: 52, maxW: 500 } },
+       },
+     },
+   });
+   ```
 
-```typescript
-// 같은 패턴으로 다른 UI 시스템도 구현 가능
-export const modalStore = createStore<ModalState>({...});
-export const drawerStore = createStore<DrawerState>({...});
-export const dialogStore = createStore<DialogState>({...});
-// 커스텀 스토어도 쉽게 생성
-export const notificationCenter = createStore<NotificationState>({
-  notifications: [],
-  unreadCount: 0,
-  isOpen: false
-});
-```
+#### 장점
 
-실제 프로덕션에서의 효과
-Before vs After 비교
+- 타입 안전한 스타일 props
+- 반응형 디자인 자동 적용
+- CSS-in-JS의 런타임 오버헤드 없음
 
-| 측면        | Before (useState)                | After (useSyncExternalStore) |
-| ----------- | -------------------------------- | ---------------------------- |
-| 코드 복잡성 | 높음 (각 컴포넌트마다 상태 관리) | 낮음 (중앙집중식 관리)       |
-| 타입 안전성 | 부분적                           | 완전함                       |
-| 재사용성    | 낮음 (컴포넌트 종속적)           | 높음 (어디서든 사용)         |
-| 성능        | 비효율적 (불필요한 리렌더링)     | 최적화됨                     |
-| 유지보수성  | 어려움 (분산된 로직)             | 쉬움 (단일 진실 공급원)      |
-| 번들 크기   | 외부 라이브러리 의존             | 최소한의 자체 구현           |
+### 확장 가능성
 
-실제 사용 통계
-// 프로젝트 전체에서 Toast 사용 현황
-// - API 에러 처리: 45개 위치에서 사용
-// - 폼 검증: 23개 컴포넌트에서 활용  
-// - 성공 피드백: 67개 액션에서 사용
-// - 총 코드 라인 수: 기존 대비 60% 감소
+1. 새로운 알림 타입 추가
 
-핵심 교훈:
+   ```typescript
+   // 단순히 타입과 스타일만 추가
+   type: {
+     warning: { container: { '& svg': { fill: 'statusWarning' } } },
+     loading: { container: { '& svg': { animation: 'spin 1s linear infinite' } } },
+   }
+   ```
 
-1. 컴포넌트 외부 상태 관리의 새로운 표준
-2. 타입스크립트와의 완벽한 조화
-3. 성능과 개발자 경험의 양립
-4. 확장 가능한 아키텍처의 기반
-   Toast 시스템은 시작에 불과합니다. 이 패턴을 활용하면 Modal, Drawer, 전역 상태 등 다양한 UI 시스템을 일관된 방식으로 구현할 수 있습니다.
+## 마무리
 
----
+주요 인사이트 포인트
 
-전체 코드 리포지토리
-구현된 전체 코드는 다음 구조로 구성되어 있습니다:
-packages/@kit-design/ui/src/components/Notifications/  
-├── store/  
-│ ├── index.ts # 기본 스토어 시스템  
-│ └── toast.store.ts # Toast 전용 스토어 및 API  
-├── Toast/  
-│ ├── index.tsx # Toast 컴포넌트  
-│ ├── toast.recipe.ts # Panda CSS 스타일링  
-│ └── toast.stories.tsx # Storybook 스토리  
-└── index.ts # 공개 API
+1. Zero State Management: 컴포넌트에서 상태 관리 코드 완전 제거
+2. Actor Model: Toast 시스템이 하나의 독립적인 Actor로 동작
+3. Type-Driven Development: 타입 시스템이 API 설계를 주도
+4. Performance by Design: React 18의 동시성 기능 활용
 
-```tsx
-import { Toast, toasts } from '@kit-design/ui';
-
-// 앱에 Toast 컴포넌트 추가 (한 번만)
-function App() {
-  return (
-    <div>
-      {/* 다른 컴포넌트들 */}
-      <Toast />
-    </div>
-  );
-}
-
-// 어디서든 토스트 사용
-toasts.show({ message: 'Hello, useSyncExternalStore!' });
-```
-
-이제 여러분도 useSyncExternalStore를 활용한 강력한 상태 관리 시스템을 구축해보세요!
+이런 패턴을 통해 React 애플리케이션의 상태 관리를 한 단계 끌어올릴 수 있습니다.  
+단순히 라이브러리를 사용하는 것을 넘어서, 도메인을 완전히 추상화한 시스템을 만드는 것이 현대 프론트엔드 개발의 핵심이라고 생각합니다.
