@@ -204,7 +204,7 @@ function getDistributedToasts(
   limit: number,
 ) {
   const queue: ToastData[] = [];
-  const Toasts: ToastData[] = [];
+  const toasts: ToastData[] = [];
   const count: Record<string, number> = {};
 
   data.forEach(item => {
@@ -213,7 +213,7 @@ function getDistributedToasts(
     count[position] += 1;
 
     if (count[position] <= limit) {
-      Toasts.push(item);
+      toasts.push(item);
     } else {
       queue.push(item);
     }
@@ -495,9 +495,8 @@ const handleUpload = async (file: File) => {
 ### 주요 인사이트 포인트
 
 1. **Zero State Management**: 컴포넌트에서 상태 관리 코드 완전 제거
-2. **Actor Model**: Toast 시스템이 하나의 독립적인 Actor로 동작
-3. **Type-Driven Development**: 타입 시스템이 API 설계를 주도
-4. **Performance by Design**: React 18의 동시성 기능 활용
+2. **Type-Driven Development**: 타입 시스템이 API 설계를 주도
+3. **Performance by Design**: React 18의 동시성 기능 활용
 
 ### 확장 가능성: Store Core의 진정한 힘
 
@@ -641,11 +640,11 @@ const handleFormStep = stepData => {
 
 **"Toast 하나를 제대로 만들면, 전체 앱의 상태 관리 아키텍처가 완성된다"**
 
-이것이 바로 **추상화의 힘**입니다.
+이런 과정에서 **추상화의 매력**을 느낄 수 있었습니다.
 
-- 하나의 도메인을 깊이 파면서 범용적 패턴 발견
-- 작은 컴포넌트에서 시작해 전체 시스템으로 확장
-- 구체적 문제 해결에서 추상적 해결책 도출
+- 하나의 문제를 깊이 파면서 다른 곳에도 활용할 수 있는 패턴을 발견
+- 작은 컴포넌트에서 시작해서 전체 시스템 설계로 확장
+- 구체적인 Toast 문제 해결에서 범용적인 해결책 도출
 
-이런 접근 방식이 현대 프론트엔드 개발에서 **진짜 시니어 개발자**가 되는 길이라고 생각합니다.  
-단순히 라이브러리를 가져다 쓰는 것이 아니라, 문제의 본질을 파악하고 범용적 해결책을 만드는 것 말입니다.
+개인적으로는 이런 접근이 **개발자로서 한 단계 성장**하는 방법이라고 생각합니다.  
+그냥 필요한 라이브러리 찾아서 가져다 쓰는 것도 좋지만, 가끔은 이렇게 문제를 깊이 파보고 나만의 해결책을 만들어보는 것도 의미 있는 것 같습니다.
