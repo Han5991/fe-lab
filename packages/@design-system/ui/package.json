@@ -2,36 +2,37 @@
   "name": "@design-system/ui",
   "version": "0.0.1",
   "private": true,
+  "type": "module",
   "types": "./dist/index.d.ts",
   "main": "./dist/index.js",
   "exports": {
-    ".": {
-      "source": "./src/index.ts",
-      "types": "./dist/index.d.ts",
-      "import": {
-        "types": "./dist/index.d.mts",
-        "default": "./dist/index.mjs"
+    ".": "./src/index.ts",
+    "./preset": "./src/preset.ts",
+    "./Toast": "./src/toast/index.ts"
+  },
+  "publishConfig": {
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js",
+        "require": "./dist/index.cjs"
       },
-      "require": "./dist/index.js"
-    },
-    "./preset": {
-      "source": "./src/preset.ts",
-      "types": "./dist/preset.d.ts",
-      "import": {
-        "types": "./dist/preset.d.mts",
-        "default": "./dist/preset.mjs"
+      "./preset": {
+        "types": "./dist/preset.d.ts",
+        "import": "./dist/preset.js",
+        "require": "./dist/preset.cjs"
       },
-      "require": "./dist/preset.js"
-    },
-	"./Button": {
-	  "source": "./src/button.tsx",
-      "types": "./dist/button.d.ts",
-      "import": {
-        "types": "./dist/button.d.mts",
-        "default": "./dist/button.mjs"
+      "./Button": {
+        "types": "./dist/Button.d.ts",
+        "import": "./dist/Button.js",
+        "require": "./dist/Button.cjs"
       },
-      "require": "./dist/button.js"
-	}
+      "./Toast": {
+        "types": "./dist/toast/index.d.ts",
+        "import": "./dist/toast/index.js",
+        "require": "./dist/toast/index.cjs"
+      }
+    }
   },
   "scripts": {
     "prepare": "pnpm panda codegen && pnpm build",
@@ -49,7 +50,7 @@
     "tsup": "8.4.0",
     "typescript": "5.8.3"
   },
-  "packageManager": "pnpm@8.6.4",
+  "packageManager": "pnpm@10.10.0",
   "devDependencies": {
     "@pandacss/dev": "catalog:",
     "@types/react": "catalog:react19",
