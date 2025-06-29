@@ -7,10 +7,10 @@
     "test": "turbo run test",
     "lint": "turbo run lint",
     "check-types": "turbo run check-types",
-    "react": "turbo run dev --filter=react --filter=@design-system/ui",
+    "react": "turbo run dev --filter=react",
     "typescript": "turbo run dev --filter=typescript",
-    "next": "turbo run dev --filter=next.js --filter=@design-system/ui",
-    "blog-web": "turbo run dev --filter=@blog/web --filter=@design-system/ui",
+    "next": "turbo run dev --filter=next.js",
+    "blog-web": "turbo run dev --filter=@blog/web",
     "blog-build": "turbo run build --filter=@blog/web"
   },
   "devDependencies": {
