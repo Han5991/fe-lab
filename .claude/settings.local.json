@@ -10,7 +10,8 @@
       "Bash(pnpm list:*)",
       "Bash(pnpm build:*)",
       "Bash(ls:*)",
-      "Bash(mkdir:*)"
+      "Bash(mkdir:*)",
+      "WebFetch(domain:github.com)"
     ],
     "deny": []
   }
