@@ -29,6 +29,7 @@
     ]
   },
   "dependencies": {
-    "concurrently": "^9.2.0"
+    "concurrently": "^9.2.0",
+    "hanspell": "^0.9.7"
   }
 }
