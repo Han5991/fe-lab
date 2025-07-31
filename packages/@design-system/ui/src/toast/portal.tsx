@@ -14,7 +14,7 @@ export const Portal = ({ children, container }: PortalProps) => {
     setMounted(true);
     const element = container || document.body;
     setPortalContainer(element);
-    
+
     return () => setMounted(false);
   }, [container]);
 

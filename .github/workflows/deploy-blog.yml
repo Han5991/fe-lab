@@ -1,13 +1,13 @@
 name: Deploy Blog to GitHub Pages
 
 env:
-  BASE_PATH: "."
-  INDEX_APP_PATH: "./app"
-  SUBPACKAGES_PATH: "./packages"
+  BASE_PATH: '.'
+  INDEX_APP_PATH: './app'
+  SUBPACKAGES_PATH: './packages'
 
 on:
   pull_request:
-    branches: [ main ]
+    branches: [main]
     paths:
       - 'apps/blog/**'
 
@@ -19,7 +19,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: "pages"
+  group: 'pages'
   cancel-in-progress: false
 
 jobs:
