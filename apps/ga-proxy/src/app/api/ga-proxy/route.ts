@@ -22,7 +22,6 @@ const TRANSPARENT_PIXEL = Buffer.from(
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const slug = searchParams.get('slug') || searchParams.get('s')
-  const title = searchParams.get('title') || searchParams.get('t')
 
   if (!slug) {
     console.warn('Missing required slug parameter')
@@ -56,6 +55,7 @@ export async function GET(request: NextRequest) {
     const sessionId = generateSessionId()
     
     const pageLocation = `https://velog.io/@rewq5991/${slug}`
+    const pageTitle = slugToTitle(slug)
     
     const gaEvent: GAEvent = {
       client_id: clientId,
@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
         name: 'page_view',
         params: {
           page_location: pageLocation,
-          page_title: title || undefined,
+          page_title: pageTitle,
           page_referrer: undefined,
           engagement_time_msec: 1,
           session_id: sessionId
@@ -120,4 +120,11 @@ function generateClientId(request: NextRequest): string {
 
 function generateSessionId(): string {
   return Math.floor(Date.now() / 1000).toString()
+}
+
+function slugToTitle(slug: string): string {
+  return slug
+    .split('-')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ')
 }
