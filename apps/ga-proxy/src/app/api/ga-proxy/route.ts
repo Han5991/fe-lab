@@ -21,14 +21,11 @@ const TRANSPARENT_PIXEL = Buffer.from(
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
-  const tid = searchParams.get('tid')
-  const host = searchParams.get('host')
-  const page = searchParams.get('page')
-  const title = searchParams.get('title')
-  const referrer = searchParams.get('referrer')
+  const slug = searchParams.get('slug') || searchParams.get('s')
+  const title = searchParams.get('title') || searchParams.get('t')
 
-  if (!tid || !host || !page) {
-    console.warn('Missing required parameters:', { tid: !!tid, host: !!host, page: !!page })
+  if (!slug) {
+    console.warn('Missing required slug parameter')
     return new NextResponse(TRANSPARENT_PIXEL, {
       status: 200,
       headers: {
@@ -58,7 +55,7 @@ export async function GET(request: NextRequest) {
     const clientId = generateClientId(request)
     const sessionId = generateSessionId()
     
-    const pageLocation = `https://${host}${page}`
+    const pageLocation = `https://velog.io/@rewq5991/${slug}`
     
     const gaEvent: GAEvent = {
       client_id: clientId,
@@ -67,7 +64,7 @@ export async function GET(request: NextRequest) {
         params: {
           page_location: pageLocation,
           page_title: title || undefined,
-          page_referrer: referrer || undefined,
+          page_referrer: undefined,
           engagement_time_msec: 1,
           session_id: sessionId
         }
