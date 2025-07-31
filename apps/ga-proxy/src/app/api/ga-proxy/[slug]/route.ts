@@ -19,9 +19,11 @@ const TRANSPARENT_PIXEL = Buffer.from(
   'base64'
 )
 
-export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url)
-  const slug = searchParams.get('slug') || searchParams.get('s')
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { slug: string } }
+) {
+  const { slug } = params
 
   if (!slug) {
     console.warn('Missing required slug parameter')
