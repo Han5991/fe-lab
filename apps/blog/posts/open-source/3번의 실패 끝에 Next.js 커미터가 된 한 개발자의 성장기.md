@@ -151,6 +151,10 @@ export function matchRemotePattern(
 ```
 
 ```typescript
+/**
+ * 여기에 dist가 붙어있었다. ㅠㅠ
+ */
+import { matchRemotePattern as m } from 'next/dist/shared/lib/match-remote-pattern';
 // 그 당시 적었던 테스트 코드
 it('should match URLs with wildcard patterns', () => {
   // 허용되는 패턴
