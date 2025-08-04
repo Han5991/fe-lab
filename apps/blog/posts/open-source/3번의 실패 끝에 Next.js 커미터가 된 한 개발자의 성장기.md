@@ -48,7 +48,10 @@ Next.js라니, 생각만 해도 가슴이 뛰었다.
 깨달음은 내가 너무 어려운 걸 골랐다는 것이었다. 첫 도전치고는 너무 무모했던 것 같다.
 
 ```typescript
-// 당시 내가 만든 테스트 코드
+/**
+ * 당시 내가 만든 테스트 코드
+ * 시작점을 여기로 설정하면 같은 경로의 next.js 코드가 들어가게 된다(신기)
+ */
 import { nextTestSetup } from 'e2e-utils';
 import { fetchViaHTTP } from 'next-test-utils';
 
@@ -89,10 +92,14 @@ describe('Segment prefetches with rewritten paths', () => {
 테스트 코드도 자신 있게 작성했는데, dist가 있다는 걸 모르고 며칠을 고생했다.
 
 ```typescript
+/**
+ * next/image remote pattern 확인하는 코드
+ * 결국 여기도 읽어보면 별거 없다
+ * 별거 없는 것 처럼 보이게 코드를 잘 나눈 것 같기도 하다.
+ */
 import type { RemotePattern } from './image-config';
 import { makeRe } from 'next/dist/compiled/picomatch';
 
-// Modifying this function should also modify writeImagesManifest()
 export function matchRemotePattern(
   pattern: RemotePattern | URL,
   url: URL,
@@ -144,7 +151,7 @@ export function matchRemotePattern(
 ```
 
 ```typescript
-// 그당시 적었던 테스트 코드
+// 그 당시 적었던 테스트 코드
 it('should match URLs with wildcard patterns', () => {
   // 허용되는 패턴
   const p = 'https://example.com/act123/**';
@@ -163,10 +170,10 @@ it('should match URLs with wildcard patterns', () => {
 
 **그 순간 나는 뒤통수를 맞은 기분이었다.**
 
-"아... 이게 버그가 아니라 의도적인 거였구나. 나는 왜 이걸 미리 확인 안 했지?"
+**"아... 이게 버그가 아니라 의도적인 거였구나. 나는 왜 이걸 미리 확인 안 했지?"**
 
-이번에도 새로운 걸 배웠다. 단위 테스트 중에도 dist 빌드가 필요한 테스트가 있다는 것이었다. 하지만 가장 중요한 깨달음은 따로 있었다. 바로 이슈를 제대로 이해하지 못했다는
-것이다. 내가 버그라고 생각한 것이 사실은 보안상의 이유로 의도적으로 막아놓은 기능이었다.
+이번에도 새로운 걸 배웠다. 단위 테스트 중에도 `dist` 빌드가 필요한 테스트가 있다는 것이었다. 하지만 가장 중요한 깨달음은 따로 있었다. 바로 이슈를 제대로 이해하지 못했다는 것이다.  
+내가 버그라고 생각한 것이 사실은 보안상의 이유로 의도적으로 막아놓은 기능이었다.
 
 그날은 정말 자존심이 상했다. 커피숍에 앉아서 노트북을 덮고 한참을 멍때렸다. "내가 개발을 잘못 배운 건가?"
 
