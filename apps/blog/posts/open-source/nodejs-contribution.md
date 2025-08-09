@@ -1,43 +1,52 @@
-# 4시간 만에 Node.js PR 승인받기 - AI 페어 프로그래밍으로 오픈소스 진입 장벽 낮추기
+# 4시간 만에 Node.js PR 승인받기
+
+## AI 페어 프로그래밍으로 오픈소스 진입 장벽 낮추기
 
 ![img.png](img.png)
 
 > “무조건 Node.js에 내 코드를 넣고 말겠다!”  
 > 오픈소스 기여가 점점 재미있어지고, 자신감도 차오르던 시기였다.  
-> 하지만 매일같이 이슈를 살펴봐도 여전히 모르는 것이 많았다. C++ 코드도 보였고, fs 같은 코어 모듈이 대부분이었기 때문이다. (게다가 그 이슈들을 잘 이해한 것도 아니었다.)  
-> 그러던 중 우연히 오픈소스 기여 모임을 알게 되었는데, 조금 특이하게도 AI를 활용한 오픈소스 기여를 주제로 한 모임이었다.  
-> 공지 사항에서 본 링크는 나에게 혁신을 가져다 주었다.
+> 하지만 매일같이 이슈를 살펴봐도 여전히 모르는 부분이 많았다. C++ 코드가 보이기도 했고, `fs` 같은 코어 모듈이 대부분이었기 때문이다. (게다가 이슈를 완벽히 이해한 것도 아니었다.)  
+> 그러던 중 **AI를 활용한 오픈소스 기여 모임**을 알게 되었고, 거기서 본 한 링크가 나에게 혁신을 가져다주었다.
 
-## 이슈 탐색
+---
 
-이슈 분석부터 여러워 하고 힘들어 하던 나에게 혁신적인 [링크(이슈 수집기)](https://contribution-issue-collector.streamlit.app/)가 있었다.  
-바로 고민도없이 nodejs/node를 때려 넣고 내 토큰을 넣고 모든 이슈를 풀로 땡겼다(지금도 매일 한다.)
+## 1. 이슈 찾기: AI로 시작하는 빠른 탐색
 
-그중 하나 걸려든 이슈
+이슈 분석에 어려움을 느끼던 내게 구세주가 나타났다.  
+바로 [이슈 수집기](https://contribution-issue-collector.streamlit.app/)였다.  
+곧장 `nodejs/node` 저장소와 내 토큰을 입력하고 모든 이슈를 긁어왔다. (지금도 매일 한다.)
+
+그중 눈에 들어온 이슈가 있었다.
 
 > **Issue 23: util.inspect incorrectly formats negative fractional numbers**
+>
+> - **라벨:** 없음
+> - **내용:** `numericSeparator: true` 옵션 사용 시 음수 소수점 숫자 포맷팅 버그
+> - **원인:** `formatNumber` 함수에서 -0 처리 시 부호 손실
+> - **해결 방향:** 없음
+> - **적합도:** 상 (재현 코드와 명확한 문제 설명)
+> - **기술 난이도:** 중
 
-- 라벨: 없음
-- 내용: numericSeparator: true 옵션 사용시 음수 소수점 숫자 포맷팅 버그
-- 원인: formatNumber 함수에서 -0 처리시 부호 손실
-- 해결방향: 없음
-- 기준 적합도: 상 (상세 재현 코드, 해결방향 명시)
-- 기술적 난이도: 중
+C++도 없고, 복잡한 코어 모듈도 아닌, 숫자 유틸 함수 하나를 수정하는 일이었다.  
+게다가 이슈가 올라온 지 5시간밖에 되지 않아 바로 댓글을 달고 선점했다.
 
-c++ 내용도 없고, 너무 코어 모듈도 아니며, 넘버 유틸함수 하나 고치는 일이었다.  
-그 당시 이슈 생선된 지 5시간이 된 이슈였기에 바로 내가 댓글을 달아 내가 하겠다고 선점 하였다.
+곧 메인테이너가 해결 방향과 최적화 아이디어를 제시해주었고, 나는 지체 없이 코드를 수정하러 들어갔다.
 
-그러자 바로 달리는 댓글
+---
 
-![img_1.png](img_1.png)
+## AI 활용 팁: 이슈 선택 시 체크리스트
 
-메인테이너가 확인 하고 해결방안 및 최적화 방안까지 제시해주었다!!! 지체없이 코드를 고치러 갔다.
+- **난이도**: 너무 어려운 영역(C++, 네이티브 모듈 등)은 피하고, 변경 범위가 명확한 이슈를 선택합니다.
+- **재현 가능성**: 이슈 설명에 재현 코드나 명확한 조건이 포함되어 있는지 확인합니다.
+- **라벨 여부**: 'good first issue', 'help wanted' 라벨은 초심자에게 좋은 출발점입니다.
 
-## 이슈 분석
+---
 
-내용은 심플 하다
+## 2. 문제 분석: 버그 원인 파악하기
 
-inspect 모듈에 numericSeparator을 줄 때 0과 1사이의 - 부호가 붙으면 출력이 이상하게 된다는 것
+문제는 간단했다.  
+`util.inspect`에서 `numericSeparator` 옵션을 켜면, 0과 1 사이의 음수 값에서 부호가 사라지는 현상이 있었다.
 
 ```typescript
 import { inspect } from 'util';
@@ -46,74 +55,67 @@ const values = [0.1234, -0.12, -0.123, -0.1234, -1.234];
 const text = inspect(values, { numericSeparator: true });
 console.log(text);
 
-// 기대한 것
+// 기대 출력
 [ 0.123_4, -0.12, -0.123, -0.123_4, -1.234 ]
 
-// 실제 나온 것
+// 실제 출력
 [ 0.123_4, 0..12, 0..12_3, 0..12_34, -1.234 ]
 ```
 
-이슈 제기자의 말에 따르면 `lib/internal/util/inspect.js` 에 이 코드가 있는대 맨 처음에 number을 받아 string 바꿔버리는 것이었다.  
-예를 들어 -0 이면 "0" 으로 바꾸어 버려 부호가 사라지는 것  
-고치는 방법 알았으니 이제 고치러 가보자
+문제의 원인은 `lib/internal/util/inspect.js`에서 숫자를 문자열로 변환할 때, `-0`이 `"0"`으로 변환되어 부호가 사라지는 것이었다.
 
-## 개발 환경 구성
+---
 
-nodejs의 프로젝트를 포크하여 클론 받아 cli 환경에서 /init 를 날려서 ai에게 코드베이스를 학습 하게 했다.
+## 3. 개발 환경 구축: 로컬에서 Node.js 빌드하기
 
-```aiignore
-ai: /init
-ai: 빌드하는 스크립트나 방버 찾아줘
-```
-
-![img_2.png](img_2.png)
-
-**이 중에 내가 필요한건 전체 빌드 였다.**
+Node.js 저장소를 포크 후 클론 받아 AI CLI 환경에서 코드베이스를 학습시켰다.
 
 ```bash
 ./configure
 make -j4
 ```
 
-에러나 나기 시작 했고 이유는 c++이 없다는 것이었다. ai와 같이 머리를 맡대어 생각해보니
-command line tools 을 설치하면 c++이 설치된다는 걸 알았다.  
-약간의 삽질로 c++ 설치하는대에 성공 하고 다시 빌드 명령어를 넣었다.  
-대략 30분의 시간이 흐르고 빌드 성공했다.
+처음에는 C++이 없어서 빌드 에러가 발생했다. AI와 함께 원인을 찾아보니 Command Line Tools 설치가 필요했다. 설치 후 다시 빌드하니 약 30분 만에 성공.
 
-이 때 좀 신기 했다. 내가 nodejs를 빌드 하고 이걸 직접 사용해볼 수 있다니! 하고
+처음 직접 빌드한 Node.js를 실행했을 때, 테스트 코드가 정상 동작하는 것을 보고 꽤 뿌듯했다.
 
-빌드 한 node를 가지고 테스트 코드를 돌려보니 잘 돌아간다! 개발 환경 구축 끝!
+---
 
-## 테스트 환경 구성
+## AI 활용 팁: 빌드 에러 대처
 
-이제 이슈 기반의 테스트 코드를 작성할 차례다
+- **환경 의존성**: C++ 컴파일러, Python 버전 등 필수 의존성을 먼저 확인합니다.
+- **빌드 로그 분석**: 에러 메시지를 그대로 AI에게 전달하면 빠르게 해결책을 제시해줍니다.
+- **부분 빌드**: 전체 빌드가 오래 걸린다면, 변경된 부분만 빌드하는 방법을 찾아보세요.
 
-ai: https://github.com/nodejs/node/issues/59376 기반으로 아직 통과 못 하는 테스트 코드를 만들어줘
-ai: 단일 파일의 테스트를 사용하는 방법 알려줘
-A: `./out/Release/node test/parallel/test-util-inspect.js` -> 에러 남
+---
 
-이제 이슈 상황을 테스트 코드로 재현 완료 했다. 커밋을 하고 코드 고치기 시작
+## 4. 테스트 작성: 버그 재현부터 시작
 
-## bug 고치기
+다음 단계는 재현 테스트 작성이었다.  
+이슈(#59376) 내용을 기반으로 아직 통과하지 못하는 테스트를 만들고, 단일 파일 테스트를 실행했다.
+
+```bash
+./out/Release/node test/parallel/test-util-inspect.js
+```
+
+이슈 상황이 정상적으로 재현되는 것을 확인하고 수정 작업에 착수했다.
+
+---
+
+## 5. 버그 수정: 부호 보존 로직 추가
+
+수정 후 `formatNumber` 함수는 다음과 같이 변경했다.
 
 ```javascript
-/**
-* 수정후
-**/
 function formatNumber(fn, number, numericSeparator) {
   if (!numericSeparator) {
-    // Format -0 as '-0'. Checking `number === -0` won't distinguish 0 from -0.
-    if (ObjectIs(number, -0)) {
-      return fn('-0', 'number');
-    }
+    if (ObjectIs(number, -0)) return fn('-0', 'number');
     return fn(`${number}`, 'number');
   }
 
-  // 메인 테이너의 요구대로 string 바꾸는건 한번만
   const numberString = String(number);
   const integer = MathTrunc(number);
 
-  // 바꾸려는 숫자가 똑같으면 _ 찍어서 내보내기
   if (integer === number) {
     if (!NumberIsFinite(number) || StringPrototypeIncludes(numberString, 'e')) {
       return fn(numberString, 'number');
@@ -121,52 +123,46 @@ function formatNumber(fn, number, numericSeparator) {
     return fn(addNumericSeparator(numberString), 'number');
   }
 
-  // NaN이면 함수로 씌워서 리턴
   if (NumberIsNaN(number)) {
     return fn(numberString, 'number');
   }
 
-  * 여기는 실행 되면 안 되지만 방어적 코드로 작성
-  * 여기는 이슈제기자가 내 코드를 보고 이 흐름을 모를 수 있다고 하여 나는 이내용을 주석으로 작성
-  // ---------------------------------------------------------------------------
-  // From this point on, only *non-integer* numbers will reach the code below.
-  // Values where `integer === number` (plain integers, exponential notation,
-  // Infinity, etc.) have already been returned in the previous branch.
-  // For IEEE-754 doubles within the ±2^53 exact-integer range, `String(number)`
-  // never inserts a decimal point, therefore encountering
-  // `decimalIndex === -1` in the next lines should be impossible under
-  // normal circumstances. (kept here as a defensive fallback)
-  // ---------------------------------------------------------------------------
+  // 방어적 주석: IEEE-754에서 이 분기까지 오는 경우는 거의 없음
   const decimalIndex = StringPrototypeIndexOf(numberString, '.');
-  if (decimalIndex === -1) {
-    return fn(numberString, 'number');
-  }
+  if (decimalIndex === -1) return fn(numberString, 'number');
 
-  const integerPart = StringPrototypeSlice(numberString, 0, decimalIndex); // "-0"
-  const fractionalPart = StringPrototypeSlice(numberString, decimalIndex + 1); // "12"
+  const integerPart = StringPrototypeSlice(numberString, 0, decimalIndex);
+  const fractionalPart = StringPrototypeSlice(numberString, decimalIndex + 1);
 
-  return fn(`${
-    addNumericSeparator(integerPart)   // "-0"
-  }.${
-    addNumericSeparatorEnd(fractionalPart)  // 결과: "-0.12" (부호 보존!)
-  }`, 'number');
+  return fn(
+    `${addNumericSeparator(integerPart)}.${addNumericSeparatorEnd(fractionalPart)}`,
+    'number',
+  );
 }
 ```
 
-## pull request
+메인테이너가 제안한 방향을 반영하고, 이슈 제기자가 지적한 잠재적 케이스에 대해 방어적 주석을 남겼다.
 
-이제 ai 에게 요약 해서 pr 메시지를 작성하고 로컬에서 테스트 다 통과했다는 이미지도 넣고 push!
+---
 
-메인 테이너가 매우빠르게 승인 해주었지만 바로 머지되지는 않았다 (나중에 한번에 하려고 하나보다)
+## 6. Pull Request
 
-이슈 제기자가 내 코드를 보고 버그가 날거라고 이야기 해줬고 난 거기에 테스트 코드 기반으로 이미 다 통과한거라고
-했다 이미 이슈제기자가 말한 케이스가 이미 테스트 코드에 있기 때문이었다.
+AI에게 요약을 맡겨 PR 메시지를 작성하고, 로컬 테스트 통과 스크린샷과 함께 Push했다.  
+메인테이너는 [빠르게 승인](https://github.com/nodejs/node/pull/59379)을 줬지만, 병합은 다른 PR과 함께 진행하는 듯했다.
 
-하지만 64비트 IEEE 754 부동 소수점 값을 사용하기에 이런 내용이 내 코드에 담기지 않았다는 것이었다.  
-난 이 뜻을 존중하여 이 부분의 주석을 길게 남겨놓았다.(위의 주석 참고)
+이슈 제기자는 내 코드에 특정 케이스에서 버그가 날 수 있다고 했지만, 해당 케이스가 이미 테스트 코드에 포함되어 있었기에 문제없음을 설명했다.
 
-## 마무리
+---
 
-ai를 활용하여 이슈를 분석 하는 내용이 매우 매우 흥미로웠고  
-코드베이스를 학습시켜 빌드나 테스트 환경을 구성하는 건 정말 즐거운 경험이었다.  
-이전 좀 더 적극적으로 ai를 활용하여 오픈소스에 기여 및 학습을 해보는 경험을 하고 싶다.
+## 7. 회고: AI와 함께한 오픈소스 첫걸음
+
+이번 경험에서 느낀 점은 다음과 같다.
+
+1. **AI는 오픈소스 진입 장벽을 크게 낮춰준다.**  
+   빌드·테스트 환경 설정, 코드 구조 파악 등에서 큰 도움을 받았다.
+2. **작은 이슈도 충분히 가치 있다.**  
+   코어 모듈이 아니더라도 유지보수와 품질 개선에 기여할 수 있다.
+3. **테스트 코드 작성이 핵심이다.**  
+   버그를 명확히 재현하고, 수정 후에도 안정성을 보장할 수 있었다.
+
+앞으로도 AI를 적극적으로 활용해 더 많은 오픈소스 기여와 학습을 이어가고 싶다.
