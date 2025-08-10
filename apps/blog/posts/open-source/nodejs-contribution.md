@@ -103,7 +103,25 @@ Node.js 저장소를 포크 후 클론 받아 AI CLI 환경에서 코드베이�
 
 ## 5. 버그 수정: 부호 보존 로직 추가
 
-수정 후 `formatNumber` 함수는 다음과 같이 변경했다.
+수정 전 `formatNumber`
+
+```javascript
+// 수정 전 (버그가 있던 코드)
+const integer = MathTrunc(number);
+const string = String(integer);
+
+// 소수점 처리
+return fn(
+  `${
+    addNumericSeparator(string) // <- 여기서 음수 부호 손실
+  }.${addNumericSeparatorEnd(
+    StringPrototypeSlice(String(number), string.length + 1),
+  )}`,
+  'number',
+);
+```
+
+수정 후 `formatNumber`
 
 ```javascript
 function formatNumber(fn, number, numericSeparator) {
@@ -126,21 +144,30 @@ function formatNumber(fn, number, numericSeparator) {
     return fn(numberString, 'number');
   }
 
-  // 방어적 주석: IEEE-754에서 이 분기까지 오는 경우는 거의 없음
+  // 원본 문자열에서 직접 소수점 위치 찾기
   const decimalIndex = StringPrototypeIndexOf(numberString, '.');
+  // 방어적 주석: IEEE-754에서 이 분기까지 오는 경우는 거의 없음
   if (decimalIndex === -1) return fn(numberString, 'number');
 
+  // 원본 문자열에서 정수/소수 부분 분리
   const integerPart = StringPrototypeSlice(numberString, 0, decimalIndex);
   const fractionalPart = StringPrototypeSlice(numberString, decimalIndex + 1);
 
   return fn(
-    `${addNumericSeparator(integerPart)}.${addNumericSeparatorEnd(fractionalPart)}`,
-    'number',
-  );
+     return fn(`${
+    addNumericSeparator(integerPart)  // <- 음수 부호 보존
+  }.${
+    addNumericSeparatorEnd(fractionalPart)
+  }`, 'number');
 }
 ```
 
-메인테이너가 제안한 방향을 반영하고, 이슈 제기자가 지적한 잠재적 케이스에 대해 방어적 주석을 남겼다.
+이유
+
+- 문제: -0.1234에서 Math.trunc(-0.1234) = -0, String(-0) = "0"이 되어 음수 기호가 사라짐
+- 해결: 원본 문자열 -0.1234에서 직접 . 앞부분(-0)과 뒷부분(1234)을 분리
+
+메인테이너가 제안한 방향(string 한번만 사용)을 반영하고, 이슈 제기자가 지적한 잠재적 케이스에 대해 방어적 주석을 남겼다.
 
 ---
 
