@@ -70,10 +70,7 @@ console.log(text);
 
 Node.js 저장소를 포크 후 클론 받아 AI CLI 환경에서 코드베이스를 학습시켰다.
 
-```bash
-./configure
-make -j4
-```
+![img_2.png](img_2.png)
 
 처음에는 C++이 없어서 빌드 에러가 발생했다. AI와 함께 원인을 찾아보니 Command Line Tools 설치가 필요했다. 설치 후 다시 빌드하니 약 30분 만에 성공.
 
@@ -93,6 +90,8 @@ make -j4
 
 다음 단계는 재현 테스트 작성이었다.  
 이슈(#59376) 내용을 기반으로 아직 통과하지 못하는 테스트를 만들고, 단일 파일 테스트를 실행했다.
+
+![img_3.png](img_3.png)
 
 ```bash
 ./out/Release/node test/parallel/test-util-inspect.js
