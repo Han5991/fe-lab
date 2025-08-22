@@ -56,8 +56,8 @@ ex) 사용했던 프롬프트
 새로운 기능을 추가하는 PR은 메인테이너 입장에서 고려할 게 많습니다.  
 프로젝트의 방향성과 맞는지, 다른 기능과 충돌은 없는지, 앞으로 유지보수 비용은 어떨지 등등... 하지만 성능 개선 PR은 `빚을 갚아주는` 것과 같습니다.  
 누구도 마다할 이유가 없죠. 프로젝트를 더 건강하게 만드는, 가장 환영받는 기여 중 하나입니다.  
-하지만 너무 바꿀 범위가 많다고 생각을 했다. 그래서 pr을 2개 쪼개어 날리기로 했다.  
-두 번이나 pr을 날릴수도 있고 계획적으로 나만의 로드맵을 그려갈 수 있다고 생각을 했다.
+하지만 너무 바꿀 범위가 많다고 생각을 했습니다. 그래서 pr을 2개 쪼개어 날리기로 했습니다.  
+두 번이나 pr을 날릴수도 있고 계획적으로 나만의 로드맵을 그려갈 수 있다고 생각을 했습니다.
 
 1. fileUtils.ts -> 개선
 2. read-many-files.ts -> 병렬처리로 전환
@@ -67,7 +67,7 @@ ex) 사용했던 프롬프트
 ### 1차 기여: fileUtils.ts 비동기 전환
 
 저 파일안에 있는 `detectFileType` 만 비동기로 만들어도 되었지만
-ai는 나에게 좀 더 몇 가지 개선점을 알려주었다.
+ai는 나에게 좀 더 몇 가지 개선점을 알려주었습니다.
 
 ```javascript
 // AS-IS
@@ -160,7 +160,7 @@ export async function isBinaryFile(filePath: string): Promise<boolean> {
 }
 ```
 
-> fs.promises 를 붙인 것만으로도 아래와 개선 효과를 볼 수 있다는 걸 ai와 함께 정리 했다.
+> fs.promises 를 붙인 것만으로도 아래와 개선 효과를 볼 수 있다는 걸 ai와 함께 정리 했습니다.
 
 ### 주요 차이점
 
@@ -312,7 +312,7 @@ const [file1, file2, file3] = await Promise.all([
 
 **구글러들을 설득한 실제 문서**를 보여드리겠습니다:
 
-#### [이슈 #3286](https://github.com/google-gemini/gemini-cli/issues/3286) - 문제 정의의 힘
+#### [이슈 #3286](https://github.com/google-gemini/gemini-cli/issues/3286)
 
 ```markdown
 # Convert synchronous file binary detection to async to eliminate event loop blocking
@@ -338,7 +338,7 @@ Current file binary detection uses synchronous file operations that:
 - Update all callers to use `await`
 ```
 
-#### [PR #3288](https://github.com/google-gemini/gemini-cli/pull/3288) - 변화의 설득력
+#### [PR #3288](https://github.com/google-gemini/gemini-cli/pull/3288)
 
 ```markdown
 # feat: Make file type detection and binary checks asynchronous (#3286)
@@ -374,9 +374,9 @@ This lays the foundation for parallel file processing (coming in next PR)
 
 1차 PR 머지 후, 바로 2차 [이슈](https://github.com/google-gemini/gemini-cli/issues/4712)와 [PR](https://github.com/google-gemini/gemini-cli/pull/4763)을 진행했다.
 
-### 📈 2차 작업: 74% 성능 개선의 비밀
+### 📈 2차 작업: 74% 성능 개선
 
-#### 🎯 [이슈 #4712](https://github.com/google-gemini/gemini-cli/issues/4712) - 야심찬 목표 설정
+#### 🎯 [이슈 #4712](https://github.com/google-gemini/gemini-cli/issues/4712)
 
 ```markdown
 # Implement batch/parallel file processing for performance optimization
@@ -392,7 +392,7 @@ Improve file processing performance for large projects by implementing parallel 
 - Leverage async foundation from previous PR #3288
 ```
 
-#### 💥 [PR #4763](https://github.com/google-gemini/gemini-cli/pull/4763) - 숫자로 말하는 성과
+#### 💥 [PR #4763](https://github.com/google-gemini/gemini-cli/pull/4763)
 
 ```markdown
 # perf(core): implement parallel file processing for 74% performance improvement
@@ -420,9 +420,9 @@ Improve file processing performance for large projects by implementing parallel 
 
 리뷰어는 ! non-null assertion이 잠재적 버그를 가릴 수 있다고 지적했습니다.  
 파일 처리 중 실패하는 엣지 케이스에서 에러를 던지는 대신 undefined를 반환하며 조용히 넘어가버릴 수 있기 때문입니다.  
-그의 지적에 따라, 성공과 실패 케이스를 명확히 구분하는 Result 타입을 도입하여 코드의 안정성을 한층 높일 수 있었습니다.
+그의 지적에 따라, 성공과 실패 케이스를 명확히 구분하는 Result 타입을 도입하여 코드의 안정성을 한층 높일 수 있었습니다.  
 작은 기호 하나에도 깊은 뜻이 있다는 것을 배운 순간이었습니다.  
-그래서 이렇게 타입을 만들어 성공과 실패 케이스를 나누어서 처리를 하였다.
+그래서 이렇게 타입을 만들어 성공과 실패 케이스를 나누어서 처리를 하였습니다.
 
 ```typescript
 /**
@@ -492,10 +492,10 @@ it('should process files in parallel for performance', async () => {
 
 ### 성능 테스트가 게임 체인저였다!
 
-구글러들이 특히 좋아한 부분은 **구체적인 성능 측정 테스트**였습니다:
+구글러들이 특히 좋아한 부분은 **구체적인 성능 측정 테스트**였습니다.
 
 ```typescript
-// 💡 실제 성능 개선을 증명하는 테스트
+// 실제 성능 개선을 증명하는 테스트
 it('should process files in parallel for performance', async () => {
   // 4개 파일 처리 시간 측정
   const startTime = Date.now();
@@ -520,7 +520,7 @@ _"Praised the performance optimization and test coverage"_
 
 ![img_2.png](img_2.png)
 
-**이번 PR은 이전 작업과의 연관성을 명시해서 승인이 매우 빠르게 났다.**
+**이번 PR은 이전 작업과의 연관성을 명시해서 승인이 매우 빠르게 났습니다.**
 
 ![img_3.png](img_3.png)
 
@@ -535,7 +535,7 @@ _"Praised the performance optimization and test coverage"_
 
 ### 🎯 다음 액션 플랜
 
-이 성공적인 기여 경험을 바탕으로, **더 큰 임팩트를 만들어갈 계획**입니다:
+이 성공적인 기여 경험을 바탕으로, **더 큰 임팩트를 만들어갈 계획**입니다.
 
 **단기 목표**
 
