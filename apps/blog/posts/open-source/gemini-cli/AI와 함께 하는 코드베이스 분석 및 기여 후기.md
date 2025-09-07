@@ -306,7 +306,7 @@ const [file1, file2, file3] = await Promise.all([
 - 간단한 일회성 작업
 - 성능보다 단순함이 중요한 경우
 
-> 이런 내용을 기반으로 공부도 되었고 다음 작업을 위해서 1차 [이슈](https://github.com/google-gemini/gemini-cli/issues/3286)와 [PR](https://github.com/google-gemini/gemini-cli/pull/3288)을 작성했다.
+> 이런 내용을 기반으로 공부도 되었고 다음 작업을 위해서 1차 [이슈](https://github.com/google-gemini/gemini-cli/issues/3286)와 [PR](https://github.com/google-gemini/gemini-cli/pull/3288)을 작성했습니다.
 
 ### 실제 이슈 & PR 작성법 공개
 
@@ -372,7 +372,7 @@ This lays the foundation for parallel file processing (coming in next PR)
 
 ### 2차 기여: 병렬 처리로 성능 개선
 
-1차 PR 머지 후, 바로 2차 [이슈](https://github.com/google-gemini/gemini-cli/issues/4712)와 [PR](https://github.com/google-gemini/gemini-cli/pull/4763)을 진행했다.
+1차 PR 머지 후, 바로 2차 [이슈](https://github.com/google-gemini/gemini-cli/issues/4712)와 [PR](https://github.com/google-gemini/gemini-cli/pull/4763)을 진행했습니다.
 
 ### 📈 2차 작업: 74% 성능 개선
 
@@ -447,7 +447,7 @@ type FileProcessingResult =
     };
 ```
 
-그리고 성능이 중요하다고 생각 하여 병렬 처리에대한 속도 처리 테스트를 만들어 넣었다.
+그리고 성능이 중요하다고 생각 하여 병렬 처리에대한 속도 처리 테스트를 만들어 넣었습니다.
 
 ```typescript
 it('should process files in parallel for performance', async () => {
@@ -533,7 +533,7 @@ _"Praised the performance optimization and test coverage"_
 - **성능 테스트까지 포함하면 더 좋은 평가를 받음**
 - **이전 작업과의 연관성을 명시하면 승인이 빨라짐**
 
-### 🎯 다음 액션 플랜
+### 다음 액션 플랜
 
 이 성공적인 기여 경험을 바탕으로, **더 큰 임팩트를 만들어갈 계획**입니다.
 
