@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="320" viewBox="0 0 600 320">
+    <style>
+        .layer { stroke:#2d3748; stroke-width:2; rx:10; }
+        .label { font: 600 14px sans-serif; fill:#2d3748; }
+        .desc { font: 500 12px sans-serif; fill:#4a5568; }
+    </style>
+
+    <!-- utilities -->
+    <rect x="40" y="40" width="520" height="70" class="layer" fill="#ebf8ff"/>
+    <text x="60" y="70" class="label">utilities</text>
+    <text x="60" y="90" class="desc">Panda CSS utilities / tokens / recipes</text>
+
+    <!-- components -->
+    <rect x="40" y="130" width="520" height="80" class="layer" fill="#fefcbf"/>
+    <text x="60" y="160" class="label">components</text>
+    <text x="60" y="180" class="desc">Mantine component styles</text>
+
+    <!-- base -->
+    <rect x="40" y="230" width="520" height="60" class="layer" fill="#e2e8f0"/>
+    <text x="60" y="260" class="label">base</text>
+    <text x="120" y="260" class="desc">(global reset / legacy CSS)</text>
+</svg>
+

@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="880" height="220" viewBox="0 0 880 220">
+    <style>
+        .box { fill:#edf2f7; stroke:#2d3748; stroke-width:2; rx:8; }
+        .title { font: 600 14px sans-serif; fill:#2d3748; }
+        .sub { font: 500 12px sans-serif; fill:#4a5568; }
+        .arrow { stroke:#4a5568; stroke-width:2; marker-end:url(#arrowhead); }
+    </style>
+    <defs>
+        <marker id="arrowhead" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <polygon points="0 0, 6 3, 0 6" fill="#4a5568"/>
+        </marker>
+    </defs>
+
+    <!-- steps -->
+    <rect x="20" y="70" width="140" height="80" class="box"/>
+    <text x="30" y="100" class="title">prebuild</text>
+    <text x="30" y="120" class="sub">panda codegen</text>
+
+    <rect x="200" y="70" width="140" height="80" class="box"/>
+    <text x="210" y="100" class="title">build</text>
+    <text x="210" y="120" class="sub">tsup (esm)</text>
+
+    <rect x="380" y="70" width="160" height="80" class="box"/>
+    <text x="390" y="100" class="title">types</text>
+    <text x="390" y="120" class="sub">tsc d.ts only</text>
+
+    <rect x="580" y="70" width="120" height="80" class="box"/>
+    <text x="590" y="100" class="title">pack</text>
+    <text x="590" y="120" class="sub">pnpm pack</text>
+
+    <rect x="740" y="70" width="120" height="80" class="box"/>
+    <text x="750" y="100" class="title">publish</text>
+    <text x="750" y="120" class="sub">npm public</text>
+
+    <!-- arrows -->
+    <line x1="160" y1="110" x2="200" y2="110" class="arrow"/>
+    <line x1="340" y1="110" x2="380" y2="110" class="arrow"/>
+    <line x1="540" y1="110" x2="580" y2="110" class="arrow"/>
+    <line x1="700" y1="110" x2="740" y2="110" class="arrow"/>
+</svg>
+
