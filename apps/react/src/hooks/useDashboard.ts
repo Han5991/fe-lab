@@ -1,25 +1,27 @@
-import { useSuspenseQueries } from '@tanstack/react-query';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import {
   getDashboardStats,
   getChartData,
   getActivities,
 } from '../api/dashboard';
 
-export const useDashboardData = () => {
-  return useSuspenseQueries({
-    queries: [
-      {
-        queryKey: ['dashboardStats'],
-        queryFn: getDashboardStats,
-      },
-      {
-        queryKey: ['chartData'],
-        queryFn: getChartData,
-      },
-      {
-        queryKey: ['activities'],
-        queryFn: getActivities,
-      },
-    ],
+export const useDashboardStats = () => {
+  return useSuspenseQuery({
+    queryKey: ['dashboardStats'],
+    queryFn: getDashboardStats,
+  });
+};
+
+export const useChartData = () => {
+  return useSuspenseQuery({
+    queryKey: ['chartData'],
+    queryFn: getChartData,
+  });
+};
+
+export const useActivities = () => {
+  return useSuspenseQuery({
+    queryKey: ['activities'],
+    queryFn: getActivities,
   });
 };

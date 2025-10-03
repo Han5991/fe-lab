@@ -36,21 +36,60 @@ const mockActivities: Activity[] = [
 ];
 
 export const handlers = [
-  // 대시보드 통계
+  // 대시보드 통계 - 50% 확률로 에러
   http.get('/api/dashboard/stats', async () => {
     await new Promise((resolve) => setTimeout(resolve, 500));
+
+    const shouldFail = Math.random() < 0.5;
+
+    if (shouldFail) {
+      return HttpResponse.json(
+        {
+          error: 'STATS_ERROR',
+          message: '통계 데이터를 불러오는데 실패했습니다',
+        },
+        { status: 500 },
+      );
+    }
+
     return HttpResponse.json(mockStats);
   }),
 
-  // 차트 데이터
+  // 차트 데이터 - 50% 확률로 에러
   http.get('/api/dashboard/chart', async () => {
     await new Promise((resolve) => setTimeout(resolve, 300));
+
+    const shouldFail = Math.random() < 0.5;
+
+    if (shouldFail) {
+      return HttpResponse.json(
+        {
+          error: 'CHART_ERROR',
+          message: '차트 데이터를 불러오는데 실패했습니다',
+        },
+        { status: 500 },
+      );
+    }
+
     return HttpResponse.json(mockChartData);
   }),
 
-  // 활동 피드
+  // 활동 피드 - 50% 확률로 에러
   http.get('/api/dashboard/activities', async () => {
     await new Promise((resolve) => setTimeout(resolve, 400));
+
+    const shouldFail = Math.random() < 0.5;
+
+    if (shouldFail) {
+      return HttpResponse.json(
+        {
+          error: 'ACTIVITY_ERROR',
+          message: '활동 데이터를 불러오는데 실패했습니다',
+        },
+        { status: 500 },
+      );
+    }
+
     return HttpResponse.json(mockActivities);
   }),
 ];

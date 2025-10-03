@@ -1,7 +1,15 @@
 import { Suspense } from 'react';
 import { Box, Grid } from '@design-system/ui-lib/jsx';
-import { useDashboardData } from '@/hooks/useDashboard';
-import type { ChartData, Activity } from '@/api/dashboard';
+import {
+  useDashboardStats,
+  useChartData,
+  useActivities,
+} from '@/hooks/useDashboard';
+import {
+  StatsErrorBoundary,
+  ChartErrorBoundary,
+  ActivityErrorBoundary,
+} from '@/components/SectionErrorBoundary';
 
 // 통계 카드 컴포넌트
 const StatCard = ({
@@ -26,8 +34,40 @@ const StatCard = ({
   </Box>
 );
 
+// 통계 섹션
+const StatsSection = () => {
+  const { data: stats } = useDashboardStats();
+
+  return (
+    <>
+      <StatCard
+        title="총 방문자"
+        value={stats.visitors.total.toLocaleString()}
+        change={`${stats.visitors.change > 0 ? '+' : ''}${stats.visitors.change}%`}
+      />
+      <StatCard
+        title="신규 가입"
+        value={stats.signups.total.toLocaleString()}
+        change={`${stats.signups.change > 0 ? '+' : ''}${stats.signups.change}%`}
+      />
+      <StatCard
+        title="매출"
+        value={`₩${stats.revenue.total.toLocaleString()}`}
+        change={`${stats.revenue.change > 0 ? '+' : ''}${stats.revenue.change}%`}
+      />
+      <StatCard
+        title="전환율"
+        value={`${stats.conversion.rate}%`}
+        change={`${stats.conversion.change > 0 ? '+' : ''}${stats.conversion.change}%`}
+      />
+    </>
+  );
+};
+
 // 차트 영역 컴포넌트
-const ChartWidget = ({ data }: { data: ChartData }) => {
+const ChartWidget = () => {
+  const { data } = useChartData();
+
   return (
     <Box border="1px solid #e5e7eb" borderRadius="8px" p={6} bg="white">
       <Box fontSize="lg" fontWeight="semibold" mb={4}>
@@ -53,14 +93,16 @@ const ChartWidget = ({ data }: { data: ChartData }) => {
 };
 
 // 활동 피드 컴포넌트
-const ActivityFeed = ({ data }: { data: Activity[] }) => {
+const ActivityFeed = () => {
+  const { data } = useActivities();
+
   return (
     <Box border="1px solid #e5e7eb" borderRadius="8px" p={6} bg="white">
       <Box fontSize="lg" fontWeight="semibold" mb={4}>
         최근 활동
       </Box>
       <Box display="flex" flexDirection="column" gap={3}>
-        {data.map((activity) => (
+        {data.map(activity => (
           <Box
             key={activity.id}
             p={3}
@@ -76,15 +118,23 @@ const ActivityFeed = ({ data }: { data: Activity[] }) => {
   );
 };
 
-// 대시보드 내용
-const DashboardContent = () => {
-  // 병렬 패칭 - useSuspenseQueries 사용
-  const [statsQuery, chartQuery, activitiesQuery] = useDashboardData();
+// 로딩 폴백 컴포넌트
+const LoadingFallback = ({ message }: { message: string }) => (
+  <Box
+    border="1px solid #e5e7eb"
+    borderRadius="8px"
+    p={6}
+    bg="white"
+    height="100%"
+    display="flex"
+    alignItems="center"
+    justifyContent="center"
+  >
+    {message}
+  </Box>
+);
 
-  const stats = statsQuery.data;
-  const chartData = chartQuery.data;
-  const activities = activitiesQuery.data;
-
+const ErrorDesignPage = () => {
   return (
     <Grid
       gridTemplateColumns="repeat(4, minmax(0, 1fr))"
@@ -104,62 +154,47 @@ const DashboardContent = () => {
         border="1px solid #e5e7eb"
       >
         <Box fontSize="2xl" fontWeight="bold">
-          대시보드
+          대시보드 - 에러 핸들링 예제
+        </Box>
+        <Box fontSize="sm" color="#6b7280" mt={2}>
+          각 섹션은 독립적으로 로딩되고 에러를 처리합니다
         </Box>
       </Box>
 
-      {/* 통계 카드 4개 */}
-      <StatCard
-        title="총 방문자"
-        value={stats.visitors.total.toLocaleString()}
-        change={`${stats.visitors.change > 0 ? '+' : ''}${stats.visitors.change}%`}
-      />
-      <StatCard
-        title="신규 가입"
-        value={stats.signups.total.toLocaleString()}
-        change={`${stats.signups.change > 0 ? '+' : ''}${stats.signups.change}%`}
-      />
-      <StatCard
-        title="매출"
-        value={`₩${stats.revenue.total.toLocaleString()}`}
-        change={`${stats.revenue.change > 0 ? '+' : ''}${stats.revenue.change}%`}
-      />
-      <StatCard
-        title="전환율"
-        value={`${stats.conversion.rate}%`}
-        change={`${stats.conversion.change > 0 ? '+' : ''}${stats.conversion.change}%`}
-      />
+      {/* 통계 카드 4개 - 독립적 Suspense + ErrorBoundary */}
+      <StatsErrorBoundary>
+        <Suspense
+          fallback={
+            <>
+              <LoadingFallback message="통계 로딩..." />
+              <LoadingFallback message="통계 로딩..." />
+              <LoadingFallback message="통계 로딩..." />
+              <LoadingFallback message="통계 로딩..." />
+            </>
+          }
+        >
+          <StatsSection />
+        </Suspense>
+      </StatsErrorBoundary>
 
-      {/* 큰 차트 (2x2) */}
+      {/* 큰 차트 (2x2) - 독립적 Suspense + ErrorBoundary */}
       <Box gridColumn="span 2" gridRow="span 2">
-        <ChartWidget data={chartData} />
+        <ChartErrorBoundary>
+          <Suspense fallback={<LoadingFallback message="차트 로딩..." />}>
+            <ChartWidget />
+          </Suspense>
+        </ChartErrorBoundary>
       </Box>
 
-      {/* 활동 피드 (2x2) */}
+      {/* 활동 피드 (2x2) - 독립적 Suspense + ErrorBoundary */}
       <Box gridColumn="span 2" gridRow="span 2">
-        <ActivityFeed data={activities} />
+        <ActivityErrorBoundary>
+          <Suspense fallback={<LoadingFallback message="활동 로딩..." />}>
+            <ActivityFeed />
+          </Suspense>
+        </ActivityErrorBoundary>
       </Box>
     </Grid>
-  );
-};
-
-const ErrorDesignPage = () => {
-  return (
-    <Suspense
-      fallback={
-        <Box
-          height="100vh"
-          width="100vw"
-          display="flex"
-          alignItems="center"
-          justifyContent="center"
-        >
-          로딩 중...
-        </Box>
-      }
-    >
-      <DashboardContent />
-    </Suspense>
   );
 };
 

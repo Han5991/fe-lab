@@ -1,4 +1,5 @@
 import { instance } from '@/shared';
+import { StatsError, ChartError, ActivityError } from '@package/core';
 
 export interface DashboardStats {
   visitors: {
@@ -32,16 +33,37 @@ export interface Activity {
 }
 
 export const getDashboardStats = async (): Promise<DashboardStats> => {
-  const response = await instance.get('/api/dashboard/stats');
-  return response.data;
+  try {
+    const response = await instance.get('/api/dashboard/stats');
+    return response.data;
+  } catch (error: any) {
+    throw new StatsError(
+      error.response?.data?.message || '통계 데이터를 불러오는데 실패했습니다',
+      error.response?.data?.error,
+    );
+  }
 };
 
 export const getChartData = async (): Promise<ChartData> => {
-  const response = await instance.get('/api/dashboard/chart');
-  return response.data;
+  try {
+    const response = await instance.get('/api/dashboard/chart');
+    return response.data;
+  } catch (error: any) {
+    throw new ChartError(
+      error.response?.data?.message || '차트 데이터를 불러오는데 실패했습니다',
+      error.response?.data?.error,
+    );
+  }
 };
 
 export const getActivities = async (): Promise<Activity[]> => {
-  const response = await instance.get('/api/dashboard/activities');
-  return response.data;
+  try {
+    const response = await instance.get('/api/dashboard/activities');
+    return response.data;
+  } catch (error: any) {
+    throw new ActivityError(
+      error.response?.data?.message || '활동 데이터를 불러오는데 실패했습니다',
+      error.response?.data?.error,
+    );
+  }
 };
