@@ -48,9 +48,20 @@ export class Http {
     const data = await response.json();
 
     if (!response.ok) {
-      throw new ApiError(
-        `HTTP Error: ${response.status} ${response.statusText}`,
+      const apiError = new ApiError(
+        data?.message || `HTTP Error: ${response.status} ${response.statusText}`,
+        data?.error,
+        response.status,
       );
+
+      // 원본 응답 정보 보존 (API 레이어에서 활용 가능)
+      (apiError as any).response = {
+        data,
+        status: response.status,
+        headers: response.headers,
+      };
+
+      throw apiError;
     }
 
     return {

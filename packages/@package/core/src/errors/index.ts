@@ -20,6 +20,6 @@ export interface HttpErrorResponse {
   message?: string;
 }
 
-export function isApiError(error: unknown): error is HttpErrorResponse {
+export function isHttpError(error: unknown): error is HttpErrorResponse {
   return (error as ApiError).name === 'ApiError';
 }

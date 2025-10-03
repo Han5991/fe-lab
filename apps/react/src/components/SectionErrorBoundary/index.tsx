@@ -29,7 +29,7 @@ export class SectionErrorBoundary extends Component<Props, State> {
     const { errorType } = this.props;
 
     // 특정 에러 타입만 캐치하도록 설정된 경우
-    if (errorType.name !== error.name) {
+    if (!(error instanceof errorType)) {
       this.setState({ hasError: false, error: null });
       throw error;
     }
