@@ -24,8 +24,12 @@
   "pnpm": {
     "onlyBuiltDependencies": [
       "esbuild",
+      "msw",
       "sharp",
       "supabase"
+    ],
+    "ignoredBuiltDependencies": [
+      "msw"
     ]
   },
   "dependencies": {

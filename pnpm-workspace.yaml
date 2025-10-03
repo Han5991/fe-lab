@@ -3,7 +3,7 @@ packages:
   - 'packages/**/*'
 
 catalog:
-  '@pandacss/dev': 0.53.3
+  '@pandacss/dev': 1.4.1
 
 catalogs:
   react19:
