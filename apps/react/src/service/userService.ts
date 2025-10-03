@@ -1,6 +1,8 @@
 import type { UserReq, UserRes, UserServer } from '@/server';
 import { userServer } from '@/server';
 import type { UserStatus } from '@/shared';
+import type { IDateUtils } from '@/shared/lib';
+import { DateUtils } from '@/shared/lib';
 
 interface IUserService {
   createUser(user: UserReq): Promise<UserRes>;
@@ -13,18 +15,17 @@ interface IUserService {
 }
 
 export class UserService implements IUserService {
-  constructor(protected user: UserServer) {}
+  constructor(
+    protected user: UserServer,
+    protected dateUtils: IDateUtils
+  ) {}
 
   createUser(user: UserReq): Promise<UserRes> {
     return this.user.createUser(user);
   }
 
   getUserStatus(user: UserRes): UserStatus {
-    const now = Date.now();
-    const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
-    const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000;
-
-    if (user.isPremium && user.lastLoginDate.getTime() > sevenDaysAgo) {
+    if (user.isPremium && this.dateUtils.isWithinDays(user.lastLoginDate, 7)) {
       return 'premium-active';
     }
 
@@ -32,7 +33,7 @@ export class UserService implements IUserService {
       return 'active';
     }
 
-    if (user.createdAt.getTime() > thirtyDaysAgo) {
+    if (this.dateUtils.isWithinDays(user.createdAt, 30)) {
       return 'new';
     }
 
@@ -49,4 +50,4 @@ export class UserService implements IUserService {
   }
 }
 
-export const userService = new UserService(userServer);
+export const userService = new UserService(userServer, new DateUtils());
