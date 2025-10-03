@@ -134,68 +134,66 @@ const LoadingFallback = ({ message }: { message: string }) => (
   </Box>
 );
 
-const ErrorDesignPage = () => {
-  return (
-    <Grid
-      gridTemplateColumns="repeat(4, minmax(0, 1fr))"
-      gridTemplateRows="auto repeat(3, 1fr)"
-      gap={4}
-      height="100vh"
-      width="100vw"
+const ErrorDesignPage = () => (
+  <Grid
+    gridTemplateColumns="repeat(4, minmax(0, 1fr))"
+    gridTemplateRows="auto repeat(3, 1fr)"
+    gap={4}
+    height="100vh"
+    width="100vw"
+    p={4}
+    bg="#f9fafb"
+  >
+    {/* 헤더 */}
+    <Box
+      gridColumn="span 4"
       p={4}
-      bg="#f9fafb"
+      bg="white"
+      borderRadius="8px"
+      border="1px solid #e5e7eb"
     >
-      {/* 헤더 */}
-      <Box
-        gridColumn="span 4"
-        p={4}
-        bg="white"
-        borderRadius="8px"
-        border="1px solid #e5e7eb"
+      <Box fontSize="2xl" fontWeight="bold">
+        대시보드 - 에러 핸들링 예제
+      </Box>
+      <Box fontSize="sm" color="#6b7280" mt={2}>
+        각 섹션은 독립적으로 로딩되고 에러를 처리합니다
+      </Box>
+    </Box>
+
+    {/* 통계 카드 4개 - 독립적 Suspense + ErrorBoundary */}
+    <StatsErrorBoundary>
+      <Suspense
+        fallback={
+          <>
+            <LoadingFallback message="통계 로딩..." />
+            <LoadingFallback message="통계 로딩..." />
+            <LoadingFallback message="통계 로딩..." />
+            <LoadingFallback message="통계 로딩..." />
+          </>
+        }
       >
-        <Box fontSize="2xl" fontWeight="bold">
-          대시보드 - 에러 핸들링 예제
-        </Box>
-        <Box fontSize="sm" color="#6b7280" mt={2}>
-          각 섹션은 독립적으로 로딩되고 에러를 처리합니다
-        </Box>
-      </Box>
+        <StatsSection />
+      </Suspense>
+    </StatsErrorBoundary>
 
-      {/* 통계 카드 4개 - 독립적 Suspense + ErrorBoundary */}
-      <StatsErrorBoundary>
-        <Suspense
-          fallback={
-            <>
-              <LoadingFallback message="통계 로딩..." />
-              <LoadingFallback message="통계 로딩..." />
-              <LoadingFallback message="통계 로딩..." />
-              <LoadingFallback message="통계 로딩..." />
-            </>
-          }
-        >
-          <StatsSection />
+    {/* 큰 차트 (2x2) - 독립적 Suspense + ErrorBoundary */}
+    <Box gridColumn="span 2" gridRow="span 2">
+      <ChartErrorBoundary>
+        <Suspense fallback={<LoadingFallback message="차트 로딩..." />}>
+          <ChartWidget />
         </Suspense>
-      </StatsErrorBoundary>
+      </ChartErrorBoundary>
+    </Box>
 
-      {/* 큰 차트 (2x2) - 독립적 Suspense + ErrorBoundary */}
-      <Box gridColumn="span 2" gridRow="span 2">
-        <ChartErrorBoundary>
-          <Suspense fallback={<LoadingFallback message="차트 로딩..." />}>
-            <ChartWidget />
-          </Suspense>
-        </ChartErrorBoundary>
-      </Box>
-
-      {/* 활동 피드 (2x2) - 독립적 Suspense + ErrorBoundary */}
-      <Box gridColumn="span 2" gridRow="span 2">
-        <ActivityErrorBoundary>
-          <Suspense fallback={<LoadingFallback message="활동 로딩..." />}>
-            <ActivityFeed />
-          </Suspense>
-        </ActivityErrorBoundary>
-      </Box>
-    </Grid>
-  );
-};
+    {/* 활동 피드 (2x2) - 독립적 Suspense + ErrorBoundary */}
+    <Box gridColumn="span 2" gridRow="span 2">
+      <ActivityErrorBoundary>
+        <Suspense fallback={<LoadingFallback message="활동 로딩..." />}>
+          <ActivityFeed />
+        </Suspense>
+      </ActivityErrorBoundary>
+    </Box>
+  </Grid>
+);
 
 export default ErrorDesignPage;

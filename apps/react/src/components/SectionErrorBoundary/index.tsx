@@ -1,13 +1,13 @@
 import type { ReactNode } from 'react';
 import { Component } from 'react';
 import { Box } from '@design-system/ui-lib/jsx';
-import { AppError } from '@package/core';
+import { ApiError } from '@package/core';
 import { ActivityError, ChartError, StatsError } from '@/shared';
 
 interface Props {
   children: ReactNode;
   sectionName: string;
-  errorTypes?: (typeof AppError)[];
+  errorType: typeof ActivityError | typeof ChartError | typeof StatsError;
 }
 
 interface State {
@@ -25,22 +25,13 @@ export class SectionErrorBoundary extends Component<Props, State> {
     return { hasError: true, error };
   }
 
-  componentDidCatch(error: Error) {
-    const { errorTypes } = this.props;
+  componentDidCatch(error: ActivityError | ChartError | StatsError) {
+    const { errorType } = this.props;
 
     // 특정 에러 타입만 캐치하도록 설정된 경우
-    if (errorTypes && errorTypes.length > 0) {
-      const shouldHandle = errorTypes.some(
-        ErrorType => error instanceof ErrorType,
-      );
-
-      if (!shouldHandle) {
-        // 이 ErrorBoundary에서 처리할 에러가 아니면 위로 전파
-        throw error;
-      }
+    if (!(error instanceof errorType)) {
+      throw error;
     }
-
-    console.error(`[${this.props.sectionName}] Error caught:`, error);
   }
 
   resetError = () => {
@@ -54,7 +45,7 @@ export class SectionErrorBoundary extends Component<Props, State> {
       let errorCode = '';
 
       // 커스텀 에러 클래스인 경우 추가 정보 표시
-      if (error instanceof AppError) {
+      if (error instanceof ApiError) {
         errorCode = error.code || '';
       }
 
@@ -104,13 +95,13 @@ export class SectionErrorBoundary extends Component<Props, State> {
 
 // 섹션별 ErrorBoundary 래퍼
 export const StatsErrorBoundary = ({ children }: { children: ReactNode }) => (
-  <SectionErrorBoundary sectionName="통계" errorTypes={[StatsError]}>
+  <SectionErrorBoundary sectionName="통계" errorType={StatsError}>
     {children}
   </SectionErrorBoundary>
 );
 
 export const ChartErrorBoundary = ({ children }: { children: ReactNode }) => (
-  <SectionErrorBoundary sectionName="차트" errorTypes={[ChartError]}>
+  <SectionErrorBoundary sectionName="차트" errorType={ChartError}>
     {children}
   </SectionErrorBoundary>
 );
@@ -120,7 +111,7 @@ export const ActivityErrorBoundary = ({
 }: {
   children: ReactNode;
 }) => (
-  <SectionErrorBoundary sectionName="활동" errorTypes={[ActivityError]}>
+  <SectionErrorBoundary sectionName="활동" errorType={ActivityError}>
     {children}
   </SectionErrorBoundary>
 );
