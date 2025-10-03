@@ -1,3 +1,3 @@
 import { Http } from '@package/core';
 
-export const instance = new Http('http://localhost');
+export const instance = new Http('http://localhost:5173');

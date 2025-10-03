@@ -9,7 +9,7 @@ const buttonRecipe = defineRecipe({
   },
   variants: {
     visual: {
-      funky: { bg: 'red.200', color: 'white' },
+      funky: { bg: 'blue.500', color: 'white' },
       edgy: { border: '3px solid token(colors.purple.500)' },
     },
     size: {

@@ -1,11 +1,12 @@
 import { setupServer } from 'msw/node';
 import { http, HttpResponse } from 'msw';
+import { beforeAll, afterEach, afterAll, describe, it, expect } from 'vitest';
 import type { UserReq, UserRes } from '@/server/user/types';
 import { userServer } from '@/server/user/api';
 
 const server = setupServer(
   http.post<never, UserReq>(
-    'http://localhost/api/user',
+    'http://localhost:5173/api/user',
     async ({ request }) => {
       const user = await request.json();
       return HttpResponse.json<UserRes>({
@@ -21,7 +22,7 @@ const server = setupServer(
   ),
 );
 
-beforeAll(() => server.listen());
+beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
 afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 
@@ -34,7 +35,12 @@ describe('UserServerImpl', () => {
       id: userReq.id,
       name: 'New User',
       email: 'test@test.com',
+      isPremium: false,
+      subscriptionStatus: 'inactive',
       createdAt: expect.stringMatching(
+        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/,
+      ),
+      lastLoginDate: expect.stringMatching(
         /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/,
       ),
     });

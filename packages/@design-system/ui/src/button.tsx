@@ -1,5 +1,5 @@
-import { ComponentPropsWithoutRef } from 'react';
-import { button, ButtonVariantProps } from '@design-system/ui-lib/recipes';
+import type { ComponentPropsWithoutRef } from 'react';
+import { button, type ButtonVariantProps } from '@design-system/ui-lib/recipes';
 import { cx } from '@design-system/ui-lib/css';
 
 export interface ButtonProps

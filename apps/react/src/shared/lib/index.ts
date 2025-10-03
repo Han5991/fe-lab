@@ -1,2 +1,3 @@
 export * from './http.client';
-export * from './date.utils';
+export * from './errors';
+export * from './date-utils';
