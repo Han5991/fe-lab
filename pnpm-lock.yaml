@@ -11,17 +11,17 @@ catalogs:
       version: 0.53.3
   react19:
     '@types/react':
-      specifier: ^19.0.8
-      version: 19.0.10
+      specifier: ^19.2.0
+      version: 19.2.0
     '@types/react-dom':
-      specifier: ^19.0.3
-      version: 19.0.4
+      specifier: ^19.2.0
+      version: 19.2.0
     react:
-      specifier: 19.1.0
-      version: 19.1.0
+      specifier: ^19.3.0-canary-a757cb76-20251002
+      version: 19.3.0-canary-a757cb76-20251002
     react-dom:
-      specifier: 19.1.0
-      version: 19.1.0
+      specifier: ^19.3.0-canary-a757cb76-20251002
+      version: 19.3.0-canary-a757cb76-20251002
   typescript5:
     typescript:
       specifier: 5.8.3
@@ -58,34 +58,34 @@ importers:
         version: 3.1.0(acorn@8.14.0)
       '@mdx-js/react':
         specifier: ^3.1.0
-        version: 3.1.0(@types/react@19.0.10)(react@19.1.0)
+        version: 3.1.0(@types/react@19.2.0)(react@19.3.0-canary-a757cb76-20251002)
       '@next/mdx':
         specifier: ^15.3.4
-        version: 15.3.4(@mdx-js/loader@3.1.0(acorn@8.14.0))(@mdx-js/react@3.1.0(@types/react@19.0.10)(react@19.1.0))
+        version: 15.3.4(@mdx-js/loader@3.1.0(acorn@8.14.0))(@mdx-js/react@3.1.0(@types/react@19.2.0)(react@19.3.0-canary-a757cb76-20251002))
       '@next/third-parties':
         specifier: ^15.3.4
-        version: 15.3.4(next@15.4.0-canary.83(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react@19.1.0)
+        version: 15.3.4(next@15.4.0-canary.83(react-dom@19.3.0-canary-a757cb76-20251002(react@19.3.0-canary-a757cb76-20251002))(react@19.3.0-canary-a757cb76-20251002))(react@19.3.0-canary-a757cb76-20251002)
       '@supabase/supabase-js':
         specifier: ^2.50.0
         version: 2.50.0
       '@tanstack/react-query':
         specifier: ^5.81.2
-        version: 5.81.2(react@19.1.0)
+        version: 5.81.2(react@19.3.0-canary-a757cb76-20251002)
       gray-matter:
         specifier: ^4.0.3
         version: 4.0.3
       next:
         specifier: 15.4.0-canary.83
-        version: 15.4.0-canary.83(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+        version: 15.4.0-canary.83(react-dom@19.3.0-canary-a757cb76-20251002(react@19.3.0-canary-a757cb76-20251002))(react@19.3.0-canary-a757cb76-20251002)
       react:
         specifier: catalog:react19
-        version: 19.1.0
+        version: 19.3.0-canary-a757cb76-20251002
       react-dom:
         specifier: catalog:react19
-        version: 19.1.0(react@19.1.0)
+        version: 19.3.0-canary-a757cb76-20251002(react@19.3.0-canary-a757cb76-20251002)
       react-markdown:
         specifier: ^10.1.0
-        version: 10.1.0(@types/react@19.0.10)(react@19.1.0)
+        version: 10.1.0(@types/react@19.2.0)(react@19.3.0-canary-a757cb76-20251002)
     devDependencies:
       '@eslint/eslintrc':
         specifier: ^3
@@ -101,10 +101,10 @@ importers:
         version: 22.15.31
       '@types/react':
         specifier: catalog:react19
-        version: 19.0.10
+        version: 19.2.0
       '@types/react-dom':
         specifier: catalog:react19
-        version: 19.0.4(@types/react@19.0.10)
+        version: 19.2.0(@types/react@19.2.0)
       eslint:
         specifier: ^9
         version: 9.27.0(jiti@2.4.2)
@@ -165,13 +165,13 @@ importers:
         version: link:../../packages/@design-system/ui-lib
       next:
         specifier: 15.4.0-canary.23
-        version: 15.4.0-canary.23(@babel/core@7.27.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+        version: 15.4.0-canary.23(@babel/core@7.27.1)(react-dom@19.3.0-canary-a757cb76-20251002(react@19.3.0-canary-a757cb76-20251002))(react@19.3.0-canary-a757cb76-20251002)
       react:
         specifier: catalog:react19
-        version: 19.1.0
+        version: 19.3.0-canary-a757cb76-20251002
       react-dom:
         specifier: catalog:react19
-        version: 19.1.0(react@19.1.0)
+        version: 19.3.0-canary-a757cb76-20251002(react@19.3.0-canary-a757cb76-20251002)
     devDependencies:
       '@eslint/eslintrc':
         specifier: ^3
@@ -190,7 +190,7 @@ importers:
         version: 6.6.3
       '@testing-library/react':
         specifier: ^16.2.0
-        version: 16.3.0(@testing-library/dom@10.4.0)(@types/react-dom@19.0.4(@types/react@19.0.10))(@types/react@19.0.10)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+        version: 16.3.0(@testing-library/dom@10.4.0)(@types/react-dom@19.2.0(@types/react@19.2.0))(@types/react@19.2.0)(react-dom@19.3.0-canary-a757cb76-20251002(react@19.3.0-canary-a757cb76-20251002))(react@19.3.0-canary-a757cb76-20251002)
       '@testing-library/user-event':
         specifier: ^14.6.1
         version: 14.6.1(@testing-library/dom@10.4.0)
@@ -202,10 +202,10 @@ importers:
         version: 22.15.31
       '@types/react':
         specifier: catalog:react19
-        version: 19.0.10
+        version: 19.2.0
       '@types/react-dom':
         specifier: catalog:react19
-        version: 19.0.4(@types/react@19.0.10)
+        version: 19.2.0(@types/react@19.2.0)
       eslint:
         specifier: ^9
         version: 9.27.0(jiti@2.4.2)
@@ -226,7 +226,7 @@ importers:
         version: 29.7.0
       next-router-mock:
         specifier: ^0.9.13
-        version: 0.9.13(next@15.4.0-canary.23(@babel/core@7.27.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react@19.1.0)
+        version: 0.9.13(next@15.4.0-canary.23(@babel/core@7.27.1)(react-dom@19.3.0-canary-a757cb76-20251002(react@19.3.0-canary-a757cb76-20251002))(react@19.3.0-canary-a757cb76-20251002))(react@19.3.0-canary-a757cb76-20251002)
       ts-node:
         specifier: ^10.9.2
         version: 10.9.2(@types/node@22.15.31)(typescript@5.8.3)
@@ -247,13 +247,13 @@ importers:
         version: link:../../packages/@package/core
       react:
         specifier: catalog:react19
-        version: 19.1.0
+        version: 19.3.0-canary-a757cb76-20251002
       react-dom:
         specifier: catalog:react19
-        version: 19.1.0(react@19.1.0)
+        version: 19.3.0-canary-a757cb76-20251002(react@19.3.0-canary-a757cb76-20251002)
       react-router:
         specifier: ^7.5.2
-        version: 7.5.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+        version: 7.5.2(react-dom@19.3.0-canary-a757cb76-20251002(react@19.3.0-canary-a757cb76-20251002))(react@19.3.0-canary-a757cb76-20251002)
     devDependencies:
       '@eslint/js':
         specifier: ^9.19.0
@@ -266,7 +266,7 @@ importers:
         version: 6.6.3
       '@testing-library/react':
         specifier: ^16.2.0
-        version: 16.3.0(@testing-library/dom@10.4.0)(@types/react-dom@19.0.4(@types/react@19.0.10))(@types/react@19.0.10)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+        version: 16.3.0(@testing-library/dom@10.4.0)(@types/react-dom@19.2.0(@types/react@19.2.0))(@types/react@19.2.0)(react-dom@19.3.0-canary-a757cb76-20251002(react@19.3.0-canary-a757cb76-20251002))(react@19.3.0-canary-a757cb76-20251002)
       '@testing-library/user-event':
         specifier: ^14.6.1
         version: 14.6.1(@testing-library/dom@10.4.0)
@@ -275,10 +275,10 @@ importers:
         version: 22.15.31
       '@types/react':
         specifier: catalog:react19
-        version: 19.0.10
+        version: 19.2.0
       '@types/react-dom':
         specifier: catalog:react19
-        version: 19.0.4(@types/react@19.0.10)
+        version: 19.2.0(@types/react@19.2.0)
       '@vitejs/plugin-react':
         specifier: ^4.3.4
         version: 4.4.1(vite@6.3.5(@types/node@22.15.31)(jiti@2.4.2)(lightningcss@1.29.1))
@@ -365,7 +365,7 @@ importers:
         version: link:../ui-lib
       tsup:
         specifier: 8.4.0
-        version: 8.4.0(jiti@2.4.2)(postcss@8.4.49)(typescript@5.8.3)
+        version: 8.4.0(jiti@2.4.2)(postcss@8.5.3)(typescript@5.8.3)
       typescript:
         specifier: 5.8.3
         version: 5.8.3
@@ -375,16 +375,16 @@ importers:
         version: 0.53.3(jsdom@26.1.0)(typescript@5.8.3)
       '@types/react':
         specifier: catalog:react19
-        version: 19.0.10
+        version: 19.2.0
       '@types/react-dom':
         specifier: catalog:react19
-        version: 19.0.4(@types/react@19.0.10)
+        version: 19.2.0(@types/react@19.2.0)
       react:
         specifier: catalog:react19
-        version: 19.1.0
+        version: 19.3.0-canary-a757cb76-20251002
       react-dom:
         specifier: catalog:react19
-        version: 19.1.0(react@19.1.0)
+        version: 19.3.0-canary-a757cb76-20251002(react@19.3.0-canary-a757cb76-20251002)
 
   packages/@design-system/ui-lib: {}
 
@@ -2339,8 +2339,16 @@ packages:
     peerDependencies:
       '@types/react': ^19.0.0
 
+  '@types/react-dom@19.2.0':
+    resolution: {integrity: sha512-brtBs0MnE9SMx7px208g39lRmC5uHZs96caOJfTjFcYSLHNamvaSMfJNagChVNkup2SdtOxKX1FDBkRSJe1ZAg==}
+    peerDependencies:
+      '@types/react': ^19.2.0
+
   '@types/react@19.0.10':
     resolution: {integrity: sha512-JuRQ9KXLEjaUNjTWpzuR231Z2WpIwczOkBEIvbHNCzQefFIT0L8IqE6NV6ULLyC1SI/i234JnDoMkfg+RjQj2g==}
+
+  '@types/react@19.2.0':
+    resolution: {integrity: sha512-1LOH8xovvsKsCBq1wnT4ntDUdCJKmnEakhsuoUSy6ExlHCkGP2hqnatagYTgFk6oeL0VU31u7SNjunPN+GchtA==}
 
   '@types/stack-utils@2.0.3':
     resolution: {integrity: sha512-9aEbYZ3TbYMznPdcdr3SmIrLXwC/AKZXQeCf9Pgao5CKb8CyHuEX5jzWPTkvregvhRJHcpRO6BFoGW9ycaOkYw==}
@@ -5113,6 +5121,11 @@ packages:
     peerDependencies:
       react: ^19.1.0
 
+  react-dom@19.3.0-canary-a757cb76-20251002:
+    resolution: {integrity: sha512-UvMoAElWcrEe1keKAMZqJ2Rw4wQZah8GFQHvqCLsBd+50LR22sme5hkjiyUO1dnoSVfAvEncARgDfJVEJ1miKA==}
+    peerDependencies:
+      react: 19.3.0-canary-a757cb76-20251002
+
   react-is@16.13.1:
     resolution: {integrity: sha512-24e6ynE2H+OKt4kqsOvNd8kBpV65zoxbA4BVsEOB3ARVWQki/DHzaUoC5KuON/BiccDaCCTZBuOcfZs70kR8bQ==}
 
@@ -5144,6 +5157,10 @@ packages:
 
   react@19.1.0:
     resolution: {integrity: sha512-FS+XFBNvn3GTAWq26joslQgWNoFu08F4kl0J4CgdNKADkdSGXQyTCnKteIAJy96Br6YbpEU1LSzV5dYtjMkMDg==}
+    engines: {node: '>=0.10.0'}
+
+  react@19.3.0-canary-a757cb76-20251002:
+    resolution: {integrity: sha512-sbMInOneG99tvHhQShNxQ16JT06vAPT3VIL/ez3O2lFLPOqfjLaS9Ka7mOvu6A80i+R01PIVT4tyluhu71WUtg==}
     engines: {node: '>=0.10.0'}
 
   read-cmd-shim@5.0.0:
@@ -5305,6 +5322,9 @@ packages:
 
   scheduler@0.26.0:
     resolution: {integrity: sha512-NlHwttCI/l5gCPR3D1nNXtWABUmBwvZpEQiD4IXSbIDq8BzLIK/7Ir5gTFSGZDUu37K5cMNp0hFtzO38sC7gWA==}
+
+  scheduler@0.28.0-canary-a757cb76-20251002:
+    resolution: {integrity: sha512-H6/e/ybFu7/U5c+e1QcBtB/8ZDXHLpOX67KU3lXt/PIzWLo6oZzO3pwuqviUlSFHKVeEriSO8jJuB4L0hH7wrQ==}
 
   section-matter@1.0.0:
     resolution: {integrity: sha512-vfD3pmTzGpufjScBh50YHKzEu2lxBWhVEHsNGoEXmCmn2hKGfeNLYMzCJpe8cD7gqX7TJluOVpBkAequ6dgMmA==}
@@ -7678,11 +7698,11 @@ snapshots:
       - acorn
       - supports-color
 
-  '@mdx-js/react@3.1.0(@types/react@19.0.10)(react@19.1.0)':
+  '@mdx-js/react@3.1.0(@types/react@19.2.0)(react@19.3.0-canary-a757cb76-20251002)':
     dependencies:
       '@types/mdx': 2.0.13
-      '@types/react': 19.0.10
-      react: 19.1.0
+      '@types/react': 19.2.0
+      react: 19.3.0-canary-a757cb76-20251002
 
   '@mswjs/interceptors@0.37.6':
     dependencies:
@@ -7711,12 +7731,12 @@ snapshots:
     dependencies:
       fast-glob: 3.3.1
 
-  '@next/mdx@15.3.4(@mdx-js/loader@3.1.0(acorn@8.14.0))(@mdx-js/react@3.1.0(@types/react@19.0.10)(react@19.1.0))':
+  '@next/mdx@15.3.4(@mdx-js/loader@3.1.0(acorn@8.14.0))(@mdx-js/react@3.1.0(@types/react@19.2.0)(react@19.3.0-canary-a757cb76-20251002))':
     dependencies:
       source-map: 0.7.4
     optionalDependencies:
       '@mdx-js/loader': 3.1.0(acorn@8.14.0)
-      '@mdx-js/react': 3.1.0(@types/react@19.0.10)(react@19.1.0)
+      '@mdx-js/react': 3.1.0(@types/react@19.2.0)(react@19.3.0-canary-a757cb76-20251002)
 
   '@next/swc-darwin-arm64@15.4.0-canary.23':
     optional: true
@@ -7790,10 +7810,10 @@ snapshots:
   '@next/swc-win32-x64-msvc@15.4.5':
     optional: true
 
-  '@next/third-parties@15.3.4(next@15.4.0-canary.83(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react@19.1.0)':
+  '@next/third-parties@15.3.4(next@15.4.0-canary.83(react-dom@19.3.0-canary-a757cb76-20251002(react@19.3.0-canary-a757cb76-20251002))(react@19.3.0-canary-a757cb76-20251002))(react@19.3.0-canary-a757cb76-20251002)':
     dependencies:
-      next: 15.4.0-canary.83(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
-      react: 19.1.0
+      next: 15.4.0-canary.83(react-dom@19.3.0-canary-a757cb76-20251002(react@19.3.0-canary-a757cb76-20251002))(react@19.3.0-canary-a757cb76-20251002)
+      react: 19.3.0-canary-a757cb76-20251002
       third-party-capital: 1.0.20
 
   '@nodelib/fs.scandir@2.1.5':
@@ -8170,10 +8190,10 @@ snapshots:
 
   '@tanstack/query-core@5.81.2': {}
 
-  '@tanstack/react-query@5.81.2(react@19.1.0)':
+  '@tanstack/react-query@5.81.2(react@19.3.0-canary-a757cb76-20251002)':
     dependencies:
       '@tanstack/query-core': 5.81.2
-      react: 19.1.0
+      react: 19.3.0-canary-a757cb76-20251002
 
   '@testing-library/dom@10.4.0':
     dependencies:
@@ -8196,15 +8216,15 @@ snapshots:
       lodash: 4.17.21
       redent: 3.0.0
 
-  '@testing-library/react@16.3.0(@testing-library/dom@10.4.0)(@types/react-dom@19.0.4(@types/react@19.0.10))(@types/react@19.0.10)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)':
+  '@testing-library/react@16.3.0(@testing-library/dom@10.4.0)(@types/react-dom@19.2.0(@types/react@19.2.0))(@types/react@19.2.0)(react-dom@19.3.0-canary-a757cb76-20251002(react@19.3.0-canary-a757cb76-20251002))(react@19.3.0-canary-a757cb76-20251002)':
     dependencies:
       '@babel/runtime': 7.26.9
       '@testing-library/dom': 10.4.0
-      react: 19.1.0
-      react-dom: 19.1.0(react@19.1.0)
+      react: 19.3.0-canary-a757cb76-20251002
+      react-dom: 19.3.0-canary-a757cb76-20251002(react@19.3.0-canary-a757cb76-20251002)
     optionalDependencies:
-      '@types/react': 19.0.10
-      '@types/react-dom': 19.0.4(@types/react@19.0.10)
+      '@types/react': 19.2.0
+      '@types/react-dom': 19.2.0(@types/react@19.2.0)
 
   '@testing-library/user-event@14.6.1(@testing-library/dom@10.4.0)':
     dependencies:
@@ -8325,7 +8345,15 @@ snapshots:
     dependencies:
       '@types/react': 19.0.10
 
+  '@types/react-dom@19.2.0(@types/react@19.2.0)':
+    dependencies:
+      '@types/react': 19.2.0
+
   '@types/react@19.0.10':
+    dependencies:
+      csstype: 3.1.3
+
+  '@types/react@19.2.0':
     dependencies:
       csstype: 3.1.3
 
@@ -11437,20 +11465,20 @@ snapshots:
 
   natural-compare@1.4.0: {}
 
-  next-router-mock@0.9.13(next@15.4.0-canary.23(@babel/core@7.27.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react@19.1.0):
+  next-router-mock@0.9.13(next@15.4.0-canary.23(@babel/core@7.27.1)(react-dom@19.3.0-canary-a757cb76-20251002(react@19.3.0-canary-a757cb76-20251002))(react@19.3.0-canary-a757cb76-20251002))(react@19.3.0-canary-a757cb76-20251002):
     dependencies:
-      next: 15.4.0-canary.23(@babel/core@7.27.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
-      react: 19.1.0
+      next: 15.4.0-canary.23(@babel/core@7.27.1)(react-dom@19.3.0-canary-a757cb76-20251002(react@19.3.0-canary-a757cb76-20251002))(react@19.3.0-canary-a757cb76-20251002)
+      react: 19.3.0-canary-a757cb76-20251002
 
-  next@15.4.0-canary.23(@babel/core@7.27.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0):
+  next@15.4.0-canary.23(@babel/core@7.27.1)(react-dom@19.3.0-canary-a757cb76-20251002(react@19.3.0-canary-a757cb76-20251002))(react@19.3.0-canary-a757cb76-20251002):
     dependencies:
       '@next/env': 15.4.0-canary.23
       '@swc/helpers': 0.5.15
       caniuse-lite: 1.0.30001700
       postcss: 8.4.31
-      react: 19.1.0
-      react-dom: 19.1.0(react@19.1.0)
-      styled-jsx: 5.1.6(@babel/core@7.27.1)(react@19.1.0)
+      react: 19.3.0-canary-a757cb76-20251002
+      react-dom: 19.3.0-canary-a757cb76-20251002(react@19.3.0-canary-a757cb76-20251002)
+      styled-jsx: 5.1.6(@babel/core@7.27.1)(react@19.3.0-canary-a757cb76-20251002)
     optionalDependencies:
       '@next/swc-darwin-arm64': 15.4.0-canary.23
       '@next/swc-darwin-x64': 15.4.0-canary.23
@@ -11465,15 +11493,15 @@ snapshots:
       - '@babel/core'
       - babel-plugin-macros
 
-  next@15.4.0-canary.83(react-dom@19.1.0(react@19.1.0))(react@19.1.0):
+  next@15.4.0-canary.83(react-dom@19.3.0-canary-a757cb76-20251002(react@19.3.0-canary-a757cb76-20251002))(react@19.3.0-canary-a757cb76-20251002):
     dependencies:
       '@next/env': 15.4.0-canary.83
       '@swc/helpers': 0.5.15
       caniuse-lite: 1.0.30001718
       postcss: 8.4.31
-      react: 19.1.0
-      react-dom: 19.1.0(react@19.1.0)
-      styled-jsx: 5.1.6(@babel/core@7.27.1)(react@19.1.0)
+      react: 19.3.0-canary-a757cb76-20251002
+      react-dom: 19.3.0-canary-a757cb76-20251002(react@19.3.0-canary-a757cb76-20251002)
+      styled-jsx: 5.1.6(@babel/core@7.27.1)(react@19.3.0-canary-a757cb76-20251002)
     optionalDependencies:
       '@next/swc-darwin-arm64': 15.4.0-canary.83
       '@next/swc-darwin-x64': 15.4.0-canary.83
@@ -11496,7 +11524,7 @@ snapshots:
       postcss: 8.4.31
       react: 19.1.0
       react-dom: 19.1.0(react@19.1.0)
-      styled-jsx: 5.1.6(@babel/core@7.27.1)(react@19.1.0)
+      styled-jsx: 5.1.6(react@19.1.0)
     optionalDependencies:
       '@next/swc-darwin-arm64': 15.4.5
       '@next/swc-darwin-x64': 15.4.5
@@ -11724,12 +11752,12 @@ snapshots:
     dependencies:
       postcss: 8.4.49
 
-  postcss-load-config@6.0.1(jiti@2.4.2)(postcss@8.4.49):
+  postcss-load-config@6.0.1(jiti@2.4.2)(postcss@8.5.3):
     dependencies:
       lilconfig: 3.1.3
     optionalDependencies:
       jiti: 2.4.2
-      postcss: 8.4.49
+      postcss: 8.5.3
 
   postcss-merge-rules@7.0.4(postcss@8.4.49):
     dependencies:
@@ -11832,22 +11860,27 @@ snapshots:
       react: 19.1.0
       scheduler: 0.26.0
 
+  react-dom@19.3.0-canary-a757cb76-20251002(react@19.3.0-canary-a757cb76-20251002):
+    dependencies:
+      react: 19.3.0-canary-a757cb76-20251002
+      scheduler: 0.28.0-canary-a757cb76-20251002
+
   react-is@16.13.1: {}
 
   react-is@17.0.2: {}
 
   react-is@18.3.1: {}
 
-  react-markdown@10.1.0(@types/react@19.0.10)(react@19.1.0):
+  react-markdown@10.1.0(@types/react@19.2.0)(react@19.3.0-canary-a757cb76-20251002):
     dependencies:
       '@types/hast': 3.0.4
       '@types/mdast': 4.0.4
-      '@types/react': 19.0.10
+      '@types/react': 19.2.0
       devlop: 1.1.0
       hast-util-to-jsx-runtime: 2.3.6
       html-url-attributes: 3.0.1
       mdast-util-to-hast: 13.2.0
-      react: 19.1.0
+      react: 19.3.0-canary-a757cb76-20251002
       remark-parse: 11.0.0
       remark-rehype: 11.1.2
       unified: 11.0.5
@@ -11858,16 +11891,18 @@ snapshots:
 
   react-refresh@0.17.0: {}
 
-  react-router@7.5.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0):
+  react-router@7.5.2(react-dom@19.3.0-canary-a757cb76-20251002(react@19.3.0-canary-a757cb76-20251002))(react@19.3.0-canary-a757cb76-20251002):
     dependencies:
       cookie: 1.0.2
-      react: 19.1.0
+      react: 19.3.0-canary-a757cb76-20251002
       set-cookie-parser: 2.7.1
       turbo-stream: 2.4.0
     optionalDependencies:
-      react-dom: 19.1.0(react@19.1.0)
+      react-dom: 19.3.0-canary-a757cb76-20251002(react@19.3.0-canary-a757cb76-20251002)
 
   react@19.1.0: {}
+
+  react@19.3.0-canary-a757cb76-20251002: {}
 
   read-cmd-shim@5.0.0: {}
 
@@ -12129,6 +12164,8 @@ snapshots:
       xmlchars: 2.2.0
 
   scheduler@0.26.0: {}
+
+  scheduler@0.28.0-canary-a757cb76-20251002: {}
 
   section-matter@1.0.0:
     dependencies:
@@ -12428,12 +12465,17 @@ snapshots:
     dependencies:
       inline-style-parser: 0.2.4
 
-  styled-jsx@5.1.6(@babel/core@7.27.1)(react@19.1.0):
+  styled-jsx@5.1.6(@babel/core@7.27.1)(react@19.3.0-canary-a757cb76-20251002):
+    dependencies:
+      client-only: 0.0.1
+      react: 19.3.0-canary-a757cb76-20251002
+    optionalDependencies:
+      '@babel/core': 7.27.1
+
+  styled-jsx@5.1.6(react@19.1.0):
     dependencies:
       client-only: 0.0.1
       react: 19.1.0
-    optionalDependencies:
-      '@babel/core': 7.27.1
 
   sucrase@3.35.0:
     dependencies:
@@ -12650,7 +12692,7 @@ snapshots:
 
   tslib@2.8.1: {}
 
-  tsup@8.4.0(jiti@2.4.2)(postcss@8.4.49)(typescript@5.8.3):
+  tsup@8.4.0(jiti@2.4.2)(postcss@8.5.3)(typescript@5.8.3):
     dependencies:
       bundle-require: 5.1.0(esbuild@0.25.2)
       cac: 6.7.14
@@ -12660,7 +12702,7 @@ snapshots:
       esbuild: 0.25.2
       joycon: 3.1.1
       picocolors: 1.1.1
-      postcss-load-config: 6.0.1(jiti@2.4.2)(postcss@8.4.49)
+      postcss-load-config: 6.0.1(jiti@2.4.2)(postcss@8.5.3)
       resolve-from: 5.0.0
       rollup: 4.34.8
       source-map: 0.8.0-beta.0
@@ -12669,7 +12711,7 @@ snapshots:
       tinyglobby: 0.2.12
       tree-kill: 1.2.2
     optionalDependencies:
-      postcss: 8.4.49
+      postcss: 8.5.3
       typescript: 5.8.3
     transitivePeerDependencies:
       - jiti

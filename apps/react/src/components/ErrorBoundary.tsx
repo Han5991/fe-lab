@@ -1,8 +1,10 @@
-import React, { Component, type ReactNode } from 'react';
+import type { BaseError } from '@/shared';
+import { Component } from 'react';
+import type { ErrorInfo, ReactNode } from 'react';
 
 interface ErrorBoundaryState {
   hasError: boolean;
-  error?: Error;
+  error?: BaseError;
 }
 
 export class ErrorBoundary extends Component<
@@ -14,7 +16,7 @@ export class ErrorBoundary extends Component<
     this.state = { hasError: false, error: undefined };
   }
 
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     // 에러 로깅 서비스에 에러를 기록합니다.
     console.error('Error caught by ErrorBoundary:', error, errorInfo);
   }
