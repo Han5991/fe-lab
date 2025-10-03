@@ -41,10 +41,10 @@ jobs:
             actions: read
 
           # Optional: Give a custom prompt to Claude. If this is not specified, Claude will perform the instructions specified in the comment that tagged it.
-          # prompt: 'Update the pull request description to include a summary of changes.'
+          prompt: '사용자의 요청을 수행하되, 모든 답변과 설명은 반드시 한글로 작성해주세요. ${{ github.event.comment.body || github.event.review.body || github.event.issue.body }}'
 
           # Optional: Add claude_args to customize behavior and configuration
           # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
           # or https://docs.claude.com/en/docs/claude-code/sdk#command-line for available options
-          claude_args: '--locale ko'
+          # claude_args: '--model claude-opus-4-1-20250805 --allowed-tools Bash(gh pr:*)'
 
