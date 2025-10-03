@@ -66,6 +66,8 @@ export const getChartData = async (): Promise<ChartData> => {
 
 export const getActivities = async (): Promise<Activity[]> => {
   try {
+    // 임시 에러 계층 테스트용 코드 이걸 풀면 더 상위 에러 바운더리로 전파됨
+    // throw new Error('test');
     const response = await instance.get('/api/dashboard/activities');
     return response.data;
   } catch (error: unknown) {

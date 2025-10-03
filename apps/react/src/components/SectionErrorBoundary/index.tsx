@@ -29,7 +29,8 @@ export class SectionErrorBoundary extends Component<Props, State> {
     const { errorType } = this.props;
 
     // 특정 에러 타입만 캐치하도록 설정된 경우
-    if (!(error instanceof errorType)) {
+    if (errorType.name !== error.name) {
+      this.setState({ hasError: false, error: null });
       throw error;
     }
   }
@@ -93,7 +94,6 @@ export class SectionErrorBoundary extends Component<Props, State> {
   }
 }
 
-// 섹션별 ErrorBoundary 래퍼
 export const StatsErrorBoundary = ({ children }: { children: ReactNode }) => (
   <SectionErrorBoundary sectionName="통계" errorType={StatsError}>
     {children}

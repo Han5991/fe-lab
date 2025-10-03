@@ -1,4 +1,5 @@
 import { HttpStatusCode } from './HttpStatusCode';
+import { ApiError } from '../errors';
 
 interface RequestConfig<T = any> {
   headers?: Record<string, string>;
@@ -47,7 +48,9 @@ export class Http {
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(`HTTP Error: ${response.status} ${response.statusText}`);
+      throw new ApiError(
+        `HTTP Error: ${response.status} ${response.statusText}`,
+      );
     }
 
     return {

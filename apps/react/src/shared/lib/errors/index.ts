@@ -27,7 +27,7 @@ export class ChartError extends ApiError {
 export class ActivityError extends ApiError {
   constructor(message: string, code?: string) {
     super(message, code, 500);
-    this.name = 'ActivityError';
+    this.name = 'ActivityError' as const;
   }
 }
 
