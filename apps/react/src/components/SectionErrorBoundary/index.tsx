@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
 import { Component } from 'react';
 import { Box } from '@design-system/ui-lib/jsx';
-import { StatsError, ChartError, ActivityError, AppError } from '@package/core';
+import { AppError } from '@package/core';
+import { ActivityError, ChartError, StatsError } from '@/shared';
 
 interface Props {
   children: ReactNode;
