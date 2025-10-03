@@ -21,5 +21,5 @@ export interface HttpErrorResponse {
 }
 
 export function isHttpError(error: unknown): error is HttpErrorResponse {
-  return (error as ApiError).name === 'ApiError';
+  return error instanceof ApiError;
 }
