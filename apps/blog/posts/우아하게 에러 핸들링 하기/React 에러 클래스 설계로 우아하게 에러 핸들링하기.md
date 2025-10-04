@@ -1,23 +1,24 @@
 ## 0. 프롤로그
 
-> 주간 회고 시간.
+> `throw`를 보다가 문득 깨달았다.
 >
-> "에러 핸들링 개선했다고 했는데, 디버깅이 더 힘들어진 것 같아요."
+> ```typescript
+> try {
+>   throw new Error('error');
+> } catch (error) {
+>   throw error; // 상위로 전파된다
+> }
+> ```
 >
-> 팀원의 한마디에 Sentry 대시보드를 열어봤다.
-
-```
-Error: Request failed with status code 500
-...
-```
-
-모든 에러가 `Error`로만 찍혀있다.  
-통계 API에서 터진 건지, 차트 API에서 터진 건지, 활동 API에서 터진 건지...  
-에러 메시지만 봐서는 구분이 안 된다.
-
-[JavaScript 에러 핸들링 글](https://velog.io/@rewq5991/javascript-error)에서 커스텀 에러 클래스를,  
-[React 에러 핸들링 글](https://velog.io/@rewq5991/react-error)에서 ErrorBoundary 기본을 다뤘었는데,  
-이제 두 개념을 결합해서 실전 프로젝트에 제대로 적용해볼 때가 온 것 같다.
+> 에러는 계층을 따라 올라간다.
+> 그럼 에러 클래스도 계층 구조로 설계할 수 있지 않을까?
+>
+> ```
+> 깊게: Error → ApiError → HttpError → NotFoundError → StatsNotFoundError
+> 넓게: Error → ApiError → StatsError, ChartError, ActivityError
+> ```
+>
+> ErrorBoundary에서 `instanceof`로 잡으려면 되지 않을까?
 
 ## 1. 왜 에러를 변환해야 하는가?
 
