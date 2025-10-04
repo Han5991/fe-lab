@@ -96,8 +96,8 @@ ApiError (Base)
 
 3. **공통 속성 관리**
    ```
-   // ApiError에 statusCode, code 정의
-   // 하위 클래스들이 자동으로 상속
+   ApiError에 statusCode, code 정의
+   하위 클래스들이 자동으로 상속
    ```
 
 **클래스 상속이 있어야 얕고 넓은 구조를 만들 수 있다.**
