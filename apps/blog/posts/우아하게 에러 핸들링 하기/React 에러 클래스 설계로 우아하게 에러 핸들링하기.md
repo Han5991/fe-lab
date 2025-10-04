@@ -20,31 +20,9 @@
 >
 > ErrorBoundary에서 `instanceof`로 잡으려면 되지 않을까?
 
-## 1. 왜 에러를 변환해야 하는가?
+## 1. 에러를 어떻게 설계 할 것인가?
 
-### 현재 코드의 흐름
-
-대시보드 통계 데이터를 가져오는 API 함수는 이렇게 생겼다:
-
-```typescript
-const getDashboardStats = async () => {
-  const response = await instance.get('/api/dashboard/stats');
-  return response.data;
-};
-```
-
-간단하다. API 호출하고 데이터 반환. 에러가 발생하면?
-
-**흐름**:
-
-1. API 에러 발생 (네트워크 에러, 500 에러 등)
-2. React Query가 에러를 받음
-3. React Query → ErrorBoundary로 전파
-4. ErrorBoundary가 에러를 캐치
-
-문제없어 보인다. 실제로도 잘 동작한다. 하지만...
-
-### 문제: 모든 에러가 똑같이 보인다
+### 1.1. 문제: 모든 에러가 똑같이 보인다
 
 ```typescript
 // 통계 API
@@ -85,7 +63,44 @@ componentDidCatch(error: Error) {
 - ErrorBoundary에서 섹션별 다른 처리 불가능
 - 디버깅할 때 어느 API가 터진 건지 추적 어려움
 
-### 해결: 에러를 변환하자
+### 1.2. 왜 클래스 설계인가?
+
+프롤로그에서 본 계층 구조를 실제로 구현하려면 **클래스 상속**이 필요하다.
+
+```
+Error (JavaScript 내장)
+  ↓
+ApiError (Base)
+  ↓
+├─ StatsError
+├─ ChartError
+└─ ActivityError
+```
+
+**상속 구조의 장점**
+
+1. **instanceof로 타입 체크**
+
+   ```typescript
+   if (error instanceof StatsError) {
+     // StatsError만 처리
+   }
+   ```
+
+2. **계층적 ErrorBoundary 설계**
+
+   ```
+   StatsErrorBoundary: StatsError만 캐치
+   GlobalErrorBoundary: ApiError 전체 캐치
+   ```
+
+3. **공통 속성 관리**
+   ```
+   // ApiError에 statusCode, code 정의
+   // 하위 클래스들이 자동으로 상속
+   ```
+
+**클래스 상속이 있어야 얕고 넓은 구조를 만들 수 있다.**
 
 ```typescript
 const getDashboardStats = async () => {
@@ -114,13 +129,13 @@ const getDashboardStats = async () => {
 
 try-catch로 Error을 잡아서, 커스텀 에러 클래스로 변환해서 다시 던진다. 이게 `핵심`이다.
 
-## 💭 깊게 생각해보기?
+### 1.3. throw vs return?
 
 에러를 변환하기로 했다. 그런데 질문이 하나 생긴다.
 
 **"변환한 에러를 throw 해야 할까, return 해야 할까?"**
 
-### 두 가지 선택지
+**두 가지 선택지**
 
 **방식 1: throw**
 
