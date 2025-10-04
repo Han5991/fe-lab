@@ -456,9 +456,9 @@ ErrorBoundary에서 `instanceof StatsError`로 정확히 구분할 수 있다.
 
 전체 구현은 GitHub에서 확인할 수 있다:
 
-- [에러 클래스 정의](https://github.com/Han5991/fe-lab/blob/main/apps/react/src/shared/lib/errors/index.ts)
-- [API 레이어 적용](https://github.com/Han5991/fe-lab/blob/main/apps/react/src/api/dashboard.ts)
-- [Core 패키지 ApiError](https://github.com/Han5991/fe-lab/blob/main/packages/@package/core/src/errors/index.ts)
+- [에러 클래스 정의](https://github.com/Han5991/fe-lab/blob/c1c3e26/apps/react/src/shared/lib/errors/index.ts)
+- [API 레이어 적용](https://github.com/Han5991/fe-lab/blob/c1c3e26/apps/react/src/api/dashboard.ts)
+- [Core 패키지 ApiError](https://github.com/Han5991/fe-lab/blob/c1c3e26/packages/@package/core/src/errors/index.ts)
 
 ## 4. ErrorBoundary와 연결하기
 
@@ -613,8 +613,8 @@ export const ActivityErrorBoundary = ({
 
 전체 구현은 GitHub에서 확인할 수 있다:
 
-- [SectionErrorBoundary 구현](https://github.com/Han5991/fe-lab/blob/main/apps/react/src/components/SectionErrorBoundary/index.tsx)
-- [실제 사용 예시](https://github.com/Han5991/fe-lab/blob/main/apps/react/src/pages/error-design/index.tsx)
+- [SectionErrorBoundary 구현](https://github.com/Han5991/fe-lab/blob/c1c3e26/apps/react/src/components/SectionErrorBoundary/index.tsx)
+- [실제 사용 예시](https://github.com/Han5991/fe-lab/blob/c1c3e26/apps/react/src/pages/error-design/index.tsx)
 
 ## 5. 실전 활용
 
@@ -767,9 +767,9 @@ ApiError
 
 전체 구현은 GitHub에서 확인할 수 있다:
 
-- [대시보드 페이지](https://github.com/Han5991/fe-lab/blob/main/apps/react/src/pages/error-design/index.tsx)
-- [React Query 훅](https://github.com/Han5991/fe-lab/blob/main/apps/react/src/hooks/useDashboard.ts)
-- [테스트 코드](https://github.com/Han5991/fe-lab/blob/main/apps/react/src/pages/error-design/index.test.tsx)
+- [대시보드 페이지](https://github.com/Han5991/fe-lab/blob/c1c3e26/apps/react/src/pages/error-design/index.tsx)
+- [React Query 훅](https://github.com/Han5991/fe-lab/blob/c1c3e26/apps/react/src/hooks/useDashboard.ts)
+- [테스트 코드](https://github.com/Han5991/fe-lab/blob/c1c3e26/apps/react/src/pages/error-design/index.test.tsx)
 
 ## 6. 결론
 
