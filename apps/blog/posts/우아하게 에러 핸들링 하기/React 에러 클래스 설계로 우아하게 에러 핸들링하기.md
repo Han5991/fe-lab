@@ -113,7 +113,7 @@ const getDashboardStats = async () => {
 
 try-catch로 Error을 잡아서, 커스텀 에러 클래스로 변환해서 다시 던진다. 이게 `핵심`이다.
 
-## 1.5. throw를 사용해야 하는가?
+## 💭 깊게 생각해보기?
 
 에러를 변환하기로 했다. 그런데 질문이 하나 생긴다.
 
@@ -400,7 +400,7 @@ export class ActivityError extends ApiError {
 
 ### 3.3. 실제 사용
 
-API 레이어에서 이렇게 사용한다:
+앞서 본 패턴대로 API 레이어에서 사용한다:
 
 ```typescript
 const getDashboardStats = async (): Promise<DashboardStats> => {
@@ -601,7 +601,7 @@ React Query + Suspense + ErrorBoundary로 완성된 에러 처리 시스템을 �
 
 ### 5.1. 계층별 역할 분리
 
-전체 흐름을 다시 보자:
+전체 흐름을 보자:
 
 ```tsx
 // 1. API 레이어: 에러 변환
@@ -642,7 +642,7 @@ const StatsSection = () => {
   );
 };
 
-// 4. 사용: Suspense + ErrorBoundary
+// 4. Suspense + ErrorBoundary
 <StatsErrorBoundary>
   <Suspense fallback={<Loading />}>
     <StatsSection />
@@ -652,8 +652,8 @@ const StatsSection = () => {
 
 **각 계층의 역할**:
 
-- **API**: 에러 변환 (generic Error → 커스텀 에러)
-- **Hook**: 데이터 페칭 (React Query)
+- **API**: 에러 변환 (generic Error → StatsError)
+- **Hook**: 데이터 페칭
 - **Component**: 데이터 렌더링 (에러 처리 코드 없음!)
 - **Boundary**: 에러/로딩 처리 (선언적)
 
