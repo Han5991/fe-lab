@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//Users/han/repository/fe-lab/apps/blog/posts/우아하게 에러 핸들링 하기/**)",
+      "Read(//Users/han/repository/fe-lab/apps/blog/posts/design-system-lib-deploy/**)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
