@@ -100,6 +100,10 @@ monorepo/
 Error: default export를 처리할 수 없습니다
 ```
 
+![svgr-default.png](svgr-default.png)
+
+![svgr2.png](svgr2.png)
+
 **tsup이 SVGR의 default export 구문을 처리하지 못했다.**
 
 #### 시도했던 해결책들
@@ -213,6 +217,14 @@ dist/
 ```bash
 # 디자인 시스템 패키지에서
 pnpm pack
+
+```
+
+**결과물**
+
+![pack.png](pack.png)
+
+```bash
 
 # 다른 서비스에서
 pnpm install ../design-system/design-system-1.0.0.tgz
