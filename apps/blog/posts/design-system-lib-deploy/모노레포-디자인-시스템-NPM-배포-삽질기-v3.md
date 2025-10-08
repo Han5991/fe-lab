@@ -38,15 +38,13 @@
 monorepo/
 ├── design-system/          # 메인 디자인 시스템 패키지
 └── packages/
-    ├── @acme/core          # HTTP 클라이언트, 상태 코드
-    ├── @acme/constants
-    ├── @acme/entities
-    └── @acme/service
+    ├── @package/core       # HTTP 클라이언트, 상태 코드
+    ├── @package/constants
+    ├── @package/entities
+    └── @package/service
 ```
 
 **여기서 첫 번째 함정**: 디자인 시스템이 내부 패키지 4개에 의존하고 있었다.
-
-> 글에서 사용하는 패키지 이름(`@acme/design-system`, `@acme/core` 등)은 이해를 돕기 위한 가상의 예시입니다.
 
 왜? GNB 때문에... 거기에 모든 공통 로직을 몽땅 때려넣고 있었던 것이다.
 
@@ -67,7 +65,7 @@ monorepo/
 - 사용하는 쪽에서 직접 설치하도록 강제
 - pnpm의 엄격한 의존성 관리와 잘 맞음 (중복 설치 방지)
 
-게다가 `@acme/core`, `@acme/service` 같은 패키지들은 디자인 시스템 외에도 재활용될 가능성이 높았다.
+게다가 `@package/core`, `@package/service` 같은 패키지들은 디자인 시스템 외에도 재활용될 가능성이 높았다.
 
 그래서 `peerDependency`로 결정했다.
 
@@ -145,10 +143,10 @@ Panda CSS 공식 예제를 따라해봤지만 당연히 안 됐다.
 ```json
 {
   "external": [
-    "@acme/core",
-    "@acme/constants",
-    "@acme/entities",
-    "@acme/service"
+    "@package/core",
+    "@package/constants",
+    "@package/entities",
+    "@package/service"
   ]
 }
 ```
@@ -220,11 +218,17 @@ dist/
 # 디자인 시스템 패키지에서
 pnpm pack
 
+```
+
+**결과물**
+
+![pack.png](pack.png)
+
+```bash
+
 # 다른 서비스에서
 pnpm install ../design-system/design-system-1.0.0.tgz
 ```
-
-![`pnpm pack`으로 생성된 tarball 예시](pack.png)
 
 복붙만 하면 되니까 빠른 피드백 루프를 만들 수 있었다.
 
@@ -233,7 +237,7 @@ pnpm install ../design-system/design-system-1.0.0.tgz
 설치하고 컴포넌트를 import 해봤다.
 
 ```typescript
-import { Button } from '@acme/design-system';
+import { Button } from '@our-org/design-system';
 ```
 
 **컴포넌트는 뜨는데 스타일이 전부 깨져있었다.**
@@ -431,7 +435,7 @@ Error: Package name must start with @organization/
 import { Button } from 'design-system';
 
 // After
-import { Button } from '@acme/design-system';
+import { Button } from '@our-org/design-system';
 ```
 
 **모든 파일의 import를 바꿔야 했다.**
@@ -542,7 +546,7 @@ GitHub 이슈를 검색해보니:
 npm에서 패키지를 설치하고, 테스트했다.
 
 ```bash
-npm install @acme/design-system
+npm install @our-org/design-system
 ```
 
 로컬 테스트에서 했던 것처럼:
