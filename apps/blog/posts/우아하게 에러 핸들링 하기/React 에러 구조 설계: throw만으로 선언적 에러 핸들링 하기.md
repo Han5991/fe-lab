@@ -262,17 +262,13 @@ JavaScript의 기본 `Error` 클래스는 `message`만 있다.
 
 ### 2.2 상속 구조와 ErrorBoundary 전략
 
-이제 핵심이다. 상속 구조를 보자:
+이제 핵심이다. 앞서 그렸던 계층을 **책임 관점**으로 정리하면 다음과 같다.
 
-```
-Error (JavaScript 내장)
-  ↓
-ApiError (Base)
-  ↓
-├─ StatsError
-├─ ChartError
-└─ ActivityError
-```
+| 계층     | 예시 타입                                   | 담당 Boundary          | 주 역할                 |
+| -------- | ------------------------------------------- | ---------------------- | ----------------------- |
+| 최상위   | `Error`                                     | 최상위 `ErrorBoundary` | 예상 밖 에러 안전망     |
+| 공통 API | `ApiError`                                  | `GlobalErrorBoundary`  | 공통 로깅·토스트 처리   |
+| 도메인   | `StatsError`, `ChartError`, `ActivityError` | 각 섹션 Boundary       | 섹션별 복구 UI, UX 유지 |
 
 **이 구조 덕분에 ErrorBoundary를 설계할 수 있다:**
 
@@ -345,24 +341,19 @@ export class ActivityError extends ApiError {
 
 ### 3.2. 실제 사용
 
-앞서 본 패턴대로 API 레이어에서 사용한다:
+앞서 본 `getDashboardStats` 예제에서 **catch 블록**이 담당하는 역할만 발췌하면 다음과 같다:
 
-```typescript
-const getDashboardStats = async (): Promise<DashboardStats> => {
-  try {
-    const response = await instance.get('/api/dashboard/stats');
-    return response.data;
-  } catch (error: unknown) {
-    if (isHttpError(error)) {
-      throw new StatsError(
-        error.response?.data?.message ||
-          '통계 데이터를 불러오는데 실패했습니다',
-        error.response?.data?.error,
-      );
-    }
-    throw error; // 예상치 못한 에러는 그대로 던짐
-  }
-};
+```diff
+ catch (error: unknown) {
++  if (isHttpError(error)) {
++    throw new StatsError(
++      error.response?.data?.message ||
++        '통계 데이터를 불러오는데 실패했습니다',
++      error.response?.data?.error,
++    );
++  }
+   throw error; // 예상치 못한 에러는 그대로 던짐
+ }
 ```
 
 **흐름**: HTTP 에러 발생 → `isHttpError` 타입 체크 → 커스텀 에러로 변환 → throw
@@ -583,30 +574,14 @@ React Query + Suspense + ErrorBoundary로 완성된 에러 처리 시스템을 �
 전체 흐름을 보자:
 
 ```tsx
-// 1. API 레이어: 에러 변환
-const getDashboardStats = async (): Promise<DashboardStats> => {
-  try {
-    const response = await instance.get('/api/dashboard/stats');
-    return response.data;
-  } catch (error: unknown) {
-    if (isHttpError(error)) {
-      throw new StatsError(
-        error.response?.data?.message ||
-          '통계 데이터를 불러오는데 실패했습니다',
-        error.response?.data?.error,
-      );
-    }
-    throw error;
-  }
-};
+// 1. API 레이어: 앞서 정의한 getDashboardStats가 StatsError를 throw
 
 // 2. Hook 레이어: React Query
-export const useDashboardStats = () => {
-  return useSuspenseQuery({
+export const useDashboardStats = () =>
+  useSuspenseQuery({
     queryKey: ['dashboardStats'],
     queryFn: getDashboardStats, // StatsError를 throw
   });
-};
 
 // 3. Component 레이어: 선언적 사용
 const StatsSection = () => {
@@ -672,25 +647,15 @@ const ErrorDesignPage = () => (
 
 **결과**: 한 섹션이 실패해도 다른 섹션은 정상 동작. 완전히 독립적인 에러 처리.
 
-### 5.4. 이것이 가능한 이유
+### 5.3. 이것이 가능한 이유
 
-**에러 클래스 계층 구조** 덕분이다:
+앞서 정리한 책임 표 그대로 흐름이 흘러가기 때문이다.
 
-```
-Error
-  ↓
-ApiError
-  ↓
-├─ StatsError    → StatsErrorBoundary가 캐치
-├─ ChartError    → ChartErrorBoundary가 캐치
-└─ ActivityError → ActivityErrorBoundary가 캐치
-```
+- `StatsError` · `ChartError` · `ActivityError`는 각 섹션 Boundary에서 복구 UI를 보여 준다.
+- `ApiError`는 전역 Boundary가 공통 로깅과 가드 처리를 맡는다.
+- 예상 밖 `Error`는 최상위 Boundary까지 전파되어 전체 보호막이 된다.
 
-- `instanceof`로 에러 타입 구분
-- 담당 에러만 캐치, 나머지는 전파
-- 섹션별 독립적 에러 처리
-
-결국 **설계**의 승리다.
+설계 단계에서 경계가 명확해졌기에 런타임에서도 자연스럽게 분리된다.
 
 ### 전체 코드
 
@@ -760,8 +725,7 @@ export const NotificationErrorBoundary = ({ children }) => (
 - ApiError → 전역 GlobalErrorBoundary
 - StatsError → 섹션별 StatsErrorBoundary
 
-각 에러는 자신이 어디까지 올라가야 하는지 알고, 각 Boundary는 자신의 책임을 안다. HTTP 에러는 도메인 에러로 변환되고, 도메인 에러는 섹션 Boundary
-가 받아 처리한다. 예외가 예상 범위를 벗어나면 더 높은 Boundary로 전파된다.
+각 에러는 자신이 어디까지 올라가야 하는지 알고, 각 Boundary는 자신의 책임을 안다. HTTP 에러는 도메인 에러로 변환되고, 도메인 에러는 섹션 Boundary가 받아 처리한다. 예외가 예상 범위를 벗어나면 더 높은 Boundary로 전파된다.
 
 이 구조 덕분에 “이 에러는 누가 처리해야 하지?”라는 고민은 사라진다. 타입이 곧 처리 위치이기 때문이다. 한 섹션이 실패해도, 다른 섹션은 영향 없이
 정상적으로 동작한다.
