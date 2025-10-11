@@ -25,43 +25,28 @@
 ### 1.1. 문제: 모든 에러가 똑같이 보인다
 
 ```typescript
-// 통계 API
+// 세 개의 API - 각각 다른 섹션 데이터
 const getDashboardStats = async () => {
-  const response = await instance.get('/api/dashboard/stats');
-  return response.data;
+  /* ... */
 };
-
-// 차트 API
 const getChartData = async () => {
-  const response = await instance.get('/api/dashboard/chart');
-  return response.data;
+  /* ... */
 };
-
-// 활동 API
 const getActivities = async () => {
-  const response = await instance.get('/api/dashboard/activities');
-  return response.data;
+  /* ... */
 };
 ```
 
-세 개의 API가 있다. 각각 다른 섹션의 데이터를 가져온다.
-근데 에러가 발생하면?
+에러가 발생하면?
 
 ```tsx
-// ErrorBoundary에서
 componentDidCatch(error: Error) {
-  console.log(error.message); // "Request failed with status code 500"
-
   // 😰 이게 통계 에러야? 차트 에러야? 활동 에러야?
-  // instanceof Error 하면 전부 true
-  // 구분할 방법이 없다
+  // instanceof Error 하면 전부 true - 구분 불가능
 }
 ```
 
-**문제점**:
-
-- ErrorBoundary에서 섹션별 다른 처리 불가능
-- 디버깅할 때 어느 API가 터진 건지 추적 어려움
+**문제점**: ErrorBoundary에서 섹션별 처리 불가, 디버깅 어려움
 
 ### 1.2. 왜 클래스 설계인가?
 
@@ -120,14 +105,9 @@ const getDashboardStats = async () => {
 };
 ```
 
-**개선점**:
+**개선점**: `instanceof StatsError`로 타입 구분 가능, ErrorBoundary 선택적 처리
 
-1. **에러 타입으로 구분 가능**: `instanceof StatsError`
-2. **ErrorBoundary에서 선택적 처리**: 통계 에러만 특별히 처리 가능
-3. **Sentry 로그 깔끔**: 에러 타입별로 그룹핑 가능
-4. **확장성**: 새 섹션 추가 시 새 에러 클래스만 만들면 됨
-
-try-catch로 Error을 잡아서, 커스텀 에러 클래스로 변환해서 다시 던진다. 이게 `핵심`이다.
+**핵심**: try-catch로 Error을 잡아서, 커스텀 에러 클래스로 변환해서 throw
 
 ### 1.3. throw vs return?
 
@@ -230,42 +210,16 @@ ErrorBoundary
 React Query + Suspense + ErrorBoundary 조합을 보자:
 
 ```tsx
-// Hook
-export const useDashboardStats = () => {
-  return useSuspenseQuery({
-    queryKey: ['dashboardStats'],
-    queryFn: getDashboardStats, // StatsError를 throw
-  });
-};
+// API → Hook → Component → ErrorBoundary 자동 전파
+export const useDashboardStats = () =>
+  useSuspenseQuery({ queryFn: getDashboardStats });
 
-// Component
-const StatsSection = () => {
-  const { data } = useDashboardStats(); // 에러나면 자동으로 throw
-  return <div>{data.total}</div>;
-};
-
-// 사용
 <StatsErrorBoundary>
   <Suspense fallback={<Loading />}>
     <StatsSection />
   </Suspense>
 </StatsErrorBoundary>;
 ```
-
-**흐름**:
-
-1. `getDashboardStats`에서 `StatsError` throw
-2. React Query가 받아서 다시 throw
-3. ErrorBoundary가 캐치
-4. `instanceof StatsError`로 타입 구분 가능!
-
-우리가 커스텀 에러 클래스로 변환했기 때문에, StatsErrorBoundary에서 정확히 구분할 수 있다.
-
-### 결론
-
-- 흐름 제어가 간단하다
-- 계층 간 매개변수 전달 불필요
-- ErrorBoundary와 완벽하게 통합된다
 
 ## 2. 계층 구조 설계하기
 
@@ -352,18 +306,7 @@ GlobalErrorBoundary (ApiError 캐치)
        └─ Component
 ```
 
-**핵심**:
-
-- **상속 구조 = ErrorBoundary 전략**
-- `instanceof`로 에러 레벨 구분
-- 특정 에러만 잡고 나머지는 상위로 전파
-- 유연한 에러 격리 가능
-
-통계 섹션이 터져도 차트는 멀쩡하고,
-차트가 터져도 활동 피드는 멀쩡하다.
-각 섹션이 독립적으로 에러를 처리한다.
-
-이게 가능한 이유는 **에러 클래스 계층 구조** 덕분이다.
+**핵심**: 상속 구조 = ErrorBoundary 전략. `instanceof`로 에러 레벨 구분, 특정 에러만 잡고 나머지는 상위로 전파. 통계 섹션이 터져도 차트는 정상 동작한다.
 
 ## 3. 도메인별 에러 클래스 구현
 
@@ -399,33 +342,9 @@ export class ActivityError extends ApiError {
 }
 ```
 
-**포인트**:
+**포인트**: `ApiError` 상속, `name` 속성으로 에러 구분
 
-- `ApiError` 상속
-- `name` 속성으로 에러 구분
-- `statusCode` 기본값 설정 (500)
-- `code`는 optional (서버에서 내려주면 사용)
-
-### 3.2. 네이밍 전략
-
-일관된 네이밍 패턴을 사용한다:
-
-```
-{도메인명} + Error
-```
-
-- 통계 → `StatsError`
-- 차트 → `ChartError`
-- 활동 → `ActivityError`
-- 알림 → `NotificationError` (미래에 추가할 때)
-- 설정 → `SettingsError` (미래에 추가할 때)
-
-**장점**:
-
-- 에러 이름만 봐도 어느 도메인인지 바로 알 수 있음
-- 새 도메인 추가 시 패턴이 명확함
-
-### 3.3. 실제 사용
+### 3.2. 실제 사용
 
 앞서 본 패턴대로 API 레이어에서 사용한다:
 
@@ -447,15 +366,9 @@ const getDashboardStats = async (): Promise<DashboardStats> => {
 };
 ```
 
-**흐름**:
+**흐름**: HTTP 에러 발생 → `isHttpError` 타입 체크 → 커스텀 에러로 변환 → throw
 
-1. HTTP 에러 발생
-2. `isHttpError`로 타입 체크
-3. **커스텀 에러로 변환**
-4. throw로 상위로 전파
-
-이제 이 에러는 `StatsError` 타입이다.
-ErrorBoundary에서 `instanceof StatsError`로 정확히 구분할 수 있다.
+이제 ErrorBoundary에서 `instanceof StatsError`로 정확히 구분 가능
 
 ### 전체 코드
 
@@ -625,33 +538,16 @@ if (error instanceof Error) {
 
 ### 4.3. 실제 사용
 
-각 섹션별 ErrorBoundary를 만든다:
+각 섹션별 ErrorBoundary wrapper를 만든다:
 
 ```tsx
-// 통계 섹션용
 export const StatsErrorBoundary = ({ children }: { children: ReactNode }) => (
   <SectionErrorBoundary sectionName="통계" errorType={StatsError}>
     {children}
   </SectionErrorBoundary>
 );
 
-// 차트 섹션용
-export const ChartErrorBoundary = ({ children }: { children: ReactNode }) => (
-  <SectionErrorBoundary sectionName="차트" errorType={ChartError}>
-    {children}
-  </SectionErrorBoundary>
-);
-
-// 활동 섹션용
-export const ActivityErrorBoundary = ({
-  children,
-}: {
-  children: ReactNode;
-}) => (
-  <SectionErrorBoundary sectionName="활동" errorType={ActivityError}>
-    {children}
-  </SectionErrorBoundary>
-);
+// ChartErrorBoundary, ActivityErrorBoundary도 동일한 패턴
 ```
 
 **컴포넌트에서 사용:**
@@ -664,14 +560,7 @@ export const ActivityErrorBoundary = ({
 </StatsErrorBoundary>
 ```
 
-**결과**:
-
-- `StatsSection`에서 `StatsError` 발생 → 통계 섹션만 fallback UI 표시
-- `ChartSection`에서 `ChartError` 발생 → 차트 섹션만 fallback UI 표시
-- 나머지 섹션들은 정상 동작
-
-각 섹션이 독립적으로 에러를 처리한다.
-한 섹션이 터져도 전체 앱이 죽지 않는다.
+각 섹션이 독립적으로 에러를 처리한다. 한 섹션이 터져도 전체 앱이 죽지 않는다.
 
 ### 전체 코드
 
@@ -718,14 +607,7 @@ export const useDashboardStats = () => {
 // 3. Component 레이어: 선언적 사용
 const StatsSection = () => {
   const { data: stats } = useDashboardStats();
-
-  return (
-    <>
-      <StatCard title="총 방문자" value={stats.visitors.total} />
-      <StatCard title="신규 가입" value={stats.signups.total} />
-      {/* ... */}
-    </>
-  );
+  return <StatCard title="총 방문자" value={stats.visitors.total} />;
 };
 
 // 4. Suspense + ErrorBoundary
@@ -784,28 +666,7 @@ const ErrorDesignPage = () => (
 );
 ```
 
-**결과**:
-
-**시나리오 1: 통계 API 실패**
-
-- 통계 섹션 → ❌ Error fallback UI
-- 차트 섹션 → ✅ 정상 동작
-- 활동 섹션 → ✅ 정상 동작
-
-**시나리오 2: 차트 API 실패**
-
-- 통계 섹션 → ✅ 정상 동작
-- 차트 섹션 → ❌ Error fallback UI
-- 활동 섹션 → ✅ 정상 동작
-
-**시나리오 3: 모든 API 실패**
-
-- 통계 섹션 → ❌ Error fallback UI
-- 차트 섹션 → ❌ Error fallback UI
-- 활동 섹션 → ❌ Error fallback UI
-
-각 섹션이 완전히 독립적이다.
-한 섹션이 터져도 다른 섹션은 살아있다.
+**결과**: 한 섹션이 실패해도 다른 섹션은 정상 동작. 완전히 독립적인 에러 처리.
 
 ### 5.4. 이것이 가능한 이유
 
@@ -837,32 +698,21 @@ ApiError
 
 ## 6. 결론
 
-### 계층 구조의 이점
+### 계층 구조의 핵심 가치
 
 에러 클래스 계층 구조가 가져다준 것들:
 
-**1. 타입 안전성**
+**1. 타입 안전성과 ErrorBoundary 전략**
 
-- `instanceof`로 에러 타입 정확히 구분
-- TypeScript와 완벽한 조합
-- 런타임에서도 안전한 타입 체크
-
-**2. 섹션별 독립적 에러 처리**
-
-- 통계 섹션이 터져도 차트는 정상
-- 한 섹션의 실패가 전체로 전파되지 않음
-- 사용자 경험 향상
-
-**3. 디버깅 용이성**
-
-- 로그만 봐도 어느 도메인 에러인지 즉시 파악
-- 빠른 문제 해결
-
-**4. ErrorBoundary 전략**
-
+- `instanceof`로 런타임 타입 체크
 - 에러 상속 구조 = ErrorBoundary 계층 구조
-- 선택적 캐치와 전파
-- 유연한 에러 격리
+- 선택적 캐치와 전파로 유연한 에러 격리
+
+**2. 독립적 에러 처리와 디버깅**
+
+- 섹션별 독립적 처리: 통계 섹션이 터져도 차트는 정상
+- 로그만 봐도 어느 도메인 에러인지 즉시 파악
+- 사용자 경험과 개발자 경험 모두 향상
 
 ### 확장 가능한 설계
 
@@ -892,25 +742,7 @@ export const NotificationErrorBoundary = ({ children }) => (
 </NotificationErrorBoundary>;
 ```
 
-일관된 패턴으로 무한 확장 가능하다.
-
-### 여정의 연결
-
-```
-JavaScript 에러 핸들링
-    ↓
-커스텀 에러 클래스 기본 개념
-    ↓
-React 에러 핸들링
-    ↓
-ErrorBoundary 기본 사용법
-    ↓
-이번 글
-    ↓
-두 개념을 결합한 실전 적용
-```
-
-기본기가 쌓여서 실전 시스템이 되었다.
+일관된 패턴으로 확장 가능하다.
 
 ---
 
