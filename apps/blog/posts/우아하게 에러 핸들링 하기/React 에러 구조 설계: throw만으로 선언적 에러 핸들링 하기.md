@@ -257,7 +257,6 @@ JavaScript의 기본 `Error` 클래스는 `message`만 있다.
 
 이 정보들이 있어야:
 
-- Sentry에서 에러를 그룹핑할 수 있고
 - 에러별로 다른 처리를 할 수 있고
 - 디버깅할 때 원인을 빠르게 파악할 수 있다
 
@@ -695,7 +694,7 @@ ApiError
 
 ### 전체 코드
 
-전체 구현은 GitHub에서 확인할 수 있다:
+전체 구현은 GitHub에서 확인할 수 있다.
 
 - [대시보드 페이지](https://github.com/Han5991/fe-lab/blob/c1c3e26/apps/react/src/pages/error-design/index.tsx)
 - [React Query 훅](https://github.com/Han5991/fe-lab/blob/c1c3e26/apps/react/src/hooks/useDashboard.ts)
@@ -705,7 +704,7 @@ ApiError
 
 ### 계층 구조의 핵심 가치
 
-에러 클래스 계층 구조가 가져다준 것들:
+에러 클래스 계층 구조가 가져다준 것들
 
 **1. 타입 안전성과 ErrorBoundary 전략**
 
@@ -721,7 +720,7 @@ ApiError
 
 ### 확장 가능한 설계
 
-새로운 섹션 추가는 간단하다
+새로운 섹션 추가는 간단하다.
 
 ```tsx
 // 1. 에러 클래스 추가
@@ -751,17 +750,18 @@ export const NotificationErrorBoundary = ({ children }) => (
 
 ---
 
-팀 회고에서 나온 피드백이
-이렇게 견고한 에러 처리 시스템으로 발전했다.
+### 정리하면
 
-"디버깅이 더 힘들어진 것 같아요"라는 한마디에서 시작해서,
-이제는 Sentry 로그만 봐도 정확히 어느 섹션의 어떤 에러인지 알 수 있다.
+프롤로그의 질문으로 돌아가보자. "에러는 계층을 따라 전파된다. 그렇다면 에러 클래스도 계층 구조로 설계할 수 있지 않을까?"
 
-**에러 클래스 계층 구조**
-**instanceof를 활용한 선택적 캐치**
-**섹션별 독립적 에러 처리**
+그 답은 명확하다. 에러의 구조화가 곧 처리 전략이다.
 
-이 세 가지가 핵심이다.
+- Error → 최상위 ErrorBoundary
+- ApiError → 전역 GlobalErrorBoundary
+- StatsError → 섹션별 StatsErrorBoundary
 
-여러분의 대시보드도 한 섹션씩 차근차근 개선해보자.
-통계가 터져도, 차트는 살아있을 것이다.
+각 에러는 자신이 어디까지 올라가야 하는지 알고, 각 Boundary는 자신의 책임을 안다. HTTP 에러는 도메인 에러로 변환되고, 도메인 에러는 섹션 Boundary
+가 받아 처리한다. 예외가 예상 범위를 벗어나면 더 높은 Boundary로 전파된다.
+
+이 구조 덕분에 “이 에러는 누가 처리해야 하지?”라는 고민은 사라진다. 타입이 곧 처리 위치이기 때문이다. 한 섹션이 실패해도, 다른 섹션은 영향 없이
+정상적으로 동작한다.
