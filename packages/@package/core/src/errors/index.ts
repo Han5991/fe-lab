@@ -41,6 +41,11 @@ export interface HttpErrorResponse {
 
 export function isHttpError(
   error: unknown,
-): error is ApiError & HttpErrorResponse {
-  return error instanceof ApiError && 'response' in error;
+): error is HttpErrorResponse {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'response' in error &&
+    typeof (error as any).response === 'object'
+  );
 }

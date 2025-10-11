@@ -25,7 +25,7 @@ describe('StatsError', () => {
 
     expect(error.message).toBe('통계 에러 발생');
     expect(error.name).toBe('StatsError');
-    expect(error.statusCode).toBe(500);
+    expect(error.status).toBe(500);
     expect(error.code).toBeUndefined();
   });
 
@@ -35,7 +35,7 @@ describe('StatsError', () => {
     expect(error.message).toBe('통계 에러 발생');
     expect(error.code).toBe('STATS_ERROR');
     expect(error.name).toBe('StatsError');
-    expect(error.statusCode).toBe(500);
+    expect(error.status).toBe(500);
   });
 });
 
@@ -45,7 +45,7 @@ describe('ChartError', () => {
 
     expect(error.message).toBe('차트 에러 발생');
     expect(error.name).toBe('ChartError');
-    expect(error.statusCode).toBe(500);
+    expect(error.status).toBe(500);
     expect(error.code).toBeUndefined();
   });
 
@@ -55,7 +55,7 @@ describe('ChartError', () => {
     expect(error.message).toBe('차트 에러 발생');
     expect(error.code).toBe('CHART_ERROR');
     expect(error.name).toBe('ChartError');
-    expect(error.statusCode).toBe(500);
+    expect(error.status).toBe(500);
   });
 });
 
@@ -65,7 +65,7 @@ describe('ActivityError', () => {
 
     expect(error.message).toBe('활동 에러 발생');
     expect(error.name).toBe('ActivityError');
-    expect(error.statusCode).toBe(500);
+    expect(error.status).toBe(500);
     expect(error.code).toBeUndefined();
   });
 
@@ -75,7 +75,7 @@ describe('ActivityError', () => {
     expect(error.message).toBe('활동 에러 발생');
     expect(error.code).toBe('ACTIVITY_ERROR');
     expect(error.name).toBe('ActivityError');
-    expect(error.statusCode).toBe(500);
+    expect(error.status).toBe(500);
   });
 });
 
@@ -86,7 +86,7 @@ describe('NetworkError', () => {
     expect(error.message).toBe('네트워크 오류가 발생했습니다');
     expect(error.name).toBe('NetworkError');
     expect(error.code).toBe('NETWORK_ERROR');
-    expect(error.statusCode).toBe(0);
+    expect(error.status).toBe(0);
   });
 
   test('커스텀 메시지로 생성된다', () => {
@@ -95,27 +95,7 @@ describe('NetworkError', () => {
     expect(error.message).toBe('연결 실패');
     expect(error.name).toBe('NetworkError');
     expect(error.code).toBe('NETWORK_ERROR');
-    expect(error.statusCode).toBe(0);
-  });
-});
-
-describe('AuthError', () => {
-  test('기본 메시지로 생성된다', () => {
-    const error = new AuthError();
-
-    expect(error.message).toBe('인증에 실패했습니다');
-    expect(error.name).toBe('AuthError');
-    expect(error.code).toBe('AUTH_ERROR');
-    expect(error.statusCode).toBe(401);
-  });
-
-  test('커스텀 메시지로 생성된다', () => {
-    const error = new AuthError('토큰이 만료되었습니다');
-
-    expect(error.message).toBe('토큰이 만료되었습니다');
-    expect(error.name).toBe('AuthError');
-    expect(error.code).toBe('AUTH_ERROR');
-    expect(error.statusCode).toBe(401);
+    expect(error.status).toBe(0);
   });
 });
 

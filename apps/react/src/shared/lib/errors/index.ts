@@ -10,7 +10,7 @@ export class BaseError extends Error {
 // 통계 데이터 에러
 export class StatsError extends ApiError {
   constructor(message: string, code?: string) {
-    super(message, code, 500);
+    super(message, { code, status: 500 });
     this.name = 'StatsError';
   }
 }
@@ -18,7 +18,7 @@ export class StatsError extends ApiError {
 // 차트 데이터 에러
 export class ChartError extends ApiError {
   constructor(message: string, code?: string) {
-    super(message, code, 500);
+    super(message, { code, status: 500 });
     this.name = 'ChartError';
   }
 }
@@ -26,7 +26,7 @@ export class ChartError extends ApiError {
 // 활동 데이터 에러
 export class ActivityError extends ApiError {
   constructor(message: string, code?: string) {
-    super(message, code, 500);
+    super(message, { code, status: 500 });
     this.name = 'ActivityError';
   }
 }
@@ -34,7 +34,7 @@ export class ActivityError extends ApiError {
 // 네트워크 에러
 export class NetworkError extends ApiError {
   constructor(message: string = '네트워크 오류가 발생했습니다') {
-    super(message, 'NETWORK_ERROR', 0);
+    super(message, { code: 'NETWORK_ERROR', status: 0 });
     this.name = 'NetworkError';
   }
 }
@@ -42,7 +42,7 @@ export class NetworkError extends ApiError {
 // 인증 에러
 export class AuthError extends ApiError {
   constructor(message: string = '인증에 실패했습니다') {
-    super(message, 'AUTH_ERROR', 401);
+    super(message, { code: 'AUTH_ERROR', status: 401 });
     this.name = 'AuthError';
   }
 }

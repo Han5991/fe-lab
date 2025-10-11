@@ -11,7 +11,9 @@
       "Bash(pnpm build:*)",
       "Bash(ls:*)",
       "Bash(mkdir:*)",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "Bash(pnpm tsc:*)",
+      "Bash(pnpm test:*)"
     ],
     "deny": []
   }

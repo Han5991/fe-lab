@@ -316,7 +316,7 @@ AppErrorBoundary (Error 캐치)
 // 통계 데이터 에러
 export class StatsError extends ApiError {
   constructor(message: string, code?: string) {
-    super(message, code, 500);
+    super(message, { code, status: 500 });
     this.name = 'StatsError';
   }
 }
@@ -324,7 +324,7 @@ export class StatsError extends ApiError {
 // 차트 데이터 에러
 export class ChartError extends ApiError {
   constructor(message: string, code?: string) {
-    super(message, code, 500);
+    super(message, { code, status: 500 });
     this.name = 'ChartError';
   }
 }
@@ -332,13 +332,17 @@ export class ChartError extends ApiError {
 // 활동 데이터 에러
 export class ActivityError extends ApiError {
   constructor(message: string, code?: string) {
-    super(message, code, 500);
+    super(message, { code, status: 500 });
     this.name = 'ActivityError';
   }
 }
 ```
 
-**포인트**: `ApiError` 상속, `name` 속성으로 에러 구분
+**포인트**:
+
+- `ApiError` 상속으로 계층 구조 구축
+- `super(message, { code, status })` 형태로 옵션 객체 전달
+- `name` 속성으로 에러 타입 구분
 
 ### 3.2. 실제 사용
 
@@ -412,6 +416,7 @@ export class SectionErrorBoundary<T extends Error = Error> extends Component<
       if (this.isHandled(error)) {
         return <ErrorFallbackUI />; // 담당 에러: 처리
       }
+      // 👇 반드시 render에서 재-throw 해야 상위 Boundary로 전파
       throw error; // 담당 아님: 상위로 전파
     }
 
@@ -692,7 +697,7 @@ const ErrorDesignPage = () => (
 // 1. 에러 클래스 추가
 export class NotificationError extends ApiError {
   constructor(message: string, code?: string) {
-    super(message, code, 500);
+    super(message, { code, status: 500 });
     this.name = 'NotificationError';
   }
 }
