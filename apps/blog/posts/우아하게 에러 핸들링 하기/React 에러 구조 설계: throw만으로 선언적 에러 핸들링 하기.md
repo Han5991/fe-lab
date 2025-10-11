@@ -264,11 +264,11 @@ JavaScript의 기본 `Error` 클래스는 `message`만 있다.
 
 이제 핵심이다. 앞서 그렸던 계층을 **책임 관점**으로 정리하면 다음과 같다.
 
-| 계층     | 예시 타입                                   | 담당 Boundary          | 주 역할                 |
-| -------- | ------------------------------------------- | ---------------------- | ----------------------- |
-| 최상위   | `Error`                                     | 최상위 `ErrorBoundary` | 예상 밖 에러 안전망     |
-| 공통 API | `ApiError`                                  | `GlobalErrorBoundary`  | 공통 로깅·토스트 처리   |
-| 도메인   | `StatsError`, `ChartError`, `ActivityError` | 각 섹션 Boundary       | 섹션별 복구 UI, UX 유지 |
+| 계층     | 예시 타입                                   | 담당 Boundary                       | 주 역할                 |
+| -------- | ------------------------------------------- | ----------------------------------- | ----------------------- |
+| 최상위   | `Error`                                     | 최상위 `ErrorBoundary`              | 예상 밖 에러 안전망     |
+| 공통 API | `ApiError`                                  | `GlobalErrorBoundary` (필요시 사용) | ApiError 공통 처리      |
+| 도메인   | `StatsError`, `ChartError`, `ActivityError` | 각 섹션 Boundary                    | 섹션별 복구 UI, UX 유지 |
 
 **이 구조 덕분에 ErrorBoundary를 설계할 수 있다:**
 
@@ -296,12 +296,13 @@ if (error instanceof StatsError) {
 #### 패턴 3: 계층적 ErrorBoundary
 
 ```
-GlobalErrorBoundary (ApiError 캐치)
-  └─ StatsErrorBoundary (StatsError만 캐치)
-       └─ Component
+AppErrorBoundary (Error 캐치)
+  └─ GlobalErrorBoundary (ApiError 캐치, 선택)
+        └─ StatsErrorBoundary (StatsError만 캐치)
+             └─ Component
 ```
 
-**핵심**: 상속 구조 = ErrorBoundary 전략. `instanceof`로 에러 레벨 구분, 특정 에러만 잡고 나머지는 상위로 전파. 통계 섹션이 터져도 차트는 정상 동작한다.
+**핵심**: 상속 구조 = ErrorBoundary 전략. `instanceof`로 에러 레벨 구분, 특정 에러만 잡고 나머지는 상위로 전파. 통계 섹션이 터져도 다른 섹션은 정상 동작한다.
 
 ## 3. 도메인별 에러 클래스 구현
 
@@ -309,7 +310,7 @@ GlobalErrorBoundary (ApiError 캐치)
 
 ### 3.1. 간단한 구현
 
-`ApiError`를 상속받기만 하면 된다:
+`ApiError`를 상속받기만 하면 된다.
 
 ```typescript
 // 통계 데이터 에러
@@ -341,19 +342,19 @@ export class ActivityError extends ApiError {
 
 ### 3.2. 실제 사용
 
-앞서 본 `getDashboardStats` 예제에서 **catch 블록**이 담당하는 역할만 발췌하면 다음과 같다:
+앞서 본 `getDashboardStats` 예제에서 **catch 블록**이 담당하는 역할만 발췌하면 다음과 같다.
 
-```diff
- catch (error: unknown) {
-+  if (isHttpError(error)) {
-+    throw new StatsError(
-+      error.response?.data?.message ||
-+        '통계 데이터를 불러오는데 실패했습니다',
-+      error.response?.data?.error,
-+    );
-+  }
-   throw error; // 예상치 못한 에러는 그대로 던짐
- }
+```typescript
+catch (error: unknown) {
+  if (isHttpError(error)) { // ⭐ HTTP 에러만 StatsError로 변환
+    throw new StatsError(
+      error.response?.data?.message ||
+        '통계 데이터를 불러오는데 실패했습니다',
+      error.response?.data?.error,
+    );
+  }
+  throw error; // 예상치 못한 에러는 그대로 던짐
+}
 ```
 
 **흐름**: HTTP 에러 발생 → `isHttpError` 타입 체크 → 커스텀 에러로 변환 → throw
@@ -377,7 +378,7 @@ export class ActivityError extends ApiError {
 핵심 아이디어는 `특정 에러만 캐치하고, 나머지는 상위로 전파` 하는 것이다.
 
 ```tsx
-type ErrorCtor<T extends Error = Error> = new (...args: never[]) => T;
+type ErrorCtor<T extends Error = Error> = new (...args: any[]) => T;
 
 interface Props<T extends Error = Error> {
   children: ReactNode;
