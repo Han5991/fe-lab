@@ -447,6 +447,11 @@ if (error) {
 
 ### 4.2. 에러 전파 전략: 상속 구조 따라가기
 
+> **⚠️ 중요: 에러 전파는 render()에서만 일어난다**
+>
+> `componentDidCatch`에서 `throw error`를 해도 부모 ErrorBoundary로 전파되지 않습니다.
+> 에러를 상위로 전파하려면 **반드시 `render()` 메서드에서 `throw`** 해야 합니다.
+
 **왜 다시 throw 하는가?**
 
 에러 상속 구조를 따라가기 위해서다
