@@ -277,13 +277,18 @@ const StatsSection = () => {
 
 ```typescript
 export class ApiError extends Error {
+  code?: string;
+  status?: number;
+
   constructor(
     message: string,
-    public code?: string,
-    public statusCode?: number,
+    opts?: { code?: string; status?: number; cause?: unknown },
   ) {
-    super(message);
-    this.name = 'ApiError';
+    super(message, { cause: opts?.cause });
+    this.name = new.target.name; // 정확한 클래스명
+    this.code = opts?.code;
+    this.status = opts?.status;
+    if (Error.captureStackTrace) Error.captureStackTrace(this, new.target);
   }
 }
 ```
@@ -469,28 +474,43 @@ ErrorBoundary에서 `instanceof StatsError`로 정확히 구분할 수 있다.
 핵심 아이디어는 `특정 에러만 캐치하고, 나머지는 상위로 전파` 하는 것이다.
 
 ```tsx
-interface Props {
+type ErrorCtor<T extends Error = Error> = new (...args: never[]) => T;
+
+interface Props<T extends Error = Error> {
   children: ReactNode;
   sectionName: string;
-  errorType: typeof StatsError | typeof ChartError | typeof ActivityError;
+  errorType: ErrorCtor<T>; // 제네릭 생성자 시그니처
 }
 
-class SectionErrorBoundary extends Component<Props, State> {
-  componentDidCatch(error: Error) {
-    const { errorType } = this.props;
+export class SectionErrorBoundary<T extends Error = Error> extends Component<
+  Props<T>,
+  State
+> {
+  state: State = { error: null };
 
-    // 특정 에러 타입만 캐치
-    if (!(error instanceof errorType)) {
-      throw error; // 다른 에러는 상위로 전파!
-    }
+  static getDerivedStateFromError(error: Error): Partial<State> {
+    return { error }; // 에러 저장만
+  }
 
-    console.error(`[${this.props.sectionName}]:`, error);
+  componentDidCatch(error: Error, _info: ErrorInfo) {
+    console.error(`[${this.props.sectionName}]`, error, _info); // 로깅만
+  }
+
+  private isHandled(error: Error | null): error is T {
+    if (!error) return false;
+    return error instanceof this.props.errorType;
   }
 
   render() {
-    if (this.state.hasError && this.state.error) {
-      return <ErrorFallbackUI error={this.state.error} />;
+    const { error } = this.state;
+
+    if (error) {
+      if (this.isHandled(error)) {
+        return <ErrorFallbackUI />; // 담당 에러: 처리
+      }
+      throw error; // 담당 아님: 상위로 전파
     }
+
     return this.props.children;
   }
 }
@@ -499,7 +519,10 @@ class SectionErrorBoundary extends Component<Props, State> {
 **핵심 로직**
 
 ```typescript
-if (!(error instanceof errorType)) {
+if (error) {
+  if (this.isHandled(error)) {
+    return <ErrorFallbackUI />; // 담당 에러만 처리
+  }
   throw error; // 다른 에러는 상위로!
 }
 ```
@@ -507,6 +530,7 @@ if (!(error instanceof errorType)) {
 - `StatsErrorBoundary`는 `StatsError`만 캐치
 - `ChartError`가 발생하면? → throw로 상위로 전파
 - 담당하지 않는 에러는 관여하지 않는다
+- **중요**: `render`에서 throw해야 상위로 전파됨 (`componentDidCatch`에서는 안됨)
 
 ### 4.2. 에러 전파 전략: 상속 구조 따라가기
 
@@ -553,11 +577,51 @@ if (error instanceof ApiError) {
 }
 ```
 
+**시나리오 3: 일반 Error 발생 (테스트용)**
+
+```typescript
+export const getActivities = async (): Promise<Activity[]> => {
+  try {
+    // 임시 에러 계층 테스트용 코드 - 이걸 풀면 더 상위 에러 바운더리로 전파됨
+    throw new Error('test');
+
+    const response = await instance.get('/api/dashboard/activities');
+    return response.data;
+  } catch (error: unknown) {
+    if (isHttpError(error)) {
+      throw new ActivityError(/*...*/);
+    }
+    throw error; // 👈 일반 Error는 그대로 throw
+  }
+};
+
+// ActivityErrorBoundary에서
+if (!(error instanceof ActivityError)) {
+  // true! (일반 Error는 ActivityError가 아님)
+  throw error; // 👈 상위로 전파
+}
+
+// GlobalErrorBoundary에서
+if (error instanceof ApiError) {
+  // false (일반 Error는 ApiError가 아님)
+  throw error; // 👈 더 상위로 전파
+}
+
+// 최상위 ErrorBoundary에서
+if (error instanceof Error) {
+  // true
+  // 👉 여기서 최종 캐치!
+}
+```
+
+이렇게 **예상치 못한 에러**도 계층을 따라 올라가면서 적절한 곳에서 처리된다.
+
 **핵심**:
 
 - 담당 에러만 처리
 - 나머지는 상속 구조를 따라 상위로
 - 계층적 에러 처리 가능
+- 예상치 못한 에러는 최상위 ErrorBoundary까지 전파
 
 ### 4.3. 실제 사용
 
