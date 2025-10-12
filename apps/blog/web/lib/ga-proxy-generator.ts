@@ -61,7 +61,7 @@ export function generateTrackingImageFromUrl(fullUrl: string, baseUrl?: string):
     }
     
     return generateVelogTrackingImage(options)
-  } catch (error) {
+  } catch (_error) {
     console.error('Invalid URL provided:', fullUrl)
     throw new Error('Invalid URL format')
   }
