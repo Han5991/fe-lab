@@ -2,7 +2,7 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter, Route, Routes } from 'react-router';
 import { QueryClientProvider } from '@tanstack/react-query';
 import App from './App';
-import { ErrorTest, ErrorDesign, ToastExamplePage } from '@/pages';
+import { ErrorTest, ErrorDesign, ToastExamplePage, SocketDemo } from '@/pages';
 import './index.css';
 import { ErrorBoundary } from '@/components';
 import { queryClient } from './lib/queryClient';
@@ -15,7 +15,10 @@ async function enableMocking() {
     return;
   }
 
-  return worker.start();
+  // WebSocket 연결은 MSW가 가로채지 않도록 설정
+  return worker.start({
+    onUnhandledRequest: 'bypass',
+  });
 }
 
 enableMocking().then(() => {
@@ -28,6 +31,7 @@ enableMocking().then(() => {
             <Route path="/error-test" element={<ErrorTest />} />
             <Route path="/error-design" element={<ErrorDesign />} />
             <Route path="/toast" element={<ToastExamplePage />} />
+            <Route path="/socket" element={<SocketDemo />} />
           </Routes>
         </BrowserRouter>
       </QueryClientProvider>

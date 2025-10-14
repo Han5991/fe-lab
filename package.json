@@ -11,7 +11,9 @@
     "typescript": "turbo run dev --filter=typescript",
     "next": "turbo run dev --filter=next.js",
     "blog-web": "turbo run dev --filter=@blog/web",
-    "blog-build": "turbo run build --filter=@blog/web"
+    "blog-build": "turbo run build --filter=@blog/web",
+    "socket-server": "turbo run dev --filter=socket-server",
+    "socket": "concurrently \"pnpm socket-server\" \"pnpm react\""
   },
   "devDependencies": {
     "prettier": "^3.5.0",
