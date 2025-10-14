@@ -1,4 +1,4 @@
-import crypto from 'crypto';
+import crypto from 'node:crypto';
 import type { Server as HTTPServer, IncomingMessage } from 'node:http';
 import type { Duplex } from 'node:stream';
 
@@ -71,9 +71,7 @@ export class WebSocketServer {
     this.cleanupIntervalId = null;
 
     // HTTP 서버의 upgrade 이벤트를 리스닝
-    this.httpServer.on('upgrade', (req, socket, head) => {
-      this.handleUpgrade(req, socket, head);
-    });
+    this.httpServer.on('upgrade', this.handleUpgrade.bind(this));
 
     // 세션 정리 타이머 시작 (1분마다 체크)
     this.startCleanupTimer();
