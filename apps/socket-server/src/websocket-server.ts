@@ -8,6 +8,22 @@ import type { Duplex } from 'node:stream';
 interface WebSocketServerOptions {
   /** 허용할 Origin 목록. null이면 모든 origin 허용 */
   allowedOrigins?: string[] | null;
+  /** 세션 타임아웃 시간 (밀리초). 기본값: 5분 */
+  sessionTimeout?: number;
+}
+
+/**
+ * 세션 정보
+ */
+interface SessionInfo {
+  /** 세션 고유 ID */
+  id: string;
+  /** 연결 생성 시간 */
+  connectedAt: Date;
+  /** 마지막 활동 시간 */
+  lastActiveAt: Date;
+  /** 세션 메타데이터 */
+  metadata: Record<string, any>;
 }
 
 /**
@@ -41,17 +57,26 @@ enum WebSocketOpcode {
 export class WebSocketServer {
   private httpServer: HTTPServer;
   private readonly clients: Set<WebSocketConnection>;
+  private readonly sessions: Map<string, WebSocketConnection>;
   private readonly allowedOrigins: string[] | null;
+  private readonly sessionTimeout: number;
+  private cleanupIntervalId: NodeJS.Timeout | null;
 
   constructor(httpServer: HTTPServer, options: WebSocketServerOptions = {}) {
     this.httpServer = httpServer;
     this.clients = new Set();
+    this.sessions = new Map();
     this.allowedOrigins = options.allowedOrigins || null; // null이면 모든 origin 허용
+    this.sessionTimeout = options.sessionTimeout || 5 * 60 * 1000; // 기본 5분
+    this.cleanupIntervalId = null;
 
     // HTTP 서버의 upgrade 이벤트를 리스닝
     this.httpServer.on('upgrade', (req, socket, head) => {
       this.handleUpgrade(req, socket, head);
     });
+
+    // 세션 정리 타이머 시작 (1분마다 체크)
+    this.startCleanupTimer();
   }
 
   /**
@@ -69,6 +94,10 @@ export class WebSocketServer {
       socket.end('HTTP/1.1 403 Forbidden\r\n\r\n');
       return;
     }
+
+    // URL에서 세션 ID 추출 (쿼리 파라미터: ?sessionId=xxx)
+    const url = new URL(req.url || '/', `http://${req.headers.host}`);
+    const requestedSessionId = url.searchParams.get('sessionId');
 
     // WebSocket 핸드셰이크 키 추출
     const key = req.headers['sec-websocket-key'];
@@ -101,9 +130,14 @@ export class WebSocketServer {
 
     // WebSocket 연결 생성
     const client = new WebSocketConnection(socket);
-    this.clients.add(client);
+    const sessionId = client.getSessionId();
 
-    console.log(`New client connected. Total clients: ${this.clients.size}`);
+    this.clients.add(client);
+    this.sessions.set(sessionId, client);
+
+    console.log(
+      `New client connected. Session ID: ${sessionId}, Total clients: ${this.clients.size}`,
+    );
 
     // 핸드셰이크 중 이미 수신된 WebSocket 데이터 처리
     if (head.length > 0) {
@@ -112,19 +146,22 @@ export class WebSocketServer {
 
     // 클라이언트 이벤트 리스너
     client.on('message', (data: string) => {
-      console.log('Received text:', data);
+      console.log(`[${sessionId}] Received text:`, data);
       // 모든 클라이언트에게 브로드캐스트
       this.broadcast(data);
     });
 
     client.on('binary', (data: Buffer) => {
-      console.log('Received binary data:', data.length, 'bytes');
+      console.log(`[${sessionId}] Received binary data:`, data.length, 'bytes');
       // 바이너리 데이터 처리 (필요시 구현)
     });
 
     client.on('close', () => {
       this.clients.delete(client);
-      console.log(`Client disconnected. Total clients: ${this.clients.size}`);
+      this.sessions.delete(sessionId);
+      console.log(
+        `Client disconnected. Session ID: ${sessionId}, Total clients: ${this.clients.size}`,
+      );
     });
   }
 
@@ -144,6 +181,124 @@ export class WebSocketServer {
       client.send(message);
     }
   }
+
+  /**
+   * 특정 세션 ID로 클라이언트 조회
+   */
+  getSession(sessionId: string): WebSocketConnection | undefined {
+    return this.sessions.get(sessionId);
+  }
+
+  /**
+   * 모든 활성 세션 정보 조회
+   */
+  getAllSessions(): SessionInfo[] {
+    return Array.from(this.sessions.values()).map(client =>
+      client.getSessionInfo(),
+    );
+  }
+
+  /**
+   * 세션 수 조회
+   */
+  getSessionCount(): number {
+    return this.sessions.size;
+  }
+
+  /**
+   * 세션 ID로 특정 클라이언트에게 메시지 전송
+   */
+  sendToSession(sessionId: string, message: string): boolean {
+    const client = this.sessions.get(sessionId);
+    if (client) {
+      client.send(message);
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * 세션 ID로 연결 종료
+   */
+  closeSession(sessionId: string): boolean {
+    const client = this.sessions.get(sessionId);
+    if (client) {
+      client.close();
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * 세션 정리 타이머 시작
+   */
+  private startCleanupTimer(): void {
+    // 1분마다 비활성 세션 체크
+    this.cleanupIntervalId = setInterval(() => {
+      this.cleanupInactiveSessions();
+    }, 60 * 1000);
+  }
+
+  /**
+   * 세션 정리 타이머 중지
+   */
+  stopCleanupTimer(): void {
+    if (this.cleanupIntervalId) {
+      clearInterval(this.cleanupIntervalId);
+      this.cleanupIntervalId = null;
+    }
+  }
+
+  /**
+   * 비활성 세션 정리
+   */
+  private cleanupInactiveSessions(): void {
+    const now = Date.now();
+    const inactiveSessions: string[] = [];
+
+    for (const [sessionId, client] of this.sessions.entries()) {
+      const sessionInfo = client.getSessionInfo();
+      const inactiveTime = now - sessionInfo.lastActiveAt.getTime();
+
+      if (inactiveTime > this.sessionTimeout) {
+        inactiveSessions.push(sessionId);
+      }
+    }
+
+    // 비활성 세션 종료
+    for (const sessionId of inactiveSessions) {
+      console.log(
+        `Closing inactive session: ${sessionId} (inactive for ${Math.round(this.sessionTimeout / 1000)}s)`,
+      );
+      this.closeSession(sessionId);
+    }
+
+    if (inactiveSessions.length > 0) {
+      console.log(
+        `Cleaned up ${inactiveSessions.length} inactive session(s). Active sessions: ${this.sessions.size}`,
+      );
+    }
+  }
+
+  /**
+   * 서버 종료 시 정리 작업
+   */
+  shutdown(): void {
+    console.log('Shutting down WebSocket server...');
+
+    // 타이머 중지
+    this.stopCleanupTimer();
+
+    // 모든 연결 종료
+    for (const client of this.clients) {
+      client.close();
+    }
+
+    this.clients.clear();
+    this.sessions.clear();
+
+    console.log('WebSocket server shut down complete.');
+  }
 }
 
 /**
@@ -151,15 +306,25 @@ export class WebSocketServer {
  */
 class WebSocketConnection {
   private socket: Duplex;
-  private listeners: EventListeners;
+  private readonly listeners: EventListeners;
   private fragmentedMessage: Buffer[];
   private fragmentedOpcode: number | null;
+  private readonly sessionInfo: SessionInfo;
 
-  constructor(socket: Duplex) {
+  constructor(socket: Duplex, sessionId?: string) {
     this.socket = socket;
     this.listeners = {};
     this.fragmentedMessage = [];
     this.fragmentedOpcode = null;
+
+    // 세션 정보 초기화
+    const now = new Date();
+    this.sessionInfo = {
+      id: sessionId || this.generateSessionId(),
+      connectedAt: now,
+      lastActiveAt: now,
+      metadata: {},
+    };
 
     this.socket.on('data', (buffer: Buffer) => {
       this.handleData(buffer);
@@ -198,6 +363,9 @@ class WebSocketConnection {
    * +---------------------------------------------------------------+
    */
   private handleData(buffer: Buffer): void {
+    // 마지막 활동 시간 업데이트
+    this.updateLastActive();
+
     // 첫 번째 바이트: FIN, RSV, Opcode
     const firstByte = buffer[0];
     const isFinalFrame = Boolean(firstByte & 0x80); // FIN bit
@@ -377,5 +545,40 @@ class WebSocketConnection {
     if (this.listeners[event]) {
       this.listeners[event].forEach(callback => callback(data));
     }
+  }
+
+  /**
+   * 세션 ID 생성 (UUID v4)
+   */
+  private generateSessionId(): string {
+    return crypto.randomUUID();
+  }
+
+  /**
+   * 세션 ID 반환
+   */
+  getSessionId(): string {
+    return this.sessionInfo.id;
+  }
+
+  /**
+   * 세션 정보 반환
+   */
+  getSessionInfo(): SessionInfo {
+    return { ...this.sessionInfo };
+  }
+
+  /**
+   * 세션 메타데이터 설정
+   */
+  setMetadata(key: string, value: any): void {
+    this.sessionInfo.metadata[key] = value;
+  }
+
+  /**
+   * 마지막 활동 시간 업데이트
+   */
+  private updateLastActive(): void {
+    this.sessionInfo.lastActiveAt = new Date();
   }
 }

@@ -17,10 +17,30 @@ const httpServer = createServer((req, res) => {
 // allowedOrigins를 설정하면 해당 출처만 허용
 // null이면 모든 출처 허용 (개발 환경)
 const wsServer = new WebSocketServer(httpServer, {
-  // allowedOrigins: ['http://localhost:5173'], // 주석 해제하면 특정 출처만 허용
+  allowedOrigins: ['http://localhost:5173'], // 주석 해제하면 특정 출처만 허용
+  sessionTimeout: 5 * 60 * 1000, // 5분 (기본값)
 });
 
 httpServer.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
   console.log(`WebSocket server is ready for connections`);
+});
+
+// Graceful shutdown
+process.on('SIGINT', () => {
+  console.log('\nReceived SIGINT, shutting down gracefully...');
+  wsServer.shutdown();
+  httpServer.close(() => {
+    console.log('HTTP server closed.');
+    process.exit(0);
+  });
+});
+
+process.on('SIGTERM', () => {
+  console.log('\nReceived SIGTERM, shutting down gracefully...');
+  wsServer.shutdown();
+  httpServer.close(() => {
+    console.log('HTTP server closed.');
+    process.exit(0);
+  });
 });
