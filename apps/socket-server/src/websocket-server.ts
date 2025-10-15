@@ -51,6 +51,16 @@ enum WebSocketOpcode {
 }
 
 /**
+ * 주식 데이터
+ */
+interface StockData {
+  symbol: string;
+  name: string;
+  price: number;
+  basePrice: number; // 기준가 (변동 계산용)
+}
+
+/**
  * WebSocket Server - HTTP 서버 위에서 동작하는 WebSocket 구현
  * RFC 6455 스펙 기반
  */
@@ -61,6 +71,8 @@ export class WebSocketServer {
   private readonly allowedOrigins: string[] | null;
   private readonly sessionTimeout: number;
   private cleanupIntervalId: NodeJS.Timeout | null;
+  private stockBroadcastIntervalId: NodeJS.Timeout | null;
+  private stockData: Map<string, StockData>;
 
   constructor(httpServer: HTTPServer, options: WebSocketServerOptions = {}) {
     this.httpServer = httpServer;
@@ -69,12 +81,25 @@ export class WebSocketServer {
     this.allowedOrigins = options.allowedOrigins || null; // null이면 모든 origin 허용
     this.sessionTimeout = options.sessionTimeout || 5 * 60 * 1000; // 기본 5분
     this.cleanupIntervalId = null;
+    this.stockBroadcastIntervalId = null;
+
+    // 주식 데이터 초기화
+    this.stockData = new Map([
+      ['AAPL', { symbol: 'AAPL', name: 'Apple Inc.', price: 178.25, basePrice: 178.25 }],
+      ['GOOGL', { symbol: 'GOOGL', name: 'Alphabet Inc.', price: 141.8, basePrice: 141.8 }],
+      ['MSFT', { symbol: 'MSFT', name: 'Microsoft Corp.', price: 378.91, basePrice: 378.91 }],
+      ['TSLA', { symbol: 'TSLA', name: 'Tesla Inc.', price: 242.84, basePrice: 242.84 }],
+      ['AMZN', { symbol: 'AMZN', name: 'Amazon.com Inc.', price: 178.35, basePrice: 178.35 }],
+    ]);
 
     // HTTP 서버의 upgrade 이벤트를 리스닝
     this.httpServer.on('upgrade', this.handleUpgrade.bind(this));
 
     // 세션 정리 타이머 시작 (1분마다 체크)
     this.startCleanupTimer();
+
+    // 주식 데이터 브로드캐스트 시작 (1초마다)
+    this.startStockBroadcast();
   }
 
   /**
@@ -279,6 +304,86 @@ export class WebSocketServer {
   }
 
   /**
+   * 주식 데이터 브로드캐스트 시작
+   */
+  private startStockBroadcast(): void {
+    // 1초마다 랜덤하게 주식 가격 업데이트
+    this.stockBroadcastIntervalId = setInterval(() => {
+      this.updateStockPrices();
+    }, 1000);
+
+    console.log('Stock price broadcast started (1s interval)');
+  }
+
+  /**
+   * 주식 데이터 브로드캐스트 중지
+   */
+  private stopStockBroadcast(): void {
+    if (this.stockBroadcastIntervalId) {
+      clearInterval(this.stockBroadcastIntervalId);
+      this.stockBroadcastIntervalId = null;
+    }
+  }
+
+  /**
+   * 주식 가격 업데이트 및 브로드캐스트
+   */
+  private updateStockPrices(): void {
+    // 클라이언트가 없으면 브로드캐스트 안함
+    if (this.clients.size === 0) return;
+
+    // 랜덤하게 1-2개 종목 선택
+    const symbols = Array.from(this.stockData.keys());
+    const numUpdates = Math.floor(Math.random() * 2) + 1;
+    const selectedSymbols = this.shuffleArray(symbols).slice(0, numUpdates);
+
+    for (const symbol of selectedSymbols) {
+      const stock = this.stockData.get(symbol);
+      if (!stock) continue;
+
+      // 가격을 -2% ~ +2% 범위에서 랜덤하게 변동
+      const changePercent = (Math.random() - 0.5) * 4; // -2 ~ +2
+      const newPrice = stock.price * (1 + changePercent / 100);
+      const change = newPrice - stock.basePrice;
+      const changePercentFromBase = (change / stock.basePrice) * 100;
+
+      // 가격 업데이트
+      stock.price = newPrice;
+
+      // 거래량 생성 (랜덤)
+      const volume = Math.floor(Math.random() * 100000000) + 10000000;
+
+      // WebSocket 메시지 생성
+      const message = JSON.stringify({
+        type: 'PRICE_UPDATE',
+        data: {
+          symbol: stock.symbol,
+          price: parseFloat(newPrice.toFixed(2)),
+          change: parseFloat(change.toFixed(2)),
+          changePercent: parseFloat(changePercentFromBase.toFixed(2)),
+          volume,
+          timestamp: Date.now(),
+        },
+      });
+
+      // 모든 클라이언트에게 브로드캐스트
+      this.broadcast(message);
+    }
+  }
+
+  /**
+   * 배열 섞기 (Fisher-Yates shuffle)
+   */
+  private shuffleArray<T>(array: T[]): T[] {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  }
+
+  /**
    * 서버 종료 시 정리 작업
    */
   shutdown(): void {
@@ -286,6 +391,7 @@ export class WebSocketServer {
 
     // 타이머 중지
     this.stopCleanupTimer();
+    this.stopStockBroadcast();
 
     // 모든 연결 종료
     for (const client of this.clients) {
