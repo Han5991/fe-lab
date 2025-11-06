@@ -18,7 +18,7 @@
 
 ---
 
-## 무슨 일이 있었던 걸까요?
+## 문제 상황
 
 회원 구조가 바뀌었습니다.
 
@@ -59,8 +59,6 @@ api.fetchData(profileId);
 
 ## 왜 가능했을까? #1: 도메인 분리의 시작점
 
-답은 1년 전으로 거슬러 올라갑니다.
-
 처음 코드를 작성할 때, 이렇게 할 수도 있었습니다:
 
 ```typescript
@@ -90,7 +88,7 @@ api.fetchData(id); // 타입 안전
 
 **코드에 의미 계층을 추가한 것**입니다.
 
-이 작은 차이가 1년 후, 552개 파일을 수정할 때 결정적이었습니다.
+이 작은 차이가 대규모 변경을 가능하게 만들었습니다.
 
 ---
 
@@ -102,19 +100,17 @@ api.fetchData(id); // 타입 안전
 
 ```typescript
 // 변경 전
-export const getProfileId = () =>
-	cookies.get<ProfileId>('ProfileId'); // ProfileId 반환
+const getProfileId = () => cookies.get<ProfileId>('ProfileId'); // ProfileId 반환
 
 // 변경 후
-export const getProfileId = () =>
-	cookies.get<ProfileId | undefined>('ProfileId'); // ProfileId | undefined 반환
+const getProfileId = () => cookies.get<ProfileId | undefined>('ProfileId'); // ProfileId | undefined 반환
 ```
 
 타입 하나만 바꿨을 뿐인데, 타입스크립트 컴파일러가 수정이 필요한 모든 곳을 찾아냈습니다.
 
 ---
 
-## 왜 가능했을까? #2: 변경 전파의 단위 생성
+## 왜 가능했을까? #2: 변경 추적 가능한 단위 생성
 
 타입 별칭이 없었다면 어땠을까요?
 
@@ -126,39 +122,70 @@ const userId: string = '123';
 const profileId: string = '456';
 ```
 
-`string`을 `string | undefined`로 바꾸면?
+이 코드의 문제는 **의미가 없다**는 것입니다.
 
-**아무 일도 일어나지 않습니다.**
+`string`만 봐서는:
 
-왜냐하면 `string`은 너무 범용적이기 때문입니다. 사용자 ID도 string, 프로필 ID도 string, 이름도 string... 타입스크립트는 어떤 `string`을
-바꿔야 하는지 알 수 없습니다.
+- 어떤 `string`이 ProfileId인지 알 수 없음
+- 어떤 `string`이 UserId인지 알 수 없음
+- 나중에 코드를 읽을 때 매번 변수명을 확인해야 함
 
-하지만 `ProfileId`라는 별칭을 만들면:
+---
+
+하지만 `ProfileId`라는 타입을 만들면:
 
 ```typescript
-// ProfileId 타입이 명시된 모든 곳
 type ProfileId = string;
 
-const getProfileId = (): ProfileId =>
-...
-const fetchData = (id: ProfileId) =>
-...
+const getProfileId = (): ProfileId => cookies.get<ProfileId>('ProfileId');
+const fetchData = (id: ProfileId) => api.fetch(id);
 const profileId: ProfileId = '456';
 ```
 
-이제 `const getProfileId = () => cookies.get<ProfileId | undefined>('ProfileId');`로 한 줄만 바꾸면:
+**무엇이 달라지나?**
+
+### 1. 코드 자체가 문서가 됩니다
+
+```typescript
+// Before: 이게 뭔지 알 수 없음
+function fetchData(id: string) {}
+
+// After: ProfileId를 받는구나! 명확함
+function fetchData(id: ProfileId) {}
+```
+
+### 2. 변경 추적이 가능해집니다
+
+이제 `getProfileId()`의 반환 타입만 바꾸면:
+
+```typescript
+// 이 한 줄만 수정
+export const getProfileId = () =>
+  cookies.get<ProfileId | undefined>('ProfileId');
+```
+
+**TypeScript 컴파일러가 영향받는 모든 곳을 찾아냅니다:**
 
 ```
-❌ Type 'ProfileId | undefined' is not assignable to type 'ProfileId'
-❌ Argument of type 'ProfileId | undefined' is not assignable to parameter
+❌ Type 'string | undefined' is not assignable to type 'string'
+❌ Argument of type 'string | undefined' is not assignable to parameter
 ❌ Object is possibly 'undefined'
 ```
 
-**컴파일러가 수정이 필요한 552개 파일을 모두 찾아냅니다.**
+이 에러들이 **수정이 필요한 모든 파일의 위치**를 정확히 알려줬습니다.
 
-이것이 **"변경 전파의 단위를 중앙집중화"** 한 것입니다.
+---
 
-타입 하나만 바꾸면, 그 변경이 자동으로 전체 코드베이스에 전파됩니다.
+**이것이 "변경 추적 가능한 단위"를 만든 것입니다.**
+
+`ProfileId` 타입 덕분에:
+
+1. **검색**: 정확히 관련 코드만 찾음
+2. **문서화**: 코드 읽을 때 의미가 즉시 파악됨
+
+타입 하나만 바꾸면, 그 변경이 자동으로 전체에 전파되고, 컴파일러가 수정이 필요한 모든 곳을 알려줍니다.
+
+**단순히 string이 아니라, ProfileId라는 의미를 부여한 것** - 이것이 안전하게 수정할 수 있었습니다.
 
 ---
 
@@ -188,12 +215,14 @@ path parameter처럼 '반드시 있어야 하는' 경우를 위한 훅을 만들
 
 ```typescript
 const useProfileIdByPath = (): ProfileId => {
-	const {profileId} = useParams<{ profileId: ProfileId }>();
-	
-	if (!profileId)
-		throw new Error('useProfileIdByPath hook must be used within an profileId path');
-	
-	return profileId;
+  const { profileId } = useParams<{ profileId: ProfileId }>();
+
+  if (!profileId)
+    throw new Error(
+      'useProfileIdByPath hook must be used within an profileId path',
+    );
+
+  return profileId;
 };
 ```
 
@@ -213,42 +242,6 @@ const useProfileIdByPath = (): ProfileId => {
 
 ---
 
-## 왜 가능했을까? #3: 컴파일러를 QA로 전환
-
-만약 `string`을 직접 사용했다면 어땠을까요?
-
-```typescript
-const profileId = getProfileId(); // string
-api.fetchData(profileId); // 컴파일은 성공
-```
-
-`getProfileId()`가 `undefined`를 반환해도 **컴파일 에러가 나지 않습니다.**
-
-런타임에 가서야 발견됩니다:
-
-- 사용자가 클릭했을 때
-- QA가 테스트할 때
-- 운이 나쁘면 프로덕션에서
-
-하지만 `ProfileId` 타입 덕분에:
-
-```typescript
-const profileId = getProfileId(); // ProfileId | undefined
-api.fetchData(profileId); // ❌ 컴파일 에러!
-```
-
-**컴파일 타임에 모든 문제를 발견합니다.**
-
-더 놀라운 점은, 컴파일러가 **우리가 놓친 엣지 케이스까지 찾아냈다**는 것입니다.
-
-"여기도 ProfileId가 없을 수 있는데 처리 안 했네요?"
-
-기획에서 빠진 부분까지 발견했습니다. 타입 체크가 **회귀 테스트 역할**을 한 셈입니다.
-
-**타입스크립트 컴파일러가 QA가 된 것**입니다.
-
----
-
 ## 결과
 
 **552개 파일. 2주. 사이드 이펙트 0건.**
@@ -259,7 +252,7 @@ api.fetchData(profileId); // ❌ 컴파일 에러!
 
 ---
 
-## 추가 효과: 커뮤니케이션 비용 절감
+## 추가 효과: 협업 속도 향상
 
 타입 별칭의 효과는 여기서 끝나지 않습니다.
 
@@ -268,80 +261,17 @@ api.fetchData(profileId); // ❌ 컴파일 에러!
 ```typescript
 // ❌ 의미 없는 원시 타입
 function updateProfile(id: string, name: string) {
-	// id가 UserId인가? ProfileId인가? TeamId인가?
-	// name이 displayName인가? userName인가?
+  // id가 UserId인가? ProfileId인가? TeamId인가?
+  // name이 displayName인가? userName인가?
 }
 
 // ✅ 의미 있는 타입
 function updateProfile(id: ProfileId, name: DisplayName) {
-	// 명확합니다
+  // 명확합니다
 }
 ```
 
-**실수로 잘못된 ID를 넘기는 것도 방지됩니다:**
-
-```typescript
-const userId: UserId = '123';
-const profileId: ProfileId = '456';
-
-updateProfile(userId, 'name'); // ❌ 컴파일 에러!
-updateProfile(profileId, 'name'); // ✅
-```
-
-**코드 자체가 문서 역할**을 합니다. 주석이나 별도 문서 없이도 "이 함수는 ProfileId를 받는구나"를 즉시 알 수 있습니다.
-
-코드 리뷰할 때도, 온보딩할 때도, 코드를 이해하는 속도가 빨라집니다.
-
----
-
-## 타입 설계 원칙: 한 줄의 힘
-
-**`string` 대신 의미 있는 타입을 만드세요.**
-
-```typescript
-// ❌ 이렇게 하지 마세요
-const getId = (): string => cookies.get('id');
-const fetchData = (id: string) => api.fetch(id);
-const userId: string = '123';
-const profileId: string = '456';
-
-// ✅ 이렇게 하세요
-type ProfileId = string;
-type UserId = string;
-
-const getProfileId = (): ProfileId => cookies.get<ProfileId>('ProfileId');
-const fetchData = (id: ProfileId) => api.fetch(id);
-const userId: UserId = '123';
-const profileId: ProfileId = '456';
-```
-
----
-
-### 타입 한 줄이 만드는 4가지 변화
-
-**1. 도메인 분리의 시작점**
-
-- `string`은 의미 없는 원시 타입
-- `ProfileId`는 "이 값은 프로필 식별자"라는 도메인 개념
-- 코드에 의미 계층을 추가
-
-**2. 변경 전파의 단위 생성**
-
-- 타입 정의 한 곳만 바꾸면 모든 사용처에 전파
-- 컴파일러가 영향받는 552개 파일을 자동으로 찾아줌
-- 변경 단위가 중앙집중화됨
-
-**3. 컴파일러를 QA로 전환**
-
-- 런타임 에러 → 컴파일 타임 에러
-- 타입 체크가 회귀 테스트 역할
-- 기획 누락까지 발견
-
-**4. 커뮤니케이션 비용 절감**
-
-- 코드 자체가 문서 역할
-- 의미 충돌 방지 (UserId vs ProfileId)
-- 협업 속도 향상
+**코드 자체가 문서 역할**을 합니다. 주석이나 별도 문서 없이도 **"이 함수는 ProfileId를 받는구나"** 를 즉시 알 수 있습니다.
 
 ---
 
@@ -360,9 +290,9 @@ type ErrorMessage = string;
 ✅ 의미 있는 적용
 
 ```typescript
-type UserId = string;      // 식별자
-type ProfileId = string;   // 도메인 핵심 개념
-type ApiKey = string;      // 보안/검증 필요
+type UserId = string; // 식별자
+type ProfileId = string; // 도메인 핵심 개념
+type ApiKey = string; // 보안/검증 필요
 ```
 
 **도메인의 핵심 개념이나, 추적이 필요한 식별자**처럼 꼭 필요해 보이는 곳에만 적용하세요.
@@ -375,8 +305,7 @@ type ApiKey = string;      // 보안/검증 필요
 
 `string` 대신 `ProfileId`를 썼던 과거의 선택이 모든 차이를 만들었습니다.
 
-**"나중에 필요할지도 몰라"** 하는 막연한 기대가 아니라, **지금 당장 코드의 의미를 명확하게 만들기 위해** 타입을 만들었던 것이 1년 후 대규모 변경을 가능하게
-만들었습니다.
+**"나중에 필요할지도 몰라"** 하는 막연한 기대가 아니라, **지금 당장 코드의 의미를 명확하게 만들기 위해** 타입을 만들었던 것이 1년 후 대규모 변경을 가능하게 만들었습니다.
 
 타입은 단순히 에러를 잡는 도구가 아닙니다. **코드에 의미를 부여하고, 변경을 추적 가능하게 만드는 설계 도구**입니다.
 
@@ -402,6 +331,15 @@ type ApiKey = string;      // 보안/검증 필요
 3. 해당 타입을 사용하는 모든 곳에 타입을 명시하세요
 4. 다음에 변경이 필요할 때, 그 위력을 경험하게 될 것입니다
 
-**작은 변경이 큰 차이를 만듭니다.**
+---
 
-오늘 만든 타입 하나가 1년 후 당신을 구할 수 있습니다.
+## 3개월 후 이 글을 다시 읽는 당신에게
+
+**"그때 ProfileId 타입을 만들어둬서 다행이야."**
+
+이 문장을 하게 될 순간이 반드시 옵니다.
+
+- API 응답 구조가 바뀔 때
+- 권한 시스템을 추가할 때
+
+**타입 한 줄은 미래의 당신에게 보내는 선물입니다.**
