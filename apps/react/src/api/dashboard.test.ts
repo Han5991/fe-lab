@@ -1,7 +1,7 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest';
 import { getDashboardStats, getChartData, getActivities } from './dashboard';
 import { StatsError, ChartError, ActivityError, instance } from '@/shared';
-import type { AxiosError } from 'axios';
+import { HttpStatusCode } from '@package/core';
 
 vi.mock('@/shared', async () => {
   const actual = await vi.importActual('@/shared');
@@ -26,7 +26,11 @@ describe('getDashboardStats', () => {
       conversion: { rate: 10, change: 3 },
     };
 
-    vi.mocked(instance.get).mockResolvedValue({ data: mockData });
+    vi.mocked(instance.get).mockResolvedValue({
+      data: mockData,
+      status: HttpStatusCode.Continue,
+      headers: new Headers(),
+    });
 
     const result = await getDashboardStats();
 
@@ -44,7 +48,7 @@ describe('getDashboardStats', () => {
         },
         status: 500,
       },
-    } as AxiosError;
+    };
 
     vi.mocked(instance.get).mockRejectedValue(axiosError);
 
@@ -59,7 +63,7 @@ describe('getDashboardStats', () => {
         data: {},
         status: 500,
       },
-    } as AxiosError;
+    };
 
     vi.mocked(instance.get).mockRejectedValue(axiosError);
 
@@ -88,7 +92,11 @@ describe('getChartData', () => {
       data: [100, 200, 150, 300, 250],
     };
 
-    vi.mocked(instance.get).mockResolvedValue({ data: mockData });
+    vi.mocked(instance.get).mockResolvedValue({
+      data: mockData,
+      status: HttpStatusCode.Continue,
+      headers: new Headers(),
+    });
 
     const result = await getChartData();
 
@@ -106,7 +114,7 @@ describe('getChartData', () => {
         },
         status: 500,
       },
-    } as AxiosError;
+    };
 
     vi.mocked(instance.get).mockRejectedValue(axiosError);
 
@@ -121,7 +129,7 @@ describe('getChartData', () => {
         data: {},
         status: 500,
       },
-    } as AxiosError;
+    };
 
     vi.mocked(instance.get).mockRejectedValue(axiosError);
 
@@ -160,7 +168,11 @@ describe('getActivities', () => {
       },
     ];
 
-    vi.mocked(instance.get).mockResolvedValue({ data: mockData });
+    vi.mocked(instance.get).mockResolvedValue({
+      data: mockData,
+      status: HttpStatusCode.Continue,
+      headers: new Headers(),
+    });
 
     const result = await getActivities();
 
@@ -178,7 +190,7 @@ describe('getActivities', () => {
         },
         status: 500,
       },
-    } as AxiosError;
+    };
 
     vi.mocked(instance.get).mockRejectedValue(axiosError);
 
@@ -193,7 +205,7 @@ describe('getActivities', () => {
         data: {},
         status: 500,
       },
-    } as AxiosError;
+    };
 
     vi.mocked(instance.get).mockRejectedValue(axiosError);
 

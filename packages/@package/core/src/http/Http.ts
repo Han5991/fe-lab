@@ -49,9 +49,9 @@ export class Http {
 
     if (!response.ok) {
       const apiError = new ApiError(
-        data?.message || `HTTP Error: ${response.status} ${response.statusText}`,
+        data?.message ||
+          `HTTP Error: ${response.status} ${response.statusText}`,
         data?.error,
-        response.status,
       );
 
       // 원본 응답 정보 보존 (API 레이어에서 활용 가능)
