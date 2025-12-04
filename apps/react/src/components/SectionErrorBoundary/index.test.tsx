@@ -110,9 +110,7 @@ describe('StatsErrorBoundary', () => {
 
     expect(screen.getByText('❌ 통계 에러')).toBeInTheDocument();
     expect(screen.getByText('통계 데이터 로드 실패')).toBeInTheDocument();
-    expect(
-      screen.getByText('에러 코드: STATS_LOAD_ERROR'),
-    ).toBeInTheDocument();
+    expect(screen.getByText('에러 코드: STATS_LOAD_ERROR')).toBeInTheDocument();
   });
 });
 
@@ -136,9 +134,7 @@ describe('ChartErrorBoundary', () => {
 
     expect(screen.getByText('❌ 차트 에러')).toBeInTheDocument();
     expect(screen.getByText('차트 데이터 로드 실패')).toBeInTheDocument();
-    expect(
-      screen.getByText('에러 코드: CHART_LOAD_ERROR'),
-    ).toBeInTheDocument();
+    expect(screen.getByText('에러 코드: CHART_LOAD_ERROR')).toBeInTheDocument();
   });
 });
 
