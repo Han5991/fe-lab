@@ -4,6 +4,7 @@ packages:
 
 catalog:
   '@pandacss/dev': 1.4.1
+  'next' : 16.1.0
 
 catalogs:
   react19:

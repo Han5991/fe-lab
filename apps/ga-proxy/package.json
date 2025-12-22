@@ -9,16 +9,16 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "next": "15.4.5",
-    "react": "19.1.0",
-    "react-dom": "19.1.0",
+    "next": "catalog:",
+    "react": "catalog:react19",
+    "react-dom": "catalog:react19",
     "ua-parser-js": "^2.0.4"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
+    "@types/react": "catalog:react19",
+    "@types/react-dom": "catalog:react19",
     "eslint": "^9",
     "eslint-config-next": "15.4.5",
     "typescript": "^5"
