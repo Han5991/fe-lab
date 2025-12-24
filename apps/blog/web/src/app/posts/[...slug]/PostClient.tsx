@@ -1,19 +1,14 @@
-import type { GetStaticPaths, GetStaticProps } from 'next';
-import Head from 'next/head';
-import Link from 'next/link';
+'use client';
+
 import { useState, useCallback, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/cjs/styles/prism';
-import { getAllPostSlugs, getPostBySlug, type PostData } from '@/lib/posts';
 import { css, cx } from '@design-system/ui-lib/css';
 import mermaid from 'mermaid';
-import { SsgoiTransition } from "@ssgoi/react";
-
-interface PostPageProps {
-  post: PostData;
-}
+import { SsgoiTransition } from '@ssgoi/react';
+import type { PostData } from '@/lib/posts';
 
 // Mermaid Initialization
 if (typeof window !== 'undefined') {
@@ -40,7 +35,10 @@ const Mermaid = ({ chart }: { chart: string }) => {
     const renderChart = async () => {
       if (ref.current) {
         try {
-          const { svg } = await mermaid.render(`mermaid-${Math.random().toString(36).substr(2, 9)}`, chart);
+          const { svg } = await mermaid.render(
+            `mermaid-${Math.random().toString(36).substr(2, 9)}`,
+            chart,
+          );
           setSvg(svg);
         } catch (error) {
           console.error('Mermaid render failed:', error);
@@ -64,7 +62,7 @@ const Mermaid = ({ chart }: { chart: string }) => {
         justifyContent: 'center',
         overflow: 'auto',
         transition: 'all 0.3s',
-        _hover: { shadow: 'xl', transform: 'translateY(-2px)', bg: 'white' }
+        _hover: { shadow: 'xl', transform: 'translateY(-2px)', bg: 'white' },
       })}
       dangerouslySetInnerHTML={{ __html: svg }}
     />
@@ -99,7 +97,11 @@ const CopyButton = ({ content }: { content: string }) => {
         borderColor: 'white/10',
         cursor: 'pointer',
         transition: 'all 0.2s',
-        _hover: { bg: 'white/10', color: 'blue.400', borderColor: 'blue.500/30' },
+        _hover: {
+          bg: 'white/10',
+          color: 'blue.400',
+          borderColor: 'blue.500/30',
+        },
       })}
     >
       {isCopied ? 'Copied!' : 'Copy'}
@@ -107,7 +109,7 @@ const CopyButton = ({ content }: { content: string }) => {
   );
 };
 
-export default function PostPage({ post }: PostPageProps) {
+export default function PostClient({ post }: { post: PostData }) {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -116,29 +118,6 @@ export default function PostPage({ post }: PostPageProps) {
 
   return (
     <SsgoiTransition id={`/posts/${post.slug}`}>
-      <Head>
-        <title>{post.title} | Frontend Lab Blog</title>
-        <meta
-          name="description"
-          content={post.excerpt || post.content.slice(0, 160) + '...'}
-        />
-        <meta property="og:title" content={post.title} />
-        <meta
-          property="og:description"
-          content={post.excerpt || post.content.slice(0, 160) + '...'}
-        />
-        <meta property="og:type" content="article" />
-        {post.date && (
-          <meta property="article:published_time" content={post.date} />
-        )}
-        <meta name="twitter:card" content="summary" />
-        <meta name="twitter:title" content={post.title} />
-        <meta
-          name="twitter:description"
-          content={post.excerpt || post.content.slice(0, 160) + '...'}
-        />
-      </Head>
-
       <div
         className={cx(
           css({
@@ -150,23 +129,25 @@ export default function PostPage({ post }: PostPageProps) {
             transform: 'translateY(10px)',
             transition: 'all 0.6s cubic-bezier(0.16, 1, 0.3, 1)',
           }),
-          isVisible && css({ opacity: 1, transform: 'translateY(0)' })
+          isVisible && css({ opacity: 1, transform: 'translateY(0)' }),
         )}
       >
         <header className={css({ mb: '16', textAlign: 'center' })}>
-          <div className={css({
-            display: 'inline-block',
-            mb: '6',
-            px: '3',
-            py: '1',
-            rounded: 'full',
-            bg: 'blue.50',
-            color: 'blue.600',
-            fontSize: 'xs',
-            fontWeight: 'bold',
-            letterSpacing: 'wider',
-            textTransform: 'uppercase'
-          })}>
+          <div
+            className={css({
+              display: 'inline-block',
+              mb: '6',
+              px: '3',
+              py: '1',
+              rounded: 'full',
+              bg: 'blue.50',
+              color: 'blue.600',
+              fontSize: 'xs',
+              fontWeight: 'bold',
+              letterSpacing: 'wider',
+              textTransform: 'uppercase',
+            })}
+          >
             Lab Log
           </div>
           <h1
@@ -189,7 +170,7 @@ export default function PostPage({ post }: PostPageProps) {
               alignItems: 'center',
               color: 'gray.400',
               fontSize: 'sm',
-              fontWeight: 'medium'
+              fontWeight: 'medium',
             })}
           >
             {post.date && (
@@ -201,7 +182,14 @@ export default function PostPage({ post }: PostPageProps) {
                 })}
               </time>
             )}
-            <span className={css({ w: '1', h: '1', rounded: 'full', bg: 'gray.300' })} />
+            <span
+              className={css({
+                w: '1',
+                h: '1',
+                rounded: 'full',
+                bg: 'gray.300',
+              })}
+            />
             <span>{Math.ceil(post.content.length / 500)} min read</span>
           </div>
         </header>
@@ -211,10 +199,15 @@ export default function PostPage({ post }: PostPageProps) {
             fontSize: '1.125rem',
             lineHeight: '1.8',
             color: 'gray.700',
-            // Selection Style
             '& ::selection': { bg: 'blue.600', color: 'white' },
-            // Premium Typography Styles
-            '& h1': { fontSize: '3xl', fontWeight: '800', mt: '16', mb: '6', color: 'gray.900', letterSpacing: 'tight' },
+            '& h1': {
+              fontSize: '3xl',
+              fontWeight: '800',
+              mt: '16',
+              mb: '6',
+              color: 'gray.900',
+              letterSpacing: 'tight',
+            },
             '& h2': {
               fontSize: '2xl',
               fontWeight: '700',
@@ -232,10 +225,16 @@ export default function PostPage({ post }: PostPageProps) {
                 w: '8',
                 h: '1',
                 bg: 'blue.600',
-                rounded: 'full'
-              }
+                rounded: 'full',
+              },
             },
-            '& h3': { fontSize: 'xl', fontWeight: '700', mt: '12', mb: '4', color: 'gray.900' },
+            '& h3': {
+              fontSize: 'xl',
+              fontWeight: '700',
+              mt: '12',
+              mb: '4',
+              color: 'gray.900',
+            },
             '& p': { mb: '8', wordBreak: 'keep-all' },
             '& ul': { listStyleType: 'disc', pl: '6', mb: '8' },
             '& ol': { listStyleType: 'decimal', pl: '6', mb: '8' },
@@ -247,7 +246,7 @@ export default function PostPage({ post }: PostPageProps) {
               display: 'flex',
               alignItems: 'flex-start',
               gap: '3',
-              mb: '4'
+              mb: '4',
             },
             '& li.task-list-item input[type="checkbox"]': {
               mt: '1.5',
@@ -259,17 +258,17 @@ export default function PostPage({ post }: PostPageProps) {
               color: 'gray.400',
               textDecorationColor: 'gray.300',
             },
-            '& code:not([class])': { // Inline code
-              bg: 'blue.50/50',
+            '& code:not([class])': {
+              bg: 'gray.100',
               px: '1.5',
               py: '0.5',
               borderRadius: 'md',
-              fontSize: '0.9em',
-              color: 'blue.700',
-              fontWeight: '600',
+              fontSize: '0.85em',
+              color: 'red.500',
+              fontWeight: '500',
               fontFamily: 'mono',
               borderWidth: '1px',
-              borderColor: 'blue.100/50',
+              borderColor: 'gray.200',
             },
             '& blockquote': {
               borderLeftWidth: '4px',
@@ -291,7 +290,11 @@ export default function PostPage({ post }: PostPageProps) {
               borderBottomColor: 'blue.200',
               transition: 'all 0.2s',
               fontWeight: '600',
-              _hover: { color: 'blue.700', borderBottomColor: 'blue.600', bg: 'blue.50/50' },
+              _hover: {
+                color: 'blue.700',
+                borderBottomColor: 'blue.600',
+                bg: 'blue.50/50',
+              },
             },
             '& img': {
               borderRadius: '2xl',
@@ -300,7 +303,7 @@ export default function PostPage({ post }: PostPageProps) {
               h: 'auto',
               shadow: '2xl',
               borderWidth: '1px',
-              borderColor: 'gray.100'
+              borderColor: 'gray.100',
             },
             '& hr': {
               my: '20',
@@ -322,7 +325,7 @@ export default function PostPage({ post }: PostPageProps) {
               borderColor: 'gray.200',
               borderRadius: '2xl',
               overflow: 'hidden',
-              boxShadow: 'sm'
+              boxShadow: 'sm',
             },
             '& th': {
               bg: 'gray.50',
@@ -338,7 +341,7 @@ export default function PostPage({ post }: PostPageProps) {
               borderBottomWidth: '1px',
               borderColor: 'gray.100',
               color: 'gray.700',
-              transition: 'all 0.2s'
+              transition: 'all 0.2s',
             },
             '& tr:last-child td': {
               borderBottomWidth: '0',
@@ -354,18 +357,27 @@ export default function PostPage({ post }: PostPageProps) {
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
             components={{
-              code({ node, inline, className, children, ...props }: any) {
+              code({ node, className, children, ...props }: any) {
                 const match = /language-(\w+)/.exec(className || '');
                 const content = String(children).replace(/\n$/, '');
 
-                // Mermaid Rendering
-                if (!inline && match && match[1] === 'mermaid') {
+                if (match && match[1] === 'mermaid') {
                   return <Mermaid chart={content} />;
                 }
 
-                return !inline && match ? (
-                  <div className={css({ mb: '12', mt: '8', position: 'relative', shadow: '2xl', rounded: '2xl', overflow: 'hidden', borderWidth: '1px', borderColor: 'white/10' })}>
-                    {/* macOS Window Controls */}
+                return match ? (
+                  <div
+                    className={css({
+                      mb: '12',
+                      mt: '8',
+                      position: 'relative',
+                      shadow: '2xl',
+                      rounded: '2xl',
+                      overflow: 'hidden',
+                      borderWidth: '1px',
+                      borderColor: 'white/10',
+                    })}
+                  >
                     <div
                       className={css({
                         bg: '#1e1e1e',
@@ -378,9 +390,27 @@ export default function PostPage({ post }: PostPageProps) {
                         borderColor: 'white/5',
                       })}
                     >
-                      <div className={css({ boxSize: '3', rounded: 'full', bg: '#ff5f56' })} />
-                      <div className={css({ boxSize: '3', rounded: 'full', bg: '#ffbd2e' })} />
-                      <div className={css({ boxSize: '3', rounded: 'full', bg: '#27c93f' })} />
+                      <div
+                        className={css({
+                          boxSize: '3',
+                          rounded: 'full',
+                          bg: '#ff5f56',
+                        })}
+                      />
+                      <div
+                        className={css({
+                          boxSize: '3',
+                          rounded: 'full',
+                          bg: '#ffbd2e',
+                        })}
+                      />
+                      <div
+                        className={css({
+                          boxSize: '3',
+                          rounded: 'full',
+                          bg: '#27c93f',
+                        })}
+                      />
                       {match[1] && (
                         <span
                           className={css({
@@ -420,17 +450,18 @@ export default function PostPage({ post }: PostPageProps) {
                   <code
                     className={cx(
                       className,
-                      !inline && css({
-                        display: 'block',
-                        p: '4',
-                        bg: 'gray.900',
-                        color: 'gray.100',
-                        rounded: 'xl',
-                        overflowX: 'auto',
+                      css({
+                        bg: 'gray.100',
+                        color: 'red.500',
+                        px: '1.5',
+                        py: '0.5',
+                        rounded: 'md',
                         fontFamily: 'mono',
-                        fontSize: '0.9em',
-                        my: '6'
-                      })
+                        fontSize: '0.85em',
+                        fontWeight: '500',
+                        borderWidth: '1px',
+                        borderColor: 'gray.200',
+                      }),
                     )}
                     {...props}
                   >
@@ -439,14 +470,15 @@ export default function PostPage({ post }: PostPageProps) {
                 );
               },
               img({ src, alt }: any) {
-                // GitHub Pages 배포 시 basePath(/fe-lab) 대응
-                const PREFIX = process.env.NODE_ENV === 'production' ? '/fe-lab' : '';
-
-                // 상대 경로인 경우 (http로 시작하지 않는 경우) 경로 보정
-                const isRelative = src && !src.startsWith('http') && !src.startsWith('/');
+                const PREFIX =
+                  process.env.NODE_ENV === 'production' ? '/fe-lab' : '';
+                const isRelative =
+                  src && !src.startsWith('http') && !src.startsWith('/');
                 const imageSrc = isRelative
                   ? `${PREFIX}/posts/${post.relativeDir}/${src}`
-                  : src.startsWith('/') ? `${PREFIX}${src}` : src;
+                  : src.startsWith('/')
+                    ? `${PREFIX}${src}`
+                    : src;
 
                 return (
                   <figure className={css({ my: '14' })}>
@@ -459,20 +491,9 @@ export default function PostPage({ post }: PostPageProps) {
                         h: 'auto',
                         shadow: '2xl',
                         borderWidth: '1px',
-                        borderColor: 'gray.100'
+                        borderColor: 'gray.100',
                       })}
                     />
-                    {alt && (
-                      <figcaption className={css({
-                        mt: '4',
-                        textAlign: 'center',
-                        fontSize: 'sm',
-                        color: 'gray.400',
-                        fontStyle: 'italic'
-                      })}>
-                        {alt}
-                      </figcaption>
-                    )}
                   </figure>
                 );
               },
@@ -485,31 +506,3 @@ export default function PostPage({ post }: PostPageProps) {
     </SsgoiTransition>
   );
 }
-
-export const getStaticPaths: GetStaticPaths = async () => {
-  const slugs = getAllPostSlugs();
-
-  const paths = slugs.map(slug => ({
-    params: { slug: slug.split('/') },
-  }));
-
-  return { paths, fallback: false };
-};
-
-export const getStaticProps: GetStaticProps = async ({ params }) => {
-  const slug = Array.isArray(params?.slug)
-    ? params.slug.join('/')
-    : params?.slug || '';
-  const post = getPostBySlug(slug);
-
-  if (!post) {
-    return { notFound: true };
-  }
-
-  return {
-    props: {
-      post,
-    },
-  };
-};
-

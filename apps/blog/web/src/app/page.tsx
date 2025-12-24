@@ -1,28 +1,13 @@
-import Head from 'next/head';
 import Link from 'next/link';
 import { css } from '@design-system/ui-lib/css';
-import { SsgoiTransition } from "@ssgoi/react";
+import { SsgoiTransition } from '@ssgoi/react';
 
 export default function HomePage() {
   return (
     <SsgoiTransition id="/">
-      <Head>
-        <title>Frontend Lab | 프론트엔드 실험실</title>
-        <meta
-          name="description"
-          content="프론트엔드 기술 실험과 깊이 있는 학습 내용을 공유하는 공간입니다."
-        />
-        <meta property="og:title" content="Frontend Lab" />
-        <meta
-          property="og:description"
-          content="프론트엔드 기술 실험과 깊이 있는 학습 내용을 공유하는 공간입니다."
-        />
-        <meta property="og:type" content="website" />
-      </Head>
-
       <div
         className={css({
-          minHeight: 'calc(100vh - 64px)', // Deducting nav height
+          minHeight: 'calc(100lvh - 231px)', // Deducting nav height
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',

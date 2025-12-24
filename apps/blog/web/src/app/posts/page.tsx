@@ -1,26 +1,27 @@
-import { GetStaticProps } from 'next';
-import Head from 'next/head';
 import Link from 'next/link';
-import { getAllPosts, PostData } from '@/lib/posts';
+import { getAllPosts } from '@/lib/posts';
 import { css } from '@design-system/ui-lib/css';
-import { SsgoiTransition } from "@ssgoi/react";
+import { SsgoiTransition } from '@ssgoi/react';
+import type { Metadata } from 'next';
 
-interface PostsPageProps {
-  posts: PostData[];
-}
+export const metadata: Metadata = {
+  title: 'Posts | Frontend Lab',
+  description: '프론트엔드 실험실의 모든 기록들을 확인해보세요.',
+};
 
-export default function PostsPage({ posts }: PostsPageProps) {
+export default function PostsPage() {
+  const posts = getAllPosts();
+
   return (
     <SsgoiTransition id="/posts">
-      <Head>
-        <title>Posts | Frontend Lab</title>
-        <meta
-          name="description"
-          content="프론트엔드 실험실의 모든 기록들을 확인해보세요."
-        />
-      </Head>
-
-      <div className={css({ maxWidth: '800px', margin: '0 auto', px: '6', py: '16' })}>
+      <div
+        className={css({
+          maxWidth: '800px',
+          margin: '0 auto',
+          px: '6',
+          py: '16',
+        })}
+      >
         <header className={css({ mb: '12' })}>
           <h1
             className={css({
@@ -37,10 +38,19 @@ export default function PostsPage({ posts }: PostsPageProps) {
           </p>
         </header>
 
-        <div className={css({ display: 'flex', flexDirection: 'column', gap: '8' })}>
+        <div
+          className={css({
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '8',
+          })}
+        >
           {posts.map(post => (
             <article key={post.slug} className="group">
-              <Link href={`/posts/${post.slug}`} className={css({ display: 'block' })}>
+              <Link
+                href={`/posts/${post.slug}`}
+                className={css({ display: 'block' })}
+              >
                 <div className={css({ mb: '2' })}>
                   {post.date && (
                     <time
@@ -106,13 +116,3 @@ export default function PostsPage({ posts }: PostsPageProps) {
     </SsgoiTransition>
   );
 }
-
-export const getStaticProps: GetStaticProps = async () => {
-  const posts = getAllPosts();
-
-  return {
-    props: {
-      posts,
-    },
-  };
-};
