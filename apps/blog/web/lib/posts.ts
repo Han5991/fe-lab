@@ -7,6 +7,7 @@ const postsDirectory = join(process.cwd(), '..', 'posts');
 export interface PostData {
   slug: string;
   originalSlug: string;
+  relativeDir: string;
   title: string;
   date: string | null;
   content: string;
@@ -52,6 +53,7 @@ export function getAllPosts(): PostData[] {
         posts.push({
           slug,
           originalSlug: rawSlug,
+          relativeDir: currentPath,
           title: data.title || fileName,
           date: data.date || null,
           content,

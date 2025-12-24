@@ -253,12 +253,36 @@ export default function PostPage({ post }: PostPageProps) {
                   </code>
                 );
               },
+              img({ src, alt }: any) {
+                // GitHub Pages 배포 시 basePath(/fe-lab) 대응
+                const PREFIX = process.env.NODE_ENV === 'production' ? '/fe-lab' : '';
+
+                // 상대 경로인 경우 (http로 시작하지 않는 경우) 경로 보정
+                const isRelative = src && !src.startsWith('http') && !src.startsWith('/');
+                const imageSrc = isRelative
+                  ? `${PREFIX}/posts/${post.relativeDir}/${src}`
+                  : src.startsWith('/') ? `${PREFIX}${src}` : src;
+
+                return (
+                  <img
+                    src={imageSrc}
+                    alt={alt}
+                    className={css({
+                      borderRadius: 'xl',
+                      my: '10',
+                      w: 'full',
+                      h: 'auto',
+                      shadow: 'md',
+                    })}
+                  />
+                );
+              },
             }}
           >
             {post.content}
           </ReactMarkdown>
         </div>
-      </div>
+      </div >
     </>
   );
 }

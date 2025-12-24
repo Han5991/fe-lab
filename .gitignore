@@ -45,3 +45,4 @@ yarn-error.log*
 /packages/@design-system/ui-lib/helpers.mjs
 /packages/@design-system/ui-lib/recipes/
 /.idea/
+/apps/blog/web/public/posts/

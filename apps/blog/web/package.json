@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "prebuild": "rm -rf public/posts && cp -R ../posts public/posts",
+    "build": "pnpm prebuild && next build",
     "start": "next start",
     "lint": "next lint"
   },
