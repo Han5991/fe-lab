@@ -1,3 +1,9 @@
+---
+title: 'Panda CSS 1년 사용기'
+date: '2025-02-17'
+published: true
+---
+
 # 프롤로그
 
 > 프로젝트에서 Panda CSS를 도입해 사용해 보면서, 기존의 styled-components나 Tailwind CSS와는 다른 독특한 스타일 작성 방식을 체감할 수 있었습니다. 특히 TypeScript 기반의 타입 안전성, 빌드 타임에 CSS를 정적으로 추출하여 런타임 오버헤드를 줄이는 점, 그리고 CSS‑in‑JS 스타일 작성과 표준 CSS 문법을 모두 지원하는 유연함이 인상적이었습니다. 이번 글에서는 Panda CSS의 주요 기능, Tailwind 및 styled-components와의 차이점, 그리고 모노레포 환경에서 디자인 시스템으로 활용하는 방법에 대해 공유하고자 합니다.

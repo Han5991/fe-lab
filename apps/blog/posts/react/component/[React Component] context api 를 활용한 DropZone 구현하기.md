@@ -1,3 +1,8 @@
+---
+title: 'Context API를 활용한 DropZone 구현하기'
+date: '2025-07-30'
+published: true
+---
 # [React Component] Context API를 활용한 DropZone 구현하기
 
 > 평소처럼 Mantine의 Dropzone을 사용하고 있었는데, 문득 내부 구현이 궁금해졌습니다. 어떻게 이렇게 깔끔한 API를 제공할 수 있을까?

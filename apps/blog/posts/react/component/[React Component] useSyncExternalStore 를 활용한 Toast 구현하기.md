@@ -1,3 +1,9 @@
+---
+title: '15줄에서 2줄로: useSyncExternalStore 기반 React Toast 시스템 설계법'
+date: '2025-06-30'
+published: true
+---
+
 ## 들어가며
 
 > 안녕하세요, 여러분! 프론트엔드 개발자라면 누구나 한 번쯤 만들어보는 토스트 UI.  
@@ -234,7 +240,7 @@ function getDistributedToasts(
 // 상태 업데이트 헬퍼
 export function updateToastsState(
   store: ToastStore,
-  update: (toasts: ToastData[]) => ToastData[],
+  update: '2025-06-30'
 ) {
   const state = store.getState();
   const toasts = update([...state.toasts]);
@@ -255,7 +261,7 @@ export function updateToastsState(
 export const toasts = {
   show: showToast,
   hide: hideToast,
-  update: updateToast,
+  update: '2025-06-30'
   clean: cleanToasts,
   cleanQueue: cleanToastsQueue,
 } as const;
@@ -553,7 +559,7 @@ Toast 구현 과정에서 우리는 단순히 알림 시스템을 만든 것이 
 // 단 3줄로 Modal 스토어 완성
 const modalsStore = createStore({ modals: [], stackLimit: 3 });
 const modals = { open, close, closeAll };
-// 사용: modals.open({ title: '확인', type: 'confirm' })
+// 사용: modals.open({ title: '15줄에서 2줄로: useSyncExternalStore 기반 React Toast 시스템 설계법'
 ```
 
 **Loading & Progress 관리**
@@ -569,7 +575,7 @@ const loading = { start, finish, isLoading };
 ```typescript
 // 읽음/안읽음, 카테고리별 필터링
 const notifications = { push, markAsRead, clear };
-// 사용: notifications.push({ title: '새 메시지', category: 'email' })
+// 사용: notifications.push({ title: '15줄에서 2줄로: useSyncExternalStore 기반 React Toast 시스템 설계법'
 ```
 
 **Form Validation 상태**
@@ -633,9 +639,9 @@ const handleComplexUserFlow = async () => {
   try {
     const result = await processUserData();
     toasts.show({ message: '처리 완료', type: 'success' });
-    notifications.push({ title: '작업 완료', category: 'system' });
+    notifications.push({ title: '15줄에서 2줄로: useSyncExternalStore 기반 React Toast 시스템 설계법'
   } catch (error) {
-    modals.open({ title: '오류', content: error.message, type: 'alert' });
+    modals.open({ title: '15줄에서 2줄로: useSyncExternalStore 기반 React Toast 시스템 설계법'
   } finally {
     loading.finish('user-flow');
   }

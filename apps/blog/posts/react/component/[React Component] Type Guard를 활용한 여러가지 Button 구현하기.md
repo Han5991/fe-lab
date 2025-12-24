@@ -1,3 +1,8 @@
+---
+title: 'Type Guard를 활용한 여러가지 Button 구현하기'
+date: '2025-06-30'
+published: true
+---
 # [React Component] Type Guard를 활용한 여러가지 Button 구현하기
 
 > 드디어 디자인 시스템 프로젝트가 시작되었습니다! 팀에서 가장 먼저 구현하기로 한 컴포넌트는 Button입니다. 디자인 시스템에서 Button은 특별합니다. 가장 많이 사용되고, 가장 다양한 형태를 가지며, 다른 모든 컴포넌트의 기초가 되는 컴포넌트거든요.

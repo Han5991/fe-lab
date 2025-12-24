@@ -1,3 +1,9 @@
+---
+title: '3주간의 패키지 배포 삽질기: SVG와 npm scope가 만든 지옥'
+date: null
+published: false
+---
+
 # 3주간의 패키지 배포 삽질기: SVG와 npm scope가 만든 지옥
 
 ## 프롤로그: "별거 아니겠지"의 착각

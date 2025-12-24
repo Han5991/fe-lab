@@ -1,3 +1,9 @@
+---
+title: 'Turborepo 에서 next.js 도커라이징 하기'
+date: '2025-03-22'
+published: true
+---
+
 ## 0. 프롤로그
 
 > 이 글은 뮤즈라이브에서 웹 서비스 3개를 모노레포 구조에서 Turborepo의 공식 문서를 참조하여 Next.js의 standalone 모드와 Docker를 활용한 모노레포 환경 설정 및 최적화 방법을 설명합니다.

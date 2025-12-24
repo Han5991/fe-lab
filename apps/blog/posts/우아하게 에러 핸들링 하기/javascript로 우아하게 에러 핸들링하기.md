@@ -1,3 +1,9 @@
+---
+title: 'javascript로 우아하게 Error 핸들링하기'
+date: '2025-02-27'
+published: true
+---
+
 ## 프롤로그
 
 > 이번 글은 JavaScript에서 동기 및 비동기 상황 모두에 대해 에러를 어떻게 처리할 수 있는지에 대해 다룹니다. 에러 처리는 코드의 안정성과 유지보수성에 큰 영향을 미치므로, 명확하고 일관된 패턴을 적용하는 것이 중요합니다. 이 글에서는 기본적인 try-catch 패턴부터, async/await 환경에서의 에러 처리, 그리고 여러 비동기 작업이나 에러 래핑(Error Wrapper) 패턴, 그리고 커스텀 에러 클래스까지 다양한 예제를 통해 살펴보겠습니다. ![](https://velog.velcdn.com/images/rewq5991/post/64802bfb-a008-44ab-a0ee-3ab7450ca59b/image.png)

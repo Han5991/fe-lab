@@ -1,7 +1,8 @@
 ---
+published: false
 title: '누가 시키지도 않았는데 라이브러리 번들러 만들기'
 description: '번들러 내부 흐름을 직접 구현하며 라이브러리 번들링의 판단 과정을 기록하는 시리즈 목차.'
-date: '2025-12-22'
+date: null
 slug: 'no-one-asked-library-bundler-01-outline'
 tags: ['bundler', 'library', 'build', 'tooling']
 excerpt: '번들러가 어떤 판단을 거쳐 결과물을 만드는지 직접 구현하며 따라가는 시리즈 목차.'

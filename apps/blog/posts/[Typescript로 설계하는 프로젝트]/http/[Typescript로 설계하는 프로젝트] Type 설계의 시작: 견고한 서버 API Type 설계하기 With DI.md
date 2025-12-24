@@ -1,3 +1,9 @@
+---
+title: '[Typescript로 설계하는 프로젝트] Type 설계의 시작: 견고한 서버 API Type 설계하기 With DI'
+date: '2025-06-01'
+published: true
+---
+
 ## 들어가며
 
 > 피곤에 쩔은 모습으로 하나의 테스크를 마무리 하는 순간 백엔드 개발자가 다가옵니다.  

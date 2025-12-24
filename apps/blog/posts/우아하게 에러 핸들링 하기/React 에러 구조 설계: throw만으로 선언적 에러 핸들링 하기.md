@@ -1,3 +1,8 @@
+---
+title: 'React 에러 구조 설계: throw만으로 선언적 에러 핸들링 하기'
+date: '2025-10-14'
+published: true
+---
 ## 0. 프롤로그
 
 > `throw`를 보던중 문득 깨달았다.

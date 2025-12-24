@@ -29,22 +29,33 @@ export function getAllPosts(): PostData[] {
         const fileContents = readFileSync(fullPath, 'utf8');
         const { data, content } = matter(fileContents);
 
-        const fileName = item.replace(/\.md|mdx$/, '');
+        // 오직 published: true 인 글만 가져오기
+        if (data.published !== true) continue;
+
+        const fileName = item.replace(/\.(md|mdx)$/, '');
         const rawSlug = currentPath ? `${currentPath}/${fileName}` : fileName;
 
-        // URL-safe slug 생성
-        const slug = rawSlug
+        const slug = (data.slug || rawSlug)
           .replace(/\s+/g, '-')
           .replace(/[^\w\-가-힣/]/g, '')
           .toLowerCase();
 
+        // 마크다운 문법 제거 후 순수 텍스트만 추출
+        const cleanContent = content
+          .replace(/!\[.*?\]\(.*?\)/g, '') // 이미지 제거
+          .replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1') // 링크 텍스트만 남기기
+          .replace(/[#*`_>~]/g, '') // 마크다운 기호 제거
+          .replace(/\n+/g, ' ') // 개행을 공백으로 변환
+          .replace(/\s+/g, ' ') // 연속된 공백 제거
+          .trim();
+
         posts.push({
           slug,
           originalSlug: rawSlug,
-          title: data.title || item.replace(/\.md|mdx$/, ''),
+          title: data.title || fileName,
           date: data.date || null,
           content,
-          excerpt: data.excerpt || content.slice(0, 200) + '...',
+          excerpt: data.excerpt || cleanContent.slice(0, 160) + '...',
         });
       }
     }

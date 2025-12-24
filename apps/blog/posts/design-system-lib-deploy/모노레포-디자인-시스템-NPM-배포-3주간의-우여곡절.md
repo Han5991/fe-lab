@@ -1,7 +1,8 @@
 ---
+published: false
 title: '모노레포 디자인 시스템 NPM 배포하기: 3주간의 우여곡절'
 description: '어떻게든 되겠지라는 안일한 생각으로 시작했다가 3주간의 험난한 여정을 겪으며 모노레포에 있던 디자인 시스템을 NPM 패키지로 배포하고, 다른 서비스에 적용하기까지의 모든 과정을 공유합니다.'
-date: '2025-09-20'
+date: null
 slug: 'monorepo-design-system-npm-deploy-struggle'
 tags: ['monorepo', 'design-system', 'npm', 'panda-css', 'tsup', 'changeset', 'react']
 ---

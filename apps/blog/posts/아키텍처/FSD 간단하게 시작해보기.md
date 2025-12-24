@@ -1,3 +1,9 @@
+---
+title: 'FSD 간단하게 시작해보기'
+date: '2025-01-21'
+published: true
+---
+
 ![](https://velog.velcdn.com/images/rewq5991/post/4710be4e-18f1-40dc-b7dd-dc5783900a0e/image.png)
 
 > [공식홈피](https://feature-sliced.design/kr/)를 기반 했지만 제 입맛에 따라 해석 했음을 알려드립니다.

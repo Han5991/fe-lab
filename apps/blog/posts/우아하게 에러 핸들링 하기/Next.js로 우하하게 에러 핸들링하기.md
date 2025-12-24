@@ -1,3 +1,9 @@
+---
+title: 'Next.js로 우아하게 Error 핸들링하기'
+date: '2025-03-03'
+published: true
+---
+
 ## 0. 프롤로그
 
 > 이전까지는 javascript의 try catch과 React의 ErrorBoundary로 error 객체의 전파와 핸들링하는 방법에 대해 알아 보았습니다.

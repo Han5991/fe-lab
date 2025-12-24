@@ -1,3 +1,9 @@
+---
+title: 'ecs와 code deploy를 활용한 next.js 배포하기'
+date: '2025-04-01'
+published: true
+---
+
 # 0. 프롤로그
 
 > 이전에는 next.js의 standalone과 turborepo의 --docker 옵션을 활용한 도커라이징 하는 방법을 정리하였습니다.

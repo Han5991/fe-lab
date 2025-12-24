@@ -1,3 +1,8 @@
+---
+title: '4시간 만에 Node.js PR 승인받기'
+date: '2025-08-10'
+published: true
+---
 # 4시간 만에 Node.js PR 승인받기
 
 ## AI 페어 프로그래밍으로 오픈소스 진입 장벽 낮추기

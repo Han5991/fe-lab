@@ -1,3 +1,9 @@
+---
+title: '🚨3분만에 Next.js 서비스 장애 대응 대응하기: GitHub Actions + AWS ECS + CodeDeploy 롤백 시스템'
+date: '2025-04-03'
+published: true
+---
+
 ## 0. 프롤로그
 
 > 이번글에서는 지난번까지 구축한 ECS 환경에서, 오류 발생 시 애플리케이션을 안정적으로 롤백하는 방법에 대해 다뤄보겠습니다.
