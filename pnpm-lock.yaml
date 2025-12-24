@@ -68,6 +68,9 @@ importers:
       '@next/third-parties':
         specifier: ^16.1.0
         version: 16.1.0(next@16.1.0(react-dom@19.3.0-canary-a757cb76-20251002(react@19.3.0-canary-a757cb76-20251002))(react@19.3.0-canary-a757cb76-20251002))(react@19.3.0-canary-a757cb76-20251002)
+      '@ssgoi/react':
+        specifier: ^4.0.0
+        version: 4.0.0
       '@supabase/supabase-js':
         specifier: ^2.50.0
         version: 2.50.0
@@ -2087,6 +2090,14 @@ packages:
 
   '@sinonjs/fake-timers@10.3.0':
     resolution: {integrity: sha512-V4BG07kuYSUkTCSBHG8G8TNhM+F19jXFWnQtzj+we8DrkpSBCee9Z3Ms8yiGer/dlmhe35/Xdgyo3/0rQKg7YA==}
+
+  '@ssgoi/core@4.1.0':
+    resolution: {integrity: sha512-bEygpToiyBJsCJeH6Cp/iehqoymR02DqYbzQI5WyLbllDDveGomE4Du5tSL3W3Ggdp/MfDCMF2lxLPBZk3O2EA==}
+    engines: {node: '>=18.0.0'}
+
+  '@ssgoi/react@4.0.0':
+    resolution: {integrity: sha512-MeQbzXcR60sQ9KlxhlGcGpydt+KtYLLsLLSrz9gjt5bytHQqAnwfs3byrlnI1/MxenkOntm/VN8AxeTABP8eoA==}
+    engines: {node: '>=18.0.0'}
 
   '@supabase/auth-js@2.70.0':
     resolution: {integrity: sha512-BaAK/tOAZFJtzF1sE3gJ2FwTjLf4ky3PSvcvLGEgEmO4BSBkwWKu8l67rLLIBZPDnCyV7Owk2uPyKHa0kj5QGg==}
@@ -6286,6 +6297,10 @@ packages:
     resolution: {integrity: sha512-gptHNQghINnc/vTGIk0SOFGFNXw7JVrlRUtConJRlvaw6DuX0wO5Jeko9sWrMBhh+PsYAZ7oXAiOnf/UKogyiw==}
     engines: {node: '>= 10.0.0'}
 
+  unplugin@2.3.11:
+    resolution: {integrity: sha512-5uKD0nqiYVzlmCRs01Fhs2BdkEgBS3SAVP6ndrBsuK42iC2+JHyxM05Rm9G8+5mkmRtzMZGY8Ct5+mliZxU/Ww==}
+    engines: {node: '>=18.12.0'}
+
   update-browserslist-db@1.1.2:
     resolution: {integrity: sha512-PPypAm5qvlD7XMZC3BujecnaOxwhrtoFR+Dqkk5Aa/6DssiH0ibKoketaj9w8LP7Bont1rYeoV5plxD7RTEPRg==}
     hasBin: true
@@ -6463,6 +6478,9 @@ packages:
   webidl-conversions@8.0.0:
     resolution: {integrity: sha512-n4W4YFyz5JzOfQeA8oN7dUYpR+MBP3PIUsn2jLjWXwK5ASUzt0Jc/A5sAUZoCYFJRGF0FBKJ+1JjN43rNdsQzA==}
     engines: {node: '>=20'}
+
+  webpack-virtual-modules@0.6.2:
+    resolution: {integrity: sha512-66/V2i5hQanC51vBQKPH4aI8NMAcBW59FVBs+rC7eGHupMyfn34q7rZIE+ETlJ+XTevqfUhVVBgSUNSW2flEUQ==}
 
   whatwg-encoding@2.0.0:
     resolution: {integrity: sha512-p41ogyeMUrw3jWclHWTQg1k05DSVXPLcVxRTYsXUk+ZooOCZLcoYgPZ/HL/D/N+uQPOtcp1me1WhBEaX02mhWg==}
@@ -8605,6 +8623,16 @@ snapshots:
     dependencies:
       '@sinonjs/commons': 3.0.1
 
+  '@ssgoi/core@4.1.0': {}
+
+  '@ssgoi/react@4.0.0':
+    dependencies:
+      '@babel/core': 7.28.4
+      '@ssgoi/core': 4.1.0
+      unplugin: 2.3.11
+    transitivePeerDependencies:
+      - supports-color
+
   '@supabase/auth-js@2.70.0':
     dependencies:
       '@supabase/node-fetch': 2.6.15
@@ -10257,7 +10285,7 @@ snapshots:
   esast-util-from-js@2.0.1:
     dependencies:
       '@types/estree-jsx': 1.0.5
-      acorn: 8.14.0
+      acorn: 8.15.0
       esast-util-from-estree: 2.0.0
       vfile-message: 4.0.2
 
@@ -14080,6 +14108,13 @@ snapshots:
 
   universalify@2.0.1: {}
 
+  unplugin@2.3.11:
+    dependencies:
+      '@jridgewell/remapping': 2.3.5
+      acorn: 8.15.0
+      picomatch: 4.0.3
+      webpack-virtual-modules: 0.6.2
+
   update-browserslist-db@1.1.2(browserslist@4.24.4):
     dependencies:
       browserslist: 4.24.4
@@ -14242,6 +14277,8 @@ snapshots:
   webidl-conversions@7.0.0: {}
 
   webidl-conversions@8.0.0: {}
+
+  webpack-virtual-modules@0.6.2: {}
 
   whatwg-encoding@2.0.0:
     dependencies:

@@ -3,6 +3,7 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { getAllPosts, PostData } from '@/lib/posts';
 import { css } from '@design-system/ui-lib/css';
+import { SsgoiTransition } from "@ssgoi/react";
 
 interface PostsPageProps {
   posts: PostData[];
@@ -10,7 +11,7 @@ interface PostsPageProps {
 
 export default function PostsPage({ posts }: PostsPageProps) {
   return (
-    <>
+    <SsgoiTransition id="/posts">
       <Head>
         <title>Posts | Frontend Lab</title>
         <meta
@@ -102,7 +103,7 @@ export default function PostsPage({ posts }: PostsPageProps) {
           ))}
         </div>
       </div>
-    </>
+    </SsgoiTransition>
   );
 }
 

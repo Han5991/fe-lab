@@ -9,6 +9,8 @@ import { oneDark } from 'react-syntax-highlighter/dist/cjs/styles/prism';
 import { getAllPostSlugs, getPostBySlug, type PostData } from '@/lib/posts';
 import { css, cx } from '@design-system/ui-lib/css';
 import mermaid from 'mermaid';
+import { SsgoiTransition } from "@ssgoi/react";
+
 interface PostPageProps {
   post: PostData;
 }
@@ -113,7 +115,7 @@ export default function PostPage({ post }: PostPageProps) {
   }, []);
 
   return (
-    <>
+    <SsgoiTransition id={`/posts/${post.slug}`}>
       <Head>
         <title>{post.title} | Frontend Lab Blog</title>
         <meta
@@ -480,7 +482,7 @@ export default function PostPage({ post }: PostPageProps) {
           </ReactMarkdown>
         </div>
       </div>
-    </>
+    </SsgoiTransition>
   );
 }
 

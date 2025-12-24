@@ -1,10 +1,11 @@
 import Head from 'next/head';
 import Link from 'next/link';
 import { css } from '@design-system/ui-lib/css';
+import { SsgoiTransition } from "@ssgoi/react";
 
 export default function HomePage() {
   return (
-    <>
+    <SsgoiTransition id="/">
       <Head>
         <title>Frontend Lab | 프론트엔드 실험실</title>
         <meta
@@ -119,6 +120,6 @@ export default function HomePage() {
           </div>
         </main>
       </div>
-    </>
+    </SsgoiTransition>
   );
 }
