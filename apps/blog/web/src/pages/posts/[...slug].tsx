@@ -1,25 +1,54 @@
 import type { GetStaticPaths, GetStaticProps } from 'next';
 import Head from 'next/head';
 import Link from 'next/link';
-import { useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { oneDark } from 'react-syntax-highlighter/dist/cjs/styles/prism';
 import { getAllPostSlugs, getPostBySlug, type PostData } from '@/lib/posts';
-import { debugViewCooldowns } from '@/lib/analytics';
-import { usePostViewCount } from '@/lib/hooks/useViewCount';
+import { css } from '@design-system/ui-lib/css';
 
 interface PostPageProps {
   post: PostData;
 }
 
+const CopyButton = ({ content }: { content: string }) => {
+  const [isCopied, setIsCopied] = useState(false);
+
+  const handleCopy = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(content);
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
+    } catch (err) {
+      console.error('Copy failed', err);
+    }
+  }, [content]);
+
+  return (
+    <button
+      onClick={handleCopy}
+      className={css({
+        ml: '4',
+        px: '2',
+        py: '1',
+        fontSize: 'xs',
+        color: 'gray.500',
+        bg: 'white/5',
+        rounded: 'md',
+        borderWidth: '1px',
+        borderColor: 'white/10',
+        cursor: 'pointer',
+        transition: 'all 0.2s',
+        _hover: { bg: 'white/10', color: 'gray.300', borderColor: 'white/20' },
+      })}
+    >
+      {isCopied ? 'Copied!' : 'Copy'}
+    </button>
+  );
+};
+
 export default function PostPage({ post }: PostPageProps) {
-  const { viewCount, isLoading, incrementOnce, isIncrementing } =
-    usePostViewCount(post.slug);
-
-  useEffect(() => {
-    incrementOnce();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   return (
     <>
       <Head>
@@ -45,156 +74,158 @@ export default function PostPage({ post }: PostPageProps) {
         />
       </Head>
 
-      <article style={{ maxWidth: '800px', margin: '0 auto', padding: '2rem' }}>
-        <header style={{ marginBottom: '2rem' }}>
+      <div className={css({ maxWidth: '800px', margin: '0 auto', px: '6', py: '12' })}>
+        <header className={css({ mb: '10' })}>
           <h1
-            style={{
-              fontSize: '2.5rem',
+            className={css({
+              fontSize: '4xl',
               fontWeight: 'bold',
-              marginBottom: '1rem',
-            }}
+              letterSpacing: 'tight',
+              lineHeight: '1.2',
+              mb: '4',
+              color: 'gray.900',
+            })}
           >
             {post.title}
           </h1>
           <div
-            style={{
+            className={css({
               display: 'flex',
-              gap: '1rem',
+              gap: '3',
               alignItems: 'center',
-              color: '#666',
-              fontSize: '1rem',
-              marginBottom: '1rem',
-            }}
+              color: 'gray.500',
+              fontSize: 'sm',
+            })}
           >
             {post.date && (
-              <span>{new Date(post.date).toLocaleDateString('ko-KR')}</span>
-            )}
-            <span>
-              조회수 {isLoading ? '...' : viewCount.toLocaleString()}회
-              {isIncrementing && ' 📈'}
-            </span>
-            {/* 개발 환경에서만 디버깅 버튼 표시 */}
-            {process.env.NODE_ENV === 'development' && (
-              <button
-                onClick={() => debugViewCooldowns()}
-                style={{
-                  padding: '4px 8px',
-                  fontSize: '12px',
-                  backgroundColor: '#f0f0f0',
-                  border: '1px solid #ccc',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                }}
-              >
-                🔍 쿨다운 확인
-              </button>
+              <time dateTime={post.date}>
+                {new Date(post.date).toLocaleDateString('ko-KR', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                })}
+              </time>
             )}
           </div>
         </header>
 
-        <div style={{ lineHeight: '1.8', fontSize: '1.1rem' }}>
+        <div
+          className={css({
+            fontSize: 'lg',
+            lineHeight: '1.8',
+            color: 'gray.800',
+            '& h1': { fontSize: '2xl', fontWeight: 'bold', mt: '12', mb: '6', color: 'gray.900' },
+            '& h2': { fontSize: 'xl', fontWeight: 'bold', mt: '10', mb: '5', color: 'gray.900' },
+            '& h3': { fontSize: 'lg', fontWeight: 'bold', mt: '8', mb: '4', color: 'gray.900' },
+            '& p': { mb: '6' },
+            '& ul': { listStyleType: 'disc', pl: '6', mb: '6' },
+            '& ol': { listStyleType: 'decimal', pl: '6', mb: '6' },
+            '& li': { mb: '2', pl: '1' },
+            '& code': {
+              bg: 'gray.100',
+              px: '2',
+              py: '0.5',
+              borderRadius: 'md',
+              fontSize: '0.85em',
+              color: 'blue.600', // Changed to blue for better contrast
+              fontWeight: '500',
+              fontFamily: 'var(--font-mono, monospace)',
+            },
+            '& blockquote': {
+              borderLeftWidth: '4px',
+              borderLeftColor: 'gray.200',
+              pl: '6',
+              py: '1',
+              my: '8',
+              fontStyle: 'italic',
+              color: 'gray.600',
+            },
+            '& a': {
+              color: 'blue.600',
+              textDecoration: 'underline',
+              textUnderlineOffset: '4px',
+              transition: 'color 0.2s',
+              _hover: { color: 'blue.800' },
+            },
+            '& img': {
+              borderRadius: 'lg',
+              my: '8',
+              w: 'full',
+              h: 'auto',
+            },
+            '& hr': {
+              my: '12',
+              borderColor: 'gray.200',
+            },
+          })}
+        >
           <ReactMarkdown
             components={{
-              h1: ({ children }) => (
-                <h1
-                  style={{
-                    fontSize: '2rem',
-                    fontWeight: 'bold',
-                    margin: '2rem 0 1rem 0',
-                  }}
-                >
-                  {children}
-                </h1>
-              ),
-              h2: ({ children }) => (
-                <h2
-                  style={{
-                    fontSize: '1.5rem',
-                    fontWeight: 'bold',
-                    margin: '1.5rem 0 1rem 0',
-                  }}
-                >
-                  {children}
-                </h2>
-              ),
-              h3: ({ children }) => (
-                <h3
-                  style={{
-                    fontSize: '1.25rem',
-                    fontWeight: 'bold',
-                    margin: '1.25rem 0 0.75rem 0',
-                  }}
-                >
-                  {children}
-                </h3>
-              ),
-              p: ({ children }) => (
-                <p style={{ margin: '1rem 0' }}>{children}</p>
-              ),
-              code: ({ children, className }) => {
-                const isInline = !className;
-                if (isInline) {
-                  return (
-                    <code
-                      style={{
-                        backgroundColor: '#f5f5f5',
-                        padding: '0.2rem 0.4rem',
-                        borderRadius: '4px',
-                        fontSize: '0.9em',
-                      }}
+              code({ node, inline, className, children, ...props }: any) {
+                const match = /language-(\w+)/.exec(className || '');
+                const content = String(children).replace(/\n$/, '');
+                return !inline && match ? (
+                  <div className={css({ mb: '8', mt: '4', position: 'relative', shadow: 'xl', rounded: 'xl', overflow: 'hidden' })}>
+                    {/* macOS Window Controls */}
+                    <div
+                      className={css({
+                        bg: '#282c34', // Matched with One Dark
+                        px: '4',
+                        py: '2.5',
+                        display: 'flex',
+                        gap: '2.5',
+                        alignItems: 'center',
+                        borderBottomWidth: '1px',
+                        borderColor: 'white/5',
+                      })}
                     >
-                      {children}
-                    </code>
-                  );
-                }
-                return (
-                  <pre
-                    style={{
-                      backgroundColor: '#f5f5f5',
-                      padding: '1rem',
-                      borderRadius: '8px',
-                      overflow: 'auto',
-                      fontSize: '0.9em',
-                    }}
-                  >
-                    <code>{children}</code>
-                  </pre>
+                      <div className={css({ boxSize: '3', rounded: 'full', bg: '#ff5f56' })} />
+                      <div className={css({ boxSize: '3', rounded: 'full', bg: '#ffbd2e' })} />
+                      <div className={css({ boxSize: '3', rounded: 'full', bg: '#27c93f' })} />
+                      {match[1] && (
+                        <span
+                          className={css({
+                            ml: '4',
+                            color: 'gray.400',
+                            fontSize: 'xs',
+                            fontFamily: 'mono',
+                            textTransform: 'lowercase',
+                          })}
+                        >
+                          {match[1]}
+                        </span>
+                      )}
+                      <div className={css({ ml: 'auto' })}>
+                        <CopyButton content={content} />
+                      </div>
+                    </div>
+                    <SyntaxHighlighter
+                      style={oneDark}
+                      language={match[1]}
+                      PreTag="div"
+                      customStyle={{
+                        margin: 0,
+                        padding: '1.5rem',
+                        fontSize: '0.85em',
+                        lineHeight: '1.6',
+                      }}
+                      {...props}
+                    >
+                      {content}
+                    </SyntaxHighlighter>
+                  </div>
+                ) : (
+                  <code className={className} {...props}>
+                    {children}
+                  </code>
                 );
               },
-              blockquote: ({ children }) => (
-                <blockquote
-                  style={{
-                    borderLeft: '4px solid #ddd',
-                    paddingLeft: '1rem',
-                    margin: '1rem 0',
-                    color: '#666',
-                    fontStyle: 'italic',
-                  }}
-                >
-                  {children}
-                </blockquote>
-              ),
             }}
           >
             {post.content}
           </ReactMarkdown>
         </div>
-
-        <footer
-          style={{
-            marginTop: '3rem',
-            paddingTop: '2rem',
-            borderTop: '1px solid #e5e5e5',
-          }}
-        >
-          <Link
-            href="/posts"
-            style={{ color: '#0070f3', textDecoration: 'none' }}
-          >
-            ← 목록으로 돌아가기
-          </Link>
-        </footer>
-      </article>
+      </div>
     </>
   );
 }
