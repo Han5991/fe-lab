@@ -434,6 +434,7 @@ export default function PostClient({ post }: { post: PostData }) {
                       language={match[1]}
                       PreTag="div"
                       customStyle={{
+                        borderRadius: 0,
                         margin: 0,
                         padding: '2rem',
                         fontSize: '0.95em',
