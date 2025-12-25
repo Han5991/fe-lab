@@ -471,29 +471,24 @@ export default function PostClient({ post }: { post: PostData }) {
                 );
               },
               img({ src, alt }: any) {
-                const isDev = process.env.NODE_ENV === 'development';
-                const PREFIX = isDev ? '' : '/fe-lab';
+                const PREFIX =
+                  process.env.NODE_ENV === 'production' ? '/fe-lab' : '';
 
-                // 마크다운 파서가 공백을 %20으로 인코딩해서 줄 수 있으므로 먼저 디코딩
-                const decodedSrc = src ? decodeURIComponent(src) : '';
+                // 상대 경로인 경우 (http로 시작하지 않는 경우) 경로 보정
+                const isRelative =
+                  src && !src.startsWith('http') && !src.startsWith('/');
+
                 let imageSrc = src;
-
-                if (src && !src.startsWith('http')) {
-                  if (src.startsWith('/')) {
-                    imageSrc = `${PREFIX}${src}`;
+                if (isRelative) {
+                  if (process.env.NODE_ENV === 'development') {
+                    const decodedSrc = src ? decodeURIComponent(src) : '';
+                    const relativePath = `${post.relativeDir}/${decodedSrc}`;
+                    imageSrc = `/api/local-image?path=${encodeURIComponent(relativePath)}`;
                   } else {
-                    // 상대 경로인 경우
-                    if (isDev) {
-                      // 개발 환경: 로컬 API 사용 (decodedSrc 사용)
-                      const relativePath = `${post.relativeDir}/${decodedSrc}`;
-                      imageSrc = `/api/local-image?path=${encodeURIComponent(
-                        relativePath,
-                      )}`;
-                    } else {
-                      // 프로덕션 환경: 정적 경로 사용
-                      imageSrc = `${PREFIX}/posts/${post.relativeDir}/${decodedSrc}`;
-                    }
+                    imageSrc = `${PREFIX}/posts/${post.relativeDir}/${src}`;
                   }
+                } else if (src.startsWith('/')) {
+                  imageSrc = `${PREFIX}${src}`;
                 }
 
                 return (

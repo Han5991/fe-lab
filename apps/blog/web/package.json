@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "prebuild": "node generate-sitemap.mjs",
+    "prebuild": "node sync-posts.mjs && node generate-sitemap.mjs",
     "build": "pnpm prebuild && next build",
     "start": "next start",
     "lint": "next lint"
