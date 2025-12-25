@@ -11,11 +11,19 @@ export default defineConfig({
     './src/**/*.{js,jsx,ts,tsx}',
     './node_modules/@design-system/ui/src/**/*.{js,jsx,ts,tsx}',
   ],
+  strictTokens: true,
 
   jsxFramework: 'react',
 
   strictPropertyValues: true,
   outdir: '../../../packages/@design-system/ui-lib',
+  globalCss: {
+    extend: {
+      body: {
+        wordBreak: 'keep-all',
+      },
+    },
+  },
   importMap: {
     css: '@design-system/ui-lib/css',
     recipes: '@design-system/ui-lib/recipes',
