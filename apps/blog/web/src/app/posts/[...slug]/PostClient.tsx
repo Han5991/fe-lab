@@ -9,6 +9,7 @@ import { css, cx } from '@design-system/ui-lib/css';
 import mermaid from 'mermaid';
 import { SsgoiTransition } from '@ssgoi/react';
 import type { PostData } from '@/lib/posts';
+import GiscusComments from '@/src/components/GiscusComments';
 
 // Mermaid Initialization
 if (typeof window !== 'undefined') {
@@ -481,20 +482,19 @@ export default function PostClient({ post }: { post: PostData }) {
                     : src;
 
                 return (
-                  <figure className={css({ my: '14' })}>
-                    <img
-                      src={imageSrc}
-                      alt={alt}
-                      className={css({
-                        borderRadius: '2xl',
-                        w: 'full',
-                        h: 'auto',
-                        shadow: '2xl',
-                        borderWidth: '1px',
-                        borderColor: 'gray.100',
-                      })}
-                    />
-                  </figure>
+                  <img
+                    src={imageSrc}
+                    alt={alt}
+                    className={css({
+                      borderRadius: '2xl',
+                      my: '14',
+                      w: 'full',
+                      h: 'auto',
+                      shadow: '2xl',
+                      borderWidth: '1px',
+                      borderColor: 'gray.100',
+                    })}
+                  />
                 );
               },
             }}
@@ -502,6 +502,7 @@ export default function PostClient({ post }: { post: PostData }) {
             {post.content}
           </ReactMarkdown>
         </div>
+        <GiscusComments />
       </div>
     </SsgoiTransition>
   );
