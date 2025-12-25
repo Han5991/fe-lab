@@ -29,10 +29,10 @@
     "react-dom": "catalog:react19",
     "react-markdown": "^10.1.0",
     "react-syntax-highlighter": "^16.1.0",
+    "rehype-raw": "^7.0.0",
     "remark-gfm": "^4.0.1"
   },
   "devDependencies": {
-    "@types/react-syntax-highlighter": "^15.5.13",
     "@eslint/eslintrc": "^3",
     "@pandacss/dev": "catalog:",
     "@types/mdx": "^2.0.13",
@@ -40,6 +40,7 @@
     "@types/node": "^22.15.31",
     "@types/react": "catalog:react19",
     "@types/react-dom": "catalog:react19",
+    "@types/react-syntax-highlighter": "^15.5.13",
     "concurrently": "^9.2.0",
     "eslint": "^9",
     "eslint-config-next": "15.3.3",

@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/cjs/styles/prism';
 import { css, cx } from '@design-system/ui-lib/css';
@@ -265,7 +266,7 @@ export default function PostClient({ post }: { post: PostData }) {
             borderLeftColor: 'blue.600',
             pl: '8',
             py: '4',
-            my: '10',
+            my: 8,
             color: 'gray.600',
             bg: 'blue.50/30',
             roundedRight: '2xl',
@@ -345,6 +346,7 @@ export default function PostClient({ post }: { post: PostData }) {
       >
         <ReactMarkdown
           remarkPlugins={[remarkGfm]}
+          rehypePlugins={[rehypeRaw]}
           components={{
             code({ node, className, children, ...props }: any) {
               const match = /language-(\w+)/.exec(className || '');
