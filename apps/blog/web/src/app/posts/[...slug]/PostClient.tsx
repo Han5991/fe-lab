@@ -111,12 +111,6 @@ const CopyButton = ({ content }: { content: string }) => {
 };
 
 export default function PostClient({ post }: { post: PostData }) {
-  const [isVisible, setIsVisible] = useState(false);
-
-  useEffect(() => {
-    setIsVisible(true);
-  }, []);
-
   return (
     <SsgoiTransition id={`/posts/${post.slug}`}>
       <div
@@ -126,11 +120,7 @@ export default function PostClient({ post }: { post: PostData }) {
             margin: '0 auto',
             px: '6',
             py: '20',
-            opacity: 0,
-            transform: 'translateY(10px)',
-            transition: 'all 0.6s cubic-bezier(0.16, 1, 0.3, 1)',
           }),
-          isVisible && css({ opacity: 1, transform: 'translateY(0)' }),
         )}
       >
         <header className={css({ mb: '16', textAlign: 'center' })}>
