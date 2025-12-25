@@ -223,7 +223,7 @@ export default function PostClient({ post }: { post: PostData }) {
                 position: 'absolute',
                 bottom: '-2',
                 left: '0',
-                w: '8',
+                w: 'full',
                 h: '1',
                 bg: 'blue.600',
                 rounded: 'full',
@@ -491,7 +491,7 @@ export default function PostClient({ post }: { post: PostData }) {
                       )}`;
                     } else {
                       // 프로덕션 환경: 정적 경로 사용
-                      imageSrc = `${PREFIX}/posts/${post.relativeDir}/${src}`;
+                      imageSrc = `${PREFIX}/posts/${post.relativeDir}/${decodedSrc}`;
                     }
                   }
                 }
