@@ -36,11 +36,6 @@ export function getAllPosts(): PostData[] {
         const fileName = item.replace(/\.(md|mdx)$/, '');
         const rawSlug = currentPath ? `${currentPath}/${fileName}` : fileName;
 
-        const slug = (data.slug || rawSlug)
-          .replace(/\s+/g, '-')
-          .replace(/[^\w\-가-힣/]/g, '')
-          .toLowerCase();
-
         // 마크다운 문법 제거 후 순수 텍스트만 추출
         const cleanContent = content
           .replace(/!\[.*?\]\(.*?\)/g, '') // 이미지 제거
@@ -51,7 +46,7 @@ export function getAllPosts(): PostData[] {
           .trim();
 
         posts.push({
-          slug,
+          slug: data.slug,
           originalSlug: rawSlug,
           relativeDir: currentPath,
           title: data.title || fileName,
