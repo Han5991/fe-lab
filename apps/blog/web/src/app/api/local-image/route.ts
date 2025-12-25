@@ -3,6 +3,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import mime from 'mime-types';
 
+// 정적 내보내기(output: 'export') 빌드 에러 방지
+// 이 API는 개발 모드에서만 사용되므로 force-static으로 설정하여 빌드 통과
+export const dynamic = 'force-static';
+
 export async function GET(request: NextRequest) {
   // 개발 모드에서만 동작하도록 제한
   if (process.env.NODE_ENV !== 'development') {
