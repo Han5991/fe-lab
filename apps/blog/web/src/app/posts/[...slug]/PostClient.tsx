@@ -471,23 +471,39 @@ export default function PostClient({ post }: { post: PostData }) {
                 );
               },
               img({ src, alt }: any) {
-                const PREFIX =
-                  process.env.NODE_ENV === 'production' ? '/fe-lab' : '';
-                const isRelative =
-                  src && !src.startsWith('http') && !src.startsWith('/');
-                const imageSrc = isRelative
-                  ? `${PREFIX}/posts/${post.relativeDir}/${src}`
-                  : src.startsWith('/')
-                    ? `${PREFIX}${src}`
-                    : src;
+                const isDev = process.env.NODE_ENV === 'development';
+                const PREFIX = isDev ? '' : '/fe-lab';
+
+                // 마크다운 파서가 공백을 %20으로 인코딩해서 줄 수 있으므로 먼저 디코딩
+                const decodedSrc = src ? decodeURIComponent(src) : '';
+                let imageSrc = src;
+
+                if (src && !src.startsWith('http')) {
+                  if (src.startsWith('/')) {
+                    imageSrc = `${PREFIX}${src}`;
+                  } else {
+                    // 상대 경로인 경우
+                    if (isDev) {
+                      // 개발 환경: 로컬 API 사용 (decodedSrc 사용)
+                      const relativePath = `${post.relativeDir}/${decodedSrc}`;
+                      imageSrc = `/api/local-image?path=${encodeURIComponent(
+                        relativePath,
+                      )}`;
+                    } else {
+                      // 프로덕션 환경: 정적 경로 사용
+                      imageSrc = `${PREFIX}/posts/${post.relativeDir}/${src}`;
+                    }
+                  }
+                }
 
                 return (
                   <img
                     src={imageSrc}
                     alt={alt}
                     className={css({
-                      borderRadius: '2xl',
+                      display: 'block',
                       my: '14',
+                      borderRadius: '2xl',
                       w: 'full',
                       h: 'auto',
                       shadow: '2xl',

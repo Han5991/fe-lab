@@ -46,3 +46,6 @@ yarn-error.log*
 /packages/@design-system/ui-lib/recipes/
 /.idea/
 /apps/blog/web/public/posts/
+
+.gemini/
+gha-creds-*.json
