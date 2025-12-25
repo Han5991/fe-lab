@@ -80,9 +80,6 @@ importers:
       '@tanstack/react-query':
         specifier: ^5.81.2
         version: 5.81.2(react@19.3.0-canary-a757cb76-20251002)
-      '@types/react-syntax-highlighter':
-        specifier: ^15.5.13
-        version: 15.5.13
       gray-matter:
         specifier: ^4.0.3
         version: 4.0.3
@@ -135,6 +132,12 @@ importers:
       '@types/react-dom':
         specifier: catalog:react19
         version: 19.2.0(@types/react@19.2.0)
+      '@types/react-syntax-highlighter':
+        specifier: ^15.5.13
+        version: 15.5.13
+      concurrently:
+        specifier: ^9.2.0
+        version: 9.2.0
       eslint:
         specifier: ^9
         version: 9.27.0(jiti@2.4.2)

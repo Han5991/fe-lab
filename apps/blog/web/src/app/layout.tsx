@@ -4,6 +4,7 @@ import { Providers } from './providers';
 import { Layout } from '@/src/components/Layout';
 import { GoogleAnalytics } from '@next/third-parties/google';
 import type { Metadata } from 'next';
+import type { ReactNode } from 'react';
 
 const PREFIX = process.env.NODE_ENV === 'production' ? '/fe-lab' : '';
 
@@ -12,16 +13,38 @@ export const metadata: Metadata = {
   description:
     '프론트엔드 기술 실험과 깊이 있는 학습 내용을 공유하는 공간입니다.',
   icons: {
-    icon: `${PREFIX}/favicon.ico`,
+    icon: [
+      { url: `${PREFIX}/favicon.ico`, sizes: 'any' },
+      { url: `${PREFIX}/favicon-16x16.png`, type: 'image/png', sizes: '16x16' },
+      { url: `${PREFIX}/favicon-32x32.png`, type: 'image/png', sizes: '32x32' },
+    ],
     shortcut: `${PREFIX}/favicon.ico`,
+    apple: [
+      {
+        url: `${PREFIX}/apple-touch-icon.png`,
+        sizes: '180x180',
+        type: 'image/png',
+      },
+    ],
+    other: [
+      {
+        rel: 'icon',
+        url: `${PREFIX}/android-chrome-192x192.png`,
+        sizes: '192x192',
+        type: 'image/png',
+      },
+      {
+        rel: 'icon',
+        url: `${PREFIX}/android-chrome-512x512.png`,
+        sizes: '512x512',
+        type: 'image/png',
+      },
+    ],
   },
+  manifest: `${PREFIX}/site.webmanifest`,
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="ko">
       <body>
