@@ -1,21 +1,19 @@
-import React from 'react';
 import Link from 'next/link';
 import { css } from '@design-system/ui-lib/css';
+import type { ReactNode } from 'react';
 
 interface LayoutProps {
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
 export const Layout = ({ children }: LayoutProps) => {
   return (
-    <div
-      className={css({ minHeight: '100vh', bg: 'white', color: 'gray.900' })}
-    >
+    <div className={css({ minH: '100vh', bg: 'white', color: 'gray.900' })}>
       <nav
         className={css({
           borderBottomWidth: '1px',
           borderColor: 'gray.100',
-          position: 'sticky',
+          pos: 'sticky',
           top: 0,
           bg: 'white/80',
           backdropFilter: 'blur(8px)',
@@ -24,10 +22,10 @@ export const Layout = ({ children }: LayoutProps) => {
       >
         <div
           className={css({
-            maxWidth: '800px',
-            margin: '0 auto',
+            maxW: '800px',
+            m: 'auto',
             px: '6',
-            height: '16',
+            h: '16',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -45,20 +43,18 @@ export const Layout = ({ children }: LayoutProps) => {
           >
             FE Lab
           </Link>
-          <div className={css({ display: 'flex', gap: '6' })}>
-            <Link
-              href="/posts"
-              className={css({
-                fontSize: 'sm',
-                fontWeight: 'medium',
-                color: 'gray.600',
-                _hover: { color: 'gray.900' },
-                transition: 'color 0.2s',
-              })}
-            >
-              Posts
-            </Link>
-          </div>
+          <Link
+            href="/posts"
+            className={css({
+              fontSize: 'sm',
+              fontWeight: 'medium',
+              color: 'gray.600',
+              _hover: { color: 'gray.900' },
+              transition: 'color 0.2s',
+            })}
+          >
+            Posts
+          </Link>
         </div>
       </nav>
       <main>{children}</main>
@@ -72,8 +68,8 @@ export const Layout = ({ children }: LayoutProps) => {
       >
         <div
           className={css({
-            maxWidth: '800px',
-            margin: '0 auto',
+            maxW: '800px',
+            mx: 'auto',
             px: '6',
             textAlign: 'center',
             color: 'gray.400',
