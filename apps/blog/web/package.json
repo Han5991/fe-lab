@@ -25,6 +25,7 @@
     "mermaid": "^11.12.2",
     "mime-types": "^3.0.2",
     "next": "catalog:",
+    "pretendard": "^1.3.9",
     "react": "catalog:react19",
     "react-dom": "catalog:react19",
     "react-markdown": "^10.1.0",

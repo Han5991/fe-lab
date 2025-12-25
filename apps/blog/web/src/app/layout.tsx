@@ -1,3 +1,4 @@
+import 'pretendard/dist/web/static/pretendard.css';
 import '@/src/styles/globals.css';
 import { Providers } from './providers';
 import { Layout } from '@/src/components/Layout';

@@ -17,9 +17,22 @@ export default defineConfig({
 
   strictPropertyValues: true,
   outdir: '../../../packages/@design-system/ui-lib',
+  theme: {
+    extend: {
+      tokens: {
+        fonts: {
+          sans: {
+            value:
+              'Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif',
+          },
+        },
+      },
+    },
+  },
   globalCss: {
     extend: {
       body: {
+        fontFamily: 'sans',
         wordBreak: 'keep-all',
       },
     },
