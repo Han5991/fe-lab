@@ -280,7 +280,6 @@ export default function PostClient({ post }: { post: PostData }) {
               bg: 'blue.50/30',
               roundedRight: '2xl',
               fontSize: '1.15rem',
-              fontStyle: 'italic',
               '& p': { mb: '0' },
             },
             '& a': {
