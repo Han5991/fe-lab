@@ -6,10 +6,9 @@ env:
   SUBPACKAGES_PATH: './packages'
 
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - 'apps/blog/**'
+  push:
+    branches: [ main ]
+    paths: [ 'apps/blog/**' ]
 
   workflow_dispatch:
 
@@ -39,7 +38,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '24.1.0'
+          node-version: '24.6.0'
           cache: 'pnpm'
           cache-dependency-path: '**/pnpm-lock.yaml'
 
