@@ -2,6 +2,7 @@
 title: 'Next.js로 우아하게 Error 핸들링하기'
 date: '2025-03-03'
 published: true
+slug: 'nextjs-error'
 ---
 
 ## 0. 프롤로그

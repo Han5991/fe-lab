@@ -2,6 +2,7 @@
 title: 'Turborepo 에서 next.js 도커라이징 하기'
 date: '2025-03-22'
 published: true
+slug: 'turborepo-next.js-docker'
 ---
 
 ## 0. 프롤로그

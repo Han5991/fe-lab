@@ -2,6 +2,7 @@
 title: '[Typescript로 설계하는 프로젝트] Type 설계의 시작: 견고한 서버 API Type 설계하기 With DI'
 date: '2025-06-01'
 published: true
+slug: 'typescript-project-api-di-design'
 ---
 
 ## 들어가며

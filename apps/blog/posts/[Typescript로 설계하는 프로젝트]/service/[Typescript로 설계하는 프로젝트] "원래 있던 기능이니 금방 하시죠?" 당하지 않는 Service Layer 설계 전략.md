@@ -2,6 +2,7 @@
 title: '[Typescript로 설계하는 프로젝트] "원래 있던 기능이니 금방 하시죠?" 당하지 않는 Service Layer 설계 전략'
 date: '2025-06-08'
 published: true
+slug: 'typescript-project-service-design'
 ---
 
 ## 들어가며

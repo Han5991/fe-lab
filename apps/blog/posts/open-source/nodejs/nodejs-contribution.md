@@ -2,6 +2,7 @@
 title: '4시간 만에 Node.js PR 승인받기'
 date: '2025-08-10'
 published: true
+slug: 'nodejs-contribution'
 ---
 # 4시간 만에 Node.js PR 승인받기
 

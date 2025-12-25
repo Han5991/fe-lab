@@ -2,6 +2,7 @@
 title: '서버 의존성을 줄여보자 (Feat : 클린 아키텍처)'
 date: '2025-01-13'
 published: true
+slug: 'reduce-server-dependency-clean-architecture'
 ---
 
 텍스트> **기존 클린 아키텍처에서 많이 벗어난 내용이 많습니다. 감안하고 봐주시면 감사하겠습니다.**

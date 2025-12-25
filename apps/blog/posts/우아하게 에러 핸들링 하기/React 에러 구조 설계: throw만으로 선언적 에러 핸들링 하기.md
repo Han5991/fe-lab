@@ -2,6 +2,7 @@
 title: 'React 에러 구조 설계: throw만으로 선언적 에러 핸들링 하기'
 date: '2025-10-14'
 published: true
+slug: 'react-error-deign'
 ---
 ## 0. 프롤로그
 

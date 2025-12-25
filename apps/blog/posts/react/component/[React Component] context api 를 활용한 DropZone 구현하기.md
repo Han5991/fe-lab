@@ -2,6 +2,7 @@
 title: 'Context API를 활용한 DropZone 구현하기'
 date: '2025-07-30'
 published: true
+slug: 'react-component-context-api-dropzone'
 ---
 # [React Component] Context API를 활용한 DropZone 구현하기
 

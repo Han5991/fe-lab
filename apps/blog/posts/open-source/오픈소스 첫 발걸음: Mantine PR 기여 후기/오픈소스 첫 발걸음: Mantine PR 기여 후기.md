@@ -2,6 +2,7 @@
 title: '오픈소스 첫 발걸음: Mantine PR 기여 후기'
 date: '2025-04-22'
 published: true
+slug: 'first-open-source-contribution'
 ---
 
 ## 0. 프롤로그

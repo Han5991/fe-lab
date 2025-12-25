@@ -2,6 +2,7 @@
 title: '[Typescript로 설계하는 프로젝트] 당신의 Type, 어디까지 연결되어 있나요?'
 date: '2025-05-05'
 published: true
+slug: 'typescript-project-design'
 ---
 
 # [타입으로 설계하는 프로젝트] 당신의 Type, 어디까지 연결되어 있나요?

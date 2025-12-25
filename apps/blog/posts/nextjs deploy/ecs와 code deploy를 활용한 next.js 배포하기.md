@@ -2,6 +2,7 @@
 title: 'ecs와 code deploy를 활용한 next.js 배포하기'
 date: '2025-04-01'
 published: true
+slug: 'next-js-ecs-deploy'
 ---
 
 # 0. 프롤로그

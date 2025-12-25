@@ -2,6 +2,7 @@
 title: 'FSD 간단하게 시작해보기'
 date: '2025-01-21'
 published: true
+slug: 'simple-fsd-start'
 ---
 
 ![](https://velog.velcdn.com/images/rewq5991/post/4710be4e-18f1-40dc-b7dd-dc5783900a0e/image.png)

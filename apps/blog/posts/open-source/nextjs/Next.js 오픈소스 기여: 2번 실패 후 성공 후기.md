@@ -2,6 +2,7 @@
 title: 'Next.js 오픈소스 기여: 2번 실패 후 성공 후기'
 date: '2025-08-05'
 published: true
+slug: 'nextjs-contributor'
 ---
 # Next.js 오픈소스 기여: 2번 실패 후 성공 후기
 

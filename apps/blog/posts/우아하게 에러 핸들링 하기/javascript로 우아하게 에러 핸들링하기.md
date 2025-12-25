@@ -2,6 +2,7 @@
 title: 'javascript로 우아하게 Error 핸들링하기'
 date: '2025-02-27'
 published: true
+slug: 'javascript-error'
 ---
 
 ## 프롤로그

@@ -2,6 +2,7 @@
 title: 'Type Guard를 활용한 여러가지 Button 구현하기'
 date: '2025-06-30'
 published: true
+slug: 'react-component-type-guard-button'
 ---
 # [React Component] Type Guard를 활용한 여러가지 Button 구현하기
 

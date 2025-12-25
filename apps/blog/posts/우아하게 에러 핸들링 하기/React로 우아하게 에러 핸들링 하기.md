@@ -2,6 +2,7 @@
 title: 'React로 우아하게 Error 핸들링 하기'
 date: '2025-03-02'
 published: true
+slug: 'react-error'
 ---
 
 ## 0. 프롤로그
