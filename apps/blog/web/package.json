@@ -3,11 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "concurrently \"next dev\" \"pnpm supabase-start\"",
     "prebuild": "node sync-posts.mjs && node generate-sitemap.mjs",
     "build": "pnpm prebuild && next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "supabase-stop": "supabase stop --all --debug",
+    "supabase-start": "pnpm supabase-stop && pnpm supabase start"
   },
   "dependencies": {
     "@design-system/ui": "workspace:^",
@@ -15,10 +17,10 @@
     "@giscus/react": "^3.1.0",
     "@mdx-js/loader": "^3.1.0",
     "@mdx-js/react": "^3.1.0",
-    "@next/mdx": "^15.3.4",
+    "@next/mdx": "^16.1.1",
     "@next/third-parties": "^16.1.0",
     "@ssgoi/react": "^4.0.0",
-    "@supabase/supabase-js": "^2.50.0",
+    "@supabase/supabase-js": "^2.89.0",
     "@tanstack/react-query": "^5.81.2",
     "gray-matter": "^4.0.3",
     "mermaid": "^11.12.2",
@@ -43,8 +45,8 @@
     "@types/react-syntax-highlighter": "^15.5.13",
     "concurrently": "^9.2.0",
     "eslint": "^9",
-    "eslint-config-next": "15.3.3",
-    "supabase": "^2.26.9",
+    "eslint-config-next": "16.1.1",
+    "supabase": "^2.70.5",
     "typescript": "catalog:typescript5"
   }
 }
