@@ -22,6 +22,7 @@ create or replace function public.increment_view_count(slug_input text)
 returns void
 language plpgsql
 security definer
+set search_path = public
 as $$
 begin
   insert into public.post_views (slug, view_count, updated_at)
@@ -32,3 +33,7 @@ begin
     updated_at = now();
 end;
 $$;
+
+-- Secure the function permissions
+revoke execute on function public.increment_view_count(text) from public;
+grant execute on function public.increment_view_count(text) to anon, authenticated, service_role;
