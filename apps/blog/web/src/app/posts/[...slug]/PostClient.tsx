@@ -11,6 +11,7 @@ import mermaid from 'mermaid';
 import { SsgoiTransition } from '@ssgoi/react';
 import type { PostData } from '@/lib/posts';
 import GiscusComments from '@/src/components/GiscusComments';
+import { useViewCount } from '@/lib/hooks/useViewCount';
 
 // Mermaid Initialization
 if (typeof window !== 'undefined') {
@@ -112,13 +113,14 @@ const CopyButton = ({ content }: { content: string }) => {
 };
 
 export default function PostClient({ post }: { post: PostData }) {
+  useViewCount(post.slug);
   return (
     <SsgoiTransition
       id={`/posts/${post.slug}`}
       className={cx(
         css({
-          maxWidth: '850px',
-          margin: '0 auto',
+          maxW: '850px',
+          m: '0 auto',
           px: '6',
           py: '20',
         }),

@@ -39,7 +39,7 @@ export function Providers({ children }: { children: ReactNode }) {
             {
               from: '/posts/*',
               to: '/posts',
-              transition: drill({ direction: 'exit' }),
+              transition: drill({ direction: 'exit', opacity: true }),
             },
           ],
         }}

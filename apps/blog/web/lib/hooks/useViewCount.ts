@@ -1,52 +1,41 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getViewCount, incrementViewCount } from '../analytics';
+import { useEffect } from 'react';
+import { client } from '../client';
 
-// 조회수 조회 훅
-export function useViewCount(slug: string) {
-  return useQuery({
-    queryKey: ['viewCount', slug],
-    queryFn: () => getViewCount(slug),
-    staleTime: 5 * 60 * 1000, // 5분
-    gcTime: 10 * 60 * 1000, // 10분
-  });
-}
+const VIEW_COOLDOWN_HOURS = 6;
 
-// 조회수 증가 훅
-export function useIncrementViewCount() {
-  const queryClient = useQueryClient();
+export const useViewCount = (slug: string) => {
+  useEffect(() => {
+    if (!slug) return;
 
-  return useMutation({
-    mutationFn: incrementViewCount,
-    onSuccess: (newViewCount, slug) => {
-      queryClient.setQueryData(['viewCount', slug], newViewCount);
-    },
-  });
-}
+    const viewedKey = `viewed_${slug.replace(/[^a-zA-Z0-9-]/g, '_')}`;
 
-// 포스트 페이지에서 사용할 통합 훅
-export function usePostViewCount(slug: string) {
-  const viewCountQuery = useViewCount(slug);
-  const incrementMutation = useIncrementViewCount();
+    // Check if the cookie exists
+    const hasViewed = document.cookie
+      .split('; ')
+      .some(row => row.startsWith(`${viewedKey}=`));
 
-  // 조회수 증가 실행 (한 번만)
-  const incrementOnce = (): void => {
-    if (incrementMutation.isPending || incrementMutation.isSuccess) {
-      return;
-    }
+    if (hasViewed) return;
 
-    incrementMutation.mutate(slug);
-  };
+    const incrementView = async () => {
+      try {
+        const { error } = await client.rpc('increment_view_count', {
+          slug_input: slug,
+        });
 
-  return {
-    // 현재 조회수
-    viewCount: viewCountQuery.data || 0,
-    // 로딩 상태
-    isLoading: viewCountQuery.isLoading,
-    // 에러 상태
-    error: viewCountQuery.error || incrementMutation.error,
-    // 조회수 증가 함수
-    incrementOnce,
-    // 증가 상태
-    isIncrementing: incrementMutation.isPending,
-  };
-}
+        if (error) {
+          console.error('Failed to increment view count:', error);
+          return;
+        }
+
+        // Set cookie with 6-hour expiration
+        const date = new Date();
+        date.setTime(date.getTime() + VIEW_COOLDOWN_HOURS * 60 * 60 * 1000);
+        document.cookie = `${viewedKey}=true; expires=${date.toUTCString()}; path=/`;
+      } catch (err) {
+        console.error('Error in useViewCount:', err);
+      }
+    };
+
+    incrementView();
+  }, [slug]);
+};
