@@ -117,8 +117,8 @@ export default function PostClient({ post }: { post: PostData }) {
       id={`/posts/${post.slug}`}
       className={cx(
         css({
-          maxWidth: '850px',
-          margin: '0 auto',
+          maxW: '850px',
+          m: '0 auto',
           px: '6',
           py: '20',
         }),
