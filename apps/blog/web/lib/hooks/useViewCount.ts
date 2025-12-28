@@ -7,7 +7,7 @@ export const useViewCount = (slug: string) => {
   useEffect(() => {
     if (!slug) return;
 
-    const viewedKey = `viewed_${slug}`;
+    const viewedKey = `viewed_${slug.replace(/[^a-zA-Z0-9-]/g, '_')}`;
 
     // Check if the cookie exists
     const hasViewed = document.cookie
