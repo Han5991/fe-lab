@@ -19,7 +19,7 @@ slug: 'typescript-project-service-design'
 
 > **어떻게 하면 이런 로직을 재활용하기 쉽게 만들 수 없을까? 지난번 API도 구조적으로 설계 했는대 이것도 그렇게 할 수 있지 않을까?**
 
-[이전글](https://velog.io/@rewq5991/typescript-project-api-design)에서는 Type-Safe Http class을 설계하고
+[이전글](https://blog.sangwook.dev/posts/typescript-project-api-design)에서는 Type-Safe Http class을 설계하고
 Type을 구조적으로 설계하는 것에 대해 이야기 했습니다.
 
 이번글에서는 프론트에서 쓰이는 비즈니스 로직을 분리하는 부분에 관하여 이야기해 볼까 합니다.
@@ -508,7 +508,7 @@ export const Dashboard = ({ userId }: { userId: string }) => {
 
 **다음 글에서는 Domain 포함되는 요소들과 이를 통해 어떻게 활용할 수 있는지에 대해 알아보겠습니다.**
 
-## 🔗 관련 시리즈 (전체 보기)
+## 🔗 관련 시리즈
 
 1. 당신의 Type, 어디까지 연결되어 있나요? (https://blog.sangwook.dev/posts/typescript-project-design)
 2. Type 설계의 시작: 견고한 서버 API Type 설계하기

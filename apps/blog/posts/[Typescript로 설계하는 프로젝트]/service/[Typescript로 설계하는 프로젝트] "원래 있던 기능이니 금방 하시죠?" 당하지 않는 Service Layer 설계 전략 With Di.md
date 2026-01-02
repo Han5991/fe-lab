@@ -19,7 +19,7 @@ slug: 'typescript-project-service-di-design'
 
 > **어떻게 하면 이런 로직을 재활용하기 쉽게 만들 수 없을까? 지난번 API도 구조적으로 설계했는데 이것도 그렇게 할 수 있지 않을까?**
 
-[이전글](https://velog.io/@rewq5991/typescript-project-api-di-design)에서는 Type-Safe Http class을 설계하고 Type을 구조적으로 설계하는 것에 대해 이야기했습니다.  
+[이전글](https://blog.sangwook.dev/posts/typescript-project-api-di-design)에서는 Type-Safe Http class을 설계하고 Type을 구조적으로 설계하는 것에 대해 이야기했습니다.  
 해당 글에서는 서버 API Type을 설계하고 제네릭을 활용한 HTTP 클래스를 통해 타입 안전성을 확보하는 방법을 다루었습니다.  
 특히 DI을 활용하여 HTTP 클라이언트를 추상화하고 테스트하기 쉬운 코드를 작성하는 방법을 설명했습니다.
 
@@ -739,3 +739,14 @@ export const Dashboard = ({ id }: Pick<User, 'id'>) => {
 > "원래 있던 기능이니 금방 하시죠?" → "네, 기존 로직들을 조합하고 필요한 API들을 묶어서 정말 금방 할 수 있습니다!" 🎉
 
 **다음 글에서는 Domain 포함되는 요소들과 이를 통해 어떻게 활용할 수 있는지에 대해 알아보겠습니다.**
+
+---
+
+### 🔗 관련 시리즈
+
+1. [당신의 Type, 어디까지 연결되어 있나요?](https://blog.sangwook.dev/posts/typescript-project-design)
+2. [Type 설계의 시작: 견고한 서버 API Type 설계하기](https://blog.sangwook.dev/posts/typescript-project-api-design)
+3. [Type 설계의 시작: 견고한 서버 API Type 설계하기 With Di](https://blog.sangwook.dev/posts/typescript-project-api-di-design)
+4. ["원래 있던 기능이니 금방 하시죠?" 당하지 않는 Service Layer 설계 전략](https://blog.sangwook.dev/posts/typescript-project-service-design)
+5. ["원래 있던 기능이니 금방 하시죠?" 당하지 않는 Service Layer 설계 전략 With Di](현재 글)
+6. ["같은 로직 또 복사했어요?" Domain 모델로 책임 분리하기](https://blog.sangwook.dev/posts/typescript-project-domain-design)
