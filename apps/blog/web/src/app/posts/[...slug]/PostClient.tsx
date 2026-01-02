@@ -462,18 +462,15 @@ export default function PostClient({ post }: { post: PostData }) {
               );
             },
             img({ src, alt }: any) {
-              const PREFIX =
-                process.env.NODE_ENV === 'production' ? '/fe-lab' : '';
-
               // 상대 경로인 경우 (http로 시작하지 않는 경우) 경로 보정
               const isRelative =
                 src && !src.startsWith('http') && !src.startsWith('/');
 
               let imageSrc = src;
               if (isRelative) {
-                imageSrc = `${PREFIX}/posts/${post.relativeDir}/${src}`;
+                imageSrc = `/posts/${post.relativeDir}/${src}`;
               } else if (src.startsWith('/')) {
-                imageSrc = `${PREFIX}${src}`;
+                imageSrc = `${src}`;
               }
 
               return (
