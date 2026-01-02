@@ -8,7 +8,7 @@
     "build": "pnpm prebuild && next build",
     "start": "next start",
     "lint": "next lint",
-    "supabase-stop": "supabase stop --all --debug",
+    "supabase-stop": "supabase stop --all --no-backup --debug",
     "supabase-start": "pnpm supabase-stop && pnpm supabase start"
   },
   "dependencies": {

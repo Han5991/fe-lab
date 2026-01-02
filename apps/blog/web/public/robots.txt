@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://han5991.github.io/fe-lab/sitemap.xml
+Sitemap: https://blog.sangwook.dev/sitemap.xml
