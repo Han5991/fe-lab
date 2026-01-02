@@ -10,6 +10,11 @@ export const metadata: Metadata = {
   title: 'Frontend Lab | 프론트엔드 실험실',
   description:
     '프론트엔드 기술 실험과 깊이 있는 학습 내용을 공유하는 공간입니다.',
+  verification: {
+    other: {
+      'naver-site-verification': '75d49afa4fd30cb6c90cc9ccdf2b17560e0dd8a5',
+    },
+  },
   icons: {
     icon: [
       { url: `/favicon.ico`, sizes: 'any' },
