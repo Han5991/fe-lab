@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import matter from 'gray-matter';
 
-const BASE_URL = 'https://han5991.github.io/fe-lab';
+const BASE_URL = 'https://sangwook.dev';
 const POSTS_DIR = path.join(process.cwd(), '..', 'posts');
 const PUBLIC_DIR = path.join(process.cwd(), 'public');
 
