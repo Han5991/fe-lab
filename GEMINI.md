@@ -38,7 +38,7 @@ This file serves as a comprehensive guide for AI agents (Gemini) interacting wit
 | `apps/next.js/` | Server Component & Architecture experiments | Next.js (App Router), Turbopack |
 | `apps/react/` | SPA experiments, Design System consumer | React 19, Vite, Vitest |
 | `apps/typescript/` | Pure TS domain modeling & patterns | TypeScript |
-| `apps/blog/web/` | Tech blog frontend | Next.js, Contentlayer (implied) |
+| `apps/blog/web/` | Tech blog frontend | Next.js, Custom MDX, Supabase |
 | `apps/blog/posts/` | Markdown content for the blog | Markdown |
 | `apps/ga-proxy/` | Google Analytics Proxy | Next.js |
 | `apps/socket-server/` | WebSocket experiment server | Node.js |
@@ -49,6 +49,8 @@ This file serves as a comprehensive guide for AI agents (Gemini) interacting wit
 | :--- | :--- |
 | `packages/@design-system/ui` | Shared UI components (React) |
 | `packages/@design-system/ui-lib` | Styling utilities & primitives (Panda CSS) |
+| `packages/@package/bundler` | Custom bundler implementation experiments |
+| `packages/@package/bundler-playground` | Playground for custom bundler |
 | `packages/@package/core` | Core utilities, HTTP clients, constants |
 | `packages/@package/config` | Shared configurations (TSConfig, etc.) |
 
