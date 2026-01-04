@@ -13,7 +13,8 @@ tags: ['bundler', 'javascript', 'ast', 'acorn', 'graph']
 단순 문자열인 코드를 "의미 있는 트리 구조"로 변환한다. 우리는 정규표현식 대신 `acorn` 파서를 사용했다.
 
 ### 왜 정규표현식이 아닐까?
-정규식은 **문맥(Context)**을 모른다. 주석이나 문자열 내부에 있는 `import` 텍스트까지 찾아내어 오작동을 일으킬 수 있다. AST는 문법적으로 유효한 실제 코드만 걸러낸다.
+
+정규식은 **문맥(Context)** 을 모른다. 주석이나 문자열 내부에 있는 `import` 텍스트까지 찾아내어 오작동을 일으킬 수 있다. AST는 문법적으로 유효한 실제 코드만 걸러낸다.
 
 ```javascript
 // 코드
@@ -28,11 +29,37 @@ import { name } from './name.js';
 }
 ```
 
-## 2. 의존성 그래프 (Dependency Graph)
+> 한계: `import()`나 `require(path)`처럼 **동적으로 계산되는 경로**는 정적 AST 분석으로는 해석할 수 없습니다.  
+> 이런 경우 번들러는 보통 **외부 처리**하거나 **코드 스플리팅 포인트**로 취급합니다.
+
+```js
+const name = getUserChoice();
+const mod = await import(`./features/${name}.js`);
+```
+
+## 2. Resolve 핵심 규칙 (요약)
+
+- Node.js는 `package.json`의 **`exports`가 있으면 그것을 최우선**으로 사용합니다.
+- `exports`가 없을 때 **`main`으로 fallback**합니다.
+- `module` 필드는 Node 공식 규격은 아니지만, **번들러가 ESM 엔트리로 관례적으로 사용**합니다.
+- ESM 환경에서는 **확장자를 명시**하는 쪽이 안전합니다 (`.js`, `.mjs` 등).
+
+```json
+{
+  "name": "demo-lib",
+  "exports": {
+    ".": "./dist/index.mjs"
+  },
+  "main": "./dist/index.cjs"
+}
+```
+
+## 3. 의존성 그래프 (Dependency Graph)
 
 파일 간의 관계를 관리하기 위해 `Graph`와 `Module` 클래스를 설계했다.
 
 ### 핵심 로직: DFS & Visited Map
+
 단순 리스트가 아닌 **그래프**가 필요한 이유는 **순환 참조(Circular Dependency)** 때문이다.
 `A -> B -> A` 구조에서 무한 루프(Stack Overflow)에 빠지지 않으려면 **"이미 방문한 파일"**을 기억해야 한다.
 
@@ -54,7 +81,7 @@ class Graph {
 }
 ```
 
-## 3. 구현 결과 (Playground 테스트)
+## 4. 구현 결과 (Playground 테스트)
 
 복잡한 순환 참조 시나리오(`Index -> A, B`, `A <-> C`)를 만들어 테스트했다.
 
@@ -63,12 +90,13 @@ graph TD
     Entry(index.js) --> A(a.js)
     Entry --> B(b.js)
     A --> C(c.js)
-    B --> C(c.js)  
-    C --> A(a.js)  
+    B --> C(c.js)
+    C --> A(a.js)
 ```
 
 **결과:**
+
 - 4개의 파일(`index`, `a`, `b`, `c`)이 모두 정확히 한 번씩만 처리됨.
 - 무한 루프 없이 안정적으로 그래프 생성 완료.
 
-이제 모든 파일의 내용과 관계를 파악했으니, 다음 단계는 이들을 하나로 합치는 **번들링(Bundling)**이다.
+이제 모든 파일의 내용과 관계를 파악했으니, 다음 단계는 이들을 하나로 합치는 **번들링(Bundling)** 이다.

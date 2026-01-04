@@ -77,6 +77,21 @@ sequenceDiagram
     deactivate Mod0
 ```
 
+> 순환 참조의 미묘한 차이: CJS는 `exports` 객체를 **먼저 만든 뒤 실행**하므로, 순환 참조 시 “부분적으로 채워진 exports”가 노출됩니다.  
+> ESM은 초기화 순서와 TDZ 제약이 더 엄격해, 같은 코드라도 에러가 날 수 있습니다.
+
+```js
+// a.js
+const b = require('./b.js');
+exports.a = 'A';
+console.log(b.b);
+
+// b.js
+const a = require('./a.js');
+exports.b = 'B';
+console.log(a.a); // undefined (partial exports)
+```
+
 ---
 
 ## 3. 상세 변환 전략 (ESM → CJS)
@@ -121,9 +136,6 @@ flowchart TD
         Wrapper -->|Static Analysis| Named["export const {a} = result"]
         Wrapper -->|Static Analysis| Default["export default result.default"]
     end
-
-    style CJS fill:#e1f5fe
-    style ESM fill:#fff3e0
 ```
 
 ### 정적 분석을 통한 수출 명단 수집
@@ -138,11 +150,21 @@ ESM은 수출할 변수 이름을 미리 알아야 하기에 `Module.ts`에서 �
 - **bundle.cjs**: `module.exports = (function...)` (CJS 완전 독립)
 - **bundle.mjs**: 번들 로직을 복사(Inlining)한 뒤 `export const { ... } = result` (ESM 완전 독립)
 
+> 라이브러리 번들러는 보통 `peerDependencies`를 **external 처리**합니다.  
+> 예를 들어 `react`를 번들에 포함하면, 소비자 앱에 이미 있는 React와 **중복 로딩/충돌**이 발생할 수 있기 때문입니다.
+
+```ts
+const externals = new Set(['react', 'react-dom']);
+if (externals.has(specifier)) {
+  // treat as external and skip bundling
+}
+```
+
 ---
 
 ## 6. 심화: 번들러의 두 가지 철학 (Webpack vs Rollup)
 
-오늘 우리가 구현한 방식은 **런타임 모듈 로더 중심(Webpack 스타일)**입니다. 반면 라이브러리 번들링에는 **정적 분석 중심(Rollup 스타일)**이 자주 쓰입니다. 다만 이 구분은 "경향"이지 절대 규칙은 아닙니다.
+오늘 우리가 구현한 방식은 **런타임 모듈 로더 중심(Webpack 스타일)** 입니다. 반면 라이브러리 번들링에는 **정적 분석 중심(Rollup 스타일)** 이 자주 쓰입니다. 다만 이 구분은 "경향"이지 절대 규칙은 아닙니다.
 
 ### 📦 Webpack 스타일: 런타임 모듈 로더 중심
 

@@ -14,6 +14,14 @@ previous_step: 'Step 3 (Bundling & Scope)'
 ### 1. SourceMap과 VLQ
 *   변환된 코드의 [행, 열]을 원본의 [행, 열]로 매핑하는 원리.
 *   `.map` 파일 내부의 `mappings` 필드가 왜 외계어(?)처럼 생겼는지 이해하기.
+*   `sourcesContent`를 포함하면 원본 파일이 없어도 DevTools에서 바로 열립니다.
+*   인라인 소스맵과 외부 `.map` 파일은 배포 편의성과 번들 크기에서 트레이드오프가 있습니다.
+
+```js
+const map = magicString.generateMap({ hires: true, includeContent: true });
+fs.writeFileSync('dist/bundle.cjs.map', map.toString());
+bundle += '\n//# sourceMappingURL=bundle.cjs.map';
+```
 
 ### 2. DX(Developer Experience) 개선
 *   브라우저 개발자 도구의 'Sources' 탭에서 우리가 작성한 원본 `a.js`, `b.js`가 그대로 보이게 만들기.
