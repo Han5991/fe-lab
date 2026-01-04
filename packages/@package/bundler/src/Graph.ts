@@ -1,4 +1,5 @@
 import path from 'node:path';
+import fs from 'node:fs';
 import { Module } from './Module.js';
 
 /**
@@ -7,6 +8,7 @@ import { Module } from './Module.js';
 export class Graph {
   entryPath: string;
   modules: Map<string, Module>;
+  private nextId = 0;
 
   constructor(entryPath: string) {
     this.entryPath = entryPath;
@@ -18,23 +20,20 @@ export class Graph {
   }
 
   createModule(filePath: string): Module {
-    // 1. 이미 방문한 파일이면 스킵
     if (this.modules.has(filePath)) {
       return this.modules.get(filePath)!;
     }
 
-    // 2. 새로운 모듈 생성 및 파싱
     console.log(`📂 Processing: ${filePath}`);
-    const module = new Module(filePath);
+    const module = new Module(this.nextId++, filePath);
     module.init();
 
-    // 3. 맵에 등록
     this.modules.set(filePath, module);
 
-    // 4. 의존성 재귀 탐색
     module.dependencies.forEach(importPath => {
       const absolutePath = this.resolve(importPath, filePath);
-      this.createModule(absolutePath);
+      const childModule = this.createModule(absolutePath);
+      module.mapping.set(importPath, childModule.id);
     });
 
     return module;
@@ -42,7 +41,57 @@ export class Graph {
 
   resolve(importPath: string, importer: string): string {
     const baseDir = path.dirname(importer);
-    // TODO: 확장자 처리 로직 추가 필요 (.js, .ts 등)
-    return path.resolve(baseDir, importPath);
+    // 간단한 확장자 처리
+    let fullPath = path.resolve(baseDir, importPath);
+    if (!fullPath.endsWith('.js')) fullPath += '.js';
+    return fullPath;
+  }
+
+  /**
+   * 최종 번들 생성
+   */
+  generate(): string {
+    // 1. 모든 모듈 변환
+    this.modules.forEach(module => module.transform());
+
+    // 2. 모듈 객체 문자열 생성
+    let modulesStr = '';
+    this.modules.forEach((module, filePath) => {
+      modulesStr += `
+  ${module.id}: function(require, module, exports) {
+${module.magicString.toString()}
+  },`;
+    });
+
+    // 3. 최종 번들 템플릿 (IIFE)
+    const entryModule = this.modules.get(this.entryPath)!;
+    const bundle = `
+(function(modules) {
+  const cache = {};
+
+  function require(id) {
+    if (cache[id]) return cache[id].exports;
+
+    const module = { exports: {} };
+    cache[id] = module;
+
+    // 모듈 실행
+    modules[id](require, module, module.exports);
+
+    return module.exports;
+  }
+
+  // 엔트리 포인트 실행
+  require(${entryModule.id});
+})({${modulesStr}
+});
+`;
+
+    // 4. 파일 저장
+    const distDir = path.resolve(process.cwd(), 'dist');
+    if (!fs.existsSync(distDir)) fs.mkdirSync(distDir);
+    fs.writeFileSync(path.join(distDir, 'bundle.js'), bundle);
+
+    return bundle;
   }
 }

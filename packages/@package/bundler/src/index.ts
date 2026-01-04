@@ -13,13 +13,13 @@ try {
   const graph = new Graph(entryPath);
   graph.build();
 
-  console.log('✅ Graph built successfully!');
-
-  console.log('--- Modules in Graph ---');
-  for (const [filePath] of graph.modules) {
-    console.log(`- ${filePath}`);
-  }
-  console.log('------------------------');
+  console.log('🛠️ Generating bundle...');
+  const bundle = graph.generate();
+  
+  console.log('✅ Bundle built successfully! (dist/bundle.js)');
+  
+  // 간단하게 생성된 번들의 길이를 출력
+  console.log(`📏 Bundle Size: ${bundle.length} bytes`);
 } catch (err) {
   console.error('❌ Build failed:', err);
   process.exit(1);
