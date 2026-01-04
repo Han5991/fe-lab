@@ -42,6 +42,8 @@ export class Module {
   magicString: MagicString;
   dependencies: string[];
   mapping: Map<string, number> = new Map();
+  exportsList: string[] = [];
+  exportAllSources: string[] = [];
 
   constructor(id: number, filePath: string) {
     this.id = id;
@@ -66,14 +68,51 @@ export class Module {
 
   init() {
     this.ast.body.forEach(node => {
-      if (
-        (node.type === 'ImportDeclaration' ||
-          node.type === 'ExportNamedDeclaration' ||
-          node.type === 'ExportAllDeclaration') &&
-        node.source &&
-        typeof node.source.value === 'string'
-      ) {
-        this.dependencies.push(node.source.value);
+      // 1. Import 분석
+      if (node.type === 'ImportDeclaration') {
+         if (node.source && typeof node.source.value === 'string') {
+           this.dependencies.push(node.source.value);
+         }
+      }
+      
+      // 2. Export Named 분석 (export const a = 1;)
+      else if (node.type === 'ExportNamedDeclaration') {
+        if (node.declaration) {
+          if (node.declaration.type === 'VariableDeclaration') {
+            node.declaration.declarations.forEach(d => {
+              if (d.id.type === 'Identifier') this.exportsList.push(d.id.name);
+            });
+          } else if (
+            (node.declaration.type === 'FunctionDeclaration' ||
+             node.declaration.type === 'ClassDeclaration') &&
+            node.declaration.id
+          ) {
+            this.exportsList.push(node.declaration.id.name);
+          }
+        } else if (node.specifiers) {
+          // export { a, b }
+          node.specifiers.forEach(s => {
+             this.exportsList.push(this.getSpecifierName(s.exported));
+          });
+        }
+        
+        // Re-export (export { a } from './b') 처리
+        if (node.source && typeof node.source.value === 'string') {
+           this.dependencies.push(node.source.value);
+        }
+      }
+
+      // 3. Export Default 분석
+      else if (node.type === 'ExportDefaultDeclaration') {
+        this.exportsList.push('default');
+      }
+
+      // 4. Export All 분석 (export * from './b')
+      else if (node.type === 'ExportAllDeclaration') {
+        if (node.source && typeof node.source.value === 'string') {
+          this.dependencies.push(node.source.value);
+          this.exportAllSources.push(node.source.value);
+        }
       }
     });
   }

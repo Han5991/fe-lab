@@ -1,45 +1,30 @@
 ---
-title: '🚀 Next Step: 번들링과 스코프 (Step 3)'
+title: '🚀 Next Step: 소스맵과 디버깅 (Step 4)'
 status: 'To Do'
-previous_step: 'Step 2 (AST & Graph)'
+previous_step: 'Step 3 (Bundling & Scope)'
 ---
 
-# 🚀 Next Step: 번들링과 스코프 (Step 3)
+# 🚀 Next Step: 소스맵과 디버깅 (Step 4)
 
-> **오늘의 성과**: 파일들을 찾아서 메모리에 올리는 것(Graph)까지 성공했습니다.
-> **다음 목표**: 이제 메모리에 있는 파일들을 **진짜 실행 가능한 하나의 파일(`bundle.js`)**로 합쳐야 합니다.
+> **오늘의 성과**: 라이브러리 모드까지 지원하는 완벽한 번들 파일(`bundle.cjs`)을 만들고 테스트에 성공했습니다.
+> **다음 목표**: 번들링된 코드는 원본과 모양이 다릅니다. 에러가 났을 때 원본의 위치를 정확히 가리켜주는 **SourceMap**을 추가해 봅시다.
 
 ## 🎯 핵심 학습 주제
 
-다음 시간에는 **"그냥 합치면 망한다"**는 사실을 깨닫고, 이를 해결하는 기술들을 배웁니다.
+### 1. SourceMap과 VLQ
+*   변환된 코드의 [행, 열]을 원본의 [행, 열]로 매핑하는 원리.
+*   `.map` 파일 내부의 `mappings` 필드가 왜 외계어(?)처럼 생겼는지 이해하기.
 
-### 1. 스코프 격리 (Scope Isolation)
-*   **문제**: A파일의 `const name`과 B파일의 `const name`이 합쳐지면 충돌이 발생합니다.
-*   **해결책**: **IIFE(즉시 실행 함수)**와 **Closure**를 사용하여 각 파일만의 독립된 공간(방)을 만들어줍니다.
-
-### 2. 모듈 시스템 에뮬레이션
-브라우저는 `require`나 `module.exports`를 모릅니다. 우리가 직접 이 기능들을 **함수로 구현(Shim)**해야 합니다.
-
-*   **변환 (Transformation)**: `import` 문을 -> `require()` 함수 호출로 바꿉니다.
-*   **런타임 (Runtime)**: `function require(id) { ... }`를 직접 구현해서 번들 파일 상단에 심어줍니다.
+### 2. DX(Developer Experience) 개선
+*   브라우저 개발자 도구의 'Sources' 탭에서 우리가 작성한 원본 `a.js`, `b.js`가 그대로 보이게 만들기.
+*   `magic-string`의 `generateMap()` 기능을 활용한 자동 생성.
 
 ## 🛠️ 구현할 기능 (To-Do)
 
-1.  **`transform()` 메서드 추가**:
-    *   AST를 수정하여 ESM 문법(`import/export`)을 CommonJS 스타일로 변환합니다.
-2.  **`bundle()` 메서드 구현**:
-    *   각 모듈을 문자열 템플릿 함수로 감쌉니다.
-    *   전체 모듈 맵을 순회하며 하나의 큰 문자열로 합칩니다.
-3.  **파일 쓰기**:
-    *   드디어 `dist/bundle.js`에 결과물을 저장합니다.
-    *   브라우저에서 `index.html`을 열어 콘솔에 결과가 찍히는지 확인합니다.
+1.  **`bundle.cjs.map` 생성**: 매핑 정보를 담은 JSON 파일 출력.
+2.  **주석 연결**: `bundle.cjs` 하단에 `//# sourceMappingURL=...` 추가.
+3.  **검증**: 고의 에러 발생 후 원본 파일 위치가 잡히는지 확인.
 
 ---
 
-## 🧠 미리 생각해보기 (Pre-Quiz)
-
-다음 시간 시작 전에 가볍게 고민해보세요.
-
-> "웹팩(Webpack)으로 빌드한 파일을 열어보면 왜 항상 `(function(modules) { ... })` 처럼 괄호로 시작할까요?"
-
-수고하셨습니다! 다음 세션에서 만나요. 👋
+고생하셨습니다! 다음 세션에서 소스맵의 마법을 경험해 보세요. 👋
