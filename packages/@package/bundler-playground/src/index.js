@@ -4,4 +4,4 @@ import greet from './greet.js';
 export * from './name.js';
 
 console.log(a, b);
-console.log(greet('World'));
+console.log(greet('Bundler Master! 🎉'));
