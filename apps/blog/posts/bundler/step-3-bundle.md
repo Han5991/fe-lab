@@ -105,7 +105,29 @@ console.log(a.a); // undefined (partial exports)
 | **ExportDefaultDeclaration** | `export default a`        | `exports.default = a`                | 파일의 대표 값을 내보냄      |
 | **ExportAllDeclaration**     | `export * from './a'`     | `Object.assign(exports, require(1))` | 다른 파일의 모든 수출을 복사 |
 
-> 참고: `export *`의 실제 스펙은 `default` 제외, 이름 충돌 처리, live binding 등을 고려해야 합니다. 여기서는 학습용으로 단순화된 변환만 다룹니다.
+### 🛠️ 상세 변환 로직 (Code Deep Dive)
+
+`Module.ts`의 `transform` 메서드가 복잡한 이유는 개발자가 `export`를 사용하는 방식이 매우 다양하기 때문입니다. 각 함수가 처리하는 구체적인 케이스는 다음과 같습니다.
+
+#### 1. `transformImportDeclaration`
+*   **Named**: `import { a } from './file'` ➡️ `const { a } = require(1)`
+*   **Default**: `import A from './file'` ➡️ `const A = require(1).default`
+*   **Namespace**: `import * as ns from './file'` ➡️ `const ns = require(1)`
+*   **Side Effect**: `import './style.css'` ➡️ `require(1)` (변수 할당 없이 실행만)
+
+#### 2. `transformExportNamedDeclaration`
+가장 분기 처리가 많은 부분입니다.
+*   **Re-export**: `export { a } from './file'` ➡️ `exports.a = require(1).a` (남의 것을 바로 내보냄)
+*   **Variable**: `export const a = 1` ➡️ `const a = 1; exports.a = a` (선언 후 등록)
+*   **Function**: `export function foo() {}` ➡️ `function foo() {}; exports.foo = foo`
+*   **List**: `export { a, b }` ➡️ `exports.a = a; exports.b = b` (이미 있는 변수 등록)
+
+#### 3. `transformExportDefaultDeclaration`
+*   **Declaration**: `export default function foo() {}` ➡️ 함수 선언 뒤에 `exports.default = foo` 추가
+*   **Expression**: `export default 123` ➡️ `exports.default = 123` 으로 치환
+
+#### 4. `transformExportAllDeclaration`
+*   **All**: `export * from './file'` ➡️ `Object.assign(exports, require(1))` (대상 모듈의 모든 속성을 내 exports에 병합)
 
 ---
 
