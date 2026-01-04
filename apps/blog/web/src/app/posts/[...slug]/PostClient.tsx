@@ -282,6 +282,8 @@ export default function PostClient({ post }: { post: PostData }) {
             borderBottomColor: 'blue.200',
             transition: 'all 0.2s',
             fontWeight: '600',
+            wordBreak: 'break-all',
+            overflowWrap: 'break-word',
             _hover: {
               color: 'blue.700',
               borderBottomColor: 'blue.600',

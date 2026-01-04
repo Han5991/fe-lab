@@ -14,21 +14,19 @@ export default function GiscusComments() {
   }
 
   return (
-    <div className={css({ mt: '16', mb: '10' })}>
-      <Giscus
-        id="comments"
-        repo={repo as `${string}/${string}`}
-        repoId={repoId}
-        category={category}
-        categoryId={categoryId}
-        mapping="pathname"
-        reactionsEnabled="1"
-        emitMetadata="0"
-        inputPosition="top"
-        theme="preferred_color_scheme"
-        lang="ko"
-        loading="lazy"
-      />
-    </div>
+    <Giscus
+      id="comments"
+      repo={repo as `${string}/${string}`}
+      repoId={repoId}
+      category={category}
+      categoryId={categoryId}
+      mapping="pathname"
+      reactionsEnabled="1"
+      emitMetadata="0"
+      inputPosition="top"
+      theme="preferred_color_scheme"
+      lang="ko"
+      loading="lazy"
+    />
   );
 }
