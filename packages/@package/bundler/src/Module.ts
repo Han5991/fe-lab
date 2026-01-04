@@ -86,7 +86,8 @@ export class Module {
 
     const strategies: Record<string, Action> = {
       ImportDeclaration: node =>
-        node.type === 'ImportDeclaration' && this.transformImportDeclaration(node),
+        node.type === 'ImportDeclaration' &&
+        this.transformImportDeclaration(node),
       ExportNamedDeclaration: node =>
         node.type === 'ExportNamedDeclaration' &&
         this.transformExportNamedDeclaration(node),
