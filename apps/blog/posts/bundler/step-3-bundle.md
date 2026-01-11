@@ -1,230 +1,116 @@
 ---
 title: 'Step 3: 번들링과 스코프 (Bundling & Scope)'
 date: 2026-01-04
-tags:
-  ['bundler', 'javascript', 'scope', 'runtime', 'cjs', 'esm', 'dual-package']
+tags: ['bundler', 'javascript', 'scope', 'runtime', 'cjs', 'esm']
 ---
 
 # Step 3: 번들링과 스코프 (Bundling & Scope)
 
-메모리 상에 흩어진 모듈 그래프를 **실행 가능한 하나의 파일**로 합치는 것은 단순히 코드를 이어 붙이는 것이 아닙니다. 브라우저 환경에서 Node.js의 모듈 로딩/캐시를 **부분적으로 흉내내는 과정**입니다.
-
-## 1. 스코프 격리: "변수 충돌이라는 재앙 막기"
-
-여러 파일의 코드를 그냥 합치면 변수 이름(`const a`)이 겹쳐서 실행조차 되지 않습니다.
-
-- **해결책**: 각 파일의 내용을 **함수(Function Scope)**로 감쌉니다.
-- **구조**: `(function(require, module, exports) { ... })`
-- **의미**: 이렇게 감싸는 순간, 각 파일은 외부와 차단된 자신만의 '방'을 갖게 됩니다. 이 안에서 선언된 변수는 밖으로 새어나가지 않습니다.
-
-```mermaid
-graph LR
-    subgraph Bundle [bundle.js - IIFE Scope]
-        direction TB
-        Runtime[Runtime Shim require]
-
-        subgraph Map [Module Map]
-            M0["ID 0: function(...) { index.js }"]
-            M1["ID 1: function(...) { a.js }"]
-            M2["ID 2: function(...) { b.js }"]
-        end
-
-        Runtime -->|1 . 실행| M0
-        M0 -->|2 . require 1| Runtime
-        Runtime -->|3 . 실행| M1
-    end
-```
+메모리상에 구축된 모듈 그래프를 하나의 실행 가능한 파일로 결합하는 과정은 단순한 텍스트 이어 붙이기가 아닙니다. 브라우저 환경에는 존재하지 않는 Node.js의 모듈 시스템을 구현하고, 각 모듈이 서로 간섭하지 않도록 독립적인 실행 환경을 보장해야 합니다. 이번 단계에서는 번들러가 어떻게 **스코프를 격리**하고, **런타임을 구현**하여 코드를 실행하는지 상세히 알아봅니다.
 
 ---
 
-## 2. 모듈 시스템 흉내내기 (The Shim)
+## 1. 스코프 격리 (Scope Isolation)
 
-브라우저에는 `require`, `module`, `exports`가 없습니다. 번들러는 이 도구 3개를 직접 만들어서 각 파일(함수)에게 인자로 쥐여줍니다.
+여러 파일의 코드를 단순히 합치면 변수 이름 충돌(Namespace Collision)이라는 치명적인 문제가 발생합니다. 서로 다른 파일에서 선언한 동일한 이름의 변수가 전역 공간에서 충돌하여 의도치 않은 동작을 일으키기 때문입니다.
 
-### 🏨 호텔 룸서비스 비유 (작동 원리)
+이를 해결하기 위해 번들러는 **IIFE(Immediately Invoked Function Expression, 즉시 실행 함수)** 패턴을 사용합니다. 각 모듈의 코드를 하나의 함수로 감쌈으로써, 자바스크립트의 함수 스코프 특성을 활용해 외부로부터 변수를 격리합니다.
 
-- **호텔 지배인 (번들러 런타임)**: 전체 실행을 관리합니다.
-- **빈 접시 (`module.exports = {}`)**: 요리사(모듈)에게 전달할 결과물 그릇입니다.
-- **요리사 호출 (`modules[id](...)`)**: 요리사에게 도구(require, exports)를 주고 요리를 시킵니다. 요리사는 이 도구를 사용해 빈 접시에 결과물을 채워 넣습니다.
-- **서빙 (`return module.exports`)**: 다 채워진 접시를 주문자에게 전달합니다.
-
-### 🔄 도미노 효과 (Execution Flow)
-
-"0번 함수에 모든 게 몰려 있는 것 아닌가요?"라는 질문의 해답입니다. 0번이 뿌리가 되어 멈추고 실행하기를 반복하며 깊이 우선 탐색(DFS)하듯 실행됩니다.
-
-```mermaid
-sequenceDiagram
-    participant Main as Entry (Root)
-    participant Req as require()
-    participant Mod0 as Module 0 (index)
-    participant Mod1 as Module 1 (a.js)
-
-    Main->>Req: 1. require(0) 호출
-    Req->>Mod0: 2. 0번 함수 실행
-    activate Mod0
-    Note right of Mod0: 코드 실행 중...<br/>require(1) 발견!
-    Mod0->>Req: 3. require(1) 요청
-    activate Req
-    Req->>Mod1: 4. 1번 함수 실행
-    activate Mod1
-    Note right of Mod1: exports.a = 'Hello'
-    Mod1-->>Req: 5. 결과 반환
-    deactivate Mod1
-    Req-->>Mod0: 6. 1번 결과 전달
-    deactivate Req
-    Note right of Mod0: 나머지 코드 실행
-    Mod0-->>Main: 7. 0번 완료 (전체 종료)
-    deactivate Mod0
-```
-
-> 순환 참조의 미묘한 차이: CJS는 `exports` 객체를 **먼저 만든 뒤 실행**하므로, 순환 참조 시 “부분적으로 채워진 exports”가 노출됩니다.  
-> ESM은 초기화 순서와 TDZ 제약이 더 엄격해, 같은 코드라도 에러가 날 수 있습니다.
-
-```js
-// a.js
-const b = require('./b.js');
-exports.a = 'A';
-console.log(b.b);
-
-// b.js
-const a = require('./a.js');
-exports.b = 'B';
-console.log(a.a); // undefined (partial exports)
-```
-
----
-
-## 3. 상세 변환 전략 (ESM → CJS)
-
-일부 런타임(CJS 환경, 구형 브라우저 등)에서는 ESM을 그대로 실행할 수 없으므로, 빌드 타임에 AST를 분석해 모든 ESM 문법을 우리가 만든 `require` 체계로 번역해야 합니다.
-
-| AST 타입                     | 원본 코드 (ESM)           | 변환된 코드 (CJS)                    | 역할                         |
-| :--------------------------- | :------------------------ | :----------------------------------- | :--------------------------- |
-| **ImportDeclaration**        | `import { a } from './a'` | `const { a } = require(1)`           | 다른 파일의 값을 가져옴      |
-| **ExportNamedDeclaration**   | `export const a = 1`      | `const a = 1; exports.a = a`         | 값을 이름 붙여 내보냄        |
-| **ExportDefaultDeclaration** | `export default a`        | `exports.default = a`                | 파일의 대표 값을 내보냄      |
-| **ExportAllDeclaration**     | `export * from './a'`     | `Object.assign(exports, require(1))` | 다른 파일의 모든 수출을 복사 |
-
-### 🛠️ 상세 변환 로직 (Code Deep Dive)
-
-`Module.ts`의 `transform` 메서드가 복잡한 이유는 개발자가 `export`를 사용하는 방식이 매우 다양하기 때문입니다. 각 함수가 처리하는 구체적인 케이스는 다음과 같습니다.
-
-#### 1. `transformImportDeclaration`
-*   **Named**: `import { a } from './file'` ➡️ `const { a } = require(1)`
-*   **Default**: `import A from './file'` ➡️ `const A = require(1).default`
-*   **Namespace**: `import * as ns from './file'` ➡️ `const ns = require(1)`
-*   **Side Effect**: `import './style.css'` ➡️ `require(1)` (변수 할당 없이 실행만)
-
-#### 2. `transformExportNamedDeclaration`
-가장 분기 처리가 많은 부분입니다.
-*   **Re-export**: `export { a } from './file'` ➡️ `exports.a = require(1).a` (남의 것을 바로 내보냄)
-*   **Variable**: `export const a = 1` ➡️ `const a = 1; exports.a = a` (선언 후 등록)
-*   **Function**: `export function foo() {}` ➡️ `function foo() {}; exports.foo = foo`
-*   **List**: `export { a, b }` ➡️ `exports.a = a; exports.b = b` (이미 있는 변수 등록)
-
-#### 3. `transformExportDefaultDeclaration`
-*   **Declaration**: `export default function foo() {}` ➡️ 함수 선언 뒤에 `exports.default = foo` 추가
-*   **Expression**: `export default 123` ➡️ `exports.default = 123` 으로 치환
-
-#### 4. `transformExportAllDeclaration`
-*   **All**: `export * from './file'` ➡️ `Object.assign(exports, require(1))` (대상 모듈의 모든 속성을 내 exports에 병합)
-
----
-
-## 4. 효율적인 관리: 번호표(ID) 시스템
-
-파일 경로(`'./src/utils/math.js'`) 대신 숫자(`1`, `2`)를 사용하는 이유는 명확합니다.
-
-- **용량**: 긴 주소를 숫자로 치환하여 파일 크기를 줄입니다.
-- **단순화**: 문자열 경로 대신 숫자 키로 관리해 조회 로직이 단순해집니다.
-- **캡슐화**: 내부 파일 구조를 외부에 숨깁니다.
-
----
-
-## 5. ESM 지원 및 독립형(Standalone) 번들링
-
-최신 환경을 위해 `.mjs` 파일을 생성할 때, 단순한 Wrapper 방식이 아닌 **완전 독립형** 방식을 채택했습니다.
-
-```mermaid
-flowchart TD
-    Graph[Memory Graph] -->|Generate| Core["Bundle Content<br/>(IIFE String)"]
-
-    subgraph CJS [bundle.cjs]
-        Core -->|Append| CJS_Exp["module.exports = ..."]
-    end
-
-    subgraph ESM [bundle.mjs]
-        Core -->|Inline Copy| Wrapper["const result = ..."]
-        Wrapper -->|Static Analysis| Named["export const {a} = result"]
-        Wrapper -->|Static Analysis| Default["export default result.default"]
-    end
-```
-
-### 정적 분석을 통한 수출 명단 수집
-
-ESM은 수출할 변수 이름을 미리 알아야 하기에 `Module.ts`에서 다음 상태를 관리합니다.
-
-- **`exportsList`**: 직접 내보내는 이름들 수집 (`export const a` 등)
-- **`exportAllSources`**: `export *` 처럼 다른 파일에 떠넘긴 경로 기록. 나중에 재귀적으로 추적하여 명단을 합칩니다.
-
-### 결과물 구조
-
-- **bundle.cjs**: `module.exports = (function...)` (CJS 완전 독립)
-- **bundle.mjs**: 번들 로직을 복사(Inlining)한 뒤 `export const { ... } = result` (ESM 완전 독립)
-
-> 라이브러리 번들러는 보통 `peerDependencies`를 **external 처리**합니다.  
-> 예를 들어 `react`를 번들에 포함하면, 소비자 앱에 이미 있는 React와 **중복 로딩/충돌**이 발생할 수 있기 때문입니다.
-
-```ts
-const externals = new Set(['react', 'react-dom']);
-if (externals.has(specifier)) {
-  // treat as external and skip bundling
+```javascript
+// 번들 파일 내부의 모듈 구조 예시
+{
+  0: function(require, module, exports) {
+    const message = "Hello"; // 이 변수는 0번 모듈 내부에서만 유효합니다.
+    const utils = require(1);
+    console.log(message, utils.name);
+  },
+  1: function(require, module, exports) {
+    exports.name = "Bundler";
+  }
 }
 ```
 
 ---
 
-## 6. 심화: 번들러의 두 가지 철학 (Webpack vs Rollup)
+## 2. 런타임 심 구현 (Runtime Shim)
 
-오늘 우리가 구현한 방식은 **런타임 모듈 로더 중심(Webpack 스타일)** 입니다. 반면 라이브러리 번들링에는 **정적 분석 중심(Rollup 스타일)** 이 자주 쓰입니다. 다만 이 구분은 "경향"이지 절대 규칙은 아닙니다.
+브라우저 환경에는 `require`, `module`, `exports`와 같은 모듈 시스템 객체가 기본적으로 존재하지 않습니다. 따라서 번들러는 이러한 도구들을 직접 구현하여 각 모듈 함수에 주입해 주어야 합니다. 이를 **런타임 심(Runtime Shim)**이라고 부릅니다.
 
-### 📦 Webpack 스타일: 런타임 모듈 로더 중심
+### 런타임의 핵심 역할
 
-> "모듈을 함수로 감싸 두고, 런타임 로더(`require`)가 실행을 관리한다."
+1.  **모듈 실행**: 특정 ID를 가진 모듈 함수를 찾아 실행합니다.
+2.  **의존성 주입**: 모듈 함수가 필요로 하는 `require`, `module`, `exports` 객체를 인자로 전달합니다.
+3.  **캐싱(Caching)**: 동일한 모듈이 여러 번 호출되더라도 한 번만 실행되도록 결과를 저장해 둡니다.
 
-- **특징**:
-  1.  **런타임 유연성**: 모듈을 독립된 함수로 관리해 실행 순서/캐싱을 런타임에서 제어하기 쉽습니다.
-  2.  **대규모 앱 번들링 친화**: 다양한 로더/플러그인 생태계를 바탕으로 복잡한 앱 구성에 강점이 있습니다.
-  3.  **스코프 호이스팅도 가능**: 기본은 함수 래핑이지만, 설정에 따라 스코프 호이스팅도 수행합니다.
+```javascript
+// 단순화된 런타임 로직
+function require(id) {
+  // 1. 캐시 확인
+  if (cache[id]) return cache[id].exports;
 
-### 📜 Rollup 스타일: 정적 분석/스코프 호이스팅 중심
+  const module = { exports: {} };
+  cache[id] = module;
 
-> "정적 분석을 기반으로 모듈을 한 스코프로 펼치는 경향이 강하다."
+  // 2. 모듈 함수 실행 및 도구 주입
+  modules[id](require, module, module.exports);
 
-- **특징**:
-  1.  **결과물 간결성**: 런타임 보일러플레이트가 적어 라이브러리 배포에 유리합니다.
-  2.  **트리 쉐이킹에 유리**: 정적 분석 기반이라 미사용 코드 제거가 잘 동작합니다.
-  3.  **코드 스플리팅은 포맷/설정 의존**: ESM 출력 등 특정 조건에서 강점을 가집니다.
-
-**우리의 선택**: 우리는 번들러의 기본 런타임 구조를 이해하기 위해 **런타임 모듈 로더 방식**을 먼저 정복했습니다.
-
-## 7. 검증 결과 및 로그
-
-실제 프로젝트를 빌드하고 실행한 결과입니다.
-
-```bash
-# 실행 결과 (Node.js)
-Value of a in C: undefined  <-- 순환 참조 재현 성공
-Local name in A: A
-Local name in B: B
-Module A Module B
-Hello, Bundler Master! 🎉!
-
-# 라이브러리 모드 테스트 (test-bundle.cjs / test-bundle.mjs)
-Exported: { name: 'Universe' }
-✅ Success: Named Import 및 require() 값이 정확히 일치함.
+  // 3. 결과 반환
+  return module.exports;
+}
 ```
 
 ---
 
-**Next Step**: 이제 합쳐진 코드 속에서 길을 잃지 않게 도와주는 **Step 4: 소스맵(SourceMap)**으로 나아갑니다.
+## 3. 실행 흐름 (Execution Flow)
+
+번들링된 코드는 엔트리 포인트(보통 ID 0)부터 시작하여 의존성 그래프를 따라 **깊이 우선 탐색(DFS)** 방식으로 실행됩니다. 이 과정을 시퀀스 다이어그램으로 나타내면 다음과 같습니다.
+
+```mermaid
+sequenceDiagram
+    participant Runtime as Bundler Runtime
+    participant Entry as Entry Module (ID: 0)
+    participant Dep as Dependency (ID: 1)
+
+    Runtime->>Entry: 1. execute(0) 호출
+    activate Entry
+    Note over Entry: 코드 실행 중...<br/>require(1) 발견
+    Entry->>Runtime: 2. require(1) 요청
+    activate Runtime
+    Runtime->>Dep: 3. execute(1) 실행
+    activate Dep
+    Note over Dep: exports.data = 'value'
+    Dep-->>Runtime: 4. module.exports 반환
+    deactivate Dep
+    Runtime-->>Entry: 5. 결과('value') 전달
+    deactivate Runtime
+    Note over Entry: 나머지 코드 실행
+    Entry-->>Runtime: 6. 실행 완료
+    deactivate Entry
+```
+
+---
+
+## 4. 문법 변환 (ESM to CJS Transform)
+
+최신 자바스크립트에서는 `import/export`(ESM) 문법을 사용하지만, 위에서 구현한 런타임은 `require/exports`(CJS) 구조를 기반으로 합니다. 따라서 빌드 과정에서 추상 구문 트리(AST)를 분석하여 문법을 변환하는 작업이 필요합니다.
+
+| 분류              | 원본 코드 (ESM)           | 변환된 코드 (CJS 방식)               | 설명                                      |
+| :---------------- | :------------------------ | :----------------------------------- | :---------------------------------------- |
+| **가져오기**      | `import { a } from './a'` | `const { a } = require(1)`           | 모듈 ID를 기반으로 값을 가져옵니다.       |
+| **이름 내보내기** | `export const b = 1`      | `const b = 1; exports.b = b`         | `exports` 객체에 속성을 추가합니다.       |
+| **기본 내보내기** | `export default c`        | `exports.default = c`                | `default`라는 이름의 속성으로 할당합니다. |
+| **전체 내보내기** | `export * from './a'`     | `Object.assign(exports, require(1))` | 대상 모듈의 모든 수출항을 복사합니다.     |
+
+### 상세 변환 로직의 주의점
+
+- **Default Import**: `import A from './a'`는 런타임에서 `require(1).default`를 참조하도록 변환되어야 합니다.
+- **Side Effect**: `import './style.css'`와 같이 변수 할당이 없는 경우, 단순히 `require(1)`만 실행하여 모듈 내부의 로직이 구동되도록 합니다.
+- **순환 참조**: CJS 방식에서는 `exports` 객체를 먼저 생성한 후 코드를 실행하므로, 순환 참조 발생 시 "부분적으로 완성된(Partial)" 객체가 노출될 수 있음에 유의해야 합니다.
+
+---
+
+## 5. 요약
+
+번들링의 핵심은 단순히 파일을 합치는 것을 넘어, **격리된 스코프**를 제공하고 브라우저가 이해할 수 없는 **모듈 시스템을 런타임으로 재현**하는 데 있습니다. 이를 통해 개발자는 모듈화된 설계를 유지하면서도, 브라우저 환경에서 안정적으로 동작하는 단일 실행 파일을 얻게 됩니다.
+
+다음 단계에서는 실행 중인 번들 코드와 원본 소스 코드를 연결해 주는 **Step 4: 소스맵(SourceMap)**에 대해 알아보겠습니다.
