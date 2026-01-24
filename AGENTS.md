@@ -1,43 +1,145 @@
-# Repository Guidelines
+# AGENTS.md - Context & Rules for AI Agents
 
-## Project Structure & Module Organization
-- `apps/next.js/`: App Router lab; routes in `src/app`, shared UI in `src/components`, Jest specs in `test/` and `src/app/__tests__`.
-- `apps/react/`: Vite SPA; screens in `src/pages`, services in `src/service`, Vitest specs in `src/test` or adjacent `*.test.tsx`.
-- `apps/typescript/`: Type-only experiments; use the `error/` module and `jest.config.ts` as the template.
-- `apps/blog/web/`: MDX blog; posts in `apps/blog/posts/`, Supabase SQL in `supabase/`.
-- `apps/ga-proxy/`: Next.js proxy; handlers in `src/app` with shared utilities in `lib/`.
-- Shared packages: UI in `packages/@design-system/ui`, Panda CSS tokens in `packages/@design-system/ui-lib`, configs/utilities in `packages/@package/*`.
+This file provides the necessary context, commands, and standards for AI agents operating in this repository (`fe-lab`).
+**READ THIS FIRST** before making changes.
 
-## Architecture & Shared Practices
-- Turborepo + pnpm workspaces coordinate builds; edit `turbo.json` and `pnpm-workspace.yaml` together.
-- Use `workspace:` protocol for internal deps and catalog aliases (`catalog:react19`, `catalog:typescript5`, `catalog:` for Panda CSS).
-- Component folders follow the three-file pattern (`Component.tsx`, `Component.test.tsx`, `index.ts`).
-- Panda CSS tokens are generated; rerun Panda instead of editing `packages/@design-system/ui-lib`.
+## 1. Environment & Setup
 
-## Build, Test, and Development Commands
-- `pnpm install` (Node 20+, pnpm 10.10.0) to bootstrap.
-- `pnpm dev` runs everything; use `pnpm next`, `pnpm react`, `pnpm typescript`, or `pnpm blog-web` for focused dev.
-- `pnpm build`, `pnpm lint`, and `pnpm check-types` run repo-wide gates; `pnpm blog-build` exports the blog.
-- `pnpm test` runs all suites; add `--filter=next.js`, `--filter=react`, etc., when iterating.
+- **Package Manager**: `pnpm` (v10.10.0). strictly enforce `pnpm-lock.yaml`.
+- **Monorepo Tool**: `turborepo`.
+- **Node Version**: >= 20.
+- **Root Commands**:
+  - `pnpm install`: Bootstrap dependencies.
+  - `pnpm dev`: Start all apps in parallel.
+  - `pnpm build`: Build all apps/packages.
+  - `pnpm test`: Run all tests.
+  - `pnpm lint`: Run ESLint across the repo.
+  - `pnpm check-types`: Run TypeScript validation.
 
-## Coding Style & Naming Conventions
-- Prettier (2 spaces) plus per-app ESLint configs set formatting—run `pnpm lint` regularly.
-- Components use PascalCase (`ArticleCard.tsx`), utilities camelCase, route folders and MDX slugs kebab-case.
-- Use `data-testid` for critical selectors and promote reusable code into `packages/`.
+## 2. Project Structure
 
-## Testing Guidelines
-- Next.js → Jest + React Testing Library (`apps/next.js/test`, `src/app/__tests__`).
-- React SPA → Vitest + MSW (`src/test`).
-- TypeScript experiments → Jest + Babel (`apps/typescript`).
-- Save specs as `*.test.ts` or `*.test.tsx`, extend existing MSW handlers, and update snapshots deliberately.
+- **apps/**
+  - `next.js/` (Next.js 16 + App Router): Core experimentation lab.
+  - `react/` (Vite + React 19): SPA experimentation lab.
+  - `typescript/` (Pure TS): Type challenges and logic experiments.
+  - `blog/web/` (Next.js + MDX): Tech blog.
+  - `ga-proxy/` (Next.js): Utility service.
+- **packages/**
+  - `@design-system/ui`: Shared React components.
+  - `@design-system/ui-lib`: Panda CSS generated tokens/styles (DO NOT EDIT directly).
+  - `@package/core`: Shared utilities (HTTP client, etc.).
+  - `@package/config`: Shared TS/ESLint configs.
 
-## Commit & Pull Request Guidelines
-- Follow `type(scope): summary` (e.g., `docs(blog): 내용 보강`); Korean summaries are fine if clear.
-- Keep commits focused and note validation commands (`pnpm test --filter=next.js`) when behavior changes.
-- PRs must include summary, impacted areas, validation steps, linked issue/doc, and screenshots or logs for UI work.
-- Ensure Turbo, lint, and type checks succeed locally before requesting review.
+## 3. Development Commands (Crucial for Agents)
 
-## Security & Configuration Tips
-- Store Supabase keys, proxy tokens, and other secrets in local `.env.local`.
-- Respect `pnpm.onlyBuiltDependencies`; avoid global installs or editing `node_modules`.
-- Flag cascading impacts when tweaking `turbo.json`, workspace filters, or catalog entries.
+### Running Specific Apps
+
+Do not run `pnpm dev` if you only need one app. Save resources.
+
+- `pnpm next`: Run `apps/next.js`
+- `pnpm react`: Run `apps/react`
+- `pnpm typescript`: Run `apps/typescript`
+
+### Running Tests (Targeted)
+
+**ALWAYS** run relevant tests after changes. Do not run the full suite unless necessary.
+
+**Pattern**: `pnpm test --filter=<app_name> -- <test_args>`
+
+- **Single App Suite**:
+
+  ```bash
+  pnpm test --filter=next.js   # Run all Next.js tests (Jest)
+  pnpm test --filter=react     # Run all React tests (Vitest)
+  ```
+
+- **Single Test File** (Best for TDD/Debugging):
+
+  ```bash
+  # Jest (Next.js)
+  pnpm test --filter=next.js -- src/app/some-feature.test.tsx
+
+  # Vitest (React)
+  pnpm test --filter=react -- src/features/some-feature.test.tsx
+  ```
+
+- **Watch Mode**:
+  - `pnpm --filter=next.js run test:watch`
+
+## 4. Coding Standards
+
+### TypeScript
+
+- **Strictness**: `strict: true` is enabled. No `any`. Use `unknown` or specific types.
+- **Interfaces**: Prefer `interface` over `type` for object definitions.
+- **Exports**: Use named exports (`export const Foo = ...`) over default exports, except for Next.js Pages/Layouts.
+
+### React & Next.js
+
+- **Component Naming**: PascalCase (`UserCard.tsx`).
+- **Structure**:
+  ```text
+  UserCard/
+  ├── index.ts        # Export barrel
+  ├── UserCard.tsx    # Component logic & view
+  └── UserCard.test.tsx # Tests
+  ```
+- **Hooks**: Use `use` prefix. Encapsulate complex logic in custom hooks.
+- **Server Components**: In `apps/next.js`, default to Server Components. Add `"use client"` only when interactive state/hooks are needed.
+
+### Styling (Panda CSS)
+
+- **Zero Runtime**: Use Panda CSS recipes and patterns.
+- **Restricted Files**: **NEVER** edit files inside `styled-system/` or `packages/@design-system/ui-lib/dist`.
+- **Tokens**: Use semantic tokens (e.g., `css({ color: "text.primary" })`) instead of raw hex values.
+
+### Imports
+
+- **Order**: External deps -> Internal packages (`@package/*`) -> Local absolute (`@/*`) -> Relative.
+- **Absolute Imports**: Use `@/` alias for `src/` directory.
+
+### Error Handling
+
+- **Typed Errors**: Do not throw raw strings. Use `Error` instances or custom error classes.
+- **Boundaries**: Ensure UI components are wrapped in Error Boundaries where appropriate.
+- **Async**: Always handle Promise rejections (try/catch or `.catch`).
+
+## 5. Testing Guidelines
+
+- **Tools**:
+  - `jest` + `react-testing-library` (Next.js)
+  - `vitest` + `react-testing-library` (React/Vite)
+  - `msw` (Network mocking)
+- **Selectors**: Prefer user-centric selectors:
+  1. `getByRole` (button, heading, etc.)
+  2. `getByLabelText` (forms)
+  3. `getByPlaceholderText`
+  4. `getByText`
+  5. `getByTestId` (Last resort: use `data-testid="identifier"`)
+- **Mocking**: Use MSW for API calls. Avoid mocking internal hook implementations if possible (test behavior, not implementation).
+
+## 6. Git & Workflow
+
+- **Commit Messages**: Conventional Commits.
+  - `feat(scope): ...`
+  - `fix(scope): ...`
+  - `docs(scope): ...`
+  - `refactor(scope): ...`
+  - `test(scope): ...`
+- **Scope**: `next`, `react`, `ui`, `core`, etc.
+- **PRs**: Self-review required. Verify `pnpm lint` and `pnpm check-types` pass before submitting.
+
+## 7. Troubleshooting
+
+- **Lockfile Issues**: If dependencies are weird, run `pnpm install --frozen-lockfile`.
+- **Turbo Cache**: If builds are stale/broken, run `pnpm build --force`.
+- **Types**: If types are missing, check `pnpm-workspace.yaml` catalog versions.
+
+**Agent Action Checklist**:
+
+1. Read this file.
+2. Locate relevant files using `ls` and `find` (or `glob` tool).
+3. `pnpm install` if new deps are needed (rare).
+4. Make changes.
+5. **VERIFY**: Run specific tests (`pnpm test --filter=... -- <file>`).
+6. Lint/Typecheck changed files.

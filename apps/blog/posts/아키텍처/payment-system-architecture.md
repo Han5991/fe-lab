@@ -1,8 +1,18 @@
 ---
-title: '🏗️ 결제 시스템, "복잡한 비즈니스 요구사항" 이 무섭지 않은 설계로 진화하기'
+title: '결제 시스템 리팩토링: if문 지옥에서 디자인 패턴(Factory, Adapter)으로 탈출하기'
 date: '2026-01-24'
 published: true
 slug: 'payment-system-architecture'
+tags:
+  [
+    'TypeScript',
+    'Design Pattern',
+    'Refactoring',
+    'Architecture',
+    'Zod',
+    'Clean Code',
+  ]
+description: '복잡한 비즈니스 로직을 if문 지옥에서 구해내는 Adapter, Factory, Strategy 패턴 적용기. Zod를 활용한 타입 안전성 확보와 Code Splitting 팁까지.'
 ---
 
 > **"만약 내일 당장 '프랑스'가 서비스 국가로 추가된다면? 그리고 한국에서 '사업자 유형'에 따라 결제 수단이 달라져야 한다면?"**
@@ -97,7 +107,7 @@ export interface IPaymentAdapter {
 > **⚖️ Trade-off**:
 >
 > - (👍 장점) PG사가 변경되거나 추가되어도 클라이언트 코드는 수정할 필요가 없습니다. (OCP)
-> - (👎 단점) 모든 PG사의 기능을 공통 인터페이스로 맞추다 보니, 특정 PG사만의 고유 기능(예: Toss의 전용 포인트 할인)을 살리기 어려울 수 있습니다.
+> - (👎 단점) 모든 PG사의 기능을 공통 인터페이스로 맞추다 보니, 특정 PG사만의 고유 기능(예: Toss의 전용 포인트 할인)을 살리기 어려울 수 있습니다. 때로는 추상화 누수(Leaky Abstraction)가 발생하여 고유 기능을 억지로 끼워 맞춰야 할 수도 있습니다.
 
 ### 🏗️ Step 2: Factory Pattern (규칙 자판기)
 
@@ -111,7 +121,7 @@ export interface IPaymentAdapter {
 // PaymentFactory.ts
 export const PaymentFactory = {
   getAvailableProviders(context: { country: string; businessType?: string }) {
-    // 🇰🇷 한국: 사업자 유형에 따른 동적 필터링 (복잡한 규칙이 여기에만 존재!)
+    // 🇰🇷 한국: 사업자 유형에 따른 동적 필터링 (이곳에 분기 로직이 캡슐화됩니다!)
     if (context.country === 'KR') {
       if (['CORPORATE', 'INDIVIDUAL'].includes(context.businessType)) {
         return [PaymentProviderType.TOSS, PaymentProviderType.GENERAL];
@@ -161,6 +171,8 @@ sequenceDiagram
     Adapter-->>Hook: Success
 ```
 
+> **요약**: UI가 훅을 호출하면, 훅은 팩토리에 생성을 위임하고, 반환된 어댑터를 실행합니다.
+
 ```typescript
 // usePayment.ts
 export const usePayment = () => {
@@ -187,6 +199,8 @@ export const usePayment = () => {
 ---
 
 ## 🛡️ 4. 디테일: Zod로 데이터 무결성 철통 방어
+
+설계가 유연해진 만큼, 입력값에 대한 엄격한 검증이 중요해졌습니다. 팩토리가 올바른 객체를 생성하려면 입력값(Context)의 무결성이 보장되어야 하기 때문입니다.
 
 "사업자일 때만 무통장 입금이 가능하다"는 규칙을 UI뿐만 아니라 **데이터 스키마 레벨**에서도 검증하고 싶었습니다. Zod의 `discriminatedUnion`이 빛을 발하는 순간입니다.
 
@@ -217,13 +231,33 @@ export const KrPurchaseSchema = z.discriminatedUnion('businessType', [
 
 ### ⚡️ Strategy Pattern을 활용한 'Lazy Loading UI'
 
-국가별, 상황별로 UI가 너무 다르다면? 아예 다른 파일을 불러오면 됩니다.
+로직만 분리한다고 끝이 아닙니다. UI도 전략 패턴으로 분리할 수 있습니다.
+특히 React의 `lazy`를 활용하면, **한국 유저는 프랑스 결제 폼 코드를 다운로드할 필요가 없게 되어(Code Splitting)** 초기 로딩 속도까지 잡을 수 있습니다.
 
 ```typescript
-// SelfPurchaseOrder/Create/index.ts
-const STRATEGIES = {
-  KR: lazy(() => import('./KrCreate')), // 한국 전용 복잡한 폼
-  FR: lazy(() => import('./FrCreate')), // 프랑스 전용 폼
+// SelfPurchaseOrder/Create/index.tsx
+import { Suspense, lazy } from 'react';
+
+// 1. 전략 정의 (Code Splitting)
+const UI_STRATEGIES = {
+  KR: lazy(() => import('./KrCreate')), // 한국: 복잡한 사업자 로직 포함
+  FR: lazy(() => import('./FrCreate')), // 프랑스: 간소화된 UI
+  DEFAULT: lazy(() => import('./GlobalCreate')),
+};
+
+// 2. 전략 선택 (Strategy Selection)
+const PurchaseFormStrategy = ({ country }) => {
+  const TargetForm = UI_STRATEGIES[country] || UI_STRATEGIES.DEFAULT;
+  return <TargetForm />;
+};
+
+// 3. 상위 컴포넌트에서 우아한 로딩 처리 (Suspense at Page Level)
+export const PurchasePage = ({ country }) => {
+  return (
+    <Suspense fallback={<PageSkeleton />}>
+      <PurchaseFormStrategy country={country} />
+    </Suspense>
+  );
 };
 ```
 
@@ -247,6 +281,10 @@ const STRATEGIES = {
 - [ ] 조건에 따라 객체 생성이 달라진다면 `Factory Pattern`을 도입한다.
 - [ ] 실행 로직이 다양하다면 `Adapter`로 인터페이스를 통일한다.
 - [ ] 복잡한 폼 검증은 `Zod Discriminated Union`으로 해결해본다.
+
+> **여러분은 어떠신가요?**
+>
+> 혹시 지금 보고 계신 코드에 **"국가 코드"나 "유저 타입"을 체크하는 `if`문이 화면 곳곳에 흩어져 있나요?** 그곳이 바로 팩토리 패턴이 필요한 지점일 수 있습니다. 댓글로 경험을 공유해주세요!
 
 <br>
 
