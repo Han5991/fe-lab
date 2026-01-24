@@ -120,6 +120,16 @@ export const PaymentFactory = {
     }
     // ...
   },
+
+  getAdapter(providerType: PaymentProviderType): IPaymentAdapter {
+    switch (providerType) {
+      case PaymentProviderType.TOSS:
+        return new TossAdapter();
+      // 다른 PG사 어댑터 추가
+      default:
+        throw new Error(`${providerType}에 대한 어댑터를 찾을 수 없습니다.`);
+    }
+  },
 };
 ```
 
@@ -154,7 +164,11 @@ sequenceDiagram
 ```typescript
 // usePayment.ts
 export const usePayment = () => {
-  const requestPayment = async (context, providerType, params) => {
+  const requestPayment = async (
+    context: { country: string; businessType?: string },
+    providerType: PaymentProviderType,
+    params: PaymentRequestParams,
+  ) => {
     // 1. 비즈니스 로직 검증 (Factory에게 위임)
     const allowed = PaymentFactory.getAvailableProviders(context);
     if (!allowed.includes(providerType)) {
