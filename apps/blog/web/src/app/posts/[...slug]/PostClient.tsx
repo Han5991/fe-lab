@@ -493,6 +493,15 @@ export default function PostClient({ post }: { post: PostData }) {
                 />
               );
             },
+            table({ children, ...props }: any) {
+              return (
+                <div className={css({ w: 'full', overflowX: 'auto', mb: '12', mt: '8' })}>
+                  <table {...props} className={css({ w: 'full', borderCollapse: 'separate', borderSpacing: 0 })} >
+                    {children}
+                  </table>
+                </div>
+              );
+            },
             li({ className, children, ...props }: any) {
               const isTaskList = className?.includes('task-list-item');
               if (isTaskList) {
