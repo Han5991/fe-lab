@@ -107,7 +107,7 @@ export interface IPaymentAdapter {
 > **⚖️ Trade-off**:
 >
 > - (👍 장점) PG사가 변경되거나 추가되어도 클라이언트 코드는 수정할 필요가 없습니다. (OCP)
-> - (👎 단점) 모든 PG사의 기능을 공통 인터페이스로 맞추다 보니, 특정 PG사만의 고유 기능(예: Toss의 전용 포인트 할인)을 살리기 어려울 수 있습니다. 때로는 추상화 누수(Leaky Abstraction)가 발생하여 고유 기능을 억지로 끼워 맞춰야 할 수도 있습니다.
+> - (👎 단점) **간접 계층의 복잡성**: 단순 함수 호출이면 될 것을 `Interface` -> `Adapter` -> `Real Implementation`으로 거쳐 가야 하므로, 코드 추적이 한 단계 더 깊어지고 초기 구조 잡는 비용이 듭니다.
 
 ### 🏗️ Step 2: Factory Pattern (규칙 자판기)
 
