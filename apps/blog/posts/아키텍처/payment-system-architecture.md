@@ -252,7 +252,7 @@ const PurchaseFormStrategy = ({ country }) => {
 };
 
 // 3. 상위 컴포넌트에서 우아한 로딩 처리 (Suspense at Page Level)
-export const PurchasePage = ({ country }) => {
+export const PurchasePage = ({ country }: { country: string }) => {
   return (
     <Suspense fallback={<PageSkeleton />}>
       <PurchaseFormStrategy country={country} />
