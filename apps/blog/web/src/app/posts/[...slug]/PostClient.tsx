@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, Children } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
@@ -234,6 +234,7 @@ export default function PostClient({ post }: { post: PostData }) {
           '& ol': { listStyleType: 'decimal', pl: '6', mb: '8' },
           '& li': { mb: '1', pl: '1' },
           '& li > ul': { mt: '2', mb: '0' },
+          '& li.task-list-item > div > ul': { mt: '2', mb: '0' },
           '& li.task-list-item': {
             listStyleType: 'none',
             pl: 0,
@@ -491,6 +492,33 @@ export default function PostClient({ post }: { post: PostData }) {
                   })}
                 />
               );
+            },
+            table({ children, ...props }: any) {
+              return (
+                <div className={css({ w: 'full', overflowX: 'auto', mb: '12', mt: '8' })}>
+                  <table {...props} className={css({ w: 'full', borderCollapse: 'separate', borderSpacing: 0 })} >
+                    {children}
+                  </table>
+                </div>
+              );
+            },
+            li({ className, children, ...props }: any) {
+              const isTaskList = className?.includes('task-list-item');
+              if (isTaskList) {
+                const childrenArray = Children.toArray(children);
+                const checkbox = childrenArray[0];
+                const content = childrenArray.slice(1);
+
+                return (
+                  <li className={className} {...props}>
+                    {checkbox}
+                    <div className={css({ flex: 1, minW: 0 })}>
+                      {content}
+                    </div>
+                  </li>
+                );
+              }
+              return <li className={className} {...props}>{children}</li>;
             },
           }}
         >
