@@ -196,13 +196,13 @@ export const usePayment = () => {
 // 1. 일반 유저 (해당 없음)
 const KrNormalSchema = z.object({
   businessType: z.literal('NONE'),
-  paymentMethod: z.literal('TOSS'), // Toss만 허용
+  paymentMethod: z.literal(PaymentProviderType.TOSS), // 문자열 대신 enum 사용
 });
 
 // 2. 사업자 (개인/법인)
 const KrBusinessSchema = z.object({
   businessType: z.enum(['INDIVIDUAL', 'CORPORATE']),
-  paymentMethod: z.enum(['TOSS', 'GENERAL']), // Toss + 무통장 허용
+  paymentMethod: z.enum([PaymentProviderType.TOSS, PaymentProviderType.GENERAL]), // 문자열 대신 enum 사용
   registrationFile: z.instanceof(File), // 사업자등록증 필수
 });
 
