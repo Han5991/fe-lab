@@ -132,13 +132,15 @@ export const PaymentFactory = {
   },
 
   getAdapter(providerType: PaymentProviderType): IPaymentAdapter {
-    switch (providerType) {
-      case PaymentProviderType.TOSS:
-        return new TossAdapter();
-      // 다른 PG사 어댑터 추가
-      default:
-        throw new Error(`${providerType}에 대한 어댑터를 찾을 수 없습니다.`);
+    const adapters: Partial<Record<PaymentProviderType, new () => IPaymentAdapter>> = {
+      [PaymentProviderType.TOSS]: TossAdapter,
+    };
+
+    const AdapterClass = adapters[providerType];
+    if (!AdapterClass) {
+      throw new Error(`${providerType}에 대한 어댑터를 찾을 수 없습니다.`);
     }
+    return new AdapterClass();
   },
 };
 ```
