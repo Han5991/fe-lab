@@ -252,12 +252,9 @@ const PurchaseFormStrategy = ({ country }: { country: string }) => {
   // UI_STRATEGIES의 키에 대한 타입 가드 함수
   const isUIStrategyKey = (key: string): key is keyof typeof UI_STRATEGIES => key in UI_STRATEGIES;
 
-  let TargetForm;
-  if (isUIStrategyKey(country)) {
-    TargetForm = UI_STRATEGIES[country];
-  } else {
-    TargetForm = UI_STRATEGIES.DEFAULT;
-  }
+  const TargetForm = isUIStrategyKey(country)
+    ? UI_STRATEGIES[country]
+    : UI_STRATEGIES.DEFAULT;
   return <TargetForm />;
 };
 
