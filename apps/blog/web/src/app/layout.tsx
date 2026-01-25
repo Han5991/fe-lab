@@ -7,6 +7,7 @@ import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://blog.sangwook.dev'),
   title: 'Frontend Lab | 프론트엔드 실험실',
   description:
     '프론트엔드 기술 실험과 깊이 있는 학습 내용을 공유하는 공간입니다.',

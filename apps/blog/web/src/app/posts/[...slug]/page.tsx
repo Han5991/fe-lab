@@ -30,9 +30,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: `${post.title} | Frontend Lab Blog`,
     description: post.excerpt || post.content.slice(0, 160) + '...',
+    alternates: {
+      canonical: `/posts/${slug}`,
+    },
     openGraph: {
       title: post.title,
       description: post.excerpt || post.content.slice(0, 160) + '...',
+      url: `/posts/${slug}`,
+      siteName: 'Frontend Lab Blog',
       type: 'article',
       publishedTime: post.date || undefined,
     },
@@ -53,5 +58,27 @@ export default async function PostPage({ params }: Props) {
     notFound();
   }
 
-  return <PostClient post={post} />;
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: post.title,
+    datePublished: post.date,
+    dateModified: post.date,
+    description: post.excerpt || post.content.slice(0, 160) + '...',
+    author: {
+      '@type': 'Person',
+      name: 'Sangwook Han',
+      url: 'https://blog.sangwook.dev',
+    },
+  };
+
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <PostClient post={post} />
+    </>
+  );
 }
