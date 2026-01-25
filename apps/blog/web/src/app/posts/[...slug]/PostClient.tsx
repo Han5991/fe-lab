@@ -5,7 +5,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { oneDark } from 'react-syntax-highlighter/dist/cjs/styles/prism';
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/cjs/styles/prism';
 import { css, cx } from '@design-system/ui-lib/css';
 import mermaid from 'mermaid';
 import { SsgoiTransition } from '@ssgoi/react';
@@ -17,35 +17,23 @@ import { useViewCount } from '@/lib/hooks/useViewCount';
 if (typeof window !== 'undefined') {
   mermaid.initialize({
     startOnLoad: true,
-    theme: 'base',
-    themeVariables: {
-      primaryColor: '#3b82f6',
-      primaryTextColor: '#1e40af',
-      primaryBorderColor: '#93c5fd',
-      lineColor: '#64748b',
-      secondaryColor: '#f1f5f9',
-      tertiaryColor: '#fff',
-    },
-    securityLevel: 'loose',
+    securityLevel: 'strict',
   });
 }
 
 const Mermaid = ({ chart }: { chart: string }) => {
-  const ref = useRef<HTMLDivElement>(null);
   const [svg, setSvg] = useState<string>('');
 
   useEffect(() => {
     const renderChart = async () => {
-      if (ref.current) {
-        try {
-          const { svg } = await mermaid.render(
-            `mermaid-${Math.random().toString(36).substr(2, 9)}`,
-            chart,
-          );
-          setSvg(svg);
-        } catch (error) {
-          console.error('Mermaid render failed:', error);
-        }
+      try {
+        const { svg } = await mermaid.render(
+          `mermaid-${Math.random().toString(36).substr(2, 9)}`,
+          chart,
+        );
+        setSvg(svg);
+      } catch (error) {
+        console.error('Mermaid render failed:', error);
       }
     };
     renderChart();
@@ -53,20 +41,21 @@ const Mermaid = ({ chart }: { chart: string }) => {
 
   return (
     <div
-      ref={ref}
-      className={css({
-        my: '10',
-        p: '6',
-        bg: 'gray.50/50',
-        rounded: '2xl',
-        borderWidth: '1px',
-        borderColor: 'gray.100',
-        display: 'flex',
-        justifyContent: 'center',
-        overflow: 'auto',
-        transition: 'all 0.3s',
-        _hover: { shadow: 'xl', transform: 'translateY(-2px)', bg: 'white' },
-      })}
+      className={
+        css({
+          my: '10',
+          p: '6',
+          bg: 'gray.50/50',
+          rounded: '2xl',
+          borderWidth: '1px',
+          borderColor: 'gray.100',
+          display: 'flex',
+          justifyContent: 'center',
+          overflow: 'auto',
+          transition: 'all 0.3s',
+          _hover: { shadow: 'xl', transform: 'translateY(-2px)', bg: 'white' },
+        })
+      }
       dangerouslySetInnerHTML={{ __html: svg }}
     />
   );
@@ -426,14 +415,13 @@ export default function PostClient({ post }: { post: PostData }) {
                     </div>
                   </div>
                   <SyntaxHighlighter
-                    style={oneDark}
+                    style={vscDarkPlus}
                     language={match[1]}
                     PreTag="div"
                     customStyle={{
                       borderRadius: 0,
                       margin: 0,
                       padding: '2rem',
-                      fontSize: '0.95em',
                       lineHeight: '1.8',
                       background: '#1e1e1e',
                     }}
@@ -493,7 +481,7 @@ export default function PostClient({ post }: { post: PostData }) {
                 />
               );
             },
-            table({ children, ...props }: any) {
+            table({ children, ...props }) {
               return (
                 <div className={css({ w: 'full', overflowX: 'auto', mb: '12', mt: '8' })}>
                   <table {...props} className={css({ w: 'full', borderCollapse: 'separate', borderSpacing: 0 })} >
@@ -502,7 +490,7 @@ export default function PostClient({ post }: { post: PostData }) {
                 </div>
               );
             },
-            li({ className, children, ...props }: any) {
+            li({ className, children, ...props }) {
               const isTaskList = className?.includes('task-list-item');
               if (isTaskList) {
                 const childrenArray = Children.toArray(children);
