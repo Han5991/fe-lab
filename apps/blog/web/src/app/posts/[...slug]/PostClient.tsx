@@ -252,6 +252,9 @@ export default function PostClient({ post }: { post: PostData }) {
             fontWeight: '500',
             borderWidth: '1px',
             borderColor: 'gray.200',
+            whiteSpace: 'pre-wrap',
+            wordBreak: 'break-word',
+            overflowWrap: 'anywhere',
           },
           '& blockquote': {
             borderLeftWidth: '4px',
@@ -444,6 +447,9 @@ export default function PostClient({ post }: { post: PostData }) {
                       fontWeight: '500',
                       borderWidth: '1px',
                       borderColor: 'gray.200',
+                      whiteSpace: 'pre-wrap',
+                      wordBreak: 'break-word',
+                      overflowWrap: 'anywhere',
                     }),
                   )}
                   {...props}
