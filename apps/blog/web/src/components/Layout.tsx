@@ -2,6 +2,8 @@ import Link from 'next/link';
 import { css } from '@design-system/ui-lib/css';
 import type { ReactNode } from 'react';
 
+import { PageTransition } from './PageTransition';
+
 interface LayoutProps {
   children: ReactNode;
 }
@@ -57,7 +59,9 @@ export const Layout = ({ children }: LayoutProps) => {
           </Link>
         </div>
       </nav>
-      <main>{children}</main>
+      <main>
+        <PageTransition>{children}</PageTransition>
+      </main>
       <footer
         className={css({
           borderTopWidth: '1px',
