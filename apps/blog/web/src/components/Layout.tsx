@@ -10,7 +10,7 @@ interface LayoutProps {
 
 export const Layout = ({ children }: LayoutProps) => {
   return (
-    <div className={css({ minH: '100vh', bg: 'white', color: 'gray.900' })}>
+    <div className={css({ minH: '100vh', bg: 'white', color: 'gray.900', display: 'flex', flexDirection: 'column' })}>
       <nav
         className={css({
           borderBottomWidth: '1px',
@@ -59,7 +59,7 @@ export const Layout = ({ children }: LayoutProps) => {
           </Link>
         </div>
       </nav>
-      <main>
+      <main className={css({ flex: 1, w: 'full' })}>
         <PageTransition>{children}</PageTransition>
       </main>
       <footer

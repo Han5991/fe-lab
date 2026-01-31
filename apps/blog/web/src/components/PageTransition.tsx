@@ -27,6 +27,7 @@ export function PageTransition({ children }: { children: ReactNode }) {
             <div
                 className={css({
                     pos: 'relative',
+                    w: 'full',
                 })}
             >
                 {children}
