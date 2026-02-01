@@ -12,6 +12,7 @@ export interface PostData {
   date: string | null;
   content: string;
   excerpt?: string;
+  thumbnail?: string;
 }
 
 export function getAllPosts(): PostData[] {
@@ -53,6 +54,7 @@ export function getAllPosts(): PostData[] {
           date: data.date || null,
           content,
           excerpt: data.excerpt || cleanContent.slice(0, 160) + '...',
+          thumbnail: typeof data.thumbnail === 'string' ? data.thumbnail : undefined,
         });
       }
     }
