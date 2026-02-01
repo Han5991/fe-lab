@@ -4,11 +4,17 @@
   "private": true,
   "type": "module",
   "bin": {
-    "minibundler": "./dist/index.js"
+    "minibundler": "./dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
   },
   "scripts": {
-    "build": "tsup src/index.ts --format esm --clean",
-    "dev": "tsup src/index.ts --format esm --clean --watch"
+    "build": "tsup src/index.ts src/cli.ts --format esm --clean --dts --no-splitting",
+    "dev": "tsup src/index.ts src/cli.ts --format esm --clean --watch --dts --no-splitting"
   },
   "devDependencies": {
     "@types/estree": "^1.0.8",

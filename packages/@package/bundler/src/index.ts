@@ -1,23 +1,8 @@
-#!/usr/bin/env node
-import path from 'node:path';
-import { Graph } from './Graph.js';
+export { Graph } from './Graph.js';
+export * from './types.js';
 
-console.log('📦 Minibundler started...');
+import type { MinibundlerConfig } from './types.js';
 
-const entryPath = path.resolve(process.cwd(), 'src/index.js');
-console.log(`🔍 Entry: ${entryPath}`);
-
-try {
-  const graph = new Graph(entryPath, ['react', 'react-dom']);
-  graph.build();
-
-  console.log('🛠️ Generating bundle...');
-  const bundle = graph.generate();
-
-  console.log('✅ Bundle built successfully! (dist/bundle.js)');
-  console.log(`📏 Bundle Size: ${bundle.length} bytes`);
-} catch (err) {
-  console.error('❌ Build failed:', err);
-  console.error(err);
-  process.exit(1);
+export function defineConfig(config: MinibundlerConfig): MinibundlerConfig {
+  return config;
 }
