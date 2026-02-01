@@ -30,6 +30,18 @@
 - **프롬프트 (Final - Simple Ver.)**:
   > A minimalist, flat-design blog cover image for 'Payment System Architecture'. Simple, clean geometric shapes representing data flow or software modules. Soft blue, white, and gray color palette. No complex 3D effects or neon lights. Professional, lightweight, and easy on the eyes. High resolution 1200x630.
 
+### 4. 번들러 시리즈 프롤로그
+- **대상**: `bundler/[누가 시키지도 않았는데 라이브러리 번들러 만들기] 0. 프롤로그.md`
+- **파일명**: `bundler-prologue-thumb.png`
+- **프롬프트**:
+  > A minimalist, flat-design blog cover image for 'JavaScript Bundler Development'. Simple geometric shapes representing multiple modules merging into one package. Soft blue, purple, and white color palette. Clean lines, abstract representation of bundling. Professional, tech-oriented. 16:9 aspect ratio.
+
+### 5. 번들러 시리즈 1: 개념과 도구
+- **대상**: `bundler/[누가 시키지도 않았는데 라이브러리 번들러 만들기] 1. 개념과 도구.md`
+- **파일명**: `bundler-concept-thumb.png`
+- **프롬프트**:
+  > A minimalist, flat-design blog cover image for 'JavaScript Bundler Concepts'. Visualizing the evolution of code modules from chaos to order. Simple geometric shapes representing code blocks connecting together. Soft blue, purple, and white color palette. Clean lines, abstract representation of module linking and magic string transformation. Professional, tech-oriented. 16:9 aspect ratio.
+
 ---
 
 ## 🚀 사용 방법

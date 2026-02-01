@@ -1,9 +1,3 @@
----
-title: 'Step 3: 번들링과 스코프 (Bundling & Scope)'
-date: 2026-01-04
-tags: ['bundler', 'javascript', 'scope', 'runtime', 'cjs', 'esm']
----
-
 # Step 3: 번들링과 스코프 (Bundling & Scope)
 
 메모리상에 구축된 모듈 그래프를 하나의 실행 가능한 파일로 결합하는 과정은 단순한 텍스트 이어 붙이기가 아닙니다. 브라우저 환경에는 존재하지 않는 Node.js의 모듈 시스템을 구현하고, 각 모듈이 서로 간섭하지 않도록 독립적인 실행 환경을 보장해야 합니다. 이번 단계에서는 번들러가 어떻게 **스코프를 격리**하고, **런타임을 구현**하여 코드를 실행하는지 상세히 알아봅니다.
@@ -134,17 +128,18 @@ sequenceDiagram
 
 핵심 함수는 아래 네 가지입니다.
 
-- `transformImportDeclaration()`  
-- `transformExportNamedDeclaration()`  
-- `transformExportAllDeclaration()`  
-- `transformExportDefaultDeclaration()`  
+- `transformImportDeclaration()`
+- `transformExportNamedDeclaration()`
+- `transformExportAllDeclaration()`
+- `transformExportDefaultDeclaration()`
 
 아래는 **실제 코드와 동일한 변환 패턴**(축약본)입니다.
 
 ```typescript
 // Module.ts (요약)
 const depId = this.mapping.get(node.source.value);
-const requireCall = typeof depId === 'number' ? `require(${depId})` : `require('${depId}')`;
+const requireCall =
+  typeof depId === 'number' ? `require(${depId})` : `require('${depId}')`;
 
 // 1) default import
 const _m = requireCall;
@@ -222,14 +217,15 @@ const { sum } = require(1); // './math.js'가 ID: 1로 변환됨
 이 과정은 `Module.ts` 내부의 `transform` 메서드에서 일어납니다. 핵심 로직을 3단계로 쪼개 봅시다.
 
 #### 1단계: 환부 찾기 (AST 탐색)
+
 `acorn`이 파싱한 AST에서 `ImportDeclaration` 타입을 가진 노드를 찾습니다. 이 노드는 다음과 같은 정보를 가지고 있습니다.
 
 ```json
 // AST Node (ImportDeclaration)
 {
   "type": "ImportDeclaration",
-  "start": 0,  // "import"가 시작되는 인덱스
-  "end": 32,   // 세미콜론(;)이 끝나는 인덱스
+  "start": 0, // "import"가 시작되는 인덱스
+  "end": 32, // 세미콜론(;)이 끝나는 인덱스
   "source": {
     "type": "Literal",
     "value": "./math.js" // 👈 우리가 필요한 경로!
@@ -238,13 +234,14 @@ const { sum } = require(1); // './math.js'가 ID: 1로 변환됨
     {
       "type": "ImportSpecifier",
       "imported": { "name": "sum" }, // 가져올 변수명
-      "local": { "name": "sum" }     // 내 파일에서 쓸 변수명
+      "local": { "name": "sum" } // 내 파일에서 쓸 변수명
     }
   ]
 }
 ```
 
 #### 2단계: 매핑 조회 (ID 치환)
+
 번들러는 이미 `Graph`를 만들면서 `'./math.js'`에게 주민등록번호(ID) `1`번을 부여했습니다.
 
 ```typescript
@@ -256,6 +253,7 @@ const moduleId = this.mapping.get(sourcePath); // 1 (Graph가 미리 매핑해�
 ```
 
 #### 3단계: 봉합 수술 (MagicString 조작)
+
 이제 `magic-string`이라는 메스를 들 차례입니다. 원본 코드를 건드리지 않고, 기존 `import` 문을 덮어쓰기(overwrite) 합니다.
 
 ```typescript
