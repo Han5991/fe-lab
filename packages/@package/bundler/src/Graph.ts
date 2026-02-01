@@ -130,7 +130,6 @@ export class Graph {
       bundle.addSource({
         filename: path.relative(process.cwd(), module.filePath),
         content: module.magicString,
-        separator: '\n',
       });
 
       bundle.addSource({
