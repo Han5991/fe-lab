@@ -42,17 +42,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       publishedTime: post.date || undefined,
       images: [
         {
-          url: `/api/og?title=${encodeURIComponent(post.title)}&date=${encodeURIComponent(
-            post.date
-              ? new Date(post.date).toLocaleDateString('ko-KR', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-              })
-              : '',
-          )}`,
+          url: '/og-default.svg',
           width: 1200,
           height: 630,
+          alt: 'FE Lab Blog - Frontend Experimentation',
         },
       ],
     },
