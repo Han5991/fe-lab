@@ -10,13 +10,14 @@
     }
   },
   "scripts": {
-    "build": "tsx ../bundler/src/index.ts"
+    "build": "minibundler"
   },
   "peerDependencies": {
     "react": ">=18",
     "react-dom": ">=18"
   },
   "devDependencies": {
+    "@package/bundler": "workspace:*",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "tsx": "^4.20.6"

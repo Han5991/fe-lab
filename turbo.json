@@ -4,12 +4,14 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "inputs": [
-        "$TURBO_DEFAULT$",
-        ".env*",
-        "$TURBO_ROOT$/apps/blog/posts/**"
-      ],
-      "outputs": [".next/**", "!.next/cache/**", "out/**"]
+      "inputs": ["$TURBO_DEFAULT$", ".env*", "$TURBO_ROOT$/apps/blog/posts/**"],
+      "outputs": [
+        ".next/**",
+        "!.next/cache/**",
+        "out/**",
+        "dist/**",
+        "build/**"
+      ]
     },
     "lint": {
       "dependsOn": ["^lint"]
