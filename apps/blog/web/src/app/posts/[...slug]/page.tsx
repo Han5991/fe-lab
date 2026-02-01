@@ -40,6 +40,21 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       siteName: 'Frontend Lab Blog',
       type: 'article',
       publishedTime: post.date || undefined,
+      images: [
+        {
+          url: `/api/og?title=${encodeURIComponent(post.title)}&date=${encodeURIComponent(
+            post.date
+              ? new Date(post.date).toLocaleDateString('ko-KR', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+              })
+              : '',
+          )}`,
+          width: 1200,
+          height: 630,
+        },
+      ],
     },
     twitter: {
       card: 'summary',
