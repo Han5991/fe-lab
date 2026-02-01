@@ -16,6 +16,19 @@ export const MobileTOC = () => {
     const [toc, setToc] = useState<TOCItem[]>([]);
     const [activeId, setActiveId] = useState<string>('');
 
+    // Body Scroll Lock
+    useEffect(() => {
+        if (isOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'unset';
+        }
+
+        return () => {
+            document.body.style.overflow = 'unset';
+        };
+    }, [isOpen]);
+
     useEffect(() => {
         // DOM이 렌더링된 후 헤더를 찾습니다.
         const updateToc = () => {
