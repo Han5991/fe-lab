@@ -1,5 +1,6 @@
 ---
 title: '결제 시스템 리팩토링: if문 지옥에서 디자인 패턴(Factory, Adapter)으로 탈출하기'
+thumbnail: 'payment-system-architecture-thumb.png'
 date: '2026-01-24'
 published: true
 slug: 'payment-system-architecture'
