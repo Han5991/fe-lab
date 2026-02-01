@@ -42,10 +42,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       publishedTime: post.date || undefined,
       images: [
         {
-          url: '/og-default.svg',
+          url: post.thumbnail
+            ? post.thumbnail.startsWith('http') || post.thumbnail.startsWith('/')
+              ? post.thumbnail
+              : `/posts/${post.relativeDir ? post.relativeDir + '/' : ''}${post.thumbnail}`
+            : '/og-default.png',
           width: 1200,
           height: 630,
-          alt: 'FE Lab Blog - Frontend Experimentation',
+          alt: post.title,
         },
       ],
     },
