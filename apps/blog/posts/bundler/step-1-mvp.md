@@ -12,6 +12,34 @@ excerpt: '웹 개발의 역사가 어떻게 번들러를 필요로 하게 되었
 
 본격적으로 번들러를 구현하기 전에, 우리가 만들고자 하는 도구의 정체와 필요성을 명확히 짚고 넘어갈 필요가 있습니다. 단순히 코드를 합치는 행위를 넘어, 웹 개발의 역사가 왜 번들러라는 도구를 선택하게 되었는지 이해하면 구현의 방향성이 훨씬 선명해집니다.
 
+## 실습 준비: 예제 코드 위치와 흐름
+
+이 시리즈는 레포 안에 이미 준비된 **실습용 예제 코드**를 기준으로 설명합니다. 각 Step에서 어떤 파일을 읽어야 하는지 먼저 알고 가면, "Module.ts / Graph.ts가 어디 있지?" 같은 길 잃는 순간이 없어집니다.
+
+```
+packages/@package/bundler/
+  src/index.ts   # 파이프라인 진입점 (entry 설정 -> build -> generate)
+  src/Graph.ts   # 의존성 그래프/런타임/번들 생성
+  src/Module.ts  # AST 파싱 + ESM->CJS 변환
+
+packages/@package/sample-lib/
+  src/index.js   # 번들러 입력(엔트리) 예제
+  src/components/Button.js
+
+packages/@package/bundler-playground/
+  src/index.js   # 번들 결과물 소비/검증 예제
+  src/a.js
+  src/b.js
+  src/c.js       # 순환 의존성 예제
+```
+
+### 실습 흐름 (Step별로 실제 파일 연결)
+
+- **Step 1**: `src/index.ts`의 전체 파이프라인 감 잡기 (입력 -> 처리 -> 출력)
+- **Step 2**: `src/Module.ts` + `src/Graph.ts`로 AST/그래프 구성 이해
+- **Step 3**: `Graph.generate()`에서 번들 구조, `Module.transform()`에서 ESM→CJS 변환 확인
+- **Step 4**: 소스맵/externals 결과물(`dist/index.js`, `dist/index.mjs`, `dist/index.js.map`) 검증
+
 ---
 
 ## 1. 번들러(Bundler)란 무엇인가?
@@ -145,3 +173,11 @@ console.log('Build completed!');
 ---
 
 이제 기초 체력은 충분히 길렀습니다. 다음 단계에서는 실제로 코드를 데이터로 변환하여 분석하는 **AST 분석과 의존성 그래프 구현**의 세계로 들어가 보겠습니다.
+
+---
+
+## 체크리스트 (Step 1)
+
+- 번들러가 "파일 결합" 이상의 역할(의존성 분석/트랜스파일/최적화)을 한다는 점을 설명할 수 있다.
+- ESM의 **정적 분석 가능성**과 번들러의 그래프 구축 관계를 이해했다.
+- 이후 Step에서 참조할 파일 위치(`packages/@package/bundler/src/...`)를 확인했다.

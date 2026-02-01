@@ -70,6 +70,12 @@ const map = bundle.generateMap({ ... });
 
 ---
 
+### 중간 체크리스트 (소스맵)
+
+- `packages/@package/bundler/src/Graph.ts`에서 `Bundle.generateMap()` 호출을 찾았다.
+- `sources`에 **상대 경로**를 넣는 이유를 이해했다.
+- `dist/index.js.map`에 원본 코드 내용(`includeContent`)이 포함되는지 설명할 수 있다.
+
 ## 2. 외부 의존성(Externals): "남의 집 살림까지 챙기지 마세요"
 
 우리가 라이브러리를 만든다고 가정해 봅시다. 우리 라이브러리가 `react`를 사용한다면, 번들 결과물에 React 전체 코드를 포함해야 할까요?
@@ -98,6 +104,12 @@ Externals 구현의 핵심은 **"빌드 때는 무시하고, 실행 때는 빌�
 
 ---
 
+### 중간 체크리스트 (externals)
+
+- `Graph.createModule()`에서 `isExternal()`로 분기하는 위치를 확인했다.
+- 외부 모듈은 `mapping`에 **문자열**로 저장된다는 점을 이해했다.
+- 런타임 심이 문자열 ID를 받으면 외부 `require`로 전달하는 흐름을 설명할 수 있다.
+
 ## 3. 난관 돌파: 우리가 겪은 버그들
 
 구현 과정에서 겪은 실제 트러블슈팅 경험입니다.
@@ -119,6 +131,89 @@ const React = _mod && _mod.default ? _mod.default : _mod;
 
 ---
 
+## 4. 실습: 예제 코드로 빌드 결과물 생성하기
+
+이제 실제로 번들러를 돌려 결과물을 확인해 봅니다. 아래 커맨드는 **예제 라이브러리(`sample-lib`)를 번들링**하고, 결과물을 **소비자(`bundler-playground`)에서 검증**합니다.
+
+```bash
+# 1) sample-lib 번들 생성 (dist/index.js, dist/index.mjs, dist/index.js.map)
+pnpm --filter @package/sample-lib run build
+
+# 2) 번들 결과물 소비/검증 (externals 동작 확인)
+pnpm --filter @package/bundler-playground run test
+```
+
+### 예상 결과물
+
+빌드 후 아래 파일들이 생성됩니다.
+
+- `packages/@package/sample-lib/dist/index.js`
+- `packages/@package/sample-lib/dist/index.mjs`
+- `packages/@package/sample-lib/dist/index.js.map`
+
+`dist/index.js` 안에는 `Graph.ts`에서 만든 런타임 심이 들어가며, 형태는 대략 아래와 같습니다.
+
+```javascript
+(function(modules, externalRequire) {
+  const cache = {};
+  function require(id) { /* ... */ }
+  const entryExports = require(0);
+  if (typeof module !== 'undefined' && module.exports) {
+    module.exports = entryExports;
+  }
+  return entryExports;
+})({ /* module map */ }, typeof require !== 'undefined' ? require : null);
+```
+
+`bundler-playground` 실행 시 아래 문구가 보이면 externals가 정상 동작하는 것입니다.
+
+- `🎉 Test PASSED: Externals working correctly!`
+
+### 실행 로그 예시
+
+실제 실행 시 콘솔 출력은 아래와 비슷하게 나타납니다.
+
+```bash
+> pnpm --filter @package/sample-lib run build
+
+📦 Minibundler started...
+🔍 Entry: /Users/han/repository/fe-lab/packages/@package/sample-lib/src/index.js
+📂 Processing: /Users/han/repository/fe-lab/packages/@package/sample-lib/src/index.js
+📂 Processing: /Users/han/repository/fe-lab/packages/@package/sample-lib/src/components/Button.js
+🛠️ Generating bundle...
+📦 Generated CJS Bundle: dist/index.js
+🗺️  Generated SourceMap: dist/index.js.map
+✨ Generated Standalone ESM: dist/index.mjs
+✅ Bundle built successfully! (dist/bundle.js)
+📏 Bundle Size: 1236 bytes
+```
+
+```bash
+> pnpm --filter @package/bundler-playground run test
+
+🧪 Bundler Playground: Consumer Mode
+1. Importing Button from @package/sample-lib...
+2. Rendering Button...
+🖼️ Rendered HTML: <button>Click me</button>
+🎉 Test PASSED: Externals working correctly!
+```
+
+### `sources` 상대 경로 확인 예시
+
+소스맵이 절대 경로를 포함하지 않는지 확인하려면 `sources` 배열을 확인하면 됩니다.
+
+```bash
+node -e "const fs=require('node:fs');const map=JSON.parse(fs.readFileSync('dist/index.js.map','utf-8'));console.log(map.sources);"
+```
+
+정상이라면 아래처럼 **`src/` 기준의 상대 경로**가 출력됩니다.
+
+```bash
+[ 'src/index.js', 'src/components/Button.js' ]
+```
+
+---
+
 ## 🏁 마치며: 우리가 배운 것들
 
 우리는 총 4단계에 걸쳐 번들러의 심장을 직접 만들어 보았습니다.
@@ -131,3 +226,11 @@ const React = _mod && _mod.default ? _mod.default : _mod;
 번들러는 더 이상 "검은 상자"가 아닙니다. 우리가 작성한 코드가 어떻게 해석되고, 어떻게 하나로 묶여 브라우저에 전달되는지 그 과정을 이해하게 되었습니다.
 
 이제 에필로그에서 이 여정을 마무리하며, 남은 과제들을 살펴보겠습니다.
+
+---
+
+## 체크리스트 (Step 4)
+
+- `dist/index.js`, `dist/index.mjs`, `dist/index.js.map`이 생성되는지 확인했다.
+- `index.js.map`의 `sources`가 **상대 경로**인지 검증했다.
+- `bundler-playground` 테스트가 통과하여 externals 동작을 확인했다.

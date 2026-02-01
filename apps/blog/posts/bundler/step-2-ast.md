@@ -8,6 +8,19 @@ tags: ['bundler', 'javascript', 'ast', 'acorn', 'graph']
 
 번들러의 핵심 가치는 단일 파일의 처리가 아닌, 프로젝트 전체의 의존 관계를 파악하고 이를 하나로 엮어내는 데 있습니다. 이를 위해 번들러는 코드를 단순한 텍스트가 아닌 **데이터(Data)**로 바라보아야 합니다. 이번 단계에서는 AST를 통해 의존성을 추출하고, 복잡한 파일 간의 관계를 그래프 자료구조로 구축하는 과정을 다룹니다.
 
+## 실습 맵: 실제 파일 위치
+
+이 Step의 핵심 구현은 아래 두 파일에 들어 있습니다. 이 위치를 먼저 확인해두면, 뒤에서 설명하는 `Module`/`Graph` 흐름이 헷갈리지 않습니다.
+
+- `packages/@package/bundler/src/Module.ts`
+- `packages/@package/bundler/src/Graph.ts`
+
+의존성 그래프의 예제 데이터는 다음 폴더에 준비되어 있습니다.
+
+- `packages/@package/bundler-playground/src/a.js`
+- `packages/@package/bundler-playground/src/b.js`
+- `packages/@package/bundler-playground/src/c.js` (순환 참조 예제)
+
 ## 1. AST (Abstract Syntax Tree): 정규표현식의 한계를 넘어서
 
 코드를 분석할 때 가장 먼저 떠오르는 도구는 정규표현식(Regex)일 수 있습니다. 하지만 정규표현식은 번들러와 같은 정밀한 도구를 만들기에는 결정적인 한계가 있습니다.
@@ -105,8 +118,64 @@ class DependencyGraph {
 
 ---
 
+## 4. 실습 포인트: `Module.ts`와 `Graph.ts` 연결하기
+
+실제 구현에서는 아래 흐름으로 Step 2의 개념이 연결됩니다.
+
+1. `Module.ts`에서 `acorn.parse()`로 AST 생성
+2. `init()`에서 `ImportDeclaration`, `Export...`를 순회하며 `dependencies` 수집
+3. `Graph.ts`의 `createModule()`이 `Module`을 만들고 `mapping`에 **import 경로 → 모듈 ID**를 등록
+
+이 과정에서 `Graph.ts`의 `modules` 맵이 **Visited Map** 역할을 하며, `a.js -> c.js -> a.js` 같은 순환 참조를 안전하게 막습니다.
+
+---
+
+### 실행 로그 예시 (의존성 그래프 생성)
+
+아래는 번들러가 실제로 모듈을 탐색하며 그래프를 구축할 때의 로그 예시입니다.
+
+```bash
+📦 Minibundler started...
+🔍 Entry: /Users/han/repository/fe-lab/packages/@package/sample-lib/src/index.js
+📂 Processing: /Users/han/repository/fe-lab/packages/@package/sample-lib/src/index.js
+📂 Processing: /Users/han/repository/fe-lab/packages/@package/sample-lib/src/components/Button.js
+```
+
+`Processing` 로그가 **그래프 탐색 순서**를 그대로 보여줍니다.  
+한 번 처리된 파일은 `modules` 맵에 기록되어, 다시 방문하지 않습니다.
+
+---
+
+### 순환 의존성 로그 예시 (추가 실습)
+
+`bundler-playground/src/a.js → c.js → a.js`는 순환 의존성 구조입니다.  
+이 케이스를 확인하려면 **entry를 임시로 변경**해 그래프를 만들어 보세요.
+
+1) `packages/@package/bundler/src/index.ts`의 entry를 `bundler-playground/src/a.js`로 변경  
+2) 번들러 실행 후 로그 확인
+
+```bash
+📦 Minibundler started...
+🔍 Entry: /Users/han/repository/fe-lab/packages/@package/bundler-playground/src/a.js
+📂 Processing: /Users/han/repository/fe-lab/packages/@package/bundler-playground/src/a.js
+📂 Processing: /Users/han/repository/fe-lab/packages/@package/bundler-playground/src/c.js
+```
+
+`a.js`가 다시 등장하지 않는 것이 포인트입니다.  
+`modules.has(filePath)` 체크가 **무한 재귀를 차단**하고 있기 때문입니다.
+
+---
+
 ## 4. 마치며
 
 이제 우리는 코드를 데이터(AST)로 읽어내고, 경로를 해석(Resolve)하며, 전체 구조를 지도(Graph)로 그려낼 수 있게 되었습니다.
 
 모든 파일의 내용과 그들 사이의 연결 고리를 확보했으므로, 다음 단계에서는 이 파편화된 파일들을 하나의 실행 가능한 자바스크립트 파일로 합치는 **번들링(Bundling)**과 **스코프 격리**에 대해 알아보겠습니다.
+
+---
+
+## 체크리스트 (Step 2)
+
+- `Module.ts`에서 AST를 생성하고 `dependencies`를 수집하는 위치를 찾았다.
+- `Graph.ts`에서 `modules.has(filePath)`로 순환 참조를 막는 이유를 이해했다.
+- `bundler-playground/src/a.js -> c.js -> a.js`가 순환 구조라는 것을 확인했다.

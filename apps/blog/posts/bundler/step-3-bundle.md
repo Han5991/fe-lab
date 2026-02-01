@@ -113,7 +113,7 @@ sequenceDiagram
 
 ---
 
-## 4. 문법 변환 (ESM to CJS Transform)
+## 5. 문법 변환 (ESM to CJS Transform)
 
 최신 자바스크립트에서는 `import/export`(ESM) 문법을 사용하지만, 위에서 구현한 런타임은 `require/exports`(CJS) 구조를 기반으로 합니다. 따라서 빌드 과정에서 추상 구문 트리(AST)를 분석하여 문법을 변환하는 작업이 필요합니다.
 
@@ -123,6 +123,90 @@ sequenceDiagram
 | **이름 내보내기** | `export const b = 1`      | `const b = 1; exports.b = b`         | `exports` 객체에 속성을 추가합니다.       |
 | **기본 내보내기** | `export default c`        | `exports.default = c`                | `default`라는 이름의 속성으로 할당합니다. |
 | **전체 내보내기** | `export * from './a'`     | `Object.assign(exports, require(1))` | 대상 모듈의 모든 수출항을 복사합니다.     |
+
+### 실제 구현 흐름 (코드 위치 포함)
+
+이 변환 로직은 `packages/@package/bundler/src/Module.ts` 안에 그대로 구현되어 있습니다. 흐름은 다음과 같습니다.
+
+1. **AST 파싱**: `acorn.parse(content, { ecmaVersion: 'latest', sourceType: 'module' })`
+2. **모듈 그래프 매핑**: `Graph.createModule()`에서 import 경로를 숫자 ID로 매핑
+3. **변환 실행**: `Module.transform()`에서 AST를 순회하며 `MagicString`으로 코드 조작
+
+핵심 함수는 아래 네 가지입니다.
+
+- `transformImportDeclaration()`  
+- `transformExportNamedDeclaration()`  
+- `transformExportAllDeclaration()`  
+- `transformExportDefaultDeclaration()`  
+
+아래는 **실제 코드와 동일한 변환 패턴**(축약본)입니다.
+
+```typescript
+// Module.ts (요약)
+const depId = this.mapping.get(node.source.value);
+const requireCall = typeof depId === 'number' ? `require(${depId})` : `require('${depId}')`;
+
+// 1) default import
+const _m = requireCall;
+const local = _m && _m.__esModule ? _m.default : _m;
+
+// 2) named import
+const { a, b: localB } = requireCall;
+
+// 3) side effect import
+requireCall;
+```
+
+### 함수 흐름 다이어그램 (Module.ts 기준)
+
+`Module.transform()`이 어떤 순서로 변환 로직을 호출하는지 한눈에 보는 흐름입니다.
+
+```mermaid
+flowchart TD
+  A[Graph.generate] --> B[modules.forEach(module.transform)]
+  B --> C[Module.transform]
+  C --> D{node.type}
+  D -->|ImportDeclaration| E[transformImportDeclaration]
+  D -->|ExportNamedDeclaration| F[transformExportNamedDeclaration]
+  D -->|ExportAllDeclaration| G[transformExportAllDeclaration]
+  D -->|ExportDefaultDeclaration| H[transformExportDefaultDeclaration]
+  E --> I[MagicString.overwrite/remove/append]
+  F --> I
+  G --> I
+  H --> I
+```
+
+변환은 **AST 노드 타입 분기 → MagicString 조작**이라는 단순한 규칙을 반복합니다.  
+그래서 전체 구조를 이해하면 edge case를 추가하는 것도 어렵지 않습니다.
+
+### 변환 전/후 예시 (실제 파일 기준)
+
+`packages/@package/sample-lib/src/index.js`를 번들링하면, 아래처럼 변환됩니다.  
+모듈 ID는 그래프 탐색 순서에 따라 달라질 수 있지만, 여기서는 `Button` 모듈이 `1`번이라고 가정합니다.
+
+```javascript
+// ESM (입력)
+import { Button } from './components/Button.js';
+
+export { Button };
+export const version = '1.0.0';
+```
+
+```javascript
+// CJS (출력)
+const { Button } = require(1);
+
+exports.Button = Button;
+const version = '1.0.0';
+exports.version = version;
+```
+
+### edge case 처리 포인트
+
+- **Default Import Interop**: `__esModule` 플래그가 없으면 모듈 자체를 사용합니다.
+- **Side Effect Import**: `import './x.js'`는 단순 `require()` 호출만 남깁니다.
+- **Re-export**: `export { a } from './b'`는 `exports.a = require(1).a`로 변환됩니다.
+- **Export All**: `export * from './b'`는 `Object.assign(exports, require(1))`로 처리됩니다.
 
 > **💡 순환 참조(Circular Dependency)는 어떻게 해결되나요?**
 >
@@ -137,7 +221,7 @@ sequenceDiagram
 
 ---
 
-## 5. 결과물의 형태: Dual Package 전략
+## 6. 결과물의 형태: Dual Package 전략
 
 우리가 만든 번들러는 내부적으로 ESM 코드를 CJS(`require`) 런타임 위에서 돌아가도록 변환했습니다. 그렇다면 최종 결과물은 CJS 파일 하나만 나오는 걸까요?
 
@@ -161,8 +245,16 @@ sequenceDiagram
 
 ---
 
-## 6. 요약
+## 7. 요약
 
 번들링의 핵심은 단순히 파일을 합치는 것을 넘어, **격리된 스코프**를 제공하고 브라우저가 이해할 수 없는 **모듈 시스템을 런타임으로 재현**하는 데 있습니다. 이를 통해 개발자는 모듈화된 설계를 유지하면서도, 브라우저 환경에서 안정적으로 동작하는 단일 실행 파일을 얻게 됩니다.
 
 다음 단계에서는 실행 중인 번들 코드와 원본 소스 코드를 연결해 주는 **Step 4: 소스맵(SourceMap)**에 대해 알아보겠습니다.
+
+---
+
+## 체크리스트 (Step 3)
+
+- `Graph.generate()`가 모듈을 함수로 감싸고 런타임 심을 주입하는 위치를 확인했다.
+- `Module.transform()`에서 ESM→CJS 변환이 어떻게 이루어지는지 이해했다.
+- Default Import/Side Effect/Export All 같은 케이스가 별도로 처리되는 이유를 설명할 수 있다.
