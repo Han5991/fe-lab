@@ -118,4 +118,30 @@ console.log(s.toString()); // name = 'bundler';
 
 ---
 
+## 6. 실전: 10줄로 만드는 초미니 번들러
+
+개념만 공부하고 넘어가기엔 손이 근질거리지 않나요? 앞서 배운 내용들을 종합해, 파일 하나를 읽어서 그대로 내보내는 세상에서 가장 단순한 번들러를 만들어보며 1단계를 마무리합시다.
+
+```javascript
+import fs from 'node:fs';
+import MagicString from 'magic-string';
+
+// 1. 파일 읽기 (모듈 해석 단계의 기초)
+const content = fs.readFileSync('./src/index.js', 'utf-8');
+
+// 2. MagicString으로 감싸기 (변환의 기초)
+const bundle = new MagicString(content);
+
+// 3. (가정) 여기서 코드를 분석하고 변환하는 작업이 들어갑니다.
+bundle.prepend('/* Bundled by Me */\n');
+
+// 4. 결과물 쓰기 (생성 단계)
+fs.writeFileSync('./dist/bundle.js', bundle.toString());
+console.log('Build completed!');
+```
+
+이 10줄 남짓한 코드가 바로 우리가 만들 거대한 번들러의 **아주 작은 씨앗(MVP)**입니다. 지금은 단순히 파일을 복사하는 수준이지만, 앞으로 우리는 저 3번 주석 자리에 **AST 분석, 의존성 그래프 탐색, 코드 변환 로직**을 하나씩 채워 넣을 것입니다.
+
+---
+
 이제 기초 체력은 충분히 길렀습니다. 다음 단계에서는 실제로 코드를 데이터로 변환하여 분석하는 **AST 분석과 의존성 그래프 구현**의 세계로 들어가 보겠습니다.
