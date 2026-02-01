@@ -3,14 +3,18 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "bin": {
+    "minibundler": "./dist/index.js"
+  },
   "scripts": {
-    "build": "tsx ./src/index.ts",
-    "dev": "tsx --watch ./src/index.ts"
+    "build": "tsup src/index.ts --format esm --clean",
+    "dev": "tsup src/index.ts --format esm --clean --watch"
   },
   "devDependencies": {
     "@types/estree": "^1.0.8",
     "@types/node": "^24.10.4",
     "magic-string": "^0.30.21",
+    "tsup": "8.4.0",
     "tsx": "^4.19.2",
     "typescript": "5.9.3"
   },
