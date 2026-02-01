@@ -41,7 +41,7 @@ export class Module {
   ast: AcornProgram;
   magicString: MagicString;
   dependencies: string[];
-  mapping: Map<string, number> = new Map();
+  mapping: Map<string, number | string> = new Map();
   exportsList: string[] = [];
   exportAllSources: string[] = [];
 
@@ -70,11 +70,11 @@ export class Module {
     this.ast.body.forEach(node => {
       // 1. Import 분석
       if (node.type === 'ImportDeclaration') {
-         if (node.source && typeof node.source.value === 'string') {
-           this.dependencies.push(node.source.value);
-         }
+        if (node.source && typeof node.source.value === 'string') {
+          this.dependencies.push(node.source.value);
+        }
       }
-      
+
       // 2. Export Named 분석 (export const a = 1;)
       else if (node.type === 'ExportNamedDeclaration') {
         if (node.declaration) {
@@ -84,7 +84,7 @@ export class Module {
             });
           } else if (
             (node.declaration.type === 'FunctionDeclaration' ||
-             node.declaration.type === 'ClassDeclaration') &&
+              node.declaration.type === 'ClassDeclaration') &&
             node.declaration.id
           ) {
             this.exportsList.push(node.declaration.id.name);
@@ -92,13 +92,13 @@ export class Module {
         } else if (node.specifiers) {
           // export { a, b }
           node.specifiers.forEach(s => {
-             this.exportsList.push(this.getSpecifierName(s.exported));
+            this.exportsList.push(this.getSpecifierName(s.exported));
           });
         }
-        
+
         // Re-export (export { a } from './b') 처리
         if (node.source && typeof node.source.value === 'string') {
-           this.dependencies.push(node.source.value);
+          this.dependencies.push(node.source.value);
         }
       }
 
@@ -165,11 +165,18 @@ export class Module {
     );
 
     let replacement = '';
+    const requireCall =
+      typeof depId === 'number' ? `require(${depId})` : `require('${depId}')`;
+
     if (namespaceSpecifier) {
-      replacement += `const ${namespaceSpecifier.local.name} = require(${depId});\n`;
+      replacement += `const ${namespaceSpecifier.local.name} = ${requireCall};\n`;
     } else if (defaultSpecifier || namedSpecifiers.length > 0) {
       if (defaultSpecifier) {
-        replacement += `const ${defaultSpecifier.local.name} = require(${depId}).default;\n`;
+        const localName = defaultSpecifier.local.name;
+        // Default Import Interop 처리
+        // (require 결과에 default가 있으면 쓰고, 없으면 모듈 자체를 사용)
+        replacement += `const _${localName}_module = ${requireCall};\n`;
+        replacement += `const ${localName} = _${localName}_module && _${localName}_module.__esModule ? _${localName}_module.default : _${localName}_module;\n`;
       }
       if (namedSpecifiers.length > 0) {
         const specifierStr = namedSpecifiers
@@ -181,11 +188,11 @@ export class Module {
               : `${importedName}: ${localName}`;
           })
           .join(', ');
-        replacement += `const { ${specifierStr} } = require(${depId});\n`;
+        replacement += `const { ${specifierStr} } = ${requireCall};\n`;
       }
     } else {
       // import './file.js' (Side effect)
-      replacement += `require(${depId});\n`;
+      replacement += `${requireCall};\n`;
     }
 
     this.magicString.overwrite(node.start, node.end, replacement);
@@ -199,11 +206,14 @@ export class Module {
     if (node.source && typeof node.source.value === 'string') {
       // export { a, b } from './file.js';
       const depId = this.mapping.get(node.source.value);
+      const requireCall =
+        typeof depId === 'number' ? `require(${depId})` : `require('${depId}')`;
+
       const specifierStr = node.specifiers
         .map(s => {
           const localName = this.getSpecifierName(s.local);
           const exportedName = this.getSpecifierName(s.exported);
-          return `exports.${exportedName} = require(${depId}).${localName};`;
+          return `exports.${exportedName} = ${requireCall}.${localName};`;
         })
         .join('\n');
       this.magicString.overwrite(node.start, node.end, specifierStr);
@@ -255,10 +265,13 @@ export class Module {
   ) {
     if (typeof node.source.value !== 'string') return;
     const depId = this.mapping.get(node.source.value);
+    const requireCall =
+      typeof depId === 'number' ? `require(${depId})` : `require('${depId}')`;
+
     this.magicString.overwrite(
       node.start,
       node.end,
-      `Object.assign(exports, require(${depId}));`,
+      `Object.assign(exports, ${requireCall});`,
     );
   }
 
