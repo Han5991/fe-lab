@@ -3,7 +3,7 @@ title: 'Step 1. 번들러의 시작: 개념 파악과 기술적 토대 다지기
 description: '본격적인 구현에 앞서 번들러의 역사와 핵심 원리인 ESM의 특징, 그리고 코드 조작을 위한 도구를 살펴봅니다.'
 date: '2026-01-11'
 slug: 'no-one-asked-library-bundler-01-concept'
-published: true
+published: false
 tags: ['bundler', 'javascript', 'esm', 'frontend']
 excerpt: '웹 개발의 역사가 어떻게 번들러를 필요로 하게 되었을까요? 우리가 만들 번들러의 근간이 되는 ESM과 Magic String의 정체를 알아봅니다.'
 ---
