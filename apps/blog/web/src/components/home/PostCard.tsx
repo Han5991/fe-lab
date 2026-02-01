@@ -8,6 +8,13 @@ interface PostCardProps {
 }
 
 export function PostCard({ post, rank }: PostCardProps) {
+    const rankStyleProps =
+        rank === 1
+            ? { bg: 'yellow.100', color: 'yellow.700' }
+            : rank === 2
+                ? { bg: 'gray.100', color: 'gray.700' }
+                : { bg: 'orange.100', color: 'orange.700' };
+
     return (
         <Link
             href={`/posts/${post.slug}`}
@@ -37,10 +44,9 @@ export function PostCard({ post, rank }: PostCardProps) {
                             w: '8',
                             h: '8',
                             rounded: 'full',
-                            bg: rank === 1 ? 'yellow.100' : rank === 2 ? 'gray.100' : 'orange.100',
-                            color: rank === 1 ? 'yellow.700' : rank === 2 ? 'gray.700' : 'orange.700',
                             fontWeight: 'bold',
                             fontSize: 'sm',
+                            ...rankStyleProps,
                         })}
                     >
                         {rank}
@@ -48,7 +54,7 @@ export function PostCard({ post, rank }: PostCardProps) {
                 )}
                 {post.date && (
                     <time className={css({ fontSize: 'sm', color: 'gray.400' })}>
-                        {new Date(post.date).toLocaleDateString()}
+                        {new Date(post.date).toLocaleDateString('ko-KR')}
                     </time>
                 )}
             </div>

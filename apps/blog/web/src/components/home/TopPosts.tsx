@@ -32,9 +32,11 @@ export function TopPosts({ posts }: TopPostsProps) {
                     return;
                 }
 
+                const postsBySlug = new Map(posts.map(p => [p.slug, p]));
+
                 const rankedPosts = data
                     .map(view => {
-                        const post = posts.find(p => p.slug === view.slug);
+                        const post = postsBySlug.get(view.slug);
                         if (!post) return null;
                         return { ...post, viewCount: view.view_count };
                     })
