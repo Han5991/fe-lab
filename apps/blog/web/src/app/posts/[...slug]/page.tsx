@@ -40,6 +40,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       siteName: 'Frontend Lab Blog',
       type: 'article',
       publishedTime: post.date || undefined,
+      images: [
+        {
+          url: '/og-default.svg',
+          width: 1200,
+          height: 630,
+          alt: 'FE Lab Blog - Frontend Experimentation',
+        },
+      ],
     },
     twitter: {
       card: 'summary',
