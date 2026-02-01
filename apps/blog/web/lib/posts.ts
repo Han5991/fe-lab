@@ -54,7 +54,7 @@ export function getAllPosts(): PostData[] {
           date: data.date || null,
           content,
           excerpt: data.excerpt || cleanContent.slice(0, 160) + '...',
-          thumbnail: data.thumbnail,
+          thumbnail: typeof data.thumbnail === 'string' ? data.thumbnail : undefined,
         });
       }
     }
