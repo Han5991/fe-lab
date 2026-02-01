@@ -1,17 +1,3 @@
----
-title: 'Step 4: 소스맵(SourceMap)과 외부 의존성(Externals)'
-date: 2026-01-11
-tags:
-  [
-    'bundler',
-    'javascript',
-    'sourcemap',
-    'externals',
-    'magic-string',
-    'debugging',
-  ]
----
-
 # Step 4: 소스맵(SourceMap)과 외부 의존성(Externals)
 
 번들러가 코드를 성공적으로 합치고 실행까지 시켰다면, 이제는 **사용성(DX, Developer Experience)**과 **효율성**을 챙길 차례입니다. 우리가 만든 번들러를 실제 프로젝트에 쓰려면 넘어야 할 두 가지 큰 산이 있습니다.
@@ -154,15 +140,22 @@ pnpm --filter @package/bundler-playground run test
 `dist/index.js` 안에는 `Graph.ts`에서 만든 런타임 심이 들어가며, 형태는 대략 아래와 같습니다.
 
 ```javascript
-(function(modules, externalRequire) {
+(function (modules, externalRequire) {
   const cache = {};
-  function require(id) { /* ... */ }
+  function require(id) {
+    /* ... */
+  }
   const entryExports = require(0);
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = entryExports;
   }
   return entryExports;
-})({ /* module map */ }, typeof require !== 'undefined' ? require : null);
+})(
+  {
+    /* module map */
+  },
+  typeof require !== 'undefined' ? require : null,
+);
 ```
 
 `bundler-playground` 실행 시 아래 문구가 보이면 externals가 정상 동작하는 것입니다.
