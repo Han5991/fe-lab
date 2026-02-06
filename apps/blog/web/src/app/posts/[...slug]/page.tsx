@@ -54,9 +54,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       ],
     },
     twitter: {
-      card: 'summary',
+      card: 'summary_large_image',
       title: post.title,
       description: post.excerpt || post.content.slice(0, 160) + '...',
+      images: [
+        post.thumbnail
+          ? post.thumbnail.startsWith('http') || post.thumbnail.startsWith('/')
+            ? post.thumbnail
+            : `/posts/${post.relativeDir ? post.relativeDir + '/' : ''}${post.thumbnail}`
+          : '/og-default.png',
+      ],
     },
   };
 }
