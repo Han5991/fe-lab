@@ -7,6 +7,28 @@ import type { Metadata } from 'next';
 export const metadata: Metadata = {
   title: 'Posts | Frontend Lab',
   description: '프론트엔드 실험실의 모든 기록들을 확인해보세요.',
+  openGraph: {
+    title: 'Posts | Frontend Lab',
+    description: '프론트엔드 실험실의 모든 기록들을 확인해보세요.',
+    url: 'https://blog.sangwook.dev/posts',
+    siteName: 'Frontend Lab',
+    images: [
+      {
+        url: '/og-default.png',
+        width: 1200,
+        height: 630,
+        alt: 'Frontend Lab Blog Posts',
+      },
+    ],
+    locale: 'ko_KR',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Posts | Frontend Lab',
+    description: '프론트엔드 실험실의 모든 기록들을 확인해보세요.',
+    images: ['/og-default.png'],
+  },
 };
 
 export default function PostsPage() {

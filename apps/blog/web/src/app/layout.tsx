@@ -11,6 +11,30 @@ export const metadata: Metadata = {
   title: 'Frontend Lab | 프론트엔드 실험실',
   description:
     '프론트엔드 기술 실험과 깊이 있는 학습 내용을 공유하는 공간입니다.',
+  openGraph: {
+    title: 'Frontend Lab | 프론트엔드 실험실',
+    description:
+      '프론트엔드 기술 실험과 깊이 있는 학습 내용을 공유하는 공간입니다.',
+    url: 'https://blog.sangwook.dev',
+    siteName: 'Frontend Lab',
+    images: [
+      {
+        url: '/og-default.png',
+        width: 1200,
+        height: 630,
+        alt: 'Frontend Lab Blog',
+      },
+    ],
+    locale: 'ko_KR',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Frontend Lab | 프론트엔드 실험실',
+    description:
+      '프론트엔드 기술 실험과 깊이 있는 학습 내용을 공유하는 공간입니다.',
+    images: ['/og-default.png'],
+  },
   verification: {
     other: {
       'naver-site-verification': '8f6135bb66d952d10dd08c6460797fd98fa26823',
