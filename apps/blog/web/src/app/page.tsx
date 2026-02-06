@@ -4,6 +4,37 @@ import { SsgoiTransition } from '@ssgoi/react';
 import { getAllPosts } from '@/lib/posts';
 import { TopPosts } from '@/src/components/home/TopPosts';
 import { PostCard } from '@/src/components/home/PostCard';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Frontend Lab | 프론트엔드 실험실',
+  description:
+    '프론트엔드 기술 실험과 깊이 있는 학습 내용을 공유하는 공간입니다.',
+  openGraph: {
+    title: 'Frontend Lab | 프론트엔드 실험실',
+    description:
+      '프론트엔드 기술 실험과 깊이 있는 학습 내용을 공유하는 공간입니다.',
+    url: 'https://blog.sangwook.dev',
+    siteName: 'Frontend Lab',
+    images: [
+      {
+        url: 'https://blog.sangwook.dev/og-default.png',
+        width: 1200,
+        height: 630,
+        alt: 'Frontend Lab Blog',
+      },
+    ],
+    locale: 'ko_KR',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Frontend Lab | 프론트엔드 실험실',
+    description:
+      '프론트엔드 기술 실험과 깊이 있는 학습 내용을 공유하는 공간입니다.',
+    images: ['https://blog.sangwook.dev/og-default.png'],
+  },
+};
 
 export default function HomePage() {
   const allPosts = getAllPosts();
