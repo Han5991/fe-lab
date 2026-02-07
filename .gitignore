@@ -47,5 +47,4 @@ yarn-error.log*
 /.idea/
 /apps/blog/web/public/posts/
 
-.gemini/
 gha-creds-*.json
