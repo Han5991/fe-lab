@@ -16,8 +16,6 @@ interface PostItem {
 
 interface PostsFilterProps {
     posts: PostItem[];
-    allTags: string[];
-    allSeries: string[];
 }
 
 type TabKey = 'all' | 'series' | 'tags';
@@ -106,6 +104,13 @@ export const PostsFilter = ({ posts }: PostsFilterProps) => {
     const [seriesQuery, setSeriesQuery] = useState('');
     const [tagQuery, setTagQuery] = useState('');
 
+    // 전체 탭 필터링
+    const filteredAll = useMemo(() => {
+        const q = allQuery.toLowerCase().trim();
+        if (!q) return posts;
+        return posts.filter(p => p.title.toLowerCase().includes(q) || p.excerpt.toLowerCase().includes(q));
+    }, [posts, allQuery]);
+
     // 시리즈별 그룹
     const seriesGroups = useMemo(() => {
         const groups: Record<string, PostItem[]> = {};
@@ -191,32 +196,26 @@ export const PostsFilter = ({ posts }: PostsFilterProps) => {
             </div>
 
             {/* ─── 전체 뷰 ─── */}
-            {activeTab === 'all' && (() => {
-                const q = allQuery.toLowerCase().trim();
-                const filtered = q
-                    ? posts.filter(p => p.title.toLowerCase().includes(q) || p.excerpt.toLowerCase().includes(q))
-                    : posts;
-                return (
-                    <>
-                        <InlineSearch
-                            value={allQuery}
-                            onChange={setAllQuery}
-                            placeholder="글 제목 또는 내용 검색..."
-                        />
-                        <div className={css({ display: 'flex', flexDirection: 'column', gap: '8' })}>
-                            {filtered.length === 0 ? (
-                                <p className={css({ py: '12', textAlign: 'center', color: 'gray.400' })}>
-                                    검색 결과가 없습니다.
-                                </p>
-                            ) : (
-                                filtered.map(post => (
-                                    <PostCard key={post.slug} post={post} />
-                                ))
-                            )}
-                        </div>
-                    </>
-                );
-            })()}
+            {activeTab === 'all' && (
+                <>
+                    <InlineSearch
+                        value={allQuery}
+                        onChange={setAllQuery}
+                        placeholder="글 제목 또는 내용 검색..."
+                    />
+                    <div className={css({ display: 'flex', flexDirection: 'column', gap: '8' })}>
+                        {filteredAll.length === 0 ? (
+                            <p className={css({ py: '12', textAlign: 'center', color: 'gray.400' })}>
+                                검색 결과가 없습니다.
+                            </p>
+                        ) : (
+                            filteredAll.map(post => (
+                                <PostCard key={post.slug} post={post} />
+                            ))
+                        )}
+                    </div>
+                </>
+            )}
 
             {/* ─── 시리즈 뷰 ─── */}
             {activeTab === 'series' && (

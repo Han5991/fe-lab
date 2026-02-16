@@ -51,26 +51,6 @@ const jsonLd = {
 export default function PostsPage() {
   const posts = getAllPosts();
 
-  // 태그 & 시리즈 목록 추출 (빈도순 정렬)
-  const tagCounts = new Map<string, number>();
-  const seriesSet = new Set<string>();
-
-  for (const post of posts) {
-    if (post.tags) {
-      for (const tag of post.tags) {
-        tagCounts.set(tag, (tagCounts.get(tag) || 0) + 1);
-      }
-    }
-    if (post.series) {
-      seriesSet.add(post.series);
-    }
-  }
-
-  const allTags = [...tagCounts.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .map(([tag]) => tag);
-  const allSeries = [...seriesSet];
-
   const postsData = posts.map(p => ({
     slug: p.slug,
     title: p.title,
@@ -111,7 +91,7 @@ export default function PostsPage() {
             </p>
           </header>
 
-          <PostsFilter posts={postsData} allTags={allTags} allSeries={allSeries} />
+          <PostsFilter posts={postsData} />
         </div>
       </SsgoiTransition>
     </>

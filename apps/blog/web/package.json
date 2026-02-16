@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "pnpm supabase-start && next dev",
-    "prebuild": "node sync-posts.mjs && node generate-sitemap.mjs && node generate-search-index.mjs",
+    "prebuild": "node sync-posts.mjs && node generate-sitemap.mjs && tsx scripts/generate-search-index.ts",
     "build": "pnpm prebuild && next build",
     "start": "next start",
     "lint": "next lint",
@@ -51,6 +51,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.1.1",
     "supabase": "^2.70.5",
+    "tsx": "^4.21.0",
     "typescript": "catalog:typescript5"
   }
 }
