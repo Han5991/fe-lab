@@ -100,7 +100,7 @@ function InlineSearch({ value, onChange, placeholder }: { value: string; onChang
 }
 
 /* ─── Main Component ─── */
-export const PostsFilter = ({ posts, allTags, allSeries }: PostsFilterProps) => {
+export const PostsFilter = ({ posts }: PostsFilterProps) => {
     const [activeTab, setActiveTab] = useState<TabKey>('all');
     const [allQuery, setAllQuery] = useState('');
     const [seriesQuery, setSeriesQuery] = useState('');
