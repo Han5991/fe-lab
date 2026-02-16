@@ -84,6 +84,12 @@ export default async function PostPage({ params }: Props) {
     ? { prev: seriesAdj.prev, next: seriesAdj.next, seriesName: seriesAdj.seriesName }
     : null;
 
+  const thumbnailUrl = post.thumbnail
+    ? post.thumbnail.startsWith('http') || post.thumbnail.startsWith('/')
+      ? post.thumbnail
+      : `/posts/${post.relativeDir ? post.relativeDir + '/' : ''}${post.thumbnail}`
+    : '/og-default.png';
+
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'BlogPosting',
@@ -91,6 +97,11 @@ export default async function PostPage({ params }: Props) {
     datePublished: post.date,
     dateModified: post.date,
     description: post.excerpt || post.content.slice(0, 160) + '...',
+    image: `https://blog.sangwook.dev${thumbnailUrl}`,
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': `https://blog.sangwook.dev/posts/${slug}`,
+    },
     author: {
       '@type': 'Person',
       name: 'Sangwook Han',

@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Frontend Lab | 프론트엔드 실험실</title>
+    <link>https://blog.sangwook.dev</link>
+    <description>프론트엔드 기술 실험과 깊이 있는 학습 내용을 공유하는 공간입니다.</description>
+    <language>ko</language>
+    <lastBuildDate>Mon, 16 Feb 2026 08:11:06 GMT</lastBuildDate>
+    <atom:link href="https://blog.sangwook.dev/rss.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>[누가 시키지도 않았는데 번들러 만들기] 2. 코드를 데이터로 보는 법 (AST Graph)</title>
+      <link>https://blog.sangwook.dev/posts/no-one-asked-library-bundler-02-ast-graph/</link>
+      <guid isPermaLink="true">https://blog.sangwook.dev/posts/no-one-asked-library-bundler-02-ast-graph/</guid>
+      <pubDate>Tue, 17 Feb 2026 00:00:00 GMT</pubDate>
+      <description>정규표현식으로 import 문을 찾으려다 실패한 경험, 그리고 AST 추상 구문 트리를 통해 코드를 데이터로 바라보는 관점을 소개합니다. 파일 시스템을 그래프로 변환하는 과정을 직접 구현해봅니다.</description>
+    </item>
+    <item>
+      <title>[누가 시키지도 않았는데 번들러 만들기] 0. 프롤로그: 질문이 구현이 되는 순간</title>
+      <link>https://blog.sangwook.dev/posts/no-one-asked-library-bundler-00-prologue/</link>
+      <guid isPermaLink="true">https://blog.sangwook.dev/posts/no-one-asked-library-bundler-00-prologue/</guid>
+      <pubDate>Mon, 02 Feb 2026 00:00:00 GMT</pubDate>
+      <description>수많은 소스 코드가 어떻게 하나의 결과물로 합쳐질까요? 당연하게 사용하던 번들러의 블랙박스를 열고, 직접 손으로 구현하며 그 답을 찾아봅니다.</description>
+    </item>
+    <item>
+      <title>[누가 시키지도 않았는데 번들러 만들기] 1. 개념과 도구: 번들러의 등장 배경</title>
+      <link>https://blog.sangwook.dev/posts/no-one-asked-library-bundler-01-concept/</link>
+      <guid isPermaLink="true">https://blog.sangwook.dev/posts/no-one-asked-library-bundler-01-concept/</guid>
+      <pubDate>Mon, 02 Feb 2026 00:00:00 GMT</pubDate>
+      <description>코드를 번들링해야 하는 기술적 이유와 자바스크립트 모듈 시스템의 발전 과정을 살펴봅니다. 또한 번들러 구현의 기반이 되는 Magic String 라이브러리를 소개합니다.</description>
+    </item>
+    <item>
+      <title>결제 시스템 리팩토링: if문 지옥에서 디자인 패턴(Factory, Adapter)으로 탈출하기</title>
+      <link>https://blog.sangwook.dev/posts/payment-system-architecture/</link>
+      <guid isPermaLink="true">https://blog.sangwook.dev/posts/payment-system-architecture/</guid>
+      <pubDate>Sat, 24 Jan 2026 00:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>2025 회고: 글 33개, PR 38회, 발표 3회로 &apos;보여주는 개발자&apos;가 되다</title>
+      <link>https://blog.sangwook.dev/posts/2025-retrospect/</link>
+      <guid isPermaLink="true">https://blog.sangwook.dev/posts/2025-retrospect/</guid>
+      <pubDate>Sun, 21 Dec 2025 00:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>2025 Teoconf 발표 후기</title>
+      <link>https://blog.sangwook.dev/posts/2025-teoconf-presentation/</link>
+      <guid isPermaLink="true">https://blog.sangwook.dev/posts/2025-teoconf-presentation/</guid>
+      <pubDate>Thu, 11 Dec 2025 00:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>하루 만에 끝날 줄 알았던 디자인 시스템 배포가 3주 걸린 이유</title>
+      <link>https://blog.sangwook.dev/posts/npm-deploy-series-0-prologue/</link>
+      <guid isPermaLink="true">https://blog.sangwook.dev/posts/npm-deploy-series-0-prologue/</guid>
+      <pubDate>Sun, 30 Nov 2025 00:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>[Typescript로 설계하는 프로젝트] 타입 한 줄로 552개 파일을 2주 만에 안전하게 수정한 방법</title>
+      <link>https://blog.sangwook.dev/posts/typescript-project-type-safe-refactor-with-typescript/</link>
+      <guid isPermaLink="true">https://blog.sangwook.dev/posts/typescript-project-type-safe-refactor-with-typescript/</guid>
+      <pubDate>Thu, 06 Nov 2025 00:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>React 에러 구조 설계: throw만으로 선언적 에러 핸들링 하기</title>
+      <link>https://blog.sangwook.dev/posts/react-error-deign/</link>
+      <guid isPermaLink="true">https://blog.sangwook.dev/posts/react-error-deign/</guid>
+      <pubDate>Tue, 14 Oct 2025 00:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>구글 개발자가 인정한 성능 최적화 기여 후기 - AI와 함께한 gemini-cli 오픈소스 여정</title>
+      <link>https://blog.sangwook.dev/posts/ai-opensource-contribution/</link>
+      <guid isPermaLink="true">https://blog.sangwook.dev/posts/ai-opensource-contribution/</guid>
+      <pubDate>Sun, 07 Sep 2025 00:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>feconf 2025 발표 후기</title>
+      <link>https://blog.sangwook.dev/posts/feconf-2025-lightning-speaker/</link>
+      <guid isPermaLink="true">https://blog.sangwook.dev/posts/feconf-2025-lightning-speaker/</guid>
+      <pubDate>Tue, 02 Sep 2025 00:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>4시간 만에 Node.js PR 승인받기</title>
+      <link>https://blog.sangwook.dev/posts/nodejs-contribution/</link>
+      <guid isPermaLink="true">https://blog.sangwook.dev/posts/nodejs-contribution/</guid>
+      <pubDate>Sun, 10 Aug 2025 00:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>Next.js 오픈소스 기여: 2번 실패 후 성공 후기</title>
+      <link>https://blog.sangwook.dev/posts/nextjs-contributor/</link>
+      <guid isPermaLink="true">https://blog.sangwook.dev/posts/nextjs-contributor/</guid>
+      <pubDate>Tue, 05 Aug 2025 00:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>Context API를 활용한 DropZone 구현하기</title>
+      <link>https://blog.sangwook.dev/posts/react-component-context-api-dropzone/</link>
+      <guid isPermaLink="true">https://blog.sangwook.dev/posts/react-component-context-api-dropzone/</guid>
+      <pubDate>Wed, 30 Jul 2025 00:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>Type Guard를 활용한 여러가지 Button 구현하기</title>
+      <link>https://blog.sangwook.dev/posts/react-component-type-guard-button/</link>
+      <guid isPermaLink="true">https://blog.sangwook.dev/posts/react-component-type-guard-button/</guid>
+      <pubDate>Mon, 30 Jun 2025 00:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>15줄에서 2줄로: useSyncExternalStore 기반 React Toast 시스템 설계법</title>
+      <link>https://blog.sangwook.dev/posts/react-component-toast/</link>
+      <guid isPermaLink="true">https://blog.sangwook.dev/posts/react-component-toast/</guid>
+      <pubDate>Mon, 30 Jun 2025 00:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>개발자에서 기여자로: 기술 블로그와 오픈소스가 바꾼 나의 2025년 상반기</title>
+      <link>https://blog.sangwook.dev/posts/2025-mid-year-review/</link>
+      <guid isPermaLink="true">https://blog.sangwook.dev/posts/2025-mid-year-review/</guid>
+      <pubDate>Tue, 17 Jun 2025 00:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>[Typescript로 설계하는 프로젝트] &quot;같은 로직 또 복사했어요?&quot; Domain 모델로 책임 분리하기</title>
+      <link>https://blog.sangwook.dev/posts/typescript-project-domain-design/</link>
+      <guid isPermaLink="true">https://blog.sangwook.dev/posts/typescript-project-domain-design/</guid>
+      <pubDate>Sun, 15 Jun 2025 00:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>[Typescript로 설계하는 프로젝트] &quot;원래 있던 기능이니 금방 하시죠?&quot; 당하지 않는 Service Layer 설계 전략 With Di</title>
+      <link>https://blog.sangwook.dev/posts/typescript-project-service-di-design/</link>
+      <guid isPermaLink="true">https://blog.sangwook.dev/posts/typescript-project-service-di-design/</guid>
+      <pubDate>Sun, 08 Jun 2025 00:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>[Typescript로 설계하는 프로젝트] &quot;원래 있던 기능이니 금방 하시죠?&quot; 당하지 않는 Service Layer 설계 전략</title>
+      <link>https://blog.sangwook.dev/posts/typescript-project-service-design/</link>
+      <guid isPermaLink="true">https://blog.sangwook.dev/posts/typescript-project-service-design/</guid>
+      <pubDate>Sun, 08 Jun 2025 00:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>[Typescript로 설계하는 프로젝트] Type 설계의 시작: 견고한 서버 API Type 설계하기 With DI</title>
+      <link>https://blog.sangwook.dev/posts/typescript-project-api-di-design/</link>
+      <guid isPermaLink="true">https://blog.sangwook.dev/posts/typescript-project-api-di-design/</guid>
+      <pubDate>Sun, 01 Jun 2025 00:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>[Typescript로 설계하는 프로젝트] Type 설계의 시작: 견고한 서버 API Type 설계하기</title>
+      <link>https://blog.sangwook.dev/posts/typescript-project-api-design/</link>
+      <guid isPermaLink="true">https://blog.sangwook.dev/posts/typescript-project-api-design/</guid>
+      <pubDate>Sun, 01 Jun 2025 00:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>[Typescript로 설계하는 프로젝트] 당신의 Type, 어디까지 연결되어 있나요?</title>
+      <link>https://blog.sangwook.dev/posts/typescript-project-design/</link>
+      <guid isPermaLink="true">https://blog.sangwook.dev/posts/typescript-project-design/</guid>
+      <pubDate>Mon, 05 May 2025 00:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>pnpm 10 업그레이드 후 ESLint 설정이 사라졌어요?! (feat. 호이스팅)</title>
+      <link>https://blog.sangwook.dev/posts/pnpm-eslint-not-working/</link>
+      <guid isPermaLink="true">https://blog.sangwook.dev/posts/pnpm-eslint-not-working/</guid>
+      <pubDate>Thu, 01 May 2025 00:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>오픈소스 첫 발걸음: Mantine PR 기여 후기</title>
+      <link>https://blog.sangwook.dev/posts/first-open-source-contribution/</link>
+      <guid isPermaLink="true">https://blog.sangwook.dev/posts/first-open-source-contribution/</guid>
+      <pubDate>Tue, 22 Apr 2025 00:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>🚨3분만에 Next.js 서비스 장애 대응 대응하기: GitHub Actions + AWS ECS + CodeDeploy 롤백 시스템</title>
+      <link>https://blog.sangwook.dev/posts/aws-ecs-rollback/</link>
+      <guid isPermaLink="true">https://blog.sangwook.dev/posts/aws-ecs-rollback/</guid>
+      <pubDate>Thu, 03 Apr 2025 00:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>ecs와 code deploy를 활용한 next.js 배포하기</title>
+      <link>https://blog.sangwook.dev/posts/next-js-ecs-deploy/</link>
+      <guid isPermaLink="true">https://blog.sangwook.dev/posts/next-js-ecs-deploy/</guid>
+      <pubDate>Tue, 01 Apr 2025 00:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>Turborepo 에서 next.js 도커라이징 하기</title>
+      <link>https://blog.sangwook.dev/posts/turborepo-next.js-docker/</link>
+      <guid isPermaLink="true">https://blog.sangwook.dev/posts/turborepo-next.js-docker/</guid>
+      <pubDate>Sat, 22 Mar 2025 00:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>Next.js로 우아하게 Error 핸들링하기</title>
+      <link>https://blog.sangwook.dev/posts/nextjs-error/</link>
+      <guid isPermaLink="true">https://blog.sangwook.dev/posts/nextjs-error/</guid>
+      <pubDate>Mon, 03 Mar 2025 00:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>React로 우아하게 Error 핸들링 하기</title>
+      <link>https://blog.sangwook.dev/posts/react-error/</link>
+      <guid isPermaLink="true">https://blog.sangwook.dev/posts/react-error/</guid>
+      <pubDate>Sun, 02 Mar 2025 00:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>javascript로 우아하게 Error 핸들링하기</title>
+      <link>https://blog.sangwook.dev/posts/javascript-error/</link>
+      <guid isPermaLink="true">https://blog.sangwook.dev/posts/javascript-error/</guid>
+      <pubDate>Thu, 27 Feb 2025 00:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>미들웨어에서 auth 적용하기</title>
+      <link>https://blog.sangwook.dev/posts/next-middleware/</link>
+      <guid isPermaLink="true">https://blog.sangwook.dev/posts/next-middleware/</guid>
+      <pubDate>Wed, 26 Feb 2025 00:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>Panda CSS 1년 사용기</title>
+      <link>https://blog.sangwook.dev/posts/panda-css-1year-review/</link>
+      <guid isPermaLink="true">https://blog.sangwook.dev/posts/panda-css-1year-review/</guid>
+      <pubDate>Mon, 17 Feb 2025 00:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>컴포넌트에 인터렉션 레이어 이쁘게 씌우기</title>
+      <link>https://blog.sangwook.dev/posts/adding-interaction-layers-to-components/</link>
+      <guid isPermaLink="true">https://blog.sangwook.dev/posts/adding-interaction-layers-to-components/</guid>
+      <pubDate>Mon, 10 Feb 2025 00:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>디자인 시스템 시작해보기</title>
+      <link>https://blog.sangwook.dev/posts/design-system-start/</link>
+      <guid isPermaLink="true">https://blog.sangwook.dev/posts/design-system-start/</guid>
+      <pubDate>Sun, 02 Feb 2025 00:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>FSD 간단하게 시작해보기</title>
+      <link>https://blog.sangwook.dev/posts/simple-fsd-start/</link>
+      <guid isPermaLink="true">https://blog.sangwook.dev/posts/simple-fsd-start/</guid>
+      <pubDate>Tue, 21 Jan 2025 00:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>서버 의존성을 줄여보자 (Feat : 클린 아키텍처)</title>
+      <link>https://blog.sangwook.dev/posts/reduce-server-dependency-clean-architecture/</link>
+      <guid isPermaLink="true">https://blog.sangwook.dev/posts/reduce-server-dependency-clean-architecture/</guid>
+      <pubDate>Mon, 13 Jan 2025 00:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>도전과 성장, 그리고 배움으로 가득 찬 2024년 회고</title>
+      <link>https://blog.sangwook.dev/posts/2024-retrospect/</link>
+      <guid isPermaLink="true">https://blog.sangwook.dev/posts/2024-retrospect/</guid>
+      <pubDate>Mon, 23 Dec 2024 00:00:00 GMT</pubDate>
+    </item>
+  </channel>
+</rss>

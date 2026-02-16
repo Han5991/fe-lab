@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "pnpm supabase-start && next dev",
-    "prebuild": "node sync-posts.mjs && node generate-sitemap.mjs && tsx scripts/generate-search-index.ts",
+    "prebuild": "node sync-posts.mjs && node generate-sitemap.mjs && node generate-rss.mjs && tsx scripts/generate-search-index.ts",
     "build": "pnpm prebuild && next build",
     "start": "next start",
     "lint": "next lint",
