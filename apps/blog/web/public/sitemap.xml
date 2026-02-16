@@ -2,12 +2,12 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://blog.sangwook.dev/</loc>
-    <lastmod>2026-02-01</lastmod>
+    <lastmod>2026-02-16</lastmod>
     <priority>1.0</priority>
   </url>
   <url>
     <loc>https://blog.sangwook.dev/posts/</loc>
-    <lastmod>2026-02-01</lastmod>
+    <lastmod>2026-02-16</lastmod>
     <priority>0.8</priority>
   </url>
   
@@ -49,6 +49,16 @@
   <url>
     <loc>https://blog.sangwook.dev/posts/typescript-project-service-design/</loc>
     <lastmod>2025-06-08</lastmod>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://blog.sangwook.dev/posts/no-one-asked-library-bundler-00-prologue/</loc>
+    <lastmod>2026-02-02</lastmod>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://blog.sangwook.dev/posts/no-one-asked-library-bundler-01-concept/</loc>
+    <lastmod>2026-02-02</lastmod>
     <priority>0.6</priority>
   </url>
   <url>
