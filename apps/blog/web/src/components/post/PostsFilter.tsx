@@ -11,6 +11,19 @@ interface PostsFilterProps {
     posts: PostData[];
 }
 
+const filterGroupedEntries = (
+    entries: [string, PostData[]][],
+    query: string,
+): [string, PostData[]][] => {
+    if (!query.trim()) return entries;
+    const q = query.toLowerCase();
+    return entries.filter(
+        ([name, items]) =>
+            name.toLowerCase().includes(q) ||
+            items.some(p => p.title.toLowerCase().includes(q)),
+    );
+};
+
 const TAB_KEYS = ['all', 'series', 'tags'] as const;
 type TabKey = (typeof TAB_KEYS)[number];
 
@@ -123,19 +136,12 @@ export const PostsFilter = ({ posts }: PostsFilterProps) => {
                 groups[p.series].push(p);
             }
         }
-        let entries = Object.entries(groups).sort((a, b) => {
+        const entries = Object.entries(groups).sort((a, b) => {
             const aDate = a[1][0]?.date || '';
             const bDate = b[1][0]?.date || '';
             return bDate.localeCompare(aDate);
         });
-        if (query.trim()) {
-            const q = query.toLowerCase();
-            entries = entries.filter(([name, items]) =>
-                name.toLowerCase().includes(q) ||
-                items.some(p => p.title.toLowerCase().includes(q))
-            );
-        }
-        return entries;
+        return filterGroupedEntries(entries, query);
     }, [posts, query]);
 
     // 태그별 그룹
@@ -149,15 +155,8 @@ export const PostsFilter = ({ posts }: PostsFilterProps) => {
                 }
             }
         }
-        let entries = Object.entries(groups).sort((a, b) => b[1].length - a[1].length);
-        if (query.trim()) {
-            const q = query.toLowerCase();
-            entries = entries.filter(([name, items]) =>
-                name.toLowerCase().includes(q) ||
-                items.some(p => p.title.toLowerCase().includes(q))
-            );
-        }
-        return entries;
+        const entries = Object.entries(groups).sort((a, b) => b[1].length - a[1].length);
+        return filterGroupedEntries(entries, query);
     }, [posts, query]);
 
     return (
