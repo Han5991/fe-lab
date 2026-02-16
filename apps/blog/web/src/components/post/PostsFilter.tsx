@@ -1,16 +1,31 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import { css } from '@design-system/ui-lib/css';
 import { Search } from 'lucide-react';
+import { useQueryState, parseAsStringLiteral } from 'nuqs';
 import type { PostData } from '@/lib/posts';
 
 interface PostsFilterProps {
     posts: PostData[];
 }
 
-type TabKey = 'all' | 'series' | 'tags';
+const filterGroupedEntries = (
+    entries: [string, PostData[]][],
+    query: string,
+): [string, PostData[]][] => {
+    if (!query.trim()) return entries;
+    const q = query.toLowerCase();
+    return entries.filter(
+        ([name, items]) =>
+            name.toLowerCase().includes(q) ||
+            items.some(p => p.title.toLowerCase().includes(q)),
+    );
+};
+
+const TAB_KEYS = ['all', 'series', 'tags'] as const;
+type TabKey = (typeof TAB_KEYS)[number];
 
 const TABS: { key: TabKey; label: string }[] = [
     { key: 'all', label: '전체' },
@@ -91,17 +106,26 @@ function InlineSearch({ value, onChange, placeholder }: { value: string; onChang
 
 /* ─── Main Component ─── */
 export const PostsFilter = ({ posts }: PostsFilterProps) => {
-    const [activeTab, setActiveTab] = useState<TabKey>('all');
-    const [allQuery, setAllQuery] = useState('');
-    const [seriesQuery, setSeriesQuery] = useState('');
-    const [tagQuery, setTagQuery] = useState('');
+    const [activeTab, setActiveTab] = useQueryState(
+        'tab',
+        parseAsStringLiteral(TAB_KEYS).withDefault('all'),
+    );
+    const [query, setQuery] = useQueryState('q', { defaultValue: '' });
+
+    const handleTabChange = useCallback(
+        (tab: TabKey) => {
+            setActiveTab(tab);
+            setQuery('');
+        },
+        [setActiveTab, setQuery],
+    );
 
     // 전체 탭 필터링
     const filteredAll = useMemo(() => {
-        const q = allQuery.toLowerCase().trim();
+        const q = query.toLowerCase().trim();
         if (!q) return posts;
         return posts.filter(p => p.title.toLowerCase().includes(q) || (p.excerpt || '').toLowerCase().includes(q));
-    }, [posts, allQuery]);
+    }, [posts, query]);
 
     // 시리즈별 그룹
     const seriesGroups = useMemo(() => {
@@ -112,20 +136,13 @@ export const PostsFilter = ({ posts }: PostsFilterProps) => {
                 groups[p.series].push(p);
             }
         }
-        let entries = Object.entries(groups).sort((a, b) => {
+        const entries = Object.entries(groups).sort((a, b) => {
             const aDate = a[1][0]?.date || '';
             const bDate = b[1][0]?.date || '';
             return bDate.localeCompare(aDate);
         });
-        if (seriesQuery.trim()) {
-            const q = seriesQuery.toLowerCase();
-            entries = entries.filter(([name, items]) =>
-                name.toLowerCase().includes(q) ||
-                items.some(p => p.title.toLowerCase().includes(q))
-            );
-        }
-        return entries;
-    }, [posts, seriesQuery]);
+        return filterGroupedEntries(entries, query);
+    }, [posts, query]);
 
     // 태그별 그룹
     const tagGroups = useMemo(() => {
@@ -138,16 +155,9 @@ export const PostsFilter = ({ posts }: PostsFilterProps) => {
                 }
             }
         }
-        let entries = Object.entries(groups).sort((a, b) => b[1].length - a[1].length);
-        if (tagQuery.trim()) {
-            const q = tagQuery.toLowerCase();
-            entries = entries.filter(([name, items]) =>
-                name.toLowerCase().includes(q) ||
-                items.some(p => p.title.toLowerCase().includes(q))
-            );
-        }
-        return entries;
-    }, [posts, tagQuery]);
+        const entries = Object.entries(groups).sort((a, b) => b[1].length - a[1].length);
+        return filterGroupedEntries(entries, query);
+    }, [posts, query]);
 
     return (
         <>
@@ -164,7 +174,7 @@ export const PostsFilter = ({ posts }: PostsFilterProps) => {
                 {TABS.map(tab => (
                     <button
                         key={tab.key}
-                        onClick={() => setActiveTab(tab.key)}
+                        onClick={() => handleTabChange(tab.key)}
                         className={css({
                             px: { base: '4', md: '5' },
                             py: '3',
@@ -191,8 +201,8 @@ export const PostsFilter = ({ posts }: PostsFilterProps) => {
             {activeTab === 'all' && (
                 <>
                     <InlineSearch
-                        value={allQuery}
-                        onChange={setAllQuery}
+                        value={query}
+                        onChange={setQuery}
                         placeholder="글 제목 또는 내용 검색..."
                     />
                     <div className={css({ display: 'flex', flexDirection: 'column', gap: '8' })}>
@@ -213,14 +223,14 @@ export const PostsFilter = ({ posts }: PostsFilterProps) => {
             {activeTab === 'series' && (
                 <>
                     <InlineSearch
-                        value={seriesQuery}
-                        onChange={setSeriesQuery}
+                        value={query}
+                        onChange={setQuery}
                         placeholder="시리즈 또는 글 제목 검색..."
                     />
                     <div className={css({ display: 'flex', flexDirection: 'column', gap: '10' })}>
                         {seriesGroups.length === 0 ? (
                             <p className={css({ py: '12', textAlign: 'center', color: 'gray.400' })}>
-                                {seriesQuery ? '검색 결과가 없습니다.' : '시리즈가 없습니다.'}
+                                {query ? '검색 결과가 없습니다.' : '시리즈가 없습니다.'}
                             </p>
                         ) : (
                             seriesGroups.map(([seriesName, seriesPosts]) => (
@@ -254,14 +264,14 @@ export const PostsFilter = ({ posts }: PostsFilterProps) => {
             {activeTab === 'tags' && (
                 <>
                     <InlineSearch
-                        value={tagQuery}
-                        onChange={setTagQuery}
+                        value={query}
+                        onChange={setQuery}
                         placeholder="태그 또는 글 제목 검색..."
                     />
                     <div className={css({ display: 'flex', flexDirection: 'column', gap: '10' })}>
                         {tagGroups.length === 0 ? (
                             <p className={css({ py: '12', textAlign: 'center', color: 'gray.400' })}>
-                                {tagQuery ? '검색 결과가 없습니다.' : '태그가 없습니다.'}
+                                {query ? '검색 결과가 없습니다.' : '태그가 없습니다.'}
                             </p>
                         ) : (
                             tagGroups.map(([tagName, tagPosts]) => (

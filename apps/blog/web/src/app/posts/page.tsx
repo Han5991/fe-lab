@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { getAllPosts } from '@/lib/posts';
 import { css } from '@design-system/ui-lib/css';
 import { SsgoiTransition } from '@ssgoi/react';
@@ -82,7 +83,9 @@ export default function PostsPage() {
             </p>
           </header>
 
-          <PostsFilter posts={posts} />
+          <Suspense>
+            <PostsFilter posts={posts} />
+          </Suspense>
         </div>
       </SsgoiTransition>
     </>
