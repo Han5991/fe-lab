@@ -14,18 +14,25 @@ interface SearchPost {
     series: string | null;
 }
 
-interface SearchDialogProps {
-    posts: SearchPost[];
-}
-
-export const SearchDialog = ({ posts }: SearchDialogProps) => {
+export const SearchDialog = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [query, setQuery] = useState('');
+    const [posts, setPosts] = useState<SearchPost[]>([]);
     const [filteredPosts, setFilteredPosts] = useState<SearchPost[]>([]);
     const [selectedIndex, setSelectedIndex] = useState(0);
     const inputRef = useRef<HTMLInputElement>(null);
     const listRef = useRef<HTMLDivElement>(null);
     const router = useRouter();
+
+    // 다이얼로그 열릴 때 데이터 로드 (Lazy Load)
+    useEffect(() => {
+        if (isOpen && posts.length === 0) {
+            fetch('/search-index.json')
+                .then(res => res.json())
+                .then((data: SearchPost[]) => setPosts(data))
+                .catch(err => console.error('Failed to load search index:', err));
+        }
+    }, [isOpen]);
 
     // Cmd+K / Ctrl+K 단축키
     useEffect(() => {
