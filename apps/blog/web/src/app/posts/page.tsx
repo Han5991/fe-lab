@@ -51,15 +51,6 @@ const jsonLd = {
 export default function PostsPage() {
   const posts = getAllPosts();
 
-  const postsData = posts.map(p => ({
-    slug: p.slug,
-    title: p.title,
-    date: p.date,
-    excerpt: p.excerpt || '',
-    tags: p.tags,
-    series: p.series,
-  }));
-
   return (
     <>
       <script
@@ -91,7 +82,7 @@ export default function PostsPage() {
             </p>
           </header>
 
-          <PostsFilter posts={postsData} />
+          <PostsFilter posts={posts} />
         </div>
       </SsgoiTransition>
     </>

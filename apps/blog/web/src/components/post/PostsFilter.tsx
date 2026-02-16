@@ -4,18 +4,10 @@ import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { css } from '@design-system/ui-lib/css';
 import { Search } from 'lucide-react';
-
-interface PostItem {
-    slug: string;
-    title: string;
-    date: string | null;
-    excerpt: string;
-    tags?: string[];
-    series?: string;
-}
+import type { PostData } from '@/lib/posts';
 
 interface PostsFilterProps {
-    posts: PostItem[];
+    posts: PostData[];
 }
 
 type TabKey = 'all' | 'series' | 'tags';
@@ -27,7 +19,7 @@ const TABS: { key: TabKey; label: string }[] = [
 ];
 
 /* ─── Post Card ─── */
-function PostCard({ post }: { post: PostItem }) {
+function PostCard({ post }: { post: PostData }) {
     return (
         <article className="group">
             <Link href={`/posts/${post.slug}`} className={css({ display: 'block' })}>
@@ -52,7 +44,7 @@ function PostCard({ post }: { post: PostItem }) {
                         lineClamp: 2, overflow: 'hidden', fontSize: { base: 'sm', md: 'md' },
                     })}
                 >
-                    {post.excerpt}
+                    {post.excerpt || ''}
                 </p>
             </Link>
         </article>
@@ -108,12 +100,12 @@ export const PostsFilter = ({ posts }: PostsFilterProps) => {
     const filteredAll = useMemo(() => {
         const q = allQuery.toLowerCase().trim();
         if (!q) return posts;
-        return posts.filter(p => p.title.toLowerCase().includes(q) || p.excerpt.toLowerCase().includes(q));
+        return posts.filter(p => p.title.toLowerCase().includes(q) || (p.excerpt || '').toLowerCase().includes(q));
     }, [posts, allQuery]);
 
     // 시리즈별 그룹
     const seriesGroups = useMemo(() => {
-        const groups: Record<string, PostItem[]> = {};
+        const groups: Record<string, PostData[]> = {};
         for (const p of posts) {
             if (p.series) {
                 if (!groups[p.series]) groups[p.series] = [];
@@ -137,7 +129,7 @@ export const PostsFilter = ({ posts }: PostsFilterProps) => {
 
     // 태그별 그룹
     const tagGroups = useMemo(() => {
-        const groups: Record<string, PostItem[]> = {};
+        const groups: Record<string, PostData[]> = {};
         for (const p of posts) {
             if (p.tags) {
                 for (const tag of p.tags) {
