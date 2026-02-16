@@ -1,14 +1,26 @@
 import Link from 'next/link';
 import { css } from '@design-system/ui-lib/css';
 import type { ReactNode } from 'react';
+import { getAllPosts } from '@/lib/posts';
 
 import { PageTransition } from './PageTransition';
+import { SearchDialog } from './search/SearchDialog';
 
 interface LayoutProps {
   children: ReactNode;
 }
 
 export const Layout = ({ children }: LayoutProps) => {
+  const posts = getAllPosts();
+  const searchPosts = posts.map(p => ({
+    slug: p.slug,
+    title: p.title,
+    date: p.date,
+    excerpt: p.excerpt || '',
+    tags: p.tags || [],
+    series: p.series || null,
+  }));
+
   return (
     <div className={css({ minH: '100vh', bg: 'white', color: 'gray.900', display: 'flex', flexDirection: 'column' })}>
       <nav
@@ -45,18 +57,21 @@ export const Layout = ({ children }: LayoutProps) => {
           >
             FE Lab
           </Link>
-          <Link
-            href="/posts"
-            className={css({
-              fontSize: 'sm',
-              fontWeight: 'medium',
-              color: 'gray.600',
-              _hover: { color: 'gray.900' },
-              transition: 'color 0.2s',
-            })}
-          >
-            Posts
-          </Link>
+          <div className={css({ display: 'flex', alignItems: 'center', gap: '3' })}>
+            <SearchDialog posts={searchPosts} />
+            <Link
+              href="/posts"
+              className={css({
+                fontSize: 'sm',
+                fontWeight: 'medium',
+                color: 'gray.600',
+                _hover: { color: 'gray.900' },
+                transition: 'color 0.2s',
+              })}
+            >
+              Posts
+            </Link>
+          </div>
         </div>
       </nav>
       <main className={css({ flex: 1, w: 'full' })}>
@@ -86,3 +101,4 @@ export const Layout = ({ children }: LayoutProps) => {
     </div>
   );
 };
+
