@@ -367,6 +367,9 @@ export default function PostClient({ post }: { post: PostData }) {
                 remarkPlugins={[remarkGfm]}
                 rehypePlugins={[rehypeRaw, rehypeSlug]}
                 components={{
+                  h1({ children, ...props }) {
+                    return <h2 {...props}>{children}</h2>;
+                  },
                   code({ node, className, children, ...props }: any) {
                     const match = /language-(\w+)/.exec(className || '');
                     const content = String(children).replace(/\n$/, '');
