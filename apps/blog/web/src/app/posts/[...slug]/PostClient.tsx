@@ -367,6 +367,24 @@ export default function PostClient({ post }: { post: PostData }) {
                 remarkPlugins={[remarkGfm]}
                 rehypePlugins={[rehypeRaw, rehypeSlug]}
                 components={{
+                  p({ children, ...props }) {
+                    // <p> 안에 <div>가 들어가면 hydration 에러 발생 (e.g. Zoom 컴포넌트)
+                    // children 중 block-level 요소가 있으면 <div>로 렌더링
+                    const hasBlockChild = Array.isArray(children)
+                      ? children.some(
+                        (child: any) =>
+                          typeof child === 'object' &&
+                          child?.type &&
+                          typeof child.type !== 'string' // React component (like Zoom)
+                      )
+                      : typeof children === 'object' &&
+                      (children as any)?.type &&
+                      typeof (children as any).type !== 'string';
+                    if (hasBlockChild) {
+                      return <div {...props}>{children}</div>;
+                    }
+                    return <p {...props}>{children}</p>;
+                  },
                   h1({ children, ...props }) {
                     return <h2 {...props}>{children}</h2>;
                   },

@@ -1,8 +1,9 @@
-import Link from 'next/link';
 import { getAllPosts } from '@/lib/posts';
 import { css } from '@design-system/ui-lib/css';
 import { SsgoiTransition } from '@ssgoi/react';
 import type { Metadata } from 'next';
+
+import { PostsFilter } from '@/src/components/post/PostsFilter';
 
 export const metadata: Metadata = {
   title: 'Posts | Frontend Lab',
@@ -62,13 +63,13 @@ export default function PostsPage() {
             maxWidth: '800px',
             margin: '0 auto',
             px: '6',
-            py: '16',
+            py: { base: '8', md: '16' },
           })}
         >
-          <header className={css({ mb: '12' })}>
+          <header className={css({ mb: '8' })}>
             <h1
               className={css({
-                fontSize: '4xl',
+                fontSize: { base: '3xl', md: '4xl' },
                 fontWeight: 'bold',
                 letterSpacing: 'tight',
                 color: 'gray.900',
@@ -81,80 +82,7 @@ export default function PostsPage() {
             </p>
           </header>
 
-          <div
-            className={css({
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '8',
-            })}
-          >
-            {posts.map(post => (
-              <article key={post.slug} className="group">
-                <Link
-                  href={`/posts/${post.slug}`}
-                  className={css({ display: 'block' })}
-                >
-                  <div className={css({ mb: '2' })}>
-                    {post.date && (
-                      <time
-                        dateTime={post.date}
-                        className={css({ fontSize: 'sm', color: 'gray.400' })}
-                      >
-                        {new Date(post.date).toLocaleDateString('ko-KR', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
-                        })}
-                      </time>
-                    )}
-                  </div>
-                  <h2
-                    className={css({
-                      fontSize: '2xl',
-                      fontWeight: 'bold',
-                      color: 'gray.900',
-                      mb: '3',
-                      transition: 'color 0.2s',
-                      _groupHover: { color: 'blue.600' },
-                    })}
-                  >
-                    {post.title}
-                  </h2>
-                  <p
-                    className={css({
-                      color: 'gray.600',
-                      lineHeight: 'relaxed',
-                      mb: '4',
-                      lineClamp: 3,
-                      overflow: 'hidden',
-                    })}
-                  >
-                    {post.excerpt}
-                  </p>
-                  <div
-                    className={css({
-                      fontSize: 'sm',
-                      fontWeight: 'semibold',
-                      color: 'blue.600',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '1',
-                    })}
-                  >
-                    더 읽어보기
-                    <span
-                      className={css({
-                        transition: 'transform 0.2s',
-                        _groupHover: { transform: 'translateX(4px)' },
-                      })}
-                    >
-                      →
-                    </span>
-                  </div>
-                </Link>
-              </article>
-            ))}
-          </div>
+          <PostsFilter posts={posts} />
         </div>
       </SsgoiTransition>
     </>

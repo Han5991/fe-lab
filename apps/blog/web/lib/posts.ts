@@ -13,6 +13,13 @@ export interface PostData {
   content: string;
   excerpt?: string;
   thumbnail?: string;
+  tags?: string[];
+  series?: string;
+}
+
+export interface PostNavItem {
+  slug: string;
+  title: string;
 }
 
 export function getAllPosts(): PostData[] {
@@ -46,6 +53,12 @@ export function getAllPosts(): PostData[] {
           .replace(/\s+/g, ' ') // 연속된 공백 제거
           .trim();
 
+        // tags 파싱: frontmatter에 있으면 사용
+        const tags: string[] | undefined = Array.isArray(data.tags) ? data.tags : undefined;
+
+        // series 파싱: relativeDir(폴더명) 기반 자동 추출
+        const series: string | undefined = currentPath || undefined;
+
         posts.push({
           slug: data.slug,
           originalSlug: rawSlug,
@@ -55,6 +68,8 @@ export function getAllPosts(): PostData[] {
           content,
           excerpt: data.excerpt || cleanContent.slice(0, 160) + '...',
           thumbnail: typeof data.thumbnail === 'string' ? data.thumbnail : undefined,
+          tags,
+          series,
         });
       }
     }
@@ -78,4 +93,75 @@ export function getPostBySlug(slug: string): PostData | null {
 export function getAllPostSlugs(): string[] {
   const posts = getAllPosts();
   return posts.map(post => post.slug);
+}
+
+/**
+ * 현재 포스트 기준으로 이전/다음 포스트를 반환합니다.
+ * - prev: 더 오래된(과거) 글
+ * - next: 더 최신(미래) 글
+ *
+ * posts는 날짜 내림차순 정렬 (index 0 = 최신)
+ * 따라서 index+1 = prev(과거), index-1 = next(미래)
+ */
+export function getAdjacentPosts(
+  currentSlug: string,
+  options?: {
+    filterTag?: string;
+    filterSeries?: string;
+    sortOrder?: 'newest' | 'oldest';
+  }
+): { prev: PostNavItem | null; next: PostNavItem | null } {
+  let posts = getAllPosts();
+
+  // 태그 필터
+  if (options?.filterTag) {
+    posts = posts.filter(p => p.tags?.includes(options.filterTag!));
+  }
+
+  // 시리즈 필터
+  if (options?.filterSeries) {
+    posts = posts.filter(p => p.series === options.filterSeries);
+  }
+
+  // 정렬 (기본: newest first)
+  if (options?.sortOrder === 'oldest') {
+    posts = [...posts].reverse();
+  }
+
+  const currentIndex = posts.findIndex(p => p.slug === currentSlug);
+
+  if (currentIndex === -1) {
+    return { prev: null, next: null };
+  }
+
+  // 날짜 내림차순 기준: index+1 = older(이전 글), index-1 = newer(다음 글)
+  const prevPost = currentIndex < posts.length - 1 ? posts[currentIndex + 1] : null;
+  const nextPost = currentIndex > 0 ? posts[currentIndex - 1] : null;
+
+  return {
+    prev: prevPost ? { slug: prevPost.slug, title: prevPost.title } : null,
+    next: nextPost ? { slug: nextPost.slug, title: nextPost.title } : null,
+  };
+}
+
+/**
+ * 같은 시리즈 내의 이전/다음 포스트를 반환
+ */
+export function getSeriesAdjacentPosts(
+  currentSlug: string
+): { prev: PostNavItem | null; next: PostNavItem | null; seriesName: string | null } {
+  const currentPost = getPostBySlug(currentSlug);
+
+  if (!currentPost?.series) {
+    return { prev: null, next: null, seriesName: null };
+  }
+
+  const adjacent = getAdjacentPosts(currentSlug, {
+    filterSeries: currentPost.series,
+  });
+
+  return {
+    ...adjacent,
+    seriesName: currentPost.series,
+  };
 }
