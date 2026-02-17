@@ -108,7 +108,7 @@ const CopyButton = ({ content }: { content: string }) => {
   );
 };
 
-export default function PostClient({ post }: { post: PostData }) {
+export default function PostClient({ post, thumbnailUrl }: { post: PostData; thumbnailUrl?: string }) {
   useViewCount(post.slug);
   return (
     <>
@@ -195,6 +195,24 @@ export default function PostClient({ post }: { post: PostData }) {
                 <span>{Math.ceil(post.content.length / 500)} min read</span>
               </div>
             </header>
+
+            {/* Thumbnail Hero Image */}
+            {thumbnailUrl && (
+              <img
+                src={thumbnailUrl}
+                alt={post.title}
+                className={css({
+                  mb: '12',
+                  rounded: '2xl',
+                  w: 'full',
+                  h: 'auto',
+                  shadow: '2xl',
+                  borderWidth: '1px',
+                  borderColor: 'gray.100',
+                  display: 'block',
+                })}
+              />
+            )}
 
             <div
               id="post-content"
