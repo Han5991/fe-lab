@@ -131,7 +131,7 @@ export const MobileTOC = () => {
                       }
                       className={css({
                         pl:
-                          item.level === 3 ? '4' : item.level === 2 ? '2' : '0',
+                          item.level === 4 ? '6' : item.level === 3 ? '4' : item.level === 2 ? '2' : '0',
                         fontSize: 'md',
                         fontWeight: activeId === item.id ? 'bold' : 'medium',
                         color: activeId === item.id ? 'blue.600' : 'gray.600',

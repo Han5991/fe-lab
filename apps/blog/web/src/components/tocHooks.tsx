@@ -38,7 +38,7 @@ export const useTocHook = () => {
       const content = document.getElementById('post-content');
       if (!content) return;
 
-      const headers = content.querySelectorAll('h1, h2, h3');
+      const headers = content.querySelectorAll('h1, h2, h3, h4');
       const items = Array.from(headers)
         .map(header => ({
           id: header.id,

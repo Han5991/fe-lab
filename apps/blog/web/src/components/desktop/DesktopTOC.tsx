@@ -53,7 +53,7 @@ export const DesktopTOC = () => {
                 activeId === item.id ? 'blue.600' : 'transparent',
               ml: '-17px', // border-left를 위한 보정 (1px + 16px pl)
               paddingLeft:
-                item.level === 3 ? '31px' : item.level === 2 ? '23px' : '15px',
+                item.level === 4 ? '39px' : item.level === 3 ? '31px' : item.level === 2 ? '23px' : '15px',
               _hover: { color: 'gray.900' },
             })}
           >

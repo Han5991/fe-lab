@@ -250,12 +250,12 @@ export default function PostClient({
                   mb: '6',
                   color: 'gray.900',
                   letterSpacing: 'tight',
-                  position: 'relative',
+                  pos: 'relative',
                   display: 'inline-block',
                   scrollMarginTop: '100px',
                   _after: {
                     content: '""',
-                    position: 'absolute',
+                    pos: 'absolute',
                     bottom: '-2',
                     left: '0',
                     w: 'full',
@@ -270,6 +270,14 @@ export default function PostClient({
                   mt: 8,
                   mb: '4',
                   color: 'gray.900',
+                  scrollMarginTop: '100px',
+                },
+                '& h4': {
+                  fontSize: 'lg',
+                  fontWeight: '600',
+                  mt: 6,
+                  mb: '3',
+                  color: 'gray.800',
                   scrollMarginTop: '100px',
                 },
                 '& p': { mb: '8' },
@@ -300,7 +308,7 @@ export default function PostClient({
                   bg: 'gray.100',
                   px: '1.5',
                   py: '0.5',
-                  borderRadius: 'md',
+                  rounded: 'md',
                   fontSize: '0.85em',
                   color: 'red.500',
                   fontWeight: '500',
@@ -338,7 +346,7 @@ export default function PostClient({
                   },
                 },
                 '& img': {
-                  borderRadius: '2xl',
+                  rounded: '2xl',
                   w: 'full',
                   h: 'auto',
                   shadow: '2xl',
@@ -403,14 +411,14 @@ export default function PostClient({
                     // children 중 block-level 요소가 있으면 <div>로 렌더링
                     const hasBlockChild = Array.isArray(children)
                       ? children.some(
-                        (child: any) =>
-                          typeof child === 'object' &&
-                          child?.type &&
-                          typeof child.type !== 'string', // React component (like Zoom)
-                      )
+                          (child: any) =>
+                            typeof child === 'object' &&
+                            child?.type &&
+                            typeof child.type !== 'string', // React component (like Zoom)
+                        )
                       : typeof children === 'object' &&
-                      (children as any)?.type &&
-                      typeof (children as any).type !== 'string';
+                        (children as any)?.type &&
+                        typeof (children as any).type !== 'string';
                     if (hasBlockChild) {
                       return <div {...props}>{children}</div>;
                     }

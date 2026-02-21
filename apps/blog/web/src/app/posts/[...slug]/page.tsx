@@ -126,10 +126,7 @@ export default async function PostPage({ params }: Props) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <PostClient
-        post={post}
-        thumbnailUrl={post.thumbnail ? thumbnailUrl : undefined}
-      />
+      <PostClient post={post} thumbnailUrl={post.thumbnail} />
       <div className={css({ maxW: '800px', m: '0 auto', p: '0 24px' })}>
         <PostNavigation prev={prev} next={next} seriesNav={seriesNav} />
       </div>
