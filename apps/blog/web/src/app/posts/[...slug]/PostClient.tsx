@@ -354,12 +354,12 @@ export default function PostClient({
                   borderColor: 'gray.100',
                 },
                 '& hr': {
-                  my: 12,
+                  my: 8,
                   h: '1px',
                   border: 'none',
                   bgGradient: 'to-r',
                   gradientFrom: 'transparent',
-                  gradientVia: 'gray.200',
+                  gradientVia: 'gray.300',
                   gradientTo: 'transparent',
                 },
                 '& table': {
@@ -371,7 +371,7 @@ export default function PostClient({
                   fontSize: 'md',
                   borderWidth: '1px',
                   borderColor: 'gray.200',
-                  borderRadius: '2xl',
+                  rounded: '2xl',
                   overflow: 'hidden',
                   boxShadow: 'sm',
                 },
