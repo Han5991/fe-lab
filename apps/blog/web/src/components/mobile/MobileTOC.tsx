@@ -22,8 +22,6 @@ export const MobileTOC = () => {
     };
   }, [isOpen]);
 
-  if (toc.length === 0) return null;
-
   return (
     <>
       {/* Floating Button */}
@@ -86,9 +84,9 @@ export const MobileTOC = () => {
                 roundedTop: '2xl',
                 maxH: '70vh',
                 display: 'flex',
-                flexDirection: 'column',
+                flexDir: 'column',
                 shadow: '2xl',
-                paddingBottom: 'safe-area-inset-bottom', // iOS safe area
+                paddingBottom: 'env(safe-area-inset-bottom)', // iOS safe area
               })}
             >
               <div
@@ -119,9 +117,9 @@ export const MobileTOC = () => {
                     gap: '3',
                   })}
                 >
-                  {toc.map((item, index) => (
+                  {toc.map(item => (
                     <li
-                      key={index}
+                      key={item.id}
                       onClick={() =>
                         scrollToId({
                           id: item.id,
