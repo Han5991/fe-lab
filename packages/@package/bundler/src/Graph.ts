@@ -132,6 +132,12 @@ export class Graph {
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = entryExports;
   }
+
+  // 전역 변수 노출 (브라우저 지원)
+  if (typeof window !== 'undefined') {
+    window.BundlerLibrary = entryExports;
+  }
+
   return entryExports;
 })({`;
 
