@@ -61,10 +61,25 @@ export class Graph {
 
   resolve(importPath: string, importer: string): string {
     const baseDir = path.dirname(importer);
-    // 간단한 확장자 처리
-    let fullPath = path.resolve(baseDir, importPath);
-    if (!fullPath.endsWith('.js')) fullPath += '.js';
-    return fullPath;
+    const fullPath = path.resolve(baseDir, importPath);
+
+    if (fs.existsSync(fullPath) && fs.statSync(fullPath).isFile()) {
+      return fullPath;
+    }
+
+    if (fs.existsSync(fullPath) && fs.statSync(fullPath).isDirectory()) {
+      const indexPath = path.join(fullPath, 'index.js');
+      if (fs.existsSync(indexPath) && fs.statSync(indexPath).isFile()) {
+        return indexPath;
+      }
+    }
+
+    const jsPath = fullPath + '.js';
+    if (fs.existsSync(jsPath) && fs.statSync(jsPath).isFile()) {
+      return jsPath;
+    }
+
+    return fullPath.endsWith('.js') ? fullPath : fullPath + '.js';
   }
 
   /**

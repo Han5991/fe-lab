@@ -12,11 +12,12 @@ async function run() {
     let config: MinibundlerConfig = { entry: 'src/index.js', externals: [] };
 
     try {
-      const importedConfig = await import(configPath);
+      const { pathToFileURL } = await import('node:url');
+      const importedConfig = await import(pathToFileURL(configPath).href);
       config = { ...config, ...(importedConfig.default || {}) };
       console.log(`🔧 Config loaded from: ${configPath}`);
     } catch (e) {
-      console.log('⚠️ No config found or failed to load, using defaults.');
+      console.log('⚠️ No config found or failed to load, using defaults.', e);
     }
 
     const entryPath = path.resolve(process.cwd(), config.entry);
