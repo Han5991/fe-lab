@@ -42,7 +42,6 @@ export const DesktopTOC = () => {
             key={item.id}
             onClick={() => scrollToId({ id: item.id, headerOffset: 100 })}
             className={css({
-              pl: item.level === 3 ? '4' : '0',
               fontSize: 'sm',
               color: activeId === item.id ? 'blue.600' : 'gray.500',
               fontWeight: activeId === item.id ? 'bold' : 'medium',
@@ -53,7 +52,8 @@ export const DesktopTOC = () => {
               borderLeftColor:
                 activeId === item.id ? 'blue.600' : 'transparent',
               ml: '-17px', // border-left를 위한 보정 (1px + 16px pl)
-              paddingLeft: '15px',
+              paddingLeft:
+                item.level === 3 ? '31px' : item.level === 2 ? '23px' : '15px',
               _hover: { color: 'gray.900' },
             })}
           >

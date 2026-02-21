@@ -403,21 +403,18 @@ export default function PostClient({
                     // children 중 block-level 요소가 있으면 <div>로 렌더링
                     const hasBlockChild = Array.isArray(children)
                       ? children.some(
-                          (child: any) =>
-                            typeof child === 'object' &&
-                            child?.type &&
-                            typeof child.type !== 'string', // React component (like Zoom)
-                        )
+                        (child: any) =>
+                          typeof child === 'object' &&
+                          child?.type &&
+                          typeof child.type !== 'string', // React component (like Zoom)
+                      )
                       : typeof children === 'object' &&
-                        (children as any)?.type &&
-                        typeof (children as any).type !== 'string';
+                      (children as any)?.type &&
+                      typeof (children as any).type !== 'string';
                     if (hasBlockChild) {
                       return <div {...props}>{children}</div>;
                     }
                     return <p {...props}>{children}</p>;
-                  },
-                  h1({ children, ...props }) {
-                    return <h2 {...props}>{children}</h2>;
                   },
                   code({ node, className, children, ...props }: any) {
                     const match = /language-(\w+)/.exec(className || '');
