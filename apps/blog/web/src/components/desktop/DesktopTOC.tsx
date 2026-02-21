@@ -6,8 +6,6 @@ import { useTocHook, scrollToId } from '@/src/components/tocHooks';
 export const DesktopTOC = () => {
   const { toc, activeId } = useTocHook();
 
-  if (toc.length === 0) return null;
-
   return (
     <nav
       className={css({
@@ -15,7 +13,7 @@ export const DesktopTOC = () => {
         top: '120px',
         alignSelf: 'start',
         display: 'none',
-        lg: { display: 'block' }, // 데스크탑에서만 표시
+        lg: { display: 'block' },
         w: '240px',
         maxH: 'calc(100vh - 140px)',
         overflowY: 'auto',
@@ -53,7 +51,13 @@ export const DesktopTOC = () => {
                 activeId === item.id ? 'blue.600' : 'transparent',
               ml: '-17px', // border-left를 위한 보정 (1px + 16px pl)
               paddingLeft:
-                item.level === 4 ? '39px' : item.level === 3 ? '31px' : item.level === 2 ? '23px' : '15px',
+                item.level === 4
+                  ? '39px'
+                  : item.level === 3
+                    ? '31px'
+                    : item.level === 2
+                      ? '23px'
+                      : '15px',
               _hover: { color: 'gray.900' },
             })}
           >

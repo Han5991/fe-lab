@@ -1,13 +1,15 @@
+'use client';
+
 import { useEffect, useState } from 'react';
 
 export const scrollToId = ({
   id,
   headerOffset,
-  closeCallBack,
+  action,
 }: {
   id: string;
   headerOffset: number;
-  closeCallBack?: () => void;
+  action?: () => void;
 }) => {
   const el = document.getElementById(id);
   if (el) {
@@ -18,7 +20,7 @@ export const scrollToId = ({
       top: offsetPosition,
       behavior: 'smooth',
     });
-    closeCallBack && closeCallBack();
+    action && action();
   }
 };
 
@@ -33,26 +35,19 @@ export const useTocHook = () => {
   const [activeId, setActiveId] = useState('');
 
   useEffect(() => {
-    // DOM이 렌더링된 후 헤더를 찾습니다.
-    const updateToc = () => {
-      const content = document.getElementById('post-content');
-      if (!content) return;
+    const content = document.getElementById('post-content');
+    if (!content) return;
 
-      const headers = content.querySelectorAll('h1, h2, h3, h4');
-      const items = Array.from(headers)
-        .map(header => ({
-          id: header.id,
-          text: header.textContent || '',
-          level: parseInt(header.tagName.substring(1)),
-        }))
-        .filter(item => item.id);
+    const headers = content.querySelectorAll('h1, h2, h3, h4');
+    const items = Array.from(headers)
+      .map(header => ({
+        id: header.id,
+        text: header.textContent || '',
+        level: parseInt(header.tagName.substring(1)),
+      }))
+      .filter(item => item.id);
 
-      setToc(items);
-    };
-
-    const timer = setTimeout(updateToc, 500);
-
-    return () => clearTimeout(timer);
+    setToc(items);
   }, []);
 
   useEffect(() => {
