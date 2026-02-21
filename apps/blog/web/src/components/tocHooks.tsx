@@ -49,7 +49,6 @@ export const useTocHook = () => {
 
       setToc(items);
     };
-    updateToc();
 
     const timer = setTimeout(updateToc, 500);
 

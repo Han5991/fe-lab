@@ -4,7 +4,6 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { css } from '@design-system/ui-lib/css';
 import { Search, X } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
 
 interface SearchPost {
   slug: string;

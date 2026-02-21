@@ -44,7 +44,7 @@ interface RankedPost extends PostData {
 
 export function TopPosts({ posts }: TopPostsProps) {
   const { data: topPosts } = useSuspenseQuery({
-    queryKey: ['posts'],
+    queryKey: ['top-posts'],
     queryFn: async () => {
       const { data } = await client
         .from('post_views')
