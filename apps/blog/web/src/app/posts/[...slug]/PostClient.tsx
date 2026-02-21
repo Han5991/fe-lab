@@ -108,7 +108,13 @@ const CopyButton = ({ content }: { content: string }) => {
   );
 };
 
-export default function PostClient({ post, thumbnailUrl }: { post: PostData; thumbnailUrl?: string }) {
+export default function PostClient({
+  post,
+  thumbnailUrl,
+}: {
+  post: PostData;
+  thumbnailUrl?: string;
+}) {
   useViewCount(post.slug);
   return (
     <>
@@ -122,16 +128,20 @@ export default function PostClient({ post, thumbnailUrl }: { post: PostData; thu
 
       <SsgoiTransition
         id={`/posts/${post.slug}`}
-        className={cx(
-          css({
-            maxW: 'screen-xl',
-            m: '0 auto',
-            px: '6',
-            py: '20',
-          }),
-        )}
+        className={css({
+          maxW: 'screen-xl',
+          m: '0 auto',
+          px: '6',
+          py: '20',
+        })}
       >
-        <div className={css({ display: 'flex', gap: '8', justifyContent: 'center' })}>
+        <div
+          className={css({
+            display: 'flex',
+            gap: '8',
+            justifyContent: 'center',
+          })}
+        >
           {/* Main Content Article */}
           <article className={css({ flex: 1, maxW: '850px', minW: 0 })}>
             <header className={css({ mb: '16', textAlign: 'center' })}>
@@ -176,7 +186,10 @@ export default function PostClient({ post, thumbnailUrl }: { post: PostData; thu
                 })}
               >
                 {post.date && (
-                  <time dateTime={post.date} className={css({ color: 'gray.500' })}>
+                  <time
+                    dateTime={post.date}
+                    className={css({ color: 'gray.500' })}
+                  >
                     {new Date(post.date).toLocaleDateString('ko-KR', {
                       year: 'numeric',
                       month: 'long',
@@ -390,14 +403,14 @@ export default function PostClient({ post, thumbnailUrl }: { post: PostData; thu
                     // children 중 block-level 요소가 있으면 <div>로 렌더링
                     const hasBlockChild = Array.isArray(children)
                       ? children.some(
-                        (child: any) =>
-                          typeof child === 'object' &&
-                          child?.type &&
-                          typeof child.type !== 'string' // React component (like Zoom)
-                      )
+                          (child: any) =>
+                            typeof child === 'object' &&
+                            child?.type &&
+                            typeof child.type !== 'string', // React component (like Zoom)
+                        )
                       : typeof children === 'object' &&
-                      (children as any)?.type &&
-                      typeof (children as any).type !== 'string';
+                        (children as any)?.type &&
+                        typeof (children as any).type !== 'string';
                     if (hasBlockChild) {
                       return <div {...props}>{children}</div>;
                     }
@@ -552,8 +565,22 @@ export default function PostClient({ post, thumbnailUrl }: { post: PostData; thu
                   },
                   table({ children, ...props }) {
                     return (
-                      <div className={css({ w: 'full', overflowX: 'auto', mb: '12', mt: '8' })}>
-                        <table {...props} className={css({ w: 'full', borderCollapse: 'separate', borderSpacing: 0 })} >
+                      <div
+                        className={css({
+                          w: 'full',
+                          overflowX: 'auto',
+                          mb: '12',
+                          mt: '8',
+                        })}
+                      >
+                        <table
+                          {...props}
+                          className={css({
+                            w: 'full',
+                            borderCollapse: 'separate',
+                            borderSpacing: 0,
+                          })}
+                        >
                           {children}
                         </table>
                       </div>
@@ -575,7 +602,11 @@ export default function PostClient({ post, thumbnailUrl }: { post: PostData; thu
                         </li>
                       );
                     }
-                    return <li className={className} {...props}>{children}</li>;
+                    return (
+                      <li className={className} {...props}>
+                        {children}
+                      </li>
+                    );
                   },
                 }}
               >
@@ -583,7 +614,13 @@ export default function PostClient({ post, thumbnailUrl }: { post: PostData; thu
               </ReactMarkdown>
             </div>
 
-            <div className={css({ my: '12', display: 'flex', justifyContent: 'center' })}>
+            <div
+              className={css({
+                my: '12',
+                display: 'flex',
+                justifyContent: 'center',
+              })}
+            >
               <ShareButton title={post.title} />
             </div>
 
