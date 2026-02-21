@@ -63,23 +63,27 @@ export class Graph {
     const baseDir = path.dirname(importer);
     const fullPath = path.resolve(baseDir, importPath);
 
-    if (fs.existsSync(fullPath) && fs.statSync(fullPath).isFile()) {
+    const stat = fs.statSync(fullPath, { throwIfNoEntry: false });
+
+    if (stat?.isFile()) {
       return fullPath;
     }
 
-    if (fs.existsSync(fullPath) && fs.statSync(fullPath).isDirectory()) {
+    if (stat?.isDirectory()) {
       const indexPath = path.join(fullPath, 'index.js');
-      if (fs.existsSync(indexPath) && fs.statSync(indexPath).isFile()) {
+      const indexStat = fs.statSync(indexPath, { throwIfNoEntry: false });
+      if (indexStat?.isFile()) {
         return indexPath;
       }
     }
 
     const jsPath = fullPath + '.js';
-    if (fs.existsSync(jsPath) && fs.statSync(jsPath).isFile()) {
+    const jsStat = fs.statSync(jsPath, { throwIfNoEntry: false });
+    if (jsStat?.isFile()) {
       return jsPath;
     }
 
-    return fullPath.endsWith('.js') ? fullPath : fullPath + '.js';
+    throw new Error(`Could not resolve "${importPath}" from "${importer}"`);
   }
 
   /**
