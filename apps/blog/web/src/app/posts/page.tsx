@@ -61,7 +61,7 @@ export default function PostsPage() {
       <SsgoiTransition id="/posts">
         <div
           className={css({
-            maxW: '800px',
+            maxW: '1200px',
             m: '0 auto',
             px: '6',
             py: { base: '8', md: '16' },

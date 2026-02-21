@@ -17,7 +17,7 @@ export const Layout = ({ children }: LayoutProps) => {
         bg: 'white',
         color: 'gray.900',
         display: 'flex',
-        flexDirection: 'column',
+        flexDir: 'column',
       })}
     >
       <nav
@@ -33,7 +33,7 @@ export const Layout = ({ children }: LayoutProps) => {
       >
         <div
           className={css({
-            maxW: '800px',
+            maxW: '1200px',
             m: 'auto',
             px: '6',
             h: '16',
