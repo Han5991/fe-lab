@@ -108,7 +108,13 @@ const CopyButton = ({ content }: { content: string }) => {
   );
 };
 
-export default function PostClient({ post, thumbnailUrl }: { post: PostData; thumbnailUrl?: string }) {
+export default function PostClient({
+  post,
+  thumbnailUrl,
+}: {
+  post: PostData;
+  thumbnailUrl?: string;
+}) {
   useViewCount(post.slug);
   return (
     <>
@@ -122,16 +128,20 @@ export default function PostClient({ post, thumbnailUrl }: { post: PostData; thu
 
       <SsgoiTransition
         id={`/posts/${post.slug}`}
-        className={cx(
-          css({
-            maxW: 'screen-xl',
-            m: '0 auto',
-            px: '6',
-            py: '20',
-          }),
-        )}
+        className={css({
+          maxW: 'screen-xl',
+          m: '0 auto',
+          px: '6',
+          py: '20',
+        })}
       >
-        <div className={css({ display: 'flex', gap: '8', justifyContent: 'center' })}>
+        <div
+          className={css({
+            display: 'flex',
+            gap: '8',
+            justifyContent: 'center',
+          })}
+        >
           {/* Main Content Article */}
           <article className={css({ flex: 1, maxW: '850px', minW: 0 })}>
             <header className={css({ mb: '16', textAlign: 'center' })}>
@@ -176,7 +186,10 @@ export default function PostClient({ post, thumbnailUrl }: { post: PostData; thu
                 })}
               >
                 {post.date && (
-                  <time dateTime={post.date} className={css({ color: 'gray.500' })}>
+                  <time
+                    dateTime={post.date}
+                    className={css({ color: 'gray.500' })}
+                  >
                     {new Date(post.date).toLocaleDateString('ko-KR', {
                       year: 'numeric',
                       month: 'long',
@@ -237,12 +250,12 @@ export default function PostClient({ post, thumbnailUrl }: { post: PostData; thu
                   mb: '6',
                   color: 'gray.900',
                   letterSpacing: 'tight',
-                  position: 'relative',
+                  pos: 'relative',
                   display: 'inline-block',
                   scrollMarginTop: '100px',
                   _after: {
                     content: '""',
-                    position: 'absolute',
+                    pos: 'absolute',
                     bottom: '-2',
                     left: '0',
                     w: 'full',
@@ -257,6 +270,14 @@ export default function PostClient({ post, thumbnailUrl }: { post: PostData; thu
                   mt: 8,
                   mb: '4',
                   color: 'gray.900',
+                  scrollMarginTop: '100px',
+                },
+                '& h4': {
+                  fontSize: 'lg',
+                  fontWeight: '600',
+                  mt: 6,
+                  mb: '3',
+                  color: 'gray.800',
                   scrollMarginTop: '100px',
                 },
                 '& p': { mb: '8' },
@@ -287,7 +308,7 @@ export default function PostClient({ post, thumbnailUrl }: { post: PostData; thu
                   bg: 'gray.100',
                   px: '1.5',
                   py: '0.5',
-                  borderRadius: 'md',
+                  rounded: 'md',
                   fontSize: '0.85em',
                   color: 'red.500',
                   fontWeight: '500',
@@ -325,7 +346,7 @@ export default function PostClient({ post, thumbnailUrl }: { post: PostData; thu
                   },
                 },
                 '& img': {
-                  borderRadius: '2xl',
+                  rounded: '2xl',
                   w: 'full',
                   h: 'auto',
                   shadow: '2xl',
@@ -333,12 +354,12 @@ export default function PostClient({ post, thumbnailUrl }: { post: PostData; thu
                   borderColor: 'gray.100',
                 },
                 '& hr': {
-                  my: 12,
+                  my: 8,
                   h: '1px',
                   border: 'none',
                   bgGradient: 'to-r',
                   gradientFrom: 'transparent',
-                  gradientVia: 'gray.200',
+                  gradientVia: 'gray.300',
                   gradientTo: 'transparent',
                 },
                 '& table': {
@@ -350,7 +371,7 @@ export default function PostClient({ post, thumbnailUrl }: { post: PostData; thu
                   fontSize: 'md',
                   borderWidth: '1px',
                   borderColor: 'gray.200',
-                  borderRadius: '2xl',
+                  rounded: '2xl',
                   overflow: 'hidden',
                   boxShadow: 'sm',
                 },
@@ -390,21 +411,18 @@ export default function PostClient({ post, thumbnailUrl }: { post: PostData; thu
                     // children 중 block-level 요소가 있으면 <div>로 렌더링
                     const hasBlockChild = Array.isArray(children)
                       ? children.some(
-                        (child: any) =>
-                          typeof child === 'object' &&
-                          child?.type &&
-                          typeof child.type !== 'string' // React component (like Zoom)
-                      )
+                          (child: any) =>
+                            typeof child === 'object' &&
+                            child?.type &&
+                            typeof child.type !== 'string', // React component (like Zoom)
+                        )
                       : typeof children === 'object' &&
-                      (children as any)?.type &&
-                      typeof (children as any).type !== 'string';
+                        (children as any)?.type &&
+                        typeof (children as any).type !== 'string';
                     if (hasBlockChild) {
                       return <div {...props}>{children}</div>;
                     }
                     return <p {...props}>{children}</p>;
-                  },
-                  h1({ children, ...props }) {
-                    return <h2 {...props}>{children}</h2>;
                   },
                   code({ node, className, children, ...props }: any) {
                     const match = /language-(\w+)/.exec(className || '');
@@ -552,8 +570,22 @@ export default function PostClient({ post, thumbnailUrl }: { post: PostData; thu
                   },
                   table({ children, ...props }) {
                     return (
-                      <div className={css({ w: 'full', overflowX: 'auto', mb: '12', mt: '8' })}>
-                        <table {...props} className={css({ w: 'full', borderCollapse: 'separate', borderSpacing: 0 })} >
+                      <div
+                        className={css({
+                          w: 'full',
+                          overflowX: 'auto',
+                          mb: '12',
+                          mt: '8',
+                        })}
+                      >
+                        <table
+                          {...props}
+                          className={css({
+                            w: 'full',
+                            borderCollapse: 'separate',
+                            borderSpacing: 0,
+                          })}
+                        >
                           {children}
                         </table>
                       </div>
@@ -575,7 +607,11 @@ export default function PostClient({ post, thumbnailUrl }: { post: PostData; thu
                         </li>
                       );
                     }
-                    return <li className={className} {...props}>{children}</li>;
+                    return (
+                      <li className={className} {...props}>
+                        {children}
+                      </li>
+                    );
                   },
                 }}
               >
@@ -583,7 +619,13 @@ export default function PostClient({ post, thumbnailUrl }: { post: PostData; thu
               </ReactMarkdown>
             </div>
 
-            <div className={css({ my: '12', display: 'flex', justifyContent: 'center' })}>
+            <div
+              className={css({
+                my: '12',
+                display: 'flex',
+                justifyContent: 'center',
+              })}
+            >
               <ShareButton title={post.title} />
             </div>
 

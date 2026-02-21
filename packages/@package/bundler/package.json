@@ -3,28 +3,29 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "bin": {
-    "minibundler": "./dist/cli.js"
-  },
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "require": "./dist/index.cjs"
     }
   },
   "scripts": {
-    "build": "tsup src/index.ts src/cli.ts --format esm --clean --dts --no-splitting",
-    "dev": "tsup src/index.ts src/cli.ts --format esm --clean --watch --dts --no-splitting"
+    "build": "tsup",
+    "dev": "tsup --watch"
+  },
+  "bin": {
+    "minibundler": "./dist/cli.js"
   },
   "devDependencies": {
     "@types/estree": "^1.0.8",
     "@types/node": "^24.10.4",
-    "magic-string": "^0.30.21",
     "tsup": "8.4.0",
     "tsx": "^4.19.2",
     "typescript": "5.9.3"
   },
   "dependencies": {
-    "acorn": "^8.14.0"
+    "acorn": "^8.14.0",
+    "magic-string": "^0.30.21"
   }
 }

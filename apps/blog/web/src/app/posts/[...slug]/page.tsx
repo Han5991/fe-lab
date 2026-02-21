@@ -1,8 +1,14 @@
-import { getAllPostSlugs, getPostBySlug, getAdjacentPosts, getSeriesAdjacentPosts } from '@/lib/posts';
+import {
+  getAllPostSlugs,
+  getPostBySlug,
+  getAdjacentPosts,
+  getSeriesAdjacentPosts,
+} from '@/lib/posts';
 import { notFound } from 'next/navigation';
 import PostClient from './PostClient';
 import { PostNavigation } from '@/src/components/post/PostNavigation';
 import type { Metadata } from 'next';
+import { css } from '@design-system/ui-lib/css';
 
 interface Props {
   params: Promise<{
@@ -44,7 +50,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       images: [
         {
           url: post.thumbnail
-            ? post.thumbnail.startsWith('http') || post.thumbnail.startsWith('/')
+            ? post.thumbnail.startsWith('http') ||
+              post.thumbnail.startsWith('/')
               ? post.thumbnail
               : `/posts/${post.relativeDir ? post.relativeDir + '/' : ''}${post.thumbnail}`
             : '/og-default.png',
@@ -81,7 +88,11 @@ export default async function PostPage({ params }: Props) {
   const { prev, next } = getAdjacentPosts(slug);
   const seriesAdj = getSeriesAdjacentPosts(slug);
   const seriesNav = seriesAdj.seriesName
-    ? { prev: seriesAdj.prev, next: seriesAdj.next, seriesName: seriesAdj.seriesName }
+    ? {
+        prev: seriesAdj.prev,
+        next: seriesAdj.next,
+        seriesName: seriesAdj.seriesName,
+      }
     : null;
 
   const thumbnailUrl = post.thumbnail
@@ -115,11 +126,13 @@ export default async function PostPage({ params }: Props) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <PostClient post={post} thumbnailUrl={post.thumbnail ? thumbnailUrl : undefined} />
-      <div className="post-nav-wrapper" style={{ maxWidth: '800px', margin: '0 auto', padding: '0 24px' }}>
+      <PostClient
+        post={post}
+        thumbnailUrl={post.thumbnail ? thumbnailUrl : undefined}
+      />
+      <div className={css({ maxW: '1200px', m: '0 auto', p: '0 24px' })}>
         <PostNavigation prev={prev} next={next} seriesNav={seriesNav} />
       </div>
     </>
   );
 }
-

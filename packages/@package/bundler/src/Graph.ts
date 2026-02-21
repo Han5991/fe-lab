@@ -61,10 +61,29 @@ export class Graph {
 
   resolve(importPath: string, importer: string): string {
     const baseDir = path.dirname(importer);
-    // 간단한 확장자 처리
-    let fullPath = path.resolve(baseDir, importPath);
-    if (!fullPath.endsWith('.js')) fullPath += '.js';
-    return fullPath;
+    const fullPath = path.resolve(baseDir, importPath);
+
+    const stat = fs.statSync(fullPath, { throwIfNoEntry: false });
+
+    if (stat?.isFile()) {
+      return fullPath;
+    }
+
+    if (stat?.isDirectory()) {
+      const indexPath = path.join(fullPath, 'index.js');
+      const indexStat = fs.statSync(indexPath, { throwIfNoEntry: false });
+      if (indexStat?.isFile()) {
+        return indexPath;
+      }
+    }
+
+    const jsPath = fullPath + '.js';
+    const jsStat = fs.statSync(jsPath, { throwIfNoEntry: false });
+    if (jsStat?.isFile()) {
+      return jsPath;
+    }
+
+    throw new Error(`Could not resolve "${importPath}" from "${importer}"`);
   }
 
   /**
@@ -113,6 +132,12 @@ export class Graph {
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = entryExports;
   }
+
+  // 전역 변수 노출 (브라우저 지원)
+  if (typeof window !== 'undefined') {
+    window.BundlerLibrary = entryExports;
+  }
+
   return entryExports;
 })({`;
 

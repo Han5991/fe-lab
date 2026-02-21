@@ -10,9 +10,16 @@ interface LayoutProps {
 }
 
 export const Layout = ({ children }: LayoutProps) => {
-
   return (
-    <div className={css({ minH: '100vh', bg: 'white', color: 'gray.900', display: 'flex', flexDirection: 'column' })}>
+    <div
+      className={css({
+        minH: '100vh',
+        bg: 'white',
+        color: 'gray.900',
+        display: 'flex',
+        flexDir: 'column',
+      })}
+    >
       <nav
         className={css({
           borderBottomWidth: '1px',
@@ -26,7 +33,7 @@ export const Layout = ({ children }: LayoutProps) => {
       >
         <div
           className={css({
-            maxW: '800px',
+            maxW: '1200px',
             m: 'auto',
             px: '6',
             h: '16',
@@ -47,7 +54,9 @@ export const Layout = ({ children }: LayoutProps) => {
           >
             FE Lab
           </Link>
-          <div className={css({ display: 'flex', alignItems: 'center', gap: '3' })}>
+          <div
+            className={css({ display: 'flex', alignItems: 'center', gap: '3' })}
+          >
             <SearchDialog />
             <Link
               href="/posts"
@@ -91,4 +100,3 @@ export const Layout = ({ children }: LayoutProps) => {
     </div>
   );
 };
-
