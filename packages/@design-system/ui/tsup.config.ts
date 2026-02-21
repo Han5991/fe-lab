@@ -6,8 +6,7 @@ export default defineConfig({
     preset: './src/preset.ts',
     Button: './src/button.tsx',
   },
-  format: ['esm', 'cjs'],
-  external: ['@@design-system/ui-lib'],
+  format: ['esm'],
   dts: true,
   clean: true,
 });

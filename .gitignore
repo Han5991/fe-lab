@@ -48,3 +48,4 @@ yarn-error.log*
 /apps/blog/web/public/posts/
 
 gha-creds-*.json
+\n# Gemini Skills\n*.skill
