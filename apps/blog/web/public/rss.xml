@@ -5,8 +5,15 @@
     <link>https://blog.sangwook.dev</link>
     <description>프론트엔드 기술 실험과 깊이 있는 학습 내용을 공유하는 공간입니다.</description>
     <language>ko</language>
-    <lastBuildDate>Mon, 16 Feb 2026 08:11:06 GMT</lastBuildDate>
+    <lastBuildDate>Sun, 22 Feb 2026 05:18:03 GMT</lastBuildDate>
     <atom:link href="https://blog.sangwook.dev/rss.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>[누가 시키지도 않았는데 번들러 만들기] 3. 번들링과 스코프: 파일 합치기의 기술</title>
+      <link>https://blog.sangwook.dev/posts/no-one-asked-library-bundler-03-bundling-scope/</link>
+      <guid isPermaLink="true">https://blog.sangwook.dev/posts/no-one-asked-library-bundler-03-bundling-scope/</guid>
+      <pubDate>Mon, 23 Feb 2026 00:00:00 GMT</pubDate>
+      <description>단순히 파일을 합치는 것과 번들링은 다릅니다. 변수 충돌을 막기 위한 함수 스코프 전략과 브라우저를 위한 런타임 구현 과정을 깊이 있게 다룹니다.</description>
+    </item>
     <item>
       <title>[누가 시키지도 않았는데 번들러 만들기] 2. 코드를 데이터로 보는 법 (AST Graph)</title>
       <link>https://blog.sangwook.dev/posts/no-one-asked-library-bundler-02-ast-graph/</link>
