@@ -1,5 +1,35 @@
 [
   {
+    "slug": "no-one-asked-library-bundler-03-bundling-scope",
+    "title": "[누가 시키지도 않았는데 번들러 만들기] 3. 번들링과 스코프: 파일 합치기의 기술",
+    "date": "2026-02-23",
+    "excerpt": "단순히 파일을 합치는 것과 번들링은 다릅니다. 변수 충돌을 막기 위한 함수 스코프 전략과 브라우저를 위한 런타임 구현 과정을 깊이 있게 다룹니다.",
+    "tags": [
+      "bundler",
+      "javascript",
+      "iife",
+      "scope",
+      "cjs",
+      "ast"
+    ],
+    "series": "bundler"
+  },
+  {
+    "slug": "no-one-asked-library-bundler-02-ast-graph",
+    "title": "[누가 시키지도 않았는데 번들러 만들기] 2. 코드를 데이터로 보는 법 (AST Graph)",
+    "date": "2026-02-17",
+    "excerpt": "정규표현식으로 import 문을 찾으려다 실패한 경험, 그리고 AST 추상 구문 트리를 통해 코드를 데이터로 바라보는 관점을 소개합니다. 파일 시스템을 그래프로 변환하는 과정을 직접 구현해봅니다.",
+    "tags": [
+      "bundler",
+      "javascript",
+      "ast",
+      "graph",
+      "dfs",
+      "algorithm"
+    ],
+    "series": "bundler"
+  },
+  {
     "slug": "no-one-asked-library-bundler-00-prologue",
     "title": "[누가 시키지도 않았는데 번들러 만들기] 0. 프롤로그: 질문이 구현이 되는 순간",
     "date": "2026-02-02",

@@ -2,12 +2,12 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://blog.sangwook.dev/</loc>
-    <lastmod>2026-02-16</lastmod>
+    <lastmod>2026-02-22</lastmod>
     <priority>1.0</priority>
   </url>
   <url>
     <loc>https://blog.sangwook.dev/posts/</loc>
-    <lastmod>2026-02-16</lastmod>
+    <lastmod>2026-02-22</lastmod>
     <priority>0.8</priority>
   </url>
   
@@ -59,6 +59,16 @@
   <url>
     <loc>https://blog.sangwook.dev/posts/no-one-asked-library-bundler-01-concept/</loc>
     <lastmod>2026-02-02</lastmod>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://blog.sangwook.dev/posts/no-one-asked-library-bundler-02-ast-graph/</loc>
+    <lastmod>2026-02-17</lastmod>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://blog.sangwook.dev/posts/no-one-asked-library-bundler-03-bundling-scope/</loc>
+    <lastmod>2026-02-23</lastmod>
     <priority>0.6</priority>
   </url>
   <url>
