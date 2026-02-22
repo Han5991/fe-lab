@@ -7,8 +7,8 @@ env:
 
 on:
   push:
-    branches: [ main ]
-    paths: [ 'apps/blog/**' ]
+    branches: [main]
+    paths: ['apps/blog/**']
 
   workflow_dispatch:
 
@@ -58,6 +58,7 @@ jobs:
           PAGES_BASE_PATH: ${{ steps.setup_pages.outputs.base_path }}
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          NEXT_PUBLIC_ADMIN_EMAIL: ${{ secrets.NEXT_PUBLIC_ADMIN_EMAIL }}
           NODE_ENV: production
 
       - name: Upload to pages artifact
