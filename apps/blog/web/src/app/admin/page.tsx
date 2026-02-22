@@ -1,6 +1,6 @@
 'use client';
 
-import { client as supabase } from '@/lib/client';
+import { client } from '@/lib/client';
 import { useRouter } from 'next/navigation';
 import { LogOut, BarChart3, Users, FileText } from 'lucide-react';
 import { css } from '@design-system/ui-lib/css';
@@ -9,12 +9,18 @@ export default function AdminDashboardPage() {
   const router = useRouter();
 
   const handleLogout = async () => {
-    await supabase.auth.signOut({ scope: 'local' });
+    await client.auth.signOut({ scope: 'local' });
     router.push('/admin/login');
   };
 
   return (
-    <div className={css({ minH: '100vh', bg: '#f9fafb', p: '2rem' })}>
+    <div
+      className={css({
+        minH: 'calc(100dvh-128px)',
+        bg: '#f9fafb',
+        p: '2rem',
+      })}
+    >
       <header
         className={css({
           display: 'flex',
@@ -44,6 +50,7 @@ export default function AdminDashboardPage() {
             gap: '0.5rem',
             p: '0.5rem 1rem',
             color: '#4b5563',
+            cursor: 'pointer',
             rounded: '4px',
             transition: 'background-color 0.2s',
             _hover: { bg: '#f3f4f6', color: '#ef4444' },
