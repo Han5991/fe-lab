@@ -67,18 +67,16 @@ function computeDerivedStats(post: PostStatDetail) {
 
   // Milestones
   const milestoneTargets = [100, 500, 1000, 5000];
-  let cumulative = 0;
   const milestones = milestoneTargets.map(target => {
     let reachedDate: string | null = null;
     let tempCum = 0;
     for (const t of sorted) {
       tempCum += t.view_count;
-      if (tempCum >= target && !reachedDate) {
+      if (tempCum >= target) {
         reachedDate = t.view_date;
         break;
       }
     }
-    cumulative = tempCum;
     return {
       target,
       reached: post.totalViews >= target,
