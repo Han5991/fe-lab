@@ -47,8 +47,10 @@ export function PostList() {
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          p: '1rem 1.5rem',
+          p: { base: '0.75rem 1rem', md: '1rem 1.5rem' },
           borderBottom: '1px solid #e5e7eb',
+          flexWrap: 'wrap',
+          gap: '0.5rem',
         })}
       >
         <div
@@ -78,7 +80,13 @@ export function PostList() {
           >
             <RefreshCw size={14} /> 새로고침
           </button>
-          <span className={css({ fontSize: '0.875rem', color: '#6b7280' })}>
+          <span
+            className={css({
+              fontSize: '0.875rem',
+              color: '#6b7280',
+              display: { base: 'none', md: 'inline' },
+            })}
+          >
             마지막 업데이트: {lastUpdated.toLocaleString('ko-KR')}
           </span>
         </div>

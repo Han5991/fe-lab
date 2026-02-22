@@ -109,7 +109,7 @@ export default function AdminDashboardPage() {
       className={css({
         minH: 'calc(100dvh-128px)',
         bg: '#f9fafb',
-        p: '2rem',
+        p: { base: '1rem', md: '2rem' },
       })}
     >
       <header
@@ -118,9 +118,11 @@ export default function AdminDashboardPage() {
           alignItems: 'center',
           mb: '2rem',
           bg: 'white',
-          p: '1rem 2rem',
+          p: { base: '0.75rem 1rem', md: '1rem 2rem' },
           rounded: '8px',
           boxShadow: '0 1px 3px 0 rgb(0 0 0 / 0.1)',
+          flexWrap: 'wrap',
+          gap: '0.5rem',
         })}
       >
         <div

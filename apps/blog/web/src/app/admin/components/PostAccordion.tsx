@@ -49,7 +49,7 @@ export function PostAccordion({ post }: Props) {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          p: '1rem 1.5rem',
+          p: { base: '0.75rem 1rem', md: '1rem 1.5rem' },
           bg: isOpen ? '#f3f4f6' : 'transparent',
           transition: 'background-color 0.2s',
           _hover: { bg: '#f9fafb' },
@@ -90,6 +90,7 @@ export function PostAccordion({ post }: Props) {
               color: '#9ca3af',
               fontSize: '0.875rem',
               flexShrink: 0,
+              display: { base: 'none', md: 'inline' },
             })}
           >
             {post.date}
@@ -129,18 +130,6 @@ export function PostAccordion({ post }: Props) {
             </span>
           </div>
 
-          {/* Date filter – stop propagation so clicking it doesn't toggle the accordion */}
-          <div onClick={e => e.stopPropagation()}>
-            <DateRangeControls
-              filterType={filterType}
-              setFilterType={setFilterType}
-              startDate={startDate}
-              setStartDate={setStartDate}
-              endDate={endDate}
-              setEndDate={setEndDate}
-            />
-          </div>
-
           <motion.div
             animate={{ rotate: isOpen ? 180 : 0 }}
             transition={{ duration: 0.2 }}
@@ -164,7 +153,29 @@ export function PostAccordion({ post }: Props) {
             transition={{ duration: 0.3, ease: 'easeInOut' }}
             className={css({ overflow: 'hidden' })}
           >
-            <div className={css({ p: '1.5rem', bg: '#f9fafb' })}>
+            <div
+              className={css({
+                p: { base: '1rem', md: '1.5rem' },
+                bg: '#f9fafb',
+              })}
+            >
+              {/* Date filter */}
+              <div
+                className={css({
+                  display: 'flex',
+                  justifyContent: 'flex-end',
+                  mb: '1rem',
+                })}
+              >
+                <DateRangeControls
+                  filterType={filterType}
+                  setFilterType={setFilterType}
+                  startDate={startDate}
+                  setStartDate={setStartDate}
+                  endDate={endDate}
+                  setEndDate={setEndDate}
+                />
+              </div>
               <div className={css({ h: '250px', w: '100%' })}>
                 {formattedData.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">

@@ -5,7 +5,7 @@
     <link>https://blog.sangwook.dev</link>
     <description>프론트엔드 기술 실험과 깊이 있는 학습 내용을 공유하는 공간입니다.</description>
     <language>ko</language>
-    <lastBuildDate>Sun, 22 Feb 2026 05:18:03 GMT</lastBuildDate>
+    <lastBuildDate>Sun, 22 Feb 2026 05:22:58 GMT</lastBuildDate>
     <atom:link href="https://blog.sangwook.dev/rss.xml" rel="self" type="application/rss+xml"/>
     <item>
       <title>[누가 시키지도 않았는데 번들러 만들기] 3. 번들링과 스코프: 파일 합치기의 기술</title>
