@@ -66,7 +66,7 @@ export function PostAccordion({ post }: Props) {
           })}
         >
           <Link
-            href={`/post/${post.slug}`}
+            href={`/posts/${post.slug}`}
             target="_blank"
             onClick={e => e.stopPropagation()}
             className={css({ color: '#6b7280', _hover: { color: '#3b82f6' } })}
