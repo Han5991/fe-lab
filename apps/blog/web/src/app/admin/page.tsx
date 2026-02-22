@@ -9,7 +9,7 @@ export default function AdminDashboardPage() {
   const router = useRouter();
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    await supabase.auth.signOut({ scope: 'local' });
     router.push('/admin/login');
   };
 
