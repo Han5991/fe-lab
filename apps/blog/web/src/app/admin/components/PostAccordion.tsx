@@ -1,9 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { PostStatDetail } from '@/lib/hooks/useAdminViews';
+import { computeBriefStats } from '@/lib/hooks/usePostDetailStats';
 import { css } from '@design-system/ui-lib/css';
-import { ChevronDown, ExternalLink } from 'lucide-react';
+import {
+  ChevronDown,
+  ExternalLink,
+  BarChart3,
+  TrendingUp,
+  TrendingDown,
+} from 'lucide-react';
 import {
   LineChart,
   Line,
@@ -22,6 +29,7 @@ interface Props {
 
 export function PostAccordion({ post }: Props) {
   const [isOpen, setIsOpen] = useState(false);
+  const briefStats = useMemo(() => computeBriefStats(post), [post]);
   const {
     filterType,
     setFilterType,
@@ -66,12 +74,29 @@ export function PostAccordion({ post }: Props) {
           })}
         >
           <Link
+            href={`/admin/analytics/${post.slug}`}
+            onClick={e => e.stopPropagation()}
+            className={css({
+              color: '#6b7280',
+              _hover: { color: '#3b82f6' },
+              display: 'flex',
+              alignItems: 'center',
+            })}
+          >
+            <BarChart3 size={16} />
+          </Link>
+          <Link
             href={`/posts/${post.slug}`}
             target="_blank"
             onClick={e => e.stopPropagation()}
-            className={css({ color: '#6b7280', _hover: { color: '#3b82f6' } })}
+            className={css({
+              color: '#d1d5db',
+              _hover: { color: '#3b82f6' },
+              display: 'flex',
+              alignItems: 'center',
+            })}
           >
-            <ExternalLink size={16} />
+            <ExternalLink size={14} />
           </Link>
           <span
             className={css({
@@ -159,6 +184,125 @@ export function PostAccordion({ post }: Props) {
                 bg: '#f9fafb',
               })}
             >
+              {/* Brief Analysis Cards */}
+              <div
+                className={css({
+                  display: 'grid',
+                  gridTemplateColumns: { base: '1fr', sm: 'repeat(3, 1fr)' },
+                  gap: '0.75rem',
+                  mb: '1rem',
+                })}
+              >
+                <div
+                  className={css({
+                    bg: 'white',
+                    p: '0.75rem 1rem',
+                    rounded: '6px',
+                    border: '1px solid #e5e7eb',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                  })}
+                >
+                  {briefStats.weekGrowthRate !== null &&
+                  briefStats.weekGrowthRate >= 0 ? (
+                    <TrendingUp
+                      size={14}
+                      className={css({ color: '#22c55e' })}
+                    />
+                  ) : (
+                    <TrendingDown
+                      size={14}
+                      className={css({ color: '#ef4444' })}
+                    />
+                  )}
+                  <span
+                    className={css({ fontSize: '0.75rem', color: '#6b7280' })}
+                  >
+                    7일 증감
+                  </span>
+                  <span
+                    className={css({
+                      fontWeight: 'bold',
+                      fontSize: '0.875rem',
+                      ml: 'auto',
+                      color:
+                        briefStats.weekGrowthRate !== null
+                          ? briefStats.weekGrowthRate >= 0
+                            ? '#22c55e'
+                            : '#ef4444'
+                          : '#9ca3af',
+                    })}
+                  >
+                    {briefStats.weekGrowthRate !== null
+                      ? `${briefStats.weekGrowthRate >= 0 ? '+' : ''}${briefStats.weekGrowthRate}%`
+                      : '—'}
+                  </span>
+                </div>
+                <div
+                  className={css({
+                    bg: 'white',
+                    p: '0.75rem 1rem',
+                    rounded: '6px',
+                    border: '1px solid #e5e7eb',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                  })}
+                >
+                  <BarChart3 size={14} className={css({ color: '#f59e0b' })} />
+                  <span
+                    className={css({ fontSize: '0.75rem', color: '#6b7280' })}
+                  >
+                    피크
+                  </span>
+                  <span
+                    className={css({
+                      fontWeight: 'bold',
+                      fontSize: '0.875rem',
+                      ml: 'auto',
+                      color: '#111827',
+                    })}
+                  >
+                    {briefStats.peakDay ? `${briefStats.peakDay.count}회` : '—'}
+                  </span>
+                  {briefStats.peakDay && (
+                    <span
+                      className={css({ fontSize: '0.7rem', color: '#9ca3af' })}
+                    >
+                      {briefStats.peakDay.date}
+                    </span>
+                  )}
+                </div>
+                <div
+                  className={css({
+                    bg: 'white',
+                    p: '0.75rem 1rem',
+                    rounded: '6px',
+                    border: '1px solid #e5e7eb',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                  })}
+                >
+                  <span
+                    className={css({ fontSize: '0.75rem', color: '#6b7280' })}
+                  >
+                    일평균
+                  </span>
+                  <span
+                    className={css({
+                      fontWeight: 'bold',
+                      fontSize: '0.875rem',
+                      ml: 'auto',
+                      color: '#111827',
+                    })}
+                  >
+                    {briefStats.dailyAverage}회
+                  </span>
+                </div>
+              </div>
+
               {/* Date filter */}
               <div
                 className={css({
