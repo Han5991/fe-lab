@@ -233,7 +233,7 @@ function AdminOverviewContent() {
             {topPosts.map((post, i) => (
               <Link
                 key={post.slug}
-                href={`/post/${post.slug}`}
+                href={`/posts/${post.slug}`}
                 target="_blank"
                 className={css({
                   display: 'flex',
@@ -309,7 +309,7 @@ function AdminOverviewContent() {
             {recentPosts.map((post, i) => (
               <Link
                 key={post.slug}
-                href={`/post/${post.slug}`}
+                href={`/posts/${post.slug}`}
                 target="_blank"
                 className={css({
                   display: 'flex',
