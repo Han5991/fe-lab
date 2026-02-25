@@ -570,25 +570,16 @@ export default function PostClient({
                   },
                   table({ children, ...props }) {
                     return (
-                      <div
+                      <table
+                        {...props}
                         className={css({
                           w: 'full',
-                          overflowX: 'auto',
-                          mb: '12',
-                          mt: '8',
+                          borderCollapse: 'separate',
+                          borderSpacing: 0,
                         })}
                       >
-                        <table
-                          {...props}
-                          className={css({
-                            w: 'full',
-                            borderCollapse: 'separate',
-                            borderSpacing: 0,
-                          })}
-                        >
-                          {children}
-                        </table>
-                      </div>
+                        {children}
+                      </table>
                     );
                   },
                   li({ className, children, ...props }) {
