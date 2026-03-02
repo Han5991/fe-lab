@@ -1,22 +1,15 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { client } from '../client';
+import type { PostStatDetail } from '../../domain/analytics/types';
 
-export interface PostStatDetail {
-  slug: string;
-  title: string;
-  date: string | null;
-  totalViews: number;
-  todayViews: number;
-  trends: { view_date: string; view_count: number }[];
-  status: 'published' | 'draft' | 'scheduled';
-  scheduledDate: string | null;
-}
+export type { PostStatDetail };
 
 export function useAdminDashboardData() {
   return useSuspenseQuery({
     queryKey: ['admin', 'dashboard-data'],
     queryFn: async (): Promise<PostStatDetail[]> => {
-      // Fetch post metadata (admin index includes draft/scheduled), overall stats, and daily trends concurrently
+      // admin-posts-index.json 대신 API Route를 사용해야 이상적이나,
+      // 현재 SSG 환경에서는 빌드 시 생성된 JSON을 사용합니다.
       const [metaRes, statsRes, trendsRes] = await Promise.all([
         fetch('/admin-posts-index.json').then(
           res =>
@@ -68,7 +61,6 @@ export function useAdminDashboardData() {
         });
       }
 
-      // Combine into the final shape
       const combined: PostStatDetail[] = metadata.map(post => {
         const postStats = statsMap.get(post.slug) || {
           total_views: 0,

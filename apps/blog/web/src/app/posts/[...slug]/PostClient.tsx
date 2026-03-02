@@ -1,17 +1,12 @@
 'use client';
 
-import { useState, useCallback, useEffect, Children } from 'react';
+import { Children } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import rehypeSlug from 'rehype-slug';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { vscDarkPlus } from 'react-syntax-highlighter/dist/cjs/styles/prism';
-import { css, cx } from '@design-system/ui-lib/css';
-import mermaid from 'mermaid';
+import { css } from '@design-system/ui-lib/css';
 import { SsgoiTransition } from '@ssgoi/react';
-import Zoom from 'react-medium-image-zoom';
-import 'react-medium-image-zoom/dist/styles.css';
 
 import type { PostData } from '@/lib/posts';
 import GiscusComments from '@/src/components/GiscusComments';
@@ -21,92 +16,8 @@ import { BackToTop } from '@/src/components/mobile/BackToTop';
 import { MobileTOC } from '@/src/components/mobile/MobileTOC';
 import { ShareButton } from '@/src/components/mobile/ShareButton';
 import { DesktopTOC } from '@/src/components/desktop/DesktopTOC';
-
-// Mermaid Initialization
-if (typeof window !== 'undefined') {
-  mermaid.initialize({
-    startOnLoad: true,
-    securityLevel: 'strict',
-  });
-}
-
-const Mermaid = ({ chart }: { chart: string }) => {
-  const [svg, setSvg] = useState<string>('');
-
-  useEffect(() => {
-    const renderChart = async () => {
-      try {
-        const { svg } = await mermaid.render(
-          `mermaid-${Math.random().toString(36).substr(2, 9)}`,
-          chart,
-        );
-        setSvg(svg);
-      } catch (error) {
-        console.error('Mermaid render failed:', error);
-      }
-    };
-    renderChart();
-  }, [chart]);
-
-  return (
-    <div
-      className={css({
-        my: '10',
-        p: '6',
-        bg: 'gray.50/50',
-        rounded: '2xl',
-        borderWidth: '1px',
-        borderColor: 'gray.100',
-        display: 'flex',
-        justifyContent: 'center',
-        overflow: 'auto',
-        transition: 'all 0.3s',
-        _hover: { shadow: 'xl', transform: 'translateY(-2px)', bg: 'white' },
-      })}
-      dangerouslySetInnerHTML={{ __html: svg }}
-    />
-  );
-};
-
-const CopyButton = ({ content }: { content: string }) => {
-  const [isCopied, setIsCopied] = useState(false);
-
-  const handleCopy = useCallback(async () => {
-    try {
-      await navigator.clipboard.writeText(content);
-      setIsCopied(true);
-      setTimeout(() => setIsCopied(false), 2000);
-    } catch (err) {
-      console.error('Copy failed', err);
-    }
-  }, [content]);
-
-  return (
-    <button
-      onClick={handleCopy}
-      className={css({
-        ml: '4',
-        px: '2',
-        py: '1',
-        fontSize: 'xs',
-        color: 'gray.400',
-        bg: 'white/5',
-        rounded: 'md',
-        borderWidth: '1px',
-        borderColor: 'white/10',
-        cursor: 'pointer',
-        transition: 'all 0.2s',
-        _hover: {
-          bg: 'white/10',
-          color: 'blue.400',
-          borderColor: 'blue.500/30',
-        },
-      })}
-    >
-      {isCopied ? 'Copied!' : 'Copy'}
-    </button>
-  );
-};
+import { CodeBlock } from '@/src/components/post/CodeBlock';
+import { MarkdownImage } from '@/src/components/post/MarkdownImage';
 
 export default function PostClient({
   post,
@@ -424,148 +335,16 @@ export default function PostClient({
                     }
                     return <p {...props}>{children}</p>;
                   },
-                  code({ node, className, children, ...props }: any) {
-                    const match = /language-(\w+)/.exec(className || '');
-                    const content = String(children).replace(/\n$/, '');
-
-                    if (match && match[1] === 'mermaid') {
-                      return <Mermaid chart={content} />;
-                    }
-
-                    return match ? (
-                      <div
-                        className={css({
-                          mb: '12',
-                          mt: '8',
-                          pos: 'relative',
-                          shadow: '2xl',
-                          rounded: '2xl',
-                          overflow: 'hidden',
-                          borderWidth: '1px',
-                          borderColor: 'white/10',
-                        })}
-                      >
-                        <div
-                          className={css({
-                            bg: '#1e1e1e',
-                            px: '5',
-                            py: '4',
-                            display: 'flex',
-                            gap: '2.5',
-                            alignItems: 'center',
-                            borderBottomWidth: '1px',
-                            borderColor: 'white/5',
-                          })}
-                        >
-                          <div
-                            className={css({
-                              boxSize: '3',
-                              rounded: 'full',
-                              bg: '#ff5f56',
-                            })}
-                          />
-                          <div
-                            className={css({
-                              boxSize: '3',
-                              rounded: 'full',
-                              bg: '#ffbd2e',
-                            })}
-                          />
-                          <div
-                            className={css({
-                              boxSize: '3',
-                              rounded: 'full',
-                              bg: '#27c93f',
-                            })}
-                          />
-                          {match[1] && (
-                            <span
-                              className={css({
-                                ml: '4',
-                                color: 'gray.500',
-                                fontSize: 'xs',
-                                textTransform: 'uppercase',
-                                letterSpacing: 'widest',
-                                fontWeight: 'bold',
-                              })}
-                            >
-                              {match[1]}
-                            </span>
-                          )}
-                          <div className={css({ ml: 'auto' })}>
-                            <CopyButton content={content} />
-                          </div>
-                        </div>
-                        <SyntaxHighlighter
-                          style={vscDarkPlus}
-                          language={match[1]}
-                          PreTag="div"
-                          customStyle={{
-                            borderRadius: 0,
-                            margin: 0,
-                            padding: '2rem',
-                            lineHeight: '1.8',
-                            background: '#1e1e1e',
-                          }}
-                          {...props}
-                        >
-                          {content}
-                        </SyntaxHighlighter>
-                      </div>
-                    ) : (
-                      <code
-                        className={cx(
-                          className,
-                          css({
-                            bg: 'gray.100',
-                            color: 'red.500',
-                            px: '1.5',
-                            py: '0.5',
-                            rounded: 'md',
-                            fontSize: '0.85em',
-                            fontWeight: '500',
-                            borderWidth: '1px',
-                            borderColor: 'gray.200',
-                            whiteSpace: 'pre-wrap',
-                            wordBreak: 'break-word',
-                            overflowWrap: 'anywhere',
-                          }),
-                        )}
-                        {...props}
-                      >
-                        {children}
-                      </code>
-                    );
+                  code(props) {
+                    return <CodeBlock {...props} />;
                   },
                   img({ src, alt }: any) {
-                    // 상대 경로인 경우 (http로 시작하지 않는 경우) 경로 보정
-                    const isRelative =
-                      src && !src.startsWith('http') && !src.startsWith('/');
-
-                    let imageSrc = src;
-                    if (isRelative) {
-                      imageSrc = `/posts/${post.relativeDir}/${src}`;
-                    } else if (src.startsWith('/')) {
-                      imageSrc = `${src}`;
-                    }
-
                     return (
-                      <Zoom>
-                        <img
-                          src={imageSrc}
-                          alt={alt}
-                          className={css({
-                            display: 'block',
-                            my: '14',
-                            rounded: '2xl',
-                            w: 'full',
-                            h: 'auto',
-                            shadow: '2xl',
-                            borderWidth: '1px',
-                            borderColor: 'gray.100',
-                          })}
-                        />
-                      </Zoom>
+                      <MarkdownImage
+                        src={src}
+                        alt={alt}
+                        relativeDir={post.relativeDir}
+                      />
                     );
                   },
                   table({ children, ...props }) {
