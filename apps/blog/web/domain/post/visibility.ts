@@ -1,5 +1,3 @@
-import type { PostData } from './types';
-
 /**
  * Frontmatter 데이터를 기반으로 포스트의 공개 여부를 판단합니다.
  *

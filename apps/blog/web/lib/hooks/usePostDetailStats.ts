@@ -43,8 +43,9 @@ export function usePostDetailStats(slug: string): PostDetailStats {
             view_count: Number(d.view_count),
           })) as DowDistribution[],
         };
-      } catch {
-        // RPC functions may not exist yet — return empty distributions
+      } catch (error) {
+        // RPC functions may not exist yet — return empty distributions, but log the error for debugging.
+        console.error(`Failed to fetch post detail stats for ${slug}:`, error);
         return {
           hourly: [] as HourlyDistribution[],
           dow: [] as DowDistribution[],

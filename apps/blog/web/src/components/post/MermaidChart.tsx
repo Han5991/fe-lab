@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useId } from 'react';
 import mermaid from 'mermaid';
 import { css } from '@design-system/ui-lib/css';
 
@@ -14,21 +14,19 @@ if (typeof window !== 'undefined') {
 
 export function MermaidChart({ chart }: { chart: string }) {
   const [svg, setSvg] = useState<string>('');
+  const id = useId();
 
   useEffect(() => {
     const renderChart = async () => {
       try {
-        const rendered = await mermaid.render(
-          `mermaid-${Math.random().toString(36).substr(2, 9)}`,
-          chart,
-        );
+        const rendered = await mermaid.render(`mermaid-${id}`, chart);
         setSvg(rendered.svg);
       } catch (error) {
         console.error('Mermaid render failed:', error);
       }
     };
     renderChart();
-  }, [chart]);
+  }, [chart, id]);
 
   return (
     <div
