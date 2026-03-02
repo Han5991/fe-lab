@@ -1,6 +1,6 @@
 'use client';
 
-import { css } from '@design-system/ui-lib/css';
+import { css, cx } from '@design-system/ui-lib/css';
 
 interface LoadingPlaceholderProps {
   height?: string;
@@ -17,13 +17,16 @@ export function LoadingPlaceholder({
 }: LoadingPlaceholderProps) {
   return (
     <div
-      className={`${css({
-        w: '100%',
-        h: height || '100%',
-        bg: '#f3f4f6',
-        animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-        rounded: '8px',
-      })}${className ? ` ${className}` : ''}`}
+      className={cx(
+        css({
+          w: '100%',
+          h: height || '100%',
+          bg: '#f3f4f6',
+          animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+          rounded: '8px',
+        }),
+        className,
+      )}
     />
   );
 }

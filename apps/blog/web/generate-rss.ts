@@ -2,67 +2,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { SITE_URL, SITE_NAME, SITE_DESCRIPTION } from './lib/constants';
-
-// generate-rss.mjs는 Node/ESM 환경에서 실행되므로 domain/post/service를 직접 import
-// tsconfig의 paths가 적용되지 않아 상대경로로 import
-// 단, Next.js 빌드 없이 실행되므로 app 코드 대신 lib/posts.ts를 컴파일된 경로로 참조하거나
-// gray-matter + post-visibility.mjs를 사용해야 합니다.
-// 현재 아키텍처(mjs 스크립트)에서는 TypeScript를 직접 import 할 수 없어
-// lib/post-visibility.mjs를 계속 사용합니다 (domain/visibility.ts의 동일 로직 유지).
-import matter from 'gray-matter';
-import { isPostVisible } from './lib/post-visibility.mjs';
+import { getAllPosts } from './domain/post/service';
+import { toEncodedSlug } from './scripts/utils';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
-const POSTS_DIR = path.join(__dirname, '..', 'posts');
 const PUBLIC_DIR = path.join(__dirname, 'public');
-
-/** 인코딩된 slug를 반환합니다 */
-function toEncodedSlug(rawSlug: string): string {
-  return rawSlug
-    .split('/')
-    .map((part: string) => encodeURIComponent(part))
-    .join('/');
-}
-
-interface RssPost {
-  title: string;
-  slug: string;
-  date: Date;
-  excerpt: string;
-}
-
-function getAllPosts(dirPath: string, currentPath: string = ''): RssPost[] {
-  const items = fs.readdirSync(dirPath);
-  let posts: RssPost[] = [];
-
-  for (const item of items) {
-    const fullPath = path.join(dirPath, item);
-    const stat = fs.statSync(fullPath);
-
-    if (stat.isDirectory()) {
-      posts = posts.concat(getAllPosts(fullPath, path.join(currentPath, item)));
-    } else if (item.endsWith('.md') || item.endsWith('.mdx')) {
-      const fileContents = fs.readFileSync(fullPath, 'utf8');
-      const { data } = matter(fileContents);
-
-      if (!isPostVisible(data)) continue;
-
-      const fileName = item.replace(/\.(md|mdx)$/, '');
-      const rawSlug = currentPath ? `${currentPath}/${fileName}` : fileName;
-      let slug = (data.slug || rawSlug).trim().replace(/^\//, '');
-
-      posts.push({
-        title: data.title || fileName,
-        slug: toEncodedSlug(slug),
-        date: data.date ? new Date(data.date) : new Date(),
-        excerpt: data.excerpt || '',
-      });
-    }
-  }
-  return posts;
-}
 
 function escapeXml(str: string): string {
   return str
@@ -73,17 +18,15 @@ function escapeXml(str: string): string {
     .replace(/'/g, '&apos;');
 }
 
-const posts = getAllPosts(POSTS_DIR).sort(
-  (a, b) => b.date.getTime() - a.date.getTime(),
-);
+const posts = getAllPosts();
 
 const rssItems = posts
   .map(
     post => `    <item>
       <title>${escapeXml(post.title)}</title>
-      <link>${SITE_URL}/posts/${post.slug}/</link>
-      <guid isPermaLink="true">${SITE_URL}/posts/${post.slug}/</guid>
-      <pubDate>${post.date.toUTCString()}</pubDate>${post.excerpt ? `\n      <description>${escapeXml(post.excerpt)}</description>` : ''}
+      <link>${SITE_URL}/posts/${toEncodedSlug(post.slug)}/</link>
+      <guid isPermaLink="true">${SITE_URL}/posts/${toEncodedSlug(post.slug)}/</guid>
+      <pubDate>${post.date ? new Date(post.date).toUTCString() : new Date().toUTCString()}</pubDate>${post.excerpt ? `\n      <description>${escapeXml(post.excerpt)}</description>` : ''}
     </item>`,
   )
   .join('\n');

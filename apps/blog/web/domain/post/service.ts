@@ -20,13 +20,17 @@ export function getAllPostsIncludingHidden(): PostData[] {
   return readAllPosts();
 }
 
+let _postsBySlugMap: Map<string, PostData> | null = null;
+
 /**
  * slug로 특정 포스트를 조회합니다.
  * 내부적으로 캐시된 Map을 사용하여 O(1)로 조회합니다.
  */
 export function getPostBySlug(slug: string): PostData | null {
-  const posts = getAllPosts();
-  return posts.find(post => post.slug === slug) ?? null;
+  if (!_postsBySlugMap) {
+    _postsBySlugMap = new Map(getAllPosts().map(post => [post.slug, post]));
+  }
+  return _postsBySlugMap.get(slug) ?? null;
 }
 
 /**

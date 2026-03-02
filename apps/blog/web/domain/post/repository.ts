@@ -19,11 +19,21 @@ function extractPlainText(content: string): string {
 }
 
 /**
+ * status가 PostStatus 타입인지 확인하는 타입 가드 함수
+ */
+function isPostStatus(status: unknown): status is PostStatus {
+  return (
+    typeof status === 'string' &&
+    ['published', 'draft', 'scheduled'].includes(status)
+  );
+}
+
+/**
  * frontmatter에서 PostStatus를 결정합니다
  */
 function determineStatus(data: Record<string, unknown>): PostStatus {
-  if (data.status) {
-    return data.status as PostStatus;
+  if (isPostStatus(data.status)) {
+    return data.status;
   }
   return data.published === true ? 'published' : 'draft';
 }
