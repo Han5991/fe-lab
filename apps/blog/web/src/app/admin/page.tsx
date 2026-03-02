@@ -1,26 +1,12 @@
 'use client';
 
 import { Suspense } from 'react';
-import { client } from '@/lib/client';
-import { useRouter } from 'next/navigation';
 import { LogOut, BarChart3, FileText, Clock } from 'lucide-react';
 import { css } from '@design-system/ui-lib/css';
 import { useAdminDashboardData } from '@/lib/hooks/useAdminViews';
+import { useAdminLogout } from '@/lib/hooks/useAdminLogout';
+import { LoadingPlaceholder } from '@/src/components/shared/LoadingPlaceholder';
 import Link from 'next/link';
-
-function LoadingPlaceholder({ height }: { height?: string }) {
-  return (
-    <div
-      className={css({
-        w: '100%',
-        h: height || '100%',
-        bg: '#f3f4f6',
-        animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-        rounded: '8px',
-      })}
-    />
-  );
-}
 
 function AdminOverviewContent() {
   const { data } = useAdminDashboardData();
@@ -357,12 +343,7 @@ function AdminOverviewContent() {
 }
 
 export default function AdminPage() {
-  const router = useRouter();
-
-  const handleLogout = async () => {
-    await client.auth.signOut({ scope: 'local' });
-    router.push('/admin/login');
-  };
+  const { handleLogout } = useAdminLogout();
 
   return (
     <div
