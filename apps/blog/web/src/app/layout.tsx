@@ -2,7 +2,7 @@ import 'pretendard/dist/web/static/pretendard.css';
 import '@/src/styles/globals.css';
 import { Providers } from './providers';
 import { Layout } from '@/src/components/Layout';
-import { GoogleAnalytics } from '@next/third-parties/google';
+import { GoogleAnalytics, GoogleTagManager } from '@next/third-parties/google';
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 
@@ -85,7 +85,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <Layout>{children}</Layout>
         </Providers>
         {process.env.NODE_ENV === 'production' && (
-          <GoogleAnalytics gaId="G-ZS9ENFSSQ0" />
+          <>
+            <GoogleAnalytics gaId="G-ZS9ENFSSQ0" />
+            <GoogleTagManager gtmId="GTM-5SMPQ23P" />
+          </>
         )}
       </body>
     </html>
