@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import matter from 'gray-matter';
+import { isPostVisible } from './lib/post-visibility.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -26,7 +27,7 @@ function getAllPostSlugs(dirPath, currentPath = '') {
       const fileContents = fs.readFileSync(fullPath, 'utf8');
       const { data } = matter(fileContents);
 
-      if (data.published !== true) continue;
+      if (!isPostVisible(data)) continue;
 
       const fileName = item.replace(/\.(md|mdx)$/, '');
       const rawSlug = currentPath ? `${currentPath}/${fileName}` : fileName;
@@ -45,7 +46,10 @@ function getAllPostSlugs(dirPath, currentPath = '') {
       // URL로 쓰일 때는 인코딩하는 것이 안전함. 하지만 Next.js 기본 동작이나 구글은 UTF-8 URL도 잘 처리함.
       // 여기서는 템플릿 리터럴에서 그대로 사용하되, 생성된 결과물 확인 필요.
       // 안전하게 가려면 encodeURI 사용.
-      slug = slug.split('/').map(part => encodeURIComponent(part)).join('/');
+      slug = slug
+        .split('/')
+        .map(part => encodeURIComponent(part))
+        .join('/');
 
       const date = data.date
         ? new Date(data.date).toISOString().split('T')[0]

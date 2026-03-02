@@ -1,8 +1,11 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import matter from 'gray-matter';
+import { isPostVisible } from './post-visibility.mjs';
 
 const postsDirectory = join(process.cwd(), '..', 'posts');
+
+export type PostStatus = 'published' | 'draft' | 'scheduled';
 
 export interface PostData {
   slug: string;
@@ -15,6 +18,8 @@ export interface PostData {
   thumbnail?: string;
   tags?: string[];
   series?: string;
+  status?: PostStatus;
+  scheduledDate?: string;
 }
 
 export interface PostNavItem {
@@ -23,6 +28,17 @@ export interface PostNavItem {
 }
 
 export function getAllPosts(): PostData[] {
+  return readAllPostData().filter(isPostVisible);
+}
+
+/**
+ * Admin 대시보드용: draft, scheduled 포함 모든 포스트를 반환합니다.
+ */
+export function getAllPostsIncludingHidden(): PostData[] {
+  return readAllPostData();
+}
+
+function readAllPostData(): PostData[] {
   const posts: PostData[] = [];
 
   function readDirectory(dirPath: string, currentPath: string = ''): void {
@@ -38,8 +54,8 @@ export function getAllPosts(): PostData[] {
         const fileContents = readFileSync(fullPath, 'utf8');
         const { data, content } = matter(fileContents);
 
-        // 오직 published: true 인 글만 가져오기
-        if (data.published !== true) continue;
+        // slug가 없으면 스킵 (PLAN.md 등 메타 파일 제외)
+        if (!data.slug && !data.published && !data.status) continue;
 
         const fileName = item.replace(/\.(md|mdx)$/, '');
         const rawSlug = currentPath ? `${currentPath}/${fileName}` : fileName;
@@ -54,22 +70,38 @@ export function getAllPosts(): PostData[] {
           .trim();
 
         // tags 파싱: frontmatter에 있으면 사용
-        const tags: string[] | undefined = Array.isArray(data.tags) ? data.tags : undefined;
+        const tags: string[] | undefined = Array.isArray(data.tags)
+          ? data.tags
+          : undefined;
 
         // series 파싱: relativeDir(폴더명) 기반 자동 추출
         const series: string | undefined = currentPath || undefined;
 
+        // status 결정: 명시적 status가 있으면 사용, 없으면 published 기반
+        let status: PostStatus;
+        if (data.status) {
+          status = data.status as PostStatus;
+        } else {
+          status = data.published === true ? 'published' : 'draft';
+        }
+
         posts.push({
-          slug: data.slug,
+          slug: data.slug || rawSlug,
           originalSlug: rawSlug,
           relativeDir: currentPath,
           title: data.title || fileName,
           date: data.date || null,
           content,
           excerpt: data.excerpt || cleanContent.slice(0, 160) + '...',
-          thumbnail: typeof data.thumbnail === 'string' ? data.thumbnail : undefined,
+          thumbnail:
+            typeof data.thumbnail === 'string' ? data.thumbnail : undefined,
           tags,
           series,
+          status,
+          scheduledDate:
+            typeof data.scheduledDate === 'string'
+              ? data.scheduledDate
+              : undefined,
         });
       }
     }
@@ -109,7 +141,7 @@ export function getAdjacentPosts(
     filterTag?: string;
     filterSeries?: string;
     sortOrder?: 'newest' | 'oldest';
-  }
+  },
 ): { prev: PostNavItem | null; next: PostNavItem | null } {
   let posts = getAllPosts();
 
@@ -135,7 +167,8 @@ export function getAdjacentPosts(
   }
 
   // 날짜 내림차순 기준: index+1 = older(이전 글), index-1 = newer(다음 글)
-  const prevPost = currentIndex < posts.length - 1 ? posts[currentIndex + 1] : null;
+  const prevPost =
+    currentIndex < posts.length - 1 ? posts[currentIndex + 1] : null;
   const nextPost = currentIndex > 0 ? posts[currentIndex - 1] : null;
 
   return {
@@ -147,9 +180,11 @@ export function getAdjacentPosts(
 /**
  * 같은 시리즈 내의 이전/다음 포스트를 반환
  */
-export function getSeriesAdjacentPosts(
-  currentSlug: string
-): { prev: PostNavItem | null; next: PostNavItem | null; seriesName: string | null } {
+export function getSeriesAdjacentPosts(currentSlug: string): {
+  prev: PostNavItem | null;
+  next: PostNavItem | null;
+  seriesName: string | null;
+} {
   const currentPost = getPostBySlug(currentSlug);
 
   if (!currentPost?.series) {

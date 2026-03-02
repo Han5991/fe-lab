@@ -98,6 +98,46 @@ export function PostAccordion({ post }: Props) {
           >
             <ExternalLink size={14} />
           </Link>
+          {post.status && (
+            <span
+              className={css({
+                fontSize: '0.6875rem',
+                fontWeight: '600',
+                px: '0.5rem',
+                py: '0.125rem',
+                rounded: '9999px',
+                flexShrink: 0,
+                ...(post.status === 'published'
+                  ? {
+                      bg: '#f0fdf4',
+                      color: '#16a34a',
+                      border: '1px solid #bbf7d0',
+                    }
+                  : post.status === 'draft'
+                    ? {
+                        bg: '#f3f4f6',
+                        color: '#6b7280',
+                        border: '1px solid #e5e7eb',
+                      }
+                    : {
+                        bg: '#fff7ed',
+                        color: '#ea580c',
+                        border: '1px solid #fed7aa',
+                      }),
+              })}
+              title={
+                post.status === 'scheduled' && post.scheduledDate
+                  ? `예약: ${new Date(post.scheduledDate).toLocaleString('ko-KR')}`
+                  : undefined
+              }
+            >
+              {post.status === 'published'
+                ? '공개'
+                : post.status === 'draft'
+                  ? '비공개'
+                  : `📅 ${post.scheduledDate ? new Date(post.scheduledDate).toLocaleDateString('ko-KR') : '예약'}`}
+            </span>
+          )}
           <span
             className={css({
               fontWeight: '600',

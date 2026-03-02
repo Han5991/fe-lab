@@ -10,6 +10,10 @@ on:
     branches: [main]
     paths: ['apps/blog/**']
 
+  # 매일 KST 09:00 (UTC 00:00) 자동 빌드 — 예약 발행(scheduled) 글 공개용
+  schedule:
+    - cron: '0 0 * * *'
+
   workflow_dispatch:
 
 permissions:
