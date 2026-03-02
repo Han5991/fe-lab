@@ -13,19 +13,22 @@ export function computeDerivedStats(post: PostStatDetail): DerivedStats {
     a.view_date.localeCompare(b.view_date),
   );
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const now = new Date();
+  const today = new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
+  );
 
   const sevenDaysAgo = new Date(today);
-  sevenDaysAgo.setDate(today.getDate() - 7);
+  sevenDaysAgo.setUTCDate(today.getUTCDate() - 7);
   const fourteenDaysAgo = new Date(today);
-  fourteenDaysAgo.setDate(today.getDate() - 14);
+  fourteenDaysAgo.setUTCDate(today.getUTCDate() - 14);
 
+  const todayStr = today.toISOString().split('T')[0];
   const sevenDayStr = sevenDaysAgo.toISOString().split('T')[0];
   const fourteenDayStr = fourteenDaysAgo.toISOString().split('T')[0];
 
   const recent7 = sorted
-    .filter(t => t.view_date >= sevenDayStr)
+    .filter(t => t.view_date >= sevenDayStr && t.view_date < todayStr)
     .reduce((acc, t) => acc + t.view_count, 0);
   const previous7 = sorted
     .filter(t => t.view_date >= fourteenDayStr && t.view_date < sevenDayStr)
