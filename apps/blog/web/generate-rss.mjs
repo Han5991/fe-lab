@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import matter from 'gray-matter';
+import { isPostVisible } from './lib/post-visibility.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -9,28 +10,6 @@ const __dirname = path.dirname(__filename);
 const BASE_URL = 'https://blog.sangwook.dev';
 const POSTS_DIR = path.join(__dirname, '..', 'posts');
 const PUBLIC_DIR = path.join(__dirname, 'public');
-
-/**
- * Frontmatter 데이터를 기반으로 포스트의 공개 여부를 판단합니다.
- * (posts.ts의 isPostVisible과 동일한 로직)
- */
-function isPostVisible(data) {
-  if (!data.status) {
-    return data.published === true;
-  }
-  switch (data.status) {
-    case 'published':
-      return true;
-    case 'draft':
-      return false;
-    case 'scheduled': {
-      if (!data.scheduledDate) return false;
-      return new Date(data.scheduledDate) <= new Date();
-    }
-    default:
-      return false;
-  }
-}
 
 function getAllPosts(dirPath, currentPath = '') {
   const items = fs.readdirSync(dirPath);

@@ -1,37 +1,11 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import matter from 'gray-matter';
+import { isPostVisible } from './post-visibility.mjs';
 
 const postsDirectory = join(process.cwd(), '..', 'posts');
 
 export type PostStatus = 'published' | 'draft' | 'scheduled';
-
-/**
- * Frontmatter 데이터를 기반으로 포스트의 공개 여부를 판단합니다.
- *
- * - status가 없으면 published 필드로 하위호환 (기존 방식)
- * - status: 'published' → 공개
- * - status: 'draft' → 비공개
- * - status: 'scheduled' + scheduledDate가 현재 시간 이전 → 공개
- */
-function isPostVisible(data: Record<string, unknown>): boolean {
-  if (!data.status) {
-    return data.published === true;
-  }
-
-  switch (data.status) {
-    case 'published':
-      return true;
-    case 'draft':
-      return false;
-    case 'scheduled': {
-      if (!data.scheduledDate) return false;
-      return new Date(data.scheduledDate as string) <= new Date();
-    }
-    default:
-      return false;
-  }
-}
 
 export interface PostData {
   slug: string;
@@ -54,13 +28,7 @@ export interface PostNavItem {
 }
 
 export function getAllPosts(): PostData[] {
-  return readAllPostData().filter(post =>
-    isPostVisible({
-      status: post.status,
-      published: post.status === 'published' || !post.status,
-      scheduledDate: post.scheduledDate,
-    }),
-  );
+  return readAllPostData().filter(isPostVisible);
 }
 
 /**
