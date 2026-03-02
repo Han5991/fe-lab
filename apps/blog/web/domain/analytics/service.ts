@@ -52,22 +52,37 @@ export function computeDerivedStats(post: PostStatDetail): DerivedStats {
   const dailyAverage =
     sorted.length > 0 ? Math.round((totalViews / sorted.length) * 10) / 10 : 0;
 
-  const milestones = MILESTONE_TARGETS.map(target => {
-    let reachedDate: string | null = null;
-    let cumulative = 0;
-    for (const t of sorted) {
-      cumulative += t.view_count;
-      if (cumulative >= target) {
-        reachedDate = t.view_date;
-        break;
-      }
+  const milestones: {
+    target: (typeof MILESTONE_TARGETS)[number];
+    reached: boolean;
+    date: string | null;
+  }[] = [];
+  let cumulative = 0;
+  let milestoneIdx = 0;
+
+  for (const t of sorted) {
+    cumulative += t.view_count;
+    while (
+      milestoneIdx < MILESTONE_TARGETS.length &&
+      cumulative >= MILESTONE_TARGETS[milestoneIdx]
+    ) {
+      milestones.push({
+        target: MILESTONE_TARGETS[milestoneIdx],
+        reached: true,
+        date: t.view_date,
+      });
+      milestoneIdx++;
     }
-    return {
-      target,
-      reached: post.totalViews >= target,
-      date: reachedDate,
-    };
-  });
+  }
+
+  while (milestoneIdx < MILESTONE_TARGETS.length) {
+    milestones.push({
+      target: MILESTONE_TARGETS[milestoneIdx],
+      reached: false,
+      date: null,
+    });
+    milestoneIdx++;
+  }
 
   return { weekGrowthRate, peakDay, dailyAverage, milestones };
 }
