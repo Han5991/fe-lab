@@ -176,7 +176,7 @@ export class Graph {
 
     const code = bundle.toString();
     const map = bundle.generateMap({
-      file: 'index.js.map', // 파일명 변경
+      file: 'index.js',
       includeContent: true,
       hires: true,
     });
