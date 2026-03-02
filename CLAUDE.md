@@ -213,16 +213,24 @@ The blog (`apps/blog/web/`) is a **statically generated (SSG) Next.js applicatio
 #### 콘텐츠 파이프라인
 
 1. **콘텐츠 작성**: `apps/blog/posts/` 디렉토리에 Markdown 파일 작성
-   - Frontmatter: `title`, `date`, `slug`, `excerpt`, `thumbnail`, `tags`, `published`
-   - `published: true`인 글만 빌드에 포함
+   - Frontmatter: `title`, `date`, `slug`, `excerpt`, `thumbnail`, `tags`, `published`, `status`, `scheduledDate`
    - 폴더 구조로 시리즈(series) 자동 분류
-2. **빌드 전 처리** (`prebuild`):
+2. **콘텐츠 공개 제어** (`isPostVisible()` 헬퍼로 판단):
+   - `published: true` (기존 방식, 하위호환)
+   - `status: 'published'` — 공개
+   - `status: 'draft'` — 비공개 (빌드에서 제외)
+   - `status: 'scheduled'` + `scheduledDate: '2026-03-05T09:00:00+09:00'` — 해당 날짜 이후 빌드에서 공개
+   - `isPostVisible()` 로직은 `posts.ts`, `generate-sitemap.mjs`, `generate-rss.mjs`에 동일하게 적용
+3. **빌드 전 처리** (`prebuild`):
    - `sync-posts.mjs`: 포스트 디렉토리의 이미지/미디어 파일을 `public/posts/`에 복사
    - `generate-sitemap.mjs`: 발행된 글 목록으로 `sitemap.xml` 생성
    - `generate-rss.mjs`: RSS 피드(`rss.xml`) 생성
    - `generate-search-index.ts`: 검색용 JSON 인덱스(`search-index.json`) 생성
-3. **정적 빌드**: `next build` → `out/` 디렉토리에 정적 파일 생성
-4. **배포**: GitHub Actions → GitHub Pages
+4. **정적 빌드**: `next build` → `out/` 디렉토리에 정적 파일 생성
+5. **배포**: GitHub Actions → GitHub Pages
+   - `main` 브랜치 push 시 자동 빌드
+   - **매일 KST 09:00 (UTC 00:00) cron 자동 빌드** — 예약 발행 글 공개용
+   - 수동 트리거(`workflow_dispatch`) 지원
 
 #### 클라이언트 사이드 기능 (런타임)
 

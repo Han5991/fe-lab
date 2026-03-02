@@ -8,18 +8,26 @@ export interface PostStatDetail {
   totalViews: number;
   todayViews: number;
   trends: { view_date: string; view_count: number }[];
+  status: 'published' | 'draft' | 'scheduled';
+  scheduledDate: string | null;
 }
 
 export function useAdminDashboardData() {
   return useSuspenseQuery({
     queryKey: ['admin', 'dashboard-data'],
     queryFn: async (): Promise<PostStatDetail[]> => {
-      // Fetch post metadata, overall stats, and daily trends concurrently
+      // Fetch post metadata (admin index includes draft/scheduled), overall stats, and daily trends concurrently
       const [metaRes, statsRes, trendsRes] = await Promise.all([
-        fetch('/search-index.json').then(
+        fetch('/admin-posts-index.json').then(
           res =>
             res.json() as Promise<
-              { slug: string; title: string; date: string | null }[]
+              {
+                slug: string;
+                title: string;
+                date: string | null;
+                status: 'published' | 'draft' | 'scheduled';
+                scheduledDate: string | null;
+              }[]
             >,
         ),
         client.rpc('get_all_post_stats'),
@@ -75,6 +83,8 @@ export function useAdminDashboardData() {
           totalViews: postStats.total_views,
           todayViews: postStats.today_views,
           trends: postTrends,
+          status: post.status || 'published',
+          scheduledDate: post.scheduledDate || null,
         };
       });
 

@@ -1,9 +1,3 @@
----
-title: '🚀 Next Step: 소스맵과 디버깅 (Step 4)'
-status: 'To Do'
-previous_step: 'Step 3 (Bundling & Scope)'
----
-
 # 🚀 Next Step: 배포 가능한 라이브러리 만들기 (Step 4 - Externals & SourceMap)
 
 > **오늘의 성과**: 라이브러리 모드까지 지원하는 완벽한 번들 파일(`bundle.cjs`)을 만들고 테스트에 성공했습니다.
