@@ -19,16 +19,23 @@ const POSTS_DIR = path.join(__dirname, '..', 'posts');
 const PUBLIC_DIR = path.join(__dirname, 'public');
 
 /** 인코딩된 slug를 반환합니다 */
-function toEncodedSlug(rawSlug) {
+function toEncodedSlug(rawSlug: string): string {
   return rawSlug
     .split('/')
-    .map(part => encodeURIComponent(part))
+    .map((part: string) => encodeURIComponent(part))
     .join('/');
 }
 
-function getAllPosts(dirPath, currentPath = '') {
+interface RssPost {
+  title: string;
+  slug: string;
+  date: Date;
+  excerpt: string;
+}
+
+function getAllPosts(dirPath: string, currentPath: string = ''): RssPost[] {
   const items = fs.readdirSync(dirPath);
-  let posts = [];
+  let posts: RssPost[] = [];
 
   for (const item of items) {
     const fullPath = path.join(dirPath, item);
@@ -57,7 +64,7 @@ function getAllPosts(dirPath, currentPath = '') {
   return posts;
 }
 
-function escapeXml(str) {
+function escapeXml(str: string): string {
   return str
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -66,7 +73,9 @@ function escapeXml(str) {
     .replace(/'/g, '&apos;');
 }
 
-const posts = getAllPosts(POSTS_DIR).sort((a, b) => b.date - a.date);
+const posts = getAllPosts(POSTS_DIR).sort(
+  (a, b) => b.date.getTime() - a.date.getTime(),
+);
 
 const rssItems = posts
   .map(

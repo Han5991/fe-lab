@@ -12,16 +12,19 @@ const POSTS_DIR = path.join(__dirname, '..', 'posts');
 const PUBLIC_DIR = path.join(__dirname, 'public');
 
 /** 인코딩된 slug를 반환합니다 */
-function toEncodedSlug(rawSlug) {
+function toEncodedSlug(rawSlug: string): string {
   return rawSlug
     .split('/')
-    .map(part => encodeURIComponent(part))
+    .map((part: string) => encodeURIComponent(part))
     .join('/');
 }
 
-function getAllPostSlugs(dirPath, currentPath = '') {
+function getAllPostSlugs(
+  dirPath: string,
+  currentPath: string = '',
+): { slug: string; date: string }[] {
   const items = fs.readdirSync(dirPath);
-  let slugs = [];
+  let slugs: { slug: string; date: string }[] = [];
 
   for (const item of items) {
     const fullPath = path.join(dirPath, item);
