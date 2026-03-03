@@ -1,5 +1,20 @@
 [
   {
+    "slug": "no-one-asked-library-bundler-04-sourcemap",
+    "title": "[누가 시키지도 않았는데 번들러 만들기] 4. 소스맵: 번들된 코드에서 원본의 흔적 찾기",
+    "date": "2026-03-03",
+    "excerpt": "수천 줄로 합쳐진 번들 파일에서 에러가 나면 어떻게 원본 위치를 찾을까요? 소스맵의 VLQ 인코딩 원리와 magic-string이 변환 이력을 관리하는 방식을 직접 구현하며 이해합니다.",
+    "tags": [
+      "bundler",
+      "javascript",
+      "sourcemap",
+      "vlq",
+      "magic-string",
+      "security"
+    ],
+    "series": "bundler"
+  },
+  {
     "slug": "no-one-asked-library-bundler-03-bundling-scope",
     "title": "[누가 시키지도 않았는데 번들러 만들기] 3. 번들링과 스코프: 파일 합치기의 기술",
     "date": "2026-02-23",
@@ -126,7 +141,7 @@
     "date": "2025-09-07",
     "excerpt": "구글 개발자에게 인정받은 성능 최적화: gemini-cli 기여 후기 이 글을 읽고 나면 - AI와 협업해서 오픈소스 기여하는 방법을 알게 됩니다 - 성능 최적화 PR이 더 좋은 평가를 받는 이유를 이해합니다 - 구글같은 대기업 프로젝트에 기여하는 전략을 배웁니다 - 실제 머지된 PR ...",
     "tags": [],
-    "series": "open-source/gemini-cli"
+    "series": "open-source"
   },
   {
     "slug": "feconf-2025-lightning-speaker",
@@ -142,7 +157,7 @@
     "date": "2025-08-10",
     "excerpt": "4시간 만에 Node.js PR 승인받기 AI 페어 프로그래밍으로 오픈소스 진입 장벽 낮추기 “무조건 Node.js에 내 코드를 넣고 말겠다!” 오픈소스 기여가 점점 재미있어지고, 자신감도 차오르던 시기였다. 하지만 매일같이 이슈를 살펴봐도 여전히 모르는 부분이 많았다. C++ 코드가 ...",
     "tags": [],
-    "series": "open-source/nodejs"
+    "series": "open-source"
   },
   {
     "slug": "nextjs-contributor",
@@ -150,7 +165,7 @@
     "date": "2025-08-05",
     "excerpt": "Next.js 오픈소스 기여: 2번 실패 후 성공 후기 들어가며 \"띠링\" 새벽 2시, 내 핸드폰에 또 다른 GitHub 알림이 울렸다. 발신자: vercel/next.js [[제목] : Re:[vercel/next.js] Fix remote pattern (80294) (PR 80428...",
     "tags": [],
-    "series": "open-source/nextjs"
+    "series": "open-source"
   },
   {
     "slug": "react-component-context-api-dropzone",
@@ -190,7 +205,7 @@
     "date": "2025-06-15",
     "excerpt": "들어가며 오후 4시, 또 다시 울리는 슬랙 알림... [기획자]: \"저번에 만든 사용자 상태 로직 잘 쓰고 있어요! 그런데 이번엔 사용자가 특정 액션을 할 수 있는지 검증하는 로직도 추가해 주세요.\" [나]: \"네, 어떤 검증 로직인가요?\" [기획자]: \"사용자가 글을 작성할 수 있는지...",
     "tags": [],
-    "series": "[Typescript로 설계하는 프로젝트]/domain"
+    "series": "[Typescript로 설계하는 프로젝트]"
   },
   {
     "slug": "typescript-project-service-di-design",
@@ -198,7 +213,7 @@
     "date": "2025-06-08",
     "excerpt": "들어가며 겨우 백엔드의 요청을 쳐내고 다시 피곤함에전 모습으로 테스크를 마무리하려는 순간 이번엔 제 슬랙이 울립니다. [기획자]: \"급하게 기획이 바뀌어서요. 이거 프론트에서 추가로 수정해 주셔야 할 것 같아요. 아직 마무리 다 안 하신 거 맞죠?\" [나]: \"네 아직 마무리 안 했어요...",
     "tags": [],
-    "series": "[Typescript로 설계하는 프로젝트]/service"
+    "series": "[Typescript로 설계하는 프로젝트]"
   },
   {
     "slug": "typescript-project-service-design",
@@ -206,7 +221,7 @@
     "date": "2025-06-08",
     "excerpt": "들어가며 겨우 백엔드의 요청을 쳐내고 다시 피곤함에전 모습으로 테스크를 마무리하려는 순간 이번엔 제 슬랙이 울립니다. [기획자]: \"급하게 기획이 바뀌어서요. 이거 프론트에서 추가로 수정해 주셔야 할 것 같아요. 아직 마무리 다 안 하신 거 맞죠?\" [나]: \"네 아직 마무리 안 했어요...",
     "tags": [],
-    "series": "[Typescript로 설계하는 프로젝트]/service"
+    "series": "[Typescript로 설계하는 프로젝트]"
   },
   {
     "slug": "typescript-project-api-di-design",
@@ -214,7 +229,7 @@
     "date": "2025-06-01",
     "excerpt": "들어가며 피곤에 쩔은 모습으로 하나의 테스크를 마무리 하는 순간 백엔드 개발자가 다가옵니다. \"죄송하지만 이번에 만든 api 중에 하나의 리스폰스가 변동 될 것 같습니다.\" \"User로 정의한 스키마 중에 name이 빠질 것 같아요.\" 순간 머릿속에서 여기저기 대강 흩어져 있는 User...",
     "tags": [],
-    "series": "[Typescript로 설계하는 프로젝트]/http"
+    "series": "[Typescript로 설계하는 프로젝트]"
   },
   {
     "slug": "typescript-project-api-design",
@@ -222,7 +237,7 @@
     "date": "2025-06-01",
     "excerpt": "들어가며 피곤에 쩔은 모습으로 하나의 테스크를 마무리 하는 순간 백엔드 개발자가 다가옵니다. \"죄송하지만 이번에 만든 api 중에 하나의 리스폰스가 변동 될 것 같습니다.\" \"User로 정의한 스키마 중에 name이 빠질 것 같아요.\" 순간 머릿속에서 여기저기 대강 흩어져 있는 User...",
     "tags": [],
-    "series": "[Typescript로 설계하는 프로젝트]/http"
+    "series": "[Typescript로 설계하는 프로젝트]"
   },
   {
     "slug": "typescript-project-design",
@@ -246,7 +261,7 @@
     "date": "2025-04-22",
     "excerpt": "0. 프롤로그 \"내가 자주 사용하는 오픈 소스에 기여 해보고 싶다.\" 늘 마음 한켠에 있었지만, 다른 사람의 기여 후기를 보거나 기여 방법을 보아도 막막 했습니다. 그러던 중, 회사 프로젝트에서 Slider를 구현해야 할 일이 생겼습니다. 디자이너님께서 전달해주신 피그마 시안을 보자마자...",
     "tags": [],
-    "series": "open-source/오픈소스 첫 발걸음: Mantine PR 기여 후기"
+    "series": "open-source"
   },
   {
     "slug": "aws-ecs-rollback",

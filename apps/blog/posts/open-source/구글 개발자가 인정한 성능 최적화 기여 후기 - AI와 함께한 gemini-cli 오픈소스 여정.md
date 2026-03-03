@@ -372,7 +372,7 @@ This lays the foundation for parallel file processing (coming in next PR)
 - **Gemini Code Assist**: _"clean and thorough implementation"_
 - **NTaylorMullen**: _"Thanked for the contribution"_ ✅ **승인**
 
-![img.png](img.png)
+![img.png](gemini-cli.img.png)
 
 첫 PR이 성공적으로 머지되었을 때의 기쁨은 정말 컸습니다.  
 이슈 등록부터 시작해 제 코드로 직접 성능 개선에 기여했다는 성취감, 그리고 다음 기여를 위한 발판까지 마련했다는 생각에 뿌듯했습니다.
@@ -423,7 +423,7 @@ Improve file processing performance for large projects by implementing parallel 
 - **SandyTao520**: **머지 완료**
 
 이과정에서 약간의 코드리뷰가 있었는대
-![img_1.png](img_1.png)
+![img_1.png](gemini-cli.img_1.png)
 
 리뷰어는 ! non-null assertion이 잠재적 버그를 가릴 수 있다고 지적했습니다.  
 파일 처리 중 실패하는 엣지 케이스에서 에러를 던지는 대신 undefined를 반환하며 조용히 넘어가버릴 수 있기 때문입니다.  
@@ -525,11 +525,11 @@ _"Praised the performance optimization and test coverage"_
 - **구체적 증거**: 테스트 코드로 성능 개선 입증
 - **빠른 승인**: 성능 데이터 덕분에 논의 없이 바로 머지
 
-![img_2.png](img_2.png)
+![img_2.png](gemini-cli.img_2.png)
 
 **이번 PR은 이전 작업과의 연관성을 명시해서 승인이 매우 빠르게 났습니다.**
 
-![img_3.png](img_3.png)
+![img_3.png](gemini-cli.img_3.png)
 
 ## 여러분도 구글 프로젝트에 기여해보세요!
 
