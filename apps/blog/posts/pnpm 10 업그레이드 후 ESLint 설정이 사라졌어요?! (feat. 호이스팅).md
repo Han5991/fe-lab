@@ -40,10 +40,10 @@ slug: 'pnpm-eslint-not-working'
 > 10버전 부터는 최상단으로 올라오지 않고 그대로 패키지 않에 들어 있는 문제가 생겼습니다.
 
 **문제 생기기전**  
-![img_1.png](img_1.png)
+![pnpm.img_1.png](./pnpm.img_1.png)
 
 **문제가 생긴 후**  
-![img.png](img.png)
+![img.png](./pnpm.img.png)
 
 이렇게 로드가 되면 결국 @config 안에만 eslint가 설치가 되어 사용할수가 없게 되어버립니다.
 

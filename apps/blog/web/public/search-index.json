@@ -253,7 +253,7 @@
     "date": "2025-05-01",
     "excerpt": "0. 프롤로그 pnpm 9 → 10 업그레이드 후 monorepo에서 eslint가 동작하지 않는 문제를 겪은 경험을 공유 합니다. --- 1. 상황설명 저희 회사는 pnpm을 패키지 매니저로 사용하고 있습니다. 최근 pnpm 9에서 pnpm 10으로 업그레이드를 진행했습니다. 업그레이...",
     "tags": [],
-    "series": "pnpm 10 업그레이드 후 ESLint 설정이 사라졌어요?! (feat. 호이스팅)"
+    "series": null
   },
   {
     "slug": "first-open-source-contribution",

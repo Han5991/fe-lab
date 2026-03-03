@@ -5,7 +5,7 @@
     <link>https://blog.sangwook.dev</link>
     <description>프론트엔드 기술 실험과 깊이 있는 학습 내용을 공유하는 공간입니다.</description>
     <language>ko</language>
-    <lastBuildDate>Tue, 03 Mar 2026 12:06:59 GMT</lastBuildDate>
+    <lastBuildDate>Tue, 03 Mar 2026 12:24:07 GMT</lastBuildDate>
     <atom:link href="https://blog.sangwook.dev/rss.xml" rel="self" type="application/rss+xml"/>
     <item>
       <title>[누가 시키지도 않았는데 번들러 만들기] 4. 소스맵: 번들된 코드에서 원본의 흔적 찾기</title>
