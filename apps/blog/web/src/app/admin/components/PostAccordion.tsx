@@ -30,6 +30,19 @@ interface Props {
 export function PostAccordion({ post }: Props) {
   const [isOpen, setIsOpen] = useState(false);
   const briefStats = useMemo(() => computeBriefStats(post), [post]);
+
+  // 예약 발행 시간이 이미 지났으면 'published'로 처리
+  const computedStatus = useMemo(() => {
+    if (
+      post.status === 'scheduled' &&
+      post.scheduledDate &&
+      new Date(post.scheduledDate) <= new Date()
+    ) {
+      return 'published';
+    }
+    return post.status;
+  }, [post.status, post.scheduledDate]);
+
   const {
     filterType,
     setFilterType,
@@ -98,7 +111,7 @@ export function PostAccordion({ post }: Props) {
           >
             <ExternalLink size={14} />
           </Link>
-          {post.status && (
+          {computedStatus && (
             <span
               className={css({
                 fontSize: '0.6875rem',
@@ -107,13 +120,13 @@ export function PostAccordion({ post }: Props) {
                 py: '0.125rem',
                 rounded: '9999px',
                 flexShrink: 0,
-                ...(post.status === 'published'
+                ...(computedStatus === 'published'
                   ? {
                       bg: '#f0fdf4',
                       color: '#16a34a',
                       border: '1px solid #bbf7d0',
                     }
-                  : post.status === 'draft'
+                  : computedStatus === 'draft'
                     ? {
                         bg: '#f3f4f6',
                         color: '#6b7280',
@@ -126,14 +139,14 @@ export function PostAccordion({ post }: Props) {
                       }),
               })}
               title={
-                post.status === 'scheduled' && post.scheduledDate
+                computedStatus === 'scheduled' && post.scheduledDate
                   ? `예약: ${new Date(post.scheduledDate).toLocaleString('ko-KR')}`
                   : undefined
               }
             >
-              {post.status === 'published'
+              {computedStatus === 'published'
                 ? '공개'
-                : post.status === 'draft'
+                : computedStatus === 'draft'
                   ? '비공개'
                   : `📅 ${post.scheduledDate ? new Date(post.scheduledDate).toLocaleDateString('ko-KR') : '예약'}`}
             </span>
