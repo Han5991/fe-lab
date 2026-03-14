@@ -135,6 +135,10 @@ function isPublished(post: Post): post is PublishedPost {
 }
 ```
 
+여기서 반환 타입이 `boolean`이 아니라 `post is PublishedPost`인 점이 눈에 띌 겁니다. 이것은 타입스크립트의 **타입 서술어** 문법입니다. 의미는 간단합니다. _"이 함수가 `true`를 반환하면, 매개변수 `post`를 `PublishedPost` 타입으로 좁혀도 안전하다"_ 고 컴파일러에게 알려주는 것이죠.
+
+만약 반환 타입을 그냥 `boolean`으로 쓰면, 함수 호출 후에도 타입스크립트는 여전히 `post`를 `DraftPost | PublishedPost`로 인식합니다. `post is PublishedPost`라는 한 마디가 `if` 블록 안에서 자동 타입 좁혀짐을 가능하게 하는 열쇠입니다.
+
 이렇게 하면 비즈니스 로직에서 기술적인 구현이 숨겨지고, 도메인의 언어만 남습니다.
 
 ```typescript
@@ -146,13 +150,40 @@ function updatePost(post: Post) {
 }
 ```
 
+### 그래서 DraftPost는 언제 PublishedPost가 되는가?
+
+**"타입을 분리한 건 알겠는데, 실제 코드에서 `DraftPost`가 `PublishedPost`로 바뀌는 시점은 언제야?"** 라는 의문이 남을 수 있습니다. 답은 명확합니다. **서버가 ID를 부여해서 응답을 돌려주는 바로 그 순간** 입니다.
+
+```typescript
+// API 응답 타입: 서버가 ID를 부여한 결과
+interface CreatePostResponse {
+  id: string;
+  title: string;
+  content: string;
+}
+
+async function createPost(draft: DraftPost): Promise<PublishedPost> {
+  const response = await api.post<CreatePostResponse>('/posts', draft);
+
+  // 서버가 부여한 id와 함께, 상태 태그를 'published'로 확정합니다.
+  // 이 순간 DraftPost는 사라지고, PublishedPost가 탄생합니다.
+  return {
+    ...draft,
+    status: 'published',
+    id: response.id,
+  };
+}
+```
+
+핵심은 **객체를 직접 변환하지 않는다** 는 것입니다. 기존 `DraftPost`의 `status`를 바꾸는 게 아니라, 서버 응답 데이터를 기반으로 **완전히 새로운 `PublishedPost` 객체를 생성** 합니다. `status: 'published'`와 `id`가 함께 들어가는 순간, 타입스크립트는 이 객체가 `PublishedPost`임을 자동으로 인식합니다. 타입의 전환이 곧 도메인 상태의 전환이 되는 셈이죠.
+
 ## 6. 마무리: 방어하지 말고 증명하세요
 
 `id?: string`을 사용할 때 타입스크립트는 걸핏하면 에러를 띄우는 깐깐한 '단속 카메라' 같았습니다. 우리는 그 카메라를 피하기 위해 의미 없는 `if` 문을 덕지덕지 발라야 했죠.
 
 하지만 도메인의 실제 규칙에 맞춰 **Tagged Type**으로 상태를 분리하는 순간, 타입스크립트는 우리가 실수하지 않도록 가장 빠르고 안전한 길을 안내해 주는 든든한 '네비게이션'이 됩니다.
 
-타입은 단순한 에러 방지용 도구가 아닙니다. 비즈니스의 흐름과 상태의 변화를 코드에 **증명**하는 가장 강력한 수단입니다.
+타입은 단순한 에러 방지용 도구가 아닙니다. 비즈니스의 흐름과 상태의 변화를 코드에 **증명** 하는 가장 강력한 수단입니다.
 
 ---
 

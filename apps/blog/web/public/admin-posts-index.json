@@ -2,7 +2,7 @@
   {
     "slug": "typescript-domain-modeling-without-optional",
     "title": "[Typescript로 설계하는 프로젝트] id?: string을 버려라. ID의 존재가 곧 상태다.",
-    "date": "2026-03-14T00:00:00.000Z",
+    "date": "2026-03-16T00:00:00.000Z",
     "excerpt": "1. 프롤로그: 우리가 숨 쉬듯 작성하는 \"거짓말\" 주니어 개발자: \"OO님, Post 타입에서 id가 없다고 에디터에서 빨간 줄이 뜨는데, 새 글 작성할 땐 서버 id가 없으니까 그냥 ? 붙여도 될까요?\" 프론트엔드 개발을 하다 보면 슬랙이나 코드 리뷰에서 심심치 않게 보게 되는 질문...",
     "tags": [
       "TypeScript",

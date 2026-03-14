@@ -5,13 +5,13 @@
     <link>https://blog.sangwook.dev</link>
     <description>프론트엔드 기술 실험과 깊이 있는 학습 내용을 공유하는 공간입니다.</description>
     <language>ko</language>
-    <lastBuildDate>Sat, 14 Mar 2026 13:45:43 GMT</lastBuildDate>
+    <lastBuildDate>Sat, 14 Mar 2026 14:10:14 GMT</lastBuildDate>
     <atom:link href="https://blog.sangwook.dev/rss.xml" rel="self" type="application/rss+xml"/>
     <item>
       <title>[Typescript로 설계하는 프로젝트] id?: string을 버려라. ID의 존재가 곧 상태다.</title>
       <link>https://blog.sangwook.dev/posts/typescript-domain-modeling-without-optional/</link>
       <guid isPermaLink="true">https://blog.sangwook.dev/posts/typescript-domain-modeling-without-optional/</guid>
-      <pubDate>Sat, 14 Mar 2026 00:00:00 GMT</pubDate>
+      <pubDate>Mon, 16 Mar 2026 00:00:00 GMT</pubDate>
       <description>1. 프롤로그: 우리가 숨 쉬듯 작성하는 &quot;거짓말&quot; 주니어 개발자: &quot;OO님, Post 타입에서 id가 없다고 에디터에서 빨간 줄이 뜨는데, 새 글 작성할 땐 서버 id가 없으니까 그냥 ? 붙여도 될까요?&quot; 프론트엔드 개발을 하다 보면 슬랙이나 코드 리뷰에서 심심치 않게 보게 되는 질문...</description>
     </item>
     <item>
