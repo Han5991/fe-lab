@@ -55,25 +55,33 @@ interface Post {
 
 중복되는 코드는 `BasePost`로 깔끔하게 묶어내고, `status`라는 **태그(Tag)** 속성으로 상태를 명확히 분리해 봅시다.
 
+먼저, 글이라면 무조건 가져야 하는 공통 속성을 정의합니다.
+
 ```typescript
-// 공통 속성: 글이라면 무조건 가져야 하는 기본 뼈대
 interface BasePost {
   title: string;
   content: string;
 }
+```
 
-// 1. 아직 식별자가 없는 '작성 중' 상태
+그 다음, `status` 태그로 두 가지 상태를 분리합니다.
+
+```typescript
+// 아직 식별자가 없는 '작성 중' 상태
 interface DraftPost extends BasePost {
-  status: 'draft'; // Tag: 이 객체가 "임시저장" 상태임을 선언
+  status: 'draft';
 }
 
-// 2. 서버에 저장되어 식별자가 존재하는 '발행 완료' 상태
+// 서버에 저장되어 식별자가 존재하는 '발행 완료' 상태
 interface PublishedPost extends BasePost {
-  status: 'published'; // Tag: 이 객체가 "발행됨" 상태임을 선언
+  status: 'published';
   id: string; // 발행되었으니 반드시 존재!
 }
+```
 
-// 이 둘을 합쳐서 비로소 완전한 Post 도메인을 만듭니다.
+마지막으로, 이 둘을 합쳐서 완전한 `Post` 도메인을 만듭니다.
+
+```typescript
 type Post = DraftPost | PublishedPost;
 ```
 
@@ -126,7 +134,7 @@ function handlePost(post: Post) {
 
 ## 5. 한 걸음 더: 타입 가드로 비즈니스 규칙을 캡슐화하기
 
-한 가지 더 욕심을 부려볼까요? 컴포넌트 곳곳에서 `if (post.status === 'published')`를 반복하는 대신, **비즈니스 규칙 자체를 함수로 빼내어 캡슐화** 할 수 있습니다.
+한 가지 더 욕심을 부려봅시다. 컴포넌트 곳곳에 `if (post.status === 'published')`가 반복되고 있지 않나요? **비즈니스 규칙 자체를 함수로 빼내세요.** 기술적 구현을 캡슐화하면 도메인의 언어만 남습니다.
 
 ```typescript
 // 비즈니스 규칙이 담긴 타입 가드 함수
