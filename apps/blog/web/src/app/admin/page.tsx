@@ -7,6 +7,7 @@ import { useAdminDashboardData } from '@/lib/hooks/useAdminViews';
 import { useAdminLogout } from '@/lib/hooks/useAdminLogout';
 import { LoadingPlaceholder } from '@/src/components/shared/LoadingPlaceholder';
 import Link from 'next/link';
+import { encodePostSlug } from '@/domain/post/utils';
 
 function AdminOverviewContent() {
   const { data } = useAdminDashboardData();
@@ -219,7 +220,7 @@ function AdminOverviewContent() {
             {topPosts.map((post, i) => (
               <Link
                 key={post.slug}
-                href={`/posts/${post.slug}`}
+                href={`/posts/${encodePostSlug(post.slug)}`}
                 target="_blank"
                 className={css({
                   display: 'flex',
@@ -295,7 +296,7 @@ function AdminOverviewContent() {
             {recentPosts.map((post, i) => (
               <Link
                 key={post.slug}
-                href={`/posts/${post.slug}`}
+                href={`/posts/${encodePostSlug(post.slug)}`}
                 target="_blank"
                 className={css({
                   display: 'flex',

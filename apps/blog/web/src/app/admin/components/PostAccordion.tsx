@@ -22,6 +22,7 @@ import {
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'motion/react';
 import { DateRangeControls, useDateFilter } from './DateRangeControls';
+import { encodePostSlug } from '@/domain/post/utils';
 
 interface Props {
   post: PostStatDetail;
@@ -99,7 +100,7 @@ export function PostAccordion({ post }: Props) {
             <BarChart3 size={16} />
           </Link>
           <Link
-            href={`/posts/${post.slug}`}
+            href={`/posts/${encodePostSlug(post.slug)}`}
             target="_blank"
             onClick={e => e.stopPropagation()}
             className={css({

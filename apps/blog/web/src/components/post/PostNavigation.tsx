@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { css } from '@design-system/ui-lib/css';
 import type { PostNavItem } from '@/lib/posts';
+import { encodePostSlug } from '@/domain/post/utils';
 
 interface PostNavigationProps {
   prev: PostNavItem | null;
@@ -55,7 +56,7 @@ export const PostNavigation = ({
         >
           {seriesNav.prev ? (
             <Link
-              href={`/posts/${seriesNav.prev.slug}`}
+              href={`/posts/${encodePostSlug(seriesNav.prev.slug)}`}
               className={css({
                 display: 'flex',
                 flexDir: 'column',
@@ -93,7 +94,7 @@ export const PostNavigation = ({
           )}
           {seriesNav.next ? (
             <Link
-              href={`/posts/${seriesNav.next.slug}`}
+              href={`/posts/${encodePostSlug(seriesNav.next.slug)}`}
               className={css({
                 display: 'flex',
                 flexDir: 'column',
@@ -149,7 +150,7 @@ export const PostNavigation = ({
     >
       {prev ? (
         <Link
-          href={`/posts/${prev.slug}`}
+          href={`/posts/${encodePostSlug(prev.slug)}`}
           className={css({
             display: 'flex',
             flexDir: 'column',
@@ -187,7 +188,7 @@ export const PostNavigation = ({
 
       {next ? (
         <Link
-          href={`/posts/${next.slug}`}
+          href={`/posts/${encodePostSlug(next.slug)}`}
           className={css({
             display: 'flex',
             flexDir: 'column',
