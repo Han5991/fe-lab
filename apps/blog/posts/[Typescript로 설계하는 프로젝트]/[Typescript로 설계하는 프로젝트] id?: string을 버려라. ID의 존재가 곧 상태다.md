@@ -1,8 +1,8 @@
 ---
 title: '[Typescript로 설계하는 프로젝트] id?: string을 버려라. ID의 존재가 곧 상태다.'
 thumbnail: 'ts-tagged-type-thumb.png'
-description: '무분별한 옵셔널 타입이 낳은 안티 패턴에서 벗어나, 도메인의 상태를 온전히 타입으로 증명하는 방법을 알아봅니다.'
-date: 2026-03-14
+description: '무분별한 옵셔널 타입이 낳은 안티 패턴에서 벗어나, Tagged Type(Discriminated Union)과 도메인 모델링으로 안전하고 견고하게 데이터를 설계하는 방법을 알아봅니다.'
+date: 2026-03-16
 slug: 'typescript-domain-modeling-without-optional'
 published: true
 tags: ['TypeScript', 'Architecture', 'Data Modeling']
@@ -28,21 +28,32 @@ interface Post {
 
 왜 이런 일이 발생할까요? 우리가 타입스크립트에게 **"도메인의 현실"을 제대로 알려주지 않고 거짓말을 했기 때문**입니다.
 
-## 2. 도메인 모델링: ID는 단순한 값이 아니라 '신분증'이다
+## 2. 왜 프론트엔드에 도메인 모델링이 필요한가
 
-거창하게 들리지만, '도메인 모델링'의 핵심은 현실의 비즈니스 규칙을 코드에 그대로 반영하는 것입니다.
+'도메인 모델링'이라고 하면 보통 백엔드나 DDD의 영역으로 생각하기 쉽습니다. 하지만 잠깐 생각해 봅시다. **사용자의 행동 흐름을 가장 충실하게 코드로 표현해야 하는 곳이 어디인가요?** 바로 프론트엔드입니다.
+
+사용자는 글을 '작성'하고, '저장'하고, '수정'하고, '삭제'합니다. 이 모든 흐름에서 데이터의 **상태**는 끊임없이 변합니다. 그런데 우리가 이 상태 변화를 타입으로 제대로 표현하지 않으면, 결국 런타임에서 `undefined` 에러로 돌아옵니다.
+
+도메인 모델링의 핵심은 거창한 것이 아닙니다. **현실의 비즈니스 규칙을 코드에 그대로 반영하는 것**입니다.
+
 우리의 비즈니스 규칙을 가만히 들여다봅시다.
 
 1. **작성 중인 글**: 제목과 내용만 있습니다. ID는 절대 없습니다.
 2. **발행된 글**: 서버에 안전하게 저장되었습니다. **반드시 고유한 ID를 가집니다.**
 
-즉, 이 도메인에서 "ID가 생겼다"는 것은 단순히 데이터에 문자열 필드 하나가 추가된 것이 아닙니다. **객체의 신분이 '임시'에서 '정식'으로 완전히 바뀌었음**을 의미합니다.
+즉, 이 도메인에서 _"ID가 생겼다"_ 는 것은 단순히 데이터에 문자열 필드 하나가 추가된 것이 아닙니다. **객체의 신분이 '임시'에서 '정식'으로 완전히 바뀌었음**을 의미합니다.
 
 그런데 우리는 귀찮다는 이유로 이 완전히 다른 두 가지 상태를 `Post`라는 하나의 타입에 억지로 욱여넣고, `id?: string`으로 퉁쳐버린 겁니다.
 
-## 3. 해결책: 공통 속성은 묶고, 상태는 있는 그대로 쪼개기
+## 3. Tagged Type: 상태를 타입으로 증명하기
 
-이 문제를 해결하는 가장 우아한 방법은 억지스러운 옵셔널을 걷어내고, 데이터를 상태에 맞게 완전히 분리하는 것입니다. 중복되는 코드는 `BasePost`로 깔끔하게 묶어내고, 인위적인 태그 값 없이 오직 **'ID의 유무'** 로만 상태를 정의해 봅시다.
+이 문제를 해결하는 타입스크립트의 공식 패턴이 있습니다. 바로 **Tagged Type**, 또는 **Discriminated Union** 이라고 불리는 패턴입니다.
+
+핵심 아이디어는 간단합니다.
+
+> 💡 모든 상태가 공유하는 **하나의 리터럴 속성(Tag)** 을 만들고, 그 값으로 상태를 식별하자.
+
+중복되는 코드는 `BasePost`로 깔끔하게 묶어내고, `status`라는 **태그(Tag)** 속성으로 상태를 명확히 분리해 봅시다.
 
 ```typescript
 // 공통 속성: 글이라면 무조건 가져야 하는 기본 뼈대
@@ -52,103 +63,103 @@ interface BasePost {
 }
 
 // 1. 아직 식별자가 없는 '작성 중' 상태
-interface DraftPost extends BasePost {}
+interface DraftPost extends BasePost {
+  status: 'draft'; // Tag: 이 객체가 "임시저장" 상태임을 선언
+}
 
 // 2. 서버에 저장되어 식별자가 존재하는 '발행 완료' 상태
 interface PublishedPost extends BasePost {
-  id: string; // 더 이상 옵셔널이 아닙니다! 무조건 존재합니다.
+  status: 'published'; // Tag: 이 객체가 "발행됨" 상태임을 선언
+  id: string; // 발행되었으니 반드시 존재!
 }
 
 // 이 둘을 합쳐서 비로소 완전한 Post 도메인을 만듭니다.
 type Post = DraftPost | PublishedPost;
 ```
 
-이제 데이터의 구조가 우리의 비즈니스 현실과 완벽하게 일치하게 되었습니다!
+여기서 `status`가 바로 **Tag** 입니다. `'draft'`와 `'published'`라는 리터럴 값이 각 상태의 이름표 역할을 하죠. 이제 타입스크립트는 `status` 값만 확인하면 나머지 데이터의 형태를 **자동으로** 추론할 수 있게 됩니다.
 
-## 4. 타입 가드: 코드가 소설처럼 읽히는 마법
+## 4. Before / After: 컴파일러가 보장하는 안전함
 
-타입을 분리했으니, 이제 이 상태를 어떻게 구분할까요? 컴포넌트 안에서 `if ('id' in post)`를 직접 쓸 수도 있지만, 이런 기술적인 코드가 비즈니스 로직에 날것 그대로 노출되는 것은 조금 아쉽습니다.
+이론만으로는 감이 잘 안 올 수 있습니다. 같은 비즈니스 로직을 옵셔널 방식과 Tagged Type 방식으로 나란히 비교해 봅시다.
 
-**"ID가 있으면 발행된 글이다"** 라는 비즈니스 규칙 자체를 아예 함수로 빼내어 캡슐화해 봅시다.
-이때 반환 타입을 `post is PublishedPost`로 지정해주면, 이 함수를 통과한 데이터는 타입스크립트가 `PublishedPost`로 완벽하게 신뢰하게 됩니다.
+### ❌ Before: 끝없는 의심과 방어 (옵셔널 파티)
+
+```typescript
+function handlePost(post: Post) {
+  // post.id가 있는지 확신할 수 없습니다.
+  if (!post.id) {
+    // 여기가 "새 글 작성"인지 "에러 상황"인지 알 수 없습니다.
+    console.log('ID가 없습니다... 새 글인가? 에러인가?');
+    api.create(post);
+    return;
+  }
+
+  // 여기서도 타입스크립트는 post.id가 string | undefined라고 불평합니다.
+  api.update(post.id, post);
+}
+```
+
+- `post.id`가 없는 상황이 "새 글 작성"인지 "진짜 에러"인지 구분이 안 됩니다.
+- 개발자가 매번 `if (post.id)` 같은 방어 코드를 직접 작성해야 합니다.
+
+### ✅ After: Tag 하나로 모든 것이 명확해지는 순간
+
+```typescript
+function handlePost(post: Post) {
+  if (post.status === 'draft') {
+    // 이 블록 안에서 post는 DraftPost입니다.
+    // id 필드 자체가 존재하지 않으므로 실수할 여지가 없습니다.
+    console.log(`임시저장 글을 새로 생성합니다: ${post.title}`);
+    api.create(post);
+    return;
+  }
+
+  // 여기서 post는 자동으로 PublishedPost!
+  // post.id는 무조건 string. 옵셔널 체이닝도 느낌표도 필요 없습니다.
+  console.log(`기존 글(${post.id})을 업데이트합니다.`);
+  api.update(post.id, post);
+}
+```
+
+`post.status === 'draft'`라는 조건 하나로, 타입스크립트가 **나머지 모든 타입을 자동으로 좁혀냅니다.** 개발자는 더 이상 `id`가 있는지 없는지 런타임에서 의심할 필요가 없습니다. _"발행된 글은 id가 반드시 있다"_ 는 도메인의 규칙이 타입 시스템에 완벽하게 녹아들었기 때문입니다.
+
+## 5. 한 걸음 더: 타입 가드로 비즈니스 규칙을 캡슐화하기
+
+한 가지 더 욕심을 부려볼까요? 컴포넌트 곳곳에서 `if (post.status === 'published')`를 반복하는 대신, **비즈니스 규칙 자체를 함수로 빼내어 캡슐화** 할 수 있습니다.
 
 ```typescript
 // 비즈니스 규칙이 담긴 타입 가드 함수
 function isPublished(post: Post): post is PublishedPost {
-  return 'id' in post;
+  return post.status === 'published';
 }
 ```
 
-이제 실제 비즈니스 로직을 작성할 때, 코드가 어떻게 변하는지 감상해 보세요. 기술적인 구현은 숨겨지고, 도메인의 언어만 남습니다.
+이렇게 하면 비즈니스 로직에서 기술적인 구현이 숨겨지고, 도메인의 언어만 남습니다.
 
 ```typescript
-function handlePost(post: Post) {
+function updatePost(post: Post) {
   if (isPublished(post)) {
-    // 타입스크립트는 isPublished를 통과했으니 id가 무조건 있음을 알아챕니다.
-    console.log(`발행된 글의 ID: ${post.id}`);
-
-    // 무조건 id가 있는 타입만 받는 깐깐한 함수에도 안전하게 통과!
-    updatePost(post);
-  } else {
-    // 이 블록 안에서 post는 자연스럽게 DraftPost로 취급됩니다.
-    console.log(`아직 저장되지 않은 글: ${post.title}`);
+    // isPublished를 통과했으니 post.id는 무조건 존재!
+    api.patch(`/posts/${post.id}`, post);
   }
 }
-
-// 오직 발행된 글만 받을 수 있는 엄격한 함수
-function updatePost(post: PublishedPost) {
-  api.patch(`/posts/${post.id}`, post);
-}
 ```
-
-더 이상 옵셔널 체이닝이나 느낌표를 남발하며 타입스크립트와 싸울 필요가 없습니다.
-
-## 5. 보너스: 존재함을 넘어, '의미'를 부여하기
-
-자, 이제 우리는 `PublishedPost`를 통해 ID가 100% 존재한다는 확신을 얻었습니다. 그런데 여기서 한 걸음 더 나아가 볼까요? 흥미로운 의문이 하나 생깁니다.
-
-```typescript
-function deletePost(id: string) {
-  /* ... */
-}
-
-// 프론트엔드 어딘가에서 발생한 대참사
-const currentUserId = 'user_999';
-deletePost(currentUserId); // 타입스크립트: "음~ 둘 다 string이네! 통과!"
-```
-
-분명 ID가 존재하도록 만들었지만, 타입스크립트의 눈에는 글의 ID나 유저의 ID나 그저 똑같은 `string`일 뿐입니다. 여기서 우리가 처음에 던졌던 **"타입스크립트에게 거짓말을 하지 말자"** 는 원칙을 한 번 더 끝까지 밀어붙여 봅시다.
-
-복잡한 유틸리티 타입 없이, 타입스크립트에게 이 문자열이 단순한 텍스트가 아니라 **'글의 ID'** 라는 가상의 이름표를 찰칵 달아주는 겁니다.
-
-```typescript
-// 실제로는 존재하지 않는 가상의 이름표를 달아줍니다.
-type PostId = string & { readonly __tag: unique symbol };
-
-// 이제 PublishedPost의 id는 단순한 string이 아닙니다.
-interface PublishedPost extends BasePost {
-  id: PostId;
-}
-```
-
-이제 우리의 함수는 어처구니없는 실수로부터 완벽하게 보호받습니다.
-
-```typescript
-function deletePost(id: PostId) {
-  api.delete(`/posts/${id}`);
-}
-
-const currentUserId = 'user_999';
-// 컴파일 에러: "user_999는 단순 string이지, PostId 태그가 없잖아!"
-deletePost(currentUserId);
-```
-
-`isPublished`라는 타입 가드를 통과한 데이터는 이제 ID가 '존재'할 뿐만 아니라, 그 ID가 완벽하게 검증된 '글의 ID'임이 증명된 것입니다.
 
 ## 6. 마무리: 방어하지 말고 증명하세요
 
 `id?: string`을 사용할 때 타입스크립트는 걸핏하면 에러를 띄우는 깐깐한 '단속 카메라' 같았습니다. 우리는 그 카메라를 피하기 위해 의미 없는 `if` 문을 덕지덕지 발라야 했죠.
 
-하지만 도메인의 실제 규칙에 맞춰 상태를 분리하고, 이를 **타입 가드 함수**와 **브랜디드 타입**으로 풀어내는 순간, 타입스크립트는 우리가 실수하지 않도록 가장 빠르고 안전한 길을 안내해 주는 든든한 '네비게이션'이 됩니다.
+하지만 도메인의 실제 규칙에 맞춰 **Tagged Type**으로 상태를 분리하는 순간, 타입스크립트는 우리가 실수하지 않도록 가장 빠르고 안전한 길을 안내해 주는 든든한 '네비게이션'이 됩니다.
 
-타입은 단순한 에러 방지용 도구가 아닙니다. 비즈니스의 흐름과 상태의 변화를 코드에 증명하는 가장 강력한 수단입니다. `undefined`와의 무의미한 감정 소모를 멈추고, 진짜 중요한 비즈니스 로직에 여러분의 에너지를 집중해 보세요.
+타입은 단순한 에러 방지용 도구가 아닙니다. 비즈니스의 흐름과 상태의 변화를 코드에 **증명**하는 가장 강력한 수단입니다.
+
+---
+
+**💡 내 프로젝트에 당장 적용하기 체크리스트**
+
+- [ ] 내 코드에 무의미한 `if (data.id)` 체크가 너무 많지 않은가?
+- [ ] `?` 옵셔널 필드들이 사실 특정 '상태'를 대변하고 있진 않은가?
+- [ ] 상태를 식별할 수 있는 공통 Tag 속성(`status`, `type`, `kind`)을 추가할 수 있는가?
+- [ ] 상태별로 타입을 명확히 분리하여 유니온(`|`)으로 묶었는가?
+- [ ] 타입 가드 함수로 비즈니스 규칙을 캡슐화했는가?
