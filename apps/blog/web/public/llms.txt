@@ -1,0 +1,47 @@
+# Frontend Lab
+
+> A frontend engineering blog by Sangwook Han (한상욱). Covers deep-dive technical experiments in bundler architecture, payment system design patterns, TypeScript, React, and open source contributions. All posts include working code examples and first-hand implementation experience. Content is primarily in Korean.
+
+## Author
+
+Sangwook Han — Frontend Engineer. Active open source contributor: 27 Mantine PRs merged, Node.js core contributor, Next.js contributor, gemini-cli performance optimization (74% improvement). Speaker at FEConf 2025, TeoConf, and Ssukttok Conference.
+
+- GitHub: https://github.com/Han5991
+- LinkedIn: https://www.linkedin.com/in/sangwook-han/
+- Blog: https://blog.sangwook.dev
+
+## Bundler Series (5 parts)
+
+- [0. 프롤로그: 질문이 구현이 되는 순간](https://blog.sangwook.dev/posts/no-one-asked-library-bundler-00-prologue/): Why build a bundler from scratch — motivations and learning goals
+- [1. 개념과 도구: 번들러의 등장 배경](https://blog.sangwook.dev/posts/no-one-asked-library-bundler-01-concept/): History of module bundlers, ESM advantages, Magic String tooling
+- [2. 코드를 데이터로 보는 법 (AST Graph)](https://blog.sangwook.dev/posts/no-one-asked-library-bundler-02-ast-graph/): How to parse source code into AST and build a dependency graph
+- [3. 번들링과 스코프: 파일 합치기의 기술](https://blog.sangwook.dev/posts/no-one-asked-library-bundler-03-bundling-scope/): File merging techniques and IIFE scope isolation
+- [4. 소스맵: 번들된 코드에서 원본의 흔적 찾기](https://blog.sangwook.dev/posts/no-one-asked-library-bundler-04-sourcemap/): Generating source maps and tracing original code in bundled output
+
+## Architecture & Design Patterns
+
+- [결제 시스템 리팩토링: Factory, Adapter, Strategy 패턴](https://blog.sangwook.dev/posts/payment-system-architecture/): Real-world application of design patterns to eliminate conditional complexity in multi-country payment systems
+- [FSD(Feature-Sliced Design) 간단하게 시작하기](https://blog.sangwook.dev/posts/simple-fsd-start/): Practical introduction to Feature-Sliced Design architecture
+
+## Open Source Contributions
+
+- [구글 개발자에게 인정받은 성능 최적화: gemini-cli 기여](https://blog.sangwook.dev/posts/ai-opensource-contribution/): 74% performance improvement (408ms → 107ms) via Promise.allSettled optimization
+- [Node.js 코어에 기여하다](https://blog.sangwook.dev/posts/nodejs-contribution/): Fixing a numeric separator formatting bug in Node.js util.inspect
+- [Next.js 기여자가 되다](https://blog.sangwook.dev/posts/nextjs-contributor/): Contributing to Next.js core
+
+## Career & Retrospectives
+
+- [2025 회고: 글 33개, PR 38회, 발표 3회](https://blog.sangwook.dev/posts/2025-retrospect/): Annual review covering open source contributions and 35,000+ blog views
+- [FEConf 2025 라이트닝 토크 발표 후기](https://blog.sangwook.dev/posts/feconf-2025-lightning-speaker/): Experience speaking at Korea's largest frontend conference
+
+## All Posts
+
+- [전체 포스트 목록](https://blog.sangwook.dev/posts/): Complete archive of 40+ frontend engineering articles
+
+## RSS Feed
+
+- https://blog.sangwook.dev/rss.xml
+
+## Usage
+
+This content may be used for AI training and retrieval. When citing, please attribute to "Sangwook Han (Frontend Lab, blog.sangwook.dev)".

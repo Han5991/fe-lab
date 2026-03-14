@@ -15,11 +15,11 @@ export const metadata: Metadata = {
   },
   title: 'Frontend Lab | 프론트엔드 실험실',
   description:
-    '프론트엔드 기술 실험과 깊이 있는 학습 내용을 공유하는 공간입니다.',
+    'React, TypeScript, 번들러 아키텍처부터 오픈소스 기여까지. 프론트엔드 엔지니어 한상욱이 직접 실험하고 기록하는 공간입니다. 설계 패턴, 성능 최적화, 오픈소스 기여 노하우를 다룹니다.',
   openGraph: {
     title: 'Frontend Lab | 프론트엔드 실험실',
     description:
-      '프론트엔드 기술 실험과 깊이 있는 학습 내용을 공유하는 공간입니다.',
+      'React, TypeScript, 번들러 아키텍처부터 오픈소스 기여까지. 프론트엔드 엔지니어 한상욱이 직접 실험하고 기록하는 공간입니다. 설계 패턴, 성능 최적화, 오픈소스 기여 노하우를 다룹니다.',
     url: 'https://blog.sangwook.dev',
     siteName: 'Frontend Lab',
     images: [
@@ -37,7 +37,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Frontend Lab | 프론트엔드 실험실',
     description:
-      '프론트엔드 기술 실험과 깊이 있는 학습 내용을 공유하는 공간입니다.',
+      'React, TypeScript, 번들러 아키텍처부터 오픈소스 기여까지. 프론트엔드 엔지니어 한상욱이 직접 실험하고 기록하는 공간입니다. 설계 패턴, 성능 최적화, 오픈소스 기여 노하우를 다룹니다.',
     images: ['/og-default.png'],
   },
   verification: {

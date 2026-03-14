@@ -39,7 +39,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     };
   }
 
-  const thumbnailUrl = resolveThumbnailUrl(post);
   const absoluteThumbnailUrl = resolveAbsoluteThumbnailUrl(post);
   const description = post.excerpt || post.content.slice(0, 160) + '...';
 
@@ -96,23 +95,70 @@ export default async function PostPage({ params }: Props) {
   const thumbnailUrl = resolveThumbnailUrl(post);
   const absoluteThumbnailUrl = resolveAbsoluteThumbnailUrl(post);
 
+  const postUrl = `${SITE_URL}/posts/${slug}/`;
+  const isoDate = (date: string | null) =>
+    date ? `${date}T00:00:00+09:00` : undefined;
+
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'BlogPosting',
     headline: post.title,
-    datePublished: post.date,
-    dateModified: post.date,
+    datePublished: isoDate(post.date),
+    dateModified: isoDate(post.date),
     description: post.excerpt || post.content.slice(0, 160) + '...',
-    image: absoluteThumbnailUrl,
+    image: {
+      '@type': 'ImageObject',
+      url: absoluteThumbnailUrl,
+      width: 1200,
+      height: 630,
+    },
+    inLanguage: 'ko',
+    ...(post.tags &&
+      post.tags.length > 0 && {
+        keywords: post.tags.join(', '),
+      }),
+    ...(post.series && { articleSection: post.series }),
     mainEntityOfPage: {
       '@type': 'WebPage',
-      '@id': `${SITE_URL}/posts/${slug}`,
+      '@id': postUrl,
     },
-    author: {
-      '@type': 'Person',
-      name: 'Sangwook Han',
-      url: SITE_URL,
+    author: { '@id': `${SITE_URL}/#author` },
+    publisher: { '@id': `${SITE_URL}/#organization` },
+    isPartOf: { '@id': `${SITE_URL}/#website` },
+    speakable: {
+      '@type': 'SpeakableSpecification',
+      cssSelector: ['h1', 'h2:first-of-type', 'article > p:first-of-type'],
     },
+  };
+
+  const breadcrumbItems: Array<{
+    position: number;
+    name: string;
+    item: string;
+  }> = [
+    { position: 1, name: 'Home', item: `${SITE_URL}/` },
+    { position: 2, name: 'Posts', item: `${SITE_URL}/posts/` },
+  ];
+  if (post.series) {
+    breadcrumbItems.push({
+      position: 3,
+      name: post.series,
+      item: `${SITE_URL}/posts/?series=${encodeURIComponent(post.series)}`,
+    });
+    breadcrumbItems.push({ position: 4, name: post.title, item: postUrl });
+  } else {
+    breadcrumbItems.push({ position: 3, name: post.title, item: postUrl });
+  }
+
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: breadcrumbItems.map(({ position, name, item }) => ({
+      '@type': 'ListItem',
+      position,
+      name,
+      item,
+    })),
   };
 
   return (
@@ -120,6 +166,10 @@ export default async function PostPage({ params }: Props) {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
       <PostClient
         post={post}

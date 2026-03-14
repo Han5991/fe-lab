@@ -36,21 +36,45 @@ export const metadata: Metadata = {
   },
 };
 
-const jsonLd = {
-  '@context': 'https://schema.org',
-  '@type': 'CollectionPage',
-  name: 'Posts | Frontend Lab',
-  url: 'https://blog.sangwook.dev/posts',
-  description: '프론트엔드 실험실의 모든 기록들을 확인해보세요.',
-  isPartOf: {
-    '@type': 'WebSite',
-    name: 'Frontend Lab',
-    url: 'https://blog.sangwook.dev',
-  },
-};
-
 export default function PostsPage() {
   const posts = getAllPosts();
+
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    '@id': 'https://blog.sangwook.dev/posts/',
+    name: 'Posts | Frontend Lab',
+    url: 'https://blog.sangwook.dev/posts/',
+    description: '프론트엔드 실험실의 모든 기록들을 확인해보세요.',
+    inLanguage: 'ko',
+    isPartOf: { '@id': 'https://blog.sangwook.dev/#website' },
+    breadcrumb: {
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        {
+          '@type': 'ListItem',
+          position: 1,
+          name: 'Home',
+          item: 'https://blog.sangwook.dev/',
+        },
+        {
+          '@type': 'ListItem',
+          position: 2,
+          name: 'Posts',
+          item: 'https://blog.sangwook.dev/posts/',
+        },
+      ],
+    },
+    mainEntity: {
+      '@type': 'ItemList',
+      itemListElement: posts.slice(0, 20).map((post, index) => ({
+        '@type': 'ListItem',
+        position: index + 1,
+        url: `https://blog.sangwook.dev/posts/${post.slug}/`,
+        name: post.title,
+      })),
+    },
+  };
 
   return (
     <>
