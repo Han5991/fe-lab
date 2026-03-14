@@ -1,5 +1,17 @@
 [
   {
+    "slug": "typescript-domain-modeling-without-optional",
+    "title": "[Typescript로 설계하는 프로젝트] id?: string을 버려라. ID의 존재가 곧 상태다.",
+    "date": "2026-03-16T00:00:00.000Z",
+    "excerpt": "1. 프롤로그: 우리가 숨 쉬듯 작성하는 \"거짓말\" 주니어 개발자: \"OO님, Post 타입에서 id가 없다고 에디터에서 빨간 줄이 뜨는데, 새 글 작성할 땐 서버 id가 없으니까 그냥 ? 붙여도 될까요?\" 프론트엔드 개발을 하다 보면 슬랙이나 코드 리뷰에서 심심치 않게 보게 되는 질문...",
+    "tags": [
+      "TypeScript",
+      "Architecture",
+      "Data Modeling"
+    ],
+    "series": "[Typescript로 설계하는 프로젝트]"
+  },
+  {
     "slug": "no-one-asked-library-bundler-04-sourcemap",
     "title": "[누가 시키지도 않았는데 번들러 만들기] 4. 소스맵: 번들된 코드에서 원본의 흔적 찾기",
     "date": "2026-03-03",
@@ -333,7 +345,7 @@
     "date": "2025-02-10",
     "excerpt": "프롤로그 디자인 시스템에서 중요한 목표 중 하나는 일관된 사용자 경험(UX)을 제공하는 것입니다. UI 컴포넌트(버튼, 카드 등)마다 hover, focus, press와 같은 다양한 인터랙션 상태가 있고, 각 상태에서 색상이 어떻게 변화하는지가 사용성에 큰 영향을 미칩니다. 이번 글에...",
     "tags": [],
-    "series": null
+    "series": "react/component"
   },
   {
     "slug": "design-system-start",

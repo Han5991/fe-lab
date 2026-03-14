@@ -1,5 +1,6 @@
 import { SITE_URL, OG_DEFAULT_IMAGE } from '../../lib/constants';
 import type { PostData } from './types';
+import { encodePostSlug } from './utils';
 
 /**
  * 포스트의 thumbnail URL을 해결합니다.
@@ -16,8 +17,10 @@ export function resolveThumbnailUrl(
   if (thumbnail.startsWith('http') || thumbnail.startsWith('/')) {
     return thumbnail;
   }
-  const dir = relativeDir ? `${relativeDir}/` : '';
-  return `/posts/${dir}${thumbnail}`;
+  const dir = relativeDir
+    ? `${encodePostSlug(relativeDir)}/`
+    : '';
+  return `/posts/${dir}${encodeURIComponent(thumbnail)}`;
 }
 
 /**

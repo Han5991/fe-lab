@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { css } from '@design-system/ui-lib/css';
 import type { PostData } from '@/lib/posts';
+import { encodePostSlug } from '@/domain/post/utils';
 
 interface PostCardProps {
   post: PostData;
@@ -17,7 +18,7 @@ export function PostCard({ post, rank }: PostCardProps) {
 
   return (
     <Link
-      href={`/posts/${post.slug}`}
+      href={`/posts/${encodePostSlug(post.slug)}`}
       className={css({
         display: 'flex',
         flexDir: 'column',
@@ -61,7 +62,7 @@ export function PostCard({ post, rank }: PostCardProps) {
         )}
         {post.date && (
           <time className={css({ fontSize: 'sm', color: 'gray.400' })}>
-            {new Date(post.date).toLocaleDateString('ko-KR')}
+            {new Date(post.date).toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul' })}
           </time>
         )}
       </div>

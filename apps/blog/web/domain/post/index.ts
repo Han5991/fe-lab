@@ -7,3 +7,4 @@ export * from './types';
 export * from './visibility';
 export * from './thumbnail';
 export * from './service';
+export * from './utils';

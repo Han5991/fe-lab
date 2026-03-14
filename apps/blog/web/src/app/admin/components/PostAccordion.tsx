@@ -22,6 +22,7 @@ import {
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'motion/react';
 import { DateRangeControls, useDateFilter } from './DateRangeControls';
+import { encodePostSlug } from '@/domain/post/utils';
 
 interface Props {
   post: PostStatDetail;
@@ -99,7 +100,7 @@ export function PostAccordion({ post }: Props) {
             <BarChart3 size={16} />
           </Link>
           <Link
-            href={`/posts/${post.slug}`}
+            href={`/posts/${encodePostSlug(post.slug)}`}
             target="_blank"
             onClick={e => e.stopPropagation()}
             className={css({
@@ -140,7 +141,7 @@ export function PostAccordion({ post }: Props) {
               })}
               title={
                 computedStatus === 'scheduled' && post.scheduledDate
-                  ? `예약: ${new Date(post.scheduledDate).toLocaleString('ko-KR')}`
+                  ? `예약: ${new Date(post.scheduledDate).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })}`
                   : undefined
               }
             >
@@ -148,7 +149,7 @@ export function PostAccordion({ post }: Props) {
                 ? '공개'
                 : computedStatus === 'draft'
                   ? '비공개'
-                  : `📅 ${post.scheduledDate ? new Date(post.scheduledDate).toLocaleDateString('ko-KR') : '예약'}`}
+                  : `📅 ${post.scheduledDate ? new Date(post.scheduledDate).toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul' }) : '예약'}`}
             </span>
           )}
           <span

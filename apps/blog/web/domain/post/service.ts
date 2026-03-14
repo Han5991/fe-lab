@@ -25,8 +25,13 @@ let _postsBySlugMap: Map<string, PostData> | null = null;
 /**
  * slug로 특정 포스트를 조회합니다.
  * 내부적으로 캐시된 Map을 사용하여 O(1)로 조회합니다.
+ * 단, 개발 모드에서는 수정한 마크다운이 바로 반영되도록 캐시를 건너뜁니다.
  */
 export function getPostBySlug(slug: string): PostData | null {
+  if (process.env.NODE_ENV === 'development') {
+    return getAllPosts().find(post => post.slug === slug) ?? null;
+  }
+
   if (!_postsBySlugMap) {
     _postsBySlugMap = new Map(getAllPosts().map(post => [post.slug, post]));
   }

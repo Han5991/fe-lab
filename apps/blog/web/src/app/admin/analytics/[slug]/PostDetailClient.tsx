@@ -25,6 +25,7 @@ import {
 } from 'recharts';
 import Link from 'next/link';
 import { usePostDetailStats } from '@/lib/hooks/usePostDetailStats';
+import { encodePostSlug } from '@/domain/post/utils';
 import {
   DateRangeControls,
   useDateFilter,
@@ -125,7 +126,7 @@ function PostDetailContent() {
             {post.title}
           </h2>
           <Link
-            href={`/posts/${post.slug}`}
+            href={`/posts/${encodePostSlug(post.slug)}`}
             target="_blank"
             onClick={e => e.stopPropagation()}
             className={css({

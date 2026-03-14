@@ -105,6 +105,7 @@ export default function PostClient({
                       year: 'numeric',
                       month: 'long',
                       day: 'numeric',
+                      timeZone: 'Asia/Seoul',
                     })}
                   </time>
                 )}
