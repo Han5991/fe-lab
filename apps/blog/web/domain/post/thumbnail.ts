@@ -16,8 +16,10 @@ export function resolveThumbnailUrl(
   if (thumbnail.startsWith('http') || thumbnail.startsWith('/')) {
     return thumbnail;
   }
-  const dir = relativeDir ? `${relativeDir}/` : '';
-  return `/posts/${dir}${thumbnail}`;
+  const dir = relativeDir
+    ? `${relativeDir.split('/').map(encodeURIComponent).join('/')}/`
+    : '';
+  return `/posts/${dir}${encodeURIComponent(thumbnail)}`;
 }
 
 /**

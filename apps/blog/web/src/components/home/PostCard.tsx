@@ -62,7 +62,7 @@ export function PostCard({ post, rank }: PostCardProps) {
         )}
         {post.date && (
           <time className={css({ fontSize: 'sm', color: 'gray.400' })}>
-            {new Date(post.date).toLocaleDateString('ko-KR')}
+            {new Date(post.date).toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul' })}
           </time>
         )}
       </div>

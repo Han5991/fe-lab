@@ -57,6 +57,7 @@ function PostCard({ post }: { post: PostData }) {
                 year: 'numeric',
                 month: 'long',
                 day: 'numeric',
+                timeZone: 'Asia/Seoul',
               })}
             </time>
           )}

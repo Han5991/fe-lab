@@ -77,13 +77,14 @@ function collectPosts(
       : undefined;
     const series: string | undefined = currentPath || undefined;
     const status = determineStatus(data);
+    const dateString = data.date instanceof Date ? data.date.toISOString() : (typeof data.date === 'string' ? data.date : null);
 
     results.push({
       slug: data.slug || rawSlug,
       originalSlug: rawSlug,
       relativeDir: currentPath,
       title: data.title || fileName,
-      date: data.date || null,
+      date: dateString,
       content,
       excerpt: data.excerpt || cleanContent.slice(0, 160) + '...',
       thumbnail:
@@ -118,8 +119,13 @@ let _cache: PostData[] | null = null;
 /**
  * 파일시스템에서 모든 포스트 데이터를 읽고 캐싱합니다.
  * 빌드 타임에 한 번만 읽어 O(N²) 파일 읽기를 방지합니다.
+ * 단, 개발 모드에서는 수정 사항이 즉시 반영되도록 매번 새로 읽어옵니다.
  */
 export function readAllPosts(): PostData[] {
+  if (process.env.NODE_ENV === 'development') {
+    return sortByDateDesc(collectPosts(postsDirectory));
+  }
+
   if (_cache) return _cache;
   _cache = sortByDateDesc(collectPosts(postsDirectory));
   return _cache;
