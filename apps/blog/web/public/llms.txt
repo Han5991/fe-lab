@@ -1,47 +1,85 @@
 # Frontend Lab
 
-> A frontend engineering blog by Sangwook Han (한상욱). Covers deep-dive technical experiments in bundler architecture, payment system design patterns, TypeScript, React, and open source contributions. All posts include working code examples and first-hand implementation experience. Content is primarily in Korean.
+> Frontend engineering blog by Sangwook Han (한상욱). Deep-dive technical experiments in bundler architecture, TypeScript domain modeling, React patterns, and open source contributions. All posts include working code and first-hand implementation experience. Content primarily in Korean.
 
-## Author
+## Docs
 
-Sangwook Han — Frontend Engineer. Active open source contributor: 27 Mantine PRs merged, Node.js core contributor, Next.js contributor, gemini-cli performance optimization (74% improvement). Speaker at FEConf 2025, TeoConf, and Ssukttok Conference.
+- [블로그 홈](https://blog.sangwook.dev/): Frontend Lab — React, TypeScript, bundler architecture experiments by Han Sangwook.
+- [전체 포스트 목록](https://blog.sangwook.dev/posts/): Complete archive of 45+ frontend engineering articles organized by topic and series.
 
-- GitHub: https://github.com/Han5991
-- LinkedIn: https://www.linkedin.com/in/sangwook-han/
-- Blog: https://blog.sangwook.dev
+## Bundler Series
 
-## Bundler Series (5 parts)
+- [0. 프롤로그: 질문이 구현이 되는 순간](https://blog.sangwook.dev/posts/no-one-asked-library-bundler-00-prologue/): Why build a bundler from scratch — motivations and learning goals behind the series.
+- [1. 개념과 도구: 번들러의 등장 배경](https://blog.sangwook.dev/posts/no-one-asked-library-bundler-01-concept/): History of module bundlers, ESM advantages, and Magic String tooling introduction.
+- [2. 코드를 데이터로 보는 법 (AST & Dependency Graph)](https://blog.sangwook.dev/posts/no-one-asked-library-bundler-02-ast-graph/): Parsing source code into AST and building a dependency graph from scratch.
+- [3. 번들링과 스코프: 파일 합치기의 기술](https://blog.sangwook.dev/posts/no-one-asked-library-bundler-03-bundling-scope/): File merging techniques and IIFE scope isolation for safe module bundling.
+- [4. 소스맵: 번들된 코드에서 원본의 흔적 찾기](https://blog.sangwook.dev/posts/no-one-asked-library-bundler-04-sourcemap/): Generating source maps to trace original source code in bundled output.
 
-- [0. 프롤로그: 질문이 구현이 되는 순간](https://blog.sangwook.dev/posts/no-one-asked-library-bundler-00-prologue/): Why build a bundler from scratch — motivations and learning goals
-- [1. 개념과 도구: 번들러의 등장 배경](https://blog.sangwook.dev/posts/no-one-asked-library-bundler-01-concept/): History of module bundlers, ESM advantages, Magic String tooling
-- [2. 코드를 데이터로 보는 법 (AST Graph)](https://blog.sangwook.dev/posts/no-one-asked-library-bundler-02-ast-graph/): How to parse source code into AST and build a dependency graph
-- [3. 번들링과 스코프: 파일 합치기의 기술](https://blog.sangwook.dev/posts/no-one-asked-library-bundler-03-bundling-scope/): File merging techniques and IIFE scope isolation
-- [4. 소스맵: 번들된 코드에서 원본의 흔적 찾기](https://blog.sangwook.dev/posts/no-one-asked-library-bundler-04-sourcemap/): Generating source maps and tracing original code in bundled output
+## TypeScript Series
+
+- [선택적 필드 대신 상태별 타입 분리하기](https://blog.sangwook.dev/posts/typescript-domain-modeling-without-optional/): Using Tagged Types and Discriminated Unions instead of optional fields for precise domain modeling.
+- [TypeScript로 설계하는 프로젝트: 타입 연결성](https://blog.sangwook.dev/posts/typescript-project-design/): Designing TypeScript projects where types flow naturally from server to UI layer.
+- [API 설계: 타입으로 인터페이스 정의하기](https://blog.sangwook.dev/posts/typescript-project-api-design/): Defining API interfaces with TypeScript types for type-safe client-server contracts.
+- [API DI 설계: 의존성 역전으로 테스트 가능한 구조 만들기](https://blog.sangwook.dev/posts/typescript-project-api-di-design/): Applying dependency injection to API layer for testable and flexible architecture.
+- [Service 설계: 비즈니스 로직 캡슐화](https://blog.sangwook.dev/posts/typescript-project-service-design/): Encapsulating business logic in service layer with TypeScript.
+- [Service DI 설계: 서비스 의존성 역전](https://blog.sangwook.dev/posts/typescript-project-service-di-design/): Dependency injection patterns for TypeScript service layer.
+- [도메인 설계: 도메인 모델과 타입 안전성](https://blog.sangwook.dev/posts/typescript-project-domain-design/): Building domain models with strict type safety in TypeScript.
+- [타입 안전 리팩토링](https://blog.sangwook.dev/posts/typescript-project-type-safe-refactor-with-typescript/): Step-by-step refactoring guide to achieve full type safety in existing TypeScript projects.
 
 ## Architecture & Design Patterns
 
-- [결제 시스템 리팩토링: Factory, Adapter, Strategy 패턴](https://blog.sangwook.dev/posts/payment-system-architecture/): Real-world application of design patterns to eliminate conditional complexity in multi-country payment systems
-- [FSD(Feature-Sliced Design) 간단하게 시작하기](https://blog.sangwook.dev/posts/simple-fsd-start/): Practical introduction to Feature-Sliced Design architecture
+- [결제 시스템 리팩토링: Factory, Adapter, Strategy 패턴](https://blog.sangwook.dev/posts/payment-system-architecture/): Eliminating if-hell in multi-country payment systems using Factory, Adapter, and Strategy patterns.
+- [FSD(Feature-Sliced Design) 간단하게 시작하기](https://blog.sangwook.dev/posts/simple-fsd-start/): Practical introduction to Feature-Sliced Design architecture for scalable frontend projects.
+- [서버 의존성 줄이기: Clean Architecture 적용](https://blog.sangwook.dev/posts/reduce-server-dependency-clean-architecture/): Applying Clean Architecture to reduce frontend coupling with backend services.
+
+## React Patterns
+
+- [Context API로 Dropzone 컴포넌트 설계하기](https://blog.sangwook.dev/posts/react-component-context-api-dropzone/): Building a flexible Dropzone component using React Context API for shared state.
+- [Type Guard로 안전한 Button 컴포넌트 만들기](https://blog.sangwook.dev/posts/react-component-type-guard-button/): Using TypeScript type guards to create a type-safe polymorphic Button component.
+- [Toast 컴포넌트 설계](https://blog.sangwook.dev/posts/react-component-toast/): Designing a reusable and accessible Toast notification component in React.
+- [컴포넌트에 상호작용 레이어 추가하기](https://blog.sangwook.dev/posts/adding-interaction-layers-to-components/): Adding interaction layers to UI components for better user experience and accessibility.
+- [React 에러 처리 설계](https://blog.sangwook.dev/posts/react-error-deign/): Designing error boundaries and error handling strategies in React applications.
+
+## Error Handling
+
+- [JavaScript 에러 처리의 모든 것](https://blog.sangwook.dev/posts/javascript-error/): Comprehensive guide to JavaScript error types, handling strategies, and best practices.
+- [React 에러 바운더리 완전 정복](https://blog.sangwook.dev/posts/react-error/): Deep dive into React Error Boundaries with practical implementation patterns.
+- [Next.js 에러 처리 전략](https://blog.sangwook.dev/posts/nextjs-error/): Error handling in Next.js App Router including error.tsx and global-error.tsx.
 
 ## Open Source Contributions
 
-- [구글 개발자에게 인정받은 성능 최적화: gemini-cli 기여](https://blog.sangwook.dev/posts/ai-opensource-contribution/): 74% performance improvement (408ms → 107ms) via Promise.allSettled optimization
-- [Node.js 코어에 기여하다](https://blog.sangwook.dev/posts/nodejs-contribution/): Fixing a numeric separator formatting bug in Node.js util.inspect
-- [Next.js 기여자가 되다](https://blog.sangwook.dev/posts/nextjs-contributor/): Contributing to Next.js core
+- [구글 개발자에게 인정받은 성능 최적화: gemini-cli 기여](https://blog.sangwook.dev/posts/ai-opensource-contribution/): 74% performance improvement (408ms → 107ms) in gemini-cli via Promise.allSettled optimization.
+- [Node.js 코어에 기여하다](https://blog.sangwook.dev/posts/nodejs-contribution/): Fixing a numeric separator formatting bug in Node.js util.inspect module.
+- [Next.js 기여자가 되다](https://blog.sangwook.dev/posts/nextjs-contributor/): Contributing to Next.js core — process and lessons learned.
+- [첫 오픈소스 기여: Mantine](https://blog.sangwook.dev/posts/first-open-source-contribution/): First open source contribution experience with Mantine component library.
 
-## Career & Retrospectives
+## Optional
 
-- [2025 회고: 글 33개, PR 38회, 발표 3회](https://blog.sangwook.dev/posts/2025-retrospect/): Annual review covering open source contributions and 35,000+ blog views
-- [FEConf 2025 라이트닝 토크 발표 후기](https://blog.sangwook.dev/posts/feconf-2025-lightning-speaker/): Experience speaking at Korea's largest frontend conference
+- [디자인 시스템 배포: NPM 패키지 배포의 현실](https://blog.sangwook.dev/posts/npm-deploy-series-0-prologue/): Why a 1-day task became 3 weeks — real challenges in publishing a design system to NPM.
+- [Panda CSS 1년 사용 후기](https://blog.sangwook.dev/posts/panda-css-1year-review/): Honest 1-year review of Panda CSS in production: strengths, pain points, and trade-offs.
+- [디자인 시스템 시작하기](https://blog.sangwook.dev/posts/design-system-start/): Getting started with building a design system from scratch for a frontend team.
+- [Turborepo + Next.js Docker 배포](https://blog.sangwook.dev/posts/turborepo-next.js-docker/): Setting up Docker deployment for a Turborepo monorepo with Next.js applications.
+- [Next.js ECS 배포](https://blog.sangwook.dev/posts/next-js-ecs-deploy/): Deploying Next.js to AWS ECS with step-by-step configuration guide.
+- [AWS ECS 롤백 전략](https://blog.sangwook.dev/posts/aws-ecs-rollback/): Implementing zero-downtime rollback strategies for Next.js on AWS ECS.
+- [TeoConf 발표 후기](https://blog.sangwook.dev/posts/2025-teoconf-presentation/): Retrospective on presenting at TeoConf developer conference.
+- [FEConf 2025 라이트닝 토크 발표 후기](https://blog.sangwook.dev/posts/feconf-2025-lightning-speaker/): Experience speaking at Korea's largest frontend conference FEConf 2025.
+- [2025 회고: 글 33개, PR 38회, 발표 3회](https://blog.sangwook.dev/posts/2025-retrospect/): 2025 annual review — 33 posts, 38 PR approvals, 3 conference talks, 35,000+ blog views.
 
-## All Posts
+## Key Facts
 
-- [전체 포스트 목록](https://blog.sangwook.dev/posts/): Complete archive of 40+ frontend engineering articles
+- Author: Sangwook Han (한상욱), Frontend Engineer
+- Blog: https://blog.sangwook.dev
+- Language: Primarily Korean, some English
+- Total posts: 45+ articles
+- Open source: 27 Mantine PRs merged, Node.js core contributor, Next.js contributor
+- Notable contribution: gemini-cli 74% performance improvement (408ms → 107ms)
+- Speaking: FEConf 2025 (Korea's largest frontend conference), TeoConf, Ssukttok Conference
+- 2025 stats: 33 posts, 38 PR approvals, 35,000+ blog views
+- Main topics: Bundler internals, TypeScript domain modeling, React patterns, design systems, open source
 
-## RSS Feed
+## Contact
 
-- https://blog.sangwook.dev/rss.xml
-
-## Usage
-
-This content may be used for AI training and retrieval. When citing, please attribute to "Sangwook Han (Frontend Lab, blog.sangwook.dev)".
+- Blog: https://blog.sangwook.dev
+- GitHub: https://github.com/Han5991
+- LinkedIn: https://www.linkedin.com/in/sangwook-han/
+- RSS: https://blog.sangwook.dev/rss.xml

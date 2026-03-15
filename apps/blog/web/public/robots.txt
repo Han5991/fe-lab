@@ -43,4 +43,16 @@ User-agent: Applebot-Extended
 Allow: /
 Disallow: /admin/
 
+User-agent: Amazonbot
+Allow: /
+Disallow: /admin/
+
+User-agent: FacebookBot
+Allow: /
+Disallow: /admin/
+
+User-agent: cohere-ai
+Allow: /
+Disallow: /admin/
+
 Sitemap: https://blog.sangwook.dev/sitemap.xml

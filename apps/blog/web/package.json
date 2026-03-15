@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "predev": "node sync-posts.mjs && npx tsx generate-sitemap.ts && npx tsx generate-rss.ts && npx tsx scripts/generate-search-index.ts",
+    "predev": "node sync-posts.mjs && npx tsx generate-sitemap.ts && npx tsx generate-rss.ts && npx tsx scripts/generate-search-index.ts && npx tsx scripts/generate-llms-full.ts",
     "dev": "pnpm supabase-start && next dev",
-    "prebuild": "node sync-posts.mjs && npx tsx generate-sitemap.ts && npx tsx generate-rss.ts && npx tsx scripts/generate-search-index.ts",
+    "prebuild": "node sync-posts.mjs && npx tsx generate-sitemap.ts && npx tsx generate-rss.ts && npx tsx scripts/generate-search-index.ts && npx tsx scripts/generate-llms-full.ts",
     "build": "pnpm prebuild && next build",
     "start": "next start",
     "lint": "next lint",

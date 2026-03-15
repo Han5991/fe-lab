@@ -43,7 +43,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const description = post.excerpt || post.content.slice(0, 160) + '...';
 
   return {
-    title: `${post.title} | Frontend Lab Blog`,
+    title: `${post.title} | FE Lab`,
     description,
     alternates: {
       canonical: `/posts/${slug}`,
@@ -124,7 +124,14 @@ export default async function PostPage({ params }: Props) {
     },
     author: { '@id': `${SITE_URL}/#author` },
     publisher: { '@id': `${SITE_URL}/#organization` },
-    isPartOf: { '@id': `${SITE_URL}/#website` },
+    isPartOf: post.series
+      ? {
+          '@type': 'CollectionPage',
+          '@id': `${SITE_URL}/posts/?tab=series&series=${encodeURIComponent(post.series)}`,
+          name: post.series,
+          url: `${SITE_URL}/posts/?tab=series&series=${encodeURIComponent(post.series)}`,
+        }
+      : { '@id': `${SITE_URL}/#website` },
     speakable: {
       '@type': 'SpeakableSpecification',
       cssSelector: ['h1', 'h2:first-of-type', 'article > p:first-of-type'],
@@ -143,7 +150,7 @@ export default async function PostPage({ params }: Props) {
     breadcrumbItems.push({
       position: 3,
       name: post.series,
-      item: `${SITE_URL}/posts/?series=${encodeURIComponent(post.series)}`,
+      item: `${SITE_URL}/posts/?tab=series&series=${encodeURIComponent(post.series)}`,
     });
     breadcrumbItems.push({ position: 4, name: post.title, item: postUrl });
   } else {
