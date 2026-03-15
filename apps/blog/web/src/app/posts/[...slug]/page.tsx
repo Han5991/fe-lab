@@ -124,7 +124,14 @@ export default async function PostPage({ params }: Props) {
     },
     author: { '@id': `${SITE_URL}/#author` },
     publisher: { '@id': `${SITE_URL}/#organization` },
-    isPartOf: { '@id': `${SITE_URL}/#website` },
+    isPartOf: post.series
+      ? {
+          '@type': 'CollectionPage',
+          '@id': `${SITE_URL}/posts/?series=${encodeURIComponent(post.series)}`,
+          name: post.series,
+          url: `${SITE_URL}/posts/?series=${encodeURIComponent(post.series)}`,
+        }
+      : { '@id': `${SITE_URL}/#website` },
     speakable: {
       '@type': 'SpeakableSpecification',
       cssSelector: ['h1', 'h2:first-of-type', 'article > p:first-of-type'],
