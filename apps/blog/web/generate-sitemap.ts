@@ -23,6 +23,11 @@ const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
     <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
     <priority>0.8</priority>
   </url>
+  <url>
+    <loc>${SITE_URL}/about/</loc>
+    <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
+    <priority>0.7</priority>
+  </url>
   ${posts
     .map(
       post => `
