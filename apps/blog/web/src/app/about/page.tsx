@@ -279,11 +279,6 @@ export default function AboutPage() {
                     description: '개발자 컨퍼런스 발표',
                     link: '/posts/2025-teoconf-presentation',
                   },
-                  {
-                    event: '쑥톡(Ssukttok) 컨퍼런스',
-                    description: '개발자 컨퍼런스 발표',
-                    link: null,
-                  },
                 ].map(item => (
                   <div
                     key={item.event}
