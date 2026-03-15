@@ -127,9 +127,9 @@ export default async function PostPage({ params }: Props) {
     isPartOf: post.series
       ? {
           '@type': 'CollectionPage',
-          '@id': `${SITE_URL}/posts/?series=${encodeURIComponent(post.series)}`,
+          '@id': `${SITE_URL}/posts/?tab=series&series=${encodeURIComponent(post.series)}`,
           name: post.series,
-          url: `${SITE_URL}/posts/?series=${encodeURIComponent(post.series)}`,
+          url: `${SITE_URL}/posts/?tab=series&series=${encodeURIComponent(post.series)}`,
         }
       : { '@id': `${SITE_URL}/#website` },
     speakable: {
@@ -150,7 +150,7 @@ export default async function PostPage({ params }: Props) {
     breadcrumbItems.push({
       position: 3,
       name: post.series,
-      item: `${SITE_URL}/posts/?series=${encodeURIComponent(post.series)}`,
+      item: `${SITE_URL}/posts/?tab=series&series=${encodeURIComponent(post.series)}`,
     });
     breadcrumbItems.push({ position: 4, name: post.title, item: postUrl });
   } else {
