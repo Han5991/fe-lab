@@ -338,25 +338,25 @@ export default function AboutPage() {
                   {
                     title: '번들러 만들기',
                     description: '모듈 번들러를 밑바닥부터 직접 구현. AST 파싱, 의존성 그래프, 스코프 격리, 소스맵까지.',
-                    href: '/posts?tab=series&series=bundler',
+                    href: '/posts?tab=series&series=bundler&q=bundler',
                     count: '5편',
                   },
                   {
                     title: 'TypeScript로 설계하는 프로젝트',
                     description: '타입을 설계 도구로 활용하는 방법. API, 서비스, 도메인 레이어 전반의 타입 시스템 설계.',
-                    href: '/posts?tab=series&series=typescript-project',
+                    href: '/posts?tab=series&series=typescript&q=typescript',
                     count: '7편',
                   },
                   {
                     title: '오픈소스 기여',
                     description: 'Mantine, Node.js, Next.js, gemini-cli 기여 경험과 노하우.',
-                    href: '/posts?tab=series',
+                    href: '/posts?tab=series&series=open-source&q=open-source',
                     count: '4편',
                   },
                   {
                     title: '에러 핸들링',
                     description: 'JavaScript, React, Next.js 에러 처리 전략과 패턴.',
-                    href: '/posts?tab=series',
+                    href: '/posts?tab=series&series=에러&q=에러',
                     count: '3편',
                   },
                 ].map(series => (
