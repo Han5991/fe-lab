@@ -94,8 +94,29 @@ export default function PostClient({
                   color: 'gray.400',
                   fontSize: 'sm',
                   fontWeight: 'medium',
+                  flexWrap: 'wrap',
                 })}
               >
+                <a
+                  href="/about"
+                  className={css({
+                    color: 'gray.600',
+                    fontWeight: 'semibold',
+                    _hover: { color: 'blue.600' },
+                    transition: 'color 0.2s',
+                  })}
+                  rel="author"
+                >
+                  Sangwook Han
+                </a>
+                <span
+                  className={css({
+                    w: '1',
+                    h: '1',
+                    rounded: 'full',
+                    bg: 'gray.300',
+                  })}
+                />
                 {post.date && (
                   <time
                     dateTime={post.date}
@@ -126,6 +147,8 @@ export default function PostClient({
               <img
                 src={thumbnailUrl}
                 alt={post.title}
+                width={1200}
+                height={630}
                 className={css({
                   mb: '12',
                   rounded: '2xl',

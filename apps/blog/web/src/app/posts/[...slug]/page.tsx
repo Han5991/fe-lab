@@ -43,7 +43,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const description = post.excerpt || post.content.slice(0, 160) + '...';
 
   return {
-    title: `${post.title} | Frontend Lab Blog`,
+    title: `${post.title} | FE Lab`,
     description,
     alternates: {
       canonical: `/posts/${slug}`,
