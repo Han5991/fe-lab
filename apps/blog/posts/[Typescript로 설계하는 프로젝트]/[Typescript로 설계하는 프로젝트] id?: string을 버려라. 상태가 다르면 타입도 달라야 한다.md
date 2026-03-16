@@ -5,7 +5,6 @@ description: '무분별한 옵셔널 타입이 낳은 안티 패턴에서 벗어
 date: 2026-03-16
 slug: 'typescript-domain-modeling-without-optional'
 published: true
-status: 'scheduled'
 tags: ['TypeScript', 'Architecture', 'Data Modeling']
 ---
 
