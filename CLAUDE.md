@@ -219,7 +219,7 @@ The blog (`apps/blog/web/`) is a **statically generated (SSG) Next.js applicatio
    - `published: true` (기존 방식, 하위호환)
    - `status: 'published'` — 공개
    - `status: 'draft'` — 비공개 (빌드에서 제외)
-   - `status: 'scheduled'` + `scheduledDate: '2026-03-05T09:00:00+09:00'` — 해당 날짜 이후 빌드에서 공개
+   - `status: 'scheduled'` — **주의**: 반드시 `scheduledDate` (예: `scheduledDate: '2026-03-16T09:00:00+09:00'`) 값을 함께 명시해야 합니다. 누락 시 항상 비공개 처리됩니다.
    - `isPostVisible()` 로직은 `posts.ts`, `generate-sitemap.mjs`, `generate-rss.mjs`에 동일하게 적용
 3. **빌드 전 처리** (`prebuild`):
    - `sync-posts.mjs`: 포스트 디렉토리의 이미지/미디어 파일을 `public/posts/`에 복사
