@@ -2,13 +2,9 @@
   {
     "slug": "typescript-domain-modeling-without-optional",
     "title": "[Typescript로 설계하는 프로젝트] id?: string을 버려라. ID의 존재가 곧 상태다.",
-    "date": "2026-03-16T00:00:00.000Z",
+    "date": "2026-03-16",
     "excerpt": "1. 프롤로그: 우리가 숨 쉬듯 작성하는 \"거짓말\" 주니어 개발자: \"OO님, Post 타입에서 id가 없다고 에디터에서 빨간 줄이 뜨는데, 새 글 작성할 땐 서버 id가 없으니까 그냥 ? 붙여도 될까요?\" 프론트엔드 개발을 하다 보면 슬랙이나 코드 리뷰에서 심심치 않게 보게 되는 질문...",
-    "tags": [
-      "TypeScript",
-      "Architecture",
-      "Data Modeling"
-    ],
+    "tags": ["TypeScript", "Architecture", "Data Modeling"],
     "series": "[Typescript로 설계하는 프로젝트]",
     "status": "published",
     "scheduledDate": null
@@ -35,14 +31,7 @@
     "title": "[누가 시키지도 않았는데 번들러 만들기] 3. 번들링과 스코프: 파일 합치기의 기술",
     "date": "2026-02-23",
     "excerpt": "단순히 파일을 합치는 것과 번들링은 다릅니다. 변수 충돌을 막기 위한 함수 스코프 전략과 브라우저를 위한 런타임 구현 과정을 깊이 있게 다룹니다.",
-    "tags": [
-      "bundler",
-      "javascript",
-      "iife",
-      "scope",
-      "cjs",
-      "ast"
-    ],
+    "tags": ["bundler", "javascript", "iife", "scope", "cjs", "ast"],
     "series": "bundler",
     "status": "published",
     "scheduledDate": null
@@ -52,14 +41,7 @@
     "title": "[누가 시키지도 않았는데 번들러 만들기] 2. 코드를 데이터로 보는 법 (AST Graph)",
     "date": "2026-02-17",
     "excerpt": "정규표현식으로 import 문을 찾으려다 실패한 경험, 그리고 AST 추상 구문 트리를 통해 코드를 데이터로 바라보는 관점을 소개합니다. 파일 시스템을 그래프로 변환하는 과정을 직접 구현해봅니다.",
-    "tags": [
-      "bundler",
-      "javascript",
-      "ast",
-      "graph",
-      "dfs",
-      "algorithm"
-    ],
+    "tags": ["bundler", "javascript", "ast", "graph", "dfs", "algorithm"],
     "series": "bundler",
     "status": "published",
     "scheduledDate": null
@@ -86,13 +68,7 @@
     "title": "[누가 시키지도 않았는데 번들러 만들기] 1. 개념과 도구: 번들러의 등장 배경",
     "date": "2026-02-02",
     "excerpt": "코드를 번들링해야 하는 기술적 이유와 자바스크립트 모듈 시스템의 발전 과정을 살펴봅니다. 또한 번들러 구현의 기반이 되는 Magic String 라이브러리를 소개합니다.",
-    "tags": [
-      "bundler",
-      "javascript",
-      "history",
-      "esm",
-      "magic-string"
-    ],
+    "tags": ["bundler", "javascript", "history", "esm", "magic-string"],
     "series": "bundler",
     "status": "published",
     "scheduledDate": null
@@ -139,14 +115,7 @@
     "title": "하루 만에 끝날 줄 알았던 디자인 시스템 배포가 3주 걸린 이유",
     "date": "2025-11-30",
     "excerpt": "하루 만에 끝날 줄 알았던 NPM 배포가 3주 걸린 이유 프롤로그: \"별거 아니겠지\"의 착각 타팀 기획자님이 내 자리로 다가왔다. \"개발자님, 저희 팀에서도 그 디자인 시스템 쓸 수 있을까요? 버튼이랑 인풋 컴포넌트가 정말 예쁘던데...\" 당시 디자인 시스템은 완성해둔 참이었다. 모노레...",
-    "tags": [
-      "NPM",
-      "디자인 시스템",
-      "배포",
-      "Panda CSS",
-      "tsup",
-      "빌드"
-    ],
+    "tags": ["NPM", "디자인 시스템", "배포", "Panda CSS", "tsup", "빌드"],
     "series": "design-system-lib-deploy",
     "status": "published",
     "scheduledDate": null

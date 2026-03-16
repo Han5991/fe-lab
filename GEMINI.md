@@ -292,5 +292,6 @@ Run these commands from the **root directory**:
 *   **When refactoring:** Ensure changes align with the DDD/Clean Architecture principles favored in this repo.
 *   **When debugging:** Use `pnpm <app-name>` scripts to isolate the environment.
 *   **Blog Content:** Blog posts are located in `apps/blog/posts/`. When editing or analyzing posts, refer to the directory structure there.
+*   **Scheduled Posts:** 블로그 예약 발행 글 작성 시 (`status: 'scheduled'`), frontmatter에 반드시 `scheduledDate` (예: `scheduledDate: '2026-03-16T09:00:00+09:00'`)를 명시해야 합니다. 누락 시 무조건 비공개 처리됩니다.
 
 This file should be the **first point of reference** for understanding the project state and capabilities.

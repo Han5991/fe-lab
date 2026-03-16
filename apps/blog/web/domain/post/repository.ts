@@ -77,7 +77,7 @@ function collectPosts(
       : undefined;
     const series: string | undefined = currentPath || undefined;
     const status = determineStatus(data);
-    const dateString = data.date instanceof Date ? data.date.toISOString() : (typeof data.date === 'string' ? data.date : null);
+    const dateString = data.date instanceof Date ? data.date.toISOString().split('T')[0] : (typeof data.date === 'string' ? data.date : null);
 
     results.push({
       slug: data.slug || rawSlug,
