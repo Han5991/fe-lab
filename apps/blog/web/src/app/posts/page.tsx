@@ -4,6 +4,7 @@ import { css } from '@design-system/ui-lib/css';
 import { SsgoiTransition } from '@ssgoi/react';
 import type { Metadata } from 'next';
 
+import { PostsArchive } from '@/src/components/post/PostsArchive';
 import { PostsFilter } from '@/src/components/post/PostsFilter';
 
 export const metadata: Metadata = {
@@ -110,6 +111,8 @@ export default function PostsPage() {
           <Suspense>
             <PostsFilter posts={posts} />
           </Suspense>
+
+          <PostsArchive posts={posts} />
         </div>
       </SsgoiTransition>
     </>
