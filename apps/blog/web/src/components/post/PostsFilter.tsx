@@ -38,7 +38,7 @@ const TABS: { key: TabKey; label: string }[] = [
 function PostCard({ post }: { post: PostData }) {
   return (
     <article className="group">
-      <Link href={`/posts/${encodePostSlug(post.slug)}`} className={css({ display: 'block' })}>
+      <Link href={`/posts/${encodePostSlug(post.slug)}/`} className={css({ display: 'block' })}>
         <div
           className={css({
             mb: '2',

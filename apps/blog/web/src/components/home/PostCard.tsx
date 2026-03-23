@@ -18,7 +18,7 @@ export function PostCard({ post, rank }: PostCardProps) {
 
   return (
     <Link
-      href={`/posts/${encodePostSlug(post.slug)}`}
+      href={`/posts/${encodePostSlug(post.slug)}/`}
       className={css({
         display: 'flex',
         flexDir: 'column',

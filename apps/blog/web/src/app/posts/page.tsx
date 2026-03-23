@@ -11,12 +11,12 @@ export const metadata: Metadata = {
   title: 'Posts | Frontend Lab',
   description: '프론트엔드 실험실의 모든 기록들을 확인해보세요.',
   alternates: {
-    canonical: '/posts',
+    canonical: '/posts/',
   },
   openGraph: {
     title: 'Posts | Frontend Lab',
     description: '프론트엔드 실험실의 모든 기록들을 확인해보세요.',
-    url: 'https://blog.sangwook.dev/posts',
+    url: 'https://blog.sangwook.dev/posts/',
     siteName: 'Frontend Lab',
     images: [
       {

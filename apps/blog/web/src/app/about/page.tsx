@@ -9,13 +9,13 @@ export const metadata: Metadata = {
   description:
     '프론트엔드 엔지니어 한상욱(Sangwook Han)의 소개 페이지. Mantine, Node.js, Next.js, gemini-cli 오픈소스 기여자. FEConf 2025 발표자.',
   alternates: {
-    canonical: '/about',
+    canonical: '/about/',
   },
   openGraph: {
     title: '소개 | Frontend Lab',
     description:
       '프론트엔드 엔지니어 한상욱(Sangwook Han). Mantine 27 PRs, Node.js 코어 기여, gemini-cli 74% 성능 개선. FEConf 2025 발표자.',
-    url: `${SITE_URL}/about`,
+    url: `${SITE_URL}/about/`,
     siteName: 'Frontend Lab',
   },
 };
@@ -23,8 +23,8 @@ export const metadata: Metadata = {
 const jsonLd = {
   '@context': 'https://schema.org',
   '@type': 'ProfilePage',
-  '@id': `${SITE_URL}/about`,
-  url: `${SITE_URL}/about`,
+  '@id': `${SITE_URL}/about/`,
+  url: `${SITE_URL}/about/`,
   name: '한상욱 (Sangwook Han) — About',
   mainEntity: {
     '@type': 'Person',

@@ -198,7 +198,7 @@ export default function HomePage() {
                 })}
               >
                 <Link
-                  href="/posts"
+                  href="/posts/"
                   className={css({
                     px: '8',
                     py: '4',
@@ -260,7 +260,7 @@ export default function HomePage() {
             </div>
             <div className={css({ mt: '12', textAlign: 'center' })}>
               <Link
-                href="/posts"
+                href="/posts/"
                 className={css({
                   display: 'inline-flex',
                   alignItems: 'center',
