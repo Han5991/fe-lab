@@ -74,7 +74,7 @@ export default function NotFound() {
           홈으로 돌아가기
         </Link>
         <Link
-          href="/posts"
+          href="/posts/"
           className={css({
             px: '6',
             py: '3',

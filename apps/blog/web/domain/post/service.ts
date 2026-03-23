@@ -1,8 +1,29 @@
 import { readAllPosts } from './repository';
 import { isPostVisible } from './visibility';
-import type { PostData, PostNavItem, AdjacentPostsOptions } from './types';
+import type {
+  PostData,
+  PostNavItem,
+  AdjacentPostsOptions,
+  PostSummary,
+} from './types';
 
-export type { PostData, PostNavItem, PostStatus } from './types';
+export type { PostData, PostNavItem, PostStatus, PostSummary } from './types';
+
+function toPostSummary(post: PostData): PostSummary {
+  return {
+    slug: post.slug,
+    originalSlug: post.originalSlug,
+    relativeDir: post.relativeDir,
+    title: post.title,
+    date: post.date,
+    excerpt: post.excerpt,
+    thumbnail: post.thumbnail,
+    tags: post.tags,
+    series: post.series,
+    status: post.status,
+    scheduledDate: post.scheduledDate,
+  };
+}
 
 // ---------- Public API ----------
 
@@ -11,6 +32,13 @@ export type { PostData, PostNavItem, PostStatus } from './types';
  */
 export function getAllPosts(): PostData[] {
   return readAllPosts().filter(isPostVisible);
+}
+
+/**
+ * 홈/목록 등 요약 뷰에서 사용하는 경량 포스트 목록을 반환합니다.
+ */
+export function getAllPostSummaries(): PostSummary[] {
+  return getAllPosts().map(toPostSummary);
 }
 
 /**

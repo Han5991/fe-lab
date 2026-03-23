@@ -60,7 +60,7 @@ export const Layout = ({ children }: LayoutProps) => {
           >
             <SearchDialog />
             <Link
-              href="/posts"
+              href="/posts/"
               className={css({
                 fontSize: 'sm',
                 fontWeight: 'medium',
@@ -72,7 +72,7 @@ export const Layout = ({ children }: LayoutProps) => {
               Posts
             </Link>
             <Link
-              href="/about"
+              href="/about/"
               className={css({
                 fontSize: 'sm',
                 fontWeight: 'medium',
@@ -116,7 +116,7 @@ export const Layout = ({ children }: LayoutProps) => {
               flexWrap: 'wrap',
             })}
           >
-            <Link href="/about" className={css({ _hover: { color: 'gray.600' }, transition: 'color 0.2s' })}>
+            <Link href="/about/" className={css({ _hover: { color: 'gray.600' }, transition: 'color 0.2s' })}>
               About
             </Link>
             <Link href="/privacy" className={css({ _hover: { color: 'gray.600' }, transition: 'color 0.2s' })}>

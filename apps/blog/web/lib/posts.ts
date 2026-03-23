@@ -4,6 +4,7 @@
  */
 export type {
   PostData,
+  PostSummary,
   PostNavItem,
   PostStatus,
   AdjacentPostsOptions,
@@ -11,6 +12,7 @@ export type {
 
 export {
   getAllPosts,
+  getAllPostSummaries,
   getAllPostsIncludingHidden,
   getPostBySlug,
   getAllPostSlugs,

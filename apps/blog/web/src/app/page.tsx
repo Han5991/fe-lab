@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { css } from '@design-system/ui-lib/css';
 import { SsgoiTransition } from '@ssgoi/react';
-import { getAllPosts } from '@/lib/posts';
+import { getAllPostSummaries } from '@/lib/posts';
 import { TopPosts, TopPostsLoading } from '@/src/components/home/TopPosts';
 import { PostCard } from '@/src/components/home/PostCard';
 import type { Metadata } from 'next';
@@ -106,7 +106,7 @@ const jsonLd = {
 };
 
 export default function HomePage() {
-  const allPosts = getAllPosts();
+  const allPosts = getAllPostSummaries();
   const recentPosts = allPosts.slice(0, 3);
 
   return (
@@ -198,7 +198,7 @@ export default function HomePage() {
                 })}
               >
                 <Link
-                  href="/posts"
+                  href="/posts/"
                   className={css({
                     px: '8',
                     py: '4',
@@ -260,7 +260,7 @@ export default function HomePage() {
             </div>
             <div className={css({ mt: '12', textAlign: 'center' })}>
               <Link
-                href="/posts"
+                href="/posts/"
                 className={css({
                   display: 'inline-flex',
                   alignItems: 'center',

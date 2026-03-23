@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { getAllPosts } from '@/lib/posts';
+import { getAllPostSummaries } from '@/lib/posts';
 import { css } from '@design-system/ui-lib/css';
 import { SsgoiTransition } from '@ssgoi/react';
 import type { Metadata } from 'next';
@@ -11,12 +11,12 @@ export const metadata: Metadata = {
   title: 'Posts | Frontend Lab',
   description: '프론트엔드 실험실의 모든 기록들을 확인해보세요.',
   alternates: {
-    canonical: '/posts',
+    canonical: '/posts/',
   },
   openGraph: {
     title: 'Posts | Frontend Lab',
     description: '프론트엔드 실험실의 모든 기록들을 확인해보세요.',
-    url: 'https://blog.sangwook.dev/posts',
+    url: 'https://blog.sangwook.dev/posts/',
     siteName: 'Frontend Lab',
     images: [
       {
@@ -38,7 +38,7 @@ export const metadata: Metadata = {
 };
 
 export default function PostsPage() {
-  const posts = getAllPosts();
+  const posts = getAllPostSummaries();
 
   const jsonLd = {
     '@context': 'https://schema.org',
