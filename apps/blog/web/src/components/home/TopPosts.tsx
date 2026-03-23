@@ -2,12 +2,12 @@
 
 import { css } from '@design-system/ui-lib/css';
 import { client } from '@/lib/client';
-import type { PostData } from '@/lib/posts';
+import type { PostSummary } from '@/lib/posts';
 import { PostCard } from './PostCard';
 import { useSuspenseQuery } from '@tanstack/react-query';
 
 interface TopPostsProps {
-  posts: PostData[];
+  posts: PostSummary[];
 }
 
 export function TopPostsLoading() {
@@ -38,7 +38,7 @@ export function TopPostsLoading() {
   );
 }
 
-interface RankedPost extends PostData {
+interface RankedPost extends PostSummary {
   viewCount: number;
 }
 

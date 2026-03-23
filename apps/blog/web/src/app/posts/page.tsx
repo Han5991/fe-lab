@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { getAllPosts } from '@/lib/posts';
+import { getAllPostSummaries } from '@/lib/posts';
 import { css } from '@design-system/ui-lib/css';
 import { SsgoiTransition } from '@ssgoi/react';
 import type { Metadata } from 'next';
@@ -38,7 +38,7 @@ export const metadata: Metadata = {
 };
 
 export default function PostsPage() {
-  const posts = getAllPosts();
+  const posts = getAllPostSummaries();
 
   const jsonLd = {
     '@context': 'https://schema.org',

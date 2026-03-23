@@ -19,6 +19,20 @@ export interface PostData {
   scheduledDate?: string;
 }
 
+export interface PostSummary {
+  slug: string;
+  originalSlug: string;
+  relativeDir: string;
+  title: string;
+  date: string | null;
+  excerpt?: string;
+  thumbnail?: string;
+  tags?: string[];
+  series?: string;
+  status?: PostStatus;
+  scheduledDate?: string;
+}
+
 export interface PostNavItem {
   slug: string;
   title: string;

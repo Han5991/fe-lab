@@ -5,17 +5,17 @@ import Link from 'next/link';
 import { css } from '@design-system/ui-lib/css';
 import { Search } from 'lucide-react';
 import { useQueryState, parseAsStringLiteral } from 'nuqs';
-import type { PostData } from '@/lib/posts';
+import type { PostSummary } from '@/lib/posts';
 import { encodePostSlug } from '@/domain/post/utils';
 
 interface PostsFilterProps {
-  posts: PostData[];
+  posts: PostSummary[];
 }
 
 const filterGroupedEntries = (
-  entries: [string, PostData[]][],
+  entries: [string, PostSummary[]][],
   query: string,
-): [string, PostData[]][] => {
+): [string, PostSummary[]][] => {
   if (!query.trim()) return entries;
   const q = query.toLowerCase();
   return entries.filter(
@@ -35,7 +35,7 @@ const TABS: { key: TabKey; label: string }[] = [
 ];
 
 /* ─── Post Card ─── */
-function PostCard({ post }: { post: PostData }) {
+function PostCard({ post }: { post: PostSummary }) {
   return (
     <article className="group">
       <Link href={`/posts/${encodePostSlug(post.slug)}/`} className={css({ display: 'block' })}>
@@ -162,7 +162,7 @@ export const PostsFilter = ({ posts }: PostsFilterProps) => {
 
   // 시리즈별 그룹
   const seriesGroups = useMemo(() => {
-    const groups: Record<string, PostData[]> = {};
+    const groups: Record<string, PostSummary[]> = {};
     for (const p of posts) {
       if (p.series) {
         if (!groups[p.series]) groups[p.series] = [];
@@ -179,7 +179,7 @@ export const PostsFilter = ({ posts }: PostsFilterProps) => {
 
   // 태그별 그룹
   const tagGroups = useMemo(() => {
-    const groups: Record<string, PostData[]> = {};
+    const groups: Record<string, PostSummary[]> = {};
     for (const p of posts) {
       if (p.tags) {
         for (const tag of p.tags) {
