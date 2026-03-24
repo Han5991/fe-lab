@@ -1,8 +1,9 @@
 import { defineConfig } from '@pandacss/dev';
+import blogPreset from './src/blog-preset';
 import preset from './src/preset';
 
 export default defineConfig({
-  presets: ['@pandacss/dev/presets', preset],
+  presets: ['@pandacss/dev/presets', preset, blogPreset],
   // Whether to use css reset
   preflight: true,
   lightningcss: true,
@@ -19,6 +20,7 @@ export default defineConfig({
     recipes: '@design-system/ui-lib/recipes',
     patterns: '@design-system/ui-lib/patterns',
     jsx: '@design-system/ui-lib/jsx',
+    tokens: '@design-system/ui-lib/tokens',
   },
   // The JSX framework to use
   jsxFramework: 'react',
