@@ -34,59 +34,70 @@ const TABS: { key: TabKey; label: string }[] = [
   { key: 'tags', label: '태그' },
 ];
 
-/* ─── Post Card ─── */
-function PostCard({ post }: { post: PostSummary }) {
+/* ─── Post Row ─── */
+function PostRow({ post }: { post: PostSummary }) {
   return (
-    <article className="group">
-      <Link href={`/posts/${encodePostSlug(post.slug)}/`} className={css({ display: 'block' })}>
-        <div
+    <Link
+      href={`/posts/${encodePostSlug(post.slug)}/`}
+      className={css({
+        display: 'flex',
+        flexDir: { base: 'column', md: 'row' },
+        alignItems: { base: 'flex-start', md: 'baseline' },
+        gap: { base: '1', md: '5' },
+        py: '4',
+        px: '6',
+        mx: '-6',
+        borderBottomWidth: '1px',
+        borderColor: 'ink.border',
+        transition: 'background 0.15s, box-shadow 0.15s',
+        _hover: { bg: 'ink.50', boxShadow: 'accentLeft' },
+      })}
+    >
+      {post.date && (
+        <time
+          dateTime={post.date}
           className={css({
-            mb: '2',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '2',
-            flexWrap: 'wrap',
+            flexShrink: 0,
+            minW: { md: '110px' },
+            fontSize: 'xs',
+            color: 'ink.500',
+            letterSpacing: 'wide',
+            fontVariantNumeric: 'tabular-nums',
           })}
         >
-          {post.date && (
-            <time
-              dateTime={post.date}
-              className={css({ fontSize: 'sm', color: 'gray.400' })}
-            >
-              {new Date(post.date).toLocaleDateString('ko-KR', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                timeZone: 'Asia/Seoul',
-              })}
-            </time>
-          )}
-        </div>
+          {new Date(post.date).toLocaleDateString('ko-KR', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            timeZone: 'Asia/Seoul',
+          })}
+        </time>
+      )}
+      <div className={css({ flex: 1, minW: 0 })}>
         <h3
           className={css({
-            fontSize: { base: 'lg', md: 'xl' },
-            fontWeight: 'bold',
-            color: 'gray.900',
-            mb: '2',
-            transition: 'color 0.2s',
-            _groupHover: { color: 'blue.600' },
+            fontSize: 'base',
+            fontWeight: 'semibold',
+            color: 'ink.950',
+            mb: '1',
+            lineClamp: 1,
           })}
         >
           {post.title}
         </h3>
-        <p
-          className={css({
-            color: 'gray.600',
-            lineHeight: 'relaxed',
-            lineClamp: 2,
-            overflow: 'hidden',
-            fontSize: { base: 'sm', md: 'md' },
-          })}
-        >
-          {post.excerpt || ''}
-        </p>
-      </Link>
-    </article>
+        {post.excerpt && (
+          <p
+            className={css({
+              color: 'ink.500',
+              fontSize: 'sm',
+              lineClamp: 1,
+            })}
+          >
+            {post.excerpt}
+          </p>
+        )}
+      </div>
+    </Link>
   );
 }
 
@@ -107,16 +118,17 @@ function InlineSearch({
         alignItems: 'center',
         gap: '2',
         px: '3',
-        py: '2',
-        mb: '6',
+        py: '2.5',
+        mb: '2',
         borderWidth: '1px',
-        borderColor: 'gray.200',
+        borderColor: 'ink.border',
         rounded: 'lg',
-        _focusWithin: { borderColor: 'gray.400' },
-        transition: 'border-color 0.15s',
+        bg: 'ink.50',
+        _focusWithin: { borderColor: 'accent.600', bg: 'ink.25' },
+        transition: 'all 0.15s',
       })}
     >
-      <Search size={15} className={css({ color: 'gray.400', flexShrink: 0 })} />
+      <Search size={14} className={css({ color: 'ink.500', flexShrink: 0 })} />
       <input
         type="text"
         value={value}
@@ -128,10 +140,71 @@ function InlineSearch({
           border: 'none',
           outline: 'none',
           fontSize: { base: '16px', md: 'sm' },
-          color: 'gray.900',
-          _placeholder: { color: 'gray.400' },
+          color: 'ink.950',
+          _placeholder: { color: 'ink.500' },
         })}
       />
+      {value && (
+        <button
+          onClick={() => onChange('')}
+          className={css({
+            fontSize: 'xs',
+            color: 'ink.500',
+            _hover: { color: 'ink.950' },
+            transition: 'color 0.15s',
+            flexShrink: 0,
+          })}
+        >
+          지우기
+        </button>
+      )}
+    </div>
+  );
+}
+
+/* ─── Empty State ─── */
+function EmptyState({ message }: { message: string }) {
+  return (
+    <p
+      className={css({
+        py: '16',
+        textAlign: 'center',
+        color: 'ink.500',
+        fontSize: 'sm',
+      })}
+    >
+      {message}
+    </p>
+  );
+}
+
+/* ─── Group Header ─── */
+function GroupHeader({ name, count, unit }: { name: string; count: number; unit: string }) {
+  return (
+    <div
+      className={css({
+        display: 'flex',
+        alignItems: 'baseline',
+        gap: '3',
+        mb: '1',
+        pb: '3',
+        borderBottomWidth: '1px',
+        borderColor: 'ink.border',
+      })}
+    >
+      <h2
+        className={css({
+          fontSize: 'sm',
+          fontWeight: 'bold',
+          color: 'ink.950',
+          letterSpacing: 'tight',
+        })}
+      >
+        {name}
+      </h2>
+      <span className={css({ fontSize: 'xs', color: 'ink.500' })}>
+        {count}{unit}
+      </span>
     </div>
   );
 }
@@ -149,7 +222,6 @@ export const PostsFilter = ({ posts }: PostsFilterProps) => {
     [setActiveTab, setQuery],
   );
 
-  // 전체 탭 필터링
   const filteredAll = useMemo(() => {
     const q = query.toLowerCase().trim();
     if (!q) return posts;
@@ -160,7 +232,6 @@ export const PostsFilter = ({ posts }: PostsFilterProps) => {
     );
   }, [posts, query]);
 
-  // 시리즈별 그룹
   const seriesGroups = useMemo(() => {
     const groups: Record<string, PostSummary[]> = {};
     for (const p of posts) {
@@ -177,7 +248,6 @@ export const PostsFilter = ({ posts }: PostsFilterProps) => {
     return filterGroupedEntries(entries, query);
   }, [posts, query]);
 
-  // 태그별 그룹
   const tagGroups = useMemo(() => {
     const groups: Record<string, PostSummary[]> = {};
     for (const p of posts) {
@@ -201,9 +271,9 @@ export const PostsFilter = ({ posts }: PostsFilterProps) => {
         className={css({
           display: 'flex',
           gap: '0',
-          mb: '8',
+          mb: '6',
           borderBottomWidth: '1px',
-          borderColor: 'gray.200',
+          borderColor: 'ink.border',
         })}
       >
         {TABS.map(tab => (
@@ -215,18 +285,20 @@ export const PostsFilter = ({ posts }: PostsFilterProps) => {
               py: '3',
               fontSize: 'sm',
               fontWeight: activeTab === tab.key ? 'semibold' : 'medium',
-              color: activeTab === tab.key ? 'gray.900' : 'gray.400',
-              borderBottom: '2px solid',
-              borderBottomColor:
-                activeTab === tab.key ? 'gray.900' : 'transparent',
-              bg: 'transparent',
-              border: 'none',
+              color: activeTab === tab.key ? 'ink.950' : 'ink.500',
               borderBottomWidth: '2px',
               borderBottomStyle: 'solid',
+              borderBottomColor:
+                activeTab === tab.key ? 'accent.600' : 'transparent',
+              bg: 'transparent',
+              border: 'none',
+              borderBottom: activeTab === tab.key
+                ? '2px solid token(colors.accent.600)'
+                : '2px solid transparent',
               cursor: 'pointer',
               transition: 'all 0.15s',
               _hover: {
-                color: activeTab === tab.key ? 'gray.900' : 'gray.600',
+                color: activeTab === tab.key ? 'ink.950' : 'ink.700',
               },
             })}
           >
@@ -245,23 +317,15 @@ export const PostsFilter = ({ posts }: PostsFilterProps) => {
           />
           <div
             className={css({
-              display: 'flex',
-              flexDir: 'column',
-              gap: '8',
+              mt: '4',
+              borderTopWidth: '1px',
+              borderColor: 'ink.border',
             })}
           >
             {filteredAll.length === 0 ? (
-              <p
-                className={css({
-                  py: '12',
-                  textAlign: 'center',
-                  color: 'gray.400',
-                })}
-              >
-                검색 결과가 없습니다.
-              </p>
+              <EmptyState message="검색 결과가 없습니다." />
             ) : (
-              filteredAll.map(post => <PostCard key={post.slug} post={post} />)
+              filteredAll.map(post => <PostRow key={post.slug} post={post} />)
             )}
           </div>
         </>
@@ -277,60 +341,26 @@ export const PostsFilter = ({ posts }: PostsFilterProps) => {
           />
           <div
             className={css({
+              mt: '6',
               display: 'flex',
               flexDir: 'column',
               gap: '10',
             })}
           >
             {seriesGroups.length === 0 ? (
-              <p
-                className={css({
-                  py: '12',
-                  textAlign: 'center',
-                  color: 'gray.400',
-                })}
-              >
-                {query ? '검색 결과가 없습니다.' : '시리즈가 없습니다.'}
-              </p>
+              <EmptyState message={query ? '검색 결과가 없습니다.' : '시리즈가 없습니다.'} />
             ) : (
               seriesGroups.map(([seriesName, seriesPosts]) => (
                 <section key={seriesName}>
-                  <div
-                    className={css({
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '3',
-                      mb: '4',
-                      pb: '3',
-                      borderBottomWidth: '1px',
-                      borderColor: 'gray.100',
-                    })}
-                  >
-                    <h2
-                      className={css({
-                        fontSize: 'lg',
-                        fontWeight: 'bold',
-                        color: 'gray.800',
-                      })}
-                    >
-                      📚 {seriesName}
-                    </h2>
-                    <span
-                      className={css({ fontSize: 'sm', color: 'gray.400' })}
-                    >
-                      {seriesPosts.length}편
-                    </span>
-                  </div>
+                  <GroupHeader name={seriesName} count={seriesPosts.length} unit="편" />
                   <div
                     className={css({
                       display: 'flex',
                       flexDir: 'column',
-                      gap: '6',
-                      pl: { base: '0', md: '4' },
                     })}
                   >
                     {seriesPosts.map(post => (
-                      <PostCard key={post.slug} post={post} />
+                      <PostRow key={post.slug} post={post} />
                     ))}
                   </div>
                 </section>
@@ -350,60 +380,21 @@ export const PostsFilter = ({ posts }: PostsFilterProps) => {
           />
           <div
             className={css({
+              mt: '6',
               display: 'flex',
               flexDir: 'column',
               gap: '10',
             })}
           >
             {tagGroups.length === 0 ? (
-              <p
-                className={css({
-                  py: '12',
-                  textAlign: 'center',
-                  color: 'gray.400',
-                })}
-              >
-                {query ? '검색 결과가 없습니다.' : '태그가 없습니다.'}
-              </p>
+              <EmptyState message={query ? '검색 결과가 없습니다.' : '태그가 없습니다.'} />
             ) : (
               tagGroups.map(([tagName, tagPosts]) => (
                 <section key={tagName}>
-                  <div
-                    className={css({
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '3',
-                      mb: '4',
-                      pb: '3',
-                      borderBottomWidth: '1px',
-                      borderColor: 'gray.100',
-                    })}
-                  >
-                    <h2
-                      className={css({
-                        fontSize: 'lg',
-                        fontWeight: 'bold',
-                        color: 'gray.800',
-                      })}
-                    >
-                      # {tagName}
-                    </h2>
-                    <span
-                      className={css({ fontSize: 'sm', color: 'gray.400' })}
-                    >
-                      {tagPosts.length}개
-                    </span>
-                  </div>
-                  <div
-                    className={css({
-                      display: 'flex',
-                      flexDir: 'column',
-                      gap: '6',
-                      pl: { base: '0', md: '4' },
-                    })}
-                  >
+                  <GroupHeader name={`# ${tagName}`} count={tagPosts.length} unit="개" />
+                  <div className={css({ display: 'flex', flexDir: 'column' })}>
                     {tagPosts.map(post => (
-                      <PostCard key={post.slug} post={post} />
+                      <PostRow key={post.slug} post={post} />
                     ))}
                   </div>
                 </section>

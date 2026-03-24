@@ -15,7 +15,6 @@ export function useDateFilter(
   const filteredTrends = useMemo(() => {
     if (!trends || trends.length === 0) return [];
 
-    // Sort by date chronologically
     const sorted = [...trends].sort((a, b) =>
       a.view_date.localeCompare(b.view_date),
     );
@@ -25,7 +24,7 @@ export function useDateFilter(
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    let cutoffDate = new Date(0); // far past
+    let cutoffDate = new Date(0);
 
     if (filterType === '7days') {
       cutoffDate = new Date(today);
@@ -56,6 +55,19 @@ export function useDateFilter(
   };
 }
 
+const inputClass = css({
+  py: '1.5',
+  px: '2',
+  borderWidth: '1px',
+  borderColor: 'ink.border',
+  rounded: 'md',
+  fontSize: 'xs',
+  bg: 'ink.25',
+  color: 'ink.950',
+  cursor: 'pointer',
+  _focus: { outline: 'none', borderColor: 'accent.600' },
+});
+
 interface DateRangeControlsProps {
   filterType: FilterType;
   setFilterType: (val: FilterType) => void;
@@ -78,59 +90,35 @@ export function DateRangeControls({
       className={css({
         display: 'flex',
         alignItems: 'center',
-        gap: '0.5rem',
+        gap: '2',
         flexWrap: 'wrap',
       })}
     >
       <select
         value={filterType}
         onChange={e => setFilterType(e.target.value as FilterType)}
-        className={css({
-          p: '0.375rem 0.5rem',
-          border: '1px solid #d1d5db',
-          rounded: '4px',
-          fontSize: '0.875rem',
-          bg: 'white',
-          color: '#374151',
-          cursor: 'pointer',
-        })}
+        className={inputClass}
       >
         <option value="30days">지난 30일</option>
         <option value="7days">지난 7일</option>
-        <option value="all">미선택 (전체)</option>
+        <option value="all">전체</option>
         <option value="custom">직접선택</option>
       </select>
 
       {filterType === 'custom' && (
-        <div
-          className={css({
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.25rem',
-          })}
-        >
+        <div className={css({ display: 'flex', alignItems: 'center', gap: '1' })}>
           <input
             type="date"
             value={startDate}
             onChange={e => setStartDate(e.target.value)}
-            className={css({
-              p: '0.375rem 0.5rem',
-              border: '1px solid #d1d5db',
-              rounded: '4px',
-              fontSize: '0.875rem',
-            })}
+            className={inputClass}
           />
-          <span className={css({ color: '#6b7280' })}>-</span>
+          <span className={css({ color: 'ink.500', fontSize: 'xs' })}>—</span>
           <input
             type="date"
             value={endDate}
             onChange={e => setEndDate(e.target.value)}
-            className={css({
-              p: '0.375rem 0.5rem',
-              border: '1px solid #d1d5db',
-              rounded: '4px',
-              fontSize: '0.875rem',
-            })}
+            className={inputClass}
           />
         </div>
       )}

@@ -1,7 +1,7 @@
 import { defineConfig } from '@pandacss/dev';
 
 export default defineConfig({
-  presets: ['@pandacss/dev/presets', '@design-system/ui/preset'],
+  presets: ['@pandacss/dev/presets', '@design-system/ui/preset', '@design-system/ui/blog-preset'],
   preflight: true,
   lightningcss: true,
 
@@ -15,23 +15,27 @@ export default defineConfig({
 
   strictPropertyValues: true,
   outdir: '../../../packages/@design-system/ui-lib',
-  theme: {
-    extend: {
-      tokens: {
-        fonts: {
-          sans: {
-            value:
-              'Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif',
-          },
-        },
-      },
-    },
-  },
   globalCss: {
     extend: {
+      html: {
+        bg: 'ink.25',
+        color: 'ink.950',
+        scrollBehavior: 'smooth',
+      },
       body: {
         fontFamily: 'sans',
         wordBreak: 'keep-all',
+        WebkitFontSmoothing: 'antialiased',
+        MozOsxFontSmoothing: 'grayscale',
+      },
+      '::selection': {
+        bg: 'accent.600',
+        color: 'white',
+      },
+      ':focus-visible': {
+        outline: '2px solid token(colors.accent.600)',
+        outlineOffset: '3px',
+        borderRadius: '3px',
       },
     },
   },
@@ -40,5 +44,6 @@ export default defineConfig({
     recipes: '@design-system/ui-lib/recipes',
     patterns: '@design-system/ui-lib/patterns',
     jsx: '@design-system/ui-lib/jsx',
+    tokens: '@design-system/ui-lib/tokens',
   },
 });

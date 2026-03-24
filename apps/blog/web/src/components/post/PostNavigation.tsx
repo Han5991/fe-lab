@@ -25,32 +25,30 @@ export const PostNavigation = ({
     {seriesNav && (seriesNav.prev || seriesNav.next) && (
       <div
         className={css({
-          mb: '6',
-          p: { base: '4', md: '5' },
-          rounded: 'xl',
-          bg: 'gray.50',
-          borderWidth: '1px',
-          borderColor: 'gray.200',
+          mb: '8',
+          pb: '8',
+          borderBottomWidth: '1px',
+          borderColor: 'ink.border',
         })}
       >
         <p
           className={css({
             fontSize: 'xs',
-            fontWeight: 'semibold',
-            color: 'blue.600',
-            mb: '3',
+            fontWeight: 'bold',
+            color: 'accent.600',
+            mb: '4',
             textTransform: 'uppercase',
-            letterSpacing: 'wide',
+            letterSpacing: 'widest',
           })}
         >
-          📚 시리즈: {seriesNav.seriesName}
+          Series · {seriesNav.seriesName}
         </p>
         <div
           className={css({
             display: 'flex',
             flexDir: { base: 'column', md: 'row' },
             justifyContent: 'space-between',
-            alignItems: { base: 'stretch', md: 'center' },
+            alignItems: { base: 'stretch', md: 'start' },
             gap: { base: '2', md: '4' },
           })}
         >
@@ -62,22 +60,19 @@ export const PostNavigation = ({
                 flexDir: 'column',
                 gap: '1',
                 flex: 1,
-                p: '3',
-                rounded: 'lg',
-                _hover: { bg: 'gray.100' },
-                _active: { bg: 'gray.200' },
-                transition: 'background 0.2s',
-                textDecoration: 'none',
+                py: '3',
+                _hover: { color: 'accent.600' },
+                transition: 'color 0.15s',
               })}
             >
-              <span className={css({ fontSize: 'xs', color: 'gray.500' })}>
-                ← 이전
+              <span className={css({ fontSize: 'xs', color: 'ink.500' })}>
+                ← 이전 편
               </span>
               <span
                 className={css({
                   fontSize: 'sm',
                   fontWeight: 'medium',
-                  color: 'gray.700',
+                  color: 'ink.950',
                   lineClamp: 1,
                 })}
               >
@@ -85,12 +80,7 @@ export const PostNavigation = ({
               </span>
             </Link>
           ) : (
-            <div
-              className={css({
-                flex: 1,
-                display: { base: 'none', md: 'block' },
-              })}
-            />
+            <div className={css({ flex: 1, display: { base: 'none', md: 'block' } })} />
           )}
           {seriesNav.next ? (
             <Link
@@ -101,35 +91,28 @@ export const PostNavigation = ({
                 alignItems: { base: 'flex-start', md: 'flex-end' },
                 gap: '1',
                 flex: 1,
-                p: '3',
-                rounded: 'lg',
-                _hover: { bg: 'gray.100' },
-                _active: { bg: 'gray.200' },
-                transition: 'background 0.2s',
-                textDecoration: 'none',
+                py: '3',
+                _hover: { color: 'accent.600' },
+                transition: 'color 0.15s',
               })}
             >
-              <span className={css({ fontSize: 'xs', color: 'gray.500' })}>
-                다음 →
+              <span className={css({ fontSize: 'xs', color: 'ink.500' })}>
+                다음 편 →
               </span>
               <span
                 className={css({
                   fontSize: 'sm',
                   fontWeight: 'medium',
-                  color: 'gray.700',
+                  color: 'ink.950',
                   lineClamp: 1,
+                  textAlign: { base: 'left', md: 'right' },
                 })}
               >
                 {seriesNav.next.title}
               </span>
             </Link>
           ) : (
-            <div
-              className={css({
-                flex: 1,
-                display: { base: 'none', md: 'block' },
-              })}
-            />
+            <div className={css({ flex: 1, display: { base: 'none', md: 'block' } })} />
           )}
         </div>
       </div>
@@ -142,10 +125,9 @@ export const PostNavigation = ({
         flexDir: { base: 'column', md: 'row' },
         justifyContent: 'space-between',
         alignItems: 'stretch',
-        gap: { base: '3', md: '4' },
+        gap: { base: '0', md: '4' },
         borderTopWidth: '1px',
-        borderColor: 'gray.200',
-        pt: '6',
+        borderColor: 'ink.border',
       })}
     >
       {prev ? (
@@ -156,34 +138,31 @@ export const PostNavigation = ({
             flexDir: 'column',
             gap: '1',
             flex: 1,
-            p: '4',
-            rounded: 'lg',
-            borderWidth: '1px',
-            borderColor: 'gray.200',
-            _hover: { borderColor: 'gray.400', bg: 'gray.50' },
-            _active: { bg: 'gray.100' },
-            transition: 'all 0.2s',
-            textDecoration: 'none',
+            py: '5',
+            pr: { md: '6' },
+            borderRightWidth: { md: next ? '1px' : '0' },
+            borderColor: 'ink.border',
+            transition: 'color 0.15s',
+            _hover: { color: 'accent.600' },
           })}
         >
-          <span className={css({ fontSize: 'xs', color: 'gray.500' })}>
+          <span className={css({ fontSize: 'xs', color: 'ink.500' })}>
             ← 이전 글
           </span>
           <span
             className={css({
               fontSize: 'sm',
               fontWeight: 'medium',
-              color: 'gray.800',
+              color: 'ink.950',
               lineClamp: 2,
+              mt: '1',
             })}
           >
             {prev.title}
           </span>
         </Link>
       ) : (
-        <div
-          className={css({ flex: 1, display: { base: 'none', md: 'block' } })}
-        />
+        <div className={css({ flex: 1, display: { base: 'none', md: 'block' } })} />
       )}
 
       {next ? (
@@ -195,35 +174,32 @@ export const PostNavigation = ({
             alignItems: { base: 'flex-start', md: 'flex-end' },
             gap: '1',
             flex: 1,
-            p: '4',
-            rounded: 'lg',
-            borderWidth: '1px',
-            borderColor: 'gray.200',
-            _hover: { borderColor: 'gray.400', bg: 'gray.50' },
-            _active: { bg: 'gray.100' },
-            transition: 'all 0.2s',
-            textDecoration: 'none',
-            textAlign: { base: 'left', md: 'right' },
+            py: '5',
+            pl: { md: '6' },
+            borderTopWidth: { base: '1px', md: '0' },
+            borderColor: 'ink.border',
+            transition: 'color 0.15s',
+            _hover: { color: 'accent.600' },
           })}
         >
-          <span className={css({ fontSize: 'xs', color: 'gray.500' })}>
+          <span className={css({ fontSize: 'xs', color: 'ink.500' })}>
             다음 글 →
           </span>
           <span
             className={css({
               fontSize: 'sm',
               fontWeight: 'medium',
-              color: 'gray.800',
+              color: 'ink.950',
               lineClamp: 2,
+              textAlign: { base: 'left', md: 'right' },
+              mt: '1',
             })}
           >
             {next.title}
           </span>
         </Link>
       ) : (
-        <div
-          className={css({ flex: 1, display: { base: 'none', md: 'block' } })}
-        />
+        <div className={css({ flex: 1, display: { base: 'none', md: 'block' } })} />
       )}
     </div>
   </div>

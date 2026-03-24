@@ -8,6 +8,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./preset": "./src/preset.ts",
+    "./blog-preset": "./src/blog-preset.ts",
     "./Toast": "./src/toast/index.ts"
   },
   "publishConfig": {
@@ -21,6 +22,11 @@
         "types": "./dist/preset.d.ts",
         "import": "./dist/preset.js",
         "require": "./dist/preset.cjs"
+      },
+      "./blog-preset": {
+        "types": "./dist/blog-preset.d.ts",
+        "import": "./dist/blog-preset.js",
+        "require": "./dist/blog-preset.cjs"
       },
       "./Button": {
         "types": "./dist/Button.d.ts",

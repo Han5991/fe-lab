@@ -1,7 +1,7 @@
 'use client';
 
 import { Suspense } from 'react';
-import { LogOut, BarChart3, FileText, Clock } from 'lucide-react';
+import { LogOut, BarChart3, FileText } from 'lucide-react';
 import { css } from '@design-system/ui-lib/css';
 import { useAdminDashboardData } from '@/lib/hooks/useAdminViews';
 import { useAdminLogout } from '@/lib/hooks/useAdminLogout';
@@ -16,12 +16,10 @@ function AdminOverviewContent() {
   const totalTodayViews = data.reduce((acc, curr) => acc + curr.todayViews, 0);
   const totalPosts = data.length;
 
-  // Top 5 posts by views
   const topPosts = [...data]
     .sort((a, b) => b.totalViews - a.totalViews)
     .slice(0, 5);
 
-  // Recent 5 posts by date
   const recentPosts = [...data]
     .filter(p => p.date)
     .sort((a, b) => (b.date || '').localeCompare(a.date || ''))
@@ -29,191 +27,127 @@ function AdminOverviewContent() {
 
   return (
     <>
-      {/* Stats Cards */}
+      {/* Stats row */}
       <div
         className={css({
           display: 'grid',
           gridTemplateColumns: { base: '1fr', md: 'repeat(3, 1fr)' },
-          gap: '1.5rem',
-          mb: '2rem',
+          gap: '4',
+          mb: '8',
         })}
       >
+        {/* 전체 조회수 */}
         <div
           className={css({
-            bg: 'white',
-            p: '2rem',
-            rounded: '8px',
-            boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
+            bg: 'ink.25',
+            borderWidth: '1px',
+            borderColor: 'ink.border',
+            rounded: 'lg',
+            p: '6',
           })}
         >
-          <div
-            className={css({
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.75rem',
-              mb: '1rem',
-            })}
-          >
-            <div
-              className={css({ p: '0.625rem', bg: '#eff6ff', rounded: '8px' })}
-            >
-              <BarChart3 size={20} className={css({ color: '#3b82f6' })} />
-            </div>
-            <span
-              className={css({
-                fontSize: '0.875rem',
-                color: '#6b7280',
-                fontWeight: '500',
-              })}
-            >
+          <div className={css({ display: 'flex', alignItems: 'center', gap: '2', mb: '4' })}>
+            <BarChart3 size={16} className={css({ color: 'accent.600' })} />
+            <span className={css({ fontSize: 'xs', color: 'ink.500', fontWeight: 'medium' })}>
               전체 조회수
             </span>
           </div>
-          <div
-            className={css({
-              display: 'flex',
-              alignItems: 'baseline',
-              gap: '0.5rem',
-            })}
-          >
-            <span
-              className={css({
-                fontSize: '2rem',
-                fontWeight: 'bold',
-                color: '#111827',
-              })}
-            >
+          <div className={css({ display: 'flex', alignItems: 'baseline', gap: '2' })}>
+            <span className={css({ fontSize: '2xl', fontWeight: 'bold', color: 'ink.950', letterSpacing: 'tight' })}>
               {totalViews.toLocaleString()}
             </span>
-            <span className={css({ fontSize: '0.875rem', color: '#6b7280' })}>
-              회
-            </span>
+            <span className={css({ fontSize: 'xs', color: 'ink.500' })}>회</span>
             {totalTodayViews > 0 && (
-              <span
-                className={css({
-                  color: '#3b82f6',
-                  fontWeight: 'bold',
-                  fontSize: '0.875rem',
-                  ml: '0.25rem',
-                })}
-              >
-                ↑ {totalTodayViews}
+              <span className={css({ color: 'accent.600', fontWeight: 'bold', fontSize: 'sm' })}>
+                +{totalTodayViews}
               </span>
             )}
           </div>
         </div>
 
+        {/* 총 게시글 */}
         <div
           className={css({
-            bg: 'white',
-            p: '2rem',
-            rounded: '8px',
-            boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
+            bg: 'ink.25',
+            borderWidth: '1px',
+            borderColor: 'ink.border',
+            rounded: 'lg',
+            p: '6',
           })}
         >
-          <div
-            className={css({
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.75rem',
-              mb: '1rem',
-            })}
-          >
-            <div
-              className={css({ p: '0.625rem', bg: '#eff6ff', rounded: '8px' })}
-            >
-              <FileText size={20} className={css({ color: '#3b82f6' })} />
-            </div>
-            <span
-              className={css({
-                fontSize: '0.875rem',
-                color: '#6b7280',
-                fontWeight: '500',
-              })}
-            >
+          <div className={css({ display: 'flex', alignItems: 'center', gap: '2', mb: '4' })}>
+            <FileText size={16} className={css({ color: 'accent.600' })} />
+            <span className={css({ fontSize: 'xs', color: 'ink.500', fontWeight: 'medium' })}>
               총 게시글 수
             </span>
           </div>
-          <div
-            className={css({
-              display: 'flex',
-              alignItems: 'baseline',
-              gap: '0.5rem',
-            })}
-          >
-            <span
-              className={css({
-                fontSize: '2rem',
-                fontWeight: 'bold',
-                color: '#111827',
-              })}
-            >
+          <div className={css({ display: 'flex', alignItems: 'baseline', gap: '2' })}>
+            <span className={css({ fontSize: '2xl', fontWeight: 'bold', color: 'ink.950', letterSpacing: 'tight' })}>
               {totalPosts}
             </span>
-            <span className={css({ fontSize: '0.875rem', color: '#6b7280' })}>
-              개
-            </span>
+            <span className={css({ fontSize: 'xs', color: 'ink.500' })}>개</span>
           </div>
         </div>
 
+        {/* 상세 분석 링크 */}
         <Link
           href="/admin/analytics"
           className={css({
-            bg: '#3b82f6',
-            p: '2rem',
-            rounded: '8px',
-            boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
-            transition: 'background-color 0.2s',
-            _hover: { bg: '#2563eb' },
+            bg: 'accent.600',
+            borderWidth: '1px',
+            borderColor: 'accent.600',
+            rounded: 'lg',
+            p: '6',
             display: 'flex',
-            flexDirection: 'column',
+            flexDir: 'column',
             justifyContent: 'center',
             alignItems: 'center',
-            gap: '0.75rem',
-            textDecoration: 'none',
+            gap: '3',
+            transition: 'opacity 0.15s',
+            _hover: { opacity: '0.85' },
           })}
         >
-          <BarChart3 size={28} className={css({ color: 'white' })} />
-          <span
-            className={css({
-              color: 'white',
-              fontWeight: '600',
-              fontSize: '1rem',
-            })}
-          >
+          <BarChart3 size={24} className={css({ color: 'white' })} />
+          <span className={css({ color: 'white', fontWeight: 'semibold', fontSize: 'sm' })}>
             상세 분석 보기 →
           </span>
         </Link>
       </div>
 
-      {/* Content Grid */}
+      {/* Content grid */}
       <div
         className={css({
           display: 'grid',
           gridTemplateColumns: { base: '1fr', lg: 'repeat(2, 1fr)' },
-          gap: '1.5rem',
+          gap: '4',
         })}
       >
         {/* Top Posts */}
         <div
           className={css({
-            bg: 'white',
-            rounded: '8px',
-            boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
+            bg: 'ink.25',
+            borderWidth: '1px',
+            borderColor: 'ink.border',
+            rounded: 'lg',
             overflow: 'hidden',
           })}
         >
           <div
-            className={css({ p: '1.5rem', borderBottom: '1px solid #e5e7eb' })}
+            className={css({
+              px: '5',
+              py: '4',
+              borderBottomWidth: '1px',
+              borderColor: 'ink.border',
+              display: 'flex',
+              alignItems: 'baseline',
+              gap: '3',
+            })}
           >
-            <h2
-              className={css({
-                fontWeight: 'bold',
-                color: '#111827',
-                fontSize: '1.125rem',
-              })}
-            >
-              🏆 인기 게시글 TOP 5
+            <span className={css({ fontSize: 'xs', fontWeight: 'bold', color: 'accent.600', letterSpacing: 'widest', textTransform: 'uppercase' })}>
+              Top
+            </span>
+            <h2 className={css({ fontWeight: 'bold', color: 'ink.950', fontSize: 'sm' })}>
+              인기 게시글
             </h2>
           </div>
           <div>
@@ -225,30 +159,33 @@ function AdminOverviewContent() {
                 className={css({
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '1rem',
-                  p: '1rem 1.5rem',
-                  borderBottom:
-                    i < topPosts.length - 1 ? '1px solid #f3f4f6' : 'none',
-                  textDecoration: 'none',
-                  transition: 'background-color 0.15s',
-                  _hover: { bg: '#f9fafb' },
+                  gap: '4',
+                  px: '5',
+                  py: '3',
+                  borderBottomWidth: i < topPosts.length - 1 ? '1px' : '0',
+                  borderColor: 'ink.border',
+                  transition: 'background 0.15s',
+                  _hover: { bg: 'ink.50' },
                 })}
               >
                 <span
                   className={css({
                     fontWeight: 'bold',
-                    color: '#3b82f6',
-                    fontSize: '1.25rem',
-                    w: '2rem',
+                    color: 'accent.600',
+                    fontSize: 'sm',
+                    w: '5',
                     textAlign: 'center',
+                    fontVariantNumeric: 'tabular-nums',
+                    flexShrink: 0,
                   })}
                 >
-                  {i + 1}
+                  {String(i + 1).padStart(2, '0')}
                 </span>
                 <span
                   className={css({
                     flex: 1,
-                    color: '#111827',
+                    color: 'ink.950',
+                    fontSize: 'sm',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                     whiteSpace: 'nowrap',
@@ -258,12 +195,14 @@ function AdminOverviewContent() {
                 </span>
                 <span
                   className={css({
-                    fontWeight: 'bold',
-                    color: '#374151',
+                    fontWeight: 'semibold',
+                    color: 'ink.700',
+                    fontSize: 'sm',
                     flexShrink: 0,
+                    fontVariantNumeric: 'tabular-nums',
                   })}
                 >
-                  {post.totalViews.toLocaleString()}회
+                  {post.totalViews.toLocaleString()}
                 </span>
               </Link>
             ))}
@@ -273,23 +212,29 @@ function AdminOverviewContent() {
         {/* Recent Posts */}
         <div
           className={css({
-            bg: 'white',
-            rounded: '8px',
-            boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
+            bg: 'ink.25',
+            borderWidth: '1px',
+            borderColor: 'ink.border',
+            rounded: 'lg',
             overflow: 'hidden',
           })}
         >
           <div
-            className={css({ p: '1.5rem', borderBottom: '1px solid #e5e7eb' })}
+            className={css({
+              px: '5',
+              py: '4',
+              borderBottomWidth: '1px',
+              borderColor: 'ink.border',
+              display: 'flex',
+              alignItems: 'baseline',
+              gap: '3',
+            })}
           >
-            <h2
-              className={css({
-                fontWeight: 'bold',
-                color: '#111827',
-                fontSize: '1.125rem',
-              })}
-            >
-              📝 최근 게시글
+            <span className={css({ fontSize: 'xs', fontWeight: 'bold', color: 'accent.600', letterSpacing: 'widest', textTransform: 'uppercase' })}>
+              Recent
+            </span>
+            <h2 className={css({ fontWeight: 'bold', color: 'ink.950', fontSize: 'sm' })}>
+              최근 게시글
             </h2>
           </div>
           <div>
@@ -301,23 +246,20 @@ function AdminOverviewContent() {
                 className={css({
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '1rem',
-                  p: '1rem 1.5rem',
-                  borderBottom:
-                    i < recentPosts.length - 1 ? '1px solid #f3f4f6' : 'none',
-                  textDecoration: 'none',
-                  transition: 'background-color 0.15s',
-                  _hover: { bg: '#f9fafb' },
+                  gap: '4',
+                  px: '5',
+                  py: '3',
+                  borderBottomWidth: i < recentPosts.length - 1 ? '1px' : '0',
+                  borderColor: 'ink.border',
+                  transition: 'background 0.15s',
+                  _hover: { bg: 'ink.50' },
                 })}
               >
-                <Clock
-                  size={16}
-                  className={css({ color: '#9ca3af', flexShrink: 0 })}
-                />
                 <span
                   className={css({
                     flex: 1,
-                    color: '#111827',
+                    color: 'ink.950',
+                    fontSize: 'sm',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                     whiteSpace: 'nowrap',
@@ -327,9 +269,10 @@ function AdminOverviewContent() {
                 </span>
                 <span
                   className={css({
-                    color: '#9ca3af',
-                    fontSize: '0.875rem',
+                    color: 'ink.500',
+                    fontSize: 'xs',
                     flexShrink: 0,
+                    fontVariantNumeric: 'tabular-nums',
                   })}
                 >
                   {post.date}
@@ -349,9 +292,9 @@ export default function AdminPage() {
   return (
     <div
       className={css({
-        minH: 'calc(100dvh-128px)',
-        bg: '#f9fafb',
-        p: { base: '1rem', md: '2rem' },
+        minH: 'calc(100dvh - 128px)',
+        bg: 'ink.50',
+        p: { base: '4', md: '8' },
       })}
     >
       <header
@@ -359,49 +302,41 @@ export default function AdminPage() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          mb: '2rem',
-          bg: 'white',
-          p: { base: '0.75rem 1rem', md: '1rem 2rem' },
-          rounded: '8px',
-          boxShadow: '0 1px 3px 0 rgb(0 0 0 / 0.1)',
+          mb: '6',
+          pb: '5',
+          borderBottomWidth: '1px',
+          borderColor: 'ink.border',
           flexWrap: 'wrap',
-          gap: '0.5rem',
+          gap: '3',
         })}
       >
-        <h1
-          className={css({
-            fontSize: '1.5rem',
-            fontWeight: 'bold',
-            color: '#111827',
-          })}
-        >
-          관리자 대시보드
-        </h1>
+        <div>
+          <p className={css({ fontSize: 'xs', fontWeight: 'bold', letterSpacing: 'widest', textTransform: 'uppercase', color: 'accent.600', mb: '1' })}>
+            Admin
+          </p>
+          <h1 className={css({ fontSize: 'xl', fontWeight: 'bold', color: 'ink.950' })}>
+            대시보드
+          </h1>
+        </div>
 
-        <div
-          className={css({
-            display: 'flex',
-            alignItems: 'center',
-            gap: '1rem',
-          })}
-        >
+        <div className={css({ display: 'flex', alignItems: 'center', gap: '2' })}>
           <Link
             href="/admin/analytics"
             className={css({
               display: 'flex',
               alignItems: 'center',
-              gap: '0.5rem',
-              p: '0.5rem 1rem',
-              color: '#3b82f6',
-              fontWeight: '500',
-              fontSize: '0.875rem',
-              rounded: '4px',
-              textDecoration: 'none',
-              transition: 'background-color 0.2s',
-              _hover: { bg: '#eff6ff' },
+              gap: '1.5',
+              px: '3',
+              py: '1.5',
+              color: 'accent.600',
+              fontWeight: 'medium',
+              fontSize: 'sm',
+              rounded: 'md',
+              transition: 'background 0.15s',
+              _hover: { bg: 'accent.50' },
             })}
           >
-            <BarChart3 size={18} />
+            <BarChart3 size={16} />
             상세 분석
           </Link>
           <button
@@ -409,16 +344,18 @@ export default function AdminPage() {
             className={css({
               display: 'flex',
               alignItems: 'center',
-              gap: '0.5rem',
-              p: '0.5rem 1rem',
-              color: '#4b5563',
+              gap: '1.5',
+              px: '3',
+              py: '1.5',
+              color: 'ink.500',
               cursor: 'pointer',
-              rounded: '4px',
-              transition: 'background-color 0.2s',
-              _hover: { bg: '#f3f4f6', color: '#ef4444' },
+              rounded: 'md',
+              fontSize: 'sm',
+              transition: 'all 0.15s',
+              _hover: { bg: 'red.50', color: 'red.600' },
             })}
           >
-            <LogOut size={18} />
+            <LogOut size={16} />
             로그아웃
           </button>
         </div>
@@ -430,7 +367,7 @@ export default function AdminPage() {
             className={css({
               display: 'grid',
               gridTemplateColumns: { base: '1fr', md: 'repeat(3, 1fr)' },
-              gap: '1.5rem',
+              gap: '4',
             })}
           >
             <LoadingPlaceholder height="140px" />

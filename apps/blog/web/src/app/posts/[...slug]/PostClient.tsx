@@ -43,44 +43,46 @@ export default function PostClient({
           maxW: 'screen-xl',
           m: '0 auto',
           px: '6',
-          py: '20',
+          py: '16',
         })}
       >
         <div
           className={css({
             display: 'flex',
-            gap: '8',
+            gap: '12',
             justifyContent: 'center',
           })}
         >
           {/* Main Content Article */}
-          <article className={css({ flex: 1, maxW: '850px', minW: 0 })}>
-            <header className={css({ mb: '16', textAlign: 'center' })}>
-              <div
+          <article className={css({ flex: 1, maxW: '720px', minW: 0 })}>
+            <header
+              className={css({
+                mb: '12',
+                pb: '10',
+                borderBottomWidth: '1px',
+                borderColor: 'ink.border',
+              })}
+            >
+              <p
                 className={css({
-                  display: 'inline-block',
-                  mb: '6',
-                  px: '3',
-                  py: '1',
-                  rounded: 'full',
-                  bg: 'blue.50',
-                  color: 'blue.600',
                   fontSize: 'xs',
                   fontWeight: 'bold',
-                  letterSpacing: 'wider',
+                  letterSpacing: 'widest',
                   textTransform: 'uppercase',
+                  color: 'accent.600',
+                  mb: '4',
                 })}
               >
                 Lab Log
-              </div>
+              </p>
               <h1
                 className={css({
-                  fontSize: { base: '4xl', md: '5xl' },
+                  fontSize: { base: '3xl', md: '4xl' },
                   fontWeight: 'extrabold',
                   letterSpacing: 'tight',
                   lineHeight: '1.2',
                   mb: '6',
-                  color: 'gray.900',
+                  color: 'ink.950',
                 })}
               >
                 {post.title}
@@ -89,21 +91,19 @@ export default function PostClient({
                 className={css({
                   display: 'flex',
                   gap: '4',
-                  justifyContent: 'center',
                   alignItems: 'center',
-                  color: 'gray.400',
+                  color: 'ink.500',
                   fontSize: 'sm',
-                  fontWeight: 'medium',
                   flexWrap: 'wrap',
                 })}
               >
                 <a
                   href="/about"
                   className={css({
-                    color: 'gray.600',
+                    color: 'ink.700',
                     fontWeight: 'semibold',
-                    _hover: { color: 'blue.600' },
-                    transition: 'color 0.2s',
+                    _hover: { color: 'accent.600' },
+                    transition: 'color 0.15s',
                   })}
                   rel="author"
                 >
@@ -114,13 +114,14 @@ export default function PostClient({
                     w: '1',
                     h: '1',
                     rounded: 'full',
-                    bg: 'gray.300',
+                    bg: 'ink.200',
+                    display: 'inline-block',
                   })}
                 />
                 {post.date && (
                   <time
                     dateTime={post.date}
-                    className={css({ color: 'gray.500' })}
+                    className={css({ color: 'ink.500' })}
                   >
                     {new Date(post.date).toLocaleDateString('ko-KR', {
                       year: 'numeric',
@@ -135,7 +136,8 @@ export default function PostClient({
                     w: '1',
                     h: '1',
                     rounded: 'full',
-                    bg: 'gray.300',
+                    bg: 'ink.200',
+                    display: 'inline-block',
                   })}
                 />
                 <span>{Math.ceil(post.content.length / 500)} min read</span>
@@ -150,75 +152,64 @@ export default function PostClient({
                 width={1200}
                 height={630}
                 className={css({
-                  mb: '12',
-                  rounded: '2xl',
+                  mb: '10',
+                  rounded: 'xl',
                   w: 'full',
                   h: 'auto',
-                  shadow: '2xl',
                   borderWidth: '1px',
-                  borderColor: 'gray.100',
+                  borderColor: 'ink.border',
                   display: 'block',
                 })}
               />
             )}
 
+            {/* Article body */}
             <div
               id="post-content"
               className={css({
-                fontSize: '1.125rem',
-                lineHeight: '1.8',
-                color: 'gray.700',
-                '& ::selection': { bg: 'blue.600', color: 'white' },
+                fontSize: '1.0625rem',
+                lineHeight: '1.85',
+                color: 'ink.700',
                 '& h1': {
-                  fontSize: '3xl',
+                  fontSize: { base: '2xl', md: '3xl' },
                   fontWeight: '800',
-                  mt: '16',
-                  mb: '6',
-                  color: 'gray.900',
+                  mt: '14',
+                  mb: '5',
+                  color: 'ink.950',
                   letterSpacing: 'tight',
+                  lineHeight: '1.25',
                   scrollMarginTop: '100px',
                 },
                 '& h2': {
-                  fontSize: '2xl',
+                  fontSize: { base: 'xl', md: '2xl' },
                   fontWeight: '700',
-                  mt: 8,
-                  mb: '6',
-                  color: 'gray.900',
+                  mt: '12',
+                  mb: '5',
+                  color: 'ink.950',
                   letterSpacing: 'tight',
-                  pos: 'relative',
-                  display: 'inline-block',
+                  lineHeight: '1.3',
                   scrollMarginTop: '100px',
-                  _after: {
-                    content: '""',
-                    pos: 'absolute',
-                    bottom: '-2',
-                    left: '0',
-                    w: 'full',
-                    h: '1',
-                    bg: 'blue.600',
-                    rounded: 'full',
-                  },
                 },
                 '& h3': {
-                  fontSize: 'xl',
+                  fontSize: 'lg',
                   fontWeight: '700',
-                  mt: 8,
+                  mt: '10',
                   mb: '4',
-                  color: 'gray.900',
+                  color: 'ink.950',
                   scrollMarginTop: '100px',
                 },
                 '& h4': {
-                  fontSize: 'lg',
+                  fontSize: 'base',
                   fontWeight: '600',
-                  mt: 6,
+                  mt: '8',
                   mb: '3',
-                  color: 'gray.800',
+                  color: 'ink.950',
                   scrollMarginTop: '100px',
                 },
-                '& p': { mb: '8' },
-                '& ul': { listStyleType: 'disc', pl: '6', mb: '8' },
-                '& ol': { listStyleType: 'decimal', pl: '6', mb: '8' },
-                '& li': { mb: '1', pl: '1' },
+                '& p': { mb: '6' },
+                '& ul': { listStyleType: 'disc', pl: '6', mb: '6' },
+                '& ol': { listStyleType: 'decimal', pl: '6', mb: '6' },
+                '& li': { mb: '2', pl: '1' },
                 '& li > ul': { mt: '2', mb: '0' },
                 '& li.task-list-item > div > ul': { mt: '2', mb: '0' },
                 '& li.task-list-item': {
@@ -232,108 +223,99 @@ export default function PostClient({
                 '& li.task-list-item input[type="checkbox"]': {
                   mt: '1.5',
                   cursor: 'default',
-                  accentColor: '#2563eb',
+                  accentColor: 'token(colors.accent.600)',
                   boxSize: '4',
                 },
                 '& del': {
-                  color: 'gray.400',
-                  textDecorationColor: 'gray.300',
+                  color: 'ink.500',
                 },
                 '& code:not([class])': {
-                  bg: 'gray.100',
+                  bg: 'ink.100',
                   px: '1.5',
                   py: '0.5',
                   rounded: 'md',
                   fontSize: '0.85em',
-                  color: 'red.500',
+                  color: 'accent.600',
                   fontWeight: '500',
                   borderWidth: '1px',
-                  borderColor: 'gray.200',
+                  borderColor: 'ink.border',
                   whiteSpace: 'pre-wrap',
                   wordBreak: 'break-word',
                   overflowWrap: 'anywhere',
                 },
                 '& blockquote': {
-                  borderLeftWidth: '4px',
-                  borderLeftColor: 'blue.600',
-                  pl: '8',
-                  py: '4',
-                  my: 8,
-                  color: 'gray.600',
-                  bg: 'blue.50/30',
-                  roundedRight: '2xl',
-                  fontSize: '1.15rem',
+                  borderLeftWidth: '3px',
+                  borderLeftColor: 'accent.600',
+                  pl: '6',
+                  py: '1',
+                  my: '8',
+                  color: 'ink.700',
+                  fontSize: '1.05rem',
                   '& p': { mb: '0' },
                 },
                 '& a': {
-                  color: 'blue.600',
+                  color: 'accent.600',
                   textDecoration: 'none',
                   borderBottomWidth: '1px',
-                  borderBottomColor: 'blue.200',
-                  transition: 'all 0.2s',
-                  fontWeight: '600',
+                  borderBottomColor: 'accent.200',
+                  transition: 'all 0.15s',
+                  fontWeight: '500',
                   wordBreak: 'break-all',
                   overflowWrap: 'break-word',
                   _hover: {
-                    color: 'blue.700',
-                    borderBottomColor: 'blue.600',
-                    bg: 'blue.50/50',
+                    borderBottomColor: 'accent.600',
+                    bg: 'accent.50',
                   },
                 },
                 '& img': {
-                  rounded: '2xl',
+                  rounded: 'lg',
                   w: 'full',
                   h: 'auto',
-                  shadow: '2xl',
                   borderWidth: '1px',
-                  borderColor: 'gray.100',
+                  borderColor: 'ink.border',
+                  my: '2',
                 },
                 '& hr': {
-                  my: 8,
+                  my: '10',
                   h: '1px',
                   border: 'none',
-                  bgGradient: 'to-r',
-                  gradientFrom: 'transparent',
-                  gradientVia: 'gray.300',
-                  gradientTo: 'transparent',
+                  bg: 'ink.border',
                 },
                 '& table': {
                   w: 'full',
-                  mb: '12',
-                  mt: '8',
+                  mb: '8',
+                  mt: '6',
                   borderCollapse: 'separate',
                   borderSpacing: '0',
-                  fontSize: 'md',
+                  fontSize: 'sm',
                   borderWidth: '1px',
-                  borderColor: 'gray.200',
-                  rounded: '2xl',
+                  borderColor: 'ink.border',
+                  rounded: 'lg',
                   overflow: 'hidden',
-                  boxShadow: 'sm',
                 },
                 '& th': {
-                  bg: 'gray.50',
+                  bg: 'ink.50',
                   fontWeight: 'bold',
-                  p: '5',
+                  p: '4',
                   borderBottomWidth: '1px',
-                  borderColor: 'gray.200',
+                  borderColor: 'ink.border',
                   textAlign: 'left',
-                  color: 'gray.900',
+                  color: 'ink.950',
+                  fontSize: 'xs',
+                  letterSpacing: 'wide',
+                  textTransform: 'uppercase',
                 },
                 '& td': {
-                  p: '5',
+                  p: '4',
                   borderBottomWidth: '1px',
-                  borderColor: 'gray.100',
-                  color: 'gray.700',
-                  transition: 'all 0.2s',
+                  borderColor: 'ink.border',
+                  color: 'ink.700',
                 },
                 '& tr:last-child td': {
                   borderBottomWidth: '0',
                 },
-                '& tr:nth-child(even)': {
-                  bg: 'gray.50/20',
-                },
                 '& tr:hover td': {
-                  bg: 'blue.50/10',
+                  bg: 'ink.50',
                 },
               })}
             >
@@ -342,14 +324,12 @@ export default function PostClient({
                 rehypePlugins={[rehypeRaw, rehypeSlug]}
                 components={{
                   p({ children, ...props }) {
-                    // <p> 안에 <div>가 들어가면 hydration 에러 발생 (e.g. Zoom 컴포넌트)
-                    // children 중 block-level 요소가 있으면 <div>로 렌더링
                     const hasBlockChild = Array.isArray(children)
                       ? children.some(
                           (child: any) =>
                             typeof child === 'object' &&
                             child?.type &&
-                            typeof child.type !== 'string', // React component (like Zoom)
+                            typeof child.type !== 'string',
                         )
                       : typeof children === 'object' &&
                         (children as any)?.type &&
@@ -415,15 +395,20 @@ export default function PostClient({
 
             <div
               className={css({
-                my: '12',
+                mt: '14',
+                pt: '8',
+                borderTopWidth: '1px',
+                borderColor: 'ink.border',
                 display: 'flex',
-                justifyContent: 'center',
+                justifyContent: 'flex-end',
               })}
             >
               <ShareButton title={post.title} />
             </div>
 
-            <GiscusComments />
+            <div className={css({ mt: '10' })}>
+              <GiscusComments />
+            </div>
           </article>
 
           {/* Desktop Side TOC */}

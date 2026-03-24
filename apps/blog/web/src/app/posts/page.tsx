@@ -10,22 +10,13 @@ import { PostsFilter } from '@/src/components/post/PostsFilter';
 export const metadata: Metadata = {
   title: 'Posts | Frontend Lab',
   description: '프론트엔드 실험실의 모든 기록들을 확인해보세요.',
-  alternates: {
-    canonical: '/posts/',
-  },
+  alternates: { canonical: '/posts/' },
   openGraph: {
     title: 'Posts | Frontend Lab',
     description: '프론트엔드 실험실의 모든 기록들을 확인해보세요.',
     url: 'https://blog.sangwook.dev/posts/',
     siteName: 'Frontend Lab',
-    images: [
-      {
-        url: '/og-default.png',
-        width: 1200,
-        height: 630,
-        alt: 'Frontend Lab Blog Posts',
-      },
-    ],
+    images: [{ url: '/og-default.png', width: 1200, height: 630, alt: 'Frontend Lab Blog Posts' }],
     locale: 'ko_KR',
     type: 'website',
   },
@@ -49,23 +40,6 @@ export default function PostsPage() {
     description: '프론트엔드 실험실의 모든 기록들을 확인해보세요.',
     inLanguage: 'ko',
     isPartOf: { '@id': 'https://blog.sangwook.dev/#website' },
-    breadcrumb: {
-      '@type': 'BreadcrumbList',
-      itemListElement: [
-        {
-          '@type': 'ListItem',
-          position: 1,
-          name: 'Home',
-          item: 'https://blog.sangwook.dev/',
-        },
-        {
-          '@type': 'ListItem',
-          position: 2,
-          name: 'Posts',
-          item: 'https://blog.sangwook.dev/posts/',
-        },
-      ],
-    },
     mainEntity: {
       '@type': 'ItemList',
       itemListElement: posts.slice(0, 20).map((post, index) => ({
@@ -89,23 +63,58 @@ export default function PostsPage() {
             maxW: '1200px',
             m: '0 auto',
             px: '6',
-            py: { base: '8', md: '16' },
+            py: { base: '10', md: '16' },
           })}
         >
-          <header className={css({ mb: '8' })}>
-            <h1
+          <header
+            className={css({
+              mb: '10',
+              pb: '8',
+              borderBottomWidth: '1px',
+              borderColor: 'ink.border',
+            })}
+          >
+            <p
               className={css({
-                fontSize: { base: '3xl', md: '4xl' },
+                fontSize: 'xs',
                 fontWeight: 'bold',
-                letterSpacing: 'tight',
-                color: 'gray.900',
+                letterSpacing: 'widest',
+                textTransform: 'uppercase',
+                color: 'accent.600',
+                mb: '3',
               })}
             >
-              실험 기록들
-            </h1>
-            <p className={css({ color: 'gray.600', mt: '2' })}>
-              총 {posts.length}개의 기록이 있습니다.
+              Archive
             </p>
+            <div
+              className={css({
+                display: 'flex',
+                alignItems: 'baseline',
+                justifyContent: 'space-between',
+                gap: '4',
+                flexWrap: 'wrap',
+              })}
+            >
+              <h1
+                className={css({
+                  fontSize: { base: '3xl', md: '4xl' },
+                  fontWeight: 'extrabold',
+                  letterSpacing: 'tight',
+                  color: 'ink.950',
+                })}
+              >
+                실험 기록들
+              </h1>
+              <span
+                className={css({
+                  fontSize: 'sm',
+                  color: 'ink.500',
+                  fontVariantNumeric: 'tabular-nums',
+                })}
+              >
+                총 {posts.length}편
+              </span>
+            </div>
           </header>
 
           <Suspense>

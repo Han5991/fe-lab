@@ -15,9 +15,7 @@ export function PostList() {
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
 
   const handleRefresh = async () => {
-    await queryClient.invalidateQueries({
-      queryKey: ['admin', 'dashboard-data'],
-    });
+    await queryClient.invalidateQueries({ queryKey: ['admin', 'dashboard-data'] });
     setLastUpdated(new Date());
   };
 
@@ -33,12 +31,26 @@ export function PostList() {
     return sortOrder === 'desc' ? -cmp : cmp;
   });
 
+  const inputClass = css({
+    py: '1.5',
+    px: '2',
+    borderWidth: '1px',
+    borderColor: 'ink.border',
+    rounded: 'md',
+    fontSize: 'xs',
+    bg: 'ink.25',
+    color: 'ink.950',
+    cursor: 'pointer',
+    _focus: { outline: 'none', borderColor: 'accent.600' },
+  });
+
   return (
     <div
       className={css({
-        bg: 'white',
-        rounded: '8px',
-        boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
+        bg: 'ink.25',
+        borderWidth: '1px',
+        borderColor: 'ink.border',
+        rounded: 'lg',
         overflow: 'hidden',
       })}
     >
@@ -47,65 +59,56 @@ export function PostList() {
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          p: { base: '0.75rem 1rem', md: '1rem 1.5rem' },
-          borderBottom: '1px solid #e5e7eb',
+          px: '5',
+          py: '3',
+          borderBottomWidth: '1px',
+          borderColor: 'ink.border',
           flexWrap: 'wrap',
-          gap: '0.5rem',
+          gap: '2',
         })}
       >
-        <div
-          className={css({
-            display: 'flex',
-            alignItems: 'center',
-            gap: '1rem',
-          })}
-        >
+        <div className={css({ display: 'flex', alignItems: 'center', gap: '3' })}>
           <button
             onClick={handleRefresh}
             className={css({
               display: 'flex',
               alignItems: 'center',
-              gap: '0.5rem',
-              bg: '#3b82f6',
+              gap: '1.5',
+              bg: 'accent.600',
               color: 'white',
-              px: '0.75rem',
-              py: '0.375rem',
-              rounded: '4px',
-              fontSize: '0.875rem',
-              fontWeight: '500',
+              px: '3',
+              py: '1.5',
+              rounded: 'md',
+              fontSize: 'xs',
+              fontWeight: 'medium',
               cursor: 'pointer',
-              transition: 'background-color 0.2s',
-              _hover: { bg: '#2563eb' },
+              transition: 'opacity 0.15s',
+              _hover: { opacity: '0.85' },
             })}
           >
-            <RefreshCw size={14} /> 새로고침
+            <RefreshCw size={12} />
+            새로고침
           </button>
           <span
             className={css({
-              fontSize: '0.875rem',
-              color: '#6b7280',
+              fontSize: 'xs',
+              color: 'ink.500',
               display: { base: 'none', md: 'inline' },
             })}
           >
-            마지막 업데이트: {lastUpdated.toLocaleString('ko-KR')}
+            업데이트: {lastUpdated.toLocaleString('ko-KR')}
           </span>
         </div>
 
-        <div
-          className={css({
-            display: 'flex',
-            alignItems: 'center',
-            gap: '1rem',
-          })}
-        >
+        <div className={css({ display: 'flex', alignItems: 'center', gap: '3' })}>
           <label
             className={css({
               display: 'flex',
               alignItems: 'center',
-              gap: '0.5rem',
-              fontSize: '0.875rem',
+              gap: '1.5',
+              fontSize: 'xs',
               cursor: 'pointer',
-              color: '#4b5563',
+              color: 'ink.700',
             })}
           >
             <input
@@ -118,15 +121,7 @@ export function PostList() {
           <select
             value={sortField}
             onChange={e => setSortField(e.target.value as 'date' | 'views')}
-            className={css({
-              p: '0.375rem 0.5rem',
-              border: '1px solid #d1d5db',
-              rounded: '4px',
-              fontSize: '0.875rem',
-              bg: 'white',
-              color: '#374151',
-              cursor: 'pointer',
-            })}
+            className={inputClass}
           >
             <option value="date">작성일순</option>
             <option value="views">조회수순</option>
@@ -134,16 +129,17 @@ export function PostList() {
         </div>
       </div>
 
-      <div className={css({ display: 'flex', flexDirection: 'column' })}>
+      <div className={css({ display: 'flex', flexDir: 'column' })}>
         {sortedData.map(post => (
           <PostAccordion key={post.slug} post={post} />
         ))}
         {sortedData.length === 0 && (
           <div
             className={css({
-              p: '3rem',
+              p: '12',
               textAlign: 'center',
-              color: '#9ca3af',
+              color: 'ink.500',
+              fontSize: 'sm',
             })}
           >
             게시글 데이터가 없습니다.
