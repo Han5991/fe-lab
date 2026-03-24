@@ -57,7 +57,6 @@ export default defineConfig({
       body: {
         fontFamily: 'sans',
         wordBreak: 'keep-all',
-        bg: 'ink.25',
         WebkitFontSmoothing: 'antialiased',
         MozOsxFontSmoothing: 'grayscale',
       },

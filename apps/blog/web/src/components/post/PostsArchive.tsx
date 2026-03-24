@@ -114,8 +114,8 @@ export const PostsArchive = ({ posts }: PostsArchiveProps) => {
                     >
                       {new Date(post.date).toLocaleDateString('ko-KR', {
                         year: 'numeric',
-                        month: '2-digit',
-                        day: '2-digit',
+                        month: 'short',
+                        day: 'numeric',
                         timeZone: 'Asia/Seoul',
                       })}
                     </time>

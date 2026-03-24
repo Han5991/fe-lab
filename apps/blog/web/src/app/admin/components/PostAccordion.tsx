@@ -20,6 +20,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import Link from 'next/link';
+import { token } from '@design-system/ui-lib/tokens';
 import { motion, AnimatePresence } from 'motion/react';
 import { DateRangeControls, useDateFilter } from './DateRangeControls';
 import { encodePostSlug } from '@/domain/post/utils';
@@ -355,33 +356,33 @@ export function PostAccordion({ post }: Props) {
                     >
                       <XAxis
                         dataKey="name"
-                        axisLine={{ stroke: 'oklch(87% 0.018 250)' }}
+                        axisLine={{ stroke: token('colors.ink.border') }}
                         tickLine={false}
-                        tick={{ fill: 'oklch(62% 0.02 250)', fontSize: 11 }}
+                        tick={{ fill: token('colors.ink.500'), fontSize: 11 }}
                         dy={10}
                       />
                       <YAxis
                         axisLine={false}
                         tickLine={false}
-                        tick={{ fill: 'oklch(62% 0.02 250)', fontSize: 11 }}
+                        tick={{ fill: token('colors.ink.500'), fontSize: 11 }}
                       />
                       <Tooltip
-                        cursor={{ stroke: 'oklch(87% 0.018 250)', strokeWidth: 1, strokeDasharray: '4 4' }}
+                        cursor={{ stroke: token('colors.ink.border'), strokeWidth: 1, strokeDasharray: '4 4' }}
                         contentStyle={{
                           borderRadius: '8px',
-                          border: '1px solid oklch(87% 0.018 250)',
-                          background: 'oklch(99% 0.005 250)',
+                          border: `1px solid ${token('colors.ink.border')}`,
+                          background: token('colors.ink.25'),
                           fontSize: '12px',
                         }}
-                        labelStyle={{ color: 'oklch(40% 0.025 250)', marginBottom: '2px' }}
+                        labelStyle={{ color: token('colors.ink.700'), marginBottom: '2px' }}
                       />
                       <Line
                         type="monotone"
                         dataKey="views"
-                        stroke="oklch(53% 0.22 255)"
+                        stroke={token('colors.accent.600')}
                         strokeWidth={2}
-                        dot={{ r: 3, fill: 'oklch(53% 0.22 255)', strokeWidth: 0 }}
-                        activeDot={{ r: 5, fill: 'oklch(47% 0.24 255)', strokeWidth: 0 }}
+                        dot={{ r: 3, fill: token('colors.accent.600'), strokeWidth: 0 }}
+                        activeDot={{ r: 5, fill: token('colors.accent.700'), strokeWidth: 0 }}
                       />
                     </LineChart>
                   </ResponsiveContainer>
