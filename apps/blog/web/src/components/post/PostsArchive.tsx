@@ -94,10 +94,12 @@ export const PostsArchive = ({ posts }: PostsArchiveProps) => {
                     alignItems: { base: 'flex-start', md: 'baseline' },
                     gap: { base: '0.5', md: '5' },
                     py: '3',
+                    px: '6',
+                    mx: '-6',
                     borderBottomWidth: '1px',
                     borderColor: 'ink.border',
                     transition: 'background 0.15s, box-shadow 0.15s',
-                    _hover: { bg: 'ink.50', mx: '-6', px: '6', boxShadow: 'accentLeft' },
+                    _hover: { bg: 'ink.50', boxShadow: 'accentLeft' },
                   })}
                 >
                   {post.date && (
