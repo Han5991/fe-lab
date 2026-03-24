@@ -21,60 +21,26 @@ function AdminHeaderStats() {
       className={css({
         display: 'flex',
         alignItems: 'center',
-        gap: '1.5rem',
+        gap: '5',
         ml: 'auto',
-        mr: '2rem',
+        mr: '4',
       })}
     >
-      <div
-        className={css({
-          display: 'flex',
-          alignItems: 'baseline',
-          gap: '0.5rem',
-        })}
-      >
-        <span className={css({ color: '#6b7280', fontSize: '0.875rem' })}>
-          총 게시글
-        </span>
-        <span
-          className={css({
-            fontWeight: 'bold',
-            color: '#111827',
-            fontSize: '1rem',
-          })}
-        >
+      <div className={css({ display: 'flex', alignItems: 'baseline', gap: '1.5' })}>
+        <span className={css({ color: 'ink.500', fontSize: 'xs' })}>총 게시글</span>
+        <span className={css({ fontWeight: 'bold', color: 'ink.950', fontSize: 'sm', fontVariantNumeric: 'tabular-nums' })}>
           {totalPosts}개
         </span>
       </div>
-      <div className={css({ w: '1px', h: '16px', bg: '#e5e7eb' })} />
-      <div
-        className={css({
-          display: 'flex',
-          alignItems: 'baseline',
-          gap: '0.5rem',
-        })}
-      >
-        <span className={css({ color: '#6b7280', fontSize: '0.875rem' })}>
-          전체 조회수
-        </span>
-        <span
-          className={css({
-            fontWeight: 'bold',
-            color: '#111827',
-            fontSize: '1rem',
-          })}
-        >
+      <div className={css({ w: '1px', h: '16px', bg: 'ink.border' })} />
+      <div className={css({ display: 'flex', alignItems: 'baseline', gap: '1.5' })}>
+        <span className={css({ color: 'ink.500', fontSize: 'xs' })}>전체 조회수</span>
+        <span className={css({ fontWeight: 'bold', color: 'ink.950', fontSize: 'sm', fontVariantNumeric: 'tabular-nums' })}>
           {totalViews.toLocaleString()}회
         </span>
         {totalTodayViews > 0 && (
-          <span
-            className={css({
-              color: '#3b82f6',
-              fontWeight: 'bold',
-              fontSize: '0.875rem',
-            })}
-          >
-            ↑ {totalTodayViews}
+          <span className={css({ color: 'accent.600', fontWeight: 'bold', fontSize: 'xs' })}>
+            +{totalTodayViews}
           </span>
         )}
       </div>
@@ -88,53 +54,41 @@ export default function AdminDashboardPage() {
   return (
     <div
       className={css({
-        minH: 'calc(100dvh-128px)',
-        bg: '#f9fafb',
-        p: { base: '1rem', md: '2rem' },
+        minH: 'calc(100dvh - 128px)',
+        bg: 'ink.50',
+        p: { base: '4', md: '8' },
       })}
     >
       <header
         className={css({
           display: 'flex',
           alignItems: 'center',
-          mb: '2rem',
-          bg: 'white',
-          p: { base: '0.75rem 1rem', md: '1rem 2rem' },
-          rounded: '8px',
-          boxShadow: '0 1px 3px 0 rgb(0 0 0 / 0.1)',
+          mb: '6',
+          pb: '5',
+          borderBottomWidth: '1px',
+          borderColor: 'ink.border',
           flexWrap: 'wrap',
-          gap: '0.5rem',
+          gap: '3',
         })}
       >
-        <div
-          className={css({
-            display: 'flex',
-            alignItems: 'center',
-            gap: '1rem',
-          })}
-        >
+        <div className={css({ display: 'flex', alignItems: 'center', gap: '4' })}>
           <Link
             href="/admin"
             className={css({
               display: 'flex',
               alignItems: 'center',
-              gap: '0.25rem',
-              color: '#6b7280',
-              fontSize: '0.875rem',
-              textDecoration: 'none',
-              _hover: { color: '#3b82f6' },
+              gap: '1',
+              color: 'ink.500',
+              fontSize: 'sm',
+              _hover: { color: 'accent.600' },
+              transition: 'color 0.15s',
             })}
           >
-            <ArrowLeft size={16} />
+            <ArrowLeft size={15} />
             대시보드
           </Link>
-          <h1
-            className={css({
-              fontSize: '1.5rem',
-              fontWeight: 'bold',
-              color: '#111827',
-            })}
-          >
+          <div className={css({ w: '1px', h: '16px', bg: 'ink.border' })} />
+          <h1 className={css({ fontSize: 'base', fontWeight: 'bold', color: 'ink.950' })}>
             조회수 분석
           </h1>
         </div>
@@ -144,11 +98,11 @@ export default function AdminDashboardPage() {
             <div
               className={css({
                 ml: 'auto',
-                mr: '2rem',
-                w: '250px',
-                h: '24px',
-                bg: '#f3f4f6',
-                rounded: '4px',
+                mr: '4',
+                w: '200px',
+                h: '5',
+                bg: 'ink.100',
+                rounded: 'sm',
                 animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
               })}
             />
@@ -162,21 +116,23 @@ export default function AdminDashboardPage() {
           className={css({
             display: 'flex',
             alignItems: 'center',
-            gap: '0.5rem',
-            p: '0.5rem 1rem',
-            color: '#4b5563',
+            gap: '1.5',
+            px: '3',
+            py: '1.5',
+            color: 'ink.500',
             cursor: 'pointer',
-            rounded: '4px',
-            transition: 'background-color 0.2s',
-            _hover: { bg: '#f3f4f6', color: '#ef4444' },
+            rounded: 'md',
+            fontSize: 'sm',
+            transition: 'all 0.15s',
+            _hover: { bg: 'red.50', color: 'red.600' },
           })}
         >
-          <LogOut size={18} />
+          <LogOut size={16} />
           로그아웃
         </button>
       </header>
 
-      <div className={css({ display: 'flex', flexDirection: 'column' })}>
+      <div className={css({ display: 'flex', flexDir: 'column', gap: '4' })}>
         <Suspense fallback={<LoadingPlaceholder height="400px" />}>
           <GlobalViewsChart />
         </Suspense>

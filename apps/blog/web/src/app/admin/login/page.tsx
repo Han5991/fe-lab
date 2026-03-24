@@ -31,40 +31,55 @@ function LoginForm() {
         alignItems: 'center',
         justifyContent: 'center',
         minH: '100vh',
+        bg: 'ink.50',
       })}
     >
       <div
         className={css({
-          p: '2rem',
-          rounded: '8px',
-          boxShadow:
-            '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
-          bg: 'white',
+          p: '8',
+          rounded: 'xl',
+          borderWidth: '1px',
+          borderColor: 'ink.border',
+          bg: 'ink.25',
           textAlign: 'center',
           maxW: '400px',
-          w: '100%',
+          w: 'full',
         })}
       >
-        <h1
+        <p
           className={css({
-            fontSize: '1.5rem',
+            fontSize: 'xs',
             fontWeight: 'bold',
-            mb: '1rem',
-            color: 'black',
+            letterSpacing: 'widest',
+            textTransform: 'uppercase',
+            color: 'accent.600',
+            mb: '3',
           })}
         >
-          Admin Login
+          Admin
+        </p>
+        <h1
+          className={css({
+            fontSize: 'xl',
+            fontWeight: 'bold',
+            mb: '6',
+            color: 'ink.950',
+          })}
+        >
+          FE Lab 관리자
         </h1>
 
         {error === 'unauthorized' && (
           <div
             className={css({
-              color: 'red.500',
-              fontSize: '0.875rem',
-              mb: '1rem',
-              p: '0.5rem',
+              color: 'red.600',
+              fontSize: 'sm',
+              mb: '4',
+              p: '3',
               bg: 'red.50',
-              rounded: '4px',
+              rounded: 'lg',
+              borderWidth: '1px',
+              borderColor: 'red.200',
             })}
           >
             등록되지 않은 이메일입니다. 지정된 관리자 계정으로 로그인해주세요.
@@ -78,24 +93,22 @@ function LoginForm() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: '0.5rem',
-            w: '100%',
-            p: '0.75rem 1rem',
-            bg: '#4285F4',
+            gap: '2',
+            w: 'full',
+            py: '3',
+            px: '4',
+            bg: 'accent.600',
             color: 'white',
-            rounded: '4px',
+            rounded: 'lg',
             cursor: isLoading ? 'not-allowed' : 'pointer',
             opacity: isLoading ? 0.7 : 1,
-            fontWeight: '500',
-            transition: 'background-color 0.2s',
-            border: 'none',
-            fontSize: '1rem',
-            _hover: {
-              bg: '#3367D6',
-            },
+            fontWeight: 'semibold',
+            fontSize: 'sm',
+            transition: 'opacity 0.15s',
+            _hover: { opacity: '0.85' },
           })}
         >
-          <LogIn size={20} />
+          <LogIn size={18} />
           {isLoading ? '로그인 중...' : 'Google 계정으로 계속하기'}
         </button>
       </div>

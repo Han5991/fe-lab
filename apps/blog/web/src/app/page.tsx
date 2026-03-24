@@ -16,22 +16,13 @@ import {
 export const metadata: Metadata = {
   title: 'Frontend Lab | 프론트엔드 실험실',
   description: SITE_DESCRIPTION_EXPANDED,
-  alternates: {
-    canonical: '/',
-  },
+  alternates: { canonical: '/' },
   openGraph: {
     title: 'Frontend Lab | 프론트엔드 실험실',
     description: SITE_DESCRIPTION_EXPANDED,
     url: 'https://blog.sangwook.dev',
     siteName: 'Frontend Lab',
-    images: [
-      {
-        url: 'https://blog.sangwook.dev/og-default.png',
-        width: 1200,
-        height: 630,
-        alt: 'Frontend Lab Blog',
-      },
-    ],
+    images: [{ url: 'https://blog.sangwook.dev/og-default.png', width: 1200, height: 630, alt: 'Frontend Lab Blog' }],
     locale: 'ko_KR',
     type: 'website',
   },
@@ -58,10 +49,7 @@ const jsonLd = {
       author: { '@id': `${SITE_URL}/#author` },
       potentialAction: {
         '@type': 'SearchAction',
-        target: {
-          '@type': 'EntryPoint',
-          urlTemplate: `${SITE_URL}/posts/?q={search_term_string}`,
-        },
+        target: { '@type': 'EntryPoint', urlTemplate: `${SITE_URL}/posts/?q={search_term_string}` },
         'query-input': 'required name=search_term_string',
       },
     },
@@ -69,14 +57,8 @@ const jsonLd = {
       '@type': 'Organization',
       '@id': `${SITE_URL}/#organization`,
       name: 'Frontend Lab',
-      alternateName: '프론트엔드 실험실',
       url: SITE_URL,
-      logo: {
-        '@type': 'ImageObject',
-        url: `${SITE_URL}/og-default.png`,
-        width: 1200,
-        height: 630,
-      },
+      logo: { '@type': 'ImageObject', url: `${SITE_URL}/og-default.png`, width: 1200, height: 630 },
       description: SITE_DESCRIPTION_EXPANDED,
       founder: { '@id': `${SITE_URL}/#author` },
       sameAs: [SITE_AUTHOR_GITHUB, SITE_AUTHOR_LINKEDIN],
@@ -88,18 +70,6 @@ const jsonLd = {
       alternateName: '한상욱',
       url: SITE_URL,
       jobTitle: 'Frontend Engineer',
-      description:
-        '프론트엔드 엔지니어. 번들러, 디자인 패턴, 오픈소스 기여를 주로 다룹니다.',
-      inLanguage: 'ko',
-      knowsAbout: [
-        'Frontend Engineering',
-        'TypeScript',
-        'React',
-        'Next.js',
-        'Bundlers',
-        'Design Patterns',
-        'Open Source',
-      ],
       sameAs: [SITE_AUTHOR_GITHUB, SITE_AUTHOR_LINKEDIN],
     },
   ],
@@ -107,7 +77,7 @@ const jsonLd = {
 
 export default function HomePage() {
   const allPosts = getAllPostSummaries();
-  const recentPosts = allPosts.slice(0, 3);
+  const recentPosts = allPosts.slice(0, 4);
 
   return (
     <>
@@ -116,171 +86,219 @@ export default function HomePage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <SsgoiTransition id="/">
-        <div
-          className={css({
-            minHeight: 'calc(100lvh - 231px)',
-            bg: 'white',
-          })}
-        >
-          {/* Hero Section */}
+        <div className={css({ bg: 'ink.25' })}>
+
+          {/* Hero — left-aligned, asymmetric, typographic */}
           <div
             className={css({
-              display: 'flex',
-              flexDir: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              py: '20',
-              px: '6',
-              textAlign: 'center',
-              bg: 'gray.50',
               borderBottomWidth: '1px',
-              borderColor: 'gray.100',
+              borderColor: 'ink.border',
+              bg: 'ink.50',
             })}
           >
-            <main className={css({ maxWidth: '2xl', w: 'full' })}>
-              <div
-                className={css({
-                  display: 'inline-block',
-                  px: '3',
-                  py: '1',
-                  rounded: 'full',
-                  bg: 'blue.50',
-                  color: 'blue.600',
-                  fontSize: 'xs',
-                  fontWeight: 'semibold',
-                  mb: '6',
-                  borderWidth: '1px',
-                  borderColor: 'blue.100',
-                })}
-              >
-                Welcome to FE Lab
+            <main
+              className={css({
+                maxW: '1200px',
+                mx: 'auto',
+                px: '6',
+                py: { base: '16', md: '24' },
+                display: 'grid',
+                gridTemplateColumns: { base: '1fr', md: '7fr 3fr' },
+                gap: '16',
+                alignItems: 'end',
+              })}
+            >
+              <div>
+                <p
+                  className={css({
+                    fontSize: 'xs',
+                    fontWeight: 'bold',
+                    letterSpacing: 'widest',
+                    textTransform: 'uppercase',
+                    color: 'accent.600',
+                    mb: '6',
+                  })}
+                >
+                  Frontend Engineering · 한상욱
+                </p>
+                <h1
+                  className={css({
+                    fontSize: { base: '4xl', md: '6xl', lg: '7xl' },
+                    fontWeight: 'extrabold',
+                    letterSpacing: 'tight',
+                    lineHeight: '1.05',
+                    mb: '8',
+                    color: 'ink.950',
+                  })}
+                >
+                  번들러 밑바닥부터
+                  <br />
+                  대규모 아키텍처까지
+                </h1>
+                <p
+                  className={css({
+                    fontSize: { base: 'base', md: 'lg' },
+                    color: 'ink.700',
+                    lineHeight: '1.7',
+                    maxW: '540px',
+                    mb: '10',
+                  })}
+                >
+                  실험하고 기록하며 성장하는 프론트엔드 엔지니어의 공간.
+                  TypeScript 설계 패턴, 번들러 내부 구조, 오픈소스 기여 경험을 공유합니다.
+                </p>
+                <div className={css({ display: 'flex', gap: '3', flexWrap: 'wrap' })}>
+                  <Link
+                    href="/posts/"
+                    className={css({
+                      px: '6',
+                      py: '3',
+                      bg: 'ink.950',
+                      color: 'ink.25',
+                      rounded: 'lg',
+                      fontWeight: 'semibold',
+                      fontSize: 'sm',
+                      transition: 'opacity 0.15s',
+                      _hover: { opacity: '0.85' },
+                    })}
+                  >
+                    실험 기록 읽기
+                  </Link>
+                  <Link
+                    href="/about/"
+                    className={css({
+                      px: '6',
+                      py: '3',
+                      bg: 'transparent',
+                      color: 'ink.700',
+                      rounded: 'lg',
+                      fontWeight: 'semibold',
+                      fontSize: 'sm',
+                      borderWidth: '1px',
+                      borderColor: 'ink.border',
+                      transition: 'all 0.15s',
+                      _hover: {
+                        borderColor: 'ink.borderStrong',
+                        color: 'ink.950',
+                      },
+                    })}
+                  >
+                    소개 보기
+                  </Link>
+                </div>
               </div>
-              <h1
-                className={css({
-                  fontSize: { base: '5xl', md: '7xl' },
-                  fontWeight: 'extrabold',
-                  letterSpacing: 'tight',
-                  lineHeight: '1.1',
-                  mb: '6',
-                  color: 'gray.900',
-                })}
-              >
-                Frontend <br />
-                <span
-                  className={css({
-                    bgGradient: 'to-r',
-                    gradientFrom: 'blue.600',
-                    gradientTo: 'purple.600',
-                    bgClip: '[text]',
-                    color: 'transparent',
-                  })}
-                >
-                  Experiment Lab
-                </span>
-              </h1>
-              <p
-                className={css({
-                  fontSize: { base: 'lg', md: 'xl' },
-                  color: 'gray.600',
-                  mb: '10',
-                  lineHeight: 'relaxed',
-                })}
-              >
-                번들러 밑바닥부터 대규모 아키텍처까지, <br />
-                실험하고 기록하며 성장하는 프론트엔드 엔지니어의 공간입니다.
-              </p>
 
+              {/* Side stats */}
               <div
                 className={css({
-                  display: 'flex',
-                  gap: '4',
-                  justifyContent: 'center',
+                  display: { base: 'none', md: 'flex' },
+                  flexDir: 'column',
+                  gap: '6',
+                  pb: '2',
                 })}
               >
-                <Link
-                  href="/posts/"
-                  className={css({
-                    px: '8',
-                    py: '4',
-                    bg: 'gray.900',
-                    color: 'white',
-                    rounded: 'xl',
-                    fontWeight: 'semibold',
-                    transition: 'all 0.2s',
-                    _hover: {
-                      bg: 'gray.800',
-                      transform: 'translateY(-2px)',
-                      shadow: 'lg',
-                    },
-                    _active: { transform: 'translateY(0)' },
-                  })}
-                >
-                  실험 기록 읽기
-                </Link>
+                {[
+                  { num: '33+', label: '작성한 글' },
+                  { num: '38', label: '오픈소스 PR' },
+                  { num: '3', label: '컨퍼런스 발표' },
+                ].map(s => (
+                  <div key={s.label}>
+                    <div
+                      className={css({
+                        fontSize: '3xl',
+                        fontWeight: 'extrabold',
+                        color: 'ink.950',
+                        letterSpacing: 'tight',
+                        lineHeight: '1',
+                      })}
+                    >
+                      {s.num}
+                    </div>
+                    <div
+                      className={css({
+                        fontSize: 'xs',
+                        color: 'ink.500',
+                        mt: '1',
+                      })}
+                    >
+                      {s.label}
+                    </div>
+                  </div>
+                ))}
               </div>
             </main>
           </div>
 
-          {/* Top Posts Section (Client Component) */}
+          {/* Popular Posts */}
           <Suspense fallback={<TopPostsLoading />}>
             <TopPosts posts={allPosts} />
           </Suspense>
 
-          {/* Recent Posts Section */}
+          {/* Recent Posts */}
           <section
             className={css({
-              py: '20',
-              px: '6',
-              maxW: '7xl',
+              py: { base: '12', md: '20' },
+              maxW: '1200px',
               mx: 'auto',
+              px: '6',
               borderTopWidth: '1px',
-              borderColor: 'gray.100',
+              borderColor: 'ink.border',
             })}
           >
-            <h2
-              className={css({
-                fontSize: '3xl',
-                fontWeight: 'bold',
-                mb: '10',
-                textAlign: 'center',
-              })}
-            >
-              ✨ 최근 등록된 실험 기록
-            </h2>
             <div
               className={css({
-                display: 'grid',
-                gridTemplateColumns: { base: '1fr', md: '3fr' },
-                gap: '8',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'baseline',
+                mb: '10',
               })}
             >
-              {recentPosts.map(post => (
-                <PostCard key={post.slug} post={post} />
-              ))}
-            </div>
-            <div className={css({ mt: '12', textAlign: 'center' })}>
+              <div className={css({ display: 'flex', alignItems: 'baseline', gap: '4' })}>
+                <span
+                  className={css({
+                    fontSize: 'xs',
+                    fontWeight: 'bold',
+                    color: 'accent.600',
+                    letterSpacing: 'widest',
+                    textTransform: 'uppercase',
+                  })}
+                >
+                  02
+                </span>
+                <h2
+                  className={css({
+                    fontSize: { base: 'xl', md: '2xl' },
+                    fontWeight: 'bold',
+                    color: 'ink.950',
+                    letterSpacing: 'tight',
+                  })}
+                >
+                  최근 기록
+                </h2>
+              </div>
               <Link
                 href="/posts/"
                 className={css({
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  px: '6',
-                  py: '3',
-                  rounded: 'full',
-                  borderWidth: '1px',
-                  borderColor: 'gray.200',
-                  color: 'gray.600',
-                  fontWeight: 'semibold',
-                  transition: 'all 0.2s',
-                  _hover: {
-                    borderColor: 'blue.600',
-                    color: 'blue.600',
-                    bg: 'blue.50',
-                  },
+                  fontSize: 'sm',
+                  color: 'ink.500',
+                  _hover: { color: 'accent.600' },
+                  transition: 'color 0.15s',
                 })}
               >
-                모든 기록 보기 <span className={css({ ml: '2' })}>→</span>
+                전체 보기 →
               </Link>
+            </div>
+            <div
+              className={css({
+                display: 'grid',
+                gridTemplateColumns: { base: '1fr', md: 'repeat(2, 1fr)' },
+                borderTopWidth: '1px',
+                borderColor: 'ink.border',
+              })}
+            >
+              {recentPosts.map((post, i) => (
+                <PostCard key={post.slug} post={post} index={i} />
+              ))}
             </div>
           </section>
         </div>

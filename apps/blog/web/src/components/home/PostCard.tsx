@@ -6,100 +6,102 @@ import { encodePostSlug } from '@/domain/post/utils';
 interface PostCardProps {
   post: PostSummary;
   rank?: number;
+  index?: number;
 }
 
-export function PostCard({ post, rank }: PostCardProps) {
-  const rankStyleProps =
-    rank === 1
-      ? { bg: 'yellow.100', color: 'yellow.700' }
-      : rank === 2
-        ? { bg: 'gray.100', color: 'gray.700' }
-        : { bg: 'orange.100', color: 'orange.700' };
+export function PostCard({ post, rank, index }: PostCardProps) {
+  const isEven = (index ?? 0) % 2 === 1;
 
   return (
     <Link
       href={`/posts/${encodePostSlug(post.slug)}/`}
       className={css({
-        display: 'flex',
-        flexDir: 'column',
+        display: 'block',
         p: '6',
-        bg: 'white',
-        rounded: '2xl',
-        borderWidth: '1px',
-        borderColor: 'gray.100',
-        transition: 'all 0.2s',
-        _hover: {
-          borderColor: 'blue.200',
-          transform: 'translateY(-4px)',
-          shadow: 'lg',
-        },
+        borderBottomWidth: '1px',
+        borderRightWidth: { base: '0', md: isEven ? '0' : '1px' },
+        borderColor: 'ink.border',
+        transition: 'background 0.15s',
+        _hover: { bg: 'ink.50' },
       })}
     >
       <div
         className={css({
-          mb: '4',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between',
+          gap: '3',
+          mb: '3',
         })}
       >
         {rank && (
           <span
             className={css({
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              w: '8',
-              h: '8',
-              rounded: 'full',
+              fontSize: 'xs',
               fontWeight: 'bold',
-              fontSize: 'sm',
-              ...rankStyleProps,
+              color: 'accent.600',
+              minW: '5',
+              fontVariantNumeric: 'tabular-nums',
             })}
           >
-            {rank}
+            {String(rank).padStart(2, '0')}
           </span>
         )}
         {post.date && (
-          <time className={css({ fontSize: 'sm', color: 'gray.400' })}>
-            {new Date(post.date).toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul' })}
+          <time
+            className={css({
+              fontSize: 'xs',
+              color: 'ink.500',
+              letterSpacing: 'wide',
+            })}
+          >
+            {new Date(post.date).toLocaleDateString('ko-KR', {
+              year: 'numeric',
+              month: 'short',
+              day: 'numeric',
+              timeZone: 'Asia/Seoul',
+            })}
           </time>
+        )}
+        {post.tags?.[0] && (
+          <span
+            className={css({
+              fontSize: 'xs',
+              color: 'accent.600',
+              bg: 'accent.50',
+              px: '2',
+              py: '0.5',
+              rounded: 'sm',
+              fontWeight: 'medium',
+            })}
+          >
+            {post.tags[0]}
+          </span>
         )}
       </div>
       <h3
         className={css({
-          fontSize: 'xl',
+          fontSize: { base: 'base', md: 'lg' },
           fontWeight: 'bold',
-          color: 'gray.900',
+          color: 'ink.950',
           mb: '2',
+          lineHeight: '1.4',
           lineClamp: 2,
         })}
       >
         {post.title}
       </h3>
-      <p
-        className={css({
-          color: 'gray.600',
-          fontSize: 'sm',
-          lineHeight: 'relaxed',
-          lineClamp: 3,
-          mb: '4',
-          flex: 1,
-        })}
-      >
-        {post.excerpt}
-      </p>
-      <div
-        className={css({
-          display: 'flex',
-          alignItems: 'center',
-          color: 'blue.600',
-          fontSize: 'sm',
-          fontWeight: 'semibold',
-        })}
-      >
-        Read more <span className={css({ ml: '1' })}>→</span>
-      </div>
+      {post.excerpt && (
+        <p
+          className={css({
+            color: 'ink.700',
+            fontSize: 'sm',
+            lineHeight: '1.6',
+            lineClamp: 2,
+          })}
+        >
+          {post.excerpt}
+        </p>
+      )}
     </Link>
   );
 }

@@ -16,7 +16,6 @@ import { useMemo } from 'react';
 export function GlobalViewsChart() {
   const { data } = useAdminDashboardData();
 
-  // Aggregate all trends into a centralized array
   const aggregatedTrends = useMemo(() => {
     const map = new Map<string, number>();
     for (const post of data) {
@@ -51,11 +50,11 @@ export function GlobalViewsChart() {
   return (
     <div
       className={css({
-        bg: 'white',
-        p: '2rem',
-        rounded: '8px',
-        boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
-        mb: '2rem',
+        bg: 'ink.25',
+        borderWidth: '1px',
+        borderColor: 'ink.border',
+        rounded: 'lg',
+        p: '6',
       })}
     >
       <div
@@ -63,18 +62,12 @@ export function GlobalViewsChart() {
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          mb: '1.5rem',
+          mb: '6',
           flexWrap: 'wrap',
-          gap: '1rem',
+          gap: '3',
         })}
       >
-        <h2
-          className={css({
-            fontSize: '1.25rem',
-            fontWeight: 'bold',
-            color: '#111827',
-          })}
-        >
+        <h2 className={css({ fontSize: 'base', fontWeight: 'bold', color: 'ink.950' })}>
           전체 조회수 추이
         </h2>
         <DateRangeControls
@@ -87,7 +80,7 @@ export function GlobalViewsChart() {
         />
       </div>
 
-      <div className={css({ h: '350px', w: '100%' })}>
+      <div className={css({ h: '320px', w: 'full' })}>
         {formattedData.length > 0 ? (
           <ResponsiveContainer width="100%" height="100%">
             <LineChart
@@ -96,36 +89,33 @@ export function GlobalViewsChart() {
             >
               <XAxis
                 dataKey="name"
-                axisLine={{ stroke: '#e5e7eb' }}
+                axisLine={{ stroke: 'oklch(87% 0.018 250)' }}
                 tickLine={false}
-                tick={{ fill: '#6b7280', fontSize: 12 }}
+                tick={{ fill: 'oklch(62% 0.02 250)', fontSize: 11 }}
                 dy={10}
               />
               <YAxis
                 axisLine={false}
                 tickLine={false}
-                tick={{ fill: '#6b7280', fontSize: 12 }}
+                tick={{ fill: 'oklch(62% 0.02 250)', fontSize: 11 }}
               />
               <Tooltip
-                cursor={{
-                  stroke: '#d1d5db',
-                  strokeWidth: 1,
-                  strokeDasharray: '4 4',
-                }}
+                cursor={{ stroke: 'oklch(87% 0.018 250)', strokeWidth: 1, strokeDasharray: '4 4' }}
                 contentStyle={{
                   borderRadius: '8px',
-                  border: 'none',
-                  boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                  border: '1px solid oklch(87% 0.018 250)',
+                  background: 'oklch(99% 0.005 250)',
+                  fontSize: '12px',
                 }}
-                labelStyle={{ color: '#6b7280', marginBottom: '0.25rem' }}
+                labelStyle={{ color: 'oklch(40% 0.025 250)', marginBottom: '2px' }}
               />
               <Line
                 type="monotone"
                 dataKey="views"
-                stroke="#3b82f6"
-                strokeWidth={3}
-                dot={{ r: 4, fill: '#3b82f6', strokeWidth: 0 }}
-                activeDot={{ r: 6, fill: '#2563eb', strokeWidth: 0 }}
+                stroke="oklch(53% 0.22 255)"
+                strokeWidth={2}
+                dot={{ r: 3, fill: 'oklch(53% 0.22 255)', strokeWidth: 0 }}
+                activeDot={{ r: 5, fill: 'oklch(47% 0.24 255)', strokeWidth: 0 }}
               />
             </LineChart>
           </ResponsiveContainer>
@@ -133,13 +123,14 @@ export function GlobalViewsChart() {
           <div
             className={css({
               display: 'flex',
-              h: '100%',
+              h: 'full',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#9ca3af',
+              color: 'ink.500',
+              fontSize: 'sm',
             })}
           >
-            <p>해당 기간에 데이터가 없습니다.</p>
+            해당 기간에 데이터가 없습니다.
           </div>
         )}
       </div>

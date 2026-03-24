@@ -15,8 +15,8 @@ export const Layout = ({ children }: LayoutProps) => {
     <div
       className={css({
         minH: '100vh',
-        bg: 'white',
-        color: 'gray.900',
+        bg: 'ink.25',
+        color: 'ink.950',
         display: 'flex',
         flexDir: 'column',
       })}
@@ -24,11 +24,11 @@ export const Layout = ({ children }: LayoutProps) => {
       <nav
         className={css({
           borderBottomWidth: '1px',
-          borderColor: 'gray.100',
+          borderColor: 'ink.border',
           pos: 'sticky',
           top: 0,
-          bg: 'white/80',
-          backdropFilter: 'blur(8px)',
+          bg: 'ink.25/85',
+          backdropFilter: 'blur(12px)',
           zIndex: 10,
         })}
       >
@@ -37,7 +37,7 @@ export const Layout = ({ children }: LayoutProps) => {
             maxW: '1200px',
             m: 'auto',
             px: '6',
-            h: '16',
+            h: '14',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -46,17 +46,19 @@ export const Layout = ({ children }: LayoutProps) => {
           <Link
             href="/"
             className={css({
-              fontSize: 'lg',
+              fontSize: 'sm',
               fontWeight: 'bold',
-              letterSpacing: 'tight',
-              _hover: { color: 'blue.600' },
-              transition: 'color 0.2s',
+              letterSpacing: 'widest',
+              textTransform: 'uppercase',
+              color: 'ink.950',
+              _hover: { color: 'accent.600' },
+              transition: 'color 0.15s',
             })}
           >
             FE Lab
           </Link>
           <div
-            className={css({ display: 'flex', alignItems: 'center', gap: '3' })}
+            className={css({ display: 'flex', alignItems: 'center', gap: '1' })}
           >
             <SearchDialog />
             <Link
@@ -64,9 +66,12 @@ export const Layout = ({ children }: LayoutProps) => {
               className={css({
                 fontSize: 'sm',
                 fontWeight: 'medium',
-                color: 'gray.600',
-                _hover: { color: 'gray.900' },
-                transition: 'color 0.2s',
+                color: 'ink.500',
+                px: '3',
+                py: '1.5',
+                rounded: 'md',
+                _hover: { color: 'ink.950', bg: 'ink.100' },
+                transition: 'all 0.15s',
               })}
             >
               Posts
@@ -76,9 +81,12 @@ export const Layout = ({ children }: LayoutProps) => {
               className={css({
                 fontSize: 'sm',
                 fontWeight: 'medium',
-                color: 'gray.600',
-                _hover: { color: 'gray.900' },
-                transition: 'color 0.2s',
+                color: 'ink.500',
+                px: '3',
+                py: '1.5',
+                rounded: 'md',
+                _hover: { color: 'ink.950', bg: 'ink.100' },
+                transition: 'all 0.15s',
               })}
             >
               About
@@ -86,60 +94,88 @@ export const Layout = ({ children }: LayoutProps) => {
           </div>
         </div>
       </nav>
+
       <main className={css({ flex: 1, w: 'full' })}>
         <PageTransition>{children}</PageTransition>
       </main>
+
       <footer
         className={css({
           borderTopWidth: '1px',
-          borderColor: 'gray.100',
-          py: '12',
-          mt: '12',
+          borderColor: 'ink.border',
+          py: '10',
+          mt: '16',
+          bg: 'ink.50',
         })}
       >
         <div
           className={css({
-            maxW: '800px',
+            maxW: '1200px',
             mx: 'auto',
             px: '6',
-            textAlign: 'center',
-            color: 'gray.400',
-            fontSize: 'sm',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '4',
           })}
         >
+          <span
+            className={css({
+              fontSize: 'xs',
+              fontWeight: 'bold',
+              letterSpacing: 'widest',
+              textTransform: 'uppercase',
+              color: 'ink.500',
+            })}
+          >
+            © {new Date().getFullYear()} FE Lab
+          </span>
           <div
             className={css({
               display: 'flex',
-              justifyContent: 'center',
               gap: '5',
-              mb: '4',
               flexWrap: 'wrap',
+              alignItems: 'center',
             })}
           >
-            <Link href="/about/" className={css({ _hover: { color: 'gray.600' }, transition: 'color 0.2s' })}>
-              About
-            </Link>
-            <Link href="/privacy" className={css({ _hover: { color: 'gray.600' }, transition: 'color 0.2s' })}>
-              개인정보처리방침
-            </Link>
-            <a
-              href={SITE_AUTHOR_GITHUB}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={css({ _hover: { color: 'gray.600' }, transition: 'color 0.2s' })}
-            >
-              GitHub
-            </a>
-            <a
-              href={SITE_AUTHOR_LINKEDIN}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={css({ _hover: { color: 'gray.600' }, transition: 'color 0.2s' })}
-            >
-              LinkedIn
-            </a>
+            {[
+              { href: '/about/', label: 'About', internal: true },
+              { href: '/privacy', label: '개인정보처리방침', internal: true },
+              { href: SITE_AUTHOR_GITHUB, label: 'GitHub', internal: false },
+              { href: SITE_AUTHOR_LINKEDIN, label: 'LinkedIn', internal: false },
+            ].map(link =>
+              link.internal ? (
+                <Link
+                  key={link.label}
+                  href={link.href}
+                  className={css({
+                    fontSize: 'xs',
+                    color: 'ink.500',
+                    _hover: { color: 'ink.950' },
+                    transition: 'color 0.15s',
+                  })}
+                >
+                  {link.label}
+                </Link>
+              ) : (
+                <a
+                  key={link.label}
+                  href={link.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={css({
+                    fontSize: 'xs',
+                    color: 'ink.500',
+                    _hover: { color: 'ink.950' },
+                    transition: 'color 0.15s',
+                  })}
+                >
+                  {link.label}
+                </a>
+              ),
+            )}
           </div>
-          © {new Date().getFullYear()} FE Lab. All rights reserved.
         </div>
       </footer>
     </div>

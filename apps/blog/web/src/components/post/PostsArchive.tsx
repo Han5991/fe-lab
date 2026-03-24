@@ -15,19 +15,10 @@ export const PostsArchive = ({ posts }: PostsArchiveProps) => {
         mt: '16',
         pt: '10',
         borderTopWidth: '1px',
-        borderColor: 'gray.100',
+        borderColor: 'ink.border',
       })}
     >
-      <details
-        className={css({
-          rounded: '2xl',
-          borderWidth: '1px',
-          borderColor: 'gray.200',
-          bg: 'gray.50/40',
-          px: '5',
-          py: '4',
-        })}
-      >
+      <details>
         <summary
           id="posts-archive-heading"
           className={css({
@@ -37,41 +28,57 @@ export const PostsArchive = ({ posts }: PostsArchiveProps) => {
             gap: '3',
             cursor: 'pointer',
             listStyle: 'none',
-            fontSize: { base: 'lg', md: 'xl' },
-            fontWeight: 'bold',
-            color: 'gray.900',
-            '&::-webkit-details-marker': {
-              display: 'none',
-            },
+            py: '3',
+            '&::-webkit-details-marker': { display: 'none' },
           })}
         >
-          <span>전체 글 아카이브</span>
+          <div className={css({ display: 'flex', alignItems: 'baseline', gap: '3' })}>
+            <span
+              className={css({
+                fontSize: 'xs',
+                fontWeight: 'bold',
+                letterSpacing: 'widest',
+                textTransform: 'uppercase',
+                color: 'ink.500',
+              })}
+            >
+              Archive
+            </span>
+            <span
+              className={css({
+                fontSize: 'sm',
+                fontWeight: 'semibold',
+                color: 'ink.950',
+              })}
+            >
+              전체 글 아카이브
+            </span>
+            <span
+              className={css({
+                fontSize: 'xs',
+                color: 'ink.500',
+                fontVariantNumeric: 'tabular-nums',
+              })}
+            >
+              {posts.length}편
+            </span>
+          </div>
           <span
             aria-hidden="true"
             className={css({
-              fontSize: 'sm',
-              color: 'gray.500',
+              fontSize: 'xs',
+              color: 'ink.500',
             })}
           >
-            펼치기
+            펼치기 ↓
           </span>
         </summary>
-        <p
-          className={css({
-            mt: '3',
-            color: 'gray.500',
-            fontSize: 'sm',
-            lineHeight: 'relaxed',
-          })}
-        >
-          모든 글을 날짜순으로 바로 탐색할 수 있는 아카이브입니다.
-        </p>
 
         <ul
           className={css({
-            display: 'grid',
-            gap: '3',
-            mt: '6',
+            mt: '4',
+            borderTopWidth: '1px',
+            borderColor: 'ink.border',
           })}
         >
           {posts.map(post => {
@@ -84,19 +91,13 @@ export const PostsArchive = ({ posts }: PostsArchiveProps) => {
                   className={css({
                     display: 'flex',
                     flexDir: { base: 'column', md: 'row' },
-                    alignItems: { base: 'flex-start', md: 'center' },
-                    gap: { base: '1', md: '4' },
-                    px: '4',
+                    alignItems: { base: 'flex-start', md: 'baseline' },
+                    gap: { base: '0.5', md: '5' },
                     py: '3',
-                    rounded: 'xl',
-                    borderWidth: '1px',
-                    borderColor: 'gray.100',
-                    bg: 'white',
-                    transition: 'all 0.2s',
-                    _hover: {
-                      borderColor: 'blue.200',
-                      bg: 'blue.50/30',
-                    },
+                    borderBottomWidth: '1px',
+                    borderColor: 'ink.border',
+                    transition: 'background 0.15s',
+                    _hover: { bg: 'ink.50', mx: '-6', px: '6' },
                   })}
                 >
                   {post.date && (
@@ -104,9 +105,11 @@ export const PostsArchive = ({ posts }: PostsArchiveProps) => {
                       dateTime={post.date}
                       className={css({
                         flexShrink: 0,
-                        minW: { md: '120px' },
-                        fontSize: 'sm',
-                        color: 'gray.400',
+                        minW: { md: '110px' },
+                        fontSize: 'xs',
+                        color: 'ink.500',
+                        letterSpacing: 'wide',
+                        fontVariantNumeric: 'tabular-nums',
                       })}
                     >
                       {new Date(post.date).toLocaleDateString('ko-KR', {
@@ -119,10 +122,10 @@ export const PostsArchive = ({ posts }: PostsArchiveProps) => {
                   )}
                   <span
                     className={css({
-                      fontSize: 'md',
+                      fontSize: 'sm',
                       fontWeight: 'medium',
-                      color: 'gray.800',
-                      lineHeight: 'relaxed',
+                      color: 'ink.950',
+                      lineHeight: '1.5',
                     })}
                   >
                     {post.title}

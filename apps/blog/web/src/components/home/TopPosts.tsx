@@ -13,27 +13,48 @@ interface TopPostsProps {
 export function TopPostsLoading() {
   return (
     <section
-      className={css({ py: '20', px: '6', maxWidth: '7xl', mx: 'auto' })}
+      className={css({
+        py: '12',
+        maxW: '1200px',
+        mx: 'auto',
+        px: '6',
+        borderTopWidth: '1px',
+        borderColor: 'ink.border',
+      })}
     >
       <div
         className={css({
-          h: '8',
-          w: '48',
-          bg: 'gray.200',
-          rounded: 'md',
-          mx: 'auto',
-          mb: '10',
+          h: '5',
+          w: '32',
+          bg: 'ink.100',
+          rounded: 'sm',
+          mb: '8',
           animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
         })}
       />
       <div
         className={css({
-          h: 64,
-          bg: 'gray.100',
-          rounded: '2xl',
-          animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+          display: 'grid',
+          gridTemplateColumns: { base: '1fr', md: 'repeat(3, 1fr)' },
+          borderTopWidth: '1px',
+          borderColor: 'ink.border',
         })}
-      />
+      >
+        {[0, 1, 2].map(i => (
+          <div
+            key={i}
+            className={css({
+              p: '6',
+              borderBottomWidth: '1px',
+              borderRightWidth: { base: '0', md: i < 2 ? '1px' : '0' },
+              borderColor: 'ink.border',
+              h: '36',
+              animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+              bg: 'ink.50',
+            })}
+          />
+        ))}
+      </div>
     </section>
   );
 }
@@ -70,27 +91,55 @@ export function TopPosts({ posts }: TopPostsProps) {
 
   return (
     <section
-      className={css({ py: '20', px: '6', maxWidth: '7xl', mx: 'auto' })}
+      className={css({
+        py: { base: '12', md: '20' },
+        maxW: '1200px',
+        mx: 'auto',
+        px: '6',
+        borderTopWidth: '1px',
+        borderColor: 'ink.border',
+      })}
     >
-      <h2
+      <div
         className={css({
-          fontSize: '3xl',
-          fontWeight: 'bold',
+          display: 'flex',
+          alignItems: 'baseline',
+          gap: '4',
           mb: '10',
-          textAlign: 'center',
         })}
       >
-        🔥 인기 있는 실험 기록
-      </h2>
+        <span
+          className={css({
+            fontSize: 'xs',
+            fontWeight: 'bold',
+            color: 'accent.600',
+            letterSpacing: 'widest',
+            textTransform: 'uppercase',
+          })}
+        >
+          01
+        </span>
+        <h2
+          className={css({
+            fontSize: { base: 'xl', md: '2xl' },
+            fontWeight: 'bold',
+            color: 'ink.950',
+            letterSpacing: 'tight',
+          })}
+        >
+          인기 기록
+        </h2>
+      </div>
       <div
         className={css({
           display: 'grid',
-          gridTemplateColumns: { base: '1fr', md: '3fr' },
-          gap: '8',
+          gridTemplateColumns: { base: '1fr', md: 'repeat(3, 1fr)' },
+          borderTopWidth: '1px',
+          borderColor: 'ink.border',
         })}
       >
         {topPosts.map((post, index) => (
-          <PostCard key={post.slug} post={post} rank={index + 1} />
+          <PostCard key={post.slug} post={post} rank={index + 1} index={index} />
         ))}
       </div>
     </section>
