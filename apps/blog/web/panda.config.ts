@@ -17,6 +17,9 @@ export default defineConfig({
   outdir: '../../../packages/@design-system/ui-lib',
   theme: {
     extend: {
+      shadows: {
+        accentLeft: { value: 'inset 3px 0 0 oklch(53% 0.22 255)' },
+      },
       tokens: {
         fonts: {
           sans: {

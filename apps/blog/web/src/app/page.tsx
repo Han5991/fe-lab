@@ -117,6 +117,9 @@ export default function HomePage() {
                     textTransform: 'uppercase',
                     color: 'accent.600',
                     mb: '6',
+                    borderLeftWidth: '3px',
+                    borderLeftColor: 'accent.600',
+                    pl: '3',
                   })}
                 >
                   Frontend Engineering · 한상욱
@@ -205,7 +208,7 @@ export default function HomePage() {
                   <div key={s.label}>
                     <div
                       className={css({
-                        fontSize: '3xl',
+                        fontSize: '5xl',
                         fontWeight: 'extrabold',
                         color: 'ink.950',
                         letterSpacing: 'tight',
@@ -248,34 +251,35 @@ export default function HomePage() {
             <div
               className={css({
                 display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'baseline',
+                alignItems: 'center',
+                gap: '4',
                 mb: '10',
               })}
             >
-              <div className={css({ display: 'flex', alignItems: 'baseline', gap: '4' })}>
-                <span
-                  className={css({
-                    fontSize: 'xs',
-                    fontWeight: 'bold',
-                    color: 'accent.600',
-                    letterSpacing: 'widest',
-                    textTransform: 'uppercase',
-                  })}
-                >
-                  02
-                </span>
-                <h2
-                  className={css({
-                    fontSize: { base: 'xl', md: '2xl' },
-                    fontWeight: 'bold',
-                    color: 'ink.950',
-                    letterSpacing: 'tight',
-                  })}
-                >
-                  최근 기록
-                </h2>
-              </div>
+              <span
+                className={css({
+                  fontSize: 'xs',
+                  fontWeight: 'bold',
+                  color: 'accent.600',
+                  letterSpacing: 'widest',
+                  textTransform: 'uppercase',
+                  flexShrink: 0,
+                })}
+              >
+                02
+              </span>
+              <h2
+                className={css({
+                  fontSize: { base: 'xl', md: '2xl' },
+                  fontWeight: 'bold',
+                  color: 'ink.950',
+                  letterSpacing: 'tight',
+                  flexShrink: 0,
+                })}
+              >
+                최근 기록
+              </h2>
+              <div className={css({ flex: 1, h: '1px', bg: 'ink.border' })} />
               <Link
                 href="/posts/"
                 className={css({
@@ -283,6 +287,7 @@ export default function HomePage() {
                   color: 'ink.500',
                   _hover: { color: 'accent.600' },
                   transition: 'color 0.15s',
+                  flexShrink: 0,
                 })}
               >
                 전체 보기 →

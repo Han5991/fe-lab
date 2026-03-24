@@ -47,8 +47,8 @@ function PostRow({ post }: { post: PostSummary }) {
         py: '4',
         borderBottomWidth: '1px',
         borderColor: 'ink.border',
-        transition: 'background 0.15s',
-        _hover: { bg: 'ink.50', mx: '-6', px: '6' },
+        transition: 'background 0.15s, box-shadow 0.15s',
+        _hover: { bg: 'ink.50', mx: '-6', px: '6', boxShadow: 'accentLeft' },
       })}
     >
       {post.date && (

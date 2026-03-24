@@ -21,8 +21,8 @@ export function PostCard({ post, rank, index }: PostCardProps) {
         borderBottomWidth: '1px',
         borderRightWidth: { base: '0', md: isEven ? '0' : '1px' },
         borderColor: 'ink.border',
-        transition: 'background 0.15s',
-        _hover: { bg: 'ink.50' },
+        transition: 'background 0.15s, box-shadow 0.15s',
+        _hover: { bg: 'ink.50', boxShadow: 'accentLeft' },
       })}
     >
       <div

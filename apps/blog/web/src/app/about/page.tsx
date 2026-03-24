@@ -74,6 +74,9 @@ export default function AboutPage() {
                     textTransform: 'uppercase',
                     color: 'accent.600',
                     mb: '4',
+                    borderLeftWidth: '3px',
+                    borderLeftColor: 'accent.600',
+                    pl: '3',
                   })}
                 >
                   Frontend Engineer
@@ -187,10 +190,11 @@ export default function AboutPage() {
                     <div key={stat.label}>
                       <div
                         className={css({
-                          fontSize: '2xl',
+                          fontSize: { base: '3xl', md: '4xl' },
                           fontWeight: 'extrabold',
                           color: 'ink.950',
                           letterSpacing: 'tight',
+                          lineHeight: '1',
                         })}
                       >
                         {stat.value}
@@ -393,8 +397,8 @@ export default function AboutPage() {
                         py: '4',
                         borderBottomWidth: '1px',
                         borderColor: 'ink.border',
-                        transition: 'background 0.15s',
-                        _hover: { bg: 'ink.50', mx: '-6', px: '6' },
+                        transition: 'background 0.15s, box-shadow 0.15s',
+                        _hover: { bg: 'ink.50', mx: '-6', px: '6', boxShadow: 'accentLeft' },
                       })}
                     >
                       <div>
@@ -450,7 +454,8 @@ export default function AboutPage() {
                   className={css({
                     display: 'flex',
                     flexDir: 'column',
-                    gap: '3',
+                    borderTopWidth: '1px',
+                    borderColor: 'ink.border',
                   })}
                 >
                   {[
@@ -487,13 +492,11 @@ export default function AboutPage() {
                         justifyContent: 'space-between',
                         alignItems: 'start',
                         gap: '4',
-                        p: '4',
-                        rounded: 'lg',
-                        borderWidth: '1px',
+                        py: '4',
+                        borderBottomWidth: '1px',
                         borderColor: 'ink.border',
-                        bg: 'ink.50',
-                        transition: 'border-color 0.15s',
-                        _hover: { borderColor: 'accent.200' },
+                        transition: 'background 0.15s, box-shadow 0.15s',
+                        _hover: { bg: 'ink.50', mx: '-6', px: '6', boxShadow: 'accentLeft' },
                       })}
                     >
                       <div className={css({ flex: 1, minW: 0 })}>

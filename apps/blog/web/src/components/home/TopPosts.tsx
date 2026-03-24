@@ -103,7 +103,7 @@ export function TopPosts({ posts }: TopPostsProps) {
       <div
         className={css({
           display: 'flex',
-          alignItems: 'baseline',
+          alignItems: 'center',
           gap: '4',
           mb: '10',
         })}
@@ -115,6 +115,7 @@ export function TopPosts({ posts }: TopPostsProps) {
             color: 'accent.600',
             letterSpacing: 'widest',
             textTransform: 'uppercase',
+            flexShrink: 0,
           })}
         >
           01
@@ -125,10 +126,12 @@ export function TopPosts({ posts }: TopPostsProps) {
             fontWeight: 'bold',
             color: 'ink.950',
             letterSpacing: 'tight',
+            flexShrink: 0,
           })}
         >
           인기 기록
         </h2>
+        <div className={css({ flex: 1, h: '1px', bg: 'ink.border' })} />
       </div>
       <div
         className={css({
