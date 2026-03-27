@@ -1,5 +1,6 @@
 import { Suspense } from 'react';
 import { getAllPostSummaries } from '@/lib/posts';
+import { SITE_URL } from '@/lib/constants';
 import { css } from '@design-system/ui-lib/css';
 import { SsgoiTransition } from '@ssgoi/react';
 import type { Metadata } from 'next';
@@ -34,18 +35,18 @@ export default function PostsPage() {
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'CollectionPage',
-    '@id': 'https://blog.sangwook.dev/posts/',
+    '@id': `${SITE_URL}/posts/`,
     name: 'Posts | Frontend Lab',
-    url: 'https://blog.sangwook.dev/posts/',
+    url: `${SITE_URL}/posts/`,
     description: '프론트엔드 실험실의 모든 기록들을 확인해보세요.',
     inLanguage: 'ko',
-    isPartOf: { '@id': 'https://blog.sangwook.dev/#website' },
+    isPartOf: { '@id': `${SITE_URL}/#website` },
     mainEntity: {
       '@type': 'ItemList',
       itemListElement: posts.slice(0, 20).map((post, index) => ({
         '@type': 'ListItem',
         position: index + 1,
-        url: `https://blog.sangwook.dev/posts/${post.slug}/`,
+        item: `${SITE_URL}/posts/${post.slug}/`,
         name: post.title,
       })),
     },

@@ -122,8 +122,26 @@ export default async function PostPage({ params }: Props) {
       '@type': 'WebPage',
       '@id': postUrl,
     },
-    author: { '@id': `${SITE_URL}/#author` },
-    publisher: { '@id': `${SITE_URL}/#organization` },
+    url: postUrl,
+    author: {
+      '@type': 'Person',
+      '@id': `${SITE_URL}/#author`,
+      name: 'Sangwook Han',
+      alternateName: '한상욱',
+      url: SITE_URL,
+    },
+    publisher: {
+      '@type': 'Organization',
+      '@id': `${SITE_URL}/#organization`,
+      name: 'Frontend Lab',
+      url: SITE_URL,
+      logo: {
+        '@type': 'ImageObject',
+        url: `${SITE_URL}/og-default.png`,
+        width: 1200,
+        height: 630,
+      },
+    },
     isPartOf: post.series
       ? {
           '@type': 'CollectionPage',
