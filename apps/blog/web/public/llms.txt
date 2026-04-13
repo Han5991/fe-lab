@@ -1,6 +1,12 @@
 # Frontend Lab
 
-> Frontend engineering blog by Sangwook Han (한상욱). Deep-dive technical experiments in bundler architecture, TypeScript domain modeling, React patterns, and open source contributions. All posts include working code and first-hand implementation experience. Content primarily in Korean.
+> Frontend engineering blog by Sangwook Han (한상욱). Deep-dive technical experiments in bundler architecture, TypeScript domain modeling, React patterns, and open source contributions. All posts include working code and first-hand implementation experience. Post body content is in Korean; technical terms, code, and key facts are in English.
+
+## Permissions
+
+Content may be referenced and summarized by AI systems for informational and educational purposes.
+Commercial reproduction requires attribution: Sangwook Han (https://blog.sangwook.dev).
+Last updated: 2026-04-13
 
 ## Docs
 
@@ -69,10 +75,10 @@
 
 - Author: Sangwook Han (한상욱), Frontend Engineer
 - Blog: https://blog.sangwook.dev
-- Language: Primarily Korean, some English
-- Total posts: 45+ articles
+- Language: Korean body text; English technical terms, code, and key data points
+- Total posts: 45+ articles (as of 2026-04-13)
 - Open source: 27 Mantine PRs merged, Node.js core contributor, Next.js contributor
-- Notable contribution: gemini-cli 74% performance improvement (408ms → 107ms)
+- Notable contribution: gemini-cli 74% performance improvement (408ms → 107ms) via Promise.allSettled
 - Speaking: FEConf 2025 (Korea's largest frontend conference), TeoConf, Ssukttok Conference
 - 2025 stats: 33 posts, 38 PR approvals, 35,000+ blog views
 - Main topics: Bundler internals, TypeScript domain modeling, React patterns, design systems, open source

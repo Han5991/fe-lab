@@ -24,13 +24,31 @@ const jsonLd = {
   '@id': `${SITE_URL}/about/`,
   url: `${SITE_URL}/about/`,
   name: '한상욱 (Sangwook Han) — About',
+  dateCreated: '2024-12-01',
+  dateModified: new Date().toISOString().split('T')[0],
   mainEntity: {
     '@type': 'Person',
     '@id': `${SITE_URL}/#author`,
     name: 'Sangwook Han',
     alternateName: '한상욱',
     url: SITE_URL,
+    image: {
+      '@type': 'ImageObject',
+      url: 'https://github.com/Han5991.png?size=400',
+      width: 400,
+      height: 400,
+    },
     jobTitle: 'Frontend Engineer',
+    description:
+      '번들러 내부 구조, TypeScript 설계 패턴, 오픈소스 기여를 탐구하는 프론트엔드 엔지니어. Mantine, Node.js, gemini-cli, Next.js 오픈소스 기여자.',
+    knowsAbout: [
+      'React',
+      'TypeScript',
+      'JavaScript',
+      'Module Bundlers',
+      'Frontend Architecture',
+      'Open Source',
+    ],
     sameAs: [SITE_AUTHOR_GITHUB, SITE_AUTHOR_LINKEDIN],
   },
 };

@@ -16,6 +16,7 @@ function toPostSummary(post: PostData): PostSummary {
     relativeDir: post.relativeDir,
     title: post.title,
     date: post.date,
+    updatedAt: post.updatedAt,
     excerpt: post.excerpt,
     thumbnail: post.thumbnail,
     tags: post.tags,

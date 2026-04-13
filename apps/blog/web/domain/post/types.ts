@@ -10,6 +10,7 @@ export interface PostData {
   relativeDir: string;
   title: string;
   date: string | null;
+  updatedAt?: string | null;
   content: string;
   excerpt?: string;
   thumbnail?: string;
@@ -25,6 +26,7 @@ export interface PostSummary {
   relativeDir: string;
   title: string;
   date: string | null;
+  updatedAt?: string | null;
   excerpt?: string;
   thumbnail?: string;
   tags?: string[];
