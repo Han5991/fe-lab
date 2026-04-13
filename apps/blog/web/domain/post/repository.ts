@@ -78,6 +78,7 @@ function collectPosts(
     const series: string | undefined = currentPath || undefined;
     const status = determineStatus(data);
     const dateString = data.date instanceof Date ? data.date.toISOString().split('T')[0] : (typeof data.date === 'string' ? data.date : null);
+    const updatedAtString = data.updatedAt instanceof Date ? data.updatedAt.toISOString().split('T')[0] : (typeof data.updatedAt === 'string' ? data.updatedAt : null);
 
     results.push({
       slug: data.slug || rawSlug,
@@ -85,6 +86,7 @@ function collectPosts(
       relativeDir: currentPath,
       title: data.title || fileName,
       date: dateString,
+      updatedAt: updatedAtString,
       content,
       excerpt: data.excerpt || cleanContent.slice(0, 160) + '...',
       thumbnail:

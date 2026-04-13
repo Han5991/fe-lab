@@ -43,7 +43,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const description = post.excerpt || post.content.slice(0, 160) + '...';
 
   return {
-    title: `${post.title} | FE Lab`,
+    title: `${post.title} | Frontend Lab`,
     description,
     alternates: {
       canonical: `/posts/${slug}`,
@@ -99,12 +99,19 @@ export default async function PostPage({ params }: Props) {
   const isoDate = (date: string | null) =>
     date ? `${date}T00:00:00+09:00` : undefined;
 
+  const plainTextLength = post.content
+    .replace(/[#*`_>~\[\]()!]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .split(' ')
+    .filter(Boolean).length;
+
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'BlogPosting',
     headline: post.title,
     datePublished: isoDate(post.date),
-    dateModified: isoDate(post.date),
+    dateModified: post.updatedAt ? isoDate(post.updatedAt) : isoDate(post.date),
     description: post.excerpt || post.content.slice(0, 160) + '...',
     image: {
       '@type': 'ImageObject',
@@ -113,6 +120,8 @@ export default async function PostPage({ params }: Props) {
       height: 630,
     },
     inLanguage: 'ko',
+    isAccessibleForFree: true,
+    wordCount: plainTextLength,
     ...(post.tags &&
       post.tags.length > 0 && {
         keywords: post.tags.join(', '),
@@ -137,22 +146,15 @@ export default async function PostPage({ params }: Props) {
       url: SITE_URL,
       logo: {
         '@type': 'ImageObject',
-        url: `${SITE_URL}/og-default.png`,
-        width: 1200,
-        height: 630,
+        url: `${SITE_URL}/logo-wordmark.svg`,
+        width: 280,
+        height: 60,
       },
     },
-    isPartOf: post.series
-      ? {
-          '@type': 'CollectionPage',
-          '@id': `${SITE_URL}/posts/?tab=series&series=${encodeURIComponent(post.series)}`,
-          name: post.series,
-          url: `${SITE_URL}/posts/?tab=series&series=${encodeURIComponent(post.series)}`,
-        }
-      : { '@id': `${SITE_URL}/#website` },
+    isPartOf: { '@id': `${SITE_URL}/#website` },
     speakable: {
       '@type': 'SpeakableSpecification',
-      cssSelector: ['h1', 'h2:first-of-type', 'article > p:first-of-type'],
+      cssSelector: ['h1', 'h2:first-of-type', 'article > p.tldr, article > p:first-of-type'],
     },
   };
 
@@ -163,17 +165,8 @@ export default async function PostPage({ params }: Props) {
   }> = [
     { position: 1, name: 'Home', item: `${SITE_URL}/` },
     { position: 2, name: 'Posts', item: `${SITE_URL}/posts/` },
+    { position: 3, name: post.title, item: postUrl },
   ];
-  if (post.series) {
-    breadcrumbItems.push({
-      position: 3,
-      name: post.series,
-      item: `${SITE_URL}/posts/?tab=series&series=${encodeURIComponent(post.series)}`,
-    });
-    breadcrumbItems.push({ position: 4, name: post.title, item: postUrl });
-  } else {
-    breadcrumbItems.push({ position: 3, name: post.title, item: postUrl });
-  }
 
   const breadcrumbJsonLd = {
     '@context': 'https://schema.org',

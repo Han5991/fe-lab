@@ -32,7 +32,7 @@ export const metadata: Metadata = {
 export default function PostsPage() {
   const posts = getAllPostSummaries();
 
-  const jsonLd = {
+  const collectionPageJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'CollectionPage',
     '@id': `${SITE_URL}/posts/`,
@@ -43,7 +43,7 @@ export default function PostsPage() {
     isPartOf: { '@id': `${SITE_URL}/#website` },
     mainEntity: {
       '@type': 'ItemList',
-      itemListElement: posts.slice(0, 20).map((post, index) => ({
+      itemListElement: posts.map((post, index) => ({
         '@type': 'ListItem',
         position: index + 1,
         item: `${SITE_URL}/posts/${post.slug}/`,
@@ -52,11 +52,28 @@ export default function PostsPage() {
     },
   };
 
+  const blogJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Blog',
+    '@id': `${SITE_URL}/posts/#blog`,
+    name: 'Frontend Lab — 실험 기록들',
+    url: `${SITE_URL}/posts/`,
+    description: '프론트엔드 실험실의 모든 기록들. React, TypeScript, 번들러 시리즈 등.',
+    inLanguage: 'ko',
+    author: { '@id': `${SITE_URL}/#author` },
+    publisher: { '@id': `${SITE_URL}/#organization` },
+    isPartOf: { '@id': `${SITE_URL}/#website` },
+  };
+
   return (
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionPageJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(blogJsonLd) }}
       />
       <SsgoiTransition id="/posts">
         <div
