@@ -52,7 +52,7 @@
     "@types/react-syntax-highlighter": "^15.5.13",
     "concurrently": "^9.2.0",
     "eslint": "^9",
-    "eslint-config-next": "16.1.1",
+    "eslint-config-next": "16.2.3",
     "supabase": "^2.70.5",
     "tsx": "^4.21.0",
     "typescript": "catalog:typescript5"
