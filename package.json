@@ -24,6 +24,17 @@
     "node": ">=20"
   },
   "pnpm": {
+    "overrides": {
+      "@babel/runtime": "7.29.2",
+      "@tootallnate/once": "3.0.1",
+      "dompurify": "3.3.3",
+      "flatted": "3.4.2",
+      "form-data@2": "2.5.5",
+      "mdast-util-to-hast": "13.2.1",
+      "picomatch@4": "4.0.4",
+      "qs@6": "6.15.1",
+      "tough-cookie@2": "4.1.4"
+    },
     "onlyBuiltDependencies": [
       "esbuild",
       "msw",

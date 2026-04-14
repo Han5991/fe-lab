@@ -30,7 +30,7 @@
     "@types/react": "catalog:react19",
     "@types/react-dom": "catalog:react19",
     "eslint": "^9",
-    "eslint-config-next": "15.4.0-canary.23",
+    "eslint-config-next": "16.2.3",
     "eslint-plugin-react": "^7.37.4",
     "eslint-plugin-react-hooks": "^5.1.0",
     "jest": "^29.7.0",
