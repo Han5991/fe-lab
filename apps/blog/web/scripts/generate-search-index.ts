@@ -4,6 +4,19 @@ import { getAllPosts, getAllPostsIncludingHidden } from '../lib/posts';
 
 const outputPath = join(process.cwd(), 'public', 'search-index.json');
 
+const CONTENT_PREVIEW_CHARS = 1500;
+
+function toPlainText(content: string): string {
+  return content
+    .replace(/```[\s\S]*?```/g, '')
+    .replace(/!\[.*?\]\(.*?\)/g, '')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/[#*`_>~]/g, '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 // 공개 포스트용 검색 인덱스 (프론트엔드 검색용)
 const publicPosts = getAllPosts().map(p => ({
   slug: p.slug,
@@ -12,6 +25,7 @@ const publicPosts = getAllPosts().map(p => ({
   excerpt: p.excerpt || '',
   tags: p.tags || [],
   series: p.series || null,
+  contentPreview: toPlainText(p.content).slice(0, CONTENT_PREVIEW_CHARS),
 }));
 
 writeFileSync(outputPath, JSON.stringify(publicPosts, null, 2), 'utf8');

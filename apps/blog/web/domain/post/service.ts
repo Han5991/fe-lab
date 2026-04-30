@@ -1,5 +1,6 @@
 import { readAllPosts } from './repository';
 import { isPostVisible } from './visibility';
+import { getSeriesMeta } from './series';
 import type {
   PostData,
   PostNavItem,
@@ -47,6 +48,13 @@ export function getAllPostSummaries(): PostSummary[] {
  */
 export function getAllPostsIncludingHidden(): PostData[] {
   return readAllPosts();
+}
+
+/**
+ * 미리보기/관리용: draft, scheduled 포함 slug로 포스트를 조회합니다.
+ */
+export function getPostBySlugIncludingHidden(slug: string): PostData | null {
+  return readAllPosts().find(post => post.slug === slug) ?? null;
 }
 
 let _postsBySlugMap: Map<string, PostData> | null = null;
@@ -118,6 +126,9 @@ export function getAdjacentPosts(
 
 /**
  * 같은 시리즈 내의 이전/다음 포스트를 반환합니다.
+ *
+ * `_series.yml`의 `order` 필드가 있으면 그 순서대로 정렬하고,
+ * 시리즈 표시명도 메타의 `title`로 대체합니다.
  */
 export function getSeriesAdjacentPosts(currentSlug: string): {
   prev: PostNavItem | null;
@@ -130,12 +141,47 @@ export function getSeriesAdjacentPosts(currentSlug: string): {
     return { prev: null, next: null, seriesName: null };
   }
 
+  const meta = getSeriesMeta(currentPost.series);
+  const displayName = meta?.title ?? currentPost.series;
+
+  if (meta?.order && meta.order.length > 0) {
+    const seriesPosts = getAllPosts().filter(
+      p => p.series === currentPost.series,
+    );
+    const orderMap = new Map(meta.order.map((slug, i) => [slug, i]));
+    const ordered = [...seriesPosts].sort((a, b) => {
+      const aRank =
+        orderMap.get(a.slug) ??
+        orderMap.get(a.originalSlug) ??
+        Number.POSITIVE_INFINITY;
+      const bRank =
+        orderMap.get(b.slug) ??
+        orderMap.get(b.originalSlug) ??
+        Number.POSITIVE_INFINITY;
+      if (aRank === bRank) {
+        return (a.date ?? '').localeCompare(b.date ?? '');
+      }
+      return aRank - bRank;
+    });
+    const idx = ordered.findIndex(p => p.slug === currentSlug);
+    if (idx === -1) {
+      return { prev: null, next: null, seriesName: displayName };
+    }
+    const prevPost = idx > 0 ? ordered[idx - 1] : null;
+    const nextPost = idx < ordered.length - 1 ? ordered[idx + 1] : null;
+    return {
+      prev: prevPost ? { slug: prevPost.slug, title: prevPost.title } : null,
+      next: nextPost ? { slug: nextPost.slug, title: nextPost.title } : null,
+      seriesName: displayName,
+    };
+  }
+
   const adjacent = getAdjacentPosts(currentSlug, {
     filterSeries: currentPost.series,
   });
 
   return {
     ...adjacent,
-    seriesName: currentPost.series,
+    seriesName: displayName,
   };
 }

@@ -47,7 +47,7 @@
 
 "회원 구조가 바뀌었습니다. 552개 파일을 수정해야 합니다." 보통은 이렇게 됩니다 - 어디를 수정해야 하는지 찾느라 1주 - 수정하다가 놓친 곳 때문에 버그 발생 - 회귀 테스트에 또 1주 - QA에서 엣지 케이스 발견 - 결국 한 달... 하지만 우리는 2주 만에, 사이드 이펙트 ......
 
-### [[Typescript로 설계하는 프로젝트] id?: string을 버려라. 상태가 다르면 타입도 달라야 한다.](https://blog.sangwook.dev/posts/typescript-domain-modeling-without-optional/) (2026-03-16T00:00:00.000Z)
+### [[Typescript로 설계하는 프로젝트] id?: string을 버려라. 상태가 다르면 타입도 달라야 한다.](https://blog.sangwook.dev/posts/typescript-domain-modeling-without-optional/) (2026-03-16)
 
 1. 프롤로그: 우리가 숨 쉬듯 작성하는 "거짓말" 팀원: "OO님, Post 타입에서 id가 없다고 에디터에서 빨간 줄이 뜨는데, 새 글 작성할 땐 서버 id가 없으니까 그냥 ? 붙여도 될까요?" 프론트엔드 개발을 하다 보면 슬랙이나 코드 리뷰에서 심심치 않게 보게 되는 질문입니다. ...... Tags: TypeScript, Architecture, Data Modeling.
 

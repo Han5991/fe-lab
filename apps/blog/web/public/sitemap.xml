@@ -2,17 +2,17 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://blog.sangwook.dev/</loc>
-    <lastmod>2026-03-16</lastmod>
+    <lastmod>2026-04-30</lastmod>
     <priority>1.0</priority>
   </url>
   <url>
     <loc>https://blog.sangwook.dev/posts/</loc>
-    <lastmod>2026-03-16</lastmod>
+    <lastmod>2026-04-30</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://blog.sangwook.dev/about/</loc>
-    <lastmod>2026-03-16</lastmod>
+    <lastmod>2026-04-30</lastmod>
     <priority>0.7</priority>
   </url>
   
@@ -24,27 +24,27 @@
   <url>
     <loc>https://blog.sangwook.dev/posts/no-one-asked-library-bundler-04-sourcemap/</loc>
     <lastmod>2026-03-03</lastmod>
-    <priority>0.6</priority>
+    <priority>0.75</priority>
   </url>
   <url>
     <loc>https://blog.sangwook.dev/posts/no-one-asked-library-bundler-03-bundling-scope/</loc>
     <lastmod>2026-02-23</lastmod>
-    <priority>0.6</priority>
+    <priority>0.75</priority>
   </url>
   <url>
     <loc>https://blog.sangwook.dev/posts/no-one-asked-library-bundler-02-ast-graph/</loc>
     <lastmod>2026-02-17</lastmod>
-    <priority>0.6</priority>
+    <priority>0.75</priority>
   </url>
   <url>
     <loc>https://blog.sangwook.dev/posts/no-one-asked-library-bundler-00-prologue/</loc>
     <lastmod>2026-02-02</lastmod>
-    <priority>0.6</priority>
+    <priority>0.75</priority>
   </url>
   <url>
     <loc>https://blog.sangwook.dev/posts/no-one-asked-library-bundler-01-concept/</loc>
     <lastmod>2026-02-02</lastmod>
-    <priority>0.6</priority>
+    <priority>0.75</priority>
   </url>
   <url>
     <loc>https://blog.sangwook.dev/posts/payment-system-architecture/</loc>
@@ -79,7 +79,7 @@
   <url>
     <loc>https://blog.sangwook.dev/posts/ai-opensource-contribution/</loc>
     <lastmod>2025-09-07</lastmod>
-    <priority>0.6</priority>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://blog.sangwook.dev/posts/feconf-2025-lightning-speaker/</loc>
@@ -89,12 +89,12 @@
   <url>
     <loc>https://blog.sangwook.dev/posts/nodejs-contribution/</loc>
     <lastmod>2025-08-10</lastmod>
-    <priority>0.6</priority>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://blog.sangwook.dev/posts/nextjs-contributor/</loc>
     <lastmod>2025-08-05</lastmod>
-    <priority>0.6</priority>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://blog.sangwook.dev/posts/react-component-context-api-dropzone/</loc>
@@ -154,7 +154,7 @@
   <url>
     <loc>https://blog.sangwook.dev/posts/first-open-source-contribution/</loc>
     <lastmod>2025-04-22</lastmod>
-    <priority>0.6</priority>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://blog.sangwook.dev/posts/aws-ecs-rollback/</loc>

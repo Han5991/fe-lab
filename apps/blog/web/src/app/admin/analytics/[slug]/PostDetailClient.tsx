@@ -66,6 +66,7 @@ function PostDetailContent() {
     endDate,
     setEndDate,
     filteredTrends,
+    autoFellBackToAll,
   } = useDateFilter(post.trends);
 
   const trendData = filteredTrends.map(d => {
@@ -467,15 +468,34 @@ function PostDetailContent() {
             gap: '1rem',
           })}
         >
-          <h3
+          <div
             className={css({
-              fontSize: '1.125rem',
-              fontWeight: 'bold',
-              color: '#111827',
+              display: 'flex',
+              alignItems: 'baseline',
+              gap: '0.75rem',
+              flexWrap: 'wrap',
             })}
           >
-            📈 일별 조회수 추이
-          </h3>
+            <h3
+              className={css({
+                fontSize: '1.125rem',
+                fontWeight: 'bold',
+                color: '#111827',
+              })}
+            >
+              📈 일별 조회수 추이
+            </h3>
+            {autoFellBackToAll && (
+              <span
+                className={css({
+                  fontSize: '0.75rem',
+                  color: '#9ca3af',
+                })}
+              >
+                최근 30일 데이터가 없어 전체 기간으로 표시 중
+              </span>
+            )}
+          </div>
           <DateRangeControls
             filterType={filterType}
             setFilterType={setFilterType}

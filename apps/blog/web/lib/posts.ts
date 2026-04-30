@@ -15,6 +15,7 @@ export {
   getAllPostSummaries,
   getAllPostsIncludingHidden,
   getPostBySlug,
+  getPostBySlugIncludingHidden,
   getAllPostSlugs,
   getAdjacentPosts,
   getSeriesAdjacentPosts,
