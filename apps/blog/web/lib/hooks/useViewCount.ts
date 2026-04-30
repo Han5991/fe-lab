@@ -3,7 +3,7 @@ import { client } from '../client';
 
 const VIEW_COOLDOWN_HOURS = 6;
 
-export const useViewCount = (slug: string) => {
+export const useViewCount = (slug: string | null) => {
   useEffect(() => {
     if (!slug) return;
 

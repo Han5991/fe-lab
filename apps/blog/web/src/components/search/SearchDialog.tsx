@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { css } from '@design-system/ui-lib/css';
-import { Search, X } from 'lucide-react';
+import { Search, X, Clock } from 'lucide-react';
+import { getRecentViews, type RecentView } from '@/lib/hooks/useRecentViews';
 
 interface SearchPost {
   slug: string;
@@ -12,6 +13,46 @@ interface SearchPost {
   excerpt: string;
   tags: string[];
   series: string | null;
+  contentPreview?: string;
+}
+
+function escapeRegex(str: string): string {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function highlight(text: string, query: string): ReactNode {
+  if (!query.trim() || !text) return text;
+  const regex = new RegExp(`(${escapeRegex(query)})`, 'gi');
+  const parts = text.split(regex);
+  return parts.map((part, i) =>
+    regex.test(part) ? (
+      <mark
+        key={i}
+        className={css({
+          bg: 'amber.100',
+          color: 'amber.900',
+          px: '0.5',
+          rounded: 'sm',
+        })}
+      >
+        {part}
+      </mark>
+    ) : (
+      <span key={i}>{part}</span>
+    ),
+  );
+}
+
+function pickContentSnippet(content: string, query: string, radius = 60): string {
+  if (!content) return '';
+  if (!query.trim()) return content.slice(0, 140);
+  const idx = content.toLowerCase().indexOf(query.toLowerCase());
+  if (idx === -1) return content.slice(0, 140);
+  const start = Math.max(0, idx - radius);
+  const end = Math.min(content.length, idx + query.length + radius);
+  const prefix = start > 0 ? '…' : '';
+  const suffix = end < content.length ? '…' : '';
+  return `${prefix}${content.slice(start, end)}${suffix}`;
 }
 
 export const SearchDialog = () => {
@@ -20,18 +61,39 @@ export const SearchDialog = () => {
   const [posts, setPosts] = useState<SearchPost[]>([]);
   const [filteredPosts, setFilteredPosts] = useState<SearchPost[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [recentViews, setRecentViews] = useState<RecentView[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
-  // 다이얼로그 열릴 때 데이터 로드 (Lazy Load)
+  const showRecentViews = !query.trim() && recentViews.length > 0;
+  const recentAsPosts = useMemo<SearchPost[]>(() => {
+    if (!showRecentViews) return [];
+    return recentViews.map(rv => {
+      const found = posts.find(p => p.slug === rv.slug);
+      return (
+        found ?? {
+          slug: rv.slug,
+          title: rv.title,
+          date: null,
+          excerpt: '',
+          tags: [],
+          series: null,
+        }
+      );
+    });
+  }, [showRecentViews, recentViews, posts]);
+
+  // 다이얼로그 열릴 때 데이터 로드 (Lazy Load) + 최근 본 글 갱신
   useEffect(() => {
-    if (isOpen && posts.length === 0) {
+    if (!isOpen) return;
+    if (posts.length === 0) {
       fetch('/search-index.json')
         .then(res => res.json())
         .then((data: SearchPost[]) => setPosts(data))
         .catch(err => console.error('Failed to load search index:', err));
     }
+    setRecentViews(getRecentViews());
   }, [isOpen]);
 
   // Cmd+K / Ctrl+K 단축키
@@ -67,7 +129,7 @@ export const SearchDialog = () => {
   // 검색 필터링
   useEffect(() => {
     if (!query.trim()) {
-      setFilteredPosts(posts.slice(0, 10));
+      setFilteredPosts(recentAsPosts.length > 0 ? recentAsPosts : posts.slice(0, 10));
       setSelectedIndex(0);
       return;
     }
@@ -78,11 +140,13 @@ export const SearchDialog = () => {
         post.title.toLowerCase().includes(lowerQuery) ||
         post.excerpt.toLowerCase().includes(lowerQuery) ||
         post.tags.some(tag => tag.toLowerCase().includes(lowerQuery)) ||
-        (post.series && post.series.toLowerCase().includes(lowerQuery)),
+        (post.series && post.series.toLowerCase().includes(lowerQuery)) ||
+        (post.contentPreview &&
+          post.contentPreview.toLowerCase().includes(lowerQuery)),
     );
     setFilteredPosts(results.slice(0, 10));
     setSelectedIndex(0);
-  }, [query, posts]);
+  }, [query, posts, recentAsPosts]);
 
   const handleSelect = useCallback(
     (slug: string) => {
@@ -263,7 +327,6 @@ export const SearchDialog = () => {
 
           {/* 검색 결과 */}
           <div
-            ref={listRef}
             className={css({
               flex: 1,
               overflowY: 'auto',
@@ -271,90 +334,116 @@ export const SearchDialog = () => {
               WebkitOverflowScrolling: 'touch',
             })}
           >
-            {filteredPosts.length === 0 ? (
-              <p
+            {showRecentViews && (
+              <div
                 className={css({
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '2',
                   px: '4',
-                  py: '8',
-                  textAlign: 'center',
-                  color: 'gray.400',
-                  fontSize: 'sm',
+                  py: '2',
+                  fontSize: 'xs',
+                  fontWeight: 'semibold',
+                  color: 'gray.500',
+                  letterSpacing: 'wide',
+                  textTransform: 'uppercase',
                 })}
               >
-                {query ? '검색 결과가 없습니다' : '포스트를 검색해보세요'}
-              </p>
-            ) : (
-              filteredPosts.map((post, index) => (
-                <button
-                  key={post.slug}
-                  onClick={() => handleSelect(post.slug)}
+                <Clock size={12} /> 최근 본 글
+              </div>
+            )}
+            <div ref={listRef}>
+              {filteredPosts.length === 0 ? (
+                <p
                   className={css({
-                    display: 'block',
-                    w: 'full',
-                    textAlign: 'left',
                     px: '4',
-                    py: { base: '4', md: '3' },
-                    cursor: 'pointer',
-                    bg: index === selectedIndex ? 'blue.50' : 'transparent',
-                    _hover: { bg: 'gray.50' },
-                    _active: { bg: 'blue.50' },
-                    transition: 'background 0.1s',
-                    border: 'none',
-                    borderBottomWidth: { base: '1px', md: '0' },
-                    borderColor: 'gray.50',
+                    py: '8',
+                    textAlign: 'center',
+                    color: 'gray.400',
+                    fontSize: 'sm',
                   })}
                 >
-                  <p
-                    className={css({
-                      fontSize: 'sm',
-                      fontWeight: 'medium',
-                      color: 'gray.900',
-                      lineClamp: 1,
-                    })}
-                  >
-                    {post.title}
-                  </p>
-                  <p
-                    className={css({
-                      fontSize: 'xs',
-                      color: 'gray.500',
-                      mt: '1',
-                      lineClamp: 1,
-                    })}
-                  >
-                    {post.date && <span>{post.date} · </span>}
-                    {post.series && <span>📚 {post.series} · </span>}
-                    {post.excerpt}
-                  </p>
-                  {post.tags.length > 0 && (
-                    <div
+                  {query ? '검색 결과가 없습니다' : '포스트를 검색해보세요'}
+                </p>
+              ) : (
+                filteredPosts.map((post, index) => {
+                  const snippet =
+                    query.trim() && post.contentPreview
+                      ? pickContentSnippet(post.contentPreview, query)
+                      : post.excerpt;
+                  return (
+                    <button
+                      key={post.slug}
+                      onClick={() => handleSelect(post.slug)}
                       className={css({
-                        display: 'flex',
-                        gap: '1',
-                        mt: '1.5',
-                        flexWrap: 'wrap',
+                        display: 'block',
+                        w: 'full',
+                        textAlign: 'left',
+                        px: '4',
+                        py: { base: '4', md: '3' },
+                        cursor: 'pointer',
+                        bg: index === selectedIndex ? 'blue.50' : 'transparent',
+                        _hover: { bg: 'gray.50' },
+                        _active: { bg: 'blue.50' },
+                        transition: 'background 0.1s',
+                        border: 'none',
+                        borderBottomWidth: { base: '1px', md: '0' },
+                        borderColor: 'gray.50',
                       })}
                     >
-                      {post.tags.slice(0, 3).map(tag => (
-                        <span
-                          key={tag}
+                      <p
+                        className={css({
+                          fontSize: 'sm',
+                          fontWeight: 'medium',
+                          color: 'gray.900',
+                          lineClamp: 1,
+                        })}
+                      >
+                        {highlight(post.title, query)}
+                      </p>
+                      <p
+                        className={css({
+                          fontSize: 'xs',
+                          color: 'gray.500',
+                          mt: '1',
+                          lineClamp: 2,
+                        })}
+                      >
+                        {post.date && <span>{post.date} · </span>}
+                        {post.series && <span>📚 {post.series} · </span>}
+                        {highlight(snippet, query)}
+                      </p>
+                      {post.tags.length > 0 && (
+                        <div
                           className={css({
-                            fontSize: '2xs',
-                            px: '1.5',
-                            py: '0.5',
-                            bg: 'gray.100',
-                            color: 'gray.600',
-                            rounded: 'md',
+                            display: 'flex',
+                            gap: '1',
+                            mt: '1.5',
+                            flexWrap: 'wrap',
                           })}
                         >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </button>
-              ))
-            )}
+                          {post.tags.slice(0, 3).map(tag => (
+                            <span
+                              key={tag}
+                              className={css({
+                                fontSize: '2xs',
+                                px: '1.5',
+                                py: '0.5',
+                                bg: 'gray.100',
+                                color: 'gray.600',
+                                rounded: 'md',
+                              })}
+                            >
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </button>
+                  );
+                })
+              )}
+            </div>
           </div>
 
           {/* 하단 힌트 — 데스크탑만 */}

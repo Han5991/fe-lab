@@ -11,6 +11,7 @@ import { SsgoiTransition } from '@ssgoi/react';
 import type { PostData } from '@/lib/posts';
 import GiscusComments from '@/src/components/GiscusComments';
 import { useViewCount } from '@/lib/hooks/useViewCount';
+import { useRecordRecentView } from '@/lib/hooks/useRecentViews';
 import { ReadingProgressBar } from '@/src/components/mobile/ReadingProgressBar';
 import { BackToTop } from '@/src/components/mobile/BackToTop';
 import { MobileTOC } from '@/src/components/mobile/MobileTOC';
@@ -18,15 +19,21 @@ import { ShareButton } from '@/src/components/mobile/ShareButton';
 import { DesktopTOC } from '@/src/components/desktop/DesktopTOC';
 import { CodeBlock } from '@/src/components/post/CodeBlock';
 import { MarkdownImage } from '@/src/components/post/MarkdownImage';
+import { Callout } from '@/src/components/post/markdown/Callout';
+import { Figure } from '@/src/components/post/markdown/Figure';
+import { FileTree } from '@/src/components/post/markdown/FileTree';
 
 export default function PostClient({
   post,
   thumbnailUrl,
+  previewMode = false,
 }: {
   post: PostData;
   thumbnailUrl?: string;
+  previewMode?: boolean;
 }) {
-  useViewCount(post.slug);
+  useViewCount(previewMode ? null : post.slug);
+  useRecordRecentView(previewMode ? null : post.slug, post.title);
   return (
     <>
       <ReadingProgressBar />
@@ -387,7 +394,10 @@ export default function PostClient({
                       </li>
                     );
                   },
-                }}
+                  callout: Callout,
+                  'file-tree': FileTree,
+                  figure: Figure,
+                } as React.ComponentProps<typeof ReactMarkdown>['components']}
               >
                 {post.content}
               </ReactMarkdown>

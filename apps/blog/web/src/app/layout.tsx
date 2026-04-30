@@ -10,7 +10,9 @@ export const metadata: Metadata = {
   metadataBase: new URL('https://blog.sangwook.dev'),
   alternates: {
     types: {
-      'application/rss+xml': '/rss.xml',
+      'application/rss+xml': [
+        { url: '/rss.xml', title: 'Frontend Lab RSS Feed' },
+      ],
     },
   },
   title: 'Frontend Lab | 프론트엔드 실험실',
@@ -80,6 +82,14 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="ko">
+      <head>
+        <link
+          rel="alternate"
+          type="application/rss+xml"
+          title="Frontend Lab RSS Feed"
+          href="/rss.xml"
+        />
+      </head>
       <body>
         <Providers>
           <Layout>{children}</Layout>

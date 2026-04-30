@@ -1,0 +1,8 @@
+title: 누가 시키지도 않았는데 번들러 만들기
+description: JavaScript 번들러를 처음부터 직접 만들어보는 시리즈
+order:
+  - no-one-asked-library-bundler-00-prologue
+  - no-one-asked-library-bundler-01-concept
+  - no-one-asked-library-bundler-02-ast-graph
+  - no-one-asked-library-bundler-03-bundling-scope
+  - no-one-asked-library-bundler-04-sourcemap
