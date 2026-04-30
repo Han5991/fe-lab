@@ -77,10 +77,9 @@ function parseArgs(argv: string[]): Options {
 }
 
 function todayKST(): string {
-  const now = new Date();
-  const kstMs = now.getTime() + 9 * 60 * 60 * 1000;
-  const kst = new Date(kstMs);
-  return kst.toISOString().split('T')[0];
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Seoul',
+  }).format(new Date());
 }
 
 function safeFilename(title: string): string {

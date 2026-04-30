@@ -212,14 +212,19 @@ function validateImageReferences(record: PostRecord, raw: string): Issue[] {
   return issues;
 }
 
+// 명시 slug가 없으면 파일경로(확장자 제거)를 기본 slug로 사용 — repository.ts의 rawSlug 규칙과 동일
+function deriveDefaultSlug(relPath: string): string {
+  return relPath.replace(/\.(md|mdx)$/, '');
+}
+
 function detectDuplicateSlugs(records: PostRecord[]): Issue[] {
   const slugMap = new Map<string, string[]>();
   for (const r of records) {
     const explicit = typeof r.data.slug === 'string' ? r.data.slug : null;
-    if (!explicit) continue;
-    const arr = slugMap.get(explicit) ?? [];
+    const effective = explicit ?? deriveDefaultSlug(r.relPath);
+    const arr = slugMap.get(effective) ?? [];
     arr.push(r.relPath);
-    slugMap.set(explicit, arr);
+    slugMap.set(effective, arr);
   }
 
   const issues: Issue[] = [];
@@ -231,7 +236,7 @@ function detectDuplicateSlugs(records: PostRecord[]): Issue[] {
         line: null,
         severity: 'error',
         rule: 'duplicate-slug',
-        message: `slug \`${slug}\`이(가) 다른 글과 중복됩니다: ${files.filter(f => f !== file).join(', ')}`,
+        message: `slug \`${slug}\`이(가) 다른 글과 충돌합니다 (명시 slug ↔ 파일명 기반 slug 포함 검사): ${files.filter(f => f !== file).join(', ')}`,
       });
     }
   }

@@ -86,6 +86,11 @@ pnpm check-types
 
 # Blog-specific commands
 pnpm blog-build  # Build blog application
+
+# 블로그 글쓰기 도구 (apps/blog/web 디렉토리에서 실행)
+pnpm new-post "글 제목" --series bundler --tags a,b      # 새 포스트 스캐폴딩
+pnpm new-post "예약글" --scheduled "2026-05-01T09:00+09:00"  # 예약 발행 글
+pnpm lint:posts                                          # frontmatter 검증 (필수 필드, 끊긴 이미지, 중복 slug 등)
 ```
 
 ## Key Design Patterns
@@ -213,24 +218,37 @@ The blog (`apps/blog/web/`) is a **statically generated (SSG) Next.js applicatio
 #### 콘텐츠 파이프라인
 
 1. **콘텐츠 작성**: `apps/blog/posts/` 디렉토리에 Markdown 파일 작성
+   - 새 포스트는 `pnpm new-post "제목"` 스캐폴딩 CLI로 시작 권장 (frontmatter 자동 생성)
    - Frontmatter: `title`, `date`, `slug`, `excerpt`, `thumbnail`, `tags`, `published`, `status`, `scheduledDate`
-   - 폴더 구조로 시리즈(series) 자동 분류
+   - 폴더 구조로 시리즈(series) 자동 분류 — `posts/{series}/` 폴더에 `_series.yml`을 두면 표시명/설명/order 정의 가능
 2. **콘텐츠 공개 제어** (`isPostVisible()` 헬퍼로 판단):
    - `published: true` (기존 방식, 하위호환)
    - `status: 'published'` — 공개
    - `status: 'draft'` — 비공개 (빌드에서 제외)
    - `status: 'scheduled'` — **주의**: 반드시 `scheduledDate` (예: `scheduledDate: '2026-03-16T09:00:00+09:00'`) 값을 함께 명시해야 합니다. 누락 시 항상 비공개 처리됩니다.
    - `isPostVisible()` 로직은 `posts.ts`, `generate-sitemap.mjs`, `generate-rss.mjs`에 동일하게 적용
-3. **빌드 전 처리** (`prebuild`):
-   - `sync-posts.mjs`: 포스트 디렉토리의 이미지/미디어 파일을 `public/posts/`에 복사
-   - `generate-sitemap.mjs`: 발행된 글 목록으로 `sitemap.xml` 생성
-   - `generate-rss.mjs`: RSS 피드(`rss.xml`) 생성
-   - `generate-search-index.ts`: 검색용 JSON 인덱스(`search-index.json`) 생성
+3. **빌드 전 처리** (`prebuild` → `scripts/build-content.ts` 통합 진입점):
+   - `validate-posts.ts`: frontmatter 필수 필드, `scheduled` ↔ `scheduledDate` 정합성, 끊긴 이미지, 중복 slug 검사 (prebuild에서만 실행, predev에서는 skip)
+   - `sync-posts.mjs`: 포스트 디렉토리의 이미지/미디어 파일을 `public/posts/`에 복사 (mtime 기반 incremental — 변경분만 복사)
+   - `generate-sitemap.ts`: 발행된 글 목록으로 `sitemap.xml` 생성
+   - `generate-rss.ts`: RSS 피드(`rss.xml`) 생성
+   - `generate-search-index.ts`: 검색용 JSON 인덱스(`search-index.json`) 생성 — 본문 미리보기(`contentPreview`) 포함
+   - `generate-llms-full.ts`: AI/LLM용 통합 텍스트(`llms-full.txt`) 생성
 4. **정적 빌드**: `next build` → `out/` 디렉토리에 정적 파일 생성
 5. **배포**: GitHub Actions → GitHub Pages
    - `main` 브랜치 push 시 자동 빌드
    - **매일 KST 09:00 (UTC 00:00) cron 자동 빌드** — 예약 발행 글 공개용
    - 수동 트리거(`workflow_dispatch`) 지원
+
+#### 글쓰기 도구 (Authoring DX)
+
+| 도구 | 설명 |
+| :--- | :--- |
+| `pnpm new-post "제목"` | 새 포스트 스캐폴딩. `--series`, `--tags`, `--scheduled`, `--slug`, `--status` 옵션 지원. 한글 제목/파일명 그대로 사용 가능 |
+| `pnpm lint:posts` | frontmatter 검증. 정책: frontmatter delimiter(`---`)가 없는 파일은 메타 노트로 간주하고 조용히 skip |
+| `/preview/[...slug]` 라우트 | dev 환경에서만 동작하는 draft·scheduled 글 미리보기. prod 빌드는 placeholder 1개(`__disabled__`) + 즉시 `notFound`로 차단 |
+| `_series.yml` | 시리즈 폴더에 두면 시리즈 nav가 `order` 기준 chronological 정렬 + 표시명을 폴더명 대신 사용 |
+| `<callout type="warning\|info\|tip\|danger">` | 마크다운 헬퍼 컴포넌트 (raw HTML로 작성). `<figure>` + `<figcaption>`, `<file-tree>`도 지원 |
 
 #### 클라이언트 사이드 기능 (런타임)
 
@@ -267,6 +285,8 @@ The blog (`apps/blog/web/`) is a **statically generated (SSG) Next.js applicatio
 | `.env.local`                        | 로컬 개발용 환경변수 (GA, Supabase local 등) |
 | `supabase/config.toml`              | 로컬 Supabase 설정 (Auth, DB, Storage 등)    |
 | `.github/workflows/deploy-blog.yml` | CI/CD 배포 워크플로우                        |
+| `apps/blog/posts/{series}/_series.yml` | (선택) 시리즈 표시명·설명·order 메타     |
+| `apps/blog/web/scripts/build-content.ts` | predev/prebuild 통합 진입점 (validate/sync/sitemap/rss/search/llms) |
 
 ## Prerequisites
 

@@ -1,4 +1,4 @@
-import { Children } from 'react';
+import { Children, isValidElement } from 'react';
 import type { ReactNode } from 'react';
 import { css } from '@design-system/ui-lib/css';
 
@@ -9,18 +9,12 @@ interface FileTreeProps {
 function extractText(children: ReactNode): string {
   if (typeof children === 'string') return children;
   if (typeof children === 'number') return String(children);
-  if (!children) return '';
+  if (children == null || typeof children === 'boolean') return '';
   if (Array.isArray(children)) {
     return children.map(extractText).join('');
   }
-  if (
-    typeof children === 'object' &&
-    'props' in children &&
-    children.props &&
-    typeof children.props === 'object' &&
-    'children' in children.props
-  ) {
-    return extractText((children.props as { children: ReactNode }).children);
+  if (isValidElement<{ children?: ReactNode }>(children)) {
+    return extractText(children.props.children);
   }
   return '';
 }
@@ -31,16 +25,18 @@ interface Line {
   isDir: boolean;
 }
 
+// 2-space 들여쓰기 컨벤션 (탭은 2-space 단위로 정규화)
 function parseLines(raw: string): Line[] {
   return raw
     .split('\n')
     .map(line => line.replace(/\s+$/, ''))
     .filter(line => line.trim().length > 0)
     .map(line => {
-      const indentMatch = line.match(/^(\s*)/);
+      const normalized = line.replace(/^\t+/, m => '  '.repeat(m.length));
+      const indentMatch = normalized.match(/^( *)/);
       const indent = indentMatch ? indentMatch[1].length : 0;
       const depth = Math.floor(indent / 2);
-      const trimmed = line.trim();
+      const trimmed = normalized.trim();
       const isDir = trimmed.endsWith('/');
       const name = isDir ? trimmed.slice(0, -1) : trimmed;
       return { depth, name, isDir };
