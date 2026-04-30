@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { css } from '@design-system/ui-lib/css';
 
 export type FilterType = 'all' | '7days' | '30days' | 'custom';
@@ -8,9 +8,35 @@ export type FilterType = 'all' | '7days' | '30days' | 'custom';
 export function useDateFilter(
   trends: { view_date: string; view_count: number }[],
 ) {
-  const [filterType, setFilterType] = useState<FilterType>('30days');
+  const [filterType, setFilterTypeRaw] = useState<FilterType>('30days');
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
+  // 30일 default가 빈 결과를 만들 때 자동으로 'all'로 fallback했는지 표시
+  const [autoFellBackToAll, setAutoFellBackToAll] = useState(false);
+
+  const setFilterType = (val: FilterType) => {
+    setFilterTypeRaw(val);
+    setAutoFellBackToAll(false);
+  };
+
+  // 데이터가 있는데 default 30일에 0건 매칭이면 'all'로 1회 자동 전환
+  useEffect(() => {
+    if (filterType !== '30days') return;
+    if (autoFellBackToAll) return;
+    if (!trends || trends.length === 0) return;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const cutoff = new Date(today);
+    cutoff.setDate(today.getDate() - 30);
+    const cutoffStr = cutoff.toISOString().split('T')[0];
+
+    const hasRecent = trends.some(t => t.view_date >= cutoffStr);
+    if (!hasRecent) {
+      setFilterTypeRaw('all');
+      setAutoFellBackToAll(true);
+    }
+  }, [trends, filterType, autoFellBackToAll]);
 
   const filteredTrends = useMemo(() => {
     if (!trends || trends.length === 0) return [];
@@ -52,6 +78,7 @@ export function useDateFilter(
     endDate,
     setEndDate,
     filteredTrends,
+    autoFellBackToAll,
   };
 }
 
