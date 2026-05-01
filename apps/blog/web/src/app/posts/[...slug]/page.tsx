@@ -46,12 +46,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title: `${post.title} | Frontend Lab`,
     description,
     alternates: {
-      canonical: `/posts/${slug}`,
+      canonical: `/posts/${slug}/`,
     },
     openGraph: {
       title: post.title,
       description,
-      url: `/posts/${slug}`,
+      url: `/posts/${slug}/`,
       siteName: 'Frontend Lab Blog',
       type: 'article',
       publishedTime: post.date || undefined,

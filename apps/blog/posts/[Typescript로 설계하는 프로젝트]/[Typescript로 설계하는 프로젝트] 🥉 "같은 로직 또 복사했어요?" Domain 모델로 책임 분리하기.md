@@ -22,7 +22,7 @@ slug: 'typescript-project-domain-design'
 
 **이런 상황, 어떻게 해결하시겠어요?**
 
-[지난 글](https://blog.sangwook.dev/posts/typescript-project-service-di-design)에서는 Service Layer를 통해 비즈니스
+[지난 글](https://blog.sangwook.dev/posts/typescript-project-service-di-design/)에서는 Service Layer를 통해 비즈니스
 로직을 분리하고 재사용 가능한 구조를 만드는 방법을 다뤘습니다.
 
 하지만 실제 프로젝트에서는 이런 상황을 만나게 됩니다.
@@ -117,7 +117,7 @@ export const canUserUploadFile = (user: User): boolean => {
 >
 > **[나]**: 지금까지 우리가 HTTP API 설계, Service Layer 설계를 하면서 계속 `@/shared`에서 타입을 import 해왔잖아요?
 >
-> **[독자]**: 맞아요! [HTTP 설계 글](https://blog.sangwook.dev/posts/typescript-project-api-design)에서 이런 코드 봤죠.
+> **[독자]**: 맞아요! [HTTP 설계 글](https://blog.sangwook.dev/posts/typescript-project-api-design/)에서 이런 코드 봤죠.
 >
 > ```typescript
 > // 📁 apps/react/src/server/user/types.ts
@@ -157,7 +157,7 @@ export const canUserUploadFile = (user: User): boolean => {
 
 이런 문제를 해결하기 위해 `shared/domain` 디렉토리에 핵심 엔티티들을 중앙 집중화하여 정의합니다.  
 이를 통해 모든 레이어에서 동일한 타입을 사용하게 되어 일관성을 보장할 수 있습니다.  
-> [Service Layer 글](https://blog.sangwook.dev/posts/typescript-project-service-di-design)에서 보았듯이, Service
+> [Service Layer 글](https://blog.sangwook.dev/posts/typescript-project-service-di-design/)에서 보았듯이, Service
 > 레이어에서 비즈니스 로직을 처리할 때도 중앙 집중화된 타입을 활용하여 로직의 재사용성과 테스트 용이성을 확보할 수 있습니다.
 
 > #### 여러 레이어에서의 타입 활용 패턴
@@ -561,11 +561,11 @@ export class User {
 
 ### 🔗 관련 시리즈
 
-1. [당신의 Type, 어디까지 연결되어 있나요?](https://blog.sangwook.dev/posts/typescript-project-design)
-2. [Type 설계의 시작: 견고한 서버 API Type 설계하기](https://blog.sangwook.dev/posts/typescript-project-api-design)
-3. [Type 설계의 시작: 견고한 서버 API Type 설계하기 With Di](https://blog.sangwook.dev/posts/typescript-project-api-di-design)
-4. ["원래 있던 기능이니 금방 하시죠?" 당하지 않는 Service Layer 설계 전략](https://blog.sangwook.dev/posts/typescript-project-service-design)
-5. ["원래 있던 기능이니 금방 하시죠?" 당하지 않는 Service Layer 설계 전략 With Di](https://blog.sangwook.dev/posts/typescript-project-service-di-design)
+1. [당신의 Type, 어디까지 연결되어 있나요?](https://blog.sangwook.dev/posts/typescript-project-design/)
+2. [Type 설계의 시작: 견고한 서버 API Type 설계하기](https://blog.sangwook.dev/posts/typescript-project-api-design/)
+3. [Type 설계의 시작: 견고한 서버 API Type 설계하기 With Di](https://blog.sangwook.dev/posts/typescript-project-api-di-design/)
+4. ["원래 있던 기능이니 금방 하시죠?" 당하지 않는 Service Layer 설계 전략](https://blog.sangwook.dev/posts/typescript-project-service-design/)
+5. ["원래 있던 기능이니 금방 하시죠?" 당하지 않는 Service Layer 설계 전략 With Di](https://blog.sangwook.dev/posts/typescript-project-service-di-design/)
 6. ["같은 로직 또 복사했어요?" Domain 모델로 책임 분리하기](현재 글)
 
 ---
