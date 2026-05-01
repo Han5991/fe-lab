@@ -122,7 +122,7 @@ export function PostAccordion({ post }: Props) {
             <BarChart3 size={14} />
           </Link>
           <Link
-            href={`/posts/${encodePostSlug(post.slug)}`}
+            href={`/posts/${encodePostSlug(post.slug)}/`}
             target="_blank"
             onClick={e => e.stopPropagation()}
             className={css({

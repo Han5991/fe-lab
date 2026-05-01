@@ -127,7 +127,7 @@ function PostDetailContent() {
             {post.title}
           </h2>
           <Link
-            href={`/posts/${encodePostSlug(post.slug)}`}
+            href={`/posts/${encodePostSlug(post.slug)}/`}
             target="_blank"
             onClick={e => e.stopPropagation()}
             className={css({

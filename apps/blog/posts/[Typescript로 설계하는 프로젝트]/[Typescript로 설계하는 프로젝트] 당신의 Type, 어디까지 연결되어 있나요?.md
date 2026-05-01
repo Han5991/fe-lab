@@ -276,13 +276,13 @@ export const UserProfile: React.FC<UserProfileProps> = ({ userId }) => {
 >
 > - **대상**: 개인 프로젝트, 프로토타입, 소규모 팀 (2-3명)
 > - **특징**: 빠른 구현, 낮은 진입장벽, 직관적
-> - **👉 [함수형 접근 버전 보기](https://blog.sangwook.dev/posts/typescript-project-api-design)**
+> - **👉 [함수형 접근 버전 보기](https://blog.sangwook.dev/posts/typescript-project-api-design/)**
 >
 > ### 🏗️ 확장 가능한 DI 기반 접근 (현재 글)
 >
 > - **대상**: 팀 프로젝트, 장기 운영, 복잡한 요구사항
 > - **특징**: 테스트 용이성, 환경별 설정, 유지보수성
-> - **👉 [DI 기반 버전 보기](https://blog.sangwook.dev/posts/typescript-project-api-di-design)**
+> - **👉 [DI 기반 버전 보기](https://blog.sangwook.dev/posts/typescript-project-api-di-design/)**
 >
 > **🤔 어떤 걸 선택해야 할지 모르겠다면?**
 >
@@ -294,8 +294,8 @@ export const UserProfile: React.FC<UserProfileProps> = ({ userId }) => {
 ### 🔗 관련 시리즈
 
 1. [당신의 Type, 어디까지 연결되어 있나요?](현재 글)
-2. [Type 설계의 시작: 견고한 서버 API Type 설계하기](https://blog.sangwook.dev/posts/typescript-project-api-design)
-3. [Type 설계의 시작: 견고한 서버 API Type 설계하기 With Di](https://blog.sangwook.dev/posts/typescript-project-api-di-design)
-4. ["원래 있던 기능이니 금방 하시죠?" 당하지 않는 Service Layer 설계 전략](https://blog.sangwook.dev/posts/typescript-project-service-design)
-5. ["원래 있던 기능이니 금방 하시죠?" 당하지 않는 Service Layer 설계 전략 With Di](https://blog.sangwook.dev/posts/typescript-project-service-di-design)
-6. ["같은 로직 또 복사했어요?" Domain 모델로 책임 분리하기](https://blog.sangwook.dev/posts/typescript-project-domain-design)
+2. [Type 설계의 시작: 견고한 서버 API Type 설계하기](https://blog.sangwook.dev/posts/typescript-project-api-design/)
+3. [Type 설계의 시작: 견고한 서버 API Type 설계하기 With Di](https://blog.sangwook.dev/posts/typescript-project-api-di-design/)
+4. ["원래 있던 기능이니 금방 하시죠?" 당하지 않는 Service Layer 설계 전략](https://blog.sangwook.dev/posts/typescript-project-service-design/)
+5. ["원래 있던 기능이니 금방 하시죠?" 당하지 않는 Service Layer 설계 전략 With Di](https://blog.sangwook.dev/posts/typescript-project-service-di-design/)
+6. ["같은 로직 또 복사했어요?" Domain 모델로 책임 분리하기](https://blog.sangwook.dev/posts/typescript-project-domain-design/)

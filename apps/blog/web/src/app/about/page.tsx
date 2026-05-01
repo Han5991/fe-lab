@@ -230,7 +230,7 @@ export default function AboutPage() {
                   ))}
                 </div>
                 <Link
-                  href="/posts/2025-retrospect"
+                  href="/posts/2025-retrospect/"
                   className={css({
                     fontSize: 'xs',
                     color: 'ink.500',
