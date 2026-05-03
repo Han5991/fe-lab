@@ -3,7 +3,7 @@ import {
   getPostBySlug,
   getAdjacentPosts,
   getSeriesAdjacentPosts,
-} from '@/lib/posts';
+} from '@/domain/post';
 import {
   resolveThumbnailUrl,
   resolveAbsoluteThumbnailUrl,

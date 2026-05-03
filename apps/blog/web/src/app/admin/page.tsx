@@ -3,8 +3,8 @@
 import { Suspense } from 'react';
 import { LogOut, BarChart3, FileText } from 'lucide-react';
 import { css } from '@design-system/ui-lib/css';
-import { useAdminDashboardData } from '@/lib/hooks/useAdminViews';
-import { useAdminLogout } from '@/lib/hooks/useAdminLogout';
+import { useAdminDashboardData } from '@/src/hooks/useAdminViews';
+import { useAdminLogout } from '@/src/hooks/useAdminLogout';
 import { LoadingPlaceholder } from '@/src/components/shared/LoadingPlaceholder';
 import Link from 'next/link';
 import { encodePostSlug } from '@/domain/post/utils';

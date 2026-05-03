@@ -1,8 +1,8 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { PostStatDetail } from '@/lib/hooks/useAdminViews';
-import { computeBriefStats } from '@/lib/hooks/usePostDetailStats';
+import { PostStatDetail } from '@/src/hooks/useAdminViews';
+import { computeBriefStats } from '@/src/hooks/usePostDetailStats';
 import { css } from '@design-system/ui-lib/css';
 import {
   ChevronDown,

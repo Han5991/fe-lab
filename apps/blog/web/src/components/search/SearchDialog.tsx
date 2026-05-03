@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback, useMemo, type ReactNode } fro
 import { useRouter } from 'next/navigation';
 import { css } from '@design-system/ui-lib/css';
 import { Search, X, Clock } from 'lucide-react';
-import { getRecentViews, type RecentView } from '@/lib/hooks/useRecentViews';
+import { getRecentViews, type RecentView } from '@/src/hooks/useRecentViews';
 
 interface SearchPost {
   slug: string;

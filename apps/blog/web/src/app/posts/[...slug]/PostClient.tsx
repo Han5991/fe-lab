@@ -8,10 +8,10 @@ import rehypeSlug from 'rehype-slug';
 import { css } from '@design-system/ui-lib/css';
 import { SsgoiTransition } from '@ssgoi/react';
 
-import type { PostData } from '@/lib/posts';
+import type { PostData } from '@/domain/post';
 import GiscusComments from '@/src/components/GiscusComments';
-import { useViewCount } from '@/lib/hooks/useViewCount';
-import { useRecordRecentView } from '@/lib/hooks/useRecentViews';
+import { useViewCount } from '@/src/hooks/useViewCount';
+import { useRecordRecentView } from '@/src/hooks/useRecentViews';
 import { ReadingProgressBar } from '@/src/components/mobile/ReadingProgressBar';
 import { BackToTop } from '@/src/components/mobile/BackToTop';
 import { MobileTOC } from '@/src/components/mobile/MobileTOC';
