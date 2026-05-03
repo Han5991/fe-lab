@@ -3,7 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { SITE_URL } from './lib/constants';
 import { getAllPosts } from './domain/post/service';
-import { toEncodedSlug } from './scripts/utils';
+import { encodePostSlug } from './domain/post/utils';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -53,7 +53,7 @@ const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
           : today;
       return `
   <url>
-    <loc>${SITE_URL}/posts/${toEncodedSlug(post.slug)}/</loc>
+    <loc>${SITE_URL}/posts/${encodePostSlug(post.slug)}/</loc>
     <lastmod>${lastmod}</lastmod>
     <priority>${getPostPriority(post)}</priority>
   </url>`;

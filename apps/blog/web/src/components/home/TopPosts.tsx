@@ -1,8 +1,8 @@
 'use client';
 
 import { css } from '@design-system/ui-lib/css';
-import { client } from '@/lib/client';
-import type { PostSummary } from '@/lib/posts';
+import { getTopPosts } from '@/domain/analytics/repository';
+import type { PostSummary } from '@/domain/post/types';
 import { PostCard } from './PostCard';
 import { useSuspenseQuery } from '@tanstack/react-query';
 
@@ -66,16 +66,8 @@ interface RankedPost extends PostSummary {
 export function TopPosts({ posts }: TopPostsProps) {
   const { data: topPosts } = useSuspenseQuery({
     queryKey: ['top-posts'],
-    queryFn: async () => {
-      const { data } = await client
-        .from('post_views')
-        .select('slug, view_count')
-        .order('view_count', { ascending: false })
-        .limit(3);
-      return data;
-    },
+    queryFn: () => getTopPosts(3),
     select: data => {
-      if (data === null) return [];
       const postsBySlug = new Map(posts.map(p => [p.slug, p]));
       return data
         .map(view => {

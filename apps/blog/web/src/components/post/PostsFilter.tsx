@@ -5,25 +5,18 @@ import Link from 'next/link';
 import { css } from '@design-system/ui-lib/css';
 import { Search } from 'lucide-react';
 import { useQueryState, parseAsStringLiteral } from 'nuqs';
-import type { PostSummary } from '@/lib/posts';
+import type { PostSummary } from '@/domain/post/types';
 import { encodePostSlug } from '@/domain/post/utils';
+import {
+  filterGroupedEntries,
+  filterPostsByQuery,
+  groupPostsBySeries,
+  groupPostsByTags,
+} from '@/domain/post/filtering';
 
 interface PostsFilterProps {
   posts: PostSummary[];
 }
-
-const filterGroupedEntries = (
-  entries: [string, PostSummary[]][],
-  query: string,
-): [string, PostSummary[]][] => {
-  if (!query.trim()) return entries;
-  const q = query.toLowerCase();
-  return entries.filter(
-    ([name, items]) =>
-      name.toLowerCase().includes(q) ||
-      items.some(p => p.title.toLowerCase().includes(q)),
-  );
-};
 
 const TAB_KEYS = ['all', 'series', 'tags'] as const;
 type TabKey = (typeof TAB_KEYS)[number];
@@ -222,47 +215,20 @@ export const PostsFilter = ({ posts }: PostsFilterProps) => {
     [setActiveTab, setQuery],
   );
 
-  const filteredAll = useMemo(() => {
-    const q = query.toLowerCase().trim();
-    if (!q) return posts;
-    return posts.filter(
-      p =>
-        p.title.toLowerCase().includes(q) ||
-        (p.excerpt || '').toLowerCase().includes(q),
-    );
-  }, [posts, query]);
+  const filteredAll = useMemo(
+    () => filterPostsByQuery(posts, query),
+    [posts, query],
+  );
 
-  const seriesGroups = useMemo(() => {
-    const groups: Record<string, PostSummary[]> = {};
-    for (const p of posts) {
-      if (p.series) {
-        if (!groups[p.series]) groups[p.series] = [];
-        groups[p.series].push(p);
-      }
-    }
-    const entries = Object.entries(groups).sort((a, b) => {
-      const aDate = a[1][0]?.date || '';
-      const bDate = b[1][0]?.date || '';
-      return bDate.localeCompare(aDate);
-    });
-    return filterGroupedEntries(entries, query);
-  }, [posts, query]);
+  const seriesGroups = useMemo(
+    () => filterGroupedEntries(groupPostsBySeries(posts), query),
+    [posts, query],
+  );
 
-  const tagGroups = useMemo(() => {
-    const groups: Record<string, PostSummary[]> = {};
-    for (const p of posts) {
-      if (p.tags) {
-        for (const tag of p.tags) {
-          if (!groups[tag]) groups[tag] = [];
-          groups[tag].push(p);
-        }
-      }
-    }
-    const entries = Object.entries(groups).sort(
-      (a, b) => b[1].length - a[1].length,
-    );
-    return filterGroupedEntries(entries, query);
-  }, [posts, query]);
+  const tagGroups = useMemo(
+    () => filterGroupedEntries(groupPostsByTags(posts), query),
+    [posts, query],
+  );
 
   return (
     <>

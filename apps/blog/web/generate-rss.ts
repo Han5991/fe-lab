@@ -3,7 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { SITE_URL, SITE_NAME, SITE_DESCRIPTION } from './lib/constants';
 import { getAllPosts } from './domain/post/service';
-import { toEncodedSlug } from './scripts/utils';
+import { encodePostSlug } from './domain/post/utils';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -24,8 +24,8 @@ const rssItems = posts
   .map(
     post => `    <item>
       <title>${escapeXml(post.title)}</title>
-      <link>${SITE_URL}/posts/${toEncodedSlug(post.slug)}/</link>
-      <guid isPermaLink="true">${SITE_URL}/posts/${toEncodedSlug(post.slug)}/</guid>
+      <link>${SITE_URL}/posts/${encodePostSlug(post.slug)}/</link>
+      <guid isPermaLink="true">${SITE_URL}/posts/${encodePostSlug(post.slug)}/</guid>
       <pubDate>${post.date ? new Date(post.date).toUTCString() : new Date().toUTCString()}</pubDate>${post.excerpt ? `\n      <description>${escapeXml(post.excerpt)}</description>` : ''}
     </item>`,
   )

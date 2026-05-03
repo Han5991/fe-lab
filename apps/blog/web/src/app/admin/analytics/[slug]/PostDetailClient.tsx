@@ -24,7 +24,7 @@ import {
   Cell,
 } from 'recharts';
 import Link from 'next/link';
-import { usePostDetailStats } from '@/lib/hooks/usePostDetailStats';
+import { usePostDetailStats } from '@/src/hooks/usePostDetailStats';
 import { encodePostSlug } from '@/domain/post/utils';
 import {
   DateRangeControls,

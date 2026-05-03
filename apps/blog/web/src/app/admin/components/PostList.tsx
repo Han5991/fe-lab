@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useAdminDashboardData } from '@/lib/hooks/useAdminViews';
+import { useAdminDashboardData } from '@/src/hooks/useAdminViews';
 import { css } from '@design-system/ui-lib/css';
 import { PostAccordion } from './PostAccordion';
 import { RefreshCw } from 'lucide-react';

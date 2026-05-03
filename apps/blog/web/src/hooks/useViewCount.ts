@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { client } from '../client';
+import { incrementViewCount } from '@/domain/analytics/repository';
 
 const VIEW_COOLDOWN_HOURS = 6;
 
@@ -9,33 +9,20 @@ export const useViewCount = (slug: string | null) => {
 
     const viewedKey = `viewed_${slug.replace(/[^a-zA-Z0-9-]/g, '_')}`;
 
-    // Check if the cookie exists
     const hasViewed = document.cookie
       .split('; ')
       .some(row => row.startsWith(`${viewedKey}=`));
 
     if (hasViewed) return;
 
-    const incrementView = async () => {
-      try {
-        const { error } = await client.rpc('increment_view_count', {
-          slug_input: slug,
-        });
-
-        if (error) {
-          console.error('Failed to increment view count:', error);
-          return;
-        }
-
-        // Set cookie with 6-hour expiration
+    incrementViewCount(slug)
+      .then(() => {
         const date = new Date();
         date.setTime(date.getTime() + VIEW_COOLDOWN_HOURS * 60 * 60 * 1000);
         document.cookie = `${viewedKey}=true; expires=${date.toUTCString()}; path=/`;
-      } catch (err) {
-        console.error('Error in useViewCount:', err);
-      }
-    };
-
-    incrementView();
+      })
+      .catch(err => {
+        console.error('Failed to increment view count:', err);
+      });
   }, [slug]);
 };

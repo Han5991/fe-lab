@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { css } from '@design-system/ui-lib/css';
-import type { PostNavItem } from '@/lib/posts';
+import type { PostNavItem } from '@/domain/post';
 import { encodePostSlug } from '@/domain/post/utils';
 
 interface PostNavigationProps {

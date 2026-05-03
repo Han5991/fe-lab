@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import {
   getAllPostsIncludingHidden,
   getPostBySlugIncludingHidden,
-} from '@/lib/posts';
+} from '@/domain/post';
 import { resolveThumbnailUrl } from '@/domain/post/thumbnail';
 import PostClient from '@/src/app/posts/[...slug]/PostClient';
 import { PreviewBanner } from '@/src/components/preview/PreviewBanner';

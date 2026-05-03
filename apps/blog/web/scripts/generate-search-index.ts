@@ -1,6 +1,6 @@
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { getAllPosts, getAllPostsIncludingHidden } from '../lib/posts';
+import { getAllPosts, getAllPostsIncludingHidden } from '../domain/post';
 
 const outputPath = join(process.cwd(), 'public', 'search-index.json');
 

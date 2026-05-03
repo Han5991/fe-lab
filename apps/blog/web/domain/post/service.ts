@@ -11,20 +11,8 @@ import type {
 export type { PostData, PostNavItem, PostStatus, PostSummary } from './types';
 
 function toPostSummary(post: PostData): PostSummary {
-  return {
-    slug: post.slug,
-    originalSlug: post.originalSlug,
-    relativeDir: post.relativeDir,
-    title: post.title,
-    date: post.date,
-    updatedAt: post.updatedAt,
-    excerpt: post.excerpt,
-    thumbnail: post.thumbnail,
-    tags: post.tags,
-    series: post.series,
-    status: post.status,
-    scheduledDate: post.scheduledDate,
-  };
+  const { content: _content, ...summary } = post;
+  return summary;
 }
 
 // ---------- Public API ----------
