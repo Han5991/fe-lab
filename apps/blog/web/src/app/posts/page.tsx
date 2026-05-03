@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { getAllPostSummaries } from '@/lib/posts';
+import { getAllPostSummaries } from '@/domain/post';
 import { SITE_URL } from '@/lib/constants';
 import { css } from '@design-system/ui-lib/css';
 import { SsgoiTransition } from '@ssgoi/react';

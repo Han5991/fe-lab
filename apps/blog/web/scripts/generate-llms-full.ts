@@ -1,6 +1,6 @@
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { getAllPosts } from '../lib/posts';
+import { getAllPosts } from '../domain/post';
 
 const SITE_URL = 'https://blog.sangwook.dev';
 const outputPath = join(process.cwd(), 'public', 'llms-full.txt');

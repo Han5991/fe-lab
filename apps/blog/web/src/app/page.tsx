@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { css } from '@design-system/ui-lib/css';
 import { SsgoiTransition } from '@ssgoi/react';
-import { getAllPostSummaries } from '@/lib/posts';
+import { getAllPostSummaries } from '@/domain/post';
 import { TopPosts, TopPostsLoading } from '@/src/components/home/TopPosts';
 import { PostCard } from '@/src/components/home/PostCard';
 import type { Metadata } from 'next';
