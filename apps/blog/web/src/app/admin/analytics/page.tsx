@@ -1,14 +1,22 @@
 'use client';
 
 import { Suspense } from 'react';
+import dynamic from 'next/dynamic';
 import { LogOut, ArrowLeft } from 'lucide-react';
 import { css } from '@design-system/ui-lib/css';
-import { GlobalViewsChart } from '../components/GlobalViewsChart';
 import { PostList } from '../components/PostList';
-import { useAdminDashboardData } from '@/lib/hooks/useAdminViews';
-import { useAdminLogout } from '@/lib/hooks/useAdminLogout';
+import { useAdminDashboardData } from '@/src/hooks/useAdminViews';
+import { useAdminLogout } from '@/src/hooks/useAdminLogout';
 import { LoadingPlaceholder } from '@/src/components/shared/LoadingPlaceholder';
 import Link from 'next/link';
+
+const GlobalViewsChart = dynamic(
+  () =>
+    import('../components/GlobalViewsChart').then(m => ({
+      default: m.GlobalViewsChart,
+    })),
+  { loading: () => <LoadingPlaceholder height="400px" /> },
+);
 
 function AdminHeaderStats() {
   const { data } = useAdminDashboardData();
