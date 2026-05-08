@@ -1,5 +1,5 @@
 import { css } from '@design-system/ui-lib/css';
-import type { PostData } from '@/lib/posts';
+import type { PostData } from '@/domain/post';
 import { fmtDate, estimateReadMin } from '@/lib/format';
 import { Label } from './Label';
 

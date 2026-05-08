@@ -5,7 +5,7 @@ import { css } from '@design-system/ui-lib/css';
 
 import { Label } from '@/src/components/blog/Label';
 import { fmtNum } from '@/lib/format';
-import { useAnalyticsOverview } from '@/lib/hooks/useAnalyticsOverview';
+import { useAnalyticsOverview } from '@/src/hooks/useAnalyticsOverview';
 import {
   AnalyticsRangeSelect,
   type AnalyticsRange,

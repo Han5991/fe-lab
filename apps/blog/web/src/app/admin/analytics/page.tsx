@@ -6,7 +6,7 @@ import { LogOut, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { css } from '@design-system/ui-lib/css';
 
-import { useAdminLogout } from '@/lib/hooks/useAdminLogout';
+import { useAdminLogout } from '@/src/hooks/useAdminLogout';
 import { LoadingPlaceholder } from '@/src/components/shared/LoadingPlaceholder';
 import { Label } from '@/src/components/blog/Label';
 

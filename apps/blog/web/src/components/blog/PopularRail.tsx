@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { css } from '@design-system/ui-lib/css';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { client } from '@/lib/client';
-import type { PostSummary } from '@/lib/posts';
+import type { PostSummary } from '@/domain/post';
 import { encodePostSlug } from '@/domain/post/utils';
 import { fmtNum } from '@/lib/format';
 import { Label } from './Label';

@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import { useQueryState, parseAsString, parseAsStringLiteral } from 'nuqs';
 import { css } from '@design-system/ui-lib/css';
 
-import type { PostSummary } from '@/lib/posts';
+import type { PostSummary } from '@/domain/post';
 import type { SeriesSummary, TagSummary } from '@/domain/post/aggregate';
 
 import { Label } from './Label';

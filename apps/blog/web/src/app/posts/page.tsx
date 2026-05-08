@@ -3,7 +3,7 @@ import { css } from '@design-system/ui-lib/css';
 import { SsgoiTransition } from '@ssgoi/react';
 import type { Metadata } from 'next';
 
-import { getAllPostSummaries } from '@/lib/posts';
+import { getAllPostSummaries } from '@/domain/post';
 import {
   getAllSeries,
   getAllTags,

@@ -4,7 +4,7 @@ import {
   getAdjacentPosts,
   getSeriesAdjacentPosts,
   getAllPosts,
-} from '@/lib/posts';
+} from '@/domain/post';
 import { getSeriesMeta } from '@/domain/post/series';
 import {
   resolveThumbnailUrl,

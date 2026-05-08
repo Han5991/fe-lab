@@ -4,7 +4,7 @@ import { SsgoiTransition } from '@ssgoi/react';
 import { Suspense } from 'react';
 import type { Metadata } from 'next';
 
-import { getAllPostSummaries } from '@/lib/posts';
+import { getAllPostSummaries } from '@/domain/post';
 import { getAllSeries } from '@/domain/post/aggregate';
 import {
   SITE_URL,

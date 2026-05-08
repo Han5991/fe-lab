@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { css } from '@design-system/ui-lib/css';
-import type { PostSummary } from '@/lib/posts';
+import type { PostSummary } from '@/domain/post';
 import { encodePostSlug } from '@/domain/post/utils';
 import { fmtDate } from '@/lib/format';
 import { Label } from './Label';
