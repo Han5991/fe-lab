@@ -1,7 +1,11 @@
 import { defineConfig } from '@pandacss/dev';
 
 export default defineConfig({
-  presets: ['@pandacss/dev/presets', '@design-system/ui/preset', '@design-system/ui/blog-preset'],
+  presets: [
+    '@pandacss/dev/presets',
+    '@design-system/ui/preset',
+    '@design-system/ui/blog-preset',
+  ],
   preflight: true,
   lightningcss: true,
 
@@ -9,10 +13,11 @@ export default defineConfig({
     './src/**/*.{js,jsx,ts,tsx}',
     './node_modules/@design-system/ui/src/**/*.{js,jsx,ts,tsx}',
   ],
-  // ui 패키지의 panda 설정과 동일하게 strictTokens는 비활성화한다.
-  // ui-lib이 prepare 훅에서 ui 패키지의 codegen으로 생성되기 때문에,
-  // 두 설정이 어긋나면 codegen 결과물이 자리잡는 타입에 따라 빌드가 깨진다.
-  strictTokens: false,
+  // 이 블로그 앱 자체에서 codegen을 돌릴 때는 strictTokens=true로 새 코드의 토큰 사용을
+  // 강제한다. 다만 ui-lib(공용 출력)는 `@design-system/ui` 패키지의 prepare 훅에서
+  // strictTokens 없이 생성되므로, CI/배포에서는 기존 임의값(`maxW: '1200px'` 등)도
+  // 빌드에 통과한다. 새로 추가하는 코드는 가급적 토큰을 쓰자.
+  strictTokens: true,
 
   jsxFramework: 'react',
 

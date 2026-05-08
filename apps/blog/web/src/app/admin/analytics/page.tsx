@@ -3,152 +3,165 @@
 import { Suspense } from 'react';
 import dynamic from 'next/dynamic';
 import { LogOut, ArrowLeft } from 'lucide-react';
-import { css } from '@design-system/ui-lib/css';
-import { PostList } from '../components/PostList';
-import { useAdminDashboardData } from '@/src/hooks/useAdminViews';
-import { useAdminLogout } from '@/src/hooks/useAdminLogout';
-import { LoadingPlaceholder } from '@/src/components/shared/LoadingPlaceholder';
 import Link from 'next/link';
+import { css } from '@design-system/ui-lib/css';
 
-const GlobalViewsChart = dynamic(
-  () =>
-    import('../components/GlobalViewsChart').then(m => ({
-      default: m.GlobalViewsChart,
-    })),
-  { loading: () => <LoadingPlaceholder height="400px" /> },
-);
+import { useAdminLogout } from '@/lib/hooks/useAdminLogout';
+import { LoadingPlaceholder } from '@/src/components/shared/LoadingPlaceholder';
+import { Label } from '@/src/components/blog/Label';
 
-function AdminHeaderStats() {
-  const { data } = useAdminDashboardData();
-  const totalViews = data.reduce((acc, curr) => acc + curr.totalViews, 0);
-  const totalTodayViews = data.reduce((acc, curr) => acc + curr.todayViews, 0);
-  const totalPosts = data.length;
+import { AnalyticsContent } from './AnalyticsContent';
+import { useAdminTagDistribution } from './useAdminTagDistribution';
+import { PostList } from '../components/PostList';
 
-  return (
-    <div
-      className={css({
-        display: 'flex',
-        alignItems: 'center',
-        gap: '5',
-        ml: 'auto',
-        mr: '4',
-      })}
-    >
-      <div className={css({ display: 'flex', alignItems: 'baseline', gap: '1.5' })}>
-        <span className={css({ color: 'ink.500', fontSize: 'xs' })}>총 게시글</span>
-        <span className={css({ fontWeight: 'bold', color: 'ink.950', fontSize: 'sm', fontVariantNumeric: 'tabular-nums' })}>
-          {totalPosts}개
-        </span>
-      </div>
-      <div className={css({ w: '1px', h: '16px', bg: 'ink.border' })} />
-      <div className={css({ display: 'flex', alignItems: 'baseline', gap: '1.5' })}>
-        <span className={css({ color: 'ink.500', fontSize: 'xs' })}>전체 조회수</span>
-        <span className={css({ fontWeight: 'bold', color: 'ink.950', fontSize: 'sm', fontVariantNumeric: 'tabular-nums' })}>
-          {totalViews.toLocaleString()}회
-        </span>
-        {totalTodayViews > 0 && (
-          <span className={css({ color: 'accent.600', fontWeight: 'bold', fontSize: 'xs' })}>
-            +{totalTodayViews}
-          </span>
-        )}
-      </div>
-    </div>
-  );
+function TagAwareAnalytics() {
+  const tags = useAdminTagDistribution();
+  return <AnalyticsContent tags={tags} />;
 }
 
-export default function AdminDashboardPage() {
+export default function AdminAnalyticsPage() {
   const { handleLogout } = useAdminLogout();
 
   return (
     <div
       className={css({
         minH: 'calc(100dvh - 128px)',
-        bg: 'ink.50',
-        p: { base: '4', md: '8' },
+        bg: 'paper.50',
       })}
     >
-      <header
+      {/* Admin top strip */}
+      <div
         className={css({
+          bg: 'ink.950',
+          color: 'paper.50',
+          px: { base: '4', md: '8' },
+          py: '2.5',
           display: 'flex',
           alignItems: 'center',
-          mb: '6',
-          pb: '5',
-          borderBottomWidth: '1px',
-          borderColor: 'ink.border',
-          flexWrap: 'wrap',
           gap: '3',
+          flexWrap: 'wrap',
         })}
       >
-        <div className={css({ display: 'flex', alignItems: 'center', gap: '4' })}>
-          <Link
-            href="/admin"
-            className={css({
-              display: 'flex',
-              alignItems: 'center',
-              gap: '1',
-              color: 'ink.500',
-              fontSize: 'sm',
-              _hover: { color: 'accent.600' },
-              transition: 'color 0.15s',
-            })}
-          >
-            <ArrowLeft size={15} />
-            대시보드
-          </Link>
-          <div className={css({ w: '1px', h: '16px', bg: 'ink.border' })} />
-          <h1 className={css({ fontSize: 'base', fontWeight: 'bold', color: 'ink.950' })}>
-            조회수 분석
-          </h1>
-        </div>
-
-        <Suspense
-          fallback={
-            <div
-              className={css({
-                ml: 'auto',
-                mr: '4',
-                w: '200px',
-                h: '5',
-                bg: 'ink.100',
-                rounded: 'sm',
-                animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-              })}
-            />
-          }
-        >
-          <AdminHeaderStats />
-        </Suspense>
-
-        <button
-          onClick={handleLogout}
+        <span
           className={css({
-            display: 'flex',
-            alignItems: 'center',
-            gap: '1.5',
-            px: '3',
-            py: '1.5',
-            color: 'ink.500',
-            cursor: 'pointer',
-            rounded: 'md',
-            fontSize: 'sm',
-            transition: 'all 0.15s',
-            _hover: { bg: 'red.50', color: 'red.600' },
+            fontFamily: 'serif',
+            fontStyle: 'italic',
+            fontSize: 'base',
+            fontWeight: '600',
           })}
         >
-          <LogOut size={16} />
+          Frontend Lab
+        </span>
+        <span
+          className={css({
+            fontFamily: 'mono',
+            fontSize: '2xs',
+            px: '1.5',
+            py: '0.5',
+            bg: 'marker.300',
+            color: 'ink.950',
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+          })}
+        >
+          ADMIN
+        </span>
+        <span className={css({ flex: 1 })} />
+        <Link
+          href="/admin"
+          className={css({
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '1',
+            fontFamily: 'mono',
+            fontSize: 'xs',
+            color: 'ink.300',
+            transition: 'color 0.15s',
+            _hover: { color: 'paper.50' },
+          })}
+        >
+          <ArrowLeft size={13} />
+          대시보드
+        </Link>
+        <button
+          type="button"
+          onClick={handleLogout}
+          className={css({
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '1',
+            fontFamily: 'mono',
+            fontSize: 'xs',
+            color: 'ink.300',
+            cursor: 'pointer',
+            transition: 'color 0.15s',
+            _hover: { color: 'marker.300' },
+          })}
+        >
+          <LogOut size={13} />
           로그아웃
         </button>
+      </div>
+
+      {/* Page header */}
+      <header
+        className={css({
+          maxW: '1280px',
+          mx: 'auto',
+          px: { base: '4', md: '8' },
+          py: { base: '8', md: '10' },
+          borderBottomWidth: '1px',
+          borderColor: 'ink.border',
+        })}
+      >
+        <Label tone="meta" className={css({ display: 'block', mb: '2' })}>
+          ANALYTICS / OVERVIEW
+        </Label>
+        <h1
+          className={css({
+            fontFamily: 'serif',
+            fontSize: { base: '3xl', md: '4xl' },
+            fontWeight: '500',
+            letterSpacing: '-0.015em',
+            color: 'ink.950',
+          })}
+        >
+          독자들이 무엇을 읽고 있는가
+        </h1>
       </header>
 
-      <div className={css({ display: 'flex', flexDir: 'column', gap: '4' })}>
-        <Suspense fallback={<LoadingPlaceholder height="400px" />}>
-          <GlobalViewsChart />
+      <main
+        className={css({
+          maxW: '1280px',
+          mx: 'auto',
+          px: { base: '4', md: '8' },
+          py: { base: '8', md: '10' },
+          display: 'flex',
+          flexDir: 'column',
+          gap: '12',
+        })}
+      >
+        <Suspense fallback={<LoadingPlaceholder height="600px" />}>
+          <TagAwareAnalytics />
         </Suspense>
 
-        <Suspense fallback={<LoadingPlaceholder height="600px" />}>
-          <PostList />
-        </Suspense>
-      </div>
+        {/* Detailed post list — 기존 도구 유지 */}
+        <section
+          className={css({
+            pt: '10',
+            borderTopWidth: '1px',
+            borderColor: 'ink.border',
+            display: 'flex',
+            flexDir: 'column',
+            gap: '4',
+          })}
+        >
+          <Label tone="meta">ALL POSTS · 상세</Label>
+          <Suspense fallback={<LoadingPlaceholder height="400px" />}>
+            <PostList />
+          </Suspense>
+        </section>
+      </main>
     </div>
   );
 }
