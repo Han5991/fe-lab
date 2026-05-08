@@ -9,3 +9,4 @@ export * from './thumbnail';
 export * from './service';
 export * from './series';
 export * from './utils';
+export * from './aggregate';

@@ -9,7 +9,10 @@ export default defineConfig({
     './src/**/*.{js,jsx,ts,tsx}',
     './node_modules/@design-system/ui/src/**/*.{js,jsx,ts,tsx}',
   ],
-  strictTokens: true,
+  // ui 패키지의 panda 설정과 동일하게 strictTokens는 비활성화한다.
+  // ui-lib이 prepare 훅에서 ui 패키지의 codegen으로 생성되기 때문에,
+  // 두 설정이 어긋나면 codegen 결과물이 자리잡는 타입에 따라 빌드가 깨진다.
+  strictTokens: false,
 
   jsxFramework: 'react',
 
