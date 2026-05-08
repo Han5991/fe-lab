@@ -140,13 +140,13 @@ export default function HomePage() {
               className={css({
                 pt: '6',
                 pb: { base: '12', md: '16' },
-                borderTopWidth: '2px',
+                borderTopWidth: '[2px]',
                 borderColor: 'ink.950',
               })}
             >
               <div
                 className={css({
-                  maxW: '1200px',
+                  maxW: 'containerW',
                   mx: 'auto',
                   px: '8',
                   pt: { base: '8', md: '10' },
@@ -171,7 +171,7 @@ export default function HomePage() {
                         display: 'block',
                         mb: '4',
                         pb: '3',
-                        borderBottomWidth: '1px',
+                        borderBottomWidth: '[1px]',
                         borderColor: 'ink.border',
                       })}
                     >
@@ -197,13 +197,13 @@ export default function HomePage() {
             <section
               className={css({
                 bg: 'paper.100',
-                borderTopWidth: '1px',
-                borderBottomWidth: '1px',
+                borderTopWidth: '[1px]',
+                borderBottomWidth: '[1px]',
                 borderColor: 'ink.border',
                 py: { base: '12', md: '16' },
               })}
             >
-              <div className={css({ maxW: '1200px', mx: 'auto', px: '8' })}>
+              <div className={css({ maxW: 'containerW', mx: 'auto', px: '8' })}>
                 <div
                   className={css({
                     display: 'flex',
@@ -211,33 +211,33 @@ export default function HomePage() {
                     gap: '4',
                     mb: '8',
                     pb: '4',
-                    borderBottomWidth: '1px',
+                    borderBottomWidth: '[1px]',
                     borderColor: 'ink.border',
                   })}
                 >
-                  <Label tone="marker" className={css({ letterSpacing: '0.12em' })}>
+                  <Label tone="marker" className={css({ letterSpacing: 'monoXxl' })}>
                     § 03
                   </Label>
                   <h2
                     className={css({
                       fontFamily: 'serif',
                       fontSize: { base: 'xl', md: '2xl' },
-                      fontWeight: '600',
+                      fontWeight: 'semibold',
                       color: 'ink.950',
                     })}
                   >
                     시리즈로 묶어서 보기
                   </h2>
-                  <span className={css({ flex: 1 })} />
+                  <span className={css({ flex: '1' })} />
                   <Link
                     href="/posts/"
                     className={css({
                       fontFamily: 'mono',
                       fontSize: 'xs',
                       color: 'ink.500',
-                      letterSpacing: '0.08em',
+                      letterSpacing: 'monoXl',
                       _hover: { color: 'ink.950' },
-                      transition: 'color 0.15s',
+                      transition: '[color 0.15s]',
                     })}
                   >
                     모두 보기 →
@@ -248,8 +248,8 @@ export default function HomePage() {
                     display: 'grid',
                     gridTemplateColumns: {
                       base: '1fr',
-                      md: 'repeat(2, 1fr)',
-                      lg: 'repeat(3, 1fr)',
+                      md: '[repeat(2, 1fr)]',
+                      lg: '[repeat(3, 1fr)]',
                     },
                     gap: '6',
                   })}
@@ -266,7 +266,7 @@ export default function HomePage() {
           <section
             className={css({
               py: { base: '12', md: '16' },
-              maxW: '1200px',
+              maxW: 'containerW',
               mx: 'auto',
               px: '8',
             })}
@@ -286,39 +286,39 @@ export default function HomePage() {
                     gap: '4',
                     mb: '4',
                     pb: '3',
-                    borderBottomWidth: '1px',
+                    borderBottomWidth: '[1px]',
                     borderColor: 'ink.border',
                   })}
                 >
-                  <Label tone="marker" className={css({ letterSpacing: '0.12em' })}>
+                  <Label tone="marker" className={css({ letterSpacing: 'monoXxl' })}>
                     § 04
                   </Label>
                   <h2
                     className={css({
                       fontFamily: 'serif',
                       fontSize: { base: 'xl', md: '2xl' },
-                      fontWeight: '600',
+                      fontWeight: 'semibold',
                       color: 'ink.950',
                     })}
                   >
                     최근 노트
                   </h2>
-                  <span className={css({ flex: 1 })} />
+                  <span className={css({ flex: '1' })} />
                   <Link
                     href="/posts/"
                     className={css({
                       fontFamily: 'mono',
                       fontSize: 'xs',
                       color: 'ink.500',
-                      letterSpacing: '0.08em',
+                      letterSpacing: 'monoXl',
                       _hover: { color: 'ink.950' },
-                      transition: 'color 0.15s',
+                      transition: '[color 0.15s]',
                     })}
                   >
                     모두 보기 →
                   </Link>
                 </div>
-                <ol className={css({ listStyle: 'none', p: 0, m: 0 })}>
+                <ol className={css({ listStyleType: 'none', p: '0', m: '0' })}>
                   {recent.map(p => (
                     <PostIndexRow key={p.slug} post={p} />
                   ))}

@@ -8,11 +8,11 @@ interface SeriesCardProps {
   index: number;
 }
 
-const accentColor: Record<SeriesSummary['colorKey'], string> = {
+const accentColor = {
   accent: 'accent.600',
   marker: 'marker.600',
   moss: 'moss.600',
-};
+} as const;
 
 export const SeriesCard = ({ series, index }: SeriesCardProps) => {
   return (
@@ -25,22 +25,21 @@ export const SeriesCard = ({ series, index }: SeriesCardProps) => {
         gap: '3',
         p: '6',
         bg: 'paper.50',
-        borderWidth: '1px',
+        borderWidth: '[1px]',
         borderColor: 'ink.border',
-        transition: 'border-color 0.15s',
-        minH: '200px',
+        transition: '[border-color 0.15s]',
+        minH: '[200px]',
         _hover: { borderColor: 'ink.borderStrong' },
       })}
     >
-      {/* 좌측 4px 시리즈 컬러 키 */}
       <span
         aria-hidden="true"
         className={css({
           position: 'absolute',
-          left: 0,
-          top: 0,
-          bottom: 0,
-          w: '4px',
+          left: '0',
+          top: '0',
+          bottom: '0',
+          w: '1',
           bg: accentColor[series.colorKey],
         })}
       />
@@ -56,8 +55,8 @@ export const SeriesCard = ({ series, index }: SeriesCardProps) => {
             fontFamily: 'mono',
             fontSize: 'xs',
             color: accentColor[series.colorKey],
-            letterSpacing: '0.12em',
-            fontWeight: '500',
+            letterSpacing: 'monoXxl',
+            fontWeight: 'medium',
           })}
         >
           {String(index + 1).padStart(2, '0')} / SERIES
@@ -68,8 +67,8 @@ export const SeriesCard = ({ series, index }: SeriesCardProps) => {
         className={css({
           fontFamily: 'serif',
           fontSize: '2xl',
-          fontWeight: '600',
-          lineHeight: '1.2',
+          fontWeight: 'semibold',
+          lineHeight: 'tighter',
           color: 'ink.950',
         })}
       >
@@ -82,7 +81,7 @@ export const SeriesCard = ({ series, index }: SeriesCardProps) => {
             fontFamily: 'sans',
             fontSize: 'sm',
             color: 'ink.700',
-            lineHeight: '1.6',
+            lineHeight: 'relaxed',
             lineClamp: 3,
           })}
         >
@@ -90,12 +89,12 @@ export const SeriesCard = ({ series, index }: SeriesCardProps) => {
         </p>
       )}
 
-      <div className={css({ flex: 1 })} />
+      <div className={css({ flex: '1' })} />
 
       <div
         className={css({
           pt: '3',
-          borderTopWidth: '1px',
+          borderTopWidth: '[1px]',
           borderColor: 'ink.border',
           display: 'flex',
           justifyContent: 'space-between',
@@ -107,7 +106,7 @@ export const SeriesCard = ({ series, index }: SeriesCardProps) => {
             fontFamily: 'mono',
             fontSize: 'xs',
             color: 'ink.700',
-            letterSpacing: '0.04em',
+            letterSpacing: 'mono',
           })}
         >
           {series.count}편

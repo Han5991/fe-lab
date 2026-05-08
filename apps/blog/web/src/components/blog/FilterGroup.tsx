@@ -22,7 +22,6 @@ export const FilterGroup = ({
   items,
   active,
   onToggle,
-  multi = true,
 }: FilterGroupProps) => {
   if (items.length === 0) return null;
   return (
@@ -32,12 +31,11 @@ export const FilterGroup = ({
       </Label>
       <ul
         className={css({
-          listStyle: 'none',
-          p: 0,
-          m: 0,
+          listStyleType: 'none',
+          p: '0',
+          m: '0',
           display: 'flex',
           flexDir: 'column',
-          gap: '1px',
         })}
       >
         {items.map(item => {
@@ -58,13 +56,13 @@ export const FilterGroup = ({
                   py: '1',
                   fontFamily: 'mono',
                   fontSize: 'xs',
-                  letterSpacing: '0.04em',
+                  letterSpacing: 'mono',
                   textAlign: 'left',
                   color: isActive ? 'ink.950' : 'ink.700',
-                  borderLeftWidth: '2px',
+                  borderLeftWidth: '[2px]',
                   borderLeftColor: isActive ? 'ink.950' : 'transparent',
                   bg: isActive ? 'paper.100' : 'transparent',
-                  transition: 'all 0.15s',
+                  transition: '[all 0.15s]',
                   cursor: 'pointer',
                   _hover: { color: 'ink.950', bg: 'paper.100' },
                 })}

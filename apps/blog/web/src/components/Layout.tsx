@@ -18,7 +18,7 @@ const navLink = css({
   px: '3',
   py: '1.5',
   rounded: 'md',
-  transition: 'all 0.15s',
+  transition: '[all 0.15s]',
   _hover: { color: 'ink.950', bg: 'paper.100' },
 });
 
@@ -26,7 +26,7 @@ export const Layout = ({ children }: LayoutProps) => {
   return (
     <div
       className={css({
-        minH: '100vh',
+        minH: '[100vh]',
         bg: 'paper.50',
         color: 'ink.950',
         display: 'flex',
@@ -35,18 +35,18 @@ export const Layout = ({ children }: LayoutProps) => {
     >
       <nav
         className={css({
-          borderBottomWidth: '1px',
+          borderBottomWidth: '[1px]',
           borderColor: 'ink.border',
           pos: 'sticky',
-          top: 0,
-          bg: 'paper.50/85',
-          backdropFilter: 'blur(12px)',
-          zIndex: 10,
+          top: '0',
+          bg: '[rgba(252,250,247,0.85)]',
+          backdropFilter: '[blur(12px)]',
+          zIndex: '10',
         })}
       >
         <div
           className={css({
-            maxW: '1200px',
+            maxW: 'containerW',
             m: 'auto',
             px: '8',
             h: '14',
@@ -62,7 +62,7 @@ export const Layout = ({ children }: LayoutProps) => {
               alignItems: 'baseline',
               gap: '3',
               color: 'ink.950',
-              transition: 'opacity 0.15s',
+              transition: '[opacity 0.15s]',
               _hover: { opacity: '0.8' },
             })}
           >
@@ -71,8 +71,8 @@ export const Layout = ({ children }: LayoutProps) => {
                 fontFamily: 'serif',
                 fontStyle: 'italic',
                 fontSize: 'lg',
-                fontWeight: '600',
-                letterSpacing: '-0.01em',
+                fontWeight: 'semibold',
+                letterSpacing: 'tightXs',
               })}
             >
               Frontend Lab
@@ -82,7 +82,7 @@ export const Layout = ({ children }: LayoutProps) => {
                 fontFamily: 'mono',
                 fontSize: '2xs',
                 color: 'ink.400',
-                letterSpacing: '0.12em',
+                letterSpacing: 'monoXxl',
                 display: { base: 'none', md: 'inline' },
               })}
             >
@@ -101,13 +101,13 @@ export const Layout = ({ children }: LayoutProps) => {
         </div>
       </nav>
 
-      <main className={css({ flex: 1, w: 'full' })}>
+      <main className={css({ flex: '1', w: 'full' })}>
         <PageTransition>{children}</PageTransition>
       </main>
 
       <footer
         className={css({
-          borderTopWidth: '1px',
+          borderTopWidth: '[1px]',
           borderColor: 'ink.border',
           mt: '20',
           py: '8',
@@ -116,7 +116,7 @@ export const Layout = ({ children }: LayoutProps) => {
       >
         <div
           className={css({
-            maxW: '1200px',
+            maxW: 'containerW',
             mx: 'auto',
             px: '8',
             display: 'flex',
@@ -130,7 +130,7 @@ export const Layout = ({ children }: LayoutProps) => {
             className={css({
               fontFamily: 'mono',
               fontSize: 'xs',
-              letterSpacing: '0.08em',
+              letterSpacing: 'monoXl',
               textTransform: 'uppercase',
               color: 'ink.500',
             })}
@@ -161,7 +161,7 @@ export const Layout = ({ children }: LayoutProps) => {
                     fontSize: 'xs',
                     color: 'ink.500',
                     _hover: { color: 'ink.950' },
-                    transition: 'color 0.15s',
+                    transition: '[color 0.15s]',
                   })}
                 >
                   {link.label}
@@ -179,7 +179,7 @@ export const Layout = ({ children }: LayoutProps) => {
                     fontSize: 'xs',
                     color: 'ink.500',
                     _hover: { color: 'ink.950' },
-                    transition: 'color 0.15s',
+                    transition: '[color 0.15s]',
                   })}
                 >
                   {link.label}

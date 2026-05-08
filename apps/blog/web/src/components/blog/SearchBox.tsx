@@ -37,21 +37,24 @@ export const SearchBox = ({
         h: '11',
         px: '3',
         bg: 'paper.50',
-        borderWidth: '1px',
+        borderWidth: '[1px]',
         borderColor: 'ink.border',
         rounded: 'lg',
         cursor: 'pointer',
-        transition: 'border-color 0.15s',
+        transition: '[border-color 0.15s]',
         _hover: { borderColor: 'ink.borderStrong' },
       })}
     >
-      <Search size={14} className={css({ color: 'ink.500', mr: '2', flexShrink: 0 })} />
+      <Search
+        size={14}
+        className={css({ color: 'ink.500', mr: '2', flexShrink: 0 })}
+      />
       <span
         className={css({
           fontFamily: 'sans',
           fontSize: 'sm',
           color: 'ink.500',
-          flex: 1,
+          flex: '1',
         })}
       >
         {placeholder}
@@ -62,7 +65,7 @@ export const SearchBox = ({
             fontFamily: 'mono',
             fontSize: '2xs',
             color: 'ink.500',
-            borderWidth: '1px',
+            borderWidth: '[1px]',
             borderColor: 'ink.border',
             bg: 'paper.100',
             px: '1.5',

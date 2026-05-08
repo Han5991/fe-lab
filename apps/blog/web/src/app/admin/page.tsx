@@ -40,7 +40,7 @@ function AdminOverviewContent() {
         <div
           className={css({
             bg: 'ink.25',
-            borderWidth: '1px',
+            borderWidth: '[1px]',
             borderColor: 'ink.border',
             rounded: 'lg',
             p: '6',
@@ -69,7 +69,7 @@ function AdminOverviewContent() {
         <div
           className={css({
             bg: 'ink.25',
-            borderWidth: '1px',
+            borderWidth: '[1px]',
             borderColor: 'ink.border',
             rounded: 'lg',
             p: '6',
@@ -94,7 +94,7 @@ function AdminOverviewContent() {
           href="/admin/analytics"
           className={css({
             bg: 'accent.600',
-            borderWidth: '1px',
+            borderWidth: '[1px]',
             borderColor: 'accent.600',
             rounded: 'lg',
             p: '6',
@@ -103,7 +103,7 @@ function AdminOverviewContent() {
             justifyContent: 'center',
             alignItems: 'center',
             gap: '3',
-            transition: 'opacity 0.15s',
+            transition: '[opacity 0.15s]',
             _hover: { opacity: '0.85' },
           })}
         >
@@ -126,7 +126,7 @@ function AdminOverviewContent() {
         <div
           className={css({
             bg: 'ink.25',
-            borderWidth: '1px',
+            borderWidth: '[1px]',
             borderColor: 'ink.border',
             rounded: 'lg',
             overflow: 'hidden',
@@ -136,7 +136,7 @@ function AdminOverviewContent() {
             className={css({
               px: '5',
               py: '4',
-              borderBottomWidth: '1px',
+              borderBottomWidth: '[1px]',
               borderColor: 'ink.border',
               display: 'flex',
               alignItems: 'baseline',
@@ -164,7 +164,7 @@ function AdminOverviewContent() {
                   py: '3',
                   borderBottomWidth: i < topPosts.length - 1 ? '1px' : '0',
                   borderColor: 'ink.border',
-                  transition: 'background 0.15s',
+                  transition: '[background 0.15s]',
                   _hover: { bg: 'ink.50' },
                 })}
               >
@@ -183,7 +183,7 @@ function AdminOverviewContent() {
                 </span>
                 <span
                   className={css({
-                    flex: 1,
+                    flex: '1',
                     color: 'ink.950',
                     fontSize: 'sm',
                     overflow: 'hidden',
@@ -213,7 +213,7 @@ function AdminOverviewContent() {
         <div
           className={css({
             bg: 'ink.25',
-            borderWidth: '1px',
+            borderWidth: '[1px]',
             borderColor: 'ink.border',
             rounded: 'lg',
             overflow: 'hidden',
@@ -223,7 +223,7 @@ function AdminOverviewContent() {
             className={css({
               px: '5',
               py: '4',
-              borderBottomWidth: '1px',
+              borderBottomWidth: '[1px]',
               borderColor: 'ink.border',
               display: 'flex',
               alignItems: 'baseline',
@@ -251,13 +251,13 @@ function AdminOverviewContent() {
                   py: '3',
                   borderBottomWidth: i < recentPosts.length - 1 ? '1px' : '0',
                   borderColor: 'ink.border',
-                  transition: 'background 0.15s',
+                  transition: '[background 0.15s]',
                   _hover: { bg: 'ink.50' },
                 })}
               >
                 <span
                   className={css({
-                    flex: 1,
+                    flex: '1',
                     color: 'ink.950',
                     fontSize: 'sm',
                     overflow: 'hidden',
@@ -292,7 +292,7 @@ export default function AdminPage() {
   return (
     <div
       className={css({
-        minH: 'calc(100dvh - 128px)',
+        minH: '[calc(100dvh - 128px)]',
         bg: 'ink.50',
         p: { base: '4', md: '8' },
       })}
@@ -304,7 +304,7 @@ export default function AdminPage() {
           justifyContent: 'space-between',
           mb: '6',
           pb: '5',
-          borderBottomWidth: '1px',
+          borderBottomWidth: '[1px]',
           borderColor: 'ink.border',
           flexWrap: 'wrap',
           gap: '3',
@@ -332,7 +332,7 @@ export default function AdminPage() {
               fontWeight: 'medium',
               fontSize: 'sm',
               rounded: 'md',
-              transition: 'background 0.15s',
+              transition: '[background 0.15s]',
               _hover: { bg: 'accent.50' },
             })}
           >
@@ -351,7 +351,7 @@ export default function AdminPage() {
               cursor: 'pointer',
               rounded: 'md',
               fontSize: 'sm',
-              transition: 'all 0.15s',
+              transition: '[all 0.15s]',
               _hover: { bg: 'red.50', color: 'red.600' },
             })}
           >

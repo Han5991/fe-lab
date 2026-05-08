@@ -42,12 +42,12 @@ export const BackToTop = () => {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: 'gray.600',
-            borderWidth: '1px',
-            borderColor: 'gray.200',
+            color: 'ink.600',
+            borderWidth: '[1px]',
+            borderColor: 'ink.border',
             cursor: 'pointer',
-            zIndex: 40,
-            _hover: { color: 'blue.600', borderColor: 'blue.200' },
+            zIndex: '40',
+            _hover: { color: 'accent.600', borderColor: 'accent.200' },
           })}
         >
           <ArrowUp size={24} />

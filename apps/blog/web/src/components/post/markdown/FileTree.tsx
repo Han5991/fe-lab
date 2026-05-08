@@ -85,14 +85,14 @@ export function FileTree({ children }: FileTreeProps) {
     <pre
       className={css({
         bg: 'ink.50',
-        border: '1px solid',
+        borderWidth: '[1px]',
         borderColor: 'ink.border',
         rounded: 'lg',
         px: '5',
         py: '4',
         my: '6',
         fontSize: 'sm',
-        lineHeight: '1.7',
+        lineHeight: 'proseLoose',
         color: 'ink.700',
         overflow: 'auto',
         fontFamily: 'mono',

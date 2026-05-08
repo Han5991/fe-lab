@@ -9,8 +9,8 @@ export const MarkerText = ({ children }: MarkerTextProps) => (
   <span
     className={css({
       backgroundImage:
-        'linear-gradient(180deg, transparent 55%, token(colors.marker.300) 55%, token(colors.marker.300) 92%, transparent 92%)',
-      px: '2px',
+        '[linear-gradient(180deg, transparent 55%, token(colors.marker.300) 55%, token(colors.marker.300) 92%, transparent 92%)]',
+      px: '0.5',
     })}
   >
     {children}

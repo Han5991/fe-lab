@@ -23,12 +23,11 @@ export const SortRadio = ({ value, onChange }: SortRadioProps) => {
       <ul
         role="radiogroup"
         className={css({
-          listStyle: 'none',
-          p: 0,
-          m: 0,
+          listStyleType: 'none',
+          p: '0',
+          m: '0',
           display: 'flex',
           flexDir: 'column',
-          gap: '1px',
         })}
       >
         {OPTIONS.map(opt => {
@@ -52,9 +51,9 @@ export const SortRadio = ({ value, onChange }: SortRadioProps) => {
                   fontStyle: isActive ? 'italic' : 'normal',
                   textAlign: 'left',
                   color: isActive ? 'marker.600' : 'ink.700',
-                  borderLeftWidth: '2px',
+                  borderLeftWidth: '[2px]',
                   borderLeftColor: isActive ? 'marker.600' : 'transparent',
-                  transition: 'all 0.15s',
+                  transition: '[all 0.15s]',
                   cursor: 'pointer',
                   _hover: { color: 'ink.950' },
                 })}

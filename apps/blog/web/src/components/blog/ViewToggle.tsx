@@ -23,7 +23,7 @@ export const ViewToggle = ({ value, onChange }: ViewToggleProps) => {
         role="tablist"
         className={css({
           display: 'flex',
-          borderWidth: '1px',
+          borderWidth: '[1px]',
           borderColor: 'ink.border',
           rounded: 'md',
           overflow: 'hidden',
@@ -39,17 +39,19 @@ export const ViewToggle = ({ value, onChange }: ViewToggleProps) => {
               type="button"
               onClick={() => onChange(opt.id)}
               className={css({
-                flex: 1,
+                flex: '1',
                 py: '2',
                 fontFamily: 'mono',
                 fontSize: 'xs',
-                letterSpacing: '0.08em',
+                letterSpacing: 'monoXl',
                 textTransform: 'uppercase',
                 bg: isActive ? 'ink.950' : 'transparent',
                 color: isActive ? 'paper.50' : 'ink.600',
                 cursor: 'pointer',
-                transition: 'all 0.15s',
-                _hover: !isActive ? { color: 'ink.950', bg: 'paper.100' } : undefined,
+                transition: '[all 0.15s]',
+                _hover: !isActive
+                  ? { color: 'ink.950', bg: 'paper.100' }
+                  : undefined,
               })}
             >
               {opt.label}

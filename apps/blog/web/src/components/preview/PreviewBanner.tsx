@@ -19,7 +19,7 @@ export function PreviewBanner({ status, scheduledDate }: Props) {
       role="status"
       className={css({
         position: 'sticky',
-        top: 0,
+        top: '0',
         zIndex: 100,
         bg: 'amber.500',
         color: 'black',

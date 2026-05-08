@@ -18,10 +18,10 @@ export function PostCard({ post, rank, index }: PostCardProps) {
       className={css({
         display: 'block',
         p: '6',
-        borderBottomWidth: '1px',
-        borderRightWidth: { base: '0', md: isEven ? '0' : '1px' },
+        borderBottomWidth: '[1px]',
+        borderRightWidth: { base: '0', md: isEven ? '0' : '[1px]' },
         borderColor: 'ink.border',
-        transition: 'background 0.15s, box-shadow 0.15s',
+        transition: '[background 0.15s, box-shadow 0.15s]',
         _hover: { bg: 'ink.50', boxShadow: 'accentLeft' },
       })}
     >
@@ -80,11 +80,11 @@ export function PostCard({ post, rank, index }: PostCardProps) {
       </div>
       <h3
         className={css({
-          fontSize: { base: 'base', md: 'lg' },
+          fontSize: { base: 'md', md: 'lg' },
           fontWeight: 'bold',
           color: 'ink.950',
           mb: '2',
-          lineHeight: '1.4',
+          lineHeight: 'headerSm',
           lineClamp: 2,
         })}
       >
@@ -95,7 +95,7 @@ export function PostCard({ post, rank, index }: PostCardProps) {
           className={css({
             color: 'ink.700',
             fontSize: 'sm',
-            lineHeight: '1.6',
+            lineHeight: 'relaxed',
             lineClamp: 2,
           })}
         >

@@ -41,27 +41,21 @@ export const PopularRail = ({ posts, limit = 5 }: PopularRailProps) => {
     },
   });
 
-  // 데이터가 비어 있으면 최신 글 fallback (로컬 dev에서 viewCount 없을 때)
   const items: RankedPost[] =
     data.length > 0
       ? data
       : posts.slice(0, limit).map(p => ({ ...p, viewCount: 0 }));
 
   return (
-    <aside
-      className={css({
-        position: 'sticky',
-        top: '20',
-      })}
-    >
+    <aside className={css({ position: 'sticky', top: '20' })}>
       <Label tone="meta" className={css({ display: 'block', mb: '4' })}>
         POPULAR · 30일
       </Label>
       <ol
         className={css({
-          listStyle: 'none',
-          p: 0,
-          m: 0,
+          listStyleType: 'none',
+          p: '0',
+          m: '0',
           display: 'flex',
           flexDir: 'column',
         })}
@@ -70,7 +64,7 @@ export const PopularRail = ({ posts, limit = 5 }: PopularRailProps) => {
           <li
             key={post.slug}
             className={css({
-              borderTopWidth: i === 0 ? '0' : '1px',
+              borderTopWidth: i === 0 ? '0' : '[1px]',
               borderColor: 'ink.border',
             })}
           >
@@ -81,10 +75,10 @@ export const PopularRail = ({ posts, limit = 5 }: PopularRailProps) => {
                 gap: '4',
                 alignItems: 'baseline',
                 py: '4',
-                transition: 'all 0.15s',
+                transition: '[all 0.15s]',
                 '& [data-rank]': {
                   color: 'ink.300',
-                  transition: 'color 0.15s',
+                  transition: '[color 0.15s]',
                 },
                 _hover: {
                   '& [data-rank]': { color: 'marker.600' },
@@ -98,22 +92,22 @@ export const PopularRail = ({ posts, limit = 5 }: PopularRailProps) => {
                   fontFamily: 'serif',
                   fontStyle: 'italic',
                   fontSize: '2xl',
-                  fontWeight: '500',
+                  fontWeight: 'medium',
                   minW: '8',
                   flexShrink: 0,
                 })}
               >
                 {String(i + 1).padStart(2, '0')}
               </span>
-              <div className={css({ flex: 1, minW: 0 })}>
+              <div className={css({ flex: '1', minW: '0' })}>
                 <h4
                   className={css({
                     fontFamily: 'serif',
                     fontSize: 'sm',
-                    fontWeight: '500',
-                    lineHeight: '1.4',
+                    fontWeight: 'medium',
+                    lineHeight: 'headerSm',
                     color: 'ink.950',
-                    transition: 'color 0.15s',
+                    transition: '[color 0.15s]',
                   })}
                 >
                   {post.title}
@@ -126,7 +120,7 @@ export const PopularRail = ({ posts, limit = 5 }: PopularRailProps) => {
                       color: 'ink.500',
                       mt: '1',
                       display: 'inline-block',
-                      letterSpacing: '0.04em',
+                      letterSpacing: 'mono',
                     })}
                   >
                     {fmtNum(post.viewCount)} reads
@@ -141,17 +135,20 @@ export const PopularRail = ({ posts, limit = 5 }: PopularRailProps) => {
   );
 };
 
-export const PopularRailFallback = ({ posts, limit = 5 }: PopularRailProps) => (
+export const PopularRailFallback = ({
+  posts,
+  limit = 5,
+}: PopularRailProps) => (
   <aside className={css({ position: 'sticky', top: '20' })}>
     <Label tone="meta" className={css({ display: 'block', mb: '4' })}>
       POPULAR · 30일
     </Label>
-    <ol className={css({ listStyle: 'none', p: 0, m: 0 })}>
+    <ol className={css({ listStyleType: 'none', p: '0', m: '0' })}>
       {posts.slice(0, limit).map((post, i) => (
         <li
           key={post.slug}
           className={css({
-            borderTopWidth: i === 0 ? '0' : '1px',
+            borderTopWidth: i === 0 ? '0' : '[1px]',
             borderColor: 'ink.border',
             py: '4',
             display: 'flex',
@@ -164,7 +161,7 @@ export const PopularRailFallback = ({ posts, limit = 5 }: PopularRailProps) => (
               fontFamily: 'serif',
               fontStyle: 'italic',
               fontSize: '2xl',
-              fontWeight: '500',
+              fontWeight: 'medium',
               minW: '8',
               color: 'ink.300',
             })}
@@ -175,8 +172,8 @@ export const PopularRailFallback = ({ posts, limit = 5 }: PopularRailProps) => (
             className={css({
               fontFamily: 'serif',
               fontSize: 'sm',
-              fontWeight: '500',
-              lineHeight: '1.4',
+              fontWeight: 'medium',
+              lineHeight: 'headerSm',
               color: 'ink.950',
             })}
           >

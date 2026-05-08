@@ -22,21 +22,22 @@ export const Tag = ({
     display: 'inline-flex',
     alignItems: 'center',
     fontFamily: 'mono',
-    fontSize: size === 'sm' ? 'xs' : '12px',
-    py: size === 'sm' ? '2px' : '4px',
-    px: size === 'sm' ? '8px' : '10px',
-    letterSpacing: '0.04em',
+    fontSize: size === 'sm' ? 'xs' : '[12px]',
+    py: size === 'sm' ? '0.5' : '1',
+    px: size === 'sm' ? '2' : '2.5',
+    letterSpacing: 'mono',
     rounded: 'full',
-    borderWidth: '1px',
+    borderWidth: '[1px]',
     borderColor: active ? 'ink.950' : 'ink.border',
     bg: active ? 'ink.950' : 'transparent',
     color: active ? 'paper.50' : 'ink.700',
-    transition: 'all 0.15s',
+    transition: '[all 0.15s]',
     whiteSpace: 'nowrap',
     cursor: onClick ? 'pointer' : 'default',
-    _hover: onClick && !active
-      ? { borderColor: 'ink.borderStrong', color: 'ink.950' }
-      : undefined,
+    _hover:
+      onClick && !active
+        ? { borderColor: 'ink.borderStrong', color: 'ink.950' }
+        : undefined,
   });
 
   if (as === 'span') {

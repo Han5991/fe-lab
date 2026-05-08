@@ -24,7 +24,7 @@ export const AnalyticsRangeSelect = ({
       role="tablist"
       className={css({
         display: 'flex',
-        borderWidth: '1px',
+        borderWidth: '[1px]',
         borderColor: 'ink.border',
         rounded: 'md',
         bg: 'paper.100',
@@ -45,12 +45,12 @@ export const AnalyticsRangeSelect = ({
               py: '1.5',
               fontFamily: 'mono',
               fontSize: 'xs',
-              letterSpacing: '0.06em',
+              letterSpacing: 'monoLg',
               rounded: 'sm',
               bg: active ? 'ink.950' : 'transparent',
               color: active ? 'paper.50' : 'ink.600',
               cursor: 'pointer',
-              transition: 'all 0.15s',
+              transition: '[all 0.15s]',
               _hover: !active ? { color: 'ink.950' } : undefined,
             })}
           >

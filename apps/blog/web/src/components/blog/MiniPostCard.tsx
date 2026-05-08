@@ -10,7 +10,10 @@ interface MiniPostCardProps {
   withDivider?: boolean;
 }
 
-export const MiniPostCard = ({ post, withDivider = true }: MiniPostCardProps) => {
+export const MiniPostCard = ({
+  post,
+  withDivider = true,
+}: MiniPostCardProps) => {
   return (
     <Link
       href={`/posts/${encodePostSlug(post.slug)}/`}
@@ -19,7 +22,7 @@ export const MiniPostCard = ({ post, withDivider = true }: MiniPostCardProps) =>
         py: '4',
         borderTopWidth: withDivider ? '1px' : '0',
         borderColor: 'ink.border',
-        transition: 'background 0.15s',
+        transition: '[background 0.15s]',
         _hover: {
           '& h4': { color: 'accent.600' },
         },
@@ -28,12 +31,12 @@ export const MiniPostCard = ({ post, withDivider = true }: MiniPostCardProps) =>
       <h4
         className={css({
           fontFamily: 'serif',
-          fontSize: 'base',
-          fontWeight: '500',
-          lineHeight: '1.4',
+          fontSize: 'md',
+          fontWeight: 'medium',
+          lineHeight: 'headerSm',
           color: 'ink.950',
           mb: '2',
-          transition: 'color 0.15s',
+          transition: '[color 0.15s]',
         })}
       >
         {post.title}
@@ -48,7 +51,7 @@ export const MiniPostCard = ({ post, withDivider = true }: MiniPostCardProps) =>
       >
         {post.date && <Label tone="meta">{fmtDate(post.date)}</Label>}
         {post.tags && post.tags.length > 0 && (
-          <Label tone="meta" className={css({ letterSpacing: '0.04em' })}>
+          <Label tone="meta" className={css({ letterSpacing: 'mono' })}>
             {post.tags
               .slice(0, 2)
               .map(t => `#${t}`)

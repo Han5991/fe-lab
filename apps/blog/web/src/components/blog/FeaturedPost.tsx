@@ -21,7 +21,7 @@ export const FeaturedPost = ({ post }: FeaturedPostProps) => {
       className={css({
         display: 'block',
         position: 'relative',
-        '& h2': { transition: 'color 0.15s' },
+        '& h2': { transition: '[color 0.15s]' },
         _hover: { '& h2': { color: 'ink.700' } },
       })}
     >
@@ -42,23 +42,16 @@ export const FeaturedPost = ({ post }: FeaturedPostProps) => {
             py: '0.5',
             bg: 'marker.300',
             color: 'ink.950',
-            letterSpacing: '0.08em',
+            letterSpacing: 'monoXl',
             textTransform: 'uppercase',
           })}
         >
           LATEST
         </span>
-        {post.series && (
-          <Label tone="marker">
-            {post.series}
-          </Label>
-        )}
-        {post.date && (
-          <Label tone="meta">· {fmtDate(post.date)}</Label>
-        )}
+        {post.series && <Label tone="marker">{post.series}</Label>}
+        {post.date && <Label tone="meta">· {fmtDate(post.date)}</Label>}
       </div>
 
-      {/* Hero image — 실제 썸네일 또는 placeholder */}
       {thumb ? (
         <img
           src={thumb}
@@ -66,9 +59,9 @@ export const FeaturedPost = ({ post }: FeaturedPostProps) => {
           className={css({
             display: 'block',
             w: 'full',
-            h: '320px',
+            h: '[320px]',
             objectFit: 'cover',
-            borderWidth: '1px',
+            borderWidth: '[1px]',
             borderColor: 'ink.border',
           })}
         />
@@ -76,15 +69,15 @@ export const FeaturedPost = ({ post }: FeaturedPostProps) => {
         <div
           className={css({
             w: 'full',
-            h: '320px',
+            h: '[320px]',
             bg: 'paper.100',
-            borderWidth: '1px',
+            borderWidth: '[1px]',
             borderColor: 'ink.border',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             backgroundImage:
-              'repeating-linear-gradient(135deg, transparent 0 8px, rgba(0,0,0,0.025) 8px 9px)',
+              '[repeating-linear-gradient(135deg, transparent 0 8px, rgba(0,0,0,0.025) 8px 9px)]',
           })}
         >
           <span
@@ -92,7 +85,7 @@ export const FeaturedPost = ({ post }: FeaturedPostProps) => {
               fontFamily: 'mono',
               fontSize: 'xs',
               color: 'ink.500',
-              letterSpacing: '0.08em',
+              letterSpacing: 'monoXl',
             })}
           >
             FEATURE · {post.series ?? 'NOTE'}
@@ -106,9 +99,9 @@ export const FeaturedPost = ({ post }: FeaturedPostProps) => {
           mb: '3',
           fontFamily: 'serif',
           fontSize: { base: '3xl', md: '4xl' },
-          fontWeight: '500',
-          lineHeight: '1.2',
-          letterSpacing: '-0.02em',
+          fontWeight: 'medium',
+          lineHeight: 'tighter',
+          letterSpacing: 'tightX',
           color: 'ink.950',
         })}
       >
@@ -118,10 +111,10 @@ export const FeaturedPost = ({ post }: FeaturedPostProps) => {
         <p
           className={css({
             fontFamily: 'serif',
-            fontSize: 'base',
+            fontSize: 'md',
             fontStyle: 'italic',
             color: 'ink.700',
-            lineHeight: '1.6',
+            lineHeight: 'relaxed',
             mb: '4',
             lineClamp: 2,
           })}

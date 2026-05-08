@@ -15,10 +15,10 @@ export function TopPostsLoading() {
     <section
       className={css({
         py: '12',
-        maxW: '1200px',
+        maxW: 'containerW',
         mx: 'auto',
         px: '6',
-        borderTopWidth: '1px',
+        borderTopWidth: '[1px]',
         borderColor: 'ink.border',
       })}
     >
@@ -29,14 +29,14 @@ export function TopPostsLoading() {
           bg: 'ink.100',
           rounded: 'sm',
           mb: '8',
-          animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+          animation: '[pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite]',
         })}
       />
       <div
         className={css({
           display: 'grid',
           gridTemplateColumns: { base: '1fr', md: 'repeat(3, 1fr)' },
-          borderTopWidth: '1px',
+          borderTopWidth: '[1px]',
           borderColor: 'ink.border',
         })}
       >
@@ -45,11 +45,11 @@ export function TopPostsLoading() {
             key={i}
             className={css({
               p: '6',
-              borderBottomWidth: '1px',
+              borderBottomWidth: '[1px]',
               borderRightWidth: { base: '0', md: i < 2 ? '1px' : '0' },
               borderColor: 'ink.border',
               h: '36',
-              animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+              animation: '[pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite]',
               bg: 'ink.50',
             })}
           />
@@ -85,10 +85,10 @@ export function TopPosts({ posts }: TopPostsProps) {
     <section
       className={css({
         py: { base: '12', md: '20' },
-        maxW: '1200px',
+        maxW: 'containerW',
         mx: 'auto',
         px: '6',
-        borderTopWidth: '1px',
+        borderTopWidth: '[1px]',
         borderColor: 'ink.border',
       })}
     >
@@ -123,13 +123,13 @@ export function TopPosts({ posts }: TopPostsProps) {
         >
           인기 기록
         </h2>
-        <div className={css({ flex: 1, h: '1px', bg: 'ink.border' })} />
+        <div className={css({ flex: '1', h: '[1px]', bg: 'ink.border' })} />
       </div>
       <div
         className={css({
           display: 'grid',
           gridTemplateColumns: { base: '1fr', md: 'repeat(3, 1fr)' },
-          borderTopWidth: '1px',
+          borderTopWidth: '[1px]',
           borderColor: 'ink.border',
         })}
       >

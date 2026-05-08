@@ -35,12 +35,12 @@ export function MermaidChart({ chart }: { chart: string }) {
         p: '6',
         bg: 'gray.50/50',
         rounded: '2xl',
-        borderWidth: '1px',
+        borderWidth: '[1px]',
         borderColor: 'gray.100',
         display: 'flex',
         justifyContent: 'center',
         overflow: 'auto',
-        transition: 'all 0.3s',
+        transition: '[all 0.3s]',
         _hover: { shadow: 'xl', transform: 'translateY(-2px)', bg: 'white' },
       })}
       dangerouslySetInnerHTML={{ __html: svg }}

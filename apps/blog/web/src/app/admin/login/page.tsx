@@ -30,7 +30,7 @@ function LoginForm() {
         flexDir: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        minH: '100vh',
+        minH: '[100vh]',
         bg: 'ink.50',
       })}
     >
@@ -38,11 +38,11 @@ function LoginForm() {
         className={css({
           p: '8',
           rounded: 'xl',
-          borderWidth: '1px',
+          borderWidth: '[1px]',
           borderColor: 'ink.border',
           bg: 'ink.25',
           textAlign: 'center',
-          maxW: '400px',
+          maxW: 'formW',
           w: 'full',
         })}
       >
@@ -78,7 +78,7 @@ function LoginForm() {
               p: '3',
               bg: 'red.50',
               rounded: 'lg',
-              borderWidth: '1px',
+              borderWidth: '[1px]',
               borderColor: 'red.200',
             })}
           >
@@ -104,7 +104,7 @@ function LoginForm() {
             opacity: isLoading ? 0.7 : 1,
             fontWeight: 'semibold',
             fontSize: 'sm',
-            transition: 'opacity 0.15s',
+            transition: '[opacity 0.15s]',
             _hover: { opacity: '0.85' },
           })}
         >

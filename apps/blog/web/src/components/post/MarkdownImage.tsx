@@ -33,7 +33,7 @@ export function MarkdownImage({ src, alt, relativeDir }: MarkdownImageProps) {
           w: 'full',
           h: 'auto',
           shadow: '2xl',
-          borderWidth: '1px',
+          borderWidth: '[1px]',
           borderColor: 'gray.100',
         })}
       />

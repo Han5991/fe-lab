@@ -21,7 +21,7 @@ export const TagDistribution = ({ tags, highlightId }: TagDistributionProps) => 
             key={t.id}
             className={css({
               display: 'grid',
-              gridTemplateColumns: '110px 1fr 32px',
+              gridTemplateColumns: '[110px 1fr 32px]',
               alignItems: 'center',
               gap: '3',
             })}
@@ -41,18 +41,18 @@ export const TagDistribution = ({ tags, highlightId }: TagDistributionProps) => 
             <div
               className={css({
                 position: 'relative',
-                h: '14px',
+                h: '[14px]',
                 bg: 'paper.100',
-                borderWidth: '1px',
+                borderWidth: '[1px]',
                 borderColor: 'ink.border',
               })}
             >
               <div
                 className={css({
                   position: 'absolute',
-                  left: 0,
-                  top: 0,
-                  bottom: 0,
+                  left: '0',
+                  top: '0',
+                  bottom: '0',
                   bg: isHighlighted ? 'marker.300' : 'ink.700',
                 })}
                 style={{ width: `${ratio}%` }}

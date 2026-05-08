@@ -17,13 +17,13 @@ export function LoadingPlaceholder({
 }: LoadingPlaceholderProps) {
   return (
     <div
+      style={{ height: height ?? '100%' }}
       className={cx(
         css({
-          w: '100%',
-          h: height || '100%',
-          bg: '#f3f4f6',
-          animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-          rounded: '8px',
+          w: 'full',
+          bg: 'paper.100',
+          animation: '[pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite]',
+          rounded: 'lg',
         }),
         className,
       )}

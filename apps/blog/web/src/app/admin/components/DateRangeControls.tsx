@@ -85,7 +85,7 @@ export function useDateFilter(
 const inputClass = css({
   py: '1.5',
   px: '2',
-  borderWidth: '1px',
+  borderWidth: '[1px]',
   borderColor: 'ink.border',
   rounded: 'md',
   fontSize: 'xs',

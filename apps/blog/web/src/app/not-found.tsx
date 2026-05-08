@@ -9,7 +9,7 @@ export default function NotFound() {
         flexDir: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        minH: '60vh',
+        minH: '[60vh]',
         px: '6',
         textAlign: 'center',
       })}
@@ -18,8 +18,8 @@ export default function NotFound() {
         className={css({
           fontSize: { base: '6xl', md: '8xl' },
           fontWeight: 'bold',
-          color: 'gray.200',
-          lineHeight: 1,
+          color: 'ink.200',
+          lineHeight: 'flat',
         })}
       >
         404
@@ -28,7 +28,7 @@ export default function NotFound() {
         className={css({
           fontSize: { base: 'xl', md: '2xl' },
           fontWeight: 'bold',
-          color: 'gray.900',
+          color: 'ink.950',
           mt: '4',
         })}
       >
@@ -37,9 +37,9 @@ export default function NotFound() {
       <p
         className={css({
           fontSize: 'sm',
-          color: 'gray.500',
+          color: 'ink.500',
           mt: '3',
-          maxW: '400px',
+          maxW: 'formW',
         })}
       >
         요청하신 페이지가 존재하지 않거나, 이동되었거나, 일시적으로 사용할 수
@@ -59,16 +59,16 @@ export default function NotFound() {
           className={css({
             px: '6',
             py: '3',
-            bg: 'gray.900',
-            color: 'white',
+            bg: 'ink.950',
+            color: 'paper.50',
             rounded: 'lg',
             fontSize: 'sm',
             fontWeight: 'medium',
             textAlign: 'center',
-            _hover: { bg: 'gray.700' },
-            _active: { bg: 'gray.800' },
-            transition: 'background 0.2s',
-            textDecoration: 'none',
+            _hover: { bg: 'ink.800' },
+            _active: { bg: 'ink.900' },
+            transition: '[background 0.2s]',
+            textDecorationLine: 'none',
           })}
         >
           홈으로 돌아가기
@@ -78,17 +78,17 @@ export default function NotFound() {
           className={css({
             px: '6',
             py: '3',
-            borderWidth: '1px',
-            borderColor: 'gray.300',
-            color: 'gray.700',
+            borderWidth: '[1px]',
+            borderColor: 'ink.border',
+            color: 'ink.700',
             rounded: 'lg',
             fontSize: 'sm',
             fontWeight: 'medium',
             textAlign: 'center',
-            _hover: { bg: 'gray.50', borderColor: 'gray.400' },
-            _active: { bg: 'gray.100' },
-            transition: 'all 0.2s',
-            textDecoration: 'none',
+            _hover: { bg: 'paper.100', borderColor: 'ink.borderStrong' },
+            _active: { bg: 'paper.200' },
+            transition: '[all 0.2s]',
+            textDecorationLine: 'none',
           })}
         >
           글 목록 보기

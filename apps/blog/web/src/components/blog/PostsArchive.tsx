@@ -33,7 +33,10 @@ export const PostsArchiveView = ({
   years,
 }: PostsArchiveViewProps) => {
   const [q, setQ] = useQueryState('q', parseAsString.withDefault(''));
-  const [tagParam, setTagParam] = useQueryState('tag', parseAsString.withDefault(''));
+  const [tagParam, setTagParam] = useQueryState(
+    'tag',
+    parseAsString.withDefault(''),
+  );
   const [seriesParam, setSeriesParam] = useQueryState(
     'series',
     parseAsString.withDefault(''),
@@ -88,7 +91,6 @@ export const PostsArchiveView = ({
     } else {
       sorted.sort((a, b) => (b.date ?? '').localeCompare(a.date ?? ''));
     }
-    // popular는 별도 view 데이터가 없으므로 최신순과 같이 동작 (mock)
     return sorted;
   }, [posts, q, activeTags, seriesParam, yearParam, sort]);
 
@@ -119,7 +121,7 @@ export const PostsArchiveView = ({
     <div
       className={css({
         display: 'grid',
-        gridTemplateColumns: { base: '1fr', md: '240px 1fr' },
+        gridTemplateColumns: { base: '1fr', md: '[240px 1fr]' },
         gap: { base: '8', md: '12' },
       })}
     >
@@ -128,33 +130,14 @@ export const PostsArchiveView = ({
           position: { md: 'sticky' },
           top: { md: '20' },
           alignSelf: { md: 'start' },
-          maxH: { md: 'calc(100vh - 88px)' },
+          maxH: { md: '[calc(100vh - 88px)]' },
           overflowY: { md: 'auto' },
           display: 'flex',
           flexDir: 'column',
           gap: '7',
         })}
       >
-        <SearchBox
-          placeholder="검색…"
-          showHotkey={false}
-          onClick={() => {
-            const el = document.getElementById('archive-search-input');
-            el?.focus();
-          }}
-        />
-
-        <input
-          id="archive-search-input"
-          type="search"
-          value={q}
-          onChange={e => setQ(e.target.value || null)}
-          placeholder="검색…"
-          className={css({
-            display: 'none',
-          })}
-        />
-
+        <ArchiveSearchBar q={q} onChange={v => setQ(v || null)} />
         <SortRadio value={sort} onChange={v => setSort(v)} />
         <ViewToggle value={view} onChange={v => setView(v)} />
 
@@ -173,9 +156,7 @@ export const PostsArchiveView = ({
             label="시리즈"
             items={seriesItems}
             active={seriesParam ? [seriesParam] : []}
-            onToggle={id =>
-              setSeriesParam(seriesParam === id ? null : id)
-            }
+            onToggle={id => setSeriesParam(seriesParam === id ? null : id)}
           />
         )}
 
@@ -190,11 +171,6 @@ export const PostsArchiveView = ({
       </aside>
 
       <div>
-        <ArchiveSearchBar
-          q={q}
-          onChange={v => setQ(v || null)}
-        />
-
         <ActiveFilters
           tags={activeTags}
           series={seriesParam || null}
@@ -255,12 +231,12 @@ export const PostsArchiveView = ({
                 color: 'marker.600',
                 px: '3',
                 py: '2',
-                borderWidth: '1px',
+                borderWidth: '[1px]',
                 borderColor: 'ink.border',
                 rounded: 'md',
                 cursor: 'pointer',
                 _hover: { borderColor: 'marker.600' },
-                transition: 'border-color 0.15s',
+                transition: '[border-color 0.15s]',
               })}
             >
               ✕ 모두 지우기
@@ -272,8 +248,8 @@ export const PostsArchiveView = ({
               display: 'grid',
               gridTemplateColumns: {
                 base: '1fr',
-                sm: 'repeat(2, 1fr)',
-                lg: 'repeat(3, 1fr)',
+                sm: '[repeat(2, 1fr)]',
+                lg: '[repeat(3, 1fr)]',
               },
               gap: '6',
             })}
@@ -285,10 +261,10 @@ export const PostsArchiveView = ({
         ) : (
           <ol
             className={css({
-              listStyle: 'none',
-              p: 0,
-              m: 0,
-              borderTopWidth: '1px',
+              listStyleType: 'none',
+              p: '0',
+              m: '0',
+              borderTopWidth: '[1px]',
               borderColor: 'ink.border',
             })}
           >
@@ -317,13 +293,12 @@ const ArchiveSearchBar = ({ q, onChange }: ArchiveSearchBarProps) => (
       gap: '2',
       px: '3',
       py: '2.5',
-      mb: '4',
-      borderWidth: '1px',
+      borderWidth: '[1px]',
       borderColor: 'ink.border',
       rounded: 'lg',
       bg: 'paper.50',
       _focusWithin: { borderColor: 'ink.950' },
-      transition: 'border-color 0.15s',
+      transition: '[border-color 0.15s]',
     })}
   >
     <span
@@ -343,10 +318,10 @@ const ArchiveSearchBar = ({ q, onChange }: ArchiveSearchBarProps) => (
       onChange={e => onChange(e.target.value)}
       placeholder="제목, 본문, 태그 검색…"
       className={css({
-        flex: 1,
+        flex: '1',
         bg: 'transparent',
-        border: 'none',
-        outline: 'none',
+        border: '[none]',
+        outline: '[none]',
         fontSize: 'sm',
         color: 'ink.950',
         fontFamily: 'sans',

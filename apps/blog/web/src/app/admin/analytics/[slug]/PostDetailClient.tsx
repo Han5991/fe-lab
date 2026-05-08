@@ -34,12 +34,12 @@ import {
 function LoadingPlaceholder({ height }: { height?: string }) {
   return (
     <div
+      style={{ height: height ?? '100%' }}
       className={css({
-        w: '100%',
-        h: height || '100%',
-        bg: '#f3f4f6',
-        animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-        rounded: '8px',
+        w: 'full',
+        bg: 'paper.100',
+        animation: '[pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite]',
+        rounded: 'lg',
       })}
     />
   );
@@ -99,26 +99,26 @@ function PostDetailContent() {
       <div
         className={css({
           bg: 'white',
-          p: '1.5rem 2rem',
-          rounded: '8px',
-          boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
-          mb: '1.5rem',
+          p: '[1.5rem 2rem]',
+          rounded: '[8px]',
+          boxShadow: '[0 1px 2px 0 rgb(0 0 0 / 0.05)]',
+          mb: '6',
         })}
       >
         <div
           className={css({
             display: 'flex',
             alignItems: 'center',
-            gap: '0.75rem',
-            mb: '1rem',
+            gap: '3',
+            mb: '4',
           })}
         >
           <h2
             className={css({
-              fontSize: '1.25rem',
+              fontSize: 'xl',
               fontWeight: 'bold',
-              color: '#111827',
-              flex: 1,
+              color: '[#111827]',
+              flex: '1',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
@@ -131,8 +131,8 @@ function PostDetailContent() {
             target="_blank"
             onClick={e => e.stopPropagation()}
             className={css({
-              color: '#6b7280',
-              _hover: { color: '#3b82f6' },
+              color: '[#6b7280]',
+              _hover: { color: '[#3b82f6]' },
               flexShrink: 0,
             })}
           >
@@ -144,7 +144,7 @@ function PostDetailContent() {
           className={css({
             display: 'flex',
             flexWrap: 'wrap',
-            gap: '2rem',
+            gap: '8',
             alignItems: 'center',
           })}
         >
@@ -153,11 +153,11 @@ function PostDetailContent() {
               className={css({
                 display: 'flex',
                 alignItems: 'center',
-                gap: '0.5rem',
+                gap: '2',
               })}
             >
-              <Calendar size={16} className={css({ color: '#9ca3af' })} />
-              <span className={css({ fontSize: '0.875rem', color: '#6b7280' })}>
+              <Calendar size={16} className={css({ color: '[#9ca3af]' })} />
+              <span className={css({ fontSize: 'sm', color: '[#6b7280]' })}>
                 {post.date}
               </span>
             </div>
@@ -166,31 +166,31 @@ function PostDetailContent() {
             className={css({
               display: 'flex',
               alignItems: 'baseline',
-              gap: '0.5rem',
+              gap: '2',
             })}
           >
-            <span className={css({ fontSize: '0.875rem', color: '#6b7280' })}>
+            <span className={css({ fontSize: 'sm', color: '[#6b7280]' })}>
               총 조회수
             </span>
             <span
               className={css({
                 fontWeight: 'bold',
-                color: '#111827',
-                fontSize: '1.25rem',
+                color: '[#111827]',
+                fontSize: 'xl',
               })}
             >
               {post.totalViews.toLocaleString()}
             </span>
-            <span className={css({ fontSize: '0.875rem', color: '#6b7280' })}>
+            <span className={css({ fontSize: 'sm', color: '[#6b7280]' })}>
               회
             </span>
           </div>
           {post.todayViews > 0 && (
             <span
               className={css({
-                color: '#3b82f6',
+                color: '[#3b82f6]',
                 fontWeight: 'bold',
-                fontSize: '0.875rem',
+                fontSize: 'sm',
               })}
             >
               오늘 +{post.todayViews}
@@ -208,37 +208,37 @@ function PostDetailContent() {
             sm: 'repeat(2, 1fr)',
             lg: 'repeat(4, 1fr)',
           },
-          gap: '1rem',
-          mb: '1.5rem',
+          gap: '4',
+          mb: '6',
         })}
       >
         {/* 7-day growth rate */}
         <div
           className={css({
             bg: 'white',
-            p: '1.25rem',
-            rounded: '8px',
-            boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
+            p: '5',
+            rounded: '[8px]',
+            boxShadow: '[0 1px 2px 0 rgb(0 0 0 / 0.05)]',
           })}
         >
           <div
             className={css({
               display: 'flex',
               alignItems: 'center',
-              gap: '0.5rem',
-              mb: '0.75rem',
+              gap: '2',
+              mb: '3',
             })}
           >
             {derived.weekGrowthRate !== null && derived.weekGrowthRate >= 0 ? (
-              <TrendingUp size={18} className={css({ color: '#22c55e' })} />
+              <TrendingUp size={18} className={css({ color: '[#22c55e]' })} />
             ) : (
-              <TrendingDown size={18} className={css({ color: '#ef4444' })} />
+              <TrendingDown size={18} className={css({ color: '[#ef4444]' })} />
             )}
             <span
               className={css({
-                fontSize: '0.8rem',
-                color: '#6b7280',
-                fontWeight: '500',
+                fontSize: '[0.8rem]',
+                color: '[#6b7280]',
+                fontWeight: 'medium',
               })}
             >
               7일 증감률
@@ -246,14 +246,14 @@ function PostDetailContent() {
           </div>
           <span
             className={css({
-              fontSize: '1.5rem',
+              fontSize: '2xl',
               fontWeight: 'bold',
               color:
                 derived.weekGrowthRate !== null
                   ? derived.weekGrowthRate >= 0
-                    ? '#22c55e'
-                    : '#ef4444'
-                  : '#9ca3af',
+                    ? '[#22c55e]'
+                    : '[#ef4444]'
+                  : '[#9ca3af]',
             })}
           >
             {derived.weekGrowthRate !== null
@@ -266,25 +266,25 @@ function PostDetailContent() {
         <div
           className={css({
             bg: 'white',
-            p: '1.25rem',
-            rounded: '8px',
-            boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
+            p: '5',
+            rounded: '[8px]',
+            boxShadow: '[0 1px 2px 0 rgb(0 0 0 / 0.05)]',
           })}
         >
           <div
             className={css({
               display: 'flex',
               alignItems: 'center',
-              gap: '0.5rem',
-              mb: '0.75rem',
+              gap: '2',
+              mb: '3',
             })}
           >
-            <BarChart3 size={18} className={css({ color: '#f59e0b' })} />
+            <BarChart3 size={18} className={css({ color: '[#f59e0b]' })} />
             <span
               className={css({
-                fontSize: '0.8rem',
-                color: '#6b7280',
-                fontWeight: '500',
+                fontSize: '[0.8rem]',
+                color: '[#6b7280]',
+                fontWeight: 'medium',
               })}
             >
               피크일
@@ -294,27 +294,27 @@ function PostDetailContent() {
             <div>
               <span
                 className={css({
-                  fontSize: '1.5rem',
+                  fontSize: '2xl',
                   fontWeight: 'bold',
-                  color: '#111827',
+                  color: '[#111827]',
                 })}
               >
                 {derived.peakDay.count}
               </span>
               <span
                 className={css({
-                  fontSize: '0.8rem',
-                  color: '#6b7280',
-                  ml: '0.25rem',
+                  fontSize: '[0.8rem]',
+                  color: '[#6b7280]',
+                  ml: '1',
                 })}
               >
                 회
               </span>
               <div
                 className={css({
-                  fontSize: '0.8rem',
-                  color: '#9ca3af',
-                  mt: '0.25rem',
+                  fontSize: '[0.8rem]',
+                  color: '[#9ca3af]',
+                  mt: '1',
                 })}
               >
                 {derived.peakDay.date}
@@ -323,9 +323,9 @@ function PostDetailContent() {
           ) : (
             <span
               className={css({
-                fontSize: '1.5rem',
+                fontSize: '2xl',
                 fontWeight: 'bold',
-                color: '#9ca3af',
+                color: '[#9ca3af]',
               })}
             >
               —
@@ -337,25 +337,25 @@ function PostDetailContent() {
         <div
           className={css({
             bg: 'white',
-            p: '1.25rem',
-            rounded: '8px',
-            boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
+            p: '5',
+            rounded: '[8px]',
+            boxShadow: '[0 1px 2px 0 rgb(0 0 0 / 0.05)]',
           })}
         >
           <div
             className={css({
               display: 'flex',
               alignItems: 'center',
-              gap: '0.5rem',
-              mb: '0.75rem',
+              gap: '2',
+              mb: '3',
             })}
           >
-            <Calendar size={18} className={css({ color: '#8b5cf6' })} />
+            <Calendar size={18} className={css({ color: '[#8b5cf6]' })} />
             <span
               className={css({
-                fontSize: '0.8rem',
-                color: '#6b7280',
-                fontWeight: '500',
+                fontSize: '[0.8rem]',
+                color: '[#6b7280]',
+                fontWeight: 'medium',
               })}
             >
               일평균
@@ -363,18 +363,18 @@ function PostDetailContent() {
           </div>
           <span
             className={css({
-              fontSize: '1.5rem',
+              fontSize: '2xl',
               fontWeight: 'bold',
-              color: '#111827',
+              color: '[#111827]',
             })}
           >
             {derived.dailyAverage}
           </span>
           <span
             className={css({
-              fontSize: '0.8rem',
-              color: '#6b7280',
-              ml: '0.25rem',
+              fontSize: '[0.8rem]',
+              color: '[#6b7280]',
+              ml: '1',
             })}
           >
             회/일
@@ -385,25 +385,25 @@ function PostDetailContent() {
         <div
           className={css({
             bg: 'white',
-            p: '1.25rem',
-            rounded: '8px',
-            boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
+            p: '5',
+            rounded: '[8px]',
+            boxShadow: '[0 1px 2px 0 rgb(0 0 0 / 0.05)]',
           })}
         >
           <div
             className={css({
               display: 'flex',
               alignItems: 'center',
-              gap: '0.5rem',
-              mb: '0.75rem',
+              gap: '2',
+              mb: '3',
             })}
           >
-            <Trophy size={18} className={css({ color: '#f59e0b' })} />
+            <Trophy size={18} className={css({ color: '[#f59e0b]' })} />
             <span
               className={css({
-                fontSize: '0.8rem',
-                color: '#6b7280',
-                fontWeight: '500',
+                fontSize: '[0.8rem]',
+                color: '[#6b7280]',
+                fontWeight: 'medium',
               })}
             >
               마일스톤
@@ -413,7 +413,7 @@ function PostDetailContent() {
             className={css({
               display: 'flex',
               flexDirection: 'column',
-              gap: '0.25rem',
+              gap: '1',
             })}
           >
             {derived.milestones.map(m => (
@@ -422,22 +422,22 @@ function PostDetailContent() {
                 className={css({
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '0.5rem',
-                  fontSize: '0.8rem',
+                  gap: '2',
+                  fontSize: '[0.8rem]',
                 })}
               >
                 <span>{m.reached ? '●' : '○'}</span>
                 <span
                   className={css({
-                    color: m.reached ? '#111827' : '#9ca3af',
-                    fontWeight: m.reached ? '600' : '400',
+                    color: m.reached ? '[#111827]' : '[#9ca3af]',
+                    fontWeight: m.reached ? 'semibold' : 'normal',
                   })}
                 >
                   {m.target.toLocaleString()}회
                 </span>
                 {m.reached && m.date && (
                   <span
-                    className={css({ color: '#9ca3af', fontSize: '0.75rem' })}
+                    className={css({ color: '[#9ca3af]', fontSize: '[0.75rem]' })}
                   >
                     ({m.date})
                   </span>
@@ -452,10 +452,10 @@ function PostDetailContent() {
       <div
         className={css({
           bg: 'white',
-          p: '2rem',
-          rounded: '8px',
-          boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
-          mb: '1.5rem',
+          p: '8',
+          rounded: '[8px]',
+          boxShadow: '[0 1px 2px 0 rgb(0 0 0 / 0.05)]',
+          mb: '6',
         })}
       >
         <div
@@ -463,24 +463,24 @@ function PostDetailContent() {
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            mb: '1.5rem',
+            mb: '6',
             flexWrap: 'wrap',
-            gap: '1rem',
+            gap: '4',
           })}
         >
           <div
             className={css({
               display: 'flex',
               alignItems: 'baseline',
-              gap: '0.75rem',
+              gap: '3',
               flexWrap: 'wrap',
             })}
           >
             <h3
               className={css({
-                fontSize: '1.125rem',
+                fontSize: 'lg',
                 fontWeight: 'bold',
-                color: '#111827',
+                color: '[#111827]',
               })}
             >
               📈 일별 조회수 추이
@@ -488,8 +488,8 @@ function PostDetailContent() {
             {autoFellBackToAll && (
               <span
                 className={css({
-                  fontSize: '0.75rem',
-                  color: '#9ca3af',
+                  fontSize: '[0.75rem]',
+                  color: '[#9ca3af]',
                 })}
               >
                 최근 30일 데이터가 없어 전체 기간으로 표시 중
@@ -505,7 +505,7 @@ function PostDetailContent() {
             setEndDate={setEndDate}
           />
         </div>
-        <div className={css({ h: '300px', w: '100%' })}>
+        <div className={css({ h: '[300px]', w: 'full' })}>
           {trendData.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
               <LineChart
@@ -514,15 +514,15 @@ function PostDetailContent() {
               >
                 <XAxis
                   dataKey="name"
-                  axisLine={{ stroke: '#e5e7eb' }}
+                  axisLine={{ stroke: '[#e5e7eb]' }}
                   tickLine={false}
-                  tick={{ fill: '#6b7280', fontSize: 12 }}
+                  tick={{ fill: '[#6b7280]', fontSize: 12 }}
                   dy={10}
                 />
                 <YAxis
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fill: '#6b7280', fontSize: 12 }}
+                  tick={{ fill: '[#6b7280]', fontSize: 12 }}
                 />
                 <Tooltip
                   cursor={{
@@ -531,7 +531,7 @@ function PostDetailContent() {
                     strokeDasharray: '4 4',
                   }}
                   contentStyle={{
-                    borderRadius: '8px',
+                    borderRadius: '[8px]',
                     border: 'none',
                     boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
                   }}
@@ -541,7 +541,7 @@ function PostDetailContent() {
                   dataKey="views"
                   stroke="#3b82f6"
                   strokeWidth={3}
-                  dot={{ r: 4, fill: '#3b82f6', strokeWidth: 0 }}
+                  dot={{ r: 4, fill: '[#3b82f6]', strokeWidth: 0 }}
                   activeDot={{ r: 6, fill: '#2563eb', strokeWidth: 0 }}
                 />
               </LineChart>
@@ -550,10 +550,10 @@ function PostDetailContent() {
             <div
               className={css({
                 display: 'flex',
-                h: '100%',
+                h: 'full',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#9ca3af',
+                color: '[#9ca3af]',
               })}
             >
               <p>해당 기간에 데이터가 없습니다.</p>
@@ -567,29 +567,29 @@ function PostDetailContent() {
         className={css({
           display: 'grid',
           gridTemplateColumns: { base: '1fr', lg: 'repeat(2, 1fr)' },
-          gap: '1.5rem',
+          gap: '6',
         })}
       >
         {/* Hourly Distribution */}
         <div
           className={css({
             bg: 'white',
-            p: '2rem',
-            rounded: '8px',
-            boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
+            p: '8',
+            rounded: '[8px]',
+            boxShadow: '[0 1px 2px 0 rgb(0 0 0 / 0.05)]',
           })}
         >
           <h3
             className={css({
-              fontSize: '1.125rem',
+              fontSize: 'lg',
               fontWeight: 'bold',
-              color: '#111827',
-              mb: '1.5rem',
+              color: '[#111827]',
+              mb: '6',
             })}
           >
             🕐 시간대별 분포
           </h3>
-          <div className={css({ h: '250px', w: '100%' })}>
+          <div className={css({ h: '[250px]', w: 'full' })}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={hourlyData}
@@ -597,19 +597,19 @@ function PostDetailContent() {
               >
                 <XAxis
                   dataKey="hour"
-                  axisLine={{ stroke: '#e5e7eb' }}
+                  axisLine={{ stroke: '[#e5e7eb]' }}
                   tickLine={false}
-                  tick={{ fill: '#6b7280', fontSize: 10 }}
+                  tick={{ fill: '[#6b7280]', fontSize: 10 }}
                   interval={2}
                 />
                 <YAxis
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fill: '#6b7280', fontSize: 12 }}
+                  tick={{ fill: '[#6b7280]', fontSize: 12 }}
                 />
                 <Tooltip
                   contentStyle={{
-                    borderRadius: '8px',
+                    borderRadius: '[8px]',
                     border: 'none',
                     boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
                   }}
@@ -631,22 +631,22 @@ function PostDetailContent() {
         <div
           className={css({
             bg: 'white',
-            p: '2rem',
-            rounded: '8px',
-            boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
+            p: '8',
+            rounded: '[8px]',
+            boxShadow: '[0 1px 2px 0 rgb(0 0 0 / 0.05)]',
           })}
         >
           <h3
             className={css({
-              fontSize: '1.125rem',
+              fontSize: 'lg',
               fontWeight: 'bold',
-              color: '#111827',
-              mb: '1.5rem',
+              color: '[#111827]',
+              mb: '6',
             })}
           >
             📅 요일별 분포
           </h3>
-          <div className={css({ h: '250px', w: '100%' })}>
+          <div className={css({ h: '[250px]', w: 'full' })}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={dowData}
@@ -654,18 +654,18 @@ function PostDetailContent() {
               >
                 <XAxis
                   dataKey="day"
-                  axisLine={{ stroke: '#e5e7eb' }}
+                  axisLine={{ stroke: '[#e5e7eb]' }}
                   tickLine={false}
-                  tick={{ fill: '#6b7280', fontSize: 12 }}
+                  tick={{ fill: '[#6b7280]', fontSize: 12 }}
                 />
                 <YAxis
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fill: '#6b7280', fontSize: 12 }}
+                  tick={{ fill: '[#6b7280]', fontSize: 12 }}
                 />
                 <Tooltip
                   contentStyle={{
-                    borderRadius: '8px',
+                    borderRadius: '[8px]',
                     border: 'none',
                     boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
                   }}
@@ -691,21 +691,21 @@ export default function PostDetailClient() {
   return (
     <div
       className={css({
-        minH: 'calc(100dvh-128px)',
-        bg: '#f9fafb',
-        p: { base: '1rem', md: '2rem' },
+        minH: '[calc(100dvh - 128px)]',
+        bg: '[#f9fafb]',
+        p: { base: '4', md: '8' },
       })}
     >
       <header
         className={css({
           display: 'flex',
           alignItems: 'center',
-          mb: '2rem',
+          mb: '8',
           bg: 'white',
-          p: { base: '0.75rem 1rem', md: '1rem 2rem' },
-          rounded: '8px',
-          boxShadow: '0 1px 3px 0 rgb(0 0 0 / 0.1)',
-          gap: '1rem',
+          p: { base: '[0.75rem 1rem]', md: '[1rem 2rem]' },
+          rounded: '[8px]',
+          boxShadow: '[0 1px 3px 0 rgb(0 0 0 / 0.1)]',
+          gap: '4',
         })}
       >
         <Link
@@ -713,11 +713,11 @@ export default function PostDetailClient() {
           className={css({
             display: 'flex',
             alignItems: 'center',
-            gap: '0.25rem',
-            color: '#6b7280',
-            fontSize: '0.875rem',
+            gap: '1',
+            color: '[#6b7280]',
+            fontSize: 'sm',
             textDecoration: 'none',
-            _hover: { color: '#3b82f6' },
+            _hover: { color: '[#3b82f6]' },
           })}
         >
           <ArrowLeft size={16} />
@@ -725,9 +725,9 @@ export default function PostDetailClient() {
         </Link>
         <h1
           className={css({
-            fontSize: '1.5rem',
+            fontSize: '2xl',
             fontWeight: 'bold',
-            color: '#111827',
+            color: '[#111827]',
           })}
         >
           포스트 상세 분석
@@ -740,7 +740,7 @@ export default function PostDetailClient() {
             className={css({
               display: 'flex',
               flexDirection: 'column',
-              gap: '1.5rem',
+              gap: '6',
             })}
           >
             <LoadingPlaceholder height="120px" />
@@ -750,7 +750,7 @@ export default function PostDetailClient() {
               className={css({
                 display: 'grid',
                 gridTemplateColumns: { base: '1fr', lg: 'repeat(2, 1fr)' },
-                gap: '1.5rem',
+                gap: '6',
               })}
             >
               <LoadingPlaceholder height="300px" />

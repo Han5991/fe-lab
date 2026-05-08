@@ -26,9 +26,9 @@ export const KpiCard = ({ num, label, delta, small, series }: KpiCardProps) => {
           className={css({
             fontFamily: 'serif',
             fontSize: { base: '4xl', md: '5xl' },
-            fontWeight: '600',
-            lineHeight: '1',
-            letterSpacing: '-0.02em',
+            fontWeight: 'semibold',
+            lineHeight: 'flat',
+            letterSpacing: 'tightX',
             color: 'ink.950',
             fontVariantNumeric: 'tabular-nums',
           })}
@@ -58,7 +58,7 @@ export const KpiCard = ({ num, label, delta, small, series }: KpiCardProps) => {
               fontFamily: 'mono',
               fontSize: 'xs',
               color: delta >= 0 ? 'moss.600' : 'marker.600',
-              letterSpacing: '0.04em',
+              letterSpacing: 'mono',
             })}
           >
             {delta >= 0 ? '↑' : '↓'} {Math.abs(delta * 100).toFixed(1)}%

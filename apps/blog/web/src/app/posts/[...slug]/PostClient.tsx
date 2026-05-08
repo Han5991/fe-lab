@@ -55,8 +55,8 @@ export default function PostClient({
       <SsgoiTransition
         id={`/posts/${post.slug}`}
         className={css({
-          maxW: '1080px',
-          m: '0 auto',
+          maxW: 'articleW',
+          mx: 'auto',
           px: '8',
           py: { base: '10', md: '14' },
           bg: 'paper.50',
@@ -65,15 +65,15 @@ export default function PostClient({
         <div
           className={css({
             display: 'grid',
-            gridTemplateColumns: { base: '1fr', lg: '1fr 240px' },
+            gridTemplateColumns: { base: '1fr', lg: '[1fr 240px]' },
             gap: { base: '0', lg: '16' },
             alignItems: 'start',
           })}
         >
           <article
             className={css({
-              maxW: '680px',
-              minW: 0,
+              maxW: 'proseW',
+              minW: '0',
               mx: { base: 'auto', lg: '0' },
               w: 'full',
             })}
@@ -91,7 +91,7 @@ export default function PostClient({
                   mb: '10',
                   w: 'full',
                   h: 'auto',
-                  borderWidth: '1px',
+                  borderWidth: '[1px]',
                   borderColor: 'ink.border',
                 })}
               />
@@ -101,49 +101,49 @@ export default function PostClient({
               id="post-content"
               className={css({
                 fontFamily: 'serif',
-                fontSize: '1.125rem',
-                lineHeight: '1.75',
+                fontSize: 'lg',
+                lineHeight: 'prose',
                 color: 'ink.900',
                 '& h1': {
                   fontFamily: 'serif',
                   fontSize: { base: '2xl', md: '3xl' },
-                  fontWeight: '600',
-                  letterSpacing: '-0.015em',
+                  fontWeight: 'semibold',
+                  letterSpacing: 'tightSm',
                   mt: '14',
                   mb: '5',
                   color: 'ink.950',
-                  lineHeight: '1.25',
-                  scrollMarginTop: '100px',
+                  lineHeight: 'tight',
+                  scrollMarginTop: '[100px]',
                 },
                 '& h2': {
                   fontFamily: 'serif',
                   fontSize: { base: 'xl', md: '2xl' },
-                  fontWeight: '600',
-                  letterSpacing: '-0.01em',
+                  fontWeight: 'semibold',
+                  letterSpacing: 'tightXs',
                   mt: '12',
                   mb: '4',
                   color: 'ink.950',
-                  lineHeight: '1.3',
-                  scrollMarginTop: '100px',
+                  lineHeight: 'header',
+                  scrollMarginTop: '[100px]',
                 },
                 '& h3': {
                   fontFamily: 'serif',
                   fontSize: 'xl',
-                  fontWeight: '600',
+                  fontWeight: 'semibold',
                   fontStyle: 'italic',
                   mt: '10',
                   mb: '3',
                   color: 'ink.950',
-                  scrollMarginTop: '100px',
+                  scrollMarginTop: '[100px]',
                 },
                 '& h4': {
                   fontFamily: 'serif',
                   fontSize: 'lg',
-                  fontWeight: '600',
+                  fontWeight: 'semibold',
                   mt: '8',
                   mb: '3',
                   color: 'ink.950',
-                  scrollMarginTop: '100px',
+                  scrollMarginTop: '[100px]',
                 },
                 '& p': { mb: '6' },
                 '& ul': { listStyleType: 'disc', pl: '6', mb: '6' },
@@ -153,7 +153,7 @@ export default function PostClient({
                 '& li.task-list-item > div > ul': { mt: '2', mb: '0' },
                 '& li.task-list-item': {
                   listStyleType: 'none',
-                  pl: 0,
+                  pl: '0',
                   display: 'flex',
                   alignItems: 'flex-start',
                   gap: '3',
@@ -162,7 +162,7 @@ export default function PostClient({
                 '& li.task-list-item input[type="checkbox"]': {
                   mt: '1.5',
                   cursor: 'default',
-                  accentColor: 'token(colors.marker.600)',
+                  accentColor: '[token(colors.marker.600)]',
                   boxSize: '4',
                 },
                 '& del': { color: 'ink.500' },
@@ -172,17 +172,17 @@ export default function PostClient({
                   px: '1.5',
                   py: '0.5',
                   rounded: 'sm',
-                  fontSize: '0.92em',
+                  fontSize: '[0.92em]',
                   color: 'marker.600',
-                  fontWeight: '500',
-                  borderWidth: '1px',
+                  fontWeight: 'medium',
+                  borderWidth: '[1px]',
                   borderColor: 'ink.border',
                   whiteSpace: 'pre-wrap',
                   wordBreak: 'break-word',
                   overflowWrap: 'anywhere',
                 },
                 '& blockquote': {
-                  borderLeftWidth: '2px',
+                  borderLeftWidth: '[2px]',
                   borderLeftColor: 'marker.300',
                   pl: '6',
                   py: '1',
@@ -194,10 +194,10 @@ export default function PostClient({
                 '& a': {
                   color: 'accent.600',
                   textDecorationLine: 'none',
-                  borderBottomWidth: '1px',
+                  borderBottomWidth: '[1px]',
                   borderBottomColor: 'accent.200',
-                  transition: 'all 0.15s',
-                  fontWeight: '500',
+                  transition: '[all 0.15s]',
+                  fontWeight: 'medium',
                   wordBreak: 'break-all',
                   overflowWrap: 'break-word',
                   _hover: {
@@ -209,14 +209,14 @@ export default function PostClient({
                   rounded: 'sm',
                   w: 'full',
                   h: 'auto',
-                  borderWidth: '1px',
+                  borderWidth: '[1px]',
                   borderColor: 'ink.border',
                   my: '4',
                 },
                 '& hr': {
                   my: '10',
-                  h: '1px',
-                  border: 'none',
+                  h: '[1px]',
+                  border: '[none]',
                   bg: 'ink.border',
                 },
                 '& table': {
@@ -227,25 +227,25 @@ export default function PostClient({
                   borderSpacing: '0',
                   fontSize: 'sm',
                   fontFamily: 'sans',
-                  borderWidth: '1px',
+                  borderWidth: '[1px]',
                   borderColor: 'ink.border',
                 },
                 '& th': {
                   bg: 'paper.100',
-                  fontWeight: '600',
+                  fontWeight: 'semibold',
                   p: '4',
-                  borderBottomWidth: '1px',
+                  borderBottomWidth: '[1px]',
                   borderColor: 'ink.border',
                   textAlign: 'left',
                   color: 'ink.950',
                   fontSize: 'xs',
-                  letterSpacing: '0.04em',
+                  letterSpacing: 'mono',
                   textTransform: 'uppercase',
                   fontFamily: 'mono',
                 },
                 '& td': {
                   p: '4',
-                  borderBottomWidth: '1px',
+                  borderBottomWidth: '[1px]',
                   borderColor: 'ink.border',
                   color: 'ink.700',
                 },
@@ -292,7 +292,7 @@ export default function PostClient({
                         className={css({
                           w: 'full',
                           borderCollapse: 'separate',
-                          borderSpacing: 0,
+                          borderSpacing: '0',
                         })}
                       >
                         {children}
@@ -309,7 +309,7 @@ export default function PostClient({
                       return (
                         <li className={className} {...props}>
                           {checkbox}
-                          <div className={css({ flex: 1, minW: 0 })}>
+                          <div className={css({ flex: '1', minW: '0' })}>
                             {content}
                           </div>
                         </li>
@@ -334,7 +334,7 @@ export default function PostClient({
               className={css({
                 mt: '14',
                 pt: '6',
-                borderTopWidth: '1px',
+                borderTopWidth: '[1px]',
                 borderColor: 'ink.border',
                 display: 'flex',
                 justifyContent: 'flex-end',

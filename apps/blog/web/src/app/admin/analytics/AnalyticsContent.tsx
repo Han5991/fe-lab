@@ -60,7 +60,7 @@ export const AnalyticsContent = ({ tags }: AnalyticsContentProps) => {
           gridTemplateColumns: { base: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' },
           gap: { base: '6', md: '8' },
           pb: '8',
-          borderBottomWidth: '1px',
+          borderBottomWidth: '[1px]',
           borderColor: 'ink.border',
         })}
       >
@@ -95,7 +95,7 @@ export const AnalyticsContent = ({ tags }: AnalyticsContentProps) => {
             justifyContent: 'space-between',
             mb: '4',
             pb: '3',
-            borderBottomWidth: '1px',
+            borderBottomWidth: '[1px]',
             borderColor: 'ink.border',
           })}
         >
@@ -129,7 +129,7 @@ export const AnalyticsContent = ({ tags }: AnalyticsContentProps) => {
               justifyContent: 'space-between',
               mb: '4',
               pb: '3',
-              borderBottomWidth: '1px',
+              borderBottomWidth: '[1px]',
               borderColor: 'ink.border',
             })}
           >
@@ -149,7 +149,7 @@ export const AnalyticsContent = ({ tags }: AnalyticsContentProps) => {
               className={css({
                 fontFamily: 'serif',
                 fontStyle: 'italic',
-                fontSize: 'base',
+                fontSize: 'md',
                 color: 'ink.500',
                 py: '8',
                 textAlign: 'center',
@@ -170,7 +170,7 @@ export const AnalyticsContent = ({ tags }: AnalyticsContentProps) => {
               justifyContent: 'space-between',
               mb: '4',
               pb: '3',
-              borderBottomWidth: '1px',
+              borderBottomWidth: '[1px]',
               borderColor: 'ink.border',
             })}
           >

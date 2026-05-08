@@ -233,7 +233,7 @@ export default async function PostPage({ params }: Props) {
         thumbnailUrl={post.thumbnail ? thumbnailUrl : undefined}
         seriesIndex={seriesIndex}
       />
-      <div className={css({ maxW: '1200px', m: '0 auto', p: '0 24px' })}>
+      <div className={css({ maxW: 'containerW', mx: 'auto', px: '6' })}>
         <PostNavigation prev={prev} next={next} seriesNav={seriesNav} />
       </div>
     </>

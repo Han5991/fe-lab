@@ -10,7 +10,7 @@ const STYLES: Record<
   info: {
     wrapper: css({
       bg: 'blue.50',
-      borderLeftWidth: '4px',
+      borderLeftWidth: '[4px]',
       borderLeftColor: 'blue.400',
       color: 'blue.900',
     }),
@@ -20,7 +20,7 @@ const STYLES: Record<
   tip: {
     wrapper: css({
       bg: 'green.50',
-      borderLeftWidth: '4px',
+      borderLeftWidth: '[4px]',
       borderLeftColor: 'green.500',
       color: 'green.900',
     }),
@@ -30,7 +30,7 @@ const STYLES: Record<
   warning: {
     wrapper: css({
       bg: 'amber.50',
-      borderLeftWidth: '4px',
+      borderLeftWidth: '[4px]',
       borderLeftColor: 'amber.500',
       color: 'amber.900',
     }),
@@ -40,7 +40,7 @@ const STYLES: Record<
   danger: {
     wrapper: css({
       bg: 'red.50',
-      borderLeftWidth: '4px',
+      borderLeftWidth: '[4px]',
       borderLeftColor: 'red.500',
       color: 'red.900',
     }),
@@ -78,10 +78,10 @@ export function Callout({ type, title, children }: CalloutProps) {
         alignItems: 'flex-start',
       })}`}
     >
-      <span aria-hidden className={css({ fontSize: 'lg', lineHeight: '1.4' })}>
+      <span aria-hidden className={css({ fontSize: 'lg', lineHeight: 'headerSm' })}>
         {icon}
       </span>
-      <div className={css({ flex: 1, minW: 0, '& > *:last-child': { mb: 0 } })}>
+      <div className={css({ flex: '1', minW: '0', '& > *:last-child': { mb: '0' } })}>
         <div
           className={css({
             fontWeight: 'bold',

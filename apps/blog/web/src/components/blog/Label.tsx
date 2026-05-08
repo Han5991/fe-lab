@@ -6,12 +6,12 @@ interface LabelProps extends HTMLAttributes<HTMLSpanElement> {
   tone?: 'meta' | 'marker' | 'moss' | 'ink';
 }
 
-const toneColor: Record<NonNullable<LabelProps['tone']>, string> = {
+const toneColor = {
   meta: 'ink.500',
   marker: 'marker.600',
   moss: 'moss.600',
   ink: 'ink.950',
-};
+} as const;
 
 export const Label = ({
   children,
@@ -26,8 +26,8 @@ export const Label = ({
         css({
           fontFamily: 'mono',
           fontSize: 'xs',
-          fontWeight: 500,
-          letterSpacing: '0.08em',
+          fontWeight: 'medium',
+          letterSpacing: 'monoXl',
           textTransform: 'uppercase',
           color: toneColor[tone],
         }),

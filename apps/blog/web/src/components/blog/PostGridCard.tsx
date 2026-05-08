@@ -20,9 +20,9 @@ export const PostGridCard = ({ post }: PostGridCardProps) => {
         display: 'flex',
         flexDir: 'column',
         bg: 'paper.50',
-        borderWidth: '1px',
+        borderWidth: '[1px]',
         borderColor: 'ink.border',
-        transition: 'border-color 0.15s',
+        transition: '[border-color 0.15s]',
         _hover: {
           borderColor: 'ink.borderStrong',
           '& h3': { color: 'accent.600' },
@@ -36,9 +36,9 @@ export const PostGridCard = ({ post }: PostGridCardProps) => {
           className={css({
             display: 'block',
             w: 'full',
-            h: '160px',
+            h: '[160px]',
             objectFit: 'cover',
-            borderBottomWidth: '1px',
+            borderBottomWidth: '[1px]',
             borderColor: 'ink.border',
           })}
         />
@@ -46,12 +46,12 @@ export const PostGridCard = ({ post }: PostGridCardProps) => {
         <div
           className={css({
             w: 'full',
-            h: '160px',
+            h: '[160px]',
             bg: 'paper.100',
-            borderBottomWidth: '1px',
+            borderBottomWidth: '[1px]',
             borderColor: 'ink.border',
             backgroundImage:
-              'repeating-linear-gradient(135deg, transparent 0 8px, rgba(0,0,0,0.025) 8px 9px)',
+              '[repeating-linear-gradient(135deg, transparent 0 8px, rgba(0,0,0,0.025) 8px 9px)]',
           })}
         />
       )}
@@ -61,17 +61,17 @@ export const PostGridCard = ({ post }: PostGridCardProps) => {
           display: 'flex',
           flexDir: 'column',
           gap: '2',
-          flex: 1,
+          flex: '1',
         })}
       >
         <h3
           className={css({
             fontFamily: 'serif',
             fontSize: 'lg',
-            fontWeight: '600',
-            lineHeight: '1.3',
+            fontWeight: 'semibold',
+            lineHeight: 'header',
             color: 'ink.950',
-            transition: 'color 0.15s',
+            transition: '[color 0.15s]',
             lineClamp: 2,
           })}
         >
@@ -83,14 +83,14 @@ export const PostGridCard = ({ post }: PostGridCardProps) => {
               fontFamily: 'sans',
               fontSize: 'sm',
               color: 'ink.700',
-              lineHeight: '1.5',
+              lineHeight: 'snug',
               lineClamp: 2,
             })}
           >
             {post.excerpt}
           </p>
         )}
-        <div className={css({ flex: 1 })} />
+        <div className={css({ flex: '1' })} />
         <div
           className={css({
             display: 'flex',
@@ -109,7 +109,7 @@ export const PostGridCard = ({ post }: PostGridCardProps) => {
                 fontFamily: 'mono',
                 fontSize: '2xs',
                 color: 'ink.500',
-                letterSpacing: '0.04em',
+                letterSpacing: 'mono',
               })}
             >
               #{post.tags[0]}

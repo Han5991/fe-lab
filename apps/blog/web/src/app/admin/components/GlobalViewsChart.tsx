@@ -52,7 +52,7 @@ export function GlobalViewsChart() {
     <div
       className={css({
         bg: 'ink.25',
-        borderWidth: '1px',
+        borderWidth: '[1px]',
         borderColor: 'ink.border',
         rounded: 'lg',
         p: '6',
@@ -68,7 +68,7 @@ export function GlobalViewsChart() {
           gap: '3',
         })}
       >
-        <h2 className={css({ fontSize: 'base', fontWeight: 'bold', color: 'ink.950' })}>
+        <h2 className={css({ fontSize: 'md', fontWeight: 'bold', color: 'ink.950' })}>
           전체 조회수 추이
         </h2>
         <DateRangeControls
@@ -81,7 +81,7 @@ export function GlobalViewsChart() {
         />
       </div>
 
-      <div className={css({ h: '320px', w: 'full' })}>
+      <div className={css({ h: '[320px]', w: 'full' })}>
         {formattedData.length > 0 ? (
           <ResponsiveContainer width="100%" height="100%">
             <LineChart
@@ -103,12 +103,12 @@ export function GlobalViewsChart() {
               <Tooltip
                 cursor={{ stroke: token('colors.ink.border'), strokeWidth: 1, strokeDasharray: '4 4' }}
                 contentStyle={{
-                  borderRadius: '8px',
+                  borderRadius: '[8px]',
                   border: `1px solid ${token('colors.ink.border')}`,
                   background: token('colors.ink.25'),
-                  fontSize: '12px',
+                  fontSize: '[12px]',
                 }}
-                labelStyle={{ color: token('colors.ink.700'), marginBottom: '2px' }}
+                labelStyle={{ color: token('colors.ink.700'), marginBottom: '[2px]' }}
               />
               <Line
                 type="monotone"

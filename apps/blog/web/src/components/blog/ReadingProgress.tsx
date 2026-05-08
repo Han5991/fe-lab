@@ -36,10 +36,10 @@ export const ReadingProgress = () => {
       className={css({
         pos: 'fixed',
         top: '14',
-        left: 0,
-        right: 0,
-        h: '3px',
-        zIndex: 9,
+        left: '0',
+        right: '0',
+        h: '[3px]',
+        zIndex: '9',
         bg: 'transparent',
         pointerEvents: 'none',
       })}
@@ -48,7 +48,7 @@ export const ReadingProgress = () => {
         className={css({
           h: 'full',
           bg: 'marker.600',
-          transition: 'width 0.1s linear',
+          transition: '[width 0.1s linear]',
         })}
         style={{ width: `${pct}%` }}
       />

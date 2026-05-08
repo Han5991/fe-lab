@@ -21,19 +21,19 @@ interface TopPostsTableProps {
 
 export const TopPostsTable = ({ rows }: TopPostsTableProps) => {
   return (
-    <ol className={css({ listStyle: 'none', p: 0, m: 0 })}>
+    <ol className={css({ listStyleType: 'none', p: '0', m: '0' })}>
       {rows.map((p, i) => (
         <li
           key={p.slug}
           className={css({
             display: 'grid',
-            gridTemplateColumns: '32px 1fr 96px 72px 56px',
+            gridTemplateColumns: '[32px 1fr 96px 72px 56px]',
             alignItems: 'center',
             gap: '3',
             py: '3',
-            borderBottomWidth: '1px',
+            borderBottomWidth: '[1px]',
             borderColor: 'ink.border',
-            transition: 'background 0.15s',
+            transition: '[background 0.15s]',
             _hover: { bg: 'paper.100' },
           })}
         >
@@ -42,7 +42,7 @@ export const TopPostsTable = ({ rows }: TopPostsTableProps) => {
               fontFamily: 'serif',
               fontStyle: 'italic',
               fontSize: 'lg',
-              fontWeight: '500',
+              fontWeight: 'medium',
               color: 'ink.300',
               textAlign: 'center',
             })}
@@ -54,13 +54,13 @@ export const TopPostsTable = ({ rows }: TopPostsTableProps) => {
             className={css({
               fontFamily: 'sans',
               fontSize: 'sm',
-              fontWeight: '500',
+              fontWeight: 'medium',
               color: 'ink.950',
-              minW: 0,
+              minW: '0',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
-              transition: 'color 0.15s',
+              transition: '[color 0.15s]',
               _hover: { color: 'accent.600', textDecorationLine: 'underline' },
             })}
           >
@@ -77,7 +77,7 @@ export const TopPostsTable = ({ rows }: TopPostsTableProps) => {
             className={css({
               fontFamily: 'mono',
               fontSize: 'sm',
-              fontWeight: '500',
+              fontWeight: 'medium',
               color: 'ink.950',
               textAlign: 'right',
               fontVariantNumeric: 'tabular-nums',

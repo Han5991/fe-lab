@@ -19,7 +19,7 @@ export const PostHeader = ({ post, seriesIndex }: PostHeaderProps) => {
           className={css({
             display: 'block',
             mb: '4',
-            letterSpacing: '0.12em',
+            letterSpacing: 'monoXxl',
           })}
         >
           SERIES · {seriesIndex.displayName} ·{' '}
@@ -31,9 +31,9 @@ export const PostHeader = ({ post, seriesIndex }: PostHeaderProps) => {
         className={css({
           fontFamily: 'serif',
           fontSize: { base: '4xl', md: '5xl', lg: '6xl' },
-          fontWeight: '500',
-          lineHeight: '1.05',
-          letterSpacing: '-0.025em',
+          fontWeight: 'medium',
+          lineHeight: 'hero',
+          letterSpacing: 'tightish',
           color: 'ink.950',
           mb: '5',
         })}
@@ -47,7 +47,7 @@ export const PostHeader = ({ post, seriesIndex }: PostHeaderProps) => {
             fontStyle: 'italic',
             fontSize: { base: 'lg', md: 'xl' },
             color: 'ink.700',
-            lineHeight: '1.55',
+            lineHeight: 'comfortable',
             mb: '6',
           })}
         >
@@ -61,7 +61,7 @@ export const PostHeader = ({ post, seriesIndex }: PostHeaderProps) => {
           gap: '4',
           flexWrap: 'wrap',
           pb: '6',
-          borderBottomWidth: '1px',
+          borderBottomWidth: '[1px]',
           borderColor: 'ink.border',
         })}
       >
@@ -71,7 +71,7 @@ export const PostHeader = ({ post, seriesIndex }: PostHeaderProps) => {
               fontFamily: 'mono',
               fontSize: 'xs',
               color: 'ink.600',
-              letterSpacing: '0.04em',
+              letterSpacing: 'mono',
               fontVariantNumeric: 'tabular-nums',
             })}
           >
@@ -83,7 +83,7 @@ export const PostHeader = ({ post, seriesIndex }: PostHeaderProps) => {
             fontFamily: 'mono',
             fontSize: 'xs',
             color: 'ink.500',
-            letterSpacing: '0.04em',
+            letterSpacing: 'mono',
           })}
         >
           · {readMin}분 읽기
@@ -93,7 +93,7 @@ export const PostHeader = ({ post, seriesIndex }: PostHeaderProps) => {
             fontFamily: 'mono',
             fontSize: 'xs',
             color: 'ink.500',
-            letterSpacing: '0.04em',
+            letterSpacing: 'mono',
           })}
         >
           · 한상욱
@@ -104,7 +104,7 @@ export const PostHeader = ({ post, seriesIndex }: PostHeaderProps) => {
               fontFamily: 'mono',
               fontSize: 'xs',
               color: 'ink.500',
-              letterSpacing: '0.04em',
+              letterSpacing: 'mono',
             })}
           >
             · {post.tags.slice(0, 4).map(t => `#${t}`).join(' ')}

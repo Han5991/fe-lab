@@ -25,7 +25,7 @@ export default function AdminAnalyticsPage() {
   return (
     <div
       className={css({
-        minH: 'calc(100dvh - 128px)',
+        minH: '[calc(100dvh - 128px)]',
         bg: 'paper.50',
       })}
     >
@@ -46,8 +46,8 @@ export default function AdminAnalyticsPage() {
           className={css({
             fontFamily: 'serif',
             fontStyle: 'italic',
-            fontSize: 'base',
-            fontWeight: '600',
+            fontSize: 'md',
+            fontWeight: 'semibold',
           })}
         >
           Frontend Lab
@@ -60,13 +60,13 @@ export default function AdminAnalyticsPage() {
             py: '0.5',
             bg: 'marker.300',
             color: 'ink.950',
-            letterSpacing: '0.08em',
+            letterSpacing: 'monoXl',
             textTransform: 'uppercase',
           })}
         >
           ADMIN
         </span>
-        <span className={css({ flex: 1 })} />
+        <span className={css({ flex: '1' })} />
         <Link
           href="/admin"
           className={css({
@@ -76,7 +76,7 @@ export default function AdminAnalyticsPage() {
             fontFamily: 'mono',
             fontSize: 'xs',
             color: 'ink.300',
-            transition: 'color 0.15s',
+            transition: '[color 0.15s]',
             _hover: { color: 'paper.50' },
           })}
         >
@@ -94,7 +94,7 @@ export default function AdminAnalyticsPage() {
             fontSize: 'xs',
             color: 'ink.300',
             cursor: 'pointer',
-            transition: 'color 0.15s',
+            transition: '[color 0.15s]',
             _hover: { color: 'marker.300' },
           })}
         >
@@ -106,11 +106,11 @@ export default function AdminAnalyticsPage() {
       {/* Page header */}
       <header
         className={css({
-          maxW: '1280px',
+          maxW: 'dashboardW',
           mx: 'auto',
           px: { base: '4', md: '8' },
           py: { base: '8', md: '10' },
-          borderBottomWidth: '1px',
+          borderBottomWidth: '[1px]',
           borderColor: 'ink.border',
         })}
       >
@@ -121,8 +121,8 @@ export default function AdminAnalyticsPage() {
           className={css({
             fontFamily: 'serif',
             fontSize: { base: '3xl', md: '4xl' },
-            fontWeight: '500',
-            letterSpacing: '-0.015em',
+            fontWeight: 'medium',
+            letterSpacing: 'tightSm',
             color: 'ink.950',
           })}
         >
@@ -132,7 +132,7 @@ export default function AdminAnalyticsPage() {
 
       <main
         className={css({
-          maxW: '1280px',
+          maxW: 'dashboardW',
           mx: 'auto',
           px: { base: '4', md: '8' },
           py: { base: '8', md: '10' },
@@ -149,7 +149,7 @@ export default function AdminAnalyticsPage() {
         <section
           className={css({
             pt: '10',
-            borderTopWidth: '1px',
+            borderTopWidth: '[1px]',
             borderColor: 'ink.border',
             display: 'flex',
             flexDir: 'column',

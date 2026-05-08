@@ -10,13 +10,13 @@ export const ReadingProgressBar = () => {
     <motion.div
       className={css({
         position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        height: '4px',
-        bg: 'blue.500',
-        transformOrigin: '0%',
-        zIndex: 100,
+        top: '0',
+        left: '0',
+        right: '0',
+        height: '[4px]',
+        bg: 'marker.600',
+        transformOrigin: '[0%]',
+        zIndex: '50',
       })}
       style={{ scaleX: scrollYProgress }}
     />

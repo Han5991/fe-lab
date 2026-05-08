@@ -92,8 +92,8 @@ export default function PostsPage() {
       <SsgoiTransition id="/posts">
         <div
           className={css({
-            maxW: '1200px',
-            m: '0 auto',
+            maxW: 'containerW',
+            mx: 'auto',
             px: '8',
             py: { base: '10', md: '16' },
           })}
@@ -102,7 +102,7 @@ export default function PostsPage() {
             className={css({
               mb: '10',
               pb: '6',
-              borderBottomWidth: '1px',
+              borderBottomWidth: '[1px]',
               borderColor: 'ink.border',
             })}
           >
@@ -122,8 +122,8 @@ export default function PostsPage() {
                 className={css({
                   fontFamily: 'serif',
                   fontSize: { base: '4xl', md: '5xl' },
-                  fontWeight: '500',
-                  letterSpacing: '-0.02em',
+                  fontWeight: 'medium',
+                  letterSpacing: 'tightX',
                   color: 'ink.950',
                 })}
               >
@@ -135,7 +135,7 @@ export default function PostsPage() {
                   fontSize: 'xs',
                   color: 'ink.500',
                   fontVariantNumeric: 'tabular-nums',
-                  letterSpacing: '0.04em',
+                  letterSpacing: 'mono',
                 })}
               >
                 {posts.length}편

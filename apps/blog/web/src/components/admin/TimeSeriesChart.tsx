@@ -40,7 +40,7 @@ const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
         py: '2',
         fontFamily: 'mono',
         fontSize: 'xs',
-        letterSpacing: '0.04em',
+        letterSpacing: 'mono',
       })}
     >
       <div className={css({ color: 'marker.300', fontSize: '2xs' })}>
@@ -51,12 +51,18 @@ const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
           fontFamily: 'serif',
           fontStyle: 'italic',
           fontSize: 'lg',
-          fontWeight: '500',
+          fontWeight: 'medium',
           mt: '0.5',
         })}
       >
         {fmtNum(value)}{' '}
-        <span className={css({ fontFamily: 'mono', fontSize: '2xs', color: 'ink.300' })}>
+        <span
+          className={css({
+            fontFamily: 'mono',
+            fontSize: '2xs',
+            color: 'ink.300',
+          })}
+        >
           views
         </span>
       </div>
@@ -64,7 +70,10 @@ const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
   );
 };
 
-export const TimeSeriesChart = ({ data, height = 240 }: TimeSeriesChartProps) => {
+export const TimeSeriesChart = ({
+  data,
+  height = 240,
+}: TimeSeriesChartProps) => {
   return (
     <div className={css({ w: 'full' })} style={{ height }}>
       <ResponsiveContainer width="100%" height="100%">

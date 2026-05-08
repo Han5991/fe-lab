@@ -17,7 +17,7 @@ function AuthFallback() {
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        minH: '100vh',
+        minH: '[100vh]',
       })}
     >
       <p>인증 확인 중...</p>

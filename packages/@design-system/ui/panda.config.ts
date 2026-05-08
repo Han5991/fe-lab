@@ -25,6 +25,7 @@ export default defineConfig({
   // The JSX framework to use
   jsxFramework: 'react',
 
+  strictTokens: true,
   strictPropertyValues: true,
   // The CSS Syntax to use to use
   syntax: 'object-literal',

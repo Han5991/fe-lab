@@ -34,8 +34,8 @@ export const ActiveFilters = ({
         flexWrap: 'wrap',
         py: '3',
         mb: '4',
-        borderTopWidth: '1px',
-        borderBottomWidth: '1px',
+        borderTopWidth: '[1px]',
+        borderBottomWidth: '[1px]',
         borderColor: 'ink.border',
       })}
     >
@@ -67,7 +67,7 @@ export const ActiveFilters = ({
           cursor: 'pointer',
           ml: '2',
           _hover: { textDecorationColor: 'marker.600' },
-          transition: 'text-decoration-color 0.15s',
+          transition: '[text-decoration-color 0.15s]',
         })}
       >
         ✕ 모두 지우기

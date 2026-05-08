@@ -9,14 +9,20 @@ export const Hero = () => {
         pb: { base: '10', md: '14' },
       })}
     >
-      <div className={css({ maxW: '1200px', mx: 'auto', px: '8' })}>
+      <div
+        className={css({
+          maxW: 'containerW',
+          mx: 'auto',
+          px: '8',
+        })}
+      >
         <Label
           tone="meta"
           className={css({
             display: 'block',
             mb: '5',
             color: 'ink.500',
-            letterSpacing: '0.16em',
+            letterSpacing: 'monoXxxl',
           })}
         >
           STUDY NOTE / 한상욱 · since 2023
@@ -24,10 +30,10 @@ export const Hero = () => {
         <h1
           className={css({
             fontFamily: 'serif',
-            fontSize: { base: '5xl', md: '7xl', lg: '88px' },
-            fontWeight: '400',
-            lineHeight: '0.95',
-            letterSpacing: '-0.03em',
+            fontSize: { base: '5xl', md: '7xl', lg: '[88px]' },
+            fontWeight: 'normal',
+            lineHeight: 'heroDense',
+            letterSpacing: 'tighter',
             color: 'ink.950',
             mb: '4',
           })}
@@ -41,8 +47,8 @@ export const Hero = () => {
             fontFamily: 'serif',
             fontSize: { base: 'lg', md: 'xl' },
             color: 'ink.700',
-            maxW: '580px',
-            lineHeight: '1.55',
+            maxW: 'heroSubW',
+            lineHeight: 'comfortable',
           })}
         >
           아직 정리되지 않은 생각과, 내일이면 다시 계산해볼 코드 조각들. 회사에서

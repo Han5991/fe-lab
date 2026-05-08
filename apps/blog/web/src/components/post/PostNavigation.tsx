@@ -27,7 +27,7 @@ export const PostNavigation = ({
         className={css({
           mb: '8',
           pb: '8',
-          borderBottomWidth: '1px',
+          borderBottomWidth: '[1px]',
           borderColor: 'ink.border',
         })}
       >
@@ -59,10 +59,10 @@ export const PostNavigation = ({
                 display: 'flex',
                 flexDir: 'column',
                 gap: '1',
-                flex: 1,
+                flex: '1',
                 py: '3',
                 _hover: { color: 'accent.600' },
-                transition: 'color 0.15s',
+                transition: '[color 0.15s]',
               })}
             >
               <span className={css({ fontSize: 'xs', color: 'ink.500' })}>
@@ -80,7 +80,7 @@ export const PostNavigation = ({
               </span>
             </Link>
           ) : (
-            <div className={css({ flex: 1, display: { base: 'none', md: 'block' } })} />
+            <div className={css({ flex: '1', display: { base: 'none', md: 'block' } })} />
           )}
           {seriesNav.next ? (
             <Link
@@ -90,10 +90,10 @@ export const PostNavigation = ({
                 flexDir: 'column',
                 alignItems: { base: 'flex-start', md: 'flex-end' },
                 gap: '1',
-                flex: 1,
+                flex: '1',
                 py: '3',
                 _hover: { color: 'accent.600' },
-                transition: 'color 0.15s',
+                transition: '[color 0.15s]',
               })}
             >
               <span className={css({ fontSize: 'xs', color: 'ink.500' })}>
@@ -112,7 +112,7 @@ export const PostNavigation = ({
               </span>
             </Link>
           ) : (
-            <div className={css({ flex: 1, display: { base: 'none', md: 'block' } })} />
+            <div className={css({ flex: '1', display: { base: 'none', md: 'block' } })} />
           )}
         </div>
       </div>
@@ -126,7 +126,7 @@ export const PostNavigation = ({
         justifyContent: 'space-between',
         alignItems: 'stretch',
         gap: { base: '0', md: '4' },
-        borderTopWidth: '1px',
+        borderTopWidth: '[1px]',
         borderColor: 'ink.border',
       })}
     >
@@ -137,12 +137,12 @@ export const PostNavigation = ({
             display: 'flex',
             flexDir: 'column',
             gap: '1',
-            flex: 1,
+            flex: '1',
             py: '5',
             pr: { md: '6' },
             borderRightWidth: { md: next ? '1px' : '0' },
             borderColor: 'ink.border',
-            transition: 'color 0.15s',
+            transition: '[color 0.15s]',
             _hover: { color: 'accent.600' },
           })}
         >
@@ -162,7 +162,7 @@ export const PostNavigation = ({
           </span>
         </Link>
       ) : (
-        <div className={css({ flex: 1, display: { base: 'none', md: 'block' } })} />
+        <div className={css({ flex: '1', display: { base: 'none', md: 'block' } })} />
       )}
 
       {next ? (
@@ -173,12 +173,12 @@ export const PostNavigation = ({
             flexDir: 'column',
             alignItems: { base: 'flex-start', md: 'flex-end' },
             gap: '1',
-            flex: 1,
+            flex: '1',
             py: '5',
             pl: { md: '6' },
-            borderTopWidth: { base: '1px', md: '0' },
+            borderTopWidth: { base: '[1px]', md: '0' },
             borderColor: 'ink.border',
-            transition: 'color 0.15s',
+            transition: '[color 0.15s]',
             _hover: { color: 'accent.600' },
           })}
         >
@@ -199,7 +199,7 @@ export const PostNavigation = ({
           </span>
         </Link>
       ) : (
-        <div className={css({ flex: 1, display: { base: 'none', md: 'block' } })} />
+        <div className={css({ flex: '1', display: { base: 'none', md: 'block' } })} />
       )}
     </div>
   </div>

@@ -16,7 +16,7 @@ export const TOC = () => {
         alignSelf: 'start',
         display: 'none',
         lg: { display: 'block' },
-        maxH: 'calc(100vh - 100px)',
+        maxH: '[calc(100vh - 100px)]',
         overflowY: 'auto',
       })}
       aria-label="이 글의 차례"
@@ -27,7 +27,7 @@ export const TOC = () => {
           display: 'block',
           mb: '3',
           pb: '2',
-          borderBottomWidth: '1px',
+          borderBottomWidth: '[1px]',
           borderColor: 'ink.border',
         })}
       >
@@ -35,12 +35,12 @@ export const TOC = () => {
       </Label>
       <ol
         className={css({
-          listStyle: 'none',
-          p: 0,
-          m: 0,
+          listStyleType: 'none',
+          p: '0',
+          m: '0',
           fontFamily: 'sans',
           fontSize: 'sm',
-          lineHeight: '1.7',
+          lineHeight: 'proseLoose',
         })}
       >
         {toc.map(item => {
@@ -68,11 +68,11 @@ export const TOC = () => {
                   py: '0.5',
                   pl: '2',
                   cursor: 'pointer',
-                  borderLeftWidth: '2px',
+                  borderLeftWidth: '[2px]',
                   borderLeftColor: isActive ? 'ink.950' : 'transparent',
                   color: isActive ? 'ink.950' : 'ink.600',
-                  fontWeight: isActive ? '500' : '400',
-                  transition: 'all 0.15s',
+                  fontWeight: isActive ? 'medium' : 'normal',
+                  transition: '[all 0.15s]',
                   _hover: { color: 'ink.950' },
                 })}
                 style={{ paddingLeft: `calc(8px + ${indent})` }}
