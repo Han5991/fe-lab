@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Frontend Lab — 블로그 리디자인</title>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <style>
+    html, body { margin: 0; padding: 0; height: 100%; background: oklch(95% 0.012 75); }
+  </style>
+  <script type="text/babel" src="src/tokens.jsx"></script>
+  <script type="text/babel" src="src/data.jsx"></script>
+  <script type="text/babel" src="src/components.jsx"></script>
+  <script type="text/babel" src="src/home.jsx"></script>
+  <script type="text/babel" src="src/list.jsx"></script>
+  <script type="text/babel" src="src/post.jsx"></script>
+  <script type="text/babel" src="src/extras.jsx"></script>
+  <script type="text/babel" src="design-canvas.jsx"></script>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel" data-presets="env,react">
+    const { useState, useEffect } = React;
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+
+    function App() {
+      return (
+        <DesignCanvas
+          title="Frontend Lab — 블로그 리디자인"
+          subtitle="한상욱 · 따뜻한 저널 + 위키 밀도 · 선택된 변형 모음"
+        >
+          <DCSection id="home" title="01 · Home" subtitle="에디토리얼 피처 — 그냥, 적어 두는 공부방.">
+            <DCArtboard id="home-b" label="Home — 에디토리얼 피처" width={1200} height={1480}>
+              <HomeB />
+            </DCArtboard>
+          </DCSection>
+
+          <DCSection id="list" title="02 · Posts (Archive)" subtitle="사이드바 필터 · 리스트↔카드 토글 · 정렬 · 인라인 검색.">
+            <DCArtboard id="list-a" label="Posts — 사이드바 필터 + 토글" width={1200} height={1300}>
+              <ListA />
+            </DCArtboard>
+          </DCSection>
+
+          <DCSection id="post" title="03 · Post detail" subtitle="우측 TOC + 진행률 바 + 각주.">
+            <DCArtboard id="post-a" label="Post — TOC + 진행률 + 각주" width={1200} height={900}>
+              <PostA />
+            </DCArtboard>
+          </DCSection>
+
+          <DCSection id="analytics" title="04 · Analytics" subtitle="시계열 + 글별 랭킹 + 태그 분포. 차트 호버 동작.">
+            <DCArtboard id="analytics-1" label="대시보드 — 30일 / 글별 시계열 / 태그 분포" width={1280} height={950}>
+              <Analytics />
+            </DCArtboard>
+          </DCSection>
+
+          <DCSection id="ideas" title="05 · 새 기능 제안" subtitle="컨셉 카드 — 어느 게 흥미로운지 골라 주세요.">
+            <DCArtboard id="ideas-1" label="제안 5가지 — 컨셉 스케치" width={1280} height={920}>
+              <Section5 />
+            </DCArtboard>
+          </DCSection>
+        </DesignCanvas>
+      );
+    }
+
+    root.render(<App />);
+  </script>
+</body>
+</html>

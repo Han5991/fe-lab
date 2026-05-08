@@ -18,7 +18,7 @@ export default defineConfig({
   globalCss: {
     extend: {
       html: {
-        bg: 'ink.25',
+        bg: 'paper.50',
         color: 'ink.950',
         scrollBehavior: 'smooth',
       },
@@ -29,8 +29,8 @@ export default defineConfig({
         MozOsxFontSmoothing: 'grayscale',
       },
       '::selection': {
-        bg: 'accent.600',
-        color: 'white',
+        bg: 'marker.300',
+        color: 'ink.950',
       },
       ':focus-visible': {
         outline: '2px solid token(colors.accent.600)',

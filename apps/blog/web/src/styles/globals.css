@@ -1,1 +1,49 @@
 @layer reset, base, tokens, recipes, utilities;
+
+@layer base {
+  /* Warm journal: 본문/UI 가독성 + 한글 글머리 keep-all */
+  html,
+  body {
+    word-break: keep-all;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Selection — marker(형광펜) 톤으로 */
+  ::selection {
+    background: oklch(89% 0.14 90); /* marker.300 */
+    color: oklch(16% 0.018 60); /* ink.950 */
+  }
+
+  /* Focus ring */
+  :focus-visible {
+    outline: 2px solid oklch(53% 0.22 255);
+    outline-offset: 3px;
+    border-radius: 3px;
+  }
+
+  /* Scrollbar polish */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: oklch(88% 0.012 75);
+    border-radius: 5px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: oklch(80% 0.012 70);
+  }
+
+  /* Marker (형광펜) helper — raw HTML/MDX에서 사용 가능 */
+  .marker {
+    background: linear-gradient(
+      180deg,
+      transparent 55%,
+      oklch(89% 0.14 90) 55%,
+      oklch(89% 0.14 90) 92%,
+      transparent 92%
+    );
+    padding: 0 2px;
+  }
+}
