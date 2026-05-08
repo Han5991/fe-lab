@@ -10,36 +10,44 @@ import { SsgoiTransition } from '@ssgoi/react';
 
 import type { PostData } from '@/domain/post';
 import GiscusComments from '@/src/components/GiscusComments';
-import { useViewCount } from '@/src/hooks/useViewCount';
-import { useRecordRecentView } from '@/src/hooks/useRecentViews';
-import { ReadingProgressBar } from '@/src/components/mobile/ReadingProgressBar';
+import { useViewCount } from '@/lib/hooks/useViewCount';
+import { useRecordRecentView } from '@/lib/hooks/useRecentViews';
 import { BackToTop } from '@/src/components/mobile/BackToTop';
 import { MobileTOC } from '@/src/components/mobile/MobileTOC';
 import { ShareButton } from '@/src/components/mobile/ShareButton';
-import { DesktopTOC } from '@/src/components/desktop/DesktopTOC';
 import { CodeBlock } from '@/src/components/post/CodeBlock';
 import { MarkdownImage } from '@/src/components/post/MarkdownImage';
 import { Callout } from '@/src/components/post/markdown/Callout';
 import { Figure } from '@/src/components/post/markdown/Figure';
 import { FileTree } from '@/src/components/post/markdown/FileTree';
 
+import {
+  TOC,
+  ReadingProgress,
+  PostHeader,
+} from '@/src/components/blog';
+
+interface PostClientProps {
+  post: PostData;
+  thumbnailUrl?: string;
+  previewMode?: boolean;
+  seriesIndex?: { current: number; total: number; displayName: string };
+}
+
 export default function PostClient({
   post,
   thumbnailUrl,
   previewMode = false,
-}: {
-  post: PostData;
-  thumbnailUrl?: string;
-  previewMode?: boolean;
-}) {
+  seriesIndex,
+}: PostClientProps) {
   useViewCount(previewMode ? null : post.slug);
   useRecordRecentView(previewMode ? null : post.slug, post.title);
+
   return (
     <>
-      <ReadingProgressBar />
+      <ReadingProgress />
       <BackToTop />
 
-      {/* Mobile only TOC */}
       <div className={css({ display: 'block', lg: { display: 'none' } })}>
         <MobileTOC />
       </div>
@@ -47,111 +55,31 @@ export default function PostClient({
       <SsgoiTransition
         id={`/posts/${post.slug}`}
         className={css({
-          maxW: 'screen-xl',
+          maxW: '1080px',
           m: '0 auto',
-          px: '6',
-          py: '16',
+          px: '8',
+          py: { base: '10', md: '14' },
+          bg: 'paper.50',
         })}
       >
         <div
           className={css({
-            display: 'flex',
-            gap: '12',
-            justifyContent: 'center',
+            display: 'grid',
+            gridTemplateColumns: { base: '1fr', lg: '1fr 240px' },
+            gap: { base: '0', lg: '16' },
+            alignItems: 'start',
           })}
         >
-          {/* Main Content Article */}
-          <article className={css({ flex: 1, maxW: '720px', minW: 0 })}>
-            <header
-              className={css({
-                mb: '12',
-                pb: '10',
-                borderBottomWidth: '1px',
-                borderColor: 'ink.border',
-              })}
-            >
-              <p
-                className={css({
-                  fontSize: 'xs',
-                  fontWeight: 'bold',
-                  letterSpacing: 'widest',
-                  textTransform: 'uppercase',
-                  color: 'accent.600',
-                  mb: '4',
-                })}
-              >
-                Lab Log
-              </p>
-              <h1
-                className={css({
-                  fontSize: { base: '3xl', md: '4xl' },
-                  fontWeight: 'extrabold',
-                  letterSpacing: 'tight',
-                  lineHeight: '1.2',
-                  mb: '6',
-                  color: 'ink.950',
-                })}
-              >
-                {post.title}
-              </h1>
-              <div
-                className={css({
-                  display: 'flex',
-                  gap: '4',
-                  alignItems: 'center',
-                  color: 'ink.500',
-                  fontSize: 'sm',
-                  flexWrap: 'wrap',
-                })}
-              >
-                <a
-                  href="/about"
-                  className={css({
-                    color: 'ink.700',
-                    fontWeight: 'semibold',
-                    _hover: { color: 'accent.600' },
-                    transition: 'color 0.15s',
-                  })}
-                  rel="author"
-                >
-                  Sangwook Han
-                </a>
-                <span
-                  className={css({
-                    w: '1',
-                    h: '1',
-                    rounded: 'full',
-                    bg: 'ink.200',
-                    display: 'inline-block',
-                  })}
-                />
-                {post.date && (
-                  <time
-                    dateTime={post.date}
-                    className={css({ color: 'ink.500' })}
-                  >
-                    {new Date(post.date).toLocaleDateString('ko-KR', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                      timeZone: 'Asia/Seoul',
-                    })}
-                  </time>
-                )}
-                <span
-                  className={css({
-                    w: '1',
-                    h: '1',
-                    rounded: 'full',
-                    bg: 'ink.200',
-                    display: 'inline-block',
-                  })}
-                />
-                <span>{Math.ceil(post.content.length / 500)} min read</span>
-              </div>
-            </header>
+          <article
+            className={css({
+              maxW: '680px',
+              minW: 0,
+              mx: { base: 'auto', lg: '0' },
+              w: 'full',
+            })}
+          >
+            <PostHeader post={post} seriesIndex={seriesIndex} />
 
-            {/* Thumbnail Hero Image */}
             {thumbnailUrl && (
               <img
                 src={thumbnailUrl}
@@ -159,54 +87,58 @@ export default function PostClient({
                 width={1200}
                 height={630}
                 className={css({
+                  display: 'block',
                   mb: '10',
-                  rounded: 'xl',
                   w: 'full',
                   h: 'auto',
                   borderWidth: '1px',
                   borderColor: 'ink.border',
-                  display: 'block',
                 })}
               />
             )}
 
-            {/* Article body */}
             <div
               id="post-content"
               className={css({
-                fontSize: '1.0625rem',
-                lineHeight: '1.85',
-                color: 'ink.700',
+                fontFamily: 'serif',
+                fontSize: '1.125rem',
+                lineHeight: '1.75',
+                color: 'ink.900',
                 '& h1': {
+                  fontFamily: 'serif',
                   fontSize: { base: '2xl', md: '3xl' },
-                  fontWeight: '800',
+                  fontWeight: '600',
+                  letterSpacing: '-0.015em',
                   mt: '14',
                   mb: '5',
                   color: 'ink.950',
-                  letterSpacing: 'tight',
                   lineHeight: '1.25',
                   scrollMarginTop: '100px',
                 },
                 '& h2': {
+                  fontFamily: 'serif',
                   fontSize: { base: 'xl', md: '2xl' },
-                  fontWeight: '700',
+                  fontWeight: '600',
+                  letterSpacing: '-0.01em',
                   mt: '12',
-                  mb: '5',
+                  mb: '4',
                   color: 'ink.950',
-                  letterSpacing: 'tight',
                   lineHeight: '1.3',
                   scrollMarginTop: '100px',
                 },
                 '& h3': {
-                  fontSize: 'lg',
-                  fontWeight: '700',
+                  fontFamily: 'serif',
+                  fontSize: 'xl',
+                  fontWeight: '600',
+                  fontStyle: 'italic',
                   mt: '10',
-                  mb: '4',
+                  mb: '3',
                   color: 'ink.950',
                   scrollMarginTop: '100px',
                 },
                 '& h4': {
-                  fontSize: 'base',
+                  fontFamily: 'serif',
+                  fontSize: 'lg',
                   fontWeight: '600',
                   mt: '8',
                   mb: '3',
@@ -230,19 +162,18 @@ export default function PostClient({
                 '& li.task-list-item input[type="checkbox"]': {
                   mt: '1.5',
                   cursor: 'default',
-                  accentColor: 'token(colors.accent.600)',
+                  accentColor: 'token(colors.marker.600)',
                   boxSize: '4',
                 },
-                '& del': {
-                  color: 'ink.500',
-                },
+                '& del': { color: 'ink.500' },
                 '& code:not([class])': {
-                  bg: 'ink.100',
+                  fontFamily: 'mono',
+                  bg: 'paper.100',
                   px: '1.5',
                   py: '0.5',
-                  rounded: 'md',
-                  fontSize: '0.85em',
-                  color: 'accent.600',
+                  rounded: 'sm',
+                  fontSize: '0.92em',
+                  color: 'marker.600',
                   fontWeight: '500',
                   borderWidth: '1px',
                   borderColor: 'ink.border',
@@ -251,18 +182,18 @@ export default function PostClient({
                   overflowWrap: 'anywhere',
                 },
                 '& blockquote': {
-                  borderLeftWidth: '3px',
-                  borderLeftColor: 'accent.600',
+                  borderLeftWidth: '2px',
+                  borderLeftColor: 'marker.300',
                   pl: '6',
                   py: '1',
                   my: '8',
                   color: 'ink.700',
-                  fontSize: '1.05rem',
+                  fontStyle: 'italic',
                   '& p': { mb: '0' },
                 },
                 '& a': {
                   color: 'accent.600',
-                  textDecoration: 'none',
+                  textDecorationLine: 'none',
                   borderBottomWidth: '1px',
                   borderBottomColor: 'accent.200',
                   transition: 'all 0.15s',
@@ -275,12 +206,12 @@ export default function PostClient({
                   },
                 },
                 '& img': {
-                  rounded: 'lg',
+                  rounded: 'sm',
                   w: 'full',
                   h: 'auto',
                   borderWidth: '1px',
                   borderColor: 'ink.border',
-                  my: '2',
+                  my: '4',
                 },
                 '& hr': {
                   my: '10',
@@ -295,22 +226,22 @@ export default function PostClient({
                   borderCollapse: 'separate',
                   borderSpacing: '0',
                   fontSize: 'sm',
+                  fontFamily: 'sans',
                   borderWidth: '1px',
                   borderColor: 'ink.border',
-                  rounded: 'lg',
-                  overflow: 'hidden',
                 },
                 '& th': {
-                  bg: 'ink.50',
-                  fontWeight: 'bold',
+                  bg: 'paper.100',
+                  fontWeight: '600',
                   p: '4',
                   borderBottomWidth: '1px',
                   borderColor: 'ink.border',
                   textAlign: 'left',
                   color: 'ink.950',
                   fontSize: 'xs',
-                  letterSpacing: 'wide',
+                  letterSpacing: '0.04em',
                   textTransform: 'uppercase',
+                  fontFamily: 'mono',
                 },
                 '& td': {
                   p: '4',
@@ -318,12 +249,8 @@ export default function PostClient({
                   borderColor: 'ink.border',
                   color: 'ink.700',
                 },
-                '& tr:last-child td': {
-                  borderBottomWidth: '0',
-                },
-                '& tr:hover td': {
-                  bg: 'ink.50',
-                },
+                '& tr:last-child td': { borderBottomWidth: '0' },
+                '& tr:hover td': { bg: 'paper.100' },
               })}
             >
               <ReactMarkdown
@@ -406,7 +333,7 @@ export default function PostClient({
             <div
               className={css({
                 mt: '14',
-                pt: '8',
+                pt: '6',
                 borderTopWidth: '1px',
                 borderColor: 'ink.border',
                 display: 'flex',
@@ -421,8 +348,7 @@ export default function PostClient({
             </div>
           </article>
 
-          {/* Desktop Side TOC */}
-          <DesktopTOC />
+          <TOC />
         </div>
       </SsgoiTransition>
     </>

@@ -3,7 +3,9 @@ import {
   getPostBySlug,
   getAdjacentPosts,
   getSeriesAdjacentPosts,
-} from '@/domain/post';
+  getAllPosts,
+} from '@/lib/posts';
+import { getSeriesMeta } from '@/domain/post/series';
 import {
   resolveThumbnailUrl,
   resolveAbsoluteThumbnailUrl,
@@ -91,6 +93,43 @@ export default async function PostPage({ params }: Props) {
         seriesName: seriesAdj.seriesName,
       }
     : null;
+
+  // 시리즈 내 위치 계산 (헤더 라벨용)
+  let seriesIndex: { current: number; total: number; displayName: string } | undefined;
+  if (post.series) {
+    const meta = getSeriesMeta(post.series);
+    const seriesPosts = getAllPosts().filter(p => p.series === post.series);
+    const orderedPosts = (() => {
+      if (meta?.order && meta.order.length > 0) {
+        const orderMap = new Map(meta.order.map((s, i) => [s, i]));
+        return [...seriesPosts].sort((a, b) => {
+          const aRank =
+            orderMap.get(a.slug) ??
+            orderMap.get(a.originalSlug) ??
+            Number.POSITIVE_INFINITY;
+          const bRank =
+            orderMap.get(b.slug) ??
+            orderMap.get(b.originalSlug) ??
+            Number.POSITIVE_INFINITY;
+          if (aRank === bRank) {
+            return (a.date ?? '').localeCompare(b.date ?? '');
+          }
+          return aRank - bRank;
+        });
+      }
+      return [...seriesPosts].sort((a, b) =>
+        (a.date ?? '').localeCompare(b.date ?? ''),
+      );
+    })();
+    const idx = orderedPosts.findIndex(p => p.slug === slug);
+    if (idx !== -1) {
+      seriesIndex = {
+        current: idx + 1,
+        total: orderedPosts.length,
+        displayName: meta?.title ?? post.series,
+      };
+    }
+  }
 
   const thumbnailUrl = resolveThumbnailUrl(post);
   const absoluteThumbnailUrl = resolveAbsoluteThumbnailUrl(post);
@@ -192,6 +231,7 @@ export default async function PostPage({ params }: Props) {
       <PostClient
         post={post}
         thumbnailUrl={post.thumbnail ? thumbnailUrl : undefined}
+        seriesIndex={seriesIndex}
       />
       <div className={css({ maxW: '1200px', m: '0 auto', p: '0 24px' })}>
         <PostNavigation prev={prev} next={next} seriesNav={seriesNav} />
