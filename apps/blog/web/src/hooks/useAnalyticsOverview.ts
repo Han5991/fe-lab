@@ -55,22 +55,14 @@ export function useAnalyticsOverview(range: AnalyticsRange): AnalyticsOverview {
       prevDays.push(d.toISOString().slice(0, 10));
     }
 
-    // 일별 합산
-    const dailyTotals = new Map<string, number>();
-    days.forEach(d => dailyTotals.set(d, 0));
+    // 일별 합산 — 현재 기간 + 직전 기간을 한 번에 순회
+    const dailyTotals = new Map<string, number>(days.map(d => [d, 0]));
+    const prevTotals = new Map<string, number>(prevDays.map(d => [d, 0]));
     for (const post of data) {
       for (const t of post.trends) {
         if (dailyTotals.has(t.view_date)) {
           dailyTotals.set(t.view_date, (dailyTotals.get(t.view_date) ?? 0) + t.view_count);
-        }
-      }
-    }
-
-    const prevTotals = new Map<string, number>();
-    prevDays.forEach(d => prevTotals.set(d, 0));
-    for (const post of data) {
-      for (const t of post.trends) {
-        if (prevTotals.has(t.view_date)) {
+        } else if (prevTotals.has(t.view_date)) {
           prevTotals.set(t.view_date, (prevTotals.get(t.view_date) ?? 0) + t.view_count);
         }
       }
@@ -119,7 +111,7 @@ export function useAnalyticsOverview(range: AnalyticsRange): AnalyticsOverview {
         return {
           slug: post.slug,
           title: post.title,
-          views: rangeViews || post.totalViews,
+          views: rangeViews,
           delta,
           series: Array.from(seriesMap.values()),
         };

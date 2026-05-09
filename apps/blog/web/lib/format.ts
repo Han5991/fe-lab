@@ -21,7 +21,7 @@ export function fmtNum(n: number): string {
   if (n < 1000) return String(n);
   if (n < 1_000_000) {
     const k = n / 1000;
-    return `${k.toFixed(k >= 10 ? 1 : 1)}K`.replace(/\.0K$/, 'K');
+    return `${k.toFixed(1)}K`.replace(/\.0K$/, 'K');
   }
   return `${(n / 1_000_000).toFixed(1)}M`;
 }
