@@ -16,8 +16,19 @@ export function useAdminTagDistribution() {
   const { data } = useSuspenseQuery({
     queryKey: ['admin', 'tag-distribution'],
     queryFn: async () => {
-      const res = await fetch('/admin-posts-index.json').then(r => r.json());
-      const posts = (res ?? []) as AdminPostMeta[];
+      // useSuspenseQuery는 가까운 ErrorBoundary로 throw를 위임하므로
+      // 응답 코드와 형식을 명시적으로 검증합니다 (404나 깨진 JSON 시 .json()이
+      // 그대로 throw되어 페이지 전체가 깨지는 것을 막습니다).
+      const res = await fetch('/admin-posts-index.json');
+      if (!res.ok) {
+        throw new Error(
+          `admin-posts-index.json fetch failed: ${res.status} ${res.statusText}`,
+        );
+      }
+      const json: unknown = await res.json();
+      const posts: AdminPostMeta[] = Array.isArray(json)
+        ? (json as AdminPostMeta[])
+        : [];
       const counts = new Map<string, number>();
       for (const post of posts) {
         for (const tag of post.tags ?? []) {

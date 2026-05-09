@@ -23,11 +23,7 @@ export const AnalyticsContent = ({ tags }: AnalyticsContentProps) => {
   const [range, setRange] = useState<AnalyticsRange>('30d');
   const overview = useAnalyticsOverview(range);
 
-  const totalTitle = overview.range === '30d'
-    ? 'TOTAL VIEWS · 30D'
-    : overview.range === '7d'
-      ? 'TOTAL VIEWS · 7D'
-      : 'TOTAL VIEWS · 90D';
+  const totalTitle = `TOTAL VIEWS · ${overview.range.toUpperCase()}`;
   const topTitle = `TOP POSTS · ${overview.range.toUpperCase()}`;
 
   return (

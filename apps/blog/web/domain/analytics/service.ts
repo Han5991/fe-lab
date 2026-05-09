@@ -20,6 +20,9 @@ export function computeDerivedStats(post: PostStatDetail): DerivedStats {
   const sevenDayStr = addDaysISO(todayStr, -7);
   const fourteenDayStr = addDaysISO(todayStr, -14);
 
+  // 오늘은 아직 진행 중인 날이라 두 윈도우 모두에서 의도적으로 제외합니다
+  // ([7일 전, 오늘) vs [14일 전, 7일 전)). 7일 성장률 계산이 미완성된 오늘
+  // 데이터로 왜곡되지 않도록 함입니다.
   const recent7 = sorted
     .filter(t => t.view_date >= sevenDayStr && t.view_date < todayStr)
     .reduce((acc, t) => acc + t.view_count, 0);
