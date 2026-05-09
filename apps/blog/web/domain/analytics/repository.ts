@@ -57,13 +57,27 @@ export async function getAllPostStats(): Promise<PostStatsRow[]> {
 }
 
 export async function getAllPostsTrends(): Promise<PostTrendRow[]> {
-  const { data, error } = await client.rpc('get_all_posts_trends');
-  if (error) throw error;
-  return (data ?? []).map(t => ({
-    slug: t.slug,
-    view_date: t.view_date,
-    view_count: Number(t.view_count),
-  }));
+  // PostgREST는 기본 1000-row cap. 글 수 × 평균 trends가 그 이상이면 알파벳
+  // 후순 slug(t로 시작하는 typescript-* 등)가 통째로 잘려 나갑니다.
+  // .range()로 페이지네이션해 전체 행을 모읍니다.
+  const all: PostTrendRow[] = [];
+  const PAGE = 1000;
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await client
+      .rpc('get_all_posts_trends')
+      .range(from, from + PAGE - 1);
+    if (error) throw error;
+    const rows = data ?? [];
+    all.push(
+      ...rows.map(t => ({
+        slug: t.slug,
+        view_date: t.view_date,
+        view_count: Number(t.view_count),
+      })),
+    );
+    if (rows.length < PAGE) break;
+  }
+  return all;
 }
 
 export async function getAdminPostsIndex(): Promise<AdminPostIndex[]> {
