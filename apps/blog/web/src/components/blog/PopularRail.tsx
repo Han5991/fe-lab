@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { css } from '@design-system/ui-lib/css';
-import { useSuspenseQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { client } from '@/lib/client';
 import type { PostSummary } from '@/domain/post';
 import { encodePostSlug } from '@/domain/post/utils';
@@ -19,7 +19,9 @@ interface RankedPost extends PostSummary {
 }
 
 export const PopularRail = ({ posts, limit = 5 }: PopularRailProps) => {
-  const { data } = useSuspenseQuery({
+  // useSuspenseQuery에서 useQuery로 전환. fetch가 실패하면 ErrorBoundary로
+  // 떠넘기지 않고 정적 fallback(최신글 limit개)으로 graceful degrade합니다.
+  const { data } = useQuery({
     queryKey: ['popular-rail', limit],
     queryFn: async () => {
       const res = await client
@@ -45,7 +47,7 @@ export const PopularRail = ({ posts, limit = 5 }: PopularRailProps) => {
   });
 
   const items: RankedPost[] =
-    data.length > 0
+    data && data.length > 0
       ? data
       : posts.slice(0, limit).map(p => ({ ...p, viewCount: 0 }));
 
@@ -138,52 +140,3 @@ export const PopularRail = ({ posts, limit = 5 }: PopularRailProps) => {
   );
 };
 
-export const PopularRailFallback = ({
-  posts,
-  limit = 5,
-}: PopularRailProps) => (
-  <aside className={css({ position: 'sticky', top: '20' })}>
-    <Label tone="meta" className={css({ display: 'block', mb: '4' })}>
-      POPULAR · 30일
-    </Label>
-    <ol className={css({ listStyleType: 'none', p: '0', m: '0' })}>
-      {posts.slice(0, limit).map((post, i) => (
-        <li
-          key={post.slug}
-          className={css({
-            borderTopWidth: i === 0 ? '0' : '[1px]',
-            borderColor: 'ink.border',
-            py: '4',
-            display: 'flex',
-            gap: '4',
-            alignItems: 'baseline',
-          })}
-        >
-          <span
-            className={css({
-              fontFamily: 'serif',
-              fontStyle: 'italic',
-              fontSize: '2xl',
-              fontWeight: 'medium',
-              minW: '8',
-              color: 'ink.300',
-            })}
-          >
-            {String(i + 1).padStart(2, '0')}
-          </span>
-          <h4
-            className={css({
-              fontFamily: 'serif',
-              fontSize: 'sm',
-              fontWeight: 'medium',
-              lineHeight: 'headerSm',
-              color: 'ink.950',
-            })}
-          >
-            {post.title}
-          </h4>
-        </li>
-      ))}
-    </ol>
-  </aside>
-);

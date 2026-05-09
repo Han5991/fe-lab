@@ -9,6 +9,24 @@ interface AdminPostMeta {
 }
 
 /**
+ * 외부에서 받은 unknown 객체를 AdminPostMeta로 안전하게 좁힙니다.
+ * 필수 필드(slug)와 옵셔널 tags가 string[] 형태인지만 가볍게 확인합니다.
+ */
+function isAdminPostMeta(item: unknown): item is AdminPostMeta {
+  if (typeof item !== 'object' || item === null) return false;
+  const candidate = item as Record<string, unknown>;
+  if (typeof candidate.slug !== 'string') return false;
+  if (
+    candidate.tags !== undefined &&
+    !(Array.isArray(candidate.tags) &&
+      candidate.tags.every(t => typeof t === 'string'))
+  ) {
+    return false;
+  }
+  return true;
+}
+
+/**
  * admin-posts-index.json을 그대로 가져와 태그별 빈도수를 계산한다.
  * (analytics/page.tsx는 client 컴포넌트라 server-side getAllTags()를 못 쓴다)
  */
@@ -26,8 +44,9 @@ export function useAdminTagDistribution() {
         );
       }
       const json: unknown = await res.json();
+      // 배열이면서 각 원소가 AdminPostMeta shape인 것만 통과 (런타임 가드).
       const posts: AdminPostMeta[] = Array.isArray(json)
-        ? (json as AdminPostMeta[])
+        ? json.filter(isAdminPostMeta)
         : [];
       const counts = new Map<string, number>();
       for (const post of posts) {

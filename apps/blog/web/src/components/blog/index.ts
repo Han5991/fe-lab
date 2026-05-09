@@ -8,7 +8,7 @@ export { FeaturedPost } from './FeaturedPost';
 export { MiniPostCard } from './MiniPostCard';
 export { SeriesCard } from './SeriesCard';
 export { PostIndexRow } from './PostIndexRow';
-export { PopularRail, PopularRailFallback } from './PopularRail';
+export { PopularRail } from './PopularRail';
 export { FilterGroup } from './FilterGroup';
 export { SortRadio } from './SortRadio';
 export { ViewToggle } from './ViewToggle';

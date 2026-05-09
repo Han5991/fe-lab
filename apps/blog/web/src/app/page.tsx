@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import { css } from '@design-system/ui-lib/css';
 import { SsgoiTransition } from '@ssgoi/react';
-import { Suspense } from 'react';
 import type { Metadata } from 'next';
 
 import { getAllPostSummaries } from '@/domain/post';
@@ -20,7 +19,6 @@ import {
   SeriesCard,
   PostIndexRow,
   PopularRail,
-  PopularRailFallback,
   SearchBox,
   Label,
 } from '@/src/components/blog';
@@ -336,9 +334,8 @@ export default function HomePage() {
                 </ol>
               </div>
 
-              <Suspense fallback={<PopularRailFallback posts={allPosts} />}>
-                <PopularRail posts={allPosts} />
-              </Suspense>
+              {/* PopularRail은 내부에서 useQuery + 자체 fallback. Suspense 불필요. */}
+              <PopularRail posts={allPosts} />
             </div>
           </section>
         </div>
