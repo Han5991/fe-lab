@@ -22,6 +22,7 @@ import {
 import Link from 'next/link';
 import { token } from '@design-system/ui-lib/tokens';
 import { motion, AnimatePresence } from 'motion/react';
+import { formatMonthDayISO } from '@/lib/dates';
 import { DateRangeControls, useDateFilter } from './DateRangeControls';
 import { encodePostSlug } from '@/domain/post/utils';
 
@@ -54,13 +55,10 @@ export function PostAccordion({ post }: Props) {
     filteredTrends,
   } = useDateFilter(post.trends);
 
-  const formattedData = filteredTrends.map(d => {
-    const date = new Date(d.view_date);
-    return {
-      name: `${date.getMonth() + 1}/${date.getDate()}`,
-      views: d.view_count,
-    };
-  });
+  const formattedData = filteredTrends.map(d => ({
+    name: formatMonthDayISO(d.view_date),
+    views: d.view_count,
+  }));
 
   const statusStyle =
     computedStatus === 'published'

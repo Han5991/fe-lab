@@ -54,7 +54,12 @@ export const PostsArchiveView = ({
     parseAsStringLiteral(VIEW_KEYS).withDefault('list'),
   );
 
-  const activeTags = tagParam ? tagParam.split(',').filter(Boolean) : [];
+  // tagParam을 매 렌더 새 배열로 split하면 useMemo dep가 늘 무효화됩니다.
+  // tagParam(string) 자체를 dep으로 두고, activeTags는 tagParam 변경 시에만 새로 만듭니다.
+  const activeTags = useMemo(
+    () => (tagParam ? tagParam.split(',').filter(Boolean) : []),
+    [tagParam],
+  );
 
   const toggleTag = (tag: string) => {
     const next = activeTags.includes(tag)
@@ -147,7 +152,6 @@ export const PostsArchiveView = ({
             items={tagItems.slice(0, 12)}
             active={activeTags}
             onToggle={toggleTag}
-            multi
           />
         )}
 

@@ -29,6 +29,9 @@ export const PopularRail = ({ posts, limit = 5 }: PopularRailProps) => {
         .limit(limit);
       return res.data ?? [];
     },
+    // 인기글 랭킹은 자주 바뀌지 않습니다. 5분간 캐시해 홈 재방문 시 재요청을 줄입니다.
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
     select: rows => {
       const bySlug = new Map(posts.map(p => [p.slug, p]));
       return rows

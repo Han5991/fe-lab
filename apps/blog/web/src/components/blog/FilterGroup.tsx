@@ -14,7 +14,6 @@ interface FilterGroupProps {
   items: FilterItem[];
   active: string[];
   onToggle: (id: string) => void;
-  multi?: boolean;
 }
 
 export const FilterGroup = ({

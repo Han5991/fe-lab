@@ -26,6 +26,7 @@ import {
 import Link from 'next/link';
 import { usePostDetailStats } from '@/src/hooks/usePostDetailStats';
 import { encodePostSlug } from '@/domain/post/utils';
+import { formatMonthDayISO } from '@/lib/dates';
 import {
   DateRangeControls,
   useDateFilter,
@@ -69,13 +70,10 @@ function PostDetailContent() {
     autoFellBackToAll,
   } = useDateFilter(post.trends);
 
-  const trendData = filteredTrends.map(d => {
-    const date = new Date(d.view_date);
-    return {
-      name: `${date.getMonth() + 1}/${date.getDate()}`,
-      views: d.view_count,
-    };
-  });
+  const trendData = filteredTrends.map(d => ({
+    name: formatMonthDayISO(d.view_date),
+    views: d.view_count,
+  }));
 
   // Fill hourly data with 0s for missing hours
   const hourlyData = Array.from({ length: 24 }, (_, i) => {

@@ -13,6 +13,7 @@ import {
 } from 'recharts';
 import { useMemo } from 'react';
 import { token } from '@design-system/ui-lib/tokens';
+import { formatMonthDayISO } from '@/lib/dates';
 
 export function GlobalViewsChart() {
   const { data } = useAdminDashboardData();
@@ -40,13 +41,10 @@ export function GlobalViewsChart() {
     filteredTrends,
   } = useDateFilter(aggregatedTrends);
 
-  const formattedData = filteredTrends.map(d => {
-    const date = new Date(d.view_date);
-    return {
-      name: `${date.getMonth() + 1}/${date.getDate()}`,
-      views: d.view_count,
-    };
-  });
+  const formattedData = filteredTrends.map(d => ({
+    name: formatMonthDayISO(d.view_date),
+    views: d.view_count,
+  }));
 
   return (
     <div

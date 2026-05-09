@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import { useAdminDashboardData } from './useAdminViews';
-import { getKSTDateISO, addDaysISO } from '@/lib/dates';
+import { getKSTDateISO, addDaysISO, formatMonthDayISO } from '@/lib/dates';
 import type { AnalyticsRange } from '@/src/components/admin/AnalyticsRangeSelect';
 
 const RANGE_DAYS: Record<AnalyticsRange, number> = {
@@ -65,14 +65,10 @@ export function useAnalyticsOverview(range: AnalyticsRange): AnalyticsOverview {
       }
     }
 
-    const totalSeries = Array.from(dailyTotals.entries())
-      .map(([d, v]) => {
-        const date = new Date(d);
-        return {
-          date: `${date.getMonth() + 1}/${date.getDate()}`,
-          value: v,
-        };
-      });
+    const totalSeries = Array.from(dailyTotals.entries()).map(([d, v]) => ({
+      date: formatMonthDayISO(d),
+      value: v,
+    }));
 
     const total = Array.from(dailyTotals.values()).reduce((s, v) => s + v, 0);
     const prevTotal = Array.from(prevTotals.values()).reduce((s, v) => s + v, 0);

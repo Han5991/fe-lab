@@ -41,3 +41,16 @@ export function diffDaysISO(a: string, b: string): number {
     new Date(`${a}T00:00:00Z`).getTime();
   return Math.round(ms / 86400000);
 }
+
+/**
+ * `YYYY-MM-DD` → `M/D` 차트 X축용 짧은 라벨.
+ *
+ * `new Date('YYYY-MM-DD').getMonth()`는 입력 문자열을 UTC 자정으로 파싱한 뒤
+ * 로컬 TZ 게터를 호출하므로, UTC보다 뒤처진 TZ에서 하루 앞당겨 표시됩니다.
+ * 문자열 슬라이스로 처리해 TZ 영향 없이 KST 날짜 그대로 출력합니다.
+ */
+export function formatMonthDayISO(iso: string): string {
+  // iso 예: "2026-05-09" → "5/9"
+  const [, mm, dd] = iso.split('-');
+  return `${Number(mm)}/${Number(dd)}`;
+}
