@@ -7,6 +7,10 @@ import { css } from '@design-system/ui-lib/css';
 
 import type { PostSummary } from '@/domain/post';
 import type { SeriesSummary, TagSummary } from '@/domain/post/aggregate';
+import {
+  filterAndSortPostsByArchiveParams,
+  parseTagParam,
+} from '@/domain/post/filtering';
 import { client } from '@/lib/client';
 
 import { Label } from './Label';
@@ -79,10 +83,7 @@ export const PostsArchiveView = ({
 
   // tagParam을 매 렌더 새 배열로 split하면 useMemo dep가 늘 무효화됩니다.
   // tagParam(string) 자체를 dep으로 두고, activeTags는 tagParam 변경 시에만 새로 만듭니다.
-  const activeTags = useMemo(
-    () => (tagParam ? tagParam.split(',').filter(Boolean) : []),
-    [tagParam],
-  );
+  const activeTags = useMemo(() => parseTagParam(tagParam), [tagParam]);
 
   const toggleTag = (tag: string) => {
     const next = activeTags.includes(tag)
@@ -91,45 +92,18 @@ export const PostsArchiveView = ({
     setTagParam(next.length ? next.join(',') : null);
   };
 
-  const filtered = useMemo(() => {
-    let r = posts;
-    const query = q.trim().toLowerCase();
-    if (query) {
-      r = r.filter(
-        p =>
-          p.title.toLowerCase().includes(query) ||
-          (p.excerpt ?? '').toLowerCase().includes(query) ||
-          (p.tags ?? []).some(t => t.toLowerCase().includes(query)),
-      );
-    }
-    if (activeTags.length) {
-      r = r.filter(p => activeTags.every(t => (p.tags ?? []).includes(t)));
-    }
-    if (seriesParam) {
-      r = r.filter(p => p.series === seriesParam);
-    }
-    if (yearParam) {
-      r = r.filter(p => p.date?.startsWith(yearParam));
-    }
-    const sorted = [...r];
-    if (sort === 'shortest') {
-      // 본문 분량 기반(readMin). excerpt는 자동 생성 시 160자로 잘려 동률이라
-      // 상위 몇 개만 움직이는 것처럼 보였습니다.
-      sorted.sort((a, b) => a.readMin - b.readMin);
-    } else if (sort === 'popular') {
-      // post_views가 도착하기 전엔 최신순으로 보여주고, 도착하면 view_count로.
-      const counts = viewCounts;
-      sorted.sort((a, b) => {
-        const va = counts?.get(a.slug) ?? 0;
-        const vb = counts?.get(b.slug) ?? 0;
-        if (vb !== va) return vb - va;
-        return (b.date ?? '').localeCompare(a.date ?? '');
-      });
-    } else {
-      sorted.sort((a, b) => (b.date ?? '').localeCompare(a.date ?? ''));
-    }
-    return sorted;
-  }, [posts, q, activeTags, seriesParam, yearParam, sort, viewCounts]);
+  const filtered = useMemo(
+    () =>
+      filterAndSortPostsByArchiveParams(posts, {
+        q,
+        tags: activeTags,
+        series: seriesParam || null,
+        year: yearParam || null,
+        sort,
+        viewCounts,
+      }),
+    [posts, q, activeTags, seriesParam, yearParam, sort, viewCounts],
+  );
 
   const seriesItems = series.map(s => ({
     id: s.id,
