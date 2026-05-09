@@ -86,7 +86,7 @@ export const Layout = ({ children }: LayoutProps) => {
                 display: { base: 'none', md: 'inline' },
               })}
             >
-              EST. 2023
+              EST. 2025
             </span>
           </Link>
           <div className={css({ display: 'flex', alignItems: 'center', gap: '1' })}>

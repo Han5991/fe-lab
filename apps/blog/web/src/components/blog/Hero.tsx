@@ -25,7 +25,7 @@ export const Hero = () => {
             letterSpacing: 'monoXxxl',
           })}
         >
-          STUDY NOTE / 한상욱 · since 2023
+          STUDY NOTE / 한상욱 · since 2025
         </Label>
         <h1
           className={css({
@@ -51,8 +51,8 @@ export const Hero = () => {
             lineHeight: 'comfortable',
           })}
         >
-          아직 정리되지 않은 생각과, 내일이면 다시 계산해볼 코드 조각들. 회사에서
-          번들러 소스를 떠돌다 뜨게 알게 된 내용이 주로 살고 있습니다.
+          아직 정리되지 않은 생각과, 내일이면 다시 계산해볼 코드 조각들. 날마다
+          코드 사이에서 마주치는 문제와 고민을 그대로 적어 둡니다.
         </p>
       </div>
     </header>
