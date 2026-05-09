@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useQueryState, parseAsString, parseAsStringLiteral } from 'nuqs';
 import { css } from '@design-system/ui-lib/css';
 
@@ -8,13 +8,14 @@ import type { PostSummary } from '@/domain/post';
 import type { SeriesSummary, TagSummary } from '@/domain/post/aggregate';
 
 import { Label } from './Label';
-import { SearchBox } from './SearchBox';
 import { SortRadio, type SortKey } from './SortRadio';
 import { ViewToggle, type ViewMode } from './ViewToggle';
 import { FilterGroup } from './FilterGroup';
 import { ActiveFilters } from './ActiveFilters';
 import { PostListRow } from './PostListRow';
 import { PostGridCard } from './PostGridCard';
+import { PostsFilterSheet } from './PostsFilterSheet';
+import { PostsFilterFab } from './PostsFilterFab';
 
 interface PostsArchiveViewProps {
   posts: PostSummary[];
@@ -53,6 +54,7 @@ export const PostsArchiveView = ({
     'view',
     parseAsStringLiteral(VIEW_KEYS).withDefault('list'),
   );
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   // tagParam을 매 렌더 새 배열로 split하면 useMemo dep가 늘 무효화됩니다.
   // tagParam(string) 자체를 dep으로 두고, activeTags는 tagParam 변경 시에만 새로 만듭니다.
@@ -122,59 +124,85 @@ export const PostsArchiveView = ({
     setYearParam(null);
   };
 
+  // 모바일 시트와 데스크톱 사이드바에서 동일하게 쓰이는 필터 컨트롤 블록.
+  const filterControls = (
+    <>
+      <SortRadio value={sort} onChange={v => setSort(v)} />
+      <ViewToggle value={view} onChange={v => setView(v)} />
+
+      {tagItems.length > 0 && (
+        <FilterGroup
+          label="태그"
+          items={tagItems.slice(0, 12)}
+          active={activeTags}
+          onToggle={toggleTag}
+        />
+      )}
+
+      {seriesItems.length > 0 && (
+        <FilterGroup
+          label="시리즈"
+          items={seriesItems}
+          active={seriesParam ? [seriesParam] : []}
+          onToggle={id => setSeriesParam(seriesParam === id ? null : id)}
+        />
+      )}
+
+      {yearItems.length > 0 && (
+        <FilterGroup
+          label="연도"
+          items={yearItems}
+          active={yearParam ? [yearParam] : []}
+          onToggle={id => setYearParam(yearParam === id ? null : id)}
+        />
+      )}
+    </>
+  );
+
+  // 활성 필터 합산 (FAB·시트 헤더의 N 뱃지 + 정렬도 기본값이 아니면 카운트)
+  const activeCount =
+    activeTags.length +
+    (seriesParam ? 1 : 0) +
+    (yearParam ? 1 : 0) +
+    (sort !== 'recent' ? 1 : 0) +
+    (view !== 'list' ? 1 : 0);
+
   return (
     <div
       className={css({
         display: 'grid',
         gridTemplateColumns: { base: '1fr', md: '[240px 1fr]' },
-        gap: { base: '8', md: '12' },
+        gap: { base: '4', md: '12' },
       })}
     >
       <aside
         className={css({
+          // 모바일에서는 사이드바를 숨기고 FAB+바텀시트로 필터 노출.
+          display: { base: 'none', md: 'flex' },
           position: { md: 'sticky' },
           top: { md: '20' },
           alignSelf: { md: 'start' },
           maxH: { md: '[calc(100vh - 88px)]' },
           overflowY: { md: 'auto' },
-          display: 'flex',
           flexDir: 'column',
           gap: '7',
         })}
       >
         <ArchiveSearchBar q={q} onChange={v => setQ(v || null)} />
-        <SortRadio value={sort} onChange={v => setSort(v)} />
-        <ViewToggle value={view} onChange={v => setView(v)} />
-
-        {tagItems.length > 0 && (
-          <FilterGroup
-            label="태그"
-            items={tagItems.slice(0, 12)}
-            active={activeTags}
-            onToggle={toggleTag}
-          />
-        )}
-
-        {seriesItems.length > 0 && (
-          <FilterGroup
-            label="시리즈"
-            items={seriesItems}
-            active={seriesParam ? [seriesParam] : []}
-            onToggle={id => setSeriesParam(seriesParam === id ? null : id)}
-          />
-        )}
-
-        {yearItems.length > 0 && (
-          <FilterGroup
-            label="연도"
-            items={yearItems}
-            active={yearParam ? [yearParam] : []}
-            onToggle={id => setYearParam(yearParam === id ? null : id)}
-          />
-        )}
+        {filterControls}
       </aside>
 
       <div>
+        {/* 모바일 전용 검색창. 데스크톱은 aside 안의 검색창을 그대로 사용. */}
+        <div
+          className={css({
+            display: { base: 'block', md: 'none' },
+            mb: '4',
+          })}
+        >
+          <ArchiveSearchBar q={q} onChange={v => setQ(v || null)} />
+        </div>
+
         <ActiveFilters
           tags={activeTags}
           series={seriesParam || null}
@@ -280,6 +308,19 @@ export const PostsArchiveView = ({
           </ol>
         )}
       </div>
+
+      <PostsFilterFab
+        onClick={() => setSheetOpen(true)}
+        activeCount={activeCount}
+      />
+      <PostsFilterSheet
+        open={sheetOpen}
+        onClose={() => setSheetOpen(false)}
+        onClearAll={clearAll}
+        activeCount={activeCount}
+      >
+        {filterControls}
+      </PostsFilterSheet>
     </div>
   );
 };
