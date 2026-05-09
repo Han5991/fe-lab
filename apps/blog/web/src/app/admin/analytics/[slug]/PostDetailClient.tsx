@@ -514,15 +514,15 @@ function PostDetailContent() {
               >
                 <XAxis
                   dataKey="name"
-                  axisLine={{ stroke: '[#e5e7eb]' }}
+                  axisLine={{ stroke: '#e5e7eb' }}
                   tickLine={false}
-                  tick={{ fill: '[#6b7280]', fontSize: 12 }}
+                  tick={{ fill: '#6b7280', fontSize: 12 }}
                   dy={10}
                 />
                 <YAxis
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fill: '[#6b7280]', fontSize: 12 }}
+                  tick={{ fill: '#6b7280', fontSize: 12 }}
                 />
                 <Tooltip
                   cursor={{
@@ -531,7 +531,7 @@ function PostDetailContent() {
                     strokeDasharray: '4 4',
                   }}
                   contentStyle={{
-                    borderRadius: '[8px]',
+                    borderRadius: '8px',
                     border: 'none',
                     boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
                   }}
@@ -541,7 +541,7 @@ function PostDetailContent() {
                   dataKey="views"
                   stroke="#3b82f6"
                   strokeWidth={3}
-                  dot={{ r: 4, fill: '[#3b82f6]', strokeWidth: 0 }}
+                  dot={{ r: 4, fill: '#3b82f6', strokeWidth: 0 }}
                   activeDot={{ r: 6, fill: '#2563eb', strokeWidth: 0 }}
                 />
               </LineChart>
@@ -597,19 +597,19 @@ function PostDetailContent() {
               >
                 <XAxis
                   dataKey="hour"
-                  axisLine={{ stroke: '[#e5e7eb]' }}
+                  axisLine={{ stroke: '#e5e7eb' }}
                   tickLine={false}
-                  tick={{ fill: '[#6b7280]', fontSize: 10 }}
+                  tick={{ fill: '#6b7280', fontSize: 10 }}
                   interval={2}
                 />
                 <YAxis
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fill: '[#6b7280]', fontSize: 12 }}
+                  tick={{ fill: '#6b7280', fontSize: 12 }}
                 />
                 <Tooltip
                   contentStyle={{
-                    borderRadius: '[8px]',
+                    borderRadius: '8px',
                     border: 'none',
                     boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
                   }}
@@ -654,18 +654,18 @@ function PostDetailContent() {
               >
                 <XAxis
                   dataKey="day"
-                  axisLine={{ stroke: '[#e5e7eb]' }}
+                  axisLine={{ stroke: '#e5e7eb' }}
                   tickLine={false}
-                  tick={{ fill: '[#6b7280]', fontSize: 12 }}
+                  tick={{ fill: '#6b7280', fontSize: 12 }}
                 />
                 <YAxis
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fill: '[#6b7280]', fontSize: 12 }}
+                  tick={{ fill: '#6b7280', fontSize: 12 }}
                 />
                 <Tooltip
                   contentStyle={{
-                    borderRadius: '[8px]',
+                    borderRadius: '8px',
                     border: 'none',
                     boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
                   }}

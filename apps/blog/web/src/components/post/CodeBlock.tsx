@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/cjs/styles/prism';
 import { css, cx } from '@design-system/ui-lib/css';
+import { token } from '@design-system/ui-lib/tokens';
 import { MermaidChart } from './MermaidChart';
 
 function CopyButton({ content }: { content: string }) {
@@ -130,7 +131,7 @@ export function CodeBlock({
         customStyle={{
           borderRadius: 0,
           margin: 0,
-          padding: '1.5rem 2rem',
+          padding: `${token('spacing.6')} ${token('spacing.8')}`,
           lineHeight: '1.8',
           background: '#1e1e1e',
         }}

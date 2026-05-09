@@ -379,12 +379,12 @@ export function PostAccordion({ post }: Props) {
                       <Tooltip
                         cursor={{ stroke: token('colors.ink.border'), strokeWidth: 1, strokeDasharray: '4 4' }}
                         contentStyle={{
-                          borderRadius: '[8px]',
+                          borderRadius: token('radii.lg'),
                           border: `1px solid ${token('colors.ink.border')}`,
                           background: token('colors.ink.25'),
-                          fontSize: '[12px]',
+                          fontSize: '12px',
                         }}
-                        labelStyle={{ color: token('colors.ink.700'), marginBottom: '[2px]' }}
+                        labelStyle={{ color: token('colors.ink.700'), marginBottom: '2px' }}
                       />
                       <Line
                         type="monotone"
