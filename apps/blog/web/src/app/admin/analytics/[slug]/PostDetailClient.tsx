@@ -115,7 +115,7 @@ function PostDetailContent() {
             className={css({
               fontSize: 'xl',
               fontWeight: 'bold',
-              color: '[#111827]',
+              color: 'ink.950',
               flex: '1',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
@@ -129,8 +129,8 @@ function PostDetailContent() {
             target="_blank"
             onClick={e => e.stopPropagation()}
             className={css({
-              color: '[#6b7280]',
-              _hover: { color: '[#3b82f6]' },
+              color: 'ink.500',
+              _hover: { color: 'accent.600' },
               flexShrink: 0,
             })}
           >
@@ -154,8 +154,8 @@ function PostDetailContent() {
                 gap: '2',
               })}
             >
-              <Calendar size={16} className={css({ color: '[#9ca3af]' })} />
-              <span className={css({ fontSize: 'sm', color: '[#6b7280]' })}>
+              <Calendar size={16} className={css({ color: 'ink.300' })} />
+              <span className={css({ fontSize: 'sm', color: 'ink.500' })}>
                 {post.date}
               </span>
             </div>
@@ -167,26 +167,26 @@ function PostDetailContent() {
               gap: '2',
             })}
           >
-            <span className={css({ fontSize: 'sm', color: '[#6b7280]' })}>
+            <span className={css({ fontSize: 'sm', color: 'ink.500' })}>
               총 조회수
             </span>
             <span
               className={css({
                 fontWeight: 'bold',
-                color: '[#111827]',
+                color: 'ink.950',
                 fontSize: 'xl',
               })}
             >
               {post.totalViews.toLocaleString()}
             </span>
-            <span className={css({ fontSize: 'sm', color: '[#6b7280]' })}>
+            <span className={css({ fontSize: 'sm', color: 'ink.500' })}>
               회
             </span>
           </div>
           {post.todayViews > 0 && (
             <span
               className={css({
-                color: '[#3b82f6]',
+                color: 'accent.600',
                 fontWeight: 'bold',
                 fontSize: 'sm',
               })}
@@ -228,14 +228,14 @@ function PostDetailContent() {
             })}
           >
             {derived.weekGrowthRate !== null && derived.weekGrowthRate >= 0 ? (
-              <TrendingUp size={18} className={css({ color: '[#22c55e]' })} />
+              <TrendingUp size={18} className={css({ color: 'moss.600' })} />
             ) : (
-              <TrendingDown size={18} className={css({ color: '[#ef4444]' })} />
+              <TrendingDown size={18} className={css({ color: 'marker.600' })} />
             )}
             <span
               className={css({
                 fontSize: '[0.8rem]',
-                color: '[#6b7280]',
+                color: 'ink.500',
                 fontWeight: 'medium',
               })}
             >
@@ -249,9 +249,9 @@ function PostDetailContent() {
               color:
                 derived.weekGrowthRate !== null
                   ? derived.weekGrowthRate >= 0
-                    ? '[#22c55e]'
-                    : '[#ef4444]'
-                  : '[#9ca3af]',
+                    ? 'moss.600'
+                    : 'marker.600'
+                  : 'ink.300',
             })}
           >
             {derived.weekGrowthRate !== null
@@ -277,11 +277,11 @@ function PostDetailContent() {
               mb: '3',
             })}
           >
-            <BarChart3 size={18} className={css({ color: '[#f59e0b]' })} />
+            <BarChart3 size={18} className={css({ color: 'yellow.500' })} />
             <span
               className={css({
                 fontSize: '[0.8rem]',
-                color: '[#6b7280]',
+                color: 'ink.500',
                 fontWeight: 'medium',
               })}
             >
@@ -294,7 +294,7 @@ function PostDetailContent() {
                 className={css({
                   fontSize: '2xl',
                   fontWeight: 'bold',
-                  color: '[#111827]',
+                  color: 'ink.950',
                 })}
               >
                 {derived.peakDay.count}
@@ -302,7 +302,7 @@ function PostDetailContent() {
               <span
                 className={css({
                   fontSize: '[0.8rem]',
-                  color: '[#6b7280]',
+                  color: 'ink.500',
                   ml: '1',
                 })}
               >
@@ -311,7 +311,7 @@ function PostDetailContent() {
               <div
                 className={css({
                   fontSize: '[0.8rem]',
-                  color: '[#9ca3af]',
+                  color: 'ink.300',
                   mt: '1',
                 })}
               >
@@ -323,7 +323,7 @@ function PostDetailContent() {
               className={css({
                 fontSize: '2xl',
                 fontWeight: 'bold',
-                color: '[#9ca3af]',
+                color: 'ink.300',
               })}
             >
               —
@@ -348,11 +348,11 @@ function PostDetailContent() {
               mb: '3',
             })}
           >
-            <Calendar size={18} className={css({ color: '[#8b5cf6]' })} />
+            <Calendar size={18} className={css({ color: 'purple.500' })} />
             <span
               className={css({
                 fontSize: '[0.8rem]',
-                color: '[#6b7280]',
+                color: 'ink.500',
                 fontWeight: 'medium',
               })}
             >
@@ -363,7 +363,7 @@ function PostDetailContent() {
             className={css({
               fontSize: '2xl',
               fontWeight: 'bold',
-              color: '[#111827]',
+              color: 'ink.950',
             })}
           >
             {derived.dailyAverage}
@@ -371,7 +371,7 @@ function PostDetailContent() {
           <span
             className={css({
               fontSize: '[0.8rem]',
-              color: '[#6b7280]',
+              color: 'ink.500',
               ml: '1',
             })}
           >
@@ -396,11 +396,11 @@ function PostDetailContent() {
               mb: '3',
             })}
           >
-            <Trophy size={18} className={css({ color: '[#f59e0b]' })} />
+            <Trophy size={18} className={css({ color: 'yellow.500' })} />
             <span
               className={css({
                 fontSize: '[0.8rem]',
-                color: '[#6b7280]',
+                color: 'ink.500',
                 fontWeight: 'medium',
               })}
             >
@@ -427,7 +427,7 @@ function PostDetailContent() {
                 <span>{m.reached ? '●' : '○'}</span>
                 <span
                   className={css({
-                    color: m.reached ? '[#111827]' : '[#9ca3af]',
+                    color: m.reached ? 'ink.950' : 'ink.300',
                     fontWeight: m.reached ? 'semibold' : 'normal',
                   })}
                 >
@@ -435,7 +435,7 @@ function PostDetailContent() {
                 </span>
                 {m.reached && m.date && (
                   <span
-                    className={css({ color: '[#9ca3af]', fontSize: '[0.75rem]' })}
+                    className={css({ color: 'ink.300', fontSize: '[0.75rem]' })}
                   >
                     ({m.date})
                   </span>
@@ -478,7 +478,7 @@ function PostDetailContent() {
               className={css({
                 fontSize: 'lg',
                 fontWeight: 'bold',
-                color: '[#111827]',
+                color: 'ink.950',
               })}
             >
               📈 일별 조회수 추이
@@ -487,7 +487,7 @@ function PostDetailContent() {
               <span
                 className={css({
                   fontSize: '[0.75rem]',
-                  color: '[#9ca3af]',
+                  color: 'ink.300',
                 })}
               >
                 최근 30일 데이터가 없어 전체 기간으로 표시 중
@@ -551,7 +551,7 @@ function PostDetailContent() {
                 h: 'full',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '[#9ca3af]',
+                color: 'ink.300',
               })}
             >
               <p>해당 기간에 데이터가 없습니다.</p>
@@ -581,7 +581,7 @@ function PostDetailContent() {
             className={css({
               fontSize: 'lg',
               fontWeight: 'bold',
-              color: '[#111827]',
+              color: 'ink.950',
               mb: '6',
             })}
           >
@@ -638,7 +638,7 @@ function PostDetailContent() {
             className={css({
               fontSize: 'lg',
               fontWeight: 'bold',
-              color: '[#111827]',
+              color: 'ink.950',
               mb: '6',
             })}
           >
@@ -690,7 +690,7 @@ export default function PostDetailClient() {
     <div
       className={css({
         minH: '[calc(100dvh - 128px)]',
-        bg: '[#f9fafb]',
+        bg: 'paper.50',
         p: { base: '4', md: '8' },
       })}
     >
@@ -712,10 +712,10 @@ export default function PostDetailClient() {
             display: 'flex',
             alignItems: 'center',
             gap: '1',
-            color: '[#6b7280]',
+            color: 'ink.500',
             fontSize: 'sm',
             textDecoration: 'none',
-            _hover: { color: '[#3b82f6]' },
+            _hover: { color: 'accent.600' },
           })}
         >
           <ArrowLeft size={16} />
@@ -725,7 +725,7 @@ export default function PostDetailClient() {
           className={css({
             fontSize: '2xl',
             fontWeight: 'bold',
-            color: '[#111827]',
+            color: 'ink.950',
           })}
         >
           포스트 상세 분석
