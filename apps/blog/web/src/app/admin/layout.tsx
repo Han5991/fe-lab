@@ -34,9 +34,7 @@ export default function AdminLayout({
   const isLoginPage =
     pathname === '/admin/login' || pathname === '/admin/login/';
 
-  // TEMP: dev 점검용 — AdminGuard 우회. 점검 끝나면 원복하세요.
-  const content = isLoginPage ? children : children;
-  void AdminGuard;
+  const content = isLoginPage ? children : <AdminGuard>{children}</AdminGuard>;
 
   return <Suspense fallback={<AuthFallback />}>{content}</Suspense>;
 }
