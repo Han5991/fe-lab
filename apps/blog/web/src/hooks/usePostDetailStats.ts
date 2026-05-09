@@ -40,6 +40,10 @@ export function usePostDetailStats(slug: string): PostDetailStats {
   // post가 아직 없으면 빈 분포 반환, 진짜 데이터는 hydration 후 갱신.
   const { data: distributions } = useSuspenseQuery({
     queryKey: ['admin', 'post-detail', slug],
+    // 같은 사유 (useAdminDashboardData 주석 참조): SSR placeholder를 hydration
+    // 직후 무조건 갱신해 prod 화면이 빈 차트로 굳지 않게 합니다.
+    staleTime: 0,
+    refetchOnMount: 'always',
     queryFn: async (): Promise<{
       hourly: HourlyDistribution[];
       dow: DowDistribution[];
