@@ -3,7 +3,7 @@ import { css } from '@design-system/ui-lib/css';
 import type { PostSummary } from '@/domain/post';
 import { encodePostSlug } from '@/domain/post/utils';
 import { resolveThumbnailUrl } from '@/domain/post/thumbnail';
-import { fmtDate, estimateReadMin } from '@/lib/format';
+import { fmtDate } from '@/lib/format';
 import { Label } from './Label';
 
 interface PostGridCardProps {
@@ -12,7 +12,7 @@ interface PostGridCardProps {
 
 export const PostGridCard = ({ post }: PostGridCardProps) => {
   const thumb = post.thumbnail ? resolveThumbnailUrl(post) : null;
-  const readMin = estimateReadMin(post.excerpt ?? post.title);
+  const readMin = post.readMin;
   return (
     <Link
       href={`/posts/${encodePostSlug(post.slug)}/`}

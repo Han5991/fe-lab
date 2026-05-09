@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { css } from '@design-system/ui-lib/css';
 import type { PostSummary } from '@/domain/post';
 import { encodePostSlug } from '@/domain/post/utils';
-import { fmtDate, estimateReadMin } from '@/lib/format';
+import { fmtDate } from '@/lib/format';
 import { Label } from './Label';
 
 interface PostIndexRowProps {
@@ -10,7 +10,7 @@ interface PostIndexRowProps {
 }
 
 export const PostIndexRow = ({ post }: PostIndexRowProps) => {
-  const readMin = estimateReadMin(post.excerpt ?? post.title);
+  const readMin = post.readMin;
   return (
     <Link
       href={`/posts/${encodePostSlug(post.slug)}/`}

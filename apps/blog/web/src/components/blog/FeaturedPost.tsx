@@ -3,7 +3,7 @@ import { css } from '@design-system/ui-lib/css';
 import type { PostSummary } from '@/domain/post';
 import { encodePostSlug } from '@/domain/post/utils';
 import { resolveThumbnailUrl } from '@/domain/post/thumbnail';
-import { estimateReadMin, fmtDate } from '@/lib/format';
+import { fmtDate } from '@/lib/format';
 import { Label } from './Label';
 
 interface FeaturedPostProps {
@@ -13,7 +13,7 @@ interface FeaturedPostProps {
 export const FeaturedPost = ({ post }: FeaturedPostProps) => {
   const href = `/posts/${encodePostSlug(post.slug)}/`;
   const thumb = post.thumbnail ? resolveThumbnailUrl(post) : null;
-  const readMin = estimateReadMin(post.excerpt ?? '');
+  const readMin = post.readMin;
 
   return (
     <Link

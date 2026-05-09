@@ -1,6 +1,6 @@
 import { css } from '@design-system/ui-lib/css';
 import type { PostData } from '@/domain/post';
-import { fmtDate, estimateReadMin } from '@/lib/format';
+import { fmtDate } from '@/lib/format';
 import { Label } from './Label';
 
 interface PostHeaderProps {
@@ -10,7 +10,7 @@ interface PostHeaderProps {
 }
 
 export const PostHeader = ({ post, seriesIndex }: PostHeaderProps) => {
-  const readMin = estimateReadMin(post.content);
+  const readMin = post.readMin;
   return (
     <header className={css({ mb: '10' })}>
       {seriesIndex && (
