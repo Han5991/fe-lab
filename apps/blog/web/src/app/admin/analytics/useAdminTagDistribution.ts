@@ -34,6 +34,9 @@ export function useAdminTagDistribution() {
   const { data } = useSuspenseQuery({
     queryKey: ['admin', 'tag-distribution'],
     queryFn: async () => {
+      // SSR 환경에서는 상대 URL fetch가 ERR_INVALID_URL이라 빈 결과로 대기.
+      // (AdminGuard가 보통 children의 SSR을 막지만, 우회 빌드에서도 안전하도록.)
+      if (typeof window === 'undefined') return [];
       // useSuspenseQuery는 가까운 ErrorBoundary로 throw를 위임하므로
       // 응답 코드와 형식을 명시적으로 검증합니다 (404나 깨진 JSON 시 .json()이
       // 그대로 throw되어 페이지 전체가 깨지는 것을 막습니다).

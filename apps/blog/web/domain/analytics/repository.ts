@@ -67,7 +67,15 @@ export async function getAllPostsTrends(): Promise<PostTrendRow[]> {
 }
 
 export async function getAdminPostsIndex(): Promise<AdminPostIndex[]> {
+  // 서버 환경(SSG prerender 포함)에서는 상대 URL fetch가 ERR_INVALID_URL.
+  // 어차피 admin은 클라이언트 hydration 후에만 유효하므로 SSR에선 빈 배열로 대기.
+  if (typeof window === 'undefined') return [];
   const res = await fetch('/admin-posts-index.json');
+  if (!res.ok) {
+    throw new Error(
+      `admin-posts-index.json fetch failed: ${res.status} ${res.statusText}`,
+    );
+  }
   return (await res.json()) as AdminPostIndex[];
 }
 
