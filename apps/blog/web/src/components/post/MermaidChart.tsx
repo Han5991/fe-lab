@@ -2,15 +2,14 @@
 
 import { useState, useEffect, useId } from 'react';
 import mermaid from 'mermaid';
-import DOMPurify from 'dompurify';
 import { css } from '@design-system/ui-lib/css';
 
 // Mermaid Initialization (once per module)
 if (typeof window !== 'undefined') {
   mermaid.initialize({
     startOnLoad: true,
-    // 'strict' = HTML 허용, JS·이벤트 핸들러 차단. 작성자 신뢰 마크다운만 받지만
-    // 추가 방어선으로 dangerouslySetInnerHTML 직전에도 DOMPurify를 한 번 더 통과시킵니다.
+    // 'strict' = HTML 허용, JS·이벤트 핸들러 차단. Mermaid가 내부적으로
+    // DOMPurify를 돌리고, 입력도 작성자 신뢰 마크다운만이라 추가 sanitize 불필요.
     securityLevel: 'strict',
   });
 }
@@ -25,11 +24,7 @@ export function MermaidChart({ chart }: { chart: string }) {
       try {
         const rendered = await mermaid.render(`mermaid-${id}`, chart);
         if (cancelled) return;
-        // 이중 sanitize: Mermaid 자체 필터 + 명시적 DOMPurify SVG 프로파일.
-        const safe = DOMPurify.sanitize(rendered.svg, {
-          USE_PROFILES: { svg: true, svgFilters: true },
-        });
-        setSvg(safe);
+        setSvg(rendered.svg);
       } catch (error) {
         console.error('Mermaid render failed:', error);
       }

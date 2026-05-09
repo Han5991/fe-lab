@@ -26,7 +26,6 @@
     "@ssgoi/react": "^4.0.0",
     "@supabase/supabase-js": "^2.89.0",
     "@tanstack/react-query": "^5.81.2",
-    "dompurify": "^3.3.3",
     "gray-matter": "^4.0.3",
     "lucide-react": "^0.563.0",
     "mermaid": "^11.12.2",
