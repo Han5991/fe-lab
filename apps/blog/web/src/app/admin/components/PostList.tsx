@@ -34,21 +34,21 @@ export function PostList() {
   const inputClass = css({
     py: '1.5',
     px: '2',
-    borderWidth: '1px',
+    borderWidth: '[1px]',
     borderColor: 'ink.border',
     rounded: 'md',
     fontSize: 'xs',
     bg: 'ink.25',
     color: 'ink.950',
     cursor: 'pointer',
-    _focus: { outline: 'none', borderColor: 'accent.600' },
+    _focus: { outline: 'none', borderColor: 'ink.950' },
   });
 
   return (
     <div
       className={css({
         bg: 'ink.25',
-        borderWidth: '1px',
+        borderWidth: '[1px]',
         borderColor: 'ink.border',
         rounded: 'lg',
         overflow: 'hidden',
@@ -61,7 +61,7 @@ export function PostList() {
           alignItems: 'center',
           px: '5',
           py: '3',
-          borderBottomWidth: '1px',
+          borderBottomWidth: '[1px]',
           borderColor: 'ink.border',
           flexWrap: 'wrap',
           gap: '2',
@@ -74,15 +74,15 @@ export function PostList() {
               display: 'flex',
               alignItems: 'center',
               gap: '1.5',
-              bg: 'accent.600',
-              color: 'white',
+              bg: 'ink.950',
+              color: 'paper.50',
               px: '3',
               py: '1.5',
               rounded: 'md',
               fontSize: 'xs',
               fontWeight: 'medium',
               cursor: 'pointer',
-              transition: 'opacity 0.15s',
+              transition: '[opacity 0.15s]',
               _hover: { opacity: '0.85' },
             })}
           >

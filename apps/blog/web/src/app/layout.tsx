@@ -5,6 +5,7 @@ import { Layout } from '@/src/components/Layout';
 import { GoogleAnalytics, GoogleTagManager } from '@next/third-parties/google';
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
+import { newsreader, notoSerifKr, jetbrainsMono } from './fonts';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://blog.sangwook.dev'),
@@ -76,7 +77,11 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="ko">
+    <html
+      lang="ko"
+      data-scroll-behavior="smooth"
+      className={`${newsreader.variable} ${notoSerifKr.variable} ${jetbrainsMono.variable}`}
+    >
       <head>
         <link
           rel="alternate"

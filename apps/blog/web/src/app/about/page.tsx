@@ -66,14 +66,14 @@ export default function AboutPage() {
           {/* Header */}
           <div
             className={css({
-              borderBottomWidth: '1px',
+              borderBottomWidth: '[1px]',
               borderColor: 'ink.border',
               bg: 'ink.50',
             })}
           >
             <div
               className={css({
-                maxW: '1200px',
+                maxW: 'containerW',
                 mx: 'auto',
                 px: '6',
                 py: { base: '14', md: '20' },
@@ -92,7 +92,7 @@ export default function AboutPage() {
                     textTransform: 'uppercase',
                     color: 'accent.600',
                     mb: '4',
-                    borderLeftWidth: '3px',
+                    borderLeftWidth: '[3px]',
                     borderLeftColor: 'accent.600',
                     pl: '3',
                   })}
@@ -104,7 +104,7 @@ export default function AboutPage() {
                     fontSize: { base: '4xl', md: '5xl' },
                     fontWeight: 'extrabold',
                     letterSpacing: 'tight',
-                    lineHeight: '1.1',
+                    lineHeight: 'tighter',
                     mb: '4',
                     color: 'ink.950',
                   })}
@@ -125,10 +125,10 @@ export default function AboutPage() {
                 </h1>
                 <p
                   className={css({
-                    fontSize: 'base',
+                    fontSize: 'md',
                     color: 'ink.700',
-                    lineHeight: '1.7',
-                    maxW: '480px',
+                    lineHeight: 'proseLoose',
+                    maxW: 'heroAside',
                   })}
                 >
                   번들러 내부 구조, TypeScript 설계 패턴, 오픈소스 기여를 탐구합니다.
@@ -161,7 +161,7 @@ export default function AboutPage() {
                       fontSize: 'sm',
                       fontWeight: 'medium',
                       _hover: { opacity: '0.85' },
-                      transition: 'opacity 0.15s',
+                      transition: '[opacity 0.15s]',
                     })}
                   >
                     GitHub
@@ -181,7 +181,7 @@ export default function AboutPage() {
                       fontSize: 'sm',
                       fontWeight: 'medium',
                       _hover: { opacity: '0.85' },
-                      transition: 'opacity 0.15s',
+                      transition: '[opacity 0.15s]',
                     })}
                   >
                     LinkedIn
@@ -196,7 +196,7 @@ export default function AboutPage() {
                     gap: '4',
                     mt: '4',
                     pt: '6',
-                    borderTopWidth: '1px',
+                    borderTopWidth: '[1px]',
                     borderColor: 'ink.border',
                   })}
                 >
@@ -212,7 +212,7 @@ export default function AboutPage() {
                           fontWeight: 'extrabold',
                           color: 'ink.950',
                           letterSpacing: 'tight',
-                          lineHeight: '1',
+                          lineHeight: 'flat',
                         })}
                       >
                         {stat.value}
@@ -235,7 +235,7 @@ export default function AboutPage() {
                     fontSize: 'xs',
                     color: 'ink.500',
                     _hover: { color: 'accent.600' },
-                    transition: 'color 0.15s',
+                    transition: '[color 0.15s]',
                   })}
                 >
                   2025 회고 전체 읽기 →
@@ -247,7 +247,7 @@ export default function AboutPage() {
           {/* Content */}
           <div
             className={css({
-              maxW: '1200px',
+              maxW: 'containerW',
               mx: 'auto',
               px: '6',
               py: { base: '12', md: '20' },
@@ -283,7 +283,7 @@ export default function AboutPage() {
               </h2>
               <div
                 className={css({
-                  borderTopWidth: '1px',
+                  borderTopWidth: '[1px]',
                   borderColor: 'ink.border',
                 })}
               >
@@ -319,9 +319,9 @@ export default function AboutPage() {
                     className={css({
                       display: 'block',
                       py: '5',
-                      borderBottomWidth: '1px',
+                      borderBottomWidth: '[1px]',
                       borderColor: 'ink.border',
-                      transition: 'background 0.15s',
+                      transition: '[background 0.15s]',
                       _hover: { bg: 'ink.50', mx: '-6', px: '6' },
                     })}
                   >
@@ -336,7 +336,7 @@ export default function AboutPage() {
                       <span
                         className={css({
                           fontWeight: 'bold',
-                          fontSize: 'base',
+                          fontSize: 'md',
                           color: 'ink.950',
                         })}
                       >
@@ -350,7 +350,7 @@ export default function AboutPage() {
                       className={css({
                         fontSize: 'sm',
                         color: 'ink.700',
-                        lineHeight: '1.6',
+                        lineHeight: 'relaxed',
                       })}
                     >
                       {item.description}
@@ -388,7 +388,7 @@ export default function AboutPage() {
                 </h2>
                 <div
                   className={css({
-                    borderTopWidth: '1px',
+                    borderTopWidth: '[1px]',
                     borderColor: 'ink.border',
                   })}
                 >
@@ -413,9 +413,9 @@ export default function AboutPage() {
                         alignItems: 'center',
                         gap: '4',
                         py: '4',
-                        borderBottomWidth: '1px',
+                        borderBottomWidth: '[1px]',
                         borderColor: 'ink.border',
-                        transition: 'background 0.15s, box-shadow 0.15s',
+                        transition: '[background 0.15s, box-shadow 0.15s]',
                         _hover: { bg: 'ink.50', mx: '-6', px: '6', boxShadow: 'accentLeft' },
                       })}
                     >
@@ -472,7 +472,7 @@ export default function AboutPage() {
                   className={css({
                     display: 'flex',
                     flexDir: 'column',
-                    borderTopWidth: '1px',
+                    borderTopWidth: '[1px]',
                     borderColor: 'ink.border',
                   })}
                 >
@@ -511,13 +511,13 @@ export default function AboutPage() {
                         alignItems: 'start',
                         gap: '4',
                         py: '4',
-                        borderBottomWidth: '1px',
+                        borderBottomWidth: '[1px]',
                         borderColor: 'ink.border',
-                        transition: 'background 0.15s, box-shadow 0.15s',
+                        transition: '[background 0.15s, box-shadow 0.15s]',
                         _hover: { bg: 'ink.50', mx: '-6', px: '6', boxShadow: 'accentLeft' },
                       })}
                     >
-                      <div className={css({ flex: 1, minW: 0 })}>
+                      <div className={css({ flex: '1', minW: '0' })}>
                         <span
                           className={css({
                             fontWeight: 'semibold',
@@ -533,7 +533,7 @@ export default function AboutPage() {
                           className={css({
                             fontSize: 'xs',
                             color: 'ink.700',
-                            lineHeight: '1.6',
+                            lineHeight: 'relaxed',
                           })}
                         >
                           {series.description}

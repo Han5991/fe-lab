@@ -3,7 +3,9 @@ import {
   getPostBySlug,
   getAdjacentPosts,
   getSeriesAdjacentPosts,
+  getAllPosts,
 } from '@/domain/post';
+import { getSeriesMeta, sortPostsBySeriesOrder } from '@/domain/post/series';
 import {
   resolveThumbnailUrl,
   resolveAbsoluteThumbnailUrl,
@@ -91,6 +93,22 @@ export default async function PostPage({ params }: Props) {
         seriesName: seriesAdj.seriesName,
       }
     : null;
+
+  // 시리즈 내 위치 계산 (헤더 라벨용)
+  let seriesIndex: { current: number; total: number; displayName: string } | undefined;
+  if (post.series) {
+    const meta = getSeriesMeta(post.series);
+    const seriesPosts = getAllPosts().filter(p => p.series === post.series);
+    const orderedPosts = sortPostsBySeriesOrder(seriesPosts, meta?.order);
+    const idx = orderedPosts.findIndex(p => p.slug === slug);
+    if (idx !== -1) {
+      seriesIndex = {
+        current: idx + 1,
+        total: orderedPosts.length,
+        displayName: meta?.title ?? post.series,
+      };
+    }
+  }
 
   const thumbnailUrl = resolveThumbnailUrl(post);
   const absoluteThumbnailUrl = resolveAbsoluteThumbnailUrl(post);
@@ -192,8 +210,9 @@ export default async function PostPage({ params }: Props) {
       <PostClient
         post={post}
         thumbnailUrl={post.thumbnail ? thumbnailUrl : undefined}
+        seriesIndex={seriesIndex}
       />
-      <div className={css({ maxW: '1200px', m: '0 auto', p: '0 24px' })}>
+      <div className={css({ maxW: 'containerW', mx: 'auto', px: '6' })}>
         <PostNavigation prev={prev} next={next} seriesNav={seriesNav} />
       </div>
     </>

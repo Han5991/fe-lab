@@ -40,14 +40,14 @@ function AdminOverviewContent() {
         <div
           className={css({
             bg: 'ink.25',
-            borderWidth: '1px',
+            borderWidth: '[1px]',
             borderColor: 'ink.border',
             rounded: 'lg',
             p: '6',
           })}
         >
           <div className={css({ display: 'flex', alignItems: 'center', gap: '2', mb: '4' })}>
-            <BarChart3 size={16} className={css({ color: 'accent.600' })} />
+            <BarChart3 size={16} className={css({ color: 'marker.600' })} />
             <span className={css({ fontSize: 'xs', color: 'ink.500', fontWeight: 'medium' })}>
               전체 조회수
             </span>
@@ -58,7 +58,7 @@ function AdminOverviewContent() {
             </span>
             <span className={css({ fontSize: 'xs', color: 'ink.500' })}>회</span>
             {totalTodayViews > 0 && (
-              <span className={css({ color: 'accent.600', fontWeight: 'bold', fontSize: 'sm' })}>
+              <span className={css({ color: 'marker.600', fontWeight: 'bold', fontSize: 'sm' })}>
                 +{totalTodayViews}
               </span>
             )}
@@ -69,14 +69,14 @@ function AdminOverviewContent() {
         <div
           className={css({
             bg: 'ink.25',
-            borderWidth: '1px',
+            borderWidth: '[1px]',
             borderColor: 'ink.border',
             rounded: 'lg',
             p: '6',
           })}
         >
           <div className={css({ display: 'flex', alignItems: 'center', gap: '2', mb: '4' })}>
-            <FileText size={16} className={css({ color: 'accent.600' })} />
+            <FileText size={16} className={css({ color: 'marker.600' })} />
             <span className={css({ fontSize: 'xs', color: 'ink.500', fontWeight: 'medium' })}>
               총 게시글 수
             </span>
@@ -93,9 +93,9 @@ function AdminOverviewContent() {
         <Link
           href="/admin/analytics"
           className={css({
-            bg: 'accent.600',
-            borderWidth: '1px',
-            borderColor: 'accent.600',
+            bg: 'ink.950',
+            borderWidth: '[1px]',
+            borderColor: 'ink.950',
             rounded: 'lg',
             p: '6',
             display: 'flex',
@@ -103,12 +103,12 @@ function AdminOverviewContent() {
             justifyContent: 'center',
             alignItems: 'center',
             gap: '3',
-            transition: 'opacity 0.15s',
+            transition: '[opacity 0.15s]',
             _hover: { opacity: '0.85' },
           })}
         >
-          <BarChart3 size={24} className={css({ color: 'white' })} />
-          <span className={css({ color: 'white', fontWeight: 'semibold', fontSize: 'sm' })}>
+          <BarChart3 size={24} className={css({ color: 'paper.50' })} />
+          <span className={css({ color: 'paper.50', fontWeight: 'semibold', fontSize: 'sm' })}>
             상세 분석 보기 →
           </span>
         </Link>
@@ -126,7 +126,7 @@ function AdminOverviewContent() {
         <div
           className={css({
             bg: 'ink.25',
-            borderWidth: '1px',
+            borderWidth: '[1px]',
             borderColor: 'ink.border',
             rounded: 'lg',
             overflow: 'hidden',
@@ -136,14 +136,14 @@ function AdminOverviewContent() {
             className={css({
               px: '5',
               py: '4',
-              borderBottomWidth: '1px',
+              borderBottomWidth: '[1px]',
               borderColor: 'ink.border',
               display: 'flex',
               alignItems: 'baseline',
               gap: '3',
             })}
           >
-            <span className={css({ fontSize: 'xs', fontWeight: 'bold', color: 'accent.600', letterSpacing: 'widest', textTransform: 'uppercase' })}>
+            <span className={css({ fontSize: 'xs', fontWeight: 'bold', color: 'marker.600', letterSpacing: 'widest', textTransform: 'uppercase' })}>
               Top
             </span>
             <h2 className={css({ fontWeight: 'bold', color: 'ink.950', fontSize: 'sm' })}>
@@ -164,14 +164,14 @@ function AdminOverviewContent() {
                   py: '3',
                   borderBottomWidth: i < topPosts.length - 1 ? '1px' : '0',
                   borderColor: 'ink.border',
-                  transition: 'background 0.15s',
+                  transition: '[background 0.15s]',
                   _hover: { bg: 'ink.50' },
                 })}
               >
                 <span
                   className={css({
                     fontWeight: 'bold',
-                    color: 'accent.600',
+                    color: 'marker.600',
                     fontSize: 'sm',
                     w: '5',
                     textAlign: 'center',
@@ -183,7 +183,7 @@ function AdminOverviewContent() {
                 </span>
                 <span
                   className={css({
-                    flex: 1,
+                    flex: '1',
                     color: 'ink.950',
                     fontSize: 'sm',
                     overflow: 'hidden',
@@ -213,7 +213,7 @@ function AdminOverviewContent() {
         <div
           className={css({
             bg: 'ink.25',
-            borderWidth: '1px',
+            borderWidth: '[1px]',
             borderColor: 'ink.border',
             rounded: 'lg',
             overflow: 'hidden',
@@ -223,14 +223,14 @@ function AdminOverviewContent() {
             className={css({
               px: '5',
               py: '4',
-              borderBottomWidth: '1px',
+              borderBottomWidth: '[1px]',
               borderColor: 'ink.border',
               display: 'flex',
               alignItems: 'baseline',
               gap: '3',
             })}
           >
-            <span className={css({ fontSize: 'xs', fontWeight: 'bold', color: 'accent.600', letterSpacing: 'widest', textTransform: 'uppercase' })}>
+            <span className={css({ fontSize: 'xs', fontWeight: 'bold', color: 'marker.600', letterSpacing: 'widest', textTransform: 'uppercase' })}>
               Recent
             </span>
             <h2 className={css({ fontWeight: 'bold', color: 'ink.950', fontSize: 'sm' })}>
@@ -251,13 +251,13 @@ function AdminOverviewContent() {
                   py: '3',
                   borderBottomWidth: i < recentPosts.length - 1 ? '1px' : '0',
                   borderColor: 'ink.border',
-                  transition: 'background 0.15s',
+                  transition: '[background 0.15s]',
                   _hover: { bg: 'ink.50' },
                 })}
               >
                 <span
                   className={css({
-                    flex: 1,
+                    flex: '1',
                     color: 'ink.950',
                     fontSize: 'sm',
                     overflow: 'hidden',
@@ -292,7 +292,7 @@ export default function AdminPage() {
   return (
     <div
       className={css({
-        minH: 'calc(100dvh - 128px)',
+        minH: '[calc(100dvh - 128px)]',
         bg: 'ink.50',
         p: { base: '4', md: '8' },
       })}
@@ -304,14 +304,14 @@ export default function AdminPage() {
           justifyContent: 'space-between',
           mb: '6',
           pb: '5',
-          borderBottomWidth: '1px',
+          borderBottomWidth: '[1px]',
           borderColor: 'ink.border',
           flexWrap: 'wrap',
           gap: '3',
         })}
       >
         <div>
-          <p className={css({ fontSize: 'xs', fontWeight: 'bold', letterSpacing: 'widest', textTransform: 'uppercase', color: 'accent.600', mb: '1' })}>
+          <p className={css({ fontSize: 'xs', fontWeight: 'bold', letterSpacing: 'widest', textTransform: 'uppercase', color: 'marker.600', mb: '1' })}>
             Admin
           </p>
           <h1 className={css({ fontSize: 'xl', fontWeight: 'bold', color: 'ink.950' })}>
@@ -328,12 +328,12 @@ export default function AdminPage() {
               gap: '1.5',
               px: '3',
               py: '1.5',
-              color: 'accent.600',
+              color: 'marker.600',
               fontWeight: 'medium',
               fontSize: 'sm',
               rounded: 'md',
-              transition: 'background 0.15s',
-              _hover: { bg: 'accent.50' },
+              transition: '[background 0.15s]',
+              _hover: { bg: 'paper.100' },
             })}
           >
             <BarChart3 size={16} />
@@ -351,8 +351,8 @@ export default function AdminPage() {
               cursor: 'pointer',
               rounded: 'md',
               fontSize: 'sm',
-              transition: 'all 0.15s',
-              _hover: { bg: 'red.50', color: 'red.600' },
+              transition: '[all 0.15s]',
+              _hover: { bg: 'marker.100', color: 'marker.600' },
             })}
           >
             <LogOut size={16} />

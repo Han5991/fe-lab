@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/cjs/styles/prism';
 import { css, cx } from '@design-system/ui-lib/css';
+import { token } from '@design-system/ui-lib/tokens';
 import { MermaidChart } from './MermaidChart';
 
 function CopyButton({ content }: { content: string }) {
@@ -30,10 +31,10 @@ function CopyButton({ content }: { content: string }) {
         color: 'gray.400',
         bg: 'white/5',
         rounded: 'md',
-        borderWidth: '1px',
+        borderWidth: '[1px]',
         borderColor: 'white/10',
         cursor: 'pointer',
-        transition: 'all 0.2s',
+        transition: '[all 0.2s]',
         _hover: {
           bg: 'white/10',
           color: 'blue.400',
@@ -79,37 +80,37 @@ export function CodeBlock({
         shadow: '2xl',
         rounded: '2xl',
         overflow: 'hidden',
-        borderWidth: '1px',
+        borderWidth: '[1px]',
         borderColor: 'white/10',
       })}
     >
       {/* Window chrome dots + language label */}
       <div
         className={css({
-          bg: '#1e1e1e',
+          bg: '[#1e1e1e]',
           px: '5',
           py: '4',
           display: 'flex',
           gap: '2.5',
           alignItems: 'center',
-          borderBottomWidth: '1px',
+          borderBottomWidth: '[1px]',
           borderColor: 'white/5',
         })}
       >
         <div
-          className={css({ boxSize: '3', rounded: 'full', bg: '#ff5f56' })}
+          className={css({ boxSize: '3', rounded: 'full', bg: '[#ff5f56]' })}
         />
         <div
-          className={css({ boxSize: '3', rounded: 'full', bg: '#ffbd2e' })}
+          className={css({ boxSize: '3', rounded: 'full', bg: '[#ffbd2e]' })}
         />
         <div
-          className={css({ boxSize: '3', rounded: 'full', bg: '#27c93f' })}
+          className={css({ boxSize: '3', rounded: 'full', bg: '[#27c93f]' })}
         />
         {match[1] && (
           <span
             className={css({
               ml: '4',
-              color: 'gray.500',
+              color: 'ink.500',
               fontSize: 'xs',
               textTransform: 'uppercase',
               letterSpacing: 'widest',
@@ -130,7 +131,7 @@ export function CodeBlock({
         customStyle={{
           borderRadius: 0,
           margin: 0,
-          padding: '2rem',
+          padding: `${token('spacing.6')} ${token('spacing.8')}`,
           lineHeight: '1.8',
           background: '#1e1e1e',
         }}
@@ -144,15 +145,15 @@ export function CodeBlock({
       className={cx(
         className,
         css({
-          bg: 'gray.100',
-          color: 'red.500',
+          bg: 'paper.100',
+          color: 'marker.600',
           px: '1.5',
           py: '0.5',
           rounded: 'md',
-          fontSize: '0.85em',
-          fontWeight: '500',
-          borderWidth: '1px',
-          borderColor: 'gray.200',
+          fontSize: '[0.85em]',
+          fontWeight: 'medium',
+          borderWidth: '[1px]',
+          borderColor: 'ink.border',
           whiteSpace: 'pre-wrap',
           wordBreak: 'break-word',
           overflowWrap: 'anywhere',

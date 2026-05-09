@@ -36,18 +36,18 @@ export const MobileTOC = () => {
           right: '6',
           w: '12',
           h: '12',
-          bg: 'white',
+          bg: 'paper.50',
           rounded: 'full',
           shadow: 'lg',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          color: 'gray.600',
-          borderWidth: '1px',
-          borderColor: 'gray.200',
-          zIndex: 39,
+          color: 'ink.600',
+          borderWidth: '[1px]',
+          borderColor: 'ink.border',
+          zIndex: '39',
           cursor: 'pointer',
-          _hover: { color: 'blue.600', borderColor: 'blue.200' },
+          _hover: { color: 'accent.600', borderColor: 'accent.200' },
         })}
       >
         <List size={24} />
@@ -64,9 +64,9 @@ export const MobileTOC = () => {
               onClick={() => setIsOpen(false)}
               className={css({
                 pos: 'fixed',
-                inset: 0,
-                bg: 'black',
-                zIndex: 50,
+                inset: '0',
+                bg: 'ink.950',
+                zIndex: '50',
               })}
             />
             <motion.div
@@ -76,24 +76,24 @@ export const MobileTOC = () => {
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
               className={css({
                 pos: 'fixed',
-                bottom: 0,
-                left: 0,
-                right: 0,
-                bg: 'white',
-                zIndex: 51,
+                bottom: '0',
+                left: '0',
+                right: '0',
+                bg: 'paper.50',
+                zIndex: '51',
                 roundedTop: '2xl',
-                maxH: '70vh',
+                maxH: '[70vh]',
                 display: 'flex',
                 flexDir: 'column',
                 shadow: '2xl',
-                paddingBottom: 'env(safe-area-inset-bottom)', // iOS safe area
+                paddingBottom: '[env(safe-area-inset-bottom)]',
               })}
             >
               <div
                 className={css({
                   p: '5',
-                  borderBottomWidth: '1px',
-                  borderColor: 'gray.100',
+                  borderBottomWidth: '[1px]',
+                  borderColor: 'ink.border',
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
@@ -104,12 +104,12 @@ export const MobileTOC = () => {
                 </h2>
                 <button
                   onClick={() => setIsOpen(false)}
-                  className={css({ cursor: 'pointer', color: 'gray.400' })}
+                  className={css({ cursor: 'pointer', color: 'ink.400' })}
                 >
                   <X size={24} />
                 </button>
               </div>
-              <div className={css({ p: '5', overflowY: 'auto', flex: 1 })}>
+              <div className={css({ p: '5', overflowY: 'auto', flex: '1' })}>
                 <ul
                   className={css({
                     display: 'flex',
@@ -138,10 +138,10 @@ export const MobileTOC = () => {
                                 : '0',
                         fontSize: 'md',
                         fontWeight: activeId === item.id ? 'bold' : 'medium',
-                        color: activeId === item.id ? 'blue.600' : 'gray.600',
+                        color: activeId === item.id ? 'accent.600' : 'ink.600',
                         cursor: 'pointer',
-                        transition: 'color 0.2s',
-                        _hover: { color: 'blue.600' },
+                        transition: '[color 0.2s]',
+                        _hover: { color: 'accent.600' },
                       })}
                     >
                       {item.text}

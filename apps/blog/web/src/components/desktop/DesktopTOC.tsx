@@ -10,16 +10,16 @@ export const DesktopTOC = () => {
     <nav
       className={css({
         pos: 'sticky',
-        top: '120px',
+        top: '[120px]',
         alignSelf: 'start',
         display: 'none',
         lg: { display: 'block' },
-        w: '240px',
-        maxH: 'calc(100vh - 140px)',
+        w: '[240px]',
+        maxH: '[calc(100vh - 140px)]',
         overflowY: 'auto',
         pl: '4',
-        borderLeftWidth: '1px',
-        borderColor: 'gray.100',
+        borderLeftWidth: '[1px]',
+        borderColor: 'ink.100',
       })}
     >
       <h4
@@ -27,7 +27,7 @@ export const DesktopTOC = () => {
           textTransform: 'uppercase',
           fontSize: 'xs',
           fontWeight: 'bold',
-          color: 'gray.400',
+          color: 'ink.400',
           mb: '4',
           letterSpacing: 'wider',
         })}
@@ -41,24 +41,24 @@ export const DesktopTOC = () => {
             onClick={() => scrollToId({ id: item.id, headerOffset: 100 })}
             className={css({
               fontSize: 'sm',
-              color: activeId === item.id ? 'blue.600' : 'gray.500',
+              color: activeId === item.id ? 'accent.600' : 'ink.500',
               fontWeight: activeId === item.id ? 'bold' : 'medium',
               cursor: 'pointer',
-              lineHeight: '1.4',
-              transition: 'all 0.2s',
-              borderLeftWidth: '2px',
+              lineHeight: 'headerSm',
+              transition: '[all 0.2s]',
+              borderLeftWidth: '[2px]',
               borderLeftColor:
-                activeId === item.id ? 'blue.600' : 'transparent',
-              ml: '-17px', // border-left를 위한 보정 (1px + 16px pl)
+                activeId === item.id ? 'accent.600' : 'transparent',
+              ml: '[-17px]',
               paddingLeft:
                 item.level === 4
-                  ? '39px'
+                  ? '[39px]'
                   : item.level === 3
-                    ? '31px'
+                    ? '[31px]'
                     : item.level === 2
-                      ? '23px'
-                      : '15px',
-              _hover: { color: 'gray.900' },
+                      ? '[23px]'
+                      : '[15px]',
+              _hover: { color: 'ink.950' },
             })}
           >
             {item.text}

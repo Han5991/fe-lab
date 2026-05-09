@@ -14,7 +14,7 @@ export const PostsArchive = ({ posts }: PostsArchiveProps) => {
       className={css({
         mt: '16',
         pt: '10',
-        borderTopWidth: '1px',
+        borderTopWidth: '[1px]',
         borderColor: 'ink.border',
       })}
     >
@@ -27,7 +27,7 @@ export const PostsArchive = ({ posts }: PostsArchiveProps) => {
             justifyContent: 'space-between',
             gap: '3',
             cursor: 'pointer',
-            listStyle: 'none',
+            listStyleType: 'none',
             py: '3',
             '&::-webkit-details-marker': { display: 'none' },
           })}
@@ -77,7 +77,7 @@ export const PostsArchive = ({ posts }: PostsArchiveProps) => {
         <ul
           className={css({
             mt: '4',
-            borderTopWidth: '1px',
+            borderTopWidth: '[1px]',
             borderColor: 'ink.border',
           })}
         >
@@ -96,9 +96,9 @@ export const PostsArchive = ({ posts }: PostsArchiveProps) => {
                     py: '3',
                     px: '6',
                     mx: '-6',
-                    borderBottomWidth: '1px',
+                    borderBottomWidth: '[1px]',
                     borderColor: 'ink.border',
-                    transition: 'background 0.15s, box-shadow 0.15s',
+                    transition: '[background 0.15s, box-shadow 0.15s]',
                     _hover: { bg: 'ink.50', boxShadow: 'accentLeft' },
                   })}
                 >
@@ -107,7 +107,7 @@ export const PostsArchive = ({ posts }: PostsArchiveProps) => {
                       dateTime={post.date}
                       className={css({
                         flexShrink: 0,
-                        minW: { md: '110px' },
+                        minW: { md: '[110px]' },
                         fontSize: 'xs',
                         color: 'ink.500',
                         letterSpacing: 'wide',
@@ -127,7 +127,7 @@ export const PostsArchive = ({ posts }: PostsArchiveProps) => {
                       fontSize: 'sm',
                       fontWeight: 'medium',
                       color: 'ink.950',
-                      lineHeight: '1.5',
+                      lineHeight: 'snug',
                     })}
                   >
                     {post.title}

@@ -40,9 +40,9 @@ function PostRow({ post }: { post: PostSummary }) {
         py: '4',
         px: '6',
         mx: '-6',
-        borderBottomWidth: '1px',
+        borderBottomWidth: '[1px]',
         borderColor: 'ink.border',
-        transition: 'background 0.15s, box-shadow 0.15s',
+        transition: '[background 0.15s, box-shadow 0.15s]',
         _hover: { bg: 'ink.50', boxShadow: 'accentLeft' },
       })}
     >
@@ -51,7 +51,7 @@ function PostRow({ post }: { post: PostSummary }) {
           dateTime={post.date}
           className={css({
             flexShrink: 0,
-            minW: { md: '110px' },
+            minW: { md: '[110px]' },
             fontSize: 'xs',
             color: 'ink.500',
             letterSpacing: 'wide',
@@ -66,10 +66,10 @@ function PostRow({ post }: { post: PostSummary }) {
           })}
         </time>
       )}
-      <div className={css({ flex: 1, minW: 0 })}>
+      <div className={css({ flex: '1', minW: '0' })}>
         <h3
           className={css({
-            fontSize: 'base',
+            fontSize: 'md',
             fontWeight: 'semibold',
             color: 'ink.950',
             mb: '1',
@@ -113,12 +113,12 @@ function InlineSearch({
         px: '3',
         py: '2.5',
         mb: '2',
-        borderWidth: '1px',
+        borderWidth: '[1px]',
         borderColor: 'ink.border',
         rounded: 'lg',
         bg: 'ink.50',
         _focusWithin: { borderColor: 'accent.600', bg: 'ink.25' },
-        transition: 'all 0.15s',
+        transition: '[all 0.15s]',
       })}
     >
       <Search size={14} className={css({ color: 'ink.500', flexShrink: 0 })} />
@@ -128,11 +128,11 @@ function InlineSearch({
         onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
         className={css({
-          flex: 1,
+          flex: '1',
           bg: 'transparent',
           border: 'none',
           outline: 'none',
-          fontSize: { base: '16px', md: 'sm' },
+          fontSize: { base: '[16px]', md: 'sm' },
           color: 'ink.950',
           _placeholder: { color: 'ink.500' },
         })}
@@ -144,7 +144,7 @@ function InlineSearch({
             fontSize: 'xs',
             color: 'ink.500',
             _hover: { color: 'ink.950' },
-            transition: 'color 0.15s',
+            transition: '[color 0.15s]',
             flexShrink: 0,
           })}
         >
@@ -181,7 +181,7 @@ function GroupHeader({ name, count, unit }: { name: string; count: number; unit:
         gap: '3',
         mb: '1',
         pb: '3',
-        borderBottomWidth: '1px',
+        borderBottomWidth: '[1px]',
         borderColor: 'ink.border',
       })}
     >
@@ -238,7 +238,7 @@ export const PostsFilter = ({ posts }: PostsFilterProps) => {
           display: 'flex',
           gap: '0',
           mb: '6',
-          borderBottomWidth: '1px',
+          borderBottomWidth: '[1px]',
           borderColor: 'ink.border',
         })}
       >
@@ -252,17 +252,13 @@ export const PostsFilter = ({ posts }: PostsFilterProps) => {
               fontSize: 'sm',
               fontWeight: activeTab === tab.key ? 'semibold' : 'medium',
               color: activeTab === tab.key ? 'ink.950' : 'ink.500',
-              borderBottomWidth: '2px',
+              borderBottomWidth: '[2px]',
               borderBottomStyle: 'solid',
               borderBottomColor:
                 activeTab === tab.key ? 'accent.600' : 'transparent',
               bg: 'transparent',
-              border: 'none',
-              borderBottom: activeTab === tab.key
-                ? '2px solid token(colors.accent.600)'
-                : '2px solid transparent',
               cursor: 'pointer',
-              transition: 'all 0.15s',
+              transition: '[all 0.15s]',
               _hover: {
                 color: activeTab === tab.key ? 'ink.950' : 'ink.700',
               },
@@ -284,7 +280,7 @@ export const PostsFilter = ({ posts }: PostsFilterProps) => {
           <div
             className={css({
               mt: '4',
-              borderTopWidth: '1px',
+              borderTopWidth: '[1px]',
               borderColor: 'ink.border',
             })}
           >

@@ -1,17 +1,27 @@
 import Link from 'next/link';
 import { css } from '@design-system/ui-lib/css';
 import { SsgoiTransition } from '@ssgoi/react';
-import { getAllPostSummaries } from '@/domain/post';
-import { TopPosts, TopPostsLoading } from '@/src/components/home/TopPosts';
-import { PostCard } from '@/src/components/home/PostCard';
 import type { Metadata } from 'next';
-import { Suspense } from 'react';
+
+import { getAllPostSummaries } from '@/domain/post';
+import { getAllSeries } from '@/domain/post/aggregate';
 import {
   SITE_URL,
   SITE_AUTHOR_GITHUB,
   SITE_AUTHOR_LINKEDIN,
   SITE_DESCRIPTION_EXPANDED,
 } from '@/lib/constants';
+
+import {
+  Hero,
+  FeaturedPost,
+  MiniPostCard,
+  SeriesCard,
+  PostIndexRow,
+  PopularRail,
+  SearchBox,
+  Label,
+} from '@/src/components/blog';
 
 export const metadata: Metadata = {
   title: 'Frontend Lab | 프론트엔드 실험실',
@@ -22,7 +32,14 @@ export const metadata: Metadata = {
     description: SITE_DESCRIPTION_EXPANDED,
     url: 'https://blog.sangwook.dev',
     siteName: 'Frontend Lab',
-    images: [{ url: 'https://blog.sangwook.dev/og-default.png', width: 1200, height: 630, alt: 'Frontend Lab Blog' }],
+    images: [
+      {
+        url: 'https://blog.sangwook.dev/og-default.png',
+        width: 1200,
+        height: 630,
+        alt: 'Frontend Lab Blog',
+      },
+    ],
     locale: 'ko_KR',
     type: 'website',
   },
@@ -48,7 +65,10 @@ const jsonLd = {
       publisher: { '@id': `${SITE_URL}/#organization` },
       potentialAction: {
         '@type': 'SearchAction',
-        target: { '@type': 'EntryPoint', urlTemplate: `${SITE_URL}/posts/?q={search_term_string}` },
+        target: {
+          '@type': 'EntryPoint',
+          urlTemplate: `${SITE_URL}/posts/?q={search_term_string}`,
+        },
         'query-input': 'required name=search_term_string',
       },
     },
@@ -95,9 +115,25 @@ const jsonLd = {
   ],
 };
 
+// 홈 섹션 번호. Hero·Featured 섹션은 자리만 차지하고 §xx 라벨은 안 붙입니다.
+// 라벨이 보이는 섹션은 Series shelf와 Recent notes 둘뿐:
+//   featured 있을 때:  Hero(§01) → Featured(§02, 라벨 안 보임) → Series §03 → Recent §04
+//   featured 없을 때:  Hero(§01) → Series §02 → Recent §03
+function homeSectionNumbers(hasFeatured: boolean) {
+  // Hero가 §01, featured 유무에 따라 series·recent가 시프트.
+  const seriesIdx = hasFeatured ? 3 : 2;
+  const recentIdx = seriesIdx + 1;
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return { series: pad(seriesIdx), recent: pad(recentIdx) };
+}
+
 export default function HomePage() {
   const allPosts = getAllPostSummaries();
-  const recentPosts = allPosts.slice(0, 4);
+  const featured = allPosts[0];
+  const sideTwo = allPosts.slice(1, 3);
+  const recent = allPosts.slice(3, 13);
+  const series = getAllSeries().slice(0, 3);
+  const sectionNo = homeSectionNumbers(Boolean(featured));
 
   return (
     <>
@@ -106,224 +142,202 @@ export default function HomePage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <SsgoiTransition id="/">
-        <div className={css({ bg: 'ink.25' })}>
+        <div className={css({ bg: 'paper.50' })}>
+          <Hero />
 
-          {/* Hero — left-aligned, asymmetric, typographic */}
-          <div
-            className={css({
-              borderBottomWidth: '1px',
-              borderColor: 'ink.border',
-              bg: 'ink.50',
-            })}
-          >
-            <main
+          {/* Featured + Side stack */}
+          {featured && (
+            <section
               className={css({
-                maxW: '1200px',
-                mx: 'auto',
-                px: '6',
-                py: { base: '16', md: '24' },
-                display: 'grid',
-                gridTemplateColumns: { base: '1fr', md: '7fr 3fr' },
-                gap: '16',
-                alignItems: 'end',
+                pt: '6',
+                pb: { base: '12', md: '16' },
+                borderTopWidth: '[2px]',
+                borderColor: 'ink.950',
               })}
             >
-              <div>
-                <p
-                  className={css({
-                    fontSize: 'xs',
-                    fontWeight: 'bold',
-                    letterSpacing: 'widest',
-                    textTransform: 'uppercase',
-                    color: 'accent.600',
-                    mb: '6',
-                    borderLeftWidth: '3px',
-                    borderLeftColor: 'accent.600',
-                    pl: '3',
-                  })}
+              <div
+                className={css({
+                  maxW: 'containerW',
+                  mx: 'auto',
+                  px: '8',
+                  pt: { base: '8', md: '10' },
+                  display: 'grid',
+                  gridTemplateColumns: { base: '1fr', md: '7fr 5fr' },
+                  gap: { base: '10', md: '12' },
+                })}
+              >
+                <FeaturedPost post={featured} />
+
+                <aside
+                  className={css({ display: 'flex', flexDir: 'column', gap: '6' })}
                 >
-                  Frontend Engineering · 한상욱
-                </p>
-                <h1
+                  <SearchBox
+                    placeholder="이 노트장에서 찾기…"
+                    href="/posts/?focus=search"
+                  />
+                  <div>
+                    <Label
+                      tone="meta"
+                      className={css({
+                        display: 'block',
+                        mb: '4',
+                        pb: '3',
+                        borderBottomWidth: '[1px]',
+                        borderColor: 'ink.border',
+                      })}
+                    >
+                      이번 주 함께 읽기 좋은 글
+                    </Label>
+                    <div>
+                      {sideTwo.map((p, i) => (
+                        <MiniPostCard
+                          key={p.slug}
+                          post={p}
+                          withDivider={i > 0}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </aside>
+              </div>
+            </section>
+          )}
+
+          {/* Series shelf */}
+          {series.length > 0 && (
+            <section
+              className={css({
+                bg: 'paper.100',
+                borderTopWidth: '[1px]',
+                borderBottomWidth: '[1px]',
+                borderColor: 'ink.border',
+                py: { base: '12', md: '16' },
+              })}
+            >
+              <div className={css({ maxW: 'containerW', mx: 'auto', px: '8' })}>
+                <div
                   className={css({
-                    fontSize: { base: '4xl', md: '6xl', lg: '7xl' },
-                    fontWeight: 'extrabold',
-                    letterSpacing: 'tight',
-                    lineHeight: '1.05',
+                    display: 'flex',
+                    alignItems: 'baseline',
+                    gap: '4',
                     mb: '8',
-                    color: 'ink.950',
+                    pb: '4',
+                    borderBottomWidth: '[1px]',
+                    borderColor: 'ink.border',
                   })}
                 >
-                  번들러 밑바닥부터
-                  <br />
-                  대규모 아키텍처까지
-                </h1>
-                <p
-                  className={css({
-                    fontSize: { base: 'base', md: 'lg' },
-                    color: 'ink.700',
-                    lineHeight: '1.7',
-                    maxW: '540px',
-                    mb: '10',
-                  })}
-                >
-                  실험하고 기록하며 성장하는 프론트엔드 엔지니어의 공간.
-                  TypeScript 설계 패턴, 번들러 내부 구조, 오픈소스 기여 경험을 공유합니다.
-                </p>
-                <div className={css({ display: 'flex', gap: '3', flexWrap: 'wrap' })}>
+                  <Label tone="marker" className={css({ letterSpacing: 'monoXxl' })}>
+                    § {sectionNo.series}
+                  </Label>
+                  <h2
+                    className={css({
+                      fontFamily: 'serif',
+                      fontSize: { base: 'xl', md: '2xl' },
+                      fontWeight: 'semibold',
+                      color: 'ink.950',
+                    })}
+                  >
+                    시리즈로 묶어서 보기
+                  </h2>
+                  <span className={css({ flex: '1' })} />
                   <Link
                     href="/posts/"
                     className={css({
-                      px: '6',
-                      py: '3',
-                      bg: 'ink.950',
-                      color: 'ink.25',
-                      rounded: 'lg',
-                      fontWeight: 'semibold',
-                      fontSize: 'sm',
-                      transition: 'opacity 0.15s',
-                      _hover: { opacity: '0.85' },
+                      fontFamily: 'mono',
+                      fontSize: 'xs',
+                      color: 'ink.500',
+                      letterSpacing: 'monoXl',
+                      _hover: { color: 'ink.950' },
+                      transition: '[color 0.15s]',
                     })}
                   >
-                    실험 기록 읽기
-                  </Link>
-                  <Link
-                    href="/about/"
-                    className={css({
-                      px: '6',
-                      py: '3',
-                      bg: 'transparent',
-                      color: 'ink.700',
-                      rounded: 'lg',
-                      fontWeight: 'semibold',
-                      fontSize: 'sm',
-                      borderWidth: '1px',
-                      borderColor: 'ink.border',
-                      transition: 'all 0.15s',
-                      _hover: {
-                        borderColor: 'ink.borderStrong',
-                        color: 'ink.950',
-                      },
-                    })}
-                  >
-                    소개 보기
+                    모두 보기 →
                   </Link>
                 </div>
+                <div
+                  className={css({
+                    display: 'grid',
+                    gridTemplateColumns: {
+                      base: '1fr',
+                      md: '[repeat(2, 1fr)]',
+                      lg: '[repeat(3, 1fr)]',
+                    },
+                    gap: '6',
+                  })}
+                >
+                  {series.map((s, i) => (
+                    <SeriesCard key={s.id} series={s} index={i} />
+                  ))}
+                </div>
               </div>
+            </section>
+          )}
 
-              {/* Side stats */}
-              <div
-                className={css({
-                  display: { base: 'none', md: 'flex' },
-                  flexDir: 'column',
-                  gap: '6',
-                  pb: '2',
-                })}
-              >
-                {[
-                  { num: '33+', label: '작성한 글' },
-                  { num: '38', label: '오픈소스 PR' },
-                  { num: '3', label: '컨퍼런스 발표' },
-                ].map(s => (
-                  <div key={s.label}>
-                    <div
-                      className={css({
-                        fontSize: '5xl',
-                        fontWeight: 'extrabold',
-                        color: 'ink.950',
-                        letterSpacing: 'tight',
-                        lineHeight: '1',
-                      })}
-                    >
-                      {s.num}
-                    </div>
-                    <div
-                      className={css({
-                        fontSize: 'xs',
-                        color: 'ink.500',
-                        mt: '1',
-                      })}
-                    >
-                      {s.label}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </main>
-          </div>
-
-          {/* Popular Posts */}
-          <Suspense fallback={<TopPostsLoading />}>
-            <TopPosts posts={allPosts} />
-          </Suspense>
-
-          {/* Recent Posts */}
+          {/* Recent + Popular */}
           <section
             className={css({
-              py: { base: '12', md: '20' },
-              maxW: '1200px',
+              py: { base: '12', md: '16' },
+              maxW: 'containerW',
               mx: 'auto',
-              px: '6',
-              borderTopWidth: '1px',
-              borderColor: 'ink.border',
+              px: '8',
             })}
           >
             <div
               className={css({
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4',
-                mb: '10',
-              })}
-            >
-              <span
-                className={css({
-                  fontSize: 'xs',
-                  fontWeight: 'bold',
-                  color: 'accent.600',
-                  letterSpacing: 'widest',
-                  textTransform: 'uppercase',
-                  flexShrink: 0,
-                })}
-              >
-                02
-              </span>
-              <h2
-                className={css({
-                  fontSize: { base: 'xl', md: '2xl' },
-                  fontWeight: 'bold',
-                  color: 'ink.950',
-                  letterSpacing: 'tight',
-                  flexShrink: 0,
-                })}
-              >
-                최근 기록
-              </h2>
-              <div className={css({ flex: 1, h: '1px', bg: 'ink.border' })} />
-              <Link
-                href="/posts/"
-                className={css({
-                  fontSize: 'sm',
-                  color: 'ink.500',
-                  _hover: { color: 'accent.600' },
-                  transition: 'color 0.15s',
-                  flexShrink: 0,
-                })}
-              >
-                전체 보기 →
-              </Link>
-            </div>
-            <div
-              className={css({
                 display: 'grid',
-                gridTemplateColumns: { base: '1fr', md: 'repeat(2, 1fr)' },
-                borderTopWidth: '1px',
-                borderColor: 'ink.border',
+                gridTemplateColumns: { base: '1fr', md: '8fr 4fr' },
+                gap: { base: '10', md: '16' },
               })}
             >
-              {recentPosts.map((post, i) => (
-                <PostCard key={post.slug} post={post} index={i} />
-              ))}
+              <div>
+                <div
+                  className={css({
+                    display: 'flex',
+                    alignItems: 'baseline',
+                    gap: '4',
+                    mb: '4',
+                    pb: '3',
+                    borderBottomWidth: '[1px]',
+                    borderColor: 'ink.border',
+                  })}
+                >
+                  <Label tone="marker" className={css({ letterSpacing: 'monoXxl' })}>
+                    § {sectionNo.recent}
+                  </Label>
+                  <h2
+                    className={css({
+                      fontFamily: 'serif',
+                      fontSize: { base: 'xl', md: '2xl' },
+                      fontWeight: 'semibold',
+                      color: 'ink.950',
+                    })}
+                  >
+                    최근 노트
+                  </h2>
+                  <span className={css({ flex: '1' })} />
+                  <Link
+                    href="/posts/"
+                    className={css({
+                      fontFamily: 'mono',
+                      fontSize: 'xs',
+                      color: 'ink.500',
+                      letterSpacing: 'monoXl',
+                      _hover: { color: 'ink.950' },
+                      transition: '[color 0.15s]',
+                    })}
+                  >
+                    모두 보기 →
+                  </Link>
+                </div>
+                <ol className={css({ listStyleType: 'none', p: '0', m: '0' })}>
+                  {recent.map(p => (
+                    <PostIndexRow key={p.slug} post={p} />
+                  ))}
+                </ol>
+              </div>
+
+              {/* PopularRail은 내부에서 useQuery + 자체 fallback. Suspense 불필요. */}
+              <PopularRail posts={allPosts} />
             </div>
           </section>
         </div>

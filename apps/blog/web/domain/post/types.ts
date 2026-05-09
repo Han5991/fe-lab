@@ -12,6 +12,7 @@ export interface PostData {
   date: string | null;
   updatedAt?: string | null;
   content: string;
+  readMin: number;
   excerpt?: string;
   thumbnail?: string;
   tags?: string[];

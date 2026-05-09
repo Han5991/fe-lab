@@ -1,6 +1,9 @@
 {
   "name": "@design-system/ui-lib",
   "type": "module",
+  "peerDependencies": {
+    "react": "*"
+  },
   "exports": {
     "./css": {
       "types": "./css/index.d.ts",

@@ -1,6 +1,7 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import matter from 'gray-matter';
+import { estimateReadMin } from '../../lib/format';
 import type { PostData, PostStatus } from './types';
 
 const postsDirectory = join(process.cwd(), '..', 'posts');
@@ -88,6 +89,7 @@ function collectPosts(
       date: dateString,
       updatedAt: updatedAtString,
       content,
+      readMin: estimateReadMin(cleanContent),
       excerpt: data.excerpt || cleanContent.slice(0, 160) + '...',
       thumbnail:
         typeof data.thumbnail === 'string' ? data.thumbnail : undefined,

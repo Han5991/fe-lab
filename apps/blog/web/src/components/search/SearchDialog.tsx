@@ -201,16 +201,16 @@ export const SearchDialog = () => {
           px: { base: '2', md: '3' },
           py: '1.5',
           rounded: 'lg',
-          borderWidth: '1px',
-          borderColor: 'gray.200',
-          color: 'gray.500',
+          borderWidth: '[1px]',
+          borderColor: 'ink.border',
+          color: 'ink.500',
           fontSize: 'sm',
           cursor: 'pointer',
-          _hover: { borderColor: 'gray.400', color: 'gray.700' },
-          _active: { bg: 'gray.100' },
-          transition: 'all 0.2s',
+          _hover: { borderColor: 'ink.borderStrong', color: 'ink.700' },
+          _active: { bg: 'paper.100' },
+          transition: '[all 0.2s]',
           bg: 'transparent',
-          minW: { base: '36px', md: 'auto' },
+          minW: { base: '[36px]', md: 'auto' },
           justifyContent: 'center',
         })}
         aria-label="검색"
@@ -225,9 +225,9 @@ export const SearchDialog = () => {
             px: '1.5',
             py: '0.5',
             rounded: 'md',
-            bg: 'gray.100',
+            bg: 'paper.100',
             fontSize: 'xs',
-            color: 'gray.400',
+            color: 'ink.400',
           })}
         >
           ⌘K
@@ -242,9 +242,9 @@ export const SearchDialog = () => {
       <div
         className={css({
           pos: 'fixed',
-          inset: 0,
-          bg: 'black/50',
-          zIndex: 50,
+          inset: '0',
+          bg: '[rgba(0,0,0,0.5)]',
+          zIndex: '50',
         })}
         onClick={() => setIsOpen(false)}
       />
@@ -253,22 +253,21 @@ export const SearchDialog = () => {
       <div
         className={css({
           pos: 'fixed',
-          zIndex: 51,
-          /* 모바일: 전체 화면 */
-          top: { base: 0, md: '15%' },
-          left: { base: 0, md: '50%' },
-          right: { base: 0, md: 'auto' },
-          bottom: { base: 0, md: 'auto' },
+          zIndex: '51',
+          top: { base: '0', md: '[15vh]' },
+          left: { base: '0', md: '[50%]' },
+          right: { base: '0', md: '[auto]' },
+          bottom: { base: '0', md: '[auto]' },
           transform: { base: 'none', md: 'translateX(-50%)' },
-          w: { base: 'full', md: '560px' },
+          w: { base: 'full', md: '[560px]' },
         })}
       >
         <div
           className={css({
-            bg: 'white',
-            rounded: { base: '0', md: 'xl' },
+            bg: 'paper.50',
+            rounded: { base: '[0]', md: 'xl' },
             overflow: 'hidden',
-            shadow: { base: 'none', md: '2xl' },
+            shadow: { base: '[none]', md: '2xl' },
             h: { base: 'full', md: 'auto' },
             display: 'flex',
             flexDirection: 'column',
@@ -280,8 +279,8 @@ export const SearchDialog = () => {
               display: 'flex',
               alignItems: 'center',
               px: '4',
-              borderBottomWidth: '1px',
-              borderColor: 'gray.100',
+              borderBottomWidth: '[1px]',
+              borderColor: 'ink.100',
               flexShrink: 0,
             })}
           >
@@ -297,12 +296,12 @@ export const SearchDialog = () => {
               onKeyDown={handleKeyDown}
               placeholder="제목, 태그, 시리즈로 검색..."
               className={css({
-                flex: 1,
+                flex: '1',
                 px: '3',
                 py: '4',
                 bg: 'transparent',
                 outline: 'none',
-                fontSize: { base: '16px', md: 'md' },
+                fontSize: { base: '[16px]', md: 'md' },
                 color: 'gray.900',
                 border: 'none',
                 _placeholder: { color: 'gray.400' },
@@ -328,7 +327,7 @@ export const SearchDialog = () => {
           {/* 검색 결과 */}
           <div
             className={css({
-              flex: 1,
+              flex: '1',
               overflowY: 'auto',
               py: '2',
               WebkitOverflowScrolling: 'touch',
@@ -385,9 +384,9 @@ export const SearchDialog = () => {
                         bg: index === selectedIndex ? 'blue.50' : 'transparent',
                         _hover: { bg: 'gray.50' },
                         _active: { bg: 'blue.50' },
-                        transition: 'background 0.1s',
+                        transition: '[background 0.1s]',
                         border: 'none',
-                        borderBottomWidth: { base: '1px', md: '0' },
+                        borderBottomWidth: { base: '[1px]', md: '0' },
                         borderColor: 'gray.50',
                       })}
                     >
@@ -454,7 +453,7 @@ export const SearchDialog = () => {
               gap: '4',
               px: '4',
               py: '2',
-              borderTopWidth: '1px',
+              borderTopWidth: '[1px]',
               borderColor: 'gray.100',
               fontSize: 'xs',
               color: 'gray.400',

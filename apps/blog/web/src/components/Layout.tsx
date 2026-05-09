@@ -10,12 +10,24 @@ interface LayoutProps {
   children: ReactNode;
 }
 
+const navLink = css({
+  display: 'inline-flex',
+  alignItems: 'center',
+  fontSize: 'sm',
+  color: 'ink.600',
+  px: '3',
+  py: '1.5',
+  rounded: 'md',
+  transition: '[all 0.15s]',
+  _hover: { color: 'ink.950', bg: 'paper.100' },
+});
+
 export const Layout = ({ children }: LayoutProps) => {
   return (
     <div
       className={css({
-        minH: '100vh',
-        bg: 'ink.25',
+        minH: '[100vh]',
+        bg: 'paper.50',
         color: 'ink.950',
         display: 'flex',
         flexDir: 'column',
@@ -23,20 +35,20 @@ export const Layout = ({ children }: LayoutProps) => {
     >
       <nav
         className={css({
-          borderBottomWidth: '1px',
+          borderBottomWidth: '[1px]',
           borderColor: 'ink.border',
           pos: 'sticky',
-          top: 0,
-          bg: 'ink.25/85',
-          backdropFilter: 'blur(12px)',
-          zIndex: 10,
+          top: '0',
+          bg: '[rgba(252,250,247,0.95)]',
+          backdropFilter: '[blur(12px)]',
+          zIndex: '10',
         })}
       >
         <div
           className={css({
-            maxW: '1200px',
+            maxW: 'containerW',
             m: 'auto',
-            px: '6',
+            px: '8',
             h: '14',
             display: 'flex',
             alignItems: 'center',
@@ -46,73 +58,67 @@ export const Layout = ({ children }: LayoutProps) => {
           <Link
             href="/"
             className={css({
-              fontSize: 'sm',
-              fontWeight: 'bold',
-              letterSpacing: 'widest',
-              textTransform: 'uppercase',
+              display: 'inline-flex',
+              alignItems: 'baseline',
+              gap: '3',
               color: 'ink.950',
-              _hover: { color: 'accent.600' },
-              transition: 'color 0.15s',
+              transition: '[opacity 0.15s]',
+              _hover: { opacity: '0.8' },
             })}
           >
-            FE Lab
-          </Link>
-          <div
-            className={css({ display: 'flex', alignItems: 'center', gap: '1' })}
-          >
-            <SearchDialog />
-            <Link
-              href="/posts/"
+            <span
               className={css({
-                fontSize: 'sm',
-                fontWeight: 'medium',
-                color: 'ink.500',
-                px: '3',
-                py: '1.5',
-                rounded: 'md',
-                _hover: { color: 'ink.950', bg: 'ink.100' },
-                transition: 'all 0.15s',
+                fontFamily: 'serif',
+                fontStyle: 'italic',
+                fontSize: 'lg',
+                fontWeight: 'semibold',
+                letterSpacing: 'tightXs',
               })}
             >
+              Frontend Lab
+            </span>
+            <span
+              className={css({
+                fontFamily: 'mono',
+                fontSize: '2xs',
+                color: 'ink.400',
+                letterSpacing: 'monoXxl',
+                display: { base: 'none', md: 'inline' },
+              })}
+            >
+              EST. 2025
+            </span>
+          </Link>
+          <div className={css({ display: 'flex', alignItems: 'center', gap: '1' })}>
+            <Link href="/posts/" className={navLink}>
               Posts
             </Link>
-            <Link
-              href="/about/"
-              className={css({
-                fontSize: 'sm',
-                fontWeight: 'medium',
-                color: 'ink.500',
-                px: '3',
-                py: '1.5',
-                rounded: 'md',
-                _hover: { color: 'ink.950', bg: 'ink.100' },
-                transition: 'all 0.15s',
-              })}
-            >
+            <Link href="/about/" className={navLink}>
               About
             </Link>
+            <SearchDialog />
           </div>
         </div>
       </nav>
 
-      <main className={css({ flex: 1, w: 'full' })}>
+      <main className={css({ flex: '1', w: 'full' })}>
         <PageTransition>{children}</PageTransition>
       </main>
 
       <footer
         className={css({
-          borderTopWidth: '1px',
+          borderTopWidth: '[1px]',
           borderColor: 'ink.border',
-          py: '10',
-          mt: '16',
-          bg: 'ink.50',
+          mt: '20',
+          py: '8',
+          bg: 'paper.100',
         })}
       >
         <div
           className={css({
-            maxW: '1200px',
+            maxW: 'containerW',
             mx: 'auto',
-            px: '6',
+            px: '8',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
@@ -122,38 +128,40 @@ export const Layout = ({ children }: LayoutProps) => {
         >
           <span
             className={css({
+              fontFamily: 'mono',
               fontSize: 'xs',
-              fontWeight: 'bold',
-              letterSpacing: 'widest',
+              letterSpacing: 'monoXl',
               textTransform: 'uppercase',
               color: 'ink.500',
             })}
           >
-            © {new Date().getFullYear()} FE Lab
+            © {new Date().getFullYear()} Frontend Lab · 한상욱
           </span>
           <div
             className={css({
               display: 'flex',
-              gap: '5',
+              gap: '6',
               flexWrap: 'wrap',
               alignItems: 'center',
             })}
           >
             {[
               { href: '/about/', label: 'About', internal: true },
-              { href: '/privacy', label: '개인정보처리방침', internal: true },
+              { href: '/privacy', label: '개인정보', internal: true },
               { href: SITE_AUTHOR_GITHUB, label: 'GitHub', internal: false },
               { href: SITE_AUTHOR_LINKEDIN, label: 'LinkedIn', internal: false },
+              { href: '/rss.xml', label: 'RSS', internal: false },
             ].map(link =>
               link.internal ? (
                 <Link
                   key={link.label}
                   href={link.href}
                   className={css({
+                    fontFamily: 'mono',
                     fontSize: 'xs',
                     color: 'ink.500',
                     _hover: { color: 'ink.950' },
-                    transition: 'color 0.15s',
+                    transition: '[color 0.15s]',
                   })}
                 >
                   {link.label}
@@ -162,13 +170,16 @@ export const Layout = ({ children }: LayoutProps) => {
                 <a
                   key={link.label}
                   href={link.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  target={link.href.startsWith('http') ? '_blank' : undefined}
+                  rel={
+                    link.href.startsWith('http') ? 'noopener noreferrer' : undefined
+                  }
                   className={css({
+                    fontFamily: 'mono',
                     fontSize: 'xs',
                     color: 'ink.500',
                     _hover: { color: 'ink.950' },
-                    transition: 'color 0.15s',
+                    transition: '[color 0.15s]',
                   })}
                 >
                   {link.label}

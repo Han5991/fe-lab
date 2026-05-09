@@ -22,6 +22,7 @@ import {
 import Link from 'next/link';
 import { token } from '@design-system/ui-lib/tokens';
 import { motion, AnimatePresence } from 'motion/react';
+import { formatMonthDayISO } from '@/lib/dates';
 import { DateRangeControls, useDateFilter } from './DateRangeControls';
 import { encodePostSlug } from '@/domain/post/utils';
 
@@ -54,23 +55,30 @@ export function PostAccordion({ post }: Props) {
     filteredTrends,
   } = useDateFilter(post.trends);
 
-  const formattedData = filteredTrends.map(d => {
-    const date = new Date(d.view_date);
-    return {
-      name: `${date.getMonth() + 1}/${date.getDate()}`,
-      views: d.view_count,
-    };
-  });
+  const formattedData = filteredTrends.map(d => ({
+    name: formatMonthDayISO(d.view_date),
+    views: d.view_count,
+  }));
 
   const statusStyle =
     computedStatus === 'published'
-      ? { bg: 'green.50', color: 'green.700', borderColor: 'green.200', label: '공개' }
+      ? {
+          bg: 'moss.100' as const,
+          color: 'moss.600' as const,
+          borderColor: 'moss.600' as const,
+          label: '공개',
+        }
       : computedStatus === 'draft'
-        ? { bg: 'ink.100', color: 'ink.500', borderColor: 'ink.border', label: '비공개' }
+        ? {
+            bg: 'ink.100' as const,
+            color: 'ink.500' as const,
+            borderColor: 'ink.border' as const,
+            label: '비공개',
+          }
         : {
-            bg: 'orange.50',
-            color: 'orange.700',
-            borderColor: 'orange.200',
+            bg: 'marker.100' as const,
+            color: 'marker.600' as const,
+            borderColor: 'marker.300' as const,
             label: post.scheduledDate
               ? new Date(post.scheduledDate).toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul' })
               : '예약',
@@ -79,7 +87,7 @@ export function PostAccordion({ post }: Props) {
   return (
     <div
       className={css({
-        borderBottomWidth: '1px',
+        borderBottomWidth: '[1px]',
         borderColor: 'ink.border',
         _last: { borderBottomWidth: '0' },
       })}
@@ -94,7 +102,7 @@ export function PostAccordion({ post }: Props) {
           px: '5',
           py: '3',
           bg: isOpen ? 'ink.50' : 'transparent',
-          transition: 'background 0.15s',
+          transition: '[background 0.15s]',
           _hover: { bg: 'ink.50' },
           cursor: 'pointer',
         })}
@@ -104,7 +112,7 @@ export function PostAccordion({ post }: Props) {
             display: 'flex',
             alignItems: 'center',
             gap: '3',
-            flex: 1,
+            flex: '1',
             overflow: 'hidden',
           })}
         >
@@ -113,7 +121,7 @@ export function PostAccordion({ post }: Props) {
             onClick={e => e.stopPropagation()}
             className={css({
               color: 'ink.500',
-              _hover: { color: 'accent.600' },
+              _hover: { color: 'marker.600' },
               display: 'flex',
               alignItems: 'center',
               flexShrink: 0,
@@ -127,7 +135,7 @@ export function PostAccordion({ post }: Props) {
             onClick={e => e.stopPropagation()}
             className={css({
               color: 'ink.200',
-              _hover: { color: 'accent.600' },
+              _hover: { color: 'marker.600' },
               display: 'flex',
               alignItems: 'center',
               flexShrink: 0,
@@ -139,14 +147,14 @@ export function PostAccordion({ post }: Props) {
             <span
               className={css({
                 fontSize: 'xs',
-                fontWeight: '600',
+                fontWeight: 'semibold',
                 px: '2',
                 py: '0.5',
                 rounded: 'full',
                 flexShrink: 0,
                 bg: statusStyle.bg,
                 color: statusStyle.color,
-                borderWidth: '1px',
+                borderWidth: '[1px]',
                 borderColor: statusStyle.borderColor,
               })}
               title={
@@ -160,7 +168,7 @@ export function PostAccordion({ post }: Props) {
           )}
           <span
             className={css({
-              fontWeight: '600',
+              fontWeight: 'semibold',
               color: 'ink.950',
               fontSize: 'sm',
               whiteSpace: 'nowrap',
@@ -198,7 +206,7 @@ export function PostAccordion({ post }: Props) {
               display: 'flex',
               alignItems: 'baseline',
               gap: '1',
-              minW: '80px',
+              minW: '[80px]',
               justifyContent: 'flex-end',
             })}
           >
@@ -206,7 +214,7 @@ export function PostAccordion({ post }: Props) {
               {post.totalViews.toLocaleString()}
             </span>
             {post.todayViews > 0 && (
-              <span className={css({ color: 'accent.600', fontSize: 'xs', fontWeight: '500' })}>
+              <span className={css({ color: 'marker.600', fontSize: 'xs', fontWeight: 'medium' })}>
                 +{post.todayViews}
               </span>
             )}
@@ -235,7 +243,7 @@ export function PostAccordion({ post }: Props) {
               className={css({
                 p: '5',
                 bg: 'ink.50',
-                borderTopWidth: '1px',
+                borderTopWidth: '[1px]',
                 borderColor: 'ink.border',
               })}
             >
@@ -254,7 +262,7 @@ export function PostAccordion({ post }: Props) {
                     bg: 'ink.25',
                     p: '3',
                     rounded: 'lg',
-                    borderWidth: '1px',
+                    borderWidth: '[1px]',
                     borderColor: 'ink.border',
                     display: 'flex',
                     alignItems: 'center',
@@ -262,9 +270,9 @@ export function PostAccordion({ post }: Props) {
                   })}
                 >
                   {briefStats.weekGrowthRate !== null && briefStats.weekGrowthRate >= 0 ? (
-                    <TrendingUp size={13} className={css({ color: 'green.600' })} />
+                    <TrendingUp size={13} className={css({ color: 'moss.600' })} />
                   ) : (
-                    <TrendingDown size={13} className={css({ color: 'red.500' })} />
+                    <TrendingDown size={13} className={css({ color: 'marker.600' })} />
                   )}
                   <span className={css({ fontSize: 'xs', color: 'ink.500' })}>7일 증감</span>
                   <span
@@ -275,8 +283,8 @@ export function PostAccordion({ post }: Props) {
                       color:
                         briefStats.weekGrowthRate !== null
                           ? briefStats.weekGrowthRate >= 0
-                            ? 'green.600'
-                            : 'red.500'
+                            ? 'moss.600'
+                            : 'marker.600'
                           : 'ink.500',
                     })}
                   >
@@ -291,7 +299,7 @@ export function PostAccordion({ post }: Props) {
                     bg: 'ink.25',
                     p: '3',
                     rounded: 'lg',
-                    borderWidth: '1px',
+                    borderWidth: '[1px]',
                     borderColor: 'ink.border',
                     display: 'flex',
                     alignItems: 'center',
@@ -315,7 +323,7 @@ export function PostAccordion({ post }: Props) {
                     bg: 'ink.25',
                     p: '3',
                     rounded: 'lg',
-                    borderWidth: '1px',
+                    borderWidth: '[1px]',
                     borderColor: 'ink.border',
                     display: 'flex',
                     alignItems: 'center',
@@ -347,7 +355,7 @@ export function PostAccordion({ post }: Props) {
                 />
               </div>
 
-              <div className={css({ h: '220px', w: 'full' })}>
+              <div className={css({ h: '[220px]', w: 'full' })}>
                 {formattedData.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart
@@ -369,7 +377,7 @@ export function PostAccordion({ post }: Props) {
                       <Tooltip
                         cursor={{ stroke: token('colors.ink.border'), strokeWidth: 1, strokeDasharray: '4 4' }}
                         contentStyle={{
-                          borderRadius: '8px',
+                          borderRadius: token('radii.lg'),
                           border: `1px solid ${token('colors.ink.border')}`,
                           background: token('colors.ink.25'),
                           fontSize: '12px',
@@ -379,10 +387,10 @@ export function PostAccordion({ post }: Props) {
                       <Line
                         type="monotone"
                         dataKey="views"
-                        stroke={token('colors.accent.600')}
+                        stroke={token('colors.ink.700')}
                         strokeWidth={2}
-                        dot={{ r: 3, fill: token('colors.accent.600'), strokeWidth: 0 }}
-                        activeDot={{ r: 5, fill: token('colors.accent.700'), strokeWidth: 0 }}
+                        dot={{ r: 3, fill: token('colors.marker.600'), strokeWidth: 0 }}
+                        activeDot={{ r: 5, fill: token('colors.marker.600'), strokeWidth: 0 }}
                       />
                     </LineChart>
                   </ResponsiveContainer>

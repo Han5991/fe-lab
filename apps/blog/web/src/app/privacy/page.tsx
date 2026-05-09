@@ -19,10 +19,10 @@ const LAST_UPDATED = '2026년 3월 15일';
 export default function PrivacyPage() {
   return (
     <SsgoiTransition id="/privacy">
-      <div className={css({ minHeight: 'calc(100lvh - 231px)', bg: 'white' })}>
+      <div className={css({ minHeight: '[calc(100lvh - 231px)]', bg: 'paper.50' })}>
         <div
           className={css({
-            maxW: '800px',
+            maxW: 'panelW',
             mx: 'auto',
             px: '6',
             py: '16',

@@ -1,6 +1,6 @@
 import { readAllPosts } from './repository';
 import { isPostVisible } from './visibility';
-import { getSeriesMeta } from './series';
+import { getSeriesMeta, sortPostsBySeriesOrder } from './series';
 import type {
   PostData,
   PostNavItem,
@@ -136,21 +136,7 @@ export function getSeriesAdjacentPosts(currentSlug: string): {
     const seriesPosts = getAllPosts().filter(
       p => p.series === currentPost.series,
     );
-    const orderMap = new Map(meta.order.map((slug, i) => [slug, i]));
-    const ordered = [...seriesPosts].sort((a, b) => {
-      const aRank =
-        orderMap.get(a.slug) ??
-        orderMap.get(a.originalSlug) ??
-        Number.POSITIVE_INFINITY;
-      const bRank =
-        orderMap.get(b.slug) ??
-        orderMap.get(b.originalSlug) ??
-        Number.POSITIVE_INFINITY;
-      if (aRank === bRank) {
-        return (a.date ?? '').localeCompare(b.date ?? '');
-      }
-      return aRank - bRank;
-    });
+    const ordered = sortPostsBySeriesOrder(seriesPosts, meta.order);
     const idx = ordered.findIndex(p => p.slug === currentSlug);
     if (idx === -1) {
       return { prev: null, next: null, seriesName: displayName };

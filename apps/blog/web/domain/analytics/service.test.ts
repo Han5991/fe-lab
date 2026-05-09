@@ -50,6 +50,49 @@ test('computeDerivedStats: 일 평균 계산 (소수 1자리 반올림)', () => 
   assert.equal(result.dailyAverage, 1.3);
 });
 
+test('computeDerivedStats: 데이터 1개일 때 span=1로 가드되어 평균 = 본 그 값', () => {
+  // 첫=끝 → diff=0, +1로 span=1. 같은 값이 평균으로 그대로 나와야 함.
+  const result = computeDerivedStats(
+    makePost([{ view_date: '2025-01-01', view_count: 7 }]),
+  );
+  assert.equal(result.dailyAverage, 7);
+  assert.equal(result.peakDay?.count, 7);
+});
+
+test('computeDerivedStats: 일 평균 분모는 활동일이 아닌 trends span(첫~끝)', () => {
+  // 빈 날(view_count=0)은 RPC가 안 돌려주지만, 두 끝점 사이 캘린더 일수로 나눠야
+  // 스파이크 1회 글의 평균이 비현실적으로 부풀지 않습니다.
+  const result = computeDerivedStats(
+    makePost([
+      { view_date: '2025-01-01', view_count: 30 },
+      { view_date: '2025-01-30', view_count: 30 },
+    ]),
+  );
+  // 합 60, span 30일 → 60/30 = 2.0
+  assert.equal(result.dailyAverage, 2);
+});
+
+test('computeDerivedStats: trends가 비어도 totalViews가 마일스톤 넘으면 reached(date 미상)', () => {
+  // 글이 trends RPC 365일 cap 밖에서만 활동했을 때 발생하는 시나리오.
+  // post.totalViews는 영구 누적이고 trends 합과 다를 수 있음.
+  const post = {
+    slug: 'old',
+    title: 'Old post',
+    date: '2024-01-01',
+    totalViews: 427,
+    todayViews: 0,
+    trends: [],
+    status: 'published' as const,
+    scheduledDate: null,
+  };
+  const result = computeDerivedStats(post);
+  assert.equal(result.milestones[0].reached, true);
+  assert.equal(result.milestones[0].target, 100);
+  assert.equal(result.milestones[0].date, null);
+  assert.equal(result.milestones[1].reached, false);
+  assert.equal(result.milestones[1].target, 500);
+});
+
 test('computeDerivedStats: 누적이 마일스톤을 넘으면 reached=true', () => {
   const trends = Array.from({ length: 5 }, (_, i) => ({
     view_date: `2025-01-0${i + 1}`,

@@ -8,6 +8,8 @@ import { css } from '@design-system/ui-lib/css';
 if (typeof window !== 'undefined') {
   mermaid.initialize({
     startOnLoad: true,
+    // 'strict' = HTML 허용, JS·이벤트 핸들러 차단. Mermaid가 내부적으로
+    // DOMPurify를 돌리고, 입력도 작성자 신뢰 마크다운만이라 추가 sanitize 불필요.
     securityLevel: 'strict',
   });
 }
@@ -17,15 +19,20 @@ export function MermaidChart({ chart }: { chart: string }) {
   const id = useId();
 
   useEffect(() => {
+    let cancelled = false;
     const renderChart = async () => {
       try {
         const rendered = await mermaid.render(`mermaid-${id}`, chart);
+        if (cancelled) return;
         setSvg(rendered.svg);
       } catch (error) {
         console.error('Mermaid render failed:', error);
       }
     };
     renderChart();
+    return () => {
+      cancelled = true;
+    };
   }, [chart, id]);
 
   return (
@@ -33,15 +40,19 @@ export function MermaidChart({ chart }: { chart: string }) {
       className={css({
         my: '10',
         p: '6',
-        bg: 'gray.50/50',
+        bg: 'paper.100',
         rounded: '2xl',
-        borderWidth: '1px',
-        borderColor: 'gray.100',
+        borderWidth: '[1px]',
+        borderColor: 'ink.border',
         display: 'flex',
         justifyContent: 'center',
         overflow: 'auto',
-        transition: 'all 0.3s',
-        _hover: { shadow: 'xl', transform: 'translateY(-2px)', bg: 'white' },
+        transition: '[all 0.3s]',
+        _hover: {
+          shadow: 'xl',
+          transform: '[translateY(-2px)]',
+          bg: 'paper.50',
+        },
       })}
       dangerouslySetInnerHTML={{ __html: svg }}
     />
