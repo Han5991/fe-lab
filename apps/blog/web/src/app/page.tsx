@@ -120,11 +120,11 @@ const jsonLd = {
 //   featured 있을 때:  Hero(§01) → Featured(§02, 라벨 안 보임) → Series §03 → Recent §04
 //   featured 없을 때:  Hero(§01) → Series §02 → Recent §03
 function homeSectionNumbers(hasFeatured: boolean) {
-  let n = 1; // Hero가 §01.
-  if (hasFeatured) n++; // Featured가 있으면 §02 자리 점유.
-  const series = String(++n).padStart(2, '0');
-  const recent = String(++n).padStart(2, '0');
-  return { series, recent };
+  // Hero가 §01, featured 유무에 따라 series·recent가 시프트.
+  const seriesIdx = hasFeatured ? 3 : 2;
+  const recentIdx = seriesIdx + 1;
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return { series: pad(seriesIdx), recent: pad(recentIdx) };
 }
 
 export default function HomePage() {

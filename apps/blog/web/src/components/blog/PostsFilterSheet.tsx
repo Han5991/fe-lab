@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X } from 'lucide-react';
 import { css } from '@design-system/ui-lib/css';
@@ -25,14 +25,55 @@ export const PostsFilterSheet = ({
   activeCount,
   children,
 }: PostsFilterSheetProps) => {
+  const sheetRef = useRef<HTMLDivElement | null>(null);
+  const previouslyFocusedRef = useRef<HTMLElement | null>(null);
+
   useEffect(() => {
     if (!open) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = prev;
+
+    // Escape로 닫기 + Tab을 시트 내부로 묶어 포커스 트랩.
+    const focusableSelector =
+      'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])';
+    previouslyFocusedRef.current = document.activeElement as HTMLElement | null;
+    // 다음 frame에 시트가 마운트된 후 첫 focusable로 포커스를 옮깁니다.
+    const focusFirst = requestAnimationFrame(() => {
+      const first = sheetRef.current?.querySelector<HTMLElement>(focusableSelector);
+      first?.focus();
+    });
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        onClose();
+        return;
+      }
+      if (e.key !== 'Tab') return;
+      const root = sheetRef.current;
+      if (!root) return;
+      const focusables = Array.from(
+        root.querySelectorAll<HTMLElement>(focusableSelector),
+      ).filter(el => !el.hasAttribute('disabled'));
+      if (focusables.length === 0) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      const active = document.activeElement;
+      if (e.shiftKey && active === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault();
+        first.focus();
+      }
     };
-  }, [open]);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      cancelAnimationFrame(focusFirst);
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prev;
+      previouslyFocusedRef.current?.focus();
+    };
+  }, [open, onClose]);
 
   return (
     <AnimatePresence>
@@ -51,6 +92,7 @@ export const PostsFilterSheet = ({
             })}
           />
           <motion.div
+            ref={sheetRef}
             role="dialog"
             aria-modal="true"
             aria-label="글 필터"

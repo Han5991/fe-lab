@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useQueryState, parseAsString, parseAsStringLiteral } from 'nuqs';
 import { useQuery } from '@tanstack/react-query';
 import { css } from '@design-system/ui-lib/css';
@@ -14,14 +14,14 @@ import {
 import { client } from '@/lib/client';
 
 import { Label } from './Label';
-import { SortRadio, type SortKey } from './SortRadio';
-import { ViewToggle, type ViewMode } from './ViewToggle';
-import { FilterGroup } from './FilterGroup';
+import { type SortKey } from './SortRadio';
+import { type ViewMode } from './ViewToggle';
 import { ActiveFilters } from './ActiveFilters';
 import { PostListRow } from './PostListRow';
 import { PostGridCard } from './PostGridCard';
 import { PostsFilterSheet } from './PostsFilterSheet';
 import { PostsFilterFab } from './PostsFilterFab';
+import { PostsFilterPanel } from './PostsFilterPanel';
 
 interface PostsArchiveViewProps {
   posts: PostSummary[];
@@ -85,12 +85,27 @@ export const PostsArchiveView = ({
   // tagParam(string) 자체를 dep으로 두고, activeTags는 tagParam 변경 시에만 새로 만듭니다.
   const activeTags = useMemo(() => parseTagParam(tagParam), [tagParam]);
 
-  const toggleTag = (tag: string) => {
-    const next = activeTags.includes(tag)
-      ? activeTags.filter(t => t !== tag)
-      : [...activeTags, tag];
-    setTagParam(next.length ? next.join(',') : null);
-  };
+  // 필터 패널 핸들러는 PostsFilterPanel(React.memo)에 prop으로 전달되므로
+  // 매 렌더마다 새 함수가 생기면 memo가 무력화됩니다. useCallback으로 안정화.
+  const toggleTag = useCallback(
+    (tag: string) => {
+      const next = activeTags.includes(tag)
+        ? activeTags.filter(t => t !== tag)
+        : [...activeTags, tag];
+      setTagParam(next.length ? next.join(',') : null);
+    },
+    [activeTags, setTagParam],
+  );
+
+  const toggleSeries = useCallback(
+    (id: string) => setSeriesParam(seriesParam === id ? null : id),
+    [seriesParam, setSeriesParam],
+  );
+
+  const toggleYear = useCallback(
+    (id: string) => setYearParam(yearParam === id ? null : id),
+    [yearParam, setYearParam],
+  );
 
   const filtered = useMemo(
     () =>
@@ -105,81 +120,26 @@ export const PostsArchiveView = ({
     [posts, q, activeTags, seriesParam, yearParam, sort, viewCounts],
   );
 
-  const seriesItems = series.map(s => ({
-    id: s.id,
-    label: s.title,
-    count: s.count,
-  }));
-  const tagItems = tags.map(t => ({
-    id: t.id,
-    label: `#${t.id}`,
-    count: t.count,
-  }));
-  const yearItems = years.map(y => ({
-    id: y.year,
-    label: y.year,
-    count: y.count,
-  }));
+  // 동일 props에서 PostsFilterPanel.memo가 효력을 발휘하도록 items도 useMemo.
+  const seriesItems = useMemo(
+    () => series.map(s => ({ id: s.id, label: s.title, count: s.count })),
+    [series],
+  );
+  const tagItems = useMemo(
+    () => tags.map(t => ({ id: t.id, label: `#${t.id}`, count: t.count })),
+    [tags],
+  );
+  const yearItems = useMemo(
+    () => years.map(y => ({ id: y.year, label: y.year, count: y.count })),
+    [years],
+  );
 
-  const clearAll = () => {
+  const clearAll = useCallback(() => {
     setQ(null);
     setTagParam(null);
     setSeriesParam(null);
     setYearParam(null);
-  };
-
-  // 모바일 시트와 데스크톱 사이드바에서 동일하게 쓰이는 필터 컨트롤 블록.
-  // useMemo로 고정해 매 렌더마다 children prop의 참조가 바뀌지 않게 합니다.
-  const filterControls = useMemo(
-    () => (
-    <>
-      <SortRadio value={sort} onChange={v => setSort(v)} />
-      <ViewToggle value={view} onChange={v => setView(v)} />
-
-      {tagItems.length > 0 && (
-        <FilterGroup
-          label="태그"
-          items={tagItems.slice(0, 12)}
-          active={activeTags}
-          onToggle={toggleTag}
-        />
-      )}
-
-      {seriesItems.length > 0 && (
-        <FilterGroup
-          label="시리즈"
-          items={seriesItems}
-          active={seriesParam ? [seriesParam] : []}
-          onToggle={id => setSeriesParam(seriesParam === id ? null : id)}
-        />
-      )}
-
-      {yearItems.length > 0 && (
-        <FilterGroup
-          label="연도"
-          items={yearItems}
-          active={yearParam ? [yearParam] : []}
-          onToggle={id => setYearParam(yearParam === id ? null : id)}
-        />
-      )}
-    </>
-    ),
-    [
-      sort,
-      view,
-      tagItems,
-      activeTags,
-      seriesItems,
-      seriesParam,
-      yearItems,
-      yearParam,
-      setSort,
-      setView,
-      toggleTag,
-      setSeriesParam,
-      setYearParam,
-    ],
-  );
+  }, [setQ, setTagParam, setSeriesParam, setYearParam]);
 
   // 활성 필터 합산 (FAB·시트 헤더의 N 뱃지 + 정렬도 기본값이 아니면 카운트)
   const activeCount =
@@ -214,7 +174,21 @@ export const PostsArchiveView = ({
         })}
       >
         <ArchiveSearchBar q={q} onChange={v => setQ(v || null)} />
-        {filterControls}
+        <PostsFilterPanel
+          sort={sort}
+          onSortChange={setSort}
+          view={view}
+          onViewChange={setView}
+          tagItems={tagItems}
+          activeTags={activeTags}
+          onToggleTag={toggleTag}
+          seriesItems={seriesItems}
+          activeSeries={seriesParam || null}
+          onToggleSeries={toggleSeries}
+          yearItems={yearItems}
+          activeYear={yearParam || null}
+          onToggleYear={toggleYear}
+        />
       </aside>
 
       <div>
@@ -345,7 +319,21 @@ export const PostsArchiveView = ({
       onClearAll={clearAll}
       activeCount={activeCount}
     >
-      {filterControls}
+      <PostsFilterPanel
+        sort={sort}
+        onSortChange={setSort}
+        view={view}
+        onViewChange={setView}
+        tagItems={tagItems}
+        activeTags={activeTags}
+        onToggleTag={toggleTag}
+        seriesItems={seriesItems}
+        activeSeries={seriesParam || null}
+        onToggleSeries={toggleSeries}
+        yearItems={yearItems}
+        activeYear={yearParam || null}
+        onToggleYear={toggleYear}
+      />
     </PostsFilterSheet>
     </>
   );
@@ -388,6 +376,7 @@ const ArchiveSearchBar = ({ q, onChange }: ArchiveSearchBarProps) => (
       value={q}
       onChange={e => onChange(e.target.value)}
       placeholder="제목, 본문, 태그 검색…"
+      aria-label="글 검색"
       className={css({
         flex: '1',
         bg: 'transparent',

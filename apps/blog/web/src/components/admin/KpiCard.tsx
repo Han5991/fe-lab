@@ -1,4 +1,5 @@
 import { css } from '@design-system/ui-lib/css';
+import { token } from '@design-system/ui-lib/tokens';
 import { Label } from '@/src/components/blog/Label';
 import { Sparkline } from '@/src/components/blog/Sparkline';
 
@@ -40,8 +41,8 @@ export const KpiCard = ({ num, label, delta, small, series }: KpiCardProps) => {
             data={series}
             w={80}
             h={32}
-            color="oklch(40% 0.022 60)"
-            fill="oklch(40% 0.022 60)"
+            color={token('colors.ink.700')}
+            fill={token('colors.ink.700')}
           />
         )}
       </div>

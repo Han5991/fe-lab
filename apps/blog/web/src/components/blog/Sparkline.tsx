@@ -1,3 +1,5 @@
+import { token } from '@design-system/ui-lib/tokens';
+
 interface SparklineProps {
   data: number[];
   w?: number;
@@ -6,11 +8,15 @@ interface SparklineProps {
   fill?: string;
 }
 
+// 디자인 토큰을 직접 SVG에 넘기기 위한 캐시. 컴포넌트 호출 시점에 매번
+// token() 함수를 부르지 않도록 모듈 로드 1회만 평가합니다.
+const DEFAULT_COLOR = token('colors.ink.700');
+
 export const Sparkline = ({
   data,
   w = 100,
   h = 24,
-  color = 'oklch(40% 0.022 60)',
+  color = DEFAULT_COLOR,
   fill,
 }: SparklineProps) => {
   if (!data || data.length === 0) return null;
