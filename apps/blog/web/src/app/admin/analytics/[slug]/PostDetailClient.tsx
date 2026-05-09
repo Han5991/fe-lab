@@ -24,9 +24,20 @@ import {
   Cell,
 } from 'recharts';
 import Link from 'next/link';
+import { token } from '@design-system/ui-lib/tokens';
 import { usePostDetailStats } from '@/src/hooks/usePostDetailStats';
 import { encodePostSlug } from '@/domain/post/utils';
 import { formatMonthDayISO } from '@/lib/dates';
+
+// 차트 색상 — 페이지의 다른 영역(텍스트/카드)과 같은 warm journal 톤.
+// Tailwind blue 500 단색 → ink/marker 조합으로 교체.
+const CHART_LINE = token('colors.ink.700');
+const CHART_ACCENT = token('colors.marker.600');
+const CHART_AXIS = token('colors.ink.border');
+const CHART_TICK = token('colors.ink.500');
+const CHART_GUIDE = token('colors.ink.300');
+// rgba 알파 점진 표현용 marker.600 hex 근사(oklch(60% 0.16 65)).
+const MARKER_RGB = '201, 122, 77';
 import {
   DateRangeControls,
   useDateFilter,
@@ -512,19 +523,19 @@ function PostDetailContent() {
               >
                 <XAxis
                   dataKey="name"
-                  axisLine={{ stroke: '#e5e7eb' }}
+                  axisLine={{ stroke: CHART_AXIS }}
                   tickLine={false}
-                  tick={{ fill: '#6b7280', fontSize: 12 }}
+                  tick={{ fill: CHART_TICK, fontSize: 12 }}
                   dy={10}
                 />
                 <YAxis
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fill: '#6b7280', fontSize: 12 }}
+                  tick={{ fill: CHART_TICK, fontSize: 12 }}
                 />
                 <Tooltip
                   cursor={{
-                    stroke: '#d1d5db',
+                    stroke: CHART_GUIDE,
                     strokeWidth: 1,
                     strokeDasharray: '4 4',
                   }}
@@ -537,10 +548,10 @@ function PostDetailContent() {
                 <Line
                   type="monotone"
                   dataKey="views"
-                  stroke="#3b82f6"
+                  stroke={CHART_LINE}
                   strokeWidth={3}
-                  dot={{ r: 4, fill: '#3b82f6', strokeWidth: 0 }}
-                  activeDot={{ r: 6, fill: '#2563eb', strokeWidth: 0 }}
+                  dot={{ r: 4, fill: CHART_ACCENT, strokeWidth: 0 }}
+                  activeDot={{ r: 6, fill: CHART_ACCENT, strokeWidth: 0 }}
                 />
               </LineChart>
             </ResponsiveContainer>
@@ -595,15 +606,15 @@ function PostDetailContent() {
               >
                 <XAxis
                   dataKey="hour"
-                  axisLine={{ stroke: '#e5e7eb' }}
+                  axisLine={{ stroke: CHART_AXIS }}
                   tickLine={false}
-                  tick={{ fill: '#6b7280', fontSize: 10 }}
+                  tick={{ fill: CHART_TICK, fontSize: 10 }}
                   interval={2}
                 />
                 <YAxis
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fill: '#6b7280', fontSize: 12 }}
+                  tick={{ fill: CHART_TICK, fontSize: 12 }}
                 />
                 <Tooltip
                   contentStyle={{
@@ -616,7 +627,7 @@ function PostDetailContent() {
                   {hourlyData.map((entry, index) => (
                     <Cell
                       key={`cell-${index}`}
-                      fill={`rgba(59, 130, 246, ${0.3 + (entry.views / maxHourlyViews) * 0.7})`}
+                      fill={`rgba(${MARKER_RGB}, ${0.3 + (entry.views / maxHourlyViews) * 0.7})`}
                     />
                   ))}
                 </Bar>
@@ -652,14 +663,14 @@ function PostDetailContent() {
               >
                 <XAxis
                   dataKey="day"
-                  axisLine={{ stroke: '#e5e7eb' }}
+                  axisLine={{ stroke: CHART_AXIS }}
                   tickLine={false}
-                  tick={{ fill: '#6b7280', fontSize: 12 }}
+                  tick={{ fill: CHART_TICK, fontSize: 12 }}
                 />
                 <YAxis
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fill: '#6b7280', fontSize: 12 }}
+                  tick={{ fill: CHART_TICK, fontSize: 12 }}
                 />
                 <Tooltip
                   contentStyle={{
@@ -672,7 +683,7 @@ function PostDetailContent() {
                   {dowData.map((entry, index) => (
                     <Cell
                       key={`cell-${index}`}
-                      fill={`rgba(59, 130, 246, ${0.3 + (entry.views / maxDowViews) * 0.7})`}
+                      fill={`rgba(${MARKER_RGB}, ${0.3 + (entry.views / maxDowViews) * 0.7})`}
                     />
                   ))}
                 </Bar>

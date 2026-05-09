@@ -41,7 +41,7 @@ export function PostList() {
     bg: 'ink.25',
     color: 'ink.950',
     cursor: 'pointer',
-    _focus: { outline: 'none', borderColor: 'accent.600' },
+    _focus: { outline: 'none', borderColor: 'ink.950' },
   });
 
   return (
@@ -74,8 +74,8 @@ export function PostList() {
               display: 'flex',
               alignItems: 'center',
               gap: '1.5',
-              bg: 'accent.600',
-              color: 'white',
+              bg: 'ink.950',
+              color: 'paper.50',
               px: '3',
               py: '1.5',
               rounded: 'md',

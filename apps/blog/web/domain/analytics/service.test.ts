@@ -72,6 +72,27 @@ test('computeDerivedStats: 일 평균 분모는 활동일이 아닌 trends span(
   assert.equal(result.dailyAverage, 2);
 });
 
+test('computeDerivedStats: trends가 비어도 totalViews가 마일스톤 넘으면 reached(date 미상)', () => {
+  // 글이 trends RPC 365일 cap 밖에서만 활동했을 때 발생하는 시나리오.
+  // post.totalViews는 영구 누적이고 trends 합과 다를 수 있음.
+  const post = {
+    slug: 'old',
+    title: 'Old post',
+    date: '2024-01-01',
+    totalViews: 427,
+    todayViews: 0,
+    trends: [],
+    status: 'published' as const,
+    scheduledDate: null,
+  };
+  const result = computeDerivedStats(post);
+  assert.equal(result.milestones[0].reached, true);
+  assert.equal(result.milestones[0].target, 100);
+  assert.equal(result.milestones[0].date, null);
+  assert.equal(result.milestones[1].reached, false);
+  assert.equal(result.milestones[1].target, 500);
+});
+
 test('computeDerivedStats: 누적이 마일스톤을 넘으면 reached=true', () => {
   const trends = Array.from({ length: 5 }, (_, i) => ({
     view_date: `2025-01-0${i + 1}`,

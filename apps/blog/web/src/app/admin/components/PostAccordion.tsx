@@ -121,7 +121,7 @@ export function PostAccordion({ post }: Props) {
             onClick={e => e.stopPropagation()}
             className={css({
               color: 'ink.500',
-              _hover: { color: 'accent.600' },
+              _hover: { color: 'marker.600' },
               display: 'flex',
               alignItems: 'center',
               flexShrink: 0,
@@ -135,7 +135,7 @@ export function PostAccordion({ post }: Props) {
             onClick={e => e.stopPropagation()}
             className={css({
               color: 'ink.200',
-              _hover: { color: 'accent.600' },
+              _hover: { color: 'marker.600' },
               display: 'flex',
               alignItems: 'center',
               flexShrink: 0,
@@ -214,7 +214,7 @@ export function PostAccordion({ post }: Props) {
               {post.totalViews.toLocaleString()}
             </span>
             {post.todayViews > 0 && (
-              <span className={css({ color: 'accent.600', fontSize: 'xs', fontWeight: 'medium' })}>
+              <span className={css({ color: 'marker.600', fontSize: 'xs', fontWeight: 'medium' })}>
                 +{post.todayViews}
               </span>
             )}
@@ -270,9 +270,9 @@ export function PostAccordion({ post }: Props) {
                   })}
                 >
                   {briefStats.weekGrowthRate !== null && briefStats.weekGrowthRate >= 0 ? (
-                    <TrendingUp size={13} className={css({ color: 'green.600' })} />
+                    <TrendingUp size={13} className={css({ color: 'moss.600' })} />
                   ) : (
-                    <TrendingDown size={13} className={css({ color: 'red.500' })} />
+                    <TrendingDown size={13} className={css({ color: 'marker.600' })} />
                   )}
                   <span className={css({ fontSize: 'xs', color: 'ink.500' })}>7일 증감</span>
                   <span
@@ -283,8 +283,8 @@ export function PostAccordion({ post }: Props) {
                       color:
                         briefStats.weekGrowthRate !== null
                           ? briefStats.weekGrowthRate >= 0
-                            ? 'green.600'
-                            : 'red.500'
+                            ? 'moss.600'
+                            : 'marker.600'
                           : 'ink.500',
                     })}
                   >
@@ -387,10 +387,10 @@ export function PostAccordion({ post }: Props) {
                       <Line
                         type="monotone"
                         dataKey="views"
-                        stroke={token('colors.accent.600')}
+                        stroke={token('colors.ink.700')}
                         strokeWidth={2}
-                        dot={{ r: 3, fill: token('colors.accent.600'), strokeWidth: 0 }}
-                        activeDot={{ r: 5, fill: token('colors.accent.700'), strokeWidth: 0 }}
+                        dot={{ r: 3, fill: token('colors.marker.600'), strokeWidth: 0 }}
+                        activeDot={{ r: 5, fill: token('colors.marker.600'), strokeWidth: 0 }}
                       />
                     </LineChart>
                   </ResponsiveContainer>

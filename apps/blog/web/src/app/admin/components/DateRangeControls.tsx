@@ -92,7 +92,7 @@ const inputClass = css({
   bg: 'ink.25',
   color: 'ink.950',
   cursor: 'pointer',
-  _focus: { outline: 'none', borderColor: 'accent.600' },
+  _focus: { outline: 'none', borderColor: 'ink.950' },
 });
 
 interface DateRangeControlsProps {

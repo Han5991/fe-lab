@@ -111,10 +111,10 @@ export function GlobalViewsChart() {
               <Line
                 type="monotone"
                 dataKey="views"
-                stroke={token('colors.accent.600')}
+                stroke={token('colors.ink.700')}
                 strokeWidth={2}
-                dot={{ r: 3, fill: token('colors.accent.600'), strokeWidth: 0 }}
-                activeDot={{ r: 5, fill: token('colors.accent.700'), strokeWidth: 0 }}
+                dot={{ r: 3, fill: token('colors.marker.600'), strokeWidth: 0 }}
+                activeDot={{ r: 5, fill: token('colors.marker.600'), strokeWidth: 0 }}
               />
             </LineChart>
           </ResponsiveContainer>

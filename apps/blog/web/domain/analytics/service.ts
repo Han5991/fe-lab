@@ -57,13 +57,30 @@ export function computeDerivedStats(post: PostStatDetail): DerivedStats {
   const dailyAverage =
     daySpan > 0 ? Math.round((totalViews / daySpan) * 10) / 10 : 0;
 
+  // trends RPC는 365일 cap이라 그 이전에 쌓인 누적이 sorted에 안 들어옵니다.
+  // totalViews(post_views의 영구 누적값)와 sorted 합 차이를 시작 누적으로 두고,
+  // 그 차이만큼 이미 통과한 마일스톤은 도달일자 미상(date=null)으로 reached 처리합니다.
   const milestones: {
     target: (typeof MILESTONE_TARGETS)[number];
     reached: boolean;
     date: string | null;
   }[] = [];
-  let cumulative = 0;
   let milestoneIdx = 0;
+  const trendSum = totalViews;
+  const offset = Math.max(0, post.totalViews - trendSum);
+  let cumulative = offset;
+  // trends 시작 전에 이미 통과한 마일스톤은 도달일자 미상으로 기록.
+  while (
+    milestoneIdx < MILESTONE_TARGETS.length &&
+    cumulative >= MILESTONE_TARGETS[milestoneIdx]
+  ) {
+    milestones.push({
+      target: MILESTONE_TARGETS[milestoneIdx],
+      reached: true,
+      date: null,
+    });
+    milestoneIdx++;
+  }
 
   for (const t of sorted) {
     cumulative += t.view_count;
