@@ -5,7 +5,10 @@ import { css } from '@design-system/ui-lib/css';
 
 import { Label } from '@/src/components/blog/Label';
 import { fmtNum } from '@/lib/format';
-import { useAnalyticsOverview } from '@/src/hooks/useAnalyticsOverview';
+import {
+  useAnalyticsOverview,
+  UNIQUES_ESTIMATE_RATIO,
+} from '@/src/hooks/useAnalyticsOverview';
 import {
   AnalyticsRangeSelect,
   type AnalyticsRange,
@@ -70,7 +73,7 @@ export const AnalyticsContent = ({ tags }: AnalyticsContentProps) => {
           num={fmtNum(overview.uniques)}
           label="UNIQUE VISITS"
           delta={overview.uniquesDelta ?? undefined}
-          small="55% 추정"
+          small={`${Math.round(UNIQUES_ESTIMATE_RATIO * 100)}% 추정`}
         />
         <KpiCard
           num={String(overview.postsPublished)}

@@ -11,6 +11,12 @@ const RANGE_DAYS: Record<AnalyticsRange, number> = {
   '90d': 90,
 };
 
+/**
+ * 별도 분석 API가 붙기 전, 총 조회수 대비 고유 방문자 추정 비율.
+ * GA·Plausible 같은 외부 데이터 소스를 도입하면 이 상수를 제거하고 실제값으로 대체합니다.
+ */
+export const UNIQUES_ESTIMATE_RATIO = 0.55;
+
 export interface AnalyticsOverview {
   range: AnalyticsRange;
   rangeDays: number;
@@ -75,9 +81,9 @@ export function useAnalyticsOverview(range: AnalyticsRange): AnalyticsOverview {
     const totalDelta =
       prevTotal > 0 ? (total - prevTotal) / prevTotal : null;
 
-    // 고유 방문자 — 분석 API 없으면 추정 (대략 50%)
-    const uniques = Math.round(total * 0.55);
-    const prevUniques = Math.round(prevTotal * 0.55);
+    // 고유 방문자 — 분석 API 없으면 추정. UNIQUES_ESTIMATE_RATIO 단일 소스.
+    const uniques = Math.round(total * UNIQUES_ESTIMATE_RATIO);
+    const prevUniques = Math.round(prevTotal * UNIQUES_ESTIMATE_RATIO);
     const uniquesDelta =
       prevUniques > 0 ? (uniques - prevUniques) / prevUniques : null;
 

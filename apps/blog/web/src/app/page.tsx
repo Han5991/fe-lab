@@ -117,12 +117,23 @@ const jsonLd = {
   ],
 };
 
+// 홈 섹션 번호. Hero는 암묵적으로 §01, Featured/Side stack은 §02(라벨 없음).
+// featured가 빈 경우 series가 §02로 올라가도록 동적으로 계산합니다.
+function homeSectionNumbers(hasFeatured: boolean) {
+  let n = 1; // Hero가 §01.
+  if (hasFeatured) n++; // Featured 섹션이 있을 때 §02 차지.
+  const series = String(++n).padStart(2, '0');
+  const recent = String(++n).padStart(2, '0');
+  return { series, recent };
+}
+
 export default function HomePage() {
   const allPosts = getAllPostSummaries();
   const featured = allPosts[0];
   const sideTwo = allPosts.slice(1, 3);
   const recent = allPosts.slice(3, 13);
   const series = getAllSeries().slice(0, 3);
+  const sectionNo = homeSectionNumbers(Boolean(featured));
 
   return (
     <>
@@ -216,7 +227,7 @@ export default function HomePage() {
                   })}
                 >
                   <Label tone="marker" className={css({ letterSpacing: 'monoXxl' })}>
-                    § 03
+                    § {sectionNo.series}
                   </Label>
                   <h2
                     className={css({
@@ -291,7 +302,7 @@ export default function HomePage() {
                   })}
                 >
                   <Label tone="marker" className={css({ letterSpacing: 'monoXxl' })}>
-                    § 04
+                    § {sectionNo.recent}
                   </Label>
                   <h2
                     className={css({
