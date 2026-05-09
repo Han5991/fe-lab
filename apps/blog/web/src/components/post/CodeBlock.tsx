@@ -130,7 +130,7 @@ export function CodeBlock({
         customStyle={{
           borderRadius: 0,
           margin: 0,
-          padding: '8',
+          padding: '1.5rem 2rem',
           lineHeight: '1.8',
           background: '#1e1e1e',
         }}
