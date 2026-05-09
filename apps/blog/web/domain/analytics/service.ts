@@ -1,3 +1,4 @@
+import { addDaysISO, diffDaysISO, getKSTDateISO } from '../../lib/dates';
 import type { PostStatDetail, DerivedStats } from './types';
 
 const MILESTONE_TARGETS = [100, 500, 1000, 5000] as const;
@@ -13,19 +14,11 @@ export function computeDerivedStats(post: PostStatDetail): DerivedStats {
     a.view_date.localeCompare(b.view_date),
   );
 
-  const now = new Date();
-  const today = new Date(
-    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
-  );
-
-  const sevenDaysAgo = new Date(today);
-  sevenDaysAgo.setUTCDate(today.getUTCDate() - 7);
-  const fourteenDaysAgo = new Date(today);
-  fourteenDaysAgo.setUTCDate(today.getUTCDate() - 14);
-
-  const todayStr = today.toISOString().split('T')[0];
-  const sevenDayStr = sevenDaysAgo.toISOString().split('T')[0];
-  const fourteenDayStr = fourteenDaysAgo.toISOString().split('T')[0];
+  // KST 기준 today. RPC view_date도 KST이므로 동일 TZ로 윈도우를 잡아야
+  // recent7/previous7이 어제·재작년처럼 한 칸 밀리지 않습니다.
+  const todayStr = getKSTDateISO();
+  const sevenDayStr = addDaysISO(todayStr, -7);
+  const fourteenDayStr = addDaysISO(todayStr, -14);
 
   const recent7 = sorted
     .filter(t => t.view_date >= sevenDayStr && t.view_date < todayStr)
@@ -49,8 +42,17 @@ export function computeDerivedStats(post: PostStatDetail): DerivedStats {
     : null;
 
   const totalViews = sorted.reduce((acc, t) => acc + t.view_count, 0);
+  // 일평균은 trends 첫 날 ~ 마지막 날 사이의 캘린더 일수로 나눕니다.
+  // (활동일 수로 나누면 스파이크 1회로 끝난 글의 평균이 비현실적으로 높아집니다.)
+  const daySpan =
+    sorted.length > 0
+      ? diffDaysISO(
+          sorted[0].view_date,
+          sorted[sorted.length - 1].view_date,
+        ) + 1
+      : 0;
   const dailyAverage =
-    sorted.length > 0 ? Math.round((totalViews / sorted.length) * 10) / 10 : 0;
+    daySpan > 0 ? Math.round((totalViews / daySpan) * 10) / 10 : 0;
 
   const milestones: {
     target: (typeof MILESTONE_TARGETS)[number];

@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react';
 import { useAdminDashboardData } from './useAdminViews';
+import { getKSTDateISO, addDaysISO } from '@/lib/dates';
 import type { AnalyticsRange } from '@/src/components/admin/AnalyticsRangeSelect';
 
 const RANGE_DAYS: Record<AnalyticsRange, number> = {
@@ -38,21 +39,17 @@ export function useAnalyticsOverview(range: AnalyticsRange): AnalyticsOverview {
 
   return useMemo(() => {
     const rangeDays = RANGE_DAYS[range];
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    // KST 기준 오늘부터 rangeDays·rangeDays*2일 윈도우. RPC가 반환하는
+    // view_date도 KST이므로 동일 기준으로 비교해야 1일 시프트가 안 생깁니다.
+    const todayISO = getKSTDateISO();
 
     const days: string[] = [];
     for (let i = rangeDays - 1; i >= 0; i--) {
-      const d = new Date(today);
-      d.setDate(today.getDate() - i);
-      const iso = d.toISOString().slice(0, 10);
-      days.push(iso);
+      days.push(addDaysISO(todayISO, -i));
     }
     const prevDays: string[] = [];
     for (let i = rangeDays * 2 - 1; i >= rangeDays; i--) {
-      const d = new Date(today);
-      d.setDate(today.getDate() - i);
-      prevDays.push(d.toISOString().slice(0, 10));
+      prevDays.push(addDaysISO(todayISO, -i));
     }
 
     // 일별 합산 — 현재 기간 + 직전 기간을 한 번에 순회
