@@ -92,7 +92,7 @@ importers:
         specifier: ^5.81.2
         version: 5.97.0(react@19.3.0-canary-a757cb76-20251002)
       dompurify:
-        specifier: ^3.3.3
+        specifier: 3.3.3
         version: 3.3.3
       gray-matter:
         specifier: ^4.0.3
@@ -432,7 +432,11 @@ importers:
         specifier: catalog:react19
         version: 19.3.0-canary-a757cb76-20251002(react@19.3.0-canary-a757cb76-20251002)
 
-  packages/@design-system/ui-lib: {}
+  packages/@design-system/ui-lib:
+    dependencies:
+      react:
+        specifier: '*'
+        version: 19.2.5
 
   packages/@package/bundler:
     dependencies:
