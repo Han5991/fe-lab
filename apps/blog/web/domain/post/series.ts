@@ -48,3 +48,37 @@ export function getSeriesMeta(seriesName: string): SeriesMeta | null {
 export function clearSeriesMetaCache(): void {
   _metaCache.clear();
 }
+
+/**
+ * 시리즈 내 포스트 정렬.
+ * `_series.yml`에 `order` 배열이 있으면 그 순서를 우선시하고, 없으면 date 오름차순.
+ * (서로 다른 호출부에서 같은 로직을 반복하던 것을 한 곳으로 모음.)
+ */
+export function sortPostsBySeriesOrder<
+  T extends {
+    slug: string;
+    originalSlug: string;
+    date?: string | null;
+  },
+>(posts: T[], order: string[] | undefined): T[] {
+  if (order && order.length > 0) {
+    const orderMap = new Map(order.map((s, i) => [s, i]));
+    return [...posts].sort((a, b) => {
+      const aRank =
+        orderMap.get(a.slug) ??
+        orderMap.get(a.originalSlug) ??
+        Number.POSITIVE_INFINITY;
+      const bRank =
+        orderMap.get(b.slug) ??
+        orderMap.get(b.originalSlug) ??
+        Number.POSITIVE_INFINITY;
+      if (aRank === bRank) {
+        return (a.date ?? '').localeCompare(b.date ?? '');
+      }
+      return aRank - bRank;
+    });
+  }
+  return [...posts].sort((a, b) =>
+    (a.date ?? '').localeCompare(b.date ?? ''),
+  );
+}

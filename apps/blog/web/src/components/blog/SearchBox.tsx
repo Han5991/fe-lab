@@ -82,7 +82,11 @@ export const SearchBox = ({
 
   if (href) {
     return (
-      <Link href={href} className={css({ display: 'block', w: 'full' })}>
+      <Link
+        href={href}
+        onClick={onClick}
+        className={css({ display: 'block', w: 'full' })}
+      >
         {inner}
       </Link>
     );

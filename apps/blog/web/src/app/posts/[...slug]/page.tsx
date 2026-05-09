@@ -5,7 +5,7 @@ import {
   getSeriesAdjacentPosts,
   getAllPosts,
 } from '@/domain/post';
-import { getSeriesMeta } from '@/domain/post/series';
+import { getSeriesMeta, sortPostsBySeriesOrder } from '@/domain/post/series';
 import {
   resolveThumbnailUrl,
   resolveAbsoluteThumbnailUrl,
@@ -99,28 +99,7 @@ export default async function PostPage({ params }: Props) {
   if (post.series) {
     const meta = getSeriesMeta(post.series);
     const seriesPosts = getAllPosts().filter(p => p.series === post.series);
-    const orderedPosts = (() => {
-      if (meta?.order && meta.order.length > 0) {
-        const orderMap = new Map(meta.order.map((s, i) => [s, i]));
-        return [...seriesPosts].sort((a, b) => {
-          const aRank =
-            orderMap.get(a.slug) ??
-            orderMap.get(a.originalSlug) ??
-            Number.POSITIVE_INFINITY;
-          const bRank =
-            orderMap.get(b.slug) ??
-            orderMap.get(b.originalSlug) ??
-            Number.POSITIVE_INFINITY;
-          if (aRank === bRank) {
-            return (a.date ?? '').localeCompare(b.date ?? '');
-          }
-          return aRank - bRank;
-        });
-      }
-      return [...seriesPosts].sort((a, b) =>
-        (a.date ?? '').localeCompare(b.date ?? ''),
-      );
-    })();
+    const orderedPosts = sortPostsBySeriesOrder(seriesPosts, meta?.order);
     const idx = orderedPosts.findIndex(p => p.slug === slug);
     if (idx !== -1) {
       seriesIndex = {
