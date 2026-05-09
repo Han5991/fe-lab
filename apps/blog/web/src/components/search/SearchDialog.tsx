@@ -255,7 +255,7 @@ export const SearchDialog = () => {
           pos: 'fixed',
           zIndex: '51',
           top: { base: '0', md: '[15vh]' },
-          left: { base: '0', md: '1/2' },
+          left: { base: '0', md: '[50%]' },
           right: { base: '0', md: '[auto]' },
           bottom: { base: '0', md: '[auto]' },
           transform: { base: 'none', md: 'translateX(-50%)' },

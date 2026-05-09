@@ -39,7 +39,7 @@ export const Layout = ({ children }: LayoutProps) => {
           borderColor: 'ink.border',
           pos: 'sticky',
           top: '0',
-          bg: '[rgba(252,250,247,0.85)]',
+          bg: '[rgba(252,250,247,0.95)]',
           backdropFilter: '[blur(12px)]',
           zIndex: '10',
         })}

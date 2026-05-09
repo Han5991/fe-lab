@@ -79,6 +79,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html
       lang="ko"
+      data-scroll-behavior="smooth"
       className={`${newsreader.variable} ${notoSerifKr.variable} ${jetbrainsMono.variable}`}
     >
       <head>
