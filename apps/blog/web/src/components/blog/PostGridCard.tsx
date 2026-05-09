@@ -11,7 +11,9 @@ interface PostGridCardProps {
 }
 
 export const PostGridCard = ({ post }: PostGridCardProps) => {
-  const thumb = post.thumbnail ? resolveThumbnailUrl(post) : null;
+  // resolveThumbnailUrl은 thumbnail이 없으면 OG_DEFAULT_IMAGE를 반환합니다.
+  // 항상 호출해 디폴트 이미지로 fallback되게 합니다.
+  const thumb = resolveThumbnailUrl(post);
   const readMin = post.readMin;
   return (
     <Link
@@ -29,32 +31,18 @@ export const PostGridCard = ({ post }: PostGridCardProps) => {
         },
       })}
     >
-      {thumb ? (
-        <img
-          src={thumb}
-          alt={post.title}
-          className={css({
-            display: 'block',
-            w: 'full',
-            h: '[160px]',
-            objectFit: 'cover',
-            borderBottomWidth: '[1px]',
-            borderColor: 'ink.border',
-          })}
-        />
-      ) : (
-        <div
-          className={css({
-            w: 'full',
-            h: '[160px]',
-            bg: 'paper.100',
-            borderBottomWidth: '[1px]',
-            borderColor: 'ink.border',
-            backgroundImage:
-              '[repeating-linear-gradient(135deg, transparent 0 8px, rgba(0,0,0,0.025) 8px 9px)]',
-          })}
-        />
-      )}
+      <img
+        src={thumb}
+        alt={post.title}
+        className={css({
+          display: 'block',
+          w: 'full',
+          h: '[160px]',
+          objectFit: 'cover',
+          borderBottomWidth: '[1px]',
+          borderColor: 'ink.border',
+        })}
+      />
       <div
         className={css({
           p: '5',

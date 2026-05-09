@@ -12,7 +12,8 @@ interface FeaturedPostProps {
 
 export const FeaturedPost = ({ post }: FeaturedPostProps) => {
   const href = `/posts/${encodePostSlug(post.slug)}/`;
-  const thumb = post.thumbnail ? resolveThumbnailUrl(post) : null;
+  // 디폴트 이미지로 fallback (resolveThumbnailUrl이 OG_DEFAULT_IMAGE 처리).
+  const thumb = resolveThumbnailUrl(post);
   const readMin = post.readMin;
 
   return (
@@ -52,46 +53,18 @@ export const FeaturedPost = ({ post }: FeaturedPostProps) => {
         {post.date && <Label tone="meta">· {fmtDate(post.date)}</Label>}
       </div>
 
-      {thumb ? (
-        <img
-          src={thumb}
-          alt={post.title}
-          className={css({
-            display: 'block',
-            w: 'full',
-            h: '[320px]',
-            objectFit: 'cover',
-            borderWidth: '[1px]',
-            borderColor: 'ink.border',
-          })}
-        />
-      ) : (
-        <div
-          className={css({
-            w: 'full',
-            h: '[320px]',
-            bg: 'paper.100',
-            borderWidth: '[1px]',
-            borderColor: 'ink.border',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundImage:
-              '[repeating-linear-gradient(135deg, transparent 0 8px, rgba(0,0,0,0.025) 8px 9px)]',
-          })}
-        >
-          <span
-            className={css({
-              fontFamily: 'mono',
-              fontSize: 'xs',
-              color: 'ink.500',
-              letterSpacing: 'monoXl',
-            })}
-          >
-            FEATURE · {post.series ?? 'NOTE'}
-          </span>
-        </div>
-      )}
+      <img
+        src={thumb}
+        alt={post.title}
+        className={css({
+          display: 'block',
+          w: 'full',
+          h: '[320px]',
+          objectFit: 'cover',
+          borderWidth: '[1px]',
+          borderColor: 'ink.border',
+        })}
+      />
 
       <h2
         className={css({

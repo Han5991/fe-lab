@@ -2,10 +2,12 @@
 
 import { useMemo, useState } from 'react';
 import { useQueryState, parseAsString, parseAsStringLiteral } from 'nuqs';
+import { useQuery } from '@tanstack/react-query';
 import { css } from '@design-system/ui-lib/css';
 
 import type { PostSummary } from '@/domain/post';
 import type { SeriesSummary, TagSummary } from '@/domain/post/aggregate';
+import { client } from '@/lib/client';
 
 import { Label } from './Label';
 import { SortRadio, type SortKey } from './SortRadio';
@@ -52,9 +54,28 @@ export const PostsArchiveView = ({
   );
   const [view, setView] = useQueryState<ViewMode>(
     'view',
-    parseAsStringLiteral(VIEW_KEYS).withDefault('list'),
+    parseAsStringLiteral(VIEW_KEYS).withDefault('cards'),
   );
   const [sheetOpen, setSheetOpen] = useState(false);
+
+  // 인기순 정렬은 Supabase post_views 테이블 기반. 'popular'를 누르기 전까지는
+  // 요청을 보내지 않습니다 (lazy). 5분 staleTime으로 재방문 시 캐시 사용.
+  const { data: viewCounts } = useQuery({
+    queryKey: ['posts-view-counts'],
+    queryFn: async () => {
+      const { data } = await client
+        .from('post_views')
+        .select('slug, view_count');
+      const map = new Map<string, number>();
+      for (const row of data ?? []) {
+        map.set(row.slug, row.view_count ?? 0);
+      }
+      return map;
+    },
+    enabled: sort === 'popular',
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+  });
 
   // tagParam을 매 렌더 새 배열로 split하면 useMemo dep가 늘 무효화됩니다.
   // tagParam(string) 자체를 dep으로 두고, activeTags는 tagParam 변경 시에만 새로 만듭니다.
@@ -92,14 +113,23 @@ export const PostsArchiveView = ({
     }
     const sorted = [...r];
     if (sort === 'shortest') {
-      sorted.sort(
-        (a, b) => (a.excerpt?.length ?? 0) - (b.excerpt?.length ?? 0),
-      );
+      // 본문 분량 기반(readMin). excerpt는 자동 생성 시 160자로 잘려 동률이라
+      // 상위 몇 개만 움직이는 것처럼 보였습니다.
+      sorted.sort((a, b) => a.readMin - b.readMin);
+    } else if (sort === 'popular') {
+      // post_views가 도착하기 전엔 최신순으로 보여주고, 도착하면 view_count로.
+      const counts = viewCounts;
+      sorted.sort((a, b) => {
+        const va = counts?.get(a.slug) ?? 0;
+        const vb = counts?.get(b.slug) ?? 0;
+        if (vb !== va) return vb - va;
+        return (b.date ?? '').localeCompare(a.date ?? '');
+      });
     } else {
       sorted.sort((a, b) => (b.date ?? '').localeCompare(a.date ?? ''));
     }
     return sorted;
-  }, [posts, q, activeTags, seriesParam, yearParam, sort]);
+  }, [posts, q, activeTags, seriesParam, yearParam, sort, viewCounts]);
 
   const seriesItems = series.map(s => ({
     id: s.id,
@@ -165,7 +195,7 @@ export const PostsArchiveView = ({
     (seriesParam ? 1 : 0) +
     (yearParam ? 1 : 0) +
     (sort !== 'recent' ? 1 : 0) +
-    (view !== 'list' ? 1 : 0);
+    (view !== 'cards' ? 1 : 0);
 
   return (
     <div
