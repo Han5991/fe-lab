@@ -17,11 +17,11 @@ export interface TagSummary {
   count: number;
 }
 
+// 키는 폴더명(= post.series). `apps/blog/posts/<폴더>` 와 정확히 일치해야 합니다.
+// 매칭되지 않은 시리즈는 `COLOR_FALLBACK` 라운드로빈으로 색이 배정됩니다.
 const SERIES_COLOR_MAP: Record<string, SeriesSummary['colorKey']> = {
   bundler: 'accent',
-  'typescript-patterns': 'marker',
   '[Typescript로 설계하는 프로젝트]': 'marker',
-  'oss-diary': 'moss',
   'open-source': 'moss',
 };
 

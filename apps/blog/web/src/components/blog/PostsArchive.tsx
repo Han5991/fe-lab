@@ -129,7 +129,9 @@ export const PostsArchiveView = ({
   };
 
   // 모바일 시트와 데스크톱 사이드바에서 동일하게 쓰이는 필터 컨트롤 블록.
-  const filterControls = (
+  // useMemo로 고정해 매 렌더마다 children prop의 참조가 바뀌지 않게 합니다.
+  const filterControls = useMemo(
+    () => (
     <>
       <SortRadio value={sort} onChange={v => setSort(v)} />
       <ViewToggle value={view} onChange={v => setView(v)} />
@@ -161,6 +163,22 @@ export const PostsArchiveView = ({
         />
       )}
     </>
+    ),
+    [
+      sort,
+      view,
+      tagItems,
+      activeTags,
+      seriesItems,
+      seriesParam,
+      yearItems,
+      yearParam,
+      setSort,
+      setView,
+      toggleTag,
+      setSeriesParam,
+      setYearParam,
+    ],
   );
 
   // 활성 필터 합산 (FAB·시트 헤더의 N 뱃지 + 정렬도 기본값이 아니면 카운트)
@@ -172,6 +190,9 @@ export const PostsArchiveView = ({
     (view !== 'cards' ? 1 : 0);
 
   return (
+    // FAB·시트는 grid 자식으로 두면 fixed 포지션이라도 DOM상 grid item이 되어
+    // 접근성/레이아웃 어색함이 있으므로, 둘은 grid 바깥의 sibling으로 분리합니다.
+    <>
     <div
       className={css({
         display: 'grid',
@@ -312,20 +333,21 @@ export const PostsArchiveView = ({
           </ol>
         )}
       </div>
-
-      <PostsFilterFab
-        onClick={() => setSheetOpen(true)}
-        activeCount={activeCount}
-      />
-      <PostsFilterSheet
-        open={sheetOpen}
-        onClose={() => setSheetOpen(false)}
-        onClearAll={clearAll}
-        activeCount={activeCount}
-      >
-        {filterControls}
-      </PostsFilterSheet>
     </div>
+
+    <PostsFilterFab
+      onClick={() => setSheetOpen(true)}
+      activeCount={activeCount}
+    />
+    <PostsFilterSheet
+      open={sheetOpen}
+      onClose={() => setSheetOpen(false)}
+      onClearAll={clearAll}
+      activeCount={activeCount}
+    >
+      {filterControls}
+    </PostsFilterSheet>
+    </>
   );
 };
 

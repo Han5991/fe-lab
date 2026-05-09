@@ -21,9 +21,14 @@ export const SearchBox = ({
   const [hotkeyLabel, setHotkeyLabel] = useState('Ctrl K');
 
   useEffect(() => {
-    const isMac =
-      typeof navigator !== 'undefined' &&
-      /Mac|iPod|iPhone|iPad/.test(navigator.platform);
+    if (typeof navigator === 'undefined') return;
+    // navigator.platform은 deprecated. 우선 NavigatorUAData(Chromium 90+)를 보고
+    // 없으면 userAgent 문자열을 fallback으로 검사합니다.
+    const ua = navigator as Navigator & {
+      userAgentData?: { platform?: string };
+    };
+    const platform = ua.userAgentData?.platform ?? navigator.userAgent ?? '';
+    const isMac = /Mac|iPhone|iPad|iPod/.test(platform);
     setHotkeyLabel(isMac ? '⌘K' : 'Ctrl K');
   }, []);
 

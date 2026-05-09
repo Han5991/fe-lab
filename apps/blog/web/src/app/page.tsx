@@ -115,11 +115,13 @@ const jsonLd = {
   ],
 };
 
-// 홈 섹션 번호. Hero는 암묵적으로 §01, Featured/Side stack은 §02(라벨 없음).
-// featured가 빈 경우 series가 §02로 올라가도록 동적으로 계산합니다.
+// 홈 섹션 번호. Hero·Featured 섹션은 자리만 차지하고 §xx 라벨은 안 붙입니다.
+// 라벨이 보이는 섹션은 Series shelf와 Recent notes 둘뿐:
+//   featured 있을 때:  Hero(§01) → Featured(§02, 라벨 안 보임) → Series §03 → Recent §04
+//   featured 없을 때:  Hero(§01) → Series §02 → Recent §03
 function homeSectionNumbers(hasFeatured: boolean) {
   let n = 1; // Hero가 §01.
-  if (hasFeatured) n++; // Featured 섹션이 있을 때 §02 차지.
+  if (hasFeatured) n++; // Featured가 있으면 §02 자리 점유.
   const series = String(++n).padStart(2, '0');
   const recent = String(++n).padStart(2, '0');
   return { series, recent };
