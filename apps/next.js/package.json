@@ -30,7 +30,7 @@
     "@testing-library/react": "^16.2.0",
     "@testing-library/user-event": "^14.6.1",
     "@types/jest": "^29.5.14",
-    "@types/node": "^22.13.8",
+    "@types/node": "^25.8.0",
     "@types/react": "catalog:react19",
     "@types/react-dom": "catalog:react19",
     "eslint": "^9",
