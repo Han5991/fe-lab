@@ -298,7 +298,7 @@ importers:
         specifier: catalog:react19
         version: 19.3.0-canary-a757cb76-20251002(react@19.3.0-canary-a757cb76-20251002)
       react-router:
-        specifier: ^7.5.2
+        specifier: ^7.15.1
         version: 7.15.1(react-dom@19.3.0-canary-a757cb76-20251002(react@19.3.0-canary-a757cb76-20251002))(react@19.3.0-canary-a757cb76-20251002)
     devDependencies:
       '@eslint/js':
