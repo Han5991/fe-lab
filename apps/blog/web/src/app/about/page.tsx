@@ -3,6 +3,7 @@ import { css } from '@design-system/ui-lib/css';
 import { SsgoiTransition } from '@ssgoi/react';
 import type { Metadata } from 'next';
 import { SITE_URL, SITE_AUTHOR_GITHUB, SITE_AUTHOR_LINKEDIN } from '@/lib/constants';
+import { Label } from '@/src/components/blog';
 
 export const metadata: Metadata = {
   title: '소개 | Frontend Lab',
@@ -61,21 +62,21 @@ export default function AboutPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <SsgoiTransition id="/about">
-        <div className={css({ bg: 'ink.25' })}>
+        <div className={css({ bg: 'paper.50' })}>
 
           {/* Header */}
-          <div
+          <header
             className={css({
+              bg: 'paper.100',
               borderBottomWidth: '[1px]',
               borderColor: 'ink.border',
-              bg: 'ink.50',
             })}
           >
             <div
               className={css({
                 maxW: 'containerW',
                 mx: 'auto',
-                px: '6',
+                px: '8',
                 py: { base: '14', md: '20' },
                 display: 'grid',
                 gridTemplateColumns: { base: '1fr', md: '1fr 1fr' },
@@ -84,29 +85,25 @@ export default function AboutPage() {
               })}
             >
               <div>
-                <p
+                <Label
+                  tone="marker"
                   className={css({
-                    fontSize: 'xs',
-                    fontWeight: 'bold',
-                    letterSpacing: 'widest',
-                    textTransform: 'uppercase',
-                    color: 'accent.600',
-                    mb: '4',
-                    borderLeftWidth: '[3px]',
-                    borderLeftColor: 'accent.600',
-                    pl: '3',
+                    display: 'block',
+                    mb: '5',
+                    letterSpacing: 'monoXxxl',
                   })}
                 >
-                  Frontend Engineer
-                </p>
+                  § 01 / PROFILE — FRONTEND ENGINEER
+                </Label>
                 <h1
                   className={css({
-                    fontSize: { base: '4xl', md: '5xl' },
-                    fontWeight: 'extrabold',
-                    letterSpacing: 'tight',
-                    lineHeight: 'tighter',
-                    mb: '4',
+                    fontFamily: 'serif',
+                    fontSize: { base: '5xl', md: '6xl' },
+                    fontWeight: 'normal',
+                    letterSpacing: 'tighter',
+                    lineHeight: 'heroDense',
                     color: 'ink.950',
+                    mb: '4',
                   })}
                 >
                   한상욱
@@ -114,9 +111,10 @@ export default function AboutPage() {
                     className={css({
                       display: 'block',
                       fontSize: { base: 'xl', md: '2xl' },
-                      fontWeight: 'medium',
+                      fontStyle: 'italic',
+                      fontWeight: 'normal',
                       color: 'ink.700',
-                      mt: '1',
+                      mt: '2',
                       letterSpacing: 'normal',
                     })}
                   >
@@ -125,9 +123,10 @@ export default function AboutPage() {
                 </h1>
                 <p
                   className={css({
-                    fontSize: 'md',
+                    fontFamily: 'serif',
+                    fontSize: { base: 'md', md: 'lg' },
                     color: 'ink.700',
-                    lineHeight: 'proseLoose',
+                    lineHeight: 'comfortable',
                     maxW: 'heroAside',
                   })}
                 >
@@ -140,7 +139,7 @@ export default function AboutPage() {
                 className={css({
                   display: 'flex',
                   flexDir: 'column',
-                  gap: '4',
+                  gap: '6',
                   alignSelf: 'start',
                   pt: { md: '8' },
                 })}
@@ -155,16 +154,17 @@ export default function AboutPage() {
                       alignItems: 'center',
                       px: '4',
                       py: '2',
-                      rounded: 'lg',
                       bg: 'ink.950',
-                      color: 'ink.25',
-                      fontSize: 'sm',
-                      fontWeight: 'medium',
+                      color: 'paper.50',
+                      fontFamily: 'mono',
+                      fontSize: 'xs',
+                      letterSpacing: 'monoXl',
+                      textTransform: 'uppercase',
                       _hover: { opacity: '0.85' },
                       transition: '[opacity 0.15s]',
                     })}
                   >
-                    GitHub
+                    GitHub →
                   </a>
                   <a
                     href={SITE_AUTHOR_LINKEDIN}
@@ -175,16 +175,19 @@ export default function AboutPage() {
                       alignItems: 'center',
                       px: '4',
                       py: '2',
-                      rounded: 'lg',
-                      bg: 'accent.600',
-                      color: 'white',
-                      fontSize: 'sm',
-                      fontWeight: 'medium',
-                      _hover: { opacity: '0.85' },
-                      transition: '[opacity 0.15s]',
+                      bg: 'paper.50',
+                      borderWidth: '[1px]',
+                      borderColor: 'ink.950',
+                      color: 'ink.950',
+                      fontFamily: 'mono',
+                      fontSize: 'xs',
+                      letterSpacing: 'monoXl',
+                      textTransform: 'uppercase',
+                      _hover: { bg: 'ink.950', color: 'paper.50' },
+                      transition: '[background 0.15s, color 0.15s]',
                     })}
                   >
-                    LinkedIn
+                    LinkedIn →
                   </a>
                 </div>
 
@@ -193,8 +196,7 @@ export default function AboutPage() {
                   className={css({
                     display: 'grid',
                     gridTemplateColumns: 'repeat(3, 1fr)',
-                    gap: '4',
-                    mt: '4',
+                    gap: '6',
                     pt: '6',
                     borderTopWidth: '[1px]',
                     borderColor: 'ink.border',
@@ -208,20 +210,25 @@ export default function AboutPage() {
                     <div key={stat.label}>
                       <div
                         className={css({
-                          fontSize: { base: '3xl', md: '4xl' },
-                          fontWeight: 'extrabold',
+                          fontFamily: 'serif',
+                          fontSize: { base: '4xl', md: '5xl' },
+                          fontWeight: 'normal',
                           color: 'ink.950',
                           letterSpacing: 'tight',
                           lineHeight: 'flat',
+                          fontVariantNumeric: 'tabular-nums',
                         })}
                       >
                         {stat.value}
                       </div>
                       <div
                         className={css({
-                          fontSize: 'xs',
+                          fontFamily: 'mono',
+                          fontSize: '2xs',
                           color: 'ink.500',
-                          mt: '0.5',
+                          letterSpacing: 'mono',
+                          textTransform: 'uppercase',
+                          mt: '1',
                         })}
                       >
                         {stat.label}
@@ -232,9 +239,11 @@ export default function AboutPage() {
                 <Link
                   href="/posts/2025-retrospect/"
                   className={css({
+                    fontFamily: 'mono',
                     fontSize: 'xs',
                     color: 'ink.500',
-                    _hover: { color: 'accent.600' },
+                    letterSpacing: 'monoXl',
+                    _hover: { color: 'ink.950' },
                     transition: '[color 0.15s]',
                   })}
                 >
@@ -242,14 +251,14 @@ export default function AboutPage() {
                 </Link>
               </div>
             </div>
-          </div>
+          </header>
 
           {/* Content */}
           <div
             className={css({
               maxW: 'containerW',
               mx: 'auto',
-              px: '6',
+              px: '8',
               py: { base: '12', md: '20' },
               display: 'grid',
               gridTemplateColumns: { base: '1fr', lg: '1fr 1fr' },
@@ -258,35 +267,33 @@ export default function AboutPage() {
           >
             {/* 오픈소스 기여 */}
             <section>
-              <p
-                className={css({
-                  fontSize: 'xs',
-                  fontWeight: 'bold',
-                  letterSpacing: 'widest',
-                  textTransform: 'uppercase',
-                  color: 'accent.600',
-                  mb: '3',
-                })}
-              >
-                Open Source
-              </p>
-              <h2
-                className={css({
-                  fontSize: { base: 'xl', md: '2xl' },
-                  fontWeight: 'bold',
-                  color: 'ink.950',
-                  letterSpacing: 'tight',
-                  mb: '6',
-                })}
-              >
-                오픈소스 기여
-              </h2>
               <div
                 className={css({
-                  borderTopWidth: '[1px]',
+                  display: 'flex',
+                  alignItems: 'baseline',
+                  gap: '3',
+                  mb: '6',
+                  pb: '4',
+                  borderBottomWidth: '[1px]',
                   borderColor: 'ink.border',
                 })}
               >
+                <Label tone="marker" className={css({ letterSpacing: 'monoXxl' })}>
+                  § 02
+                </Label>
+                <h2
+                  className={css({
+                    fontFamily: 'serif',
+                    fontSize: { base: 'xl', md: '2xl' },
+                    fontWeight: 'semibold',
+                    color: 'ink.950',
+                    letterSpacing: 'tight',
+                  })}
+                >
+                  오픈소스 기여
+                </h2>
+              </div>
+              <div>
                 {[
                   {
                     project: 'gemini-cli',
@@ -321,8 +328,8 @@ export default function AboutPage() {
                       py: '5',
                       borderBottomWidth: '[1px]',
                       borderColor: 'ink.border',
-                      transition: '[background 0.15s]',
-                      _hover: { bg: 'ink.50', mx: '-6', px: '6' },
+                      transition: '[background 0.15s, box-shadow 0.15s, padding 0.15s]',
+                      _hover: { bg: 'paper.100', boxShadow: 'markerLeft', pl: '4' },
                     })}
                   >
                     <div
@@ -335,16 +342,17 @@ export default function AboutPage() {
                     >
                       <span
                         className={css({
-                          fontWeight: 'bold',
-                          fontSize: 'md',
+                          fontFamily: 'serif',
+                          fontWeight: 'semibold',
+                          fontSize: 'lg',
                           color: 'ink.950',
                         })}
                       >
                         {item.project}
                       </span>
-                      <span className={css({ fontSize: 'xs', color: 'ink.500' })}>
+                      <Label tone="meta" className={css({ letterSpacing: 'mono' })}>
                         {item.org}
-                      </span>
+                      </Label>
                     </div>
                     <p
                       className={css({
@@ -363,35 +371,33 @@ export default function AboutPage() {
             <div className={css({ display: 'flex', flexDir: 'column', gap: '12' })}>
               {/* 발표 */}
               <section>
-                <p
-                  className={css({
-                    fontSize: 'xs',
-                    fontWeight: 'bold',
-                    letterSpacing: 'widest',
-                    textTransform: 'uppercase',
-                    color: 'accent.600',
-                    mb: '3',
-                  })}
-                >
-                  Speaking
-                </p>
-                <h2
-                  className={css({
-                    fontSize: { base: 'xl', md: '2xl' },
-                    fontWeight: 'bold',
-                    color: 'ink.950',
-                    letterSpacing: 'tight',
-                    mb: '6',
-                  })}
-                >
-                  발표
-                </h2>
                 <div
                   className={css({
-                    borderTopWidth: '[1px]',
+                    display: 'flex',
+                    alignItems: 'baseline',
+                    gap: '3',
+                    mb: '6',
+                    pb: '4',
+                    borderBottomWidth: '[1px]',
                     borderColor: 'ink.border',
                   })}
                 >
+                  <Label tone="marker" className={css({ letterSpacing: 'monoXxl' })}>
+                    § 03
+                  </Label>
+                  <h2
+                    className={css({
+                      fontFamily: 'serif',
+                      fontSize: { base: 'xl', md: '2xl' },
+                      fontWeight: 'semibold',
+                      color: 'ink.950',
+                      letterSpacing: 'tight',
+                    })}
+                  >
+                    발표
+                  </h2>
+                </div>
+                <div>
                   {[
                     {
                       event: 'FEConf 2025',
@@ -415,16 +421,17 @@ export default function AboutPage() {
                         py: '4',
                         borderBottomWidth: '[1px]',
                         borderColor: 'ink.border',
-                        transition: '[background 0.15s, box-shadow 0.15s]',
-                        _hover: { bg: 'ink.50', mx: '-6', px: '6', boxShadow: 'accentLeft' },
+                        transition: '[background 0.15s, box-shadow 0.15s, padding 0.15s]',
+                        _hover: { bg: 'paper.100', boxShadow: 'markerLeft', pl: '4' },
                       })}
                     >
                       <div>
                         <span
                           className={css({
+                            fontFamily: 'serif',
                             fontWeight: 'semibold',
                             color: 'ink.950',
-                            fontSize: 'sm',
+                            fontSize: 'md',
                             display: 'block',
                             mb: '0.5',
                           })}
@@ -435,7 +442,14 @@ export default function AboutPage() {
                           {item.description}
                         </span>
                       </div>
-                      <span className={css({ fontSize: 'sm', color: 'ink.500', flexShrink: 0 })}>
+                      <span
+                        className={css({
+                          fontFamily: 'mono',
+                          fontSize: 'sm',
+                          color: 'ink.500',
+                          flexShrink: 0,
+                        })}
+                      >
                         →
                       </span>
                     </Link>
@@ -445,37 +459,33 @@ export default function AboutPage() {
 
               {/* 주요 시리즈 */}
               <section>
-                <p
-                  className={css({
-                    fontSize: 'xs',
-                    fontWeight: 'bold',
-                    letterSpacing: 'widest',
-                    textTransform: 'uppercase',
-                    color: 'accent.600',
-                    mb: '3',
-                  })}
-                >
-                  Series
-                </p>
-                <h2
-                  className={css({
-                    fontSize: { base: 'xl', md: '2xl' },
-                    fontWeight: 'bold',
-                    color: 'ink.950',
-                    letterSpacing: 'tight',
-                    mb: '6',
-                  })}
-                >
-                  주요 시리즈
-                </h2>
                 <div
                   className={css({
                     display: 'flex',
-                    flexDir: 'column',
-                    borderTopWidth: '[1px]',
+                    alignItems: 'baseline',
+                    gap: '3',
+                    mb: '6',
+                    pb: '4',
+                    borderBottomWidth: '[1px]',
                     borderColor: 'ink.border',
                   })}
                 >
+                  <Label tone="marker" className={css({ letterSpacing: 'monoXxl' })}>
+                    § 04
+                  </Label>
+                  <h2
+                    className={css({
+                      fontFamily: 'serif',
+                      fontSize: { base: 'xl', md: '2xl' },
+                      fontWeight: 'semibold',
+                      color: 'ink.950',
+                      letterSpacing: 'tight',
+                    })}
+                  >
+                    주요 시리즈
+                  </h2>
+                </div>
+                <div className={css({ display: 'flex', flexDir: 'column' })}>
                   {[
                     {
                       title: '번들러 만들기',
@@ -513,16 +523,17 @@ export default function AboutPage() {
                         py: '4',
                         borderBottomWidth: '[1px]',
                         borderColor: 'ink.border',
-                        transition: '[background 0.15s, box-shadow 0.15s]',
-                        _hover: { bg: 'ink.50', mx: '-6', px: '6', boxShadow: 'accentLeft' },
+                        transition: '[background 0.15s, box-shadow 0.15s, padding 0.15s]',
+                        _hover: { bg: 'paper.100', boxShadow: 'markerLeft', pl: '4' },
                       })}
                     >
                       <div className={css({ flex: '1', minW: '0' })}>
                         <span
                           className={css({
+                            fontFamily: 'serif',
                             fontWeight: 'semibold',
                             color: 'ink.950',
-                            fontSize: 'sm',
+                            fontSize: 'md',
                             display: 'block',
                             mb: '1',
                           })}
@@ -541,15 +552,14 @@ export default function AboutPage() {
                       </div>
                       <span
                         className={css({
-                          fontSize: 'xs',
-                          color: 'accent.600',
-                          bg: 'accent.50',
-                          px: '2',
-                          py: '0.5',
-                          rounded: 'sm',
-                          fontWeight: 'medium',
+                          fontFamily: 'mono',
+                          fontSize: '2xs',
+                          color: 'marker.600',
+                          letterSpacing: 'monoXl',
+                          textTransform: 'uppercase',
                           flexShrink: 0,
                           whiteSpace: 'nowrap',
+                          pt: '0.5',
                         })}
                       >
                         {series.count}
