@@ -329,7 +329,7 @@ export default function AboutPage() {
                       borderBottomWidth: '[1px]',
                       borderColor: 'ink.border',
                       transition: '[background 0.15s, box-shadow 0.15s]',
-                      _hover: { bg: 'paper.100', mx: '-6', px: '6', boxShadow: 'accentLeft' },
+                      _hover: { bg: 'paper.100', boxShadow: 'markerLeft' },
                     })}
                   >
                     <div
@@ -422,7 +422,7 @@ export default function AboutPage() {
                         borderBottomWidth: '[1px]',
                         borderColor: 'ink.border',
                         transition: '[background 0.15s, box-shadow 0.15s]',
-                        _hover: { bg: 'paper.100', mx: '-6', px: '6', boxShadow: 'accentLeft' },
+                        _hover: { bg: 'paper.100', boxShadow: 'markerLeft' },
                       })}
                     >
                       <div>
@@ -524,7 +524,7 @@ export default function AboutPage() {
                         borderBottomWidth: '[1px]',
                         borderColor: 'ink.border',
                         transition: '[background 0.15s, box-shadow 0.15s]',
-                        _hover: { bg: 'paper.100', mx: '-6', px: '6', boxShadow: 'accentLeft' },
+                        _hover: { bg: 'paper.100', boxShadow: 'markerLeft' },
                       })}
                     >
                       <div className={css({ flex: '1', minW: '0' })}>
