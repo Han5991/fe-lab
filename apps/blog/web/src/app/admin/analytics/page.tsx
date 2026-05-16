@@ -1,7 +1,6 @@
 'use client';
 
 import { Suspense } from 'react';
-import dynamic from 'next/dynamic';
 import { LogOut, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { css } from '@design-system/ui-lib/css';

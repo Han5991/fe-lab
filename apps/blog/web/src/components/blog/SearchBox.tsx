@@ -29,6 +29,9 @@ export const SearchBox = ({
     };
     const platform = ua.userAgentData?.platform ?? navigator.userAgent ?? '';
     const isMac = /Mac|iPhone|iPad|iPod/.test(platform);
+    // 클라이언트 mount 후 navigator 감지 결과를 라벨에 반영하는 외부 시스템 sync.
+    // SSR/CSR 첫 render는 'Ctrl K' 디폴트라 hydration mismatch 없음.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- 외부 시스템(navigator) 1회 측정
     setHotkeyLabel(isMac ? '⌘K' : 'Ctrl K');
   }, []);
 

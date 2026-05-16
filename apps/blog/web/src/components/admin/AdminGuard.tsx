@@ -1,9 +1,8 @@
 'use client';
 
-import { useEffect, Suspense } from 'react';
+import { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { client as supabase } from '@/lib/client';
-import { css } from '@design-system/ui-lib/css';
 import { useSuspenseQuery } from '@tanstack/react-query';
 
 export function AdminGuard({ children }: { children: React.ReactNode }) {

@@ -5,7 +5,6 @@ export default defineConfig({
     index: './src/index.ts',
     preset: './src/preset.ts',
     'blog-preset': './src/blog-preset.ts',
-    Button: './src/button.tsx',
   },
   format: ['esm'],
   dts: true,
