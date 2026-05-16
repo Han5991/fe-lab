@@ -31,27 +31,27 @@ catalogs:
       version: 5.8.3
 
 overrides:
-  '@babel/plugin-transform-modules-systemjs': ^7.29.4
+  '@babel/plugin-transform-modules-systemjs': 7.29.4
   '@babel/runtime': 7.29.2
   '@tootallnate/once': 3.0.1
-  brace-expansion@1: ^1.1.13
-  diff@4: ^4.0.4
-  dompurify: ^3.4.0
-  fast-uri: ^3.1.2
+  brace-expansion@1: 1.1.13
+  diff@4: 4.0.4
+  dompurify: 3.4.3
+  fast-uri: 3.1.2
   flatted: 3.4.2
   form-data@2: 2.5.5
-  form-data@4: ^4.0.4
-  glob@10: ^10.5.0
-  js-yaml@3: ^3.14.2
+  form-data@4: 4.0.5
+  glob@10: 10.5.0
+  js-yaml@3: 3.14.2
   mdast-util-to-hast: 13.2.1
-  minimatch@3: ^3.1.4
-  picomatch@2: ^2.3.2
+  minimatch@3: 3.1.5
+  picomatch@2: 2.3.2
   picomatch@4: 4.0.4
-  postcss: ^8.5.10
+  postcss: 8.5.14
   qs@6: 6.15.1
-  rollup@4: ^4.59.0
+  rollup@4: 4.60.4
   tough-cookie@2: 4.1.4
-  uuid@11: ^11.1.1
+  uuid@11: 11.1.1
 
 importers:
 
@@ -86,11 +86,11 @@ importers:
         specifier: ^3.1.0
         version: 3.1.1(@types/react@19.2.0)(react@19.3.0-canary-a757cb76-20251002)
       '@next/mdx':
-        specifier: ^16.1.1
-        version: 16.2.3(@mdx-js/loader@3.1.1(acorn@8.16.0))(@mdx-js/react@3.1.1(@types/react@19.2.0)(react@19.3.0-canary-a757cb76-20251002))
+        specifier: ^16.2.6
+        version: 16.2.6(@mdx-js/loader@3.1.1(acorn@8.16.0))(@mdx-js/react@3.1.1(@types/react@19.2.0)(react@19.3.0-canary-a757cb76-20251002))
       '@next/third-parties':
-        specifier: ^16.1.0
-        version: 16.2.3(next@16.2.6(@babel/core@7.28.4)(react-dom@19.3.0-canary-a757cb76-20251002(react@19.3.0-canary-a757cb76-20251002))(react@19.3.0-canary-a757cb76-20251002))(react@19.3.0-canary-a757cb76-20251002)
+        specifier: ^16.2.6
+        version: 16.2.6(next@16.2.6(@babel/core@7.28.4)(react-dom@19.3.0-canary-a757cb76-20251002(react@19.3.0-canary-a757cb76-20251002))(react@19.3.0-canary-a757cb76-20251002))(react@19.3.0-canary-a757cb76-20251002)
       '@ssgoi/react':
         specifier: ^4.0.0
         version: 4.2.1
@@ -217,8 +217,8 @@ importers:
         specifier: ^3
         version: 3.3.5
       '@next/eslint-plugin-next':
-        specifier: ^15.2.0
-        version: 15.5.15
+        specifier: ^16.2.6
+        version: 16.2.6
       '@pandacss/dev':
         specifier: 'catalog:'
         version: 1.7.1(jsdom@27.4.0)(typescript@5.8.3)
@@ -1307,7 +1307,7 @@ packages:
     resolution: {integrity: sha512-nWBE08nhO8uWl6kSAeCx4im7QfVko3zLrtgWZY4/bP87zrSPpSyN/3W3TDqz1jJuH+kbKOHXg5rJnK+ZVYcFFg==}
     engines: {node: '>=18'}
     peerDependencies:
-      postcss: ^8.5.10
+      postcss: 8.5.14
 
   '@csstools/selector-specificity@5.0.0':
     resolution: {integrity: sha512-PCqQV3c4CoVm3kdPhyeZ07VmBRdH2EpMFA/pd9OASpOEC3aXNGoqPDAZ80D0cLpMBxnmk0+yNhGsEx31hq7Gtw==}
@@ -2018,14 +2018,11 @@ packages:
   '@next/env@16.2.6':
     resolution: {integrity: sha512-gd8HoHN4ufj73WmR3JmVolrpJR47ILK6LouP5xElPglaVxir6e1a7VzvTvDWkOoPXT9rkkTzyCxBu4yeZfZwcw==}
 
-  '@next/eslint-plugin-next@15.5.15':
-    resolution: {integrity: sha512-ExQoBfyKMjAUQ2nuF39ryQsG26H374ZfH13dlOZqf6TaE9ycRbIm+qUbUFCliU4BtQhiqtS7cnGA1yWfPMQ+jA==}
-
   '@next/eslint-plugin-next@16.2.6':
     resolution: {integrity: sha512-Z8l6o4JWKUl755x4R+wogD86KPeU+Ckw4K+SYG4kHeOJtRenDeK+OSbGcqZpDtbwn9DsJVdir2UxmwXuinUbUw==}
 
-  '@next/mdx@16.2.3':
-    resolution: {integrity: sha512-mm7XNfPagSIcN8jFtozB9toeh5ESES0KCLRoo0gu6xydijvnIrV7dRIK3akNL3Tecc8AHX1FNzYZOZTeFU6RCw==}
+  '@next/mdx@16.2.6':
+    resolution: {integrity: sha512-0hdoSkzRbyud1dNRRDiyqD9FrxR2wwdiW+ffhYx+n+fXrFOJ7Nwpi8o7nUz2LiiM44BB9M0eIO1Evy3BBrS50A==}
     peerDependencies:
       '@mdx-js/loader': '>=0.15.0'
       '@mdx-js/react': '>=0.15.0'
@@ -2083,8 +2080,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@next/third-parties@16.2.3':
-    resolution: {integrity: sha512-SLXsH3CYR0JRbBg5+WFoyjTiQh4cbxfszcafgFdAck+AU4g6em/jX9hZfyfvCgsjIkk0OGkTetrHqKDSNhxxuA==}
+  '@next/third-parties@16.2.6':
+    resolution: {integrity: sha512-PDPIPVj1NX6Taxsl8OJteAUJ7iwR+QrokwWig68eh0cOmuNjC6MBL+ZzBjO8Bv0n/HOSqjGArZpM5KMSUxm+MQ==}
     peerDependencies:
       next: ^13.0.0 || ^14.0.0 || ^15.0.0 || ^16.0.0-beta.0
       react: ^18.2.0 || 19.0.0-rc-de68d2f4-20241204 || ^19.0.0
@@ -3281,7 +3278,7 @@ packages:
     resolution: {integrity: sha512-ZIP71eQgG9JwjVZsTPSqhc6GHgEr53uJ7tK5///VfyWj6Xp2DBmixWHqJgPno+PqATzn48pL42ww9x5SSGmhZg==}
     engines: {node: ^18.12.0 || ^20.9.0 || >=22.0}
     peerDependencies:
-      postcss: ^8.5.10
+      postcss: 8.5.14
 
   cssom@0.3.8:
     resolution: {integrity: sha512-b0tGHbfegbhPJpxpiBPU2sCkigAqtM9O121le6bbOlgyV+NyGyCmVfJ6QW9eRjz8CpNfWEOYBIMIGRYkLwsIYg==}
@@ -5481,20 +5478,20 @@ packages:
     resolution: {integrity: sha512-eTonaQvPZ/3i1ASDHOKkYwAybiM45zFIc7KXils4mQmHLqIswXD9XNOKEVxtTFnsmwYzF66u4LMgSr0abDlh5w==}
     engines: {node: ^18.12.0 || ^20.9.0 || >=22.0}
     peerDependencies:
-      postcss: ^8.5.10
+      postcss: 8.5.14
 
   postcss-discard-empty@7.0.1:
     resolution: {integrity: sha512-cFrJKZvcg/uxB6Ijr4l6qmn3pXQBna9zyrPC+sK0zjbkDUZew+6xDltSF7OeB7rAtzaaMVYSdbod+sZOCWnMOg==}
     engines: {node: ^18.12.0 || ^20.9.0 || >=22.0}
     peerDependencies:
-      postcss: ^8.5.10
+      postcss: 8.5.14
 
   postcss-load-config@6.0.1:
     resolution: {integrity: sha512-oPtTM4oerL+UXmx+93ytZVN82RrlY/wPUV8IeDxFrzIjXOLF1pN+EmKPLbubvKHT2HC20xXsCAH2Z+CKV6Oz/g==}
     engines: {node: '>= 18'}
     peerDependencies:
       jiti: '>=1.21.0'
-      postcss: ^8.5.10
+      postcss: 8.5.14
       tsx: ^4.8.1
       yaml: ^2.4.2
     peerDependenciesMeta:
@@ -5511,25 +5508,25 @@ packages:
     resolution: {integrity: sha512-njWJrd/Ms6XViwowaaCc+/vqhPG3SmXn725AGrnl+BgTuRPEacjiLEaGq16J6XirMJbtKkTwnt67SS+e2WGoew==}
     engines: {node: ^18.12.0 || ^20.9.0 || >=22.0}
     peerDependencies:
-      postcss: ^8.5.10
+      postcss: 8.5.14
 
   postcss-minify-selectors@7.0.5:
     resolution: {integrity: sha512-x2/IvofHcdIrAm9Q+p06ZD1h6FPcQ32WtCRVodJLDR+WMn8EVHI1kvLxZuGKz/9EY5nAmI6lIQIrpo4tBy5+ug==}
     engines: {node: ^18.12.0 || ^20.9.0 || >=22.0}
     peerDependencies:
-      postcss: ^8.5.10
+      postcss: 8.5.14
 
   postcss-nested@7.0.2:
     resolution: {integrity: sha512-5osppouFc0VR9/VYzYxO03VaDa3e8F23Kfd6/9qcZTUI8P58GIYlArOET2Wq0ywSl2o2PjELhYOFI4W7l5QHKw==}
     engines: {node: '>=18.0'}
     peerDependencies:
-      postcss: ^8.5.10
+      postcss: 8.5.14
 
   postcss-normalize-whitespace@7.0.1:
     resolution: {integrity: sha512-vsbgFHMFQrJBJKrUFJNZ2pgBeBkC2IvvoHjz1to0/0Xk7sII24T0qFOiJzG6Fu3zJoq/0yI4rKWi7WhApW+EFA==}
     engines: {node: ^18.12.0 || ^20.9.0 || >=22.0}
     peerDependencies:
-      postcss: ^8.5.10
+      postcss: 8.5.14
 
   postcss-selector-parser@7.1.1:
     resolution: {integrity: sha512-orRsuYpJVw8LdAwqqLykBj9ecS5/cRHlI5+nvTo8LcCKmzDmqVORXtOIYEEQuL9D4BxtA1lm5isAqzQZCoQ6Eg==}
@@ -6315,7 +6312,7 @@ packages:
     peerDependencies:
       '@microsoft/api-extractor': ^7.36.0
       '@swc/core': ^1
-      postcss: ^8.5.10
+      postcss: 8.5.14
       typescript: '>=4.5.0'
     peerDependenciesMeta:
       '@microsoft/api-extractor':
@@ -8481,15 +8478,11 @@ snapshots:
 
   '@next/env@16.2.6': {}
 
-  '@next/eslint-plugin-next@15.5.15':
-    dependencies:
-      fast-glob: 3.3.1
-
   '@next/eslint-plugin-next@16.2.6':
     dependencies:
       fast-glob: 3.3.1
 
-  '@next/mdx@16.2.3(@mdx-js/loader@3.1.1(acorn@8.16.0))(@mdx-js/react@3.1.1(@types/react@19.2.0)(react@19.3.0-canary-a757cb76-20251002))':
+  '@next/mdx@16.2.6(@mdx-js/loader@3.1.1(acorn@8.16.0))(@mdx-js/react@3.1.1(@types/react@19.2.0)(react@19.3.0-canary-a757cb76-20251002))':
     dependencies:
       source-map: 0.7.4
     optionalDependencies:
@@ -8520,7 +8513,7 @@ snapshots:
   '@next/swc-win32-x64-msvc@16.2.6':
     optional: true
 
-  '@next/third-parties@16.2.3(next@16.2.6(@babel/core@7.28.4)(react-dom@19.3.0-canary-a757cb76-20251002(react@19.3.0-canary-a757cb76-20251002))(react@19.3.0-canary-a757cb76-20251002))(react@19.3.0-canary-a757cb76-20251002)':
+  '@next/third-parties@16.2.6(next@16.2.6(@babel/core@7.28.4)(react-dom@19.3.0-canary-a757cb76-20251002(react@19.3.0-canary-a757cb76-20251002))(react@19.3.0-canary-a757cb76-20251002))(react@19.3.0-canary-a757cb76-20251002)':
     dependencies:
       next: 16.2.6(@babel/core@7.28.4)(react-dom@19.3.0-canary-a757cb76-20251002(react@19.3.0-canary-a757cb76-20251002))(react@19.3.0-canary-a757cb76-20251002)
       react: 19.3.0-canary-a757cb76-20251002
