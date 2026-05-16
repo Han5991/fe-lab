@@ -28,7 +28,7 @@
     "@tanstack/react-query": "^5.81.2",
     "gray-matter": "^4.0.3",
     "lucide-react": "^0.563.0",
-    "mermaid": "^11.12.2",
+    "mermaid": "^11.15.0",
     "mime-types": "^3.0.2",
     "motion": "^12.29.2",
     "next": "catalog:",
@@ -55,7 +55,7 @@
     "@types/react-syntax-highlighter": "^15.5.13",
     "concurrently": "^9.2.0",
     "eslint": "^9",
-    "eslint-config-next": "16.2.3",
+    "eslint-config-next": "16.2.6",
     "supabase": "^2.70.5",
     "tsx": "^4.21.0",
     "typescript": "catalog:typescript5"
