@@ -13,7 +13,6 @@
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "scripts": {
-    "prepare": "pnpm build",
     "build": "minibundler && pnpm build:types",
     "build:types": "tsc --emitDeclarationOnly"
   },
