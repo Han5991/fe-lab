@@ -4,12 +4,9 @@ import { fileURLToPath } from 'node:url';
 import { SITE_URL, SITE_NAME, SITE_DESCRIPTION } from './lib/constants';
 import { getAllPosts } from './domain/post/service';
 import { encodePostSlug } from './domain/post/utils';
+import type { PostSummary } from './domain/post/types';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const PUBLIC_DIR = path.join(__dirname, 'public');
-
-function escapeXml(str: string): string {
+export function escapeXml(str: string): string {
   return str
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -18,31 +15,63 @@ function escapeXml(str: string): string {
     .replace(/'/g, '&apos;');
 }
 
-const posts = getAllPosts();
+export type RssPost = Pick<PostSummary, 'slug' | 'title' | 'date' | 'excerpt'>;
 
-const rssItems = posts
-  .map(
-    post => `    <item>
+export interface RssBuildOptions {
+  siteUrl?: string;
+  siteName?: string;
+  siteDescription?: string;
+  /** lastBuildDate / pubDate fallback 시 사용 — 테스트에서 결정성 확보용 */
+  now?: Date;
+}
+
+/**
+ * RSS XML을 생성합니다.
+ * 옵션을 주입받아 결정성을 확보합니다 (테스트에서 재현 가능하도록).
+ */
+export function buildRssXml(
+  posts: RssPost[],
+  options: RssBuildOptions = {},
+): string {
+  const {
+    siteUrl = SITE_URL,
+    siteName = SITE_NAME,
+    siteDescription = SITE_DESCRIPTION,
+    now = new Date(),
+  } = options;
+
+  const rssItems = posts
+    .map(
+      post => `    <item>
       <title>${escapeXml(post.title)}</title>
-      <link>${SITE_URL}/posts/${encodePostSlug(post.slug)}/</link>
-      <guid isPermaLink="true">${SITE_URL}/posts/${encodePostSlug(post.slug)}/</guid>
-      <pubDate>${post.date ? new Date(post.date).toUTCString() : new Date().toUTCString()}</pubDate>${post.excerpt ? `\n      <description>${escapeXml(post.excerpt)}</description>` : ''}
+      <link>${siteUrl}/posts/${encodePostSlug(post.slug)}/</link>
+      <guid isPermaLink="true">${siteUrl}/posts/${encodePostSlug(post.slug)}/</guid>
+      <pubDate>${post.date ? new Date(post.date).toUTCString() : now.toUTCString()}</pubDate>${post.excerpt ? `\n      <description>${escapeXml(post.excerpt)}</description>` : ''}
     </item>`,
-  )
-  .join('\n');
+    )
+    .join('\n');
 
-const rss = `<?xml version="1.0" encoding="UTF-8"?>
+  return `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>${SITE_NAME} | ${SITE_DESCRIPTION.split('。')[0]}</title>
-    <link>${SITE_URL}</link>
-    <description>${SITE_DESCRIPTION}</description>
+    <title>${siteName} | ${siteDescription.split('。')[0]}</title>
+    <link>${siteUrl}</link>
+    <description>${siteDescription}</description>
     <language>ko</language>
-    <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
-    <atom:link href="${SITE_URL}/rss.xml" rel="self" type="application/rss+xml"/>
+    <lastBuildDate>${now.toUTCString()}</lastBuildDate>
+    <atom:link href="${siteUrl}/rss.xml" rel="self" type="application/rss+xml"/>
 ${rssItems}
   </channel>
 </rss>`;
+}
 
-fs.writeFileSync(path.join(PUBLIC_DIR, 'rss.xml'), rss);
-console.log('RSS feed generated successfully!');
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const PUBLIC_DIR = path.join(__dirname, 'public');
+
+if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
+  const posts = getAllPosts();
+  const rss = buildRssXml(posts);
+  fs.writeFileSync(path.join(PUBLIC_DIR, 'rss.xml'), rss);
+  console.log('RSS feed generated successfully!');
+}

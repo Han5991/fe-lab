@@ -1,10 +1,10 @@
 name: CI
 
 on:
+  # 모든 브랜치 push에서 CI 실행 (lefthook이 로컬에서 잡지 못한 경우의 안전망).
+  # PR과 main push가 동시 트리거되어 중복 실행될 수 있으나 아래 concurrency 그룹에서 정리됩니다.
   pull_request:
-    branches: [main]
   push:
-    branches: [main]
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -51,6 +51,9 @@ jobs:
 
       - name: Test
         run: pnpm test
+
+      - name: Lint blog posts (frontmatter)
+        run: pnpm --filter @blog/web lint:posts
 
       - name: Format check
         run: pnpm format:check
