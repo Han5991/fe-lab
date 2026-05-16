@@ -8,35 +8,21 @@
   "exports": {
     ".": "./src/index.ts",
     "./preset": "./src/preset.ts",
-    "./blog-preset": "./src/blog-preset.ts",
-    "./Toast": "./src/toast/index.ts"
+    "./blog-preset": "./src/blog-preset.ts"
   },
   "publishConfig": {
     "exports": {
       ".": {
         "types": "./dist/index.d.ts",
-        "import": "./dist/index.js",
-        "require": "./dist/index.cjs"
+        "import": "./dist/index.js"
       },
       "./preset": {
         "types": "./dist/preset.d.ts",
-        "import": "./dist/preset.js",
-        "require": "./dist/preset.cjs"
+        "import": "./dist/preset.js"
       },
       "./blog-preset": {
         "types": "./dist/blog-preset.d.ts",
-        "import": "./dist/blog-preset.js",
-        "require": "./dist/blog-preset.cjs"
-      },
-      "./Button": {
-        "types": "./dist/Button.d.ts",
-        "import": "./dist/Button.js",
-        "require": "./dist/Button.cjs"
-      },
-      "./Toast": {
-        "types": "./dist/toast/index.d.ts",
-        "import": "./dist/toast/index.js",
-        "require": "./dist/toast/index.cjs"
+        "import": "./dist/blog-preset.js"
       }
     }
   },
