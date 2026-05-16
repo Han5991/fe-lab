@@ -78,8 +78,18 @@ function collectPosts(
       : undefined;
     const series: string | undefined = currentPath || undefined;
     const status = determineStatus(data);
-    const dateString = data.date instanceof Date ? data.date.toISOString().split('T')[0] : (typeof data.date === 'string' ? data.date : null);
-    const updatedAtString = data.updatedAt instanceof Date ? data.updatedAt.toISOString().split('T')[0] : (typeof data.updatedAt === 'string' ? data.updatedAt : null);
+    const dateString =
+      data.date instanceof Date
+        ? data.date.toISOString().split('T')[0]
+        : typeof data.date === 'string'
+          ? data.date
+          : null;
+    const updatedAtString =
+      data.updatedAt instanceof Date
+        ? data.updatedAt.toISOString().split('T')[0]
+        : typeof data.updatedAt === 'string'
+          ? data.updatedAt
+          : null;
 
     results.push({
       slug: data.slug || rawSlug,

@@ -27,6 +27,9 @@ out/
 build
 dist
 
+# TypeScript incremental build artifacts
+*.tsbuildinfo
+
 
 # Debug
 npm-debug.log*
@@ -49,3 +52,6 @@ yarn-error.log*
 
 gha-creds-*.json
 \n# Gemini Skills\n*.skill
+
+# Claude Code runtime state
+.claude/scheduled_tasks.lock

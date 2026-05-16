@@ -24,7 +24,13 @@
       "persistent": true
     },
     "test": {
-      "dependsOn": ["^test"]
+      "dependsOn": ["^build", "^test"]
+    },
+    "format": {
+      "cache": false
+    },
+    "format:check": {
+      "cache": false
     }
   }
 }

@@ -241,7 +241,10 @@ function PostDetailContent() {
             {derived.weekGrowthRate !== null && derived.weekGrowthRate >= 0 ? (
               <TrendingUp size={18} className={css({ color: 'moss.600' })} />
             ) : (
-              <TrendingDown size={18} className={css({ color: 'marker.600' })} />
+              <TrendingDown
+                size={18}
+                className={css({ color: 'marker.600' })}
+              />
             )}
             <span
               className={css({

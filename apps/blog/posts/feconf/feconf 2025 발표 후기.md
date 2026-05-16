@@ -4,6 +4,7 @@ date: '2025-09-02'
 published: true
 slug: 'feconf-2025-lightning-speaker'
 ---
+
 ## 시작
 
 마이크를 잡는 순간 정말 내가 말해도 되는건가? 나 해도되는건가?

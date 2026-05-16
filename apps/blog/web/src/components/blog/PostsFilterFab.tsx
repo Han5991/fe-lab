@@ -13,7 +13,10 @@ interface PostsFilterFabProps {
  * 모바일에서 /posts 우하단에 떠있는 필터 FAB.
  * `display: { base: 'flex', md: 'none' }`로 데스크톱에서는 숨깁니다.
  */
-export const PostsFilterFab = ({ onClick, activeCount }: PostsFilterFabProps) => (
+export const PostsFilterFab = ({
+  onClick,
+  activeCount,
+}: PostsFilterFabProps) => (
   <motion.button
     type="button"
     onClick={onClick}

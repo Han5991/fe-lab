@@ -1,11 +1,7 @@
 import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { vi } from 'vitest';
-import {
-  useDashboardStats,
-  useChartData,
-  useActivities,
-} from './useDashboard';
+import { useDashboardStats, useChartData, useActivities } from './useDashboard';
 import * as dashboardApi from '@/api/dashboard';
 
 const createWrapper = () => {

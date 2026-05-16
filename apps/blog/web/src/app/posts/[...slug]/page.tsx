@@ -95,7 +95,9 @@ export default async function PostPage({ params }: Props) {
     : null;
 
   // 시리즈 내 위치 계산 (헤더 라벨용)
-  let seriesIndex: { current: number; total: number; displayName: string } | undefined;
+  let seriesIndex:
+    | { current: number; total: number; displayName: string }
+    | undefined;
   if (post.series) {
     const meta = getSeriesMeta(post.series);
     const seriesPosts = getAllPosts().filter(p => p.series === post.series);
@@ -172,7 +174,11 @@ export default async function PostPage({ params }: Props) {
     isPartOf: { '@id': `${SITE_URL}/#website` },
     speakable: {
       '@type': 'SpeakableSpecification',
-      cssSelector: ['h1', 'h2:first-of-type', 'article > p.tldr, article > p:first-of-type'],
+      cssSelector: [
+        'h1',
+        'h2:first-of-type',
+        'article > p.tldr, article > p:first-of-type',
+      ],
     },
   };
 

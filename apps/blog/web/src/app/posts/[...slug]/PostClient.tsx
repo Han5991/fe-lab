@@ -1,6 +1,6 @@
 'use client';
 
-import { Children } from 'react';
+import { Children, isValidElement } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
@@ -21,11 +21,7 @@ import { Callout } from '@/src/components/post/markdown/Callout';
 import { Figure } from '@/src/components/post/markdown/Figure';
 import { FileTree } from '@/src/components/post/markdown/FileTree';
 
-import {
-  TOC,
-  ReadingProgress,
-  PostHeader,
-} from '@/src/components/blog';
+import { TOC, ReadingProgress, PostHeader } from '@/src/components/blog';
 
 interface PostClientProps {
   post: PostData;
@@ -256,75 +252,72 @@ export default function PostClient({
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 rehypePlugins={[rehypeRaw, rehypeSlug]}
-                components={{
-                  p({ children, ...props }) {
-                    const hasBlockChild = Array.isArray(children)
-                      ? children.some(
-                          (child: any) =>
-                            typeof child === 'object' &&
-                            child?.type &&
-                            typeof child.type !== 'string',
-                        )
-                      : typeof children === 'object' &&
-                        (children as any)?.type &&
-                        typeof (children as any).type !== 'string';
-                    if (hasBlockChild) {
-                      return <div {...props}>{children}</div>;
-                    }
-                    return <p {...props}>{children}</p>;
-                  },
-                  code(props) {
-                    return <CodeBlock {...props} />;
-                  },
-                  img({ src, alt }: any) {
-                    return (
-                      <MarkdownImage
-                        src={src}
-                        alt={alt}
-                        relativeDir={post.relativeDir}
-                      />
-                    );
-                  },
-                  table({ children, ...props }) {
-                    return (
-                      <table
-                        {...props}
-                        className={css({
-                          w: 'full',
-                          borderCollapse: 'separate',
-                          borderSpacing: '0',
-                        })}
-                      >
-                        {children}
-                      </table>
-                    );
-                  },
-                  li({ className, children, ...props }) {
-                    const isTaskList = className?.includes('task-list-item');
-                    if (isTaskList) {
-                      const childrenArray = Children.toArray(children);
-                      const checkbox = childrenArray[0];
-                      const content = childrenArray.slice(1);
+                components={
+                  {
+                    p({ children, ...props }) {
+                      const isBlockElement = (node: unknown) =>
+                        isValidElement(node) && typeof node.type !== 'string';
+                      const hasBlockChild = Array.isArray(children)
+                        ? children.some(isBlockElement)
+                        : isBlockElement(children);
+                      if (hasBlockChild) {
+                        return <div {...props}>{children}</div>;
+                      }
+                      return <p {...props}>{children}</p>;
+                    },
+                    code(props) {
+                      return <CodeBlock {...props} />;
+                    },
+                    img({ src, alt }) {
+                      return (
+                        <MarkdownImage
+                          src={typeof src === 'string' ? src : undefined}
+                          alt={alt}
+                          relativeDir={post.relativeDir}
+                        />
+                      );
+                    },
+                    table({ children, ...props }) {
+                      return (
+                        <table
+                          {...props}
+                          className={css({
+                            w: 'full',
+                            borderCollapse: 'separate',
+                            borderSpacing: '0',
+                          })}
+                        >
+                          {children}
+                        </table>
+                      );
+                    },
+                    li({ className, children, ...props }) {
+                      const isTaskList = className?.includes('task-list-item');
+                      if (isTaskList) {
+                        const childrenArray = Children.toArray(children);
+                        const checkbox = childrenArray[0];
+                        const content = childrenArray.slice(1);
 
+                        return (
+                          <li className={className} {...props}>
+                            {checkbox}
+                            <div className={css({ flex: '1', minW: '0' })}>
+                              {content}
+                            </div>
+                          </li>
+                        );
+                      }
                       return (
                         <li className={className} {...props}>
-                          {checkbox}
-                          <div className={css({ flex: '1', minW: '0' })}>
-                            {content}
-                          </div>
+                          {children}
                         </li>
                       );
-                    }
-                    return (
-                      <li className={className} {...props}>
-                        {children}
-                      </li>
-                    );
-                  },
-                  callout: Callout,
-                  'file-tree': FileTree,
-                  figure: Figure,
-                } as React.ComponentProps<typeof ReactMarkdown>['components']}
+                    },
+                    callout: Callout,
+                    'file-tree': FileTree,
+                    figure: Figure,
+                  } as React.ComponentProps<typeof ReactMarkdown>['components']
+                }
               >
                 {post.content}
               </ReactMarkdown>

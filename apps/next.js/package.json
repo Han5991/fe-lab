@@ -6,9 +6,13 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint .",
+    "check-types": "tsc --noEmit",
     "test": "jest",
     "test:watch": "jest --watch"
+  },
+  "engines": {
+    "node": ">=22"
   },
   "dependencies": {
     "next": "catalog:",

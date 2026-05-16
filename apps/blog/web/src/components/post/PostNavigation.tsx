@@ -80,7 +80,12 @@ export const PostNavigation = ({
               </span>
             </Link>
           ) : (
-            <div className={css({ flex: '1', display: { base: 'none', md: 'block' } })} />
+            <div
+              className={css({
+                flex: '1',
+                display: { base: 'none', md: 'block' },
+              })}
+            />
           )}
           {seriesNav.next ? (
             <Link
@@ -112,7 +117,12 @@ export const PostNavigation = ({
               </span>
             </Link>
           ) : (
-            <div className={css({ flex: '1', display: { base: 'none', md: 'block' } })} />
+            <div
+              className={css({
+                flex: '1',
+                display: { base: 'none', md: 'block' },
+              })}
+            />
           )}
         </div>
       </div>
@@ -162,7 +172,9 @@ export const PostNavigation = ({
           </span>
         </Link>
       ) : (
-        <div className={css({ flex: '1', display: { base: 'none', md: 'block' } })} />
+        <div
+          className={css({ flex: '1', display: { base: 'none', md: 'block' } })}
+        />
       )}
 
       {next ? (
@@ -199,7 +211,9 @@ export const PostNavigation = ({
           </span>
         </Link>
       ) : (
-        <div className={css({ flex: '1', display: { base: 'none', md: 'block' } })} />
+        <div
+          className={css({ flex: '1', display: { base: 'none', md: 'block' } })}
+        />
       )}
     </div>
   </div>

@@ -80,7 +80,9 @@ export function PostAccordion({ post }: Props) {
             color: 'marker.600' as const,
             borderColor: 'marker.300' as const,
             label: post.scheduledDate
-              ? new Date(post.scheduledDate).toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul' })
+              ? new Date(post.scheduledDate).toLocaleDateString('ko-KR', {
+                  timeZone: 'Asia/Seoul',
+                })
               : '예약',
           };
 
@@ -210,11 +212,24 @@ export function PostAccordion({ post }: Props) {
               justifyContent: 'flex-end',
             })}
           >
-            <span className={css({ fontWeight: 'bold', color: 'ink.950', fontSize: 'sm', fontVariantNumeric: 'tabular-nums' })}>
+            <span
+              className={css({
+                fontWeight: 'bold',
+                color: 'ink.950',
+                fontSize: 'sm',
+                fontVariantNumeric: 'tabular-nums',
+              })}
+            >
               {post.totalViews.toLocaleString()}
             </span>
             {post.todayViews > 0 && (
-              <span className={css({ color: 'marker.600', fontSize: 'xs', fontWeight: 'medium' })}>
+              <span
+                className={css({
+                  color: 'marker.600',
+                  fontSize: 'xs',
+                  fontWeight: 'medium',
+                })}
+              >
                 +{post.todayViews}
               </span>
             )}
@@ -223,7 +238,11 @@ export function PostAccordion({ post }: Props) {
           <motion.div
             animate={{ rotate: isOpen ? 180 : 0 }}
             transition={{ duration: 0.2 }}
-            className={css({ color: 'ink.500', display: 'flex', alignItems: 'center' })}
+            className={css({
+              color: 'ink.500',
+              display: 'flex',
+              alignItems: 'center',
+            })}
           >
             <ChevronDown size={16} />
           </motion.div>
@@ -269,12 +288,21 @@ export function PostAccordion({ post }: Props) {
                     gap: '2',
                   })}
                 >
-                  {briefStats.weekGrowthRate !== null && briefStats.weekGrowthRate >= 0 ? (
-                    <TrendingUp size={13} className={css({ color: 'moss.600' })} />
+                  {briefStats.weekGrowthRate !== null &&
+                  briefStats.weekGrowthRate >= 0 ? (
+                    <TrendingUp
+                      size={13}
+                      className={css({ color: 'moss.600' })}
+                    />
                   ) : (
-                    <TrendingDown size={13} className={css({ color: 'marker.600' })} />
+                    <TrendingDown
+                      size={13}
+                      className={css({ color: 'marker.600' })}
+                    />
                   )}
-                  <span className={css({ fontSize: 'xs', color: 'ink.500' })}>7일 증감</span>
+                  <span className={css({ fontSize: 'xs', color: 'ink.500' })}>
+                    7일 증감
+                  </span>
                   <span
                     className={css({
                       fontWeight: 'bold',
@@ -306,9 +334,21 @@ export function PostAccordion({ post }: Props) {
                     gap: '2',
                   })}
                 >
-                  <BarChart3 size={13} className={css({ color: 'orange.500' })} />
-                  <span className={css({ fontSize: 'xs', color: 'ink.500' })}>피크</span>
-                  <span className={css({ fontWeight: 'bold', fontSize: 'sm', ml: 'auto', color: 'ink.950' })}>
+                  <BarChart3
+                    size={13}
+                    className={css({ color: 'orange.500' })}
+                  />
+                  <span className={css({ fontSize: 'xs', color: 'ink.500' })}>
+                    피크
+                  </span>
+                  <span
+                    className={css({
+                      fontWeight: 'bold',
+                      fontSize: 'sm',
+                      ml: 'auto',
+                      color: 'ink.950',
+                    })}
+                  >
                     {briefStats.peakDay ? `${briefStats.peakDay.count}회` : '—'}
                   </span>
                   {briefStats.peakDay && (
@@ -330,8 +370,17 @@ export function PostAccordion({ post }: Props) {
                     gap: '2',
                   })}
                 >
-                  <span className={css({ fontSize: 'xs', color: 'ink.500' })}>일평균</span>
-                  <span className={css({ fontWeight: 'bold', fontSize: 'sm', ml: 'auto', color: 'ink.950' })}>
+                  <span className={css({ fontSize: 'xs', color: 'ink.500' })}>
+                    일평균
+                  </span>
+                  <span
+                    className={css({
+                      fontWeight: 'bold',
+                      fontSize: 'sm',
+                      ml: 'auto',
+                      color: 'ink.950',
+                    })}
+                  >
                     {briefStats.dailyAverage}회
                   </span>
                 </div>
@@ -375,22 +424,37 @@ export function PostAccordion({ post }: Props) {
                         tick={{ fill: token('colors.ink.500'), fontSize: 11 }}
                       />
                       <Tooltip
-                        cursor={{ stroke: token('colors.ink.border'), strokeWidth: 1, strokeDasharray: '4 4' }}
+                        cursor={{
+                          stroke: token('colors.ink.border'),
+                          strokeWidth: 1,
+                          strokeDasharray: '4 4',
+                        }}
                         contentStyle={{
                           borderRadius: token('radii.lg'),
                           border: `1px solid ${token('colors.ink.border')}`,
                           background: token('colors.ink.25'),
                           fontSize: '12px',
                         }}
-                        labelStyle={{ color: token('colors.ink.700'), marginBottom: '2px' }}
+                        labelStyle={{
+                          color: token('colors.ink.700'),
+                          marginBottom: '2px',
+                        }}
                       />
                       <Line
                         type="monotone"
                         dataKey="views"
                         stroke={token('colors.ink.700')}
                         strokeWidth={2}
-                        dot={{ r: 3, fill: token('colors.marker.600'), strokeWidth: 0 }}
-                        activeDot={{ r: 5, fill: token('colors.marker.600'), strokeWidth: 0 }}
+                        dot={{
+                          r: 3,
+                          fill: token('colors.marker.600'),
+                          strokeWidth: 0,
+                        }}
+                        activeDot={{
+                          r: 5,
+                          fill: token('colors.marker.600'),
+                          strokeWidth: 0,
+                        }}
                       />
                     </LineChart>
                   </ResponsiveContainer>

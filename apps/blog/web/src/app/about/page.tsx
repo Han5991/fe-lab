@@ -2,7 +2,11 @@ import Link from 'next/link';
 import { css } from '@design-system/ui-lib/css';
 import { SsgoiTransition } from '@ssgoi/react';
 import type { Metadata } from 'next';
-import { SITE_URL, SITE_AUTHOR_GITHUB, SITE_AUTHOR_LINKEDIN } from '@/lib/constants';
+import {
+  SITE_URL,
+  SITE_AUTHOR_GITHUB,
+  SITE_AUTHOR_LINKEDIN,
+} from '@/lib/constants';
 import { Label } from '@/src/components/blog';
 
 export const metadata: Metadata = {
@@ -63,7 +67,6 @@ export default function AboutPage() {
       />
       <SsgoiTransition id="/about">
         <div className={css({ bg: 'paper.50' })}>
-
           {/* Header */}
           <header
             className={css({
@@ -130,8 +133,9 @@ export default function AboutPage() {
                     maxW: 'heroAside',
                   })}
                 >
-                  번들러 내부 구조, TypeScript 설계 패턴, 오픈소스 기여를 탐구합니다.
-                  직접 실험하고 기록하며 배운 것들을 이 블로그에 남깁니다.
+                  번들러 내부 구조, TypeScript 설계 패턴, 오픈소스 기여를
+                  탐구합니다. 직접 실험하고 기록하며 배운 것들을 이 블로그에
+                  남깁니다.
                 </p>
               </div>
 
@@ -144,7 +148,13 @@ export default function AboutPage() {
                   pt: { md: '8' },
                 })}
               >
-                <div className={css({ display: 'flex', gap: '3', flexWrap: 'wrap' })}>
+                <div
+                  className={css({
+                    display: 'flex',
+                    gap: '3',
+                    flexWrap: 'wrap',
+                  })}
+                >
                   <a
                     href={SITE_AUTHOR_GITHUB}
                     target="_blank"
@@ -278,7 +288,10 @@ export default function AboutPage() {
                   borderColor: 'ink.border',
                 })}
               >
-                <Label tone="marker" className={css({ letterSpacing: 'monoXxl' })}>
+                <Label
+                  tone="marker"
+                  className={css({ letterSpacing: 'monoXxl' })}
+                >
                   § 02
                 </Label>
                 <h2
@@ -298,19 +311,22 @@ export default function AboutPage() {
                   {
                     project: 'gemini-cli',
                     org: 'Google',
-                    description: 'Promise.allSettled 병렬 처리로 성능 74% 개선 (408ms → 107ms).',
+                    description:
+                      'Promise.allSettled 병렬 처리로 성능 74% 개선 (408ms → 107ms).',
                     link: '/posts/ai-opensource-contribution',
                   },
                   {
                     project: 'Mantine',
                     org: 'Community',
-                    description: '27개 PR 병합. 컴포넌트 버그 수정 및 기능 개선.',
+                    description:
+                      '27개 PR 병합. 컴포넌트 버그 수정 및 기능 개선.',
                     link: '/posts/first-open-source-contribution',
                   },
                   {
                     project: 'Node.js',
                     org: 'OpenJS Foundation',
-                    description: 'util.inspect의 numeric separator 포매팅 버그 수정.',
+                    description:
+                      'util.inspect의 numeric separator 포매팅 버그 수정.',
                     link: '/posts/nodejs-contribution',
                   },
                   {
@@ -328,8 +344,13 @@ export default function AboutPage() {
                       py: '5',
                       borderBottomWidth: '[1px]',
                       borderColor: 'ink.border',
-                      transition: '[background 0.15s, box-shadow 0.15s, padding 0.15s]',
-                      _hover: { bg: 'paper.100', boxShadow: 'markerLeft', pl: '4' },
+                      transition:
+                        '[background 0.15s, box-shadow 0.15s, padding 0.15s]',
+                      _hover: {
+                        bg: 'paper.100',
+                        boxShadow: 'markerLeft',
+                        pl: '4',
+                      },
                     })}
                   >
                     <div
@@ -350,7 +371,10 @@ export default function AboutPage() {
                       >
                         {item.project}
                       </span>
-                      <Label tone="meta" className={css({ letterSpacing: 'mono' })}>
+                      <Label
+                        tone="meta"
+                        className={css({ letterSpacing: 'mono' })}
+                      >
                         {item.org}
                       </Label>
                     </div>
@@ -368,7 +392,9 @@ export default function AboutPage() {
               </div>
             </section>
 
-            <div className={css({ display: 'flex', flexDir: 'column', gap: '12' })}>
+            <div
+              className={css({ display: 'flex', flexDir: 'column', gap: '12' })}
+            >
               {/* 발표 */}
               <section>
                 <div
@@ -382,7 +408,10 @@ export default function AboutPage() {
                     borderColor: 'ink.border',
                   })}
                 >
-                  <Label tone="marker" className={css({ letterSpacing: 'monoXxl' })}>
+                  <Label
+                    tone="marker"
+                    className={css({ letterSpacing: 'monoXxl' })}
+                  >
                     § 03
                   </Label>
                   <h2
@@ -401,7 +430,8 @@ export default function AboutPage() {
                   {[
                     {
                       event: 'FEConf 2025',
-                      description: '한국 최대 프론트엔드 컨퍼런스 라이트닝 토크',
+                      description:
+                        '한국 최대 프론트엔드 컨퍼런스 라이트닝 토크',
                       link: '/posts/feconf-2025-lightning-speaker',
                     },
                     {
@@ -421,8 +451,13 @@ export default function AboutPage() {
                         py: '4',
                         borderBottomWidth: '[1px]',
                         borderColor: 'ink.border',
-                        transition: '[background 0.15s, box-shadow 0.15s, padding 0.15s]',
-                        _hover: { bg: 'paper.100', boxShadow: 'markerLeft', pl: '4' },
+                        transition:
+                          '[background 0.15s, box-shadow 0.15s, padding 0.15s]',
+                        _hover: {
+                          bg: 'paper.100',
+                          boxShadow: 'markerLeft',
+                          pl: '4',
+                        },
                       })}
                     >
                       <div>
@@ -438,7 +473,9 @@ export default function AboutPage() {
                         >
                           {item.event}
                         </span>
-                        <span className={css({ fontSize: 'xs', color: 'ink.500' })}>
+                        <span
+                          className={css({ fontSize: 'xs', color: 'ink.500' })}
+                        >
                           {item.description}
                         </span>
                       </div>
@@ -470,7 +507,10 @@ export default function AboutPage() {
                     borderColor: 'ink.border',
                   })}
                 >
-                  <Label tone="marker" className={css({ letterSpacing: 'monoXxl' })}>
+                  <Label
+                    tone="marker"
+                    className={css({ letterSpacing: 'monoXxl' })}
+                  >
                     § 04
                   </Label>
                   <h2
@@ -489,25 +529,29 @@ export default function AboutPage() {
                   {[
                     {
                       title: '번들러 만들기',
-                      description: '모듈 번들러를 밑바닥부터 직접 구현. AST 파싱, 의존성 그래프, 스코프 격리, 소스맵까지.',
+                      description:
+                        '모듈 번들러를 밑바닥부터 직접 구현. AST 파싱, 의존성 그래프, 스코프 격리, 소스맵까지.',
                       href: '/posts?tab=series&series=bundler&q=bundler',
                       count: '5편',
                     },
                     {
                       title: 'TypeScript로 설계하는 프로젝트',
-                      description: '타입을 설계 도구로 활용하는 방법. API, 서비스, 도메인 레이어 전반의 타입 시스템 설계.',
+                      description:
+                        '타입을 설계 도구로 활용하는 방법. API, 서비스, 도메인 레이어 전반의 타입 시스템 설계.',
                       href: '/posts?tab=series&series=typescript&q=typescript',
                       count: '7편',
                     },
                     {
                       title: '오픈소스 기여',
-                      description: 'Mantine, Node.js, Next.js, gemini-cli 기여 경험과 노하우.',
+                      description:
+                        'Mantine, Node.js, Next.js, gemini-cli 기여 경험과 노하우.',
                       href: '/posts?tab=series&series=open-source&q=open-source',
                       count: '4편',
                     },
                     {
                       title: '에러 핸들링',
-                      description: 'JavaScript, React, Next.js 에러 처리 전략과 패턴.',
+                      description:
+                        'JavaScript, React, Next.js 에러 처리 전략과 패턴.',
                       href: '/posts?tab=series&series=에러&q=에러',
                       count: '3편',
                     },
@@ -523,8 +567,13 @@ export default function AboutPage() {
                         py: '4',
                         borderBottomWidth: '[1px]',
                         borderColor: 'ink.border',
-                        transition: '[background 0.15s, box-shadow 0.15s, padding 0.15s]',
-                        _hover: { bg: 'paper.100', boxShadow: 'markerLeft', pl: '4' },
+                        transition:
+                          '[background 0.15s, box-shadow 0.15s, padding 0.15s]',
+                        _hover: {
+                          bg: 'paper.100',
+                          boxShadow: 'markerLeft',
+                          pl: '4',
+                        },
                       })}
                     >
                       <div className={css({ flex: '1', minW: '0' })}>

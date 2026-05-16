@@ -241,17 +241,14 @@ export class Http {
 #### 이 HTTP 클래스의 핵심 특징.
 
 1. **제네릭 타입 파라미터**:
-
    - `T`: 응답 데이터의 타입
    - `D`: 요청 본문의 타입
 
 2. **타입 안전한 메서드 체인**:
-
    - 각 HTTP 메서드는 제네릭 타입을 활용하여 요청과 응답의 타입을 명확히 합니다.
    - 내부적으로 `request` 메서드를 호출하여 코드 중복을 방지합니다.
 
 3. **에러 처리**:
-
    - 응답이 성공적이지 않을 경우 명시적으로 에러를 던집니다.
    - 타입 시스템을 통해 에러 처리 로직을 강제할 수 있습니다.
 
@@ -271,12 +268,10 @@ export type UserRes = User;
 타입 정의의 특징:
 
 1. **도메인 모델 재사용**:
-
    - 공유 도메인 모델(`User`)을 기반으로 API 요청/응답 타입을 정의합니다.
    - `Pick`, `Omit` 등의 유틸리티 타입을 활용하여 필요한 속성만 선택합니다.
 
 2. **명확한 네이밍 컨벤션**:
-
    - `UserReq`: 요청 타입
    - `UserRes`: 응답 타입
 
@@ -340,7 +335,6 @@ export const createUser = async (user: UserReq) => {
 #### 📊 실제 겪게 되는 문제 상황들
 
 1. 😱 환경별 설정 지옥
-
    - ```typescript
      // 개발 환경에서 테스트하다가 실수로 프로덕션 API 호출
      const API_URL = 'https://api.production.com'; // 이거 매번 바꿔야 해?
@@ -350,7 +344,6 @@ export const createUser = async (user: UserReq) => {
      ```
 
 2. 🧪 테스트 작성의 악몽
-
    - ```typescript
      // 함수형: 전역 모킹으로 다른 테스트에 영향
      jest.mock('../httpClient');
@@ -360,7 +353,6 @@ export const createUser = async (user: UserReq) => {
      ```
 
 3. 🔄 API 변경 시 대응
-
    - ```typescript
      // REST → GraphQL 변경 시에도 인터페이스는 동일
      const userServer = new GraphQLUserServerImpl(graphqlClient);
@@ -424,12 +416,10 @@ describe('UserServerImpl', () => {
 테스트의 특징:
 
 1. **MSW를 활용한 API 모킹**:
-
    - 실제 서버 없이도 API 요청을 모킹할 수 있습니다.
    - 타입 안전성이 테스트 코드까지 확장됩니다.
 
 2. **타입 일관성**:
-
    - 테스트 코드에서도 동일한 타입(`UserReq`, `UserRes`)을 사용합니다.
    - 이는 테스트와 실제 코드 간의 일관성을 보장합니다.
 

@@ -143,4 +143,3 @@ export const PopularRail = ({ posts, limit = 5 }: PopularRailProps) => {
     </aside>
   );
 };
-

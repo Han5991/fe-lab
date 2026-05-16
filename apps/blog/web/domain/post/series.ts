@@ -78,7 +78,5 @@ export function sortPostsBySeriesOrder<
       return aRank - bRank;
     });
   }
-  return [...posts].sort((a, b) =>
-    (a.date ?? '').localeCompare(b.date ?? ''),
-  );
+  return [...posts].sort((a, b) => (a.date ?? '').localeCompare(b.date ?? ''));
 }

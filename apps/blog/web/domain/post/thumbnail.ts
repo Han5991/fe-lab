@@ -17,9 +17,7 @@ export function resolveThumbnailUrl(
   if (thumbnail.startsWith('http') || thumbnail.startsWith('/')) {
     return thumbnail;
   }
-  const dir = relativeDir
-    ? `${encodePostSlug(relativeDir)}/`
-    : '';
+  const dir = relativeDir ? `${encodePostSlug(relativeDir)}/` : '';
   return `/posts/${dir}${encodeURIComponent(thumbnail)}`;
 }
 

@@ -134,7 +134,12 @@ export function TopPosts({ posts }: TopPostsProps) {
         })}
       >
         {topPosts.map((post, index) => (
-          <PostCard key={post.slug} post={post} rank={index + 1} index={index} />
+          <PostCard
+            key={post.slug}
+            post={post}
+            rank={index + 1}
+            index={index}
+          />
         ))}
       </div>
     </section>

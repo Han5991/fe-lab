@@ -57,9 +57,7 @@ export const TOC = () => {
             <li key={item.id}>
               <button
                 type="button"
-                onClick={() =>
-                  scrollToId({ id: item.id, headerOffset: 100 })
-                }
+                onClick={() => scrollToId({ id: item.id, headerOffset: 100 })}
                 aria-current={isActive ? 'true' : undefined}
                 className={css({
                   display: 'block',

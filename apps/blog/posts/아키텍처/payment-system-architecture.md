@@ -133,7 +133,9 @@ export const PaymentFactory = {
   },
 
   getAdapter(providerType: PaymentProviderType): IPaymentAdapter {
-    const adapters: Partial<Record<PaymentProviderType, new () => IPaymentAdapter>> = {
+    const adapters: Partial<
+      Record<PaymentProviderType, new () => IPaymentAdapter>
+    > = {
       [PaymentProviderType.TOSS]: TossAdapter,
     };
 
@@ -219,7 +221,10 @@ const KrNormalSchema = z.object({
 // 2. 사업자 (개인/법인)
 const KrBusinessSchema = z.object({
   businessType: z.enum(['INDIVIDUAL', 'CORPORATE']),
-  paymentMethod: z.enum([PaymentProviderType.TOSS, PaymentProviderType.GENERAL]), // 문자열 대신 enum 사용
+  paymentMethod: z.enum([
+    PaymentProviderType.TOSS,
+    PaymentProviderType.GENERAL,
+  ]), // 문자열 대신 enum 사용
   registrationFile: z.instanceof(File), // 사업자등록증 필수
 });
 

@@ -242,13 +242,13 @@ The blog (`apps/blog/web/`) is a **statically generated (SSG) Next.js applicatio
 
 #### 글쓰기 도구 (Authoring DX)
 
-| 도구 | 설명 |
-| :--- | :--- |
-| `pnpm new-post "제목"` | 새 포스트 스캐폴딩. `--series`, `--tags`, `--scheduled`, `--slug`, `--status` 옵션 지원. 한글 제목/파일명 그대로 사용 가능 |
-| `pnpm lint:posts` | frontmatter 검증. 정책: frontmatter delimiter(`---`)가 없는 파일은 메타 노트로 간주하고 조용히 skip |
-| `/preview/[...slug]` 라우트 | dev 환경에서만 동작하는 draft·scheduled 글 미리보기. prod 빌드는 placeholder 1개(`__disabled__`) + 즉시 `notFound`로 차단 |
-| `_series.yml` | 시리즈 폴더에 두면 시리즈 nav가 `order` 기준 chronological 정렬 + 표시명을 폴더명 대신 사용 |
-| `<callout type="warning\|info\|tip\|danger">` | 마크다운 헬퍼 컴포넌트 (raw HTML로 작성). `<figure>` + `<figcaption>`, `<file-tree>`도 지원 |
+| 도구                                          | 설명                                                                                                                       |
+| :-------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm new-post "제목"`                        | 새 포스트 스캐폴딩. `--series`, `--tags`, `--scheduled`, `--slug`, `--status` 옵션 지원. 한글 제목/파일명 그대로 사용 가능 |
+| `pnpm lint:posts`                             | frontmatter 검증. 정책: frontmatter delimiter(`---`)가 없는 파일은 메타 노트로 간주하고 조용히 skip                        |
+| `/preview/[...slug]` 라우트                   | dev 환경에서만 동작하는 draft·scheduled 글 미리보기. prod 빌드는 placeholder 1개(`__disabled__`) + 즉시 `notFound`로 차단  |
+| `_series.yml`                                 | 시리즈 폴더에 두면 시리즈 nav가 `order` 기준 chronological 정렬 + 표시명을 폴더명 대신 사용                                |
+| `<callout type="warning\|info\|tip\|danger">` | 마크다운 헬퍼 컴포넌트 (raw HTML로 작성). `<figure>` + `<figcaption>`, `<file-tree>`도 지원                                |
 
 #### 클라이언트 사이드 기능 (런타임)
 
@@ -277,18 +277,18 @@ The blog (`apps/blog/web/`) is a **statically generated (SSG) Next.js applicatio
 
 #### 주요 설정 파일
 
-| 파일                                | 역할                                         |
-| :---------------------------------- | :------------------------------------------- |
-| `next.config.ts`                    | SSG output, MDX, trailingSlash 설정          |
-| `panda.config.ts`                   | Panda CSS 스타일 설정                        |
-| `.env.production`                   | Supabase URL/Key, Giscus 설정                |
-| `.env.local`                        | 로컬 개발용 환경변수 (GA, Supabase local 등) |
-| `supabase/config.toml`              | 로컬 Supabase 설정 (Auth, DB, Storage 등)    |
-| `.github/workflows/deploy-blog.yml` | CI/CD 배포 워크플로우                        |
-| `apps/blog/posts/{series}/_series.yml` | (선택) 시리즈 표시명·설명·order 메타     |
+| 파일                                     | 역할                                                                |
+| :--------------------------------------- | :------------------------------------------------------------------ |
+| `next.config.ts`                         | SSG output, MDX, trailingSlash 설정                                 |
+| `panda.config.ts`                        | Panda CSS 스타일 설정                                               |
+| `.env.production`                        | Supabase URL/Key, Giscus 설정                                       |
+| `.env.local`                             | 로컬 개발용 환경변수 (GA, Supabase local 등)                        |
+| `supabase/config.toml`                   | 로컬 Supabase 설정 (Auth, DB, Storage 등)                           |
+| `.github/workflows/deploy-blog.yml`      | CI/CD 배포 워크플로우                                               |
+| `apps/blog/posts/{series}/_series.yml`   | (선택) 시리즈 표시명·설명·order 메타                                |
 | `apps/blog/web/scripts/build-content.ts` | predev/prebuild 통합 진입점 (validate/sync/sitemap/rss/search/llms) |
 
 ## Prerequisites
 
-- Node.js >= 20
+- Node.js >= 22 (`apps/blog/web`의 `node --test '<glob>'` 글롭 패턴이 22.5+ 필요)
 - pnpm 10.10.0 (specified in packageManager field)

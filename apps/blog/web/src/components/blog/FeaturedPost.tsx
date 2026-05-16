@@ -107,7 +107,10 @@ export const FeaturedPost = ({ post }: FeaturedPostProps) => {
         <Label tone="meta">
           {readMin}분 읽기
           {post.tags && post.tags.length > 0 ? ' · ' : ''}
-          {post.tags?.slice(0, 3).map(t => `#${t}`).join(' ')}
+          {post.tags
+            ?.slice(0, 3)
+            .map(t => `#${t}`)
+            .join(' ')}
         </Label>
       </div>
     </Link>

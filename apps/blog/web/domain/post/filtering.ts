@@ -76,10 +76,9 @@ export function parseTagParam(tagParam: string | null | undefined): string[] {
  * title/excerpt에 query가 포함된 포스트만 반환합니다.
  * query가 비어있으면 입력을 그대로 반환합니다.
  */
-export function filterPostsByQuery<T extends Pick<PostSummary, 'title' | 'excerpt'>>(
-  posts: T[],
-  query: string,
-): T[] {
+export function filterPostsByQuery<
+  T extends Pick<PostSummary, 'title' | 'excerpt'>,
+>(posts: T[], query: string): T[] {
   const q = query.toLowerCase().trim();
   if (!q) return posts;
   return posts.filter(
@@ -110,9 +109,9 @@ export function filterGroupedEntries<T extends { title: string }>(
  * 시리즈별로 포스트를 그룹핑합니다.
  * 그룹은 첫 번째 글의 date 기준 내림차순으로 정렬됩니다.
  */
-export function groupPostsBySeries<T extends Pick<PostSummary, 'series' | 'date'>>(
-  posts: T[],
-): [string, T[]][] {
+export function groupPostsBySeries<
+  T extends Pick<PostSummary, 'series' | 'date'>,
+>(posts: T[]): [string, T[]][] {
   const groups: Record<string, T[]> = {};
   for (const p of posts) {
     if (!p.series) continue;

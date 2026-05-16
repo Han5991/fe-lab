@@ -9,6 +9,9 @@
     "start": "node dist/index.js",
     "check-types": "tsc --noEmit"
   },
+  "engines": {
+    "node": ">=22"
+  },
   "dependencies": {},
   "devDependencies": {
     "@types/node": "^24.6.0",

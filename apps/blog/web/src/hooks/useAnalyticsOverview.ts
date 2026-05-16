@@ -64,9 +64,15 @@ export function useAnalyticsOverview(range: AnalyticsRange): AnalyticsOverview {
     for (const post of data) {
       for (const t of post.trends) {
         if (dailyTotals.has(t.view_date)) {
-          dailyTotals.set(t.view_date, (dailyTotals.get(t.view_date) ?? 0) + t.view_count);
+          dailyTotals.set(
+            t.view_date,
+            (dailyTotals.get(t.view_date) ?? 0) + t.view_count,
+          );
         } else if (prevTotals.has(t.view_date)) {
-          prevTotals.set(t.view_date, (prevTotals.get(t.view_date) ?? 0) + t.view_count);
+          prevTotals.set(
+            t.view_date,
+            (prevTotals.get(t.view_date) ?? 0) + t.view_count,
+          );
         }
       }
     }
@@ -77,9 +83,11 @@ export function useAnalyticsOverview(range: AnalyticsRange): AnalyticsOverview {
     }));
 
     const total = Array.from(dailyTotals.values()).reduce((s, v) => s + v, 0);
-    const prevTotal = Array.from(prevTotals.values()).reduce((s, v) => s + v, 0);
-    const totalDelta =
-      prevTotal > 0 ? (total - prevTotal) / prevTotal : null;
+    const prevTotal = Array.from(prevTotals.values()).reduce(
+      (s, v) => s + v,
+      0,
+    );
+    const totalDelta = prevTotal > 0 ? (total - prevTotal) / prevTotal : null;
 
     // 고유 방문자 — 분석 API 없으면 추정. UNIQUES_ESTIMATE_RATIO 단일 소스.
     const uniques = Math.round(total * UNIQUES_ESTIMATE_RATIO);
@@ -88,7 +96,8 @@ export function useAnalyticsOverview(range: AnalyticsRange): AnalyticsOverview {
       prevUniques > 0 ? (uniques - prevUniques) / prevUniques : null;
 
     const postsPublished = data.filter(p => p.status === 'published').length;
-    const avgPerPost = postsPublished > 0 ? Math.round(total / postsPublished) : 0;
+    const avgPerPost =
+      postsPublished > 0 ? Math.round(total / postsPublished) : 0;
 
     // 글별 랭킹: 기간 내 합산 + 직전 기간 대비 증감
     const topPosts = [...data]
@@ -106,7 +115,9 @@ export function useAnalyticsOverview(range: AnalyticsRange): AnalyticsOverview {
           }
         }
         const delta =
-          prevRangeViews > 0 ? (rangeViews - prevRangeViews) / prevRangeViews : 0;
+          prevRangeViews > 0
+            ? (rangeViews - prevRangeViews) / prevRangeViews
+            : 0;
         return {
           slug: post.slug,
           title: post.title,

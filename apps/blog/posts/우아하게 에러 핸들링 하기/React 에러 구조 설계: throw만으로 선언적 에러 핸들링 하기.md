@@ -4,6 +4,7 @@ date: '2025-10-14'
 published: true
 slug: 'react-error-deign'
 ---
+
 ## 0. 프롤로그
 
 > `throw`를 보던중 문득 깨달았다.

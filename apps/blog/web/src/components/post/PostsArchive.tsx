@@ -32,7 +32,13 @@ export const PostsArchive = ({ posts }: PostsArchiveProps) => {
             '&::-webkit-details-marker': { display: 'none' },
           })}
         >
-          <div className={css({ display: 'flex', alignItems: 'baseline', gap: '3' })}>
+          <div
+            className={css({
+              display: 'flex',
+              alignItems: 'baseline',
+              gap: '3',
+            })}
+          >
             <span
               className={css({
                 fontSize: 'xs',

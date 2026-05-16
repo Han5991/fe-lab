@@ -40,7 +40,8 @@ export const Hero = () => {
         >
           그냥,
           <br />
-          <span className={css({ fontStyle: 'italic' })}>적어 두는</span> 공부방.
+          <span className={css({ fontStyle: 'italic' })}>적어 두는</span>{' '}
+          공부방.
         </h1>
         <p
           className={css({

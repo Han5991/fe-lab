@@ -107,7 +107,11 @@ export const PostHeader = ({ post, seriesIndex }: PostHeaderProps) => {
               letterSpacing: 'mono',
             })}
           >
-            · {post.tags.slice(0, 4).map(t => `#${t}`).join(' ')}
+            ·{' '}
+            {post.tags
+              .slice(0, 4)
+              .map(t => `#${t}`)
+              .join(' ')}
           </span>
         )}
       </div>

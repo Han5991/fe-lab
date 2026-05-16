@@ -5,7 +5,7 @@
     <link>https://blog.sangwook.dev</link>
     <description>프론트엔드 기술 실험과 깊이 있는 학습 내용을 공유하는 공간입니다.</description>
     <language>ko</language>
-    <lastBuildDate>Sun, 03 May 2026 14:24:25 GMT</lastBuildDate>
+    <lastBuildDate>Sat, 16 May 2026 11:24:09 GMT</lastBuildDate>
     <atom:link href="https://blog.sangwook.dev/rss.xml" rel="self" type="application/rss+xml"/>
     <item>
       <title>[Typescript로 설계하는 프로젝트] id?: string을 버려라. 상태가 다르면 타입도 달라야 한다.</title>

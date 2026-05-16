@@ -49,10 +49,8 @@ export function computeDerivedStats(post: PostStatDetail): DerivedStats {
   // (활동일 수로 나누면 스파이크 1회로 끝난 글의 평균이 비현실적으로 높아집니다.)
   const daySpan =
     sorted.length > 0
-      ? diffDaysISO(
-          sorted[0].view_date,
-          sorted[sorted.length - 1].view_date,
-        ) + 1
+      ? diffDaysISO(sorted[0].view_date, sorted[sorted.length - 1].view_date) +
+        1
       : 0;
   const dailyAverage =
     daySpan > 0 ? Math.round((totalViews / daySpan) * 10) / 10 : 0;

@@ -93,7 +93,8 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
         ) {
           setIsReconnecting(true);
           const delay =
-            reconnectInterval * Math.pow(reconnectBackoffMultiplier, reconnectAttempt);
+            reconnectInterval *
+            Math.pow(reconnectBackoffMultiplier, reconnectAttempt);
           addSystemMessage(
             `연결이 끊어졌습니다. ${Math.round(delay / 1000)}초 후 재연결 시도... (${reconnectAttempt + 1}/${maxReconnectAttempts})`,
           );

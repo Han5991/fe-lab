@@ -8,12 +8,16 @@
     "prebuild": "npx tsx scripts/build-content.ts",
     "build": "pnpm prebuild && next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint .",
     "lint:posts": "npx tsx scripts/validate-posts.ts",
+    "check-types": "tsc --noEmit",
     "test": "node --import tsx --test 'domain/**/*.test.ts' 'lib/**/*.test.ts'",
     "new-post": "npx tsx scripts/new-post.ts",
     "supabase-stop": "supabase stop --all --no-backup --debug",
     "supabase-start": "pnpm supabase-stop && pnpm supabase start"
+  },
+  "engines": {
+    "node": ">=22"
   },
   "dependencies": {
     "@design-system/ui": "workspace:^",
@@ -56,6 +60,7 @@
     "concurrently": "^9.2.0",
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
+    "eslint-plugin-react-hooks": "^7.0.0",
     "supabase": "^2.70.5",
     "tsx": "^4.21.0",
     "typescript": "catalog:typescript5"

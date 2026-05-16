@@ -169,7 +169,11 @@ export default function HomePage() {
                 <FeaturedPost post={featured} />
 
                 <aside
-                  className={css({ display: 'flex', flexDir: 'column', gap: '6' })}
+                  className={css({
+                    display: 'flex',
+                    flexDir: 'column',
+                    gap: '6',
+                  })}
                 >
                   <SearchBox
                     placeholder="이 노트장에서 찾기…"
@@ -226,7 +230,10 @@ export default function HomePage() {
                     borderColor: 'ink.border',
                   })}
                 >
-                  <Label tone="marker" className={css({ letterSpacing: 'monoXxl' })}>
+                  <Label
+                    tone="marker"
+                    className={css({ letterSpacing: 'monoXxl' })}
+                  >
                     § {sectionNo.series}
                   </Label>
                   <h2
@@ -301,7 +308,10 @@ export default function HomePage() {
                     borderColor: 'ink.border',
                   })}
                 >
-                  <Label tone="marker" className={css({ letterSpacing: 'monoXxl' })}>
+                  <Label
+                    tone="marker"
+                    className={css({ letterSpacing: 'monoXxl' })}
+                  >
                     § {sectionNo.recent}
                   </Label>
                   <h2
