@@ -27,18 +27,24 @@ interface SessionInfo {
 }
 
 /**
- * 이벤트 리스너 타입
- * TODO(#85): 이벤트별 페이로드 맵(EventPayloadMap)으로 정밀 타이핑 — 현재는 호출처 내로우잉 유지를 위해 any.
+ * 클라이언트 이벤트별 페이로드 맵
+ *
+ * - `message`: 텍스트 프레임 (UTF-8 디코딩된 string)
+ * - `binary`: 바이너리 프레임 (Buffer)
+ * - `close`: 연결 종료 (페이로드 없음)
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type EventListener = (data?: any) => void;
-
-/**
- * 이벤트 맵
- */
-interface EventListeners {
-  [event: string]: EventListener[];
+interface ClientEventPayloadMap {
+  message: string;
+  binary: Buffer;
+  close: void;
 }
+
+type ClientEvent = keyof ClientEventPayloadMap;
+
+type ClientEventListener<E extends ClientEvent> =
+  ClientEventPayloadMap[E] extends void
+    ? () => void
+    : (data: ClientEventPayloadMap[E]) => void;
 
 /**
  * WebSocket Opcode
@@ -452,7 +458,7 @@ export class WebSocketServer {
  */
 class WebSocketConnection {
   private socket: Duplex;
-  private readonly listeners: EventListeners;
+  private readonly listeners: { [E in ClientEvent]?: ClientEventListener<E>[] };
   private fragmentedMessage: Buffer[];
   private fragmentedOpcode: number | null;
   private readonly sessionInfo: SessionInfo;
@@ -680,16 +686,21 @@ class WebSocketConnection {
   /**
    * 이벤트 시스템
    */
-  on(event: string, callback: EventListener): void {
-    if (!this.listeners[event]) {
-      this.listeners[event] = [];
-    }
-    this.listeners[event].push(callback);
+  on<E extends ClientEvent>(event: E, callback: ClientEventListener<E>): void {
+    const bucket = (this.listeners[event] ??= []) as ClientEventListener<E>[];
+    bucket.push(callback);
   }
 
-  private emit<T = unknown>(event: string, data?: T): void {
-    if (this.listeners[event]) {
-      this.listeners[event].forEach(callback => callback(data));
+  private emit<E extends ClientEvent>(
+    ...args: ClientEventPayloadMap[E] extends void
+      ? [event: E]
+      : [event: E, data: ClientEventPayloadMap[E]]
+  ): void {
+    const [event, data] = args as [E, ClientEventPayloadMap[E] | undefined];
+    const bucket = this.listeners[event];
+    if (!bucket) return;
+    for (const callback of bucket) {
+      (callback as (payload?: ClientEventPayloadMap[E]) => void)(data);
     }
   }
 
