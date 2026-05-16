@@ -27,6 +27,9 @@ out/
 build
 dist
 
+# TypeScript incremental build artifacts
+*.tsbuildinfo
+
 
 # Debug
 npm-debug.log*
