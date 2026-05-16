@@ -1,0 +1,26 @@
+# Lefthook 설정 — Git hook 관리
+# 참고: https://lefthook.dev/configuration/
+#
+# pre-commit: staged 파일에만 빠른 검증 (prettier 자동 포매팅)
+# pre-push: 전체 워크스페이스에 무거운 검증 (lint + type-check + test, turbo 캐시 활용)
+#
+# 우회: 긴급 시 `LEFTHOOK=0 git commit` 또는 `git commit --no-verify`
+
+pre-commit:
+  parallel: true
+  commands:
+    prettier:
+      # 모노레포 하위 파일까지 명시적으로 매치 — 루트만 잡는 오해 방지
+      glob: '**/*.{ts,tsx,js,jsx,json,md,mjs,cjs,yml,yaml}'
+      run: pnpm exec prettier --write {staged_files} --ignore-unknown
+      stage_fixed: true
+
+pre-push:
+  parallel: true
+  commands:
+    lint:
+      run: pnpm lint
+    types:
+      run: pnpm check-types
+    test:
+      run: pnpm test

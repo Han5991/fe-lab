@@ -15,9 +15,11 @@
     "blog-web": "turbo run dev --filter=@blog/web",
     "blog-build": "turbo run build --filter=@blog/web",
     "socket-server": "turbo run dev --filter=socket-server",
-    "socket": "concurrently \"pnpm socket-server\" \"pnpm react\""
+    "socket": "concurrently \"pnpm socket-server\" \"pnpm react\"",
+    "prepare": "lefthook install"
   },
   "devDependencies": {
+    "lefthook": "^2.1.6",
     "prettier": "^3.5.0",
     "turbo": "^2.5.3"
   },
