@@ -10,7 +10,7 @@
     "check-types": "tsc --noEmit"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "dependencies": {},
   "devDependencies": {

@@ -17,7 +17,7 @@
     "supabase-start": "pnpm supabase-stop && pnpm supabase start"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "dependencies": {
     "@design-system/ui": "workspace:^",
