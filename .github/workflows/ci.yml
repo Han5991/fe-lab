@@ -2,12 +2,15 @@ name: CI
 
 on:
   # 모든 브랜치 push에서 CI 실행 (lefthook이 로컬에서 잡지 못한 경우의 안전망).
-  # PR과 main push가 동시 트리거되어 중복 실행될 수 있으나 아래 concurrency 그룹에서 정리됩니다.
+  # PR과 push가 같은 commit에 동시 트리거되어도 아래 concurrency 그룹에서 한 번만 실행됩니다.
   pull_request:
   push:
 
 concurrency:
-  group: ci-${{ github.workflow }}-${{ github.ref }}
+  # github.head_ref는 PR 이벤트에서만 source 브랜치 이름(예: chore/foo)을 갖고,
+  # push 이벤트에서는 빈 값이라 github.ref(refs/heads/chore/foo)로 fallback.
+  # 결과적으로 같은 브랜치의 PR/push가 동일 그룹에 묶여 CI 중복 실행을 방지합니다.
+  group: ci-${{ github.workflow }}-${{ github.head_ref || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
