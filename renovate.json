@@ -3,12 +3,13 @@
   "extends": ["config:recommended", ":dependencyDashboard", ":semanticCommits"],
   "timezone": "Asia/Seoul",
   "schedule": ["before 10am on monday"],
-  "prHourlyLimit": 0,
+  "prHourlyLimit": 2,
   "prConcurrentLimit": 10,
   "rangeStrategy": "bump",
   "lockFileMaintenance": {
     "enabled": true,
-    "schedule": ["before 10am on monday"]
+    "schedule": ["before 10am on monday"],
+    "semanticCommitScope": "deps"
   },
   "packageRules": [
     {
@@ -23,7 +24,8 @@
         "/^eslint-/",
         "/^@eslint\\//"
       ],
-      "groupName": "eslint"
+      "groupName": "eslint",
+      "semanticCommitScope": "deps"
     },
     {
       "matchPackageNames": [
@@ -36,23 +38,28 @@
         "/^jest-/",
         "/^@testing-library\\//"
       ],
-      "groupName": "testing"
+      "groupName": "testing",
+      "semanticCommitScope": "deps"
     },
     {
       "matchPackageNames": ["next", "eslint-config-next", "/^@next\\//"],
-      "groupName": "next"
+      "groupName": "next",
+      "semanticCommitScope": "deps"
     },
     {
       "matchPackageNames": ["react", "react-dom", "react-router"],
-      "groupName": "react"
+      "groupName": "react",
+      "semanticCommitScope": "deps"
     },
     {
       "matchPackageNames": ["/^@tanstack\\//"],
-      "groupName": "tanstack"
+      "groupName": "tanstack",
+      "semanticCommitScope": "deps"
     },
     {
       "matchPackageNames": ["/^@pandacss\\//"],
-      "groupName": "panda"
+      "groupName": "panda",
+      "semanticCommitScope": "deps"
     },
     {
       "matchManagers": ["github-actions"],
@@ -60,13 +67,10 @@
       "semanticCommitScope": "ci"
     },
     {
-      "matchUpdateTypes": ["patch"],
-      "automerge": true
-    },
-    {
       "matchDepTypes": ["devDependencies"],
       "matchUpdateTypes": ["minor", "patch"],
-      "automerge": true
+      "automerge": true,
+      "platformAutomerge": true
     }
   ]
 }
