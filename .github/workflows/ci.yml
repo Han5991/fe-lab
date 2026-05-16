@@ -20,7 +20,7 @@ jobs:
     timeout-minutes: 20
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -29,7 +29,7 @@ jobs:
           run_install: false
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           # .tool-versions(nodejs 24.6.0)를 단일 source of truth로 사용
           # node:test --test 의 glob 패턴은 22.5+ 부터 지원 — engines.node ">=22"의 실 근거
@@ -38,7 +38,7 @@ jobs:
           cache-dependency-path: '**/pnpm-lock.yaml'
 
       - name: Caching for Turborepo
-        uses: rharkor/caching-for-turbo@v2.1.0
+        uses: rharkor/caching-for-turbo@v2.4.2
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
