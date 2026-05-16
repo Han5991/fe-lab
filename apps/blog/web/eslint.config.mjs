@@ -12,7 +12,7 @@ const eslintConfig = [
     plugins: { 'react-hooks': reactHooks },
     rules: {
       // 신규 React Compiler 규칙. 기존 코드 다수 위반 — 점진 정리 위해 warn 강등.
-      // TODO: SearchDialog/tocHooks 등 useEffect setState 제거 리팩터링 후 error 복귀.
+      // TODO(#84): SearchDialog/tocHooks 등 useEffect setState 제거 리팩터링 후 error 복귀.
       'react-hooks/set-state-in-effect': 'warn',
     },
   },

@@ -28,7 +28,7 @@ interface SessionInfo {
 
 /**
  * 이벤트 리스너 타입
- * TODO: 이벤트별 페이로드 맵(EventPayloadMap)으로 정밀 타이핑 — 현재는 호출처 내로우잉 유지를 위해 any.
+ * TODO(#85): 이벤트별 페이로드 맵(EventPayloadMap)으로 정밀 타이핑 — 현재는 호출처 내로우잉 유지를 위해 any.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type EventListener = (data?: any) => void;
