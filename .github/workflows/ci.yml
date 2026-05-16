@@ -31,8 +31,9 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          # node:test --test 의 glob 패턴은 22.5+ 부터 지원 — deploy-blog.yml와 일치
-          node-version: '24.6.0'
+          # .tool-versions(nodejs 24.6.0)를 단일 source of truth로 사용
+          # node:test --test 의 glob 패턴은 22.5+ 부터 지원 — engines.node ">=22"의 실 근거
+          node-version-file: '.tool-versions'
           cache: 'pnpm'
           cache-dependency-path: '**/pnpm-lock.yaml'
 
