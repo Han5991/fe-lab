@@ -47,7 +47,7 @@ jobs:
           cache-dependency-path: '**/pnpm-lock.yaml'
 
       - name: Caching for Turborepo
-        uses: rharkor/caching-for-turbo@v2.1.0
+        uses: rharkor/caching-for-turbo@v2.4.2
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
