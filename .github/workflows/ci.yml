@@ -11,9 +11,9 @@ concurrency:
   # push 이벤트에서는 빈 값이라 github.ref(refs/heads/chore/foo)로 fallback.
   # 결과적으로 같은 브랜치의 PR/push가 동일 그룹에 묶여 CI 중복 실행을 방지합니다.
   group: ci-${{ github.workflow }}-${{ github.head_ref || github.ref }}
-  # feature 브랜치에 짧은 간격으로 여러 push가 쌓이는 경우, 이전 in-progress run을
-  # 취소해 누적을 방지합니다. main push도 동일 적용 — 어차피 최신 commit만 검증되면 충분.
-  cancel-in-progress: true
+  # feature 브랜치/PR은 짧은 간격으로 push가 쌓일 수 있어 이전 run을 취소.
+  # 단, main push는 머지 기록 보호 차원에서 취소하지 않고 모두 완주시킵니다.
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 permissions:
   contents: read

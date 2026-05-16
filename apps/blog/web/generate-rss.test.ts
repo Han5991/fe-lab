@@ -32,8 +32,11 @@ test('escapeXml: &, <, >, ", \' 모두 엔티티로 치환', () => {
   );
 });
 
-test('escapeXml: & 이중 인코딩 방지 (입력 그대로의 & 처리)', () => {
-  // 현재 동작: &amp;가 들어와도 다시 & → &amp; 로 인코딩됨 (동작 잠금)
+test('escapeXml: & 는 entity awareness 없이 항상 &amp; 로 인코딩 (동작 잠금)', () => {
+  // 현재 구현은 raw text만 입력으로 가정 — 이미 escape된 &amp;가 들어오면
+  // &amp;amp; 로 이중 인코딩됨. RSS의 title/excerpt는 frontmatter raw text라
+  // 이 가정이 성립하지만, entity-aware escape로 교체 시 이 테스트가 실패해
+  // 회귀를 감지하도록 잠가둡니다.
   assert.equal(escapeXml('A & B'), 'A &amp; B');
 });
 

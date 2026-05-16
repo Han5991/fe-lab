@@ -65,13 +65,13 @@ ${rssItems}
 </rss>`;
 }
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const PUBLIC_DIR = path.join(__dirname, 'public');
-
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
+  const publicDir = path.join(
+    path.dirname(fileURLToPath(import.meta.url)),
+    'public',
+  );
   const posts = getAllPosts();
   const rss = buildRssXml(posts);
-  fs.writeFileSync(path.join(PUBLIC_DIR, 'rss.xml'), rss);
+  fs.writeFileSync(path.join(publicDir, 'rss.xml'), rss);
   console.log('RSS feed generated successfully!');
 }

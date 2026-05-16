@@ -73,15 +73,15 @@ export function buildSitemapXml(
 </urlset>`;
 }
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const PUBLIC_DIR = path.join(__dirname, 'public');
-
 // 스크립트로 직접 실행될 때만 파일 쓰기. (테스트에서 import 시에는 실행 안 됨)
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
+  const publicDir = path.join(
+    path.dirname(fileURLToPath(import.meta.url)),
+    'public',
+  );
   const posts = getAllPosts();
   const today = new Date().toISOString().split('T')[0];
   const sitemap = buildSitemapXml(posts, today);
-  fs.writeFileSync(path.join(PUBLIC_DIR, 'sitemap.xml'), sitemap);
+  fs.writeFileSync(path.join(publicDir, 'sitemap.xml'), sitemap);
   console.log('Sitemap generated successfully!');
 }

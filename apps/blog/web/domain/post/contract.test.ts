@@ -124,8 +124,11 @@ test('sitemap: draft/미래 scheduled 글은 sitemap에 없음', () => {
     p => !isPostVisible({ status: p.status, scheduledDate: p.scheduledDate }),
   );
   for (const p of hidden) {
+    // 한글/특수문자 slug의 hidden 글이 sitemap에 잘못 포함됐을 때 false pass 방지를 위해
+    // public 검사와 동일한 인코딩 규칙으로 비교합니다 (디렉토리 구분자 / 는 보존).
+    const encodedSlug = encodeURIComponent(p.slug).replace(/%2F/g, '/');
     assert.ok(
-      !xml.includes(`/posts/${p.slug}/`),
+      !xml.includes(`/posts/${encodedSlug}/`),
       `숨김 글이 sitemap에 노출: ${p.slug}`,
     );
   }
