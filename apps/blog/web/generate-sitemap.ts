@@ -6,9 +6,14 @@ import { getAllPosts } from './domain/post/service';
 import { encodePostSlug } from './domain/post/utils';
 import type { PostSummary } from './domain/post/types';
 
-// 시리즈별 고가치 포스트는 우선순위 높게 설정
-const HIGH_PRIORITY_SERIES = new Set(['bundler', 'typescript', 'open-source']);
-const HIGH_PRIORITY_SLUGS = new Set([
+// 시리즈별 고가치 포스트는 우선순위 높게 설정.
+// 테스트에서 self-describing 패턴으로 참조하기 위해 export.
+export const HIGH_PRIORITY_SERIES = new Set([
+  'bundler',
+  'typescript',
+  'open-source',
+]);
+export const HIGH_PRIORITY_SLUGS = new Set([
   'ai-opensource-contribution',
   'nodejs-contribution',
   'nextjs-contributor',

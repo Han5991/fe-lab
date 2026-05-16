@@ -1,6 +1,11 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { buildSitemapXml, getPostPriority } from './generate-sitemap';
+import {
+  buildSitemapXml,
+  getPostPriority,
+  HIGH_PRIORITY_SERIES,
+  HIGH_PRIORITY_SLUGS,
+} from './generate-sitemap';
 import type { SitemapPost } from './generate-sitemap';
 
 // arbitrary fixture date — not today's date. 단위 테스트는 실제 날짜에 의존하지
@@ -81,17 +86,21 @@ test('sitemap: date도 updatedAt도 없으면 lastmod = today', () => {
   assert.equal(block[1], TODAY);
 });
 
-test('getPostPriority: 고우선 slug는 0.8', () => {
-  assert.equal(getPostPriority({ slug: 'nodejs-contribution' }), '0.8');
-  assert.equal(
-    getPostPriority({ slug: 'first-open-source-contribution' }),
-    '0.8',
-  );
+test('getPostPriority: 고우선 slug는 0.8 (HIGH_PRIORITY_SLUGS 전부 0.8)', () => {
+  // 상수에서 직접 참조 — slug 목록이 변경되어도 테스트가 자동으로 맞춰짐.
+  for (const slug of HIGH_PRIORITY_SLUGS) {
+    assert.equal(getPostPriority({ slug }), '0.8', `${slug} priority`);
+  }
 });
 
-test('getPostPriority: 고우선 시리즈는 0.75', () => {
-  assert.equal(getPostPriority({ slug: 'x', series: 'bundler' }), '0.75');
-  assert.equal(getPostPriority({ slug: 'x', series: 'open-source' }), '0.75');
+test('getPostPriority: 고우선 시리즈는 0.75 (HIGH_PRIORITY_SERIES 전부 0.75)', () => {
+  for (const series of HIGH_PRIORITY_SERIES) {
+    assert.equal(
+      getPostPriority({ slug: 'arbitrary', series }),
+      '0.75',
+      `${series} series priority`,
+    );
+  }
 });
 
 test('getPostPriority: 그 외는 0.6', () => {

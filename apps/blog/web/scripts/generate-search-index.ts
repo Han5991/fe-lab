@@ -42,7 +42,13 @@ export interface AdminPostsIndexEntry {
   scheduledDate: string | null;
 }
 
-/** 공개 포스트용 검색 인덱스 (프론트엔드 검색용) */
+/**
+ * 공개 포스트용 검색 인덱스 (프론트엔드 검색용).
+ *
+ * `||`는 의도적: 빈 문자열/undefined 모두 falsy fallback으로 정규화.
+ * 검색 UI에서 빈 entry vs 누락 entry의 차이가 없으므로 일관된 빈 값을 사용.
+ * (llms-full.ts의 excerpt 처리도 같은 의도이며 거기엔 본문 fallback이 한 단계 더 있음.)
+ */
 export function buildPublicSearchIndex(
   posts: PostData[],
 ): PublicSearchIndexEntry[] {

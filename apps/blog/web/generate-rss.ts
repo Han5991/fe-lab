@@ -6,6 +6,11 @@ import { getAllPosts } from './domain/post/service';
 import { encodePostSlug } from './domain/post/utils';
 import type { PostSummary } from './domain/post/types';
 
+/**
+ * @internal RSS 본문에 들어가는 raw text 전용 XML 이스케이프.
+ *           모듈 외부에서는 사용을 권장하지 않으며 (entity awareness 없음 — 이미
+ *           escape된 문자열을 다시 이중 인코딩함), 테스트에서 동작 잠금 목적으로만 export.
+ */
 export function escapeXml(str: string): string {
   return str
     .replace(/&/g, '&amp;')
