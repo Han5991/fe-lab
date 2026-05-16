@@ -27,6 +27,10 @@ test('sitemap: 정적 URL 3개(루트/posts/about)가 포함됨', () => {
 });
 
 test('sitemap: 포스트 entry 개수만큼 <url> 블록 추가', () => {
+  // 정적 URL 개수는 빈 posts 결과로부터 동적으로 산출 — 새 정적 페이지가
+  // 추가될 때 이 테스트가 그 사실만으로 깨지지 않도록.
+  const staticCount = (buildSitemapXml([], TODAY, SITE).match(/<url>/g) || [])
+    .length;
   const posts = [
     makePost({ slug: 'a' }),
     makePost({ slug: 'b' }),
@@ -34,8 +38,7 @@ test('sitemap: 포스트 entry 개수만큼 <url> 블록 추가', () => {
   ];
   const xml = buildSitemapXml(posts, TODAY, SITE);
   const count = (xml.match(/<url>/g) || []).length;
-  // 정적 3 + 포스트 3
-  assert.equal(count, 6);
+  assert.equal(count, staticCount + posts.length);
 });
 
 test('sitemap: slug의 특수문자가 URL 인코딩됨 (디렉토리 구분자는 보존)', () => {

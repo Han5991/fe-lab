@@ -65,6 +65,8 @@ export function buildLlmsFullText(
 
     for (const post of sorted) {
       const url = `${SITE_URL}/posts/${post.slug}/`;
+      // `truthy 체크` 의도적: 빈 문자열 excerpt('')도 content fallback으로 처리해
+      // 빈 entry를 방지. excerpt 필드를 frontmatter에서 명시적으로 생략하면 동일 효과.
       const excerpt = post.excerpt
         ? post.excerpt.slice(0, 200)
         : post.content

@@ -32,8 +32,12 @@ test('contract: 글이 1개 이상 존재 (블로그 동작의 최소 조건)', 
 
 test('contract: 모든 글은 unique slug 보유', () => {
   const posts = getAllPostsIncludingHidden();
-  const slugs = posts.map(p => p.slug);
-  const dup = slugs.filter((s, i) => slugs.indexOf(s) !== i);
+  const seen = new Set<string>();
+  const dup: string[] = [];
+  for (const p of posts) {
+    if (seen.has(p.slug)) dup.push(p.slug);
+    else seen.add(p.slug);
+  }
   assert.deepEqual(dup, [], `중복 slug 발견: ${dup.join(', ')}`);
 });
 

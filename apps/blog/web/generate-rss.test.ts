@@ -58,6 +58,17 @@ test('rss: lastBuildDate가 now.toUTCString()', () => {
   );
 });
 
+test('rss: siteDescription에 。이 있으면 channel title은 첫 문장만 사용', () => {
+  const xml = buildRssXml([], {
+    ...OPTS,
+    siteDescription: '첫 문장。두 번째 문장',
+  });
+  // channel <title>은 split 결과의 첫 토큰만 사용
+  assert.ok(xml.includes('<title>Test Blog | 첫 문장</title>'));
+  // 단, channel <description>은 원본을 그대로 유지
+  assert.ok(xml.includes('<description>첫 문장。두 번째 문장</description>'));
+});
+
 test('rss: atom:link self 참조', () => {
   const xml = buildRssXml([], OPTS);
   assert.ok(
