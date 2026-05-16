@@ -70,7 +70,6 @@ export const SearchDialog = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [posts, setPosts] = useState<SearchPost[]>([]);
-  const [filteredPosts, setFilteredPosts] = useState<SearchPost[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [recentViews, setRecentViews] = useState<RecentView[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -95,78 +94,85 @@ export const SearchDialog = () => {
     });
   }, [showRecentViews, recentViews, posts]);
 
-  // 다이얼로그 열릴 때 데이터 로드 (Lazy Load) + 최근 본 글 갱신
-  useEffect(() => {
-    if (!isOpen) return;
-    if (posts.length === 0) {
+  // 검색 필터링 — query/posts/recentAsPosts에서 derived
+  const filteredPosts = useMemo<SearchPost[]>(() => {
+    if (!query.trim()) {
+      return recentAsPosts.length > 0 ? recentAsPosts : posts.slice(0, 10);
+    }
+    const lowerQuery = query.toLowerCase();
+    return posts
+      .filter(
+        post =>
+          post.title.toLowerCase().includes(lowerQuery) ||
+          post.excerpt.toLowerCase().includes(lowerQuery) ||
+          post.tags.some(tag => tag.toLowerCase().includes(lowerQuery)) ||
+          (post.series && post.series.toLowerCase().includes(lowerQuery)) ||
+          (post.contentPreview &&
+            post.contentPreview.toLowerCase().includes(lowerQuery)),
+      )
+      .slice(0, 10);
+  }, [query, posts, recentAsPosts]);
+
+  const openDialog = useCallback(() => {
+    setIsOpen(true);
+    setRecentViews(getRecentViews());
+    setPosts(prev => {
+      if (prev.length > 0) return prev;
       fetch('/search-index.json')
         .then(res => res.json())
         .then((data: SearchPost[]) => setPosts(data))
         .catch(err => console.error('Failed to load search index:', err));
-    }
-    setRecentViews(getRecentViews());
-  }, [isOpen]);
+      return prev;
+    });
+  }, []);
+
+  const closeDialog = useCallback(() => {
+    setIsOpen(false);
+    setQuery('');
+    setSelectedIndex(0);
+  }, []);
 
   // Cmd+K / Ctrl+K 단축키
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
-        setIsOpen(prev => !prev);
+        if (isOpen) closeDialog();
+        else openDialog();
       }
       if (e.key === 'Escape') {
-        setIsOpen(false);
+        closeDialog();
       }
     };
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [isOpen, openDialog, closeDialog]);
 
-  // 열릴 때 body 스크롤 잠금 (모바일에서 중요)
+  // 열릴 때 body 스크롤 잠금 + 인풋 포커스 (외부 시스템 sync)
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
       setTimeout(() => inputRef.current?.focus(), 100);
     } else {
       document.body.style.overflow = '';
-      setQuery('');
-      setSelectedIndex(0);
     }
     return () => {
       document.body.style.overflow = '';
     };
   }, [isOpen]);
 
-  // 검색 필터링
+  // query 변경 시 선택 인덱스 초기화 (검색 결과가 달라지므로)
   useEffect(() => {
-    if (!query.trim()) {
-      setFilteredPosts(
-        recentAsPosts.length > 0 ? recentAsPosts : posts.slice(0, 10),
-      );
-      setSelectedIndex(0);
-      return;
-    }
-
-    const lowerQuery = query.toLowerCase();
-    const results = posts.filter(
-      post =>
-        post.title.toLowerCase().includes(lowerQuery) ||
-        post.excerpt.toLowerCase().includes(lowerQuery) ||
-        post.tags.some(tag => tag.toLowerCase().includes(lowerQuery)) ||
-        (post.series && post.series.toLowerCase().includes(lowerQuery)) ||
-        (post.contentPreview &&
-          post.contentPreview.toLowerCase().includes(lowerQuery)),
-    );
-    setFilteredPosts(results.slice(0, 10));
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- query 변경 추적용 1줄 reset
     setSelectedIndex(0);
-  }, [query, posts, recentAsPosts]);
+  }, [query]);
 
   const handleSelect = useCallback(
     (slug: string) => {
-      setIsOpen(false);
+      closeDialog();
       router.push(`/posts/${slug}`);
     },
-    [router],
+    [router, closeDialog],
   );
 
   const handleKeyDown = useCallback(
@@ -206,7 +212,7 @@ export const SearchDialog = () => {
   if (!isOpen) {
     return (
       <button
-        onClick={() => setIsOpen(true)}
+        onClick={openDialog}
         className={css({
           display: 'flex',
           alignItems: 'center',
@@ -259,7 +265,7 @@ export const SearchDialog = () => {
           bg: '[rgba(0,0,0,0.5)]',
           zIndex: '50',
         })}
-        onClick={() => setIsOpen(false)}
+        onClick={closeDialog}
       />
 
       {/* 다이얼로그 — 모바일: 풀스크린, 데스크탑: 센터 모달 */}
@@ -321,7 +327,7 @@ export const SearchDialog = () => {
               })}
             />
             <button
-              onClick={() => setIsOpen(false)}
+              onClick={closeDialog}
               className={css({
                 p: '2',
                 rounded: 'md',

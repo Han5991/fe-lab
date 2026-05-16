@@ -1,7 +1,6 @@
 'use client';
 
 import Giscus from '@giscus/react';
-import { css } from '@design-system/ui-lib/css';
 
 export default function GiscusComments() {
   const repo = process.env.NEXT_PUBLIC_GISCUS_REPO;

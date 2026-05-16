@@ -20,7 +20,7 @@ export const scrollToId = ({
       top: offsetPosition,
       behavior: 'smooth',
     });
-    action && action();
+    action?.();
   }
 };
 
@@ -47,6 +47,9 @@ export const useTocHook = () => {
       }))
       .filter(item => item.id);
 
+    // 마운트 시점 DOM 파싱 결과를 상태로 옮기는 정당한 외부 시스템 sync.
+    // useSyncExternalStore로 모델링 가능하지만 1회성 측정이라 over-engineering.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- 외부 시스템(DOM) 1회 측정
     setToc(items);
   }, []);
 
