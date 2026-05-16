@@ -26,6 +26,8 @@ updates:
           - '@testing-library/*'
           - 'ts-jest'
           - 'babel-jest'
+          - 'msw'
+          - 'jsdom'
       next:
         patterns:
           - 'next'
