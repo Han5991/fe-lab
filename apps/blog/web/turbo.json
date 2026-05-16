@@ -3,7 +3,7 @@
   "extends": ["//"],
   "tasks": {
     "test": {
-      "dependsOn": ["^build", "^test"],
+      "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/apps/blog/posts/**"]
     }
   }

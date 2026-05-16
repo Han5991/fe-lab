@@ -46,8 +46,9 @@ export function buildLlmsFullText(
 
   for (const post of posts) {
     if (post.series) {
-      if (!seriesMap.has(post.series)) seriesMap.set(post.series, []);
-      seriesMap.get(post.series)!.push(post);
+      const arr = seriesMap.get(post.series) ?? [];
+      arr.push(post);
+      seriesMap.set(post.series, arr);
     } else {
       standalone.push(post);
     }

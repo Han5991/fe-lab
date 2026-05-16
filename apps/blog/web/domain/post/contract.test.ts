@@ -59,13 +59,17 @@ test('contract: 모든 글은 readMin >= 1', () => {
   );
 });
 
-test('contract: 공개 글(getAllPosts)은 isPostVisible 기준 일치', () => {
+test('contract: 공개 글(getAllPosts)은 isPostVisible 기준 일치 (slug 집합 비교)', () => {
+  // count만 비교하면 "잘못된 글이 잘못된 글로 대체"되는 필터 버그를 놓침.
+  // slug 집합을 정렬해서 deepEqual로 비교해야 실제 동등성을 검증할 수 있음.
   const all = getAllPostsIncludingHidden();
   const visible = getAllPosts();
   const expected = all.filter(p =>
     isPostVisible({ status: p.status, scheduledDate: p.scheduledDate }),
   );
-  assert.equal(visible.length, expected.length);
+  const visibleSlugs = visible.map(p => p.slug).sort();
+  const expectedSlugs = expected.map(p => p.slug).sort();
+  assert.deepEqual(visibleSlugs, expectedSlugs);
 });
 
 test('contract: getAllPosts는 date 내림차순', () => {
