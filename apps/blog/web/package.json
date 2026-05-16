@@ -62,7 +62,7 @@
     "eslint-config-next": "16.2.6",
     "eslint-plugin-react-hooks": "^7.0.0",
     "supabase": "^2.70.5",
-    "tsx": "^4.21.0",
+    "tsx": "^4.22.0",
     "typescript": "catalog:typescript5"
   }
 }
