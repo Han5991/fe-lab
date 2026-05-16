@@ -11,7 +11,7 @@
     "lint": "eslint .",
     "lint:posts": "npx tsx scripts/validate-posts.ts",
     "check-types": "tsc --noEmit",
-    "test": "node --import tsx --test 'domain/**/*.test.ts' 'lib/**/*.test.ts'",
+    "test": "node --import tsx --test 'domain/**/*.test.ts' 'lib/**/*.test.ts' 'scripts/**/*.test.ts' 'generate-*.test.ts'",
     "new-post": "npx tsx scripts/new-post.ts",
     "supabase-stop": "supabase stop --all --no-backup --debug",
     "supabase-start": "pnpm supabase-stop && pnpm supabase start"

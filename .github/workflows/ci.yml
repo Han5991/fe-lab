@@ -1,10 +1,10 @@
 name: CI
 
 on:
+  # 모든 브랜치 push에서 CI 실행 (lefthook이 로컬에서 잡지 못한 경우의 안전망).
+  # PR과 main push가 동시 트리거되어 중복 실행될 수 있으나 아래 concurrency 그룹에서 정리됩니다.
   pull_request:
-    branches: [main]
   push:
-    branches: [main]
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -20,16 +20,16 @@ jobs:
     timeout-minutes: 20
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
         with:
           version: '10.10.0'
           run_install: false
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           # .tool-versions(nodejs 24.6.0)를 단일 source of truth로 사용
           # node:test --test 의 glob 패턴은 22.5+ 부터 지원 — engines.node ">=22"의 실 근거
@@ -38,7 +38,7 @@ jobs:
           cache-dependency-path: '**/pnpm-lock.yaml'
 
       - name: Caching for Turborepo
-        uses: rharkor/caching-for-turbo@v2.1.0
+        uses: rharkor/caching-for-turbo@5d14fba18e450c09393333cfd4242e8b3cb455a6 # v2.4.2
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -51,6 +51,9 @@ jobs:
 
       - name: Test
         run: pnpm test
+
+      - name: Lint blog posts (frontmatter)
+        run: pnpm --filter @blog/web lint:posts
 
       - name: Format check
         run: pnpm format:check
