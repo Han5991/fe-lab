@@ -22,6 +22,10 @@ apps/blog/web/public/search-index.json
 # Next.js 자동 생성 타입 선언
 **/next-env.d.ts
 
+# Claude Code Action은 default branch와 1바이트라도 다르면 거부 — prettier 손대지 않음
+.github/workflows/claude.yml
+.github/workflows/claude-code-review.yml
+
 # 의존성 디렉토리
 node_modules
 .pnpm-store
