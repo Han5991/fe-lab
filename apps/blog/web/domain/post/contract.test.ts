@@ -21,7 +21,9 @@ import {
 import { buildLlmsFullText } from '../../scripts/generate-llms-full';
 import { SITE_URL } from '../../lib/constants';
 
-const TODAY = '2026-05-16';
+// sitemap lastmod 비교용 — 동적으로 현재 날짜 사용. 하드코딩 시 미래 scheduledDate를
+// 가진 글이 공개되었을 때 contract 테스트가 false failure를 내는 문제를 회피.
+const TODAY = new Date().toISOString().split('T')[0];
 
 test('contract: 글이 1개 이상 존재 (블로그 동작의 최소 조건)', () => {
   const posts = getAllPostsIncludingHidden();

@@ -3,14 +3,22 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { getAllPosts } from '../domain/post';
 import type { PostData } from '../domain/post';
+import { SITE_URL as DEFAULT_SITE_URL } from '../lib/constants';
 
-const SITE_URL = 'https://blog.sangwook.dev';
+export interface LlmsFullBuildOptions {
+  siteUrl?: string;
+}
 
 /**
  * llms-full.txt 본문을 생성합니다.
  * 시리즈는 입력 순서(= getAllPosts 정렬 결과)에 따른 등장 순서대로 출력됩니다.
+ * sitemap/rss와 동일한 패턴으로 siteUrl을 주입받아 결정성을 확보합니다.
  */
-export function buildLlmsFullText(posts: PostData[]): string {
+export function buildLlmsFullText(
+  posts: PostData[],
+  options: LlmsFullBuildOptions = {},
+): string {
+  const SITE_URL = options.siteUrl ?? DEFAULT_SITE_URL;
   const lines: string[] = [
     `# Frontend Lab`,
     ``,

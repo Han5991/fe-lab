@@ -7,14 +7,18 @@ import type { PostData } from '../domain/post';
 export const CONTENT_PREVIEW_CHARS = 1500;
 
 export function toPlainText(content: string): string {
-  return content
-    .replace(/```[\s\S]*?```/g, '')
-    .replace(/!\[.*?\]\(.*?\)/g, '')
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
-    .replace(/[#*`_>~]/g, '')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
+  return (
+    content
+      .replace(/```[\s\S]*?```/g, '')
+      .replace(/!\[.*?\]\(.*?\)/g, '')
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+      // HTML 태그를 마크다운 기호 제거(`>` 포함)보다 먼저 처리해야 `<div>...</div>` 같은
+      // 태그가 정상적으로 공백으로 치환됩니다.
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/[#*`_>~]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+  );
 }
 
 export interface PublicSearchIndexEntry {

@@ -10,7 +10,8 @@ pre-commit:
   parallel: true
   commands:
     prettier:
-      glob: '*.{ts,tsx,js,jsx,json,md,mjs,cjs,yml,yaml}'
+      # 모노레포 하위 파일까지 명시적으로 매치 — 루트만 잡는 오해 방지
+      glob: '**/*.{ts,tsx,js,jsx,json,md,mjs,cjs,yml,yaml}'
       run: pnpm exec prettier --write {staged_files} --ignore-unknown
       stage_fixed: true
 

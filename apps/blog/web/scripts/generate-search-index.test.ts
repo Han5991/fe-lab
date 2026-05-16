@@ -49,16 +49,13 @@ test('toPlainText: 마크다운 기호 제거', () => {
   );
 });
 
-test('toPlainText: HTML 태그가 마크다운 기호(>) 단계에서 절단됨', () => {
-  // 현재 구현: `>`가 먼저 [#*`_>~] 제거 단계에서 사라져 `<[^>]+>` 정규식이
-  // 매치되지 않음. 의도된 정밀 동작은 아니지만 출력 텍스트의 모양을 잠금하여
-  // 인덱스 크기/검색 매칭 결과가 무의식적으로 바뀌지 않도록 가드합니다.
-  assert.equal(toPlainText('<div>hi</div><br/>there'), '<divhi</div<br/there');
+test('toPlainText: HTML 태그가 정상적으로 제거됨', () => {
+  // HTML 태그 제거 → 그 다음 마크다운 기호 제거 → 공백 정리 순서.
+  assert.equal(toPlainText('<div>hi</div><br/>there'), 'hi there');
 });
 
-test('toPlainText: 정상 HTML 태그도 안전하게 처리 (공백 정리)', () => {
-  // 단일 토큰만 남으면 trim 결과는 그 토큰 그대로
-  assert.equal(toPlainText('<span>x</span>'), '<spanx</span');
+test('toPlainText: 닫는 태그도 정상 처리', () => {
+  assert.equal(toPlainText('<span>x</span>'), 'x');
 });
 
 test('toPlainText: 연속 공백 압축', () => {
