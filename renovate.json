@@ -1,28 +1,18 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "config:recommended",
-    ":dependencyDashboard",
-    ":semanticCommits"
-  ],
+  "extends": ["config:recommended", ":dependencyDashboard", ":semanticCommits"],
   "timezone": "Asia/Seoul",
-  "schedule": [
-    "before 10am on monday"
-  ],
+  "schedule": ["before 10am on monday"],
   "prHourlyLimit": 0,
   "prConcurrentLimit": 10,
   "rangeStrategy": "bump",
   "lockFileMaintenance": {
     "enabled": true,
-    "schedule": [
-      "before 10am on monday"
-    ]
+    "schedule": ["before 10am on monday"]
   },
   "packageRules": [
     {
-      "matchPackageNames": [
-        "/^@types\\//"
-      ],
+      "matchPackageNames": ["/^@types\\//"],
       "groupName": "types",
       "semanticCommitScope": "deps"
     },
@@ -49,54 +39,33 @@
       "groupName": "testing"
     },
     {
-      "matchPackageNames": [
-        "next",
-        "eslint-config-next",
-        "/^@next\\//"
-      ],
+      "matchPackageNames": ["next", "eslint-config-next", "/^@next\\//"],
       "groupName": "next"
     },
     {
-      "matchPackageNames": [
-        "react",
-        "react-dom",
-        "react-router"
-      ],
+      "matchPackageNames": ["react", "react-dom", "react-router"],
       "groupName": "react"
     },
     {
-      "matchPackageNames": [
-        "/^@tanstack\\//"
-      ],
+      "matchPackageNames": ["/^@tanstack\\//"],
       "groupName": "tanstack"
     },
     {
-      "matchPackageNames": [
-        "/^@pandacss\\//"
-      ],
+      "matchPackageNames": ["/^@pandacss\\//"],
       "groupName": "panda"
     },
     {
-      "matchManagers": [
-        "github-actions"
-      ],
+      "matchManagers": ["github-actions"],
       "groupName": "ci",
       "semanticCommitScope": "ci"
     },
     {
-      "matchUpdateTypes": [
-        "patch"
-      ],
+      "matchUpdateTypes": ["patch"],
       "automerge": true
     },
     {
-      "matchDepTypes": [
-        "devDependencies"
-      ],
-      "matchUpdateTypes": [
-        "minor",
-        "patch"
-      ],
+      "matchDepTypes": ["devDependencies"],
+      "matchUpdateTypes": ["minor", "patch"],
       "automerge": true
     }
   ]
