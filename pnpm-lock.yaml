@@ -192,7 +192,7 @@ importers:
         specifier: ^2.70.5
         version: 2.98.2
       tsx:
-        specifier: ^4.21.0
+        specifier: ^4.22.0
         version: 4.22.0
       typescript:
         specifier: catalog:typescript5
@@ -208,7 +208,7 @@ importers:
         version: link:../../packages/@design-system/ui-lib
       next:
         specifier: 'catalog:'
-        version: 16.2.6(@babel/core@7.29.0)(react-dom@19.3.0-canary-a757cb76-20251002(react@19.3.0-canary-a757cb76-20251002))(react@19.3.0-canary-a757cb76-20251002)
+        version: 16.2.6(@babel/core@7.28.4)(react-dom@19.3.0-canary-a757cb76-20251002(react@19.3.0-canary-a757cb76-20251002))(react@19.3.0-canary-a757cb76-20251002)
       react:
         specifier: catalog:react19
         version: 19.3.0-canary-a757cb76-20251002
@@ -269,7 +269,7 @@ importers:
         version: 29.7.0
       next-router-mock:
         specifier: ^0.9.13
-        version: 0.9.13(next@16.2.6(@babel/core@7.29.0)(react-dom@19.3.0-canary-a757cb76-20251002(react@19.3.0-canary-a757cb76-20251002))(react@19.3.0-canary-a757cb76-20251002))(react@19.3.0-canary-a757cb76-20251002)
+        version: 0.9.13(next@16.2.6(react-dom@19.3.0-canary-a757cb76-20251002(react@19.3.0-canary-a757cb76-20251002))(react@19.3.0-canary-a757cb76-20251002))(react@19.3.0-canary-a757cb76-20251002)
       ts-node:
         specifier: ^10.9.2
         version: 10.9.2(@types/node@25.8.0)(typescript@5.8.3)
@@ -466,7 +466,7 @@ importers:
         specifier: 8.4.0
         version: 8.4.0(jiti@2.4.2)(postcss@8.5.14)(tsx@4.22.0)(typescript@5.9.3)
       tsx:
-        specifier: ^4.19.2
+        specifier: ^4.22.0
         version: 4.22.0
       typescript:
         specifier: 5.9.3
@@ -507,7 +507,7 @@ importers:
         specifier: ^19.2.4
         version: 19.2.6(react@19.2.6)
       tsx:
-        specifier: ^4.20.6
+        specifier: ^4.22.0
         version: 4.22.0
       typescript:
         specifier: ^5.9.3
@@ -13103,9 +13103,9 @@ snapshots:
 
   neo-async@2.6.2: {}
 
-  next-router-mock@0.9.13(next@16.2.6(@babel/core@7.29.0)(react-dom@19.3.0-canary-a757cb76-20251002(react@19.3.0-canary-a757cb76-20251002))(react@19.3.0-canary-a757cb76-20251002))(react@19.3.0-canary-a757cb76-20251002):
+  next-router-mock@0.9.13(next@16.2.6(react-dom@19.3.0-canary-a757cb76-20251002(react@19.3.0-canary-a757cb76-20251002))(react@19.3.0-canary-a757cb76-20251002))(react@19.3.0-canary-a757cb76-20251002):
     dependencies:
-      next: 16.2.6(@babel/core@7.29.0)(react-dom@19.3.0-canary-a757cb76-20251002(react@19.3.0-canary-a757cb76-20251002))(react@19.3.0-canary-a757cb76-20251002)
+      next: 16.2.6(@babel/core@7.28.4)(react-dom@19.3.0-canary-a757cb76-20251002(react@19.3.0-canary-a757cb76-20251002))(react@19.3.0-canary-a757cb76-20251002)
       react: 19.3.0-canary-a757cb76-20251002
 
   next@16.2.6(@babel/core@7.28.4)(react-dom@19.3.0-canary-a757cb76-20251002(react@19.3.0-canary-a757cb76-20251002))(react@19.3.0-canary-a757cb76-20251002):
@@ -13118,30 +13118,6 @@ snapshots:
       react: 19.3.0-canary-a757cb76-20251002
       react-dom: 19.3.0-canary-a757cb76-20251002(react@19.3.0-canary-a757cb76-20251002)
       styled-jsx: 5.1.6(@babel/core@7.28.4)(react@19.3.0-canary-a757cb76-20251002)
-    optionalDependencies:
-      '@next/swc-darwin-arm64': 16.2.6
-      '@next/swc-darwin-x64': 16.2.6
-      '@next/swc-linux-arm64-gnu': 16.2.6
-      '@next/swc-linux-arm64-musl': 16.2.6
-      '@next/swc-linux-x64-gnu': 16.2.6
-      '@next/swc-linux-x64-musl': 16.2.6
-      '@next/swc-win32-arm64-msvc': 16.2.6
-      '@next/swc-win32-x64-msvc': 16.2.6
-      sharp: 0.34.5
-    transitivePeerDependencies:
-      - '@babel/core'
-      - babel-plugin-macros
-
-  next@16.2.6(@babel/core@7.29.0)(react-dom@19.3.0-canary-a757cb76-20251002(react@19.3.0-canary-a757cb76-20251002))(react@19.3.0-canary-a757cb76-20251002):
-    dependencies:
-      '@next/env': 16.2.6
-      '@swc/helpers': 0.5.15
-      baseline-browser-mapping: 2.10.18
-      caniuse-lite: 1.0.30001765
-      postcss: 8.5.14
-      react: 19.3.0-canary-a757cb76-20251002
-      react-dom: 19.3.0-canary-a757cb76-20251002(react@19.3.0-canary-a757cb76-20251002)
-      styled-jsx: 5.1.6(@babel/core@7.29.0)(react@19.3.0-canary-a757cb76-20251002)
     optionalDependencies:
       '@next/swc-darwin-arm64': 16.2.6
       '@next/swc-darwin-x64': 16.2.6
@@ -14133,13 +14109,6 @@ snapshots:
       react: 19.3.0-canary-a757cb76-20251002
     optionalDependencies:
       '@babel/core': 7.28.4
-
-  styled-jsx@5.1.6(@babel/core@7.29.0)(react@19.3.0-canary-a757cb76-20251002):
-    dependencies:
-      client-only: 0.0.1
-      react: 19.3.0-canary-a757cb76-20251002
-    optionalDependencies:
-      '@babel/core': 7.29.0
 
   stylis@4.3.6: {}
 
