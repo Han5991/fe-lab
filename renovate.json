@@ -8,7 +8,8 @@
   "rangeStrategy": "bump",
   "lockFileMaintenance": {
     "enabled": true,
-    "schedule": ["before 10am on monday"]
+    "schedule": ["before 10am on monday"],
+    "semanticCommitScope": "deps"
   },
   "packageRules": [
     {
