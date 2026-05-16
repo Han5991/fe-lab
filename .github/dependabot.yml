@@ -1,0 +1,58 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '09:00'
+      timezone: Asia/Seoul
+    open-pull-requests-limit: 10
+    groups:
+      types:
+        patterns:
+          - '@types/*'
+      eslint:
+        patterns:
+          - 'eslint'
+          - 'eslint-*'
+          - '@eslint/*'
+          - 'typescript-eslint'
+      testing:
+        patterns:
+          - 'jest'
+          - 'jest-*'
+          - 'vitest'
+          - '@testing-library/*'
+          - 'ts-jest'
+          - 'babel-jest'
+      next:
+        patterns:
+          - 'next'
+          - '@next/*'
+          - 'eslint-config-next'
+      react:
+        patterns:
+          - 'react'
+          - 'react-dom'
+          - 'react-router'
+      tanstack:
+        patterns:
+          - '@tanstack/*'
+      panda:
+        patterns:
+          - '@pandacss/*'
+    commit-message:
+      prefix: chore(deps)
+      include: scope
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '09:00'
+      timezone: Asia/Seoul
+    commit-message:
+      prefix: chore(ci)
+      include: scope

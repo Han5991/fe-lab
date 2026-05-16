@@ -285,9 +285,9 @@ function QueryInvalidationExample() {
           fontSize: '12px',
         }}
       >
-        💡 <strong>패턴 1:</strong> WebSocket 메시지로 전체 종목 데이터를 업데이트합니다.
-        실무에서는 invalidateQueries()로 REST API를 다시 호출하지만, 이 예제는 학습용이므로
-        setQueryData()를 사용합니다.
+        💡 <strong>패턴 1:</strong> WebSocket 메시지로 전체 종목 데이터를
+        업데이트합니다. 실무에서는 invalidateQueries()로 REST API를 다시
+        호출하지만, 이 예제는 학습용이므로 setQueryData()를 사용합니다.
       </div>
     </div>
   );
@@ -566,8 +566,9 @@ function PartialUpdatesExample() {
           fontSize: '12px',
         }}
       >
-        💡 <strong>패턴 2:</strong> WebSocket 메시지로 특정 데이터(호가창)만 업데이트합니다.
-        setQueryData()로 캐시를 부분 업데이트하여 필요한 부분만 즉시 반영합니다.
+        💡 <strong>패턴 2:</strong> WebSocket 메시지로 특정 데이터(호가창)만
+        업데이트합니다. setQueryData()로 캐시를 부분 업데이트하여 필요한 부분만
+        즉시 반영합니다.
       </div>
     </div>
   );

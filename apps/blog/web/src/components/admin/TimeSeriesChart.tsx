@@ -77,7 +77,10 @@ export const TimeSeriesChart = ({
   return (
     <div className={css({ w: 'full' })} style={{ height }}>
       <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={data} margin={{ top: 10, right: 16, left: -12, bottom: 0 }}>
+        <AreaChart
+          data={data}
+          margin={{ top: 10, right: 16, left: -12, bottom: 0 }}
+        >
           <CartesianGrid
             strokeDasharray="2 4"
             stroke={token('colors.ink.border')}

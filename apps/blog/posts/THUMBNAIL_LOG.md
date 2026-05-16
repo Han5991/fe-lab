@@ -15,28 +15,33 @@
 ## 📝 생성 로그 (Prompt Log)
 
 ### 1. 기본 이미지 (Default OG)
+
 - **대상**: 썸네일이 지정되지 않은 모든 글
 - **파일**: `apps/blog/web/public/og-default.png`
 - **프롬프트**:
   > A minimalist blog post cover image with a sleek dark blue gradient background. In the center, clear white bold text says 'FE Lab'. The design should be modern, professional, and suitable for a tech blog. Resolution 1200x630.
 
 ### 2. 타입스크립트 리팩토링 프로젝트
+
 - **대상**: `[Typescript로 설계하는 프로젝트]/typescript-refactor-thumb.png`
 - **프롬프트**:
   > A tech blog cover image featuring TypeScript logos and a visual representation of large-scale code refactoring. The design should convey safety, efficiency, and engineering excellence. Use a modern dark theme with TypeScript blue accents. High quality, 1200x630 resolution.
 
 ### 3. 결제 시스템 아키텍처
+
 - **대상**: `아키텍처/payment-system-architecture-thumb.png`
 - **프롬프트 (Final - Simple Ver.)**:
   > A minimalist, flat-design blog cover image for 'Payment System Architecture'. Simple, clean geometric shapes representing data flow or software modules. Soft blue, white, and gray color palette. No complex 3D effects or neon lights. Professional, lightweight, and easy on the eyes. High resolution 1200x630.
 
 ### 4. 번들러 시리즈 프롤로그
+
 - **대상**: `bundler/[누가 시키지도 않았는데 라이브러리 번들러 만들기] 0. 프롤로그.md`
 - **파일명**: `bundler-prologue-thumb.png`
 - **프롬프트**:
   > A minimalist, flat-design blog cover image for 'JavaScript Bundler Development'. Simple geometric shapes representing multiple modules merging into one package. Soft blue, purple, and white color palette. Clean lines, abstract representation of bundling. Professional, tech-oriented. 16:9 aspect ratio.
 
 ### 5. 번들러 시리즈 1: 개념과 도구
+
 - **대상**: `bundler/[누가 시키지도 않았는데 라이브러리 번들러 만들기] 1. 개념과 도구.md`
 - **파일명**: `bundler-concept-thumb.png`
 - **프롬프트**:

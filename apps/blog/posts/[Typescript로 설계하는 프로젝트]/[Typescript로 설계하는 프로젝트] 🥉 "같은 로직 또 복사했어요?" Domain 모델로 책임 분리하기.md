@@ -156,7 +156,8 @@ export const canUserUploadFile = (user: User): boolean => {
 > #### shared/domain을 통한 도메인 모델 중앙 집중화
 
 이런 문제를 해결하기 위해 `shared/domain` 디렉토리에 핵심 엔티티들을 중앙 집중화하여 정의합니다.  
-이를 통해 모든 레이어에서 동일한 타입을 사용하게 되어 일관성을 보장할 수 있습니다.  
+이를 통해 모든 레이어에서 동일한 타입을 사용하게 되어 일관성을 보장할 수 있습니다.
+
 > [Service Layer 글](https://blog.sangwook.dev/posts/typescript-project-service-di-design/)에서 보았듯이, Service
 > 레이어에서 비즈니스 로직을 처리할 때도 중앙 집중화된 타입을 활용하여 로직의 재사용성과 테스트 용이성을 확보할 수 있습니다.
 

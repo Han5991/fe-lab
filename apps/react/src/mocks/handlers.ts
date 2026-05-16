@@ -38,7 +38,7 @@ const mockActivities: Activity[] = [
 export const handlers = [
   // 대시보드 통계 - 50% 확률로 에러
   http.get('/api/dashboard/stats', async () => {
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    await new Promise(resolve => setTimeout(resolve, 500));
 
     const shouldFail = Math.random() < 0.5;
 
@@ -57,7 +57,7 @@ export const handlers = [
 
   // 차트 데이터 - 50% 확률로 에러
   http.get('/api/dashboard/chart', async () => {
-    await new Promise((resolve) => setTimeout(resolve, 300));
+    await new Promise(resolve => setTimeout(resolve, 300));
 
     const shouldFail = Math.random() < 0.5;
 
@@ -76,7 +76,7 @@ export const handlers = [
 
   // 활동 피드 - 50% 확률로 에러
   http.get('/api/dashboard/activities', async () => {
-    await new Promise((resolve) => setTimeout(resolve, 400));
+    await new Promise(resolve => setTimeout(resolve, 400));
 
     const shouldFail = Math.random() < 0.5;
 

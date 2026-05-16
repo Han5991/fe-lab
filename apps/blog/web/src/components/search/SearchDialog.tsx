@@ -1,6 +1,13 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback, useMemo, type ReactNode } from 'react';
+import {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo,
+  type ReactNode,
+} from 'react';
 import { useRouter } from 'next/navigation';
 import { css } from '@design-system/ui-lib/css';
 import { Search, X, Clock } from 'lucide-react';
@@ -43,7 +50,11 @@ function highlight(text: string, query: string): ReactNode {
   );
 }
 
-function pickContentSnippet(content: string, query: string, radius = 60): string {
+function pickContentSnippet(
+  content: string,
+  query: string,
+  radius = 60,
+): string {
   if (!content) return '';
   if (!query.trim()) return content.slice(0, 140);
   const idx = content.toLowerCase().indexOf(query.toLowerCase());
@@ -129,7 +140,9 @@ export const SearchDialog = () => {
   // 검색 필터링
   useEffect(() => {
     if (!query.trim()) {
-      setFilteredPosts(recentAsPosts.length > 0 ? recentAsPosts : posts.slice(0, 10));
+      setFilteredPosts(
+        recentAsPosts.length > 0 ? recentAsPosts : posts.slice(0, 10),
+      );
       setSelectedIndex(0);
       return;
     }

@@ -5,6 +5,7 @@ date: '2025-11-06'
 published: true
 slug: 'typescript-project-type-safe-refactor-with-typescript'
 ---
+
 **"회원 구조가 바뀌었습니다. 552개 파일을 수정해야 합니다."**
 
 보통은 이렇게 됩니다

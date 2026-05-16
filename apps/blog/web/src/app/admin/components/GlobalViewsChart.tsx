@@ -66,7 +66,13 @@ export function GlobalViewsChart() {
           gap: '3',
         })}
       >
-        <h2 className={css({ fontSize: 'md', fontWeight: 'bold', color: 'ink.950' })}>
+        <h2
+          className={css({
+            fontSize: 'md',
+            fontWeight: 'bold',
+            color: 'ink.950',
+          })}
+        >
           전체 조회수 추이
         </h2>
         <DateRangeControls
@@ -99,14 +105,21 @@ export function GlobalViewsChart() {
                 tick={{ fill: token('colors.ink.500'), fontSize: 11 }}
               />
               <Tooltip
-                cursor={{ stroke: token('colors.ink.border'), strokeWidth: 1, strokeDasharray: '4 4' }}
+                cursor={{
+                  stroke: token('colors.ink.border'),
+                  strokeWidth: 1,
+                  strokeDasharray: '4 4',
+                }}
                 contentStyle={{
                   borderRadius: token('radii.lg'),
                   border: `1px solid ${token('colors.ink.border')}`,
                   background: token('colors.ink.25'),
                   fontSize: '12px',
                 }}
-                labelStyle={{ color: token('colors.ink.700'), marginBottom: '2px' }}
+                labelStyle={{
+                  color: token('colors.ink.700'),
+                  marginBottom: '2px',
+                }}
               />
               <Line
                 type="monotone"
@@ -114,7 +127,11 @@ export function GlobalViewsChart() {
                 stroke={token('colors.ink.700')}
                 strokeWidth={2}
                 dot={{ r: 3, fill: token('colors.marker.600'), strokeWidth: 0 }}
-                activeDot={{ r: 5, fill: token('colors.marker.600'), strokeWidth: 0 }}
+                activeDot={{
+                  r: 5,
+                  fill: token('colors.marker.600'),
+                  strokeWidth: 0,
+                }}
               />
             </LineChart>
           </ResponsiveContainer>

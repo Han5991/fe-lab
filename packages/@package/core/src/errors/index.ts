@@ -39,9 +39,7 @@ export interface HttpErrorResponse {
   message?: string;
 }
 
-export function isHttpError(
-  error: unknown,
-): error is HttpErrorResponse {
+export function isHttpError(error: unknown): error is HttpErrorResponse {
   return (
     typeof error === 'object' &&
     error !== null &&

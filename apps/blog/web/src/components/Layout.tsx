@@ -89,7 +89,9 @@ export const Layout = ({ children }: LayoutProps) => {
               EST. 2025
             </span>
           </Link>
-          <div className={css({ display: 'flex', alignItems: 'center', gap: '1' })}>
+          <div
+            className={css({ display: 'flex', alignItems: 'center', gap: '1' })}
+          >
             <Link href="/posts/" className={navLink}>
               Posts
             </Link>
@@ -149,7 +151,11 @@ export const Layout = ({ children }: LayoutProps) => {
               { href: '/about/', label: 'About', internal: true },
               { href: '/privacy', label: '개인정보', internal: true },
               { href: SITE_AUTHOR_GITHUB, label: 'GitHub', internal: false },
-              { href: SITE_AUTHOR_LINKEDIN, label: 'LinkedIn', internal: false },
+              {
+                href: SITE_AUTHOR_LINKEDIN,
+                label: 'LinkedIn',
+                internal: false,
+              },
               { href: '/rss.xml', label: 'RSS', internal: false },
             ].map(link =>
               link.internal ? (
@@ -172,7 +178,9 @@ export const Layout = ({ children }: LayoutProps) => {
                   href={link.href}
                   target={link.href.startsWith('http') ? '_blank' : undefined}
                   rel={
-                    link.href.startsWith('http') ? 'noopener noreferrer' : undefined
+                    link.href.startsWith('http')
+                      ? 'noopener noreferrer'
+                      : undefined
                   }
                   className={css({
                     fontFamily: 'mono',

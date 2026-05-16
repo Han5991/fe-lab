@@ -56,7 +56,11 @@ export const AnalyticsContent = ({ tags }: AnalyticsContentProps) => {
       <section
         className={css({
           display: 'grid',
-          gridTemplateColumns: { base: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' },
+          gridTemplateColumns: {
+            base: '1fr',
+            sm: 'repeat(2, 1fr)',
+            md: 'repeat(4, 1fr)',
+          },
           gap: { base: '6', md: '8' },
           pb: '8',
           borderBottomWidth: '[1px]',
@@ -79,10 +83,7 @@ export const AnalyticsContent = ({ tags }: AnalyticsContentProps) => {
           num={String(overview.postsPublished)}
           label="POSTS PUBLISHED"
         />
-        <KpiCard
-          num={fmtNum(overview.avgPerPost)}
-          label="AVG / POST"
-        />
+        <KpiCard num={fmtNum(overview.avgPerPost)} label="AVG / POST" />
       </section>
 
       {/* 시계열 차트 */}
@@ -184,10 +185,7 @@ export const AnalyticsContent = ({ tags }: AnalyticsContentProps) => {
               top {Math.min(8, tags.length)}
             </span>
           </div>
-          <TagDistribution
-            tags={tags.slice(0, 8)}
-            highlightId={tags[0]?.id}
-          />
+          <TagDistribution tags={tags.slice(0, 8)} highlightId={tags[0]?.id} />
         </div>
       </section>
     </div>

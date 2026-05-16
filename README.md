@@ -47,7 +47,6 @@
 #### **📝 기술 블로그** (`blog/`)
 
 - **TypeScript 프로젝트 설계 시리즈**
-
   - [도메인 모델로 복잡한 비즈니스 로직 정리하기](apps/blog/[Typescript로%20설계하는%20프로젝트]/domain/)
   - [견고한 서버 API Type 설계하기](apps/blog/[Typescript로%20설계하는%20프로젝트]/http/)
   - [Service Layer 설계 전략](apps/blog/[Typescript로%20설계하는%20프로젝트]/service/)

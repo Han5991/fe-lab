@@ -25,14 +25,21 @@ const SERIES_COLOR_MAP: Record<string, SeriesSummary['colorKey']> = {
   'open-source': 'moss',
 };
 
-const COLOR_FALLBACK: SeriesSummary['colorKey'][] = ['accent', 'marker', 'moss'];
+const COLOR_FALLBACK: SeriesSummary['colorKey'][] = [
+  'accent',
+  'marker',
+  'moss',
+];
 
 /**
  * 모든 시리즈를 최근 글 기준 내림차순으로 반환합니다.
  */
 export function getAllSeries(): SeriesSummary[] {
   const posts = getAllPosts();
-  const map = new Map<string, { posts: PostSummary[]; updated: string | null }>();
+  const map = new Map<
+    string,
+    { posts: PostSummary[]; updated: string | null }
+  >();
 
   for (const post of posts) {
     if (!post.series) continue;

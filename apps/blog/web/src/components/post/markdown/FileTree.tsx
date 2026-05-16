@@ -43,10 +43,12 @@ function parseLines(raw: string): Line[] {
     });
 }
 
-function renderTreeLine(line: Line, isLast: boolean, ancestorContinues: boolean[]): string {
-  const branches = ancestorContinues
-    .map(c => (c ? '│  ' : '   '))
-    .join('');
+function renderTreeLine(
+  line: Line,
+  isLast: boolean,
+  ancestorContinues: boolean[],
+): string {
+  const branches = ancestorContinues.map(c => (c ? '│  ' : '   ')).join('');
   const connector = isLast ? '└─ ' : '├─ ';
   return `${branches}${connector}${line.name}${line.isDir ? '/' : ''}`;
 }

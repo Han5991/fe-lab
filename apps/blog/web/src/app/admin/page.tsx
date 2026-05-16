@@ -46,19 +46,53 @@ function AdminOverviewContent() {
             p: '6',
           })}
         >
-          <div className={css({ display: 'flex', alignItems: 'center', gap: '2', mb: '4' })}>
+          <div
+            className={css({
+              display: 'flex',
+              alignItems: 'center',
+              gap: '2',
+              mb: '4',
+            })}
+          >
             <BarChart3 size={16} className={css({ color: 'marker.600' })} />
-            <span className={css({ fontSize: 'xs', color: 'ink.500', fontWeight: 'medium' })}>
+            <span
+              className={css({
+                fontSize: 'xs',
+                color: 'ink.500',
+                fontWeight: 'medium',
+              })}
+            >
               전체 조회수
             </span>
           </div>
-          <div className={css({ display: 'flex', alignItems: 'baseline', gap: '2' })}>
-            <span className={css({ fontSize: '2xl', fontWeight: 'bold', color: 'ink.950', letterSpacing: 'tight' })}>
+          <div
+            className={css({
+              display: 'flex',
+              alignItems: 'baseline',
+              gap: '2',
+            })}
+          >
+            <span
+              className={css({
+                fontSize: '2xl',
+                fontWeight: 'bold',
+                color: 'ink.950',
+                letterSpacing: 'tight',
+              })}
+            >
               {totalViews.toLocaleString()}
             </span>
-            <span className={css({ fontSize: 'xs', color: 'ink.500' })}>회</span>
+            <span className={css({ fontSize: 'xs', color: 'ink.500' })}>
+              회
+            </span>
             {totalTodayViews > 0 && (
-              <span className={css({ color: 'marker.600', fontWeight: 'bold', fontSize: 'sm' })}>
+              <span
+                className={css({
+                  color: 'marker.600',
+                  fontWeight: 'bold',
+                  fontSize: 'sm',
+                })}
+              >
                 +{totalTodayViews}
               </span>
             )}
@@ -75,17 +109,45 @@ function AdminOverviewContent() {
             p: '6',
           })}
         >
-          <div className={css({ display: 'flex', alignItems: 'center', gap: '2', mb: '4' })}>
+          <div
+            className={css({
+              display: 'flex',
+              alignItems: 'center',
+              gap: '2',
+              mb: '4',
+            })}
+          >
             <FileText size={16} className={css({ color: 'marker.600' })} />
-            <span className={css({ fontSize: 'xs', color: 'ink.500', fontWeight: 'medium' })}>
+            <span
+              className={css({
+                fontSize: 'xs',
+                color: 'ink.500',
+                fontWeight: 'medium',
+              })}
+            >
               총 게시글 수
             </span>
           </div>
-          <div className={css({ display: 'flex', alignItems: 'baseline', gap: '2' })}>
-            <span className={css({ fontSize: '2xl', fontWeight: 'bold', color: 'ink.950', letterSpacing: 'tight' })}>
+          <div
+            className={css({
+              display: 'flex',
+              alignItems: 'baseline',
+              gap: '2',
+            })}
+          >
+            <span
+              className={css({
+                fontSize: '2xl',
+                fontWeight: 'bold',
+                color: 'ink.950',
+                letterSpacing: 'tight',
+              })}
+            >
               {totalPosts}
             </span>
-            <span className={css({ fontSize: 'xs', color: 'ink.500' })}>개</span>
+            <span className={css({ fontSize: 'xs', color: 'ink.500' })}>
+              개
+            </span>
           </div>
         </div>
 
@@ -108,7 +170,13 @@ function AdminOverviewContent() {
           })}
         >
           <BarChart3 size={24} className={css({ color: 'paper.50' })} />
-          <span className={css({ color: 'paper.50', fontWeight: 'semibold', fontSize: 'sm' })}>
+          <span
+            className={css({
+              color: 'paper.50',
+              fontWeight: 'semibold',
+              fontSize: 'sm',
+            })}
+          >
             상세 분석 보기 →
           </span>
         </Link>
@@ -143,10 +211,24 @@ function AdminOverviewContent() {
               gap: '3',
             })}
           >
-            <span className={css({ fontSize: 'xs', fontWeight: 'bold', color: 'marker.600', letterSpacing: 'widest', textTransform: 'uppercase' })}>
+            <span
+              className={css({
+                fontSize: 'xs',
+                fontWeight: 'bold',
+                color: 'marker.600',
+                letterSpacing: 'widest',
+                textTransform: 'uppercase',
+              })}
+            >
               Top
             </span>
-            <h2 className={css({ fontWeight: 'bold', color: 'ink.950', fontSize: 'sm' })}>
+            <h2
+              className={css({
+                fontWeight: 'bold',
+                color: 'ink.950',
+                fontSize: 'sm',
+              })}
+            >
               인기 게시글
             </h2>
           </div>
@@ -230,10 +312,24 @@ function AdminOverviewContent() {
               gap: '3',
             })}
           >
-            <span className={css({ fontSize: 'xs', fontWeight: 'bold', color: 'marker.600', letterSpacing: 'widest', textTransform: 'uppercase' })}>
+            <span
+              className={css({
+                fontSize: 'xs',
+                fontWeight: 'bold',
+                color: 'marker.600',
+                letterSpacing: 'widest',
+                textTransform: 'uppercase',
+              })}
+            >
               Recent
             </span>
-            <h2 className={css({ fontWeight: 'bold', color: 'ink.950', fontSize: 'sm' })}>
+            <h2
+              className={css({
+                fontWeight: 'bold',
+                color: 'ink.950',
+                fontSize: 'sm',
+              })}
+            >
               최근 게시글
             </h2>
           </div>
@@ -311,15 +407,32 @@ export default function AdminPage() {
         })}
       >
         <div>
-          <p className={css({ fontSize: 'xs', fontWeight: 'bold', letterSpacing: 'widest', textTransform: 'uppercase', color: 'marker.600', mb: '1' })}>
+          <p
+            className={css({
+              fontSize: 'xs',
+              fontWeight: 'bold',
+              letterSpacing: 'widest',
+              textTransform: 'uppercase',
+              color: 'marker.600',
+              mb: '1',
+            })}
+          >
             Admin
           </p>
-          <h1 className={css({ fontSize: 'xl', fontWeight: 'bold', color: 'ink.950' })}>
+          <h1
+            className={css({
+              fontSize: 'xl',
+              fontWeight: 'bold',
+              color: 'ink.950',
+            })}
+          >
             대시보드
           </h1>
         </div>
 
-        <div className={css({ display: 'flex', alignItems: 'center', gap: '2' })}>
+        <div
+          className={css({ display: 'flex', alignItems: 'center', gap: '2' })}
+        >
           <Link
             href="/admin/analytics"
             className={css({

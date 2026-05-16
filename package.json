@@ -7,6 +7,8 @@
     "test": "turbo run test",
     "lint": "turbo run lint",
     "check-types": "turbo run check-types",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,mjs,cjs,yml,yaml}\" --ignore-path .prettierignore --cache",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md,mjs,cjs,yml,yaml}\" --ignore-path .prettierignore --cache",
     "react": "turbo run dev --filter=react",
     "typescript": "turbo run dev --filter=typescript",
     "next": "turbo run dev --filter=next.js",

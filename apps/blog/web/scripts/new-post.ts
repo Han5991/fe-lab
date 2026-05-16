@@ -37,8 +37,14 @@ function parseArgs(argv: string[]): Options {
           opts.series = value;
           break;
         case 'status':
-          if (value !== 'draft' && value !== 'published' && value !== 'scheduled') {
-            throw new Error(`status는 draft|published|scheduled 중 하나여야 합니다.`);
+          if (
+            value !== 'draft' &&
+            value !== 'published' &&
+            value !== 'scheduled'
+          ) {
+            throw new Error(
+              `status는 draft|published|scheduled 중 하나여야 합니다.`,
+            );
           }
           opts.status = value;
           break;
@@ -51,7 +57,10 @@ function parseArgs(argv: string[]): Options {
           opts.slug = value;
           break;
         case 'tags':
-          opts.tags = value.split(',').map(t => t.trim()).filter(Boolean);
+          opts.tags = value
+            .split(',')
+            .map(t => t.trim())
+            .filter(Boolean);
           break;
         default:
           throw new Error(`알 수 없는 옵션: --${key}`);
@@ -60,9 +69,14 @@ function parseArgs(argv: string[]): Options {
       const key = arg.slice(1);
       const value = argv[++i] ?? '';
       switch (key) {
-        case 't': opts.title = value; break;
-        case 's': opts.series = value; break;
-        default: throw new Error(`알 수 없는 옵션: -${key}`);
+        case 't':
+          opts.title = value;
+          break;
+        case 's':
+          opts.series = value;
+          break;
+        default:
+          throw new Error(`알 수 없는 옵션: -${key}`);
       }
     } else {
       positional.push(arg);
@@ -86,7 +100,10 @@ function safeFilename(title: string): string {
   return title.replace(/[/\\\0]/g, '-').trim();
 }
 
-function buildFrontmatter(opts: Required<Pick<Options, 'title' | 'status' | 'tags'>> & Pick<Options, 'slug' | 'scheduledDate'>): string {
+function buildFrontmatter(
+  opts: Required<Pick<Options, 'title' | 'status' | 'tags'>> &
+    Pick<Options, 'slug' | 'scheduledDate'>,
+): string {
   const lines = ['---'];
   lines.push(`title: '${opts.title.replace(/'/g, "''")}'`);
   lines.push(`date: ${todayKST()}`);
@@ -139,7 +156,9 @@ function main() {
   }
 
   if (opts.status === 'scheduled' && !opts.scheduledDate) {
-    console.error('✖ status: scheduled에는 --scheduled <ISO 날짜>가 필요합니다.');
+    console.error(
+      '✖ status: scheduled에는 --scheduled <ISO 날짜>가 필요합니다.',
+    );
     process.exit(1);
   }
 

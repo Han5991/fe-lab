@@ -127,17 +127,17 @@ export const ToastExamplePage = () => {
   return (
     <div
       className={css({
-        padding: '32px',
-        maxWidth: '800px',
-        margin: '0 auto',
-        fontFamily: 'system-ui, sans-serif',
+        padding: '[32px]',
+        maxWidth: '[800px]',
+        margin: '[0 auto]',
+        fontFamily: '[system-ui, sans-serif]',
       })}
     >
       <h1
         className={css({
           fontSize: '2xl',
           fontWeight: 'bold',
-          marginBottom: '24px',
+          marginBottom: '[24px]',
           textAlign: 'center',
         })}
       >
@@ -147,7 +147,7 @@ export const ToastExamplePage = () => {
       <div
         className={css({
           display: 'grid',
-          gap: '24px',
+          gap: '[24px]',
         })}
       >
         {/* 기본 토스트 타입들 */}
@@ -156,7 +156,7 @@ export const ToastExamplePage = () => {
             className={css({
               fontSize: 'lg',
               fontWeight: 'semibold',
-              marginBottom: '16px',
+              marginBottom: '[16px]',
             })}
           >
             기본 토스트 타입
@@ -164,7 +164,7 @@ export const ToastExamplePage = () => {
           <div
             className={css({
               display: 'flex',
-              gap: '12px',
+              gap: '[12px]',
               flexWrap: 'wrap',
             })}
           >
@@ -181,7 +181,7 @@ export const ToastExamplePage = () => {
             className={css({
               fontSize: 'lg',
               fontWeight: 'semibold',
-              marginBottom: '16px',
+              marginBottom: '[16px]',
             })}
           >
             위치별 토스트
@@ -189,7 +189,7 @@ export const ToastExamplePage = () => {
           <div
             className={css({
               display: 'flex',
-              gap: '12px',
+              gap: '[12px]',
               flexWrap: 'wrap',
             })}
           >
@@ -205,7 +205,7 @@ export const ToastExamplePage = () => {
             className={css({
               fontSize: 'lg',
               fontWeight: 'semibold',
-              marginBottom: '16px',
+              marginBottom: '[16px]',
             })}
           >
             비동기 작업 시뮬레이션
@@ -221,7 +221,7 @@ export const ToastExamplePage = () => {
             className={css({
               fontSize: 'lg',
               fontWeight: 'semibold',
-              marginBottom: '16px',
+              marginBottom: '[16px]',
             })}
           >
             고급 예제
@@ -229,7 +229,7 @@ export const ToastExamplePage = () => {
           <div
             className={css({
               display: 'flex',
-              gap: '12px',
+              gap: '[12px]',
               flexWrap: 'wrap',
             })}
           >
@@ -242,15 +242,15 @@ export const ToastExamplePage = () => {
         <section
           className={css({
             backgroundColor: 'gray.50',
-            padding: '16px',
-            borderRadius: '8px',
+            padding: '[16px]',
+            borderRadius: '[8px]',
           })}
         >
           <h2
             className={css({
               fontSize: 'lg',
               fontWeight: 'semibold',
-              marginBottom: '12px',
+              marginBottom: '[12px]',
             })}
           >
             사용법

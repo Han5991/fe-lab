@@ -56,7 +56,10 @@ for (const [seriesName, seriesPosts] of seriesMap) {
     const url = `${SITE_URL}/posts/${post.slug}/`;
     const excerpt = post.excerpt
       ? post.excerpt.slice(0, 200)
-      : post.content.replace(/[#`*\[\]]/g, '').trim().slice(0, 200);
+      : post.content
+          .replace(/[#`*\[\]]/g, '')
+          .trim()
+          .slice(0, 200);
     const tags = post.tags?.length ? ` Tags: ${post.tags.join(', ')}.` : '';
     const date = post.date ? ` (${post.date})` : '';
 
@@ -81,7 +84,10 @@ if (sortedStandalone.length > 0) {
     const url = `${SITE_URL}/posts/${post.slug}/`;
     const excerpt = post.excerpt
       ? post.excerpt.slice(0, 200)
-      : post.content.replace(/[#`*\[\]]/g, '').trim().slice(0, 200);
+      : post.content
+          .replace(/[#`*\[\]]/g, '')
+          .trim()
+          .slice(0, 200);
     const tags = post.tags?.length ? ` Tags: ${post.tags.join(', ')}.` : '';
     const date = post.date ? ` (${post.date})` : '';
 

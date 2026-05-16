@@ -51,7 +51,11 @@ export default function SocketDemo() {
               : isReconnecting
                 ? '#fff3cd'
                 : '#f8d7da',
-            color: isConnected ? '#155724' : isReconnecting ? '#856404' : '#721c24',
+            color: isConnected
+              ? '#155724'
+              : isReconnecting
+                ? '#856404'
+                : '#721c24',
             borderRadius: '4px',
             display: 'flex',
             justifyContent: 'space-between',
@@ -174,11 +178,13 @@ export default function SocketDemo() {
           disabled={!isConnected || !inputMessage.trim()}
           style={{
             padding: '10px 20px',
-            backgroundColor: isConnected && inputMessage.trim() ? '#007bff' : '#ccc',
+            backgroundColor:
+              isConnected && inputMessage.trim() ? '#007bff' : '#ccc',
             color: 'white',
             border: 'none',
             borderRadius: '4px',
-            cursor: isConnected && inputMessage.trim() ? 'pointer' : 'not-allowed',
+            cursor:
+              isConnected && inputMessage.trim() ? 'pointer' : 'not-allowed',
           }}
         >
           전송
@@ -200,7 +206,11 @@ export default function SocketDemo() {
           <li>프로토콜: WebSocket (RFC 6455)</li>
           <li>
             연결 상태:{' '}
-            {isConnected ? '✅ OPEN' : isReconnecting ? '🔄 RECONNECTING' : '❌ CLOSED'}
+            {isConnected
+              ? '✅ OPEN'
+              : isReconnecting
+                ? '🔄 RECONNECTING'
+                : '❌ CLOSED'}
           </li>
           <li>메시지 수: {messages.length}</li>
           <li>자동 재연결: ✅ 활성화 (최대 5회 시도)</li>

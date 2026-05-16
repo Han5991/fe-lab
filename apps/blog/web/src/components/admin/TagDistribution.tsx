@@ -8,7 +8,10 @@ interface TagDistributionProps {
   highlightId?: string;
 }
 
-export const TagDistribution = ({ tags, highlightId }: TagDistributionProps) => {
+export const TagDistribution = ({
+  tags,
+  highlightId,
+}: TagDistributionProps) => {
   if (tags.length === 0) return null;
   const max = Math.max(...tags.map(t => t.count));
   return (

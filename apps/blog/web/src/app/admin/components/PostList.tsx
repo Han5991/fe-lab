@@ -15,7 +15,9 @@ export function PostList() {
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
 
   const handleRefresh = async () => {
-    await queryClient.invalidateQueries({ queryKey: ['admin', 'dashboard-data'] });
+    await queryClient.invalidateQueries({
+      queryKey: ['admin', 'dashboard-data'],
+    });
     setLastUpdated(new Date());
   };
 
@@ -67,7 +69,9 @@ export function PostList() {
           gap: '2',
         })}
       >
-        <div className={css({ display: 'flex', alignItems: 'center', gap: '3' })}>
+        <div
+          className={css({ display: 'flex', alignItems: 'center', gap: '3' })}
+        >
           <button
             onClick={handleRefresh}
             className={css({
@@ -100,7 +104,9 @@ export function PostList() {
           </span>
         </div>
 
-        <div className={css({ display: 'flex', alignItems: 'center', gap: '3' })}>
+        <div
+          className={css({ display: 'flex', alignItems: 'center', gap: '3' })}
+        >
           <label
             className={css({
               display: 'flex',

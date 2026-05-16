@@ -4,11 +4,7 @@ import { SsgoiTransition } from '@ssgoi/react';
 import type { Metadata } from 'next';
 
 import { getAllPostSummaries } from '@/domain/post';
-import {
-  getAllSeries,
-  getAllTags,
-  getAllYears,
-} from '@/domain/post/aggregate';
+import { getAllSeries, getAllTags, getAllYears } from '@/domain/post/aggregate';
 import { SITE_URL } from '@/lib/constants';
 import { Label, PostsArchiveView } from '@/src/components/blog';
 
@@ -72,7 +68,8 @@ export default function PostsPage() {
     '@id': `${SITE_URL}/posts/#blog`,
     name: 'Frontend Lab — 실험 기록들',
     url: `${SITE_URL}/posts/`,
-    description: '프론트엔드 실험실의 모든 기록들. React, TypeScript, 번들러 시리즈 등.',
+    description:
+      '프론트엔드 실험실의 모든 기록들. React, TypeScript, 번들러 시리즈 등.',
     inLanguage: 'ko',
     author: { '@id': `${SITE_URL}/#author` },
     publisher: { '@id': `${SITE_URL}/#organization` },
@@ -83,7 +80,9 @@ export default function PostsPage() {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionPageJsonLd) }}
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(collectionPageJsonLd),
+        }}
       />
       <script
         type="application/ld+json"

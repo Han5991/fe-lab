@@ -4,9 +4,12 @@
   "private": true,
   "scripts": {
     "dev": "tsc -watch",
-    "build": "echo 'Add build script here'",
-    "test": "jest",
-    "lint": "echo 'Add lint script here'"
+    "build": "tsc --noEmit",
+    "check-types": "tsc --noEmit",
+    "test": "jest"
+  },
+  "engines": {
+    "node": ">=20"
   },
   "devDependencies": {
     "@babel/core": "^7.26.9",

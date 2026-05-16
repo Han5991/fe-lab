@@ -45,9 +45,7 @@ describe('ErrorDesignPage', () => {
 
     render(<ErrorDesignPage />, { wrapper: createWrapper() });
 
-    expect(
-      screen.getByText('대시보드 - 에러 핸들링 예제'),
-    ).toBeInTheDocument();
+    expect(screen.getByText('대시보드 - 에러 핸들링 예제')).toBeInTheDocument();
     expect(
       screen.getByText('각 섹션은 독립적으로 로딩되고 에러를 처리합니다'),
     ).toBeInTheDocument();

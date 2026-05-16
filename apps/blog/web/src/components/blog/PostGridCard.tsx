@@ -89,7 +89,9 @@ export const PostGridCard = ({ post }: PostGridCardProps) => {
           })}
         >
           <Label tone="meta">
-            {post.date ? `${fmtDate(post.date)} · ${readMin}분` : `${readMin}분`}
+            {post.date
+              ? `${fmtDate(post.date)} · ${readMin}분`
+              : `${readMin}분`}
           </Label>
           {post.tags && post.tags.length > 0 && (
             <span

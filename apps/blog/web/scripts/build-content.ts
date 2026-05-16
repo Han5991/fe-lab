@@ -36,7 +36,11 @@ const steps: Step[] = [
   },
   { label: 'sitemap', cmd: 'tsx', args: ['generate-sitemap.ts'] },
   { label: 'rss', cmd: 'tsx', args: ['generate-rss.ts'] },
-  { label: 'search-index', cmd: 'tsx', args: ['scripts/generate-search-index.ts'] },
+  {
+    label: 'search-index',
+    cmd: 'tsx',
+    args: ['scripts/generate-search-index.ts'],
+  },
   { label: 'llms-full', cmd: 'tsx', args: ['scripts/generate-llms-full.ts'] },
 ];
 
@@ -53,7 +57,9 @@ for (const step of steps) {
   });
   const elapsed = ((Date.now() - stepStart) / 1000).toFixed(2);
   if (result.status !== 0) {
-    console.error(`✖ [${step.label}] 실패 (${elapsed}s, exit ${result.status})`);
+    console.error(
+      `✖ [${step.label}] 실패 (${elapsed}s, exit ${result.status})`,
+    );
     process.exit(result.status ?? 1);
   }
   console.log(`✓ [${step.label}] ${elapsed}s`);

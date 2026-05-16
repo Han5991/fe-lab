@@ -98,7 +98,6 @@ export default Post;
 
 - **통합 접근**:
   Next.js error.js와 React ErrorBoundary는 상호 보완적인 역할을 수행할 수 있습니다.
-
   - 전역 또는 페이지 수준에서는 error.js를 통해 큰 틀의 에러 핸들링을 관리하며,
   - 세부 컴포넌트 수준에서는 ErrorBoundary를 사용해 특정 영역의 예외 상황에 대해 상세하게 대응하는 방식이 효과적입니다.
 

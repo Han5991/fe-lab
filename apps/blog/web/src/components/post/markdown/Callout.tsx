@@ -52,7 +52,10 @@ const STYLES: Record<
 function isCalloutType(value: unknown): value is CalloutType {
   return (
     typeof value === 'string' &&
-    (value === 'info' || value === 'tip' || value === 'warning' || value === 'danger')
+    (value === 'info' ||
+      value === 'tip' ||
+      value === 'warning' ||
+      value === 'danger')
   );
 }
 
@@ -78,10 +81,19 @@ export function Callout({ type, title, children }: CalloutProps) {
         alignItems: 'flex-start',
       })}`}
     >
-      <span aria-hidden className={css({ fontSize: 'lg', lineHeight: 'headerSm' })}>
+      <span
+        aria-hidden
+        className={css({ fontSize: 'lg', lineHeight: 'headerSm' })}
+      >
         {icon}
       </span>
-      <div className={css({ flex: '1', minW: '0', '& > *:last-child': { mb: '0' } })}>
+      <div
+        className={css({
+          flex: '1',
+          minW: '0',
+          '& > *:last-child': { mb: '0' },
+        })}
+      >
         <div
           className={css({
             fontWeight: 'bold',

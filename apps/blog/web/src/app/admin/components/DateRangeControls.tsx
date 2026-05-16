@@ -133,7 +133,9 @@ export function DateRangeControls({
       </select>
 
       {filterType === 'custom' && (
-        <div className={css({ display: 'flex', alignItems: 'center', gap: '1' })}>
+        <div
+          className={css({ display: 'flex', alignItems: 'center', gap: '1' })}
+        >
           <input
             type="date"
             value={startDate}

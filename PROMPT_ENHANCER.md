@@ -92,18 +92,15 @@ This guide provides strategies for analyzing user prompts and enhancing them by 
 "Implement real-time search for ProductList component:
 
 1. UI Implementation:
-
    - Create new SearchBar.tsx component
    - Follow UserList.tsx styling for consistency
 
 2. Search Logic:
-
    - Filter by name, category, and tags
    - Apply 300ms debouncing
    - Highlight search results
 
 3. State Management:
-
    - Use useState for search terms and results
    - Optimize API calls with useEffect
 
@@ -227,13 +224,11 @@ Phase 4 - Testing:
 "Migrate legacy/userManager.js to modern JavaScript:
 
 1. Syntax Updates:
-
    - Convert var → const/let
    - Transform functions → arrow functions (where appropriate)
    - Apply Promise → async/await conversion
 
 2. Feature Improvements:
-
    - Enhance error handling (add try-catch)
    - Improve type safety (JSDoc or TS)
    - Utilize current project utilities
@@ -365,25 +360,21 @@ Phase 4 - Testing:
 "Develop Button component (complete UI system):
 
 1. Base Button Component:
-
    - Support variants (primary, secondary, danger)
    - Size options (small, medium, large)
    - Handle disabled and loading states
 
 2. Styling:
-
    - Utilize existing design system color palette
    - Style for hover, focus, active states
    - Dark mode support (if applicable)
 
 3. Accessibility:
-
    - Complete ARIA attribute implementation
    - Keyboard navigation
    - Focus management
 
 4. TypeScript Support:
-
    - Define Props interface
    - Type safety for event handlers
 

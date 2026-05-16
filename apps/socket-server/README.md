@@ -70,6 +70,7 @@ Sec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=
 ```
 
 **Sec-WebSocket-Accept 계산:**
+
 ```javascript
 const acceptKey = crypto
   .createHash('sha1')
@@ -93,6 +94,7 @@ const acceptKey = crypto
 ```
 
 **주요 필드:**
+
 - **FIN (1bit)**: 최종 프레임 여부
 - **Opcode (4bits)**: 프레임 타입 (0x1=Text, 0x8=Close, 0x9=Ping, 0xA=Pong)
 - **MASK (1bit)**: 마스킹 여부 (클라이언트→서버는 항상 1)
@@ -175,16 +177,19 @@ broadcast(message) {
 ## 💡 학습 포인트
 
 ### 저수준 네트워크 프로그래밍
+
 - TCP 소켓 직접 다루기
 - 바이너리 데이터 파싱
 - 비트 연산 (bit masking, shifting)
 
 ### 프로토콜 설계
+
 - 핸드셰이크 메커니즘
 - 프레임 구조 설계
 - 상태 관리 (CONNECTING, OPEN, CLOSING, CLOSED)
 
 ### 실시간 통신 패턴
+
 - 이벤트 기반 아키텍처
 - 브로드캐스팅 vs 유니캐스팅
 - 연결 풀 관리

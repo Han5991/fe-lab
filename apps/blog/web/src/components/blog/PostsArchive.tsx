@@ -153,27 +153,172 @@ export const PostsArchiveView = ({
     // FAB·시트는 grid 자식으로 두면 fixed 포지션이라도 DOM상 grid item이 되어
     // 접근성/레이아웃 어색함이 있으므로, 둘은 grid 바깥의 sibling으로 분리합니다.
     <>
-    <div
-      className={css({
-        display: 'grid',
-        gridTemplateColumns: { base: '1fr', md: '[240px 1fr]' },
-        gap: { base: '4', md: '12' },
-      })}
-    >
-      <aside
+      <div
         className={css({
-          // 모바일에서는 사이드바를 숨기고 FAB+바텀시트로 필터 노출.
-          display: { base: 'none', md: 'flex' },
-          position: { md: 'sticky' },
-          top: { md: '20' },
-          alignSelf: { md: 'start' },
-          maxH: { md: '[calc(100vh - 88px)]' },
-          overflowY: { md: 'auto' },
-          flexDir: 'column',
-          gap: '7',
+          display: 'grid',
+          gridTemplateColumns: { base: '1fr', md: '[240px 1fr]' },
+          gap: { base: '4', md: '12' },
         })}
       >
-        <ArchiveSearchBar q={q} onChange={v => setQ(v || null)} />
+        <aside
+          className={css({
+            // 모바일에서는 사이드바를 숨기고 FAB+바텀시트로 필터 노출.
+            display: { base: 'none', md: 'flex' },
+            position: { md: 'sticky' },
+            top: { md: '20' },
+            alignSelf: { md: 'start' },
+            maxH: { md: '[calc(100vh - 88px)]' },
+            overflowY: { md: 'auto' },
+            flexDir: 'column',
+            gap: '7',
+          })}
+        >
+          <ArchiveSearchBar q={q} onChange={v => setQ(v || null)} />
+          <PostsFilterPanel
+            sort={sort}
+            onSortChange={setSort}
+            view={view}
+            onViewChange={setView}
+            tagItems={tagItems}
+            activeTags={activeTags}
+            onToggleTag={toggleTag}
+            seriesItems={seriesItems}
+            activeSeries={seriesParam || null}
+            onToggleSeries={toggleSeries}
+            yearItems={yearItems}
+            activeYear={yearParam || null}
+            onToggleYear={toggleYear}
+          />
+        </aside>
+
+        <div>
+          {/* 모바일 전용 검색창. 데스크톱은 aside 안의 검색창을 그대로 사용. */}
+          <div
+            className={css({
+              display: { base: 'block', md: 'none' },
+              mb: '4',
+            })}
+          >
+            <ArchiveSearchBar q={q} onChange={v => setQ(v || null)} />
+          </div>
+
+          <ActiveFilters
+            tags={activeTags}
+            series={seriesParam || null}
+            year={yearParam || null}
+            onRemoveTag={toggleTag}
+            onClearSeries={() => setSeriesParam(null)}
+            onClearYear={() => setYearParam(null)}
+            onClearAll={clearAll}
+          />
+
+          <div
+            className={css({
+              display: 'flex',
+              alignItems: 'baseline',
+              justifyContent: 'space-between',
+              mb: '4',
+            })}
+          >
+            <Label tone="meta">{filtered.length}편</Label>
+          </div>
+
+          {filtered.length === 0 ? (
+            <div
+              className={css({
+                py: '24',
+                textAlign: 'center',
+                display: 'flex',
+                flexDir: 'column',
+                alignItems: 'center',
+                gap: '4',
+              })}
+            >
+              <p
+                className={css({
+                  fontFamily: 'serif',
+                  fontStyle: 'italic',
+                  fontSize: 'lg',
+                  color: 'ink.700',
+                })}
+              >
+                매칭되는 노트가 없어요.
+              </p>
+              <p
+                className={css({
+                  fontFamily: 'sans',
+                  fontSize: 'sm',
+                  color: 'ink.500',
+                })}
+              >
+                필터를 풀거나 다른 검색어로 시도해보세요.
+              </p>
+              <button
+                type="button"
+                onClick={clearAll}
+                className={css({
+                  fontFamily: 'mono',
+                  fontSize: 'xs',
+                  color: 'marker.600',
+                  px: '3',
+                  py: '2',
+                  borderWidth: '[1px]',
+                  borderColor: 'ink.border',
+                  rounded: 'md',
+                  cursor: 'pointer',
+                  _hover: { borderColor: 'marker.600' },
+                  transition: '[border-color 0.15s]',
+                })}
+              >
+                ✕ 모두 지우기
+              </button>
+            </div>
+          ) : view === 'cards' ? (
+            <div
+              className={css({
+                display: 'grid',
+                gridTemplateColumns: {
+                  base: '1fr',
+                  sm: '[repeat(2, 1fr)]',
+                  lg: '[repeat(3, 1fr)]',
+                },
+                gap: '6',
+              })}
+            >
+              {filtered.map(p => (
+                <PostGridCard key={p.slug} post={p} />
+              ))}
+            </div>
+          ) : (
+            <ol
+              className={css({
+                listStyleType: 'none',
+                p: '0',
+                m: '0',
+                borderTopWidth: '[1px]',
+                borderColor: 'ink.border',
+              })}
+            >
+              {filtered.map(p => (
+                <li key={p.slug}>
+                  <PostListRow post={p} />
+                </li>
+              ))}
+            </ol>
+          )}
+        </div>
+      </div>
+
+      <PostsFilterFab
+        onClick={() => setSheetOpen(true)}
+        activeCount={activeCount}
+      />
+      <PostsFilterSheet
+        open={sheetOpen}
+        onClose={() => setSheetOpen(false)}
+        onClearAll={clearAll}
+        activeCount={activeCount}
+      >
         <PostsFilterPanel
           sort={sort}
           onSortChange={setSort}
@@ -189,152 +334,7 @@ export const PostsArchiveView = ({
           activeYear={yearParam || null}
           onToggleYear={toggleYear}
         />
-      </aside>
-
-      <div>
-        {/* 모바일 전용 검색창. 데스크톱은 aside 안의 검색창을 그대로 사용. */}
-        <div
-          className={css({
-            display: { base: 'block', md: 'none' },
-            mb: '4',
-          })}
-        >
-          <ArchiveSearchBar q={q} onChange={v => setQ(v || null)} />
-        </div>
-
-        <ActiveFilters
-          tags={activeTags}
-          series={seriesParam || null}
-          year={yearParam || null}
-          onRemoveTag={toggleTag}
-          onClearSeries={() => setSeriesParam(null)}
-          onClearYear={() => setYearParam(null)}
-          onClearAll={clearAll}
-        />
-
-        <div
-          className={css({
-            display: 'flex',
-            alignItems: 'baseline',
-            justifyContent: 'space-between',
-            mb: '4',
-          })}
-        >
-          <Label tone="meta">{filtered.length}편</Label>
-        </div>
-
-        {filtered.length === 0 ? (
-          <div
-            className={css({
-              py: '24',
-              textAlign: 'center',
-              display: 'flex',
-              flexDir: 'column',
-              alignItems: 'center',
-              gap: '4',
-            })}
-          >
-            <p
-              className={css({
-                fontFamily: 'serif',
-                fontStyle: 'italic',
-                fontSize: 'lg',
-                color: 'ink.700',
-              })}
-            >
-              매칭되는 노트가 없어요.
-            </p>
-            <p
-              className={css({
-                fontFamily: 'sans',
-                fontSize: 'sm',
-                color: 'ink.500',
-              })}
-            >
-              필터를 풀거나 다른 검색어로 시도해보세요.
-            </p>
-            <button
-              type="button"
-              onClick={clearAll}
-              className={css({
-                fontFamily: 'mono',
-                fontSize: 'xs',
-                color: 'marker.600',
-                px: '3',
-                py: '2',
-                borderWidth: '[1px]',
-                borderColor: 'ink.border',
-                rounded: 'md',
-                cursor: 'pointer',
-                _hover: { borderColor: 'marker.600' },
-                transition: '[border-color 0.15s]',
-              })}
-            >
-              ✕ 모두 지우기
-            </button>
-          </div>
-        ) : view === 'cards' ? (
-          <div
-            className={css({
-              display: 'grid',
-              gridTemplateColumns: {
-                base: '1fr',
-                sm: '[repeat(2, 1fr)]',
-                lg: '[repeat(3, 1fr)]',
-              },
-              gap: '6',
-            })}
-          >
-            {filtered.map(p => (
-              <PostGridCard key={p.slug} post={p} />
-            ))}
-          </div>
-        ) : (
-          <ol
-            className={css({
-              listStyleType: 'none',
-              p: '0',
-              m: '0',
-              borderTopWidth: '[1px]',
-              borderColor: 'ink.border',
-            })}
-          >
-            {filtered.map(p => (
-              <li key={p.slug}>
-                <PostListRow post={p} />
-              </li>
-            ))}
-          </ol>
-        )}
-      </div>
-    </div>
-
-    <PostsFilterFab
-      onClick={() => setSheetOpen(true)}
-      activeCount={activeCount}
-    />
-    <PostsFilterSheet
-      open={sheetOpen}
-      onClose={() => setSheetOpen(false)}
-      onClearAll={clearAll}
-      activeCount={activeCount}
-    >
-      <PostsFilterPanel
-        sort={sort}
-        onSortChange={setSort}
-        view={view}
-        onViewChange={setView}
-        tagItems={tagItems}
-        activeTags={activeTags}
-        onToggleTag={toggleTag}
-        seriesItems={seriesItems}
-        activeSeries={seriesParam || null}
-        onToggleSeries={toggleSeries}
-        yearItems={yearItems}
-        activeYear={yearParam || null}
-        onToggleYear={toggleYear}
-      />
-    </PostsFilterSheet>
+      </PostsFilterSheet>
     </>
   );
 };

@@ -17,7 +17,7 @@ interface IUserService {
 export class UserService implements IUserService {
   constructor(
     protected user: UserServer,
-    protected dateUtils: IDateUtils
+    protected dateUtils: IDateUtils,
   ) {}
 
   createUser(user: UserReq): Promise<UserRes> {

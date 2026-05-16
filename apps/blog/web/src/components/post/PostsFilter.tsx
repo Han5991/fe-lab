@@ -172,7 +172,15 @@ function EmptyState({ message }: { message: string }) {
 }
 
 /* ─── Group Header ─── */
-function GroupHeader({ name, count, unit }: { name: string; count: number; unit: string }) {
+function GroupHeader({
+  name,
+  count,
+  unit,
+}: {
+  name: string;
+  count: number;
+  unit: string;
+}) {
   return (
     <div
       className={css({
@@ -196,7 +204,8 @@ function GroupHeader({ name, count, unit }: { name: string; count: number; unit:
         {name}
       </h2>
       <span className={css({ fontSize: 'xs', color: 'ink.500' })}>
-        {count}{unit}
+        {count}
+        {unit}
       </span>
     </div>
   );
@@ -310,11 +319,17 @@ export const PostsFilter = ({ posts }: PostsFilterProps) => {
             })}
           >
             {seriesGroups.length === 0 ? (
-              <EmptyState message={query ? '검색 결과가 없습니다.' : '시리즈가 없습니다.'} />
+              <EmptyState
+                message={query ? '검색 결과가 없습니다.' : '시리즈가 없습니다.'}
+              />
             ) : (
               seriesGroups.map(([seriesName, seriesPosts]) => (
                 <section key={seriesName}>
-                  <GroupHeader name={seriesName} count={seriesPosts.length} unit="편" />
+                  <GroupHeader
+                    name={seriesName}
+                    count={seriesPosts.length}
+                    unit="편"
+                  />
                   <div
                     className={css({
                       display: 'flex',
@@ -349,11 +364,17 @@ export const PostsFilter = ({ posts }: PostsFilterProps) => {
             })}
           >
             {tagGroups.length === 0 ? (
-              <EmptyState message={query ? '검색 결과가 없습니다.' : '태그가 없습니다.'} />
+              <EmptyState
+                message={query ? '검색 결과가 없습니다.' : '태그가 없습니다.'}
+              />
             ) : (
               tagGroups.map(([tagName, tagPosts]) => (
                 <section key={tagName}>
-                  <GroupHeader name={`# ${tagName}`} count={tagPosts.length} unit="개" />
+                  <GroupHeader
+                    name={`# ${tagName}`}
+                    count={tagPosts.length}
+                    unit="개"
+                  />
                   <div className={css({ display: 'flex', flexDir: 'column' })}>
                     {tagPosts.map(post => (
                       <PostRow key={post.slug} post={post} />

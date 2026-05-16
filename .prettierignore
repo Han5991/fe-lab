@@ -4,6 +4,23 @@ build
 out
 .next
 coverage
+.tsbuildinfo
+*.tsbuildinfo
+
+# Panda CSS 생성물 (절대 직접 수정 금지)
+styled-system
+**/styled-system/**
+packages/@design-system/ui-lib/**
+
+# 저자 컨벤션 존중 — 블로그 포스트 콘텐츠
+apps/blog/posts/**
+
+# 빌드 스크립트가 생성하는 정적 인덱스
+apps/blog/web/public/admin-posts-index.json
+apps/blog/web/public/search-index.json
+
+# Next.js 자동 생성 타입 선언
+**/next-env.d.ts
 
 # 의존성 디렉토리
 node_modules

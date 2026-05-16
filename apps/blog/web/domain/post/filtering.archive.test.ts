@@ -25,7 +25,9 @@ function p(over: Partial<Pickable> = {}): Pickable {
   };
 }
 
-const baseParams = (over: Partial<ArchiveFilterParams> = {}): ArchiveFilterParams => ({
+const baseParams = (
+  over: Partial<ArchiveFilterParams> = {},
+): ArchiveFilterParams => ({
   q: '',
   tags: [],
   series: null,
@@ -57,7 +59,12 @@ test('archive: query 비면 전체 포스트', () => {
 test('archive: q는 title/excerpt/tags 모두 검색 (case-insensitive)', () => {
   const posts = [
     p({ slug: 'a', title: 'TypeScript Patterns', excerpt: '', tags: [] }),
-    p({ slug: 'b', title: '리팩토링', excerpt: 'design pattern stuff', tags: [] }),
+    p({
+      slug: 'b',
+      title: '리팩토링',
+      excerpt: 'design pattern stuff',
+      tags: [],
+    }),
     p({ slug: 'c', title: '번들러', excerpt: '', tags: ['ast', 'graph'] }),
     p({ slug: 'd', title: 'Other', excerpt: '', tags: ['unrelated'] }),
   ];
@@ -71,7 +78,10 @@ test('archive: q는 title/excerpt/tags 모두 검색 (case-insensitive)', () => 
     posts,
     baseParams({ q: 'ast' }),
   );
-  assert.deepEqual(tagHit.map(x => x.slug), ['c']);
+  assert.deepEqual(
+    tagHit.map(x => x.slug),
+    ['c'],
+  );
 });
 
 test('archive: tags는 AND 매칭', () => {
@@ -98,7 +108,10 @@ test('archive: series 필터', () => {
     posts,
     baseParams({ series: 'bundler' }),
   );
-  assert.deepEqual(out.map(x => x.slug), ['a']);
+  assert.deepEqual(
+    out.map(x => x.slug),
+    ['a'],
+  );
 });
 
 test('archive: year 필터는 date의 prefix로 매칭', () => {
@@ -124,7 +137,10 @@ test('archive: sort=recent는 date 내림차순', () => {
     posts,
     baseParams({ sort: 'recent' }),
   );
-  assert.deepEqual(out.map(x => x.slug), ['new', 'mid', 'old']);
+  assert.deepEqual(
+    out.map(x => x.slug),
+    ['new', 'mid', 'old'],
+  );
 });
 
 test('archive: sort=shortest는 readMin 오름차순', () => {
@@ -137,7 +153,10 @@ test('archive: sort=shortest는 readMin 오름차순', () => {
     posts,
     baseParams({ sort: 'shortest' }),
   );
-  assert.deepEqual(out.map(x => x.slug), ['short', 'mid', 'long']);
+  assert.deepEqual(
+    out.map(x => x.slug),
+    ['short', 'mid', 'long'],
+  );
 });
 
 test('archive: sort=popular는 viewCounts 내림차순, 동률은 date 내림차순', () => {
@@ -158,7 +177,10 @@ test('archive: sort=popular는 viewCounts 내림차순, 동률은 date 내림차
     baseParams({ sort: 'popular', viewCounts: counts }),
   );
   // a(100) > c(50, mar) > b(50, feb) > d(0)
-  assert.deepEqual(out.map(x => x.slug), ['a', 'c', 'b', 'd']);
+  assert.deepEqual(
+    out.map(x => x.slug),
+    ['a', 'c', 'b', 'd'],
+  );
 });
 
 test('archive: sort=popular + viewCounts 미제공 시 모두 0으로 간주(date desc)', () => {
@@ -171,7 +193,10 @@ test('archive: sort=popular + viewCounts 미제공 시 모두 0으로 간주(dat
     baseParams({ sort: 'popular' }),
   );
   // viewCounts undefined → 동점 0 → date desc
-  assert.deepEqual(out.map(x => x.slug), ['b', 'a']);
+  assert.deepEqual(
+    out.map(x => x.slug),
+    ['b', 'a'],
+  );
 });
 
 test('archive: 필터 + 정렬 합성', () => {
@@ -185,7 +210,10 @@ test('archive: 필터 + 정렬 합성', () => {
     baseParams({ tags: ['ts'], sort: 'shortest' }),
   );
   // ts 태그만 → ts1(5), ts2(12); shortest → ts1, ts2
-  assert.deepEqual(out.map(x => x.slug), ['ts1', 'ts2']);
+  assert.deepEqual(
+    out.map(x => x.slug),
+    ['ts1', 'ts2'],
+  );
 });
 
 test('archive: 입력 배열은 변형되지 않음(immutable)', () => {

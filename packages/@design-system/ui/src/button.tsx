@@ -3,8 +3,7 @@ import { button, type ButtonVariantProps } from '@design-system/ui-lib/recipes';
 import { cx } from '@design-system/ui-lib/css';
 
 export interface ButtonProps
-  extends ButtonVariantProps,
-    ComponentPropsWithoutRef<'button'> {}
+  extends ButtonVariantProps, ComponentPropsWithoutRef<'button'> {}
 
 export const Button = (props: ButtonProps) => {
   const [variantProps, localProps] = button.splitVariantProps(props);

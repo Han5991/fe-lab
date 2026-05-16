@@ -3,8 +3,9 @@
   "version": "1.0.0",
   "description": "",
   "main": "src/index.ts",
-  "scripts": {
-    "test": "echo \"Error: no test specified\""
+  "scripts": {},
+  "engines": {
+    "node": ">=20"
   },
   "keywords": [],
   "author": "",

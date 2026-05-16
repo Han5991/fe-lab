@@ -39,7 +39,8 @@ export const PostsFilterSheet = ({
     previouslyFocusedRef.current = document.activeElement as HTMLElement | null;
     // 다음 frame에 시트가 마운트된 후 첫 focusable로 포커스를 옮깁니다.
     const focusFirst = requestAnimationFrame(() => {
-      const first = sheetRef.current?.querySelector<HTMLElement>(focusableSelector);
+      const first =
+        sheetRef.current?.querySelector<HTMLElement>(focusableSelector);
       first?.focus();
     });
     const onKey = (e: KeyboardEvent) => {
@@ -128,7 +129,13 @@ export const PostsFilterSheet = ({
               <h2 className={css({ fontSize: 'lg', fontWeight: 'bold' })}>
                 필터{activeCount > 0 ? ` · ${activeCount}` : ''}
               </h2>
-              <div className={css({ display: 'flex', gap: '4', alignItems: 'center' })}>
+              <div
+                className={css({
+                  display: 'flex',
+                  gap: '4',
+                  alignItems: 'center',
+                })}
+              >
                 {activeCount > 0 && (
                   <button
                     type="button"

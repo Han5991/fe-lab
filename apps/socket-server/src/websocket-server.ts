@@ -23,12 +23,14 @@ interface SessionInfo {
   /** 마지막 활동 시간 */
   lastActiveAt: Date;
   /** 세션 메타데이터 */
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
 }
 
 /**
  * 이벤트 리스너 타입
+ * TODO: 이벤트별 페이로드 맵(EventPayloadMap)으로 정밀 타이핑 — 현재는 호출처 내로우잉 유지를 위해 any.
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type EventListener = (data?: any) => void;
 
 /**
@@ -85,11 +87,51 @@ export class WebSocketServer {
 
     // 주식 데이터 초기화
     this.stockData = new Map([
-      ['AAPL', { symbol: 'AAPL', name: 'Apple Inc.', price: 178.25, basePrice: 178.25 }],
-      ['GOOGL', { symbol: 'GOOGL', name: 'Alphabet Inc.', price: 141.8, basePrice: 141.8 }],
-      ['MSFT', { symbol: 'MSFT', name: 'Microsoft Corp.', price: 378.91, basePrice: 378.91 }],
-      ['TSLA', { symbol: 'TSLA', name: 'Tesla Inc.', price: 242.84, basePrice: 242.84 }],
-      ['AMZN', { symbol: 'AMZN', name: 'Amazon.com Inc.', price: 178.35, basePrice: 178.35 }],
+      [
+        'AAPL',
+        {
+          symbol: 'AAPL',
+          name: 'Apple Inc.',
+          price: 178.25,
+          basePrice: 178.25,
+        },
+      ],
+      [
+        'GOOGL',
+        {
+          symbol: 'GOOGL',
+          name: 'Alphabet Inc.',
+          price: 141.8,
+          basePrice: 141.8,
+        },
+      ],
+      [
+        'MSFT',
+        {
+          symbol: 'MSFT',
+          name: 'Microsoft Corp.',
+          price: 378.91,
+          basePrice: 378.91,
+        },
+      ],
+      [
+        'TSLA',
+        {
+          symbol: 'TSLA',
+          name: 'Tesla Inc.',
+          price: 242.84,
+          basePrice: 242.84,
+        },
+      ],
+      [
+        'AMZN',
+        {
+          symbol: 'AMZN',
+          name: 'Amazon.com Inc.',
+          price: 178.35,
+          basePrice: 178.35,
+        },
+      ],
     ]);
 
     // HTTP 서버의 upgrade 이벤트를 리스닝
@@ -645,7 +687,7 @@ class WebSocketConnection {
     this.listeners[event].push(callback);
   }
 
-  private emit(event: string, data?: any): void {
+  private emit<T = unknown>(event: string, data?: T): void {
     if (this.listeners[event]) {
       this.listeners[event].forEach(callback => callback(data));
     }
@@ -675,7 +717,7 @@ class WebSocketConnection {
   /**
    * 세션 메타데이터 설정
    */
-  setMetadata(key: string, value: any): void {
+  setMetadata(key: string, value: unknown): void {
     this.sessionInfo.metadata[key] = value;
   }
 
