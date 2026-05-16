@@ -328,8 +328,8 @@ export default function AboutPage() {
                       py: '5',
                       borderBottomWidth: '[1px]',
                       borderColor: 'ink.border',
-                      transition: '[background 0.15s, box-shadow 0.15s]',
-                      _hover: { bg: 'paper.100', boxShadow: 'markerLeft' },
+                      transition: '[background 0.15s, box-shadow 0.15s, padding 0.15s]',
+                      _hover: { bg: 'paper.100', boxShadow: 'markerLeft', pl: '4' },
                     })}
                   >
                     <div
@@ -421,8 +421,8 @@ export default function AboutPage() {
                         py: '4',
                         borderBottomWidth: '[1px]',
                         borderColor: 'ink.border',
-                        transition: '[background 0.15s, box-shadow 0.15s]',
-                        _hover: { bg: 'paper.100', boxShadow: 'markerLeft' },
+                        transition: '[background 0.15s, box-shadow 0.15s, padding 0.15s]',
+                        _hover: { bg: 'paper.100', boxShadow: 'markerLeft', pl: '4' },
                       })}
                     >
                       <div>
@@ -523,8 +523,8 @@ export default function AboutPage() {
                         py: '4',
                         borderBottomWidth: '[1px]',
                         borderColor: 'ink.border',
-                        transition: '[background 0.15s, box-shadow 0.15s]',
-                        _hover: { bg: 'paper.100', boxShadow: 'markerLeft' },
+                        transition: '[background 0.15s, box-shadow 0.15s, padding 0.15s]',
+                        _hover: { bg: 'paper.100', boxShadow: 'markerLeft', pl: '4' },
                       })}
                     >
                       <div className={css({ flex: '1', minW: '0' })}>
