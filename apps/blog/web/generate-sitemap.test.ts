@@ -7,6 +7,7 @@ import {
   HIGH_PRIORITY_SLUGS,
 } from './generate-sitemap';
 import type { SitemapPost } from './generate-sitemap';
+import { parseScheduledDateKST, getKSTDateISO } from './lib/dates';
 
 // arbitrary fixture date — not today's date. 단위 테스트는 실제 날짜에 의존하지
 // 않고 이 값이 sitemap 본문에 그대로 흘러가는지만 검증합니다. (실제 날짜 동작은
@@ -125,4 +126,45 @@ test('sitemap: XML 헤더와 urlset namespace 포함', () => {
     xml.includes('xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"'),
   );
   assert.ok(xml.trimEnd().endsWith('</urlset>'));
+});
+
+// --- KST 날짜 파싱 회귀 테스트 ---
+// 'YYYY-MM-DD' 형식의 date/updatedAt은 KST 날짜 의도이므로
+// lastmod가 하루 밀리지 않아야 합니다.
+
+test('sitemap: YYYY-MM-DD date의 lastmod는 KST 기준으로 동일 날짜', () => {
+  // '2025-12-31'은 KST 2025-12-31 자정을 의도합니다.
+  // UTC 자정으로 파싱 후 toISOString().split('T')[0]를 하면 '2025-12-30'이 됩니다.
+  // KST 기준으로 날짜를 추출하면 '2025-12-31'이어야 합니다.
+  const posts = [makePost({ slug: 'a', date: '2025-12-31' })];
+  const xml = buildSitemapXml(posts, TODAY, SITE);
+  assert.ok(
+    xml.includes('<lastmod>2025-12-31</lastmod>'),
+    'KST 날짜 의도 YYYY-MM-DD의 lastmod가 하루 밀리면 안 됨',
+  );
+});
+
+test('sitemap: YYYY-MM-DD date가 UTC 자정으로 파싱되면 lastmod가 하루 밀리는 버그 방지', () => {
+  // 버그 상태: new Date('2025-12-31').toISOString().split('T')[0] = '2025-12-30'
+  // (UTC 자정 = 2025-12-31T00:00:00Z이지만 ISO split은 UTC 기준이라 하루 전날이 됨)
+  // 수정 후: getKSTDateISO(parseScheduledDateKST('2025-12-31')) = '2025-12-31'
+  const posts = [makePost({ slug: 'a', date: '2025-12-31' })];
+  const xml = buildSitemapXml(posts, TODAY, SITE);
+  const correctLastmod = getKSTDateISO(parseScheduledDateKST('2025-12-31')); // '2025-12-31'
+  // 핵심: UTC+9 미만 TZ에서 getKSTDateISO를 쓰면 lastmod가 올바르게 유지됨
+  assert.equal(correctLastmod, '2025-12-31');
+  assert.ok(xml.includes(`<lastmod>${correctLastmod}</lastmod>`));
+});
+
+test('sitemap: offset 포함 ISO 8601 date는 KST 날짜로 변환', () => {
+  // '2026-03-10T09:00:00+09:00' → KST 2026-03-10 09:00 → KST 날짜: '2026-03-10'
+  const posts = [
+    makePost({ slug: 'a', date: '2026-03-10T09:00:00+09:00', updatedAt: null }),
+  ];
+  const xml = buildSitemapXml(posts, TODAY, SITE);
+  const expected = getKSTDateISO(
+    parseScheduledDateKST('2026-03-10T09:00:00+09:00'),
+  );
+  assert.equal(expected, '2026-03-10');
+  assert.ok(xml.includes(`<lastmod>${expected}</lastmod>`));
 });

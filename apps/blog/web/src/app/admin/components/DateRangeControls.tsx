@@ -2,8 +2,30 @@
 
 import { useMemo, useState } from 'react';
 import { css } from '@design-system/ui-lib/css';
+import { getKSTDateISO, addDaysISO } from '@/lib/dates';
 
 export type FilterType = 'all' | '7days' | '30days' | 'custom';
+
+/**
+ * filterType에 대응하는 KST 기준 cutoff 날짜 문자열 (`YYYY-MM-DD`)을 반환합니다.
+ * Supabase RPC는 KST로 집계한 view_date를 반환하므로 비교 기준도 KST여야 합니다.
+ *
+ * @param filterType - 필터 유형 ('7days' | '30days' | 그 외)
+ * @param todayKST - 오늘 KST 날짜 (`YYYY-MM-DD`). 미제공 시 현재 시각 기준으로 계산.
+ * @returns cutoff 날짜 문자열. 이 날짜 이후(>=)의 데이터를 필터링에 사용합니다.
+ *
+ * @example
+ * // KST 기준 오늘이 '2026-05-25'이고 filterType이 '7days'이면
+ * getKSTCutoffDate('7days', '2026-05-25') // → '2026-05-18'
+ */
+export function getKSTCutoffDate(
+  filterType: '7days' | '30days',
+  todayKST?: string,
+): string {
+  const today = todayKST ?? getKSTDateISO();
+  if (filterType === '7days') return addDaysISO(today, -7);
+  return addDaysISO(today, -30);
+}
 
 export function useDateFilter(
   trends: { view_date: string; view_count: number }[],
@@ -21,11 +43,9 @@ export function useDateFilter(
     if (filterType !== '30days' || !trends || trends.length === 0) {
       return { effectiveFilterType: filterType, autoFellBackToAll: false };
     }
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const cutoff = new Date(today);
-    cutoff.setDate(today.getDate() - 30);
-    const cutoffStr = cutoff.toISOString().split('T')[0];
+    // RPC가 KST view_date를 반환하므로, cutoff도 KST 기준으로 계산해야 일치합니다.
+    // 브라우저 로컬 TZ에서 new Date() + toISOString()을 쓰면 비-KST 환경에서 1일 shift.
+    const cutoffStr = getKSTCutoffDate('30days');
     const hasRecent = trends.some(t => t.view_date >= cutoffStr);
     return hasRecent
       ? { effectiveFilterType: '30days', autoFellBackToAll: false }
@@ -41,18 +61,7 @@ export function useDateFilter(
 
     if (effectiveFilterType === 'all') return sorted;
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    let cutoffDate = new Date(0);
-
-    if (effectiveFilterType === '7days') {
-      cutoffDate = new Date(today);
-      cutoffDate.setDate(today.getDate() - 7);
-    } else if (effectiveFilterType === '30days') {
-      cutoffDate = new Date(today);
-      cutoffDate.setDate(today.getDate() - 30);
-    } else if (effectiveFilterType === 'custom') {
+    if (effectiveFilterType === 'custom') {
       return sorted.filter(t => {
         if (startDate && t.view_date < startDate) return false;
         if (endDate && t.view_date > endDate) return false;
@@ -60,8 +69,14 @@ export function useDateFilter(
       });
     }
 
-    const cutoffStr = cutoffDate.toISOString().split('T')[0];
-    return sorted.filter(t => t.view_date >= cutoffStr);
+    // RPC가 KST view_date를 반환하므로 cutoff도 KST 기준으로 계산합니다.
+    // 브라우저 로컬 TZ에서 new Date() + toISOString()을 쓰면 비-KST 환경에서 1일 shift.
+    if (effectiveFilterType === '7days' || effectiveFilterType === '30days') {
+      const cutoffStr = getKSTCutoffDate(effectiveFilterType);
+      return sorted.filter(t => t.view_date >= cutoffStr);
+    }
+
+    return sorted;
   }, [trends, effectiveFilterType, startDate, endDate]);
 
   return {

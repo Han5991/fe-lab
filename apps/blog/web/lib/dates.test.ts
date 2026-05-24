@@ -5,6 +5,7 @@ import {
   diffDaysISO,
   formatMonthDayISO,
   getKSTDateISO,
+  parseScheduledDateKST,
 } from './dates';
 
 test('getKSTDateISO: KST 자정 직후', () => {
@@ -62,4 +63,38 @@ test('formatMonthDayISO: 한 자리 월/일은 zero-pad 없이', () => {
   assert.equal(formatMonthDayISO('2026-05-09'), '5/9');
   assert.equal(formatMonthDayISO('2026-12-31'), '12/31');
   assert.equal(formatMonthDayISO('2026-01-01'), '1/1');
+});
+
+// --- parseScheduledDateKST ---
+
+test('parseScheduledDateKST: YYYY-MM-DD는 KST 자정(UTC 전날 15:00)으로 파싱', () => {
+  // '2026-05-24' (시간 없음) → KST 2026-05-24 00:00:00 = UTC 2026-05-23 15:00:00
+  const d = parseScheduledDateKST('2026-05-24');
+  assert.equal(d.toISOString(), '2026-05-23T15:00:00.000Z');
+});
+
+test('parseScheduledDateKST: YYYY-MM-DD는 UTC 자정이 아닌 KST 자정', () => {
+  // UTC 자정이라면 '2026-05-24T00:00:00.000Z'가 되지만,
+  // KST 자정이므로 UTC 기준 9시간 빠른 '2026-05-23T15:00:00.000Z'여야 합니다.
+  const d = parseScheduledDateKST('2026-05-24');
+  assert.notEqual(d.toISOString(), '2026-05-24T00:00:00.000Z');
+  assert.equal(d.toISOString(), '2026-05-23T15:00:00.000Z');
+});
+
+test('parseScheduledDateKST: offset 포함 ISO 8601은 그대로 파싱', () => {
+  // +09:00 offset 포함 → KST 2026-05-24 09:00:00 = UTC 2026-05-24 00:00:00
+  const d = parseScheduledDateKST('2026-05-24T09:00:00+09:00');
+  assert.equal(d.toISOString(), '2026-05-24T00:00:00.000Z');
+});
+
+test('parseScheduledDateKST: UTC(Z) offset은 그대로 파싱', () => {
+  // Z suffix → UTC 그대로 해석
+  const d = parseScheduledDateKST('2026-05-24T00:00:00Z');
+  assert.equal(d.toISOString(), '2026-05-24T00:00:00.000Z');
+});
+
+test('parseScheduledDateKST: 날짜 경계 — 연말/월말', () => {
+  // 2026-12-31 KST 자정 = 2026-12-30 15:00 UTC
+  const d = parseScheduledDateKST('2026-12-31');
+  assert.equal(d.toISOString(), '2026-12-30T15:00:00.000Z');
 });
