@@ -42,21 +42,54 @@
 --    service_role → GRANT (Supabase client-side 호출 불가, 서버/cron만)
 -- -----------------------------------------------------------------------------
 
+-- 아래 10개 모두 동일 패턴(DO $$ IF EXISTS)으로 처리해 reset 안전성 + 일관성 확보.
+-- 4개는 기존 마이그레이션 파일에 정의되어 있고, 6개는 supabase 대시보드에서
+-- 직접 생성된 것으로 추정(production dump에는 있으나 마이그레이션 파일 없음).
+-- 어느 환경에 대해서도 동일 코드가 안전하게 동작하도록 모두 가드.
+
 -- get_all_post_stats()
-REVOKE ALL ON FUNCTION public.get_all_post_stats() FROM PUBLIC, anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.get_all_post_stats() TO service_role;
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_proc p JOIN pg_namespace n ON p.pronamespace = n.oid
+             WHERE n.nspname = 'public' AND p.proname = 'get_all_post_stats') THEN
+    EXECUTE 'REVOKE ALL ON FUNCTION public.get_all_post_stats() FROM PUBLIC, anon, authenticated';
+    EXECUTE 'GRANT EXECUTE ON FUNCTION public.get_all_post_stats() TO service_role';
+  END IF;
+END;
+$$;
 
 -- get_all_posts_trends()
-REVOKE ALL ON FUNCTION public.get_all_posts_trends() FROM PUBLIC, anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.get_all_posts_trends() TO service_role;
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_proc p JOIN pg_namespace n ON p.pronamespace = n.oid
+             WHERE n.nspname = 'public' AND p.proname = 'get_all_posts_trends') THEN
+    EXECUTE 'REVOKE ALL ON FUNCTION public.get_all_posts_trends() FROM PUBLIC, anon, authenticated';
+    EXECUTE 'GRANT EXECUTE ON FUNCTION public.get_all_posts_trends() TO service_role';
+  END IF;
+END;
+$$;
 
 -- get_post_hourly_distribution(text)
-REVOKE ALL ON FUNCTION public.get_post_hourly_distribution(text) FROM PUBLIC, anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.get_post_hourly_distribution(text) TO service_role;
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_proc p JOIN pg_namespace n ON p.pronamespace = n.oid
+             WHERE n.nspname = 'public' AND p.proname = 'get_post_hourly_distribution') THEN
+    EXECUTE 'REVOKE ALL ON FUNCTION public.get_post_hourly_distribution(text) FROM PUBLIC, anon, authenticated';
+    EXECUTE 'GRANT EXECUTE ON FUNCTION public.get_post_hourly_distribution(text) TO service_role';
+  END IF;
+END;
+$$;
 
 -- get_post_dow_distribution(text)
-REVOKE ALL ON FUNCTION public.get_post_dow_distribution(text) FROM PUBLIC, anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.get_post_dow_distribution(text) TO service_role;
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_proc p JOIN pg_namespace n ON p.pronamespace = n.oid
+             WHERE n.nspname = 'public' AND p.proname = 'get_post_dow_distribution') THEN
+    EXECUTE 'REVOKE ALL ON FUNCTION public.get_post_dow_distribution(text) FROM PUBLIC, anon, authenticated';
+    EXECUTE 'GRANT EXECUTE ON FUNCTION public.get_post_dow_distribution(text) TO service_role';
+  END IF;
+END;
+$$;
 
 -- get_daily_view_trend(int, text) — production에 존재하나 마이그레이션 파일 없음
 -- (Supabase 대시보드에서 직접 생성된 것으로 추정)
@@ -175,7 +208,7 @@ END;
 $$;
 
 -- -----------------------------------------------------------------------------
--- 3. increment_view_count — 본문은 그대로, 권한만 정리
+-- 2. increment_view_count — 본문은 그대로, 권한만 정리
 --
 -- 본 PR 초안에는 "slug 단위 1분 중복 차단" 블록이 있었으나 코드 리뷰에서
 -- "특정 slug의 첫 사용자 호출이 이후 1분간 B/C/D 사용자 호출까지 차단해
@@ -197,16 +230,25 @@ REVOKE ALL ON FUNCTION public.increment_view_count(text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.increment_view_count(text) TO anon, authenticated, service_role;
 
 -- -----------------------------------------------------------------------------
--- 4. 테이블 직접 권한 정리
+-- 3. 테이블 직접 권한 정리
 -- -----------------------------------------------------------------------------
 
--- 4-1. post_view_logs: anon GRANT ALL → REVOKE ALL
+-- 3-1. post_view_logs: anon GRANT ALL → REVOKE ALL
 --   SECURITY DEFINER RPC 경로만 허용. 직접 테이블 접근 불가.
 REVOKE ALL ON TABLE public.post_view_logs FROM anon, authenticated, PUBLIC;
--- service_role은 SECURITY DEFINER 함수 실행 컨텍스트에서 사용
-GRANT ALL ON TABLE public.post_view_logs TO service_role;
+-- service_role은 SECURITY DEFINER 함수 실행 컨텍스트에서 사용.
+--   service_role은 본래 RLS bypass + 기본적으로 모든 권한이 부여돼 GRANT 자체가
+--   엄밀히는 redundant지만, "이 테이블에 service_role이 SELECT/INSERT 한다"는
+--   의도를 명시적으로 남긴다. 실제 함수가 쓰는 동작:
+--     - SELECT: get_all_post_stats, get_post_hourly_distribution,
+--       get_post_dow_distribution, get_hourly_traffic_pattern,
+--       get_weekly_traffic_pattern, aggregate_daily_stats
+--     - INSERT: increment_view_count
+--   UPDATE/DELETE는 사용처 없음 → 좁혀서 명시.
+GRANT SELECT, INSERT ON TABLE public.post_view_logs TO service_role;
 
--- 4-2. post_view_logs_id_seq: 시퀀스도 동일하게 정리
+-- 3-2. post_view_logs_id_seq: 시퀀스 권한 좁혀서 명시
+--   INSERT 시 nextval 호출 → USAGE 필요. SELECT는 currval 호출 시.
 DO $$
 BEGIN
   IF EXISTS (
@@ -215,19 +257,21 @@ BEGIN
       AND sequence_name = 'post_view_logs_id_seq'
   ) THEN
     EXECUTE 'REVOKE ALL ON SEQUENCE public.post_view_logs_id_seq FROM anon, authenticated, PUBLIC';
-    EXECUTE 'GRANT ALL ON SEQUENCE public.post_view_logs_id_seq TO service_role';
+    EXECUTE 'GRANT USAGE, SELECT ON SEQUENCE public.post_view_logs_id_seq TO service_role';
   END IF;
 END;
 $$;
 
--- 4-3. post_views: anon에 SELECT만 남기고 INSERT/UPDATE/DELETE REVOKE
+-- 3-3. post_views: anon에 SELECT만 남기고 INSERT/UPDATE/DELETE REVOKE
 --   "Allow public read access" RLS 정책과 일관성 유지
 REVOKE INSERT, UPDATE, DELETE ON TABLE public.post_views FROM anon, authenticated, PUBLIC;
 GRANT SELECT ON TABLE public.post_views TO anon, authenticated;
-GRANT ALL ON TABLE public.post_views TO service_role;
+-- service_role: increment_view_count(INSERT/UPDATE upsert), 기타 SELECT 함수들.
+--   DELETE 사용처 없음 → 좁혀서 명시.
+GRANT SELECT, INSERT, UPDATE ON TABLE public.post_views TO service_role;
 
 -- -----------------------------------------------------------------------------
--- 5. increment_post_views 이중 정의 안내 (코멘트)
+-- 4. increment_post_views 이중 정의 안내 (코멘트)
 -- -----------------------------------------------------------------------------
 -- production pg_dump 에서 increment_post_views 가 두 시그니처로 존재함.
 -- 현재 코드(domain/analytics/repository.ts)에서는 increment_view_count 만 호출.
@@ -253,8 +297,8 @@ GRANT ALL ON TABLE public.post_views TO service_role;
 --    app.admin_email GUC 사전 설정 필요:
 --      ALTER DATABASE postgres SET "app.admin_email" = 'rewq5991@gmail.com';
 --
--- 3. increment_post_views 두 시그니처 정리 (위 섹션 5 참조)
+-- 3. increment_post_views 두 시그니처 정리 (위 섹션 4 참조)
 --
--- 4. IP/세션 기반 rate limit 도입 (위 섹션 3 참조)
+-- 4. IP/세션 기반 rate limit 도입 (위 섹션 2 참조)
 --    Supabase Edge Function에서 JWT 또는 IP 단위 토큰 버킷 권장.
 --    SQL 함수에서 inet_client_addr 사용은 pooler 환경에서 부정확.
