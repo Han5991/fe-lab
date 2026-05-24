@@ -233,7 +233,37 @@ END;
 $$;
 
 -- -----------------------------------------------------------------------------
--- 4. increment_post_views 이중 정의 안내 (코멘트)
+-- 4. DEFAULT PRIVILEGES lockdown — 재발 방지
+-- -----------------------------------------------------------------------------
+-- 본 PR의 결함 원인이 바로 Supabase의 default privilege 였음:
+--   public 스키마에 새로 생성된 함수/테이블/시퀀스에 anon/authenticated/
+--   service_role 모두에 자동 GRANT ALL. 마이그레이션의 REVOKE FROM PUBLIC 은
+--   anon role 에 영향 없음 → 새 함수 생성 즉시 lockdown 무력화.
+--
+-- ALTER DEFAULT PRIVILEGES 를 적용하지 않으면 Phase 2 마이그레이션이나 향후
+-- 어떤 PR이든 public 함수/테이블을 새로 만드는 순간 동일 결함이 재발한다.
+--
+-- ⚠️ 영향:
+--   1) 적용 후에 만드는 모든 public 함수는 service_role 외에는 호출 불가.
+--      anon/authenticated가 호출해야 하는 public RPC(예: 새로운
+--      increment_view_count 류)는 명시적 GRANT 가 반드시 필요.
+--   2) 새 public 테이블도 anon/authenticated에 자동 SELECT 권한 없음.
+--      RLS 정책 + 명시적 GRANT SELECT 필수.
+--   3) ALTER DEFAULT PRIVILEGES 는 *적용한 role* (postgres) 이 만든 객체에만
+--      적용. 다른 role이 만든 객체에는 별도 ALTER 필요.
+--      → Supabase는 supabase_admin / postgres role로 마이그레이션 실행하므로
+--        실질적으로 모든 마이그레이션 객체에 적용됨.
+ALTER DEFAULT PRIVILEGES IN SCHEMA public
+  REVOKE EXECUTE ON FUNCTIONS FROM anon, authenticated;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA public
+  REVOKE ALL ON TABLES FROM anon, authenticated;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA public
+  REVOKE ALL ON SEQUENCES FROM anon, authenticated;
+
+-- -----------------------------------------------------------------------------
+-- 5. increment_post_views 이중 정의 안내 (코멘트)
 -- -----------------------------------------------------------------------------
 -- production pg_dump 에서 increment_post_views 가 두 시그니처로 존재함.
 -- 현재 코드(domain/analytics/repository.ts)에서는 increment_view_count 만 호출.
@@ -259,7 +289,7 @@ $$;
 --    app.admin_email GUC 사전 설정 필요:
 --      ALTER DATABASE postgres SET "app.admin_email" = 'rewq5991@gmail.com';
 --
--- 3. increment_post_views 두 시그니처 정리 (위 섹션 4 참조)
+-- 3. increment_post_views 두 시그니처 정리 (위 섹션 5 참조)
 --
 -- 4. IP/세션 기반 rate limit 도입 (위 섹션 2 참조)
 --    Supabase Edge Function에서 JWT 또는 IP 단위 토큰 버킷 권장.
