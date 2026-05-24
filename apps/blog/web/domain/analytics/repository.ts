@@ -3,11 +3,19 @@
  *
  * 컴포넌트와 React 훅은 Supabase client를 직접 호출하지 않고
  * 이 모듈의 함수만 사용합니다.
+ *
+ * admin RPC 4건(getAllPostStats, getAllPostsTrends, getPostHourlyDistribution,
+ * getPostDowDistribution)은 PR #114에서 service_role 한정으로 lockdown 되었기 때문에
+ * anon key로 직접 호출할 수 없습니다. admin-analytics Edge Function을 경유합니다.
  */
 
 import { client } from '@/lib/client';
+import { createAdminApiClient } from '@/lib/adminApi';
 import type { PostStatus } from '@/domain/post/types';
 import type { HourlyDistribution, DowDistribution } from './types';
+
+/** admin-analytics Edge Function 클라이언트 (싱글턴) */
+const adminApi = createAdminApiClient(client);
 
 export interface AdminPostIndex {
   slug: string;
@@ -47,8 +55,8 @@ export async function getTopPosts(limit: number): Promise<TopPostRow[]> {
 }
 
 export async function getAllPostStats(): Promise<PostStatsRow[]> {
-  const { data, error } = await client.rpc('get_all_post_stats');
-  if (error) throw error;
+  // admin RPC — service_role 한정. Edge Function 경유.
+  const data = await adminApi.call<PostStatsRow[]>('all_post_stats');
   return (data ?? []).map(s => ({
     slug: s.slug,
     total_views: Number(s.total_views),
@@ -57,16 +65,14 @@ export async function getAllPostStats(): Promise<PostStatsRow[]> {
 }
 
 export async function getAllPostsTrends(): Promise<PostTrendRow[]> {
-  // PostgREST는 기본 1000-row cap. 글 수 × 평균 trends가 그 이상이면 알파벳
-  // 후순 slug(t로 시작하는 typescript-* 등)가 통째로 잘려 나갑니다.
-  // .range()로 페이지네이션해 전체 행을 모읍니다.
+  // admin RPC — service_role 한정. Edge Function 경유.
+  // PostgREST 1000-row cap을 피하기 위해 range 페이지네이션을 Edge Function에 위임합니다.
   const all: PostTrendRow[] = [];
   const PAGE = 1000;
   for (let from = 0; ; from += PAGE) {
-    const { data, error } = await client
-      .rpc('get_all_posts_trends')
-      .range(from, from + PAGE - 1);
-    if (error) throw error;
+    const data = await adminApi.call<PostTrendRow[]>('all_posts_trends', {
+      range: [from, from + PAGE - 1] as [number, number],
+    });
     const rows = data ?? [];
     all.push(
       ...rows.map(t => ({
@@ -96,10 +102,12 @@ export async function getAdminPostsIndex(): Promise<AdminPostIndex[]> {
 export async function getPostHourlyDistribution(
   slug: string,
 ): Promise<HourlyDistribution[]> {
-  const { data, error } = await client.rpc('get_post_hourly_distribution', {
-    slug_input: slug,
-  });
-  if (error || !data) return [];
+  // admin RPC — service_role 한정. Edge Function 경유.
+  const data = await adminApi.call<HourlyDistribution[]>(
+    'post_hourly_distribution',
+    { slug },
+  );
+  if (!data) return [];
   return data.map(h => ({
     hour: Number(h.hour),
     view_count: Number(h.view_count),
@@ -109,10 +117,11 @@ export async function getPostHourlyDistribution(
 export async function getPostDowDistribution(
   slug: string,
 ): Promise<DowDistribution[]> {
-  const { data, error } = await client.rpc('get_post_dow_distribution', {
-    slug_input: slug,
+  // admin RPC — service_role 한정. Edge Function 경유.
+  const data = await adminApi.call<DowDistribution[]>('post_dow_distribution', {
+    slug,
   });
-  if (error || !data) return [];
+  if (!data) return [];
   return data.map(d => ({
     dow: Number(d.dow),
     view_count: Number(d.view_count),
