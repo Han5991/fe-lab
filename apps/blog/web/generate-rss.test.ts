@@ -125,19 +125,19 @@ test('rss: YYYY-MM-DD pubDate는 UTC 자정이 아닌 KST 자정 기준 — 9시
   // 버그 상태(UTC 자정): 'Fri, 08 May 2026 00:00:00 GMT'
   // 수정 후(KST 자정): 'Thu, 07 May 2026 15:00:00 GMT'  (UTC 기준 하루 이전 15시)
   const xml = buildRssXml([makePost({ slug: 'a', date: '2026-05-09' })], OPTS);
-  const buggyExpected = new Date('2026-05-09').toUTCString(); // UTC 자정 (버그)
-  const correctExpected = parseScheduledDateKST('2026-05-09').toUTCString(); // KST 자정 (수정)
+  // KST 자정은 UTC 전날 15시. 'YYYY-MM-DD'를 그대로 new Date()에 넣으면 UTC
+  // 자정으로 해석되므로 buggy/correct는 항상 다른 시각(서로 9시간 차).
+  // 즉 분기 가드 없이 두 단언을 모두 실행해도 안전합니다.
   assert.ok(
-    xml.includes(`<pubDate>${correctExpected}</pubDate>`),
+    xml.includes(
+      `<pubDate>${parseScheduledDateKST('2026-05-09').toUTCString()}</pubDate>`,
+    ),
     'KST 자정 기준 pubDate를 포함해야 함',
   );
-  // 두 값이 다른 경우(UTC+9 이외 환경)에는 UTC 자정 값이 포함되지 않아야 함
-  if (buggyExpected !== correctExpected) {
-    assert.ok(
-      !xml.includes(`<pubDate>${buggyExpected}</pubDate>`),
-      'UTC 자정(버그) 기준 pubDate가 포함되면 안 됨',
-    );
-  }
+  assert.ok(
+    !xml.includes(`<pubDate>${new Date('2026-05-09').toUTCString()}</pubDate>`),
+    'UTC 자정(버그) 기준 pubDate가 포함되면 안 됨',
+  );
 });
 
 test('rss: offset 포함 ISO 8601 date는 그대로 파싱', () => {

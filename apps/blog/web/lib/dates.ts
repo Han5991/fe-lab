@@ -44,10 +44,18 @@ export function diffDaysISO(a: string, b: string): number {
 /**
  * scheduledDate / post.date 문자열을 KST 기준 Date로 파싱합니다.
  *
+ * ## 지원 입력 형식
  * - `'YYYY-MM-DD'` (시간 없음): JS Date는 UTC 자정으로 해석하지만,
  *   블로그 규칙상 이 형식은 KST 날짜이므로 `T00:00:00+09:00`를 붙여
  *   KST 자정(= UTC 전날 15:00)으로 변환합니다.
- * - 그 외 ISO 8601 (timezone offset 포함, 예: `+09:00`, `Z`): 그대로 파싱합니다.
+ * - ISO 8601 with timezone offset (예: `'2026-05-24T09:00:00+09:00'`,
+ *   `'2026-05-24T00:00:00Z'`): 그대로 파싱합니다.
+ *
+ * ## 비지원 입력 (사용 시 결과 미정의)
+ * - `'YYYY-MM-DDTHH:mm:ss'` (timezone offset 없는 datetime):
+ *   ECMAScript 스펙상 *로컬 타임*으로 파싱되어 환경 의존이 됩니다
+ *   (개발자 머신에선 KST지만 빌드 서버에선 UTC). 작성 규약에서 항상
+ *   `+09:00` 또는 `Z`를 명시하거나 `'YYYY-MM-DD'` 짧은 형식을 사용하세요.
  *
  * @example
  * parseScheduledDateKST('2026-05-24')
@@ -75,4 +83,25 @@ export function formatMonthDayISO(iso: string): string {
   // iso 예: "2026-05-09" → "5/9"
   const [, mm, dd] = iso.split('-');
   return `${Number(mm)}/${Number(dd)}`;
+}
+
+/**
+ * filterType에 대응하는 KST 기준 cutoff 날짜 문자열(`YYYY-MM-DD`)을 반환합니다.
+ * Supabase RPC가 KST 기준 view_date를 반환하므로 비교 기준도 KST여야 합니다.
+ *
+ * @param filterType - '7days' | '30days'
+ * @param todayKST   - 오늘 KST 날짜 (`YYYY-MM-DD`). 미제공 시 현재 시각 기준.
+ * @returns cutoff 날짜 (이 날짜 이후 데이터가 필터링 대상).
+ *
+ * @example
+ * getKSTCutoffDate('7days', '2026-05-25')  // → '2026-05-18'
+ * getKSTCutoffDate('30days', '2026-05-25') // → '2026-04-25'
+ */
+export function getKSTCutoffDate(
+  filterType: '7days' | '30days',
+  todayKST?: string,
+): string {
+  const today = todayKST ?? getKSTDateISO();
+  if (filterType === '7days') return addDaysISO(today, -7);
+  return addDaysISO(today, -30);
 }

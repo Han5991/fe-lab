@@ -220,3 +220,58 @@ test('computeAnalyticsOverview: topPosts는 내림차순 상위 5개', () => {
   // 첫 번째가 최다 조회
   assert.ok(result.topPosts[0].views >= result.topPosts[1].views);
 });
+
+test('computeAnalyticsOverview: postsPublished=0 이면 avgPerPost=0 (0 나눗셈 가드)', () => {
+  const data = [
+    makePostDetail(
+      'd1',
+      [{ view_date: '2026-05-22', view_count: 100 }],
+      'draft',
+    ),
+    makePostDetail(
+      'd2',
+      [{ view_date: '2026-05-22', view_count: 50 }],
+      'draft',
+    ),
+  ];
+  const result = computeAnalyticsOverview(data, '7d', '2026-05-24');
+  assert.equal(result.postsPublished, 0);
+  assert.equal(result.avgPerPost, 0);
+});
+
+test('computeAnalyticsOverview: topPosts delta — 직전 기간 0이면 null (totalDelta와 일관)', () => {
+  // post: 현재 기간만 조회수 있음, 직전 기간은 0
+  const data = [
+    makePostDetail('only-current', [
+      { view_date: '2026-05-22', view_count: 50 },
+    ]),
+  ];
+  const result = computeAnalyticsOverview(data, '7d', '2026-05-24');
+  assert.equal(result.topPosts[0].delta, null);
+});
+
+test('computeDerivedStats: todayISO 주입으로 자정 경계 결정성 확보', () => {
+  // 같은 trends 데이터를 두 개의 todayISO로 계산 → recent7/previous7 윈도우가
+  // 다르게 잡혀 weekGrowthRate가 달라야 함 (자정 stale 회귀 방지).
+  const trends = [
+    { view_date: '2026-05-13', view_count: 10 },
+    { view_date: '2026-05-15', view_count: 20 },
+    { view_date: '2026-05-18', view_count: 30 },
+    { view_date: '2026-05-20', view_count: 40 },
+    { view_date: '2026-05-22', view_count: 50 },
+  ];
+  const post = makePostDetail('x', trends);
+
+  // todayISO='2026-05-23':
+  //   recent7 [05-16, 05-23): 05-18(30) + 05-20(40) + 05-22(50) = 120
+  //   previous7 [05-09, 05-16): 05-13(10) + 05-15(20) = 30 → growth = 300%
+  const r1 = computeDerivedStats(post, '2026-05-23');
+  // todayISO='2026-05-21':
+  //   recent7 [05-14, 05-21): 05-15(20) + 05-18(30) + 05-20(40) = 90
+  //   previous7 [05-07, 05-14): 05-13(10) = 10 → growth = 800%
+  const r2 = computeDerivedStats(post, '2026-05-21');
+
+  assert.notEqual(r1.weekGrowthRate, r2.weekGrowthRate);
+  assert.equal(r1.weekGrowthRate, 300);
+  assert.equal(r2.weekGrowthRate, 800);
+});

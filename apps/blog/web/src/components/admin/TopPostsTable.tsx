@@ -11,7 +11,8 @@ export interface TopPostRow {
   slug: string;
   title: string;
   views: number;
-  delta: number;
+  /** 직전 기간 대비 증감율. 직전 기간 데이터가 없으면 null (totalDelta와 일관). */
+  delta: number | null;
   series: number[];
 }
 
@@ -89,12 +90,19 @@ export const TopPostsTable = ({ rows }: TopPostsTableProps) => {
             className={css({
               fontFamily: 'mono',
               fontSize: 'xs',
-              color: p.delta >= 0 ? 'moss.600' : 'marker.600',
+              color:
+                p.delta === null
+                  ? 'ink.400'
+                  : p.delta >= 0
+                    ? 'moss.600'
+                    : 'marker.600',
               textAlign: 'right',
               fontVariantNumeric: 'tabular-nums',
             })}
           >
-            {p.delta >= 0 ? '↑' : '↓'} {Math.abs(p.delta * 100).toFixed(0)}%
+            {p.delta === null
+              ? '—'
+              : `${p.delta >= 0 ? '↑' : '↓'} ${Math.abs(p.delta * 100).toFixed(0)}%`}
           </span>
         </li>
       ))}

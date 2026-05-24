@@ -138,6 +138,21 @@ function makeTmpDir(): string {
   return mkdtempSync(join(tmpdir(), 'sync-posts-test-'));
 }
 
+/**
+ * 임시 src/dst 디렉토리를 만들어 fn에 넘기고, 종료 시 항상 정리합니다.
+ * fn 안에서 assertion이 실패해도 finally가 실행되어 tmp dir이 누적되지 않습니다.
+ */
+function withTmpDirs(fn: (src: string, dst: string) => void): void {
+  const src = makeTmpDir();
+  const dst = makeTmpDir();
+  try {
+    fn(src, dst);
+  } finally {
+    rmSync(src, { recursive: true, force: true });
+    rmSync(dst, { recursive: true, force: true });
+  }
+}
+
 function writeFile(dir: string, relPath: string, content = 'x'): void {
   const full = join(dir, relPath);
   mkdirSync(dirname(full), { recursive: true });
@@ -147,81 +162,66 @@ function writeFile(dir: string, relPath: string, content = 'x'): void {
 // ── tests ───────────────────────────────────────────────────────────────────
 
 test('sync: src 파일이 dst로 복사됨', () => {
-  const src = makeTmpDir();
-  const dst = makeTmpDir();
-  writeFile(src, 'a/img.png', 'PNG');
+  withTmpDirs((src, dst) => {
+    writeFile(src, 'a/img.png', 'PNG');
 
-  const result = runSync(src, dst);
-  assert.equal(result.status, 0, result.stderr);
-  assert.ok(existsSync(join(dst, 'a/img.png')), 'dst에 파일이 복사되어야 함');
-  assert.ok(result.stdout.includes('1 copied'), result.stdout);
-
-  rmSync(src, { recursive: true });
-  rmSync(dst, { recursive: true });
+    const result = runSync(src, dst);
+    assert.equal(result.status, 0, result.stderr);
+    assert.ok(existsSync(join(dst, 'a/img.png')), 'dst에 파일이 복사되어야 함');
+    assert.ok(result.stdout.includes('1 copied'), result.stdout);
+  });
 });
 
 test('orphan 삭제: src에 없는 dst 파일이 삭제됨', () => {
-  const src = makeTmpDir();
-  const dst = makeTmpDir();
+  withTmpDirs((src, dst) => {
+    // dst에 orphan 파일 미리 생성
+    writeFile(dst, 'orphan.png', 'ORPHAN');
+    // src에는 다른 파일
+    writeFile(src, 'real.jpg', 'REAL');
 
-  // dst에 orphan 파일 미리 생성
-  writeFile(dst, 'orphan.png', 'ORPHAN');
-  // src에는 다른 파일
-  writeFile(src, 'real.jpg', 'REAL');
-
-  const result = runSync(src, dst);
-  assert.equal(result.status, 0, result.stderr);
-  assert.ok(
-    !existsSync(join(dst, 'orphan.png')),
-    'orphan 파일이 삭제되어야 함',
-  );
-  assert.ok(
-    existsSync(join(dst, 'real.jpg')),
-    'src 파일은 dst에 복사되어야 함',
-  );
-  assert.ok(result.stdout.includes('1 removed'), result.stdout);
-
-  rmSync(src, { recursive: true });
-  rmSync(dst, { recursive: true });
+    const result = runSync(src, dst);
+    assert.equal(result.status, 0, result.stderr);
+    assert.ok(
+      !existsSync(join(dst, 'orphan.png')),
+      'orphan 파일이 삭제되어야 함',
+    );
+    assert.ok(
+      existsSync(join(dst, 'real.jpg')),
+      'src 파일은 dst에 복사되어야 함',
+    );
+    assert.ok(result.stdout.includes('1 removed'), result.stdout);
+  });
 });
 
 test('orphan dry-run: --dry-orphan 이면 파일이 남아있음', () => {
-  const src = makeTmpDir();
-  const dst = makeTmpDir();
+  withTmpDirs((src, dst) => {
+    writeFile(dst, 'orphan.svg', 'ORPHAN');
+    writeFile(src, 'real.png', 'REAL');
 
-  writeFile(dst, 'orphan.svg', 'ORPHAN');
-  writeFile(src, 'real.png', 'REAL');
-
-  const result = runSync(src, dst, ['--dry-orphan']);
-  assert.equal(result.status, 0, result.stderr);
-  // dry-orphan 이므로 파일은 삭제되지 않아야 함
-  assert.ok(
-    existsSync(join(dst, 'orphan.svg')),
-    'dry-orphan이면 파일이 남아야 함',
-  );
-  assert.ok(result.stdout.includes('[dry-orphan]'), result.stdout);
-  assert.ok(
-    result.stdout.includes('dry-orphan: 실제 삭제 안 함'),
-    result.stdout,
-  );
-
-  rmSync(src, { recursive: true });
-  rmSync(dst, { recursive: true });
+    const result = runSync(src, dst, ['--dry-orphan']);
+    assert.equal(result.status, 0, result.stderr);
+    // dry-orphan 이므로 파일은 삭제되지 않아야 함
+    assert.ok(
+      existsSync(join(dst, 'orphan.svg')),
+      'dry-orphan이면 파일이 남아야 함',
+    );
+    assert.ok(result.stdout.includes('[dry-orphan]'), result.stdout);
+    assert.ok(
+      result.stdout.includes('dry-orphan: 실제 삭제 안 함'),
+      result.stdout,
+    );
+  });
 });
 
 test('orphan: src가 빈 디렉토리면 dst 미디어 파일 전부 삭제', () => {
-  const src = makeTmpDir();
-  const dst = makeTmpDir();
+  withTmpDirs((src, dst) => {
+    writeFile(dst, 'a/b/old.jpg', 'OLD');
+    writeFile(dst, 'c/d/old.png', 'OLD');
 
-  writeFile(dst, 'a/b/old.jpg', 'OLD');
-  writeFile(dst, 'c/d/old.png', 'OLD');
-
-  const result = runSync(src, dst);
-  assert.equal(result.status, 0, result.stderr);
-  assert.ok(!existsSync(join(dst, 'a/b/old.jpg')));
-  assert.ok(!existsSync(join(dst, 'c/d/old.png')));
-  assert.ok(result.stdout.includes('2 removed'), result.stdout);
-
-  rmSync(src, { recursive: true });
-  rmSync(dst, { recursive: true });
+    const result = runSync(src, dst);
+    assert.equal(result.status, 0, result.stderr);
+    assert.ok(!existsSync(join(dst, 'a/b/old.jpg')));
+    assert.ok(!existsSync(join(dst, 'c/d/old.png')));
+    assert.ok(result.stdout.includes('2 removed'), result.stdout);
+  });
 });

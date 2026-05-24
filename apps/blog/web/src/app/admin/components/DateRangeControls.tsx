@@ -2,30 +2,13 @@
 
 import { useMemo, useState } from 'react';
 import { css } from '@design-system/ui-lib/css';
-import { getKSTDateISO, addDaysISO } from '@/lib/dates';
+import { getKSTCutoffDate } from '@/lib/dates';
 
 export type FilterType = 'all' | '7days' | '30days' | 'custom';
 
-/**
- * filterType에 대응하는 KST 기준 cutoff 날짜 문자열 (`YYYY-MM-DD`)을 반환합니다.
- * Supabase RPC는 KST로 집계한 view_date를 반환하므로 비교 기준도 KST여야 합니다.
- *
- * @param filterType - 필터 유형 ('7days' | '30days' | 그 외)
- * @param todayKST - 오늘 KST 날짜 (`YYYY-MM-DD`). 미제공 시 현재 시각 기준으로 계산.
- * @returns cutoff 날짜 문자열. 이 날짜 이후(>=)의 데이터를 필터링에 사용합니다.
- *
- * @example
- * // KST 기준 오늘이 '2026-05-25'이고 filterType이 '7days'이면
- * getKSTCutoffDate('7days', '2026-05-25') // → '2026-05-18'
- */
-export function getKSTCutoffDate(
-  filterType: '7days' | '30days',
-  todayKST?: string,
-): string {
-  const today = todayKST ?? getKSTDateISO();
-  if (filterType === '7days') return addDaysISO(today, -7);
-  return addDaysISO(today, -30);
-}
+// getKSTCutoffDate는 단위 테스트 커버를 위해 lib/dates.ts로 이동.
+// 호환을 위해 같은 이름으로 재노출 — 다른 컴포넌트에서 직접 import해도 동작.
+export { getKSTCutoffDate };
 
 export function useDateFilter(
   trends: { view_date: string; view_count: number }[],

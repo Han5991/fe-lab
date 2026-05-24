@@ -9,7 +9,7 @@
  */
 
 import { readdirSync, statSync } from 'node:fs';
-import { join } from 'node:path';
+import { basename, join } from 'node:path';
 
 /** repository.ts 와 validate-posts.ts 모두가 스킵하는 메타 파일 이름 목록 */
 const META_FILENAMES = new Set(['PLAN.md', 'THUMBNAIL_LOG.md', 'STUDY_LOG.md']);
@@ -20,8 +20,9 @@ const META_FILENAMES = new Set(['PLAN.md', 'THUMBNAIL_LOG.md', 'STUDY_LOG.md']);
  * @param absPath 절대 경로 또는 파일 이름
  */
 export function isMetaFile(absPath: string): boolean {
-  const name = absPath.split('/').pop() ?? '';
-  return META_FILENAMES.has(name);
+  // path.basename으로 OS별 path separator 차이를 견고하게 처리.
+  // (이전 'absPath.split("/")' 는 Windows의 '\\' 경로에서 동작 불가)
+  return META_FILENAMES.has(basename(absPath));
 }
 
 /**
@@ -29,18 +30,22 @@ export function isMetaFile(absPath: string): boolean {
  *
  * 메타 파일(META_FILENAMES)은 자동으로 제외됩니다.
  *
- * @param dir   탐색 시작 디렉토리
- * @param acc   내부 재귀용 누적 배열 (외부에서 넘기지 않아도 됨)
+ * 내부 누적 배열은 외부 노출하지 않고 private helper로 격리합니다.
+ * (이전 시그니처는 acc를 public API에 두어 호출자가 실수로 외부 배열을 넘기면
+ * 의도치 않게 오염되는 위험이 있었음)
  */
-export function collectMarkdownFiles(
-  dir: string,
-  acc: string[] = [],
-): string[] {
+export function collectMarkdownFiles(dir: string): string[] {
+  const acc: string[] = [];
+  walk(dir, acc);
+  return acc;
+}
+
+function walk(dir: string, acc: string[]): void {
   for (const item of readdirSync(dir)) {
     const full = join(dir, item);
     const stat = statSync(full);
     if (stat.isDirectory()) {
-      collectMarkdownFiles(full, acc);
+      walk(full, acc);
       continue;
     }
     if (item.endsWith('.md') || item.endsWith('.mdx')) {
@@ -49,7 +54,6 @@ export function collectMarkdownFiles(
       }
     }
   }
-  return acc;
 }
 
 /**
@@ -57,7 +61,8 @@ export function collectMarkdownFiles(
  * delimiter 가 없으면 메타 노트로 간주합니다.
  */
 export function hasFrontmatter(raw: string): boolean {
-  const lines = raw.split('\n');
+  // CRLF(\r\n) / LF(\n) 모두 안전하게 분할.
+  const lines = raw.split(/\r?\n/);
   if (lines[0]?.trim() !== '---') return false;
   for (let i = 1; i < lines.length; i++) {
     if (lines[i].trim() === '---') return true;
