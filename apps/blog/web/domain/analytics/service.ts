@@ -35,7 +35,7 @@ export interface AnalyticsOverview {
     slug: string;
     title: string;
     views: number;
-    delta: number;
+    delta: number | null;
     series: number[];
   }[];
 }
@@ -99,7 +99,7 @@ export function computeAnalyticsOverview(
   const avgPerPost =
     postsPublished > 0 ? Math.round(total / postsPublished) : 0;
 
-  const topPosts = [...data]
+  const topPosts = data
     .map(post => {
       let rangeViews = 0;
       let prevRangeViews = 0;
@@ -114,7 +114,9 @@ export function computeAnalyticsOverview(
         }
       }
       const delta =
-        prevRangeViews > 0 ? (rangeViews - prevRangeViews) / prevRangeViews : 0;
+        prevRangeViews > 0
+          ? (rangeViews - prevRangeViews) / prevRangeViews
+          : null;
       return {
         slug: post.slug,
         title: post.title,
@@ -145,8 +147,15 @@ const MILESTONE_TARGETS = [100, 500, 1000, 5000] as const;
 /**
  * 트렌드 데이터에서 파생 통계를 계산합니다.
  * (주간 성장률, 피크 일자, 일 평균, 마일스톤)
+ *
+ * todayISO 파라미터로 기준일을 주입받습니다(기본값은 KST 오늘).
+ * computeAnalyticsOverview와 동일한 패턴으로 외부 시계 의존을 격리해
+ * 자정 경계 테스트를 가능하게 합니다.
  */
-export function computeDerivedStats(post: PostStatDetail): DerivedStats {
+export function computeDerivedStats(
+  post: PostStatDetail,
+  todayISO: string = getKSTDateISO(),
+): DerivedStats {
   const trends = post.trends;
 
   const sorted = [...trends].sort((a, b) =>
@@ -155,15 +164,14 @@ export function computeDerivedStats(post: PostStatDetail): DerivedStats {
 
   // KST 기준 today. RPC view_date도 KST이므로 동일 TZ로 윈도우를 잡아야
   // recent7/previous7이 어제·재작년처럼 한 칸 밀리지 않습니다.
-  const todayStr = getKSTDateISO();
-  const sevenDayStr = addDaysISO(todayStr, -7);
-  const fourteenDayStr = addDaysISO(todayStr, -14);
+  const sevenDayStr = addDaysISO(todayISO, -7);
+  const fourteenDayStr = addDaysISO(todayISO, -14);
 
   // 오늘은 아직 진행 중인 날이라 두 윈도우 모두에서 의도적으로 제외합니다
   // ([7일 전, 오늘) vs [14일 전, 7일 전)). 7일 성장률 계산이 미완성된 오늘
   // 데이터로 왜곡되지 않도록 함입니다.
   const recent7 = sorted
-    .filter(t => t.view_date >= sevenDayStr && t.view_date < todayStr)
+    .filter(t => t.view_date >= sevenDayStr && t.view_date < todayISO)
     .reduce((acc, t) => acc + t.view_count, 0);
   const previous7 = sorted
     .filter(t => t.view_date >= fourteenDayStr && t.view_date < sevenDayStr)

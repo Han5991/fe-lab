@@ -40,18 +40,23 @@ export function useAnalyticsOverview(range: AnalyticsRange) {
   const [todayISO, setTodayISO] = useState<string>(() => getKSTDateISO());
 
   useEffect(() => {
-    let timeoutId: ReturnType<typeof setTimeout>;
+    // cancelled flag 패턴: 재귀 setTimeout의 timeoutId 덮어쓰기로 인한
+    // cleanup 누락(unmount 직후 새 timer가 setTodayISO 호출)을 방지합니다.
+    let cancelled = false;
 
     function scheduleNextMidnight() {
       const ms = msUntilKSTMidnight();
-      timeoutId = setTimeout(() => {
+      setTimeout(() => {
+        if (cancelled) return;
         setTodayISO(getKSTDateISO());
         scheduleNextMidnight(); // 다음 자정도 예약
       }, ms);
     }
 
     scheduleNextMidnight();
-    return () => clearTimeout(timeoutId);
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return useMemo(

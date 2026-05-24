@@ -4,6 +4,7 @@ import {
   addDaysISO,
   diffDaysISO,
   formatMonthDayISO,
+  getKSTCutoffDate,
   getKSTDateISO,
   parseScheduledDateKST,
 } from './dates';
@@ -97,4 +98,27 @@ test('parseScheduledDateKST: 날짜 경계 — 연말/월말', () => {
   // 2026-12-31 KST 자정 = 2026-12-30 15:00 UTC
   const d = parseScheduledDateKST('2026-12-31');
   assert.equal(d.toISOString(), '2026-12-30T15:00:00.000Z');
+});
+
+test('getKSTCutoffDate: 7days', () => {
+  assert.equal(getKSTCutoffDate('7days', '2026-05-25'), '2026-05-18');
+});
+
+test('getKSTCutoffDate: 30days', () => {
+  assert.equal(getKSTCutoffDate('30days', '2026-05-25'), '2026-04-25');
+});
+
+test('getKSTCutoffDate: 월 경계 — 30days가 전월로 넘어감', () => {
+  assert.equal(getKSTCutoffDate('30days', '2026-01-15'), '2025-12-16');
+});
+
+test('getKSTCutoffDate: 연 경계 — 7days가 전년 마지막 주로 넘어감', () => {
+  assert.equal(getKSTCutoffDate('7days', '2027-01-03'), '2026-12-27');
+});
+
+test('getKSTCutoffDate: todayKST 미제공 시 현재 KST 기준', () => {
+  // 시각 의존이라 정확한 값 비교 대신 cutoff + 7 == today 만 검증
+  const cutoff = getKSTCutoffDate('7days');
+  const today = getKSTDateISO();
+  assert.equal(addDaysISO(cutoff, 7), today);
 });

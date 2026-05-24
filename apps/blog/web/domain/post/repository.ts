@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { join, relative } from 'node:path';
+import { join, relative, sep } from 'node:path';
 import matter from 'gray-matter';
 import { estimateReadMin } from '../../lib/format';
 import { collectMarkdownFiles, hasFrontmatter } from '../../lib/postFiles';
@@ -61,9 +61,10 @@ function collectPosts(dirPath: string): PostData[] {
     // slug / published / status 중 하나도 없으면 빌드 제외 (기존 메타 파일 제외 규칙)
     if (!data.slug && !data.published && !data.status) continue;
 
-    // postsDirectory 기준 상대 경로로 series / rawSlug 계산
+    // postsDirectory 기준 상대 경로로 series / rawSlug 계산.
+    // node:path의 sep으로 분할해 Windows('\\') / POSIX('/') 모두 안전하게 처리.
     const rel = relative(dirPath, fullPath);
-    const parts = rel.split('/');
+    const parts = rel.split(sep);
     const fileName = parts[parts.length - 1].replace(/\.(md|mdx)$/, '');
     const currentPath = parts.slice(0, -1).join('/');
 
