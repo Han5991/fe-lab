@@ -42,6 +42,29 @@ export function diffDaysISO(a: string, b: string): number {
 }
 
 /**
+ * scheduledDate / post.date 문자열을 KST 기준 Date로 파싱합니다.
+ *
+ * - `'YYYY-MM-DD'` (시간 없음): JS Date는 UTC 자정으로 해석하지만,
+ *   블로그 규칙상 이 형식은 KST 날짜이므로 `T00:00:00+09:00`를 붙여
+ *   KST 자정(= UTC 전날 15:00)으로 변환합니다.
+ * - 그 외 ISO 8601 (timezone offset 포함, 예: `+09:00`, `Z`): 그대로 파싱합니다.
+ *
+ * @example
+ * parseScheduledDateKST('2026-05-24')
+ * // → Date("2026-05-23T15:00:00Z")  ← KST 자정 = UTC 전날 15시
+ *
+ * parseScheduledDateKST('2026-05-24T09:00:00+09:00')
+ * // → Date("2026-05-24T00:00:00Z")
+ */
+export function parseScheduledDateKST(input: string): Date {
+  // 'YYYY-MM-DD' 형식 여부 확인 (시간 없음)
+  if (/^\d{4}-\d{2}-\d{2}$/.test(input)) {
+    return new Date(`${input}T00:00:00+09:00`);
+  }
+  return new Date(input);
+}
+
+/**
  * `YYYY-MM-DD` → `M/D` 차트 X축용 짧은 라벨.
  *
  * `new Date('YYYY-MM-DD').getMonth()`는 입력 문자열을 UTC 자정으로 파싱한 뒤

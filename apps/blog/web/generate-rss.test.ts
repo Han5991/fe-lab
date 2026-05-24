@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { buildRssXml, escapeXml } from './generate-rss';
 import type { RssPost } from './generate-rss';
+import { parseScheduledDateKST } from './lib/dates';
 
 const NOW = new Date('2026-05-16T00:00:00Z');
 const SITE = 'https://example.dev';
@@ -111,9 +112,41 @@ test('rss: slug의 특수문자는 URL 인코딩됨', () => {
   assert.ok(xml.includes(encodeURIComponent('한글-slug')));
 });
 
-test('rss: pubDate가 date 기준', () => {
+test('rss: pubDate가 date 기준 (KST-aware 파싱)', () => {
+  // 'YYYY-MM-DD' 형식의 date는 KST 자정으로 파싱되어야 합니다.
+  // 기존 `new Date('YYYY-MM-DD')`는 UTC 자정으로 해석해 9시간 빠른 날짜를 출력했습니다.
   const xml = buildRssXml([makePost({ slug: 'a', date: '2026-05-09' })], OPTS);
-  const expected = new Date('2026-05-09').toUTCString();
+  const expected = parseScheduledDateKST('2026-05-09').toUTCString();
+  assert.ok(xml.includes(`<pubDate>${expected}</pubDate>`));
+});
+
+test('rss: YYYY-MM-DD pubDate는 UTC 자정이 아닌 KST 자정 기준 — 9시간 shift 없음', () => {
+  // '2026-05-09' (KST) → UTC 2026-05-08 15:00:00 (KST 자정)
+  // 버그 상태(UTC 자정): 'Fri, 08 May 2026 00:00:00 GMT'
+  // 수정 후(KST 자정): 'Thu, 07 May 2026 15:00:00 GMT'  (UTC 기준 하루 이전 15시)
+  const xml = buildRssXml([makePost({ slug: 'a', date: '2026-05-09' })], OPTS);
+  const buggyExpected = new Date('2026-05-09').toUTCString(); // UTC 자정 (버그)
+  const correctExpected = parseScheduledDateKST('2026-05-09').toUTCString(); // KST 자정 (수정)
+  assert.ok(
+    xml.includes(`<pubDate>${correctExpected}</pubDate>`),
+    'KST 자정 기준 pubDate를 포함해야 함',
+  );
+  // 두 값이 다른 경우(UTC+9 이외 환경)에는 UTC 자정 값이 포함되지 않아야 함
+  if (buggyExpected !== correctExpected) {
+    assert.ok(
+      !xml.includes(`<pubDate>${buggyExpected}</pubDate>`),
+      'UTC 자정(버그) 기준 pubDate가 포함되면 안 됨',
+    );
+  }
+});
+
+test('rss: offset 포함 ISO 8601 date는 그대로 파싱', () => {
+  // '+09:00' offset이 있으면 KST임이 명시적 → 그대로 파싱
+  const xml = buildRssXml(
+    [makePost({ slug: 'a', date: '2026-05-09T09:00:00+09:00' })],
+    OPTS,
+  );
+  const expected = new Date('2026-05-09T09:00:00+09:00').toUTCString(); // = 2026-05-09 00:00:00 UTC
   assert.ok(xml.includes(`<pubDate>${expected}</pubDate>`));
 });
 

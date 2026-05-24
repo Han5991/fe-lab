@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { SITE_URL, SITE_NAME, SITE_DESCRIPTION } from './lib/constants';
+import { parseScheduledDateKST } from './lib/dates';
 import { getAllPosts } from './domain/post/service';
 import { encodePostSlug } from './domain/post/utils';
 import type { PostSummary } from './domain/post/types';
@@ -51,7 +52,7 @@ export function buildRssXml(
       <title>${escapeXml(post.title)}</title>
       <link>${siteUrl}/posts/${encodePostSlug(post.slug)}/</link>
       <guid isPermaLink="true">${siteUrl}/posts/${encodePostSlug(post.slug)}/</guid>
-      <pubDate>${post.date ? new Date(post.date).toUTCString() : now.toUTCString()}</pubDate>${post.excerpt ? `\n      <description>${escapeXml(post.excerpt)}</description>` : ''}
+      <pubDate>${post.date ? parseScheduledDateKST(post.date).toUTCString() : now.toUTCString()}</pubDate>${post.excerpt ? `\n      <description>${escapeXml(post.excerpt)}</description>` : ''}
     </item>`,
     )
     .join('\n');

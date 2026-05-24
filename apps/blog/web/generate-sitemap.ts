@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { SITE_URL } from './lib/constants';
+import { parseScheduledDateKST, getKSTDateISO } from './lib/dates';
 import { getAllPosts } from './domain/post/service';
 import { encodePostSlug } from './domain/post/utils';
 import type { PostSummary } from './domain/post/types';
@@ -62,10 +63,14 @@ export function buildSitemapXml(
   </url>
   ${posts
     .map(post => {
+      // 'YYYY-MM-DD' 형식을 KST 자정으로 파싱한 뒤, KST 기준 날짜 문자열로 추출합니다.
+      // UTC 자정으로 파싱하면 `toISOString().split('T')[0]`가 전날 날짜를 반환할 수 있습니다.
+      // (예: '2025-12-31' → UTC 자정 파싱 → toISOString() '2025-12-30T15:00:00Z' → '2025-12-30')
+      // getKSTDateISO()는 KST 기준 달력 날짜를 정확히 반환합니다.
       const lastmod = post.updatedAt
-        ? new Date(post.updatedAt).toISOString().split('T')[0]
+        ? getKSTDateISO(parseScheduledDateKST(post.updatedAt))
         : post.date
-          ? new Date(post.date).toISOString().split('T')[0]
+          ? getKSTDateISO(parseScheduledDateKST(post.date))
           : today;
       return `
   <url>
