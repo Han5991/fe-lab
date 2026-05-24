@@ -25,6 +25,8 @@ const ALLOWED_EXTENSIONS = [
 ];
 
 const FORCE = process.argv.includes('--force');
+/** --dry-orphan: orphan 파일을 실제로 삭제하지 않고 목록만 출력합니다 */
+const DRY_ORPHAN = process.argv.includes('--dry-orphan');
 
 function listMediaFiles(dir, results = []) {
   if (!existsSync(dir)) return results;
@@ -78,14 +80,21 @@ function syncIncremental() {
     for (const t of targetFiles) {
       const rel = relative(POSTS_TARGET_DIR, t.full);
       if (!sourceRelSet.has(rel)) {
-        rmSync(t.full);
+        if (DRY_ORPHAN) {
+          console.log(`  [dry-orphan] would remove: ${rel}`);
+        } else {
+          console.log(`  [orphan] removing: ${rel}`);
+          rmSync(t.full);
+        }
         removed++;
       }
     }
   }
 
+  const dryNote =
+    DRY_ORPHAN && removed > 0 ? ' (dry-orphan: 실제 삭제 안 함)' : '';
   console.log(
-    `Synced posts media: ${copied} copied, ${skipped} unchanged, ${removed} removed`,
+    `Synced posts media: ${copied} copied, ${skipped} unchanged, ${removed} removed${dryNote}`,
   );
 }
 

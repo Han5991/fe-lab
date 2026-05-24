@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "predev": "npx tsx scripts/build-content.ts --skip-validate",
+    "predev": "npx tsx scripts/build-content.ts",
     "dev": "pnpm supabase-start && next dev",
     "prebuild": "npx tsx scripts/build-content.ts",
     "build": "pnpm prebuild && next build",
@@ -11,7 +11,7 @@
     "lint": "eslint .",
     "lint:posts": "npx tsx scripts/validate-posts.ts",
     "check-types": "tsc --noEmit",
-    "test": "node --import tsx --test 'domain/**/*.test.ts' 'lib/**/*.test.ts' 'scripts/**/*.test.ts' 'generate-*.test.ts'",
+    "test": "node --import tsx --test 'domain/**/*.test.ts' 'lib/**/*.test.ts' 'scripts/**/*.test.ts' 'generate-*.test.ts' 'sync-posts.test.ts'",
     "new-post": "npx tsx scripts/new-post.ts",
     "supabase-stop": "supabase stop --all --no-backup --debug",
     "supabase-start": "pnpm supabase-stop && pnpm supabase start"

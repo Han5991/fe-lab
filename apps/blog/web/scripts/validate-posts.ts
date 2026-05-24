@@ -1,9 +1,32 @@
-import { readdirSync, readFileSync, statSync, existsSync } from 'node:fs';
-import { join, relative, resolve, dirname, posix } from 'node:path';
+import { readFileSync, existsSync } from 'node:fs';
+import { relative, resolve, dirname, posix } from 'node:path';
 import matter from 'gray-matter';
+import { collectMarkdownFiles, hasFrontmatter } from '../lib/postFiles';
 
 const POSTS_DIR = resolve(process.cwd(), '..', 'posts');
 const VALID_STATUSES = ['published', 'draft', 'scheduled'] as const;
+
+/**
+ * repository.ts / types.ts / visibility.ts / series.ts 에서 실제로 읽는 키 전체.
+ * 여기에 없는 키가 frontmatter에 있으면 unknown-frontmatter-key 경고를 냅니다.
+ */
+const KNOWN_FRONTMATTER_KEYS = new Set([
+  'title',
+  'date',
+  'updatedAt',
+  'slug',
+  'excerpt',
+  'thumbnail',
+  'tags',
+  'published',
+  'status',
+  'scheduledDate',
+  'series',
+  'draft',
+  // _series.yml 전용 키 (시리즈 메타 파일에서 gray-matter로 파싱되는 경우 대비)
+  'description',
+  'order',
+]);
 
 type Severity = 'error' | 'warning';
 
@@ -22,21 +45,6 @@ interface PostRecord {
   content: string;
 }
 
-function collectMarkdownFiles(dir: string, results: string[] = []): string[] {
-  for (const item of readdirSync(dir)) {
-    const full = join(dir, item);
-    const stat = statSync(full);
-    if (stat.isDirectory()) {
-      collectMarkdownFiles(full, results);
-      continue;
-    }
-    if (item.endsWith('.md') || item.endsWith('.mdx')) {
-      results.push(full);
-    }
-  }
-  return results;
-}
-
 function findFrontmatterLine(raw: string, key: string): number | null {
   const lines = raw.split('\n');
   if (lines[0]?.trim() !== '---') return null;
@@ -46,20 +54,6 @@ function findFrontmatterLine(raw: string, key: string): number | null {
     if (m && m[1] === key) return i + 1;
   }
   return null;
-}
-
-function isMetaFile(absPath: string): boolean {
-  const name = absPath.split('/').pop() ?? '';
-  return ['PLAN.md', 'THUMBNAIL_LOG.md', 'STUDY_LOG.md'].includes(name);
-}
-
-function hasFrontmatter(raw: string): boolean {
-  const lines = raw.split('\n');
-  if (lines[0]?.trim() !== '---') return false;
-  for (let i = 1; i < lines.length; i++) {
-    if (lines[i].trim() === '---') return true;
-  }
-  return false;
 }
 
 function validatePost(record: PostRecord, raw: string): Issue[] {
@@ -78,6 +72,19 @@ function validatePost(record: PostRecord, raw: string): Issue[] {
         '`status`, `published`, `slug` 중 어느 것도 없어 빌드에서 제외됩니다. 메타 파일이면 무시해도 됩니다.',
     });
     return issues;
+  }
+
+  // unknown frontmatter key 경고 — 오타(예: `tag` → `tags`, `scheduled` → `scheduledDate`) 조기 감지
+  for (const key of Object.keys(data)) {
+    if (!KNOWN_FRONTMATTER_KEYS.has(key)) {
+      issues.push({
+        file: relPath,
+        line: findFrontmatterLine(raw, key),
+        severity: 'warning',
+        rule: 'unknown-frontmatter-key',
+        message: `알 수 없는 frontmatter 키: \`${key}\`. 오타가 아닌지 확인하세요. (허용 키: ${[...KNOWN_FRONTMATTER_KEYS].join(', ')})`,
+      });
+    }
   }
 
   if (!data.title || typeof data.title !== 'string') {
@@ -255,7 +262,6 @@ function main() {
   const allIssues: Issue[] = [];
 
   for (const absPath of allFiles) {
-    if (isMetaFile(absPath)) continue;
     const raw = readFileSync(absPath, 'utf8');
     if (!hasFrontmatter(raw)) continue;
     const { data, content } = matter(raw);
