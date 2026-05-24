@@ -42,167 +42,94 @@
 --    service_role → GRANT (Supabase client-side 호출 불가, 서버/cron만)
 -- -----------------------------------------------------------------------------
 
--- 아래 10개 모두 동일 패턴(DO $$ IF EXISTS)으로 처리해 reset 안전성 + 일관성 확보.
--- 4개는 기존 마이그레이션 파일에 정의되어 있고, 6개는 supabase 대시보드에서
--- 직접 생성된 것으로 추정(production dump에는 있으나 마이그레이션 파일 없음).
--- 어느 환경에 대해서도 동일 코드가 안전하게 동작하도록 모두 가드.
-
--- get_all_post_stats()
+-- 모든 함수에 대해 pg_get_function_identity_arguments() 로 실제 시그니처를
+-- 동적으로 가져와 REVOKE/GRANT 한다. 이유:
+--   1) 마이그레이션 파일이 없는 함수가 다수(production 대시보드에서 직접 생성).
+--      실제 시그니처가 추정과 다르면 EXECUTE에서 시그니처 불일치 에러 발생.
+--   2) 같은 이름의 함수가 여러 오버로드를 가질 수 있음(예: increment_post_views).
+--      모두 일관되게 처리되어야 함.
+--   3) 함수가 없는 환경(supabase reset 직후 등)에서는 자동 skip 되어 reset 안전.
+--
+-- 일반 RPC: 9개 — 모두 service_role만 GRANT
 DO $$
+DECLARE
+  fname text;
+  args  text;
 BEGIN
-  IF EXISTS (SELECT 1 FROM pg_proc p JOIN pg_namespace n ON p.pronamespace = n.oid
-             WHERE n.nspname = 'public' AND p.proname = 'get_all_post_stats') THEN
-    EXECUTE 'REVOKE ALL ON FUNCTION public.get_all_post_stats() FROM PUBLIC, anon, authenticated';
-    EXECUTE 'GRANT EXECUTE ON FUNCTION public.get_all_post_stats() TO service_role';
-  END IF;
+  FOR fname IN VALUES
+    ('get_all_post_stats'),
+    ('get_all_posts_trends'),
+    ('get_post_hourly_distribution'),
+    ('get_post_dow_distribution'),
+    ('get_daily_view_trend'),
+    ('get_hourly_traffic_pattern'),
+    ('get_monthly_view_trend'),
+    ('get_popular_posts'),
+    ('get_weekly_traffic_pattern')
+  LOOP
+    FOR args IN
+      SELECT pg_get_function_identity_arguments(p.oid)
+      FROM pg_proc p
+      JOIN pg_namespace n ON p.pronamespace = n.oid
+      WHERE n.nspname = 'public' AND p.proname = fname
+    LOOP
+      EXECUTE format(
+        'REVOKE ALL ON FUNCTION public.%I(%s) FROM PUBLIC, anon, authenticated',
+        fname, args);
+      EXECUTE format(
+        'GRANT EXECUTE ON FUNCTION public.%I(%s) TO service_role',
+        fname, args);
+    END LOOP;
+  END LOOP;
 END;
 $$;
 
--- get_all_posts_trends()
+-- aggregate_daily_stats: service_role + (있다면) supabase_cron 만 허용
 DO $$
+DECLARE
+  args text;
+  has_cron boolean := EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'supabase_cron');
 BEGIN
-  IF EXISTS (SELECT 1 FROM pg_proc p JOIN pg_namespace n ON p.pronamespace = n.oid
-             WHERE n.nspname = 'public' AND p.proname = 'get_all_posts_trends') THEN
-    EXECUTE 'REVOKE ALL ON FUNCTION public.get_all_posts_trends() FROM PUBLIC, anon, authenticated';
-    EXECUTE 'GRANT EXECUTE ON FUNCTION public.get_all_posts_trends() TO service_role';
-  END IF;
-END;
-$$;
-
--- get_post_hourly_distribution(text)
-DO $$
-BEGIN
-  IF EXISTS (SELECT 1 FROM pg_proc p JOIN pg_namespace n ON p.pronamespace = n.oid
-             WHERE n.nspname = 'public' AND p.proname = 'get_post_hourly_distribution') THEN
-    EXECUTE 'REVOKE ALL ON FUNCTION public.get_post_hourly_distribution(text) FROM PUBLIC, anon, authenticated';
-    EXECUTE 'GRANT EXECUTE ON FUNCTION public.get_post_hourly_distribution(text) TO service_role';
-  END IF;
-END;
-$$;
-
--- get_post_dow_distribution(text)
-DO $$
-BEGIN
-  IF EXISTS (SELECT 1 FROM pg_proc p JOIN pg_namespace n ON p.pronamespace = n.oid
-             WHERE n.nspname = 'public' AND p.proname = 'get_post_dow_distribution') THEN
-    EXECUTE 'REVOKE ALL ON FUNCTION public.get_post_dow_distribution(text) FROM PUBLIC, anon, authenticated';
-    EXECUTE 'GRANT EXECUTE ON FUNCTION public.get_post_dow_distribution(text) TO service_role';
-  END IF;
-END;
-$$;
-
--- get_daily_view_trend(int, text) — production에 존재하나 마이그레이션 파일 없음
--- (Supabase 대시보드에서 직접 생성된 것으로 추정)
-DO $$
-BEGIN
-  IF EXISTS (
-    SELECT 1 FROM pg_proc p
-    JOIN pg_namespace n ON p.pronamespace = n.oid
-    WHERE n.nspname = 'public' AND p.proname = 'get_daily_view_trend'
-  ) THEN
-    EXECUTE 'REVOKE ALL ON FUNCTION public.get_daily_view_trend(int, text) FROM PUBLIC, anon, authenticated';
-    EXECUTE 'GRANT EXECUTE ON FUNCTION public.get_daily_view_trend(int, text) TO service_role';
-  END IF;
-END;
-$$;
-
--- get_hourly_traffic_pattern(int)
-DO $$
-BEGIN
-  IF EXISTS (
-    SELECT 1 FROM pg_proc p
-    JOIN pg_namespace n ON p.pronamespace = n.oid
-    WHERE n.nspname = 'public' AND p.proname = 'get_hourly_traffic_pattern'
-  ) THEN
-    EXECUTE 'REVOKE ALL ON FUNCTION public.get_hourly_traffic_pattern(int) FROM PUBLIC, anon, authenticated';
-    EXECUTE 'GRANT EXECUTE ON FUNCTION public.get_hourly_traffic_pattern(int) TO service_role';
-  END IF;
-END;
-$$;
-
--- get_monthly_view_trend(int, text)
-DO $$
-BEGIN
-  IF EXISTS (
-    SELECT 1 FROM pg_proc p
-    JOIN pg_namespace n ON p.pronamespace = n.oid
-    WHERE n.nspname = 'public' AND p.proname = 'get_monthly_view_trend'
-  ) THEN
-    EXECUTE 'REVOKE ALL ON FUNCTION public.get_monthly_view_trend(int, text) FROM PUBLIC, anon, authenticated';
-    EXECUTE 'GRANT EXECUTE ON FUNCTION public.get_monthly_view_trend(int, text) TO service_role';
-  END IF;
-END;
-$$;
-
--- get_popular_posts(int, int)
-DO $$
-BEGIN
-  IF EXISTS (
-    SELECT 1 FROM pg_proc p
-    JOIN pg_namespace n ON p.pronamespace = n.oid
-    WHERE n.nspname = 'public' AND p.proname = 'get_popular_posts'
-  ) THEN
-    EXECUTE 'REVOKE ALL ON FUNCTION public.get_popular_posts(int, int) FROM PUBLIC, anon, authenticated';
-    EXECUTE 'GRANT EXECUTE ON FUNCTION public.get_popular_posts(int, int) TO service_role';
-  END IF;
-END;
-$$;
-
--- get_weekly_traffic_pattern(int)
-DO $$
-BEGIN
-  IF EXISTS (
-    SELECT 1 FROM pg_proc p
-    JOIN pg_namespace n ON p.pronamespace = n.oid
-    WHERE n.nspname = 'public' AND p.proname = 'get_weekly_traffic_pattern'
-  ) THEN
-    EXECUTE 'REVOKE ALL ON FUNCTION public.get_weekly_traffic_pattern(int) FROM PUBLIC, anon, authenticated';
-    EXECUTE 'GRANT EXECUTE ON FUNCTION public.get_weekly_traffic_pattern(int) TO service_role';
-  END IF;
-END;
-$$;
-
--- aggregate_daily_stats(date)
--- service_role + supabase_cron (pg_cron이 쓰는 role) 만 허용
-DO $$
-BEGIN
-  IF EXISTS (
-    SELECT 1 FROM pg_proc p
+  FOR args IN
+    SELECT pg_get_function_identity_arguments(p.oid)
+    FROM pg_proc p
     JOIN pg_namespace n ON p.pronamespace = n.oid
     WHERE n.nspname = 'public' AND p.proname = 'aggregate_daily_stats'
-  ) THEN
-    EXECUTE 'REVOKE ALL ON FUNCTION public.aggregate_daily_stats(date) FROM PUBLIC, anon, authenticated';
-    EXECUTE 'GRANT EXECUTE ON FUNCTION public.aggregate_daily_stats(date) TO service_role';
-    -- supabase_cron role이 있으면 추가 grant (없으면 무시)
-    IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'supabase_cron') THEN
-      EXECUTE 'GRANT EXECUTE ON FUNCTION public.aggregate_daily_stats(date) TO supabase_cron';
+  LOOP
+    EXECUTE format(
+      'REVOKE ALL ON FUNCTION public.aggregate_daily_stats(%s) FROM PUBLIC, anon, authenticated',
+      args);
+    EXECUTE format(
+      'GRANT EXECUTE ON FUNCTION public.aggregate_daily_stats(%s) TO service_role',
+      args);
+    IF has_cron THEN
+      EXECUTE format(
+        'GRANT EXECUTE ON FUNCTION public.aggregate_daily_stats(%s) TO supabase_cron',
+        args);
     END IF;
-  END IF;
+  END LOOP;
 END;
 $$;
 
--- increment_post_views — 두 시그니처 존재 (production dump 기준)
--- 현재 코드에서 사용되지 않는 것으로 보이나 권한만 잠금.
--- 함수 자체 DROP은 사용 여부 확인 후 별도 PR에서 처리 권장.
+-- increment_post_views: production dump에 두 시그니처(오버로드) 존재.
+-- 현재 코드 사용처 없음. 본 PR은 권한만 잠금.
 -- TODO(#후속PR): increment_post_views 두 시그니처 중 불필요한 것 DROP 검토
 DO $$
 DECLARE
-  r RECORD;
+  args text;
 BEGIN
-  FOR r IN
-    SELECT p.oid, pg_get_function_identity_arguments(p.oid) AS args
+  FOR args IN
+    SELECT pg_get_function_identity_arguments(p.oid)
     FROM pg_proc p
     JOIN pg_namespace n ON p.pronamespace = n.oid
     WHERE n.nspname = 'public' AND p.proname = 'increment_post_views'
   LOOP
     EXECUTE format(
       'REVOKE ALL ON FUNCTION public.increment_post_views(%s) FROM PUBLIC, anon, authenticated',
-      r.args
-    );
+      args);
     EXECUTE format(
       'GRANT EXECUTE ON FUNCTION public.increment_post_views(%s) TO service_role',
-      r.args
-    );
+      args);
   END LOOP;
 END;
 $$;
@@ -225,9 +152,27 @@ $$;
 -- 함수 본문 자체는 production dump와 동일하므로 CREATE OR REPLACE 하지 않음.
 -- (재정의가 필요 없는 함수까지 다시 쓰면 비즈니스 로직 silent 변경 리스크 증가)
 
--- increment_view_count는 anon 정상 호출 path이므로 권한 유지
-REVOKE ALL ON FUNCTION public.increment_view_count(text) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.increment_view_count(text) TO anon, authenticated, service_role;
+-- increment_view_count는 anon 정상 호출 path이므로 권한 유지.
+-- 함수 존재 여부 확인 후 동적 시그니처로 GRANT (다른 섹션과 일관성).
+DO $$
+DECLARE
+  args text;
+BEGIN
+  FOR args IN
+    SELECT pg_get_function_identity_arguments(p.oid)
+    FROM pg_proc p
+    JOIN pg_namespace n ON p.pronamespace = n.oid
+    WHERE n.nspname = 'public' AND p.proname = 'increment_view_count'
+  LOOP
+    EXECUTE format(
+      'REVOKE ALL ON FUNCTION public.increment_view_count(%s) FROM PUBLIC',
+      args);
+    EXECUTE format(
+      'GRANT EXECUTE ON FUNCTION public.increment_view_count(%s) TO anon, authenticated, service_role',
+      args);
+  END LOOP;
+END;
+$$;
 
 -- -----------------------------------------------------------------------------
 -- 3. 테이블 직접 권한 정리
@@ -235,8 +180,6 @@ GRANT EXECUTE ON FUNCTION public.increment_view_count(text) TO anon, authenticat
 
 -- 3-1. post_view_logs: anon GRANT ALL → REVOKE ALL
 --   SECURITY DEFINER RPC 경로만 허용. 직접 테이블 접근 불가.
-REVOKE ALL ON TABLE public.post_view_logs FROM anon, authenticated, PUBLIC;
--- service_role은 SECURITY DEFINER 함수 실행 컨텍스트에서 사용.
 --   service_role은 본래 RLS bypass + 기본적으로 모든 권한이 부여돼 GRANT 자체가
 --   엄밀히는 redundant지만, "이 테이블에 service_role이 SELECT/INSERT 한다"는
 --   의도를 명시적으로 남긴다. 실제 함수가 쓰는 동작:
@@ -245,7 +188,17 @@ REVOKE ALL ON TABLE public.post_view_logs FROM anon, authenticated, PUBLIC;
 --       get_weekly_traffic_pattern, aggregate_daily_stats
 --     - INSERT: increment_view_count
 --   UPDATE/DELETE는 사용처 없음 → 좁혀서 명시.
-GRANT SELECT, INSERT ON TABLE public.post_view_logs TO service_role;
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'post_view_logs'
+  ) THEN
+    EXECUTE 'REVOKE ALL ON TABLE public.post_view_logs FROM anon, authenticated, PUBLIC';
+    EXECUTE 'GRANT SELECT, INSERT ON TABLE public.post_view_logs TO service_role';
+  END IF;
+END;
+$$;
 
 -- 3-2. post_view_logs_id_seq: 시퀀스 권한 좁혀서 명시
 --   INSERT 시 nextval 호출 → USAGE 필요. SELECT는 currval 호출 시.
@@ -264,11 +217,20 @@ $$;
 
 -- 3-3. post_views: anon에 SELECT만 남기고 INSERT/UPDATE/DELETE REVOKE
 --   "Allow public read access" RLS 정책과 일관성 유지
-REVOKE INSERT, UPDATE, DELETE ON TABLE public.post_views FROM anon, authenticated, PUBLIC;
-GRANT SELECT ON TABLE public.post_views TO anon, authenticated;
 -- service_role: increment_view_count(INSERT/UPDATE upsert), 기타 SELECT 함수들.
 --   DELETE 사용처 없음 → 좁혀서 명시.
-GRANT SELECT, INSERT, UPDATE ON TABLE public.post_views TO service_role;
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'post_views'
+  ) THEN
+    EXECUTE 'REVOKE INSERT, UPDATE, DELETE ON TABLE public.post_views FROM anon, authenticated, PUBLIC';
+    EXECUTE 'GRANT SELECT ON TABLE public.post_views TO anon, authenticated';
+    EXECUTE 'GRANT SELECT, INSERT, UPDATE ON TABLE public.post_views TO service_role';
+  END IF;
+END;
+$$;
 
 -- -----------------------------------------------------------------------------
 -- 4. increment_post_views 이중 정의 안내 (코멘트)
