@@ -1,7 +1,8 @@
-import { readdirSync, readFileSync, statSync } from 'node:fs';
-import { join } from 'node:path';
+import { readFileSync } from 'node:fs';
+import { join, relative } from 'node:path';
 import matter from 'gray-matter';
 import { estimateReadMin } from '../../lib/format';
+import { collectMarkdownFiles, hasFrontmatter } from '../../lib/postFiles';
 import type { PostData, PostStatus } from './types';
 
 const postsDirectory = join(process.cwd(), '..', 'posts');
@@ -40,37 +41,32 @@ function determineStatus(data: Record<string, unknown>): PostStatus {
 }
 
 /**
- * 디렉토리를 재귀적으로 순회하여 모든 마크다운 파일을 읽습니다.
+ * postsDirectory 아래의 모든 마크다운 파일을 읽어 PostData 배열로 반환합니다.
  *
- * @param dirPath 탐색할 디렉토리 경로
- * @param currentPath 현재 상대 경로 (재귀 누적용)
- * @param results 결과 배열 (재귀 누적용)
+ * collectMarkdownFiles (lib/postFiles.ts) 로 파일 목록을 가져오고,
+ * hasFrontmatter / 가시성 필드 검사로 메타 파일을 제외합니다.
+ * — 기존 인라인 재귀 로직을 공통 헬퍼로 교체하여 validate-posts.ts 와 일관성을 유지합니다.
  */
-function collectPosts(
-  dirPath: string,
-  currentPath: string = '',
-  results: PostData[] = [],
-): PostData[] {
-  const items = readdirSync(dirPath);
+function collectPosts(dirPath: string): PostData[] {
+  const results: PostData[] = [];
 
-  for (const item of items) {
-    const fullPath = join(dirPath, item);
-    const stat = statSync(fullPath);
-
-    if (stat.isDirectory()) {
-      collectPosts(fullPath, join(currentPath, item), results);
-      continue;
-    }
-
-    if (!item.endsWith('.md') && !item.endsWith('.mdx')) continue;
-
+  for (const fullPath of collectMarkdownFiles(dirPath)) {
     const fileContents = readFileSync(fullPath, 'utf8');
+
+    // frontmatter delimiter 없는 메타 노트는 스킵 (validate-posts 와 동일 규칙)
+    if (!hasFrontmatter(fileContents)) continue;
+
     const { data, content } = matter(fileContents);
 
-    // slug가 없으면 스킵 (PLAN.md 등 메타 파일 제외)
+    // slug / published / status 중 하나도 없으면 빌드 제외 (기존 메타 파일 제외 규칙)
     if (!data.slug && !data.published && !data.status) continue;
 
-    const fileName = item.replace(/\.(md|mdx)$/, '');
+    // postsDirectory 기준 상대 경로로 series / rawSlug 계산
+    const rel = relative(dirPath, fullPath);
+    const parts = rel.split('/');
+    const fileName = parts[parts.length - 1].replace(/\.(md|mdx)$/, '');
+    const currentPath = parts.slice(0, -1).join('/');
+
     const rawSlug = currentPath ? `${currentPath}/${fileName}` : fileName;
     const cleanContent = extractPlainText(content);
     const tags: string[] | undefined = Array.isArray(data.tags)
