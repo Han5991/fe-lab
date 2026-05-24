@@ -1,3 +1,6 @@
 {
-  "extends": "@package/config/tsconfig.json"
+  "extends": "@package/config/tsconfig.json",
+  "compilerOptions": {
+    "types": ["vitest/globals"]
+  }
 }

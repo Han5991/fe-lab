@@ -56,7 +56,7 @@ describe('error test', () => {
   });
 
   it('에러가 던져지면 콘솔로그가 실행되지 않음', () => {
-    const consoleSpy = jest.spyOn(console, 'log');
+    const consoleSpy = vi.spyOn(console, 'log');
     expect(executeTest).toThrow();
     expect(consoleSpy).not.toHaveBeenCalled();
     consoleSpy.mockRestore();
