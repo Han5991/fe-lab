@@ -1,28 +1,30 @@
 import { useEffect } from 'react';
 import { incrementViewCount } from '@/domain/analytics/repository';
-
-const VIEW_COOLDOWN_HOURS = 6;
+import {
+  slugToViewKey,
+  hasViewCookie,
+  buildViewCookieStr,
+  getViewCookieExpiry,
+} from '../../lib/viewCookie';
 
 export const useViewCount = (slug: string | null) => {
   useEffect(() => {
     if (!slug) return;
 
-    const viewedKey = `viewed_${slug.replace(/[^a-zA-Z0-9-]/g, '_')}`;
+    const viewedKey = slugToViewKey(slug);
 
-    const hasViewed = document.cookie
-      .split('; ')
-      .some(row => row.startsWith(`${viewedKey}=`));
-
+    const hasViewed = hasViewCookie(document.cookie, viewedKey);
     if (hasViewed) return;
 
-    incrementViewCount(slug)
-      .then(() => {
-        const date = new Date();
-        date.setTime(date.getTime() + VIEW_COOLDOWN_HOURS * 60 * 60 * 1000);
-        document.cookie = `${viewedKey}=true; expires=${date.toUTCString()}; path=/`;
-      })
-      .catch(err => {
-        console.error('Failed to increment view count:', err);
-      });
+    // 쿠키를 RPC 호출 *전*에 set합니다.
+    // 두 탭이 동시에 열릴 때 둘 다 hasViewed=false를 통과한 뒤 RPC를 2회 호출하는
+    // 레이스 컨디션을 차단합니다. RPC가 실패하더라도 6시간 동안 false negative가
+    // 생기지만, 중복 카운트(+N)가 무한 반복되는 것보다 안전합니다.
+    const cookieStr = buildViewCookieStr(viewedKey, getViewCookieExpiry());
+    document.cookie = cookieStr;
+
+    incrementViewCount(slug).catch(err => {
+      console.error('Failed to increment view count:', err);
+    });
   }, [slug]);
 };
