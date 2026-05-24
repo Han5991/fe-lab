@@ -1,5 +1,144 @@
-import { addDaysISO, diffDaysISO, getKSTDateISO } from '../../lib/dates';
+import {
+  addDaysISO,
+  diffDaysISO,
+  formatMonthDayISO,
+  getKSTDateISO,
+} from '../../lib/dates';
 import type { PostStatDetail, DerivedStats } from './types';
+
+// ── Analytics Overview ──────────────────────────────────────────────────────
+
+export type AnalyticsRange = '7d' | '30d' | '90d';
+
+const RANGE_DAYS: Record<AnalyticsRange, number> = {
+  '7d': 7,
+  '30d': 30,
+  '90d': 90,
+};
+
+/**
+ * 별도 분석 API가 붙기 전, 총 조회수 대비 고유 방문자 추정 비율.
+ */
+export const UNIQUES_ESTIMATE_RATIO = 0.55;
+
+export interface AnalyticsOverview {
+  range: AnalyticsRange;
+  rangeDays: number;
+  total: number;
+  totalDelta: number | null;
+  uniques: number;
+  uniquesDelta: number | null;
+  postsPublished: number;
+  avgPerPost: number;
+  totalSeries: { date: string; value: number }[];
+  topPosts: {
+    slug: string;
+    title: string;
+    views: number;
+    delta: number;
+    series: number[];
+  }[];
+}
+
+/**
+ * 순수 함수: Supabase admin dashboard 데이터 + 기준일을 받아
+ * Analytics 페이지용 AnalyticsOverview를 계산합니다.
+ *
+ * todayISO를 파라미터로 받아 외부 시계 의존을 제거했습니다.
+ * 자정 경계 테스트 및 hook의 타이머 트리거가 가능합니다.
+ */
+export function computeAnalyticsOverview(
+  data: PostStatDetail[],
+  range: AnalyticsRange,
+  todayISO: string,
+): AnalyticsOverview {
+  const rangeDays = RANGE_DAYS[range];
+
+  const days: string[] = [];
+  for (let i = rangeDays - 1; i >= 0; i--) {
+    days.push(addDaysISO(todayISO, -i));
+  }
+  const prevDays: string[] = [];
+  for (let i = rangeDays * 2 - 1; i >= rangeDays; i--) {
+    prevDays.push(addDaysISO(todayISO, -i));
+  }
+
+  const dailyTotals = new Map<string, number>(days.map(d => [d, 0]));
+  const prevTotals = new Map<string, number>(prevDays.map(d => [d, 0]));
+  for (const post of data) {
+    for (const t of post.trends) {
+      if (dailyTotals.has(t.view_date)) {
+        dailyTotals.set(
+          t.view_date,
+          (dailyTotals.get(t.view_date) ?? 0) + t.view_count,
+        );
+      } else if (prevTotals.has(t.view_date)) {
+        prevTotals.set(
+          t.view_date,
+          (prevTotals.get(t.view_date) ?? 0) + t.view_count,
+        );
+      }
+    }
+  }
+
+  const totalSeries = Array.from(dailyTotals.entries()).map(([d, v]) => ({
+    date: formatMonthDayISO(d),
+    value: v,
+  }));
+
+  const total = Array.from(dailyTotals.values()).reduce((s, v) => s + v, 0);
+  const prevTotal = Array.from(prevTotals.values()).reduce((s, v) => s + v, 0);
+  const totalDelta = prevTotal > 0 ? (total - prevTotal) / prevTotal : null;
+
+  const uniques = Math.round(total * UNIQUES_ESTIMATE_RATIO);
+  const prevUniques = Math.round(prevTotal * UNIQUES_ESTIMATE_RATIO);
+  const uniquesDelta =
+    prevUniques > 0 ? (uniques - prevUniques) / prevUniques : null;
+
+  const postsPublished = data.filter(p => p.status === 'published').length;
+  const avgPerPost =
+    postsPublished > 0 ? Math.round(total / postsPublished) : 0;
+
+  const topPosts = [...data]
+    .map(post => {
+      let rangeViews = 0;
+      let prevRangeViews = 0;
+      const seriesMap = new Map<string, number>();
+      days.forEach(d => seriesMap.set(d, 0));
+      for (const t of post.trends) {
+        if (dailyTotals.has(t.view_date)) {
+          rangeViews += t.view_count;
+          seriesMap.set(t.view_date, t.view_count);
+        } else if (prevTotals.has(t.view_date)) {
+          prevRangeViews += t.view_count;
+        }
+      }
+      const delta =
+        prevRangeViews > 0 ? (rangeViews - prevRangeViews) / prevRangeViews : 0;
+      return {
+        slug: post.slug,
+        title: post.title,
+        views: rangeViews,
+        delta,
+        series: Array.from(seriesMap.values()),
+      };
+    })
+    .sort((a, b) => b.views - a.views)
+    .slice(0, 5);
+
+  return {
+    range,
+    rangeDays,
+    total,
+    totalDelta,
+    uniques,
+    uniquesDelta,
+    postsPublished,
+    avgPerPost,
+    totalSeries,
+    topPosts,
+  };
+}
 
 const MILESTONE_TARGETS = [100, 500, 1000, 5000] as const;
 
