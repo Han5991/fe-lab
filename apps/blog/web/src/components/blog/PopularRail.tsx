@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import Link from 'next/link';
 import { css } from '@design-system/ui-lib/css';
 import { useQuery } from '@tanstack/react-query';
-import { client } from '@/lib/client';
+import { getTopPosts } from '@/domain/analytics';
 import type { PostSummary } from '@/domain/post';
 import { encodePostSlug } from '@/domain/post/utils';
 import { fmtNum } from '@/lib/format';
@@ -26,14 +26,7 @@ export const PopularRail = ({ posts, limit = 5 }: PopularRailProps) => {
   // 메모이제이션이 의미가 없으므로, raw rows만 캐시하고 매핑은 useMemo로 분리합니다.
   const { data: rows } = useQuery({
     queryKey: ['popular-rail', limit],
-    queryFn: async () => {
-      const res = await client
-        .from('post_views')
-        .select('slug, view_count')
-        .order('view_count', { ascending: false })
-        .limit(limit);
-      return res.data ?? [];
-    },
+    queryFn: () => getTopPosts(limit),
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
   });

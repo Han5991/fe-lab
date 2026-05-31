@@ -6,12 +6,12 @@ import { getKSTDateISO } from '@/lib/dates';
 import {
   computeAnalyticsOverview,
   UNIQUES_ESTIMATE_RATIO,
-} from '../../domain/analytics/service';
-import type { AnalyticsRange } from '@/src/components/admin/AnalyticsRangeSelect';
+} from '@/domain/analytics';
+import type { AnalyticsRange } from '@/domain/analytics';
 
 export type { AnalyticsRange };
 export { UNIQUES_ESTIMATE_RATIO };
-export type { AnalyticsOverview } from '../../domain/analytics/service';
+export type { AnalyticsOverview } from '@/domain/analytics';
 
 /**
  * KST 자정까지 남은 밀리초를 계산합니다.

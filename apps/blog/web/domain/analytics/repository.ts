@@ -54,6 +54,18 @@ export async function getTopPosts(limit: number): Promise<TopPostRow[]> {
   }));
 }
 
+/**
+ * 모든 글의 조회수를 반환합니다(정렬/limit 없음).
+ * PostsArchive의 '인기순' 정렬처럼 전체 slug→view_count 맵이 필요할 때 사용합니다.
+ */
+export async function getAllViewCounts(): Promise<TopPostRow[]> {
+  const { data } = await client.from('post_views').select('slug, view_count');
+  return (data ?? []).map(d => ({
+    slug: d.slug,
+    view_count: d.view_count ?? 0,
+  }));
+}
+
 export async function getAllPostStats(): Promise<PostStatsRow[]> {
   // admin RPC — service_role 한정. Edge Function 경유.
   const data = await adminApi.call<PostStatsRow[]>('all_post_stats');

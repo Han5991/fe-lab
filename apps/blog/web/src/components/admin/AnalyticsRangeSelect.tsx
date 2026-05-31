@@ -1,8 +1,7 @@
 'use client';
 
 import { css } from '@design-system/ui-lib/css';
-
-export type AnalyticsRange = '7d' | '30d' | '90d';
+import type { AnalyticsRange } from '@/domain/analytics';
 
 interface AnalyticsRangeSelectProps {
   value: AnalyticsRange;

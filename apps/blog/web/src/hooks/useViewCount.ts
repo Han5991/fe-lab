@@ -1,11 +1,11 @@
 import { useEffect } from 'react';
-import { incrementViewCount } from '@/domain/analytics/repository';
+import { incrementViewCount } from '@/domain/analytics';
 import {
   slugToViewKey,
   hasViewCookie,
   buildViewCookieStr,
   getViewCookieExpiry,
-} from '../../lib/viewCookie';
+} from '@/lib/viewCookie';
 
 export const useViewCount = (slug: string | null) => {
   useEffect(() => {

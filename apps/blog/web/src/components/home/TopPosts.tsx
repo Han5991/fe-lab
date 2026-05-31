@@ -1,7 +1,7 @@
 'use client';
 
 import { css } from '@design-system/ui-lib/css';
-import { getTopPosts } from '@/domain/analytics/repository';
+import { getTopPosts } from '@/domain/analytics';
 import type { PostSummary } from '@/domain/post/types';
 import { PostCard } from './PostCard';
 import { useSuspenseQuery } from '@tanstack/react-query';

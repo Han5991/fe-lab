@@ -2,22 +2,22 @@ import { useSuspenseQuery } from '@tanstack/react-query';
 import {
   getPostDowDistribution,
   getPostHourlyDistribution,
-} from '@/domain/analytics/repository';
-import { computeDerivedStats } from '@/domain/analytics/service';
+  computeDerivedStats,
+} from '@/domain/analytics';
 import { useAdminDashboardData } from './useAdminViews';
 import type {
   PostDetailStats,
   HourlyDistribution,
   DowDistribution,
-} from '@/domain/analytics/types';
+} from '@/domain/analytics';
 
 export type {
   PostDetailStats,
   HourlyDistribution,
   DowDistribution,
-} from '@/domain/analytics/types';
+} from '@/domain/analytics';
 
-export { computeDerivedStats as computeBriefStats } from '@/domain/analytics/service';
+export { computeDerivedStats as computeBriefStats } from '@/domain/analytics';
 
 // SSR/prerender에서 useAdminDashboardData가 빈 배열일 때 쓰는 placeholder.
 // 클라이언트 hydration 후 진짜 post로 즉시 교체됩니다.

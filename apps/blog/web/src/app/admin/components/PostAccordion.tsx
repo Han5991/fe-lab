@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { PostStatDetail } from '@/src/hooks/useAdminViews';
+import type { PostStatDetail } from '@/src/hooks/useAdminViews';
 import { computeBriefStats } from '@/src/hooks/usePostDetailStats';
 import { css } from '@design-system/ui-lib/css';
 import {
