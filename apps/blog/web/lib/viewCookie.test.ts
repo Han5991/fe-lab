@@ -30,6 +30,17 @@ test('slugToViewKey: 충돌 회귀 — 서로 다른 slug는 서로 다른 키 (
   assert.notEqual(slugToViewKey('번들러/소개'), slugToViewKey('번들러/심화'));
 });
 
+test('slugToViewKey: 점(.) 포함 slug는 점을 보존 (옛 _치환과 달라짐 — 1회성 마이그레이션)', () => {
+  // 실존 slug. encodeURIComponent는 `.`를 인코딩하지 않으므로 그대로 보존된다.
+  // (옛 구현은 `.`→`_`라 'viewed_turborepo-next_js-docker'였음 → docstring 참고)
+  assert.equal(
+    slugToViewKey('turborepo-next.js-docker'),
+    'viewed_turborepo-next.js-docker',
+  );
+  // 점만 다른 두 slug도 서로 다른 키 (1:1 보장)
+  assert.notEqual(slugToViewKey('a.b'), slugToViewKey('a-b'));
+});
+
 test('slugToViewKey: 쿠키 이름 separator(괄호/세미콜론/공백/등호)를 포함하지 않음', () => {
   for (const slug of ['a/b', '번들러 (1편)', 'a=b;c', '제목 with spaces']) {
     const key = slugToViewKey(slug);

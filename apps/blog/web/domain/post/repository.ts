@@ -112,26 +112,45 @@ function collectPosts(dirPath: string): PostData[] {
 }
 
 /**
+ * 두 문자열을 코드포인트(UTF-16) 순서로 비교합니다.
+ *
+ * `localeCompare`를 쓰지 않는 이유: 인자 없는 localeCompare는 런타임 기본
+ * locale/ICU 버전에 의존하고, 무시 가능 문자(ignorable) 때문에 *서로 다른*
+ * 문자열에도 0(동등)을 반환할 수 있어 sort가 입력(readdir) 순서로 폴백할 수
+ * 있습니다. 코드포인트 비교는 환경과 무관하게 결정적이며 서로 다른 문자열에
+ * 절대 0을 반환하지 않습니다.
+ */
+function compareByCodePoint(a: string, b: string): number {
+  return a < b ? -1 : a > b ? 1 : 0;
+}
+
+/**
  * 포스트를 날짜 내림차순으로 정렬합니다.
  *
  * 입력을 변형하지 않도록 복사본을 정렬합니다(순수 함수).
- * 같은 날짜의 글들은 slug로 안정적 2차 정렬해 readdir(파일시스템) 순서에
- * 의존하던 비결정성을 제거합니다. 이 정렬 결과는 getAdjacentPosts의 prev/next와
- * llms-full 등장 순서의 기준이 되므로 환경에 따라 흔들리면 안 됩니다.
+ * 같은 날짜의 글들은 originalSlug(파일 경로 기반의 고유·안정 키)로 2차 정렬해
+ * readdir(파일시스템) 순서에 의존하던 비결정성을 제거합니다. 이 정렬 결과는
+ * getAdjacentPosts의 prev/next와 llms-full 등장 순서의 기준이 되므로 빌드
+ * 환경(locale/ICU/OS)에 따라 흔들리면 안 됩니다 — 그래서 결정적 비교를 씁니다.
  */
 export function sortByDateDesc(posts: PostData[]): PostData[] {
   return [...posts].sort((a, b) => {
     if (a.date && b.date) {
-      const diff = new Date(b.date).getTime() - new Date(a.date).getTime();
-      if (diff !== 0) return diff;
-      // 동률이면 slug(없으면 originalSlug)로 안정적 2차 정렬
-      return (a.originalSlug || a.slug).localeCompare(b.originalSlug || b.slug);
+      const ta = new Date(a.date).getTime();
+      const tb = new Date(b.date).getTime();
+      // 두 날짜가 모두 유효하고 서로 다르면 최신순(desc).
+      // 같거나 한쪽이라도 파싱 불가(NaN)면 originalSlug로 폴백해 결정성을 유지한다.
+      // (NaN을 그대로 반환하면 sort가 0(동등)으로 취급해 2차 정렬이 무시됨)
+      if (!Number.isNaN(ta) && !Number.isNaN(tb) && ta !== tb) {
+        return tb - ta;
+      }
+      return compareByCodePoint(a.originalSlug, b.originalSlug);
     }
     // 한쪽만 날짜가 있으면 날짜 있는 글을 앞으로 (날짜순 우선)
     if (a.date) return -1;
     if (b.date) return 1;
     // 둘 다 날짜가 없으면 제목순
-    return a.title.localeCompare(b.title);
+    return compareByCodePoint(a.title, b.title);
   });
 }
 

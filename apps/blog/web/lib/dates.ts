@@ -94,8 +94,9 @@ export function hasAmbiguousTimezone(input: string): boolean {
   // 시간 성분(T 또는 공백 + HH:mm)이 없으면 날짜만 → 안전
   const hasTime = /\d{4}-\d{2}-\d{2}[T\s]\d{2}:\d{2}/.test(trimmed);
   if (!hasTime) return false;
-  // 시간이 있는데 timezone offset(Z 또는 ±HH:MM/±HHMM)이 없으면 모호
-  const hasOffset = /(Z|[+-]\d{2}:?\d{2})$/.test(trimmed);
+  // 시간이 있는데 timezone offset(Z/z 또는 ±HH:MM/±HHMM)이 없으면 모호.
+  // `i` 플래그로 비표준 소문자 `z`(Date.parse는 허용)도 offset으로 인정해 오탐 방지.
+  const hasOffset = /(Z|[+-]\d{2}:?\d{2})$/i.test(trimmed);
   return !hasOffset;
 }
 

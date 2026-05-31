@@ -129,6 +129,11 @@ test('hasAmbiguousTimezone: 공백 구분 datetime도 offset 없으면 모호', 
   assert.equal(hasAmbiguousTimezone('2026-06-01 09:00:00'), true);
 });
 
+test('hasAmbiguousTimezone: 비표준 소문자 z도 offset으로 인정(false-positive 방지)', () => {
+  // 소문자 z는 ISO 표준은 아니나 Date.parse가 UTC로 받아들이므로 모호하지 않다.
+  assert.equal(hasAmbiguousTimezone('2026-06-01T09:00:00z'), false);
+});
+
 test('getKSTCutoffDate: 7days', () => {
   assert.equal(getKSTCutoffDate('7days', '2026-05-25'), '2026-05-18');
 });

@@ -110,6 +110,46 @@ function validatePost(record: PostRecord, raw: string): Issue[] {
         rule: 'invalid-date',
         message: `\`date\`가 유효한 날짜가 아닙니다: ${String(data.date)}`,
       });
+    } else if (
+      typeof data.date === 'string' &&
+      hasAmbiguousTimezone(data.date)
+    ) {
+      // date도 sitemap lastmod / rss pubDate에서 parseScheduledDateKST를 거치므로
+      // offset 없는 datetime이면 scheduledDate와 동일하게 환경 의존 회귀가 생긴다.
+      issues.push({
+        file: relPath,
+        line: findFrontmatterLine(raw, 'date'),
+        severity: 'error',
+        rule: 'ambiguous-date',
+        message: `\`date\`에 timezone offset이 없어 빌드 환경(UTC)과 로컬(KST)에서 날짜가 어긋날 수 있습니다. \`+09:00\`/\`Z\`를 명시하거나 'YYYY-MM-DD' 형식을 쓰세요: ${data.date}`,
+      });
+    }
+  }
+
+  if (data.updatedAt != null) {
+    const updatedAtValid =
+      data.updatedAt instanceof Date ||
+      (typeof data.updatedAt === 'string' &&
+        !Number.isNaN(Date.parse(data.updatedAt)));
+    if (!updatedAtValid) {
+      issues.push({
+        file: relPath,
+        line: findFrontmatterLine(raw, 'updatedAt'),
+        severity: 'error',
+        rule: 'invalid-updated-at',
+        message: `\`updatedAt\`이 유효한 날짜가 아닙니다: ${String(data.updatedAt)}`,
+      });
+    } else if (
+      typeof data.updatedAt === 'string' &&
+      hasAmbiguousTimezone(data.updatedAt)
+    ) {
+      issues.push({
+        file: relPath,
+        line: findFrontmatterLine(raw, 'updatedAt'),
+        severity: 'error',
+        rule: 'ambiguous-updated-at',
+        message: `\`updatedAt\`에 timezone offset이 없어 빌드 환경(UTC)과 로컬(KST)에서 날짜가 어긋날 수 있습니다. \`+09:00\`/\`Z\`를 명시하거나 'YYYY-MM-DD' 형식을 쓰세요: ${data.updatedAt}`,
+      });
     }
   }
 
