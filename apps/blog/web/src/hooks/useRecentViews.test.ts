@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test } from 'vitest';
+import { beforeEach, describe, expect, test, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import {
   getRecentViews,
@@ -70,9 +70,23 @@ describe('recordRecentView', () => {
     expect(result.map(r => r.slug)).toEqual(['f', 'e', 'd', 'c', 'b']);
   });
 
-  test('viewedAt에 타임스탬프(number)를 기록', () => {
+  test('viewedAt에 타임스탬프(number)를 기록하고 최신 항목이 더 크거나 같음', () => {
     recordRecentView('a', 'A');
-    expect(typeof getRecentViews()[0].viewedAt).toBe('number');
+    recordRecentView('b', 'B');
+    const result = getRecentViews();
+    expect(typeof result[0].viewedAt).toBe('number');
+    // b가 최신(index 0) → viewedAt이 a(index 1)보다 크거나 같아야 함
+    expect(result[0].viewedAt).toBeGreaterThanOrEqual(result[1].viewedAt);
+  });
+
+  test('setItem이 throw해도(한도 초과/사적 모드) 예외를 삼키고 조용히 반환', () => {
+    const spy = vi
+      .spyOn(window.localStorage, 'setItem')
+      .mockImplementation(() => {
+        throw new Error('QuotaExceeded');
+      });
+    expect(() => recordRecentView('a', 'A')).not.toThrow();
+    spy.mockRestore();
   });
 });
 

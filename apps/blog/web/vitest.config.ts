@@ -17,8 +17,8 @@ export default defineConfig({
     include: ['src/**/*.{test,spec}.{ts,tsx}'],
   },
   resolve: {
-    // tsconfig의 `@/* → ./*` 매핑을 vitest에도 동일 적용.
-    // 키에 트레일링 슬래시를 둬 `@testing-library/*`를 잘못 매칭하지 않게 함.
+    // tsconfig의 `@/* → ./*` 매핑을 vitest에도 동일 적용하는 프리픽스 alias.
+    // (키에 트레일링 슬래시를 둬 `@/foo`만 매칭하고 `@/`가 아닌 경로엔 닿지 않게 함)
     alias: {
       '@/': fileURLToPath(new URL('./', import.meta.url)),
     },

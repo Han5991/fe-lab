@@ -57,4 +57,20 @@ describe('useViewCount', () => {
     renderHook(() => useViewCount('번들러/심화'));
     expect(incrementViewCount).toHaveBeenCalledTimes(2);
   });
+
+  test('RPC가 reject돼도 throw하지 않고, 쿠키 가드로 재마운트 시 재호출 안 함', async () => {
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    incrementViewCount.mockRejectedValueOnce(new Error('rpc fail'));
+
+    renderHook(() => useViewCount('fail-post'));
+    expect(incrementViewCount).toHaveBeenCalledTimes(1);
+
+    // 쿠키는 RPC 호출 *전*에 set되므로, reject돼도 재마운트는 차단된다.
+    renderHook(() => useViewCount('fail-post'));
+    expect(incrementViewCount).toHaveBeenCalledTimes(1);
+
+    // .catch(console.error)가 reject를 삼킨다(에러 전파 없음).
+    await vi.waitFor(() => expect(errSpy).toHaveBeenCalled());
+    errSpy.mockRestore();
+  });
 });
