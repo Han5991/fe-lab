@@ -3,8 +3,8 @@ import {
   getAdminPostsIndex,
   getAllPostStats,
   getAllPostsTrends,
-} from '@/domain/analytics/repository';
-import type { PostStatDetail } from '@/domain/analytics/types';
+} from '@/domain/analytics';
+import type { PostStatDetail } from '@/domain/analytics';
 
 export type { PostStatDetail };
 

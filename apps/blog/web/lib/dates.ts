@@ -133,3 +133,17 @@ export function getKSTCutoffDate(
   if (filterType === '7days') return addDaysISO(today, -7);
   return addDaysISO(today, -30);
 }
+
+/**
+ * 주어진 시점에서 다음 KST 자정까지 남은 밀리초(+60초 여유).
+ *
+ * 자정 정각에 OS 타이머가 약간 일찍 발화하는 경우를 대비해 60초를 더합니다.
+ * useAnalyticsOverview가 자정마다 차트 윈도우를 리셋하는 setTimeout 스케줄에 씁니다.
+ * now를 주입받아 결정적으로 테스트할 수 있습니다.
+ */
+export function msUntilKSTMidnight(now: Date = new Date()): number {
+  const kstOffset = 9 * 60 * 60 * 1000; // 9시간
+  const nowKST = now.getTime() + kstOffset;
+  const midnightKST = Math.ceil(nowKST / 86400000) * 86400000;
+  return midnightKST - nowKST + 60_000;
+}

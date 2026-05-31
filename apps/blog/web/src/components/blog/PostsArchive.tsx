@@ -11,7 +11,7 @@ import {
   filterAndSortPostsByArchiveParams,
   parseTagParam,
 } from '@/domain/post/filtering';
-import { client } from '@/lib/client';
+import { getAllViewCounts } from '@/domain/analytics';
 
 import { Label } from './Label';
 import { type SortKey } from './SortRadio';
@@ -67,12 +67,10 @@ export const PostsArchiveView = ({
   const { data: viewCounts } = useQuery({
     queryKey: ['posts-view-counts'],
     queryFn: async () => {
-      const { data } = await client
-        .from('post_views')
-        .select('slug, view_count');
+      const rows = await getAllViewCounts();
       const map = new Map<string, number>();
-      for (const row of data ?? []) {
-        map.set(row.slug, row.view_count ?? 0);
+      for (const row of rows) {
+        map.set(row.slug, row.view_count);
       }
       return map;
     },
