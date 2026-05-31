@@ -1,5 +1,6 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { relative, resolve, dirname, posix } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import matter from 'gray-matter';
 import { collectMarkdownFiles, hasFrontmatter } from '../lib/postFiles';
 import { hasAmbiguousTimezone } from '../lib/dates';
@@ -31,7 +32,7 @@ const KNOWN_FRONTMATTER_KEYS = new Set([
 
 type Severity = 'error' | 'warning';
 
-interface Issue {
+export interface Issue {
   file: string;
   line: number | null;
   severity: Severity;
@@ -39,7 +40,7 @@ interface Issue {
   message: string;
 }
 
-interface PostRecord {
+export interface PostRecord {
   absPath: string;
   relPath: string;
   data: Record<string, unknown>;
@@ -57,7 +58,7 @@ function findFrontmatterLine(raw: string, key: string): number | null {
   return null;
 }
 
-function validatePost(record: PostRecord, raw: string): Issue[] {
+export function validatePost(record: PostRecord, raw: string): Issue[] {
   const { data, relPath, absPath } = record;
   const issues: Issue[] = [];
 
@@ -273,7 +274,7 @@ function deriveDefaultSlug(relPath: string): string {
   return relPath.replace(/\.(md|mdx)$/, '');
 }
 
-function detectDuplicateSlugs(records: PostRecord[]): Issue[] {
+export function detectDuplicateSlugs(records: PostRecord[]): Issue[] {
   const slugMap = new Map<string, string[]>();
   for (const r of records) {
     const explicit = typeof r.data.slug === 'string' ? r.data.slug : null;
@@ -352,4 +353,11 @@ function main() {
   process.exit(errors.length > 0 ? 1 : 0);
 }
 
-main();
+// 스크립트로 직접 실행될 때만 main()을 호출합니다.
+// (테스트 등에서 import할 때 main()이 자동 실행되어 process.exit 하는 것을 방지)
+if (
+  process.argv[1] &&
+  import.meta.url === pathToFileURL(process.argv[1]).href
+) {
+  main();
+}
