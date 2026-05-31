@@ -11,7 +11,10 @@
     "lint": "eslint .",
     "lint:posts": "npx tsx scripts/validate-posts.ts",
     "check-types": "tsc --noEmit",
-    "test": "node --import tsx --test 'domain/**/*.test.ts' 'lib/**/*.test.ts' 'scripts/**/*.test.ts' 'generate-*.test.ts' 'sync-posts.test.ts'",
+    "test": "pnpm test:node && pnpm test:vitest",
+    "test:node": "node --import tsx --test 'domain/**/*.test.ts' 'lib/**/*.test.ts' 'scripts/**/*.test.ts' 'generate-*.test.ts' 'sync-posts.test.ts'",
+    "test:vitest": "vitest run",
+    "test:coverage": "c8 --reporter=text --reporter=text-summary --exclude='**/*.test.ts' --exclude='**/*.config.*' --exclude='**/database.types.ts' node --import tsx --test 'domain/**/*.test.ts' 'lib/**/*.test.ts' 'scripts/**/*.test.ts' 'generate-*.test.ts' 'sync-posts.test.ts'",
     "new-post": "npx tsx scripts/new-post.ts",
     "supabase-stop": "supabase stop --all --no-backup --debug",
     "supabase-start": "pnpm supabase-stop && pnpm supabase start"
@@ -51,18 +54,26 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@pandacss/dev": "catalog:",
+    "@testing-library/dom": "^10.4.0",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.2.0",
+    "@testing-library/user-event": "^14.6.1",
     "@types/mdx": "^2.0.13",
     "@types/mime-types": "^3.0.1",
     "@types/node": "^25.8.0",
     "@types/react": "catalog:react19",
     "@types/react-dom": "catalog:react19",
     "@types/react-syntax-highlighter": "^15.5.13",
+    "@vitejs/plugin-react": "^5.0.4",
+    "c8": "^11.0.0",
     "concurrently": "^9.2.0",
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
     "eslint-plugin-react-hooks": "^7.0.0",
+    "jsdom": "^29.1.1",
     "supabase": "^2.70.5",
     "tsx": "^4.22.0",
-    "typescript": "catalog:typescript5"
+    "typescript": "catalog:typescript5",
+    "vitest": "^4.0.0-beta.15"
   }
 }

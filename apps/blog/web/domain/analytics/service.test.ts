@@ -1,10 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import {
-  computeDerivedStats,
-  computeAnalyticsOverview,
-  UNIQUES_ESTIMATE_RATIO,
-} from './service';
+import { computeDerivedStats, computeAnalyticsOverview } from './service';
 import type { PostStatDetail } from './types';
 
 function makePost(
@@ -148,6 +144,28 @@ test('computeAnalyticsOverview: range=30d → rangeDays=30, totalSeries.length=3
   assert.equal(result.totalSeries.length, 30);
 });
 
+test('computeAnalyticsOverview: range=90d → rangeDays=90, totalSeries.length=90', () => {
+  const result = computeAnalyticsOverview([], '90d', '2026-05-24');
+  assert.equal(result.rangeDays, 90);
+  assert.equal(result.totalSeries.length, 90);
+});
+
+test('computeAnalyticsOverview: 90d는 현재/직전 90일 윈도우를 분리 집계', () => {
+  // todayISO=2026-05-24, range=90d → 현재 약 [2026-02-24 ~ 2026-05-24],
+  // 직전 약 [2025-11-26 ~ 2026-02-23]. 직전보다 더 과거는 제외되어야 한다.
+  const data = [
+    makePostDetail('a', [
+      { view_date: '2026-03-01', view_count: 50 }, // 현재 기간
+      { view_date: '2026-01-01', view_count: 20 }, // 직전 기간
+      { view_date: '2025-06-01', view_count: 999 }, // 직전보다 과거 → 제외
+    ]),
+  ];
+  const result = computeAnalyticsOverview(data, '90d', '2026-05-24');
+  assert.equal(result.total, 50);
+  // 직전 20 → (50-20)/20 = 1.5
+  assert.equal(result.totalDelta, 1.5);
+});
+
 test('computeAnalyticsOverview: 현재 기간 조회수만 total에 포함', () => {
   // todayISO = 2026-05-24, range=7d → 윈도우 2026-05-18 ~ 2026-05-24
   const data = [
@@ -191,12 +209,36 @@ test('computeAnalyticsOverview: totalDelta — 직전 기간 대비 증감율', 
   assert.equal(result.totalDelta, 2.0);
 });
 
-test('computeAnalyticsOverview: uniques는 UNIQUES_ESTIMATE_RATIO 비율', () => {
+test('computeAnalyticsOverview: uniques는 총 조회수의 추정 비율(0.55)', () => {
   const data = [
     makePostDetail('a', [{ view_date: '2026-05-20', view_count: 100 }]),
   ];
   const result = computeAnalyticsOverview(data, '7d', '2026-05-24');
-  assert.equal(result.uniques, Math.round(100 * UNIQUES_ESTIMATE_RATIO));
+  // 리터럴로 고정 — UNIQUES_ESTIMATE_RATIO(0.55)가 바뀌면 의도적으로 함께 갱신.
+  // round(100 * 0.55) = 55.
+  assert.equal(result.uniques, 55);
+});
+
+test('computeAnalyticsOverview: uniquesDelta — 직전 고유추정 대비 증감율, 직전 0이면 null', () => {
+  // todayISO=2026-05-14, range=7d → 현재 [05-08~05-14], 직전 [05-01~05-07]
+  // 현재 total=200 → uniques=round(200*0.55)=110
+  // 직전 total=100 → prevUniques=round(100*0.55)=55 → uniquesDelta=(110-55)/55=1.0
+  const data = [
+    makePostDetail('a', [
+      { view_date: '2026-05-10', view_count: 200 }, // 현재
+      { view_date: '2026-05-03', view_count: 100 }, // 직전
+    ]),
+  ];
+  const result = computeAnalyticsOverview(data, '7d', '2026-05-14');
+  assert.equal(result.uniques, 110);
+  assert.equal(result.uniquesDelta, 1.0);
+
+  // 직전 기간 조회수 0 → uniquesDelta는 null (0 나눗셈 가드)
+  const onlyCurrent = [
+    makePostDetail('b', [{ view_date: '2026-05-10', view_count: 200 }]),
+  ];
+  const r2 = computeAnalyticsOverview(onlyCurrent, '7d', '2026-05-14');
+  assert.equal(r2.uniquesDelta, null);
 });
 
 test('computeAnalyticsOverview: postsPublished는 published 상태 글만 카운트', () => {
