@@ -73,6 +73,34 @@ export function parseScheduledDateKST(input: string): Date {
 }
 
 /**
+ * 날짜 문자열이 `parseScheduledDateKST`로 **결정적으로** 해석되지 못하는
+ * "timezone 모호한 datetime"인지 검사합니다.
+ *
+ * - `'YYYY-MM-DD'` (날짜만) → KST 자정으로 해석되므로 안전 (false)
+ * - offset(`Z` 또는 `±HH:MM`)을 명시한 datetime → 안전 (false)
+ * - `'YYYY-MM-DDTHH:mm[:ss]'` (offset 없는 datetime) → **모호** (true).
+ *   ECMAScript 스펙상 *로컬 타임*으로 파싱되어 개발 머신(KST)과 빌드 서버(UTC)에서
+ *   서로 다른 instant가 됩니다 → 예약 발행 시각이 ~9시간 어긋남.
+ *   (commit 0e2df5a가 고친 "KST 의도를 UTC로 해석" 버그와 동일 클래스)
+ *
+ * @example
+ * hasAmbiguousTimezone('2026-06-01')                      // false (날짜만)
+ * hasAmbiguousTimezone('2026-06-01T09:00:00+09:00')       // false (offset 명시)
+ * hasAmbiguousTimezone('2026-06-01T09:00:00Z')            // false (UTC)
+ * hasAmbiguousTimezone('2026-06-01T09:00:00')             // true  (offset 없음)
+ */
+export function hasAmbiguousTimezone(input: string): boolean {
+  const trimmed = input.trim();
+  // 시간 성분(T 또는 공백 + HH:mm)이 없으면 날짜만 → 안전
+  const hasTime = /\d{4}-\d{2}-\d{2}[T\s]\d{2}:\d{2}/.test(trimmed);
+  if (!hasTime) return false;
+  // 시간이 있는데 timezone offset(Z/z 또는 ±HH:MM/±HHMM)이 없으면 모호.
+  // `i` 플래그로 비표준 소문자 `z`(Date.parse는 허용)도 offset으로 인정해 오탐 방지.
+  const hasOffset = /(Z|[+-]\d{2}:?\d{2})$/i.test(trimmed);
+  return !hasOffset;
+}
+
+/**
  * `YYYY-MM-DD` → `M/D` 차트 X축용 짧은 라벨.
  *
  * `new Date('YYYY-MM-DD').getMonth()`는 입력 문자열을 UTC 자정으로 파싱한 뒤
@@ -104,4 +132,18 @@ export function getKSTCutoffDate(
   const today = todayKST ?? getKSTDateISO();
   if (filterType === '7days') return addDaysISO(today, -7);
   return addDaysISO(today, -30);
+}
+
+/**
+ * 주어진 시점에서 다음 KST 자정까지 남은 밀리초(+60초 여유).
+ *
+ * 자정 정각에 OS 타이머가 약간 일찍 발화하는 경우를 대비해 60초를 더합니다.
+ * useAnalyticsOverview가 자정마다 차트 윈도우를 리셋하는 setTimeout 스케줄에 씁니다.
+ * now를 주입받아 결정적으로 테스트할 수 있습니다.
+ */
+export function msUntilKSTMidnight(now: Date = new Date()): number {
+  const kstOffset = 9 * 60 * 60 * 1000; // 9시간
+  const nowKST = now.getTime() + kstOffset;
+  const midnightKST = Math.ceil(nowKST / 86400000) * 86400000;
+  return midnightKST - nowKST + 60_000;
 }

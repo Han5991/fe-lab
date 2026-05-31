@@ -90,7 +90,9 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
     'public',
   );
   const posts = getAllPosts();
-  const today = new Date().toISOString().split('T')[0];
+  // KST 기준 오늘 날짜. `new Date().toISOString()`은 UTC라 KST 00:00~09:00 빌드 시
+  // 하루 밀린 lastmod를 만들 수 있어 getKSTDateISO()를 사용한다.
+  const today = getKSTDateISO();
   const sitemap = buildSitemapXml(posts, today);
   fs.writeFileSync(path.join(publicDir, 'sitemap.xml'), sitemap);
   console.log('Sitemap generated successfully!');

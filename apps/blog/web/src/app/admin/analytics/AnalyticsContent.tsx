@@ -9,10 +9,8 @@ import {
   useAnalyticsOverview,
   UNIQUES_ESTIMATE_RATIO,
 } from '@/src/hooks/useAnalyticsOverview';
-import {
-  AnalyticsRangeSelect,
-  type AnalyticsRange,
-} from '@/src/components/admin/AnalyticsRangeSelect';
+import { AnalyticsRangeSelect } from '@/src/components/admin/AnalyticsRangeSelect';
+import type { AnalyticsRange } from '@/domain/analytics';
 import { KpiCard } from '@/src/components/admin/KpiCard';
 import { TimeSeriesChart } from '@/src/components/admin/TimeSeriesChart';
 import { TopPostsTable } from '@/src/components/admin/TopPostsTable';

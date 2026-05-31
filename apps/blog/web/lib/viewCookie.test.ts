@@ -10,14 +10,46 @@ import {
 
 // ── slugToViewKey ───────────────────────────────────────────────────────────
 
-test('slugToViewKey: 영숫자/하이픈 그대로 보존', () => {
+test('slugToViewKey: 영숫자/하이픈 그대로 보존 (기존 쿠키 하위호환)', () => {
+  // encodeURIComponent가 영숫자·하이픈을 그대로 두므로 기존 ASCII-kebab slug의
+  // 쿠키 키는 변하지 않는다.
   assert.equal(slugToViewKey('hello-world-123'), 'viewed_hello-world-123');
 });
 
-test('slugToViewKey: 슬래시·한글 등 특수문자는 _로 치환', () => {
+test('slugToViewKey: 슬래시·한글은 encodeURIComponent로 1:1 인코딩', () => {
   const key = slugToViewKey('번들러/소개');
-  // 한글·슬래시 모두 _로
-  assert.match(key, /^viewed_[a-zA-Z0-9_-]+$/);
+  // 더 이상 _로 뭉개지 않고 %XX로 인코딩 → prefix + 인코딩 본문
+  assert.ok(key.startsWith('viewed_'));
+  assert.ok(key.includes('%')); // 한글이 %XX로 인코딩됨
+});
+
+test('slugToViewKey: 충돌 회귀 — 서로 다른 slug는 서로 다른 키 (a/b ≠ a_b)', () => {
+  // 이전 구현에서는 둘 다 'viewed_a_b'로 충돌했다.
+  assert.notEqual(slugToViewKey('a/b'), slugToViewKey('a_b'));
+  // 한글 slug 두 개도 1:1로 구분되어야 한다.
+  assert.notEqual(slugToViewKey('번들러/소개'), slugToViewKey('번들러/심화'));
+});
+
+test('slugToViewKey: 점(.) 포함 slug는 점을 보존 (옛 _치환과 달라짐 — 1회성 마이그레이션)', () => {
+  // 실존 slug. encodeURIComponent는 `.`를 인코딩하지 않으므로 그대로 보존된다.
+  // (옛 구현은 `.`→`_`라 'viewed_turborepo-next_js-docker'였음 → docstring 참고)
+  assert.equal(
+    slugToViewKey('turborepo-next.js-docker'),
+    'viewed_turborepo-next.js-docker',
+  );
+  // 점만 다른 두 slug도 서로 다른 키 (1:1 보장)
+  assert.notEqual(slugToViewKey('a.b'), slugToViewKey('a-b'));
+});
+
+test('slugToViewKey: 쿠키 이름 separator(괄호/세미콜론/공백/등호)를 포함하지 않음', () => {
+  for (const slug of ['a/b', '번들러 (1편)', 'a=b;c', '제목 with spaces']) {
+    const key = slugToViewKey(slug);
+    assert.doesNotMatch(
+      key,
+      /[()\s;,="\\/[\]{}@:<>?]/,
+      `쿠키-세이프하지 않은 문자 포함: ${key}`,
+    );
+  }
 });
 
 test('slugToViewKey: 빈 문자열이어도 prefix는 유지', () => {

@@ -6,6 +6,8 @@ import {
   formatMonthDayISO,
   getKSTCutoffDate,
   getKSTDateISO,
+  hasAmbiguousTimezone,
+  msUntilKSTMidnight,
   parseScheduledDateKST,
 } from './dates';
 
@@ -100,6 +102,39 @@ test('parseScheduledDateKST: 날짜 경계 — 연말/월말', () => {
   assert.equal(d.toISOString(), '2026-12-30T15:00:00.000Z');
 });
 
+// --- hasAmbiguousTimezone ---
+
+test('hasAmbiguousTimezone: 날짜만(YYYY-MM-DD)은 안전', () => {
+  assert.equal(hasAmbiguousTimezone('2026-06-01'), false);
+});
+
+test('hasAmbiguousTimezone: offset(+09:00) 명시 datetime은 안전', () => {
+  assert.equal(hasAmbiguousTimezone('2026-06-01T09:00:00+09:00'), false);
+});
+
+test('hasAmbiguousTimezone: UTC(Z) datetime은 안전', () => {
+  assert.equal(hasAmbiguousTimezone('2026-06-01T09:00:00Z'), false);
+});
+
+test('hasAmbiguousTimezone: offset 없는 datetime은 모호(true)', () => {
+  // 0e2df5a 회귀 클래스 — 빌드 서버(UTC)와 개발 머신(KST)에서 ~9시간 어긋남
+  assert.equal(hasAmbiguousTimezone('2026-06-01T09:00:00'), true);
+  assert.equal(hasAmbiguousTimezone('2026-06-01T09:00'), true);
+});
+
+test('hasAmbiguousTimezone: ±HHMM(콜론 없음) offset도 안전', () => {
+  assert.equal(hasAmbiguousTimezone('2026-06-01T09:00:00+0900'), false);
+});
+
+test('hasAmbiguousTimezone: 공백 구분 datetime도 offset 없으면 모호', () => {
+  assert.equal(hasAmbiguousTimezone('2026-06-01 09:00:00'), true);
+});
+
+test('hasAmbiguousTimezone: 비표준 소문자 z도 offset으로 인정(false-positive 방지)', () => {
+  // 소문자 z는 ISO 표준은 아니나 Date.parse가 UTC로 받아들이므로 모호하지 않다.
+  assert.equal(hasAmbiguousTimezone('2026-06-01T09:00:00z'), false);
+});
+
 test('getKSTCutoffDate: 7days', () => {
   assert.equal(getKSTCutoffDate('7days', '2026-05-25'), '2026-05-18');
 });
@@ -121,4 +156,24 @@ test('getKSTCutoffDate: todayKST 미제공 시 현재 KST 기준', () => {
   const cutoff = getKSTCutoffDate('7days');
   const today = getKSTDateISO();
   assert.equal(addDaysISO(cutoff, 7), today);
+});
+
+// --- msUntilKSTMidnight ---
+
+test('msUntilKSTMidnight: KST 23:00이면 1시간 + 60초', () => {
+  // KST 2026-05-08 23:00 = UTC 14:00 → 다음 자정까지 1시간
+  const ms = msUntilKSTMidnight(new Date('2026-05-08T14:00:00Z'));
+  assert.equal(ms, 60 * 60 * 1000 + 60_000);
+});
+
+test('msUntilKSTMidnight: KST 00:01이면 거의 24시간(정확히 24h - 1min + 60s)', () => {
+  // KST 2026-05-09 00:01 = UTC 2026-05-08 15:01 → 다음 자정까지 23h59m
+  const ms = msUntilKSTMidnight(new Date('2026-05-08T15:01:00Z'));
+  assert.equal(ms, 24 * 60 * 60 * 1000); // (86400000 - 60000) + 60000
+});
+
+test('msUntilKSTMidnight: KST 자정 정각이면 60초만(경계 비퇴행)', () => {
+  // KST 2026-05-09 00:00:00 = UTC 2026-05-08 15:00:00 → 이미 자정이라 여유 60초만
+  const ms = msUntilKSTMidnight(new Date('2026-05-08T15:00:00Z'));
+  assert.equal(ms, 60_000);
 });
