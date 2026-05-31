@@ -1,18 +1,21 @@
 name: CI
 
 on:
-  # 모든 브랜치 push에서 CI 실행 (lefthook이 로컬에서 잡지 못한 경우의 안전망).
-  # PR과 push가 같은 commit에 동시 트리거되어도 아래 concurrency 그룹에서 한 번만 실행됩니다.
+  # PR에서 CI 실행 (merge 결과 기준). feature 브랜치는 PR로 검증되고,
+  # 로컬 lefthook pre-push가 lint/types/test를 1차로 돌려 안전망 역할을 합니다.
   pull_request:
+  # push는 main(머지 커밋)에만 한정합니다.
+  # 모든 브랜치 push까지 켜면 PR과 이중 실행됩니다 — push 이벤트의 group 키는
+  # github.head_ref가 비어 github.ref(refs/heads/<branch>)를 쓰는데, 이는
+  # pull_request의 head_ref(<branch>)와 달라 같은 concurrency 그룹으로 합쳐지지
+  # 않기 때문입니다. (head_ref와 ref를 한 그룹으로 묶을 방법이 없어 트리거를 분리)
   push:
+    branches: [main]
 
 concurrency:
-  # github.head_ref는 PR 이벤트에서만 source 브랜치 이름(예: chore/foo)을 갖고,
-  # push 이벤트에서는 빈 값이라 github.ref(refs/heads/chore/foo)로 fallback.
-  # 결과적으로 같은 브랜치의 PR/push가 동일 그룹에 묶여 CI 중복 실행을 방지합니다.
+  # 같은 PR 브랜치에 짧은 간격으로 push가 쌓이면 이전 run을 취소(중복 낭비 방지).
+  # main push는 머지 기록 보호 차원에서 취소하지 않고 완주시킵니다.
   group: ci-${{ github.workflow }}-${{ github.head_ref || github.ref }}
-  # feature 브랜치/PR은 짧은 간격으로 push가 쌓일 수 있어 이전 run을 취소.
-  # 단, main push는 머지 기록 보호 차원에서 취소하지 않고 모두 완주시킵니다.
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 permissions:
