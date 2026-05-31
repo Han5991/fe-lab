@@ -51,41 +51,104 @@ test('알 수 없는 status는 비공개', () => {
   assert.equal(isPostVisible({ status: 'unknown-value' }), false);
 });
 
-// --- KST 날짜 파싱 회귀 테스트 ---
-// 'YYYY-MM-DD' 형식의 scheduledDate는 KST 자정 기준으로 공개 여부가 결정됩니다.
-// JS Date 기본 동작(UTC 자정)으로 파싱하면 KST 기준보다 9시간 빨리 공개되는 버그.
+// --- 예약 발행(scheduled) 경계 — now 주입으로 결정적 검증 ---
+// 'YYYY-MM-DD' scheduledDate는 KST 자정 기준으로 공개됩니다. UTC 자정으로 파싱하면
+// KST보다 9시간 빨리 공개되는 버그(commit 0e2df5a 클래스)가 됩니다.
+// 이전 테스트는 6년 이상 떨어진 날짜를 써서 9시간 shift를 실제로 구분하지 못했으나
+// (KST/UTC 어느 쪽이든 결과 동일), now를 주입해 경계를 정확히 잠급니다.
 
-test('scheduled: YYYY-MM-DD — KST 자정 직후(= UTC 전날 15:00:01)면 공개', () => {
-  // scheduledDate는 YYYY-MM-DD 형식으로 KST 날짜를 전달합니다.
-  // 테스트에서는 현재 시각을 제어할 수 없으므로 이미 지난 과거 KST 날짜로 검증합니다.
-  // (KST 자정 = UTC 전날 15:00이므로, 충분히 지난 날짜라면 항상 공개여야 합니다.)
-  const pastKSTDate = '2020-01-01'; // 이미 지난 날짜
-  assert.equal(
-    isPostVisible({ status: 'scheduled', scheduledDate: pastKSTDate }),
-    true,
-    'KST 기준 과거 날짜는 공개여야 함',
-  );
-});
+const SCHEDULED_KST_DATE = '2026-05-24'; // KST 2026-05-24 00:00 = UTC 2026-05-23 15:00
 
-test('scheduled: YYYY-MM-DD — 오늘 이후 KST 날짜이면 비공개', () => {
-  const futureKSTDate = '2099-12-31'; // 충분히 미래 날짜
+test('scheduled(YYYY-MM-DD): KST 자정 직전이면 비공개', () => {
+  const justBefore = new Date('2026-05-23T14:59:59Z'); // KST 2026-05-23 23:59:59
   assert.equal(
-    isPostVisible({ status: 'scheduled', scheduledDate: futureKSTDate }),
+    isPostVisible(
+      { status: 'scheduled', scheduledDate: SCHEDULED_KST_DATE },
+      justBefore,
+    ),
     false,
-    'KST 기준 미래 날짜는 비공개여야 함',
   );
 });
 
-test('scheduled: YYYY-MM-DD는 UTC 자정이 아닌 KST 자정 기준 — 9시간 shift 버그 없음', () => {
-  // UTC 자정으로 파싱하면 KST 2026-05-24는 UTC 2026-05-24 00:00:00 으로 해석됨.
-  // 하지만 실제로는 KST 자정(UTC 2026-05-23 15:00:00)이어야 합니다.
-  // 이 테스트는 UTC 2026-05-23 15:00:00 ~ UTC 2026-05-24 00:00:00 사이에
-  // 실행하면 두 해석의 차이가 드러나지만, 과거/미래 날짜로 우회합니다.
-  // 핵심: parseScheduledDateKST가 사용되는 한 이 테스트는 항상 통과합니다.
-  const pastKSTDate = '2000-06-15';
-  const result = isPostVisible({
-    status: 'scheduled',
-    scheduledDate: pastKSTDate,
-  });
-  assert.equal(result, true, '과거 KST 날짜(YYYY-MM-DD)는 항상 공개여야 함');
+test('scheduled(YYYY-MM-DD): KST 자정 정각이면 공개 (<= 경계)', () => {
+  const atMidnight = new Date('2026-05-23T15:00:00Z');
+  assert.equal(
+    isPostVisible(
+      { status: 'scheduled', scheduledDate: SCHEDULED_KST_DATE },
+      atMidnight,
+    ),
+    true,
+  );
+});
+
+test('scheduled(YYYY-MM-DD): KST 자정 직후면 공개', () => {
+  const justAfter = new Date('2026-05-23T15:00:01Z');
+  assert.equal(
+    isPostVisible(
+      { status: 'scheduled', scheduledDate: SCHEDULED_KST_DATE },
+      justAfter,
+    ),
+    true,
+  );
+});
+
+test('scheduled(YYYY-MM-DD): 9시간 shift 판별 — UTC 자정 파싱으로 회귀하면 깨지는 시점', () => {
+  // now = UTC 2026-05-23 16:00 = KST 2026-05-24 01:00 (KST 자정은 이미 지남).
+  // 올바른 KST 파싱: scheduled(UTC 15:00) <= now(16:00) → 공개.
+  // (버그) UTC 자정 파싱: scheduled가 UTC 2026-05-24 00:00이 되어 now보다 미래 → 비공개.
+  // 즉 parseScheduledDateKST가 UTC로 회귀하면 이 단언이 false가 되어 실패한다.
+  const kstAfterMidnight = new Date('2026-05-23T16:00:00Z');
+  assert.equal(
+    isPostVisible(
+      { status: 'scheduled', scheduledDate: SCHEDULED_KST_DATE },
+      kstAfterMidnight,
+    ),
+    true,
+    'KST 자정 지난 시점에는 공개여야 함 (UTC 파싱 회귀 시 비공개로 깨짐)',
+  );
+});
+
+test('scheduled(offset 명시 +09:00): 해당 instant 경계로 판단', () => {
+  // '2026-05-24T09:00:00+09:00' = UTC 2026-05-24 00:00:00
+  const scheduledDate = '2026-05-24T09:00:00+09:00';
+  assert.equal(
+    isPostVisible(
+      { status: 'scheduled', scheduledDate },
+      new Date('2026-05-23T23:59:59Z'),
+    ),
+    false,
+  );
+  assert.equal(
+    isPostVisible(
+      { status: 'scheduled', scheduledDate },
+      new Date('2026-05-24T00:00:00Z'), // 정각 == instant, <= 경계
+    ),
+    true,
+  );
+  assert.equal(
+    isPostVisible(
+      { status: 'scheduled', scheduledDate },
+      new Date('2026-05-24T00:00:01Z'),
+    ),
+    true,
+  );
+});
+
+test('비-scheduled status는 now 주입과 무관 (회귀 가드)', () => {
+  const farPast = new Date('2000-01-01T00:00:00Z');
+  const farFuture = new Date('2099-01-01T00:00:00Z');
+  // published는 now·scheduledDate와 무관하게 항상 공개
+  assert.equal(
+    isPostVisible(
+      { status: 'published', scheduledDate: '2099-12-31' },
+      farPast,
+    ),
+    true,
+  );
+  assert.equal(isPostVisible({ status: 'published' }, farFuture), true);
+  // draft는 now·scheduledDate와 무관하게 항상 비공개
+  assert.equal(
+    isPostVisible({ status: 'draft', scheduledDate: '2000-01-01' }, farFuture),
+    false,
+  );
 });
