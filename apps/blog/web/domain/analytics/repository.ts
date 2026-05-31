@@ -57,6 +57,10 @@ export async function getTopPosts(limit: number): Promise<TopPostRow[]> {
 /**
  * 모든 글의 조회수를 반환합니다(정렬/limit 없음).
  * PostsArchive의 '인기순' 정렬처럼 전체 slug→view_count 맵이 필요할 때 사용합니다.
+ *
+ * post_views는 글당 1행이므로 PostgREST의 1000-row cap에 닿으려면 글이 1000편을
+ * 넘어야 합니다(getAllPostsTrends와 달리 post×day가 아님). 그 전까지는 페이지네이션
+ * 불필요. 1000편을 넘기면 range 페이지네이션을 추가해야 합니다.
  */
 export async function getAllViewCounts(): Promise<TopPostRow[]> {
   const { data } = await client.from('post_views').select('slug, view_count');

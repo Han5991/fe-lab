@@ -37,18 +37,22 @@ const eslintConfig = [
     files: ['src/**/*.{ts,tsx}'],
     ignores: ['**/*.test.{ts,tsx}'],
     rules: {
+      // `**/` 접두로 alias(@/domain/...)와 상대경로(../../domain/...) 양쪽을 차단.
       'no-restricted-imports': [
         'error',
         {
           patterns: [
             {
-              group: ['@/domain/*/repository', '@/domain/*/repository.*'],
+              group: ['**/domain/*/repository', '**/domain/*/repository.*'],
               message:
                 'repository는 인프라 레이어입니다. domain/<x> 공개 API(배럴, 예: @/domain/analytics)를 통해 접근하세요.',
             },
           ],
         },
       ],
+      // 주의: 아래 selector는 식별자 이름(client/supabase)에 매칭하므로, Supabase
+      // 클라이언트를 임의 이름으로 alias하면(예: `client as db`) 우회될 수 있습니다.
+      // 클라이언트 import 자체를 lib/client로 한정하는 컨벤션과 함께 봐야 합니다.
       'no-restricted-syntax': [
         'error',
         {
@@ -76,7 +80,7 @@ const eslintConfig = [
         {
           patterns: [
             {
-              group: ['@/src/*', '@/src'],
+              group: ['**/src', '**/src/**'],
               message: 'domain은 상위 레이어(src)를 import할 수 없습니다.',
             },
           ],
@@ -94,7 +98,7 @@ const eslintConfig = [
         {
           patterns: [
             {
-              group: ['@/domain/*', '@/domain', '@/src/*', '@/src'],
+              group: ['**/domain', '**/domain/**', '**/src', '**/src/**'],
               message:
                 'lib은 최하위 레이어입니다. domain·src를 import할 수 없습니다.',
             },

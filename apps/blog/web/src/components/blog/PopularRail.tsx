@@ -38,7 +38,8 @@ export const PopularRail = ({ posts, limit = 5 }: PopularRailProps) => {
       .map(r => {
         const post = bySlug.get(r.slug);
         if (!post) return null;
-        return { ...post, viewCount: r.view_count ?? 0 } satisfies RankedPost;
+        // getTopPosts(TopPostRow)의 view_count는 이미 non-null number로 정규화됨.
+        return { ...post, viewCount: r.view_count } satisfies RankedPost;
       })
       .filter((p): p is RankedPost => p !== null);
   }, [rows, posts]);
