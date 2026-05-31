@@ -6,6 +6,7 @@ import {
   formatMonthDayISO,
   getKSTCutoffDate,
   getKSTDateISO,
+  hasAmbiguousTimezone,
   parseScheduledDateKST,
 } from './dates';
 
@@ -98,6 +99,34 @@ test('parseScheduledDateKST: 날짜 경계 — 연말/월말', () => {
   // 2026-12-31 KST 자정 = 2026-12-30 15:00 UTC
   const d = parseScheduledDateKST('2026-12-31');
   assert.equal(d.toISOString(), '2026-12-30T15:00:00.000Z');
+});
+
+// --- hasAmbiguousTimezone ---
+
+test('hasAmbiguousTimezone: 날짜만(YYYY-MM-DD)은 안전', () => {
+  assert.equal(hasAmbiguousTimezone('2026-06-01'), false);
+});
+
+test('hasAmbiguousTimezone: offset(+09:00) 명시 datetime은 안전', () => {
+  assert.equal(hasAmbiguousTimezone('2026-06-01T09:00:00+09:00'), false);
+});
+
+test('hasAmbiguousTimezone: UTC(Z) datetime은 안전', () => {
+  assert.equal(hasAmbiguousTimezone('2026-06-01T09:00:00Z'), false);
+});
+
+test('hasAmbiguousTimezone: offset 없는 datetime은 모호(true)', () => {
+  // 0e2df5a 회귀 클래스 — 빌드 서버(UTC)와 개발 머신(KST)에서 ~9시간 어긋남
+  assert.equal(hasAmbiguousTimezone('2026-06-01T09:00:00'), true);
+  assert.equal(hasAmbiguousTimezone('2026-06-01T09:00'), true);
+});
+
+test('hasAmbiguousTimezone: ±HHMM(콜론 없음) offset도 안전', () => {
+  assert.equal(hasAmbiguousTimezone('2026-06-01T09:00:00+0900'), false);
+});
+
+test('hasAmbiguousTimezone: 공백 구분 datetime도 offset 없으면 모호', () => {
+  assert.equal(hasAmbiguousTimezone('2026-06-01 09:00:00'), true);
 });
 
 test('getKSTCutoffDate: 7days', () => {

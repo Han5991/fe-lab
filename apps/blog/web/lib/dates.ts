@@ -73,6 +73,33 @@ export function parseScheduledDateKST(input: string): Date {
 }
 
 /**
+ * 날짜 문자열이 `parseScheduledDateKST`로 **결정적으로** 해석되지 못하는
+ * "timezone 모호한 datetime"인지 검사합니다.
+ *
+ * - `'YYYY-MM-DD'` (날짜만) → KST 자정으로 해석되므로 안전 (false)
+ * - offset(`Z` 또는 `±HH:MM`)을 명시한 datetime → 안전 (false)
+ * - `'YYYY-MM-DDTHH:mm[:ss]'` (offset 없는 datetime) → **모호** (true).
+ *   ECMAScript 스펙상 *로컬 타임*으로 파싱되어 개발 머신(KST)과 빌드 서버(UTC)에서
+ *   서로 다른 instant가 됩니다 → 예약 발행 시각이 ~9시간 어긋남.
+ *   (commit 0e2df5a가 고친 "KST 의도를 UTC로 해석" 버그와 동일 클래스)
+ *
+ * @example
+ * hasAmbiguousTimezone('2026-06-01')                      // false (날짜만)
+ * hasAmbiguousTimezone('2026-06-01T09:00:00+09:00')       // false (offset 명시)
+ * hasAmbiguousTimezone('2026-06-01T09:00:00Z')            // false (UTC)
+ * hasAmbiguousTimezone('2026-06-01T09:00:00')             // true  (offset 없음)
+ */
+export function hasAmbiguousTimezone(input: string): boolean {
+  const trimmed = input.trim();
+  // 시간 성분(T 또는 공백 + HH:mm)이 없으면 날짜만 → 안전
+  const hasTime = /\d{4}-\d{2}-\d{2}[T\s]\d{2}:\d{2}/.test(trimmed);
+  if (!hasTime) return false;
+  // 시간이 있는데 timezone offset(Z 또는 ±HH:MM/±HHMM)이 없으면 모호
+  const hasOffset = /(Z|[+-]\d{2}:?\d{2})$/.test(trimmed);
+  return !hasOffset;
+}
+
+/**
  * `YYYY-MM-DD` → `M/D` 차트 X축용 짧은 라벨.
  *
  * `new Date('YYYY-MM-DD').getMonth()`는 입력 문자열을 UTC 자정으로 파싱한 뒤

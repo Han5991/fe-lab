@@ -8,9 +8,21 @@ export const VIEW_COOLDOWN_HOURS = 6;
 
 /**
  * slug를 쿠키 키-안전 문자열로 변환합니다.
+ *
+ * encodeURIComponent는 slug를 1:1로 인코딩하므로 서로 다른 slug가 같은 키로
+ * 충돌하는 것을 막습니다. (이전 구현은 비영숫자를 모두 `_`로 뭉개, 한글/슬래시
+ * slug인 `a/b`와 `a_b`가 `viewed_a_b`로 충돌해 한 글 조회가 다른 글의 6시간
+ * 쿨다운을 잘못 트리거했습니다.)
+ *
+ * 영숫자/하이픈 slug는 encodeURIComponent가 그대로 두므로 기존 쿠키와 하위호환됩니다.
+ * 쿠키 이름 토큰에서 separator인 괄호 `()`만 추가로 %XX 인코딩합니다.
  */
 export function slugToViewKey(slug: string): string {
-  return `viewed_${slug.replace(/[^a-zA-Z0-9-]/g, '_')}`;
+  const encoded = encodeURIComponent(slug).replace(
+    /[()]/g,
+    c => `%${c.charCodeAt(0).toString(16).toUpperCase()}`,
+  );
+  return `viewed_${encoded}`;
 }
 
 /**

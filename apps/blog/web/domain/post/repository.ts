@@ -113,12 +113,24 @@ function collectPosts(dirPath: string): PostData[] {
 
 /**
  * 포스트를 날짜 내림차순으로 정렬합니다.
+ *
+ * 입력을 변형하지 않도록 복사본을 정렬합니다(순수 함수).
+ * 같은 날짜의 글들은 slug로 안정적 2차 정렬해 readdir(파일시스템) 순서에
+ * 의존하던 비결정성을 제거합니다. 이 정렬 결과는 getAdjacentPosts의 prev/next와
+ * llms-full 등장 순서의 기준이 되므로 환경에 따라 흔들리면 안 됩니다.
  */
-function sortByDateDesc(posts: PostData[]): PostData[] {
-  return posts.sort((a, b) => {
+export function sortByDateDesc(posts: PostData[]): PostData[] {
+  return [...posts].sort((a, b) => {
     if (a.date && b.date) {
-      return new Date(b.date).getTime() - new Date(a.date).getTime();
+      const diff = new Date(b.date).getTime() - new Date(a.date).getTime();
+      if (diff !== 0) return diff;
+      // 동률이면 slug(없으면 originalSlug)로 안정적 2차 정렬
+      return (a.originalSlug || a.slug).localeCompare(b.originalSlug || b.slug);
     }
+    // 한쪽만 날짜가 있으면 날짜 있는 글을 앞으로 (날짜순 우선)
+    if (a.date) return -1;
+    if (b.date) return 1;
+    // 둘 다 날짜가 없으면 제목순
     return a.title.localeCompare(b.title);
   });
 }

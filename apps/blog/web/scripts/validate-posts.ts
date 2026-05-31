@@ -2,6 +2,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { relative, resolve, dirname, posix } from 'node:path';
 import matter from 'gray-matter';
 import { collectMarkdownFiles, hasFrontmatter } from '../lib/postFiles';
+import { hasAmbiguousTimezone } from '../lib/dates';
 
 const POSTS_DIR = resolve(process.cwd(), '..', 'posts');
 const VALID_STATUSES = ['published', 'draft', 'scheduled'] as const;
@@ -144,6 +145,14 @@ function validatePost(record: PostRecord, raw: string): Issue[] {
         severity: 'error',
         rule: 'invalid-scheduled-date',
         message: `\`scheduledDate\`가 유효한 날짜가 아닙니다: ${data.scheduledDate}`,
+      });
+    } else if (hasAmbiguousTimezone(data.scheduledDate)) {
+      issues.push({
+        file: relPath,
+        line: findFrontmatterLine(raw, 'scheduledDate'),
+        severity: 'error',
+        rule: 'ambiguous-scheduled-date',
+        message: `\`scheduledDate\`에 timezone offset이 없어 빌드 환경(UTC)과 로컬(KST)에서 발행 시각이 ~9시간 어긋날 수 있습니다. \`+09:00\` 또는 \`Z\`를 명시하거나 'YYYY-MM-DD' 형식을 쓰세요: ${data.scheduledDate}`,
       });
     }
   }
