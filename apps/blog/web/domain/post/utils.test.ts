@@ -13,9 +13,8 @@ test('encodePostSlug: 대괄호·한글·공백 세그먼트는 인코딩되고 
   );
 });
 
-test('encodePostSlug: 단일 한글 세그먼트는 encodeURIComponent 결과와 동일하다', () => {
+test('encodePostSlug: 단일 한글 세그먼트는 퍼센트 인코딩된다', () => {
   assert.equal(encodePostSlug('번들러'), '%EB%B2%88%EB%93%A4%EB%9F%AC');
-  assert.equal(encodePostSlug('번들러'), encodeURIComponent('번들러'));
 });
 
 test('encodePostSlug: 빈 문자열은 빈 문자열을 반환한다', () => {
@@ -64,11 +63,10 @@ test('encodePostSlug: 이모지(서로게이트 페어)도 UTF-8 바이트로 �
   assert.equal(encodePostSlug('emoji😀'), 'emoji%F0%9F%98%80');
 });
 
-test('encodePostSlug: 각 세그먼트가 독립적으로 encodeURIComponent된 결과와 일치한다', () => {
-  const slug = '[A 1]/번들러/c d';
-  const expected = slug
-    .split('/')
-    .map(seg => encodeURIComponent(seg))
-    .join('/');
-  assert.equal(encodePostSlug(slug), expected);
+test('encodePostSlug: 다중 세그먼트가 각각 인코딩되고 슬래시는 보존된다 (리터럴 고정)', () => {
+  // expected를 구현으로 재계산하지 않고 리터럴로 고정해 독립 검증한다.
+  assert.equal(
+    encodePostSlug('[A 1]/번들러/c d'),
+    '%5BA%201%5D/%EB%B2%88%EB%93%A4%EB%9F%AC/c%20d',
+  );
 });

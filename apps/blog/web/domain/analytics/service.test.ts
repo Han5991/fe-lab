@@ -1,10 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import {
-  computeDerivedStats,
-  computeAnalyticsOverview,
-  UNIQUES_ESTIMATE_RATIO,
-} from './service';
+import { computeDerivedStats, computeAnalyticsOverview } from './service';
 import type { PostStatDetail } from './types';
 
 function makePost(
@@ -213,12 +209,14 @@ test('computeAnalyticsOverview: totalDelta — 직전 기간 대비 증감율', 
   assert.equal(result.totalDelta, 2.0);
 });
 
-test('computeAnalyticsOverview: uniques는 UNIQUES_ESTIMATE_RATIO 비율', () => {
+test('computeAnalyticsOverview: uniques는 총 조회수의 추정 비율(0.55)', () => {
   const data = [
     makePostDetail('a', [{ view_date: '2026-05-20', view_count: 100 }]),
   ];
   const result = computeAnalyticsOverview(data, '7d', '2026-05-24');
-  assert.equal(result.uniques, Math.round(100 * UNIQUES_ESTIMATE_RATIO));
+  // 리터럴로 고정 — UNIQUES_ESTIMATE_RATIO(0.55)가 바뀌면 의도적으로 함께 갱신.
+  // round(100 * 0.55) = 55.
+  assert.equal(result.uniques, 55);
 });
 
 test('computeAnalyticsOverview: uniquesDelta — 직전 고유추정 대비 증감율, 직전 0이면 null', () => {

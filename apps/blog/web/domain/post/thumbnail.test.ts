@@ -108,7 +108,10 @@ test('resolveThumbnailUrl: relativeDir 한글 단일 세그먼트', () => {
   );
 });
 
-test('resolveThumbnailUrl: http로 시작하지만 https인 문자열도 startsWith("http") 매칭으로 그대로', () => {
+test('resolveThumbnailUrl: startsWith("http") quirk — http로 시작하는 비URL도 절대로 간주', () => {
+  // 절대 판정이 startsWith('http')라 'httpsfoo'·'http-guide.png' 같은 상대
+  // 파일명도 외부 URL로 오분류되어 미해결 반환된다. 현재 동작 회귀 고정이며,
+  // 'http://'·'https://' 프리픽스로 좁히는 게 옳은지는 별도 검토 대상이다.
   assert.equal(
     resolveThumbnailUrl({ thumbnail: 'httpsfoo', relativeDir: 'dir' }),
     'httpsfoo',
