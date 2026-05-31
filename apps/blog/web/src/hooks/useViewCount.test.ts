@@ -1,0 +1,60 @@
+import { beforeEach, describe, expect, test, vi } from 'vitest';
+import { renderHook } from '@testing-library/react';
+
+// 도메인 배럴의 incrementViewCount를 mock (vi.hoisted로 mock 팩토리에서 참조).
+const { incrementViewCount } = vi.hoisted(() => ({
+  incrementViewCount: vi.fn(() => Promise.resolve()),
+}));
+vi.mock('@/domain/analytics', () => ({ incrementViewCount }));
+
+import { useViewCount } from './useViewCount';
+
+function clearAllCookies() {
+  for (const c of document.cookie.split(';')) {
+    const name = c.split('=')[0].trim();
+    if (name) {
+      document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
+    }
+  }
+}
+
+beforeEach(() => {
+  incrementViewCount.mockClear();
+  clearAllCookies();
+});
+
+describe('useViewCount', () => {
+  test('첫 조회: 쿠키가 없으면 incrementViewCount(slug) 호출 + 쿠키 set', () => {
+    renderHook(() => useViewCount('my-post'));
+    expect(incrementViewCount).toHaveBeenCalledTimes(1);
+    expect(incrementViewCount).toHaveBeenCalledWith('my-post');
+    expect(document.cookie).toContain('viewed_my-post');
+  });
+
+  test('이미 조회한 글(쿠키 존재): incrementViewCount 미호출', () => {
+    document.cookie = 'viewed_my-post=true; path=/';
+    renderHook(() => useViewCount('my-post'));
+    expect(incrementViewCount).not.toHaveBeenCalled();
+  });
+
+  test('slug가 null이면 아무 동작 안 함', () => {
+    renderHook(() => useViewCount(null));
+    expect(incrementViewCount).not.toHaveBeenCalled();
+  });
+
+  test('레이스 가드: 쿠키를 RPC 전에 set하므로 같은 글 재마운트 시 1회만 호출', () => {
+    // 첫 마운트가 쿠키를 set → 두 번째 마운트는 hasViewed=true로 RPC 차단.
+    renderHook(() => useViewCount('race-post'));
+    renderHook(() => useViewCount('race-post'));
+    expect(incrementViewCount).toHaveBeenCalledTimes(1);
+  });
+
+  test('한글 slug도 쿠키 키 충돌 없이 1회 카운트', () => {
+    renderHook(() => useViewCount('번들러/소개'));
+    expect(incrementViewCount).toHaveBeenCalledTimes(1);
+    expect(incrementViewCount).toHaveBeenCalledWith('번들러/소개');
+    // 다른 한글 slug는 별개 키라 영향 없음
+    renderHook(() => useViewCount('번들러/심화'));
+    expect(incrementViewCount).toHaveBeenCalledTimes(2);
+  });
+});

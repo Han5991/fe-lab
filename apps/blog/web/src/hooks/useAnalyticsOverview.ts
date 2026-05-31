@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useEffect } from 'react';
 import { useAdminDashboardData } from './useAdminViews';
-import { getKSTDateISO } from '@/lib/dates';
+import { getKSTDateISO, msUntilKSTMidnight } from '@/lib/dates';
 import {
   computeAnalyticsOverview,
   UNIQUES_ESTIMATE_RATIO,
@@ -12,19 +12,6 @@ import type { AnalyticsRange } from '@/domain/analytics';
 export type { AnalyticsRange };
 export { UNIQUES_ESTIMATE_RATIO };
 export type { AnalyticsOverview } from '@/domain/analytics';
-
-/**
- * KST 자정까지 남은 밀리초를 계산합니다.
- * 자정 + 60s 여유를 두어 날짜 전환 직후 확실히 트리거됩니다.
- */
-function msUntilKSTMidnight(now: Date = new Date()): number {
-  // KST 기준 다음 자정 = UTC 기준 (오늘 15:00 또는 내일 15:00)
-  const kstOffset = 9 * 60 * 60 * 1000; // 9시간
-  const nowKST = now.getTime() + kstOffset;
-  const midnightKST = Math.ceil(nowKST / 86400000) * 86400000;
-  // 여유 60초 추가: 자정 정각에 OS 타이머가 약간 일찍 발화하는 경우 대비
-  return midnightKST - nowKST + 60_000;
-}
 
 /**
  * Supabase admin dashboard 데이터를 가공해 Analytics 페이지에서 쓰는 형태로 반환.
