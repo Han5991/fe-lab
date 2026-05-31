@@ -124,6 +124,37 @@ test('parsePost: readMin >= 1', () => {
   assert.ok((parsePost(raw, 'a.md')?.readMin ?? 0) >= 1);
 });
 
+// ── 추가 엣지 (코드리뷰 반영) ─────────────────────────────────────────────────
+
+test('parsePost: 빈 문자열 slug는 falsy라 rawSlug로 폴백', () => {
+  const raw = `---\ntitle: 글\nslug: ''\nstatus: published\n---\n본문`;
+  const post = parsePost(raw, '번들러/3편.md');
+  assert.equal(post?.slug, '번들러/3편'); // '' || rawSlug → rawSlug
+});
+
+test('parsePost: updatedAt도 date와 동일하게 정규화(YAML Date → YYYY-MM-DD)', () => {
+  const raw = `---\ntitle: 글\nstatus: published\nupdatedAt: 2025-05-05\n---\n본문`;
+  assert.equal(parsePost(raw, 'a.md')?.updatedAt, '2025-05-05');
+});
+
+test('parsePost: updatedAt 없으면 null', () => {
+  const raw = `---\ntitle: 글\nstatus: published\n---\n본문`;
+  assert.equal(parsePost(raw, 'a.md')?.updatedAt, null);
+});
+
+test('parsePost: scheduledDate가 문자열이 아니면(YAML Date) undefined로 거부', () => {
+  // 무따옴표 datetime은 YAML이 Date 객체로 파싱 → 문자열 아님 → undefined.
+  const raw = `---\ntitle: 글\nstatus: scheduled\nscheduledDate: 2026-03-01\n---\n본문`;
+  assert.equal(parsePost(raw, 'a.md')?.scheduledDate, undefined);
+});
+
+test('parsePost: 시간/offset 포함 date(Date 객체)는 toISOString UTC 기준으로 정규화(현재 동작 잠금)', () => {
+  // KST 오전(08:00+09:00)은 UTC로 전날 23:00 → toISOString().split('T')[0]가 하루 당겨짐.
+  // toDateString이 UTC 기준이라 생기는 알려진 엣지(실 frontmatter는 'YYYY-MM-DD'만 사용).
+  const raw = `---\ntitle: 글\nstatus: published\ndate: 2025-01-02T08:00:00+09:00\n---\n본문`;
+  assert.equal(parsePost(raw, 'a.md')?.date, '2025-01-01');
+});
+
 // ── determineStatus 직접 ─────────────────────────────────────────────────────
 
 test('determineStatus: 유효 status 필드 우선', () => {

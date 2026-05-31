@@ -6,14 +6,15 @@ import {
   getAllPosts,
 } from '@/domain/post';
 import { getSeriesMeta, sortPostsBySeriesOrder } from '@/domain/post/series';
-import {
-  resolveThumbnailUrl,
-  resolveAbsoluteThumbnailUrl,
-} from '@/domain/post/thumbnail';
-import { SITE_URL } from '@/lib/constants';
+import { resolveThumbnailUrl } from '@/domain/post/thumbnail';
 import { notFound } from 'next/navigation';
 import PostClient from './PostClient';
 import { PostNavigation } from '@/src/components/post/PostNavigation';
+import {
+  buildPostMetadata,
+  buildPostJsonLd,
+  buildBreadcrumbJsonLd,
+} from './postSeo';
 import type { Metadata } from 'next';
 import { css } from '@design-system/ui-lib/css';
 
@@ -41,38 +42,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     };
   }
 
-  const absoluteThumbnailUrl = resolveAbsoluteThumbnailUrl(post);
-  const description = post.excerpt || post.content.slice(0, 160) + '...';
-
-  return {
-    title: `${post.title} | Frontend Lab`,
-    description,
-    alternates: {
-      canonical: `/posts/${slug}/`,
-    },
-    openGraph: {
-      title: post.title,
-      description,
-      url: `/posts/${slug}/`,
-      siteName: 'Frontend Lab Blog',
-      type: 'article',
-      publishedTime: post.date || undefined,
-      images: [
-        {
-          url: absoluteThumbnailUrl,
-          width: 1200,
-          height: 630,
-          alt: post.title,
-        },
-      ],
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title: post.title,
-      description,
-      images: [absoluteThumbnailUrl],
-    },
-  };
+  return buildPostMetadata(post, slug);
 }
 
 export default async function PostPage({ params }: Props) {
@@ -113,95 +83,8 @@ export default async function PostPage({ params }: Props) {
   }
 
   const thumbnailUrl = resolveThumbnailUrl(post);
-  const absoluteThumbnailUrl = resolveAbsoluteThumbnailUrl(post);
-
-  const postUrl = `${SITE_URL}/posts/${slug}/`;
-  const isoDate = (date: string | null) =>
-    date ? `${date}T00:00:00+09:00` : undefined;
-
-  const plainTextLength = post.content
-    .replace(/[#*`_>~\[\]()!]/g, '')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .split(' ')
-    .filter(Boolean).length;
-
-  const jsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'BlogPosting',
-    headline: post.title,
-    datePublished: isoDate(post.date),
-    dateModified: post.updatedAt ? isoDate(post.updatedAt) : isoDate(post.date),
-    description: post.excerpt || post.content.slice(0, 160) + '...',
-    image: {
-      '@type': 'ImageObject',
-      url: absoluteThumbnailUrl,
-      width: 1200,
-      height: 630,
-    },
-    inLanguage: 'ko',
-    isAccessibleForFree: true,
-    wordCount: plainTextLength,
-    ...(post.tags &&
-      post.tags.length > 0 && {
-        keywords: post.tags.join(', '),
-      }),
-    ...(post.series && { articleSection: post.series }),
-    mainEntityOfPage: {
-      '@type': 'WebPage',
-      '@id': postUrl,
-    },
-    url: postUrl,
-    author: {
-      '@type': 'Person',
-      '@id': `${SITE_URL}/#author`,
-      name: 'Sangwook Han',
-      alternateName: '한상욱',
-      url: SITE_URL,
-    },
-    publisher: {
-      '@type': 'Organization',
-      '@id': `${SITE_URL}/#organization`,
-      name: 'Frontend Lab',
-      url: SITE_URL,
-      logo: {
-        '@type': 'ImageObject',
-        url: `${SITE_URL}/logo-wordmark.svg`,
-        width: 280,
-        height: 60,
-      },
-    },
-    isPartOf: { '@id': `${SITE_URL}/#website` },
-    speakable: {
-      '@type': 'SpeakableSpecification',
-      cssSelector: [
-        'h1',
-        'h2:first-of-type',
-        'article > p.tldr, article > p:first-of-type',
-      ],
-    },
-  };
-
-  const breadcrumbItems: Array<{
-    position: number;
-    name: string;
-    item: string;
-  }> = [
-    { position: 1, name: 'Home', item: `${SITE_URL}/` },
-    { position: 2, name: 'Posts', item: `${SITE_URL}/posts/` },
-    { position: 3, name: post.title, item: postUrl },
-  ];
-
-  const breadcrumbJsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: breadcrumbItems.map(({ position, name, item }) => ({
-      '@type': 'ListItem',
-      position,
-      name,
-      item,
-    })),
-  };
+  const jsonLd = buildPostJsonLd(post, slug);
+  const breadcrumbJsonLd = buildBreadcrumbJsonLd(post, slug);
 
   return (
     <>

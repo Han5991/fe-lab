@@ -71,45 +71,57 @@ export function getAllPostSlugs(): string[] {
 }
 
 /**
- * 현재 포스트 기준으로 이전/다음 포스트를 반환합니다.
- * - prev: 더 오래된(과거) 글
- * - next: 더 최신(미래) 글
+ * posts 배열에서 currentSlug 기준 이전/다음 글을 고릅니다(순수 함수, fs 비의존).
  *
- * posts는 날짜 내림차순 정렬 (index 0 = 최신)
- * 따라서 index+1 = prev(과거), index-1 = next(미래)
+ * posts는 날짜 내림차순 정렬을 가정합니다(index 0 = 최신):
+ * - prev(더 과거) = index+1
+ * - next(더 최신) = index-1
+ * options로 tag/series 필터, sortOrder='oldest'면 역순을 적용한 뒤 인접 글을 찾습니다.
  */
-export function getAdjacentPosts(
+export function pickAdjacent(
+  posts: PostData[],
   currentSlug: string,
   options?: AdjacentPostsOptions,
 ): { prev: PostNavItem | null; next: PostNavItem | null } {
-  let posts = getAllPosts();
+  let list = posts;
 
   if (options?.filterTag) {
-    posts = posts.filter(p => p.tags?.includes(options.filterTag!));
+    list = list.filter(p => p.tags?.includes(options.filterTag!));
   }
 
   if (options?.filterSeries) {
-    posts = posts.filter(p => p.series === options.filterSeries);
+    list = list.filter(p => p.series === options.filterSeries);
   }
 
   if (options?.sortOrder === 'oldest') {
-    posts = [...posts].reverse();
+    list = [...list].reverse();
   }
 
-  const currentIndex = posts.findIndex(p => p.slug === currentSlug);
+  const currentIndex = list.findIndex(p => p.slug === currentSlug);
 
   if (currentIndex === -1) {
     return { prev: null, next: null };
   }
 
   const prevPost =
-    currentIndex < posts.length - 1 ? posts[currentIndex + 1] : null;
-  const nextPost = currentIndex > 0 ? posts[currentIndex - 1] : null;
+    currentIndex < list.length - 1 ? list[currentIndex + 1] : null;
+  const nextPost = currentIndex > 0 ? list[currentIndex - 1] : null;
 
   return {
     prev: prevPost ? { slug: prevPost.slug, title: prevPost.title } : null,
     next: nextPost ? { slug: nextPost.slug, title: nextPost.title } : null,
   };
+}
+
+/**
+ * 현재 포스트 기준으로 이전/다음 포스트를 반환합니다.
+ * (공개 글 전체를 읽어 순수 함수 pickAdjacent에 위임)
+ */
+export function getAdjacentPosts(
+  currentSlug: string,
+  options?: AdjacentPostsOptions,
+): { prev: PostNavItem | null; next: PostNavItem | null } {
+  return pickAdjacent(getAllPosts(), currentSlug, options);
 }
 
 /**
