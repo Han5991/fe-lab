@@ -12,6 +12,7 @@
     "lint:posts": "npx tsx scripts/validate-posts.ts",
     "check-types": "tsc --noEmit",
     "test": "node --import tsx --test 'domain/**/*.test.ts' 'lib/**/*.test.ts' 'scripts/**/*.test.ts' 'generate-*.test.ts' 'sync-posts.test.ts'",
+    "test:coverage": "c8 --reporter=text --reporter=text-summary --exclude='**/*.test.ts' --exclude='**/*.config.*' --exclude='**/database.types.ts' node --import tsx --test 'domain/**/*.test.ts' 'lib/**/*.test.ts' 'scripts/**/*.test.ts' 'generate-*.test.ts' 'sync-posts.test.ts'",
     "new-post": "npx tsx scripts/new-post.ts",
     "supabase-stop": "supabase stop --all --no-backup --debug",
     "supabase-start": "pnpm supabase-stop && pnpm supabase start"
@@ -57,6 +58,7 @@
     "@types/react": "catalog:react19",
     "@types/react-dom": "catalog:react19",
     "@types/react-syntax-highlighter": "^15.5.13",
+    "c8": "^11.0.0",
     "concurrently": "^9.2.0",
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
