@@ -121,8 +121,34 @@ test('scheduled(offset 명시 +09:00): 해당 instant 경계로 판단', () => {
   assert.equal(
     isPostVisible(
       { status: 'scheduled', scheduledDate },
+      new Date('2026-05-24T00:00:00Z'), // 정각 == instant, <= 경계
+    ),
+    true,
+  );
+  assert.equal(
+    isPostVisible(
+      { status: 'scheduled', scheduledDate },
       new Date('2026-05-24T00:00:01Z'),
     ),
     true,
+  );
+});
+
+test('비-scheduled status는 now 주입과 무관 (회귀 가드)', () => {
+  const farPast = new Date('2000-01-01T00:00:00Z');
+  const farFuture = new Date('2099-01-01T00:00:00Z');
+  // published는 now·scheduledDate와 무관하게 항상 공개
+  assert.equal(
+    isPostVisible(
+      { status: 'published', scheduledDate: '2099-12-31' },
+      farPast,
+    ),
+    true,
+  );
+  assert.equal(isPostVisible({ status: 'published' }, farFuture), true);
+  // draft는 now·scheduledDate와 무관하게 항상 비공개
+  assert.equal(
+    isPostVisible({ status: 'draft', scheduledDate: '2000-01-01' }, farFuture),
+    false,
   );
 });

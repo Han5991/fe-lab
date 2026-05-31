@@ -66,10 +66,12 @@ test('contract: 모든 글은 readMin >= 1', () => {
 test('contract: 공개 글(getAllPosts)은 isPostVisible 기준 일치 (slug 집합 비교)', () => {
   // count만 비교하면 "잘못된 글이 잘못된 글로 대체"되는 필터 버그를 놓침.
   // slug 집합을 정렬해서 deepEqual로 비교해야 실제 동등성을 검증할 수 있음.
+  // now를 고정 주입해 두 평가 사이에 scheduled 경계가 교차하는 플레이크를 제거.
+  const now = new Date();
   const all = getAllPostsIncludingHidden();
-  const visible = getAllPosts();
+  const visible = getAllPosts(now);
   const expected = all.filter(p =>
-    isPostVisible({ status: p.status, scheduledDate: p.scheduledDate }),
+    isPostVisible({ status: p.status, scheduledDate: p.scheduledDate }, now),
   );
   const visibleSlugs = visible.map(p => p.slug).sort();
   const expectedSlugs = expected.map(p => p.slug).sort();

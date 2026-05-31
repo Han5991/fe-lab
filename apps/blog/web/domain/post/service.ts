@@ -20,10 +20,10 @@ function toPostSummary(post: PostData): PostSummary {
 /**
  * 공개된 포스트만 반환합니다 (published, 일정 지난 scheduled 포함).
  */
-export function getAllPosts(): PostData[] {
-  // 화살표로 감싸 isPostVisible의 2번째 인자에 Array.filter의 index가
-  // now로 잘못 주입되는 것을 막는다(index 주입 시 scheduled가 항상 비공개됨).
-  return readAllPosts().filter(post => isPostVisible(post));
+export function getAllPosts(now: Date = new Date()): PostData[] {
+  // 화살표로 감싸 Array.filter의 index가 isPostVisible의 now에 주입되는 것을 방지.
+  // now는 주입 가능(기본 빌드 시각) — 테스트가 고정 시각으로 경계를 검증할 수 있음.
+  return readAllPosts().filter(post => isPostVisible(post, now));
 }
 
 /**
