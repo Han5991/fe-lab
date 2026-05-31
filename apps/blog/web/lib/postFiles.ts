@@ -20,8 +20,8 @@ const META_FILENAMES = new Set(['PLAN.md', 'THUMBNAIL_LOG.md', 'STUDY_LOG.md']);
  * @param absPath 절대 경로 또는 파일 이름
  */
 export function isMetaFile(absPath: string): boolean {
-  // path.basename으로 OS별 path separator 차이를 견고하게 처리.
-  // (이전 'absPath.split("/")' 는 Windows의 '\\' 경로에서 동작 불가)
+  // host OS 기준 path.basename으로 파일명만 추출(빌드는 POSIX에서 실행).
+  // (이전 'absPath.split("/")' 보다 견고하나, POSIX에서는 백슬래시 경로를 분리하지 않음)
   return META_FILENAMES.has(basename(absPath));
 }
 

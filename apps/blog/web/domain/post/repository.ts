@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { join, relative, sep } from 'node:path';
+import { join, relative } from 'node:path';
 import matter from 'gray-matter';
 import { estimateReadMin } from '../../lib/format';
 import { collectMarkdownFiles, hasFrontmatter } from '../../lib/postFiles';
@@ -8,9 +8,9 @@ import type { PostData, PostStatus } from './types';
 const postsDirectory = join(process.cwd(), '..', 'posts');
 
 /**
- * 마크다운 내용에서 순수 텍스트 추출
+ * 마크다운 내용에서 순수 텍스트 추출 (excerpt/readMin 계산용)
  */
-function extractPlainText(content: string): string {
+export function extractPlainText(content: string): string {
   return content
     .replace(/!\[.*?\]\(.*?\)/g, '') // 이미지 제거
     .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // 링크 텍스트만 남기기
@@ -31,9 +31,12 @@ function isPostStatus(status: unknown): status is PostStatus {
 }
 
 /**
- * frontmatter에서 PostStatus를 결정합니다
+ * frontmatter에서 PostStatus를 결정합니다.
+ *
+ * 우선순위: `status` 필드(유효 enum)가 있으면 그대로, 없으면 하위호환으로
+ * `published: true`면 'published', 그 외(false/누락)는 'draft'.
  */
-function determineStatus(data: Record<string, unknown>): PostStatus {
+export function determineStatus(data: Record<string, unknown>): PostStatus {
   if (isPostStatus(data.status)) {
     return data.status;
   }
@@ -41,71 +44,89 @@ function determineStatus(data: Record<string, unknown>): PostStatus {
 }
 
 /**
+ * frontmatter의 date/updatedAt 값을 'YYYY-MM-DD' 문자열(또는 null)로 정규화합니다.
+ * - YAML이 Date 객체로 파싱한 경우(`date: 2025-01-01`) → ISO 날짜 부분
+ * - 문자열인 경우(`date: '2025-01-01'`) → 그대로
+ * - 그 외 → null
+ */
+function toDateString(value: unknown): string | null {
+  if (value instanceof Date) return value.toISOString().split('T')[0];
+  if (typeof value === 'string') return value;
+  return null;
+}
+
+/**
+ * 마크다운 파일 1개의 내용 + (postsDirectory 기준) 상대 경로를 PostData로 파싱합니다.
+ *
+ * fs에 의존하지 않는 순수 함수라 단위 테스트가 가능합니다 — collectPosts가 파일을
+ * 읽어 이 함수에 위임합니다. 빌드에서 제외할 파일은 null을 반환합니다:
+ * - frontmatter delimiter(`---`)가 없는 메타 노트
+ * - slug / published / status 가시성 필드가 하나도 없는 메타 파일
+ *
+ * @param fileContents 파일 전체 내용(frontmatter 포함)
+ * @param relPath      postsDirectory 기준 상대 경로 (예: '번들러/intro.md')
+ */
+export function parsePost(
+  fileContents: string,
+  relPath: string,
+): PostData | null {
+  // frontmatter delimiter 없는 메타 노트는 스킵 (validate-posts 와 동일 규칙)
+  if (!hasFrontmatter(fileContents)) return null;
+
+  const { data, content } = matter(fileContents);
+
+  // slug / published / status 중 하나도 없으면 빌드 제외 (메타 파일 제외 규칙)
+  if (!data.slug && !data.published && !data.status) return null;
+
+  // 상대 경로에서 series / rawSlug 계산. '/'와 '\\' 모두 분할해 OS 무관 처리.
+  const parts = relPath.split(/[/\\]/);
+  const fileName = parts[parts.length - 1].replace(/\.(md|mdx)$/, '');
+  const currentPath = parts.slice(0, -1).join('/');
+  const rawSlug = currentPath ? `${currentPath}/${fileName}` : fileName;
+
+  const cleanContent = extractPlainText(content);
+  const tags: string[] | undefined = Array.isArray(data.tags)
+    ? data.tags
+    : undefined;
+  const series: string | undefined = currentPath || undefined;
+
+  return {
+    slug: data.slug || rawSlug,
+    originalSlug: rawSlug,
+    relativeDir: currentPath,
+    title: data.title || fileName,
+    date: toDateString(data.date),
+    updatedAt: toDateString(data.updatedAt),
+    content,
+    readMin: estimateReadMin(cleanContent),
+    // excerpt 미지정 시 본문 평문 앞 160자. 잘릴 때만 '...'을 붙인다(짧은 글에
+    // 오해 소지의 말줄임표가 붙지 않도록).
+    excerpt:
+      data.excerpt ||
+      (cleanContent.length > 160
+        ? cleanContent.slice(0, 160) + '...'
+        : cleanContent),
+    thumbnail: typeof data.thumbnail === 'string' ? data.thumbnail : undefined,
+    tags,
+    series,
+    status: determineStatus(data),
+    scheduledDate:
+      typeof data.scheduledDate === 'string' ? data.scheduledDate : undefined,
+  };
+}
+
+/**
  * postsDirectory 아래의 모든 마크다운 파일을 읽어 PostData 배열로 반환합니다.
  *
- * collectMarkdownFiles (lib/postFiles.ts) 로 파일 목록을 가져오고,
- * hasFrontmatter / 가시성 필드 검사로 메타 파일을 제외합니다.
- * — 기존 인라인 재귀 로직을 공통 헬퍼로 교체하여 validate-posts.ts 와 일관성을 유지합니다.
+ * 파일 I/O(collectMarkdownFiles + readFileSync)만 담당하고, 내용 → PostData
+ * 변환은 순수 함수 parsePost에 위임합니다(null이면 메타 파일이므로 제외).
  */
 function collectPosts(dirPath: string): PostData[] {
   const results: PostData[] = [];
-
   for (const fullPath of collectMarkdownFiles(dirPath)) {
     const fileContents = readFileSync(fullPath, 'utf8');
-
-    // frontmatter delimiter 없는 메타 노트는 스킵 (validate-posts 와 동일 규칙)
-    if (!hasFrontmatter(fileContents)) continue;
-
-    const { data, content } = matter(fileContents);
-
-    // slug / published / status 중 하나도 없으면 빌드 제외 (기존 메타 파일 제외 규칙)
-    if (!data.slug && !data.published && !data.status) continue;
-
-    // postsDirectory 기준 상대 경로로 series / rawSlug 계산.
-    // node:path의 sep으로 분할해 Windows('\\') / POSIX('/') 모두 안전하게 처리.
-    const rel = relative(dirPath, fullPath);
-    const parts = rel.split(sep);
-    const fileName = parts[parts.length - 1].replace(/\.(md|mdx)$/, '');
-    const currentPath = parts.slice(0, -1).join('/');
-
-    const rawSlug = currentPath ? `${currentPath}/${fileName}` : fileName;
-    const cleanContent = extractPlainText(content);
-    const tags: string[] | undefined = Array.isArray(data.tags)
-      ? data.tags
-      : undefined;
-    const series: string | undefined = currentPath || undefined;
-    const status = determineStatus(data);
-    const dateString =
-      data.date instanceof Date
-        ? data.date.toISOString().split('T')[0]
-        : typeof data.date === 'string'
-          ? data.date
-          : null;
-    const updatedAtString =
-      data.updatedAt instanceof Date
-        ? data.updatedAt.toISOString().split('T')[0]
-        : typeof data.updatedAt === 'string'
-          ? data.updatedAt
-          : null;
-
-    results.push({
-      slug: data.slug || rawSlug,
-      originalSlug: rawSlug,
-      relativeDir: currentPath,
-      title: data.title || fileName,
-      date: dateString,
-      updatedAt: updatedAtString,
-      content,
-      readMin: estimateReadMin(cleanContent),
-      excerpt: data.excerpt || cleanContent.slice(0, 160) + '...',
-      thumbnail:
-        typeof data.thumbnail === 'string' ? data.thumbnail : undefined,
-      tags,
-      series,
-      status,
-      scheduledDate:
-        typeof data.scheduledDate === 'string' ? data.scheduledDate : undefined,
-    });
+    const post = parsePost(fileContents, relative(dirPath, fullPath));
+    if (post) results.push(post);
   }
 
   return results;
