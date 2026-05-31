@@ -21,7 +21,9 @@ function toPostSummary(post: PostData): PostSummary {
  * 공개된 포스트만 반환합니다 (published, 일정 지난 scheduled 포함).
  */
 export function getAllPosts(): PostData[] {
-  return readAllPosts().filter(isPostVisible);
+  // 화살표로 감싸 isPostVisible의 2번째 인자에 Array.filter의 index가
+  // now로 잘못 주입되는 것을 막는다(index 주입 시 scheduled가 항상 비공개됨).
+  return readAllPosts().filter(post => isPostVisible(post));
 }
 
 /**
