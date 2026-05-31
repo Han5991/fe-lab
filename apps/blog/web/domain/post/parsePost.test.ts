@@ -95,11 +95,16 @@ test('parsePost: date 없으면 null', () => {
 
 // ── excerpt / tags / thumbnail ───────────────────────────────────────────────
 
-test('parsePost: excerpt 미지정 시 본문 평문 앞 160자 + "..."', () => {
+test('parsePost: excerpt 미지정 + 본문 160자 초과 → 160자 + "..."', () => {
   const raw = `---\ntitle: 글\nstatus: published\n---\n${'가'.repeat(200)}`;
   const post = parsePost(raw, 'a.md');
   assert.ok(post?.excerpt?.endsWith('...'));
   assert.equal(post?.excerpt?.length, 163); // 160 + '...'
+});
+
+test('parsePost: excerpt 미지정 + 본문 160자 이하 → "..." 없이 그대로', () => {
+  const raw = `---\ntitle: 글\nstatus: published\n---\n짧은 본문`;
+  assert.equal(parsePost(raw, 'a.md')?.excerpt, '짧은 본문');
 });
 
 test('parsePost: excerpt 지정 시 그대로', () => {

@@ -27,11 +27,14 @@ export type SeoPost = Pick<
   | 'series'
 >;
 
-/** description: excerpt가 있으면 그대로, 없으면 본문 앞 160자 + '...' */
+/** description: excerpt가 있으면 그대로, 없으면 본문 앞 160자(잘릴 때만 '...'). */
 export function buildDescription(
   post: Pick<PostData, 'excerpt' | 'content'>,
 ): string {
-  return post.excerpt || post.content.slice(0, 160) + '...';
+  if (post.excerpt) return post.excerpt;
+  return post.content.length > 160
+    ? post.content.slice(0, 160) + '...'
+    : post.content;
 }
 
 /** 'YYYY-MM-DD' → KST ISO(`...T00:00:00+09:00`). null/undefined면 undefined. */

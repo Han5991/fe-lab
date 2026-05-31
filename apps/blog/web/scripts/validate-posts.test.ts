@@ -62,6 +62,26 @@ test('validatePost: offset 없는 datetime date → ambiguous-date', () => {
   );
 });
 
+test('validatePost: 잘못된 updatedAt → invalid-updated-at', () => {
+  assert.ok(
+    rules({
+      title: 'x',
+      status: 'published',
+      updatedAt: 'not-a-date',
+    }).includes('invalid-updated-at'),
+  );
+});
+
+test('validatePost: offset 없는 datetime updatedAt → ambiguous-updated-at', () => {
+  assert.ok(
+    rules({
+      title: 'x',
+      status: 'published',
+      updatedAt: '2026-06-01T09:00:00',
+    }).includes('ambiguous-updated-at'),
+  );
+});
+
 test('validatePost: 잘못된 status → invalid-status', () => {
   assert.ok(rules({ title: 'x', status: 'foo' }).includes('invalid-status'));
 });

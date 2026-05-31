@@ -34,12 +34,18 @@ describe('buildDescription', () => {
     );
   });
 
-  test('excerpt가 없으면 본문 160자 + "..."', () => {
+  test('excerpt가 없고 본문이 160자 초과면 160자 + "..."', () => {
     const d = buildDescription({
       excerpt: undefined,
       content: '가'.repeat(200),
     });
     expect(d).toBe('가'.repeat(160) + '...');
+  });
+
+  test('excerpt가 없고 본문이 160자 이하면 "..." 없이 그대로', () => {
+    expect(buildDescription({ excerpt: undefined, content: '짧은 본문' })).toBe(
+      '짧은 본문',
+    );
   });
 });
 
@@ -98,17 +104,27 @@ describe('buildPostMetadata', () => {
     expect(tw.title).toBe('테스트 글');
   });
 
-  test('thumbnail 없으면 OG 기본 이미지 사용', () => {
-    const m = buildPostMetadata(makePost({ thumbnail: undefined }), 'a');
-    expect(JSON.stringify(m.openGraph)).toContain('/og-default.png');
+  test('publishedTime: date 없으면 undefined', () => {
+    const og = buildPostMetadata(makePost({ date: null }), 'a')
+      .openGraph as Record<string, unknown>;
+    expect(og.publishedTime).toBeUndefined();
   });
 
-  test('상대 thumbnail은 절대 URL(SITE_URL prefix)로 변환', () => {
-    const m = buildPostMetadata(
+  test('thumbnail 없으면 OG images[0].url = 절대 기본 이미지', () => {
+    const og = buildPostMetadata(makePost({ thumbnail: undefined }), 'a')
+      .openGraph as Record<string, unknown>;
+    const img = (og.images as Array<Record<string, unknown>>)[0];
+    expect(img.url).toBe(`${SITE}/og-default.png`);
+  });
+
+  test('상대 thumbnail은 images[0].url이 절대 URL(SITE_URL prefix)', () => {
+    const og = buildPostMetadata(
       makePost({ thumbnail: 'cover.png', relativeDir: '번들러' }),
       'a',
-    );
-    expect(JSON.stringify(m.openGraph)).toContain(`${SITE}/posts/`);
+    ).openGraph as Record<string, unknown>;
+    const img = (og.images as Array<Record<string, unknown>>)[0];
+    expect(img.url as string).toMatch(new RegExp(`^${SITE}/posts/`));
+    expect(img.url as string).toContain('cover.png');
   });
 });
 

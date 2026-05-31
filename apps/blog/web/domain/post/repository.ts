@@ -99,7 +99,13 @@ export function parsePost(
     updatedAt: toDateString(data.updatedAt),
     content,
     readMin: estimateReadMin(cleanContent),
-    excerpt: data.excerpt || cleanContent.slice(0, 160) + '...',
+    // excerpt 미지정 시 본문 평문 앞 160자. 잘릴 때만 '...'을 붙인다(짧은 글에
+    // 오해 소지의 말줄임표가 붙지 않도록).
+    excerpt:
+      data.excerpt ||
+      (cleanContent.length > 160
+        ? cleanContent.slice(0, 160) + '...'
+        : cleanContent),
     thumbnail: typeof data.thumbnail === 'string' ? data.thumbnail : undefined,
     tags,
     series,
@@ -122,6 +128,7 @@ function collectPosts(dirPath: string): PostData[] {
     const post = parsePost(fileContents, relative(dirPath, fullPath));
     if (post) results.push(post);
   }
+
   return results;
 }
 
