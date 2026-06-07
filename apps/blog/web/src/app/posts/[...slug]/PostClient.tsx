@@ -82,9 +82,6 @@ export default function PostClient({
                 alt={post.title}
                 width={1200}
                 height={630}
-                // 목록 카드 썸네일(PostGridCard, exit-key)과 같은 키 → hero 모핑 짝.
-                // 상세 쪽은 enter-key. 이 블록은 썸네일이 있을 때만 렌더되므로 무조건 부여.
-                data-hero-enter-key={`post-${post.slug}`}
                 className={css({
                   display: 'block',
                   mb: '10',

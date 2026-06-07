@@ -2,39 +2,29 @@
 
 import type { ReactNode } from 'react';
 import { Ssgoi, type SsgoiConfig } from '@ssgoi/react';
-import { drill, hero } from '@ssgoi/react/view-transitions';
+import { drill } from '@ssgoi/react/view-transitions';
 import { css } from '@design-system/ui-lib/css';
 
 // ssgoi v6 path-factory API. (v6에는 defaultTransition이 없고, 모든 전환을
-// path 기반 팩토리로 매칭한다.)
+// path 기반 팩토리로 매칭한다. 매처는 first-hit이라 더 구체적인 규칙을 먼저 둔다.)
 //
-// 글 목록 ↔ 글 상세: google-photos식 hero(shared-element morph).
-// 카드 썸네일(data-hero-exit-key)과 상세 헤더 <img>(data-hero-enter-key)가 같은 키를
-// 가지면 그 이미지가 위치+크기를 보간하며 모핑한다. type:'static'은 주변 텍스트/chrome을
-// 즉시 snap(크로스페이드 없음)하고 공유 이미지 클론만 모핑한다 — 텍스트가 같이 움직이지
-// 않아 "이미지만 커지고 작아지는" 깔끔한 모션이 된다.
+// 사이트 전체를 drill 한 가지 모션으로 통일한다. drill은 페이지를 통째로 가로
+// 슬라이드(parallax)하므로 텍스트·이미지가 한 덩어리로 함께 움직인다.
+// (google-photos식 hero 모핑은 텍스트 많은 글 상세에서 텍스트가 이미지와 따로
+//  놀아 어색해 채택하지 않았다 — static=글자 즉시 뜸, fade=전체가 부산스러움.)
 //
-// hero({paths})는 symmetric 한 방향 엔트리({from:'/posts', to:'/posts/*'}) 1개만 만든다.
-// 그런데 ssgoi 매처는 "정방향(direct) 전체 검사 → symmetric 검사"의 2-pass라서, drill
-// 와일드카드 {from:'*', to:'*'}가 direct pass에서 back(/posts/*→/posts)을 먼저 가로채
-// hero의 symmetric(2nd pass)보다 앞서 매칭돼 버린다. (데모는 와일드카드가 없어 무사.)
-// → hero를 양방향 explicit 엔트리로 펼쳐 back도 direct 매칭이 되게 한다.
-const heroEntries = hero({ paths: ['/posts', '/posts/*'], type: 'static' });
-const heroBidirectional = [
-  ...heroEntries,
-  ...heroEntries.map(e => ({
-    // ...e로 symmetric 등 다른 필드를 보존하면서 from/to만 스왑 (라이브러리 확장 대비)
-    ...e,
-    from: e.to,
-    to: e.from,
-  })),
-];
-
+// 방향성: 깊이 들어가면 enter(새 페이지 오른쪽→), 나오면 exit(왼쪽→)이라
+// back-nav가 반대 방향으로 슬라이드한다. drill({enter, exit})는
+// {from:exit, to:enter}=enter, {from:enter, to:exit}=exit 두 규칙을 만든다.
 const config: SsgoiConfig = {
   transitions: [
-    ...heroBidirectional,
-    // 그 외 모든 라우트 이동(홈↔목록, 홈↔about, 글↔글 등): drill catch-all.
-    // 와일드카드 '*'로 hero가 잡지 않은 나머지를 모두 처리한다(가로 패럴랙스).
+    // 글 목록 ↔ 글 상세
+    ...drill({ enter: '/posts/*', exit: '/posts' }),
+    // 홈 ↔ 하위 페이지(계층 이동)
+    ...drill({ enter: '/posts', exit: '/' }),
+    ...drill({ enter: '/about', exit: '/' }),
+    ...drill({ enter: '/privacy', exit: '/' }),
+    // 그 외 측면 이동(글↔글, posts↔about 등) 및 미매칭: 일관된 enter 방향 fallback
     ...drill({ enter: '*', exit: '*' }),
   ],
   // 데스크탑/모바일 동작 통일. 기본값 (isMobile)=>isMobile은 모바일만 스크롤을
@@ -46,9 +36,11 @@ const config: SsgoiConfig = {
 
 export const PageTransition = ({ children }: { children: ReactNode }) => (
   <Ssgoi config={config}>
-    {/* 가로 전환(drill/hero)용 필수 래퍼:
+    {/* 가로 전환(drill)용 필수 래퍼:
         - pos:relative → SSGOI가 OUT 페이지를 position:absolute 클론으로 띄울 때의 기준
-        - zIndex:0 → stacking context 생성(클론이 배경 뒤로 가라앉는 것 방지)
+        - zIndex:0 → stacking context 생성(drill의 z-index:-1 OUT 페이지가 배경 뒤로 가라앉는 것 방지).
+          단 이 stacking context는 내부 inline 풀스크린 오버레이를 가두므로,
+          그런 오버레이(MobileTOC·PostsFilterSheet)는 <Portal>로 body에 렌더한다.
         - overflowX:clip → 전환 중 오프스크린 페이지의 가로 스크롤바 누출 방지 (overflowY는 visible 유지되어 sticky 정상) */}
     <div
       className={css({
