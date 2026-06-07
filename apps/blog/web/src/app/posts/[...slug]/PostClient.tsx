@@ -49,7 +49,9 @@ export default function PostClient({
       </div>
 
       <SsgoiTransition
-        id={`/posts/${post.slug}`}
+        // 썸네일 있으면 /posts/*(hero 모핑 대상), 없으면 /posts-plain/*(fade 폴백)으로
+        // 분기해 전환 매칭을 라우팅한다. (URL은 그대로 /posts/{slug})
+        id={thumbnailUrl ? `/posts/${post.slug}` : `/posts-plain/${post.slug}`}
         className={css({
           maxW: 'articleW',
           mx: 'auto',
@@ -82,6 +84,9 @@ export default function PostClient({
                 alt={post.title}
                 width={1200}
                 height={630}
+                // 목록 카드 썸네일(data-hero-exit-key)과 같은 키 → hero 모핑 짝.
+                // 이 블록은 썸네일이 있을 때만 렌더되므로 무조건 부여.
+                data-hero-enter-key={`post-${post.slug}`}
                 className={css({
                   display: 'block',
                   mb: '10',
