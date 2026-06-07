@@ -23,9 +23,10 @@ const heroEntries = hero({ paths: ['/posts', '/posts/*'], type: 'static' });
 const heroBidirectional = [
   ...heroEntries,
   ...heroEntries.map(e => ({
+    // ...e로 symmetric 등 다른 필드를 보존하면서 from/to만 스왑 (라이브러리 확장 대비)
+    ...e,
     from: e.to,
     to: e.from,
-    transition: e.transition,
   })),
 ];
 
