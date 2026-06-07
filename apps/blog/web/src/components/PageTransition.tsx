@@ -2,30 +2,23 @@
 
 import type { ReactNode } from 'react';
 import { Ssgoi, type SsgoiConfig } from '@ssgoi/react';
-import { drill } from '@ssgoi/react/view-transitions';
+import { drill, fade } from '@ssgoi/react/view-transitions';
 import { css } from '@design-system/ui-lib/css';
 
 // ssgoi v6 path-factory API. (v6에는 defaultTransition이 없고, 모든 전환을
 // path 기반 팩토리로 매칭한다. 매처는 first-hit이라 더 구체적인 규칙을 먼저 둔다.)
 //
-// 사이트 전체를 drill 한 가지 모션으로 통일한다. drill은 페이지를 통째로 가로
-// 슬라이드(parallax)하므로 텍스트·이미지가 한 덩어리로 함께 움직인다.
-// (google-photos식 hero 모핑은 텍스트 많은 글 상세에서 텍스트가 이미지와 따로
-//  놀아 어색해 채택하지 않았다 — static=글자 즉시 뜸, fade=전체가 부산스러움.)
-//
-// 방향성: 깊이 들어가면 enter(새 페이지 오른쪽→), 나오면 exit(왼쪽→)이라
-// back-nav가 반대 방향으로 슬라이드한다. drill({enter, exit})는
-// {from:exit, to:enter}=enter, {from:enter, to:exit}=exit 두 규칙을 만든다.
+// main과 동일한 구조: 글 목록 ↔ 글 상세만 drill(iOS식 가로 푸시/팝), 그 외 모든
+// 이동(홈↔목록·홈↔글·글↔글·about 등)은 fade. drill은 들어갈 때 enter(우측 진입),
+// 나올 때 exit(좌측 복귀)로 방향성이 있다.
 const config: SsgoiConfig = {
   transitions: [
-    // 글 목록 ↔ 글 상세
+    // 글 목록 ↔ 글 상세: drill (목록→글 우측 진입, 글→목록 좌측 복귀)
     ...drill({ enter: '/posts/*', exit: '/posts' }),
-    // 홈 ↔ 하위 페이지(계층 이동)
-    ...drill({ enter: '/posts', exit: '/' }),
-    ...drill({ enter: '/about', exit: '/' }),
-    ...drill({ enter: '/privacy', exit: '/' }),
-    // 그 외 측면 이동(글↔글, posts↔about 등) 및 미매칭: 일관된 enter 방향 fallback
-    ...drill({ enter: '*', exit: '*' }),
+    // 그 외 전부(홈↔목록·홈↔글·글↔글·about 등): fade — main 기본 전환과 동일한 결.
+    // (fade는 순차적이라 전환 중 잠깐 빈 화면이 생길 수 있으나 main과 동일.)
+    // paths:['*','*'] = {from:'*', to:'*'} 와일드카드 catch-all.
+    ...fade({ paths: ['*', '*'] }),
   ],
   // 데스크탑/모바일 동작 통일. 기본값 (isMobile)=>isMobile은 모바일만 스크롤을
   // 복원해 플랫폼마다 체감이 달라진다. exclude로 일관되게:
