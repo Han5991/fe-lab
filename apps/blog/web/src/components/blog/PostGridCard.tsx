@@ -34,6 +34,11 @@ export const PostGridCard = ({ post }: PostGridCardProps) => {
       <img
         src={thumb}
         alt={post.title}
+        // 실제 썸네일이 있는 글만 hero 모핑 대상으로 지정한다.
+        // (기본 og 이미지 fallback에는 키를 붙이지 않아 상세와 짝이 안 맞는 모핑을 막는다.)
+        // 목록 쪽은 exit-key. v6 hero는 exit↔enter 키를 양방향으로 매칭하므로
+        // 목록→상세(커짐)·상세→목록(작아짐) 모두 모핑된다.
+        data-hero-exit-key={post.thumbnail ? `post-${post.slug}` : undefined}
         className={css({
           display: 'block',
           w: 'full',
