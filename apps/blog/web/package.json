@@ -30,7 +30,7 @@
     "@mdx-js/react": "^3.1.0",
     "@next/mdx": "^16.2.6",
     "@next/third-parties": "^16.2.6",
-    "@ssgoi/react": "^5.2.0",
+    "@ssgoi/react": "6.4.0",
     "@supabase/supabase-js": "^2.89.0",
     "@tanstack/react-query": "^5.100.10",
     "gray-matter": "^4.0.3",

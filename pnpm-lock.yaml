@@ -95,8 +95,8 @@ importers:
         specifier: ^16.2.6
         version: 16.2.6(next@16.2.6(@babel/core@7.29.0)(react-dom@19.3.0-canary-a757cb76-20251002(react@19.3.0-canary-a757cb76-20251002))(react@19.3.0-canary-a757cb76-20251002))(react@19.3.0-canary-a757cb76-20251002)
       '@ssgoi/react':
-        specifier: ^5.2.0
-        version: 5.2.0
+        specifier: 6.4.0
+        version: 6.4.0
       '@supabase/supabase-js':
         specifier: ^2.89.0
         version: 2.103.0
@@ -293,7 +293,7 @@ importers:
         version: 27.4.0
       next-router-mock:
         specifier: ^0.9.13
-        version: 0.9.13(next@16.2.6(@babel/core@7.29.0)(react-dom@19.3.0-canary-a757cb76-20251002(react@19.3.0-canary-a757cb76-20251002))(react@19.3.0-canary-a757cb76-20251002))(react@19.3.0-canary-a757cb76-20251002)
+        version: 0.9.13(next@16.2.6(react-dom@19.3.0-canary-a757cb76-20251002(react@19.3.0-canary-a757cb76-20251002))(react@19.3.0-canary-a757cb76-20251002))(react@19.3.0-canary-a757cb76-20251002)
       typescript:
         specifier: catalog:typescript5
         version: 5.8.3
@@ -1794,12 +1794,12 @@ packages:
   '@rtsao/scc@1.1.0':
     resolution: {integrity: sha512-zt6OdqaDoOnJ1ZYsCYGt9YmWzDXl4vQdKTyJev62gFhRGKdx7mcT54V9KIjg+d2wi9EXsPvAPKe7i7WjfVWB8g==}
 
-  '@ssgoi/core@5.2.2':
-    resolution: {integrity: sha512-QinhwesMweLfke8W931LZz6bebiaQJfbApR1jzNiicSDE6vRwdteyem9lNXQc6BaZCTyuiysqvZH88RccGOUGA==}
+  '@ssgoi/core@6.4.0':
+    resolution: {integrity: sha512-R0vwkdpJtywKJfRK5yx9aug7uSIw9JI2Ufpyyblo5vrT9PfN8xvZtfBpfFzKQQA050VH+pwBZLEwtjw/kBRO7w==}
     engines: {node: '>=18.0.0'}
 
-  '@ssgoi/react@5.2.0':
-    resolution: {integrity: sha512-vxxFQmNbqsov+EwUm61RUev7/daihR4rsD9t2f94XWm6C/tyyOnAcY2//LQrc/r3Izrk/F1EbholLArJ0zwg1w==}
+  '@ssgoi/react@6.4.0':
+    resolution: {integrity: sha512-wjwMFK5KSiSjB1/qLNT0DJZM522zJTe6IK0GlbIWoMd8Y8m65DQ85TsOERgbOqHxxY8Eo2vQBJvuM9yTXEhTVA==}
     engines: {node: '>=18.0.0'}
 
   '@standard-schema/spec@1.0.0':
@@ -6754,15 +6754,6 @@ snapshots:
       - jsdom
       - typescript
 
-  '@pandacss/extractor@1.11.1(typescript@5.8.3)':
-    dependencies:
-      '@pandacss/shared': 1.11.1
-      ts-evaluator: 1.2.0(jsdom@27.4.0)(typescript@5.8.3)
-      ts-morph: 28.0.0
-    transitivePeerDependencies:
-      - jsdom
-      - typescript
-
   '@pandacss/generator@1.11.1':
     dependencies:
       '@pandacss/core': 1.11.1
@@ -6975,7 +6966,7 @@ snapshots:
     dependencies:
       '@pandacss/config': 1.11.1
       '@pandacss/core': 1.11.1
-      '@pandacss/extractor': 1.11.1(typescript@5.8.3)
+      '@pandacss/extractor': 1.11.1(jsdom@27.4.0)(typescript@5.8.3)
       '@pandacss/logger': 1.11.1
       '@pandacss/shared': 1.11.1
       '@pandacss/types': 1.11.1
@@ -7202,12 +7193,12 @@ snapshots:
 
   '@rtsao/scc@1.1.0': {}
 
-  '@ssgoi/core@5.2.2': {}
+  '@ssgoi/core@6.4.0': {}
 
-  '@ssgoi/react@5.2.0':
+  '@ssgoi/react@6.4.0':
     dependencies:
       '@babel/core': 7.29.0
-      '@ssgoi/core': 5.2.2
+      '@ssgoi/core': 6.4.0
       unplugin: 2.3.11
     transitivePeerDependencies:
       - supports-color
@@ -10517,7 +10508,7 @@ snapshots:
 
   negotiator@1.0.0: {}
 
-  next-router-mock@0.9.13(next@16.2.6(@babel/core@7.29.0)(react-dom@19.3.0-canary-a757cb76-20251002(react@19.3.0-canary-a757cb76-20251002))(react@19.3.0-canary-a757cb76-20251002))(react@19.3.0-canary-a757cb76-20251002):
+  next-router-mock@0.9.13(next@16.2.6(react-dom@19.3.0-canary-a757cb76-20251002(react@19.3.0-canary-a757cb76-20251002))(react@19.3.0-canary-a757cb76-20251002))(react@19.3.0-canary-a757cb76-20251002):
     dependencies:
       next: 16.2.6(@babel/core@7.29.0)(react-dom@19.3.0-canary-a757cb76-20251002(react@19.3.0-canary-a757cb76-20251002))(react@19.3.0-canary-a757cb76-20251002)
       react: 19.3.0-canary-a757cb76-20251002
