@@ -30,6 +30,9 @@ dist
 # TypeScript incremental build artifacts
 *.tsbuildinfo
 
+# Node.js compile cache (NODE_COMPILE_CACHE)
+node-compile-cache/
+
 
 # Debug
 npm-debug.log*
