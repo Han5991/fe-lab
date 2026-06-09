@@ -6,6 +6,7 @@ description: '별거 아니겠지라고 생각했던 NPM 패키지 배포가 어
 category: 'design-system-lib-deploy'
 tags: ['NPM', '디자인 시스템', '배포', 'Panda CSS', 'tsup', '빌드']
 slug: 'npm-deploy-series-0-prologue'
+thumbnail: '/og/npm-deploy-series-0-prologue.png'
 ---
 
 # 하루 만에 끝날 줄 알았던 NPM 배포가 3주 걸린 이유

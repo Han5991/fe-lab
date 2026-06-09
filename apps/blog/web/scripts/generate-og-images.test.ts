@@ -3,6 +3,7 @@ import { test } from 'node:test';
 import {
   ogContentHash,
   displayTitle,
+  needsGeneratedOg,
   ogFileRelPath,
   ogTemplate,
   titleFontSize,
@@ -52,6 +53,20 @@ test('ogFileRelPath: og/ 밖으로 나갈 수 있는 slug는 에러', () => {
   assert.throws(() => ogFileRelPath('../etc'), /쓸 수 없는 slug/);
   assert.throws(() => ogFileRelPath('a/../b'), /쓸 수 없는 slug/);
   assert.throws(() => ogFileRelPath('a//b'), /쓸 수 없는 slug/);
+});
+
+// ── needsGeneratedOg ─────────────────────────────────────────────────────────
+
+test('needsGeneratedOg: thumbnail 없거나 /og/*를 가리키면 생성 대상', () => {
+  assert.equal(needsGeneratedOg({}), true);
+  assert.equal(needsGeneratedOg({ thumbnail: '' }), true);
+  assert.equal(needsGeneratedOg({ thumbnail: '/og/my-post.png' }), true);
+});
+
+test('needsGeneratedOg: 외부/직접 썸네일이 있으면 제외', () => {
+  assert.equal(needsGeneratedOg({ thumbnail: 'cover.png' }), false);
+  assert.equal(needsGeneratedOg({ thumbnail: 'https://cdn/x.png' }), false);
+  assert.equal(needsGeneratedOg({ thumbnail: '/images/x.png' }), false);
 });
 
 // ── titleFontSize / ogTemplate ───────────────────────────────────────────────

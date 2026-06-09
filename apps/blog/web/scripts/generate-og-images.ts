@@ -67,6 +67,15 @@ export function ogFileRelPath(slug: string): string {
   return `${segments.join('/')}.png`;
 }
 
+/**
+ * 생성 대상 판정: 명시 thumbnail이 없거나, frontmatter에 기록된 생성 카드
+ * 경로(/og/*)를 가리키는 글. 후자가 없으면 frontmatter가 생성기 출력물을
+ * 참조하는 순간 "썸네일 있는 글"로 오인되어 이미지가 사라지는 순환이 생긴다.
+ */
+export function needsGeneratedOg(post: { thumbnail?: string }): boolean {
+  return !post.thumbnail || post.thumbnail.startsWith('/og/');
+}
+
 /** 긴 한글 제목이 3줄을 넘지 않도록 글자수 기준으로 폰트 크기를 줄입니다. */
 export function titleFontSize(title: string): number {
   if (title.length <= 18) return 76;
@@ -280,8 +289,8 @@ function readManifest(): Record<string, string> {
 }
 
 async function main() {
-  // 썸네일이 명시된 글은 그 이미지를 쓰므로 없는 글만 생성 대상
-  const posts = getAllPosts().filter(post => !post.thumbnail);
+  // 외부/직접 썸네일이 명시된 글은 제외, 없거나 /og/*를 가리키는 글만 생성
+  const posts = getAllPosts().filter(needsGeneratedOg);
 
   mkdirSync(OG_DIR, { recursive: true });
 

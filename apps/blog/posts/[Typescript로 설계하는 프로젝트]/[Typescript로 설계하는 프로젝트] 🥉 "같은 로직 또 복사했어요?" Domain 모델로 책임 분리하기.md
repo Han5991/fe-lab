@@ -3,6 +3,7 @@ title: '[Typescript로 설계하는 프로젝트] "같은 로직 또 복사했�
 date: '2025-06-15'
 published: true
 slug: 'typescript-project-domain-design'
+thumbnail: '/og/typescript-project-domain-design.png'
 ---
 
 ## 들어가며

@@ -3,6 +3,7 @@ title: 'pnpm 10 업그레이드 후 ESLint 설정이 사라졌어요?! (feat. �
 date: '2025-05-01'
 published: true
 slug: 'pnpm-eslint-not-working'
+thumbnail: '/og/pnpm-eslint-not-working.png'
 ---
 
 ## 0. 프롤로그

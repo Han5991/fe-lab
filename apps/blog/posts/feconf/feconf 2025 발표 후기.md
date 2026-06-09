@@ -3,6 +3,7 @@ title: 'feconf 2025 발표 후기'
 date: '2025-09-02'
 published: true
 slug: 'feconf-2025-lightning-speaker'
+thumbnail: '/og/feconf-2025-lightning-speaker.png'
 ---
 
 ## 시작

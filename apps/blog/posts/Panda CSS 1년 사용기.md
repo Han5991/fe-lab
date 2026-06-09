@@ -3,6 +3,7 @@ title: 'Panda CSS 1년 사용기'
 date: '2025-02-17'
 published: true
 slug: 'panda-css-1year-review'
+thumbnail: '/og/panda-css-1year-review.png'
 ---
 
 # 프롤로그
