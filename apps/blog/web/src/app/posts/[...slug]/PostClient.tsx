@@ -21,7 +21,9 @@ import { Callout } from '@/src/components/post/markdown/Callout';
 import { Figure } from '@/src/components/post/markdown/Figure';
 import { FileTree } from '@/src/components/post/markdown/FileTree';
 
-import { TOC, ReadingProgress, PostHeader } from '@/src/components/blog';
+import { TOC } from '@/src/components/post/TOC';
+import { ReadingProgress } from '@/src/components/post/ReadingProgress';
+import { PostHeader } from '@/src/components/post/PostHeader';
 
 interface PostClientProps {
   post: PostData;

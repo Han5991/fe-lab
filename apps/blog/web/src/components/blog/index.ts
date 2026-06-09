@@ -16,6 +16,3 @@ export { ActiveFilters } from './ActiveFilters';
 export { PostListRow } from './PostListRow';
 export { PostGridCard } from './PostGridCard';
 export { PostsArchiveView } from './PostsArchive';
-export { TOC } from './TOC';
-export { ReadingProgress } from './ReadingProgress';
-export { PostHeader } from './PostHeader';
