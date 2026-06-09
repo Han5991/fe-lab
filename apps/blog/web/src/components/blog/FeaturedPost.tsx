@@ -12,7 +12,7 @@ interface FeaturedPostProps {
 
 export const FeaturedPost = ({ post }: FeaturedPostProps) => {
   const href = `/posts/${encodePostSlug(post.slug)}/`;
-  // 디폴트 이미지로 fallback (resolveThumbnailUrl이 OG_DEFAULT_IMAGE 처리).
+  // thumbnail 없으면 빌드 시 생성된 글별 OG 카드로 fallback (resolveThumbnailUrl).
   const thumb = resolveThumbnailUrl(post);
   const readMin = post.readMin;
 

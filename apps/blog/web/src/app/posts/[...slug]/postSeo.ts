@@ -57,7 +57,7 @@ export function countWords(content: string): number {
 /** Next.js generateMetadata가 반환할 Metadata(OG/Twitter/canonical). */
 export function buildPostMetadata(post: SeoPost, slug: string): Metadata {
   const description = buildDescription(post);
-  const absoluteThumbnailUrl = resolveAbsoluteThumbnailUrl(post);
+  const absoluteThumbnailUrl = resolveAbsoluteThumbnailUrl({ ...post, slug });
   return {
     title: `${post.title} | Frontend Lab`,
     description,
@@ -93,7 +93,7 @@ export function buildPostJsonLd(
   slug: string,
 ): Record<string, unknown> {
   const postUrl = `${SITE_URL}/posts/${slug}/`;
-  const absoluteThumbnailUrl = resolveAbsoluteThumbnailUrl(post);
+  const absoluteThumbnailUrl = resolveAbsoluteThumbnailUrl({ ...post, slug });
   return {
     '@context': 'https://schema.org',
     '@type': 'BlogPosting',

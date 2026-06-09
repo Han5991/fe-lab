@@ -232,6 +232,7 @@ The blog (`apps/blog/web/`) is a **statically generated (SSG) Next.js applicatio
    - `sync-posts.mjs`: 포스트 디렉토리의 이미지/미디어 파일을 `public/posts/`에 복사 (mtime 기반 incremental — 변경분만 복사)
    - `generate-sitemap.ts`: 발행된 글 목록으로 `sitemap.xml` 생성
    - `generate-rss.ts`: RSS 피드(`rss.xml`) 생성
+   - `generate-og-images.ts`: thumbnail 없는 발행 글의 OG 카드 이미지(`public/og/{slug}.png`)를 satori + resvg로 생성 (content hash 기반 incremental, `.cache/og-images.json` manifest)
    - `generate-search-index.ts`: 검색용 JSON 인덱스(`search-index.json`) 생성 — 본문 미리보기(`contentPreview`) 포함
    - `generate-llms-full.ts`: AI/LLM용 통합 텍스트(`llms-full.txt`) 생성
 4. **정적 빌드**: `next build` → `out/` 디렉토리에 정적 파일 생성

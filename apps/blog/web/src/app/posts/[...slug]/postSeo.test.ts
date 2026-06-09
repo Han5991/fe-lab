@@ -110,11 +110,22 @@ describe('buildPostMetadata', () => {
     expect(og.publishedTime).toBeUndefined();
   });
 
-  test('thumbnail 없으면 OG images[0].url = 절대 기본 이미지', () => {
+  test('thumbnail 없으면 OG images[0].url = 빌드 시 생성되는 글별 OG 카드', () => {
     const og = buildPostMetadata(makePost({ thumbnail: undefined }), 'a')
       .openGraph as Record<string, unknown>;
     const img = (og.images as Array<Record<string, unknown>>)[0];
-    expect(img.url).toBe(`${SITE}/og-default.png`);
+    expect(img.url).toBe(`${SITE}/og/a.png`);
+  });
+
+  test('thumbnail 없는 한글/중첩 slug는 OG 이미지 URL이 세그먼트별 인코딩', () => {
+    const og = buildPostMetadata(
+      makePost({ thumbnail: undefined }),
+      '번들러/3편',
+    ).openGraph as Record<string, unknown>;
+    const img = (og.images as Array<Record<string, unknown>>)[0];
+    expect(img.url).toBe(
+      `${SITE}/og/%EB%B2%88%EB%93%A4%EB%9F%AC/3%ED%8E%B8.png`,
+    );
   });
 
   test('상대 thumbnail은 images[0].url이 절대 URL(SITE_URL prefix)', () => {

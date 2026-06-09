@@ -37,6 +37,11 @@ const steps: Step[] = [
   { label: 'sitemap', cmd: 'tsx', args: ['generate-sitemap.ts'] },
   { label: 'rss', cmd: 'tsx', args: ['generate-rss.ts'] },
   {
+    label: 'og-images',
+    cmd: 'tsx',
+    args: ['scripts/generate-og-images.ts'],
+  },
+  {
     label: 'search-index',
     cmd: 'tsx',
     args: ['scripts/generate-search-index.ts'],
