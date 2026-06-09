@@ -102,6 +102,22 @@ export function safeFilename(title: string): string {
 }
 
 /**
+ * 시리즈는 중첩 폴더(`회고/2024` 등)를 허용하므로 `/`는 그대로 두되,
+ * 상위 경로 탈출(`..`)·빈 세그먼트·절대 경로는 거부해
+ * posts/ 밖에 파일이 생기는 것을 막습니다.
+ */
+export function safeSeriesPath(series: string): string {
+  const segments = series.split('/').map(s => s.trim());
+  const valid = segments.every(
+    s => s && s !== '.' && s !== '..' && !/[\\\0]/.test(s),
+  );
+  if (!valid) {
+    throw new Error(`올바르지 않은 시리즈 이름입니다: ${series}`);
+  }
+  return segments.join('/');
+}
+
+/**
  * 포스트 파일의 최종 경로를 계산합니다.
  * 제목이 sanitize 후 비어 있으면(공백뿐인 제목 등) `.md` 숨김 파일이
  * 생기는 것을 막기 위해 에러를 던집니다.
@@ -115,7 +131,7 @@ export function buildPostFilePath(
   if (!fileName) {
     throw new Error('제목이 비어 있어 파일명을 만들 수 없습니다.');
   }
-  const targetDir = series ? join(postsDir, series) : postsDir;
+  const targetDir = series ? join(postsDir, safeSeriesPath(series)) : postsDir;
   return join(targetDir, `${fileName}.md`);
 }
 

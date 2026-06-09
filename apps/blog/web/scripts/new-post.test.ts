@@ -114,6 +114,54 @@ test('buildPostFilePath: 공백뿐인 제목은 숨김 .md 파일이 되므로 �
   assert.throws(() => buildPostFilePath('/posts', '   '), /제목이 비어/);
 });
 
+test('buildPostFilePath: 중첩 시리즈(회고/2024 스타일)는 허용', () => {
+  assert.equal(
+    buildPostFilePath('/posts', '글', '회고/2026'),
+    '/posts/회고/2026/글.md',
+  );
+});
+
+test('buildPostFilePath: 시리즈 세그먼트 앞뒤 공백은 trim', () => {
+  assert.equal(
+    buildPostFilePath('/posts', '글', ' bundler '),
+    '/posts/bundler/글.md',
+  );
+});
+
+test('buildPostFilePath: 상위 경로 탈출 시리즈는 에러', () => {
+  assert.throws(
+    () => buildPostFilePath('/posts', '글', '..'),
+    /올바르지 않은 시리즈/,
+  );
+  assert.throws(
+    () => buildPostFilePath('/posts', '글', '../etc'),
+    /올바르지 않은 시리즈/,
+  );
+  assert.throws(
+    () => buildPostFilePath('/posts', '글', 'a/../b'),
+    /올바르지 않은 시리즈/,
+  );
+});
+
+test('buildPostFilePath: 절대 경로/빈 세그먼트/특수문자 시리즈는 에러', () => {
+  assert.throws(
+    () => buildPostFilePath('/posts', '글', '/etc'),
+    /올바르지 않은 시리즈/,
+  );
+  assert.throws(
+    () => buildPostFilePath('/posts', '글', 'a//b'),
+    /올바르지 않은 시리즈/,
+  );
+  assert.throws(
+    () => buildPostFilePath('/posts', '글', 'a\\b'),
+    /올바르지 않은 시리즈/,
+  );
+  assert.throws(
+    () => buildPostFilePath('/posts', '글', '   '),
+    /올바르지 않은 시리즈/,
+  );
+});
+
 // ── buildFrontmatter ─────────────────────────────────────────────────────────
 
 const NOW = new Date('2026-06-09T12:00:00+09:00');
