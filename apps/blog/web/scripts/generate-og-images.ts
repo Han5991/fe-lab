@@ -29,7 +29,7 @@ const FONT_DIR = join(
 );
 
 /** 템플릿 디자인을 바꾸면 올려서 모든 이미지를 재생성하게 합니다. */
-export const TEMPLATE_VERSION = 1;
+export const TEMPLATE_VERSION = 2;
 
 export const OG_WIDTH = 1200;
 export const OG_HEIGHT = 630;
@@ -69,7 +69,20 @@ export function ogFileRelPath(slug: string): string {
 
 /** 긴 한글 제목이 3줄을 넘지 않도록 글자수 기준으로 폰트 크기를 줄입니다. */
 export function titleFontSize(title: string): number {
-  return title.length > 40 ? 56 : 64;
+  if (title.length <= 18) return 76;
+  if (title.length <= 38) return 64;
+  return 54;
+}
+
+/**
+ * 시리즈 pill과 중복되는 제목의 시리즈 prefix를 이미지에서만 제거합니다.
+ * (예: '[Typescript로 설계하는 프로젝트] 당신의 Type...' — 폴더명과 정확히
+ * 일치하는 prefix만, 남는 제목이 있을 때만 제거하는 보수적 규칙)
+ */
+export function displayTitle(title: string, series?: string): string {
+  if (!series || !title.startsWith(series)) return title;
+  const rest = title.slice(series.length).replace(/^[\s:·—-]+/, '');
+  return rest || title;
 }
 
 interface OgNode {
@@ -85,29 +98,34 @@ function el(
   return { type, props: { style, children } };
 }
 
+// 블로그 paper/ink 토큰의 hex 근사값 (resvg는 oklch 미지원)
+const PAPER = '#FCFAF5'; // paper.50
+const INK = '#221D17'; // ink.950
+const INK_META = '#8A8275'; // ink.500
+const INK_RULE = '#DCD5C8'; // ink.border
+const ACCENT = '#2563EB'; // accent.600 근사
+
 /**
  * 1200×630 OG 카드 satori 엘리먼트 트리.
- * 디자인: 다크 네이비 그라데이션 + 좌측 액센트 바(블로그의 accentLeft 모티프),
- * 시리즈 pill / 제목 / 날짜·도메인 푸터.
+ * 디자인: 블로그 지면과 같은 paper 톤 + 중앙 정렬 구성(카드 썸네일로
+ * 축소돼도 좌우 균형 유지) + 상하 룰. 시리즈 pill / 날짜·도메인 푸터.
  */
 export function ogTemplate(post: OgPostInput): OgNode {
-  const accentBar = el('div', {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    bottom: 0,
-    width: 12,
-    backgroundImage: 'linear-gradient(180deg, #3B82F6 0%, #2563EB 100%)',
+  const title = displayTitle(post.title, post.series);
+
+  const rule = el('div', {
+    width: '100%',
+    height: 2,
+    backgroundColor: INK_RULE,
   });
 
   const brand = el('div', { display: 'flex', alignItems: 'center', gap: 14 }, [
-    el('div', {
-      width: 18,
-      height: 18,
-      borderRadius: 5,
-      backgroundColor: '#3B82F6',
-    }),
-    el('div', { fontSize: 30, fontWeight: 500, color: '#CBD5E1' }, SITE_NAME),
+    el('div', { width: 14, height: 14, backgroundColor: ACCENT }),
+    el(
+      'div',
+      { fontSize: 27, fontWeight: 500, color: INK, letterSpacing: 3 },
+      SITE_NAME,
+    ),
   ]);
 
   const headline: OgNode[] = [];
@@ -117,13 +135,12 @@ export function ogTemplate(post: OgPostInput): OgNode {
         'div',
         {
           display: 'flex',
-          alignSelf: 'flex-start',
-          border: '2px solid rgba(59, 130, 246, 0.55)',
+          border: '2px solid rgba(37, 99, 235, 0.4)',
           borderRadius: 9999,
-          padding: '8px 24px',
-          fontSize: 26,
+          padding: '6px 26px',
+          fontSize: 25,
           fontWeight: 500,
-          color: '#93C5FD',
+          color: ACCENT,
         },
         post.series,
       ),
@@ -133,37 +150,37 @@ export function ogTemplate(post: OgPostInput): OgNode {
     el(
       'div',
       {
-        fontSize: titleFontSize(post.title),
+        fontSize: titleFontSize(title),
         fontWeight: 700,
-        color: '#F8FAFC',
-        lineHeight: 1.3,
-        letterSpacing: -1,
+        color: INK,
+        lineHeight: 1.38,
+        letterSpacing: -0.5,
         lineClamp: 3,
+        textAlign: 'center',
+        wordBreak: 'keep-all',
       },
-      post.title,
+      title,
     ),
   );
 
-  const footer = el(
-    'div',
-    {
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-    },
-    [
-      el(
-        'div',
-        { fontSize: 26, fontWeight: 500, color: '#94A3B8' },
-        fmtDate(post.date?.slice(0, 10)),
-      ),
-      el(
-        'div',
-        { fontSize: 26, fontWeight: 500, color: '#64748B' },
-        SITE_URL.replace('https://', ''),
-      ),
-    ],
-  );
+  const footer = el('div', { display: 'flex', alignItems: 'center', gap: 16 }, [
+    el(
+      'div',
+      { fontSize: 24, fontWeight: 500, color: INK_META },
+      fmtDate(post.date?.slice(0, 10)),
+    ),
+    el('div', {
+      width: 5,
+      height: 5,
+      borderRadius: 9999,
+      backgroundColor: INK_RULE,
+    }),
+    el(
+      'div',
+      { fontSize: 24, fontWeight: 500, color: INK_META },
+      SITE_URL.replace('https://', ''),
+    ),
+  ]);
 
   return el(
     'div',
@@ -171,30 +188,45 @@ export function ogTemplate(post: OgPostInput): OgNode {
       width: '100%',
       height: '100%',
       display: 'flex',
-      position: 'relative',
-      backgroundImage:
-        'linear-gradient(135deg, #020617 0%, #0B1B36 60%, #12275B 100%)',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      backgroundColor: PAPER,
+      padding: '52px 90px 46px',
     },
     [
-      accentBar,
       el(
         'div',
         {
           display: 'flex',
-          flex: 1,
           flexDirection: 'column',
-          justifyContent: 'space-between',
-          padding: '64px 80px 56px 88px',
+          alignItems: 'center',
+          gap: 24,
+          width: '100%',
         },
-        [
-          brand,
-          el(
-            'div',
-            { display: 'flex', flexDirection: 'column', gap: 28 },
-            headline,
-          ),
-          footer,
-        ],
+        [brand, rule],
+      ),
+      el(
+        'div',
+        {
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: 30,
+          padding: '0 20px',
+        },
+        headline,
+      ),
+      el(
+        'div',
+        {
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: 22,
+          width: '100%',
+        },
+        [rule, footer],
       ),
     ],
   );

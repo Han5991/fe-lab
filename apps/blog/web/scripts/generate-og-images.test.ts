@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import {
   ogContentHash,
+  displayTitle,
   ogFileRelPath,
   ogTemplate,
   titleFontSize,
@@ -55,9 +56,23 @@ test('ogFileRelPath: og/ 밖으로 나갈 수 있는 slug는 에러', () => {
 
 // ── titleFontSize / ogTemplate ───────────────────────────────────────────────
 
-test('titleFontSize: 40자 이하 64px, 초과 56px', () => {
-  assert.equal(titleFontSize('짧은 제목'), 64);
-  assert.equal(titleFontSize('가'.repeat(41)), 56);
+test('titleFontSize: 길이에 따라 76/64/54px 3단계', () => {
+  assert.equal(titleFontSize('짧은 제목'), 76);
+  assert.equal(titleFontSize('가'.repeat(30)), 64);
+  assert.equal(titleFontSize('가'.repeat(39)), 54);
+});
+
+test('displayTitle: 시리즈명과 정확히 일치하는 prefix만 제거', () => {
+  assert.equal(
+    displayTitle('[TS로 설계] 당신의 Type', '[TS로 설계]'),
+    '당신의 Type',
+  );
+  assert.equal(displayTitle('그냥 제목', '[TS로 설계]'), '그냥 제목');
+  assert.equal(displayTitle('그냥 제목', undefined), '그냥 제목');
+});
+
+test('displayTitle: prefix 제거 후 빈 제목이 되면 원본 유지', () => {
+  assert.equal(displayTitle('bundler', 'bundler'), 'bundler');
 });
 
 test('ogTemplate: 제목/날짜/도메인이 트리에 포함', () => {
@@ -68,10 +83,19 @@ test('ogTemplate: 제목/날짜/도메인이 트리에 포함', () => {
 });
 
 test('ogTemplate: series가 있을 때만 pill 노출', () => {
-  assert.ok(
-    JSON.stringify(ogTemplate(post({ series: 'bundler' }))).includes('bundler'),
+  const PILL_BORDER = 'rgba(37, 99, 235, 0.4)';
+  const withSeries = JSON.stringify(ogTemplate(post({ series: 'bundler' })));
+  assert.ok(withSeries.includes('bundler'));
+  assert.ok(withSeries.includes(PILL_BORDER));
+  assert.ok(!JSON.stringify(ogTemplate(post())).includes(PILL_BORDER));
+});
+
+test('ogTemplate: 시리즈명이 제목 prefix와 중복되면 제목에서 제거', () => {
+  const json = JSON.stringify(
+    ogTemplate(post({ title: '[TS 설계] 당신의 Type', series: '[TS 설계]' })),
   );
-  assert.ok(!JSON.stringify(ogTemplate(post())).includes('borderRadius":9999'));
+  assert.ok(!json.includes('[TS 설계] 당신의 Type'));
+  assert.ok(json.includes('당신의 Type'));
 });
 
 test('ogTemplate: 제목은 3줄 클램프', () => {
