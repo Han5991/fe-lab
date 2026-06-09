@@ -200,7 +200,16 @@ test('buildFrontmatter: scheduledDate/slug는 있을 때만 라인 추가', () =
     NOW,
   );
   assert.match(raw, /scheduledDate: '2026-05-01T09:00:00\+09:00'/);
-  assert.match(raw, /slug: release-note/);
+  assert.match(raw, /slug: 'release-note'/);
+});
+
+test('buildFrontmatter: 특수문자 slug도 YAML 구조를 깨지 않고 round-trip', () => {
+  const slug = 'my: [edge] slug';
+  const raw = buildFrontmatter(
+    { title: '제목', status: 'draft', tags: [], slug },
+    NOW,
+  );
+  assert.equal(matter(raw).data.slug, slug);
 });
 
 test('buildFrontmatter: 제목의 작은따옴표가 escape되어 round-trip 보존', () => {

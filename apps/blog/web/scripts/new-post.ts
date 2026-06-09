@@ -153,7 +153,7 @@ export function buildFrontmatter(
     lines.push(`scheduledDate: ${yamlQuote(opts.scheduledDate)}`);
   }
   if (opts.slug) {
-    lines.push(`slug: ${opts.slug}`);
+    lines.push(`slug: ${yamlQuote(opts.slug)}`);
   }
   lines.push(`excerpt: ''`);
   lines.push(`tags: [${opts.tags.map(yamlQuote).join(', ')}]`);
