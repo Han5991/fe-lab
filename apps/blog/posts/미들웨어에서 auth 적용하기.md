@@ -3,6 +3,7 @@ title: '미들웨어에서 auth 적용하기'
 date: '2025-02-26'
 published: true
 slug: 'next-middleware'
+thumbnail: '/og/next-middleware.png'
 ---
 
 ## 프롤로그

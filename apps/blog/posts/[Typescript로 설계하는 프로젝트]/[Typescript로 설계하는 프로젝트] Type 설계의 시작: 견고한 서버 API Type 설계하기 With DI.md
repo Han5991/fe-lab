@@ -3,6 +3,7 @@ title: '[Typescript로 설계하는 프로젝트] Type 설계의 시작: 견고�
 date: '2025-06-01'
 published: true
 slug: 'typescript-project-api-di-design'
+thumbnail: '/og/typescript-project-api-di-design.png'
 ---
 
 ## 들어가며

@@ -3,6 +3,7 @@ title: '15줄에서 2줄로: useSyncExternalStore 기반 React Toast 시스템 �
 date: '2025-06-30'
 published: true
 slug: 'react-component-toast'
+thumbnail: '/og/react-component-toast.png'
 ---
 
 ## 들어가며

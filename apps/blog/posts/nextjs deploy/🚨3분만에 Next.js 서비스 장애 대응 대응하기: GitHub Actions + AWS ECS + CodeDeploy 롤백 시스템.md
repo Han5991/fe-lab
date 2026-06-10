@@ -3,6 +3,7 @@ title: '🚨3분만에 Next.js 서비스 장애 대응 대응하기: GitHub Acti
 date: '2025-04-03'
 published: true
 slug: 'aws-ecs-rollback'
+thumbnail: '/og/aws-ecs-rollback.png'
 ---
 
 ## 0. 프롤로그

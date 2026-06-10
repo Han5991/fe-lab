@@ -3,6 +3,7 @@ title: '구글 개발자가 인정한 성능 최적화 기여 후기 - AI와 함
 date: '2025-09-07'
 published: true
 slug: 'ai-opensource-contribution'
+thumbnail: '/og/ai-opensource-contribution.png'
 ---
 
 # 구글 개발자에게 인정받은 성능 최적화: gemini-cli 기여 후기

@@ -1,9 +1,10 @@
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { dirname, join, relative, resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 const POSTS_DIR = resolve(process.cwd(), '..', 'posts');
 
-interface Options {
+export interface Options {
   title?: string;
   series?: string;
   status: 'draft' | 'published' | 'scheduled';
@@ -12,7 +13,7 @@ interface Options {
   tags: string[];
 }
 
-function parseArgs(argv: string[]): Options {
+export function parseArgs(argv: string[]): Options {
   const opts: Options = { status: 'draft', tags: [] };
   const positional: string[] = [];
 
@@ -90,32 +91,72 @@ function parseArgs(argv: string[]): Options {
   return opts;
 }
 
-function todayKST(): string {
+export function todayKST(now: Date = new Date()): string {
   return new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Asia/Seoul',
-  }).format(new Date());
+  }).format(now);
 }
 
-function safeFilename(title: string): string {
+export function safeFilename(title: string): string {
   return title.replace(/[/\\\0]/g, '-').trim();
 }
 
-function buildFrontmatter(
+/**
+ * 시리즈는 중첩 폴더(`회고/2024` 등)를 허용하므로 `/`는 그대로 두되,
+ * 상위 경로 탈출(`..`)·빈 세그먼트·절대 경로는 거부해
+ * posts/ 밖에 파일이 생기는 것을 막습니다.
+ */
+export function safeSeriesPath(series: string): string {
+  const segments = series.split('/').map(s => s.trim());
+  const valid = segments.every(
+    s => s && s !== '.' && s !== '..' && !/[\\\0]/.test(s),
+  );
+  if (!valid) {
+    throw new Error(`올바르지 않은 시리즈 이름입니다: ${series}`);
+  }
+  return segments.join('/');
+}
+
+/**
+ * 포스트 파일의 최종 경로를 계산합니다.
+ * 제목이 sanitize 후 비어 있으면(공백뿐인 제목 등) `.md` 숨김 파일이
+ * 생기는 것을 막기 위해 에러를 던집니다.
+ */
+export function buildPostFilePath(
+  postsDir: string,
+  title: string,
+  series?: string,
+): string {
+  const fileName = safeFilename(title);
+  if (!fileName) {
+    throw new Error('제목이 비어 있어 파일명을 만들 수 없습니다.');
+  }
+  const targetDir = series ? join(postsDir, safeSeriesPath(series)) : postsDir;
+  return join(targetDir, `${fileName}.md`);
+}
+
+// YAML 단일 인용 스칼라: 특수문자(`:`, `[`, `'` 등)가 든 값도 안전하게 직렬화
+function yamlQuote(value: string): string {
+  return `'${value.replace(/'/g, "''")}'`;
+}
+
+export function buildFrontmatter(
   opts: Required<Pick<Options, 'title' | 'status' | 'tags'>> &
     Pick<Options, 'slug' | 'scheduledDate'>,
+  now: Date = new Date(),
 ): string {
   const lines = ['---'];
-  lines.push(`title: '${opts.title.replace(/'/g, "''")}'`);
-  lines.push(`date: ${todayKST()}`);
+  lines.push(`title: ${yamlQuote(opts.title)}`);
+  lines.push(`date: ${todayKST(now)}`);
   lines.push(`status: ${opts.status}`);
   if (opts.scheduledDate) {
-    lines.push(`scheduledDate: '${opts.scheduledDate}'`);
+    lines.push(`scheduledDate: ${yamlQuote(opts.scheduledDate)}`);
   }
   if (opts.slug) {
-    lines.push(`slug: ${opts.slug}`);
+    lines.push(`slug: ${yamlQuote(opts.slug)}`);
   }
   lines.push(`excerpt: ''`);
-  lines.push(`tags: [${opts.tags.join(', ')}]`);
+  lines.push(`tags: [${opts.tags.map(yamlQuote).join(', ')}]`);
   lines.push('---');
   lines.push('');
   lines.push(`# ${opts.title}`);
@@ -162,18 +203,20 @@ function main() {
     process.exit(1);
   }
 
-  const targetDir = opts.series ? join(POSTS_DIR, opts.series) : POSTS_DIR;
-  if (!existsSync(targetDir)) {
-    mkdirSync(targetDir, { recursive: true });
+  let targetPath: string;
+  try {
+    targetPath = buildPostFilePath(POSTS_DIR, opts.title, opts.series);
+  } catch (e) {
+    console.error(`✖ ${(e as Error).message}`);
+    process.exit(1);
   }
-
-  const fileName = `${safeFilename(opts.title)}.md`;
-  const targetPath = join(targetDir, fileName);
 
   if (existsSync(targetPath)) {
     console.error(`✖ 이미 존재합니다: ${targetPath}`);
     process.exit(1);
   }
+
+  mkdirSync(dirname(targetPath), { recursive: true });
 
   const frontmatter = buildFrontmatter({
     title: opts.title,
@@ -184,11 +227,18 @@ function main() {
   });
 
   writeFileSync(targetPath, frontmatter, 'utf8');
-  const rel = targetPath.replace(`${POSTS_DIR}/`, '');
+  const rel = relative(POSTS_DIR, targetPath);
   console.log(`✓ 새 포스트 생성됨: posts/${rel}`);
   console.log(`  status: ${opts.status}`);
   if (opts.series) console.log(`  series: ${opts.series}`);
   if (opts.scheduledDate) console.log(`  scheduledDate: ${opts.scheduledDate}`);
 }
 
-main();
+// 스크립트로 직접 실행될 때만 main()을 호출합니다.
+// (테스트 등에서 import할 때 main()이 자동 실행되어 process.exit 하는 것을 방지)
+if (
+  process.argv[1] &&
+  import.meta.url === pathToFileURL(process.argv[1]).href
+) {
+  main();
+}

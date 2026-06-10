@@ -3,6 +3,7 @@ title: '2025 Teoconf 발표 후기'
 date: '2025-12-11'
 published: true
 slug: '2025-teoconf-presentation'
+thumbnail: '/og/2025-teoconf-presentation.png'
 ---
 
 # 🎤 발표 후기: ‘내가 하고 싶은 말’ 대신 ‘청중이 가져갈 한 문장’을 찾기까지

@@ -1,7 +1,7 @@
 import { css } from '@design-system/ui-lib/css';
 import type { PostData } from '@/domain/post';
 import { fmtDate } from '@/lib/format';
-import { Label } from './Label';
+import { Label } from '@/src/components/blog/Label';
 
 interface PostHeaderProps {
   post: PostData;

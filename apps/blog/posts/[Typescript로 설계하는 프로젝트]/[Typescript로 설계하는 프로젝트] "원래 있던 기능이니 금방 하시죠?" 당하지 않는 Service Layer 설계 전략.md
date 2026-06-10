@@ -3,6 +3,7 @@ title: '[Typescript로 설계하는 프로젝트] "원래 있던 기능이니 �
 date: '2025-06-08'
 published: true
 slug: 'typescript-project-service-design'
+thumbnail: '/og/typescript-project-service-design.png'
 ---
 
 ## 들어가며

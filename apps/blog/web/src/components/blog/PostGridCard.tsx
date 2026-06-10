@@ -11,8 +11,8 @@ interface PostGridCardProps {
 }
 
 export const PostGridCard = ({ post }: PostGridCardProps) => {
-  // resolveThumbnailUrl은 thumbnail이 없으면 OG_DEFAULT_IMAGE를 반환합니다.
-  // 항상 호출해 디폴트 이미지로 fallback되게 합니다.
+  // resolveThumbnailUrl은 thumbnail이 없으면 빌드 시 생성된 글별 OG 카드
+  // (/og/{slug}.png)로 fallback합니다.
   const thumb = resolveThumbnailUrl(post);
   const readMin = post.readMin;
   return (

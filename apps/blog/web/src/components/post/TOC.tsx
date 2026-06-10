@@ -2,7 +2,7 @@
 
 import { css } from '@design-system/ui-lib/css';
 import { useTocHook, scrollToId } from '@/src/components/tocHooks';
-import { Label } from './Label';
+import { Label } from '@/src/components/blog/Label';
 
 export const TOC = () => {
   const { toc, activeId } = useTocHook();

@@ -30,6 +30,9 @@ dist
 # TypeScript incremental build artifacts
 *.tsbuildinfo
 
+# Node.js compile cache (NODE_COMPILE_CACHE)
+node-compile-cache/
+
 
 # Debug
 npm-debug.log*
@@ -49,6 +52,8 @@ yarn-error.log*
 /packages/@design-system/ui-lib/recipes/
 /.idea/
 /apps/blog/web/public/posts/
+/apps/blog/web/public/og/
+/apps/blog/web/.cache/
 
 gha-creds-*.json
 \n# Gemini Skills\n*.skill
