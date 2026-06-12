@@ -2,6 +2,36 @@ packages:
   - 'apps/**/*'
   - 'packages/**/*'
 
+overrides:
+  '@babel/plugin-transform-modules-systemjs': 7.29.4
+  '@babel/runtime': 7.29.2
+  '@tootallnate/once': 3.0.1
+  'brace-expansion@1': 1.1.13
+  'diff@4': 4.0.4
+  dompurify: 3.4.3
+  fast-uri: 3.1.2
+  flatted: 3.4.2
+  'form-data@2': 2.5.5
+  'form-data@4': 4.0.5
+  'glob@10': 10.5.0
+  'js-yaml@3': 3.14.2
+  mdast-util-to-hast: 13.2.1
+  'minimatch@3': 3.1.5
+  'picomatch@2': 2.3.2
+  'picomatch@4': 4.0.4
+  postcss: 8.5.14
+  'qs@6': 6.15.1
+  'rollup@4': 4.60.4
+  'tough-cookie@2': 4.1.4
+  'uuid@11': 11.1.1
+
+allowBuilds:
+  esbuild: true
+  sharp: true
+  supabase: true
+  lefthook: true
+  msw: false
+
 catalog:
   '@pandacss/dev': 1.11.1
   'next': 16.2.6

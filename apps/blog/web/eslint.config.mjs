@@ -1,12 +1,25 @@
 import nextCoreWebVitals from 'eslint-config-next/core-web-vitals';
 import nextTypescript from 'eslint-config-next/typescript';
+import reactHooks from 'eslint-plugin-react-hooks';
 
 const eslintConfig = [
   {
     ignores: ['.next/**', 'out/**', 'public/**', 'supabase/**'],
   },
+  // core-web-vitals가 react recommended + react-hooks v7(recommended-latest의
+  // React Compiler 진단 룰: purity/immutability/refs/set-state-in-render 등)을
+  // 이미 error로 포함합니다. next.config.ts의 reactCompiler: true와 짝.
   ...nextCoreWebVitals,
   ...nextTypescript,
+  {
+    // recommended-latest 중 core-web-vitals에서 유일하게 빠진 컴파일러 룰.
+    // core-web-vitals와 동일한 플러그인 인스턴스라 재등록 충돌 없음.
+    files: ['**/*.{ts,tsx,js,jsx}'],
+    plugins: { 'react-hooks': reactHooks },
+    rules: {
+      'react-hooks/void-use-memo': 'error',
+    },
+  },
   {
     rules: {
       // `_` prefix 식별자는 의도적 미사용으로 간주 (destructuring rest 패턴 등)

@@ -36,7 +36,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
         with:
-          version: '10.10.0'
+          # 버전은 루트 package.json의 packageManager 필드를 단일 source of truth로 사용
           run_install: false
 
       - name: Setup Node.js
