@@ -28,6 +28,7 @@
   },
   "scripts": {
     "prepare": "pnpm panda codegen && pnpm build",
+    "codegen": "panda codegen",
     "build": "tsup",
     "release": "pnpm panda prepare && pnpm build && pnpm publish",
     "build-fast": "tsup --no-dts",

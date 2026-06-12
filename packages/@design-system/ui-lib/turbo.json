@@ -1,0 +1,23 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "build": {
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/packages/@design-system/ui/src/**",
+        "$TURBO_ROOT$/packages/@design-system/ui/panda.config.ts"
+      ],
+      "outputs": [
+        "css/**",
+        "jsx/**",
+        "patterns/**",
+        "recipes/**",
+        "tokens/**",
+        "types/**",
+        "helpers.mjs",
+        "styles.css"
+      ]
+    }
+  }
+}

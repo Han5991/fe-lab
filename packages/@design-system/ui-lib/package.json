@@ -1,6 +1,9 @@
 {
   "name": "@design-system/ui-lib",
   "type": "module",
+  "scripts": {
+    "build": "pnpm -C ../ui codegen"
+  },
   "peerDependencies": {
     "react": "*"
   },
