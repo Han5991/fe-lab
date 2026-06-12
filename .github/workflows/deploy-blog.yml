@@ -13,7 +13,6 @@ on:
   # 매일 KST 09:00 (UTC 00:00) 자동 빌드 — 예약 발행(scheduled) 글 공개용
   schedule:
     - cron: '0 9 * * *'
-      timezone: Asia/Seoul
   workflow_dispatch:
 
 permissions:
@@ -79,4 +78,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4.0.5
+        uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5.0.0
