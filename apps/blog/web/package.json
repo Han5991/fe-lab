@@ -66,6 +66,7 @@
     "@types/react-dom": "catalog:react19",
     "@types/react-syntax-highlighter": "^15.5.13",
     "@vitejs/plugin-react": "^5.0.4",
+    "babel-plugin-react-compiler": "^1.0.0",
     "c8": "^11.0.0",
     "concurrently": "^9.2.0",
     "eslint": "^9",
