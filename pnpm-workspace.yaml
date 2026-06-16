@@ -36,10 +36,7 @@ catalog:
   '@pandacss/dev': 1.11.1
   'next': 16.2.6
   typescript: 6.0.3
-
-catalogs:
-  react19:
-    react: ^19.3.0-canary-a757cb76-20251002
-    react-dom: ^19.3.0-canary-a757cb76-20251002
-    '@types/react': ^19.2.14
-    '@types/react-dom': ^19.2.0
+  react: 19.2.7
+  react-dom: 19.2.7
+  '@types/react': 19.2.17
+  '@types/react-dom': 19.2.3

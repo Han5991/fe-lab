@@ -39,20 +39,20 @@
     "dist"
   ],
   "dependencies": {
-    "@design-system/ui-lib": "workspace:^",
-    "tsdown": "0.22.2",
-    "typescript": "catalog:"
+    "@design-system/ui-lib": "workspace:^"
   },
   "devDependencies": {
     "@pandacss/dev": "catalog:",
-    "@types/react": "catalog:react19",
-    "@types/react-dom": "catalog:react19",
-    "react": "catalog:react19",
-    "react-dom": "catalog:react19"
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "tsdown": "0.22.2",
+    "typescript": "catalog:"
   },
   "peerDependencies": {
     "@pandacss/dev": "catalog:",
-    "react": "catalog:react19",
-    "react-dom": "catalog:react19"
+    "react": "catalog:",
+    "react-dom": "catalog:"
   }
 }
