@@ -23,26 +23,9 @@ permissions:
 
 jobs:
   quality:
-    name: ${{ matrix.task.name }}
+    name: Lint / Types / Tests
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    strategy:
-      # 한 체크가 실패해도 나머지 체크는 끝까지 실행해 모든 실패를 한 번에 확인.
-      fail-fast: false
-      matrix:
-        # 각 체크를 독립된 병렬 job으로 실행. 설정(checkout/pnpm/node/install)은
-        # 아래 steps에서 공유되며 matrix 항목마다 반복 수행됩니다.
-        task:
-          - name: Lint
-            run: pnpm lint
-          - name: Type check
-            run: pnpm check-types
-          - name: Test
-            run: pnpm test
-          - name: Lint blog posts (frontmatter)
-            run: pnpm --filter @blog/web lint:posts
-          - name: Format check
-            run: pnpm format:check
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -68,5 +51,15 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: ${{ matrix.task.name }}
-        run: ${{ matrix.task.run }}
+      # lint/check-types/test는 모두 turbo 태스크. 한 번의 turbo 호출로 묶으면
+      # 공유 의존성(^build)을 한 번만 빌드하고 세 태스크를 의존성 그래프에 맞춰
+      # 병렬 실행 + 캐싱합니다. (태스크별로 따로 호출하면 ^build가 중복됩니다)
+      - name: Lint / Type check / Test
+        run: pnpm turbo run lint check-types test
+
+      # turbo 태스크가 아닌 검사들 (가볍게 끝나므로 순차 실행)
+      - name: Lint blog posts (frontmatter)
+        run: pnpm --filter @blog/web lint:posts
+
+      - name: Format check
+        run: pnpm format:check
