@@ -17,14 +17,14 @@
     "build:types": "tsc --emitDeclarationOnly"
   },
   "peerDependencies": {
-    "react": ">=18",
-    "react-dom": ">=18"
+    "react": ">=19",
+    "react-dom": ">=19"
   },
   "devDependencies": {
     "@package/bundler": "workspace:*",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4",
+    "react": "catalog:",
+    "react-dom": "catalog:",
     "tsx": "^4.22.0",
-    "typescript": "^5.9.3"
+    "typescript": "catalog:"
   }
 }

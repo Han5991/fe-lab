@@ -291,5 +291,5 @@ The blog (`apps/blog/web/`) is a **statically generated (SSG) Next.js applicatio
 
 ## Prerequisites
 
-- Node.js >= 22 (`apps/blog/web`의 `node --test '<glob>'` 글롭 패턴이 22.5+ 필요)
-- pnpm 10.10.0 (specified in packageManager field)
+- Node.js >= 24 (루트 `engines` 및 `.tool-versions` 기준 24.6.0; `apps/blog/web`의 `node --test '<glob>'` 글롭 패턴이 22.5+ 필요)
+- pnpm 11.6.0 (specified in packageManager field)

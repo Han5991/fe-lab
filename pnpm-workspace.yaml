@@ -21,7 +21,6 @@ overrides:
   'picomatch@4': 4.0.4
   postcss: 8.5.14
   'qs@6': 6.15.1
-  'rollup@4': 4.60.4
   'tough-cookie@2': 4.1.4
   'uuid@11': 11.1.1
 
@@ -35,13 +34,8 @@ allowBuilds:
 catalog:
   '@pandacss/dev': 1.11.1
   'next': 16.2.6
-
-catalogs:
-  react19:
-    react: ^19.3.0-canary-a757cb76-20251002
-    react-dom: ^19.3.0-canary-a757cb76-20251002
-    '@types/react': ^19.2.14
-    '@types/react-dom': ^19.2.0
-
-  typescript5:
-    typescript: 5.8.3
+  typescript: 6.0.3
+  react: 19.2.7
+  react-dom: 19.2.7
+  '@types/react': 19.2.17
+  '@types/react-dom': 19.2.3

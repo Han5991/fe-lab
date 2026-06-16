@@ -16,18 +16,19 @@
     "blog-build": "turbo run build --filter=@blog/web",
     "socket-server": "turbo run dev --filter=socket-server",
     "socket": "concurrently \"pnpm socket-server\" \"pnpm react\"",
+    "clean": "pnpm clean:dist && pnpm clean:modules",
+    "clean:dist": "find . -name node_modules -prune -o -type d '(' -name dist -o -name .next -o -name out -o -name .turbo ')' -prune -exec rm -rf {} +",
+    "clean:modules": "find . -name node_modules -type d -prune -exec rm -rf {} +",
     "prepare": "lefthook install"
   },
   "devDependencies": {
     "lefthook": "^2.1.6",
-    "prettier": "^3.5.0",
-    "turbo": "^2.5.3"
+    "prettier": "^3.8.4",
+    "turbo": "^2.9.18",
+    "concurrently": "^10.0.3"
   },
   "packageManager": "pnpm@11.6.0",
   "engines": {
-    "node": ">=22"
-  },
-  "dependencies": {
-    "concurrently": "^9.2.0"
+    "node": ">=24"
   }
 }

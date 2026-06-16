@@ -17,6 +17,12 @@
 /.next/
 /out/
 
+# generated blog content artifacts (scripts/build-content.ts — regenerated on prebuild/predev)
+/public/rss.xml
+/public/sitemap.xml
+/public/search-index.json
+/public/llms-full.txt
+
 # production
 /build
 

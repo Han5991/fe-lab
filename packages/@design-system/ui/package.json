@@ -3,8 +3,8 @@
   "version": "0.0.1",
   "private": true,
   "type": "module",
-  "types": "./dist/index.d.ts",
-  "main": "./dist/index.js",
+  "types": "./dist/index.d.mts",
+  "main": "./dist/index.mjs",
   "exports": {
     ".": "./src/index.ts",
     "./preset": "./src/preset.ts",
@@ -13,25 +13,25 @@
   "publishConfig": {
     "exports": {
       ".": {
-        "types": "./dist/index.d.ts",
-        "import": "./dist/index.js"
+        "types": "./dist/index.d.mts",
+        "import": "./dist/index.mjs"
       },
       "./preset": {
-        "types": "./dist/preset.d.ts",
-        "import": "./dist/preset.js"
+        "types": "./dist/preset.d.mts",
+        "import": "./dist/preset.mjs"
       },
       "./blog-preset": {
-        "types": "./dist/blog-preset.d.ts",
-        "import": "./dist/blog-preset.js"
+        "types": "./dist/blog-preset.d.mts",
+        "import": "./dist/blog-preset.mjs"
       }
     }
   },
   "scripts": {
     "prepare": "pnpm panda codegen && pnpm build",
     "codegen": "panda codegen",
-    "build": "tsup",
+    "build": "tsdown",
     "release": "pnpm panda prepare && pnpm build && pnpm publish",
-    "build-fast": "tsup --no-dts",
+    "build-fast": "tsdown --no-dts",
     "dev": "pnpm build-fast --watch",
     "fmt": "prettier --write ."
   },
@@ -39,20 +39,20 @@
     "dist"
   ],
   "dependencies": {
-    "@design-system/ui-lib": "workspace:^",
-    "tsup": "8.4.0",
-    "typescript": "5.8.3"
+    "@design-system/ui-lib": "workspace:^"
   },
-  "packageManager": "pnpm@10.10.0",
   "devDependencies": {
     "@pandacss/dev": "catalog:",
-    "@types/react": "catalog:react19",
-    "@types/react-dom": "catalog:react19",
-    "react": "catalog:react19",
-    "react-dom": "catalog:react19"
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "tsdown": "0.22.2",
+    "typescript": "catalog:"
   },
   "peerDependencies": {
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "@pandacss/dev": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:"
   }
 }
