@@ -35,6 +35,7 @@ allowBuilds:
 catalog:
   '@pandacss/dev': 1.11.1
   'next': 16.2.6
+  typescript: 6.0.3
 
 catalogs:
   react19:
@@ -42,6 +43,3 @@ catalogs:
     react-dom: ^19.3.0-canary-a757cb76-20251002
     '@types/react': ^19.2.14
     '@types/react-dom': ^19.2.0
-
-  typescript5:
-    typescript: 5.8.3

@@ -1,9 +1,9 @@
-import { defineConfig } from 'tsup';
+import { defineConfig } from 'tsdown';
 
 export default defineConfig({
   entry: ['src/index.ts', 'src/cli.ts'],
   format: ['esm', 'cjs'],
-  target: 'node24',
+  platform: 'node',
   clean: true,
   dts: true,
   sourcemap: true,
