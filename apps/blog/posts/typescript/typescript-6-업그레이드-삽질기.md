@@ -336,16 +336,17 @@ import { defineConfig } from 'tsdown';
 export default defineConfig({
   entry: ['src/index.ts', 'src/cli.ts'],
   format: ['esm', 'cjs'],
-  platform: 'node',   // tsup의 target: 'node' 대응
-  dts: true,
+  platform: 'node',
+  target: 'node24',   // ← platform과 다른 축 (함정 ② 참고)
   clean: true,
+  dts: true,
   sourcemap: true,
 });
 ```
 
 전환 직후, `TS5101`은 **사라졌다.** 근본 원인(baseUrl 주입)이 없어졌기 때문이다.
 
-### 함정: 출력 확장자가 다르다
+### 함정 ①: 출력 확장자가 다르다
 
 다만 공짜는 아니었다. tsdown은 `platform: 'node'`에서 기본적으로 **`.mjs` / `.cjs` / `.d.mts` / `.d.cts`** 확장자로 출력한다(`fixedExtension`). tsup의 `.js` / `.d.ts`와 달라서, `package.json`의 `exports`·`bin`·`main`·`types`가 존재하지 않는 파일을 가리키게 됐다. 실제 산출물에 맞춰 전부 정정해야 했다.
 
@@ -364,6 +365,28 @@ export default defineConfig({
 
 `@design-system/ui`도 마찬가지로 `main`/`types`를 `./dist/index.mjs`·`./dist/index.d.mts`로 맞췄다(이 정정은 별도 커밋으로 떨어졌다 — 산출물 확장자가 바뀌면 이런 메타데이터가 줄줄이 따라온다는 걸 잊지 말 것).
 
+### 함정 ②: `platform: 'node'`은 `target`이 아니다
+
+tsup의 `target: 'node24'`를 옮기며 무심코 `platform: 'node'`로 바꿔 적었는데, 둘은 **다른 축**이다. `platform`은 "이 번들은 Node에서 돈다"는 힌트로 의존성 외부화·조건 해석·기본 출력 확장자(`fixedExtension`) 등에 영향을 주고, **ES 문법 트랜스파일 타겟**은 `target`이 따로 통제한다. `target`을 생략하면 tsdown 기본값이 쓰이므로, Node 24 문법까지 의도대로 내리려면 `target: 'node24'`를 **함께** 명시해야 한다.
+
+### 함정 ③: 빌드 도구는 `devDependencies`에
+
+tsup 시절 `tsup`이 `dependencies`에 들어가 있었고, tsdown으로 바꾸며 그 자리를 그대로 물려줬다. 하지만 빌드 도구(`tsdown`)와 `typescript`는 런타임 의존성이 아니라 **`devDependencies`**에 있어야 한다 — 안 그러면 패키지를 퍼블리시할 때 불필요한 의존성이 딸려간다. `@package/bundler`는 처음부터 devDependencies였는데 `@design-system/ui`만 `dependencies`에 남아 있어 뒤늦게 맞춰 옮겼다.
+
+```jsonc
+// @design-system/ui/package.json
+{
+  "dependencies": {
+    "@design-system/ui-lib": "workspace:^"   // 런타임 의존성만
+  },
+  "devDependencies": {
+    "tsdown": "0.22.2",        // ← 빌드 도구
+    "typescript": "catalog:"   // ← 빌드 타임
+    // ...
+  }
+}
+```
+
 - `pnpm build` (전체) → **9/9 통과** (blog 정적 빌드 포함)
 
 ---
@@ -375,7 +398,8 @@ export default defineConfig({
 1. **`baseUrl`을 쓰는가?** → 직접 쓰면 제거(`paths`는 4.1부터 baseUrl 불필요). 빌드 도구가 주입한다면 도구를 점검하라. `TS5101`은 baseUrl 전용이 아니라 **범용 deprecated-option 진단**임을 기억할 것.
 2. **`@types/node` 같은 전역에 의존하는가?** → `types: ["node", ...]`로 명시. TS6 기본은 `[]`이고, 이는 **ambient 전역에만** 영향을 준다(import 타입은 무관). 옛 동작은 `["*"]`.
 3. **`emitDeclarationOnly`/`outDir`로 emit하는데 소스가 tsconfig보다 깊은가?** → `rootDir`을 명시. 에러 메시지의 `'{1}'`이 곧 넣어야 할 값이다.
-4. **dts 번들러가 tsup인가?** → tsup은 유지보수가 멈췄고 dts에 baseUrl을 주입한다. tsdown으로 전환하고(`npx tsdown-migrate`), 출력 확장자(`.mjs`/`.d.mts`)에 맞춰 `exports`/`bin`/`main`/`types`를 점검하라.
+4. **dts 번들러가 tsup인가?** → tsup은 유지보수가 멈췄고 dts에 baseUrl을 주입한다. tsdown으로 전환하고(`npx tsdown-migrate`), ⓐ 출력 확장자(`.mjs`/`.d.mts`)에 맞춰 `exports`/`bin`/`main`/`types`를 고치고, ⓑ `platform`과 `target`은 다른 축이니 ES 타겟이 필요하면 `target`을 따로 명시하고, ⓒ 빌드 도구(`tsdown`)·`typescript`는 `devDependencies`에 두라.
+5. **버전을 일괄 갱신했는가?** → 하위 패키지에 박힌 `packageManager`·`engines` 필드가 루트와 어긋나 있지 않은지 확인하라. (루트는 `pnpm@11.6.0`인데 한 패키지에 `pnpm@10.4.1`이 남아 있었다.)
 
 곁가지 — 작업 중 <code>node_modules</code>와 빌드 산출물을 수없이 지웠던 터라, 외부 의존성 없이 macOS <code>find</code>로 도는 clean 스크립트를 루트에 넣어뒀다. 핵심은 <code>-name node_modules -prune</code>으로 <strong>node_modules 내부를 가지치기</strong>하는 것 — 안 그러면 의존성 안의 수많은 <code>dist</code>까지 매칭돼 느리고 위험하다.
 
