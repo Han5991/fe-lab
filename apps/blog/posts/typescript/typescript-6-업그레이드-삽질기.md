@@ -3,8 +3,8 @@ title: 'TypeScript 6 업그레이드: breaking change 3종을 PR diff까지 추�
 date: '2026-06-16'
 status: 'draft'
 slug: 'typescript-6-migration-troubleshooting'
-excerpt: '5도 멀쩡한데 왜 6을? 회사 코드에 올리기 전, 리허설 삼아 개인 모노레포를 TypeScript 5.8.3 → 6.0.3으로 올렸다. baseUrl·types·rootDir이라는 breaking change 3종이 차례로 빌드를 무너뜨렸고, "왜 그렇게 바뀌었나"를 microsoft/TypeScript PR diff까지 파고들자 셋의 공통점이 드러났다 — 전부 Go로 다시 쓰는 다음 세대 TS7로 가기 위한 레거시 청소. 유지보수가 멈춘 tsup을 tsdown으로 갈아치운 보너스와, "6을 안 올려도 이 셋은 5에서 미리 적용할 수 있다"는 가장 큰 수확까지.'
-tags: [ 'TypeScript', 'tsdown', 'monorepo', 'troubleshooting', 'breaking-change', 'typescript-7' ]
+excerpt: 'TypeScript 6으로 올리자 baseUrl·rootDir·types 기본값이 차례로 빌드를 깨뜨렸다. tsup→tsdown 전환까지, 각 변경의 "왜"를 microsoft/TypeScript PR diff로 추적하니 전부 Go 네이티브 TS7로 가는 레거시 청소였다. 그리고 6을 안 올려도 이 셋은 5에서 미리 적용할 수 있다.'
+tags: [ 'TypeScript', 'TypeScript 6', 'typescript-7', 'tsgo', 'baseUrl', 'rootDir', 'tsdown', 'tsup', 'monorepo', 'breaking-change' ]
 ---
 
 메이저 업그레이드는 한 번 밀리면 두 번 밀린다. 5가 멀쩡히 도니까 6은 자꾸 뒤로 미뤄졌다. 그러다 Go로 다시 쓴 7.0이 다가오는 걸 보고 정신이 들었다. 회사 코드가 두 메이저를 한꺼번에 건너뛰게 두기 전에, 개인 모노레포에서 먼저 6을 밟아봤다.
@@ -144,24 +144,17 @@ error TS5101: Option 'baseUrl' is deprecated and will stop functioning in TypeSc
 이슈(<a href="https://github.com/microsoft/TypeScript/issues/62508">#62508</a>)로 리다이렉트되는데, 이 글을 쓰는 시점엔
 본문이 아직 <code>Placeholder</code>만 들어 있는 빈 페이지다. 에러는 친절하게 안내하지만 정작 안내처는 공사 중인 셈.
 
-### `paths`도 끝이 아니다: package.json `imports`로 런타임까지 일치시키기
+### `paths`도 끝이 아니다: 진짜 대안은 package.json `imports`
 
-`baseUrl`을 지우고 `paths`로 갈아탔지만, 사실 `paths`도 완전한 답은 아니다. **`paths`는 타입체커 전용**이라 `tsc`가 내보내는 JS에는 그 매핑이 반영되지 않는다.
+`baseUrl`을 지우고 `paths`로 갈아탔지만, `paths`도 완전한 답은 아니다. **`paths`는 타입체커 전용**이라 `tsc`가 내보내는 JS엔 반영되지 않아, `baseUrl`이 6.0에서 막힌 그 이유(런타임에 안 맞는 import를 타입체커만 통과)와 정도만 다를 뿐 같은 괴리를 안는다. 그 괴리가 구조적으로 없는 대안이 **Node가 런타임에 직접 읽는 package.json `imports`**(`#` subpath)다 — 타입과 런타임이 같은 매핑을 보니 어긋날 수 없고, TS 핸드북도 이를 _"a standard replacement for convenience `paths` aliases"_로 부른다.
 
-> "The `paths` option does _not_ change the import path in the code emitted by TypeScript. Consequently, it's very easy to create path aliases that appear to work in TypeScript but will crash at runtime." — [TS 핸드북 Modules Reference](https://www.typescriptlang.org/docs/handbook/modules/reference.html)
+<details>
+<summary>옮길 때 알아둘 것 — 설정·버전·번들러 (펼치기)</summary>
 
-그래서 번들러가 같은 별칭을 알고 있거나 [`tsc-alias`](https://github.com/justkey007/tsc-alias) 같은 후처리로 빈틈을 메워야 한다. 묘하게도 이건 `baseUrl`이 6.0에서 막힌 바로 그 이유와 닮은꼴이다 — _"런타임에 절대 동작 안 할 import를 타입체커만 괜찮다고 통과시킴"._ `paths`도 정도가 덜할 뿐 같은 괴리를 안고 있다.
-
-**그 괴리가 구조적으로 없는 대안이 package.json `imports`다.** `#`로 시작하는 subpath import는 **Node가 런타임에 직접 읽는 필드**라, 타입체커와 런타임이 _같은_ 매핑을 본다. 어긋날 수가 없다. 핸드북도 이를 표준 대체재로 못 박는다.
-
-> "Both libraries and apps can consider package.json `"imports"` as a standard replacement for convenience `paths` aliases." — [TS 핸드북 Modules Reference](https://www.typescriptlang.org/docs/handbook/modules/reference.html)
-
-```jsonc
+```json
 // package.json — tsconfig paths 대신 여기에
 {
-  "imports": {
-    "#/*": "./src/*"
-  }
+  "imports": { "#/*": "./src/*" }
 }
 ```
 
@@ -169,13 +162,14 @@ error TS5101: Option 'baseUrl' is deprecated and will stop functioning in TypeSc
 import { foo } from '#/utils/foo'; // 타입도, Node 런타임도 같은 매핑으로 해석
 ```
 
-디테일 몇 가지:
+- **TypeScript는 4.7부터** `imports`를 해석하고, `moduleResolution`이 `node16`·`nodenext`·`bundler`일 때 동작한다(레거시 `node`는 안 된다).
+- **`#`는 강제다.** `@/` 같은 임의 별칭은 못 쓴다. 다만 **`#/` prefix는 TS 6.0 + Node 20부터** 허용돼 `@/`에 가까운 컨벤션을 쓸 수 있다 — 단 `#/` 패턴은 `nodenext`·`bundler`에서만이고 `node16`은 제외다.
+- **번들러 지원은 제각각.** Vite 4.2+, esbuild 0.13.9+는 지원하고, Jest는 네이티브로 안 돼 `moduleNameMapper`가 필요하다.
+- 참고로 `baseUrl` deprecation 이슈(#62207·#62508) 자체는 `imports`가 아니라 "prefix를 `paths`에 직접 박기"를 권한다. `imports`를 표준 대체재로 부르는 건 핸드북·릴리스 노트 쪽 라인이다.
 
-- **TypeScript는 4.7부터** `imports`를 해석하고, `moduleResolution`이 `node16`·`nodenext`·`bundler`일 때만 동작한다(레거시 `node`는 안 된다). — [TS 4.7 릴리스 노트](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-4-7.html)
-- **`#`는 강제다.** `@/` 같은 임의 별칭은 못 쓴다. 다만 **TS 6.0 + Node 20부터 `#/`가 허용**돼, `@/`에 가장 가까운 `#/` 컨벤션은 쓸 수 있게 됐다. — [TS 6.0 릴리스 노트](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-6-0.html)
-- **번들러 지원은 제각각이다.** Vite 4.2+, esbuild 0.13.9+가 지원하고, Jest는 네이티브로 안 돼 `moduleNameMapper`가 필요하다. 옮기기 전 도구 체인부터 확인할 것.
+— 출처: [TS 핸드북 Modules Reference](https://www.typescriptlang.org/docs/handbook/modules/reference.html) · [TS 4.7](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-4-7.html) · [TS 6.0 릴리스 노트](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-6-0.html)
 
-> 사족: `baseUrl` deprecation 이슈([#62207](https://github.com/microsoft/TypeScript/issues/62207)·[#62508](https://github.com/microsoft/TypeScript/issues/62508)) 자체는 `imports`를 권하지 않는다 — 거기 권장은 "prefix를 `paths`에 직접 박아라"다. `imports`를 표준 대체재로 부르는 건 핸드북·릴리스 노트 쪽 라인이니 출처를 섞지 말 것.
+</details>
 
 ---
 
@@ -209,7 +203,7 @@ flattened `node_modules`를 쓰는 모노레포에서는 이게 특히 치명적
 PR [#63054 "Set default `types` array to `[]`; support
 `\"*\"` wildcard"](https://github.com/microsoft/TypeScript/pull/63054)을 까보면, 흥미롭게도
 `options.types = []` 같은 **명시적 기본값 대입은 어디에도 없다.** 자동 열거를 담당하던 `getAutomaticTypeDirectiveNames`의
-early-return 조건이 뒤집힌 게 전부다.
+early-return 조건이 뒤집힌 게 전부다(아래 diff는 핵심만 발췌·정리).
 
 ```diff
 // src/compiler/moduleNameResolver.ts
@@ -295,7 +289,7 @@ tsconfig.json:10:5 - error TS5011: The common source directory of 'tsconfig.json
 
 해결은 한 줄.
 
-```jsonc
+```json
 // packages/@package/sample-lib/tsconfig.json
 {
   "compilerOptions": {
@@ -375,147 +369,25 @@ sample-lib는 소스가 `./src`에 있어 옛 추론값이 `./src`였는데, 새
 
 ## 5. 🎁 보너스: 빌드에서 튀어나온 진짜 빌런 — tsup
 
-### 안 쓴 baseUrl이 왜 또?
+`pnpm build`가 디자인 시스템 패키지의 dts 빌드에 다다르자 **또 `TS5101`**이 떴다. 그런데 `@design-system/ui`의 tsconfig엔 `baseUrl`이 **없다.** #1에서 봤듯 TS5101은 범용 진단이니, 누군가 내 빌드에 baseUrl을 **주입**하고 있다는 뜻이다.
 
-`pnpm build`가 디자인 시스템 패키지의 dts 빌드에 다다른 순간이었다.
-
-```text
-@design-system/ui build: DTS Build start
-@design-system/ui build: error TS5101: Option 'baseUrl' is deprecated and will
-  stop functioning in TypeScript 7.0. Specify compilerOption '"ignoreDeprecations":
-  "6.0"' to silence this error.
-@design-system/ui build: DTS Build error
-```
-
-또 `TS5101`. 그런데 `@design-system/ui/tsconfig.json`에는 `baseUrl`이 **없다.** #1에서 정리했듯 TS5101은 범용
-deprecation 진단이니, 누군가가 내 빌드에 baseUrl을 **주입**하고 있다는 뜻이다.
-
-### 진단: 범인은 tsup
-
-범인은 dts 번들러로 쓰던 **tsup**이었다. tsup의 소스 [
-`src/rollup.ts`](https://github.com/egoist/tsup/blob/main/src/rollup.ts)를 직접 까보면:
+범인은 dts 번들러로 쓰던 **tsup**이었다. [소스](https://github.com/egoist/tsup/blob/main/src/rollup.ts)의 dts 빌드 옵션 구성부에 이 한 줄이 있다.
 
 ```ts
-// tsup/src/rollup.ts — dts 빌드 컴파일러 옵션 구성부
-compilerOptions: {
-...
-  compilerOptions,
-    baseUrl
-:
-  compilerOptions.baseUrl || '.',   // ← 내 tsconfig에 없어도 '.'를 강제 주입
-    declaration
-:
-  true,
-  // ...
-}
+baseUrl: compilerOptions.baseUrl || '.', // ← 내 tsconfig에 없어도 '.'를 강제 주입
 ```
 
-즉 내 tsconfig에 `baseUrl`이 없어도 tsup이 `'.'`로 채워 넣는다. TS 5.x에선 무해했지만, TS6에선 이 주입된 한 줄이 곧장 `TS5101` 하드
-에러가 된다. 똑같은 증상이 tsup 이슈 트래커에도 올라와
-있다([#1388 "DTS Build error TS5101"](https://github.com/egoist/tsup/issues/1388), 재현 환경 tsup 8.5.1 +
-TypeScript 6.0.2).
+TS 5.x에선 무해했지만 TS6에선 이 주입이 곧장 하드 에러다([tsup #1388](https://github.com/egoist/tsup/issues/1388), 재현 환경 tsup 8.5.1 + TS 6.0.2). 게다가 tsup은 **이미 유지보수 중단** — README 최상단에 박혀 있다.
 
-### 그런데 tsup이… 유지보수 중단?
+> "This project is not actively maintained anymore. Please consider using tsdown instead." — [egoist/tsup README](https://github.com/egoist/tsup/blob/main/README.md)
 
-"최신 tsup으로 올리면 고쳐졌으려나" 하고 저장소에 갔다가, README 최상단에서 답을 봤다.
+baseUrl 주입은 내 코드가 아니라 도구의 문제이고, 그 도구가 더는 고쳐지지 않으니 답은 정해져 있었다 — 후속 도구 [tsdown](https://tsdown.dev)으로 갈아탔다. [Rolldown](https://rolldown.rs) 기반이라 **baseUrl을 주입하지 않고**, peer로 `typescript: "^5.0.0 || ^6.0.0"`을 선언해 **TS6를 공식 지원**한다. 마이그레이션 도구(`npx tsdown-migrate`)로 config도 거의 그대로 옮겨졌고, 전환 직후 `TS5101`은 사라졌다.
 
-> "This project is not actively maintained anymore. Please consider using tsdown
-> instead." — [egoist/tsup README](https://github.com/egoist/tsup/blob/main/README.md)
+다만 공짜는 아니었다. 전환하며 밟은 함정 셋:
 
-저자(egoist) 본인이 박아둔 문구였다. 실제로 "TypeScript 6 지원" 요청
-이슈([#1389](https://github.com/egoist/tsup/issues/1389))는 여전히 열려 있고, 마지막 릴리스 `8.5.1`은 2025-11-12로 한참
-전이다. 흥미로운 건 **npm에는 아직 `deprecate` 플래그가 안 걸려 있어서**(그걸 요청하는
-이슈가 [#1391](https://github.com/egoist/tsup/issues/1391)) — `pnpm install` 단계에선 아무 경고도 못 보고, 빌드가 깨지고
-나서야 README를 보고 알게 됐다는 점이다.
-
-선택지는 둘이었다. (a) `ignoreDeprecations: "6.0"`으로 경고를 한시적으로 끄거나, (b) 권고대로 도구를 갈아치우거나. baseUrl 주입은 내 코드가
-아니라 도구의 문제고, 그 도구가 더는 고쳐지지 않는다면 답은 정해져 있었다.
-
-### tsdown으로
-
-[tsdown](https://tsdown.dev)은 [Rolldown](https://rolldown.rs)(Rust 기반 번들러) 위에서 도는 tsup의 후속 격 도구다. 공식
-문서가 관계를 이렇게 정리한다.
-
-> "tsdown is the spiritual successor to tsup, powered by Rolldown instead of
-> esbuild." — [tsdown FAQ](https://tsdown.dev/guide/faq)
-
-결정적으로, dts를 [`rolldown-plugin-dts`](https://github.com/sxzz/rolldown-plugin-dts)로 생성하기 때문에 **tsup처럼
-baseUrl을 주입하지 않는다.** 그리고 peer dependency로 `typescript: "^5.0.0 || ^6.0.0"`을 선언해 **TS6를 공식 지원**한다(
-tsup은 아직 open 이슈). tsup을 쓰던 패키지는 둘(`@design-system/ui`, `@package/bundler`)뿐이라 둘 다 전환했다. 공식 마이그레이션
-도구도 있다.
-
-```bash
-npx tsdown-migrate            # 단일 디렉터리
-npx tsdown-migrate packages/* # 모노레포 glob
-npx tsdown-migrate --dry-run  # 변경 미리보기 (-d)
-```
-
-config는 `import`만 바꾸면 거의 그대로다.
-
-```ts
-// packages/@package/bundler/tsdown.config.ts
-import { defineConfig } from 'tsdown';
-
-export default defineConfig({
-  entry: ['src/index.ts', 'src/cli.ts'],
-  format: ['esm', 'cjs'],
-  platform: 'node',
-  target: 'node24',   // ← platform과 다른 축 (함정 ② 참고)
-  clean: true,
-  dts: true,
-  sourcemap: true,
-});
-```
-
-전환 직후, `TS5101`은 **사라졌다.** 근본 원인(baseUrl 주입)이 없어졌기 때문이다.
-
-### 함정 ①: 출력 확장자가 다르다
-
-다만 공짜는 아니었다. tsdown은 `platform: 'node'`에서 기본적으로 **`.mjs` / `.cjs` / `.d.mts` / `.d.cts`** 확장자로 출력한다(
-`fixedExtension`). tsup의 `.js` / `.d.ts`와 달라서, `package.json`의 `exports`·`bin`·`main`·`types`가 존재하지
-않는 파일을 가리키게 됐다. 실제 산출물에 맞춰 전부 정정해야 했다.
-
-```jsonc
-// @package/bundler/package.json — 실제 산출물에 맞게 수정
-{
-  "exports": {
-    ".": {
-      "import":  { "types": "./dist/index.d.mts", "default": "./dist/index.mjs" },
-      "require": { "types": "./dist/index.d.cts", "default": "./dist/index.cjs" }
-    }
-  },
-  "bin": { "minibundler": "./dist/cli.mjs" }   // ← cli.js 가 아니라 cli.mjs
-}
-```
-
-`@design-system/ui`도 마찬가지로 `main`/`types`를 `./dist/index.mjs`·`./dist/index.d.mts`로 맞췄다(이 정정은 별도
-커밋으로 떨어졌다 — 산출물 확장자가 바뀌면 이런 메타데이터가 줄줄이 따라온다는 걸 잊지 말 것).
-
-### 함정 ②: `platform: 'node'`은 `target`이 아니다
-
-tsup의 `target: 'node24'`를 옮기며 무심코 `platform: 'node'`로 바꿔 적었는데, 둘은 **다른 축**이다. `platform`은 "이 번들은
-Node에서 돈다"는 힌트로 의존성 외부화·조건 해석·기본 출력 확장자(`fixedExtension`) 등에 영향을 주고, **ES 문법 트랜스파일 타겟**은 `target`이
-따로 통제한다. `target`을 생략하면 tsdown 기본값이 쓰이므로, Node 24 문법까지 의도대로 내리려면 `target: 'node24'`를 **함께** 명시해야 한다.
-
-### 함정 ③: 빌드 도구는 `devDependencies`에
-
-tsup 시절 `tsup`이 `dependencies`에 들어가 있었고, tsdown으로 바꾸며 그 자리를 그대로 물려줬다. 하지만 빌드 도구(`tsdown`)와
-`typescript`는 런타임 의존성이 아니라 **`devDependencies`**에 있어야 한다 — 안 그러면 패키지를 퍼블리시할 때 불필요한 의존성이 딸려간다.
-`@package/bundler`는 처음부터 devDependencies였는데 `@design-system/ui`만 `dependencies`에 남아 있어 뒤늦게 맞춰 옮겼다.
-
-```jsonc
-// @design-system/ui/package.json
-{
-  "dependencies": {
-    "@design-system/ui-lib": "workspace:^"   // 런타임 의존성만
-  },
-  "devDependencies": {
-    "tsdown": "0.22.2",        // ← 빌드 도구
-    "typescript": "catalog:"   // ← 빌드 타임
-    // ...
-  }
-}
-```
+- **출력 확장자.** tsdown은 `platform: 'node'`에서 `.mjs`/`.cjs`/`.d.mts`/`.d.cts`로 낸다(tsup은 `.js`/`.d.ts`). `package.json`의 `exports`·`bin`·`main`·`types`를 산출물에 맞춰 전부 정정해야 했다.
+- **`platform` ≠ `target`.** `platform: 'node'`는 의존성 외부화·출력 확장자 힌트일 뿐, ES 문법 타겟은 `target`이 따로 통제한다. Node 24 문법까지 내리려면 `target: 'node24'`를 함께 명시.
+- **빌드 도구는 `devDependencies`에.** `tsdown`·`typescript`는 런타임 의존성이 아니다. `@design-system/ui`가 `tsup`을 `dependencies`에 두고 있어 뒤늦게 옮겼다.
 
 - `pnpm build` (전체) → **9/9 통과** (blog 정적 빌드 포함)
 
@@ -523,7 +395,7 @@ tsup 시절 `tsup`이 `dependencies`에 들어가 있었고, tsdown으로 바꾸
 
 ## 6. 정리: TypeScript 6 마이그레이션 체크리스트
 
-이번 삽질을 한 줄짜리 체크리스트로 압축하면:
+이번 삽질을 한 줄짜리 체크리스트로 압축하면(1~4는 앞에서 다룬 것, 5는 버전을 일괄 갱신할 때 함께 챙기는 곁가지다):
 
 1. **`baseUrl`을 쓰는가?** → 직접 쓰면 제거(`paths`는 4.1부터 baseUrl 불필요). 빌드 도구가 주입한다면 도구를 점검하라. `TS5101`은
    baseUrl 전용이 아니라 **범용 deprecated-option 진단**임을 기억할 것.
@@ -537,48 +409,30 @@ tsup 시절 `tsup`이 `dependencies`에 들어가 있었고, tsdown으로 바꾸
 5. **버전을 일괄 갱신했는가?** → 하위 패키지에 박힌 `packageManager`·`engines` 필드가 루트와 어긋나 있지 않은지 확인하라. (루트는
    `pnpm@11.6.0`인데 한 패키지에 `pnpm@10.4.1`이 남아 있었다.)
 
-### 정작 가장 큰 수확: 6을 올리지 않아도 됐다
+곁가지 — 작업 중 <code>node_modules</code>와 빌드 산출물을 수없이 지웠던 터라, 외부 의존성 없이 macOS <code>find</code>로 도는 clean 스크립트를 루트에 넣어뒀다. 핵심은 <code>-name node_modules -prune</code>으로 <strong>node_modules 내부를 가지치기</strong>하는 것 — 안 그러면 의존성 안의 수많은 <code>dist</code>까지 매칭돼 느리고 위험하다.
 
-여기까지 와서야 깨달은 게 있다. 위 세 규칙은 6의 전유물이 아니다. 셋 다 **5에서도 오늘 당장 적용할 수 있는 모범 설정**이고, 그러면 굳이 메이저를 올리지 않고도 같은 이득(빠른 빌드·건강한 경로·결정적 출력)을 먼저 챙긴다. 회사 코드에 보낼 첫 커밋도 "6 업그레이드"가 아니라 이 정리다.
-
-**`baseUrl` 제거**
-
-<!-- 추적 가이드 (발행 전 직접 쓴 내용으로 교체):
-요약: `paths`는 4.1부터 baseUrl 없이 동작하니, 5에서도 지금 지울 수 있다.
-- 4.1: paths가 baseUrl 없이 동작 → 제거의 토대
-- 6.0: deprecated (TS5101), 7.0에서 완전 제거
-- 5에서 지금: 직접 쓴 baseUrl 제거 → 런타임에 안 맞는 import를 타입체커가 통과시키는 일이 사라짐
--->
-
-**`types` 좁히기**
-
-<!-- 추적 가이드 (발행 전 직접 쓴 내용으로 교체):
-요약: types: ["node", ...]로 명시하면 5에서도 자동 @types 열거 비용을 미리 던다.
-- ~5.x: 기본값 = node_modules/@types 전부 자동 포함
-- 6.0: 기본값 [] (+ "*"로 옛 동작 복원)
-- 5에서 지금: types: ["node", ...] 명시로 자동 열거 비용 선취
--->
-
-**`rootDir` 고정**
-
-<!-- 추적 가이드 (발행 전 직접 쓴 내용으로 교체):
-요약: 출력 레이아웃이 입력 파일 집합에 흔들리지 않게, 5에서도 한 줄로 못 박는다.
-- ~5.x: 미지정 시 입력 파일 공통 디렉터리로 추론(비결정적)
-- 6.0: tsconfig 디렉터리로 고정, 어긋나면 TS5011로 명시 요구
-- 5에서 지금: rootDir 명시로 출력 레이아웃 고정
--->
-
-곁가지 — 작업 중 <code>node_modules</code>와 빌드 산출물을 수없이 지웠던 터라, 외부 의존성 없이 macOS <code>find</code>로 도는
-clean 스크립트를 루트에 넣어뒀다. 핵심은 <code>-name node_modules -prune</code>으로 <strong>node_modules 내부를
-가지치기</strong>하는 것 — 안 그러면 의존성 안의 수많은 <code>dist</code>까지 매칭돼 느리고 위험하다.
-
-```jsonc
+```json
 "clean:dist":    "find . -name node_modules -prune -o -type d '(' -name dist -o -name .next -o -name out -o -name .turbo ')' -prune -exec rm -rf {} +",
 "clean:modules": "find . -name node_modules -type d -prune -exec rm -rf {} +"
 ```
 
-> 메이저 업그레이드는 버전 숫자 하나 바꾸는 일처럼 보여도, 그 숫자가 건드리는 **기본값과 빌드 파이프라인의 가정들**을 전부 다시 확인하게 만든다. 이번엔 그 가정이
-`baseUrl`, `types`, `rootDir` 세 군데에 숨어 있었고, 마지막 하나는 TypeScript가 아니라 **유지보수가 멈춘 내 빌드 도구** 안에 있었다. 그리고 이 청소가 끝나는 곳엔 Go로 다시 쓰인 7.0이 기다린다. 이번에 막아낸 TypeScript의 세 규칙은 결국 거기로 가는 길목이었던 셈이다.
+---
+
+## 7. 정작 가장 큰 수확: 6을 올리지 않아도 됐다
+
+표의 #1~#3, 그리고 보너스까지 따라오며 깨달은 게 있다. 이 변화들의 공통점은 'TS7(Go)로 가는 청소'였고, **그 청소는 6을 올려야만 할 수 있는 게 아니다.** baseUrl·types·rootDir 셋 다 5에서도 오늘 당장 적용할 수 있는 모범 설정이다. 회사 코드에 보낼 첫 커밋도 "6 업그레이드"가 아니라 이 정리다.
+
+**6을 안 올려도, 5에서 지금 할 일:**
+
+- **`baseUrl` 제거** → `paths`만 남기거나, 런타임까지 일치하는 package.json `imports`로 (자세히는 1장).
+- **`types` 좁히기** → `types: ["node", ...]`로 명시해 자동 `@types` 열거 비용을 미리 던다 (2장).
+- **`rootDir` 고정** → 명시해 출력 레이아웃을 결정적으로 묶는다 (3장).
+
+세 줄 다 5.x tsconfig에서 오늘 커밋할 수 있다. 6은 이걸 '강제'했을 뿐 '발명'한 게 아니다.
+
+<!-- (선택) 5 프로젝트에 직접 적용하며 겪은 점을 여기에 덧붙이면 글이 더 단단해진다 -->
+
+> 메이저 업그레이드는 버전 숫자 하나 바꾸는 일처럼 보여도, 그 숫자가 건드리는 **기본값과 빌드 파이프라인의 가정들**을 전부 다시 확인하게 만든다. 이번엔 그 가정이 `baseUrl`, `types`, `rootDir` 세 군데에 숨어 있었고, 마지막 하나는 TypeScript가 아니라 **유지보수가 멈춘 내 빌드 도구** 안에 있었다. 그리고 이 청소가 끝나는 곳엔 Go로 다시 쓰인 7.0이 기다린다. 이번에 막아낸 TypeScript의 세 규칙은 결국 거기로 가는 길목이었던 셈이다.
 
 ---
 
@@ -589,8 +443,7 @@ clean 스크립트를 루트에 넣어뒀다. 핵심은 <code>-name node_modules
 - baseUrl
   deprecation: [issue #62207](https://github.com/microsoft/TypeScript/issues/62207) · [PR #62509](https://github.com/microsoft/TypeScript/pull/62509)
 - `baseUrl`/`paths`의 런타임 안전 대안 package.json `imports`: [TS 핸드북 Modules Reference](https://www.typescriptlang.org/docs/handbook/modules/reference.html) · [Node.js `imports` 필드](https://nodejs.org/api/packages.html) · [TS 4.7 릴리스 노트(imports 지원)](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-4-7.html)
-- types 기본값
-  `[]`: [issue #62195](https://github.com/microsoft/TypeScript/issues/62195) · [PR #63054](https://github.com/microsoft/TypeScript/pull/63054) · [원 rationale #54500](https://github.com/microsoft/TypeScript/issues/54500)
+- types 기본값 `[]`: [issue #62195](https://github.com/microsoft/TypeScript/issues/62195) · [PR #63054](https://github.com/microsoft/TypeScript/pull/63054) · [원 rationale #54500](https://github.com/microsoft/TypeScript/issues/54500)
 - rootDir
   기본값: [issue #62194](https://github.com/microsoft/TypeScript/issues/62194) · [PR #62418](https://github.com/microsoft/TypeScript/pull/62418)
 -
