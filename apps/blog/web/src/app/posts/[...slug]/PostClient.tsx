@@ -286,7 +286,7 @@ export default function PostClient({
                 rehypePlugins={[rehypeRaw, rehypeSlug]}
                 components={
                   {
-                    p({ children, ...props }) {
+                    p({ children, node: _node, ...props }) {
                       const hasBlockChild = Array.isArray(children)
                         ? children.some(isBlockMarkdownChild)
                         : isBlockMarkdownChild(children);
@@ -307,7 +307,7 @@ export default function PostClient({
                         />
                       );
                     },
-                    table({ children, ...props }) {
+                    table({ children, node: _node, ...props }) {
                       return (
                         <table
                           {...props}
@@ -321,7 +321,7 @@ export default function PostClient({
                         </table>
                       );
                     },
-                    li({ className, children, ...props }) {
+                    li({ className, children, node: _node, ...props }) {
                       const isTaskList = className?.includes('task-list-item');
                       if (isTaskList) {
                         const childrenArray = Children.toArray(children);
