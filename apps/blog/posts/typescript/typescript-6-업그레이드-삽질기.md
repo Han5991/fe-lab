@@ -1,37 +1,39 @@
 ---
-title: 'TypeScript 6 업그레이드: breaking change 3종을 PR diff까지 추적한 기록'
+title: 'TypeScript 6 업그레이드인 줄 알았는데 — breaking change 3종을 PR diff까지 쫓다 만난 "올바른 설정"'
 date: '2026-06-16'
 status: 'draft'
+published: true
 slug: 'typescript-6-migration-troubleshooting'
-excerpt: 'TypeScript 6으로 올리자 baseUrl·rootDir·types 기본값이 차례로 빌드를 깨뜨렸다. tsup→tsdown 전환까지, 각 변경의 "왜"를 microsoft/TypeScript PR diff로 추적하니 전부 Go 네이티브 TS7로 가는 레거시 청소였다. 그리고 6을 안 올려도 이 셋은 5에서 미리 적용할 수 있다.'
+excerpt: 'TypeScript 6으로 올리자 baseUrl·rootDir·types 기본값이 차례로 빌드를 깨뜨렸다. 각 변경의 "왜"를 microsoft/TypeScript PR diff까지 추적해 보니, 이건 버전을 올리는 이야기가 아니라 "올바른 설정"에 도달하는 이야기였다 — baseUrl은 TS7로 가는 청소, types는 순수 성능 개선. 게다가 이 셋은 6을 안 올려도 5에서 오늘 당장 적용할 수 있다.'
+thumbnail: '/og/typescript-6-migration-troubleshooting.png'
 tags: [ 'TypeScript', 'TypeScript 6', 'typescript-7', 'tsgo', 'baseUrl', 'rootDir', 'tsdown', 'tsup', 'monorepo', 'breaking-change' ]
 ---
 
-메이저 업그레이드는 한 번 밀리면 두 번 밀린다. 5가 멀쩡히 도니까 6은 자꾸 뒤로 미뤄졌다. 그러다 Go로 다시 쓴 7.0이 다가오는 걸 보고 정신이 들었다. 회사 코드가 두 메이저를 한꺼번에 건너뛰게 두기 전에, 개인 모노레포에서 먼저 6을 밟아봤다.
+어느 날 TypeScript 6 릴리스 소식이 들려왔다. breaking change 목록을 여는데, 매일 tsconfig에 적던 이름들이 줄줄이 눈에 들어왔다 —
+`baseUrl`, `types`, `rootDir`. 멀쩡히 쓰던 옵션들을 6은 왜 굳이 건드리려는 걸까? 그 `왜`가 궁금했다. 릴리스 노트만 훑고 넘기는 대신, 직접 하나씩
+따라 바꿔보며 이유를 파보기로 했다. 마침 굴리던 개인 모노레포가 있어, 실험 삼아 거기에 6을 먼저 올려봤다.
 
-명목은 공부였다. 버전 숫자만 올리고 뭐가 깨지는지 미리 다 맞아보자는 것. 그런데 breaking change를 하나씩 따라가 보니, 이건 단순한 "6의 새 규칙들"이 아니었다.
+그런데 하나씩 따라가 보니, 이건 단순한 "6의 새 규칙들"이 아니었다. 세 변경을 관통하는 줄기는 하나 — 비싸거나 모호한 기본 동작을 걷어내는 **청소**라는
+점이다. 다만 그 청소가 향하는 곳은 셋이 조금씩 갈렸다. `baseUrl`은 **Go로 새로 짠 네이티브 컴파일러**(`tsgo`, 7.0)가 아예 다시 구현하지 않기로
+한 동작이라, 7.0을 앞두고 6.0이 미리 거두는 것이다. `rootDir`은 출력 레이아웃을 결정적으로 굳히려는 것이고, `types`는 tsgo와는 무관하게 빌드를
+20–50% 깎아먹던 기본값을 바로잡은 **순수 성능 개선**이다. breaking change 그 자체가 목적이 아니라, 저마다 이유 있는 '정리'였던 셈이다. (각 옵션이
+왜, 어떻게 바뀌었는지는 PR diff까지 본문에서 하나씩 짚는다.)
 
-`baseUrl`은 _"7.0에서 재구현하지 않는다"_고 못 박혀 있었고, `types` 기본값이 `[]`가 된 건 빌드 성능 때문이었고, `rootDir`를 강제하는 건 출력의
-결정성 때문이었다. 셋을 관통하는 건 하나였다 — 그 7.0, 곧 **Go로 새로 짠 네이티브 컴파일러**(`tsgo`)로 넘어가기 전에, 옛
-컴파일러가 떠안고 있던 비싸고 모호한 레거시를 걷어내는 청소.
-
-즉 TS6의 breaking change는 그 자체가 목적이 아니라, **TS7로 가는 길을 닦는 정리**였다. 이 글은 회사 도입 전 리허설로 시작했다가, 결국
-TypeScript가 _무엇을 버리고 무엇을 준비하는지_를 들여다보게 된 이야기다.
+그래서 이 글은 '6 업그레이드 기록'으로 시작했지만, 따라가다 보니 정체가 달라졌다. 세 변경의 '왜'를 PR diff까지 좇고 나면 손에 남는 건 버전 숫자가 아니라
+_'그래서 무엇이 올바른 설정인가'_라는 질문이고, 이 글은 그 답에 도달하는 이야기다. 그게 왜 '6 업그레이드'와는 별개의 일인지는 마지막 장에서 분명해진다.
 
 ## 0. TL;DR
 
-> "catalog에 박힌 TypeScript 5.8.3을 6 최신으로 올려줘." — 공부 삼아 한 줄로 시작했지만, TypeScript 6는 메이저 버전답게 곳곳에서 빌드를
-> 무너뜨렸다.
+이 글은 Turborepo + pnpm 워크스페이스 모노레포에서 TypeScript `5.8.3 → 6.0.3`으로 올리며 만난 breaking change들을, **"왜 그렇게
+바뀌었는지"를 릴리스 노트 → 이슈 → 실제 PR diff까지 따라가며** 정리한 기록이다. 아래 표가 그 전부다 — 그 변경의 이유, 해결책 한 줄씩. 바쁘면 표만
+보고 가도 된다.
 
-이 글은 Turborepo + pnpm 워크스페이스 모노레포에서 TypeScript `5.8.3 → 6.0.3` 업그레이드를 하며 만난 breaking change들을, **"왜
-그렇게 바뀌었는지"를 릴리스 노트 → 이슈 → 실제 PR diff까지 추적하면서** 하나씩 격파한 기록이다. 단순 해결 로그가 아니라 "그 변경의 근거"를 파는 게 목적이다.
-
-| #      | 증상                                | 왜 TS6가 이렇게 바꿨나 (근거)                                                                                                                                           | 해결                                                       |
+| #      | 에러                                | 왜 TS6가 이렇게 바꿨나                                                                                                                                                | 해결                                                       |
 |:-------|:----------------------------------|:--------------------------------------------------------------------------------------------------------------------------------------------------------------|:---------------------------------------------------------|
 | #1     | `TS5101: 'baseUrl' is deprecated` | baseUrl의 숨은 2번째 역할(bare specifier look-up root)이 런타임에 안 맞는 import를 통과시킴 → deprecate ([#62509](https://github.com/microsoft/TypeScript/pull/62509))            | 직접 쓴 곳(react 앱)의 `baseUrl` 제거 (paths는 4.1부터 baseUrl 불필요) |
-| #2     | "빌드는 되는데 타입이 빠진 것 같은데?"           | `types` 기본값이 "모든 `@types` 자동 포함" → `[]`. flattened `node_modules`에서 수백 개가 전이로 끌려와 빌드 20–50% 낭비 ([#63054](https://github.com/microsoft/TypeScript/pull/63054)) | 전역이 필요한 곳은 이미 `types` 명시돼 있었음                            |
-| #3     | `TS5011: 'rootDir' must be set`   | 추론된 `rootDir`는 입력 파일 집합에 따라 흔들려 출력 레이아웃이 비결정적 → tsconfig 디렉터리로 고정 ([#62418](https://github.com/microsoft/TypeScript/pull/62418))                              | `"rootDir": "./src"` 한 줄                                 |
-| 🎁 보너스 | 빌드 때 **안 쓴** baseUrl로 또 `TS5101`  | tsup이 dts 빌드에 `baseUrl \|\| '.'`를 **주입**하는데, tsup은 이미 유지보수 중단                                                                                                 | **tsup → tsdown 전환**                                     |
+| #2     | `TS5011: 'rootDir' must be set`   | 추론된 `rootDir`는 입력 파일 집합에 따라 흔들려 출력 레이아웃이 비결정적 → tsconfig 디렉터리로 고정 ([#62418](https://github.com/microsoft/TypeScript/pull/62418))                              | `"rootDir": "./src"` 한 줄                                 |
+| #3     | "빌드는 되는데 타입이 빠진 것 같은데?"           | `types` 기본값이 "모든 `@types` 자동 포함" → `[]`. flattened `node_modules`에서 수백 개가 전이로 끌려와 빌드 20–50% 낭비 ([#63054](https://github.com/microsoft/TypeScript/pull/63054)) | 전역이 필요한 곳은 이미 `types` 명시돼 있었음                            |
+| 보너스    | 빌드 때 **안 쓴** baseUrl로 또 `TS5101`  | tsup이 dts 빌드에 `baseUrl \|\| '.'`를 **주입**하는데, tsup은 이미 유지보수 중단                                                                                                 | **tsup → tsdown 전환**                                     |
 
 먼저 한 가지 정정부터. 위 표의 `TS5101`은 baseUrl **전용 에러가 아니다.** TypeScript의 **범용 "deprecated option" 진단**이고,
 6.0이 baseUrl을 그 경로에 태웠을 뿐이다. 이 디테일이 왜 중요한지는 #1에서 PR diff로 확인한다.
@@ -44,7 +46,7 @@ TypeScript가 _무엇을 버리고 무엇을 준비하는지_를 들여다보게
 
 `baseUrl`이 deprecated된다는 건 이미 알고 있었다. 내 코드에서 `baseUrl`을 실제로 쓰는 곳은 React 앱 하나뿐이었고, `paths`의 접두사 용도였다.
 
-```jsonc
+```json
 // apps/react/tsconfig.app.json
 {
   "compilerOptions": {
@@ -59,20 +61,13 @@ TypeScript가 _무엇을 버리고 무엇을 준비하는지_를 들여다보게
 }
 ```
 
-그냥 지웠다. `paths`는 [TypeScript 4.1부터
-`baseUrl` 없이 동작](https://www.typescriptlang.org/tsconfig/baseUrl.html)한다.
+그냥 지웠다. `paths`는 [TypeScript 4.1부터`baseUrl` 없이 동작](https://www.typescriptlang.org/tsconfig/baseUrl.html)한다.
 
 > "As of TypeScript 4.1, `baseUrl` is no longer required to be set when using `paths`."
 
-여기서 한 가지 흔한 오해를 짚자. "`moduleResolution: bundler`라서 baseUrl이 필요 없어진 것"이 **아니다.** `paths`가 baseUrl을
-요구하지 않게 된 건 moduleResolution 종류와 무관하게 4.1부터의 일이다. 그러니 어떤 resolution 모드든 `paths`만 쓴다면 baseUrl은 그냥 지우면
-된다.
+### 왜 deprecated 됐나: 아무도 모르던 baseUrl의 두 번째 역할
 
-### 왜 deprecated 됐나: baseUrl의 "숨은 두 번째 일"
-
-해결은 쉬웠지만, **왜** 멀쩡히 동작하던 옵션을 6.0이 하드 에러로 막는지가
-궁금했다. [릴리스 노트](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-6-0.html)와 도입
-이슈 [#62207](https://github.com/microsoft/TypeScript/issues/62207)을 보면 이유가 명확하다. baseUrl은 두 가지 일을 한다.
+해결은 쉬웠지만, **왜** 멀쩡히 동작하던 옵션을 6.0이 하드 에러로 막는지가 궁금했다. [릴리스 노트](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-6-0.html)와 도입 이슈 [#62207](https://github.com/microsoft/TypeScript/issues/62207)을 보면 이유가 명확하다. baseUrl은 두 가지 역할을 한다.
 
 > "Today, `baseUrl` performs two functions:
 > - it acts as a prefix for all entries in `paths`
@@ -81,19 +76,31 @@ TypeScript가 _무엇을 버리고 무엇을 준비하는지_를 들여다보게
 > But almost nobody realizes that last
 > part." — [issue #62207](https://github.com/microsoft/TypeScript/issues/62207)
 
-문제는 두 번째다. baseUrl이 모든 bare specifier의 암묵적 해석 지점이 되면서, **번들러/런타임에선 절대 동작하지 않을 import를 타입체커만 "괜찮다"고
-통과**시킨다.
+문제는 두 번째, 인용문이 말한 _"bare paths"_다. baseUrl이 켜져 있으면 `./`로 시작하지 않는 import까지 — 예컨대 `import { Button } from
+"components/Button"`처럼 **패키지인지 내 파일인지 모호한 경로**까지 — baseUrl 폴더 안에서 찾아준다. 그 바람에 **번들러/런타임에선 절대 동작하지
+않을 import를 타입체커만 "괜찮다"고 통과**시킨다.
 
 > "...it often meant that many import paths that would never have worked at runtime are considered
 > \"just fine\" by TypeScript." — 릴리스 노트
 
-즉 첫 번째 일(paths 접두사)은 4.1 이후 `paths`가 직접 대체할 수 있으니, 위험한 두 번째 일을 없애기 위해 baseUrl 자체를 걷어내는 것이다. 7.0에서는
+즉 첫 번째 역할(paths 접두사)은 4.1 이후 `paths`가 직접 대체할 수 있으니, 위험한 두 번째 역할을 없애기 위해 baseUrl 자체를 걷어내는 것이다. 7.0에서는
 아예 제거된다.
 
 > "In TypeScript 7.0, we are not reimplementing `baseUrl`. ... In TypeScript 6.0, we will be
 > deprecating this behavior. Using `baseUrl` will lead to an error which can only be resolved by
 > applying one of the above fixes, or using
 `--ignoreDeprecations`." — [issue #62207](https://github.com/microsoft/TypeScript/issues/62207)
+
+### 사실 이 분리는 6년 전에 시작됐다
+
+그런데 "두 역할을 떼어낸다"는 발상은 6.0이 처음 꺼낸 게 아니다. 첫 번째 역할(`paths` 접두사)을 baseUrl에서 분리할 토대는 이미 6년 전에
+깔렸다. 2019년, 한 사용자가 이슈 [#31869](https://github.com/microsoft/TypeScript/issues/31869)에서 지금과 똑같은 불편을
+제기했다 —`paths`는 타입체킹용 별칭으로 쓰고 싶은데, baseUrl이 딸려 보내는 _비상대(bare) 이름의 암묵적 해석(두 번째 역할)_ 은 원치 않는다는 것이었다.
+한 옵션에 묶인 두 역할 중 하나만 쓰고 싶다는 요청이다. 이 제안은 PR [#40101](https://github.com/microsoft/TypeScript/pull/40101)로
+구현되어 **4.1(2020년)** 에 출시됐고 — baseUrl이 없으면 `paths`의 상대 경로를 tsconfig 위치 기준으로 해석하되, 값은 반드시 `./`나 절대 경로여야 한다는 검증이 함께 들어갔다 — 그때부터 baseUrl 없이도 `paths`가 동작한다.
+
+그러니 6.0의 deprecation은 어느 날 갑자기 튀어나온 breaking change가 아니다. **2019년 문제 제기(#31869) → 2020년 4.1 구현(#40101)
+→ 2026년 6.0 정리(#62207·#62509)** 로, baseUrl의 두 역할을 떼어내는 일은 6년에 걸쳐 진행돼 온 청소의 마지막 단계인 셈이다.
 
 ### 구현 레벨: TS5101은 baseUrl 전용이 아니다
 
@@ -146,7 +153,10 @@ error TS5101: Option 'baseUrl' is deprecated and will stop functioning in TypeSc
 
 ### `paths`도 끝이 아니다: 진짜 대안은 package.json `imports`
 
-`baseUrl`을 지우고 `paths`로 갈아탔지만, `paths`도 완전한 답은 아니다. **`paths`는 타입체커 전용**이라 `tsc`가 내보내는 JS엔 반영되지 않아, `baseUrl`이 6.0에서 막힌 그 이유(런타임에 안 맞는 import를 타입체커만 통과)와 정도만 다를 뿐 같은 괴리를 안는다. 그 괴리가 구조적으로 없는 대안이 **Node가 런타임에 직접 읽는 package.json `imports`**(`#` subpath)다 — 타입과 런타임이 같은 매핑을 보니 어긋날 수 없고, TS 핸드북도 이를 _"a standard replacement for convenience `paths` aliases"_로 부른다.
+`baseUrl`을 지우고 `paths`로 갈아탔지만, `paths`도 완전한 답은 아니다. **`paths`는 타입체커 전용**이라 `tsc`가 내보내는 JS엔 반영되지 않아,
+`baseUrl`이 6.0에서 막힌 그 이유(런타임에 안 맞는 import를 타입체커만 통과)와 정도만 다를 뿐 같은 괴리를 안는다. 그 괴리가 구조적으로 없는 대안이 *
+*Node가 런타임에 직접 읽는 package.json `imports`** (`#` subpath)다 — 타입과 런타임이 같은 매핑을 보니 어긋날 수 없고, TS 핸드북도
+이를 _"a standard replacement for convenience `paths` aliases"_ 로 부른다.
 
 <details>
 <summary>옮길 때 알아둘 것 — 설정·버전·번들러 (펼치기)</summary>
@@ -154,7 +164,9 @@ error TS5101: Option 'baseUrl' is deprecated and will stop functioning in TypeSc
 ```json
 // package.json — tsconfig paths 대신 여기에
 {
-  "imports": { "#/*": "./src/*" }
+  "imports": {
+	"#/*": "./src/*"
+  }
 }
 ```
 
@@ -162,32 +174,169 @@ error TS5101: Option 'baseUrl' is deprecated and will stop functioning in TypeSc
 import { foo } from '#/utils/foo'; // 타입도, Node 런타임도 같은 매핑으로 해석
 ```
 
-- **TypeScript는 4.7부터** `imports`를 해석하고, `moduleResolution`이 `node16`·`nodenext`·`bundler`일 때 동작한다(레거시 `node`는 안 된다).
-- **`#`는 강제다.** `@/` 같은 임의 별칭은 못 쓴다. 다만 **`#/` prefix는 TS 6.0 + Node 20부터** 허용돼 `@/`에 가까운 컨벤션을 쓸 수 있다 — 단 `#/` 패턴은 `nodenext`·`bundler`에서만이고 `node16`은 제외다.
+- **TypeScript는 4.7부터** `imports`를 해석하고, `moduleResolution`이 `node16`·`nodenext`·`bundler`일 때 동작한다(
+  레거시 `node`는 안 된다).
+- **`#`는 강제다.** `@/` 같은 임의 별칭은 못 쓴다. 다만 **`#/` prefix는 TS 6.0 + Node 20부터** 허용돼 `@/`에 가까운 컨벤션을 쓸 수
+  있다 — 단 `#/` 패턴은 `nodenext`·`bundler`에서만이고 `node16`은 제외다.
 - **번들러 지원은 제각각.** Vite 4.2+, esbuild 0.13.9+는 지원하고, Jest는 네이티브로 안 돼 `moduleNameMapper`가 필요하다.
-- 참고로 `baseUrl` deprecation 이슈(#62207·#62508) 자체는 `imports`가 아니라 "prefix를 `paths`에 직접 박기"를 권한다. `imports`를 표준 대체재로 부르는 건 핸드북·릴리스 노트 쪽 라인이다.
+- 참고로 `baseUrl` deprecation 이슈(#62207·#62508) 자체는 `imports`가 아니라 "prefix를 `paths`에 직접 박기"를 권한다.
+  `imports`를 표준 대체재로 부르는 건 핸드북·릴리스 노트 쪽 라인이다.
 
-— 출처: [TS 핸드북 Modules Reference](https://www.typescriptlang.org/docs/handbook/modules/reference.html) · [TS 4.7](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-4-7.html) · [TS 6.0 릴리스 노트](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-6-0.html)
+>
+출처: [TS 핸드북 Modules Reference](https://www.typescriptlang.org/docs/handbook/modules/reference.html) · [TS 4.7](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-4-7.html) · [TS 6.0 릴리스 노트](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-6-0.html)
 
 </details>
 
 ---
 
-## 2. types 기본값이 []가 된 이유 (그리고 왜 우리 빌드는 멀쩡했나)
+## 2. rootDir를 명시하라 (TS5011)
+
+### 마주침: 빌드의 dts emit 단계
+
+`@package/sample-lib`의 빌드는 `minibundler && tsc --emitDeclarationOnly` 두 단계다. 앞 단계(번들)는 통과했는데 `tsc`가
+깨졌다.
+
+```text
+tsconfig.json:10:5 - error TS5011: The common source directory of 'tsconfig.json'
+  is './src'. The 'rootDir' setting must be explicitly set to this or another path
+  to adjust your output's file layout.
+  Visit https://aka.ms/ts6 for migration information.
+```
+
+해결은 한 줄.
+
+```json
+// packages/@package/sample-lib/tsconfig.json
+{
+  "compilerOptions": {
+    "emitDeclarationOnly": true,
+    "outDir": "./dist",
+    "rootDir": "./src", // ← 추가
+  }
+}
+```
+
+그런데 방금 추가한 `rootDir: "./src"` 한 줄은 정확히 뭘 할까? `rootDir`은 **출력 폴더(`dist`)의 모양을 어디서부터 베낄지** 정하는 '깃발'이라
+보면 된다. tsc는 깃발 **아래**의 폴더 구조를 그대로 `dist`에 복제한다.
+
+```
+my-lib/
+├── tsconfig.json
+└── src/
+    ├── index.ts
+    └── utils.ts
+```
+
+깃발을 `src/`에 꽂으면 → `dist/index.js`, `dist/utils.js`. 한 칸 위(`my-lib/`)에 꽂으면 → `dist/src/index.js`로 `src/`가 딸려
+들어온다. **위치 한 끗이 산출물 모양을 가른다.**
+
+### 왜 추론하던 걸 이제 명시하라고 하나
+
+[릴리스 노트](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-6-0.html)와
+이슈 [#62194](https://github.com/microsoft/TypeScript/issues/62194)의 논거는 두 가지다.
+
+> "Previously, if you did not specify a `rootDir`, it was inferred based on the common directory of
+> all non-declaration input files. But this often meant that it was impossible to know if a file
+> belonged to a project without trying to load and parse that project. It also meant that TypeScript
+> had to spend more time inferring that common source directory by analyzing every file path in the
+> program." — 릴리스 노트
+
+요점은 **결정성**이다. 옛 TS는 이 깃발을 **자동으로** 꽂았는데, 규칙이 "내 파일을 전부 담는 가장 깊은 공통 폴더"였다. 위 예제는
+파일이 다 `src/`에 있으니 깃발은 `src/`. 그런데 루트에 파일 하나(`my-lib/build.ts`)만 더하면 '전부 담는 폴더'가 `my-lib/`로 **점프**하고,
+`dist/index.js`였던 출력이 통째로 `dist/src/index.js`로 밀린다. **파일 하나 더했을 뿐인데 산출물 구조가 바뀌는 것** — 이 들쭉날쭉함이
+비결정성이다. 게다가 "이 파일이 어느 프로젝트 소속인가"를 알려면 그 깃발 위치부터 계산하느라 프로젝트를 통째로 로드·파싱해야 했다(언어 서비스 성능에도 불리). 그래서
+6.0은 깃발을 자동 추측 대신 **`tsconfig.json`이 있는 폴더에 못 박는다**.
+
+앞 문단이 괄호로 슬쩍 흘린 '언어 서비스 성능' — 그게 사실 이 변경의 또 다른 노림수다. 추론 방식에선 프로젝트를 로드·파싱해봐야 알 수 있던 "이 파일이 어느
+`tsconfig` 소속인가"를, configDir 고정은 **경로만 보고 즉답**한다. 제안 이슈도 그대로 말한다 — _"our language service to
+**trivially** determine whether a file could belong to another `tsconfig.json`"_
+([#62194](https://github.com/microsoft/TypeScript/issues/62194)). 1장의 baseUrl과는 결이 다르다. baseUrl은 7.0이 _아예
+다시 구현하지 않는_ 동작이었지만, rootDir은 동작 자체는 남되 그 **계산을 입력 파일 목록에서 떼어낸** 것뿐이다. 그래도 향하는 곳은 비슷하다 — 로드 없이
+파일 소속을 즉답하는 일은, Go로 다시 쓴 7.0(`tsgo`)이 내세우는 빠른 언어 서비스와 같은 방향이다.
+
+그럼 왜 기본값만 슬쩍 바꾸지 않고 굳이 **에러**를 던질까? 깃발의 기본 위치를 말없이 옮기면, 빌드는 성공하는데 산출물이 `dist/file.js`에서
+`dist/src/file.js`로 소리 없이 밀려난다 — 그걸 `import`하던 다른 패키지가 영문도 모르고 깨진다. 조용한 사고보다 시끄러운 멈춤이 낫다. 그래서 팀은
+옛 추론값과 새 기본값(configDir)이 어긋나면 **멈추고 명시를 요구하는** 쪽을 택했다(그 비교 로직이 곧 다음 절의 `TS5011`이다). 제안자 본인도
+매끄럽진 않다고 인정한다 — `rootDir`과 `include`를 _"often the same"_ 값으로 둘 다 적게 된다는
+것이다([#62194](https://github.com/microsoft/TypeScript/issues/62194)).
+
+기본값이 좁아진 충격은 모노레포에서 더 컸다. 구현 PR의 생태계 테스트에서 mui-docs는 에러가 **0에서 1만 건 넘게**(11,385개) 튀었고, TS 팀의
+jakebailey도 _"Ouch, looking bad for pyright and mui-docs"_ 라 적었다. 원인은 _"both `baseUrl` and `rootDir` are
+unset"_ — rootDir을 안 적고 추론에 맡긴 채, 프로젝트 참조 대신 _"every project emit each other's files into their own dist"_
+하던 구조였다([#62418](https://github.com/microsoft/TypeScript/pull/62418)).
+
+여기서 증상이 갈린다. **같은 변경(기본 rootDir = `configDir`)인데, 깃발이 어디로 가느냐에 따라 두 얼굴**로 나타난다.
+
+|                | 내 경우 (작은 라이브러리)         | 모노레포 (mui 같은)                       |
+|:---------------|:------------------------|:------------------------------------|
+| 소스 위치          | 전부 `src/` **안**         | 다른 패키지(루트 **밖**) 파일을 끌어다 씀          |
+| 깃발을 옮기면        | 출력 위치만 밀림               | 파일이 새 깃발 **바깥**에 놓임                 |
+| 터지는 에러         | **`TS5011`** ("rootDir 명시해") | **`TS6059`** ("이 파일 rootDir 밖이야") |
+
+뿌리는 하나 — 깃발을 자동 추측에서 `tsconfig` 폴더로 못 박은 것이다. 내 프로젝트는 '출력이 밀리는' 얼굴로, 큰 모노레포는 '파일이 루트 밖으로 튕겨나가는'
+얼굴로 나타났을 뿐이다.
+
+### 구현 레벨: 한 줄짜리 조건 완화 + 신·구 비교
+
+PR [#62418 "Assume rootDir is the current configuration directory"](https://github.com/microsoft/TypeScript/pull/62418)
+은 81개 파일을 건드린 큰 PR이지만, 핵심 로직은 **동일한 한 줄이 세 군데에서 완화된 것**이다.
+
+```diff
+// src/compiler/emitter.ts — getCommonSourceDirectory()
+-    else if (options.composite && options.configFilePath) {
++    else if (options.configFilePath) {
+         // Project compilations never infer their root from the input source paths
+         commonSourceDirectory = getDirectoryPath(normalizeSlashes(options.configFilePath));
+```
+
+예전엔 `composite` 프로젝트만 "configDir를 공통 소스 디렉터리로" 썼는데, 이제 `configFilePath`만 있으면(=tsconfig 기반 빌드면) 항상
+그렇게 한다. 같은 패턴이 `utilities.ts`, `moduleNameResolver.ts`에도 동일하게 적용됐다.
+
+그럼 TS5011은 언제 던지나? `program.ts`에 새로 추가된 블록이 **옛 방식과 새 방식의 공통 디렉터리를 비교**해서, 출력 레이아웃이 달라질 때만 에러를 낸다(
+아래는 핵심만 발췌·정리).
+
+```diff
+// src/compiler/program.ts
++if (!options.noEmit && !options.composite && !options.rootDir && options.configFilePath &&
++    (options.outDir || (getEmitDeclarations(options) && options.declarationDir) || options.outFile)) {
++    const dir   = getCommonSourceDirectory();            // 새 방식: configDir 기준
++    const files = mapDefined(/* 실제 emit될 입력 파일들 */);
++    const dir59 = getComputedCommonSourceDirectory(files, /* ... */);  // 옛 방식: 입력 파일 기준
++    if (dir59 !== "" && getCanonicalFileName(dir) !== getCanonicalFileName(dir59)) {
++        // 레이아웃이 바뀐다 → TS5011
++        createDiagnosticForOption(/* ... */
++            Diagnostics.The_common_source_directory_of_0_is_1_The_rootDir_setting_must_be_explicitly_set_...);
++    }
++}
+```
+
+여기서 에러 메시지의 친절함이 설명된다. 메시지의 `'{1}'`(=`'./src'`)은 바로 `dir59` — **옛 방식으로 계산한 공통 디렉터리**다. 우리
+sample-lib는 소스가 `./src`에 있어 옛 추론값이 `./src`였는데, 새 기본값은 tsconfig 위치(`.`)라 둘이 어긋난다. 그래서 6.0은 "전엔
+`./src`로 잡혔으니, 그 값을 `rootDir`에 명시하라"고 **정답을 알려주며** 멈춘 것이다. `rootDir: "./src"`는 그 안내를 그대로 따른 것뿐이다.
+
+---
+
+## 3. types 기본값이 []가 된 이유 (그리고 왜 우리 빌드는 멀쩡했나)
 
 ### 의심: 타입이 다 빠졌어야 하는 거 아닌가?
 
-작업 중간에 의문이 들었다. "TS6에선 `types: []`가 기본이라던데, 그럼 전역 타입이 다 빠졌을 텐데 왜 빌드가 다 되지?" 이건 에러가 아니라 **에러가 안 난 게 더
+baseUrl도 rootDir도 빨간 에러로 멈춰 세웠는데, types는 이상하리만치 조용했다. 그래서 오히려 의문이 들었다. "TS6에선 `types: []`가 기본이라던데, 그럼 전역 타입이 다 빠졌을 텐데 왜 빌드가 다 되지?" 이건 에러가 아니라 **에러가 안 난 게 더
 수상한** 경우였다.
 
 ### 무엇이, 왜 바뀌었나
 
-[릴리스 노트](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-6-0.html)와 제안
-이슈 [#62195](https://github.com/microsoft/TypeScript/issues/62195)이 명확하다. 기존 `types`의 기본값은 사실상 "
-`node_modules/@types`를 전부 열거"였다.
+먼저 결을 분명히 하자. 1장(`baseUrl`)·2장(`rootDir`)이 7.0(`tsgo`)을 앞둔 정리였다면, **이 `types` 변경의 동기는 순수하게 빌드 성능**
+이다 —
+제안 이슈 [#62195](https://github.com/microsoft/TypeScript/issues/62195)도 이 변경을 네이티브 컴파일러(7.0)와 묶이지 않은,
+6.0에
+독립적으로 들어가는 성능 개선으로 다룬다. 그 이슈와
+[릴리스 노트](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-6-0.html)를 보면 이유가
+명확하다:
+기존 `types`의 기본값은 사실상 "`node_modules/@types`를 전부 열거"였다.
 
 > "for convenience, TypeScript would also include all packages in `node_modules/@types` by
-> default... This can be _very_ expensive, as a normal repository setup these days might transitively
+> default... This can be _very_ expensive, as a normal repository setup these days might
+> transitively
 > pull in hundreds of `@types` packages, especially in multi-project workspaces with flattened
 `node_modules`." — 릴리스 노트
 
@@ -237,15 +386,16 @@ undefined) typeRoots를 뒤져 모든 `@types`를 자동 포함"했는데, 이�
 `options.types.map(t => t === "*" ? wildcardMatches : t)` — `"*"`가 있던 **위치에** 열거 결과를 펼쳐 넣어 순서까지
 보존한다.
 
-### 핵심: types가 통제하는 범위는 좁다
+### 핵심: 사라지는 건 import 안 한 '전역' 타입뿐
 
-가장 중요한 포인트. 이 변경은 **`node_modules/@types` 읽기를 중단하는 게 아니다.** import해서 쓰는 타입은 전혀 영향이 없고, 오직 **import
-없이 전역(ambient)으로 들어오던 `@types`**만 영향을 받는다.
+기본값이 `[]`로 바뀌었다니, 내 타입이 우수수 빠지는 건 아닐까? 다행히 **영향 범위는 훨씬 좁다.** 이 변경은 `node_modules/@types` **읽기를 멈추는
+게 아니다.** 내가 직접 `import`해서 쓰는 타입은 전혀 영향이 없고, 오직 **import 없이 전역(global)으로 깔리던 `@types`** — 예컨대
+`@types/node`의 `process`·`Buffer`, 테스트 프레임워크의 `describe`/`expect` 같은 것 — 만 끊긴다.
 
 > "...this does not mean we will stop reading from `node_modules/@types`, just that the files won't
 > be brought in unless imported, explicitly listed in your `tsconfig.json`'s `types` array...
-> Typically this will only affect users relying on global values and module names, like those brought
-> in from `@types/node` (e.g. the `"fs"` module is globally defined), or a testing
+> Typically this will only affect users relying on global values and module names, like those
+> brought in from `@types/node` (e.g. the `"fs"` module is globally defined), or a testing
 > framework." — [issue #62195](https://github.com/microsoft/TypeScript/issues/62195)
 
 ```ts
@@ -253,9 +403,9 @@ import { foo } from 'some-pkg';   // ← types 설정과 무관하게 타입 붙
 process.env.NODE_ENV;             // ← @types/node 전역. types에 'node' 없으면 에러
 ```
 
-### 왜 우리 레포는 멀쩡히 빌드됐나
+### 답: 빠질 게 없었다 — 이미 명시돼 있어서
 
-답은 싱겁게도 "이미 잘 명시돼 있어서"였다. 전역(ambient)이 필요한 패키지는 전부 `types`를 명시하고 있었다.
+답은 싱겁게도 "이미 잘 명시돼 있어서"였다. 전역이 필요한 패키지는 전부 `types`를 명시하고 있었다.
 
 | 패키지                     | `types`                      | TS6 영향                        |
 |:------------------------|:-----------------------------|:------------------------------|
@@ -273,89 +423,6 @@ types</code> 기본값 변경을 되돌리는 옵션이 아니다. 옛 동작이
 
 ---
 
-## 3. rootDir를 명시하라 (TS5011)
-
-### 마주침: 빌드의 dts emit 단계
-
-`@package/sample-lib`의 빌드는 `minibundler && tsc --emitDeclarationOnly` 두 단계다. 앞 단계(번들)는 통과했는데 `tsc`가
-깨졌다.
-
-```text
-tsconfig.json:10:5 - error TS5011: The common source directory of 'tsconfig.json'
-  is './src'. The 'rootDir' setting must be explicitly set to this or another path
-  to adjust your output's file layout.
-  Visit https://aka.ms/ts6 for migration information.
-```
-
-해결은 한 줄.
-
-```json
-// packages/@package/sample-lib/tsconfig.json
-{
-  "compilerOptions": {
-    "emitDeclarationOnly": true,
-    "outDir": "./dist",
-    "rootDir": "./src",   // ← 추가
-    "allowJs": true
-  }
-}
-```
-
-### 왜 추론하던 걸 이제 명시하라고 하나
-
-[릴리스 노트](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-6-0.html)와
-이슈 [#62194](https://github.com/microsoft/TypeScript/issues/62194)의 논거는 두 가지다.
-
-> "Previously, if you did not specify a `rootDir`, it was inferred based on the common directory of
-> all non-declaration input files. But this often meant that it was impossible to know if a file
-> belonged to a project without trying to load and parse that project. It also meant that TypeScript
-> had to spend more time inferring that common source directory by analyzing every file path in the
-> program." — 릴리스 노트
-
-요점은 **결정성(determinism)**이다. 추론된 rootDir는 입력 파일 집합에 따라 움직인다 — 파일 하나를 추가/제거하면 공통 디렉터리가 이동하고, 그러면
-`outDir` 안의 출력 경로 레이아웃이 통째로 달라진다. 게다가 "이 파일이 어느 프로젝트 소속인가"를 알려면 프로젝트를 로드·파싱해봐야만 했다(언어 서비스 성능에도 불리).
-그래서 6.0은 기본 rootDir를 **tsconfig.json이 있는 디렉터리로 고정**한다.
-
-### 구현 레벨: 한 줄짜리 조건 완화 + 신·구 비교
-
-PR [#62418 "Assume rootDir is the current configuration directory"](https://github.com/microsoft/TypeScript/pull/62418)
-은 81개 파일을 건드린 큰 PR이지만, 핵심 로직은 **동일한 한 줄이 세 군데에서 완화된 것**이다.
-
-```diff
-// src/compiler/emitter.ts — getCommonSourceDirectory()
--    else if (options.composite && options.configFilePath) {
-+    else if (options.configFilePath) {
-         // Project compilations never infer their root from the input source paths
-         commonSourceDirectory = getDirectoryPath(normalizeSlashes(options.configFilePath));
-```
-
-예전엔 `composite` 프로젝트만 "configDir를 공통 소스 디렉터리로" 썼는데, 이제 `configFilePath`만 있으면(=tsconfig 기반 빌드면) 항상
-그렇게 한다. 같은 패턴이 `utilities.ts`, `moduleNameResolver.ts`에도 동일하게 적용됐다.
-
-그럼 TS5011은 언제 던지나? `program.ts`에 새로 추가된 블록이 **옛 방식과 새 방식의 공통 디렉터리를 비교**해서, 출력 레이아웃이 달라질 때만 에러를 낸다(
-아래는 핵심만 발췌·정리).
-
-```diff
-// src/compiler/program.ts
-+if (!options.noEmit && !options.composite && !options.rootDir && options.configFilePath &&
-+    (options.outDir || (getEmitDeclarations(options) && options.declarationDir) || options.outFile)) {
-+    const dir   = getCommonSourceDirectory();            // 새 방식: configDir 기준
-+    const files = mapDefined(/* 실제 emit될 입력 파일들 */);
-+    const dir59 = getComputedCommonSourceDirectory(files, /* ... */);  // 옛 방식: 입력 파일 기준
-+    if (dir59 !== "" && getCanonicalFileName(dir) !== getCanonicalFileName(dir59)) {
-+        // 레이아웃이 바뀐다 → TS5011
-+        createDiagnosticForOption(/* ... */
-+            Diagnostics.The_common_source_directory_of_0_is_1_The_rootDir_setting_must_be_explicitly_set_...);
-+    }
-+}
-```
-
-여기서 에러 메시지의 친절함이 설명된다. 메시지의 `'{1}'`(=`'./src'`)은 바로 `dir59` — **옛 방식으로 계산한 공통 디렉터리**다. 우리
-sample-lib는 소스가 `./src`에 있어 옛 추론값이 `./src`였는데, 새 기본값은 tsconfig 위치(`.`)라 둘이 어긋난다. 그래서 6.0은 "전엔
-`./src`로 잡혔으니, 그 값을 `rootDir`에 명시하라"고 **정답을 알려주며** 멈춘 것이다. `rootDir: "./src"`는 그 안내를 그대로 따른 것뿐이다.
-
----
-
 ## 4. 1차 검증: 여기까지 check-types는 통과
 
 세 가지 규칙을 다 맞추고 나니 타입 체크는 깨끗했다.
@@ -367,27 +434,37 @@ sample-lib는 소스가 `./src`에 있어 옛 추론값이 `./src`였는데, 새
 
 ---
 
-## 5. 🎁 보너스: 빌드에서 튀어나온 진짜 빌런 — tsup
+## 5. 보너스: 다시 튀어나온 baseUrl — 이번엔 내 코드가 아니었다
 
-`pnpm build`가 디자인 시스템 패키지의 dts 빌드에 다다르자 **또 `TS5101`**이 떴다. 그런데 `@design-system/ui`의 tsconfig엔 `baseUrl`이 **없다.** #1에서 봤듯 TS5101은 범용 진단이니, 누군가 내 빌드에 baseUrl을 **주입**하고 있다는 뜻이다.
+`pnpm build`가 디자인 시스템 패키지의 dts 빌드에 다다르자 **또 `TS5101`**이 떴다. 그런데 `@design-system/ui`의 tsconfig엔
+`baseUrl`이 **없다.** #1에서 봤듯 TS5101은 범용 진단이니, 누군가 내 빌드에 baseUrl을 **주입**하고 있다는 뜻이다.
 
-범인은 dts 번들러로 쓰던 **tsup**이었다. [소스](https://github.com/egoist/tsup/blob/main/src/rollup.ts)의 dts 빌드 옵션 구성부에 이 한 줄이 있다.
+범인은 dts 번들러로 쓰던 **tsup**이었다. [소스](https://github.com/egoist/tsup/blob/main/src/rollup.ts)의 dts 빌드 옵션
+구성부에 이 한 줄이 있다.
 
 ```ts
 baseUrl: compilerOptions.baseUrl || '.', // ← 내 tsconfig에 없어도 '.'를 강제 주입
 ```
 
-TS 5.x에선 무해했지만 TS6에선 이 주입이 곧장 하드 에러다([tsup #1388](https://github.com/egoist/tsup/issues/1388), 재현 환경 tsup 8.5.1 + TS 6.0.2). 게다가 tsup은 **이미 유지보수 중단** — README 최상단에 박혀 있다.
+TS 5.x에선 무해했지만 TS6에선 이 주입이 곧장 하드 에러다([tsup #1388](https://github.com/egoist/tsup/issues/1388), 재현 환경
+tsup 8.5.1 + TS 6.0.2). 게다가 tsup은 **이미 유지보수 중단** — README 최상단에 박혀 있다.
 
-> "This project is not actively maintained anymore. Please consider using tsdown instead." — [egoist/tsup README](https://github.com/egoist/tsup/blob/main/README.md)
+> "This project is not actively maintained anymore. Please consider using tsdown
+> instead." — [egoist/tsup README](https://github.com/egoist/tsup/blob/main/README.md)
 
-baseUrl 주입은 내 코드가 아니라 도구의 문제이고, 그 도구가 더는 고쳐지지 않으니 답은 정해져 있었다 — 후속 도구 [tsdown](https://tsdown.dev)으로 갈아탔다. [Rolldown](https://rolldown.rs) 기반이라 **baseUrl을 주입하지 않고**, peer로 `typescript: "^5.0.0 || ^6.0.0"`을 선언해 **TS6를 공식 지원**한다. 마이그레이션 도구(`npx tsdown-migrate`)로 config도 거의 그대로 옮겨졌고, 전환 직후 `TS5101`은 사라졌다.
+baseUrl 주입은 내 코드가 아니라 도구의 문제이고, 그 도구가 더는 고쳐지지 않으니 답은 정해져 있었다 — 후속 도구 [tsdown](https://tsdown.dev)으로
+갈아탔다. [Rolldown](https://rolldown.rs) 기반이라 **baseUrl을 주입하지 않고**, peer로
+`typescript: "^5.0.0 || ^6.0.0"`을 선언해 **TS6를 공식 지원**한다. 마이그레이션 도구(`npx tsdown-migrate`)로 config도 거의
+그대로 옮겨졌고, 전환 직후 `TS5101`은 사라졌다.
 
 다만 공짜는 아니었다. 전환하며 밟은 함정 셋:
 
-- **출력 확장자.** tsdown은 `platform: 'node'`에서 `.mjs`/`.cjs`/`.d.mts`/`.d.cts`로 낸다(tsup은 `.js`/`.d.ts`). `package.json`의 `exports`·`bin`·`main`·`types`를 산출물에 맞춰 전부 정정해야 했다.
-- **`platform` ≠ `target`.** `platform: 'node'`는 의존성 외부화·출력 확장자 힌트일 뿐, ES 문법 타겟은 `target`이 따로 통제한다. Node 24 문법까지 내리려면 `target: 'node24'`를 함께 명시.
-- **빌드 도구는 `devDependencies`에.** `tsdown`·`typescript`는 런타임 의존성이 아니다. `@design-system/ui`가 `tsup`을 `dependencies`에 두고 있어 뒤늦게 옮겼다.
+- **출력 확장자.** tsdown은 `platform: 'node'`에서 `.mjs`/`.cjs`/`.d.mts`/`.d.cts`로 낸다(tsup은 `.js`/`.d.ts`).
+  `package.json`의 `exports`·`bin`·`main`·`types`를 산출물에 맞춰 전부 정정해야 했다.
+- **`platform` ≠ `target`.** `platform: 'node'`는 의존성 외부화·출력 확장자 힌트일 뿐, ES 문법 타겟은 `target`이 따로 통제한다.
+  Node 24 문법까지 내리려면 `target: 'node24'`를 함께 명시.
+- **빌드 도구는 `devDependencies`에.** `tsdown`·`typescript`는 런타임 의존성이 아니다. `@design-system/ui`가 `tsup`을
+  `dependencies`에 두고 있어 뒤늦게 옮겼다.
 
 - `pnpm build` (전체) → **9/9 통과** (blog 정적 빌드 포함)
 
@@ -399,54 +476,38 @@ baseUrl 주입은 내 코드가 아니라 도구의 문제이고, 그 도구가 
 
 1. **`baseUrl`을 쓰는가?** → 직접 쓰면 제거(`paths`는 4.1부터 baseUrl 불필요). 빌드 도구가 주입한다면 도구를 점검하라. `TS5101`은
    baseUrl 전용이 아니라 **범용 deprecated-option 진단**임을 기억할 것.
-2. **`@types/node` 같은 전역에 의존하는가?** → `types: ["node", ...]`로 명시. TS6 기본은 `[]`이고, 이는 **ambient 전역에만**
-   영향을 준다(import 타입은 무관). 옛 동작은 `["*"]`.
-3. **`emitDeclarationOnly`/`outDir`로 emit하는데 소스가 tsconfig보다 깊은가?** → `rootDir`을 명시. 에러 메시지의 `'{1}'`이
+2. **`emitDeclarationOnly`/`outDir`로 emit하는데 소스가 tsconfig보다 깊은가?** → `rootDir`을 명시. 에러 메시지의 `'{1}'`이
    곧 넣어야 할 값이다.
-4. **dts 번들러가 tsup인가?** → tsup은 유지보수가 멈췄고 dts에 baseUrl을 주입한다. tsdown으로 전환하고(`npx tsdown-migrate`), ⓐ
-   출력 확장자(`.mjs`/`.d.mts`)에 맞춰 `exports`/`bin`/`main`/`types`를 고치고, ⓑ `platform`과 `target`은 다른 축이니
-   ES 타겟이 필요하면 `target`을 따로 명시하고, ⓒ 빌드 도구(`tsdown`)·`typescript`는 `devDependencies`에 두라.
-5. **버전을 일괄 갱신했는가?** → 하위 패키지에 박힌 `packageManager`·`engines` 필드가 루트와 어긋나 있지 않은지 확인하라. (루트는
-   `pnpm@11.6.0`인데 한 패키지에 `pnpm@10.4.1`이 남아 있었다.)
-
-곁가지 — 작업 중 <code>node_modules</code>와 빌드 산출물을 수없이 지웠던 터라, 외부 의존성 없이 macOS <code>find</code>로 도는 clean 스크립트를 루트에 넣어뒀다. 핵심은 <code>-name node_modules -prune</code>으로 <strong>node_modules 내부를 가지치기</strong>하는 것 — 안 그러면 의존성 안의 수많은 <code>dist</code>까지 매칭돼 느리고 위험하다.
-
-```json
-"clean:dist":    "find . -name node_modules -prune -o -type d '(' -name dist -o -name .next -o -name out -o -name .turbo ')' -prune -exec rm -rf {} +",
-"clean:modules": "find . -name node_modules -type d -prune -exec rm -rf {} +"
-```
+3. **`@types/node` 같은 전역에 의존하는가?** → `types: ["node", ...]`로 명시. TS6 기본은 `[]`이고, 이는 **ambient 전역에만**
+   영향을 준다(import 타입은 무관). 옛 동작은 `["*"]`.
 
 ---
 
 ## 7. 정작 가장 큰 수확: 6을 올리지 않아도 됐다
 
-표의 #1~#3, 그리고 보너스까지 따라오며 깨달은 게 있다. 이 변화들의 공통점은 'TS7(Go)로 가는 청소'였고, **그 청소는 6을 올려야만 할 수 있는 게 아니다.** baseUrl·types·rootDir 셋 다 5에서도 오늘 당장 적용할 수 있는 모범 설정이다. 회사 코드에 보낼 첫 커밋도 "6 업그레이드"가 아니라 이 정리다.
+표의 #1~#3, 그리고 보너스까지 따라오며 깨달은 게 있다. 이 변화들의 공통점은 결국 '비싸거나 모호한 기본값을 걷어내는 청소'였다 — baseUrl·rootDir은 TS7(Go)을 향한 정리, types는 순수 성능 개선. 그리고 **그 청소는 6을 올려야만 할 수 있는 게 아니다.**
+baseUrl·rootDir·types 셋 다 5에서도 오늘 당장 적용할 수 있는 모범 설정이다. 그러니 정작 올릴 첫 커밋은 "6 업그레이드"가 아니라 이 정리다.
 
 **6을 안 올려도, 5에서 지금 할 일:**
 
-- **`baseUrl` 제거** → `paths`만 남기거나, 런타임까지 일치하는 package.json `imports`로 (자세히는 1장).
-- **`types` 좁히기** → `types: ["node", ...]`로 명시해 자동 `@types` 열거 비용을 미리 던다 (2장).
-- **`rootDir` 고정** → 명시해 출력 레이아웃을 결정적으로 묶는다 (3장).
+- **`baseUrl` 제거** → `paths`만 남기거나, 런타임까지 일치하는 package.json `imports`로.
+- **`rootDir` 고정** → 명시해 출력 레이아웃을 결정적으로 묶는다.
+- **`types` 좁히기** → `types: ["node", ...]`로 명시해 자동 `@types` 열거 비용을 미리 던다.
 
 세 줄 다 5.x tsconfig에서 오늘 커밋할 수 있다. 6은 이걸 '강제'했을 뿐 '발명'한 게 아니다.
 
-<!-- (선택) 5 프로젝트에 직접 적용하며 겪은 점을 여기에 덧붙이면 글이 더 단단해진다 -->
-
-> 메이저 업그레이드는 버전 숫자 하나 바꾸는 일처럼 보여도, 그 숫자가 건드리는 **기본값과 빌드 파이프라인의 가정들**을 전부 다시 확인하게 만든다. 이번엔 그 가정이 `baseUrl`, `types`, `rootDir` 세 군데에 숨어 있었고, 마지막 하나는 TypeScript가 아니라 **유지보수가 멈춘 내 빌드 도구** 안에 있었다. 그리고 이 청소가 끝나는 곳엔 Go로 다시 쓰인 7.0이 기다린다. 이번에 막아낸 TypeScript의 세 규칙은 결국 거기로 가는 길목이었던 셈이다.
+> 시작은 "이걸 왜 굳이 바꾸지?"라는 호기심 한 줄이었다. 세 옵션의 '왜'를 PR diff까지 따라가 보니, 답은 늘 같은 곳을 가리켰다 — Go로 다시 쓰인 7.0.
+`baseUrl`·`types`·`rootDir`도, 마지막에 튀어나온 `tsup`도, 전부 그 길목을 미리 쓸어두는 일이었다. 그리고 가장 김빠지면서도 든든한 깨달음은 따로
+> 있었다. 이 길, 6을 올려야만 걸을 수 있는 게 아니다. 5에서 그대로, 그것도 빌드가 빨라지는 채로 갈 수 있다. 버전 숫자를 올리는 일과 더 나은 설정으로 가는 일은, 생각보다 자주 별개다.
 
 ---
 
 ## 참고 링크
 
-- TypeScript 6.0 릴리스
-  노트 — <https://www.typescriptlang.org/docs/handbook/release-notes/typescript-6-0.html>
-- baseUrl
-  deprecation: [issue #62207](https://github.com/microsoft/TypeScript/issues/62207) · [PR #62509](https://github.com/microsoft/TypeScript/pull/62509)
-- `baseUrl`/`paths`의 런타임 안전 대안 package.json `imports`: [TS 핸드북 Modules Reference](https://www.typescriptlang.org/docs/handbook/modules/reference.html) · [Node.js `imports` 필드](https://nodejs.org/api/packages.html) · [TS 4.7 릴리스 노트(imports 지원)](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-4-7.html)
+- TypeScript 6.0 릴리스 노트 — <https://www.typescriptlang.org/docs/handbook/release-notes/typescript-6-0.html>
+- baseUrl deprecation: [issue #62207](https://github.com/microsoft/TypeScript/issues/62207) · [PR #62509](https://github.com/microsoft/TypeScript/pull/62509)
+- `baseUrl`/`paths`의 런타임 안전 대안 package.json `imports`: [TS 핸드북 Modules Reference](https://www.typescriptlang.org/docs/handbook/modules/reference.html) · [Node.js`imports` 필드](https://nodejs.org/api/packages.html) · [TS 4.7 릴리스 노트(imports 지원)](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-4-7.html)
 - types 기본값 `[]`: [issue #62195](https://github.com/microsoft/TypeScript/issues/62195) · [PR #63054](https://github.com/microsoft/TypeScript/pull/63054) · [원 rationale #54500](https://github.com/microsoft/TypeScript/issues/54500)
-- rootDir
-  기본값: [issue #62194](https://github.com/microsoft/TypeScript/issues/62194) · [PR #62418](https://github.com/microsoft/TypeScript/pull/62418)
--
-tsup: [README](https://github.com/egoist/tsup/blob/main/README.md) · [TS5101 이슈 #1388](https://github.com/egoist/tsup/issues/1388) · [TS6 지원 #1389](https://github.com/egoist/tsup/issues/1389)
--
-tsdown: [공식 문서](https://tsdown.dev) · [tsup → tsdown 마이그레이션](https://tsdown.dev/guide/migrate-from-tsup) · [rolldown-plugin-dts](https://github.com/sxzz/rolldown-plugin-dts)
+- rootDir 기본값: [issue #62194](https://github.com/microsoft/TypeScript/issues/62194) · [PR #62418](https://github.com/microsoft/TypeScript/pull/62418)
+- tsup: [README](https://github.com/egoist/tsup/blob/main/README.md) · [TS5101 이슈 #1388](https://github.com/egoist/tsup/issues/1388) · [TS6 지원 #1389](https://github.com/egoist/tsup/issues/1389)
+- tsdown: [공식 문서](https://tsdown.dev) · [tsup → tsdown 마이그레이션](https://tsdown.dev/guide/migrate-from-tsup) · [rolldown-plugin-dts](https://github.com/sxzz/rolldown-plugin-dts)
