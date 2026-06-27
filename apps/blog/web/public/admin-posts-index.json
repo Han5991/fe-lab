@@ -17,8 +17,8 @@
       "breaking-change"
     ],
     "series": "typescript",
-    "status": "published",
-    "scheduledDate": null
+    "status": "scheduled",
+    "scheduledDate": "2026-07-02T09:00:00+09:00"
   },
   {
     "slug": "typescript-domain-modeling-without-optional",
