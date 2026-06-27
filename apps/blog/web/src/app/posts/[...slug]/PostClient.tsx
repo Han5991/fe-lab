@@ -1,6 +1,6 @@
 'use client';
 
-import { Children, isValidElement } from 'react';
+import { Children } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
@@ -24,6 +24,7 @@ import { FileTree } from '@/src/components/post/markdown/FileTree';
 import { TOC } from '@/src/components/post/TOC';
 import { ReadingProgress } from '@/src/components/post/ReadingProgress';
 import { PostHeader } from '@/src/components/post/PostHeader';
+import { isBlockMarkdownChild } from './markdownBlocks';
 
 interface PostClientProps {
   post: PostData;
@@ -261,12 +262,10 @@ export default function PostClient({
                 rehypePlugins={[rehypeRaw, rehypeSlug]}
                 components={
                   {
-                    p({ children, ...props }) {
-                      const isBlockElement = (node: unknown) =>
-                        isValidElement(node) && typeof node.type !== 'string';
+                    p({ children, node: _node, ...props }) {
                       const hasBlockChild = Array.isArray(children)
-                        ? children.some(isBlockElement)
-                        : isBlockElement(children);
+                        ? children.some(isBlockMarkdownChild)
+                        : isBlockMarkdownChild(children);
                       if (hasBlockChild) {
                         return <div {...props}>{children}</div>;
                       }
@@ -284,7 +283,7 @@ export default function PostClient({
                         />
                       );
                     },
-                    table({ children, ...props }) {
+                    table({ children, node: _node, ...props }) {
                       return (
                         <table
                           {...props}
@@ -298,7 +297,7 @@ export default function PostClient({
                         </table>
                       );
                     },
-                    li({ className, children, ...props }) {
+                    li({ className, children, node: _node, ...props }) {
                       const isTaskList = className?.includes('task-list-item');
                       if (isTaskList) {
                         const childrenArray = Children.toArray(children);

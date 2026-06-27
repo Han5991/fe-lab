@@ -21,6 +21,7 @@
 /public/rss.xml
 /public/sitemap.xml
 /public/search-index.json
+/public/admin-posts-index.json
 /public/llms-full.txt
 
 # production
