@@ -1,6 +1,6 @@
 'use client';
 
-import { Children, isValidElement } from 'react';
+import { Children, isValidElement, type ElementType } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
@@ -26,27 +26,41 @@ import { ReadingProgress } from '@/src/components/post/ReadingProgress';
 import { PostHeader } from '@/src/components/post/PostHeader';
 
 /**
- * <p>로 감싸이지만 실제로는 블록 요소를 렌더하는 커스텀 컴포넌트.
- * 이들이 <p> 안에 들어가면 무효 중첩(<p><div>…</div></p>)이 되어
+ * `components` 맵에 직접 매핑돼(`callout: Callout` 등) child.type으로 식별
+ * 가능한 블록 컴포넌트. <p> 안에 들어가면 무효 중첩(<p><div>…</div></p>)이 되어
  * 브라우저가 <p>를 조기 종료 → SSR/CSR 트리가 어긋나며 hydration mismatch가 난다.
+ *
+ * 주의: code·img는 closure가 필요한 인라인 래퍼(`img({src}) => <MarkdownImage/>`)로
+ * 매핑돼 child.type이 래퍼 함수라 identity로 못 잡는다. 이들은 아래에서 공개
+ * prop(className·src)으로 따로 식별한다.
  */
-const BLOCK_MARKDOWN_COMPONENTS = new Set<unknown>([Callout, Figure, FileTree]);
+const BLOCK_MARKDOWN_COMPONENTS = new Set<ElementType>([
+  Callout,
+  Figure,
+  FileTree,
+]);
 
 /**
  * react-markdown이 단락(<p>)으로 감싼 자식이 블록 요소라서
  * <p> 대신 <div>로 감싸야 하는지 판별한다.
  *
- * 커스텀 블록 컴포넌트는 참조(identity)로, fenced code는 공개 prop인
- * `className`의 `language-*`로 식별한다 — react-markdown 내부 `node` prop에
- * 의존하지 않으므로 라이브러리 업그레이드로 node 형태가 바뀌어도 회귀하지 않는다.
- * 인라인 code·이미지 등 phrasing 콘텐츠는 <p> 안에 유효하므로 블록으로 보지
- * 않는다 — 불필요하게 <div>로 감싸면 `& p` 마진/타이포가 빠지기 때문.
+ * 직접 매핑된 블록 컴포넌트는 참조(identity)로, 인라인 래퍼를 거치는 fenced
+ * code·이미지는 공개 prop(`className`의 `language-*`, `src`)으로 식별한다 —
+ * react-markdown 내부 `node` prop에 의존하지 않으므로 라이브러리 업그레이드로
+ * node 형태가 바뀌어도 회귀하지 않는다.
+ *
+ * - img: MarkdownImage가 react-medium-image-zoom <Zoom>의 블록 <div data-rmiz>를
+ *   렌더하므로 단독 이미지(`![alt](url)`)도 <p> 안에 두면 안 된다.
+ * - 인라인 code(language-* 없는 backtick)만 phrasing이라 <p> 안에 유효하다.
  */
 function isBlockMarkdownChild(child: unknown): boolean {
-  if (!isValidElement(child)) return false;
-  if (BLOCK_MARKDOWN_COMPONENTS.has(child.type)) return true;
+  if (!isValidElement<{ className?: string; src?: string }>(child))
+    return false;
+  if (BLOCK_MARKDOWN_COMPONENTS.has(child.type as ElementType)) return true;
+  const { className, src } = child.props;
+  // img(src 보유) → MarkdownImage가 블록 <div>를 렌더한다.
+  if (typeof src === 'string') return true;
   // CodeBlock은 language-* 클래스가 있을 때(fenced code)만 블록 <div>를 렌더한다.
-  const className = (child.props as { className?: string }).className;
   return typeof className === 'string' && /\blanguage-/.test(className);
 }
 
