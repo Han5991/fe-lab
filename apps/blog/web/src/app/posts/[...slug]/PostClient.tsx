@@ -262,8 +262,18 @@ export default function PostClient({
                 components={
                   {
                     p({ children, ...props }) {
-                      const isBlockElement = (node: unknown) =>
-                        isValidElement(node) && typeof node.type !== 'string';
+                      const isBlockElement = (node: unknown) => {
+                        if (
+                          !isValidElement(node) ||
+                          typeof node.type === 'string'
+                        ) {
+                          return false;
+                        }
+                        const tagName = (
+                          node.props as { node?: { tagName?: string } }
+                        )?.node?.tagName;
+                        return tagName !== 'code';
+                      };
                       const hasBlockChild = Array.isArray(children)
                         ? children.some(isBlockElement)
                         : isBlockElement(children);
