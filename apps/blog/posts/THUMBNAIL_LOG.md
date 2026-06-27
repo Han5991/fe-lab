@@ -47,6 +47,13 @@
 - **프롬프트**:
   > A minimalist, flat-design blog cover image for 'JavaScript Bundler Concepts'. Visualizing the evolution of code modules from chaos to order. Simple geometric shapes representing code blocks connecting together. Soft blue, purple, and white color palette. Clean lines, abstract representation of module linking and magic string transformation. Professional, tech-oriented. 16:9 aspect ratio.
 
+### 6. TypeScript 6 마이그레이션 (설정 이야기)
+
+- **대상**: `typescript/typescript-6-migration-thumb.png` (글: TypeScript 6 업그레이드인 줄 알았는데, 문제는 "설정"이었습니다)
+- **생성 방식**: AI 이미지가 아니라 **satori + resvg 코드 렌더**(블로그 OG 스택과 동일). 코드 글꼴 Monaco(monospace) + 본문 Pretendard.
+- **디자인**: soft 블루–라벤더 그라데이션 위에 flat한 `tsconfig.json` 코드 카드. diff로 글의 3대 변경을 그대로 표현 — `− "baseUrl": "."`(제거, 취소선/red), `+ "rootDir": "./src"`·`+ "types": ["node"]`(추가, green). 상단 TS 워드마크, 하단 핵심 문구 “업그레이드가 아니라, ‘올바른 설정’”.
+- **비고**: 이 글은 `/og` 자동 카드 대신 커스텀 썸네일을 사용한다 — `thumbnail`이 `/og/`로 시작하지 않으면 `generate-og-images.ts`가 생성을 skip한다.
+
 ---
 
 ## 🚀 사용 방법

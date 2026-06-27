@@ -1,26 +1,20 @@
 ---
-title: 'TypeScript 6 업그레이드인 줄 알았는데 — breaking change 3종을 PR diff까지 쫓다 만난 "올바른 설정"'
-date: '2026-06-16'
-status: 'draft'
+title: 'TypeScript 6 업그레이드인 줄 알았는데, 문제는 "설정"이었습니다'
+date: '2026-07-02'
 published: true
 slug: 'typescript-6-migration-troubleshooting'
 excerpt: 'TypeScript 6으로 올리자 baseUrl·rootDir·types 기본값이 차례로 빌드를 깨뜨렸다. 각 변경의 "왜"를 microsoft/TypeScript PR diff까지 추적해 보니, 이건 버전을 올리는 이야기가 아니라 "올바른 설정"에 도달하는 이야기였다 — baseUrl은 TS7로 가는 청소, types는 순수 성능 개선. 게다가 이 셋은 6을 안 올려도 5에서 오늘 당장 적용할 수 있다.'
-thumbnail: '/og/typescript-6-migration-troubleshooting.png'
+thumbnail: 'typescript-6-migration-thumb.png'
 tags: [ 'TypeScript', 'TypeScript 6', 'typescript-7', 'tsgo', 'baseUrl', 'rootDir', 'tsdown', 'tsup', 'monorepo', 'breaking-change' ]
 ---
 
-어느 날 TypeScript 6 릴리스 소식이 들려왔다. breaking change 목록을 여는데, 매일 tsconfig에 적던 이름들이 줄줄이 눈에 들어왔다 —
-`baseUrl`, `types`, `rootDir`. 멀쩡히 쓰던 옵션들을 6은 왜 굳이 건드리려는 걸까? 그 `왜`가 궁금했다. 릴리스 노트만 훑고 넘기는 대신, 직접 하나씩
-따라 바꿔보며 이유를 파보기로 했다. 마침 굴리던 개인 모노레포가 있어, 실험 삼아 거기에 6을 먼저 올려봤다.
+TypeScript 6 릴리스 노트의 breaking change 목록을 여는데, 매일 tsconfig에 적던 이름들이 줄줄이 눈에 들어왔다 — `baseUrl`, `types`, `rootDir`. 멀쩡히 쓰던 옵션들을 6은 왜 굳이 건드리는 걸까?
 
-그런데 하나씩 따라가 보니, 이건 단순한 "6의 새 규칙들"이 아니었다. 세 변경을 관통하는 줄기는 하나 — 비싸거나 모호한 기본 동작을 걷어내는 **청소**라는
-점이다. 다만 그 청소가 향하는 곳은 셋이 조금씩 갈렸다. `baseUrl`은 **Go로 새로 짠 네이티브 컴파일러**(`tsgo`, 7.0)가 아예 다시 구현하지 않기로
-한 동작이라, 7.0을 앞두고 6.0이 미리 거두는 것이다. `rootDir`은 출력 레이아웃을 결정적으로 굳히려는 것이고, `types`는 tsgo와는 무관하게 빌드를
-20–50% 깎아먹던 기본값을 바로잡은 **순수 성능 개선**이다. breaking change 그 자체가 목적이 아니라, 저마다 이유 있는 '정리'였던 셈이다. (각 옵션이
-왜, 어떻게 바뀌었는지는 PR diff까지 본문에서 하나씩 짚는다.)
+그 `왜`가 궁금해서, 릴리스 노트만 훑고 넘기는 대신 마침 굴리던 개인 모노레포에 6을 먼저 올려 하나씩 따라 바꿔봤다.
 
-그래서 이 글은 '6 업그레이드 기록'으로 시작했지만, 따라가다 보니 정체가 달라졌다. 세 변경의 '왜'를 PR diff까지 좇고 나면 손에 남는 건 버전 숫자가 아니라
-_'그래서 무엇이 올바른 설정인가'_라는 질문이고, 이 글은 그 답에 도달하는 이야기다. 그게 왜 '6 업그레이드'와는 별개의 일인지는 마지막 장에서 분명해진다.
+따라가 보니 이건 단순한 '6의 새 규칙들'이 아니었다. 세 변경을 관통하는 줄기는 하나 — 비싸거나 모호한 기본 동작을 걷어내는 '청소'. 다만 그 청소가 향하는 곳은 셋이 제각각이었다.
+
+그래서 '6 업그레이드 기록'으로 시작한 이 글은, 따라가다 보니 정체가 달라졌다. 손에 남은 건 버전 숫자가 아니라 _'그래서 무엇이 올바른 설정인가'_ 라는 질문이었다.
 
 ## 0. TL;DR
 
@@ -93,14 +87,11 @@ _'그래서 무엇이 올바른 설정인가'_라는 질문이고, 이 글은 �
 
 ### 사실 이 분리는 6년 전에 시작됐다
 
-그런데 "두 역할을 떼어낸다"는 발상은 6.0이 처음 꺼낸 게 아니다. 첫 번째 역할(`paths` 접두사)을 baseUrl에서 분리할 토대는 이미 6년 전에
-깔렸다. 2019년, 한 사용자가 이슈 [#31869](https://github.com/microsoft/TypeScript/issues/31869)에서 지금과 똑같은 불편을
-제기했다 —`paths`는 타입체킹용 별칭으로 쓰고 싶은데, baseUrl이 딸려 보내는 _비상대(bare) 이름의 암묵적 해석(두 번째 역할)_ 은 원치 않는다는 것이었다.
-한 옵션에 묶인 두 역할 중 하나만 쓰고 싶다는 요청이다. 이 제안은 PR [#40101](https://github.com/microsoft/TypeScript/pull/40101)로
-구현되어 **4.1(2020년)** 에 출시됐고 — baseUrl이 없으면 `paths`의 상대 경로를 tsconfig 위치 기준으로 해석하되, 값은 반드시 `./`나 절대 경로여야 한다는 검증이 함께 들어갔다 — 그때부터 baseUrl 없이도 `paths`가 동작한다.
+그런데 "두 역할을 떼어낸다"는 발상은 6.0이 처음이 아니다. 이미 2019년, 한 사용자가 이슈 [#31869](https://github.com/microsoft/TypeScript/issues/31869)에서 똑같은 불편을 제기했다 — `paths`는 타입체킹용 별칭으로만 쓰고 싶은데, baseUrl이 딸려 보내는 _두 번째 역할(bare 이름의 암묵적 해석)_ 까지 떠안긴 싫다는 것이었다.
 
-그러니 6.0의 deprecation은 어느 날 갑자기 튀어나온 breaking change가 아니다. **2019년 문제 제기(#31869) → 2020년 4.1 구현(#40101)
-→ 2026년 6.0 정리(#62207·#62509)** 로, baseUrl의 두 역할을 떼어내는 일은 6년에 걸쳐 진행돼 온 청소의 마지막 단계인 셈이다.
+이 요청은 PR [#40101](https://github.com/microsoft/TypeScript/pull/40101)로 구현돼 **4.1(2020년)** 에 출시됐고, 그때부터 baseUrl 없이도 `paths`가 동작한다.
+
+그러니 6.0의 deprecation은 갑자기 튀어나온 breaking change가 아니다. **2019년 문제 제기(#31869) → 2020년 4.1 구현(#40101) → 2026년 6.0 정리(#62207·#62509)** — baseUrl의 두 역할을 떼어내는 일은 6년에 걸친 청소의 마지막 단계인 셈이다.
 
 ### 구현 레벨: TS5101은 baseUrl 전용이 아니다
 
@@ -241,37 +232,32 @@ my-lib/
 > had to spend more time inferring that common source directory by analyzing every file path in the
 > program." — 릴리스 노트
 
-요점은 **결정성**이다. 옛 TS는 이 깃발을 **자동으로** 꽂았는데, 규칙이 "내 파일을 전부 담는 가장 깊은 공통 폴더"였다. 위 예제는
-파일이 다 `src/`에 있으니 깃발은 `src/`. 그런데 루트에 파일 하나(`my-lib/build.ts`)만 더하면 '전부 담는 폴더'가 `my-lib/`로 **점프**하고,
-`dist/index.js`였던 출력이 통째로 `dist/src/index.js`로 밀린다. **파일 하나 더했을 뿐인데 산출물 구조가 바뀌는 것** — 이 들쭉날쭉함이
-비결정성이다. 게다가 "이 파일이 어느 프로젝트 소속인가"를 알려면 그 깃발 위치부터 계산하느라 프로젝트를 통째로 로드·파싱해야 했다(언어 서비스 성능에도 불리). 그래서
-6.0은 깃발을 자동 추측 대신 **`tsconfig.json`이 있는 폴더에 못 박는다**.
+요점은 **결정성**이다. 옛 TS는 깃발을 "내 파일을 전부 담는 가장 깊은 공통 폴더"에 **자동으로** 꽂았다. 위 예제는 파일이 다 `src/`에 있으니
+깃발은 `src/`. 그런데 루트에 파일 하나(`my-lib/build.ts`)만 더하면 공통 폴더가 `my-lib/`로 **점프**하고, `dist/index.js`였던 출력이
+통째로 `dist/src/index.js`로 밀린다. **파일 하나 더했을 뿐인데 산출물 구조가 바뀐다** — 이 들쭉날쭉함이 비결정성이다.
 
-앞 문단이 괄호로 슬쩍 흘린 '언어 서비스 성능' — 그게 사실 이 변경의 또 다른 노림수다. 추론 방식에선 프로젝트를 로드·파싱해봐야 알 수 있던 "이 파일이 어느
-`tsconfig` 소속인가"를, configDir 고정은 **경로만 보고 즉답**한다. 제안 이슈도 그대로 말한다 — _"our language service to
-**trivially** determine whether a file could belong to another `tsconfig.json`"_
-([#62194](https://github.com/microsoft/TypeScript/issues/62194)). 1장의 baseUrl과는 결이 다르다. baseUrl은 7.0이 _아예
-다시 구현하지 않는_ 동작이었지만, rootDir은 동작 자체는 남되 그 **계산을 입력 파일 목록에서 떼어낸** 것뿐이다. 그래도 향하는 곳은 비슷하다 — 로드 없이
-파일 소속을 즉답하는 일은, Go로 다시 쓴 7.0(`tsgo`)이 내세우는 빠른 언어 서비스와 같은 방향이다.
+비용은 하나 더 있다. "이 파일이 어느 `tsconfig` 소속인가"를 알려면 그 공통 폴더부터 계산하느라 프로젝트를 통째로 로드·파싱해야 했다. 깃발을
+`tsconfig.json` 폴더(configDir)에 못 박으면 이걸 **경로만 보고 즉답**한다 — 제안 이슈의 표현 그대로 _"trivially determine whether
+a file could belong to another `tsconfig.json`"_
+([#62194](https://github.com/microsoft/TypeScript/issues/62194)). 1장 baseUrl이 7.0에서 _아예 사라지는_ 동작이었던 것과
+달리, rootDir은 동작은 남고 그 **계산만 입력 파일 목록에서 떼어낸** 것이다. 그래도 향하는 곳은 같다 — Go로 다시 쓴 7.0(`tsgo`)의 빠른 언어
+서비스다.
 
-그럼 왜 기본값만 슬쩍 바꾸지 않고 굳이 **에러**를 던질까? 깃발의 기본 위치를 말없이 옮기면, 빌드는 성공하는데 산출물이 `dist/file.js`에서
-`dist/src/file.js`로 소리 없이 밀려난다 — 그걸 `import`하던 다른 패키지가 영문도 모르고 깨진다. 조용한 사고보다 시끄러운 멈춤이 낫다. 그래서 팀은
-옛 추론값과 새 기본값(configDir)이 어긋나면 **멈추고 명시를 요구하는** 쪽을 택했다(그 비교 로직이 곧 다음 절의 `TS5011`이다). 제안자 본인도
-매끄럽진 않다고 인정한다 — `rootDir`과 `include`를 _"often the same"_ 값으로 둘 다 적게 된다는
-것이다([#62194](https://github.com/microsoft/TypeScript/issues/62194)).
+그럼 왜 기본값만 슬쩍 바꾸지 않고 굳이 **에러**를 던질까? 기본 위치를 말없이 옮기면 빌드는 성공하는데 산출물이 `dist/file.js`에서
+`dist/src/file.js`로 소리 없이 밀리고, 그걸 `import`하던 패키지가 영문도 모르고 깨진다. 조용한 사고보다 시끄러운 멈춤이 낫다 — 그래서 옛 추론값과
+configDir이 어긋나면 **멈추고 명시를 요구한다**(그 비교 로직이 다음 절의 `TS5011`이다).
 
-기본값이 좁아진 충격은 모노레포에서 더 컸다. 구현 PR의 생태계 테스트에서 mui-docs는 에러가 **0에서 1만 건 넘게**(11,385개) 튀었고, TS 팀의
-jakebailey도 _"Ouch, looking bad for pyright and mui-docs"_ 라 적었다. 원인은 _"both `baseUrl` and `rootDir` are
-unset"_ — rootDir을 안 적고 추론에 맡긴 채, 프로젝트 참조 대신 _"every project emit each other's files into their own dist"_
-하던 구조였다([#62418](https://github.com/microsoft/TypeScript/pull/62418)).
+충격은 모노레포에서 더 컸다. 구현 PR의 생태계 테스트에서 mui-docs는 에러가 **0 → 11,385개**로 튀었고, TS 팀의 jakebailey도 _"Ouch,
+looking bad for pyright and mui-docs"_ 라 적었다. 원인은 rootDir을 추론에 맡긴 채 프로젝트 참조 대신 _"every project emit each
+other's files into their own dist"_ 하던 구조였다([#62418](https://github.com/microsoft/TypeScript/pull/62418)).
 
 여기서 증상이 갈린다. **같은 변경(기본 rootDir = `configDir`)인데, 깃발이 어디로 가느냐에 따라 두 얼굴**로 나타난다.
 
-|                | 내 경우 (작은 라이브러리)         | 모노레포 (mui 같은)                       |
-|:---------------|:------------------------|:------------------------------------|
-| 소스 위치          | 전부 `src/` **안**         | 다른 패키지(루트 **밖**) 파일을 끌어다 씀          |
-| 깃발을 옮기면        | 출력 위치만 밀림               | 파일이 새 깃발 **바깥**에 놓임                 |
-| 터지는 에러         | **`TS5011`** ("rootDir 명시해") | **`TS6059`** ("이 파일 rootDir 밖이야") |
+|         | 내 경우 (작은 라이브러리)              | 모노레포 (mui 같은)                     |
+|:--------|:-----------------------------|:----------------------------------|
+| 소스 위치   | 전부 `src/` **안**              | 다른 패키지(루트 **밖**) 파일을 끌어다 씀        |
+| 깃발을 옮기면 | 출력 위치만 밀림                    | 파일이 새 깃발 **바깥**에 놓임               |
+| 터지는 에러  | **`TS5011`** ("rootDir 명시해") | **`TS6059`** ("이 파일 rootDir 밖이야") |
 
 뿌리는 하나 — 깃발을 자동 추측에서 `tsconfig` 폴더로 못 박은 것이다. 내 프로젝트는 '출력이 밀리는' 얼굴로, 큰 모노레포는 '파일이 루트 밖으로 튕겨나가는'
 얼굴로 나타났을 뿐이다.
