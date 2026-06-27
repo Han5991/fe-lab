@@ -25,6 +25,31 @@ import { TOC } from '@/src/components/post/TOC';
 import { ReadingProgress } from '@/src/components/post/ReadingProgress';
 import { PostHeader } from '@/src/components/post/PostHeader';
 
+/**
+ * <p>로 감싸이지만 실제로는 블록 요소를 렌더하는 커스텀 컴포넌트.
+ * 이들이 <p> 안에 들어가면 무효 중첩(<p><div>…</div></p>)이 되어
+ * 브라우저가 <p>를 조기 종료 → SSR/CSR 트리가 어긋나며 hydration mismatch가 난다.
+ */
+const BLOCK_MARKDOWN_COMPONENTS = new Set<unknown>([Callout, Figure, FileTree]);
+
+/**
+ * react-markdown이 단락(<p>)으로 감싼 자식이 블록 요소라서
+ * <p> 대신 <div>로 감싸야 하는지 판별한다.
+ *
+ * 커스텀 블록 컴포넌트는 참조(identity)로, fenced code는 공개 prop인
+ * `className`의 `language-*`로 식별한다 — react-markdown 내부 `node` prop에
+ * 의존하지 않으므로 라이브러리 업그레이드로 node 형태가 바뀌어도 회귀하지 않는다.
+ * 인라인 code·이미지 등 phrasing 콘텐츠는 <p> 안에 유효하므로 블록으로 보지
+ * 않는다 — 불필요하게 <div>로 감싸면 `& p` 마진/타이포가 빠지기 때문.
+ */
+function isBlockMarkdownChild(child: unknown): boolean {
+  if (!isValidElement(child)) return false;
+  if (BLOCK_MARKDOWN_COMPONENTS.has(child.type)) return true;
+  // CodeBlock은 language-* 클래스가 있을 때(fenced code)만 블록 <div>를 렌더한다.
+  const className = (child.props as { className?: string }).className;
+  return typeof className === 'string' && /\blanguage-/.test(className);
+}
+
 interface PostClientProps {
   post: PostData;
   thumbnailUrl?: string;
@@ -262,21 +287,9 @@ export default function PostClient({
                 components={
                   {
                     p({ children, ...props }) {
-                      const isBlockElement = (node: unknown) => {
-                        if (
-                          !isValidElement(node) ||
-                          typeof node.type === 'string'
-                        ) {
-                          return false;
-                        }
-                        const tagName = (
-                          node.props as { node?: { tagName?: string } }
-                        )?.node?.tagName;
-                        return tagName !== 'code';
-                      };
                       const hasBlockChild = Array.isArray(children)
-                        ? children.some(isBlockElement)
-                        : isBlockElement(children);
+                        ? children.some(isBlockMarkdownChild)
+                        : isBlockMarkdownChild(children);
                       if (hasBlockChild) {
                         return <div {...props}>{children}</div>;
                       }
