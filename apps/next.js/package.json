@@ -33,7 +33,6 @@
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "@vitejs/plugin-react": "^5.0.4",
-    "@vitest/expect": "^4.1.9",
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
     "eslint-plugin-react": "^7.37.4",
