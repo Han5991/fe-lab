@@ -8,10 +8,6 @@ interface PageBoundaryProps extends ComponentPropsWithRef<'div'> {
   id: string;
 }
 
-export function PageBoundary({ id, children, className }: PageBoundaryProps) {
-  return (
-    <div data-ssgoi-transition={id} className={className}>
-      {children}
-    </div>
-  );
-}
+export const PageBoundary = ({ id, ...rest }: PageBoundaryProps) => (
+  <div data-ssgoi-transition={id} {...rest} />
+);
