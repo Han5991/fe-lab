@@ -52,11 +52,9 @@ function renderTreeLine(
   if (line.depth === 0) {
     return `${line.name}${line.isDir ? '/' : ''}`;
   }
-  // 루트는 브랜치 칼럼을 차지하지 않으므로 depth 0 조상 칼럼은 건너뛴다
-  const branches = ancestorContinues
-    .slice(1)
-    .map(c => (c ? '│  ' : '   '))
-    .join('');
+  // 조상(depth ≥ 1) 칼럼만 그린다. 루트(depth 0)는 브랜치 칼럼을 차지하지 않고,
+  // 아래 loop가 d=1부터 채우므로 별도 slice가 필요 없다.
+  const branches = ancestorContinues.map(c => (c ? '│  ' : '   ')).join('');
   const connector = isLast ? '└─ ' : '├─ ';
   return `${branches}${connector}${line.name}${line.isDir ? '/' : ''}`;
 }
@@ -69,7 +67,7 @@ export function FileTree({ children }: FileTreeProps) {
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     const ancestorContinues: boolean[] = [];
-    for (let d = 0; d < line.depth; d++) {
+    for (let d = 1; d < line.depth; d++) {
       let hasMoreSibling = false;
       for (let j = i + 1; j < lines.length; j++) {
         if (lines[j].depth < d) break;

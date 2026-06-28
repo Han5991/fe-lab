@@ -60,8 +60,7 @@ const jsonLd = {
 };
 
 export default function AboutPage() {
-  // 빌드 타임 통계. 블로그 글 수는 실제 발행 수, PR 수는 CI가 주입(NEXT_PUBLIC_PR_COUNT),
-  // 로컬 빌드·CI 조회 실패 시 폴백 상수가 처리. 컨퍼런스는 수동 관리.
+  // PR 수만 비자명: CI가 빌드 타임에 NEXT_PUBLIC_PR_COUNT로 주입, 로컬·실패 시 '58' 폴백.
   const blogPostCount = getAllPostSummaries().length;
   const mergedPrCount = process.env.NEXT_PUBLIC_PR_COUNT || '58';
   const conferenceCount = '2';
