@@ -489,6 +489,14 @@ baseUrl·rootDir·types 셋 다 5에서도 오늘 당장 적용할 수 있는 �
 
 ---
 
+## 그래서, 오늘 당신의 tsconfig는?
+
+이 글을 닫기 전에 딱 하나만 하자 — `tsconfig.json`을 여는 것. `baseUrl`이 아직 남아 있는지, `rootDir`이 비어 있는지, `types`가 통째로 열려 있는지. 셋 다 6을 기다릴 것 없이 오늘 5.x에서 고치고, 그 커밋 하나로 빌드를 더 빠르게 만들 수 있다. 미뤄도 빌드는 돌지만, 미룬 만큼 7.0에서 한꺼번에 청구된다.
+
+그리고 정말 궁금하다 — **여러분의 프로젝트는 이 셋 중 몇 개를 이미 지키고 있었나?** 셋 다 비어 있었다면 무엇부터 손볼지, 아니면 "우린 진작 package.json `imports`로 넘어갔다" 같은 이야기가 있다면 댓글로 남겨 달라. 남의 tsconfig가 어디서 새는지는, 의외로 서로의 댓글에서 가장 빨리 배운다.
+
+---
+
 ## 참고 링크
 
 - TypeScript 6.0 릴리스 노트 — <https://www.typescriptlang.org/docs/handbook/release-notes/typescript-6-0.html>
