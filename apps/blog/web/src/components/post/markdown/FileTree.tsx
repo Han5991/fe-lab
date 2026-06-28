@@ -1,22 +1,11 @@
-import { Children, isValidElement } from 'react';
+import { Children } from 'react';
 import type { ReactNode } from 'react';
 import { css } from '@design-system/ui-lib/css';
 
+import { codeText } from '../markdownCode';
+
 interface FileTreeProps {
   children?: ReactNode;
-}
-
-function extractText(children: ReactNode): string {
-  if (typeof children === 'string') return children;
-  if (typeof children === 'number') return String(children);
-  if (children == null || typeof children === 'boolean') return '';
-  if (Array.isArray(children)) {
-    return children.map(extractText).join('');
-  }
-  if (isValidElement<{ children?: ReactNode }>(children)) {
-    return extractText(children.props.children);
-  }
-  return '';
 }
 
 interface Line {
@@ -60,7 +49,7 @@ function renderTreeLine(
 }
 
 export function FileTree({ children }: FileTreeProps) {
-  const text = Children.toArray(children).map(extractText).join('\n');
+  const text = Children.toArray(children).map(codeText).join('\n');
   const lines = parseLines(text);
 
   const rendered: string[] = [];

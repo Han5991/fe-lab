@@ -1,12 +1,15 @@
 import { isValidElement, type ReactNode } from 'react';
 
 /**
- * code 자식의 텍스트만 안전하게 뽑는다. rehypeRaw가 raw HTML <code>에 자식 엘리먼트를
- * 실어 보내면(예: <code><span>x</span></code>) children이 문자열이 아니라 엘리먼트(배열)가
- * 되는데, String(children)은 '[object Object]', 단순 문자열 가드는 ''로 내용을 잃는다.
+ * ReactNode에서 텍스트만 재귀적으로 안전하게 뽑는다. rehypeRaw가 raw HTML <code>에 자식
+ * 엘리먼트를 실어 보내면(예: <code><span>x</span></code>) children이 문자열이 아니라
+ * 엘리먼트(배열)가 되는데, String(children)은 '[object Object]', 단순 문자열 가드는 ''로
+ * 내용을 잃는다. CodeBlock/isBlockCode와 FileTree(트리 텍스트 추출)가 이 함수를 공유한다.
  */
 export function codeText(node: ReactNode): string {
   if (typeof node === 'string') return node;
+  // number도 텍스트로 보존(FileTree 동작과 통일). 누락하면 숫자 노드가 조용히 사라진다.
+  if (typeof node === 'number') return String(node);
   if (Array.isArray(node)) return node.map(codeText).join('');
   if (isValidElement<{ children?: ReactNode }>(node))
     return codeText(node.props.children);

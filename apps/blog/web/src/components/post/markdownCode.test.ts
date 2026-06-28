@@ -23,10 +23,14 @@ describe('codeText', () => {
     );
     expect(codeText(node)).toBe('abc\n');
   });
-  test('문자열이 아닌 leaf(null/undefined/number)는 빈 문자열', () => {
+  test('number는 String으로 변환(FileTree extractText와 동작 통일)', () => {
+    expect(codeText(42)).toBe('42');
+    expect(codeText(0)).toBe('0');
+  });
+  test('null/undefined/boolean leaf는 빈 문자열', () => {
     expect(codeText(null)).toBe('');
     expect(codeText(undefined)).toBe('');
-    expect(codeText(42)).toBe('');
+    expect(codeText(true)).toBe('');
   });
 });
 

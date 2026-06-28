@@ -63,7 +63,7 @@ jobs:
         run: |
           json=$(curl -fsSL https://raw.githubusercontent.com/Han5991/Han5991/main/config/summary.json || true)
           count=$(printf '%s' "$json" | jq -r '.mergedPRs // empty' 2>/dev/null || true)
-          [[ "$count" =~ ^[1-9][0-9]*$ ]] || { echo "::warning::PR count fetch 실패 — about 페이지가 폴백값을 사용합니다"; count=''; }
+          [[ "$count" =~ ^[0-9]+$ ]] || { echo "::warning::PR count fetch 실패 — about 페이지가 폴백값을 사용합니다"; count=''; }
           echo "count=$count" >> "$GITHUB_OUTPUT"
           echo "Merged PR count: ${count:-(fallback)}"
 
