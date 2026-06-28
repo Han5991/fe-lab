@@ -1,6 +1,5 @@
 import Link from 'next/link';
 import { css } from '@design-system/ui-lib/css';
-import { SsgoiTransition } from '@ssgoi/react';
 import type { Metadata } from 'next';
 
 import { getAllPostSummaries } from '@/domain/post';
@@ -11,6 +10,7 @@ import {
   SITE_AUTHOR_LINKEDIN,
   SITE_DESCRIPTION_EXPANDED,
 } from '@/lib/constants';
+import { safeJsonLd } from '@/lib/jsonLd';
 
 import {
   Hero,
@@ -22,6 +22,7 @@ import {
   SearchBox,
   Label,
 } from '@/src/components/blog';
+import { PageBoundary } from '@/src/components/PageBoundary';
 
 export const metadata: Metadata = {
   title: 'Frontend Lab | 프론트엔드 실험실',
@@ -139,9 +140,9 @@ export default function HomePage() {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }}
       />
-      <SsgoiTransition id="/">
+      <PageBoundary transitionId="/">
         <div className={css({ bg: 'paper.50' })}>
           <Hero />
 
@@ -351,7 +352,7 @@ export default function HomePage() {
             </div>
           </section>
         </div>
-      </SsgoiTransition>
+      </PageBoundary>
     </>
   );
 }

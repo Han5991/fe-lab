@@ -330,10 +330,12 @@ https://github.com/cschroeter/park-ui
 - 공통 디자인 토큰 및 레시피 중앙 관리
   Panda CSS의 panda.config.ts 파일에서 색상, 폰트, 간격 등의 디자인 토큰을 정의하고, 이를 레시피(예: 버튼, 텍스트 등)와 패턴으로 만들어 둡니다. 이 공통 디자인 시스템을 하나의 패키지로 구성하여, 모노레포 내 여러 프로젝트에서 재사용할 수 있습니다
 
+<file-tree>
 📦 packages
-├── 📂 panda-preset
-├── 📂 react
-└── 📂 styled-system
+    📂 panda-preset
+    📂 react
+    📂 styled-system
+</file-tree>
 
 ```typescript
 // 예시: panda.config.ts (모노레포 공통 디자인 시스템)

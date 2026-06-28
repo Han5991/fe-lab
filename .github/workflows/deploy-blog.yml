@@ -12,7 +12,7 @@ on:
 
   # 매일 KST 09:00 (UTC 00:00) 자동 빌드 — 예약 발행(scheduled) 글 공개용
   schedule:
-    - cron: '0 9 * * *'
+    - cron: '0 0 * * *'
   workflow_dispatch:
 
 permissions:
@@ -55,6 +55,18 @@ jobs:
         id: setup_pages
         uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
 
+      # about 페이지 'PR 승인' 통계 — Han5991/Han5991 프로필 레포가 매일 갱신하는
+      # config/summary.json(외부 OSS 머지 PR 총수)을 읽어 빌드 타임에 주입한다.
+      # 조회 실패 시 빈값 → 페이지 폴백(|| '58')이 처리.
+      - name: Fetch merged PR count
+        id: pr_count
+        run: |
+          json=$(curl -fsSL https://raw.githubusercontent.com/Han5991/Han5991/main/config/summary.json || true)
+          count=$(printf '%s' "$json" | jq -r '.mergedPRs // empty' 2>/dev/null || true)
+          [[ "$count" =~ ^[0-9]+$ ]] || { echo "::warning::PR count fetch 실패 — about 페이지가 폴백값을 사용합니다"; count=''; }
+          echo "count=$count" >> "$GITHUB_OUTPUT"
+          echo "Merged PR count: ${count:-(fallback)}"
+
       - name: Build blog
         run: pnpm build --filter=@blog/web --no-cache
         env:
@@ -62,6 +74,7 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
           NEXT_PUBLIC_ADMIN_EMAIL: ${{ secrets.NEXT_PUBLIC_ADMIN_EMAIL }}
+          NEXT_PUBLIC_PR_COUNT: ${{ steps.pr_count.outputs.count }}
           NODE_ENV: production
 
       - name: Upload to pages artifact

@@ -17,6 +17,7 @@ import {
 } from './postSeo';
 import type { Metadata } from 'next';
 import { css } from '@design-system/ui-lib/css';
+import { safeJsonLd } from '@/lib/jsonLd';
 
 interface Props {
   params: Promise<{
@@ -90,11 +91,11 @@ export default async function PostPage({ params }: Props) {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbJsonLd) }}
       />
       <PostClient
         post={post}

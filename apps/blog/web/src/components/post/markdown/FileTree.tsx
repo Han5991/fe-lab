@@ -1,22 +1,11 @@
-import { Children, isValidElement } from 'react';
+import { Children } from 'react';
 import type { ReactNode } from 'react';
 import { css } from '@design-system/ui-lib/css';
 
+import { codeText } from '../markdownCode';
+
 interface FileTreeProps {
   children?: ReactNode;
-}
-
-function extractText(children: ReactNode): string {
-  if (typeof children === 'string') return children;
-  if (typeof children === 'number') return String(children);
-  if (children == null || typeof children === 'boolean') return '';
-  if (Array.isArray(children)) {
-    return children.map(extractText).join('');
-  }
-  if (isValidElement<{ children?: ReactNode }>(children)) {
-    return extractText(children.props.children);
-  }
-  return '';
 }
 
 interface Line {
@@ -48,20 +37,26 @@ function renderTreeLine(
   isLast: boolean,
   ancestorContinues: boolean[],
 ): string {
+  // 루트(depth 0)는 커넥터 없이 이름만 — 표준 트리 모양
+  if (line.depth === 0) {
+    return `${line.name}${line.isDir ? '/' : ''}`;
+  }
+  // 조상(depth ≥ 1) 칼럼만 그린다. 루트(depth 0)는 브랜치 칼럼을 차지하지 않고,
+  // 아래 loop가 d=1부터 채우므로 별도 slice가 필요 없다.
   const branches = ancestorContinues.map(c => (c ? '│  ' : '   ')).join('');
   const connector = isLast ? '└─ ' : '├─ ';
   return `${branches}${connector}${line.name}${line.isDir ? '/' : ''}`;
 }
 
 export function FileTree({ children }: FileTreeProps) {
-  const text = Children.toArray(children).map(extractText).join('\n');
+  const text = Children.toArray(children).map(codeText).join('\n');
   const lines = parseLines(text);
 
   const rendered: string[] = [];
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     const ancestorContinues: boolean[] = [];
-    for (let d = 0; d < line.depth; d++) {
+    for (let d = 1; d < line.depth; d++) {
       let hasMoreSibling = false;
       for (let j = i + 1; j < lines.length; j++) {
         if (lines[j].depth < d) break;

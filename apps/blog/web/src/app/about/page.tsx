@@ -1,13 +1,15 @@
 import Link from 'next/link';
 import { css } from '@design-system/ui-lib/css';
-import { SsgoiTransition } from '@ssgoi/react';
 import type { Metadata } from 'next';
 import {
   SITE_URL,
   SITE_AUTHOR_GITHUB,
   SITE_AUTHOR_LINKEDIN,
 } from '@/lib/constants';
+import { safeJsonLd } from '@/lib/jsonLd';
 import { Label } from '@/src/components/blog';
+import { PageBoundary } from '@/src/components/PageBoundary';
+import { getAllPostSummaries } from '@/domain/post';
 
 export const metadata: Metadata = {
   title: '소개 | Frontend Lab',
@@ -59,13 +61,18 @@ const jsonLd = {
 };
 
 export default function AboutPage() {
+  // PR 수만 비자명: CI가 빌드 타임에 NEXT_PUBLIC_PR_COUNT로 주입, 로컬·실패 시 '58' 폴백.
+  const blogPostCount = getAllPostSummaries().length;
+  const mergedPrCount = process.env.NEXT_PUBLIC_PR_COUNT || '58';
+  const conferenceCount = '2';
+
   return (
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }}
       />
-      <SsgoiTransition id="/about">
+      <PageBoundary transitionId="/about">
         <div className={css({ bg: 'paper.50' })}>
           {/* Header */}
           <header
@@ -213,9 +220,9 @@ export default function AboutPage() {
                   })}
                 >
                   {[
-                    { value: '33', label: '블로그 포스트' },
-                    { value: '38', label: 'PR 승인' },
-                    { value: '3', label: '컨퍼런스' },
+                    { value: String(blogPostCount), label: '블로그 포스트' },
+                    { value: mergedPrCount, label: 'PR 승인' },
+                    { value: conferenceCount, label: '컨퍼런스' },
                   ].map(stat => (
                     <div key={stat.label}>
                       <div
@@ -620,7 +627,7 @@ export default function AboutPage() {
             </div>
           </div>
         </div>
-      </SsgoiTransition>
+      </PageBoundary>
     </>
   );
 }

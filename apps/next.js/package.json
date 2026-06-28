@@ -40,6 +40,6 @@
     "jsdom": "^27.0.0",
     "next-router-mock": "^0.9.13",
     "typescript": "catalog:",
-    "vitest": "^4.0.0-beta.15"
+    "vitest": "^4.1.9"
   }
 }

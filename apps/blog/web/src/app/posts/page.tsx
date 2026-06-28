@@ -1,12 +1,13 @@
 import { Suspense } from 'react';
 import { css } from '@design-system/ui-lib/css';
-import { SsgoiTransition } from '@ssgoi/react';
 import type { Metadata } from 'next';
 
 import { getAllPostSummaries } from '@/domain/post';
 import { getAllSeries, getAllTags, getAllYears } from '@/domain/post/aggregate';
 import { SITE_URL } from '@/lib/constants';
+import { safeJsonLd } from '@/lib/jsonLd';
 import { Label, PostsArchiveView } from '@/src/components/blog';
+import { PageBoundary } from '@/src/components/PageBoundary';
 
 export const metadata: Metadata = {
   title: '모든 노트 | Frontend Lab',
@@ -80,15 +81,13 @@ export default function PostsPage() {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(collectionPageJsonLd),
-        }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(collectionPageJsonLd) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(blogJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(blogJsonLd) }}
       />
-      <SsgoiTransition id="/posts">
+      <PageBoundary transitionId="/posts">
         <div
           className={css({
             maxW: 'containerW',
@@ -165,7 +164,7 @@ export default function PostsPage() {
             />
           </Suspense>
         </div>
-      </SsgoiTransition>
+      </PageBoundary>
     </>
   );
 }

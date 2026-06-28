@@ -211,13 +211,13 @@ tsconfig.json:10:5 - error TS5011: The common source directory of 'tsconfig.json
 그런데 방금 추가한 `rootDir: "./src"` 한 줄은 정확히 뭘 할까? `rootDir`은 **출력 폴더(`dist`)의 모양을 어디서부터 베낄지** 정하는 '깃발'이라
 보면 된다. tsc는 깃발 **아래**의 폴더 구조를 그대로 `dist`에 복제한다.
 
-```
+<file-tree>
 my-lib/
-├── tsconfig.json
-└── src/
-    ├── index.ts
-    └── utils.ts
-```
+  tsconfig.json
+  src/
+    index.ts
+    utils.ts
+</file-tree>
 
 깃발을 `src/`에 꽂으면 → `dist/index.js`, `dist/utils.js`. 한 칸 위(`my-lib/`)에 꽂으면 → `dist/src/index.js`로 `src/`가 딸려
 들어온다. **위치 한 끗이 산출물 모양을 가른다.**
@@ -423,7 +423,7 @@ types</code> 기본값 변경을 되돌리는 옵션이 아니다. 옛 동작이
 
 ## 5. 보너스: 다시 튀어나온 baseUrl — 이번엔 내 코드가 아니었다
 
-`pnpm build`가 디자인 시스템 패키지의 dts 빌드에 다다르자 **또 `TS5101`**이 떴다. 그런데 `@design-system/ui`의 tsconfig엔
+`pnpm build`가 디자인 시스템 패키지의 dts 빌드에 다다르자 **또 `TS5101`** 이 떴다. 그런데 `@design-system/ui`의 tsconfig엔
 `baseUrl`이 **없다.** #1에서 봤듯 TS5101은 범용 진단이니, 누군가 내 빌드에 baseUrl을 **주입**하고 있다는 뜻이다.
 
 범인은 dts 번들러로 쓰던 **tsup**이었다. [소스](https://github.com/egoist/tsup/blob/main/src/rollup.ts)의 dts 빌드 옵션
@@ -443,17 +443,6 @@ baseUrl 주입은 내 코드가 아니라 도구의 문제이고, 그 도구가 
 갈아탔다. [Rolldown](https://rolldown.rs) 기반이라 **baseUrl을 주입하지 않고**, peer로
 `typescript: "^5.0.0 || ^6.0.0"`을 선언해 **TS6를 공식 지원**한다. 마이그레이션 도구(`npx tsdown-migrate`)로 config도 거의
 그대로 옮겨졌고, 전환 직후 `TS5101`은 사라졌다.
-
-다만 공짜는 아니었다. 전환하며 밟은 함정 셋:
-
-- **출력 확장자.** tsdown은 `platform: 'node'`에서 `.mjs`/`.cjs`/`.d.mts`/`.d.cts`로 낸다(tsup은 `.js`/`.d.ts`).
-  `package.json`의 `exports`·`bin`·`main`·`types`를 산출물에 맞춰 전부 정정해야 했다.
-- **`platform` ≠ `target`.** `platform: 'node'`는 의존성 외부화·출력 확장자 힌트일 뿐, ES 문법 타겟은 `target`이 따로 통제한다.
-  Node 24 문법까지 내리려면 `target: 'node24'`를 함께 명시.
-- **빌드 도구는 `devDependencies`에.** `tsdown`·`typescript`는 런타임 의존성이 아니다. `@design-system/ui`가 `tsup`을
-  `dependencies`에 두고 있어 뒤늦게 옮겼다.
-
-- `pnpm build` (전체) → **9/9 통과** (blog 정적 빌드 포함)
 
 ---
 
@@ -481,11 +470,15 @@ baseUrl·rootDir·types 셋 다 5에서도 오늘 당장 적용할 수 있는 �
 - **`rootDir` 고정** → 명시해 출력 레이아웃을 결정적으로 묶는다.
 - **`types` 좁히기** → `types: ["node", ...]`로 명시해 자동 `@types` 열거 비용을 미리 던다.
 
-세 줄 다 5.x tsconfig에서 오늘 커밋할 수 있다. 6은 이걸 '강제'했을 뿐 '발명'한 게 아니다.
+세 줄 다 5.x tsconfig에서 오늘 커밋할 수 있다. 6은 이걸 **'강제'** 했을 뿐 **'개발'** 한 게 아니다.
 
-> 시작은 "이걸 왜 굳이 바꾸지?"라는 호기심 한 줄이었다. 세 옵션의 '왜'를 PR diff까지 따라가 보니, 답은 늘 같은 곳을 가리켰다 — Go로 다시 쓰인 7.0.
-`baseUrl`·`types`·`rootDir`도, 마지막에 튀어나온 `tsup`도, 전부 그 길목을 미리 쓸어두는 일이었다. 그리고 가장 김빠지면서도 든든한 깨달음은 따로
-> 있었다. 이 길, 6을 올려야만 걸을 수 있는 게 아니다. 5에서 그대로, 그것도 빌드가 빨라지는 채로 갈 수 있다. 버전 숫자를 올리는 일과 더 나은 설정으로 가는 일은, 생각보다 자주 별개다.
+---
+
+## 그래서, 오늘 당신의 tsconfig는?
+
+이 글을 닫기 전에 딱 하나만 하자 — `tsconfig.json`을 여는 것. `baseUrl`이 아직 남아 있는지, `rootDir`이 비어 있는지, `types`가 통째로 열려 있는지. 셋 다 6을 기다릴 것 없이 오늘 5.x에서 고치고, 그 커밋 하나로 빌드를 더 빠르게 만들 수 있다. 미뤄도 빌드는 돌지만, 미룬 만큼 7.0에서 한꺼번에 청구된다.
+
+그리고 정말 궁금하다 — **여러분의 프로젝트는 이 셋 중 몇 개를 이미 지키고 있었나?** 셋 다 비어 있었다면 무엇부터 손볼지, 아니면 "우린 진작 package.json `imports`로 넘어갔다" 같은 이야기가 있다면 댓글로 남겨 달라. 남의 tsconfig가 어디서 새는지는, 의외로 서로의 댓글에서 가장 빨리 배운다.
 
 ---
 

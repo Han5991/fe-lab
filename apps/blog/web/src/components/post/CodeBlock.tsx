@@ -6,6 +6,7 @@ import { vscDarkPlus } from 'react-syntax-highlighter/dist/cjs/styles/prism';
 import { css, cx } from '@design-system/ui-lib/css';
 import { token } from '@design-system/ui-lib/tokens';
 import { MermaidChart } from './MermaidChart';
+import { codeText, isBlockCode } from './markdownCode';
 
 function CopyButton({ content }: { content: string }) {
   const [isCopied, setIsCopied] = useState(false);
@@ -65,13 +66,18 @@ export function CodeBlock({
   ...props
 }: CodeBlockProps) {
   const match = /language-(\w+)/.exec(className || '');
-  const content = String(children).replace(/\n$/, '');
+  const rawContent = codeText(children);
+  const content = rawContent.replace(/\n$/, '');
+  const language = match?.[1];
+  // 블록/인라인 판별은 isBlockCode 하나로 단일화한다. <p>/<div> 래퍼를 정하는
+  // isBlockMarkdownChild도 같은 함수를 써야 <p> 안 <div> hydration 오류가 안 난다.
+  const isBlock = isBlockCode(children, className);
 
-  if (match && match[1] === 'mermaid') {
+  if (language === 'mermaid') {
     return <MermaidChart chart={content} />;
   }
 
-  return match ? (
+  return isBlock ? (
     <div
       className={css({
         mb: '12',
@@ -106,7 +112,7 @@ export function CodeBlock({
         <div
           className={css({ boxSize: '3', rounded: 'full', bg: '[#27c93f]' })}
         />
-        {match[1] && (
+        {language && (
           <span
             className={css({
               ml: '4',
@@ -117,7 +123,7 @@ export function CodeBlock({
               fontWeight: 'bold',
             })}
           >
-            {match[1]}
+            {language}
           </span>
         )}
         <div className={css({ ml: 'auto' })}>
@@ -126,7 +132,7 @@ export function CodeBlock({
       </div>
       <SyntaxHighlighter
         style={vscDarkPlus}
-        language={match[1]}
+        language={language || 'text'}
         PreTag="div"
         customStyle={{
           borderRadius: 0,
