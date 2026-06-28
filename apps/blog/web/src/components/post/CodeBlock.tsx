@@ -72,10 +72,7 @@ export function CodeBlock({
   // 줄바꿈으로 "끝나게" 주므로, rawContent가 \n으로 끝나면 fenced 블록(한 줄짜리·빈 줄로 시작하는
   // 경우 포함)으로 본다. 일반 인라인 코드와 줄을 넘긴 raw 인라인 <code>(예: `<code>\ntypes</code>`)
   // 는 \n으로 끝나지 않아 인라인으로 남고, <p> 안에 <div>가 들어가는 hydration 오류를 피한다.
-  const isBlock =
-    Boolean(match) ||
-    content.trim().includes('\n') ||
-    rawContent.endsWith('\n');
+  const isBlock = Boolean(match) || rawContent.endsWith('\n');
 
   if (language === 'mermaid') {
     return <MermaidChart chart={content} />;
