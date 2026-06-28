@@ -1,9 +1,8 @@
 ---
 title: 'TypeScript 6 업그레이드인 줄 알았는데, 문제는 "설정"이었습니다'
 date: '2026-07-02'
-#status: 'scheduled'
-published: true
-#scheduledDate: '2026-07-02T09:00:00+09:00'
+status: 'scheduled'
+scheduledDate: '2026-07-02T09:00:00+09:00'
 slug: 'typescript-6-migration-troubleshooting'
 excerpt: 'TypeScript 6으로 올리자 baseUrl·rootDir·types 기본값이 차례로 빌드를 깨뜨렸다. 각 변경의 "왜"를 microsoft/TypeScript PR diff까지 추적해 보니, 이건 버전을 올리는 이야기가 아니라 "올바른 설정"에 도달하는 이야기였다 — baseUrl은 TS7로 가는 청소, types는 순수 성능 개선. 게다가 이 셋은 6을 안 올려도 5에서 오늘 당장 적용할 수 있다.'
 thumbnail: 'typescript-6-migration-thumb.png'
