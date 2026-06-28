@@ -10,6 +10,7 @@ import {
   SITE_AUTHOR_LINKEDIN,
   SITE_DESCRIPTION_EXPANDED,
 } from '@/lib/constants';
+import { safeJsonLd } from '@/lib/jsonLd';
 
 import {
   Hero,
@@ -139,7 +140,7 @@ export default function HomePage() {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }}
       />
       <PageBoundary transitionId="/">
         <div className={css({ bg: 'paper.50' })}>

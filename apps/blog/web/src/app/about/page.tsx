@@ -6,6 +6,7 @@ import {
   SITE_AUTHOR_GITHUB,
   SITE_AUTHOR_LINKEDIN,
 } from '@/lib/constants';
+import { safeJsonLd } from '@/lib/jsonLd';
 import { Label } from '@/src/components/blog';
 import { PageBoundary } from '@/src/components/PageBoundary';
 import { getAllPostSummaries } from '@/domain/post';
@@ -69,7 +70,7 @@ export default function AboutPage() {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }}
       />
       <PageBoundary transitionId="/about">
         <div className={css({ bg: 'paper.50' })}>

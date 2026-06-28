@@ -5,6 +5,7 @@ import type { Metadata } from 'next';
 import { getAllPostSummaries } from '@/domain/post';
 import { getAllSeries, getAllTags, getAllYears } from '@/domain/post/aggregate';
 import { SITE_URL } from '@/lib/constants';
+import { safeJsonLd } from '@/lib/jsonLd';
 import { Label, PostsArchiveView } from '@/src/components/blog';
 import { PageBoundary } from '@/src/components/PageBoundary';
 
@@ -80,13 +81,11 @@ export default function PostsPage() {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(collectionPageJsonLd),
-        }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(collectionPageJsonLd) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(blogJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(blogJsonLd) }}
       />
       <PageBoundary transitionId="/posts">
         <div
