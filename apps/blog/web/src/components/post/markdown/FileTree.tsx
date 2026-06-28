@@ -48,7 +48,15 @@ function renderTreeLine(
   isLast: boolean,
   ancestorContinues: boolean[],
 ): string {
-  const branches = ancestorContinues.map(c => (c ? '│  ' : '   ')).join('');
+  // 루트(depth 0)는 커넥터 없이 이름만 — 표준 트리 모양
+  if (line.depth === 0) {
+    return `${line.name}${line.isDir ? '/' : ''}`;
+  }
+  // 루트는 브랜치 칼럼을 차지하지 않으므로 depth 0 조상 칼럼은 건너뛴다
+  const branches = ancestorContinues
+    .slice(1)
+    .map(c => (c ? '│  ' : '   '))
+    .join('');
   const connector = isLast ? '└─ ' : '├─ ';
   return `${branches}${connector}${line.name}${line.isDir ? '/' : ''}`;
 }
