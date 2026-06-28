@@ -68,15 +68,14 @@ export function CodeBlock({
   const rawContent = String(children);
   const content = rawContent.replace(/\n$/, '');
   const language = match?.[1];
-  // 언어가 있거나 fenced 코드블록이면 블록으로 렌더. fenced 블록은 react-markdown이 줄바꿈으로
-  // "끝나는" 텍스트를 주고(여러 줄이면 내부에도 줄바꿈), raw HTML 인라인 <code>가 본문에서 줄을
-  // 넘겨 "앞"에 줄바꿈을 끼는 경우(예: `<code>\ntypes</code>`)와 구분된다. 그래서 ①내부 줄바꿈,
-  // 또는 ②줄바꿈으로 끝나되 시작하지는 않음 → 블록. ②가 한 줄짜리 fenced 블록(예: ```\nnpm i\n```)
-  // 도 잡으면서, 줄바꿈으로 시작하는 인라인 <code>는 인라인으로 남겨 hydration 오류를 막는다.
+  // 언어가 있거나 fenced 코드블록이면 블록으로 렌더. react-markdown은 fenced 블록 텍스트를
+  // 줄바꿈으로 "끝나게" 주므로, rawContent가 \n으로 끝나면 fenced 블록(한 줄짜리·빈 줄로 시작하는
+  // 경우 포함)으로 본다. 일반 인라인 코드와 줄을 넘긴 raw 인라인 <code>(예: `<code>\ntypes</code>`)
+  // 는 \n으로 끝나지 않아 인라인으로 남고, <p> 안에 <div>가 들어가는 hydration 오류를 피한다.
   const isBlock =
     Boolean(match) ||
     content.trim().includes('\n') ||
-    (rawContent.endsWith('\n') && !/^\r?\n/.test(rawContent));
+    rawContent.endsWith('\n');
 
   if (language === 'mermaid') {
     return <MermaidChart chart={content} />;
