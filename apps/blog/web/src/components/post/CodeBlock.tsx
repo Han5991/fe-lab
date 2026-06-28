@@ -76,7 +76,7 @@ export function CodeBlock({
   const isBlock =
     Boolean(match) ||
     content.trim().includes('\n') ||
-    (rawContent.endsWith('\n') && !rawContent.startsWith('\n'));
+    (rawContent.endsWith('\n') && !/^\r?\n/.test(rawContent));
 
   if (language === 'mermaid') {
     return <MermaidChart chart={content} />;
