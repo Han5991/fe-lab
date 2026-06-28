@@ -1,11 +1,24 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, isValidElement, type ReactNode } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/cjs/styles/prism';
 import { css, cx } from '@design-system/ui-lib/css';
 import { token } from '@design-system/ui-lib/tokens';
 import { MermaidChart } from './MermaidChart';
+
+/**
+ * code 자식의 텍스트만 안전하게 뽑는다. rehypeRaw가 raw HTML <code>에 자식 엘리먼트를
+ * 실어 보내면(예: <code><span>x</span></code>) children이 문자열이 아니라 엘리먼트(배열)가
+ * 되는데, String(children)은 '[object Object]', 단순 문자열 가드는 ''로 내용을 잃는다.
+ */
+function codeText(node: ReactNode): string {
+  if (typeof node === 'string') return node;
+  if (Array.isArray(node)) return node.map(codeText).join('');
+  if (isValidElement<{ children?: ReactNode }>(node))
+    return codeText(node.props.children);
+  return '';
+}
 
 function CopyButton({ content }: { content: string }) {
   const [isCopied, setIsCopied] = useState(false);
@@ -65,7 +78,7 @@ export function CodeBlock({
   ...props
 }: CodeBlockProps) {
   const match = /language-(\w+)/.exec(className || '');
-  const rawContent = typeof children === 'string' ? children : '';
+  const rawContent = codeText(children);
   const content = rawContent.replace(/\n$/, '');
   const language = match?.[1];
   // 언어가 있거나 fenced 코드블록이면 블록으로 렌더. react-markdown은 fenced 블록 텍스트를

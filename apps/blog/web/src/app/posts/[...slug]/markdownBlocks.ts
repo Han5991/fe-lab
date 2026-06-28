@@ -15,12 +15,20 @@ const BLOCK_MARKDOWN_COMPONENTS = new Set<ElementType>([
 // <p>를 조기 종료 → hydration mismatch. 직접 매핑된 블록은 identity로, 인라인
 // 래퍼(img/code)를 거치는 것은 공개 prop으로 식별한다(react-markdown 내부 node 비의존).
 export function isBlockMarkdownChild(child: unknown): boolean {
-  if (!isValidElement<{ className?: string; src?: string }>(child))
+  if (
+    !isValidElement<{ className?: string; src?: string; children?: unknown }>(
+      child,
+    )
+  )
     return false;
   if (BLOCK_MARKDOWN_COMPONENTS.has(child.type as ElementType)) return true;
-  const { className, src } = child.props;
+  const { className, src, children } = child.props;
   // img → MarkdownImage가 <Zoom>의 블록 <div>를 렌더하므로 <p>에 둘 수 없다.
   if (typeof src === 'string') return true;
-  // 인라인/fenced code는 같은 핸들러라 language-* className으로만 구분된다.
-  return typeof className === 'string' && /\blanguage-/.test(className);
+  // 인라인/fenced code는 같은 핸들러(CodeBlock)라, 그 isBlock 기준(언어 className 또는
+  // 텍스트가 \n으로 끝남)과 동일하게 판별해야 <p> 래퍼 결정과 CodeBlock 렌더가 어긋나
+  // <p> 안에 <div>가 들어가는 hydration mismatch를 만들지 않는다.
+  if (typeof className === 'string' && /\blanguage-/.test(className))
+    return true;
+  return typeof children === 'string' && children.endsWith('\n');
 }
