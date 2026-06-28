@@ -1,24 +1,12 @@
 'use client';
 
-import { useState, useCallback, isValidElement, type ReactNode } from 'react';
+import { useState, useCallback } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/cjs/styles/prism';
 import { css, cx } from '@design-system/ui-lib/css';
 import { token } from '@design-system/ui-lib/tokens';
 import { MermaidChart } from './MermaidChart';
-
-/**
- * code 자식의 텍스트만 안전하게 뽑는다. rehypeRaw가 raw HTML <code>에 자식 엘리먼트를
- * 실어 보내면(예: <code><span>x</span></code>) children이 문자열이 아니라 엘리먼트(배열)가
- * 되는데, String(children)은 '[object Object]', 단순 문자열 가드는 ''로 내용을 잃는다.
- */
-function codeText(node: ReactNode): string {
-  if (typeof node === 'string') return node;
-  if (Array.isArray(node)) return node.map(codeText).join('');
-  if (isValidElement<{ children?: ReactNode }>(node))
-    return codeText(node.props.children);
-  return '';
-}
+import { codeText, isBlockCode } from './markdownCode';
 
 function CopyButton({ content }: { content: string }) {
   const [isCopied, setIsCopied] = useState(false);
@@ -81,11 +69,9 @@ export function CodeBlock({
   const rawContent = codeText(children);
   const content = rawContent.replace(/\n$/, '');
   const language = match?.[1];
-  // 언어가 있거나 fenced 코드블록이면 블록으로 렌더. react-markdown은 fenced 블록 텍스트를
-  // 줄바꿈으로 "끝나게" 주므로, rawContent가 \n으로 끝나면 fenced 블록(한 줄짜리·빈 줄로 시작하는
-  // 경우 포함)으로 본다. 일반 인라인 코드와 줄을 넘긴 raw 인라인 <code>(예: `<code>\ntypes</code>`)
-  // 는 \n으로 끝나지 않아 인라인으로 남고, <p> 안에 <div>가 들어가는 hydration 오류를 피한다.
-  const isBlock = Boolean(match) || rawContent.endsWith('\n');
+  // 블록/인라인 판별은 isBlockCode 하나로 단일화한다. <p>/<div> 래퍼를 정하는
+  // isBlockMarkdownChild도 같은 함수를 써야 <p> 안 <div> hydration 오류가 안 난다.
+  const isBlock = isBlockCode(children, className);
 
   if (language === 'mermaid') {
     return <MermaidChart chart={content} />;
