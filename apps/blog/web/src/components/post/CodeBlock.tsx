@@ -65,13 +65,18 @@ export function CodeBlock({
   ...props
 }: CodeBlockProps) {
   const match = /language-(\w+)/.exec(className || '');
-  const content = String(children).replace(/\n$/, '');
+  const rawContent = String(children);
+  const content = rawContent.replace(/\n$/, '');
   const language = match?.[1];
-  // 언어가 있거나, 언어 없이도 "내부에" 줄바꿈이 있으면(= fenced 코드블록) 블록으로 렌더.
-  // trim 후 판별하는 이유: raw HTML 인라인 <code>가 앞뒤로 줄바꿈을 끼고 작성될 수 있는데
-  // (예: 본문에서 줄을 넘긴 `<code>\ntypes</code>`), 이를 블록으로 오인하면 <p> 안에
-  // <div>가 들어가 hydration 오류가 난다. 진짜 인라인 코드는 내부 줄바꿈이 없다.
-  const isBlock = Boolean(match) || content.trim().includes('\n');
+  // 언어가 있거나 fenced 코드블록이면 블록으로 렌더. fenced 블록은 react-markdown이 줄바꿈으로
+  // "끝나는" 텍스트를 주고(여러 줄이면 내부에도 줄바꿈), raw HTML 인라인 <code>가 본문에서 줄을
+  // 넘겨 "앞"에 줄바꿈을 끼는 경우(예: `<code>\ntypes</code>`)와 구분된다. 그래서 ①내부 줄바꿈,
+  // 또는 ②줄바꿈으로 끝나되 시작하지는 않음 → 블록. ②가 한 줄짜리 fenced 블록(예: ```\nnpm i\n```)
+  // 도 잡으면서, 줄바꿈으로 시작하는 인라인 <code>는 인라인으로 남겨 hydration 오류를 막는다.
+  const isBlock =
+    Boolean(match) ||
+    content.trim().includes('\n') ||
+    (rawContent.endsWith('\n') && !rawContent.startsWith('\n'));
 
   if (language === 'mermaid') {
     return <MermaidChart chart={content} />;
