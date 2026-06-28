@@ -65,7 +65,7 @@ export function CodeBlock({
   ...props
 }: CodeBlockProps) {
   const match = /language-(\w+)/.exec(className || '');
-  const rawContent = String(children);
+  const rawContent = typeof children === 'string' ? children : '';
   const content = rawContent.replace(/\n$/, '');
   const language = match?.[1];
   // 언어가 있거나 fenced 코드블록이면 블록으로 렌더. react-markdown은 fenced 블록 텍스트를
