@@ -72,7 +72,7 @@ export default function AboutPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <PageBoundary id="/about">
+      <PageBoundary transitionId="/about">
         <div className={css({ bg: 'paper.50' })}>
           {/* Header */}
           <header

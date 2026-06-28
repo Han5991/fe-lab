@@ -54,7 +54,9 @@ export default function PostClient({
       <PageBoundary
         // 썸네일 있으면 /posts/*(hero 모핑 대상), 없으면 /posts-plain/*(fade 폴백)으로
         // 분기해 전환 매칭을 라우팅한다. (URL은 그대로 /posts/{slug})
-        id={thumbnailUrl ? `/posts/${post.slug}` : `/posts-plain/${post.slug}`}
+        transitionId={
+          thumbnailUrl ? `/posts/${post.slug}` : `/posts-plain/${post.slug}`
+        }
         className={css({
           maxW: 'articleW',
           mx: 'auto',

@@ -88,7 +88,7 @@ export default function PostsPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(blogJsonLd) }}
       />
-      <PageBoundary id="/posts">
+      <PageBoundary transitionId="/posts">
         <div
           className={css({
             maxW: 'containerW',

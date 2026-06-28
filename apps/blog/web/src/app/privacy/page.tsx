@@ -18,7 +18,7 @@ const LAST_UPDATED = '2026년 3월 15일';
 
 export default function PrivacyPage() {
   return (
-    <PageBoundary id="/privacy">
+    <PageBoundary transitionId="/privacy">
       <div
         className={css({ minHeight: '[calc(100lvh - 231px)]', bg: 'paper.50' })}
       >

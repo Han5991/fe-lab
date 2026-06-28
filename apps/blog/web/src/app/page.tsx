@@ -141,7 +141,7 @@ export default function HomePage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <PageBoundary id="/">
+      <PageBoundary transitionId="/">
         <div className={css({ bg: 'paper.50' })}>
           <Hero />
 
