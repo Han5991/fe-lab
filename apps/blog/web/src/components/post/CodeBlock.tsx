@@ -66,12 +66,18 @@ export function CodeBlock({
 }: CodeBlockProps) {
   const match = /language-(\w+)/.exec(className || '');
   const content = String(children).replace(/\n$/, '');
+  const language = match?.[1];
+  // 언어가 있거나, 언어 없이도 "내부에" 줄바꿈이 있으면(= fenced 코드블록) 블록으로 렌더.
+  // trim 후 판별하는 이유: raw HTML 인라인 <code>가 앞뒤로 줄바꿈을 끼고 작성될 수 있는데
+  // (예: 본문에서 줄을 넘긴 `<code>\ntypes</code>`), 이를 블록으로 오인하면 <p> 안에
+  // <div>가 들어가 hydration 오류가 난다. 진짜 인라인 코드는 내부 줄바꿈이 없다.
+  const isBlock = Boolean(match) || content.trim().includes('\n');
 
-  if (match && match[1] === 'mermaid') {
+  if (language === 'mermaid') {
     return <MermaidChart chart={content} />;
   }
 
-  return match ? (
+  return isBlock ? (
     <div
       className={css({
         mb: '12',
@@ -106,7 +112,7 @@ export function CodeBlock({
         <div
           className={css({ boxSize: '3', rounded: 'full', bg: '[#27c93f]' })}
         />
-        {match[1] && (
+        {language && (
           <span
             className={css({
               ml: '4',
@@ -117,7 +123,7 @@ export function CodeBlock({
               fontWeight: 'bold',
             })}
           >
-            {match[1]}
+            {language}
           </span>
         )}
         <div className={css({ ml: 'auto' })}>
@@ -126,7 +132,7 @@ export function CodeBlock({
       </div>
       <SyntaxHighlighter
         style={vscDarkPlus}
-        language={match[1]}
+        language={language || 'text'}
         PreTag="div"
         customStyle={{
           borderRadius: 0,
