@@ -1,6 +1,7 @@
 import { css } from '@design-system/ui-lib/css';
 import type { Metadata } from 'next';
 import { SITE_URL } from '@/lib/constants';
+import { PageBoundary } from '@/src/components/PageBoundary';
 
 export const metadata: Metadata = {
   title: '개인정보처리방침 | Frontend Lab',
@@ -17,7 +18,7 @@ const LAST_UPDATED = '2026년 3월 15일';
 
 export default function PrivacyPage() {
   return (
-    <div data-ssgoi-transition="/privacy">
+    <PageBoundary id="/privacy">
       <div
         className={css({ minHeight: '[calc(100lvh - 231px)]', bg: 'paper.50' })}
       >
@@ -240,6 +241,6 @@ export default function PrivacyPage() {
           </div>
         </div>
       </div>
-    </div>
+    </PageBoundary>
   );
 }

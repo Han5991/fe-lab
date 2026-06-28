@@ -9,6 +9,7 @@ import { css } from '@design-system/ui-lib/css';
 
 import type { PostData } from '@/domain/post';
 import GiscusComments from '@/src/components/GiscusComments';
+import { PageBoundary } from '@/src/components/PageBoundary';
 import { useViewCount } from '@/src/hooks/useViewCount';
 import { useRecordRecentView } from '@/src/hooks/useRecentViews';
 import { BackToTop } from '@/src/components/mobile/BackToTop';
@@ -50,12 +51,10 @@ export default function PostClient({
         <MobileTOC />
       </div>
 
-      <div
+      <PageBoundary
         // 썸네일 있으면 /posts/*(hero 모핑 대상), 없으면 /posts-plain/*(fade 폴백)으로
         // 분기해 전환 매칭을 라우팅한다. (URL은 그대로 /posts/{slug})
-        data-ssgoi-transition={
-          thumbnailUrl ? `/posts/${post.slug}` : `/posts-plain/${post.slug}`
-        }
+        id={thumbnailUrl ? `/posts/${post.slug}` : `/posts-plain/${post.slug}`}
         className={css({
           maxW: 'articleW',
           mx: 'auto',
@@ -350,7 +349,7 @@ export default function PostClient({
 
           <TOC />
         </div>
-      </div>
+      </PageBoundary>
     </>
   );
 }

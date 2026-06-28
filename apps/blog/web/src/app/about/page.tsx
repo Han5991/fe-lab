@@ -7,6 +7,7 @@ import {
   SITE_AUTHOR_LINKEDIN,
 } from '@/lib/constants';
 import { Label } from '@/src/components/blog';
+import { PageBoundary } from '@/src/components/PageBoundary';
 
 export const metadata: Metadata = {
   title: '소개 | Frontend Lab',
@@ -64,7 +65,7 @@ export default function AboutPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <div data-ssgoi-transition="/about">
+      <PageBoundary id="/about">
         <div className={css({ bg: 'paper.50' })}>
           {/* Header */}
           <header
@@ -214,7 +215,7 @@ export default function AboutPage() {
                   {[
                     { value: '33', label: '블로그 포스트' },
                     { value: '38', label: 'PR 승인' },
-                    { value: '3', label: '컨퍼런스' },
+                    { value: '2', label: '컨퍼런스' },
                   ].map(stat => (
                     <div key={stat.label}>
                       <div
@@ -619,7 +620,7 @@ export default function AboutPage() {
             </div>
           </div>
         </div>
-      </div>
+      </PageBoundary>
     </>
   );
 }

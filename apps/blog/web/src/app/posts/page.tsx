@@ -6,6 +6,7 @@ import { getAllPostSummaries } from '@/domain/post';
 import { getAllSeries, getAllTags, getAllYears } from '@/domain/post/aggregate';
 import { SITE_URL } from '@/lib/constants';
 import { Label, PostsArchiveView } from '@/src/components/blog';
+import { PageBoundary } from '@/src/components/PageBoundary';
 
 export const metadata: Metadata = {
   title: '모든 노트 | Frontend Lab',
@@ -87,7 +88,7 @@ export default function PostsPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(blogJsonLd) }}
       />
-      <div data-ssgoi-transition="/posts">
+      <PageBoundary id="/posts">
         <div
           className={css({
             maxW: 'containerW',
@@ -164,7 +165,7 @@ export default function PostsPage() {
             />
           </Suspense>
         </div>
-      </div>
+      </PageBoundary>
     </>
   );
 }

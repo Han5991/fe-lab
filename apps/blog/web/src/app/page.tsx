@@ -21,6 +21,7 @@ import {
   SearchBox,
   Label,
 } from '@/src/components/blog';
+import { PageBoundary } from '@/src/components/PageBoundary';
 
 export const metadata: Metadata = {
   title: 'Frontend Lab | 프론트엔드 실험실',
@@ -140,7 +141,7 @@ export default function HomePage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <div data-ssgoi-transition="/">
+      <PageBoundary id="/">
         <div className={css({ bg: 'paper.50' })}>
           <Hero />
 
@@ -350,7 +351,7 @@ export default function HomePage() {
             </div>
           </section>
         </div>
-      </div>
+      </PageBoundary>
     </>
   );
 }
