@@ -1,6 +1,5 @@
 import Link from 'next/link';
 import { css } from '@design-system/ui-lib/css';
-import { SsgoiTransition } from '@ssgoi/react';
 import type { Metadata } from 'next';
 
 import { getAllPostSummaries } from '@/domain/post';
@@ -141,7 +140,7 @@ export default function HomePage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <SsgoiTransition id="/">
+      <div data-ssgoi-transition="/">
         <div className={css({ bg: 'paper.50' })}>
           <Hero />
 
@@ -351,7 +350,7 @@ export default function HomePage() {
             </div>
           </section>
         </div>
-      </SsgoiTransition>
+      </div>
     </>
   );
 }

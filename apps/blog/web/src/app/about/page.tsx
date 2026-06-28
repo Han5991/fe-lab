@@ -1,6 +1,5 @@
 import Link from 'next/link';
 import { css } from '@design-system/ui-lib/css';
-import { SsgoiTransition } from '@ssgoi/react';
 import type { Metadata } from 'next';
 import {
   SITE_URL,
@@ -65,7 +64,7 @@ export default function AboutPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <SsgoiTransition id="/about">
+      <div data-ssgoi-transition="/about">
         <div className={css({ bg: 'paper.50' })}>
           {/* Header */}
           <header
@@ -620,7 +619,7 @@ export default function AboutPage() {
             </div>
           </div>
         </div>
-      </SsgoiTransition>
+      </div>
     </>
   );
 }

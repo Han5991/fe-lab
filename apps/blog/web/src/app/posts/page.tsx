@@ -1,6 +1,5 @@
 import { Suspense } from 'react';
 import { css } from '@design-system/ui-lib/css';
-import { SsgoiTransition } from '@ssgoi/react';
 import type { Metadata } from 'next';
 
 import { getAllPostSummaries } from '@/domain/post';
@@ -88,7 +87,7 @@ export default function PostsPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(blogJsonLd) }}
       />
-      <SsgoiTransition id="/posts">
+      <div data-ssgoi-transition="/posts">
         <div
           className={css({
             maxW: 'containerW',
@@ -165,7 +164,7 @@ export default function PostsPage() {
             />
           </Suspense>
         </div>
-      </SsgoiTransition>
+      </div>
     </>
   );
 }

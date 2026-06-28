@@ -1,5 +1,4 @@
 import { css } from '@design-system/ui-lib/css';
-import { SsgoiTransition } from '@ssgoi/react';
 import type { Metadata } from 'next';
 import { SITE_URL } from '@/lib/constants';
 
@@ -18,7 +17,7 @@ const LAST_UPDATED = '2026년 3월 15일';
 
 export default function PrivacyPage() {
   return (
-    <SsgoiTransition id="/privacy">
+    <div data-ssgoi-transition="/privacy">
       <div
         className={css({ minHeight: '[calc(100lvh - 231px)]', bg: 'paper.50' })}
       >
@@ -241,6 +240,6 @@ export default function PrivacyPage() {
           </div>
         </div>
       </div>
-    </SsgoiTransition>
+    </div>
   );
 }
