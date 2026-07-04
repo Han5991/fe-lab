@@ -3,7 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createElement, type ReactNode } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import Markdown, { type Components } from 'react-markdown';
+import Markdown, { defaultUrlTransform, type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import { SITE_URL, SITE_NAME, SITE_DESCRIPTION } from './lib/constants';
@@ -90,7 +90,12 @@ export function renderContentHtml(
         rehypePlugins: [rehypeRaw],
         components: FEED_COMPONENTS,
         urlTransform: (url: string) => {
-          const resolved = resolvePostAssetUrl(url, relativeDir);
+          // react-markdown 기본 sanitizer를 먼저 적용해 javascript: 등
+          // 위험 프로토콜 차단을 유지한다 (커스텀 transform은 기본값을 대체하므로
+          // 생략하면 sanitize가 사라짐 — defense in depth).
+          const safe = defaultUrlTransform(url);
+          if (!safe) return safe;
+          const resolved = resolvePostAssetUrl(safe, relativeDir);
           // 사이트 상대 경로(/posts/... 등)만 절대 URL로 승격.
           // protocol-relative(//)는 이미 절대 URL이므로 제외.
           return resolved.startsWith('/') && !resolved.startsWith('//')
@@ -108,12 +113,20 @@ export function wrapCdata(html: string): string {
   return `<![CDATA[${html.replace(/\]\]>/g, ']]]]><![CDATA[>')}]]>`;
 }
 
+/** content:encoded 전문을 포함할 최신 글 개수 — 피드 크기 무한 증가 방지 */
+const DEFAULT_FULL_CONTENT_LIMIT = 20;
+
 export interface RssBuildOptions {
   siteUrl?: string;
   siteName?: string;
   siteDescription?: string;
   /** lastBuildDate / pubDate fallback 시 사용 — 테스트에서 결정성 확보용 */
   now?: Date;
+  /**
+   * content:encoded를 포함할 앞쪽 아이템 수 (posts는 최신순 정렬 가정 —
+   * getAllPosts가 sortByDateDesc로 보장). 이후 글은 excerpt만 포함.
+   */
+  fullContentLimit?: number;
 }
 
 /**
@@ -129,15 +142,16 @@ export function buildRssXml(
     siteName = SITE_NAME,
     siteDescription = SITE_DESCRIPTION,
     now = new Date(),
+    fullContentLimit = DEFAULT_FULL_CONTENT_LIMIT,
   } = options;
 
   const rssItems = posts
     .map(
-      post => `    <item>
+      (post, index) => `    <item>
       <title>${escapeXml(post.title)}</title>
       <link>${siteUrl}/posts/${encodePostSlug(post.slug)}/</link>
       <guid isPermaLink="true">${siteUrl}/posts/${encodePostSlug(post.slug)}/</guid>
-      <pubDate>${post.date ? parseScheduledDateKST(post.date).toUTCString() : now.toUTCString()}</pubDate>${post.excerpt ? `\n      <description>${escapeXml(post.excerpt)}</description>` : ''}${post.content ? `\n      <content:encoded>${wrapCdata(renderContentHtml(post.content, siteUrl, post.relativeDir))}</content:encoded>` : ''}
+      <pubDate>${post.date ? parseScheduledDateKST(post.date).toUTCString() : now.toUTCString()}</pubDate>${post.excerpt ? `\n      <description>${escapeXml(post.excerpt)}</description>` : ''}${post.content && index < fullContentLimit ? `\n      <content:encoded>${wrapCdata(renderContentHtml(post.content, siteUrl, post.relativeDir))}</content:encoded>` : ''}
     </item>`,
     )
     .join('\n');

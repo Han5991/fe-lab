@@ -321,6 +321,27 @@ test('renderContentHtml: <file-tree>는 pre로 매핑', () => {
   assert.ok(!html.includes('<file-tree'), 'raw file-tree 태그가 남으면 안 됨');
 });
 
+test('renderContentHtml: javascript: 등 위험 프로토콜은 기본 sanitizer로 차단', () => {
+  const html = renderContentHtml('[클릭](javascript:alert(1))', SITE);
+  assert.ok(!html.includes('javascript:'), html);
+  // 허용 프로토콜(https)은 그대로 통과
+  const ok = renderContentHtml('[링크](https://example.com/)', SITE);
+  assert.ok(ok.includes('href="https://example.com/"'), ok);
+});
+
+test('rss: fullContentLimit 이후 글은 content:encoded 생략 (피드 크기 제한)', () => {
+  const posts = [
+    makePost({ slug: 'newest', content: '# 최신 글' }),
+    makePost({ slug: 'older', content: '# 옛날 글' }),
+  ];
+  const xml = buildRssXml(posts, { ...OPTS, fullContentLimit: 1 });
+  assert.equal((xml.match(/<content:encoded>/g) || []).length, 1);
+  // 최신(앞쪽) 글만 전문 포함, 이후 글은 item 자체는 유지
+  assert.ok(xml.includes('최신 글'));
+  assert.ok(!xml.includes('옛날 글'));
+  assert.equal((xml.match(/<item>/g) || []).length, 2);
+});
+
 test('wrapCdata: ]]> 시퀀스는 CDATA 분할로 안전하게 처리', () => {
   const wrapped = wrapCdata('a]]>b');
   assert.equal(wrapped, '<![CDATA[a]]]]><![CDATA[>b]]>');
