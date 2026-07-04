@@ -236,6 +236,53 @@ test('rss: 절대 URL 이미지는 그대로 유지', () => {
   assert.ok(xml.includes('src="https://example.com/x.png"'));
 });
 
+test('rss: 루트 레벨 포스트(relativeDir 없음) 이미지도 /posts/ 프리픽스 유지', () => {
+  // sync-posts는 posts/ 루트의 이미지를 public/posts/ 바로 아래로 복사한다.
+  // 예: 'pnpm 10 업그레이드' 글의 ./pnpm.img_1.png → /posts/pnpm.img_1.png
+  const xml = buildRssXml(
+    [makePost({ slug: 'a', content: '![img](./pnpm.img_1.png)' })],
+    OPTS,
+  );
+  assert.ok(xml.includes(`src="${SITE}/posts/pnpm.img_1.png"`));
+});
+
+test('rss: 한글/공백 relativeDir는 percent-encoding됨', () => {
+  const xml = buildRssXml(
+    [
+      makePost({
+        slug: 'a',
+        content: '![img](./pic.png)',
+        relativeDir: 'nextjs deploy',
+      }),
+    ],
+    OPTS,
+  );
+  assert.ok(xml.includes(`src="${SITE}/posts/nextjs%20deploy/pic.png"`));
+});
+
+test('rss: 하위 디렉토리 이미지 경로의 슬래시는 %2F로 인코딩되지 않고 보존', () => {
+  const xml = buildRssXml(
+    [
+      makePost({
+        slug: 'a',
+        content: '![img](img/start.png)',
+        relativeDir: 'feconf',
+      }),
+    ],
+    OPTS,
+  );
+  assert.ok(xml.includes(`src="${SITE}/posts/feconf/img/start.png"`));
+});
+
+test('renderContentHtml: 한글 경로는 단일 인코딩 (이중 인코딩 %25 없음)', () => {
+  const html = renderContentHtml('![img](./한글.png)', SITE, '회고');
+  assert.ok(
+    html.includes(`src="${SITE}/posts/%ED%9A%8C%EA%B3%A0/`),
+    `relativeDir가 인코딩되어야 함: ${html}`,
+  );
+  assert.ok(!html.includes('%25'), `이중 인코딩 감지: ${html}`);
+});
+
 test('renderContentHtml: 루트 상대 경로는 siteUrl만 prefix', () => {
   const html = renderContentHtml('![img](/posts/x/pic.png)', SITE, 'ignored');
   assert.ok(html.includes(`src="${SITE}/posts/x/pic.png"`));

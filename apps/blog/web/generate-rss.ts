@@ -56,9 +56,12 @@ export function renderContentHtml(
           if (/^(?:[a-z][a-z0-9+.-]*:|\/\/|#)/i.test(url)) return url;
           if (url.startsWith('/')) return `${siteUrl}${url}`;
           const cleaned = url.replace(/^\.\//, '');
-          return relativeDir
-            ? `${siteUrl}/posts/${relativeDir}/${cleaned}`
-            : `${siteUrl}/${cleaned}`;
+          // sync-posts가 루트 레벨 포스트의 이미지도 public/posts/ 아래로 복사하므로
+          // relativeDir 유무와 무관하게 /posts/ 프리픽스는 항상 유지한다.
+          // 파일명 부분(cleaned)은 markdown 파서가 이미 percent-encoding하므로
+          // 우리 데이터인 relativeDir만 인코딩해 이중 인코딩을 피한다.
+          const prefix = relativeDir ? `${encodePostSlug(relativeDir)}/` : '';
+          return `${siteUrl}/posts/${prefix}${cleaned}`;
         },
       },
       content,
