@@ -10,6 +10,11 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
       {
+        source: '/:path(.+\\.[a-zA-Z0-9]+)',
+        destination: 'https://blog.sangwook.dev/:path',
+        permanent: true,
+      },
+      {
         source: '/:path+',
         destination: 'https://blog.sangwook.dev/:path+/',
         permanent: true,
