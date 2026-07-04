@@ -288,6 +288,39 @@ test('renderContentHtml: 루트 상대 경로는 siteUrl만 prefix', () => {
   assert.ok(html.includes(`src="${SITE}/posts/x/pic.png"`));
 });
 
+test('renderContentHtml: <callout>은 blockquote + 라벨로 매핑', () => {
+  const html = renderContentHtml(
+    '<callout type="warning">조심하세요</callout>',
+    SITE,
+  );
+  assert.ok(html.includes('<blockquote>'), html);
+  assert.ok(html.includes('<strong>⚠️ Warning</strong>'), html);
+  assert.ok(html.includes('조심하세요'), html);
+  assert.ok(!html.includes('<callout'), 'raw callout 태그가 남으면 안 됨');
+});
+
+test('renderContentHtml: callout title 속성이 라벨을 대체', () => {
+  const html = renderContentHtml(
+    '<callout type="tip" title="꿀팁">내용</callout>',
+    SITE,
+  );
+  assert.ok(html.includes('<strong>💡 꿀팁</strong>'), html);
+});
+
+test('renderContentHtml: 알 수 없는 callout type은 info로 폴백', () => {
+  const html = renderContentHtml('<callout>내용</callout>', SITE);
+  assert.ok(html.includes('<strong>ℹ️ Info</strong>'), html);
+});
+
+test('renderContentHtml: <file-tree>는 pre로 매핑', () => {
+  const html = renderContentHtml(
+    '<file-tree>\nsrc/\n  index.ts\n</file-tree>',
+    SITE,
+  );
+  assert.ok(html.includes('<pre>'), html);
+  assert.ok(!html.includes('<file-tree'), 'raw file-tree 태그가 남으면 안 됨');
+});
+
 test('wrapCdata: ]]> 시퀀스는 CDATA 분할로 안전하게 처리', () => {
   const wrapped = wrapCdata('a]]>b');
   assert.equal(wrapped, '<![CDATA[a]]]]><![CDATA[>b]]>');

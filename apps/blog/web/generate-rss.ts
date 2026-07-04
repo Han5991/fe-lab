@@ -1,12 +1,13 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createElement } from 'react';
+import { createElement, type ReactNode } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import Markdown from 'react-markdown';
+import Markdown, { type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import { SITE_URL, SITE_NAME, SITE_DESCRIPTION } from './lib/constants';
+import { resolvePostAssetUrl } from './domain/post/assetUrl';
 import { parseScheduledDateKST } from './lib/dates';
 import { getAllPosts } from './domain/post/service';
 import { encodePostSlug } from './domain/post/utils';
@@ -36,10 +37,45 @@ export type RssPost = Pick<
   relativeDir?: string;
 };
 
+const CALLOUT_META: Record<string, { icon: string; label: string }> = {
+  info: { icon: 'ℹ️', label: 'Info' },
+  tip: { icon: '💡', label: 'Tip' },
+  warning: { icon: '⚠️', label: 'Warning' },
+  danger: { icon: '🚨', label: 'Danger' },
+};
+
+/**
+ * 피드 리더에는 사이트의 스타일드 컴포넌트가 없으므로 커스텀 마크다운 헬퍼를
+ * 의미가 통하는 표준 HTML로 매핑한다 (사이트 쪽 매핑: PostClient.tsx의
+ * callout → Callout, file-tree → FileTree). figure는 표준 HTML이라 매핑 불필요.
+ */
+const FEED_COMPONENTS = {
+  callout: (props: { type?: string; title?: string; children?: ReactNode }) => {
+    const meta = CALLOUT_META[props.type ?? ''] ?? CALLOUT_META.info;
+    return createElement(
+      'blockquote',
+      null,
+      createElement(
+        'p',
+        null,
+        createElement(
+          'strong',
+          null,
+          `${meta.icon} ${props.title ?? meta.label}`,
+        ),
+      ),
+      props.children,
+    );
+  },
+  'file-tree': (props: { children?: ReactNode }) =>
+    createElement('pre', null, props.children),
+} as unknown as Components;
+
 /**
  * 마크다운 본문을 피드용 HTML로 렌더링합니다.
  * 사이트 렌더링과 동일한 스택(remark-gfm + rehype-raw)을 사용하되,
  * 피드 리더는 사이트 origin을 모르므로 상대 URL을 절대 URL로 변환합니다.
+ * 경로 해석은 사이트(MarkdownImage)와 공유하는 resolvePostAssetUrl 사용.
  */
 export function renderContentHtml(
   content: string,
@@ -52,16 +88,14 @@ export function renderContentHtml(
       {
         remarkPlugins: [remarkGfm],
         rehypePlugins: [rehypeRaw],
+        components: FEED_COMPONENTS,
         urlTransform: (url: string) => {
-          if (/^(?:[a-z][a-z0-9+.-]*:|\/\/|#)/i.test(url)) return url;
-          if (url.startsWith('/')) return `${siteUrl}${url}`;
-          const cleaned = url.replace(/^\.\//, '');
-          // sync-posts가 루트 레벨 포스트의 이미지도 public/posts/ 아래로 복사하므로
-          // relativeDir 유무와 무관하게 /posts/ 프리픽스는 항상 유지한다.
-          // 파일명 부분(cleaned)은 markdown 파서가 이미 percent-encoding하므로
-          // 우리 데이터인 relativeDir만 인코딩해 이중 인코딩을 피한다.
-          const prefix = relativeDir ? `${encodePostSlug(relativeDir)}/` : '';
-          return `${siteUrl}/posts/${prefix}${cleaned}`;
+          const resolved = resolvePostAssetUrl(url, relativeDir);
+          // 사이트 상대 경로(/posts/... 등)만 절대 URL로 승격.
+          // protocol-relative(//)는 이미 절대 URL이므로 제외.
+          return resolved.startsWith('/') && !resolved.startsWith('//')
+            ? `${siteUrl}${resolved}`
+            : resolved;
         },
       },
       content,
