@@ -37,11 +37,16 @@ export function buildDescription(
     : post.content;
 }
 
-/** 'YYYY-MM-DD' → KST ISO(`...T00:00:00+09:00`). null/undefined면 undefined. */
+/**
+ * 'YYYY-MM-DD' → KST ISO(`...T00:00:00+09:00`). null/undefined면 undefined.
+ * validate-posts가 권장하는 offset 포함 full-ISO(`2026-05-24T09:00:00+09:00`)는
+ * 이미 완전한 형식이므로 그대로 반환한다 (suffix를 덧붙이면 invalid ISO가 됨).
+ */
 export function toKstIsoDate(
   date: string | null | undefined,
 ): string | undefined {
-  return date ? `${date}T00:00:00+09:00` : undefined;
+  if (!date) return undefined;
+  return date.includes('T') ? date : `${date}T00:00:00+09:00`;
 }
 
 /** 마크다운 본문의 대략적 단어 수(JSON-LD wordCount용). 기호 제거 후 공백 분할. */
