@@ -1,6 +1,11 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { buildRssXml, escapeXml } from './generate-rss';
+import {
+  buildRssXml,
+  escapeXml,
+  renderContentHtml,
+  wrapCdata,
+} from './generate-rss';
 import type { RssPost } from './generate-rss';
 import { parseScheduledDateKST } from './lib/dates';
 
@@ -178,4 +183,166 @@ test('rss: excerpt가 있으면 <description> 추가, 없으면 생략', () => {
 test('rss: excerpt도 escape됨', () => {
   const xml = buildRssXml([makePost({ slug: 'a', excerpt: 'a & b' })], OPTS);
   assert.ok(xml.includes('<description>a &amp; b</description>'));
+});
+
+test('rss: content 네임스페이스 선언 포함', () => {
+  const xml = buildRssXml([], OPTS);
+  assert.ok(
+    xml.includes('xmlns:content="http://purl.org/rss/1.0/modules/content/"'),
+  );
+});
+
+test('rss: content가 있으면 content:encoded에 HTML 전문 포함', () => {
+  const xml = buildRssXml(
+    [makePost({ slug: 'a', content: '## 소제목\n\n본문 **강조** 텍스트' })],
+    OPTS,
+  );
+  assert.ok(xml.includes('<content:encoded><![CDATA['));
+  assert.ok(xml.includes('<h2>소제목</h2>'));
+  assert.ok(xml.includes('<strong>강조</strong>'));
+  assert.ok(xml.includes(']]></content:encoded>'));
+});
+
+test('rss: content 없으면 content:encoded 생략', () => {
+  const xml = buildRssXml([makePost({ slug: 'a' })], OPTS);
+  assert.ok(!xml.includes('<content:encoded>'));
+});
+
+test('rss: 상대 경로 이미지는 절대 URL로 변환', () => {
+  const xml = buildRssXml(
+    [
+      makePost({
+        slug: 'a',
+        content: '![스크린샷](./pic.png)',
+        relativeDir: 'series-a',
+      }),
+    ],
+    OPTS,
+  );
+  assert.ok(xml.includes(`src="${SITE}/posts/series-a/pic.png"`));
+});
+
+test('rss: 절대 URL 이미지는 그대로 유지', () => {
+  const xml = buildRssXml(
+    [
+      makePost({
+        slug: 'a',
+        content: '![외부](https://example.com/x.png)',
+        relativeDir: 'series-a',
+      }),
+    ],
+    OPTS,
+  );
+  assert.ok(xml.includes('src="https://example.com/x.png"'));
+});
+
+test('rss: 루트 레벨 포스트(relativeDir 없음) 이미지도 /posts/ 프리픽스 유지', () => {
+  // sync-posts는 posts/ 루트의 이미지를 public/posts/ 바로 아래로 복사한다.
+  // 예: 'pnpm 10 업그레이드' 글의 ./pnpm.img_1.png → /posts/pnpm.img_1.png
+  const xml = buildRssXml(
+    [makePost({ slug: 'a', content: '![img](./pnpm.img_1.png)' })],
+    OPTS,
+  );
+  assert.ok(xml.includes(`src="${SITE}/posts/pnpm.img_1.png"`));
+});
+
+test('rss: 한글/공백 relativeDir는 percent-encoding됨', () => {
+  const xml = buildRssXml(
+    [
+      makePost({
+        slug: 'a',
+        content: '![img](./pic.png)',
+        relativeDir: 'nextjs deploy',
+      }),
+    ],
+    OPTS,
+  );
+  assert.ok(xml.includes(`src="${SITE}/posts/nextjs%20deploy/pic.png"`));
+});
+
+test('rss: 하위 디렉토리 이미지 경로의 슬래시는 %2F로 인코딩되지 않고 보존', () => {
+  const xml = buildRssXml(
+    [
+      makePost({
+        slug: 'a',
+        content: '![img](img/start.png)',
+        relativeDir: 'feconf',
+      }),
+    ],
+    OPTS,
+  );
+  assert.ok(xml.includes(`src="${SITE}/posts/feconf/img/start.png"`));
+});
+
+test('renderContentHtml: 한글 경로는 단일 인코딩 (이중 인코딩 %25 없음)', () => {
+  const html = renderContentHtml('![img](./한글.png)', SITE, '회고');
+  assert.ok(
+    html.includes(`src="${SITE}/posts/%ED%9A%8C%EA%B3%A0/`),
+    `relativeDir가 인코딩되어야 함: ${html}`,
+  );
+  assert.ok(!html.includes('%25'), `이중 인코딩 감지: ${html}`);
+});
+
+test('renderContentHtml: 루트 상대 경로는 siteUrl만 prefix', () => {
+  const html = renderContentHtml('![img](/posts/x/pic.png)', SITE, 'ignored');
+  assert.ok(html.includes(`src="${SITE}/posts/x/pic.png"`));
+});
+
+test('renderContentHtml: <callout>은 blockquote + 라벨로 매핑', () => {
+  const html = renderContentHtml(
+    '<callout type="warning">조심하세요</callout>',
+    SITE,
+  );
+  assert.ok(html.includes('<blockquote>'), html);
+  assert.ok(html.includes('<strong>⚠️ Warning</strong>'), html);
+  assert.ok(html.includes('조심하세요'), html);
+  assert.ok(!html.includes('<callout'), 'raw callout 태그가 남으면 안 됨');
+});
+
+test('renderContentHtml: callout title 속성이 라벨을 대체', () => {
+  const html = renderContentHtml(
+    '<callout type="tip" title="꿀팁">내용</callout>',
+    SITE,
+  );
+  assert.ok(html.includes('<strong>💡 꿀팁</strong>'), html);
+});
+
+test('renderContentHtml: 알 수 없는 callout type은 info로 폴백', () => {
+  const html = renderContentHtml('<callout>내용</callout>', SITE);
+  assert.ok(html.includes('<strong>ℹ️ Info</strong>'), html);
+});
+
+test('renderContentHtml: <file-tree>는 pre로 매핑', () => {
+  const html = renderContentHtml(
+    '<file-tree>\nsrc/\n  index.ts\n</file-tree>',
+    SITE,
+  );
+  assert.ok(html.includes('<pre>'), html);
+  assert.ok(!html.includes('<file-tree'), 'raw file-tree 태그가 남으면 안 됨');
+});
+
+test('renderContentHtml: javascript: 등 위험 프로토콜은 기본 sanitizer로 차단', () => {
+  const html = renderContentHtml('[클릭](javascript:alert(1))', SITE);
+  assert.ok(!html.includes('javascript:'), html);
+  // 허용 프로토콜(https)은 그대로 통과
+  const ok = renderContentHtml('[링크](https://example.com/)', SITE);
+  assert.ok(ok.includes('href="https://example.com/"'), ok);
+});
+
+test('rss: fullContentLimit 이후 글은 content:encoded 생략 (피드 크기 제한)', () => {
+  const posts = [
+    makePost({ slug: 'newest', content: '# 최신 글' }),
+    makePost({ slug: 'older', content: '# 옛날 글' }),
+  ];
+  const xml = buildRssXml(posts, { ...OPTS, fullContentLimit: 1 });
+  assert.equal((xml.match(/<content:encoded>/g) || []).length, 1);
+  // 최신(앞쪽) 글만 전문 포함, 이후 글은 item 자체는 유지
+  assert.ok(xml.includes('최신 글'));
+  assert.ok(!xml.includes('옛날 글'));
+  assert.equal((xml.match(/<item>/g) || []).length, 2);
+});
+
+test('wrapCdata: ]]> 시퀀스는 CDATA 분할로 안전하게 처리', () => {
+  const wrapped = wrapCdata('a]]>b');
+  assert.equal(wrapped, '<![CDATA[a]]]]><![CDATA[>b]]>');
 });

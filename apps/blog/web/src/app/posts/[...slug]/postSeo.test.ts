@@ -58,6 +58,25 @@ describe('toKstIsoDate', () => {
     expect(toKstIsoDate(null)).toBeUndefined();
     expect(toKstIsoDate(undefined)).toBeUndefined();
   });
+
+  test('offset 포함 full-ISO는 suffix 없이 그대로 반환 (invalid ISO 방지)', () => {
+    // validate-posts가 권장하는 형식 — suffix를 덧붙이면
+    // '...+09:00T00:00:00+09:00' 같은 깨진 값이 됐던 회귀 케이스
+    expect(toKstIsoDate('2026-05-24T09:00:00+09:00')).toBe(
+      '2026-05-24T09:00:00+09:00',
+    );
+    expect(toKstIsoDate('2026-05-24T00:00:00Z')).toBe('2026-05-24T00:00:00Z');
+  });
+});
+
+describe('buildPostMetadata: full-ISO date', () => {
+  test('publishedTime도 full-ISO date를 그대로 사용', () => {
+    const og = buildPostMetadata(
+      makePost({ date: '2026-05-24T09:00:00+09:00' }),
+      'a',
+    ).openGraph as Record<string, unknown>;
+    expect(og.publishedTime).toBe('2026-05-24T09:00:00+09:00');
+  });
 });
 
 describe('countWords', () => {
@@ -87,7 +106,8 @@ describe('buildPostMetadata', () => {
     const og = buildPostMetadata(makePost({ date: '2025-01-02' }), 'a')
       .openGraph as Record<string, unknown>;
     expect(og.type).toBe('article');
-    expect(og.publishedTime).toBe('2025-01-02');
+    // JSON-LD의 datePublished와 동일한 KST ISO 8601 형식
+    expect(og.publishedTime).toBe('2025-01-02T00:00:00+09:00');
     expect(og.url).toBe('/posts/a/');
     const img = (og.images as Array<Record<string, unknown>>)[0];
     expect(img.width).toBe(1200);

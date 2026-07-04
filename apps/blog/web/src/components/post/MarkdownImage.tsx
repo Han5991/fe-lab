@@ -3,6 +3,7 @@
 import { css } from '@design-system/ui-lib/css';
 import Zoom from 'react-medium-image-zoom';
 import 'react-medium-image-zoom/dist/styles.css';
+import { resolvePostAssetUrl } from '@/domain/post/assetUrl';
 
 interface MarkdownImageProps {
   src?: string;
@@ -13,13 +14,10 @@ interface MarkdownImageProps {
 /**
  * Markdown 이미지 렌더러.
  * 상대 경로 이미지를 올바른 URL로 변환하고 Zoom 기능을 추가합니다.
+ * 경로 해석은 RSS 전문 렌더링과 공유하는 resolvePostAssetUrl 단일 소스를 사용.
  */
 export function MarkdownImage({ src, alt, relativeDir }: MarkdownImageProps) {
-  let imageSrc = src ?? '';
-
-  if (src && !src.startsWith('http') && !src.startsWith('/')) {
-    imageSrc = `/posts/${relativeDir}/${src}`;
-  }
+  const imageSrc = src ? resolvePostAssetUrl(src, relativeDir) : '';
 
   return (
     <Zoom>
