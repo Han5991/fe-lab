@@ -13,7 +13,9 @@
       "Bash(mkdir:*)",
       "WebFetch(domain:github.com)",
       "Bash(pnpm tsc:*)",
-      "Bash(pnpm test:*)"
+      "Bash(pnpm test:*)",
+      "Bash(/usr/bin/git status *)",
+      "Bash(/usr/bin/git diff *)"
     ],
     "deny": []
   }
