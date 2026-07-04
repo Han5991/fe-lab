@@ -22,6 +22,21 @@ export const metadata: Metadata = {
       '프론트엔드 엔지니어 한상욱(Sangwook Han). Mantine 27 PRs, Node.js 코어 기여, gemini-cli 74% 성능 개선. FEConf 2025 발표자.',
     url: `${SITE_URL}/about/`,
     siteName: 'Frontend Lab',
+    images: [
+      {
+        url: `${SITE_URL}/og-default.png`,
+        width: 1200,
+        height: 630,
+        alt: 'Frontend Lab Blog',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: '소개 | Frontend Lab',
+    description:
+      '프론트엔드 엔지니어 한상욱(Sangwook Han). Mantine 27 PRs, Node.js 코어 기여, gemini-cli 74% 성능 개선. FEConf 2025 발표자.',
+    images: [`${SITE_URL}/og-default.png`],
   },
 };
 

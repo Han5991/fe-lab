@@ -68,7 +68,8 @@ export function buildPostMetadata(post: SeoPost, slug: string): Metadata {
       url: `/posts/${slug}/`,
       siteName: 'Frontend Lab Blog',
       type: 'article',
-      publishedTime: post.date || undefined,
+      // JSON-LD(datePublished)와 동일하게 KST 기준 완전한 ISO 8601로 통일
+      publishedTime: toKstIsoDate(post.date),
       images: [
         {
           url: absoluteThumbnailUrl,

@@ -87,7 +87,8 @@ describe('buildPostMetadata', () => {
     const og = buildPostMetadata(makePost({ date: '2025-01-02' }), 'a')
       .openGraph as Record<string, unknown>;
     expect(og.type).toBe('article');
-    expect(og.publishedTime).toBe('2025-01-02');
+    // JSON-LD의 datePublished와 동일한 KST ISO 8601 형식
+    expect(og.publishedTime).toBe('2025-01-02T00:00:00+09:00');
     expect(og.url).toBe('/posts/a/');
     const img = (og.images as Array<Record<string, unknown>>)[0];
     expect(img.width).toBe(1200);

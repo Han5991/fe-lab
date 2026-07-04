@@ -1,40 +1,15 @@
-'use client';
+import type { Metadata } from 'next';
+import { AdminLayoutClient } from './AdminLayoutClient';
 
-import dynamic from 'next/dynamic';
-import { usePathname } from 'next/navigation';
-import { Suspense } from 'react';
-import { css } from '@design-system/ui-lib/css';
-
-const AdminGuard = dynamic(
-  () => import('@/src/components/admin/AdminGuard').then(mod => mod.AdminGuard),
-  { ssr: false },
-);
-
-function AuthFallback() {
-  return (
-    <div
-      className={css({
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        minH: '[100vh]',
-      })}
-    >
-      <p>인증 확인 중...</p>
-    </div>
-  );
-}
+// robots.txt의 Disallow는 크롤만 막고 색인은 막지 못하므로 noindex를 명시한다.
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const pathname = usePathname();
-  const isLoginPage =
-    pathname === '/admin/login' || pathname === '/admin/login/';
-
-  const content = isLoginPage ? children : <AdminGuard>{children}</AdminGuard>;
-
-  return <Suspense fallback={<AuthFallback />}>{content}</Suspense>;
+  return <AdminLayoutClient>{children}</AdminLayoutClient>;
 }
