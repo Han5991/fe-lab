@@ -1,6 +1,11 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { buildRssXml, escapeXml } from './generate-rss';
+import {
+  buildRssXml,
+  escapeXml,
+  renderContentHtml,
+  wrapCdata,
+} from './generate-rss';
 import type { RssPost } from './generate-rss';
 import { parseScheduledDateKST } from './lib/dates';
 
@@ -178,4 +183,65 @@ test('rss: excerpt가 있으면 <description> 추가, 없으면 생략', () => {
 test('rss: excerpt도 escape됨', () => {
   const xml = buildRssXml([makePost({ slug: 'a', excerpt: 'a & b' })], OPTS);
   assert.ok(xml.includes('<description>a &amp; b</description>'));
+});
+
+test('rss: content 네임스페이스 선언 포함', () => {
+  const xml = buildRssXml([], OPTS);
+  assert.ok(
+    xml.includes('xmlns:content="http://purl.org/rss/1.0/modules/content/"'),
+  );
+});
+
+test('rss: content가 있으면 content:encoded에 HTML 전문 포함', () => {
+  const xml = buildRssXml(
+    [makePost({ slug: 'a', content: '## 소제목\n\n본문 **강조** 텍스트' })],
+    OPTS,
+  );
+  assert.ok(xml.includes('<content:encoded><![CDATA['));
+  assert.ok(xml.includes('<h2>소제목</h2>'));
+  assert.ok(xml.includes('<strong>강조</strong>'));
+  assert.ok(xml.includes(']]></content:encoded>'));
+});
+
+test('rss: content 없으면 content:encoded 생략', () => {
+  const xml = buildRssXml([makePost({ slug: 'a' })], OPTS);
+  assert.ok(!xml.includes('<content:encoded>'));
+});
+
+test('rss: 상대 경로 이미지는 절대 URL로 변환', () => {
+  const xml = buildRssXml(
+    [
+      makePost({
+        slug: 'a',
+        content: '![스크린샷](./pic.png)',
+        relativeDir: 'series-a',
+      }),
+    ],
+    OPTS,
+  );
+  assert.ok(xml.includes(`src="${SITE}/posts/series-a/pic.png"`));
+});
+
+test('rss: 절대 URL 이미지는 그대로 유지', () => {
+  const xml = buildRssXml(
+    [
+      makePost({
+        slug: 'a',
+        content: '![외부](https://example.com/x.png)',
+        relativeDir: 'series-a',
+      }),
+    ],
+    OPTS,
+  );
+  assert.ok(xml.includes('src="https://example.com/x.png"'));
+});
+
+test('renderContentHtml: 루트 상대 경로는 siteUrl만 prefix', () => {
+  const html = renderContentHtml('![img](/posts/x/pic.png)', SITE, 'ignored');
+  assert.ok(html.includes(`src="${SITE}/posts/x/pic.png"`));
+});
+
+test('wrapCdata: ]]> 시퀀스는 CDATA 분할로 안전하게 처리', () => {
+  const wrapped = wrapCdata('a]]>b');
+  assert.equal(wrapped, '<![CDATA[a]]]]><![CDATA[>b]]>');
 });
