@@ -324,7 +324,7 @@ The blog (`apps/blog/web/`) is a **statically generated (SSG) Next.js applicatio
 
 | 파일                                     | 역할                                                                |
 | :--------------------------------------- | :------------------------------------------------------------------ |
-| `next.config.ts`                         | SSG output, trailingSlash 설정                                     |
+| `next.config.ts`                         | SSG output, trailingSlash 설정                                      |
 | `panda.config.ts`                        | Panda CSS 스타일 설정                                               |
 | `.env.production`                        | Supabase URL/Key, Giscus 설정                                       |
 | `.env.local`                             | 로컬 개발용 환경변수 (GA, Supabase local 등)                        |
