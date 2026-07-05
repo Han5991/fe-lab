@@ -1,5 +1,6 @@
 'use client';
 
+import type { ComponentProps } from 'react';
 import { Children } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -89,8 +90,6 @@ export default function PostClient({
                 alt={post.title}
                 width={1200}
                 height={630}
-                // 목록 카드 썸네일(data-hero-exit-key)과 같은 키 → hero 모핑 짝.
-                // 이 블록은 썸네일이 있을 때만 렌더되므로 무조건 부여.
                 data-hero-enter-key={`post-${post.slug}`}
                 className={css({
                   display: 'block',
@@ -319,7 +318,7 @@ export default function PostClient({
                     callout: Callout,
                     'file-tree': FileTree,
                     figure: Figure,
-                  } as React.ComponentProps<typeof ReactMarkdown>['components']
+                  } as ComponentProps<typeof ReactMarkdown>['components']
                 }
               >
                 {post.content}

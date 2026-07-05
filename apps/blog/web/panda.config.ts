@@ -41,10 +41,6 @@ export default defineConfig({
         WebkitFontSmoothing: 'antialiased',
         MozOsxFontSmoothing: 'grayscale',
       },
-      // 색 토큰을 쓰는 전역 pseudo/헬퍼는 여기(Panda globalCss)에 둔다 — Panda가
-      // semanticToken을 올바른 CSS 변수(--colors-*, 테마-가변)로 해석해주기 때문.
-      // globals.css는 Panda가 처리하지 않아 손으로 var()를 쓰면 flat-dotted 토큰의
-      // 이스케이프 점 이름(--colors-ink\.border)과 어긋난다.
       // GitHub: selection은 중립 회색 + 밝은 텍스트
       '::selection': {
         bg: 'ink.border',
@@ -56,12 +52,12 @@ export default defineConfig({
         borderRadius: '3px',
       },
       '::-webkit-scrollbar': {
-        width: '10px',
-        height: '10px',
+        width: '8px',
+        height: '6px',
       },
       '::-webkit-scrollbar-thumb': {
         bg: 'ink.border',
-        borderRadius: '5px',
+        borderRadius: '8px',
       },
       '::-webkit-scrollbar-thumb:hover': {
         bg: 'ink.300',

@@ -5,10 +5,6 @@ import mermaid from 'mermaid';
 import { css } from '@design-system/ui-lib/css';
 import { useTheme } from '@/src/hooks/useTheme';
 
-// mermaid render id는 전역적으로 유일해야 한다(mermaid가 측정용 임시 DOM
-// 노드를 이 id로 삽입하므로 재사용 시 충돌·중복 SVG가 발생). 렌더할 때마다
-// 증가하는 카운터로 매번 새 id를 만들어 테마 토글/StrictMode 이중 호출에서도
-// 안전하게 한다.
 let renderSeq = 0;
 
 export function MermaidChart({ chart }: { chart: string }) {

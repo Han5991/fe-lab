@@ -2,13 +2,9 @@
 
 import { useState, useCallback } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import {
-  vscDarkPlus,
-  oneLight,
-} from 'react-syntax-highlighter/dist/cjs/styles/prism';
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/cjs/styles/prism';
 import { css, cx } from '@design-system/ui-lib/css';
 import { token } from '@design-system/ui-lib/tokens';
-import { useTheme } from '@/src/hooks/useTheme';
 import { MermaidChart } from './MermaidChart';
 import { codeText, isBlockCode } from './markdownCode';
 
@@ -34,16 +30,16 @@ function CopyButton({ content }: { content: string }) {
         py: '1',
         fontSize: 'xs',
         color: 'ink.500',
-        bg: 'paper.200',
+        bg: '[#212a35]',
         rounded: 'md',
-        borderWidth: '[1px]',
-        borderColor: 'ink.border',
+        borderWidth: 'thin',
+        borderColor: '[#343d47]',
         cursor: 'pointer',
         transition: '[all 0.2s]',
         _hover: {
-          bg: 'paper.300',
-          color: 'accent.600',
-          borderColor: 'ink.borderStrong',
+          bg: '[#2d3742]',
+          color: '[#58a6ff]',
+          borderColor: '[#4a5560]',
         },
       })}
     >
@@ -76,9 +72,6 @@ export function CodeBlock({
   // 블록/인라인 판별은 isBlockCode 하나로 단일화한다. <p>/<div> 래퍼를 정하는
   // isBlockMarkdownChild도 같은 함수를 써야 <p> 안 <div> hydration 오류가 안 난다.
   const isBlock = isBlockCode(children, className);
-  // 코드블록도 테마 추종: 다크=vscDarkPlus/#161b22, 라이트=oneLight/#f6f8fa.
-  // (컨테이너 배경은 CSS로 즉시 전환, syntax 토큰 색만 useTheme로 스왑.)
-  const isDark = useTheme() === 'dark';
 
   if (language === 'mermaid') {
     return <MermaidChart chart={content} />;
@@ -91,23 +84,22 @@ export function CodeBlock({
         mt: '8',
         pos: 'relative',
         shadow: '2xl',
-        rounded: '[12px]',
+        rounded: '2xl',
         overflow: 'hidden',
-        bg: { base: '[#f6f8fa]', _dark: '[#161b22]' },
-        borderWidth: '[1px]',
+        bg: { base: '[#161b22]' },
+        borderWidth: 'thin',
         borderColor: 'ink.border',
       })}
     >
-      {/* Window chrome dots + language label */}
       <div
         className={css({
-          bg: { base: '[#eaeef2]', _dark: '[#12171d]' },
+          bg: { base: '[#12171d]' },
           px: '5',
           py: '3',
           display: 'flex',
           gap: '2.5',
           alignItems: 'center',
-          borderBottomWidth: '[1px]',
+          borderBottomWidth: 'thin',
           borderColor: 'ink.border',
         })}
       >
@@ -139,9 +131,8 @@ export function CodeBlock({
         </div>
       </div>
       <SyntaxHighlighter
-        style={isDark ? vscDarkPlus : oneLight}
+        style={vscDarkPlus}
         language={language || 'text'}
-        PreTag="div"
         customStyle={{
           borderRadius: 0,
           margin: 0,
