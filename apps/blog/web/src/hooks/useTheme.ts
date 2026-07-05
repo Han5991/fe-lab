@@ -1,31 +1,30 @@
 'use client';
 
 import { useSyncExternalStore } from 'react';
+import { THEME_COOKIE, THEME_COOKIE_MATCH } from './theme-cookie';
 
 export type Theme = 'light' | 'dark';
 
 // html[data-theme]를 단일 진실원으로 삼는다. 초기값은 layout.tsx의 <head>
 // 인라인 스크립트가 paint 전에 설정한다(쿠키 → 없으면 시스템 설정, FOUC 방지).
 // useSyncExternalStore로 읽어 effect 내 setState 없이 외부 상태를 구독한다.
-const COOKIE = 'theme';
 const listeners = new Set<() => void>();
 
 // readCookie/writeCookie/systemTheme/getSnapshot은 순수 헬퍼로 단위 테스트에서
 // 직접 검증하려고 export한다(sibling useRecentViews와 동일한 컨벤션).
 export function readCookie(): Theme | null {
-  // 이 정규식은 layout.tsx <head>의 FOUC 방지 인라인 스크립트와 의도적으로 동일한
-  // 복제본이다(그 스크립트는 hydration 전에 돌아 이 훅을 import할 수 없다).
-  // 한쪽만 바꾸면 조용히 어긋나니 반드시 함께 맞춰라.
+  // 쿠키 정규식은 theme-cookie.ts의 THEME_COOKIE_MATCH 단일 소스를 쓴다
+  // (layout.tsx의 FOUC 스크립트도 같은 소스를 주입 → 두 곳이 어긋날 수 없음).
   const m =
     typeof document !== 'undefined'
-      ? document.cookie.match(/(?:^|;\s*)theme=(dark|light)/)
+      ? document.cookie.match(new RegExp(THEME_COOKIE_MATCH))
       : null;
   return m ? (m[1] as Theme) : null;
 }
 
 export function writeCookie(t: Theme) {
   // 1년 유지 · path=/ · SameSite=Lax (구독/서버 어디서든 읽히도록 쿠키에 저장)
-  document.cookie = `${COOKIE}=${t}; path=/; max-age=31536000; SameSite=Lax`;
+  document.cookie = `${THEME_COOKIE}=${t}; path=/; max-age=31536000; SameSite=Lax`;
 }
 
 export function systemTheme(): Theme {

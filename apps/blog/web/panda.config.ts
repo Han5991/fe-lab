@@ -25,7 +25,6 @@ export default defineConfig({
   conditions: {
     extend: {
       dark: '[data-theme=dark] &',
-      light: '[data-theme=light] &',
     },
   },
   outdir: '../../../packages/@design-system/ui-lib',
