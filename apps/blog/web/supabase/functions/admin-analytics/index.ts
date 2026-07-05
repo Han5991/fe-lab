@@ -14,6 +14,8 @@
  *   SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY
  * 사용자가 Supabase Dashboard > Edge Functions > Secrets 에서 설정:
  *   ADMIN_EMAIL
+ * 로컬 개발 전용(config.toml [edge_runtime.secrets]):
+ *   ADMIN_ANALYTICS_ALLOW_UNAUTH="true" → 인증 우회. 프로덕션엔 미주입.
  */
 
 import { createClient } from 'npm:@supabase/supabase-js@2';
@@ -44,15 +46,16 @@ Deno.serve(async (req: Request) => {
     const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
     // ── 인증 ───────────────────────────────────────────────────────
-    // 로컬 개발(Supabase local)에선 인증 검사를 자동 우회하고, 프로덕션
-    // (*.supabase.co)에선 강제한다. 로컬은 SUPABASE_URL이 kong/127.0.0.1/
-    // localhost. → 수동으로 주석 해제할 필요 없이 환경에 따라 자동 분기.
-    const isLocalDev =
-      supabaseUrl.includes('kong') ||
-      supabaseUrl.includes('127.0.0.1') ||
-      supabaseUrl.includes('localhost');
+    // 인증 우회는 명시적 opt-in 플래그로만 허용한다(기본 = 인증 강제).
+    // 로컬 개발은 config.toml [edge_runtime.secrets]에서 이 플래그를 켠다.
+    // 프로덕션(Cloud/셀프호스트)은 플래그 미설정 → 인증 강제.
+    // (예전엔 SUPABASE_URL에 kong/127.0.0.1/localhost가 있으면 자동 우회했는데,
+    //  'kong'은 Supabase 셀프호스트 docker-compose의 표준 게이트웨이 호스트명이라
+    //  셀프호스트 프로덕션에서도 인증이 통째로 꺼지는 footgun이었다.)
+    const allowUnauthenticated =
+      Deno.env.get('ADMIN_ANALYTICS_ALLOW_UNAUTH') === 'true';
 
-    if (!isLocalDev) {
+    if (!allowUnauthenticated) {
       // 1. 사용자 JWT 추출
       const authHeader = req.headers.get('Authorization');
       if (!authHeader) {
