@@ -9,40 +9,40 @@ const STYLES: Record<
 > = {
   info: {
     wrapper: css({
-      bg: '[rgba(56,139,253,0.1)]',
+      bg: 'callout.info.bg',
       borderLeftWidth: '[4px]',
-      borderLeftColor: '[#1f6feb]',
-      color: '[#79c0ff]',
+      borderLeftColor: 'callout.info.border',
+      color: 'callout.info.text',
     }),
     icon: 'ℹ️',
     label: 'Info',
   },
   tip: {
     wrapper: css({
-      bg: '[rgba(63,185,80,0.1)]',
+      bg: 'callout.tip.bg',
       borderLeftWidth: '[4px]',
-      borderLeftColor: '[#238636]',
-      color: 'moss.600',
+      borderLeftColor: 'callout.tip.border',
+      color: 'callout.tip.text',
     }),
     icon: '💡',
     label: 'Tip',
   },
   warning: {
     wrapper: css({
-      bg: '[rgba(210,153,34,0.1)]',
+      bg: 'callout.warn.bg',
       borderLeftWidth: '[4px]',
-      borderLeftColor: '[#9e6a03]',
-      color: 'marker.600',
+      borderLeftColor: 'callout.warn.border',
+      color: 'callout.warn.text',
     }),
     icon: '⚠️',
     label: 'Warning',
   },
   danger: {
     wrapper: css({
-      bg: '[rgba(248,81,73,0.1)]',
+      bg: 'danger.bg',
       borderLeftWidth: '[4px]',
-      borderLeftColor: '[#da3633]',
-      color: '[#f85149]',
+      borderLeftColor: 'danger.border',
+      color: 'danger.text',
     }),
     icon: '🚨',
     label: 'Danger',

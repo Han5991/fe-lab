@@ -3,28 +3,41 @@
 import { useState, useEffect, useId } from 'react';
 import mermaid from 'mermaid';
 import { css } from '@design-system/ui-lib/css';
+import { useTheme } from '@/src/hooks/useTheme';
 
-// Mermaid Initialization (once per module)
-if (typeof window !== 'undefined') {
-  mermaid.initialize({
-    startOnLoad: true,
-    // GitHub 다크 배경과 어울리도록 다크 테마 사용
-    theme: 'dark',
-    // 'strict' = HTML 허용, JS·이벤트 핸들러 차단. Mermaid가 내부적으로
-    // DOMPurify를 돌리고, 입력도 작성자 신뢰 마크다운만이라 추가 sanitize 불필요.
-    securityLevel: 'strict',
-  });
-}
+// mermaid render id는 전역적으로 유일해야 한다(mermaid가 측정용 임시 DOM
+// 노드를 이 id로 삽입하므로 재사용 시 충돌·중복 SVG가 발생). 렌더할 때마다
+// 증가하는 카운터로 매번 새 id를 만들어 테마 토글/StrictMode 이중 호출에서도
+// 안전하게 한다.
+let renderSeq = 0;
 
 export function MermaidChart({ chart }: { chart: string }) {
   const [svg, setSvg] = useState<string>('');
   const id = useId();
+  const theme = useTheme();
 
   useEffect(() => {
     let cancelled = false;
+    // 앱 테마 → mermaid 테마 매핑 (mermaid의 라이트 테마 이름은 'default').
+    const mermaidTheme = theme === 'dark' ? 'dark' : 'default';
+
     const renderChart = async () => {
       try {
-        const rendered = await mermaid.render(`mermaid-${id}`, chart);
+        // mermaid는 테마를 전역 config로 캐시하므로, 테마가 바뀌면 render 전에
+        // 다시 initialize해야 새 색상으로 그려진다. initialize/render 모두
+        // effect 안에서만 호출하므로 SSR(window 없음)에서 실행되지 않는다.
+        mermaid.initialize({
+          startOnLoad: false,
+          theme: mermaidTheme,
+          // 'strict' = HTML 허용, JS·이벤트 핸들러 차단. Mermaid가 내부적으로
+          // DOMPurify를 돌리고, 입력도 작성자 신뢰 마크다운만이라 추가 sanitize 불필요.
+          securityLevel: 'strict',
+        });
+        // useId 값(:r0: 등)에서 셀렉터 부적합 문자를 제거하고, 매 렌더마다
+        // 고유하도록 카운터를 덧붙인다.
+        renderSeq += 1;
+        const renderId = `mermaid-${id.replace(/[^a-zA-Z0-9-_]/g, '')}-${renderSeq}`;
+        const rendered = await mermaid.render(renderId, chart);
         if (cancelled) return;
         setSvg(rendered.svg);
       } catch (error) {
@@ -35,7 +48,7 @@ export function MermaidChart({ chart }: { chart: string }) {
     return () => {
       cancelled = true;
     };
-  }, [chart, id]);
+  }, [chart, id, theme]);
 
   return (
     <div

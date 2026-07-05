@@ -35,8 +35,6 @@ const CHART_ACCENT = token('colors.accent.600');
 const CHART_AXIS = token('colors.ink.border');
 const CHART_TICK = token('colors.ink.400');
 const CHART_GUIDE = token('colors.ink.300');
-// rgba 알파 점진 표현용 accent.600 rgb (GitHub blue #58a6ff).
-const MARKER_RGB = '88, 166, 255';
 import {
   DateRangeControls,
   useDateFilter,
@@ -647,7 +645,8 @@ function PostDetailContent() {
                   {hourlyData.map((entry, index) => (
                     <Cell
                       key={`cell-${index}`}
-                      fill={`rgba(${MARKER_RGB}, ${0.3 + (entry.views / maxHourlyViews) * 0.7})`}
+                      fill={CHART_ACCENT}
+                      fillOpacity={0.3 + (entry.views / maxHourlyViews) * 0.7}
                     />
                   ))}
                 </Bar>
@@ -716,7 +715,8 @@ function PostDetailContent() {
                   {dowData.map((entry, index) => (
                     <Cell
                       key={`cell-${index}`}
-                      fill={`rgba(${MARKER_RGB}, ${0.3 + (entry.views / maxDowViews) * 0.7})`}
+                      fill={CHART_ACCENT}
+                      fillOpacity={0.3 + (entry.views / maxDowViews) * 0.7}
                     />
                   ))}
                 </Bar>

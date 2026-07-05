@@ -121,6 +121,57 @@ export const blogPreset = definePreset({
           // spot — admin 전용 강조색(청록/teal). Panda 기본 'teal' 스케일과
           // 이름 충돌을 피하려 커스텀 명 'spot' 사용. 퍼플/파랑/초록과 구분.
           'spot.600': { value: { base: '#0e7490', _dark: '#56d4dd' } },
+          // danger — 에러/위험 상태 (로그인 에러 박스 + danger 콜아웃 공용)
+          'danger.text': { value: { base: '#cf222e', _dark: '#f85149' } },
+          'danger.bg': {
+            value: {
+              base: 'rgba(207,34,46,0.08)',
+              _dark: 'rgba(248,81,73,0.1)',
+            },
+          },
+          'danger.border': { value: { base: '#cf222e', _dark: '#da3633' } },
+          // btn — 버튼 배경. 링크용 accent.600(다크에서 밝음)과 달리 흰 글씨
+          // 대비를 확보한 GitHub 버튼 전용 명도(라이트/다크 쌍).
+          'btn.accent': { value: { base: '#0969da', _dark: '#1f6feb' } },
+          'btn.primary': { value: { base: '#1f883d', _dark: '#238636' } },
+          'btn.primaryHover': { value: { base: '#1a7f37', _dark: '#2ea043' } },
+          'btn.primaryBorder': {
+            value: {
+              base: 'rgba(31,35,40,0.15)',
+              _dark: 'rgba(240,246,252,0.1)',
+            },
+          },
+          // callout — 마크다운 콜아웃 타입별 테마-가변 색 (danger는 danger.* 재사용)
+          'callout.info.bg': {
+            value: {
+              base: 'rgba(9,105,218,0.08)',
+              _dark: 'rgba(56,139,253,0.1)',
+            },
+          },
+          'callout.info.text': { value: { base: '#0969da', _dark: '#79c0ff' } },
+          'callout.info.border': {
+            value: { base: '#0969da', _dark: '#1f6feb' },
+          },
+          'callout.tip.bg': {
+            value: {
+              base: 'rgba(26,127,55,0.08)',
+              _dark: 'rgba(63,185,80,0.1)',
+            },
+          },
+          'callout.tip.text': { value: { base: '#1a7f37', _dark: '#3fb950' } },
+          'callout.tip.border': {
+            value: { base: '#1f883d', _dark: '#238636' },
+          },
+          'callout.warn.bg': {
+            value: {
+              base: 'rgba(154,103,0,0.08)',
+              _dark: 'rgba(210,153,34,0.1)',
+            },
+          },
+          'callout.warn.text': { value: { base: '#9a6700', _dark: '#d29922' } },
+          'callout.warn.border': {
+            value: { base: '#bf8700', _dark: '#9e6a03' },
+          },
         },
       },
     },
