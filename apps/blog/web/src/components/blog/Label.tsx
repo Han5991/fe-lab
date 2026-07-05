@@ -27,7 +27,7 @@ export const Label = ({
           fontFamily: 'mono',
           fontSize: 'xs',
           fontWeight: 'medium',
-          letterSpacing: 'monoXl',
+          letterSpacing: 'mono',
           textTransform: 'uppercase',
           color: toneColor[tone],
         }),

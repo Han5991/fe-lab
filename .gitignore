@@ -60,3 +60,4 @@ gha-creds-*.json
 
 # Claude Code runtime state
 .claude/scheduled_tasks.lock
+/.claude/launch.json

@@ -58,7 +58,7 @@ export const KpiCard = ({ num, label, delta, small, series }: KpiCardProps) => {
             className={css({
               fontFamily: 'mono',
               fontSize: 'xs',
-              color: delta >= 0 ? 'moss.600' : 'marker.600',
+              color: delta >= 0 ? 'moss.600' : 'spot.600',
               letterSpacing: 'mono',
             })}
           >

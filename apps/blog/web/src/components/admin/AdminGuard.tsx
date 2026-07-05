@@ -5,6 +5,11 @@ import { useRouter, usePathname } from 'next/navigation';
 import { client as supabase } from '@/lib/client';
 import { useSuspenseQuery } from '@tanstack/react-query';
 
+// TODO(restore-admin-guard): 로컬 로그인이 안 되는 환경에서 admin UI 개발/확인용
+// 임시 우회. Edge Function 인증도 함께 임시 해제됨(admin-analytics/index.ts).
+// 배포/PR 전 이 우회와 Edge Function 인증을 모두 원복할 것.
+const DEV_BYPASS = process.env.NODE_ENV === 'development';
+
 export function AdminGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -12,6 +17,7 @@ export function AdminGuard({ children }: { children: React.ReactNode }) {
   const { data: session } = useSuspenseQuery({
     queryKey: ['admin-auth-session'],
     queryFn: async () => {
+      if (DEV_BYPASS) return null; // 우회 시 supabase 세션 조회 생략
       const {
         data: { session },
         error,
@@ -26,6 +32,7 @@ export function AdminGuard({ children }: { children: React.ReactNode }) {
   });
 
   useEffect(() => {
+    if (DEV_BYPASS) return; // 우회: redirect/auth 리스너 skip
     // Skip guard for the login page itself to prevent infinite loops
     if (pathname === '/admin/login') {
       return;
@@ -65,6 +72,10 @@ export function AdminGuard({ children }: { children: React.ReactNode }) {
       subscription.unsubscribe();
     };
   }, [session, router, pathname]);
+
+  if (DEV_BYPASS) {
+    return children; // TODO(restore-admin-guard): dev 임시 우회
+  }
 
   if (pathname === '/admin/login') {
     return children;

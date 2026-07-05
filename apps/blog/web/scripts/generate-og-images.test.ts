@@ -98,7 +98,7 @@ test('ogTemplate: 제목/날짜/도메인이 트리에 포함', () => {
 });
 
 test('ogTemplate: series가 있을 때만 pill 노출', () => {
-  const PILL_BORDER = 'rgba(37, 99, 235, 0.4)';
+  const PILL_BORDER = 'rgba(88, 166, 255, 0.4)';
   const withSeries = JSON.stringify(ogTemplate(post({ series: 'bundler' })));
   assert.ok(withSeries.includes('bundler'));
   assert.ok(withSeries.includes(PILL_BORDER));

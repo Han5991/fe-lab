@@ -112,14 +112,13 @@ export default function AboutPage() {
             >
               <div>
                 <Label
-                  tone="marker"
+                  tone="meta"
                   className={css({
                     display: 'block',
-                    mb: '5',
-                    letterSpacing: 'monoXxxl',
+                    mb: '4',
                   })}
                 >
-                  § 01 / PROFILE — FRONTEND ENGINEER
+                  PROFILE — FRONTEND ENGINEER
                 </Label>
                 <h1
                   className={css({
@@ -136,11 +135,10 @@ export default function AboutPage() {
                   <span
                     className={css({
                       display: 'block',
-                      fontSize: { base: 'xl', md: '2xl' },
-                      fontStyle: 'italic',
+                      fontSize: { base: 'lg', md: 'xl' },
                       fontWeight: 'normal',
-                      color: 'ink.700',
-                      mt: '2',
+                      color: 'ink.600',
+                      mt: '1',
                       letterSpacing: 'normal',
                     })}
                   >
@@ -185,16 +183,22 @@ export default function AboutPage() {
                     className={css({
                       display: 'inline-flex',
                       alignItems: 'center',
-                      px: '4',
-                      py: '2',
-                      bg: 'ink.950',
-                      color: 'paper.50',
-                      fontFamily: 'mono',
-                      fontSize: 'xs',
-                      letterSpacing: 'monoXl',
-                      textTransform: 'uppercase',
-                      _hover: { opacity: '0.85' },
-                      transition: '[opacity 0.15s]',
+                      gap: '2',
+                      px: '[16px]',
+                      py: '[6px]',
+                      bg: 'paper.200',
+                      color: 'ink.800',
+                      borderWidth: '[1px]',
+                      borderStyle: 'solid',
+                      borderColor: 'ink.border',
+                      rounded: '[6px]',
+                      fontSize: 'sm',
+                      fontWeight: 'medium',
+                      _hover: {
+                        bg: 'paper.300',
+                        borderColor: 'ink.borderStrong',
+                      },
+                      transition: '[background 0.15s, border-color 0.15s]',
                     })}
                   >
                     GitHub →
@@ -206,18 +210,22 @@ export default function AboutPage() {
                     className={css({
                       display: 'inline-flex',
                       alignItems: 'center',
-                      px: '4',
-                      py: '2',
-                      bg: 'paper.50',
+                      gap: '2',
+                      px: '[16px]',
+                      py: '[6px]',
+                      bg: 'paper.200',
+                      color: 'ink.800',
                       borderWidth: '[1px]',
-                      borderColor: 'ink.950',
-                      color: 'ink.950',
-                      fontFamily: 'mono',
-                      fontSize: 'xs',
-                      letterSpacing: 'monoXl',
-                      textTransform: 'uppercase',
-                      _hover: { bg: 'ink.950', color: 'paper.50' },
-                      transition: '[background 0.15s, color 0.15s]',
+                      borderStyle: 'solid',
+                      borderColor: 'ink.border',
+                      rounded: '[6px]',
+                      fontSize: 'sm',
+                      fontWeight: 'medium',
+                      _hover: {
+                        bg: 'paper.300',
+                        borderColor: 'ink.borderStrong',
+                      },
+                      transition: '[background 0.15s, border-color 0.15s]',
                     })}
                   >
                     LinkedIn →
@@ -311,16 +319,9 @@ export default function AboutPage() {
                   borderColor: 'ink.border',
                 })}
               >
-                <Label
-                  tone="marker"
-                  className={css({ letterSpacing: 'monoXxl' })}
-                >
-                  § 02
-                </Label>
                 <h2
                   className={css({
-                    fontFamily: 'serif',
-                    fontSize: { base: 'xl', md: '2xl' },
+                    fontSize: { base: 'lg', md: 'xl' },
                     fontWeight: 'semibold',
                     color: 'ink.950',
                     letterSpacing: 'tight',
@@ -431,16 +432,9 @@ export default function AboutPage() {
                     borderColor: 'ink.border',
                   })}
                 >
-                  <Label
-                    tone="marker"
-                    className={css({ letterSpacing: 'monoXxl' })}
-                  >
-                    § 03
-                  </Label>
                   <h2
                     className={css({
-                      fontFamily: 'serif',
-                      fontSize: { base: 'xl', md: '2xl' },
+                      fontSize: { base: 'lg', md: 'xl' },
                       fontWeight: 'semibold',
                       color: 'ink.950',
                       letterSpacing: 'tight',
@@ -530,16 +524,9 @@ export default function AboutPage() {
                     borderColor: 'ink.border',
                   })}
                 >
-                  <Label
-                    tone="marker"
-                    className={css({ letterSpacing: 'monoXxl' })}
-                  >
-                    § 04
-                  </Label>
                   <h2
                     className={css({
-                      fontFamily: 'serif',
-                      fontSize: { base: 'xl', md: '2xl' },
+                      fontSize: { base: 'lg', md: 'xl' },
                       fontWeight: 'semibold',
                       color: 'ink.950',
                       letterSpacing: 'tight',

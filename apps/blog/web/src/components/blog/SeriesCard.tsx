@@ -22,11 +22,13 @@ export const SeriesCard = ({ series, index }: SeriesCardProps) => {
         position: 'relative',
         display: 'flex',
         flexDir: 'column',
-        gap: '3',
-        p: '6',
-        bg: 'paper.50',
+        gap: '[8px]',
+        p: '[16px]',
+        bg: 'paper.100',
         borderWidth: '[1px]',
+        borderStyle: 'solid',
         borderColor: 'ink.border',
+        rounded: '[6px]',
         transition: '[border-color 0.15s]',
         minH: '[200px]',
         _hover: { borderColor: 'ink.borderStrong' },
@@ -39,7 +41,8 @@ export const SeriesCard = ({ series, index }: SeriesCardProps) => {
           left: '0',
           top: '0',
           bottom: '0',
-          w: '1',
+          w: '[3px]',
+          roundedLeft: '[6px]',
           bg: accentColor[series.colorKey],
         })}
       />
@@ -53,9 +56,8 @@ export const SeriesCard = ({ series, index }: SeriesCardProps) => {
         <span
           className={css({
             fontFamily: 'mono',
-            fontSize: 'xs',
-            color: accentColor[series.colorKey],
-            letterSpacing: 'monoXxl',
+            fontSize: '[12px]',
+            color: 'ink.500',
             fontWeight: 'medium',
           })}
         >
@@ -65,10 +67,10 @@ export const SeriesCard = ({ series, index }: SeriesCardProps) => {
 
       <h3
         className={css({
-          fontFamily: 'serif',
-          fontSize: '2xl',
+          fontFamily: 'sans',
+          fontSize: 'lg',
           fontWeight: 'semibold',
-          lineHeight: 'tighter',
+          lineHeight: 'tight',
           color: 'ink.950',
         })}
       >
@@ -80,7 +82,7 @@ export const SeriesCard = ({ series, index }: SeriesCardProps) => {
           className={css({
             fontFamily: 'sans',
             fontSize: 'sm',
-            color: 'ink.700',
+            color: 'ink.600',
             lineHeight: 'relaxed',
             lineClamp: 3,
           })}
@@ -93,25 +95,44 @@ export const SeriesCard = ({ series, index }: SeriesCardProps) => {
 
       <div
         className={css({
-          pt: '3',
+          pt: '[12px]',
           borderTopWidth: '[1px]',
+          borderTopStyle: 'solid',
           borderColor: 'ink.border',
           display: 'flex',
           justifyContent: 'space-between',
-          alignItems: 'baseline',
+          alignItems: 'center',
+          gap: '2',
         })}
       >
         <span
           className={css({
+            display: 'inline-flex',
+            alignItems: 'center',
+            px: '[8px]',
+            py: '[2px]',
+            rounded: '[2rem]',
+            bg: 'paper.300',
+            color: 'ink.700',
             fontFamily: 'mono',
             fontSize: 'xs',
-            color: 'ink.700',
-            letterSpacing: 'mono',
+            fontWeight: 'medium',
+            lineHeight: 'flat',
           })}
         >
           {series.count}편
-          {series.updated ? ` · ${fmtDate(series.updated)} 업데이트` : ''}
         </span>
+        {series.updated && (
+          <span
+            className={css({
+              fontFamily: 'mono',
+              fontSize: '[12px]',
+              color: 'ink.500',
+            })}
+          >
+            {fmtDate(series.updated)} 업데이트
+          </span>
+        )}
       </div>
     </Link>
   );

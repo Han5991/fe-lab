@@ -14,21 +14,22 @@ export function TopPostsLoading() {
   return (
     <section
       className={css({
-        py: '12',
+        py: '10',
         maxW: 'containerW',
         mx: 'auto',
         px: '6',
         borderTopWidth: '[1px]',
+        borderStyle: 'solid',
         borderColor: 'ink.border',
       })}
     >
       <div
         className={css({
-          h: '5',
-          w: '32',
-          bg: 'ink.100',
-          rounded: 'sm',
-          mb: '8',
+          h: '4',
+          w: '28',
+          bg: 'paper.200',
+          rounded: '[6px]',
+          mb: '6',
           animation: '[pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite]',
         })}
       />
@@ -37,6 +38,7 @@ export function TopPostsLoading() {
           display: 'grid',
           gridTemplateColumns: { base: '1fr', md: 'repeat(3, 1fr)' },
           borderTopWidth: '[1px]',
+          borderStyle: 'solid',
           borderColor: 'ink.border',
         })}
       >
@@ -44,13 +46,14 @@ export function TopPostsLoading() {
           <div
             key={i}
             className={css({
-              p: '6',
+              p: '[16px]',
               borderBottomWidth: '[1px]',
-              borderRightWidth: { base: '0', md: i < 2 ? '1px' : '0' },
+              borderRightWidth: { base: '0', md: i < 2 ? '[1px]' : '0' },
+              borderStyle: 'solid',
               borderColor: 'ink.border',
-              h: '36',
+              h: '32',
               animation: '[pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite]',
-              bg: 'ink.50',
+              bg: 'paper.100',
             })}
           />
         ))}
@@ -84,52 +87,47 @@ export function TopPosts({ posts }: TopPostsProps) {
   return (
     <section
       className={css({
-        py: { base: '12', md: '20' },
+        py: '10',
         maxW: 'containerW',
         mx: 'auto',
         px: '6',
         borderTopWidth: '[1px]',
+        borderStyle: 'solid',
         borderColor: 'ink.border',
       })}
     >
       <div
         className={css({
           display: 'flex',
-          alignItems: 'center',
-          gap: '4',
-          mb: '10',
+          alignItems: 'baseline',
+          gap: '[8px]',
+          mb: '5',
         })}
       >
-        <span
-          className={css({
-            fontSize: 'xs',
-            fontWeight: 'bold',
-            color: 'accent.600',
-            letterSpacing: 'widest',
-            textTransform: 'uppercase',
-            flexShrink: 0,
-          })}
-        >
-          01
-        </span>
         <h2
           className={css({
-            fontSize: { base: 'xl', md: '2xl' },
-            fontWeight: 'bold',
+            fontSize: '[16px]',
+            fontWeight: 'semibold',
             color: 'ink.950',
-            letterSpacing: 'tight',
-            flexShrink: 0,
           })}
         >
           인기 기록
         </h2>
-        <div className={css({ flex: '1', h: '[1px]', bg: 'ink.border' })} />
+        <span
+          className={css({
+            fontSize: '[12px]',
+            color: 'ink.500',
+          })}
+        >
+          가장 많이 읽힌 글
+        </span>
       </div>
       <div
         className={css({
           display: 'grid',
           gridTemplateColumns: { base: '1fr', md: 'repeat(3, 1fr)' },
           borderTopWidth: '[1px]',
+          borderStyle: 'solid',
           borderColor: 'ink.border',
         })}
       >

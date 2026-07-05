@@ -116,25 +116,12 @@ const jsonLd = {
   ],
 };
 
-// 홈 섹션 번호. Hero·Featured 섹션은 자리만 차지하고 §xx 라벨은 안 붙입니다.
-// 라벨이 보이는 섹션은 Series shelf와 Recent notes 둘뿐:
-//   featured 있을 때:  Hero(§01) → Featured(§02, 라벨 안 보임) → Series §03 → Recent §04
-//   featured 없을 때:  Hero(§01) → Series §02 → Recent §03
-function homeSectionNumbers(hasFeatured: boolean) {
-  // Hero가 §01, featured 유무에 따라 series·recent가 시프트.
-  const seriesIdx = hasFeatured ? 3 : 2;
-  const recentIdx = seriesIdx + 1;
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return { series: pad(seriesIdx), recent: pad(recentIdx) };
-}
-
 export default function HomePage() {
   const allPosts = getAllPostSummaries();
   const featured = allPosts[0];
   const sideTwo = allPosts.slice(1, 3);
   const recent = allPosts.slice(3, 13);
   const series = getAllSeries().slice(0, 3);
-  const sectionNo = homeSectionNumbers(Boolean(featured));
 
   return (
     <>
@@ -151,9 +138,9 @@ export default function HomePage() {
             <section
               className={css({
                 pt: '6',
-                pb: { base: '12', md: '16' },
-                borderTopWidth: '[2px]',
-                borderColor: 'ink.950',
+                pb: { base: '10', md: '14' },
+                borderTopWidth: '[1px]',
+                borderColor: 'ink.border',
               })}
             >
               <div
@@ -224,23 +211,16 @@ export default function HomePage() {
                   className={css({
                     display: 'flex',
                     alignItems: 'baseline',
-                    gap: '4',
-                    mb: '8',
-                    pb: '4',
+                    gap: '3',
+                    mb: '6',
+                    pb: '3',
                     borderBottomWidth: '[1px]',
                     borderColor: 'ink.border',
                   })}
                 >
-                  <Label
-                    tone="marker"
-                    className={css({ letterSpacing: 'monoXxl' })}
-                  >
-                    § {sectionNo.series}
-                  </Label>
                   <h2
                     className={css({
-                      fontFamily: 'serif',
-                      fontSize: { base: 'xl', md: '2xl' },
+                      fontSize: { base: 'md', md: 'lg' },
                       fontWeight: 'semibold',
                       color: 'ink.950',
                     })}
@@ -251,12 +231,9 @@ export default function HomePage() {
                   <Link
                     href="/posts/"
                     className={css({
-                      fontFamily: 'mono',
-                      fontSize: 'xs',
-                      color: 'ink.500',
-                      letterSpacing: 'monoXl',
-                      _hover: { color: 'ink.950' },
-                      transition: '[color 0.15s]',
+                      fontSize: 'sm',
+                      color: 'accent.600',
+                      _hover: { textDecoration: 'underline' },
                     })}
                   >
                     모두 보기 →
@@ -302,23 +279,16 @@ export default function HomePage() {
                   className={css({
                     display: 'flex',
                     alignItems: 'baseline',
-                    gap: '4',
+                    gap: '3',
                     mb: '4',
                     pb: '3',
                     borderBottomWidth: '[1px]',
                     borderColor: 'ink.border',
                   })}
                 >
-                  <Label
-                    tone="marker"
-                    className={css({ letterSpacing: 'monoXxl' })}
-                  >
-                    § {sectionNo.recent}
-                  </Label>
                   <h2
                     className={css({
-                      fontFamily: 'serif',
-                      fontSize: { base: 'xl', md: '2xl' },
+                      fontSize: { base: 'md', md: 'lg' },
                       fontWeight: 'semibold',
                       color: 'ink.950',
                     })}
@@ -329,12 +299,9 @@ export default function HomePage() {
                   <Link
                     href="/posts/"
                     className={css({
-                      fontFamily: 'mono',
-                      fontSize: 'xs',
-                      color: 'ink.500',
-                      letterSpacing: 'monoXl',
-                      _hover: { color: 'ink.950' },
-                      transition: '[color 0.15s]',
+                      fontSize: 'sm',
+                      color: 'accent.600',
+                      _hover: { textDecoration: 'underline' },
                     })}
                   >
                     모두 보기 →

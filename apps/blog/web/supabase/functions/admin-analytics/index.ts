@@ -40,64 +40,76 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    // ── 1. 사용자 JWT 추출 ─────────────────────────────────────────
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: 'Authorization 헤더가 없습니다.' }),
-        {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+
+    // ── 인증 ───────────────────────────────────────────────────────
+    // 로컬 개발(Supabase local)에선 인증 검사를 자동 우회하고, 프로덕션
+    // (*.supabase.co)에선 강제한다. 로컬은 SUPABASE_URL이 kong/127.0.0.1/
+    // localhost. → 수동으로 주석 해제할 필요 없이 환경에 따라 자동 분기.
+    const isLocalDev =
+      supabaseUrl.includes('kong') ||
+      supabaseUrl.includes('127.0.0.1') ||
+      supabaseUrl.includes('localhost');
+
+    if (!isLocalDev) {
+      // 1. 사용자 JWT 추출
+      const authHeader = req.headers.get('Authorization');
+      if (!authHeader) {
+        return new Response(
+          JSON.stringify({ error: 'Authorization 헤더가 없습니다.' }),
+          {
+            status: 401,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          },
+        );
+      }
+
+      const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+      const adminEmail = Deno.env.get('ADMIN_EMAIL');
+      if (!adminEmail) {
+        console.error('ADMIN_EMAIL 환경변수가 설정되지 않았습니다.');
+        return new Response(
+          JSON.stringify({ error: '서버 설정 오류입니다.' }),
+          {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          },
+        );
+      }
+
+      // 2. 사용자 JWT로 user 검증
+      const userClient = createClient(supabaseUrl, supabaseAnonKey, {
+        global: { headers: { Authorization: authHeader } },
+      });
+      const {
+        data: { user },
+        error: userError,
+      } = await userClient.auth.getUser();
+      if (userError || !user) {
+        return new Response(JSON.stringify({ error: '인증에 실패했습니다.' }), {
           status: 401,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        },
-      );
+        });
+      }
+
+      // 3. admin 이메일 확인
+      if (user.email !== adminEmail) {
+        return new Response(
+          JSON.stringify({ error: '관리자 권한이 없습니다.' }),
+          {
+            status: 403,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          },
+        );
+      }
     }
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-    const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const adminEmail = Deno.env.get('ADMIN_EMAIL');
-
-    if (!adminEmail) {
-      console.error('ADMIN_EMAIL 환경변수가 설정되지 않았습니다.');
-      return new Response(JSON.stringify({ error: '서버 설정 오류입니다.' }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    // ── 2. 사용자 JWT로 user 검증 ──────────────────────────────────
-    const userClient = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
-
-    const {
-      data: { user },
-      error: userError,
-    } = await userClient.auth.getUser();
-
-    if (userError || !user) {
-      return new Response(JSON.stringify({ error: '인증에 실패했습니다.' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    // ── 3. admin 이메일 확인 ───────────────────────────────────────
-    if (user.email !== adminEmail) {
-      return new Response(
-        JSON.stringify({ error: '관리자 권한이 없습니다.' }),
-        {
-          status: 403,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        },
-      );
-    }
-
-    // ── 4. 요청 body 파싱 ──────────────────────────────────────────
+    // ── 요청 body 파싱 ──────────────────────────────────────────────
     const body = (await req.json()) as RequestBody;
     const { action, params } = body;
 
-    // ── 5. service_role client로 RPC 호출 ─────────────────────────
+    // ── service_role client로 RPC 호출 ─────────────────────────────
     const serviceClient = createClient(supabaseUrl, supabaseServiceRoleKey);
 
     let data: unknown;

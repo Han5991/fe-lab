@@ -352,9 +352,9 @@ const ArchiveSearchBar = ({ q, onChange }: ArchiveSearchBarProps) => (
       py: '2.5',
       borderWidth: '[1px]',
       borderColor: 'ink.border',
-      rounded: 'lg',
-      bg: 'paper.50',
-      _focusWithin: { borderColor: 'ink.950' },
+      rounded: '[6px]',
+      bg: 'ink.25',
+      _focusWithin: { borderColor: 'accent.600' },
       transition: '[border-color 0.15s]',
     })}
   >

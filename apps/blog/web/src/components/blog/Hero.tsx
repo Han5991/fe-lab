@@ -5,8 +5,8 @@ export const Hero = () => {
   return (
     <header
       className={css({
-        pt: { base: '12', md: '20' },
-        pb: { base: '10', md: '14' },
+        pt: { base: '[32px]', md: '[48px]' },
+        pb: { base: '[24px]', md: '[32px]' },
       })}
     >
       <div
@@ -20,34 +20,33 @@ export const Hero = () => {
           tone="meta"
           className={css({
             display: 'block',
-            mb: '5',
+            mb: '[12px]',
             color: 'ink.500',
-            letterSpacing: 'monoXxxl',
+            letterSpacing: 'mono',
           })}
         >
           STUDY NOTE / 한상욱 · since 2025
         </Label>
         <h1
           className={css({
-            fontFamily: 'serif',
-            fontSize: { base: '5xl', md: '7xl', lg: '[88px]' },
-            fontWeight: 'normal',
+            fontFamily: 'sans',
+            fontSize: { base: '4xl', md: '[40px]', lg: '[48px]' },
+            fontWeight: 'bold',
             lineHeight: 'heroDense',
-            letterSpacing: 'tighter',
+            letterSpacing: 'tight',
             color: 'ink.950',
-            mb: '4',
+            mb: '[12px]',
           })}
         >
           그냥,
           <br />
-          <span className={css({ fontStyle: 'italic' })}>적어 두는</span>{' '}
-          공부방.
+          <span>적어 두는</span> 공부방.
         </h1>
         <p
           className={css({
-            fontFamily: 'serif',
-            fontSize: { base: 'lg', md: 'xl' },
-            color: 'ink.700',
+            fontFamily: 'sans',
+            fontSize: { base: 'md', md: 'lg' },
+            color: 'ink.600',
             maxW: 'heroSubW',
             lineHeight: 'comfortable',
           })}

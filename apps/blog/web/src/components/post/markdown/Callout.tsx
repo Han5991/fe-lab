@@ -9,40 +9,40 @@ const STYLES: Record<
 > = {
   info: {
     wrapper: css({
-      bg: 'blue.50',
+      bg: '[rgba(56,139,253,0.1)]',
       borderLeftWidth: '[4px]',
-      borderLeftColor: 'blue.400',
-      color: 'blue.900',
+      borderLeftColor: '[#1f6feb]',
+      color: '[#79c0ff]',
     }),
     icon: 'ℹ️',
     label: 'Info',
   },
   tip: {
     wrapper: css({
-      bg: 'green.50',
+      bg: '[rgba(63,185,80,0.1)]',
       borderLeftWidth: '[4px]',
-      borderLeftColor: 'green.500',
-      color: 'green.900',
+      borderLeftColor: '[#238636]',
+      color: 'moss.600',
     }),
     icon: '💡',
     label: 'Tip',
   },
   warning: {
     wrapper: css({
-      bg: 'amber.50',
+      bg: '[rgba(210,153,34,0.1)]',
       borderLeftWidth: '[4px]',
-      borderLeftColor: 'amber.500',
-      color: 'amber.900',
+      borderLeftColor: '[#9e6a03]',
+      color: 'marker.600',
     }),
     icon: '⚠️',
     label: 'Warning',
   },
   danger: {
     wrapper: css({
-      bg: 'red.50',
+      bg: '[rgba(248,81,73,0.1)]',
       borderLeftWidth: '[4px]',
-      borderLeftColor: 'red.500',
-      color: 'red.900',
+      borderLeftColor: '[#da3633]',
+      color: '[#f85149]',
     }),
     icon: '🚨',
     label: 'Danger',

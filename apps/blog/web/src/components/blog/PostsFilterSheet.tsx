@@ -84,13 +84,13 @@ export const PostsFilterSheet = ({
           <>
             <motion.div
               initial={{ opacity: 0 }}
-              animate={{ opacity: 0.5 }}
+              animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={onClose}
               className={css({
                 pos: 'fixed',
                 inset: '0',
-                bg: 'ink.950',
+                bg: '[rgba(1,4,9,0.8)]',
                 zIndex: '50',
               })}
             />
@@ -108,33 +108,62 @@ export const PostsFilterSheet = ({
                 bottom: '0',
                 left: '0',
                 right: '0',
-                bg: 'paper.50',
+                bg: 'paper.100',
+                borderTopWidth: '[1px]',
+                borderRightWidth: '[1px]',
+                borderLeftWidth: '[1px]',
+                borderStyle: 'solid',
+                borderColor: 'ink.border',
                 zIndex: '51',
-                roundedTop: '2xl',
+                roundedTop: '[12px]',
                 maxH: '[85vh]',
                 display: 'flex',
                 flexDir: 'column',
-                shadow: '2xl',
                 paddingBottom: '[env(safe-area-inset-bottom)]',
               })}
             >
               <div
                 className={css({
-                  p: '5',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  pt: '[8px]',
+                  pb: '[4px]',
+                })}
+              >
+                <span
+                  className={css({
+                    width: '[32px]',
+                    height: '[4px]',
+                    rounded: '[2rem]',
+                    bg: 'ink.border',
+                  })}
+                />
+              </div>
+              <div
+                className={css({
+                  px: '[16px]',
+                  py: '[12px]',
                   borderBottomWidth: '[1px]',
+                  borderBottomStyle: 'solid',
                   borderColor: 'ink.border',
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
                 })}
               >
-                <h2 className={css({ fontSize: 'lg', fontWeight: 'bold' })}>
+                <h2
+                  className={css({
+                    fontSize: '[16px]',
+                    fontWeight: 'semibold',
+                    color: 'ink.950',
+                  })}
+                >
                   필터{activeCount > 0 ? ` · ${activeCount}` : ''}
                 </h2>
                 <div
                   className={css({
                     display: 'flex',
-                    gap: '4',
+                    gap: '[8px]',
                     alignItems: 'center',
                   })}
                 >
@@ -146,11 +175,21 @@ export const PostsFilterSheet = ({
                         onClose();
                       }}
                       className={css({
-                        fontFamily: 'mono',
-                        fontSize: 'xs',
-                        color: 'ink.500',
+                        bg: 'paper.200',
+                        borderWidth: '[1px]',
+                        borderStyle: 'solid',
+                        borderColor: 'ink.border',
+                        rounded: '[6px]',
+                        px: '[16px]',
+                        py: '[5px]',
+                        color: 'ink.800',
+                        fontSize: 'sm',
+                        fontWeight: 'medium',
                         cursor: 'pointer',
-                        _hover: { color: 'marker.600' },
+                        _hover: {
+                          bg: 'paper.300',
+                          borderColor: 'ink.borderStrong',
+                        },
                       })}
                     >
                       모두 지우기
@@ -160,20 +199,21 @@ export const PostsFilterSheet = ({
                     type="button"
                     onClick={onClose}
                     aria-label="닫기"
-                    className={css({ cursor: 'pointer', color: 'ink.400' })}
+                    className={css({ cursor: 'pointer', color: 'ink.600' })}
                   >
-                    <X size={24} />
+                    <X size={20} />
                   </button>
                 </div>
               </div>
               <div
                 className={css({
-                  p: '5',
+                  px: '[16px]',
+                  py: '[16px]',
                   overflowY: 'auto',
                   flex: '1',
                   display: 'flex',
                   flexDir: 'column',
-                  gap: '7',
+                  gap: '[16px]',
                 })}
               >
                 {children}

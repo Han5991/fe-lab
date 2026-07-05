@@ -1,7 +1,8 @@
 @layer reset, base, tokens, recipes, utilities;
 
 @layer base {
-  /* Warm journal: 본문/UI 가독성 + 한글 글머리 keep-all */
+  /* GitHub 폼: 본문/UI 가독성 + 한글 글머리 keep-all. 색은 테마-가변 토큰
+     CSS 변수(--colors-*)를 참조해 라이트/다크 전환에 자동 반응한다. */
   html,
   body {
     word-break: keep-all;
@@ -9,15 +10,23 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
-  /* Selection — marker(형광펜) 톤으로 */
-  ::selection {
-    background: oklch(89% 0.14 90); /* marker.300 */
-    color: oklch(16% 0.018 60); /* ink.950 */
+  /* color-scheme: 네이티브 컨트롤/스크롤바를 테마에 맞춘다 */
+  html {
+    color-scheme: light;
+  }
+  html[data-theme='dark'] {
+    color-scheme: dark;
   }
 
-  /* Focus ring */
+  /* Selection — 중립 보더 톤 + 밝은 텍스트 (테마-가변) */
+  ::selection {
+    background: var(--colors-ink-border);
+    color: var(--colors-ink-900);
+  }
+
+  /* Focus ring — accent(파랑) */
   :focus-visible {
-    outline: 2px solid oklch(53% 0.22 255);
+    outline: 2px solid var(--colors-accent-600);
     outline-offset: 3px;
     border-radius: 3px;
   }
@@ -28,22 +37,45 @@
     height: 10px;
   }
   ::-webkit-scrollbar-thumb {
-    background: oklch(88% 0.012 75);
+    background: var(--colors-ink-border);
     border-radius: 5px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: oklch(80% 0.012 70);
+    background: var(--colors-ink-300);
   }
 
-  /* Marker (형광펜) helper — raw HTML/MDX에서 사용 가능 */
+  /* Marker (형광펜) helper — 반투명 앰버(테마-가변) */
   .marker {
     background: linear-gradient(
       180deg,
       transparent 55%,
-      oklch(89% 0.14 90) 55%,
-      oklch(89% 0.14 90) 92%,
+      var(--colors-marker-300) 55%,
+      var(--colors-marker-300) 92%,
       transparent 92%
     );
     padding: 0 2px;
+  }
+
+  /* 테마 전환 애니메이션 — 토글 순간에만 .theme-transition 클래스를 얹어
+     색이 부드럽게 페이드되게 한다(평상시 hover 등엔 영향 없음). useTheme의
+     setTheme가 클래스를 320ms 동안 붙였다 뗀다. */
+  html.theme-transition,
+  html.theme-transition *,
+  html.theme-transition *::before,
+  html.theme-transition *::after {
+    transition:
+      background-color 0.28s ease,
+      border-color 0.28s ease,
+      color 0.28s ease,
+      fill 0.28s ease !important;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html.theme-transition,
+    html.theme-transition *,
+    html.theme-transition *::before,
+    html.theme-transition *::after {
+      transition: none !important;
+    }
   }
 }

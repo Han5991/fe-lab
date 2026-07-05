@@ -17,26 +17,30 @@ export function PostCard({ post, rank, index }: PostCardProps) {
       href={`/posts/${encodePostSlug(post.slug)}/`}
       className={css({
         display: 'block',
-        p: '6',
+        p: '[16px]',
         borderBottomWidth: '[1px]',
         borderRightWidth: { base: '0', md: isEven ? '0' : '[1px]' },
         borderColor: 'ink.border',
-        transition: '[background 0.15s, box-shadow 0.15s]',
-        _hover: { bg: 'ink.50', boxShadow: 'accentLeft' },
+        transition: '[border-color 0.15s]',
+        _hover: {
+          borderColor: 'ink.borderStrong',
+          '& [data-post-title]': { textDecoration: 'underline' },
+        },
       })}
     >
       <div
         className={css({
           display: 'flex',
           alignItems: 'center',
-          gap: '3',
-          mb: '3',
+          gap: '[8px]',
+          mb: '[8px]',
         })}
       >
         {rank && (
           <span
             className={css({
-              fontSize: 'xs',
+              fontFamily: 'mono',
+              fontSize: '[12px]',
               fontWeight: 'bold',
               color: 'accent.600',
               minW: '5',
@@ -49,9 +53,8 @@ export function PostCard({ post, rank, index }: PostCardProps) {
         {post.date && (
           <time
             className={css({
-              fontSize: 'xs',
+              fontSize: '[12px]',
               color: 'ink.500',
-              letterSpacing: 'wide',
             })}
           >
             {new Date(post.date).toLocaleDateString('ko-KR', {
@@ -65,13 +68,16 @@ export function PostCard({ post, rank, index }: PostCardProps) {
         {post.tags?.[0] && (
           <span
             className={css({
+              display: 'inline-flex',
+              alignItems: 'center',
+              px: '[10px]',
+              py: '[2px]',
+              rounded: '[2rem]',
+              bg: 'paper.200',
+              color: 'ink.700',
               fontSize: 'xs',
-              color: 'accent.600',
-              bg: 'accent.50',
-              px: '2',
-              py: '0.5',
-              rounded: 'sm',
               fontWeight: 'medium',
+              lineHeight: 'flat',
             })}
           >
             {post.tags[0]}
@@ -79,11 +85,12 @@ export function PostCard({ post, rank, index }: PostCardProps) {
         )}
       </div>
       <h3
+        data-post-title
         className={css({
-          fontSize: { base: 'md', md: 'lg' },
-          fontWeight: 'bold',
-          color: 'ink.950',
-          mb: '2',
+          fontSize: '[16px]',
+          fontWeight: 'semibold',
+          color: 'accent.600',
+          mb: '[4px]',
           lineHeight: 'headerSm',
           lineClamp: 2,
         })}
@@ -93,7 +100,7 @@ export function PostCard({ post, rank, index }: PostCardProps) {
       {post.excerpt && (
         <p
           className={css({
-            color: 'ink.700',
+            color: 'ink.600',
             fontSize: 'sm',
             lineHeight: 'relaxed',
             lineClamp: 2,

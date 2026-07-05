@@ -32,7 +32,7 @@ export function MarkdownImage({ src, alt, relativeDir }: MarkdownImageProps) {
           h: 'auto',
           shadow: '2xl',
           borderWidth: '[1px]',
-          borderColor: 'gray.100',
+          borderColor: 'ink.border',
         })}
       />
     </Zoom>

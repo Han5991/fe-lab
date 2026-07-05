@@ -25,7 +25,7 @@ export const ViewToggle = ({ value, onChange }: ViewToggleProps) => {
           display: 'flex',
           borderWidth: '[1px]',
           borderColor: 'ink.border',
-          rounded: 'md',
+          rounded: '[6px]',
           overflow: 'hidden',
         })}
       >
@@ -40,17 +40,18 @@ export const ViewToggle = ({ value, onChange }: ViewToggleProps) => {
               onClick={() => onChange(opt.id)}
               className={css({
                 flex: '1',
-                py: '2',
+                px: '[12px]',
+                py: '[5px]',
                 fontFamily: 'mono',
                 fontSize: 'xs',
-                letterSpacing: 'monoXl',
+                letterSpacing: 'wide',
                 textTransform: 'uppercase',
-                bg: isActive ? 'ink.950' : 'transparent',
-                color: isActive ? 'paper.50' : 'ink.600',
+                bg: isActive ? 'paper.300' : 'transparent',
+                color: isActive ? 'ink.950' : 'ink.600',
                 cursor: 'pointer',
                 transition: '[all 0.15s]',
                 _hover: !isActive
-                  ? { color: 'ink.950', bg: 'paper.100' }
+                  ? { color: 'ink.900', bg: 'paper.200' }
                   : undefined,
               })}
             >

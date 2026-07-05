@@ -1,9 +1,20 @@
 'use client';
 
 import { memo } from 'react';
+import { css } from '@design-system/ui-lib/css';
 import { SortRadio, type SortKey } from './SortRadio';
 import { ViewToggle, type ViewMode } from './ViewToggle';
 import { FilterGroup, type FilterItem } from './FilterGroup';
+
+const groupBlock = css({
+  display: 'flex',
+  flexDir: 'column',
+  gap: '[12px]',
+  pt: '[12px]',
+  borderTopWidth: '[1px]',
+  borderTopStyle: 'solid',
+  borderTopColor: 'ink.border',
+});
 
 export interface PostsFilterPanelProps {
   sort: SortKey;
@@ -46,37 +57,45 @@ const PostsFilterPanelImpl = ({
   activeYear,
   onToggleYear,
 }: PostsFilterPanelProps) => (
-  <>
-    <SortRadio value={sort} onChange={onSortChange} />
-    <ViewToggle value={view} onChange={onViewChange} />
+  <div className={css({ display: 'flex', flexDir: 'column', gap: '[16px]' })}>
+    <div className={css({ display: 'flex', flexDir: 'column', gap: '[12px]' })}>
+      <SortRadio value={sort} onChange={onSortChange} />
+      <ViewToggle value={view} onChange={onViewChange} />
+    </div>
 
     {tagItems.length > 0 && (
-      <FilterGroup
-        label="태그"
-        items={tagItems.slice(0, 12)}
-        active={activeTags}
-        onToggle={onToggleTag}
-      />
+      <div className={groupBlock}>
+        <FilterGroup
+          label="태그"
+          items={tagItems.slice(0, 12)}
+          active={activeTags}
+          onToggle={onToggleTag}
+        />
+      </div>
     )}
 
     {seriesItems.length > 0 && (
-      <FilterGroup
-        label="시리즈"
-        items={seriesItems}
-        active={activeSeries ? [activeSeries] : []}
-        onToggle={onToggleSeries}
-      />
+      <div className={groupBlock}>
+        <FilterGroup
+          label="시리즈"
+          items={seriesItems}
+          active={activeSeries ? [activeSeries] : []}
+          onToggle={onToggleSeries}
+        />
+      </div>
     )}
 
     {yearItems.length > 0 && (
-      <FilterGroup
-        label="연도"
-        items={yearItems}
-        active={activeYear ? [activeYear] : []}
-        onToggle={onToggleYear}
-      />
+      <div className={groupBlock}>
+        <FilterGroup
+          label="연도"
+          items={yearItems}
+          active={activeYear ? [activeYear] : []}
+          onToggle={onToggleYear}
+        />
+      </div>
     )}
-  </>
+  </div>
 );
 
 export const PostsFilterPanel = memo(PostsFilterPanelImpl);

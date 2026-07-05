@@ -24,8 +24,8 @@ export const FilterGroup = ({
 }: FilterGroupProps) => {
   if (items.length === 0) return null;
   return (
-    <div className={css({ display: 'flex', flexDir: 'column', gap: '2' })}>
-      <Label tone="meta" className={css({ display: 'block', mb: '1' })}>
+    <div className={css({ display: 'flex', flexDir: 'column', gap: '[6px]' })}>
+      <Label tone="meta" className={css({ display: 'block', mb: '[2px]' })}>
         {label}
       </Label>
       <ul
@@ -50,26 +50,34 @@ export const FilterGroup = ({
                   display: 'flex',
                   alignItems: 'baseline',
                   justifyContent: 'space-between',
-                  gap: '2',
-                  px: '2',
-                  py: '1',
-                  fontFamily: 'mono',
-                  fontSize: 'xs',
-                  letterSpacing: 'mono',
+                  gap: '[8px]',
+                  px: '[8px]',
+                  py: '[4px]',
+                  rounded: '[6px]',
+                  fontSize: 'sm',
+                  fontWeight: isActive ? 'semibold' : 'normal',
                   textAlign: 'left',
                   color: isActive ? 'ink.950' : 'ink.700',
-                  borderLeftWidth: '[2px]',
-                  borderLeftColor: isActive ? 'ink.950' : 'transparent',
-                  bg: isActive ? 'paper.100' : 'transparent',
-                  transition: '[all 0.15s]',
+                  bg: isActive ? 'paper.200' : 'transparent',
+                  transition: '[color 0.15s, background-color 0.15s]',
                   cursor: 'pointer',
-                  _hover: { color: 'ink.950', bg: 'paper.100' },
+                  _hover: { color: 'ink.950', bg: 'paper.200' },
                 })}
               >
                 <span>{item.label}</span>
                 <span
                   className={css({
-                    color: isActive ? 'ink.500' : 'ink.400',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    minWidth: '[20px]',
+                    px: '[6px]',
+                    rounded: '[2rem]',
+                    bg: 'paper.300',
+                    color: 'ink.600',
+                    fontSize: 'xs',
+                    fontWeight: 'medium',
+                    lineHeight: 'flat',
                     fontVariantNumeric: 'tabular-nums',
                   })}
                 >

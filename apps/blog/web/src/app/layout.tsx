@@ -79,10 +79,20 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html
       lang="ko"
+      data-theme="dark"
       data-scroll-behavior="smooth"
+      suppressHydrationWarning
       className={`${newsreader.variable} ${notoSerifKr.variable} ${jetbrainsMono.variable}`}
     >
       <head>
+        {/* 테마 초기화: paint 전에 쿠키 → 없으면 시스템 설정(prefers-color-scheme)
+            순으로 반영해 FOUC 방지. 쿠키에 명시 선택이 있으면 그것을 우선한다. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "(function(){try{var m=document.cookie.match(/(?:^|; )theme=(dark|light)/);var t=m?m[1]:((window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light');document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme='dark';}})();",
+          }}
+        />
         <link
           rel="alternate"
           type="application/rss+xml"

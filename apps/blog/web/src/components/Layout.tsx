@@ -5,6 +5,7 @@ import { SITE_AUTHOR_GITHUB, SITE_AUTHOR_LINKEDIN } from '@/lib/constants';
 
 import { PageTransition } from './PageTransition';
 import { SearchDialog } from './search/SearchDialog';
+import { ThemeToggle } from './ThemeToggle';
 
 interface LayoutProps {
   children: ReactNode;
@@ -39,7 +40,7 @@ export const Layout = ({ children }: LayoutProps) => {
           borderColor: 'ink.border',
           pos: 'sticky',
           top: '0',
-          bg: '[rgba(252,250,247,0.95)]',
+          bg: 'paper.50/80',
           backdropFilter: '[blur(12px)]',
           zIndex: '10',
         })}
@@ -68,9 +69,7 @@ export const Layout = ({ children }: LayoutProps) => {
           >
             <span
               className={css({
-                fontFamily: 'serif',
-                fontStyle: 'italic',
-                fontSize: 'lg',
+                fontSize: 'md',
                 fontWeight: 'semibold',
                 letterSpacing: 'tightXs',
               })}
@@ -99,6 +98,7 @@ export const Layout = ({ children }: LayoutProps) => {
               About
             </Link>
             <SearchDialog />
+            <ThemeToggle />
           </div>
         </div>
       </nav>

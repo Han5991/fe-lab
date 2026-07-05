@@ -21,23 +21,18 @@ export const Tag = ({
   const className = css({
     display: 'inline-flex',
     alignItems: 'center',
-    fontFamily: 'mono',
-    fontSize: size === 'sm' ? 'xs' : '[12px]',
-    py: size === 'sm' ? '0.5' : '1',
-    px: size === 'sm' ? '2' : '2.5',
-    letterSpacing: 'mono',
-    rounded: 'full',
-    borderWidth: '[1px]',
-    borderColor: active ? 'ink.950' : 'ink.border',
-    bg: active ? 'ink.950' : 'transparent',
-    color: active ? 'paper.50' : 'ink.700',
+    fontSize: 'xs',
+    lineHeight: 'flat',
+    py: size === 'sm' ? '[1px]' : '[2px]',
+    px: size === 'sm' ? '[8px]' : '[10px]',
+    rounded: '[2rem]',
+    fontWeight: 'medium',
+    bg: active ? 'paper.300' : 'paper.200',
+    color: 'ink.700',
     transition: '[all 0.15s]',
     whiteSpace: 'nowrap',
     cursor: onClick ? 'pointer' : 'default',
-    _hover:
-      onClick && !active
-        ? { borderColor: 'ink.borderStrong', color: 'ink.950' }
-        : undefined,
+    _hover: onClick ? { bg: 'paper.300' } : undefined,
   });
 
   if (as === 'span') {

@@ -84,23 +84,24 @@ export function CodeBlock({
         mt: '8',
         pos: 'relative',
         shadow: '2xl',
-        rounded: '2xl',
+        rounded: '[12px]',
         overflow: 'hidden',
+        bg: '[#161b22]',
         borderWidth: '[1px]',
-        borderColor: 'white/10',
+        borderColor: 'white/12',
       })}
     >
       {/* Window chrome dots + language label */}
       <div
         className={css({
-          bg: '[#1e1e1e]',
+          bg: '[#12171d]',
           px: '5',
-          py: '4',
+          py: '3',
           display: 'flex',
           gap: '2.5',
           alignItems: 'center',
           borderBottomWidth: '[1px]',
-          borderColor: 'white/5',
+          borderColor: 'white/8',
         })}
       >
         <div
@@ -139,7 +140,7 @@ export function CodeBlock({
           margin: 0,
           padding: `${token('spacing.6')} ${token('spacing.8')}`,
           lineHeight: '1.8',
-          background: '#1e1e1e',
+          background: '#161b22',
         }}
         {...props}
       >
@@ -151,15 +152,13 @@ export function CodeBlock({
       className={cx(
         className,
         css({
-          bg: 'paper.100',
-          color: 'marker.600',
+          bg: 'paper.200',
+          color: 'ink.900',
           px: '1.5',
           py: '0.5',
-          rounded: 'md',
-          fontSize: '[0.85em]',
-          fontWeight: 'medium',
-          borderWidth: '[1px]',
-          borderColor: 'ink.border',
+          rounded: '[6px]',
+          fontSize: '[0.9em]',
+          fontWeight: 'normal',
           whiteSpace: 'pre-wrap',
           wordBreak: 'break-word',
           overflowWrap: 'anywhere',

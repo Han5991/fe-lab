@@ -36,8 +36,9 @@ function highlight(text: string, query: string): ReactNode {
       <mark
         key={i}
         className={css({
-          bg: 'amber.100',
-          color: 'amber.900',
+          bg: 'marker.300',
+          color: 'ink.950',
+          fontWeight: 'medium',
           px: '0.5',
           rounded: 'sm',
         })}
@@ -305,7 +306,7 @@ export const SearchDialog = () => {
           >
             <Search
               size={18}
-              className={css({ color: 'gray.400', flexShrink: 0 })}
+              className={css({ color: 'ink.400', flexShrink: 0 })}
             />
             <input
               ref={inputRef}
@@ -321,9 +322,9 @@ export const SearchDialog = () => {
                 bg: 'transparent',
                 outline: 'none',
                 fontSize: { base: '[16px]', md: 'md' },
-                color: 'gray.900',
+                color: 'ink.950',
                 border: 'none',
-                _placeholder: { color: 'gray.400' },
+                _placeholder: { color: 'ink.400' },
               })}
             />
             <button
@@ -331,9 +332,9 @@ export const SearchDialog = () => {
               className={css({
                 p: '2',
                 rounded: 'md',
-                color: 'gray.400',
-                _hover: { color: 'gray.600', bg: 'gray.100' },
-                _active: { bg: 'gray.200' },
+                color: 'ink.400',
+                _hover: { color: 'ink.600', bg: 'paper.200' },
+                _active: { bg: 'paper.200' },
                 cursor: 'pointer',
                 bg: 'transparent',
                 border: 'none',
@@ -362,7 +363,7 @@ export const SearchDialog = () => {
                   py: '2',
                   fontSize: 'xs',
                   fontWeight: 'semibold',
-                  color: 'gray.500',
+                  color: 'ink.500',
                   letterSpacing: 'wide',
                   textTransform: 'uppercase',
                 })}
@@ -377,7 +378,7 @@ export const SearchDialog = () => {
                     px: '4',
                     py: '8',
                     textAlign: 'center',
-                    color: 'gray.400',
+                    color: 'ink.400',
                     fontSize: 'sm',
                   })}
                 >
@@ -400,20 +401,21 @@ export const SearchDialog = () => {
                         px: '4',
                         py: { base: '4', md: '3' },
                         cursor: 'pointer',
-                        bg: index === selectedIndex ? 'blue.50' : 'transparent',
-                        _hover: { bg: 'gray.50' },
-                        _active: { bg: 'blue.50' },
+                        bg:
+                          index === selectedIndex ? 'accent.50' : 'transparent',
+                        _hover: { bg: 'ink.50' },
+                        _active: { bg: 'accent.50' },
                         transition: '[background 0.1s]',
                         border: 'none',
                         borderBottomWidth: { base: '[1px]', md: '0' },
-                        borderColor: 'gray.50',
+                        borderColor: 'paper.200',
                       })}
                     >
                       <p
                         className={css({
                           fontSize: 'sm',
                           fontWeight: 'medium',
-                          color: 'gray.900',
+                          color: 'ink.950',
                           lineClamp: 1,
                         })}
                       >
@@ -422,7 +424,7 @@ export const SearchDialog = () => {
                       <p
                         className={css({
                           fontSize: 'xs',
-                          color: 'gray.500',
+                          color: 'ink.500',
                           mt: '1',
                           lineClamp: 2,
                         })}
@@ -447,8 +449,8 @@ export const SearchDialog = () => {
                                 fontSize: '2xs',
                                 px: '1.5',
                                 py: '0.5',
-                                bg: 'gray.100',
-                                color: 'gray.600',
+                                bg: 'paper.200',
+                                color: 'ink.600',
                                 rounded: 'md',
                               })}
                             >
@@ -473,9 +475,9 @@ export const SearchDialog = () => {
               px: '4',
               py: '2',
               borderTopWidth: '[1px]',
-              borderColor: 'gray.100',
+              borderColor: 'ink.100',
               fontSize: 'xs',
-              color: 'gray.400',
+              color: 'ink.400',
               flexShrink: 0,
             })}
           >

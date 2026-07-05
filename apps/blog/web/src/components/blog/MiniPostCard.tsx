@@ -3,7 +3,6 @@ import { css } from '@design-system/ui-lib/css';
 import type { PostSummary } from '@/domain/post';
 import { encodePostSlug } from '@/domain/post/utils';
 import { fmtDate } from '@/lib/format';
-import { Label } from './Label';
 
 interface MiniPostCardProps {
   post: PostSummary;
@@ -19,24 +18,23 @@ export const MiniPostCard = ({
       href={`/posts/${encodePostSlug(post.slug)}/`}
       className={css({
         display: 'block',
-        py: '4',
+        py: '[16px]',
         borderTopWidth: withDivider ? '[1px]' : '0',
+        borderTopStyle: 'solid',
         borderColor: 'ink.border',
-        transition: '[background 0.15s]',
+        transition: '[color 0.15s]',
         _hover: {
-          '& h4': { color: 'accent.600' },
+          '& h4': { textDecoration: 'underline' },
         },
       })}
     >
       <h4
         className={css({
-          fontFamily: 'serif',
-          fontSize: 'md',
-          fontWeight: 'medium',
+          fontSize: '[16px]',
+          fontWeight: 'semibold',
           lineHeight: 'headerSm',
-          color: 'ink.950',
-          mb: '2',
-          transition: '[color 0.15s]',
+          color: 'accent.600',
+          mb: '[8px]',
         })}
       >
         {post.title}
@@ -44,19 +42,51 @@ export const MiniPostCard = ({
       <div
         className={css({
           display: 'flex',
-          alignItems: 'baseline',
-          gap: '2',
+          alignItems: 'center',
+          gap: '[8px]',
           flexWrap: 'wrap',
         })}
       >
-        {post.date && <Label tone="meta">{fmtDate(post.date)}</Label>}
+        {post.date && (
+          <span
+            className={css({
+              fontSize: '[12px]',
+              color: 'ink.500',
+              lineHeight: 'flat',
+            })}
+          >
+            {fmtDate(post.date)}
+          </span>
+        )}
         {post.tags && post.tags.length > 0 && (
-          <Label tone="meta" className={css({ letterSpacing: 'mono' })}>
-            {post.tags
-              .slice(0, 2)
-              .map(t => `#${t}`)
-              .join(' · ')}
-          </Label>
+          <div
+            className={css({
+              display: 'flex',
+              alignItems: 'center',
+              gap: '[6px]',
+              flexWrap: 'wrap',
+            })}
+          >
+            {post.tags.slice(0, 2).map(t => (
+              <span
+                key={t}
+                className={css({
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  px: '[10px]',
+                  py: '[2px]',
+                  rounded: '[2rem]',
+                  bg: 'paper.200',
+                  color: 'ink.700',
+                  fontSize: 'xs',
+                  fontWeight: 'medium',
+                  lineHeight: 'flat',
+                })}
+              >
+                #{t}
+              </span>
+            ))}
+          </div>
         )}
       </div>
     </Link>

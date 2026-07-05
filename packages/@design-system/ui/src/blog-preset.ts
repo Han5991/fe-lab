@@ -6,61 +6,32 @@ export const blogPreset = definePreset({
     extend: {
       tokens: {
         shadows: {
-          accentLeft: { value: 'inset 3px 0 0 oklch(53% 0.22 255)' },
-          markerLeft: { value: 'inset 3px 0 0 oklch(60% 0.16 65)' },
+          // accent = github blue, marker = github purple (앰버 폐기)
+          accentLeft: { value: 'inset 3px 0 0 #58A6FF' },
+          markerLeft: { value: 'inset 3px 0 0 #a371f7' },
         },
         fonts: {
           sans: {
             value:
               'var(--font-pretendard, Pretendard), -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif',
           },
+          // GitHub 폼 리디자인: serif 정체성 폐기 → serif/serifKr 토큰을 system sans로
+          // 매핑해 기존 serif 사용처를 일괄 de-serif. (컴포넌트를 안 건드려도 sans 적용)
           serif: {
             value:
-              "var(--font-newsreader, 'Newsreader'), var(--font-noto-serif-kr, 'Noto Serif KR'), Georgia, 'Times New Roman', serif",
+              'var(--font-pretendard, Pretendard), -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif',
           },
           serifKr: {
             value:
-              "var(--font-noto-serif-kr, 'Noto Serif KR'), var(--font-newsreader, 'Newsreader'), Georgia, serif",
+              'var(--font-pretendard, Pretendard), -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif',
           },
           mono: {
             value:
               "var(--font-jetbrains, 'JetBrains Mono'), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
           },
         },
-        colors: {
-          // 페이퍼톤 웜 뉴트럴 — 배경 / 카드 / 푸터 등
-          'paper.50': { value: 'oklch(98.5% 0.008 75)' },
-          'paper.100': { value: 'oklch(96% 0.012 75)' },
-          'paper.200': { value: 'oklch(92% 0.014 75)' },
-          'paper.300': { value: 'oklch(86% 0.014 75)' },
-          // 잉크 — 텍스트 / 보더. cool → warm hue (60–75)
-          'ink.950': { value: 'oklch(16% 0.018 60)' },
-          'ink.900': { value: 'oklch(22% 0.02 60)' },
-          'ink.800': { value: 'oklch(30% 0.022 60)' },
-          'ink.700': { value: 'oklch(40% 0.022 60)' },
-          'ink.600': { value: 'oklch(50% 0.02 60)' },
-          'ink.500': { value: 'oklch(60% 0.018 60)' },
-          'ink.400': { value: 'oklch(70% 0.014 60)' },
-          'ink.300': { value: 'oklch(80% 0.012 70)' },
-          'ink.200': { value: 'oklch(88% 0.012 75)' },
-          'ink.100': { value: 'oklch(93.5% 0.014 75)' },
-          'ink.50': { value: 'oklch(97% 0.008 75)' },
-          'ink.25': { value: 'oklch(98.5% 0.008 75)' },
-          'ink.border': { value: 'oklch(86% 0.014 75)' },
-          'ink.borderStrong': { value: 'oklch(72% 0.018 70)' },
-          // 액센트 — 링크/액션
-          'accent.50': { value: 'oklch(96.5% 0.022 255)' },
-          'accent.200': { value: 'oklch(84% 0.05 255)' },
-          'accent.600': { value: 'oklch(53% 0.22 255)' },
-          'accent.700': { value: 'oklch(47% 0.24 255)' },
-          // 형광펜 옐로 — highlight, 시리즈 컬러 키 1
-          'marker.100': { value: 'oklch(95% 0.06 90)' },
-          'marker.300': { value: 'oklch(89% 0.14 90)' },
-          'marker.600': { value: 'oklch(60% 0.16 65)' },
-          // 모스 그린 — "지금 작업 중", 라이브 데모, 시리즈 컬러 키 2
-          'moss.100': { value: 'oklch(94% 0.04 145)' },
-          'moss.600': { value: 'oklch(45% 0.12 145)' },
-        },
+        // 색 팔레트는 semanticTokens.colors 로 이동(테마-가변 base/_dark).
+        // paper/ink/accent/marker/moss 이름은 유지 — 컴포넌트가 그대로 소비.
         fontSizes: {
           '2xs': { value: '10px' },
           xs: { value: '11px' },
@@ -123,13 +94,79 @@ export const blogPreset = definePreset({
       },
       semanticTokens: {
         colors: {
-          bg: { value: { base: '{colors.paper.50}' } },
-          bgMuted: { value: { base: '{colors.paper.100}' } },
-          text: { value: { base: '{colors.ink.950}' } },
-          textMuted: { value: { base: '{colors.ink.700}' } },
-          textMeta: { value: { base: '{colors.ink.500}' } },
-          link: { value: { base: '{colors.accent.600}' } },
-          linkHover: { value: { base: '{colors.accent.700}' } },
+          // ─────────────────────────────────────────────────────────────
+          // 테마-가변 팔레트. base = GitHub 라이트(Primer), _dark = GitHub
+          // 다크(살짝 띄워 순검정 완화 + 서피스 분리 강화). 토큰 이름은 그대로.
+          // 다크 조건은 panda.config의 conditions.dark = [data-theme=dark] &.
+          // paper = 서피스(배경/카드/행), ink = 텍스트/보더, accent = 링크(파랑),
+          // marker = attention 앰버(절제), moss = success 그린.
+          // ─────────────────────────────────────────────────────────────
+          // paper — 서피스
+          'paper.50': { value: { base: '#ffffff', _dark: '#0f141a' } },
+          'paper.100': { value: { base: '#f6f8fa', _dark: '#171e27' } },
+          'paper.200': { value: { base: '#eaeef2', _dark: '#212a35' } },
+          'paper.300': { value: { base: '#d0d7de', _dark: '#2d3742' } },
+          // ink — 텍스트/보더
+          'ink.950': { value: { base: '#1f2328', _dark: '#f0f6fc' } },
+          'ink.900': { value: { base: '#24292f', _dark: '#e6edf3' } },
+          'ink.800': { value: { base: '#32383f', _dark: '#c9d1d9' } },
+          'ink.700': { value: { base: '#57606a', _dark: '#b1bac4' } },
+          'ink.600': { value: { base: '#656d76', _dark: '#8b949e' } },
+          'ink.500': { value: { base: '#6e7781', _dark: '#7d8590' } },
+          'ink.400': { value: { base: '#8c959f', _dark: '#6e7681' } },
+          'ink.300': { value: { base: '#afb8c1', _dark: '#545d68' } },
+          'ink.200': { value: { base: '#d0d7de', _dark: '#3d444d' } },
+          'ink.100': { value: { base: '#eaeef2', _dark: '#2d3742' } },
+          'ink.50': { value: { base: '#f6f8fa', _dark: '#212a35' } },
+          'ink.25': { value: { base: '#f6f8fa', _dark: '#171e27' } },
+          'ink.border': { value: { base: '#d0d7de', _dark: '#343d47' } },
+          'ink.borderStrong': { value: { base: '#afb8c1', _dark: '#4a5560' } },
+          // accent — 링크/액션 (GitHub blue)
+          'accent.50': { value: { base: '#ddf4ff', _dark: '#12243a' } },
+          'accent.200': { value: { base: '#54aeff', _dark: '#388bfd' } },
+          'accent.600': { value: { base: '#0969da', _dark: '#58a6ff' } },
+          'accent.700': { value: { base: '#0550ae', _dark: '#79c0ff' } },
+          // marker — 강조/하이라이트 액센트. 주황(앰버) 폐기 → GitHub 퍼플
+          // (done/sponsors)로 통일. 파랑(링크/데이터)·초록(성공)과 구분되는
+          // 제3의 액센트로 색 위계를 유지한다.
+          'marker.100': {
+            value: {
+              base: 'rgba(130,80,223,0.1)',
+              _dark: 'rgba(163,113,247,0.15)',
+            },
+          },
+          'marker.300': {
+            value: {
+              base: 'rgba(130,80,223,0.2)',
+              _dark: 'rgba(163,113,247,0.32)',
+            },
+          },
+          'marker.600': { value: { base: '#8250df', _dark: '#a371f7' } },
+          // moss — success 그린
+          'moss.100': {
+            value: {
+              base: 'rgba(26,127,55,0.12)',
+              _dark: 'rgba(63,185,80,0.15)',
+            },
+          },
+          'moss.600': { value: { base: '#1a7f37', _dark: '#3fb950' } },
+          // spot — admin 전용 강조색(청록/teal). Panda 기본 'teal' 스케일과
+          // 이름 충돌을 피하려 커스텀 명 'spot' 사용. 퍼플/파랑/초록과 구분.
+          'spot.100': {
+            value: {
+              base: 'rgba(14,116,144,0.1)',
+              _dark: 'rgba(86,212,221,0.15)',
+            },
+          },
+          'spot.600': { value: { base: '#0e7490', _dark: '#56d4dd' } },
+          // 시맨틱 별칭 (하위호환)
+          bg: { value: '{colors.paper.50}' },
+          bgMuted: { value: '{colors.paper.100}' },
+          text: { value: '{colors.ink.950}' },
+          textMuted: { value: '{colors.ink.700}' },
+          textMeta: { value: '{colors.ink.500}' },
+          link: { value: '{colors.accent.600}' },
+          linkHover: { value: '{colors.accent.700}' },
         },
       },
     },

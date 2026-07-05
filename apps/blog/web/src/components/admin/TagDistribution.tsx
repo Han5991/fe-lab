@@ -33,7 +33,7 @@ export const TagDistribution = ({
               className={css({
                 fontFamily: 'mono',
                 fontSize: 'xs',
-                color: 'ink.700',
+                color: 'ink.800',
                 whiteSpace: 'nowrap',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
@@ -56,7 +56,7 @@ export const TagDistribution = ({
                   left: '0',
                   top: '0',
                   bottom: '0',
-                  bg: isHighlighted ? 'marker.300' : 'ink.700',
+                  bg: isHighlighted ? 'accent.600' : 'ink.400',
                 })}
                 style={{ width: `${ratio}%` }}
               />
@@ -65,7 +65,7 @@ export const TagDistribution = ({
               className={css({
                 fontFamily: 'mono',
                 fontSize: 'xs',
-                color: 'ink.500',
+                color: 'ink.600',
                 textAlign: 'right',
                 fontVariantNumeric: 'tabular-nums',
               })}

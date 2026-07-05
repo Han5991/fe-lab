@@ -13,15 +13,21 @@ export default defineConfig({
     './src/**/*.{js,jsx,ts,tsx}',
     './node_modules/@design-system/ui/src/**/*.{js,jsx,ts,tsx}',
   ],
-  // 이 블로그 앱 자체에서 codegen을 돌릴 때는 strictTokens=true로 새 코드의 토큰 사용을
-  // 강제한다. 다만 ui-lib(공용 출력)는 `@design-system/ui` 패키지의 prepare 훅에서
-  // strictTokens 없이 생성되므로, CI/배포에서는 기존 임의값(`maxW: '1200px'` 등)도
-  // 빌드에 통과한다. 새로 추가하는 코드는 가급적 토큰을 쓰자.
+  // 디자인 토큰 강제: 임의 색/값 대신 토큰만 허용. 임의값이 꼭 필요하면
+  // 대괄호 이스케이프(`'[6px]'`)로 명시적으로 표기한다.
   strictTokens: true,
 
   jsxFramework: 'react',
 
   strictPropertyValues: true,
+  // 테마 토글: html[data-theme] 로 라이트/다크 전환. semanticTokens의 _dark
+  // 값이 이 조건에서 적용된다. base = 라이트, [data-theme=dark] = 다크.
+  conditions: {
+    extend: {
+      dark: '[data-theme=dark] &',
+      light: '[data-theme=light] &',
+    },
+  },
   outdir: '../../../packages/@design-system/ui-lib',
   globalCss: {
     extend: {
@@ -36,9 +42,10 @@ export default defineConfig({
         WebkitFontSmoothing: 'antialiased',
         MozOsxFontSmoothing: 'grayscale',
       },
+      // GitHub 다크: selection은 앰버 대신 중립 회색 + 밝은 텍스트
       '::selection': {
-        bg: 'marker.300',
-        color: 'ink.950',
+        bg: 'ink.border',
+        color: 'ink.900',
       },
       ':focus-visible': {
         outline: '2px solid token(colors.accent.600)',

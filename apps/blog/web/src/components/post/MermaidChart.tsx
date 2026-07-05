@@ -8,6 +8,8 @@ import { css } from '@design-system/ui-lib/css';
 if (typeof window !== 'undefined') {
   mermaid.initialize({
     startOnLoad: true,
+    // GitHub 다크 배경과 어울리도록 다크 테마 사용
+    theme: 'dark',
     // 'strict' = HTML 허용, JS·이벤트 핸들러 차단. Mermaid가 내부적으로
     // DOMPurify를 돌리고, 입력도 작성자 신뢰 마크다운만이라 추가 sanitize 불필요.
     securityLevel: 'strict',
