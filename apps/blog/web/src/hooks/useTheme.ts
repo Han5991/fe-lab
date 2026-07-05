@@ -52,19 +52,33 @@ export function useTheme(): Theme {
   return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }
 
-// 전환 시 짧게 transition 클래스를 얹어 색이 부드럽게 페이드되게 한다.
-// (평상시 hover 등에는 트랜지션이 걸리지 않도록 전환 순간에만 적용)
-let transitionTimer: ReturnType<typeof setTimeout> | undefined;
-function applyWithTransition(next: Theme) {
-  const el = document.documentElement;
-  el.classList.add('theme-transition');
-  el.dataset.theme = next;
-  listeners.forEach(l => l());
-  if (transitionTimer) clearTimeout(transitionTimer);
-  transitionTimer = setTimeout(
-    () => el.classList.remove('theme-transition'),
-    320,
+function prefersReducedMotion(): boolean {
+  return (
+    typeof window !== 'undefined' &&
+    !!window.matchMedia &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches
   );
+}
+
+function applyTheme(next: Theme) {
+  document.documentElement.dataset.theme = next;
+  listeners.forEach(l => l());
+}
+
+// 테마 전환은 View Transitions API로 전체 페이지를 한 번의 컴포지터
+// 크로스페이드로 처리한다. 예전처럼 모든 요소에 color/fill transition을 걸면
+// 차트·코드 하이라이팅이 많은 페이지(analytics 등)에서 요소 수만큼 style/paint가
+// 터져 버벅였다. 루트 스냅샷 크로스페이드는 요소 수와 무관하게 GPU에서 처리돼
+// 매끄럽다. 미지원 브라우저·reduced-motion은 즉시 전환.
+function applyWithTransition(next: Theme) {
+  if (
+    prefersReducedMotion() ||
+    typeof document.startViewTransition !== 'function'
+  ) {
+    applyTheme(next);
+    return;
+  }
+  document.startViewTransition(() => applyTheme(next));
 }
 
 /** 사용자가 명시적으로 테마를 바꾼다 → 쿠키에 저장하고 부드럽게 전환. */

@@ -56,26 +56,16 @@
     padding: 0 2px;
   }
 
-  /* 테마 전환 애니메이션 — 토글 순간에만 .theme-transition 클래스를 얹어
-     색이 부드럽게 페이드되게 한다(평상시 hover 등엔 영향 없음). useTheme의
-     setTheme가 클래스를 320ms 동안 붙였다 뗀다. */
-  html.theme-transition,
-  html.theme-transition *,
-  html.theme-transition *::before,
-  html.theme-transition *::after {
-    transition:
-      background-color 0.28s ease,
-      border-color 0.28s ease,
-      color 0.28s ease,
-      fill 0.28s ease !important;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    html.theme-transition,
-    html.theme-transition *,
-    html.theme-transition *::before,
-    html.theme-transition *::after {
-      transition: none !important;
-    }
+  /* 테마 전환 애니메이션 — View Transitions API(useTheme)로 전체 페이지를
+     한 번의 컴포지터 크로스페이드로 전환한다. 예전엔 html.theme-transition *
+     로 모든 요소에 color/fill transition을 걸어, 차트·코드 하이라이팅이 많은
+     페이지(analytics 등)에서 요소 수만큼 style/paint가 터져 버벅였다. 루트
+     스냅샷 크로스페이드는 요소 수와 무관하게 GPU에서 처리돼 매끄럽다.
+     (reduced-motion·미지원 브라우저는 useTheme가 즉시 전환하므로 이 pseudo가
+     생성되지 않는다.) */
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 0.26s;
+    animation-timing-function: ease;
   }
 }
