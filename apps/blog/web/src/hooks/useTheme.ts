@@ -10,7 +10,12 @@ export type Theme = 'light' | 'dark';
 const COOKIE = 'theme';
 const listeners = new Set<() => void>();
 
-function readCookie(): Theme | null {
+// readCookie/writeCookie/systemTheme/getSnapshot은 순수 헬퍼로 단위 테스트에서
+// 직접 검증하려고 export한다(sibling useRecentViews와 동일한 컨벤션).
+export function readCookie(): Theme | null {
+  // 이 정규식은 layout.tsx <head>의 FOUC 방지 인라인 스크립트와 의도적으로 동일한
+  // 복제본이다(그 스크립트는 hydration 전에 돌아 이 훅을 import할 수 없다).
+  // 한쪽만 바꾸면 조용히 어긋나니 반드시 함께 맞춰라.
   const m =
     typeof document !== 'undefined'
       ? document.cookie.match(/(?:^|;\s*)theme=(dark|light)/)
@@ -18,12 +23,12 @@ function readCookie(): Theme | null {
   return m ? (m[1] as Theme) : null;
 }
 
-function writeCookie(t: Theme) {
+export function writeCookie(t: Theme) {
   // 1년 유지 · path=/ · SameSite=Lax (구독/서버 어디서든 읽히도록 쿠키에 저장)
   document.cookie = `${COOKIE}=${t}; path=/; max-age=31536000; SameSite=Lax`;
 }
 
-function systemTheme(): Theme {
+export function systemTheme(): Theme {
   return typeof window !== 'undefined' &&
     window.matchMedia &&
     window.matchMedia('(prefers-color-scheme: dark)').matches
@@ -36,7 +41,7 @@ function subscribe(onChange: () => void) {
   return () => listeners.delete(onChange);
 }
 
-function getSnapshot(): Theme {
+export function getSnapshot(): Theme {
   return (
     (document.documentElement.dataset.theme as Theme | undefined) ?? 'dark'
   );

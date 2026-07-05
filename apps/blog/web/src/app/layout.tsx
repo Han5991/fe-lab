@@ -86,11 +86,14 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     >
       <head>
         {/* 테마 초기화: paint 전에 쿠키 → 없으면 시스템 설정(prefers-color-scheme)
-            순으로 반영해 FOUC 방지. 쿠키에 명시 선택이 있으면 그것을 우선한다. */}
+            순으로 반영해 FOUC 방지. 쿠키에 명시 선택이 있으면 그것을 우선한다.
+            이 스크립트는 hydration 전에 실행돼야 해서 useTheme를 import할 수 없다.
+            아래 theme 쿠키 정규식은 useTheme.ts의 readCookie()와 의도적으로 동일한
+            복제본이다 — 한쪽만 바꾸지 말고 반드시 함께 맞춰라(문자열 안이라 `\\s`로 이스케이프). */}
         <script
           dangerouslySetInnerHTML={{
             __html:
-              "(function(){try{var m=document.cookie.match(/(?:^|; )theme=(dark|light)/);var t=m?m[1]:((window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light');document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme='dark';}})();",
+              "(function(){try{var m=document.cookie.match(/(?:^|;\\s*)theme=(dark|light)/);var t=m?m[1]:((window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light');document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme='dark';}})();",
           }}
         />
         <link

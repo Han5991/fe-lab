@@ -4,6 +4,7 @@ import type { PostSummary } from '@/domain/post';
 import { encodePostSlug } from '@/domain/post/utils';
 import { fmtDate } from '@/lib/format';
 import { Label } from './Label';
+import { tagPillStyle } from './tagPillStyle';
 
 interface PostIndexRowProps {
   post: PostSummary;
@@ -66,19 +67,7 @@ export const PostIndexRow = ({ post }: PostIndexRowProps) => {
             {post.tags.slice(0, 4).map(t => (
               <span
                 key={t}
-                className={css({
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  px: '[10px]',
-                  py: '[2px]',
-                  rounded: '[2rem]',
-                  bg: 'paper.200',
-                  color: 'ink.700',
-                  fontSize: 'xs',
-                  fontWeight: 'medium',
-                  lineHeight: 'flat',
-                  _hover: { bg: 'paper.300' },
-                })}
+                className={css(tagPillStyle, { _hover: { bg: 'paper.300' } })}
               >
                 #{t}
               </span>

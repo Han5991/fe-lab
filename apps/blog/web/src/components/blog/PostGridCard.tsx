@@ -5,6 +5,7 @@ import { encodePostSlug } from '@/domain/post/utils';
 import { resolveThumbnailUrl } from '@/domain/post/thumbnail';
 import { fmtDate } from '@/lib/format';
 import { Label } from './Label';
+import { tagPillStyle } from './tagPillStyle';
 
 interface PostGridCardProps {
   post: PostSummary;
@@ -100,21 +101,7 @@ export const PostGridCard = ({ post }: PostGridCardProps) => {
               : `${readMin}분`}
           </Label>
           {post.tags && post.tags.length > 0 && (
-            <span
-              className={css({
-                display: 'inline-flex',
-                alignItems: 'center',
-                px: '[10px]',
-                py: '[2px]',
-                rounded: '[2rem]',
-                bg: 'paper.200',
-                color: 'ink.700',
-                fontFamily: 'sans',
-                fontSize: 'xs',
-                fontWeight: 'medium',
-                lineHeight: 'flat',
-              })}
-            >
+            <span className={css(tagPillStyle, { fontFamily: 'sans' })}>
               #{post.tags[0]}
             </span>
           )}
