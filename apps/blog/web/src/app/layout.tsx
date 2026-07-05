@@ -1,4 +1,4 @@
-import 'pretendard/dist/web/static/pretendard.css';
+import 'pretendard/dist/web/static/pretendard-dynamic-subset.css';
 import '@/src/styles/globals.css';
 import { Providers } from './providers';
 import { Layout } from '@/src/components/Layout';
