@@ -6,8 +6,7 @@ export const blogPreset = definePreset({
     extend: {
       tokens: {
         shadows: {
-          // accent = github blue, marker = github purple (앰버 폐기)
-          accentLeft: { value: 'inset 3px 0 0 #58A6FF' },
+          // marker = github purple — 블로그 강조 좌측 바 (앰버 폐기)
           markerLeft: { value: 'inset 3px 0 0 #a371f7' },
         },
         fonts: {
@@ -15,13 +14,9 @@ export const blogPreset = definePreset({
             value:
               'var(--font-pretendard, Pretendard), -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif',
           },
-          // GitHub 폼 리디자인: serif 정체성 폐기 → serif/serifKr 토큰을 system sans로
+          // GitHub 폼 리디자인: serif 정체성 폐기 → serif 토큰을 system sans로
           // 매핑해 기존 serif 사용처를 일괄 de-serif. (컴포넌트를 안 건드려도 sans 적용)
           serif: {
-            value:
-              'var(--font-pretendard, Pretendard), -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif',
-          },
-          serifKr: {
             value:
               'var(--font-pretendard, Pretendard), -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif',
           },
@@ -46,7 +41,6 @@ export const blogPreset = definePreset({
           monoLg: { value: '0.06em' },
           monoXl: { value: '0.08em' },
           monoXxl: { value: '0.12em' },
-          monoXxxl: { value: '0.16em' },
         },
         lineHeights: {
           prose: { value: '1.75' },
@@ -55,12 +49,8 @@ export const blogPreset = definePreset({
           comfortable: { value: '1.55' },
           snug: { value: '1.5' },
           headerSm: { value: '1.4' },
-          headerXs: { value: '1.35' },
           header: { value: '1.3' },
           tight: { value: '1.25' },
-          tighter: { value: '1.2' },
-          h1Tight: { value: '1.15' },
-          hero: { value: '1.05' },
           heroDense: { value: '0.95' },
           flat: { value: '1' },
         },
@@ -70,26 +60,10 @@ export const blogPreset = definePreset({
           dashboardW: { value: '1280px' },
           articleW: { value: '1080px' },
           proseW: { value: '680px' },
-          postBodyW: { value: '720px' },
-          tocW: { value: '240px' },
-          sidebarW: { value: '240px' },
           heroSubW: { value: '580px' },
-          heroSubNarrow: { value: '540px' },
           heroAside: { value: '480px' },
           panelW: { value: '800px' },
           formW: { value: '400px' },
-          searchAside: { value: '320px' },
-          searchAsideSm: { value: '280px' },
-          chartCard: { value: '320px' },
-          adminTagW: { value: '90px' },
-          adminTagSpan: { value: '110px' },
-          listDateW: { value: '110px' },
-          listMetaW: { value: '200px' },
-          listMetaSm: { value: '100px' },
-          listMetaXs: { value: '80px' },
-          listSparkline: { value: '100px' },
-          listRank: { value: '32px' },
-          tooltipW: { value: '140px' },
         },
       },
       semanticTokens: {
@@ -129,12 +103,6 @@ export const blogPreset = definePreset({
           // marker — 강조/하이라이트 액센트. 주황(앰버) 폐기 → GitHub 퍼플
           // (done/sponsors)로 통일. 파랑(링크/데이터)·초록(성공)과 구분되는
           // 제3의 액센트로 색 위계를 유지한다.
-          'marker.100': {
-            value: {
-              base: 'rgba(130,80,223,0.1)',
-              _dark: 'rgba(163,113,247,0.15)',
-            },
-          },
           'marker.300': {
             value: {
               base: 'rgba(130,80,223,0.2)',
@@ -152,21 +120,7 @@ export const blogPreset = definePreset({
           'moss.600': { value: { base: '#1a7f37', _dark: '#3fb950' } },
           // spot — admin 전용 강조색(청록/teal). Panda 기본 'teal' 스케일과
           // 이름 충돌을 피하려 커스텀 명 'spot' 사용. 퍼플/파랑/초록과 구분.
-          'spot.100': {
-            value: {
-              base: 'rgba(14,116,144,0.1)',
-              _dark: 'rgba(86,212,221,0.15)',
-            },
-          },
           'spot.600': { value: { base: '#0e7490', _dark: '#56d4dd' } },
-          // 시맨틱 별칭 (하위호환)
-          bg: { value: '{colors.paper.50}' },
-          bgMuted: { value: '{colors.paper.100}' },
-          text: { value: '{colors.ink.950}' },
-          textMuted: { value: '{colors.ink.700}' },
-          textMeta: { value: '{colors.ink.500}' },
-          link: { value: '{colors.accent.600}' },
-          linkHover: { value: '{colors.accent.700}' },
         },
       },
     },
