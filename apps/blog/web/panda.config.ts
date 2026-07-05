@@ -42,7 +42,11 @@ export default defineConfig({
         WebkitFontSmoothing: 'antialiased',
         MozOsxFontSmoothing: 'grayscale',
       },
-      // GitHub 다크: selection은 앰버 대신 중립 회색 + 밝은 텍스트
+      // 색 토큰을 쓰는 전역 pseudo/헬퍼는 여기(Panda globalCss)에 둔다 — Panda가
+      // semanticToken을 올바른 CSS 변수(--colors-*, 테마-가변)로 해석해주기 때문.
+      // globals.css는 Panda가 처리하지 않아 손으로 var()를 쓰면 flat-dotted 토큰의
+      // 이스케이프 점 이름(--colors-ink\.border)과 어긋난다.
+      // GitHub: selection은 중립 회색 + 밝은 텍스트
       '::selection': {
         bg: 'ink.border',
         color: 'ink.900',
@@ -51,6 +55,23 @@ export default defineConfig({
         outline: '2px solid token(colors.accent.600)',
         outlineOffset: '3px',
         borderRadius: '3px',
+      },
+      '::-webkit-scrollbar': {
+        width: '10px',
+        height: '10px',
+      },
+      '::-webkit-scrollbar-thumb': {
+        bg: 'ink.border',
+        borderRadius: '5px',
+      },
+      '::-webkit-scrollbar-thumb:hover': {
+        bg: 'ink.300',
+      },
+      // Marker(형광펜) — raw HTML 본문의 <span class="marker">…</span> 강조
+      '.marker': {
+        background:
+          'linear-gradient(180deg, transparent 55%, token(colors.marker.300) 55%, token(colors.marker.300) 92%, transparent 92%)',
+        padding: '0 2px',
       },
     },
   },

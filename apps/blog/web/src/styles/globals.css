@@ -18,43 +18,12 @@
     color-scheme: dark;
   }
 
-  /* Selection — 중립 보더 톤 + 밝은 텍스트 (테마-가변) */
-  ::selection {
-    background: var(--colors-ink-border);
-    color: var(--colors-ink-900);
-  }
-
-  /* Focus ring — accent(파랑) */
-  :focus-visible {
-    outline: 2px solid var(--colors-accent-600);
-    outline-offset: 3px;
-    border-radius: 3px;
-  }
-
-  /* Scrollbar polish */
-  ::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
-  }
-  ::-webkit-scrollbar-thumb {
-    background: var(--colors-ink-border);
-    border-radius: 5px;
-  }
-  ::-webkit-scrollbar-thumb:hover {
-    background: var(--colors-ink-300);
-  }
-
-  /* Marker (형광펜) helper — 반투명 앰버(테마-가변) */
-  .marker {
-    background: linear-gradient(
-      180deg,
-      transparent 55%,
-      var(--colors-marker-300) 55%,
-      var(--colors-marker-300) 92%,
-      transparent 92%
-    );
-    padding: 0 2px;
-  }
+  /* 색 토큰을 쓰는 전역 규칙(::selection, :focus-visible, 스크롤바, .marker)은
+     panda.config.ts globalCss로 옮겼다. globals.css는 Panda가 처리하지 않아
+     손으로 var(--colors-ink-border)처럼 쓰면, Panda가 flat-dotted 토큰을 실제로
+     내보내는 이스케이프 점 형태(--colors-ink\.border)와 이름이 어긋나 값이
+     적용되지 않는다(마커/스크롤바가 조용히 깨졌던 원인). Panda globalCss에서
+     토큰명으로 쓰면 Panda가 올바른 CSS 변수로 해석해준다. */
 
   /* 테마 전환 애니메이션 — View Transitions API(useTheme)로 전체 페이지를
      한 번의 컴포지터 크로스페이드로 전환한다. 예전엔 html.theme-transition *
