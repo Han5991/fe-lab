@@ -1,6 +1,7 @@
 'use client';
 
 import { css } from '@design-system/ui-lib/css';
+import { tagPillStyle } from './tagPillStyle';
 
 export interface ActiveFiltersProps {
   tags: string[];
@@ -24,18 +25,9 @@ export const ActiveFilters = ({
   const total = tags.length + (series ? 1 : 0) + (year ? 1 : 0);
   if (total === 0) return null;
 
-  const chipClass = css({
-    display: 'inline-flex',
-    alignItems: 'center',
+  const chipClass = css(tagPillStyle, {
     gap: '[6px]',
-    py: '[2px]',
-    px: '[10px]',
-    rounded: '[2rem]',
-    bg: 'paper.200',
     color: 'ink.800',
-    fontSize: 'xs',
-    fontWeight: 'medium',
-    lineHeight: 'flat',
     whiteSpace: 'nowrap',
     cursor: 'pointer',
     transition: '[all 0.15s]',

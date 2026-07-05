@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { css } from '@design-system/ui-lib/css';
+import { tagPillStyle } from './tagPillStyle';
 import type { SeriesSummary } from '@/domain/post/aggregate';
 import { fmtDate } from '@/lib/format';
 
@@ -106,18 +107,10 @@ export const SeriesCard = ({ series, index }: SeriesCardProps) => {
         })}
       >
         <span
-          className={css({
-            display: 'inline-flex',
-            alignItems: 'center',
+          className={css(tagPillStyle, {
             px: '[8px]',
-            py: '[2px]',
-            rounded: '[2rem]',
             bg: 'paper.300',
-            color: 'ink.700',
             fontFamily: 'mono',
-            fontSize: 'xs',
-            fontWeight: 'medium',
-            lineHeight: 'flat',
           })}
         >
           {series.count}편

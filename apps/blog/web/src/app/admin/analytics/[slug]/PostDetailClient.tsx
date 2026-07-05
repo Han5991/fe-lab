@@ -356,7 +356,7 @@ function PostDetailContent() {
               mb: '3',
             })}
           >
-            <Calendar size={18} className={css({ color: 'purple.500' })} />
+            <Calendar size={18} className={css({ color: 'spot.600' })} />
             <span
               className={css({
                 fontSize: '[0.8rem]',

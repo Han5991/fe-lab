@@ -5,7 +5,7 @@ import { Layout } from '@/src/components/Layout';
 import { GoogleAnalytics, GoogleTagManager } from '@next/third-parties/google';
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
-import { newsreader, notoSerifKr, jetbrainsMono } from './fonts';
+import { jetbrainsMono } from './fonts';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://blog.sangwook.dev'),
@@ -82,7 +82,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       data-theme="dark"
       data-scroll-behavior="smooth"
       suppressHydrationWarning
-      className={`${newsreader.variable} ${notoSerifKr.variable} ${jetbrainsMono.variable}`}
+      className={`${jetbrainsMono.variable}`}
     >
       <head>
         {/* 테마 초기화: paint 전에 쿠키 → 없으면 시스템 설정(prefers-color-scheme)

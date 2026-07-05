@@ -433,12 +433,14 @@ export function PostAccordion({ post }: Props) {
                           borderRadius: token('radii.lg'),
                           border: `1px solid ${token('colors.ink.border')}`,
                           background: token('colors.ink.25'),
+                          color: token('colors.ink.900'),
                           fontSize: '12px',
                         }}
                         labelStyle={{
-                          color: token('colors.ink.700'),
+                          color: token('colors.ink.600'),
                           marginBottom: '2px',
                         }}
+                        itemStyle={{ color: token('colors.ink.800') }}
                       />
                       <Line
                         type="monotone"

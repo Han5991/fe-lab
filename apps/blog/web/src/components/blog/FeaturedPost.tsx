@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { css } from '@design-system/ui-lib/css';
+import { tagPillStyle } from './tagPillStyle';
 import type { PostSummary } from '@/domain/post';
 import { encodePostSlug } from '@/domain/post/utils';
 import { resolveThumbnailUrl } from '@/domain/post/thumbnail';
@@ -59,17 +60,10 @@ export const FeaturedPost = ({ post }: FeaturedPostProps) => {
           })}
         >
           <span
-            className={css({
-              display: 'inline-flex',
-              alignItems: 'center',
-              px: '[10px]',
-              py: '[2px]',
-              rounded: '[2rem]',
+            className={css(tagPillStyle, {
               bg: 'moss.100',
               color: 'moss.600',
-              fontSize: 'xs',
               fontWeight: 'semibold',
-              lineHeight: 'flat',
             })}
           >
             LATEST
@@ -142,17 +136,7 @@ export const FeaturedPost = ({ post }: FeaturedPostProps) => {
           {post.tags?.slice(0, 3).map(t => (
             <span
               key={t}
-              className={css({
-                display: 'inline-flex',
-                alignItems: 'center',
-                px: '[10px]',
-                py: '[2px]',
-                rounded: '[2rem]',
-                bg: 'paper.200',
-                color: 'ink.700',
-                fontSize: 'xs',
-                fontWeight: 'medium',
-                lineHeight: 'flat',
+              className={css(tagPillStyle, {
                 _hover: { bg: 'paper.300' },
               })}
             >
