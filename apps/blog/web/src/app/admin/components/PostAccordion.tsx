@@ -63,22 +63,22 @@ export function PostAccordion({ post }: Props) {
   const statusStyle =
     computedStatus === 'published'
       ? {
-          bg: 'moss.100' as const,
+          bg: 'paper.100' as const,
           color: 'moss.600' as const,
-          borderColor: 'moss.600' as const,
+          borderColor: 'ink.border' as const,
           label: '공개',
         }
       : computedStatus === 'draft'
         ? {
-            bg: 'ink.100' as const,
+            bg: 'paper.100' as const,
             color: 'ink.500' as const,
             borderColor: 'ink.border' as const,
             label: '비공개',
           }
         : {
-            bg: 'marker.100' as const,
-            color: 'marker.600' as const,
-            borderColor: 'marker.300' as const,
+            bg: 'paper.100' as const,
+            color: 'spot.600' as const,
+            borderColor: 'ink.border' as const,
             label: post.scheduledDate
               ? new Date(post.scheduledDate).toLocaleDateString('ko-KR', {
                   timeZone: 'Asia/Seoul',
@@ -123,7 +123,7 @@ export function PostAccordion({ post }: Props) {
             onClick={e => e.stopPropagation()}
             className={css({
               color: 'ink.500',
-              _hover: { color: 'marker.600' },
+              _hover: { color: 'spot.600' },
               display: 'flex',
               alignItems: 'center',
               flexShrink: 0,
@@ -137,7 +137,7 @@ export function PostAccordion({ post }: Props) {
             onClick={e => e.stopPropagation()}
             className={css({
               color: 'ink.200',
-              _hover: { color: 'marker.600' },
+              _hover: { color: 'spot.600' },
               display: 'flex',
               alignItems: 'center',
               flexShrink: 0,
@@ -225,7 +225,7 @@ export function PostAccordion({ post }: Props) {
             {post.todayViews > 0 && (
               <span
                 className={css({
-                  color: 'marker.600',
+                  color: 'spot.600',
                   fontSize: 'xs',
                   fontWeight: 'medium',
                 })}
@@ -297,7 +297,7 @@ export function PostAccordion({ post }: Props) {
                   ) : (
                     <TrendingDown
                       size={13}
-                      className={css({ color: 'marker.600' })}
+                      className={css({ color: 'spot.600' })}
                     />
                   )}
                   <span className={css({ fontSize: 'xs', color: 'ink.500' })}>
@@ -312,7 +312,7 @@ export function PostAccordion({ post }: Props) {
                         briefStats.weekGrowthRate !== null
                           ? briefStats.weekGrowthRate >= 0
                             ? 'moss.600'
-                            : 'marker.600'
+                            : 'spot.600'
                           : 'ink.500',
                     })}
                   >
@@ -433,26 +433,28 @@ export function PostAccordion({ post }: Props) {
                           borderRadius: token('radii.lg'),
                           border: `1px solid ${token('colors.ink.border')}`,
                           background: token('colors.ink.25'),
+                          color: token('colors.ink.900'),
                           fontSize: '12px',
                         }}
                         labelStyle={{
-                          color: token('colors.ink.700'),
+                          color: token('colors.ink.600'),
                           marginBottom: '2px',
                         }}
+                        itemStyle={{ color: token('colors.ink.800') }}
                       />
                       <Line
                         type="monotone"
                         dataKey="views"
-                        stroke={token('colors.ink.700')}
+                        stroke={token('colors.accent.600')}
                         strokeWidth={2}
                         dot={{
                           r: 3,
-                          fill: token('colors.marker.600'),
+                          fill: token('colors.accent.600'),
                           strokeWidth: 0,
                         }}
                         activeDot={{
                           r: 5,
-                          fill: token('colors.marker.600'),
+                          fill: token('colors.accent.600'),
                           strokeWidth: 0,
                         }}
                       />

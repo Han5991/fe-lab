@@ -95,7 +95,7 @@ export const TopPostsTable = ({ rows }: TopPostsTableProps) => {
                   ? 'ink.400'
                   : p.delta >= 0
                     ? 'moss.600'
-                    : 'marker.600',
+                    : 'spot.600',
               textAlign: 'right',
               fontVariantNumeric: 'tabular-nums',
             })}

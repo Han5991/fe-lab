@@ -1,10 +1,10 @@
 import Link from 'next/link';
 import { css } from '@design-system/ui-lib/css';
+import { tagPillStyle } from './tagPillStyle';
 import type { PostSummary } from '@/domain/post';
 import { encodePostSlug } from '@/domain/post/utils';
 import { resolveThumbnailUrl } from '@/domain/post/thumbnail';
 import { fmtDate } from '@/lib/format';
-import { Label } from './Label';
 
 interface FeaturedPostProps {
   post: PostSummary;
@@ -22,37 +22,19 @@ export const FeaturedPost = ({ post }: FeaturedPostProps) => {
       className={css({
         display: 'block',
         position: 'relative',
-        '& h2': { transition: '[color 0.15s]' },
-        _hover: { '& h2': { color: 'ink.700' } },
+        bg: 'paper.100',
+        borderWidth: '[1px]',
+        borderStyle: 'solid',
+        borderColor: 'ink.border',
+        rounded: '[12px]',
+        overflow: 'hidden',
+        transition: '[border-color 0.15s]',
+        _hover: {
+          borderColor: 'ink.borderStrong',
+          '& h2': { color: 'accent.600', textDecoration: 'underline' },
+        },
       })}
     >
-      <div
-        className={css({
-          mb: '5',
-          display: 'flex',
-          flexWrap: 'wrap',
-          alignItems: 'center',
-          gap: '2',
-        })}
-      >
-        <span
-          className={css({
-            fontFamily: 'mono',
-            fontSize: '2xs',
-            px: '2',
-            py: '0.5',
-            bg: 'marker.300',
-            color: 'ink.950',
-            letterSpacing: 'monoXl',
-            textTransform: 'uppercase',
-          })}
-        >
-          LATEST
-        </span>
-        {post.series && <Label tone="marker">{post.series}</Label>}
-        {post.date && <Label tone="meta">· {fmtDate(post.date)}</Label>}
-      </div>
-
       <img
         src={thumb}
         alt={post.title}
@@ -61,57 +43,107 @@ export const FeaturedPost = ({ post }: FeaturedPostProps) => {
           w: 'full',
           h: '[320px]',
           objectFit: 'cover',
-          borderWidth: '[1px]',
+          borderBottomWidth: '[1px]',
+          borderBottomStyle: 'solid',
           borderColor: 'ink.border',
         })}
       />
 
-      <h2
-        className={css({
-          mt: '6',
-          mb: '3',
-          fontFamily: 'serif',
-          fontSize: { base: '3xl', md: '4xl' },
-          fontWeight: 'medium',
-          lineHeight: 'tighter',
-          letterSpacing: 'tightX',
-          color: 'ink.950',
-        })}
-      >
-        {post.title}
-      </h2>
-      {post.excerpt && (
-        <p
+      <div className={css({ p: '[16px]' })}>
+        <div
           className={css({
-            fontFamily: 'serif',
-            fontSize: 'md',
-            fontStyle: 'italic',
-            color: 'ink.700',
-            lineHeight: 'relaxed',
-            mb: '4',
-            lineClamp: 2,
+            mb: '[12px]',
+            display: 'flex',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            gap: '[8px]',
           })}
         >
-          {post.excerpt}
-        </p>
-      )}
+          <span
+            className={css(tagPillStyle, {
+              bg: 'moss.100',
+              color: 'moss.600',
+              fontWeight: 'semibold',
+            })}
+          >
+            LATEST
+          </span>
+          {post.series && (
+            <span
+              className={css({
+                fontSize: '[12px]',
+                color: 'ink.500',
+                fontWeight: 'medium',
+              })}
+            >
+              {post.series}
+            </span>
+          )}
+          {post.date && (
+            <span
+              className={css({
+                fontSize: '[12px]',
+                color: 'ink.500',
+              })}
+            >
+              · {fmtDate(post.date)}
+            </span>
+          )}
+        </div>
 
-      <div
-        className={css({
-          display: 'flex',
-          alignItems: 'center',
-          gap: '3',
-          flexWrap: 'wrap',
-        })}
-      >
-        <Label tone="meta">
-          {readMin}분 읽기
-          {post.tags && post.tags.length > 0 ? ' · ' : ''}
-          {post.tags
-            ?.slice(0, 3)
-            .map(t => `#${t}`)
-            .join(' ')}
-        </Label>
+        <h2
+          className={css({
+            mb: '[8px]',
+            fontSize: { base: '2xl', md: '3xl' },
+            fontWeight: 'bold',
+            lineHeight: 'tight',
+            color: 'ink.950',
+            transition: '[color 0.15s]',
+          })}
+        >
+          {post.title}
+        </h2>
+        {post.excerpt && (
+          <p
+            className={css({
+              fontSize: 'md',
+              color: 'ink.700',
+              lineHeight: 'relaxed',
+              mb: '[16px]',
+              lineClamp: 2,
+            })}
+          >
+            {post.excerpt}
+          </p>
+        )}
+
+        <div
+          className={css({
+            display: 'flex',
+            alignItems: 'center',
+            gap: '[8px]',
+            flexWrap: 'wrap',
+          })}
+        >
+          <span
+            className={css({
+              fontSize: '[12px]',
+              color: 'ink.500',
+            })}
+          >
+            {readMin}분 읽기
+          </span>
+          {post.tags?.slice(0, 3).map(t => (
+            <span
+              key={t}
+              className={css(tagPillStyle, {
+                _hover: { bg: 'paper.300' },
+              })}
+            >
+              #{t}
+            </span>
+          ))}
+        </div>
       </div>
     </Link>
   );

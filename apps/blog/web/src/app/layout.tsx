@@ -1,11 +1,12 @@
-import 'pretendard/dist/web/static/pretendard.css';
+import 'pretendard/dist/web/static/pretendard-dynamic-subset.css';
 import '@/src/styles/globals.css';
 import { Providers } from './providers';
 import { Layout } from '@/src/components/Layout';
 import { GoogleAnalytics, GoogleTagManager } from '@next/third-parties/google';
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
-import { newsreader, notoSerifKr, jetbrainsMono } from './fonts';
+import { jetbrainsMono } from './fonts';
+import { THEME_COOKIE_MATCH } from '@/src/hooks/theme-cookie';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://blog.sangwook.dev'),
@@ -79,10 +80,24 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html
       lang="ko"
+      data-theme="dark"
       data-scroll-behavior="smooth"
-      className={`${newsreader.variable} ${notoSerifKr.variable} ${jetbrainsMono.variable}`}
+      suppressHydrationWarning
+      className={`${jetbrainsMono.variable}`}
     >
       <head>
+        {/* 테마 초기화: paint 전에 쿠키 → 없으면 시스템 설정(prefers-color-scheme)
+            순으로 반영해 FOUC 방지. 쿠키에 명시 선택이 있으면 그것을 우선한다.
+            이 스크립트는 hydration 전에 실행돼야 해서 useTheme를 import할 수 없지만,
+            쿠키 정규식은 theme-cookie.ts의 THEME_COOKIE_MATCH 단일 소스를 빌드 시
+            주입한다(readCookie()도 같은 소스 → 두 곳이 어긋날 수 없음). */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var m=document.cookie.match(new RegExp(${JSON.stringify(
+              THEME_COOKIE_MATCH,
+            )}));var t=m?m[1]:((window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light');document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme='dark';}})();`,
+          }}
+        />
         <link
           rel="alternate"
           type="application/rss+xml"

@@ -29,7 +29,7 @@ const FONT_DIR = join(
 );
 
 /** 템플릿 디자인을 바꾸면 올려서 모든 이미지를 재생성하게 합니다. */
-export const TEMPLATE_VERSION = 2;
+export const TEMPLATE_VERSION = 3;
 
 export const OG_WIDTH = 1200;
 export const OG_HEIGHT = 630;
@@ -107,12 +107,12 @@ function el(
   return { type, props: { style, children } };
 }
 
-// 블로그 paper/ink 토큰의 hex 근사값 (resvg는 oklch 미지원)
-const PAPER = '#FCFAF5'; // paper.50
-const INK = '#221D17'; // ink.950
-const INK_META = '#8A8275'; // ink.500
-const INK_RULE = '#DCD5C8'; // ink.border
-const ACCENT = '#2563EB'; // accent.600 근사
+// GitHub 다크 토큰의 hex 값 (resvg는 oklch 미지원)
+const PAPER = '#0D1117'; // paper.50 (root bg)
+const INK = '#F0F6FC'; // ink.950 (heading/brand)
+const INK_META = '#8B949E'; // ink.600 (meta)
+const INK_RULE = '#30363D'; // ink.border (rule/dot)
+const ACCENT = '#58A6FF'; // accent.600 (github blue)
 
 /**
  * 1200×630 OG 카드 satori 엘리먼트 트리.
@@ -144,7 +144,7 @@ export function ogTemplate(post: OgPostInput): OgNode {
         'div',
         {
           display: 'flex',
-          border: '2px solid rgba(37, 99, 235, 0.4)',
+          border: '2px solid rgba(88, 166, 255, 0.4)',
           borderRadius: 9999,
           padding: '6px 26px',
           fontSize: 25,

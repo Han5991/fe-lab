@@ -57,16 +57,19 @@ export default function NotFound() {
         <Link
           href="/"
           className={css({
-            px: '6',
-            py: '3',
-            bg: 'ink.950',
-            color: 'paper.50',
-            rounded: 'lg',
+            px: '[16px]',
+            py: '[8px]',
+            bg: 'btn.primary',
+            color: 'white',
+            borderWidth: '[1px]',
+            borderStyle: 'solid',
+            borderColor: 'btn.primaryBorder',
+            rounded: '[6px]',
             fontSize: 'sm',
-            fontWeight: 'medium',
+            fontWeight: 'semibold',
             textAlign: 'center',
-            _hover: { bg: 'ink.800' },
-            _active: { bg: 'ink.900' },
+            _hover: { bg: 'btn.primaryHover' },
+            _active: { bg: 'btn.primary' },
             transition: '[background 0.2s]',
             textDecorationLine: 'none',
           })}
@@ -76,17 +79,19 @@ export default function NotFound() {
         <Link
           href="/posts/"
           className={css({
-            px: '6',
-            py: '3',
+            px: '[16px]',
+            py: '[8px]',
+            bg: 'paper.200',
             borderWidth: '[1px]',
+            borderStyle: 'solid',
             borderColor: 'ink.border',
-            color: 'ink.700',
-            rounded: 'lg',
+            color: 'ink.800',
+            rounded: '[6px]',
             fontSize: 'sm',
             fontWeight: 'medium',
             textAlign: 'center',
-            _hover: { bg: 'paper.100', borderColor: 'ink.borderStrong' },
-            _active: { bg: 'paper.200' },
+            _hover: { bg: 'paper.300', borderColor: 'ink.borderStrong' },
+            _active: { bg: 'paper.300' },
             transition: '[all 0.2s]',
             textDecorationLine: 'none',
           })}

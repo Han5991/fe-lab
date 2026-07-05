@@ -35,12 +35,12 @@ export default function PrivacyPage() {
               fontSize: '4xl',
               fontWeight: 'extrabold',
               mb: '3',
-              color: 'gray.900',
+              color: 'ink.950',
             })}
           >
             개인정보처리방침
           </h1>
-          <p className={css({ fontSize: 'sm', color: 'gray.400', mb: '10' })}>
+          <p className={css({ fontSize: 'sm', color: 'ink.400', mb: '10' })}>
             최종 수정일: {LAST_UPDATED}
           </p>
 
@@ -49,7 +49,7 @@ export default function PrivacyPage() {
               display: 'flex',
               flexDir: 'column',
               gap: '10',
-              color: 'gray.700',
+              color: 'ink.700',
               lineHeight: 'relaxed',
             })}
           >
@@ -59,7 +59,7 @@ export default function PrivacyPage() {
                   fontSize: 'xl',
                   fontWeight: 'bold',
                   mb: '3',
-                  color: 'gray.900',
+                  color: 'ink.950',
                 })}
               >
                 1. 수집하는 정보
@@ -93,7 +93,7 @@ export default function PrivacyPage() {
                   fontSize: 'xl',
                   fontWeight: 'bold',
                   mb: '3',
-                  color: 'gray.900',
+                  color: 'ink.950',
                 })}
               >
                 2. 사용하는 서비스
@@ -118,8 +118,8 @@ export default function PrivacyPage() {
                       target="_blank"
                       rel="noopener noreferrer"
                       className={css({
-                        color: 'blue.600',
-                        _hover: { color: 'blue.800' },
+                        color: 'accent.600',
+                        _hover: { color: 'accent.700' },
                       })}
                     >
                       Google 개인정보처리방침
@@ -155,7 +155,7 @@ export default function PrivacyPage() {
                   fontSize: 'xl',
                   fontWeight: 'bold',
                   mb: '3',
-                  color: 'gray.900',
+                  color: 'ink.950',
                 })}
               >
                 3. 쿠키
@@ -187,7 +187,7 @@ export default function PrivacyPage() {
                   fontSize: 'xl',
                   fontWeight: 'bold',
                   mb: '3',
-                  color: 'gray.900',
+                  color: 'ink.950',
                 })}
               >
                 4. AI 학습 데이터 활용
@@ -205,7 +205,7 @@ export default function PrivacyPage() {
                   fontSize: 'xl',
                   fontWeight: 'bold',
                   mb: '3',
-                  color: 'gray.900',
+                  color: 'ink.950',
                 })}
               >
                 5. 문의
@@ -217,8 +217,8 @@ export default function PrivacyPage() {
                   target="_blank"
                   rel="noopener noreferrer"
                   className={css({
-                    color: 'blue.600',
-                    _hover: { color: 'blue.800' },
+                    color: 'accent.600',
+                    _hover: { color: 'accent.700' },
                   })}
                 >
                   GitHub
@@ -229,8 +229,8 @@ export default function PrivacyPage() {
                   target="_blank"
                   rel="noopener noreferrer"
                   className={css({
-                    color: 'blue.600',
-                    _hover: { color: 'blue.800' },
+                    color: 'accent.600',
+                    _hover: { color: 'accent.700' },
                   })}
                 >
                   LinkedIn

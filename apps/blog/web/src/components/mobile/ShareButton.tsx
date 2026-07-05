@@ -44,14 +44,14 @@ export const ShareButton = ({ title, url, className }: ShareButtonProps) => {
           gap: '2',
           px: '4',
           py: '2',
-          bg: 'gray.100',
+          bg: 'paper.200',
           rounded: 'full',
-          color: 'gray.700',
+          color: 'ink.800',
           fontSize: 'sm',
           fontWeight: 'medium',
           cursor: 'pointer',
           transition: '[all 0.2s]',
-          _hover: { bg: 'gray.200' },
+          _hover: { bg: 'paper.300' },
         })
       }
     >

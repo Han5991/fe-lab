@@ -1,7 +1,8 @@
 @layer reset, base, tokens, recipes, utilities;
 
 @layer base {
-  /* Warm journal: 본문/UI 가독성 + 한글 글머리 keep-all */
+  /* GitHub 폼: 본문/UI 가독성 + 한글 글머리 keep-all. 색은 테마-가변 토큰
+     CSS 변수(--colors-*)를 참조해 라이트/다크 전환에 자동 반응한다. */
   html,
   body {
     word-break: keep-all;
@@ -9,41 +10,31 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
-  /* Selection — marker(형광펜) 톤으로 */
-  ::selection {
-    background: oklch(89% 0.14 90); /* marker.300 */
-    color: oklch(16% 0.018 60); /* ink.950 */
+  /* color-scheme: 네이티브 컨트롤/스크롤바를 테마에 맞춘다 */
+  html {
+    color-scheme: light;
+  }
+  html[data-theme='dark'] {
+    color-scheme: dark;
   }
 
-  /* Focus ring */
-  :focus-visible {
-    outline: 2px solid oklch(53% 0.22 255);
-    outline-offset: 3px;
-    border-radius: 3px;
-  }
+  /* 색 토큰을 쓰는 전역 규칙(::selection, :focus-visible, 스크롤바, .marker)은
+     panda.config.ts globalCss로 옮겼다. globals.css는 Panda가 처리하지 않아
+     손으로 var(--colors-ink-border)처럼 쓰면, Panda가 flat-dotted 토큰을 실제로
+     내보내는 이스케이프 점 형태(--colors-ink\.border)와 이름이 어긋나 값이
+     적용되지 않는다(마커/스크롤바가 조용히 깨졌던 원인). Panda globalCss에서
+     토큰명으로 쓰면 Panda가 올바른 CSS 변수로 해석해준다. */
 
-  /* Scrollbar polish */
-  ::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
-  }
-  ::-webkit-scrollbar-thumb {
-    background: oklch(88% 0.012 75);
-    border-radius: 5px;
-  }
-  ::-webkit-scrollbar-thumb:hover {
-    background: oklch(80% 0.012 70);
-  }
-
-  /* Marker (형광펜) helper — raw HTML/MDX에서 사용 가능 */
-  .marker {
-    background: linear-gradient(
-      180deg,
-      transparent 55%,
-      oklch(89% 0.14 90) 55%,
-      oklch(89% 0.14 90) 92%,
-      transparent 92%
-    );
-    padding: 0 2px;
+  /* 테마 전환 애니메이션 — View Transitions API(useTheme)로 전체 페이지를
+     한 번의 컴포지터 크로스페이드로 전환한다. 예전엔 html.theme-transition *
+     로 모든 요소에 color/fill transition을 걸어, 차트·코드 하이라이팅이 많은
+     페이지(analytics 등)에서 요소 수만큼 style/paint가 터져 버벅였다. 루트
+     스냅샷 크로스페이드는 요소 수와 무관하게 GPU에서 처리돼 매끄럽다.
+     (reduced-motion·미지원 브라우저는 useTheme가 즉시 전환하므로 이 pseudo가
+     생성되지 않는다.) */
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 0.26s;
+    animation-timing-function: ease;
   }
 }

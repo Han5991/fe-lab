@@ -305,8 +305,11 @@ inspector_port = 8083
 # The Deno major version to use.
 deno_version = 1
 
-# [edge_runtime.secrets]
-# secret_key = "env(SECRET_VALUE)"
+[edge_runtime.secrets]
+# 로컬 개발에서만 admin-analytics 인증을 우회한다. config.toml은 `supabase start`
+# 로컬 전용 설정이라 프로덕션(Cloud/셀프호스트)에는 이 값이 주입되지 않는다
+# → 배포 환경에서는 자동으로 인증이 강제된다.
+ADMIN_ANALYTICS_ALLOW_UNAUTH = "true"
 
 [analytics]
 enabled = true

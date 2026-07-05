@@ -9,40 +9,40 @@ const STYLES: Record<
 > = {
   info: {
     wrapper: css({
-      bg: 'blue.50',
+      bg: 'callout.info.bg',
       borderLeftWidth: '[4px]',
-      borderLeftColor: 'blue.400',
-      color: 'blue.900',
+      borderLeftColor: 'callout.info.border',
+      color: 'callout.info.text',
     }),
     icon: 'ℹ️',
     label: 'Info',
   },
   tip: {
     wrapper: css({
-      bg: 'green.50',
+      bg: 'callout.tip.bg',
       borderLeftWidth: '[4px]',
-      borderLeftColor: 'green.500',
-      color: 'green.900',
+      borderLeftColor: 'callout.tip.border',
+      color: 'callout.tip.text',
     }),
     icon: '💡',
     label: 'Tip',
   },
   warning: {
     wrapper: css({
-      bg: 'amber.50',
+      bg: 'callout.warn.bg',
       borderLeftWidth: '[4px]',
-      borderLeftColor: 'amber.500',
-      color: 'amber.900',
+      borderLeftColor: 'callout.warn.border',
+      color: 'callout.warn.text',
     }),
     icon: '⚠️',
     label: 'Warning',
   },
   danger: {
     wrapper: css({
-      bg: 'red.50',
+      bg: 'danger.bg',
       borderLeftWidth: '[4px]',
-      borderLeftColor: 'red.500',
-      color: 'red.900',
+      borderLeftColor: 'danger.border',
+      color: 'danger.text',
     }),
     icon: '🚨',
     label: 'Danger',

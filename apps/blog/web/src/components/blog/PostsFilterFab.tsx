@@ -30,24 +30,47 @@ export const PostsFilterFab = ({
       bottom: '6',
       right: '6',
       alignItems: 'center',
-      gap: '2',
-      pl: '4',
-      pr: '5',
-      h: '12',
-      bg: 'ink.950',
-      color: 'paper.50',
-      rounded: 'full',
-      shadow: 'lg',
+      gap: '[6px]',
+      pl: '[12px]',
+      pr: '[14px]',
+      h: '[40px]',
+      bg: 'paper.200',
+      borderWidth: '[1px]',
+      borderStyle: 'solid',
+      borderColor: 'ink.border',
+      color: 'ink.800',
+      rounded: '[6px]',
       fontFamily: 'sans',
       fontSize: 'sm',
-      fontWeight: 'semibold',
+      fontWeight: 'medium',
       cursor: 'pointer',
       zIndex: '40',
-      transition: '[transform 0.15s]',
-      _active: { shadow: 'md' },
+      transition: '[background-color 0.15s, border-color 0.15s]',
+      _hover: { bg: 'paper.300', borderColor: 'ink.borderStrong' },
     })}
   >
-    <SlidersHorizontal size={18} />
-    <span>필터{activeCount > 0 ? ` · ${activeCount}` : ''}</span>
+    <SlidersHorizontal size={16} />
+    <span>필터</span>
+    {activeCount > 0 && (
+      <span
+        className={css({
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minW: '[18px]',
+          h: '[18px]',
+          px: '[5px]',
+          bg: 'accent.600',
+          color: 'paper.50',
+          rounded: '[2rem]',
+          fontSize: 'xs',
+          fontWeight: 'semibold',
+          lineHeight: 'flat',
+          fontVariantNumeric: 'tabular-nums',
+        })}
+      >
+        {activeCount}
+      </span>
+    )}
   </motion.button>
 );

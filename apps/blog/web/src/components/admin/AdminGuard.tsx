@@ -5,6 +5,13 @@ import { useRouter, usePathname } from 'next/navigation';
 import { client as supabase } from '@/lib/client';
 import { useSuspenseQuery } from '@tanstack/react-query';
 
+// admin UI를 로컬(pnpm dev)에서 로그인 없이 개발/확인하기 위한 우회.
+// NODE_ENV로 자동 게이팅된다 → 프로덕션 빌드에선 false로 인라인되어 아래 우회
+// 분기가 전부 DCE로 제거되므로 배포 전 수동 원복이 필요 없다. (Edge Function
+// admin-analytics도 SUPABASE_URL 기반 isLocalDev로 자동 분기 — 로컬만 우회하고
+// *.supabase.co 프로덕션은 인증을 강제한다.)
+const DEV_BYPASS = process.env.NODE_ENV === 'development';
+
 export function AdminGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -12,6 +19,7 @@ export function AdminGuard({ children }: { children: React.ReactNode }) {
   const { data: session } = useSuspenseQuery({
     queryKey: ['admin-auth-session'],
     queryFn: async () => {
+      if (DEV_BYPASS) return null; // 우회 시 supabase 세션 조회 생략
       const {
         data: { session },
         error,
@@ -26,6 +34,7 @@ export function AdminGuard({ children }: { children: React.ReactNode }) {
   });
 
   useEffect(() => {
+    if (DEV_BYPASS) return; // 우회: redirect/auth 리스너 skip
     // Skip guard for the login page itself to prevent infinite loops
     if (pathname === '/admin/login') {
       return;
@@ -65,6 +74,10 @@ export function AdminGuard({ children }: { children: React.ReactNode }) {
       subscription.unsubscribe();
     };
   }, [session, router, pathname]);
+
+  if (DEV_BYPASS) {
+    return children; // dev 전용 우회 (프로덕션은 위 게이팅으로 도달 불가)
+  }
 
   if (pathname === '/admin/login') {
     return children;

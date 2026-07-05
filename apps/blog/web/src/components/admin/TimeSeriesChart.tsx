@@ -34,8 +34,8 @@ const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
   return (
     <div
       className={css({
-        bg: 'ink.950',
-        color: 'paper.50',
+        bg: 'paper.100',
+        color: 'ink.950',
         px: '3',
         py: '2',
         fontFamily: 'mono',
@@ -43,15 +43,11 @@ const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
         letterSpacing: 'mono',
       })}
     >
-      <div className={css({ color: 'marker.300', fontSize: '2xs' })}>
-        {label}
-      </div>
+      <div className={css({ color: 'spot.600', fontSize: '2xs' })}>{label}</div>
       <div
         className={css({
-          fontFamily: 'serif',
-          fontStyle: 'italic',
           fontSize: 'lg',
-          fontWeight: 'medium',
+          fontWeight: 'semibold',
           mt: '0.5',
         })}
       >
@@ -109,7 +105,7 @@ export const TimeSeriesChart = ({
           />
           <Tooltip
             cursor={{
-              stroke: token('colors.marker.600'),
+              stroke: token('colors.ink.400'),
               strokeWidth: 1,
               strokeDasharray: '2 3',
             }}
@@ -118,15 +114,15 @@ export const TimeSeriesChart = ({
           <Area
             type="monotone"
             dataKey="value"
-            stroke={token('colors.ink.700')}
-            strokeWidth={1.5}
-            fill={token('colors.marker.300')}
-            fillOpacity={0.18}
+            stroke={token('colors.accent.600')}
+            strokeWidth={2}
+            fill={token('colors.accent.600')}
+            fillOpacity={0.15}
             dot={false}
             activeDot={{
               r: 4,
-              fill: token('colors.marker.300'),
-              stroke: token('colors.ink.950'),
+              fill: token('colors.accent.600'),
+              stroke: token('colors.paper.50'),
               strokeWidth: 1.5,
             }}
           />

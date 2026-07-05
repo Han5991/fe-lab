@@ -8,7 +8,6 @@ import { getTopPosts } from '@/domain/analytics';
 import type { PostSummary } from '@/domain/post';
 import { encodePostSlug } from '@/domain/post/utils';
 import { fmtNum } from '@/lib/format';
-import { Label } from './Label';
 
 interface PopularRailProps {
   posts: PostSummary[];
@@ -51,9 +50,18 @@ export const PopularRail = ({ posts, limit = 5 }: PopularRailProps) => {
 
   return (
     <aside className={css({ position: 'sticky', top: '20' })}>
-      <Label tone="meta" className={css({ display: 'block', mb: '4' })}>
-        POPULAR · 30일
-      </Label>
+      <span
+        className={css({
+          display: 'block',
+          mb: '3',
+          fontFamily: 'sans',
+          fontSize: '[12px]',
+          fontWeight: 'semibold',
+          color: 'ink.500',
+        })}
+      >
+        Popular · 30일
+      </span>
       <ol
         className={css({
           listStyleType: 'none',
@@ -68,6 +76,7 @@ export const PopularRail = ({ posts, limit = 5 }: PopularRailProps) => {
             key={post.slug}
             className={css({
               borderTopWidth: i === 0 ? '0' : '[1px]',
+              borderStyle: 'solid',
               borderColor: 'ink.border',
             })}
           >
@@ -75,28 +84,23 @@ export const PopularRail = ({ posts, limit = 5 }: PopularRailProps) => {
               href={`/posts/${encodePostSlug(post.slug)}/`}
               className={css({
                 display: 'flex',
-                gap: '4',
+                gap: '[10px]',
                 alignItems: 'baseline',
-                py: '4',
+                py: '[10px]',
                 transition: '[all 0.15s]',
-                '& [data-rank]': {
-                  color: 'ink.300',
-                  transition: '[color 0.15s]',
-                },
                 _hover: {
-                  '& [data-rank]': { color: 'marker.600' },
-                  '& h4': { color: 'ink.700' },
+                  '& h4': { color: 'accent.700', textDecoration: 'underline' },
                 },
               })}
             >
               <span
                 data-rank
                 className={css({
-                  fontFamily: 'serif',
-                  fontStyle: 'italic',
-                  fontSize: '2xl',
+                  fontFamily: 'mono',
+                  fontSize: 'sm',
                   fontWeight: 'medium',
-                  minW: '8',
+                  color: 'ink.500',
+                  minW: '6',
                   flexShrink: 0,
                 })}
               >
@@ -105,11 +109,11 @@ export const PopularRail = ({ posts, limit = 5 }: PopularRailProps) => {
               <div className={css({ flex: '1', minW: '0' })}>
                 <h4
                   className={css({
-                    fontFamily: 'serif',
+                    fontFamily: 'sans',
                     fontSize: 'sm',
-                    fontWeight: 'medium',
+                    fontWeight: 'semibold',
                     lineHeight: 'headerSm',
-                    color: 'ink.950',
+                    color: 'accent.600',
                     transition: '[color 0.15s]',
                   })}
                 >
@@ -118,12 +122,11 @@ export const PopularRail = ({ posts, limit = 5 }: PopularRailProps) => {
                 {post.viewCount > 0 && (
                   <span
                     className={css({
-                      fontFamily: 'mono',
-                      fontSize: '2xs',
+                      fontFamily: 'sans',
+                      fontSize: '[12px]',
                       color: 'ink.500',
                       mt: '1',
                       display: 'inline-block',
-                      letterSpacing: 'mono',
                     })}
                   >
                     {fmtNum(post.viewCount)} reads

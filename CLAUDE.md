@@ -74,7 +74,7 @@ experimenting with different frontend technologies and design patterns.
 - `apps/next.js/`: Next.js application with App Router, Jest testing, and Turbopack for development
 - `apps/react/`: React SPA using Vite, Vitest for testing, and React Router for navigation
 - `apps/typescript/`: Pure TypeScript application for experimenting with type design patterns
-- `apps/blog/web/`: Next.js-based blog with MDX support, Supabase analytics, and React Query for
+- `apps/blog/web/`: Next.js-based blog with Markdown content, Supabase analytics, and React Query for
   data fetching
 
 ### Shared Packages
@@ -201,7 +201,7 @@ The blog (`apps/blog/web/`) is a **statically generated (SSG) Next.js applicatio
 │                        Build Time (CI/CD)                          │
 │                                                                     │
 │  apps/blog/posts/  ──→  sync-posts.mjs (이미지)  ──→  public/posts/ │
-│  (Markdown/MDX)    ──→  generate-sitemap.mjs     ──→  sitemap.xml   │
+│  (Markdown)        ──→  generate-sitemap.mjs     ──→  sitemap.xml   │
 │                    ──→  generate-rss.mjs         ──→  rss.xml       │
 │                    ──→  generate-search-index.ts  ──→ search-index  │
 │                    ──→  next build (output: export) ──→ out/        │
@@ -242,7 +242,6 @@ The blog (`apps/blog/web/`) is a **statically generated (SSG) Next.js applicatio
 - **Next.js `output: 'export'`**: 프로덕션 빌드 시 완전한 정적 HTML 생성 (개발 모드에서는 해제)
 - **`trailingSlash: true`**: GitHub Pages 호환을 위한 후행 슬래시 설정
 - **`images.unoptimized: true`**: 정적 호스팅에서 Next.js Image Optimization 사용 불가하므로 비활성화
-- **MDX 지원**: `@next/mdx` 플러그인으로 `.mdx` 파일을 페이지로 처리
 
 #### Supabase 백엔드
 
@@ -325,7 +324,7 @@ The blog (`apps/blog/web/`) is a **statically generated (SSG) Next.js applicatio
 
 | 파일                                     | 역할                                                                |
 | :--------------------------------------- | :------------------------------------------------------------------ |
-| `next.config.ts`                         | SSG output, MDX, trailingSlash 설정                                 |
+| `next.config.ts`                         | SSG output, trailingSlash 설정                                     |
 | `panda.config.ts`                        | Panda CSS 스타일 설정                                               |
 | `.env.production`                        | Supabase URL/Key, Giscus 설정                                       |
 | `.env.local`                             | 로컬 개발용 환경변수 (GA, Supabase local 등)                        |

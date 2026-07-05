@@ -54,7 +54,7 @@ function AdminOverviewContent() {
               mb: '4',
             })}
           >
-            <BarChart3 size={16} className={css({ color: 'marker.600' })} />
+            <BarChart3 size={16} className={css({ color: 'spot.600' })} />
             <span
               className={css({
                 fontSize: 'xs',
@@ -88,7 +88,7 @@ function AdminOverviewContent() {
             {totalTodayViews > 0 && (
               <span
                 className={css({
-                  color: 'marker.600',
+                  color: 'spot.600',
                   fontWeight: 'bold',
                   fontSize: 'sm',
                 })}
@@ -117,7 +117,7 @@ function AdminOverviewContent() {
               mb: '4',
             })}
           >
-            <FileText size={16} className={css({ color: 'marker.600' })} />
+            <FileText size={16} className={css({ color: 'spot.600' })} />
             <span
               className={css({
                 fontSize: 'xs',
@@ -155,9 +155,9 @@ function AdminOverviewContent() {
         <Link
           href="/admin/analytics"
           className={css({
-            bg: 'ink.950',
+            bg: 'paper.200',
             borderWidth: '[1px]',
-            borderColor: 'ink.950',
+            borderColor: 'ink.border',
             rounded: 'lg',
             p: '6',
             display: 'flex',
@@ -169,10 +169,10 @@ function AdminOverviewContent() {
             _hover: { opacity: '0.85' },
           })}
         >
-          <BarChart3 size={24} className={css({ color: 'paper.50' })} />
+          <BarChart3 size={24} className={css({ color: 'ink.950' })} />
           <span
             className={css({
-              color: 'paper.50',
+              color: 'ink.950',
               fontWeight: 'semibold',
               fontSize: 'sm',
             })}
@@ -215,7 +215,7 @@ function AdminOverviewContent() {
               className={css({
                 fontSize: 'xs',
                 fontWeight: 'bold',
-                color: 'marker.600',
+                color: 'spot.600',
                 letterSpacing: 'widest',
                 textTransform: 'uppercase',
               })}
@@ -253,7 +253,7 @@ function AdminOverviewContent() {
                 <span
                   className={css({
                     fontWeight: 'bold',
-                    color: 'marker.600',
+                    color: 'spot.600',
                     fontSize: 'sm',
                     w: '5',
                     textAlign: 'center',
@@ -316,7 +316,7 @@ function AdminOverviewContent() {
               className={css({
                 fontSize: 'xs',
                 fontWeight: 'bold',
-                color: 'marker.600',
+                color: 'spot.600',
                 letterSpacing: 'widest',
                 textTransform: 'uppercase',
               })}
@@ -413,7 +413,7 @@ export default function AdminPage() {
               fontWeight: 'bold',
               letterSpacing: 'widest',
               textTransform: 'uppercase',
-              color: 'marker.600',
+              color: 'spot.600',
               mb: '1',
             })}
           >
@@ -441,7 +441,7 @@ export default function AdminPage() {
               gap: '1.5',
               px: '3',
               py: '1.5',
-              color: 'marker.600',
+              color: 'spot.600',
               fontWeight: 'medium',
               fontSize: 'sm',
               rounded: 'md',
@@ -465,7 +465,7 @@ export default function AdminPage() {
               rounded: 'md',
               fontSize: 'sm',
               transition: '[all 0.15s]',
-              _hover: { bg: 'marker.100', color: 'marker.600' },
+              _hover: { bg: 'paper.200', color: 'ink.900' },
             })}
           >
             <LogOut size={16} />

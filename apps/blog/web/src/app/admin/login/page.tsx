@@ -72,14 +72,14 @@ function LoginForm() {
         {error === 'unauthorized' && (
           <div
             className={css({
-              color: 'red.600',
+              color: 'danger.text',
               fontSize: 'sm',
               mb: '4',
               p: '3',
-              bg: 'red.50',
+              bg: 'danger.bg',
               rounded: 'lg',
               borderWidth: '[1px]',
-              borderColor: 'red.200',
+              borderColor: 'danger.border',
             })}
           >
             등록되지 않은 이메일입니다. 지정된 관리자 계정으로 로그인해주세요.
@@ -97,7 +97,7 @@ function LoginForm() {
             w: 'full',
             py: '3',
             px: '4',
-            bg: 'accent.600',
+            bg: 'btn.accent',
             color: 'white',
             rounded: 'lg',
             cursor: isLoading ? 'not-allowed' : 'pointer',

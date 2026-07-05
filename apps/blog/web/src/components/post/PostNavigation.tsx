@@ -23,22 +23,13 @@ export const PostNavigation = ({
   <div className={css({ mt: '12', mb: '8' })}>
     {/* 시리즈 네비게이션 */}
     {seriesNav && (seriesNav.prev || seriesNav.next) && (
-      <div
-        className={css({
-          mb: '8',
-          pb: '8',
-          borderBottomWidth: '[1px]',
-          borderColor: 'ink.border',
-        })}
-      >
+      <div className={css({ mb: '6' })}>
         <p
           className={css({
             fontSize: 'xs',
-            fontWeight: 'bold',
-            color: 'accent.600',
-            mb: '4',
-            textTransform: 'uppercase',
-            letterSpacing: 'widest',
+            fontWeight: 'medium',
+            color: 'ink.500',
+            mb: '3',
           })}
         >
           Series · {seriesNav.seriesName}
@@ -48,8 +39,8 @@ export const PostNavigation = ({
             display: 'flex',
             flexDir: { base: 'column', md: 'row' },
             justifyContent: 'space-between',
-            alignItems: { base: 'stretch', md: 'start' },
-            gap: { base: '2', md: '4' },
+            alignItems: 'stretch',
+            gap: '3',
           })}
         >
           {seriesNav.prev ? (
@@ -60,9 +51,14 @@ export const PostNavigation = ({
                 flexDir: 'column',
                 gap: '1',
                 flex: '1',
-                py: '3',
-                _hover: { color: 'accent.600' },
-                transition: '[color 0.15s]',
+                bg: 'paper.100',
+                borderWidth: '[1px]',
+                borderStyle: 'solid',
+                borderColor: 'ink.border',
+                rounded: '[6px]',
+                p: '[16px]',
+                transition: '[border-color 0.15s]',
+                _hover: { borderColor: 'ink.borderStrong' },
               })}
             >
               <span className={css({ fontSize: 'xs', color: 'ink.500' })}>
@@ -72,7 +68,7 @@ export const PostNavigation = ({
                 className={css({
                   fontSize: 'sm',
                   fontWeight: 'medium',
-                  color: 'ink.950',
+                  color: 'accent.600',
                   lineClamp: 1,
                 })}
               >
@@ -96,9 +92,14 @@ export const PostNavigation = ({
                 alignItems: { base: 'flex-start', md: 'flex-end' },
                 gap: '1',
                 flex: '1',
-                py: '3',
-                _hover: { color: 'accent.600' },
-                transition: '[color 0.15s]',
+                bg: 'paper.100',
+                borderWidth: '[1px]',
+                borderStyle: 'solid',
+                borderColor: 'ink.border',
+                rounded: '[6px]',
+                p: '[16px]',
+                transition: '[border-color 0.15s]',
+                _hover: { borderColor: 'ink.borderStrong' },
               })}
             >
               <span className={css({ fontSize: 'xs', color: 'ink.500' })}>
@@ -108,7 +109,7 @@ export const PostNavigation = ({
                 className={css({
                   fontSize: 'sm',
                   fontWeight: 'medium',
-                  color: 'ink.950',
+                  color: 'accent.600',
                   lineClamp: 1,
                   textAlign: { base: 'left', md: 'right' },
                 })}
@@ -135,9 +136,7 @@ export const PostNavigation = ({
         flexDir: { base: 'column', md: 'row' },
         justifyContent: 'space-between',
         alignItems: 'stretch',
-        gap: { base: '0', md: '4' },
-        borderTopWidth: '[1px]',
-        borderColor: 'ink.border',
+        gap: '3',
       })}
     >
       {prev ? (
@@ -148,12 +147,14 @@ export const PostNavigation = ({
             flexDir: 'column',
             gap: '1',
             flex: '1',
-            py: '5',
-            pr: { md: '6' },
-            borderRightWidth: { md: next ? '1px' : '0' },
+            bg: 'paper.100',
+            borderWidth: '[1px]',
+            borderStyle: 'solid',
             borderColor: 'ink.border',
-            transition: '[color 0.15s]',
-            _hover: { color: 'accent.600' },
+            rounded: '[6px]',
+            p: '[16px]',
+            transition: '[border-color 0.15s]',
+            _hover: { borderColor: 'ink.borderStrong' },
           })}
         >
           <span className={css({ fontSize: 'xs', color: 'ink.500' })}>
@@ -163,7 +164,7 @@ export const PostNavigation = ({
             className={css({
               fontSize: 'sm',
               fontWeight: 'medium',
-              color: 'ink.950',
+              color: 'accent.600',
               lineClamp: 2,
               mt: '1',
             })}
@@ -186,12 +187,14 @@ export const PostNavigation = ({
             alignItems: { base: 'flex-start', md: 'flex-end' },
             gap: '1',
             flex: '1',
-            py: '5',
-            pl: { md: '6' },
-            borderTopWidth: { base: '[1px]', md: '0' },
+            bg: 'paper.100',
+            borderWidth: '[1px]',
+            borderStyle: 'solid',
             borderColor: 'ink.border',
-            transition: '[color 0.15s]',
-            _hover: { color: 'accent.600' },
+            rounded: '[6px]',
+            p: '[16px]',
+            transition: '[border-color 0.15s]',
+            _hover: { borderColor: 'ink.borderStrong' },
           })}
         >
           <span className={css({ fontSize: 'xs', color: 'ink.500' })}>
@@ -201,7 +204,7 @@ export const PostNavigation = ({
             className={css({
               fontSize: 'sm',
               fontWeight: 'medium',
-              color: 'ink.950',
+              color: 'accent.600',
               lineClamp: 2,
               textAlign: { base: 'left', md: 'right' },
               mt: '1',

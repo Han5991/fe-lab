@@ -25,10 +25,9 @@ export const TOC = () => {
         tone="meta"
         className={css({
           display: 'block',
-          mb: '3',
-          pb: '2',
-          borderBottomWidth: '[1px]',
-          borderColor: 'ink.border',
+          mb: '[8px]',
+          letterSpacing: 'normal',
+          color: 'ink.500',
         })}
       >
         이 글의 차례
@@ -63,15 +62,16 @@ export const TOC = () => {
                   display: 'block',
                   width: 'full',
                   textAlign: 'left',
-                  py: '0.5',
-                  pl: '2',
+                  py: '[2px]',
+                  pl: '[8px]',
                   cursor: 'pointer',
                   borderLeftWidth: '[2px]',
-                  borderLeftColor: isActive ? 'ink.950' : 'transparent',
-                  color: isActive ? 'ink.950' : 'ink.600',
+                  borderLeftStyle: 'solid',
+                  borderLeftColor: isActive ? 'accent.600' : 'transparent',
+                  color: isActive ? 'accent.600' : 'ink.600',
                   fontWeight: isActive ? 'medium' : 'normal',
-                  transition: '[all 0.15s]',
-                  _hover: { color: 'ink.950' },
+                  transition: '[color 0.15s, border-color 0.15s]',
+                  _hover: { color: 'ink.900' },
                 })}
                 style={{ paddingLeft: `calc(8px + ${indent})` }}
               >

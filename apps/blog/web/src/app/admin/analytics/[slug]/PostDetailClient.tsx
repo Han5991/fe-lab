@@ -29,15 +29,12 @@ import { usePostDetailStats } from '@/src/hooks/usePostDetailStats';
 import { encodePostSlug } from '@/domain/post/utils';
 import { formatMonthDayISO } from '@/lib/dates';
 
-// 차트 색상 — 페이지의 다른 영역(텍스트/카드)과 같은 warm journal 톤.
-// Tailwind blue 500 단색 → ink/marker 조합으로 교체.
-const CHART_LINE = token('colors.ink.700');
-const CHART_ACCENT = token('colors.marker.600');
+// 차트 색상 — GitHub accent(파랑)로 통일. 데이터 강조는 accent 하나로.
+const CHART_LINE = token('colors.accent.600');
+const CHART_ACCENT = token('colors.accent.600');
 const CHART_AXIS = token('colors.ink.border');
-const CHART_TICK = token('colors.ink.500');
+const CHART_TICK = token('colors.ink.400');
 const CHART_GUIDE = token('colors.ink.300');
-// rgba 알파 점진 표현용 marker.600 hex 근사(oklch(60% 0.16 65)).
-const MARKER_RGB = '201, 122, 77';
 import {
   DateRangeControls,
   useDateFilter,
@@ -107,7 +104,7 @@ function PostDetailContent() {
       {/* Header */}
       <div
         className={css({
-          bg: 'white',
+          bg: 'paper.100',
           p: '[1.5rem 2rem]',
           rounded: '[8px]',
           boxShadow: '[0 1px 2px 0 rgb(0 0 0 / 0.05)]',
@@ -224,7 +221,7 @@ function PostDetailContent() {
         {/* 7-day growth rate */}
         <div
           className={css({
-            bg: 'white',
+            bg: 'paper.100',
             p: '5',
             rounded: '[8px]',
             boxShadow: '[0 1px 2px 0 rgb(0 0 0 / 0.05)]',
@@ -241,10 +238,7 @@ function PostDetailContent() {
             {derived.weekGrowthRate !== null && derived.weekGrowthRate >= 0 ? (
               <TrendingUp size={18} className={css({ color: 'moss.600' })} />
             ) : (
-              <TrendingDown
-                size={18}
-                className={css({ color: 'marker.600' })}
-              />
+              <TrendingDown size={18} className={css({ color: 'spot.600' })} />
             )}
             <span
               className={css({
@@ -264,7 +258,7 @@ function PostDetailContent() {
                 derived.weekGrowthRate !== null
                   ? derived.weekGrowthRate >= 0
                     ? 'moss.600'
-                    : 'marker.600'
+                    : 'spot.600'
                   : 'ink.300',
             })}
           >
@@ -277,7 +271,7 @@ function PostDetailContent() {
         {/* Peak day */}
         <div
           className={css({
-            bg: 'white',
+            bg: 'paper.100',
             p: '5',
             rounded: '[8px]',
             boxShadow: '[0 1px 2px 0 rgb(0 0 0 / 0.05)]',
@@ -291,7 +285,7 @@ function PostDetailContent() {
               mb: '3',
             })}
           >
-            <BarChart3 size={18} className={css({ color: 'yellow.500' })} />
+            <BarChart3 size={18} className={css({ color: 'spot.600' })} />
             <span
               className={css({
                 fontSize: '[0.8rem]',
@@ -348,7 +342,7 @@ function PostDetailContent() {
         {/* Daily average */}
         <div
           className={css({
-            bg: 'white',
+            bg: 'paper.100',
             p: '5',
             rounded: '[8px]',
             boxShadow: '[0 1px 2px 0 rgb(0 0 0 / 0.05)]',
@@ -362,7 +356,7 @@ function PostDetailContent() {
               mb: '3',
             })}
           >
-            <Calendar size={18} className={css({ color: 'purple.500' })} />
+            <Calendar size={18} className={css({ color: 'spot.600' })} />
             <span
               className={css({
                 fontSize: '[0.8rem]',
@@ -396,7 +390,7 @@ function PostDetailContent() {
         {/* Milestones */}
         <div
           className={css({
-            bg: 'white',
+            bg: 'paper.100',
             p: '5',
             rounded: '[8px]',
             boxShadow: '[0 1px 2px 0 rgb(0 0 0 / 0.05)]',
@@ -410,7 +404,7 @@ function PostDetailContent() {
               mb: '3',
             })}
           >
-            <Trophy size={18} className={css({ color: 'yellow.500' })} />
+            <Trophy size={18} className={css({ color: 'spot.600' })} />
             <span
               className={css({
                 fontSize: '[0.8rem]',
@@ -463,7 +457,7 @@ function PostDetailContent() {
       {/* Daily Trend Chart */}
       <div
         className={css({
-          bg: 'white',
+          bg: 'paper.100',
           p: '8',
           rounded: '[8px]',
           boxShadow: '[0 1px 2px 0 rgb(0 0 0 / 0.05)]',
@@ -543,10 +537,18 @@ function PostDetailContent() {
                     strokeDasharray: '4 4',
                   }}
                   contentStyle={{
-                    borderRadius: '8px',
-                    border: 'none',
-                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                    borderRadius: token('radii.lg'),
+                    border: `1px solid ${token('colors.ink.border')}`,
+                    background: token('colors.ink.25'),
+                    color: token('colors.ink.900'),
+                    boxShadow: '0 4px 12px rgb(0 0 0 / 0.4)',
+                    fontSize: '12px',
                   }}
+                  labelStyle={{
+                    color: token('colors.ink.600'),
+                    marginBottom: '2px',
+                  }}
+                  itemStyle={{ color: token('colors.ink.800') }}
                 />
                 <Line
                   type="monotone"
@@ -585,7 +587,7 @@ function PostDetailContent() {
         {/* Hourly Distribution */}
         <div
           className={css({
-            bg: 'white',
+            bg: 'paper.100',
             p: '8',
             rounded: '[8px]',
             boxShadow: '[0 1px 2px 0 rgb(0 0 0 / 0.05)]',
@@ -620,17 +622,31 @@ function PostDetailContent() {
                   tick={{ fill: CHART_TICK, fontSize: 12 }}
                 />
                 <Tooltip
-                  contentStyle={{
-                    borderRadius: '8px',
-                    border: 'none',
-                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                  cursor={{
+                    fill: token('colors.accent.600'),
+                    fillOpacity: 0.12,
+                    radius: 4,
                   }}
+                  contentStyle={{
+                    borderRadius: token('radii.lg'),
+                    border: `1px solid ${token('colors.ink.border')}`,
+                    background: token('colors.ink.25'),
+                    color: token('colors.ink.900'),
+                    boxShadow: '0 4px 12px rgb(0 0 0 / 0.4)',
+                    fontSize: '12px',
+                  }}
+                  labelStyle={{
+                    color: token('colors.ink.600'),
+                    marginBottom: '2px',
+                  }}
+                  itemStyle={{ color: token('colors.ink.800') }}
                 />
                 <Bar dataKey="views" radius={[4, 4, 0, 0]}>
                   {hourlyData.map((entry, index) => (
                     <Cell
                       key={`cell-${index}`}
-                      fill={`rgba(${MARKER_RGB}, ${0.3 + (entry.views / maxHourlyViews) * 0.7})`}
+                      fill={CHART_ACCENT}
+                      fillOpacity={0.3 + (entry.views / maxHourlyViews) * 0.7}
                     />
                   ))}
                 </Bar>
@@ -642,7 +658,7 @@ function PostDetailContent() {
         {/* Day of Week Distribution */}
         <div
           className={css({
-            bg: 'white',
+            bg: 'paper.100',
             p: '8',
             rounded: '[8px]',
             boxShadow: '[0 1px 2px 0 rgb(0 0 0 / 0.05)]',
@@ -676,17 +692,31 @@ function PostDetailContent() {
                   tick={{ fill: CHART_TICK, fontSize: 12 }}
                 />
                 <Tooltip
-                  contentStyle={{
-                    borderRadius: '8px',
-                    border: 'none',
-                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                  cursor={{
+                    fill: token('colors.accent.600'),
+                    fillOpacity: 0.12,
+                    radius: 4,
                   }}
+                  contentStyle={{
+                    borderRadius: token('radii.lg'),
+                    border: `1px solid ${token('colors.ink.border')}`,
+                    background: token('colors.ink.25'),
+                    color: token('colors.ink.900'),
+                    boxShadow: '0 4px 12px rgb(0 0 0 / 0.4)',
+                    fontSize: '12px',
+                  }}
+                  labelStyle={{
+                    color: token('colors.ink.600'),
+                    marginBottom: '2px',
+                  }}
+                  itemStyle={{ color: token('colors.ink.800') }}
                 />
                 <Bar dataKey="views" radius={[4, 4, 0, 0]}>
                   {dowData.map((entry, index) => (
                     <Cell
                       key={`cell-${index}`}
-                      fill={`rgba(${MARKER_RGB}, ${0.3 + (entry.views / maxDowViews) * 0.7})`}
+                      fill={CHART_ACCENT}
+                      fillOpacity={0.3 + (entry.views / maxDowViews) * 0.7}
                     />
                   ))}
                 </Bar>
@@ -713,7 +743,7 @@ export default function PostDetailClient() {
           display: 'flex',
           alignItems: 'center',
           mb: '8',
-          bg: 'white',
+          bg: 'paper.100',
           p: { base: '[0.75rem 1rem]', md: '[1rem 2rem]' },
           rounded: '[8px]',
           boxShadow: '[0 1px 3px 0 rgb(0 0 0 / 0.1)]',

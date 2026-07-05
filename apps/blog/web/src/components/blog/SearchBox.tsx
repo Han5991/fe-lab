@@ -42,26 +42,30 @@ export const SearchBox = ({
         display: 'flex',
         alignItems: 'center',
         w: 'full',
-        h: '11',
-        px: '3',
-        bg: 'paper.50',
+        h: '[32px]',
+        px: '[12px]',
+        bg: 'paper.100',
         borderWidth: '[1px]',
         borderColor: 'ink.border',
-        rounded: 'lg',
+        rounded: '[6px]',
         cursor: 'pointer',
-        transition: '[border-color 0.15s]',
+        transition: '[border-color 0.15s, box-shadow 0.15s]',
         _hover: { borderColor: 'ink.borderStrong' },
+        _focusWithin: {
+          borderColor: 'accent.600',
+          boxShadow: '[0 0 0 1px token(colors.accent.600)]',
+        },
       })}
     >
       <Search
         size={14}
-        className={css({ color: 'ink.500', mr: '2', flexShrink: 0 })}
+        className={css({ color: 'ink.500', mr: '[8px]', flexShrink: 0 })}
       />
       <span
         className={css({
           fontFamily: 'sans',
           fontSize: 'sm',
-          color: 'ink.500',
+          color: 'ink.600',
           flex: '1',
         })}
       >
@@ -75,10 +79,10 @@ export const SearchBox = ({
             color: 'ink.500',
             borderWidth: '[1px]',
             borderColor: 'ink.border',
-            bg: 'paper.100',
-            px: '1.5',
-            py: '0.5',
-            rounded: 'sm',
+            bg: 'paper.200',
+            px: '[6px]',
+            py: '[2px]',
+            rounded: '[6px]',
             flexShrink: 0,
           })}
         >

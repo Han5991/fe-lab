@@ -57,7 +57,7 @@ export const ReadingProgress = () => {
       <div
         className={css({
           h: 'full',
-          bg: 'marker.600',
+          bg: 'accent.600',
           transition: '[width 0.1s linear]',
         })}
         style={{ width: `${pct}%` }}

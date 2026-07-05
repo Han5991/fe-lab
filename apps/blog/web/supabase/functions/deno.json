@@ -1,0 +1,11 @@
+{
+  "imports": {},
+  "lint": {
+    "rules": {
+      "tags": ["recommended"]
+    }
+  },
+  "compilerOptions": {
+    "lib": ["deno.window", "dom", "esnext"]
+  }
+}

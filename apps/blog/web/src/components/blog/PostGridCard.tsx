@@ -5,6 +5,7 @@ import { encodePostSlug } from '@/domain/post/utils';
 import { resolveThumbnailUrl } from '@/domain/post/thumbnail';
 import { fmtDate } from '@/lib/format';
 import { Label } from './Label';
+import { tagPillStyle } from './tagPillStyle';
 
 interface PostGridCardProps {
   post: PostSummary;
@@ -21,13 +22,15 @@ export const PostGridCard = ({ post }: PostGridCardProps) => {
       className={css({
         display: 'flex',
         flexDir: 'column',
-        bg: 'paper.50',
+        bg: 'paper.100',
         borderWidth: '[1px]',
         borderColor: 'ink.border',
+        rounded: '[12px]',
+        overflow: 'hidden',
         transition: '[border-color 0.15s]',
         _hover: {
           borderColor: 'ink.borderStrong',
-          '& h3': { color: 'accent.600' },
+          '& h3': { textDecoration: 'underline' },
         },
       })}
     >
@@ -49,7 +52,7 @@ export const PostGridCard = ({ post }: PostGridCardProps) => {
       />
       <div
         className={css({
-          p: '5',
+          p: '[16px]',
           display: 'flex',
           flexDir: 'column',
           gap: '2',
@@ -58,11 +61,11 @@ export const PostGridCard = ({ post }: PostGridCardProps) => {
       >
         <h3
           className={css({
-            fontFamily: 'serif',
-            fontSize: 'lg',
+            fontFamily: 'sans',
+            fontSize: 'md',
             fontWeight: 'semibold',
             lineHeight: 'header',
-            color: 'ink.950',
+            color: 'accent.600',
             transition: '[color 0.15s]',
             lineClamp: 2,
           })}
@@ -74,7 +77,7 @@ export const PostGridCard = ({ post }: PostGridCardProps) => {
             className={css({
               fontFamily: 'sans',
               fontSize: 'sm',
-              color: 'ink.700',
+              color: 'ink.600',
               lineHeight: 'snug',
               lineClamp: 2,
             })}
@@ -98,14 +101,7 @@ export const PostGridCard = ({ post }: PostGridCardProps) => {
               : `${readMin}분`}
           </Label>
           {post.tags && post.tags.length > 0 && (
-            <span
-              className={css({
-                fontFamily: 'mono',
-                fontSize: '2xs',
-                color: 'ink.500',
-                letterSpacing: 'mono',
-              })}
-            >
+            <span className={css(tagPillStyle, { fontFamily: 'sans' })}>
               #{post.tags[0]}
             </span>
           )}

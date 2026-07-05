@@ -31,8 +31,10 @@ export default function AdminAnalyticsPage() {
       {/* Admin top strip */}
       <div
         className={css({
-          bg: 'ink.950',
-          color: 'paper.50',
+          bg: 'paper.100',
+          borderBottomWidth: '[1px]',
+          borderBottomStyle: 'solid',
+          borderColor: 'ink.border',
           px: { base: '4', md: '8' },
           py: '2.5',
           display: 'flex',
@@ -43,10 +45,9 @@ export default function AdminAnalyticsPage() {
       >
         <span
           className={css({
-            fontFamily: 'serif',
-            fontStyle: 'italic',
             fontSize: 'md',
             fontWeight: 'semibold',
+            color: 'ink.950',
           })}
         >
           Frontend Lab
@@ -57,9 +58,10 @@ export default function AdminAnalyticsPage() {
             fontSize: '2xs',
             px: '1.5',
             py: '0.5',
-            bg: 'marker.300',
-            color: 'ink.950',
-            letterSpacing: 'monoXl',
+            rounded: '[2rem]',
+            bg: 'accent.50',
+            color: 'accent.600',
+            letterSpacing: 'mono',
             textTransform: 'uppercase',
           })}
         >
@@ -74,9 +76,9 @@ export default function AdminAnalyticsPage() {
             gap: '1',
             fontFamily: 'mono',
             fontSize: 'xs',
-            color: 'ink.300',
+            color: 'ink.600',
             transition: '[color 0.15s]',
-            _hover: { color: 'paper.50' },
+            _hover: { color: 'ink.950' },
           })}
         >
           <ArrowLeft size={13} />
@@ -91,10 +93,10 @@ export default function AdminAnalyticsPage() {
             gap: '1',
             fontFamily: 'mono',
             fontSize: 'xs',
-            color: 'ink.300',
+            color: 'ink.600',
             cursor: 'pointer',
             transition: '[color 0.15s]',
-            _hover: { color: 'marker.300' },
+            _hover: { color: 'ink.950' },
           })}
         >
           <LogOut size={13} />
