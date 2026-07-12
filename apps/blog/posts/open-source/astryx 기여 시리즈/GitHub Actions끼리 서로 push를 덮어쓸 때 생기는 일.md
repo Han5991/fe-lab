@@ -23,6 +23,7 @@ thumbnail: '/og/astryx-gh-pages-deploy-race.png'
 > 2. 로컬에선 그대로인데 CI에서만 빨라지는 최적화가 있습니다
 > 3. GitHub Actions끼리 서로 push를 덮어쓸 때 생기는 일 **(현재 글)**
 > 4. fork PR을 머지했더니 CI가 빨간불이 됐습니다 — permissions: write가 무시된 이유
+> 5. deploy job은 이제 27초면 끝납니다
 
 CI가 가끔 빨간불이면 어떻게 하시나요. 솔직히 저는 재실행 버튼부터 눌렀습니다. 다시 돌리면 초록불이 되니까요. 그렇게 넘어가던 실패가 하나 있었습니다.
 
