@@ -23,6 +23,7 @@ thumbnail: '/og/astryx-vitest-project-split.png'
 > 2. 로컬에선 그대로인데 CI에서만 빨라지는 최적화가 있습니다 **(현재 글)**
 > 3. GitHub Actions끼리 서로 push를 덮어쓸 때 생기는 일
 > 4. fork PR을 머지했더니 CI가 빨간불이 됐습니다 — permissions: write가 무시된 이유
+> 5. deploy job은 이제 27초면 끝납니다
 
 벤치마크 결과를 보고 한참을 멍하니 앉아 있었습니다. 테스트 인프라 최적화 PR을 만들고, 같은 트리에서 diff를 붙였다 뗐다 하며 전체 스위트를 돌렸습니다. 결과는 이랬습니다.
 

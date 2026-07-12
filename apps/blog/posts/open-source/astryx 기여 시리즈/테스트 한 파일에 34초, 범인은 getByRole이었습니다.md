@@ -23,6 +23,7 @@ thumbnail: '/og/astryx-getbyrole-test-perf.png'
 > 2. 로컬에선 그대로인데 CI에서만 빨라지는 최적화가 있습니다
 > 3. GitHub Actions끼리 서로 push를 덮어쓸 때 생기는 일
 > 4. fork PR을 머지했더니 CI가 빨간불이 됐습니다 — permissions: write가 무시된 이유
+> 5. deploy job은 이제 27초면 끝납니다
 
 최근 3일 동안 facebook/astryx에 PR 11개를 머지시켰습니다. astryx는 메타가 오픈소스로 공개한 내부 도구용 디자인 시스템입니다. pnpm 모노레포에 Vitest, GitHub Actions 조합이죠. 이 글은 그중 CI/테스트 인프라 개선 시리즈의 한 편입니다.
 
