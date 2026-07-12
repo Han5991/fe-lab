@@ -113,7 +113,23 @@ build가 test를 **추월**했습니다. 앞의 두 실행에서는 test가 크�
 
 이게 병렬화의 정직한 얼굴이라고 생각합니다. 직렬을 병렬로 바꾸면 병목이 없어지는 게 아닙니다. **가장 긴 가지로 이동합니다.** 어제까지 이 파이프라인의 wall time을 정하던 건 deploy의 재빌드였습니다. 오늘은 max(test, build)이고, 그 max의 주인이 실행마다 test와 build 사이를 오갑니다. 다음에 줄여야 할 대상이 뭔지, 그래프가 스스로 알려주는 셈입니다.
 
-그래서 다음 단계도 이미 있습니다. build 가지 안에서 샌드박스 빌드를 Storybook 빌드와 병렬로 돌리는 PR [#3811](https://github.com/facebook/astryx/pull/3811)입니다. 솔직하게 적자면, 이 PR은 아직 **리뷰 대기 중**입니다. 머지되어 새 병목이 실제로 얼마나 줄어드는지 측정되면, 그 이야기는 다음 편에서 다루겠습니다.
+그래서 다음 단계도 자연스럽게 정해졌습니다. 같은 원리를 옆 파이프라인 — PR CI — 에 적용하는 것입니다. 그리고 이 글의 초안을 다듬던 바로 그날 오후, 실제로 일어났습니다.
+
+## 후속: 같은 날, 병목이 두 번 더 이동했습니다
+
+초안을 다듬는 사이 후속 PR 두 개가 나란히 머지됐습니다. 예고만 하고 끝내기엔 숫자가 아까워서, 실측을 그대로 붙입니다.
+
+**[#3811](https://github.com/facebook/astryx/pull/3811) — PR CI에서도 샌드박스 빌드를 분리.** PR CI의 build job도 Storybook 빌드와 샌드박스 빌드를 직렬로 안고 있었습니다. 이걸 `build-storybook` ∥ `build-sandbox` 병렬 job으로 쪼갠 결과, PR CI 크리티컬 패스가 **8m56s → 평균 7m04s**(머지 후 4회 실측, 6m09s~7m30s)로 줄었습니다. 그리고 예상대로 병목은 이동했습니다. 이제 가장 긴 가지는 build-sandbox — 정확히는 그 안의 Next.js 콜드 컴파일 ~4분입니다.
+
+**[#3864](https://github.com/facebook/astryx/pull/3864) — 그 콜드 컴파일의 범인은 죽은 캐시.** PR 빌드와 main 배포가 같은 캐시 키를 쓰는데 basePath가 서로 달라서, Next.js가 복원된 캐시를 매번 내부 무효화하고 있었습니다. 캐시 "히트"인데 4분 풀컴파일. 게다가 히트로 처리되니 PR은 자기 캐시를 저장할 기회조차 없었습니다. 키에 PR 번호를 넣어 분리하자, 같은 PR의 두 번째 push부터 진짜 웜 빌드가 됩니다:
+
+| | 콜드 (PR 첫 push) | 웜 (같은 PR 재push) |
+|---|---|---|
+| Next.js 컴파일 | 4.1min | **60s** |
+| Build Sandbox 스텝 | 5m13s | **2m01s** |
+| build-sandbox job 전체 | 6m48s | **3m34s** |
+
+웜 재push의 빌드 경로는 약 4분까지 내려왔습니다. 그러자 병목은 **또** 이동했습니다 — 이번엔 test job(~4m50s)입니다. 본문에서 "다음에 줄여야 할 대상을 그래프가 스스로 알려준다"고 썼는데, 하루 사이에 세 번을 알려줬습니다. deploy의 재빌드 → 샌드박스 콜드 컴파일 → 이제 테스트. 다음 수는 아마 vitest 샤딩이 될 겁니다.
 
 ## 마치며
 
@@ -122,10 +138,11 @@ build가 test를 **추월**했습니다. 앞의 두 실행에서는 test가 크�
 - astryx의 Deploy 워크플로우는 test(~6분) 완료 후 deploy가 전체 빌드 + push(4~8분)를 수행하는 완전 직렬이었고, 머지에서 배포까지 평균 12m21s가 걸렸습니다
 - 빌드를 test와 병렬인 build job으로 분리하고 deploy를 조립 + push만 남기자, 평균 6m33s — **47% 단축**됐습니다. deploy job 자체는 4~8분에서 **22~27초**가 됐습니다
 - 파이프라인을 DAG로 보면 wall time은 합이 아니라 크리티컬 패스, 즉 max(test, build)입니다. 게이트(테스트 통과)와 직렬화(빌드 대기)는 다른 요구사항입니다
-- 머지 후 세 번째 실행에서 build(7m05s)가 test(6m21s)를 추월했습니다. 병목은 제거되는 게 아니라 이동합니다 — 다음 병목을 줄이는 [#3811](https://github.com/facebook/astryx/pull/3811)은 리뷰 대기 중입니다
+- 머지 후 세 번째 실행에서 build(7m05s)가 test(6m21s)를 추월했습니다. 병목은 제거되는 게 아니라 이동합니다 — 같은 날 머지된 후속 [#3811](https://github.com/facebook/astryx/pull/3811)·[#3864](https://github.com/facebook/astryx/pull/3864)가 병목을 두 번 더 옮겼습니다 (PR CI 8m56s → 7m04s, 웜 재push 컴파일 4.1min → 60s)
 - 효과는 `gh api`로 job별 started_at/completed_at을 뽑아, 머지 전후에 같은 기준(첫 job 시작 → 마지막 job 종료)으로 측정했습니다
 
 여러분의 배포 파이프라인에서 deploy job은 몇 분짜리인가요. 그 안에서 빌드를 하고 있다면, 그 빌드는 정말 앞 job의 결과를 기다려야 하는 일인가요. 위의 `gh api` 명령으로 job별 시간을 한번 뽑아보세요. 직렬로 서 있을 이유가 없는 job이 발견됐다면, 혹은 병렬화 후 병목이 어디로 이동했는지 측정해 본 적이 있다면 댓글로 공유해 주세요. 남의 파이프라인 이야기가 늘 가장 좋은 교재입니다.
 
 - 근거 PR: [facebook/astryx#3812 — perf(deploy): build in parallel with test, deploy only assembles and pushes](https://github.com/facebook/astryx/pull/3812) (2026-07-12 머지)
-- 후속 PR: [facebook/astryx#3811 — perf(ci): build sandbox preview in parallel with storybook](https://github.com/facebook/astryx/pull/3811) (리뷰 대기 중)
+- 후속 PR: [facebook/astryx#3811 — perf(ci): build sandbox preview in parallel with storybook](https://github.com/facebook/astryx/pull/3811) (2026-07-12 머지)
+- 후속 PR: [facebook/astryx#3864 — perf(ci): key sandbox next cache by PR to stop cross-basepath invalidation](https://github.com/facebook/astryx/pull/3864) (2026-07-12 머지)
