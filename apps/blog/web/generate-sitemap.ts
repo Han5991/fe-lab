@@ -71,13 +71,19 @@ export function buildSitemapXml(
   const entries = posts.map(post => ({
     post,
     lastmod: resolvePostLastmod(post, today),
+    // date/updatedAt이 둘 다 없는 글의 lastmod는 today로 폴백된 값이라
+    // "콘텐츠 날짜"가 아니다. 정적 URL 계산에 섞으면 today가 항상 최댓값이 되어
+    // lastmod가 매일 전진하는 원래 버그로 되돌아간다.
+    hasOwnDate: Boolean(post.updatedAt ?? post.date),
   }));
 
   // 'YYYY-MM-DD'는 사전순 비교가 곧 시간순 비교.
-  const latestContentDate = entries.reduce(
-    (max, entry) => (entry.lastmod > max ? entry.lastmod : max),
-    entries[0]?.lastmod ?? today,
-  );
+  const contentDates = entries
+    .filter(entry => entry.hasOwnDate)
+    .map(entry => entry.lastmod);
+  const latestContentDate = contentDates.length
+    ? contentDates.reduce((max, date) => (date > max ? date : max))
+    : today;
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">

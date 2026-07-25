@@ -144,6 +144,48 @@ test('sitemap: about은 lastmod를 내보내지 않음 (변경 시점 미상)', 
   );
 });
 
+test('sitemap: date 없는 글이 섞여도 정적 lastmod가 today로 튀지 않음', () => {
+  // date/updatedAt이 없는 글의 lastmod는 today 폴백값이라 콘텐츠 날짜가 아니다.
+  // 이걸 최댓값 계산에 섞으면 today가 항상 이겨서 lastmod가 매일 전진한다.
+  const posts = [
+    makePost({ slug: 'dated', date: '2026-02-20' }),
+    makePost({ slug: 'undated', date: null, updatedAt: null }),
+  ];
+  const xml = buildSitemapXml(posts, TODAY, SITE);
+
+  for (const loc of [`${SITE}/`, `${SITE}/posts/`]) {
+    const block = staticBlock(xml, loc);
+    assert.ok(block, `${loc} block must exist`);
+    assert.match(
+      block[1],
+      /<lastmod>2026-02-20<\/lastmod>/,
+      `${loc}은 date 있는 글의 날짜만 반영해야 함`,
+    );
+    assert.ok(
+      !block[1].includes(TODAY),
+      `${loc}에 빌드 날짜가 새어 들어가면 안 됨`,
+    );
+  }
+
+  // 정작 그 글 자신의 lastmod는 today 폴백을 유지한다.
+  const undated = xml.match(
+    /<url>\s*<loc>https:\/\/example\.dev\/posts\/undated\/<\/loc>\s*<lastmod>([^<]+)<\/lastmod>/,
+  );
+  assert.ok(undated, 'undated post block must exist');
+  assert.equal(undated[1], TODAY);
+});
+
+test('sitemap: 모든 글에 date가 없으면 정적 lastmod는 today로 폴백', () => {
+  const posts = [
+    makePost({ slug: 'a', date: null, updatedAt: null }),
+    makePost({ slug: 'b', date: null, updatedAt: null }),
+  ];
+  const xml = buildSitemapXml(posts, TODAY, SITE);
+  const block = staticBlock(xml, `${SITE}/`);
+  assert.ok(block);
+  assert.match(block[1], new RegExp(`<lastmod>${TODAY}</lastmod>`));
+});
+
 test('sitemap: 글이 하나도 없으면 정적 lastmod는 today로 폴백', () => {
   const xml = buildSitemapXml([], TODAY, SITE);
   const block = staticBlock(xml, `${SITE}/`);
