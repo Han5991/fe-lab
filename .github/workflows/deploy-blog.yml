@@ -79,6 +79,21 @@ jobs:
           NEXT_PUBLIC_PR_COUNT: ${{ steps.pr_count.outputs.count }}
           NODE_ENV: production
 
+      # /posts/ 아카이브는 사이트의 유일한 전체 목록 허브다. PostsArchiveView가
+      # useSearchParams를 쓰는 탓에 프리렌더에서 빠지므로, Suspense fallback이
+      # 스피너로 되돌아가면 이 페이지의 내부 링크가 조용히 0개가 된다.
+      # (실제로 c206b99에서 고친 것이 15ed918 리디자인에서 유실된 적 있음)
+      - name: Verify archive links are prerendered
+        run: |
+          html='apps/blog/web/out/posts/index.html'
+          [[ -f "$html" ]] || { echo "::error::$html 이 없습니다"; exit 1; }
+          count=$(grep -o 'href="/posts/[^"]*"' "$html" | sort -u | wc -l | tr -d ' ')
+          echo "prerendered post links: $count"
+          if (( count < 10 )); then
+            echo "::error::/posts/ 에 프리렌더된 글 링크가 ${count}개뿐입니다 — CSR bail-out 회귀로 아카이브 내부 링크가 사라졌습니다"
+            exit 1
+          fi
+
       - name: Upload to pages artifact
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:

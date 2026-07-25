@@ -87,6 +87,112 @@ test('sitemap: date도 updatedAt도 없으면 lastmod = today', () => {
   assert.equal(block[1], TODAY);
 });
 
+// --- lastmod 신뢰성 회귀 테스트 ---
+// 매일 cron으로 빌드되는 사이트라, 정적 URL의 lastmod에 빌드 날짜를 넣으면
+// 콘텐츠가 그대로인 날에도 lastmod가 전진한다. Google은 그런 사이트의 lastmod를
+// 통째로 무시하므로, 정적 URL은 콘텐츠에서 파생된 날짜만 써야 한다.
+
+function staticBlock(xml: string, loc: string) {
+  return xml.match(
+    new RegExp(
+      `<url>\\s*<loc>${loc.replace(/[/.]/g, '\\$&')}</loc>([\\s\\S]*?)</url>`,
+    ),
+  );
+}
+
+test('sitemap: 루트/posts의 lastmod는 빌드 날짜가 아니라 최신 글 날짜', () => {
+  const posts = [
+    makePost({ slug: 'old', date: '2025-01-01' }),
+    makePost({ slug: 'newest', date: '2026-02-20' }),
+    makePost({ slug: 'mid', date: '2025-08-15' }),
+  ];
+  const xml = buildSitemapXml(posts, TODAY, SITE);
+
+  for (const loc of [`${SITE}/`, `${SITE}/posts/`]) {
+    const block = staticBlock(xml, loc);
+    assert.ok(block, `${loc} block must exist`);
+    assert.match(
+      block[1],
+      /<lastmod>2026-02-20<\/lastmod>/,
+      `${loc}의 lastmod는 최신 글 날짜여야 함`,
+    );
+    assert.ok(
+      !block[1].includes(TODAY),
+      `${loc}의 lastmod에 빌드 날짜가 들어가면 안 됨`,
+    );
+  }
+});
+
+test('sitemap: updatedAt이 가장 최신이면 그 값이 정적 URL lastmod가 됨', () => {
+  const posts = [
+    makePost({ slug: 'a', date: '2026-01-01' }),
+    makePost({ slug: 'b', date: '2025-06-01', updatedAt: '2026-04-09' }),
+  ];
+  const xml = buildSitemapXml(posts, TODAY, SITE);
+  const block = staticBlock(xml, `${SITE}/`);
+  assert.ok(block);
+  assert.match(block[1], /<lastmod>2026-04-09<\/lastmod>/);
+});
+
+test('sitemap: about은 lastmod를 내보내지 않음 (변경 시점 미상)', () => {
+  const xml = buildSitemapXml([makePost({ slug: 'a' })], TODAY, SITE);
+  const block = staticBlock(xml, `${SITE}/about/`);
+  assert.ok(block, 'about block must exist');
+  assert.ok(
+    !block[1].includes('<lastmod>'),
+    'about에 lastmod가 있으면 매 빌드마다 전진한다',
+  );
+});
+
+test('sitemap: date 없는 글이 섞여도 정적 lastmod가 today로 튀지 않음', () => {
+  // date/updatedAt이 없는 글의 lastmod는 today 폴백값이라 콘텐츠 날짜가 아니다.
+  // 이걸 최댓값 계산에 섞으면 today가 항상 이겨서 lastmod가 매일 전진한다.
+  const posts = [
+    makePost({ slug: 'dated', date: '2026-02-20' }),
+    makePost({ slug: 'undated', date: null, updatedAt: null }),
+  ];
+  const xml = buildSitemapXml(posts, TODAY, SITE);
+
+  for (const loc of [`${SITE}/`, `${SITE}/posts/`]) {
+    const block = staticBlock(xml, loc);
+    assert.ok(block, `${loc} block must exist`);
+    assert.match(
+      block[1],
+      /<lastmod>2026-02-20<\/lastmod>/,
+      `${loc}은 date 있는 글의 날짜만 반영해야 함`,
+    );
+    assert.ok(
+      !block[1].includes(TODAY),
+      `${loc}에 빌드 날짜가 새어 들어가면 안 됨`,
+    );
+  }
+
+  // 정작 그 글 자신의 lastmod는 today 폴백을 유지한다.
+  const undated = xml.match(
+    /<url>\s*<loc>https:\/\/example\.dev\/posts\/undated\/<\/loc>\s*<lastmod>([^<]+)<\/lastmod>/,
+  );
+  assert.ok(undated, 'undated post block must exist');
+  assert.equal(undated[1], TODAY);
+});
+
+test('sitemap: 모든 글에 date가 없으면 정적 lastmod는 today로 폴백', () => {
+  const posts = [
+    makePost({ slug: 'a', date: null, updatedAt: null }),
+    makePost({ slug: 'b', date: null, updatedAt: null }),
+  ];
+  const xml = buildSitemapXml(posts, TODAY, SITE);
+  const block = staticBlock(xml, `${SITE}/`);
+  assert.ok(block);
+  assert.match(block[1], new RegExp(`<lastmod>${TODAY}</lastmod>`));
+});
+
+test('sitemap: 글이 하나도 없으면 정적 lastmod는 today로 폴백', () => {
+  const xml = buildSitemapXml([], TODAY, SITE);
+  const block = staticBlock(xml, `${SITE}/`);
+  assert.ok(block);
+  assert.match(block[1], new RegExp(`<lastmod>${TODAY}</lastmod>`));
+});
+
 test('getPostPriority: 고우선 slug는 0.8 (HIGH_PRIORITY_SLUGS 전부 0.8)', () => {
   // 상수에서 직접 참조 — slug 목록이 변경되어도 테스트가 자동으로 맞춰짐.
   for (const slug of HIGH_PRIORITY_SLUGS) {

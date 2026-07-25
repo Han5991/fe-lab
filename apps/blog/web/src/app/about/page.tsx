@@ -48,7 +48,9 @@ const jsonLd = {
   url: `${SITE_URL}/about/`,
   name: '한상욱 (Sangwook Han) — About',
   dateCreated: '2024-12-01',
-  dateModified: new Date().toISOString().split('T')[0],
+  // 빌드 시각을 넣으면 매일 cron 빌드마다 "수정됨"으로 보고되어 신호가 무의미해진다.
+  // 이 페이지 내용을 실제로 고칠 때 함께 갱신할 것.
+  dateModified: '2026-07-05',
   mainEntity: {
     '@type': 'Person',
     '@id': `${SITE_URL}/#author`,
