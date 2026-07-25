@@ -6,7 +6,7 @@ import { getAllPostSummaries } from '@/domain/post';
 import { getAllSeries, getAllTags, getAllYears } from '@/domain/post/aggregate';
 import { SITE_URL } from '@/lib/constants';
 import { safeJsonLd } from '@/lib/jsonLd';
-import { Label, PostsArchiveView } from '@/src/components/blog';
+import { Label, PostListRow, PostsArchiveView } from '@/src/components/blog';
 import { PageBoundary } from '@/src/components/PageBoundary';
 
 export const metadata: Metadata = {
@@ -141,18 +141,20 @@ export default function PostsPage() {
             </div>
           </header>
 
+          {/*
+            PostsArchiveView는 nuqs(useSearchParams)를 쓰므로 output: 'export'의
+            빌드 타임 프리렌더 대상에서 빠진다 (BAILOUT_TO_CLIENT_SIDE_RENDERING).
+            즉 out/posts/index.html에 구워지는 건 아래 fallback이 전부다.
+            스피너를 두면 아카이브 허브의 내부 링크가 0개가 되므로, 글 목록을 여기서
+            프리렌더해 링크를 남긴다. (브라우저에서 하이드레이션되면 인터랙티브 뷰로 교체)
+            회귀 이력: c206b99에서 도입 → 15ed918(리디자인)에서 유실 → 재도입.
+          */}
           <Suspense
             fallback={
-              <div
-                className={css({
-                  py: '12',
-                  textAlign: 'center',
-                  fontFamily: 'mono',
-                  fontSize: 'xs',
-                  color: 'ink.500',
-                })}
-              >
-                노트 불러오는 중…
+              <div>
+                {posts.map(post => (
+                  <PostListRow key={post.slug} post={post} />
+                ))}
               </div>
             }
           >
