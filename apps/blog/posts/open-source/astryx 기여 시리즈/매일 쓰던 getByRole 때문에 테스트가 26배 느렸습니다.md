@@ -217,14 +217,8 @@ screen.getAllByRole('button', {hidden: true});
 두 옵션이 어떻게 필터를 끄는지는 3장에서 본 소스에 그대로 있습니다.
 
 ```js
-.filter(element => {
-  if (name === undefined) return true;      // name을 안 주면 통째로 통과
-  return matches(computeAccessibleName(element), ...);
-})
-.filter(element => {
-  return hidden === false ? isInaccessible(element) === false : true;
-  //     ^^^^^^^^^^^^^^^^ hidden: true 면 검사 자체를 건너뜀
-});
+if (name === undefined) return true;                  // name을 안 주면 이름 계산을 건너뛰고
+return hidden === false ? isInaccessible(el) : true;  // hidden: true 면 가시성 검사도 건너뛴다
 ```
 
 `hidden: true`를 같이 넣은 데는 이유가 있습니다.  
@@ -306,30 +300,7 @@ accessible name : "15일"
 
 #### 게다가 자식 하나하나를 봐야 합니다
 
-두 번째 예제입니다.
-
-```js
-const dom = new JSDOM(`<!doctype html><body>
-  <button id="inline"><span>홍</span><span>길동</span></button>
-  <button id="block">
-    <span style="display: block">홍</span><span style="display: block">길동</span>
-  </button>
-</body>`);
-```
-
-```
-inline 자식 : "홍길동"
-block  자식 : "홍 길동"
-```
-
-`display`가 `block`이면 화면에서 줄이 바뀝니다.  
-그러면 두 단어는 **분리돼서** 들려야 하니 사이에 공백이 들어갑니다. `inline`이면 붙고요.
-
-즉 이름 계산은 버튼 자신뿐 아니라 **버튼 안의 모든 자식에게** 물어봅니다.
-
-> "너 보이니?"  
-> "너 block이니, inline이니?"
-
+확인 대상은 버튼 자신만이 아닙니다.  
 `dom-accessibility-api` 소스를 열어보면 그대로 있습니다.
 
 ```js
@@ -348,6 +319,11 @@ const display = isElement(child)
   ? getComputedStyle(child).getPropertyValue('display')
   : 'inline';
 ```
+
+두 번째 조각이 중요합니다. **자식의 `display`까지** 확인하죠.  
+`block`이면 화면에서 줄이 바뀌니, 단어 사이에 공백을 넣어야 하거든요.
+
+즉 이름 계산은 버튼 하나가 아니라 **그 안의 모든 노드에게** 물어봅니다.
 
 #### 그래서 곱셈이 됩니다
 
@@ -398,13 +374,12 @@ getComputedStyle(el).visibility // "visible"       ← 아무도 안 썼는데 �
 
 Computed 탭의 **"Show all"** 체크박스를 켜면 건드린 적 없는 프로퍼티가 수백 개 나오는 거, 그겁니다.
 
-> `getComputedStyle`은 **"이 엘리먼트의 모든 CSS 프로퍼티가 담긴 완성된 표"** 를 만들어 돌려줍니다.  
-> 부분적으로는 못 만듭니다.
-
 ```js
 const display = getComputedStyle(el).display;
 //              ^^^^^^^^^^^^^^^^^^^^ 표 전체를 만든 다음, 거기서 한 칸을 꺼낸다
 ```
+
+**부분적으로는 못 만듭니다.** `display` 하나가 궁금해도 표 전체가 나옵니다.
 
 #### jsdom은 그 표를 호출할 때마다 다시 만듭니다
 
@@ -448,29 +423,7 @@ if (elementImpl._attached) {
 
 렌더는 20ms인데 쿼리는 450ms. 만드는 것보다 찾는 게 22배 비쌌던 그 이상함이요.
 
-직접 재봤습니다. 버튼 85개를 만들고, 스타일을 물어보고, 다시 물어보고, DOM을 한 번 건드린 뒤 또 물어봤습니다.
-
-```js
-// 버튼 85개 (각각 span 자식 1개) / 스타일시트 규칙 2000개
-let t = performance.now();
-root.innerHTML = markup;                                    // 1. 렌더
-const render = performance.now() - t;
-
-t = performance.now();
-buttons.forEach(b => window.getComputedStyle(b).display);   // 2. 첫 조회
-const cold = performance.now() - t;
-
-t = performance.now();
-buttons.forEach(b => window.getComputedStyle(b).display);   // 3. 다시 조회
-const warm = performance.now() - t;
-
-root.setAttribute('data-rerender', '1');                    // DOM을 한 글자 건드린다
-t = performance.now();
-buttons.forEach(b => window.getComputedStyle(b).display);   // 4. 또 조회
-const afterMutation = performance.now() - t;
-```
-
-결과입니다.
+직접 재봤습니다. 버튼 85개(각각 span 자식 1개)에 스타일시트 규칙 2,000개를 얹고, **렌더 → 첫 조회 → 재조회 → DOM을 한 글자 건드린 뒤 또 조회**, 이렇게 네 구간을 쟀습니다.
 
 ```
 1. 렌더 (DOM 85개 생성 + 트리 삽입) :     9.7 ms
@@ -618,25 +571,11 @@ RTL의 `.filter()`는 끝까지 다 돌지만, `.find()`는 **찾으면 거기�
 + expect(queryButton('Clear Date')).not.toBeInTheDocument();
 ```
 
-날짜 컴포넌트 4개 파일에서 **41개 호출부**를 이렇게 교체했습니다.  
-PR의 변경 내역은 이렇습니다. ([전체 diff 보기](https://github.com/facebook/astryx/pull/3816/files))
+날짜 컴포넌트 4개 파일에서 **41개 호출부**를 이렇게 교체했습니다. ([전체 diff 보기](https://github.com/facebook/astryx/pull/3816/files))
 
-| 파일 | 변경 |
-| :--- | ---: |
-| `__tests__/fastRoleQueries.ts` *(신규)* | +66 |
-| `DateRangeInput.test.tsx` | +31 / −44 |
-| `Calendar.test.tsx` | +13 / −16 |
-| `DateInput.test.tsx` | +11 / −20 |
-| `DateTimeInput.test.tsx` | +9 / −16 |
-| `package.json` | +1 |
-
-테스트 파일 네 개는 오히려 **줄어들었습니다.**  
+그런데 테스트 파일 네 개는 오히려 **줄어들었습니다.**  
 `screen.getByRole('button', {name: 'Open calendar'})`가 `getButton('Open calendar')`이 되니까요.  
 헬퍼 66줄을 추가하고 테스트 코드 96줄을 덜어낸 셈입니다.
-
-> 스텁 타입이 `Pick<CSSStyleDeclaration, 'getPropertyValue'>`인 게 눈에 걸릴 수 있습니다.  
-> `CSSStyleDeclaration`으로 선언하면 필수 멤버 수백 개를 전부 구현해야 해서 불가능합니다.  
-> **"이것만 구현했다"고 정직하게 선언하는 타입**이라고 보면 됩니다.
 
 #### 다만, 전부 바꾸지는 않았습니다
 
@@ -650,7 +589,9 @@ PR의 변경 내역은 이렇습니다. ([전체 diff 보기](https://github.com
 
 ### 8. 무엇을 포기했나
 
-공짜는 없습니다. 이 헬퍼는 **하나를 확실히 포기합니다.**
+공짜는 없습니다. 이 헬퍼는 **두 가지**를 포기했습니다.
+
+**포기 1 — 유일성 검사**
 
 RTL의 `getByRole`은 조건에 맞는 요소가 **두 개 이상이면 에러를 던집니다.**
 
@@ -658,28 +599,42 @@ RTL의 `getByRole`은 조건에 맞는 요소가 **두 개 이상이면 에러�
 Found multiple elements with the role "button" and name "확인"
 ```
 
-이건 성가신 기능처럼 보이지만 사실 **안전장치**입니다.  
-"이 이름의 버튼은 화면에 하나뿐이다"라는 걸 테스트가 대신 확인해주는 거니까요.
+성가신 기능처럼 보이지만 사실 **안전장치**입니다.  
+"이 이름의 버튼은 화면에 하나뿐이다"를 테스트가 대신 확인해주는 거니까요.
 
-`.find()`로 바꾸는 순간 그게 사라집니다.
+`.find()`는 첫 매치에서 멈추므로 그게 사라집니다.  
+버튼이 두 개여도 조용히 첫 번째를 집어 옵니다. **중복이 생겨도 테스트가 알려주지 않습니다.**
 
-```ts
-.find(el => matchesName(el, name))   // 첫 번째를 찾으면 바로 반환
+**포기 2 — 이름의 정확도**
+
+스텁은 `display`에 **항상 `"block"`**이라고 대답합니다.  
+그러면 숨긴 노드도 "보인다"고 판정됩니다. 5장의 그 버튼을 다시 보죠.
+
+```html
+<button>
+  <span style="display: none">지난달</span>
+  <span>15일</span>
+</button>
 ```
 
-버튼이 두 개여도 조용히 첫 번째를 집어 옵니다.  
-**중복이 생겨도 테스트가 알려주지 않습니다.**
+```
+RTL     : "15일"
+이 헬퍼 : "지난달 15일"   ← 숨긴 텍스트가 이름에 섞여 들어온다
+```
 
-그래서 헬퍼 파일 맨 위 주석에 이걸 명시해뒀습니다.
+5장에서 "접근성 이름은 보이는 대로 읽은 텍스트"라고 했는데, 스텁을 끼우면 그 원칙이 깨집니다.  
+`getComputedStyle` 비용을 없앤 대가로 **"보이는 대로"를 포기한 셈**입니다.
+
+날짜 버튼은 `<button><span>15</span></button>` 정도로 단순해서 문제가 없었습니다.  
+하지만 **다른 코드베이스에 그대로 옮길 때는 반드시 확인해야 합니다.**
+
+---
+
+그래서 헬퍼 파일 맨 위 주석에 트레이드오프를 명시해뒀습니다.
 
 ```
 Trade-off vs getByRole: first match wins — no tree-wide uniqueness check.
 ```
-
-> 한 가지 더 짚어둘 게 있습니다. 스텁은 `display`에 항상 `"block"`이라고 대답합니다.  
-> 그래서 CSS로 숨긴 텍스트가 이름에 섞여 들어오거나, inline 형제 사이에 공백이 생길 수 있습니다.  
-> (`"홍길동"`이 `"홍 길동"`이 되는 식으로요.)  
-> 날짜 버튼처럼 자식 구조가 단순한 곳에서는 문제가 없었지만, **다른 코드베이스에 그대로 옮길 때는 확인이 필요합니다.**
 
 정리하면 이 헬퍼는 **"이 파일들에서, 이 조건에서"** 안전한 도구입니다.  
 범용 유틸리티가 아니라 국소 최적화죠. 그래서 테스트 폴더 안에만 두었습니다.
@@ -710,17 +665,6 @@ Trade-off vs getByRole: first match wins — no tree-wide uniqueness check.
 
 컴포넌트 코드도, 테스트가 확인하는 동작도 손대지 않았습니다.  
 **요소를 찾는 방법만** 바꿨습니다.
-
-CI에서도 확인됐습니다. main의 Deploy 워크플로우에서 도는 `Run pnpm test` 스텝 기준입니다.
-
-| | `Run pnpm test` (main, 4-vCPU 러너) |
-| :--- | ---: |
-| 두 최적화 이전 | 296초 |
-| 앞선 테스트 환경 분리 이후 | 271초 |
-| **이 변경 이후** | **246초** |
-
-이 변경 몫으로 약 **25초**입니다.  
-로컬에서 잰 43초보다 작은데, CI는 워커가 병렬로 도니까 파일 하나가 빨라져도 벽시계 시간에는 일부만 반영되기 때문입니다.
 
 ---
 
@@ -778,8 +722,8 @@ console.log('name 제외 :', (t2 - t1).toFixed(0), 'ms');
 | 2 | **`within()`으로 탐색 범위를 좁힌다** | 컴포넌트 구조를 못 바꿀 때. 후보 수 자체가 줄어듭니다 |
 | 3 | **전용 헬퍼를 만든다** | 위 둘이 불가능할 때. 이 글의 방법입니다 |
 
-제 경우 1번은 컴포넌트 동작을 바꾸는 일이라 테스트 최적화의 범위를 넘었고, 2번으로는 닫힌 팝오버가 트리거와 같은 컨테이너 안에 있어 충분히 줄지 않았습니다.  
-그래서 3번으로 갔습니다.
+1번이 가장 근본적이지만 컴포넌트 동작을 바꾸는 일이라, 테스트만 손보려는 상황에서는 범위를 넘습니다.  
+2번은 구조를 안 건드리고도 후보를 줄일 수 있지만, 찾으려는 요소와 숨은 요소가 같은 컨테이너 안에 있으면 효과가 없습니다.
 
 **3번이 첫 번째 선택지가 되면 안 됩니다.** 표준 API를 떠나는 건 팀이 치르는 비용이니까요.
 
@@ -787,12 +731,10 @@ console.log('name 제외 :', (t2 - t1).toFixed(0), 'ms');
 
 ## 마치며
 
-이번 일에서 제일 오래 남은 건 34초를 1.3초로 줄인 것보다, **매일 쓰던 API를 처음으로 열어봤다는 것**이었습니다.
-
 `getByRole('button', {name})`은 제게 "이름이 이런 버튼을 찾아줘"라는 한 문장이었습니다.  
 열어보니 `.filter()` 다섯 개가 줄줄이 있었고, 그중 하나가 트리 전체를 훑고 있었습니다.
 
-편의는 공짜가 아니라 **누군가 대신 내주고 있는 비용**이더군요.  
+편의는 공짜가 아니라 **누군가 대신 내주고 있는 비용**이었습니다.  
 평소에는 그 비용이 충분히 작아서 안 보일 뿐이고요.
 
 그러니 도구가 이상하게 느리다면, 한 번쯤 열어보시길 권합니다.  
