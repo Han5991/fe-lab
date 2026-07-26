@@ -268,17 +268,17 @@ The blog (`apps/blog/web/`) is a **statically generated (SSG) Next.js applicatio
    **Frontmatter 전체 목록** — 여기 없는 키는 `lint:posts`가 `unknown-frontmatter-key`로
    경고합니다. `domain/post/types.ts`의 `RawFrontmatter`가 단일 출처입니다.
 
-   | 키 | 필수 | 설명 |
-   | :--- | :---: | :--- |
-   | `status` | ✅ | `published` \| `draft` \| `scheduled`. **이 키가 없으면 포스트가 아니라 메타 노트로 간주되어 빌드에서 통째로 제외됩니다.** |
-   | `title` | ✅ | 없으면 파일명으로 폴백하지만 `lint:posts`가 에러 |
-   | `date` |  | `'YYYY-MM-DD'`. `scheduled`일 때는 공개 시각으로도 쓰임 |
-   | `slug` |  | URL. 없으면 파일 경로에서 유도 |
-   | `excerpt` |  | 없으면 본문 앞 160자 |
-   | `thumbnail` |  | 없으면 빌드 시 OG 카드(`/og/{slug}.png`) 자동 생성 |
-   | `tags` |  | 문자열 배열. 문자열 아닌 원소가 섞이면 태그 전체가 무시됨 |
-   | `updatedAt` |  | Schema.org `dateModified`, sitemap `lastmod`에 사용 |
-   | `scheduledDate` |  | **시각까지 지정할 때만.** 날짜만이면 `date`로 충분 |
+   | 키              | 필수 | 설명                                                                                                                       |
+   | :-------------- | :--: | :------------------------------------------------------------------------------------------------------------------------- |
+   | `status`        |  ✅  | `published` \| `draft` \| `scheduled`. **이 키가 없으면 포스트가 아니라 메타 노트로 간주되어 빌드에서 통째로 제외됩니다.** |
+   | `title`         |  ✅  | 없으면 파일명으로 폴백하지만 `lint:posts`가 에러                                                                           |
+   | `date`          |      | `'YYYY-MM-DD'`. `scheduled`일 때는 공개 시각으로도 쓰임                                                                    |
+   | `slug`          |      | URL. 없으면 파일 경로에서 유도                                                                                             |
+   | `excerpt`       |      | 없으면 본문 앞 160자                                                                                                       |
+   | `thumbnail`     |      | 없으면 빌드 시 OG 카드(`/og/{slug}.png`) 자동 생성                                                                         |
+   | `tags`          |      | 문자열 배열. 문자열 아닌 원소가 섞이면 태그 전체가 무시됨                                                                  |
+   | `updatedAt`     |      | Schema.org `dateModified`, sitemap `lastmod`에 사용                                                                        |
+   | `scheduledDate` |      | **시각까지 지정할 때만.** 날짜만이면 `date`로 충분                                                                         |
 
    `series`는 frontmatter가 아니라 **폴더 경로**로 결정됩니다(`repository.ts`).
 
@@ -312,13 +312,13 @@ The blog (`apps/blog/web/`) is a **statically generated (SSG) Next.js applicatio
 
 #### 글쓰기 도구 (Authoring DX)
 
-| 도구                                          | 설명                                                                                                                       |
-| :-------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------- |
-| `pnpm new-post "제목"`                        | 새 포스트 스캐폴딩. `--series`, `--tags`, `--scheduled`, `--slug`, `--status` 옵션 지원. 한글 제목/파일명 그대로 사용 가능 |
+| 도구                                          | 설명                                                                                                                        |
+| :-------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm new-post "제목"`                        | 새 포스트 스캐폴딩. `--series`, `--tags`, `--scheduled`, `--slug`, `--status` 옵션 지원. 한글 제목/파일명 그대로 사용 가능  |
 | `pnpm lint:posts`                             | frontmatter 검증. 메타 노트 정책: frontmatter delimiter(`---`)가 없거나 `status`가 없으면 빌드 대상이 아닌 것으로 보고 skip |
-| `/preview/[...slug]` 라우트                   | dev 환경에서만 동작하는 draft·scheduled 글 미리보기. prod 빌드는 placeholder 1개(`__disabled__`) + 즉시 `notFound`로 차단  |
-| `_series.yml`                                 | 시리즈 폴더에 두면 시리즈 nav가 `order` 기준 chronological 정렬 + 표시명을 폴더명 대신 사용                                |
-| `<callout type="warning\|info\|tip\|danger">` | 마크다운 헬퍼 컴포넌트 (raw HTML로 작성). `<figure>` + `<figcaption>`, `<file-tree>`도 지원                                |
+| `/preview/[...slug]` 라우트                   | dev 환경에서만 동작하는 draft·scheduled 글 미리보기. prod 빌드는 placeholder 1개(`__disabled__`) + 즉시 `notFound`로 차단   |
+| `_series.yml`                                 | 시리즈 폴더에 두면 시리즈 nav가 `order` 기준 chronological 정렬 + 표시명을 폴더명 대신 사용                                 |
+| `<callout type="warning\|info\|tip\|danger">` | 마크다운 헬퍼 컴포넌트 (raw HTML로 작성). `<figure>` + `<figcaption>`, `<file-tree>`도 지원                                 |
 
 #### 클라이언트 사이드 기능 (런타임)
 
