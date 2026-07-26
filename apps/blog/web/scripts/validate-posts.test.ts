@@ -117,6 +117,17 @@ test('validatePost: 잘못된 status → invalid-status', () => {
   assert.ok(rules({ title: 'x', status: 'foo' }).includes('invalid-status'));
 });
 
+test('validatePost: status가 유효하지 않아도 나머지 검사를 계속한다', () => {
+  // status 키가 있으면 meta-file-skipped 조기 반환을 타지 않는다. 빌드에서 제외될
+  // 파일이라도 오타 하나 고칠 때마다 새 에러가 튀어나오지 않도록 한 번에 전부
+  // 알려주기 위한 의도적 동작이라 테스트로 잠근다.
+  const found = rules({ status: 'foo', tags: 'notarray' });
+  assert.ok(found.includes('invalid-status'));
+  assert.ok(found.includes('missing-title'));
+  assert.ok(found.includes('invalid-tags'));
+  assert.ok(!found.includes('meta-file-skipped'));
+});
+
 test('validatePost: scheduled인데 scheduledDate도 date도 없음 → scheduled-without-date', () => {
   assert.ok(
     rules({ title: 'x', status: 'scheduled' }).includes(
