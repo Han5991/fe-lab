@@ -1,5 +1,5 @@
 ---
-title: 'getByRole은 검색이 아니라 전수 조사였다 - Meta 디자인 시스템 테스트 34초를 1.3초로'
+title: '매일 쓰던 getByRole 때문에 테스트가 26배 느렸습니다 — RTL·jsdom 성능 분석'
 date: 2026-07-26
 status: draft
 slug: 'getbyrole-performance'
@@ -7,7 +7,7 @@ excerpt: '매일 쓰던 getByRole이 사실은 트리 전체를 훑고 있었습
 tags: ['testing-library', 'jsdom', 'performance', 'open-source']
 ---
 
-# getByRole은 검색이 아니라 전수 조사였다
+# 매일 쓰던 getByRole 때문에 테스트가 26배 느렸습니다
 
 ## 이 글을 읽고 나면
 
@@ -631,7 +631,7 @@ Trade-off vs getByRole: first match wins — no tree-wide uniqueness check.
 | DateTimeInput.test.tsx | 64 | 4.1s | **1.8s** | −56% |
 | **합계** | **211** | **50.7s** | **7.2s** | |
 
-처음의 그 파일은 **34.3초에서 1.3초**가 됐습니다.
+처음의 그 파일은 **34.3초에서 1.3초**가 됐습니다. 약 **26배**입니다.
 
 여기서 강조하고 싶은 게 있습니다.
 
@@ -641,8 +641,16 @@ Trade-off vs getByRole: first match wins — no tree-wide uniqueness check.
 컴포넌트 코드도, 테스트가 확인하는 동작도 손대지 않았습니다.  
 **요소를 찾는 방법만** 바꿨습니다.
 
-CI에서도 test job이 평균 320초에서 280초로 내려왔습니다.  
-다만 이건 같은 시기에 머지된 다른 테스트 최적화 PR과 효과가 겹쳐 있어서, 이 변경 하나의 몫으로 떼어 말하기는 어렵습니다.
+CI에서도 확인됐습니다. main의 Deploy 워크플로우에서 도는 `Run pnpm test` 스텝 기준입니다.
+
+| | `Run pnpm test` (main, 4-vCPU 러너) |
+| :--- | ---: |
+| 두 최적화 이전 | 296초 |
+| 앞선 테스트 환경 분리 이후 | 271초 |
+| **이 변경 이후** | **246초** |
+
+이 변경 몫으로 약 **25초**입니다.  
+로컬에서 잰 43초보다 작은데, CI는 워커가 병렬로 도니까 파일 하나가 빨라져도 벽시계 시간에는 일부만 반영되기 때문입니다.
 
 ---
 
