@@ -31,13 +31,13 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320
         with:
           # 버전은 루트 package.json의 packageManager 필드를 단일 source of truth로 사용
           run_install: false
 
       - name: Setup Node.js
-        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        uses: actions/setup-node@v7
         with:
           # .tool-versions(nodejs 24.6.0)를 단일 source of truth로 사용
           # node:test --test 의 glob 패턴은 22.5+ 부터 지원 — engines.node ">=22"의 실 근거
