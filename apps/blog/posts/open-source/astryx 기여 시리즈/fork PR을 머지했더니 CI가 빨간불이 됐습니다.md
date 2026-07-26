@@ -25,7 +25,7 @@ thumbnail: '/og/astryx-fork-pr-token-403.png'
 > 4. fork PR을 머지했더니 CI가 빨간불이 됐습니다 — permissions: write가 무시된 이유 **(현재 글)**
 > 5. deploy job은 이제 27초면 끝납니다
 
-최근 3일 동안 facebook/astryx에 PR 11개를 머지시켰습니다. astryx는 메타가 오픈소스로 운영하는 내부 도구용 디자인 시스템입니다. pnpm 모노레포에 Vitest, CI는 GitHub Actions를 씁니다.
+2026년 7월, 열흘 남짓 동안 facebook/astryx에 PR 17개를 머지시켰습니다. astryx는 메타가 오픈소스로 운영하는 내부 도구용 디자인 시스템입니다. pnpm 모노레포에 Vitest, CI는 GitHub Actions를 씁니다.
 
 이 글은 그 시리즈 중에서 조금 특이한 편입니다. 무언가를 고친 이야기가 아니기 때문입니다. CI가 뱉은 403 하나를 추적해서 원인을 규명하고, 마지막에 **고치지 않기로 결정**한 이야기입니다.
 

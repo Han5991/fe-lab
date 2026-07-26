@@ -27,7 +27,7 @@ thumbnail: '/og/astryx-gh-pages-deploy-race.png'
 
 CI가 가끔 빨간불이면 어떻게 하시나요. 솔직히 저는 재실행 버튼부터 눌렀습니다. 다시 돌리면 초록불이 되니까요. 그렇게 넘어가던 실패가 하나 있었습니다.
 
-최근 3일간 facebook/astryx에 PR 11개를 머지시켰습니다. astryx는 메타의 내부 도구용 디자인 시스템입니다. pnpm 모노레포이고, CI는 GitHub Actions입니다. main에 머지될 때마다 Deploy 워크플로우가 gh-pages로 Storybook과 샌드박스를 배포합니다.
+2026년 7월, 열흘 남짓 동안 facebook/astryx에 PR 17개를 머지시켰습니다. astryx는 메타의 내부 도구용 디자인 시스템입니다. pnpm 모노레포이고, CI는 GitHub Actions입니다. main에 머지될 때마다 Deploy 워크플로우가 gh-pages로 Storybook과 샌드박스를 배포합니다.
 
 그 와중에 이상한 실패를 계속 마주쳤습니다. PR이 머지될 때마다 Cleanup Preview Deployments 워크플로우가 간헐적으로 죽었습니다. 하루에 두 번 실패한 날, 더는 못 본 척할 수 없었습니다. 이 글은 그 원인을 추적하고 고친 기록입니다.
 
