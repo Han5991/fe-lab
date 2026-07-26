@@ -2,9 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { isPostVisible } from './visibility';
 
-test('status가 없으면 published === true 일 때만 공개', () => {
-  assert.equal(isPostVisible({ published: true }), true);
-  assert.equal(isPostVisible({ published: false }), false);
+test('status가 없으면 비공개 (fail-closed)', () => {
   assert.equal(isPostVisible({}), false);
 });
 
@@ -14,11 +12,58 @@ test('status: published는 항상 공개', () => {
 
 test('status: draft는 항상 비공개', () => {
   assert.equal(isPostVisible({ status: 'draft' }), false);
-  assert.equal(isPostVisible({ status: 'draft', published: true }), false);
 });
 
-test('scheduled: scheduledDate가 없으면 비공개', () => {
+test('scheduled: scheduledDate도 date도 없으면 비공개', () => {
   assert.equal(isPostVisible({ status: 'scheduled' }), false);
+  assert.equal(isPostVisible({ status: 'scheduled', date: null }), false);
+});
+
+// --- scheduledDate 생략 시 date 폴백 ---
+// scheduledDate는 date와 값이 겹치는 중복 필드였습니다. 시각까지 지정할 때만 쓰고,
+// 날짜만 필요하면 date 하나로 충분합니다.
+
+test('scheduled: scheduledDate가 없으면 date를 공개 시각으로 사용', () => {
+  const past = new Date('2026-05-23T15:00:01Z'); // KST 2026-05-24 00:00:01
+  assert.equal(
+    isPostVisible({ status: 'scheduled', date: '2026-05-24' }, past),
+    true,
+  );
+  const before = new Date('2026-05-23T14:59:59Z'); // KST 2026-05-23 23:59:59
+  assert.equal(
+    isPostVisible({ status: 'scheduled', date: '2026-05-24' }, before),
+    false,
+  );
+});
+
+test('scheduled: scheduledDate가 있으면 date보다 우선', () => {
+  // date는 이미 지났지만 scheduledDate가 미래면 비공개여야 한다.
+  const now = new Date('2026-05-24T00:00:00Z');
+  assert.equal(
+    isPostVisible(
+      {
+        status: 'scheduled',
+        date: '2020-01-01',
+        scheduledDate: '2099-01-01T00:00:00Z',
+      },
+      now,
+    ),
+    false,
+  );
+});
+
+test('published/draft는 date 폴백과 무관', () => {
+  const now = new Date('2020-01-01T00:00:00Z');
+  // date가 미래여도 published면 공개
+  assert.equal(
+    isPostVisible({ status: 'published', date: '2099-01-01' }, now),
+    true,
+  );
+  // date가 과거여도 draft면 비공개
+  assert.equal(
+    isPostVisible({ status: 'draft', date: '1999-01-01' }, now),
+    false,
+  );
 });
 
 test('scheduled: 과거 시각이면 공개', () => {

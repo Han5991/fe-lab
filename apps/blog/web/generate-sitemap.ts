@@ -3,9 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { SITE_URL } from './lib/constants';
 import { parseScheduledDateKST, getKSTDateISO } from './lib/dates';
-import { getAllPosts } from './domain/post/service';
-import { encodePostSlug } from './domain/post/utils';
-import type { PostSummary } from './domain/post/types';
+import { getAllPosts, encodePostSlug, type PostSummary } from '@/domain/post';
 
 // 시리즈별 고가치 포스트는 우선순위 높게 설정.
 // 테스트에서 self-describing 패턴으로 참조하기 위해 export.

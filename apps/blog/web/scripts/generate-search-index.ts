@@ -74,7 +74,7 @@ export function buildAdminPostsIndex(
     excerpt: p.excerpt || '',
     tags: p.tags || [],
     series: p.series || null,
-    status: p.status || 'published',
+    status: p.status,
     scheduledDate: p.scheduledDate || null,
   }));
 }

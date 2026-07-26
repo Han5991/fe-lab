@@ -46,7 +46,9 @@ export function useAdminDashboardData() {
           totalViews: postStats?.total_views ?? 0,
           todayViews: postStats?.today_views ?? 0,
           trends: trendsMap.get(post.slug) ?? [],
-          status: post.status || 'published',
+          // 폴백은 fail-closed('draft')여야 한다. 'published'로 두면 인덱스가
+          // 깨졌을 때 draft·scheduled 글이 admin 대시보드에서 공개 글로 보인다.
+          status: post.status || 'draft',
           scheduledDate: post.scheduledDate || null,
         };
       });
