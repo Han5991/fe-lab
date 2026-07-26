@@ -25,7 +25,7 @@ thumbnail: '/og/astryx-deploy-pipeline-parallel.png'
 > 4. fork PR을 머지했더니 CI가 빨간불이 됐습니다 — permissions: write가 무시된 이유
 > 5. deploy job은 이제 27초면 끝납니다 **(현재 글)**
 
-최근 3일 동안 facebook/astryx에 PR 11개를 머지시켰습니다. astryx는 메타가 오픈소스로 운영하는 내부 도구용 디자인 시스템입니다. main에 머지될 때마다 Deploy 워크플로우가 gh-pages로 Storybook과 샌드박스를 배포합니다. 이번 글의 주인공이 바로 그 워크플로우입니다.
+2026년 7월, 열흘 남짓 동안 facebook/astryx에 PR 17개를 머지시켰습니다. astryx는 메타가 오픈소스로 운영하는 내부 도구용 디자인 시스템입니다. main에 머지될 때마다 Deploy 워크플로우가 gh-pages로 Storybook과 샌드박스를 배포합니다. 이번 글의 주인공이 바로 그 워크플로우입니다.
 
 지금 astryx의 Actions 탭에서 최근 Deploy 실행을 열면, deploy job이 **27초** 만에 끝나 있습니다. Storybook 풀 빌드에 Next.js 샌드박스까지 얹어 사이트 전체를 배포하는 job인데 말이죠. 대체 뭘 하길래 27초일까요. 답은 간단합니다. **아무것도 빌드하지 않기 때문입니다.**
 

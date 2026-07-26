@@ -36,7 +36,7 @@ thumbnail: '/og/astryx-vitest-project-split.png'
 
 결론부터 말하면, 실패가 아니었습니다. 이 PR은 머지 후 CI에서 실행당 약 25초를 꾸준히 줄였습니다. 로컬에선 그대로인데 CI에서만 빨라지는 최적화. 그게 어떻게 가능한지가 이 글의 주제입니다.
 
-이 글은 facebook/astryx(메타의 내부 도구용 디자인 시스템, 오픈소스)에 3일간 PR 11개를 머지시킨 기여 시리즈 중 한 편입니다. 근거 PR은 [#3814](https://github.com/facebook/astryx/pull/3814)이고, 2026년 7월 11일에 머지되었습니다.
+이 글은 facebook/astryx(메타의 내부 도구용 디자인 시스템, 오픈소스)에 열흘 남짓 동안 PR 17개를 머지시킨 기여 시리즈 중 한 편입니다. 근거 PR은 [#3814](https://github.com/facebook/astryx/pull/3814)이고, 2026년 7월 11일에 머지되었습니다.
 
 ## 발단: 벽시계보다 큰 오버헤드
 
