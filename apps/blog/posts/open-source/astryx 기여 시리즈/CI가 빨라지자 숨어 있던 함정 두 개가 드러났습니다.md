@@ -1,9 +1,10 @@
 ---
 title: 'CI가 빨라지자 숨어 있던 함정 두 개가 드러났습니다'
 date: '2026-07-12'
-published: false
+status: draft
 slug: 'astryx-ci-race-and-permissions'
 thumbnail: '/og/astryx-ci-race-and-permissions.png'
+tags: ['github-actions', 'ci', 'permissions']
 ---
 
 # CI가 빨라지자 숨어 있던 함정 두 개가 드러났습니다
