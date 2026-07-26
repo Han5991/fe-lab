@@ -2,10 +2,9 @@
 title: '매일 쓰던 getByRole 때문에 테스트가 26배 느렸습니다 — RTL·jsdom 성능 분석'
 date: '2026-07-26'
 status: draft
-published: false
 slug: 'getbyrole-performance'
-thumbnail: '/og/getbyrole-performance.png'
 excerpt: '매일 쓰던 getByRole이 사실은 트리 전체를 훑고 있었습니다. Meta 디자인 시스템에서 34초짜리 테스트 파일의 범인을 찾아 1.3초로 줄이기까지, RTL과 jsdom 내부에서 실제로 벌어지는 일.'
+thumbnail: '/og/getbyrole-performance.png'
 tags: ['testing-library', 'jsdom', 'performance', 'open-source']
 ---
 
