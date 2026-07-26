@@ -1,9 +1,10 @@
 ---
 title: 'CI에서만 git diff가 빈 결과를 냈습니다 — GitHub Actions shallow clone과 three-dot diff'
 date: '2026-07-26'
-published: false
+status: draft
 slug: 'astryx-shallow-clone-merge-base'
 thumbnail: '/og/astryx-shallow-clone-merge-base.png'
+tags: ['github-actions', 'git', 'ci']
 ---
 
 # CI에서만 git diff가 빈 결과를 냈습니다 — GitHub Actions shallow clone과 three-dot diff
@@ -25,7 +26,9 @@ facebook/astryx에서 CI를 손보던 중이었습니다. astryx는 메타가 �
 
 이 글은 그 원인을 추적한 [facebook/astryx#3865](https://github.com/facebook/astryx/pull/3865)의 기록입니다. 워크플로 로직에는 버그가 없었습니다. 범인은 git이었습니다. 정확히는, 3개월 전에 들어온 shallow clone 최적화와 `git diff`의 점 세 개였습니다.
 
-## 증상: 실패가 아니라 '변경 없음'이라고 말하는 두 곳
+## 원인 추적 — 증상에서 no merge base까지
+
+### 증상: 실패가 아니라 '변경 없음'이라고 말하는 두 곳
 
 머지 직전 시점을 기준으로 CI 워크플로 실행을 훑었습니다. PR 이벤트로 돌아간 최근 실행 15건을 뽑아 `pr-a11y` job의 결론만 봤습니다.
 
@@ -50,7 +53,7 @@ git diff --name-only origin/main...HEAD
 
 점이 세 개입니다.
 
-## `..`와 `...`는 서로 다른 질문입니다
+### `..`와 `...`는 서로 다른 질문입니다
 
 이 둘을 같은 것으로 알고 계셨다면, 여기서 잠깐 멈추셔도 좋습니다. 저도 이번에 다시 배웠습니다.
 
@@ -122,7 +125,7 @@ $ git log --oneline main..pr
 
 `git log A...B`는 양쪽의 대칭 차집합입니다. 세 커밋이 다 나옵니다. `git diff`의 `...`와는 다른 의미입니다. 같은 기호가 명령마다 다른 뜻을 갖는, 별로 친절하지 않은 설계입니다.
 
-## shallow clone이 깨뜨리는 정확한 지점
+### shallow clone이 깨뜨리는 정확한 지점
 
 three-dot diff는 merge base를 **계산할 수 있어야** 성립합니다. merge base를 계산하려면 두 브랜치의 공통 조상까지 커밋 그래프가 로컬에 있어야 합니다.
 
@@ -192,7 +195,7 @@ packages/core/src/Button/Button.tsx
   (exit 0)
 ```
 
-## 왜 3개월 동안 아무도 몰랐을까
+### 왜 3개월 동안 아무도 몰랐을까
 
 여기서부터가 이 사건의 본론입니다. `fatal`이 났는데 CI는 왜 빨간불이 아니었을까요. 에러를 삼키는 경로가 정확히 두 개 있었습니다.
 
