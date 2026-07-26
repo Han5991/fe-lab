@@ -16,13 +16,13 @@ tags: ['testing-library', 'jsdom', 'performance', 'open-source']
 - jsdom의 `getComputedStyle`이 왜 브라우저와 다르게 비싼지 이해합니다
 - 내 프로젝트에서 언제 이 문제를 의심해야 하는지 판단 기준을 얻습니다
 
-> **astryx 기여 시리즈**
+> **느린 CI 뜯어고치기**
 >
 > 1. 매일 쓰던 getByRole 때문에 테스트가 26배 느렸습니다 **(현재 글)**
 > 2. 로컬에선 그대로인데 CI에서만 빨라지는 최적화가 있습니다
-> 3. GitHub Actions끼리 서로 push를 덮어쓸 때 생기는 일
-> 4. fork PR을 머지했더니 CI가 빨간불이 됐습니다 — permissions: write가 무시된 이유
-> 5. deploy job은 이제 27초면 끝납니다
+> 3. 캐시가 hit인데 매번 콜드 빌드였습니다
+> 4. deploy job은 이제 27초면 끝납니다
+> 5. CI가 빨라지자 숨어 있던 함정 두 개가 드러났습니다
 
 ---
 
@@ -252,8 +252,13 @@ screen.getAllByRole('button', {hidden: true});
 
 ## 5. 접근성 이름은 "보이는 대로 읽은 텍스트"입니다
 
-직접 돌려보는 게 빠릅니다.  
-`jsdom`과 `dom-accessibility-api`만 있으면 됩니다. (RTL이 내부에서 쓰는 바로 그 라이브러리입니다.)
+접근성 이름이 그냥 버튼 안의 글자라면, `textContent`와 같아야 합니다.  
+정말 그런지 확인해보면 됩니다.
+
+버튼을 하나 만들되, **자식 하나를 `display: none`으로 숨겨두겠습니다.**  
+글자가 전부라면 숨긴 것도 그대로 읽힐 테니까요.
+
+준비물은 `jsdom`과 `dom-accessibility-api` 둘뿐입니다. (후자는 RTL이 내부에서 쓰는 바로 그 라이브러리입니다.)
 
 ```js
 // npm i jsdom dom-accessibility-api
@@ -274,15 +279,15 @@ console.log('textContent     :', JSON.stringify(button.textContent.trim()));
 console.log('accessible name :', JSON.stringify(computeAccessibleName(button)));
 ```
 
-결과입니다.
+`textContent`와 접근성 이름을 나란히 찍어본 결과입니다.
 
 ```
 textContent     : "지난달 15일"
 accessible name : "15일"
 ```
 
-`textContent`는 `"지난달 15일"`이지만, 접근성 이름은 `"15일"`입니다.  
-**`display: none`인 자식이 빠졌습니다.**
+**둘이 다릅니다.**  
+숨겨둔 `"지난달"`이 접근성 이름에서만 빠졌습니다.
 
 당연한 일입니다. 화면에는 `15일`만 보이는데 스크린리더가 "지난달 15일"이라고 읽으면 틀린 정보니까요.
 
@@ -387,7 +392,7 @@ getComputedStyle(el).visibility // "visible"       ← 아무도 안 썼는데 �
 
 Computed 탭의 **"Show all"** 체크박스를 켜면 건드린 적 없는 프로퍼티가 수백 개 나오는 거, 그겁니다.
 
-> `getComputedStyle`은 **"이 엘리먼트의 모든 CSS 프로퍼티가 담긴 완성된 표"**를 만들어 돌려줍니다.  
+> `getComputedStyle`은 **"이 엘리먼트의 모든 CSS 프로퍼티가 담긴 완성된 표"** 를 만들어 돌려줍니다.  
 > 부분적으로는 못 만듭니다.
 
 ```js
