@@ -43,11 +43,10 @@ export default async function PreviewPage({ params }: Props) {
   }
 
   const thumbnailUrl = resolveThumbnailUrl(post);
-  const status = post.status ?? 'published';
 
   return (
     <>
-      <PreviewBanner status={status} scheduledDate={post.scheduledDate} />
+      <PreviewBanner status={post.status} scheduledDate={post.scheduledDate} />
       <PostClient
         post={post}
         thumbnailUrl={post.thumbnail ? thumbnailUrl : undefined}

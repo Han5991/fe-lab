@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { parsePost, determineStatus, extractPlainText } from './repository';
+import { parsePost, extractPlainText } from './repository';
+import { isPostFile } from './visibility';
 
 // ── 메타 파일 제외 (어떤 글을 가져올지) ───────────────────────────────────────
 
@@ -8,15 +9,44 @@ test('parsePost: frontmatter delimiter 없으면 null (메타 노트)', () => {
   assert.equal(parsePost('# 제목만 있는 노트\n본문', 'note.md'), null);
 });
 
-test('parsePost: slug/published/status 가시성 필드가 하나도 없으면 null (메타 파일)', () => {
+test('parsePost: status가 없으면 null (메타 파일)', () => {
   const raw = `---\ntitle: 메타\ndate: 2025-01-01\n---\n본문`;
   assert.equal(parsePost(raw, 'meta.md'), null);
 });
 
-test('parsePost: published: false만 있고 slug/status 없으면 null (현재 동작 잠금)', () => {
-  // published:false는 falsy라 가시성 게이트(`!slug && !published && !status`)를 통과 → 제외.
-  const raw = `---\ntitle: 숨김\npublished: false\n---\n본문`;
-  assert.equal(parsePost(raw, 'hidden.md'), null);
+test('parsePost: slug만 있고 status가 없으면 null', () => {
+  // 예전 규칙(`!slug && !published && !status`)에서는 포스트로 잡혔지만,
+  // 이제 판정 축은 status 하나입니다.
+  const raw = `---\ntitle: 글\nslug: some-slug\n---\n본문`;
+  assert.equal(parsePost(raw, 'a.md'), null);
+});
+
+test('parsePost: 폐기된 published 필드만 있으면 null (status로만 판정)', () => {
+  const raw = `---\ntitle: 옛 글\npublished: true\n---\n본문`;
+  assert.equal(parsePost(raw, 'legacy.md'), null);
+});
+
+test('parsePost: status 값이 enum 밖이면 null', () => {
+  const raw = `---\ntitle: 글\nstatus: publish\n---\n본문`;
+  assert.equal(parsePost(raw, 'typo.md'), null);
+});
+
+// ── isPostFile: repository와 validate-posts가 공유하는 단일 판정 규칙 ─────────
+
+test('isPostFile: 유효한 status가 있을 때만 true', () => {
+  assert.equal(isPostFile({ status: 'published' }), true);
+  assert.equal(isPostFile({ status: 'draft' }), true);
+  assert.equal(isPostFile({ status: 'scheduled' }), true);
+  assert.equal(isPostFile({ status: 'foo' }), false);
+  assert.equal(isPostFile({ status: 3 }), false);
+  assert.equal(isPostFile({}), false);
+});
+
+test('isPostFile: 폐기된 published나 slug는 판정에 관여하지 않는다', () => {
+  const legacy: Record<string, unknown> = { published: true };
+  const slugOnly: Record<string, unknown> = { slug: 'a' };
+  assert.equal(isPostFile(legacy), false);
+  assert.equal(isPostFile(slugOnly), false);
 });
 
 // ── slug / series 유도 (파일 경로 기반) ──────────────────────────────────────
@@ -160,26 +190,19 @@ test('parsePost: 시간/offset 포함 date(Date 객체)는 toISOString UTC 기�
   assert.equal(parsePost(raw, 'a.md')?.date, '2025-01-01');
 });
 
-// ── determineStatus 직접 ─────────────────────────────────────────────────────
-
-test('determineStatus: 유효 status 필드 우선', () => {
-  assert.equal(determineStatus({ status: 'scheduled' }), 'scheduled');
+test('parsePost: tags에 문자열 아닌 원소가 섞이면 통째로 undefined', () => {
+  // 조용한 부분 유실을 막기 위해 전부-문자열일 때만 보존합니다.
+  // (validate-posts의 invalid-tags 규칙이 별도로 에러를 냅니다)
+  const raw = `---\ntitle: 글\nstatus: published\ntags: [a, 3]\n---\n본문`;
+  assert.equal(parsePost(raw, 'a.md')?.tags, undefined);
 });
 
-test('determineStatus: status 없고 published:true면 published', () => {
-  assert.equal(determineStatus({ published: true }), 'published');
-});
-
-test('determineStatus: status 없고 published 누락/false면 draft', () => {
-  assert.equal(determineStatus({}), 'draft');
-  assert.equal(determineStatus({ published: false }), 'draft');
-});
-
-test('determineStatus: 잘못된 status 문자열은 무시하고 published 폴백', () => {
-  assert.equal(
-    determineStatus({ status: 'foo', published: true }),
-    'published',
-  );
+test('parsePost: 빈 문자열 title/excerpt/thumbnail은 값 없음으로 취급', () => {
+  const raw = `---\ntitle: ''\nstatus: published\nexcerpt: ''\nthumbnail: ''\n---\n본문입니다`;
+  const post = parsePost(raw, 'my-file.md');
+  assert.equal(post?.title, 'my-file'); // 파일명 폴백
+  assert.equal(post?.excerpt, '본문입니다'); // 본문 폴백
+  assert.equal(post?.thumbnail, undefined);
 });
 
 // ── extractPlainText 직접 ────────────────────────────────────────────────────

@@ -9,9 +9,7 @@ import rehypeRaw from 'rehype-raw';
 import { SITE_URL, SITE_NAME, SITE_DESCRIPTION } from './lib/constants';
 import { resolvePostAssetUrl } from './domain/post/assetUrl';
 import { parseScheduledDateKST } from './lib/dates';
-import { getAllPosts } from './domain/post/service';
-import { encodePostSlug } from './domain/post/utils';
-import type { PostSummary } from './domain/post/types';
+import { getAllPosts, encodePostSlug, type PostSummary } from '@/domain/post';
 
 /**
  * @internal RSS 본문에 들어가는 raw text 전용 XML 이스케이프.
@@ -110,13 +108,13 @@ export function renderContentHtml(
 
 /** CDATA 종료 시퀀스(`]]>`)가 본문에 있어도 깨지지 않도록 분할 래핑 */
 export function wrapCdata(html: string): string {
-  return `<![CDATA[${html.replace(/\]\]>/g, ']]]]><![CDATA[>')}]]>`;
+  return `<![CDATA[${html.replace(/]]>/g, ']]]]><![CDATA[>')}]]>`;
 }
 
 /** content:encoded 전문을 포함할 최신 글 개수 — 피드 크기 무한 증가 방지 */
 const DEFAULT_FULL_CONTENT_LIMIT = 20;
 
-export interface RssBuildOptions {
+interface RssBuildOptions {
   siteUrl?: string;
   siteName?: string;
   siteDescription?: string;

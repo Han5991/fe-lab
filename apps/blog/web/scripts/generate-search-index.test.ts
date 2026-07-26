@@ -120,9 +120,11 @@ test('buildAdminPostsIndex: status/scheduledDate 보존', () => {
   assert.equal(idx[1].scheduledDate, '2026-06-01T00:00:00Z');
 });
 
-test('buildAdminPostsIndex: status 누락 시 published 기본값', () => {
-  const idx = buildAdminPostsIndex([makePost({ status: undefined })]);
-  assert.equal(idx[0].status, 'published');
+test('buildAdminPostsIndex: status를 그대로 전달 (published 폴백 없음)', () => {
+  // 예전에는 `p.status || 'published'` 폴백이 있었습니다. status가 required가 된
+  // 지금, 그 폴백은 draft를 published로 둔갑시킬 수 있는 fail-open 기본값입니다.
+  const idx = buildAdminPostsIndex([makePost({ status: 'draft' })]);
+  assert.equal(idx[0].status, 'draft');
 });
 
 test('buildAdminPostsIndex: contentPreview 필드 없음 (보안/용량 분리)', () => {

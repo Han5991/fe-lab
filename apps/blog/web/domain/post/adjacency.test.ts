@@ -13,6 +13,7 @@ function makePost(over: Partial<PostData> = {}): PostData {
     date: '2025-01-01',
     content: '',
     readMin: 1,
+    status: 'published',
     ...over,
   };
 }

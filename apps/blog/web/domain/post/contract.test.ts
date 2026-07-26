@@ -11,15 +11,15 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { getAllPosts, getAllPostsIncludingHidden } from './service';
 import { isPostVisible } from './visibility';
-import { buildSitemapXml } from '../../generate-sitemap';
-import { buildRssXml } from '../../generate-rss';
+import { buildSitemapXml } from '@/generate-sitemap';
+import { buildRssXml } from '@/generate-rss';
 import {
   buildAdminPostsIndex,
   buildPublicSearchIndex,
   CONTENT_PREVIEW_CHARS,
-} from '../../scripts/generate-search-index';
-import { buildLlmsFullText } from '../../scripts/generate-llms-full';
-import { SITE_URL } from '../../lib/constants';
+} from '@/scripts/generate-search-index';
+import { buildLlmsFullText } from '@/scripts/generate-llms-full';
+import { SITE_URL } from '@/lib/constants';
 
 // sitemap lastmod 비교용 — 동적으로 현재 날짜 사용. 하드코딩 시 미래 scheduledDate를
 // 가진 글이 공개되었을 때 contract 테스트가 false failure를 내는 문제를 회피.
@@ -70,9 +70,9 @@ test('contract: 공개 글(getAllPosts)은 isPostVisible 기준 일치 (slug 집
   const now = new Date();
   const all = getAllPostsIncludingHidden();
   const visible = getAllPosts(now);
-  const expected = all.filter(p =>
-    isPostVisible({ status: p.status, scheduledDate: p.scheduledDate }, now),
-  );
+  // PostData를 그대로 넘긴다 — 필드를 골라 넘기면 여기서 가시성 규칙을 재구현하는
+  // 꼴이 되어, 규칙이 바뀔 때(예: scheduled의 date 폴백 추가) 조용히 어긋난다.
+  const expected = all.filter(p => isPostVisible(p, now));
   const visibleSlugs = visible.map(p => p.slug).sort();
   const expectedSlugs = expected.map(p => p.slug).sort();
   assert.deepEqual(visibleSlugs, expectedSlugs);
@@ -100,16 +100,20 @@ test('contract: status 값이 유효 enum 범위', () => {
   assert.equal(invalid.length, 0);
 });
 
-test('contract: scheduled 상태면 scheduledDate가 ISO 파싱 가능', () => {
+test('contract: scheduled 글은 공개 시각(scheduledDate ?? date)이 파싱 가능', () => {
   const posts = getAllPostsIncludingHidden();
   for (const p of posts) {
-    if (p.status === 'scheduled') {
-      assert.ok(p.scheduledDate, `${p.slug}: scheduled인데 scheduledDate 없음`);
-      assert.ok(
-        !Number.isNaN(Date.parse(p.scheduledDate!)),
-        `${p.slug}: scheduledDate 파싱 불가 (${p.scheduledDate})`,
-      );
-    }
+    if (p.status !== 'scheduled') continue;
+    // scheduledDate는 시각까지 지정할 때만 쓰는 선택 필드. 없으면 date가 공개 시각.
+    const publishAt = p.scheduledDate ?? p.date;
+    assert.ok(
+      publishAt,
+      `${p.slug}: scheduled인데 scheduledDate도 date도 없음 (영원히 비공개)`,
+    );
+    assert.ok(
+      !Number.isNaN(Date.parse(publishAt)),
+      `${p.slug}: 공개 시각 파싱 불가 (${publishAt})`,
+    );
   }
 });
 
@@ -130,9 +134,7 @@ test('sitemap: 모든 공개 글이 sitemap에 포함됨', () => {
 
 test('sitemap: draft/미래 scheduled 글은 sitemap에 없음', () => {
   const xml = buildSitemapXml(getAllPosts(), TODAY);
-  const hidden = getAllPostsIncludingHidden().filter(
-    p => !isPostVisible({ status: p.status, scheduledDate: p.scheduledDate }),
-  );
+  const hidden = getAllPostsIncludingHidden().filter(p => !isPostVisible(p));
   for (const p of hidden) {
     // 한글/특수문자 slug의 hidden 글이 sitemap에 잘못 포함됐을 때 false pass 방지를 위해
     // public 검사와 동일한 인코딩 규칙으로 비교합니다 (디렉토리 구분자 / 는 보존).
