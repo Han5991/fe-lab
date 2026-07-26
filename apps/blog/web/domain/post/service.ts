@@ -18,12 +18,35 @@ function toPostSummary(post: PostData): PostSummary {
 // ---------- Public API ----------
 
 /**
+ * dev 서버에서만 draft·scheduled 글을 목록/상세에 함께 노출할지 여부.
+ *
+ * 글을 쓰는 중에 `/preview/`로 따로 들어가지 않고 실제 화면에서 바로 확인하기
+ * 위한 장치입니다. **이 게이트는 여기 한 곳에만 존재해야 합니다** — 공개 여부를
+ * 결정하는 지점이 늘어나는 순간 이번 리팩토링이 없앤 "판정 규칙 두 벌" 문제가
+ * 그대로 되살아납니다.
+ *
+ * `=== 'development'`로 정확히 비교하는 이유(`!== 'production'`이 아니라):
+ * 정적 산출물을 만드는 스크립트들(prebuild/predev의 sitemap·rss·search-index·
+ * llms-full·og-images)은 tsx로 직접 실행되어 NODE_ENV가 **undefined**입니다.
+ * 느슨하게 비교하면 그 스크립트들이 dev로 오인되어 draft가 sitemap과 RSS에
+ * 실려 나갑니다. next dev만 'development'를 설정합니다.
+ */
+function shouldIncludeHiddenPosts(): boolean {
+  return process.env.NODE_ENV === 'development';
+}
+
+/**
  * 공개된 포스트만 반환합니다 (published, 일정 지난 scheduled 포함).
+ *
+ * 단, dev 서버에서는 draft·scheduled도 함께 반환합니다.
+ * 목록·상세 화면은 실제로 비공개인 글에 배지/배너를 붙여 구분합니다.
  */
 export function getAllPosts(now: Date = new Date()): PostData[] {
+  const posts = readAllPosts();
+  if (shouldIncludeHiddenPosts()) return posts;
   // 화살표로 감싸 Array.filter의 index가 isPostVisible의 now에 주입되는 것을 방지.
   // now는 주입 가능(기본 빌드 시각) — 테스트가 고정 시각으로 경계를 검증할 수 있음.
-  return readAllPosts().filter(post => isPostVisible(post, now));
+  return posts.filter(post => isPostVisible(post, now));
 }
 
 /**
