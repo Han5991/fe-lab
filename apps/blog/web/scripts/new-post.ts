@@ -140,6 +140,27 @@ function yamlQuote(value: string): string {
   return `'${value.replace(/'/g, "''")}'`;
 }
 
+/**
+ * 예약 글의 `date`는 오늘이 아니라 **공개 예정일**이어야 합니다.
+ * 오늘 날짜를 넣으면 목록에 뜨는 날짜와 실제 공개일이 어긋납니다.
+ */
+function resolveDate(
+  status: Options['status'],
+  scheduledDate: string | undefined,
+  now: Date,
+): string {
+  if (status === 'scheduled' && scheduledDate) return scheduledDate.slice(0, 10);
+  return todayKST(now);
+}
+
+/**
+ * `scheduledDate`는 **시각까지 지정할 때만** 필요한 선택 필드입니다.
+ * 날짜만 주면 `date`가 KST 자정 기준 공개 시각으로 쓰이므로(visibility.ts) 중복입니다.
+ */
+function needsScheduledDate(scheduledDate: string | undefined): boolean {
+  return Boolean(scheduledDate) && !/^\d{4}-\d{2}-\d{2}$/.test(scheduledDate!);
+}
+
 export function buildFrontmatter(
   opts: Required<Pick<Options, 'title' | 'status' | 'tags'>> &
     Pick<Options, 'slug' | 'scheduledDate'>,
@@ -147,10 +168,10 @@ export function buildFrontmatter(
 ): string {
   const lines = ['---'];
   lines.push(`title: ${yamlQuote(opts.title)}`);
-  lines.push(`date: ${todayKST(now)}`);
+  lines.push(`date: ${resolveDate(opts.status, opts.scheduledDate, now)}`);
   lines.push(`status: ${opts.status}`);
-  if (opts.scheduledDate) {
-    lines.push(`scheduledDate: ${yamlQuote(opts.scheduledDate)}`);
+  if (needsScheduledDate(opts.scheduledDate)) {
+    lines.push(`scheduledDate: ${yamlQuote(opts.scheduledDate!)}`);
   }
   if (opts.slug) {
     lines.push(`slug: ${yamlQuote(opts.slug)}`);
@@ -171,12 +192,15 @@ function printUsage() {
 옵션:
   --series <name>          시리즈 폴더 (예: bundler)
   --status <s>             draft | published | scheduled (기본 draft)
-  --scheduled <iso>        예약 발행 일시. 자동으로 status: scheduled 적용
+  --scheduled <날짜>       예약 발행일. 자동으로 status: scheduled 적용.
+                           'YYYY-MM-DD'면 date로만 기록되고(KST 자정 공개),
+                           시각까지 주면 scheduledDate가 추가됩니다.
   --slug <slug>            URL용 영문 slug (선택)
   --tags <a,b,c>           쉼표 구분 태그
 
 예시:
   pnpm new-post "번들러 만들기 3편" --series bundler --tags bundler,build
+  pnpm new-post "릴리스 노트" --scheduled 2026-05-01
   pnpm new-post "릴리스 노트" --scheduled "2026-05-01T09:00:00+09:00"
 `);
 }

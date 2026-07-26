@@ -2,15 +2,23 @@ import { readFileSync, existsSync } from 'node:fs';
 import { relative, resolve, dirname, posix } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import matter from 'gray-matter';
-import { collectMarkdownFiles, hasFrontmatter } from '../lib/postFiles';
-import { hasAmbiguousTimezone } from '../lib/dates';
+import { collectMarkdownFiles, hasFrontmatter } from '@/lib/postFiles';
+import { hasAmbiguousTimezone } from '@/lib/dates';
+import { POST_STATUSES, isPostStatus, isPostFile } from '@/domain/post';
 
 const POSTS_DIR = resolve(process.cwd(), '..', 'posts');
-const VALID_STATUSES = ['published', 'draft', 'scheduled'] as const;
 
 /**
- * repository.ts / types.ts / visibility.ts / series.ts 에서 실제로 읽는 키 전체.
+ * repository.ts / types.ts / visibility.ts 에서 **실제로 읽는** 키 전체.
  * 여기에 없는 키가 frontmatter에 있으면 unknown-frontmatter-key 경고를 냅니다.
+ *
+ * 의도적으로 뺀 키:
+ * - `published` — status로 통합됨. 아래 legacy-published-field 규칙이 에러로 잡습니다.
+ * - `description` — excerpt와 역할이 겹치는데 어떤 코드도 읽지 않았습니다.
+ * - `draft`, `category` — 읽는 코드가 없는 유령 키.
+ * - `series` — 시리즈는 폴더 경로로 결정됩니다(repository.ts). frontmatter 값은 무시됩니다.
+ * - `order` — `_series.yml` 전용인데 collectMarkdownFiles가 `.yml`을 수집하지 않아
+ *             애초에 이 검사에 들어오지 않습니다.
  */
 const KNOWN_FRONTMATTER_KEYS = new Set([
   'title',
@@ -20,14 +28,8 @@ const KNOWN_FRONTMATTER_KEYS = new Set([
   'excerpt',
   'thumbnail',
   'tags',
-  'published',
   'status',
   'scheduledDate',
-  'series',
-  'draft',
-  // _series.yml 전용 키 (시리즈 메타 파일에서 gray-matter로 파싱되는 경우 대비)
-  'description',
-  'order',
 ]);
 
 type Severity = 'error' | 'warning';
@@ -62,16 +64,37 @@ export function validatePost(record: PostRecord, raw: string): Issue[] {
   const { data, relPath, absPath } = record;
   const issues: Issue[] = [];
 
-  const hasAnyVisibilityField =
-    'status' in data || 'published' in data || 'slug' in data;
-  if (!hasAnyVisibilityField) {
+  // 폐기된 published 필드 — status로 통합됨. status와 공존하면 조용히 무시되므로 에러.
+  if ('published' in data) {
+    issues.push({
+      file: relPath,
+      line: findFrontmatterLine(raw, 'published'),
+      severity: 'error',
+      rule: 'legacy-published-field',
+      message: `\`published\`는 더 이상 쓰지 않습니다. \`status: ${POST_STATUSES.join(' | ')}\`로 바꾸세요. (\`status\`가 함께 있으면 \`published\`는 조용히 무시됩니다)`,
+    });
+  }
+
+  if ('status' in data && !isPostStatus(data.status)) {
+    issues.push({
+      file: relPath,
+      line: findFrontmatterLine(raw, 'status'),
+      severity: 'error',
+      rule: 'invalid-status',
+      message: `\`status\`는 ${POST_STATUSES.join(', ')} 중 하나여야 합니다.`,
+    });
+  }
+
+  // 유효한 status가 없으면 빌드에서 제외됩니다 (repository.ts의 parsePost와 동일 규칙).
+  // published가 남아 있는 경우는 위에서 이미 에러로 잡았으므로 여기서 조용히 넘어가지 않습니다.
+  if (!isPostFile(data) && !('published' in data) && !('status' in data)) {
     issues.push({
       file: relPath,
       line: 1,
       severity: 'warning',
       rule: 'meta-file-skipped',
       message:
-        '`status`, `published`, `slug` 중 어느 것도 없어 빌드에서 제외됩니다. 메타 파일이면 무시해도 됩니다.',
+        '유효한 `status`가 없어 빌드에서 제외됩니다. 메타 파일이면 무시해도 됩니다.',
     });
     return issues;
   }
@@ -154,32 +177,22 @@ export function validatePost(record: PostRecord, raw: string): Issue[] {
     }
   }
 
-  if ('status' in data) {
-    if (
-      typeof data.status !== 'string' ||
-      !VALID_STATUSES.includes(data.status as (typeof VALID_STATUSES)[number])
-    ) {
-      issues.push({
-        file: relPath,
-        line: findFrontmatterLine(raw, 'status'),
-        severity: 'error',
-        rule: 'invalid-status',
-        message: `\`status\`는 ${VALID_STATUSES.join(', ')} 중 하나여야 합니다.`,
-      });
-    }
-  }
-
   if (data.status === 'scheduled') {
-    if (typeof data.scheduledDate !== 'string') {
+    // 공개 시각은 scheduledDate가 있으면 그것, 없으면 date (visibility.ts와 동일 규칙).
+    // 둘 다 없으면 영원히 비공개가 되므로 에러로 막습니다.
+    if (typeof data.scheduledDate !== 'string' && data.date == null) {
       issues.push({
         file: relPath,
         line: findFrontmatterLine(raw, 'status'),
         severity: 'error',
         rule: 'scheduled-without-date',
         message:
-          '`status: scheduled`인 경우 `scheduledDate` 필드가 필수입니다. 누락 시 항상 비공개 처리됩니다.',
+          '`status: scheduled`에는 `scheduledDate` 또는 `date` 중 하나가 필요합니다. 둘 다 없으면 영원히 비공개 처리됩니다. (시각까지 지정할 때만 `scheduledDate`를 쓰고, 날짜만 쓸 거면 `date`로 충분합니다)',
       });
-    } else if (Number.isNaN(Date.parse(data.scheduledDate))) {
+    } else if (
+      typeof data.scheduledDate === 'string' &&
+      Number.isNaN(Date.parse(data.scheduledDate))
+    ) {
       issues.push({
         file: relPath,
         line: findFrontmatterLine(raw, 'scheduledDate'),
@@ -187,7 +200,10 @@ export function validatePost(record: PostRecord, raw: string): Issue[] {
         rule: 'invalid-scheduled-date',
         message: `\`scheduledDate\`가 유효한 날짜가 아닙니다: ${data.scheduledDate}`,
       });
-    } else if (hasAmbiguousTimezone(data.scheduledDate)) {
+    } else if (
+      typeof data.scheduledDate === 'string' &&
+      hasAmbiguousTimezone(data.scheduledDate)
+    ) {
       issues.push({
         file: relPath,
         line: findFrontmatterLine(raw, 'scheduledDate'),
@@ -198,14 +214,26 @@ export function validatePost(record: PostRecord, raw: string): Issue[] {
     }
   }
 
-  if ('tags' in data && !Array.isArray(data.tags)) {
-    issues.push({
-      file: relPath,
-      line: findFrontmatterLine(raw, 'tags'),
-      severity: 'error',
-      rule: 'invalid-tags',
-      message: '`tags`는 배열이어야 합니다. 예: `tags: [bundler, build]`',
-    });
+  if ('tags' in data) {
+    // 배열이 아니거나 문자열 아닌 원소가 섞이면 repository.ts가 tags를 통째로
+    // undefined로 떨어뜨립니다(조용한 유실). 그래서 원소 타입까지 검사합니다.
+    if (!Array.isArray(data.tags)) {
+      issues.push({
+        file: relPath,
+        line: findFrontmatterLine(raw, 'tags'),
+        severity: 'error',
+        rule: 'invalid-tags',
+        message: '`tags`는 배열이어야 합니다. 예: `tags: [bundler, build]`',
+      });
+    } else if (data.tags.some(tag => typeof tag !== 'string')) {
+      issues.push({
+        file: relPath,
+        line: findFrontmatterLine(raw, 'tags'),
+        severity: 'error',
+        rule: 'invalid-tags',
+        message: `\`tags\`의 모든 원소는 문자열이어야 합니다. 문자열이 아닌 값이 하나라도 있으면 태그 전체가 무시됩니다: ${JSON.stringify(data.tags)}`,
+      });
+    }
   }
 
   if ('thumbnail' in data && typeof data.thumbnail === 'string') {
