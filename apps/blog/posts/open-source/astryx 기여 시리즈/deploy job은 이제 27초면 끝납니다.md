@@ -17,13 +17,13 @@ thumbnail: '/og/astryx-deploy-pipeline-parallel.png'
 
 ## 들어가며
 
-> **astryx 기여 시리즈**
+> **느린 CI 뜯어고치기**
 >
 > 1. 매일 쓰던 getByRole 때문에 테스트가 26배 느렸습니다
 > 2. 로컬에선 그대로인데 CI에서만 빨라지는 최적화가 있습니다
-> 3. GitHub Actions끼리 서로 push를 덮어쓸 때 생기는 일
-> 4. fork PR을 머지했더니 CI가 빨간불이 됐습니다 — permissions: write가 무시된 이유
-> 5. deploy job은 이제 27초면 끝납니다 **(현재 글)**
+> 3. 캐시가 hit인데 매번 콜드 빌드였습니다
+> 4. deploy job은 이제 27초면 끝납니다 **(현재 글)**
+> 5. CI가 빨라지자 숨어 있던 함정 두 개가 드러났습니다
 
 2026년 7월, 열흘 남짓 동안 facebook/astryx에 PR 17개를 머지시켰습니다. astryx는 메타가 오픈소스로 운영하는 내부 도구용 디자인 시스템입니다. main에 머지될 때마다 Deploy 워크플로우가 gh-pages로 Storybook과 샌드박스를 배포합니다. 이번 글의 주인공이 바로 그 워크플로우입니다.
 

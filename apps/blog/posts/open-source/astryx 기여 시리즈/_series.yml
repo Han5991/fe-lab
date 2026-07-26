@@ -3,6 +3,6 @@ description: Meta 오픈소스 astryx의 CI를 뜯어고치며 머지한 PR 17�
 order:
   - getbyrole-performance
   - astryx-vitest-project-split
+  - astryx-pr-ci-parallel-cache
   - astryx-deploy-pipeline-parallel
-  - astryx-gh-pages-deploy-race
-  - astryx-fork-pr-token-403
+  - astryx-ci-race-and-permissions
