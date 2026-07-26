@@ -2,6 +2,7 @@
 title: '매일 쓰던 getByRole 때문에 테스트가 26배 느렸습니다 — RTL·jsdom 성능 분석'
 date: '2026-07-26'
 status: draft
+published: false
 slug: 'getbyrole-performance'
 thumbnail: '/og/getbyrole-performance.png'
 excerpt: '매일 쓰던 getByRole이 사실은 트리 전체를 훑고 있었습니다. Meta 디자인 시스템에서 34초짜리 테스트 파일의 범인을 찾아 1.3초로 줄이기까지, RTL과 jsdom 내부에서 실제로 벌어지는 일.'
@@ -121,17 +122,17 @@ query  : 450 ms
 ```js
 // @testing-library/dom v10.4.1 — queries/role.js
 Array.from(container.querySelectorAll(makeRoleSelector(role)))
-  .filter(/* ① 이 노드의 role이 정말 맞는가 */)
-  .filter(/* ② aria 속성 조건 (checked, expanded, ...) */)
+  .filter(/* role 필터 — 이 노드의 role이 정말 맞는가 */)
+  .filter(/* aria 필터 — checked, expanded, ... */)
   .filter(element => {
     if (name === undefined) return true;
     return matches(computeAccessibleName(element), element, name, text => text);
-    //              ^^^^^^^^^^^^^^^^^^^^ ③ 이름을 계산해서 비교
+    //              ^^^^^^^^^^^^^^^^^^^^ name 필터 — 이름을 계산해서 비교
   })
-  .filter(/* ④ description 조건 */)
+  .filter(/* description 필터 */)
   .filter(element => {
     return hidden === false ? isInaccessible(element) === false : true;
-    //                        ^^^^^^^^^^^^^^ ⑤ 화면에 보이는가
+    //                        ^^^^^^^^^^^^^^ hidden 필터 — 화면에 보이는가
   });
 ```
 
@@ -140,8 +141,8 @@ Array.from(container.querySelectorAll(makeRoleSelector(role)))
 ```js
 screen.getByRole('button', {name: 'Open calendar'});
 //                ^^^^^^^   ^^^^^^^^^^^^^^^^^^^^^^   + 기본값 hidden: false
-//                ① role로  ③ 이름으로 필터           ⑤ 안 보이는 것 제외
-//                후보 수집
+//                role 필터  name 필터                hidden 필터
+//                후보 수집  이름으로 걸러냄          안 보이는 것 제외
 ```
 
 여기서 `computeAccessibleName`은 **접근성 이름**을 구하는 함수입니다.  
@@ -149,12 +150,12 @@ screen.getByRole('button', {name: 'Open calendar'});
 
 #### 그런데 순서가 이상합니다
 
-체인을 다시 보세요. **③ 이름 계산이 ⑤ 가시성 검사보다 먼저 옵니다.**
+체인을 다시 보세요. **name 필터가 hidden 필터보다 먼저 옵니다.**
 
 `.filter()`는 앞에서부터 순서대로 실행됩니다.  
 그러니까 이런 일이 벌어집니다.
 
-> 화면에 안 보여서 **어차피 ⑤에서 걸러질 노드들**의 이름을,  
+> 화면에 안 보여서 **어차피 hidden 필터에서 걸러질 노드들**의 이름을,  
 > 안 보인다는 걸 알아내기도 **전에** 전부 계산한다.
 
 그리고 하나 더. `.filter()`니까 **원하는 걸 찾아도 멈추지 않습니다.**  
@@ -177,13 +178,13 @@ DateRangeInput
 그러니 트리거 버튼 하나를 찾으려고 `getByRole('button', {name})`을 부르면,
 
 1. `role=button` 후보를 긁어모읍니다 → **86개**
-2. 86개 **전부**의 접근성 이름을 계산합니다 ← ③
-3. 그다음에야 "아, 85개는 안 보이는 거였네" 하고 걸러냅니다 ← ⑤
+2. 86개 **전부**의 접근성 이름을 계산합니다 ← name 필터
+3. 그다음에야 "아, 85개는 안 보이는 거였네" 하고 걸러냅니다 ← hidden 필터
 
 **보이지도 않을 버튼 85개의 이름을, 안 보인다는 걸 알기도 전에 전부 계산하고 있었던 겁니다.**
 
 여기까지 읽으면 자연스럽게 의심이 갑니다.  
-450ms를 먹은 건 ③번, 이름 계산 아닐까?
+450ms를 먹은 건 name 필터, 그러니까 이름 계산 아닐까?
 
 확인해봐야죠.
 
@@ -193,20 +194,20 @@ DateRangeInput
 
 의심은 의심일 뿐입니다. 재봐야 압니다.
 
-문제는 `getByRole` 안에서 ①③⑤가 한 덩어리로 돌아간다는 겁니다.  
+문제는 `getByRole` 안에서 role·name·hidden 필터가 한 덩어리로 돌아간다는 겁니다.  
 프로파일러를 붙여도 "이 함수가 느리다"까지는 알려주지만, **셋 중 누구인지**는 제가 갈라내야 합니다.
 
 방법은 하나뿐입니다. **떼어내고 다시 재는 것.**
 
 그래서 **하한선**을 먼저 만들었습니다.  
-"③도 ⑤도 없이, ① 후보 수집만 하면 얼마나 걸리나?"
+"name 필터도 hidden 필터도 없이, role 필터로 후보만 모으면 얼마나 걸리나?"
 
 ```js
-// ① + ③ + ⑤  — 원래 쓰던 쿼리
+// role + name + hidden  — 원래 쓰던 쿼리
 screen.getByRole('button', {name: 'Open calendar'});
 // → 450ms
 
-// ① 만  — 이름 필터와 가시성 검사를 둘 다 끔
+// role 만  — 이름 필터와 가시성 검사를 둘 다 끔
 screen.getAllByRole('button', {hidden: true});
 // → 29ms
 ```
@@ -217,7 +218,7 @@ screen.getAllByRole('button', {hidden: true});
 
 ```js
 .filter(element => {
-  if (name === undefined) return true;      // ③ name을 안 주면 통째로 통과
+  if (name === undefined) return true;      // name을 안 주면 통째로 통과
   return matches(computeAccessibleName(element), ...);
 })
 .filter(element => {
@@ -227,14 +228,14 @@ screen.getAllByRole('button', {hidden: true});
 ```
 
 `hidden: true`를 같이 넣은 데는 이유가 있습니다.  
-⑤ 가시성 검사도 결국 **스타일을 들여다보는 일**이라, 이것까지 꺼야 순수한 바닥값이 나오기 때문입니다.
+hidden 필터도 결국 **스타일을 들여다보는 일**이라, 이것까지 꺼야 순수한 바닥값이 나오기 때문입니다.
 
 정리하면 이렇습니다.
 
 | 무엇을 쟀나 | 시간 | 비중 |
 | :--- | ---: | ---: |
-| ① 후보 수집만 | 29ms | 6% |
-| **③ 이름 계산 + ⑤ 가시성 검사** | **421ms** | **94%** |
+| role 필터 (후보 수집만) | 29ms | 6% |
+| **name 필터 + hidden 필터** | **421ms** | **94%** |
 | 합계 | 450ms | 100% |
 
 `role=button` 노드 86개를 긁어모으는 것 자체는 29ms면 끝납니다.  
@@ -413,23 +414,23 @@ jsdom 구현을 열어봤습니다.
 // jsdom — lib/jsdom/browser/Window.js
 window.getComputedStyle = function (elt, pseudoElt = undefined) {
   // ...
-  const declaration = new CSSStyleDeclaration();          // ① 빈 객체를 새로 만들고
+  const declaration = new CSSStyleDeclaration();          // 1. 빈 객체를 새로 만들고
 
-  const elementDeclaration = getDeclarationForElement(elt); // ② 캐스케이드를 계산해서
+  const elementDeclaration = getDeclarationForElement(elt); // 2. 캐스케이드를 계산해서
   forEach.call(elementDeclaration, property => {
-    declaration.setProperty(...);                          // ③ 프로퍼티를 하나씩 옮겨 담고
+    declaration.setProperty(...);                          // 3. 프로퍼티를 하나씩 옮겨 담고
   });
 
   const declarations = Object.keys(propertiesWithResolvedValueImplemented);
   forEach.call(declarations, property => {
-    declaration.setProperty(property, getResolvedValue(elt, property)); // ④ 최종값을 계산한다
+    declaration.setProperty(property, getResolvedValue(elt, property)); // 4. 최종값을 계산한다
   });
 
   return declaration;
 };
 ```
 
-②의 캐스케이드에는 캐시가 있습니다. 그런데 그 바로 옆에 이런 코드가 있습니다.
+2번의 캐스케이드에는 캐시가 있습니다. 그런데 그 바로 옆에 이런 코드가 있습니다.
 
 ```js
 // jsdom — lib/jsdom/living/helpers/style-rules.js
@@ -452,34 +453,34 @@ if (elementImpl._attached) {
 ```js
 // 버튼 85개 (각각 span 자식 1개) / 스타일시트 규칙 2000개
 let t = performance.now();
-root.innerHTML = markup;                                    // ① 렌더
+root.innerHTML = markup;                                    // 1. 렌더
 const render = performance.now() - t;
 
 t = performance.now();
-buttons.forEach(b => window.getComputedStyle(b).display);   // ② 첫 조회
+buttons.forEach(b => window.getComputedStyle(b).display);   // 2. 첫 조회
 const cold = performance.now() - t;
 
 t = performance.now();
-buttons.forEach(b => window.getComputedStyle(b).display);   // ③ 다시 조회
+buttons.forEach(b => window.getComputedStyle(b).display);   // 3. 다시 조회
 const warm = performance.now() - t;
 
 root.setAttribute('data-rerender', '1');                    // DOM을 한 글자 건드린다
 t = performance.now();
-buttons.forEach(b => window.getComputedStyle(b).display);   // ④ 또 조회
+buttons.forEach(b => window.getComputedStyle(b).display);   // 4. 또 조회
 const afterMutation = performance.now() - t;
 ```
 
 결과입니다.
 
 ```
-① 렌더 (DOM 85개 생성 + 트리 삽입) :     9.7 ms
-② 스타일 첫 조회 85회 (콜드)        :   463.4 ms
-③ 스타일 재조회 85회 (캐시 히트)     :     8.8 ms
-④ DOM 한 번 건드린 뒤 85회          :   266.5 ms
+1. 렌더 (DOM 85개 생성 + 트리 삽입) :     9.7 ms
+2. 스타일 첫 조회 85회 (콜드)       :   463.4 ms
+3. 스타일 재조회 85회 (캐시 히트)    :     8.8 ms
+4. DOM 한 번 건드린 뒤 85회         :   266.5 ms
 ```
 
-②가 ①의 **47배**입니다. 그리고 ③은 ②의 **1/53**입니다.  
-④를 보세요. 속성 하나 추가했을 뿐인데 다시 비싸집니다.
+2번이 1번의 **47배**입니다. 그리고 3번은 2번의 **1/53**입니다.  
+4번을 보세요. 속성 하나 추가했을 뿐인데 다시 비싸집니다.
 
 이유는 이겁니다.
 
@@ -591,10 +592,10 @@ export function getButton(name: string | RegExp): HTMLElement {
 
 장치는 두 개입니다.
 
-**① `{hidden: true}`** — 3장의 ⑤번 필터를 통째로 건너뜁니다.  
+**1. `{hidden: true}`** — 3장의 hidden 필터를 통째로 건너뜁니다.  
 가시성 검사를 위한 `getComputedStyle` 호출이 사라집니다.
 
-**② 스타일 스텁 주입** — 이름 계산 안에서 부르던 `getComputedStyle`을 상수 응답으로 바꿉니다.  
+**2. 스타일 스텁 주입** — 이름 계산 안에서 부르던 `getComputedStyle`을 상수 응답으로 바꿉니다.  
 캐스케이드를 계산하는 대신 `"block"`, `"visible"`을 즉시 돌려주니 비용이 0에 수렴합니다.
 
 그리고 하나 더 있습니다.
