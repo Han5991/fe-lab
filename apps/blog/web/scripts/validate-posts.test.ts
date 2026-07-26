@@ -134,6 +134,38 @@ test('validatePost: scheduled + date만 있으면 이슈 없음 (date 폴백)', 
   );
 });
 
+test('validatePost: 무따옴표 scheduledDate(YAML Date) → unquoted-scheduled-date', () => {
+  // 무따옴표 datetime은 YAML이 Date로 파싱 → repository가 버림 → 공개 시각이
+  // date(KST 자정)로 폴백 → 의도(09:00+09:00)보다 9시간 일찍 공개된다.
+  assert.ok(
+    rules({
+      title: 'x',
+      status: 'scheduled',
+      date: '2026-06-01',
+      scheduledDate: new Date('2026-06-01T09:00:00+09:00'),
+    }).includes('unquoted-scheduled-date'),
+  );
+});
+
+test('validatePost: 문자열 아닌 slug/excerpt/thumbnail → non-string-field', () => {
+  // slug가 무시되면 파일 경로 기반 slug로 대체되어 URL이 조용히 바뀐다.
+  assert.ok(
+    rules({ title: 'x', status: 'published', slug: 123 }).includes(
+      'non-string-field',
+    ),
+  );
+  assert.ok(
+    rules({ title: 'x', status: 'published', excerpt: 123 }).includes(
+      'non-string-field',
+    ),
+  );
+  assert.ok(
+    rules({ title: 'x', status: 'published', thumbnail: 123 }).includes(
+      'non-string-field',
+    ),
+  );
+});
+
 test('validatePost: scheduledDate가 잘못됨 → invalid-scheduled-date', () => {
   assert.ok(
     rules({ title: 'x', status: 'scheduled', scheduledDate: 'bad' }).includes(

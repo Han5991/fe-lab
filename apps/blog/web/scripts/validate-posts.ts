@@ -112,6 +112,22 @@ export function validatePost(record: PostRecord, raw: string): Issue[] {
     }
   }
 
+  // 문자열이어야 하는 키가 다른 타입이면 repository.ts의 toOptionalString이 값을
+  // 통째로 버리고 폴백합니다(slug는 파일 경로로, excerpt는 본문 앞 160자로,
+  // thumbnail은 생성 OG 카드로). 특히 `slug: 123` 같은 실수는 **URL이 조용히
+  // 바뀌는** 결과가 되므로 에러로 막습니다.
+  for (const key of ['slug', 'excerpt', 'thumbnail'] as const) {
+    if (key in data && typeof data[key] !== 'string') {
+      issues.push({
+        file: relPath,
+        line: findFrontmatterLine(raw, key),
+        severity: 'error',
+        rule: 'non-string-field',
+        message: `\`${key}\`는 문자열이어야 합니다. 다른 타입이면 값이 무시되고 기본값으로 폴백합니다${key === 'slug' ? ' (slug는 파일 경로 기반으로 대체되어 URL이 바뀝니다)' : ''}: ${JSON.stringify(data[key])}`,
+      });
+    }
+  }
+
   if (!data.title || typeof data.title !== 'string') {
     issues.push({
       file: relPath,
@@ -175,6 +191,20 @@ export function validatePost(record: PostRecord, raw: string): Issue[] {
         message: `\`updatedAt\`에 timezone offset이 없어 빌드 환경(UTC)과 로컬(KST)에서 날짜가 어긋날 수 있습니다. \`+09:00\`/\`Z\`를 명시하거나 'YYYY-MM-DD' 형식을 쓰세요: ${data.updatedAt}`,
       });
     }
+  }
+
+  // scheduledDate는 반드시 따옴표로 감싼 문자열이어야 합니다.
+  // 무따옴표 datetime(`scheduledDate: 2026-06-01T09:00:00+09:00`)은 YAML이 Date
+  // 객체로 파싱하고, repository.ts가 문자열이 아닌 값을 버립니다. 그러면 공개 시각이
+  // date로 폴백되는데 date는 KST 자정 기준이라 **의도보다 9시간 일찍 공개**됩니다.
+  if ('scheduledDate' in data && typeof data.scheduledDate !== 'string') {
+    issues.push({
+      file: relPath,
+      line: findFrontmatterLine(raw, 'scheduledDate'),
+      severity: 'error',
+      rule: 'unquoted-scheduled-date',
+      message: `\`scheduledDate\`는 따옴표로 감싼 문자열이어야 합니다. 무따옴표로 쓰면 YAML이 Date 객체로 파싱해 값이 버려지고, 공개 시각이 \`date\`(KST 자정)로 폴백되어 의도보다 9시간 일찍 공개됩니다. 예: \`scheduledDate: '2026-06-01T09:00:00+09:00'\``,
+    });
   }
 
   if (data.status === 'scheduled') {
