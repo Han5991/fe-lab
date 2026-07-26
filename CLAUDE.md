@@ -134,7 +134,7 @@ pnpm blog-build  # Build blog application
 
 # 블로그 글쓰기 도구 (apps/blog/web 디렉토리에서 실행)
 pnpm new-post "글 제목" --series bundler --tags a,b      # 새 포스트 스캐폴딩
-pnpm new-post "예약글" --scheduled "2026-05-01T09:00+09:00"  # 예약 발행 글
+pnpm new-post "예약글" --scheduled 2026-05-01            # 예약 발행 글 (KST 자정 공개)
 pnpm lint:posts                                          # frontmatter 검증 (필수 필드, 끊긴 이미지, 중복 slug 등)
 ```
 
@@ -263,16 +263,41 @@ The blog (`apps/blog/web/`) is a **statically generated (SSG) Next.js applicatio
 
 1. **콘텐츠 작성**: `apps/blog/posts/` 디렉토리에 Markdown 파일 작성
    - 새 포스트는 `pnpm new-post "제목"` 스캐폴딩 CLI로 시작 권장 (frontmatter 자동 생성)
-   - Frontmatter: `title`, `date`, `slug`, `excerpt`, `thumbnail`, `tags`, `published`, `status`, `scheduledDate`
    - 폴더 구조로 시리즈(series) 자동 분류 — `posts/{series}/` 폴더에 `_series.yml`을 두면 표시명/설명/order 정의 가능
-2. **콘텐츠 공개 제어** (`isPostVisible()` 헬퍼로 판단):
-   - `published: true` (기존 방식, 하위호환)
-   - `status: 'published'` — 공개
-   - `status: 'draft'` — 비공개 (빌드에서 제외)
-   - `status: 'scheduled'` — **주의**: 반드시 `scheduledDate` (예: `scheduledDate: '2026-03-16T09:00:00+09:00'`) 값을 함께 명시해야 합니다. 누락 시 항상 비공개 처리됩니다.
-   - `isPostVisible()` 로직은 `posts.ts`, `generate-sitemap.mjs`, `generate-rss.mjs`에 동일하게 적용
+
+   **Frontmatter 전체 목록** — 여기 없는 키는 `lint:posts`가 `unknown-frontmatter-key`로
+   경고합니다. `domain/post/types.ts`의 `RawFrontmatter`가 단일 출처입니다.
+
+   | 키 | 필수 | 설명 |
+   | :--- | :---: | :--- |
+   | `status` | ✅ | `published` \| `draft` \| `scheduled`. **이 키가 없으면 포스트가 아니라 메타 노트로 간주되어 빌드에서 통째로 제외됩니다.** |
+   | `title` | ✅ | 없으면 파일명으로 폴백하지만 `lint:posts`가 에러 |
+   | `date` |  | `'YYYY-MM-DD'`. `scheduled`일 때는 공개 시각으로도 쓰임 |
+   | `slug` |  | URL. 없으면 파일 경로에서 유도 |
+   | `excerpt` |  | 없으면 본문 앞 160자 |
+   | `thumbnail` |  | 없으면 빌드 시 OG 카드(`/og/{slug}.png`) 자동 생성 |
+   | `tags` |  | 문자열 배열. 문자열 아닌 원소가 섞이면 태그 전체가 무시됨 |
+   | `updatedAt` |  | Schema.org `dateModified`, sitemap `lastmod`에 사용 |
+   | `scheduledDate` |  | **시각까지 지정할 때만.** 날짜만이면 `date`로 충분 |
+
+   `series`는 frontmatter가 아니라 **폴더 경로**로 결정됩니다(`repository.ts`).
+
+2. **콘텐츠 공개 제어** — 축은 `status` **하나뿐**입니다 (`domain/post/visibility.ts`):
+   - `status: published` — 공개
+   - `status: draft` — 비공개 (빌드에서 제외)
+   - `status: scheduled` — 공개 시각이 지나면 공개. 공개 시각은 `scheduledDate ?? date`
+   - status가 없거나 enum 밖 → **비공개**(fail-closed)이자 아예 포스트로 취급되지 않음
+
+   `status`는 **발행 의도**이고 실제 공개 여부는 `isPostVisible()`의 계산 결과입니다.
+   예약일이 지난 글의 `status`를 손으로 `published`로 되돌릴 필요는 없습니다.
+
+   > 예전 `published: boolean` 필드는 **제거**되었습니다. `status`와 공존하면 조용히
+   > 무시되는 구조였고, 판정 규칙이 `repository.ts`와 `validate-posts.ts`에 따로
+   > 존재해 어긋나 있었습니다. 지금은 `isPostFile()` 하나를 양쪽이 공유하고,
+   > `published`가 남아 있으면 `lint:posts`가 `legacy-published-field` 에러를 냅니다.
+
 3. **빌드 전 처리** (`prebuild` → `scripts/build-content.ts` 통합 진입점):
-   - `validate-posts.ts`: frontmatter 필수 필드, `scheduled` ↔ `scheduledDate` 정합성, 끊긴 이미지, 중복 slug 검사 (prebuild에서만 실행, predev에서는 skip)
+   - `validate-posts.ts`: frontmatter 필수 필드, 폐기된 `published` 필드, `scheduled`의 공개 시각 존재 여부, 끊긴 이미지, 중복 slug 검사 (prebuild에서만 실행, predev에서는 skip)
    - `sync-posts.mjs`: 포스트 디렉토리의 이미지/미디어 파일을 `public/posts/`에 복사 (mtime 기반 incremental — 변경분만 복사)
    - `generate-sitemap.ts`: 발행된 글 목록으로 `sitemap.xml` 생성
    - `generate-rss.ts`: RSS 피드(`rss.xml`) 생성
@@ -290,7 +315,7 @@ The blog (`apps/blog/web/`) is a **statically generated (SSG) Next.js applicatio
 | 도구                                          | 설명                                                                                                                       |
 | :-------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------- |
 | `pnpm new-post "제목"`                        | 새 포스트 스캐폴딩. `--series`, `--tags`, `--scheduled`, `--slug`, `--status` 옵션 지원. 한글 제목/파일명 그대로 사용 가능 |
-| `pnpm lint:posts`                             | frontmatter 검증. 정책: frontmatter delimiter(`---`)가 없는 파일은 메타 노트로 간주하고 조용히 skip                        |
+| `pnpm lint:posts`                             | frontmatter 검증. 메타 노트 정책: frontmatter delimiter(`---`)가 없거나 `status`가 없으면 빌드 대상이 아닌 것으로 보고 skip |
 | `/preview/[...slug]` 라우트                   | dev 환경에서만 동작하는 draft·scheduled 글 미리보기. prod 빌드는 placeholder 1개(`__disabled__`) + 즉시 `notFound`로 차단  |
 | `_series.yml`                                 | 시리즈 폴더에 두면 시리즈 nav가 `order` 기준 chronological 정렬 + 표시명을 폴더명 대신 사용                                |
 | `<callout type="warning\|info\|tip\|danger">` | 마크다운 헬퍼 컴포넌트 (raw HTML로 작성). `<figure>` + `<figcaption>`, `<file-tree>`도 지원                                |
