@@ -7,8 +7,10 @@ import {
 } from '@/domain/post';
 import { getSeriesMeta, sortPostsBySeriesOrder } from '@/domain/post/series';
 import { resolveThumbnailUrl } from '@/domain/post/thumbnail';
+import { isPostVisible } from '@/domain/post/visibility';
 import { notFound } from 'next/navigation';
 import PostClient from './PostClient';
+import { PreviewBanner } from '@/src/components/preview/PreviewBanner';
 import { PostNavigation } from '@/src/components/post/PostNavigation';
 import {
   buildPostMetadata,
@@ -87,12 +89,23 @@ export default async function PostPage({ params }: Props) {
   const jsonLd = buildPostJsonLd(post, slug);
   const breadcrumbJsonLd = buildBreadcrumbJsonLd(post, slug);
 
+  // dev 서버는 draft·scheduled 글도 이 경로로 열어준다(service.ts). 프로덕션과
+  // 똑같이 렌더되면 발행 여부를 착각하므로 실제로 비공개일 때만 배너를 얹는다.
+  const showHiddenBanner =
+    process.env.NODE_ENV === 'development' && !isPostVisible(post);
+
   return (
     <>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }}
       />
+      {showHiddenBanner && (
+        <PreviewBanner
+          status={post.status}
+          scheduledDate={post.scheduledDate}
+        />
+      )}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbJsonLd) }}

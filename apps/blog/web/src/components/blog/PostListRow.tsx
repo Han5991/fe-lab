@@ -4,6 +4,7 @@ import type { PostSummary } from '@/domain/post';
 import { encodePostSlug } from '@/domain/post/utils';
 import { fmtDate } from '@/lib/format';
 import { tagPillStyle } from './tagPillStyle';
+import { HiddenPostBadge } from './HiddenPostBadge';
 
 interface PostListRowProps {
   post: PostSummary;
@@ -38,6 +39,7 @@ export const PostListRow = ({ post, views }: PostListRowProps) => {
         })}
       >
         {post.title}
+        <HiddenPostBadge post={post} />
       </h3>
 
       {post.excerpt && (
