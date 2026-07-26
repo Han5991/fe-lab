@@ -1,10 +1,10 @@
 ---
 title: '[Typescript로 설계하는 프로젝트] id?: string을 버려라. 상태가 다르면 타입도 달라야 한다.'
-thumbnail: 'ts-tagged-type-thumb.png'
-description: '무분별한 옵셔널 타입이 낳은 안티 패턴에서 벗어나, Tagged Type(Discriminated Union)과 도메인 모델링으로 안전하고 견고하게 데이터를 설계하는 방법을 알아봅니다.'
 date: 2026-03-16
+status: published
 slug: 'typescript-domain-modeling-without-optional'
-published: true
+excerpt: '무분별한 옵셔널 타입이 낳은 안티 패턴에서 벗어나, Tagged Type(Discriminated Union)과 도메인 모델링으로 안전하고 견고하게 데이터를 설계하는 방법을 알아봅니다.'
+thumbnail: 'ts-tagged-type-thumb.png'
 tags: ['TypeScript', 'Architecture', 'Data Modeling']
 ---
 

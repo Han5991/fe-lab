@@ -1,7 +1,7 @@
 ---
 title: '[Typescript로 설계하는 프로젝트] "같은 로직 또 복사했어요?" Domain 모델로 책임 분리하기'
 date: '2025-06-15'
-published: true
+status: published
 slug: 'typescript-project-domain-design'
 thumbnail: '/og/typescript-project-domain-design.png'
 ---

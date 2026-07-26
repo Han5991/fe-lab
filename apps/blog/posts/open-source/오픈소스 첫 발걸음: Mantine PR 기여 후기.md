@@ -1,7 +1,7 @@
 ---
 title: '오픈소스 첫 발걸음: Mantine PR 기여 후기'
 date: '2025-04-22'
-published: true
+status: published
 slug: 'first-open-source-contribution'
 thumbnail: '/og/first-open-source-contribution.png'
 ---

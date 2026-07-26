@@ -1,7 +1,7 @@
 ---
 title: 'React로 우아하게 Error 핸들링 하기'
 date: '2025-03-02'
-published: true
+status: published
 slug: 'react-error'
 thumbnail: '/og/react-error.png'
 ---

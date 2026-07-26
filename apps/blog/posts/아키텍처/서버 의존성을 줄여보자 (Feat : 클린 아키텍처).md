@@ -1,7 +1,7 @@
 ---
 title: '서버 의존성을 줄여보자 (Feat : 클린 아키텍처)'
 date: '2025-01-13'
-published: true
+status: published
 slug: 'reduce-server-dependency-clean-architecture'
 thumbnail: '/og/reduce-server-dependency-clean-architecture.png'
 ---

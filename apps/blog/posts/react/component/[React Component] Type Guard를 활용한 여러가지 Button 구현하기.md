@@ -1,7 +1,7 @@
 ---
 title: 'Type Guard를 활용한 여러가지 Button 구현하기'
 date: '2025-06-30'
-published: true
+status: published
 slug: 'react-component-type-guard-button'
 thumbnail: '/og/react-component-type-guard-button.png'
 ---

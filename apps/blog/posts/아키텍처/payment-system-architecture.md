@@ -1,9 +1,10 @@
 ---
 title: '결제 시스템 리팩토링: if문 지옥에서 디자인 패턴(Factory, Adapter)으로 탈출하기'
-thumbnail: 'payment-system-architecture-thumb.png'
 date: '2026-01-24'
-published: true
+status: published
 slug: 'payment-system-architecture'
+excerpt: '복잡한 비즈니스 로직을 if문 지옥에서 구해내는 Adapter, Factory, Strategy 패턴 적용기. Zod를 활용한 타입 안전성 확보와 Code Splitting 팁까지.'
+thumbnail: 'payment-system-architecture-thumb.png'
 tags:
   [
     'TypeScript',
@@ -13,7 +14,6 @@ tags:
     'Zod',
     'Clean Code',
   ]
-description: '복잡한 비즈니스 로직을 if문 지옥에서 구해내는 Adapter, Factory, Strategy 패턴 적용기. Zod를 활용한 타입 안전성 확보와 Code Splitting 팁까지.'
 ---
 
 > **"만약 내일 당장 '프랑스'가 서비스 국가로 추가된다면? 그리고 한국에서 '사업자 유형'에 따라 결제 수단이 달라져야 한다면?"**
