@@ -31,6 +31,9 @@ tags: ['testing-library', 'jsdom', 'performance', 'open-source']
 Meta의 디자인 시스템 [astryx](https://github.com/facebook/astryx)에서 CI 최적화 작업을 하고 있었습니다.  
 CI가 오래 걸려서 이것저것 줄여보던 중이었습니다.
 
+> 이 글의 근거 PR은 [facebook/astryx#3816](https://github.com/facebook/astryx/pull/3816)이고, 2026년 7월 12일에 머지되었습니다.  
+> 아래 나오는 코드와 수치는 전부 그 PR에서 직접 확인하실 수 있습니다.
+
 그러다 테스트 파일별 실행 시간을 훑어보다가 이상한 걸 발견했습니다.  
 가장 느린 파일 네 개가 **전부 날짜 컴포넌트**였습니다.
 
@@ -535,6 +538,8 @@ astryx 환경에서 `getComputedStyle` 한 번은 대략 **5ms**였습니다.
 
 다행히 `computeAccessibleName`은 `getComputedStyle` 구현을 **주입받을 수 있게** 열려 있었습니다.
 
+실제로 머지된 코드입니다. ([main에서 보기](https://github.com/facebook/astryx/blob/main/packages/core/src/__tests__/fastRoleQueries.ts))
+
 ```ts
 // packages/core/src/__tests__/fastRoleQueries.ts
 import {screen} from '@testing-library/react';
@@ -600,7 +605,21 @@ RTL의 `.filter()`는 끝까지 다 돌지만, `.find()`는 **찾으면 거기�
 + expect(queryButton('Clear Date')).not.toBeInTheDocument();
 ```
 
-날짜 컴포넌트 4개 파일에서 **41개 호출부**를 이렇게 교체했습니다.
+날짜 컴포넌트 4개 파일에서 **41개 호출부**를 이렇게 교체했습니다.  
+PR의 변경 내역은 이렇습니다. ([전체 diff 보기](https://github.com/facebook/astryx/pull/3816/files))
+
+| 파일 | 변경 |
+| :--- | ---: |
+| `__tests__/fastRoleQueries.ts` *(신규)* | +66 |
+| `DateRangeInput.test.tsx` | +31 / −44 |
+| `Calendar.test.tsx` | +13 / −16 |
+| `DateInput.test.tsx` | +11 / −20 |
+| `DateTimeInput.test.tsx` | +9 / −16 |
+| `package.json` | +1 |
+
+테스트 파일 네 개는 오히려 **줄어들었습니다.**  
+`screen.getByRole('button', {name: 'Open calendar'})`가 `getButton('Open calendar')`이 되니까요.  
+헬퍼 66줄을 추가하고 테스트 코드 96줄을 덜어낸 셈입니다.
 
 > 스텁 타입이 `Pick<CSSStyleDeclaration, 'getPropertyValue'>`인 게 눈에 걸릴 수 있습니다.  
 > `CSSStyleDeclaration`으로 선언하면 필수 멤버 수백 개를 전부 구현해야 해서 불가능합니다.  
@@ -656,7 +675,8 @@ Trade-off vs getByRole: first match wins — no tree-wide uniqueness check.
 
 ## 9. 결과
 
-날짜 컴포넌트 4개 파일, 211개 테스트의 실행 시간입니다.
+날짜 컴포넌트 4개 파일, 211개 테스트의 실행 시간입니다.  
+아래 수치는 [PR 본문](https://github.com/facebook/astryx/pull/3816)에 그대로 기록돼 있습니다.
 
 | 파일 | 테스트 수 | before | after | |
 | :--- | ---: | ---: | ---: | ---: |
@@ -765,9 +785,14 @@ console.log('name 제외 :', (t2 - t1).toFixed(0), 'ms');
 
 ---
 
-**참고**
+**이 글의 근거**
 
-- [PR #3816 — perf(test): make role+name queries O(match) in the date-component suites](https://github.com/facebook/astryx/pull/3816)
-- [@testing-library/dom — `queries/role.js`](https://github.com/testing-library/dom-testing-library/blob/main/src/queries/role.ts)
+- PR: [facebook/astryx#3816 — perf(test): make role+name queries O(match) in the date-component suites](https://github.com/facebook/astryx/pull/3816) (2026-07-12 머지)
+- 변경 내역: [전체 diff](https://github.com/facebook/astryx/pull/3816/files)
+- 머지된 헬퍼: [`packages/core/src/__tests__/fastRoleQueries.ts`](https://github.com/facebook/astryx/blob/main/packages/core/src/__tests__/fastRoleQueries.ts)
+
+**더 읽을거리**
+
+- [@testing-library/dom — `queries/role.ts`](https://github.com/testing-library/dom-testing-library/blob/main/src/queries/role.ts)
 - [dom-accessibility-api](https://github.com/eps1lon/dom-accessibility-api)
-- [Accessible Name and Description Computation (W3C)](https://www.w3.org/TR/accname-1.2/)
+- [Accessible Name and Description Computation (W3C)](https://www.w3.org/TR/accname/)
