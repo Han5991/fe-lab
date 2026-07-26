@@ -22,7 +22,7 @@ export function PreviewBanner({ status, scheduledDate }: Props) {
         top: '0',
         zIndex: 100,
         bg: 'marker.600',
-        color: '[#0d1117]',
+        color: 'paper.50',
         textAlign: 'center',
         py: '2',
         px: '4',
