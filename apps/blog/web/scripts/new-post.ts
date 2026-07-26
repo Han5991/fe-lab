@@ -149,7 +149,8 @@ function resolveDate(
   scheduledDate: string | undefined,
   now: Date,
 ): string {
-  if (status === 'scheduled' && scheduledDate) return scheduledDate.slice(0, 10);
+  if (status === 'scheduled' && scheduledDate)
+    return scheduledDate.slice(0, 10);
   return todayKST(now);
 }
 

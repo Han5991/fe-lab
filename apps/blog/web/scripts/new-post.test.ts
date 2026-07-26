@@ -208,7 +208,12 @@ test('buildFrontmatter: 시각까지 지정한 예약글은 scheduledDate를 추
 test('buildFrontmatter: 날짜만 지정한 예약글은 scheduledDate 없이 date만', () => {
   // 'YYYY-MM-DD'는 date가 곧 KST 자정 공개 시각이라 scheduledDate가 중복이다.
   const raw = buildFrontmatter(
-    { title: '예약글', status: 'scheduled', tags: [], scheduledDate: '2026-05-01' },
+    {
+      title: '예약글',
+      status: 'scheduled',
+      tags: [],
+      scheduledDate: '2026-05-01',
+    },
     NOW,
   );
   assert.match(raw, /date: 2026-05-01/);
