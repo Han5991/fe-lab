@@ -19,7 +19,7 @@ thumbnail: '/og/astryx-fork-pr-token-403.png'
 
 > **astryx 기여 시리즈**
 >
-> 1. 테스트 한 파일에 34초, 범인은 getByRole이었습니다
+> 1. 매일 쓰던 getByRole 때문에 테스트가 26배 느렸습니다
 > 2. 로컬에선 그대로인데 CI에서만 빨라지는 최적화가 있습니다
 > 3. GitHub Actions끼리 서로 push를 덮어쓸 때 생기는 일
 > 4. fork PR을 머지했더니 CI가 빨간불이 됐습니다 — permissions: write가 무시된 이유 **(현재 글)**
