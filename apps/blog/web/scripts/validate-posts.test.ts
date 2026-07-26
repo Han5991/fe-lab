@@ -29,8 +29,39 @@ function rules(
 
 // ── validatePost: frontmatter 규칙 ───────────────────────────────────────────
 
-test('validatePost: 가시성 필드(slug/published/status) 없으면 meta-file-skipped만', () => {
+test('validatePost: status 없으면 meta-file-skipped만', () => {
   assert.deepEqual(rules({ title: '메타' }), ['meta-file-skipped']);
+});
+
+test('validatePost: slug만 있고 status 없으면 meta-file-skipped (repository와 동일 판정)', () => {
+  assert.deepEqual(rules({ title: '메타', slug: 'x' }), ['meta-file-skipped']);
+});
+
+// ── 폐기된 published 필드 ────────────────────────────────────────────────────
+
+test('validatePost: published 필드가 남아 있으면 legacy-published-field 에러', () => {
+  assert.ok(
+    rules({ title: 'x', published: true }).includes('legacy-published-field'),
+  );
+  assert.ok(
+    rules({ title: 'x', published: false }).includes('legacy-published-field'),
+  );
+});
+
+test('validatePost: published만 있는 글을 meta-file-skipped로 조용히 넘기지 않는다', () => {
+  // 예전 규칙에서는 포스트였던 글이 status 통일 후 빌드에서 통째로 사라지는데,
+  // 경고(meta-file-skipped)로만 알리면 놓치기 쉽다. 반드시 에러여야 한다.
+  const found = rules({ title: 'x', published: true });
+  assert.ok(found.includes('legacy-published-field'));
+  assert.ok(!found.includes('meta-file-skipped'));
+});
+
+test('validatePost: status와 published가 공존해도 에러 (published가 조용히 무시됨)', () => {
+  assert.ok(
+    rules({ title: 'x', status: 'draft', published: true }).includes(
+      'legacy-published-field',
+    ),
+  );
 });
 
 test('validatePost: 정상 글은 이슈 없음', () => {
@@ -86,11 +117,20 @@ test('validatePost: 잘못된 status → invalid-status', () => {
   assert.ok(rules({ title: 'x', status: 'foo' }).includes('invalid-status'));
 });
 
-test('validatePost: scheduled인데 scheduledDate 없음 → scheduled-without-date', () => {
+test('validatePost: scheduled인데 scheduledDate도 date도 없음 → scheduled-without-date', () => {
   assert.ok(
     rules({ title: 'x', status: 'scheduled' }).includes(
       'scheduled-without-date',
     ),
+  );
+});
+
+test('validatePost: scheduled + date만 있으면 이슈 없음 (date 폴백)', () => {
+  // scheduledDate는 시각까지 지정할 때만 쓰는 선택 필드.
+  // visibility.ts가 date를 공개 시각으로 쓰므로 date만으로 충분하다.
+  assert.deepEqual(
+    rules({ title: 'x', status: 'scheduled', date: '2026-06-01' }),
+    [],
   );
 });
 
