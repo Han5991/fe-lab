@@ -1,7 +1,7 @@
 ---
 title: '[Typescript로 설계하는 프로젝트] "원래 있던 기능이니 금방 하시죠?" 당하지 않는 Service Layer 설계 전략 With Di'
 date: '2025-06-08'
-published: true
+status: published
 slug: 'typescript-project-service-di-design'
 thumbnail: '/og/typescript-project-service-di-design.png'
 ---

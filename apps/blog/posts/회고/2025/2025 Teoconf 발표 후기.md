@@ -1,7 +1,7 @@
 ---
 title: '2025 Teoconf 발표 후기'
 date: '2025-12-11'
-published: true
+status: published
 slug: '2025-teoconf-presentation'
 thumbnail: '/og/2025-teoconf-presentation.png'
 ---

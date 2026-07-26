@@ -1,9 +1,9 @@
 ---
 title: '[Typescript로 설계하는 프로젝트] 타입 한 줄로 552개 파일을 2주 만에 안전하게 수정한 방법'
-thumbnail: 'typescript-refactor-thumb.png'
 date: '2025-11-06'
-published: true
+status: published
 slug: 'typescript-project-type-safe-refactor-with-typescript'
+thumbnail: 'typescript-refactor-thumb.png'
 ---
 
 **"회원 구조가 바뀌었습니다. 552개 파일을 수정해야 합니다."**

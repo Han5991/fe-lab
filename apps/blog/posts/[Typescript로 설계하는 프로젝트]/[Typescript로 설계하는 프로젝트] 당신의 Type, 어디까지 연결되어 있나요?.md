@@ -1,7 +1,7 @@
 ---
 title: '[Typescript로 설계하는 프로젝트] 당신의 Type, 어디까지 연결되어 있나요?'
 date: '2025-05-05'
-published: true
+status: published
 slug: 'typescript-project-design'
 thumbnail: '/og/typescript-project-design.png'
 ---

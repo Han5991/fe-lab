@@ -1,7 +1,7 @@
 ---
 title: 'javascript로 우아하게 Error 핸들링하기'
 date: '2025-02-27'
-published: true
+status: published
 slug: 'javascript-error'
 thumbnail: '/og/javascript-error.png'
 ---

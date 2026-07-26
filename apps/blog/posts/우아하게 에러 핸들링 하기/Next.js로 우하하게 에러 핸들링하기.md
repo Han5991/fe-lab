@@ -1,7 +1,7 @@
 ---
 title: 'Next.js로 우아하게 Error 핸들링하기'
 date: '2025-03-03'
-published: true
+status: published
 slug: 'nextjs-error'
 thumbnail: '/og/nextjs-error.png'
 ---

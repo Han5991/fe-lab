@@ -1,7 +1,7 @@
 ---
 title: '🚨3분만에 Next.js 서비스 장애 대응 대응하기: GitHub Actions + AWS ECS + CodeDeploy 롤백 시스템'
 date: '2025-04-03'
-published: true
+status: published
 slug: 'aws-ecs-rollback'
 thumbnail: '/og/aws-ecs-rollback.png'
 ---

@@ -1,7 +1,7 @@
 ---
 title: 'FSD 간단하게 시작해보기'
 date: '2025-01-21'
-published: true
+status: published
 slug: 'simple-fsd-start'
 thumbnail: '/og/simple-fsd-start.png'
 ---

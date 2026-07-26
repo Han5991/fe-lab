@@ -1,7 +1,7 @@
 ---
 title: '[Typescript로 설계하는 프로젝트] Type 설계의 시작: 견고한 서버 API Type 설계하기'
 date: '2025-06-01'
-published: true
+status: published
 slug: 'typescript-project-api-design'
 thumbnail: '/og/typescript-project-api-design.png'
 ---
