@@ -268,17 +268,17 @@ The blog (`apps/blog/web/`) is a **statically generated (SSG) Next.js applicatio
    **Frontmatter 전체 목록** — 여기 없는 키는 `lint:posts`가 `unknown-frontmatter-key`로
    경고합니다. `domain/post/types.ts`의 `RawFrontmatter`가 단일 출처입니다.
 
-   | 키              | 필수 | 설명                                                                                                                       |
-   | :-------------- | :--: | :------------------------------------------------------------------------------------------------------------------------- |
-   | `status`        |  ✅  | `published` \| `draft` \| `scheduled`. **이 키가 없으면 포스트가 아니라 메타 노트로 간주되어 빌드에서 통째로 제외됩니다.** |
-   | `title`         |  ✅  | 없으면 파일명으로 폴백하지만 `lint:posts`가 에러                                                                           |
-   | `date`          |      | `'YYYY-MM-DD'`. `scheduled`일 때는 공개 시각으로도 쓰임                                                                    |
-   | `slug`          |      | URL. 없으면 파일 경로에서 유도                                                                                             |
-   | `excerpt`       |      | 없으면 본문 앞 160자                                                                                                       |
-   | `thumbnail`     |      | 없으면 빌드 시 OG 카드(`/og/{slug}.png`) 자동 생성                                                                         |
-   | `tags`          |      | 문자열 배열. 문자열 아닌 원소가 섞이면 태그 전체가 무시됨                                                                  |
-   | `updatedAt`     |      | Schema.org `dateModified`, sitemap `lastmod`에 사용                                                                        |
-   | `scheduledDate` |      | **시각까지 지정할 때만.** 날짜만이면 `date`로 충분                                                                         |
+   | 키              | 필수 | 설명                                                                                                                              |
+   | :-------------- | :--: | :-------------------------------------------------------------------------------------------------------------------------------- |
+   | `status`        |  ✅  | `published` \| `draft` \| `scheduled`. **이 키가 없으면 포스트가 아니라 메타 노트로 간주되어 빌드에서 통째로 제외됩니다.**        |
+   | `title`         |  ✅  | 없으면 파일명으로 폴백하지만 `lint:posts`가 에러                                                                                  |
+   | `date`          |  ✅  | `'YYYY-MM-DD'`. 목록 정렬·아카이브·sitemap·RSS가 모두 사용하고, `scheduled`일 때는 공개 시각이기도 함. 없으면 `missing-date` 에러 |
+   | `slug`          |      | URL. 없으면 파일 경로에서 유도                                                                                                    |
+   | `excerpt`       |      | 없으면 본문 앞 160자                                                                                                              |
+   | `thumbnail`     |      | 없으면 빌드 시 OG 카드(`/og/{slug}.png`) 자동 생성                                                                                |
+   | `tags`          |      | 문자열 배열. 문자열 아닌 원소가 섞이면 태그 전체가 무시됨                                                                         |
+   | `updatedAt`     |      | Schema.org `dateModified`, sitemap `lastmod`에 사용                                                                               |
+   | `scheduledDate` |      | **시각까지 지정할 때만.** 날짜만이면 `date`로 충분. 이걸 써도 `date`는 여전히 필수                                                |
 
    `series`는 frontmatter가 아니라 **폴더 경로**로 결정됩니다(`repository.ts`).
 
@@ -297,7 +297,7 @@ The blog (`apps/blog/web/`) is a **statically generated (SSG) Next.js applicatio
    > `published`가 남아 있으면 `lint:posts`가 `legacy-published-field` 에러를 냅니다.
 
 3. **빌드 전 처리** (`prebuild` → `scripts/build-content.ts` 통합 진입점):
-   - `validate-posts.ts`: frontmatter 필수 필드, 폐기된 `published` 필드, `scheduled`의 공개 시각 존재 여부, 끊긴 이미지, 중복 slug 검사 (prebuild에서만 실행, predev에서는 skip)
+   - `validate-posts.ts`: frontmatter 필수 필드(`status`·`title`·`date`), 폐기된 `published` 필드, 날짜 형식/timezone 모호성, 끊긴 이미지, 중복 slug 검사 (prebuild에서만 실행, predev에서는 skip)
    - `sync-posts.mjs`: 포스트 디렉토리의 이미지/미디어 파일을 `public/posts/`에 복사 (mtime 기반 incremental — 변경분만 복사)
    - `generate-sitemap.ts`: 발행된 글 목록으로 `sitemap.xml` 생성
    - `generate-rss.ts`: RSS 피드(`rss.xml`) 생성

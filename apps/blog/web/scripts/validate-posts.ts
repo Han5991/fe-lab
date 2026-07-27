@@ -138,7 +138,22 @@ export function validatePost(record: PostRecord, raw: string): Issue[] {
     });
   }
 
-  if (data.date != null) {
+  // `date`는 선택 필드가 아닙니다. 목록 정렬(filtering.ts), 아카이브 연도 필터,
+  // sitemap lastmod, RSS pubDate가 모두 이 값을 읽고, `status: scheduled`는 이 값을
+  // 공개 시각으로 씁니다(visibility.ts). 없으면 목록에서 날짜가 비고 예약 글은
+  // 영원히 비공개가 되는데, 지금까지는 아무 경고 없이 통과했습니다.
+  if (data.date == null) {
+    issues.push({
+      file: relPath,
+      line: findFrontmatterLine(raw, 'date'),
+      severity: 'error',
+      rule: 'missing-date',
+      message:
+        data.status === 'scheduled'
+          ? '`date` 필드가 필요합니다. `status: scheduled`는 `date`를 공개 시각으로 쓰므로, 없으면 영원히 비공개 처리됩니다.'
+          : '`date` 필드가 필요합니다. 목록 정렬·아카이브·sitemap·RSS가 모두 이 값을 사용합니다.',
+    });
+  } else {
     const dateValid =
       data.date instanceof Date ||
       (typeof data.date === 'string' && !Number.isNaN(Date.parse(data.date)));
@@ -208,18 +223,11 @@ export function validatePost(record: PostRecord, raw: string): Issue[] {
   }
 
   if (data.status === 'scheduled') {
-    // 공개 시각은 scheduledDate가 있으면 그것, 없으면 date (visibility.ts와 동일 규칙).
-    // 둘 다 없으면 영원히 비공개가 되므로 에러로 막습니다.
-    if (typeof data.scheduledDate !== 'string' && data.date == null) {
-      issues.push({
-        file: relPath,
-        line: findFrontmatterLine(raw, 'status'),
-        severity: 'error',
-        rule: 'scheduled-without-date',
-        message:
-          '`status: scheduled`에는 `scheduledDate` 또는 `date` 중 하나가 필요합니다. 둘 다 없으면 영원히 비공개 처리됩니다. (시각까지 지정할 때만 `scheduledDate`를 쓰고, 날짜만 쓸 거면 `date`로 충분합니다)',
-      });
-    } else if (
+    // 공개 시각이 아예 없는 경우는 위의 missing-date가 잡습니다. 예전에는 여기서
+    // scheduled-without-date로 따로 검사했지만, date가 필수가 되면서 그 조건
+    // (`scheduledDate도 date도 없음`)은 missing-date에 완전히 포섭돼 같은 파일에
+    // 에러 두 개가 뜰 뿐이었습니다.
+    if (
       typeof data.scheduledDate === 'string' &&
       Number.isNaN(Date.parse(data.scheduledDate))
     ) {

@@ -128,11 +128,38 @@ test('validatePost: status가 유효하지 않아도 나머지 검사를 계속�
   assert.ok(!found.includes('meta-file-skipped'));
 });
 
-test('validatePost: scheduled인데 scheduledDate도 date도 없음 → scheduled-without-date', () => {
+// ── date 필수 ────────────────────────────────────────────────────────────────
+// date는 목록 정렬·아카이브·sitemap·RSS가 모두 읽고, scheduled의 공개 시각이기도
+// 하다. 예전에는 없어도 조용히 통과했다.
+
+test('validatePost: date 누락 → missing-date', () => {
   assert.ok(
-    rules({ title: 'x', status: 'scheduled' }).includes(
-      'scheduled-without-date',
-    ),
+    rules({ title: 'x', status: 'published' }).includes('missing-date'),
+  );
+  assert.ok(rules({ title: 'x', status: 'draft' }).includes('missing-date'));
+});
+
+test('validatePost: scheduled인데 date가 없으면 missing-date (영원히 비공개)', () => {
+  // 예전 scheduled-without-date 규칙을 대체한다. date가 필수가 되면서
+  // "scheduledDate도 date도 없음" 조건이 missing-date에 완전히 포섭됐다.
+  const issues = validatePost(
+    rec({ title: 'x', status: 'scheduled' }),
+    '---\ntitle: x\n---\n',
+  );
+  const found = issues.filter(i => i.rule === 'missing-date');
+  assert.equal(found.length, 1, 'missing-date가 정확히 하나여야 함(중복 없음)');
+  assert.match(found[0].message, /영원히 비공개/);
+  assert.ok(!issues.some(i => i.rule === 'scheduled-without-date'));
+});
+
+test('validatePost: scheduledDate만 있고 date가 없으면 missing-date', () => {
+  // 공개 시각은 scheduledDate로 정해지지만 정렬·아카이브·표시는 여전히 date를 본다.
+  assert.ok(
+    rules({
+      title: 'x',
+      status: 'scheduled',
+      scheduledDate: '2026-06-01T09:00:00+09:00',
+    }).includes('missing-date'),
   );
 });
 
@@ -200,6 +227,7 @@ test('validatePost: scheduledDate offset 명시 → 이슈 없음', () => {
     rules({
       title: 'x',
       status: 'scheduled',
+      date: '2026-06-01',
       scheduledDate: '2026-06-01T09:00:00+09:00',
     }),
     [],
@@ -226,11 +254,21 @@ test('validatePost: 알 수 없는 frontmatter 키 → unknown-frontmatter-key (
 
 test('validatePost: 절대/http thumbnail은 fs 검사 없이 통과', () => {
   assert.deepEqual(
-    rules({ title: 'x', status: 'published', thumbnail: '/abs.png' }),
+    rules({
+      title: 'x',
+      status: 'published',
+      date: '2025-01-01',
+      thumbnail: '/abs.png',
+    }),
     [],
   );
   assert.deepEqual(
-    rules({ title: 'x', status: 'published', thumbnail: 'https://cdn/x.png' }),
+    rules({
+      title: 'x',
+      status: 'published',
+      date: '2025-01-01',
+      thumbnail: 'https://cdn/x.png',
+    }),
     [],
   );
 });
