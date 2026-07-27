@@ -22,9 +22,10 @@ import {
 import Link from 'next/link';
 import { token } from '@design-system/ui-lib/tokens';
 import { motion, AnimatePresence } from 'motion/react';
-import { formatMonthDayISO } from '@/lib/dates';
+import { formatMonthDayISO, parseScheduledDateKST } from '@/lib/dates';
 import { DateRangeControls, useDateFilter } from './DateRangeControls';
 import { encodePostSlug } from '@/domain/post/utils';
+import { resolvePostState } from '@/domain/post/visibility';
 
 interface Props {
   post: PostStatDetail;
@@ -34,16 +35,12 @@ export function PostAccordion({ post }: Props) {
   const [isOpen, setIsOpen] = useState(false);
   const briefStats = useMemo(() => computeBriefStats(post), [post]);
 
-  const computedStatus = useMemo(() => {
-    if (
-      post.status === 'scheduled' &&
-      post.scheduledDate &&
-      new Date(post.scheduledDate) <= new Date()
-    ) {
-      return 'published';
-    }
-    return post.status;
-  }, [post.status, post.scheduledDate]);
+  // frontmatter의 status(발행 의도)가 아니라 **지금 실제로 공개 중인지**로 배지를
+  // 그립니다. 판정은 도메인 함수 하나에 위임합니다 — 예전에는 이 자리에서 규칙을
+  // 다시 구현하다 `date` 폴백과 KST 파싱을 둘 다 놓쳤습니다.
+  const state = resolvePostState(post);
+  // scheduledDate는 시각까지 지정할 때만 쓰는 선택 필드라 보통은 date가 공개 시각입니다.
+  const publishAt = post.scheduledDate ?? post.date;
 
   const {
     filterType,
@@ -61,14 +58,14 @@ export function PostAccordion({ post }: Props) {
   }));
 
   const statusStyle =
-    computedStatus === 'published'
+    state === 'published'
       ? {
           bg: 'paper.100' as const,
           color: 'moss.600' as const,
           borderColor: 'ink.border' as const,
           label: '공개',
         }
-      : computedStatus === 'draft'
+      : state === 'draft'
         ? {
             bg: 'paper.100' as const,
             color: 'ink.500' as const,
@@ -79,11 +76,9 @@ export function PostAccordion({ post }: Props) {
             bg: 'paper.100' as const,
             color: 'spot.600' as const,
             borderColor: 'ink.border' as const,
-            label: post.scheduledDate
-              ? new Date(post.scheduledDate).toLocaleDateString('ko-KR', {
-                  timeZone: 'Asia/Seoul',
-                })
-              : '예약',
+            // 공개 예정일은 옆 날짜 칼럼에 이미 있으므로 배지는 상태만 말합니다.
+            // 정확한 시각은 title 툴팁으로.
+            label: '예약',
           };
 
   return (
@@ -145,29 +140,29 @@ export function PostAccordion({ post }: Props) {
           >
             <ExternalLink size={12} />
           </Link>
-          {computedStatus && (
-            <span
-              className={css({
-                fontSize: 'xs',
-                fontWeight: 'semibold',
-                px: '2',
-                py: '0.5',
-                rounded: 'full',
-                flexShrink: 0,
-                bg: statusStyle.bg,
-                color: statusStyle.color,
-                borderWidth: '[1px]',
-                borderColor: statusStyle.borderColor,
-              })}
-              title={
-                computedStatus === 'scheduled' && post.scheduledDate
-                  ? `예약: ${new Date(post.scheduledDate).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })}`
-                  : undefined
-              }
-            >
-              {statusStyle.label}
-            </span>
-          )}
+          <span
+            className={css({
+              fontSize: 'xs',
+              fontWeight: 'semibold',
+              px: '2',
+              py: '0.5',
+              rounded: 'full',
+              flexShrink: 0,
+              bg: statusStyle.bg,
+              color: statusStyle.color,
+              borderWidth: '[1px]',
+              borderColor: statusStyle.borderColor,
+            })}
+            title={
+              state === 'scheduled' && publishAt
+                ? // 'YYYY-MM-DD'를 native Date에 넣으면 UTC 자정으로 파싱돼
+                  // KST 09:00으로 잘못 표시됩니다.
+                  `예약: ${parseScheduledDateKST(publishAt).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })}`
+                : undefined
+            }
+          >
+            {statusStyle.label}
+          </span>
           <span
             className={css({
               fontWeight: 'semibold',

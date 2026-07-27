@@ -46,7 +46,7 @@ export default async function PreviewPage({ params }: Props) {
 
   return (
     <>
-      <PreviewBanner status={post.status} scheduledDate={post.scheduledDate} />
+      <PreviewBanner post={post} />
       <PostClient
         post={post}
         thumbnailUrl={post.thumbnail ? thumbnailUrl : undefined}

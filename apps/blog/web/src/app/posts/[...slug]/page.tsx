@@ -100,12 +100,7 @@ export default async function PostPage({ params }: Props) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }}
       />
-      {showHiddenBanner && (
-        <PreviewBanner
-          status={post.status}
-          scheduledDate={post.scheduledDate}
-        />
-      )}
+      {showHiddenBanner && <PreviewBanner post={post} />}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbJsonLd) }}

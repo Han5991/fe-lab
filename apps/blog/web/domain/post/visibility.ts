@@ -29,7 +29,9 @@ export function isPostFile<T extends { status?: unknown }>(
 
 export interface VisibilityData {
   status?: string;
-  scheduledDate?: string;
+  // analytics의 PostStatDetail은 빈 값을 null로 정규화해 들고 옵니다.
+  // `scheduledDate ?? date` 폴백이 null도 그대로 처리하므로 타입만 넓혀 받습니다.
+  scheduledDate?: string | null;
   date?: string | null;
 }
 
@@ -67,4 +69,31 @@ export function isPostVisible(
     default:
       return false;
   }
+}
+
+/**
+ * 포스트의 **현재 상태**를 계산합니다. 화면에 상태 배지를 그릴 때 씁니다.
+ *
+ * `status`(frontmatter)는 "언제 내보내기로 했는가"라는 **발행 의도**의 기록이고,
+ * 사람이 화면에서 알고 싶은 것은 "지금 공개인가"입니다. 예약 시각이 지난 글은
+ * 원본이 `scheduled`로 남아 있어도 이미 공개된 상태이므로 `'published'`를
+ * 반환합니다. 원본 frontmatter를 `published`로 되돌리지는 않습니다 — 그러면
+ * 예약 발행이었다는 사실이 파일에서 사라지고, 커밋 전 기간을 커버할 파생 판정도
+ * 여전히 필요해 규칙이 두 벌이 됩니다.
+ *
+ * 공개 판정은 `isPostVisible`에 위임합니다. 이 규칙을 복사해서 쓰면 `date` 폴백이나
+ * KST 파싱 중 하나가 빠진 채 갈라집니다 — admin 상태 배지가 실제로 그렇게 깨져서,
+ * 이미 공개돼 조회수가 쌓이는 글을 몇 달째 "예약"으로 표시하고 있었습니다.
+ *
+ * @param data
+ * @param now 기준 시각. 테스트는 경계를 결정적으로 검증하기 위해 주입합니다.
+ */
+export function resolvePostState(
+  data: VisibilityData,
+  now: Date = new Date(),
+): PostStatus {
+  if (isPostVisible(data, now)) return 'published';
+  // 아직 공개 전인 예약 글만 'scheduled'.
+  // status 누락·미지 값은 isPostVisible과 같은 이유로 draft 취급(fail-closed)입니다.
+  return data.status === 'scheduled' ? 'scheduled' : 'draft';
 }
