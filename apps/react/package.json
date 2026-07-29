@@ -12,7 +12,7 @@
     "test": "vitest --run"
   },
   "engines": {
-    "node": ">=22"
+    "node": ">=22.22.0"
   },
   "dependencies": {
     "@design-system/ui": "workspace:^",
