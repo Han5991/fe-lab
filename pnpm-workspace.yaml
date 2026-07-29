@@ -6,7 +6,12 @@ overrides:
   '@babel/plugin-transform-modules-systemjs': 7.29.4
   '@babel/runtime': 7.29.2
   '@tootallnate/once': 3.0.1
-  'brace-expansion@1': 1.1.13
+  # v2부터 CJS default export가 함수 → named export 객체로 바뀌었다. minimatch@3
+  # (eslint가 끌어온다)이 require('brace-expansion')을 함수로 호출하므로 v1을 유지한다.
+  # 1.1.16에서 DoS advisory(GHSA-3jxr-9vmj-r5cp)가 패치됐다.
+  'brace-expansion@1': 1.1.16
+  # @pandacss/dev → ts-morph → minimatch@10이 쓰는 v5 라인. 5.0.7 미만이 같은 advisory 대상.
+  'brace-expansion@5': 5.0.8
   'diff@4': 4.0.4
   dompurify: 3.4.12
   fast-uri: 3.1.4
@@ -14,7 +19,12 @@ overrides:
   'form-data@2': 2.5.5
   'form-data@4': 4.0.5
   'glob@10': 10.5.0
-  'js-yaml@3': 3.14.2
+  # gray-matter@4.0.3이 yaml.safeLoad/safeDump(v3 API)를 모듈 로드 시점에 바인딩한다.
+  # v4는 이 둘을 throw 스텁으로 남겨서 올리면 프론트매터 파싱이 전부 죽는다.
+  # CVE-2026-53550(GHSA-h67p-54hq-rp68)은 v3 라인에도 3.15.0으로 백포트됐다.
+  'js-yaml@3': 3.15.0
+  # @eslint/eslintrc가 끌어오는 v4 라인. 같은 advisory가 4.0.0~4.1.1을 대상으로 한다.
+  'js-yaml@4': 4.3.0
   mdast-util-to-hast: 13.2.1
   'minimatch@3': 3.1.5
   'picomatch@2': 2.3.2
