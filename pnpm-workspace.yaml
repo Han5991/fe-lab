@@ -19,7 +19,7 @@ overrides:
   'minimatch@3': 3.1.5
   'picomatch@2': 2.3.2
   'picomatch@4': 4.0.4
-  postcss: 8.5.14
+  postcss: 8.5.18
   'qs@6': 6.15.1
   'tough-cookie@2': 4.1.4
   'uuid@11': 11.1.1
