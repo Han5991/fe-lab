@@ -52,6 +52,13 @@
       "platformAutomerge": true
     },
     {
+      "description": "pnpm-workspace.yaml의 overrides·catalog도 minor/patch까지 자동 머지. overrides는 대부분 transitive 의존성의 보안 패치이고, catalog는 전역 고정이라 영향 범위가 넓지만 CI가 lint·types·test를 모두 돌린다. 이 규칙이 없으면 depType이 dependencies/devDependencies 어느 쪽도 아니라 automerge가 전혀 걸리지 않는다",
+      "matchDepTypes": ["pnpm-workspace.overrides", "/^pnpm\\.catalog\\./"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "automerge": true,
+      "platformAutomerge": true
+    },
+    {
       "description": "@types/*는 타입 정의뿐이라 minor까지 자동 머지",
       "matchPackageNames": ["/^@types\\//"],
       "matchUpdateTypes": ["minor", "patch"],
