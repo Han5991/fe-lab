@@ -6,7 +6,7 @@ overrides:
   '@babel/plugin-transform-modules-systemjs': 7.29.4
   '@babel/runtime': 7.29.2
   '@tootallnate/once': 3.0.1
-  'brace-expansion@1': 1.1.13
+  'brace-expansion@1': 5.0.8
   'diff@4': 4.0.4
   dompurify: 3.4.3
   fast-uri: 3.1.2
