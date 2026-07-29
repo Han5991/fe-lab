@@ -1,0 +1,68 @@
+name: Claude Site Smoke
+
+# 매일 Claude Code가 "배포 결과물"을 검사합니다. 빌드 성공 여부가 아니라
+# 실제 배포된 HTML/sitemap/rss를 보고, PR #133에서 잡았던 류의 회귀
+# (/posts/ CSR bail-out으로 정적 링크 0개, sitemap lastmod 매일 전진)를
+# 감지하면 이슈를 만듭니다. 전부 정상이면 아무것도 만들지 않습니다.
+
+on:
+  schedule:
+    # 매일 10:00 KST (01:00 UTC) — deploy-blog cron(00:00 UTC) 완료 + 지연 버퍼 후
+    - cron: '0 1 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: claude-site-smoke
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  issues: write
+  id-token: write
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 1
+
+      - name: Run Claude site smoke
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            당신은 배포된 블로그(https://blog.sangwook.dev)의 헬스체커입니다.
+            빌드 성공 여부가 아니라 배포 결과물 자체를 검사합니다. SSG 산출물의
+            원문 HTML을 봐야 하므로 페이지는 렌더링 도구가 아닌 curl로 가져오세요.
+            모든 산출물(이슈, 코멘트)은 한글로 작성합니다.
+
+            <검사 항목>
+            1. 홈(/)과 /posts/ 가 200이고 실제 콘텐츠가 있는 HTML인지
+            2. /posts/ 원문 HTML에 개별 글로 가는 정적 앵커(<a href="/posts/...)가
+               1개 이상 있는지 — 0개면 CSR bail-out 회귀(과거 PR #133에서 잡은
+               버그)로 critical
+            3. /sitemap.xml: 유효한 XML인지, 저장소의 발행 글(apps/blog/posts/**
+               에서 status: published, 그리고 공개 시각이 지난 scheduled)이 누락
+               없이 들어있는지, 그리고 lastmod가 전부 오늘 날짜는 아닌지 — 모든
+               lastmod가 검사 당일이면 lastmod 매일 전진 회귀입니다
+            4. /rss.xml: 유효한 XML + item 존재
+            5. /robots.txt: 200 + sitemap 참조
+            6. 최근 발행 글 1개의 페이지: 200, canonical 링크, og:title 메타태그 존재
+            </검사 항목>
+
+            <보고 규칙>
+            - 전부 정상이면 아무것도 만들지 말고 결과 요약만 남기고 종료하세요.
+            - 문제 발견 시: `gh issue list --state open --search "[site-smoke] in:title"`
+              로 기존 열린 이슈를 먼저 확인하세요. 있으면 그 이슈에 오늘 결과를
+              코멘트로 추가하고, 없으면 "[site-smoke] <문제 요약>" 제목으로 이슈를
+              생성하세요. 본문에는 무엇이 어떻게 실패했는지(HTTP 상태, 앵커 개수 등
+              실측값), 의심 원인, 확인해볼 코드 위치를 적으세요.
+            - 사이트 전체가 접속 불가(5xx/타임아웃)면 배포 직후 일시 현상일 수
+              있으니 2-3분 간격으로 재시도한 뒤에도 실패할 때만 이슈를 만드세요.
+            </보고 규칙>
+
+          claude_args: '--model claude-sonnet-5 --allowedTools "Bash,Read,Grep,Glob,WebFetch"'
