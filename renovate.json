@@ -1,76 +1,75 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:recommended", ":dependencyDashboard", ":semanticCommits"],
+  "extends": [
+    "config:recommended",
+    ":dependencyDashboard",
+    ":semanticCommits",
+    "group:definitelyTyped",
+    "group:jsUnitTest",
+    "group:nextjsMonorepo"
+  ],
   "timezone": "Asia/Seoul",
   "schedule": ["before 10am on monday"],
   "prHourlyLimit": 2,
   "prConcurrentLimit": 10,
   "rangeStrategy": "bump",
+  "labels": ["dependencies"],
   "lockFileMaintenance": {
     "enabled": true,
     "schedule": ["before 10am on monday"],
-    "semanticCommitScope": "deps"
+    "automerge": true,
+    "platformAutomerge": true
   },
   "packageRules": [
     {
-      "matchPackageNames": ["/^@types\\//"],
-      "groupName": "types",
-      "semanticCommitScope": "deps"
-    },
-    {
-      "matchPackageNames": [
-        "eslint",
-        "typescript-eslint",
-        "/^eslint-/",
-        "/^@eslint\\//"
-      ],
-      "groupName": "eslint",
-      "semanticCommitScope": "deps"
-    },
-    {
-      "matchPackageNames": [
-        "jest",
-        "vitest",
-        "ts-jest",
-        "babel-jest",
-        "msw",
-        "jsdom",
-        "/^jest-/",
-        "/^@testing-library\\//"
-      ],
-      "groupName": "testing",
-      "semanticCommitScope": "deps"
-    },
-    {
-      "matchPackageNames": ["next", "eslint-config-next", "/^@next\\//"],
-      "groupName": "next",
-      "semanticCommitScope": "deps"
-    },
-    {
-      "matchPackageNames": ["react", "react-dom", "react-router"],
-      "groupName": "react",
-      "semanticCommitScope": "deps"
-    },
-    {
+      "description": "프리셋에 없는 그룹 — TanStack",
       "matchPackageNames": ["/^@tanstack\\//"],
-      "groupName": "tanstack",
-      "semanticCommitScope": "deps"
+      "groupName": "tanstack"
     },
     {
+      "description": "프리셋에 없는 그룹 — Panda CSS",
       "matchPackageNames": ["/^@pandacss\\//"],
-      "groupName": "panda",
-      "semanticCommitScope": "deps"
+      "groupName": "panda"
     },
     {
+      "description": "GitHub Actions는 ci scope로 묶는다 (기본 scope는 deps)",
       "matchManagers": ["github-actions"],
       "groupName": "ci",
       "semanticCommitScope": "ci"
     },
     {
+      "description": "devDependencies의 minor/patch는 자동 머지",
       "matchDepTypes": ["devDependencies"],
       "matchUpdateTypes": ["minor", "patch"],
       "automerge": true,
       "platformAutomerge": true
+    },
+    {
+      "description": "프로덕션 의존성은 patch만 자동 머지",
+      "matchDepTypes": ["dependencies"],
+      "matchUpdateTypes": ["patch"],
+      "automerge": true,
+      "platformAutomerge": true
+    },
+    {
+      "description": "@types/*는 타입 정의뿐이라 minor까지 자동 머지",
+      "matchPackageNames": ["/^@types\\//"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "automerge": true,
+      "platformAutomerge": true
+    },
+    {
+      "description": "GitHub Actions의 minor/patch도 자동 머지",
+      "matchManagers": ["github-actions"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "automerge": true,
+      "platformAutomerge": true
+    },
+    {
+      "description": "major는 자동 머지하지 않고 deps-major 라벨을 붙인다 — 이 라벨이 붙은 PR만 claude-code-review.yml이 리뷰한다",
+      "matchUpdateTypes": ["major"],
+      "addLabels": ["deps-major"],
+      "automerge": false
     }
   ]
 }

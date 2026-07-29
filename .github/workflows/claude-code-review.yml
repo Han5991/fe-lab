@@ -12,12 +12,26 @@ on:
 
 jobs:
   claude-review:
+    # 봇이 연 PR은 원칙적으로 리뷰하지 않되, major 업데이트만 예외로 받는다.
+    #
+    # claude-code-action은 non-human actor를 거부한다
+    # ("Workflow initiated by non-human actor: renovate (type: Bot)").
+    # 그대로 두면 의존성 PR마다 실패한 체크가 붙는다.
+    #
+    # minor/patch의 판정 기준은 "코드 품질"이 아니라 "올려도 안 깨지나"이고
+    # 그건 CI가 본다 — diff도 대부분 lockfile이라 리뷰할 코드가 없다.
+    # 반면 major는 release note를 이 저장소 코드와 대조할 가치가 있으므로,
+    # renovate.json이 붙이는 deps-major 라벨을 보고 리뷰를 돌린다.
+    if: >-
+      github.event.pull_request.user.type != 'Bot' ||
+      contains(github.event.pull_request.labels.*.name, 'deps-major')
+
     # Optional: Filter by PR author
     # if: |
     #   github.event.pull_request.user.login == 'external-contributor' ||
     #   github.event.pull_request.user.login == 'new-developer' ||
     #   github.event.pull_request.author_association == 'FIRST_TIME_CONTRIBUTOR'
-    
+
     runs-on: ubuntu-latest
     permissions:
       contents: read
