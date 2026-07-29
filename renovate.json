@@ -74,6 +74,13 @@
       "platformAutomerge": true
     },
     {
+      "description": "brace-expansion·js-yaml overrides는 소비자가 요구하는 major 라인에 묶여 있다. minimatch@3(eslint 경유)은 brace-expansion v1의 CJS 콜러블 export를, gray-matter는 js-yaml v3의 safeLoad를 각각 요구한다. major를 올리면 lint와 프론트매터 파싱이 즉시 죽으므로 제안 자체를 막는다. advisory는 두 라인 모두 백포트가 있어 major 없이 닫힌다",
+      "matchDepTypes": ["pnpm-workspace.overrides"],
+      "matchPackageNames": ["brace-expansion", "js-yaml"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
+    },
+    {
       "description": "major는 자동 머지하지 않고 deps-major 라벨을 붙인다 — 이 라벨이 붙은 PR만 claude-code-review.yml이 리뷰한다",
       "matchUpdateTypes": ["major"],
       "addLabels": ["deps-major"],
