@@ -8,7 +8,7 @@ overrides:
   '@tootallnate/once': 3.0.1
   'brace-expansion@1': 1.1.13
   'diff@4': 4.0.4
-  dompurify: 3.4.3
+  dompurify: 3.4.12
   fast-uri: 3.1.2
   flatted: 3.4.2
   'form-data@2': 2.5.5
