@@ -14,7 +14,7 @@ overrides:
   'form-data@2': 2.5.5
   'form-data@4': 4.0.5
   'glob@10': 10.5.0
-  'js-yaml@3': 3.14.2
+  'js-yaml@3': 4.3.0
   mdast-util-to-hast: 13.2.1
   'minimatch@3': 3.1.5
   'picomatch@2': 2.3.2
