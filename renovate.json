@@ -6,10 +6,13 @@
   "prHourlyLimit": 2,
   "prConcurrentLimit": 10,
   "rangeStrategy": "bump",
+  "labels": ["dependencies"],
   "lockFileMaintenance": {
     "enabled": true,
     "schedule": ["before 10am on monday"],
-    "semanticCommitScope": "deps"
+    "semanticCommitScope": "deps",
+    "automerge": true,
+    "platformAutomerge": true
   },
   "packageRules": [
     {
@@ -67,10 +70,38 @@
       "semanticCommitScope": "ci"
     },
     {
+      "description": "devDependencies의 minor/patch는 자동 머지",
       "matchDepTypes": ["devDependencies"],
       "matchUpdateTypes": ["minor", "patch"],
       "automerge": true,
       "platformAutomerge": true
+    },
+    {
+      "description": "프로덕션 의존성은 patch만 자동 머지",
+      "matchDepTypes": ["dependencies"],
+      "matchUpdateTypes": ["patch"],
+      "automerge": true,
+      "platformAutomerge": true
+    },
+    {
+      "description": "@types/*는 타입 정의뿐이라 minor까지 자동 머지",
+      "matchPackageNames": ["/^@types\\//"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "automerge": true,
+      "platformAutomerge": true
+    },
+    {
+      "description": "GitHub Actions의 minor/patch도 자동 머지",
+      "matchManagers": ["github-actions"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "automerge": true,
+      "platformAutomerge": true
+    },
+    {
+      "description": "major는 자동 머지하지 않고 deps-major 라벨을 붙인다 — 이 라벨이 붙은 PR만 claude-code-review.yml이 리뷰한다",
+      "matchUpdateTypes": ["major"],
+      "addLabels": ["deps-major"],
+      "automerge": false
     }
   ]
 }
