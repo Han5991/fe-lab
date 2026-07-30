@@ -218,7 +218,11 @@ export const PostsArchiveView = ({
               mb: '4',
             })}
           >
-            <Label tone="meta">{filtered.length}편</Label>
+            {/* 아래 목록 카드/행 제목이 h3라, 이 라벨이 span이면 페이지 h1에서
+                h3로 건너뛴다(axe heading-order). 목록의 섹션 헤딩으로 올린다. */}
+            <Label as="h2" tone="meta">
+              {filtered.length}편
+            </Label>
           </div>
 
           {filtered.length === 0 ? (

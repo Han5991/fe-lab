@@ -168,7 +168,10 @@ export default function HomePage() {
                     href="/posts/?focus=search"
                   />
                   <div>
+                    {/* 바로 아래 MiniPostCard가 h4라, 이 라벨이 span이면
+                        FeaturedPost의 h2에서 h4로 두 단계를 건너뛴다. */}
                     <Label
+                      as="h3"
                       tone="meta"
                       className={css({
                         display: 'block',
