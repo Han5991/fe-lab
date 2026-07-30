@@ -287,8 +287,10 @@ export const PostsArchiveView = ({
                 gap: '6',
               })}
             >
-              {filtered.map(p => (
-                <PostGridCard key={p.slug} post={p} />
+              {/* 첫 행(데스크톱 3열)만 우선 로드하고 나머지는 lazy — 목록 전체를
+                  한꺼번에 받으면 첫 화면 이미지가 대역폭을 뺏겨 LCP가 밀린다. */}
+              {filtered.map((p, i) => (
+                <PostGridCard key={p.slug} post={p} priority={i < 3} />
               ))}
             </div>
           ) : (
