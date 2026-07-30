@@ -29,7 +29,11 @@ function CopyButton({ content }: { content: string }) {
         px: '2',
         py: '1',
         fontSize: 'xs',
-        color: 'ink.500',
+        // 코드블록 크롬은 테마와 무관하게 항상 어둡다(#161b22/#12171d/#212a35).
+        // 여기에 테마-가변 ink.500을 쓰면 라이트 테마에서 진한 회색 글자가
+        // 어두운 배경에 얹혀 2.89:1까지 떨어진다. 크롬 색과 같은 계열의
+        // 고정 밝은 회색을 쓴다.
+        color: '[#9198a1]',
         bg: '[#212a35]',
         rounded: 'md',
         borderWidth: 'thin',
@@ -116,7 +120,8 @@ export function CodeBlock({
           <span
             className={css({
               ml: '4',
-              color: 'ink.500',
+              // CopyButton과 동일 — 항상 어두운 크롬 위의 고정 밝은 회색.
+              color: '[#9198a1]',
               fontSize: 'xs',
               textTransform: 'uppercase',
               letterSpacing: 'widest',

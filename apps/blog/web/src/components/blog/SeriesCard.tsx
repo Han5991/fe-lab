@@ -110,6 +110,9 @@ export const SeriesCard = ({ series, index }: SeriesCardProps) => {
           className={css(tagPillStyle, {
             px: '[8px]',
             bg: 'paper.300',
+            // tagPillStyle 기본 ink.700은 paper.200 기준이라, 한 단계 진한
+            // paper.300 위에서는 11px 기준 4.40:1로 AA에 못 미친다.
+            color: 'ink.800',
             fontFamily: 'mono',
           })}
         >
