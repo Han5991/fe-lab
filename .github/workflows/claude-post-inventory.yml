@@ -51,7 +51,12 @@ jobs:
               커밋일(`git log --follow --format=%ad --date=short -- <파일> | tail -1`),
               마지막 수정 커밋일
             - status: scheduled 글 — 제목, 시리즈, 공개 예정일(scheduledDate가
-              있으면 그것, 없으면 date), 예정일 경과 여부
+              있으면 그것, 없으면 date). 표에는 "실제로 아직 사이트에 올라가지
+              않은 글"만 넣습니다: https://blog.sangwook.dev/sitemap.xml 을
+              curl로 가져와, 글의 slug(frontmatter의 slug, 없으면 파일 경로에서
+              유도)가 sitemap에 이미 있으면 제외하세요. 예정일이 지났는데도
+              sitemap에 없는 글은 아직 배포 전이라는 뜻이므로 표에 넣고 비고에
+              "예정일 경과, 배포 대기"라고 적으세요.
             - frontmatter에 status 키가 없는 파일은 메타 노트이므로 제외
             </수집>
 
@@ -65,4 +70,5 @@ jobs:
             갱신하고, 이슈 자체가 없다면 새로 만들지 말고 종료하세요.
             </산출>
 
-          claude_args: '--model claude-sonnet-5 --allowed-tools "Read,Write,Grep,Glob,Bash(git log:*),Bash(gh issue:*),Bash(date:*),Bash(tail:*)"'
+          # curl은 배포 sitemap 대조(실제 공개 여부 판정)용
+          claude_args: '--model claude-sonnet-5 --allowed-tools "Read,Write,Grep,Glob,Bash(git log:*),Bash(gh issue:*),Bash(date:*),Bash(tail:*),Bash(curl:*)"'
