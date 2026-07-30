@@ -2,11 +2,64 @@
 
 import { useState, useCallback } from 'react';
 import dynamic from 'next/dynamic';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { PrismLight as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/cjs/styles/prism';
+import markup from 'react-syntax-highlighter/dist/cjs/languages/prism/markup';
+import cssLang from 'react-syntax-highlighter/dist/cjs/languages/prism/css';
+import javascript from 'react-syntax-highlighter/dist/cjs/languages/prism/javascript';
+import jsx from 'react-syntax-highlighter/dist/cjs/languages/prism/jsx';
+import typescript from 'react-syntax-highlighter/dist/cjs/languages/prism/typescript';
+import tsx from 'react-syntax-highlighter/dist/cjs/languages/prism/tsx';
+import bash from 'react-syntax-highlighter/dist/cjs/languages/prism/bash';
+import yaml from 'react-syntax-highlighter/dist/cjs/languages/prism/yaml';
+import json from 'react-syntax-highlighter/dist/cjs/languages/prism/json';
+import diff from 'react-syntax-highlighter/dist/cjs/languages/prism/diff';
+import markdown from 'react-syntax-highlighter/dist/cjs/languages/prism/markdown';
+import docker from 'react-syntax-highlighter/dist/cjs/languages/prism/docker';
+import jsExtras from 'react-syntax-highlighter/dist/cjs/languages/prism/js-extras';
+import jsdoc from 'react-syntax-highlighter/dist/cjs/languages/prism/jsdoc';
 import { css, cx } from '@design-system/ui-lib/css';
 import { token } from '@design-system/ui-lib/tokens';
 import { codeText, isBlockCode } from './markdownCode';
+import { PRISM_LANGUAGES, type PrismLanguageName } from './prismLanguages';
+
+// `Prism` export는 refractor 전 언어(300여 종)를 번들해 gzip 350KB 청크가
+// 된다. 글이 실제로 쓰는 fence는 십여 종뿐이라 PrismLight로 바꾸고 필요한
+// 언어만 등록한다. refractor 5의 언어 모듈은 의존성을 스스로 등록하므로
+// (예: tsx → jsx + typescript) 등록 순서를 신경 쓸 필요가 없다.
+// 목록과 순서의 단일 출처는 prismLanguages.ts이고, 아래 맵이 그와 어긋나면
+// prismLanguages.test.tsx가 실패한다. (순서도 의미가 있다 — 주석 참고)
+export const LANGUAGE_MODULES: Record<PrismLanguageName, unknown> = {
+  markup,
+  css: cssLang,
+  javascript,
+  jsx,
+  'js-extras': jsExtras,
+  jsdoc,
+  typescript,
+  tsx,
+  bash,
+  yaml,
+  json,
+  diff,
+  markdown,
+  docker,
+};
+
+for (const [name, mod] of Object.entries(LANGUAGE_MODULES)) {
+  SyntaxHighlighter.registerLanguage(name, mod);
+}
+// refractor의 register()는 언어 함수만 등록하고 별칭은 붙이지 않는다.
+// `js`/`ts`/`md`/`dockerfile` 같은 라벨이 평문으로 떨어지지 않도록 따로 건다.
+SyntaxHighlighter.alias(
+  Object.fromEntries(
+    Object.entries(PRISM_LANGUAGES)
+      .filter(([, aliases]) => aliases.length > 0)
+      // PRISM_LANGUAGES는 `as const`라 별칭이 readonly 튜플이다. refractor의
+      // alias()는 mutable string[]을 받으므로 복사해서 넘긴다.
+      .map(([name, aliases]) => [name, [...aliases]] as const),
+  ),
+);
 
 // mermaid는 d3·dagre까지 끌고 와 raw 1.1MB(gzip 360KB)짜리 청크가 된다.
 // 정적 import면 CodeBlock을 쓰는 모든 글 — 즉 mermaid 다이어그램이 하나도
