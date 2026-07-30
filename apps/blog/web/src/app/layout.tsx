@@ -1,4 +1,9 @@
-import 'pretendard/dist/web/static/pretendard-dynamic-subset.css';
+// 가변(variable) 동적 서브셋. 예전엔 static 동적 서브셋을 썼는데, 그건 9개
+// 웨이트 × 92개 유니코드 서브셋 × (woff2 + woff) = @font-face 828개짜리
+// 542KB 스타일시트라 렌더 블로킹 CSS 청크가 gzip 137KB까지 부풀었다(Lighthouse
+// unused-css-rules에서 100% 미사용으로 잡힌 파일이 이것). 가변 폰트 한 벌이면
+// 같은 서브셋 92개를 @font-face 92개로 덮고, 웨이트는 45~920 축에서 뽑는다.
+import 'pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css';
 import '@/src/styles/globals.css';
 import { Providers } from './providers';
 import { Layout } from '@/src/components/Layout';
