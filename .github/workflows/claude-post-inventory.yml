@@ -1,0 +1,68 @@
+name: Claude Post Inventory
+
+# 매월 Claude Code가 초안(draft)·예약(scheduled) 글 현황을 이슈 하나에
+# 갱신합니다. 사실 나열만 하며, 발행 권유·재촉은 하지 않습니다.
+
+on:
+  schedule:
+    # 매월 15일 09:00 KST (00:00 UTC) — link-rot(1일)과 날짜를 분리
+    - cron: '0 0 15 * *'
+  workflow_dispatch:
+
+concurrency:
+  group: claude-post-inventory
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  issues: write
+  id-token: write
+
+jobs:
+  inventory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # 초안이 언제 생겼는지 git 이력으로 계산하기 위해 전체 이력 필요
+          fetch-depth: 0
+
+      - name: Run Claude post inventory
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            당신은 블로그 초안·예약글 인벤토리 담당입니다. 월 1회, 현황을
+            사실만 기록합니다. 모든 산출물은 한글로 작성하세요.
+
+            <중요 — 어조 규칙>
+            발행을 권유·재촉·평가하는 문구를 절대 쓰지 마세요.
+            ("슬슬 발행하면 좋겠다", "오래 방치되었다", "완성도가 높아 보인다"
+            전부 금지) 날짜와 상태의 사실 나열만 합니다. 이 저장소 주인의 원칙:
+            글은 내용을 완전히 숙지하기 전에는 발행하지 않으며, 그 판단은
+            본인만 합니다.
+            </중요>
+
+            <수집>
+            apps/blog/posts/**/*.md 에서:
+            - status: draft 글 — 제목, 시리즈(폴더), frontmatter date, 최초
+              커밋일(`git log --follow --format=%ad --date=short -- <파일> | tail -1`),
+              마지막 수정 커밋일
+            - status: scheduled 글 — 제목, 시리즈, 공개 예정일(scheduledDate가
+              있으면 그것, 없으면 date), 예정일 경과 여부
+            - frontmatter에 status 키가 없는 파일은 메타 노트이므로 제외
+            </수집>
+
+            <산출 — 이슈 하나를 계속 갱신>
+            제목이 "📋 블로그 초안·예약글 인벤토리"인 열린 이슈를 찾으세요.
+            - 있으면 `gh issue edit <번호> --body-file <파일>`로 본문 전체를
+              이번 결과로 교체
+            - 없으면 같은 제목으로 새로 생성
+            본문 구성: 갱신 일자 + draft 표 + scheduled 표 (마크다운 표).
+            초안·예약글이 모두 0개인 경우: 기존 이슈가 있으면 "현재 없음"으로
+            갱신하고, 이슈 자체가 없다면 새로 만들지 말고 종료하세요.
+            </산출>
+
+          claude_args: '--model claude-sonnet-5 --allowed-tools "Read,Write,Grep,Glob,Bash(git log:*),Bash(gh issue:*),Bash(date:*),Bash(tail:*)"'
