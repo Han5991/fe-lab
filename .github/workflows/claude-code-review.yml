@@ -41,7 +41,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 1
 
@@ -324,10 +324,32 @@ jobs:
             수행한 모드의 각 점검 카테고리 중 지적 사항이 없었던 것을
             한 줄로 나열. 카테고리를 조용히 건너뛰지 마세요.
 
+            ### 커밋 가능한 수정 제안 (suggested changes)
+            요약 코멘트를 남긴 뒤, 몇 줄 이내의 구체적 수정으로 해결되는 지적은
+            GitHub suggested change로도 제안해 작성자가 UI에서 바로 커밋할 수
+            있게 하세요. 글 리뷰 모드의 문장 교정도 같은 방식으로 제안합니다.
+
+            - 대상: 이번 PR diff에 존재하는 라인(RIGHT side)만. diff 밖 라인이나
+              설계 차원의 지적은 suggestion 없이 요약 코멘트로만 남기세요.
+            - 기준: 확신도 high이고 대체 내용이 자명한 지적만. 취향 교정은 금지.
+            - 방법: 인라인 코멘트들을 리뷰 하나로 모아 제출하세요. Write 도구로
+              review.json을 만든 뒤:
+              gh api repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/reviews -X POST --input review.json
+              review.json 형식:
+              {"event":"COMMENT","body":"인라인 수정 제안 N건",
+               "comments":[{"path":"파일경로","line":42,"side":"RIGHT",
+                 "body":"왜 바꾸는지 한 줄\n\n```suggestion\n42행 전체를 대체할 내용\n```"}]}
+              여러 줄을 교체하려면 start_line(범위 시작)과 start_side("RIGHT")를
+              추가하고 suggestion 블록에 그 범위 전체의 대체 내용을 넣으세요.
+            - suggestion 블록 안에는 대체할 코드/문장만 넣고, 설명은 body에 쓰세요.
+              들여쓰기는 원본 라인과 정확히 일치해야 합니다.
+
             어조는 건설적으로. 다만 칭찬으로 코멘트를 채우지 말고
             무엇이 왜 기준에 미달하는지에 집중하세요.
             </output_format>
 
           # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
           # or https://docs.claude.com/en/docs/claude-code/sdk#command-line for available options
-          claude_args: '--allowed-tools "Read,Grep,Glob,Bash(gh issue view:*),Bash(gh search:*),Bash(gh issue list:*),Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr list:*)"'
+          # Write는 리뷰 코멘트 body-file·suggestion용 review.json 작성에,
+          # Bash(gh api:*)는 인라인 suggestion 리뷰 제출에 필요하다.
+          claude_args: '--allowed-tools "Read,Grep,Glob,Write,Bash(gh issue view:*),Bash(gh search:*),Bash(gh issue list:*),Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr list:*),Bash(gh api:*)"'
