@@ -58,8 +58,6 @@ const eslintConfig = [
             {
               // adminRepository처럼 접두사가 붙은 것도 함께 막습니다.
               group: [
-                '**/domain/*/repository',
-                '**/domain/*/repository.*',
                 '**/domain/*/*[rR]epository',
                 '**/domain/*/*[rR]epository.*',
               ],
