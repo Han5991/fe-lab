@@ -12,9 +12,13 @@ overrides:
 
 auditConfig:
   ignoreGhsas:
-    # brace-expansion ReDoS. 패치가 5.0.8뿐이고 1.x 백포트가 없다. eslint→minimatch@3이
-    # ^1.1.7을 고정하는데 v2+는 CJS export가 바뀌어 강제 승격 불가(함수→named export).
-    # 1.x 백포트(1.1.17+)가 나오면 이 ignore를 지우고 lockfile 재해석으로 반영할 것.
+    # brace-expansion DoS(unbounded expansion length). eslint→minimatch@3이 brace-expansion을
+    # ^1.1.7로 고정하는데 v2+는 CJS export가 바뀌어 강제 승격 불가(함수→named export).
+    # 1.x 백포트(1.1.17)가 2026-07-30 기준 나와 있고 실제 코드에 EXPANSION_MAX_LENGTH 방어가
+    # 들어가 있어 lockfile 해석은 1.1.17로 올려뒀지만, GHSA-mh99-v99m-4gvg의 patched_versions
+    # 메타데이터가 여전히 ">=5.0.8"만 명시하고 있어 pnpm audit는 1.1.17을 취약으로 계속 표시한다
+    # (temp override로 1.1.17을 강제 → audit 재실행해 직접 확인함). advisory 메타데이터가
+    # 1.x 백포트를 patched_versions에 반영하면 이 ignore를 지울 것.
     - GHSA-mh99-v99m-4gvg
 
 allowBuilds:
@@ -32,3 +36,7 @@ catalog:
   react-dom: 19.2.7
   '@types/react': 19.2.17
   '@types/react-dom': 19.2.3
+
+minimumReleaseAgeExclude:
+  # GHSA-mh99-v99m-4gvg 대응으로 brace-expansion 1.x 라인을 최신 백포트로 올리기 위한 예외.
+  - brace-expansion@1.1.17
