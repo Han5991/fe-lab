@@ -45,10 +45,10 @@ jobs:
             모든 산출물은 한글로 작성하세요.
 
             <측정>
-            러너에 Chrome이 설치되어 있습니다. 이렇게 실행하세요:
+            러너에 Chrome이 설치되어 있고 CHROME_PATH 환경변수도 이미 설정되어
+            있습니다. 이렇게 실행하세요:
 
-            CHROME_PATH="$(command -v google-chrome || command -v google-chrome-stable)" \
-              npx --yes lighthouse <URL> --output=json --output-path=<파일> \
+            npx --yes lighthouse <URL> --output=json --output-path=<파일> \
               --chrome-flags="--headless=new --no-sandbox" --quiet
 
             대상 URL 3개: 홈(/), 글 목록(/posts/), 최근 발행 글 1개
@@ -73,4 +73,7 @@ jobs:
             근거로 설명하세요.
             </보고>
 
-          claude_args: '--model claude-sonnet-5 --allowedTools "Bash,Read,Grep,Glob,WebFetch"'
+          claude_args: '--model claude-sonnet-5 --allowedTools "Read,Write,Grep,Glob,WebFetch,Bash(npx:*),Bash(curl:*),Bash(gh issue:*),Bash(date:*)"'
+        env:
+          # 러너에 설치된 Chrome을 lighthouse(chrome-launcher)가 찾도록 지정
+          CHROME_PATH: /usr/bin/google-chrome

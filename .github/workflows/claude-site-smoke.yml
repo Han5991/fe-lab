@@ -65,4 +65,4 @@ jobs:
               있으니 2-3분 간격으로 재시도한 뒤에도 실패할 때만 이슈를 만드세요.
             </보고 규칙>
 
-          claude_args: '--model claude-sonnet-5 --allowedTools "Bash,Read,Grep,Glob,WebFetch"'
+          claude_args: '--model claude-sonnet-5 --allowedTools "Read,Write,Grep,Glob,WebFetch,Bash(curl:*),Bash(gh issue:*),Bash(date:*),Bash(sleep:*)"'

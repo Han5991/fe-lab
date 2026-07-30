@@ -65,4 +65,4 @@ jobs:
             갱신하고, 이슈 자체가 없다면 새로 만들지 말고 종료하세요.
             </산출>
 
-          claude_args: '--model claude-sonnet-5 --allowedTools "Bash,Read,Grep,Glob"'
+          claude_args: '--model claude-sonnet-5 --allowedTools "Read,Write,Grep,Glob,Bash(git log:*),Bash(gh issue:*),Bash(date:*),Bash(tail:*)"'

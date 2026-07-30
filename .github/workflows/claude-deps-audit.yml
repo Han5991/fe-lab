@@ -112,7 +112,7 @@ jobs:
             5. 변경할 것이 전혀 없으면(죽은 override 없음 + 신규 advisory 0건 +
                예외 조건 미충족) 아무것도 만들지 말고 요약만 남기고 종료하세요.
 
-          # 자동화 잡이라 사람이 중간 승인을 해줄 수 없어 Bash를 통으로 허용한다.
-          # (러너는 일회용 샌드박스이고 프롬프트는 고정이라 위험이 제한적)
+          # 쓰기 권한(contents/PR write)과 외부 콘텐츠 조회(WebFetch/WebSearch)를 함께
+          # 가지므로 Bash는 필요한 서브커맨드로만 스코프한다 (#162 리뷰 반영).
           # WebSearch/WebFetch는 advisory·백포트 출시 확인용.
-          claude_args: '--allowedTools "Bash,Read,Edit,Write,Grep,Glob,WebFetch,WebSearch"'
+          claude_args: '--allowedTools "Read,Edit,Write,Grep,Glob,WebFetch,WebSearch,Bash(pnpm:*),Bash(git:*),Bash(gh pr:*),Bash(gh issue:*),Bash(date:*),Bash(diff:*),Bash(cp:*),Bash(shasum:*)"'
