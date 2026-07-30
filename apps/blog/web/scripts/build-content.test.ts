@@ -31,13 +31,14 @@ test('buildPhases: 기본 — validate 게이트 phase + 병렬 generate phase',
     'search-index',
     'sitemap',
     'sync-posts',
+    'thumbnails',
   ]);
 });
 
 test('buildPhases: skip-validate면 generate phase만', () => {
   const phases = buildPhases({ skipValidate: true, force: false });
   assert.equal(phases.length, 1);
-  assert.ok(phases[0].length >= 6);
+  assert.ok(phases[0].length >= 7);
 });
 
 test('buildPhases: force 플래그는 sync-posts에만 전달', () => {
