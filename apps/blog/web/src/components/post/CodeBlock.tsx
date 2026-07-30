@@ -1,12 +1,38 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import dynamic from 'next/dynamic';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/cjs/styles/prism';
 import { css, cx } from '@design-system/ui-lib/css';
 import { token } from '@design-system/ui-lib/tokens';
-import { MermaidChart } from './MermaidChart';
 import { codeText, isBlockCode } from './markdownCode';
+
+// mermaid는 d3·dagre까지 끌고 와 raw 1.1MB(gzip 360KB)짜리 청크가 된다.
+// 정적 import면 CodeBlock을 쓰는 모든 글 — 즉 mermaid 다이어그램이 하나도
+// 없는 글까지 — 이 청크를 초기 로드에 포함한다(71편 중 mermaid를 쓰는 건 6편).
+// 아래 `language === 'mermaid'` 분기에 도달할 때만 받아오도록 분리한다.
+// MermaidChart는 원래도 useEffect 안에서만 렌더하므로 ssr: false로 잃는 건 없다.
+const MermaidChart = dynamic(
+  () => import('./MermaidChart').then(m => m.MermaidChart),
+  {
+    ssr: false,
+    // 청크를 받는 동안 도표 자리를 잡아둬 레이아웃 시프트를 막는다.
+    loading: () => <div className={mermaidBoxStyle} />,
+  },
+);
+
+// MermaidChart 내부 컨테이너와 같은 박스 — placeholder와 실제 도표의 자리가
+// 어긋나지 않게 여기서도 동일한 여백/테두리를 쓴다.
+const mermaidBoxStyle = css({
+  my: '10',
+  p: '6',
+  minH: '[120px]',
+  bg: 'paper.100',
+  rounded: '2xl',
+  borderWidth: '[1px]',
+  borderColor: 'ink.border',
+});
 
 function CopyButton({ content }: { content: string }) {
   const [isCopied, setIsCopied] = useState(false);
