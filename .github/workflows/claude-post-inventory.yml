@@ -51,7 +51,9 @@ jobs:
               커밋일(`git log --follow --format=%ad --date=short -- <파일> | tail -1`),
               마지막 수정 커밋일
             - status: scheduled 글 — 제목, 시리즈, 공개 예정일(scheduledDate가
-              있으면 그것, 없으면 date), 예정일 경과 여부
+              있으면 그것, 없으면 date). 공개 예정일이 이미 지난 글은 사이트에
+              자동 공개된 상태이므로 표에서 제외하세요. 예정일이 아직 오지 않은
+              실제 미발행 글만 기록합니다.
             - frontmatter에 status 키가 없는 파일은 메타 노트이므로 제외
             </수집>
 
