@@ -62,7 +62,7 @@ export const FeaturedPost = ({ post }: FeaturedPostProps) => {
           <span
             className={css(tagPillStyle, {
               bg: 'moss.100',
-              color: 'moss.600',
+              color: 'moss.700',
               fontWeight: 'semibold',
             })}
           >
