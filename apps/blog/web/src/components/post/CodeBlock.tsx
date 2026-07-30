@@ -225,6 +225,10 @@ export function CodeBlock({
           background: 'transparent',
         }}
         {...props}
+        // 코드 블록은 가로 스크롤되는데 포커스를 받을 수 없어 키보드만 쓰는
+        // 사용자가 잘린 코드를 볼 방법이 없었다(axe scrollable-region-focusable,
+        // impact serious — 글 하나에 10곳). props 뒤에 둬서 덮이지 않게 한다.
+        tabIndex={0}
       >
         {content}
       </SyntaxHighlighter>

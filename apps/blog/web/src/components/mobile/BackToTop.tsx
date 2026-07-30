@@ -29,6 +29,9 @@ export const BackToTop = () => {
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.8 }}
           onClick={scrollToTop}
+          // MobileTOC와 같은 이유 — 아이콘 단독 버튼이라 이름이 필요하다.
+          // 스크롤 전에는 렌더되지 않아 axe 스캔에 안 잡혔을 뿐, 같은 결함이다.
+          aria-label="맨 위로 이동"
           whileTap={{ scale: 0.9 }}
           className={css({
             pos: 'fixed',
