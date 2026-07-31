@@ -424,21 +424,6 @@ jobs:
             무엇이 왜 기준에 미달하는지에 집중하세요.
             </output_format>
 
-            <final_output>
-            코멘트를 다 남긴 뒤, 마지막 메시지로 --json-schema 스키마에 맞는
-            JSON만 출력하세요. 이건 Actions 요약에 찍히는 집계용이고
-            사람이 읽는 리뷰는 위의 PR 코멘트가 전부입니다. JSON에 지적
-            본문을 옮겨 적지 마세요.
-
-            - modes: 실제로 수행한 모드 ("code" / "writing" / "deps")
-            - critical / high / medium / low: 요약 코멘트에 실제로 올린
-              심각도별 건수. 인라인으로만 올린 것도 포함해 셉니다.
-            - inline_suggestions: create_inline_comment를 호출한 횟수
-            - ci_status: get_ci_status로 본 상태를 "pass" / "fail" /
-              "running" / "unknown" 중 하나로
-            - headline: 가장 중요한 발견 한 줄. 지적이 없으면 왜 없는지 한 줄
-            </final_output>
-
           # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
           # or https://docs.claude.com/en/docs/claude-code/sdk#command-line for available options
           # Write는 요약 코멘트 --body-file 작성용.
@@ -453,38 +438,6 @@ jobs:
           # Bash(gh api:*)는 뺐다. 인라인 suggestion을 직접 POST할 때만 필요했는데
           # 이제 전용 MCP 도구가 그 일을 하고, gh api는 사실상 모든 write 엔드포인트를
           # 여는 와일드카드라 리뷰 전용 잡에 남겨둘 이유가 없다.
-          #
-          # --json-schema는 마지막 메시지를 스키마로 검증해 structured_output
-          # 출력으로 내보낸다. 아래 "리뷰 결과 요약" 스텝이 이걸 Step Summary에
-          # 찍는다. required를 비워 둔 것은 의도적이다 — 집계는 부수적이고,
-          # 필드 하나가 빠졌다고 리뷰 잡이 실패하면 본말이 전도된다.
           claude_args: >-
             --allowed-tools
             "Read,Grep,Glob,Write,mcp__github_inline_comment__create_inline_comment,mcp__github_ci__get_ci_status,mcp__github_ci__get_workflow_run_details,mcp__github_ci__download_job_log,Bash(gh issue view:*),Bash(gh search:*),Bash(gh issue list:*),Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr list:*)"
-            --json-schema
-            '{"type":"object","properties":{"modes":{"type":"array","items":{"type":"string","enum":["code","writing","deps"]}},"critical":{"type":"integer"},"high":{"type":"integer"},"medium":{"type":"integer"},"low":{"type":"integer"},"inline_suggestions":{"type":"integer"},"ci_status":{"type":"string","enum":["pass","fail","running","unknown"]},"headline":{"type":"string"}},"required":[]}'
-
-      # structured_output은 모델이 만든 문자열이다. run 스크립트에 ${{ }}로
-      # 직접 박으면 셸 인젝션이 되므로 env로 넘겨 jq에 파이프한다.
-      # 값이 비어 있거나(스키마 미준수) 리뷰 스텝이 실패해도 이 스텝이
-      # 잡을 빨갛게 만들지 않도록 always() + 빈 값 가드를 둔다.
-      - name: 리뷰 결과 요약
-        if: always() && steps.claude-review.outputs.structured_output != ''
-        env:
-          REVIEW_RESULT: ${{ steps.claude-review.outputs.structured_output }}
-        run: |
-          set -euo pipefail
-          if ! printf '%s' "$REVIEW_RESULT" | jq -e . >/dev/null 2>&1; then
-            echo "structured_output이 JSON이 아니라 요약을 건너뜁니다." >> "$GITHUB_STEP_SUMMARY"
-            exit 0
-          fi
-          printf '%s' "$REVIEW_RESULT" | jq -r '
-            "## 리뷰 집계",
-            "",
-            "- 모드: \(([(.modes // [])[]] | join(", ") | if . == "" then "-" else . end))",
-            "- CI: \(.ci_status // "unknown")",
-            "- critical \(.critical // 0) / high \(.high // 0) / medium \(.medium // 0) / low \(.low // 0)",
-            "- 인라인 suggestion: \(.inline_suggestions // 0)건",
-            "",
-            "> \(.headline // "-")"
-          ' >> "$GITHUB_STEP_SUMMARY"
