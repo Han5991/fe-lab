@@ -5,10 +5,9 @@ import {
   readFileSync,
   readdirSync,
   rmSync,
-  statSync,
   writeFileSync,
 } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import sharp from 'sharp';
 import { getAllPosts } from '../domain/post/service';
@@ -103,7 +102,11 @@ function readManifest(): Record<string, string> {
 
 function listExistingWebps(): string[] {
   if (!existsSync(THUMBS_DIR)) return [];
-  return readdirSync(THUMBS_DIR, { recursive: true }).map(p => String(p));
+  // readdirSync는 OS 구분자를 쓰지만 outputRel은 항상 '/'로 조립되므로,
+  // Windows에서 모든 파일이 orphan으로 오판되지 않도록 정규화해서 비교합니다.
+  return readdirSync(THUMBS_DIR, { recursive: true }).map(p =>
+    String(p).split(sep).join('/'),
+  );
 }
 
 async function main() {
@@ -172,9 +175,4 @@ if (
     console.error(e);
     process.exit(1);
   });
-}
-
-/** 테스트에서 실제 파일 크기를 확인할 때 쓰는 헬퍼 */
-export function fileSize(path: string): number {
-  return statSync(path).size;
 }

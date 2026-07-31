@@ -33,22 +33,29 @@ const OPTIMIZABLE_EXT = /\.(?:png|jpe?g)$/i;
  * 외부 URL(http)과 절대 경로(`/og/*` 생성 카드 포함)는 제외합니다. 생성 OG
  * 카드는 satori가 이미 적정 크기로 만들고, 외부 URL은 우리가 변환할 수 없습니다.
  */
-export function isOptimizableThumbnail(thumbnail?: string): boolean {
+export function isOptimizableThumbnail(
+  thumbnail?: string,
+): thumbnail is string {
   if (!thumbnail) return false;
   if (thumbnail.startsWith('http') || thumbnail.startsWith('/')) return false;
   return OPTIMIZABLE_EXT.test(thumbnail);
 }
 
+/** 확장자 치환 규칙의 단일 출처 — 아래 두 함수가 공유합니다. */
+function toWebpName(thumbnail: string): string {
+  return thumbnail.replace(OPTIMIZABLE_EXT, '.webp');
+}
+
 /**
  * 최적화본의 `public/thumbs/` 기준 상대 경로(인코딩 전). 대상이 아니면 null.
- * scripts/generate-thumbnails.ts와 이 모듈이 같은 규칙을 공유하기 위한 단일 출처입니다.
+ * generate-thumbnails.ts가 파일을 쓸 위치를 정할 때 씁니다.
  */
 export function thumbnailWebpRelPath(
   post: Pick<PostData, 'thumbnail' | 'relativeDir'>,
 ): string | null {
   const { thumbnail, relativeDir } = post;
   if (!isOptimizableThumbnail(thumbnail)) return null;
-  const name = thumbnail!.replace(OPTIMIZABLE_EXT, '.webp');
+  const name = toWebpName(thumbnail);
   return relativeDir ? `${relativeDir}/${name}` : name;
 }
 
@@ -68,9 +75,10 @@ export function resolveThumbnailSrc(
   if (!isOptimizableThumbnail(post.thumbnail)) {
     return resolveThumbnailUrl(post);
   }
-  const name = post.thumbnail!.replace(OPTIMIZABLE_EXT, '.webp');
+  // 디렉터리는 세그먼트별(구분자 보존), 파일명은 통째로 인코딩 —
+  // resolveThumbnailUrl과 같은 규칙이라 경로 형태가 어긋나지 않습니다.
   const dir = post.relativeDir ? `${encodePostSlug(post.relativeDir)}/` : '';
-  return `/thumbs/${dir}${encodeURIComponent(name)}`;
+  return `/thumbs/${dir}${encodeURIComponent(toWebpName(post.thumbnail))}`;
 }
 
 /**

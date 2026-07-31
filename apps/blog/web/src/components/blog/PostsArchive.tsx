@@ -287,10 +287,14 @@ export const PostsArchiveView = ({
                 gap: '6',
               })}
             >
-              {/* 첫 행(데스크톱 3열)만 우선 로드하고 나머지는 lazy — 목록 전체를
-                  한꺼번에 받으면 첫 화면 이미지가 대역폭을 뺏겨 LCP가 밀린다. */}
+              {/* 앞의 2개만 우선 로드하고 나머지는 lazy — 목록 전체를 한꺼번에 받으면
+                  첫 화면 이미지가 대역폭을 뺏겨 LCP가 밀린다. loading/fetchPriority는
+                  정적 속성이라 브레이크포인트별로 달리 줄 수 없는데, 그리드는 모바일
+                  1열 / sm 2열 / lg 3열이다. 가장 좁은 화면에 맞춰 잡아야 "안 보이는
+                  이미지를 high로 요청"하는 일이 없다. 나머지도 뷰포트에 들어오면
+                  lazy가 곧바로 로드하므로 손해가 아니다. */}
               {filtered.map((p, i) => (
-                <PostGridCard key={p.slug} post={p} priority={i < 3} />
+                <PostGridCard key={p.slug} post={p} priority={i < 2} />
               ))}
             </div>
           ) : (
