@@ -168,7 +168,10 @@ export default function HomePage() {
                     href="/posts/?focus=search"
                   />
                   <div>
+                    {/* 바로 아래 MiniPostCard가 h4라, 이 라벨이 span이면
+                        FeaturedPost의 h2에서 h4로 두 단계를 건너뛴다. */}
                     <Label
+                      as="h3"
                       tone="meta"
                       className={css({
                         display: 'block',
@@ -308,8 +311,13 @@ export default function HomePage() {
                   </Link>
                 </div>
                 <ol className={css({ listStyleType: 'none', p: '0', m: '0' })}>
+                  {/* PostIndexRow의 루트는 <a>다. <ol> 바로 밑에 두면 목록
+                      구조가 깨진다(axe list, impact serious). PopularRail·
+                      PostsArchive와 같이 <li>로 감싼다. */}
                   {recent.map(p => (
-                    <PostIndexRow key={p.slug} post={p} />
+                    <li key={p.slug}>
+                      <PostIndexRow post={p} />
+                    </li>
                   ))}
                 </ol>
               </div>

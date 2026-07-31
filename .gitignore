@@ -53,6 +53,7 @@ yarn-error.log*
 /.idea/
 /apps/blog/web/public/posts/
 /apps/blog/web/public/og/
+/apps/blog/web/public/thumbs/
 /apps/blog/web/.cache/
 
 gha-creds-*.json

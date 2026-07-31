@@ -22,10 +22,10 @@
     "prepare": "lefthook install"
   },
   "devDependencies": {
+    "concurrently": "^10.0.4",
     "lefthook": "^2.1.6",
     "prettier": "^3.8.4",
-    "turbo": "^2.9.18",
-    "concurrently": "^10.0.4"
+    "turbo": "^2.9.18"
   },
   "packageManager": "pnpm@11.6.0",
   "engines": {

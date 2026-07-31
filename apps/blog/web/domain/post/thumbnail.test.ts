@@ -1,6 +1,12 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { resolveThumbnailUrl, resolveAbsoluteThumbnailUrl } from './thumbnail';
+import {
+  resolveThumbnailUrl,
+  resolveAbsoluteThumbnailUrl,
+  resolveThumbnailSrc,
+  isOptimizableThumbnail,
+  thumbnailWebpRelPath,
+} from './thumbnail';
 
 // 인코딩 결과 상수 (실제 encodeURIComponent / encodePostSlug 출력으로 확정)
 const ENC_BUNDLER = '%EB%B2%88%EB%93%A4%EB%9F%AC'; // '번들러'
@@ -179,5 +185,92 @@ test('resolveAbsoluteThumbnailUrl: http URL은 prefix 없이 그대로', () => {
       p({ thumbnail: 'http://example.com/x.png', relativeDir: 'dir' }),
     ),
     'http://example.com/x.png',
+  );
+});
+
+// ── isOptimizableThumbnail ───────────────────────────────────────────────────
+
+test('isOptimizableThumbnail: posts/ 상대 png/jpg/jpeg만 대상', () => {
+  assert.equal(isOptimizableThumbnail('a-thumb.png'), true);
+  assert.equal(isOptimizableThumbnail('a.jpg'), true);
+  assert.equal(isOptimizableThumbnail('a.jpeg'), true);
+  assert.equal(isOptimizableThumbnail('A-THUMB.PNG'), true);
+});
+
+test('isOptimizableThumbnail: 생성 OG 카드·절대 경로·외부 URL은 제외', () => {
+  assert.equal(isOptimizableThumbnail('/og/my-post.png'), false);
+  assert.equal(isOptimizableThumbnail('/other/x.png'), false);
+  assert.equal(isOptimizableThumbnail('https://cdn/x.png'), false);
+  assert.equal(isOptimizableThumbnail('http://cdn/x.png'), false);
+});
+
+test('isOptimizableThumbnail: 없거나 변환 대상 아닌 확장자는 제외', () => {
+  assert.equal(isOptimizableThumbnail(undefined), false);
+  assert.equal(isOptimizableThumbnail(''), false);
+  assert.equal(isOptimizableThumbnail('x.svg'), false);
+  assert.equal(isOptimizableThumbnail('x.webp'), false);
+  assert.equal(isOptimizableThumbnail('x.gif'), false);
+});
+
+// ── thumbnailWebpRelPath ─────────────────────────────────────────────────────
+
+test('thumbnailWebpRelPath: relativeDir을 붙이고 확장자를 webp로 교체', () => {
+  assert.equal(
+    thumbnailWebpRelPath(
+      p({ thumbnail: 'a-thumb.png', relativeDir: 'bundler' }),
+    ),
+    'bundler/a-thumb.webp',
+  );
+});
+
+test('thumbnailWebpRelPath: relativeDir이 비면 파일명만 (인코딩하지 않은 원시 경로)', () => {
+  assert.equal(
+    thumbnailWebpRelPath(p({ thumbnail: 'a.jpeg', relativeDir: '' })),
+    'a.webp',
+  );
+});
+
+test('thumbnailWebpRelPath: 대상이 아니면 null', () => {
+  assert.equal(thumbnailWebpRelPath(p({ thumbnail: '/og/x.png' })), null);
+  assert.equal(thumbnailWebpRelPath(p({})), null);
+});
+
+// ── resolveThumbnailSrc ──────────────────────────────────────────────────────
+
+test('resolveThumbnailSrc: 상대 png는 /thumbs/ 아래 webp로', () => {
+  assert.equal(
+    resolveThumbnailSrc(
+      p({ thumbnail: 'a-thumb.png', relativeDir: 'bundler' }),
+    ),
+    '/thumbs/bundler/a-thumb.webp',
+  );
+});
+
+test('resolveThumbnailSrc: 한글 relativeDir은 세그먼트별 인코딩 (구분자 보존)', () => {
+  assert.equal(
+    resolveThumbnailSrc(p({ thumbnail: 'a.png', relativeDir: '번들러/3편' })),
+    `/thumbs/${ENC_BUNDLER}/${ENC_3PYEON}/a.webp`,
+  );
+});
+
+test('resolveThumbnailSrc: 대상이 아니면 resolveThumbnailUrl과 같은 결과', () => {
+  // 생성 OG 카드
+  assert.equal(resolveThumbnailSrc(p({})), '/og/my-post.png');
+  // 외부 URL
+  assert.equal(
+    resolveThumbnailSrc(p({ thumbnail: 'https://cdn/x.png' })),
+    'https://cdn/x.png',
+  );
+  // 절대 경로
+  assert.equal(
+    resolveThumbnailSrc(p({ thumbnail: '/og/other.png' })),
+    '/og/other.png',
+  );
+});
+
+test('resolveThumbnailSrc: 파일명의 공백은 인코딩', () => {
+  assert.equal(
+    resolveThumbnailSrc(p({ thumbnail: 'my thumb.png', relativeDir: 'dir' })),
+    '/thumbs/dir/my%20thumb.webp',
   );
 });

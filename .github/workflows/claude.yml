@@ -2,13 +2,15 @@ name: Claude Code
 
 on:
   issue_comment:
-    types: [created]
+    types: [ created ]
   pull_request_review_comment:
-    types: [created]
+    types: [ created ]
   issues:
-    types: [opened, assigned]
+    # labeled: 본문을 고쳐 @claude를 끼워 넣지 않고 라벨 하나로 부르기 위한 것.
+    # 이미 열려 있는 이슈(특히 남이 연 이슈)를 넘길 때 쓴다.
+    types: [ opened, assigned, labeled ]
   pull_request_review:
-    types: [submitted]
+    types: [ submitted ]
 
 jobs:
   claude:
@@ -16,7 +18,8 @@ jobs:
       (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
       (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
       (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude')) ||
-      (github.event_name == 'issues' && (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude')))
+      (github.event_name == 'issues' && github.event.action == 'labeled' && github.event.label.name == 'claude') ||
+      (github.event_name == 'issues' && github.event.action != 'labeled' && (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude')))
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -26,7 +29,7 @@ jobs:
       actions: read # Required for Claude to read CI results on PRs
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 1
 
@@ -35,10 +38,18 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          
+
+          # 이슈에 이 라벨이 붙으면 트리거로 인정한다. 액션 기본값도 'claude'지만,
+          # 위 on.issues.types의 labeled와 짝이 되는 값이라 명시해 둔다.
+          # (라벨명을 바꾸려면 여기와 위 if의 label.name을 함께 고칠 것)
+          label_trigger: 'claude'
+
           # This is an optional setting that allows Claude to read CI results on PRs
           additional_permissions: |
             actions: read
+
+          # 실행 리포트를 Actions Step Summary에 남긴다.
+          display_report: true
 
           # Optional: Give a custom prompt to Claude. If this is not specified, Claude will perform the instructions specified in the comment that tagged it.
           prompt: '사용자의 요청을 수행하되, 모든 답변과 설명은 반드시 한글로 작성해주세요. ${{ github.event.comment.body || github.event.review.body || github.event.issue.body }}'

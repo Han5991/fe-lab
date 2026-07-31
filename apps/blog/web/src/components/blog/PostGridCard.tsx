@@ -2,19 +2,28 @@ import Link from 'next/link';
 import { css } from '@design-system/ui-lib/css';
 import type { PostSummary } from '@/domain/post';
 import { encodePostSlug } from '@/domain/post/utils';
-import { resolveThumbnailUrl } from '@/domain/post/thumbnail';
+import { resolveThumbnailSrc } from '@/domain/post/thumbnail';
 import { fmtDate } from '@/lib/format';
 import { Label } from './Label';
 import { tagPillStyle } from './tagPillStyle';
 
+/** CSS가 실제 크기를 정하므로 이 값들은 종횡비 힌트로만 쓰입니다(표시 346×160). */
+const THUMB_WIDTH = 692;
+const THUMB_HEIGHT = 320;
+
 interface PostGridCardProps {
   post: PostSummary;
+  /**
+   * 첫 화면에 들어오는 카드. LCP 후보이므로 lazy 대신 우선 로드합니다.
+   * 목록 전체에 걸면 화면 밖 이미지까지 한꺼번에 받아 오히려 LCP가 밀립니다.
+   */
+  priority?: boolean;
 }
 
-export const PostGridCard = ({ post }: PostGridCardProps) => {
-  // resolveThumbnailUrl은 thumbnail이 없으면 빌드 시 생성된 글별 OG 카드
-  // (/og/{slug}.png)로 fallback합니다.
-  const thumb = resolveThumbnailUrl(post);
+export const PostGridCard = ({ post, priority = false }: PostGridCardProps) => {
+  // resolveThumbnailSrc는 posts/ 안의 png/jpg면 빌드 시 만든 WebP 최적화본을,
+  // 아니면 원본(생성 OG 카드 /og/{slug}.png 포함)을 돌려줍니다.
+  const thumb = resolveThumbnailSrc(post);
   const readMin = post.readMin;
   return (
     <Link
@@ -37,6 +46,11 @@ export const PostGridCard = ({ post }: PostGridCardProps) => {
       <img
         src={thumb}
         alt={post.title}
+        width={THUMB_WIDTH}
+        height={THUMB_HEIGHT}
+        loading={priority ? 'eager' : 'lazy'}
+        fetchPriority={priority ? 'high' : 'auto'}
+        decoding="async"
         // 실제 썸네일이 있는 글만 hero 모핑 대상(목록=exit-key). 상세 헤더 이미지의
         // data-hero-enter-key와 같은 키로 매칭돼 카드↔헤더 이미지가 모핑한다.
         // 썸네일 없는 글은 키를 안 붙이고 상세 id도 /posts-plain/*이라 fade로 폴백.

@@ -56,27 +56,33 @@ const eslintConfig = [
         {
           patterns: [
             {
-              group: ['**/domain/*/repository', '**/domain/*/repository.*'],
+              // adminRepository처럼 접두사가 붙은 것도 함께 막습니다.
+              group: [
+                '**/domain/*/*[rR]epository',
+                '**/domain/*/*[rR]epository.*',
+              ],
               message:
-                'repository는 인프라 레이어입니다. domain/<x> 공개 API(배럴, 예: @/domain/analytics)를 통해 접근하세요.',
+                'repository는 인프라 레이어입니다. domain/<x> 공개 API(배럴, 예: @/domain/analytics, @/domain/analytics/admin)를 통해 접근하세요.',
             },
           ],
         },
       ],
-      // 주의: 아래 selector는 식별자 이름(client/supabase)에 매칭하므로, Supabase
-      // 클라이언트를 임의 이름으로 alias하면(예: `client as db`) 우회될 수 있습니다.
-      // 클라이언트 import 자체를 lib/client로 한정하는 컨벤션과 함께 봐야 합니다.
+      // 주의: 아래 selector는 식별자 이름(client/supabase/publicDb)에 매칭하므로,
+      // Supabase 클라이언트를 임의 이름으로 alias하면(예: `client as db`) 우회될
+      // 수 있습니다. 클라이언트 import 자체를 lib/client·lib/publicClient로
+      // 한정하는 컨벤션과 함께 봐야 합니다. 새 클라이언트를 만들면 이 정규식에도
+      // 이름을 추가하세요 — 안 그러면 가드에 구멍이 생깁니다.
       'no-restricted-syntax': [
         'error',
         {
           selector:
-            "CallExpression[callee.property.name='from'][callee.object.name=/^(client|supabase)$/]",
+            "CallExpression[callee.property.name='from'][callee.object.name=/^(client|supabase|publicDb)$/]",
           message:
             'Supabase 데이터 접근은 src에서 직접 하지 말고 domain repository/service(배럴)를 통하세요.',
         },
         {
           selector:
-            "CallExpression[callee.property.name='rpc'][callee.object.name=/^(client|supabase)$/]",
+            "CallExpression[callee.property.name='rpc'][callee.object.name=/^(client|supabase|publicDb)$/]",
           message:
             'Supabase RPC는 src에서 직접 호출하지 말고 domain repository를 통하세요.',
         },

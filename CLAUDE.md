@@ -335,9 +335,18 @@ The blog (`apps/blog/web/`) is a **statically generated (SSG) Next.js applicatio
 - **robots.txt**: `/public/robots.txt`
 - **OpenGraph/Twitter Card**: `layout.tsx` 메타데이터에 설정
 - **Google Analytics**: `@next/third-parties` GA4 연동 (`G-ZS9ENFSSQ0`)
+- **Google Tag Manager**: `@next/third-parties` GTM 연동 (`GTM-5SMPQ23P`). GA4와 **별개로** `layout.tsx`에서 함께 로드된다
 - **GA Proxy**: `apps/ga-proxy/`로 Velog 등 외부 플랫폼 조회수 추적
 - **검색 인증**: Naver 사이트 인증 메타태그 포함
 - **검색 인덱스**: `search-index.json`으로 클라이언트 사이드 검색 지원
+
+> **GTM 컨테이너는 이 저장소 밖에 있다.** 코드에 있는 건 컨테이너 ID 한 줄뿐이고,
+> 어떤 태그가 실제로 발사되는지는 GTM 웹 콘솔에만 존재한다. 2026-07-30 Lighthouse
+> 점검(이슈 #165)에서 이 컨테이너가 **Microsoft Clarity**(`clarity.ms`, `c.bing.com`)를
+> 로드해 서드파티 쿠키 8개를 심는 것이 확인됐고, 그 때문에 Best Practices가 세 페이지
+> 모두 77점이다(`third-party-cookies` 가중치 5 + `inspector-issues` 1 = 26점 중 6점 감점).
+> 태그를 추가·제거할 때 여기와 `/privacy` 페이지를 함께 갱신할 것 — 현재 개인정보처리방침은
+> GA4만 고지하고 있어 Clarity가 누락된 상태다.
 
 #### 인증 & Admin
 

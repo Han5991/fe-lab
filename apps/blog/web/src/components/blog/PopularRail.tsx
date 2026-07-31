@@ -50,7 +50,9 @@ export const PopularRail = ({ posts, limit = 5 }: PopularRailProps) => {
 
   return (
     <aside className={css({ position: 'sticky', top: '20' })}>
-      <span
+      {/* 섹션 라벨은 h3. 아래 포스트 제목이 h4라 span으로 두면 헤딩 레벨이
+          건너뛰어져 axe heading-order가 깨진다(홈 기준 h2 → h3 → h4). */}
+      <h3
         className={css({
           display: 'block',
           mb: '3',
@@ -61,7 +63,7 @@ export const PopularRail = ({ posts, limit = 5 }: PopularRailProps) => {
         })}
       >
         Popular · 30일
-      </span>
+      </h3>
       <ol
         className={css({
           listStyleType: 'none',

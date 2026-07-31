@@ -28,6 +28,9 @@ export const MobileTOC = () => {
       {/* Floating Button */}
       <motion.button
         onClick={() => setIsOpen(true)}
+        // 아이콘만 있는 버튼이라 접근 가능한 이름이 없었다(axe button-name,
+        // impact critical). lucide 아이콘은 aria-hidden된 svg라 이름을 못 준다.
+        aria-label="목차 열기"
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
         whileTap={{ scale: 0.9 }}

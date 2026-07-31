@@ -76,7 +76,9 @@ export const SearchBox = ({
           className={css({
             fontFamily: 'mono',
             fontSize: '2xs',
-            color: 'ink.500',
+            // paper.200 위에서는 ink.500도 AA에 못 미친다(라이트 4.31:1).
+            // 같은 서피스를 쓰는 tagPillStyle과 동일하게 ink.700을 쓴다.
+            color: 'ink.700',
             borderWidth: '[1px]',
             borderColor: 'ink.border',
             bg: 'paper.200',

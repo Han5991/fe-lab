@@ -2,8 +2,8 @@ import { useSuspenseQuery } from '@tanstack/react-query';
 import {
   getPostDowDistribution,
   getPostHourlyDistribution,
-  computeDerivedStats,
-} from '@/domain/analytics';
+} from '@/domain/analytics/admin';
+import { computeDerivedStats } from '@/domain/analytics';
 import { useAdminDashboardData } from './useAdminViews';
 import type {
   PostDetailStats,

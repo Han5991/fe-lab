@@ -5,6 +5,7 @@ import matter from 'gray-matter';
 import { collectMarkdownFiles, hasFrontmatter } from '@/lib/postFiles';
 import { hasAmbiguousTimezone } from '@/lib/dates';
 import { POST_STATUSES, isPostStatus, isPostFile } from '@/domain/post';
+import { SUPPORTED_FENCE_LABELS } from '@/src/components/post/prismLanguages';
 
 const POSTS_DIR = resolve(process.cwd(), '..', 'posts');
 
@@ -335,6 +336,55 @@ function validateImageReferences(record: PostRecord, raw: string): Issue[] {
   return issues;
 }
 
+/**
+ * 코드 펜스의 언어 라벨이 CodeBlock에 등록된 언어인지 검사합니다.
+ *
+ * CodeBlock은 refractor 전 언어를 번들하는 대신 `prismLanguages.ts`에 적힌
+ * 언어만 등록합니다(번들 gzip 350KB 절감). 등록되지 않은 라벨은 에러 없이
+ * 그냥 강조 없는 평문으로 렌더되기 때문에, 글쓴이가 알아채기 어렵습니다.
+ * 그 조용한 품질 저하를 빌드 시점 경고로 끌어올립니다.
+ *
+ * 중첩 펜스(마크다운 글이 코드 예시로 ```를 품는 경우)를 오탐하지 않도록,
+ * 여는 펜스의 백틱 개수를 기억했다가 같은 개수 이상으로 닫힐 때까지는
+ * 내부를 검사하지 않습니다.
+ */
+function validateCodeFenceLanguages(record: PostRecord, raw: string): Issue[] {
+  const issues: Issue[] = [];
+  const offset = frontmatterOffset(raw);
+  const lines = record.content.split('\n');
+  let openFenceLength = 0;
+
+  for (let i = 0; i < lines.length; i++) {
+    const m = lines[i].match(/^(\s{0,3})(`{3,})(.*)$/);
+    if (!m) continue;
+    const fenceLength = m[2].length;
+    const info = m[3].trim();
+
+    if (openFenceLength > 0) {
+      // 열려 있는 펜스는 라벨 없는 같은 길이 이상의 펜스로만 닫힌다.
+      if (fenceLength >= openFenceLength && info === '') openFenceLength = 0;
+      continue;
+    }
+
+    openFenceLength = fenceLength;
+    if (info === '') continue;
+
+    // ```ts title="a.ts" 처럼 뒤에 메타가 붙는 경우 첫 토큰만 언어다.
+    const label = info.split(/[\s,{]/)[0].toLowerCase();
+    if (!label || SUPPORTED_FENCE_LABELS.has(label)) continue;
+
+    issues.push({
+      file: record.relPath,
+      line: offset + i + 1,
+      severity: 'warning',
+      rule: 'unregistered-code-language',
+      message: `구문 강조에 등록되지 않은 언어입니다: \`${label}\` — 강조 없이 평문으로 렌더됩니다. src/components/post/prismLanguages.ts에 추가하거나 평문 라벨(text)을 쓰세요.`,
+    });
+  }
+
+  return issues;
+}
+
 // 명시 slug가 없으면 파일경로(확장자 제거)를 기본 slug로 사용 — repository.ts의 rawSlug 규칙과 동일
 function deriveDefaultSlug(relPath: string): string {
   return relPath.replace(/\.(md|mdx)$/, '');
@@ -386,6 +436,7 @@ function main() {
     records.push(record);
     allIssues.push(...validatePost(record, raw));
     allIssues.push(...validateImageReferences(record, raw));
+    allIssues.push(...validateCodeFenceLanguages(record, raw));
   }
 
   allIssues.push(...detectDuplicateSlugs(records));

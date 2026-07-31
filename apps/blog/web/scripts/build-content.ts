@@ -54,6 +54,13 @@ export function buildPhases(flags: Flags): Step[][] {
       args: ['scripts/generate-og-images.ts'],
     },
     {
+      // posts/를 읽어 public/thumbs/에만 쓰므로 sync-posts(public/posts/)와
+      // 병렬로 돌아도 서로의 산출물에 손대지 않는다.
+      label: 'thumbnails',
+      cmd: 'tsx',
+      args: ['scripts/generate-thumbnails.ts'],
+    },
+    {
       label: 'search-index',
       cmd: 'tsx',
       args: ['scripts/generate-search-index.ts'],

@@ -3,36 +3,26 @@ packages:
   - 'packages/**/*'
 
 overrides:
-  '@babel/plugin-transform-modules-systemjs': 7.29.4
-  '@babel/runtime': 7.29.2
-  '@tootallnate/once': 3.0.1
-  # v2부터 CJS default export가 함수 → named export 객체로 바뀌었다. minimatch@3
-  # (eslint가 끌어온다)이 require('brace-expansion')을 함수로 호출하므로 v1을 유지한다.
-  # 1.1.16에서 DoS advisory(GHSA-3jxr-9vmj-r5cp)가 패치됐다.
-  'brace-expansion@1': 1.1.16
-  # @pandacss/dev → ts-morph → minimatch@10이 쓰는 v5 라인. 5.0.7 미만이 같은 advisory 대상.
-  'brace-expansion@5': 5.0.8
-  'diff@4': 4.0.4
-  dompurify: 3.4.12
-  fast-uri: 3.1.4
-  flatted: 3.4.2
-  'form-data@2': 2.5.5
-  'form-data@4': 4.0.5
-  'glob@10': 10.5.0
-  # gray-matter@4.0.3이 yaml.safeLoad/safeDump(v3 API)를 모듈 로드 시점에 바인딩한다.
-  # v4는 이 둘을 throw 스텁으로 남겨서 올리면 프론트매터 파싱이 전부 죽는다.
-  # CVE-2026-53550(GHSA-h67p-54hq-rp68)은 v3 라인에도 3.15.0으로 백포트됐다.
-  'js-yaml@3': 3.15.0
-  # @eslint/eslintrc가 끌어오는 v4 라인. 같은 advisory가 4.0.0~4.1.1을 대상으로 한다.
-  'js-yaml@4': 4.3.0
-  mdast-util-to-hast: 13.2.1
-  'minimatch@3': 3.1.5
-  'picomatch@2': 2.3.2
-  'picomatch@4': 4.0.4
+  # next(8.4.31 고정)와 @pandacss/*(8.5.14 고정)가 각자 exact 핀을 걸어서, 오버라이드를
+  # 빼면 postcss가 8.4.31/8.5.14/8.5.18 세 벌로 갈라진다. 한 벌로 dedupe하기 위해 유지.
   postcss: 8.5.18
-  'qs@6': 6.15.2
-  'tough-cookie@2': 4.1.4
-  'uuid@11': 11.1.1
+  # GHSA-f88m-g3jw-g9cj(high)가 0.35.0에서만 패치됐는데 next가 ^0.34.5로 optional 핀.
+  # next가 0.35 라인을 허용하면 제거할 것.
+  # 블로그의 Next Image Optimization은 images.unoptimized로 꺼져 있지만, 그것과 별개로
+  # apps/blog/web/scripts/generate-thumbnails.ts가 빌드 타임 썸네일 WebP 변환에 sharp를
+  # 직접 쓴다 — 실사용 의존성이므로 이 override와 allowBuilds.sharp를 함부로 지우지 말 것.
+  sharp: 0.35.3
+
+auditConfig:
+  ignoreGhsas:
+    # brace-expansion DoS(unbounded expansion length). eslint→minimatch@3이 brace-expansion을
+    # ^1.1.7로 고정하는데 v2+는 CJS export가 바뀌어 강제 승격 불가(함수→named export).
+    # 1.x 백포트(1.1.17)가 2026-07-30 기준 나와 있고 실제 코드에 EXPANSION_MAX_LENGTH 방어가
+    # 들어가 있어 lockfile 해석은 1.1.17로 올려뒀지만, GHSA-mh99-v99m-4gvg의 patched_versions
+    # 메타데이터가 여전히 ">=5.0.8"만 명시하고 있어 pnpm audit는 1.1.17을 취약으로 계속 표시한다
+    # (temp override로 1.1.17을 강제 → audit 재실행해 직접 확인함). advisory 메타데이터가
+    # 1.x 백포트를 patched_versions에 반영하면 이 ignore를 지울 것.
+    - GHSA-mh99-v99m-4gvg
 
 allowBuilds:
   esbuild: true
@@ -49,3 +39,7 @@ catalog:
   react-dom: 19.2.7
   '@types/react': 19.2.17
   '@types/react-dom': 19.2.3
+
+minimumReleaseAgeExclude:
+  # GHSA-mh99-v99m-4gvg 대응으로 brace-expansion 1.x 라인을 최신 백포트로 올리기 위한 예외.
+  - brace-expansion@1.1.17

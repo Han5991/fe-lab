@@ -12,13 +12,13 @@ export const blogPreset = definePreset({
         fonts: {
           sans: {
             value:
-              'var(--font-pretendard, Pretendard), -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif',
+              'var(--font-pretendard, "Pretendard Variable"), Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif',
           },
           // GitHub 폼 리디자인: serif 정체성 폐기 → serif 토큰을 system sans로
           // 매핑해 기존 serif 사용처를 일괄 de-serif. (컴포넌트를 안 건드려도 sans 적용)
           serif: {
             value:
-              'var(--font-pretendard, Pretendard), -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif',
+              'var(--font-pretendard, "Pretendard Variable"), Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif',
           },
           mono: {
             value:
@@ -86,7 +86,12 @@ export const blogPreset = definePreset({
           'ink.800': { value: { base: '#32383f', _dark: '#c9d1d9' } },
           'ink.700': { value: { base: '#57606a', _dark: '#b1bac4' } },
           'ink.600': { value: { base: '#656d76', _dark: '#8b949e' } },
-          'ink.500': { value: { base: '#6e7781', _dark: '#7d8590' } },
+          // ink.500 — 12px 메타 텍스트(날짜/시리즈/조회수)에 주로 쓰인다.
+          // 예전 값(base #6e7781 / _dark #7d8590)은 카드 서피스(paper.100)
+          // 위에서 4.27:1 / 4.50:1이라 WCAG AA(4.5:1)를 못 넘거나 딱 걸쳤다.
+          // ink.600보다는 여전히 옅게 유지하면서(램프 순서 보존) paper.50·
+          // paper.100 위에서 4.7:1 이상 나오는 값으로 당겼다.
+          'ink.500': { value: { base: '#687079', _dark: '#858e98' } },
           'ink.400': { value: { base: '#8c959f', _dark: '#6e7681' } },
           'ink.300': { value: { base: '#afb8c1', _dark: '#545d68' } },
           'ink.200': { value: { base: '#d0d7de', _dark: '#3d444d' } },
@@ -98,7 +103,10 @@ export const blogPreset = definePreset({
           // accent — 링크/액션 (GitHub blue)
           'accent.50': { value: { base: '#ddf4ff', _dark: '#12243a' } },
           'accent.200': { value: { base: '#54aeff', _dark: '#388bfd' } },
-          'accent.600': { value: { base: '#0969da', _dark: '#58a6ff' } },
+          // 라이트 값은 GitHub 링크 블루(#0969da)에서 한 톤만 내렸다. 원래
+          // 값은 paper.200(인라인 코드/콜아웃 배경) 위 링크에서 4.45:1로 AA를
+          // 아슬하게 놓쳤다. 다크(#58a6ff)는 5.74:1로 충분해 그대로 둔다.
+          'accent.600': { value: { base: '#0866d1', _dark: '#58a6ff' } },
           'accent.700': { value: { base: '#0550ae', _dark: '#79c0ff' } },
           // marker — 강조/하이라이트 액센트. 주황(앰버) 폐기 → GitHub 퍼플
           // (done/sponsors)로 통일. 파랑(링크/데이터)·초록(성공)과 구분되는
@@ -118,6 +126,11 @@ export const blogPreset = definePreset({
             },
           },
           'moss.600': { value: { base: '#1a7f37', _dark: '#3fb950' } },
+          // moss.700 — moss.100 배지 위에 얹는 텍스트 전용. moss.600을 그대로
+          // 쓰면 라이트에서 4.06:1로 AA 미달이라(배지 배경이 초록 12%라 대비가
+          // 깎인다) 한 단계 어두운 값을 따로 둔다. 다크는 moss.600이 이미
+          // 5.17:1로 충분해 같은 값을 유지한다.
+          'moss.700': { value: { base: '#116329', _dark: '#3fb950' } },
           // spot — admin 전용 강조색(청록/teal). Panda 기본 'teal' 스케일과
           // 이름 충돌을 피하려 커스텀 명 'spot' 사용. 퍼플/파랑/초록과 구분.
           'spot.600': { value: { base: '#0e7490', _dark: '#56d4dd' } },

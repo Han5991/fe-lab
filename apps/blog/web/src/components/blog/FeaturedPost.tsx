@@ -3,8 +3,12 @@ import { css } from '@design-system/ui-lib/css';
 import { tagPillStyle } from './tagPillStyle';
 import type { PostSummary } from '@/domain/post';
 import { encodePostSlug } from '@/domain/post/utils';
-import { resolveThumbnailUrl } from '@/domain/post/thumbnail';
+import { resolveThumbnailSrc } from '@/domain/post/thumbnail';
 import { fmtDate } from '@/lib/format';
+
+/** CSS가 실제 크기를 정하므로 종횡비 힌트로만 쓰입니다(표시 폭 전체 × 320). */
+const THUMB_WIDTH = 1200;
+const THUMB_HEIGHT = 320;
 
 interface FeaturedPostProps {
   post: PostSummary;
@@ -12,8 +16,8 @@ interface FeaturedPostProps {
 
 export const FeaturedPost = ({ post }: FeaturedPostProps) => {
   const href = `/posts/${encodePostSlug(post.slug)}/`;
-  // thumbnail 없으면 빌드 시 생성된 글별 OG 카드로 fallback (resolveThumbnailUrl).
-  const thumb = resolveThumbnailUrl(post);
+  // thumbnail 없으면 빌드 시 생성된 글별 OG 카드로 fallback (resolveThumbnailSrc).
+  const thumb = resolveThumbnailSrc(post);
   const readMin = post.readMin;
 
   return (
@@ -38,6 +42,12 @@ export const FeaturedPost = ({ post }: FeaturedPostProps) => {
       <img
         src={thumb}
         alt={post.title}
+        width={THUMB_WIDTH}
+        height={THUMB_HEIGHT}
+        // 홈 최상단 카드라 항상 LCP 후보 — lazy를 걸면 안 된다.
+        loading="eager"
+        fetchPriority="high"
+        decoding="async"
         className={css({
           display: 'block',
           w: 'full',
@@ -62,7 +72,7 @@ export const FeaturedPost = ({ post }: FeaturedPostProps) => {
           <span
             className={css(tagPillStyle, {
               bg: 'moss.100',
-              color: 'moss.600',
+              color: 'moss.700',
               fontWeight: 'semibold',
             })}
           >
