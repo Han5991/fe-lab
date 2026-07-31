@@ -91,7 +91,7 @@ export const MobileTOC = () => {
                   display: 'flex',
                   flexDir: 'column',
                   shadow: '2xl',
-                  paddingBottom: '[env(safe-area-inset-bottom)]',
+                  pb: '[env(safe-area-inset-bottom)]',
                 })}
               >
                 <div

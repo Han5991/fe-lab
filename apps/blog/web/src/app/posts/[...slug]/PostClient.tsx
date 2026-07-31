@@ -191,6 +191,58 @@ export default function PostClient({
                   color: 'ink.600',
                   '& p': { mb: '0' },
                 },
+                // 본문에서 비켜둔 보조 설명(측정 방법론·재현 환경 고지 등)을 접어두는 블록.
+                // 펼침 애니메이션은 ::details-content의 block-size를 0 ↔ auto로 전환한다.
+                // auto 보간에 필요한 interpolate-size는 globals.css의 :root에 있고,
+                // 미지원 브라우저는 애니메이션 없이 즉시 펼쳐진다(기능 손실 없음).
+                '& details': {
+                  my: '6',
+                  borderWidth: '[1px]',
+                  borderColor: 'ink.border',
+                  rounded: 'sm',
+                  bg: 'paper.100',
+                  px: '4',
+                },
+                '& details > summary': {
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '2',
+                  py: '3',
+                  cursor: 'pointer',
+                  listStyle: '[none]',
+                  userSelect: 'none',
+                  color: 'ink.600',
+                  fontSize: 'sm',
+                  fontWeight: 'medium',
+                  transition: '[color 0.15s]',
+                  _hover: { color: 'ink.900' },
+                  // Safari의 기본 삼각형 마커 제거 — 아래 ::before로 대체한다
+                  '&::-webkit-details-marker': { display: 'none' },
+                  '&::before': {
+                    content: '"▸"',
+                    display: 'inline-block',
+                    flexShrink: '0',
+                    color: 'ink.500',
+                    transition: '[transform 0.25s ease]',
+                  },
+                },
+                '& details[open] > summary::before': {
+                  transform: '[rotate(90deg)]',
+                },
+                '& details::details-content': {
+                  blockSize: '[0]',
+                  overflow: 'hidden',
+                  transition:
+                    '[block-size 0.28s ease, content-visibility 0.28s allow-discrete]',
+                },
+                '& details[open]::details-content': { blockSize: '[auto]' },
+                // 접힌 영역 안쪽 여백 정리 — 첫 요소는 summary에 붙고 마지막은 아래 여백만
+                '& details > summary + *': { mt: '0' },
+                '& details > *:last-child': { mb: '4' },
+                '@media (prefers-reduced-motion: reduce)': {
+                  '& details::details-content': { transition: '[none]' },
+                  '& details > summary::before': { transition: '[none]' },
+                },
                 '& a': {
                   color: 'accent.600',
                   textDecorationLine: 'none',
