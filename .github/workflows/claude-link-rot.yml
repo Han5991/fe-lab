@@ -33,6 +33,12 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+
+          # 예약 실행 잡은 "아무것도 만들지 않음"이 정상 종료라 성공 로그만
+          # 남는다. 실행 리포트를 Step Summary에 찍어 두면 무엇을 확인하고
+          # 왜 만들지 않았는지를 raw 로그를 펼치지 않고 볼 수 있다.
+          display_report: true
+
           prompt: |
             당신은 블로그 발행 글의 외부 링크 건강 검사 담당입니다. 월 1회
             실행됩니다. 모든 산출물(커밋, PR, 코멘트)은 한글로 작성하세요.

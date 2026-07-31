@@ -38,6 +38,9 @@ jobs:
       pull-requests: read
       issues: read
       id-token: write
+      # mcp__github_ci__* 서버는 설치 전에 워크플로 토큰의 actions:read를 실제로
+      # 검증한다. 없으면 경고만 남기고 서버를 조용히 빼므로 여기서 함께 켠다.
+      actions: read
 
     steps:
       - name: Checkout repository
@@ -50,6 +53,34 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+
+          # 위 if의 deps-major 예외를 실제로 동작하게 만드는 설정.
+          # 액션은 actor의 type이 User가 아니면 allowed_bots에 있는지부터 보고,
+          # 없으면 "Workflow initiated by non-human actor" 로 그 자리에서 죽는다.
+          # 즉 지금까지 deps-major PR은 if는 통과하고 액션에서 실패했다.
+          # 이름은 소문자화 + `[bot]` 접미사 제거 후 비교하므로 renovate만 써도 되지만,
+          # PR에 표시되는 이름 그대로 두는 편이 대조하기 쉽다.
+          # '*'는 쓰지 않는다 — 아무 App이나 이 워크플로를 돌릴 수 있게 된다.
+          allowed_bots: 'renovate[bot]'
+
+          # CI 결과(mcp__github_ci__*)를 읽기 위해 필요. 리뷰가 "빨간 체크가 왜
+          # 빨간지"까지 보고 판단할 수 있게 된다.
+          additional_permissions: |
+            actions: read
+
+          # 인라인 코멘트를 발견 즉시 던지지 않고 버퍼에 모아 분류한 뒤 게시한다.
+          # 기본값이 true라 없어도 동작은 같지만, 이 워크플로가 인라인 코멘트를
+          # 쓰기 시작했으므로 의존하는 동작을 명시해 둔다.
+          classify_inline_comments: true
+
+          # 인라인 지적에 "Fix this" 링크를 붙인다. 작성자가 링크만 눌러도
+          # 그 지적에 대한 후속 수정 작업이 걸린다. (기본값 true, 명시)
+          include_fix_links: true
+
+          # 실행 리포트를 Actions Step Summary에 남긴다. 리뷰가 왜 짧게 끝났는지
+          # /어디서 막혔는지를 raw 로그를 뒤지지 않고 확인하기 위한 것.
+          display_report: true
+
           prompt: |
             REPO: ${{ github.repository }}
             PR NUMBER: ${{ github.event.pull_request.number }}
@@ -62,6 +93,25 @@ jobs:
             diff는 반드시 `gh pr diff`로 가져오세요.
             저장소 파일은 Read/Grep/Glob으로 직접 읽어 변경의 실제 사용처와
             기존 문서의 컨벤션을 확인하세요.
+
+            <ci_results>
+            리뷰를 쓰기 전에 `mcp__github_ci__get_ci_status`로 이 PR의 CI 상태를
+            확인하세요. 실패한 잡이 있으면 `mcp__github_ci__get_workflow_run_details`
+            와 `mcp__github_ci__download_job_log`로 로그를 받아 실패 원인이 이번
+            diff에 있는지 판단하세요.
+
+            - 원인이 diff에 있으면 파일:라인과 함께 지적으로 올리세요.
+              CI가 이미 빨갛다는 사실만 반복하지 말고, 어느 줄이 왜 그 실패를
+              만들었는지를 쓰세요.
+            - 원인이 diff 밖(플래키 테스트, 인프라, base 브랜치 선행 실패)이면
+              지적 대신 요약에 한 줄로만 적으세요.
+            - CI가 아직 실행 중이면 기다리지 말고 그대로 리뷰하되, 요약에
+              "CI 진행 중"이라고 적으세요.
+
+            CI가 전부 통과했다는 것은 "테스트가 커버하는 범위에서" 통과했다는
+            뜻입니다. 이번 변경으로 생긴 분기에 테스트가 없다면 그건 여전히
+            <review_dimensions> 7번의 지적 대상입니다.
+            </ci_results>
 
             <mode_selection>
             변경된 파일 목록을 보고 아래 모드를 고르세요. 여러 모드가 해당되면
@@ -280,11 +330,28 @@ jobs:
 
             ────────────────────────────────────────
             <output_format>
-            `gh pr comment`의 Bash 도구로 PR에 코멘트를 남기세요.
-            여러 번 나눠 달지 말고 한 번에 하나의 코멘트로 작성합니다.
-            본문에 백틱과 따옴표가 들어가므로 셸 해석을 피하기 위해
-            `gh pr comment <번호> --body-file -` 형태로 stdin을 쓰거나
-            인용부호로 감싼 heredoc(<<'EOF')을 사용하세요.
+            요약 코멘트는 PR당 하나만 유지합니다. 이 워크플로는 synchronize에도
+            돌기 때문에 매번 새 코멘트를 달면 push할 때마다 리뷰가 쌓입니다.
+            Write 도구로 본문을 파일(review.md)에 먼저 쓰세요. 본문에 백틱과
+            따옴표가 들어가므로 `--body`로 셸에 직접 넘기지 말고 반드시
+            `--body-file`을 쓰세요.
+
+            게시 전에 `gh pr view <번호> --json comments`로 이 PR의 코멘트를 보고,
+            **claude[bot]이 마지막으로 남긴 코멘트**가 무엇인지 확인하세요.
+
+            - 그 코멘트가 이 워크플로의 리뷰(본문이 `## 리뷰 요약`으로 시작)이면
+              덮어씁니다:
+                gh pr comment <번호> --edit-last --create-if-none --body-file review.md
+            - claude[bot] 코멘트가 아예 없으면 위 명령이 `--create-if-none`으로
+              새로 만들어 주므로 그대로 쓰면 됩니다.
+            - 마지막 claude[bot] 코멘트가 리뷰가 아니면(@claude 호출에 답한
+              코멘트 등) `--edit-last`를 쓰지 마세요. 그걸 덮어쓰게 됩니다.
+              이 경우에만 새 코멘트를 남깁니다:
+                gh pr comment <번호> --body-file review.md
+
+            덮어쓰는 경우 요약 코멘트는 항상 이번 실행 기준의 전체 상태여야
+            합니다. 이전 실행에서 지적했다가 이번에 고쳐진 항목은 빼고,
+            "이전 리뷰에서 언급했듯이" 같은 이전 코멘트 참조도 쓰지 마세요.
 
             수행한 모드의 섹션만 포함하세요.
 
@@ -332,17 +399,26 @@ jobs:
             - 대상: 이번 PR diff에 존재하는 라인(RIGHT side)만. diff 밖 라인이나
               설계 차원의 지적은 suggestion 없이 요약 코멘트로만 남기세요.
             - 기준: 확신도 high이고 대체 내용이 자명한 지적만. 취향 교정은 금지.
-            - 방법: 인라인 코멘트들을 리뷰 하나로 모아 제출하세요. Write 도구로
-              review.json을 만든 뒤:
-              gh api repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/reviews -X POST --input review.json
-              review.json 형식:
-              {"event":"COMMENT","body":"인라인 수정 제안 N건",
-               "comments":[{"path":"파일경로","line":42,"side":"RIGHT",
-                 "body":"왜 바꾸는지 한 줄\n\n```suggestion\n42행 전체를 대체할 내용\n```"}]}
-              여러 줄을 교체하려면 start_line(범위 시작)과 start_side("RIGHT")를
-              추가하고 suggestion 블록에 그 범위 전체의 대체 내용을 넣으세요.
-            - suggestion 블록 안에는 대체할 코드/문장만 넣고, 설명은 body에 쓰세요.
-              들여쓰기는 원본 라인과 정확히 일치해야 합니다.
+            - 방법: `mcp__github_inline_comment__create_inline_comment`를 지적마다
+              한 번씩 호출하세요. 이 도구는 호출을 즉시 게시하지 않고 모았다가
+              분류 후 한 번에 올리므로, 여러 번 나눠 불러도 코멘트가 흩어지지
+              않습니다. `gh api ... /pulls/*/reviews`를 직접 치지 마세요.
+              파라미터:
+                path       — 파일 경로
+                line       — 코멘트를 붙일 라인 (한 줄일 때)
+                startLine  — 여러 줄을 교체할 때 범위 시작 (line이 범위 끝)
+                side       — "RIGHT" (기본값)
+                body       — 설명 한 줄 + suggestion 블록
+            - body 형식:
+              왜 바꾸는지 한 줄
+
+              ```suggestion
+              line(또는 startLine~line) 범위 전체를 대체할 내용
+              ```
+            - suggestion 블록 안에는 대체할 코드/문장만 넣고, 설명은 블록 밖에
+              쓰세요. 들여쓰기는 원본 라인과 정확히 일치해야 합니다.
+            - 같은 지적을 인라인과 요약 양쪽에 전부 옮겨 적지 마세요. 인라인으로
+              올린 것은 요약에서는 파일:라인과 한 줄 제목까지만 남깁니다.
 
             어조는 건설적으로. 다만 칭찬으로 코멘트를 채우지 말고
             무엇이 왜 기준에 미달하는지에 집중하세요.
@@ -350,6 +426,18 @@ jobs:
 
           # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
           # or https://docs.claude.com/en/docs/claude-code/sdk#command-line for available options
-          # Write는 리뷰 코멘트 body-file·suggestion용 review.json 작성에,
-          # Bash(gh api:*)는 인라인 suggestion 리뷰 제출에 필요하다.
-          claude_args: '--allowed-tools "Read,Grep,Glob,Write,Bash(gh issue view:*),Bash(gh search:*),Bash(gh issue list:*),Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr list:*),Bash(gh api:*)"'
+          # Write는 요약 코멘트 --body-file 작성용.
+          #
+          # 이 워크플로는 prompt가 있고 @claude 멘션이 없으므로 agent 모드로 붙는다.
+          # agent 모드에서 액션은 여기 적힌 --allowed-tools를 파싱해서, 실제로
+          # 나열된 MCP 서버만 설치한다. 즉 mcp__github_inline_comment__* /
+          # mcp__github_ci__* 는 아래에 이름을 적어야 서버 자체가 켜진다.
+          # (tag 모드는 기본으로 붙지만, 그러면 이 프롬프트가 tag 모드 기본
+          #  프롬프트 뒤에 custom_instructions로 밀려들어가 출력 규약이 흔들린다)
+          #
+          # Bash(gh api:*)는 뺐다. 인라인 suggestion을 직접 POST할 때만 필요했는데
+          # 이제 전용 MCP 도구가 그 일을 하고, gh api는 사실상 모든 write 엔드포인트를
+          # 여는 와일드카드라 리뷰 전용 잡에 남겨둘 이유가 없다.
+          claude_args: >-
+            --allowed-tools
+            "Read,Grep,Glob,Write,mcp__github_inline_comment__create_inline_comment,mcp__github_ci__get_ci_status,mcp__github_ci__get_workflow_run_details,mcp__github_ci__download_job_log,Bash(gh issue view:*),Bash(gh search:*),Bash(gh issue list:*),Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr list:*)"
