@@ -34,6 +34,12 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+
+          # 예약 실행 잡은 "아무것도 만들지 않음"이 정상 종료라 성공 로그만
+          # 남는다. 실행 리포트를 Step Summary에 찍어 두면 무엇을 확인하고
+          # 왜 만들지 않았는지를 raw 로그를 펼치지 않고 볼 수 있다.
+          display_report: true
+
           prompt: |
             당신은 배포된 블로그(https://blog.sangwook.dev)의 헬스체커입니다.
             빌드 성공 여부가 아니라 배포 결과물 자체를 검사합니다. SSG 산출물의

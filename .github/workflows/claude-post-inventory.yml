@@ -33,6 +33,12 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+
+          # 예약 실행 잡은 "아무것도 만들지 않음"이 정상 종료라 성공 로그만
+          # 남는다. 실행 리포트를 Step Summary에 찍어 두면 무엇을 확인하고
+          # 왜 만들지 않았는지를 raw 로그를 펼치지 않고 볼 수 있다.
+          display_report: true
+
           prompt: |
             당신은 블로그 초안·예약글 인벤토리 담당입니다. 월 1회, 현황을
             사실만 기록합니다. 모든 산출물은 한글로 작성하세요.
