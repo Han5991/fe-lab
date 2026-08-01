@@ -1,5 +1,5 @@
 import { getAllPosts } from './service';
-import { getSeriesMeta } from './series';
+import { getSeriesMeta, isSeriesFolder } from './series';
 import type { PostSummary } from './types';
 
 export interface SeriesSummary {
@@ -53,8 +53,11 @@ export function getAllSeries(): SeriesSummary[] {
     map.set(post.series, entry);
   }
 
-  const series: SeriesSummary[] = Array.from(map.entries()).map(
-    ([id, { posts: ps, updated }], idx) => {
+  // 색 배정은 걸러낸 뒤에 한다 — 시리즈가 아닌 폴더가 round-robin 순번을
+  // 잡아먹으면 남은 시리즈 색이 이유 없이 건너뛴다.
+  const series: SeriesSummary[] = Array.from(map.entries())
+    .filter(([id, { posts: ps }]) => isSeriesFolder(id, ps.length))
+    .map(([id, { posts: ps, updated }], idx) => {
       const meta = getSeriesMeta(id);
       const colorKey = SERIES_COLOR_MAP[id] ?? COLOR_FALLBACK[idx % 3];
       return {
@@ -65,8 +68,7 @@ export function getAllSeries(): SeriesSummary[] {
         updated,
         colorKey,
       };
-    },
-  );
+    });
 
   return series.sort((a, b) => {
     if (a.updated && b.updated) return b.updated.localeCompare(a.updated);

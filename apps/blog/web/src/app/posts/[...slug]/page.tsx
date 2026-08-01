@@ -5,7 +5,11 @@ import {
   getSeriesAdjacentPosts,
   getAllPosts,
 } from '@/domain/post';
-import { getSeriesMeta, sortPostsBySeriesOrder } from '@/domain/post/series';
+import {
+  getSeriesMeta,
+  isSeriesFolder,
+  sortPostsBySeriesOrder,
+} from '@/domain/post/series';
 import { resolveThumbnailUrl } from '@/domain/post/thumbnail';
 import { isPostVisible } from '@/domain/post/visibility';
 import { notFound } from 'next/navigation';
@@ -71,9 +75,13 @@ export default async function PostPage({ params }: Props) {
   let seriesIndex:
     | { current: number; total: number; displayName: string }
     | undefined;
-  if (post.series) {
+  // 한 편짜리 폴더는 시리즈가 아니다 — 배지를 달면 `Turborepo 인프라 1/1`
+  // 처럼 뜻이 없는 표기가 된다(`isSeriesFolder` 참고).
+  const seriesPosts = post.series
+    ? getAllPosts().filter(p => p.series === post.series)
+    : [];
+  if (post.series && isSeriesFolder(post.series, seriesPosts.length)) {
     const meta = getSeriesMeta(post.series);
-    const seriesPosts = getAllPosts().filter(p => p.series === post.series);
     const orderedPosts = sortPostsBySeriesOrder(seriesPosts, meta?.order);
     const idx = orderedPosts.findIndex(p => p.slug === slug);
     if (idx !== -1) {

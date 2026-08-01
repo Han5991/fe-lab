@@ -5,6 +5,7 @@ import type { Metadata } from 'next';
 import {
   getAllPostSummaries,
   getSeriesMeta,
+  isSeriesFolder,
   sortPostsBySeriesOrder,
   type PostSummary,
 } from '@/domain/post';
@@ -125,11 +126,11 @@ function buildSeriesLabel(
   allPosts: PostSummary[],
 ): string | undefined {
   if (!post.series) return undefined;
+  const siblings = allPosts.filter(p => p.series === post.series);
+  // 한 편짜리 폴더는 시리즈가 아니다 — `시리즈 · testing 1/1` 배지를 막는다.
+  if (!isSeriesFolder(post.series, siblings.length)) return undefined;
   const meta = getSeriesMeta(post.series);
-  const ordered = sortPostsBySeriesOrder(
-    allPosts.filter(p => p.series === post.series),
-    meta?.order,
-  );
+  const ordered = sortPostsBySeriesOrder(siblings, meta?.order);
   return seriesBadgeLabel(
     meta?.title ?? post.series,
     ordered.map(p => p.slug),

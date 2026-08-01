@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { sortPostsBySeriesOrder } from './series';
+import {
+  SERIES_MIN_POSTS,
+  isSeriesFolder,
+  sortPostsBySeriesOrder,
+} from './series';
 
 interface Fixture {
   slug: string;
@@ -257,4 +261,31 @@ test('sortPostsBySeriesOrder: order 경로에서도 입력 불변', () => {
     posts.map(p => p.slug),
     before,
   );
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// isSeriesFolder
+//
+// 시리즈는 폴더 경로로 결정되므로, 주제별로 글을 묶어 둔 한 편짜리 폴더까지
+// 전부 시리즈가 되어 `시리즈 · testing 1/1` 같은 배지가 붙었다. 아래 규칙이
+// 홈 배지 / 글 상세 배지 / 시리즈 목록 / 아카이브 필터의 단일 기준이다.
+// ─────────────────────────────────────────────────────────────────────────────
+
+test('isSeriesFolder: 2편 이상이면 _series.yml 없이도 시리즈', () => {
+  assert.equal(isSeriesFolder('__없는-폴더__', SERIES_MIN_POSTS), true);
+  assert.equal(isSeriesFolder('__없는-폴더__', 5), true);
+});
+
+test('isSeriesFolder: 1편짜리 폴더는 시리즈가 아니다', () => {
+  assert.equal(isSeriesFolder('__없는-폴더__', 1), false);
+});
+
+test('isSeriesFolder: 0편도 시리즈가 아니다', () => {
+  assert.equal(isSeriesFolder('__없는-폴더__', 0), false);
+});
+
+test('isSeriesFolder: _series.yml이 있으면 1편이어도 시리즈', () => {
+  // ci 폴더에는 실제 _series.yml이 있다. 편수와 무관하게 저자가 시리즈로
+  // 선언한 것이므로 존중한다.
+  assert.equal(isSeriesFolder('ci', 1), true);
 });
