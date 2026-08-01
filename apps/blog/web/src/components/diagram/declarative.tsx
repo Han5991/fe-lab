@@ -127,7 +127,20 @@ export function Diagram({
 
   const { nodes, edges } = collectSpecs(children);
   // 노드가 없으면 빈 프레임만 남아 본문에 여백이 생긴다. 아무것도 안 그린다.
-  if (nodes.length === 0) return null;
+  //
+  // 다만 조용히 사라지면 저자가 원인을 못 찾는다. 가장 흔한 원인이
+  // self-closing 태그다 — `<diagram-node />`로 쓰면 HTML 파서가 void 요소로
+  // 보지 않아 뒤따르는 형제가 전부 그 안에 중첩되고, 최상위 노드가 0개가 된다.
+  if (nodes.length === 0) {
+    if (process.env.NODE_ENV === 'development' && children) {
+      console.warn(
+        '[diagram] <diagram-node>를 찾지 못해 아무것도 그리지 않았습니다. ' +
+          'self-closing 태그(`<diagram-node />`)를 쓰면 다음 형제가 안으로 ' +
+          '중첩되어 무시됩니다 — 닫는 태그를 쓰세요.',
+      );
+    }
+    return null;
+  }
 
   const layout = layoutDiagram(nodes, edges, {
     direction: toDirection(direction),

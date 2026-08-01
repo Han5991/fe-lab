@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { css } from '@design-system/ui-lib/css';
 import type { PostData } from '@/domain/post';
+import { fmtDate } from '@/lib/format';
 
 interface PostHeaderProps {
   post: PostData;
@@ -64,7 +65,7 @@ export const PostHeader = ({ post, seriesIndex }: PostHeaderProps) => {
           mb: post.excerpt ? '[10px]' : '[22px]',
         })}
       >
-        {post.date && `${post.date} · `}
+        {post.date && `${fmtDate(post.date)} · `}
         {post.readMin} min
         {/* 레퍼런스 표기: `2025-03-31 · 14 min · #ecs #docker` — 태그 묶음
             앞에만 가운뎃점을 두고 태그끼리는 공백으로 잇는다. */}

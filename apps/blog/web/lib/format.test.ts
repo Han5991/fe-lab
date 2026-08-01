@@ -62,3 +62,12 @@ test('fmtNum: 1_000_000은 trailing .0 제거되어 1M', () => {
 test('fmtNum: M 단위 소수', () => {
   assert.equal(fmtNum(1_500_000), '1.5M');
 });
+
+// 리뷰 지적: fmtDate가 항등 함수가 되면서 date-only 슬라이스 책임이 소비처로
+// 흩어졌다(PostHeader는 아예 이 함수를 안 거치고 raw date를 찍고 있었다).
+// 예약 발행 글의 `date`는 datetime일 수 있어, 빠뜨린 곳은 ISO 문자열이 통째로
+// 목록에 찍힌다.
+test('fmtDate: datetime이 와도 날짜 부분만 남긴다', () => {
+  assert.equal(fmtDate('2026-03-16T09:00:00+09:00'), '2026-03-16');
+  assert.equal(fmtDate('2026-03-16T00:00:00Z'), '2026-03-16');
+});

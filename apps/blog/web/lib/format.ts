@@ -17,7 +17,11 @@ export function estimateReadMin(content: string): number {
  */
 export function fmtDate(iso: string | null | undefined): string {
   if (!iso) return '';
-  return iso;
+  // frontmatter의 `date`는 날짜만일 수도, `2026-03-16T09:00:00+09:00` 같은
+  // datetime일 수도 있다(예약 발행 글). 날짜 부분만 잘라 내는 책임을 여기서
+  // 지지 않으면 소비처마다 `.slice(0, 10)`이 흩어지고, 빠뜨린 곳은 목록에
+  // ISO 문자열이 통째로 찍힌다. 표기 규칙은 이 함수 하나만 안다.
+  return iso.slice(0, 10);
 }
 
 /**

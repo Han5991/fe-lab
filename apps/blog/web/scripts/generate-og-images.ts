@@ -182,7 +182,7 @@ export function ogTemplate(post: OgPostInput): OgNode {
     el(
       'div',
       { fontSize: 24, fontWeight: 500, color: INK_META },
-      fmtDate(post.date?.slice(0, 10)),
+      fmtDate(post.date),
     ),
     el('div', {
       width: 5,
