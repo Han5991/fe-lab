@@ -112,3 +112,11 @@ describe('Metrics — 필드 타입이 어긋난 JSON', () => {
     ).not.toThrow();
   });
 });
+
+// 리뷰 지적: 가드가 null까지 걸러내 `"value": null` 하나로 아이템이 통째로
+// 사라졌다. JSON을 손으로 쓰면 빈 값에 null을 넣는 게 흔하고, 렌더는
+// `value ?? children` 이라 null은 흘려보내도 안전하다.
+test('value가 null이면 생략으로 보고 라벨만 그린다', () => {
+  render(<Metrics items='[{"label":"다운타임","value":null}]' />);
+  expect(screen.getByText('다운타임')).toBeInTheDocument();
+});

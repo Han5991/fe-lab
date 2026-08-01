@@ -60,7 +60,10 @@ export function optionalString(value: unknown): string | undefined {
  * "페이지 크래시"가 된다.
  */
 export function isOptionalString(value: unknown): boolean {
-  return value === undefined || typeof value === 'string';
+  // `null`도 "생략됨"으로 본다. JSON을 손으로 쓰면 빈 값에 `null`을 넣는 게
+  // 흔하고, 렌더 경로가 `value ?? children`이라 null은 그대로 흘려보내도
+  // 안전하다. 가드가 막아야 하는 건 **객체·배열**이지 nullish가 아니다.
+  return value === undefined || value === null || typeof value === 'string';
 }
 
 /**

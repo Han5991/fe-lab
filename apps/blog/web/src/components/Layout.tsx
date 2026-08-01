@@ -1,7 +1,11 @@
 import Link from 'next/link';
 import { css, cx } from '@design-system/ui-lib/css';
 import type { ReactNode } from 'react';
-import { SITE_AUTHOR_GITHUB, SITE_AUTHOR_LINKEDIN } from '@/lib/constants';
+import {
+  RSS_PATH,
+  SITE_AUTHOR_GITHUB,
+  SITE_AUTHOR_LINKEDIN,
+} from '@/lib/constants';
 
 import { PageTransition } from './PageTransition';
 import { NavLinks } from './home/NavLinks';
@@ -33,7 +37,7 @@ const FOOTER_LINKS = [
   { href: '/privacy/', label: '개인정보', internal: true },
   { href: SITE_AUTHOR_GITHUB, label: 'GitHub', internal: false },
   { href: SITE_AUTHOR_LINKEDIN, label: 'LinkedIn', internal: false },
-  { href: '/rss.xml', label: 'RSS', internal: false },
+  { href: RSS_PATH, label: 'RSS', internal: false },
 ] as const;
 
 export const Layout = ({ children }: LayoutProps) => {
