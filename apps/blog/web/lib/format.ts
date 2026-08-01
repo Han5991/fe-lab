@@ -7,11 +7,17 @@ export function estimateReadMin(content: string): number {
 }
 
 /**
- * `2026-04-28` → `2026.04.28`
+ * 목록·메타에 찍는 날짜 표기. `2026-04-28` → `2026-04-28`.
+ *
+ * 예전에는 점 표기(`2026.04.28`)로 바꿨는데, 리뉴얼 시각 기준인
+ * `design/design-reference.html`은 홈(화면 1)과 글 상세(화면 2) 모두 하이픈을
+ * 쓴다. 글 상세 헤더가 하이픈으로 바뀌면서 같은 사이트 안에서 두 표기가
+ * 섞였고, 표기를 하이픈으로 통일했다. 함수를 없애지 않은 건 null 가드와
+ * "날짜 표기는 여기 한 곳에서 정한다"는 단일 지점을 유지하기 위해서다.
  */
 export function fmtDate(iso: string | null | undefined): string {
   if (!iso) return '';
-  return iso.replaceAll('-', '.');
+  return iso;
 }
 
 /**

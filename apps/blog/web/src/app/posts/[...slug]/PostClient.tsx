@@ -21,10 +21,19 @@ import { MarkdownImage } from '@/src/components/post/MarkdownImage';
 import { Callout } from '@/src/components/post/markdown/Callout';
 import { Figure } from '@/src/components/post/markdown/Figure';
 import { FileTree } from '@/src/components/post/markdown/FileTree';
+import { Dialogue, Msg } from '@/src/components/post/markdown/Dialogue';
+import { Metrics, Metric } from '@/src/components/post/markdown/Metrics';
+import { Timeline, Step } from '@/src/components/post/markdown/Timeline';
+import {
+  Diagram,
+  DiagramNodeTag,
+  DiagramEdgeTag,
+} from '@/src/components/diagram';
 
 import { TOC } from '@/src/components/post/TOC';
 import { ReadingProgress } from '@/src/components/post/ReadingProgress';
 import { PostHeader } from '@/src/components/post/PostHeader';
+import { PostHero } from '@/src/components/post/PostHero';
 import { isBlockMarkdownChild } from './markdownBlocks';
 
 interface PostClientProps {
@@ -84,34 +93,33 @@ export default function PostClient({
           >
             <PostHeader post={post} seriesIndex={seriesIndex} />
 
-            {thumbnailUrl && (
-              <img
-                src={thumbnailUrl}
-                alt={post.title}
-                width={1200}
-                height={630}
-                data-hero-enter-key={`post-${post.slug}`}
-                className={css({
-                  display: 'block',
-                  mb: '10',
-                  w: 'full',
-                  h: 'auto',
-                  borderWidth: '[1px]',
-                  borderColor: 'ink.border',
-                })}
-              />
-            )}
+            {/* hero는 frontmatter 값 그대로다 — thumbnailUrl과 달리 경로 해석이
+                없어서 page.tsx를 거칠 이유가 없다. */}
+            <PostHero
+              slug={post.slug}
+              title={post.title}
+              hero={post.hero}
+              thumbnailUrl={thumbnailUrl}
+            />
 
             <div
               id="post-content"
               className={css({
-                fontFamily: 'serif',
+                // 리뉴얼로 세리프 정체성을 폐기했다. serif 토큰이 sans로
+                // 매핑돼 있긴 하지만 의도를 코드에 남기려 명시적으로 sans.
+                // 크기는 본문 가독성 기준인 lg(18px)를 유지한다 — 레퍼런스의
+                // 14px은 목업 리드 문단이지 본문 스펙이 아니다.
+                fontFamily: 'sans',
                 fontSize: 'lg',
                 lineHeight: 'prose',
                 color: 'ink.900',
+                // 본문 헤딩 스케일의 천장은 글 제목(22px)이다. 예전 스케일은
+                // h1이 30px이라 제목보다 커서 위계가 뒤집혀 있었다. 레퍼런스가
+                // 22px을 최대 크기로 두는 이상 본문 헤딩이 그 위로 올라갈 수
+                // 없어서, 22 → 20 → 18 → 16으로 좁게 다시 깔았다.
+                // 간격이 좁은 만큼 구분은 크기보다 여백(mt)이 맡는다.
                 '& h1': {
-                  fontFamily: 'serif',
-                  fontSize: { base: '2xl', md: '3xl' },
+                  fontSize: '[22px]',
                   fontWeight: 'semibold',
                   letterSpacing: 'tightSm',
                   mt: '14',
@@ -121,8 +129,7 @@ export default function PostClient({
                   scrollMarginTop: '[100px]',
                 },
                 '& h2': {
-                  fontFamily: 'serif',
-                  fontSize: { base: 'xl', md: '2xl' },
+                  fontSize: '[20px]',
                   fontWeight: 'semibold',
                   letterSpacing: 'tightXs',
                   mt: '12',
@@ -131,18 +138,21 @@ export default function PostClient({
                   lineHeight: 'header',
                   scrollMarginTop: '[100px]',
                 },
+                // h3는 본문(18px)과 크기가 같다. 굵기·색(ink.950)·위 여백으로
+                // 구분되므로 크기까지 벌리면 위 단계와 붙어버린다.
                 '& h3': {
-                  fontSize: 'xl',
+                  fontSize: '[18px]',
                   fontWeight: 'semibold',
+                  lineHeight: 'header',
                   mt: '10',
                   mb: '3',
                   color: 'ink.950',
                   scrollMarginTop: '[100px]',
                 },
                 '& h4': {
-                  fontFamily: 'serif',
-                  fontSize: 'lg',
+                  fontSize: '[16px]',
                   fontWeight: 'semibold',
+                  lineHeight: 'header',
                   mt: '8',
                   mb: '3',
                   color: 'ink.950',
@@ -171,10 +181,12 @@ export default function PostClient({
                 '& del': { color: 'ink.500' },
                 '& code:not([class])': {
                   fontFamily: 'mono',
+                  // 인라인 코드는 서브 서피스(paper.100) 위에 얹히는 칩이라
+                  // 레퍼런스의 chip과 같은 8px(control) 라운드를 쓴다.
                   bg: 'paper.200',
                   px: '1.5',
                   py: '0.5',
-                  rounded: '[6px]',
+                  rounded: 'control',
                   fontSize: '[0.9em]',
                   color: 'ink.900',
                   fontWeight: 'normal',
@@ -182,9 +194,10 @@ export default function PostClient({
                   wordBreak: 'break-word',
                   overflowWrap: 'anywhere',
                 },
+                // 인용은 Dialogue와 같은 2px hairline 좌측 바로 통일한다.
                 '& blockquote': {
-                  borderLeftWidth: '[3px]',
-                  borderLeftColor: 'ink.borderStrong',
+                  borderLeftWidth: '[2px]',
+                  borderLeftColor: 'ink.border',
                   pl: '4',
                   py: '1',
                   my: '6',
@@ -197,9 +210,9 @@ export default function PostClient({
                 // 미지원 브라우저는 애니메이션 없이 즉시 펼쳐진다(기능 손실 없음).
                 '& details': {
                   my: '6',
-                  borderWidth: '[1px]',
+                  borderWidth: 'hairline',
                   borderColor: 'ink.border',
-                  rounded: 'sm',
+                  rounded: 'control',
                   bg: 'paper.100',
                   px: '4',
                 },
@@ -246,22 +259,23 @@ export default function PostClient({
                 '& a': {
                   color: 'accent.600',
                   textDecorationLine: 'none',
-                  borderBottomWidth: '[1px]',
+                  borderBottomWidth: 'hairline',
                   borderBottomColor: 'accent.200',
                   transition: '[all 0.15s]',
                   fontWeight: 'medium',
                   wordBreak: 'break-all',
                   overflowWrap: 'break-word',
                   _hover: {
-                    borderBottomColor: 'accent.600',
+                    // 보더는 비텍스트라 원색(accent.500)을 그대로 쓴다.
+                    borderBottomColor: 'accent.500',
                     bg: 'accent.50',
                   },
                 },
                 '& img': {
-                  rounded: 'sm',
+                  rounded: 'control',
                   w: 'full',
                   h: 'auto',
-                  borderWidth: '[1px]',
+                  borderWidth: 'hairline',
                   borderColor: 'ink.border',
                   my: '4',
                 },
@@ -279,14 +293,14 @@ export default function PostClient({
                   borderSpacing: '0',
                   fontSize: 'sm',
                   fontFamily: 'sans',
-                  borderWidth: '[1px]',
+                  borderWidth: 'hairline',
                   borderColor: 'ink.border',
                 },
                 '& th': {
                   bg: 'paper.100',
                   fontWeight: 'semibold',
                   p: '4',
-                  borderBottomWidth: '[1px]',
+                  borderBottomWidth: 'hairline',
                   borderColor: 'ink.border',
                   textAlign: 'left',
                   color: 'ink.950',
@@ -297,11 +311,12 @@ export default function PostClient({
                 },
                 '& td': {
                   p: '4',
-                  borderBottomWidth: '[1px]',
+                  borderBottomWidth: 'hairline',
                   borderColor: 'ink.border',
                   color: 'ink.700',
                 },
-                '& tr:last-child td': { borderBottomWidth: '0' },
+                // borderWidths 토큰은 hairline 하나뿐이라 0은 이스케이프해서 쓴다
+                '& tr:last-child td': { borderBottomWidth: '[0]' },
                 '& tr:hover td': { bg: 'paper.100' },
               })}
             >
@@ -370,6 +385,21 @@ export default function PostClient({
                     callout: Callout,
                     'file-tree': FileTree,
                     figure: Figure,
+                    // 시그니처 컴포넌트도 기존 callout/file-tree와 똑같이
+                    // rehype-raw가 살려준 소문자 커스텀 태그로 등록한다
+                    // (MDX 없이 마크다운에서 <dialogue> 처럼 쓴다).
+                    dialogue: Dialogue,
+                    msg: Msg,
+                    metrics: Metrics,
+                    metric: Metric,
+                    timeline: Timeline,
+                    step: Step,
+                    // 선언형 다이어그램 — 좌표를 손으로 박은 SVG 컴포넌트를
+                    // 만들지 않고 글에서 바로 그릴 때 쓴다. 복잡한 그림은
+                    // `<diagram name="…">`로 레지스트리의 컴포넌트를 부른다.
+                    diagram: Diagram,
+                    'diagram-node': DiagramNodeTag,
+                    'diagram-edge': DiagramEdgeTag,
                   } as ComponentProps<typeof ReactMarkdown>['components']
                 }
               >
@@ -381,7 +411,7 @@ export default function PostClient({
               className={css({
                 mt: '14',
                 pt: '6',
-                borderTopWidth: '[1px]',
+                borderTopWidth: 'hairline',
                 borderColor: 'ink.border',
                 display: 'flex',
                 justifyContent: 'flex-end',

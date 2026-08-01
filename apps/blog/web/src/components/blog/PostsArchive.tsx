@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useMemo, useState } from 'react';
+import Link from 'next/link';
 import { useQueryState, parseAsString, parseAsStringLiteral } from 'nuqs';
 import { useQuery } from '@tanstack/react-query';
 import { css } from '@design-system/ui-lib/css';
@@ -12,13 +13,16 @@ import {
   parseTagParam,
 } from '@/domain/post/filtering';
 import { getAllViewCounts } from '@/domain/analytics';
+import { encodePostSlug } from '@/domain/post/utils';
+import { fmtDate } from '@/lib/format';
 
 import { Label } from './Label';
 import { type SortKey } from './SortRadio';
 import { type ViewMode } from './ViewToggle';
 import { ActiveFilters } from './ActiveFilters';
-import { PostListRow } from './PostListRow';
+import { HiddenPostBadge } from './HiddenPostBadge';
 import { PostGridCard } from './PostGridCard';
+import { PopularRail } from './PopularRail';
 import { PostsFilterSheet } from './PostsFilterSheet';
 import { PostsFilterFab } from './PostsFilterFab';
 import { PostsFilterPanel } from './PostsFilterPanel';
@@ -32,6 +36,64 @@ interface PostsArchiveViewProps {
 
 const SORT_KEYS = ['recent', 'popular', 'shortest'] as const;
 const VIEW_KEYS = ['list', 'cards'] as const;
+
+// 홈 글 목록과 같은 문법: 장식 없이 hairline 보더로만 구분하고
+// 제목 좌측 / 날짜 우측(모노). 마지막 행에만 아래 보더를 더한다.
+const rowItem = css({
+  borderTopWidth: '[1px]',
+  borderTopStyle: 'solid',
+  borderColor: 'ink.border',
+  _last: { borderBottomWidth: '[1px]', borderBottomStyle: 'solid' },
+});
+
+const rowLink = css({
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'baseline',
+  gap: '[16px]',
+  py: '[12px]',
+  px: '[2px]',
+  _hover: { '& h3': { color: 'accent.600', textDecorationLine: 'underline' } },
+});
+
+/**
+ * 아카이브 목록(리스트 뷰) 한 행.
+ *
+ * `/posts/`는 nuqs 때문에 빌드 타임 프리렌더에서 빠지므로, 정적 HTML에 남는
+ * 폴백 목록(page.tsx)과 하이드레이션 후의 목록이 같은 컴포넌트를 써야
+ * 화면이 바뀌지 않습니다. 그래서 여기서 export합니다.
+ */
+export const ArchiveRow = ({ post }: { post: PostSummary }) => (
+  <li className={rowItem}>
+    <Link href={`/posts/${encodePostSlug(post.slug)}/`} className={rowLink}>
+      <h3
+        className={css({
+          minW: '0',
+          fontSize: '[14px]',
+          fontWeight: 'normal',
+          lineHeight: 'snug',
+          color: 'ink.950',
+          transition: '[color 0.15s]',
+        })}
+      >
+        {post.title}
+        <HiddenPostBadge post={post} />
+      </h3>
+      <span
+        className={css({
+          fontFamily: 'mono',
+          fontWeight: 'normal',
+          fontSize: '[12px]',
+          color: 'ink.500',
+          flexShrink: 0,
+          fontVariantNumeric: 'tabular-nums',
+        })}
+      >
+        {fmtDate(post.date)}
+      </span>
+    </Link>
+  </li>
+);
 
 export const PostsArchiveView = ({
   posts,
@@ -187,6 +249,22 @@ export const PostsArchiveView = ({
             activeYear={yearParam || null}
             onToggleYear={toggleYear}
           />
+          {/*
+            홈에서 내려온 인기글 레일(Supabase 조회수 기반). 데스크톱은 사이드바
+            하단, 모바일은 목록 아래에 같은 컴포넌트를 한 번씩 둡니다 — 위 검색창과
+            동일한 패턴으로, 둘은 브레이크포인트상 배타적으로만 보이고 React Query
+            캐시 키가 같아 요청은 한 번만 나갑니다.
+          */}
+          <div
+            className={css({
+              pt: '6',
+              borderTopWidth: '[1px]',
+              borderTopStyle: 'solid',
+              borderColor: 'ink.border',
+            })}
+          >
+            <PopularRail posts={posts} />
+          </div>
         </aside>
 
         <div>
@@ -228,29 +306,27 @@ export const PostsArchiveView = ({
           {filtered.length === 0 ? (
             <div
               className={css({
-                py: '24',
+                py: '20',
                 textAlign: 'center',
                 display: 'flex',
                 flexDir: 'column',
                 alignItems: 'center',
-                gap: '4',
+                gap: '3',
               })}
             >
               <p
                 className={css({
-                  fontFamily: 'serif',
-                  fontStyle: 'italic',
-                  fontSize: 'lg',
-                  color: 'ink.700',
+                  fontSize: '[16px]',
+                  fontWeight: 'semibold',
+                  color: 'ink.950',
                 })}
               >
-                매칭되는 노트가 없어요.
+                조건에 맞는 글이 없습니다.
               </p>
               <p
                 className={css({
-                  fontFamily: 'sans',
-                  fontSize: 'sm',
-                  color: 'ink.500',
+                  fontSize: '[13px]',
+                  color: 'ink.600',
                 })}
               >
                 필터를 풀거나 다른 검색어로 시도해보세요.
@@ -260,19 +336,20 @@ export const PostsArchiveView = ({
                 onClick={clearAll}
                 className={css({
                   fontFamily: 'mono',
-                  fontSize: 'xs',
-                  color: 'marker.600',
-                  px: '3',
-                  py: '2',
+                  fontSize: '[12px]',
+                  color: 'accent.600',
+                  px: '[11px]',
+                  py: '[5px]',
                   borderWidth: '[1px]',
+                  borderStyle: 'solid',
                   borderColor: 'ink.border',
-                  rounded: 'md',
+                  rounded: 'control',
                   cursor: 'pointer',
-                  _hover: { borderColor: 'marker.600' },
+                  _hover: { borderColor: 'accent.500' },
                   transition: '[border-color 0.15s]',
                 })}
               >
-                ✕ 모두 지우기
+                모두 지우기
               </button>
             </div>
           ) : view === 'cards' ? (
@@ -298,22 +375,26 @@ export const PostsArchiveView = ({
               ))}
             </div>
           ) : (
-            <ol
-              className={css({
-                listStyleType: 'none',
-                p: '0',
-                m: '0',
-                borderTopWidth: '[1px]',
-                borderColor: 'ink.border',
-              })}
-            >
+            <ol className={css({ listStyleType: 'none', p: '0', m: '0' })}>
               {filtered.map(p => (
-                <li key={p.slug}>
-                  <PostListRow post={p} />
-                </li>
+                <ArchiveRow key={p.slug} post={p} />
               ))}
             </ol>
           )}
+
+          {/* 모바일 전용 인기글 레일 — 목록을 밀어내지 않도록 아래에 둔다. */}
+          <div
+            className={css({
+              display: { base: 'block', md: 'none' },
+              mt: '10',
+              pt: '6',
+              borderTopWidth: '[1px]',
+              borderTopStyle: 'solid',
+              borderColor: 'ink.border',
+            })}
+          >
+            <PopularRail posts={posts} />
+          </div>
         </div>
       </div>
 
@@ -361,10 +442,11 @@ const ArchiveSearchBar = ({ q, onChange }: ArchiveSearchBarProps) => (
       px: '3',
       py: '2.5',
       borderWidth: '[1px]',
+      borderStyle: 'solid',
       borderColor: 'ink.border',
-      rounded: '[6px]',
-      bg: 'ink.25',
-      _focusWithin: { borderColor: 'accent.600' },
+      rounded: 'control',
+      bg: 'paper.100',
+      _focusWithin: { borderColor: 'accent.500' },
       transition: '[border-color 0.15s]',
     })}
   >
@@ -372,7 +454,7 @@ const ArchiveSearchBar = ({ q, onChange }: ArchiveSearchBarProps) => (
       aria-hidden="true"
       className={css({
         fontFamily: 'mono',
-        fontSize: 'xs',
+        fontSize: '[12px]',
         color: 'ink.500',
         flexShrink: 0,
       })}
@@ -390,7 +472,7 @@ const ArchiveSearchBar = ({ q, onChange }: ArchiveSearchBarProps) => (
         bg: 'transparent',
         border: '[none]',
         outline: '[none]',
-        fontSize: 'sm',
+        fontSize: '[13px]',
         color: 'ink.950',
         fontFamily: 'sans',
         _placeholder: { color: 'ink.500' },
@@ -402,7 +484,7 @@ const ArchiveSearchBar = ({ q, onChange }: ArchiveSearchBarProps) => (
         onClick={() => onChange('')}
         className={css({
           fontFamily: 'mono',
-          fontSize: '2xs',
+          fontSize: '[12px]',
           color: 'ink.500',
           flexShrink: 0,
           cursor: 'pointer',

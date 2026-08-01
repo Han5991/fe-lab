@@ -18,8 +18,10 @@ test('estimateReadMin: 501자는 2분', () => {
   assert.equal(estimateReadMin('a'.repeat(501)), 2);
 });
 
-test('fmtDate: 일반 ISO', () => {
-  assert.equal(fmtDate('2026-05-09'), '2026.05.09');
+// 리뉴얼 시각 기준(design-reference.html)이 홈·상세 모두 하이픈 표기라
+// 점 표기를 걷어냈다. 표기가 다시 갈리지 않도록 여기서 고정한다.
+test('fmtDate: ISO 하이픈 표기를 그대로 유지', () => {
+  assert.equal(fmtDate('2026-05-09'), '2026-05-09');
 });
 
 test('fmtDate: null/undefined는 빈 문자열', () => {

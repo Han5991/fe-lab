@@ -43,7 +43,7 @@ export const SortRadio = ({ value, onChange }: SortRadioProps) => {
               key={opt.id}
               className={css({
                 display: 'flex',
-                borderLeftWidth: i === 0 ? '0' : '[1px]',
+                borderLeftWidth: i === 0 ? '[0]' : '[1px]',
                 borderLeftStyle: 'solid',
                 borderLeftColor: 'ink.border',
               })}

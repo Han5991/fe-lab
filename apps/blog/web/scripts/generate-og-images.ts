@@ -28,8 +28,11 @@ const FONT_DIR = join(
   'static',
 );
 
-/** 템플릿 디자인을 바꾸면 올려서 모든 이미지를 재생성하게 합니다. */
-export const TEMPLATE_VERSION = 3;
+/**
+ * 템플릿 디자인을 바꾸면 올려서 모든 이미지를 재생성하게 합니다.
+ * 4 — 리뉴얼 팔레트(틸 포인트 + #0B0D10 지면) 적용 + 날짜를 하이픈 표기로 통일.
+ */
+export const TEMPLATE_VERSION = 4;
 
 export const OG_WIDTH = 1200;
 export const OG_HEIGHT = 630;
@@ -107,12 +110,15 @@ function el(
   return { type, props: { style, children } };
 }
 
-// GitHub 다크 토큰의 hex 값 (resvg는 oklch 미지원)
-const PAPER = '#0D1117'; // paper.50 (root bg)
-const INK = '#F0F6FC'; // ink.950 (heading/brand)
-const INK_META = '#8B949E'; // ink.600 (meta)
-const INK_RULE = '#30363D'; // ink.border (rule/dot)
-const ACCENT = '#58A6FF'; // accent.600 (github blue)
+// 다크 테마 토큰의 hex 값. satori/resvg는 CSS 변수도 oklch도 못 읽어서
+// blog-preset.ts의 `_dark` 값을 손으로 옮겨 둔다 — 팔레트를 바꾸면 여기도
+// 같이 고쳐야 소셜 미리보기가 사이트와 어긋나지 않는다.
+const PAPER = '#0B0D10'; // paper.50
+const INK = '#E6E8EB'; // ink.950
+const INK_META = '#8B919A'; // ink.600
+const INK_RULE = '#333941'; // ink.border(다크 rgba를 paper.50 위에 합성한 값)
+const ACCENT = '#5DCAA5'; // accent.500 — 포인트 틸
+const ACCENT_BORDER = 'rgba(93, 202, 165, 0.4)'; // 시리즈 pill 보더
 
 /**
  * 1200×630 OG 카드 satori 엘리먼트 트리.
@@ -144,7 +150,7 @@ export function ogTemplate(post: OgPostInput): OgNode {
         'div',
         {
           display: 'flex',
-          border: '2px solid rgba(88, 166, 255, 0.4)',
+          border: `2px solid ${ACCENT_BORDER}`,
           borderRadius: 9999,
           padding: '6px 26px',
           fontSize: 25,

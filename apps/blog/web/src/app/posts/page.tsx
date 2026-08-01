@@ -6,7 +6,12 @@ import { getAllPostSummaries } from '@/domain/post';
 import { getAllSeries, getAllTags, getAllYears } from '@/domain/post/aggregate';
 import { SITE_URL } from '@/lib/constants';
 import { safeJsonLd } from '@/lib/jsonLd';
-import { Label, PostListRow, PostsArchiveView } from '@/src/components/blog';
+// 폴백 목록과 하이드레이션 후 목록이 같은 행 컴포넌트를 쓰도록 배럴(index.ts)이
+// 아니라 모듈에서 직접 가져온다.
+import {
+  ArchiveRow,
+  PostsArchiveView,
+} from '@/src/components/blog/PostsArchive';
 import { PageBoundary } from '@/src/components/PageBoundary';
 
 export const metadata: Metadata = {
@@ -96,49 +101,42 @@ export default function PostsPage() {
             py: { base: '10', md: '16' },
           })}
         >
+          {/* 허브 문법에 맞춘 헤더 — 큰 세리프 타이틀 대신 21px 산세리프 +
+              모노 수치 한 줄, 구분은 hairline 보더 하나로만. */}
           <header
             className={css({
-              mb: '10',
-              pb: '6',
+              mb: '[30px]',
+              pb: '[16px]',
               borderBottomWidth: '[1px]',
+              borderBottomStyle: 'solid',
               borderColor: 'ink.border',
+              display: 'flex',
+              alignItems: 'baseline',
+              justifyContent: 'space-between',
+              gap: '[16px]',
+              flexWrap: 'wrap',
             })}
           >
-            <Label tone="meta" className={css({ mb: '3', display: 'block' })}>
-              POSTS / ARCHIVE
-            </Label>
-            <div
+            <h1
               className={css({
-                display: 'flex',
-                alignItems: 'baseline',
-                justifyContent: 'space-between',
-                gap: '4',
-                flexWrap: 'wrap',
+                fontSize: '[21px]',
+                fontWeight: 'bold',
+                color: 'ink.950',
               })}
             >
-              <h1
-                className={css({
-                  fontFamily: 'serif',
-                  fontSize: { base: '4xl', md: '5xl' },
-                  fontWeight: 'medium',
-                  letterSpacing: 'tightX',
-                  color: 'ink.950',
-                })}
-              >
-                모든 노트
-              </h1>
-              <span
-                className={css({
-                  fontFamily: 'mono',
-                  fontSize: 'xs',
-                  color: 'ink.500',
-                  fontVariantNumeric: 'tabular-nums',
-                  letterSpacing: 'mono',
-                })}
-              >
-                {posts.length}편
-              </span>
-            </div>
+              모든 노트
+            </h1>
+            <span
+              className={css({
+                fontFamily: 'mono',
+                fontWeight: 'normal',
+                fontSize: '[12px]',
+                color: 'ink.500',
+                fontVariantNumeric: 'tabular-nums',
+              })}
+            >
+              {posts.length}편
+            </span>
           </header>
 
           {/*
@@ -151,11 +149,11 @@ export default function PostsPage() {
           */}
           <Suspense
             fallback={
-              <div>
+              <ol className={css({ listStyleType: 'none', p: '0', m: '0' })}>
                 {posts.map(post => (
-                  <PostListRow key={post.slug} post={post} />
+                  <ArchiveRow key={post.slug} post={post} />
                 ))}
-              </div>
+              </ol>
             }
           >
             <PostsArchiveView

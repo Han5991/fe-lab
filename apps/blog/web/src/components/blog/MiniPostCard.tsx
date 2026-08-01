@@ -20,7 +20,7 @@ export const MiniPostCard = ({
       className={css({
         display: 'block',
         py: '[16px]',
-        borderTopWidth: withDivider ? '[1px]' : '0',
+        borderTopWidth: withDivider ? '[1px]' : '[0]',
         borderTopStyle: 'solid',
         borderColor: 'ink.border',
         transition: '[color 0.15s]',

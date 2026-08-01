@@ -1,107 +1,97 @@
+import Link from 'next/link';
 import { css } from '@design-system/ui-lib/css';
 import type { PostData } from '@/domain/post';
-import { fmtDate } from '@/lib/format';
-import { Label } from '@/src/components/blog/Label';
 
 interface PostHeaderProps {
   post: PostData;
-  /** 시리즈 내 위치 — 있다면 `01 / 5` 같은 라벨로 표시 */
+  /** 시리즈 내 위치 — 있다면 `시리즈 · {표시명} 3/3` 배지로 표시 */
   seriesIndex?: { current: number; total: number; displayName: string };
 }
 
+// 메타 줄(mono 12px) 안에서 태그를 해시태그로 인라인시킨다. 별도 pill 그룹을
+// 없앴을 뿐 필터 링크는 그대로라, /posts/?tag=... 아카이브 필터가 계속 산다.
+const tagLinkStyle = css({
+  color: 'ink.500',
+  textDecorationLine: 'none',
+  transition: '[color 0.15s]',
+  _hover: { color: 'accent.600' },
+});
+
 export const PostHeader = ({ post, seriesIndex }: PostHeaderProps) => {
-  const readMin = post.readMin;
+  const tags = post.tags?.slice(0, 4) ?? [];
+
   return (
-    <header className={css({ mb: '8' })}>
+    <header>
       {seriesIndex && (
-        <Label
-          tone="meta"
+        <span
           className={css({
-            display: 'block',
-            mb: '2',
+            display: 'inline-block',
             fontSize: '[12px]',
-            letterSpacing: 'mono',
+            color: 'accent.600',
+            bg: 'accent.50',
+            rounded: '[6px]',
+            px: '[9px]',
+            py: '[2px]',
           })}
         >
-          SERIES · {seriesIndex.displayName} ·{' '}
-          {String(seriesIndex.current).padStart(2, '0')} /{' '}
-          {String(seriesIndex.total).padStart(2, '0')}
-        </Label>
+          시리즈 · {seriesIndex.displayName} {seriesIndex.current}/
+          {seriesIndex.total}
+        </span>
       )}
       <h1
         className={css({
           fontFamily: 'sans',
-          fontSize: { base: '3xl', md: '4xl' },
+          // 레퍼런스(화면 2)의 22px을 그대로 쓴다. 목업 콘텐츠 폭(640px)과
+          // 실제 본문 칼럼(proseW 680px)이 거의 같아 반응형 분기가 필요 없다.
+          fontSize: '[22px]',
           fontWeight: 'bold',
-          lineHeight: 'tight',
-          letterSpacing: 'tightish',
+          lineHeight: 'headerSm',
           color: 'ink.950',
-          mb: '3',
+          mt: '[12px]',
+          mb: '[6px]',
         })}
       >
         {post.title}
       </h1>
-      {post.excerpt && (
-        <p
-          className={css({
-            fontSize: { base: 'md', md: 'lg' },
-            color: 'ink.700',
-            lineHeight: 'comfortable',
-            mb: '4',
-          })}
-        >
-          {post.excerpt}
-        </p>
-      )}
-      <div
+      <p
         className={css({
-          display: 'flex',
-          alignItems: 'center',
-          gap: '3',
-          flexWrap: 'wrap',
           fontFamily: 'mono',
           fontSize: '[12px]',
           color: 'ink.500',
           fontVariantNumeric: 'tabular-nums',
-          pb: '4',
-          borderBottomWidth: '[1px]',
-          borderStyle: 'solid',
-          borderColor: 'ink.border',
+          // excerpt가 뒤따르면 메타는 제목 쪽에 붙여두고, 히어로 앞 여백은
+          // excerpt가 대신 만든다(레퍼런스의 리드 문단 mb 22px과 같은 리듬).
+          mb: post.excerpt ? '[10px]' : '[22px]',
         })}
       >
-        {post.date && <span>{fmtDate(post.date)}</span>}
-        <span>{readMin}분 읽기</span>
-        <span>한상욱</span>
-      </div>
-      {post.tags && post.tags.length > 0 && (
-        <div
-          className={css({
-            display: 'flex',
-            gap: '2',
-            flexWrap: 'wrap',
-            mt: '4',
-          })}
-        >
-          {post.tags.slice(0, 4).map(t => (
-            <span
-              key={t}
-              className={css({
-                display: 'inline-flex',
-                alignItems: 'center',
-                px: '[10px]',
-                py: '[2px]',
-                rounded: '[2rem]',
-                bg: 'paper.200',
-                color: 'ink.700',
-                fontSize: 'xs',
-                fontWeight: 'medium',
-                lineHeight: 'flat',
-              })}
+        {post.date && `${post.date} · `}
+        {post.readMin} min
+        {/* 레퍼런스 표기: `2025-03-31 · 14 min · #ecs #docker` — 태그 묶음
+            앞에만 가운뎃점을 두고 태그끼리는 공백으로 잇는다. */}
+        {tags.length > 0 && ' · '}
+        {tags.map((t, i) => (
+          <span key={t}>
+            {i > 0 && ' '}
+            <Link
+              href={`/posts/?tag=${encodeURIComponent(t)}`}
+              className={tagLinkStyle}
             >
               #{t}
-            </span>
-          ))}
-        </div>
+            </Link>
+          </span>
+        ))}
+      </p>
+      {post.excerpt && (
+        <p
+          className={css({
+            fontSize: '[14px]',
+            color: 'ink.600',
+            lineHeight: 'comfortable',
+            mb: '[22px]',
+          })}
+        >
+          {post.excerpt}
+        </p>
       )}
     </header>
   );

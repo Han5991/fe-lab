@@ -1,6 +1,5 @@
 import Link from 'next/link';
 import { css } from '@design-system/ui-lib/css';
-import { tagPillStyle } from './tagPillStyle';
 import type { SeriesSummary } from '@/domain/post/aggregate';
 import { fmtDate } from '@/lib/format';
 
@@ -9,69 +8,57 @@ interface SeriesCardProps {
   index: number;
 }
 
-const accentColor = {
-  accent: 'accent.600',
-  marker: 'marker.600',
-  moss: 'moss.600',
-} as const;
-
+/**
+ * 시리즈 카드.
+ *
+ * 리뉴얼 전에는 좌측에 3px 컬러 바(`series.colorKey`)를 세워 시리즈마다 다른
+ * 색을 썼지만, 새 팔레트는 "무채색 + 포인트 1색"이라 색으로 위계를 나누지
+ * 않는다. 구분은 hairline 보더 하나로만 하고 포인트색은 시리즈 배지에만 남긴다.
+ * (`colorKey`는 도메인 타입에 그대로 있으니 다른 화면에서 필요하면 다시 쓸 수 있다)
+ */
 export const SeriesCard = ({ series, index }: SeriesCardProps) => {
   return (
     <Link
       href={`/posts/?series=${encodeURIComponent(series.id)}`}
       className={css({
-        position: 'relative',
         display: 'flex',
         flexDir: 'column',
         gap: '[8px]',
-        p: '[16px]',
-        bg: 'paper.100',
+        px: '[20px]',
+        py: '[18px]',
+        minH: '[180px]',
         borderWidth: '[1px]',
         borderStyle: 'solid',
         borderColor: 'ink.border',
-        rounded: '[6px]',
+        rounded: 'card',
         transition: '[border-color 0.15s]',
-        minH: '[200px]',
-        _hover: { borderColor: 'ink.borderStrong' },
+        _hover: {
+          borderColor: 'ink.borderStrong',
+          '& h3': { textDecorationLine: 'underline' },
+        },
       })}
     >
+      {/* 레퍼런스 .badge — 시리즈임을 알리는 유일한 포인트색 요소 */}
       <span
-        aria-hidden="true"
         className={css({
-          position: 'absolute',
-          left: '0',
-          top: '0',
-          bottom: '0',
-          w: '[3px]',
-          roundedLeft: '[6px]',
-          bg: accentColor[series.colorKey],
-        })}
-      />
-      <div
-        className={css({
-          display: 'flex',
-          alignItems: 'baseline',
-          gap: '2',
+          alignSelf: 'flex-start',
+          fontSize: '[12px]',
+          lineHeight: 'snug',
+          color: 'accent.600',
+          bg: 'accent.50',
+          rounded: '[6px]',
+          px: '[9px]',
+          py: '[2px]',
         })}
       >
-        <span
-          className={css({
-            fontFamily: 'mono',
-            fontSize: '[12px]',
-            color: 'ink.500',
-            fontWeight: 'medium',
-          })}
-        >
-          {String(index + 1).padStart(2, '0')} / SERIES
-        </span>
-      </div>
+        시리즈 · {String(index + 1).padStart(2, '0')}
+      </span>
 
       <h3
         className={css({
-          fontFamily: 'sans',
-          fontSize: 'lg',
+          fontSize: '[16px]',
           fontWeight: 'semibold',
-          lineHeight: 'tight',
+          lineHeight: 'headerSm',
           color: 'ink.950',
         })}
       >
@@ -81,8 +68,7 @@ export const SeriesCard = ({ series, index }: SeriesCardProps) => {
       {series.description && (
         <p
           className={css({
-            fontFamily: 'sans',
-            fontSize: 'sm',
+            fontSize: '[13px]',
             color: 'ink.600',
             lineHeight: 'relaxed',
             lineClamp: 3,
@@ -102,33 +88,17 @@ export const SeriesCard = ({ series, index }: SeriesCardProps) => {
           borderColor: 'ink.border',
           display: 'flex',
           justifyContent: 'space-between',
-          alignItems: 'center',
-          gap: '2',
+          alignItems: 'baseline',
+          gap: '[8px]',
+          fontFamily: 'mono',
+          fontWeight: 'normal',
+          fontSize: '[12px]',
+          color: 'ink.500',
+          fontVariantNumeric: 'tabular-nums',
         })}
       >
-        <span
-          className={css(tagPillStyle, {
-            px: '[8px]',
-            bg: 'paper.300',
-            // tagPillStyle 기본 ink.700은 paper.200 기준이라, 한 단계 진한
-            // paper.300 위에서는 11px 기준 4.40:1로 AA에 못 미친다.
-            color: 'ink.800',
-            fontFamily: 'mono',
-          })}
-        >
-          {series.count}편
-        </span>
-        {series.updated && (
-          <span
-            className={css({
-              fontFamily: 'mono',
-              fontSize: '[12px]',
-              color: 'ink.500',
-            })}
-          >
-            {fmtDate(series.updated)} 업데이트
-          </span>
-        )}
+        <span>{series.count}편</span>
+        {series.updated && <span>{fmtDate(series.updated)} 업데이트</span>}
       </div>
     </Link>
   );
