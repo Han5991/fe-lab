@@ -342,7 +342,7 @@ The blog (`apps/blog/web/`) is a **statically generated (SSG) Next.js applicatio
 | :------------------------------------ | :------------------------------- | :---------------------------------------------- |
 | `--bg`                                | `paper.50`                       | `#FFFFFF` / `#0B0D10`                           |
 | `--bg-sub`                            | `paper.100`                      | `#F7F7F5` / `#14171C`                           |
-| `--page`                              | `paper.200`                      | `#EDEDEA` / `#1B1F26`                           |
+| `--page` ⚠️                           | `paper.200`                      | `#EDEDEA` / `#1B1F26`                           |
 | `--fg`                                | `ink.950`                        | `#1A1A1A` / `#E6E8EB`                           |
 | `--fg-sub`                            | `ink.600`                        | `#6B7280` / `#8B919A`                           |
 | `--fg-sub` (서브 서피스 위 12px 메타) | `ink.500`                        | `#656C77` / `#8B919A`                           |
@@ -353,6 +353,11 @@ The blog (`apps/blog/web/`) is a **statically generated (SSG) Next.js applicatio
 | `--danger`                            | `danger.text` / `danger.border`  | `#C81E1E`·`#DC2626` / `#F09595`                 |
 | `--success`                           | `moss.600` (텍스트는 `moss.700`) | `#16A34A` / `#97C459`                           |
 | `--warn-bg` / `--warn-fg`             | `warn.bg` / `warn.text`          | `#FAEEDA`·`#854F0B` / `#3A2A10`·`#FAC775`       |
+
+> ⚠️ **`paper.200` 다크만 시안(`#060809`)을 따르지 않는다.** 시안의 `--page`는 목업
+> 카드 **뒤쪽 바깥 배경**이라 다크에서 `--bg`보다 더 어둡다. 실제 사이트엔 그 바깥
+> 배경이 없고 `paper.200`은 인라인 코드·콜아웃처럼 지면에서 **한 단계 떠 있는**
+> 서피스라, 시안 값을 쓰면 코드 배경이 본문보다 어두워져 파여 보인다.
 
 > **글자엔 `accent.600`, 선·아이콘·다이어그램 스트로크엔 `accent.500`.**
 > 레퍼런스 HTML은 둘 다 `--accent` 한 색이지만, 라이트 모드에서 `#1D9E75` **글자**는

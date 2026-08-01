@@ -100,11 +100,18 @@ export const blogPreset = definePreset({
           //   시안 변수 → 토큰
           //   --bg      #FFFFFF / #0B0D10  → paper.50
           //   --bg-sub  #F7F7F5 / #14171C  → paper.100
-          //   --page    #EDEDEA / #060809  → paper.200
+          //   --page    #EDEDEA / #060809  → paper.200 (다크는 일부러 다름 ↓)
           //   --fg      #1A1A1A / #E6E8EB  → ink.950
           //   --fg-sub  #6B7280 / #8B919A  → ink.600
           //   --accent  #1D9E75 / #5DCAA5  → accent.500
           //   --border  rgba(0,0,0,.10) / rgba(255,255,255,.12) → ink.border
+          //
+          // `paper.200` 다크만 시안(`#060809`)을 따르지 않고 `#1B1F26`을 쓴다.
+          // 시안의 `--page`는 목업 카드 **뒤쪽 바깥 배경**이라 다크에서 `--bg`
+          // 보다 더 어둡다. 실제 사이트에는 그 바깥 배경이 없고, `paper.200`이
+          // 맡은 역할은 인라인 코드·콜아웃처럼 지면에서 **한 단계 떠 있는**
+          // 서피스라 오히려 `--bg`보다 밝아야 한다. 시안 값을 그대로 쓰면
+          // 코드 배경이 본문보다 어두워져 파여 보인다.
           //
           // 토큰 이름(paper/ink/accent/marker/moss)은 기존 컴포넌트가 그대로
           // 소비하므로 유지하고 값만 갈아끼운다.
