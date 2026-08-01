@@ -201,44 +201,36 @@ describe('shape', () => {
   });
 });
 
-// 리뷰 지적(medium): 자동 연결을 끄는 기준이 "엣지를 적었다"였다. from/to에 오타가
-// 나면 명시 엣지가 전부 버려지는데 자동 연결까지 함께 꺼져서, 노드가 통째로 분리된
-// 그림이 경고도 lint 에러도 없이 나갔다.
+// 자동 연결을 끄는 기준은 "엣지를 적었다"가 아니라 "해석되는 엣지가 있다"이다.
+// 전자였을 땐 id 오타 하나로 명시 엣지가 전부 버려지면서 자동 연결까지 함께
+// 꺼져, 노드가 통째로 분리된 그림이 경고도 없이 나갔다.
 describe('layoutDiagram — 해석 불가능한 엣지', () => {
-  test('엣지 id가 전부 오타면 안 적은 것과 같게 보고 자동 연결한다', () => {
-    const { edges } = layoutDiagram(PIPELINE, [
-      { from: 'typo', to: 'nope', flow: 'sync', emphasis: false, arrow: true },
-    ]);
-
+  test('전부 오타면 안 적은 것과 같게 보고 자동 연결한다', () => {
+    const { edges } = layoutDiagram(PIPELINE, [edge('오타', '없음')]);
     expect(edges).toHaveLength(PIPELINE.length - 1);
   });
 
-  test('해석되는 엣지가 하나라도 있으면 그것만 그린다', () => {
-    const { edges } = layoutDiagram(PIPELINE, [
-      {
-        from: PIPELINE[0].id,
-        to: PIPELINE[1].id,
-        flow: 'sync',
-        emphasis: false,
-        arrow: true,
-      },
-      { from: 'typo', to: 'nope', flow: 'sync', emphasis: false, arrow: true },
-    ]);
+  test('자기 자신을 가리키는 엣지만 있어도 자동 연결로 돌아간다', () => {
+    const { edges } = layoutDiagram(PIPELINE, [edge('push', 'push')]);
+    expect(edges).toHaveLength(PIPELINE.length - 1);
+  });
+});
 
+// declarative.tsx의 uniqueId()는 "먼저 선언한 id가 이긴다"를 보장하지만, 이
+// 모듈은 React 없이 테스트하려고 따로 공개한 순수 API라 스스로도 같은 불변식을
+// 지켜야 한다. new Map(nodes.map(...))은 반대로 나중 항목이 이긴다.
+describe('layoutDiagram — 중복 id', () => {
+  test('id가 겹치면 먼저 선언한 노드가 이긴다', () => {
+    const nodes = [
+      node('dup', '첫째'),
+      node('dup', '둘째'),
+      node('last', '셋째'),
+    ];
+    const { edges } = layoutDiagram(nodes, [edge('dup', 'last')]);
+
+    // 첫 번째 'dup'은 x=24에서 시작하고, 두 번째는 그보다 오른쪽에 놓인다.
+    const placed = layoutDiagram(nodes, []).nodes;
     expect(edges).toHaveLength(1);
-  });
-
-  test('자기 자신을 가리키는 엣지만 있으면 자동 연결로 돌아간다', () => {
-    const { edges } = layoutDiagram(PIPELINE, [
-      {
-        from: PIPELINE[0].id,
-        to: PIPELINE[0].id,
-        flow: 'sync',
-        emphasis: false,
-        arrow: true,
-      },
-    ]);
-
-    expect(edges).toHaveLength(PIPELINE.length - 1);
+    expect(edges[0].x1).toBe(placed[0].x + placed[0].width);
   });
 });

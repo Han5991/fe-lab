@@ -103,7 +103,9 @@ export function Msg({ from, children }: MsgProps) {
         // `avatarInitial`이 trim된 이름으로 이니셜을 뽑으므로 여기도 같은 값을
         // 읽어야 한다. `from=" PM "` 이면 보이는 이니셜과 낭독이 어긋난다.
         aria-label={from?.trim() ? `${from.trim()} 발언` : undefined}
-        role={from ? 'img' : undefined}
+        // role도 같은 조건이어야 한다. `from="   "`이면 role만 붙고 label은
+        // undefined가 되어 "이름 없는 이미지"로 낭독된다.
+        role={from?.trim() ? 'img' : undefined}
         className={`${avatarBase} ${mine ? avatarMine : avatarOther}`}
       >
         {avatarInitial(from)}

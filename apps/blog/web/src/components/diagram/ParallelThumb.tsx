@@ -2,7 +2,15 @@ import { DiagramEdge, DiagramFrame, DiagramNode } from './primitives';
 
 interface ParallelThumbProps {
   className?: string;
-  /** 대표 글이 바뀌면 설명도 같이 바꾼다. */
+  /**
+   * 이 그림이 그 글의 구조를 실제로 설명할 때만 준다. **생략하면 장식**으로
+   * 보고 접근성 트리에서 감춘다(`DiagramFrame`의 규칙).
+   *
+   * 예전에는 "동기 처리를 병렬로 나눈 구조 다이어그램"을 기본값으로 뒀는데,
+   * 이 그림이 뜨는 자리는 대부분 "썸네일 없는 글의 폴백"이라 어떤 글이 오든
+   * 같은 설명이 낭독됐다. 글 주제와 무관한 이름을 붙이느니 장식으로 두는 게
+   * 맞다 — 글 제목은 바로 옆 링크가 이미 읽어 준다.
+   */
   label?: string;
 }
 
@@ -13,10 +21,7 @@ interface ParallelThumbProps {
  * 다크모드 전환에 별도 에셋이 필요 없다(핸드오프 §4).
  * 좌표는 `design/design-reference.html`의 SVG를 그대로 옮긴 값이다.
  */
-export function ParallelThumb({
-  className,
-  label = '동기 처리를 병렬로 나눈 구조 다이어그램',
-}: ParallelThumbProps) {
+export function ParallelThumb({ className, label }: ParallelThumbProps) {
   return (
     <DiagramFrame viewBox="0 0 150 92" label={label} className={className}>
       {/* 세 갈래 전부가 이 글의 핵심 경로라 모두 틸 실선이다. */}

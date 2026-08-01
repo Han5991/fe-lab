@@ -26,8 +26,8 @@ const cardStyle = css.raw({
   borderColor: 'ink.border',
   rounded: 'card',
   p: '[16px]',
-  transition: '[border-color 0.15s, background 0.15s]',
-  _hover: { borderColor: 'ink.borderStrong', bg: 'paper.100' },
+  transition: '[border-color 0.15s]',
+  _hover: { borderColor: 'ink.borderStrong' },
 });
 
 // 다음 글 카드만 우측 정렬. 모바일은 세로 스택이라 좌측 정렬을 유지한다.

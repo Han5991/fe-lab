@@ -171,11 +171,21 @@ describe('DiagramLabel', () => {
 });
 
 describe('구체 다이어그램', () => {
-  test('ParallelThumb는 의미 있는 이미지로 노출한다', () => {
-    render(<ParallelThumb />);
-    const svg = screen.getByRole('img');
+  // label 없이 쓰이는 자리가 "썸네일 없는 글의 폴백"이라, 예전 기본 label은
+  // 어떤 글이 와도 같은 설명을 낭독했다. 이제는 장식이 기본이다.
+  test('ParallelThumb는 label이 없으면 장식으로 감춘다', () => {
+    const { container } = render(<ParallelThumb />);
+    const svg = container.querySelector('svg');
     expect(svg).toHaveAttribute('viewBox', '0 0 150 92');
-    expect(svg).toHaveAccessibleName();
+    expect(svg).toHaveAttribute('aria-hidden', 'true');
+    expect(svg).not.toHaveAttribute('role');
+  });
+
+  test('ParallelThumb는 label을 주면 의미 있는 이미지로 노출한다', () => {
+    render(<ParallelThumb label="병렬 처리 구조" />);
+    expect(
+      screen.getByRole('img', { name: '병렬 처리 구조' }),
+    ).toBeInTheDocument();
   });
 
   test('DeployPipeline은 마지막 구간만 핵심 경로로 강조한다', () => {

@@ -273,7 +273,14 @@ function routeEdges(
   edges: DiagramEdgeSpec[],
   direction: DiagramDirection,
 ): PlacedEdge[] {
-  const byId = new Map(nodes.map(node => [node.id, node]));
+  // id가 겹치면 **먼저 선언한 노드가 이긴다.** declarative.tsx의 uniqueId()가
+  // 같은 규칙으로 미리 걸러 주지만, 이 모듈은 React 없이 테스트하려고 따로
+  // 공개한 순수 API라 스스로도 불변식을 지켜야 한다. `new Map(nodes.map(...))`
+  // 은 반대로 나중 항목이 이겨서, 두 번째 소비자가 생기면 규칙이 뒤집힌다.
+  const byId = new Map<string, PlacedNode>();
+  for (const node of nodes) {
+    if (!byId.has(node.id)) byId.set(node.id, node);
+  }
   const resolvable = (spec: DiagramEdgeSpec) => {
     const from = byId.get(spec.from);
     const to = byId.get(spec.to);

@@ -236,8 +236,18 @@ function collectSpecs(children: ReactNode): {
       const { from, to, flow, emphasis, arrow } = child.props;
       const fromId = optionalString(from);
       const toId = optionalString(to);
-      // 한쪽 끝이 없는 엣지는 좌표를 만들 수 없다.
-      if (!fromId || !toId) continue;
+      // 한쪽 끝이 없는 엣지는 좌표를 만들 수 없다. 여기서 버리면 layout의
+      // "해석 불가 엣지" 경고에도 안 잡히므로(배열에 들어가지도 않는다) 같은
+      // 조용한 무시가 다른 경로로 남는다 — 여기서 따로 알린다.
+      if (!fromId || !toId) {
+        if (process.env.NODE_ENV === 'development') {
+          console.warn(
+            `[diagram] <diagram-edge>의 from/to가 비어 무시했습니다: ` +
+              `from=${fromId ?? '(없음)'}, to=${toId ?? '(없음)'}`,
+          );
+        }
+        continue;
+      }
 
       edges.push({
         from: fromId,
