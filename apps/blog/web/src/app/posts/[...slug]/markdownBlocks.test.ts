@@ -8,6 +8,7 @@ import { Figure } from '@/src/components/post/markdown/Figure';
 import { FileTree } from '@/src/components/post/markdown/FileTree';
 import { Metric, Metrics } from '@/src/components/post/markdown/Metrics';
 import { Step, Timeline } from '@/src/components/post/markdown/Timeline';
+import { Diagram } from '@/src/components/diagram';
 
 // react-markdown이 <p>로 감싼 자식을 isBlockMarkdownChild가 어떻게 분류하는지 검증.
 // true면 PostClient가 <p>를 <div>로 교체해 무효 중첩(<p><div></div></p>) → hydration
@@ -31,6 +32,9 @@ describe('isBlockMarkdownChild', () => {
     });
     test('Timeline → block', () => {
       expect(isBlockMarkdownChild(createElement(Timeline))).toBe(true);
+    });
+    test('Diagram → block', () => {
+      expect(isBlockMarkdownChild(createElement(Diagram))).toBe(true);
     });
     test('Set에 없는 커스텀 컴포넌트는 블록 아님', () => {
       const Inline = () => null;
