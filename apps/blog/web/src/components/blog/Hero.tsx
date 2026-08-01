@@ -1,60 +1,85 @@
 import { css } from '@design-system/ui-lib/css';
-import { Label } from './Label';
+import { RSS_PATH, SITE_AUTHOR_GITHUB } from '@/lib/constants';
+import { HeroMotif } from '@/src/components/diagram';
+
+/** 히어로 pill — 이름 아래 외부 채널. 레퍼런스 `.pill` 수치 그대로. */
+const pill = css({
+  fontFamily: 'mono',
+  fontWeight: 'normal',
+  fontSize: '[12px]',
+  color: 'ink.600',
+  borderWidth: 'hairline',
+  borderStyle: 'solid',
+  borderColor: 'ink.border',
+  rounded: 'pill',
+  px: '[11px]',
+  py: '[3px]',
+  transition: '[color 0.15s, border-color 0.15s]',
+  _hover: { color: 'ink.950', borderColor: 'ink.borderStrong' },
+});
+
+// 레퍼런스에는 velog pill도 있지만 크로스포스팅을 접기로 해서 뺐다.
+const PILLS = [
+  { href: SITE_AUTHOR_GITHUB, label: 'github', external: true },
+  // RSS는 같은 도메인의 정적 파일이라 새 탭으로 열지 않는다.
+  { href: RSS_PATH, label: 'rss', external: false },
+] as const;
 
 export const Hero = () => {
   return (
-    <header
+    // <header>로 감싸면 Chrome이 main 안에서도 banner 랜드마크로 노출해
+    // 사이트 헤더와 banner가 둘이 된다(axe: no-duplicate-banner). 그냥 div.
+    <div
       className={css({
-        pt: { base: '[32px]', md: '[48px]' },
-        pb: { base: '[24px]', md: '[32px]' },
+        display: 'grid',
+        gridTemplateColumns: { base: '1fr', md: '[minmax(0,1fr) 210px]' },
+        gap: '[26px]',
+        alignItems: 'center',
+        mb: '[30px]',
       })}
     >
-      <div
-        className={css({
-          maxW: 'containerW',
-          mx: 'auto',
-          px: '8',
-        })}
-      >
-        <Label
-          tone="meta"
-          className={css({
-            display: 'block',
-            mb: '[12px]',
-            color: 'ink.500',
-            letterSpacing: 'mono',
-          })}
-        >
-          STUDY NOTE / 한상욱 · since 2025
-        </Label>
+      <div>
         <h1
           className={css({
-            fontFamily: 'sans',
-            fontSize: { base: '4xl', md: '[40px]', lg: '[48px]' },
+            fontSize: '[21px]',
             fontWeight: 'bold',
-            lineHeight: 'heroDense',
-            letterSpacing: 'tight',
             color: 'ink.950',
-            mb: '[12px]',
+            mb: '[8px]',
           })}
         >
-          그냥,
-          <br />
-          <span>적어 두는</span> 공부방.
+          한상욱
         </h1>
-        <p
+        <p className={css({ fontSize: '[14px]', color: 'ink.600' })}>
+          구조를 그려서 문제를 푸는 프론트엔드 엔지니어.
+          <br />
+          디자인 시스템, 모노레포, 배포 파이프라인을 다룹니다.
+        </p>
+        <div
           className={css({
-            fontFamily: 'sans',
-            fontSize: { base: 'md', md: 'lg' },
-            color: 'ink.600',
-            maxW: 'heroSubW',
-            lineHeight: 'comfortable',
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: '[8px]',
+            mt: '[14px]',
           })}
         >
-          아직 정리되지 않은 생각과, 내일이면 다시 계산해볼 코드 조각들. 날마다
-          코드 사이에서 마주치는 문제와 고민을 그대로 적어 둡니다.
-        </p>
+          {PILLS.map(item => (
+            <a
+              key={item.label}
+              href={item.href}
+              target={item.external ? '_blank' : undefined}
+              rel={item.external ? 'noopener noreferrer' : undefined}
+              className={pill}
+            >
+              {item.label}
+            </a>
+          ))}
+        </div>
       </div>
-    </header>
+
+      {/* 장식 모티프 — 좁은 화면에서는 이름/소개가 우선이라 숨긴다. */}
+      <div className={css({ display: { base: 'none', md: 'block' } })}>
+        <HeroMotif />
+      </div>
+    </div>
   );
 };

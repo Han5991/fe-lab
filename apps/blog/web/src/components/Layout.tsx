@@ -1,9 +1,10 @@
 import Link from 'next/link';
-import { css } from '@design-system/ui-lib/css';
+import { css, cx } from '@design-system/ui-lib/css';
 import type { ReactNode } from 'react';
 import { SITE_AUTHOR_GITHUB, SITE_AUTHOR_LINKEDIN } from '@/lib/constants';
 
 import { PageTransition } from './PageTransition';
+import { NavLinks } from './home/NavLinks';
 import { SearchDialog } from './search/SearchDialog';
 import { ThemeToggle } from './ThemeToggle';
 
@@ -11,17 +12,29 @@ interface LayoutProps {
   children: ReactNode;
 }
 
-const navLink = css({
-  display: 'inline-flex',
-  alignItems: 'center',
-  fontSize: 'sm',
-  color: 'ink.600',
-  px: '3',
-  py: '1.5',
-  rounded: 'md',
-  transition: '[all 0.15s]',
-  _hover: { color: 'ink.950', bg: 'paper.100' },
+/**
+ * 헤더·푸터의 기준 칼럼. 레퍼런스 허브와 같은 640px 축에 정렬합니다.
+ * 바깥 px가 좁은 화면의 여백을, 안쪽 maxW가 넓은 화면의 폭을 담당합니다.
+ * (글 상세는 TOC 사이드바 때문에 더 넓지만, 헤더는 공통이라 여기 기준을 따릅니다)
+ */
+const railOuter = css({ px: '[20px]' });
+const railInner = css({ maxW: 'hubW', mx: 'auto' });
+
+const footerLink = css({
+  fontFamily: 'mono',
+  fontSize: '[12px]',
+  color: 'ink.500',
+  transition: '[color 0.15s]',
+  _hover: { color: 'ink.950' },
 });
+
+const FOOTER_LINKS = [
+  { href: '/about/', label: 'About', internal: true },
+  { href: '/privacy/', label: '개인정보', internal: true },
+  { href: SITE_AUTHOR_GITHUB, label: 'GitHub', internal: false },
+  { href: SITE_AUTHOR_LINKEDIN, label: 'LinkedIn', internal: false },
+  { href: '/rss.xml', label: 'RSS', internal: false },
+] as const;
 
 export const Layout = ({ children }: LayoutProps) => {
   return (
@@ -34,74 +47,69 @@ export const Layout = ({ children }: LayoutProps) => {
         flexDir: 'column',
       })}
     >
-      <nav
+      {/* sticky는 유지하되 blur/알파 배경은 걷어냈다 — 위계는 hairline 보더로만. */}
+      <header
         className={css({
-          borderBottomWidth: '[1px]',
+          borderBottomWidth: 'hairline',
+          borderBottomStyle: 'solid',
           borderColor: 'ink.border',
           pos: 'sticky',
           top: '0',
-          bg: 'paper.50/80',
-          backdropFilter: '[blur(12px)]',
+          bg: 'paper.50',
           zIndex: '10',
         })}
       >
-        <div
-          className={css({
-            maxW: 'containerW',
-            m: 'auto',
-            px: '8',
-            h: '14',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          })}
-        >
-          <Link
-            href="/"
-            className={css({
-              display: 'inline-flex',
-              alignItems: 'baseline',
-              gap: '3',
-              color: 'ink.950',
-              transition: '[opacity 0.15s]',
-              _hover: { opacity: '0.8' },
-            })}
+        <div className={railOuter}>
+          <div
+            className={cx(
+              railInner,
+              css({
+                h: '[52px]',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: { base: '[10px]', md: '[16px]' },
+              }),
+            )}
           >
-            <span
-              className={css({
-                fontSize: 'md',
-                fontWeight: 'semibold',
-                letterSpacing: 'tightXs',
-              })}
-            >
-              Frontend Lab
-            </span>
-            <span
+            {/* 로고 표기만 sangwook.dev. metadata/JSON-LD의 사이트명(Frontend Lab)은
+                검색 색인 보호를 위해 그대로 둔다. */}
+            <Link
+              href="/"
               className={css({
                 fontFamily: 'mono',
-                fontSize: '2xs',
-                color: 'ink.400',
-                letterSpacing: 'monoXxl',
-                display: { base: 'none', md: 'inline' },
+                fontWeight: 'medium',
+                fontSize: '[15px]',
+                color: 'ink.950',
+                transition: '[opacity 0.15s]',
+                _hover: { opacity: '0.7' },
               })}
             >
-              EST. 2025
-            </span>
-          </Link>
-          <div
-            className={css({ display: 'flex', alignItems: 'center', gap: '1' })}
-          >
-            <Link href="/posts/" className={navLink}>
-              Posts
+              sangwook.dev
             </Link>
-            <Link href="/about/" className={navLink}>
-              About
-            </Link>
-            <SearchDialog />
-            <ThemeToggle />
+
+            <div
+              className={css({
+                display: 'flex',
+                alignItems: 'center',
+                gap: { base: '[10px]', md: '[16px]' },
+              })}
+            >
+              <NavLinks />
+              <div
+                className={css({
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '[4px]',
+                })}
+              >
+                <SearchDialog />
+                <ThemeToggle />
+              </div>
+            </div>
           </div>
         </div>
-      </nav>
+      </header>
 
       <main className={css({ flex: '1', w: 'full' })}>
         <PageTransition>{children}</PageTransition>
@@ -109,91 +117,69 @@ export const Layout = ({ children }: LayoutProps) => {
 
       <footer
         className={css({
-          borderTopWidth: '[1px]',
+          borderTopWidth: 'hairline',
+          borderTopStyle: 'solid',
           borderColor: 'ink.border',
-          mt: '20',
-          py: '8',
-          bg: 'paper.100',
+          mt: '[64px]',
+          py: '[20px]',
         })}
       >
-        <div
-          className={css({
-            maxW: 'containerW',
-            mx: 'auto',
-            px: '8',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: '4',
-          })}
-        >
-          <span
-            className={css({
-              fontFamily: 'mono',
-              fontSize: 'xs',
-              letterSpacing: 'monoXl',
-              textTransform: 'uppercase',
-              color: 'ink.500',
-            })}
-          >
-            © {new Date().getFullYear()} Frontend Lab · 한상욱
-          </span>
+        <div className={railOuter}>
           <div
-            className={css({
-              display: 'flex',
-              gap: '6',
-              flexWrap: 'wrap',
-              alignItems: 'center',
-            })}
-          >
-            {[
-              { href: '/about/', label: 'About', internal: true },
-              { href: '/privacy', label: '개인정보', internal: true },
-              { href: SITE_AUTHOR_GITHUB, label: 'GitHub', internal: false },
-              {
-                href: SITE_AUTHOR_LINKEDIN,
-                label: 'LinkedIn',
-                internal: false,
-              },
-              { href: '/rss.xml', label: 'RSS', internal: false },
-            ].map(link =>
-              link.internal ? (
-                <Link
-                  key={link.label}
-                  href={link.href}
-                  className={css({
-                    fontFamily: 'mono',
-                    fontSize: 'xs',
-                    color: 'ink.500',
-                    _hover: { color: 'ink.950' },
-                    transition: '[color 0.15s]',
-                  })}
-                >
-                  {link.label}
-                </Link>
-              ) : (
-                <a
-                  key={link.label}
-                  href={link.href}
-                  target={link.href.startsWith('http') ? '_blank' : undefined}
-                  rel={
-                    link.href.startsWith('http')
-                      ? 'noopener noreferrer'
-                      : undefined
-                  }
-                  className={css({
-                    fontFamily: 'mono',
-                    fontSize: 'xs',
-                    color: 'ink.500',
-                    _hover: { color: 'ink.950' },
-                    transition: '[color 0.15s]',
-                  })}
-                >
-                  {link.label}
-                </a>
-              ),
+            className={cx(
+              railInner,
+              css({
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: '[12px]',
+              }),
             )}
+          >
+            <span
+              className={css({
+                fontFamily: 'mono',
+                fontSize: '[12px]',
+                color: 'ink.500',
+              })}
+            >
+              © {new Date().getFullYear()} 한상욱
+            </span>
+            <div
+              className={css({
+                display: 'flex',
+                gap: '[16px]',
+                flexWrap: 'wrap',
+                alignItems: 'center',
+              })}
+            >
+              {FOOTER_LINKS.map(link =>
+                link.internal ? (
+                  <Link
+                    key={link.label}
+                    href={link.href}
+                    className={footerLink}
+                  >
+                    {link.label}
+                  </Link>
+                ) : (
+                  <a
+                    key={link.label}
+                    href={link.href}
+                    target={link.href.startsWith('http') ? '_blank' : undefined}
+                    rel={
+                      link.href.startsWith('http')
+                        ? 'noopener noreferrer'
+                        : undefined
+                    }
+                    className={footerLink}
+                  >
+                    {link.label}
+                  </a>
+                ),
+              )}
+            </div>
           </div>
         </div>
       </footer>

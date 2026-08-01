@@ -2,8 +2,12 @@ import Link from 'next/link';
 import { css } from '@design-system/ui-lib/css';
 import type { Metadata } from 'next';
 
-import { getAllPostSummaries } from '@/domain/post';
-import { getAllSeries } from '@/domain/post/aggregate';
+import {
+  getAllPostSummaries,
+  getSeriesMeta,
+  sortPostsBySeriesOrder,
+  type PostSummary,
+} from '@/domain/post';
 import {
   SITE_URL,
   SITE_AUTHOR_GITHUB,
@@ -12,16 +16,9 @@ import {
 } from '@/lib/constants';
 import { safeJsonLd } from '@/lib/jsonLd';
 
-import {
-  Hero,
-  FeaturedPost,
-  MiniPostCard,
-  SeriesCard,
-  PostIndexRow,
-  PopularRail,
-  SearchBox,
-  Label,
-} from '@/src/components/blog';
+import { Hero, FeaturedPost, PostIndexRow } from '@/src/components/blog';
+import { OssStrip } from '@/src/components/home/OssStrip';
+import { seriesBadgeLabel } from '@/src/components/home/seriesBadge';
 import { PageBoundary } from '@/src/components/PageBoundary';
 
 export const metadata: Metadata = {
@@ -116,12 +113,34 @@ const jsonLd = {
   ],
 };
 
+/** 허브에 노출할 최근 글 수. 대표 글 1개는 제외한 나머지에서 센다. */
+const RECENT_COUNT = 12;
+
+/**
+ * 대표 글의 시리즈 배지 문구. 시리즈 안 순서는 `_series.yml`의 `order`를 따르고
+ * (없으면 날짜 오름차순) 글 상세의 시리즈 네비게이션과 같은 규칙을 씁니다.
+ */
+function buildSeriesLabel(
+  post: PostSummary,
+  allPosts: PostSummary[],
+): string | undefined {
+  if (!post.series) return undefined;
+  const meta = getSeriesMeta(post.series);
+  const ordered = sortPostsBySeriesOrder(
+    allPosts.filter(p => p.series === post.series),
+    meta?.order,
+  );
+  return seriesBadgeLabel(
+    meta?.title ?? post.series,
+    ordered.map(p => p.slug),
+    post.slug,
+  );
+}
+
 export default function HomePage() {
   const allPosts = getAllPostSummaries();
   const featured = allPosts[0];
-  const sideTwo = allPosts.slice(1, 3);
-  const recent = allPosts.slice(3, 13);
-  const series = getAllSeries().slice(0, 3);
+  const recent = allPosts.slice(1, 1 + RECENT_COUNT);
 
   return (
     <>
@@ -130,202 +149,61 @@ export default function HomePage() {
         dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }}
       />
       <PageBoundary transitionId="/">
-        <div className={css({ bg: 'paper.50' })}>
-          <Hero />
-
-          {/* Featured + Side stack */}
-          {featured && (
-            <section
-              className={css({
-                pt: '6',
-                pb: { base: '10', md: '14' },
-                borderTopWidth: '[1px]',
-                borderColor: 'ink.border',
-              })}
-            >
-              <div
-                className={css({
-                  maxW: 'containerW',
-                  mx: 'auto',
-                  px: '8',
-                  pt: { base: '8', md: '10' },
-                  display: 'grid',
-                  gridTemplateColumns: { base: '1fr', md: '7fr 5fr' },
-                  gap: { base: '10', md: '12' },
-                })}
-              >
-                <FeaturedPost post={featured} />
-
-                <aside
-                  className={css({
-                    display: 'flex',
-                    flexDir: 'column',
-                    gap: '6',
-                  })}
-                >
-                  <SearchBox
-                    placeholder="이 노트장에서 찾기…"
-                    href="/posts/?focus=search"
-                  />
-                  <div>
-                    {/* 바로 아래 MiniPostCard가 h4라, 이 라벨이 span이면
-                        FeaturedPost의 h2에서 h4로 두 단계를 건너뛴다. */}
-                    <Label
-                      as="h3"
-                      tone="meta"
-                      className={css({
-                        display: 'block',
-                        mb: '4',
-                        pb: '3',
-                        borderBottomWidth: '[1px]',
-                        borderColor: 'ink.border',
-                      })}
-                    >
-                      이번 주 함께 읽기 좋은 글
-                    </Label>
-                    <div>
-                      {sideTwo.map((p, i) => (
-                        <MiniPostCard
-                          key={p.slug}
-                          post={p}
-                          withDivider={i > 0}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                </aside>
-              </div>
-            </section>
-          )}
-
-          {/* Series shelf */}
-          {series.length > 0 && (
-            <section
-              className={css({
-                bg: 'paper.100',
-                borderTopWidth: '[1px]',
-                borderBottomWidth: '[1px]',
-                borderColor: 'ink.border',
-                py: { base: '12', md: '16' },
-              })}
-            >
-              <div className={css({ maxW: 'containerW', mx: 'auto', px: '8' })}>
-                <div
-                  className={css({
-                    display: 'flex',
-                    alignItems: 'baseline',
-                    gap: '3',
-                    mb: '6',
-                    pb: '3',
-                    borderBottomWidth: '[1px]',
-                    borderColor: 'ink.border',
-                  })}
-                >
-                  <h2
-                    className={css({
-                      fontSize: { base: 'md', md: 'lg' },
-                      fontWeight: 'semibold',
-                      color: 'ink.950',
-                    })}
-                  >
-                    시리즈로 묶어서 보기
-                  </h2>
-                  <span className={css({ flex: '1' })} />
-                  <Link
-                    href="/posts/"
-                    className={css({
-                      fontSize: 'sm',
-                      color: 'accent.600',
-                      _hover: { textDecoration: 'underline' },
-                    })}
-                  >
-                    모두 보기 →
-                  </Link>
-                </div>
-                <div
-                  className={css({
-                    display: 'grid',
-                    gridTemplateColumns: {
-                      base: '1fr',
-                      md: '[repeat(2, 1fr)]',
-                      lg: '[repeat(3, 1fr)]',
-                    },
-                    gap: '6',
-                  })}
-                >
-                  {series.map((s, i) => (
-                    <SeriesCard key={s.id} series={s} index={i} />
-                  ))}
-                </div>
-              </div>
-            </section>
-          )}
-
-          {/* Recent + Popular */}
-          <section
+        <div className={css({ bg: 'paper.50', px: '[20px]' })}>
+          <div
             className={css({
-              py: { base: '12', md: '16' },
-              maxW: 'containerW',
+              maxW: 'hubW',
               mx: 'auto',
-              px: '8',
+              pt: '[36px]',
+              pb: '[48px]',
             })}
           >
-            <div
+            <Hero />
+
+            {featured && (
+              <FeaturedPost
+                post={featured}
+                seriesLabel={buildSeriesLabel(featured, allPosts)}
+              />
+            )}
+
+            {/* 장식 없는 텍스트 리스트. 행이 스스로 "마지막"인지 알 수 없어
+                목록을 닫는 아래 보더는 여기서 :last-child로 붙인다. */}
+            <ol
+              aria-label="최근 글"
               className={css({
-                display: 'grid',
-                gridTemplateColumns: { base: '1fr', md: '8fr 4fr' },
-                gap: { base: '10', md: '16' },
+                listStyleType: 'none',
+                p: '0',
+                m: '0',
+                '& > li:last-child > a': {
+                  borderBottomWidth: 'hairline',
+                  borderBottomStyle: 'solid',
+                  borderBottomColor: 'ink.border',
+                },
               })}
             >
-              <div>
-                <div
-                  className={css({
-                    display: 'flex',
-                    alignItems: 'baseline',
-                    gap: '3',
-                    mb: '4',
-                    pb: '3',
-                    borderBottomWidth: '[1px]',
-                    borderColor: 'ink.border',
-                  })}
-                >
-                  <h2
-                    className={css({
-                      fontSize: { base: 'md', md: 'lg' },
-                      fontWeight: 'semibold',
-                      color: 'ink.950',
-                    })}
-                  >
-                    최근 노트
-                  </h2>
-                  <span className={css({ flex: '1' })} />
-                  <Link
-                    href="/posts/"
-                    className={css({
-                      fontSize: 'sm',
-                      color: 'accent.600',
-                      _hover: { textDecoration: 'underline' },
-                    })}
-                  >
-                    모두 보기 →
-                  </Link>
-                </div>
-                <ol className={css({ listStyleType: 'none', p: '0', m: '0' })}>
-                  {/* PostIndexRow의 루트는 <a>다. <ol> 바로 밑에 두면 목록
-                      구조가 깨진다(axe list, impact serious). PopularRail·
-                      PostsArchive와 같이 <li>로 감싼다. */}
-                  {recent.map(p => (
-                    <li key={p.slug}>
-                      <PostIndexRow post={p} />
-                    </li>
-                  ))}
-                </ol>
-              </div>
+              {recent.map(post => (
+                <li key={post.slug}>
+                  <PostIndexRow post={post} />
+                </li>
+              ))}
+            </ol>
 
-              {/* PopularRail은 내부에서 useQuery + 자체 fallback. Suspense 불필요. */}
-              <PopularRail posts={allPosts} />
-            </div>
-          </section>
+            <Link
+              href="/posts/"
+              className={css({
+                display: 'inline-block',
+                mt: '[14px]',
+                fontSize: '[13px]',
+                color: 'accent.600',
+                _hover: { textDecoration: 'underline' },
+              })}
+            >
+              모든 글 →
+            </Link>
+
+            <OssStrip />
+          </div>
         </div>
       </PageBoundary>
     </>

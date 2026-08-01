@@ -1,113 +1,73 @@
 import Link from 'next/link';
 import { css } from '@design-system/ui-lib/css';
-import { tagPillStyle } from './tagPillStyle';
 import type { PostSummary } from '@/domain/post';
 import { encodePostSlug } from '@/domain/post/utils';
 import { resolveThumbnailSrc } from '@/domain/post/thumbnail';
-import { fmtDate } from '@/lib/format';
+import { ParallelThumb } from '@/src/components/diagram';
 
-/** CSS가 실제 크기를 정하므로 종횡비 힌트로만 쓰입니다(표시 폭 전체 × 320). */
-const THUMB_WIDTH = 1200;
-const THUMB_HEIGHT = 320;
+/** 레퍼런스 미니 썸네일 칸(150×92)과 같은 비율로 고정합니다. */
+const THUMB_WIDTH = 150;
+const THUMB_HEIGHT = 92;
 
 interface FeaturedPostProps {
   post: PostSummary;
+  /** `시리즈 · 번들러 만들기 2/5` 형태. 시리즈에 속하지 않으면 생략. */
+  seriesLabel?: string;
 }
 
-export const FeaturedPost = ({ post }: FeaturedPostProps) => {
+export const FeaturedPost = ({ post, seriesLabel }: FeaturedPostProps) => {
   const href = `/posts/${encodePostSlug(post.slug)}/`;
-  // thumbnail 없으면 빌드 시 생성된 글별 OG 카드로 fallback (resolveThumbnailSrc).
-  const thumb = resolveThumbnailSrc(post);
-  const readMin = post.readMin;
+  // 자동 생성 OG 카드는 1200×630 소셜 카드라 150px 칸에서 글자가 뭉갠다.
+  // thumbnail이 비었거나 `/og/*`를 가리키면(= 빌드가 OG 카드를 만들어 주는
+  // 경우) 이미지 대신 다이어그램 썸네일을 세운다 — 리뉴얼의 시각 아이덴티티다.
+  const hasOwnThumbnail =
+    Boolean(post.thumbnail) && !post.thumbnail?.startsWith('/og/');
 
   return (
     <Link
       href={href}
       className={css({
-        display: 'block',
-        position: 'relative',
-        bg: 'paper.100',
-        borderWidth: '[1px]',
+        display: 'grid',
+        gridTemplateColumns: { base: '1fr', md: '[minmax(0,1fr) 150px]' },
+        gap: '[18px]',
+        alignItems: 'center',
+        borderWidth: 'hairline',
         borderStyle: 'solid',
         borderColor: 'ink.border',
-        rounded: '[12px]',
-        overflow: 'hidden',
+        rounded: 'card',
+        px: '[20px]',
+        py: '[18px]',
+        mb: '[26px]',
         transition: '[border-color 0.15s]',
         _hover: {
           borderColor: 'ink.borderStrong',
-          '& h2': { color: 'accent.600', textDecoration: 'underline' },
+          '& h2': { color: 'accent.600' },
         },
       })}
     >
-      <img
-        src={thumb}
-        alt={post.title}
-        width={THUMB_WIDTH}
-        height={THUMB_HEIGHT}
-        // 홈 최상단 카드라 항상 LCP 후보 — lazy를 걸면 안 된다.
-        loading="eager"
-        fetchPriority="high"
-        decoding="async"
-        className={css({
-          display: 'block',
-          w: 'full',
-          h: '[320px]',
-          objectFit: 'cover',
-          borderBottomWidth: '[1px]',
-          borderBottomStyle: 'solid',
-          borderColor: 'ink.border',
-        })}
-      />
-
-      <div className={css({ p: '[16px]' })}>
-        <div
-          className={css({
-            mb: '[12px]',
-            display: 'flex',
-            flexWrap: 'wrap',
-            alignItems: 'center',
-            gap: '[8px]',
-          })}
-        >
+      <div className={css({ minW: '0' })}>
+        {seriesLabel && (
           <span
-            className={css(tagPillStyle, {
-              bg: 'moss.100',
-              color: 'moss.700',
-              fontWeight: 'semibold',
+            className={css({
+              display: 'inline-block',
+              fontSize: '[12px]',
+              color: 'accent.600',
+              bg: 'accent.50',
+              rounded: '[6px]',
+              px: '[9px]',
+              py: '[2px]',
             })}
           >
-            LATEST
+            {seriesLabel}
           </span>
-          {post.series && (
-            <span
-              className={css({
-                fontSize: '[12px]',
-                color: 'ink.500',
-                fontWeight: 'medium',
-              })}
-            >
-              {post.series}
-            </span>
-          )}
-          {post.date && (
-            <span
-              className={css({
-                fontSize: '[12px]',
-                color: 'ink.500',
-              })}
-            >
-              · {fmtDate(post.date)}
-            </span>
-          )}
-        </div>
-
+        )}
         <h2
           className={css({
-            mb: '[8px]',
-            fontSize: { base: '2xl', md: '3xl' },
-            fontWeight: 'bold',
-            lineHeight: 'tight',
+            fontSize: '[16px]',
+            fontWeight: 'semibold',
             color: 'ink.950',
+            mt: '[10px]',
+            mb: '[5px]',
             transition: '[color 0.15s]',
           })}
         >
@@ -116,44 +76,53 @@ export const FeaturedPost = ({ post }: FeaturedPostProps) => {
         {post.excerpt && (
           <p
             className={css({
-              fontSize: 'md',
-              color: 'ink.700',
-              lineHeight: 'relaxed',
-              mb: '[16px]',
+              fontSize: '[13px]',
+              color: 'ink.600',
               lineClamp: 2,
             })}
           >
             {post.excerpt}
           </p>
         )}
-
-        <div
+        <p
           className={css({
-            display: 'flex',
-            alignItems: 'center',
-            gap: '[8px]',
-            flexWrap: 'wrap',
+            fontFamily: 'mono',
+            fontWeight: 'normal',
+            fontSize: '[12px]',
+            color: 'ink.500',
+            mt: '[10px]',
           })}
         >
-          <span
+          {post.date ? `${post.date} · ` : ''}
+          {post.readMin} min
+        </p>
+      </div>
+
+      <div className={css({ w: '[150px]', maxW: 'full' })}>
+        {hasOwnThumbnail ? (
+          <img
+            src={resolveThumbnailSrc(post)}
+            alt=""
+            width={THUMB_WIDTH}
+            height={THUMB_HEIGHT}
+            // 예전 홈에서는 이 이미지가 320px 히어로라 LCP 후보였지만, 지금은
+            // 150px 미니 썸네일이라 우선순위를 올리지 않는다(LCP는 히어로 텍스트).
+            loading="lazy"
+            decoding="async"
             className={css({
-              fontSize: '[12px]',
-              color: 'ink.500',
+              display: 'block',
+              w: 'full',
+              h: '[92px]',
+              objectFit: 'cover',
+              rounded: 'control',
+              borderWidth: 'hairline',
+              borderStyle: 'solid',
+              borderColor: 'ink.border',
             })}
-          >
-            {readMin}분 읽기
-          </span>
-          {post.tags?.slice(0, 3).map(t => (
-            <span
-              key={t}
-              className={css(tagPillStyle, {
-                _hover: { bg: 'paper.300' },
-              })}
-            >
-              #{t}
-            </span>
-          ))}
-        </div>
+          />
+        ) : (
+          <ParallelThumb />
+        )}
       </div>
     </Link>
   );
