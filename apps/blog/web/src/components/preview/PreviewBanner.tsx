@@ -43,7 +43,8 @@ export function PreviewBanner({ post }: Props) {
         px: '4',
         fontSize: 'sm',
         fontWeight: 'semibold',
-        boxShadow: 'sm',
+        borderBottomWidth: 'hairline',
+        borderColor: 'ink.border',
       })}
     >
       🔒 {label} — 이 페이지는 dev 환경에서만 노출됩니다

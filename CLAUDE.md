@@ -268,17 +268,18 @@ The blog (`apps/blog/web/`) is a **statically generated (SSG) Next.js applicatio
    **Frontmatter 전체 목록** — 여기 없는 키는 `lint:posts`가 `unknown-frontmatter-key`로
    경고합니다. `domain/post/types.ts`의 `RawFrontmatter`가 단일 출처입니다.
 
-   | 키              | 필수 | 설명                                                                                                                              |
-   | :-------------- | :--: | :-------------------------------------------------------------------------------------------------------------------------------- |
-   | `status`        |  ✅  | `published` \| `draft` \| `scheduled`. **이 키가 없으면 포스트가 아니라 메타 노트로 간주되어 빌드에서 통째로 제외됩니다.**        |
-   | `title`         |  ✅  | 없으면 파일명으로 폴백하지만 `lint:posts`가 에러                                                                                  |
-   | `date`          |  ✅  | `'YYYY-MM-DD'`. 목록 정렬·아카이브·sitemap·RSS가 모두 사용하고, `scheduled`일 때는 공개 시각이기도 함. 없으면 `missing-date` 에러 |
-   | `slug`          |      | URL. 없으면 파일 경로에서 유도                                                                                                    |
-   | `excerpt`       |      | 없으면 본문 앞 160자                                                                                                              |
-   | `thumbnail`     |      | 없으면 빌드 시 OG 카드(`/og/{slug}.png`) 자동 생성                                                                                |
-   | `tags`          |      | 문자열 배열. 문자열 아닌 원소가 섞이면 태그 전체가 무시됨                                                                         |
-   | `updatedAt`     |      | Schema.org `dateModified`, sitemap `lastmod`에 사용                                                                               |
-   | `scheduledDate` |      | **시각까지 지정할 때만.** 날짜만이면 `date`로 충분. 이걸 써도 `date`는 여전히 필수                                                |
+   | 키              | 필수 | 설명                                                                                                                                                                                                        |
+   | :-------------- | :--: | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+   | `status`        |  ✅  | `published` \| `draft` \| `scheduled`. **이 키가 없으면 포스트가 아니라 메타 노트로 간주되어 빌드에서 통째로 제외됩니다.**                                                                                  |
+   | `title`         |  ✅  | 없으면 파일명으로 폴백하지만 `lint:posts`가 에러                                                                                                                                                            |
+   | `date`          |  ✅  | `'YYYY-MM-DD'`. 목록 정렬·아카이브·sitemap·RSS가 모두 사용하고, `scheduled`일 때는 공개 시각이기도 함. 없으면 `missing-date` 에러                                                                           |
+   | `slug`          |      | URL. 없으면 파일 경로에서 유도                                                                                                                                                                              |
+   | `excerpt`       |      | 없으면 본문 앞 160자                                                                                                                                                                                        |
+   | `thumbnail`     |      | 없으면 빌드 시 OG 카드(`/og/{slug}.png`) 자동 생성                                                                                                                                                          |
+   | `hero`          |      | 히어로 슬롯에 꽂을 **등록된 다이어그램 이름**(현재 `deploy-pipeline`). 있으면 썸네일 대신 이 SVG가 그려진다. 렌더는 fail-soft(미등록 → 썸네일 폴백)지만 `lint:posts`가 `unknown-hero-diagram` 에러로 막는다 |
+   | `tags`          |      | 문자열 배열. 문자열 아닌 원소가 섞이면 태그 전체가 무시됨                                                                                                                                                   |
+   | `updatedAt`     |      | Schema.org `dateModified`, sitemap `lastmod`에 사용                                                                                                                                                         |
+   | `scheduledDate` |      | **시각까지 지정할 때만.** 날짜만이면 `date`로 충분. 이걸 써도 `date`는 여전히 필수                                                                                                                          |
 
    `series`는 frontmatter가 아니라 **폴더 경로**로 결정됩니다(`repository.ts`).
 
@@ -319,6 +320,139 @@ The blog (`apps/blog/web/`) is a **statically generated (SSG) Next.js applicatio
 | `/preview/[...slug]` 라우트                   | dev 환경에서만 동작하는 draft·scheduled 글 미리보기. prod 빌드는 placeholder 1개(`__disabled__`) + 즉시 `notFound`로 차단   |
 | `_series.yml`                                 | 시리즈 폴더에 두면 시리즈 nav가 `order` 기준 chronological 정렬 + 표시명을 폴더명 대신 사용                                 |
 | `<callout type="warning\|info\|tip\|danger">` | 마크다운 헬퍼 컴포넌트 (raw HTML로 작성). `<figure>` + `<figcaption>`, `<file-tree>`도 지원                                 |
+| `<dialogue>` · `<metrics>` · `<timeline>`     | 리뉴얼 시그니처 컴포넌트. 역시 raw HTML 커스텀 태그 — 아래 "디자인 시스템" 참고                                             |
+| `<diagram>` + frontmatter `hero:`             | 구조 그림. 저작법 전체는 **`apps/blog/web/design/DIAGRAM_AUTHORING.md`** — 아래 "다이어그램 문법" 참고                      |
+
+#### 디자인 시스템 (리뉴얼 기준)
+
+**시각 기준은 `apps/blog/web/design/design-reference.html` 파일이다.** 홈·글 상세를
+구현하거나 리뷰할 때는 이 파일을 브라우저로 열어 1:1로 대조한다. 아래 설명과 파일의
+렌더링이 다르면 **파일이 이긴다**. 상단 토글로 다크 모드까지 함께 본다.
+
+> `design/github-style-reference.md`는 **폐기된 이전 방향**(GitHub 스타일 다크 전용)이다.
+> 참고 자료로 남겨둔 것뿐이니 새 작업의 근거로 쓰지 말 것.
+
+##### 컬러 토큰
+
+색은 전부 `packages/@design-system/ui/src/blog-preset.ts`의 semanticTokens로 정의돼
+라이트/다크가 자동 전환된다. **컴포넌트에서 hex를 직접 쓰지 않는다.**
+
+| 레퍼런스 CSS 변수                     | 토큰                             | 라이트 / 다크                                   |
+| :------------------------------------ | :------------------------------- | :---------------------------------------------- |
+| `--bg`                                | `paper.50`                       | `#FFFFFF` / `#0B0D10`                           |
+| `--bg-sub`                            | `paper.100`                      | `#F7F7F5` / `#14171C`                           |
+| `--page`                              | `paper.200`                      | `#EDEDEA` / `#1B1F26`                           |
+| `--fg`                                | `ink.950`                        | `#1A1A1A` / `#E6E8EB`                           |
+| `--fg-sub`                            | `ink.600`                        | `#6B7280` / `#8B919A`                           |
+| `--fg-sub` (서브 서피스 위 12px 메타) | `ink.500`                        | `#656C77` / `#8B919A`                           |
+| `--accent` (**비텍스트** — 선·아이콘) | `accent.500`                     | `#1D9E75` / `#5DCAA5`                           |
+| `--accent` (**텍스트·링크**)          | `accent.600`                     | `#157F5E` / `#5DCAA5`                           |
+| `--accent-bg`                         | `accent.50`                      | `rgba(29,158,117,.10)` / `rgba(93,202,165,.14)` |
+| `--border`                            | `ink.border`                     | `rgba(0,0,0,.10)` / `rgba(255,255,255,.12)`     |
+| `--danger`                            | `danger.text` / `danger.border`  | `#C81E1E`·`#DC2626` / `#F09595`                 |
+| `--success`                           | `moss.600` (텍스트는 `moss.700`) | `#16A34A` / `#97C459`                           |
+| `--warn-bg` / `--warn-fg`             | `warn.bg` / `warn.text`          | `#FAEEDA`·`#854F0B` / `#3A2A10`·`#FAC775`       |
+
+> **글자엔 `accent.600`, 선·아이콘·다이어그램 스트로크엔 `accent.500`.**
+> 레퍼런스 HTML은 둘 다 `--accent` 한 색이지만, 라이트 모드에서 `#1D9E75` **글자**는
+> 흰 배경 위 3.4:1로 WCAG AA(4.5:1) 미달이다. 그래서 색상각은 유지한 채 명도만 낮춘
+> 톤을 텍스트 전용으로 따로 뒀다. 비텍스트는 3:1 기준이라 원색 그대로 써도 통과한다.
+> 같은 이유로 `moss.600`(배경·아이콘) ↔ `moss.700`(텍스트)도 분리돼 있다.
+
+포인트색은 **링크 · 시리즈 배지 · 다이어그램의 핵심 경로**에만 쓴다. 그 외에는 무채색.
+
+##### 타이포그래피
+
+- 본문/UI: `fontFamily: 'sans'` (Pretendard Variable)
+- **날짜 · 수치 · 태그 · 코드 · 로고는 반드시 `fontFamily: 'mono'`** (JetBrains Mono).
+  "측정하는 엔지니어" 무드의 핵심이라 예외를 두지 않는다
+- 세리프 금지. `serif` 토큰은 sans로 매핑돼 있어 실수로 써도 세리프가 나오지 않는다
+
+##### 형태
+
+- 라운드: `radii.card`(12px, 카드) · `radii.control`(8px, 작은 요소) · `radii.pill`(배지)
+- 보더: `borderWidths.hairline`(1px) 단일 소스. **위계는 그림자가 아니라 보더로 표현한다**
+- **그라데이션 · 글로우 · box-shadow 장식 금지.** 플랫 유지
+- Panda는 `strictTokens: true`다. 토큰 밖 값은 `fontSize: '[12px]'`, `shadow: '[none]'`처럼
+  대괄호로 이스케이프해 "여긴 의도적으로 토큰을 벗어난다"를 코드에 남긴다
+
+##### 다이어그램 문법 (모든 글 공통)
+
+- **이미지가 아니라 SVG React 컴포넌트**로 그린다 → 다크 모드 색 전환이 자동으로 따라온다.
+  프리미티브는 `src/components/diagram`(`DiagramFrame` / `DiagramNode` / `DiagramEdge` /
+  `DiagramLabel`)에 있고, 글별 다이어그램도 이 프리미티브 위에 올린다
+- SVG 안에 **색을 하드코딩하지 않는다.** `currentColor` 또는 Panda `css()` 클래스로
+  `fill`/`stroke`를 토큰에 연결한다
+- 노드: 라운드 사각형 `rx=8`, 스트로크 0.5~1px
+- 선: **실선 = 동기 호출**, **점선(`stroke-dasharray: 3 3`) = 비동기/데이터 흐름**
+- 색은 **2색만**: 구조는 회색(fill `paper.100` / stroke `ink.border`),
+  핵심 경로는 틸(fill `accent.50` / stroke `accent.500`)
+- 라벨: 노드 제목 12px/600 + 부제 11px, **부제는 5단어 이내**
+
+**글에 다이어그램을 붙이는 두 갈래** — 저작 가이드는
+**`apps/blog/web/design/DIAGRAM_AUTHORING.md`** 에 전부 있다(prop 표, 복붙 예제, 함정).
+여기엔 어느 쪽을 쓸지 고르는 기준만 남긴다.
+
+1. **선언형 태그** — 노드를 나열하면 좌표가 자동으로 잡힌다. 좌→우 체인(`row`)과
+   팬아웃(`fan`) 두 모양만 지원하고, 그 이상 복잡하면 대개 그림을 쪼개야 한다는 신호다.
+
+   ```html
+   <diagram label="스크린리더가 읽을 한 문장" caption="아래 중앙 주석">
+     <diagram-node id="a" title="첫 단계" desc="부제 5단어 이내"></diagram-node>
+     <diagram-node id="b" title="두 번째" tone="teal"></diagram-node>
+     <diagram-edge from="a" to="b" flow="async" emphasis="true"></diagram-edge>
+   </diagram>
+   ```
+
+   가장 자주 걸리는 규칙 둘: **엣지를 하나라도 쓰면 자동 연결이 꺼진다**(쓸 거면 전부 쓴다),
+   그리고 시그니처 컴포넌트와 마찬가지로 **self-closing이 안 된다**(`<diagram-node />`로
+   쓰면 뒤따르는 노드가 그 안에 중첩돼 조용히 사라진다).
+
+2. **이름 레지스트리** — 분기·회귀처럼 자동 레이아웃으로 안 되는 그림은 손으로 그린
+   컴포넌트를 `domain/post/diagramNames.ts`(이름)와 `src/components/diagram/registry.ts`
+   (맵)에 각각 한 줄씩 등록하고 `<diagram name="deploy-pipeline">` 또는 frontmatter
+   `hero:` 로 부른다. 타입이 `Record<DiagramName, …>`이라 한쪽만 하면 컴파일이 막는다.
+   **히어로 슬롯은 이 갈래만 받는다.**
+
+##### 시그니처 컴포넌트
+
+velite/contentlayer/MDX는 도입하지 않는다. 로더는 `gray-matter` + `react-markdown` +
+`rehype-raw` 그대로이고, 시그니처 컴포넌트도 `<callout>`·`<file-tree>`와 **똑같은 raw HTML
+소문자 커스텀 태그**로 쓴다(`PostClient.tsx`의 `components` 맵에 등록돼 있다).
+
+HTML 파서를 거치므로 **self-closing(`<metrics />`)은 동작하지 않는다.** 내용이 없어도
+여는 태그와 닫는 태그를 모두 쓴다. 속성 값은 항상 문자열이라, 배열을 넘길 때는 JSON
+문자열로 준다.
+
+```html
+<dialogue>
+  <msg from="PM">배포하다 서비스 죽으면 어떡해요?</msg>
+  <msg from="me">아니요, 점심에 합니다.</msg>
+</dialogue>
+
+<metrics
+  items='[{"label":"배포 소요","value":"22분 → 8분"},{"label":"롤백","value":"자동","tone":"success"}]'
+></metrics>
+
+<timeline>
+  <step
+    title="시도 1 · pm2 롤링 재시작"
+    desc="전환 순간 504"
+    result="fail"
+  ></step>
+  <step
+    title="시도 3 · blue/green"
+    desc="실패 시 자동 롤백"
+    result="success"
+  ></step>
+</timeline>
+```
+
+| 태그         | 용도                    | 핵심 속성                                                        |
+| :----------- | :---------------------- | :--------------------------------------------------------------- |
+| `<dialogue>` | 도입부 대화 재현        | 자식 `<msg from="...">`. `from="me"`면 우측 정렬 + 포인트색 버블 |
+| `<metrics>`  | before/after 수치 강조  | `items` JSON 문자열 또는 자식 `<metric label value tone>`        |
+| `<timeline>` | 시도 → 실패 → 해결 서사 | `steps` JSON 문자열 또는 자식 `<step title desc result>`         |
 
 #### 클라이언트 사이드 기능 (런타임)
 
@@ -356,16 +490,17 @@ The blog (`apps/blog/web/`) is a **statically generated (SSG) Next.js applicatio
 
 #### 주요 설정 파일
 
-| 파일                                     | 역할                                                                |
-| :--------------------------------------- | :------------------------------------------------------------------ |
-| `next.config.ts`                         | SSG output, trailingSlash 설정                                      |
-| `panda.config.ts`                        | Panda CSS 스타일 설정                                               |
-| `.env.production`                        | Supabase URL/Key, Giscus 설정                                       |
-| `.env.local`                             | 로컬 개발용 환경변수 (GA, Supabase local 등)                        |
-| `supabase/config.toml`                   | 로컬 Supabase 설정 (Auth, DB, Storage 등)                           |
-| `.github/workflows/deploy-blog.yml`      | CI/CD 배포 워크플로우                                               |
-| `apps/blog/posts/{series}/_series.yml`   | (선택) 시리즈 표시명·설명·order 메타                                |
-| `apps/blog/web/scripts/build-content.ts` | predev/prebuild 통합 진입점 (validate/sync/sitemap/rss/search/llms) |
+| 파일                                        | 역할                                                                    |
+| :------------------------------------------ | :---------------------------------------------------------------------- |
+| `next.config.ts`                            | SSG output, trailingSlash 설정                                          |
+| `panda.config.ts`                           | Panda CSS 스타일 설정                                                   |
+| `.env.production`                           | Supabase URL/Key, Giscus 설정                                           |
+| `.env.local`                                | 로컬 개발용 환경변수 (GA, Supabase local 등)                            |
+| `supabase/config.toml`                      | 로컬 Supabase 설정 (Auth, DB, Storage 등)                               |
+| `.github/workflows/deploy-blog.yml`         | CI/CD 배포 워크플로우                                                   |
+| `apps/blog/posts/{series}/_series.yml`      | (선택) 시리즈 표시명·설명·order 메타                                    |
+| `apps/blog/web/scripts/build-content.ts`    | predev/prebuild 통합 진입점 (validate/sync/sitemap/rss/search/llms)     |
+| `apps/blog/web/design/DIAGRAM_AUTHORING.md` | 다이어그램 저작 가이드 (선언형 태그 prop 표, 복붙 예제, `hero:` 등록법) |
 
 ## Prerequisites
 

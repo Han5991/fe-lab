@@ -42,13 +42,13 @@ export const MobileTOC = () => {
           h: '12',
           bg: 'paper.50',
           rounded: 'full',
-          shadow: 'lg',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           color: 'ink.600',
-          borderWidth: '[1px]',
-          borderColor: 'ink.border',
+          // 떠 있는 버튼이지만 그림자 대신 hairline 보더로 본문과 분리한다.
+          borderWidth: 'hairline',
+          borderColor: 'ink.borderStrong',
           zIndex: '39',
           cursor: 'pointer',
           _hover: { color: 'accent.600', borderColor: 'accent.200' },
@@ -86,11 +86,14 @@ export const MobileTOC = () => {
                   right: '0',
                   bg: 'paper.50',
                   zIndex: '51',
-                  roundedTop: '2xl',
+                  roundedTop: 'card',
                   maxH: '[70vh]',
                   display: 'flex',
                   flexDir: 'column',
-                  shadow: '2xl',
+                  // 뒤를 덮는 dim 오버레이가 이미 레이어를 갈라주므로 그림자는
+                  // 빼고 상단 hairline 보더만 남긴다.
+                  borderTopWidth: 'hairline',
+                  borderColor: 'ink.border',
                   pb: '[env(safe-area-inset-bottom)]',
                 })}
               >

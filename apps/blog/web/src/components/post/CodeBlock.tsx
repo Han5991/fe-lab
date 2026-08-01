@@ -61,6 +61,21 @@ SyntaxHighlighter.alias(
   ),
 );
 
+// ─────────────────────────────────────────────────────────────────────────
+// 코드 표면은 테마와 무관하게 항상 어둡다. react-syntax-highlighter가 쓰는
+// vscDarkPlus 토큰 색이 고정값이라, 라이트 테마에서 배경만 밝히면 구문 강조
+// 색이 통째로 대비를 잃는다. 그래서 크롬 색은 토큰이 아니라 "새 다크 팔레트에서
+// 뽑은 고정값"을 쓴다. 각각 paper.50 / paper.100 / ink.border / ink.600 /
+// accent.500 의 _dark 값이고, 보더만 8자리 hex(≈ 12% 알파)로 옮겨 적었다.
+// (여기에 테마-가변 토큰을 쓰면 라이트 테마에서 검은 보더·진한 회색 글자가
+//  어두운 크롬 위에 얹혀 대비가 3:1 아래로 떨어진다.)
+// ─────────────────────────────────────────────────────────────────────────
+const CODE_SURFACE = '[#0b0d10]';
+const CODE_CHROME = '[#14171c]';
+const CODE_BORDER = '[#ffffff1f]';
+const CODE_META = '[#8b919a]';
+const CODE_ACCENT = '[#5dcaa5]';
+
 // mermaid는 d3·dagre까지 끌고 와 raw 1.1MB(gzip 360KB)짜리 청크가 된다.
 // 정적 import면 CodeBlock을 쓰는 모든 글 — 즉 mermaid 다이어그램이 하나도
 // 없는 글까지 — 이 청크를 초기 로드에 포함한다(71편 중 mermaid를 쓰는 건 6편).
@@ -104,25 +119,20 @@ function CopyButton({ content }: { content: string }) {
     <button
       onClick={handleCopy}
       className={css({
-        ml: '4',
-        px: '2',
+        px: '2.5',
         py: '1',
+        fontFamily: 'mono',
         fontSize: 'xs',
-        // 코드블록 크롬은 테마와 무관하게 항상 어둡다(#161b22/#12171d/#212a35).
-        // 여기에 테마-가변 ink.500을 쓰면 라이트 테마에서 진한 회색 글자가
-        // 어두운 배경에 얹혀 2.89:1까지 떨어진다. 크롬 색과 같은 계열의
-        // 고정 밝은 회색을 쓴다.
-        color: '[#9198a1]',
-        bg: '[#212a35]',
-        rounded: 'md',
-        borderWidth: 'thin',
-        borderColor: '[#343d47]',
+        color: CODE_META,
+        bg: 'transparent',
+        rounded: 'control',
+        borderWidth: 'hairline',
+        borderColor: CODE_BORDER,
         cursor: 'pointer',
-        transition: '[all 0.2s]',
+        transition: '[color 0.15s, border-color 0.15s]',
         _hover: {
-          bg: '[#2d3742]',
-          color: '[#58a6ff]',
-          borderColor: '[#4a5560]',
+          color: CODE_ACCENT,
+          borderColor: CODE_ACCENT,
         },
       })}
     >
@@ -166,45 +176,35 @@ export function CodeBlock({
         mb: '12',
         mt: '8',
         pos: 'relative',
-        shadow: '2xl',
-        rounded: '2xl',
+        rounded: 'control',
         overflow: 'hidden',
-        bg: { base: '[#161b22]' },
-        borderWidth: 'thin',
-        borderColor: 'ink.border',
+        bg: CODE_SURFACE,
+        borderWidth: 'hairline',
+        borderColor: CODE_BORDER,
       })}
     >
       <div
         className={css({
-          bg: { base: '[#12171d]' },
-          px: '5',
-          py: '3',
+          bg: CODE_CHROME,
+          px: '4',
+          py: '2',
           display: 'flex',
-          gap: '2.5',
           alignItems: 'center',
-          borderBottomWidth: 'thin',
-          borderColor: 'ink.border',
+          minH: '[36px]',
+          borderBottomWidth: 'hairline',
+          borderColor: CODE_BORDER,
         })}
       >
-        <div
-          className={css({ boxSize: '3', rounded: 'full', bg: '[#ff5f56]' })}
-        />
-        <div
-          className={css({ boxSize: '3', rounded: 'full', bg: '[#ffbd2e]' })}
-        />
-        <div
-          className={css({ boxSize: '3', rounded: 'full', bg: '[#27c93f]' })}
-        />
+        {/* 맥 신호등 점 3개는 뺐다 — 아무 정보도 주지 않는 순수 장식이고,
+            팔레트 밖의 빨강·노랑·초록이라 "포인트 1색" 원칙과 정면으로 부딪힌다.
+            남은 건 언어 라벨(모노)과 복사 버튼뿐. */}
         {language && (
           <span
             className={css({
-              ml: '4',
-              // CopyButton과 동일 — 항상 어두운 크롬 위의 고정 밝은 회색.
-              color: '[#9198a1]',
+              fontFamily: 'mono',
               fontSize: 'xs',
-              textTransform: 'uppercase',
-              letterSpacing: 'widest',
-              fontWeight: 'bold',
+              letterSpacing: 'mono',
+              color: CODE_META,
             })}
           >
             {language}
@@ -220,8 +220,10 @@ export function CodeBlock({
         customStyle={{
           borderRadius: 0,
           margin: 0,
-          padding: `${token('spacing.6')} ${token('spacing.8')}`,
-          lineHeight: '1.8',
+          // 크롬이 얇아진 만큼 안쪽 여백도 줄여 680px 본문 칼럼에서 코드가
+          // 실제로 쓸 수 있는 가로폭을 넓힌다.
+          padding: `${token('spacing.5')} ${token('spacing.6')}`,
+          lineHeight: '1.7',
           background: 'transparent',
         }}
         {...props}

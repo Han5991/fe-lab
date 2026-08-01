@@ -6,6 +6,7 @@ import {
   OG_DEFAULT_IMAGE,
   SITE_AUTHOR_GITHUB,
   SITE_AUTHOR_LINKEDIN,
+  MERGED_PR_COUNT_FALLBACK,
 } from '@/lib/constants';
 import { safeJsonLd } from '@/lib/jsonLd';
 import { Label } from '@/src/components/blog';
@@ -79,9 +80,11 @@ const jsonLd = {
 };
 
 export default function AboutPage() {
-  // PR 수만 비자명: CI가 빌드 타임에 NEXT_PUBLIC_PR_COUNT로 주입, 로컬·실패 시 '58' 폴백.
+  // PR 수만 비자명: CI가 빌드 타임에 NEXT_PUBLIC_PR_COUNT로 주입, 로컬·실패 시 폴백.
+  // 폴백 값은 홈의 오픈소스 스트립과 같은 숫자를 보여야 해서 상수 하나를 공유한다.
   const blogPostCount = getAllPostSummaries().length;
-  const mergedPrCount = process.env.NEXT_PUBLIC_PR_COUNT || '58';
+  const mergedPrCount =
+    process.env.NEXT_PUBLIC_PR_COUNT || MERGED_PR_COUNT_FALLBACK;
   const conferenceCount = '2';
 
   return (
