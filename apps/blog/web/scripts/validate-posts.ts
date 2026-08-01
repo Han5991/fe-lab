@@ -276,6 +276,24 @@ export function validatePost(record: PostRecord, raw: string): Issue[] {
         rule: 'invalid-tags',
         message: `\`tags\`의 모든 원소는 문자열이어야 합니다. 문자열이 아닌 값이 하나라도 있으면 태그 전체가 무시됩니다: ${JSON.stringify(data.tags)}`,
       });
+    } else {
+      // 렌더 계층(repository.toStringArray)이 중복을 걷어내므로 화면은 멀쩡하다.
+      // 다만 frontmatter에 남아 있으면 저자가 눈치채지 못하므로 경고로 알린다.
+      const seen = new Set<string>();
+      const dupes = new Set<string>();
+      for (const tag of data.tags as string[]) {
+        if (seen.has(tag)) dupes.add(tag);
+        seen.add(tag);
+      }
+      if (dupes.size > 0) {
+        issues.push({
+          file: relPath,
+          line: findFrontmatterLine(raw, 'tags'),
+          severity: 'warning',
+          rule: 'duplicate-tags',
+          message: `\`tags\`에 중복이 있습니다(렌더 시 하나로 합쳐집니다): ${[...dupes].join(', ')}`,
+        });
+      }
     }
   }
 

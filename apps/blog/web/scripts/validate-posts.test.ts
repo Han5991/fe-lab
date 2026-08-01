@@ -356,3 +356,24 @@ test('detectDuplicateSlugs: 충돌 없으면 빈 배열', () => {
   ];
   assert.deepEqual(detectDuplicateSlugs(records), []);
 });
+
+// 렌더 계층(repository.toStringArray)이 중복을 걷어내므로 화면은 멀쩡하지만,
+// frontmatter에 남아 있으면 저자가 눈치채지 못한다. 에러가 아니라 경고인 이유다.
+test('validatePost: 중복 태그 → duplicate-tags 경고', () => {
+  const issues = validatePost(
+    rec({ title: 'x', status: 'published', tags: ['ci', 'ci', 'build'] }),
+    '---\ntitle: x\n---\n',
+  );
+  const dup = issues.find(i => i.rule === 'duplicate-tags');
+  assert.ok(dup, 'duplicate-tags 이슈가 있어야 함');
+  assert.equal(dup?.severity, 'warning');
+  assert.ok(dup?.message.includes('ci'));
+});
+
+test('validatePost: 중복 없는 태그는 duplicate-tags를 내지 않는다', () => {
+  assert.ok(
+    !rules({ title: 'x', status: 'published', tags: ['ci', 'build'] }).includes(
+      'duplicate-tags',
+    ),
+  );
+});

@@ -243,3 +243,21 @@ test('extractPlainText: 이미지/링크/마크다운 기호 제거', () => {
 test('extractPlainText: 개행/연속공백 압축 + trim', () => {
   assert.equal(extractPlainText('a\n\n\nb   c  '), 'a b c');
 });
+
+// 태그는 의미상 집합이다. 중복이 흘러가면 글 메타에 `#ci #ci`가 두 번 찍히고,
+// getAllTags() 개수가 부풀고, 목록 렌더에서 React key가 충돌한다.
+test('parsePost: 중복 태그는 하나로 합친다', () => {
+  const post = parsePost(
+    `---\nstatus: published\ntitle: T\ndate: '2026-01-01'\ntags: [ci, ci, build]\n---\n본문`,
+    'a.md',
+  );
+  assert.deepEqual(post?.tags, ['ci', 'build']);
+});
+
+test('parsePost: 중복 태그는 첫 등장 순서를 지킨다', () => {
+  const post = parsePost(
+    `---\nstatus: published\ntitle: T\ndate: '2026-01-01'\ntags: [b, a, b]\n---\n본문`,
+    'a.md',
+  );
+  assert.deepEqual(post?.tags, ['b', 'a']);
+});
