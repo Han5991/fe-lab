@@ -51,6 +51,10 @@ export const FeaturedPost = ({ post, seriesLabel }: FeaturedPostProps) => {
           <span
             className={css({
               display: 'inline-block',
+              // 안에 `2/5` 같은 숫자가 있어도 sans다. 레퍼런스 `.badge`가
+              // font-family를 지정하지 않아 sans로 렌더되고, 글 상세·/series의
+              // 같은 배지도 sans다. 숫자가 있다고 mono로 바꾸지 말 것.
+              fontFamily: 'sans',
               fontSize: '[12px]',
               color: 'accent.600',
               bg: 'accent.50',

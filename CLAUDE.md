@@ -364,8 +364,12 @@ The blog (`apps/blog/web/`) is a **statically generated (SSG) Next.js applicatio
 ##### 타이포그래피
 
 - 본문/UI: `fontFamily: 'sans'` (Pretendard Variable)
-- **날짜 · 수치 · 태그 · 코드 · 로고는 반드시 `fontFamily: 'mono'`** (JetBrains Mono).
-  "측정하는 엔지니어" 무드의 핵심이라 예외를 두지 않는다
+- **메타 정보는 `fontFamily: 'mono'`** (JetBrains Mono) — 날짜, 읽기 시간, 조회수,
+  태그, 코드, 로고, 오픈소스 칩. "측정하는 엔지니어" 무드의 핵심이다
+- 단, **시리즈 배지는 sans**다. `시리즈 · Turborepo 인프라 3/3` 처럼 안에 숫자가
+  있어도 본문 성격의 라벨이고, 레퍼런스 `.badge`도 `font-family`를 지정하지 않아
+  sans로 렌더된다. 홈·글 상세·`/series` 세 곳이 모두 sans로 맞춰져 있으니
+  한 곳만 mono로 바꾸지 말 것 (숫자가 있다고 기계적으로 mono를 적용하지 않는다)
 - 세리프 금지. `serif` 토큰은 sans로 매핑돼 있어 실수로 써도 세리프가 나오지 않는다
 
 ##### 형태

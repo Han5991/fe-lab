@@ -27,6 +27,9 @@ export const PostHeader = ({ post, seriesIndex }: PostHeaderProps) => {
         <span
           className={css({
             display: 'inline-block',
+            // 안에 `3/3` 같은 숫자가 있어도 sans다(레퍼런스 `.badge` 기준).
+            // 홈·/series의 같은 배지와 맞춘다.
+            fontFamily: 'sans',
             fontSize: '[12px]',
             color: 'accent.600',
             bg: 'accent.50',
