@@ -13,7 +13,6 @@ import {
   DiagramFrame,
   DiagramLabel,
   DiagramNode,
-  HeroMotif,
   ParallelThumb,
 } from './index';
 
@@ -172,16 +171,6 @@ describe('DiagramLabel', () => {
 });
 
 describe('구체 다이어그램', () => {
-  test('HeroMotif는 장식이라 접근성 트리에서 감춘다', () => {
-    const { container } = render(<HeroMotif />);
-    const svg = container.querySelector('svg');
-    expect(svg).toHaveAttribute('viewBox', '0 0 210 124');
-    expect(svg).toHaveAttribute('aria-hidden', 'true');
-    // 노드 4 + 엣지 3(레퍼런스 구성)
-    expect(container.querySelectorAll('rect')).toHaveLength(4);
-    expect(container.querySelectorAll('line')).toHaveLength(3);
-  });
-
   test('ParallelThumb는 의미 있는 이미지로 노출한다', () => {
     render(<ParallelThumb />);
     const svg = screen.getByRole('img');

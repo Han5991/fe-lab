@@ -18,9 +18,8 @@ import { DeployPipeline } from './DeployPipeline';
  * 아래 맵에 한 줄 추가하면 끝입니다. 타입이 `Record<DiagramName, …>`이라
  * 한쪽만 하면 컴파일이 막습니다.
  *
- * `HeroMotif`/`ParallelThumb`은 홈 장식(`aria-hidden` 모티프)이라 등록하지
- * 않습니다 — 글 안에서 부를 이유가 없고, 등록하면 본문에 뜻 없는 그림이
- * 박힐 수 있습니다.
+ * `ParallelThumb`은 홈 대표 글 카드의 썸네일이라 등록하지 않습니다 — 글 안에서
+ * 부를 이유가 없고, 등록하면 본문에 뜻 없는 그림이 박힐 수 있습니다.
  */
 
 /** 레지스트리에 등록되는 다이어그램이 공통으로 받는 prop. */

@@ -23,9 +23,8 @@ describe('diagram registry', () => {
     expect(getDiagram('')).toBeUndefined();
   });
 
-  test('홈 장식(HeroMotif/ParallelThumb)은 등록하지 않는다', () => {
+  test('홈 대표 글 썸네일(ParallelThumb)은 등록하지 않는다', () => {
     // 본문에서 부를 수 있게 되면 뜻 없는 그림이 글에 박힌다.
-    expect(DIAGRAM_NAMES).not.toContain('hero-motif');
     expect(DIAGRAM_NAMES).not.toContain('parallel-thumb');
   });
 });

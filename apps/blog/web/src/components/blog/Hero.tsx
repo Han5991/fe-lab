@@ -1,6 +1,5 @@
 import { css } from '@design-system/ui-lib/css';
 import { RSS_PATH, SITE_AUTHOR_GITHUB } from '@/lib/constants';
-import { HeroMotif } from '@/src/components/diagram';
 
 /** 히어로 pill — 이름 아래 외부 채널. 레퍼런스 `.pill` 수치 그대로. */
 const pill = css({
@@ -29,15 +28,12 @@ export const Hero = () => {
   return (
     // <header>로 감싸면 Chrome이 main 안에서도 banner 랜드마크로 노출해
     // 사이트 헤더와 banner가 둘이 된다(axe: no-duplicate-banner). 그냥 div.
-    <div
-      className={css({
-        display: 'grid',
-        gridTemplateColumns: { base: '1fr', md: '[minmax(0,1fr) 210px]' },
-        gap: '[26px]',
-        alignItems: 'center',
-        mb: '[30px]',
-      })}
-    >
+    //
+    // 레퍼런스는 우측 210px에 장식 다이어그램 모티프를 뒀지만 걷어냈다.
+    // `aria-hidden` 장식이라 정보가 0인데, 정작 다이어그램이 의미를 갖는 자리
+    // (글 히어로·본문)와 언어가 겹쳐 그쪽 무게를 깎았다. 다이어그램은 글 안에서만
+    // 쓴다.
+    <div className={css({ mb: '[30px]' })}>
       <div>
         <h1
           className={css({
@@ -74,11 +70,6 @@ export const Hero = () => {
             </a>
           ))}
         </div>
-      </div>
-
-      {/* 장식 모티프 — 좁은 화면에서는 이름/소개가 우선이라 숨긴다. */}
-      <div className={css({ display: { base: 'none', md: 'block' } })}>
-        <HeroMotif />
       </div>
     </div>
   );

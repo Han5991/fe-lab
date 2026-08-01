@@ -10,7 +10,7 @@ export {
   DiagramEdge,
   DiagramLabel,
 } from './primitives';
-export { HeroMotif } from './HeroMotif';
+
 export { ParallelThumb } from './ParallelThumb';
 export { DeployPipeline } from './DeployPipeline';
 
