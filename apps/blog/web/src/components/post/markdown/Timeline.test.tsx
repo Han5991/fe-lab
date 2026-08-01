@@ -102,3 +102,23 @@ describe('Step', () => {
     expect(screen.getByText('커넥션 드레이닝 불가')).toBeInTheDocument();
   });
 });
+
+// 리뷰 지적(critical): Metrics와 같은 가드 결함. 아래는 그 회귀 테스트다.
+describe('Timeline — 필드 타입이 어긋난 JSON', () => {
+  test('desc가 객체면 크래시 없이 children 폴백으로 떨어진다', () => {
+    expect(() =>
+      render(
+        <Timeline steps='[{"title":"시도 1","desc":{"x":1}}]'>
+          <Step title="폴백 시도" desc="정상 설명" result="fail" />
+        </Timeline>,
+      ),
+    ).not.toThrow();
+    expect(screen.getByText('폴백 시도')).toBeInTheDocument();
+  });
+
+  test('result가 객체여도 크래시하지 않는다', () => {
+    expect(() =>
+      render(<Timeline steps='[{"title":"시도","desc":"설명","result":{}}]' />),
+    ).not.toThrow();
+  });
+});

@@ -100,7 +100,9 @@ export function Msg({ from, children }: MsgProps) {
       <span
         // 이니셜은 장식이고 화자 정보는 aria-label이 전달한다(스크린리더가 "ㅍ" 하나를
         // 읽어봐야 의미가 없다).
-        aria-label={from ? `${from} 발언` : undefined}
+        // `avatarInitial`이 trim된 이름으로 이니셜을 뽑으므로 여기도 같은 값을
+        // 읽어야 한다. `from=" PM "` 이면 보이는 이니셜과 낭독이 어긋난다.
+        aria-label={from?.trim() ? `${from.trim()} 발언` : undefined}
         role={from ? 'img' : undefined}
         className={`${avatarBase} ${mine ? avatarMine : avatarOther}`}
       >

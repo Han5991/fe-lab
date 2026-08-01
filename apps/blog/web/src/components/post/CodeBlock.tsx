@@ -97,8 +97,8 @@ const mermaidBoxStyle = css({
   p: '6',
   minH: '[120px]',
   bg: 'paper.100',
-  rounded: '2xl',
-  borderWidth: '[1px]',
+  rounded: 'card',
+  borderWidth: 'hairline',
   borderColor: 'ink.border',
 });
 

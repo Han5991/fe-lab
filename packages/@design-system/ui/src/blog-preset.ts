@@ -5,10 +5,9 @@ export const blogPreset = definePreset({
   theme: {
     extend: {
       tokens: {
-        shadows: {
-          // marker = 포인트 틸 — 블로그 강조 좌측 바
-          markerLeft: { value: 'inset 3px 0 0 #1D9E75' },
-        },
+        // 강조 좌측 바(about 페이지)는 semanticTokens.shadows 로 내려 라이트/다크
+        // accent를 각각 탄다. plain `tokens.*` 는 `_dark` 배리언트를 지원하지 않아
+        // hex를 박으면 다크에서도 라이트 틸이 그대로 나온다.
         radii: {
           // 핸드오프 §3 "기타": 카드 12px / 작은 요소 8px / 배지 pill.
           // 의미 기반 이름으로 고정해 컴포넌트가 숫자를 직접 쓰지 않게 한다.
@@ -82,6 +81,14 @@ export const blogPreset = definePreset({
         },
       },
       semanticTokens: {
+        shadows: {
+          markerLeft: {
+            value: {
+              base: 'inset 3px 0 0 #1d9e75',
+              _dark: 'inset 3px 0 0 #5dcaa5',
+            },
+          },
+        },
         colors: {
           // ─────────────────────────────────────────────────────────────
           // 테마-가변 팔레트 — 리뉴얼 기준은 `apps/blog/web/design/
@@ -177,8 +184,9 @@ export const blogPreset = definePreset({
             },
           },
           'moss.600': { value: { base: '#16a34a', _dark: '#97c459' } },
-          // moss.700 — moss.100 배지 위 텍스트 전용(라이트에서 moss.600은
-          // 3.6:1로 AA 미달). 다크는 --success가 이미 충분해 동일 값.
+          // moss.700 — moss.100 배지 위 텍스트 전용. 라이트에서 moss.600은
+          // 흰 배경 위 3.30:1, 배지 배경(초록 12%) 위 2.9:1로 AA 미달이다.
+          // 다크는 --success가 이미 충분해 동일 값.
           'moss.700': { value: { base: '#0f7536', _dark: '#97c459' } },
           // spot — admin 대시보드 전용 보조 강조색. 포인트 틸과 겹치지 않도록
           // 채도 낮은 슬레이트 블루로 둔다(공개 페이지에서는 쓰지 않는다).

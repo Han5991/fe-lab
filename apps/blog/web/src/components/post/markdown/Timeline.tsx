@@ -3,6 +3,7 @@ import type { ReactElement, ReactNode } from 'react';
 import { css } from '@design-system/ui-lib/css';
 
 import {
+  isOptionalString,
   markdownChildren,
   optionalString,
   parseItemsProp,
@@ -29,7 +30,16 @@ export interface TimelineStep {
 
 function isTimelineStep(candidate: unknown): candidate is TimelineStep {
   if (typeof candidate !== 'object' || candidate === null) return false;
-  const { title, desc } = candidate as TimelineStep;
+  const { title, desc, result } = candidate as TimelineStep;
+  // 읽는 필드는 전부 "없거나 문자열"이어야 한다. 하나라도 객체/배열이면 그대로
+  // JSX 자식이 되어 React가 throw한다(`isOptionalString` 주석 참고).
+  if (
+    !isOptionalString(title) ||
+    !isOptionalString(desc) ||
+    !isOptionalString(result)
+  ) {
+    return false;
+  }
   return (
     optionalString(title) !== undefined || optionalString(desc) !== undefined
   );

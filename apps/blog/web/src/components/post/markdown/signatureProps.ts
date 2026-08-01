@@ -46,6 +46,24 @@ export function optionalString(value: unknown): string | undefined {
 }
 
 /**
+ * "없거나 문자열"인지 검사한다. 타입 가드가 **읽지 않는 필드까지** 확인해야 하는
+ * 이유가 있다.
+ *
+ * `items` / `steps`의 JSON은 저자가 손으로 쓴다. 문법은 맞지만 필드 타입이 틀린
+ * 값(`{"label":"a","value":{"nested":true}}`)이 오면, "label만 문자열이면 통과"
+ * 같은 느슨한 가드는 이걸 통과시킨다. 그 객체는 그대로 JSX 자식이 되고 React가
+ * "Objects are not valid as a React child"로 throw한다. 본문을 감싸는 에러
+ * 바운더리가 없어 글 페이지 전체가 죽는다.
+ *
+ * `parseItemsProp`은 가드를 통과 못 한 아이템을 걸러내고, 전부 걸러지면 children
+ * 폴백으로 떨어진다. 즉 가드를 촘촘히 할수록 "조용히 폴백"이 되고, 느슨하면
+ * "페이지 크래시"가 된다.
+ */
+export function isOptionalString(value: unknown): boolean {
+  return value === undefined || typeof value === 'string';
+}
+
+/**
  * react-markdown이 커스텀 태그 사이에 끼워 넣는 **공백 전용 텍스트 노드**를 걷어내고
  * 의미 있는 자식만 순서대로 돌려준다.
  *

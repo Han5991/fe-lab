@@ -273,13 +273,34 @@ function routeEdges(
   edges: DiagramEdgeSpec[],
   direction: DiagramDirection,
 ): PlacedEdge[] {
-  const specs = edges.length > 0 ? edges : autoEdges(nodes, direction);
   const byId = new Map(nodes.map(node => [node.id, node]));
+  const resolvable = (spec: DiagramEdgeSpec) => {
+    const from = byId.get(spec.from);
+    const to = byId.get(spec.to);
+    return Boolean(from && to && from !== to);
+  };
+
+  // 자동 연결을 끄는 기준은 "엣지를 적었다"가 아니라 "해석되는 엣지가 있다"이다.
+  // id 오타 하나로 명시 엣지가 전부 버려지면, 자동 연결까지 함께 꺼져서 노드가
+  // 통째로 분리된 그림이 조용히 나간다(경고도 lint:posts 에러도 없다).
+  // 해석되는 엣지가 하나도 없으면 애초에 안 적은 것과 같게 취급한다.
+  const usable = edges.filter(resolvable);
+  const specs = usable.length > 0 ? usable : autoEdges(nodes, direction);
+
+  if (process.env.NODE_ENV === 'development' && edges.length > usable.length) {
+    const dropped = edges
+      .filter(spec => !resolvable(spec))
+      .map(spec => `${spec.from} → ${spec.to}`)
+      .join(', ');
+    console.warn(
+      `[diagram] 연결할 수 없는 엣지를 무시했습니다: ${dropped}. ` +
+        `<diagram-node id="…"> 값과 <diagram-edge from/to> 값이 같은지 확인하세요.`,
+    );
+  }
 
   return specs.flatMap((spec, index) => {
     const from = byId.get(spec.from);
     const to = byId.get(spec.to);
-    // 없는 id를 가리키는 엣지는 조용히 버린다 — 오타 하나로 글이 죽지 않게.
     if (!from || !to || from === to) return [];
 
     return [

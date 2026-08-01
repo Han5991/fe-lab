@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { css } from '@design-system/ui-lib/css';
 
 import {
+  isOptionalString,
   markdownChildren,
   optionalString,
   parseItemsProp,
@@ -31,7 +32,16 @@ export interface MetricItem {
 
 function isMetricItem(candidate: unknown): candidate is MetricItem {
   if (typeof candidate !== 'object' || candidate === null) return false;
-  const { label, value } = candidate as MetricItem;
+  const { label, value, tone } = candidate as MetricItem;
+  // 읽는 필드는 전부 "없거나 문자열"이어야 한다. 하나라도 객체/배열이면 그대로
+  // JSX 자식이 되어 React가 throw한다(`isOptionalString` 주석 참고).
+  if (
+    !isOptionalString(label) ||
+    !isOptionalString(value) ||
+    !isOptionalString(tone)
+  ) {
+    return false;
+  }
   // 라벨·값이 둘 다 없으면 빈 카드다 — 그릴 이유가 없다.
   return (
     optionalString(label) !== undefined || optionalString(value) !== undefined

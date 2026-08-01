@@ -383,7 +383,7 @@ The blog (`apps/blog/web/`) is a **statically generated (SSG) Next.js applicatio
   `DiagramLabel`)에 있고, 글별 다이어그램도 이 프리미티브 위에 올린다
 - SVG 안에 **색을 하드코딩하지 않는다.** `currentColor` 또는 Panda `css()` 클래스로
   `fill`/`stroke`를 토큰에 연결한다
-- 노드: 라운드 사각형 `rx=8`, 스트로크 0.5~1px
+- 노드: 라운드 사각형 `rx=8`, 스트로크 1px(`borderWidths.hairline` 고정)
 - 선: **실선 = 동기 호출**, **점선(`stroke-dasharray: 3 3`) = 비동기/데이터 흐름**
 - 색은 **2색만**: 구조는 회색(fill `paper.100` / stroke `ink.border`),
   핵심 경로는 틸(fill `accent.50` / stroke `accent.500`)

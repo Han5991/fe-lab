@@ -200,3 +200,45 @@ describe('shape', () => {
     expect(nodes.map(n => n.rx)).toEqual([8, 25]);
   });
 });
+
+// 리뷰 지적(medium): 자동 연결을 끄는 기준이 "엣지를 적었다"였다. from/to에 오타가
+// 나면 명시 엣지가 전부 버려지는데 자동 연결까지 함께 꺼져서, 노드가 통째로 분리된
+// 그림이 경고도 lint 에러도 없이 나갔다.
+describe('layoutDiagram — 해석 불가능한 엣지', () => {
+  test('엣지 id가 전부 오타면 안 적은 것과 같게 보고 자동 연결한다', () => {
+    const { edges } = layoutDiagram(PIPELINE, [
+      { from: 'typo', to: 'nope', flow: 'sync', emphasis: false, arrow: true },
+    ]);
+
+    expect(edges).toHaveLength(PIPELINE.length - 1);
+  });
+
+  test('해석되는 엣지가 하나라도 있으면 그것만 그린다', () => {
+    const { edges } = layoutDiagram(PIPELINE, [
+      {
+        from: PIPELINE[0].id,
+        to: PIPELINE[1].id,
+        flow: 'sync',
+        emphasis: false,
+        arrow: true,
+      },
+      { from: 'typo', to: 'nope', flow: 'sync', emphasis: false, arrow: true },
+    ]);
+
+    expect(edges).toHaveLength(1);
+  });
+
+  test('자기 자신을 가리키는 엣지만 있으면 자동 연결로 돌아간다', () => {
+    const { edges } = layoutDiagram(PIPELINE, [
+      {
+        from: PIPELINE[0].id,
+        to: PIPELINE[0].id,
+        flow: 'sync',
+        emphasis: false,
+        arrow: true,
+      },
+    ]);
+
+    expect(edges).toHaveLength(PIPELINE.length - 1);
+  });
+});

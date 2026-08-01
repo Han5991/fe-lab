@@ -81,3 +81,34 @@ describe('Metric', () => {
     expect(tones()[0].dataset.tone).toBe('default');
   });
 });
+
+// 리뷰 지적(critical): 가드가 "label 또는 value 중 하나가 문자열"만 봐서
+// 나머지 필드가 객체여도 통과했다. 그 객체는 그대로 JSX 자식이 되고 React가
+// "Objects are not valid as a React child"로 throw해 글 페이지 전체가 죽는다.
+describe('Metrics — 필드 타입이 어긋난 JSON', () => {
+  test('value가 객체면 크래시 없이 children 폴백으로 떨어진다', () => {
+    expect(() =>
+      render(
+        <Metrics items='[{"label":"배포 소요","value":{"nested":true}}]'>
+          <Metric label="폴백" value="0초" />
+        </Metrics>,
+      ),
+    ).not.toThrow();
+    expect(screen.getByText('폴백')).toBeInTheDocument();
+    expect(screen.getByText('0초')).toBeInTheDocument();
+  });
+
+  test('label이 배열이면 그 아이템만 걸러진다', () => {
+    render(
+      <Metrics items='[{"label":["a"],"value":"x"},{"label":"정상","value":"8분"}]' />,
+    );
+    expect(screen.getByText('정상')).toBeInTheDocument();
+    expect(screen.getByText('8분')).toBeInTheDocument();
+  });
+
+  test('tone이 객체여도 크래시하지 않는다', () => {
+    expect(() =>
+      render(<Metrics items='[{"label":"롤백","value":"자동","tone":{}}]' />),
+    ).not.toThrow();
+  });
+});
