@@ -16,11 +16,24 @@ const NAV_ITEMS = [
   { href: '/about/', label: 'About' },
 ] as const;
 
+// 터치 타겟은 의사요소로 넓힌다. Layout에서 옮겨올 때 빠진 px/py를 그대로
+// 되살리면 링크 사이 간격이 레퍼런스(20px, 모바일 14px)보다 벌어진다. `::after`
+// 로 히트 영역만 키우면 시각적 배치는 그대로 두고 탭 영역만 넓힐 수 있다.
+// 가장 좁은 링크("글", 11px)가 11+14=25px가 되어 WCAG 2.5.8의 24px를 넘고,
+// 세로는 20+16=36px다. 좌우 7px씩(총 14px) 확장은 모바일 간격 14px과 정확히
+// 맞물려 인접 링크와 겹치지 않는다.
 const linkStyle = css({
+  pos: 'relative',
   fontSize: '[13px]',
   color: 'ink.600',
   transition: '[color 0.15s]',
   _hover: { color: 'ink.950' },
+  _after: {
+    content: '""',
+    pos: 'absolute',
+    insetBlock: '[-8px]',
+    insetInline: '[-7px]',
+  },
 });
 
 const activeStyle = css({
