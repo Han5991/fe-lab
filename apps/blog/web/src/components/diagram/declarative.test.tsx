@@ -294,12 +294,23 @@ describe('Diagram — 이름 레지스트리', () => {
     );
   });
 
-  test('미등록 이름이어도 throw하지 않는다', () => {
+  // 경고 박스는 **개발 환경에서만** 보인다. 예전에는 게이트가 "production이
+  // 아니면"이라, vitest의 NODE_ENV='test'에서도 통과해 이 테스트가 우연히
+  // 초록이었다. 이제는 두 분기를 각각 stubEnv로 명시해 고정한다.
+  test('미등록 이름: dev에서는 경고 박스로 오타를 알린다', () => {
+    vi.stubEnv('NODE_ENV', 'development');
     expect(() => render(<Diagram name="아직-없는-다이어그램" />)).not.toThrow();
-    // 개발 환경에서만 보이는 경고 — 배포 전에 오타를 잡으라는 신호다.
     expect(screen.getByRole('status')).toHaveTextContent(
       '아직-없는-다이어그램',
     );
+    vi.unstubAllEnvs();
+  });
+
+  test('미등록 이름: dev가 아니면 아무것도 그리지 않는다', () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    const { container } = render(<Diagram name="아직-없는-다이어그램" />);
+    expect(container).toBeEmptyDOMElement();
+    vi.unstubAllEnvs();
   });
 
   test('name이 있으면 children은 무시한다', () => {

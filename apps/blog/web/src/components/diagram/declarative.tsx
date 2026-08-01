@@ -211,7 +211,10 @@ function NamedDiagram({ name, label }: { name: string; label?: string }) {
     );
   }
 
-  if (process.env.NODE_ENV === 'production') return null;
+  // 개발 환경에서만 경고 박스를 보인다. 형제 분기들과 `HiddenPostBadge`가 모두
+  // "development일 때만"이라는 허용목록을 쓰는데 여기만 "production이 아니면"
+  // 이었다 — NODE_ENV가 test 같은 제3의 값일 때 이 분기만 디버그 UI를 흘렸다.
+  if (process.env.NODE_ENV !== 'development') return null;
 
   return (
     <div role="status" className={missing}>
