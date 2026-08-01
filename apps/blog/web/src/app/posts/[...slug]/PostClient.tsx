@@ -287,8 +287,8 @@ export default function PostClient({
                 },
                 '& table': {
                   w: 'full',
-                  mb: '8',
-                  mt: '6',
+                  // 상하 여백은 가로 스크롤 래퍼가 가진다. 여기서도 주면
+                  // 래퍼 여백과 겹쳐 표 앞뒤가 두 배로 벌어진다.
                   borderCollapse: 'separate',
                   borderSpacing: '0',
                   fontSize: 'sm',
@@ -348,16 +348,40 @@ export default function PostClient({
                     },
                     table({ children, node: _node, ...props }) {
                       return (
-                        <table
-                          {...props}
+                        // 열이 많은 표는 본문 폭(모바일 ~310px)을 넘는다. 감싸지
+                        // 않으면 마지막 열이 잘린 채 스크롤도 안 된다.
+                        //
+                        // tabIndex+role로 키보드 초점을 받게 한다 — 마우스 없이
+                        // 스크롤할 방법이 사라지면 안 된다(axe
+                        // scrollable-region-focusable).
+                        <div
+                          role="region"
+                          aria-label="표"
+                          tabIndex={0}
                           className={css({
-                            w: 'full',
-                            borderCollapse: 'separate',
-                            borderSpacing: '0',
+                            overflowX: 'auto',
+                            overscrollBehaviorX: 'contain',
+                            mb: '8',
+                            mt: '6',
+                            // 스크롤 컨테이너의 초점 링이 표 테두리에 붙지 않게
+                            borderRadius: 'control',
                           })}
                         >
-                          {children}
-                        </table>
+                          <table
+                            {...props}
+                            className={css({
+                              w: 'full',
+                              // 컨테이너보다 좁으면 100%로 채우고, 넓으면 내용
+                              // 폭을 지켜 가로 스크롤이 생긴다. 이게 없으면
+                              // 칸이 찌그러져 글자만 세로로 쌓인다.
+                              minW: '[max-content]',
+                              borderCollapse: 'separate',
+                              borderSpacing: '0',
+                            })}
+                          >
+                            {children}
+                          </table>
+                        </div>
                       );
                     },
                     li({ className, children, node: _node, ...props }) {
