@@ -56,18 +56,19 @@ const rowStyle = css({
   gap: '3',
 });
 
-// 카드 4장이 같은 블록을 복붙하고 있어 한 컴포넌트로 모았다.
+// 카드들이 같은 블록을 복붙하고 있어 한 컴포넌트로 모았다.
 interface NavCardProps {
-  item: PostNavItem;
+  href: string;
+  title: string;
   direction: 'prev' | 'next';
   label: string;
   /** 제목 줄 수 — 시리즈 카드는 1줄, 전체 이전/다음은 2줄까지 */
   clamp: 1 | 2;
 }
 
-const NavCard = ({ item, direction, label, clamp }: NavCardProps) => (
+const NavCard = ({ href, title, direction, label, clamp }: NavCardProps) => (
   <Link
-    href={`/posts/${encodePostSlug(item.slug)}/`}
+    href={href}
     className={
       direction === 'next' ? css(cardStyle, cardNextStyle) : css(cardStyle)
     }
@@ -80,10 +81,12 @@ const NavCard = ({ item, direction, label, clamp }: NavCardProps) => (
           : css(titleStyle, { lineClamp: 2 })
       }
     >
-      {item.title}
+      {title}
     </span>
   </Link>
 );
+
+const postHref = (item: PostNavItem) => `/posts/${encodePostSlug(item.slug)}/`;
 
 // 한쪽만 있을 때 남은 칸을 차지해 좌/우 정렬을 유지하는 자리끝. 모바일에서는
 // 세로 스택이라 빈 칸이 필요 없다.
@@ -91,61 +94,96 @@ const NavSpacer = () => (
   <div className={css({ flex: '1', display: { base: 'none', md: 'block' } })} />
 );
 
+/**
+ * 글 하단 이동 카드.
+ *
+ * **시리즈 글이면 시리즈 네비만, 아니면 전체 이전/다음만** 보여준다.
+ * 둘을 같이 그리면 순서 개념이 두 개가 되어 같은 글이 두 번 나온다 —
+ * 시리즈 네비는 읽는 순서(`_series.yml` order / 날짜 오름차순)이고 전체
+ * 이전/다음은 시간축(최신순 인접)이라, 연달아 발행한 시리즈에서는 같은 글이
+ * `다음 편`이자 `이전 글`로 잡혔다. 라벨도 "편"과 "글" 한 글자 차이라
+ * 구분이 안 됐다.
+ *
+ * 시리즈 마지막 편에는 나갈 곳이 없으므로 `시리즈 목록 →`을 대신 둔다.
+ */
 export const PostNavigation = ({
   prev,
   next,
   seriesNav,
-}: PostNavigationProps) => (
-  <div className={css({ mt: '12', mb: '8' })}>
-    {/* 시리즈 네비게이션 */}
-    {seriesNav && (seriesNav.prev || seriesNav.next) && (
-      <div className={css({ mb: '6' })}>
-        <p
-          className={css({
-            fontSize: '[12px]',
-            color: 'ink.600',
-            mb: '[10px]',
-          })}
-        >
-          시리즈 · {seriesNav.seriesName}
-        </p>
+}: PostNavigationProps) => {
+  const inSeries = Boolean(seriesNav && (seriesNav.prev || seriesNav.next));
+
+  return (
+    <div className={css({ mb: '8' })}>
+      {inSeries && seriesNav ? (
+        <>
+          <p
+            className={css({
+              fontSize: '[12px]',
+              color: 'ink.600',
+              mb: '[10px]',
+            })}
+          >
+            시리즈 · {seriesNav.seriesName}
+          </p>
+          <div className={rowStyle}>
+            {seriesNav.prev ? (
+              <NavCard
+                href={postHref(seriesNav.prev)}
+                title={seriesNav.prev.title}
+                direction="prev"
+                label="← 이전 편"
+                clamp={1}
+              />
+            ) : (
+              <NavSpacer />
+            )}
+            {seriesNav.next ? (
+              <NavCard
+                href={postHref(seriesNav.next)}
+                title={seriesNav.next.title}
+                direction="next"
+                label="다음 편 →"
+                clamp={1}
+              />
+            ) : (
+              // 마지막 편. 여기서 끊기면 갈 곳이 없어 시리즈 목록으로 보낸다.
+              <NavCard
+                href="/series/"
+                title="다른 시리즈 둘러보기"
+                direction="next"
+                label="시리즈 목록 →"
+                clamp={1}
+              />
+            )}
+          </div>
+        </>
+      ) : (
         <div className={rowStyle}>
-          {seriesNav.prev ? (
+          {prev ? (
             <NavCard
-              item={seriesNav.prev}
+              href={postHref(prev)}
+              title={prev.title}
               direction="prev"
-              label="← 이전 편"
-              clamp={1}
+              label="← 이전 글"
+              clamp={2}
             />
           ) : (
             <NavSpacer />
           )}
-          {seriesNav.next ? (
+          {next ? (
             <NavCard
-              item={seriesNav.next}
+              href={postHref(next)}
+              title={next.title}
               direction="next"
-              label="다음 편 →"
-              clamp={1}
+              label="다음 글 →"
+              clamp={2}
             />
           ) : (
             <NavSpacer />
           )}
         </div>
-      </div>
-    )}
-
-    {/* 전체 글 이전/다음 네비게이션 */}
-    <div className={rowStyle}>
-      {prev ? (
-        <NavCard item={prev} direction="prev" label="← 이전 글" clamp={2} />
-      ) : (
-        <NavSpacer />
-      )}
-      {next ? (
-        <NavCard item={next} direction="next" label="다음 글 →" clamp={2} />
-      ) : (
-        <NavSpacer />
       )}
     </div>
-  </div>
-);
+  );
+};

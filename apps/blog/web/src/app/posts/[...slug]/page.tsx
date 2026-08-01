@@ -118,7 +118,12 @@ export default async function PostPage({ params }: Props) {
         thumbnailUrl={post.thumbnail ? thumbnailUrl : undefined}
         seriesIndex={seriesIndex}
       />
-      <div className={css({ maxW: 'containerW', mx: 'auto', px: '6' })}>
+      {/* 본문 컨테이너(PostClient의 articleW + px 8)와 같은 폭·좌우 여백을 써
+          왼쪽 끝이 본문과 맞는다. 예전엔 containerW(1200px)라 본문(1080px)보다
+          넓게 삐져나왔다. 위 여백을 따로 주지 않는 것은 PostClient의 PageBoundary
+          하단 패딩이 이미 그 간격을 만들기 때문 — 둘 다 주면 댓글과 네비 사이가
+          200px 가까이 벌어진다. */}
+      <div className={css({ maxW: 'articleW', mx: 'auto', px: '8' })}>
         <PostNavigation prev={prev} next={next} seriesNav={seriesNav} />
       </div>
     </>
