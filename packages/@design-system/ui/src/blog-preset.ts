@@ -91,12 +91,13 @@ export const blogPreset = definePreset({
         },
         colors: {
           // ─────────────────────────────────────────────────────────────
-          // 테마-가변 팔레트 — 리뉴얼 기준은 `apps/blog/web/design/
-          // design-reference.html`의 :root / [data-theme="dark"] 변수다.
-          // "무채색 베이스 + 포인트 1색(틸)". 다크 조건은 panda.config의
-          // conditions.dark = [data-theme=dark] &.
+          // 테마-가변 팔레트 — "무채색 베이스 + 포인트 1색(틸)". 다크 조건은
+          // panda.config의 conditions.dark = [data-theme=dark] &.
           //
-          //   레퍼런스 변수 → 토큰
+          // 값의 출처는 리뉴얼 디자인 시안이고, 이 표가 그 대응을 그대로 옮긴
+          // **단일 출처**다(시안 파일은 구현 후 삭제됐다).
+          //
+          //   시안 변수 → 토큰
           //   --bg      #FFFFFF / #0B0D10  → paper.50
           //   --bg-sub  #F7F7F5 / #14171C  → paper.100
           //   --page    #EDEDEA / #060809  → paper.200

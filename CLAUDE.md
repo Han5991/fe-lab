@@ -325,9 +325,10 @@ The blog (`apps/blog/web/`) is a **statically generated (SSG) Next.js applicatio
 
 #### 디자인 시스템 (리뉴얼 기준)
 
-**시각 기준은 `apps/blog/web/design/design-reference.html` 파일이다.** 홈·글 상세를
-구현하거나 리뷰할 때는 이 파일을 브라우저로 열어 1:1로 대조한다. 아래 설명과 파일의
-렌더링이 다르면 **파일이 이긴다**. 상단 토글로 다크 모드까지 함께 본다.
+리뉴얼 때 쓰던 시각 기준 파일(`design-reference.html`)은 구현이 끝나 **삭제했다.**
+이제 기준은 **구현된 화면 자체**다 — 홈(`/`)과 글 상세를 dev 서버로 열어 대조한다.
+원래의 디자인 의도와 결정 배경은 `design/blog-redesign-handoff.md`에 남아 있고,
+수치는 아래 항목들이 단일 출처다.
 
 > `design/github-style-reference.md`는 **폐기된 이전 방향**(GitHub 스타일 다크 전용)이다.
 > 참고 자료로 남겨둔 것뿐이니 새 작업의 근거로 쓰지 말 것.

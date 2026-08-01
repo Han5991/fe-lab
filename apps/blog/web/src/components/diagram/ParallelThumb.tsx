@@ -19,7 +19,7 @@ interface ParallelThumbProps {
  *
  * 하나의 입력이 세 갈래로 갈라지는 "병렬 처리" 모양. 이미지가 아니라 SVG라
  * 다크모드 전환에 별도 에셋이 필요 없다(핸드오프 §4).
- * 좌표는 `design/design-reference.html`의 SVG를 그대로 옮긴 값이다.
+ * 좌표는 디자인 시안 SVG를 그대로 옮긴 값이다.
  */
 export function ParallelThumb({ className, label }: ParallelThumbProps) {
   return (

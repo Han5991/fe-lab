@@ -64,7 +64,7 @@ export interface DiagramLayout {
 
 // ── 상수 ────────────────────────────────────────────────────────────────────
 //
-// 전부 SVG user unit = px. 값은 `design/design-reference.html` 의 배포 파이프라인
+// 전부 SVG user unit = px. 값은 디자인 시안의 배포 파이프라인
 // SVG(`0 0 640 122`)에서 역산했다.
 
 /** primitives.tsx 의 `nodeTitle` — 12px/600. */

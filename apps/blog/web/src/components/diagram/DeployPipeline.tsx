@@ -12,7 +12,7 @@ import type { NamedDiagramProps } from './registry';
  * git push → Actions → ECR → ECS 배포. 앞 세 구간은 "그냥 지나가는 구조"라 회색이고,
  * 이 글이 실제로 다루는 마지막 전환(blue/green)만 틸로 강조한다 —
  * 핸드오프 §4의 "핵심 경로에만 포인트색" 규칙.
- * 좌표는 `design/design-reference.html`의 SVG를 그대로 옮긴 값이다.
+ * 좌표는 디자인 시안 SVG를 그대로 옮긴 값이다.
  */
 export function DeployPipeline({
   className,

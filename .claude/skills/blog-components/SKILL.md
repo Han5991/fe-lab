@@ -209,7 +209,8 @@ packages/
 
 ## 디자인 규칙 (컴포넌트를 고칠 때)
 
-시각 기준은 `apps/blog/web/design/design-reference.html` 이고, 설명 문서보다 **이 파일이 우선**한다.
+디자인 의도와 결정 배경은 `apps/blog/web/design/blog-redesign-handoff.md`에 있다.
+(리뉴얼 때 쓰던 `design-reference.html`은 구현 완료 후 삭제됐다.)
 
 - 색은 Panda semanticTokens만. `strictTokens: true` 라 임의 값은 `'[14px]'` 로 이스케이프
 - **글자엔 `accent.600`, 선·아이콘엔 `accent.500`** (라이트 모드 WCAG AA 때문에 나뉜다)
