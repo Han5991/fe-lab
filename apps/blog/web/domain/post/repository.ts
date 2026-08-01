@@ -102,6 +102,9 @@ export function parsePost(
         ? cleanContent.slice(0, 160) + '...'
         : cleanContent),
     thumbnail: toOptionalString(data.thumbnail),
+    // 등록되지 않은 이름인지까지는 여기서 보지 않는다 — 렌더 계층이 폴백하고
+    // validate-posts가 unknown-hero-diagram으로 막는다.
+    hero: toOptionalString(data.hero),
     tags: toStringArray(data.tags),
     series,
     status: data.status,

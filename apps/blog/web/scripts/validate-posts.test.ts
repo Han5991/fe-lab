@@ -5,6 +5,7 @@ import {
   detectDuplicateSlugs,
   type PostRecord,
 } from './validate-posts';
+import { DIAGRAM_NAMES } from '@/domain/post/diagramNames';
 
 function rec(
   data: Record<string, unknown>,
@@ -271,6 +272,60 @@ test('validatePost: 절대/http thumbnail은 fs 검사 없이 통과', () => {
     }),
     [],
   );
+});
+
+// ── hero (히어로 다이어그램 이름) ────────────────────────────────────────────
+
+test('validatePost: 등록된 hero 이름은 이슈 없음', () => {
+  for (const name of DIAGRAM_NAMES) {
+    assert.deepEqual(
+      rules({
+        title: 'x',
+        status: 'published',
+        date: '2025-01-01',
+        hero: name,
+      }),
+      [],
+      `등록된 이름인데 이슈 발생: ${name}`,
+    );
+  }
+});
+
+test('validatePost: 미등록 hero 이름 → unknown-hero-diagram 에러', () => {
+  const issues = validatePost(
+    rec({
+      title: 'x',
+      status: 'published',
+      date: '2025-01-01',
+      hero: 'deploy-pipelnie',
+    }),
+    "---\ntitle: x\nhero: 'deploy-pipelnie'\n---\n",
+  );
+  const found = issues.find(i => i.rule === 'unknown-hero-diagram');
+  assert.ok(found, 'unknown-hero-diagram 이슈가 있어야 함');
+  assert.equal(found.severity, 'error');
+  assert.equal(found.line, 3);
+});
+
+test('validatePost: 문자열 아닌 hero도 unknown-hero-diagram', () => {
+  assert.ok(
+    rules({
+      title: 'x',
+      status: 'published',
+      date: '2025-01-01',
+      hero: 3,
+    }).includes('unknown-hero-diagram'),
+  );
+});
+
+test('validatePost: hero는 더 이상 unknown-frontmatter-key 경고를 내지 않는다', () => {
+  const found = rules({
+    title: 'x',
+    status: 'published',
+    date: '2025-01-01',
+    hero: DIAGRAM_NAMES[0],
+  });
+  assert.ok(!found.includes('unknown-frontmatter-key'));
 });
 
 // ── detectDuplicateSlugs ─────────────────────────────────────────────────────

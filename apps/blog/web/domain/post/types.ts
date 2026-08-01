@@ -30,6 +30,7 @@ export type RawFrontmatter = {
   excerpt?: unknown;
   thumbnail?: unknown;
   tags?: unknown;
+  hero?: unknown;
 };
 
 export interface PostData {
@@ -43,6 +44,12 @@ export interface PostData {
   readMin: number;
   excerpt?: string;
   thumbnail?: string;
+  /**
+   * 글 상단 히어로 슬롯에 꽂을 다이어그램 **이름**.
+   * 유효성은 도메인이 아니라 렌더 계층(레지스트리)과 `lint:posts`가 판정합니다 —
+   * 도메인이 UI 컴포넌트 목록을 알면 의존 방향이 뒤집힙니다.
+   */
+  hero?: string;
   tags?: string[];
   series?: string;
   // parsePost가 유효한 status 없는 파일을 걸러내므로 항상 채워져 있습니다.

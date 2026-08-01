@@ -4,6 +4,7 @@ date: '2025-04-01'
 status: published
 slug: 'next-js-ecs-deploy'
 thumbnail: '/og/next-js-ecs-deploy.png'
+hero: 'deploy-pipeline'
 ---
 
 # 0. 프롤로그

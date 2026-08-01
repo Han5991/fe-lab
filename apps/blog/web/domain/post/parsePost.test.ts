@@ -154,6 +154,33 @@ test('parsePost: thumbnail은 문자열일 때만 보존', () => {
   assert.equal(parsePost(raw, 'a.md')?.thumbnail, 'cover.png');
 });
 
+// ── hero (히어로 다이어그램 이름) ────────────────────────────────────────────
+
+test('parsePost: hero는 문자열일 때만 보존', () => {
+  const raw = `---\ntitle: 글\nstatus: published\nhero: deploy-pipeline\n---\n본문`;
+  assert.equal(parsePost(raw, 'a.md')?.hero, 'deploy-pipeline');
+});
+
+test('parsePost: hero가 문자열이 아니면 undefined', () => {
+  // YAML은 뭐든 줄 수 있다. 숫자/불리언/배열이 그대로 흘러가면 렌더 계층에서
+  // getDiagram(number)가 되므로 여기서 잘라낸다.
+  for (const value of ['123', 'true', '[a, b]', "''"]) {
+    const raw = `---\ntitle: 글\nstatus: published\nhero: ${value}\n---\n본문`;
+    assert.equal(parsePost(raw, 'a.md')?.hero, undefined, `hero: ${value}`);
+  }
+});
+
+test('parsePost: hero 미지정이면 undefined (썸네일 폴백은 렌더 계층이 결정)', () => {
+  const raw = `---\ntitle: 글\nstatus: published\n---\n본문`;
+  assert.equal(parsePost(raw, 'a.md')?.hero, undefined);
+});
+
+test('parsePost: 등록 여부는 도메인이 판정하지 않는다 (미등록 이름도 그대로 통과)', () => {
+  // 도메인이 UI 컴포넌트 목록을 알면 의존 방향이 뒤집힌다. 오타는 lint:posts가 잡는다.
+  const raw = `---\ntitle: 글\nstatus: published\nhero: 없는-다이어그램\n---\n본문`;
+  assert.equal(parsePost(raw, 'a.md')?.hero, '없는-다이어그램');
+});
+
 test('parsePost: readMin >= 1', () => {
   const raw = `---\ntitle: 글\nstatus: published\n---\n${'단어 '.repeat(300)}`;
   assert.ok((parsePost(raw, 'a.md')?.readMin ?? 0) >= 1);
