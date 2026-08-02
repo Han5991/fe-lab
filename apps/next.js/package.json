@@ -23,7 +23,7 @@
   },
   "devDependencies": {
     "@pandacss/dev": "catalog:",
-    "@eslint/eslintrc": "^3",
+    "@eslint/eslintrc": "^3.3.6",
     "@next/eslint-plugin-next": "^16.2.6",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
