@@ -209,8 +209,10 @@ packages/
 
 ## 디자인 규칙 (컴포넌트를 고칠 때)
 
-디자인 의도와 결정 배경은 `apps/blog/web/design/blog-redesign-handoff.md`에 있다.
-(리뉴얼 때 쓰던 `design-reference.html`은 구현 완료 후 삭제됐다.)
+지금 유효한 규칙은 `CLAUDE.md`의 "디자인 시스템" 절과 토큰 정의(`blog-preset.ts`)다.
+`apps/blog/web/design/blog-redesign-handoff.md`에는 **왜 그렇게 정했는지**만 남아 있다 —
+착수 시점 초안이라 구현과 다른 값이 섞여 있으니(문서 안에 `⚠️` 표시) 수치의 근거로
+쓰지 말 것. (1:1 대조에 쓰던 `design-reference.html`은 구현 완료 후 삭제됐다.)
 
 - 색은 Panda semanticTokens만. `strictTokens: true` 라 임의 값은 `'[14px]'` 로 이스케이프
 - **글자엔 `accent.600`, 선·아이콘엔 `accent.500`** (라이트 모드 WCAG AA 때문에 나뉜다)

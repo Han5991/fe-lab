@@ -330,6 +330,10 @@ The blog (`apps/blog/web/`) is a **statically generated (SSG) Next.js applicatio
 원래의 디자인 의도와 결정 배경은 `design/blog-redesign-handoff.md`에 남아 있고,
 수치는 아래 항목들이 단일 출처다.
 
+> 핸드오프는 **착수 시점 초안**이지 사양서가 아니다. 만들면서 바뀐 값(포인트색,
+> 배지 라운드, 다이어그램 라벨 크기)과 아예 채택하지 않은 절(§7 MDX·velite 전환)이
+> 있고, 문서 안에 `⚠️`로 표시해 뒀다. 그 파일의 수치를 근거로 코드를 고치지 말 것.
+
 > `design/github-style-reference.md`는 **폐기된 이전 방향**(GitHub 스타일 다크 전용)이다.
 > 참고 자료로 남겨둔 것뿐이니 새 작업의 근거로 쓰지 말 것.
 
