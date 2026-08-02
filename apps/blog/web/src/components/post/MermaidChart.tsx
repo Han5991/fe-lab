@@ -55,6 +55,30 @@ const MERMAID_VARS = {
   },
 } as const;
 
+/**
+ * 도표를 감싸는 박스. CodeBlock의 로딩 placeholder(`mermaidBoxStyle`)가 같은
+ * 여백·보더를 써야 청크가 도착할 때 자리가 안 튀는데, 두 파일이 값을 따로
+ * 들고 있어 한쪽만 바뀌기 쉽다. 비교 가능하도록 상수로 빼서 export한다
+ * (CodeBlock.test.tsx가 대조한다).
+ */
+export const mermaidContainerStyle = css({
+  my: '10',
+  p: '6',
+  bg: 'paper.100',
+  rounded: 'card',
+  borderWidth: 'hairline',
+  borderColor: 'ink.border',
+  display: 'flex',
+  justifyContent: 'center',
+  overflow: 'auto',
+  transition: '[all 0.3s]',
+  // hover 강조도 그림자·들어올리기가 아니라 보더 톤으로만 준다(플랫 유지).
+  _hover: {
+    borderColor: 'ink.borderStrong',
+    bg: 'paper.50',
+  },
+});
+
 export function MermaidChart({ chart }: { chart: string }) {
   const [svg, setSvg] = useState<string>('');
   const id = useId();
@@ -103,23 +127,7 @@ export function MermaidChart({ chart }: { chart: string }) {
 
   return (
     <div
-      className={css({
-        my: '10',
-        p: '6',
-        bg: 'paper.100',
-        rounded: 'card',
-        borderWidth: 'hairline',
-        borderColor: 'ink.border',
-        display: 'flex',
-        justifyContent: 'center',
-        overflow: 'auto',
-        transition: '[all 0.3s]',
-        // hover 강조도 그림자·들어올리기가 아니라 보더 톤으로만 준다(플랫 유지).
-        _hover: {
-          borderColor: 'ink.borderStrong',
-          bg: 'paper.50',
-        },
-      })}
+      className={mermaidContainerStyle}
       dangerouslySetInnerHTML={{ __html: svg }}
     />
   );

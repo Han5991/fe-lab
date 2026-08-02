@@ -74,8 +74,11 @@ type Grammar = ((refractor: Refractor) => void) & { displayName: string };
  * 나왔다.
  *
  * 패치를 끝낸 뒤 자기 이름 키를 남겨, 다음 등록부터는 refractor의 가드가 잡게 한다.
+ *
+ * (export는 CodeBlock.test.tsx가 이 계약을 직접 검증하기 위한 것이다. 렌더 결과로는
+ *  토큰 중첩을 관찰할 수 없어 함수 단위로 못박는 편이 싸다.)
  */
-function registerOnce(mod: unknown, name: string): Grammar {
+export function registerOnce(mod: unknown, name: string): Grammar {
   const patch = mod as Grammar;
   return Object.assign(
     (refractor: Refractor) => {
@@ -134,8 +137,11 @@ const MermaidChart = dynamic(
 );
 
 // MermaidChart 내부 컨테이너와 같은 박스 — placeholder와 실제 도표의 자리가
-// 어긋나지 않게 여기서도 동일한 여백/테두리를 쓴다.
-const mermaidBoxStyle = css({
+// 어긋나지 않게 여기서도 동일한 여백/테두리를 쓴다. 값을 한쪽만 고치면 청크가
+// 도착하는 순간 레이아웃이 튀므로, 동일성은 CodeBlock.test.tsx가 못박는다.
+// (한 상수로 합치지 않는 이유: CodeBlock이 MermaidChart 모듈을 정적으로 참조하는
+//  순간 위 dynamic import가 무의미해져 mermaid 청크가 초기 로드로 돌아온다.)
+export const mermaidBoxStyle = css({
   my: '10',
   p: '6',
   minH: '[120px]',
