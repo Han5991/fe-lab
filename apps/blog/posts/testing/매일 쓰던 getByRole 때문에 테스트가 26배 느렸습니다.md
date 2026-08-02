@@ -151,7 +151,7 @@ DateRangeInput
 
 <diagram label="role 필터로 후보 86개를 모은 뒤 name 필터가 전부의 이름을 계산하고, hidden 필터가 마지막에 85개를 제외하는 순서" caption="hidden이 먼저였다면 85개는 계산조차 없다">
   <diagram-node id="role" title="role 필터" desc="후보 86개 수집"></diagram-node>
-  <diagram-node id="name" title="name 필터" desc="86개 전부 이름 계산" tone="teal"></diagram-node>
+  <diagram-node id="name" title="name 필터" desc="86개 전부 이름 계산" tone="accent"></diagram-node>
   <diagram-node id="hidden" title="hidden 필터" desc="85개 뒤늦게 제외"></diagram-node>
   <diagram-edge from="role" to="name" emphasis="true"></diagram-edge>
   <diagram-edge from="name" to="hidden"></diagram-edge>

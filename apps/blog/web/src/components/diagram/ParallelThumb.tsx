@@ -29,9 +29,9 @@ export function ParallelThumb({ label }: ParallelThumbProps) {
       <DiagramEdge x1={40} y1={46} x2={62} y2={72} emphasis arrow={false} />
 
       <DiagramNode x={12} y={34} width={28} height={24} rx={5} />
-      <DiagramNode x={62} y={9} width={76} height={20} rx={5} tone="teal" />
-      <DiagramNode x={62} y={36} width={76} height={20} rx={5} tone="teal" />
-      <DiagramNode x={62} y={63} width={76} height={20} rx={5} tone="teal" />
+      <DiagramNode x={62} y={9} width={76} height={20} rx={5} tone="accent" />
+      <DiagramNode x={62} y={36} width={76} height={20} rx={5} tone="accent" />
+      <DiagramNode x={62} y={63} width={76} height={20} rx={5} tone="accent" />
     </DiagramFrame>
   );
 }

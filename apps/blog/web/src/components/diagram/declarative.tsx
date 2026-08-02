@@ -33,7 +33,7 @@ import {
  * ```html
  * <diagram label="배포 파이프라인" caption="↻ 실패 시 자동 롤백">
  *   <diagram-node id="push" title="git push" desc="main 병합"></diagram-node>
- *   <diagram-node id="ecs" title="ECS 배포" desc="blue/green 전환" tone="teal"></diagram-node>
+ *   <diagram-node id="ecs" title="ECS 배포" desc="blue/green 전환" tone="accent"></diagram-node>
  *   <diagram-edge from="push" to="ecs" emphasis="true"></diagram-edge>
  * </diagram>
  * ```
@@ -54,7 +54,7 @@ export interface DiagramNodeTagProps {
   title?: string;
   /** 핸드오프 §4: 5단어 이내. */
   desc?: string;
-  /** `gray`(구조) | `teal`(핵심 경로). 그 외 값은 gray로 떨어진다. */
+  /** `gray`(구조) | `accent`(핵심 경로). 그 외 값은 gray로 떨어진다. */
   tone?: string;
   /** `box`(rx 8) | `pill`(rx height/2). */
   shape?: string;
@@ -301,7 +301,9 @@ function isTag<P>(
 }
 
 function toTone(value: unknown): DiagramTone {
-  return value === 'teal' ? 'teal' : 'gray';
+  // `teal`은 포인트색이 틸이던 시절의 이름이다. 이미 발행된 글의 마크다운에
+  // 남아 있어 계속 받아준다 — 새 글은 `accent`를 쓰고, 문서에도 그쪽만 적는다.
+  return value === 'accent' || value === 'teal' ? 'accent' : 'gray';
 }
 
 function toShape(value: unknown): DiagramShape {

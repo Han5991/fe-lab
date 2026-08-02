@@ -52,7 +52,7 @@ export function DeployPipeline({
         y={27}
         width={160}
         height={50}
-        tone="teal"
+        tone="accent"
         title="ECS 배포"
         subtitle="blue/green 전환"
       />

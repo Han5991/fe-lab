@@ -47,19 +47,30 @@ describe('Diagram — 접근성', () => {
 });
 
 describe('Diagram — 문자열 prop 파싱', () => {
-  test('tone="teal"만 핵심 경로로 받고 알 수 없는 값은 gray로 떨어진다', () => {
+  test('tone="accent"만 핵심 경로로 받고 알 수 없는 값은 gray로 떨어진다', () => {
     const { container } = render(
       <Diagram>
-        <DiagramNodeTag id="a" title="A" tone="teal" />
+        <DiagramNodeTag id="a" title="A" tone="accent" />
         <DiagramNodeTag id="b" title="B" tone="rainbow" />
         <DiagramNodeTag id="c" title="C" />
       </Diagram>,
     );
     expect(rects(container).map(r => r.getAttribute('data-tone'))).toEqual([
-      'teal',
+      'accent',
       'gray',
       'gray',
     ]);
+  });
+
+  // 포인트색이 틸이던 시절 이름. 이미 발행된 글의 마크다운에 남아 있어 계속
+  // 받아줘야 한다 — 별칭을 지우면 그 글들의 핵심 노드가 조용히 회색이 된다.
+  test('옛 이름 tone="teal"도 핵심 경로로 받는다', () => {
+    const { container } = render(
+      <Diagram>
+        <DiagramNodeTag id="a" title="A" tone="teal" />
+      </Diagram>,
+    );
+    expect(rects(container)[0]).toHaveAttribute('data-tone', 'accent');
   });
 
   test('shape="pill"은 rx를 높이의 절반으로 바꾼다', () => {
@@ -353,7 +364,7 @@ describe('마크다운 왕복', () => {
         '  <diagram-node id="push" title="git push" desc="main 병합"></diagram-node>',
         '  <diagram-node id="actions" title="Actions" desc="Docker 빌드"></diagram-node>',
         '  <diagram-node id="ecr" title="ECR" desc="이미지 푸시"></diagram-node>',
-        '  <diagram-node id="ecs" title="ECS 배포" desc="blue/green 전환" tone="teal"></diagram-node>',
+        '  <diagram-node id="ecs" title="ECS 배포" desc="blue/green 전환" tone="accent"></diagram-node>',
         '  <diagram-edge from="ecr" to="ecs" emphasis="true"></diagram-edge>',
         '</diagram>',
         '',

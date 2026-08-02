@@ -52,15 +52,15 @@ describe('DiagramNode', () => {
     expect(rect).toHaveAttribute('data-tone', 'gray');
   });
 
-  test('tone="teal"로 핵심 노드를 구분한다', () => {
+  test('tone="accent"로 핵심 노드를 구분한다', () => {
     const { container } = render(
       <svg>
-        <DiagramNode x={0} y={0} width={100} height={50} tone="teal" />
+        <DiagramNode x={0} y={0} width={100} height={50} tone="accent" />
       </svg>,
     );
     expect(container.querySelector('rect')).toHaveAttribute(
       'data-tone',
-      'teal',
+      'accent',
     );
   });
 

@@ -33,7 +33,7 @@
 ```html
 <diagram label="스크린리더가 읽을 한 문장" caption="그림 아래 중앙 주석">
   <diagram-node id="a" title="첫 단계" desc="부제 5단어 이내"></diagram-node>
-  <diagram-node id="b" title="두 번째" desc="부제" tone="teal"></diagram-node>
+  <diagram-node id="b" title="두 번째" desc="부제" tone="accent"></diagram-node>
   <diagram-edge from="a" to="b" emphasis="true"></diagram-edge>
 </diagram>
 ```
@@ -57,13 +57,13 @@
 
 ### `<diagram-node>`
 
-| prop    | 기본값          | 설명                                                                |
-| :------ | :-------------- | :------------------------------------------------------------------ |
-| `id`    | 순번(`node-0`…) | `<diagram-edge from/to>` 가 가리키는 키. 엣지를 쓸 거면 직접 준다   |
-| `title` | 없음            | 노드 제목(12px/600)                                                 |
-| `desc`  | 없음            | 부제(11px). **5단어 이내**                                          |
-| `tone`  | `gray`          | `gray` = 구조 / `teal` = 핵심 경로. 그 밖의 값은 `gray` 로 떨어진다 |
-| `shape` | `box`           | `box` = rx 8 / `pill` = 완전 둥근 캡슐                              |
+| prop    | 기본값          | 설명                                                                  |
+| :------ | :-------------- | :-------------------------------------------------------------------- |
+| `id`    | 순번(`node-0`…) | `<diagram-edge from/to>` 가 가리키는 키. 엣지를 쓸 거면 직접 준다     |
+| `title` | 없음            | 노드 제목(12px/600)                                                   |
+| `desc`  | 없음            | 부제(11px). **5단어 이내**                                            |
+| `tone`  | `gray`          | `gray` = 구조 / `accent` = 핵심 경로. 그 밖의 값은 `gray` 로 떨어진다 |
+| `shape` | `box`           | `box` = rx 8 / `pill` = 완전 둥근 캡슐                                |
 
 ### `<diagram-edge>`
 
@@ -124,7 +124,7 @@ viewBox 폭은 노드 텍스트 길이의 합이라 노드 개수가 그대로 �
   <diagram-node id="entry" title="엔트리" desc="index.js"></diagram-node>
   <diagram-node id="ast" title="AST 파싱" desc="import 노드 추출"></diagram-node>
   <diagram-node id="resolve" title="resolve" desc="절대 경로 확정"></diagram-node>
-  <diagram-node id="graph" title="Graph" desc="modules 맵 등록" tone="teal"></diagram-node>
+  <diagram-node id="graph" title="Graph" desc="modules 맵 등록" tone="accent"></diagram-node>
   <diagram-edge from="entry" to="ast"></diagram-edge>
   <diagram-edge from="ast" to="resolve"></diagram-edge>
   <diagram-edge from="resolve" to="graph" emphasis="true"></diagram-edge>
@@ -140,7 +140,7 @@ viewBox 폭은 노드 텍스트 길이의 합이라 노드 개수가 그대로 �
 <diagram direction="fan" label="변경 감지 후 test 매트릭스와 build 캐시 job이 동시에 시작된다" caption="wall time은 가장 느린 갈래가 정한다">
   <diagram-node id="push" title="PR push" desc="변경 파일 감지"></diagram-node>
   <diagram-node id="test" title="test 매트릭스" desc="node 22 · 24 병렬"></diagram-node>
-  <diagram-node id="build" title="build 캐시" desc="turbo 원격 캐시 복원" tone="teal"></diagram-node>
+  <diagram-node id="build" title="build 캐시" desc="turbo 원격 캐시 복원" tone="accent"></diagram-node>
 </diagram>
 ```
 
@@ -157,7 +157,7 @@ viewBox 폭은 노드 텍스트 길이의 합이라 노드 개수가 그대로 �
 <diagram label="정적 페이지가 조회수를 Supabase RPC로 비동기 전송하고 집계 결과만 다시 읽는 흐름" caption="점선 = 렌더를 막지 않는 경로">
   <diagram-node id="page" title="정적 페이지" desc="GitHub Pages"></diagram-node>
   <diagram-node id="rpc" title="increment RPC" desc="6시간 쿨다운"></diagram-node>
-  <diagram-node id="db" title="post_views" desc="집계 테이블" tone="teal"></diagram-node>
+  <diagram-node id="db" title="post_views" desc="집계 테이블" tone="accent"></diagram-node>
   <diagram-edge from="page" to="rpc" flow="async"></diagram-edge>
   <diagram-edge from="rpc" to="db" flow="async" emphasis="true"></diagram-edge>
 </diagram>

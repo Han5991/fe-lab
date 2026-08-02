@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { css } from '@design-system/ui-lib/css';
+import type { DiagramTone } from './layout';
 
 /**
  * 다이어그램 프리미티브 — 핸드오프 §4 "다이어그램 문법"을 코드로 강제한다.
@@ -95,7 +96,7 @@ const nodeGray = css({
   strokeWidth: 'hairline',
 });
 
-const nodeTeal = css({
+const nodeAccent = css({
   fill: 'accent.50',
   stroke: 'accent.500',
   strokeWidth: 'hairline',
@@ -124,7 +125,7 @@ interface DiagramNodeProps {
   height: number;
   /** 핸드오프 §4 기본값. 작은 장식 노드나 pill 모양일 때만 바꾼다. */
   rx?: number;
-  tone?: 'gray' | 'teal';
+  tone?: DiagramTone;
   title?: string;
   /** 5단어 이내(핸드오프 §4). */
   subtitle?: string;
@@ -152,7 +153,7 @@ export function DiagramNode({
         height={height}
         rx={rx}
         data-tone={tone}
-        className={tone === 'teal' ? nodeTeal : nodeGray}
+        className={tone === 'accent' ? nodeAccent : nodeGray}
       />
       {title && (
         <text
@@ -190,7 +191,7 @@ const edgeBase = css({
 
 const edgeGray = css({ stroke: 'ink.600', opacity: '[0.55]' });
 // 핵심 경로만 틸. 스트로크는 비텍스트라 accent.500(스펙 §3).
-const edgeTeal = css({ stroke: 'accent.500' });
+const edgeAccent = css({ stroke: 'accent.500' });
 
 const edgeAsync = css({ strokeDasharray: '[3 3]' });
 
@@ -218,7 +219,7 @@ export function DiagramEdge({
   emphasis = false,
   arrow = true,
 }: DiagramEdgeProps) {
-  const toneStyle = emphasis ? edgeTeal : edgeGray;
+  const toneStyle = emphasis ? edgeAccent : edgeGray;
 
   return (
     <g

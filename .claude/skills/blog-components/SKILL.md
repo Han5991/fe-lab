@@ -15,7 +15,7 @@ MDX가 아니라 `react-markdown` + `rehype-raw`다.
 1. **닫는 태그를 반드시 쓴다.** `<diagram-node />` 같은 자기 닫힘은 통하지 않는다.
    브라우저 HTML 파서와 같은 규칙이라 뒤따르는 형제가 전부 그 안에 중첩돼 사라진다.
 2. 여는 태그는 **줄 맨 앞**에서 시작하고, 블록 **앞뒤로 빈 줄**을 둔다.
-3. **속성 값은 전부 문자열이다.** `emphasis="true"`, `tone="teal"` 처럼 따옴표로 쓴다.
+3. **속성 값은 전부 문자열이다.** `emphasis="true"`, `tone="accent"` 처럼 따옴표로 쓴다.
 4. 잘못된 값(`tone="보라"`)은 throw하지 않고 기본값으로 떨어진다. 글이 죽지는 않지만
    의도한 그림도 안 나오니 아래 표의 허용값을 확인할 것.
 5. 다 쓰고 나면 `pnpm --filter @blog/web run lint:posts` 로 frontmatter를 검증한다.
@@ -51,7 +51,7 @@ PNG를 붙이지 말 것. SVG라 다크모드 색이 따라오고, 좁은 화면
     id="ecs"
     title="ECS 배포"
     desc="blue/green 전환"
-    tone="teal"
+    tone="accent"
   ></diagram-node>
   <diagram-edge from="ecr" to="ecs" emphasis="true"></diagram-edge>
 </diagram>
@@ -67,7 +67,7 @@ PNG를 붙이지 말 것. SVG라 다크모드 색이 따라오고, 좁은 화면
 |                  | `name`           | 없음    | 레지스트리 이름. 주면 children 무시                                       |
 | `<diagram-node>` | `id`             | 순번    | 엣지가 가리키는 키. 엣지를 쓸 거면 직접 준다                              |
 |                  | `title` / `desc` | 없음    | 제목 / 부제(**5단어 이내**)                                               |
-|                  | `tone`           | `gray`  | `gray`(구조) / `teal`(핵심 경로)                                          |
+|                  | `tone`           | `gray`  | `gray`(구조) / `accent`(핵심 경로)                                        |
 |                  | `shape`          | `box`   | `box`(rx 8) / `pill`                                                      |
 | `<diagram-edge>` | `from` / `to`    | —       | 노드 `id`. 둘 다 있어야 그려진다                                          |
 |                  | `flow`           | `sync`  | `sync`(실선=동기) / `async`(점선=비동기·데이터)                           |

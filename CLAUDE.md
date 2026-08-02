@@ -430,7 +430,7 @@ The blog (`apps/blog/web/`) is a **statically generated (SSG) Next.js applicatio
    ```html
    <diagram label="스크린리더가 읽을 한 문장" caption="아래 중앙 주석">
      <diagram-node id="a" title="첫 단계" desc="부제 5단어 이내"></diagram-node>
-     <diagram-node id="b" title="두 번째" tone="teal"></diagram-node>
+     <diagram-node id="b" title="두 번째" tone="accent"></diagram-node>
      <diagram-edge from="a" to="b" flow="async" emphasis="true"></diagram-edge>
    </diagram>
    ```

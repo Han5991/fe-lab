@@ -37,7 +37,7 @@ const PIPELINE = [
   node('push', 'git push', 'main 병합'),
   node('actions', 'Actions', 'Docker 빌드'),
   node('ecr', 'ECR', '이미지 푸시'),
-  node('ecs', 'ECS 배포', 'blue/green 전환', { tone: 'teal' }),
+  node('ecs', 'ECS 배포', 'blue/green 전환', { tone: 'accent' }),
 ];
 
 describe('estimateTextWidth', () => {
