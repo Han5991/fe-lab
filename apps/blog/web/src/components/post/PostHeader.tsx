@@ -31,6 +31,8 @@ export const PostHeader = ({ post, seriesIndex }: PostHeaderProps) => {
             // 홈·/series의 같은 배지와 맞춘다.
             fontFamily: 'sans',
             fontSize: '[12px]',
+            // 배지는 accent.50 배경 위 작은 글씨라 제목용 accent.900을 쓰면
+            // 배경과 붙어 답답해진다. 링크와 같은 accent.600을 유지한다.
             color: 'accent.600',
             bg: 'accent.50',
             rounded: '[6px]',
@@ -50,7 +52,9 @@ export const PostHeader = ({ post, seriesIndex }: PostHeaderProps) => {
           fontSize: '[22px]',
           fontWeight: 'bold',
           lineHeight: 'headerSm',
-          color: 'ink.950',
+          // 글 제목은 액센트. 바로 아래 메타 줄(ink.500)·excerpt(ink.600)와
+          // 본문 h3·h4는 무채색이라, 색이 제목 계열의 표식이 된다.
+          color: 'accent.900',
           mt: '[12px]',
           mb: '[6px]',
         })}

@@ -31,8 +31,9 @@ const FONT_DIR = join(
 /**
  * 템플릿 디자인을 바꾸면 올려서 모든 이미지를 재생성하게 합니다.
  * 4 — 리뉴얼 팔레트(틸 포인트 + #0B0D10 지면) 적용 + 날짜를 하이픈 표기로 통일.
+ * 5 — 포인트색을 틸에서 cyan(#67E8F9)으로 교체.
  */
-export const TEMPLATE_VERSION = 4;
+const TEMPLATE_VERSION = 5;
 
 export const OG_WIDTH = 1200;
 export const OG_HEIGHT = 630;
@@ -117,8 +118,11 @@ const PAPER = '#0B0D10'; // paper.50
 const INK = '#E6E8EB'; // ink.950
 const INK_META = '#8B919A'; // ink.600
 const INK_RULE = '#333941'; // ink.border(다크 rgba를 paper.50 위에 합성한 값)
-const ACCENT = '#5DCAA5'; // accent.500 — 포인트 틸
-const ACCENT_BORDER = 'rgba(93, 202, 165, 0.4)'; // 시리즈 pill 보더
+const ACCENT = '#67E8F9'; // accent.500 — 포인트 cyan
+// 시리즈 pill 보더. 테스트가 "series가 있을 때만 pill이 나온다"를 이 값의
+// 유무로 판별하므로 export한다 — 값을 리터럴로 복사해 두면 팔레트를 바꿀 때마다
+// 테스트가 색 때문에 깨진다(정작 검증하려는 건 색이 아니라 조건부 렌더다).
+export const OG_PILL_BORDER = 'rgba(103, 232, 249, 0.4)';
 
 /**
  * 1200×630 OG 카드 satori 엘리먼트 트리.
@@ -150,7 +154,7 @@ export function ogTemplate(post: OgPostInput): OgNode {
         'div',
         {
           display: 'flex',
-          border: `2px solid ${ACCENT_BORDER}`,
+          border: `2px solid ${OG_PILL_BORDER}`,
           borderRadius: 9999,
           padding: '6px 26px',
           fontSize: 25,

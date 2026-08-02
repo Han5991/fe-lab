@@ -34,42 +34,43 @@ export const Hero = () => {
     // (글 히어로·본문)와 언어가 겹쳐 그쪽 무게를 깎았다. 다이어그램은 글 안에서만
     // 쓴다.
     <div className={css({ mb: '[30px]' })}>
-      <div>
-        <h1
-          className={css({
-            fontSize: '[21px]',
-            fontWeight: 'bold',
-            color: 'ink.950',
-            mb: '[8px]',
-          })}
-        >
-          한상욱
-        </h1>
-        <p className={css({ fontSize: '[14px]', color: 'ink.600' })}>
-          구조를 그려서 문제를 푸는 프론트엔드 엔지니어.
-          <br />
-          디자인 시스템, 모노레포, 배포 파이프라인을 다룹니다.
-        </p>
-        <div
-          className={css({
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: '[8px]',
-            mt: '[14px]',
-          })}
-        >
-          {PILLS.map(item => (
-            <a
-              key={item.label}
-              href={item.href}
-              target={item.external ? '_blank' : undefined}
-              rel={item.external ? 'noopener noreferrer' : undefined}
-              className={pill}
-            >
-              {item.label}
-            </a>
-          ))}
-        </div>
+      <h1
+        className={css({
+          fontSize: '[21px]',
+          fontWeight: 'bold',
+          // 페이지의 최상위 제목이라 액센트를 준다. 아래 소개 문단과 pill,
+          // 섹션 라벨은 전부 무채색으로 남는다 — 액센트가 제목 계열에만
+          // 붙어야 "제목 > 그 외"라는 위계가 색으로 읽힌다.
+          color: 'accent.900',
+          mb: '[8px]',
+        })}
+      >
+        한상욱
+      </h1>
+      <p className={css({ fontSize: '[14px]', color: 'ink.600' })}>
+        구조를 그려서 문제를 푸는 프론트엔드 엔지니어.
+        <br />
+        디자인 시스템, 모노레포, 배포 파이프라인을 다룹니다.
+      </p>
+      <div
+        className={css({
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: '[8px]',
+          mt: '[14px]',
+        })}
+      >
+        {PILLS.map(item => (
+          <a
+            key={item.label}
+            href={item.href}
+            target={item.external ? '_blank' : undefined}
+            rel={item.external ? 'noopener noreferrer' : undefined}
+            className={pill}
+          >
+            {item.label}
+          </a>
+        ))}
       </div>
     </div>
   );

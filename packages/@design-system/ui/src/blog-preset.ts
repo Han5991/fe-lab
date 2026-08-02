@@ -43,14 +43,12 @@ export const blogPreset = definePreset({
         },
         letterSpacings: {
           tighter: { value: '-0.03em' },
-          tightish: { value: '-0.025em' },
           tightX: { value: '-0.02em' },
           tightSm: { value: '-0.015em' },
           tightXs: { value: '-0.01em' },
           mono: { value: '0.04em' },
           monoLg: { value: '0.06em' },
           monoXl: { value: '0.08em' },
-          monoXxl: { value: '0.12em' },
         },
         lineHeights: {
           prose: { value: '1.75' },
@@ -74,7 +72,6 @@ export const blogPreset = definePreset({
           dashboardW: { value: '1280px' },
           articleW: { value: '1080px' },
           proseW: { value: '680px' },
-          heroSubW: { value: '580px' },
           heroAside: { value: '480px' },
           panelW: { value: '800px' },
           formW: { value: '400px' },
@@ -84,8 +81,8 @@ export const blogPreset = definePreset({
         shadows: {
           markerLeft: {
             value: {
-              base: 'inset 3px 0 0 #1d9e75',
-              _dark: 'inset 3px 0 0 #5dcaa5',
+              base: 'inset 3px 0 0 #0891b2',
+              _dark: 'inset 3px 0 0 #67e8f9',
             },
           },
         },
@@ -103,7 +100,7 @@ export const blogPreset = definePreset({
           //   --page    #EDEDEA / #060809  → paper.200 (다크는 일부러 다름 ↓)
           //   --fg      #1A1A1A / #E6E8EB  → ink.950
           //   --fg-sub  #6B7280 / #8B919A  → ink.600
-          //   --accent  #1D9E75 / #5DCAA5  → accent.500
+          //   --accent  (시안의 틸은 폐기 — accent.* 항목 주석 참고)
           //   --border  rgba(0,0,0,.10) / rgba(255,255,255,.12) → ink.border
           //
           // `paper.200` 다크만 시안(`#060809`)을 따르지 않고 `#1B1F26`을 쓴다.
@@ -152,52 +149,76 @@ export const blogPreset = definePreset({
               _dark: 'rgba(255,255,255,0.26)',
             },
           },
-          // accent — 포인트 1색(틸). 링크 / 시리즈 배지 / 다이어그램 핵심 경로에만.
+          // accent — 포인트 1색(cyan). 링크 / 시리즈 배지 / 제목 / 다이어그램
+          // 핵심 경로에만.
           //
-          // accent.500 = 레퍼런스 --accent 원색. 보더·다이어그램 스트로크·
-          //   아이콘 등 "비텍스트" 용도(WCAG 비텍스트 대비 3:1 기준 통과).
-          // accent.600 = 텍스트/링크용. 라이트에서 원색 #1D9E75는 흰 배경 위
-          //   3.43:1, 배지 배경(accent.50) 위 3.06:1로 AA 미달이라 같은 색상
-          //   각(hue)에서 명도만 낮춘 값을 쓴다(흰 배경 4.9:1). 다크의
-          //   #5DCAA5는 9.7:1로 충분해 원색을 그대로 유지한다.
+          // ("시안"은 이 파일에서 디자인 목업을 뜻하므로, 색 이름은 혼동을
+          //  피해 `cyan`으로 적는다.)
+          //
+          // 원래 틸(#1D9E75/#5DCAA5)이었다가 cyan으로 옮겼다. 이유는 둘이다.
+          // 하나는 **다크 시인성**: 다크 포인트색은 지면(#0B0D10) 위에서 밝은
+          // 톤이어야 읽힌다. 후보로 검토한 중간 톤 블루(#4A80E8)는 AA는 통과해도
+          // 5.14:1로 틸(9.69:1)의 절반이라 눈에 띄게 탁했다. 지금 값은 13.42:1.
+          // 다른 하나는 **의미색과의 거리**: 틸은 success 그린(moss)과 색상각이
+          // 가까워 포인트색과 성공 상태가 헷갈렸다. 빨강/노랑/연두는 각각
+          // danger·warn·moss와 겹쳐 애초에 후보에서 빠지고, cyan이 네 의미색
+          // 어디와도 안 겹치면서 파랑 특유의 흔한 인상도 피한다.
+          //
+          // accent.500 = 원색. 보더·다이어그램 스트로크·아이콘 등 "비텍스트"
+          //   용도(WCAG 비텍스트 대비 3:1 기준). 라이트 3.68:1.
+          // accent.600 = 텍스트/링크/제목용. 라이트에서 원색 #0891B2는 흰 배경
+          //   위 3.34:1로 AA(4.5:1) 미달이라 같은 색상각에서 명도만 낮춘 값을
+          //   쓴다(흰 배경 5.36:1, 배지 배경 위 4.76:1). 다크의 #67E8F9는
+          //   13.42:1로 충분해 원색을 그대로 쓴다.
+          // accent.700 = hover. 라이트는 더 어둡게, 다크는 더 밝게.
           'accent.50': {
             value: {
-              base: 'rgba(29,158,117,0.10)',
-              _dark: 'rgba(93,202,165,0.14)',
+              base: 'rgba(8,145,178,0.10)',
+              _dark: 'rgba(103,232,249,0.14)',
             },
           },
           'accent.200': {
             value: {
-              base: 'rgba(29,158,117,0.38)',
-              _dark: 'rgba(93,202,165,0.42)',
+              base: 'rgba(8,145,178,0.38)',
+              _dark: 'rgba(103,232,249,0.42)',
             },
           },
-          'accent.500': { value: { base: '#1d9e75', _dark: '#5dcaa5' } },
-          'accent.600': { value: { base: '#157f5e', _dark: '#5dcaa5' } },
-          'accent.700': { value: { base: '#0f6549', _dark: '#8fdcc1' } },
-          // marker — 형광펜 하이라이트. 포인트 1색 원칙에 맞춰 틸로 통일.
+          'accent.500': { value: { base: '#0891b2', _dark: '#67e8f9' } },
+          'accent.600': { value: { base: '#0e7490', _dark: '#67e8f9' } },
+          'accent.700': { value: { base: '#155e75', _dark: '#a5f3fc' } },
+          // accent.900 = **제목 전용**. 링크와 달리 제목은 바로 아래 본문보다
+          // 약해 보이면 안 된다.
+          //
+          // 다크는 우연히 균형이 맞는다 — accent 13.42:1 vs 본문 ink.900
+          // 13.72:1이라 둘이 같은 무게로 읽히고 차이는 색이 낸다. 라이트는
+          // accent.600이 5.36:1인데 본문 ink.900이 15.13:1이라, 제목이 본문보다
+          // 3배 흐려서 위계가 뒤집힌다(헤딩 스케일이 22/20/18/16으로 좁아
+          // 크기가 이걸 못 메운다).
+          //
+          // 그래서 라이트만 같은 색상각의 훨씬 진한 톤을 쓴다. 13.40:1로
+          // 다크 쪽 13.42:1과 사실상 같아져, 두 테마에서 제목이 같은 무게가 된다.
+          // 링크·배지는 계속 accent.600을 쓴다 — 링크까지 이 톤으로 내리면
+          // 본문 속에서 색이 안 보인다.
+          'accent.900': { value: { base: '#083344', _dark: '#67e8f9' } },
+          // marker — 형광펜 하이라이트. 포인트 1색 원칙에 맞춰 cyan으로 통일.
           'marker.300': {
             value: {
-              base: 'rgba(29,158,117,0.22)',
-              _dark: 'rgba(93,202,165,0.28)',
+              base: 'rgba(8,145,178,0.22)',
+              _dark: 'rgba(103,232,249,0.28)',
             },
           },
-          'marker.600': { value: { base: '#157f5e', _dark: '#5dcaa5' } },
+          'marker.600': { value: { base: '#0e7490', _dark: '#67e8f9' } },
           // moss — success 그린. 레퍼런스 --success (#16A34A / #97C459).
-          // 틸 액센트와 구분되도록 노랑기 있는 그린을 유지한다.
-          'moss.100': {
-            value: {
-              base: 'rgba(22,163,74,0.12)',
-              _dark: 'rgba(151,196,89,0.16)',
-            },
-          },
+          // 액센트가 시안으로 옮겨가면서 색상각이 충분히 벌어졌지만, 노랑기
+          // 있는 그린이라는 성격은 그대로 둔다(경고색과도 구분돼야 한다).
           'moss.600': { value: { base: '#16a34a', _dark: '#97c459' } },
-          // moss.700 — moss.100 배지 위 텍스트 전용. 라이트에서 moss.600은
-          // 흰 배경 위 3.30:1, 배지 배경(초록 12%) 위 2.9:1로 AA 미달이다.
+          // moss.700 — 옅은 초록 배경 위 텍스트 전용. 라이트에서 moss.600은
+          // 흰 배경 위 3.30:1, 초록 12% 배경 위 2.9:1로 AA 미달이다.
           // 다크는 --success가 이미 충분해 동일 값.
           'moss.700': { value: { base: '#0f7536', _dark: '#97c459' } },
-          // spot — admin 대시보드 전용 보조 강조색. 포인트 틸과 겹치지 않도록
-          // 채도 낮은 슬레이트 블루로 둔다(공개 페이지에서는 쓰지 않는다).
+          // spot — admin 대시보드 전용 보조 강조색. 채도 낮은 슬레이트 블루.
+          // 액센트가 시안이 되면서 같은 한류 계열이 됐지만, spot은 admin에서만
+          // 쓰고 공개 페이지에서 accent와 나란히 놓이는 자리가 없다.
           'spot.600': { value: { base: '#4f6d8f', _dark: '#8fb0d4' } },
           // danger — 에러/위험. 레퍼런스 --danger (#DC2626 / #F09595).
           'danger.text': { value: { base: '#c81e1e', _dark: '#f09595' } },
@@ -213,9 +234,14 @@ export const blogPreset = definePreset({
           'warn.bg': { value: { base: '#faeeda', _dark: '#3a2a10' } },
           'warn.text': { value: { base: '#854f0b', _dark: '#fac775' } },
           // btn — 버튼 배경. 흰 글씨 대비를 확보한 버튼 전용 명도.
-          'btn.accent': { value: { base: '#157f5e', _dark: '#12694e' } },
-          'btn.primary': { value: { base: '#157f5e', _dark: '#178a66' } },
-          'btn.primaryHover': { value: { base: '#0f6549', _dark: '#1d9e75' } },
+          //
+          // 틸 시절 다크 값(#178A66 4.32:1 / hover #1D9E75 3.39:1)은 흰 글씨
+          // 기준 AA 미달이었다. 시안으로 갈아끼우면서 다크도 흰 글씨가 4.5:1을
+          // 넘도록 명도를 다시 잡았다(primary 5.23:1, hover 4.70:1).
+          // 다크 hover가 primary보다 밝아지는 방향은 그대로 유지한다.
+          'btn.accent': { value: { base: '#0e7490', _dark: '#0e5f75' } },
+          'btn.primary': { value: { base: '#0e7490', _dark: '#12768f' } },
+          'btn.primaryHover': { value: { base: '#155e75', _dark: '#127e99' } },
           'btn.primaryBorder': {
             value: {
               base: 'rgba(26,26,26,0.15)',
@@ -223,7 +249,7 @@ export const blogPreset = definePreset({
             },
           },
           // callout — 마크다운 콜아웃 타입별 색 (danger는 danger.* 재사용).
-          // info는 무채색(구조), tip은 포인트 틸, warning은 warn.* 를 쓴다.
+          // info는 무채색(구조), tip은 포인트 cyan, warning은 warn.* 를 쓴다.
           'callout.info.bg': {
             value: {
               base: 'rgba(0,0,0,0.04)',
@@ -239,13 +265,13 @@ export const blogPreset = definePreset({
           },
           'callout.tip.bg': {
             value: {
-              base: 'rgba(29,158,117,0.08)',
-              _dark: 'rgba(93,202,165,0.12)',
+              base: 'rgba(8,145,178,0.08)',
+              _dark: 'rgba(103,232,249,0.12)',
             },
           },
-          'callout.tip.text': { value: { base: '#157f5e', _dark: '#5dcaa5' } },
+          'callout.tip.text': { value: { base: '#0e7490', _dark: '#67e8f9' } },
           'callout.tip.border': {
-            value: { base: '#1d9e75', _dark: '#5dcaa5' },
+            value: { base: '#0891b2', _dark: '#67e8f9' },
           },
           'callout.warn.bg': { value: { base: '#faeeda', _dark: '#3a2a10' } },
           'callout.warn.text': { value: { base: '#854f0b', _dark: '#fac775' } },

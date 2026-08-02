@@ -23,8 +23,8 @@ const MERMAID_VARS = {
     primaryColor: '#f7f7f5',
     primaryTextColor: '#1a1a1a', // ink.950
     primaryBorderColor: '#dedede', // ink.border를 paper.50 위에 합성
-    secondaryColor: '#e8f5f0', // accent.50
-    secondaryBorderColor: '#1d9e75', // accent.500
+    secondaryColor: '#e6f4f7', // accent.50
+    secondaryBorderColor: '#0891b2', // accent.500
     tertiaryColor: '#ededea', // paper.200
     tertiaryBorderColor: '#dedede',
     lineColor: '#6b7280', // ink.600
@@ -41,8 +41,8 @@ const MERMAID_VARS = {
     primaryColor: '#14171c',
     primaryTextColor: '#e6e8eb',
     primaryBorderColor: '#333941',
-    secondaryColor: '#16302a', // accent.50을 paper.50 위에 합성
-    secondaryBorderColor: '#5dcaa5',
+    secondaryColor: '#182c31', // accent.50을 paper.50 위에 합성
+    secondaryBorderColor: '#67e8f9',
     tertiaryColor: '#1b1f26',
     tertiaryBorderColor: '#333941',
     lineColor: '#8b919a',

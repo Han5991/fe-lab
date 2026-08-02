@@ -117,14 +117,18 @@ export default function PostClient({
                 // h1이 30px이라 제목보다 커서 위계가 뒤집혀 있었다. 레퍼런스가
                 // 22px을 최대 크기로 두는 이상 본문 헤딩이 그 위로 올라갈 수
                 // 없어서, 22 → 20 → 18 → 16으로 좁게 다시 깔았다.
-                // 간격이 좁은 만큼 구분은 크기보다 여백(mt)이 맡는다.
+                // 간격이 좁은 만큼 구분은 크기와 여백(mt), 그리고 **색**이
+                // 맡는다. 22 → 20 → 18 → 16은 2px씩밖에 안 벌어져서 크기만으로는
+                // h2와 h3가 잘 안 갈린다. 상위 두 단계(h1·h2)에만 액센트를 주면
+                // "대단원 / 그 아래"가 한눈에 잘리고, h3·h4는 무채색으로 남아
+                // 본문 흐름을 끊지 않는다.
                 '& h1': {
                   fontSize: '[22px]',
                   fontWeight: 'semibold',
                   letterSpacing: 'tightSm',
                   mt: '14',
                   mb: '5',
-                  color: 'ink.950',
+                  color: 'accent.900',
                   lineHeight: 'tight',
                   scrollMarginTop: '[100px]',
                 },
@@ -134,7 +138,7 @@ export default function PostClient({
                   letterSpacing: 'tightXs',
                   mt: '12',
                   mb: '4',
-                  color: 'ink.950',
+                  color: 'accent.900',
                   lineHeight: 'header',
                   scrollMarginTop: '[100px]',
                 },
@@ -179,21 +183,10 @@ export default function PostClient({
                   boxSize: '4',
                 },
                 '& del': { color: 'ink.500' },
-                '& code:not([class])': {
-                  fontFamily: 'mono',
-                  // 인라인 코드는 서브 서피스(paper.100) 위에 얹히는 칩이라
-                  // 레퍼런스의 chip과 같은 8px(control) 라운드를 쓴다.
-                  bg: 'paper.200',
-                  px: '1.5',
-                  py: '0.5',
-                  rounded: 'control',
-                  fontSize: '[0.9em]',
-                  color: 'ink.900',
-                  fontWeight: 'normal',
-                  whiteSpace: 'pre-wrap',
-                  wordBreak: 'break-word',
-                  overflowWrap: 'anywhere',
-                },
+                // 인라인 코드 스타일은 CodeBlock의 인라인 분기가 전담한다.
+                // ReactMarkdown의 code 매퍼가 모든 <code>를 CodeBlock으로
+                // 보내고 CodeBlock이 항상 클래스를 붙이므로, 여기에
+                // `& code:not([class])` 규칙을 두면 절대 매칭되지 않는다.
                 // 인용은 Dialogue와 같은 2px hairline 좌측 바로 통일한다.
                 '& blockquote': {
                   borderLeftWidth: '[2px]',
@@ -370,13 +363,11 @@ export default function PostClient({
                           <table
                             {...props}
                             className={css({
-                              w: 'full',
-                              // 컨테이너보다 좁으면 100%로 채우고, 넓으면 내용
-                              // 폭을 지켜 가로 스크롤이 생긴다. 이게 없으면
-                              // 칸이 찌그러져 글자만 세로로 쌓인다.
+                              // 컨테이너보다 좁으면 100%로 채우고(w는 위
+                              // `& table` 규칙이 준다), 넓으면 내용 폭을 지켜
+                              // 가로 스크롤이 생긴다. 이게 없으면 칸이
+                              // 찌그러져 글자만 세로로 쌓인다.
                               minW: '[max-content]',
-                              borderCollapse: 'separate',
-                              borderSpacing: '0',
                             })}
                           >
                             {children}

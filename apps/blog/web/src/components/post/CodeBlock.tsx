@@ -74,7 +74,7 @@ const CODE_SURFACE = '[#0b0d10]';
 const CODE_CHROME = '[#14171c]';
 const CODE_BORDER = '[#ffffff1f]';
 const CODE_META = '[#8b919a]';
-const CODE_ACCENT = '[#5dcaa5]';
+const CODE_ACCENT = '[#67e8f9]';
 
 // mermaid는 d3·dagre까지 끌고 와 raw 1.1MB(gzip 360KB)짜리 청크가 된다.
 // 정적 import면 CodeBlock을 쓰는 모든 글 — 즉 mermaid 다이어그램이 하나도
@@ -244,7 +244,9 @@ export function CodeBlock({
           color: 'ink.900',
           px: '1.5',
           py: '0.5',
-          rounded: '[6px]',
+          // 인라인 코드는 서브 서피스(paper.100) 위에 얹히는 칩이라
+          // 레퍼런스의 chip과 같은 8px(control) 라운드를 쓴다.
+          rounded: 'control',
           fontSize: '[0.9em]',
           fontWeight: 'normal',
           whiteSpace: 'pre-wrap',

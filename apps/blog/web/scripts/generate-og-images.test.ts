@@ -12,6 +12,7 @@ import {
   renderOgPng,
   OG_WIDTH,
   OG_HEIGHT,
+  OG_PILL_BORDER,
   type OgPostInput,
 } from './generate-og-images';
 
@@ -98,11 +99,10 @@ test('ogTemplate: 제목/날짜/도메인이 트리에 포함', () => {
 });
 
 test('ogTemplate: series가 있을 때만 pill 노출', () => {
-  const PILL_BORDER = 'rgba(93, 202, 165, 0.4)';
   const withSeries = JSON.stringify(ogTemplate(post({ series: 'bundler' })));
   assert.ok(withSeries.includes('bundler'));
-  assert.ok(withSeries.includes(PILL_BORDER));
-  assert.ok(!JSON.stringify(ogTemplate(post())).includes(PILL_BORDER));
+  assert.ok(withSeries.includes(OG_PILL_BORDER));
+  assert.ok(!JSON.stringify(ogTemplate(post())).includes(OG_PILL_BORDER));
 });
 
 test('ogTemplate: 시리즈명이 제목 prefix와 중복되면 제목에서 제거', () => {

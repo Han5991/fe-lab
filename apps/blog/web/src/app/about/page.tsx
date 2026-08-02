@@ -132,7 +132,9 @@ export default function AboutPage() {
                     fontWeight: 'normal',
                     letterSpacing: 'tighter',
                     lineHeight: 'heroDense',
-                    color: 'ink.950',
+                    // 홈 히어로의 같은 이름과 맞춘다. 아래 로마자 부제와 소개
+                    // 문단, 섹션 라벨은 무채색으로 남는다.
+                    color: 'accent.900',
                     mb: '4',
                   })}
                 >

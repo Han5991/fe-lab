@@ -42,7 +42,9 @@ export const FeaturedPost = ({ post, seriesLabel }: FeaturedPostProps) => {
         transition: '[border-color 0.15s]',
         _hover: {
           borderColor: 'ink.borderStrong',
-          '& h2': { color: 'accent.600' },
+          // 제목이 기본부터 accent.600이라, hover는 한 단계 더 진한 700으로
+          // 간다. 그대로 600을 쓰면 hover에 아무 변화가 없다.
+          '& h2': { color: 'accent.700' },
         },
       })}
     >
@@ -70,7 +72,9 @@ export const FeaturedPost = ({ post, seriesLabel }: FeaturedPostProps) => {
           className={css({
             fontSize: '[16px]',
             fontWeight: 'semibold',
-            color: 'ink.950',
+            // 대표글 제목은 액센트. 아래 `최근 글` 목록의 제목은 무채색으로
+            // 남겨서, 색이 곧 "이게 대표글"이라는 위계 신호가 되게 한다.
+            color: 'accent.900',
             mt: '[10px]',
             mb: '[5px]',
             transition: '[color 0.15s]',
