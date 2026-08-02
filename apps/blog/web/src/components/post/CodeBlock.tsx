@@ -21,7 +21,11 @@ import jsdoc from 'react-syntax-highlighter/dist/cjs/languages/prism/jsdoc';
 import { css, cx } from '@design-system/ui-lib/css';
 import { token } from '@design-system/ui-lib/tokens';
 import { codeText, isBlockCode } from './markdownCode';
-import { PRISM_LANGUAGES, type PrismLanguageName } from './prismLanguages';
+import {
+  PRISM_LANGUAGES,
+  GRAMMAR_EXTENSION_ONLY,
+  type PrismLanguageName,
+} from './prismLanguages';
 
 // `Prism` export는 refractor 전 언어(300여 종)를 번들해 gzip 350KB 청크가
 // 된다. 글이 실제로 쓰는 fence는 십여 종뿐이라 PrismLight로 바꾸고 필요한
@@ -46,8 +50,50 @@ export const LANGUAGE_MODULES: Record<PrismLanguageName, unknown> = {
   docker,
 };
 
+/** refractor가 문법 함수에 넘겨주는 인스턴스 중 우리가 건드리는 부분만. */
+type Refractor = { languages: Record<string, unknown> };
+type Grammar = ((refractor: Refractor) => void) & { displayName: string };
+
+/**
+ * 문법 확장이 **두 번 적용되지 않게** 감싼다.
+ *
+ * refractor의 중복 등록 가드는 이렇게 생겼다:
+ *
+ *     if (!Object.hasOwn(refractor.languages, syntax.displayName)) syntax(refractor)
+ *
+ * 보통 언어 모듈은 `refractor.languages.typescript = …` 처럼 자기 이름 키를
+ * 만들기 때문에 두 번째 등록부터 이 가드에 걸린다. 그런데 js-extras·jsdoc은
+ * 언어가 아니라 javascript 문법에 `insertBefore`로 토큰을 **끼워 넣는 패치**라
+ * 자기 이름 키를 남기지 않는다. 그래서 이 둘만 가드를 매번 통과하고, 모듈이 두 번
+ * 평가되면 같은 토큰이 중첩 삽입돼 문법이 달라진다.
+ *
+ * 프로덕션은 빌드 프로세스에서 한 번만 평가되니 드러나지 않지만, 오래 떠 있는
+ * dev 서버는 HMR로 재평가가 쌓인다. 그러면 서버가 내보내는 토큰이 클라이언트와
+ * 갈려 글 전체가 하이드레이션 불일치로 다시 그려진다. 실측으로, 같은 글의 SSR
+ * HTML에서 `property-access` 토큰이 dev 서버 재시작 전 12개 / 재시작 후 56개로
+ * 나왔다.
+ *
+ * 패치를 끝낸 뒤 자기 이름 키를 남겨, 다음 등록부터는 refractor의 가드가 잡게 한다.
+ *
+ * (export는 CodeBlock.test.tsx가 이 계약을 직접 검증하기 위한 것이다. 렌더 결과로는
+ *  토큰 중첩을 관찰할 수 없어 함수 단위로 못박는 편이 싸다.)
+ */
+export function registerOnce(mod: unknown, name: string): Grammar {
+  const patch = mod as Grammar;
+  return Object.assign(
+    (refractor: Refractor) => {
+      patch(refractor);
+      refractor.languages[name] ??= {};
+    },
+    { displayName: name },
+  );
+}
+
 for (const [name, mod] of Object.entries(LANGUAGE_MODULES)) {
-  SyntaxHighlighter.registerLanguage(name, mod);
+  SyntaxHighlighter.registerLanguage(
+    name,
+    GRAMMAR_EXTENSION_ONLY.has(name) ? registerOnce(mod, name) : mod,
+  );
 }
 // refractor의 register()는 언어 함수만 등록하고 별칭은 붙이지 않는다.
 // `js`/`ts`/`md`/`dockerfile` 같은 라벨이 평문으로 떨어지지 않도록 따로 건다.
@@ -60,6 +106,21 @@ SyntaxHighlighter.alias(
       .map(([name, aliases]) => [name, [...aliases]] as const),
   ),
 );
+
+// ─────────────────────────────────────────────────────────────────────────
+// 코드 표면은 테마와 무관하게 항상 어둡다. react-syntax-highlighter가 쓰는
+// vscDarkPlus 토큰 색이 고정값이라, 라이트 테마에서 배경만 밝히면 구문 강조
+// 색이 통째로 대비를 잃는다. 그래서 크롬 색은 토큰이 아니라 "새 다크 팔레트에서
+// 뽑은 고정값"을 쓴다. 각각 paper.50 / paper.100 / ink.border / ink.600 /
+// accent.500 의 _dark 값이고, 보더만 8자리 hex(≈ 12% 알파)로 옮겨 적었다.
+// (여기에 테마-가변 토큰을 쓰면 라이트 테마에서 검은 보더·진한 회색 글자가
+//  어두운 크롬 위에 얹혀 대비가 3:1 아래로 떨어진다.)
+// ─────────────────────────────────────────────────────────────────────────
+const CODE_SURFACE = '[#0b0d10]';
+const CODE_CHROME = '[#14171c]';
+const CODE_BORDER = '[#ffffff1f]';
+const CODE_META = '[#8b919a]';
+const CODE_ACCENT = '[#67e8f9]';
 
 // mermaid는 d3·dagre까지 끌고 와 raw 1.1MB(gzip 360KB)짜리 청크가 된다.
 // 정적 import면 CodeBlock을 쓰는 모든 글 — 즉 mermaid 다이어그램이 하나도
@@ -76,14 +137,17 @@ const MermaidChart = dynamic(
 );
 
 // MermaidChart 내부 컨테이너와 같은 박스 — placeholder와 실제 도표의 자리가
-// 어긋나지 않게 여기서도 동일한 여백/테두리를 쓴다.
-const mermaidBoxStyle = css({
+// 어긋나지 않게 여기서도 동일한 여백/테두리를 쓴다. 값을 한쪽만 고치면 청크가
+// 도착하는 순간 레이아웃이 튀므로, 동일성은 CodeBlock.test.tsx가 못박는다.
+// (한 상수로 합치지 않는 이유: CodeBlock이 MermaidChart 모듈을 정적으로 참조하는
+//  순간 위 dynamic import가 무의미해져 mermaid 청크가 초기 로드로 돌아온다.)
+export const mermaidBoxStyle = css({
   my: '10',
   p: '6',
   minH: '[120px]',
   bg: 'paper.100',
-  rounded: '2xl',
-  borderWidth: '[1px]',
+  rounded: 'card',
+  borderWidth: 'hairline',
   borderColor: 'ink.border',
 });
 
@@ -104,25 +168,20 @@ function CopyButton({ content }: { content: string }) {
     <button
       onClick={handleCopy}
       className={css({
-        ml: '4',
-        px: '2',
+        px: '2.5',
         py: '1',
+        fontFamily: 'mono',
         fontSize: 'xs',
-        // 코드블록 크롬은 테마와 무관하게 항상 어둡다(#161b22/#12171d/#212a35).
-        // 여기에 테마-가변 ink.500을 쓰면 라이트 테마에서 진한 회색 글자가
-        // 어두운 배경에 얹혀 2.89:1까지 떨어진다. 크롬 색과 같은 계열의
-        // 고정 밝은 회색을 쓴다.
-        color: '[#9198a1]',
-        bg: '[#212a35]',
-        rounded: 'md',
-        borderWidth: 'thin',
-        borderColor: '[#343d47]',
+        color: CODE_META,
+        bg: 'transparent',
+        rounded: 'control',
+        borderWidth: 'hairline',
+        borderColor: CODE_BORDER,
         cursor: 'pointer',
-        transition: '[all 0.2s]',
+        transition: '[color 0.15s, border-color 0.15s]',
         _hover: {
-          bg: '[#2d3742]',
-          color: '[#58a6ff]',
-          borderColor: '[#4a5560]',
+          color: CODE_ACCENT,
+          borderColor: CODE_ACCENT,
         },
       })}
     >
@@ -166,45 +225,35 @@ export function CodeBlock({
         mb: '12',
         mt: '8',
         pos: 'relative',
-        shadow: '2xl',
-        rounded: '2xl',
+        rounded: 'control',
         overflow: 'hidden',
-        bg: { base: '[#161b22]' },
-        borderWidth: 'thin',
-        borderColor: 'ink.border',
+        bg: CODE_SURFACE,
+        borderWidth: 'hairline',
+        borderColor: CODE_BORDER,
       })}
     >
       <div
         className={css({
-          bg: { base: '[#12171d]' },
-          px: '5',
-          py: '3',
+          bg: CODE_CHROME,
+          px: '4',
+          py: '2',
           display: 'flex',
-          gap: '2.5',
           alignItems: 'center',
-          borderBottomWidth: 'thin',
-          borderColor: 'ink.border',
+          minH: '[36px]',
+          borderBottomWidth: 'hairline',
+          borderColor: CODE_BORDER,
         })}
       >
-        <div
-          className={css({ boxSize: '3', rounded: 'full', bg: '[#ff5f56]' })}
-        />
-        <div
-          className={css({ boxSize: '3', rounded: 'full', bg: '[#ffbd2e]' })}
-        />
-        <div
-          className={css({ boxSize: '3', rounded: 'full', bg: '[#27c93f]' })}
-        />
+        {/* 맥 신호등 점 3개는 뺐다 — 아무 정보도 주지 않는 순수 장식이고,
+            팔레트 밖의 빨강·노랑·초록이라 "포인트 1색" 원칙과 정면으로 부딪힌다.
+            남은 건 언어 라벨(모노)과 복사 버튼뿐. */}
         {language && (
           <span
             className={css({
-              ml: '4',
-              // CopyButton과 동일 — 항상 어두운 크롬 위의 고정 밝은 회색.
-              color: '[#9198a1]',
+              fontFamily: 'mono',
               fontSize: 'xs',
-              textTransform: 'uppercase',
-              letterSpacing: 'widest',
-              fontWeight: 'bold',
+              letterSpacing: 'mono',
+              color: CODE_META,
             })}
           >
             {language}
@@ -220,8 +269,10 @@ export function CodeBlock({
         customStyle={{
           borderRadius: 0,
           margin: 0,
-          padding: `${token('spacing.6')} ${token('spacing.8')}`,
-          lineHeight: '1.8',
+          // 크롬이 얇아진 만큼 안쪽 여백도 줄여 680px 본문 칼럼에서 코드가
+          // 실제로 쓸 수 있는 가로폭을 넓힌다.
+          padding: `${token('spacing.5')} ${token('spacing.6')}`,
+          lineHeight: '1.7',
           background: 'transparent',
         }}
         {...props}
@@ -242,7 +293,9 @@ export function CodeBlock({
           color: 'ink.900',
           px: '1.5',
           py: '0.5',
-          rounded: '[6px]',
+          // 인라인 코드는 서브 서피스(paper.100) 위에 얹히는 칩이라
+          // 레퍼런스의 chip과 같은 8px(control) 라운드를 쓴다.
+          rounded: 'control',
           fontSize: '[0.9em]',
           fontWeight: 'normal',
           whiteSpace: 'pre-wrap',

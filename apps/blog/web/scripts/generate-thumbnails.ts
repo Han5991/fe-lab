@@ -34,9 +34,9 @@ export const MAX_WIDTH = 1200;
 export const WEBP_QUALITY = 80;
 
 /** 인코딩 정책을 바꾸면 올려서 전체 재생성하게 합니다. */
-export const ENCODE_VERSION = 1;
+const ENCODE_VERSION = 1;
 
-export interface ThumbnailTask {
+interface ThumbnailTask {
   /** posts/ 기준 원본 상대 경로 */
   sourceRel: string;
   /** public/thumbs/ 기준 출력 상대 경로 */
@@ -81,7 +81,7 @@ export function findOrphanWebps(
   );
 }
 
-export async function encodeWebp(sourcePath: string): Promise<Buffer> {
+async function encodeWebp(sourcePath: string): Promise<Buffer> {
   return sharp(sourcePath)
     .resize({ width: MAX_WIDTH, withoutEnlargement: true })
     .webp({ quality: WEBP_QUALITY })

@@ -45,8 +45,26 @@ export function getSeriesMeta(seriesName: string): SeriesMeta | null {
   return meta;
 }
 
-export function clearSeriesMetaCache(): void {
-  _metaCache.clear();
+/** 폴더 이름만으로 시리즈가 되기 위한 최소 편수. */
+export const SERIES_MIN_POSTS = 2;
+
+/**
+ * 이 폴더를 "시리즈"로 볼 것인가.
+ *
+ * 시리즈는 frontmatter가 아니라 폴더 경로로 결정된다(`repository.ts`). 그래서
+ * 주제별로 글을 묶어 둔 폴더까지 전부 시리즈가 되어, 한 편짜리 폴더가
+ * `시리즈 · testing 1/1` 같은 배지를 달고 시리즈 목록·필터에 섞였다.
+ * "여러 편으로 이어지는 글"이라는 시리즈의 뜻과 맞지 않는다.
+ *
+ * 판정은 둘 중 하나다:
+ * - `_series.yml` 이 있다 → 편수와 무관하게 저자가 시리즈로 선언한 것
+ * - 글이 2편 이상이다 → 선언이 없어도 실제로 이어지는 글
+ *
+ * 한 편짜리 폴더는 글이 하나 더 들어오는 순간 자동으로 시리즈가 된다.
+ */
+export function isSeriesFolder(seriesName: string, postCount: number): boolean {
+  if (postCount >= SERIES_MIN_POSTS) return true;
+  return getSeriesMeta(seriesName) !== null;
 }
 
 /**

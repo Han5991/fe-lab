@@ -12,6 +12,7 @@ import {
   renderOgPng,
   OG_WIDTH,
   OG_HEIGHT,
+  OG_PILL_BORDER,
   type OgPostInput,
 } from './generate-og-images';
 
@@ -93,16 +94,15 @@ test('displayTitle: prefix 제거 후 빈 제목이 되면 원본 유지', () =>
 test('ogTemplate: 제목/날짜/도메인이 트리에 포함', () => {
   const json = JSON.stringify(ogTemplate(post()));
   assert.ok(json.includes('테스트 글'));
-  assert.ok(json.includes('2026.06.09'));
+  assert.ok(json.includes('2026-06-09'));
   assert.ok(json.includes('blog.sangwook.dev'));
 });
 
 test('ogTemplate: series가 있을 때만 pill 노출', () => {
-  const PILL_BORDER = 'rgba(88, 166, 255, 0.4)';
   const withSeries = JSON.stringify(ogTemplate(post({ series: 'bundler' })));
   assert.ok(withSeries.includes('bundler'));
-  assert.ok(withSeries.includes(PILL_BORDER));
-  assert.ok(!JSON.stringify(ogTemplate(post())).includes(PILL_BORDER));
+  assert.ok(withSeries.includes(OG_PILL_BORDER));
+  assert.ok(!JSON.stringify(ogTemplate(post())).includes(OG_PILL_BORDER));
 });
 
 test('ogTemplate: 시리즈명이 제목 prefix와 중복되면 제목에서 제거', () => {
@@ -121,7 +121,7 @@ test('ogTemplate: datetime이 섞인 date도 날짜 부분만 표기', () => {
   const json = JSON.stringify(
     ogTemplate(post({ date: '2026-03-16T09:00:00+09:00' })),
   );
-  assert.ok(json.includes('2026.03.16'));
+  assert.ok(json.includes('2026-03-16'));
 });
 
 // ── findOrphanPngs ───────────────────────────────────────────────────────────

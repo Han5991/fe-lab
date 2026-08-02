@@ -80,7 +80,6 @@ export const PostGridCard = ({ post, priority = false }: PostGridCardProps) => {
             fontWeight: 'semibold',
             lineHeight: 'header',
             color: 'accent.600',
-            transition: '[color 0.15s]',
             lineClamp: 2,
           })}
         >

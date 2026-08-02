@@ -34,6 +34,10 @@ export default defineConfig({
         bg: 'paper.50',
         color: 'ink.950',
         scrollBehavior: 'smooth',
+        // Firefox는 ::-webkit-scrollbar 의사요소를 받지 않는다. 아래 webkit
+        // 규칙과 같은 결과를 표준 속성으로 한 번 더 준다.
+        scrollbarWidth: 'thin',
+        scrollbarColor: 'token(colors.ink.border) transparent',
       },
       body: {
         fontFamily: 'sans',
@@ -51,16 +55,21 @@ export default defineConfig({
         outlineOffset: '3px',
         borderRadius: '3px',
       },
+      // 스크롤바는 얇은 실선처럼. 리뉴얼 톤이 hairline 보더 중심이라 8px
+      // 막대가 지면에서 튄다.
       '::-webkit-scrollbar': {
-        width: '8px',
-        height: '6px',
+        width: '4px',
+        height: '4px',
+      },
+      '::-webkit-scrollbar-track': {
+        bg: 'transparent',
       },
       '::-webkit-scrollbar-thumb': {
         bg: 'ink.border',
-        borderRadius: '8px',
+        borderRadius: 'pill',
       },
       '::-webkit-scrollbar-thumb:hover': {
-        bg: 'ink.300',
+        bg: 'ink.borderStrong',
       },
       // Marker(형광펜) — raw HTML 본문의 <span class="marker">…</span> 강조
       '.marker': {

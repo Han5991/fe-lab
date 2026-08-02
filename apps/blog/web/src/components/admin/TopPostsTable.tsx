@@ -7,7 +7,7 @@ import { fmtNum } from '@/lib/format';
 import { Sparkline } from '@/src/components/blog/Sparkline';
 import { token } from '@design-system/ui-lib/tokens';
 
-export interface TopPostRow {
+interface TopPostRow {
   slug: string;
   title: string;
   views: number;

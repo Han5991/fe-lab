@@ -1,15 +1,27 @@
 import { isValidElement, type ElementType, type ReactNode } from 'react';
 
+import { Diagram } from '@/src/components/diagram';
 import { Callout } from '@/src/components/post/markdown/Callout';
+import { Dialogue } from '@/src/components/post/markdown/Dialogue';
 import { Figure } from '@/src/components/post/markdown/Figure';
 import { FileTree } from '@/src/components/post/markdown/FileTree';
+import { Metrics } from '@/src/components/post/markdown/Metrics';
+import { Timeline } from '@/src/components/post/markdown/Timeline';
 import { isBlockCode } from '@/src/components/post/markdownCode';
 
 // 직접 매핑돼(`callout: Callout`) child.type으로 식별 가능한 블록 컴포넌트.
+// 시그니처 3종(Dialogue/Metrics/Timeline)은 최상위 컨테이너만 등록한다 —
+// Msg/Metric/Step은 컨테이너 안에서만 쓰이므로 <p> 직계 자식으로 올 일이 없다.
+// Diagram도 같은 이유로 컨테이너만 등록한다(DiagramNodeTag/DiagramEdgeTag는
+// <diagram> 안에서 좌표 계산용 메타로만 소비되어 DOM에 직접 나오지 않는다).
 const BLOCK_MARKDOWN_COMPONENTS = new Set<ElementType>([
   Callout,
+  Diagram,
+  Dialogue,
   Figure,
   FileTree,
+  Metrics,
+  Timeline,
 ]);
 
 // <p> 안에 블록 요소가 들어가면 무효 중첩(<p><div></div></p>)이 되어 브라우저가

@@ -3,7 +3,7 @@
 import { css } from '@design-system/ui-lib/css';
 import { tagPillStyle } from './tagPillStyle';
 
-export interface ActiveFiltersProps {
+interface ActiveFiltersProps {
   tags: string[];
   series: string | null;
   year: string | null;

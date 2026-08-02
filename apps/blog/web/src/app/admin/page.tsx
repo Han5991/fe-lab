@@ -244,7 +244,7 @@ function AdminOverviewContent() {
                   gap: '4',
                   px: '5',
                   py: '3',
-                  borderBottomWidth: i < topPosts.length - 1 ? '1px' : '0',
+                  borderBottomWidth: i < topPosts.length - 1 ? '[1px]' : '[0]',
                   borderColor: 'ink.border',
                   transition: '[background 0.15s]',
                   _hover: { bg: 'ink.50' },
@@ -345,7 +345,8 @@ function AdminOverviewContent() {
                   gap: '4',
                   px: '5',
                   py: '3',
-                  borderBottomWidth: i < recentPosts.length - 1 ? '1px' : '0',
+                  borderBottomWidth:
+                    i < recentPosts.length - 1 ? '[1px]' : '[0]',
                   borderColor: 'ink.border',
                   transition: '[background 0.15s]',
                   _hover: { bg: 'ink.50' },

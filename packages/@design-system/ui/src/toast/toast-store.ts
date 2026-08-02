@@ -4,14 +4,14 @@ import { randomId } from './utils';
 
 export type ToastStore = ReturnType<typeof createToastStore>;
 
-export const createToastStore = () =>
+const createToastStore = () =>
   createStore<ToastsState>({
     toasts: [],
     defaultPosition: 'top-center',
     limit: 3,
   });
 
-export const toastsStore = createToastStore();
+const toastsStore = createToastStore();
 
 function getDistributedToasts(
   data: ToastData[],
@@ -37,7 +37,7 @@ function getDistributedToasts(
   return { toasts, queue };
 }
 
-export function updateToastsState(
+function updateToastsState(
   store: ToastStore,
   update: (toasts: ToastData[]) => ToastData[],
 ) {
@@ -56,7 +56,7 @@ export function updateToastsState(
   });
 }
 
-export function showToast(toast: ToastData, store: ToastStore = toastsStore) {
+function showToast(toast: ToastData, store: ToastStore = toastsStore) {
   const id = toast.id || randomId();
 
   updateToastsState(store, toasts => {
@@ -69,12 +69,12 @@ export function showToast(toast: ToastData, store: ToastStore = toastsStore) {
   return id;
 }
 
-export function hideToast(id: string, store: ToastStore = toastsStore) {
+function hideToast(id: string, store: ToastStore = toastsStore) {
   updateToastsState(store, toasts => toasts.filter(toast => toast.id !== id));
   return id;
 }
 
-export function updateToast(toast: ToastData, store: ToastStore = toastsStore) {
+function updateToast(toast: ToastData, store: ToastStore = toastsStore) {
   updateToastsState(store, toasts =>
     toasts.map(item => {
       if (item.id === toast.id) {
@@ -86,11 +86,11 @@ export function updateToast(toast: ToastData, store: ToastStore = toastsStore) {
   return toast.id;
 }
 
-export function cleanToasts(store: ToastStore = toastsStore) {
+function cleanToasts(store: ToastStore = toastsStore) {
   updateToastsState(store, () => []);
 }
 
-export function cleanToastsQueue(store: ToastStore = toastsStore) {
+function cleanToastsQueue(store: ToastStore = toastsStore) {
   updateToastsState(store, toasts => toasts.slice(0, store.getState().limit));
 }
 

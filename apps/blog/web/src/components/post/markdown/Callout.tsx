@@ -3,51 +3,81 @@ import { css } from '@design-system/ui-lib/css';
 
 type CalloutType = 'info' | 'tip' | 'warning' | 'danger';
 
+// 아이콘을 이모지에서 hairline 원형 + 문자 하나로 바꿨다. 이모지는 색을 우리가
+// 통제할 수 없어서 "무채색 베이스 + 포인트 1색" 팔레트 밖으로 튀고, 플랫한
+// 보더 위계와도 톤이 맞지 않는다. 타입 구분은 글리프가 먼저 하고 색이 거든다.
 const STYLES: Record<
   CalloutType,
-  { wrapper: string; icon: string; label: string }
+  { surface: string; badge: string; icon: string; label: string }
 > = {
   info: {
-    wrapper: css({
+    surface: css({
       bg: 'callout.info.bg',
-      borderLeftWidth: '[4px]',
-      borderLeftColor: 'callout.info.border',
+      borderColor: 'callout.info.border',
       color: 'callout.info.text',
     }),
-    icon: 'ℹ️',
+    badge: css({ borderColor: 'callout.info.border' }),
+    icon: 'i',
     label: 'Info',
   },
   tip: {
-    wrapper: css({
+    surface: css({
       bg: 'callout.tip.bg',
-      borderLeftWidth: '[4px]',
-      borderLeftColor: 'callout.tip.border',
+      borderColor: 'callout.tip.border',
       color: 'callout.tip.text',
     }),
-    icon: '💡',
+    badge: css({ borderColor: 'callout.tip.border' }),
+    icon: '+',
     label: 'Tip',
   },
   warning: {
-    wrapper: css({
+    surface: css({
       bg: 'callout.warn.bg',
-      borderLeftWidth: '[4px]',
-      borderLeftColor: 'callout.warn.border',
+      borderColor: 'callout.warn.border',
       color: 'callout.warn.text',
     }),
-    icon: '⚠️',
+    badge: css({ borderColor: 'callout.warn.border' }),
+    icon: '!',
     label: 'Warning',
   },
   danger: {
-    wrapper: css({
+    surface: css({
       bg: 'danger.bg',
-      borderLeftWidth: '[4px]',
-      borderLeftColor: 'danger.border',
+      borderColor: 'danger.border',
       color: 'danger.text',
     }),
-    icon: '🚨',
+    badge: css({ borderColor: 'danger.border' }),
+    icon: '×',
     label: 'Danger',
   },
 };
+
+const wrapperStyle = css({
+  display: 'flex',
+  gap: '3',
+  alignItems: 'flex-start',
+  my: '6',
+  px: '4',
+  py: '3.5',
+  rounded: 'control',
+  borderWidth: 'hairline',
+});
+
+// 아바타·타임라인 아이콘과 같은 어휘 — hairline 원형에 문자 하나.
+// 색은 wrapper에서 상속받고 보더만 타입별로 덧입힌다.
+const badgeStyle = css({
+  flexShrink: '0',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  boxSize: '5',
+  mt: '[1px]',
+  rounded: 'full',
+  borderWidth: 'hairline',
+  fontFamily: 'mono',
+  fontSize: 'xs',
+  lineHeight: 'flat',
+});
 
 function isCalloutType(value: unknown): value is CalloutType {
   return (
@@ -67,24 +97,11 @@ interface CalloutProps {
 
 export function Callout({ type, title, children }: CalloutProps) {
   const variant = isCalloutType(type) ? type : 'info';
-  const { wrapper, icon, label } = STYLES[variant];
+  const { surface, badge, icon, label } = STYLES[variant];
 
   return (
-    <aside
-      className={`${wrapper} ${css({
-        rounded: 'md',
-        my: '6',
-        px: '5',
-        py: '4',
-        display: 'flex',
-        gap: '3',
-        alignItems: 'flex-start',
-      })}`}
-    >
-      <span
-        aria-hidden
-        className={css({ fontSize: 'lg', lineHeight: 'headerSm' })}
-      >
+    <aside className={`${surface} ${wrapperStyle}`}>
+      <span aria-hidden className={`${badge} ${badgeStyle}`}>
         {icon}
       </span>
       <div
@@ -96,10 +113,11 @@ export function Callout({ type, title, children }: CalloutProps) {
       >
         <div
           className={css({
-            fontWeight: 'bold',
-            fontSize: 'sm',
+            fontWeight: 'semibold',
+            fontSize: '[13px]',
+            lineHeight: 'snug',
             mb: '1',
-            letterSpacing: 'wide',
+            letterSpacing: 'tightXs',
           })}
         >
           {title ?? label}

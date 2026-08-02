@@ -6,11 +6,15 @@ import {
   OG_DEFAULT_IMAGE,
   SITE_AUTHOR_GITHUB,
   SITE_AUTHOR_LINKEDIN,
+  MERGED_PR_COUNT_FALLBACK,
 } from '@/lib/constants';
 import { safeJsonLd } from '@/lib/jsonLd';
 import { Label } from '@/src/components/blog';
 import { PageBoundary } from '@/src/components/PageBoundary';
 import { getAllPostSummaries } from '@/domain/post';
+import { getAllSeries } from '@/domain/post/aggregate';
+
+import { FEATURED_SERIES } from './featuredSeries';
 
 export const metadata: Metadata = {
   title: '소개 | Frontend Lab',
@@ -79,10 +83,15 @@ const jsonLd = {
 };
 
 export default function AboutPage() {
-  // PR 수만 비자명: CI가 빌드 타임에 NEXT_PUBLIC_PR_COUNT로 주입, 로컬·실패 시 '58' 폴백.
+  // PR 수만 비자명: CI가 빌드 타임에 NEXT_PUBLIC_PR_COUNT로 주입, 로컬·실패 시 폴백.
+  // 폴백 값은 홈의 오픈소스 스트립과 같은 숫자를 보여야 해서 상수 하나를 공유한다.
   const blogPostCount = getAllPostSummaries().length;
-  const mergedPrCount = process.env.NEXT_PUBLIC_PR_COUNT || '58';
+  const mergedPrCount =
+    process.env.NEXT_PUBLIC_PR_COUNT || MERGED_PR_COUNT_FALLBACK;
   const conferenceCount = '2';
+  // 주요 시리즈 카드의 편수. 손으로 적어두면 글이 늘 때 조용히 어긋나므로
+  // /series 페이지와 같은 집계원(getAllSeries)에서 그때그때 읽는다.
+  const seriesCounts = new Map(getAllSeries().map(s => [s.id, s.count]));
 
   return (
     <>
@@ -129,7 +138,9 @@ export default function AboutPage() {
                     fontWeight: 'normal',
                     letterSpacing: 'tighter',
                     lineHeight: 'heroDense',
-                    color: 'ink.950',
+                    // 홈 히어로의 같은 이름과 맞춘다. 아래 로마자 부제와 소개
+                    // 문단, 섹션 라벨은 무채색으로 남는다.
+                    color: 'accent.900',
                     mb: '4',
                   })}
                 >
@@ -538,39 +549,12 @@ export default function AboutPage() {
                   </h2>
                 </div>
                 <div className={css({ display: 'flex', flexDir: 'column' })}>
-                  {[
-                    {
-                      title: '번들러 만들기',
-                      description:
-                        '모듈 번들러를 밑바닥부터 직접 구현. AST 파싱, 의존성 그래프, 스코프 격리, 소스맵까지.',
-                      href: '/posts?tab=series&series=bundler&q=bundler',
-                      count: '5편',
-                    },
-                    {
-                      title: 'TypeScript로 설계하는 프로젝트',
-                      description:
-                        '타입을 설계 도구로 활용하는 방법. API, 서비스, 도메인 레이어 전반의 타입 시스템 설계.',
-                      href: '/posts?tab=series&series=typescript&q=typescript',
-                      count: '7편',
-                    },
-                    {
-                      title: '오픈소스 기여',
-                      description:
-                        'Mantine, Node.js, Next.js, gemini-cli 기여 경험과 노하우.',
-                      href: '/posts?tab=series&series=open-source&q=open-source',
-                      count: '4편',
-                    },
-                    {
-                      title: '에러 핸들링',
-                      description:
-                        'JavaScript, React, Next.js 에러 처리 전략과 패턴.',
-                      href: '/posts?tab=series&series=에러&q=에러',
-                      count: '3편',
-                    },
-                  ].map(series => (
+                  {FEATURED_SERIES.map(series => (
+                    // /series 페이지와 같은 링크 문법. 아카이브는 `tab`을 읽지
+                    // 않고 `q`는 series와 AND로 걸리므로 series 하나만 넘긴다.
                     <Link
-                      key={series.title}
-                      href={series.href}
+                      key={series.id}
+                      href={`/posts/?series=${encodeURIComponent(series.id)}`}
                       className={css({
                         display: 'flex',
                         justifyContent: 'space-between',
@@ -611,20 +595,24 @@ export default function AboutPage() {
                           {series.description}
                         </p>
                       </div>
-                      <span
-                        className={css({
-                          fontFamily: 'mono',
-                          fontSize: '2xs',
-                          color: 'marker.600',
-                          letterSpacing: 'monoXl',
-                          textTransform: 'uppercase',
-                          flexShrink: 0,
-                          whiteSpace: 'nowrap',
-                          pt: '0.5',
-                        })}
-                      >
-                        {series.count}
-                      </span>
+                      {/* 폴더가 사라지면 집계에도 없다 — 0편 대신 배지를 뺀다.
+                          (테스트가 막지만 렌더는 fail-soft로 둔다) */}
+                      {seriesCounts.has(series.id) && (
+                        <span
+                          className={css({
+                            fontFamily: 'mono',
+                            fontSize: '2xs',
+                            color: 'marker.600',
+                            letterSpacing: 'monoXl',
+                            textTransform: 'uppercase',
+                            flexShrink: 0,
+                            whiteSpace: 'nowrap',
+                            pt: '0.5',
+                          })}
+                        >
+                          {seriesCounts.get(series.id)}편
+                        </span>
+                      )}
                     </Link>
                   ))}
                 </div>

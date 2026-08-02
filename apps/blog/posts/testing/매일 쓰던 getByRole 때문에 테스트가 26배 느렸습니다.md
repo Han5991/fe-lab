@@ -149,6 +149,14 @@ DateRangeInput
 
 **보이지도 않을 버튼 85개의 이름을, 안 보인다는 걸 알기도 전에 전부 계산하고 있었던 겁니다.**
 
+<diagram label="role 필터로 후보 86개를 모은 뒤 name 필터가 전부의 이름을 계산하고, hidden 필터가 마지막에 85개를 제외하는 순서" caption="hidden이 먼저였다면 85개는 계산조차 없다">
+  <diagram-node id="role" title="role 필터" desc="후보 86개 수집"></diagram-node>
+  <diagram-node id="name" title="name 필터" desc="86개 전부 이름 계산" tone="accent"></diagram-node>
+  <diagram-node id="hidden" title="hidden 필터" desc="85개 뒤늦게 제외"></diagram-node>
+  <diagram-edge from="role" to="name" emphasis="true"></diagram-edge>
+  <diagram-edge from="name" to="hidden"></diagram-edge>
+</diagram>
+
 다만 순서가 문제의 전부는 아닙니다. hidden 필터도 결국 후보 하나하나의 스타일을 봐야 하거든요. 이건 4장에서 다시 짚겠습니다.
 
 그럼 450ms를 먹은 건 이름 계산일까요? 확인해봐야죠.

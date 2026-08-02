@@ -77,7 +77,7 @@ export const PopularRail = ({ posts, limit = 5 }: PopularRailProps) => {
           <li
             key={post.slug}
             className={css({
-              borderTopWidth: i === 0 ? '0' : '[1px]',
+              borderTopWidth: i === 0 ? '[0]' : '[1px]',
               borderStyle: 'solid',
               borderColor: 'ink.border',
             })}

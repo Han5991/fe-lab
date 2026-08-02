@@ -9,9 +9,7 @@ import {
 } from '@/domain/analytics';
 import type { AnalyticsRange } from '@/domain/analytics';
 
-export type { AnalyticsRange };
 export { UNIQUES_ESTIMATE_RATIO };
-export type { AnalyticsOverview } from '@/domain/analytics';
 
 /**
  * Supabase admin dashboard 데이터를 가공해 Analytics 페이지에서 쓰는 형태로 반환.

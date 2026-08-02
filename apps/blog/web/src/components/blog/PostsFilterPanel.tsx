@@ -16,7 +16,7 @@ const groupBlock = css({
   borderTopColor: 'ink.border',
 });
 
-export interface PostsFilterPanelProps {
+interface PostsFilterPanelProps {
   sort: SortKey;
   onSortChange: (v: SortKey) => void;
   view: ViewMode;

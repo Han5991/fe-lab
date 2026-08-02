@@ -9,14 +9,3 @@ if (!supabaseUrl || !supabaseKey) {
 }
 
 export const client = createClient<Database>(supabaseUrl, supabaseKey);
-
-export interface SupabasePostData {
-  id: string;
-  title: string;
-  slug: string;
-  content: string;
-  excerpt?: string;
-  date: string | null;
-  created_at: string;
-  updated_at: string;
-}

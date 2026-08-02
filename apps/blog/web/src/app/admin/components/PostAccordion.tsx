@@ -86,7 +86,7 @@ export function PostAccordion({ post }: Props) {
       className={css({
         borderBottomWidth: '[1px]',
         borderColor: 'ink.border',
-        _last: { borderBottomWidth: '0' },
+        _last: { borderBottomWidth: '[0]' },
       })}
     >
       <button

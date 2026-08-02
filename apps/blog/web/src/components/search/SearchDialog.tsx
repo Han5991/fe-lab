@@ -285,9 +285,12 @@ export const SearchDialog = () => {
         <div
           className={css({
             bg: 'paper.50',
-            rounded: { base: '[0]', md: 'xl' },
+            rounded: { base: '[0]', md: 'card' },
             overflow: 'hidden',
-            shadow: { base: '[none]', md: '2xl' },
+            // dim 오버레이가 레이어를 갈라주므로 그림자 대신 hairline 보더로
+            // 다이얼로그 경계를 세운다(플랫 유지).
+            borderWidth: { base: '[0]', md: 'hairline' },
+            borderColor: 'ink.border',
             h: { base: 'full', md: 'auto' },
             display: 'flex',
             flexDirection: 'column',
@@ -407,7 +410,7 @@ export const SearchDialog = () => {
                         _active: { bg: 'accent.50' },
                         transition: '[background 0.1s]',
                         border: 'none',
-                        borderBottomWidth: { base: '[1px]', md: '0' },
+                        borderBottomWidth: { base: '[1px]', md: '[0]' },
                         borderColor: 'paper.200',
                       })}
                     >

@@ -27,11 +27,11 @@ export function MarkdownImage({ src, alt, relativeDir }: MarkdownImageProps) {
         className={css({
           display: 'block',
           my: '14',
-          rounded: '2xl',
+          // 리뉴얼 규칙: 위계는 그림자가 아니라 hairline 보더로만 표현한다.
+          rounded: 'card',
           w: 'full',
           h: 'auto',
-          shadow: '2xl',
-          borderWidth: '[1px]',
+          borderWidth: 'hairline',
           borderColor: 'ink.border',
         })}
       />

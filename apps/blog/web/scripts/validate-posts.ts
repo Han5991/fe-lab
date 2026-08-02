@@ -5,6 +5,9 @@ import matter from 'gray-matter';
 import { collectMarkdownFiles, hasFrontmatter } from '@/lib/postFiles';
 import { hasAmbiguousTimezone } from '@/lib/dates';
 import { POST_STATUSES, isPostStatus, isPostFile } from '@/domain/post';
+// 이름 목록만 있는 모듈에서 가져옵니다. registry.ts(=.tsx 컴포넌트 의존)를 직접
+// 참조하면 이 노드 스크립트가 React·Panda까지 끌고 들어옵니다.
+import { DIAGRAM_NAMES, isDiagramName } from '@/domain/post/diagramNames';
 import { SUPPORTED_FENCE_LABELS } from '@/src/components/post/prismLanguages';
 
 const POSTS_DIR = resolve(process.cwd(), '..', 'posts');
@@ -31,6 +34,7 @@ const KNOWN_FRONTMATTER_KEYS = new Set([
   'tags',
   'status',
   'scheduledDate',
+  'hero',
 ]);
 
 type Severity = 'error' | 'warning';
@@ -272,7 +276,38 @@ export function validatePost(record: PostRecord, raw: string): Issue[] {
         rule: 'invalid-tags',
         message: `\`tags\`의 모든 원소는 문자열이어야 합니다. 문자열이 아닌 값이 하나라도 있으면 태그 전체가 무시됩니다: ${JSON.stringify(data.tags)}`,
       });
+    } else {
+      // 렌더 계층(repository.toStringArray)이 중복을 걷어내므로 화면은 멀쩡하다.
+      // 다만 frontmatter에 남아 있으면 저자가 눈치채지 못하므로 경고로 알린다.
+      const seen = new Set<string>();
+      const dupes = new Set<string>();
+      for (const tag of data.tags as string[]) {
+        if (seen.has(tag)) dupes.add(tag);
+        seen.add(tag);
+      }
+      if (dupes.size > 0) {
+        issues.push({
+          file: relPath,
+          line: findFrontmatterLine(raw, 'tags'),
+          severity: 'warning',
+          rule: 'duplicate-tags',
+          message: `\`tags\`에 중복이 있습니다(렌더 시 하나로 합쳐집니다): ${[...dupes].join(', ')}`,
+        });
+      }
     }
+  }
+
+  // `hero`는 코드에 등록된 다이어그램 이름만 받습니다. 미등록 이름은 렌더 계층이
+  // 조용히 썸네일로 폴백하기 때문에(글이 죽지 않도록 일부러 그렇게 만들었습니다)
+  // 글쓴이는 "왜 다이어그램이 안 나오지" 상태로 방치됩니다. 그 침묵을 여기서 깹니다.
+  if ('hero' in data && !isDiagramName(data.hero)) {
+    issues.push({
+      file: relPath,
+      line: findFrontmatterLine(raw, 'hero'),
+      severity: 'error',
+      rule: 'unknown-hero-diagram',
+      message: `\`hero\`는 등록된 다이어그램 이름이어야 합니다 (${DIAGRAM_NAMES.join(', ')}). 새 다이어그램이라면 domain/post/diagramNames.ts와 src/components/diagram/registry.ts에 먼저 등록하세요: ${JSON.stringify(data.hero)}`,
+    });
   }
 
   if ('thumbnail' in data && typeof data.thumbnail === 'string') {

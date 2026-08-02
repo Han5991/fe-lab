@@ -41,10 +41,7 @@ export type SitemapPost = Pick<
  * (예: '2025-12-31' → UTC 자정 파싱 → toISOString() '2025-12-30T15:00:00Z' → '2025-12-30')
  * getKSTDateISO()는 KST 기준 달력 날짜를 정확히 반환합니다.
  */
-export function resolvePostLastmod(
-  post: SitemapPost,
-  fallback: string,
-): string {
+function resolvePostLastmod(post: SitemapPost, fallback: string): string {
   return post.updatedAt
     ? getKSTDateISO(parseScheduledDateKST(post.updatedAt))
     : post.date

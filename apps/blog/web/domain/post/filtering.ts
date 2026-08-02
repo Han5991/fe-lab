@@ -3,7 +3,7 @@ import type { PostSummary } from './types';
 /**
  * /posts 아카이브의 정렬 키. URL `sort=` 파라미터 값과 동일.
  */
-export type ArchiveSortKey = 'recent' | 'popular' | 'shortest';
+type ArchiveSortKey = 'recent' | 'popular' | 'shortest';
 
 export interface ArchiveFilterParams {
   q: string;

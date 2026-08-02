@@ -4,7 +4,7 @@ import { pathToFileURL } from 'node:url';
 
 const POSTS_DIR = resolve(process.cwd(), '..', 'posts');
 
-export interface Options {
+interface Options {
   title?: string;
   series?: string;
   status: 'draft' | 'published' | 'scheduled';
@@ -106,7 +106,7 @@ export function safeFilename(title: string): string {
  * 상위 경로 탈출(`..`)·빈 세그먼트·절대 경로는 거부해
  * posts/ 밖에 파일이 생기는 것을 막습니다.
  */
-export function safeSeriesPath(series: string): string {
+function safeSeriesPath(series: string): string {
   const segments = series.split('/').map(s => s.trim());
   const valid = segments.every(
     s => s && s !== '.' && s !== '..' && !/[\\\0]/.test(s),
