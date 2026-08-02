@@ -63,12 +63,15 @@ export const Layout = ({ children }: LayoutProps) => {
           // 위에 떠 있다는 걸 드러낸다 — 불투명하면 스크롤 중에 본문이 헤더
           // 경계에서 뚝 잘려 보인다.
           //
-          // backdrop blur는 넣지 않았다. 이 Panda 설정에서는 `backdropFilter`
-          // 유틸리티가 클래스만 만들고 규칙을 내보내지 않아 조용히 무효가 된다
-          // (리뉴얼 전 코드의 `backdropFilter: '[blur(12px)]'` 도 실은 안 먹고
-          // 있었다). 한 줄 때문에 인라인 스타일로 디자인 시스템을 우회하느니
-          // 알파만으로 처리한다.
           bg: 'paper.50/80',
+          // Panda에서 흐림은 `backdropFilter: 'auto'` + `backdropBlur` 조합이다.
+          // `backdropFilter: '[blur(12px)]'` 처럼 임의값으로 주면 클래스만 생기고
+          // 규칙이 안 나간다(리뉴얼 전 코드가 그 형태였다).
+          //
+          // lightningcss가 이 선언을 `-webkit-backdrop-filter` 한 줄로만 내보낸다.
+          // 실제 브라우저(Chrome/Safari)는 이 접두사를 지원하므로 흐림이 걸린다.
+          backdropFilter: 'auto',
+          backdropBlur: '[12px]',
           zIndex: '10',
         })}
       >
