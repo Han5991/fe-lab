@@ -5,7 +5,7 @@ import { css } from '@design-system/ui-lib/css';
 import { useTocHook, scrollToId } from '@/src/components/tocHooks';
 
 /**
- * 글 차례 — 항목들을 잇는 **레일 한 줄**을 그리고, 지금 화면에 보이는 구간만
+ * 글 차례 — 항목들을 잇는 **레일 한 줄**을 그리고, 지금 읽고 있는 항목만
  * 밝게 비춘다.
  *
  * 예전에는 항목마다 좌측 바가 하나씩 있어서, 회고처럼 항목이 20개 넘는 글에서는
@@ -24,7 +24,7 @@ import { useTocHook, scrollToId } from '@/src/components/tocHooks';
 
 /** 레벨 한 단계당 레일이 오른쪽으로 밀리는 거리. */
 const RAIL_STEP = 8;
-/** 레일이 단을 옮길 때 쓰는 대각선의 세로 길이. 절반씩 위아래로 나눠 쓴다. */
+/** 레일이 단을 옮길 때 쓰는 대각선의 세로 길이. 전부 다음 항목 안에 들어간다. */
 const ELBOW = 8;
 
 interface Measured {
@@ -37,29 +37,39 @@ interface Measured {
 /**
  * 항목 위치를 재서 레일 path를 만든다.
  *
- * 세로선은 각 항목의 높이만큼 내려가고, 앞뒤 항목의 단이 다르면 그 경계에서
- * 대각선으로 갈아탄다. 레퍼런스(fumadocs)와 같은 각진 elbow다 — 곡선으로 하면
- * 단이 촘촘할 때 서로 겹쳐 뭉개진다.
+ * 세로선은 각 항목의 높이만큼 내려가고, 앞뒤 항목의 단이 다르면 대각선으로
+ * 갈아탄다. 레퍼런스(fumadocs)와 같은 각진 elbow다 — 곡선으로 하면 단이
+ * 촘촘할 때 서로 겹쳐 뭉개진다.
+ *
+ * 대각선은 **전부 다음 항목 안쪽**에 들어간다. 예전에는 경계를 중심으로 위아래
+ * 절반씩 걸치게 그렸는데, 하이라이트가 한 항목만 비출 때 대각선도 반토막이 나
+ * 어디에도 안 닿는 조각이 허공에 뜬 것처럼 남았다. 대각선을 통째로 한 항목에
+ * 넣으면 그 항목이 켜질 때 대각선과 세로선이 이어져 보이고, 이전 항목이 켜질
+ * 때는 세로선만 깔끔하게 끊긴다.
  */
 function buildPath(m: Measured): string {
   if (m.rows.length === 0) return '';
-  const half = ELBOW / 2;
   let d = `M ${m.rows[0].x} 0`;
 
   m.rows.forEach((row, i) => {
     const next = m.rows[i + 1];
     const stepsHere = next !== undefined && next.x !== row.x;
-    // 단이 바뀌면 이 항목의 바닥까지 가지 않고 경계 조금 위에서 멈춘 뒤
-    // 대각선으로 갈아탄다. 바닥까지 그린 다음 되돌아가면 선이 겹친다.
-    d += ` L ${row.x} ${stepsHere ? next.top - half : row.bottom}`;
-    if (stepsHere) d += ` L ${next.x} ${next.top + half}`;
+    // 자기 항목은 언제나 바닥(= 다음 항목의 머리)까지 그린다.
+    d += ` L ${row.x} ${stepsHere ? next.top : row.bottom}`;
+    // 대각선의 세로 길이는 다음 항목 높이의 절반을 넘지 않게 묶는다. 두 줄짜리
+    // 항목 뒤에 한 줄 항목이 오는 식으로 높이가 들쭉날쭉해도 대각선이 그 항목을
+    // 넘어가 다음 경계를 침범하지 않는다.
+    if (stepsHere) {
+      const drop = Math.min(ELBOW, (next.bottom - next.top) / 2);
+      d += ` L ${next.x} ${next.top + drop}`;
+    }
   });
 
   return d;
 }
 
 export const TOC = () => {
-  const { toc, activeId, visibleIds } = useTocHook();
+  const { toc, activeId } = useTocHook();
   const listRef = useRef<HTMLOListElement>(null);
   const itemRefs = useRef(new Map<string, HTMLLIElement>());
   const [measured, setMeasured] = useState<Measured | null>(null);
@@ -96,24 +106,14 @@ export const TOC = () => {
 
   if (toc.length === 0) return null;
 
-  // 보이는 구간의 위/아래만 남기고 잘라낸다.
-  //
-  // 관찰 밴드가 화면 상단 20%라, 헤딩과 헤딩 사이를 지나는 동안에는 걸치는
-  // 헤딩이 하나도 없다. 그때 구간을 비우면 레일이 깜빡이며 사라지므로,
-  // 마지막으로 지나온 헤딩(activeId) 한 줄로 유지한다.
-  const rowIds = visibleIds.length > 0 ? visibleIds : [activeId];
-  const activeRows = measured
-    ? rowIds
-        .map(id => toc.findIndex(i => i.id === id))
-        .filter(i => i >= 0)
-        .map(i => measured.rows[i])
-        .filter(Boolean)
-    : [];
+  // 활성 항목 **한 줄**만 남기고 잘라낸다. 여러 항목의 최소~최대 구간으로
+  // 잡으면, 활성 판정이 한 번만 어긋나도 창이 이전 위치까지 늘어나 잔상처럼
+  // 보인다. 한 줄이면 구조적으로 그럴 수가 없다.
+  const activeIndex = toc.findIndex(i => i.id === activeId);
+  const row = measured && activeIndex >= 0 ? measured.rows[activeIndex] : null;
   const clip =
-    measured && activeRows.length > 0
-      ? `inset(${Math.min(...activeRows.map(r => r.top))}px 0px ${
-          measured.height - Math.max(...activeRows.map(r => r.bottom))
-        }px)`
+    row && measured
+      ? `inset(${row.top}px 0px ${measured.height - row.bottom}px)`
       : 'inset(0px 0px 100%)';
 
   const path = measured ? buildPath(measured) : '';
@@ -128,6 +128,15 @@ export const TOC = () => {
         lg: { display: 'block' },
         maxH: '[calc(100vh - 100px)]',
         overflowY: 'auto',
+        // 스크롤바 자리를 **항상** 비워 둔다.
+        //
+        // `overflow: auto`만 두면 스크롤바가 생길 때 내용 폭이 240 → 225px로
+        // 줄고, 그 15px 때문에 경계에 걸친 항목이 1줄에서 2줄로 접힌다. 목록이
+        // 20px 길어지면 다시 스크롤바가 필요해지고, 스크롤바가 사라지면 폭이
+        // 돌아와 또 한 줄로 펴진다 — 차례가 끝없이 밀렸다 돌아왔다 한다.
+        // 게다가 그 사이 레일 좌표가 clip-path 애니메이션 도중에 바뀌어
+        // 하이라이트가 엉뚱한 자리에 그려진다.
+        scrollbarGutter: '[stable]',
       })}
       aria-label="이 글의 차례"
     >
@@ -190,8 +199,7 @@ export const TOC = () => {
           {toc.map(item => {
             const minLevel = Math.min(...toc.map(i => i.level));
             const depth = item.level - minLevel;
-            const isActive =
-              visibleIds.includes(item.id) || activeId === item.id;
+            const isActive = item.id === activeId;
             return (
               <li
                 key={item.id}
@@ -213,7 +221,12 @@ export const TOC = () => {
                     fontSize: '[13px]',
                     lineHeight: 'relaxed',
                     color: isActive ? 'ink.950' : 'ink.600',
-                    fontWeight: isActive ? 'medium' : 'normal',
+                    // 활성 표시는 **색만** 바꾼다. 굵기를 400 → 500으로 올리면
+                    // 글자 폭이 늘어 항목이 한 줄에서 두 줄로 접히고, 그 아래
+                    // 항목이 전부 20px씩 밀린다(실측: 목록 높이 917 → 937px).
+                    // 스크롤할 때마다 차례가 들썩이는 데다, 레일 좌표가 clip-path
+                    // 애니메이션 도중에 바뀌어 하이라이트가 엉뚱한 자리에 그려진다.
+                    fontWeight: 'normal',
                     transition: '[color 0.2s]',
                     _hover: { color: 'ink.950' },
                   })}
