@@ -16,6 +16,16 @@ const reactVersion = createRequire(import.meta.url)(
   'react/package.json',
 ).version;
 
+// flat config의 settings 병합은 최상위 키 단위라, `settings.react`를 그냥 쓰면
+// 상위 설정이 넣은 react 하위 키가 통째로 날아갑니다(`import/*` 키는 남지만
+// react 하위는 교체됨). 지금 eslint-config-next가 넣는 건 version 하나뿐이라
+// 손실이 없지만, 나중에 pragma 같은 키가 추가되면 조용히 사라지므로 상속값을
+// 먼저 모아 두고 version만 덮어씁니다.
+const inheritedReactSettings = [...nextCoreWebVitals, ...nextTypescript].reduce(
+  (acc, config) => ({ ...acc, ...(config.settings?.react ?? {}) }),
+  {},
+);
+
 const eslintConfig = [
   {
     ignores: ['.next/**', 'out/**', 'public/**', 'supabase/**'],
@@ -28,7 +38,9 @@ const eslintConfig = [
   // 위 두 설정이 넣은 `react.version: 'detect'`를 덮어씁니다. 순서 의존적이라
   // nextCoreWebVitals 뒤에 와야 합니다.
   {
-    settings: { react: { version: reactVersion } },
+    settings: {
+      react: { ...inheritedReactSettings, version: reactVersion },
+    },
   },
   {
     // recommended-latest 중 core-web-vitals에서 유일하게 빠진 컴파일러 룰.
