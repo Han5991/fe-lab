@@ -1,8 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { SITE_URL } from './lib/constants';
-import { parseScheduledDateKST, getKSTDateISO } from './lib/dates';
+import { SITE_URL } from '../lib/constants';
+import { parseScheduledDateKST, getKSTDateISO } from '../lib/dates';
 import { getAllPosts, encodePostSlug, type PostSummary } from '@/domain/post';
 
 // 시리즈별 고가치 포스트는 우선순위 높게 설정.
@@ -113,6 +113,7 @@ export function buildSitemapXml(
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   const publicDir = path.join(
     path.dirname(fileURLToPath(import.meta.url)),
+    '..',
     'public',
   );
   const posts = getAllPosts();

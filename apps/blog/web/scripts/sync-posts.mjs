@@ -11,8 +11,8 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 
-const POSTS_SOURCE_DIR = resolve(__dirname, '../posts');
-const POSTS_TARGET_DIR = resolve(__dirname, 'public/posts');
+const POSTS_SOURCE_DIR = resolve(__dirname, '../../posts');
+const POSTS_TARGET_DIR = resolve(__dirname, '../public/posts');
 
 const ALLOWED_EXTENSIONS = [
   '.png',
