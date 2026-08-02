@@ -1,6 +1,20 @@
+import { createRequire } from 'node:module';
+
 import nextCoreWebVitals from 'eslint-config-next/core-web-vitals';
 import nextTypescript from 'eslint-config-next/typescript';
 import reactHooks from 'eslint-plugin-react-hooks';
+
+// eslint-config-next는 `settings.react.version: 'detect'`를 넣는데, 그 자동 감지
+// 경로(eslint-plugin-react `util/version.js`의 resolveBasedir)가 ESLint 10에서
+// 제거된 `context.getFilename()`을 폴백 없이 호출해 린트가 통째로 죽습니다
+// (TypeError: contextOrFilename.getFilename is not a function).
+// 버전을 문자열로 주면 'detect' 분기 자체를 타지 않아 크래시를 피합니다.
+// 하드코딩 대신 실제 설치된 react를 읽어 'detect'와 같은 값을 유지합니다 —
+// catalog에서 react를 올려도 따라옵니다.
+// eslint-plugin-react가 ESLint 10을 지원하면(peer에 ^10 추가) 이 블록은 제거 가능.
+const reactVersion = createRequire(import.meta.url)(
+  'react/package.json',
+).version;
 
 const eslintConfig = [
   {
@@ -11,6 +25,11 @@ const eslintConfig = [
   // 이미 error로 포함합니다. next.config.ts의 reactCompiler: true와 짝.
   ...nextCoreWebVitals,
   ...nextTypescript,
+  // 위 두 설정이 넣은 `react.version: 'detect'`를 덮어씁니다. 순서 의존적이라
+  // nextCoreWebVitals 뒤에 와야 합니다.
+  {
+    settings: { react: { version: reactVersion } },
+  },
   {
     // recommended-latest 중 core-web-vitals에서 유일하게 빠진 컴파일러 룰.
     // core-web-vitals와 동일한 플러그인 인스턴스라 재등록 충돌 없음.
