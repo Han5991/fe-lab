@@ -2,7 +2,7 @@
  * 다이어그램 프리미티브 — 핸드오프 §4 문법이 코드로 강제되는지 확인한다.
  *
  * 색은 Panda 토큰 클래스로 나가므로 여기서 검증할 수 없다(생성된 CSS가 없는 환경).
- * 대신 **문법이 갈리는 지점**(회색/틸, 실선/점선, 장식/의미)을 DOM으로 확인한다.
+ * 대신 **문법이 갈리는 지점**(회색/액센트, 실선/점선, 장식/의미)을 DOM으로 확인한다.
  */
 import { describe, expect, test } from 'vitest';
 import { render, screen } from '@testing-library/react';

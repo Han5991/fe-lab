@@ -417,7 +417,7 @@ The blog (`apps/blog/web/`) is a **statically generated (SSG) Next.js applicatio
 - 노드: 라운드 사각형 `rx=8`, 스트로크 1px(`borderWidths.hairline` 고정)
 - 선: **실선 = 동기 호출**, **점선(`stroke-dasharray: 3 3`) = 비동기/데이터 흐름**
 - 색은 **2색만**: 구조는 회색(fill `paper.100` / stroke `ink.border`),
-  핵심 경로는 틸(fill `accent.50` / stroke `accent.500`)
+  핵심 경로는 액센트(fill `accent.50` / stroke `accent.500`)
 - 라벨: 노드 제목 12px/600 + 부제 11px, **부제는 5단어 이내**
 
 **글에 다이어그램을 붙이는 두 갈래** — 저작 가이드는

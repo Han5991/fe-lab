@@ -23,7 +23,7 @@ interface ParallelThumbProps {
 export function ParallelThumb({ label }: ParallelThumbProps) {
   return (
     <DiagramFrame viewBox="0 0 150 92" label={label}>
-      {/* 세 갈래 전부가 이 글의 핵심 경로라 모두 틸 실선이다. */}
+      {/* 세 갈래 전부가 이 글의 핵심 경로라 모두 액센트 실선이다. */}
       <DiagramEdge x1={40} y1={46} x2={62} y2={20} emphasis arrow={false} />
       <DiagramEdge x1={40} y1={46} x2={62} y2={46} emphasis arrow={false} />
       <DiagramEdge x1={40} y1={46} x2={62} y2={72} emphasis arrow={false} />

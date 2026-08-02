@@ -64,7 +64,7 @@ const avatarBase = css({
 });
 
 const avatarOther = css({ bg: 'warn.bg', color: 'warn.text' });
-// 포인트 틸을 "글자"로 쓰므로 AA 확보를 위해 accent.600(스펙 §3)을 쓴다.
+// 포인트색을 "글자"로 쓰므로 AA 확보를 위해 accent.600(스펙 §3)을 쓴다.
 const avatarMine = css({ bg: 'accent.50', color: 'accent.600' });
 
 const bubbleBase = css({

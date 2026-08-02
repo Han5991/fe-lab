@@ -301,7 +301,7 @@ function isTag<P>(
 }
 
 function toTone(value: unknown): DiagramTone {
-  // `teal`은 포인트색이 틸이던 시절의 이름이다. 이미 발행된 글의 마크다운에
+  // `teal`은 포인트색이 액센트이던 시절의 이름이다. 이미 발행된 글의 마크다운에
   // 남아 있어 계속 받아준다 — 새 글은 `accent`를 쓰고, 문서에도 그쪽만 적는다.
   return value === 'accent' || value === 'teal' ? 'accent' : 'gray';
 }
@@ -326,7 +326,7 @@ const FALSY = new Set(['false', '0', 'no', 'off']);
  *
  * raw HTML에서는 `emphasis="true"`, JSX에서는 `emphasis`, hast가 값 없는 속성을
  * 살려 보내면 `emphasis=""` 로 온다. 뜻을 알 수 없는 값은 기본값으로 되돌린다 —
- * 오타를 강조로 오해해 엉뚱한 선이 틸로 칠해지는 게 더 나쁘다.
+ * 오타를 강조로 오해해 엉뚱한 선이 액센트로 칠해지는 게 더 나쁘다.
  */
 function toFlag(value: unknown, fallback: boolean): boolean {
   if (typeof value === 'boolean') return value;

@@ -7,7 +7,7 @@ import type { DiagramTone } from './layout';
  *
  * - 노드는 라운드 사각형(rx 8), 스트로크 1px
  * - 실선 = 동기 호출, 점선 = 비동기/데이터 흐름
- * - 색은 회색(구조) + 틸(핵심 경로) **2색만**
+ * - 색은 회색(구조) + 액센트(핵심 경로) **2색만**
  *
  * 색은 하드코딩하지 않고 Panda `css()` 로 토큰에 연결한다. `fill`/`stroke` 도
  * semanticTokens를 타므로 다크모드가 CSS 변수 교체만으로 자동 전환된다.
@@ -190,7 +190,7 @@ const edgeBase = css({
 });
 
 const edgeGray = css({ stroke: 'ink.600', opacity: '[0.55]' });
-// 핵심 경로만 틸. 스트로크는 비텍스트라 accent.500(스펙 §3).
+// 핵심 경로만 액센트. 스트로크는 비텍스트라 accent.500(스펙 §3).
 const edgeAccent = css({ stroke: 'accent.500' });
 
 const edgeAsync = css({ strokeDasharray: '[3 3]' });
@@ -205,7 +205,7 @@ interface Segment {
 interface DiagramEdgeProps extends Segment {
   /** 실선 = 동기 호출, 점선 = 비동기/데이터 흐름(핸드오프 §4). */
   flow?: 'sync' | 'async';
-  /** 핵심 경로 강조 — 틸로 칠하고 흐린 처리를 걷는다. */
+  /** 핵심 경로 강조 — 액센트로 칠하고 흐린 처리를 걷는다. */
   emphasis?: boolean;
   arrow?: boolean;
 }
