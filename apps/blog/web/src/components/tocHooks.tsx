@@ -33,6 +33,7 @@ interface TOCItem {
 export const useTocHook = () => {
   const [toc, setToc] = useState<TOCItem[]>([]);
   const [activeId, setActiveId] = useState('');
+  const [visibleIds, setVisibleIds] = useState<string[]>([]);
 
   useEffect(() => {
     const content = document.getElementById('post-content');
@@ -56,13 +57,22 @@ export const useTocHook = () => {
   useEffect(() => {
     if (toc.length === 0) return;
 
+    // 화면에 걸쳐 있는 헤딩을 **집합**으로 들고 있는다. 데스크톱 차례는 이 구간을
+    // 레일에 비추고(여러 개가 동시에 활성), 모바일 차례는 그중 첫 항목만 쓴다.
+    const visible = new Set<string>();
+
     const observer = new IntersectionObserver(
       entries => {
         entries.forEach(entry => {
           if (entry.isIntersecting) {
+            visible.add(entry.target.id);
             setActiveId(entry.target.id);
+          } else {
+            visible.delete(entry.target.id);
           }
         });
+        // 문서 순서를 유지해야 레일 구간이 위아래로 이어진다.
+        setVisibleIds(toc.filter(i => visible.has(i.id)).map(i => i.id));
       },
       { rootMargin: '0px 0px -80% 0px' },
     );
@@ -75,5 +85,5 @@ export const useTocHook = () => {
     return () => observer.disconnect();
   }, [toc]);
 
-  return { toc, activeId };
+  return { toc, activeId, visibleIds };
 };
