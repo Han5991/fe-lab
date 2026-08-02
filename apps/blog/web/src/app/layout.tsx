@@ -95,7 +95,21 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             순으로 반영해 FOUC 방지. 쿠키에 명시 선택이 있으면 그것을 우선한다.
             이 스크립트는 hydration 전에 실행돼야 해서 useTheme를 import할 수 없지만,
             쿠키 정규식은 theme-cookie.ts의 THEME_COOKIE_MATCH 단일 소스를 빌드 시
-            주입한다(readCookie()도 같은 소스 → 두 곳이 어긋날 수 없음). */}
+            주입한다(readCookie()도 같은 소스 → 두 곳이 어긋날 수 없음).
+
+            dev 콘솔에 "Encountered a script tag while rendering React component"
+            경고가 뜨는데, **개발 빌드 전용**이다(이 문자열은 react-dom의
+            *.development.js 에만 있고 프로덕션 번들에는 없다). React가 클라이언트
+            렌더 경로에서 script 엘리먼트를 만들 때 내는 경고인데, 정작 이 스크립트는
+            SSR된 HTML에서 이미 실행돼 제 일을 끝낸 뒤다.
+
+            next/script(strategy="beforeInteractive")로 바꿔봐도 경고는 그대로 나고
+            (React 트리를 거치는 건 같다), 스크립트 위치만 <head> 2번째에서 30번째로
+            밀려 오히려 늦게 실행된다. react-dom 소스의 isScriptDataBlock()을 보면
+            경고를 면제받는 건 실행되지 않는 data block(application/json 류)뿐이라,
+            실행돼야 하는 이 스크립트로는 피할 방법이 없다. 외부 파일(src=)로 빼면
+            사라지지만 첫 페인트 전에 요청이 한 번 더 붙는다 — dev 경고를 없애자고
+            실사용자 FCP를 깎는 건 남는 장사가 아니라서 그대로 둔다. */}
         <script
           dangerouslySetInnerHTML={{
             __html: `(function(){try{var m=document.cookie.match(new RegExp(${JSON.stringify(
