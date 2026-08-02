@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { css, cx } from '@design-system/ui-lib/css';
+import { css } from '@design-system/ui-lib/css';
 
 /**
  * 헤더 네비게이션.
@@ -22,7 +22,14 @@ const NAV_ITEMS = [
 // 가장 좁은 링크("글", 11px)가 11+14=25px가 되어 WCAG 2.5.8의 24px를 넘고,
 // 세로는 20+16=36px다. 좌우 7px씩(총 14px) 확장은 모바일 간격 14px과 정확히
 // 맞물려 인접 링크와 겹치지 않는다.
-const linkStyle = css({
+//
+// 스타일은 `css.raw`로 두고 합칠 때 `css(base, active)`를 쓴다. `cx`는 클래스
+// 문자열을 이어붙이기만 해서 **충돌하는 원자 클래스를 병합하지 않는다** —
+// `cx(linkStyle, activeStyle)`이면 활성 링크에 `c_ink.600`과 활성 색이 둘 다
+// 붙고, 승자는 클래스 순서가 아니라 스타일시트 순서가 정한다. 실제로 비활성
+// 색이 이겨서 활성 표시가 굵기로만 남아 있었다. `css()`는 객체 단계에서
+// 병합해 color 클래스를 하나만 낸다.
+const linkStyle = css.raw({
   pos: 'relative',
   fontSize: '[13px]',
   color: 'ink.600',
@@ -36,9 +43,13 @@ const linkStyle = css({
   },
 });
 
-const activeStyle = css({
-  color: 'ink.950',
+// 현재 위치는 포인트색으로 표시한다. 무채색 굵기만으로는 13px 링크 셋 중
+// 어디에 있는지 눈에 안 들어온다. hover는 한 단계 더 진한 700으로 가야
+// 활성 링크에서도 hover 반응이 보인다.
+const activeStyle = css.raw({
+  color: 'accent.600',
   fontWeight: 'semibold',
+  _hover: { color: 'accent.700' },
 });
 
 export function NavLinks() {
@@ -69,7 +80,7 @@ export function NavLinks() {
             key={item.href}
             href={item.href}
             aria-current={isActive ? 'page' : undefined}
-            className={cx(linkStyle, isActive ? activeStyle : undefined)}
+            className={css(linkStyle, isActive ? activeStyle : undefined)}
           >
             {item.label}
           </Link>
