@@ -138,19 +138,10 @@ export const TOC = () => {
         // 하이라이트가 엉뚱한 자리에 그려진다.
         scrollbarGutter: '[stable]',
       })}
+      // 눈에 보이는 "이 글의 차례" 라벨은 뺐다(좁은 사이드바가 지저분해진다).
+      // 이 aria-label이 스크린리더용 이름을 계속 대므로 접근성은 그대로다.
       aria-label="이 글의 차례"
     >
-      <span
-        className={css({
-          display: 'block',
-          fontSize: '[12px]',
-          color: 'ink.600',
-          mb: '[10px]',
-        })}
-      >
-        이 글의 차례
-      </span>
-
       <div className={css({ pos: 'relative' })}>
         {measured && path && (
           <svg
