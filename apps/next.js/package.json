@@ -35,7 +35,7 @@
     "@vitejs/plugin-react": "^5.0.4",
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
-    "eslint-plugin-react": "^7.37.4",
+    "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^5.1.0",
     "jsdom": "^27.0.0",
     "next-router-mock": "^0.9.13",
