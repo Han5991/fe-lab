@@ -112,6 +112,9 @@ export const MobileTOC = () => {
                   </h2>
                   <button
                     onClick={() => setIsOpen(false)}
+                    // 열기 버튼과 같은 axe button-name 위반. 드로어가 열렸을 때만
+                    // 존재해 스캔에서 늦게 잡혔을 뿐, 같은 이유로 이름이 필요하다.
+                    aria-label="목차 닫기"
                     className={css({ cursor: 'pointer', color: 'ink.400' })}
                   >
                     <X size={24} />
