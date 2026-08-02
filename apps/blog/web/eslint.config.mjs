@@ -1,5 +1,6 @@
 import { createRequire } from 'node:module';
 
+import { defineConfig } from 'eslint/config';
 import nextCoreWebVitals from 'eslint-config-next/core-web-vitals';
 import nextTypescript from 'eslint-config-next/typescript';
 import reactHooks from 'eslint-plugin-react-hooks';
@@ -26,7 +27,7 @@ const inheritedReactSettings = [...nextCoreWebVitals, ...nextTypescript].reduce(
   {},
 );
 
-const eslintConfig = [
+export default defineConfig([
   {
     ignores: ['.next/**', 'out/**', 'public/**', 'supabase/**'],
   },
@@ -167,6 +168,4 @@ const eslintConfig = [
       ],
     },
   },
-];
-
-export default eslintConfig;
+]);
