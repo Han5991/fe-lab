@@ -45,10 +45,6 @@ export function getSeriesMeta(seriesName: string): SeriesMeta | null {
   return meta;
 }
 
-export function clearSeriesMetaCache(): void {
-  _metaCache.clear();
-}
-
 /** 폴더 이름만으로 시리즈가 되기 위한 최소 편수. */
 export const SERIES_MIN_POSTS = 2;
 

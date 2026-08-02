@@ -5,16 +5,14 @@ import { css } from '@design-system/ui-lib/css';
 
 interface ShareButtonProps {
   title: string;
-  url?: string;
-  className?: string;
 }
 
-export const ShareButton = ({ title, url, className }: ShareButtonProps) => {
+export const ShareButton = ({ title }: ShareButtonProps) => {
   const handleShare = async () => {
     const shareData = {
       title,
       text: title,
-      url: url || window.location.href,
+      url: window.location.href,
     };
 
     if (navigator.share) {
@@ -36,24 +34,21 @@ export const ShareButton = ({ title, url, className }: ShareButtonProps) => {
   return (
     <button
       onClick={handleShare}
-      className={
-        className ||
-        css({
-          display: 'flex',
-          alignItems: 'center',
-          gap: '2',
-          px: '4',
-          py: '2',
-          bg: 'paper.200',
-          rounded: 'full',
-          color: 'ink.800',
-          fontSize: 'sm',
-          fontWeight: 'medium',
-          cursor: 'pointer',
-          transition: '[all 0.2s]',
-          _hover: { bg: 'paper.300' },
-        })
-      }
+      className={css({
+        display: 'flex',
+        alignItems: 'center',
+        gap: '2',
+        px: '4',
+        py: '2',
+        bg: 'paper.200',
+        rounded: 'full',
+        color: 'ink.800',
+        fontSize: 'sm',
+        fontWeight: 'medium',
+        cursor: 'pointer',
+        transition: '[all 0.2s]',
+        _hover: { bg: 'paper.300' },
+      })}
     >
       <Share2 size={16} />
       <span>공유하기</span>

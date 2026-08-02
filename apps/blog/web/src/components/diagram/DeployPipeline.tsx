@@ -15,11 +15,10 @@ import type { NamedDiagramProps } from './registry';
  * 좌표는 디자인 시안 SVG를 그대로 옮긴 값이다.
  */
 export function DeployPipeline({
-  className,
   label = 'git push에서 ECS blue/green 배포까지의 파이프라인',
 }: NamedDiagramProps) {
   return (
-    <DiagramFrame viewBox="0 0 640 122" label={label} className={className}>
+    <DiagramFrame viewBox="0 0 640 122" label={label}>
       <DiagramEdge x1={132} y1={52} x2={160} y2={52} />
       <DiagramEdge x1={292} y1={52} x2={320} y2={52} />
       <DiagramEdge x1={422} y1={52} x2={450} y2={52} emphasis />

@@ -21,7 +21,7 @@ import {
  * ```
  */
 
-export interface TimelineStep {
+interface TimelineStep {
   title?: string;
   desc?: string;
   /** 문서상 값은 'fail' | 'success'. raw HTML은 임의 문자열이 올 수 있어 넓게 받는다. */

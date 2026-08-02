@@ -153,7 +153,7 @@ function clamp(value: number, min: number, max: number): number {
 
 // ── 레이아웃 ────────────────────────────────────────────────────────────────
 
-export interface LayoutOptions {
+interface LayoutOptions {
   direction?: DiagramDirection;
   /** caption 자리를 아래에 확보할지. 텍스트 자체는 렌더 쪽이 그린다. */
   hasCaption?: boolean;

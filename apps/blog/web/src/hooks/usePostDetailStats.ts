@@ -11,12 +11,6 @@ import type {
   DowDistribution,
 } from '@/domain/analytics';
 
-export type {
-  PostDetailStats,
-  HourlyDistribution,
-  DowDistribution,
-} from '@/domain/analytics';
-
 export { computeDerivedStats as computeBriefStats } from '@/domain/analytics';
 
 // SSR/prerender에서 useAdminDashboardData가 빈 배열일 때 쓰는 placeholder.

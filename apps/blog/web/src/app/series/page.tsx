@@ -88,7 +88,6 @@ const rowLink = css({
   gap: '[16px]',
   py: '[12px]',
   px: '[2px]',
-  transition: '[color 0.15s]',
   _hover: { '& h3': { color: 'accent.600', textDecorationLine: 'underline' } },
 });
 

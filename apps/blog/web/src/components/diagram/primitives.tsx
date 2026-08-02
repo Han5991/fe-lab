@@ -58,7 +58,6 @@ interface DiagramFrameProps {
    * 생략하면 장식으로 보고 `aria-hidden` 처리한다(접근성 규칙: 스펙 §8).
    */
   label?: string;
-  className?: string;
   children: ReactNode;
 }
 
@@ -67,7 +66,6 @@ export function DiagramFrame({
   width,
   height,
   label,
-  className,
   children,
 }: DiagramFrameProps) {
   const base = width === undefined ? frame : frameIntrinsic;
@@ -82,7 +80,7 @@ export function DiagramFrame({
       aria-hidden={label ? undefined : true}
       // 장식 SVG가 탭 순서에 끼어드는 IE/Edge 잔재 방지 + 시맨틱 명시
       focusable="false"
-      className={className ? `${base} ${className}` : base}
+      className={base}
     >
       {children}
     </svg>
@@ -269,35 +267,15 @@ const labelSub = css({
   stroke: '[none]',
 });
 
-const labelStrong = css({
-  fontSize: '[12px]',
-  fontWeight: 'semibold',
-  fill: 'ink.950',
-  stroke: '[none]',
-});
-
 interface DiagramLabelProps {
   x: number;
   y: number;
-  anchor?: 'start' | 'middle' | 'end';
-  tone?: 'sub' | 'strong';
   children: ReactNode;
 }
 
-export function DiagramLabel({
-  x,
-  y,
-  anchor = 'middle',
-  tone = 'sub',
-  children,
-}: DiagramLabelProps) {
+export function DiagramLabel({ x, y, children }: DiagramLabelProps) {
   return (
-    <text
-      x={x}
-      y={y}
-      textAnchor={anchor}
-      className={tone === 'strong' ? labelStrong : labelSub}
-    >
+    <text x={x} y={y} textAnchor="middle" className={labelSub}>
       {children}
     </text>
   );

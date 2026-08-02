@@ -1,7 +1,6 @@
 import { DiagramEdge, DiagramFrame, DiagramNode } from './primitives';
 
 interface ParallelThumbProps {
-  className?: string;
   /**
    * 이 그림이 그 글의 구조를 실제로 설명할 때만 준다. **생략하면 장식**으로
    * 보고 접근성 트리에서 감춘다(`DiagramFrame`의 규칙).
@@ -21,9 +20,9 @@ interface ParallelThumbProps {
  * 다크모드 전환에 별도 에셋이 필요 없다(핸드오프 §4).
  * 좌표는 디자인 시안 SVG를 그대로 옮긴 값이다.
  */
-export function ParallelThumb({ className, label }: ParallelThumbProps) {
+export function ParallelThumb({ label }: ParallelThumbProps) {
   return (
-    <DiagramFrame viewBox="0 0 150 92" label={label} className={className}>
+    <DiagramFrame viewBox="0 0 150 92" label={label}>
       {/* 세 갈래 전부가 이 글의 핵심 경로라 모두 틸 실선이다. */}
       <DiagramEdge x1={40} y1={46} x2={62} y2={20} emphasis arrow={false} />
       <DiagramEdge x1={40} y1={46} x2={62} y2={46} emphasis arrow={false} />

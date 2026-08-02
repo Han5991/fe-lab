@@ -26,7 +26,6 @@ import { DeployPipeline } from './DeployPipeline';
 export interface NamedDiagramProps {
   /** 생략하면 각 다이어그램의 기본 설명이 `aria-label`로 쓰입니다. */
   label?: string;
-  className?: string;
 }
 
 export const DIAGRAMS: Record<DiagramName, ComponentType<NamedDiagramProps>> = {

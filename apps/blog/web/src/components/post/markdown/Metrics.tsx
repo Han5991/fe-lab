@@ -23,7 +23,7 @@ import {
  * ```
  */
 
-export interface MetricItem {
+interface MetricItem {
   label?: string;
   value?: string;
   /** 문서상 값은 'default' | 'success'. raw HTML은 임의 문자열이 올 수 있어 넓게 받는다. */
