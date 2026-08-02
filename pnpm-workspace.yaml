@@ -37,8 +37,8 @@ catalog:
   typescript: 6.0.3
   react: 19.2.7
   react-dom: 19.2.7
-  '@types/react': 19.2.17
-  '@types/react-dom': 19.2.3
+  '@types/react': 19.2.18
+  '@types/react-dom': 19.2.4
 
 minimumReleaseAgeExclude:
   # GHSA-mh99-v99m-4gvg 대응으로 brace-expansion 1.x 라인을 최신 백포트로 올리기 위한 예외.

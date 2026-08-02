@@ -24,8 +24,8 @@
     "minibundler": "./dist/cli.mjs"
   },
   "devDependencies": {
-    "@types/estree": "^1.0.8",
-    "@types/node": "^25.8.0",
+    "@types/estree": "^1.0.9",
+    "@types/node": "^25.9.5",
     "tsdown": "0.22.2",
     "tsx": "^4.22.0",
     "typescript": "catalog:"
