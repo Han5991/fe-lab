@@ -59,13 +59,18 @@ export const PLAIN_FENCE_LABELS = [
 ] as const;
 
 /** CodeBlock이 별도 렌더러로 처리하는 fence. */
-export const SPECIAL_FENCE_LABELS = ['mermaid'] as const;
+const SPECIAL_FENCE_LABELS = ['mermaid'] as const;
 
 /**
  * 문법 확장 전용 — 등록은 하지만 fence 라벨로 쓰지는 않는다.
  * (글에 ```js-extras 라고 쓸 일은 없다)
+ *
+ * CodeBlock이 이 목록을 보고 **중복 등록 방지 래퍼**를 씌운다. 이 둘은 언어가
+ * 아니라 javascript 문법을 덧씌우는 패치라 자기 이름의 언어 키를 만들지 않고,
+ * refractor의 중복 가드가 하필 그 키로 판단해 매번 통과해버린다 — 자세한 사정은
+ * CodeBlock.tsx의 `registerOnce` 주석 참고.
  */
-const GRAMMAR_EXTENSION_ONLY: ReadonlySet<string> = new Set([
+export const GRAMMAR_EXTENSION_ONLY: ReadonlySet<string> = new Set([
   'js-extras',
   'jsdoc',
 ]);

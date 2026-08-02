@@ -21,7 +21,11 @@ import jsdoc from 'react-syntax-highlighter/dist/cjs/languages/prism/jsdoc';
 import { css, cx } from '@design-system/ui-lib/css';
 import { token } from '@design-system/ui-lib/tokens';
 import { codeText, isBlockCode } from './markdownCode';
-import { PRISM_LANGUAGES, type PrismLanguageName } from './prismLanguages';
+import {
+  PRISM_LANGUAGES,
+  GRAMMAR_EXTENSION_ONLY,
+  type PrismLanguageName,
+} from './prismLanguages';
 
 // `Prism` export는 refractor 전 언어(300여 종)를 번들해 gzip 350KB 청크가
 // 된다. 글이 실제로 쓰는 fence는 십여 종뿐이라 PrismLight로 바꾸고 필요한
@@ -46,8 +50,47 @@ export const LANGUAGE_MODULES: Record<PrismLanguageName, unknown> = {
   docker,
 };
 
+/** refractor가 문법 함수에 넘겨주는 인스턴스 중 우리가 건드리는 부분만. */
+type Refractor = { languages: Record<string, unknown> };
+type Grammar = ((refractor: Refractor) => void) & { displayName: string };
+
+/**
+ * 문법 확장이 **두 번 적용되지 않게** 감싼다.
+ *
+ * refractor의 중복 등록 가드는 이렇게 생겼다:
+ *
+ *     if (!Object.hasOwn(refractor.languages, syntax.displayName)) syntax(refractor)
+ *
+ * 보통 언어 모듈은 `refractor.languages.typescript = …` 처럼 자기 이름 키를
+ * 만들기 때문에 두 번째 등록부터 이 가드에 걸린다. 그런데 js-extras·jsdoc은
+ * 언어가 아니라 javascript 문법에 `insertBefore`로 토큰을 **끼워 넣는 패치**라
+ * 자기 이름 키를 남기지 않는다. 그래서 이 둘만 가드를 매번 통과하고, 모듈이 두 번
+ * 평가되면 같은 토큰이 중첩 삽입돼 문법이 달라진다.
+ *
+ * 프로덕션은 빌드 프로세스에서 한 번만 평가되니 드러나지 않지만, 오래 떠 있는
+ * dev 서버는 HMR로 재평가가 쌓인다. 그러면 서버가 내보내는 토큰이 클라이언트와
+ * 갈려 글 전체가 하이드레이션 불일치로 다시 그려진다. 실측으로, 같은 글의 SSR
+ * HTML에서 `property-access` 토큰이 dev 서버 재시작 전 12개 / 재시작 후 56개로
+ * 나왔다.
+ *
+ * 패치를 끝낸 뒤 자기 이름 키를 남겨, 다음 등록부터는 refractor의 가드가 잡게 한다.
+ */
+function registerOnce(mod: unknown, name: string): Grammar {
+  const patch = mod as Grammar;
+  return Object.assign(
+    (refractor: Refractor) => {
+      patch(refractor);
+      refractor.languages[name] ??= {};
+    },
+    { displayName: name },
+  );
+}
+
 for (const [name, mod] of Object.entries(LANGUAGE_MODULES)) {
-  SyntaxHighlighter.registerLanguage(name, mod);
+  SyntaxHighlighter.registerLanguage(
+    name,
+    GRAMMAR_EXTENSION_ONLY.has(name) ? registerOnce(mod, name) : mod,
+  );
 }
 // refractor의 register()는 언어 함수만 등록하고 별칭은 붙이지 않는다.
 // `js`/`ts`/`md`/`dockerfile` 같은 라벨이 평문으로 떨어지지 않도록 따로 건다.
