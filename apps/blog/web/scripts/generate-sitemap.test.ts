@@ -7,7 +7,7 @@ import {
   HIGH_PRIORITY_SLUGS,
 } from './generate-sitemap';
 import type { SitemapPost } from './generate-sitemap';
-import { parseScheduledDateKST, getKSTDateISO } from './lib/dates';
+import { parseScheduledDateKST, getKSTDateISO } from '../lib/dates';
 
 // arbitrary fixture date — not today's date. 단위 테스트는 실제 날짜에 의존하지
 // 않고 이 값이 sitemap 본문에 그대로 흘러가는지만 검증합니다. (실제 날짜 동작은

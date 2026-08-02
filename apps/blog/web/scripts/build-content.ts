@@ -44,10 +44,10 @@ export function buildPhases(flags: Flags): Step[][] {
     {
       label: 'sync-posts',
       cmd: 'node',
-      args: ['sync-posts.mjs', ...(flags.force ? ['--force'] : [])],
+      args: ['scripts/sync-posts.mjs', ...(flags.force ? ['--force'] : [])],
     },
-    { label: 'sitemap', cmd: 'tsx', args: ['generate-sitemap.ts'] },
-    { label: 'rss', cmd: 'tsx', args: ['generate-rss.ts'] },
+    { label: 'sitemap', cmd: 'tsx', args: ['scripts/generate-sitemap.ts'] },
+    { label: 'rss', cmd: 'tsx', args: ['scripts/generate-rss.ts'] },
     {
       label: 'og-images',
       cmd: 'tsx',

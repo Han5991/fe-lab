@@ -11,8 +11,8 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { getAllPosts, getAllPostsIncludingHidden } from './service';
 import { isPostVisible } from './visibility';
-import { buildSitemapXml } from '@/generate-sitemap';
-import { buildRssXml } from '@/generate-rss';
+import { buildSitemapXml } from '@/scripts/generate-sitemap';
+import { buildRssXml } from '@/scripts/generate-rss';
 import {
   buildAdminPostsIndex,
   buildPublicSearchIndex,

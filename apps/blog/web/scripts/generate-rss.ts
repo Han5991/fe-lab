@@ -6,9 +6,9 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import Markdown, { defaultUrlTransform, type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
-import { SITE_URL, SITE_NAME, SITE_DESCRIPTION } from './lib/constants';
-import { resolvePostAssetUrl } from './domain/post/assetUrl';
-import { parseScheduledDateKST } from './lib/dates';
+import { SITE_URL, SITE_NAME, SITE_DESCRIPTION } from '../lib/constants';
+import { resolvePostAssetUrl } from '../domain/post/assetUrl';
+import { parseScheduledDateKST } from '../lib/dates';
 import { getAllPosts, encodePostSlug, type PostSummary } from '@/domain/post';
 
 /**
@@ -171,6 +171,7 @@ ${rssItems}
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   const publicDir = path.join(
     path.dirname(fileURLToPath(import.meta.url)),
+    '..',
     'public',
   );
   const posts = getAllPosts();

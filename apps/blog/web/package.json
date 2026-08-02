@@ -12,9 +12,9 @@
     "lint:posts": "npx tsx scripts/validate-posts.ts",
     "check-types": "tsc --noEmit",
     "test": "pnpm test:node && pnpm test:vitest",
-    "test:node": "node --import tsx --test 'domain/**/*.test.ts' 'lib/**/*.test.ts' 'scripts/**/*.test.ts' 'generate-*.test.ts' 'sync-posts.test.ts'",
+    "test:node": "node --import tsx --test 'domain/**/*.test.ts' 'lib/**/*.test.ts' 'scripts/**/*.test.ts'",
     "test:vitest": "vitest run",
-    "test:coverage": "c8 --reporter=text --reporter=text-summary --exclude='**/*.test.ts' --exclude='**/*.config.*' --exclude='**/database.types.ts' node --import tsx --test 'domain/**/*.test.ts' 'lib/**/*.test.ts' 'scripts/**/*.test.ts' 'generate-*.test.ts' 'sync-posts.test.ts'",
+    "test:coverage": "c8 --reporter=text --reporter=text-summary --exclude='**/*.test.ts' --exclude='**/*.config.*' --exclude='**/database.types.ts' node --import tsx --test 'domain/**/*.test.ts' 'lib/**/*.test.ts' 'scripts/**/*.test.ts'",
     "new-post": "npx tsx scripts/new-post.ts",
     "supabase-stop": "supabase stop --all --no-backup --debug",
     "supabase-start": "pnpm supabase-stop && pnpm supabase start"
