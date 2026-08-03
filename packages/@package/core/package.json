@@ -5,7 +5,7 @@
   "main": "src/index.ts",
   "scripts": {},
   "engines": {
-    "node": ">=22"
+    "node": ">=22.23.2"
   },
   "keywords": [],
   "author": "",
