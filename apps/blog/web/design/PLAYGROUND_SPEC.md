@@ -143,8 +143,9 @@ apps/blog/web/
 ├── domain/post/experimentIds.ts          # 이름만. validate-posts가 import
 └── src/components/post/markdown/Playground/
     ├── Playground.tsx                    # 셸 — 정적 프리렌더 (§7)
+    ├── PlaygroundErrorBoundary.tsx       # 본문엔 바운더리가 없다 (§13.4)
     ├── PlaygroundRunner.tsx              # 컨트롤·실행·결과. ssr:false
-    ├── views/                            # kind별 결과 렌더 (§3)
+    ├── views/                            # kind별 결과 렌더 (§3, §13.2)
     │   ├── FactList.tsx                  # compare · count
     │   ├── ResultTable.tsx               # count · time
     │   └── TraceList.tsx                 # trace
@@ -465,21 +466,181 @@ GitHub Pages는 응답 헤더를 못 넣으므로 **`crossOriginIsolated` 가 �
 
 ---
 
-## 13. 시각·접근성
+## 13. 표현 계층 — CSS와 React
 
-디자인 시스템 규칙(CLAUDE.md)을 따르고, 새로 정하는 것만 적는다.
+여기서 **CSS는 두 종류**다. 위젯 자신의 스타일(13.1~13.2)과, **실험이 측정을 위해 만들어내는
+스타일**(13.3)이다. 후자를 전자와 같은 방식으로 다루면 글 전체가 오염된다.
 
-- 카드는 `<diagram>`·`<metrics>` 와 같은 지면: `bg paper.100` / `borderWidth hairline` /
-  `rounded card` / `my 10`. **그림자·그라데이션 금지**
-- **수치는 전부 `fontFamily: mono`** (날짜·조회수와 같은 계열). 라벨과 `claim` 문구는 sans
-- 통과/실패는 색만으로 구분하지 않는다 — `✓`/`✗` 문자 + `moss.700`/`danger.text`
+### 13.1 위젯의 CSS
+
+디자인 시스템 규칙(CLAUDE.md)을 따른다. 새로 정하는 것만 적는다.
+
+**카드 해부도** — `<diagram>`·`<metrics>` 와 같은 지면(`bg paper.100` / `hairline` /
+`rounded card` / `my 10`)을 쓰고, 그림자·그라데이션은 없다.
+
+```
+┌─ 카드 (paper.100, hairline, radii.card) ──────────────────┐
+│ 제목            sans 15/600                    [실행] 버튼 │
+│ ────────────────────────── hairline ──────────────────────│
+│ ▸ 어떻게 재는가  (method, 접힘. 12px ink.600)             │
+│ [슬라이더]  nodes 85  ·  cssRules 2000        mono 12px   │
+│ ────────────────────────── hairline ──────────────────────│
+│ 결과 영역 (kind가 결정 — 13.2)                            │
+│ ────────────────────────── hairline ──────────────────────│
+│ Chrome 131 · 8코어 · isolated:false · 14:02   mono 11/ink.500│
+└───────────────────────────────────────────────────────────┘
+   caption — 이 글에서의 해석 (11px, 중앙, ink.600)
+```
+
+| 자리 | 토큰 |
+| :--- | :--- |
+| 수치·파라미터·환경 메타 | `fontFamily: mono` (날짜·조회수와 같은 계열) |
+| 라벨·`claim`·제목·caption | `fontFamily: sans` |
+| 통과 | `moss.700` + `✓` 문자 |
+| 실패 | `danger.text` + `✗` 문자 |
+| 기준선 열 | `ink.600` — 이번 실행값보다 한 단계 약하게 |
+| 강조 행(논지의 핵심) | `accent.50` 배경 + `accent.500` 좌측 보더 |
+| 실행 버튼 | 보더 + `accent.600` 글자. 채운 버튼 아님(플랫 유지) |
+
+**색만으로 구분하지 않는다.** 통과/실패는 문자를, 기준선/실행값은 열 제목을 함께 쓴다.
+
+**Panda 정적 추출 제약이 여기서 두 번 문다.**
+
+1. 클래스 이름을 **템플릿 문자열로 조립할 수 없다.** 결과 행 수·열 수처럼 런타임에 정해지는
+   값은 `Metrics.tsx` 의 `COLUMN_STYLES` 선례대로 **미리 만든 맵에서 골라 쓴다**
+2. 진행률 막대 너비처럼 **연속값**은 Panda로 표현 불가 —
+   `style={{ transform: 'scaleX(…)' }}` 인라인으로 두고, 색·높이만 Panda가 갖는다
+   (`width` 대신 `transform` 인 이유: 레이아웃을 다시 계산하지 않아 **측정 중 위젯 자신이
+   노이즈를 만들지 않는다**)
+
+`strictTokens: true` 이므로 토큰 밖 값은 대괄호로 이스케이프한다 —
+`fontSize: '[11px]'`, `shadow: '[none]'`, `borderWidth: '[0]'`.
+
+### 13.2 `kind`별 결과 뷰
+
+뷰는 `kind` 가 고른다(§3). **뷰 선택은 맵 인덱싱**이다 — 렌더 중 함수를 호출해 컴포넌트를
+얻으면 `react-hooks/static-components` 가 "매 렌더 새로 만들어지는 컴포넌트"로 오인해 에러를
+낸다(`diagram/registry.ts` 주석의 그 문제).
+
+```ts
+const VIEWS: Record<ExperimentKind, ComponentType<ViewProps>> = {
+  compare: FactList,
+  count: CountView, // FactList + ResultTable
+  time: ResultTable,
+  trace: TraceList,
+};
+```
+
+| 뷰 | 표현 |
+| :--- | :--- |
+| `FactList` | `✓ 주장 문구` + 아래 `기대 15일 / 실제 15일` mono 한 줄. 실패면 실제값만 `danger.text` |
+| `ResultTable` | 2~3열 표(`항목 / 이번 실행 / 기록값`). 본문 표와 같은 가로 스크롤 래퍼 |
+| `TraceList` | 좌측 세로선 + 순서 점. `order` 가 같으면 같은 높이에 나란히(동시 발생). `<timeline>` 시그니처 컴포넌트와 **시각 언어가 겹치므로**, 4단계 착수 시 통합 여부를 먼저 판단한다(§18) |
+
+### 13.3 실험이 만드는 스타일 — 격리
+
+`style-cache-phases` 는 CSS 규칙을 **2,000개** 주입한다. 이걸 그냥 `document.head` 에 넣으면:
+
+- 규칙은 **전역**이라 셀렉터가 고유해도 브라우저는 문서 전체에 대해 매칭 비용을 치른다 —
+  **글 읽는 사람의 페이지가 느려진다**
+- 실행이 끝난 뒤 남으면 **다음 실행이 앞선 실행의 규칙 위에서 돈다** — 측정이 오염된다
+
+그래서 픽스처 스타일은 `fixture.ts` 가 두 모드로 제공한다(§8).
+
+| 모드 | 방식 | 쓰는 곳 |
+| :--- | :--- | :--- |
+| `inline` (기본) | `ctx.container` 안에 `<style>`, 셀렉터에 고유 접두어. `finally` 로 제거 | 규칙 수가 적고 **실제 문서 환경**이 중요한 실험(RTL 계측) |
+| `isolated` | `container.attachShadow()` + shadow 안 `<style>` | 규칙을 대량 주입하는 실험 |
+
+`isolated` 를 기본으로 하지 않는 이유가 있다. 라이브러리 계측 실험(§16.2)은 **실제 라이브러리가
+실제 문서에서 도는 것**을 봐야 증거가 된다. shadow 경계는 접근성 이름 계산의 조상 순회 동작을
+바꿀 수 있어, 격리를 얻는 대신 증명하려던 것과 멀어진다.
+
+**픽스처는 반드시 렌더된 상태여야 한다.** 이건 CSS 함정이라 못박는다.
+
+- `display: none` · `content-visibility: hidden` 금지 — 브라우저가 스타일 계산을 **건너뛴다.**
+  타이밍 실험이 0에 수렴하면서 "빠르다"는 잘못된 결론을 준다
+- 대신 `maxH` + `overflow: auto` 로 **높이만** 제한한다
+- 컨테이너에 `contain: layout style` 을 걸어 픽스처의 레이아웃이 본문을 다시 흐르게 하지 않는다.
+  단 이건 측정 대상을 바꾸는 설정이므로, `time` 실험은 `method` 에 **적용 사실을 적는다**
+- 픽스처 안에서는 **블로그 토큰을 쓰지 않는다.** 지면 스타일이 섞이면 재현 조건이 흐려진다 —
+  픽스처는 자기 스타일만 갖는 중립 DOM이다
+
+### 13.4 React 구현
+
+**컴포넌트 트리와 경계**
+
+```
+Playground.tsx  (셸 · 서버 프리렌더 대상 · 상태 없음)
+├── 제목 / method / 기준선 표      ← JS 없이도 남는 부분 (§7)
+└── <PlaygroundErrorBoundary>      ← 클래스 컴포넌트. 아래가 죽어도 위는 산다
+    └── <PlaygroundRunner>         ← next/dynamic(ssr:false)
+        ├── <ParamControls>        ← 슬라이더. 값은 러너가 소유
+        ├── <RunButton>            ← idle이면 "실행", running이면 "중단"
+        └── VIEWS[kind]            ← 맵 인덱싱 (13.2)
+```
+
+**에러 바운더리는 선택이 아니다.** 본문에는 에러 바운더리가 없어서, 렌더 중 throw 하나로 글
+페이지 전체가 죽는다(`signatureProps.ts` 주석이 같은 문제를 다룬다). `run()` 의 throw는
+try/catch로 잡히지만 **결과가 이상해 뷰가 렌더 중에 죽는 경우**는 못 잡는다. 그래서 셸이 러너를
+바운더리로 감싸고, 바운더리는 §11의 폴백(기준선 표 + 에러 1줄)을 그린다.
+
+**상태 머신** — 상태는 러너 하나가 소유한다.
+
+```
+idle ──클릭──▶ loading(청크) ──▶ running ──┬──▶ done
+  ▲                                        ├──▶ error
+  └────────── 재시도 / 중단 ────────────────┴──▶ aborted
+```
+
+```ts
+type RunnerState =
+  | { status: 'idle' }
+  | { status: 'loading' }
+  | { status: 'running'; progress: number; label?: string }
+  | { status: 'done'; result: RunResult }
+  | { status: 'error'; message: string }
+  | { status: 'aborted' };
+```
+
+**이 저장소의 제약이 구현을 좁힌다.** `next.config.ts` 가 `reactCompiler: true` +
+`reactStrictMode: true` 이고, `eslint-config-next/core-web-vitals` 가 react-hooks v7의 컴파일러
+진단(purity / immutability / refs / set-state-in-render)을 **error**로 켜 둔다.
+
+| 규칙 | 이 위젯에서 뜻하는 것 |
+| :--- | :--- |
+| purity | 실험 실행·계측·DOM 생성은 **렌더 중에 절대 없다.** 전부 이벤트 핸들러 안 |
+| refs | `AbortController` 는 ref에 담되 **렌더 중 읽지도 쓰지도 않는다** |
+| set-state-in-render | 진행률은 콜백에서만 갱신 |
+| StrictMode 이중 마운트 | 실행 시작점이 **클릭 이벤트뿐**이라(§9.4 자동 실행 금지) effect 이중 실행의 영향을 받지 않는다. 자동 실행을 넣지 않기로 한 결정이 여기서 두 번째 값을 한다 |
+
+**진행률 리렌더** — `onProgress` 를 그대로 `setState` 에 연결하면 루프가 프레임당 수십 번
+리렌더시키고, **그 리렌더 비용이 측정값에 들어간다.** 러너는 `requestAnimationFrame` 으로
+throttle해 **프레임당 최대 1회** 반영하고, 마지막 값은 반드시 한 번 더 반영한다.
+
+**정리(cleanup)는 이중으로 건다.** 하네스가 `finally` 로 복원하고(§8), 러너도 언마운트
+effect에서 `abort()` → `container` 비우기를 한 번 더 한다. 전역을 건드린 채 끝나는 경로가
+하나라도 남으면 다음 실험의 측정이 오염된다.
+
+**속성 파싱** — `defaults` 는 **객체** JSON이라 기존 `parseItemsProp`(배열 전용)으로 못 받는다.
+`signatureProps.ts` 에 `parseRecordProp<number>` 를 더한다. 실패 시 `null` 을 돌려주고 호출부가
+실험 기본값으로 폴백하는 방식은 기존과 동일하다 — **글 하나의 오타로 페이지가 죽지 않는다.**
+
+**실험 모듈 로딩** — `next/dynamic` 은 러너에만 쓰고, 실험은 클릭 핸들러 안의 `import()` 다.
+같은 카드에서 두 번째 실행은 이미 받은 모듈을 쓴다(브라우저 모듈 캐시. 별도 캐시를 두지 않는다).
+결과는 캐시하지 않는다 — **다시 눌러 다시 재보는 것 자체가 이 위젯의 요점**이다.
+
+### 13.5 접근성
+
 - 결과 표는 본문 표와 같은 가로 스크롤 처리: `role="region"` + `aria-label` + `tabIndex={0}` +
   `overflowX: auto` (axe `scrollable-region-focusable`)
 - 결과 영역은 `role="status"` + `aria-live="polite"`. 진행률은 **읽지 않고**(폭주 방지) 완료 시
   요약 한 문장만 읽힌다
 - 실행 버튼은 실행 중 `aria-busy="true"`, 라벨이 "중단"으로 바뀐다
+- 슬라이더는 `<input type="range">` + `<label>`. 값은 `aria-valuetext` 로 단위까지 읽힌다
 - `prefers-reduced-motion` 이면 진행 막대 애니메이션 없이 숫자만 갱신
 - 포커스를 결과로 강제 이동시키지 않는다(읽던 자리를 뺏지 않는다)
+- 픽스처 DOM은 `aria-hidden="true"` + `inert` — 실험용 버튼 85개가 독자의 탭 순서에 끼어들면 안 된다
 
 ---
 
@@ -490,6 +651,8 @@ GitHub Pages는 응답 헤더를 못 넣으므로 **`crossOriginIsolated` 가 �
 - [ ] `kind` 를 고른다(§3). 환경에 따라 값이 바뀌면 `time`, 아니면 나머지
 - [ ] §1의 실행 예산(기본 3초 / 최대 5초)을 넘지 않는지 어림한다
 - [ ] `experiments/<이름>.ts` 작성 — 픽스처·절차·판정만. DOM은 `ctx.container` 안에서만
+- [ ] 픽스처를 숨기지 않았는지 확인 — `display:none` 은 스타일 계산을 건너뛴다(§13.3)
+- [ ] CSS 규칙을 대량 주입한다면 `fixture` 를 `isolated` 모드로(§13.3)
 - [ ] `domain/post/experimentIds.ts` 에 id 한 줄 (§5.3 이름 규칙)
 - [ ] `registry.ts` 에 한 줄 (`Record` 타입이 빠뜨림을 막는다)
 - [ ] `time`·`count` 면 기준선 JSON을 **재현 스크립트로 생성** (§10)
@@ -509,8 +672,10 @@ GitHub Pages는 응답 헤더를 못 넣으므로 **`crossOriginIsolated` 가 �
 - [ ] `<playground>` 태그가 `PostClient` 에 등록되고 §2 문법대로 동작
 - [ ] `experimentIds.ts` ↔ `registry.ts` 이원화, `Record<ExperimentId, …>` 강제
 - [ ] 셸/러너 분리 — 정적 HTML에 기준선 표가 남는 것을 `out/` 산출물에서 확인
-- [ ] `kind: 'compare'` 경로(§3) + `FactList` 뷰
-- [ ] 하네스 최소 3종: `fixture` · `schedule` · `facts`
+- [ ] `kind: 'compare'` 경로(§3) + `FactList` 뷰 — 뷰 선택은 맵 인덱싱(§13.2)
+- [ ] 하네스 최소 3종: `fixture` · `schedule` · `facts`. `fixture` 는 `inline` 모드까지
+- [ ] `PlaygroundErrorBoundary` — 뷰가 렌더 중 죽어도 글 페이지는 산다(§13.4)
+- [ ] `signatureProps.ts` 에 `parseRecordProp` 추가 + 기존 파싱 테스트와 같은 결의 테스트
 - [ ] `lint:posts` 두 규칙 + 테스트
 - [ ] 셸 추가분 ≤ 4KB gzip, 클릭 전 실험 의존성 0바이트 (청크 목록으로 확인)
 - [ ] 첫 실험은 §16.1 (`a11y-name-vs-textcontent`)
