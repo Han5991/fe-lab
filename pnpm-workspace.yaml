@@ -21,7 +21,7 @@ allowBuilds:
   msw: false
 
 catalog:
-  '@pandacss/dev': 1.11.4
+  '@pandacss/dev': 1.12.0
   'next': 16.2.11
   typescript: 6.0.3
   react: 19.2.7
