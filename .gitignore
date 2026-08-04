@@ -62,3 +62,8 @@ gha-creds-*.json
 # Claude Code runtime state
 .claude/scheduled_tasks.lock
 /.claude/launch.json
+
+# Claude 스케줄 워크플로우의 수집 스크립트 산출물 (CI에서만 생성)
+/site-smoke-facts.json
+/post-inventory-facts.json
+__pycache__/
