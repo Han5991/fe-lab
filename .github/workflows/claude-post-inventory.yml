@@ -1,7 +1,14 @@
 name: Claude Post Inventory
 
-# 매월 Claude Code가 초안(draft)·예약(scheduled) 글 현황을 이슈 하나에
-# 갱신합니다. 사실 나열만 하며, 발행 권유·재촉은 하지 않습니다.
+# 매월 초안(draft)·예약(scheduled) 글 현황을 이슈 하나에 갱신합니다.
+# 사실 나열만 하며, 발행 권유·재촉은 하지 않습니다.
+#
+# 역할을 둘로 나눠 둔 이유:
+#   - 수집(post-inventory-collect.py): frontmatter·git 이력·sitemap 대조
+#   - 서술(Claude):                    표 렌더링과 이슈 갱신
+# 2026-08-04 수동 실행이 7턴 27초 만에 permission denial 4건으로 끝났는데,
+# exit 0이라 잡은 초록이었고 이슈 #163은 7/30 상태 그대로였다. 세는 일을
+# 스크립트로 내리면 그 실패 모드가 사라지고, 수집 결과가 Step Summary에 남는다.
 
 on:
   schedule:
@@ -29,6 +36,14 @@ jobs:
           # 초안이 언제 생겼는지 git 이력으로 계산하기 위해 전체 이력 필요
           fetch-depth: 0
 
+      # frontmatter·git 이력·sitemap 대조는 세면 끝나는 일이라 스크립트가 맡는다.
+      # 2026-08-04 수동 실행이 7턴 27초 만에 denial 4건으로 끝나 이슈가 갱신되지
+      # 않았는데, exit 0이라 로그만으로는 정상처럼 보였다. 그 실패 모드를 없앤다.
+      - name: Collect draft/scheduled facts
+        run: |
+          python3 .github/scripts/post-inventory-collect.py \
+            --out "${GITHUB_WORKSPACE}/post-inventory-facts.json"
+
       - name: Run Claude post inventory
         uses: anthropics/claude-code-action@v1
         with:
@@ -51,20 +66,28 @@ jobs:
             본인만 합니다.
             </중요>
 
-            <수집>
-            apps/blog/posts/**/*.md 에서:
-            - status: draft 글 — 제목, 시리즈(폴더), frontmatter date, 최초
-              커밋일(`git log --follow --format=%ad --date=short -- <파일> | tail -1`),
-              마지막 수정 커밋일
-            - status: scheduled 글 — 제목, 시리즈, 공개 예정일(scheduledDate가
-              있으면 그것, 없으면 date). 표에는 "실제로 아직 사이트에 올라가지
-              않은 글"만 넣습니다: https://blog.sangwook.dev/sitemap.xml 을
-              curl로 가져와, 글의 slug(frontmatter의 slug, 없으면 파일 경로에서
-              유도)가 sitemap에 이미 있으면 제외하세요. 예정일이 지났는데도
-              sitemap에 없는 글은 아직 배포 전이라는 뜻이므로 표에 넣고 비고에
-              "예정일 경과, 배포 대기"라고 적으세요.
-            - frontmatter에 status 키가 없는 파일은 메타 노트이므로 제외
-            </수집>
+            <입력>
+            `post-inventory-facts.json` (저장소 루트)에 이번 실행의 수집 결과가
+            있습니다. 이 파일을 Read 하세요. 저장소를 다시 훑거나 git·curl을
+            돌릴 필요가 없습니다 — 그런 도구는 주어지지 않습니다.
+
+            - `drafts` / `scheduled`: status별 글 목록. 각 항목에 title, series,
+              date, scheduledDate, publish_at(= scheduledDate ?? date),
+              first_commit, last_commit, in_sitemap이 들어 있습니다
+            - `today_kst`: 오늘 날짜
+            - `shallow_clone`: true면 first_commit이 잘린 값이니 표에 "-"로
+              적고 각주를 다세요 (정상 실행에서는 false입니다)
+            - `sitemap.status`가 200이 아니면 in_sitemap을 신뢰할 수 없습니다.
+              그때는 scheduled 표를 그대로 싣되 비고에 "sitemap 조회 실패로
+              배포 여부 미확인"이라고 적으세요
+            </입력>
+
+            <표에 넣을 것>
+            - draft: 전부
+            - scheduled: `in_sitemap`이 false인 글만. true면 이미 사이트에
+              올라간 글이라 제외합니다. `publish_at`이 `today_kst`보다 과거인데
+              in_sitemap이 false면 비고에 "예정일 경과, 배포 대기"라고 적으세요
+            </표에 넣을 것>
 
             <산출 — 이슈 하나를 계속 갱신>
             제목이 "📋 블로그 초안·예약글 인벤토리"인 열린 이슈를 찾으세요.
@@ -72,9 +95,11 @@ jobs:
               이번 결과로 교체
             - 없으면 같은 제목으로 새로 생성
             본문 구성: 갱신 일자 + draft 표 + scheduled 표 (마크다운 표).
+            본문 파일은 **하위 디렉터리를 만들지 말고** 작업 디렉터리 루트에
+            바로 쓰세요 (디렉터리 생성은 차단됩니다).
             초안·예약글이 모두 0개인 경우: 기존 이슈가 있으면 "현재 없음"으로
             갱신하고, 이슈 자체가 없다면 새로 만들지 말고 종료하세요.
             </산출>
 
-          # curl은 배포 sitemap 대조(실제 공개 여부 판정)용
-          claude_args: '--model claude-sonnet-5 --allowed-tools "Read,Write,Grep,Glob,Bash(git log:*),Bash(gh issue:*),Bash(date:*),Bash(tail:*),Bash(curl:*)"'
+          # 수집이 끝난 뒤라 git·curl이 필요 없다. Bash는 이슈 조작 하나뿐.
+          claude_args: '--model claude-sonnet-5 --allowed-tools "Read,Write,Grep,Glob,Bash(gh issue:*)"'

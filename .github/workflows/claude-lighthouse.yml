@@ -63,6 +63,11 @@ jobs:
             npx --yes lighthouse <URL> --output=json --output-path=<파일> \
               --chrome-flags="--headless=new --no-sandbox" --quiet
 
+            결과 파일은 **하위 디렉터리를 만들지 말고** 작업 디렉터리 루트에
+            바로 쓰세요 (디렉터리 생성은 차단됩니다). 리포트 JSON은 수 MB라
+            통째로 Read하지 말고 `jq`로 필요한 값만 뽑으세요. 예:
+            `jq '.categories | map_values(.score)' <파일>`
+
             대상 URL 3개: 홈(/), 글 목록(/posts/), 최근 발행 글 1개
             (sitemap.xml에서 고르면 됩니다). 점수 변동 노이즈를 줄이기 위해
             각 URL을 2회 측정해 좋은 쪽을 채택하세요.
@@ -85,7 +90,9 @@ jobs:
             근거로 설명하세요.
             </보고>
 
-          claude_args: '--model claude-sonnet-5 --allowed-tools "Read,Write,Grep,Glob,WebFetch,Bash(npx:*),Bash(curl:*),Bash(gh issue:*),Bash(date:*)"'
+          # jq: 수 MB짜리 lighthouse 리포트에서 점수·audit만 뽑아내기 위한 것.
+          # Read로 통째로 읽으면 컨텍스트가 터지고, 없으면 파싱 시도가 전부 거부된다.
+          claude_args: '--model claude-sonnet-5 --allowed-tools "Read,Write,Grep,Glob,WebFetch,Bash(npx:*),Bash(curl:*),Bash(jq:*),Bash(gh issue:*),Bash(date:*)"'
         env:
           # 러너에 설치된 Chrome을 lighthouse(chrome-launcher)가 찾도록 지정
           CHROME_PATH: /usr/bin/google-chrome
