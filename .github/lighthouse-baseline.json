@@ -1,0 +1,36 @@
+{
+  "_note": "claude-lighthouse의 델타 판정 기준값. lighthouse-collect.py가 읽는다. 갱신하려면 이 파일을 지우고 워크플로우를 한 번 돌린 뒤, 잡 로그의 'BEGIN lighthouse-baseline.json' 블록(또는 lighthouse-facts 아티팩트의 baseline_suggestion)을 그대로 붙여넣으면 된다. 의도적으로 번들을 늘린 변경 뒤에는 반드시 갱신할 것 — 안 그러면 다음 회차부터 계속 회귀로 잡힌다.",
+  "_source": "run 30964244974 (2026-08-05T00:47:02Z, URL당 3회 중앙값, Lighthouse 13.4.1, mobile/simulate)",
+  "_caveat": "세 번째 항목은 '최근 발행 글'이라 새 글이 나오면 URL이 바뀐다. 그때는 그 페이지만 델타가 비고 나머지는 그대로 동작한다.",
+  "collected_at_utc": "2026-08-05T00:47:02Z",
+  "benchmark_index": 2861,
+  "pages": [
+    {
+      "url": "https://blog.sangwook.dev/",
+      "audits_median": {
+        "unused_javascript": { "savings_bytes": 400035 },
+        "total_byte_weight": { "numeric_value": 1332528 },
+        "third_party_cookies": { "item_count": 8 }
+      },
+      "raw_html": { "img_tag_count": 0 }
+    },
+    {
+      "url": "https://blog.sangwook.dev/posts/",
+      "audits_median": {
+        "unused_javascript": { "savings_bytes": 384088 },
+        "total_byte_weight": { "numeric_value": 1784184 },
+        "third_party_cookies": { "item_count": 8 }
+      },
+      "raw_html": { "img_tag_count": 0 }
+    },
+    {
+      "url": "https://blog.sangwook.dev/posts/getbyrole-performance/",
+      "audits_median": {
+        "unused_javascript": { "savings_bytes": 264521 },
+        "total_byte_weight": { "numeric_value": 1760330 },
+        "third_party_cookies": { "item_count": 8 }
+      },
+      "raw_html": { "img_tag_count": 1 }
+    }
+  ]
+}
