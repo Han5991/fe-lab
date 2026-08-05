@@ -487,6 +487,17 @@ def main() -> int:
         )
         print(f"  {page['url']}: {rendered} img={page['raw_html']['img_tag_count']}")
 
+    # 베이스라인이 없으면 제안본을 **잡 로그에도** 찍는다. Step Summary와
+    # 아티팩트에도 들어가지만, 둘 다 접근이 막힌 환경(사내 프록시 등)에서는
+    # 로그가 유일한 통로다. 이게 없으면 델타 판정이 영영 잠들어 있게 된다.
+    if not facts["deltas"]["available"]:
+        print()
+        print("베이스라인이 없습니다. 아래를 .github/lighthouse-baseline.json 으로")
+        print("커밋하면 다음 회차부터 델타로 판정합니다.")
+        print("----- BEGIN lighthouse-baseline.json -----")
+        print(json.dumps(facts["baseline_suggestion"], ensure_ascii=False, indent=2))
+        print("----- END lighthouse-baseline.json -----")
+
     failed = [p for p in pages if p.get("error")]
     if len(failed) == len(pages):
         print("모든 URL 측정에 실패했습니다.", file=sys.stderr)
