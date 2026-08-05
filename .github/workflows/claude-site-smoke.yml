@@ -83,8 +83,8 @@ jobs:
             2. `posts_index.post_anchor_count`가 1 이상인지 — 0이면 CSR bail-out
                회귀(과거 PR #133에서 잡은 버그)로 critical
             3. `sitemap`: xml_valid가 true인지, 그리고 저장소의 발행 글이 loc에
-               누락 없이 들어있는지. 저장소 쪽 발행 글은 `apps/blog/posts/**/*.md`의
-               frontmatter로 판정하며, 규칙은
+               누락 없이 들어있는지. 저장소 쪽 발행 글은 `apps/blog/posts/**`의
+               마크다운(`.md`·`.mdx` 둘 다) frontmatter로 판정하며, 규칙은
                `apps/blog/web/domain/post/visibility.ts`가 단일 출처입니다
                (status: published, 또는 공개 시각이 지난 scheduled. status 키가
                없으면 포스트가 아님). Grep/Glob/Read로 확인하세요.
