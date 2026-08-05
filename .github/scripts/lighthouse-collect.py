@@ -38,6 +38,7 @@ import statistics
 import subprocess
 import sys
 import tempfile
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -66,17 +67,30 @@ AUDIT_ALIASES = {
 }
 
 
-def fetch_text(url: str) -> tuple[int | None, str]:
-    """원문을 그대로 가져온다. 실패해도 예외를 던지지 않는다."""
-    try:
-        request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
-        with urllib.request.urlopen(request, timeout=30) as response:
-            return response.status, response.read().decode("utf-8", errors="replace")
-    except urllib.error.HTTPError as error:
-        body = error.read() or b""
-        return error.code, body.decode("utf-8", errors="replace")
-    except Exception:
-        return None, ""
+def fetch_text(url: str, retries: int = 2, retry_delay: float = 3.0) -> tuple[int | None, str]:
+    """원문을 그대로 가져온다. 실패해도 예외를 던지지 않는다.
+
+    호출부는 **반드시 status를 확인하고 본문을 쓸 것.** 실패 시 빈 문자열이
+    돌아오는데, 그걸 그대로 세면 `img_tag_count`가 0이 되어 프롬프트의 1순위
+    회귀 신호("0 → CSR bailout")로 오판된다. 단발 네트워크 오류가 곧바로
+    critical 판정이 되지 않도록 여기서 한 번 더 시도하고, 그래도 안 되면
+    호출부가 "측정 못 함"으로 구분할 수 있게 status를 None으로 남긴다.
+    """
+    attempt = 0
+    while True:
+        attempt += 1
+        try:
+            request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+            with urllib.request.urlopen(request, timeout=30) as response:
+                return response.status, response.read().decode("utf-8", errors="replace")
+        except urllib.error.HTTPError as error:
+            body = error.read() or b""
+            return error.code, body.decode("utf-8", errors="replace")
+        except Exception:
+            if attempt < retries:
+                time.sleep(retry_delay)
+                continue
+            return None, ""
 
 
 def pick_recent_post_path(base_url: str) -> str | None:
@@ -237,8 +251,12 @@ def measure_url(url: str, runs: int) -> dict:
         "raw_html": {
             "status": status,
             "bytes": len(raw_html.encode("utf-8")),
-            # 0이면 정적 HTML에 LCP 후보 이미지가 없다는 뜻이다.
-            "img_tag_count": len(IMG_TAG_RE.findall(raw_html)),
+            # 0이면 정적 HTML에 LCP 후보 이미지가 없다는 뜻이다. 단, 200이 아니면
+            # 본문을 신뢰할 수 없으므로 0이 아니라 null(= 측정 못 함)로 남긴다.
+            # 그러지 않으면 단발 네트워크 오류가 1순위 회귀 신호로 둔갑한다.
+            "img_tag_count": (
+                len(IMG_TAG_RE.findall(raw_html)) if status == 200 else None
+            ),
         },
         "environment": summaries[0]["environment"],
         "settings": summaries[0]["settings"],
@@ -375,7 +393,7 @@ def write_step_summary(facts: dict) -> None:
             f"{kib(audits['unused_javascript']['savings_bytes'])} | "
             f"{kib(audits['total_byte_weight']['numeric_value'])} | "
             f"{audits['third_party_cookies']['item_count'] or 0} | "
-            f"{page['raw_html']['img_tag_count']} |"
+            f"{'측정불가' if page['raw_html']['img_tag_count'] is None else page['raw_html']['img_tag_count']} |"
         )
 
     if not facts["deltas"]["available"]:
