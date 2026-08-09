@@ -5,9 +5,9 @@ This file provides the necessary context, commands, and standards for AI agents 
 
 ## 1. Environment & Setup
 
-- **Package Manager**: `pnpm` (v10.10.0). strictly enforce `pnpm-lock.yaml`.
+- **Package Manager**: `pnpm` (v11.6.0, pinned via root `packageManager`). strictly enforce `pnpm-lock.yaml`.
 - **Monorepo Tool**: `turborepo`.
-- **Node Version**: >= 20.
+- **Node Version**: >= 24.18.1 (root `engines` and `.tool-versions`).
 - **Root Commands**:
   - `pnpm install`: Bootstrap dependencies.
   - `pnpm dev`: Start all apps in parallel.
@@ -22,13 +22,16 @@ This file provides the necessary context, commands, and standards for AI agents 
   - `next.js/` (Next.js 16 + App Router): Core experimentation lab.
   - `react/` (Vite + React 19): SPA experimentation lab.
   - `typescript/` (Pure TS): Type challenges and logic experiments.
-  - `blog/web/` (Next.js + MDX): Tech blog.
-  - `ga-proxy/` (Next.js): Utility service.
+  - `blog/web/` (Next.js, static export): Tech blog. Markdown is loaded with
+    `gray-matter` + `react-markdown` — **not** MDX/velite/contentlayer.
+  - `socket-server/`: Socket experimentation server.
 - **packages/**
   - `@design-system/ui`: Shared React components.
   - `@design-system/ui-lib`: Panda CSS generated tokens/styles (DO NOT EDIT directly).
   - `@package/core`: Shared utilities (HTTP client, etc.).
   - `@package/config`: Shared TS/ESLint configs.
+  - `@package/bundler` + `@package/bundler-playground` + `@package/sample-lib`:
+    Minimal bundler built for the bundler blog series.
 
 ## 3. Development Commands (Crucial for Agents)
 
@@ -49,14 +52,14 @@ Do not run `pnpm dev` if you only need one app. Save resources.
 - **Single App Suite**:
 
   ```bash
-  pnpm test --filter=next.js   # Run all Next.js tests (Jest)
+  pnpm test --filter=next.js   # Run all Next.js tests (Vitest)
   pnpm test --filter=react     # Run all React tests (Vitest)
   ```
 
 - **Single Test File** (Best for TDD/Debugging):
 
   ```bash
-  # Jest (Next.js)
+  # Vitest (Next.js)
   pnpm test --filter=next.js -- src/app/some-feature.test.tsx
 
   # Vitest (React)
@@ -107,9 +110,9 @@ Do not run `pnpm dev` if you only need one app. Save resources.
 ## 5. Testing Guidelines
 
 - **Tools**:
-  - `jest` + `react-testing-library` (Next.js)
-  - `vitest` + `react-testing-library` (React/Vite)
-  - `msw` (Network mocking)
+  - `vitest` + `react-testing-library` (Next.js, React/Vite, blog/web)
+  - `node --test` (blog/web의 `domain/**`, `lib/**`, `scripts/**` 순수 로직)
+  - `msw` (Network mocking — `apps/react`, `apps/typescript`)
 - **Selectors**: Prefer user-centric selectors:
   1. `getByRole` (button, heading, etc.)
   2. `getByLabelText` (forms)
