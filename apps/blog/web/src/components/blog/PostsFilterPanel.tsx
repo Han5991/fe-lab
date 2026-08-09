@@ -1,6 +1,5 @@
 'use client';
 
-import { memo } from 'react';
 import { css } from '@design-system/ui-lib/css';
 import { SortRadio, type SortKey } from './SortRadio';
 import { ViewToggle, type ViewMode } from './ViewToggle';
@@ -39,10 +38,10 @@ interface PostsFilterPanelProps {
  * /posts 아카이브의 필터 컨트롤 패널.
  * 데스크톱 사이드바와 모바일 바텀시트 두 곳에서 동일하게 렌더됩니다.
  *
- * `React.memo`로 감싸 props가 같으면 리렌더를 건너뛰게 합니다.
- * 호출부에서 토글 핸들러는 `useCallback`, items 배열은 `useMemo`로 안정화하세요.
+ * 예전에는 `React.memo`로 감싸고 호출부에서 핸들러·items를 손으로 안정화했습니다.
+ * 지금은 React Compiler가 그 일을 하므로 둘 다 두지 않습니다.
  */
-const PostsFilterPanelImpl = ({
+export const PostsFilterPanel = ({
   sort,
   onSortChange,
   view,
@@ -97,5 +96,3 @@ const PostsFilterPanelImpl = ({
     )}
   </div>
 );
-
-export const PostsFilterPanel = memo(PostsFilterPanelImpl);

@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useAdminDashboardData } from './useAdminViews';
 import { getKSTDateISO, msUntilKSTMidnight } from '@/lib/dates';
 import {
@@ -14,9 +14,9 @@ export { UNIQUES_ESTIMATE_RATIO };
 /**
  * Supabase admin dashboard 데이터를 가공해 Analytics 페이지에서 쓰는 형태로 반환.
  *
- * todayISO는 KST 자정 경계에서 리셋되는 state로 관리합니다.
- * [data, range]만 deps로 쓰면 자정 넘어도 useMemo가 stale 윈도우를 반환하는
- * 버그를 방지합니다.
+ * todayISO는 KST 자정 경계에서 리셋되는 state로 관리합니다. 오늘 날짜를 렌더
+ * 시점에 즉석에서 읽으면 자정을 넘겨도 화면이 stale 윈도우에 머무르므로,
+ * state로 두어 자정에 리렌더가 걸리게 합니다.
  */
 export function useAnalyticsOverview(range: AnalyticsRange) {
   const { data } = useAdminDashboardData();
@@ -44,8 +44,5 @@ export function useAnalyticsOverview(range: AnalyticsRange) {
     };
   }, []);
 
-  return useMemo(
-    () => computeAnalyticsOverview(data, range, todayISO),
-    [data, range, todayISO],
-  );
+  return computeAnalyticsOverview(data, range, todayISO);
 }

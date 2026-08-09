@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import { PrismLight as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/cjs/styles/prism';
@@ -154,7 +154,7 @@ export const mermaidBoxStyle = css({
 function CopyButton({ content }: { content: string }) {
   const [isCopied, setIsCopied] = useState(false);
 
-  const handleCopy = useCallback(async () => {
+  const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(content);
       setIsCopied(true);
@@ -162,7 +162,7 @@ function CopyButton({ content }: { content: string }) {
     } catch (err) {
       console.error('Copy failed', err);
     }
-  }, [content]);
+  };
 
   return (
     <button

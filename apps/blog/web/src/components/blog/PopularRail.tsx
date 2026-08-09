@@ -1,6 +1,5 @@
 'use client';
 
-import { useMemo } from 'react';
 import Link from 'next/link';
 import { css } from '@design-system/ui-lib/css';
 import { useQuery } from '@tanstack/react-query';
@@ -22,7 +21,7 @@ export const PopularRail = ({ posts, limit = 5 }: PopularRailProps) => {
   // useSuspenseQuery에서 useQuery로 전환. fetch가 실패하면 ErrorBoundary로
   // 떠넘기지 않고 정적 fallback(최신글 limit개)으로 graceful degrade합니다.
   // select에 posts를 캡처하면 매 렌더마다 다른 클로저가 만들어져 React Query의
-  // 메모이제이션이 의미가 없으므로, raw rows만 캐시하고 매핑은 useMemo로 분리합니다.
+  // 메모이제이션이 의미가 없으므로, raw rows만 캐시하고 매핑은 렌더에서 합칩니다.
   const { data: rows } = useQuery({
     queryKey: ['popular-rail', limit],
     queryFn: () => getTopPosts(limit),
@@ -30,18 +29,15 @@ export const PopularRail = ({ posts, limit = 5 }: PopularRailProps) => {
     gcTime: 30 * 60 * 1000,
   });
 
-  const ranked = useMemo<RankedPost[]>(() => {
-    if (!rows || rows.length === 0) return [];
-    const bySlug = new Map(posts.map(p => [p.slug, p]));
-    return rows
-      .map(r => {
-        const post = bySlug.get(r.slug);
-        if (!post) return null;
-        // getTopPosts(TopPostRow)의 view_count는 이미 non-null number로 정규화됨.
-        return { ...post, viewCount: r.view_count } satisfies RankedPost;
-      })
-      .filter((p): p is RankedPost => p !== null);
-  }, [rows, posts]);
+  const bySlug = new Map(posts.map(p => [p.slug, p]));
+  const ranked: RankedPost[] = (rows ?? [])
+    .map(r => {
+      const post = bySlug.get(r.slug);
+      if (!post) return null;
+      // getTopPosts(TopPostRow)의 view_count는 이미 non-null number로 정규화됨.
+      return { ...post, viewCount: r.view_count } satisfies RankedPost;
+    })
+    .filter((p): p is RankedPost => p !== null);
 
   const items: RankedPost[] =
     ranked.length > 0
