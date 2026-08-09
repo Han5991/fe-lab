@@ -1,8 +1,8 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
-import { useQueryState, parseAsString, parseAsStringLiteral } from 'nuqs';
+import { useQueryStates, parseAsString, parseAsStringLiteral } from 'nuqs';
 import { useQuery } from '@tanstack/react-query';
 import { css } from '@design-system/ui-lib/css';
 
@@ -17,8 +17,8 @@ import { encodePostSlug } from '@/domain/post/utils';
 import { fmtDate } from '@/lib/format';
 
 import { Label } from './Label';
-import { type SortKey } from './SortRadio';
-import { type ViewMode } from './ViewToggle';
+import type { SortKey } from './SortRadio';
+import type { ViewMode } from './ViewToggle';
 import { ActiveFilters } from './ActiveFilters';
 import { HiddenPostBadge } from './HiddenPostBadge';
 import { PostGridCard } from './PostGridCard';
@@ -34,8 +34,16 @@ interface PostsArchiveViewProps {
   years: { year: string; count: number }[];
 }
 
-const SORT_KEYS = ['recent', 'popular', 'shortest'] as const;
-const VIEW_KEYS = ['list', 'cards'] as const;
+// `satisfies`로 각 컴포넌트의 타입에 묶어 둔다. 예전에는 useQueryState<SortKey>의
+// 명시 제네릭이 이 역할을 했는데, useQueryStates는 파서에서 타입을 추론하므로
+// 여기서 잡지 않으면 오타가 그대로 통과한다. 반대 방향(키 누락)은 아래
+// onSortChange/onViewChange가 SortKey를 좁은 리터럴 유니온에 넣으면서 걸린다.
+const SORT_KEYS = [
+  'recent',
+  'popular',
+  'shortest',
+] as const satisfies readonly SortKey[];
+const VIEW_KEYS = ['list', 'cards'] as const satisfies readonly ViewMode[];
 
 // 홈 글 목록과 같은 문법: 장식 없이 hairline 보더로만 구분하고
 // 제목 좌측 / 날짜 우측(모노). 마지막 행에만 아래 보더를 더한다.
@@ -105,27 +113,20 @@ export const PostsArchiveView = ({
   tags,
   years,
 }: PostsArchiveViewProps) => {
-  const [q, setQ] = useQueryState('q', parseAsString.withDefault(''));
-  const [tagParam, setTagParam] = useQueryState(
-    'tag',
-    parseAsString.withDefault(''),
-  );
-  const [seriesParam, setSeriesParam] = useQueryState(
-    'series',
-    parseAsString.withDefault(''),
-  );
-  const [yearParam, setYearParam] = useQueryState(
-    'year',
-    parseAsString.withDefault(''),
-  );
-  const [sort, setSort] = useQueryState<SortKey>(
-    'sort',
-    parseAsStringLiteral(SORT_KEYS).withDefault('recent'),
-  );
-  const [view, setView] = useQueryState<ViewMode>(
-    'view',
-    parseAsStringLiteral(VIEW_KEYS).withDefault('cards'),
-  );
+  // 아카이브의 URL 상태 6개는 한 덩어리로 움직인다(검색어·태그·시리즈·연도·정렬·뷰).
+  // 파서 맵 하나로 묶으면 "이 화면의 URL 계약"이 한자리에 남고, clearAll처럼 여러
+  // 개를 동시에 지우는 동작이 setParams 한 번으로 표현된다.
+  const [
+    { q, tag: tagParam, series: seriesParam, year: yearParam, sort, view },
+    setParams,
+  ] = useQueryStates({
+    q: parseAsString.withDefault(''),
+    tag: parseAsString.withDefault(''),
+    series: parseAsString.withDefault(''),
+    year: parseAsString.withDefault(''),
+    sort: parseAsStringLiteral(SORT_KEYS).withDefault('recent'),
+    view: parseAsStringLiteral(VIEW_KEYS).withDefault('cards'),
+  });
   const [sheetOpen, setSheetOpen] = useState(false);
 
   // 인기순 정렬은 Supabase post_views 테이블 기반. 'popular'를 누르기 전까지는
@@ -145,65 +146,52 @@ export const PostsArchiveView = ({
     gcTime: 30 * 60 * 1000,
   });
 
-  // tagParam을 매 렌더 새 배열로 split하면 useMemo dep가 늘 무효화됩니다.
-  // tagParam(string) 자체를 dep으로 두고, activeTags는 tagParam 변경 시에만 새로 만듭니다.
-  const activeTags = useMemo(() => parseTagParam(tagParam), [tagParam]);
+  const activeTags = parseTagParam(tagParam);
 
-  // 필터 패널 핸들러는 PostsFilterPanel(React.memo)에 prop으로 전달되므로
-  // 매 렌더마다 새 함수가 생기면 memo가 무력화됩니다. useCallback으로 안정화.
-  const toggleTag = useCallback(
-    (tag: string) => {
-      const next = activeTags.includes(tag)
-        ? activeTags.filter(t => t !== tag)
-        : [...activeTags, tag];
-      setTagParam(next.length ? next.join(',') : null);
-    },
-    [activeTags, setTagParam],
-  );
+  const toggleTag = async (tag: string) => {
+    const next = activeTags.includes(tag)
+      ? activeTags.filter(t => t !== tag)
+      : [...activeTags, tag];
+    await setParams({ tag: next.length ? next.join(',') : null });
+  };
 
-  const toggleSeries = useCallback(
-    (id: string) => setSeriesParam(seriesParam === id ? null : id),
-    [seriesParam, setSeriesParam],
-  );
+  const toggleSeries = (id: string) =>
+    setParams({ series: seriesParam === id ? null : id });
 
-  const toggleYear = useCallback(
-    (id: string) => setYearParam(yearParam === id ? null : id),
-    [yearParam, setYearParam],
-  );
+  const toggleYear = (id: string) =>
+    setParams({ year: yearParam === id ? null : id });
 
-  const filtered = useMemo(
-    () =>
-      filterAndSortPostsByArchiveParams(posts, {
-        q,
-        tags: activeTags,
-        series: seriesParam || null,
-        year: yearParam || null,
-        sort,
-        viewCounts,
-      }),
-    [posts, q, activeTags, seriesParam, yearParam, sort, viewCounts],
-  );
+  const filtered = filterAndSortPostsByArchiveParams(posts, {
+    q,
+    tags: activeTags,
+    series: seriesParam || null,
+    year: yearParam || null,
+    sort,
+    viewCounts,
+  });
 
-  // 동일 props에서 PostsFilterPanel.memo가 효력을 발휘하도록 items도 useMemo.
-  const seriesItems = useMemo(
-    () => series.map(s => ({ id: s.id, label: s.title, count: s.count })),
-    [series],
-  );
-  const tagItems = useMemo(
-    () => tags.map(t => ({ id: t.id, label: `#${t.id}`, count: t.count })),
-    [tags],
-  );
-  const yearItems = useMemo(
-    () => years.map(y => ({ id: y.year, label: y.year, count: y.count })),
-    [years],
-  );
+  const seriesItems = series.map(s => ({
+    id: s.id,
+    label: s.title,
+    count: s.count,
+  }));
+  const tagItems = tags.map(t => ({
+    id: t.id,
+    label: `#${t.id}`,
+    count: t.count,
+  }));
+  const yearItems = years.map(y => ({
+    id: y.year,
+    label: y.year,
+    count: y.count,
+  }));
 
-  const clearAll = useCallback(() => {
-    setQ(null);
-    setTagParam(null);
-    setSeriesParam(null);
-    setYearParam(null);
-  }, [setQ, setTagParam, setSeriesParam, setYearParam]);
+  // 네 개를 한 번에 지운다. 개별 setter를 연달아 부르는 것과 URL 쓰기 횟수는
+  // 같지만(nuqs가 전역 큐로 합친다), 무엇을 지우는지가 한 객체로 드러나고
+  // Promise.all 없이 하나의 promise만 기다리면 된다.
+  const clearAll = async () => {
+    await setParams({ q: null, tag: null, series: null, year: null });
+  };
 
   // 활성 필터 합산 (FAB·시트 헤더의 N 뱃지 + 정렬도 기본값이 아니면 카운트)
   const activeCount =
@@ -237,12 +225,12 @@ export const PostsArchiveView = ({
             gap: '7',
           })}
         >
-          <ArchiveSearchBar q={q} onChange={v => setQ(v || null)} />
+          <ArchiveSearchBar q={q} onChange={v => setParams({ q: v || null })} />
           <PostsFilterPanel
             sort={sort}
-            onSortChange={setSort}
+            onSortChange={v => setParams({ sort: v })}
             view={view}
-            onViewChange={setView}
+            onViewChange={v => setParams({ view: v })}
             tagItems={tagItems}
             activeTags={activeTags}
             onToggleTag={toggleTag}
@@ -279,7 +267,10 @@ export const PostsArchiveView = ({
               mb: '4',
             })}
           >
-            <ArchiveSearchBar q={q} onChange={v => setQ(v || null)} />
+            <ArchiveSearchBar
+              q={q}
+              onChange={v => setParams({ q: v || null })}
+            />
           </div>
 
           <ActiveFilters
@@ -287,8 +278,8 @@ export const PostsArchiveView = ({
             series={seriesParam || null}
             year={yearParam || null}
             onRemoveTag={toggleTag}
-            onClearSeries={() => setSeriesParam(null)}
-            onClearYear={() => setYearParam(null)}
+            onClearSeries={() => setParams({ series: null })}
+            onClearYear={() => setParams({ year: null })}
             onClearAll={clearAll}
           />
 
@@ -414,9 +405,9 @@ export const PostsArchiveView = ({
       >
         <PostsFilterPanel
           sort={sort}
-          onSortChange={setSort}
+          onSortChange={v => setParams({ sort: v })}
           view={view}
-          onViewChange={setView}
+          onViewChange={v => setParams({ view: v })}
           tagItems={tagItems}
           activeTags={activeTags}
           onToggleTag={toggleTag}

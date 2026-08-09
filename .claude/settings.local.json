@@ -18,5 +18,6 @@
       "Bash(/usr/bin/git diff *)"
     ],
     "deny": []
-  }
+  },
+  "enabledMcpjsonServers": ["next-devtools"]
 }

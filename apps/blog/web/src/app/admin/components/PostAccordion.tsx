@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import type { PostStatDetail } from '@/src/hooks/useAdminViews';
 import { computeBriefStats } from '@/src/hooks/usePostDetailStats';
 import { css } from '@design-system/ui-lib/css';
@@ -33,7 +33,7 @@ interface Props {
 
 export function PostAccordion({ post }: Props) {
   const [isOpen, setIsOpen] = useState(false);
-  const briefStats = useMemo(() => computeBriefStats(post), [post]);
+  const briefStats = computeBriefStats(post);
 
   // frontmatter의 status(발행 의도)가 아니라 **지금 실제로 공개 중인지**로 배지를
   // 그립니다. 판정은 도메인 함수 하나에 위임합니다 — 예전에는 이 자리에서 규칙을

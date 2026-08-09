@@ -5,7 +5,6 @@ import {
   useEffect,
   useRef,
   useCallback,
-  useMemo,
   type ReactNode,
 } from 'react';
 import { useRouter } from 'next/navigation';
@@ -78,42 +77,44 @@ export const SearchDialog = () => {
   const router = useRouter();
 
   const showRecentViews = !query.trim() && recentViews.length > 0;
-  const recentAsPosts = useMemo<SearchPost[]>(() => {
-    if (!showRecentViews) return [];
-    return recentViews.map(rv => {
-      const found = posts.find(p => p.slug === rv.slug);
-      return (
-        found ?? {
-          slug: rv.slug,
-          title: rv.title,
-          date: null,
-          excerpt: '',
-          tags: [],
-          series: null,
-        }
-      );
-    });
-  }, [showRecentViews, recentViews, posts]);
+  const recentAsPosts: SearchPost[] = !showRecentViews
+    ? []
+    : recentViews.map(rv => {
+        const found = posts.find(p => p.slug === rv.slug);
+        return (
+          found ?? {
+            slug: rv.slug,
+            title: rv.title,
+            date: null,
+            excerpt: '',
+            tags: [],
+            series: null,
+          }
+        );
+      });
 
   // 검색 필터링 — query/posts/recentAsPosts에서 derived
-  const filteredPosts = useMemo<SearchPost[]>(() => {
-    if (!query.trim()) {
-      return recentAsPosts.length > 0 ? recentAsPosts : posts.slice(0, 10);
-    }
-    const lowerQuery = query.toLowerCase();
-    return posts
-      .filter(
-        post =>
-          post.title.toLowerCase().includes(lowerQuery) ||
-          post.excerpt.toLowerCase().includes(lowerQuery) ||
-          post.tags.some(tag => tag.toLowerCase().includes(lowerQuery)) ||
-          (post.series && post.series.toLowerCase().includes(lowerQuery)) ||
-          (post.contentPreview &&
-            post.contentPreview.toLowerCase().includes(lowerQuery)),
-      )
-      .slice(0, 10);
-  }, [query, posts, recentAsPosts]);
+  const filteredPosts: SearchPost[] = !query.trim()
+    ? recentAsPosts.length > 0
+      ? recentAsPosts
+      : posts.slice(0, 10)
+    : posts
+        .filter(post => {
+          const lowerQuery = query.toLowerCase();
+          return (
+            post.title.toLowerCase().includes(lowerQuery) ||
+            post.excerpt.toLowerCase().includes(lowerQuery) ||
+            post.tags.some(tag => tag.toLowerCase().includes(lowerQuery)) ||
+            (post.series && post.series.toLowerCase().includes(lowerQuery)) ||
+            (post.contentPreview &&
+              post.contentPreview.toLowerCase().includes(lowerQuery))
+          );
+        })
+        .slice(0, 10);
 
+  // 이 둘만 useCallback을 남긴다. 아래 Cmd+K 이펙트의 deps에 들어가는데,
+  // react-hooks/exhaustive-deps는 React Compiler의 런타임 메모이제이션을 보지
+  // 못해 "매 렌더 바뀐다"고 경고한다. 나머지 파생값·핸들러는 컴파일러에 맡긴다.
   const openDialog = useCallback(() => {
     setIsOpen(true);
     setRecentViews(getRecentViews());
@@ -168,37 +169,29 @@ export const SearchDialog = () => {
     setSelectedIndex(0);
   }, [query]);
 
-  const handleSelect = useCallback(
-    (slug: string) => {
-      closeDialog();
-      router.push(`/posts/${slug}`);
-    },
-    [router, closeDialog],
-  );
+  const handleSelect = (slug: string) => {
+    closeDialog();
+    router.push(`/posts/${slug}`);
+  };
 
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      switch (e.key) {
-        case 'ArrowDown':
-          e.preventDefault();
-          setSelectedIndex(prev =>
-            Math.min(prev + 1, filteredPosts.length - 1),
-          );
-          break;
-        case 'ArrowUp':
-          e.preventDefault();
-          setSelectedIndex(prev => Math.max(prev - 1, 0));
-          break;
-        case 'Enter':
-          e.preventDefault();
-          if (filteredPosts[selectedIndex]) {
-            handleSelect(filteredPosts[selectedIndex].slug);
-          }
-          break;
-      }
-    },
-    [filteredPosts, selectedIndex, handleSelect],
-  );
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setSelectedIndex(prev => Math.min(prev + 1, filteredPosts.length - 1));
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setSelectedIndex(prev => Math.max(prev - 1, 0));
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (filteredPosts[selectedIndex]) {
+          handleSelect(filteredPosts[selectedIndex].slug);
+        }
+        break;
+    }
+  };
 
   // 선택된 항목으로 스크롤
   useEffect(() => {
@@ -265,6 +258,8 @@ export const SearchDialog = () => {
           inset: '0',
           bg: '[rgba(0,0,0,0.5)]',
           zIndex: '50',
+          w: '[100vw]',
+          h: '[100vh]',
         })}
         onClick={closeDialog}
       />
@@ -396,6 +391,7 @@ export const SearchDialog = () => {
                   return (
                     <button
                       key={post.slug}
+                      type="button"
                       onClick={() => handleSelect(post.slug)}
                       className={css({
                         display: 'block',

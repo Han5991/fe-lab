@@ -11,7 +11,7 @@ pre-commit:
   commands:
     prettier:
       # 모노레포 하위 파일까지 명시적으로 매치 — 루트만 잡는 오해 방지
-      glob: '**/*.{ts,tsx,js,jsx,json,md,mjs,cjs,yml,yaml}'
+      glob: '**/*.{ts,mts,tsx,js,jsx,json,md,mjs,cjs,yml,yaml}'
       # 포스트 콘텐츠는 .prettierignore 대상이고, 경로의 [시리즈명] 대괄호를
       # prettier가 glob으로 해석해 exit 2가 나므로 훅 단계에서 제외
       exclude:

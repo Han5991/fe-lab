@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import { PrismLight as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/cjs/styles/prism';
@@ -121,6 +121,13 @@ const CODE_CHROME = '[#14171c]';
 const CODE_BORDER = '[#ffffff1f]';
 const CODE_META = '[#8b919a]';
 const CODE_ACCENT = '[#67e8f9]';
+// 드래그 선택 배경도 같은 이유로 고정값이다. 전역 ::selection(panda.config)은
+// selection.bg를 쓰는데 그 라이트 값은 옅은 하늘색이라, 라이트 테마에서 이
+// 어두운 표면 위 코드 글자(vscDarkPlus의 밝은 토큰 색)를 지워버린다.
+// 값은 selection.bg의 _dark와 같다 — 다크 테마에서는 본문과 코드가 같은
+// 선택색을 쓰게 된다. 표면(#0B0D10) 대비 1.80:1이고, 이 위에서 구문 색은
+// 가장 어두운 comment(#6A9955)가 3.3:1, 본문 코드(#D4D4D4)가 7.3:1이다.
+const CODE_SELECTION = '[#214248]';
 
 // mermaid는 d3·dagre까지 끌고 와 raw 1.1MB(gzip 360KB)짜리 청크가 된다.
 // 정적 import면 CodeBlock을 쓰는 모든 글 — 즉 mermaid 다이어그램이 하나도
@@ -154,7 +161,7 @@ export const mermaidBoxStyle = css({
 function CopyButton({ content }: { content: string }) {
   const [isCopied, setIsCopied] = useState(false);
 
-  const handleCopy = useCallback(async () => {
+  const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(content);
       setIsCopied(true);
@@ -162,7 +169,7 @@ function CopyButton({ content }: { content: string }) {
     } catch (err) {
       console.error('Copy failed', err);
     }
-  }, [content]);
+  };
 
   return (
     <button
@@ -230,6 +237,8 @@ export function CodeBlock({
         bg: CODE_SURFACE,
         borderWidth: 'hairline',
         borderColor: CODE_BORDER,
+        // 언어 라벨·Copy 버튼까지 포함해 이 상자 안쪽 전체를 덮는다.
+        '&::selection, & ::selection': { bg: CODE_SELECTION },
       })}
     >
       <div
