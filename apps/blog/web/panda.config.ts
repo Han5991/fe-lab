@@ -45,10 +45,19 @@ export default defineConfig({
         WebkitFontSmoothing: 'antialiased',
         MozOsxFontSmoothing: 'grayscale',
       },
-      // GitHub: selection은 중립 회색 + 밝은 텍스트
+      // 드래그 선택. 배경만 지정하고 **글자색은 건드리지 않는다.**
+      //
+      // 예전엔 `bg: ink.border` + `color: ink.900`이었는데 둘 다 문제였다.
+      // ink.border는 알파 10% 검정이라 흰 지면 위에서 1.25:1로 묽어져 선택한
+      // 티가 안 났고, 코드 블록(항상 다크 표면)에서는 배경이 사실상 그대로인
+      // 채로 글자만 ink.900(라이트=거의 검정)으로 강제돼 대비 1.29:1 —
+      // 드래그하면 코드가 사라졌다. 색을 강제하지 않으면 링크·제목·구문
+      // 강조가 선택 중에도 제 색을 유지한다.
+      //
+      // 코드 블록처럼 테마와 무관하게 어두운 표면은 이 규칙을 그대로 쓸 수
+      // 없어 CodeBlock.tsx가 자기 안쪽 ::selection을 따로 덮는다.
       '::selection': {
-        bg: 'ink.border',
-        color: 'ink.900',
+        bg: 'selection.bg',
       },
       ':focus-visible': {
         outline: '2px solid token(colors.accent.600)',
