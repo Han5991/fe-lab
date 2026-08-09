@@ -6,17 +6,20 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
-      '@test': path.resolve(__dirname, './test'),
+      '@': path.resolve(import.meta.dirname, './src'),
+      '@test': path.resolve(import.meta.dirname, './test'),
       '@design-system/ui': path.resolve(
-        __dirname,
+        import.meta.dirname,
         './test/__mocks__/designSystemMock.js',
       ),
       '@design-system/ui-lib/css': path.resolve(
-        __dirname,
+        import.meta.dirname,
         './test/__mocks__/cssMock.js',
       ),
-      'next/link': path.resolve(__dirname, './test/__mocks__/nextLinkMock.js'),
+      'next/link': path.resolve(
+        import.meta.dirname,
+        './test/__mocks__/nextLinkMock.js',
+      ),
     },
   },
   test: {
