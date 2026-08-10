@@ -1,5 +1,5 @@
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
-import { join, relative, sep } from 'node:path';
+import { join, relative, resolve, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import {
   SITE_URL,
@@ -117,14 +117,6 @@ export function collectPages(outDir: string): Map<string, string> {
 }
 
 /**
- * 각 산출물에서 **글 목록에 해당하는 자리**의 URL만 뽑아 포스트 URL로 좁힙니다.
- *
- * 문서 전체에서 정규식으로 긁으면 RSS `content:encoded`의 본문 링크와 이미지 경로
- * (`/posts/feconf/img/…`)까지 딸려 와 "rss에만 있는 글"로 오탐합니다. 그래서
- * 형식마다 목록 위치를 지정해서 읽습니다 — sitemap은 `<loc>`, rss는 `<guid>`,
- * llms.txt는 마크다운 링크의 URL.
- */
-/**
  * 퍼센트 인코딩을 풀어 URL 비교의 기준을 하나로 맞춥니다.
  * 인코딩이 깨진 문자열(`%`가 홀로 있는 경우 등)은 디코드가 던지므로 원문을 씁니다.
  */
@@ -136,6 +128,14 @@ function decodeUrlSafe(url: string): string {
   }
 }
 
+/**
+ * 각 산출물에서 **글 목록에 해당하는 자리**의 URL만 뽑아 포스트 URL로 좁힙니다.
+ *
+ * 문서 전체에서 정규식으로 긁으면 RSS `content:encoded`의 본문 링크와 이미지 경로
+ * (`/posts/feconf/img/…`)까지 딸려 와 "rss에만 있는 글"로 오탐합니다. 그래서
+ * 형식마다 목록 위치를 지정해서 읽습니다 — sitemap은 `<loc>`, rss는 `<guid>`,
+ * llms.txt는 마크다운 링크의 URL.
+ */
 function extractPostUrls(text: string, pattern: RegExp): Set<string> {
   const postPrefix = `${SITE_URL}/posts/`;
   return new Set(
@@ -289,7 +289,9 @@ export function checkFeeds(
 }
 
 function main() {
-  const outDir = join(process.cwd(), process.argv[2] ?? 'out');
+  // resolve: 절대 경로 인자를 그대로 받는다. join이면 cwd 뒤에 이어 붙어
+  // `/home/user/proj//abs/path` 같은 없는 경로가 되고 "빌드 산출물이 없습니다"로 오인된다.
+  const outDir = resolve(process.cwd(), process.argv[2] ?? 'out');
   if (!existsSync(outDir)) {
     console.error(
       `✖ 빌드 산출물이 없습니다: ${outDir}\n  먼저 \`pnpm build\`를 실행하세요.`,

@@ -8,7 +8,12 @@ import {
   SITE_AUTHOR_GITHUB,
   SITE_AUTHOR_LINKEDIN,
 } from '../lib/constants';
-import { getSeriesMeta } from '../domain/post/series';
+import {
+  getSeriesMeta,
+  isSeriesFolder,
+  sortPostsBySeriesOrder,
+  type SeriesMeta,
+} from '../domain/post/series';
 
 /**
  * `llms.txt` — AI 크롤러용 **색인**입니다. (본문 전문은 `llms-full.txt`)
@@ -32,11 +37,11 @@ export interface LlmsBuildOptions {
    */
   lastUpdated?: string;
   /**
-   * 시리즈 폴더명 → 표시명. 기본값은 `_series.yml`을 읽는 getSeriesMeta입니다.
+   * 시리즈 폴더명 → 메타(`_series.yml`). 기본값은 디스크를 읽는 getSeriesMeta입니다.
    * (siteUrl·lastUpdated와 같은 이유로 주입 가능 — 단위 테스트가 디스크의
    * 실제 시리즈 메타에 의존하지 않도록.)
    */
-  resolveSeriesTitle?: (seriesId: string) => string;
+  resolveSeriesMeta?: (seriesId: string) => SeriesMeta | null;
 }
 
 /** 링크 옆 한 줄 설명. excerpt가 있으면 그것을, 없으면 본문 앞부분을 줄여 씁니다. */
@@ -55,23 +60,22 @@ export function toSummary(post: Pick<PostData, 'excerpt' | 'content'>): string {
   return `${(lastSpace > SUMMARY_MAX_LENGTH * 0.6 ? cut.slice(0, lastSpace) : cut).trimEnd()}…`;
 }
 
-/** 시리즈 폴더명 대신 `_series.yml`의 표시명이 있으면 그것을 씁니다. */
-function defaultSeriesTitle(seriesId: string): string {
-  return getSeriesMeta(seriesId)?.title ?? seriesId;
-}
-
 /**
  * llms.txt 본문을 생성합니다.
  *
- * 시리즈는 입력 순서(= getAllPosts의 최신순 정렬)에 따른 등장 순서로,
- * 시리즈 안에서는 1편부터 읽을 수 있도록 날짜 오름차순으로 나열합니다.
+ * **시리즈 판정과 정렬은 사이트와 같은 규칙을 씁니다** — `isSeriesFolder`(한 편짜리
+ * 폴더는 시리즈가 아니다)와 `sortPostsBySeriesOrder`(`_series.yml`의 `order` 우선).
+ * 여기서 따로 구현하면 `/series` 페이지에는 없는 "시리즈"가 색인에만 생기고,
+ * 저자가 `order`로 정해둔 읽는 순서도 무시됩니다.
+ *
+ * 시리즈로 인정되지 않은 폴더의 글은 단독 포스트로 내려갑니다.
  */
 export function buildLlmsText(
   posts: PostData[],
   options: LlmsBuildOptions = {},
 ): string {
   const siteUrl = options.siteUrl ?? DEFAULT_SITE_URL;
-  const seriesTitle = options.resolveSeriesTitle ?? defaultSeriesTitle;
+  const seriesMeta = options.resolveSeriesMeta ?? getSeriesMeta;
   const postDates = posts
     .map(p => p.date)
     .filter((d): d is string => Boolean(d));
@@ -106,26 +110,33 @@ export function buildLlmsText(
     ``,
   ];
 
-  const seriesMap = new Map<string, PostData[]>();
+  const byFolder = new Map<string, PostData[]>();
   const standalone: PostData[] = [];
   for (const post of posts) {
     if (post.series) {
-      const arr = seriesMap.get(post.series) ?? [];
+      const arr = byFolder.get(post.series) ?? [];
       arr.push(post);
-      seriesMap.set(post.series, arr);
+      byFolder.set(post.series, arr);
     } else {
       standalone.push(post);
     }
   }
 
-  for (const [seriesId, seriesPosts] of seriesMap) {
-    lines.push(`## 시리즈: ${seriesTitle(seriesId)}`, ``);
-    // 시리즈는 1편부터 — 날짜 오름차순. 같은 날짜는 slug로 2차 정렬해 결정성 유지.
-    const ordered = [...seriesPosts].sort((a, b) => {
-      const byDate = (a.date ?? '').localeCompare(b.date ?? '');
-      return byDate !== 0 ? byDate : a.slug.localeCompare(b.slug);
-    });
-    for (const post of ordered) {
+  for (const [seriesId, folderPosts] of byFolder) {
+    const meta = seriesMeta(seriesId);
+    // 한 편짜리 폴더는 시리즈가 아니다 — `/series` 페이지와 같은 판정.
+    if (!isSeriesFolder(seriesId, folderPosts.length) && !meta) {
+      standalone.push(...folderPosts);
+      continue;
+    }
+    // 표시명은 사이트와 **같은 식**이다(`meta?.title ?? post.series` — page.tsx).
+    // `_series.yml`이 없는 폴더는 사이트에서도 `회고/2025`처럼 경로가 그대로
+    // 나오므로, 여기서만 다듬으면 색인과 화면의 시리즈명이 갈린다.
+    // 이름을 고치고 싶으면 그 폴더에 `_series.yml`의 `title`을 넣으면 양쪽이 함께 바뀐다.
+    lines.push(`## 시리즈: ${meta?.title ?? seriesId}`, ``);
+    if (meta?.description) lines.push(meta.description, ``);
+    // 1편부터 읽을 수 있도록 — `_series.yml`의 order가 있으면 그 순서.
+    for (const post of sortPostsBySeriesOrder(folderPosts, meta?.order)) {
       lines.push(`- [${post.title}](${postUrl(post)}): ${toSummary(post)}`);
     }
     lines.push(``);
@@ -133,7 +144,12 @@ export function buildLlmsText(
 
   if (standalone.length > 0) {
     lines.push(`## 단독 포스트`, ``);
-    for (const post of standalone) {
+    // 최신순(입력 순서)을 유지하되, 시리즈에서 내려온 글이 섞이므로 다시 정렬한다.
+    const ordered = [...standalone].sort((a, b) => {
+      const byDate = (b.date ?? '').localeCompare(a.date ?? '');
+      return byDate !== 0 ? byDate : a.slug.localeCompare(b.slug);
+    });
+    for (const post of ordered) {
       lines.push(`- [${post.title}](${postUrl(post)}): ${toSummary(post)}`);
     }
     lines.push(``);

@@ -101,7 +101,10 @@ function seoSeverity(
   data: Record<string, unknown>,
   { strict }: ValidateOptions,
 ): Severity {
-  return strict && data.status !== 'draft' ? 'error' : 'warning';
+  // `status`가 없거나 잘못된 파일은 애초에 포스트가 아니다(빌드에서 제외).
+  // `!== 'draft'`로만 보면 그런 메타 노트가 "발행 대상"으로 오인돼 빌드를 막는다.
+  if (!strict || !isPostFile(data) || data.status === 'draft') return 'warning';
+  return 'error';
 }
 
 export function validatePost(
@@ -437,52 +440,87 @@ function frontmatterOffset(raw: string): number {
   return 0;
 }
 
+/** 마크다운 `![alt](src)` — alt는 비어 있을 수 있다. */
+const MARKDOWN_IMAGE = /!\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g;
+/** raw HTML `<img …>` — rehype-raw로 살아나므로 마크다운 문법과 똑같이 렌더된다. */
+const HTML_IMAGE = /<img\b[^>]*>/gi;
+
+/** `<img>` 태그에서 (alt, src)를 뽑는다. 속성이 없으면 빈 문자열. */
+function parseHtmlImage(tag: string): { alt: string; src: string } {
+  const attr = (name: string) =>
+    tag.match(new RegExp(`\\s${name}=("([^"]*)"|'([^']*)')`, 'i'));
+  const alt = attr('alt');
+  const src = attr('src');
+  return {
+    alt: alt ? (alt[2] ?? alt[3] ?? '') : '',
+    src: src ? (src[2] ?? src[3] ?? '') : '',
+  };
+}
+
 export function validateImageReferences(
   record: PostRecord,
   raw: string,
   options: ValidateOptions = {},
 ): Issue[] {
-  const { content, absPath, relPath } = record;
+  const { absPath, relPath } = record;
   const issues: Issue[] = [];
-  const imageRegex = /!\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g;
   const offset = frontmatterOffset(raw);
+  // 코드 펜스 안의 이미지 문법은 **코드 예시**다. 검사하면 고칠 수 없는 지적이
+  // 나온다(마크다운 사용법을 설명하는 글의 ```md 블록 등).
+  const bodyLines = scanBodyLines(record.content).filter(l => !l.inFence);
 
-  let match: RegExpExecArray | null;
-  while ((match = imageRegex.exec(content)) !== null) {
-    const [, alt, ref] = match;
-    const lineInContent = content.slice(0, match.index).split('\n').length;
+  for (const { text, index } of bodyLines) {
+    const found: { alt: string; ref: string }[] = [
+      ...[...text.matchAll(MARKDOWN_IMAGE)].map(m => ({
+        alt: m[1],
+        ref: m[2],
+      })),
+      // raw HTML `<img>`도 함께 본다. 마크다운 문법만 검사하면 `<img src="x">`로
+      // 쓴 이미지는 prebuild를 통과하고 check-seo(최종 HTML의 모든 <img>를 센다)
+      // 에서만 걸려, strict 모드가 없애려던 "로컬은 통과 · CI만 실패"가 되살아난다.
+      ...[...text.matchAll(HTML_IMAGE)].map(tag => {
+        const { alt, src } = parseHtmlImage(tag[0]);
+        return { alt, ref: src };
+      }),
+    ];
 
-    // alt가 비면 스크린리더는 파일 URL을 읽거나 그냥 건너뛴다. 이미지가 다이어그램인
-    // 이 블로그에서는 그림이 설명의 본체인 경우가 많아서 내용이 통째로 사라진다.
-    // (장식용 이미지라면 alt를 비우는 게 맞지만, 지금까지 빈 alt는 전부 실수였다.)
-    if (alt.trim() === '') {
-      issues.push({
-        file: relPath,
-        line: offset + lineInContent,
-        severity: seoSeverity(record.data, options),
-        rule: 'missing-image-alt',
-        message: `이미지에 alt 텍스트가 없습니다 — 스크린리더가 읽을 설명을 적어주세요: ${ref}`,
-      });
-    }
+    for (const { alt, ref } of found) {
+      // alt가 비면 스크린리더는 파일 URL을 읽거나 그냥 건너뛴다. 이미지가 다이어그램인
+      // 이 블로그에서는 그림이 설명의 본체인 경우가 많아서 내용이 통째로 사라진다.
+      // (장식용 이미지라면 alt를 비우는 게 맞지만, 지금까지 빈 alt는 전부 실수였다.)
+      //
+      // 빌드에서 제외되는 메타 노트는 렌더될 일이 없으므로 검사하지 않는다 —
+      // validatePost·validateBodyHeadings와 같은 기준(isPostFile).
+      if (alt.trim() === '' && isPostFile(record.data)) {
+        issues.push({
+          file: relPath,
+          line: offset + index + 1,
+          severity: seoSeverity(record.data, options),
+          rule: 'missing-image-alt',
+          message: `이미지에 alt 텍스트가 없습니다 — 스크린리더가 읽을 설명을 적어주세요: ${ref || '(src 없음)'}`,
+        });
+      }
 
-    if (
-      /^https?:\/\//.test(ref) ||
-      ref.startsWith('/') ||
-      ref.startsWith('data:')
-    ) {
-      continue;
-    }
+      if (
+        !ref ||
+        /^https?:\/\//.test(ref) ||
+        ref.startsWith('/') ||
+        ref.startsWith('data:')
+      ) {
+        continue;
+      }
 
-    const cleanRef = decodeURIComponent(ref.split('#')[0].split('?')[0]);
-    const resolved = resolve(dirname(absPath), cleanRef);
-    if (!existsSync(resolved)) {
-      issues.push({
-        file: relPath,
-        line: offset + lineInContent,
-        severity: 'error',
-        rule: 'missing-image',
-        message: `이미지 파일을 찾을 수 없습니다: ${cleanRef}`,
-      });
+      const cleanRef = decodeURIComponent(ref.split('#')[0].split('?')[0]);
+      const resolved = resolve(dirname(absPath), cleanRef);
+      if (!existsSync(resolved)) {
+        issues.push({
+          file: relPath,
+          line: offset + index + 1,
+          severity: 'error',
+          rule: 'missing-image',
+          message: `이미지 파일을 찾을 수 없습니다: ${cleanRef}`,
+        });
+      }
     }
   }
   return issues;

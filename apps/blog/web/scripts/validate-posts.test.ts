@@ -712,3 +712,87 @@ test('alt가 있으면 missing-image-alt를 내지 않는다', () => {
     [],
   );
 });
+
+// ── 이미지 검사 범위 (펜스 · raw HTML · 메타 노트) ──────────────────────────
+
+test('이미지: 코드 펜스 안의 `![](…)`는 코드 예시라 검사하지 않는다', () => {
+  // 마크다운 사용법을 설명하는 글의 ```md 블록에서 고칠 수 없는 지적이 나오던 문제.
+  assert.deepEqual(
+    validateImageReferences(
+      rec(
+        { title: 'x', status: 'published' },
+        { content: '```md\n![](https://example.com/a.png)\n```' },
+      ),
+      '---\ntitle: x\n---\n',
+      { strict: true },
+    ),
+    [],
+  );
+});
+
+test('이미지: raw HTML <img>의 alt 누락도 잡는다', () => {
+  // check-seo는 최종 HTML의 모든 <img>를 세므로, 마크다운 문법만 검사하면
+  // 로컬은 통과하고 CI에서만 실패한다 — strict 모드가 없애려던 그 간극이다.
+  const found = validateImageReferences(
+    rec(
+      { title: 'x', status: 'published' },
+      { content: '<img src="https://example.com/a.png">' },
+    ),
+    '---\ntitle: x\n---\n',
+    { strict: true },
+  );
+  assert.deepEqual(
+    found.map(i => i.rule),
+    ['missing-image-alt'],
+  );
+  assert.equal(found[0].severity, 'error');
+});
+
+test('이미지: alt가 있는 raw HTML <img>는 통과 (작은따옴표 속성 포함)', () => {
+  assert.deepEqual(
+    validateImageReferences(
+      rec(
+        { title: 'x', status: 'published' },
+        { content: "<img src='https://example.com/a.png' alt='구조도' />" },
+      ),
+      '---\ntitle: x\n---\n',
+      { strict: true },
+    ),
+    [],
+  );
+});
+
+test('이미지: 메타 노트(status 없음)는 alt를 검사하지 않는다', () => {
+  // 빌드에서 통째로 빠지는 기획 문서라 렌더될 일이 없다.
+  // validatePost·validateBodyHeadings와 같은 기준(isPostFile).
+  assert.deepEqual(
+    validateImageReferences(
+      rec({ title: '메타' }, { content: '![](https://example.com/a.png)' }),
+      '---\ntitle: x\n---\n',
+      { strict: true },
+    ),
+    [],
+  );
+});
+
+test('strict: status 없는 메타 노트는 발행 대상이 아니다 (에러로 올리지 않는다)', () => {
+  // `status !== "draft"`로만 보면 status가 아예 없는 파일이 "발행 대상"으로
+  // 오인돼 빌드를 막는다.
+  const issues = validateImageReferences(
+    rec({ title: '메타' }, { content: '![](./none.png)' }),
+    '---\ntitle: x\n---\n',
+    { strict: true },
+  );
+  assert.ok(!issues.some(i => i.rule === 'missing-image-alt'));
+});
+
+test('이미지: 한 줄에 이미지가 여럿이어도 각각 잡는다', () => {
+  const found = validateImageReferences(
+    rec(
+      { title: 'x', status: 'published' },
+      { content: '![](https://a.dev/1.png) 그리고 ![](https://a.dev/2.png)' },
+    ),
+    '---\ntitle: x\n---\n',
+  );
+  assert.equal(found.length, 2);
+});

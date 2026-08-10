@@ -20,9 +20,9 @@ function makePost(over: Partial<PostData> = {}): PostData {
   };
 }
 
-// 시리즈 표시명은 디스크의 `_series.yml`에서 오므로, 단위 테스트에서는 폴더명을
-// 그대로 쓰도록 주입한다 (실제 시리즈 메타가 바뀌어도 이 테스트는 흔들리지 않는다).
-const OPTS = { siteUrl: SITE, resolveSeriesTitle: (id: string) => id };
+// 시리즈 메타는 디스크의 `_series.yml`에서 오므로, 단위 테스트에서는 없는 것으로
+// 주입한다 (실제 시리즈 메타가 바뀌어도 이 테스트는 흔들리지 않는다).
+const OPTS = { siteUrl: SITE, resolveSeriesMeta: () => null };
 
 // ── toSummary ────────────────────────────────────────────────────────────────
 
@@ -95,7 +95,8 @@ test('llms: 시리즈 글은 시리즈 섹션에, 나머지는 단독 포스트 
   const text = buildLlmsText(
     [
       makePost({ slug: 'solo', title: '단독글' }),
-      makePost({ slug: 's1', title: '시리즈글', series: 'bundler' }),
+      makePost({ slug: 's1', title: '시리즈글1', series: 'bundler' }),
+      makePost({ slug: 's2', title: '시리즈글2', series: 'bundler' }),
     ],
     OPTS,
   );
@@ -103,9 +104,53 @@ test('llms: 시리즈 글은 시리즈 섹션에, 나머지는 단독 포스트 
   const soloIdx = text.indexOf('## 단독 포스트');
   assert.ok(seriesIdx > 0 && soloIdx > 0);
   assert.ok(
-    text.indexOf('시리즈글') > seriesIdx && text.indexOf('시리즈글') < soloIdx,
+    text.indexOf('시리즈글1') > seriesIdx &&
+      text.indexOf('시리즈글1') < soloIdx,
   );
   assert.ok(text.indexOf('단독글') > soloIdx);
+});
+
+test('llms: 한 편짜리 폴더는 시리즈가 아니다 (/series 페이지와 같은 판정)', () => {
+  // `_series.yml` 없이 글이 하나뿐인 폴더까지 시리즈로 부르면, 사이트에는 없는
+  // "시리즈"가 색인에만 생긴다.
+  const text = buildLlmsText(
+    [makePost({ slug: 'only', title: '한편글', series: 'testing' })],
+    OPTS,
+  );
+  assert.ok(!text.includes('## 시리즈: testing'));
+  assert.ok(text.includes('## 단독 포스트'));
+  assert.ok(text.includes('한편글'));
+});
+
+test('llms: _series.yml이 있으면 한 편이어도 시리즈 (표시명·설명도 함께)', () => {
+  const text = buildLlmsText(
+    [makePost({ slug: 'only', title: '한편글', series: 'ci' })],
+    {
+      siteUrl: SITE,
+      resolveSeriesMeta: () => ({
+        name: 'ci',
+        title: 'CI 파이프라인',
+        description: '빌드를 빠르게',
+      }),
+    },
+  );
+  assert.ok(text.includes('## 시리즈: CI 파이프라인'));
+  assert.ok(text.includes('빌드를 빠르게'));
+});
+
+test('llms: _series.yml의 order가 날짜보다 우선한다', () => {
+  // 저자가 정해둔 읽는 순서를 무시하면 색인이 사이트와 다른 순서를 말하게 된다.
+  const text = buildLlmsText(
+    [
+      makePost({ slug: 'b', title: '나중글', series: 's', date: '2026-01-01' }),
+      makePost({ slug: 'a', title: '먼저글', series: 's', date: '2026-02-01' }),
+    ],
+    {
+      siteUrl: SITE,
+      resolveSeriesMeta: () => ({ name: 's', order: ['a', 'b'] }),
+    },
+  );
+  assert.ok(text.indexOf('먼저글') < text.indexOf('나중글'));
 });
 
 test('llms: 시리즈 안에서는 1편부터 (날짜 오름차순)', () => {
@@ -121,15 +166,26 @@ test('llms: 시리즈 안에서는 1편부터 (날짜 오름차순)', () => {
   assert.ok(text.indexOf('2편') < text.indexOf('3편'));
 });
 
-test('llms: 같은 날짜 글은 slug로 2차 정렬 (빌드마다 순서가 흔들리지 않도록)', () => {
-  const text = buildLlmsText(
-    [
-      makePost({ slug: 'zzz', title: 'Z글', series: 's', date: '2026-01-01' }),
-      makePost({ slug: 'aaa', title: 'A글', series: 's', date: '2026-01-01' }),
-    ],
-    OPTS,
-  );
-  assert.ok(text.indexOf('A글') < text.indexOf('Z글'));
+test('llms: 같은 날짜 글은 입력 순서를 지킨다 (빌드마다 흔들리지 않도록)', () => {
+  // 정렬은 사이트와 공유하는 sortPostsBySeriesOrder가 하고, 그 정렬은 안정적이다.
+  // 입력(getAllPosts)이 이미 originalSlug로 2차 정렬돼 결정적이므로 그대로 유지된다 —
+  // 여기서 따로 2차 키를 두면 색인만 사이트와 다른 순서를 말하게 된다.
+  const first = makePost({
+    slug: 'zzz',
+    title: 'Z글',
+    series: 's',
+    date: '2026-01-01',
+  });
+  const second = makePost({
+    slug: 'aaa',
+    title: 'A글',
+    series: 's',
+    date: '2026-01-01',
+  });
+  const text = buildLlmsText([first, second], OPTS);
+  assert.ok(text.indexOf('Z글') < text.indexOf('A글'));
+  // 같은 입력이면 언제나 같은 출력
+  assert.equal(text, buildLlmsText([first, second], OPTS));
 });
 
 test('llms: 한글 slug는 URL 인코딩 (sitemap/rss와 동일)', () => {
