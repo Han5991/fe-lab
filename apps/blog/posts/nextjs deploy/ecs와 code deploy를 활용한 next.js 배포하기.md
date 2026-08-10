@@ -50,7 +50,7 @@ sequenceDiagram
     end
 ```
 
-### 프로젝트 구조 참고
+#### 프로젝트 구조 참고
 
 ```
 📂 apps
@@ -65,9 +65,9 @@ sequenceDiagram
 📄 package-lock.json
 ```
 
-### 1-2. 워크플로우 설명
+## 1-2. 워크플로우 설명
 
-#### 1-2-1 git action event type 및 조건 확인
+### 1-2-1 git action event type 및 조건 확인
 
 > 프로젝트 구조상 web1과 web2의 코드가 동시에 수정되는 경우가 있습니다. 이러한 상황에서는 개발 과정에 병목현상이 발생하여 일정에 차질이 생길 수 있습니다. 이를 방지하기 위해 특정 브랜치에만 배포되도록 조건문을 설정하였습니다.
 
@@ -99,7 +99,7 @@ run: |
   echo "확정된 버전: $VERSION"
 ```
 
-#### 1-2-2 docker build 및 ecr push
+### 1-2-2 docker build 및 ecr push
 
 ```yaml
 # 도커 이미지 빌드 및 ecr push
@@ -164,7 +164,7 @@ task definition 정의
 }
 ```
 
-### ECS 작업 정의(Task Definition) 주요 구성 요소 설명
+## ECS 작업 정의(Task Definition) 주요 구성 요소 설명
 
 #### containerDefinitions
 
@@ -200,7 +200,7 @@ ECS가 컨테이너를 실행할 때 필요한 권한(ECR에서 이미지 풀링
 
 작업이 실행되는 환경의 CPU 아키텍처 및 운영체제 지정
 
-#### 1-2-3 code deploy
+### 1-2-3 code deploy
 
 ## [code deploy란?](https://docs.aws.amazon.com/ko_kr/codedeploy/latest/userguide/welcome.html)
 
