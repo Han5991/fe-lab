@@ -3,10 +3,9 @@ title: 'Type Guard를 활용한 여러가지 Button 구현하기'
 date: '2025-06-30'
 status: published
 slug: 'react-component-type-guard-button'
+excerpt: 'solid에만 있는 assistive, primary만 있는 text. 피그마의 이 불규칙한 조합을 Button 하나로 받으면서도 잘못된 variant는 컴파일 단계에서 막는 Type Guard 설계를 정리했습니다.'
 thumbnail: '/og/react-component-type-guard-button.png'
 ---
-
-# [React Component] Type Guard를 활용한 여러가지 Button 구현하기
 
 > 드디어 디자인 시스템 프로젝트가 시작되었습니다! 팀에서 가장 먼저 구현하기로 한 컴포넌트는 Button입니다. 디자인 시스템에서 Button은 특별합니다. 가장 많이 사용되고, 가장 다양한 형태를 가지며, 다른 모든 컴포넌트의 기초가 되는 컴포넌트거든요.
 >

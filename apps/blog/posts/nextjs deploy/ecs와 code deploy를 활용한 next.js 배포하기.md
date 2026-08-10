@@ -3,23 +3,24 @@ title: 'ecs와 code deploy를 활용한 next.js 배포하기'
 date: '2025-04-01'
 status: published
 slug: 'next-js-ecs-deploy'
+excerpt: '도커라이징한 Next.js를 AWS ECS에 올리고 CodeDeploy로 배포합니다. GitHub Actions 워크플로우의 실행 조건부터 태스크 정의와 ECR 푸시까지, 실제로 쓰는 설정을 하나씩 따라가며 정리했습니다.'
 thumbnail: '/og/next-js-ecs-deploy.png'
 hero: 'deploy-pipeline'
 ---
 
-# 0. 프롤로그
+## 0. 프롤로그
 
 > 이전에는 next.js의 standalone과 turborepo의 --docker 옵션을 활용한 도커라이징 하는 방법을 정리하였습니다.
 > 이번에는 aws의 ecs를 통해 컨테이너관리를 하고 code deploy를 통해 배포 하는 방법에 대해서 정리 해보겠습니다.
 
 ---
 
-# 1. [AWS ECS란?](https://docs.aws.amazon.com/ko_kr/AmazonECS/latest/developerguide/Welcome.html)
+## 1. [AWS ECS란?](https://docs.aws.amazon.com/ko_kr/AmazonECS/latest/developerguide/Welcome.html)
 
 > AWS Elastic Container Service(ECS)는 완전관리형 컨테이너 오케스트레이션 서비스입니다. ECS를 사용하면 Docker 컨테이너를 손쉽게 실행 및 관리할
 > 수 있으며, 클러스터를 구성하고 애플리케이션을 배포, 관리하는 데 도움을 줍니다.
 
-# 2. ECS와 CodeDeploy를 이용한 배포 과정
+## 2. ECS와 CodeDeploy를 이용한 배포 과정
 
 아래는 ECS를 통해 컨테이너를 실행하고 CodeDeploy로 배포를 자동화하는 기본적인 과정을 정리한 내용입니다
 

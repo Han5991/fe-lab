@@ -1,12 +1,12 @@
 ---
 title: '[Typescript로 설계하는 프로젝트] 당신의 Type, 어디까지 연결되어 있나요?'
+seoTitle: '[TS 설계] 당신의 Type, 어디까지 연결되어 있나요?'
 date: '2025-05-05'
 status: published
 slug: 'typescript-project-design'
+excerpt: '타입스크립트로 옮겼는데도 undefined is not a function이 끊이지 않는다면 문제는 문법이 아니라 설계입니다. 서버 응답부터 화면까지 타입이 끊기지 않고 이어지는 구조를, 실제로 겪은 버그와 함께 이야기합니다.'
 thumbnail: '/og/typescript-project-design.png'
 ---
-
-# [타입으로 설계하는 프로젝트] 당신의 Type, 어디까지 연결되어 있나요?
 
 ### 들어가며
 

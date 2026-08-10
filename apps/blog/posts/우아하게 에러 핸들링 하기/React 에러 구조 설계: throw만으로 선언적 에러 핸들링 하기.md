@@ -3,6 +3,7 @@ title: 'React 에러 구조 설계: throw만으로 선언적 에러 핸들링 �
 date: '2025-10-14'
 status: published
 slug: 'react-error-deign'
+excerpt: '에러가 계층을 따라 전파된다면 에러 클래스도 계층으로 설계할 수 있지 않을까. 커스텀 에러 클래스 상속과 throw만으로 ErrorBoundary가 섹션마다 다르게 반응하는 구조를 만들고, throw와 return 중 무엇을 고를지도 정리했습니다.'
 thumbnail: '/og/react-error-deign.png'
 ---
 

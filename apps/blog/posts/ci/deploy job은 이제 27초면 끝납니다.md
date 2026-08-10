@@ -7,8 +7,6 @@ thumbnail: '/og/astryx-deploy-pipeline-parallel.png'
 tags: ['github-actions', 'ci', 'deploy']
 ---
 
-# deploy job은 이제 27초면 끝납니다
-
 ## 이 글을 읽고 나면
 
 - CI 파이프라인을 DAG로 보고, wall time을 결정하는 크리티컬 패스를 찾는 관점을 얻습니다

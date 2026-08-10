@@ -1,8 +1,10 @@
 ---
 title: '15줄에서 2줄로: useSyncExternalStore 기반 React Toast 시스템 설계법'
+seoTitle: 'useSyncExternalStore로 만드는 React Toast'
 date: '2025-06-30'
 status: published
 slug: 'react-component-toast'
+excerpt: 'useState와 useEffect로 15줄씩 반복되던 Toast 호출을 2줄로 줄였습니다. useSyncExternalStore로 상태를 컴포넌트 밖 스토어로 빼내, 앱 어디에서든 타입 안전하게 부를 수 있게 만드는 설계.'
 thumbnail: '/og/react-component-toast.png'
 ---
 

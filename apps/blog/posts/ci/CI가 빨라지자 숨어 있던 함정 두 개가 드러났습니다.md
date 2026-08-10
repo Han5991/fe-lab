@@ -7,8 +7,6 @@ thumbnail: '/og/astryx-ci-race-and-permissions.png'
 tags: ['github-actions', 'ci', 'permissions']
 ---
 
-# CI가 빨라지자 숨어 있던 함정 두 개가 드러났습니다
-
 ## 이 글을 읽고 나면
 
 - 파이프라인이 빨라지면 왜 잠복해 있던 문제가 수면 위로 올라오는지 이해합니다

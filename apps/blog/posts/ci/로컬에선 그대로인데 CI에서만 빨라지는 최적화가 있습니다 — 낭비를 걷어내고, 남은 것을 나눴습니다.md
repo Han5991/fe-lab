@@ -1,13 +1,12 @@
 ---
 title: '로컬에선 그대로인데 CI에서만 빨라지는 최적화가 있습니다 — 낭비를 걷어내고, 남은 것을 나눴습니다'
+seoTitle: 'CI에서만 빨라지는 Vitest 최적화'
 date: '2026-07-12'
 status: draft
 slug: 'astryx-vitest-project-split'
 thumbnail: '/og/astryx-vitest-project-split.png'
 tags: ['vitest', 'testing', 'ci', 'performance']
 ---
-
-# 로컬에선 그대로인데 CI에서만 빨라지는 최적화가 있습니다 — 낭비를 걷어내고, 남은 것을 나눴습니다
 
 ## 이 글을 읽고 나면
 

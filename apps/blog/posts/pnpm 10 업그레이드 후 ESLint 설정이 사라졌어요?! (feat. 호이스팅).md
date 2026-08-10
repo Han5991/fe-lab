@@ -1,8 +1,10 @@
 ---
 title: 'pnpm 10 업그레이드 후 ESLint 설정이 사라졌어요?! (feat. 호이스팅)'
+seoTitle: 'pnpm 10 업그레이드 후 ESLint가 사라진 이유'
 date: '2025-05-01'
 status: published
 slug: 'pnpm-eslint-not-working'
+excerpt: 'pnpm 9에서 10으로 올린 뒤 모노레포의 ESLint가 조용히 멈췄습니다. 원인은 설정 문법이 아니라 호이스팅 정책 변경이었습니다. pnpm 이슈 트래커를 따라가 원인을 확인하고, 설정 한 줄로 되돌리기까지의 기록입니다.'
 thumbnail: '/og/pnpm-eslint-not-working.png'
 ---
 

@@ -1,8 +1,10 @@
 ---
 title: '[Typescript로 설계하는 프로젝트] Type 설계의 시작: 견고한 서버 API Type 설계하기 With DI'
+seoTitle: '[TS 설계] 서버 API 타입 설계하기 with DI'
 date: '2025-06-01'
 status: published
 slug: 'typescript-project-api-di-design'
+excerpt: '제네릭 HTTP 클래스를 인터페이스 뒤로 감추고 밖에서 주입합니다. API 레이어가 통신 구현을 모르게 되면 fetch든 axios든 갈아끼울 수 있고, 서버가 없어도 목 하나로 테스트가 끝납니다. DI 관점의 API 설계.'
 thumbnail: '/og/typescript-project-api-di-design.png'
 ---
 

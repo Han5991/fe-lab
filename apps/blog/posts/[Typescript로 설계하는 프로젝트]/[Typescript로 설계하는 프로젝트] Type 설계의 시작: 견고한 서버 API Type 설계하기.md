@@ -1,8 +1,10 @@
 ---
 title: '[Typescript로 설계하는 프로젝트] Type 설계의 시작: 견고한 서버 API Type 설계하기'
+seoTitle: '[TS 설계] 견고한 서버 API Type 설계하기'
 date: '2025-06-01'
 status: published
 slug: 'typescript-project-api-design'
+excerpt: '''User 스키마에서 name이 빠질 것 같아요.'' 이 한마디에 흩어진 타입을 전부 찾아 헤매지 않으려면 서버 API 응답 스키마부터 구조적으로 설계해야 합니다. 타입 설계의 첫 단계를 실제 코드로 하나씩 따라가 봅니다.'
 thumbnail: '/og/typescript-project-api-design.png'
 ---
 

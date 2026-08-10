@@ -1,8 +1,10 @@
 ---
 title: '[Typescript로 설계하는 프로젝트] "같은 로직 또 복사했어요?" Domain 모델로 책임 분리하기'
+seoTitle: '[TS 설계] Domain 모델로 책임 분리하기'
 date: '2025-06-15'
 status: published
 slug: 'typescript-project-domain-design'
+excerpt: 'Service에 사용자 관련 함수가 수백 줄씩 쌓이기 시작하면 그게 신호입니다. Type에서 출발해 Domain 모델로 점진적으로 키워가는 과정과, 함수형과 객체지향 중 무엇을 고를지 판단하는 기준을 예제 코드와 함께 정리했습니다.'
 thumbnail: '/og/typescript-project-domain-design.png'
 ---
 

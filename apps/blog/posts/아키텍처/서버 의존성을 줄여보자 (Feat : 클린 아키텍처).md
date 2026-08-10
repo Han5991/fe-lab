@@ -3,12 +3,13 @@ title: '서버 의존성을 줄여보자 (Feat : 클린 아키텍처)'
 date: '2025-01-13'
 status: published
 slug: 'reduce-server-dependency-clean-architecture'
+excerpt: '페이지 맞춤형 API에 화면이 묶이면 요구사항이 바뀔 때마다 뷰까지 흔들립니다. 클린 아키텍처를 팀이 감당할 만큼만 덜어내 우리 팀이 쓸 수 있는 형태로 다시 설계하고, 실제 코드에 적용해 팀을 설득한 경험을 정리했습니다.'
 thumbnail: '/og/reduce-server-dependency-clean-architecture.png'
 ---
 
 텍스트> **기존 클린 아키텍처에서 많이 벗어난 내용이 많습니다. 감안하고 봐주시면 감사하겠습니다.**
 
-# 프롤로그
+## 프롤로그
 
 #### 백엔드 개발자로 시작했지만, 프론트엔드에서 아키텍처 고민을 시작하게 된 이유
 

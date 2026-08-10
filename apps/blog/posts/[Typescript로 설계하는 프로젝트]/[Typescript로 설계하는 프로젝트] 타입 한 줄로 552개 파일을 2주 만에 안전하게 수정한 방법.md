@@ -1,8 +1,10 @@
 ---
 title: '[Typescript로 설계하는 프로젝트] 타입 한 줄로 552개 파일을 2주 만에 안전하게 수정한 방법'
+seoTitle: '[TS 설계] 타입 한 줄로 552개 파일 안전하게 고치기'
 date: '2025-11-06'
 status: published
 slug: 'typescript-project-type-safe-refactor-with-typescript'
+excerpt: '회원 구조가 바뀌어 552개 파일을 고쳐야 했지만 2주 만에 사이드 이펙트 없이 끝냈습니다. 1년 전에 심어둔 브랜디드 타입 한 줄이 컴파일러를 리팩토링 체크리스트로 바꿔준 이야기와, 같은 안전장치를 지금 프로젝트에 심는 방법.'
 thumbnail: 'typescript-refactor-thumb.png'
 ---
 

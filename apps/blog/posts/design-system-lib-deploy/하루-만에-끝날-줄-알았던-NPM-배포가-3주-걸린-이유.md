@@ -3,12 +3,10 @@ title: '하루 만에 끝날 줄 알았던 디자인 시스템 배포가 3주 �
 date: '2025-11-30'
 status: published
 slug: 'npm-deploy-series-0-prologue'
-excerpt: '별거 아니겠지라고 생각했던 NPM 패키지 배포가 어떻게 3주간의 삽질로 이어졌는지, 그리고 그 과정에서 배운 타협의 기술'
+excerpt: "'별거 아니겠지'라고 생각했던 디자인 시스템 NPM 배포가 어떻게 3주간의 삽질로 이어졌는지, 그리고 그 과정에서 배운 타협의 기술. 사내에서만 쓰던 패키지를 세상에 내놓기까지를 다루는 배포 시리즈의 프롤로그입니다."
 thumbnail: '/og/npm-deploy-series-0-prologue.png'
 tags: ['NPM', '디자인 시스템', '배포', 'Panda CSS', 'tsup', '빌드']
 ---
-
-# 하루 만에 끝날 줄 알았던 NPM 배포가 3주 걸린 이유
 
 ## 프롤로그: "별거 아니겠지"의 착각
 

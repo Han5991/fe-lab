@@ -3,10 +3,9 @@ title: 'Context API를 활용한 DropZone 구현하기'
 date: '2025-07-30'
 status: published
 slug: 'react-component-context-api-dropzone'
+excerpt: 'Mantine Dropzone의 내부를 뜯어보니 Context API와 컴파운드 컴포넌트 패턴의 조합이 있었습니다. 같은 패턴으로 기본·허용·거부·로딩 상태별 UI를 자유롭게 갈아끼울 수 있는 DropZone을 직접 만들어봅니다.'
 thumbnail: '/og/react-component-context-api-dropzone.png'
 ---
-
-# [React Component] Context API를 활용한 DropZone 구현하기
 
 > 평소처럼 Mantine의 Dropzone을 사용하고 있었는데, 문득 내부 구현이 궁금해졌습니다. 어떻게 이렇게 깔끔한 API를 제공할 수 있을까?
 >

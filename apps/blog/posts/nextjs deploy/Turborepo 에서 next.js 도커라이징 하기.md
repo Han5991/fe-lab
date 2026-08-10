@@ -3,6 +3,7 @@ title: 'Turborepo 에서 next.js 도커라이징 하기'
 date: '2025-03-22'
 status: published
 slug: 'turborepo-next.js-docker'
+excerpt: '모노레포의 웹 서비스 세 개를 각각의 이미지로 굽습니다. Next.js standalone 모드와 Turborepo의 --docker 옵션을 조합해 node_modules를 걷어내고 이미지를 가볍게 만드는 방법을 정리했습니다.'
 thumbnail: '/og/turborepo-next.js-docker.png'
 ---
 
