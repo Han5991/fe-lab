@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import matter from 'gray-matter';
 import { estimateReadMin } from '@/lib/format';
+import { SEO_DESCRIPTION_MAX_LENGTH as EXCERPT_FALLBACK_LENGTH } from '@/lib/constants';
 import { collectMarkdownFiles, hasFrontmatter } from '@/lib/postFiles';
 import { isPostFile } from './visibility';
 import type { PostData, RawFrontmatter } from './types';
@@ -19,6 +20,24 @@ export function extractPlainText(content: string): string {
     .replace(/\n+/g, ' ') // 개행을 공백으로 변환
     .replace(/\s+/g, ' ') // 연속된 공백 제거
     .trim();
+}
+
+/**
+ * frontmatter의 `excerpt`가 없거나 빈 문자열일 때 쓰는 본문 앞부분 발췌.
+ *
+ * 이 폴백이 그대로 meta description이 되므로, 도입부가 비슷한 글끼리는 발췌가
+ * **글자 단위로 완전히 겹칩니다**. lint:posts가 그 중복을 원문에서 잡으려면
+ * 똑같은 계산을 해야 해서, 규칙을 여기 한 곳에 두고 양쪽이 함께 씁니다.
+ *
+ * 잘릴 때만 '...'을 붙입니다(짧은 글에 오해 소지의 말줄임표가 붙지 않도록).
+ */
+export function resolveExcerpt(content: string, explicit?: unknown): string {
+  const given = toOptionalString(explicit);
+  if (given) return given;
+  const plain = extractPlainText(content);
+  return plain.length > EXCERPT_FALLBACK_LENGTH
+    ? plain.slice(0, EXCERPT_FALLBACK_LENGTH) + '...'
+    : plain;
 }
 
 /**
@@ -100,13 +119,7 @@ export function parsePost(
     updatedAt: toDateString(data.updatedAt),
     content,
     readMin: estimateReadMin(cleanContent),
-    // excerpt 미지정 시 본문 평문 앞 160자. 잘릴 때만 '...'을 붙인다(짧은 글에
-    // 오해 소지의 말줄임표가 붙지 않도록).
-    excerpt:
-      toOptionalString(data.excerpt) ??
-      (cleanContent.length > 160
-        ? cleanContent.slice(0, 160) + '...'
-        : cleanContent),
+    excerpt: resolveExcerpt(content, data.excerpt),
     thumbnail: toOptionalString(data.thumbnail),
     // 등록되지 않은 이름인지까지는 여기서 보지 않는다 — 렌더 계층이 폴백하고
     // validate-posts가 unknown-hero-diagram으로 막는다.

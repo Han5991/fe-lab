@@ -202,9 +202,9 @@ ECS가 컨테이너를 실행할 때 필요한 권한(ECR에서 이미지 풀링
 
 #### 1-2-3 code deploy
 
-### [code deploy란?](https://docs.aws.amazon.com/ko_kr/codedeploy/latest/userguide/welcome.html)
+## [code deploy란?](https://docs.aws.amazon.com/ko_kr/codedeploy/latest/userguide/welcome.html)
 
-#### 주요 특징
+### 주요 특징
 
 #### 1. 자동화된 배포
 
@@ -247,7 +247,7 @@ ECS가 컨테이너를 실행할 때 필요한 권한(ECR에서 이미지 풀링
     --codedeploy-deployment-group ${{ secrets.AWS_CODE_DEPLOY_DPG }}
 ```
 
-#### 2 슬랙 연동
+### 2 슬랙 연동
 
 ```yaml
 - name: slack-send

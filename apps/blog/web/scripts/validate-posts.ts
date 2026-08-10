@@ -11,6 +11,7 @@ import {
   SEO_DESCRIPTION_MAX_LENGTH,
 } from '@/lib/constants';
 import { POST_STATUSES, isPostStatus, isPostFile } from '@/domain/post';
+import { resolveExcerpt } from '@/domain/post/repository';
 // 이름 목록만 있는 모듈에서 가져옵니다. registry.ts(=.tsx 컴포넌트 의존)를 직접
 // 참조하면 이 노드 스크립트가 React·Panda까지 끌고 들어옵니다.
 import { DIAGRAM_NAMES, isDiagramName } from '@/domain/post/diagramNames';
@@ -93,6 +94,12 @@ export interface ValidateOptions {
  * SEO 계약 위반의 심각도.
  *
  * `draft`는 빌드에서 통째로 빠져 check-seo가 볼 일이 없으므로 strict에서도 경고입니다.
+ *
+ * **`scheduled`는 아직 안 나갔더라도 에러입니다.** 지금 빌드에는 안 실리니 오늘의
+ * check-seo는 통과하지만, 예약일이 지나면 KST 09:00 cron 빌드에 실려 나가고 그때
+ * 배포가 깨집니다 — 아무도 안 보고 있는 시각에, 예약 글이 조용히 발행되지 않는
+ * 형태로. 그 실패를 글 쓰는 사람 앞으로 당겨 옵니다. (쓰는 중에 막히는 게
+ * 싫으면 `status: draft`로 두고 마지막에 `scheduled`로 바꾸면 됩니다.)
  *
  * 본문 h1(`body-h1`)은 여기 해당하지 않습니다 — 렌더 계층이 h2로 강등해
  * check-seo의 h1 검사를 통과하므로 원문이 그대로여도 배포가 막히지 않습니다.
@@ -453,6 +460,21 @@ function frontmatterOffset(raw: string): number {
   return 0;
 }
 
+/**
+ * 퍼센트 인코딩을 풀되, 잘못된 시퀀스(`./100%.png`의 `%.`처럼)에는 원문을 씁니다.
+ *
+ * 맨 decodeURIComponent는 URIError를 던져 **검증기 전체가 스택 트레이스만 남기고
+ * 죽습니다** — 위반 하나를 보고해야 할 자리에서 도구가 멈추는 셈입니다.
+ * (check-seo도 같은 이유로 감싸고 있습니다)
+ */
+function decodeUrlSafe(url: string): string {
+  try {
+    return decodeURIComponent(url);
+  } catch {
+    return url;
+  }
+}
+
 /** 마크다운 `![alt](src)` — alt는 비어 있을 수 있다. */
 const MARKDOWN_IMAGE = /!\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g;
 /**
@@ -550,7 +572,7 @@ export function validateImageReferences(
       continue;
     }
 
-    const cleanRef = decodeURIComponent(ref.split('#')[0].split('?')[0]);
+    const cleanRef = decodeUrlSafe(ref.split('#')[0].split('?')[0]);
     const resolved = resolve(dirname(absPath), cleanRef);
     if (!existsSync(resolved)) {
       issues.push({
@@ -713,6 +735,52 @@ function deriveDefaultSlug(relPath: string): string {
   return relPath.replace(/\.(md|mdx)$/, '');
 }
 
+/**
+ * 발행될 글들의 meta description이 서로 완전히 겹치는지 검사합니다.
+ *
+ * `check-seo`가 빌드 산출물에서 잡는 duplicate-description과 **같은 조건**을 원문에서
+ * 먼저 봅니다. 여기 규칙이 없으면 로컬 검사와 빌드는 통과하고 CI만 실패합니다 —
+ * strict 모드를 넣은 이유가 바로 그 간극을 없애는 것이었습니다.
+ *
+ * 비교 대상은 `excerpt`가 아니라 **실제로 나갈 description**입니다. excerpt를 비워 둔
+ * 글들은 본문 앞부분 자동 발췌로 폴백하는데, 도입부가 비슷한 시리즈 글끼리는 그 발췌가
+ * 글자 단위로 겹칩니다(실제로 본편/DI편 두 쌍이 그랬습니다). 폴백 계산은 도메인의
+ * resolveExcerpt 하나를 씁니다.
+ *
+ * draft는 빌드에서 빠지므로 제외합니다.
+ */
+export function detectDuplicateDescriptions(
+  records: PostRecord[],
+  options: ValidateOptions = {},
+): Issue[] {
+  const byDescription = new Map<string, PostRecord[]>();
+  for (const record of records) {
+    if (!isPostFile(record.data) || record.data.status === 'draft') continue;
+    const description = resolveExcerpt(record.content, record.data.excerpt);
+    const arr = byDescription.get(description) ?? [];
+    arr.push(record);
+    byDescription.set(description, arr);
+  }
+
+  const issues: Issue[] = [];
+  for (const [description, group] of byDescription) {
+    if (group.length < 2) continue;
+    for (const record of group) {
+      issues.push({
+        file: record.relPath,
+        line: null,
+        severity: seoSeverity(record.data, options),
+        rule: 'duplicate-description',
+        message: `meta description이 다른 글과 완전히 같습니다 — 중복 콘텐츠 신호가 되어 한쪽이 색인에서 밀립니다. 고유한 \`excerpt\`를 적어주세요 (겹치는 글: ${group
+          .filter(other => other !== record)
+          .map(other => other.relPath)
+          .join(', ')}): "${description.slice(0, 40)}…"`,
+      });
+    }
+  }
+  return issues;
+}
+
 export function detectDuplicateSlugs(records: PostRecord[]): Issue[] {
   const slugMap = new Map<string, string[]>();
   for (const r of records) {
@@ -767,6 +835,7 @@ function main() {
   }
 
   allIssues.push(...detectDuplicateSlugs(records));
+  allIssues.push(...detectDuplicateDescriptions(records, options));
 
   if (allIssues.length === 0) {
     console.log(`✓ ${records.length}개 포스트 검증 통과`);

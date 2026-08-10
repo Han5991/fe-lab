@@ -7,6 +7,7 @@ import {
   scanBodyLines,
   maskNonProse,
   detectDuplicateSlugs,
+  detectDuplicateDescriptions,
   type PostRecord,
 } from './validate-posts';
 import { DIAGRAM_NAMES } from '@/domain/post/diagramNames';
@@ -904,5 +905,81 @@ test('validatePost: 정상적으로 끝나는 excerpt는 truncated-excerpt가 �
       date: '2025-01-01',
       excerpt: VALID_EXCERPT,
     }).includes('truncated-excerpt'),
+  );
+});
+
+// ── 잘못된 퍼센트 인코딩 (검증기가 죽지 않아야 한다) ─────────────────────────
+
+test('이미지: 잘못된 퍼센트 시퀀스에도 검증기가 죽지 않는다', () => {
+  // `./100%.png`의 `%.`은 decodeURIComponent가 URIError를 던진다. 맨 호출이면
+  // 위반 하나를 보고해야 할 자리에서 도구 전체가 스택 트레이스만 남기고 멈춘다.
+  const issues = validateImageReferences(
+    rec(
+      { title: 'x', status: 'published' },
+      { content: '![그림](./100%.png)' },
+    ),
+    '---\ntitle: x\n---\n',
+  );
+  assert.deepEqual(
+    issues.map(i => i.rule),
+    ['missing-image'],
+  );
+});
+
+// ── duplicate-description ────────────────────────────────────────────────────
+
+function recFor(
+  relPath: string,
+  data: Record<string, unknown>,
+  content = '',
+): PostRecord {
+  return { absPath: `/posts/${relPath}`, relPath, data, content };
+}
+
+test('duplicate-description: excerpt가 같은 발행 글 둘을 잡는다', () => {
+  const issues = detectDuplicateDescriptions(
+    [
+      recFor('a.md', { title: 'A', status: 'published', excerpt: '같은 요약' }),
+      recFor('b.md', { title: 'B', status: 'published', excerpt: '같은 요약' }),
+    ],
+    { strict: true },
+  );
+  assert.deepEqual(
+    issues.map(i => i.rule),
+    ['duplicate-description', 'duplicate-description'],
+  );
+  assert.ok(issues.every(i => i.severity === 'error'));
+  assert.ok(issues[0].message.includes('b.md'));
+});
+
+test('duplicate-description: excerpt를 비운 글은 자동 발췌로 비교한다', () => {
+  // 실제로 문제가 됐던 형태 — 도입부가 같은 시리즈 본편/DI편.
+  const intro = '들어가며 '.repeat(40);
+  const issues = detectDuplicateDescriptions([
+    recFor('a.md', { title: 'A', status: 'published' }, intro + '본편 내용'),
+    recFor('b.md', { title: 'B', status: 'published' }, intro + 'DI편 내용'),
+  ]);
+  assert.equal(issues.length, 2);
+  assert.ok(issues.every(i => i.rule === 'duplicate-description'));
+});
+
+test('duplicate-description: 서로 다르면 잡지 않는다', () => {
+  assert.deepEqual(
+    detectDuplicateDescriptions([
+      recFor('a.md', { title: 'A', status: 'published', excerpt: '요약 A' }),
+      recFor('b.md', { title: 'B', status: 'published', excerpt: '요약 B' }),
+    ]),
+    [],
+  );
+});
+
+test('duplicate-description: draft와 메타 노트는 비교 대상이 아니다', () => {
+  assert.deepEqual(
+    detectDuplicateDescriptions([
+      recFor('a.md', { title: 'A', status: 'draft', excerpt: '같은 요약' }),
+      recFor('b.md', { title: 'B', status: 'draft', excerpt: '같은 요약' }),
+      recFor('c.md', { title: 'C', excerpt: '같은 요약' }),
+    ]),
+    [],
   );
 });
