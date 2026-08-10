@@ -734,38 +734,6 @@ test('이미지: 코드 펜스 안의 `![](…)`는 코드 예시라 검사하�
   );
 });
 
-test('이미지: raw HTML <img>의 alt 누락도 잡는다', () => {
-  // check-seo는 최종 HTML의 모든 <img>를 세므로, 마크다운 문법만 검사하면
-  // 로컬은 통과하고 CI에서만 실패한다 — strict 모드가 없애려던 그 간극이다.
-  const found = validateImageReferences(
-    rec(
-      { title: 'x', status: 'published' },
-      { content: '<img src="https://example.com/a.png">' },
-    ),
-    '---\ntitle: x\n---\n',
-    { strict: true },
-  );
-  assert.deepEqual(
-    found.map(i => i.rule),
-    ['missing-image-alt'],
-  );
-  assert.equal(found[0].severity, 'error');
-});
-
-test('이미지: alt가 있는 raw HTML <img>는 통과 (작은따옴표 속성 포함)', () => {
-  assert.deepEqual(
-    validateImageReferences(
-      rec(
-        { title: 'x', status: 'published' },
-        { content: "<img src='https://example.com/a.png' alt='구조도' />" },
-      ),
-      '---\ntitle: x\n---\n',
-      { strict: true },
-    ),
-    [],
-  );
-});
-
 test('이미지: 메타 노트(status 없음)는 alt를 검사하지 않는다', () => {
   // 빌드에서 통째로 빠지는 기획 문서라 렌더될 일이 없다.
   // validatePost·validateBodyHeadings와 같은 기준(isPostFile).
@@ -808,26 +776,6 @@ test('maskNonProse: 길이를 유지한 채 덮는다 (줄 번호 계산이 어�
   const masked = maskNonProse(content);
   assert.equal(masked.length, content.length);
   assert.equal(masked.split('\n').length, content.split('\n').length);
-});
-
-test('이미지: 여러 줄에 걸친 raw <img>도 잡는다', () => {
-  // <figure> 안에서 속성을 여러 줄로 늘어놓는 형태. 줄 단위로만 보면 통째로
-  // 빠져나가 CI(check-seo)에서만 걸린다.
-  const found = validateImageReferences(
-    rec(
-      { title: 'x', status: 'published' },
-      {
-        content:
-          '<figure>\n  <img\n    src="https://a.dev/x.png"\n  />\n</figure>',
-      },
-    ),
-    '---\ntitle: x\n---\n',
-    { strict: true },
-  );
-  assert.deepEqual(
-    found.map(i => i.rule),
-    ['missing-image-alt'],
-  );
 });
 
 test('이미지: 줄 번호는 실제 파일 줄을 가리킨다', () => {
@@ -966,45 +914,7 @@ test('duplicate-description: draft와 메타 노트는 비교 대상이 아니�
   );
 });
 
-test('이미지: alt 안의 `>`에서 태그가 끊기지 않는다', () => {
-  // `alt="22분 > 8분"`을 `[\s\S]*?>`로 읽으면 alt 없는 이미지로 보여,
-  // 멀쩡한 이미지가 엄격 모드에서 빌드를 막는다.
-  assert.deepEqual(
-    validateImageReferences(
-      rec(
-        { title: 'x', status: 'published' },
-        { content: '<img src="https://a.dev/x.png" alt="22분 > 8분">' },
-      ),
-      '---\ntitle: x\n---\n',
-      { strict: true },
-    ),
-    [],
-  );
-});
-
 // ── 리뷰 6라운드: 마스킹·헤딩 판정 경계 ─────────────────────────────────────
-
-test('maskNonProse: HTML 주석은 덮는다 (렌더되지 않는 마크업)', () => {
-  // 주석 안의 <img>로 빌드가 막히면 check-seo도 못 보는 것 때문에 로컬만 실패한다.
-  assert.deepEqual(
-    validateImageReferences(
-      rec(
-        { title: 'x', status: 'published' },
-        { content: '<!--\n<img src="./없는파일.png">\n-->\n본문' },
-      ),
-      '---\ntitle: x\n---\n',
-      { strict: true },
-    ),
-    [],
-  );
-});
-
-test('maskNonProse: 덮은 뒤에도 줄 수가 유지된다', () => {
-  const content = '앞\n<!--\n주석\n-->\n뒤';
-  const masked = maskNonProse(content);
-  assert.equal(masked.split('\n').length, content.split('\n').length);
-  assert.equal(masked.length, content.length);
-});
 
 test('validateBodyHeadings: 1~3칸 들여쓴 ATX h1도 잡는다', () => {
   // CommonMark는 앞 공백 3칸까지 허용한다. 그대로 h1로 렌더되는데 lint가
@@ -1031,22 +941,6 @@ test('scanBodyLines: 라벨 없는 펜스는 opensFence가 빈 문자열(null �
 
 // ── 리뷰 7라운드 ─────────────────────────────────────────────────────────────
 
-test('maskNonProse: 산문에 인용한 `<!--`가 주석 시작으로 오인되지 않는다', () => {
-  // 인라인 코드를 주석보다 먼저 덮어야 한다.
-  const issues = validateImageReferences(
-    rec(
-      { title: 'x', status: 'published' },
-      { content: '주석은 `<!--` 로 시작합니다.\n\n![그림](./없는파일.png)' },
-    ),
-    '---\ntitle: x\n---\n',
-    { strict: true },
-  );
-  assert.deepEqual(
-    issues.map(i => i.rule),
-    ['missing-image'],
-  );
-});
-
 test('validateBodyHeadings: 강조로 시작하는 문단 + `===`도 setext h1', () => {
   // `**중요한 제목**`을 목록 마커로 오인하면 진짜 h1을 놓친다.
   assert.equal(bodyH1Rules('**중요한 제목**\n===').length, 1);
@@ -1071,24 +965,6 @@ test('strict: 예약일이 지난 글도 물론 에러', () => {
   );
 });
 
-test('validateBodyHeadings: HTML 주석 안의 h1은 잡지 않는다', () => {
-  assert.deepEqual(bodyH1Rules('<!--\n# 지워둔 제목\n-->\n본문'), []);
-});
-
-test('이미지: 따옴표 없는 속성값도 읽는다 (HTML5 유효)', () => {
-  assert.deepEqual(
-    validateImageReferences(
-      rec(
-        { title: 'x', status: 'published' },
-        { content: '<img src=https://a.dev/x.png alt=다이어그램>' },
-      ),
-      '---\ntitle: x\n---\n',
-      { strict: true },
-    ),
-    [],
-  );
-});
-
 // ── 리뷰 9라운드: 마스킹이 검사를 끄지 않는다 ────────────────────────────────
 
 test('body-h1 메시지는 원문 줄을 인용한다 (마스킹된 줄이 아니라)', () => {
@@ -1098,13 +974,6 @@ test('body-h1 메시지는 원문 줄을 인용한다 (마스킹된 줄이 아�
 });
 
 // ── 리뷰 10라운드: 마스킹이 검사를 끄지 않는다 ───────────────────────────────
-
-test('maskNonProse: 인라인 코드는 덮지 않는다 (검사를 끄지 않기 위해)', () => {
-  // 백틱 짝 맞추기는 짝 없는 백틱 하나에 무너져 멀쩡한 산문을 통째로 덮었고,
-  // 그 안의 진짜 문제가 조용히 사라졌다. 이 저장소 50개 글에서 인라인 코드로
-  // <img>/<h1>을 인용한 사례는 0건이라, 막으려던 문제는 관측된 적이 없다.
-  assert.equal(maskNonProse('앞 `<img>` 뒤'), '앞 `<img>` 뒤');
-});
 
 test('이미지: 짝 없는 백틱이 있어도 진짜 문제를 놓치지 않는다', () => {
   const issues = validateImageReferences(
@@ -1165,4 +1034,64 @@ test('scanBodyLines: 안 닫힌 펜스도 언어 라벨은 남긴다', () => {
   const lines = scanBodyLines('```typescriptt\ncode');
   assert.equal(lines[0].inFence, false);
   assert.equal(lines[0].opensFence, 'typescriptt');
+});
+
+// ── 리뷰 12라운드: 이미지 검사 범위 ──────────────────────────────────────────
+
+test('maskNonProse: 코드 펜스만 덮는다 (짝 맞추기가 필요한 건 덮지 않는다)', () => {
+  // 인라인 코드와 HTML 주석은 여닫이를 문서에서 짝지어야 해서, 짝이 하나만
+  // 어긋나면 멀쩡한 산문을 통째로 덮고 그 안의 진짜 문제를 삼켰다.
+  const content = '앞 `코드` 와 <!-- 주석\n\n```ts\nx\n```\n\n뒤';
+  const masked = maskNonProse(content);
+  assert.equal(masked.length, content.length);
+  assert.ok(masked.includes('`코드`'), '인라인 코드는 남아 있어야 한다');
+  assert.ok(masked.includes('<!-- 주석'), '주석도 남아 있어야 한다');
+  assert.ok(!masked.includes('\nx\n'), '펜스 안은 덮여야 한다');
+});
+
+test('이미지: 산문에 인용한 <img> 태그는 검사하지 않는다', () => {
+  // raw HTML의 alt는 check-seo가 최종 HTML에서 본다(그 검사는 pnpm build의
+  // 마지막 단계라 로컬에서도 돈다). 여기서 또 보면, 렌더되면 <code> 텍스트일 뿐인
+  // 인용 태그가 빌드를 막는다.
+  assert.deepEqual(
+    validateImageReferences(
+      rec(
+        { title: 'x', status: 'published' },
+        { content: '태그는 `<img src="hero.png">` 처럼 씁니다.' },
+      ),
+      '---\ntitle: x\n---\n',
+      { strict: true },
+    ),
+    [],
+  );
+});
+
+test('이미지: 마크다운 빈 alt는 계속 잡는다 (감사에서 나온 4건)', () => {
+  const issues = validateImageReferences(
+    rec({ title: 'x', status: 'published' }, { content: '![](/a.png)' }),
+    '---\ntitle: x\n---\n',
+    { strict: true },
+  );
+  assert.deepEqual(
+    issues.map(i => i.rule),
+    ['missing-image-alt'],
+  );
+});
+
+test('이미지: 산문의 <!-- --> 짝이 어긋나도 깨진 이미지를 놓치지 않는다', () => {
+  // 주석 마스킹을 없앤 이유. 이 저장소에 <!--/-->가 짝이 안 맞는 글이 3개 있다.
+  const issues = validateImageReferences(
+    rec(
+      { title: 'x', status: 'published' },
+      {
+        content:
+          '주석은 <!-- 로 열고\n\n![그림](./gone.png)\n\n--> 로 닫습니다',
+      },
+    ),
+    '---\ntitle: x\n---\n',
+  );
+  assert.deepEqual(
+    issues.map(i => i.rule),
+    ['missing-image'],
+  );
 });

@@ -484,32 +484,6 @@ function decodeUrlSafe(url: string): string {
 
 /** 마크다운 `![alt](src)` — alt는 비어 있을 수 있다. */
 const MARKDOWN_IMAGE = /!\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g;
-/**
- * raw HTML `<img …>` — rehype-raw로 살아나므로 마크다운 문법과 똑같이 렌더된다.
- *
- * 속성 값을 통째로 건너뛰는 형태다. 두 가지를 동시에 해결한다:
- * - 줄바꿈을 넘긴다 — `<figure>` 안에서 속성을 여러 줄에 늘어놓는 형태가 흔한데,
- *   한 줄짜리로만 보면 그 이미지는 검사를 통째로 빠져나가 CI에서만 걸린다.
- * - 따옴표 안의 `>`에서 끊기지 않는다 — `alt="22분 > 8분"`처럼 부등호가 든 alt를
- *   `[\s\S]*?>`로 읽으면 alt가 없는 것처럼 보여, 멀쩡한 이미지가 엄격 모드에서
- *   빌드를 막는다.
- */
-const HTML_IMAGE = /<img\b(?:[^>"']|"[^"]*"|'[^']*')*>/gi;
-
-/** `<img>` 태그에서 (alt, src)를 뽑는다. 속성이 없으면 빈 문자열. */
-function parseHtmlImage(tag: string): { alt: string; src: string } {
-  // 따옴표 없는 값(`<img src=/a.png alt=다이어그램>`)도 HTML5에서는 유효하다.
-  // 따옴표만 읽으면 멀쩡한 이미지가 "alt 없음"으로 잡혀 빌드를 막는다.
-  const attr = (name: string) =>
-    tag.match(
-      new RegExp(`\\s${name}\\s*=\\s*("([^"]*)"|'([^']*)'|([^\\s>]+))`, 'i'),
-    );
-  const alt = attr('alt');
-  const src = attr('src');
-  const value = (m: RegExpMatchArray | null) =>
-    m ? (m[2] ?? m[3] ?? m[4] ?? '') : '';
-  return { alt: value(alt), src: value(src) };
-}
 
 /** 개행은 남기고 나머지만 공백으로 — 줄 번호 계산이 어긋나지 않도록. */
 function blank(text: string): string {
@@ -517,31 +491,25 @@ function blank(text: string): string {
 }
 
 /**
- * 검사 대상이 아닌 구간을 **길이를 유지한 채** 공백으로 덮은 본문을 만듭니다.
+ * 코드 펜스 안을 **길이를 유지한 채** 공백으로 덮은 본문을 만듭니다.
  *
- * 덮는 곳은 둘입니다.
- * - 코드 펜스 안: 이미지 문법이나 `# 주석`이 있어도 코드 **예시**다.
- *   (실제로 이 저장소의 글에 펜스 안 `# ` 줄이 32개 있다 — 쉘·yaml 주석이다)
- * - HTML 주석(`<!-- … -->`): 아예 렌더되지 않는다. check-seo도 볼 수 없어
- *   여기서 잡으면 "로컬만 실패"가 된다. 닫는 `-->`가 있을 때만 덮으므로
- *   안 닫힌 주석이 뒤를 다 삼키지 않는다.
+ * 펜스 안의 이미지 문법이나 `# 주석`은 코드 **예시**입니다 — 실제로 이 저장소의
+ * 글에 펜스 안 `# ` 줄이 32개 있습니다(쉘·yaml 주석).
  *
- * **인라인 코드는 덮지 않습니다.** 예전엔 `` `<img src="x">` `` 같은 인용을
- * 가리려고 백틱 짝을 찾아 덮었는데, 짝 없는 백틱이 하나만 있어도 그 뒤의 짝이
- * 밀려 멀쩡한 산문이 통째로 덮였습니다 — 그 안의 깨진 이미지와 진짜 h1이
- * **조용히 사라졌습니다**. 검사기가 스스로 검사를 끄는 셈입니다.
- * 실제로 이 저장소 50개 글에서 인라인 코드로 `<img>`·`<h1>`을 인용한 사례는
- * **0건**이라, 막으려던 문제는 관측된 적이 없고 부작용만 두 번 재현됐습니다.
- * 언젠가 그렇게 쓰면 눈에 보이는 경고 하나가 나옵니다 — 조용히 놓치는 것보다 낫습니다.
+ * **덮는 곳은 펜스뿐입니다.** 인라인 코드와 HTML 주석도 덮어 봤지만, 둘 다
+ * 여는 표시와 닫는 표시를 문서에서 짝지어야 해서 짝이 하나만 어긋나면 멀쩡한
+ * 산문을 통째로 덮었고, 그 안의 깨진 이미지와 진짜 h1이 **조용히 사라졌습니다**.
+ * 검사기가 스스로 검사를 끄는 실패라, 오탐보다 나쁩니다.
+ * 코퍼스로도 확인했습니다 — 인라인 코드로 `<img>`·`<h1>`을 인용한 글은 0건인데
+ * `<!--`와 `-->`가 산문에서 짝이 안 맞는 글은 3건입니다. 막으려던 문제보다
+ * 부작용이 흔합니다. 펜스는 여닫이가 줄 단위로 명확해 같은 함정이 없습니다.
  *
  * 길이(와 줄 수)를 유지하는 건 match.index로 줄 번호를 그대로 계산하기 위해서입니다.
  */
 export function maskNonProse(content: string): string {
-  const withoutFences = scanBodyLines(content)
+  return scanBodyLines(content)
     .map(({ text, inFence }) => (inFence ? blank(text) : text))
     .join('\n');
-
-  return withoutFences.replace(/<!--[\s\S]*?-->/g, blank);
 }
 
 export function validateImageReferences(
@@ -556,25 +524,23 @@ export function validateImageReferences(
   const lineOf = (index: number) =>
     offset + prose.slice(0, index).split('\n').length;
 
-  const found = [
-    ...[...prose.matchAll(MARKDOWN_IMAGE)].map(m => ({
-      alt: m[1],
-      ref: m[2],
-      index: m.index,
-    })),
-    // raw HTML `<img>`도 함께 본다. 마크다운 문법만 검사하면 `<img src="x">`로
-    // 쓴 이미지는 prebuild를 통과하고 check-seo(최종 HTML의 모든 <img>를 센다)
-    // 에서만 걸려, strict 모드가 없애려던 "로컬은 통과 · CI만 실패"가 되살아난다.
-    ...[...prose.matchAll(HTML_IMAGE)].map(m => {
-      const { alt, src } = parseHtmlImage(m[0]);
-      return { alt, ref: src, index: m.index };
-    }),
-  ].sort((a, b) => a.index - b.index);
+  // **마크다운 이미지만** 검사한다. raw HTML `<img>`의 alt는 `check-seo`가
+  // 최종 HTML에서 보고, 그 검사는 이제 `pnpm build`의 마지막 단계라 로컬에서도
+  // 돈다 — 여기서 또 볼 이유가 없다.
+  //
+  // 여기서 raw HTML까지 훑어봤더니 산문에 인용한 `<img …>` 태그가 그대로
+  // 위반으로 잡혔다. 렌더되면 `<code>` 텍스트라 실제 페이지에는 이미지가 없는데도
+  // 엄격 모드에서 빌드를 막는, 글쓴이가 납득할 수 없는 실패다. 정작 alt 없는
+  // raw `<img>`는 이 저장소 50개 글에 **0건**이다.
+  const found = [...prose.matchAll(MARKDOWN_IMAGE)].map(m => ({
+    alt: m[1],
+    ref: m[2],
+    index: m.index,
+  }));
 
   for (const { alt, ref, index } of found) {
     // alt가 비면 스크린리더는 파일 URL을 읽거나 그냥 건너뛴다. 이미지가 다이어그램인
     // 이 블로그에서는 그림이 설명의 본체인 경우가 많아서 내용이 통째로 사라진다.
-    // (장식용 이미지라면 alt를 비우는 게 맞지만, 지금까지 빈 alt는 전부 실수였다.)
     //
     // 빌드에서 제외되는 메타 노트는 렌더될 일이 없으므로 검사하지 않는다 —
     // validatePost·validateBodyHeadings와 같은 기준(isPostFile).
