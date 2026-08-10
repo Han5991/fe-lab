@@ -20,14 +20,17 @@ import {
   RSS_PATH,
 } from '@/lib/constants';
 
+// 제목은 meta·og·twitter 세 곳에 나간다. 한 번만 쓴다.
+const DEFAULT_TITLE = `${SITE_NAME} | 프론트엔드 실험실`;
+
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   // RSS alternate link는 RootLayout의 <head>에 직접 추가합니다
   // (Next 16 metadata.alternates.types로는 출력되지 않는 문제 회피)
-  title: 'Frontend Lab | 프론트엔드 실험실',
+  title: DEFAULT_TITLE,
   description: SITE_DESCRIPTION_EXPANDED,
   openGraph: {
-    title: 'Frontend Lab | 프론트엔드 실험실',
+    title: DEFAULT_TITLE,
     description: SITE_DESCRIPTION_EXPANDED,
     url: SITE_URL,
     siteName: SITE_NAME,
@@ -44,7 +47,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Frontend Lab | 프론트엔드 실험실',
+    title: DEFAULT_TITLE,
     description: SITE_DESCRIPTION_EXPANDED,
     images: [OG_DEFAULT_IMAGE],
   },

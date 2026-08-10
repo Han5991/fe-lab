@@ -9,6 +9,7 @@ import {
   SITE_AUTHOR_LINKEDIN,
   MERGED_PR_COUNT_FALLBACK,
   ABOUT_PAGE_MODIFIED,
+  TITLE_SUFFIX,
 } from '@/lib/constants';
 import { safeJsonLd } from '@/lib/jsonLd';
 import { Label } from '@/src/components/blog';
@@ -18,15 +19,20 @@ import { getAllSeries } from '@/domain/post/aggregate';
 
 import { FEATURED_SERIES } from './featuredSeries';
 
+const PAGE_TITLE = `소개${TITLE_SUFFIX}`;
+// 공유 카드(og·twitter)용 짧은 소개. 검색 결과용 description과 일부러 다르다 —
+// 카드는 한 줄로 읽히는 게 낫고, SERP는 길이 예산(120~160자)을 채워야 한다.
+const SHARE_DESCRIPTION =
+  '프론트엔드 엔지니어 한상욱(Sangwook Han). Mantine 27 PRs, Node.js 코어 기여, gemini-cli 74% 성능 개선. FEConf 2025 발표자.';
+
 export const metadata: Metadata = {
-  title: '소개 | Frontend Lab',
+  title: PAGE_TITLE,
   description:
     '프론트엔드 엔지니어 한상욱(Sangwook Han)의 소개 페이지입니다. Mantine·Node.js·Next.js·gemini-cli 오픈소스 기여자이자 FEConf 2025·TeoConf 발표자. 번들러 내부와 TypeScript 설계를 파고듭니다.',
   alternates: { canonical: '/about/' },
   openGraph: {
-    title: '소개 | Frontend Lab',
-    description:
-      '프론트엔드 엔지니어 한상욱(Sangwook Han). Mantine 27 PRs, Node.js 코어 기여, gemini-cli 74% 성능 개선. FEConf 2025 발표자.',
+    title: PAGE_TITLE,
+    description: SHARE_DESCRIPTION,
     url: `${SITE_URL}/about/`,
     siteName: SITE_NAME,
     // 사람 소개 페이지라 website가 아니라 profile이다. 지정하지 않으면
@@ -47,9 +53,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: '소개 | Frontend Lab',
-    description:
-      '프론트엔드 엔지니어 한상욱(Sangwook Han). Mantine 27 PRs, Node.js 코어 기여, gemini-cli 74% 성능 개선. FEConf 2025 발표자.',
+    title: PAGE_TITLE,
+    description: SHARE_DESCRIPTION,
     images: [`${SITE_URL}${OG_DEFAULT_IMAGE}`],
   },
 };

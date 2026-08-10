@@ -4,7 +4,12 @@ import type { Metadata } from 'next';
 
 import { getAllPostSummaries } from '@/domain/post';
 import { getAllSeries, getAllTags, getAllYears } from '@/domain/post/aggregate';
-import { SITE_URL, SITE_NAME, OG_DEFAULT_IMAGE } from '@/lib/constants';
+import {
+  SITE_URL,
+  SITE_NAME,
+  OG_DEFAULT_IMAGE,
+  TITLE_SUFFIX,
+} from '@/lib/constants';
 import { safeJsonLd } from '@/lib/jsonLd';
 // 폴백 목록과 하이드레이션 후 목록이 같은 행 컴포넌트를 쓰도록 배럴(index.ts)이
 // 아니라 모듈에서 직접 가져온다.
@@ -14,15 +19,20 @@ import {
 } from '@/src/components/blog/PostsArchive';
 import { PageBoundary } from '@/src/components/PageBoundary';
 
+// `<title>`·description을 세 곳(meta·og·twitter)에 각각 적으면 한 곳만 고쳐졌을 때
+// 공유 카드와 검색 결과가 서로 다른 말을 한다. 페이지당 한 번만 쓴다 — /series가
+// 쓰는 방식과 같다.
+const PAGE_TITLE = `모든 노트${TITLE_SUFFIX}`;
+const PAGE_DESCRIPTION =
+  '프론트엔드 실험실에 쌓인 글 전부를 한 곳에서 봅니다. 태그·시리즈·연도로 좁혀 가며 번들러 만들기, TypeScript 설계, React 컴포넌트 패턴, 배포 파이프라인, 오픈소스 기여 기록 중 지금 필요한 글을 찾아보세요.';
+
 export const metadata: Metadata = {
-  title: '모든 노트 | Frontend Lab',
-  description:
-    '프론트엔드 실험실에 쌓인 글 전부를 한 곳에서 봅니다. 태그·시리즈·연도로 좁혀 가며 번들러 만들기, TypeScript 설계, React 컴포넌트 패턴, 배포 파이프라인, 오픈소스 기여 기록 중 지금 필요한 글을 찾아보세요.',
+  title: PAGE_TITLE,
+  description: PAGE_DESCRIPTION,
   alternates: { canonical: '/posts/' },
   openGraph: {
-    title: '모든 노트 | Frontend Lab',
-    description:
-      '프론트엔드 실험실에 쌓인 글 전부를 한 곳에서 봅니다. 태그·시리즈·연도로 좁혀 가며 번들러 만들기, TypeScript 설계, React 컴포넌트 패턴, 배포 파이프라인, 오픈소스 기여 기록 중 지금 필요한 글을 찾아보세요.',
+    title: PAGE_TITLE,
+    description: PAGE_DESCRIPTION,
     url: `${SITE_URL}/posts/`,
     siteName: SITE_NAME,
     images: [
@@ -38,9 +48,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: '모든 노트 | Frontend Lab',
-    description:
-      '프론트엔드 실험실에 쌓인 글 전부를 한 곳에서 봅니다. 태그·시리즈·연도로 좁혀 가며 번들러 만들기, TypeScript 설계, React 컴포넌트 패턴, 배포 파이프라인, 오픈소스 기여 기록 중 지금 필요한 글을 찾아보세요.',
+    title: PAGE_TITLE,
+    description: PAGE_DESCRIPTION,
     images: [OG_DEFAULT_IMAGE],
   },
 };
