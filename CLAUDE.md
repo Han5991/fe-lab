@@ -513,7 +513,7 @@ HTML 파서를 거치므로 **self-closing(`<metrics />`)은 동작하지 않는
 - **검색 인증**: Naver 사이트 인증 메타태그 포함
 - **검색 인덱스**: `search-index.json`으로 클라이언트 사이드 검색 지원
 - **llms.txt / llms-full.txt**: 빌드 시 자동 생성 (AI 크롤러용 색인·전문)
-- **산출물 검사**: `pnpm check-seo` — 빌드된 HTML을 파싱해 SEO 계약을 검사하고 위반 시 실패한다. `pnpm build`의 마지막 단계이자 CI(`deploy-blog.yml`)의 배포 직전 단계 — 로컬과 CI가 **같은 검사**를 지나야 "로컬은 통과, CI만 실패"가 없다
+- **산출물 검사**: `pnpm check-seo` — 빌드된 HTML을 파싱해 SEO 계약을 검사하고 위반 시 실패한다. **`pnpm build`의 마지막 단계 하나가 유일한 실행 지점이다**(`prebuild → next build → check-seo`). PR CI(`ci.yml`)와 배포(`deploy-blog.yml`)가 각각 그 `build`를 부르므로 로컬·PR·배포가 **같은 검사**를 지난다 — 워크플로에 별도 스텝을 또 두면 build에서 이미 실패해 도달하지 못하는 죽은 게이트가 된다
 
 > **`prebuild`는 `--strict`로 돈다.** `lint:posts`(수동)와 `predev`는 경고로 두는
 > SEO 규칙(`missing-excerpt`·`excerpt-length`·`long-title`·`missing-image-alt`·

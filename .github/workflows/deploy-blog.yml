@@ -123,14 +123,10 @@ jobs:
             exit 1
           fi
 
-      # 최종 HTML의 SEO 계약 검사 — h1 정확히 1개, description 중복/길이,
-      # canonical 자기참조, og:site_name·locale·type, img alt,
-      # sitemap ↔ rss ↔ llms.txt 글 집합 일치.
-      # lint:posts는 frontmatter 원문만 보므로 렌더 결과의 회귀는 여기서만 잡힌다
-      # (2026-08 감사에서 나온 h1 2개 · description 완전 중복이 그런 사례).
-      - name: Check SEO of built pages
-        working-directory: apps/blog/web
-        run: npx tsx scripts/check-seo.ts
+      # 최종 HTML의 SEO 계약 검사(check-seo)는 위 "Build blog" 스텝 안에서 이미 돈다 —
+      # `build` 스크립트가 prebuild → next build → check-seo로 정의돼 있다.
+      # 여기에 같은 스텝을 또 두면 위반이 있을 때 "Build blog"에서 이미 잡이 실패해
+      # **절대 도달하지 못하는 죽은 게이트**가 된다. 검사가 도는 곳은 build 하나다.
 
       - name: Upload to pages artifact
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
