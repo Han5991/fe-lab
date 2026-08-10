@@ -511,12 +511,6 @@ function parseHtmlImage(tag: string): { alt: string; src: string } {
   return { alt: value(alt), src: value(src) };
 }
 
-/**
- * 인라인 코드로 인정할 최대 길이. 이보다 긴 매치는 짝 없는 백틱 때문에 짝이
- * 밀린 것으로 본다(진짜 인라인 코드는 태그 한 줄 정도로 짧다).
- */
-const MAX_INLINE_CODE_LENGTH = 200;
-
 /** 개행은 남기고 나머지만 공백으로 — 줄 번호 계산이 어긋나지 않도록. */
 function blank(text: string): string {
   return text.replace(/[^\n]/g, ' ');
@@ -525,63 +519,29 @@ function blank(text: string): string {
 /**
  * 검사 대상이 아닌 구간을 **길이를 유지한 채** 공백으로 덮은 본문을 만듭니다.
  *
- * 덮는 곳은 셋입니다. 셋 다 "렌더되지 않거나, 렌더되어도 이미지가 아닌" 자리라
- * 여기서 검사하면 글쓴이가 고칠 수 없는 지적이 나옵니다 — 엄격 모드에서는
- * 그게 곧 빌드 실패입니다.
- * - 코드 펜스 안: 이미지 문법이 있어도 코드 **예시**다.
+ * 덮는 곳은 둘입니다.
+ * - 코드 펜스 안: 이미지 문법이나 `# 주석`이 있어도 코드 **예시**다.
+ *   (실제로 이 저장소의 글에 펜스 안 `# ` 줄이 32개 있다 — 쉘·yaml 주석이다)
  * - HTML 주석(`<!-- … -->`): 아예 렌더되지 않는다. check-seo도 볼 수 없어
- *   "로컬만 실패"가 된다.
- * - 인라인 코드(`` `<img src="x">` ``): 태그를 인용한 것이지 이미지가 아니다.
+ *   여기서 잡으면 "로컬만 실패"가 된다. 닫는 `-->`가 있을 때만 덮으므로
+ *   안 닫힌 주석이 뒤를 다 삼키지 않는다.
  *
- * 주석과 인라인 코드는 **줄을 넘길 수 있어서** 줄 단위가 아니라 본문 전체에
- * 걸어야 합니다(`<img …>` 자체도 여러 줄로 쓰이므로 검사도 전체를 훑습니다).
- * 펜스를 먼저 지우므로, 펜스 안의 백틱이 바깥 구간을 잘못 묶는 일은 없습니다.
+ * **인라인 코드는 덮지 않습니다.** 예전엔 `` `<img src="x">` `` 같은 인용을
+ * 가리려고 백틱 짝을 찾아 덮었는데, 짝 없는 백틱이 하나만 있어도 그 뒤의 짝이
+ * 밀려 멀쩡한 산문이 통째로 덮였습니다 — 그 안의 깨진 이미지와 진짜 h1이
+ * **조용히 사라졌습니다**. 검사기가 스스로 검사를 끄는 셈입니다.
+ * 실제로 이 저장소 50개 글에서 인라인 코드로 `<img>`·`<h1>`을 인용한 사례는
+ * **0건**이라, 막으려던 문제는 관측된 적이 없고 부작용만 두 번 재현됐습니다.
+ * 언젠가 그렇게 쓰면 눈에 보이는 경고 하나가 나옵니다 — 조용히 놓치는 것보다 낫습니다.
  *
  * 길이(와 줄 수)를 유지하는 건 match.index로 줄 번호를 그대로 계산하기 위해서입니다.
  */
 export function maskNonProse(content: string): string {
-  const lines = scanBodyLines(content).map(({ text, inFence }) =>
-    inFence ? blank(text) : text,
-  );
+  const withoutFences = scanBodyLines(content)
+    .map(({ text, inFence }) => (inFence ? blank(text) : text))
+    .join('\n');
 
-  // 인라인 코드는 **문단 안에서만** 짝지어야 한다. 문서 전체에서 백틱을 짝지으면
-  // 짝 없는 백틱 하나가 그 다음 백틱까지의 넓은 구간을 통째로 덮어, 그 안의
-  // 깨진 이미지(에러)가 조용히 사라진다. CommonMark의 코드 스팬도 빈 줄을
-  // 넘지 못하므로 문단 경계가 곧 올바른 범위다.
-  const masked: string[] = [];
-  let paragraph: string[] = [];
-  const flush = () => {
-    if (paragraph.length === 0) return;
-    masked.push(
-      // 여는 백틱과 같은 개수로 닫히는 구간. 단, **길이 상한**을 둔다.
-      //
-      // 짝 없는 백틱이 하나 있으면 그 뒤의 짝이 한 칸씩 밀려, 멀쩡한 산문이
-      // 코드로 취급돼 통째로 덮인다. 그러면 그 안의 깨진 이미지나 진짜 h1이
-      // **조용히 사라진다** — 검사기가 검사를 끄는 최악의 실패다.
-      // 진짜 인라인 코드는 짧으므로, 상한을 넘는 매치는 짝이 밀린 것으로 보고
-      // 덮지 않는다. 최악이라야 고칠 수 있는 오탐 하나가 남는다.
-      paragraph
-        .join('\n')
-        .replace(/(`+)(?:(?!\1)[\s\S])*?\1/g, m =>
-          m.length <= MAX_INLINE_CODE_LENGTH ? blank(m) : m,
-        ),
-    );
-    paragraph = [];
-  };
-  for (const line of lines) {
-    if (line.trim() === '') {
-      flush();
-      masked.push(line);
-    } else {
-      paragraph.push(line);
-    }
-  }
-  flush();
-
-  // HTML 주석은 빈 줄을 넘어갈 수 있어 문서 전체에 건다. 인라인 코드를 **먼저**
-  // 덮었으므로, 산문에 인용한 `` `<!--` `` 이 주석 시작으로 오인되지 않는다.
-  // (닫는 `-->`가 없으면 매치되지 않아, 안 닫힌 주석이 뒤를 다 덮는 일도 없다)
-  return masked.join('\n').replace(/<!--[\s\S]*?-->/g, blank);
+  return withoutFences.replace(/<!--[\s\S]*?-->/g, blank);
 }
 
 export function validateImageReferences(
@@ -686,9 +646,13 @@ export function scanBodyLines(content: string): ScannedLine[] {
   const result: ScannedLine[] = [];
   let fenceChar = '';
   let fenceLength = 0;
+  // 열려 있는 펜스가 차지한 줄 인덱스. 끝까지 안 닫히면 되돌린다.
+  let openedAt: number[] = [];
 
   content.split('\n').forEach((text, index) => {
-    const m = text.match(/^(\s{0,3})(`{3,}|~{3,})(.*)$/);
+    // `[^\n]*`로 받는다: CRLF 파일에서 줄 끝의 `\r`을 `.`이 먹지 못해
+    // 펜스가 하나도 인식되지 않고, 그러면 아무것도 마스킹되지 않는다.
+    const m = text.match(/^(\s{0,3})(`{3,}|~{3,})([^\n]*)$/);
     if (!m) {
       result.push({
         text,
@@ -696,6 +660,7 @@ export function scanBodyLines(content: string): ScannedLine[] {
         inFence: fenceLength > 0,
         opensFence: null,
       });
+      if (fenceLength > 0) openedAt.push(index);
       return;
     }
 
@@ -708,15 +673,27 @@ export function scanBodyLines(content: string): ScannedLine[] {
       if (char === fenceChar && length >= fenceLength && info === '') {
         fenceChar = '';
         fenceLength = 0;
+        openedAt = [];
       }
       result.push({ text, index, inFence: true, opensFence: null });
+      if (fenceLength > 0) openedAt.push(index);
       return;
     }
 
     fenceChar = char;
     fenceLength = length;
+    openedAt = [index];
     result.push({ text, index, inFence: true, opensFence: info });
   });
+
+  // 끝까지 닫히지 않은 펜스는 **펜스가 아니었던 것으로** 되돌린다.
+  //
+  // 열린 채로 두면 오타 하나(닫는 ```를 빠뜨렸거나, 산문에 `~~~~ 구분선`을 쓴 것)
+  // 때문에 그 아래 본문 전체가 코드로 취급되어 이미지·헤딩 검사가 통째로 멈춘다.
+  // 검사기가 조용히 검사를 끄는 것보다, 코드 블록 안을 한 번 더 보는 편이 낫다.
+  for (const index of openedAt) {
+    result[index] = { ...result[index], inFence: false, opensFence: null };
+  }
 
   return result;
 }

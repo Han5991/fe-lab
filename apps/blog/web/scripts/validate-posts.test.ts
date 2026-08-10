@@ -810,10 +810,6 @@ test('maskNonProse: 길이를 유지한 채 덮는다 (줄 번호 계산이 어�
   assert.equal(masked.split('\n').length, content.split('\n').length);
 });
 
-test('maskNonProse: 인라인 코드도 덮는다', () => {
-  assert.equal(maskNonProse('앞 `<img>` 뒤'), '앞         뒤');
-});
-
 test('이미지: 여러 줄에 걸친 raw <img>도 잡는다', () => {
   // <figure> 안에서 속성을 여러 줄로 늘어놓는 형태. 줄 단위로만 보면 통째로
   // 빠져나가 CI(check-seo)에서만 걸린다.
@@ -831,22 +827,6 @@ test('이미지: 여러 줄에 걸친 raw <img>도 잡는다', () => {
   assert.deepEqual(
     found.map(i => i.rule),
     ['missing-image-alt'],
-  );
-});
-
-test('이미지: 인라인 코드로 인용한 <img>는 검사하지 않는다', () => {
-  // 태그를 문서에 인용한 것이지 이미지가 아니다. 엄격 모드에서 이건 고칠 수 없는
-  // 에러가 되어 빌드를 막았다.
-  assert.deepEqual(
-    validateImageReferences(
-      rec(
-        { title: 'x', status: 'published' },
-        { content: '`<img src="x">` 처럼 쓰면 됩니다.' },
-      ),
-      '---\ntitle: x\n---\n',
-      { strict: true },
-    ),
-    [],
   );
 });
 
@@ -1019,21 +999,6 @@ test('maskNonProse: HTML 주석은 덮는다 (렌더되지 않는 마크업)', (
   );
 });
 
-test('maskNonProse: 줄을 넘긴 인라인 코드도 덮는다', () => {
-  // 마스킹이 줄 단위면 여러 줄에 걸친 코드 스팬이 새어 나와 false error가 된다.
-  assert.deepEqual(
-    validateImageReferences(
-      rec(
-        { title: 'x', status: 'published' },
-        { content: '`<img\nsrc="x">` 처럼 씁니다.' },
-      ),
-      '---\ntitle: x\n---\n',
-      { strict: true },
-    ),
-    [],
-  );
-});
-
 test('maskNonProse: 덮은 뒤에도 줄 수가 유지된다', () => {
   const content = '앞\n<!--\n주석\n-->\n뒤';
   const masked = maskNonProse(content);
@@ -1065,26 +1030,6 @@ test('scanBodyLines: 라벨 없는 펜스는 opensFence가 빈 문자열(null �
 });
 
 // ── 리뷰 7라운드 ─────────────────────────────────────────────────────────────
-
-test('maskNonProse: 짝 없는 백틱이 문단을 넘어 덮지 않는다', () => {
-  // 문서 전체에서 백틱을 짝지으면 짝 없는 백틱 하나가 넓은 구간을 덮어,
-  // 그 안의 깨진 이미지(에러)가 조용히 사라진다.
-  const issues = validateImageReferences(
-    rec(
-      { title: 'x', status: 'published' },
-      {
-        content:
-          '앞 문단에 짝 없는 백틱 `이 있다\n\n![그림](./없는파일.png)\n\n뒤 `문단',
-      },
-    ),
-    '---\ntitle: x\n---\n',
-    { strict: true },
-  );
-  assert.deepEqual(
-    issues.map(i => i.rule),
-    ['missing-image'],
-  );
-});
 
 test('maskNonProse: 산문에 인용한 `<!--`가 주석 시작으로 오인되지 않는다', () => {
   // 인라인 코드를 주석보다 먼저 덮어야 한다.
@@ -1126,10 +1071,6 @@ test('strict: 예약일이 지난 글도 물론 에러', () => {
   );
 });
 
-test('validateBodyHeadings: 인라인 코드로 인용한 `<h1>`은 잡지 않는다', () => {
-  assert.deepEqual(bodyH1Rules('`<h1>` 태그는 이렇게 씁니다.'), []);
-});
-
 test('validateBodyHeadings: HTML 주석 안의 h1은 잡지 않는다', () => {
   assert.deepEqual(bodyH1Rules('<!--\n# 지워둔 제목\n-->\n본문'), []);
 });
@@ -1150,13 +1091,26 @@ test('이미지: 따옴표 없는 속성값도 읽는다 (HTML5 유효)', () => 
 
 // ── 리뷰 9라운드: 마스킹이 검사를 끄지 않는다 ────────────────────────────────
 
-test('maskNonProse: 짝 없는 백틱이 있어도 깨진 이미지를 놓치지 않는다', () => {
-  // 백틱 짝이 한 칸씩 밀리면 멀쩡한 산문이 코드로 덮이고, 그 안의 에러가
-  // 조용히 사라진다 — 검사기가 검사를 끄는 최악의 실패다.
+test('body-h1 메시지는 원문 줄을 인용한다 (마스킹된 줄이 아니라)', () => {
+  // 마스킹된 줄을 보여주면 ``# `useEffect` ``가 `: #`로만 찍혀 어디를 고칠지 모른다.
+  const issues = bodyH1Rules('# `useEffect` 정리');
+  assert.ok(issues[0].message.endsWith('# `useEffect` 정리'));
+});
+
+// ── 리뷰 10라운드: 마스킹이 검사를 끄지 않는다 ───────────────────────────────
+
+test('maskNonProse: 인라인 코드는 덮지 않는다 (검사를 끄지 않기 위해)', () => {
+  // 백틱 짝 맞추기는 짝 없는 백틱 하나에 무너져 멀쩡한 산문을 통째로 덮었고,
+  // 그 안의 진짜 문제가 조용히 사라졌다. 이 저장소 50개 글에서 인라인 코드로
+  // <img>/<h1>을 인용한 사례는 0건이라, 막으려던 문제는 관측된 적이 없다.
+  assert.equal(maskNonProse('앞 `<img>` 뒤'), '앞 `<img>` 뒤');
+});
+
+test('이미지: 짝 없는 백틱이 있어도 진짜 문제를 놓치지 않는다', () => {
   const issues = validateImageReferences(
     rec(
       { title: 'x', status: 'published' },
-      { content: '짝 없는 백틱 ` 하나\n\n![그림](./gone.png)\n\n`코드` 뒤' },
+      { content: '파일 `a.md 에서 ![그림](./gone.png) 를 `참고`하세요' },
     ),
     '---\ntitle: x\n---\n',
   );
@@ -1166,29 +1120,41 @@ test('maskNonProse: 짝 없는 백틱이 있어도 깨진 이미지를 놓치지
   );
 });
 
-test('maskNonProse: 짝 없는 백틱이 있어도 본문 h1을 놓치지 않는다', () => {
-  assert.equal(
-    bodyH1Rules('짝 없는 백틱 ` 하나\n\n# 진짜 제목\n\n`코드` 뒤').length,
-    1,
-  );
-});
-
-test('maskNonProse: 짧은 인라인 코드는 계속 덮는다', () => {
+test('scanBodyLines: 끝까지 안 닫힌 펜스는 펜스로 치지 않는다', () => {
+  // 닫는 ```를 빠뜨리면 그 아래 본문 전체가 코드로 취급돼 검사가 통째로 멈췄다.
   assert.deepEqual(
-    validateImageReferences(
-      rec(
-        { title: 'x', status: 'published' },
-        { content: '태그는 `<img src="x">` 처럼 씁니다.' },
-      ),
-      '---\ntitle: x\n---\n',
-      { strict: true },
-    ),
-    [],
+    scanBodyLines('```bash\necho hi\n\n본문').map(l => l.inFence),
+    [false, false, false, false],
   );
 });
 
-test('body-h1 메시지는 원문 줄을 인용한다 (마스킹된 줄이 아니라)', () => {
-  // 마스킹된 줄을 보여주면 ``# `useEffect` ``가 `: #`로만 찍혀 어디를 고칠지 모른다.
-  const issues = bodyH1Rules('# `useEffect` 정리');
-  assert.ok(issues[0].message.endsWith('# `useEffect` 정리'));
+test('이미지: 안 닫힌 펜스 뒤의 깨진 이미지를 놓치지 않는다', () => {
+  const issues = validateImageReferences(
+    rec(
+      { title: 'x', status: 'published' },
+      { content: '```bash\necho hi\n\n![그림](./gone.png)' },
+    ),
+    '---\ntitle: x\n---\n',
+  );
+  assert.deepEqual(
+    issues.map(i => i.rule),
+    ['missing-image'],
+  );
+});
+
+test('scanBodyLines: 산문의 `~~~~ 구분선`이 뒤를 삼키지 않는다', () => {
+  assert.ok(scanBodyLines('~~~~ 구분선\n\n본문').every(l => !l.inFence));
+});
+
+test('scanBodyLines: CRLF 파일에서도 펜스를 인식한다', () => {
+  // `.`은 `\r`을 먹지 못해, 예전 정규식은 CRLF 파일에서 펜스를 하나도 못 찾았다.
+  // 그러면 아무것도 마스킹되지 않아 코드 예시가 전부 위반으로 잡힌다.
+  assert.equal(
+    scanBodyLines('```md\r\n# 주석\r\n```\r').filter(l => l.inFence).length,
+    3,
+  );
+});
+
+test('validateBodyHeadings: CRLF 파일의 펜스 안 `# 주석`은 헤딩이 아니다', () => {
+  assert.deepEqual(bodyH1Rules('```sh\r\n# 주석\r\n```\r'), []);
 });
