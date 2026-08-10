@@ -1061,3 +1061,53 @@ test('scanBodyLines: 라벨 없는 펜스는 opensFence가 빈 문자열(null �
   assert.equal(lines[1].opensFence, null);
   assert.equal(lines[3].opensFence, null);
 });
+
+// ── 리뷰 7라운드 ─────────────────────────────────────────────────────────────
+
+test('maskNonProse: 짝 없는 백틱이 문단을 넘어 덮지 않는다', () => {
+  // 문서 전체에서 백틱을 짝지으면 짝 없는 백틱 하나가 넓은 구간을 덮어,
+  // 그 안의 깨진 이미지(에러)가 조용히 사라진다.
+  const issues = validateImageReferences(
+    rec(
+      { title: 'x', status: 'published' },
+      {
+        content:
+          '앞 문단에 짝 없는 백틱 `이 있다\n\n![그림](./없는파일.png)\n\n뒤 `문단',
+      },
+    ),
+    '---\ntitle: x\n---\n',
+    { strict: true },
+  );
+  assert.deepEqual(
+    issues.map(i => i.rule),
+    ['missing-image'],
+  );
+});
+
+test('maskNonProse: 산문에 인용한 `<!--`가 주석 시작으로 오인되지 않는다', () => {
+  // 인라인 코드를 주석보다 먼저 덮어야 한다.
+  const issues = validateImageReferences(
+    rec(
+      { title: 'x', status: 'published' },
+      { content: '주석은 `<!--` 로 시작합니다.\n\n![그림](./없는파일.png)' },
+    ),
+    '---\ntitle: x\n---\n',
+    { strict: true },
+  );
+  assert.deepEqual(
+    issues.map(i => i.rule),
+    ['missing-image'],
+  );
+});
+
+test('validateBodyHeadings: 강조로 시작하는 문단 + `===`도 setext h1', () => {
+  // `**중요한 제목**`을 목록 마커로 오인하면 진짜 h1을 놓친다.
+  assert.equal(bodyH1Rules('**중요한 제목**\n===').length, 1);
+});
+
+test('validateBodyHeadings: raw <h1> 태그도 알린다', () => {
+  // 렌더는 h2로 강등하지만(실제 빌드로 확인) 원문은 그대로 남는다.
+  const issues = bodyH1Rules('<h1>raw 제목</h1>');
+  assert.equal(issues.length, 1);
+  assert.ok(issues[0].message.includes('<h1>'));
+});

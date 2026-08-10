@@ -524,17 +524,38 @@ function blank(text: string): string {
  * 길이(와 줄 수)를 유지하는 건 match.index로 줄 번호를 그대로 계산하기 위해서입니다.
  */
 export function maskNonProse(content: string): string {
-  const withoutFences = scanBodyLines(content)
-    .map(({ text, inFence }) => (inFence ? blank(text) : text))
-    .join('\n');
-
-  return (
-    withoutFences
-      // HTML 주석
-      .replace(/<!--[\s\S]*?-->/g, blank)
-      // 인라인 코드: 여는 백틱과 같은 개수로 닫히는 구간.
-      .replace(/(`+)(?:(?!\1)[\s\S])*?\1/g, blank)
+  const lines = scanBodyLines(content).map(({ text, inFence }) =>
+    inFence ? blank(text) : text,
   );
+
+  // 인라인 코드는 **문단 안에서만** 짝지어야 한다. 문서 전체에서 백틱을 짝지으면
+  // 짝 없는 백틱 하나가 그 다음 백틱까지의 넓은 구간을 통째로 덮어, 그 안의
+  // 깨진 이미지(에러)가 조용히 사라진다. CommonMark의 코드 스팬도 빈 줄을
+  // 넘지 못하므로 문단 경계가 곧 올바른 범위다.
+  const masked: string[] = [];
+  let paragraph: string[] = [];
+  const flush = () => {
+    if (paragraph.length === 0) return;
+    masked.push(
+      // 여는 백틱과 같은 개수로 닫히는 구간.
+      paragraph.join('\n').replace(/(`+)(?:(?!\1)[\s\S])*?\1/g, blank),
+    );
+    paragraph = [];
+  };
+  for (const line of lines) {
+    if (line.trim() === '') {
+      flush();
+      masked.push(line);
+    } else {
+      paragraph.push(line);
+    }
+  }
+  flush();
+
+  // HTML 주석은 빈 줄을 넘어갈 수 있어 문서 전체에 건다. 인라인 코드를 **먼저**
+  // 덮었으므로, 산문에 인용한 `` `<!--` `` 이 주석 시작으로 오인되지 않는다.
+  // (닫는 `-->`가 없으면 매치되지 않아, 안 닫힌 주석이 뒤를 다 덮는 일도 없다)
+  return masked.join('\n').replace(/<!--[\s\S]*?-->/g, blank);
 }
 
 export function validateImageReferences(
@@ -736,25 +757,31 @@ export function validateBodyHeadings(record: PostRecord, raw: string): Issue[] {
     // ATX는 앞 공백 3칸까지 허용된다(CommonMark). `/^# /`로만 보면 들여쓴 h1이
     // 그대로 렌더되는데 lint는 조용하다.
     const isAtx = /^ {0,3}# /.test(text);
+    // raw HTML `<h1>`도 rehype-raw로 살아난다. 렌더 계층이 똑같이 h2로 강등하므로
+    // 페이지가 깨지지는 않지만(실제 빌드로 확인함), 원문은 그대로 남으니 알린다.
+    const isRawHtml = /<h1[\s>]/i.test(text);
     // setext 밑줄은 **문단** 뒤에만 붙는다. 목록 항목·표·인용·raw HTML 블록 뒤의
     // `===`는 헤딩이 아니므로, 그런 줄은 후보에서 뺀다 — 안 그러면 글쓴이가
     // 손댈 수 없는 경고가 나온다.
     const next = lines[index + 1];
     const isParagraphLine =
-      text.trim() !== '' && !/^ {0,3}(?:#{1,6} |[-*+>|]|\d+[.)]|<)/.test(text);
+      text.trim() !== '' &&
+      // 목록 마커는 뒤에 공백이 와야 목록이다 — `**중요한 제목**`을 목록으로
+      // 오인하면 진짜 setext h1을 놓친다.
+      !/^ {0,3}(?:#{1,6} |[-*+](?:\s|$)|\d+[.)](?:\s|$)|[>|]|<)/.test(text);
     const isSetext =
       isParagraphLine &&
       next !== undefined &&
       !next.inFence &&
       /^ {0,3}=+\s*$/.test(next.text);
-    if (!isAtx && !isSetext) continue;
+    if (!isAtx && !isSetext && !isRawHtml) continue;
 
     issues.push({
       file: record.relPath,
       line: offset + index + 1,
       severity: 'warning',
       rule: 'body-h1',
-      message: `본문에 h1(${isAtx ? '`# `' : '밑줄 `===`'})이 있습니다 — 페이지의 h1은 글 제목 하나뿐이어야 합니다. 제목의 중복이면 줄을 지우고, 절 제목이면 \`## \`로 내리세요. (렌더 시에는 h2로 강등되지만 원문은 그대로입니다): ${text.trim()}`,
+      message: `본문에 h1(${isAtx ? '`# `' : isRawHtml ? '`<h1>` 태그' : '밑줄 `===`'})이 있습니다 — 페이지의 h1은 글 제목 하나뿐이어야 합니다. 제목의 중복이면 줄을 지우고, 절 제목이면 \`## \`로 내리세요. (렌더 시에는 h2로 강등되지만 원문은 그대로입니다): ${text.trim()}`,
     });
   }
 
