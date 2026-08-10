@@ -571,7 +571,7 @@ test('validatePost: seoTitle은 알려진 frontmatter 키다', () => {
 /** 펜스 밖으로 판정된 줄의 텍스트만 */
 const outside = (content: string) =>
   scanBodyLines(content)
-    .filter(l => !l.inFence)
+    .lines.filter(l => !l.inFence)
     .map(l => l.text);
 
 test('scanBodyLines: 펜스 안쪽은 inFence, 바깥은 본문', () => {
@@ -598,7 +598,7 @@ test('scanBodyLines: 라벨이 붙은 펜스는 닫는 펜스가 아니다', () 
 
 test('scanBodyLines: opensFence는 여는 줄에만, info string을 담는다', () => {
   const opens = scanBodyLines('```ts title="a.ts"\ncode\n```')
-    .filter(l => l.opensFence !== null)
+    .lines.filter(l => l.opensFence !== null)
     .map(l => l.opensFence);
   assert.deepEqual(opens, ['ts title="a.ts"']);
 });
@@ -922,7 +922,7 @@ test('validateBodyHeadings: 목록·표·인용 뒤의 `===`는 setext가 아니
 
 test('scanBodyLines: 라벨 없는 펜스는 opensFence가 빈 문자열(null 아님)', () => {
   // "여는 줄이 아니다"(null)와 "열지만 라벨이 없다"('')는 다른 상태다.
-  const lines = scanBodyLines('```\ncode\n```\n본문');
+  const { lines } = scanBodyLines('```\ncode\n```\n본문');
   assert.equal(lines[0].opensFence, '');
   assert.equal(lines[1].opensFence, null);
   assert.equal(lines[3].opensFence, null);
@@ -964,7 +964,7 @@ test('이미지: 짝 없는 백틱이 있어도 진짜 문제를 놓치지 않�
 test('scanBodyLines: 끝까지 안 닫힌 펜스는 펜스로 치지 않는다', () => {
   // 닫는 ```를 빠뜨리면 그 아래 본문 전체가 코드로 취급돼 검사가 통째로 멈췄다.
   assert.deepEqual(
-    scanBodyLines('```bash\necho hi\n\n본문').map(l => l.inFence),
+    scanBodyLines('```bash\necho hi\n\n본문').lines.map(l => l.inFence),
     [false, false, false, false],
   );
 });
@@ -984,14 +984,15 @@ test('이미지: 안 닫힌 펜스 뒤의 깨진 이미지를 놓치지 않는�
 });
 
 test('scanBodyLines: 산문의 `~~~~ 구분선`이 뒤를 삼키지 않는다', () => {
-  assert.ok(scanBodyLines('~~~~ 구분선\n\n본문').every(l => !l.inFence));
+  assert.ok(scanBodyLines('~~~~ 구분선\n\n본문').lines.every(l => !l.inFence));
 });
 
 test('scanBodyLines: CRLF 파일에서도 펜스를 인식한다', () => {
   // `.`은 `\r`을 먹지 못해, 예전 정규식은 CRLF 파일에서 펜스를 하나도 못 찾았다.
   // 그러면 아무것도 마스킹되지 않아 코드 예시가 전부 위반으로 잡힌다.
   assert.equal(
-    scanBodyLines('```md\r\n# 주석\r\n```\r').filter(l => l.inFence).length,
+    scanBodyLines('```md\r\n# 주석\r\n```\r').lines.filter(l => l.inFence)
+      .length,
     3,
   );
 });
@@ -1161,4 +1162,56 @@ test('duplicate-description: 공개일이 지난 예약 글은 비교 대상이�
   );
   assert.equal(issues.length, 2);
   assert.ok(issues.every(i => i.severity === 'error'));
+});
+
+// ── 리뷰 15라운드 ────────────────────────────────────────────────────────────
+
+test('scanBodyLines: 안 닫힌 펜스 위치를 반환값으로 알린다', () => {
+  // 예전엔 모듈 변수에 담아 뒀는데, 사이에 maskNonProse가 한 번만 끼어도
+  // 그 값이 덮여 unclosed-fence 경고가 엉뚱한 줄을 가리켰다.
+  assert.equal(scanBodyLines('앞\n```bash\necho hi').unclosedFenceAt, 1);
+  assert.equal(scanBodyLines('```bash\necho hi\n```').unclosedFenceAt, null);
+});
+
+test('unclosed-fence: 사이에 maskNonProse가 끼어도 줄 번호가 맞는다', () => {
+  const record = rec(
+    { title: 'x', status: 'published' },
+    { content: '앞\n```bash\necho hi' },
+  );
+  const raw = '---\ntitle: x\nstatus: published\n---\n';
+  maskNonProse('```ts\n닫히지 않은 다른 본문');
+  const issues = validateCodeFenceLanguages(record, raw).filter(
+    i => i.rule === 'unclosed-fence',
+  );
+  assert.equal(issues.length, 1);
+  // frontmatter 4줄 + 본문 2번째 줄
+  assert.equal(issues[0].line, 6);
+});
+
+test('body-h1: 목록 항목의 이어지는 줄 뒤 `===`는 헤딩이 아니다', () => {
+  // setext 밑줄은 목록 항목의 lazy continuation이 될 수 없다(CommonMark).
+  // 렌더에 h1이 없으니 여기서 경고하면 글쓴이가 고칠 수 없다.
+  assert.deepEqual(bodyH1Rules('- 항목\n  이어지는 줄\n==='), []);
+});
+
+test('body-h1: 구분선 뒤의 `===`는 헤딩이 아니다', () => {
+  assert.deepEqual(bodyH1Rules('---\n==='), []);
+});
+
+test('body-h1: 인용·표의 이어지는 줄 뒤 `===`도 헤딩이 아니다', () => {
+  assert.deepEqual(bodyH1Rules('> 인용\n이어지는 줄\n==='), []);
+  assert.deepEqual(bodyH1Rules('| a | b |\n| - | - |\n==='), []);
+});
+
+test('body-h1: 블록이 빈 줄로 닫히면 그 뒤 setext h1은 다시 잡는다', () => {
+  // 상태를 이어가느라 진짜 h1을 놓치면 규칙 자체가 무의미해진다.
+  assert.equal(bodyH1Rules('- 항목\n\n진짜 제목\n===').length, 1);
+});
+
+test('body-h1: setext 헤딩은 문단을 소비한다 (경고 1건)', () => {
+  assert.equal(bodyH1Rules('제목\n===\n===').length, 1);
+});
+
+test('body-h1: 들여쓴 코드 블록 뒤의 `===`는 헤딩이 아니다', () => {
+  assert.deepEqual(bodyH1Rules('\n    코드 한 줄\n==='), []);
 });

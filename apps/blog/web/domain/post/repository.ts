@@ -32,12 +32,26 @@ export function extractPlainText(content: string): string {
  * 잘릴 때만 '...'을 붙입니다(짧은 글에 오해 소지의 말줄임표가 붙지 않도록).
  */
 export function resolveExcerpt(content: string, explicit?: unknown): string {
+  return resolveExcerptFrom(extractPlainText(content), explicit);
+}
+
+/**
+ * `resolveExcerpt`와 **같은 규칙**을 이미 평문으로 만들어 둔 내용에 적용합니다.
+ *
+ * parsePost는 readMin 계산에 쓰려고 `extractPlainText`를 이미 한 번 돌립니다.
+ * 거기서 `resolveExcerpt(content, …)`를 부르면 같은 정규식 5개를 본문 전체에
+ * 한 번 더 돌리게 되는데, 개발 모드는 포스트 캐시를 건너뛰므로 그 두 배 비용을
+ * **요청마다** 냅니다. 규칙이 갈라지지 않도록 폴백 계산은 여기 한 곳에만 둡니다.
+ */
+export function resolveExcerptFrom(
+  plainText: string,
+  explicit?: unknown,
+): string {
   const given = toOptionalString(explicit);
   if (given) return given;
-  const plain = extractPlainText(content);
-  return plain.length > EXCERPT_FALLBACK_LENGTH
-    ? plain.slice(0, EXCERPT_FALLBACK_LENGTH) + '...'
-    : plain;
+  return plainText.length > EXCERPT_FALLBACK_LENGTH
+    ? plainText.slice(0, EXCERPT_FALLBACK_LENGTH) + '...'
+    : plainText;
 }
 
 /**
@@ -119,7 +133,7 @@ export function parsePost(
     updatedAt: toDateString(data.updatedAt),
     content,
     readMin: estimateReadMin(cleanContent),
-    excerpt: resolveExcerpt(content, data.excerpt),
+    excerpt: resolveExcerptFrom(cleanContent, data.excerpt),
     thumbnail: toOptionalString(data.thumbnail),
     // 등록되지 않은 이름인지까지는 여기서 보지 않는다 — 렌더 계층이 폴백하고
     // validate-posts가 unknown-hero-diagram으로 막는다.

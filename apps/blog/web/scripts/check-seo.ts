@@ -8,6 +8,7 @@ import {
   SEO_DESCRIPTION_MIN_LENGTH,
   SEO_DESCRIPTION_MAX_LENGTH,
 } from '../lib/constants';
+import { decodeUrlSafe } from '../lib/url';
 
 /**
  * 빌드 산출물(`out/`)의 HTML을 파싱해 SEO 계약을 검사합니다.
@@ -127,18 +128,6 @@ export function collectPages(outDir: string): Map<string, string> {
   };
   walk(outDir);
   return pages;
-}
-
-/**
- * 퍼센트 인코딩을 풀어 URL 비교의 기준을 하나로 맞춥니다.
- * 인코딩이 깨진 문자열(`%`가 홀로 있는 경우 등)은 디코드가 던지므로 원문을 씁니다.
- */
-function decodeUrlSafe(url: string): string {
-  try {
-    return decodeURIComponent(url);
-  } catch {
-    return url;
-  }
 }
 
 /**

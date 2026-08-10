@@ -4,6 +4,7 @@ import { pathToFileURL } from 'node:url';
 import matter from 'gray-matter';
 import { collectMarkdownFiles, hasFrontmatter } from '@/lib/postFiles';
 import { hasAmbiguousTimezone } from '@/lib/dates';
+import { decodeUrlSafe } from '@/lib/url';
 import {
   TITLE_SUFFIX,
   SEO_TITLE_MAX_LENGTH,
@@ -490,21 +491,6 @@ function frontmatterOffset(raw: string): number {
   return 0;
 }
 
-/**
- * 퍼센트 인코딩을 풀되, 잘못된 시퀀스(`./100%.png`의 `%.`처럼)에는 원문을 씁니다.
- *
- * 맨 decodeURIComponent는 URIError를 던져 **검증기 전체가 스택 트레이스만 남기고
- * 죽습니다** — 위반 하나를 보고해야 할 자리에서 도구가 멈추는 셈입니다.
- * (check-seo도 같은 이유로 감싸고 있습니다)
- */
-function decodeUrlSafe(url: string): string {
-  try {
-    return decodeURIComponent(url);
-  } catch {
-    return url;
-  }
-}
-
 /** 마크다운 `![alt](src)` — alt는 비어 있을 수 있다. */
 const MARKDOWN_IMAGE = /!\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g;
 
@@ -531,7 +517,7 @@ function blank(text: string): string {
  */
 export function maskNonProse(content: string): string {
   return scanBodyLines(content)
-    .map(({ text, inFence }) => (inFence ? blank(text) : text))
+    .lines.map(({ text, inFence }) => (inFence ? blank(text) : text))
     .join('\n');
 }
 
@@ -630,16 +616,21 @@ export interface ScannedLine {
  * 펜스 규칙을 두 검사(코드 라벨·본문 h1)가 각자 구현하면 한쪽만 고쳐질 수 있어
  * 하나로 모았습니다.
  */
-/**
- * 직전 `scanBodyLines` 호출에서 **끝까지 닫히지 않은** 펜스가 열린 줄 인덱스.
- * (스캐너가 줄 배열만 반환하는 계약을 유지하려고 곁에 둔 값 — 같은 모듈 안에서
- * 바로 이어 읽습니다.)
- */
-let unclosedFenceAt: number | null = null;
+export interface ScanResult {
+  lines: ScannedLine[];
+  /**
+   * **끝까지 닫히지 않은** 펜스가 열린 줄 인덱스(없으면 null).
+   *
+   * 예전엔 모듈 변수에 담아 호출 뒤에 이어 읽었는데, `maskNonProse`도 같은
+   * 스캐너를 호출해 그 값을 덮어씁니다. 두 검사 사이에 마스킹이 한 번만 끼어도
+   * `unclosed-fence` 경고가 엉뚱한 줄을 가리키거나 사라지고, 그게 호출 순서에만
+   * 의존해 맞는 상태였습니다. 반환값에 실어 그 결합을 없앱니다.
+   */
+  unclosedFenceAt: number | null;
+}
 
-export function scanBodyLines(content: string): ScannedLine[] {
+export function scanBodyLines(content: string): ScanResult {
   const result: ScannedLine[] = [];
-  unclosedFenceAt = null;
   let fenceChar = '';
   let fenceLength = 0;
   // 열려 있는 펜스가 차지한 줄 인덱스. 끝까지 안 닫히면 되돌린다.
@@ -694,9 +685,11 @@ export function scanBodyLines(content: string): ScannedLine[] {
     // 보고하는 모순도 사라진다.
     result[index] = { ...result[index], inFence: false, opensFence: null };
   }
-  unclosedFenceAt = openedAt.length > 0 ? openedAt[0] : null;
 
-  return result;
+  return {
+    lines: result,
+    unclosedFenceAt: openedAt.length > 0 ? openedAt[0] : null,
+  };
 }
 
 /**
@@ -714,7 +707,7 @@ export function validateCodeFenceLanguages(
   const issues: Issue[] = [];
   const offset = frontmatterOffset(raw);
 
-  const scanned = scanBodyLines(record.content);
+  const { lines: scanned, unclosedFenceAt } = scanBodyLines(record.content);
   if (unclosedFenceAt !== null) {
     issues.push({
       file: record.relPath,
@@ -743,6 +736,77 @@ export function validateCodeFenceLanguages(
   }
 
   return issues;
+}
+
+/** setext h1 밑줄 (`===`). h2 밑줄(`---`)은 여기서 볼 일이 없다. */
+const SETEXT_H1_RULE = /^ {0,3}=+\s*$/;
+
+/**
+ * 그 줄에서 시작하고 **그 줄로 끝나는** 블록 — ATX 헤딩, 구분선(`---`/`***`/`___`).
+ * 뒤 줄은 다시 자유롭게 문단을 열 수 있다.
+ */
+const LEAF_BLOCK_START = /^ {0,3}(?:#{1,6}(?: |$)|(?:-{3,}|\*{3,}|_{3,})\s*$)/;
+
+/**
+ * 그 줄에서 시작해 **뒤 줄들을 계속 삼키는** 블록 — 목록·인용·표·raw HTML.
+ * 빈 줄을 만날 때까지 이어지는 줄들은 전부 이 블록의 내용이다.
+ */
+const CONTAINER_BLOCK_START = /^ {0,3}(?:[-*+](?:\s|$)|\d+[.)](?:\s|$)|[>|]|<)/;
+
+/**
+ * 각 줄이 **setext 밑줄로 헤딩이 될 수 있는 최상위 문단**인지 표시합니다.
+ *
+ * 한 줄만 보고 판정하면 안 됩니다. `===` 앞 줄이 산문처럼 생겼어도, 그게 목록
+ * 항목의 이어지는 줄이면 CommonMark는 헤딩으로 읽지 않습니다(setext 밑줄은
+ * 목록 항목의 lazy continuation이 될 수 없습니다):
+ *
+ * ```md
+ * - 항목
+ *   이어지는 줄
+ * ===
+ * ```
+ *
+ * 예전 구현은 `이어지는 줄`이 목록 마커로 시작하지 않는다는 이유로 문단으로 보고
+ * body-h1 경고를 냈는데, 렌더 결과에는 h1이 없으니 **글쓴이가 고칠 수 없는**
+ * 경고였습니다. 구분선 뒤의 `---\n===`도 같은 이유로 잘못 걸렸습니다.
+ *
+ * 그래서 블록 상태를 이어가며 훑습니다: 빈 줄은 모든 블록을 닫고, 컨테이너
+ * 블록은 빈 줄까지 뒤 줄을 삼키고, leaf 블록은 그 줄에서 끝납니다.
+ */
+export function markParagraphLines(lines: string[]): boolean[] {
+  const isParagraph: boolean[] = [];
+  // 빈 줄 전까지 뒤 줄을 삼키는 블록(목록·인용·표·raw HTML·들여쓴 코드) 안인가.
+  let inContainer = false;
+  let inParagraph = false;
+
+  for (const text of lines) {
+    if (text.trim() === '') {
+      inContainer = false;
+      inParagraph = false;
+      isParagraph.push(false);
+      continue;
+    }
+    if (LEAF_BLOCK_START.test(text)) {
+      inContainer = false;
+      inParagraph = false;
+      // setext 밑줄은 앞 문단을 **헤딩으로 소비한다**. 여기서 닫지 않으면
+      // `제목\n===\n===`의 둘째 `===`가 또 문단으로 보여 경고가 두 번 난다.
+    } else if (inParagraph && SETEXT_H1_RULE.test(text)) {
+      inParagraph = false;
+    } else if (CONTAINER_BLOCK_START.test(text)) {
+      inContainer = true;
+      inParagraph = false;
+      // 들여쓴 코드 블록(공백 4칸)은 문단 **안**에서는 그냥 이어지는 줄이지만,
+      // 문단 밖에서 시작하면 빈 줄까지 이어지는 코드다.
+    } else if (!inParagraph && /^ {4,}/.test(text)) {
+      inContainer = true;
+    } else if (!inContainer) {
+      inParagraph = true;
+    }
+    isParagraph.push(inParagraph);
+  }
+
+  return isParagraph;
 }
 
 /**
@@ -778,6 +842,8 @@ export function validateBodyHeadings(record: PostRecord, raw: string): Issue[] {
   // ``# `useEffect` `` 가 `: #` 로만 찍혀 어디를 고칠지 알 수 없다.
   // (마스킹은 길이와 줄 수를 유지하므로 인덱스가 그대로 맞는다)
   const originalLines = record.content.split('\n');
+  const paragraphLines = markParagraphLines(lines);
+
   for (const [index, text] of lines.entries()) {
     // ATX(`# 제목`)와 setext(`제목` 다음 줄에 `===`) 둘 다 h1로 렌더된다.
     // ATX만 보면 setext h1은 조용히 강등되고 경고도 안 나와, 이 규칙이 존재하는
@@ -786,17 +852,11 @@ export function validateBodyHeadings(record: PostRecord, raw: string): Issue[] {
     // ATX는 앞 공백 3칸까지 허용된다(CommonMark). `/^# /`로만 보면 들여쓴 h1이
     // 그대로 렌더되는데 lint는 조용하다.
     const isAtx = /^ {0,3}# /.test(text);
-    // setext 밑줄은 **문단** 뒤에만 붙는다. 목록 항목·표·인용·raw HTML 블록 뒤의
-    // `===`는 헤딩이 아니므로, 그런 줄은 후보에서 뺀다 — 안 그러면 글쓴이가
-    // 손댈 수 없는 경고가 나온다.
+    // setext 밑줄은 **최상위 문단** 뒤에만 붙는다 — 판정은 markParagraphLines가
+    // 블록 상태를 이어가며 한다.
     const next = lines[index + 1];
-    const isParagraphLine =
-      text.trim() !== '' &&
-      // 목록 마커는 뒤에 공백이 와야 목록이다 — `**중요한 제목**`을 목록으로
-      // 오인하면 진짜 setext h1을 놓친다.
-      !/^ {0,3}(?:#{1,6} |[-*+](?:\s|$)|\d+[.)](?:\s|$)|[>|]|<)/.test(text);
     const isSetext =
-      isParagraphLine && next !== undefined && /^ {0,3}=+\s*$/.test(next);
+      paragraphLines[index] && next !== undefined && SETEXT_H1_RULE.test(next);
     if (!isAtx && !isSetext) continue;
 
     issues.push({
