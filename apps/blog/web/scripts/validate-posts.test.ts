@@ -626,16 +626,15 @@ test('strict: 발행 글의 excerpt 누락은 에러 (check-seo가 배포를 막
   );
 });
 
-test('strict: 아직 공개 전인 예약 글은 에러가 아니다', () => {
-  // 에러 범위를 check-seo가 볼 수 있는 글(= 지금 빌드에 실리는 글)과 맞춘다.
-  // 공개일이 지나면 자동으로 에러가 된다(아래 8라운드 테스트 참고).
-  assert.deepEqual(
+test('strict: 아직 공개 전인 예약 글도 에러 — cron 빌드로 실패가 밀리지 않도록', () => {
+  // 경고로 두면 실패가 예약일의 KST 09:00 cron 빌드로 밀린다. 아무도 안 보는
+  // 시각에 배포가 멈추고, 증상은 "예약한 글이 그냥 안 올라왔다"로 나타난다.
+  assert.ok(
     strictErrors({
       title: 'x',
       status: 'scheduled',
       date: '2999-12-01',
-    }),
-    [],
+    }).includes('missing-excerpt'),
   );
 });
 
@@ -1117,20 +1116,7 @@ test('validateBodyHeadings: raw <h1> 태그도 알린다', () => {
 
 // ── 리뷰 8라운드 ─────────────────────────────────────────────────────────────
 
-test('strict: 공개 전 예약 글은 경고 — 스캐폴딩이 스스로 빌드를 막지 않도록', () => {
-  // `pnpm new-post --scheduled <미래>`는 excerpt: ''를 깔아준다. 이걸 에러로
-  // 두면 스캐폴딩 직후 pnpm build가 실패한다.
-  assert.deepEqual(
-    strictErrors({
-      title: 'x',
-      status: 'scheduled',
-      date: '2999-01-01',
-    }),
-    [],
-  );
-});
-
-test('strict: 예약일이 지난 글은 에러 — 이미 빌드에 실려 나간다', () => {
+test('strict: 예약일이 지난 글도 물론 에러', () => {
   assert.ok(
     strictErrors({
       title: 'x',
@@ -1160,4 +1146,49 @@ test('이미지: 따옴표 없는 속성값도 읽는다 (HTML5 유효)', () => 
     ),
     [],
   );
+});
+
+// ── 리뷰 9라운드: 마스킹이 검사를 끄지 않는다 ────────────────────────────────
+
+test('maskNonProse: 짝 없는 백틱이 있어도 깨진 이미지를 놓치지 않는다', () => {
+  // 백틱 짝이 한 칸씩 밀리면 멀쩡한 산문이 코드로 덮이고, 그 안의 에러가
+  // 조용히 사라진다 — 검사기가 검사를 끄는 최악의 실패다.
+  const issues = validateImageReferences(
+    rec(
+      { title: 'x', status: 'published' },
+      { content: '짝 없는 백틱 ` 하나\n\n![그림](./gone.png)\n\n`코드` 뒤' },
+    ),
+    '---\ntitle: x\n---\n',
+  );
+  assert.deepEqual(
+    issues.map(i => i.rule),
+    ['missing-image'],
+  );
+});
+
+test('maskNonProse: 짝 없는 백틱이 있어도 본문 h1을 놓치지 않는다', () => {
+  assert.equal(
+    bodyH1Rules('짝 없는 백틱 ` 하나\n\n# 진짜 제목\n\n`코드` 뒤').length,
+    1,
+  );
+});
+
+test('maskNonProse: 짧은 인라인 코드는 계속 덮는다', () => {
+  assert.deepEqual(
+    validateImageReferences(
+      rec(
+        { title: 'x', status: 'published' },
+        { content: '태그는 `<img src="x">` 처럼 씁니다.' },
+      ),
+      '---\ntitle: x\n---\n',
+      { strict: true },
+    ),
+    [],
+  );
+});
+
+test('body-h1 메시지는 원문 줄을 인용한다 (마스킹된 줄이 아니라)', () => {
+  // 마스킹된 줄을 보여주면 ``# `useEffect` ``가 `: #`로만 찍혀 어디를 고칠지 모른다.
+  const issues = bodyH1Rules('# `useEffect` 정리');
+  assert.ok(issues[0].message.endsWith('# `useEffect` 정리'));
 });

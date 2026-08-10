@@ -14,7 +14,6 @@ import {
   POST_STATUSES,
   isPostStatus,
   isPostFile,
-  isPostVisible,
   resolveExcerpt,
 } from '@/domain/post';
 // 이름 목록만 있는 모듈에서 가져옵니다. registry.ts(=.tsx 컴포넌트 의존)를 직접
@@ -96,20 +95,20 @@ export interface ValidateOptions {
 }
 
 /**
- * SEO 계약 위반의 심각도.
+ * SEO 계약 위반의 심각도. strict에서 `draft`가 아닌 글은 에러입니다.
  *
- * 에러로 올리는 범위를 **`check-seo`가 실제로 볼 수 있는 글**과 정확히 맞춥니다.
- * 즉 지금 빌드에 실려 나가는 글(`isPostVisible`)만 에러입니다.
+ * **아직 공개 전인 예약 글도 에러입니다.** 판단이 갈리는 지점이라 근거를 남깁니다.
  *
- * 왜 이 범위인가:
- * - 이보다 좁으면(전부 경고) `draft`를 `published`로 바꾸는 순간 로컬 검사와
- *   빌드는 통과하고 **CI에서만** 터집니다 — strict 모드를 넣은 이유가 그 간극입니다.
- * - 이보다 넓으면(아직 공개 전인 예약 글까지 에러) 도구가 스스로를 막습니다.
- *   `pnpm new-post --scheduled …`가 깔아주는 `excerpt: ''` 때문에 스캐폴딩 직후
- *   `pnpm build`가 실패합니다.
+ * 예약 글은 지금 빌드에 안 실리므로 오늘의 `check-seo`는 통과합니다. 그래서 "지금
+ * 나가는 글만 에러"로 좁혀 봤는데, 그러면 실패가 **예약일의 KST 09:00 cron 빌드**로
+ * 밀립니다. 아무도 안 보는 시각에 배포 전체가 멈추고, 증상은 "예약한 글이 그냥
+ * 안 올라왔다"로 나타납니다 — 원인까지 도달하기 가장 어려운 형태입니다.
  *
- * 공개 전 예약 글은 경고입니다. 예약일이 지나면 자동으로 에러가 되고, 그 전에
- * 한 번이라도 빌드를 돌리면 경고로 먼저 보입니다.
+ * 반대편 비용은 `pnpm new-post --scheduled …` 직후 `pnpm build`가 한 번 실패하는
+ * 것입니다. 파일과 줄 번호와 "요약을 적으세요"가 함께 찍히고, `pnpm dev`는
+ * (비엄격이라) 그대로 뜹니다. 프로덕션 배포가 조용히 멈추는 것보다 이쪽이 낫습니다.
+ *
+ * `draft`는 빌드에서 통째로 빠져 영영 나갈 일이 없으므로 경고입니다.
  *
  * 본문 h1(`body-h1`)은 여기 해당하지 않습니다 — 렌더 계층이 h2로 강등해
  * check-seo의 h1 검사를 통과하므로 원문이 그대로여도 배포가 막히지 않습니다.
@@ -119,7 +118,7 @@ function seoSeverity(
   { strict }: ValidateOptions,
 ): Severity {
   if (!strict || !isPostFile(data)) return 'warning';
-  return isPostVisible(data) ? 'error' : 'warning';
+  return data.status === 'draft' ? 'warning' : 'error';
 }
 
 export function validatePost(
@@ -512,6 +511,12 @@ function parseHtmlImage(tag: string): { alt: string; src: string } {
   return { alt: value(alt), src: value(src) };
 }
 
+/**
+ * 인라인 코드로 인정할 최대 길이. 이보다 긴 매치는 짝 없는 백틱 때문에 짝이
+ * 밀린 것으로 본다(진짜 인라인 코드는 태그 한 줄 정도로 짧다).
+ */
+const MAX_INLINE_CODE_LENGTH = 200;
+
 /** 개행은 남기고 나머지만 공백으로 — 줄 번호 계산이 어긋나지 않도록. */
 function blank(text: string): string {
   return text.replace(/[^\n]/g, ' ');
@@ -548,8 +553,18 @@ export function maskNonProse(content: string): string {
   const flush = () => {
     if (paragraph.length === 0) return;
     masked.push(
-      // 여는 백틱과 같은 개수로 닫히는 구간.
-      paragraph.join('\n').replace(/(`+)(?:(?!\1)[\s\S])*?\1/g, blank),
+      // 여는 백틱과 같은 개수로 닫히는 구간. 단, **길이 상한**을 둔다.
+      //
+      // 짝 없는 백틱이 하나 있으면 그 뒤의 짝이 한 칸씩 밀려, 멀쩡한 산문이
+      // 코드로 취급돼 통째로 덮인다. 그러면 그 안의 깨진 이미지나 진짜 h1이
+      // **조용히 사라진다** — 검사기가 검사를 끄는 최악의 실패다.
+      // 진짜 인라인 코드는 짧으므로, 상한을 넘는 매치는 짝이 밀린 것으로 보고
+      // 덮지 않는다. 최악이라야 고칠 수 있는 오탐 하나가 남는다.
+      paragraph
+        .join('\n')
+        .replace(/(`+)(?:(?!\1)[\s\S])*?\1/g, m =>
+          m.length <= MAX_INLINE_CODE_LENGTH ? blank(m) : m,
+        ),
     );
     paragraph = [];
   };
@@ -762,6 +777,10 @@ export function validateBodyHeadings(record: PostRecord, raw: string): Issue[] {
   // 마스킹된 본문은 줄 수와 각 줄의 길이가 원본과 같으므로 줄 번호가 그대로다.
   // 펜스 안은 이미 공백으로 덮여 있어 따로 inFence를 볼 필요가 없다.
   const lines = maskNonProse(record.content).split('\n');
+  // 메시지에 인용할 줄은 **원문**이다. 마스킹된 줄을 그대로 보여주면
+  // ``# `useEffect` `` 가 `: #` 로만 찍혀 어디를 고칠지 알 수 없다.
+  // (마스킹은 길이와 줄 수를 유지하므로 인덱스가 그대로 맞는다)
+  const originalLines = record.content.split('\n');
   for (const [index, text] of lines.entries()) {
     // ATX(`# 제목`)와 setext(`제목` 다음 줄에 `===`) 둘 다 h1로 렌더된다.
     // ATX만 보면 setext h1은 조용히 강등되고 경고도 안 나와, 이 규칙이 존재하는
@@ -791,7 +810,7 @@ export function validateBodyHeadings(record: PostRecord, raw: string): Issue[] {
       line: offset + index + 1,
       severity: 'warning',
       rule: 'body-h1',
-      message: `본문에 h1(${isAtx ? '`# `' : isRawHtml ? '`<h1>` 태그' : '밑줄 `===`'})이 있습니다 — 페이지의 h1은 글 제목 하나뿐이어야 합니다. 제목의 중복이면 줄을 지우고, 절 제목이면 \`## \`로 내리세요. (렌더 시에는 h2로 강등되지만 원문은 그대로입니다): ${text.trim()}`,
+      message: `본문에 h1(${isAtx ? '`# `' : isRawHtml ? '`<h1>` 태그' : '밑줄 `===`'})이 있습니다 — 페이지의 h1은 글 제목 하나뿐이어야 합니다. 제목의 중복이면 줄을 지우고, 절 제목이면 \`## \`로 내리세요. (렌더 시에는 h2로 강등되지만 원문은 그대로입니다): ${(originalLines[index] ?? text).trim()}`,
     });
   }
 

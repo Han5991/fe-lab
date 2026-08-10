@@ -265,6 +265,15 @@ function main() {
   console.log(`  status: ${opts.status}`);
   if (opts.series) console.log(`  series: ${opts.series}`);
   if (opts.scheduledDate) console.log(`  scheduledDate: ${opts.scheduledDate}`);
+  // excerpt는 비워 둔 채로 시작한다(요약은 글을 쓰고 나야 나온다). 다만 발행
+  // 대상이 되는 순간 `pnpm build`가 이걸 에러로 막으므로, 미리 알려 준다.
+  if (opts.status !== 'draft') {
+    console.log(
+      `\n  ⚠ excerpt가 비어 있습니다. status가 ${opts.status}이면 \`pnpm build\`가 막습니다 —
+` +
+        `    글을 쓰고 나서 120~160자 요약을 채우거나, 쓰는 동안은 status: draft로 두세요.`,
+    );
+  }
 }
 
 // 스크립트로 직접 실행될 때만 main()을 호출합니다.
