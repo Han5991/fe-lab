@@ -51,27 +51,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # lint/check-types/test는 모두 turbo 태스크. 한 번의 turbo 호출로 묶으면
-      # 공유 의존성(^build)을 한 번만 빌드하고 세 태스크를 의존성 그래프에 맞춰
-      # 병렬 실행 + 캐싱합니다. (태스크별로 따로 호출하면 ^build가 중복됩니다)
-      - name: Lint / Type check / Test
-        run: pnpm turbo run lint check-types test
-
-      # turbo 태스크가 아닌 검사들 (가볍게 끝나므로 순차 실행)
-      - name: Lint blog posts (frontmatter)
-        run: pnpm --filter @blog/web lint:posts
-
-      - name: Format check
-        run: pnpm format:check
-
-      # 블로그를 실제로 빌드해 산출물 SEO 검사(check-seo)까지 돌린다.
-      # `build` 스크립트가 prebuild → next build → check-seo를 이어서 실행한다.
-      #
-      # lint:posts(위)는 frontmatter 원문만 본다. h1 개수·description 중복·
-      # canonical·og 태그처럼 **렌더된 HTML에서만 보이는** 계약은 여기서만 잡힌다.
-      # 이 단계가 없으면 그 검사가 처음 도는 시점이 머지 **이후**의 deploy 워크플로라,
-      # PR 리뷰 때는 아무 신호도 없다가 머지 직후 배포가 막힌다.
-      #
-      # turbo 캐시를 쓰므로 블로그와 무관한 PR에서는 캐시 히트로 지나간다.
-      - name: Build blog + check SEO
-        run: pnpm build --filter=@blog/web
+      # 검사 정의는 composite action 하나에 모여 있고, 배포 워크플로도 **같은 것**을
+      # 부른다(.github/actions/quality-checks). 여기에만 검사를 추가하면 배포는
+      # 그 검사를 안 지나는, 이번에 실제로 있었던 종류의 구멍이 생긴다.
+      - name: Quality checks
+        uses: ./.github/actions/quality-checks
