@@ -14,6 +14,7 @@ import {
   POST_STATUSES,
   isPostStatus,
   isPostFile,
+  isPostVisible,
   resolveExcerpt,
 } from '@/domain/post';
 // 이름 목록만 있는 모듈에서 가져옵니다. registry.ts(=.tsx 컴포넌트 의존)를 직접
@@ -95,30 +96,33 @@ export interface ValidateOptions {
 }
 
 /**
- * SEO 계약 위반의 심각도. strict에서 `draft`가 아닌 글은 에러입니다.
+ * SEO 계약 위반의 심각도.
  *
- * **아직 공개 전인 예약 글도 에러입니다.** 판단이 갈리는 지점이라 근거를 남깁니다.
+ * **규칙: strict 에러의 범위는 `check-seo`가 보는 범위와 정확히 같다.**
+ * 즉 지금 빌드 산출물에 실리는 글(`isPostVisible`)만 에러다.
  *
- * 예약 글은 지금 빌드에 안 실리므로 오늘의 `check-seo`는 통과합니다. 그래서 "지금
- * 나가는 글만 에러"로 좁혀 봤는데, 그러면 실패가 **예약일의 KST 09:00 cron 빌드**로
- * 밀립니다. 아무도 안 보는 시각에 배포 전체가 멈추고, 증상은 "예약한 글이 그냥
- * 안 올라왔다"로 나타납니다 — 원인까지 도달하기 가장 어려운 형태입니다.
+ * strict 모드의 목적은 "로컬은 통과, CI만 실패"를 없애는 것이다. 그러니 로컬이
+ * CI보다 **더** 엄격해도 안 된다 — 그건 다른 종류의 실패다. 아직 공개 전인 예약
+ * 글까지 에러로 잡으면, 그 글과 아무 상관 없는 이미 발행된 변경까지 배포가
+ * 통째로 막힌다(그 글은 `out/`에 들어가지도 않아 check-seo는 볼 수조차 없다).
+ * `pnpm new-post --scheduled …`가 깔아주는 빈 excerpt 때문에 스캐폴딩 직후
+ * 빌드가 실패하는 것도 같은 원인이다.
  *
- * 반대편 비용은 `pnpm new-post --scheduled …` 직후 `pnpm build`가 한 번 실패하는
- * 것입니다. 파일과 줄 번호와 "요약을 적으세요"가 함께 찍히고, `pnpm dev`는
- * (비엄격이라) 그대로 뜹니다. 프로덕션 배포가 조용히 멈추는 것보다 이쪽이 낫습니다.
+ * 예약 글이 공개일에 문제를 드러내면 그때 cron 빌드가 실패한다. 그건 워크플로
+ * 실패 알림으로 드러나고, 무엇보다 **문제가 실제로 들어 있는 빌드**만 막는다.
+ * 그 전까지는 경고로 계속 보이므로 눈에 안 띄는 것도 아니다.
  *
- * `draft`는 빌드에서 통째로 빠져 영영 나갈 일이 없으므로 경고입니다.
+ * `draft`는 영영 나갈 일이 없으므로 당연히 경고다.
  *
- * 본문 h1(`body-h1`)은 여기 해당하지 않습니다 — 렌더 계층이 h2로 강등해
- * check-seo의 h1 검사를 통과하므로 원문이 그대로여도 배포가 막히지 않습니다.
+ * 본문 h1(`body-h1`)은 여기 해당하지 않는다 — 렌더 계층이 h2로 강등해
+ * check-seo의 h1 검사를 통과하므로 원문이 그대로여도 배포가 막히지 않는다.
  */
 function seoSeverity(
   data: Record<string, unknown>,
   { strict }: ValidateOptions,
 ): Severity {
   if (!strict || !isPostFile(data)) return 'warning';
-  return data.status === 'draft' ? 'warning' : 'error';
+  return isPostVisible(data) ? 'error' : 'warning';
 }
 
 export function validatePost(
@@ -550,12 +554,11 @@ export function validateImageReferences(
         line: lineOf(index),
         severity: seoSeverity(record.data, options),
         rule: 'missing-image-alt',
-        message: `이미지에 alt 텍스트가 없습니다 — 스크린리더가 읽을 설명을 적어주세요: ${ref || '(src 없음)'}`,
+        message: `이미지에 alt 텍스트가 없습니다 — 스크린리더가 읽을 설명을 적어주세요: ${ref}`,
       });
     }
 
     if (
-      !ref ||
       /^https?:\/\//.test(ref) ||
       ref.startsWith('/') ||
       ref.startsWith('data:')
@@ -608,8 +611,16 @@ export interface ScannedLine {
  * 펜스 규칙을 두 검사(코드 라벨·본문 h1)가 각자 구현하면 한쪽만 고쳐질 수 있어
  * 하나로 모았습니다.
  */
+/**
+ * 직전 `scanBodyLines` 호출에서 **끝까지 닫히지 않은** 펜스가 열린 줄 인덱스.
+ * (스캐너가 줄 배열만 반환하는 계약을 유지하려고 곁에 둔 값 — 같은 모듈 안에서
+ * 바로 이어 읽습니다.)
+ */
+let unclosedFenceAt: number | null = null;
+
 export function scanBodyLines(content: string): ScannedLine[] {
   const result: ScannedLine[] = [];
+  unclosedFenceAt = null;
   let fenceChar = '';
   let fenceLength = 0;
   // 열려 있는 펜스가 차지한 줄 인덱스. 끝까지 안 닫히면 되돌린다.
@@ -658,11 +669,13 @@ export function scanBodyLines(content: string): ScannedLine[] {
   // 때문에 그 아래 본문 전체가 코드로 취급되어 이미지·헤딩 검사가 통째로 멈춘다.
   // 검사기가 조용히 검사를 끄는 것보다, 코드 블록 안을 한 번 더 보는 편이 낫다.
   for (const index of openedAt) {
-    // `opensFence`는 지우지 않는다 — 펜스가 안 닫혔어도 그 줄은 여전히 "펜스를
-    // 열려던 줄"이고, 언어 라벨 검사(unregistered-code-language)는 계속 필요하다.
-    // 함께 지우면 ```` ```typescriptt ```` 같은 오타가 조용해진다.
-    result[index] = { ...result[index], inFence: false };
+    // 펜스가 아니었으므로 언어 라벨도 아니다. 안 닫힌 펜스 자체는
+    // validateCodeFenceLanguages가 `unclosed-fence`로 따로 알린다 — 라벨 오타보다
+    // "펜스가 안 닫혔다"가 더 큰 문제이고, 산문의 `~~~~ 구분선`을 언어 이름으로
+    // 보고하는 모순도 사라진다.
+    result[index] = { ...result[index], inFence: false, opensFence: null };
   }
+  unclosedFenceAt = openedAt.length > 0 ? openedAt[0] : null;
 
   return result;
 }
@@ -675,11 +688,26 @@ export function scanBodyLines(content: string): ScannedLine[] {
  * 그냥 강조 없는 평문으로 렌더되기 때문에, 글쓴이가 알아채기 어렵습니다.
  * 그 조용한 품질 저하를 빌드 시점 경고로 끌어올립니다.
  */
-function validateCodeFenceLanguages(record: PostRecord, raw: string): Issue[] {
+export function validateCodeFenceLanguages(
+  record: PostRecord,
+  raw: string,
+): Issue[] {
   const issues: Issue[] = [];
   const offset = frontmatterOffset(raw);
 
-  for (const { index, opensFence } of scanBodyLines(record.content)) {
+  const scanned = scanBodyLines(record.content);
+  if (unclosedFenceAt !== null) {
+    issues.push({
+      file: record.relPath,
+      line: offset + unclosedFenceAt + 1,
+      severity: 'warning',
+      rule: 'unclosed-fence',
+      message:
+        '코드 펜스가 끝까지 닫히지 않았습니다 — 닫는 펜스를 넣거나, 구분선이라면 `---`를 쓰세요. (닫히지 않은 펜스는 코드 블록으로 보지 않습니다)',
+    });
+  }
+
+  for (const { index, opensFence } of scanned) {
     if (!opensFence) continue;
 
     // ```ts title="a.ts" 처럼 뒤에 메타가 붙는 경우 첫 토큰만 언어다.
@@ -707,9 +735,13 @@ function validateCodeFenceLanguages(record: PostRecord, raw: string): Issue[] {
  * (src/components/post/markdownHeadings.tsx), 그 조용한 교정 때문에 글쓴이는
  * 원문이 틀렸다는 걸 영영 모릅니다. `hero`와 같은 방식으로 그 침묵을 깹니다.
  *
- * 검사는 `maskNonProse`를 지난 본문에서 합니다 — 코드 펜스·인라인 코드·HTML 주석
- * 안의 `# 주석`이나 `` `<h1>` ``은 헤딩이 아니라 **인용**이라, 그대로 검사하면
- * 글쓴이가 손댈 수 없는 경고가 나옵니다(이미지 검사와 같은 이유·같은 함수).
+ * 검사는 `maskNonProse`를 지난 본문에서 합니다 — 코드 펜스 안의 `# 주석`은
+ * 헤딩이 아니라 코드 예시라, 그대로 검사하면 손댈 수 없는 경고가 나옵니다.
+ *
+ * 마크다운 문법(ATX·setext)만 봅니다. raw HTML `<h1>`은 보지 않습니다 —
+ * 렌더된 h1 개수는 `check-seo`가 최종 HTML에서 세고(그 검사는 `pnpm build`의
+ * 마지막 단계라 로컬에서도 돕니다), 여기서 태그를 찾으면 산문에 인용한
+ * `` `<h1>` `` 까지 잡혀 고칠 수 없는 경고가 됩니다(이미지 검사와 같은 판단).
  *
  * 빌드에서 제외되는 메타 노트(유효한 `status` 없음)는 렌더될 일이 없으므로
  * 검사하지 않습니다 — 기획 문서의 `# 제목`까지 잡으면 경고만 늘고 고칠 것이 없습니다.
@@ -735,9 +767,6 @@ export function validateBodyHeadings(record: PostRecord, raw: string): Issue[] {
     // ATX는 앞 공백 3칸까지 허용된다(CommonMark). `/^# /`로만 보면 들여쓴 h1이
     // 그대로 렌더되는데 lint는 조용하다.
     const isAtx = /^ {0,3}# /.test(text);
-    // raw HTML `<h1>`도 rehype-raw로 살아난다. 렌더 계층이 똑같이 h2로 강등하므로
-    // 페이지가 깨지지는 않지만(실제 빌드로 확인함), 원문은 그대로 남으니 알린다.
-    const isRawHtml = /<h1[\s>]/i.test(text);
     // setext 밑줄은 **문단** 뒤에만 붙는다. 목록 항목·표·인용·raw HTML 블록 뒤의
     // `===`는 헤딩이 아니므로, 그런 줄은 후보에서 뺀다 — 안 그러면 글쓴이가
     // 손댈 수 없는 경고가 나온다.
@@ -749,14 +778,14 @@ export function validateBodyHeadings(record: PostRecord, raw: string): Issue[] {
       !/^ {0,3}(?:#{1,6} |[-*+](?:\s|$)|\d+[.)](?:\s|$)|[>|]|<)/.test(text);
     const isSetext =
       isParagraphLine && next !== undefined && /^ {0,3}=+\s*$/.test(next);
-    if (!isAtx && !isSetext && !isRawHtml) continue;
+    if (!isAtx && !isSetext) continue;
 
     issues.push({
       file: record.relPath,
       line: offset + index + 1,
       severity: 'warning',
       rule: 'body-h1',
-      message: `본문에 h1(${isAtx ? '`# `' : isRawHtml ? '`<h1>` 태그' : '밑줄 `===`'})이 있습니다 — 페이지의 h1은 글 제목 하나뿐이어야 합니다. 제목의 중복이면 줄을 지우고, 절 제목이면 \`## \`로 내리세요. (렌더 시에는 h2로 강등되지만 원문은 그대로입니다): ${(originalLines[index] ?? text).trim()}`,
+      message: `본문에 h1(${isAtx ? '`# `' : '밑줄 `===`'})이 있습니다 — 페이지의 h1은 글 제목 하나뿐이어야 합니다. 제목의 중복이면 줄을 지우고, 절 제목이면 \`## \`로 내리세요. (렌더 시에는 h2로 강등되지만 원문은 그대로입니다): ${(originalLines[index] ?? text).trim()}`,
     });
   }
 

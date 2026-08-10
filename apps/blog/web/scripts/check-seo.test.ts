@@ -132,8 +132,10 @@ test('checkPages: canonical이 자기 URL과 다르면 canonical-mismatch', () =
   );
 });
 
-test('checkPages: og:site_name이 두 종류면 inconsistent-og-site-name', () => {
+test('checkPages: og:site_name이 다른 페이지를 잡는다', () => {
   // 감사에서 실제로 나온 문제 — 글은 'Frontend Lab Blog', 홈은 'Frontend Lab'.
+  // 페이지끼리 비교하는 집계 규칙 대신, 각 페이지를 기대값과 직접 비교한다
+  // (집계 규칙은 이 규칙에 완전히 포섭돼 한 결함이 두 번 보고됐다).
   const found = rules(
     new Map([
       ['/posts/a/', page({ canonical: `${SITE_URL}/posts/a/` })],
@@ -142,11 +144,13 @@ test('checkPages: og:site_name이 두 종류면 inconsistent-og-site-name', () =
         page({
           siteName: 'Frontend Lab Blog',
           canonical: `${SITE_URL}/posts/b/`,
+          // 두 페이지의 description이 같으면 duplicate-description까지 섞인다.
+          description: '나'.repeat(130),
         }),
       ],
     ]),
   );
-  assert.ok(found.includes('inconsistent-og-site-name'));
+  assert.deepEqual(found, ['unexpected-og-site-name']);
 });
 
 test('checkPages: og:locale / og:type 누락을 잡는다', () => {
@@ -277,10 +281,20 @@ test('checkPages: 한 페이지만 달라도 잡는다 (다수결이 아니다)'
   const found = rules(
     new Map([
       ['/posts/a/', page({ canonical: `${SITE_URL}/posts/a/` })],
-      ['/posts/b/', page({ canonical: `${SITE_URL}/posts/b/` })],
+      [
+        '/posts/b/',
+        page({
+          canonical: `${SITE_URL}/posts/b/`,
+          description: '나'.repeat(130),
+        }),
+      ],
       [
         '/posts/c/',
-        page({ siteName: '다른 이름', canonical: `${SITE_URL}/posts/c/` }),
+        page({
+          siteName: '다른 이름',
+          canonical: `${SITE_URL}/posts/c/`,
+          description: '다'.repeat(130),
+        }),
       ],
     ]),
   );

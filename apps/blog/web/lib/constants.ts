@@ -33,9 +33,12 @@ export const SEO_DESCRIPTION_MAX_LENGTH = 160;
  *
  * 이 페이지는 글이 아니라 정적 페이지라 자동으로 알 수 있는 수정 시각이 없다.
  * 그렇다고 빌드 날짜를 넣으면 매일 도는 cron 빌드마다 lastmod가 전진해 신호가
- * 무의미해지므로(sitemap 주석 참고) 손으로 관리한다. about 페이지 **내용**을
- * 고칠 때 이 값을 함께 갱신할 것 — JSON-LD `dateModified`와 sitemap `lastmod`가
- * 모두 여기서 온다.
+ * 무의미해지므로(sitemap 주석 참고) 손으로 관리한다. JSON-LD `dateModified`와
+ * sitemap `lastmod`가 모두 여기서 온다.
+ *
+ * **갱신 기준**: 화면에 보이는 내용뿐 아니라 `description`·OG 블록처럼 검색 결과에
+ * 나가는 메타데이터를 고칠 때도 갱신한다(둘 다 "이 페이지가 달라졌다"는 신호가
+ * 맞다). 반대로 코드 정리·상수 추출처럼 나가는 값이 그대로면 건드리지 않는다.
  */
 export const ABOUT_PAGE_MODIFIED = '2026-08-10';
 export const SITE_AUTHOR_GITHUB = 'https://github.com/Han5991';

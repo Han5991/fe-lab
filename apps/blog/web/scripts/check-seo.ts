@@ -166,7 +166,6 @@ const LLMS_LINK = /\]\((https?:\/\/[^)\s]+)\)/g;
 export function checkPages(pages: Map<string, string>): SeoViolation[] {
   const violations: SeoViolation[] = [];
   const descriptions = new Map<string, string[]>();
-  const siteNames = new Set<string>();
 
   for (const [page, html] of pages) {
     const seo = parsePageSeo(html);
@@ -233,7 +232,6 @@ export function checkPages(pages: Map<string, string>): SeoViolation[] {
     if (!seo.ogSiteName) {
       add('missing-og-site-name', 'og:site_name이 없습니다');
     } else {
-      siteNames.add(seo.ogSiteName);
       if (seo.ogSiteName !== SITE_NAME) {
         add(
           'unexpected-og-site-name',
@@ -260,14 +258,6 @@ export function checkPages(pages: Map<string, string>): SeoViolation[] {
       page: slugs.join(', '),
       rule: 'duplicate-description',
       message: `description이 완전히 같습니다: "${description.slice(0, 40)}…"`,
-    });
-  }
-
-  if (siteNames.size > 1) {
-    violations.push({
-      page: '(전체)',
-      rule: 'inconsistent-og-site-name',
-      message: `og:site_name이 ${siteNames.size}종류입니다: ${[...siteNames].join(' / ')} (기대값: ${SITE_NAME})`,
     });
   }
 

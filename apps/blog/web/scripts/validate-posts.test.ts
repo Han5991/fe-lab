@@ -4,6 +4,7 @@ import {
   validatePost,
   validateBodyHeadings,
   validateImageReferences,
+  validateCodeFenceLanguages,
   scanBodyLines,
   maskNonProse,
   detectDuplicateSlugs,
@@ -626,18 +627,6 @@ test('strict: 발행 글의 excerpt 누락은 에러 (check-seo가 배포를 막
   );
 });
 
-test('strict: 아직 공개 전인 예약 글도 에러 — cron 빌드로 실패가 밀리지 않도록', () => {
-  // 경고로 두면 실패가 예약일의 KST 09:00 cron 빌드로 밀린다. 아무도 안 보는
-  // 시각에 배포가 멈추고, 증상은 "예약한 글이 그냥 안 올라왔다"로 나타난다.
-  assert.ok(
-    strictErrors({
-      title: 'x',
-      status: 'scheduled',
-      date: '2999-12-01',
-    }).includes('missing-excerpt'),
-  );
-});
-
 test('strict: draft는 여전히 경고 — 빌드에서 빠지므로 check-seo가 볼 일이 없다', () => {
   assert.deepEqual(
     strictErrors({ title: 'x', status: 'draft', date: '2025-01-01' }),
@@ -946,24 +935,7 @@ test('validateBodyHeadings: 강조로 시작하는 문단 + `===`도 setext h1',
   assert.equal(bodyH1Rules('**중요한 제목**\n===').length, 1);
 });
 
-test('validateBodyHeadings: raw <h1> 태그도 알린다', () => {
-  // 렌더는 h2로 강등하지만(실제 빌드로 확인) 원문은 그대로 남는다.
-  const issues = bodyH1Rules('<h1>raw 제목</h1>');
-  assert.equal(issues.length, 1);
-  assert.ok(issues[0].message.includes('<h1>'));
-});
-
 // ── 리뷰 8라운드 ─────────────────────────────────────────────────────────────
-
-test('strict: 예약일이 지난 글도 물론 에러', () => {
-  assert.ok(
-    strictErrors({
-      title: 'x',
-      status: 'scheduled',
-      date: '2020-01-01',
-    }).includes('missing-excerpt'),
-  );
-});
 
 // ── 리뷰 9라운드: 마스킹이 검사를 끄지 않는다 ────────────────────────────────
 
@@ -1028,14 +1000,6 @@ test('validateBodyHeadings: CRLF 파일의 펜스 안 `# 주석`은 헤딩이 �
   assert.deepEqual(bodyH1Rules('```sh\r\n# 주석\r\n```\r'), []);
 });
 
-test('scanBodyLines: 안 닫힌 펜스도 언어 라벨은 남긴다', () => {
-  // inFence만 되돌리고 opensFence까지 지우면 ```` ```typescriptt ```` 같은
-  // 오타가 조용해진다.
-  const lines = scanBodyLines('```typescriptt\ncode');
-  assert.equal(lines[0].inFence, false);
-  assert.equal(lines[0].opensFence, 'typescriptt');
-});
-
 // ── 리뷰 12라운드: 이미지 검사 범위 ──────────────────────────────────────────
 
 test('maskNonProse: 코드 펜스만 덮는다 (짝 맞추기가 필요한 건 덮지 않는다)', () => {
@@ -1094,4 +1058,43 @@ test('이미지: 산문의 <!-- --> 짝이 어긋나도 깨진 이미지를 놓�
     issues.map(i => i.rule),
     ['missing-image'],
   );
+});
+
+// ── 리뷰 13라운드 ────────────────────────────────────────────────────────────
+
+test('strict: 에러 범위는 check-seo가 보는 범위와 같다 (공개 전 예약 글은 경고)', () => {
+  // 로컬이 CI보다 더 엄격하면, 그 글과 상관없는 이미 발행된 변경까지 배포가 막힌다.
+  assert.deepEqual(
+    strictErrors({ title: 'x', status: 'scheduled', date: '2999-12-01' }),
+    [],
+  );
+  // 공개일이 지난 예약 글은 이미 빌드에 실리므로 에러.
+  assert.ok(
+    strictErrors({
+      title: 'x',
+      status: 'scheduled',
+      date: '2020-01-01',
+    }).includes('missing-excerpt'),
+  );
+});
+
+test('validateBodyHeadings: raw <h1>는 보지 않는다 (check-seo가 센다)', () => {
+  // 산문에 인용한 `<h1>`까지 잡혀 고칠 수 없는 경고가 됐다.
+  assert.deepEqual(bodyH1Rules('`<h1>` 태그는 이렇게 씁니다.'), []);
+  assert.deepEqual(bodyH1Rules('<h1>raw 제목</h1>'), []);
+});
+
+test('안 닫힌 펜스는 unclosed-fence로 알리고 언어 라벨로 보지 않는다', () => {
+  // `~~~~ 구분선`을 "구분선이라는 언어"로 보고하던 모순을 없앤다.
+  const record = rec(
+    { title: 'x', status: 'published' },
+    { content: '~~~~ 구분선\n\n본문' },
+  );
+  const raw = '---\ntitle: x\nstatus: published\n---\n';
+  const found = validatePost(record, raw).concat(
+    validateCodeFenceLanguages(record, raw),
+  );
+  const rulesFound = found.map(i => i.rule);
+  assert.ok(rulesFound.includes('unclosed-fence'));
+  assert.ok(!rulesFound.includes('unregistered-code-language'));
 });
