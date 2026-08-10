@@ -37,7 +37,7 @@ export const SEO_DESCRIPTION_MAX_LENGTH = 160;
  * 고칠 때 이 값을 함께 갱신할 것 — JSON-LD `dateModified`와 sitemap `lastmod`가
  * 모두 여기서 온다.
  */
-export const ABOUT_PAGE_MODIFIED = '2026-07-05';
+export const ABOUT_PAGE_MODIFIED = '2026-08-10';
 export const SITE_AUTHOR_GITHUB = 'https://github.com/Han5991';
 export const SITE_AUTHOR_LINKEDIN = 'https://www.linkedin.com/in/sangwook-han/';
 /** 사이트 내부 RSS 경로. 절대 URL이 필요하면 `${SITE_URL}${RSS_PATH}`로 조합하세요. */

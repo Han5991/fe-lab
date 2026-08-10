@@ -999,3 +999,65 @@ test('이미지: alt 안의 `>`에서 태그가 끊기지 않는다', () => {
     [],
   );
 });
+
+// ── 리뷰 6라운드: 마스킹·헤딩 판정 경계 ─────────────────────────────────────
+
+test('maskNonProse: HTML 주석은 덮는다 (렌더되지 않는 마크업)', () => {
+  // 주석 안의 <img>로 빌드가 막히면 check-seo도 못 보는 것 때문에 로컬만 실패한다.
+  assert.deepEqual(
+    validateImageReferences(
+      rec(
+        { title: 'x', status: 'published' },
+        { content: '<!--\n<img src="./없는파일.png">\n-->\n본문' },
+      ),
+      '---\ntitle: x\n---\n',
+      { strict: true },
+    ),
+    [],
+  );
+});
+
+test('maskNonProse: 줄을 넘긴 인라인 코드도 덮는다', () => {
+  // 마스킹이 줄 단위면 여러 줄에 걸친 코드 스팬이 새어 나와 false error가 된다.
+  assert.deepEqual(
+    validateImageReferences(
+      rec(
+        { title: 'x', status: 'published' },
+        { content: '`<img\nsrc="x">` 처럼 씁니다.' },
+      ),
+      '---\ntitle: x\n---\n',
+      { strict: true },
+    ),
+    [],
+  );
+});
+
+test('maskNonProse: 덮은 뒤에도 줄 수가 유지된다', () => {
+  const content = '앞\n<!--\n주석\n-->\n뒤';
+  const masked = maskNonProse(content);
+  assert.equal(masked.split('\n').length, content.split('\n').length);
+  assert.equal(masked.length, content.length);
+});
+
+test('validateBodyHeadings: 1~3칸 들여쓴 ATX h1도 잡는다', () => {
+  // CommonMark는 앞 공백 3칸까지 허용한다. 그대로 h1로 렌더되는데 lint가
+  // 조용하면 이 규칙이 존재하는 이유가 무너진다.
+  assert.equal(bodyH1Rules('   # 들여쓴 제목').length, 1);
+  // 4칸부터는 코드 블록이라 헤딩이 아니다.
+  assert.deepEqual(bodyH1Rules('    # 코드 블록'), []);
+});
+
+test('validateBodyHeadings: 목록·표·인용 뒤의 `===`는 setext가 아니다', () => {
+  // 문단 뒤에만 setext 밑줄이 붙는다. 이걸 안 가리면 손댈 수 없는 경고가 나온다.
+  for (const line of ['- 항목', '| a | b |', '> 인용', '1. 항목', '<div>']) {
+    assert.deepEqual(bodyH1Rules(`${line}\n===`), [], line);
+  }
+});
+
+test('scanBodyLines: 라벨 없는 펜스는 opensFence가 빈 문자열(null 아님)', () => {
+  // "여는 줄이 아니다"(null)와 "열지만 라벨이 없다"('')는 다른 상태다.
+  const lines = scanBodyLines('```\ncode\n```\n본문');
+  assert.equal(lines[0].opensFence, '');
+  assert.equal(lines[1].opensFence, null);
+  assert.equal(lines[3].opensFence, null);
+});

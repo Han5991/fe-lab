@@ -501,27 +501,40 @@ function parseHtmlImage(tag: string): { alt: string; src: string } {
   };
 }
 
+/** 개행은 남기고 나머지만 공백으로 — 줄 번호 계산이 어긋나지 않도록. */
+function blank(text: string): string {
+  return text.replace(/[^\n]/g, ' ');
+}
+
 /**
  * 검사 대상이 아닌 구간을 **길이를 유지한 채** 공백으로 덮은 본문을 만듭니다.
  *
- * 덮는 곳은 둘입니다.
+ * 덮는 곳은 셋입니다. 셋 다 "렌더되지 않거나, 렌더되어도 이미지가 아닌" 자리라
+ * 여기서 검사하면 글쓴이가 고칠 수 없는 지적이 나옵니다 — 엄격 모드에서는
+ * 그게 곧 빌드 실패입니다.
  * - 코드 펜스 안: 이미지 문법이 있어도 코드 **예시**다.
- * - 인라인 코드(`` `<img src="x">` ``): 문서에 태그를 인용한 것이지 이미지가 아니다.
- *   엄격 모드에서 이건 고칠 수 없는 에러가 되어 빌드를 막는다.
+ * - HTML 주석(`<!-- … -->`): 아예 렌더되지 않는다. check-seo도 볼 수 없어
+ *   "로컬만 실패"가 된다.
+ * - 인라인 코드(`` `<img src="x">` ``): 태그를 인용한 것이지 이미지가 아니다.
  *
- * 길이를 유지하는 건 match.index로 줄 번호를 그대로 계산하기 위해서입니다.
- * 줄 단위로 잘라 검사하면 여러 줄에 걸친 `<img …>`를 놓칩니다.
+ * 주석과 인라인 코드는 **줄을 넘길 수 있어서** 줄 단위가 아니라 본문 전체에
+ * 걸어야 합니다(`<img …>` 자체도 여러 줄로 쓰이므로 검사도 전체를 훑습니다).
+ * 펜스를 먼저 지우므로, 펜스 안의 백틱이 바깥 구간을 잘못 묶는 일은 없습니다.
+ *
+ * 길이(와 줄 수)를 유지하는 건 match.index로 줄 번호를 그대로 계산하기 위해서입니다.
  */
 export function maskNonProse(content: string): string {
-  return scanBodyLines(content)
-    .map(({ text, inFence }) => {
-      if (inFence) return ' '.repeat(text.length);
-      // 인라인 코드: 여는 백틱과 같은 개수로 닫히는 구간.
-      return text.replace(/(`+)(?:(?!\1)[\s\S])*?\1/g, m =>
-        ' '.repeat(m.length),
-      );
-    })
+  const withoutFences = scanBodyLines(content)
+    .map(({ text, inFence }) => (inFence ? blank(text) : text))
     .join('\n');
+
+  return (
+    withoutFences
+      // HTML 주석
+      .replace(/<!--[\s\S]*?-->/g, blank)
+      // 인라인 코드: 여는 백틱과 같은 개수로 닫히는 구간.
+      .replace(/(`+)(?:(?!\1)[\s\S])*?\1/g, blank)
+  );
 }
 
 export function validateImageReferences(
@@ -598,7 +611,13 @@ export interface ScannedLine {
   index: number;
   /** 코드 펜스 안(여는·닫는 펜스 줄 포함)이면 true */
   inFence: boolean;
-  /** 이 줄이 펜스를 **여는** 줄이면 info string(`ts title="a.ts"` 등), 아니면 null */
+  /**
+   * 이 줄이 펜스를 **여는** 줄이면 info string, 아니면 `null`.
+   *
+   * 라벨 없는 펜스(``` 만 있는 줄)는 빈 문자열 `''`입니다 — "여는 줄이 아니다"
+   * (`null`)와 "열지만 언어 라벨이 없다"(`''`)는 다른 상태라 구분합니다.
+   * 여는 줄인지만 볼 때는 `!== null`로, 라벨이 있는지까지 볼 때는 truthy로 봅니다.
+   */
   opensFence: string | null;
 }
 
@@ -713,11 +732,18 @@ export function validateBodyHeadings(record: PostRecord, raw: string): Issue[] {
     // ATX(`# 제목`)와 setext(`제목` 다음 줄에 `===`) 둘 다 h1로 렌더된다.
     // ATX만 보면 setext h1은 조용히 강등되고 경고도 안 나와, 이 규칙이 존재하는
     // 이유(조용한 교정을 드러내기)가 그대로 무너진다.
-    const isAtx = /^# /.test(text);
+    //
+    // ATX는 앞 공백 3칸까지 허용된다(CommonMark). `/^# /`로만 보면 들여쓴 h1이
+    // 그대로 렌더되는데 lint는 조용하다.
+    const isAtx = /^ {0,3}# /.test(text);
+    // setext 밑줄은 **문단** 뒤에만 붙는다. 목록 항목·표·인용·raw HTML 블록 뒤의
+    // `===`는 헤딩이 아니므로, 그런 줄은 후보에서 뺀다 — 안 그러면 글쓴이가
+    // 손댈 수 없는 경고가 나온다.
     const next = lines[index + 1];
+    const isParagraphLine =
+      text.trim() !== '' && !/^ {0,3}(?:#{1,6} |[-*+>|]|\d+[.)]|<)/.test(text);
     const isSetext =
-      text.trim() !== '' &&
-      !/^#{1,6} /.test(text) &&
+      isParagraphLine &&
       next !== undefined &&
       !next.inFence &&
       /^ {0,3}=+\s*$/.test(next.text);
