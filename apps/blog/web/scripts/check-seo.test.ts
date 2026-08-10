@@ -153,11 +153,17 @@ test('checkPages: og:site_name이 다른 페이지를 잡는다', () => {
   assert.deepEqual(found, ['unexpected-og-site-name']);
 });
 
-test('checkPages: og:locale / og:type 누락을 잡는다', () => {
+test('checkPages: og:locale 누락을 잡는다', () => {
   const html = page().replace(/<meta property="og:locale"[^>]*>/, '');
   assert.ok(
     rules(new Map([['/posts/a/', html]])).includes('missing-og-locale'),
   );
+});
+
+test('checkPages: og:type 누락을 잡는다', () => {
+  // locale과 한 테스트에 묶여 있어서 og:type 규칙만 회귀해도 아무도 몰랐다.
+  const html = page().replace(/<meta property="og:type"[^>]*>/, '');
+  assert.ok(rules(new Map([['/posts/a/', html]])).includes('missing-og-type'));
 });
 
 test('checkPages: noindex 페이지는 검사하지 않는다', () => {
