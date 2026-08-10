@@ -316,16 +316,16 @@ The blog (`apps/blog/web/`) is a **statically generated (SSG) Next.js applicatio
 
 #### 글쓰기 도구 (Authoring DX)
 
-| 도구                                          | 설명                                                                                                                                                                      |
-| :-------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `pnpm new-post "제목"`                        | 새 포스트 스캐폴딩. `--series`, `--tags`, `--scheduled`, `--slug`, `--status` 옵션 지원. 한글 제목/파일명 그대로 사용 가능                                                |
-| `pnpm lint:posts`                             | frontmatter 검증. 메타 노트 정책: frontmatter delimiter(`---`)가 없거나 `status`가 없으면 빌드 대상이 아닌 것으로 보고 skip                                               |
-| `pnpm check-seo`                              | **빌드 후** 산출물(`out/`) HTML의 SEO 계약 검사 — h1 1개, description 중복·길이·말줄임, `<title>` 60자, canonical 자기참조, og 태그, img alt, sitemap↔rss↔llms.txt 정합성 |
-| `/preview/[...slug]` 라우트                   | dev 환경에서만 동작하는 draft·scheduled 글 미리보기. prod 빌드는 placeholder 1개(`__disabled__`) + 즉시 `notFound`로 차단                                                 |
-| `_series.yml`                                 | 시리즈 폴더에 두면 시리즈 nav가 `order` 기준 chronological 정렬 + 표시명을 폴더명 대신 사용                                                                               |
-| `<callout type="warning\|info\|tip\|danger">` | 마크다운 헬퍼 컴포넌트 (raw HTML로 작성). `<figure>` + `<figcaption>`, `<file-tree>`도 지원                                                                               |
-| `<dialogue>` · `<metrics>` · `<timeline>`     | 리뉴얼 시그니처 컴포넌트. 역시 raw HTML 커스텀 태그 — 아래 "디자인 시스템" 참고                                                                                           |
-| `<diagram>` + frontmatter `hero:`             | 구조 그림. 저작법 전체는 **`apps/blog/web/design/DIAGRAM_AUTHORING.md`** — 아래 "다이어그램 문법" 참고                                                                    |
+| 도구                                          | 설명                                                                                                                                                                                                                  |
+| :-------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm new-post "제목"`                        | 새 포스트 스캐폴딩. `--series`, `--tags`, `--scheduled`, `--slug`, `--status` 옵션 지원. 한글 제목/파일명 그대로 사용 가능                                                                                            |
+| `pnpm lint:posts`                             | frontmatter 검증. 메타 노트 정책: frontmatter delimiter(`---`)가 없거나 `status`가 없으면 빌드 대상이 아닌 것으로 보고 skip                                                                                           |
+| `pnpm check-seo`                              | 산출물(`out/`) HTML의 SEO 계약 검사 — h1 1개, description 중복·길이·말줄임, `<title>` 60자, canonical 자기참조, og 태그, img alt, sitemap↔rss↔llms.txt 정합성. **`pnpm build`의 마지막 단계라 따로 부를 일은 드물다** |
+| `/preview/[...slug]` 라우트                   | dev 환경에서만 동작하는 draft·scheduled 글 미리보기. prod 빌드는 placeholder 1개(`__disabled__`) + 즉시 `notFound`로 차단                                                                                             |
+| `_series.yml`                                 | 시리즈 폴더에 두면 시리즈 nav가 `order` 기준 chronological 정렬 + 표시명을 폴더명 대신 사용                                                                                                                           |
+| `<callout type="warning\|info\|tip\|danger">` | 마크다운 헬퍼 컴포넌트 (raw HTML로 작성). `<figure>` + `<figcaption>`, `<file-tree>`도 지원                                                                                                                           |
+| `<dialogue>` · `<metrics>` · `<timeline>`     | 리뉴얼 시그니처 컴포넌트. 역시 raw HTML 커스텀 태그 — 아래 "디자인 시스템" 참고                                                                                                                                       |
+| `<diagram>` + frontmatter `hero:`             | 구조 그림. 저작법 전체는 **`apps/blog/web/design/DIAGRAM_AUTHORING.md`** — 아래 "다이어그램 문법" 참고                                                                                                                |
 
 #### 디자인 시스템 (리뉴얼 기준)
 
@@ -513,7 +513,15 @@ HTML 파서를 거치므로 **self-closing(`<metrics />`)은 동작하지 않는
 - **검색 인증**: Naver 사이트 인증 메타태그 포함
 - **검색 인덱스**: `search-index.json`으로 클라이언트 사이드 검색 지원
 - **llms.txt / llms-full.txt**: 빌드 시 자동 생성 (AI 크롤러용 색인·전문)
-- **산출물 검사**: `pnpm check-seo` — 빌드된 HTML을 파싱해 SEO 계약을 검사하고 위반 시 실패한다. CI(`deploy-blog.yml`)의 배포 직전 단계
+- **산출물 검사**: `pnpm check-seo` — 빌드된 HTML을 파싱해 SEO 계약을 검사하고 위반 시 실패한다. `pnpm build`의 마지막 단계이자 CI(`deploy-blog.yml`)의 배포 직전 단계 — 로컬과 CI가 **같은 검사**를 지나야 "로컬은 통과, CI만 실패"가 없다
+
+> **`prebuild`는 `--strict`로 돈다.** `lint:posts`(수동)와 `predev`는 경고로 두는
+> SEO 규칙(`missing-excerpt`·`excerpt-length`·`long-title`·`missing-image-alt`·
+> `truncated-excerpt`·`duplicate-description`)을, 빌드 직전에는 **에러**로 올린다.
+> 발행 대상(`draft`가 아닌 글)만 해당한다. 글을 쓰는 동안 dev 서버가 막히지
+> 않으면서도, 배포를 깨뜨릴 문제는 빌드를 돌리기 전에 파일·줄 번호와 함께 잡힌다.
+> 예약 글도 에러다 — 경고로 두면 실패가 예약일의 KST 09:00 cron 빌드로 밀려,
+> 아무도 안 보는 시각에 "예약한 글이 그냥 안 올라왔다"로만 나타난다.
 
 > **`lint:posts`와 `check-seo`는 보는 곳이 다르다.** 전자는 **frontmatter 원문**을,
 > 후자는 **최종 HTML**을 본다. 2026-08 감사에서 나온 문제들 — 페이지 헤더 h1과 본문

@@ -227,8 +227,20 @@ export function checkPages(pages: Map<string, string>): SeoViolation[] {
       );
     }
 
-    if (!seo.ogSiteName) add('missing-og-site-name', 'og:site_name이 없습니다');
-    else siteNames.add(seo.ogSiteName);
+    // 기대값(SITE_NAME)과 직접 비교한다. 페이지끼리만 비교하면, 모든 페이지가
+    // 같은 상수를 쓰게 된 지금은 규칙이 영영 발동하지 않는다 — 나중에 누가
+    // 상수를 안 쓰고 문자열을 박아도 "다 같으니 통과"가 되어 버린다.
+    if (!seo.ogSiteName) {
+      add('missing-og-site-name', 'og:site_name이 없습니다');
+    } else {
+      siteNames.add(seo.ogSiteName);
+      if (seo.ogSiteName !== SITE_NAME) {
+        add(
+          'unexpected-og-site-name',
+          `og:site_name이 사이트 이름과 다릅니다: ${seo.ogSiteName} ≠ ${SITE_NAME}`,
+        );
+      }
+    }
 
     if (!seo.ogLocale) add('missing-og-locale', 'og:locale이 없습니다');
     if (!seo.ogType) add('missing-og-type', 'og:type이 없습니다');

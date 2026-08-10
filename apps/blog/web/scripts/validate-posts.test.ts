@@ -1158,3 +1158,11 @@ test('scanBodyLines: CRLF 파일에서도 펜스를 인식한다', () => {
 test('validateBodyHeadings: CRLF 파일의 펜스 안 `# 주석`은 헤딩이 아니다', () => {
   assert.deepEqual(bodyH1Rules('```sh\r\n# 주석\r\n```\r'), []);
 });
+
+test('scanBodyLines: 안 닫힌 펜스도 언어 라벨은 남긴다', () => {
+  // inFence만 되돌리고 opensFence까지 지우면 ```` ```typescriptt ```` 같은
+  // 오타가 조용해진다.
+  const lines = scanBodyLines('```typescriptt\ncode');
+  assert.equal(lines[0].inFence, false);
+  assert.equal(lines[0].opensFence, 'typescriptt');
+});

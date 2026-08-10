@@ -692,7 +692,10 @@ export function scanBodyLines(content: string): ScannedLine[] {
   // 때문에 그 아래 본문 전체가 코드로 취급되어 이미지·헤딩 검사가 통째로 멈춘다.
   // 검사기가 조용히 검사를 끄는 것보다, 코드 블록 안을 한 번 더 보는 편이 낫다.
   for (const index of openedAt) {
-    result[index] = { ...result[index], inFence: false, opensFence: null };
+    // `opensFence`는 지우지 않는다 — 펜스가 안 닫혔어도 그 줄은 여전히 "펜스를
+    // 열려던 줄"이고, 언어 라벨 검사(unregistered-code-language)는 계속 필요하다.
+    // 함께 지우면 ```` ```typescriptt ```` 같은 오타가 조용해진다.
+    result[index] = { ...result[index], inFence: false };
   }
 
   return result;

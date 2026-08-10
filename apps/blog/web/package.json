@@ -6,7 +6,7 @@
     "predev": "npx tsx scripts/build-content.ts",
     "dev": "pnpm supabase-start && next dev",
     "prebuild": "npx tsx scripts/build-content.ts --strict",
-    "build": "pnpm prebuild && next build",
+    "build": "pnpm prebuild && next build && pnpm check-seo",
     "start": "next start",
     "lint": "eslint .",
     "lint:posts": "npx tsx scripts/validate-posts.ts",

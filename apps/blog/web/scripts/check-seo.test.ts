@@ -263,3 +263,26 @@ test('parsePageSeo: alt 안의 `>`에서 태그가 끊기지 않는다', () => {
   const html = page({}, '<h1>t</h1><img src="a.png" alt="22분 > 8분"/>');
   assert.equal(parsePageSeo(html).imagesMissingAlt, 0);
 });
+
+test('checkPages: og:site_name이 사이트 이름과 다르면 잡는다', () => {
+  // 페이지끼리만 비교하면, 모두 같은 상수를 쓰는 지금은 규칙이 영영 발동하지 않는다.
+  assert.ok(
+    rules(
+      new Map([['/posts/a/', page({ siteName: 'Frontend Lab Blog' })]]),
+    ).includes('unexpected-og-site-name'),
+  );
+});
+
+test('checkPages: 한 페이지만 달라도 잡는다 (다수결이 아니다)', () => {
+  const found = rules(
+    new Map([
+      ['/posts/a/', page({ canonical: `${SITE_URL}/posts/a/` })],
+      ['/posts/b/', page({ canonical: `${SITE_URL}/posts/b/` })],
+      [
+        '/posts/c/',
+        page({ siteName: '다른 이름', canonical: `${SITE_URL}/posts/c/` }),
+      ],
+    ]),
+  );
+  assert.ok(found.includes('unexpected-og-site-name'));
+});
