@@ -5,7 +5,7 @@
   "scripts": {
     "predev": "npx tsx scripts/build-content.ts",
     "dev": "pnpm supabase-start && next dev",
-    "prebuild": "npx tsx scripts/build-content.ts",
+    "prebuild": "npx tsx scripts/build-content.ts --strict",
     "build": "pnpm prebuild && next build",
     "start": "next start",
     "lint": "eslint .",

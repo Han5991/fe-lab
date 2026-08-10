@@ -3,6 +3,8 @@ import { test } from 'node:test';
 import {
   validatePost,
   validateBodyHeadings,
+  validateImageReferences,
+  scanBodyLines,
   detectDuplicateSlugs,
   type PostRecord,
 } from './validate-posts';
@@ -558,5 +560,155 @@ test('validatePost: seoTitle은 알려진 frontmatter 키다', () => {
       seoTitle: '짧은 제목',
       excerpt: VALID_EXCERPT,
     }).includes('unknown-frontmatter-key'),
+  );
+});
+
+// ── scanBodyLines (코드 펜스 추적) ───────────────────────────────────────────
+
+/** 펜스 밖으로 판정된 줄의 텍스트만 */
+const outside = (content: string) =>
+  scanBodyLines(content)
+    .filter(l => !l.inFence)
+    .map(l => l.text);
+
+test('scanBodyLines: 펜스 안쪽은 inFence, 바깥은 본문', () => {
+  assert.deepEqual(outside('앞\n```ts\ncode\n```\n뒤'), ['앞', '뒤']);
+});
+
+test('scanBodyLines: ```로 연 펜스는 ~~~로 닫히지 않는다', () => {
+  // 마크다운을 다루는 글이 코드 예시로 ~~~를 품는 경우. 문자를 무시하고 개수만
+  // 보면 여기서 펜스가 닫힌 것으로 오인해 뒤의 `# 주석`이 본문으로 새어 나온다.
+  assert.deepEqual(outside('```md\n~~~\n# 주석\n```\n본문'), ['본문']);
+});
+
+test('scanBodyLines: ~~~로 연 펜스는 ```로 닫히지 않는다', () => {
+  assert.deepEqual(outside('~~~md\n```\n# 주석\n~~~\n본문'), ['본문']);
+});
+
+test('scanBodyLines: 여는 펜스보다 짧은 펜스로는 닫히지 않는다', () => {
+  assert.deepEqual(outside('````md\n```\n# 주석\n````\n본문'), ['본문']);
+});
+
+test('scanBodyLines: 라벨이 붙은 펜스는 닫는 펜스가 아니다', () => {
+  assert.deepEqual(outside('```md\n```ts\n# 주석\n```\n본문'), ['본문']);
+});
+
+test('scanBodyLines: opensFence는 여는 줄에만, info string을 담는다', () => {
+  const opens = scanBodyLines('```ts title="a.ts"\ncode\n```')
+    .filter(l => l.opensFence !== null)
+    .map(l => l.opensFence);
+  assert.deepEqual(opens, ['ts title="a.ts"']);
+});
+
+test('validateBodyHeadings: ``` 안의 ~~~ 때문에 펜스가 새지 않는다', () => {
+  // 고칠 수 없는 body-h1 경고가 나오던 회귀.
+  assert.deepEqual(bodyH1Rules('```md\n~~~\n# 코드 예시 주석\n```\n'), []);
+});
+
+// ── strict 모드 (prebuild 전용) ───────────────────────────────────────────────
+
+/** strict 모드에서 나온 에러의 rule 이름만 */
+function strictErrors(data: Record<string, unknown>): string[] {
+  return validatePost(rec(data), '---\ntitle: x\n---\n', { strict: true })
+    .filter(i => i.severity === 'error')
+    .map(i => i.rule);
+}
+
+test('strict: 발행 글의 excerpt 누락은 에러 (check-seo가 배포를 막기 전에 잡는다)', () => {
+  assert.ok(
+    strictErrors({
+      title: 'x',
+      status: 'published',
+      date: '2025-01-01',
+    }).includes('missing-excerpt'),
+  );
+});
+
+test('strict: scheduled도 에러 — 예약일이 지나면 발행되므로 cron 빌드가 터진다', () => {
+  assert.ok(
+    strictErrors({
+      title: 'x',
+      status: 'scheduled',
+      date: '2026-12-01',
+    }).includes('missing-excerpt'),
+  );
+});
+
+test('strict: draft는 여전히 경고 — 빌드에서 빠지므로 check-seo가 볼 일이 없다', () => {
+  assert.deepEqual(
+    strictErrors({ title: 'x', status: 'draft', date: '2025-01-01' }),
+    [],
+  );
+});
+
+test('strict가 아니면 발행 글도 경고 — predev가 이 검사를 돌기 때문', () => {
+  // 글을 쓰는 중에 status를 published로 두는 건 흔하다. 요약을 아직 안 적었다고
+  // dev 서버가 안 뜨면 도구가 방해물이 된다.
+  const issues = validatePost(
+    rec({ title: 'x', status: 'published', date: '2025-01-01' }),
+    '---\ntitle: x\n---\n',
+  );
+  assert.deepEqual(
+    issues.filter(i => i.severity === 'error'),
+    [],
+  );
+});
+
+test('strict: long-title / excerpt-length도 발행 글에서는 에러', () => {
+  const found = strictErrors({
+    title: '가'.repeat(60),
+    status: 'published',
+    date: '2025-01-01',
+    excerpt: '짧음',
+  });
+  assert.ok(found.includes('long-title'));
+  assert.ok(found.includes('excerpt-length'));
+});
+
+test('strict: body-h1은 에러가 아니다 — 렌더가 h2로 강등해 배포를 막지 않는다', () => {
+  const issues = validateBodyHeadings(
+    rec({ title: 'x', status: 'published' }, { content: '# 제목' }),
+    '---\ntitle: x\n---\n',
+  );
+  assert.deepEqual(
+    issues.map(i => i.severity),
+    ['warning'],
+  );
+});
+
+test('strict: 이미지 alt 누락은 발행 글에서 에러, draft에서는 경고', () => {
+  const raw = '---\ntitle: x\n---\n';
+  const withAltMissing = (status: string) =>
+    validateImageReferences(
+      rec(
+        { title: 'x', status, date: '2025-01-01' },
+        // 외부 URL이라 파일 존재 검사(missing-image)는 타지 않는다.
+        { content: '![](https://example.com/a.png)' },
+      ),
+      raw,
+      { strict: true },
+    ).filter(i => i.rule === 'missing-image-alt');
+
+  assert.deepEqual(
+    withAltMissing('published').map(i => i.severity),
+    ['error'],
+  );
+  assert.deepEqual(
+    withAltMissing('draft').map(i => i.severity),
+    ['warning'],
+  );
+});
+
+test('alt가 있으면 missing-image-alt를 내지 않는다', () => {
+  assert.deepEqual(
+    validateImageReferences(
+      rec(
+        { title: 'x', status: 'published' },
+        { content: '![구조 다이어그램](https://example.com/a.png)' },
+      ),
+      '---\ntitle: x\n---\n',
+      { strict: true },
+    ),
+    [],
   );
 });

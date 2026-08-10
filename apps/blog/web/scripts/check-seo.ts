@@ -124,11 +124,23 @@ export function collectPages(outDir: string): Map<string, string> {
  * 형식마다 목록 위치를 지정해서 읽습니다 — sitemap은 `<loc>`, rss는 `<guid>`,
  * llms.txt는 마크다운 링크의 URL.
  */
+/**
+ * 퍼센트 인코딩을 풀어 URL 비교의 기준을 하나로 맞춥니다.
+ * 인코딩이 깨진 문자열(`%`가 홀로 있는 경우 등)은 디코드가 던지므로 원문을 씁니다.
+ */
+function decodeUrlSafe(url: string): string {
+  try {
+    return decodeURIComponent(url);
+  } catch {
+    return url;
+  }
+}
+
 function extractPostUrls(text: string, pattern: RegExp): Set<string> {
   const postPrefix = `${SITE_URL}/posts/`;
   return new Set(
     [...text.matchAll(pattern)]
-      .map(m => decodeURIComponent(m[1].trim()))
+      .map(m => decodeUrlSafe(m[1].trim()))
       // `/posts/` 자체는 아카이브 목록 페이지지 글이 아니다 — sitemap에만 있는 게 정상.
       .filter(url => url.startsWith(postPrefix) && url !== postPrefix),
   );
@@ -187,9 +199,15 @@ export function checkPages(pages: Map<string, string>): SeoViolation[] {
       descriptions.set(seo.description, arr);
     }
 
+    // canonical은 퍼센트 인코딩된 URL(`/posts/%ED%95%9C%EA%B8%80/`)이고, page는
+    // 디스크의 디렉토리 이름 그대로(`/posts/한글/`)다. 디코드해서 비교하지 않으면
+    // 한글 slug 글이 하나 생기는 순간 canonical-mismatch로 잡혀 배포가 막힌다 —
+    // `--slug` 없이 `new-post`를 쓰면 한글 파일명이 곧 slug가 되므로 흔한 경로다.
     if (!seo.canonical) {
       add('missing-canonical', 'canonical이 없습니다');
-    } else if (seo.canonical !== `${SITE_URL}${page}`) {
+    } else if (
+      decodeUrlSafe(seo.canonical) !== decodeUrlSafe(`${SITE_URL}${page}`)
+    ) {
       add(
         'canonical-mismatch',
         `canonical이 자기 URL과 다릅니다: ${seo.canonical} ≠ ${SITE_URL}${page}`,

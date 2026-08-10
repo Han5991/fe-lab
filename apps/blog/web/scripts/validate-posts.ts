@@ -72,7 +72,43 @@ function findFrontmatterLine(raw: string, key: string): number | null {
   return null;
 }
 
-export function validatePost(record: PostRecord, raw: string): Issue[] {
+export interface ValidateOptions {
+  /**
+   * SEO 계약 위반을 에러로 취급할지. **prebuild에서만** 켭니다.
+   *
+   * `check-seo`(빌드 산출물 검사)는 발행되는 페이지를 보고, 위반하면 배포를
+   * 막습니다. 그 원인이 되는 원문 문제가 항상 경고에 그치면 `draft`를
+   * `published`로 바꾸는 순간 로컬 검사와 빌드는 통과하고 **CI에서만** 터집니다.
+   * 그래서 빌드 직전에는 같은 조건을 에러로 올려, 15초짜리 빌드를 돌리기 전에
+   * 파일·줄 번호와 함께 먼저 잡습니다.
+   *
+   * 반대로 `predev`(dev 서버)와 `pnpm lint:posts`에서는 켜지 않습니다 — 글을
+   * 쓰는 중에 `status: published`로 두는 건 흔한데, 요약을 아직 안 적었다고
+   * dev 서버가 안 뜨면 도구가 방해물이 됩니다.
+   */
+  strict?: boolean;
+}
+
+/**
+ * SEO 계약 위반의 심각도.
+ *
+ * `draft`는 빌드에서 통째로 빠져 check-seo가 볼 일이 없으므로 strict에서도 경고입니다.
+ *
+ * 본문 h1(`body-h1`)은 여기 해당하지 않습니다 — 렌더 계층이 h2로 강등해
+ * check-seo의 h1 검사를 통과하므로 원문이 그대로여도 배포가 막히지 않습니다.
+ */
+function seoSeverity(
+  data: Record<string, unknown>,
+  { strict }: ValidateOptions,
+): Severity {
+  return strict && data.status !== 'draft' ? 'error' : 'warning';
+}
+
+export function validatePost(
+  record: PostRecord,
+  raw: string,
+  options: ValidateOptions = {},
+): Issue[] {
   const { data, relPath, absPath } = record;
   const issues: Issue[] = [];
 
@@ -150,6 +186,8 @@ export function validatePost(record: PostRecord, raw: string): Issue[] {
     });
   }
 
+  const publishSeverity = seoSeverity(data, options);
+
   // `<title>`은 `{seoTitle ?? title}{TITLE_SUFFIX}`로 조립됩니다(postSeo.ts).
   // 이 블로그는 `[Typescript로 설계하는 프로젝트]` 같은 긴 시리즈 접두사를 제목에
   // 넣기 때문에 접미사까지 더하면 쉽게 60자를 넘고, 검색 결과에서 뒤가 잘립니다.
@@ -167,7 +205,7 @@ export function validatePost(record: PostRecord, raw: string): Issue[] {
       line:
         findFrontmatterLine(raw, 'seoTitle') ??
         findFrontmatterLine(raw, 'title'),
-      severity: 'warning',
+      severity: publishSeverity,
       rule: 'long-title',
       message: `\`<title>\`이 ${renderedTitleLength}자입니다(접미사 \`${TITLE_SUFFIX}\` 포함, 권장 ${SEO_TITLE_MAX_LENGTH}자 이하). 검색 결과에서 잘립니다 — \`seoTitle\`에 ${SEO_TITLE_MAX_LENGTH - TITLE_SUFFIX.length}자 이하의 짧은 제목을 넣으세요(화면 제목과 OG 카드는 \`title\` 그대로 나갑니다).`,
     });
@@ -187,7 +225,7 @@ export function validatePost(record: PostRecord, raw: string): Issue[] {
       line:
         findFrontmatterLine(raw, 'excerpt') ??
         findFrontmatterLine(raw, 'title'),
-      severity: 'warning',
+      severity: publishSeverity,
       rule: 'missing-excerpt',
       message: `\`excerpt\`가 ${'excerpt' in data ? '비어 있어' : '없어'} 본문 앞 ${SEO_DESCRIPTION_MAX_LENGTH}자 자동 발췌가 meta description으로 나갑니다. 도입부가 비슷한 글끼리 description이 통째로 겹칠 수 있으니 ${SEO_DESCRIPTION_MIN_LENGTH}~${SEO_DESCRIPTION_MAX_LENGTH}자의 고유한 요약을 적어주세요.`,
     });
@@ -197,7 +235,7 @@ export function validatePost(record: PostRecord, raw: string): Issue[] {
       issues.push({
         file: relPath,
         line: findFrontmatterLine(raw, 'excerpt'),
-        severity: 'warning',
+        severity: publishSeverity,
         rule: 'excerpt-length',
         message: `\`excerpt\`가 ${len}자입니다(권장 ${SEO_DESCRIPTION_MIN_LENGTH}~${SEO_DESCRIPTION_MAX_LENGTH}자). 짧으면 검색 스니펫이 비고, 길면 뒤가 잘립니다.`,
       });
@@ -399,7 +437,11 @@ function frontmatterOffset(raw: string): number {
   return 0;
 }
 
-function validateImageReferences(record: PostRecord, raw: string): Issue[] {
+export function validateImageReferences(
+  record: PostRecord,
+  raw: string,
+  options: ValidateOptions = {},
+): Issue[] {
   const { content, absPath, relPath } = record;
   const issues: Issue[] = [];
   const imageRegex = /!\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g;
@@ -417,7 +459,7 @@ function validateImageReferences(record: PostRecord, raw: string): Issue[] {
       issues.push({
         file: relPath,
         line: offset + lineInContent,
-        severity: 'warning',
+        severity: seoSeverity(record.data, options),
         rule: 'missing-image-alt',
         message: `이미지에 alt 텍스트가 없습니다 — 스크린리더가 읽을 설명을 적어주세요: ${ref}`,
       });
@@ -446,6 +488,69 @@ function validateImageReferences(record: PostRecord, raw: string): Issue[] {
   return issues;
 }
 
+export interface ScannedLine {
+  text: string;
+  /** 본문 기준 0-based 줄 번호 */
+  index: number;
+  /** 코드 펜스 안(여는·닫는 펜스 줄 포함)이면 true */
+  inFence: boolean;
+  /** 이 줄이 펜스를 **여는** 줄이면 info string(`ts title="a.ts"` 등), 아니면 null */
+  opensFence: string | null;
+}
+
+/**
+ * 본문을 줄 단위로 훑으면서 각 줄이 코드 펜스 안인지 표시합니다.
+ *
+ * 마크다운을 다루는 글이 코드 예시로 펜스를 품는 경우가 흔해서, 여는 펜스의
+ * **문자(백틱/틸데)와 개수**를 함께 기억했다가 같은 문자·같은 개수 이상의
+ * 라벨 없는 펜스로 닫힐 때까지는 안쪽을 본문으로 보지 않습니다(CommonMark 규칙).
+ *
+ * 개수만 보고 문자를 무시하면 ```로 연 펜스가 안쪽 `~~~`로 닫힌 것처럼 보여,
+ * 그 뒤의 코드 줄들이 본문으로 새어 나옵니다 — `# 주석` 한 줄이 고칠 수 없는
+ * body-h1 경고가 되는 식입니다.
+ *
+ * 펜스 규칙을 두 검사(코드 라벨·본문 h1)가 각자 구현하면 한쪽만 고쳐질 수 있어
+ * 하나로 모았습니다.
+ */
+export function scanBodyLines(content: string): ScannedLine[] {
+  const result: ScannedLine[] = [];
+  let fenceChar = '';
+  let fenceLength = 0;
+
+  content.split('\n').forEach((text, index) => {
+    const m = text.match(/^(\s{0,3})(`{3,}|~{3,})(.*)$/);
+    if (!m) {
+      result.push({
+        text,
+        index,
+        inFence: fenceLength > 0,
+        opensFence: null,
+      });
+      return;
+    }
+
+    const [, , marker, rest] = m;
+    const char = marker[0];
+    const length = marker.length;
+    const info = rest.trim();
+
+    if (fenceLength > 0) {
+      if (char === fenceChar && length >= fenceLength && info === '') {
+        fenceChar = '';
+        fenceLength = 0;
+      }
+      result.push({ text, index, inFence: true, opensFence: null });
+      return;
+    }
+
+    fenceChar = char;
+    fenceLength = length;
+    result.push({ text, index, inFence: true, opensFence: info });
+  });
+
+  return result;
+}
+
 /**
  * 코드 펜스의 언어 라벨이 CodeBlock에 등록된 언어인지 검사합니다.
  *
@@ -453,39 +558,21 @@ function validateImageReferences(record: PostRecord, raw: string): Issue[] {
  * 언어만 등록합니다(번들 gzip 350KB 절감). 등록되지 않은 라벨은 에러 없이
  * 그냥 강조 없는 평문으로 렌더되기 때문에, 글쓴이가 알아채기 어렵습니다.
  * 그 조용한 품질 저하를 빌드 시점 경고로 끌어올립니다.
- *
- * 중첩 펜스(마크다운 글이 코드 예시로 ```를 품는 경우)를 오탐하지 않도록,
- * 여는 펜스의 백틱 개수를 기억했다가 같은 개수 이상으로 닫힐 때까지는
- * 내부를 검사하지 않습니다.
  */
 function validateCodeFenceLanguages(record: PostRecord, raw: string): Issue[] {
   const issues: Issue[] = [];
   const offset = frontmatterOffset(raw);
-  const lines = record.content.split('\n');
-  let openFenceLength = 0;
 
-  for (let i = 0; i < lines.length; i++) {
-    const m = lines[i].match(/^(\s{0,3})(`{3,})(.*)$/);
-    if (!m) continue;
-    const fenceLength = m[2].length;
-    const info = m[3].trim();
-
-    if (openFenceLength > 0) {
-      // 열려 있는 펜스는 라벨 없는 같은 길이 이상의 펜스로만 닫힌다.
-      if (fenceLength >= openFenceLength && info === '') openFenceLength = 0;
-      continue;
-    }
-
-    openFenceLength = fenceLength;
-    if (info === '') continue;
+  for (const { index, opensFence } of scanBodyLines(record.content)) {
+    if (!opensFence) continue;
 
     // ```ts title="a.ts" 처럼 뒤에 메타가 붙는 경우 첫 토큰만 언어다.
-    const label = info.split(/[\s,{]/)[0].toLowerCase();
+    const label = opensFence.split(/[\s,{]/)[0].toLowerCase();
     if (!label || SUPPORTED_FENCE_LABELS.has(label)) continue;
 
     issues.push({
       file: record.relPath,
-      line: offset + i + 1,
+      line: offset + index + 1,
       severity: 'warning',
       rule: 'unregistered-code-language',
       message: `구문 강조에 등록되지 않은 언어입니다: \`${label}\` — 강조 없이 평문으로 렌더됩니다. src/components/post/prismLanguages.ts에 추가하거나 평문 라벨(text)을 쓰세요.`,
@@ -504,8 +591,7 @@ function validateCodeFenceLanguages(record: PostRecord, raw: string): Issue[] {
  * (src/components/post/markdownHeadings.tsx), 그 조용한 교정 때문에 글쓴이는
  * 원문이 틀렸다는 걸 영영 모릅니다. `hero`와 같은 방식으로 그 침묵을 깹니다.
  *
- * 코드 펜스 안의 `# 주석`은 헤딩이 아니므로 제외합니다 —
- * validateCodeFenceLanguages와 같은 펜스 추적 규칙을 씁니다.
+ * 코드 펜스 안의 `# 주석`은 헤딩이 아니므로 제외합니다(scanBodyLines).
  *
  * 빌드에서 제외되는 메타 노트(유효한 `status` 없음)는 렌더될 일이 없으므로
  * 검사하지 않습니다 — 기획 문서의 `# 제목`까지 잡으면 경고만 늘고 고칠 것이 없습니다.
@@ -515,31 +601,16 @@ export function validateBodyHeadings(record: PostRecord, raw: string): Issue[] {
 
   const issues: Issue[] = [];
   const offset = frontmatterOffset(raw);
-  const lines = record.content.split('\n');
-  let openFenceLength = 0;
 
-  for (let i = 0; i < lines.length; i++) {
-    const fence = lines[i].match(/^(\s{0,3})(`{3,}|~{3,})(.*)$/);
-    if (fence) {
-      const fenceLength = fence[2].length;
-      if (openFenceLength > 0) {
-        if (fenceLength >= openFenceLength && fence[3].trim() === '') {
-          openFenceLength = 0;
-        }
-      } else {
-        openFenceLength = fenceLength;
-      }
-      continue;
-    }
-    if (openFenceLength > 0) continue;
-    if (!/^# /.test(lines[i])) continue;
+  for (const { text, index, inFence } of scanBodyLines(record.content)) {
+    if (inFence || !/^# /.test(text)) continue;
 
     issues.push({
       file: record.relPath,
-      line: offset + i + 1,
+      line: offset + index + 1,
       severity: 'warning',
       rule: 'body-h1',
-      message: `본문에 h1(\`# \`)이 있습니다 — 페이지의 h1은 글 제목 하나뿐이어야 합니다. 제목의 중복이면 줄을 지우고, 절 제목이면 \`## \`로 내리세요. (렌더 시에는 h2로 강등되지만 원문은 그대로입니다): ${lines[i].trim()}`,
+      message: `본문에 h1(\`# \`)이 있습니다 — 페이지의 h1은 글 제목 하나뿐이어야 합니다. 제목의 중복이면 줄을 지우고, 절 제목이면 \`## \`로 내리세요. (렌더 시에는 h2로 강등되지만 원문은 그대로입니다): ${text.trim()}`,
     });
   }
 
@@ -584,6 +655,9 @@ function format(issue: Issue): string {
 }
 
 function main() {
+  const options: ValidateOptions = {
+    strict: process.argv.includes('--strict'),
+  };
   const allFiles = collectMarkdownFiles(POSTS_DIR);
   const records: PostRecord[] = [];
   const allIssues: Issue[] = [];
@@ -595,8 +669,8 @@ function main() {
     const relPath = posix.normalize(relative(POSTS_DIR, absPath));
     const record: PostRecord = { absPath, relPath, data, content };
     records.push(record);
-    allIssues.push(...validatePost(record, raw));
-    allIssues.push(...validateImageReferences(record, raw));
+    allIssues.push(...validatePost(record, raw, options));
+    allIssues.push(...validateImageReferences(record, raw, options));
     allIssues.push(...validateCodeFenceLanguages(record, raw));
     allIssues.push(...validateBodyHeadings(record, raw));
   }

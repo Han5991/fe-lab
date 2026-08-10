@@ -216,3 +216,23 @@ test('checkFeeds: 한글 slug는 인코딩 차이로 오탐하지 않는다', ()
     [],
   );
 });
+
+test('checkPages: canonical은 퍼센트 인코딩을 풀어 비교한다 (한글 slug)', () => {
+  // out/의 디렉토리 이름은 `/posts/한글/`인데 canonical은 인코딩된 URL이다.
+  // 디코드하지 않으면 한글 slug 글이 하나만 생겨도 배포가 막힌다.
+  const encoded = `${SITE_URL}/posts/${encodeURIComponent('한글')}/`;
+  assert.deepEqual(
+    rules(new Map([['/posts/한글/', page({ canonical: encoded })]])),
+    [],
+  );
+});
+
+test('checkPages: 인코딩을 풀어도 다르면 여전히 canonical-mismatch', () => {
+  assert.ok(
+    rules(
+      new Map([
+        ['/posts/한글/', page({ canonical: `${SITE_URL}/posts/다른글/` })],
+      ]),
+    ).includes('canonical-mismatch'),
+  );
+});

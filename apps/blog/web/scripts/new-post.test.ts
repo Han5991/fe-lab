@@ -188,7 +188,7 @@ test('buildFrontmatter: 기본 골격 — 본문은 `## `로 시작한다 (h1을
       '',
       // 페이지의 h1은 PostHeader의 글 제목 하나뿐이어야 한다. 여기서 `# 제목`을
       // 깔아주는 바람에 예전 글들이 h1을 두 개씩 갖게 됐다.
-      '## ',
+      '## 들어가며',
       '',
     ].join('\n'),
   );
@@ -256,16 +256,17 @@ function recordOf(raw: string): PostRecord {
 }
 
 /**
- * 스캐폴드는 **에러를 내면 안 된다**(빌드가 막힌다). 다만 경고는 하나 남는다 —
- * 비어 있는 `excerpt`를 채우라는 알림이다. 스캐폴딩이 요약까지 지어낼 수는 없으니
- * 여기서 경고를 끄는 대신, 글을 쓰고 나서 채우라는 신호로 남긴다.
+ * 스캐폴드는 기본(비엄격) 검사에서 **에러를 내면 안 된다** — predev가 이 검사를
+ * 돌기 때문에, 에러가 나면 글을 시작하자마자 dev 서버가 안 뜬다.
+ * 다만 경고는 하나 남는다: 비어 있는 `excerpt`를 채우라는 알림이다. 스캐폴딩이
+ * 요약까지 지어낼 수는 없으니, 글을 쓰고 나서 채우라는 신호로 남긴다.
  */
 function scaffoldIssues(raw: string) {
   const issues = validatePost(recordOf(raw), raw);
   assert.deepEqual(
     issues.filter(i => i.severity === 'error'),
     [],
-    '스캐폴드가 에러를 내면 새 글마다 빌드가 막힌다',
+    '스캐폴드가 에러를 내면 글을 시작하자마자 dev 서버가 막힌다',
   );
   return issues.map(i => i.rule);
 }
@@ -297,6 +298,35 @@ test('계약: scheduled 스캐폴드(offset 포함 날짜)는 에러 없음', ()
     NOW,
   );
   assert.deepEqual(scaffoldIssues(raw), ['missing-excerpt']);
+});
+
+test('계약: strict(prebuild)에서는 발행 상태 스캐폴드가 에러 — 빌드 전에 막는다', () => {
+  // excerpt를 안 채운 채 published로 빌드하면 자동 발췌가 description으로 나가고
+  // check-seo가 배포를 막는다. 그 실패를 CI가 아니라 빌드 직전에 당겨 온다.
+  const raw = buildFrontmatter(
+    { title: '새 글', status: 'published', tags: [] },
+    NOW,
+  );
+  const errors = validatePost(recordOf(raw), raw, { strict: true }).filter(
+    i => i.severity === 'error',
+  );
+  assert.deepEqual(
+    errors.map(i => i.rule),
+    ['missing-excerpt'],
+  );
+});
+
+test('계약: strict여도 draft 스캐폴드는 에러가 아니다 (쓰는 중엔 막지 않는다)', () => {
+  const raw = buildFrontmatter(
+    { title: '새 글', status: 'draft', tags: [] },
+    NOW,
+  );
+  assert.deepEqual(
+    validatePost(recordOf(raw), raw, { strict: true }).filter(
+      i => i.severity === 'error',
+    ),
+    [],
+  );
 });
 
 test('계약: 스캐폴드 본문에는 h1이 없다 (body-h1 경고가 나지 않는다)', () => {
