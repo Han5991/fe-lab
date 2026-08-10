@@ -11,9 +11,11 @@ import {
 } from '@/domain/post';
 import {
   SITE_URL,
+  SITE_NAME,
   SITE_AUTHOR_GITHUB,
   SITE_AUTHOR_LINKEDIN,
   SITE_DESCRIPTION_EXPANDED,
+  OG_DEFAULT_IMAGE,
 } from '@/lib/constants';
 import { safeJsonLd } from '@/lib/jsonLd';
 
@@ -29,11 +31,11 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Frontend Lab | 프론트엔드 실험실',
     description: SITE_DESCRIPTION_EXPANDED,
-    url: 'https://blog.sangwook.dev',
-    siteName: 'Frontend Lab',
+    url: SITE_URL,
+    siteName: SITE_NAME,
     images: [
       {
-        url: 'https://blog.sangwook.dev/og-default.png',
+        url: `${SITE_URL}${OG_DEFAULT_IMAGE}`,
         width: 1200,
         height: 630,
         alt: 'Frontend Lab Blog',
@@ -46,7 +48,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Frontend Lab | 프론트엔드 실험실',
     description: SITE_DESCRIPTION_EXPANDED,
-    images: ['https://blog.sangwook.dev/og-default.png'],
+    images: [`${SITE_URL}${OG_DEFAULT_IMAGE}`],
   },
 };
 

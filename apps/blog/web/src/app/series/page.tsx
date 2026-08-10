@@ -16,7 +16,7 @@ import { attachSeriesPosts } from './seriesIndex';
 
 const PAGE_TITLE = `시리즈 | ${SITE_NAME}`;
 const PAGE_DESCRIPTION =
-  '여러 편으로 이어지는 글을 시리즈로 묶었습니다. 시리즈마다 1편부터 순서대로 읽을 수 있습니다.';
+  '여러 편으로 이어지는 글을 시리즈로 묶었습니다. 번들러 직접 만들기, TypeScript로 설계하는 프로젝트, 우아한 에러 핸들링, ECS 배포 파이프라인까지 — 시리즈마다 1편부터 순서대로, 중간에 길을 잃지 않고 읽을 수 있습니다.';
 
 export const metadata: Metadata = {
   title: PAGE_TITLE,

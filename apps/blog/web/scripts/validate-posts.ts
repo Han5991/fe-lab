@@ -4,6 +4,12 @@ import { pathToFileURL } from 'node:url';
 import matter from 'gray-matter';
 import { collectMarkdownFiles, hasFrontmatter } from '@/lib/postFiles';
 import { hasAmbiguousTimezone } from '@/lib/dates';
+import {
+  TITLE_SUFFIX,
+  SEO_TITLE_MAX_LENGTH,
+  SEO_DESCRIPTION_MIN_LENGTH,
+  SEO_DESCRIPTION_MAX_LENGTH,
+} from '@/lib/constants';
 import { POST_STATUSES, isPostStatus, isPostFile } from '@/domain/post';
 // 이름 목록만 있는 모듈에서 가져옵니다. registry.ts(=.tsx 컴포넌트 의존)를 직접
 // 참조하면 이 노드 스크립트가 React·Panda까지 끌고 들어옵니다.
@@ -26,6 +32,7 @@ const POSTS_DIR = resolve(process.cwd(), '..', 'posts');
  */
 const KNOWN_FRONTMATTER_KEYS = new Set([
   'title',
+  'seoTitle',
   'date',
   'updatedAt',
   'slug',
@@ -121,7 +128,7 @@ export function validatePost(record: PostRecord, raw: string): Issue[] {
   // 통째로 버리고 폴백합니다(slug는 파일 경로로, excerpt는 본문 앞 160자로,
   // thumbnail은 생성 OG 카드로). 특히 `slug: 123` 같은 실수는 **URL이 조용히
   // 바뀌는** 결과가 되므로 에러로 막습니다.
-  for (const key of ['slug', 'excerpt', 'thumbnail'] as const) {
+  for (const key of ['slug', 'excerpt', 'thumbnail', 'seoTitle'] as const) {
     if (key in data && typeof data[key] !== 'string') {
       issues.push({
         file: relPath,
@@ -141,6 +148,60 @@ export function validatePost(record: PostRecord, raw: string): Issue[] {
       rule: 'missing-title',
       message: '`title` 필드가 필요합니다.',
     });
+  }
+
+  // `<title>`은 `{seoTitle ?? title}{TITLE_SUFFIX}`로 조립됩니다(postSeo.ts).
+  // 이 블로그는 `[Typescript로 설계하는 프로젝트]` 같은 긴 시리즈 접두사를 제목에
+  // 넣기 때문에 접미사까지 더하면 쉽게 60자를 넘고, 검색 결과에서 뒤가 잘립니다.
+  // 제목 자체를 줄이면 글의 정체성이 상하므로 `seoTitle`로 `<title>`만 줄입니다.
+  const effectiveTitle =
+    typeof data.seoTitle === 'string' && data.seoTitle !== ''
+      ? data.seoTitle
+      : typeof data.title === 'string'
+        ? data.title
+        : '';
+  const renderedTitleLength = effectiveTitle.length + TITLE_SUFFIX.length;
+  if (effectiveTitle && renderedTitleLength > SEO_TITLE_MAX_LENGTH) {
+    issues.push({
+      file: relPath,
+      line:
+        findFrontmatterLine(raw, 'seoTitle') ??
+        findFrontmatterLine(raw, 'title'),
+      severity: 'warning',
+      rule: 'long-title',
+      message: `\`<title>\`이 ${renderedTitleLength}자입니다(접미사 \`${TITLE_SUFFIX}\` 포함, 권장 ${SEO_TITLE_MAX_LENGTH}자 이하). 검색 결과에서 잘립니다 — \`seoTitle\`에 ${SEO_TITLE_MAX_LENGTH - TITLE_SUFFIX.length}자 이하의 짧은 제목을 넣으세요(화면 제목과 OG 카드는 \`title\` 그대로 나갑니다).`,
+    });
+  }
+
+  // excerpt가 없으면 본문 앞 160자를 잘라 `...`를 붙인 값이 그대로 meta
+  // description이 됩니다(repository.ts). 도입부가 비슷한 글끼리는 그 발췌가
+  // **글자 단위로 완전히 겹쳐서** 중복 콘텐츠 신호가 되고, 실제로 시리즈의
+  // 본편/DI편 같은 짝에서 description이 똑같아진 적이 있습니다.
+  //
+  // 빈 문자열(`excerpt: ''`)도 같은 취급입니다 — repository.ts의 toOptionalString이
+  // 빈 문자열을 "값 없음"으로 떨어뜨려 똑같이 자동 발췌로 폴백하는데, 키가 있다는
+  // 이유로 넘어가면 `new-post` 스캐폴딩이 깔아주는 `excerpt: ''`가 영원히 조용합니다.
+  if (!('excerpt' in data) || data.excerpt === '') {
+    issues.push({
+      file: relPath,
+      line:
+        findFrontmatterLine(raw, 'excerpt') ??
+        findFrontmatterLine(raw, 'title'),
+      severity: 'warning',
+      rule: 'missing-excerpt',
+      message: `\`excerpt\`가 ${'excerpt' in data ? '비어 있어' : '없어'} 본문 앞 ${SEO_DESCRIPTION_MAX_LENGTH}자 자동 발췌가 meta description으로 나갑니다. 도입부가 비슷한 글끼리 description이 통째로 겹칠 수 있으니 ${SEO_DESCRIPTION_MIN_LENGTH}~${SEO_DESCRIPTION_MAX_LENGTH}자의 고유한 요약을 적어주세요.`,
+    });
+  } else if (typeof data.excerpt === 'string') {
+    const len = data.excerpt.length;
+    if (len < SEO_DESCRIPTION_MIN_LENGTH || len > SEO_DESCRIPTION_MAX_LENGTH) {
+      issues.push({
+        file: relPath,
+        line: findFrontmatterLine(raw, 'excerpt'),
+        severity: 'warning',
+        rule: 'excerpt-length',
+        message: `\`excerpt\`가 ${len}자입니다(권장 ${SEO_DESCRIPTION_MIN_LENGTH}~${SEO_DESCRIPTION_MAX_LENGTH}자). 짧으면 검색 스니펫이 비고, 길면 뒤가 잘립니다.`,
+      });
+    }
   }
 
   // `date`는 선택 필드가 아닙니다. 목록 정렬(filtering.ts), 아카이브 연도 필터,
@@ -341,12 +402,27 @@ function frontmatterOffset(raw: string): number {
 function validateImageReferences(record: PostRecord, raw: string): Issue[] {
   const { content, absPath, relPath } = record;
   const issues: Issue[] = [];
-  const imageRegex = /!\[[^\]]*\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g;
+  const imageRegex = /!\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g;
   const offset = frontmatterOffset(raw);
 
   let match: RegExpExecArray | null;
   while ((match = imageRegex.exec(content)) !== null) {
-    const ref = match[1];
+    const [, alt, ref] = match;
+    const lineInContent = content.slice(0, match.index).split('\n').length;
+
+    // alt가 비면 스크린리더는 파일 URL을 읽거나 그냥 건너뛴다. 이미지가 다이어그램인
+    // 이 블로그에서는 그림이 설명의 본체인 경우가 많아서 내용이 통째로 사라진다.
+    // (장식용 이미지라면 alt를 비우는 게 맞지만, 지금까지 빈 alt는 전부 실수였다.)
+    if (alt.trim() === '') {
+      issues.push({
+        file: relPath,
+        line: offset + lineInContent,
+        severity: 'warning',
+        rule: 'missing-image-alt',
+        message: `이미지에 alt 텍스트가 없습니다 — 스크린리더가 읽을 설명을 적어주세요: ${ref}`,
+      });
+    }
+
     if (
       /^https?:\/\//.test(ref) ||
       ref.startsWith('/') ||
@@ -358,7 +434,6 @@ function validateImageReferences(record: PostRecord, raw: string): Issue[] {
     const cleanRef = decodeURIComponent(ref.split('#')[0].split('?')[0]);
     const resolved = resolve(dirname(absPath), cleanRef);
     if (!existsSync(resolved)) {
-      const lineInContent = content.slice(0, match.index).split('\n').length;
       issues.push({
         file: relPath,
         line: offset + lineInContent,
@@ -420,6 +495,57 @@ function validateCodeFenceLanguages(record: PostRecord, raw: string): Issue[] {
   return issues;
 }
 
+/**
+ * 본문에 `# ` 헤딩(h1)이 있는지 검사합니다.
+ *
+ * 페이지의 h1은 글 제목 하나뿐이어야 하는데, 예전 글들은 본문 첫 줄에 제목을
+ * 한 번 더 적거나 절 제목을 `#`으로 시작해서 렌더된 HTML에 h1이 2~4개 있었습니다.
+ * 렌더 계층이 h1을 h2로 강등해 페이지 자체는 이제 항상 h1 하나지만
+ * (src/components/post/markdownHeadings.tsx), 그 조용한 교정 때문에 글쓴이는
+ * 원문이 틀렸다는 걸 영영 모릅니다. `hero`와 같은 방식으로 그 침묵을 깹니다.
+ *
+ * 코드 펜스 안의 `# 주석`은 헤딩이 아니므로 제외합니다 —
+ * validateCodeFenceLanguages와 같은 펜스 추적 규칙을 씁니다.
+ *
+ * 빌드에서 제외되는 메타 노트(유효한 `status` 없음)는 렌더될 일이 없으므로
+ * 검사하지 않습니다 — 기획 문서의 `# 제목`까지 잡으면 경고만 늘고 고칠 것이 없습니다.
+ */
+export function validateBodyHeadings(record: PostRecord, raw: string): Issue[] {
+  if (!isPostFile(record.data)) return [];
+
+  const issues: Issue[] = [];
+  const offset = frontmatterOffset(raw);
+  const lines = record.content.split('\n');
+  let openFenceLength = 0;
+
+  for (let i = 0; i < lines.length; i++) {
+    const fence = lines[i].match(/^(\s{0,3})(`{3,}|~{3,})(.*)$/);
+    if (fence) {
+      const fenceLength = fence[2].length;
+      if (openFenceLength > 0) {
+        if (fenceLength >= openFenceLength && fence[3].trim() === '') {
+          openFenceLength = 0;
+        }
+      } else {
+        openFenceLength = fenceLength;
+      }
+      continue;
+    }
+    if (openFenceLength > 0) continue;
+    if (!/^# /.test(lines[i])) continue;
+
+    issues.push({
+      file: record.relPath,
+      line: offset + i + 1,
+      severity: 'warning',
+      rule: 'body-h1',
+      message: `본문에 h1(\`# \`)이 있습니다 — 페이지의 h1은 글 제목 하나뿐이어야 합니다. 제목의 중복이면 줄을 지우고, 절 제목이면 \`## \`로 내리세요. (렌더 시에는 h2로 강등되지만 원문은 그대로입니다): ${lines[i].trim()}`,
+    });
+  }
+
+  return issues;
+}
+
 // 명시 slug가 없으면 파일경로(확장자 제거)를 기본 slug로 사용 — repository.ts의 rawSlug 규칙과 동일
 function deriveDefaultSlug(relPath: string): string {
   return relPath.replace(/\.(md|mdx)$/, '');
@@ -472,6 +598,7 @@ function main() {
     allIssues.push(...validatePost(record, raw));
     allIssues.push(...validateImageReferences(record, raw));
     allIssues.push(...validateCodeFenceLanguages(record, raw));
+    allIssues.push(...validateBodyHeadings(record, raw));
   }
 
   allIssues.push(...detectDuplicateSlugs(records));

@@ -95,6 +95,7 @@ export function parsePost(
     originalSlug: rawSlug,
     relativeDir: currentPath,
     title: toOptionalString(data.title) ?? fileName,
+    seoTitle: toOptionalString(data.seoTitle),
     date: toDateString(data.date),
     updatedAt: toDateString(data.updatedAt),
     content,

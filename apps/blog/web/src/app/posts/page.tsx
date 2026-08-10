@@ -4,7 +4,7 @@ import type { Metadata } from 'next';
 
 import { getAllPostSummaries } from '@/domain/post';
 import { getAllSeries, getAllTags, getAllYears } from '@/domain/post/aggregate';
-import { SITE_URL } from '@/lib/constants';
+import { SITE_URL, SITE_NAME, OG_DEFAULT_IMAGE } from '@/lib/constants';
 import { safeJsonLd } from '@/lib/jsonLd';
 // 폴백 목록과 하이드레이션 후 목록이 같은 행 컴포넌트를 쓰도록 배럴(index.ts)이
 // 아니라 모듈에서 직접 가져온다.
@@ -16,19 +16,21 @@ import { PageBoundary } from '@/src/components/PageBoundary';
 
 export const metadata: Metadata = {
   title: '모든 노트 | Frontend Lab',
-  description: '프론트엔드 실험실의 모든 글을 태그/시리즈/연도로 탐색합니다.',
+  description:
+    '프론트엔드 실험실에 쌓인 글 전부를 한 곳에서 봅니다. 태그·시리즈·연도로 좁혀 가며 번들러 만들기, TypeScript 설계, React 컴포넌트 패턴, 배포 파이프라인, 오픈소스 기여 기록 중 지금 필요한 글을 찾아보세요.',
   alternates: { canonical: '/posts/' },
   openGraph: {
     title: '모든 노트 | Frontend Lab',
-    description: '프론트엔드 실험실의 모든 글을 태그/시리즈/연도로 탐색합니다.',
-    url: 'https://blog.sangwook.dev/posts/',
-    siteName: 'Frontend Lab',
+    description:
+      '프론트엔드 실험실에 쌓인 글 전부를 한 곳에서 봅니다. 태그·시리즈·연도로 좁혀 가며 번들러 만들기, TypeScript 설계, React 컴포넌트 패턴, 배포 파이프라인, 오픈소스 기여 기록 중 지금 필요한 글을 찾아보세요.',
+    url: `${SITE_URL}/posts/`,
+    siteName: SITE_NAME,
     images: [
       {
-        url: '/og-default.png',
+        url: OG_DEFAULT_IMAGE,
         width: 1200,
         height: 630,
-        alt: 'Frontend Lab Blog Posts',
+        alt: `${SITE_NAME} Blog Posts`,
       },
     ],
     locale: 'ko_KR',
@@ -37,8 +39,9 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: '모든 노트 | Frontend Lab',
-    description: '프론트엔드 실험실의 모든 글을 태그/시리즈/연도로 탐색합니다.',
-    images: ['/og-default.png'],
+    description:
+      '프론트엔드 실험실에 쌓인 글 전부를 한 곳에서 봅니다. 태그·시리즈·연도로 좁혀 가며 번들러 만들기, TypeScript 설계, React 컴포넌트 패턴, 배포 파이프라인, 오픈소스 기여 기록 중 지금 필요한 글을 찾아보세요.',
+    images: [OG_DEFAULT_IMAGE],
   },
 };
 

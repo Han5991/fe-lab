@@ -10,6 +10,7 @@ import { SITE_URL, SITE_NAME, SITE_DESCRIPTION } from '../lib/constants';
 import { resolvePostAssetUrl } from '../domain/post/assetUrl';
 import { parseScheduledDateKST } from '../lib/dates';
 import { getAllPosts, encodePostSlug, type PostSummary } from '@/domain/post';
+import { HEADING_COMPONENTS } from '@/src/components/post/markdownHeadings';
 
 /**
  * @internal RSS 본문에 들어가는 raw text 전용 XML 이스케이프.
@@ -48,6 +49,9 @@ const CALLOUT_META: Record<string, { icon: string; label: string }> = {
  * callout → Callout, file-tree → FileTree). figure는 표준 HTML이라 매핑 불필요.
  */
 const FEED_COMPONENTS = {
+  // 본문 h1 → h2 강등. 사이트 본문과 **같은 매핑**을 공유한다 — 한쪽만 적용하면
+  // 피드 리더에서만 h1이 살아남는다(markdownHeadings.tsx 참고).
+  ...HEADING_COMPONENTS,
   callout: (props: { type?: string; title?: string; children?: ReactNode }) => {
     const meta = CALLOUT_META[props.type ?? ''] ?? CALLOUT_META.info;
     return createElement(

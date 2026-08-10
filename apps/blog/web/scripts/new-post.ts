@@ -181,7 +181,11 @@ export function buildFrontmatter(
   lines.push(`tags: [${opts.tags.map(yamlQuote).join(', ')}]`);
   lines.push('---');
   lines.push('');
-  lines.push(`# ${opts.title}`);
+  // 본문에 `# 제목`을 넣지 않는다. 페이지의 h1은 PostHeader가 그리는 글 제목
+  // 하나뿐이어야 하는데, 여기서 한 줄 깔아주는 바람에 예전 글 22편이 h1을 두 개씩
+  // 갖게 됐다(렌더 계층이 h2로 강등해 지금은 화면은 멀쩡하지만, 원문에 남으면
+  // `lint:posts`가 `body-h1` 경고를 낸다). 절 제목은 `## `부터 시작한다.
+  lines.push(`## `);
   lines.push('');
   return lines.join('\n');
 }

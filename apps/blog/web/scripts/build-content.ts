@@ -66,6 +66,7 @@ export function buildPhases(flags: Flags): Step[][] {
       args: ['scripts/generate-search-index.ts'],
     },
     { label: 'llms-full', cmd: 'tsx', args: ['scripts/generate-llms-full.ts'] },
+    { label: 'llms', cmd: 'tsx', args: ['scripts/generate-llms.ts'] },
   ];
   return [validate, generate].filter(phase => phase.length > 0);
 }

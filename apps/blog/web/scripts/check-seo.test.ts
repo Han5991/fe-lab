@@ -1,0 +1,218 @@
+import assert from 'node:assert/strict';
+import { test } from 'node:test';
+import { parsePageSeo, checkPages, checkFeeds } from './check-seo';
+import { SITE_URL } from '../lib/constants';
+
+/** 위반이 하나도 없는 최소 페이지 — 각 테스트는 여기서 한 가지만 망가뜨린다. */
+function page(
+  over: Partial<Record<string, string>> = {},
+  body = '<h1>제목</h1>',
+) {
+  const o = {
+    path: '/posts/a/',
+    title: '짧은 제목 | Frontend Lab',
+    description: '가'.repeat(130),
+    canonical: `${SITE_URL}/posts/a/`,
+    siteName: 'Frontend Lab',
+    locale: 'ko_KR',
+    type: 'article',
+    ...over,
+  };
+  return `<!doctype html><html><head>
+    <title>${o.title}</title>
+    <meta name="description" content="${o.description}"/>
+    <link rel="canonical" href="${o.canonical}"/>
+    <meta property="og:site_name" content="${o.siteName}"/>
+    <meta property="og:locale" content="${o.locale}"/>
+    <meta property="og:type" content="${o.type}"/>
+    </head><body>${body}</body></html>`;
+}
+
+const rules = (pages: Map<string, string>) =>
+  checkPages(pages).map(v => v.rule);
+
+// ── parsePageSeo ─────────────────────────────────────────────────────────────
+
+test('parsePageSeo: title / description / canonical / og를 뽑는다', () => {
+  const seo = parsePageSeo(page());
+  assert.equal(seo.title, '짧은 제목 | Frontend Lab');
+  assert.equal(seo.canonical, `${SITE_URL}/posts/a/`);
+  assert.equal(seo.ogSiteName, 'Frontend Lab');
+  assert.equal(seo.ogLocale, 'ko_KR');
+  assert.equal(seo.ogType, 'article');
+  assert.equal(seo.h1Count, 1);
+});
+
+test('parsePageSeo: head의 JSON-LD 안에 있는 "h1" 문자열은 세지 않는다', () => {
+  // BlogPosting의 speakable.cssSelector에 "h1"이 들어 있어서, body를 자르지 않으면
+  // 모든 글이 h1 2개로 잡힌다.
+  const html = `<!doctype html><html><head>
+    <script type="application/ld+json">{"speakable":{"cssSelector":["h1","h2:first-of-type"]}}</script>
+    </head><body><h1>제목</h1></body></html>`;
+  assert.equal(parsePageSeo(html).h1Count, 1);
+});
+
+test('parsePageSeo: content가 앞에 오는 meta도 읽는다', () => {
+  const html =
+    '<head><meta content="ko_KR" property="og:locale"/></head><body></body>';
+  assert.equal(parsePageSeo(html).ogLocale, 'ko_KR');
+});
+
+test('parsePageSeo: alt가 없거나 빈 img를 센다', () => {
+  const html = page(
+    {},
+    '<h1>t</h1><img src="a.png"/><img src="b.png" alt=""/><img src="c.png" alt="설명"/>',
+  );
+  assert.equal(parsePageSeo(html).imagesMissingAlt, 2);
+});
+
+// ── checkPages ───────────────────────────────────────────────────────────────
+
+test('checkPages: 정상 페이지는 위반 없음', () => {
+  assert.deepEqual(rules(new Map([['/posts/a/', page()]])), []);
+});
+
+test('checkPages: h1이 0개거나 2개면 h1-count', () => {
+  assert.ok(
+    rules(new Map([['/posts/a/', page({}, '<p>본문</p>')]])).includes(
+      'h1-count',
+    ),
+  );
+  assert.ok(
+    rules(
+      new Map([['/posts/a/', page({}, '<h1>제목</h1><h1>또 제목</h1>')]]),
+    ).includes('h1-count'),
+  );
+});
+
+test('checkPages: 60자 넘는 <title>은 title-length', () => {
+  const long = `${'가'.repeat(50)} | Frontend Lab`;
+  assert.ok(
+    rules(new Map([['/posts/a/', page({ title: long })]])).includes(
+      'title-length',
+    ),
+  );
+});
+
+test('checkPages: 말줄임으로 끝나는 description은 truncated-description', () => {
+  // 본문 앞 160자 자동 발췌가 그대로 나간 경우 — 도입부가 비슷한 글끼리 겹친다.
+  const desc = `${'가'.repeat(127)}...`;
+  assert.ok(
+    rules(new Map([['/posts/a/', page({ description: desc })]])).includes(
+      'truncated-description',
+    ),
+  );
+});
+
+test('checkPages: description이 서로 완전히 같으면 duplicate-description', () => {
+  const same = '나'.repeat(130);
+  const found = rules(
+    new Map([
+      [
+        '/posts/a/',
+        page({ description: same, canonical: `${SITE_URL}/posts/a/` }),
+      ],
+      [
+        '/posts/b/',
+        page({ description: same, canonical: `${SITE_URL}/posts/b/` }),
+      ],
+    ]),
+  );
+  assert.ok(found.includes('duplicate-description'));
+});
+
+test('checkPages: canonical이 자기 URL과 다르면 canonical-mismatch', () => {
+  assert.ok(
+    rules(
+      new Map([
+        ['/posts/a/', page({ canonical: `${SITE_URL}/posts/다른글/` })],
+      ]),
+    ).includes('canonical-mismatch'),
+  );
+});
+
+test('checkPages: og:site_name이 두 종류면 inconsistent-og-site-name', () => {
+  // 감사에서 실제로 나온 문제 — 글은 'Frontend Lab Blog', 홈은 'Frontend Lab'.
+  const found = rules(
+    new Map([
+      ['/posts/a/', page({ canonical: `${SITE_URL}/posts/a/` })],
+      [
+        '/posts/b/',
+        page({
+          siteName: 'Frontend Lab Blog',
+          canonical: `${SITE_URL}/posts/b/`,
+        }),
+      ],
+    ]),
+  );
+  assert.ok(found.includes('inconsistent-og-site-name'));
+});
+
+test('checkPages: og:locale / og:type 누락을 잡는다', () => {
+  const html = page().replace(/<meta property="og:locale"[^>]*>/, '');
+  assert.ok(
+    rules(new Map([['/posts/a/', html]])).includes('missing-og-locale'),
+  );
+});
+
+test('checkPages: noindex 페이지는 검사하지 않는다', () => {
+  // /admin, /privacy, /preview 플레이스홀더는 검색 대상이 아니다.
+  const html = `<head><meta name="robots" content="noindex, nofollow"/></head><body></body>`;
+  assert.deepEqual(rules(new Map([['/admin/', html]])), []);
+});
+
+// ── checkFeeds ───────────────────────────────────────────────────────────────
+
+const sitemapXml = (slugs: string[]) =>
+  `<urlset><url><loc>${SITE_URL}/</loc></url><url><loc>${SITE_URL}/posts/</loc></url>${slugs
+    .map(s => `<url><loc>${SITE_URL}/posts/${s}/</loc></url>`)
+    .join('')}</urlset>`;
+const rssXml = (slugs: string[]) =>
+  slugs
+    .map(
+      s =>
+        `<item><guid isPermaLink="true">${SITE_URL}/posts/${s}/</guid></item>`,
+    )
+    .join('');
+const llmsTxt = (slugs: string[]) =>
+  slugs.map(s => `- [글](${SITE_URL}/posts/${s}/): 요약`).join('\n');
+
+test('checkFeeds: 세 산출물의 글 집합이 같으면 위반 없음', () => {
+  const slugs = ['a', 'b', 'c'];
+  assert.deepEqual(
+    checkFeeds(sitemapXml(slugs), rssXml(slugs), llmsTxt(slugs)),
+    [],
+  );
+});
+
+test('checkFeeds: llms.txt에 빠진 글을 잡는다 (손으로 관리하다 6편 누락됐던 회귀)', () => {
+  const found = checkFeeds(
+    sitemapXml(['a', 'b', 'c']),
+    rssXml(['a', 'b', 'c']),
+    llmsTxt(['a']),
+  );
+  assert.ok(found.some(v => v.rule === 'feed-missing-posts'));
+});
+
+test('checkFeeds: 아카이브 목록(/posts/)은 글로 세지 않는다', () => {
+  // sitemap에는 있고 rss에는 없는 게 정상 — 이걸 글로 세면 항상 실패한다.
+  assert.deepEqual(
+    checkFeeds(sitemapXml(['a']), rssXml(['a']), llmsTxt(['a'])),
+    [],
+  );
+});
+
+test('checkFeeds: RSS 본문(content:encoded)의 링크는 글로 세지 않는다', () => {
+  // 본문에 다른 글 링크나 이미지 경로(/posts/시리즈/img/…)가 들어 있어도 오탐하면 안 된다.
+  const rss = `${rssXml(['a'])}<item><description><![CDATA[<a href="${SITE_URL}/posts/딴글/">링크</a><img src="${SITE_URL}/posts/시리즈/img/x.png"/>]]></description></item>`;
+  assert.deepEqual(checkFeeds(sitemapXml(['a']), rss, llmsTxt(['a'])), []);
+});
+
+test('checkFeeds: 한글 slug는 인코딩 차이로 오탐하지 않는다', () => {
+  const encoded = `<urlset><url><loc>${SITE_URL}/posts/${encodeURIComponent('한글')}/</loc></url></urlset>`;
+  const raw = `<item><guid>${SITE_URL}/posts/한글/</guid></item>`;
+  assert.deepEqual(
+    checkFeeds(encoded, raw, `- [글](${SITE_URL}/posts/한글/): 요약`),
+    [],
+  );
+});

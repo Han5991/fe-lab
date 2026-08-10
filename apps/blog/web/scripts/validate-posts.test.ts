@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import {
   validatePost,
+  validateBodyHeadings,
   detectDuplicateSlugs,
   type PostRecord,
 } from './validate-posts';
@@ -19,6 +20,13 @@ function rec(
     ...over,
   };
 }
+
+/**
+ * 권장 길이(120~160자) 안에 드는 유효한 excerpt.
+ * excerpt가 없으면 missing-excerpt 경고가 나므로, 다른 규칙을 보는 픽스처는
+ * 이 값을 함께 넣어 "그 규칙만" 검사되게 한다.
+ */
+const VALID_EXCERPT = '가'.repeat(130);
 
 /** validatePost가 낸 이슈의 rule 이름만 추출 (raw는 line 계산용) */
 function rules(
@@ -67,7 +75,12 @@ test('validatePost: status와 published가 공존해도 에러 (published가 조
 
 test('validatePost: 정상 글은 이슈 없음', () => {
   assert.deepEqual(
-    rules({ title: 'x', status: 'published', date: '2025-01-01' }),
+    rules({
+      title: 'x',
+      status: 'published',
+      date: '2025-01-01',
+      excerpt: VALID_EXCERPT,
+    }),
     [],
   );
 });
@@ -168,7 +181,12 @@ test('validatePost: scheduled + date만 있으면 이슈 없음 (date 폴백)', 
   // scheduledDate는 시각까지 지정할 때만 쓰는 선택 필드.
   // visibility.ts가 date를 공개 시각으로 쓰므로 date만으로 충분하다.
   assert.deepEqual(
-    rules({ title: 'x', status: 'scheduled', date: '2026-06-01' }),
+    rules({
+      title: 'x',
+      status: 'scheduled',
+      date: '2026-06-01',
+      excerpt: VALID_EXCERPT,
+    }),
     [],
   );
 });
@@ -230,6 +248,7 @@ test('validatePost: scheduledDate offset 명시 → 이슈 없음', () => {
       status: 'scheduled',
       date: '2026-06-01',
       scheduledDate: '2026-06-01T09:00:00+09:00',
+      excerpt: VALID_EXCERPT,
     }),
     [],
   );
@@ -260,6 +279,7 @@ test('validatePost: 절대/http thumbnail은 fs 검사 없이 통과', () => {
       status: 'published',
       date: '2025-01-01',
       thumbnail: '/abs.png',
+      excerpt: VALID_EXCERPT,
     }),
     [],
   );
@@ -269,6 +289,7 @@ test('validatePost: 절대/http thumbnail은 fs 검사 없이 통과', () => {
       status: 'published',
       date: '2025-01-01',
       thumbnail: 'https://cdn/x.png',
+      excerpt: VALID_EXCERPT,
     }),
     [],
   );
@@ -284,6 +305,7 @@ test('validatePost: 등록된 hero 이름은 이슈 없음', () => {
         status: 'published',
         date: '2025-01-01',
         hero: name,
+        excerpt: VALID_EXCERPT,
       }),
       [],
       `등록된 이름인데 이슈 발생: ${name}`,
@@ -375,5 +397,166 @@ test('validatePost: 중복 없는 태그는 duplicate-tags를 내지 않는다',
     !rules({ title: 'x', status: 'published', tags: ['ci', 'build'] }).includes(
       'duplicate-tags',
     ),
+  );
+});
+
+// ── 본문 h1 (body-h1) ────────────────────────────────────────────────────────
+
+/** 본문만 넘겨 body-h1 규칙을 돌린다 (frontmatter는 최소 형태로 고정) */
+function bodyH1Rules(content: string, data: Record<string, unknown> = {}) {
+  const raw = '---\ntitle: x\nstatus: published\n---\n';
+  return validateBodyHeadings(
+    rec({ title: 'x', status: 'published', ...data }, { content }),
+    raw,
+  );
+}
+
+test('validateBodyHeadings: 본문 h1 → body-h1 경고', () => {
+  const issues = bodyH1Rules('# 제목\n\n본문');
+  assert.equal(issues.length, 1);
+  assert.equal(issues[0].rule, 'body-h1');
+  assert.equal(issues[0].severity, 'warning');
+});
+
+test('validateBodyHeadings: h2 이하는 잡지 않는다', () => {
+  assert.deepEqual(bodyH1Rules('## 절\n\n### 소절\n\n#해시태그'), []);
+});
+
+test('validateBodyHeadings: 코드 펜스 안의 `# 주석`은 헤딩이 아니다', () => {
+  // Dockerfile·yaml 예제의 주석이 h1로 잡히면 고칠 수 없는 경고만 쌓인다.
+  assert.deepEqual(
+    bodyH1Rules('```yaml\n# 워크플로우 주석\n on: push\n```\n\n본문'),
+    [],
+  );
+});
+
+test('validateBodyHeadings: 펜스가 닫힌 뒤의 h1은 다시 잡는다', () => {
+  const issues = bodyH1Rules('```sh\n# 주석\n```\n\n# 진짜 헤딩');
+  assert.equal(issues.length, 1);
+  assert.ok(issues[0].message.includes('진짜 헤딩'));
+});
+
+test('validateBodyHeadings: 메타 노트(유효한 status 없음)는 검사하지 않는다', () => {
+  // 빌드에서 통째로 제외되는 기획 문서라 렌더될 일이 없다.
+  assert.deepEqual(
+    validateBodyHeadings(
+      rec({ title: '메타' }, { content: '# 제목' }),
+      '---\ntitle: x\n---\n',
+    ),
+    [],
+  );
+});
+
+test('validateBodyHeadings: line은 frontmatter 오프셋을 더한 실제 파일 줄번호', () => {
+  const raw = '---\ntitle: x\nstatus: published\n---\n\n# 제목\n';
+  const issues = validateBodyHeadings(
+    rec({ title: 'x', status: 'published' }, { content: '\n# 제목\n' }),
+    raw,
+  );
+  // frontmatter 4줄 + 본문 2번째 줄
+  assert.equal(issues[0].line, 6);
+});
+
+// ── excerpt (meta description) ───────────────────────────────────────────────
+
+test('validatePost: excerpt 누락 → missing-excerpt 경고', () => {
+  assert.ok(
+    rules({ title: 'x', status: 'published', date: '2025-01-01' }).includes(
+      'missing-excerpt',
+    ),
+  );
+});
+
+test("validatePost: 빈 excerpt('')도 missing-excerpt — 자동 발췌로 폴백된다", () => {
+  // repository.ts의 toOptionalString이 빈 문자열을 "값 없음"으로 떨어뜨린다.
+  // new-post 스캐폴딩이 `excerpt: ''`를 깔아주므로 이걸 놓치면 새 글마다 재발한다.
+  assert.ok(
+    rules({
+      title: 'x',
+      status: 'published',
+      date: '2025-01-01',
+      excerpt: '',
+    }).includes('missing-excerpt'),
+  );
+});
+
+test('validatePost: 너무 짧거나 긴 excerpt → excerpt-length 경고', () => {
+  const short = rules({
+    title: 'x',
+    status: 'published',
+    date: '2025-01-01',
+    excerpt: '짧음',
+  });
+  assert.ok(short.includes('excerpt-length'));
+  assert.ok(
+    !short.includes('missing-excerpt'),
+    '빈 값이 아니면 missing이 아니다',
+  );
+
+  assert.ok(
+    rules({
+      title: 'x',
+      status: 'published',
+      date: '2025-01-01',
+      excerpt: '가'.repeat(300),
+    }).includes('excerpt-length'),
+  );
+});
+
+// ── seoTitle (<title> 길이) ──────────────────────────────────────────────────
+
+test('validatePost: title이 길면 long-title 경고', () => {
+  assert.ok(
+    rules({
+      title: '가'.repeat(60),
+      status: 'published',
+      date: '2025-01-01',
+      excerpt: VALID_EXCERPT,
+    }).includes('long-title'),
+  );
+});
+
+test('validatePost: seoTitle이 짧으면 title이 길어도 long-title이 아니다', () => {
+  // <title>은 seoTitle로 조립되므로, 긴 title 자체는 문제가 아니다.
+  assert.ok(
+    !rules({
+      title: '가'.repeat(60),
+      seoTitle: '짧은 제목',
+      status: 'published',
+      date: '2025-01-01',
+      excerpt: VALID_EXCERPT,
+    }).includes('long-title'),
+  );
+});
+
+test('validatePost: seoTitle 자체가 길면 long-title', () => {
+  assert.ok(
+    rules({
+      title: '짧음',
+      seoTitle: '가'.repeat(60),
+      status: 'published',
+      date: '2025-01-01',
+      excerpt: VALID_EXCERPT,
+    }).includes('long-title'),
+  );
+});
+
+test('validatePost: 문자열 아닌 seoTitle → non-string-field', () => {
+  assert.ok(
+    rules({ title: 'x', status: 'published', seoTitle: 123 }).includes(
+      'non-string-field',
+    ),
+  );
+});
+
+test('validatePost: seoTitle은 알려진 frontmatter 키다', () => {
+  assert.ok(
+    !rules({
+      title: 'x',
+      status: 'published',
+      date: '2025-01-01',
+      seoTitle: '짧은 제목',
+      excerpt: VALID_EXCERPT,
+    }).includes('unknown-frontmatter-key'),
   );
 });

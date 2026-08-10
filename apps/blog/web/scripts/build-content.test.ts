@@ -25,6 +25,7 @@ test('buildPhases: 기본 — validate 게이트 phase + 병렬 generate phase',
     ['validate-posts'],
   );
   assert.deepEqual([...phases[1].map(s => s.label)].sort(), [
+    'llms',
     'llms-full',
     'og-images',
     'rss',

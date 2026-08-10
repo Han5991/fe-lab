@@ -8,6 +8,7 @@ import {
 } from './generate-sitemap';
 import type { SitemapPost } from './generate-sitemap';
 import { parseScheduledDateKST, getKSTDateISO } from '../lib/dates';
+import { ABOUT_PAGE_MODIFIED } from '../lib/constants';
 
 // arbitrary fixture date — not today's date. 단위 테스트는 실제 날짜에 의존하지
 // 않고 이 값이 sitemap 본문에 그대로 흘러가는지만 검증합니다. (실제 날짜 동작은
@@ -134,13 +135,20 @@ test('sitemap: updatedAt이 가장 최신이면 그 값이 정적 URL lastmod가
   assert.match(block[1], /<lastmod>2026-04-09<\/lastmod>/);
 });
 
-test('sitemap: about은 lastmod를 내보내지 않음 (변경 시점 미상)', () => {
+test('sitemap: about의 lastmod는 손으로 관리하는 상수 (빌드 날짜가 아님)', () => {
+  // about은 글이 아니라 자동으로 알 수 있는 수정 시각이 없다. 그렇다고 lastmod를
+  // 비워 두면 46개 URL 중 여기만 신호가 없고, today를 넣으면 매일 도는 cron
+  // 빌드마다 전진해 Google이 사이트 전체의 lastmod를 무시한다. 그래서 상수다.
   const xml = buildSitemapXml([makePost({ slug: 'a' })], TODAY, SITE);
   const block = staticBlock(xml, `${SITE}/about/`);
   assert.ok(block, 'about block must exist');
+  assert.match(
+    block[1],
+    new RegExp(`<lastmod>${ABOUT_PAGE_MODIFIED}</lastmod>`),
+  );
   assert.ok(
-    !block[1].includes('<lastmod>'),
-    'about에 lastmod가 있으면 매 빌드마다 전진한다',
+    !block[1].includes(`<lastmod>${TODAY}</lastmod>`),
+    'about에 빌드 날짜가 들어가면 매 빌드마다 전진한다',
   );
 });
 

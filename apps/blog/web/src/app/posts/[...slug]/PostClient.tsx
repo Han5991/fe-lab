@@ -34,6 +34,7 @@ import { TOC } from '@/src/components/post/TOC';
 import { ReadingProgress } from '@/src/components/post/ReadingProgress';
 import { PostHeader } from '@/src/components/post/PostHeader';
 import { PostHero } from '@/src/components/post/PostHero';
+import { HEADING_COMPONENTS } from '@/src/components/post/markdownHeadings';
 import { isBlockMarkdownChild } from './markdownBlocks';
 
 interface PostClientProps {
@@ -116,22 +117,16 @@ export default function PostClient({
                 // 본문 헤딩 스케일의 천장은 글 제목(22px)이다. 예전 스케일은
                 // h1이 30px이라 제목보다 커서 위계가 뒤집혀 있었다. 레퍼런스가
                 // 22px을 최대 크기로 두는 이상 본문 헤딩이 그 위로 올라갈 수
-                // 없어서, 22 → 20 → 18 → 16으로 좁게 다시 깔았다.
+                // 없어서, 20 → 18 → 16으로 좁게 다시 깔았다.
                 // 간격이 좁은 만큼 구분은 크기와 여백(mt), 그리고 **색**이
-                // 맡는다. 22 → 20 → 18 → 16은 2px씩밖에 안 벌어져서 크기만으로는
-                // h2와 h3가 잘 안 갈린다. 상위 두 단계(h1·h2)에만 액센트를 주면
+                // 맡는다. 20 → 18 → 16은 2px씩밖에 안 벌어져서 크기만으로는
+                // h2와 h3가 잘 안 갈린다. 최상위(h2)에만 액센트를 주면
                 // "대단원 / 그 아래"가 한눈에 잘리고, h3·h4는 무채색으로 남아
                 // 본문 흐름을 끊지 않는다.
-                '& h1': {
-                  fontSize: '[22px]',
-                  fontWeight: 'semibold',
-                  letterSpacing: 'tightSm',
-                  mt: '14',
-                  mb: '5',
-                  color: 'accent.900',
-                  lineHeight: 'tight',
-                  scrollMarginTop: '[100px]',
-                },
+                //
+                // `& h1` 규칙은 없다 — 본문 h1은 렌더 시 h2로 강등되므로
+                // (markdownHeadings.tsx) 이 컨테이너 안에 h1이 나올 수 없다.
+                // 페이지의 h1은 PostHeader의 글 제목 하나뿐이다.
                 '& h2': {
                   fontSize: '[20px]',
                   fontWeight: 'semibold',
@@ -318,6 +313,9 @@ export default function PostClient({
                 rehypePlugins={[rehypeRaw, rehypeSlug]}
                 components={
                   {
+                    // 본문 h1 → h2 강등. 페이지의 h1은 PostHeader의 글 제목
+                    // 하나뿐이어야 한다(markdownHeadings.tsx 참고).
+                    ...HEADING_COMPONENTS,
                     p({ children, node: _node, ...props }) {
                       const hasBlockChild = Array.isArray(children)
                         ? children.some(isBlockMarkdownChild)
