@@ -35,6 +35,6 @@ function DemotedH1({
  * 사이트 본문과 RSS `content:encoded`가 **공유하는** 헤딩 매핑.
  * 한쪽만 적용하면 피드 리더에서만 h1이 살아남아 같은 문제가 남는다.
  */
-export const HEADING_COMPONENTS = {
+export const HEADING_COMPONENTS: Pick<Components, 'h1'> = {
   h1: DemotedH1,
-} as unknown as Components;
+};
