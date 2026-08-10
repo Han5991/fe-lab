@@ -3,10 +3,9 @@ title: '4시간 만에 Node.js PR 승인받기'
 date: '2025-08-10'
 status: published
 slug: 'nodejs-contribution'
+excerpt: 'util.inspect가 음수 소수점을 잘못 포매팅하는 버그를 AI와 페어 프로그래밍으로 파고들어 4시간 만에 PR 승인까지 받았습니다. 이슈를 고르는 기준부터 메인테이너와 주고받은 과정까지, Node.js 코어 기여의 전 과정.'
 thumbnail: '/og/nodejs-contribution.png'
 ---
-
-# 4시간 만에 Node.js PR 승인받기
 
 ## AI 페어 프로그래밍으로 오픈소스 진입 장벽 낮추기
 

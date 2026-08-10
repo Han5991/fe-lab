@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { parsePost, extractPlainText } from './repository';
+import { parsePost, extractPlainText, resolveExcerpt } from './repository';
 import { isPostFile } from './visibility';
 
 // ── 메타 파일 제외 (어떤 글을 가져올지) ───────────────────────────────────────
@@ -260,4 +260,32 @@ test('parsePost: 중복 태그는 첫 등장 순서를 지킨다', () => {
     'a.md',
   );
   assert.deepEqual(post?.tags, ['b', 'a']);
+});
+
+test('resolveExcerpt: 명시 excerpt가 있으면 그대로', () => {
+  assert.equal(resolveExcerpt('본문', '요약'), '요약');
+});
+
+test('resolveExcerpt: 빈 문자열은 값 없음 — 본문 발췌로 폴백', () => {
+  assert.equal(resolveExcerpt('본문입니다', ''), '본문입니다');
+});
+
+test('resolveExcerpt: 160자를 넘으면 자르고 말줄임', () => {
+  const long = '가'.repeat(300);
+  assert.equal(resolveExcerpt(long), '가'.repeat(160) + '...');
+});
+
+test('resolveExcerpt: 짧으면 말줄임을 붙이지 않는다', () => {
+  // 잘리지도 않았는데 '...'이 붙으면 "뒤에 더 있다"는 잘못된 신호가 된다.
+  assert.equal(resolveExcerpt('짧은 본문'), '짧은 본문');
+});
+
+test('resolveExcerpt: parsePost의 excerpt와 같은 결과 (규칙이 한 곳)', () => {
+  // lint:posts의 duplicate-description이 원문에서 같은 값을 계산해야 한다.
+  const body = '가'.repeat(300);
+  const post = parsePost(
+    `---\ntitle: x\nstatus: published\n---\n${body}`,
+    'a.md',
+  );
+  assert.equal(post?.excerpt, resolveExcerpt(body));
 });

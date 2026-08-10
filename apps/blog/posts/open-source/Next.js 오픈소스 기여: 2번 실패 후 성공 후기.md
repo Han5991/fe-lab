@@ -3,10 +3,9 @@ title: 'Next.js 오픈소스 기여: 2번 실패 후 성공 후기'
 date: '2025-08-05'
 status: published
 slug: 'nextjs-contributor'
+excerpt: '새벽 2시에 날아온 Closed 알림을 두 번 받고서야 Next.js Contributors 목록에 이름을 올렸습니다. 두 번의 실패에서 무엇을 잘못 골랐는지, 세 번째에 머지된 PR은 무엇이 달랐는지 솔직하게 적었습니다.'
 thumbnail: '/og/nextjs-contributor.png'
 ---
-
-# Next.js 오픈소스 기여: 2번 실패 후 성공 후기
 
 ## 들어가며
 

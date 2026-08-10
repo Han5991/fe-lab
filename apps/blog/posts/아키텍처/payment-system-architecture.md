@@ -1,9 +1,10 @@
 ---
 title: '결제 시스템 리팩토링: if문 지옥에서 디자인 패턴(Factory, Adapter)으로 탈출하기'
+seoTitle: '결제 시스템 리팩토링: if문 지옥 탈출하기'
 date: '2026-01-24'
 status: published
 slug: 'payment-system-architecture'
-excerpt: '복잡한 비즈니스 로직을 if문 지옥에서 구해내는 Adapter, Factory, Strategy 패턴 적용기. Zod를 활용한 타입 안전성 확보와 Code Splitting 팁까지.'
+excerpt: '국가마다 결제 수단이 다른 시스템의 분기가 if문 지옥으로 자라났습니다. Adapter·Factory·Strategy 패턴으로 그 분기를 걷어낸 적용기와, Zod로 타입 안전성을 확보하고 Code Splitting까지 챙긴 방법.'
 thumbnail: 'payment-system-architecture-thumb.png'
 tags:
   [

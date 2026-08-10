@@ -181,7 +181,15 @@ export function buildFrontmatter(
   lines.push(`tags: [${opts.tags.map(yamlQuote).join(', ')}]`);
   lines.push('---');
   lines.push('');
-  lines.push(`# ${opts.title}`);
+  // 본문에 `# 제목`을 넣지 않는다. 페이지의 h1은 PostHeader가 그리는 글 제목
+  // 하나뿐이어야 하는데, 여기서 한 줄 깔아주는 바람에 예전 글 22편이 h1을 두 개씩
+  // 갖게 됐다(렌더 계층이 h2로 강등해 지금은 화면은 멀쩡하지만, 원문에 남으면
+  // `lint:posts`가 `body-h1` 경고를 낸다). 절 제목은 `## `부터 시작한다.
+  //
+  // 빈 `## `를 깔면 텍스트 없는 h2가 그대로 렌더돼(빈 줄이 벌어지고 id가 없어
+  // 목차에서도 빠진다) 어떤 검사에도 안 걸리므로, 이 블로그에서 가장 흔한 첫 절
+  // 제목을 기본값으로 넣는다. 마음에 안 들면 고쳐 쓰면 된다.
+  lines.push(`## 들어가며`);
   lines.push('');
   return lines.join('\n');
 }
@@ -257,6 +265,20 @@ function main() {
   console.log(`  status: ${opts.status}`);
   if (opts.series) console.log(`  series: ${opts.series}`);
   if (opts.scheduledDate) console.log(`  scheduledDate: ${opts.scheduledDate}`);
+  // excerpt는 비워 둔 채로 시작한다(요약은 글을 쓰고 나야 나온다). 다만 글이
+  // 공개되는 순간 `pnpm build`가 이걸 에러로 막으므로, 미리 알려 준다.
+  // 문구는 실제 동작과 맞춘다 — 예약 글은 **공개일이 지나야** 에러가 된다.
+  if (opts.status === 'published') {
+    console.log(
+      `\n  ⚠ excerpt가 비어 있습니다. status: published라 지금 바로 \`pnpm build\`가 막힙니다 —
+` + `    120~160자 요약을 채우거나, 쓰는 동안은 status: draft로 두세요.`,
+    );
+  } else if (opts.status === 'scheduled') {
+    console.log(
+      `\n  ⚠ excerpt가 비어 있습니다. 지금은 경고지만 공개일이 지나면 \`pnpm build\`가 막습니다 —
+` + `    발행 전에 120~160자 요약을 채워 주세요.`,
+    );
+  }
 }
 
 // 스크립트로 직접 실행될 때만 main()을 호출합니다.

@@ -3,6 +3,7 @@ title: 'Next.js로 우아하게 Error 핸들링하기'
 date: '2025-03-03'
 status: published
 slug: 'nextjs-error'
+excerpt: 'try-catch와 ErrorBoundary 다음은 Next.js의 error.js입니다. App Router가 경계마다 error.tsx를 심는 방식을 실제 코드로 따라가며 global-error와의 역할 차이를 정리했습니다.'
 thumbnail: '/og/nextjs-error.png'
 ---
 

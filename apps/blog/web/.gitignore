@@ -23,6 +23,7 @@
 /public/search-index.json
 /public/admin-posts-index.json
 /public/llms-full.txt
+/public/llms.txt
 
 # production
 /build

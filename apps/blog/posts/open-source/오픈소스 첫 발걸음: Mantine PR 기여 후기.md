@@ -3,6 +3,7 @@ title: '오픈소스 첫 발걸음: Mantine PR 기여 후기'
 date: '2025-04-22'
 status: published
 slug: 'first-open-source-contribution'
+excerpt: '디자이너 시안에 필요한 옵션이 Mantine에 없었습니다. 라이브러리 코드를 통째로 내려받아 Slider를 분석하고 직접 기능을 구현해 PR을 보내고 머지되기까지, 첫 오픈소스 기여의 막막함과 그 과정을 그대로 적었습니다.'
 thumbnail: '/og/first-open-source-contribution.png'
 ---
 

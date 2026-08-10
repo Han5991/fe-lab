@@ -3,6 +3,7 @@ title: 'React로 우아하게 Error 핸들링 하기'
 date: '2025-03-02'
 status: published
 slug: 'react-error'
+excerpt: 'ErrorBoundary는 렌더링 중에 난 에러만 잡습니다. 클릭 핸들러와 비동기 요청에서 난 에러를 경계까지 끌어올리는 방법, 그리고 의도한 에러와 의도치 않은 에러를 나누어 다루는 기준을 예제 코드와 함께 정리했습니다.'
 thumbnail: '/og/react-error.png'
 ---
 

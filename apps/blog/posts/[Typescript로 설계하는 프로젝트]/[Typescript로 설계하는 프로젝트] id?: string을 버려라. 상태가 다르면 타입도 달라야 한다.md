@@ -1,9 +1,10 @@
 ---
 title: '[Typescript로 설계하는 프로젝트] id?: string을 버려라. 상태가 다르면 타입도 달라야 한다.'
+seoTitle: '[TS 설계] 선택적 필드 대신 상태별 타입 분리하기'
 date: 2026-03-16
 status: published
 slug: 'typescript-domain-modeling-without-optional'
-excerpt: '무분별한 옵셔널 타입이 낳은 안티 패턴에서 벗어나, Tagged Type(Discriminated Union)과 도메인 모델링으로 안전하고 견고하게 데이터를 설계하는 방법을 알아봅니다.'
+excerpt: 'id?: string 하나가 코드 전체에 옵셔널 체이닝과 느낌표를 퍼뜨립니다. 무분별한 옵셔널이 낳은 안티 패턴에서 벗어나, Tagged Type(Discriminated Union)과 도메인 모델링으로 상태마다 다른 타입을 주는 설계를 알아봅니다.'
 thumbnail: 'ts-tagged-type-thumb.png'
 tags: ['TypeScript', 'Architecture', 'Data Modeling']
 ---

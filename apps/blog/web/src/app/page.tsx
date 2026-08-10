@@ -11,9 +11,11 @@ import {
 } from '@/domain/post';
 import {
   SITE_URL,
+  SITE_NAME,
   SITE_AUTHOR_GITHUB,
   SITE_AUTHOR_LINKEDIN,
   SITE_DESCRIPTION_EXPANDED,
+  OG_DEFAULT_IMAGE,
 } from '@/lib/constants';
 import { safeJsonLd } from '@/lib/jsonLd';
 
@@ -22,21 +24,25 @@ import { OssStrip } from '@/src/components/home/OssStrip';
 import { seriesBadgeLabel } from '@/src/components/home/seriesBadge';
 import { PageBoundary } from '@/src/components/PageBoundary';
 
+// 제목은 meta·og·twitter 세 곳에 나가므로 한 번만 쓴다 — 한 곳만 고쳐지면
+// 검색 결과와 공유 카드가 다른 말을 한다.
+const PAGE_TITLE = `${SITE_NAME} | 프론트엔드 실험실`;
+
 export const metadata: Metadata = {
-  title: 'Frontend Lab | 프론트엔드 실험실',
+  title: PAGE_TITLE,
   description: SITE_DESCRIPTION_EXPANDED,
   alternates: { canonical: '/' },
   openGraph: {
-    title: 'Frontend Lab | 프론트엔드 실험실',
+    title: PAGE_TITLE,
     description: SITE_DESCRIPTION_EXPANDED,
-    url: 'https://blog.sangwook.dev',
-    siteName: 'Frontend Lab',
+    url: SITE_URL,
+    siteName: SITE_NAME,
     images: [
       {
-        url: 'https://blog.sangwook.dev/og-default.png',
+        url: `${SITE_URL}${OG_DEFAULT_IMAGE}`,
         width: 1200,
         height: 630,
-        alt: 'Frontend Lab Blog',
+        alt: `${SITE_NAME} Blog`,
       },
     ],
     locale: 'ko_KR',
@@ -44,9 +50,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Frontend Lab | 프론트엔드 실험실',
+    title: PAGE_TITLE,
     description: SITE_DESCRIPTION_EXPANDED,
-    images: ['https://blog.sangwook.dev/og-default.png'],
+    images: [`${SITE_URL}${OG_DEFAULT_IMAGE}`],
   },
 };
 

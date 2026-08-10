@@ -3,23 +3,24 @@ title: 'ecs와 code deploy를 활용한 next.js 배포하기'
 date: '2025-04-01'
 status: published
 slug: 'next-js-ecs-deploy'
+excerpt: '도커라이징한 Next.js를 AWS ECS에 올리고 CodeDeploy로 배포합니다. GitHub Actions 워크플로우의 실행 조건부터 태스크 정의와 ECR 푸시까지, 실제로 쓰는 설정을 하나씩 따라가며 정리했습니다.'
 thumbnail: '/og/next-js-ecs-deploy.png'
 hero: 'deploy-pipeline'
 ---
 
-# 0. 프롤로그
+## 0. 프롤로그
 
 > 이전에는 next.js의 standalone과 turborepo의 --docker 옵션을 활용한 도커라이징 하는 방법을 정리하였습니다.
 > 이번에는 aws의 ecs를 통해 컨테이너관리를 하고 code deploy를 통해 배포 하는 방법에 대해서 정리 해보겠습니다.
 
 ---
 
-# 1. [AWS ECS란?](https://docs.aws.amazon.com/ko_kr/AmazonECS/latest/developerguide/Welcome.html)
+## 1. [AWS ECS란?](https://docs.aws.amazon.com/ko_kr/AmazonECS/latest/developerguide/Welcome.html)
 
 > AWS Elastic Container Service(ECS)는 완전관리형 컨테이너 오케스트레이션 서비스입니다. ECS를 사용하면 Docker 컨테이너를 손쉽게 실행 및 관리할
 > 수 있으며, 클러스터를 구성하고 애플리케이션을 배포, 관리하는 데 도움을 줍니다.
 
-# 2. ECS와 CodeDeploy를 이용한 배포 과정
+## 2. ECS와 CodeDeploy를 이용한 배포 과정
 
 아래는 ECS를 통해 컨테이너를 실행하고 CodeDeploy로 배포를 자동화하는 기본적인 과정을 정리한 내용입니다
 
@@ -49,7 +50,7 @@ sequenceDiagram
     end
 ```
 
-#### 프로젝트 구조 참고
+### 프로젝트 구조 참고
 
 ```
 📂 apps
@@ -64,9 +65,9 @@ sequenceDiagram
 📄 package-lock.json
 ```
 
-## 1-2. 워크플로우 설명
+### 1-2. 워크플로우 설명
 
-### 1-2-1 git action event type 및 조건 확인
+#### 1-2-1 git action event type 및 조건 확인
 
 > 프로젝트 구조상 web1과 web2의 코드가 동시에 수정되는 경우가 있습니다. 이러한 상황에서는 개발 과정에 병목현상이 발생하여 일정에 차질이 생길 수 있습니다. 이를 방지하기 위해 특정 브랜치에만 배포되도록 조건문을 설정하였습니다.
 
@@ -98,7 +99,7 @@ run: |
   echo "확정된 버전: $VERSION"
 ```
 
-### 1-2-2 docker build 및 ecr push
+#### 1-2-2 docker build 및 ecr push
 
 ```yaml
 # 도커 이미지 빌드 및 ecr push
@@ -163,7 +164,7 @@ task definition 정의
 }
 ```
 
-## ECS 작업 정의(Task Definition) 주요 구성 요소 설명
+### ECS 작업 정의(Task Definition) 주요 구성 요소 설명
 
 #### containerDefinitions
 
@@ -199,7 +200,7 @@ ECS가 컨테이너를 실행할 때 필요한 권한(ECR에서 이미지 풀링
 
 작업이 실행되는 환경의 CPU 아키텍처 및 운영체제 지정
 
-### 1-2-3 code deploy
+#### 1-2-3 code deploy
 
 ## [code deploy란?](https://docs.aws.amazon.com/ko_kr/codedeploy/latest/userguide/welcome.html)
 

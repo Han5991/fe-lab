@@ -1,12 +1,12 @@
 ---
 title: '구글 개발자가 인정한 성능 최적화 기여 후기 - AI와 함께한 gemini-cli 오픈소스 여정'
+seoTitle: 'gemini-cli 성능 74% 개선 기여 후기'
 date: '2025-09-07'
 status: published
 slug: 'ai-opensource-contribution'
+excerpt: '출시 직후의 gemini-cli 코드베이스를 AI와 함께 뜯어 동기 파일 처리를 병렬로 바꿨고, 408ms를 107ms로 줄였습니다. 기여할 지점을 찾는 프롬프트부터 구글 개발자에게 리뷰받으며 PR을 머지하기까지의 전략.'
 thumbnail: '/og/ai-opensource-contribution.png'
 ---
-
-# 구글 개발자에게 인정받은 성능 최적화: gemini-cli 기여 후기
 
 ## 이 글을 읽고 나면
 

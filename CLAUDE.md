@@ -136,6 +136,7 @@ pnpm blog-build  # Build blog application
 pnpm new-post "글 제목" --series bundler --tags a,b      # 새 포스트 스캐폴딩
 pnpm new-post "예약글" --scheduled 2026-05-01            # 예약 발행 글 (KST 자정 공개)
 pnpm lint:posts                                          # frontmatter 검증 (필수 필드, 끊긴 이미지, 중복 slug 등)
+pnpm check-seo                                           # 빌드 산출물(out/) SEO 검사 — pnpm build 이후에 실행
 ```
 
 ## Key Design Patterns
@@ -272,9 +273,10 @@ The blog (`apps/blog/web/`) is a **statically generated (SSG) Next.js applicatio
    | :-------------- | :--: | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
    | `status`        |  ✅  | `published` \| `draft` \| `scheduled`. **이 키가 없으면 포스트가 아니라 메타 노트로 간주되어 빌드에서 통째로 제외됩니다.**                                                                                  |
    | `title`         |  ✅  | 없으면 파일명으로 폴백하지만 `lint:posts`가 에러                                                                                                                                                            |
+   | `seoTitle`      |      | **`<title>` 전용**의 짧은 제목. 화면 제목·OG 카드·JSON-LD headline은 계속 `title`을 쓴다. `{seoTitle ?? title} \| Frontend Lab`이 60자를 넘으면 `lint:posts`가 `long-title` 경고                            |
    | `date`          |  ✅  | `'YYYY-MM-DD'`. 목록 정렬·아카이브·sitemap·RSS가 모두 사용하고, `scheduled`일 때는 공개 시각이기도 함. 없으면 `missing-date` 에러                                                                           |
    | `slug`          |      | URL. 없으면 파일 경로에서 유도                                                                                                                                                                              |
-   | `excerpt`       |      | 없으면 본문 앞 160자                                                                                                                                                                                        |
+   | `excerpt`       |      | meta description. **사실상 필수** — 없으면 본문 앞 160자 자동 발췌가 나가는데, 도입부가 비슷한 글끼리 description이 글자 단위로 겹친다(`missing-excerpt` 경고). 권장 120~160자(`excerpt-length` 경고)       |
    | `thumbnail`     |      | 없으면 빌드 시 OG 카드(`/og/{slug}.png`) 자동 생성                                                                                                                                                          |
    | `hero`          |      | 히어로 슬롯에 꽂을 **등록된 다이어그램 이름**(현재 `deploy-pipeline`). 있으면 썸네일 대신 이 SVG가 그려진다. 렌더는 fail-soft(미등록 → 썸네일 폴백)지만 `lint:posts`가 `unknown-hero-diagram` 에러로 막는다 |
    | `tags`          |      | 문자열 배열. 문자열 아닌 원소가 섞이면 태그 전체가 무시됨                                                                                                                                                   |
@@ -305,6 +307,7 @@ The blog (`apps/blog/web/`) is a **statically generated (SSG) Next.js applicatio
    - `generate-og-images.ts`: thumbnail이 없거나 `/og/*`를 가리키는 발행 글의 OG 카드 이미지(`public/og/{slug}.png`)를 satori + resvg로 생성 (content hash 기반 incremental, `.cache/og-images.json` manifest)
    - `generate-search-index.ts`: 검색용 JSON 인덱스(`search-index.json`) 생성 — 본문 미리보기(`contentPreview`) 포함
    - `generate-llms-full.ts`: AI/LLM용 통합 텍스트(`llms-full.txt`) 생성
+   - `generate-llms.ts`: AI 크롤러용 색인(`llms.txt`) 생성 — 예전엔 손으로 관리하던 정적 파일이라 글 6편이 누락되고 개수도 어긋나 있었다. 이제 sitemap·rss와 같은 소스에서 뽑는다
 4. **정적 빌드**: `next build` → `out/` 디렉토리에 정적 파일 생성
 5. **배포**: GitHub Actions → GitHub Pages
    - `main` 브랜치 push 시 자동 빌드
@@ -313,15 +316,16 @@ The blog (`apps/blog/web/`) is a **statically generated (SSG) Next.js applicatio
 
 #### 글쓰기 도구 (Authoring DX)
 
-| 도구                                          | 설명                                                                                                                        |
-| :-------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------- |
-| `pnpm new-post "제목"`                        | 새 포스트 스캐폴딩. `--series`, `--tags`, `--scheduled`, `--slug`, `--status` 옵션 지원. 한글 제목/파일명 그대로 사용 가능  |
-| `pnpm lint:posts`                             | frontmatter 검증. 메타 노트 정책: frontmatter delimiter(`---`)가 없거나 `status`가 없으면 빌드 대상이 아닌 것으로 보고 skip |
-| `/preview/[...slug]` 라우트                   | dev 환경에서만 동작하는 draft·scheduled 글 미리보기. prod 빌드는 placeholder 1개(`__disabled__`) + 즉시 `notFound`로 차단   |
-| `_series.yml`                                 | 시리즈 폴더에 두면 시리즈 nav가 `order` 기준 chronological 정렬 + 표시명을 폴더명 대신 사용                                 |
-| `<callout type="warning\|info\|tip\|danger">` | 마크다운 헬퍼 컴포넌트 (raw HTML로 작성). `<figure>` + `<figcaption>`, `<file-tree>`도 지원                                 |
-| `<dialogue>` · `<metrics>` · `<timeline>`     | 리뉴얼 시그니처 컴포넌트. 역시 raw HTML 커스텀 태그 — 아래 "디자인 시스템" 참고                                             |
-| `<diagram>` + frontmatter `hero:`             | 구조 그림. 저작법 전체는 **`apps/blog/web/design/DIAGRAM_AUTHORING.md`** — 아래 "다이어그램 문법" 참고                      |
+| 도구                                          | 설명                                                                                                                                                                                                                  |
+| :-------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm new-post "제목"`                        | 새 포스트 스캐폴딩. `--series`, `--tags`, `--scheduled`, `--slug`, `--status` 옵션 지원. 한글 제목/파일명 그대로 사용 가능                                                                                            |
+| `pnpm lint:posts`                             | frontmatter 검증. 메타 노트 정책: frontmatter delimiter(`---`)가 없거나 `status`가 없으면 빌드 대상이 아닌 것으로 보고 skip                                                                                           |
+| `pnpm check-seo`                              | 산출물(`out/`) HTML의 SEO 계약 검사 — h1 1개, description 중복·길이·말줄임, `<title>` 60자, canonical 자기참조, og 태그, img alt, sitemap↔rss↔llms.txt 정합성. **`pnpm build`의 마지막 단계라 따로 부를 일은 드물다** |
+| `/preview/[...slug]` 라우트                   | dev 환경에서만 동작하는 draft·scheduled 글 미리보기. prod 빌드는 placeholder 1개(`__disabled__`) + 즉시 `notFound`로 차단                                                                                             |
+| `_series.yml`                                 | 시리즈 폴더에 두면 시리즈 nav가 `order` 기준 chronological 정렬 + 표시명을 폴더명 대신 사용                                                                                                                           |
+| `<callout type="warning\|info\|tip\|danger">` | 마크다운 헬퍼 컴포넌트 (raw HTML로 작성). `<figure>` + `<figcaption>`, `<file-tree>`도 지원                                                                                                                           |
+| `<dialogue>` · `<metrics>` · `<timeline>`     | 리뉴얼 시그니처 컴포넌트. 역시 raw HTML 커스텀 태그 — 아래 "디자인 시스템" 참고                                                                                                                                       |
+| `<diagram>` + frontmatter `hero:`             | 구조 그림. 저작법 전체는 **`apps/blog/web/design/DIAGRAM_AUTHORING.md`** — 아래 "다이어그램 문법" 참고                                                                                                                |
 
 #### 디자인 시스템 (리뉴얼 기준)
 
@@ -508,6 +512,30 @@ HTML 파서를 거치므로 **self-closing(`<metrics />`)은 동작하지 않는
 - **GA Proxy**: `apps/ga-proxy/`로 Velog 등 외부 플랫폼 조회수 추적
 - **검색 인증**: Naver 사이트 인증 메타태그 포함
 - **검색 인덱스**: `search-index.json`으로 클라이언트 사이드 검색 지원
+- **llms.txt / llms-full.txt**: 빌드 시 자동 생성 (AI 크롤러용 색인·전문)
+- **산출물 검사**: `pnpm check-seo` — 빌드된 HTML을 파싱해 SEO 계약을 검사하고 위반 시 실패한다. `pnpm build`의 마지막 단계이자 CI(`deploy-blog.yml`)의 배포 직전 단계 — 로컬과 CI가 **같은 검사**를 지나야 "로컬은 통과, CI만 실패"가 없다
+
+> **`prebuild`는 `--strict`로 돈다.** `lint:posts`(수동)와 `predev`는 경고로 두는
+> SEO 규칙(`missing-excerpt`·`excerpt-length`·`long-title`·`missing-image-alt`·
+> `truncated-excerpt`·`duplicate-description`)을, 빌드 직전에는 **에러**로 올린다.
+> 발행 대상(`draft`가 아닌 글)만 해당한다. 글을 쓰는 동안 dev 서버가 막히지
+> 않으면서도, 배포를 깨뜨릴 문제는 빌드를 돌리기 전에 파일·줄 번호와 함께 잡힌다.
+> 에러 범위는 **`check-seo`가 보는 범위와 정확히 같다**(`isPostVisible`). 아직
+> 공개 전인 예약 글은 경고다 — 로컬이 CI보다 더 엄격하면, 그 글과 상관없는 이미
+> 발행된 변경까지 배포가 통째로 막힌다.
+
+> **`lint:posts`와 `check-seo`는 보는 곳이 다르다.** 전자는 **frontmatter 원문**을,
+> 후자는 **최종 HTML**을 본다. 2026-08 감사에서 나온 문제들 — 페이지 헤더 h1과 본문
+> `# 제목`이 겹쳐 h1이 2개, 도입부가 같은 시리즈 글끼리 description 완전 중복,
+> og:site_name이 `Frontend Lab` / `Frontend Lab Blog` 두 종류, og:locale이 46개 중
+> 44개 페이지에서 누락 — 은 전부 원문만 봐서는 보이지 않는 것들이었다. 둘 중 하나만
+> 돌리면 그 계열의 회귀가 다시 조용히 지나간다.
+
+> **본문 h1은 렌더 시 h2로 강등된다**(`src/components/post/markdownHeadings.tsx`).
+> 페이지의 h1은 `PostHeader`의 글 제목 하나뿐이어야 하기 때문이다. 사이트 본문과 RSS
+> `content:encoded`가 **같은 매핑을 공유**하니 한쪽만 바꾸지 말 것. 원문에 `# `이
+> 남아 있으면 `lint:posts`가 `body-h1` 경고로 알린다(렌더는 조용히 고쳐주므로,
+> 경고가 없으면 글쓴이가 영영 모른다).
 
 > **GTM 컨테이너는 이 저장소 밖에 있다.** 코드에 있는 건 컨테이너 ID 한 줄뿐이고,
 > 어떤 태그가 실제로 발사되는지는 GTM 웹 콘솔에만 존재한다. 2026-07-30 Lighthouse
@@ -535,6 +563,8 @@ HTML 파서를 거치므로 **self-closing(`<metrics />`)은 동작하지 않는
 | `.github/workflows/deploy-blog.yml`         | CI/CD 배포 워크플로우                                                   |
 | `apps/blog/posts/{series}/_series.yml`      | (선택) 시리즈 표시명·설명·order 메타                                    |
 | `apps/blog/web/scripts/build-content.ts`    | predev/prebuild 통합 진입점 (validate/sync/sitemap/rss/search/llms)     |
+| `apps/blog/web/scripts/check-seo.ts`        | 빌드 산출물 SEO 검사 (CI 게이트)                                        |
+| `apps/blog/web/lib/constants.ts`            | 사이트 이름·URL·`<title>` 접미사·SEO 길이 예산의 단일 소스              |
 | `apps/blog/web/design/DIAGRAM_AUTHORING.md` | 다이어그램 저작 가이드 (선언형 태그 prop 표, 복붙 예제, `hero:` 등록법) |
 
 ## Prerequisites

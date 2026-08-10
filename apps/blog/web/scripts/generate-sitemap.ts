@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { SITE_URL } from '../lib/constants';
+import { SITE_URL, ABOUT_PAGE_MODIFIED } from '../lib/constants';
 import { parseScheduledDateKST, getKSTDateISO } from '../lib/dates';
 import { getAllPosts, encodePostSlug, type PostSummary } from '@/domain/post';
 
@@ -56,7 +56,10 @@ function resolvePostLastmod(post: SitemapPost, fallback: string): string {
  * 정적 페이지(`/`, `/posts/`)의 lastmod는 빌드 날짜가 아니라 **가장 최근 글의 날짜**를
  * 씁니다. 이 사이트는 매일 cron으로 빌드되므로 빌드 날짜를 넣으면 콘텐츠가 그대로인
  * 날에도 lastmod가 전진하고, Google은 그런 사이트의 lastmod 신호를 통째로 무시합니다.
- * `/about/`은 변경 시점을 알 수 없으므로 lastmod를 생략합니다 (생략은 유효).
+ * `/about/`은 글이 아니라 자동으로 알 수 있는 수정 시각이 없어서, 손으로 관리하는
+ * `ABOUT_PAGE_MODIFIED` 상수를 씁니다 — JSON-LD `dateModified`와 같은 소스라
+ * 두 값이 어긋날 수 없습니다. (여기만 lastmod가 비어 있으면 46개 URL 중 하나만
+ * 신호가 없는 상태가 됩니다.)
  */
 export function buildSitemapXml(
   posts: SitemapPost[],
@@ -94,6 +97,7 @@ export function buildSitemapXml(
   </url>
   <url>
     <loc>${siteUrl}/about/</loc>
+    <lastmod>${ABOUT_PAGE_MODIFIED}</lastmod>
     <priority>0.7</priority>
   </url>
   ${entries

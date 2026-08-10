@@ -3,10 +3,13 @@ import { css } from '@design-system/ui-lib/css';
 import type { Metadata } from 'next';
 import {
   SITE_URL,
+  SITE_NAME,
   OG_DEFAULT_IMAGE,
   SITE_AUTHOR_GITHUB,
   SITE_AUTHOR_LINKEDIN,
   MERGED_PR_COUNT_FALLBACK,
+  ABOUT_PAGE_MODIFIED,
+  TITLE_SUFFIX,
 } from '@/lib/constants';
 import { safeJsonLd } from '@/lib/jsonLd';
 import { Label } from '@/src/components/blog';
@@ -16,31 +19,42 @@ import { getAllSeries } from '@/domain/post/aggregate';
 
 import { FEATURED_SERIES } from './featuredSeries';
 
+const PAGE_TITLE = `소개${TITLE_SUFFIX}`;
+// 공유 카드(og·twitter)용 짧은 소개. 검색 결과용 description과 일부러 다르다 —
+// 카드는 한 줄로 읽히는 게 낫고, SERP는 길이 예산(120~160자)을 채워야 한다.
+const SHARE_DESCRIPTION =
+  '프론트엔드 엔지니어 한상욱(Sangwook Han). Mantine 27 PRs, Node.js 코어 기여, gemini-cli 74% 성능 개선. FEConf 2025 발표자.';
+
 export const metadata: Metadata = {
-  title: '소개 | Frontend Lab',
+  title: PAGE_TITLE,
   description:
-    '프론트엔드 엔지니어 한상욱(Sangwook Han)의 소개 페이지. Mantine, Node.js, Next.js, gemini-cli 오픈소스 기여자. FEConf 2025 발표자.',
+    '프론트엔드 엔지니어 한상욱(Sangwook Han)의 소개 페이지입니다. Mantine·Node.js·Next.js·gemini-cli 오픈소스 기여자이자 FEConf 2025·TeoConf 발표자. 번들러 내부와 TypeScript 설계를 파고듭니다.',
   alternates: { canonical: '/about/' },
   openGraph: {
-    title: '소개 | Frontend Lab',
-    description:
-      '프론트엔드 엔지니어 한상욱(Sangwook Han). Mantine 27 PRs, Node.js 코어 기여, gemini-cli 74% 성능 개선. FEConf 2025 발표자.',
+    title: PAGE_TITLE,
+    description: SHARE_DESCRIPTION,
     url: `${SITE_URL}/about/`,
-    siteName: 'Frontend Lab',
+    siteName: SITE_NAME,
+    // 사람 소개 페이지라 website가 아니라 profile이다. 지정하지 않으면
+    // og:type 자체가 빠져서 크롤러가 문서 종류를 추정하게 된다.
+    type: 'profile',
+    firstName: 'Sangwook',
+    lastName: 'Han',
+    username: 'Han5991',
+    locale: 'ko_KR',
     images: [
       {
         url: `${SITE_URL}${OG_DEFAULT_IMAGE}`,
         width: 1200,
         height: 630,
-        alt: 'Frontend Lab Blog',
+        alt: `${SITE_NAME} Blog`,
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: '소개 | Frontend Lab',
-    description:
-      '프론트엔드 엔지니어 한상욱(Sangwook Han). Mantine 27 PRs, Node.js 코어 기여, gemini-cli 74% 성능 개선. FEConf 2025 발표자.',
+    title: PAGE_TITLE,
+    description: SHARE_DESCRIPTION,
     images: [`${SITE_URL}${OG_DEFAULT_IMAGE}`],
   },
 };
@@ -53,8 +67,8 @@ const jsonLd = {
   name: '한상욱 (Sangwook Han) — About',
   dateCreated: '2024-12-01',
   // 빌드 시각을 넣으면 매일 cron 빌드마다 "수정됨"으로 보고되어 신호가 무의미해진다.
-  // 이 페이지 내용을 실제로 고칠 때 함께 갱신할 것.
-  dateModified: '2026-07-05',
+  // 이 페이지 내용을 실제로 고칠 때 상수를 갱신할 것 (sitemap lastmod와 같은 소스).
+  dateModified: ABOUT_PAGE_MODIFIED,
   mainEntity: {
     '@type': 'Person',
     '@id': `${SITE_URL}/#author`,

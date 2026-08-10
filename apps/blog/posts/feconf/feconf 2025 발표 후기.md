@@ -3,6 +3,7 @@ title: 'feconf 2025 발표 후기'
 date: '2025-09-02'
 status: published
 slug: 'feconf-2025-lightning-speaker'
+excerpt: '마이크를 잡는 순간까지 ''내가 말해도 되나'' 싶었습니다. FEConf 2025 라이트닝 토크 신청부터 선정, 슬라이드 초안과 세 번의 리허설, 그리고 무대 위까지 — 발표가 처음인 개발자가 남긴 3개월치 준비 기록입니다.'
 thumbnail: '/og/feconf-2025-lightning-speaker.png'
 ---
 

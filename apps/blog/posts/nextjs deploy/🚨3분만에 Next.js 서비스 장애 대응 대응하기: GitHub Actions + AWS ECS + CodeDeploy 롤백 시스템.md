@@ -1,8 +1,10 @@
 ---
 title: '🚨3분만에 Next.js 서비스 장애 대응 대응하기: GitHub Actions + AWS ECS + CodeDeploy 롤백 시스템'
+seoTitle: '3분 만에 되돌리는 Next.js ECS 롤백 시스템'
 date: '2025-04-03'
 status: published
 slug: 'aws-ecs-rollback'
+excerpt: '배포 두 시간 뒤 장애 신고가 들어왔고 되돌리는 데 30분이 걸렸습니다. GitHub Actions와 AWS CodeDeploy로 배포 버전을 골라 3분 만에 롤백하는 파이프라인을 만들어 그 30분을 없앤 과정입니다.'
 thumbnail: '/og/aws-ecs-rollback.png'
 ---
 

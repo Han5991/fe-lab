@@ -3,6 +3,7 @@ title: '미들웨어에서 auth 적용하기'
 date: '2025-02-26'
 status: published
 slug: 'next-middleware'
+excerpt: '레이아웃에서 인증을 확인하면 이미 늦습니다. Next.js Middleware로 요청 단계에서 로그인 여부와 역할을 판별해, 프라이빗 페이지가 잠깐 보였다 사라지는 깜빡임을 없앤 과정과, 쿠키·캐싱 전략까지 정리했습니다.'
 thumbnail: '/og/next-middleware.png'
 ---
 

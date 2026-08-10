@@ -17,7 +17,7 @@
 ### 1. 기본 이미지 (Default OG)
 
 - **대상**: 썸네일이 지정되지 않은 모든 글
-- **파일**: `apps/blog/web/public/og-default.png`
+- **파일**: `apps/blog/web/public/og-default.jpg`
 - **프롬프트**:
   > A minimalist blog post cover image with a sleek dark blue gradient background. In the center, clear white bold text says 'FE Lab'. The design should be modern, professional, and suitable for a tech blog. Resolution 1200x630.
 

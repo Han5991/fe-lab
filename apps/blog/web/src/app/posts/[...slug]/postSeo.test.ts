@@ -4,12 +4,13 @@ import {
   buildPostJsonLd,
   buildBreadcrumbJsonLd,
   buildDescription,
+  resolveSeoTitle,
   toKstIsoDate,
   countWords,
   type SeoPost,
 } from './postSeo';
 
-// lib/constants: SITE_URL='https://blog.sangwook.dev', OG_DEFAULT_IMAGE='/og-default.png'
+// lib/constants: SITE_URL='https://blog.sangwook.dev', OG_DEFAULT_IMAGE='/og-default.jpg'
 const SITE = 'https://blog.sangwook.dev';
 
 function makePost(over: Partial<SeoPost> = {}): SeoPost {
@@ -100,6 +101,43 @@ describe('buildPostMetadata', () => {
     expect(m.title).toBe('테스트 글 | Frontend Lab');
     expect(m.description).toBe('요약');
     expect(m.alternates?.canonical).toBe('/posts/번들러/3편/');
+  });
+
+  test('seoTitle이 있으면 <title>만 그것을 쓴다 (og:title은 원래 제목)', () => {
+    // 잘림이 문제인 건 SERP의 <title> 하나뿐이라, 공유 카드·화면 제목에는
+    // 글의 원래 제목이 그대로 나가야 한다.
+    const post = makePost({
+      title: '[Typescript로 설계하는 프로젝트] 아주 긴 원래 제목',
+      seoTitle: '[TS 설계] 짧은 제목',
+    });
+    const m = buildPostMetadata(post, 'a');
+    expect(m.title).toBe('[TS 설계] 짧은 제목 | Frontend Lab');
+    const og = m.openGraph as Record<string, unknown>;
+    expect(og.title).toBe('[Typescript로 설계하는 프로젝트] 아주 긴 원래 제목');
+  });
+
+  test('seoTitle이 있어도 JSON-LD headline은 원래 제목', () => {
+    const jsonLd = buildPostJsonLd(
+      makePost({ title: '원래 제목', seoTitle: '짧은 제목' }),
+      'a',
+    );
+    expect(jsonLd.headline).toBe('원래 제목');
+  });
+
+  test('og:site_name은 사이트 상수 하나에서 온다 (홈/목록과 동일)', () => {
+    const og = buildPostMetadata(makePost(), 'a').openGraph as Record<
+      string,
+      unknown
+    >;
+    expect(og.siteName).toBe('Frontend Lab');
+  });
+
+  test('og:locale이 모든 글에 붙는다', () => {
+    const og = buildPostMetadata(makePost(), 'a').openGraph as Record<
+      string,
+      unknown
+    >;
+    expect(og.locale).toBe('ko_KR');
   });
 
   test('openGraph: article + publishedTime + 1200x630 이미지', () => {
@@ -235,5 +273,37 @@ describe('buildBreadcrumbJsonLd', () => {
       name: '테스트 글',
       item: `${SITE}/posts/번들러/3편/`,
     });
+  });
+});
+
+describe('resolveSeoTitle', () => {
+  test('seoTitle이 있으면 seoTitle', () => {
+    expect(resolveSeoTitle({ title: '길다', seoTitle: '짧다' })).toBe('짧다');
+  });
+
+  test('seoTitle이 없으면 title', () => {
+    expect(resolveSeoTitle({ title: '길다', seoTitle: undefined })).toBe(
+      '길다',
+    );
+  });
+});
+
+describe('buildDescription: 도메인 폴백 재사용', () => {
+  test('평문이 없는 본문에서도 마크다운 기호가 새지 않는다', () => {
+    // 예전에는 마크다운 원문을 그대로 잘라, 이미지·코드만 있는 글의 description이
+    // `![](...)` 같은 기호로 채워졌다.
+    const d = buildDescription({
+      excerpt: undefined,
+      content: '![](./a.png)\n\n```ts\ncode\n```',
+    });
+    expect(d).not.toContain('![');
+    expect(d).not.toContain('```');
+  });
+
+  test('parsePost가 만드는 excerpt와 같은 규칙', () => {
+    const content = '가'.repeat(300);
+    expect(buildDescription({ excerpt: undefined, content })).toBe(
+      '가'.repeat(160) + '...',
+    );
   });
 });

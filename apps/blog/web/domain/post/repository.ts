@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import matter from 'gray-matter';
 import { estimateReadMin } from '@/lib/format';
+import { SEO_DESCRIPTION_MAX_LENGTH as EXCERPT_FALLBACK_LENGTH } from '@/lib/constants';
 import { collectMarkdownFiles, hasFrontmatter } from '@/lib/postFiles';
 import { isPostFile } from './visibility';
 import type { PostData, RawFrontmatter } from './types';
@@ -22,12 +23,44 @@ export function extractPlainText(content: string): string {
 }
 
 /**
+ * frontmatter의 `excerpt`가 없거나 빈 문자열일 때 쓰는 본문 앞부분 발췌.
+ *
+ * 이 폴백이 그대로 meta description이 되므로, 도입부가 비슷한 글끼리는 발췌가
+ * **글자 단위로 완전히 겹칩니다**. lint:posts가 그 중복을 원문에서 잡으려면
+ * 똑같은 계산을 해야 해서, 규칙을 여기 한 곳에 두고 양쪽이 함께 씁니다.
+ *
+ * 잘릴 때만 '...'을 붙입니다(짧은 글에 오해 소지의 말줄임표가 붙지 않도록).
+ */
+export function resolveExcerpt(content: string, explicit?: unknown): string {
+  return resolveExcerptFrom(extractPlainText(content), explicit);
+}
+
+/**
+ * `resolveExcerpt`와 **같은 규칙**을 이미 평문으로 만들어 둔 내용에 적용합니다.
+ *
+ * parsePost는 readMin 계산에 쓰려고 `extractPlainText`를 이미 한 번 돌립니다.
+ * 거기서 `resolveExcerpt(content, …)`를 부르면 같은 정규식 5개를 본문 전체에
+ * 한 번 더 돌리게 되는데, 개발 모드는 포스트 캐시를 건너뛰므로 그 두 배 비용을
+ * **요청마다** 냅니다. 규칙이 갈라지지 않도록 폴백 계산은 여기 한 곳에만 둡니다.
+ */
+export function resolveExcerptFrom(
+  plainText: string,
+  explicit?: unknown,
+): string {
+  const given = toOptionalString(explicit);
+  if (given) return given;
+  return plainText.length > EXCERPT_FALLBACK_LENGTH
+    ? plainText.slice(0, EXCERPT_FALLBACK_LENGTH) + '...'
+    : plainText;
+}
+
+/**
  * frontmatter의 date/updatedAt 값을 'YYYY-MM-DD' 문자열(또는 null)로 정규화합니다.
  * - YAML이 Date 객체로 파싱한 경우(`date: 2025-01-01`) → ISO 날짜 부분
  * - 문자열인 경우(`date: '2025-01-01'`) → 그대로
  * - 그 외 → null
  */
-function toDateString(value: unknown): string | null {
+export function toDateString(value: unknown): string | null {
   if (value instanceof Date) return value.toISOString().split('T')[0];
   if (typeof value === 'string') return value;
   return null;
@@ -95,17 +128,12 @@ export function parsePost(
     originalSlug: rawSlug,
     relativeDir: currentPath,
     title: toOptionalString(data.title) ?? fileName,
+    seoTitle: toOptionalString(data.seoTitle),
     date: toDateString(data.date),
     updatedAt: toDateString(data.updatedAt),
     content,
     readMin: estimateReadMin(cleanContent),
-    // excerpt 미지정 시 본문 평문 앞 160자. 잘릴 때만 '...'을 붙인다(짧은 글에
-    // 오해 소지의 말줄임표가 붙지 않도록).
-    excerpt:
-      toOptionalString(data.excerpt) ??
-      (cleanContent.length > 160
-        ? cleanContent.slice(0, 160) + '...'
-        : cleanContent),
+    excerpt: resolveExcerptFrom(cleanContent, data.excerpt),
     thumbnail: toOptionalString(data.thumbnail),
     // 등록되지 않은 이름인지까지는 여기서 보지 않는다 — 렌더 계층이 폴백하고
     // validate-posts가 unknown-hero-diagram으로 막는다.

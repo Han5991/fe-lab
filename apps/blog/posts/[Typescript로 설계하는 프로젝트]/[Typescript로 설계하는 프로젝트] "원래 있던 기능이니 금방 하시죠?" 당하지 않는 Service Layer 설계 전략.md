@@ -1,8 +1,10 @@
 ---
 title: '[Typescript로 설계하는 프로젝트] "원래 있던 기능이니 금방 하시죠?" 당하지 않는 Service Layer 설계 전략'
+seoTitle: '[TS 설계] 요구사항에 흔들리지 않는 Service Layer'
 date: '2025-06-08'
 status: published
 slug: 'typescript-project-service-design'
+excerpt: '''원래 있던 기능이니 금방 하시죠?'' UI 컴포넌트에 눌어붙은 비즈니스 로직을 Service Layer로 떼어내는 이야기입니다. 기획이 갑자기 바뀌어도 화면을 뜯지 않고 재사용으로 대응할 수 있는 구조를 단계별로 만들어봅니다.'
 thumbnail: '/og/typescript-project-service-design.png'
 ---
 

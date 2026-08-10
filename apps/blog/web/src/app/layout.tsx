@@ -12,26 +12,34 @@ import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import { jetbrainsMono } from './fonts';
 import { THEME_COOKIE_MATCH } from '@/src/hooks/theme-cookie';
+import {
+  SITE_URL,
+  SITE_NAME,
+  SITE_DESCRIPTION_EXPANDED,
+  OG_DEFAULT_IMAGE,
+  RSS_PATH,
+} from '@/lib/constants';
+
+// 제목은 meta·og·twitter 세 곳에 나간다. 한 번만 쓴다.
+const DEFAULT_TITLE = `${SITE_NAME} | 프론트엔드 실험실`;
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://blog.sangwook.dev'),
+  metadataBase: new URL(SITE_URL),
   // RSS alternate link는 RootLayout의 <head>에 직접 추가합니다
   // (Next 16 metadata.alternates.types로는 출력되지 않는 문제 회피)
-  title: 'Frontend Lab | 프론트엔드 실험실',
-  description:
-    'React, TypeScript, 번들러 아키텍처부터 오픈소스 기여까지. 프론트엔드 엔지니어 한상욱이 직접 실험하고 기록하는 공간입니다. 설계 패턴, 성능 최적화, 오픈소스 기여 노하우를 다룹니다.',
+  title: DEFAULT_TITLE,
+  description: SITE_DESCRIPTION_EXPANDED,
   openGraph: {
-    title: 'Frontend Lab | 프론트엔드 실험실',
-    description:
-      'React, TypeScript, 번들러 아키텍처부터 오픈소스 기여까지. 프론트엔드 엔지니어 한상욱이 직접 실험하고 기록하는 공간입니다. 설계 패턴, 성능 최적화, 오픈소스 기여 노하우를 다룹니다.',
-    url: 'https://blog.sangwook.dev',
-    siteName: 'Frontend Lab',
+    title: DEFAULT_TITLE,
+    description: SITE_DESCRIPTION_EXPANDED,
+    url: SITE_URL,
+    siteName: SITE_NAME,
     images: [
       {
-        url: '/og-default.png',
+        url: OG_DEFAULT_IMAGE,
         width: 1200,
         height: 630,
-        alt: 'Frontend Lab Blog',
+        alt: `${SITE_NAME} Blog`,
       },
     ],
     locale: 'ko_KR',
@@ -39,10 +47,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Frontend Lab | 프론트엔드 실험실',
-    description:
-      'React, TypeScript, 번들러 아키텍처부터 오픈소스 기여까지. 프론트엔드 엔지니어 한상욱이 직접 실험하고 기록하는 공간입니다. 설계 패턴, 성능 최적화, 오픈소스 기여 노하우를 다룹니다.',
-    images: ['/og-default.png'],
+    title: DEFAULT_TITLE,
+    description: SITE_DESCRIPTION_EXPANDED,
+    images: [OG_DEFAULT_IMAGE],
   },
   verification: {
     other: {
@@ -120,8 +127,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <link
           rel="alternate"
           type="application/rss+xml"
-          title="Frontend Lab RSS Feed"
-          href="/rss.xml"
+          title={`${SITE_NAME} RSS Feed`}
+          href={RSS_PATH}
         />
       </head>
       <body>

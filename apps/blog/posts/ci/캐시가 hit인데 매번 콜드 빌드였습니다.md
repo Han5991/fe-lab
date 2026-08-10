@@ -1,13 +1,12 @@
 ---
 title: '캐시가 hit인데 매번 콜드 빌드였습니다 — GitHub Actions Next.js 캐시 키가 죽어 있던 이유'
+seoTitle: '캐시가 hit인데 매번 콜드 빌드였던 이유'
 date: '2026-07-26'
 status: draft
 slug: 'astryx-pr-ci-parallel-cache'
 thumbnail: '/og/astryx-pr-ci-parallel-cache.png'
 tags: ['github-actions', 'ci', 'nextjs', 'cache']
 ---
-
-# 캐시가 hit인데 매번 콜드 빌드였습니다 — GitHub Actions Next.js 캐시 키가 죽어 있던 이유
 
 ## 이 글을 읽고 나면
 

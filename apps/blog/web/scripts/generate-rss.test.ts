@@ -346,3 +346,18 @@ test('wrapCdata: ]]> 시퀀스는 CDATA 분할로 안전하게 처리', () => {
   const wrapped = wrapCdata('a]]>b');
   assert.equal(wrapped, '<![CDATA[a]]]]><![CDATA[>b]]>');
 });
+
+test('renderContentHtml: 본문 h1은 h2로 강등 (사이트 본문과 같은 매핑)', () => {
+  // 피드 리더에서만 h1이 살아남으면 사이트만 고친 의미가 없다.
+  const html = renderContentHtml('# 제목\n\n## 절\n', SITE);
+  assert.ok(!html.includes('<h1'), `h1이 남아 있음: ${html}`);
+  assert.ok(html.includes('<h2>제목</h2>'));
+  // h2 이하는 그대로 — 문서 전체를 한 칸씩 밀지 않는다.
+  assert.ok(html.includes('<h2>절</h2>'));
+});
+
+test('renderContentHtml: raw HTML <h1>도 강등된다', () => {
+  const html = renderContentHtml('<h1>raw</h1>', SITE);
+  assert.ok(!html.includes('<h1'), `h1이 남아 있음: ${html}`);
+  assert.ok(html.includes('<h2>raw</h2>'));
+});

@@ -22,6 +22,7 @@ export type PostStatus = (typeof POST_STATUSES)[number];
  */
 export type RawFrontmatter = {
   title?: unknown;
+  seoTitle?: unknown;
   date?: unknown;
   updatedAt?: unknown;
   status?: unknown;
@@ -38,6 +39,16 @@ export interface PostData {
   originalSlug: string;
   relativeDir: string;
   title: string;
+  /**
+   * `<title>` 태그 전용의 짧은 제목. 없으면 `title`을 씁니다.
+   *
+   * 이 블로그의 제목에는 `[Typescript로 설계하는 프로젝트]` 같은 긴 시리즈
+   * 접두사가 붙는데, 여기에 사이트 접미사(` | Frontend Lab`)까지 더해지면
+   * 검색 결과에서 잘립니다(최장 94자). 화면·OG 카드·JSON-LD headline에는
+   * 원래 제목이 그대로 나가고, 잘림이 실제로 문제인 `<title>`만 이 값으로
+   * 바꿉니다 — 제목을 짧게 고쳐서 글의 정체성을 훼손하지 않으려는 분리입니다.
+   */
+  seoTitle?: string;
   date: string | null;
   updatedAt?: string | null;
   content: string;

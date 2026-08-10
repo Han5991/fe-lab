@@ -1,8 +1,10 @@
 ---
 title: '[Typescript로 설계하는 프로젝트] "원래 있던 기능이니 금방 하시죠?" 당하지 않는 Service Layer 설계 전략 With Di'
+seoTitle: '[TS 설계] Service Layer 설계 전략 with DI'
 date: '2025-06-08'
 status: published
 slug: 'typescript-project-service-di-design'
+excerpt: '같은 Service Layer를 이번엔 의존성 주입으로 다시 짭니다. 서비스가 HTTP 클라이언트를 직접 만들지 않고 밖에서 주입받게 하면 결합도가 내려가고 목 객체만 갈아끼워 서버 없이도 테스트할 수 있습니다. 본편과 같은 문제를 다른 도구로 푸는 편.'
 thumbnail: '/og/typescript-project-service-di-design.png'
 ---
 

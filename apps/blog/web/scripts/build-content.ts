@@ -14,12 +14,15 @@ export interface Step {
 export interface Flags {
   skipValidate: boolean;
   force: boolean;
+  /** validate-posts를 엄격 모드로 — prebuild에서만 켠다(package.json 참고) */
+  strict: boolean;
 }
 
 export function parseFlags(argv: string[]): Flags {
   return {
     skipValidate: argv.includes('--skip-validate'),
     force: argv.includes('--force'),
+    strict: argv.includes('--strict'),
   };
 }
 
@@ -37,7 +40,10 @@ export function buildPhases(flags: Flags): Step[][] {
         {
           label: 'validate-posts',
           cmd: 'tsx',
-          args: ['scripts/validate-posts.ts'],
+          args: [
+            'scripts/validate-posts.ts',
+            ...(flags.strict ? ['--strict'] : []),
+          ],
         },
       ];
   const generate: Step[] = [
@@ -66,6 +72,7 @@ export function buildPhases(flags: Flags): Step[][] {
       args: ['scripts/generate-search-index.ts'],
     },
     { label: 'llms-full', cmd: 'tsx', args: ['scripts/generate-llms-full.ts'] },
+    { label: 'llms', cmd: 'tsx', args: ['scripts/generate-llms.ts'] },
   ];
   return [validate, generate].filter(phase => phase.length > 0);
 }
