@@ -1,9 +1,8 @@
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { getAllPosts, encodePostSlug } from '../domain/post';
+import { getAllPosts, encodePostSlug, sortByDateDesc } from '../domain/post';
 import type { PostData } from '../domain/post';
-import { sortByDateDesc } from '../domain/post/repository';
 import {
   SITE_URL as DEFAULT_SITE_URL,
   SITE_AUTHOR_GITHUB,

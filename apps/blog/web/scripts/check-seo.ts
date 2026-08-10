@@ -313,6 +313,15 @@ function main() {
   }
 
   const pages = collectPages(outDir);
+  // 라우트 HTML이 하나도 없으면 "위반 0건"이 아니라 **검사를 못 한 것**이다.
+  // sitemap/rss/llms는 public/에서 복사되므로 그것만 보고 통과시키면, 페이지가
+  // 통째로 안 만들어진 빌드가 조용히 배포된다.
+  if (pages.size === 0) {
+    console.error(
+      `✖ ${outDir} 에 index.html이 하나도 없습니다 — 빌드가 페이지를 만들지 못했습니다.`,
+    );
+    process.exit(1);
+  }
   const violations = checkPages(pages);
 
   const read = (name: string) => {

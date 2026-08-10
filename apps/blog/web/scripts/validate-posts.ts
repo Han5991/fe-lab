@@ -10,8 +10,13 @@ import {
   SEO_DESCRIPTION_MIN_LENGTH,
   SEO_DESCRIPTION_MAX_LENGTH,
 } from '@/lib/constants';
-import { POST_STATUSES, isPostStatus, isPostFile } from '@/domain/post';
-import { resolveExcerpt } from '@/domain/post/repository';
+import {
+  POST_STATUSES,
+  isPostStatus,
+  isPostFile,
+  isPostVisible,
+  resolveExcerpt,
+} from '@/domain/post';
 // 이름 목록만 있는 모듈에서 가져옵니다. registry.ts(=.tsx 컴포넌트 의존)를 직접
 // 참조하면 이 노드 스크립트가 React·Panda까지 끌고 들어옵니다.
 import { DIAGRAM_NAMES, isDiagramName } from '@/domain/post/diagramNames';
@@ -93,13 +98,18 @@ export interface ValidateOptions {
 /**
  * SEO 계약 위반의 심각도.
  *
- * `draft`는 빌드에서 통째로 빠져 check-seo가 볼 일이 없으므로 strict에서도 경고입니다.
+ * 에러로 올리는 범위를 **`check-seo`가 실제로 볼 수 있는 글**과 정확히 맞춥니다.
+ * 즉 지금 빌드에 실려 나가는 글(`isPostVisible`)만 에러입니다.
  *
- * **`scheduled`는 아직 안 나갔더라도 에러입니다.** 지금 빌드에는 안 실리니 오늘의
- * check-seo는 통과하지만, 예약일이 지나면 KST 09:00 cron 빌드에 실려 나가고 그때
- * 배포가 깨집니다 — 아무도 안 보고 있는 시각에, 예약 글이 조용히 발행되지 않는
- * 형태로. 그 실패를 글 쓰는 사람 앞으로 당겨 옵니다. (쓰는 중에 막히는 게
- * 싫으면 `status: draft`로 두고 마지막에 `scheduled`로 바꾸면 됩니다.)
+ * 왜 이 범위인가:
+ * - 이보다 좁으면(전부 경고) `draft`를 `published`로 바꾸는 순간 로컬 검사와
+ *   빌드는 통과하고 **CI에서만** 터집니다 — strict 모드를 넣은 이유가 그 간극입니다.
+ * - 이보다 넓으면(아직 공개 전인 예약 글까지 에러) 도구가 스스로를 막습니다.
+ *   `pnpm new-post --scheduled …`가 깔아주는 `excerpt: ''` 때문에 스캐폴딩 직후
+ *   `pnpm build`가 실패합니다.
+ *
+ * 공개 전 예약 글은 경고입니다. 예약일이 지나면 자동으로 에러가 되고, 그 전에
+ * 한 번이라도 빌드를 돌리면 경고로 먼저 보입니다.
  *
  * 본문 h1(`body-h1`)은 여기 해당하지 않습니다 — 렌더 계층이 h2로 강등해
  * check-seo의 h1 검사를 통과하므로 원문이 그대로여도 배포가 막히지 않습니다.
@@ -108,10 +118,8 @@ function seoSeverity(
   data: Record<string, unknown>,
   { strict }: ValidateOptions,
 ): Severity {
-  // `status`가 없거나 잘못된 파일은 애초에 포스트가 아니다(빌드에서 제외).
-  // `!== 'draft'`로만 보면 그런 메타 노트가 "발행 대상"으로 오인돼 빌드를 막는다.
-  if (!strict || !isPostFile(data) || data.status === 'draft') return 'warning';
-  return 'error';
+  if (!strict || !isPostFile(data)) return 'warning';
+  return isPostVisible(data) ? 'error' : 'warning';
 }
 
 export function validatePost(
@@ -491,14 +499,17 @@ const HTML_IMAGE = /<img\b(?:[^>"']|"[^"]*"|'[^']*')*>/gi;
 
 /** `<img>` 태그에서 (alt, src)를 뽑는다. 속성이 없으면 빈 문자열. */
 function parseHtmlImage(tag: string): { alt: string; src: string } {
+  // 따옴표 없는 값(`<img src=/a.png alt=다이어그램>`)도 HTML5에서는 유효하다.
+  // 따옴표만 읽으면 멀쩡한 이미지가 "alt 없음"으로 잡혀 빌드를 막는다.
   const attr = (name: string) =>
-    tag.match(new RegExp(`\\s${name}\\s*=\\s*("([^"]*)"|'([^']*)')`, 'i'));
+    tag.match(
+      new RegExp(`\\s${name}\\s*=\\s*("([^"]*)"|'([^']*)'|([^\\s>]+))`, 'i'),
+    );
   const alt = attr('alt');
   const src = attr('src');
-  return {
-    alt: alt ? (alt[2] ?? alt[3] ?? '') : '',
-    src: src ? (src[2] ?? src[3] ?? '') : '',
-  };
+  const value = (m: RegExpMatchArray | null) =>
+    m ? (m[2] ?? m[3] ?? m[4] ?? '') : '';
+  return { alt: value(alt), src: value(src) };
 }
 
 /** 개행은 남기고 나머지만 공백으로 — 줄 번호 계산이 어긋나지 않도록. */
@@ -735,7 +746,9 @@ function validateCodeFenceLanguages(record: PostRecord, raw: string): Issue[] {
  * (src/components/post/markdownHeadings.tsx), 그 조용한 교정 때문에 글쓴이는
  * 원문이 틀렸다는 걸 영영 모릅니다. `hero`와 같은 방식으로 그 침묵을 깹니다.
  *
- * 코드 펜스 안의 `# 주석`은 헤딩이 아니므로 제외합니다(scanBodyLines).
+ * 검사는 `maskNonProse`를 지난 본문에서 합니다 — 코드 펜스·인라인 코드·HTML 주석
+ * 안의 `# 주석`이나 `` `<h1>` ``은 헤딩이 아니라 **인용**이라, 그대로 검사하면
+ * 글쓴이가 손댈 수 없는 경고가 나옵니다(이미지 검사와 같은 이유·같은 함수).
  *
  * 빌드에서 제외되는 메타 노트(유효한 `status` 없음)는 렌더될 일이 없으므로
  * 검사하지 않습니다 — 기획 문서의 `# 제목`까지 잡으면 경고만 늘고 고칠 것이 없습니다.
@@ -746,10 +759,10 @@ export function validateBodyHeadings(record: PostRecord, raw: string): Issue[] {
   const issues: Issue[] = [];
   const offset = frontmatterOffset(raw);
 
-  const lines = scanBodyLines(record.content);
-  for (const { text, index, inFence } of lines) {
-    if (inFence) continue;
-
+  // 마스킹된 본문은 줄 수와 각 줄의 길이가 원본과 같으므로 줄 번호가 그대로다.
+  // 펜스 안은 이미 공백으로 덮여 있어 따로 inFence를 볼 필요가 없다.
+  const lines = maskNonProse(record.content).split('\n');
+  for (const [index, text] of lines.entries()) {
     // ATX(`# 제목`)와 setext(`제목` 다음 줄에 `===`) 둘 다 h1로 렌더된다.
     // ATX만 보면 setext h1은 조용히 강등되고 경고도 안 나와, 이 규칙이 존재하는
     // 이유(조용한 교정을 드러내기)가 그대로 무너진다.
@@ -770,10 +783,7 @@ export function validateBodyHeadings(record: PostRecord, raw: string): Issue[] {
       // 오인하면 진짜 setext h1을 놓친다.
       !/^ {0,3}(?:#{1,6} |[-*+](?:\s|$)|\d+[.)](?:\s|$)|[>|]|<)/.test(text);
     const isSetext =
-      isParagraphLine &&
-      next !== undefined &&
-      !next.inFence &&
-      /^ {0,3}=+\s*$/.test(next.text);
+      isParagraphLine && next !== undefined && /^ {0,3}=+\s*$/.test(next);
     if (!isAtx && !isSetext && !isRawHtml) continue;
 
     issues.push({

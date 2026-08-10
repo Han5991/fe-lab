@@ -626,13 +626,16 @@ test('strict: 발행 글의 excerpt 누락은 에러 (check-seo가 배포를 막
   );
 });
 
-test('strict: scheduled도 에러 — 예약일이 지나면 발행되므로 cron 빌드가 터진다', () => {
-  assert.ok(
+test('strict: 아직 공개 전인 예약 글은 에러가 아니다', () => {
+  // 에러 범위를 check-seo가 볼 수 있는 글(= 지금 빌드에 실리는 글)과 맞춘다.
+  // 공개일이 지나면 자동으로 에러가 된다(아래 8라운드 테스트 참고).
+  assert.deepEqual(
     strictErrors({
       title: 'x',
       status: 'scheduled',
-      date: '2026-12-01',
-    }).includes('missing-excerpt'),
+      date: '2999-12-01',
+    }),
+    [],
   );
 });
 
@@ -1110,4 +1113,51 @@ test('validateBodyHeadings: raw <h1> 태그도 알린다', () => {
   const issues = bodyH1Rules('<h1>raw 제목</h1>');
   assert.equal(issues.length, 1);
   assert.ok(issues[0].message.includes('<h1>'));
+});
+
+// ── 리뷰 8라운드 ─────────────────────────────────────────────────────────────
+
+test('strict: 공개 전 예약 글은 경고 — 스캐폴딩이 스스로 빌드를 막지 않도록', () => {
+  // `pnpm new-post --scheduled <미래>`는 excerpt: ''를 깔아준다. 이걸 에러로
+  // 두면 스캐폴딩 직후 pnpm build가 실패한다.
+  assert.deepEqual(
+    strictErrors({
+      title: 'x',
+      status: 'scheduled',
+      date: '2999-01-01',
+    }),
+    [],
+  );
+});
+
+test('strict: 예약일이 지난 글은 에러 — 이미 빌드에 실려 나간다', () => {
+  assert.ok(
+    strictErrors({
+      title: 'x',
+      status: 'scheduled',
+      date: '2020-01-01',
+    }).includes('missing-excerpt'),
+  );
+});
+
+test('validateBodyHeadings: 인라인 코드로 인용한 `<h1>`은 잡지 않는다', () => {
+  assert.deepEqual(bodyH1Rules('`<h1>` 태그는 이렇게 씁니다.'), []);
+});
+
+test('validateBodyHeadings: HTML 주석 안의 h1은 잡지 않는다', () => {
+  assert.deepEqual(bodyH1Rules('<!--\n# 지워둔 제목\n-->\n본문'), []);
+});
+
+test('이미지: 따옴표 없는 속성값도 읽는다 (HTML5 유효)', () => {
+  assert.deepEqual(
+    validateImageReferences(
+      rec(
+        { title: 'x', status: 'published' },
+        { content: '<img src=https://a.dev/x.png alt=다이어그램>' },
+      ),
+      '---\ntitle: x\n---\n',
+      { strict: true },
+    ),
+    [],
+  );
 });

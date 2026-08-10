@@ -6,7 +6,7 @@
  * 호출만 합니다 — 동작은 동일.)
  */
 import type { Metadata } from 'next';
-import type { PostData } from '@/domain/post';
+import { resolveExcerpt, type PostData } from '@/domain/post';
 import { resolveAbsoluteThumbnailUrl } from '@/domain/post/thumbnail';
 import { SITE_NAME, SITE_URL, TITLE_SUFFIX } from '@/lib/constants';
 
@@ -41,14 +41,18 @@ export function resolveSeoTitle(
   return post.seoTitle ?? post.title;
 }
 
-/** description: excerpt가 있으면 그대로, 없으면 본문 앞 160자(잘릴 때만 '...'). */
+/**
+ * description: excerpt가 있으면 그대로, 없으면 본문 앞부분 발췌.
+ *
+ * 폴백 계산은 도메인의 `resolveExcerpt` 하나를 씁니다. 예전에는 여기서 **마크다운
+ * 원문**을 그대로 160자 자르고 있어서, 이미지·코드만 있는 글처럼 평문이 비는
+ * 경우에 `#`·`*`·`![](…)` 같은 기호가 그대로 description으로 나갔습니다
+ * (그러면 check-seo가 길이와 말줄임 두 항목에서 걸어 배포를 막습니다).
+ */
 export function buildDescription(
   post: Pick<PostData, 'excerpt' | 'content'>,
 ): string {
-  if (post.excerpt) return post.excerpt;
-  return post.content.length > 160
-    ? post.content.slice(0, 160) + '...'
-    : post.content;
+  return resolveExcerpt(post.content, post.excerpt);
 }
 
 /**
