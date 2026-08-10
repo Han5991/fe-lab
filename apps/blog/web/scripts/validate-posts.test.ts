@@ -983,3 +983,19 @@ test('duplicate-description: draft와 메타 노트는 비교 대상이 아니�
     [],
   );
 });
+
+test('이미지: alt 안의 `>`에서 태그가 끊기지 않는다', () => {
+  // `alt="22분 > 8분"`을 `[\s\S]*?>`로 읽으면 alt 없는 이미지로 보여,
+  // 멀쩡한 이미지가 엄격 모드에서 빌드를 막는다.
+  assert.deepEqual(
+    validateImageReferences(
+      rec(
+        { title: 'x', status: 'published' },
+        { content: '<img src="https://a.dev/x.png" alt="22분 > 8분">' },
+      ),
+      '---\ntitle: x\n---\n',
+      { strict: true },
+    ),
+    [],
+  );
+});

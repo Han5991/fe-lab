@@ -298,3 +298,10 @@ test('isSeriesFolder: meta를 주입하면 디스크를 읽지 않는다', () =>
   // 2편 이상이면 meta와 무관하게 시리즈
   assert.equal(isSeriesFolder('없는폴더', 2, null), true);
 });
+
+test('isSeriesFolder: null을 명시하면 디스크를 읽지 않고 "메타 없음"', () => {
+  // `undefined`(미지정 → 조회)와 `null`(메타 없음)이 구분되어야 한다.
+  // bundler는 실제로 `_series.yml`이 있는 폴더라, 조회했다면 true가 나온다.
+  assert.equal(isSeriesFolder('bundler', 1, null), false);
+  assert.equal(isSeriesFolder('bundler', 1), true);
+});

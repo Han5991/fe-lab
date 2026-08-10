@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { getAllPosts, encodePostSlug } from '../domain/post';
 import type { PostData } from '../domain/post';
+import { sortByDateDesc } from '../domain/post/repository';
 import {
   SITE_URL as DEFAULT_SITE_URL,
   SITE_AUTHOR_GITHUB,
@@ -145,11 +146,10 @@ export function buildLlmsText(
 
   if (standalone.length > 0) {
     lines.push(`## 단독 포스트`, ``);
-    // 최신순(입력 순서)을 유지하되, 시리즈에서 내려온 글이 섞이므로 다시 정렬한다.
-    const ordered = [...standalone].sort((a, b) => {
-      const byDate = (b.date ?? '').localeCompare(a.date ?? '');
-      return byDate !== 0 ? byDate : a.slug.localeCompare(b.slug);
-    });
+    // 시리즈에서 내려온 글이 섞이므로 다시 정렬한다. 사이트 목록과 **같은 함수**를
+    // 쓴다 — 여기서 따로 비교자를 만들면 색인이 사이트와 다른 순서를 말하게 되고,
+    // 인자 없는 localeCompare는 repository.ts가 경고하는 ICU 의존 비교자다.
+    const ordered = sortByDateDesc(standalone);
     for (const post of ordered) {
       lines.push(`- [${post.title}](${postUrl(post)}): ${toSummary(post)}`);
     }

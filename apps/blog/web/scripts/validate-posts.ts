@@ -479,10 +479,15 @@ function decodeUrlSafe(url: string): string {
 const MARKDOWN_IMAGE = /!\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g;
 /**
  * raw HTML `<img …>` — rehype-raw로 살아나므로 마크다운 문법과 똑같이 렌더된다.
- * `[\s\S]`로 줄바꿈을 넘긴다: `<figure>` 안에서 속성을 여러 줄에 늘어놓는 형태가
- * 흔한데, 한 줄짜리로만 보면 그 이미지는 검사를 통째로 빠져나가 CI에서만 걸린다.
+ *
+ * 속성 값을 통째로 건너뛰는 형태다. 두 가지를 동시에 해결한다:
+ * - 줄바꿈을 넘긴다 — `<figure>` 안에서 속성을 여러 줄에 늘어놓는 형태가 흔한데,
+ *   한 줄짜리로만 보면 그 이미지는 검사를 통째로 빠져나가 CI에서만 걸린다.
+ * - 따옴표 안의 `>`에서 끊기지 않는다 — `alt="22분 > 8분"`처럼 부등호가 든 alt를
+ *   `[\s\S]*?>`로 읽으면 alt가 없는 것처럼 보여, 멀쩡한 이미지가 엄격 모드에서
+ *   빌드를 막는다.
  */
-const HTML_IMAGE = /<img\b[\s\S]*?>/gi;
+const HTML_IMAGE = /<img\b(?:[^>"']|"[^"]*"|'[^']*')*>/gi;
 
 /** `<img>` 태그에서 (alt, src)를 뽑는다. 속성이 없으면 빈 문자열. */
 function parseHtmlImage(tag: string): { alt: string; src: string } {

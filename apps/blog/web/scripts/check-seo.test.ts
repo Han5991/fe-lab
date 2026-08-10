@@ -58,12 +58,13 @@ test('parsePageSeo: content가 앞에 오는 meta도 읽는다', () => {
   assert.equal(parsePageSeo(html).ogLocale, 'ko_KR');
 });
 
-test('parsePageSeo: alt가 없거나 빈 img를 센다', () => {
+test('parsePageSeo: alt 속성이 아예 없는 img만 센다', () => {
+  // `alt=""`는 장식용 이미지의 올바른 마크업이라 위반이 아니다.
   const html = page(
     {},
     '<h1>t</h1><img src="a.png"/><img src="b.png" alt=""/><img src="c.png" alt="설명"/>',
   );
-  assert.equal(parsePageSeo(html).imagesMissingAlt, 2);
+  assert.equal(parsePageSeo(html).imagesMissingAlt, 1);
 });
 
 // ── checkPages ───────────────────────────────────────────────────────────────
@@ -235,4 +236,30 @@ test('checkPages: 인코딩을 풀어도 다르면 여전히 canonical-mismatch'
       ]),
     ).includes('canonical-mismatch'),
   );
+});
+
+test('checkPages: 장식용 alt=""는 위반이 아니다', () => {
+  // 홈의 FeaturedPost는 제목 바로 옆 썸네일이라 의도적으로 alt=""를 쓴다.
+  // 이걸 잡으면 손수 썸네일을 지정한 글이 최신 글이 되는 순간, frontmatter로는
+  // 고칠 수 없는 이유로 배포가 막힌다.
+  assert.deepEqual(
+    rules(
+      new Map([['/posts/a/', page({}, '<h1>t</h1><img src="a.png" alt=""/>')]]),
+    ),
+    [],
+  );
+});
+
+test('checkPages: alt 속성이 아예 없으면 missing-img-alt', () => {
+  assert.ok(
+    rules(
+      new Map([['/posts/a/', page({}, '<h1>t</h1><img src="a.png"/>')]]),
+    ).includes('missing-img-alt'),
+  );
+});
+
+test('parsePageSeo: alt 안의 `>`에서 태그가 끊기지 않는다', () => {
+  // `alt="22분 > 8분"` 같은 부등호. `[^>]*`로 읽으면 alt가 없는 것처럼 보인다.
+  const html = page({}, '<h1>t</h1><img src="a.png" alt="22분 > 8분"/>');
+  assert.equal(parsePageSeo(html).imagesMissingAlt, 0);
 });

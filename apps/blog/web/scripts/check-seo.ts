@@ -70,13 +70,26 @@ function countH1(html: string): number {
   return (body.match(/<h1[\s>]/gi) ?? []).length;
 }
 
-/** alt 속성이 아예 없거나 빈 문자열인 `<img>` 개수 */
+/**
+ * `<img …>` — 따옴표 안의 `>`(예: `alt="22분 > 8분"`)에서 끊기지 않도록
+ * 속성 값을 통째로 건너뜁니다.
+ */
+const HTML_IMAGE = /<img\b(?:[^>"']|"[^"]*"|'[^']*')*>/gi;
+
+/**
+ * alt 속성이 **아예 없는** `<img>` 개수.
+ *
+ * `alt=""`는 세지 않습니다 — 장식용 이미지의 올바른 마크업입니다. 실제로 홈의
+ * FeaturedPost는 제목 바로 옆에 놓인 썸네일이라 의도적으로 `alt=""`를 씁니다.
+ * 이걸 위반으로 잡으면 손수 썸네일을 지정한 글이 최신 글이 되는 순간, 글쓴이가
+ * frontmatter로는 고칠 수도 없는 이유로 배포가 막힙니다.
+ *
+ * 마크다운의 `![](…)`(빈 alt)는 거의 항상 실수라 `lint:posts`가 원문에서 따로
+ * 잡습니다 — 로컬이 더 엄격한 건 안전한 방향입니다(그 반대가 문제).
+ */
 function countImagesMissingAlt(html: string): number {
-  const imgs = html.match(/<img\b[^>]*>/gi) ?? [];
-  return imgs.filter(tag => {
-    const alt = tag.match(/\salt="([^"]*)"/i);
-    return !alt || alt[1].trim() === '';
-  }).length;
+  const imgs = html.match(HTML_IMAGE) ?? [];
+  return imgs.filter(tag => !/\salt\s*=/i.test(tag)).length;
 }
 
 export function parsePageSeo(html: string): PageSeo {

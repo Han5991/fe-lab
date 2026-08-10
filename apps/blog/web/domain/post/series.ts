@@ -66,11 +66,16 @@ export function isSeriesFolder(
   seriesName: string,
   postCount: number,
   // 디스크 접근(`_series.yml`)을 주입할 수 있게 열어 둔다 — 스크립트의 단위
-  // 테스트가 실제 posts/ 폴더 상태에 따라 흔들리지 않도록. 기본값은 실제 조회.
-  meta: SeriesMeta | null = getSeriesMeta(seriesName),
+  // 테스트가 실제 posts/ 폴더 상태에 따라 흔들리지 않도록.
+  //
+  // 기본 인자(`= getSeriesMeta(...)`)로 두지 않는 이유: 기본값은 **즉시 평가**되어
+  // 2편 이상이라 조회가 필요 없는 경우에도 파일을 읽는다. dev에서는 메타 캐시도
+  // 우회되므로 aggregate의 폴더별 필터가 매 요청마다 existsSync×2 + readFileSync를
+  // 돈다. `undefined`(미지정)와 `null`(메타 없음)도 여기서 구분된다.
+  meta?: SeriesMeta | null,
 ): boolean {
   if (postCount >= SERIES_MIN_POSTS) return true;
-  return meta !== null;
+  return (meta === undefined ? getSeriesMeta(seriesName) : meta) !== null;
 }
 
 /**
