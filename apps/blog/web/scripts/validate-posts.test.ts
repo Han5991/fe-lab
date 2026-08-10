@@ -1098,3 +1098,67 @@ test('안 닫힌 펜스는 unclosed-fence로 알리고 언어 라벨로 보지 �
   assert.ok(rulesFound.includes('unclosed-fence'));
   assert.ok(!rulesFound.includes('unregistered-code-language'));
 });
+
+// ── 리뷰 14라운드: 원문 날짜 정규화 ─────────────────────────────────────────
+
+test('strict: 무따옴표 date(YAML Date 객체)도 공개 판정에 쓰인다', () => {
+  // isPostVisible은 문자열 날짜만 인정한다(정규화된 PostData 전제). 원문을 그대로
+  // 넘기면 `new-post`가 쓰는 `date: 2026-08-10`(무따옴표 → Date 객체)이 "비공개"로
+  // 판정돼, 이미 공개된 예약 글의 strict 에러가 조용히 경고로 떨어진다.
+  const asError = (date: unknown) =>
+    validatePost(
+      rec({ title: 'x', status: 'scheduled', date }),
+      '---\ntitle: x\n---\n',
+      { strict: true },
+    )
+      .filter(i => i.rule === 'missing-excerpt')
+      .map(i => i.severity);
+
+  assert.deepEqual(asError('2020-01-01'), ['error']);
+  assert.deepEqual(asError(new Date('2020-01-01')), ['error']);
+  // 미래 예약은 둘 다 경고
+  assert.deepEqual(asError('2999-01-01'), ['warning']);
+  assert.deepEqual(asError(new Date('2999-01-01')), ['warning']);
+});
+
+test('duplicate-description: 공개 전 예약 글은 비교 대상이 아니다', () => {
+  // 산출물에 존재하지도 않는 충돌 때문에 이미 발행된 글의 빌드가 막히면 안 된다.
+  const issues = detectDuplicateDescriptions(
+    [
+      recFor('pub.md', {
+        title: 'A',
+        status: 'published',
+        excerpt: '같은 요약',
+      }),
+      recFor('fut.md', {
+        title: 'B',
+        status: 'scheduled',
+        date: '2999-01-01',
+        excerpt: '같은 요약',
+      }),
+    ],
+    { strict: true },
+  );
+  assert.deepEqual(issues, []);
+});
+
+test('duplicate-description: 공개일이 지난 예약 글은 비교 대상이다', () => {
+  const issues = detectDuplicateDescriptions(
+    [
+      recFor('pub.md', {
+        title: 'A',
+        status: 'published',
+        excerpt: '같은 요약',
+      }),
+      recFor('live.md', {
+        title: 'B',
+        status: 'scheduled',
+        date: '2020-01-01',
+        excerpt: '같은 요약',
+      }),
+    ],
+    { strict: true },
+  );
+  assert.equal(issues.length, 2);
+  assert.ok(issues.every(i => i.severity === 'error'));
+});

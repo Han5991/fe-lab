@@ -265,13 +265,18 @@ function main() {
   console.log(`  status: ${opts.status}`);
   if (opts.series) console.log(`  series: ${opts.series}`);
   if (opts.scheduledDate) console.log(`  scheduledDate: ${opts.scheduledDate}`);
-  // excerpt는 비워 둔 채로 시작한다(요약은 글을 쓰고 나야 나온다). 다만 발행
-  // 대상이 되는 순간 `pnpm build`가 이걸 에러로 막으므로, 미리 알려 준다.
-  if (opts.status !== 'draft') {
+  // excerpt는 비워 둔 채로 시작한다(요약은 글을 쓰고 나야 나온다). 다만 글이
+  // 공개되는 순간 `pnpm build`가 이걸 에러로 막으므로, 미리 알려 준다.
+  // 문구는 실제 동작과 맞춘다 — 예약 글은 **공개일이 지나야** 에러가 된다.
+  if (opts.status === 'published') {
     console.log(
-      `\n  ⚠ excerpt가 비어 있습니다. status가 ${opts.status}이면 \`pnpm build\`가 막습니다 —
-` +
-        `    글을 쓰고 나서 120~160자 요약을 채우거나, 쓰는 동안은 status: draft로 두세요.`,
+      `\n  ⚠ excerpt가 비어 있습니다. status: published라 지금 바로 \`pnpm build\`가 막힙니다 —
+` + `    120~160자 요약을 채우거나, 쓰는 동안은 status: draft로 두세요.`,
+    );
+  } else if (opts.status === 'scheduled') {
+    console.log(
+      `\n  ⚠ excerpt가 비어 있습니다. 지금은 경고지만 공개일이 지나면 \`pnpm build\`가 막습니다 —
+` + `    발행 전에 120~160자 요약을 채워 주세요.`,
     );
   }
 }

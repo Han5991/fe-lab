@@ -16,6 +16,7 @@ import {
   isPostFile,
   isPostVisible,
   resolveExcerpt,
+  toDateString,
 } from '@/domain/post';
 // 이름 목록만 있는 모듈에서 가져옵니다. registry.ts(=.tsx 컴포넌트 의존)를 직접
 // 참조하면 이 노드 스크립트가 React·Panda까지 끌고 들어옵니다.
@@ -117,12 +118,30 @@ export interface ValidateOptions {
  * 본문 h1(`body-h1`)은 여기 해당하지 않는다 — 렌더 계층이 h2로 강등해
  * check-seo의 h1 검사를 통과하므로 원문이 그대로여도 배포가 막히지 않는다.
  */
+/**
+ * frontmatter 원문으로 "지금 공개되는 글인가"를 판정합니다.
+ *
+ * `isPostVisible`은 날짜가 **문자열**일 때만 공개 시각으로 인정합니다(도메인은
+ * 정규화된 PostData를 받는 전제). 그런데 여기서 보는 건 gray-matter 원문이라,
+ * 따옴표 없이 쓴 `date: 2026-08-10`은 YAML이 **Date 객체**로 파싱합니다 —
+ * `new-post`가 정확히 그렇게 씁니다. 그대로 넘기면 이미 공개된 예약 글이
+ * "비공개"로 판정되어 strict 에러가 조용히 경고로 떨어집니다.
+ * repository가 PostData를 만들 때 쓰는 `toDateString`을 똑같이 거칩니다.
+ */
+function isVisibleFrontmatter(data: Record<string, unknown>): boolean {
+  return isPostVisible({
+    status: data.status,
+    date: toDateString(data.date),
+    scheduledDate: toDateString(data.scheduledDate),
+  } as Parameters<typeof isPostVisible>[0]);
+}
+
 function seoSeverity(
   data: Record<string, unknown>,
   { strict }: ValidateOptions,
 ): Severity {
   if (!strict || !isPostFile(data)) return 'warning';
-  return isPostVisible(data) ? 'error' : 'warning';
+  return isVisibleFrontmatter(data) ? 'error' : 'warning';
 }
 
 export function validatePost(
@@ -809,7 +828,9 @@ function deriveDefaultSlug(relPath: string): string {
  * 글자 단위로 겹칩니다(실제로 본편/DI편 두 쌍이 그랬습니다). 폴백 계산은 도메인의
  * resolveExcerpt 하나를 씁니다.
  *
- * draft는 빌드에서 빠지므로 제외합니다.
+ * 비교 대상은 **지금 빌드에 실리는 글**뿐입니다(seoSeverity와 같은 기준). 아직
+ * 공개 전인 예약 글을 섞으면, 산출물에는 존재하지도 않는 충돌 때문에 이미 발행된
+ * 글이 빌드를 막습니다.
  */
 export function detectDuplicateDescriptions(
   records: PostRecord[],
@@ -817,7 +838,8 @@ export function detectDuplicateDescriptions(
 ): Issue[] {
   const byDescription = new Map<string, PostRecord[]>();
   for (const record of records) {
-    if (!isPostFile(record.data) || record.data.status === 'draft') continue;
+    if (!isPostFile(record.data) || !isVisibleFrontmatter(record.data))
+      continue;
     const description = resolveExcerpt(record.content, record.data.excerpt);
     const arr = byDescription.get(description) ?? [];
     arr.push(record);

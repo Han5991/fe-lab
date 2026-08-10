@@ -46,7 +46,7 @@ export function resolveExcerpt(content: string, explicit?: unknown): string {
  * - 문자열인 경우(`date: '2025-01-01'`) → 그대로
  * - 그 외 → null
  */
-function toDateString(value: unknown): string | null {
+export function toDateString(value: unknown): string | null {
   if (value instanceof Date) return value.toISOString().split('T')[0];
   if (typeof value === 'string') return value;
   return null;
