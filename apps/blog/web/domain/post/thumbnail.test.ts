@@ -7,6 +7,7 @@ import {
   isOptimizableThumbnail,
   thumbnailWebpRelPath,
 } from './thumbnail';
+import { SITE_URL, OG_DEFAULT_IMAGE } from '../../lib/constants';
 
 // 인코딩 결과 상수 (실제 encodeURIComponent / encodePostSlug 출력으로 확정)
 const ENC_BUNDLER = '%EB%B2%88%EB%93%A4%EB%9F%AC'; // '번들러'
@@ -40,7 +41,7 @@ test('resolveThumbnailUrl: 한글/중첩 slug는 세그먼트별 인코딩 (구�
 });
 
 test('resolveThumbnailUrl: slug가 빈 문자열이면 기본 OG 이미지로 fallback', () => {
-  assert.equal(resolveThumbnailUrl(p({ slug: '' })), '/og-default.png');
+  assert.equal(resolveThumbnailUrl(p({ slug: '' })), OG_DEFAULT_IMAGE);
 });
 
 test('resolveThumbnailUrl: https URL은 그대로 반환', () => {
@@ -152,7 +153,7 @@ test('resolveAbsoluteThumbnailUrl: 생성된 OG 카드에 SITE_URL prefix', () =
 test('resolveAbsoluteThumbnailUrl: slug 없으면 기본 OG 이미지에 SITE_URL prefix', () => {
   assert.equal(
     resolveAbsoluteThumbnailUrl(p({ slug: '' })),
-    'https://blog.sangwook.dev/og-default.png',
+    `${SITE_URL}${OG_DEFAULT_IMAGE}`,
   );
 });
 

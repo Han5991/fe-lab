@@ -234,6 +234,19 @@ export function validatePost(
     });
   } else if (typeof data.excerpt === 'string') {
     const len = data.excerpt.length;
+    // check-seo는 최종 HTML만 보므로 "말줄임으로 끝나는 description"이 자동 발췌가
+    // 샌 것인지 저자가 그렇게 쓴 것인지 구분하지 못하고 배포를 막는다. 여기서 같은
+    // 조건을 먼저 잡아, 로컬은 통과하고 CI만 실패하는 상황을 없앤다.
+    if (/(\.\.\.|…)$/.test(data.excerpt.trimEnd())) {
+      issues.push({
+        file: relPath,
+        line: findFrontmatterLine(raw, 'excerpt'),
+        severity: publishSeverity,
+        rule: 'truncated-excerpt',
+        message:
+          '`excerpt`가 말줄임(`...`/`…`)으로 끝납니다. 자동 발췌가 샌 것과 구분되지 않아 배포 검사(check-seo)가 막습니다 — 문장을 끝맺어 주세요.',
+      });
+    }
     if (len < SEO_DESCRIPTION_MIN_LENGTH || len > SEO_DESCRIPTION_MAX_LENGTH) {
       issues.push({
         file: relPath,
@@ -442,19 +455,46 @@ function frontmatterOffset(raw: string): number {
 
 /** 마크다운 `![alt](src)` — alt는 비어 있을 수 있다. */
 const MARKDOWN_IMAGE = /!\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g;
-/** raw HTML `<img …>` — rehype-raw로 살아나므로 마크다운 문법과 똑같이 렌더된다. */
-const HTML_IMAGE = /<img\b[^>]*>/gi;
+/**
+ * raw HTML `<img …>` — rehype-raw로 살아나므로 마크다운 문법과 똑같이 렌더된다.
+ * `[\s\S]`로 줄바꿈을 넘긴다: `<figure>` 안에서 속성을 여러 줄에 늘어놓는 형태가
+ * 흔한데, 한 줄짜리로만 보면 그 이미지는 검사를 통째로 빠져나가 CI에서만 걸린다.
+ */
+const HTML_IMAGE = /<img\b[\s\S]*?>/gi;
 
 /** `<img>` 태그에서 (alt, src)를 뽑는다. 속성이 없으면 빈 문자열. */
 function parseHtmlImage(tag: string): { alt: string; src: string } {
   const attr = (name: string) =>
-    tag.match(new RegExp(`\\s${name}=("([^"]*)"|'([^']*)')`, 'i'));
+    tag.match(new RegExp(`\\s${name}\\s*=\\s*("([^"]*)"|'([^']*)')`, 'i'));
   const alt = attr('alt');
   const src = attr('src');
   return {
     alt: alt ? (alt[2] ?? alt[3] ?? '') : '',
     src: src ? (src[2] ?? src[3] ?? '') : '',
   };
+}
+
+/**
+ * 검사 대상이 아닌 구간을 **길이를 유지한 채** 공백으로 덮은 본문을 만듭니다.
+ *
+ * 덮는 곳은 둘입니다.
+ * - 코드 펜스 안: 이미지 문법이 있어도 코드 **예시**다.
+ * - 인라인 코드(`` `<img src="x">` ``): 문서에 태그를 인용한 것이지 이미지가 아니다.
+ *   엄격 모드에서 이건 고칠 수 없는 에러가 되어 빌드를 막는다.
+ *
+ * 길이를 유지하는 건 match.index로 줄 번호를 그대로 계산하기 위해서입니다.
+ * 줄 단위로 잘라 검사하면 여러 줄에 걸친 `<img …>`를 놓칩니다.
+ */
+export function maskNonProse(content: string): string {
+  return scanBodyLines(content)
+    .map(({ text, inFence }) => {
+      if (inFence) return ' '.repeat(text.length);
+      // 인라인 코드: 여는 백틱과 같은 개수로 닫히는 구간.
+      return text.replace(/(`+)(?:(?!\1)[\s\S])*?\1/g, m =>
+        ' '.repeat(m.length),
+      );
+    })
+    .join('\n');
 }
 
 export function validateImageReferences(
@@ -465,62 +505,61 @@ export function validateImageReferences(
   const { absPath, relPath } = record;
   const issues: Issue[] = [];
   const offset = frontmatterOffset(raw);
-  // 코드 펜스 안의 이미지 문법은 **코드 예시**다. 검사하면 고칠 수 없는 지적이
-  // 나온다(마크다운 사용법을 설명하는 글의 ```md 블록 등).
-  const bodyLines = scanBodyLines(record.content).filter(l => !l.inFence);
+  const prose = maskNonProse(record.content);
+  const lineOf = (index: number) =>
+    offset + prose.slice(0, index).split('\n').length;
 
-  for (const { text, index } of bodyLines) {
-    const found: { alt: string; ref: string }[] = [
-      ...[...text.matchAll(MARKDOWN_IMAGE)].map(m => ({
-        alt: m[1],
-        ref: m[2],
-      })),
-      // raw HTML `<img>`도 함께 본다. 마크다운 문법만 검사하면 `<img src="x">`로
-      // 쓴 이미지는 prebuild를 통과하고 check-seo(최종 HTML의 모든 <img>를 센다)
-      // 에서만 걸려, strict 모드가 없애려던 "로컬은 통과 · CI만 실패"가 되살아난다.
-      ...[...text.matchAll(HTML_IMAGE)].map(tag => {
-        const { alt, src } = parseHtmlImage(tag[0]);
-        return { alt, ref: src };
-      }),
-    ];
+  const found = [
+    ...[...prose.matchAll(MARKDOWN_IMAGE)].map(m => ({
+      alt: m[1],
+      ref: m[2],
+      index: m.index,
+    })),
+    // raw HTML `<img>`도 함께 본다. 마크다운 문법만 검사하면 `<img src="x">`로
+    // 쓴 이미지는 prebuild를 통과하고 check-seo(최종 HTML의 모든 <img>를 센다)
+    // 에서만 걸려, strict 모드가 없애려던 "로컬은 통과 · CI만 실패"가 되살아난다.
+    ...[...prose.matchAll(HTML_IMAGE)].map(m => {
+      const { alt, src } = parseHtmlImage(m[0]);
+      return { alt, ref: src, index: m.index };
+    }),
+  ].sort((a, b) => a.index - b.index);
 
-    for (const { alt, ref } of found) {
-      // alt가 비면 스크린리더는 파일 URL을 읽거나 그냥 건너뛴다. 이미지가 다이어그램인
-      // 이 블로그에서는 그림이 설명의 본체인 경우가 많아서 내용이 통째로 사라진다.
-      // (장식용 이미지라면 alt를 비우는 게 맞지만, 지금까지 빈 alt는 전부 실수였다.)
-      //
-      // 빌드에서 제외되는 메타 노트는 렌더될 일이 없으므로 검사하지 않는다 —
-      // validatePost·validateBodyHeadings와 같은 기준(isPostFile).
-      if (alt.trim() === '' && isPostFile(record.data)) {
-        issues.push({
-          file: relPath,
-          line: offset + index + 1,
-          severity: seoSeverity(record.data, options),
-          rule: 'missing-image-alt',
-          message: `이미지에 alt 텍스트가 없습니다 — 스크린리더가 읽을 설명을 적어주세요: ${ref || '(src 없음)'}`,
-        });
-      }
+  for (const { alt, ref, index } of found) {
+    // alt가 비면 스크린리더는 파일 URL을 읽거나 그냥 건너뛴다. 이미지가 다이어그램인
+    // 이 블로그에서는 그림이 설명의 본체인 경우가 많아서 내용이 통째로 사라진다.
+    // (장식용 이미지라면 alt를 비우는 게 맞지만, 지금까지 빈 alt는 전부 실수였다.)
+    //
+    // 빌드에서 제외되는 메타 노트는 렌더될 일이 없으므로 검사하지 않는다 —
+    // validatePost·validateBodyHeadings와 같은 기준(isPostFile).
+    if (alt.trim() === '' && isPostFile(record.data)) {
+      issues.push({
+        file: relPath,
+        line: lineOf(index),
+        severity: seoSeverity(record.data, options),
+        rule: 'missing-image-alt',
+        message: `이미지에 alt 텍스트가 없습니다 — 스크린리더가 읽을 설명을 적어주세요: ${ref || '(src 없음)'}`,
+      });
+    }
 
-      if (
-        !ref ||
-        /^https?:\/\//.test(ref) ||
-        ref.startsWith('/') ||
-        ref.startsWith('data:')
-      ) {
-        continue;
-      }
+    if (
+      !ref ||
+      /^https?:\/\//.test(ref) ||
+      ref.startsWith('/') ||
+      ref.startsWith('data:')
+    ) {
+      continue;
+    }
 
-      const cleanRef = decodeURIComponent(ref.split('#')[0].split('?')[0]);
-      const resolved = resolve(dirname(absPath), cleanRef);
-      if (!existsSync(resolved)) {
-        issues.push({
-          file: relPath,
-          line: offset + index + 1,
-          severity: 'error',
-          rule: 'missing-image',
-          message: `이미지 파일을 찾을 수 없습니다: ${cleanRef}`,
-        });
-      }
+    const cleanRef = decodeURIComponent(ref.split('#')[0].split('?')[0]);
+    const resolved = resolve(dirname(absPath), cleanRef);
+    if (!existsSync(resolved)) {
+      issues.push({
+        file: relPath,
+        line: lineOf(index),
+        severity: 'error',
+        rule: 'missing-image',
+        message: `이미지 파일을 찾을 수 없습니다: ${cleanRef}`,
+      });
     }
   }
   return issues;
@@ -640,15 +679,29 @@ export function validateBodyHeadings(record: PostRecord, raw: string): Issue[] {
   const issues: Issue[] = [];
   const offset = frontmatterOffset(raw);
 
-  for (const { text, index, inFence } of scanBodyLines(record.content)) {
-    if (inFence || !/^# /.test(text)) continue;
+  const lines = scanBodyLines(record.content);
+  for (const { text, index, inFence } of lines) {
+    if (inFence) continue;
+
+    // ATX(`# 제목`)와 setext(`제목` 다음 줄에 `===`) 둘 다 h1로 렌더된다.
+    // ATX만 보면 setext h1은 조용히 강등되고 경고도 안 나와, 이 규칙이 존재하는
+    // 이유(조용한 교정을 드러내기)가 그대로 무너진다.
+    const isAtx = /^# /.test(text);
+    const next = lines[index + 1];
+    const isSetext =
+      text.trim() !== '' &&
+      !/^#{1,6} /.test(text) &&
+      next !== undefined &&
+      !next.inFence &&
+      /^ {0,3}=+\s*$/.test(next.text);
+    if (!isAtx && !isSetext) continue;
 
     issues.push({
       file: record.relPath,
       line: offset + index + 1,
       severity: 'warning',
       rule: 'body-h1',
-      message: `본문에 h1(\`# \`)이 있습니다 — 페이지의 h1은 글 제목 하나뿐이어야 합니다. 제목의 중복이면 줄을 지우고, 절 제목이면 \`## \`로 내리세요. (렌더 시에는 h2로 강등되지만 원문은 그대로입니다): ${text.trim()}`,
+      message: `본문에 h1(${isAtx ? '`# `' : '밑줄 `===`'})이 있습니다 — 페이지의 h1은 글 제목 하나뿐이어야 합니다. 제목의 중복이면 줄을 지우고, 절 제목이면 \`## \`로 내리세요. (렌더 시에는 h2로 강등되지만 원문은 그대로입니다): ${text.trim()}`,
     });
   }
 

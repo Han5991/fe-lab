@@ -5,7 +5,16 @@ export const SITE_URL = 'https://blog.sangwook.dev';
 export const SITE_NAME = 'Frontend Lab';
 export const SITE_DESCRIPTION =
   '프론트엔드 기술 실험과 깊이 있는 학습 내용을 공유하는 공간입니다.';
-export const OG_DEFAULT_IMAGE = '/og-default.png';
+/**
+ * 글별 OG 카드가 없을 때 쓰는 기본 공유 이미지.
+ *
+ * 확장자가 `.jpg`인 이유: 원래 파일은 **JPEG인데 이름만 `.png`**였고(1024×1024,
+ * 384KB) 메타데이터는 1200×630이라고 알리고 있었다. 크기를 선언과 맞추고 형식도
+ * 이름과 맞췄다. 부드러운 그라데이션이라 PNG로 무손실 저장하면 435KB까지 붇는 반면
+ * JPEG는 33KB에 눈에 띄는 손실이 없다(팔레트 PNG는 sharp가 16색으로 떨어뜨려
+ * 그라데이션에 띠가 생겼다).
+ */
+export const OG_DEFAULT_IMAGE = '/og-default.jpg';
 /**
  * 모든 페이지 `<title>`에 붙는 접미사. 길이 예산을 계산하는 쪽(lint:posts)과
  * 실제로 붙이는 쪽(postSeo)이 같은 값을 봐야 해서 여기 한 곳에 둔다.

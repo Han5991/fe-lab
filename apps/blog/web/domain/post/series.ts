@@ -62,9 +62,15 @@ export const SERIES_MIN_POSTS = 2;
  *
  * 한 편짜리 폴더는 글이 하나 더 들어오는 순간 자동으로 시리즈가 된다.
  */
-export function isSeriesFolder(seriesName: string, postCount: number): boolean {
+export function isSeriesFolder(
+  seriesName: string,
+  postCount: number,
+  // 디스크 접근(`_series.yml`)을 주입할 수 있게 열어 둔다 — 스크립트의 단위
+  // 테스트가 실제 posts/ 폴더 상태에 따라 흔들리지 않도록. 기본값은 실제 조회.
+  meta: SeriesMeta | null = getSeriesMeta(seriesName),
+): boolean {
   if (postCount >= SERIES_MIN_POSTS) return true;
-  return getSeriesMeta(seriesName) !== null;
+  return meta !== null;
 }
 
 /**

@@ -289,3 +289,12 @@ test('isSeriesFolder: _series.yml이 있으면 1편이어도 시리즈', () => {
   // 선언한 것이므로 존중한다.
   assert.equal(isSeriesFolder('ci', 1), true);
 });
+
+test('isSeriesFolder: meta를 주입하면 디스크를 읽지 않는다', () => {
+  // 스크립트(generate-llms)의 단위 테스트가 실제 posts/ 폴더 상태에 따라
+  // 흔들리지 않도록 열어 둔 인자.
+  assert.equal(isSeriesFolder('없는폴더', 1, { name: '없는폴더' }), true);
+  assert.equal(isSeriesFolder('없는폴더', 1, null), false);
+  // 2편 이상이면 meta와 무관하게 시리즈
+  assert.equal(isSeriesFolder('없는폴더', 2, null), true);
+});

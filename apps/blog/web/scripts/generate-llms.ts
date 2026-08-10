@@ -125,7 +125,8 @@ export function buildLlmsText(
   for (const [seriesId, folderPosts] of byFolder) {
     const meta = seriesMeta(seriesId);
     // 한 편짜리 폴더는 시리즈가 아니다 — `/series` 페이지와 같은 판정.
-    if (!isSeriesFolder(seriesId, folderPosts.length) && !meta) {
+    // meta를 넘겨 주입된 조회를 쓰게 한다(기본 인자는 디스크를 읽는다).
+    if (!isSeriesFolder(seriesId, folderPosts.length, meta)) {
       standalone.push(...folderPosts);
       continue;
     }

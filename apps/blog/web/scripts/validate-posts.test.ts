@@ -5,6 +5,7 @@ import {
   validateBodyHeadings,
   validateImageReferences,
   scanBodyLines,
+  maskNonProse,
   detectDuplicateSlugs,
   type PostRecord,
 } from './validate-posts';
@@ -795,4 +796,113 @@ test('이미지: 한 줄에 이미지가 여럿이어도 각각 잡는다', () =
     '---\ntitle: x\n---\n',
   );
   assert.equal(found.length, 2);
+});
+
+// ── maskNonProse (검사 제외 구간) ─────────────────────────────────────────────
+
+test('maskNonProse: 길이를 유지한 채 덮는다 (줄 번호 계산이 어긋나지 않도록)', () => {
+  const content = '앞\n```ts\ncode\n```\n뒤';
+  const masked = maskNonProse(content);
+  assert.equal(masked.length, content.length);
+  assert.equal(masked.split('\n').length, content.split('\n').length);
+});
+
+test('maskNonProse: 인라인 코드도 덮는다', () => {
+  assert.equal(maskNonProse('앞 `<img>` 뒤'), '앞         뒤');
+});
+
+test('이미지: 여러 줄에 걸친 raw <img>도 잡는다', () => {
+  // <figure> 안에서 속성을 여러 줄로 늘어놓는 형태. 줄 단위로만 보면 통째로
+  // 빠져나가 CI(check-seo)에서만 걸린다.
+  const found = validateImageReferences(
+    rec(
+      { title: 'x', status: 'published' },
+      {
+        content:
+          '<figure>\n  <img\n    src="https://a.dev/x.png"\n  />\n</figure>',
+      },
+    ),
+    '---\ntitle: x\n---\n',
+    { strict: true },
+  );
+  assert.deepEqual(
+    found.map(i => i.rule),
+    ['missing-image-alt'],
+  );
+});
+
+test('이미지: 인라인 코드로 인용한 <img>는 검사하지 않는다', () => {
+  // 태그를 문서에 인용한 것이지 이미지가 아니다. 엄격 모드에서 이건 고칠 수 없는
+  // 에러가 되어 빌드를 막았다.
+  assert.deepEqual(
+    validateImageReferences(
+      rec(
+        { title: 'x', status: 'published' },
+        { content: '`<img src="x">` 처럼 쓰면 됩니다.' },
+      ),
+      '---\ntitle: x\n---\n',
+      { strict: true },
+    ),
+    [],
+  );
+});
+
+test('이미지: 줄 번호는 실제 파일 줄을 가리킨다', () => {
+  const found = validateImageReferences(
+    rec(
+      { title: 'x', status: 'published' },
+      { content: '\n\n![](https://a.dev/x.png)' },
+    ),
+    '---\ntitle: x\nstatus: published\n---\n',
+  );
+  // frontmatter 4줄 + 본문 3번째 줄
+  assert.equal(found[0].line, 7);
+});
+
+// ── setext h1 ────────────────────────────────────────────────────────────────
+
+test('validateBodyHeadings: setext h1(`제목` + `===`)도 잡는다', () => {
+  // ATX만 보면 setext h1은 조용히 h2로 강등되고 경고도 안 나와, 이 규칙이
+  // 존재하는 이유(조용한 교정을 드러내기)가 무너진다.
+  const issues = bodyH1Rules('제목입니다\n=====\n\n본문');
+  assert.equal(issues.length, 1);
+  assert.equal(issues[0].rule, 'body-h1');
+  assert.equal(issues[0].line, 5);
+});
+
+test('validateBodyHeadings: setext h2(`---`)는 h1이 아니므로 잡지 않는다', () => {
+  assert.deepEqual(bodyH1Rules('절 제목\n-----\n\n본문'), []);
+});
+
+test('validateBodyHeadings: 코드 펜스 안의 `===`는 setext가 아니다', () => {
+  assert.deepEqual(bodyH1Rules('```text\n제목\n===\n```\n'), []);
+});
+
+// ── truncated-excerpt ────────────────────────────────────────────────────────
+
+test('validatePost: 말줄임으로 끝나는 excerpt → truncated-excerpt', () => {
+  // check-seo는 최종 HTML만 보므로 자동 발췌가 샌 것과 구분하지 못하고 배포를
+  // 막는다. 같은 조건을 여기서 먼저 잡아 로컬/CI 판정을 맞춘다.
+  for (const suffix of ['...', '…']) {
+    assert.ok(
+      rules({
+        title: 'x',
+        status: 'published',
+        date: '2025-01-01',
+        excerpt: '가'.repeat(127) + suffix,
+      }).includes('truncated-excerpt'),
+      suffix,
+    );
+  }
+});
+
+test('validatePost: 정상적으로 끝나는 excerpt는 truncated-excerpt가 아니다', () => {
+  assert.ok(
+    !rules({
+      title: 'x',
+      status: 'published',
+      date: '2025-01-01',
+      excerpt: VALID_EXCERPT,
+    }).includes('truncated-excerpt'),
+  );
 });
