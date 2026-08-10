@@ -6,12 +6,6 @@ overrides:
   # next(8.4.31 고정)와 @pandacss/*(8.5.14 고정)가 각자 exact 핀을 걸어서, 오버라이드를
   # 빼면 postcss가 8.4.31/8.5.14/8.5.18 세 벌로 갈라진다. 한 벌로 dedupe하기 위해 유지.
   postcss: 8.5.26
-  # GHSA-f88m-g3jw-g9cj(high)가 0.35.0에서만 패치됐는데 next가 ^0.34.5로 optional 핀.
-  # next가 0.35 라인을 허용하면 제거할 것.
-  # 블로그의 Next Image Optimization은 images.unoptimized로 꺼져 있지만, 그것과 별개로
-  # apps/blog/web/scripts/generate-thumbnails.ts가 빌드 타임 썸네일 WebP 변환에 sharp를
-  # 직접 쓴다 — 실사용 의존성이므로 이 override와 allowBuilds.sharp를 함부로 지우지 말 것.
-  sharp: 0.35.3
 
 allowBuilds:
   esbuild: true
