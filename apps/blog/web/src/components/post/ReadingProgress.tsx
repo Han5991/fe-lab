@@ -45,8 +45,13 @@ export const ReadingProgress = () => {
       aria-hidden="true"
       className={css({
         pos: 'fixed',
-        top: '14',
-        left: '0',
+        // 크롬 바로 아래에 붙는다. 좁은 화면은 상단 바(52px) 아래, 넓은 화면은
+        // 세로 레일이라 위쪽에 가릴 것이 없으므로 화면 맨 위다. 예전에는 52px
+        // 헤더에 맞춘 `top: '14'`(56px)가 하드코딩돼 있어서, 헤더가 사라지면
+        // 진행률 바가 본문 위 56px 지점을 가로지른다.
+        top: { base: '[52px]', lg: '0' },
+        // 레일이 차지한 폭은 비운다 — 안 그러면 바가 레일 위로 지나간다.
+        left: { base: '0', lg: '[64px]' },
         right: '0',
         h: '[3px]',
         zIndex: '9',

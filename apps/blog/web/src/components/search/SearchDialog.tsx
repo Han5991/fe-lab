@@ -11,6 +11,7 @@ import { useRouter } from 'next/navigation';
 import { css } from '@design-system/ui-lib/css';
 import { Search, X, Clock } from 'lucide-react';
 import { getRecentViews, type RecentView } from '@/src/hooks/useRecentViews';
+import { Portal } from '@/src/components/Portal';
 
 interface SearchPost {
   slug: string;
@@ -66,7 +67,16 @@ function pickContentSnippet(
   return `${prefix}${content.slice(start, end)}${suffix}`;
 }
 
-export const SearchDialog = () => {
+interface SearchDialogProps {
+  /**
+   * `rail`은 64px 세로 레일 안에 서는 형태다 — 넓은 화면에서도 아이콘만 남긴다.
+   * 기본값(`bar`)은 `md`부터 `검색` 라벨과 `⌘K` 힌트를 함께 보여주는데,
+   * 그대로 두면 레일 폭을 넘쳐 왼쪽으로 삐져나온다.
+   */
+  variant?: 'bar' | 'rail';
+}
+
+export const SearchDialog = ({ variant = 'bar' }: SearchDialogProps = {}) => {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [posts, setPosts] = useState<SearchPost[]>([]);
@@ -203,6 +213,13 @@ export const SearchDialog = () => {
     }
   }, [selectedIndex]);
 
+  // 레일에서는 라벨·단축키 힌트를 숨기고 아이콘만 남긴다. `md` 이상에서만
+  // 보이던 것들이라, 조건을 통째로 `none`으로 덮어써야 넓은 화면에서도 접힌다.
+  const compact = variant === 'rail';
+  const labelDisplay = compact
+    ? ('none' as const)
+    : ({ base: 'none', md: 'inline' } as const);
+
   if (!isOpen) {
     return (
       <button
@@ -211,7 +228,7 @@ export const SearchDialog = () => {
           display: 'flex',
           alignItems: 'center',
           gap: '2',
-          px: { base: '2', md: '3' },
+          px: compact ? '2' : { base: '2', md: '3' },
           py: '1.5',
           rounded: 'lg',
           borderWidth: '[1px]',
@@ -223,18 +240,16 @@ export const SearchDialog = () => {
           _active: { bg: 'paper.100' },
           transition: '[all 0.2s]',
           bg: 'transparent',
-          minW: { base: '[36px]', md: 'auto' },
+          minW: compact ? '[36px]' : { base: '[36px]', md: 'auto' },
           justifyContent: 'center',
         })}
         aria-label="검색"
       >
         <Search size={16} />
-        <span className={css({ display: { base: 'none', md: 'inline' } })}>
-          검색
-        </span>
+        <span className={css({ display: labelDisplay })}>검색</span>
         <kbd
           className={css({
-            display: { base: 'none', md: 'inline' },
+            display: labelDisplay,
             px: '1.5',
             py: '0.5',
             rounded: 'md',
@@ -250,7 +265,13 @@ export const SearchDialog = () => {
   }
 
   return (
-    <>
+    // body로 portal한다. 이 오버레이는 사이트 크롬(SiteRail) 안에서 렌더되는데,
+    // 크롬은 좁은 화면에서 `backdrop-filter`를 쓰고 넓은 화면에서는 64px짜리
+    // 세로 레일이다. `backdrop-filter`는 fixed 자손의 containing block을 만들고,
+    // 레일은 애초에 폭이 64px이라 — 둘 중 무엇이든 `w:100vw` 백드롭과
+    // `left:50% + translateX(-50%)` 센터 모달의 기준이 화면이 아니라 크롬 박스가
+    // 된다(모달이 왼쪽 32px 근처에 찌그러져 뜬다). 루트로 빼면 기준이 화면이다.
+    <Portal>
       {/* 백드롭 */}
       <div
         className={css({
@@ -486,6 +507,6 @@ export const SearchDialog = () => {
           </div>
         </div>
       </div>
-    </>
+    </Portal>
   );
 };
