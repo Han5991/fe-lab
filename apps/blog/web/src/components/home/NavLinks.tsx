@@ -52,16 +52,7 @@ const activeStyle = css.raw({
   _hover: { color: 'accent.700' },
 });
 
-interface NavLinksProps {
-  /**
-   * `rail`은 세로 사이드 레일용이다 — 좁은 화면에서는 상단 바가 되므로
-   * 가로/세로 전환을 이 컴포넌트가 함께 책임진다. 호출부가 flexDir만 바꾸면
-   * 글자는 여전히 가로로 누워 64px 레일을 넘친다.
-   */
-  variant?: 'bar' | 'rail';
-}
-
-export function NavLinks({ variant = 'bar' }: NavLinksProps = {}) {
+export function NavLinks() {
   const pathname = usePathname();
 
   return (
@@ -72,13 +63,6 @@ export function NavLinks({ variant = 'bar' }: NavLinksProps = {}) {
         alignItems: 'center',
         // 좁은 화면에서 로고+네비+검색+토글이 한 줄에 들어가도록 gap만 줄인다.
         gap: { base: '[14px]', md: '[20px]' },
-        ...(variant === 'rail'
-          ? {
-              // lg 미만에서는 레일이 상단 바로 눕는다 — 그때는 bar와 같은 가로쓰기다.
-              writingMode: { base: '[horizontal-tb]', lg: '[vertical-rl]' },
-              gap: { base: '[14px]', lg: '[18px]' },
-            }
-          : {}),
       })}
     >
       {NAV_ITEMS.map(item => {
