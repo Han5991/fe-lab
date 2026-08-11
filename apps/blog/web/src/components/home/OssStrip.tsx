@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { css, cx } from '@design-system/ui-lib/css';
 import { MERGED_PR_COUNT_FALLBACK } from '@/lib/constants';
-import { DiscoveryBand } from './DiscoveryBand';
+import { DiscoveryBand } from '@/src/components/blog/DiscoveryBand';
 
 /**
  * 오픈소스 기여를 칩 한 줄로만 노출합니다. 네비에서는 뺐고(SPEC §1), 자세한

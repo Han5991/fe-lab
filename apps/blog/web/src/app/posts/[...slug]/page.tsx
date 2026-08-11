@@ -15,6 +15,7 @@ import { isPostVisible } from '@/domain/post/visibility';
 import { notFound } from 'next/navigation';
 import PostClient from './PostClient';
 import { PreviewBanner } from '@/src/components/preview/PreviewBanner';
+import { DiscoveryBand } from '@/src/components/blog/DiscoveryBand';
 import { PostNavigation } from '@/src/components/post/PostNavigation';
 import {
   buildPostMetadata,
@@ -124,6 +125,9 @@ export default async function PostPage({ params }: Props) {
           하단 패딩이 이미 그 간격을 만들기 때문 — 둘 다 주면 댓글과 네비 사이가
           200px 가까이 벌어진다. */}
       <div className={css({ maxW: 'articleW', mx: 'auto', px: '8' })}>
+        {/* 홈의 발견 면과 같은 밴드 머리. 이동 카드가 아무 예고 없이 나오던
+            자리에 라벨을 세워, 글이 끝나고 다음 갈 곳이 시작된다는 걸 알린다. */}
+        <DiscoveryBand id="post-nav" title="이어지는 글" />
         <PostNavigation prev={prev} next={next} seriesNav={seriesNav} />
       </div>
     </>

@@ -3,7 +3,7 @@ import { css } from '@design-system/ui-lib/css';
 // 배럴(`@/src/components/blog`)이 아니라 파일을 직접 가리킨다. 배럴은
 // PostsArchiveView까지 끌고 오고 그 끝에 Supabase 클라이언트가 있어서,
 // 이 리프 컴포넌트를 렌더하는 테스트가 환경변수 없이는 뜨지 않는다.
-import { Label } from '@/src/components/blog/Label';
+import { Label } from './Label';
 
 interface DiscoveryBandProps {
   /** 아래 목록이 `aria-labelledby`로 가리킬 id. */

@@ -15,19 +15,22 @@ interface PostNavigationProps {
   } | null;
 }
 
-// 위계는 그림자 없이 hairline 보더 하나로만 만들고, hover에서 보더만 진해진다.
+// 상자를 세우지 않는다. 홈이 발견 면을 밴드 머리 + hairline으로 나누면서
+// 대표 글의 카드도 걷어냈고, 글 하단의 이동 카드만 상자로 남으면 같은 지면에
+// 두 가지 어휘가 섞인다. 구분은 위쪽 hairline 하나로 충분하고, hover는
+// 보더 대신 제목 색이 받는다(보더가 없으니 진하게 만들 것도 없다).
 const cardStyle = css.raw({
   display: 'flex',
   flexDir: 'column',
   gap: '1',
   flex: '1',
-  borderWidth: '[1px]',
-  borderStyle: 'solid',
+  minW: '0',
+  px: '[2px]',
+  py: '[14px]',
+  borderTopWidth: 'hairline',
+  borderTopStyle: 'solid',
   borderColor: 'ink.border',
-  rounded: 'card',
-  p: '[16px]',
-  transition: '[border-color 0.15s]',
-  _hover: { borderColor: 'ink.borderStrong' },
+  _hover: { '& [data-nav-title]': { color: 'accent.700' } },
 });
 
 // 다음 글 카드만 우측 정렬. 모바일은 세로 스택이라 좌측 정렬을 유지한다.
@@ -46,6 +49,7 @@ const titleStyle = css.raw({
   fontSize: '[14px]',
   fontWeight: 'medium',
   color: 'accent.600',
+  transition: '[color 0.15s]',
 });
 
 const rowStyle = css({
@@ -75,6 +79,7 @@ const NavCard = ({ href, title, direction, label, clamp }: NavCardProps) => (
   >
     <span className={labelStyle}>{label}</span>
     <span
+      data-nav-title
       className={
         clamp === 1
           ? css(titleStyle, { lineClamp: 1 })

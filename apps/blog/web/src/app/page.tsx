@@ -20,7 +20,7 @@ import {
 import { safeJsonLd } from '@/lib/jsonLd';
 
 import { Hero, FeaturedPost, PostIndexRow } from '@/src/components/blog';
-import { DiscoveryBand } from '@/src/components/home/DiscoveryBand';
+import { DiscoveryBand } from '@/src/components/blog/DiscoveryBand';
 import { OssStrip } from '@/src/components/home/OssStrip';
 import { SeriesBand } from '@/src/components/home/SeriesBand';
 import { hasHomeTags, TagBand } from '@/src/components/home/TagBand';

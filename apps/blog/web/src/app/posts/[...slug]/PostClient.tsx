@@ -10,6 +10,7 @@ import { css } from '@design-system/ui-lib/css';
 
 import type { PostData } from '@/domain/post';
 import GiscusComments from '@/src/components/GiscusComments';
+import { DiscoveryBand } from '@/src/components/blog/DiscoveryBand';
 import { PageBoundary } from '@/src/components/PageBoundary';
 import { useViewCount } from '@/src/hooks/useViewCount';
 import { useRecordRecentView } from '@/src/hooks/useRecentViews';
@@ -433,8 +434,14 @@ export default function PostClient({
               <ShareButton title={post.title} />
             </div>
 
+            {/* 홈의 발견 면과 같은 밴드 머리를 쓴다. 예전에는 라벨이 아예 없어
+                Giscus 위젯이 아무 예고 없이 나타났고, 로딩 전에는 그 자리가
+                빈 공백이라 글이 끝난 건지 덜 그려진 건지 알 수 없었다. */}
             <div className={css({ mt: '10' })}>
-              <GiscusComments />
+              <DiscoveryBand id="post-comments" title="댓글" />
+              <div className={css({ mt: '[14px]' })}>
+                <GiscusComments />
+              </div>
             </div>
           </article>
 
