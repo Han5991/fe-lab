@@ -41,8 +41,9 @@ export const PostIndexRow = ({ post }: PostIndexRowProps) => {
       })}
     >
       {/* 제목은 h3다. 아카이브(ArchiveRow)·/series의 글 행과 같은 레벨이라
-          헤딩 탐색으로 목록을 훑을 수 있어야 한다. 홈은 h1(이름) → h2(대표 글)
-          → h3(목록 행) 순이라 건너뛰지 않는다. Panda preflight가 헤딩의
+          헤딩 탐색으로 목록을 훑을 수 있어야 한다. 홈은 h1(이름) → h2(발견 면
+          라벨) → h3(면 안의 글 제목) 순이라 건너뛰지 않는다. 같은 이유로 대표
+          글(FeaturedPost)의 제목도 h3다. Panda preflight가 헤딩의
           font-size/weight를 inherit로 리셋하므로 부모 <a>의 14px을 그대로 쓴다.
 
           dev에서 draft·예약 글이 여기 섞여 나오므로 다른 목록과 같은 배지를

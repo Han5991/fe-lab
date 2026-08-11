@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { css } from '@design-system/ui-lib/css';
 import type { Metadata } from 'next';
 
@@ -9,6 +8,7 @@ import {
   sortPostsBySeriesOrder,
   type PostSummary,
 } from '@/domain/post';
+import { getAllSeries, getAllTags } from '@/domain/post/aggregate';
 import {
   SITE_URL,
   SITE_NAME,
@@ -20,7 +20,10 @@ import {
 import { safeJsonLd } from '@/lib/jsonLd';
 
 import { Hero, FeaturedPost, PostIndexRow } from '@/src/components/blog';
+import { DiscoveryBand } from '@/src/components/home/DiscoveryBand';
 import { OssStrip } from '@/src/components/home/OssStrip';
+import { SeriesBand } from '@/src/components/home/SeriesBand';
+import { TagBand } from '@/src/components/home/TagBand';
 import { seriesBadgeLabel } from '@/src/components/home/seriesBadge';
 import { PageBoundary } from '@/src/components/PageBoundary';
 
@@ -124,6 +127,17 @@ const jsonLd = {
 const RECENT_COUNT = 12;
 
 /**
+ * 발견 면들의 라벨 id. 각 목록이 `aria-labelledby`로 이걸 가리켜서, 목록마다
+ * `aria-label`을 따로 다는 대신 화면에 보이는 라벨 하나가 이름을 겸한다.
+ */
+const BAND = {
+  featured: 'band-featured',
+  recent: 'band-recent',
+  series: 'band-series',
+  tags: 'band-tags',
+} as const;
+
+/**
  * 대표 글의 시리즈 배지 문구. 시리즈 안 순서는 `_series.yml`의 `order`를 따르고
  * (없으면 날짜 오름차순) 글 상세의 시리즈 네비게이션과 같은 규칙을 씁니다.
  */
@@ -148,6 +162,10 @@ export default function HomePage() {
   const allPosts = getAllPostSummaries();
   const featured = allPosts[0];
   const recent = allPosts.slice(1, 1 + RECENT_COUNT);
+  // 시간 축(최근 글) 하나로만 홈을 세우면 4~8편짜리 연재가 낱글로 흩어지고,
+  // 시리즈에 속하지 않은 글은 묶일 자리가 없다. 묶음 축과 주제 축을 같이 세운다.
+  const series = getAllSeries();
+  const tags = getAllTags();
 
   return (
     <>
@@ -168,16 +186,25 @@ export default function HomePage() {
             <Hero />
 
             {featured && (
-              <FeaturedPost
-                post={featured}
-                seriesLabel={buildSeriesLabel(featured, allPosts)}
-              />
+              <>
+                <DiscoveryBand id={BAND.featured} title="대표 글" />
+                <FeaturedPost
+                  post={featured}
+                  seriesLabel={buildSeriesLabel(featured, allPosts)}
+                />
+              </>
             )}
+
+            <DiscoveryBand
+              id={BAND.recent}
+              title="최근 글"
+              more={{ href: '/posts/', label: `전체 ${allPosts.length}편 →` }}
+            />
 
             {/* 장식 없는 텍스트 리스트. 행이 스스로 "마지막"인지 알 수 없어
                 목록을 닫는 아래 보더는 여기서 :last-child로 붙인다. */}
             <ol
-              aria-label="최근 글"
+              aria-labelledby={BAND.recent}
               className={css({
                 listStyleType: 'none',
                 p: '0',
@@ -196,18 +223,19 @@ export default function HomePage() {
               ))}
             </ol>
 
-            <Link
-              href="/posts/"
-              className={css({
-                display: 'inline-block',
-                mt: '[14px]',
-                fontSize: '[13px]',
-                color: 'accent.600',
-                _hover: { textDecoration: 'underline' },
-              })}
-            >
-              모든 글 →
-            </Link>
+            <DiscoveryBand
+              id={BAND.series}
+              title="시리즈로 읽기"
+              more={{ href: '/series/', label: `시리즈 ${series.length}개 →` }}
+            />
+            <SeriesBand series={series} labelledBy={BAND.series} />
+
+            <DiscoveryBand
+              id={BAND.tags}
+              title="태그로 읽기"
+              more={{ href: '/posts/', label: '태그 전체 →' }}
+            />
+            <TagBand tags={tags} labelledBy={BAND.tags} />
 
             <OssStrip />
           </div>

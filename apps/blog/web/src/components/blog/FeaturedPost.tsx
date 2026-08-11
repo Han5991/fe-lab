@@ -32,19 +32,15 @@ export const FeaturedPost = ({ post, seriesLabel }: FeaturedPostProps) => {
         gridTemplateColumns: { base: '1fr', md: '[minmax(0,1fr) 150px]' },
         gap: '[18px]',
         alignItems: 'center',
-        borderWidth: 'hairline',
-        borderStyle: 'solid',
-        borderColor: 'ink.border',
-        rounded: 'card',
-        px: '[20px]',
+        // 카드가 아니다. 홈은 발견 면 네 개를 밴드 머리 줄로 나누므로, 대표 글도
+        // 그 면 안의 내용일 뿐이다. 상자를 다시 세우면 밴드 경계와 카드 경계가
+        // 겹쳐 "이 글이 왜 특별한가"가 아니라 "여기 상자가 있다"만 읽힌다.
+        // 대표 글이라는 신호는 액센트 제목과 썸네일이 이미 대고 있다.
+        px: '[2px]',
         py: '[18px]',
-        mb: '[26px]',
-        transition: '[border-color 0.15s]',
         _hover: {
-          borderColor: 'ink.borderStrong',
-          // 제목이 기본부터 accent.600이라, hover는 한 단계 더 진한 700으로
-          // 간다. 그대로 600을 쓰면 hover에 아무 변화가 없다.
-          '& h2': { color: 'accent.700' },
+          // 제목이 기본부터 accent.900이라, hover는 링크 톤인 600으로 간다.
+          '& [data-featured-title]': { color: 'accent.600' },
         },
       })}
     >
@@ -68,7 +64,11 @@ export const FeaturedPost = ({ post, seriesLabel }: FeaturedPostProps) => {
             {seriesLabel}
           </span>
         )}
-        <h2
+        {/* h3다. 홈의 헤딩은 h1(이름) → h2(발견 면 라벨) → h3(면 안의 글 제목)
+            순서고, 이 글은 `대표 글` 면 안의 항목이다. 아래 최근 글 목록의
+            PostIndexRow도 같은 h3라 헤딩 탐색에서 두 면이 같은 깊이로 읽힌다. */}
+        <h3
+          data-featured-title
           className={css({
             fontSize: '[16px]',
             fontWeight: 'semibold',
@@ -81,7 +81,7 @@ export const FeaturedPost = ({ post, seriesLabel }: FeaturedPostProps) => {
           })}
         >
           {post.title}
-        </h2>
+        </h3>
         {post.excerpt && (
           <p
             className={css({
