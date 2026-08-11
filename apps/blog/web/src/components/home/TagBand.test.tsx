@@ -7,7 +7,33 @@
  */
 import { describe, expect, test } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { TagBand } from './TagBand';
+import { hasHomeTags, TagBand } from './TagBand';
+
+// 밴드 머리는 목록 밖에 있어서, 목록이 비어 `null`을 내도 헤더만 남는다.
+// 호출부(page.tsx)가 면 전체를 걷어낼 때 쓰는 판정이라 목록과 같은 문턱을
+// 봐야 한다 — 어긋나면 헤더만 뜨거나 반대로 면이 통째로 사라진다.
+describe('hasHomeTags', () => {
+  test('문턱을 넘는 태그가 하나라도 있으면 참', () => {
+    expect(
+      hasHomeTags([
+        { id: 'build', count: 1 },
+        { id: 'bundler', count: 2 },
+      ]),
+    ).toBe(true);
+  });
+
+  test('전부 문턱 미만이면 거짓 — TagBand가 렌더하지 않는 것과 같은 판정', () => {
+    expect(hasHomeTags([{ id: 'build', count: 1 }])).toBe(false);
+  });
+
+  test('빈 배열이면 거짓', () => {
+    expect(hasHomeTags([])).toBe(false);
+  });
+
+  test('문턱을 낮추면 판정도 따라 내려간다', () => {
+    expect(hasHomeTags([{ id: 'build', count: 1 }], 1)).toBe(true);
+  });
+});
 
 describe('TagBand', () => {
   test('태그와 글 수를 함께 보여준다', () => {

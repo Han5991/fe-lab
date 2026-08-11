@@ -23,7 +23,7 @@ import { Hero, FeaturedPost, PostIndexRow } from '@/src/components/blog';
 import { DiscoveryBand } from '@/src/components/home/DiscoveryBand';
 import { OssStrip } from '@/src/components/home/OssStrip';
 import { SeriesBand } from '@/src/components/home/SeriesBand';
-import { TagBand } from '@/src/components/home/TagBand';
+import { hasHomeTags, TagBand } from '@/src/components/home/TagBand';
 import { seriesBadgeLabel } from '@/src/components/home/seriesBadge';
 import { PageBoundary } from '@/src/components/PageBoundary';
 
@@ -223,19 +223,33 @@ export default function HomePage() {
               ))}
             </ol>
 
-            <DiscoveryBand
-              id={BAND.series}
-              title="시리즈로 읽기"
-              more={{ href: '/series/', label: `시리즈 ${series.length}개 →` }}
-            />
-            <SeriesBand series={series} labelledBy={BAND.series} />
+            {/* 밴드 머리는 목록 밖에 있어서, 목록이 스스로 비었다고 판단해
+                아무것도 안 그려도 헤더와 "더 보기"만 덩그러니 남는다. 대표 글이
+                없을 때 면 전체를 걷어내는 것과 같은 처리를 여기도 한다. */}
+            {series.length > 0 && (
+              <>
+                <DiscoveryBand
+                  id={BAND.series}
+                  title="시리즈로 읽기"
+                  more={{
+                    href: '/series/',
+                    label: `시리즈 ${series.length}개 →`,
+                  }}
+                />
+                <SeriesBand series={series} labelledBy={BAND.series} />
+              </>
+            )}
 
-            <DiscoveryBand
-              id={BAND.tags}
-              title="태그로 읽기"
-              more={{ href: '/posts/', label: '태그 전체 →' }}
-            />
-            <TagBand tags={tags} labelledBy={BAND.tags} />
+            {hasHomeTags(tags) && (
+              <>
+                <DiscoveryBand
+                  id={BAND.tags}
+                  title="태그로 읽기"
+                  more={{ href: '/posts/', label: '태그 전체 →' }}
+                />
+                <TagBand tags={tags} labelledBy={BAND.tags} />
+              </>
+            )}
 
             <OssStrip />
           </div>

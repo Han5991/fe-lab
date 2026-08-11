@@ -16,6 +16,19 @@ export const HOME_TAG_COUNT = 12;
  */
 export const HOME_TAG_MIN_COUNT = 2;
 
+/**
+ * 이 면이 세울 태그가 하나라도 있는가.
+ *
+ * 밴드 머리(`DiscoveryBand`)는 목록 **밖**에 있어서 목록이 스스로 비었다고
+ * 판단해 `null`을 내도 헤더와 "태그 전체 →"만 남는다. 호출부가 면 전체를
+ * 걷어낼 수 있도록 판정을 여기서 내보낸다 — 문턱 규칙이 두 곳에 복사되면
+ * 한쪽만 바뀌어 헤더와 목록의 판단이 어긋난다.
+ */
+export const hasHomeTags = (
+  tags: TagSummary[],
+  minCount: number = HOME_TAG_MIN_COUNT,
+): boolean => tags.some(tag => tag.count >= minCount);
+
 interface TagBandProps {
   tags: TagSummary[];
   /** 목록을 이름 짓는 밴드 라벨의 id. */
