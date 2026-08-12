@@ -2,7 +2,8 @@
 
 import { Suspense } from 'react';
 import { LogOut, BarChart3, FileText } from 'lucide-react';
-import { css } from '@design-system/ui-lib/css';
+import { css, cx } from '@design-system/ui-lib/css';
+import { railGutter, railColumn } from '@/src/components/Rail';
 import { useAdminDashboardData } from '@/src/hooks/useAdminViews';
 import { useAdminLogout } from '@/src/hooks/useAdminLogout';
 import { LoadingPlaceholder } from '@/src/components/shared/LoadingPlaceholder';
@@ -387,111 +388,118 @@ export default function AdminPage() {
   const { handleLogout } = useAdminLogout();
 
   return (
+    // 배경은 화면 끝까지, 내용은 /admin/analytics와 같은 wide 레일.
+    // 세로 여백은 레일과 무관하므로 바깥에 남긴다.
     <div
-      className={css({
-        minH: '[calc(100dvh - 128px)]',
-        bg: 'ink.50',
-        p: { base: '4', md: '8' },
-      })}
+      className={cx(
+        css({
+          minH: '[calc(100dvh - 128px)]',
+          bg: 'ink.50',
+          py: { base: '4', md: '8' },
+        }),
+        railGutter,
+      )}
     >
-      <header
-        className={css({
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          mb: '6',
-          pb: '5',
-          borderBottomWidth: '[1px]',
-          borderColor: 'ink.border',
-          flexWrap: 'wrap',
-          gap: '3',
-        })}
-      >
-        <div>
-          <p
-            className={css({
-              fontSize: 'xs',
-              fontWeight: 'bold',
-              letterSpacing: 'widest',
-              textTransform: 'uppercase',
-              color: 'spot.600',
-              mb: '1',
-            })}
-          >
-            Admin
-          </p>
-          <h1
-            className={css({
-              fontSize: 'xl',
-              fontWeight: 'bold',
-              color: 'ink.950',
-            })}
-          >
-            대시보드
-          </h1>
-        </div>
-
-        <div
-          className={css({ display: 'flex', alignItems: 'center', gap: '2' })}
+      <div className={railColumn('wide')}>
+        <header
+          className={css({
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            mb: '6',
+            pb: '5',
+            borderBottomWidth: '[1px]',
+            borderColor: 'ink.border',
+            flexWrap: 'wrap',
+            gap: '3',
+          })}
         >
-          <Link
-            href="/admin/analytics"
-            className={css({
-              display: 'flex',
-              alignItems: 'center',
-              gap: '1.5',
-              px: '3',
-              py: '1.5',
-              color: 'spot.600',
-              fontWeight: 'medium',
-              fontSize: 'sm',
-              rounded: 'md',
-              transition: '[background 0.15s]',
-              _hover: { bg: 'paper.100' },
-            })}
-          >
-            <BarChart3 size={16} />
-            상세 분석
-          </Link>
-          <button
-            onClick={handleLogout}
-            className={css({
-              display: 'flex',
-              alignItems: 'center',
-              gap: '1.5',
-              px: '3',
-              py: '1.5',
-              color: 'ink.500',
-              cursor: 'pointer',
-              rounded: 'md',
-              fontSize: 'sm',
-              transition: '[all 0.15s]',
-              _hover: { bg: 'paper.200', color: 'ink.900' },
-            })}
-          >
-            <LogOut size={16} />
-            로그아웃
-          </button>
-        </div>
-      </header>
-
-      <Suspense
-        fallback={
-          <div
-            className={css({
-              display: 'grid',
-              gridTemplateColumns: { base: '1fr', md: 'repeat(3, 1fr)' },
-              gap: '4',
-            })}
-          >
-            <LoadingPlaceholder height="140px" />
-            <LoadingPlaceholder height="140px" />
-            <LoadingPlaceholder height="140px" />
+          <div>
+            <p
+              className={css({
+                fontSize: 'xs',
+                fontWeight: 'bold',
+                letterSpacing: 'widest',
+                textTransform: 'uppercase',
+                color: 'spot.600',
+                mb: '1',
+              })}
+            >
+              Admin
+            </p>
+            <h1
+              className={css({
+                fontSize: 'xl',
+                fontWeight: 'bold',
+                color: 'ink.950',
+              })}
+            >
+              대시보드
+            </h1>
           </div>
-        }
-      >
-        <AdminOverviewContent />
-      </Suspense>
+
+          <div
+            className={css({ display: 'flex', alignItems: 'center', gap: '2' })}
+          >
+            <Link
+              href="/admin/analytics"
+              className={css({
+                display: 'flex',
+                alignItems: 'center',
+                gap: '1.5',
+                px: '3',
+                py: '1.5',
+                color: 'spot.600',
+                fontWeight: 'medium',
+                fontSize: 'sm',
+                rounded: 'md',
+                transition: '[background 0.15s]',
+                _hover: { bg: 'paper.100' },
+              })}
+            >
+              <BarChart3 size={16} />
+              상세 분석
+            </Link>
+            <button
+              onClick={handleLogout}
+              className={css({
+                display: 'flex',
+                alignItems: 'center',
+                gap: '1.5',
+                px: '3',
+                py: '1.5',
+                color: 'ink.500',
+                cursor: 'pointer',
+                rounded: 'md',
+                fontSize: 'sm',
+                transition: '[all 0.15s]',
+                _hover: { bg: 'paper.200', color: 'ink.900' },
+              })}
+            >
+              <LogOut size={16} />
+              로그아웃
+            </button>
+          </div>
+        </header>
+
+        <Suspense
+          fallback={
+            <div
+              className={css({
+                display: 'grid',
+                gridTemplateColumns: { base: '1fr', md: 'repeat(3, 1fr)' },
+                gap: '4',
+              })}
+            >
+              <LoadingPlaceholder height="140px" />
+              <LoadingPlaceholder height="140px" />
+              <LoadingPlaceholder height="140px" />
+            </div>
+          }
+        >
+          <AdminOverviewContent />
+        </Suspense>
+      </div>
     </div>
   );
 }
