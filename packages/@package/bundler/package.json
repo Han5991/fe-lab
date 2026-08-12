@@ -32,6 +32,6 @@
   },
   "dependencies": {
     "acorn": "^8.18.0",
-    "magic-string": "^0.30.21"
+    "magic-string": "^1.1.0"
   }
 }
