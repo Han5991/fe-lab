@@ -141,7 +141,9 @@ export function CodeTabs({ children }: { children?: ReactNode }) {
       >
         <div
           role="tablist"
-          aria-label="패키지 매니저"
+          // 축을 단정하지 않는다. npm/pnpm/yarn 만 있는 게 아니라
+          // Next.js/React Router 처럼 프레임워크로 가르기도 한다.
+          aria-label="같은 코드의 다른 버전"
           onKeyDown={onKeyDown}
           className={css({ display: 'flex', overflowX: 'auto', flex: '1' })}
         >
@@ -149,7 +151,9 @@ export function CodeTabs({ children }: { children?: ReactNode }) {
             const selected = i === active;
             return (
               <button
-                key={item.label}
+                // 라벨만으로는 부족하다 — 글쓴이가 같은 이름을 두 번 달면
+                // key가 겹쳐 두 번째 탭이 첫 번째와 같은 것으로 취급된다.
+                key={`${i}-${item.label}`}
                 ref={el => {
                   if (el) tabRefs.current.set(i, el);
                   else tabRefs.current.delete(i);
@@ -193,7 +197,14 @@ export function CodeTabs({ children }: { children?: ReactNode }) {
         </div>
         <CopyButton content={current.code} />
       </div>
-      <div role="tabpanel" id={`${baseId}-panel`}>
+      {/* 패널 → 탭 방향도 걸어야 tabs 패턴이 완성된다. 탭에서 패널로 가는
+          aria-controls만 있으면, 패널에 먼저 도착한 스크린리더 사용자는
+          이게 어느 탭의 내용인지 알 수 없다. */}
+      <div
+        role="tabpanel"
+        id={`${baseId}-panel`}
+        aria-labelledby={`${baseId}-tab-${items.indexOf(current)}`}
+      >
         {current.content}
       </div>
     </div>
