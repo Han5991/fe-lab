@@ -26,7 +26,7 @@
     "@giscus/react": "^3.1.0",
     "@next/third-parties": "^16.3.0",
     "@ssgoi/react": "6.6.10",
-    "@supabase/postgrest-js": "^2.103.0",
+    "@supabase/postgrest-js": "^2.112.2",
     "@supabase/supabase-js": "^2.112.2",
     "@tanstack/react-query": "^5.101.4",
     "gray-matter": "^4.0.3",
