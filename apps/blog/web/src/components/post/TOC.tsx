@@ -29,6 +29,13 @@ const ELBOW = 8;
 /** 목록 위아래에서 스크롤 내용이 사라지는 페이드 구간. */
 const FADE = 16;
 
+// 활성 표시는 **세 군데**가 동시에 움직인다 — 글자 색, 레일 하이라이트
+// (clip-path), 레일 위의 점(offset-distance). 셋의 목표값은 같은 순간에
+// 바뀌므로 전환 시간이 다르면 따로 도착한다. 실제로 레일만 0.3s였을 때
+// 차례를 누르면 글자가 먼저 켜지고 줄이 100ms 늦게 따라붙어, 둘이 같은
+// 사건을 가리킨다는 게 읽히지 않았다. 값을 바꿀 일이 있으면 **셋 다** 함께
+// 바꿀 것(레퍼런스도 색과 clip-path에 같은 시간을 쓴다).
+
 interface Row {
   /** 레일이 서는 가로 위치. */
   x: number;
@@ -300,7 +307,8 @@ export const TOC = () => {
                 style={{ clipPath: clip }}
                 className={css({
                   stroke: 'ink.950',
-                  transition: '[clip-path 0.3s ease]',
+                  // ↓ 글자 색·점과 같은 시간. 위 주석 참고.
+                  transition: '[clip-path 0.2s ease]',
                   '@media (prefers-reduced-motion: reduce)': {
                     transition: '[none]',
                   },
@@ -319,7 +327,7 @@ export const TOC = () => {
                   boxSize: '[5px]',
                   rounded: 'full',
                   bg: 'ink.950',
-                  transition: '[offset-distance 0.3s ease]',
+                  transition: '[offset-distance 0.2s ease]',
                   '@media (prefers-reduced-motion: reduce)': {
                     transition: '[none]',
                   },
@@ -390,7 +398,7 @@ export const TOC = () => {
                     // 스크롤할 때마다 차례가 들썩이는 데다, 레일 좌표가 clip-path
                     // 애니메이션 도중에 바뀌어 하이라이트가 엉뚱한 자리에 그려진다.
                     fontWeight: 'normal',
-                    transition: '[color 0.2s]',
+                    transition: '[color 0.2s ease]',
                     _hover: { color: 'ink.950' },
                   })}
                   // 레일이 서는 자리(x)에서 한 칸 더 띄운다.
