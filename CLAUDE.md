@@ -326,6 +326,7 @@ The blog (`apps/blog/web/`) is a **statically generated (SSG) Next.js applicatio
 | `<callout type="warning\|info\|tip\|danger">` | 마크다운 헬퍼 컴포넌트 (raw HTML로 작성). `<figure>` + `<figcaption>`, `<file-tree>`도 지원                                                                                                                           |
 | `<dialogue>` · `<metrics>` · `<timeline>`     | 리뉴얼 시그니처 컴포넌트. 역시 raw HTML 커스텀 태그 — 아래 "디자인 시스템" 참고                                                                                                                                       |
 | `<diagram>` + frontmatter `hero:`             | 구조 그림. 저작법 전체는 **`apps/blog/web/design/DIAGRAM_AUTHORING.md`** — 아래 "다이어그램 문법" 참고                                                                                                                |
+| 펜스 메타 `title=` · `<code-tabs>`            | 코드 블록에 파일명을 달거나 npm/pnpm/yarn 탭으로 묶는다. 커스텀 태그가 아니라 **코드 펜스의 메타**다 — 아래 "코드 블록" 참고                                                                                          |
 
 #### 디자인 시스템 (리뉴얼 기준)
 
@@ -525,6 +526,27 @@ HTML 파서를 거치므로 **self-closing(`<metrics />`)은 동작하지 않는
 | `<dialogue>` | 도입부 대화 재현        | 자식 `<msg from="...">`. `from="me"`면 우측 정렬 + 포인트색 버블 |
 | `<metrics>`  | before/after 수치 강조  | `items` JSON 문자열 또는 자식 `<metric label value tone>`        |
 | `<timeline>` | 시도 → 실패 → 해결 서사 | `steps` JSON 문자열 또는 자식 `<step title desc result>`         |
+
+##### 코드 블록
+
+표면이 **테마를 탄다.** 예전에는 "코드는 라이트에서도 항상 어둡다"가 규칙이었다.
+구문 강조 테마(`vscDarkPlus`)의 색이 다크 배경 전용 고정값이라, 배경만 밝히면
+대비가 통째로 무너졌기 때문이다. 지금은 그 색들을 `code.*` semanticToken으로 옮겨
+라이트/다크 두 벌로 쓴다(`src/components/post/codeTheme.ts`). 레퍼런스(fumadocs)가
+shiki 듀얼 테마로 푸는 문제를, 색 **정의**를 토큰으로 옮겨 같은 원리로 푼 것이다 —
+색이 마크업이 아니라 스타일시트에 한 번만 있으므로 HTML은 오히려 가벼워진다.
+**다크 화면의 색은 예전 그대로**고, 라이트만 github-light 계열로 새로 붙었다.
+
+- 색을 고칠 일이 생기면 `blog-preset.ts`의 `code.*` **한 곳만** 본다. 컴포넌트에
+  hex를 다시 박지 말 것 — `codeTheme.test.ts`가 "원본 테마의 색이 하나도 남지
+  않았다"를 검사하므로, 매핑에서 빠진 색은 테스트가 잡는다
+- 펜스 메타(` ```ts title="lib/foo.ts" `, `tab="npm"`)는 `rehypeCodeMeta`가
+  `data-*` 속성으로 승격한다. 이 플러그인은 **`rehypeRaw`보다 앞**이어야 한다
+  (rehypeRaw가 트리를 직렬화·재파싱하며 hast의 `data`를 버린다). 순서가 뒤집혀도
+  에러 없이 파일명만 조용히 사라지므로 `codeMeta.test.tsx`가 그 대조군까지 고정해 뒀다
+- 파일명이 있으면 상단 바가 언어 라벨 대신 그걸 보여준다. `<code-tabs>`로 묶으면
+  상단 바를 탭이 가져가고, 복사 버튼은 열려 있는 탭의 코드를 집는다
+- 600px을 넘는 코드는 블록 안에서 세로로 스크롤된다
 
 #### 클라이언트 사이드 기능 (런타임)
 

@@ -33,8 +33,10 @@ MDX가 아니라 `react-markdown` + `rehype-raw`다.
 | `<callout>`   | 강조 박스 (info/tip/warning/danger)       | [아래](#callout)                                                             |
 | `<file-tree>` | 디렉토리 구조                             | [아래](#file-tree)                                                           |
 | `<figure>`    | 그림 + 캡션                               | [아래](#figure)                                                              |
+| `<code-tabs>` | 같은 명령을 도구별로 (npm/pnpm/yarn)      | [아래](#code-tabs)                                                           |
 
 코드 블록(` ```ts `)과 Mermaid(` ```mermaid `)는 태그 없이 그냥 쓰면 된다.
+코드 블록에는 **파일명을 달 수 있다** — [아래](#code-tabs).
 
 ---
 
@@ -204,6 +206,50 @@ packages/
 ```
 
 이미지는 글 폴더에 두면 빌드 시 `public/posts/` 로 복사된다. 캡션은 모노 12px로 나온다.
+
+---
+
+## <a id="code-tabs"></a>코드 블록의 파일명과 탭
+
+둘 다 **펜스 메타**(언어 뒤에 붙이는 부분)로 쓴다. 커스텀 태그가 아니다.
+
+### 파일명
+
+````md
+```ts title="lib/export-search-indexes.ts"
+export async function exportSearchIndexes() {}
+```
+````
+
+파일명을 주면 상단 바가 언어 라벨 대신 `아이콘 + 경로`를 보여준다(둘은 한 줄을
+나눠 쓰지 않는다 — 파일명이 있으면 언어 라벨은 빠진다). 경로에 공백이 없어도
+따옴표를 쓰는 편이 안전하다.
+
+### 도구별 탭
+
+같은 명령을 npm/pnpm/yarn으로 각각 적을 때. 탭 이름은 `tab=`이고, **여닫는 태그
+양옆의 빈 줄이 문법의 일부**다(빈 줄이 없으면 안쪽 펜스가 마크다운으로 파싱되지
+않아 코드가 통째로 안 보인다).
+
+````md
+<code-tabs>
+
+```bash tab="npm"
+npm install typesense
+```
+
+```bash tab="pnpm"
+pnpm add typesense
+```
+
+</code-tabs>
+````
+
+탭 안에서는 상단 바를 탭 줄이 가져가므로 개별 블록의 언어 라벨은 나오지 않고,
+복사 버튼은 **열려 있는 탭의 코드**를 집는다. `tab=`을 하나도 안 달면 탭이
+만들어지지 않고 코드 블록들이 그대로 나온다(내용이 사라지지는 않는다).
+
+600px을 넘는 코드는 블록 안에서 세로로 스크롤된다.
 
 ---
 
