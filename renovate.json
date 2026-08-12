@@ -81,6 +81,11 @@
       "enabled": false
     },
     {
+      "description": "@ssgoi/react는 업데이트 제안을 막는다. v7이 PageTransition의 API(paths·preserveScroll, AnyTransitionConfig 형태 등)와 비호환이라 마이그레이션 없이는 빌드가 깨진다(#246). 마이그레이션을 마치면 이 규칙을 지울 것",
+      "matchPackageNames": ["@ssgoi/react"],
+      "enabled": false
+    },
+    {
       "description": "major는 자동 머지하지 않고 deps-major 라벨을 붙인다 — 이 라벨이 붙은 PR만 claude-code-review.yml이 리뷰한다",
       "matchUpdateTypes": ["major"],
       "addLabels": ["deps-major"],
