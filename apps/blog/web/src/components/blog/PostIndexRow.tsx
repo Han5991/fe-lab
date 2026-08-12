@@ -29,7 +29,8 @@ export const PostIndexRow = ({ post }: PostIndexRowProps) => {
         justifyContent: 'space-between',
         alignItems: 'baseline',
         gap: '[16px]',
-        px: '[2px]',
+        // 좌우 패딩 없음 — 목록 제목이 Hero·대표 글과 같은 세로선에서 시작해야
+        // 한다. 예전 2px 때문에 홈에서 이 목록만 2px 오른쪽으로 밀려 있었다.
         py: '[12px]',
         borderTopWidth: 'hairline',
         borderTopStyle: 'solid',
