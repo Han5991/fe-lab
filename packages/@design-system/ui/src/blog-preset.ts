@@ -304,6 +304,53 @@ export const blogPreset = definePreset({
           'callout.warn.border': {
             value: { base: '#b8770f', _dark: '#fac775' },
           },
+          // ─────────────────────────────────────────────────────────────
+          // code — 코드 블록의 표면과 구문 강조.
+          //
+          // 예전에는 이 값들이 CodeBlock.tsx 안에 hex 상수로 박혀 있었다.
+          // 구문 강조 테마(vscDarkPlus)의 색이 고정값이라 라이트 테마에서
+          // 배경만 밝히면 대비가 통째로 무너졌고, 그래서 "코드 표면은 테마와
+          // 무관하게 항상 어둡다"를 규칙으로 삼았기 때문이다. 라이트 화면
+          // 한가운데에 검은 판이 박혀 있는 셈이라 늘 이물감이 있었다.
+          //
+          // fumadocs는 shiki의 듀얼 테마로 이걸 푼다 — 토큰마다 라이트/다크
+          // 두 색을 CSS 변수(`--shiki-light`/`--shiki-dark`)로 실어 보내고
+          // `.dark`에서 어느 쪽을 쓸지만 고른다. 같은 원리를 여기서는 변수
+          // **정의**를 semanticToken으로 옮겨서 쓴다. 색이 HTML이 아니라
+          // 스타일시트에 한 번만 있으므로 마크업은 오히려 가벼워진다.
+          //
+          // 다크 값은 지금 쓰는 vscDarkPlus 그대로다(코드 화면이 바뀌지
+          // 않는다). 라이트 값은 fumadocs가 라이트 테마로 쓰는 github-light
+          // 계열에서 가져왔고, 표면(#F7F7F5) 위 대비를 전부 확인했다 —
+          // 주석만 원본 #6E7781이 4.24:1로 AA에 못 미쳐 한 톤 내렸다(5.67:1).
+          // 나머지는 4.70:1(function) ~ 13.66:1(기본 텍스트) 범위다.
+          // ─────────────────────────────────────────────────────────────
+          // 표면 — 라이트는 본문(paper.50)에서 한 단계 뜬 서브 서피스,
+          // 다크는 기존 코드 표면 값을 유지한다.
+          'code.surface': { value: { base: '#f7f7f5', _dark: '#0b0d10' } },
+          // 파일명·언어 라벨이 앉는 상단 바. 표면보다 한 단계 더 진하다.
+          'code.chrome': { value: { base: '#ededea', _dark: '#14171c' } },
+          // 드래그 선택 배경. 전역 ::selection(selection.bg)은 라이트에서
+          // 옅은 하늘색이라 라이트 코드 표면 위 파란 계열 토큰을 지운다.
+          'code.selection': { value: { base: '#d7dce3', _dark: '#214248' } },
+          // 구문 강조 — 키는 "역할", 값은 (github-light, vscDarkPlus) 쌍.
+          'code.fg': { value: { base: '#24292f', _dark: '#d4d4d4' } },
+          'code.comment': { value: { base: '#5b636d', _dark: '#6a9955' } },
+          'code.keyword': { value: { base: '#cf222e', _dark: '#569cd6' } },
+          // import/return 처럼 흐름을 바꾸는 키워드만 따로 물들이는 건
+          // vscDarkPlus의 특징이다(#c586c0). 라이트에서도 keyword와 구분되게
+          // 색상각을 옮긴 값을 쓴다.
+          'code.keywordFlow': { value: { base: '#a428b4', _dark: '#c586c0' } },
+          'code.string': { value: { base: '#0a3069', _dark: '#ce9178' } },
+          'code.number': { value: { base: '#0550ae', _dark: '#b5cea8' } },
+          'code.function': { value: { base: '#8250df', _dark: '#dcdcaa' } },
+          'code.class': { value: { base: '#953800', _dark: '#4ec9b0' } },
+          'code.property': { value: { base: '#0550ae', _dark: '#9cdcfe' } },
+          'code.tag': { value: { base: '#116329', _dark: '#569cd6' } },
+          'code.regex': { value: { base: '#a40e26', _dark: '#d16969' } },
+          'code.selector': { value: { base: '#6f42c1', _dark: '#d7ba7d' } },
+          // 눈에 덜 띄어야 하는 구두점(html 태그 괄호 등).
+          'code.muted': { value: { base: '#5b636d', _dark: '#808080' } },
         },
       },
     },

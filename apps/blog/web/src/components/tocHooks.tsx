@@ -2,6 +2,16 @@
 
 import { useEffect, useState } from 'react';
 
+/**
+ * 화면 맨 위에서 **고정 헤더가 덮는 높이.**
+ *
+ * 헤더는 `position: sticky; top: 0`으로 지면 위에 떠 있어서, 뷰포트 좌표로
+ * 0에 가까운 헤딩은 화면 안에 있어도 실제로는 가려져 안 보인다. 앵커로
+ * 이동할 때 이만큼 더 올려 주는 값과, 활성 구간을 셀 때 "여기부터가
+ * 진짜 보이는 곳"으로 삼는 값이 같아야 둘이 어긋나지 않는다.
+ */
+export const HEADER_OFFSET = 100;
+
 export const scrollToId = ({
   id,
   headerOffset,
@@ -33,6 +43,9 @@ interface TOCItem {
 export const useTocHook = () => {
   const [toc, setToc] = useState<TOCItem[]>([]);
   const [activeId, setActiveId] = useState('');
+  // 지금 화면에 들어와 있는 헤딩들의 [첫, 마지막] 인덱스. 데스크톱 차례가
+  // 레일을 **구간**으로 비추는 데 쓴다(아래 두 번째 effect 참고).
+  const [activeRange, setActiveRange] = useState<[number, number] | null>(null);
 
   useEffect(() => {
     const content = document.getElementById('post-content');
@@ -77,14 +90,37 @@ export const useTocHook = () => {
       const line = window.innerHeight * 0.2;
       // 기준선을 이미 지난 헤딩 중 마지막 것. 하나도 못 지났으면 첫 항목이
       // 활성이다(글 첫머리에서도 레일이 비어 보이지 않는다).
-      let current = toc[0].id;
-      for (const item of toc) {
+      let current = 0;
+      // 동시에, 지금 화면 안에 **들어와 있는** 헤딩들의 범위도 잡는다.
+      // 레퍼런스(fumadocs)는 IntersectionObserver로 같은 집합을 구해
+      // 레일을 그 구간만큼 비춘다 — 화면에 보이는 절이 셋이면 셋이 함께
+      // 밝다. 여기서도 같은 걸 스크롤마다 다시 계산할 뿐이라, 예전
+      // 누적 Set 방식이 앓던 잔상은 여전히 생길 수 없다.
+      let first = -1;
+      let last = -1;
+      toc.forEach((item, i) => {
         const el = document.getElementById(item.id);
-        if (!el) continue;
-        if (el.getBoundingClientRect().top > line) break;
-        current = item.id;
-      }
-      setActiveId(prev => (prev === current ? prev : current));
+        if (!el) return;
+        const { top, bottom } = el.getBoundingClientRect();
+        if (top <= line) current = i;
+        // 헤더에 가려지는 구간(0 ~ HEADER_OFFSET)은 "보인다"로 치지 않는다.
+        // 거기 걸친 헤딩까지 세면 아직 눈에 안 들어온 절이 레일에서 먼저
+        // 켜진다.
+        if (top >= HEADER_OFFSET && bottom <= window.innerHeight) {
+          if (first === -1) first = i;
+          last = i;
+        }
+      });
+
+      const currentId = toc[current].id;
+      setActiveId(prev => (prev === currentId ? prev : currentId));
+      // 헤딩이 하나도 안 보이는 구간(긴 절의 한복판)에서는 구간을 만들 수
+      // 없다. 그때는 방금 지나온 절 한 줄만 비춘다.
+      const range: [number, number] =
+        first === -1 ? [current, current] : [first, last];
+      setActiveRange(prev =>
+        prev && prev[0] === range[0] && prev[1] === range[1] ? prev : range,
+      );
     };
     // 렌더 중이 아니라 다음 프레임에 계산한다. 스크롤 이벤트가 몰려도
     // 프레임당 한 번만 돈다.
@@ -102,5 +138,5 @@ export const useTocHook = () => {
     };
   }, [toc]);
 
-  return { toc, activeId };
+  return { toc, activeId, activeRange };
 };

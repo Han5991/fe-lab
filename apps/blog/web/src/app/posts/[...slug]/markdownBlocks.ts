@@ -2,6 +2,7 @@ import { isValidElement, type ElementType, type ReactNode } from 'react';
 
 import { Diagram } from '@/src/components/diagram';
 import { Callout } from '@/src/components/post/markdown/Callout';
+import { CodeTabs } from '@/src/components/post/markdown/CodeTabs';
 import { Dialogue } from '@/src/components/post/markdown/Dialogue';
 import { Figure } from '@/src/components/post/markdown/Figure';
 import { FileTree } from '@/src/components/post/markdown/FileTree';
@@ -16,6 +17,7 @@ import { isBlockCode } from '@/src/components/post/markdownCode';
 // <diagram> 안에서 좌표 계산용 메타로만 소비되어 DOM에 직접 나오지 않는다).
 const BLOCK_MARKDOWN_COMPONENTS = new Set<ElementType>([
   Callout,
+  CodeTabs,
   Diagram,
   Dialogue,
   Figure,

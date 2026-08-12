@@ -18,6 +18,8 @@ import { BackToTop } from '@/src/components/mobile/BackToTop';
 import { MobileTOC } from '@/src/components/mobile/MobileTOC';
 import { ShareButton } from '@/src/components/mobile/ShareButton';
 import { CodeBlock } from '@/src/components/post/CodeBlock';
+import { rehypeCodeMeta } from '@/src/components/post/codeMeta';
+import { CodeTabs } from '@/src/components/post/markdown/CodeTabs';
 import { MarkdownImage } from '@/src/components/post/MarkdownImage';
 import { Callout } from '@/src/components/post/markdown/Callout';
 import { Figure } from '@/src/components/post/markdown/Figure';
@@ -81,7 +83,11 @@ export default function PostClient({
             railColumn('wide'),
             css({
               display: 'grid',
-              gridTemplateColumns: { base: '1fr', lg: '[1fr 240px]' },
+              // 차례 칼럼 268px은 레퍼런스(fumadocs)와 같은 폭이다. 240px에서는
+              // 한국어 헤딩이 대부분 두 줄로 접혀 목록이 두 배로 길어졌다.
+              // wide 레일(1200) − 차례(268) − 간격(64) = 868px이라 본문
+              // 칼럼(railText 680)에는 영향이 없다.
+              gridTemplateColumns: { base: '1fr', lg: '[1fr 268px]' },
               gap: { base: '0', lg: '16' },
               alignItems: 'start',
             }),
@@ -313,7 +319,11 @@ export default function PostClient({
             >
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
-                rehypePlugins={[rehypeRaw, rehypeSlug]}
+                // rehypeCodeMeta는 **rehypeRaw보다 앞**이어야 한다. 펜스
+                // 메타(```ts title="…")는 hast의 `data`에 실려 오는데,
+                // rehypeRaw가 트리를 직렬화·재파싱하면서 `data`를 버리기
+                // 때문이다. 먼저 속성으로 옮겨두면 그 왕복을 지나 살아남는다.
+                rehypePlugins={[rehypeCodeMeta, rehypeRaw, rehypeSlug]}
                 components={
                   {
                     // 본문 h1 → h2 강등. 페이지의 h1은 PostHeader의 글 제목
@@ -399,6 +409,9 @@ export default function PostClient({
                       );
                     },
                     callout: Callout,
+                    // 같은 명령을 도구별로 보여주는 코드 탭. 자식 펜스의
+                    // `tab="npm"` 메타를 읽어 탭 목록을 만든다.
+                    'code-tabs': CodeTabs,
                     'file-tree': FileTree,
                     figure: Figure,
                     // 시그니처 컴포넌트도 기존 callout/file-tree와 똑같이
