@@ -16,6 +16,6 @@
     "@package/core": "workspace:*",
     "msw": "^2.15.0",
     "typescript": "catalog:",
-    "vitest": "^4.0.0-beta.15"
+    "vitest": "^4.1.10"
   }
 }
