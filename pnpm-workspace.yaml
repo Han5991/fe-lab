@@ -17,7 +17,7 @@ allowBuilds:
 catalog:
   '@pandacss/dev': 1.12.0
   'next': 16.3.0
-  typescript: 6.0.3
+  typescript: 7.0.2
   react: 19.2.8
   react-dom: 19.2.8
   '@types/react': 19.2.18
