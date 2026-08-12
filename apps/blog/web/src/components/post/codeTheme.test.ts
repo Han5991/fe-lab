@@ -79,6 +79,13 @@ describe('toDualTheme', () => {
     expect([...colorsIn(dual)]).toEqual([]);
   });
 
+  test('태그는 키워드와 다른 토큰을 쓴다', () => {
+    // 원본에서는 둘 다 #569cd6이라 색 기준 매핑만으로는 갈라지지 않는다.
+    // 라이트에서 마크업의 뼈대가 읽히려면 태그가 따로 서야 한다.
+    expect(dual.tag.color).not.toBe(dual.keyword.color);
+    expect(dual.tag.color).toContain('code');
+  });
+
   test('색이 아닌 선언은 값이 유지된다', () => {
     // 글꼴·줄간격까지 건드리면 코드 블록의 조판이 통째로 흔들린다.
     expect(dual['code[class*="language-"]'].fontFamily).toBe(

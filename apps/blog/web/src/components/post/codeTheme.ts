@@ -69,6 +69,23 @@ export const CODE_COLOR_ROLES: Record<string, TokenPath> = {
 };
 
 /**
+ * 색이 아니라 **셀렉터**로 갈라야 하는 예외.
+ *
+ * 색 기준 매핑은 원본이 같은 색으로 묶어 둔 의미 그룹을 공짜로 지켜주지만,
+ * 그 대가로 **원본에서 같은 색이던 둘을 라이트에서 갈라낼 수 없다.**
+ * vscDarkPlus는 태그와 키워드가 똑같은 `#569cd6`인데, github-light은 태그를
+ * 초록(`#116329`) 키워드를 빨강(`#cf222e`)으로 나눈다. jsx·tsx·html이 자주
+ * 나오는 글에서 둘이 같은 색이면 마크업의 뼈대가 잘 안 읽혀서, 태그만
+ * 예외로 둔다(다크는 원본과 같은 값이라 화면이 바뀌지 않는다).
+ *
+ * 예외를 늘릴 때는 "라이트에서 갈라지는 게 실제로 읽기에 도움이 되는가"를
+ * 기준으로 볼 것. 그냥 다르다는 이유로 늘리면 색 기준 매핑의 장점이 사라진다.
+ */
+const SELECTOR_OVERRIDES: Record<string, TokenPath> = {
+  tag: 'colors.code.tag',
+};
+
+/**
  * 원본 테마 한 벌 — react-syntax-highlighter가 style prop으로 받는 모양
  * (셀렉터 → CSS 선언). 반환 타입도 같아야 그대로 넘길 수 있다.
  */
@@ -93,14 +110,18 @@ export function swapColors(value: string): string {
 /** 테마 한 벌의 모든 색 선언을 토큰 변수로 바꾼 새 객체를 만든다. */
 export function toDualTheme(base: PrismStyle): PrismStyle {
   return Object.fromEntries(
-    Object.entries(base).map(([selector, rules]) => [
-      selector,
-      Object.fromEntries(
+    Object.entries(base).map(([selector, rules]) => {
+      const swapped = Object.fromEntries(
         Object.entries(rules).map(([prop, value]) => [
           prop,
           typeof value === 'string' ? swapColors(value) : value,
         ]),
-      ),
-    ]),
+      );
+      const override = SELECTOR_OVERRIDES[selector];
+      return [
+        selector,
+        override ? { ...swapped, color: token.var(override) } : swapped,
+      ];
+    }),
   );
 }

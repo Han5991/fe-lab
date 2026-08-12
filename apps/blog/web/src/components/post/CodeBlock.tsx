@@ -305,6 +305,9 @@ export function CodeBlock({
                 aria-hidden
               />
               <figcaption
+                // 좁은 칼럼에서는 경로가 말줄임되는데, 그때 전체를 볼
+                // 방법이 없으면 파일명을 단 의미가 반쯤 사라진다.
+                title={title}
                 className={css({
                   fontFamily: 'mono',
                   fontSize: 'xs',
