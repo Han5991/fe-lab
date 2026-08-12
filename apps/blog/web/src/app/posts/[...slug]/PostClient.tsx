@@ -81,7 +81,11 @@ export default function PostClient({
             railColumn('wide'),
             css({
               display: 'grid',
-              gridTemplateColumns: { base: '1fr', lg: '[1fr 240px]' },
+              // 차례 칼럼 268px은 레퍼런스(fumadocs)와 같은 폭이다. 240px에서는
+              // 한국어 헤딩이 대부분 두 줄로 접혀 목록이 두 배로 길어졌다.
+              // wide 레일(1200) − 차례(268) − 간격(64) = 868px이라 본문
+              // 칼럼(railText 680)에는 영향이 없다.
+              gridTemplateColumns: { base: '1fr', lg: '[1fr 268px]' },
               gap: { base: '0', lg: '16' },
               alignItems: 'start',
             }),
