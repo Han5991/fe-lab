@@ -345,7 +345,7 @@ importers:
         specifier: ^8.2.0
         version: 8.2.0(@types/node@25.9.5)(esbuild@0.28.1)(jiti@2.4.2)(tsx@4.22.3)
       vite-tsconfig-paths:
-        specifier: ^6.0.0-beta.4
+        specifier: ^6.1.1
         version: 6.1.1(typescript@6.0.3)(vite@8.2.0(@types/node@25.9.5)(esbuild@0.28.1)(jiti@2.4.2)(tsx@4.22.3))
       vitest:
         specifier: ^4.0.0-beta.15
@@ -11901,7 +11901,7 @@ snapshots:
 
   vite-tsconfig-paths@6.1.1(typescript@6.0.3)(vite@8.2.0(@types/node@25.9.5)(esbuild@0.28.1)(jiti@2.4.2)(tsx@4.22.3)):
     dependencies:
-      debug: 4.4.1
+      debug: 4.4.3
       globrex: 0.1.2
       tsconfck: 3.1.6(typescript@6.0.3)
       vite: 8.2.0(@types/node@25.9.5)(esbuild@0.28.1)(jiti@2.4.2)(tsx@4.22.3)
