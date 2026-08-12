@@ -247,9 +247,6 @@ importers:
       eslint-config-next:
         specifier: 16.3.0
         version: 16.3.0(eslint@9.39.5(jiti@2.4.2))(typescript@6.0.3)
-      eslint-plugin-react:
-        specifier: ^7.37.5
-        version: 7.37.5(eslint@9.39.5(jiti@2.4.2))
       eslint-plugin-react-hooks:
         specifier: ^5.2.0
         version: 5.2.0(eslint@9.39.5(jiti@2.4.2))

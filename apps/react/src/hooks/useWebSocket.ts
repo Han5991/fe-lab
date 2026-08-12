@@ -52,6 +52,15 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const shouldReconnectRef = useRef(true);
+  // connect가 자기 자신을 setTimeout에서 참조하면 그 시점의 stale한 인스턴스가
+  // 잡힌다(react-hooks v7 immutability 위반). 항상 최신 connect를 부르도록
+  // ref를 경유한다.
+  const connectRef = useRef<(() => void) | null>(null);
+  // 시도 횟수가 connect의 deps에 들어가면 재연결마다 connect identity가 바뀌어
+  // 마운트 effect가 재실행되고, 타임아웃 쪽 connect와 합쳐져 소켓이 이중으로
+  // 열린다. 판정·백오프는 ref로 읽고 state(reconnectAttempt)는 UI 표시용으로만
+  // 쓴다.
+  const reconnectAttemptRef = useRef(0);
 
   const addSystemMessage = useCallback((message: string) => {
     setMessages(prev => [...prev, `[시스템] ${message}`]);
@@ -65,6 +74,7 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
         console.log('WebSocket connected');
         setIsConnected(true);
         setIsReconnecting(false);
+        reconnectAttemptRef.current = 0;
         setReconnectAttempt(0);
         addSystemMessage('서버에 연결되었습니다.');
       };
@@ -85,25 +95,26 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
         wsRef.current = null;
 
         // 정상 종료(코드 1000)가 아니고 재연결이 활성화된 경우
+        const attempt = reconnectAttemptRef.current;
         if (
           event.code !== 1000 &&
           shouldReconnectRef.current &&
           autoReconnect &&
-          reconnectAttempt < maxReconnectAttempts
+          attempt < maxReconnectAttempts
         ) {
           setIsReconnecting(true);
           const delay =
-            reconnectInterval *
-            Math.pow(reconnectBackoffMultiplier, reconnectAttempt);
+            reconnectInterval * Math.pow(reconnectBackoffMultiplier, attempt);
           addSystemMessage(
-            `연결이 끊어졌습니다. ${Math.round(delay / 1000)}초 후 재연결 시도... (${reconnectAttempt + 1}/${maxReconnectAttempts})`,
+            `연결이 끊어졌습니다. ${Math.round(delay / 1000)}초 후 재연결 시도... (${attempt + 1}/${maxReconnectAttempts})`,
           );
 
           reconnectTimeoutRef.current = setTimeout(() => {
-            setReconnectAttempt(prev => prev + 1);
-            connect();
+            reconnectAttemptRef.current += 1;
+            setReconnectAttempt(reconnectAttemptRef.current);
+            connectRef.current?.();
           }, delay);
-        } else if (reconnectAttempt >= maxReconnectAttempts) {
+        } else if (attempt >= maxReconnectAttempts) {
           addSystemMessage(
             `최대 재연결 시도 횟수(${maxReconnectAttempts}회)를 초과했습니다. 수동으로 재연결해주세요.`,
           );
@@ -124,9 +135,12 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
     maxReconnectAttempts,
     reconnectInterval,
     reconnectBackoffMultiplier,
-    reconnectAttempt,
     addSystemMessage,
   ]);
+
+  useEffect(() => {
+    connectRef.current = connect;
+  }, [connect]);
 
   const disconnect = useCallback(() => {
     shouldReconnectRef.current = false;
@@ -143,6 +157,7 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
   const reconnect = useCallback(() => {
     disconnect();
     shouldReconnectRef.current = true;
+    reconnectAttemptRef.current = 0;
     setReconnectAttempt(0);
     setIsReconnecting(true);
     addSystemMessage('수동으로 재연결을 시도합니다...');
@@ -164,6 +179,11 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
 
   useEffect(() => {
     shouldReconnectRef.current = true;
+    // 마운트에 소켓을 여는 것이 이 훅의 본질. connect는 생성 실패(catch)에서만
+    // 동기 setState를 하므로 렌더 루프 위험이 없다. (react-hooks v7의
+    // set-state-in-effect 대응 — v5에는 이 룰이 없어 이름을 특정하면 오히려
+    // "룰 없음" 에러가 나므로 이름 없이 끈다)
+    // eslint-disable-next-line
     connect();
 
     return () => {
