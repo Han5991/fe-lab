@@ -16,8 +16,7 @@ type CapturedCall = {
 };
 
 type InvokeResponse =
-  | { data: unknown; error: null }
-  | { data: null; error: { message: string } };
+  { data: unknown; error: null } | { data: null; error: { message: string } };
 
 function makeMockClient(response: InvokeResponse): {
   client: FunctionsInvoker;
