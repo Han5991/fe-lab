@@ -36,8 +36,8 @@ const FADE = 16;
 // 사건을 가리킨다는 게 읽히지 않았다. 값을 바꿀 일이 있으면 **셋 다** 함께
 // 바꿀 것(레퍼런스도 색과 clip-path에 같은 시간을 쓴다).
 
-interface Row {
-  /** 레일이 서는 가로 위치. */
+/** 항목 하나가 차지하는 세로 구간과 레일이 서는 가로 위치. */
+export interface Row {
   x: number;
   top: number;
   bottom: number;
@@ -68,7 +68,7 @@ interface Measured {
  *  실제 원인은 곡선이 아니라 세로 길이를 제한하지 않은 것이었다. 아래
  *  `drop`이 다음 항목 높이의 절반을 넘지 않게 묶고 나면 곡선도 겹치지 않는다.)
  */
-function buildPath(rows: Row[]): string {
+export function buildPath(rows: Row[]): string {
   if (rows.length === 0) return '';
   let d = `M ${rows[0].x} 0`;
 
@@ -100,7 +100,7 @@ function buildPath(rows: Row[]): string {
  * jsdom에는 이 API가 없다. 없으면 빈 배열을 돌려주고, 점은 그리지 않는다
  * (레일과 하이라이트는 그대로다).
  */
-function measureLengths(d: string, rows: Row[]): [number, number][] {
+export function measureLengths(d: string, rows: Row[]): [number, number][] {
   const probe = document.createElementNS('http://www.w3.org/2000/svg', 'path');
   if (typeof probe.getTotalLength !== 'function') return [];
   probe.setAttribute('d', d);
@@ -112,7 +112,13 @@ function measureLengths(d: string, rows: Row[]): [number, number][] {
     // 때까지 1px씩 전진한다. 그 사이에 곡선이 있으면 자연히 더 걸린다.
     let at = i === 0 ? row.top : out[i - 1][1] + (row.top - rows[i - 1].bottom);
     while (at < total && probe.getPointAtLength(at).y < row.top) at += 1;
-    out.push([at, at + (row.bottom - row.top)]);
+    // 끝도 같은 방식으로 실측한다. 세로 높이만 더하면, 단이 바뀌어 자기
+    // 구간 안에 곡선을 품은 항목에서 끝점이 실제보다 위로 잡힌다(곡선은
+    // 같은 세로 거리를 가는 데 길이를 더 쓴다). 점이 몇 px 위에 찍히는
+    // 정도의 오차지만, 보정 비용이 루프 몇 번뿐이라 맞춰 둔다.
+    let end = at + (row.bottom - row.top);
+    while (end < total && probe.getPointAtLength(end).y < row.bottom) end += 1;
+    out.push([at, end]);
   });
   return out;
 }

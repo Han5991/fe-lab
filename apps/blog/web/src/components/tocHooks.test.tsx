@@ -18,6 +18,9 @@ import { useTocHook } from './tocHooks';
 const VIEWPORT_HEIGHT = 1000;
 const LINE = 200;
 
+/** 헤딩 한 줄의 높이. 활성 "구간" 판정이 bottom을 보므로 필요하다. */
+const HEADING_HEIGHT = 40;
+
 interface HeadingSpec {
   id: string;
   tag: string;
@@ -45,10 +48,13 @@ function mountHeadings(specs: HeadingSpec[]) {
     if (spec.id) el.id = spec.id;
     el.textContent = spec.text;
     // jsdom은 레이아웃을 계산하지 않아 getBoundingClientRect가 전부 0이다.
-    // 훅이 읽는 값은 top 하나뿐이므로 "문서 좌표 - 스크롤량"으로 뷰포트 기준
-    // top만 흉내 낸다.
+    // 훅이 읽는 값은 top·bottom뿐이므로 "문서 좌표 - 스크롤량"으로 뷰포트
+    // 기준 위치만 흉내 낸다(bottom은 한 줄 높이를 더한 값).
     el.getBoundingClientRect = () =>
-      ({ top: spec.top - scrollY }) as unknown as DOMRect;
+      ({
+        top: spec.top - scrollY,
+        bottom: spec.top - scrollY + HEADING_HEIGHT,
+      }) as unknown as DOMRect;
     content.appendChild(el);
   }
   document.body.appendChild(content);
@@ -187,5 +193,68 @@ describe('useTocHook - 활성 항목', () => {
 
     scrollToY(0);
     expect(result.current.activeId).toBe('intro');
+  });
+});
+
+/**
+ * 활성 "구간" — 데스크톱 차례가 레일을 어디부터 어디까지 비출지.
+ *
+ * `activeId`(한 항목)와 달리 이쪽은 **화면에 온전히 들어온 헤딩 전체**다.
+ * 레퍼런스(fumadocs)가 IntersectionObserver로 구하는 집합과 같은 것을
+ * 스크롤마다 다시 계산할 뿐이라, 예전 누적 Set 방식의 잔상은 구조적으로
+ * 생길 수 없다 — 그 성질을 아래 마지막 케이스가 지킨다.
+ */
+describe('useTocHook - 활성 구간', () => {
+  /** 한 화면(1000px)에 여러 헤딩이 함께 들어오는 촘촘한 지면. */
+  const DENSE: HeadingSpec[] = [
+    { id: 'a', tag: 'h2', text: '가', top: 100 },
+    { id: 'b', tag: 'h2', text: '나', top: 300 },
+    { id: 'c', tag: 'h3', text: '다', top: 500 },
+    { id: 'd', tag: 'h2', text: '라', top: 1500 },
+  ];
+
+  test('화면에 들어온 헤딩 전체가 구간이 된다', () => {
+    mountHeadings(DENSE);
+    const { result } = renderHook(() => useTocHook());
+    flushFrames();
+
+    // 100·300·500은 아래끝(각 +40)까지 1000 안에 들어오고, 1500은 밖이다.
+    expect(result.current.activeRange).toEqual([0, 2]);
+  });
+
+  test('아래끝이 화면을 넘는 헤딩은 구간에 넣지 않는다', () => {
+    mountHeadings(DENSE);
+    const { result } = renderHook(() => useTocHook());
+    // 'd'의 머리(1500 → 520)는 보이지만 아래끝(560)까지 들어오는지가 기준이다.
+    scrollToY(980);
+
+    // a(-880)·b(-680)은 위로 지나갔고 c(-480)도 마찬가지, d만 온전히 보인다.
+    expect(result.current.activeRange).toEqual([3, 3]);
+  });
+
+  test('헤딩이 하나도 안 보이는 구간에서는 지나온 항목 한 줄만 비춘다', () => {
+    // 긴 절의 한복판. 구간을 만들 수 없으니 폴백이 필요하다 — 여기서
+    // 빈 구간을 돌려주면 레일이 통째로 꺼져 차례가 죽은 것처럼 보인다.
+    mountHeadings([
+      { id: 'head', tag: 'h2', text: '머리', top: 0 },
+      { id: 'tail', tag: 'h2', text: '꼬리', top: 5000 },
+    ]);
+    const { result } = renderHook(() => useTocHook());
+    scrollToY(1000);
+
+    expect(result.current.activeRange).toEqual([0, 0]);
+    expect(result.current.activeId).toBe('head');
+  });
+
+  test('되돌아가면 구간도 되돌아온다', () => {
+    // 누적 상태가 없다는 것의 관측 가능한 증거.
+    mountHeadings(DENSE);
+    const { result } = renderHook(() => useTocHook());
+
+    scrollToY(980);
+    expect(result.current.activeRange).toEqual([3, 3]);
+
+    scrollToY(0);
+    expect(result.current.activeRange).toEqual([0, 2]);
   });
 });
