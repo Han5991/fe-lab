@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { css } from '@design-system/ui-lib/css';
+import { css, cx } from '@design-system/ui-lib/css';
 import type { Metadata } from 'next';
 
 import { getAllPostSummaries } from '@/domain/post';
@@ -11,6 +11,7 @@ import { OG_DEFAULT_IMAGE, SITE_NAME, SITE_URL } from '@/lib/constants';
 import { safeJsonLd } from '@/lib/jsonLd';
 import { HiddenPostBadge } from '@/src/components/blog/HiddenPostBadge';
 import { PageBoundary } from '@/src/components/PageBoundary';
+import { railGutter, railColumn } from '@/src/components/Rail';
 
 import { attachSeriesPosts } from './seriesIndex';
 
@@ -87,7 +88,8 @@ const rowLink = css({
   alignItems: 'baseline',
   gap: '[16px]',
   py: '[12px]',
-  px: '[2px]',
+  // 좌우 패딩 없음 — 행 제목이 시리즈 제목·페이지 제목과 같은 세로선에서
+  // 시작해야 한다. PostIndexRow·PostsArchive의 rowLink와 같은 규칙이다.
   _hover: { '& h3': { color: 'accent.600', textDecorationLine: 'underline' } },
 });
 
@@ -120,15 +122,13 @@ export default function SeriesPage() {
         dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }}
       />
       <PageBoundary transitionId="/series">
-        <div className={css({ bg: 'paper.50' })}>
+        <div className={cx(css({ bg: 'paper.50' }), railGutter)}>
+          {/* 허브 계열 페이지는 홈·글 본문과 같은 text 레일을 쓴다. */}
           <div
-            className={css({
-              // 허브 계열 페이지는 홈과 같은 640px 텍스트 칼럼(레퍼런스 .screen).
-              maxW: 'hubW',
-              mx: 'auto',
-              px: '8',
-              py: { base: '10', md: '16' },
-            })}
+            className={cx(
+              railColumn('text'),
+              css({ py: { base: '10', md: '16' } }),
+            )}
           >
             <header className={css({ mb: '[30px]' })}>
               <h1

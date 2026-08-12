@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { css } from '@design-system/ui-lib/css';
+import { css, cx } from '@design-system/ui-lib/css';
 import type { Metadata } from 'next';
 
 import { getAllPostSummaries } from '@/domain/post';
@@ -18,6 +18,7 @@ import {
   PostsArchiveView,
 } from '@/src/components/blog/PostsArchive';
 import { PageBoundary } from '@/src/components/PageBoundary';
+import { railGutter, railColumn } from '@/src/components/Rail';
 
 // `<title>`·description을 세 곳(meta·og·twitter)에 각각 적으면 한 곳만 고쳐졌을 때
 // 공유 카드와 검색 결과가 서로 다른 말을 한다. 페이지당 한 번만 쓴다 — /series가
@@ -104,14 +105,12 @@ export default function PostsPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLd(blogJsonLd) }}
       />
-      <PageBoundary transitionId="/posts">
+      <PageBoundary transitionId="/posts" className={railGutter}>
         <div
-          className={css({
-            maxW: 'containerW',
-            mx: 'auto',
-            px: '8',
-            py: { base: '10', md: '16' },
-          })}
+          className={cx(
+            railColumn('wide'),
+            css({ py: { base: '10', md: '16' } }),
+          )}
         >
           {/* 허브 문법에 맞춘 헤더 — 큰 세리프 타이틀 대신 21px 산세리프 +
               모노 수치 한 줄, 구분은 hairline 보더 하나로만. */}

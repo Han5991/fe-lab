@@ -48,7 +48,7 @@ export const PostHeader = ({ post, seriesIndex }: PostHeaderProps) => {
         className={css({
           fontFamily: 'sans',
           // 레퍼런스(화면 2)의 22px을 그대로 쓴다. 목업 콘텐츠 폭(640px)과
-          // 실제 본문 칼럼(proseW 680px)이 거의 같아 반응형 분기가 필요 없다.
+          // 실제 본문 칼럼(railText 680px)이 거의 같아 반응형 분기가 필요 없다.
           fontSize: '[22px]',
           fontWeight: 'bold',
           lineHeight: 'headerSm',

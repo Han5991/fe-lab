@@ -6,11 +6,12 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import rehypeSlug from 'rehype-slug';
-import { css } from '@design-system/ui-lib/css';
+import { css, cx } from '@design-system/ui-lib/css';
 
 import type { PostData } from '@/domain/post';
 import GiscusComments from '@/src/components/GiscusComments';
 import { PageBoundary } from '@/src/components/PageBoundary';
+import { railGutter, railColumn } from '@/src/components/Rail';
 import { useViewCount } from '@/src/hooks/useViewCount';
 import { useRecordRecentView } from '@/src/hooks/useRecentViews';
 import { BackToTop } from '@/src/components/mobile/BackToTop';
@@ -68,25 +69,27 @@ export default function PostClient({
         transitionId={
           thumbnailUrl ? `/posts/${post.slug}` : `/posts-plain/${post.slug}`
         }
-        className={css({
-          maxW: 'articleW',
-          mx: 'auto',
-          px: '8',
-          py: { base: '10', md: '14' },
-          bg: 'paper.50',
-        })}
+        className={cx(
+          railGutter,
+          css({ py: { base: '10', md: '14' }, bg: 'paper.50' }),
+        )}
       >
+        {/* 셸은 wide 레일이라 헤더·/posts와 좌우 끝이 같고, 그 안에서 본문이
+            text 레일(680)을 차지하고 TOC가 오른쪽 끝에 붙는다. */}
         <div
-          className={css({
-            display: 'grid',
-            gridTemplateColumns: { base: '1fr', lg: '[1fr 240px]' },
-            gap: { base: '0', lg: '16' },
-            alignItems: 'start',
-          })}
+          className={cx(
+            railColumn('wide'),
+            css({
+              display: 'grid',
+              gridTemplateColumns: { base: '1fr', lg: '[1fr 240px]' },
+              gap: { base: '0', lg: '16' },
+              alignItems: 'start',
+            }),
+          )}
         >
           <article
             className={css({
-              maxW: 'proseW',
+              maxW: 'railText',
               minW: '0',
               mx: { base: 'auto', lg: '0' },
               w: 'full',

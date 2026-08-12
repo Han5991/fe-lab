@@ -22,7 +22,7 @@ import {
   buildBreadcrumbJsonLd,
 } from './postSeo';
 import type { Metadata } from 'next';
-import { css } from '@design-system/ui-lib/css';
+import { Rail } from '@/src/components/Rail';
 import { safeJsonLd } from '@/lib/jsonLd';
 
 interface Props {
@@ -118,14 +118,13 @@ export default async function PostPage({ params }: Props) {
         thumbnailUrl={post.thumbnail ? thumbnailUrl : undefined}
         seriesIndex={seriesIndex}
       />
-      {/* 본문 컨테이너(PostClient의 articleW + px 8)와 같은 폭·좌우 여백을 써
-          왼쪽 끝이 본문과 맞는다. 예전엔 containerW(1200px)라 본문(1080px)보다
-          넓게 삐져나왔다. 위 여백을 따로 주지 않는 것은 PostClient의 PageBoundary
-          하단 패딩이 이미 그 간격을 만들기 때문 — 둘 다 주면 댓글과 네비 사이가
-          200px 가까이 벌어진다. */}
-      <div className={css({ maxW: 'articleW', mx: 'auto', px: '8' })}>
+      {/* PostClient의 셸과 같은 wide 레일이라 왼쪽 끝이 본문과 맞는다.
+          위 여백을 따로 주지 않는 것은 PostClient의 PageBoundary 하단 패딩이
+          이미 그 간격을 만들기 때문 — 둘 다 주면 댓글과 네비 사이가 200px
+          가까이 벌어진다. */}
+      <Rail width="wide">
         <PostNavigation prev={prev} next={next} seriesNav={seriesNav} />
-      </div>
+      </Rail>
     </>
   );
 }

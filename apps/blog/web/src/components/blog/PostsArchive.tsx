@@ -60,7 +60,7 @@ const rowLink = css({
   alignItems: 'baseline',
   gap: '[16px]',
   py: '[12px]',
-  px: '[2px]',
+  // 좌우 패딩 없음 — 행 제목이 페이지 제목과 같은 세로선에서 시작해야 한다.
   _hover: { '& h3': { color: 'accent.600', textDecorationLine: 'underline' } },
 });
 
