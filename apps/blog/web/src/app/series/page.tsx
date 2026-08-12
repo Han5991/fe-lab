@@ -88,7 +88,8 @@ const rowLink = css({
   alignItems: 'baseline',
   gap: '[16px]',
   py: '[12px]',
-  px: '[2px]',
+  // 좌우 패딩 없음 — 행 제목이 시리즈 제목·페이지 제목과 같은 세로선에서
+  // 시작해야 한다. PostIndexRow·PostsArchive의 rowLink와 같은 규칙이다.
   _hover: { '& h3': { color: 'accent.600', textDecorationLine: 'underline' } },
 });
 
