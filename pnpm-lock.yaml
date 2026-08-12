@@ -63,8 +63,8 @@ importers:
         specifier: ^16.3.0
         version: 16.3.0(next@16.3.0(@babel/core@7.29.7)(@types/node@24.13.3)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8)
       '@ssgoi/react':
-        specifier: 6.4.0
-        version: 6.4.0
+        specifier: 6.6.10
+        version: 6.6.10
       '@supabase/postgrest-js':
         specifier: ^2.103.0
         version: 2.103.0
@@ -1793,12 +1793,12 @@ packages:
     engines: {node: '>= 8.0.0'}
     hasBin: true
 
-  '@ssgoi/core@6.4.0':
-    resolution: {integrity: sha512-R0vwkdpJtywKJfRK5yx9aug7uSIw9JI2Ufpyyblo5vrT9PfN8xvZtfBpfFzKQQA050VH+pwBZLEwtjw/kBRO7w==}
+  '@ssgoi/core@6.6.12':
+    resolution: {integrity: sha512-fYk0R3pM3qXpHUQQSM9SaX0JWdYKniDzh+bXlx8JNHcwSYu7U8VkjSBKnfpU7j8fxd6WML6VpLdAShArJl+krA==}
     engines: {node: '>=18.0.0'}
 
-  '@ssgoi/react@6.4.0':
-    resolution: {integrity: sha512-wjwMFK5KSiSjB1/qLNT0DJZM522zJTe6IK0GlbIWoMd8Y8m65DQ85TsOERgbOqHxxY8Eo2vQBJvuM9yTXEhTVA==}
+  '@ssgoi/react@6.6.10':
+    resolution: {integrity: sha512-hKWnORPeZNrsOFFB/J1sMx7D8YhFfTmD7PAH22pMjuLwOuSCNyWMCawGGWxhiN+5sgsKaJa+yrWASnzipuca/Q==}
     engines: {node: '>=18.0.0'}
 
   '@standard-schema/spec@1.1.0':
@@ -7157,12 +7157,12 @@ snapshots:
       fflate: 0.7.4
       string.prototype.codepointat: 0.2.1
 
-  '@ssgoi/core@6.4.0': {}
+  '@ssgoi/core@6.6.12': {}
 
-  '@ssgoi/react@6.4.0':
+  '@ssgoi/react@6.6.10':
     dependencies:
       '@babel/core': 7.29.7
-      '@ssgoi/core': 6.4.0
+      '@ssgoi/core': 6.6.12
       unplugin: 2.3.11
     transitivePeerDependencies:
       - supports-color
@@ -11737,8 +11737,8 @@ snapshots:
   unplugin@2.3.11:
     dependencies:
       '@jridgewell/remapping': 2.3.5
-      acorn: 8.16.0
-      picomatch: 4.0.4
+      acorn: 8.18.0
+      picomatch: 4.0.5
       webpack-virtual-modules: 0.6.2
 
   until-async@3.0.2: {}
