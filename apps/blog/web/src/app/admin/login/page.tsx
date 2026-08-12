@@ -2,7 +2,8 @@
 
 import { Suspense } from 'react';
 import { client as supabase } from '@/lib/client';
-import { css } from '@design-system/ui-lib/css';
+import { css, cx } from '@design-system/ui-lib/css';
+import { railGutter } from '@/src/components/Rail';
 import { LogIn } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { useMutation } from '@tanstack/react-query';
@@ -25,14 +26,19 @@ function LoginForm() {
 
   return (
     <div
-      className={css({
-        display: 'flex',
-        flexDir: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minH: '[100vh]',
-        bg: 'ink.50',
-      })}
+      className={cx(
+        css({
+          display: 'flex',
+          flexDir: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minH: '[100vh]',
+          bg: 'ink.50',
+        }),
+        // 거터가 없으면 400px보다 좁은 화면에서 카드 테두리가 화면 끝에
+        // 붙는다. 404(railForm)와 같은 대우를 해준다.
+        railGutter,
+      )}
     >
       <div
         className={css({
