@@ -29,7 +29,9 @@ export default function AdminAnalyticsPage() {
         bg: 'paper.50',
       })}
     >
-      {/* Admin top strip */}
+      {/* Admin top strip — 배경 띠는 화면 끝까지, 내용은 아래 헤더·본문과
+          같은 wide 레일. 레일을 씌우지 않으면 로그아웃 버튼만 화면 맨 오른쪽에
+          붙어 바로 아래 헤더의 우측 정렬선과 어긋난다. */}
       <div
         className={cx(
           railGutter,
@@ -38,73 +40,81 @@ export default function AdminAnalyticsPage() {
             borderBottomWidth: '[1px]',
             borderBottomStyle: 'solid',
             borderColor: 'ink.border',
-            py: '2.5',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '3',
-            flexWrap: 'wrap',
           }),
         )}
       >
-        <span
-          className={css({
-            fontSize: 'md',
-            fontWeight: 'semibold',
-            color: 'ink.950',
-          })}
+        <div
+          className={cx(
+            railColumn('wide'),
+            css({
+              py: '2.5',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '3',
+              flexWrap: 'wrap',
+            }),
+          )}
         >
-          Frontend Lab
-        </span>
-        <span
-          className={css({
-            fontFamily: 'mono',
-            fontSize: '2xs',
-            px: '1.5',
-            py: '0.5',
-            rounded: '[2rem]',
-            bg: 'accent.50',
-            color: 'accent.600',
-            letterSpacing: 'mono',
-            textTransform: 'uppercase',
-          })}
-        >
-          ADMIN
-        </span>
-        <span className={css({ flex: '1' })} />
-        <Link
-          href="/admin"
-          className={css({
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '1',
-            fontFamily: 'mono',
-            fontSize: 'xs',
-            color: 'ink.600',
-            transition: '[color 0.15s]',
-            _hover: { color: 'ink.950' },
-          })}
-        >
-          <ArrowLeft size={13} />
-          대시보드
-        </Link>
-        <button
-          type="button"
-          onClick={handleLogout}
-          className={css({
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '1',
-            fontFamily: 'mono',
-            fontSize: 'xs',
-            color: 'ink.600',
-            cursor: 'pointer',
-            transition: '[color 0.15s]',
-            _hover: { color: 'ink.950' },
-          })}
-        >
-          <LogOut size={13} />
-          로그아웃
-        </button>
+          <span
+            className={css({
+              fontSize: 'md',
+              fontWeight: 'semibold',
+              color: 'ink.950',
+            })}
+          >
+            Frontend Lab
+          </span>
+          <span
+            className={css({
+              fontFamily: 'mono',
+              fontSize: '2xs',
+              px: '1.5',
+              py: '0.5',
+              rounded: '[2rem]',
+              bg: 'accent.50',
+              color: 'accent.600',
+              letterSpacing: 'mono',
+              textTransform: 'uppercase',
+            })}
+          >
+            ADMIN
+          </span>
+          <span className={css({ flex: '1' })} />
+          <Link
+            href="/admin"
+            className={css({
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '1',
+              fontFamily: 'mono',
+              fontSize: 'xs',
+              color: 'ink.600',
+              transition: '[color 0.15s]',
+              _hover: { color: 'ink.950' },
+            })}
+          >
+            <ArrowLeft size={13} />
+            대시보드
+          </Link>
+          <button
+            type="button"
+            onClick={handleLogout}
+            className={css({
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '1',
+              fontFamily: 'mono',
+              fontSize: 'xs',
+              color: 'ink.600',
+              cursor: 'pointer',
+              transition: '[color 0.15s]',
+              _hover: { color: 'ink.950' },
+            })}
+          >
+            <LogOut size={13} />
+            로그아웃
+          </button>
+        </div>
       </div>
 
       {/* Page header */}
