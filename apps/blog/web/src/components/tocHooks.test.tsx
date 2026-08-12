@@ -222,6 +222,18 @@ describe('useTocHook - 활성 구간', () => {
     expect(result.current.activeRange).toEqual([0, 2]);
   });
 
+  test('고정 헤더에 가린 헤딩은 구간에 넣지 않는다', () => {
+    // 헤더는 sticky로 화면 맨 위를 덮고 있어서, 뷰포트 좌표가 0에 가까운
+    // 헤딩은 화면 안에 있어도 눈에는 안 보인다. 그것까지 세면 아직 안
+    // 읽고 있는 절이 레일에서 먼저 켜진다.
+    mountHeadings(DENSE);
+    const { result } = renderHook(() => useTocHook());
+    // 'a'가 50까지 올라와 헤더(100) 아래로 들어간다.
+    scrollToY(50);
+
+    expect(result.current.activeRange).toEqual([1, 2]);
+  });
+
   test('아래끝이 화면을 넘는 헤딩은 구간에 넣지 않는다', () => {
     mountHeadings(DENSE);
     const { result } = renderHook(() => useTocHook());

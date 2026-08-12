@@ -2,7 +2,11 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { css } from '@design-system/ui-lib/css';
-import { useTocHook, scrollToId } from '@/src/components/tocHooks';
+import {
+  useTocHook,
+  scrollToId,
+  HEADER_OFFSET,
+} from '@/src/components/tocHooks';
 
 /**
  * 글 차례 — 항목들을 잇는 **레일 한 줄**을 그리고, 지금 읽고 있는 구간만
@@ -176,6 +180,13 @@ export const TOC = () => {
   // 그래서 컨테이너의 scrollTop만 직접 옮긴다.
   const isFirstSync = useRef(true);
   useEffect(() => {
+    // "첫 동기화"는 **마운트 직후 한 번**을 뜻한다. 아래 가드들 뒤에서
+    // 내리면, 글 맨 위에서 읽기 시작해 한동안 보정할 일이 없던 경우
+    // (가장 흔한 경우다) 한참 뒤 처음 필요해진 보정이 "중간부터 연 것"으로
+    // 오인돼 순간 이동으로 처리된다.
+    const isFirst = isFirstSync.current;
+    isFirstSync.current = false;
+
     const box = scrollRef.current;
     const el = activeId ? itemRefs.current.get(activeId) : undefined;
     if (!box || !el) return;
@@ -192,11 +203,9 @@ export const TOC = () => {
       bottom <= box.scrollTop + box.clientHeight - FADE;
     if (inView) return;
 
-    // 첫 동기화(글을 중간부터 열었을 때)는 애니메이션 없이 제자리를 잡는다.
+    // 마운트 직후(글을 중간부터 열었을 때)는 애니메이션 없이 제자리를 잡는다.
     const instant =
-      isFirstSync.current ||
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    isFirstSync.current = false;
+      isFirst || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     box.scrollTo({
       top: top - (box.clientHeight - elRect.height) / 2,
       behavior: instant ? 'auto' : 'smooth',
@@ -375,10 +384,18 @@ export const TOC = () => {
                 <a
                   href={`#${item.id}`}
                   onClick={e => {
+                    // 수정자 키가 눌린 클릭은 **가로채지 않는다.** 여기서
+                    // 기본 동작을 막으면 Cmd/Ctrl+클릭으로 새 탭을 여는
+                    // 동작까지 함께 막혀, 앵커로 바꾼 이유가 사라진다.
+                    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey)
+                      return;
                     e.preventDefault();
                     scrollToId({
                       id: item.id,
-                      headerOffset: 100,
+                      // 활성 구간 판정이 쓰는 값과 같은 상수다. 둘이 갈리면
+                      // 앵커로 이동한 직후의 위치가 "아직 안 보이는 곳"으로
+                      // 판정돼 그 항목이 켜지지 않는다.
+                      headerOffset: HEADER_OFFSET,
                       // 주소창 해시는 이동한 뒤에 맞춘다. pushState가 아니라
                       // replaceState라, 차례를 몇 번 눌러도 뒤로 가기는 글
                       // 목록으로 한 번에 돌아간다.

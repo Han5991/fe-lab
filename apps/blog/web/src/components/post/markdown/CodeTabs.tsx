@@ -137,13 +137,22 @@ export function CodeTabs({ children }: { children?: ReactNode }) {
 
   const current = items[Math.min(active, items.length - 1)];
 
-  // ←/→ 로 탭을 옮긴다(WAI-ARIA tabs 패턴). 버튼만으로도 Tab 키 순회는
-  // 되지만, 탭 목록 안에서는 화살표가 기본 조작이다.
+  // ←/→ 로 옮기고 Home/End 로 양 끝으로 간다(WAI-ARIA tabs 패턴). 버튼만
+  // 으로도 Tab 키 순회는 되지만, 탭 목록 안에서는 이쪽이 기본 조작이다.
   const onKeyDown = (e: React.KeyboardEvent) => {
-    const delta = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
-    if (delta === 0) return;
+    const last = items.length - 1;
+    const next =
+      e.key === 'ArrowRight'
+        ? (active + 1) % items.length
+        : e.key === 'ArrowLeft'
+          ? (active + last) % items.length
+          : e.key === 'Home'
+            ? 0
+            : e.key === 'End'
+              ? last
+              : -1;
+    if (next < 0) return;
     e.preventDefault();
-    const next = (active + delta + items.length) % items.length;
     setActive(next);
     tabRefs.current.get(next)?.focus();
   };

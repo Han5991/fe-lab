@@ -7,8 +7,9 @@
  * 때 곡선이 반토막 나 허공에 뜬 조각처럼 남는다), 그 불변식은 눈으로
  * 확인하기 어렵다. 여기서 좌표로 고정한다.
  */
-import { describe, expect, test } from 'vitest';
-import { buildPath, measureLengths, type Row } from './TOC';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import { TOC, buildPath, measureLengths, type Row } from './TOC';
 
 /** 한 줄짜리 항목 하나. 높이 20px로 촘촘히 쌓는다. */
 const row = (x: number, top: number, height = 20): Row => ({
@@ -77,5 +78,78 @@ describe('measureLengths', () => {
     // jsdom에는 SVG 기하 API가 없다. 여기서 던지면 차례 전체가 못 그려지고,
     // 빈 배열이면 레일과 하이라이트는 그대로 두고 점만 빠진다.
     expect(measureLengths('M 8 0 L 8 20', [row(8, 0)])).toEqual([]);
+  });
+});
+
+/**
+ * 항목을 클릭했을 때 브라우저에게 무엇을 남기는가.
+ *
+ * 차례 항목은 `<button>`이 아니라 `<a href="#...">`인데, 그 이유의 절반은
+ * **새 탭으로 열기**다. 그런데 스크롤을 직접 처리하려고 `preventDefault()`를
+ * 무조건 부르면 Cmd/Ctrl+클릭까지 함께 막혀 앵커로 바꾼 의미가 사라진다.
+ * 화면으로는 "그냥 스크롤됐네"로만 보여서 알아채기 어려운 회귀라 여기서 막는다.
+ */
+describe('TOC 항목 클릭', () => {
+  const dispatchClick = (el: Element, init: MouseEventInit = {}) => {
+    const ev = new MouseEvent('click', {
+      bubbles: true,
+      cancelable: true,
+      ...init,
+    });
+    el.dispatchEvent(ev);
+    return ev;
+  };
+
+  beforeEach(() => {
+    const content = document.createElement('div');
+    content.id = 'post-content';
+    const h = document.createElement('h2');
+    h.id = 'intro';
+    h.textContent = '들어가며';
+    content.appendChild(h);
+    document.body.appendChild(content);
+
+    // jsdom에 없는 것들 — 없으면 TOC가 마운트되다 던진다.
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        observe() {}
+        disconnect() {}
+      },
+    );
+    vi.stubGlobal('matchMedia', () => ({ matches: false }));
+    vi.stubGlobal('scrollTo', vi.fn());
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    document.body.replaceChildren();
+  });
+
+  test('평범한 클릭은 가로채서 우리가 직접 스크롤한다', () => {
+    // 고정 헤더 높이만큼 offset을 줘야 해서 기본 앵커 이동에 맡길 수 없다.
+    render(<TOC />);
+
+    const ev = dispatchClick(screen.getByRole('link', { name: '들어가며' }));
+
+    expect(ev.defaultPrevented).toBe(true);
+    expect(window.scrollTo).toHaveBeenCalled();
+  });
+
+  test.each([
+    ['meta', { metaKey: true }],
+    ['ctrl', { ctrlKey: true }],
+    ['shift', { shiftKey: true }],
+  ])('%s 키를 누른 클릭은 브라우저에 맡긴다', (_name, init) => {
+    // 여기서 기본 동작을 막으면 새 탭·새 창이 열리지 않는다.
+    render(<TOC />);
+
+    const ev = dispatchClick(
+      screen.getByRole('link', { name: '들어가며' }),
+      init,
+    );
+
+    expect(ev.defaultPrevented).toBe(false);
+    expect(window.scrollTo).not.toHaveBeenCalled();
   });
 });

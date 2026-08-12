@@ -112,6 +112,22 @@ describe('CodeTabs', () => {
     expect(shownCode()).toContain('pnpm add typesense');
   });
 
+  test('Home / End 로 양 끝 탭으로 간다', () => {
+    // 탭이 넷 이상이면 화살표만으로 끝까지 가는 게 번거롭다(WAI-ARIA 권장).
+    renderMarkdown(TABS_MD);
+    const first = screen.getByRole('tab', { name: 'npm' });
+    first.focus();
+
+    fireEvent.keyDown(first, { key: 'End' });
+    expect(screen.getByRole('tab', { name: 'pnpm' })).toHaveFocus();
+
+    fireEvent.keyDown(screen.getByRole('tab', { name: 'pnpm' }), {
+      key: 'Home',
+    });
+    expect(screen.getByRole('tab', { name: 'npm' })).toHaveFocus();
+    expect(shownCode()).toContain('npm i typesense');
+  });
+
   test('탭 안의 코드 블록은 자기 상단 바를 그리지 않는다', () => {
     // 그리면 탭 바 아래에 언어 라벨 바가 한 줄 더 생겨 크롬이 이중이 된다.
     renderMarkdown(TABS_MD);
