@@ -52,6 +52,10 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const shouldReconnectRef = useRef(true);
+  // connect가 자기 자신을 setTimeout에서 참조하면 그 시점의 stale한 인스턴스가
+  // 잡힌다(react-hooks v7 immutability 위반). 항상 최신 connect를 부르도록
+  // ref를 경유한다.
+  const connectRef = useRef<(() => void) | null>(null);
 
   const addSystemMessage = useCallback((message: string) => {
     setMessages(prev => [...prev, `[시스템] ${message}`]);
@@ -101,7 +105,7 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
 
           reconnectTimeoutRef.current = setTimeout(() => {
             setReconnectAttempt(prev => prev + 1);
-            connect();
+            connectRef.current?.();
           }, delay);
         } else if (reconnectAttempt >= maxReconnectAttempts) {
           addSystemMessage(
@@ -127,6 +131,10 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
     reconnectAttempt,
     addSystemMessage,
   ]);
+
+  useEffect(() => {
+    connectRef.current = connect;
+  }, [connect]);
 
   const disconnect = useCallback(() => {
     shouldReconnectRef.current = false;
@@ -164,6 +172,11 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
 
   useEffect(() => {
     shouldReconnectRef.current = true;
+    // 마운트에 소켓을 여는 것이 이 훅의 본질. connect는 생성 실패(catch)에서만
+    // 동기 setState를 하므로 렌더 루프 위험이 없다. (react-hooks v7의
+    // set-state-in-effect 대응 — v5에는 이 룰이 없어 이름을 특정하면 오히려
+    // "룰 없음" 에러가 나므로 이름 없이 끈다)
+    // eslint-disable-next-line
     connect();
 
     return () => {
