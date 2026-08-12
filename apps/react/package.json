@@ -18,7 +18,7 @@
     "@design-system/ui": "workspace:^",
     "@design-system/ui-lib": "workspace:^",
     "@package/core": "workspace:*",
-    "@tanstack/react-query": "^5.100.10",
+    "@tanstack/react-query": "^5.101.4",
     "react": "catalog:",
     "react-dom": "catalog:",
     "react-router": "^8.0.0"
