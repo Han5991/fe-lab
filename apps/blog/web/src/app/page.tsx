@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { css } from '@design-system/ui-lib/css';
+import { css, cx } from '@design-system/ui-lib/css';
 import type { Metadata } from 'next';
 
 import {
@@ -23,6 +23,7 @@ import { Hero, FeaturedPost, PostIndexRow } from '@/src/components/blog';
 import { OssStrip } from '@/src/components/home/OssStrip';
 import { seriesBadgeLabel } from '@/src/components/home/seriesBadge';
 import { PageBoundary } from '@/src/components/PageBoundary';
+import { railGutter, railColumn } from '@/src/components/Rail';
 
 // 제목은 meta·og·twitter 세 곳에 나가므로 한 번만 쓴다 — 한 곳만 고쳐지면
 // 검색 결과와 공유 카드가 다른 말을 한다.
@@ -156,14 +157,12 @@ export default function HomePage() {
         dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }}
       />
       <PageBoundary transitionId="/">
-        <div className={css({ bg: 'paper.50', px: '[20px]' })}>
+        <div className={cx(css({ bg: 'paper.50' }), railGutter)}>
           <div
-            className={css({
-              maxW: 'hubW',
-              mx: 'auto',
-              pt: '[36px]',
-              pb: '[48px]',
-            })}
+            className={cx(
+              railColumn('text'),
+              css({ pt: '[36px]', pb: '[48px]' }),
+            )}
           >
             <Hero />
 

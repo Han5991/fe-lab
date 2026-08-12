@@ -1,18 +1,22 @@
 import Link from 'next/link';
-import { css } from '@design-system/ui-lib/css';
+import { css, cx } from '@design-system/ui-lib/css';
+
+import { railGutter } from '@/src/components/Rail';
 
 export default function NotFound() {
   return (
     <div
-      className={css({
-        display: 'flex',
-        flexDir: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minH: '[60vh]',
-        px: '6',
-        textAlign: 'center',
-      })}
+      className={cx(
+        css({
+          display: 'flex',
+          flexDir: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minH: '[60vh]',
+          textAlign: 'center',
+        }),
+        railGutter,
+      )}
     >
       <p
         className={css({
@@ -39,7 +43,7 @@ export default function NotFound() {
           fontSize: 'sm',
           color: 'ink.500',
           mt: '3',
-          maxW: 'formW',
+          maxW: 'railForm',
         })}
       >
         요청하신 페이지가 존재하지 않거나, 이동되었거나, 일시적으로 사용할 수

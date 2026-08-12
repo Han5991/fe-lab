@@ -3,8 +3,9 @@
 import { Suspense } from 'react';
 import { LogOut, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
-import { css } from '@design-system/ui-lib/css';
+import { css, cx } from '@design-system/ui-lib/css';
 
+import { railGutter, railColumn } from '@/src/components/Rail';
 import { useAdminLogout } from '@/src/hooks/useAdminLogout';
 import { LoadingPlaceholder } from '@/src/components/shared/LoadingPlaceholder';
 import { Label } from '@/src/components/blog/Label';
@@ -30,18 +31,20 @@ export default function AdminAnalyticsPage() {
     >
       {/* Admin top strip */}
       <div
-        className={css({
-          bg: 'paper.100',
-          borderBottomWidth: '[1px]',
-          borderBottomStyle: 'solid',
-          borderColor: 'ink.border',
-          px: { base: '4', md: '8' },
-          py: '2.5',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '3',
-          flexWrap: 'wrap',
-        })}
+        className={cx(
+          railGutter,
+          css({
+            bg: 'paper.100',
+            borderBottomWidth: '[1px]',
+            borderBottomStyle: 'solid',
+            borderColor: 'ink.border',
+            py: '2.5',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '3',
+            flexWrap: 'wrap',
+          }),
+        )}
       >
         <span
           className={css({
@@ -105,64 +108,68 @@ export default function AdminAnalyticsPage() {
       </div>
 
       {/* Page header */}
-      <header
-        className={css({
-          maxW: 'dashboardW',
-          mx: 'auto',
-          px: { base: '4', md: '8' },
-          py: { base: '8', md: '10' },
-          borderBottomWidth: '[1px]',
-          borderColor: 'ink.border',
-        })}
-      >
-        <Label tone="meta" className={css({ display: 'block', mb: '2' })}>
-          ANALYTICS / OVERVIEW
-        </Label>
-        <h1
-          className={css({
-            fontFamily: 'serif',
-            fontSize: { base: '3xl', md: '4xl' },
-            fontWeight: 'medium',
-            letterSpacing: 'tightSm',
-            color: 'ink.950',
-          })}
+      <div className={railGutter}>
+        <header
+          className={cx(
+            railColumn('wide'),
+            css({
+              py: { base: '8', md: '10' },
+              borderBottomWidth: '[1px]',
+              borderColor: 'ink.border',
+            }),
+          )}
         >
-          독자들이 무엇을 읽고 있는가
-        </h1>
-      </header>
+          <Label tone="meta" className={css({ display: 'block', mb: '2' })}>
+            ANALYTICS / OVERVIEW
+          </Label>
+          <h1
+            className={css({
+              fontFamily: 'serif',
+              fontSize: { base: '3xl', md: '4xl' },
+              fontWeight: 'medium',
+              letterSpacing: 'tightSm',
+              color: 'ink.950',
+            })}
+          >
+            독자들이 무엇을 읽고 있는가
+          </h1>
+        </header>
+      </div>
 
-      <main
-        className={css({
-          maxW: 'dashboardW',
-          mx: 'auto',
-          px: { base: '4', md: '8' },
-          py: { base: '8', md: '10' },
-          display: 'flex',
-          flexDir: 'column',
-          gap: '12',
-        })}
-      >
-        <Suspense fallback={<LoadingPlaceholder height="600px" />}>
-          <TagAwareAnalytics />
-        </Suspense>
-
-        {/* Detailed post list — 기존 도구 유지 */}
-        <section
-          className={css({
-            pt: '10',
-            borderTopWidth: '[1px]',
-            borderColor: 'ink.border',
-            display: 'flex',
-            flexDir: 'column',
-            gap: '4',
-          })}
+      <div className={railGutter}>
+        <main
+          className={cx(
+            railColumn('wide'),
+            css({
+              py: { base: '8', md: '10' },
+              display: 'flex',
+              flexDir: 'column',
+              gap: '12',
+            }),
+          )}
         >
-          <Label tone="meta">ALL POSTS · 상세</Label>
-          <Suspense fallback={<LoadingPlaceholder height="400px" />}>
-            <PostList />
+          <Suspense fallback={<LoadingPlaceholder height="600px" />}>
+            <TagAwareAnalytics />
           </Suspense>
-        </section>
-      </main>
+
+          {/* Detailed post list — 기존 도구 유지 */}
+          <section
+            className={css({
+              pt: '10',
+              borderTopWidth: '[1px]',
+              borderColor: 'ink.border',
+              display: 'flex',
+              flexDir: 'column',
+              gap: '4',
+            })}
+          >
+            <Label tone="meta">ALL POSTS · 상세</Label>
+            <Suspense fallback={<LoadingPlaceholder height="400px" />}>
+              <PostList />
+            </Suspense>
+          </section>
+        </main>
+      </div>
     </div>
   );
 }

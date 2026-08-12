@@ -1,7 +1,8 @@
-import { css } from '@design-system/ui-lib/css';
+import { css, cx } from '@design-system/ui-lib/css';
 import type { Metadata } from 'next';
 import { SITE_URL } from '@/lib/constants';
 import { PageBoundary } from '@/src/components/PageBoundary';
+import { railGutter, railColumn } from '@/src/components/Rail';
 
 export const metadata: Metadata = {
   title: '개인정보처리방침 | Frontend Lab',
@@ -20,16 +21,13 @@ export default function PrivacyPage() {
   return (
     <PageBoundary transitionId="/privacy">
       <div
-        className={css({ minHeight: '[calc(100lvh - 231px)]', bg: 'paper.50' })}
+        className={cx(
+          css({ minHeight: '[calc(100lvh - 231px)]', bg: 'paper.50' }),
+          railGutter,
+        )}
       >
-        <div
-          className={css({
-            maxW: 'panelW',
-            mx: 'auto',
-            px: '6',
-            py: '16',
-          })}
-        >
+        {/* 읽는 문서라 글 본문과 같은 text 레일. 예전엔 혼자 800px이었다. */}
+        <div className={cx(railColumn('text'), css({ py: '16' }))}>
           <h1
             className={css({
               fontSize: '4xl',

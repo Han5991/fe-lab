@@ -42,7 +42,7 @@ function LoginForm() {
           borderColor: 'ink.border',
           bg: 'ink.25',
           textAlign: 'center',
-          maxW: 'formW',
+          maxW: 'railForm',
           w: 'full',
         })}
       >

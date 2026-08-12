@@ -8,6 +8,7 @@ import {
 } from '@/lib/constants';
 
 import { PageTransition } from './PageTransition';
+import { railGutter, railColumn } from './Rail';
 import { NavLinks } from './home/NavLinks';
 import { SearchDialog } from './search/SearchDialog';
 import { ThemeToggle } from './ThemeToggle';
@@ -17,12 +18,16 @@ interface LayoutProps {
 }
 
 /**
- * 헤더·푸터의 기준 칼럼. 레퍼런스 허브와 같은 640px 축에 정렬합니다.
- * 바깥 px가 좁은 화면의 여백을, 안쪽 maxW가 넓은 화면의 폭을 담당합니다.
- * (글 상세는 TOC 사이드바 때문에 더 넓지만, 헤더는 공통이라 여기 기준을 따릅니다)
+ * 헤더·푸터는 **가장 넓은 레일**에 고정합니다. 페이지마다 본문 폭이 다른데
+ * (허브·글은 text 680, 목록·소개는 wide 1200) 헤더까지 따라 움직이면 이동할
+ * 때마다 로고 위치가 바뀝니다. wide에 고정하면 헤더는 어느 페이지에서나 같은
+ * 자리에 있고, 넓은 페이지에서는 본문 좌측과 정확히 일치합니다.
+ *
+ * 예전에는 640에 고정돼 있어서 /posts·/about에서 로고가 콘텐츠 안쪽으로
+ * 248px 들어가 있었습니다.
  */
-const railOuter = css({ px: '[20px]' });
-const railInner = css({ maxW: 'hubW', mx: 'auto' });
+const railOuter = railGutter;
+const railInner = railColumn('wide');
 
 const footerLink = css({
   fontFamily: 'mono',
