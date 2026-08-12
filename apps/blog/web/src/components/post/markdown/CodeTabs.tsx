@@ -42,7 +42,7 @@ import { CopyButton } from '@/src/components/post/CodeBlock';
  * 있는 탭**의 코드다.
  */
 
-/** `tab="npm"`이 붙은 코드 블록 하나. */
+/** 탭 하나가 된 코드 블록. */
 interface TabItem {
   label: string;
   /** 크롬을 끈 코드 블록 엘리먼트. */
@@ -51,8 +51,15 @@ interface TabItem {
   code: string;
 }
 
+/** 자식을 훑은 결과. `rest`는 탭이 될 수 없어 그대로 흘려보낼 것들. */
+interface Collected {
+  tabs: TabItem[];
+  rest: ReactNode[];
+}
+
 type CodeElementProps = {
   'data-tab'?: string;
+  className?: string;
   children?: ReactNode;
 };
 
@@ -71,34 +78,61 @@ function unwrapPre(node: ReactElement): ReactElement | null {
   return inner ?? null;
 }
 
-function collectTabs(children: ReactNode): TabItem[] {
-  return Children.toArray(children).flatMap<TabItem>(child => {
-    if (!isValidElement(child)) return [];
-    const code = unwrapPre(child);
-    if (!code) return [];
+/**
+ * 자식을 탭이 될 것과 아닌 것으로 가른다.
+ *
+ * **어느 쪽도 버리지 않는 게 이 함수의 계약이다.** 처음에는 `tab=`이 붙은
+ * 블록만 모으고 나머지는 그냥 흘려보냈는데, 그러면 탭이 하나라도 만들어진
+ * 순간 이름 없는 자식들이 화면에서 통째로 사라졌다. 셋 중 하나에만 `tab=`을
+ * 빠뜨리는 건 흔한 실수인데 에러도 경고도 없이 그 코드만 없어지니, 글쓴이가
+ * 발행 후에야 알아채게 된다.
+ *
+ * 그래서 **코드 펜스는 이름이 없어도 탭이 된다**(언어명 → 순번 순으로 이름을
+ * 짓는다). 코드가 아닌 자식(문단, 이미지…)은 탭이 될 수 없으니 `rest`로
+ * 넘겨 탭 상자 **아래에** 그대로 그린다. 자리가 어색해 보이는 건 글쓴이가
+ * 고칠 수 있지만, 안 보이는 건 고칠 수가 없다.
+ */
+function collectTabs(children: ReactNode): Collected {
+  const tabs: TabItem[] = [];
+  const rest: ReactNode[] = [];
+
+  Children.toArray(children).forEach(child => {
+    // 코드 펜스는 언제나 `<pre>`로 온다. raw HTML로 직접 쓴 <pre>도 같은
+    // 취급이지만, 그건 어차피 코드를 담는 상자라 탭에 들어가도 무방하다.
+    const code =
+      isValidElement(child) && child.type === 'pre' ? unwrapPre(child) : null;
+    if (!code) {
+      // 마크다운이 블록 사이에 끼워 넣는 공백 텍스트까지 남기면 탭 아래에
+      // 빈 줄이 생긴다. 그것만 걸러내고 나머지는 전부 보존한다.
+      if (typeof child === 'string' && child.trim() === '') return;
+      rest.push(child);
+      return;
+    }
+
     const props = code.props as CodeElementProps;
-    const label = props['data-tab'];
-    // 탭 이름이 없는 블록은 탭이 될 수 없다. 조용히 빠뜨리는 대신 그냥
-    // 목록에서 제외하고, 아래에서 탭이 하나도 없으면 원본을 그대로 그린다.
-    if (!label) return [];
-    return [
-      {
-        label,
-        content: cloneElement(code, { 'data-bare': true } as CodeElementProps),
-        code: codeText(props.children).replace(/\n$/, ''),
-      },
-    ];
+    const language = /language-(\w+)/.exec(props.className ?? '')?.[1];
+    tabs.push({
+      label: props['data-tab'] ?? language ?? `코드 ${tabs.length + 1}`,
+      content: cloneElement(code, { 'data-bare': true } as CodeElementProps),
+      code: codeText(props.children).replace(/\n$/, ''),
+    });
   });
+
+  return { tabs, rest };
 }
 
 export function CodeTabs({ children }: { children?: ReactNode }) {
-  const items = useMemo(() => collectTabs(children), [children]);
+  const { tabs: items, rest } = useMemo(
+    () => collectTabs(children),
+    [children],
+  );
   const [active, setActive] = useState(0);
   const baseId = useId();
   const tabRefs = useRef(new Map<number, HTMLButtonElement>());
 
-  // 탭 이름을 하나도 못 찾았으면 이 컴포넌트가 할 일이 없다. 글쓴이가
-  // `tab=` 을 빠뜨린 경우라, 내용을 숨기지 말고 그대로 흘려보낸다.
+  // 코드 블록이 하나도 없으면 이 컴포넌트가 할 일이 없다. 글쓴이가 태그만
+  // 열어 두고 안을 안 채웠거나 빈 줄을 빠뜨린 경우라, 내용을 숨기지 말고
+  // 그대로 흘려보낸다.
   if (items.length === 0) return <>{children}</>;
 
   const current = items[Math.min(active, items.length - 1)];
@@ -114,7 +148,7 @@ export function CodeTabs({ children }: { children?: ReactNode }) {
     tabRefs.current.get(next)?.focus();
   };
 
-  return (
+  const box = (
     <div
       className={css({
         mb: '12',
@@ -175,9 +209,15 @@ export function CodeTabs({ children }: { children?: ReactNode }) {
                   letterSpacing: 'mono',
                   whiteSpace: 'nowrap',
                   cursor: 'pointer',
-                  color: selected ? 'accent.600' : 'ink.600',
+                  // 선택 표시는 **무채색**이다. 포인트색이 가는 자리는 제목 ·
+                  // 링크 · 시리즈 배지 · 다이어그램의 핵심 경로 넷뿐이고
+                  // (CLAUDE.md 디자인 시스템), 탭은 그 어디도 아니다. 차례
+                  // 레일이 같은 이유로 무채색인 것과도 맞춘다 — 코드 블록
+                  // 크롬처럼 본문을 읽는 보조 장치에까지 액센트를 뿌리면
+                  // "액센트가 붙은 곳 = 중요한 곳"이라는 신호가 닳는다.
+                  color: selected ? 'ink.950' : 'ink.600',
                   transition: '[color 0.15s]',
-                  _hover: { color: selected ? 'accent.600' : 'ink.950' },
+                  _hover: { color: 'ink.950' },
                   // 활성 표시는 밑줄 1px. 배경을 칠하면 크롬 안에 또 다른
                   // 상자가 생겨 위계가 한 겹 늘어난다.
                   '&[aria-selected=true]::after': {
@@ -186,7 +226,7 @@ export function CodeTabs({ children }: { children?: ReactNode }) {
                     insetX: '2',
                     bottom: '0',
                     h: '[1px]',
-                    bg: 'accent.500',
+                    bg: 'ink.950',
                   },
                 })}
               >
@@ -208,5 +248,16 @@ export function CodeTabs({ children }: { children?: ReactNode }) {
         {current.content}
       </div>
     </div>
+  );
+
+  // 탭이 될 수 없었던 자식은 상자 **밖 아래**에 그대로 붙인다. 코드 표면
+  // 위에 문단을 얹으면 배경이 어긋나고, 상자 안에 감추면 안 보인다.
+  return rest.length === 0 ? (
+    box
+  ) : (
+    <>
+      {box}
+      {rest}
+    </>
   );
 }

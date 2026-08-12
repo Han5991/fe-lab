@@ -135,16 +135,93 @@ describe('CodeTabs', () => {
     vi.unstubAllGlobals();
   });
 
-  test('tab= 이 하나도 없으면 내용을 그대로 흘려보낸다', () => {
-    // 글쓴이가 메타를 빠뜨린 경우다. 탭을 못 만든다고 코드를 숨기면
-    // 글에서 문단 하나가 통째로 사라진다.
+  test('코드 블록이 하나도 없으면 내용을 그대로 흘려보낸다', () => {
+    // 태그만 열어 두고 안을 안 채웠거나 빈 줄을 빠뜨린 경우다.
     renderMarkdown(
-      ['<code-tabs>', '', '```bash', 'npm i', '```', '', '</code-tabs>'].join(
-        '\n',
-      ),
+      ['<code-tabs>', '', '그냥 문단', '', '</code-tabs>'].join('\n'),
     );
 
     expect(screen.queryAllByRole('tab')).toHaveLength(0);
-    expect(shownCode()).toContain('npm i');
+    expect(document.body.textContent).toContain('그냥 문단');
+  });
+});
+
+/**
+ * `tab=`을 빠뜨린 자식을 어떻게 다루는가.
+ *
+ * 셋 중 하나에만 이름을 안 다는 건 흔한 실수인데, 예전 구현은 그 블록을
+ * 목록에서 제외하기만 해서 **화면에서 통째로 사라졌다.** 에러도 경고도 없어
+ * 글쓴이는 발행한 뒤에야 알아챈다. 여기서는 "어느 자식도 버리지 않는다"를
+ * 고정한다.
+ */
+describe('CodeTabs — 이름 없는 자식', () => {
+  test('일부만 tab= 을 달아도 나머지 코드가 사라지지 않는다', () => {
+    renderMarkdown(
+      [
+        '<code-tabs>',
+        '',
+        '```bash tab="npm"',
+        'npm i typesense',
+        '```',
+        '',
+        '```bash',
+        'yarn add typesense',
+        '```',
+        '',
+        '</code-tabs>',
+      ].join('\n'),
+    );
+
+    // 이름이 없으면 언어명이 대신 라벨이 된다.
+    expect(screen.getAllByRole('tab').map(t => t.textContent)).toEqual([
+      'npm',
+      'bash',
+    ]);
+
+    fireEvent.click(screen.getByRole('tab', { name: 'bash' }));
+    expect(shownCode()).toContain('yarn add typesense');
+  });
+
+  test('언어도 없으면 순번으로 이름을 짓는다', () => {
+    renderMarkdown(
+      [
+        '<code-tabs>',
+        '',
+        '```',
+        'plain one',
+        '```',
+        '',
+        '```',
+        'plain two',
+        '```',
+        '',
+        '</code-tabs>',
+      ].join('\n'),
+    );
+
+    expect(screen.getAllByRole('tab').map(t => t.textContent)).toEqual([
+      '코드 1',
+      '코드 2',
+    ]);
+  });
+
+  test('코드가 아닌 자식은 탭 밖에 그대로 남는다', () => {
+    // 탭이 될 수 없다고 감추면 글에서 문단이 사라진다.
+    renderMarkdown(
+      [
+        '<code-tabs>',
+        '',
+        '설치는 아래 중 하나로.',
+        '',
+        '```bash tab="npm"',
+        'npm i',
+        '```',
+        '',
+        '</code-tabs>',
+      ].join('\n'),
+    );
+
+    expect(screen.getAllByRole('tab')).toHaveLength(1);
+    expect(document.body.textContent).toContain('설치는 아래 중 하나로.');
   });
 });
