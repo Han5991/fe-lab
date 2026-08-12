@@ -24,7 +24,7 @@
     "@design-system/ui": "workspace:^",
     "@design-system/ui-lib": "workspace:^",
     "@giscus/react": "^3.1.0",
-    "@next/third-parties": "^16.2.6",
+    "@next/third-parties": "^16.3.0",
     "@ssgoi/react": "6.4.0",
     "@supabase/postgrest-js": "^2.103.0",
     "@supabase/supabase-js": "^2.89.0",
