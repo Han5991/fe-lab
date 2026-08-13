@@ -180,10 +180,8 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
   useEffect(() => {
     shouldReconnectRef.current = true;
     // 마운트에 소켓을 여는 것이 이 훅의 본질. connect는 생성 실패(catch)에서만
-    // 동기 setState를 하므로 렌더 루프 위험이 없다. (react-hooks v7의
-    // set-state-in-effect 대응 — v5에는 이 룰이 없어 이름을 특정하면 오히려
-    // "룰 없음" 에러가 나므로 이름 없이 끈다)
-    // eslint-disable-next-line
+    // 동기 setState를 하므로 렌더 루프 위험이 없다.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     connect();
 
     return () => {

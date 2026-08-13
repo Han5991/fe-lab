@@ -73,8 +73,7 @@ export default async function PostPage({ params }: Props) {
 
   // 시리즈 내 위치 계산 (헤더 라벨용)
   let seriesIndex:
-    | { current: number; total: number; displayName: string }
-    | undefined;
+    { current: number; total: number; displayName: string } | undefined;
   // 한 편짜리 폴더는 시리즈가 아니다 — 배지를 달면 `Turborepo 인프라 1/1`
   // 처럼 뜻이 없는 표기가 된다(`isSeriesFolder` 참고).
   const seriesPosts = post.series
