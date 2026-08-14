@@ -285,9 +285,10 @@ test('isSeriesFolder: 0편도 시리즈가 아니다', () => {
 });
 
 test('isSeriesFolder: _series.yml이 있으면 1편이어도 시리즈', () => {
-  // ci 폴더에는 실제 _series.yml이 있다. 편수와 무관하게 저자가 시리즈로
-  // 선언한 것이므로 존중한다.
-  assert.equal(isSeriesFolder('ci', 1), true);
+  // bundler 폴더에는 실제 _series.yml이 있다. 편수와 무관하게 저자가 시리즈로
+  // 선언한 것이므로 존중한다. (아래 "null을 명시하면" 테스트와 같은 폴더를
+  // 픽스처로 공유한다 — 실제 폴더 의존은 bundler 하나로 유지할 것.)
+  assert.equal(isSeriesFolder('bundler', 1), true);
 });
 
 test('isSeriesFolder: meta를 주입하면 디스크를 읽지 않는다', () => {
