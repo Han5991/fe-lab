@@ -5,7 +5,6 @@ import type { Metadata } from 'next';
 import {
   getAllPostSummaries,
   getSeriesMeta,
-  isSeriesFolder,
   sortPostsBySeriesOrder,
   type PostSummary,
 } from '@/domain/post';
@@ -132,10 +131,9 @@ function buildSeriesLabel(
   post: PostSummary,
   allPosts: PostSummary[],
 ): string | undefined {
+  // `series`는 `_series.yml`로 선언된 폴더에만 붙는다(`repository.ts`).
+  // 주제별로 모아 둔 폴더의 글은 여기서 그대로 빠진다.
   if (!post.series) return undefined;
-  // `_series.yml`이 없는 폴더는 시리즈가 아니다 — 주제별로 모아 둔 폴더에까지
-  // 배지가 붙는 것을 막는다(`isSeriesFolder`).
-  if (!isSeriesFolder(post.series)) return undefined;
   const siblings = allPosts.filter(p => p.series === post.series);
   const meta = getSeriesMeta(post.series);
   const ordered = sortPostsBySeriesOrder(siblings, meta?.order);

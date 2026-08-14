@@ -9,9 +9,14 @@
  */
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { getAllPosts, getAllPostsIncludingHidden } from './service';
+import {
+  getAllPosts,
+  getAllPostsIncludingHidden,
+  getSeriesAdjacentPosts,
+} from './service';
 import { isPostVisible } from './visibility';
-import { buildSitemapXml } from '@/scripts/generate-sitemap';
+import { isSeriesFolder } from './series';
+import { buildSitemapXml, getPostPriority } from '@/scripts/generate-sitemap';
 import { buildRssXml } from '@/scripts/generate-rss';
 import {
   buildAdminPostsIndex,
@@ -212,4 +217,71 @@ test('llms-full: Total posts 카운트가 실제 공개 글 수와 일치', () =
   const posts = getAllPosts();
   const text = buildLlmsFullText(posts);
   assert.ok(text.includes(`Total posts: ${posts.length}+ articles`));
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 시리즈 단일 출처
+//
+// `series`는 `_series.yml`로 선언된 폴더에만 붙는다(`repository.ts`). 판정이 읽는
+// 시점 한 곳에서 끝나므로, 아래 불변식이 깨지면 배지·네비게이션뿐 아니라 검색·
+// OG 카드·llms까지 한꺼번에 어긋난다.
+// ─────────────────────────────────────────────────────────────────────────────
+
+test('contract: series는 _series.yml로 선언된 폴더에만 붙는다', () => {
+  const violations = getAllPostsIncludingHidden()
+    .filter((p): p is typeof p & { series: string } => Boolean(p.series))
+    .filter(p => !isSeriesFolder(p.series))
+    .map(p => `${p.slug} (series=${p.series})`);
+  assert.deepEqual(violations, []);
+});
+
+test('contract: 선언되지 않은 폴더의 글은 시리즈 네비게이션이 없다', () => {
+  // relativeDir은 있는데 series가 없는 글 = 폴더에는 있지만 시리즈가 아닌 글.
+  const grouped = getAllPosts().filter(p => p.relativeDir && !p.series);
+  assert.ok(
+    grouped.length > 0,
+    '검증이 공허하지 않으려면 시리즈가 아닌 폴더의 공개 글이 최소 1편은 있어야 함',
+  );
+  for (const p of grouped) {
+    const nav = getSeriesAdjacentPosts(p.slug);
+    assert.equal(nav.seriesName, null, `${p.slug}: seriesName`);
+    assert.equal(nav.prev, null, `${p.slug}: prev`);
+    assert.equal(nav.next, null, `${p.slug}: next`);
+  }
+});
+
+test('contract: 선언된 시리즈의 글은 시리즈 네비게이션이 있다 (대조군)', () => {
+  const seriesPosts = getAllPosts().filter(p => p.series);
+  assert.ok(seriesPosts.length > 0, '시리즈 글이 최소 1편은 있어야 함');
+  for (const p of seriesPosts) {
+    assert.ok(
+      getSeriesAdjacentPosts(p.slug).seriesName,
+      `${p.slug}: 시리즈인데 seriesName이 없음`,
+    );
+  }
+});
+
+test('contract: 검색 인덱스의 series는 선언된 시리즈만', () => {
+  // 예전엔 폴더에 글을 모아 두는 것만으로 검색 결과에 "📚 폴더명"이 붙었다.
+  for (const e of buildPublicSearchIndex(getAllPosts())) {
+    if (e.series) {
+      assert.ok(
+        isSeriesFolder(e.series),
+        `검색 인덱스에 비시리즈: ${e.series}`,
+      );
+    }
+  }
+});
+
+test('contract: sitemap 우선순위는 시리즈가 아니라 폴더 기준이다', () => {
+  // `typescript` 폴더에는 `_series.yml`이 없다. series로 판정하면 이 글의
+  // 우선순위가 조용히 0.6으로 떨어진다.
+  const post = getAllPosts().find(p => p.relativeDir === 'typescript');
+  if (!post) return; // 콘텐츠가 바뀌어 폴더가 사라지면 이 계약은 무의미해진다
+  assert.equal(
+    post.series,
+    undefined,
+    'typescript 폴더는 시리즈가 아니어야 함',
+  );
+  assert.equal(getPostPriority(post), '0.75');
 });

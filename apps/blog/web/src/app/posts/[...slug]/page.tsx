@@ -5,11 +5,7 @@ import {
   getSeriesAdjacentPosts,
   getAllPosts,
 } from '@/domain/post';
-import {
-  getSeriesMeta,
-  isSeriesFolder,
-  sortPostsBySeriesOrder,
-} from '@/domain/post/series';
+import { getSeriesMeta, sortPostsBySeriesOrder } from '@/domain/post/series';
 import { resolveThumbnailUrl } from '@/domain/post/thumbnail';
 import { isPostVisible } from '@/domain/post/visibility';
 import { notFound } from 'next/navigation';
@@ -74,13 +70,11 @@ export default async function PostPage({ params }: Props) {
   // 시리즈 내 위치 계산 (헤더 라벨용)
   let seriesIndex:
     { current: number; total: number; displayName: string } | undefined;
-  // `_series.yml`이 없는 폴더는 시리즈가 아니다 — 주제별로 모아 둔 폴더까지
-  // 배지를 달면 `아키텍처 1/3`처럼 저자가 의도하지 않은 연재가 생긴다
-  // (`isSeriesFolder` 참고).
-  const seriesPosts =
-    post.series && isSeriesFolder(post.series)
-      ? getAllPosts().filter(p => p.series === post.series)
-      : [];
+  // `series`는 `_series.yml`로 선언된 폴더에만 붙는다(`repository.ts`). 주제별로
+  // 모아 둔 폴더의 글은 series가 비어 있어 배지가 생기지 않는다.
+  const seriesPosts = post.series
+    ? getAllPosts().filter(p => p.series === post.series)
+    : [];
   if (post.series && seriesPosts.length > 0) {
     const meta = getSeriesMeta(post.series);
     const orderedPosts = sortPostsBySeriesOrder(seriesPosts, meta?.order);

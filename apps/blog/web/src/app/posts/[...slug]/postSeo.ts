@@ -145,7 +145,10 @@ export function buildPostJsonLd(
     wordCount: countWords(post.content),
     ...(post.tags &&
       post.tags.length > 0 && { keywords: post.tags.join(', ') }),
-    ...(post.series && { articleSection: post.series }),
+    // articleSection은 "이 글이 속한 섹션"이지 연재 여부가 아니다. 시리즈로
+    // 선언하지 않은 주제 폴더도 섹션이므로 물리적 폴더(`relativeDir`)를 쓴다
+    // — `series`로 쓰면 선언되지 않은 폴더의 글에서만 이 필드가 사라진다.
+    ...(post.relativeDir && { articleSection: post.relativeDir }),
     mainEntityOfPage: { '@type': 'WebPage', '@id': postUrl },
     url: postUrl,
     author: {

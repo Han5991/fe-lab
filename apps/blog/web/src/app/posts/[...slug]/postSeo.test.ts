@@ -233,13 +233,23 @@ describe('buildPostJsonLd (Schema.org BlogPosting)', () => {
     );
   });
 
-  test('articleSection: series 있으면 반영, 없으면 키 없음', () => {
+  test('articleSection: 폴더(relativeDir) 기준, 루트 글은 키 없음', () => {
+    // 섹션은 "이 글이 어디에 속하는가"라서 연재 여부와 무관하다. series로
+    // 잡으면 _series.yml을 두지 않은 주제 폴더의 글만 이 필드를 잃는다.
     expect(
-      buildPostJsonLd(makePost({ series: '번들러' }), 'x').articleSection,
+      buildPostJsonLd(makePost({ relativeDir: '번들러' }), 'x').articleSection,
     ).toBe('번들러');
     expect(
-      'articleSection' in buildPostJsonLd(makePost({ series: undefined }), 'x'),
+      'articleSection' in buildPostJsonLd(makePost({ relativeDir: '' }), 'x'),
     ).toBe(false);
+  });
+
+  test('articleSection: 시리즈가 아닌 폴더의 글에도 남는다', () => {
+    const jsonLd = buildPostJsonLd(
+      makePost({ relativeDir: 'typescript', series: undefined }),
+      'x',
+    );
+    expect(jsonLd.articleSection).toBe('typescript');
   });
 
   test('wordCount는 countWords 결과', () => {

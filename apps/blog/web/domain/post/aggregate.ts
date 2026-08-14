@@ -1,5 +1,5 @@
 import { getAllPosts } from './service';
-import { getSeriesMeta, isSeriesFolder } from './series';
+import { getSeriesMeta } from './series';
 import type { PostSummary } from './types';
 
 export interface SeriesSummary {
@@ -33,6 +33,10 @@ const COLOR_FALLBACK: SeriesSummary['colorKey'][] = [
 
 /**
  * 모든 시리즈를 최근 글 기준 내림차순으로 반환합니다.
+ *
+ * `post.series`는 `_series.yml`로 선언된 폴더에만 붙습니다(`repository.ts`).
+ * 그래서 여기서 시리즈 여부를 다시 거를 필요가 없습니다 — 걸러내는 조건을
+ * 두면 항상 참이라 "여기서도 판정한다"는 오해만 남습니다.
  */
 export function getAllSeries(): SeriesSummary[] {
   const posts = getAllPosts();
@@ -53,11 +57,8 @@ export function getAllSeries(): SeriesSummary[] {
     map.set(post.series, entry);
   }
 
-  // 색 배정은 걸러낸 뒤에 한다 — 시리즈가 아닌 폴더가 round-robin 순번을
-  // 잡아먹으면 남은 시리즈 색이 이유 없이 건너뛴다.
-  const series: SeriesSummary[] = Array.from(map.entries())
-    .filter(([id]) => isSeriesFolder(id))
-    .map(([id, { posts: ps, updated }], idx) => {
+  const series: SeriesSummary[] = Array.from(map.entries()).map(
+    ([id, { posts: ps, updated }], idx) => {
       const meta = getSeriesMeta(id);
       const colorKey = SERIES_COLOR_MAP[id] ?? COLOR_FALLBACK[idx % 3];
       return {
@@ -68,7 +69,8 @@ export function getAllSeries(): SeriesSummary[] {
         updated,
         colorKey,
       };
-    });
+    },
+  );
 
   return series.sort((a, b) => {
     if (a.updated && b.updated) return b.updated.localeCompare(a.updated);
