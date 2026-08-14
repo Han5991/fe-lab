@@ -5,6 +5,7 @@ import { estimateReadMin } from '@/lib/format';
 import { SEO_DESCRIPTION_MAX_LENGTH as EXCERPT_FALLBACK_LENGTH } from '@/lib/constants';
 import { collectMarkdownFiles, hasFrontmatter } from '@/lib/postFiles';
 import { isPostFile } from './visibility';
+import { isSeriesFolder } from './series';
 import type { PostData, RawFrontmatter } from './types';
 
 const postsDirectory = join(process.cwd(), '..', 'posts');
@@ -150,13 +151,40 @@ export function parsePost(
  *
  * 파일 I/O(collectMarkdownFiles + readFileSync)만 담당하고, 내용 → PostData
  * 변환은 순수 함수 parsePost에 위임합니다(null이면 메타 파일이므로 제외).
+ *
+ * **`series`를 붙일지 말지는 여기서 한 번에 끝냅니다.** parsePost는 경로만 보는
+ * 순수 함수라 폴더에 `_series.yml`이 있는지 알 수 없고, 디스크를 읽는 쪽은
+ * 여기입니다. 판정을 소비처마다 두면(`isSeriesFolder`를 검색·OG·llms에서 각각
+ * 부르면) 언젠가 한 곳을 빠뜨리고, 그게 정확히 예전 구조의 문제였습니다.
+ *
+ * 물리적 폴더는 `relativeDir`에 그대로 남습니다 — 시리즈가 아닌 폴더를 알아야
+ * 하는 쪽(sitemap 우선순위, JSON-LD articleSection)은 그쪽을 봅니다.
  */
 function collectPosts(dirPath: string): PostData[] {
   const results: PostData[] = [];
+  // 스캔 한 번 동안만 사는 메모. 모듈 수준 캐시로 올리지 않는 이유는
+  // getSeriesMeta가 dev에서 캐시를 우회하는 것과 같습니다 — `_series.yml`을
+  // 새로 만들거나 지우면 다음 요청에 바로 반영돼야 합니다.
+  const declaredSeries = new Map<string, boolean>();
+
   for (const fullPath of collectMarkdownFiles(dirPath)) {
     const fileContents = readFileSync(fullPath, 'utf8');
     const post = parsePost(fileContents, relative(dirPath, fullPath));
-    if (post) results.push(post);
+    if (!post) continue;
+
+    if (post.series) {
+      let declared = declaredSeries.get(post.series);
+      if (declared === undefined) {
+        declared = isSeriesFolder(post.series);
+        declaredSeries.set(post.series, declared);
+      }
+      if (!declared) {
+        results.push({ ...post, series: undefined });
+        continue;
+      }
+    }
+
+    results.push(post);
   }
 
   return results;

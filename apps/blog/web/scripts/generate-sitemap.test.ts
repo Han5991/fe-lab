@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import {
   buildSitemapXml,
   getPostPriority,
-  HIGH_PRIORITY_SERIES,
+  HIGH_PRIORITY_FOLDERS,
   HIGH_PRIORITY_SLUGS,
 } from './generate-sitemap';
 import type { SitemapPost } from './generate-sitemap';
@@ -21,7 +21,8 @@ function makePost(over: Partial<SitemapPost> = {}): SitemapPost {
     slug: 'hello-world',
     date: '2026-05-09',
     updatedAt: null,
-    series: undefined,
+    // 루트 글은 빈 문자열이다(`repository.ts`의 currentPath) — optional이 아니다.
+    relativeDir: '',
     ...over,
   };
 }
@@ -208,19 +209,32 @@ test('getPostPriority: 고우선 slug는 0.8 (HIGH_PRIORITY_SLUGS 전부 0.8)', 
   }
 });
 
-test('getPostPriority: 고우선 시리즈는 0.75 (HIGH_PRIORITY_SERIES 전부 0.75)', () => {
-  for (const series of HIGH_PRIORITY_SERIES) {
+test('getPostPriority: 고우선 폴더는 0.75 (HIGH_PRIORITY_FOLDERS 전부 0.75)', () => {
+  for (const relativeDir of HIGH_PRIORITY_FOLDERS) {
     assert.equal(
-      getPostPriority({ slug: 'arbitrary', series }),
+      getPostPriority({ slug: 'arbitrary', relativeDir }),
       '0.75',
-      `${series} series priority`,
+      `${relativeDir} folder priority`,
     );
   }
 });
 
+test('getPostPriority: 시리즈가 아닌 고우선 폴더도 0.75', () => {
+  // `typescript` 폴더에는 `_series.yml`이 없어 글의 series가 비어 있다.
+  // 우선순위를 series로 판정하면 이 글이 조용히 0.6으로 떨어진다.
+  assert.ok(HIGH_PRIORITY_FOLDERS.has('typescript'));
+  assert.equal(
+    getPostPriority({ slug: 'arbitrary', relativeDir: 'typescript' }),
+    '0.75',
+  );
+});
+
 test('getPostPriority: 그 외는 0.6', () => {
   assert.equal(getPostPriority({ slug: 'x' }), '0.6');
-  assert.equal(getPostPriority({ slug: 'x', series: 'random-series' }), '0.6');
+  assert.equal(
+    getPostPriority({ slug: 'x', relativeDir: 'random-folder' }),
+    '0.6',
+  );
 });
 
 test('sitemap: URL 절대 경로 형식 (loc은 https://...로 시작)', () => {
