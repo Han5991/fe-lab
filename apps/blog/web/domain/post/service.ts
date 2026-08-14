@@ -1,6 +1,10 @@
 import { readAllPosts } from './repository';
 import { isPostVisible } from './visibility';
-import { getSeriesMeta, sortPostsBySeriesOrder } from './series';
+import {
+  getSeriesMeta,
+  isSeriesFolder,
+  sortPostsBySeriesOrder,
+} from './series';
 import type {
   PostData,
   PostNavItem,
@@ -154,6 +158,10 @@ export function getAdjacentPosts(
  *
  * `_series.yml`의 `order` 필드가 있으면 그 순서대로 정렬하고,
  * 시리즈 표시명도 메타의 `title`로 대체합니다.
+ *
+ * 시리즈가 아닌 폴더(= `_series.yml`이 없다)는 전부 null입니다. 배지는
+ * `isSeriesFolder`로 막으면서 이 네비게이션만 폴더 경로로 판정하면, 배지 없는
+ * 글 아래에 "시리즈 이전 글"이 남습니다 — 판정은 한 곳에서만 합니다.
  */
 export function getSeriesAdjacentPosts(currentSlug: string): {
   prev: PostNavItem | null;
@@ -167,6 +175,10 @@ export function getSeriesAdjacentPosts(currentSlug: string): {
   }
 
   const meta = getSeriesMeta(currentPost.series);
+  if (!isSeriesFolder(currentPost.series, meta)) {
+    return { prev: null, next: null, seriesName: null };
+  }
+
   const displayName = meta?.title ?? currentPost.series;
 
   if (meta?.order && meta.order.length > 0) {

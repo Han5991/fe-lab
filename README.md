@@ -21,14 +21,14 @@
 
 ### apps/
 
-| 이름            | 종류             | 핵심 스택                                         | 비고                                                                         |
-| --------------- | ---------------- | ------------------------------------------------- | ---------------------------------------------------------------------------- |
-| `blog/web`      | 🚀 블로그 (운영) | Next.js 16, MDX, Panda CSS, Supabase, React Query | SSG + 동적 기능 하이브리드. 도메인 `blog.sangwook.dev`.                      |
-| `blog/posts`    | 📝 콘텐츠        | Markdown / MDX                                    | 시리즈별 폴더 구조, frontmatter 기반 메타. `_series.yml`로 시리즈 메타 정의. |
-| `next.js`       | 🧪 실험          | Next.js 16 (App Router, Turbopack), Jest          | 서버 컴포넌트·에러 바운더리·테스팅 전략.                                     |
-| `react`         | 🧪 실험          | React 19 SPA + Vite + Vitest + MSW                | React Router·커스텀 훅·API 모킹.                                             |
-| `typescript`    | 🧪 실험          | Pure TypeScript + Jest                            | 도메인 모델링·타입 설계 패턴.                                                |
-| `socket-server` | 🧪 실험          | Node.js + 순수 TypeScript WebSocket               | `react` 앱과 짝지어 실시간 통신 실험.                                        |
+| 이름            | 종류             | 핵심 스택                                         | 비고                                                                       |
+| --------------- | ---------------- | ------------------------------------------------- | -------------------------------------------------------------------------- |
+| `blog/web`      | 🚀 블로그 (운영) | Next.js 16, MDX, Panda CSS, Supabase, React Query | SSG + 동적 기능 하이브리드. 도메인 `blog.sangwook.dev`.                    |
+| `blog/posts`    | 📝 콘텐츠        | Markdown / MDX                                    | 주제별 폴더 구조, frontmatter 기반 메타. `_series.yml`을 둔 폴더만 시리즈. |
+| `next.js`       | 🧪 실험          | Next.js 16 (App Router, Turbopack), Jest          | 서버 컴포넌트·에러 바운더리·테스팅 전략.                                   |
+| `react`         | 🧪 실험          | React 19 SPA + Vite + Vitest + MSW                | React Router·커스텀 훅·API 모킹.                                           |
+| `typescript`    | 🧪 실험          | Pure TypeScript + Jest                            | 도메인 모델링·타입 설계 패턴.                                              |
+| `socket-server` | 🧪 실험          | Node.js + 순수 TypeScript WebSocket               | `react` 앱과 짝지어 실시간 통신 실험.                                      |
 
 ### packages/
 
@@ -124,7 +124,7 @@ pnpm lint:posts                                     # frontmatter 검증
 
 ## 📖 이 저장소를 활용하는 법
 
-1. **글로 정리하기** — 새 기술을 실험해 본 결과는 `apps/blog/posts/` 안에 마크다운으로 정리. 시리즈 단위로 폴더를 분리하고 `_series.yml`로 표시명을 잡습니다.
+1. **글로 정리하기** — 새 기술을 실험해 본 결과는 `apps/blog/posts/` 안에 마크다운으로 정리. 주제 단위로 폴더를 나누고, 이어서 읽는 글이면 그 폴더에 `_series.yml`을 두어 시리즈로 선언합니다.
 2. **실험 앱 추가하기** — 새 주제는 `apps/<name>` 하위에 워크스페이스를 만들고 디자인 시스템(`@design-system/ui`)을 의존성으로 가져와 시작합니다.
 3. **공유 가치가 생기면 패키지로** — 여러 앱이 공유할 만한 로직은 `packages/@package/<name>`으로 옮겨 catalog/workspace 프로토콜로 의존하게 합니다.
 

@@ -56,7 +56,7 @@ export function getAllSeries(): SeriesSummary[] {
   // 색 배정은 걸러낸 뒤에 한다 — 시리즈가 아닌 폴더가 round-robin 순번을
   // 잡아먹으면 남은 시리즈 색이 이유 없이 건너뛴다.
   const series: SeriesSummary[] = Array.from(map.entries())
-    .filter(([id, { posts: ps }]) => isSeriesFolder(id, ps.length))
+    .filter(([id]) => isSeriesFolder(id))
     .map(([id, { posts: ps, updated }], idx) => {
       const meta = getSeriesMeta(id);
       const colorKey = SERIES_COLOR_MAP[id] ?? COLOR_FALLBACK[idx % 3];

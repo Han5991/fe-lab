@@ -98,7 +98,8 @@ test('llms: 시리즈 글은 시리즈 섹션에, 나머지는 단독 포스트 
       makePost({ slug: 's1', title: '시리즈글1', series: 'bundler' }),
       makePost({ slug: 's2', title: '시리즈글2', series: 'bundler' }),
     ],
-    OPTS,
+    // 편수가 아니라 `_series.yml`의 존재가 시리즈를 만든다 — 메타를 주입한다.
+    { siteUrl: SITE, resolveSeriesMeta: () => ({ name: 'bundler' }) },
   );
   const seriesIdx = text.indexOf('## 시리즈: bundler');
   const soloIdx = text.indexOf('## 단독 포스트');
@@ -110,9 +111,8 @@ test('llms: 시리즈 글은 시리즈 섹션에, 나머지는 단독 포스트 
   assert.ok(text.indexOf('단독글') > soloIdx);
 });
 
-test('llms: 한 편짜리 폴더는 시리즈가 아니다 (/series 페이지와 같은 판정)', () => {
-  // `_series.yml` 없이 글이 하나뿐인 폴더까지 시리즈로 부르면, 사이트에는 없는
-  // "시리즈"가 색인에만 생긴다.
+test('llms: _series.yml이 없는 폴더는 시리즈가 아니다 (/series 페이지와 같은 판정)', () => {
+  // 선언 없는 폴더까지 시리즈로 부르면, 사이트에는 없는 "시리즈"가 색인에만 생긴다.
   const text = buildLlmsText(
     [makePost({ slug: 'only', title: '한편글', series: 'testing' })],
     OPTS,
@@ -120,6 +120,24 @@ test('llms: 한 편짜리 폴더는 시리즈가 아니다 (/series 페이지와
   assert.ok(!text.includes('## 시리즈: testing'));
   assert.ok(text.includes('## 단독 포스트'));
   assert.ok(text.includes('한편글'));
+});
+
+test('llms: 여러 편이어도 _series.yml이 없으면 단독 포스트로 내려간다', () => {
+  // 편수 기반 자동 승격을 없앤 뒤의 회귀 가드 — 폴더에 모아 두는 것만으로
+  // 색인에 시리즈가 생기면 안 된다.
+  const text = buildLlmsText(
+    [
+      makePost({ slug: 'a', title: 'CI글1', series: 'ci' }),
+      makePost({ slug: 'b', title: 'CI글2', series: 'ci' }),
+      makePost({ slug: 'c', title: 'CI글3', series: 'ci' }),
+    ],
+    OPTS,
+  );
+  assert.ok(!text.includes('## 시리즈: ci'));
+  assert.ok(text.includes('## 단독 포스트'));
+  for (const t of ['CI글1', 'CI글2', 'CI글3']) {
+    assert.ok(text.includes(t), `${t}가 빠짐`);
+  }
 });
 
 test('llms: _series.yml이 있으면 한 편이어도 시리즈 (표시명·설명도 함께)', () => {
@@ -160,7 +178,8 @@ test('llms: 시리즈 안에서는 1편부터 (날짜 오름차순)', () => {
       makePost({ slug: 'p1', title: '1편', series: 's', date: '2026-01-01' }),
       makePost({ slug: 'p2', title: '2편', series: 's', date: '2026-02-01' }),
     ],
-    OPTS,
+    // 시리즈 섹션 안의 정렬을 보는 테스트이므로 시리즈로 선언해 둔다.
+    { siteUrl: SITE, resolveSeriesMeta: () => ({ name: 's' }) },
   );
   assert.ok(text.indexOf('1편') < text.indexOf('2편'));
   assert.ok(text.indexOf('2편') < text.indexOf('3편'));

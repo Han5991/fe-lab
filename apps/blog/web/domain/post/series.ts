@@ -18,12 +18,12 @@ export function getSeriesMeta(seriesName: string): SeriesMeta | null {
     return _metaCache.get(seriesName) ?? null;
   }
 
-  const candidates = ['_series.yml', '_series.yaml'].map(name =>
-    join(postsDirectory, seriesName, name),
-  );
-  const filePath = candidates.find(p => existsSync(p)) ?? null;
+  // 확장자는 `_series.yml` 하나만 본다. `.yaml`도 받아 주면 같은 뜻의 파일이 두
+  // 이름으로 공존할 수 있고, 그때 어느 쪽이 이기는지는 후보 배열의 순서에만
+  // 적혀 있다 — 혼자 쓰는 저장소에서 그 규칙을 기억할 이유가 없다.
+  const filePath = join(postsDirectory, seriesName, '_series.yml');
 
-  if (!filePath) {
+  if (!existsSync(filePath)) {
     _metaCache.set(seriesName, null);
     return null;
   }
@@ -45,36 +45,27 @@ export function getSeriesMeta(seriesName: string): SeriesMeta | null {
   return meta;
 }
 
-/** 폴더 이름만으로 시리즈가 되기 위한 최소 편수. */
-export const SERIES_MIN_POSTS = 2;
-
 /**
- * 이 폴더를 "시리즈"로 볼 것인가.
+ * 이 폴더를 "시리즈"로 볼 것인가 — **`_series.yml`이 있으면 시리즈다.**
  *
- * 시리즈는 frontmatter가 아니라 폴더 경로로 결정된다(`repository.ts`). 그래서
- * 주제별로 글을 묶어 둔 폴더까지 전부 시리즈가 되어, 한 편짜리 폴더가
- * `시리즈 · testing 1/1` 같은 배지를 달고 시리즈 목록·필터에 섞였다.
- * "여러 편으로 이어지는 글"이라는 시리즈의 뜻과 맞지 않는다.
+ * 폴더는 그냥 폴더다. 주제별로 정리해 둔 것도 있고, 고쳐 쓰는 동안 비슷한
+ * 글을 모아 둔 것도 있다. 그중 "이어서 읽는 글"인 폴더만 시리즈다.
  *
- * 판정은 둘 중 하나다:
- * - `_series.yml` 이 있다 → 편수와 무관하게 저자가 시리즈로 선언한 것
- * - 글이 2편 이상이다 → 선언이 없어도 실제로 이어지는 글
+ * 예전에는 2편 이상이면 선언 없이도 시리즈가 됐다. 그러면 파일을 폴더에
+ * 넣는 것만으로 배지·시리즈 목록·검색 결과·OG 카드가 전부 따라붙어서,
+ * 묶어 두려면 시리즈를 감수하거나 폴더를 포기하거나 둘 중 하나였다.
+ * 지금은 저자가 `_series.yml`을 두는 것으로만 시리즈가 된다.
  *
- * 한 편짜리 폴더는 글이 하나 더 들어오는 순간 자동으로 시리즈가 된다.
+ * 편수는 보지 않는다. 1편뿐인 연재 시작도 선언했다면 시리즈이고,
+ * 8편이 모인 폴더라도 선언이 없으면 그냥 폴더다.
  */
 export function isSeriesFolder(
   seriesName: string,
-  postCount: number,
   // 디스크 접근(`_series.yml`)을 주입할 수 있게 열어 둔다 — 스크립트의 단위
   // 테스트가 실제 posts/ 폴더 상태에 따라 흔들리지 않도록.
-  //
-  // 기본 인자(`= getSeriesMeta(...)`)로 두지 않는 이유: 기본값은 **즉시 평가**되어
-  // 2편 이상이라 조회가 필요 없는 경우에도 파일을 읽는다. dev에서는 메타 캐시도
-  // 우회되므로 aggregate의 폴더별 필터가 매 요청마다 existsSync×2 + readFileSync를
-  // 돈다. `undefined`(미지정)와 `null`(메타 없음)도 여기서 구분된다.
+  // `undefined`(미지정 → 디스크 조회)와 `null`(메타 없음)이 여기서 구분된다.
   meta?: SeriesMeta | null,
 ): boolean {
-  if (postCount >= SERIES_MIN_POSTS) return true;
   return (meta === undefined ? getSeriesMeta(seriesName) : meta) !== null;
 }
 

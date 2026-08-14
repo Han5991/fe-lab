@@ -74,12 +74,14 @@ export default async function PostPage({ params }: Props) {
   // 시리즈 내 위치 계산 (헤더 라벨용)
   let seriesIndex:
     { current: number; total: number; displayName: string } | undefined;
-  // 한 편짜리 폴더는 시리즈가 아니다 — 배지를 달면 `Turborepo 인프라 1/1`
-  // 처럼 뜻이 없는 표기가 된다(`isSeriesFolder` 참고).
-  const seriesPosts = post.series
-    ? getAllPosts().filter(p => p.series === post.series)
-    : [];
-  if (post.series && isSeriesFolder(post.series, seriesPosts.length)) {
+  // `_series.yml`이 없는 폴더는 시리즈가 아니다 — 주제별로 모아 둔 폴더까지
+  // 배지를 달면 `아키텍처 1/3`처럼 저자가 의도하지 않은 연재가 생긴다
+  // (`isSeriesFolder` 참고).
+  const seriesPosts =
+    post.series && isSeriesFolder(post.series)
+      ? getAllPosts().filter(p => p.series === post.series)
+      : [];
+  if (post.series && seriesPosts.length > 0) {
     const meta = getSeriesMeta(post.series);
     const orderedPosts = sortPostsBySeriesOrder(seriesPosts, meta?.order);
     const idx = orderedPosts.findIndex(p => p.slug === slug);
