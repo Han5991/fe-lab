@@ -56,187 +56,14 @@ When output would be large, chunk it and summarize rather than dumping everythin
 Prefer writing big intermediate results (logs, full comment lists, diffs) to a file and reporting
 the key findings.
 
-## Repository Overview
-
-This is a Turborepo monorepo containing multiple frontend applications and shared packages for
-experimenting with different frontend technologies and design patterns.
-
-### Architecture
-
-- **Monorepo structure**: Uses Turborepo for build orchestration and pnpm workspaces for dependency
-  management
-- **Applications**: Independent React, Next.js, and TypeScript applications in `apps/` directory
-- **Shared packages**: Design system components and utilities in `packages/` directory
-- **Design system**: Built with Panda CSS for styling and component generation
-
-### Applications
-
-- `apps/next.js/`: Next.js application with App Router, Jest testing, and Turbopack for development
-- `apps/react/`: React SPA using Vite, Vitest for testing, and React Router for navigation
-- `apps/typescript/`: Pure TypeScript application for experimenting with type design patterns
-- `apps/blog/web/`: Next.js-based blog with Markdown content, Supabase analytics, and React Query for
-  data fetching
-
-### Shared Packages
-
-- `@design-system/ui`: Component library with button components and shared UI elements
-- `@design-system/ui-lib`: Generated Panda CSS utilities, patterns, and tokens
-- `@package/core`: Core utilities including HTTP client and status code definitions
-- `@package/config`: Shared TypeScript configurations
-
-## Development Commands
-
-### Starting Development
-
-```bash
-# Install dependencies
-pnpm install
-
-# Start all applications
-pnpm dev
-
-# Start specific applications
-pnpm react    # React app + design system
-pnpm next     # Next.js app + design system
-pnpm typescript # TypeScript app
-pnpm blog-web # Blog app + design system
-```
-
-### Testing
-
-```bash
-# Run all tests
-pnpm test
-
-# Run tests for specific app
-cd apps/react && pnpm test
-cd apps/next.js && pnpm test
-cd apps/typescript && pnpm test
-
-# Watch mode for Next.js
-cd apps/next.js && pnpm test:watch
-```
-
-### Building and Quality Checks
-
-```bash
-# Build all applications
-pnpm build
-
-# Lint all applications
-pnpm lint
-
-# Type checking
-pnpm check-types
-
-# Blog-specific commands
-pnpm blog-build  # Build blog application
-
-# 블로그 글쓰기 도구 (apps/blog/web 디렉토리에서 실행)
-pnpm new-post "글 제목" --series bundler --tags a,b      # 새 포스트 스캐폴딩
-pnpm new-post "예약글" --scheduled 2026-05-01            # 예약 발행 글 (KST 자정 공개)
-pnpm lint:posts                                          # frontmatter 검증 (필수 필드, 끊긴 이미지, 중복 slug 등)
-pnpm check-seo                                           # 빌드 산출물(out/) SEO 검사 — pnpm build 이후에 실행
-```
-
 ## Key Design Patterns
 
-### Workspace Dependencies
-
-Use `workspace:` protocol for internal package dependencies:
-
-```json
-{
-  "dependencies": {
-    "@design-system/ui": "workspace:^"
-  }
-}
-```
-
-### Catalog Dependencies
-
-The project uses pnpm catalog feature for consistent version management across apps:
-
-- `catalog:react19` - React 19.1.0 and related types
-- `catalog:typescript5` - TypeScript 5.8.3
-- `catalog:` - Panda CSS dev dependencies
-
-Reference in package.json as `"react": "catalog:react19"`
-
-### Component Structure
-
-Components follow this pattern:
-
-```
-components/ComponentName/
-├── ComponentName.tsx
-├── ComponentName.test.tsx
-└── index.ts
-```
-
-### Testing Approach
-
-- **React app**: Vitest + React Testing Library + MSW for API mocking
-- **Next.js app**: Jest + React Testing Library + next-router-mock
-- **TypeScript app**: Jest with Babel preset for TypeScript
-
-Use `data-testid` attributes for test element selection and mock external dependencies.
-
-### Styling System
-
-Uses Panda CSS with:
-
-- Generated CSS utilities in `@design-system/ui-lib`
-- Component recipes for consistent styling
-- JSX patterns for layout components (Box, Flex, Stack, etc.)
+테스트 요소 선택은 `data-testid` 속성으로 하고, 외부 의존성은 mock한다.
 
 ### Blog Architecture
 
 The blog (`apps/blog/web/`) is a **statically generated (SSG) Next.js application** with a
 **Supabase BaaS backend**, deployed to **GitHub Pages**. The domain is `https://blog.sangwook.dev`.
-
-#### System Architecture Overview
-
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                        Build Time (CI/CD)                          │
-│                                                                     │
-│  apps/blog/posts/  ──→  sync-posts.mjs (이미지)  ──→  public/posts/ │
-│  (Markdown)        ──→  generate-sitemap.mjs     ──→  sitemap.xml   │
-│                    ──→  generate-rss.mjs         ──→  rss.xml       │
-│                    ──→  generate-search-index.ts  ──→ search-index  │
-│                    ──→  next build (output: export) ──→ out/        │
-└─────────────────────────────────────────────────────────────────────┘
-         │
-         ▼
-┌──────────────────┐     ┌──────────────────────────────────────────┐
-│  GitHub Pages    │     │  Supabase (Cloud)                        │
-│  (Static Host)   │     │  ┌─────────────────────────────────────┐ │
-│                  │     │  │ PostgreSQL                          │ │
-│  - HTML/CSS/JS   │     │  │  - post_views (조회수)              │ │
-│  - Images        │◄───►│  │  - view_history (조회 이력)         │ │
-│  - sitemap.xml   │     │  │  - RPC functions (analytics)       │ │
-│  - rss.xml       │     │  ├─────────────────────────────────────┤ │
-│  - robots.txt    │     │  │ Auth (Google OAuth)                 │ │
-│                  │     │  │  - Admin 인증                       │ │
-│                  │     │  └─────────────────────────────────────┘ │
-└──────────────────┘     └──────────────────────────────────────────┘
-         │
-         ▼
-┌──────────────────┐     ┌──────────────────────────────────────────┐
-│  Google Analytics│     │  GA Proxy (apps/ga-proxy/)               │
-│  (GA4)           │◄────│  - Velog 등 외부 플랫폼 조회수 추적      │
-└──────────────────┘     └──────────────────────────────────────────┘
-```
-
-#### Deployment (GitHub Pages)
-
-- **CI/CD**: `.github/workflows/deploy-blog.yml`로 자동 배포
-- **Trigger**: `main` 브랜치에 `apps/blog/**` 경로 변경 시 자동 빌드 + 수동 트리거 지원
-- **빌드 명령**: `pnpm build --filter=@blog/web --no-cache`
-- **출력 디렉토리**: `apps/blog/web/out/` → GitHub Pages artifact로 업로드
-- **환경변수**: GitHub Secrets에서 Supabase URL/Key, Admin Email 주입
-- **캐싱**: Turborepo 캐시(`rharkor/caching-for-turbo`) + pnpm 캐시 활용
 
 #### SSG (Static Site Generation) 전략
 
@@ -316,6 +143,8 @@ The blog (`apps/blog/web/`) is a **statically generated (SSG) Next.js applicatio
 
 #### 글쓰기 도구 (Authoring DX)
 
+아래 `pnpm` 스크립트는 모두 **`apps/blog/web` 디렉터리에서** 실행한다.
+
 | 도구                                          | 설명                                                                                                                                                                                                                  |
 | :-------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `pnpm new-post "제목"`                        | 새 포스트 스캐폴딩. `--series`, `--tags`, `--scheduled`, `--slug`, `--status` 옵션 지원. 한글 제목/파일명 그대로 사용 가능                                                                                            |
@@ -324,229 +153,32 @@ The blog (`apps/blog/web/`) is a **statically generated (SSG) Next.js applicatio
 | `/preview/[...slug]` 라우트                   | dev 환경에서만 동작하는 draft·scheduled 글 미리보기. prod 빌드는 placeholder 1개(`__disabled__`) + 즉시 `notFound`로 차단                                                                                             |
 | `_series.yml`                                 | 시리즈 폴더에 두면 시리즈 nav가 `order` 기준 chronological 정렬 + 표시명을 폴더명 대신 사용                                                                                                                           |
 | `<callout type="warning\|info\|tip\|danger">` | 마크다운 헬퍼 컴포넌트 (raw HTML로 작성). `<figure>` + `<figcaption>`, `<file-tree>`도 지원                                                                                                                           |
-| `<dialogue>` · `<metrics>` · `<timeline>`     | 리뉴얼 시그니처 컴포넌트. 역시 raw HTML 커스텀 태그 — 아래 "디자인 시스템" 참고                                                                                                                                       |
-| `<diagram>` + frontmatter `hero:`             | 구조 그림. 저작법 전체는 **`apps/blog/web/design/DIAGRAM_AUTHORING.md`** — 아래 "다이어그램 문법" 참고                                                                                                                |
-| 펜스 메타 `title=` · `<code-tabs>`            | 코드 블록에 파일명을 달거나 npm/pnpm/yarn 탭으로 묶는다. 커스텀 태그가 아니라 **코드 펜스의 메타**다 — 아래 "코드 블록" 참고                                                                                          |
+| `<dialogue>` · `<metrics>` · `<timeline>`     | 리뉴얼 시그니처 컴포넌트. 역시 raw HTML 커스텀 태그 — 문법은 `blog-components` 스킬                                                                                                                                   |
+| `<diagram>` + frontmatter `hero:`             | 구조 그림. 저작법 전체는 **`apps/blog/web/design/DIAGRAM_AUTHORING.md`** — 요약은 `blog-components` 스킬                                                                                                              |
+| 펜스 메타 `title=` · `<code-tabs>`            | 코드 블록에 파일명을 달거나 npm/pnpm/yarn 탭으로 묶는다. 커스텀 태그가 아니라 **코드 펜스의 메타**다 — `blog-components` 스킬                                                                                         |
 
-#### 디자인 시스템 (리뉴얼 기준)
+#### 디자인 시스템 · 저작 문법 (스킬로 분리)
 
-리뉴얼 때 쓰던 시각 기준 파일(`design-reference.html`)은 구현이 끝나 **삭제했다.**
-이제 기준은 **구현된 화면 자체**다 — 홈(`/`)과 글 상세를 dev 서버로 열어 대조한다.
-원래의 디자인 의도와 결정 배경은 `design/blog-redesign-handoff.md`에 남아 있고,
-수치는 아래 항목들이 단일 출처다.
+기준은 **구현된 화면 자체**다 — 홈(`/`)과 글 상세를 dev 서버로 열어 대조한다.
+수치와 그 근거는 아래 두 스킬이 단일 출처이고, 이 파일에 다시 적지 않는다.
 
-> 핸드오프는 **착수 시점 초안**이지 사양서가 아니다. 만들면서 바뀐 값(포인트색,
-> 배지 라운드, 다이어그램 라벨 크기)과 아예 채택하지 않은 절(§7 MDX·velite 전환)이
-> 있고, 문서 안에 `⚠️`로 표시해 뒀다. 그 파일의 수치를 근거로 코드를 고치지 말 것.
+| 무엇을 고칠 때                                                                                                                                   | 스킬                 |
+| :----------------------------------------------------------------------------------------------------------------------------------------------- | :------------------- |
+| 색·글꼴·라운드·보더·레일 폭, `blog-preset.ts`의 semanticToken, 코드 블록 테마                                                                    | `blog-design-system` |
+| 글 본문의 커스텀 태그 — `<diagram>`·`<dialogue>`·`<metrics>`·`<timeline>`·`<callout>`·`<file-tree>`·`<figure>`, 코드 펜스 `title=`·`<code-tabs>` | `blog-components`    |
 
-> `design/github-style-reference.md`는 **폐기된 이전 방향**(GitHub 스타일 다크 전용)이다.
-> 참고 자료로 남겨둔 것뿐이니 새 작업의 근거로 쓰지 말 것.
+지켜야 하는 금지선만 여기 남긴다:
 
-##### 컬러 토큰
-
-색은 전부 `packages/@design-system/ui/src/blog-preset.ts`의 semanticTokens로 정의돼
-라이트/다크가 자동 전환된다. **컴포넌트에서 hex를 직접 쓰지 않는다.**
-
-| 레퍼런스 CSS 변수                     | 토큰                             | 라이트 / 다크                                   |
-| :------------------------------------ | :------------------------------- | :---------------------------------------------- |
-| `--bg`                                | `paper.50`                       | `#FFFFFF` / `#0B0D10`                           |
-| `--bg-sub`                            | `paper.100`                      | `#F7F7F5` / `#14171C`                           |
-| `--page` ⚠️                           | `paper.200`                      | `#EDEDEA` / `#1B1F26`                           |
-| `--fg`                                | `ink.950`                        | `#1A1A1A` / `#E6E8EB`                           |
-| `--fg-sub`                            | `ink.600`                        | `#6B7280` / `#8B919A`                           |
-| `--fg-sub` (서브 서피스 위 12px 메타) | `ink.500`                        | `#656C77` / `#8B919A`                           |
-| `--accent` (**비텍스트** — 선·아이콘) | `accent.500`                     | `#0891B2` / `#67E8F9`                           |
-| `--accent` (**텍스트·링크**)          | `accent.600`                     | `#0E7490` / `#67E8F9`                           |
-| `--accent` (**제목**)                 | `accent.900`                     | `#083344` / `#67E8F9`                           |
-| `--accent-bg`                         | `accent.50`                      | `rgba(8,145,178,.10)` / `rgba(103,232,249,.14)` |
-| `--border`                            | `ink.border`                     | `rgba(0,0,0,.10)` / `rgba(255,255,255,.12)`     |
-| `--danger`                            | `danger.text` / `danger.border`  | `#C81E1E`·`#DC2626` / `#F09595`                 |
-| `--success`                           | `moss.600` (텍스트는 `moss.700`) | `#16A34A` / `#97C459`                           |
-| `--warn-bg` / `--warn-fg`             | `warn.bg` / `warn.text`          | `#FAEEDA`·`#854F0B` / `#3A2A10`·`#FAC775`       |
-
-> ⚠️ **`paper.200` 다크만 시안(`#060809`)을 따르지 않는다.** 시안의 `--page`는 목업
-> 카드 **뒤쪽 바깥 배경**이라 다크에서 `--bg`보다 더 어둡다. 실제 사이트엔 그 바깥
-> 배경이 없고 `paper.200`은 인라인 코드·콜아웃처럼 지면에서 **한 단계 떠 있는**
-> 서피스라, 시안 값을 쓰면 코드 배경이 본문보다 어두워져 파여 보인다.
-
-> **포인트색은 원래 틸(`#1D9E75`/`#5DCAA5`)이었다가 cyan으로 옮겼다.**
-> 이유는 둘이다. **다크 시인성** — 다크 포인트색은 지면 위에서 밝은 톤이라야 읽힌다.
-> 대안으로 본 중간 톤 블루(`#4A80E8`)는 AA는 통과해도 5.14:1로 틸(9.69:1)의 절반이라
-> 눈에 띄게 탁했다. 지금은 13.42:1이다. 그리고 **의미색과의 거리** — 틸은 success
-> 그린(`moss`)과 색상각이 가까웠고, 빨강·노랑·연두는 각각 `danger`·`warn`·`moss`와
-> 겹쳐 후보에서 빠진다. cyan은 넷 어디와도 안 겹친다.
-
-> **용도별로 세 단계를 쓴다.** 글자엔 `accent.600`, 선·아이콘·다이어그램 스트로크엔
-> `accent.500`, **제목엔 `accent.900`**. 라이트에서 원색 `#0891B2` **글자**는 흰 배경 위
-> 3.34:1로 AA(4.5:1) 미달이라 명도만 낮춘 톤을 텍스트용으로 따로 뒀다(비텍스트는 3:1
-> 기준이라 원색 그대로 통과). 같은 이유로 `moss.600`(배경·아이콘) ↔ `moss.700`(텍스트)도
-> 분리돼 있다.
->
-> `accent.900`이 따로 있는 건 **제목은 링크와 요구가 다르기 때문**이다. 제목은 바로 아래
-> 본문보다 약해 보이면 안 되는데, 라이트에서 `accent.600`(5.36:1)은 본문
-> `ink.900`(15.13:1)보다 3배 흐려서 위계가 뒤집힌다 — 헤딩 스케일이 22/20/18/16으로
-> 좁아 크기가 이걸 못 메운다. 다크는 accent(13.42:1)와 본문(13.72:1)이 비슷해 문제가
-> 없어서, `accent.900`은 **라이트만** 훨씬 진한 톤을 쓴다(13.40:1). 링크까지 이 톤으로
-> 내리면 본문 속에서 색이 안 보이므로 링크·배지는 계속 `accent.600`이다.
-
-포인트색은 **제목 · 링크 · 시리즈 배지 · 다이어그램의 핵심 경로**에만 쓴다. 그 외에는
-무채색이다. 제목 계열에 색을 준 건 액센트를 링크 몇 개에서 지면 구조로 넓히기 위한
-것이고, 대신 **섹션 라벨(`최근 글`·`오픈소스 기여`)과 목록 제목, 본문 h3·h4는 무채색으로
-남긴다** — 전부 칠하면 "제목 > 그 외"라는 위계가 다시 사라진다. 색이 붙는 자리는
-홈 히어로 이름 / 대표글 제목 / 글 제목 / 본문 h1·h2, 이렇게 넷이다.
-
-##### 타이포그래피
-
-- 본문/UI: `fontFamily: 'sans'` (Pretendard Variable)
-- **메타 정보는 `fontFamily: 'mono'`** (JetBrains Mono) — 날짜, 읽기 시간, 조회수,
-  태그, 코드, 로고, 오픈소스 칩. "측정하는 엔지니어" 무드의 핵심이다
-- 단, **시리즈 배지는 sans**다. `시리즈 · Turborepo 인프라 3/3` 처럼 안에 숫자가
-  있어도 본문 성격의 라벨이고, 레퍼런스 `.badge`도 `font-family`를 지정하지 않아
-  sans로 렌더된다. 홈·글 상세·`/series` 세 곳이 모두 sans로 맞춰져 있으니
-  한 곳만 mono로 바꾸지 말 것 (숫자가 있다고 기계적으로 mono를 적용하지 않는다)
-- 세리프 금지. `serif` 토큰은 sans로 매핑돼 있어 실수로 써도 세리프가 나오지 않는다
-
-##### 형태
-
-- 라운드: `radii.card`(12px, 카드) · `radii.control`(8px, 작은 요소) ·
-  `radii.pill`(원형 아바타·아이콘·히어로 pill). **시리즈 배지는 `[6px]`** —
-  레퍼런스 `.badge`가 6px이라 pill이 아니다
-- 보더: `borderWidths.hairline`(1px) 단일 소스. **위계는 그림자가 아니라 보더로 표현한다**
-- **그라데이션 · 글로우 · box-shadow 장식 금지.** 플랫 유지
-- Panda는 `strictTokens: true`다. 토큰 밖 값은 `fontSize: '[12px]'`, `shadow: '[none]'`처럼
-  대괄호로 이스케이프해 "여긴 의도적으로 토큰을 벗어난다"를 코드에 남긴다
-
-##### 레이아웃 그리드
-
-단일 출처는 **`src/components/Rail.tsx`**다. 페이지에서 `maxW`와 `px`를 직접 쓰지 말 것.
-
-- **거터** — 화면 좌우 여백. `base 20px / md(768px↑) 32px` 한 쌍뿐. `railGutter`가 소유한다
-- **레일** — 콘텐츠 칼럼 폭. **세 개가 전부**다
-
-  | 레일       | 폭     | 쓰는 곳                                             |
-  | :--------- | :----- | :-------------------------------------------------- |
-  | `railWide` | 1200px | 헤더·푸터, `/posts`, `/about`, 글 상세 셸, `/admin` |
-  | `railText` | 680px  | 홈, 글 본문, `/series`, `/privacy`                  |
-  | `railForm` | 400px  | 로그인, 404                                         |
-
-> **거터는 언제나 레일 바깥이다.** `railGutter`를 준 요소의 **자식**에 `railColumn()`을
-> 붙인다(둘을 한 요소에 얹으면 콘텐츠 폭이 `레일 − 거터×2`가 된다). 그래서 `railText`
-> 화면의 글줄은 어느 페이지에서나 정확히 680px이다. 정리 전에는 거터를 안쪽에 준
-> 페이지와 바깥에 준 페이지가 섞여 있어 **같은 640px 토큰을 쓴 홈과 `/series`의 실제
-> 폭이 640과 576으로 갈렸다.**
-
-> **헤더·푸터가 `railWide`인 이유.** 페이지마다 본문 폭이 다른데 헤더까지 따라 움직이면
-> 이동할 때마다 로고 위치가 바뀐다. wide에 고정하면 헤더는 어디서나 같은 자리에 있고,
-> 넓은 페이지에서는 본문 좌측과 정확히 일치한다. 대신 `railText` 페이지에서는 본문이
-> 헤더보다 안쪽에 놓인다 — 이건 의도된 결과다.
->
-> 정리 전 실측(뷰포트 1440): 헤더는 640에 고정인데 본문 좌측이 페이지마다
-> 146.5 / 206.5 / 338.5 / 394.5 / 426.5로 흩어져 **최대 248px** 어긋나 있었다.
-
-- 목록 행에 **좌우 패딩을 주지 않는다**(`PostIndexRow`·`PostsArchive`의 `rowLink`).
-  2px만 넣어도 그 목록만 제목 세로선에서 밀려난다. 행 배경을 칠할 일이 생기면
-  패딩 대신 음수 마진으로 상쇄할 것
-- 카드 **안쪽** 패딩(`FeaturedPost`의 20px)은 레일과 무관하다. 카드는 원래 지면에서
-  한 단계 들어가 있는 게 맞다
-
-##### 다이어그램 문법 (모든 글 공통)
-
-- **이미지가 아니라 SVG React 컴포넌트**로 그린다 → 다크 모드 색 전환이 자동으로 따라온다.
-  프리미티브는 `src/components/diagram`(`DiagramFrame` / `DiagramNode` / `DiagramEdge` /
-  `DiagramLabel`)에 있고, 글별 다이어그램도 이 프리미티브 위에 올린다
-- SVG 안에 **색을 하드코딩하지 않는다.** `currentColor` 또는 Panda `css()` 클래스로
-  `fill`/`stroke`를 토큰에 연결한다
-- 노드: 라운드 사각형 `rx=8`, 스트로크 1px(`borderWidths.hairline` 고정)
-- 선: **실선 = 동기 호출**, **점선(`stroke-dasharray: 3 3`) = 비동기/데이터 흐름**
-- 색은 **2색만**: 구조는 회색(fill `paper.100` / stroke `ink.border`),
-  핵심 경로는 액센트(fill `accent.50` / stroke `accent.500`)
-- 라벨: 노드 제목 12px/600 + 부제 11px, **부제는 5단어 이내**
-
-**글에 다이어그램을 붙이는 두 갈래** — 저작 가이드는
-**`apps/blog/web/design/DIAGRAM_AUTHORING.md`** 에 전부 있다(prop 표, 복붙 예제, 함정).
-여기엔 어느 쪽을 쓸지 고르는 기준만 남긴다.
-
-1. **선언형 태그** — 노드를 나열하면 좌표가 자동으로 잡힌다. 좌→우 체인(`row`)과
-   팬아웃(`fan`) 두 모양만 지원하고, 그 이상 복잡하면 대개 그림을 쪼개야 한다는 신호다.
-
-   ```html
-   <diagram label="스크린리더가 읽을 한 문장" caption="아래 중앙 주석">
-     <diagram-node id="a" title="첫 단계" desc="부제 5단어 이내"></diagram-node>
-     <diagram-node id="b" title="두 번째" tone="accent"></diagram-node>
-     <diagram-edge from="a" to="b" flow="async" emphasis="true"></diagram-edge>
-   </diagram>
-   ```
-
-   가장 자주 걸리는 규칙 둘: **엣지를 하나라도 쓰면 자동 연결이 꺼진다**(쓸 거면 전부 쓴다),
-   그리고 시그니처 컴포넌트와 마찬가지로 **self-closing이 안 된다**(`<diagram-node />`로
-   쓰면 뒤따르는 노드가 그 안에 중첩돼 조용히 사라진다).
-
-2. **이름 레지스트리** — 분기·회귀처럼 자동 레이아웃으로 안 되는 그림은 손으로 그린
-   컴포넌트를 `domain/post/diagramNames.ts`(이름)와 `src/components/diagram/registry.ts`
-   (맵)에 각각 한 줄씩 등록하고 `<diagram name="deploy-pipeline">` 또는 frontmatter
-   `hero:` 로 부른다. 타입이 `Record<DiagramName, …>`이라 한쪽만 하면 컴파일이 막는다.
-   **히어로 슬롯은 이 갈래만 받는다.**
-
-##### 시그니처 컴포넌트
-
-velite/contentlayer/MDX는 도입하지 않는다. 로더는 `gray-matter` + `react-markdown` +
-`rehype-raw` 그대로이고, 시그니처 컴포넌트도 `<callout>`·`<file-tree>`와 **똑같은 raw HTML
-소문자 커스텀 태그**로 쓴다(`PostClient.tsx`의 `components` 맵에 등록돼 있다).
-
-HTML 파서를 거치므로 **self-closing(`<metrics />`)은 동작하지 않는다.** 내용이 없어도
-여는 태그와 닫는 태그를 모두 쓴다. 속성 값은 항상 문자열이라, 배열을 넘길 때는 JSON
-문자열로 준다.
-
-```html
-<dialogue>
-  <msg from="PM">배포하다 서비스 죽으면 어떡해요?</msg>
-  <msg from="me">아니요, 점심에 합니다.</msg>
-</dialogue>
-
-<metrics
-  items='[{"label":"배포 소요","value":"22분 → 8분"},{"label":"롤백","value":"자동","tone":"success"}]'
-></metrics>
-
-<timeline>
-  <step
-    title="시도 1 · pm2 롤링 재시작"
-    desc="전환 순간 504"
-    result="fail"
-  ></step>
-  <step
-    title="시도 3 · blue/green"
-    desc="실패 시 자동 롤백"
-    result="success"
-  ></step>
-</timeline>
-```
-
-| 태그         | 용도                    | 핵심 속성                                                        |
-| :----------- | :---------------------- | :--------------------------------------------------------------- |
-| `<dialogue>` | 도입부 대화 재현        | 자식 `<msg from="...">`. `from="me"`면 우측 정렬 + 포인트색 버블 |
-| `<metrics>`  | before/after 수치 강조  | `items` JSON 문자열 또는 자식 `<metric label value tone>`        |
-| `<timeline>` | 시도 → 실패 → 해결 서사 | `steps` JSON 문자열 또는 자식 `<step title desc result>`         |
-
-##### 코드 블록
-
-표면이 **테마를 탄다.** 예전에는 "코드는 라이트에서도 항상 어둡다"가 규칙이었다.
-구문 강조 테마(`vscDarkPlus`)의 색이 다크 배경 전용 고정값이라, 배경만 밝히면
-대비가 통째로 무너졌기 때문이다. 지금은 그 색들을 `code.*` semanticToken으로 옮겨
-라이트/다크 두 벌로 쓴다(`src/components/post/codeTheme.ts`). 레퍼런스(fumadocs)가
-shiki 듀얼 테마로 푸는 문제를, 색 **정의**를 토큰으로 옮겨 같은 원리로 푼 것이다 —
-색이 마크업이 아니라 스타일시트에 한 번만 있으므로 HTML은 오히려 가벼워진다.
-**다크 화면의 색은 예전 그대로**고, 라이트만 github-light 계열로 새로 붙었다.
-
-- 색을 고칠 일이 생기면 `blog-preset.ts`의 `code.*` **한 곳만** 본다. 컴포넌트에
-  hex를 다시 박지 말 것 — `codeTheme.test.ts`가 "원본 테마의 색이 하나도 남지
-  않았다"를 검사하므로, 매핑에서 빠진 색은 테스트가 잡는다
-- 펜스 메타(` ```ts title="lib/foo.ts" `, `tab="npm"`)는 `rehypeCodeMeta`가
-  `data-*` 속성으로 승격한다. 이 플러그인은 **`rehypeRaw`보다 앞**이어야 한다
-  (rehypeRaw가 트리를 직렬화·재파싱하며 hast의 `data`를 버린다). 순서가 뒤집혀도
-  에러 없이 파일명만 조용히 사라지므로 `codeMeta.test.tsx`가 그 대조군까지 고정해 뒀다
-- 파일명이 있으면 상단 바가 언어 라벨 대신 그걸 보여준다. `<code-tabs>`로 묶으면
-  상단 바를 탭이 가져가고, 복사 버튼은 열려 있는 탭의 코드를 집는다
-- 600px을 넘는 코드는 블록 안에서 세로로 스크롤된다
+- 색은 전부 `packages/@design-system/ui/src/blog-preset.ts`에서 온다.
+  **컴포넌트에서 hex를 직접 쓰지 않는다.** 다이어그램 SVG도 마찬가지로
+  `currentColor` 또는 Panda `css()`로 토큰에 연결한다
+- 레일·거터의 단일 출처는 `src/components/Rail.tsx`다. **페이지에서 `maxW`와 `px`를
+  직접 쓰지 않는다.** 거터는 언제나 레일 바깥이다
+- **그라데이션 · 글로우 · box-shadow 장식 금지.** 플랫 유지. **세리프 금지**
+- Panda는 `strictTokens: true`다. 토큰 밖 값은 `'[12px]'`처럼 대괄호로 이스케이프해
+  "여긴 의도적으로 토큰을 벗어난다"를 코드에 남긴다
+- 히어로 슬롯(frontmatter `hero:`)은 이름 레지스트리에 등록된 다이어그램만 받는다
+- 다이어그램 저작 가이드 전문: `apps/blog/web/design/DIAGRAM_AUTHORING.md`
 
 #### 클라이언트 사이드 기능 (런타임)
 
@@ -600,12 +232,6 @@ shiki 듀얼 테마로 푸는 문제를, 색 **정의**를 토큰으로 옮겨 �
 > 태그를 추가·제거할 때 여기와 `/privacy` 페이지를 함께 갱신할 것 — 현재 개인정보처리방침은
 > GA4만 고지하고 있어 Clarity가 누락된 상태다.
 
-#### 인증 & Admin
-
-- **Admin 페이지**: `/admin` (로그인), `/admin/analytics` (상세 분석)
-- **인증 방식**: Supabase Auth + Google OAuth
-- **접근 제어**: `NEXT_PUBLIC_ADMIN_EMAIL` 환경변수에 등록된 이메일만 Admin 접근 허용
-
 #### 주요 설정 파일
 
 | 파일                                        | 역할                                                                    |
@@ -624,5 +250,7 @@ shiki 듀얼 테마로 푸는 문제를, 색 **정의**를 토큰으로 옮겨 �
 
 ## Prerequisites
 
-- Node.js >= 24 (루트 `engines` 및 `.tool-versions` 기준 24.6.0; `apps/blog/web`의 `node --test '<glob>'` 글롭 패턴이 22.5+ 필요)
-- pnpm 11.6.0 (specified in packageManager field)
+- Node.js / pnpm 버전은 루트 `engines` · `.tool-versions` · `packageManager`가 단일
+  출처다. 이 파일에 숫자를 복사해 두지 말 것 — Renovate가 올릴 때마다 어긋난다
+- 하한을 정하는 비자명한 제약: `apps/blog/web`의 `node --test '<glob>'` 글롭 패턴이
+  **Node 22.5+** 를 요구한다
