@@ -77,7 +77,7 @@ The blog (`apps/blog/web/`) is a **statically generated (SSG) Next.js applicatio
 
 1. **콘텐츠 작성**: `apps/blog/posts/` 디렉토리에 Markdown 파일 작성
    - 새 포스트는 `pnpm new-post "제목"` 스캐폴딩 CLI로 시작 권장 (frontmatter 자동 생성)
-   - 폴더 구조로 시리즈(series) 자동 분류 — `posts/{series}/` 폴더에 `_series.yml`을 두면 표시명/설명/order 정의 가능
+   - 폴더는 그냥 폴더다. **`_series.yml`을 둔 폴더만 시리즈**가 된다 — 표시명/설명/order도 그 파일에서 정의
 
    **Frontmatter 전체 목록** — 여기 없는 키는 `lint:posts`가 `unknown-frontmatter-key`로
    경고합니다. `domain/post/types.ts`의 `RawFrontmatter`가 단일 출처입니다.
@@ -97,6 +97,11 @@ The blog (`apps/blog/web/`) is a **statically generated (SSG) Next.js applicatio
    | `scheduledDate` |      | **시각까지 지정할 때만.** 날짜만이면 `date`로 충분. 이걸 써도 `date`는 여전히 필수                                                                                                                          |
 
    `series`는 frontmatter가 아니라 **폴더 경로**로 결정됩니다(`repository.ts`).
+   다만 폴더가 있다고 시리즈가 되는 건 아닙니다 — 그 폴더에 **`_series.yml`이
+   있어야** 시리즈입니다(`domain/post/series.ts`의 `isSeriesFolder`). 편수는
+   보지 않습니다. 예전엔 2편 이상이면 선언 없이도 시리즈가 돼서, 고쳐 쓰는
+   동안 글을 한곳에 모아 두는 것만으로 배지·시리즈 목록·검색·OG 카드가
+   따라붙었습니다. 시리즈에서 빼려면 `_series.yml`을 지우면 됩니다.
 
 2. **콘텐츠 공개 제어** — 축은 `status` **하나뿐**입니다 (`domain/post/visibility.ts`):
    - `status: published` — 공개
@@ -137,7 +142,7 @@ The blog (`apps/blog/web/`) is a **statically generated (SSG) Next.js applicatio
 | `pnpm lint:posts`                             | frontmatter 검증. 메타 노트 정책: frontmatter delimiter(`---`)가 없거나 `status`가 없으면 빌드 대상이 아닌 것으로 보고 skip                                                                                           |
 | `pnpm check-seo`                              | 산출물(`out/`) HTML의 SEO 계약 검사 — h1 1개, description 중복·길이·말줄임, `<title>` 60자, canonical 자기참조, og 태그, img alt, sitemap↔rss↔llms.txt 정합성. **`pnpm build`의 마지막 단계라 따로 부를 일은 드물다** |
 | `/preview/[...slug]` 라우트                   | dev 환경에서만 동작하는 draft·scheduled 글 미리보기. prod 빌드는 placeholder 1개(`__disabled__`) + 즉시 `notFound`로 차단                                                                                             |
-| `_series.yml`                                 | 시리즈 폴더에 두면 시리즈 nav가 `order` 기준 chronological 정렬 + 표시명을 폴더명 대신 사용                                                                                                                           |
+| `_series.yml`                                 | **이 파일이 있는 폴더만 시리즈다.** 두면 시리즈 nav가 `order` 기준 chronological 정렬 + 표시명을 폴더명 대신 사용. 지우면 그냥 글을 모아 둔 폴더                                                                      |
 | `<callout type="warning\|info\|tip\|danger">` | 마크다운 헬퍼 컴포넌트 (raw HTML로 작성). `<figure>` + `<figcaption>`, `<file-tree>`도 지원                                                                                                                           |
 | `<dialogue>` · `<metrics>` · `<timeline>`     | 리뉴얼 시그니처 컴포넌트. 역시 raw HTML 커스텀 태그 — 문법은 `blog-components` 스킬                                                                                                                                   |
 | `<diagram>` + frontmatter `hero:`             | 구조 그림. 저작법 전체는 **`apps/blog/web/design/DIAGRAM_AUTHORING.md`** — 요약은 `blog-components` 스킬                                                                                                              |
@@ -228,7 +233,7 @@ The blog (`apps/blog/web/`) is a **statically generated (SSG) Next.js applicatio
 | `.env.local`                                | 로컬 개발용 환경변수 (GA, Supabase local 등)                            |
 | `supabase/config.toml`                      | 로컬 Supabase 설정 (Auth, DB, Storage 등)                               |
 | `.github/workflows/deploy-blog.yml`         | CI/CD 배포 워크플로우                                                   |
-| `apps/blog/posts/{series}/_series.yml`      | (선택) 시리즈 표시명·설명·order 메타                                    |
+| `apps/blog/posts/{series}/_series.yml`      | 시리즈 선언 — 이 파일이 있어야 시리즈. 표시명·설명·order 메타도 여기    |
 | `apps/blog/web/scripts/build-content.ts`    | predev/prebuild 통합 진입점 (validate/sync/sitemap/rss/search/llms)     |
 | `apps/blog/web/scripts/check-seo.ts`        | 빌드 산출물 SEO 검사 (CI 게이트)                                        |
 | `apps/blog/web/lib/constants.ts`            | 사이트 이름·URL·`<title>` 접미사·SEO 길이 예산의 단일 소스              |

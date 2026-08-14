@@ -133,9 +133,10 @@ function buildSeriesLabel(
   allPosts: PostSummary[],
 ): string | undefined {
   if (!post.series) return undefined;
+  // `_series.yml`이 없는 폴더는 시리즈가 아니다 — 주제별로 모아 둔 폴더에까지
+  // 배지가 붙는 것을 막는다(`isSeriesFolder`).
+  if (!isSeriesFolder(post.series)) return undefined;
   const siblings = allPosts.filter(p => p.series === post.series);
-  // 한 편짜리 폴더는 시리즈가 아니다 — `시리즈 · testing 1/1` 배지를 막는다.
-  if (!isSeriesFolder(post.series, siblings.length)) return undefined;
   const meta = getSeriesMeta(post.series);
   const ordered = sortPostsBySeriesOrder(siblings, meta?.order);
   return seriesBadgeLabel(

@@ -1,10 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import {
-  SERIES_MIN_POSTS,
-  isSeriesFolder,
-  sortPostsBySeriesOrder,
-} from './series';
+import { isSeriesFolder, sortPostsBySeriesOrder } from './series';
 
 interface Fixture {
   slug: string;
@@ -266,43 +262,42 @@ test('sortPostsBySeriesOrder: order 경로에서도 입력 불변', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 // isSeriesFolder
 //
-// 시리즈는 폴더 경로로 결정되므로, 주제별로 글을 묶어 둔 한 편짜리 폴더까지
-// 전부 시리즈가 되어 `시리즈 · testing 1/1` 같은 배지가 붙었다. 아래 규칙이
-// 홈 배지 / 글 상세 배지 / 시리즈 목록 / 아카이브 필터의 단일 기준이다.
+// 폴더는 그냥 폴더다. `_series.yml`을 둔 폴더만 시리즈다. 편수는 보지 않는다 —
+// 예전에는 2편 이상이면 자동으로 시리즈가 돼서, 고쳐 쓰는 동안 글을 모아 두는
+// 것만으로 배지·시리즈 목록·검색·OG 카드가 따라붙었다.
+//
+// 아래 규칙이 홈 배지 / 글 상세 배지·네비게이션 / 시리즈 목록 / llms.txt의
+// 단일 기준이다.
 // ─────────────────────────────────────────────────────────────────────────────
 
-test('isSeriesFolder: 2편 이상이면 _series.yml 없이도 시리즈', () => {
-  assert.equal(isSeriesFolder('__없는-폴더__', SERIES_MIN_POSTS), true);
-  assert.equal(isSeriesFolder('__없는-폴더__', 5), true);
+test('isSeriesFolder: _series.yml이 없으면 시리즈가 아니다', () => {
+  assert.equal(isSeriesFolder('__없는-폴더__'), false);
 });
 
-test('isSeriesFolder: 1편짜리 폴더는 시리즈가 아니다', () => {
-  assert.equal(isSeriesFolder('__없는-폴더__', 1), false);
+test('isSeriesFolder: 편수는 보지 않는다 — 여러 편이어도 선언이 없으면 폴더', () => {
+  // 이 함수는 이제 편수를 인자로 받지 않는다. 8편이 모인 폴더라도 선언이
+  // 없으면 그냥 폴더라는 것이 규칙의 핵심이라, 시그니처로 못을 박아 둔다.
+  assert.equal(isSeriesFolder.length, 2, '(seriesName, meta?) 두 개여야 함');
+  assert.equal(isSeriesFolder('__없는-폴더__', null), false);
 });
 
-test('isSeriesFolder: 0편도 시리즈가 아니다', () => {
-  assert.equal(isSeriesFolder('__없는-폴더__', 0), false);
-});
-
-test('isSeriesFolder: _series.yml이 있으면 1편이어도 시리즈', () => {
-  // bundler 폴더에는 실제 _series.yml이 있다. 편수와 무관하게 저자가 시리즈로
-  // 선언한 것이므로 존중한다. (아래 "null을 명시하면" 테스트와 같은 폴더를
-  // 픽스처로 공유한다 — 실제 폴더 의존은 bundler 하나로 유지할 것.)
-  assert.equal(isSeriesFolder('bundler', 1), true);
+test('isSeriesFolder: _series.yml이 있으면 시리즈', () => {
+  // bundler 폴더에는 실제 _series.yml이 있다. (아래 "null을 명시하면"
+  // 테스트와 같은 폴더를 픽스처로 공유한다 — 실제 폴더 의존은 bundler 하나로
+  // 유지할 것.)
+  assert.equal(isSeriesFolder('bundler'), true);
 });
 
 test('isSeriesFolder: meta를 주입하면 디스크를 읽지 않는다', () => {
   // 스크립트(generate-llms)의 단위 테스트가 실제 posts/ 폴더 상태에 따라
   // 흔들리지 않도록 열어 둔 인자.
-  assert.equal(isSeriesFolder('없는폴더', 1, { name: '없는폴더' }), true);
-  assert.equal(isSeriesFolder('없는폴더', 1, null), false);
-  // 2편 이상이면 meta와 무관하게 시리즈
-  assert.equal(isSeriesFolder('없는폴더', 2, null), true);
+  assert.equal(isSeriesFolder('없는폴더', { name: '없는폴더' }), true);
+  assert.equal(isSeriesFolder('없는폴더', null), false);
 });
 
 test('isSeriesFolder: null을 명시하면 디스크를 읽지 않고 "메타 없음"', () => {
   // `undefined`(미지정 → 조회)와 `null`(메타 없음)이 구분되어야 한다.
   // bundler는 실제로 `_series.yml`이 있는 폴더라, 조회했다면 true가 나온다.
-  assert.equal(isSeriesFolder('bundler', 1, null), false);
-  assert.equal(isSeriesFolder('bundler', 1), true);
+  assert.equal(isSeriesFolder('bundler', null), false);
+  assert.equal(isSeriesFolder('bundler'), true);
 });

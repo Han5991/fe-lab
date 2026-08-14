@@ -63,8 +63,8 @@ export function toSummary(post: Pick<PostData, 'excerpt' | 'content'>): string {
 /**
  * llms.txt 본문을 생성합니다.
  *
- * **시리즈 판정과 정렬은 사이트와 같은 규칙을 씁니다** — `isSeriesFolder`(한 편짜리
- * 폴더는 시리즈가 아니다)와 `sortPostsBySeriesOrder`(`_series.yml`의 `order` 우선).
+ * **시리즈 판정과 정렬은 사이트와 같은 규칙을 씁니다** — `isSeriesFolder`(`_series.yml`이
+ * 있는 폴더만 시리즈)와 `sortPostsBySeriesOrder`(`_series.yml`의 `order` 우선).
  * 여기서 따로 구현하면 `/series` 페이지에는 없는 "시리즈"가 색인에만 생기고,
  * 저자가 `order`로 정해둔 읽는 순서도 무시됩니다.
  *
@@ -124,9 +124,9 @@ export function buildLlmsText(
 
   for (const [seriesId, folderPosts] of byFolder) {
     const meta = seriesMeta(seriesId);
-    // 한 편짜리 폴더는 시리즈가 아니다 — `/series` 페이지와 같은 판정.
-    // meta를 넘겨 주입된 조회를 쓰게 한다(기본 인자는 디스크를 읽는다).
-    if (!isSeriesFolder(seriesId, folderPosts.length, meta)) {
+    // `_series.yml`이 없는 폴더는 시리즈가 아니다 — `/series` 페이지와 같은 판정.
+    // meta를 넘겨 주입된 조회를 쓰게 한다(미지정이면 디스크를 읽는다).
+    if (!isSeriesFolder(seriesId, meta)) {
       standalone.push(...folderPosts);
       continue;
     }
