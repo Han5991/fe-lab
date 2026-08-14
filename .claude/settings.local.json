@@ -1,9 +1,7 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git push:*)",
       "Bash(git add:*)",
-      "Bash(git checkout:*)",
       "Bash(pnpm install:*)",
       "Bash(pnpm dev:*)",
       "Bash(pnpm turbo dev:*)",
