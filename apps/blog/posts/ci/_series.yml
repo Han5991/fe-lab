@@ -1,7 +1,0 @@
-title: 느린 CI 뜯어고치기 — Meta 오픈소스 개선 후기
-description: Meta 오픈소스 astryx의 CI를 뜯어고치며 머지한 PR 17건. 직렬 빌드, 죽은 캐시, 권한 함정을 하나씩 잡았습니다.
-order:
-  - astryx-vitest-project-split
-  - astryx-deploy-pipeline-parallel
-  - astryx-pr-ci-parallel-cache
-  - astryx-ci-race-and-permissions
