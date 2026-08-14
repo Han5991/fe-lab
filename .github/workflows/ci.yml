@@ -51,8 +51,47 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # Turbopack FileSystem Cache — quality-checks의 마지막 스텝이 블로그를 실제로
+      # 빌드한다(check-seo가 산출물 HTML을 봐야 하므로). 그 캐시는
+      # apps/blog/web/.next/cache 에 쌓이는데, 위의 caching-for-turbo는 turbo 태스크
+      # 아티팩트 전용이고 turbo.json의 build outputs가 "!.next/cache/**"로 이
+      # 디렉터리를 명시 제외하므로 그쪽으로는 원리적으로 복원되지 않는다.
+      # 이 스텝이 없으면 PR 빌드의 Next 컴파일은 매 런 콜드다.
+      #
+      # 키는 deploy-blog.yml과 같은 rolling 방식이다. .next/cache는 append-only가
+      # 아니라 매 빌드 갱신되는데 primary key가 고정이면 "Cache hit occurred on the
+      # primary key, not saving"으로 저장이 스킵되어 캐시가 첫 런 시점에 얼어붙는다.
+      # key 끝에 커밋 SHA를 물려 매 런 새 엔트리를 저장하고, restore-keys로 직전
+      # 엔트리를 물려받는다.
+      #
+      # deploy-blog.yml과 prefix(-ci-)를 분리한 이유: apps/blog/** 를 건드린 main
+      # push에서는 두 워크플로가 같은 SHA로 동시에 도는데, 키까지 같으면 한쪽이
+      # "another job may be creating this cache" 경고로 저장을 버린다. 분리해도
+      # 시드는 마르지 않는다 — ci.yml은 main push마다 돌고, Actions 캐시는 브랜치
+      # 스코프라 PR이 기본 브랜치의 엔트리를 읽을 수 있기 때문이다(반대로 다른
+      # PR이 구운 캐시는 애초에 보이지 않는다).
+      #
+      # restore-keys에 lockfile 해시를 반드시 남긴다 — OS만 맞추는 폴백 키를 두면
+      # 의존성이 바뀐 뒤에도 옛 캐시를 물려받아 key의 해시가 무의미해진다.
+      # 캐시 오염 시 아래 `-v1-` 을 `-v2-` 로 올려 통째로 버린다.
+      - name: Restore Next.js build cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: apps/blog/web/.next/cache
+          key: blog-next-ci-v1-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+          restore-keys: |
+            blog-next-ci-v1-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
+
       # 검사 정의는 composite action 하나에 모여 있고, 배포 워크플로도 **같은 것**을
       # 부른다(.github/actions/quality-checks). 여기에만 검사를 추가하면 배포는
       # 그 검사를 안 지나는, 이번에 실제로 있었던 종류의 구멍이 생긴다.
       - name: Quality checks
         uses: ./.github/actions/quality-checks
+
+      # 캐시가 실제로 일했는지는 hit/miss 로그로 알 수 없다. 위 빌드 로그에서
+      # "⚠ No build cache found"가 사라지고 "Compiled successfully in Xs"의 X가
+      # 콜드 대비 줄어야 성공이다(2026-08-09 배포 런 기준 콜드 12.0s). 캐시가
+      # 커져 전송비용이 절감분을 먹으면 위 스텝을 지워 되돌린다.
+      - name: Report Next.js build cache size
+        if: always()
+        run: du -sh apps/blog/web/.next/cache 2>/dev/null || echo '(no .next/cache)'
