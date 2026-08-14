@@ -43,7 +43,7 @@ CI 로그의 캐시 복원 스텝은 초록불이었습니다. 캐시 hit, 67MB 
 
 > 캐시가 죽었는지 살았는지는 hit/miss 로그로 알 수 없습니다. hit 이후의 실제 컴파일 시간을 콜드 run과 비교해야 알 수 있습니다.
 
-main과 대조군은 비교의 양 끝입니다. 64초는 이 캐시가 **일할 때** 나오는 시간이고, 3.9분은 캐시가 **아예 없을 때** 나오는 시간입니다. PR의 4.0분이 어느 쪽에 붙는지만 보면 됩니다. 둘 중 하나만 있었다면 진단이 안 됐을 겁니다. 콜드만 있으면 "이 프로젝트는 원래 4분짜리군"으로 끝나고, main만 있으면 "PR은 뭔가 더 하니까 느리겠지"로 끝납니다.
+main과 대조군은 비교의 양 끝입니다. 64초는 복원된 캐시가 **실제로 재사용된** 시간이고, 3.9분은 캐시 없이 **콜드로 컴파일한** 시간입니다. PR의 4.0분이 어느 쪽에 붙는지만 보면 됩니다. 둘 중 하나만 있었다면 진단이 안 됐을 겁니다. 콜드만 있으면 "이 프로젝트는 원래 4분짜리군"으로 끝나고, main만 있으면 "PR은 뭔가 더 하니까 느리겠지"로 끝납니다.
 
 ## 캐시 판정은 2층에서 일어납니다
 
@@ -84,7 +84,13 @@ nextjs-sandbox-<pnpm-lock 해시>-<packages/core/dist 해시>
 
 이건 실수가 아니라 필연입니다. PR 프리뷰는 GitHub Pages의 `<owner>.github.io/<repo>/pr/<n>/sandbox/` 경로에 배포됩니다. 그 prefix 없이 빌드하면 루트 절대 경로로 나가는 에셋 URL이 전부 404가 나서 프리뷰의 스타일과 JS가 통째로 깨집니다.
 
-그리고 Next.js는 **resolved config가 바뀌면 webpack 캐시를 무효화**합니다. basePath는 그 config의 일부입니다. main이 만들어 둔 캐시를 PR이 복원하면, Next.js는 열어보고 "설정이 다르네" 하며 버립니다. 복원한 67MB는 처음부터 순수한 다운로드 낭비였습니다.
+그리고 앞에서 말한 "지문"의 실체는 소박한 문자열입니다. Next.js는 config 전체가 아니라 **컴파일 결과를 바꾸는 값들만 골라**, Next.js 버전과 함께 이어 붙여 webpack 캐시의 버전 문자열로 넘깁니다.
+
+```text
+cache.version = <Next.js 버전>|{"basePath":"/<repo>/sandbox","trailingSlash":true,"assetPrefix":"",…}
+```
+
+basePath는 그 선별 목록의 한 항목입니다. webpack은 캐시를 구울 때 이 문자열을 함께 기록해 두고, 복원본을 열 때 지금 문자열과 대조합니다 — **한 글자라도 다르면 통째로 버립니다.** 부분 재사용은 없습니다. main이 구운 캐시에는 main의 basePath가 박혀 있으니, PR이 여는 순간 어긋납니다. 복원한 67MB는 처음부터 순수한 다운로드 낭비였습니다.
 
 > 이 폐기는 버그가 아니라 안전장치입니다. Next.js가 config 지문을 대조하지 않았다면 결과는 느린 빌드가 아니라 **잘못된 배포**였을 겁니다. main용 basePath로 컴파일된 에셋이 PR 프리뷰로 나가 링크가 전부 404가 나는데, CI는 4분이 아니라 40초에 끝나서 "최적화가 잘 됐다"는 인상까지 줬을 겁니다. 느려진 것이 오히려 경보였습니다.
 
@@ -103,6 +109,8 @@ PR은 main의 죽은 캐시로 "hit"을 받습니다. → 저장 단계가 건�
 > 캐시가 있는데 없는 것보다 나쁜 상태가 됐습니다. 내려받는 시간은 쓰고, 빌드는 매번 콜드로 돌고, 올바른 캐시가 생기는 것까지 막습니다.
 
 main이 멀쩡했던 이유도 여기서 자명해집니다. main은 **자기가 구운 것을 자기가 꺼내 씁니다.** basePath가 같으니 2층을 통과하고, 그래서 64초입니다.
+
+이 루프에 우연한 탈출구가 하나 있긴 했습니다. 키가 lock 해시와 core dist 해시로 되어 있어서, PR이 의존성이나 core 산출물을 바꾸면 키 자체가 main이 점유하지 않은 새 값이 됩니다. 그러면 miss가 나고, 이번에는 저장이 실행되고, 다음 푸시부터는 자기 캐시로 웜입니다. 즉 core를 건드리는 PR은 우연히 멀쩡했고, sandbox나 문서만 고치는 PR은 영원히 콜드였습니다. 증상이 PR마다 달랐던 것 — 이 버그가 오래 눈에 띄지 않은 이유 중 하나입니다.
 
 ## 파일이 아닌 입력은 키에서 저절로 빠집니다
 
@@ -169,3 +177,4 @@ pr 키에도 결함이 남습니다. `.next/cache`는 매 빌드 갱신되는데
 여러분의 CI에도 캐시 스텝이 있다면, 지금 가장 최근 run의 로그를 열어보세요. 확인은 5분이면 끝납니다. `Cache restored successfully` 다음 줄의 빌드 시간이 캐시가 없던 시절과 정말로 다른가요. 비슷하게 "hit인데 안 빨라지는" 캐시를 만나신 적 있다면 댓글로 공유해 주세요.
 
 - 근거 PR: [facebook/astryx#3864 — perf(ci): key sandbox next cache by PR to stop cross-basepath invalidation](https://github.com/facebook/astryx/pull/3864) · 배경이 된 병렬화 PR: [#3811 — perf(ci): build sandbox preview in parallel with storybook](https://github.com/facebook/astryx/pull/3811) (둘 다 2026-07-12 머지)
+- 참고 문서: [webpack `cache.version` — 버전이 다르면 캐시를 재사용하지 않는다](https://webpack.js.org/configuration/cache/#cacheversion) · [Next.js가 config 값들로 캐시 버전 문자열을 만드는 곳 — `build/webpack-config.ts#L2380-L2423` (v16.3.1)](https://github.com/vercel/next.js/blob/v16.3.1/packages/next/src/build/webpack-config.ts#L2380-L2423)
