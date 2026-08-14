@@ -19,5 +19,7 @@
     ],
     "deny": []
   },
-  "enabledMcpjsonServers": ["next-devtools"]
+  "enabledMcpjsonServers": [],
+  "enabledPlugins": {},
+  "disabledMcpjsonServers": ["next-devtools"]
 }
