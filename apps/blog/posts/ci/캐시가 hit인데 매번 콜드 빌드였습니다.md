@@ -3,9 +3,9 @@ title: '캐시가 hit인데 매번 콜드 빌드였습니다 — GitHub Actions 
 seoTitle: '캐시가 hit인데 매번 콜드 빌드였던 이유'
 date: '2026-07-26'
 status: draft
-slug: 'astryx-pr-ci-parallel-cache'
-thumbnail: '/og/astryx-pr-ci-parallel-cache.png'
-excerpt: '캐시 복원은 초록불이었고 67MB가 정상적으로 내려왔습니다. 그런데 빌드는 캐시가 아예 없을 때와 같은 4분이었습니다. hit 로그가 보증하지 않는 것 — 캐시 판정의 2층 구조, 그리고 캐시 키에서 구조적으로 빠지는 입력을 대조군 실측으로 추적합니다.'
+slug: 'astryx-cache-hit-cold-build'
+thumbnail: '/og/astryx-cache-hit-cold-build.png'
+excerpt: '캐시 복원은 초록불이었고 67MB가 정상적으로 내려왔습니다. 그런데 빌드는 캐시가 아예 없을 때와 같은 4분이었습니다. hit 로그가 보증하지 않는 것 — 캐시 판정의 2층 구조, 그리고 캐시 키에서 구조적으로 빠지는 입력을 대조군 실측으로 확인합니다.'
 tags: ['github-actions', 'ci', 'nextjs', 'cache']
 ---
 
@@ -19,13 +19,13 @@ tags: ['github-actions', 'ci', 'nextjs', 'cache']
 
 CI 로그의 캐시 복원 스텝은 초록불이었습니다. 캐시 hit, 67MB 복원 완료. 그런데 빌드 시간이 전혀 줄지 않았습니다. 캐시가 있는 빌드가 4.0분, 캐시가 아예 없는 빌드가 3.9분이었습니다.
 
-캐시는 매번 내려왔고, 매번 통째로 버려지고 있었습니다.
+캐시는 매번 내려왔고, 매번 통째로 버려지고 있었습니다. 저는 이 두 줄을 한참 그냥 지나쳤습니다.
 
-이 글은 그 원인을 추적해 캐시 키 한 조각으로 고치기까지의 기록입니다(facebook/astryx [#3864](https://github.com/facebook/astryx/pull/3864)).
+이 글은 그 원인을 좁혀 캐시 키 한 조각으로 고치기까지의 기록입니다(facebook/astryx [#3864](https://github.com/facebook/astryx/pull/3864)).
 
 ## 배경: sandbox 빌드가 크리티컬 패스였습니다
 
-astryx(메타의 내부 도구용 디자인 시스템, 오픈소스)의 PR CI에는 데모 사이트(sandbox)를 Next.js로 export하는 job이 있습니다. 직전 PR [#3811](https://github.com/facebook/astryx/pull/3811)에서 직렬이던 `build` job을 쪼개 이 스텝을 병렬 job으로 뗐고, 그러자 PR CI의 총 소요 시간은 가장 느린 job인 `build-sandbox`가 정하게 됐습니다. 4분 15초. 이걸 줄이는 게 다음 과제였습니다.
+astryx(메타의 내부 도구용 디자인 시스템, 오픈소스)의 PR CI에는 데모 사이트(sandbox)를 Next.js로 export하는 job이 있습니다. 직전 PR [#3811](https://github.com/facebook/astryx/pull/3811)에서 직렬이던 `build` job을 쪼개 이 스텝을 병렬 job으로 뗐고, 그러자 PR CI의 총 소요 시간은 가장 느린 job인 `build-sandbox`가 정하게 됐습니다. 약 4분. 이걸 줄이는 게 다음 과제였습니다.
 
 그런데 이 job은 이미 캐시를 쓰고 있었습니다. `apps/sandbox/.next/cache`를 `actions/cache`로 복원하고 있었고, 복원은 매번 **성공**하고 있었습니다. 캐시가 있는데 왜 매번 4분인가 — 여기서부터가 이 글입니다.
 
@@ -60,7 +60,7 @@ astryx(메타의 내부 도구용 디자인 시스템, 오픈소스)의 PR CI에
 
 1층은 tarball을 풀어주는 일만 합니다. 그 안의 내용이 이번 빌드에 쓸모 있는지는 알지 못하고, 알 방법도 없습니다. 유효성 판단은 전적으로 **키를 짠 사람의 몫**입니다.
 
-2층은 압니다. webpack의 persistent cache에는 그 캐시를 구울 때의 resolved config 지문이 함께 저장되고, 복원본을 열 때 지금 config와 대조합니다.
+2층은 압니다. webpack의 persistent cache에는 그 캐시를 구울 때의 resolved config(설정 파일이 아니라, 환경변수까지 반영된 빌드 시점의 최종 설정값) 지문이 함께 저장되고, 복원본을 열 때 지금 값과 대조합니다.
 
 그래서 로그에 에러가 한 줄도 없었던 겁니다. 두 층 모두 명세대로 정확히 동작했습니다. 고장난 부품은 하나도 없고, 문제는 **이음매**에 있었습니다.
 
@@ -115,7 +115,7 @@ key: nextjs-sandbox-${{ hashFiles('pnpm-lock.yaml') }}-${{ hashFiles('packages/c
 
 ## 해결: 빠진 입력을 키에 넣습니다
 
-고치는 diff는 허무할 정도로 짧습니다. `ci.yml`과 `deploy.yml` 두 파일, +17/−1. 그중 `deploy.yml` 변경은 키가 아니라 **주석 5줄**입니다.
+고치는 diff는 허무할 정도로 짧습니다. +17/−1 — 키에 넣은 한 조각과, 그 근거를 적은 주석이 전부입니다.
 
 ```yaml
 key: nextjs-sandbox-pr${{ github.event.pull_request.number }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ hashFiles('packages/core/dist/**') }}
@@ -135,7 +135,9 @@ key: nextjs-sandbox-pr${{ github.event.pull_request.number }}-${{ hashFiles('pnp
 
 ### 남은 한계: 첫 푸시는 어떤 키 설계로도 웜이 될 수 없습니다
 
-pr 키에도 결함이 남습니다. `.next/cache`는 매 빌드 갱신되는데, 두 번째 푸시부터는 또 primary hit이 나므로 저장이 다시 스킵됩니다. 그 PR의 캐시는 첫 푸시 시점에 얼어붙는 셈입니다. 이를 피하는 대안으로, primary key 끝에 커밋 SHA를 물려 hit이 구조적으로 나지 않게 만들고(그러면 저장이 항상 실행됩니다) 복원은 `restore-keys`의 접두사 매칭에 맡기는 rolling 키가 있습니다. 하지만 그 느슨한 폴백이 정확히 위에서 거부한 것입니다. basePath가 다른 캐시를 접두사로 물려받는 순간 지금 고친 버그가 폴백 경로로 되살아나고, 그렇다고 basePath를 접두사에 남기면 PR별로 갈려서 결국 pr 키와 같아집니다.
+pr 키에도 결함이 남습니다. `.next/cache`는 매 빌드 갱신되는데, 두 번째 푸시부터는 또 primary hit이 나므로 저장이 다시 스킵됩니다. 그 PR의 캐시는 첫 푸시 시점에 얼어붙는 셈입니다.
+
+이를 피하는 대안으로, primary key 끝에 커밋 SHA를 물려 hit이 구조적으로 나지 않게 만들고(그러면 저장이 항상 실행됩니다) 복원은 `restore-keys`의 접두사 매칭에 맡기는 rolling 키가 있습니다. 하지만 그 느슨한 폴백이 정확히 위에서 거부한 것입니다. basePath가 다른 캐시를 접두사로 물려받는 순간 지금 고친 버그가 폴백 경로로 되살아나고, 그렇다고 basePath를 접두사에 남기면 PR별로 갈려서 결국 pr 키와 같아집니다.
 
 즉 **basePath가 PR마다 다른 한, 첫 푸시는 어떤 키 설계로도 웜이 될 수 없습니다.** 제약이 하나 더 있습니다. GitHub Actions 캐시는 브랜치 스코프라, PR run이 읽을 수 있는 것은 자기 브랜치와 base·기본 브랜치의 엔트리뿐입니다. PR 첫 푸시를 덥힐 수 있는 시드는 main 캐시 하나뿐이라는 뜻입니다.
 
@@ -161,6 +163,6 @@ pr 키에도 결함이 남습니다. `.next/cache`는 매 빌드 갱신되는데
 
 정리하면 이렇습니다. 캐시 hit은 "키 문자열이 같았다"는 뜻일 뿐이라, 캐시의 생사는 hit 이후의 컴파일 시간을 콜드 대조군과 비교해야 알 수 있습니다. 이번 사례에서 키는 정확히 맞았지만, Next.js가 basePath 다른 캐시를 열어보고 통째로 버리고 있었고, hit으로 기록된 탓에 올바른 캐시가 저장될 기회조차 없었습니다. basePath가 키에서 빠진 것은 부주의가 아니라 `hashFiles()`가 파일만 보기 때문입니다. 그래서 키에 PR 번호를 넣어, 각 PR이 자기 캐시를 굽게 했습니다.
 
-여러분의 CI에도 캐시 스텝이 있다면 한 번만 확인해 보세요. `Cache restored successfully` 다음 줄의 빌드 시간이 캐시가 없던 시절과 정말로 다른가요. 저는 그 두 줄을 한참 그냥 지나쳤습니다. 비슷하게 "hit인데 안 빨라지는" 캐시를 만나신 적 있다면 댓글로 공유해 주세요.
+여러분의 CI에도 캐시 스텝이 있다면, 지금 가장 최근 run의 로그를 열어보세요. 확인은 5분이면 끝납니다. `Cache restored successfully` 다음 줄의 빌드 시간이 캐시가 없던 시절과 정말로 다른가요. 비슷하게 "hit인데 안 빨라지는" 캐시를 만나신 적 있다면 댓글로 공유해 주세요.
 
 - 근거 PR: [facebook/astryx#3864 — perf(ci): key sandbox next cache by PR to stop cross-basepath invalidation](https://github.com/facebook/astryx/pull/3864) · 배경이 된 병렬화 PR: [#3811 — perf(ci): build sandbox preview in parallel with storybook](https://github.com/facebook/astryx/pull/3811) (둘 다 2026-07-12 머지)
