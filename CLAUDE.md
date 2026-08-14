@@ -15,20 +15,6 @@ etc.)
 
 Operational lessons from past sessions. Follow these to avoid repeated friction.
 
-### Shell Environment
-
-The user's interactive shell runs **scm_breeze + zsh plugins that wrap and sometimes intercept
-`git`, `grep`, `ls`, `cat`, `rm`** and mangle heredocs, pipes, and escapes. Therefore:
-
-- **Commits**: never use heredocs for commit messages — use `git commit -F <file>` or multiple
-  `-m` flags.
-- **Full output matters**: do not pipe to `head`/`tail` when you need the complete result (e.g. PR
-  review comments). Write to a file, then read/count it. A past session silently dropped ~22 review
-  comments to a `head -200`.
-- **Intercepted builtins**: if `ls`/`cat`/`grep`/`git` fail oddly (e.g. exit 127), re-run with
-  `command ls`, `command grep`, or the absolute binary (`/usr/bin/git`). Prefer the dedicated
-  Read/Grep/Glob tools over shell builtins.
-
 ### TypeScript / Project Conventions
 
 This repo targets **TypeScript 6 semantics, not TS5.x**. Before explaining or relying on compiler
