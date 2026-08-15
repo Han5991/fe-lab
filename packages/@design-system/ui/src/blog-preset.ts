@@ -347,6 +347,13 @@ export const blogPreset = definePreset({
           'code.class': { value: { base: '#953800', _dark: '#4ec9b0' } },
           'code.property': { value: { base: '#0550ae', _dark: '#9cdcfe' } },
           'code.tag': { value: { base: '#116329', _dark: '#569cd6' } },
+          // diff의 +/− 줄. vscDarkPlus는 inserted를 숫자(#b5cea8)와, deleted를
+          // 문자열(#ce9178)과 같은 색으로 묶어 두는데, 그 둘의 라이트 짝이
+          // #0550ae·#0a3069라 라이트에서는 추가·삭제가 둘 다 파랑이 된다.
+          // github-light의 markup.inserted/deleted 값으로 갈라 둔다
+          // (표면 위 6.89:1 · 9.80:1). 다크는 원본 그대로.
+          'code.inserted': { value: { base: '#116329', _dark: '#b5cea8' } },
+          'code.deleted': { value: { base: '#82071e', _dark: '#ce9178' } },
           'code.regex': { value: { base: '#a40e26', _dark: '#d16969' } },
           'code.selector': { value: { base: '#6f42c1', _dark: '#d7ba7d' } },
           // 눈에 덜 띄어야 하는 구두점(html 태그 괄호 등).

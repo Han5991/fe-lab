@@ -118,7 +118,7 @@ The blog (`apps/blog/web/`) is a **statically generated (SSG) Next.js applicatio
    > `published`가 남아 있으면 `lint:posts`가 `legacy-published-field` 에러를 냅니다.
 
 3. **빌드 전 처리** (`prebuild` → `scripts/build-content.ts` 통합 진입점):
-   - `validate-posts.ts`: frontmatter 필수 필드(`status`·`title`·`date`), 폐기된 `published` 필드, 날짜 형식/timezone 모호성, 끊긴 이미지, 중복 slug 검사 (prebuild에서만 실행, predev에서는 skip)
+   - `validate-posts.ts`: frontmatter 필수 필드(`status`·`title`·`date`), 폐기된 `published` 필드, 날짜 형식/timezone 모호성, 끊긴 이미지, 중복 slug 검사 (prebuild에서만 실행, predev:web에서는 skip)
    - `sync-posts.mjs`: 포스트 디렉토리의 이미지/미디어 파일을 `public/posts/`에 복사 (mtime 기반 incremental — 변경분만 복사)
    - `generate-sitemap.ts`: 발행된 글 목록으로 `sitemap.xml` 생성
    - `generate-rss.ts`: RSS 피드(`rss.xml`) 생성
@@ -193,7 +193,7 @@ The blog (`apps/blog/web/`) is a **statically generated (SSG) Next.js applicatio
 - **llms.txt / llms-full.txt**: 빌드 시 자동 생성 (AI 크롤러용 색인·전문)
 - **산출물 검사**: `pnpm check-seo` — 빌드된 HTML을 파싱해 SEO 계약을 검사하고 위반 시 실패한다. **`pnpm build`의 마지막 단계 하나가 유일한 실행 지점이다**(`prebuild → next build → check-seo`). PR CI(`ci.yml`)와 배포(`deploy-blog.yml`)가 각각 그 `build`를 부르므로 로컬·PR·배포가 **같은 검사**를 지난다 — 워크플로에 별도 스텝을 또 두면 build에서 이미 실패해 도달하지 못하는 죽은 게이트가 된다
 
-> **`prebuild`는 `--strict`로 돈다.** `lint:posts`(수동)와 `predev`는 경고로 두는
+> **`prebuild`는 `--strict`로 돈다.** `lint:posts`(수동)와 `predev:web`은 경고로 두는
 > SEO 규칙(`missing-excerpt`·`excerpt-length`·`long-title`·`missing-image-alt`·
 > `truncated-excerpt`·`duplicate-description`)을, 빌드 직전에는 **에러**로 올린다.
 > 발행 대상(`draft`가 아닌 글)만 해당한다. 글을 쓰는 동안 dev 서버가 막히지
@@ -234,7 +234,7 @@ The blog (`apps/blog/web/`) is a **statically generated (SSG) Next.js applicatio
 | `supabase/config.toml`                      | 로컬 Supabase 설정 (Auth, DB, Storage 등)                               |
 | `.github/workflows/deploy-blog.yml`         | CI/CD 배포 워크플로우                                                   |
 | `apps/blog/posts/{series}/_series.yml`      | 시리즈 선언 — 이 파일이 있어야 시리즈. 표시명·설명·order 메타도 여기    |
-| `apps/blog/web/scripts/build-content.ts`    | predev/prebuild 통합 진입점 (validate/sync/sitemap/rss/search/llms)     |
+| `apps/blog/web/scripts/build-content.ts`    | predev:web/prebuild 통합 진입점 (validate/sync/sitemap/rss/search/llms) |
 | `apps/blog/web/scripts/check-seo.ts`        | 빌드 산출물 SEO 검사 (CI 게이트)                                        |
 | `apps/blog/web/lib/constants.ts`            | 사이트 이름·URL·`<title>` 접미사·SEO 길이 예산의 단일 소스              |
 | `apps/blog/web/design/DIAGRAM_AUTHORING.md` | 다이어그램 저작 가이드 (선언형 태그 prop 표, 복붙 예제, `hero:` 등록법) |

@@ -137,6 +137,11 @@ shiki 듀얼 테마로 푸는 문제를, 색 **정의**를 토큰으로 옮겨 �
 - 색을 고칠 일이 생기면 `blog-preset.ts`의 `code.*` **한 곳만** 본다. 컴포넌트에
   hex를 다시 박지 말 것 — `codeTheme.test.ts`가 "원본 테마의 색이 하나도 남지
   않았다"를 검사하므로, 매핑에서 빠진 색은 테스트가 잡는다
+- 매핑은 **색 기준**이라 원본에서 같은 색이던 토큰은 라이트에서도 같이 움직인다.
+  셀렉터로 따로 가른 예외는 셋뿐 — `tag`(키워드와 `#569cd6` 공유 → `code.tag`),
+  `inserted`·`deleted`(각각 숫자·문자열과 색을 공유해 라이트 diff에서 +/−가 둘 다
+  파랑이 됐다 → `code.inserted`·`code.deleted`). 예외를 늘릴 땐 "라이트에서
+  갈라지는 게 읽기에 실제로 도움이 되나"를 기준으로 (`codeTheme.ts` 주석)
 - 펜스 메타(` ```ts title="lib/foo.ts" `, `tab="npm"`)는 `rehypeCodeMeta`가
   `data-*` 속성으로 승격한다. 이 플러그인은 **`rehypeRaw`보다 앞**이어야 한다
   (rehypeRaw가 트리를 직렬화·재파싱하며 hast의 `data`를 버린다). 순서가 뒤집혀도

@@ -3,8 +3,8 @@ title: 'deploy job은 이제 27초면 끝납니다'
 date: '2026-07-12'
 excerpt: 'test 완료 후 전체 빌드를 다시 하던 직렬 배포 파이프라인을 build job 분리로 병렬화해, 머지에서 배포까지 평균 12분 21초를 6분 33초로 줄였습니다. 크리티컬 패스 관점의 설계와 gh api 실측, 병목이 이동하는 과정을 정리했습니다.'
 status: draft
-slug: 'astryx-deploy-pipeline-parallel'
-thumbnail: '/og/astryx-deploy-pipeline-parallel.png'
+slug: 'deploy-pipeline-parallel'
+thumbnail: '/og/deploy-pipeline-parallel.png'
 tags: ['github-actions', 'ci', 'deploy']
 ---
 
@@ -57,7 +57,7 @@ build (~6~7분)─┘
 - **`deploy` job 축소** — `needs: [test, build]`로 둘을 기다렸다가, 아티팩트 다운로드 → gh-pages의 `pr/`과 `reports/` 보존 → 배포 디렉터리 조립 → push. 이게 전부입니다. Node 설치도, 빌드 트리 체크아웃도 없습니다.
 - **게이트는 그대로** — test가 실패하면 push는 없습니다. 이전과 동일합니다. 달라진 건 그 게이트가 더 이상 빌드까지 직렬로 세워두지 않는다는 것뿐입니다.
 
-새로운 발명은 아닙니다. job 사이에 아티팩트로 산출물을 넘기는 방식은 같은 저장소의 ci.yml이 PR 프리뷰마다 이미 쓰고 있던 메커니즘입니다. 그걸 Deploy 워크플로우에도 적용한 것뿐입니다. 참고로 deploy가 보존하는 `pr/` 디렉터리는 [CI가 빨라지자 숨어 있던 함정 두 개가 드러났습니다](https://blog.sangwook.dev/posts/astryx-ci-race-and-permissions/)에서 cleanup 워크플로우와 경쟁하는 바로 그 구조입니다.
+새로운 발명은 아닙니다. job 사이에 아티팩트로 산출물을 넘기는 방식은 같은 저장소의 ci.yml이 PR 프리뷰마다 이미 쓰고 있던 메커니즘입니다. 그걸 Deploy 워크플로우에도 적용한 것뿐입니다. 참고로 deploy가 보존하는 `pr/` 디렉터리는 [CI가 빨라지자 숨어 있던 함정 두 개가 드러났습니다](https://blog.sangwook.dev/posts/ci-race-and-permissions/)에서 cleanup 워크플로우와 경쟁하는 바로 그 구조입니다.
 
 머지 전에 검증도 했습니다. 제 fork에서 이 워크플로우를 그대로 dispatch해 돌렸습니다. fork는 Pages가 꺼져 있어서 실제 배포 없이 전 과정을 확인할 수 있었습니다. test와 build가 같은 시각에 출발했고, deploy는 14초 만에 끝났으며, 결과 트리에 `storybook/`, `sandbox/`, CSS 에셋이 기대한 레이아웃대로 들어 있었습니다.
 
@@ -65,7 +65,7 @@ build (~6~7분)─┘
 
 ### 측정: 체감 말고 같은 잣대로
 
-"빨라진 것 같은데요"로는 부족합니다. [vitest 프로젝트 분리 작업](https://blog.sangwook.dev/posts/astryx-vitest-project-split/)에서 배운 게 하나 있다면, 최적화의 효과는 **어디서 어떻게 측정하느냐**에 따라 다르게 보인다는 것입니다. 그래서 이번에도 머지 전후를 같은 방식으로 쟀습니다.
+"빨라진 것 같은데요"로는 부족합니다. [vitest 프로젝트 분리 작업](https://blog.sangwook.dev/posts/vitest-project-split/)에서 배운 게 하나 있다면, 최적화의 효과는 **어디서 어떻게 측정하느냐**에 따라 다르게 보인다는 것입니다. 그래서 이번에도 머지 전후를 같은 방식으로 쟀습니다.
 
 방법은 GitHub API입니다. 실행 하나의 job별 시작/종료 시각을 이렇게 뽑을 수 있습니다.
 

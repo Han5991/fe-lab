@@ -10,8 +10,10 @@ pre-commit:
   parallel: true
   commands:
     prettier:
-      # 모노레포 하위 파일까지 명시적으로 매치 — 루트만 잡는 오해 방지
-      glob: '**/*.{ts,mts,tsx,js,jsx,json,md,mjs,cjs,yml,yaml}'
+      # 루트 파일(`*`)과 하위 디렉터리 파일(`**/*`) 둘 다 매치. `**/*.md`만 쓰면
+      # `/`가 리터럴이라 루트의 CLAUDE.md·README.md 같은 파일이 빠져 CI의
+      # format:check에서야 잡힌다(PR #262에서 실제로 그랬다).
+      glob: '{*,**/*}.{ts,mts,tsx,js,jsx,json,md,mjs,cjs,yml,yaml}'
       # 포스트 콘텐츠는 .prettierignore 대상이고, 경로의 [시리즈명] 대괄호를
       # prettier가 glob으로 해석해 exit 2가 나므로 훅 단계에서 제외
       exclude:
