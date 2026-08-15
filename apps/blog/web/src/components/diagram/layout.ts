@@ -10,17 +10,12 @@
  * 부분이라서다 — 렌더 없이 숫자만 테스트할 수 있어야 한다.
  */
 
-/**
- * 노드의 **역할**. 색 이름이 아니다.
- *
- * 원래 `'gray' | 'teal'`이었는데, 포인트색을 틸에서 cyan으로 바꾸자 값 이름이
- * 곧바로 거짓말이 됐다. 이 값이 뜻하는 건 "청록색"이 아니라 "핵심 경로"이므로
- * 팔레트와 무관한 이름으로 바꿨다. 옛 `tone="teal"`은 `declarative.tsx`가
- * 별칭으로 받아준다.
- */
-export type DiagramTone = 'gray' | 'accent';
+// tone·flow의 값 목록은 스타일 recipe(primitives.tsx)가 정의한다. 타입 전용
+// import라 런타임에는 지워진다 — 이 모듈은 여전히 React 없이 테스트할 수 있다.
+import type { DiagramFlow, DiagramTone } from './primitives';
+
+export type { DiagramFlow, DiagramTone };
 export type DiagramShape = 'box' | 'pill';
-export type DiagramFlow = 'sync' | 'async';
 export type DiagramDirection = 'row' | 'fan';
 
 export interface DiagramNodeSpec {
