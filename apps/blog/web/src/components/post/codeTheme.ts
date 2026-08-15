@@ -78,11 +78,18 @@ export const CODE_COLOR_ROLES: Record<string, TokenPath> = {
  * 나오는 글에서 둘이 같은 색이면 마크업의 뼈대가 잘 안 읽혀서, 태그만
  * 예외로 둔다(다크는 원본과 같은 값이라 화면이 바뀌지 않는다).
  *
+ * diff의 `inserted`/`deleted`도 같은 문제다. 원본은 inserted를 숫자(`#b5cea8`),
+ * deleted를 문자열(`#ce9178`)과 묶어 두는데, 그 둘의 라이트 짝(`#0550ae`·
+ * `#0a3069`)이 둘 다 파랑이라 라이트에서는 +줄과 −줄이 구분되지 않는다.
+ * 추가·삭제가 색으로 갈리지 않는 diff는 diff가 아니므로 예외로 둔다.
+ *
  * 예외를 늘릴 때는 "라이트에서 갈라지는 게 실제로 읽기에 도움이 되는가"를
  * 기준으로 볼 것. 그냥 다르다는 이유로 늘리면 색 기준 매핑의 장점이 사라진다.
  */
 const SELECTOR_OVERRIDES: Record<string, TokenPath> = {
   tag: 'colors.code.tag',
+  inserted: 'colors.code.inserted',
+  deleted: 'colors.code.deleted',
 };
 
 /**

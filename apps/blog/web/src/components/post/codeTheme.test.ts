@@ -86,6 +86,16 @@ describe('toDualTheme', () => {
     expect(dual.tag.color).toContain('code');
   });
 
+  test('diff의 +줄과 −줄은 숫자·문자열과 다른 전용 토큰을 쓴다', () => {
+    // 원본은 inserted를 숫자(#b5cea8), deleted를 문자열(#ce9178)과 묶는데
+    // 그 둘의 라이트 짝이 둘 다 파랑이라 diff에서 추가·삭제가 갈리지 않았다.
+    expect(dual.inserted.color).toContain('code');
+    expect(dual.deleted.color).toContain('code');
+    expect(dual.inserted.color).not.toBe(dual.number.color);
+    expect(dual.deleted.color).not.toBe(dual.string.color);
+    expect(dual.inserted.color).not.toBe(dual.deleted.color);
+  });
+
   test('색이 아닌 선언은 값이 유지된다', () => {
     // 글꼴·줄간격까지 건드리면 코드 블록의 조판이 통째로 흔들린다.
     expect(dual['code[class*="language-"]'].fontFamily).toBe(
