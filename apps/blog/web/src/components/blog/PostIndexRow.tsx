@@ -3,6 +3,7 @@ import { css } from '@design-system/ui-lib/css';
 import type { PostSummary } from '@/domain/post';
 import { encodePostSlug } from '@/domain/post/utils';
 import { HiddenPostBadge } from './HiddenPostBadge';
+import { postRowBorderRaw, postRowLinkLayoutRaw, postRowMeta } from './postRow';
 
 /**
  * `2025-06-08` → `06-08`. 허브 목록은 같은 해 글이 대부분이라 연도를 떼고
@@ -24,20 +25,14 @@ export const PostIndexRow = ({ post }: PostIndexRowProps) => {
   return (
     <Link
       href={`/posts/${encodePostSlug(post.slug)}/`}
-      className={css({
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'baseline',
-        gap: '[16px]',
-        // 좌우 패딩 없음 — 목록 제목이 Hero·대표 글과 같은 세로선에서 시작해야
-        // 한다. 예전 2px 때문에 홈에서 이 목록만 2px 오른쪽으로 밀려 있었다.
-        py: '[12px]',
-        borderTopWidth: 'hairline',
-        borderTopStyle: 'solid',
-        borderColor: 'ink.border',
+      className={css(postRowBorderRaw, postRowLinkLayoutRaw, {
+        // 좌우 패딩 없음(postRowLinkLayoutRaw) — 목록 제목이 Hero·대표 글과
+        // 같은 세로선에서 시작해야 한다. 예전 2px 때문에 홈에서 이 목록만
+        // 2px 오른쪽으로 밀려 있었다.
         fontSize: '[14px]',
         color: 'ink.950',
         transition: '[color 0.15s]',
+        // 아카이브·시리즈 행(postRowLink)과 달리 밑줄 없이 색만 바꾼다.
         _hover: { color: 'accent.600' },
       })}
     >
@@ -53,18 +48,7 @@ export const PostIndexRow = ({ post }: PostIndexRowProps) => {
         <HiddenPostBadge post={post} />
       </h3>
       {post.date && (
-        <span
-          className={css({
-            fontFamily: 'mono',
-            fontWeight: 'normal',
-            fontSize: '[12px]',
-            color: 'ink.500',
-            flexShrink: 0,
-            fontVariantNumeric: 'tabular-nums',
-          })}
-        >
-          {toMonthDay(post.date)}
-        </span>
+        <span className={postRowMeta}>{toMonthDay(post.date)}</span>
       )}
     </Link>
   );

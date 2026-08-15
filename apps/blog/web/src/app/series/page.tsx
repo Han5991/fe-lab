@@ -10,6 +10,13 @@ import { fmtDate } from '@/lib/format';
 import { OG_DEFAULT_IMAGE, SITE_NAME, SITE_URL } from '@/lib/constants';
 import { safeJsonLd } from '@/lib/jsonLd';
 import { HiddenPostBadge } from '@/src/components/blog/HiddenPostBadge';
+import {
+  postRowItem,
+  postRowLink,
+  postRowMeta,
+  postRowMetaRaw,
+  postRowTitle,
+} from '@/src/components/blog/postRow';
 import { PageBoundary } from '@/src/components/PageBoundary';
 import { railGutter, railColumn } from '@/src/components/Rail';
 
@@ -59,38 +66,6 @@ const seriesBadge = css({
   rounded: '[6px]',
   px: '[9px]',
   py: '[2px]',
-});
-
-// 레퍼런스 .meta / .date — 날짜·개수 등 수치는 전부 모노.
-// 한 군데서만 여백을 덧붙이므로 raw 객체와 클래스 두 형태를 함께 둔다.
-const metaMonoStyle = css.raw({
-  fontFamily: 'mono',
-  fontWeight: 'normal',
-  fontSize: '[12px]',
-  color: 'ink.500',
-  flexShrink: 0,
-  fontVariantNumeric: 'tabular-nums',
-});
-const metaMono = css(metaMonoStyle);
-
-// 레퍼런스 .list .row — 구분은 hairline 보더 하나로만. 마지막 행에는
-// 아래 보더를 더해 목록이 열린 채로 끝나지 않게 한다.
-const rowItem = css({
-  borderTopWidth: '[1px]',
-  borderTopStyle: 'solid',
-  borderColor: 'ink.border',
-  _last: { borderBottomWidth: '[1px]', borderBottomStyle: 'solid' },
-});
-
-const rowLink = css({
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'baseline',
-  gap: '[16px]',
-  py: '[12px]',
-  // 좌우 패딩 없음 — 행 제목이 시리즈 제목·페이지 제목과 같은 세로선에서
-  // 시작해야 한다. PostIndexRow·PostsArchive의 rowLink와 같은 규칙이다.
-  _hover: { '& h3': { color: 'accent.600', textDecorationLine: 'underline' } },
 });
 
 export default function SeriesPage() {
@@ -151,7 +126,7 @@ export default function SeriesPage() {
                 {PAGE_DESCRIPTION}
               </p>
               {series.length > 0 && (
-                <p className={css(metaMonoStyle, { mt: '[10px]' })}>
+                <p className={css(postRowMetaRaw, { mt: '[10px]' })}>
                   {series.length}개 시리즈 · {seriesPostCount}편
                 </p>
               )}
@@ -208,7 +183,7 @@ export default function SeriesPage() {
                         <span className={seriesBadge}>{entry.title}</span>
                       </Link>
                     </h2>
-                    <span className={metaMono}>{entry.posts.length}편</span>
+                    <span className={postRowMeta}>{entry.posts.length}편</span>
                   </div>
 
                   {entry.description && (
@@ -228,25 +203,18 @@ export default function SeriesPage() {
                     className={css({ listStyleType: 'none', p: '0', m: '0' })}
                   >
                     {entry.posts.map(post => (
-                      <li key={post.slug} className={rowItem}>
+                      <li key={post.slug} className={postRowItem}>
                         <Link
                           href={`/posts/${encodePostSlug(post.slug)}/`}
-                          className={rowLink}
+                          className={postRowLink}
                         >
-                          <h3
-                            className={css({
-                              minW: '0',
-                              fontSize: '[14px]',
-                              fontWeight: 'normal',
-                              lineHeight: 'snug',
-                              color: 'ink.950',
-                              transition: '[color 0.15s]',
-                            })}
-                          >
+                          <h3 className={postRowTitle}>
                             {post.title}
                             <HiddenPostBadge post={post} />
                           </h3>
-                          <span className={metaMono}>{fmtDate(post.date)}</span>
+                          <span className={postRowMeta}>
+                            {fmtDate(post.date)}
+                          </span>
                         </Link>
                       </li>
                     ))}
