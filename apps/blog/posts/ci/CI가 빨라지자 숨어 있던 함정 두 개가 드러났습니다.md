@@ -1,6 +1,7 @@
 ---
 title: 'CI가 빨라지자 숨어 있던 함정 두 개가 드러났습니다'
 date: '2026-07-12'
+excerpt: 'CI 병렬화 후 gh-pages에 동시에 push하던 두 워크플로우의 경쟁을 record & replay 재시도로 풀고, permissions 선언에도 403이 나던 fork PR 토큰 강등 규칙을 진단합니다. 재현 방법과 고치지 않기로 한 결정까지의 기록입니다.'
 status: draft
 slug: 'astryx-ci-race-and-permissions'
 thumbnail: '/og/astryx-ci-race-and-permissions.png'
