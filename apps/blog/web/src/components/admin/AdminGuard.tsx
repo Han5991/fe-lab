@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { type ReactNode, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { client as supabase } from '@/lib/client';
 import { useSuspenseQuery } from '@tanstack/react-query';
@@ -12,7 +12,7 @@ import { useSuspenseQuery } from '@tanstack/react-query';
 // *.supabase.co 프로덕션은 인증을 강제한다.)
 const DEV_BYPASS = process.env.NODE_ENV === 'development';
 
-export function AdminGuard({ children }: { children: React.ReactNode }) {
+export function AdminGuard({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
 
