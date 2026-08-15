@@ -3,7 +3,7 @@ title: '캐시가 hit인데 매번 콜드 빌드였습니다 — GitHub Actions 
 seoTitle: '캐시가 hit인데 매번 콜드 빌드였던 이유'
 date: '2026-07-26'
 status: draft
-slug: 'astryx-cache-hit-cold-build'
+slug: 'cache-hit-cold-build'
 thumbnail: '/og/astryx-cache-hit-cold-build.png'
 excerpt: '캐시 복원은 초록불이었고 67MB가 정상적으로 내려왔습니다. 그런데 빌드는 캐시가 아예 없을 때와 같은 4분이었습니다. hit 로그가 보증하지 않는 것 — 캐시 판정의 2층 구조, 그리고 캐시 키에서 구조적으로 빠지는 입력을 대조군 실측으로 확인합니다.'
 tags: ['github-actions', 'ci', 'nextjs', 'cache']

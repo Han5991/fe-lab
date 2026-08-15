@@ -3,8 +3,8 @@ title: 'CI가 빨라지자 숨어 있던 함정 두 개가 드러났습니다'
 date: '2026-07-12'
 excerpt: 'CI 병렬화 후 gh-pages에 동시에 push하던 두 워크플로우의 경쟁을 record & replay 재시도로 풀고, permissions 선언에도 403이 나던 fork PR 토큰 강등 규칙을 진단합니다. 재현 방법과 고치지 않기로 한 결정까지의 기록입니다.'
 status: draft
-slug: 'astryx-ci-race-and-permissions'
-thumbnail: '/og/astryx-ci-race-and-permissions.png'
+slug: 'ci-race-and-permissions'
+thumbnail: '/og/ci-race-and-permissions.png'
 tags: ['github-actions', 'ci', 'permissions']
 ---
 
@@ -19,7 +19,7 @@ tags: ['github-actions', 'ci', 'permissions']
 
 2026년 7월, 열흘 남짓 동안 facebook/astryx에 PR 17개를 머지시켰습니다. astryx는 메타가 오픈소스로 운영하는 내부 도구용 디자인 시스템이고, CI는 GitHub Actions입니다. main에 머지될 때마다 Deploy 워크플로우가 gh-pages 브랜치로 Storybook과 샌드박스를 배포합니다.
 
-이 기간의 다른 작업은 전부 CI를 **빠르게 만드는** 것이었습니다 — [테스트를 쪼개고](https://blog.sangwook.dev/posts/astryx-vitest-project-split/), [직렬 파이프라인을 병렬로 펴고](https://blog.sangwook.dev/posts/astryx-deploy-pipeline-parallel/), [죽은 캐시를 살렸습니다](https://blog.sangwook.dev/posts/astryx-pr-ci-parallel-cache/). 이 글은 그 뒷이야기입니다. **빨라진 뒤에 드러난 문제들**이요.
+이 기간의 다른 작업은 전부 CI를 **빠르게 만드는** 것이었습니다 — [테스트를 쪼개고](https://blog.sangwook.dev/posts/vitest-project-split/), [직렬 파이프라인을 병렬로 펴고](https://blog.sangwook.dev/posts/deploy-pipeline-parallel/), [죽은 캐시를 살렸습니다](https://blog.sangwook.dev/posts/cache-hit-cold-build/). 이 글은 그 뒷이야기입니다. **빨라진 뒤에 드러난 문제들**이요.
 
 테스트를 ui/node 두 프로젝트로 쪼갠 PR([#3814](https://github.com/facebook/astryx/pull/3814))의 커밋 메시지에 이런 취지의 문장을 적었습니다. 프로젝트 분리로 파일 스케줄링이 바뀌자 잠복해 있던 레이스가 터졌다고요. **빨라지면 숨어 있던 레이스가 드러납니다.** 시간차 덕분에 안 부딪히던 것들이, job이 짧아지고 병렬로 겹치면서 부딪히기 시작합니다. 새 버그가 생긴 게 아니라, 원래 있던 버그의 발현 확률이 올라간 겁니다.
 

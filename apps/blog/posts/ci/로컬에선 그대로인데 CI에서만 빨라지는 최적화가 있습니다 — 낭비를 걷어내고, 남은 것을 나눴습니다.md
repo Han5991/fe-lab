@@ -4,8 +4,8 @@ seoTitle: 'CI에서만 빨라지는 Vitest 최적화'
 date: '2026-07-12'
 excerpt: 'DOM을 안 쓰는 테스트 121개가 파일마다 jsdom을 부팅하던 낭비를 Vitest 프로젝트 분리로 걷어냈습니다. 로컬 wall time은 그대로인데 4-vCPU CI에서만 25초가 줄어든 이유와, 남은 test job을 2-way 샤딩으로 나눈 제안까지 다룹니다.'
 status: draft
-slug: 'astryx-vitest-project-split'
-thumbnail: '/og/astryx-vitest-project-split.png'
+slug: 'vitest-project-split'
+thumbnail: '/og/vitest-project-split.png'
 tags: ['vitest', 'testing', 'ci', 'performance']
 ---
 
@@ -182,7 +182,7 @@ astryx는 main에 머지될 때마다 Deploy 워크플로우가 돕니다. 그 �
 
 로컬에서 안 보이던 25초가 CI에서는 매 실행마다 꾸준히 나타났습니다. 범위가 겹치지 않는 것도 중요합니다. 머지 후 최댓값(277초)이 머지 전 최솟값(290초)보다 작습니다. 노이즈가 아니라 분포 자체가 이동했습니다.
 
-여담 하나. 이 PR의 첫 CI 실행은 main에 잠재하던 core 빌드 레이스로 실패했습니다. node 파일들이 jsdom 부팅 없이 촘촘하게 시작하자 드러난 것이라 이 PR 안에서 함께 고쳤습니다. 빨라지면 숨어 있던 레이스가 드러난다는 이야기는 [CI가 빨라지자 숨어 있던 함정 두 개가 드러났습니다](https://blog.sangwook.dev/posts/astryx-ci-race-and-permissions/)에서 더 합니다.
+여담 하나. 이 PR의 첫 CI 실행은 main에 잠재하던 core 빌드 레이스로 실패했습니다. node 파일들이 jsdom 부팅 없이 촘촘하게 시작하자 드러난 것이라 이 PR 안에서 함께 고쳤습니다. 빨라지면 숨어 있던 레이스가 드러난다는 이야기는 [CI가 빨라지자 숨어 있던 함정 두 개가 드러났습니다](https://blog.sangwook.dev/posts/ci-race-and-permissions/)에서 더 합니다.
 
 이후 후속 PR [#3816](https://github.com/facebook/astryx/pull/3816)(날짜 테스트 스위트 최적화)까지 합쳐 최종 약 **246초**가 되었습니다. 두 PR 합산 약 50초, **17% 단축**입니다.
 
@@ -192,7 +192,7 @@ astryx는 main에 머지될 때마다 Deploy 워크플로우가 돕니다. 그 �
 
 ### 낭비를 걷어내도 test는 여전히 크리티컬 패스였습니다
 
-1부의 PR로 총 연산량은 줄었습니다. 그런데 그 뒤 deploy 파이프라인을 병렬화하고 죽은 Next.js 캐시를 살려내고 나니(각각 [deploy job은 이제 27초면 끝납니다](https://blog.sangwook.dev/posts/astryx-deploy-pipeline-parallel/)와 [캐시가 hit인데 매번 콜드 빌드였습니다](https://blog.sangwook.dev/posts/astryx-pr-ci-parallel-cache/)에 기록해 뒀습니다) 병목이 세 번 이동해서 결국 `test` job 위에 앉았습니다. 그사이 스위트도 자라 359개 파일 / 7,118개 테스트가 되어 있었습니다.
+1부의 PR로 총 연산량은 줄었습니다. 그런데 그 뒤 deploy 파이프라인을 병렬화하고 죽은 Next.js 캐시를 살려내고 나니(각각 [deploy job은 이제 27초면 끝납니다](https://blog.sangwook.dev/posts/deploy-pipeline-parallel/)와 [캐시가 hit인데 매번 콜드 빌드였습니다](https://blog.sangwook.dev/posts/cache-hit-cold-build/)에 기록해 뒀습니다) 병목이 세 번 이동해서 결국 `test` job 위에 앉았습니다. 그사이 스위트도 자라 359개 파일 / 7,118개 테스트가 되어 있었습니다.
 
 1부에서 얻은 교훈이 여기서 그대로 판단 근거가 됩니다. **코어가 포화된 곳에서 재라.** 그래서 이번에도 로컬이 아니라 실제 CI 실행 로그를 열었습니다. 근거 PR은 [#4103](https://github.com/facebook/astryx/pull/4103), 문제 정의는 이슈 [#4339](https://github.com/facebook/astryx/issues/4339)에 정리했습니다. 바뀐 파일은 `.github/workflows/ci.yml` **하나, +36/-13줄**입니다.
 
@@ -206,7 +206,7 @@ astryx는 main에 머지될 때마다 Deploy 워크플로우가 돕니다. 그 �
 | **test** | 327초 (58초 뒤) | **324초 ← 크리티컬** |
 | build-storybook | 164초 | 167초 |
 
-표를 세로가 아니라 가로로 읽어야 합니다. `test`는 두 실행에서 327초와 324초로 **거의 움직이지 않습니다**. 반면 build-sandbox는 385초에서 206초로 절반 가까이 내려갑니다. PR별 Next.js 캐시가 붙기 때문입니다(캐시 키를 PR별로 분리한 뒤 생긴 효과입니다 — [캐시가 hit인데 매번 콜드 빌드였습니다](https://blog.sangwook.dev/posts/astryx-pr-ci-parallel-cache/) 참고).
+표를 세로가 아니라 가로로 읽어야 합니다. `test`는 두 실행에서 327초와 324초로 **거의 움직이지 않습니다**. 반면 build-sandbox는 385초에서 206초로 절반 가까이 내려갑니다. PR별 Next.js 캐시가 붙기 때문입니다(캐시 키를 PR별로 분리한 뒤 생긴 효과입니다 — [캐시가 hit인데 매번 콜드 빌드였습니다](https://blog.sangwook.dev/posts/cache-hit-cold-build/) 참고).
 
 그래서 상황별로 크리티컬 패스가 갈립니다.
 
