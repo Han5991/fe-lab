@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "predev": "npx tsx scripts/build-content.ts",
-    "dev": "pnpm supabase-start && next dev",
+    "dev": "pnpm supabase-start && pnpm dev:web",
+    "dev:web": "next dev",
     "prebuild": "npx tsx scripts/build-content.ts --strict",
     "build": "pnpm prebuild && next build && pnpm check-seo",
     "start": "next start",
