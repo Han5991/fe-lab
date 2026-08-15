@@ -2,6 +2,7 @@
 title: '로컬에선 그대로인데 CI에서만 빨라지는 최적화가 있습니다 — 낭비를 걷어내고, 남은 것을 나눴습니다'
 seoTitle: 'CI에서만 빨라지는 Vitest 최적화'
 date: '2026-07-12'
+excerpt: 'DOM을 안 쓰는 테스트 121개가 파일마다 jsdom을 부팅하던 낭비를 Vitest 프로젝트 분리로 걷어냈습니다. 로컬 wall time은 그대로인데 4-vCPU CI에서만 25초가 줄어든 이유와, 남은 test job을 2-way 샤딩으로 나눈 제안까지 다룹니다.'
 status: draft
 slug: 'astryx-vitest-project-split'
 thumbnail: '/og/astryx-vitest-project-split.png'

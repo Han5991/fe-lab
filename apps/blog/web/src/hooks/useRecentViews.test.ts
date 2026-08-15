@@ -95,9 +95,4 @@ describe('useRecordRecentView', () => {
     renderHook(() => useRecordRecentView('hello', 'Hello'));
     expect(getRecentViews().map(r => r.slug)).toEqual(['hello']);
   });
-
-  test('slug가 null이면 기록하지 않음', () => {
-    renderHook(() => useRecordRecentView(null, 'X'));
-    expect(getRecentViews()).toEqual([]);
-  });
 });

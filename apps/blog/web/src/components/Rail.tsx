@@ -1,4 +1,5 @@
-import { css, cx } from '@design-system/ui-lib/css';
+import { css, cva, cx } from '@design-system/ui-lib/css';
+import type { RecipeVariant } from '@design-system/ui-lib/css';
 import type { ReactNode } from 'react';
 
 /**
@@ -19,23 +20,30 @@ import type { ReactNode } from 'react';
  * 레일이 아닌 폭(카드 안쪽 패딩, 문단 최대 폭 등)은 그대로 `css()`를 쓴다.
  */
 
-export type RailWidth = 'wide' | 'text' | 'form';
-
 /** 레일 바깥 거터. 레일을 감싸는 요소에 붙인다. */
 export const railGutter = css({ px: { base: '5', md: '8' } });
 
 /**
- * Panda는 `css()`를 정적으로 추출하므로 폭을 변수로 넘길 수 없다.
- * 세 클래스를 미리 만들어 두고 고른다.
+ * 레일 자체(폭 + 가운데 정렬). 거터를 준 요소의 **자식**에 붙인다.
+ *
+ * `css()`는 정적 추출이라 폭을 변수로 넘길 수 없지만, cva는 variant 전부를
+ * 빌드 타임에 만들어 두고 선택만 런타임에 하므로 `railColumn({ width })`로
+ * 고를 수 있다.
  */
-const railColumns = {
-  wide: css({ maxW: 'railWide', mx: 'auto' }),
-  text: css({ maxW: 'railText', mx: 'auto' }),
-  form: css({ maxW: 'railForm', mx: 'auto' }),
-} as const;
+export const railColumn = cva({
+  base: { mx: 'auto' },
+  variants: {
+    width: {
+      wide: { maxW: 'railWide' },
+      text: { maxW: 'railText' },
+      form: { maxW: 'railForm' },
+    },
+  },
+  defaultVariants: { width: 'text' },
+});
 
-/** 레일 자체(폭 + 가운데 정렬). 거터를 준 요소의 **자식**에 붙인다. */
-export const railColumn = (width: RailWidth) => railColumns[width];
+/** 레일 폭 목록은 recipe의 variant 키에서 파생된다 — 따로 관리하지 않는다. */
+export type RailWidth = RecipeVariant<typeof railColumn>['width'];
 
 interface RailProps {
   width?: RailWidth;
@@ -48,9 +56,10 @@ interface RailProps {
  * 거터 + 레일 2단 구조를 한 번에 만든다. 바깥 요소에 배경·보더를 깔아야 하는
  * 경우(섹션 배경이 화면 끝까지 가야 할 때)에는 이 컴포넌트 대신
  * `railGutter` / `railColumn()`을 직접 조합한다.
+ * 기본 폭(text)은 recipe의 `defaultVariants`가 정한다.
  */
-export const Rail = ({ width = 'text', className, children }: RailProps) => (
+export const Rail = ({ width, className, children }: RailProps) => (
   <div className={railGutter}>
-    <div className={cx(railColumn(width), className)}>{children}</div>
+    <div className={cx(railColumn({ width }), className)}>{children}</div>
   </div>
 );

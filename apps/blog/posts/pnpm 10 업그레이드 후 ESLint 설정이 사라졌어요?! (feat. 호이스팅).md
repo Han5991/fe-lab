@@ -63,7 +63,7 @@ pnpm issues를 찾아보니 관련 이슈가 올라왔다.
 1. 새롭게 eslint9로 설정하여 셋팅한다. -> 현재 여유가 없고 기존에 사용하던 룰이 아직 flat에 지원을 안하는 것도 있어 아직은 시기상조
 2. eslint를 root에 설치하지 말고 각 app에 설치한다. -> husky에 설정해둔 스크립트가 루트 기준으로 동작을 하고 있어 추가 작업이 필요
 3. 사라진 옵션을 직접 추가 한다. -> 가장 간단하고 개발 관련 패키지여서 사이드이펙트도 없음
-   ```code
+   ```text
    public-hoist-pattern[]=*eslint*
    public-hoist-pattern[]=*prettier*
    ```

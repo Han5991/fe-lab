@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
-import { css } from '@design-system/ui-lib/css';
-import type { DiagramTone } from './layout';
+import { css, cva, sva } from '@design-system/ui-lib/css';
+import type { RecipeVariant } from '@design-system/ui-lib/css';
 
 /**
  * 다이어그램 프리미티브 — 핸드오프 §4 "다이어그램 문법"을 코드로 강제한다.
@@ -19,30 +19,29 @@ import type { DiagramTone } from './layout';
 
 // ── 프레임 ──────────────────────────────────────────────────────────────────
 
-const frame = css({
-  display: 'block',
-  w: 'full',
-  h: 'auto',
-  // SVG 안 <text>는 본문 폰트를 따른다(레퍼런스 `svg text{font-family:var(--sans)}`).
-  fontFamily: 'sans',
-});
-
-/**
- * 자기 크기를 아는 다이어그램용 프레임.
- *
- * 손으로 그린 다이어그램은 놓일 자리에 맞춰 viewBox를 정하므로(히어로 640, 홈 모티프
- * 210) 칼럼을 꽉 채우는 게 맞다. 반면 **자동 레이아웃 다이어그램의 viewBox 폭은 노드
- * 텍스트 길이의 합**이라 그림마다 다르다. 그걸 매번 칼럼 폭까지 늘리면 같은 글 안에서
- * 노드 둘짜리는 3.9배로 부풀고 일곱짜리는 0.68배로 쪼그라들어, 12px로 못 박아 둔
- * 노드 제목이 실제로는 8~47px로 렌더된다. intrinsic 폭을 주고 칼럼을 상한으로만
- * 쓰면 어떤 그림이든 글자가 12px로 나오고, 칼럼보다 넓을 때만 줄어든다.
- */
-const frameIntrinsic = css({
-  display: 'block',
-  maxW: 'full',
-  h: 'auto',
-  mx: 'auto',
-  fontFamily: 'sans',
+const frame = cva({
+  base: {
+    display: 'block',
+    h: 'auto',
+    // SVG 안 <text>는 본문 폰트를 따른다(레퍼런스 `svg text{font-family:var(--sans)}`).
+    fontFamily: 'sans',
+  },
+  variants: {
+    /**
+     * 손으로 그린 다이어그램은 놓일 자리에 맞춰 viewBox를 정하므로(히어로 640, 홈 모티프
+     * 210) 칼럼을 꽉 채우는 게 맞다(fill). 반면 **자동 레이아웃 다이어그램의 viewBox
+     * 폭은 노드 텍스트 길이의 합**이라 그림마다 다르다. 그걸 매번 칼럼 폭까지 늘리면
+     * 같은 글 안에서 노드 둘짜리는 3.9배로 부풀고 일곱짜리는 0.68배로 쪼그라들어,
+     * 12px로 못 박아 둔 노드 제목이 실제로는 8~47px로 렌더된다. intrinsic 폭을 주고
+     * 칼럼을 상한으로만 쓰면 어떤 그림이든 글자가 12px로 나오고, 칼럼보다 넓을 때만
+     * 줄어든다.
+     */
+    sizing: {
+      fill: { w: 'full' },
+      intrinsic: { maxW: 'full', mx: 'auto' },
+    },
+  },
+  defaultVariants: { sizing: 'fill' },
 });
 
 interface DiagramFrameProps {
@@ -69,8 +68,6 @@ export function DiagramFrame({
   label,
   children,
 }: DiagramFrameProps) {
-  const base = width === undefined ? frame : frameIntrinsic;
-
   return (
     <svg
       viewBox={viewBox}
@@ -81,7 +78,7 @@ export function DiagramFrame({
       aria-hidden={label ? undefined : true}
       // 장식 SVG가 탭 순서에 끼어드는 IE/Edge 잔재 방지 + 시맨틱 명시
       focusable="false"
-      className={base}
+      className={frame({ sizing: width === undefined ? 'fill' : 'intrinsic' })}
     >
       {children}
     </svg>
@@ -90,17 +87,28 @@ export function DiagramFrame({
 
 // ── 노드 ────────────────────────────────────────────────────────────────────
 
-const nodeGray = css({
-  fill: 'paper.100',
-  stroke: 'ink.border',
-  strokeWidth: 'hairline',
+const node = cva({
+  base: { strokeWidth: 'hairline' },
+  variants: {
+    tone: {
+      gray: { fill: 'paper.100', stroke: 'ink.border' },
+      accent: { fill: 'accent.50', stroke: 'accent.500' },
+    },
+  },
+  defaultVariants: { tone: 'gray' },
 });
 
-const nodeAccent = css({
-  fill: 'accent.50',
-  stroke: 'accent.500',
-  strokeWidth: 'hairline',
-});
+/**
+ * 노드의 **역할**. 색 이름이 아니다.
+ *
+ * 원래 `'gray' | 'teal'`이었는데, 포인트색을 틸에서 cyan으로 바꾸자 값 이름이
+ * 곧바로 거짓말이 됐다. 이 값이 뜻하는 건 "청록색"이 아니라 "핵심 경로"이므로
+ * 팔레트와 무관한 이름으로 바꿨다. 옛 `tone="teal"`은 `declarative.tsx`가
+ * 별칭으로 받아준다.
+ *
+ * 값 목록은 recipe의 variant 키에서 파생된다 — 따로 관리하지 않는다.
+ */
+export type DiagramTone = RecipeVariant<typeof node>['tone'];
 
 // SVG 안 font-size는 user unit이라 viewBox 좌표와 같은 축이다. 타이포 스케일
 // 토큰(rem 기반)을 끌어오면 루트 폰트 크기에 따라 도형과 글자 비율이 어긋나므로,
@@ -153,7 +161,7 @@ export function DiagramNode({
         height={height}
         rx={rx}
         data-tone={tone}
-        className={tone === 'accent' ? nodeAccent : nodeGray}
+        className={node({ tone })}
       />
       {title && (
         <text
@@ -182,18 +190,32 @@ export function DiagramNode({
 
 // ── 엣지 ────────────────────────────────────────────────────────────────────
 
-const edgeBase = css({
-  fill: '[none]',
-  strokeWidth: 'hairline',
-  strokeLinecap: 'round',
-  strokeLinejoin: 'round',
+const edge = sva({
+  slots: ['root', 'line'],
+  base: {
+    root: {
+      fill: '[none]',
+      strokeWidth: 'hairline',
+      strokeLinecap: 'round',
+      strokeLinejoin: 'round',
+    },
+  },
+  variants: {
+    emphasis: {
+      false: { root: { stroke: 'ink.600', opacity: '[0.55]' } },
+      // 핵심 경로만 액센트. 스트로크는 비텍스트라 accent.500(스펙 §3).
+      true: { root: { stroke: 'accent.500' } },
+    },
+    flow: {
+      sync: {},
+      async: { line: { strokeDasharray: '[3 3]' } },
+    },
+  },
+  defaultVariants: { emphasis: false, flow: 'sync' },
 });
 
-const edgeGray = css({ stroke: 'ink.600', opacity: '[0.55]' });
-// 핵심 경로만 액센트. 스트로크는 비텍스트라 accent.500(스펙 §3).
-const edgeAccent = css({ stroke: 'accent.500' });
-
-const edgeAsync = css({ strokeDasharray: '[3 3]' });
+/** 값 목록은 recipe의 variant 키에서 파생된다 — 따로 관리하지 않는다. */
+export type DiagramFlow = RecipeVariant<typeof edge>['flow'];
 
 interface Segment {
   x1: number;
@@ -204,7 +226,7 @@ interface Segment {
 
 interface DiagramEdgeProps extends Segment {
   /** 실선 = 동기 호출, 점선 = 비동기/데이터 흐름(핸드오프 §4). */
-  flow?: 'sync' | 'async';
+  flow?: DiagramFlow;
   /** 핵심 경로 강조 — 액센트로 칠하고 흐린 처리를 걷는다. */
   emphasis?: boolean;
   arrow?: boolean;
@@ -219,21 +241,22 @@ export function DiagramEdge({
   emphasis = false,
   arrow = true,
 }: DiagramEdgeProps) {
-  const toneStyle = emphasis ? edgeAccent : edgeGray;
+  const classes = edge({ flow, emphasis });
 
   return (
     <g
       data-flow={flow}
       data-emphasis={emphasis ? 'true' : 'false'}
-      className={`${edgeBase} ${toneStyle}`}
+      className={classes.root}
     >
-      {/* 점선은 선에만 건다 — 화살촉까지 끊기면 모양이 뭉개진다. */}
+      {/* 점선은 선(line 슬롯)에만 건다 — 화살촉까지 끊기면 모양이 뭉개진다.
+          sync는 빈 슬롯이라 ''가 나오는데, 그대로 넘기면 class=""가 렌더된다. */}
       <line
         x1={x1}
         y1={y1}
         x2={x2}
         y2={y2}
-        className={flow === 'async' ? edgeAsync : undefined}
+        className={classes.line || undefined}
       />
       {arrow && <ArrowHead x1={x1} y1={y1} x2={x2} y2={y2} />}
     </g>

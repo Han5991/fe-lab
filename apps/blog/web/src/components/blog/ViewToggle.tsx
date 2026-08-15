@@ -2,6 +2,7 @@
 
 import { css } from '@design-system/ui-lib/css';
 import { Label } from './Label';
+import { segmentedItem } from './segmented';
 
 export type ViewMode = 'list' | 'cards';
 
@@ -38,22 +39,7 @@ export const ViewToggle = ({ value, onChange }: ViewToggleProps) => {
               aria-selected={isActive}
               type="button"
               onClick={() => onChange(opt.id)}
-              className={css({
-                flex: '1',
-                px: '[12px]',
-                py: '[5px]',
-                fontFamily: 'mono',
-                fontSize: 'xs',
-                letterSpacing: 'wide',
-                textTransform: 'uppercase',
-                bg: isActive ? 'paper.300' : 'transparent',
-                color: isActive ? 'ink.950' : 'ink.600',
-                cursor: 'pointer',
-                transition: '[all 0.15s]',
-                _hover: !isActive
-                  ? { color: 'ink.900', bg: 'paper.200' }
-                  : undefined,
-              })}
+              className={segmentedItem({ kind: 'tab', active: isActive })}
             >
               {opt.label}
             </button>

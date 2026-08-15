@@ -45,7 +45,7 @@ export default function AdminAnalyticsPage() {
       >
         <div
           className={cx(
-            railColumn('wide'),
+            railColumn({ width: 'wide' }),
             css({
               py: '2.5',
               display: 'flex',
@@ -121,7 +121,7 @@ export default function AdminAnalyticsPage() {
       <div className={railGutter}>
         <header
           className={cx(
-            railColumn('wide'),
+            railColumn({ width: 'wide' }),
             css({
               py: { base: '8', md: '10' },
               borderBottomWidth: '[1px]',
@@ -149,7 +149,7 @@ export default function AdminAnalyticsPage() {
       <div className={railGutter}>
         <main
           className={cx(
-            railColumn('wide'),
+            railColumn({ width: 'wide' }),
             css({
               py: { base: '8', md: '10' },
               display: 'flex',

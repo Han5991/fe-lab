@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { css } from '@design-system/ui-lib/css';
+import { css, sva } from '@design-system/ui-lib/css';
 
 import { markdownChildren } from './signatureProps';
 
@@ -40,48 +40,58 @@ function avatarInitial(from: string | undefined): string {
   return Array.from(name)[0];
 }
 
-const row = css({
-  display: 'flex',
-  gap: '2.5',
-  alignItems: 'flex-start',
-  mb: '2.5',
-  // 마지막 말풍선 아래 여백은 컨테이너가 책임진다(레퍼런스 두 번째 행에는 mb 없음).
-  _last: { mb: '0' },
+const msg = sva({
+  slots: ['row', 'avatar', 'bubble'],
+  base: {
+    row: {
+      display: 'flex',
+      gap: '2.5',
+      alignItems: 'flex-start',
+      mb: '2.5',
+      // 마지막 말풍선 아래 여백은 컨테이너가 책임진다(레퍼런스 두 번째 행에는 mb 없음).
+      _last: { mb: '0' },
+    },
+    avatar: {
+      boxSize: '[30px]',
+      rounded: 'pill',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontSize: '[12px]',
+      fontWeight: 'semibold',
+      lineHeight: 'flat',
+      flexShrink: '0',
+    },
+    bubble: {
+      // 12px = radii.card. 레퍼런스 말풍선 라운드가 카드와 같은 값이라 토큰을 재사용한다.
+      rounded: 'card',
+      px: '3',
+      py: '2',
+      fontSize: '[13px]',
+      lineHeight: 'relaxed',
+      maxW: '[420px]',
+      minW: '0',
+      // 본문 스타일(`& p { margin-bottom }`)이 말풍선 안까지 내려오므로 마지막 블록만 끈다.
+      '& > *:last-child': { mb: '0' },
+    },
+  },
+  variants: {
+    speaker: {
+      me: {
+        row: { flexDirection: 'row-reverse' },
+        // 포인트색을 "글자"로 쓰므로 AA 확보를 위해 accent.600(스펙 §3)을 쓴다.
+        avatar: { bg: 'accent.50', color: 'accent.600' },
+        bubble: { bg: 'accent.50', color: 'accent.600' },
+      },
+      other: {
+        avatar: { bg: 'warn.bg', color: 'warn.text' },
+        bubble: { bg: 'paper.100', color: 'ink.900' },
+      },
+    },
+  },
+  // `from`이 없거나 판정 불가면 상대방 취급(isMine의 폴백과 같은 방향).
+  defaultVariants: { speaker: 'other' },
 });
-
-const rowMine = css({ flexDirection: 'row-reverse' });
-
-const avatarBase = css({
-  boxSize: '[30px]',
-  rounded: 'pill',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  fontSize: '[12px]',
-  fontWeight: 'semibold',
-  lineHeight: 'flat',
-  flexShrink: '0',
-});
-
-const avatarOther = css({ bg: 'warn.bg', color: 'warn.text' });
-// 포인트색을 "글자"로 쓰므로 AA 확보를 위해 accent.600(스펙 §3)을 쓴다.
-const avatarMine = css({ bg: 'accent.50', color: 'accent.600' });
-
-const bubbleBase = css({
-  // 12px = radii.card. 레퍼런스 말풍선 라운드가 카드와 같은 값이라 토큰을 재사용한다.
-  rounded: 'card',
-  px: '3',
-  py: '2',
-  fontSize: '[13px]',
-  lineHeight: 'relaxed',
-  maxW: '[420px]',
-  minW: '0',
-  // 본문 스타일(`& p { margin-bottom }`)이 말풍선 안까지 내려오므로 마지막 블록만 끈다.
-  '& > *:last-child': { mb: '0' },
-});
-
-const bubbleOther = css({ bg: 'paper.100', color: 'ink.900' });
-const bubbleMine = css({ bg: 'accent.50', color: 'accent.600' });
 
 interface MsgProps {
   from?: string;
@@ -89,14 +99,12 @@ interface MsgProps {
 }
 
 export function Msg({ from, children }: MsgProps) {
-  const mine = isMine(from);
+  const speaker = isMine(from) ? 'me' : 'other';
+  const classes = msg({ speaker });
 
   return (
     // data-speaker: 정렬·색이 전부 이 분기에서 갈리므로 DOM에도 드러낸다(디버깅·테스트용).
-    <div
-      data-speaker={mine ? 'me' : 'other'}
-      className={mine ? `${row} ${rowMine}` : row}
-    >
+    <div data-speaker={speaker} className={classes.row}>
       <span
         // 이니셜은 장식이고 화자 정보는 aria-label이 전달한다(스크린리더가 "ㅍ" 하나를
         // 읽어봐야 의미가 없다).
@@ -106,15 +114,13 @@ export function Msg({ from, children }: MsgProps) {
         // role도 같은 조건이어야 한다. `from="   "`이면 role만 붙고 label은
         // undefined가 되어 "이름 없는 이미지"로 낭독된다.
         role={from?.trim() ? 'img' : undefined}
-        className={`${avatarBase} ${mine ? avatarMine : avatarOther}`}
+        className={classes.avatar}
       >
         {avatarInitial(from)}
       </span>
       {/* 레퍼런스는 말풍선이 <span>이지만, 마크다운 본문이 들어오면 안에 <p>가 생길 수
           있어 <div>로 둔다(span > p는 무효 중첩 → hydration 불일치). */}
-      <div className={`${bubbleBase} ${mine ? bubbleMine : bubbleOther}`}>
-        {children}
-      </div>
+      <div className={classes.bubble}>{children}</div>
     </div>
   );
 }

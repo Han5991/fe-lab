@@ -167,7 +167,7 @@ test('checkPages: og:type 누락을 잡는다', () => {
 });
 
 test('checkPages: noindex 페이지는 검사하지 않는다', () => {
-  // /admin, /privacy, /preview 플레이스홀더는 검색 대상이 아니다.
+  // /admin, /privacy는 검색 대상이 아니다.
   const html = `<head><meta name="robots" content="noindex, nofollow"/></head><body></body>`;
   assert.deepEqual(rules(new Map([['/admin/', html]])), []);
 });

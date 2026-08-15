@@ -161,7 +161,7 @@ export function checkPages(pages: Map<string, string>): SeoViolation[] {
     const add = (rule: string, message: string) =>
       violations.push({ page, rule, message });
 
-    // noindex 페이지(개인정보처리방침, preview 플레이스홀더)는 검색 대상이 아니다.
+    // noindex 페이지(admin, 개인정보처리방침)는 검색 대상이 아니다.
     if (seo.robotsNoindex) continue;
 
     if (seo.h1Count !== 1) {

@@ -159,7 +159,7 @@ export default function HomePage() {
         <div className={cx(css({ bg: 'paper.50' }), railGutter)}>
           <div
             className={cx(
-              railColumn('text'),
+              railColumn({ width: 'text' }),
               css({ pt: '[36px]', pb: '[48px]' }),
             )}
           >

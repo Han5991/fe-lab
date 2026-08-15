@@ -400,7 +400,7 @@ export default function AdminPage() {
         railGutter,
       )}
     >
-      <div className={railColumn('wide')}>
+      <div className={railColumn({ width: 'wide' })}>
         <header
           className={css({
             display: 'flex',

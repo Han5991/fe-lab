@@ -26,8 +26,14 @@ const shell = (ui: React.ReactElement) => {
 
 describe('railColumn', () => {
   test('세 레일이 서로 다른 폭을 낸다', () => {
-    const all = (['wide', 'text', 'form'] as const).map(railColumn);
+    const all = (['wide', 'text', 'form'] as const).map(width =>
+      railColumn({ width }),
+    );
     expect(new Set(all).size).toBe(3);
+  });
+
+  test('폭을 고르지 않으면 text다 (defaultVariants)', () => {
+    expect(railColumn()).toBe(railColumn({ width: 'text' }));
   });
 
   // 아래 구조 검사들은 전부 클래스 문자열 비교다. Panda 추출이 실패해 빈
@@ -36,7 +42,7 @@ describe('railColumn', () => {
   test('클래스 문자열이 비어 있지 않다', () => {
     expect(railGutter).not.toBe('');
     for (const w of ['wide', 'text', 'form'] as const) {
-      expect(railColumn(w)).not.toBe('');
+      expect(railColumn({ width: w })).not.toBe('');
     }
   });
 });
@@ -46,7 +52,7 @@ describe('Rail', () => {
     const { outer, inner } = shell(<Rail width="wide">본문</Rail>);
 
     expect(hasAll(outer, railGutter)).toBe(true);
-    expect(hasAll(inner, railColumn('wide'))).toBe(true);
+    expect(hasAll(inner, railColumn({ width: 'wide' }))).toBe(true);
   });
 
   // 둘이 한 요소에 얹히면 `box-sizing: border-box` 때문에 콘텐츠 폭이
@@ -54,14 +60,14 @@ describe('Rail', () => {
   test('거터와 레일이 같은 요소에 얹히지 않는다', () => {
     const { outer, inner } = shell(<Rail width="text">본문</Rail>);
 
-    expect(hasAll(outer, railColumn('text'))).toBe(false);
+    expect(hasAll(outer, railColumn({ width: 'text' }))).toBe(false);
     expect(hasAll(inner, railGutter)).toBe(false);
   });
 
   test('기본 폭은 text다', () => {
     const { inner } = shell(<Rail>본문</Rail>);
 
-    expect(hasAll(inner, railColumn('text'))).toBe(true);
+    expect(hasAll(inner, railColumn({ width: 'text' }))).toBe(true);
   });
 
   // py·display:grid 같은 콘텐츠 스타일은 레일에 얹혀야 한다. 거터 쪽에

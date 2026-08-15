@@ -1,6 +1,7 @@
 ---
 title: 'deploy job은 이제 27초면 끝납니다'
 date: '2026-07-12'
+excerpt: 'test 완료 후 전체 빌드를 다시 하던 직렬 배포 파이프라인을 build job 분리로 병렬화해, 머지에서 배포까지 평균 12분 21초를 6분 33초로 줄였습니다. 크리티컬 패스 관점의 설계와 gh api 실측, 병목이 이동하는 과정을 정리했습니다.'
 status: draft
 slug: 'astryx-deploy-pipeline-parallel'
 thumbnail: '/og/astryx-deploy-pipeline-parallel.png'

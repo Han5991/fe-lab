@@ -1,6 +1,6 @@
 import { cloneElement, isValidElement } from 'react';
 import type { ReactElement, ReactNode } from 'react';
-import { css } from '@design-system/ui-lib/css';
+import { css, cva } from '@design-system/ui-lib/css';
 
 import {
   isOptionalString,
@@ -59,21 +59,27 @@ const railColumn = css({
   flexShrink: '0',
 });
 
-const icon = css({
-  boxSize: '6',
-  rounded: 'pill',
-  borderWidth: 'hairline',
-  borderStyle: 'solid',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  fontSize: '[13px]',
-  lineHeight: 'flat',
+const icon = cva({
+  base: {
+    boxSize: '6',
+    rounded: 'pill',
+    borderWidth: 'hairline',
+    borderStyle: 'solid',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '[13px]',
+    lineHeight: 'flat',
+  },
+  variants: {
+    result: {
+      fail: { borderColor: 'danger.border', color: 'danger.text' },
+      // 성공 아이콘은 테두리 moss.600 / 글자 moss.700 — 글자만 AA를 위해 한 톤 낮춘다(스펙 §3).
+      success: { borderColor: 'moss.600', color: 'moss.700' },
+    },
+  },
+  defaultVariants: { result: 'fail' },
 });
-
-const iconFail = css({ borderColor: 'danger.border', color: 'danger.text' });
-// 성공 아이콘은 테두리 moss.600 / 글자 moss.700 — 글자만 AA를 위해 한 톤 낮춘다(스펙 §3).
-const iconSuccess = css({ borderColor: 'moss.600', color: 'moss.700' });
 
 const rail = css({
   w: '[1px]',
@@ -81,13 +87,20 @@ const rail = css({
   bg: 'ink.border',
 });
 
-const stepBody = css({
-  minW: '0',
-  '& > *:last-child': { mb: '0' },
+const stepBody = cva({
+  base: {
+    minW: '0',
+    '& > *:last-child': { mb: '0' },
+  },
+  variants: {
+    last: {
+      true: {},
+      // 마지막이 아닌 스텝만 아래 여백을 갖는다(연결선 길이와 짝).
+      false: { pb: '3' },
+    },
+  },
+  defaultVariants: { last: true },
 });
-
-// 마지막이 아닌 스텝만 아래 여백을 갖는다(연결선 길이와 짝).
-const stepBodySpaced = css({ pb: '3' });
 
 const stepTitle = css({
   fontSize: '[13px]',
@@ -132,14 +145,14 @@ export function Step({
         <span
           role="img"
           aria-label={succeeded ? '성공' : '실패'}
-          className={`${icon} ${succeeded ? iconSuccess : iconFail}`}
+          className={icon({ result: succeeded ? 'success' : 'fail' })}
         >
           {succeeded ? '✓' : '×'}
         </span>
         {/* 마지막 스텝에는 연결선이 없다 — 허공으로 이어지는 선을 그리지 않는다. */}
         {!isLast && <span aria-hidden data-timeline-rail="" className={rail} />}
       </div>
-      <div className={isLast ? stepBody : `${stepBody} ${stepBodySpaced}`}>
+      <div className={stepBody({ last: isLast })}>
         <div className={stepTitle}>{title}</div>
         <div className={stepDesc}>{desc ?? children}</div>
       </div>

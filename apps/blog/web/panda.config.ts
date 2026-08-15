@@ -17,6 +17,8 @@ export default defineConfig({
   // 대괄호 이스케이프(`'[6px]'`)로 명시적으로 표기한다.
   strictTokens: true,
 
+  minify: true,
+
   jsxFramework: 'react',
 
   strictPropertyValues: true,
@@ -88,11 +90,5 @@ export default defineConfig({
       },
     },
   },
-  importMap: {
-    css: '@design-system/ui-lib/css',
-    recipes: '@design-system/ui-lib/recipes',
-    patterns: '@design-system/ui-lib/patterns',
-    jsx: '@design-system/ui-lib/jsx',
-    tokens: '@design-system/ui-lib/tokens',
-  },
+  importMap: '@design-system/ui-lib',
 });

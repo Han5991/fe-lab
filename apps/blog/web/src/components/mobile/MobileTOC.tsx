@@ -3,9 +3,40 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { List, X } from 'lucide-react';
-import { css } from '@design-system/ui-lib/css';
+import { css, cva } from '@design-system/ui-lib/css';
+import type { RecipeVariant } from '@design-system/ui-lib/css';
 import { useTocHook, scrollToId } from '@/src/components/tocHooks';
 import { Portal } from '@/src/components/Portal';
+
+/** 목차 항목 한 줄 — level은 헤딩 깊이만큼 들여쓰고, active는 현재 절을 비춘다. */
+const tocItem = cva({
+  base: {
+    fontSize: 'md',
+    cursor: 'pointer',
+    transition: '[color 0.2s]',
+    _hover: { color: 'accent.600' },
+  },
+  variants: {
+    level: {
+      1: { pl: '0' },
+      2: { pl: '2' },
+      3: { pl: '4' },
+      4: { pl: '6' },
+    },
+    active: {
+      true: { fontWeight: 'bold', color: 'accent.600' },
+      false: { fontWeight: 'medium', color: 'ink.600' },
+    },
+  },
+  defaultVariants: { level: 1, active: false },
+});
+
+type TocLevel = RecipeVariant<typeof tocItem>['level'];
+
+// variantMap의 값은 런타임에 Object.keys 산물이라 문자열이다 — 숫자 level과
+// 비교하려면 되돌려야 한다.
+const isTocLevel = (level: number): level is TocLevel =>
+  tocItem.variantMap.level.map(Number).includes(level);
 
 export const MobileTOC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -138,22 +169,11 @@ export const MobileTOC = () => {
                             action: () => setIsOpen(false),
                           })
                         }
-                        className={css({
-                          pl:
-                            item.level === 4
-                              ? '6'
-                              : item.level === 3
-                                ? '4'
-                                : item.level === 2
-                                  ? '2'
-                                  : '0',
-                          fontSize: 'md',
-                          fontWeight: activeId === item.id ? 'bold' : 'medium',
-                          color:
-                            activeId === item.id ? 'accent.600' : 'ink.600',
-                          cursor: 'pointer',
-                          transition: '[color 0.2s]',
-                          _hover: { color: 'accent.600' },
+                        className={tocItem({
+                          level: isTocLevel(item.level)
+                            ? item.level
+                            : undefined,
+                          active: activeId === item.id,
                         })}
                       >
                         {item.text}

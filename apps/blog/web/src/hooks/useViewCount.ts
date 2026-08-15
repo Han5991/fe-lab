@@ -7,10 +7,8 @@ import {
   slugToViewKey,
 } from '@/lib/viewCookie';
 
-export const useViewCount = (slug: string | null) => {
+export const useViewCount = (slug: string) => {
   useEffect(() => {
-    if (!slug) return;
-
     const viewedKey = slugToViewKey(slug);
 
     const hasViewed = hasViewCookie(document.cookie, viewedKey);

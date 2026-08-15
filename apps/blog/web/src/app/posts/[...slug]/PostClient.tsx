@@ -43,18 +43,16 @@ import { isBlockMarkdownChild } from './markdownBlocks';
 interface PostClientProps {
   post: PostData;
   thumbnailUrl?: string;
-  previewMode?: boolean;
   seriesIndex?: { current: number; total: number; displayName: string };
 }
 
 export default function PostClient({
   post,
   thumbnailUrl,
-  previewMode = false,
   seriesIndex,
 }: PostClientProps) {
-  useViewCount(previewMode ? null : post.slug);
-  useRecordRecentView(previewMode ? null : post.slug, post.title);
+  useViewCount(post.slug);
+  useRecordRecentView(post.slug, post.title);
 
   return (
     <>
@@ -80,7 +78,7 @@ export default function PostClient({
             text 레일(680)을 차지하고 TOC가 오른쪽 끝에 붙는다. */}
         <div
           className={cx(
-            railColumn('wide'),
+            railColumn({ width: 'wide' }),
             css({
               display: 'grid',
               // 차례 칼럼 268px은 레퍼런스(fumadocs)와 같은 폭이다. 240px에서는

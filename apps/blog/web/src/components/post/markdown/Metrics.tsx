@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
-import { css } from '@design-system/ui-lib/css';
+import { css, cva } from '@design-system/ui-lib/css';
+import type { RecipeVariant } from '@design-system/ui-lib/css';
 
 import {
   isOptionalString,
@@ -48,33 +49,40 @@ function isMetricItem(candidate: unknown): candidate is MetricItem {
   );
 }
 
-// 열 수는 아이템 개수에서 나오지만 Panda는 정적 추출이라 템플릿 문자열로 조립하면
-// CSS가 생성되지 않는다. 그래서 1~4열을 미리 만들어 두고 골라 쓴다.
+// 열 수는 아이템 개수에서 나온다. Panda는 정적 추출이라 런타임 값으로는 CSS를
+// 만들 수 없지만, cva는 1~4열 variant 전부를 빌드 타임에 만들어 두고 선택만
+// 런타임에 하므로 개수로 고를 수 있다.
 // 모바일에서 3~4열은 값이 잘려 읽히지 않으므로 2열로 접는다(레퍼런스는 데스크톱만 정의).
-const COLUMN_STYLES: Record<number, string> = {
-  1: css({ gridTemplateColumns: '[minmax(0, 1fr)]' }),
-  2: css({ gridTemplateColumns: '[repeat(2, minmax(0, 1fr))]' }),
-  3: css({
-    gridTemplateColumns: {
-      base: '[repeat(2, minmax(0, 1fr))]',
-      md: '[repeat(3, minmax(0, 1fr))]',
+const grid = cva({
+  base: {
+    display: 'grid',
+    gap: '3',
+    mt: '[18px]',
+    mb: '6',
+    fontFamily: 'sans',
+  },
+  variants: {
+    columns: {
+      1: { gridTemplateColumns: '[minmax(0, 1fr)]' },
+      2: { gridTemplateColumns: '[repeat(2, minmax(0, 1fr))]' },
+      3: {
+        gridTemplateColumns: {
+          base: '[repeat(2, minmax(0, 1fr))]',
+          md: '[repeat(3, minmax(0, 1fr))]',
+        },
+      },
+      4: {
+        gridTemplateColumns: {
+          base: '[repeat(2, minmax(0, 1fr))]',
+          md: '[repeat(4, minmax(0, 1fr))]',
+        },
+      },
     },
-  }),
-  4: css({
-    gridTemplateColumns: {
-      base: '[repeat(2, minmax(0, 1fr))]',
-      md: '[repeat(4, minmax(0, 1fr))]',
-    },
-  }),
-};
-
-const grid = css({
-  display: 'grid',
-  gap: '3',
-  mt: '[18px]',
-  mb: '6',
-  fontFamily: 'sans',
+  },
+  defaultVariants: { columns: 1 },
 });
+
+type GridColumns = RecipeVariant<typeof grid>['columns'];
 
 const card = css({
   bg: 'paper.100',
@@ -91,20 +99,26 @@ const cardLabel = css({
   mb: '1.5',
 });
 
-const cardValue = css({
-  // "측정하는 엔지니어" 무드 — 수치는 반드시 모노스페이스(핸드오프 §3).
-  fontFamily: 'mono',
-  fontSize: '[19px]',
-  fontWeight: 'medium',
-  lineHeight: 'tight',
-  wordBreak: 'break-word',
-  // 본문 스타일(`& p { margin-bottom }`)이 카드 안까지 내려오므로 마지막 블록만 끈다.
-  '& > *:last-child': { mb: '0' },
+const cardValue = cva({
+  base: {
+    // "측정하는 엔지니어" 무드 — 수치는 반드시 모노스페이스(핸드오프 §3).
+    fontFamily: 'mono',
+    fontSize: '[19px]',
+    fontWeight: 'medium',
+    lineHeight: 'tight',
+    wordBreak: 'break-word',
+    // 본문 스타일(`& p { margin-bottom }`)이 카드 안까지 내려오므로 마지막 블록만 끈다.
+    '& > *:last-child': { mb: '0' },
+  },
+  variants: {
+    tone: {
+      default: { color: 'ink.950' },
+      // success 값은 moss.700 — moss.600은 라이트 모드에서 3.6:1로 AA 미달(스펙 §3).
+      success: { color: 'moss.700' },
+    },
+  },
+  defaultVariants: { tone: 'default' },
 });
-
-// success 값은 moss.700 — moss.600은 라이트 모드에서 3.6:1로 AA 미달(스펙 §3).
-const cardValueSuccess = css({ color: 'moss.700' });
-const cardValueDefault = css({ color: 'ink.950' });
 
 interface MetricProps {
   label?: string;
@@ -114,14 +128,14 @@ interface MetricProps {
 }
 
 export function Metric({ label, value, tone, children }: MetricProps) {
-  const toneStyle = tone === 'success' ? cardValueSuccess : cardValueDefault;
+  const resolvedTone = tone === 'success' ? 'success' : 'default';
 
   return (
     <div className={card}>
       <div className={cardLabel}>{label}</div>
       <div
-        data-tone={tone === 'success' ? 'success' : 'default'}
-        className={`${cardValue} ${toneStyle}`}
+        data-tone={resolvedTone}
+        className={cardValue({ tone: resolvedTone })}
       >
         {value ?? children}
       </div>
@@ -140,10 +154,10 @@ export function Metrics({ items, children }: MetricsProps) {
   const fallback = parsed ? null : markdownChildren(children);
   // 1열 미만·4열 초과는 레이아웃이 망가지므로 잘라낸다(핸드오프 §6 "2~4열 그리드").
   const count = parsed?.length ?? fallback?.length ?? 0;
-  const columns = Math.min(Math.max(count, 1), 4);
+  const columns = Math.min(Math.max(count, 1), 4) as GridColumns;
 
   return (
-    <div className={`${grid} ${COLUMN_STYLES[columns]}`}>
+    <div className={grid({ columns })}>
       {parsed
         ? parsed.map((item, index) => (
             <Metric

@@ -26,6 +26,7 @@ import { PopularRail } from './PopularRail';
 import { PostsFilterSheet } from './PostsFilterSheet';
 import { PostsFilterFab } from './PostsFilterFab';
 import { PostsFilterPanel } from './PostsFilterPanel';
+import { postRowItem, postRowLink, postRowMeta, postRowTitle } from './postRow';
 
 interface PostsArchiveViewProps {
   posts: PostSummary[];
@@ -45,25 +46,6 @@ const SORT_KEYS = [
 ] as const satisfies readonly SortKey[];
 const VIEW_KEYS = ['list', 'cards'] as const satisfies readonly ViewMode[];
 
-// 홈 글 목록과 같은 문법: 장식 없이 hairline 보더로만 구분하고
-// 제목 좌측 / 날짜 우측(모노). 마지막 행에만 아래 보더를 더한다.
-const rowItem = css({
-  borderTopWidth: '[1px]',
-  borderTopStyle: 'solid',
-  borderColor: 'ink.border',
-  _last: { borderBottomWidth: '[1px]', borderBottomStyle: 'solid' },
-});
-
-const rowLink = css({
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'baseline',
-  gap: '[16px]',
-  py: '[12px]',
-  // 좌우 패딩 없음 — 행 제목이 페이지 제목과 같은 세로선에서 시작해야 한다.
-  _hover: { '& h3': { color: 'accent.600', textDecorationLine: 'underline' } },
-});
-
 /**
  * 아카이브 목록(리스트 뷰) 한 행.
  *
@@ -72,37 +54,15 @@ const rowLink = css({
  * 화면이 바뀌지 않습니다. 그래서 여기서 export합니다.
  */
 export const ArchiveRow = ({ post }: { post: PostSummary }) => (
-  <li className={rowItem}>
-    <Link href={`/posts/${encodePostSlug(post.slug)}/`} className={rowLink}>
-      <h3
-        className={css({
-          minW: '0',
-          fontSize: '[14px]',
-          fontWeight: 'normal',
-          lineHeight: 'snug',
-          color: 'ink.950',
-          transition: '[color 0.15s]',
-        })}
-      >
+  <li className={postRowItem}>
+    <Link href={`/posts/${encodePostSlug(post.slug)}/`} className={postRowLink}>
+      <h3 className={postRowTitle}>
         {post.title}
         <HiddenPostBadge post={post} />
       </h3>
       {/* 날짜가 없으면 태그 자체를 낸다 — fmtDate가 빈 문자열을 돌려주므로
           크래시는 없지만 내용 없는 span이 남는다(홈의 PostIndexRow와 같은 패턴). */}
-      {post.date && (
-        <span
-          className={css({
-            fontFamily: 'mono',
-            fontWeight: 'normal',
-            fontSize: '[12px]',
-            color: 'ink.500',
-            flexShrink: 0,
-            fontVariantNumeric: 'tabular-nums',
-          })}
-        >
-          {fmtDate(post.date)}
-        </span>
-      )}
+      {post.date && <span className={postRowMeta}>{fmtDate(post.date)}</span>}
     </Link>
   </li>
 );
