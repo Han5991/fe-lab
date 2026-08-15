@@ -145,6 +145,8 @@ key: nextjs-sandbox-${{ hashFiles('pnpm-lock.yaml') }}-${{ hashFiles('packages/c
 
 이 수정이 제대로 됐다는 신호는 **miss**입니다. 각 PR의 첫 푸시는 이제 반드시 miss니까요. 그래서 테스트 플랜에 일부러 체크하지 않은 항목을 하나 남겼습니다 — "첫 푸시의 miss가 수정이 작동한다는 증거다. 재푸시에서 컴파일이 64초 수준으로 떨어지는지 확인할 것." 이걸 적어두지 않으면 다음 사람이 hit률 그래프만 보고 "캐시가 안 먹네" 하며 되돌려 놓습니다.
 
+그 항목은 이 PR 자신에서 닫혔습니다. 첫 푸시([run 29182165678](https://github.com/facebook/astryx/actions/runs/29182165678))는 `nextjs-sandbox-pr3864-…` 키로 miss가 나서 4.2분을 컴파일하고 캐시를 저장했고, 28분 뒤 재푸시([run 29182864149](https://github.com/facebook/astryx/actions/runs/29182864149))는 그 키를 복원해 **60초**에 컴파일했습니다 — main의 64초와 같은 수준입니다.
+
 머지 후, 캐시가 걸린 재푸시 기준으로 PR CI 전체 시간은 8분 56초에서 5분 10초가 됐습니다. 다만 23분 간격으로 머지된 병렬화 PR([#3811](https://github.com/facebook/astryx/pull/3811))의 효과가 섞여 있어, 캐시 수정만의 몫은 따로 떼어 말할 수 없습니다.
 
 ### 남은 한계: 첫 푸시는 여전히 콜드입니다
