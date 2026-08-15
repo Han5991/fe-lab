@@ -20,8 +20,8 @@ function toPostSummary(post: PostData): PostSummary {
 /**
  * dev 서버에서만 draft·scheduled 글을 목록/상세에 함께 노출할지 여부.
  *
- * 글을 쓰는 중에 `/preview/`로 따로 들어가지 않고 실제 화면에서 바로 확인하기
- * 위한 장치입니다. **이 게이트는 여기 한 곳에만 존재해야 합니다** — 공개 여부를
+ * 글을 쓰는 중에 별도 라우트 없이 실제 화면에서 바로 확인하기 위한
+ * 장치입니다. **이 게이트는 여기 한 곳에만 존재해야 합니다** — 공개 여부를
  * 결정하는 지점이 늘어나는 순간 이번 리팩토링이 없앤 "판정 규칙 두 벌" 문제가
  * 그대로 되살아납니다.
  *
@@ -61,13 +61,6 @@ export function getAllPostSummaries(): PostSummary[] {
  */
 export function getAllPostsIncludingHidden(): PostData[] {
   return readAllPosts();
-}
-
-/**
- * 미리보기/관리용: draft, scheduled 포함 slug로 포스트를 조회합니다.
- */
-export function getPostBySlugIncludingHidden(slug: string): PostData | null {
-  return readAllPosts().find(post => post.slug === slug) ?? null;
 }
 
 let _postsBySlugMap: Map<string, PostData> | null = null;

@@ -37,11 +37,6 @@ describe('useViewCount', () => {
     expect(incrementViewCount).not.toHaveBeenCalled();
   });
 
-  test('slug가 null이면 아무 동작 안 함', () => {
-    renderHook(() => useViewCount(null));
-    expect(incrementViewCount).not.toHaveBeenCalled();
-  });
-
   test('레이스 가드: 쿠키를 RPC 전에 set하므로 같은 글 재마운트 시 1회만 호출', () => {
     // 첫 마운트가 쿠키를 set → 두 번째 마운트는 hasViewed=true로 RPC 차단.
     renderHook(() => useViewCount('race-post'));

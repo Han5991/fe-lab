@@ -43,9 +43,8 @@ export function recordRecentView(slug: string, title: string): void {
   }
 }
 
-export function useRecordRecentView(slug: string | null, title: string): void {
+export function useRecordRecentView(slug: string, title: string): void {
   useEffect(() => {
-    if (!slug) return;
     recordRecentView(slug, title);
   }, [slug, title]);
 }

@@ -43,18 +43,16 @@ import { isBlockMarkdownChild } from './markdownBlocks';
 interface PostClientProps {
   post: PostData;
   thumbnailUrl?: string;
-  previewMode?: boolean;
   seriesIndex?: { current: number; total: number; displayName: string };
 }
 
 export default function PostClient({
   post,
   thumbnailUrl,
-  previewMode = false,
   seriesIndex,
 }: PostClientProps) {
-  useViewCount(previewMode ? null : post.slug);
-  useRecordRecentView(previewMode ? null : post.slug, post.title);
+  useViewCount(post.slug);
+  useRecordRecentView(post.slug, post.title);
 
   return (
     <>
