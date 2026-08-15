@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "predev": "npx tsx scripts/build-content.ts",
+    "predev:web": "npx tsx scripts/build-content.ts",
     "dev": "pnpm supabase-start && pnpm dev:web",
     "dev:web": "next dev",
     "prebuild": "npx tsx scripts/build-content.ts --strict",

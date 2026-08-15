@@ -90,7 +90,7 @@ export interface ValidateOptions {
    * 그래서 빌드 직전에는 같은 조건을 에러로 올려, 15초짜리 빌드를 돌리기 전에
    * 파일·줄 번호와 함께 먼저 잡습니다.
    *
-   * 반대로 `predev`(dev 서버)와 `pnpm lint:posts`에서는 켜지 않습니다 — 글을
+   * 반대로 `predev:web`(dev 서버)와 `pnpm lint:posts`에서는 켜지 않습니다 — 글을
    * 쓰는 중에 `status: published`로 두는 건 흔한데, 요약을 아직 안 적었다고
    * dev 서버가 안 뜨면 도구가 방해물이 됩니다.
    */

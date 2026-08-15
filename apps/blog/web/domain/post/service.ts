@@ -26,7 +26,7 @@ function toPostSummary(post: PostData): PostSummary {
  * 그대로 되살아납니다.
  *
  * `=== 'development'`로 정확히 비교하는 이유(`!== 'production'`이 아니라):
- * 정적 산출물을 만드는 스크립트들(prebuild/predev의 sitemap·rss·search-index·
+ * 정적 산출물을 만드는 스크립트들(prebuild/predev:web의 sitemap·rss·search-index·
  * llms-full·og-images)은 tsx로 직접 실행되어 NODE_ENV가 **undefined**입니다.
  * 느슨하게 비교하면 그 스크립트들이 dev로 오인되어 draft가 sitemap과 RSS에
  * 실려 나갑니다. next dev만 'development'를 설정합니다.
