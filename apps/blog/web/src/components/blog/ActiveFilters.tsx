@@ -13,6 +13,21 @@ interface ActiveFiltersProps {
   onClearAll: () => void;
 }
 
+const chipClass = css(tagPillStyle, {
+  gap: '[6px]',
+  color: 'ink.800',
+  whiteSpace: 'nowrap',
+  cursor: 'pointer',
+  transition: '[all 0.15s]',
+  _hover: { bg: 'paper.300', color: 'ink.950' },
+});
+
+const removeIconClass = css({
+  fontSize: '[10px]',
+  color: 'ink.500',
+  lineHeight: 'flat',
+});
+
 export const ActiveFilters = ({
   tags,
   series,
@@ -24,21 +39,6 @@ export const ActiveFilters = ({
 }: ActiveFiltersProps) => {
   const total = tags.length + (series ? 1 : 0) + (year ? 1 : 0);
   if (total === 0) return null;
-
-  const chipClass = css(tagPillStyle, {
-    gap: '[6px]',
-    color: 'ink.800',
-    whiteSpace: 'nowrap',
-    cursor: 'pointer',
-    transition: '[all 0.15s]',
-    _hover: { bg: 'paper.300', color: 'ink.950' },
-  });
-
-  const removeIconClass = css({
-    fontSize: '[10px]',
-    color: 'ink.500',
-    lineHeight: 'flat',
-  });
 
   return (
     <div
