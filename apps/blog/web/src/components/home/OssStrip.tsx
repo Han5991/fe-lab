@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { css, cx } from '@design-system/ui-lib/css';
+import { css, cva } from '@design-system/ui-lib/css';
 import { MERGED_PR_COUNT_FALLBACK } from '@/lib/constants';
 
 /**
@@ -16,24 +16,28 @@ const OSS_CHIPS = [
   { label: 'mantine', href: '/posts/first-open-source-contribution/' },
 ] as const;
 
-const chip = css({
-  display: 'inline-block',
-  fontFamily: 'mono',
-  fontWeight: 'normal',
-  fontSize: '[12px]',
-  color: 'ink.500',
-  bg: 'paper.100',
-  rounded: 'control',
-  px: '[11px]',
-  py: '[4px]',
+const chip = cva({
+  base: {
+    display: 'inline-block',
+    fontFamily: 'mono',
+    fontWeight: 'normal',
+    fontSize: '[12px]',
+    color: 'ink.500',
+    bg: 'paper.100',
+    rounded: 'control',
+    px: '[11px]',
+    py: '[4px]',
+  },
+  variants: {
+    kind: {
+      link: {
+        transition: '[color 0.15s]',
+        _hover: { color: 'ink.950' },
+      },
+      highlight: { color: 'accent.600' },
+    },
+  },
 });
-
-const chipLink = css({
-  transition: '[color 0.15s]',
-  _hover: { color: 'ink.950' },
-});
-
-const chipHighlight = css({ color: 'accent.600' });
 
 const CAPTION_ID = 'oss-strip-caption';
 
@@ -69,13 +73,13 @@ export const OssStrip = () => {
       >
         {OSS_CHIPS.map(item => (
           <li key={item.label}>
-            <Link href={item.href} className={cx(chip, chipLink)}>
+            <Link href={item.href} className={chip({ kind: 'link' })}>
               {item.label}
             </Link>
           </li>
         ))}
         <li>
-          <span className={cx(chip, chipHighlight)}>
+          <span className={chip({ kind: 'highlight' })}>
             {mergedPrCount}+ merged
           </span>
         </li>
