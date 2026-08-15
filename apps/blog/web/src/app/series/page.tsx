@@ -126,7 +126,7 @@ export default function SeriesPage() {
           {/* 허브 계열 페이지는 홈·글 본문과 같은 text 레일을 쓴다. */}
           <div
             className={cx(
-              railColumn('text'),
+              railColumn({ width: 'text' }),
               css({ py: { base: '10', md: '16' } }),
             )}
           >

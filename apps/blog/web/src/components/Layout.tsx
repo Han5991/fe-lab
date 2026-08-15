@@ -27,7 +27,7 @@ interface LayoutProps {
  * 248px 들어가 있었습니다.
  */
 const railOuter = railGutter;
-const railInner = railColumn('wide');
+const railInner = railColumn({ width: 'wide' });
 
 const footerLink = css({
   fontFamily: 'mono',

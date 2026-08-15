@@ -131,7 +131,7 @@ export default function AboutPage() {
           >
             <div
               className={cx(
-                railColumn('wide'),
+                railColumn({ width: 'wide' }),
                 css({
                   py: { base: '14', md: '20' },
                   display: 'grid',
@@ -331,7 +331,7 @@ export default function AboutPage() {
           <div className={railGutter}>
             <div
               className={cx(
-                railColumn('wide'),
+                railColumn({ width: 'wide' }),
                 css({
                   py: { base: '12', md: '20' },
                   display: 'grid',

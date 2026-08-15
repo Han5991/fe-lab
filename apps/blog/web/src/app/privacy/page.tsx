@@ -27,7 +27,7 @@ export default function PrivacyPage() {
         )}
       >
         {/* 읽는 문서라 글 본문과 같은 text 레일. 예전엔 혼자 800px이었다. */}
-        <div className={cx(railColumn('text'), css({ py: '16' }))}>
+        <div className={cx(railColumn({ width: 'text' }), css({ py: '16' }))}>
           <h1
             className={css({
               fontSize: '4xl',

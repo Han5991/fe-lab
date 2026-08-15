@@ -108,7 +108,7 @@ export default function PostsPage() {
       <PageBoundary transitionId="/posts" className={railGutter}>
         <div
           className={cx(
-            railColumn('wide'),
+            railColumn({ width: 'wide' }),
             css({ py: { base: '10', md: '16' } }),
           )}
         >
