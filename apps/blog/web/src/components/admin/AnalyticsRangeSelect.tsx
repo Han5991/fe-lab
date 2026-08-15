@@ -1,6 +1,6 @@
 'use client';
 
-import { css } from '@design-system/ui-lib/css';
+import { css, cva } from '@design-system/ui-lib/css';
 import type { AnalyticsRange } from '@/domain/analytics';
 
 interface AnalyticsRangeSelectProps {
@@ -13,6 +13,30 @@ const OPTIONS: { id: AnalyticsRange; label: string }[] = [
   { id: '30d', label: '30일' },
   { id: '90d', label: '90일' },
 ];
+
+const rangeTab = cva({
+  base: {
+    px: '4',
+    py: '1.5',
+    fontFamily: 'mono',
+    fontSize: 'xs',
+    letterSpacing: 'monoLg',
+    rounded: 'sm',
+    cursor: 'pointer',
+    transition: '[all 0.15s]',
+  },
+  variants: {
+    active: {
+      true: { bg: 'ink.950', color: 'paper.50' },
+      false: {
+        bg: 'transparent',
+        color: 'ink.600',
+        _hover: { color: 'ink.950' },
+      },
+    },
+  },
+  defaultVariants: { active: false },
+});
 
 export const AnalyticsRangeSelect = ({
   value,
@@ -39,19 +63,7 @@ export const AnalyticsRangeSelect = ({
             aria-selected={active}
             type="button"
             onClick={() => onChange(opt.id)}
-            className={css({
-              px: '4',
-              py: '1.5',
-              fontFamily: 'mono',
-              fontSize: 'xs',
-              letterSpacing: 'monoLg',
-              rounded: 'sm',
-              bg: active ? 'ink.950' : 'transparent',
-              color: active ? 'paper.50' : 'ink.600',
-              cursor: 'pointer',
-              transition: '[all 0.15s]',
-              _hover: !active ? { color: 'ink.950' } : undefined,
-            })}
+            className={rangeTab({ active })}
           >
             {opt.label}
           </button>

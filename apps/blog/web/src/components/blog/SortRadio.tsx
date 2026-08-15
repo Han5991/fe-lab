@@ -2,6 +2,7 @@
 
 import { css } from '@design-system/ui-lib/css';
 import { Label } from './Label';
+import { segmentedItem } from './segmented';
 
 export type SortKey = 'recent' | 'popular' | 'shortest';
 
@@ -53,24 +54,7 @@ export const SortRadio = ({ value, onChange }: SortRadioProps) => {
                 aria-checked={isActive}
                 type="button"
                 onClick={() => onChange(opt.id)}
-                className={css({
-                  display: 'flex',
-                  alignItems: 'center',
-                  px: '[12px]',
-                  py: '[5px]',
-                  fontSize: 'sm',
-                  fontWeight: 'medium',
-                  whiteSpace: 'nowrap',
-                  textAlign: 'left',
-                  bg: isActive ? 'paper.300' : 'transparent',
-                  color: isActive ? 'ink.950' : 'ink.600',
-                  transition: '[color 0.15s, background 0.15s]',
-                  cursor: 'pointer',
-                  _hover: {
-                    color: 'ink.950',
-                    bg: isActive ? 'paper.300' : 'paper.200',
-                  },
-                })}
+                className={segmentedItem({ kind: 'radio', active: isActive })}
               >
                 {opt.label}
               </button>
