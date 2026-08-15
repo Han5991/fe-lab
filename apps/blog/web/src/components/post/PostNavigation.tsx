@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { css } from '@design-system/ui-lib/css';
+import { css, sva } from '@design-system/ui-lib/css';
+import type { RecipeVariant } from '@design-system/ui-lib/css';
 import type { PostNavItem } from '@/domain/post';
 import { encodePostSlug } from '@/domain/post/utils';
 
@@ -15,37 +16,51 @@ interface PostNavigationProps {
   } | null;
 }
 
-// 위계는 그림자 없이 hairline 보더 하나로만 만들고, hover에서 보더만 진해진다.
-const cardStyle = css.raw({
-  display: 'flex',
-  flexDir: 'column',
-  gap: '1',
-  flex: '1',
-  borderWidth: '[1px]',
-  borderStyle: 'solid',
-  borderColor: 'ink.border',
-  rounded: 'card',
-  p: '[16px]',
-  transition: '[border-color 0.15s]',
-  _hover: { borderColor: 'ink.borderStrong' },
-});
-
-// 다음 글 카드만 우측 정렬. 모바일은 세로 스택이라 좌측 정렬을 유지한다.
-const cardNextStyle = css.raw({
-  alignItems: { base: 'flex-start', md: 'flex-end' },
-  textAlign: { base: 'left', md: 'right' },
+const navCard = sva({
+  slots: ['card', 'title'],
+  base: {
+    // 위계는 그림자 없이 hairline 보더 하나로만 만들고, hover에서 보더만 진해진다.
+    card: {
+      display: 'flex',
+      flexDir: 'column',
+      gap: '1',
+      flex: '1',
+      borderWidth: 'hairline',
+      borderStyle: 'solid',
+      borderColor: 'ink.border',
+      rounded: 'card',
+      p: '[16px]',
+      transition: '[border-color 0.15s]',
+      _hover: { borderColor: 'ink.borderStrong' },
+    },
+    title: {
+      fontSize: '[14px]',
+      fontWeight: 'medium',
+      color: 'accent.600',
+    },
+  },
+  variants: {
+    direction: {
+      prev: {},
+      // 다음 글 카드만 우측 정렬. 모바일은 세로 스택이라 좌측 정렬을 유지한다.
+      next: {
+        card: {
+          alignItems: { base: 'flex-start', md: 'flex-end' },
+          textAlign: { base: 'left', md: 'right' },
+        },
+      },
+    },
+    clamp: {
+      1: { title: { lineClamp: 1 } },
+      2: { title: { lineClamp: 2 } },
+    },
+  },
 });
 
 const labelStyle = css({
   fontFamily: 'mono',
   fontSize: '[12px]',
   color: 'ink.500',
-});
-
-const titleStyle = css.raw({
-  fontSize: '[14px]',
-  fontWeight: 'medium',
-  color: 'accent.600',
 });
 
 const rowStyle = css({
@@ -60,31 +75,21 @@ const rowStyle = css({
 interface NavCardProps {
   href: string;
   title: string;
-  direction: 'prev' | 'next';
+  direction: RecipeVariant<typeof navCard>['direction'];
   label: string;
   /** 제목 줄 수 — 시리즈 카드는 1줄, 전체 이전/다음은 2줄까지 */
-  clamp: 1 | 2;
+  clamp: RecipeVariant<typeof navCard>['clamp'];
 }
 
-const NavCard = ({ href, title, direction, label, clamp }: NavCardProps) => (
-  <Link
-    href={href}
-    className={
-      direction === 'next' ? css(cardStyle, cardNextStyle) : css(cardStyle)
-    }
-  >
-    <span className={labelStyle}>{label}</span>
-    <span
-      className={
-        clamp === 1
-          ? css(titleStyle, { lineClamp: 1 })
-          : css(titleStyle, { lineClamp: 2 })
-      }
-    >
-      {title}
-    </span>
-  </Link>
-);
+const NavCard = ({ href, title, direction, label, clamp }: NavCardProps) => {
+  const classes = navCard({ direction, clamp });
+  return (
+    <Link href={href} className={classes.card}>
+      <span className={labelStyle}>{label}</span>
+      <span className={classes.title}>{title}</span>
+    </Link>
+  );
+};
 
 const postHref = (item: PostNavItem) => `/posts/${encodePostSlug(item.slug)}/`;
 
