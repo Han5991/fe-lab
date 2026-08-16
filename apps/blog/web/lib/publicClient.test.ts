@@ -90,29 +90,47 @@ before(async () => {
 
 after(() => server.close());
 
+/**
+ * 두 클라이언트의 제네릭이 달라 구조적으로만 같은 쿼리를 태운다. 여기서
+ * 검증하는 건 타입이 아니라 와이어이므로, 시나리오가 실제로 쓰는 체인만
+ * 서술한 duck-type으로 둘을 묶는다(any로 흘리면 typed-lint가 전부 unsafe로
+ * 본다). 메서드가 늘면 이 인터페이스에도 추가할 것.
+ */
+interface WireClient {
+  from(table: string): {
+    select(columns: string): PromiseLike<unknown> & {
+      order(
+        column: string,
+        opts: { ascending: boolean },
+      ): { limit(n: number): PromiseLike<unknown> };
+    };
+  };
+  rpc(fn: string, args: Record<string, unknown>): PromiseLike<unknown>;
+}
+
 /** 교체 전: supabase-js 전체 클라이언트 */
-const legacyClient = () => createClient(baseUrl, KEY);
+const legacyClient = () => createClient(baseUrl, KEY) as unknown as WireClient;
 
 /** 교체 후: lib/publicClient.ts와 **동일한** 생성 방식 */
 const publicClient = () =>
   new PostgrestClient(`${baseUrl.replace(/\/+$/, '')}/rest/v1`, {
     headers: { apikey: KEY, Authorization: `Bearer ${KEY}` },
     schema: 'public',
-  });
+  }) as unknown as WireClient;
 
-/* eslint-disable @typescript-eslint/no-explicit-any -- 두 클라이언트의 제네릭이
-   달라 구조적으로만 같은 쿼리를 태운다. 여기서 검증하는 건 타입이 아니라 와이어다. */
-async function requestOf(run: (c: any) => PromiseLike<unknown>, client: any) {
+async function requestOf(
+  run: (c: WireClient) => PromiseLike<unknown>,
+  client: WireClient,
+) {
   captured = [];
   await run(client);
   assert.equal(captured.length, 1, '요청이 정확히 1건이어야 한다');
   return normalize(captured[0]);
 }
-/* eslint-enable @typescript-eslint/no-explicit-any */
 
 const SCENARIOS: {
   name: string;
-  run: (c: any) => PromiseLike<unknown>; // eslint-disable-line @typescript-eslint/no-explicit-any
+  run: (c: WireClient) => PromiseLike<unknown>;
 }[] = [
   {
     name: 'getTopPosts',

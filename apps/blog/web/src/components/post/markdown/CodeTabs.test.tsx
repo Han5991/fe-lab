@@ -76,7 +76,7 @@ describe('CodeTabs', () => {
     expect(shownCode()).not.toContain('pnpm add typesense');
   });
 
-  test('탭을 누르면 그 코드로 바뀐다', async () => {
+  test('탭을 누르면 그 코드로 바뀐다', () => {
     renderMarkdown(TABS_MD);
 
     fireEvent.click(screen.getByRole('tab', { name: 'pnpm' }));
@@ -85,7 +85,7 @@ describe('CodeTabs', () => {
     expect(shownCode()).not.toContain('npm i typesense');
   });
 
-  test('활성 탭만 aria-selected로 표시된다', async () => {
+  test('활성 탭만 aria-selected로 표시된다', () => {
     renderMarkdown(TABS_MD);
 
     fireEvent.click(screen.getByRole('tab', { name: 'pnpm' }));
@@ -100,7 +100,7 @@ describe('CodeTabs', () => {
     );
   });
 
-  test('← → 로 탭을 옮길 수 있다', async () => {
+  test('← → 로 탭을 옮길 수 있다', () => {
     // 탭 목록 안에서는 화살표가 기본 조작이다(WAI-ARIA tabs 패턴).
     renderMarkdown(TABS_MD);
     const first = screen.getByRole('tab', { name: 'npm' });
@@ -135,7 +135,7 @@ describe('CodeTabs', () => {
     expect(screen.queryByText('bash')).not.toBeInTheDocument();
   });
 
-  test('복사 버튼은 하나이고, 열려 있는 탭의 코드를 집는다', async () => {
+  test('복사 버튼은 하나이고, 열려 있는 탭의 코드를 집는다', () => {
     renderMarkdown(TABS_MD);
     const copy = () => screen.getByRole('button', { name: /코드 복사/ });
     const writeText = vi.fn().mockResolvedValue(undefined);

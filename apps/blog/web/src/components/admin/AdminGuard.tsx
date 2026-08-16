@@ -48,7 +48,7 @@ export function AdminGuard({ children }: { children: ReactNode }) {
     // Additional security check: Only allow the configured admin email
     if (session.user.email !== process.env.NEXT_PUBLIC_ADMIN_EMAIL) {
       console.warn(`Unauthorized email attempt: ${session.user.email}`);
-      supabase.auth.signOut().then(() => {
+      void supabase.auth.signOut().then(() => {
         router.replace('/admin/login?error=unauthorized');
       });
       return;

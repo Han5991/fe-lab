@@ -287,6 +287,7 @@ const dateChain: Chain = ({ record: { data, relPath }, raw, options }) => {
       line: findFrontmatterLine(raw, 'date'),
       severity: resolveSeverity('invalid-date', data, options),
       rule: 'invalid-date',
+      // eslint-disable-next-line @typescript-eslint/no-base-to-string -- YAML 값은 임의 타입이다. 진단 메시지에 "무엇이 들어왔는지"를 그대로 보여 주는 게 목적이라 Date는 toString, 객체는 '[object Object]' 폴백이 의도된 동작이다.
       message: `\`date\`가 유효한 날짜가 아닙니다: ${String(data['date'])}`,
     });
   } else if (
@@ -323,6 +324,7 @@ const updatedAtChain: Chain = ({ record: { data, relPath }, raw, options }) => {
       line: findFrontmatterLine(raw, 'updatedAt'),
       severity: resolveSeverity('invalid-updated-at', data, options),
       rule: 'invalid-updated-at',
+      // eslint-disable-next-line @typescript-eslint/no-base-to-string -- 위 invalid-date와 같은 이유: 진단 메시지는 들어온 값을 그대로 보여 준다.
       message: `\`updatedAt\`이 유효한 날짜가 아닙니다: ${String(data['updatedAt'])}`,
     });
   } else if (

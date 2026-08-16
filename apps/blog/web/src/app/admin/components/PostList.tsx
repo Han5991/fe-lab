@@ -73,7 +73,7 @@ export function PostList() {
           className={css({ display: 'flex', alignItems: 'center', gap: '3' })}
         >
           <button
-            onClick={handleRefresh}
+            onClick={() => void handleRefresh()}
             className={css({
               display: 'flex',
               alignItems: 'center',

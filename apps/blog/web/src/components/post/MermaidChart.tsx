@@ -119,7 +119,7 @@ export function MermaidChart({ chart }: { chart: string }) {
         console.error('Mermaid render failed:', error);
       }
     };
-    renderChart();
+    void renderChart();
     return () => {
       cancelled = true;
     };

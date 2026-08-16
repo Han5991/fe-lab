@@ -16,8 +16,10 @@ function spec(name: string): ArtifactSpec {
 
 function extractFile(name: string, text: string): Set<string> {
   const s = spec(name);
+  // node:assert/strict의 equal은 strictEqual의 별칭이라 narrowing assertion이다
+  // — 판별 프로퍼티가 좁혀지며 s가 file 스펙으로 좁아진다.
   assert.equal(s.kind, 'file');
-  return (s as Extract<ArtifactSpec, { kind: 'file' }>).extractUrls(text);
+  return s.extractUrls(text);
 }
 
 // ── 레지스트리 자체 계약 ─────────────────────────────────────────────────────
@@ -137,7 +139,7 @@ test('JSON 인덱스 추출: 깨진 JSON은 빈 집합 — 게이트는 실패�
 test('og 디렉터리 추출: png 경로 → 글 URL, 중첩 slug 보존, png 아닌 파일 무시', () => {
   const og = spec('og 이미지 (og/*.png)');
   assert.equal(og.kind, 'dir');
-  const extract = (og as Extract<ArtifactSpec, { kind: 'dir' }>).extractUrls;
+  const extract = og.extractUrls;
   assert.deepEqual(
     extract(['a.png', '회고/2024.png', '.DS_Store']),
     new Set([`${SITE_URL}/posts/a/`, `${SITE_URL}/posts/회고/2024/`]),
