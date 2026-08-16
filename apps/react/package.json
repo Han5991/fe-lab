@@ -26,9 +26,9 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@pandacss/dev": "catalog:",
-    "@testing-library/jest-dom": "^7.0.0",
+    "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.2",
-    "@testing-library/user-event": "^14.6.3",
+    "@testing-library/user-event": "^14.6.4",
     "@types/node": "^25.9.5",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
