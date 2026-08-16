@@ -9,7 +9,8 @@ import rehypeRaw from 'rehype-raw';
 import { SITE_URL, SITE_NAME, SITE_DESCRIPTION } from '../lib/constants';
 import { resolvePostAssetUrl } from '../domain/post/assetUrl';
 import { parseScheduledDateKST } from '../lib/dates';
-import { getAllPosts, postUrl, type PostSummary } from '@/domain/post';
+import { postUrl, type PostSummary } from '@/domain/post';
+import { POST_SETS } from './artifacts';
 import { HEADING_COMPONENTS } from '@/src/components/post/markdownHeadings';
 
 /**
@@ -178,7 +179,8 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
     '..',
     'public',
   );
-  const posts = getAllPosts();
+  // 레지스트리 선언(postSet: 'visible', exact)과 같은 셀렉터.
+  const posts = POST_SETS.visible();
   const rss = buildRssXml(posts);
   fs.writeFileSync(path.join(publicDir, 'rss.xml'), rss);
   console.log('RSS feed generated successfully!');

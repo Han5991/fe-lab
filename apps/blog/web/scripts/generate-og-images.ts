@@ -11,7 +11,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import satori, { type SatoriOptions } from 'satori';
 import { Resvg } from '@resvg/resvg-js';
-import { getAllPosts } from '../domain/post/service';
+import { POST_SETS } from './artifacts';
 import { fmtDate } from '../lib/format';
 import { SITE_NAME, SITE_URL } from '../lib/constants';
 
@@ -299,8 +299,10 @@ function readManifest(): Record<string, string> {
 }
 
 async function main() {
-  // 외부/직접 썸네일이 명시된 글은 제외, 없거나 /og/*를 가리키는 글만 생성
-  const posts = getAllPosts().filter(needsGeneratedOg);
+  // 외부/직접 썸네일이 명시된 글은 제외, 없거나 /og/*를 가리키는 글만 생성.
+  // visible의 **부분집합**이 되므로 레지스트리(artifacts.ts)의 og 항목은
+  // exact가 아니라 subset이다 — 베이스 셀렉터는 레지스트리와 공유한다.
+  const posts = POST_SETS.visible().filter(needsGeneratedOg);
 
   mkdirSync(OG_DIR, { recursive: true });
 

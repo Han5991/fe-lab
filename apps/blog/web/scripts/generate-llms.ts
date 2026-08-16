@@ -1,12 +1,8 @@
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import {
-  getAllPosts,
-  archiveUrl,
-  postUrl,
-  sortByDateDesc,
-} from '../domain/post';
+import { archiveUrl, postUrl, sortByDateDesc } from '../domain/post';
+import { POST_SETS } from './artifacts';
 import type { PostData } from '../domain/post';
 import {
   SITE_URL as DEFAULT_SITE_URL,
@@ -188,7 +184,8 @@ export function buildLlmsText(
 
 // 스크립트로 직접 실행될 때만 파일 쓰기. (테스트에서 import 시에는 실행 안 됨)
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
-  const posts = getAllPosts();
+  // 레지스트리 선언(postSet: 'visible', exact)과 같은 셀렉터.
+  const posts = POST_SETS.visible();
   const outputPath = join(process.cwd(), 'public', 'llms.txt');
   writeFileSync(outputPath, buildLlmsText(posts), 'utf8');
   console.log(`llms.txt generated: ${posts.length} posts`);

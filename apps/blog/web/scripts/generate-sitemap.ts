@@ -3,12 +3,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { SITE_URL, ABOUT_PAGE_MODIFIED } from '../lib/constants';
 import { parseScheduledDateKST, getKSTDateISO } from '../lib/dates';
-import {
-  getAllPosts,
-  archiveUrl,
-  postUrl,
-  type PostSummary,
-} from '@/domain/post';
+import { archiveUrl, postUrl, type PostSummary } from '@/domain/post';
+import { POST_SETS } from './artifacts';
 
 // 고가치 주제 폴더의 글은 우선순위를 높게 설정.
 // 테스트에서 self-describing 패턴으로 참조하기 위해 export.
@@ -132,7 +128,9 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
     '..',
     'public',
   );
-  const posts = getAllPosts();
+  // 글 집합은 레지스트리(artifacts.ts)에 선언된 셀렉터를 쓴다 — sitemap은
+  // 대조 기준(reference)이라 visible을 exact로 담아야 한다.
+  const posts = POST_SETS.visible();
   // KST 기준 오늘 날짜. `new Date().toISOString()`은 UTC라 KST 00:00~09:00 빌드 시
   // 하루 밀린 lastmod를 만들 수 있어 getKSTDateISO()를 사용한다.
   const today = getKSTDateISO();

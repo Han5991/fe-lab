@@ -10,7 +10,7 @@ import {
 import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import sharp from 'sharp';
-import { getAllPosts } from '../domain/post/service';
+import { POST_SETS } from './artifacts';
 import { thumbnailWebpRelPath } from '../domain/post/thumbnail';
 import type { PostData } from '../domain/post/types';
 
@@ -110,7 +110,9 @@ function listExistingWebps(): string[] {
 }
 
 async function main() {
-  const tasks = collectTasks(getAllPosts());
+  // thumbs는 파일명에서 글을 되돌릴 수 없어 레지스트리 대조 대상이 아니지만,
+  // 글 집합 선택만은 레지스트리의 셀렉터(POST_SETS)를 같이 쓴다.
+  const tasks = collectTasks(POST_SETS.visible());
   mkdirSync(THUMBS_DIR, { recursive: true });
 
   const expectedRel = new Set(tasks.map(t => t.outputRel));

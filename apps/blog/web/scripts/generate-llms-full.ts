@@ -1,8 +1,9 @@
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { getAllPosts, postUrl } from '../domain/post';
+import { postUrl } from '../domain/post';
 import type { PostData } from '../domain/post';
+import { POST_SETS } from './artifacts';
 import { SITE_URL as DEFAULT_SITE_URL } from '../lib/constants';
 
 export interface LlmsFullBuildOptions {
@@ -131,7 +132,8 @@ export function buildLlmsFullText(
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
-  const posts = getAllPosts();
+  // 레지스트리 선언(postSet: 'visible', exact)과 같은 셀렉터.
+  const posts = POST_SETS.visible();
   const outputPath = join(process.cwd(), 'public', 'llms-full.txt');
   const text = buildLlmsFullText(posts);
   writeFileSync(outputPath, text, 'utf8');
