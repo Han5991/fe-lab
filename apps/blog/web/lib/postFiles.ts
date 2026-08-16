@@ -64,8 +64,8 @@ export function hasFrontmatter(raw: string): boolean {
   // CRLF(\r\n) / LF(\n) 모두 안전하게 분할.
   const lines = raw.split(/\r?\n/);
   if (lines[0]?.trim() !== '---') return false;
-  for (let i = 1; i < lines.length; i++) {
-    if (lines[i].trim() === '---') return true;
+  for (const line of lines.slice(1)) {
+    if (line.trim() === '---') return true;
   }
   return false;
 }

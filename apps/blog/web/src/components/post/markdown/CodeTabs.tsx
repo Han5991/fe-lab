@@ -135,7 +135,8 @@ export function CodeTabs({ children }: { children?: ReactNode }) {
   // 그대로 흘려보낸다.
   if (items.length === 0) return <>{children}</>;
 
-  const current = items[Math.min(active, items.length - 1)];
+  // 위에서 items.length > 0 을 확인했고 active ≥ 0 이라 인덱스는 항상 범위 안이다.
+  const current = items[Math.min(active, items.length - 1)]!;
 
   // ←/→ 로 옮기고 Home/End 로 양 끝으로 간다(WAI-ARIA tabs 패턴). 버튼만
   // 으로도 Tab 키 순회는 되지만, 탭 목록 안에서는 이쪽이 기본 조작이다.

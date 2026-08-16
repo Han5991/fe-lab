@@ -73,8 +73,9 @@ interface Measured {
  *  `drop`이 다음 항목 높이의 절반을 넘지 않게 묶고 나면 곡선도 겹치지 않는다.)
  */
 export function buildPath(rows: Row[]): string {
-  if (rows.length === 0) return '';
-  let d = `M ${rows[0].x} 0`;
+  const head = rows[0];
+  if (head === undefined) return '';
+  let d = `M ${head.x} 0`;
 
   rows.forEach((row, i) => {
     const next = rows[i + 1];
@@ -114,7 +115,9 @@ export function measureLengths(d: string, rows: Row[]): [number, number][] {
   rows.forEach((row, i) => {
     // 직전 항목이 끝난 지점에서 출발해, path의 y가 이 항목의 머리에 닿을
     // 때까지 1px씩 전진한다. 그 사이에 곡선이 있으면 자연히 더 걸린다.
-    let at = i === 0 ? row.top : out[i - 1][1] + (row.top - rows[i - 1].bottom);
+    // i > 0 이면 직전 반복이 out[i-1]을 넣었고 rows[i-1]도 존재한다.
+    let at =
+      i === 0 ? row.top : out[i - 1]![1] + (row.top - rows[i - 1]!.bottom);
     while (at < total && probe.getPointAtLength(at).y < row.top) at += 1;
     // 끝도 같은 방식으로 실측한다. 세로 높이만 더하면, 단이 바뀌어 자기
     // 구간 안에 곡선을 품은 항목에서 끝점이 실제보다 위로 잡힌다(곡선은

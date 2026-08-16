@@ -39,7 +39,7 @@ import { isPostStatus } from './visibility';
  * - 그 외 → null
  */
 export function toDateString(value: unknown): string | null {
-  if (value instanceof Date) return value.toISOString().split('T')[0];
+  if (value instanceof Date) return value.toISOString().split('T')[0]!;
   if (typeof value === 'string') return value;
   return null;
 }

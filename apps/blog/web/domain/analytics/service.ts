@@ -194,10 +194,11 @@ export function computeDerivedStats(
   const totalViews = sorted.reduce((acc, t) => acc + t.view_count, 0);
   // 일평균은 trends 첫 날 ~ 마지막 날 사이의 캘린더 일수로 나눕니다.
   // (활동일 수로 나누면 스파이크 1회로 끝난 글의 평균이 비현실적으로 높아집니다.)
+  const firstTrend = sorted.at(0);
+  const lastTrend = sorted.at(-1);
   const daySpan =
-    sorted.length > 0
-      ? diffDaysISO(sorted[0].view_date, sorted[sorted.length - 1].view_date) +
-        1
+    firstTrend !== undefined && lastTrend !== undefined
+      ? diffDaysISO(firstTrend.view_date, lastTrend.view_date) + 1
       : 0;
   const dailyAverage =
     daySpan > 0 ? Math.round((totalViews / daySpan) * 10) / 10 : 0;
@@ -214,41 +215,26 @@ export function computeDerivedStats(
   const trendSum = totalViews;
   const offset = Math.max(0, post.totalViews - trendSum);
   let cumulative = offset;
+
+  // cumulative가 이미 넘어선 마일스톤을 순서대로 소비합니다(도달일자는 호출부 몫).
+  const pushReached = (date: string | null) => {
+    for (const target of MILESTONE_TARGETS.slice(milestoneIdx)) {
+      if (cumulative < target) break;
+      milestones.push({ target, reached: true, date });
+      milestoneIdx++;
+    }
+  };
+
   // trends 시작 전에 이미 통과한 마일스톤은 도달일자 미상으로 기록.
-  while (
-    milestoneIdx < MILESTONE_TARGETS.length &&
-    cumulative >= MILESTONE_TARGETS[milestoneIdx]
-  ) {
-    milestones.push({
-      target: MILESTONE_TARGETS[milestoneIdx],
-      reached: true,
-      date: null,
-    });
-    milestoneIdx++;
-  }
+  pushReached(null);
 
   for (const t of sorted) {
     cumulative += t.view_count;
-    while (
-      milestoneIdx < MILESTONE_TARGETS.length &&
-      cumulative >= MILESTONE_TARGETS[milestoneIdx]
-    ) {
-      milestones.push({
-        target: MILESTONE_TARGETS[milestoneIdx],
-        reached: true,
-        date: t.view_date,
-      });
-      milestoneIdx++;
-    }
+    pushReached(t.view_date);
   }
 
-  while (milestoneIdx < MILESTONE_TARGETS.length) {
-    milestones.push({
-      target: MILESTONE_TARGETS[milestoneIdx],
-      reached: false,
-      date: null,
-    });
-    milestoneIdx++;
+  for (const target of MILESTONE_TARGETS.slice(milestoneIdx)) {
+    milestones.push({ target, reached: false, date: null });
   }
 
   return { weekGrowthRate, peakDay, dailyAverage, milestones };

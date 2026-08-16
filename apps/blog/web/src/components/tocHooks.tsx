@@ -112,7 +112,8 @@ export const useTocHook = () => {
         }
       });
 
-      const currentId = toc[current].id;
+      // effect 첫 줄에서 toc.length > 0 을 확인했고 current는 forEach 인덱스다.
+      const currentId = toc[current]!.id;
       setActiveId(prev => (prev === currentId ? prev : currentId));
       // 헤딩이 하나도 안 보이는 구간(긴 절의 한복판)에서는 구간을 만들 수
       // 없다. 그때는 방금 지나온 절 한 줄만 비춘다.

@@ -18,7 +18,8 @@ export function parseArgs(argv: string[]): Options {
   const positional: string[] = [];
 
   for (let i = 0; i < argv.length; i++) {
-    const arg = argv[i];
+    // 루프 조건이 i < length 를 보장한다 (본문의 ++i 뒤에도 조건을 다시 지난다).
+    const arg = argv[i]!;
     if (arg.startsWith('--')) {
       const eq = arg.indexOf('=');
       let key: string;
@@ -84,8 +85,9 @@ export function parseArgs(argv: string[]): Options {
     }
   }
 
-  if (!opts.title && positional.length > 0) {
-    opts.title = positional[0];
+  const firstPositional = positional[0];
+  if (!opts.title && firstPositional !== undefined) {
+    opts.title = firstPositional;
   }
 
   return opts;

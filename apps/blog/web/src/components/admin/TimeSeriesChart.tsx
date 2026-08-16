@@ -29,8 +29,9 @@ interface CustomTooltipProps {
 }
 
 const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
-  if (!active || !payload || payload.length === 0) return null;
-  const value = payload[0].value ?? 0;
+  const first = payload?.[0];
+  if (!active || first === undefined) return null;
+  const value = first.value ?? 0;
   return (
     <div
       className={css({

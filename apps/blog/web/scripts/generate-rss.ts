@@ -37,8 +37,10 @@ export type RssPost = Pick<
   relativeDir?: string;
 };
 
+// 모르는 type 값은 info로 렌더한다 — 폴백을 같은 객체로 공유해 둘이 어긋날 수 없게.
+const CALLOUT_INFO = { icon: 'ℹ️', label: 'Info' };
 const CALLOUT_META: Record<string, { icon: string; label: string }> = {
-  info: { icon: 'ℹ️', label: 'Info' },
+  info: CALLOUT_INFO,
   tip: { icon: '💡', label: 'Tip' },
   warning: { icon: '⚠️', label: 'Warning' },
   danger: { icon: '🚨', label: 'Danger' },
@@ -54,7 +56,7 @@ const FEED_COMPONENTS = {
   // 피드 리더에서만 h1이 살아남는다(markdownHeadings.tsx 참고).
   ...HEADING_COMPONENTS,
   callout: (props: { type?: string; title?: string; children?: ReactNode }) => {
-    const meta = CALLOUT_META[props.type ?? ''] ?? CALLOUT_META.info;
+    const meta = CALLOUT_META[props.type ?? ''] ?? CALLOUT_INFO;
     return createElement(
       'blockquote',
       null,

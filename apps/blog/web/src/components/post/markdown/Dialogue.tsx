@@ -37,7 +37,8 @@ function avatarInitial(from: string | undefined): string {
   if (isMine(from)) return '나';
   if (name.length <= 3 && /^[A-Z]+$/.test(name)) return name;
   // 서로게이트 페어(이모지 등)가 반 토막 나지 않도록 코드포인트 단위로 자른다.
-  return Array.from(name)[0];
+  // 위에서 name.length > 0 을 확인했으므로 첫 코드포인트는 항상 있다.
+  return Array.from(name)[0]!;
 }
 
 const msg = sva({

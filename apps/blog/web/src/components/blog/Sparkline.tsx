@@ -26,11 +26,11 @@ export const Sparkline = ({
   // 데이터 1개일 땐 가운데에 점을 찍고, 채움 영역은 그리지 않습니다.
   // (length-1이 0이 되면 step=Infinity로 좌측 1점만 찍히고 fillPath가 깨집니다.)
   const step = data.length > 1 ? w / (data.length - 1) : 0;
-  const xs = data.length > 1 ? data.map((_, i) => i * step) : [w / 2];
+  const xAt = (i: number) => (data.length > 1 ? i * step : w / 2);
   const pts = data
     .map(
       (v, i) =>
-        `${xs[i].toFixed(2)},${(h - ((v - min) / range) * h).toFixed(2)}`,
+        `${xAt(i).toFixed(2)},${(h - ((v - min) / range) * h).toFixed(2)}`,
     )
     .join(' ');
   const fillPath =

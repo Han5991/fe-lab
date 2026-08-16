@@ -23,7 +23,8 @@ function parseLines(raw: string): Line[] {
     .map(line => {
       const normalized = line.replace(/^\t+/, m => '  '.repeat(m.length));
       const indentMatch = normalized.match(/^( *)/);
-      const indent = indentMatch ? indentMatch[1].length : 0;
+      // `( *)`는 매치에 항상 참여한다(빈 문자열 가능).
+      const indent = indentMatch ? indentMatch[1]!.length : 0;
       const depth = Math.floor(indent / 2);
       const trimmed = normalized.trim();
       const isDir = trimmed.endsWith('/');
@@ -54,13 +55,15 @@ export function FileTree({ children }: FileTreeProps) {
 
   const rendered: string[] = [];
   for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
+    // 루프 조건이 인덱스 범위를 보장한다 (아래 j 루프도 동일).
+    const line = lines[i]!;
     const ancestorContinues: boolean[] = [];
     for (let d = 1; d < line.depth; d++) {
       let hasMoreSibling = false;
       for (let j = i + 1; j < lines.length; j++) {
-        if (lines[j].depth < d) break;
-        if (lines[j].depth === d) {
+        const later = lines[j]!;
+        if (later.depth < d) break;
+        if (later.depth === d) {
           hasMoreSibling = true;
           break;
         }
@@ -69,8 +72,9 @@ export function FileTree({ children }: FileTreeProps) {
     }
     let isLast = true;
     for (let j = i + 1; j < lines.length; j++) {
-      if (lines[j].depth < line.depth) break;
-      if (lines[j].depth === line.depth) {
+      const later = lines[j]!;
+      if (later.depth < line.depth) break;
+      if (later.depth === line.depth) {
         isLast = false;
         break;
       }
