@@ -10,10 +10,10 @@ import { createAdminApiClient, type FunctionsInvoker } from './adminApi';
 
 // ── mock 헬퍼 ─────────────────────────────────────────────────────────────────
 
-type CapturedCall = {
+interface CapturedCall {
   functionName: string;
   options?: { body?: unknown };
-};
+}
 
 type InvokeResponse =
   { data: unknown; error: null } | { data: null; error: { message: string } };

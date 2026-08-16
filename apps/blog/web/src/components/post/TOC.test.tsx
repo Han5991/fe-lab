@@ -113,8 +113,12 @@ describe('TOC 항목 클릭', () => {
     vi.stubGlobal(
       'ResizeObserver',
       class {
-        observe() {}
-        disconnect() {}
+        observe() {
+          // 관측 콜백을 검사하지 않으므로 기록만 안 하면 된다
+        }
+        disconnect() {
+          // observe가 아무것도 안 하므로 해제할 것도 없다
+        }
       },
     );
     vi.stubGlobal('matchMedia', () => ({ matches: false }));

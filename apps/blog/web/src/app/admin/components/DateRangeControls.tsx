@@ -5,7 +5,10 @@ import { css } from '@design-system/ui-lib/css';
 import { getKSTCutoffDate } from '@/lib/dates';
 
 type FilterType = 'all' | '7days' | '30days' | 'custom';
-type Trend = { view_date: string; view_count: number };
+interface Trend {
+  view_date: string;
+  view_count: number;
+}
 
 // getKSTCutoffDate는 단위 테스트 커버를 위해 lib/dates.ts로 이동.
 // 호환을 위해 같은 이름으로 재노출 — 다른 컴포넌트에서 직접 import해도 동작.

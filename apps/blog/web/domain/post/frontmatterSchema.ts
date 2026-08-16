@@ -39,6 +39,7 @@ import { isPostStatus } from './visibility';
  * - 그 외 → null
  */
 export function toDateString(value: unknown): string | null {
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- toISOString()은 항상 'T'를 포함하므로 [0]이 존재
   if (value instanceof Date) return value.toISOString().split('T')[0]!;
   if (typeof value === 'string') return value;
   return null;
@@ -212,7 +213,7 @@ export const FRONTMATTER_KEYS = Object.keys(
  *
  * 여기 없는 키는 validate-posts의 unknown-frontmatter-key 경고 대상입니다.
  */
-export type RawFrontmatter = { [K in FrontmatterKey]?: unknown };
+export type RawFrontmatter = Partial<Record<FrontmatterKey, unknown>>;
 
 /**
  * **일부러 허용 목록에서 뺀** 키와 그 사유.

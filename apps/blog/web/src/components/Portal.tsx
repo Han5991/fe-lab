@@ -16,7 +16,9 @@ import { createPortal } from 'react-dom';
  * useSyncExternalStore로 서버 스냅샷(false)·클라이언트 스냅샷(true)을 구분해 하이드레이션
  * 불일치 없이 mount 여부를 판별한다(useEffect+setState 패턴 대비 lint·성능상 권장).
  */
-const emptySubscribe = () => () => {};
+const emptySubscribe = () => () => {
+  // 스토어가 변하지 않으므로 해지할 구독도 없다
+};
 
 export const Portal = ({ children }: { children: ReactNode }) => {
   const mounted = useSyncExternalStore(

@@ -191,7 +191,9 @@ describe('Diagram — 지저분한 children', () => {
    * 만나 콘솔 에러를 냈다("Encountered two children with the same key").
    */
   test('id가 겹쳐도 노드를 잃지 않고 React key 경고도 내지 않는다', () => {
-    const onError = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const onError = vi.spyOn(console, 'error').mockImplementation(() => {
+      // 호출 여부만 검사하고 콘솔 출력은 삼킨다
+    });
 
     const { container } = render(
       <Diagram label="중복 id">

@@ -20,7 +20,7 @@ export function parseArgs(argv: string[]): Options {
   const positional: string[] = [];
 
   for (let i = 0; i < argv.length; i++) {
-    // 루프 조건이 i < length 를 보장한다 (본문의 ++i 뒤에도 조건을 다시 지난다).
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- 루프 조건이 i < length 를 보장한다 (본문의 ++i 뒤에도 조건을 다시 지난다)
     const arg = argv[i]!;
     if (arg.startsWith('--')) {
       const eq = arg.indexOf('=');
@@ -162,8 +162,10 @@ function resolveDate(
  * `scheduledDate`는 **시각까지 지정할 때만** 필요한 선택 필드입니다.
  * 날짜만 주면 `date`가 KST 자정 기준 공개 시각으로 쓰이므로(visibility.ts) 중복입니다.
  */
-function needsScheduledDate(scheduledDate: string | undefined): boolean {
-  return Boolean(scheduledDate) && !/^\d{4}-\d{2}-\d{2}$/.test(scheduledDate!);
+function needsScheduledDate(
+  scheduledDate: string | undefined,
+): scheduledDate is string {
+  return scheduledDate ? !/^\d{4}-\d{2}-\d{2}$/.test(scheduledDate) : false;
 }
 
 export function buildFrontmatter(
@@ -176,7 +178,7 @@ export function buildFrontmatter(
   lines.push(`date: ${resolveDate(opts.status, opts.scheduledDate, now)}`);
   lines.push(`status: ${opts.status}`);
   if (needsScheduledDate(opts.scheduledDate)) {
-    lines.push(`scheduledDate: ${yamlQuote(opts.scheduledDate!)}`);
+    lines.push(`scheduledDate: ${yamlQuote(opts.scheduledDate)}`);
   }
   if (opts.slug) {
     lines.push(`slug: ${yamlQuote(opts.slug)}`);

@@ -23,7 +23,7 @@ function parseLines(raw: string): Line[] {
     .map(line => {
       const normalized = line.replace(/^\t+/, m => '  '.repeat(m.length));
       const indentMatch = normalized.match(/^( *)/);
-      // `( *)`는 매치에 항상 참여한다(빈 문자열 가능).
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- `( *)`는 매치에 항상 참여한다(빈 문자열 가능)
       const indent = indentMatch ? indentMatch[1]!.length : 0;
       const depth = Math.floor(indent / 2);
       const trimmed = normalized.trim();
@@ -56,11 +56,13 @@ export function FileTree({ children }: FileTreeProps) {
   const rendered: string[] = [];
   for (let i = 0; i < lines.length; i++) {
     // 루프 조건이 인덱스 범위를 보장한다 (아래 j 루프도 동일).
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- 위 주석: 루프 조건이 인덱스 범위 보장
     const line = lines[i]!;
     const ancestorContinues: boolean[] = [];
     for (let d = 1; d < line.depth; d++) {
       let hasMoreSibling = false;
       for (let j = i + 1; j < lines.length; j++) {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- 루프 조건 j < lines.length가 범위 보장
         const later = lines[j]!;
         if (later.depth < d) break;
         if (later.depth === d) {
@@ -72,6 +74,7 @@ export function FileTree({ children }: FileTreeProps) {
     }
     let isLast = true;
     for (let j = i + 1; j < lines.length; j++) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- 루프 조건 j < lines.length가 범위 보장
       const later = lines[j]!;
       if (later.depth < line.depth) break;
       if (later.depth === line.depth) {

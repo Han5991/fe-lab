@@ -110,10 +110,10 @@ async function requestOf(run: (c: any) => PromiseLike<unknown>, client: any) {
 }
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
-const SCENARIOS: Array<{
+const SCENARIOS: {
   name: string;
   run: (c: any) => PromiseLike<unknown>; // eslint-disable-line @typescript-eslint/no-explicit-any
-}> = [
+}[] = [
   {
     name: 'getTopPosts',
     run: c =>

@@ -61,6 +61,7 @@ export function getAllSeries(): SeriesSummary[] {
     ([id, { posts: ps, updated }], idx) => {
       const meta = getSeriesMeta(id);
       const colorKey =
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- length로 나눈 나머지 인덱스는 항상 범위 안
         SERIES_COLOR_MAP[id] ?? COLOR_FALLBACK[idx % COLOR_FALLBACK.length]!;
       return {
         id,

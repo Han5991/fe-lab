@@ -54,7 +54,9 @@ describe('useViewCount', () => {
   });
 
   test('RPC가 reject돼도 throw하지 않고, 쿠키 가드로 재마운트 시 재호출 안 함', async () => {
-    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {
+      // 호출 여부만 검사하고 콘솔 출력은 삼킨다
+    });
     incrementViewCount.mockRejectedValueOnce(new Error('rpc fail'));
 
     renderHook(() => useViewCount('fail-post'));

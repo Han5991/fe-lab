@@ -216,7 +216,7 @@ function placeRow(nodes: DiagramNodeSpec[]): PlacedNode[] {
  * 병렬 갈래"라는 뜻이 흐려진다.
  */
 function placeFan(nodes: DiagramNodeSpec[]): PlacedNode[] {
-  // 호출부가 nodes.length > 1 일 때만 팬아웃을 고르므로 첫 노드는 항상 있다.
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- 호출부가 nodes.length > 1 일 때만 팬아웃을 고르므로 첫 노드는 항상 있다
   const source = nodes[0]!;
   const targets = nodes.slice(1);
 
@@ -334,6 +334,7 @@ function autoEdges(
   const defaults = { flow: 'sync', emphasis: false, arrow: true } as const;
 
   if (direction === 'fan' && nodes.length > 1) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- 위 분기에서 nodes.length > 1 확인
     const source = nodes[0]!;
     return nodes
       .slice(1)
@@ -343,6 +344,7 @@ function autoEdges(
   // slice(0, -1) 위를 돌므로 index + 1은 항상 원본 범위 안이다.
   return nodes.slice(0, -1).map((node, index) => ({
     from: node.id,
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- 위 주석: slice(0, -1)이라 index + 1은 범위 안
     to: nodes[index + 1]!.id,
     ...defaults,
   }));

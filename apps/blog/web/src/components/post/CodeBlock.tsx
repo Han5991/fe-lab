@@ -53,7 +53,9 @@ export const LANGUAGE_MODULES: Record<PrismLanguageName, unknown> = {
 };
 
 /** refractor가 문법 함수에 넘겨주는 인스턴스 중 우리가 건드리는 부분만. */
-type Refractor = { languages: Record<string, unknown> };
+interface Refractor {
+  languages: Record<string, unknown>;
+}
 type Grammar = ((refractor: Refractor) => void) & { displayName: string };
 
 /**

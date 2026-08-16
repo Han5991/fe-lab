@@ -92,7 +92,7 @@ export function parsePost(
 
   // 상대 경로에서 series / rawSlug 계산. '/'와 '\\' 모두 분할해 OS 무관 처리.
   const parts = relPath.split(/[/\\]/);
-  // split은 빈 배열을 만들지 않으므로 마지막 원소는 항상 존재합니다.
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- split은 빈 배열을 만들지 않으므로 마지막 원소는 항상 존재
   const fileName = parts[parts.length - 1]!.replace(/\.(md|mdx)$/, '');
   const currentPath = parts.slice(0, -1).join('/');
   const rawSlug = currentPath ? `${currentPath}/${fileName}` : fileName;
