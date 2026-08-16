@@ -27,7 +27,7 @@
     "@types/estree": "^1.0.9",
     "@types/node": "^25.9.5",
     "tsdown": "0.22.14",
-    "tsx": "^4.23.11",
+    "tsx": "^4.23.12",
     "typescript": "catalog:"
   },
   "dependencies": {
