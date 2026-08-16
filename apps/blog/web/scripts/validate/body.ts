@@ -70,7 +70,9 @@ export function validateImageReferences(
   // raw `<img>`는 이 저장소 50개 글에 **0건**이다.
   // MARKDOWN_IMAGE의 두 캡처 그룹은 매치에 항상 참여합니다(1번은 빈 문자열 가능).
   const found = [...prose.matchAll(MARKDOWN_IMAGE)].map(m => ({
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- 위 주석: 캡처 그룹은 매치에 항상 참여
     alt: m[1]!,
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- 위 주석: 캡처 그룹은 매치에 항상 참여
     ref: m[2]!,
     index: m.index,
   }));
@@ -99,7 +101,7 @@ export function validateImageReferences(
       continue;
     }
 
-    // split은 빈 배열을 만들지 않으므로 [0]은 항상 존재합니다.
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- split은 빈 배열을 만들지 않으므로 [0]은 항상 존재
     const cleanRef = decodeUrlSafe(ref.split('#')[0]!.split('?')[0]!);
     const resolved = resolve(dirname(absPath), cleanRef);
     if (!existsSync(resolved)) {
@@ -181,7 +183,9 @@ export function scanBodyLines(content: string): ScanResult {
     }
 
     // 2·3번 캡처 그룹은 매치에 항상 참여합니다(3번은 빈 문자열 가능).
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- 위 주석: 캡처 그룹은 매치에 항상 참여
     const marker = m[2]!;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- 위 주석: 캡처 그룹은 매치에 항상 참여
     const rest = m[3]!;
     const char = marker.charAt(0);
     const length = marker.length;
@@ -214,7 +218,7 @@ export function scanBodyLines(content: string): ScanResult {
     // validateCodeFenceLanguages가 `unclosed-fence`로 따로 알린다 — 라벨 오타보다
     // "펜스가 안 닫혔다"가 더 큰 문제이고, 산문의 `~~~~ 구분선`을 언어 이름으로
     // 보고하는 모순도 사라진다.
-    // openedAt의 인덱스는 전부 위 forEach에서 result에 push된 줄이다.
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- openedAt의 인덱스는 전부 위 forEach에서 result에 push된 줄
     result[index] = { ...result[index]!, inFence: false, opensFence: null };
   }
 
@@ -256,7 +260,7 @@ export function validateCodeFenceLanguages(
     if (!opensFence) continue;
 
     // ```ts title="a.ts" 처럼 뒤에 메타가 붙는 경우 첫 토큰만 언어다.
-    // split은 빈 배열을 만들지 않으므로 [0]은 항상 존재합니다.
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- split은 빈 배열을 만들지 않으므로 [0]은 항상 존재
     const label = opensFence.split(/[\s,{]/)[0]!.toLowerCase();
     if (!label || SUPPORTED_FENCE_LABELS.has(label)) continue;
 

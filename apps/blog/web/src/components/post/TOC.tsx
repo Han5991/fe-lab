@@ -117,6 +117,7 @@ export function measureLengths(d: string, rows: Row[]): [number, number][] {
     // 때까지 1px씩 전진한다. 그 사이에 곡선이 있으면 자연히 더 걸린다.
     // i > 0 이면 직전 반복이 out[i-1]을 넣었고 rows[i-1]도 존재한다.
     let at =
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- 위 주석: i > 0 이면 둘 다 존재
       i === 0 ? row.top : out[i - 1]![1] + (row.top - rows[i - 1]!.bottom);
     while (at < total && probe.getPointAtLength(at).y < row.top) at += 1;
     // 끝도 같은 방식으로 실측한다. 세로 높이만 더하면, 단이 바뀌어 자기

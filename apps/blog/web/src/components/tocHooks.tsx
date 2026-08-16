@@ -112,7 +112,7 @@ export const useTocHook = () => {
         }
       });
 
-      // effect 첫 줄에서 toc.length > 0 을 확인했고 current는 forEach 인덱스다.
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- effect 첫 줄에서 toc.length > 0 을 확인했고 current는 forEach 인덱스다
       const currentId = toc[current]!.id;
       setActiveId(prev => (prev === currentId ? prev : currentId));
       // 헤딩이 하나도 안 보이는 구간(긴 절의 한복판)에서는 구간을 만들 수

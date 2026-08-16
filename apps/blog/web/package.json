@@ -9,7 +9,7 @@
     "prebuild": "npx tsx scripts/build-content.ts --strict",
     "build": "pnpm prebuild && next build && pnpm check-seo",
     "start": "next start",
-    "lint": "eslint .",
+    "lint": "eslint . --max-warnings=5",
     "lint:posts": "npx tsx scripts/validate-posts.ts",
     "check-seo": "npx tsx scripts/check-seo.ts",
     "check-types": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json --noEmit",
@@ -48,6 +48,8 @@
     "remark-gfm": "^4.0.1"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@next/eslint-plugin-next": "^16.3.0",
     "@pandacss/dev": "catalog:",
     "@resvg/resvg-js": "^2.6.2",
     "@testing-library/dom": "^10.4.1",
@@ -61,14 +63,17 @@
     "babel-plugin-react-compiler": "^1.0.0",
     "c8": "^12.0.0",
     "eslint": "^10.8.1",
-    "eslint-config-next": "16.3.0",
+    "eslint-import-resolver-typescript": "^4.4.5",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
     "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.9.0",
     "jsdom": "^30.0.1",
     "satori": "^0.29.0",
     "sharp": "0.35.3",
     "supabase": "^2.113.0",
     "tsx": "^4.23.11",
     "typescript": "catalog:",
+    "typescript-eslint": "^8.67.0",
     "vitest": "^4.1.10"
   }
 }

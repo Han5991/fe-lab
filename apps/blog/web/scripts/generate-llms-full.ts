@@ -75,7 +75,7 @@ export function buildLlmsFullText(
       const excerpt = post.excerpt
         ? post.excerpt.slice(0, 200)
         : post.content
-            .replace(/[#`*\[\]]/g, '')
+            .replace(/[#`*[\]]/g, '')
             .trim()
             .slice(0, 200);
       const tags = post.tags?.length ? ` Tags: ${post.tags.join(', ')}.` : '';
@@ -102,7 +102,7 @@ export function buildLlmsFullText(
       const excerpt = post.excerpt
         ? post.excerpt.slice(0, 200)
         : post.content
-            .replace(/[#`*\[\]]/g, '')
+            .replace(/[#`*[\]]/g, '')
             .trim()
             .slice(0, 200);
       const tags = post.tags?.length ? ` Tags: ${post.tags.join(', ')}.` : '';

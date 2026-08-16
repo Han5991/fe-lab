@@ -297,13 +297,16 @@ test('unknown-frontmatter-key: 일부러 뺀 키는 오타 안내 대신 거부 
 });
 
 test('unknown-frontmatter-key: series/order도 거부 사유를 알린다', () => {
-  const found = (key: string) =>
-    validatePost(
+  const messageFor = (key: string) => {
+    const found = validatePost(
       rec({ title: 'x', status: 'published', [key]: 'x' }),
       '---\n---\n',
     ).find(i => i.rule === 'unknown-frontmatter-key');
-  assert.match(found('series')!.message, /폴더 경로로 결정/);
-  assert.match(found('order')!.message, /_series\.yml/);
+    assert.ok(found, `${key}에 unknown-frontmatter-key 이슈가 없다`);
+    return found.message;
+  };
+  assert.match(messageFor('series'), /폴더 경로로 결정/);
+  assert.match(messageFor('order'), /_series\.yml/);
 });
 
 test('unknown-frontmatter-key: published는 내지 않는다 — legacy-published-field가 이미 정확히 알린다', () => {

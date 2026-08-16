@@ -86,7 +86,9 @@ beforeEach(() => {
   vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) =>
     frames.push(cb),
   );
-  vi.stubGlobal('cancelAnimationFrame', () => {});
+  vi.stubGlobal('cancelAnimationFrame', () => {
+    // frames 큐를 직접 비우며 진행하므로 취소를 흉내 낼 필요가 없다
+  });
 });
 
 afterEach(() => {

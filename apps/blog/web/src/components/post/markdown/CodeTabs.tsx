@@ -57,11 +57,11 @@ interface Collected {
   rest: ReactNode[];
 }
 
-type CodeElementProps = {
+interface CodeElementProps {
   'data-tab'?: string;
   className?: string;
   children?: ReactNode;
-};
+}
 
 /**
  * fenced code는 `<pre><code/></pre>`로 오므로 한 겹 벗긴다.
@@ -135,7 +135,7 @@ export function CodeTabs({ children }: { children?: ReactNode }) {
   // 그대로 흘려보낸다.
   if (items.length === 0) return <>{children}</>;
 
-  // 위에서 items.length > 0 을 확인했고 active ≥ 0 이라 인덱스는 항상 범위 안이다.
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- 위에서 items.length > 0 을 확인했고 active ≥ 0 이라 인덱스는 항상 범위 안
   const current = items[Math.min(active, items.length - 1)]!;
 
   // ←/→ 로 옮기고 Home/End 로 양 끝으로 간다(WAI-ARIA tabs 패턴). 버튼만

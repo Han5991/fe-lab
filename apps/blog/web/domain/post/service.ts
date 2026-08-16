@@ -104,7 +104,8 @@ export function pickAdjacent(
   let list = posts;
 
   if (options?.filterTag) {
-    list = list.filter(p => p.tags?.includes(options.filterTag!));
+    const { filterTag } = options;
+    list = list.filter(p => p.tags?.includes(filterTag));
   }
 
   if (options?.filterSeries) {

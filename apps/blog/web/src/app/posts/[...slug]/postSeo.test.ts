@@ -161,7 +161,7 @@ describe('buildPostMetadata', () => {
     // JSON-LD의 datePublished와 동일한 KST ISO 8601 형식
     expect(og.publishedTime).toBe('2025-01-02T00:00:00+09:00');
     expect(og.url).toBe(postPath('a'));
-    const img = (og.images as Array<Record<string, unknown>>)[0];
+    const img = (og.images as Record<string, unknown>[])[0];
     expect(img.width).toBe(1200);
     expect(img.height).toBe(630);
     expect(img.alt).toBe('테스트 글');
@@ -185,7 +185,7 @@ describe('buildPostMetadata', () => {
   test('thumbnail 없으면 OG images[0].url = 빌드 시 생성되는 글별 OG 카드', () => {
     const og = buildPostMetadata(makePost({ thumbnail: undefined }), 'a')
       .openGraph as Record<string, unknown>;
-    const img = (og.images as Array<Record<string, unknown>>)[0];
+    const img = (og.images as Record<string, unknown>[])[0];
     expect(img.url).toBe(`${SITE}/og/a.png`);
   });
 
@@ -194,7 +194,7 @@ describe('buildPostMetadata', () => {
       makePost({ thumbnail: undefined }),
       '번들러/3편',
     ).openGraph as Record<string, unknown>;
-    const img = (og.images as Array<Record<string, unknown>>)[0];
+    const img = (og.images as Record<string, unknown>[])[0];
     expect(img.url).toBe(
       `${SITE}/og/%EB%B2%88%EB%93%A4%EB%9F%AC/3%ED%8E%B8.png`,
     );
@@ -205,7 +205,7 @@ describe('buildPostMetadata', () => {
       makePost({ thumbnail: 'cover.png', relativeDir: '번들러' }),
       'a',
     ).openGraph as Record<string, unknown>;
-    const img = (og.images as Array<Record<string, unknown>>)[0];
+    const img = (og.images as Record<string, unknown>[])[0];
     expect(img.url as string).toMatch(new RegExp(`^${SITE}/posts/`));
     expect(img.url as string).toContain('cover.png');
   });
@@ -285,7 +285,7 @@ describe('buildBreadcrumbJsonLd', () => {
   test('Home > Posts > 글제목 3단계', () => {
     const bc = buildBreadcrumbJsonLd({ title: '테스트 글' }, '번들러/3편');
     expect(bc['@type']).toBe('BreadcrumbList');
-    const items = bc.itemListElement as Array<Record<string, unknown>>;
+    const items = bc.itemListElement as Record<string, unknown>[];
     expect(items).toHaveLength(3);
     expect(items[0]).toMatchObject({
       position: 1,

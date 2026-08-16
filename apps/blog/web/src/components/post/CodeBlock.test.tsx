@@ -17,7 +17,9 @@ import { mermaidContainerStyle } from './MermaidChart';
 vi.mock('mermaid', () => ({ default: {} }));
 
 /** refractor 인스턴스 중 registerOnce가 건드리는 부분만. */
-type FakeRefractor = { languages: Record<string, unknown> };
+interface FakeRefractor {
+  languages: Record<string, unknown>;
+}
 type FakeGrammar = ((refractor: FakeRefractor) => void) & {
   displayName: string;
 };
@@ -38,7 +40,12 @@ describe('registerOnce', () => {
   test('감싼 함수의 displayName이 넘긴 이름과 같다', () => {
     // refractor의 가드가 조회하는 키가 바로 이 값이다. 원본 모듈의
     // displayName('js-extras' 등)을 잃으면 가드가 엉뚱한 키를 본다.
-    expect(registerOnce(() => {}, 'js-extras').displayName).toBe('js-extras');
+    const noopGrammar = () => {
+      // displayName 전파만 보므로 패치 내용은 필요 없다
+    };
+    expect(registerOnce(noopGrammar, 'js-extras').displayName).toBe(
+      'js-extras',
+    );
   });
 
   test('첫 호출에서 원본 패치가 그대로 실행된다', () => {
@@ -57,7 +64,9 @@ describe('registerOnce', () => {
     // 그래서 키를 대신 심어주지 않으면 refractor 가드가 영영 안 걸린다.
     const refractor = emptyRefractor();
 
-    registerOnce(() => {}, 'js-extras')(refractor);
+    registerOnce(() => {
+      // 자기 이름 키를 남기지 않는 js-extras류 패치를 흉내 낸다
+    }, 'js-extras')(refractor);
 
     expect(Object.hasOwn(refractor.languages, 'js-extras')).toBe(true);
   });

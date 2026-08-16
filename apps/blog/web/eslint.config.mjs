@@ -1,57 +1,112 @@
-import { createRequire } from 'node:module';
-
+import js from '@eslint/js';
+import nextPlugin from '@next/eslint-plugin-next';
 import { defineConfig } from 'eslint/config';
-import nextCoreWebVitals from 'eslint-config-next/core-web-vitals';
-import nextTypescript from 'eslint-config-next/typescript';
+import jsxA11y from 'eslint-plugin-jsx-a11y';
 import reactHooks from 'eslint-plugin-react-hooks';
+import globals from 'globals';
+import tseslint from 'typescript-eslint';
 
-// eslint-config-next는 `settings.react.version: 'detect'`를 넣는데, 그 자동 감지
-// 경로(eslint-plugin-react `util/version.js`의 resolveBasedir)가 ESLint 10에서
-// 제거된 `context.getFilename()`을 폴백 없이 호출해 린트가 통째로 죽습니다
-// (TypeError: contextOrFilename.getFilename is not a function).
-// 버전을 문자열로 주면 'detect' 분기 자체를 타지 않아 크래시를 피합니다.
-// 하드코딩 대신 실제 설치된 react를 읽어 'detect'와 같은 값을 유지합니다 —
-// catalog에서 react를 올려도 따라옵니다.
-// eslint-plugin-react가 ESLint 10을 지원하면(peer에 ^10 추가) 이 블록은 제거 가능.
-const reactVersion = createRequire(import.meta.url)(
-  'react/package.json',
-).version;
-
-// flat config의 settings 병합은 최상위 키 단위라, `settings.react`를 그냥 쓰면
-// 상위 설정이 넣은 react 하위 키가 통째로 날아갑니다(`import/*` 키는 남지만
-// react 하위는 교체됨). 지금 eslint-config-next가 넣는 건 version 하나뿐이라
-// 손실이 없지만, 나중에 pragma 같은 키가 추가되면 조용히 사라지므로 상속값을
-// 먼저 모아 두고 version만 덮어씁니다.
-const inheritedReactSettings = [...nextCoreWebVitals, ...nextTypescript].reduce(
-  (acc, config) => ({ ...acc, ...(config.settings?.react ?? {}) }),
-  {},
-);
-
+/**
+ * ESLint 10 구성 — `eslint-config-next`를 걷어내고 플러그인을 직접 조립한다.
+ *
+ * 프리셋이 끌고 오는 eslint-plugin-react@7.x가 ESLint 10에서 제거된
+ * `context.getFilename()`을 가드 없이 호출해(util/version.js의 version:'detect'
+ * 경로) 린트가 통째로 죽는다. 여기서 조립하는 플러그인들은 전부 ESLint 10에서
+ * 동작을 실측한 조합이다. react 계열 정적 검사는 react-hooks recommended-latest
+ * (React Compiler 진단 룰 포함)가 담당한다 — next.config.ts의 reactCompiler와 짝.
+ *
+ * 타입 정보가 필요한 *-type-checked 룰셋은 여기 없다 — 별도 PR 몫.
+ */
 export default defineConfig([
   {
-    ignores: ['.next/**', 'out/**', 'public/**', 'supabase/**'],
+    ignores: [
+      '.next/**',
+      'out/**',
+      'build/**',
+      'public/**',
+      'supabase/**',
+      '.cache/**',
+      'next-env.d.ts',
+    ],
   },
-  // core-web-vitals가 react recommended + react-hooks v7(recommended-latest의
-  // React Compiler 진단 룰: purity/immutability/refs/set-state-in-render 등)을
-  // 이미 error로 포함합니다. next.config.ts의 reactCompiler: true와 짝.
-  ...nextCoreWebVitals,
-  ...nextTypescript,
-  // 위 두 설정이 넣은 `react.version: 'detect'`를 덮어씁니다. 순서 의존적이라
-  // nextCoreWebVitals 뒤에 와야 합니다.
+
   {
-    settings: {
-      react: { ...inheritedReactSettings, version: reactVersion },
+    // `eslint .`가 순회할 확장자 등록 + 전역 식별자. 이 앱은 빌드 스크립트(node)와
+    // 클라이언트 컴포넌트(browser)가 한 트리에 있어 둘 다 연다 — config-next가
+    // 넣어 주던 것과 같은 조합이다.
+    files: ['**/*.{js,jsx,mjs,cjs,ts,tsx,mts,cts}'],
+    languageOptions: {
+      globals: { ...globals.browser, ...globals.node },
     },
   },
+
+  // ── 기본 룰셋: 코어 recommended → typescript-eslint strict + stylistic ──
+  // 순서가 중요하다 — tseslint 프리셋 안의 eslint-recommended 오버라이드가
+  // TS 파일에서 코어 no-undef·no-unused-vars 등(컴파일러가 이미 잡는 것)을
+  // 꺼 주므로 코어를 먼저 두고 ts를 뒤에 둔다. strict는 recommended의 상위집합.
+  js.configs.recommended,
+  ...tseslint.configs.strict,
+  ...tseslint.configs.stylistic,
+
+  nextPlugin.configs['core-web-vitals'],
   {
-    // recommended-latest 중 core-web-vitals에서 유일하게 빠진 컴파일러 룰.
-    // core-web-vitals와 동일한 플러그인 인스턴스라 재등록 충돌 없음.
-    files: ['**/*.{ts,tsx,js,jsx}'],
-    plugins: { 'react-hooks': reactHooks },
+    // 모노레포에서 lint 실행 cwd가 앱 루트라는 보장이 없으므로 명시한다.
+    // 없으면 @next/next/no-html-link-for-pages가 cwd에서 pages/·app/을 찾는다.
+    settings: { next: { rootDir: import.meta.dirname } },
+  },
+
+  reactHooks.configs.flat['recommended-latest'],
+
+  jsxA11y.flatConfigs.recommended,
+  {
     rules: {
-      'react-hooks/void-use-memo': 'error',
+      // 스크롤 표 래퍼(role="region"+aria-label+tabIndex=0, PostClient.tsx)는 axe
+      // scrollable-region-focusable이 요구하는 패턴이다 — 마우스 없이 스크롤할
+      // 방법이 있어야 한다. 룰 기본 허용 목록(tabpanel)에 region을 더한다.
+      'jsx-a11y/no-noninteractive-tabindex': [
+        'error',
+        { roles: ['tabpanel', 'region'] },
+      ],
+      // 아래 4개의 현행 위반(MobileTOC li onClick, CodeTabs tablist,
+      // SearchDialog 백드롭)은 키보드 동선 설계 — 핸들러·role 추가 = DOM/동작
+      // 변경 — 가 필요하다. 동작 무변경이 원칙인 이 PR에서는 에러로 못 올리므로
+      // 경고로 남겨 두고, 후속에서 설계로 풀면서 에러로 올린다.
+      'jsx-a11y/click-events-have-key-events': 'warn',
+      'jsx-a11y/no-noninteractive-element-interactions': 'warn',
+      'jsx-a11y/interactive-supports-focus': 'warn',
+      'jsx-a11y/no-static-element-interactions': 'warn',
     },
   },
+
+  {
+    // Supabase CLI(`supabase gen types`) 생성 파일 — 손대면 재생성 때 되돌아온다.
+    // 생성기 출력 형태(type 별칭·인덱스 시그니처)에 스타일 룰을 묻지 않는다.
+    files: ['lib/database.types.ts'],
+    rules: {
+      '@typescript-eslint/consistent-type-definitions': 'off',
+      '@typescript-eslint/consistent-indexed-object-style': 'off',
+    },
+  },
+
+  {
+    // 별칭(@/)·확장자 없는 import의 경로 해석기. config-next가 사설 트리로
+    // 제공하던 것을 명시 선언으로 바꾼다. 지금 이 설정을 읽는 룰은 없지만,
+    // eslint-module-utils 기반 플러그인(boundaries 등)이 들어오는 즉시 이게
+    // 없으면 별칭 import가 전부 미해석된다(옆 저장소 실측 104건).
+    settings: {
+      'import/resolver': {
+        typescript: { alwaysTryTypes: true },
+      },
+    },
+  },
+
+  {
+    linterOptions: {
+      reportUnusedDisableDirectives: 'error',
+      reportUnusedInlineConfigs: 'error',
+    },
+  },
+
   {
     rules: {
       // `_` prefix 식별자는 의도적 미사용으로 간주 (destructuring rest 패턴 등)

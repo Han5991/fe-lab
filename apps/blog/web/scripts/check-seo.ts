@@ -63,7 +63,7 @@ function metaContent(html: string, key: string): string | null {
     'i',
   );
   const m = html.match(forward) ?? html.match(backward);
-  // 두 패턴 모두 1번 캡처 그룹이 매치에 항상 참여합니다.
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- 두 패턴 모두 1번 캡처 그룹이 매치에 항상 참여
   return m ? decodeEntities(m[1]!) : null;
 }
 
@@ -106,8 +106,10 @@ export function parsePageSeo(html: string): PageSeo {
     html.match(/<link[^>]*href="([^"]*)"[^>]*rel="canonical"/i);
   const robots = metaContent(html, 'robots');
   return {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- 패턴의 1번 캡처 그룹은 매치에 항상 참여
     title: titleMatch ? decodeEntities(titleMatch[1]!).trim() : null,
     description: metaContent(html, 'description'),
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- 패턴의 1번 캡처 그룹은 매치에 항상 참여
     canonical: canonicalMatch ? decodeEntities(canonicalMatch[1]!) : null,
     ogSiteName: metaContent(html, 'og:site_name'),
     ogLocale: metaContent(html, 'og:locale'),
