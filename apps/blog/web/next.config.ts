@@ -21,7 +21,10 @@ const nextConfig: NextConfig = {
   //
   // babel-plugin-react-compiler는 지우면 안 된다 — prod 빌드가 여전히 이 경로를 쓴다.
   experimental: isDev ? { turbopackRustReactCompiler: true } : {},
-  output: isDev ? undefined : 'export',
+  // dev에서는 키를 생략한다. 예전의 `output: undefined`와 동등하다 — 이 객체의
+  // 유일한 소비자인 next의 assignDefaults(dist/server/config.js)가 undefined 값을
+  // 키째 건너뛰므로, 키 유무는 관찰되지 않는다(exactOptionalPropertyTypes 대응).
+  ...(isDev ? {} : { output: 'export' as const }),
   trailingSlash: true,
   images: {
     unoptimized: true,

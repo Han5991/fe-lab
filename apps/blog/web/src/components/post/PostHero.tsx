@@ -9,9 +9,9 @@ interface PostHeroProps {
    * 예전에는 이 매핑이 slug → 컴포넌트로 이 파일에 하드코딩돼 있어서, 글에
    * 다이어그램을 붙이려면 코드를 고쳐야 했다. 이제 글이 스스로 지정한다.
    */
-  hero?: string;
+  hero?: string | undefined;
   /** frontmatter thumbnail이 있을 때만 채워진다(page.tsx에서 분기) */
-  thumbnailUrl?: string;
+  thumbnailUrl?: string | undefined;
 }
 
 /**

@@ -6,7 +6,7 @@ export interface SeriesSummary {
   id: string;
   title: string;
   count: number;
-  description?: string;
+  description?: string | undefined;
   updated: string | null;
   /** 시리즈 컬러 키 — bundler/typescript-patterns/oss-diary 외에는 round-robin */
   colorKey: 'accent' | 'marker' | 'moss';

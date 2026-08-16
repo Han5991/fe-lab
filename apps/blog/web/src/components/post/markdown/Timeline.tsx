@@ -22,10 +22,10 @@ import {
  */
 
 interface TimelineStep {
-  title?: string;
-  desc?: string;
+  title?: string | undefined;
+  desc?: string | undefined;
   /** 문서상 값은 'fail' | 'success'. raw HTML은 임의 문자열이 올 수 있어 넓게 받는다. */
-  result?: string;
+  result?: string | undefined;
 }
 
 function isTimelineStep(candidate: unknown): candidate is TimelineStep {
@@ -117,9 +117,9 @@ const stepDesc = css({
 });
 
 interface StepProps {
-  title?: string;
-  desc?: string;
-  result?: string;
+  title?: string | undefined;
+  desc?: string | undefined;
+  result?: string | undefined;
   children?: ReactNode;
   /**
    * 마지막 스텝이면 아이콘 아래 연결선을 그리지 않는다. Timeline이 주입하며,

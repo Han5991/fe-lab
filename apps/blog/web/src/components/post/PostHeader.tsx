@@ -8,7 +8,8 @@ import { fmtDate } from '@/lib/format';
 interface PostHeaderProps {
   post: PostData;
   /** 시리즈 내 위치 — 있다면 `시리즈 · {표시명} 3/3` 배지로 표시 */
-  seriesIndex?: { current: number; total: number; displayName: string };
+  seriesIndex?:
+    { current: number; total: number; displayName: string } | undefined;
 }
 
 // 메타 줄(mono 12px) 안에서 태그를 해시태그로 인라인시킨다. 별도 pill 그룹을

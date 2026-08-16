@@ -31,7 +31,9 @@ const tocItem = cva({
   defaultVariants: { level: 1, active: false },
 });
 
-type TocLevel = RecipeVariant<typeof tocItem>['level'];
+// RecipeVariant의 variant prop은 optional이라 exactOptionalPropertyTypes에서는
+// undefined가 유니언에 남는다 — 값 타입으로 쓰는 여기서는 걷어낸다.
+type TocLevel = NonNullable<RecipeVariant<typeof tocItem>['level']>;
 
 // variantMap의 값은 런타임에 Object.keys 산물이라 문자열이다 — 숫자 level과
 // 비교하려면 되돌려야 한다.

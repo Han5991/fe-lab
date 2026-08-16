@@ -51,11 +51,11 @@ import {
 export interface DiagramNodeTagProps {
   /** `<diagram-edge from/to>` 가 참조한다. 생략하면 순번으로 자동 부여. */
   id?: string;
-  title?: string;
+  title?: string | undefined;
   /** 핸드오프 §4: 5단어 이내. */
-  desc?: string;
+  desc?: string | undefined;
   /** `gray`(구조) | `accent`(핵심 경로). 그 외 값은 gray로 떨어진다. */
-  tone?: string;
+  tone?: string | undefined;
   /** `box`(rx 8) | `pill`(rx height/2). */
   shape?: string;
   children?: ReactNode;
@@ -89,7 +89,7 @@ export function DiagramEdgeTag(_props: DiagramEdgeTagProps): null {
 
 export interface DiagramProps {
   /** `role="img"` 의 aria-label. 없으면 장식으로 보고 접근성 트리에서 감춘다. */
-  label?: string;
+  label?: string | undefined;
   /** 다이어그램 아래 중앙 주석(레퍼런스의 "↻ 실패 시 자동 롤백"). */
   caption?: string;
   /** `row`(좌→우 체인, 기본) | `fan`(첫 노드에서 팬아웃). */
@@ -198,7 +198,13 @@ export function Diagram({
  * 개발 중에만 눈에 띄는 블록으로 알린다 — 오타를 배포 전에 잡는 건
  * `lint:posts`(`unknown-hero-diagram`)의 몫이고, 여기는 마지막 안전망이다.
  */
-function NamedDiagram({ name, label }: { name: string; label?: string }) {
+function NamedDiagram({
+  name,
+  label,
+}: {
+  name: string;
+  label?: string | undefined;
+}) {
   // `getDiagram(name)`이 아니라 맵을 직접 인덱싱한다 — react-hooks/static-components는
   // "함수 호출로 얻은 컴포넌트"를 렌더 중 생성으로 보고 막는다(PostHero와 같은 이유).
   const Registered = isDiagramName(name) ? DIAGRAMS[name] : undefined;

@@ -28,11 +28,11 @@ export function isPostFile<T extends { status?: unknown }>(
 }
 
 export interface VisibilityData {
-  status?: string;
+  status?: string | undefined;
   // analytics의 PostStatDetail은 빈 값을 null로 정규화해 들고 옵니다.
   // `scheduledDate ?? date` 폴백이 null도 그대로 처리하므로 타입만 넓혀 받습니다.
-  scheduledDate?: string | null;
-  date?: string | null;
+  scheduledDate?: string | null | undefined;
+  date?: string | null | undefined;
 }
 
 /**

@@ -6,8 +6,8 @@ import 'react-medium-image-zoom/dist/styles.css';
 import { resolvePostAssetUrl } from '@/domain/post/assetUrl';
 
 interface MarkdownImageProps {
-  src?: string;
-  alt?: string;
+  src?: string | undefined;
+  alt?: string | undefined;
   relativeDir?: string;
 }
 

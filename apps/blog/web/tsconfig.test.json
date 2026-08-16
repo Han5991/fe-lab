@@ -6,7 +6,9 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     // 프로덕션 전용 엄격 플래그 — 테스트 코드(및 테스트가 끌어오는 검사)에는 끈다.
-    "noUncheckedIndexedAccess": false
+    "noUncheckedIndexedAccess": false,
+    "noPropertyAccessFromIndexSignature": false,
+    "exactOptionalPropertyTypes": false
   },
   "include": [
     "next-env.d.ts",

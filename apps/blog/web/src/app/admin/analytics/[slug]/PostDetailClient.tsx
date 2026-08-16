@@ -60,10 +60,10 @@ const DOW_LABELS = ['일', '월', '화', '수', '목', '금', '토'];
 function PostDetailContent() {
   const params = useParams();
   const slug =
-    typeof params.slug === 'string'
-      ? params.slug
-      : Array.isArray(params.slug)
-        ? params.slug.join('/')
+    typeof params['slug'] === 'string'
+      ? params['slug']
+      : Array.isArray(params['slug'])
+        ? params['slug'].join('/')
         : '';
 
   const { post, hourly, dow, derived } = usePostDetailStats(slug);

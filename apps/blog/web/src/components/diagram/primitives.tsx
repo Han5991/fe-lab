@@ -57,7 +57,7 @@ interface DiagramFrameProps {
    * 의미 있는 다이어그램이면 설명을 준다 → `role="img"` + `aria-label`.
    * 생략하면 장식으로 보고 `aria-hidden` 처리한다(접근성 규칙: 스펙 §8).
    */
-  label?: string;
+  label?: string | undefined;
   children: ReactNode;
 }
 
@@ -133,10 +133,10 @@ interface DiagramNodeProps {
   height: number;
   /** 핸드오프 §4 기본값. 작은 장식 노드나 pill 모양일 때만 바꾼다. */
   rx?: number;
-  tone?: DiagramTone;
-  title?: string;
+  tone?: DiagramTone | undefined;
+  title?: string | undefined;
   /** 5단어 이내(핸드오프 §4). */
-  subtitle?: string;
+  subtitle?: string | undefined;
 }
 
 export function DiagramNode({

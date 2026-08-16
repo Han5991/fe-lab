@@ -13,7 +13,7 @@ const THUMB_HEIGHT = 92;
 interface FeaturedPostProps {
   post: PostSummary;
   /** `시리즈 · 번들러 만들기 2/5` 형태. 시리즈에 속하지 않으면 생략. */
-  seriesLabel?: string;
+  seriesLabel?: string | undefined;
 }
 
 export const FeaturedPost = ({ post, seriesLabel }: FeaturedPostProps) => {

@@ -213,7 +213,7 @@ export function CopyButton({ content }: { content: string }) {
 
 interface CodeBlockProps {
   node?: unknown;
-  className?: string;
+  className?: string | undefined;
   children?: React.ReactNode;
   /** ```ts title="lib/foo.ts" — rehypeCodeMeta가 승격해 준 파일명. */
   'data-title'?: string;

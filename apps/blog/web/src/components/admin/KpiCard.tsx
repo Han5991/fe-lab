@@ -6,7 +6,7 @@ import { Sparkline } from '@/src/components/blog/Sparkline';
 interface KpiCardProps {
   num: string;
   label: string;
-  delta?: number;
+  delta?: number | undefined;
   small?: string;
   series?: number[];
 }
