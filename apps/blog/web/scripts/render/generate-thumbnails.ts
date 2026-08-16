@@ -7,32 +7,31 @@ import {
   rmSync,
   writeFileSync,
 } from 'node:fs';
-import { dirname, join, resolve, sep } from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { dirname, join, sep } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import sharp from 'sharp';
 import { POST_SETS } from '../artifacts';
 import { thumbnailWebpRelPath } from '../../domain/post/thumbnail';
 import type { PostData } from '../../domain/post/types';
+import { CONTENT } from '../../lib/shared/contentConfig';
+import { CONTENT_PATHS } from '../../lib/shared/contentPaths';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-// scripts/render/ 아래 두 단계 위가 앱 루트다.
-const ROOT = resolve(__dirname, '..', '..');
-const POSTS_SOURCE_DIR = resolve(ROOT, '..', 'posts');
+const POSTS_SOURCE_DIR = CONTENT_PATHS.postsDir;
 
 /**
  * 생성물은 public/posts/가 아니라 public/thumbs/에 둡니다.
  *
  * sync-posts.mjs는 public/posts/ 안에서 posts/에 원본이 없는 미디어를 orphan으로
  * 삭제하고(.webp도 대상), build-content의 phase 2에서 두 단계가 병렬로 돌기 때문에
- * 같은 디렉터리를 쓰면 생성물이 지워질 수 있습니다. 디렉터리를 분리해 서로의
- * 산출물에 손대지 않도록 합니다.
+ * 같은 디렉터리를 쓰면 생성물이 지워질 수 있습니다. 두 디렉터리가 서로 배타인지는
+ * defineContent가 검증합니다(assertOutputDirsExclusive).
  */
-const THUMBS_DIR = join(ROOT, 'public', 'thumbs');
-const MANIFEST_PATH = join(ROOT, '.cache', 'thumbnails.json');
+const THUMBS_DIR = CONTENT_PATHS.thumbsOutDir;
+const MANIFEST_PATH = join(CONTENT_PATHS.cacheDir, 'thumbnails.json');
 
 /** 표시 최대 폭(FeaturedPost가 컨테이너 전체 폭). 이보다 작은 원본은 확대하지 않습니다. */
-export const MAX_WIDTH = 1200;
-export const WEBP_QUALITY = 80;
+export const MAX_WIDTH = CONTENT.thumbnails.maxWidth;
+export const WEBP_QUALITY = CONTENT.thumbnails.webpQuality;
 
 /** 인코딩 정책을 바꾸면 올려서 전체 재생성하게 합니다. */
 const ENCODE_VERSION = 1;

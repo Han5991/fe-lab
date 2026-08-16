@@ -5,7 +5,17 @@
  * (`apps/blog/web/supabase/migrations/20260224000000_fix_kst_timezone.sql`).
  * 클라이언트에서 'today/recent7/30d' 같은 윈도우를 만들 때도 KST 기준이어야
  * RPC 결과와 1대1로 매칭됩니다.
+ *
+ * 타임존 식별자(IANA 이름·ISO offset·ms 오프셋)는 값-only 모듈
+ * (`contentValues.ts`)에서 옵니다 — 셋이 같은 타임존을 가리켜야 합니다.
+ * 이 헬퍼들은 admin 클라이언트 컴포넌트가 쓰므로 설정 객체
+ * (`contentConfig.ts`)를 import하면 안 됩니다(번들 누출).
  */
+import {
+  TIMEZONE_IANA,
+  TIMEZONE_ISO_OFFSET,
+  TIMEZONE_UTC_OFFSET_MS,
+} from './contentValues';
 
 /**
  * 주어진 시점(`d`)의 KST 달력 날짜를 `YYYY-MM-DD`로 반환.
@@ -15,7 +25,7 @@
  */
 export function getKSTDateISO(d: Date = new Date()): string {
   return new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Asia/Seoul',
+    timeZone: TIMEZONE_IANA,
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
@@ -67,7 +77,7 @@ export function diffDaysISO(a: string, b: string): number {
 export function parseScheduledDateKST(input: string): Date {
   // 'YYYY-MM-DD' 형식 여부 확인 (시간 없음)
   if (/^\d{4}-\d{2}-\d{2}$/.test(input)) {
-    return new Date(`${input}T00:00:00+09:00`);
+    return new Date(`${input}T00:00:00${TIMEZONE_ISO_OFFSET}`);
   }
   return new Date(input);
 }
@@ -142,7 +152,7 @@ export function getKSTCutoffDate(
  * now를 주입받아 결정적으로 테스트할 수 있습니다.
  */
 export function msUntilKSTMidnight(now: Date = new Date()): number {
-  const kstOffset = 9 * 60 * 60 * 1000; // 9시간
+  const kstOffset = TIMEZONE_UTC_OFFSET_MS; // KST = UTC+9시간
   const nowKST = now.getTime() + kstOffset;
   const midnightKST = Math.ceil(nowKST / 86400000) * 86400000;
   return midnightKST - nowKST + 60_000;

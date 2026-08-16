@@ -14,10 +14,11 @@
  * 쓰던 import 경로를 유지하는 재수출만 담당합니다.
  */
 import { readFileSync } from 'node:fs';
-import { relative, resolve, posix } from 'node:path';
+import { relative, posix } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import matter from 'gray-matter';
-import { collectMarkdownFiles, hasFrontmatter } from '@/lib/shared/postFiles';
+import { collectMarkdownFiles, hasFrontmatter } from '../lib/shared/postFiles';
+import { CONTENT_PATHS } from '../lib/shared/contentPaths';
 import type { Issue, PostRecord, ValidateOptions } from './validate/shared';
 import { validatePost } from './validate/frontmatter';
 import {
@@ -56,7 +57,7 @@ export {
   detectDuplicateDescriptions,
 } from './validate/corpus';
 
-const POSTS_DIR = resolve(process.cwd(), '..', 'posts');
+const POSTS_DIR = CONTENT_PATHS.postsDir;
 
 function format(issue: Issue): string {
   const tag = issue.severity === 'error' ? '✖' : '⚠';

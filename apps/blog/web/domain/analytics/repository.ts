@@ -10,7 +10,7 @@
  * 조회수만 읽는 페이지까지 supabase-js 전체를 받게 됩니다.
  */
 
-import { publicDb } from '@/lib/platform/publicClient';
+import { publicDb } from '../../lib/platform/publicClient';
 
 export interface TopPostRow {
   slug: string;

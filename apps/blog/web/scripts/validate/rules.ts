@@ -10,7 +10,7 @@
  * `resolveSeverity`를 통해 여기서 읽습니다. 규칙을 추가하면 여기 한 줄이 없을 때
  * 컴파일(RuleId)이 막고, `rules.test.ts`가 개수·센티널 집합을 잠급니다.
  */
-import { isPostFile, isPostVisible, toDateString } from '@/domain/post';
+import { isPostFile, isPostVisible, toDateString } from '../../domain/post';
 import type { Severity, ValidateOptions } from './shared';
 
 /**

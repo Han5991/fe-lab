@@ -3,7 +3,18 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const root = resolve(__dirname, '..');
+
+/**
+ * 단계 스크립트 경로를 **이 파일 기준 절대 경로**로 만든다.
+ *
+ * 예전에는 'scripts/…' 상대 경로 + spawn `cwd: root` 강제로 맞췄는데, 그러면
+ * 자식 스크립트가 어느 cwd에서 도는지가 build-content의 숨은 계약이 된다.
+ * 이제 각 스크립트가 자기 위치(contentPaths)로 경로를 해석하므로, 스크립트
+ * 파일만 절대 경로로 지목하고 spawn cwd는 호출자 것을 그대로 둔다.
+ */
+function scriptPath(rel: string): string {
+  return resolve(__dirname, rel);
+}
 
 export interface Step {
   label: string;
@@ -41,38 +52,48 @@ export function buildPhases(flags: Flags): Step[][] {
           label: 'validate-posts',
           cmd: 'tsx',
           args: [
-            'scripts/validate-posts.ts',
+            scriptPath('validate-posts.ts'),
             ...(flags.strict ? ['--strict'] : []),
           ],
         },
       ];
   const generate: Step[] = [
     {
+      // .mjs지만 tsx로 돌린다 — 경로 설정(lib/shared/contentPaths.ts)을
+      // import하는데, 순 node는 .mjs → 확장자 없는 .ts 체인을 해석하지 못한다.
       label: 'sync-posts',
-      cmd: 'node',
-      args: ['scripts/sync-posts.mjs', ...(flags.force ? ['--force'] : [])],
+      cmd: 'tsx',
+      args: [scriptPath('sync-posts.mjs'), ...(flags.force ? ['--force'] : [])],
     },
-    { label: 'sitemap', cmd: 'tsx', args: ['scripts/generate-sitemap.ts'] },
-    { label: 'rss', cmd: 'tsx', args: ['scripts/render/generate-rss.ts'] },
+    { label: 'sitemap', cmd: 'tsx', args: [scriptPath('generate-sitemap.ts')] },
+    {
+      label: 'rss',
+      cmd: 'tsx',
+      args: [scriptPath('render/generate-rss.ts')],
+    },
     {
       label: 'og-images',
       cmd: 'tsx',
-      args: ['scripts/render/generate-og-images.ts'],
+      args: [scriptPath('render/generate-og-images.ts')],
     },
     {
       // posts/를 읽어 public/thumbs/에만 쓰므로 sync-posts(public/posts/)와
       // 병렬로 돌아도 서로의 산출물에 손대지 않는다.
       label: 'thumbnails',
       cmd: 'tsx',
-      args: ['scripts/render/generate-thumbnails.ts'],
+      args: [scriptPath('render/generate-thumbnails.ts')],
     },
     {
       label: 'search-index',
       cmd: 'tsx',
-      args: ['scripts/generate-search-index.ts'],
+      args: [scriptPath('generate-search-index.ts')],
     },
-    { label: 'llms-full', cmd: 'tsx', args: ['scripts/generate-llms-full.ts'] },
-    { label: 'llms', cmd: 'tsx', args: ['scripts/generate-llms.ts'] },
+    {
+      label: 'llms-full',
+      cmd: 'tsx',
+      args: [scriptPath('generate-llms-full.ts')],
+    },
+    { label: 'llms', cmd: 'tsx', args: [scriptPath('generate-llms.ts')] },
   ];
   return [validate, generate].filter(phase => phase.length > 0);
 }
@@ -88,8 +109,9 @@ interface StepResult {
 function runStep(step: Step): Promise<StepResult> {
   return new Promise(resolveStep => {
     const start = Date.now();
+    // cwd는 호출자 것을 그대로 쓴다 — 단계 스크립트들은 전부 자기 위치 기준
+    // 절대 경로(contentPaths)로 동작하므로 cwd에 의존하지 않는다.
     const child = spawn('npx', [step.cmd, ...step.args], {
-      cwd: root,
       shell: false,
       stdio: ['ignore', 'pipe', 'pipe'],
     });

@@ -2,28 +2,24 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { SITE_URL, ABOUT_PAGE_MODIFIED } from '../lib/shared/constants';
+import { CONTENT } from '../lib/shared/contentConfig';
+import { CONTENT_PATHS } from '../lib/shared/contentPaths';
 import { parseScheduledDateKST, getKSTDateISO } from '../lib/shared/dates';
-import { archiveUrl, postUrl, type PostSummary } from '@/domain/post';
+import { archiveUrl, postUrl, type PostSummary } from '../domain/post';
 import { POST_SETS } from './artifacts';
 
-// 고가치 주제 폴더의 글은 우선순위를 높게 설정.
-// 테스트에서 self-describing 패턴으로 참조하기 위해 export.
+// 고가치 주제 폴더의 글은 우선순위를 높게 설정. 목록은 설정(defineContent의
+// sitemap 그룹)에서 오고, 테스트에서 self-describing 패턴으로 참조하기 위해
+// Set으로 감싸 export한다.
 //
-// **시리즈가 아니라 폴더 기준이다.** 여기 있는 `typescript`에는 `_series.yml`이
+// **시리즈가 아니라 폴더 기준이다.** 목록의 `typescript`에는 `_series.yml`이
 // 없어서 시리즈가 아니고, `post.series`로 비교하면 이 글의 우선순위가 조용히
 // 0.6으로 떨어진다. 우선순위는 "이 주제가 중요한가"의 문제라 연재 여부와
 // 무관하므로, 물리적 폴더(`relativeDir`)를 본다.
-export const HIGH_PRIORITY_FOLDERS = new Set([
-  'bundler',
-  'typescript',
-  'open-source',
-]);
-export const HIGH_PRIORITY_SLUGS = new Set([
-  'ai-opensource-contribution',
-  'nodejs-contribution',
-  'nextjs-contributor',
-  'first-open-source-contribution',
-]);
+export const HIGH_PRIORITY_FOLDERS = new Set(
+  CONTENT.sitemap.highPriorityFolders,
+);
+export const HIGH_PRIORITY_SLUGS = new Set(CONTENT.sitemap.highPrioritySlugs);
 
 export function getPostPriority(post: {
   slug: string;
@@ -123,11 +119,7 @@ export function buildSitemapXml(
 
 // 스크립트로 직접 실행될 때만 파일 쓰기. (테스트에서 import 시에는 실행 안 됨)
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
-  const publicDir = path.join(
-    path.dirname(fileURLToPath(import.meta.url)),
-    '..',
-    'public',
-  );
+  const publicDir = CONTENT_PATHS.publicDir;
   // 글 집합은 레지스트리(artifacts.ts)에 선언된 셀렉터를 쓴다 — sitemap은
   // 대조 기준(reference)이라 visible을 exact로 담아야 한다.
   const posts = POST_SETS.visible();

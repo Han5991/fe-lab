@@ -6,13 +6,13 @@ import {
   rmSync,
   statSync,
 } from 'node:fs';
-import { dirname, extname, join, relative, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { dirname, extname, join, relative } from 'node:path';
+// 경로는 설정(defineContent → contentPaths)의 단일 출처에서 온다.
+// .ts import 때문에 이 파일은 tsx로 실행해야 한다(build-content.ts 참고).
+import { CONTENT_PATHS } from '../lib/shared/contentPaths.ts';
 
-const __dirname = fileURLToPath(new URL('.', import.meta.url));
-
-const POSTS_SOURCE_DIR = resolve(__dirname, '../../posts');
-const POSTS_TARGET_DIR = resolve(__dirname, '../public/posts');
+const POSTS_SOURCE_DIR = CONTENT_PATHS.postsDir;
+const POSTS_TARGET_DIR = CONTENT_PATHS.mediaOutDir;
 
 const ALLOWED_EXTENSIONS = [
   '.png',

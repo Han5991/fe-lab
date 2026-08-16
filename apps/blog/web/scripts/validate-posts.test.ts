@@ -11,8 +11,8 @@ import {
   detectDuplicateDescriptions,
   type PostRecord,
 } from './validate-posts';
-import { DIAGRAM_NAMES } from '@/domain/post/diagramNames';
-import { FRONTMATTER_KEYS } from '@/domain/post';
+import { DIAGRAM_NAMES } from '../domain/post/diagramNames';
+import { FRONTMATTER_KEYS } from '../domain/post';
 
 function rec(
   data: Record<string, unknown>,

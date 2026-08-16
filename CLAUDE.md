@@ -228,19 +228,19 @@ The blog (`apps/blog/web/`) is a **statically generated (SSG) Next.js applicatio
 
 #### 주요 설정 파일
 
-| 파일                                        | 역할                                                                    |
-| :------------------------------------------ | :---------------------------------------------------------------------- |
-| `next.config.ts`                            | SSG output, trailingSlash 설정                                          |
-| `panda.config.ts`                           | Panda CSS 스타일 설정                                                   |
-| `.env.production`                           | Supabase URL/Key, Giscus 설정                                           |
-| `.env.local`                                | 로컬 개발용 환경변수 (GA, Supabase local 등)                            |
-| `supabase/config.toml`                      | 로컬 Supabase 설정 (Auth, DB, Storage 등)                               |
-| `.github/workflows/deploy-blog.yml`         | CI/CD 배포 워크플로우                                                   |
-| `apps/blog/posts/{series}/_series.yml`      | 시리즈 선언 — 이 파일이 있어야 시리즈. 표시명·설명·order 메타도 여기    |
-| `apps/blog/web/scripts/build-content.ts`    | predev:web/prebuild 통합 진입점 (validate/sync/sitemap/rss/search/llms) |
-| `apps/blog/web/scripts/check-seo.ts`        | 빌드 산출물 SEO 검사 (CI 게이트)                                        |
-| `apps/blog/web/lib/shared/constants.ts`     | 사이트 이름·URL·`<title>` 접미사·SEO 길이 예산의 단일 소스              |
-| `apps/blog/web/design/DIAGRAM_AUTHORING.md` | 다이어그램 저작 가이드 (선언형 태그 prop 표, 복붙 예제, `hero:` 등록법) |
+| 파일                                        | 역할                                                                                                                                                                                                                       |
+| :------------------------------------------ | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `next.config.ts`                            | SSG output, trailingSlash 설정                                                                                                                                                                                             |
+| `panda.config.ts`                           | Panda CSS 스타일 설정                                                                                                                                                                                                      |
+| `.env.production`                           | Supabase URL/Key, Giscus 설정                                                                                                                                                                                              |
+| `.env.local`                                | 로컬 개발용 환경변수 (GA, Supabase local 등)                                                                                                                                                                               |
+| `supabase/config.toml`                      | 로컬 Supabase 설정 (Auth, DB, Storage 등)                                                                                                                                                                                  |
+| `.github/workflows/deploy-blog.yml`         | CI/CD 배포 워크플로우                                                                                                                                                                                                      |
+| `apps/blog/posts/{series}/_series.yml`      | 시리즈 선언 — 이 파일이 있어야 시리즈. 표시명·설명·order 메타도 여기                                                                                                                                                       |
+| `apps/blog/web/scripts/build-content.ts`    | predev:web/prebuild 통합 진입점 (validate/sync/sitemap/rss/search/llms)                                                                                                                                                    |
+| `apps/blog/web/scripts/check-seo.ts`        | 빌드 산출물 SEO 검사 (CI 게이트)                                                                                                                                                                                           |
+| `apps/blog/web/lib/shared/contentConfig.ts` | `defineContent({...})` 설정 표면 — 서버·빌드 전용. 클라이언트가 소비하는 리터럴은 `contentValues.ts`(값-only 모듈, `constants.ts`가 재수출)가 갖고, 설정은 그 값을 기본값으로 소비한다. 절대 경로 해석은 `contentPaths.ts` |
+| `apps/blog/web/design/DIAGRAM_AUTHORING.md` | 다이어그램 저작 가이드 (선언형 태그 prop 표, 복붙 예제, `hero:` 등록법)                                                                                                                                                    |
 
 ## Prerequisites
 

@@ -1,14 +1,17 @@
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { join, relative, resolve, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import {
-  SITE_URL,
-  SITE_NAME,
-  SEO_TITLE_MAX_LENGTH,
-  SEO_DESCRIPTION_MIN_LENGTH,
-  SEO_DESCRIPTION_MAX_LENGTH,
-} from '../lib/shared/constants';
+import { SITE_URL, SITE_NAME } from '../lib/shared/constants';
+import { CONTENT } from '../lib/shared/contentConfig';
+
+// SEO 임계값은 설정 표면에서 — validate-posts --strict와 같은 출처를 본다.
+const {
+  titleMaxLength: SEO_TITLE_MAX_LENGTH,
+  descriptionMinLength: SEO_DESCRIPTION_MIN_LENGTH,
+  descriptionMaxLength: SEO_DESCRIPTION_MAX_LENGTH,
+} = CONTENT.seo;
 import { decodeUrlSafe } from '../lib/shared/url';
+import { CONTENT_PATHS } from '../lib/shared/contentPaths';
 import { ARTIFACTS, type ArtifactRelation } from './artifacts';
 
 /**
@@ -337,9 +340,11 @@ export function checkArtifacts(collected: CollectedArtifact[]): SeoViolation[] {
 }
 
 function main() {
-  // resolve: 절대 경로 인자를 그대로 받는다. join이면 cwd 뒤에 이어 붙어
-  // `/home/user/proj//abs/path` 같은 없는 경로가 되고 "빌드 산출물이 없습니다"로 오인된다.
-  const outDir = resolve(process.cwd(), process.argv[2] ?? 'out');
+  // 인자를 주면 그 경로를(cwd 기준, resolve라 절대 경로 인자도 그대로 받는다),
+  // 없으면 설정의 out 디렉터리를 검사한다.
+  const outDir = process.argv[2]
+    ? resolve(process.cwd(), process.argv[2])
+    : CONTENT_PATHS.outDir;
   if (!existsSync(outDir)) {
     console.error(
       `✖ 빌드 산출물이 없습니다: ${outDir}\n  먼저 \`pnpm build\`를 실행하세요.`,

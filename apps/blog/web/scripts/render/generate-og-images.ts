@@ -7,27 +7,19 @@ import {
   rmSync,
   writeFileSync,
 } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { dirname, join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import satori, { type SatoriOptions } from 'satori';
 import { Resvg } from '@resvg/resvg-js';
 import { POST_SETS } from '../artifacts';
 import { fmtDate } from '../../lib/shared/format';
 import { SITE_NAME, SITE_URL } from '../../lib/shared/constants';
+import { CONTENT } from '../../lib/shared/contentConfig';
+import { CONTENT_PATHS } from '../../lib/shared/contentPaths';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-// scripts/render/ 아래 두 단계 위가 앱 루트다.
-const ROOT = resolve(__dirname, '..', '..');
-const OG_DIR = join(ROOT, 'public', 'og');
-const MANIFEST_PATH = join(ROOT, '.cache', 'og-images.json');
-const FONT_DIR = join(
-  ROOT,
-  'node_modules',
-  'pretendard',
-  'dist',
-  'public',
-  'static',
-);
+const OG_DIR = CONTENT_PATHS.ogOutDir;
+const MANIFEST_PATH = join(CONTENT_PATHS.cacheDir, 'og-images.json');
+const FONT_DIR = CONTENT_PATHS.ogFontDir;
 
 /**
  * 템플릿 디자인을 바꾸면 올려서 모든 이미지를 재생성하게 합니다.
@@ -36,8 +28,8 @@ const FONT_DIR = join(
  */
 const TEMPLATE_VERSION = 5;
 
-export const OG_WIDTH = 1200;
-export const OG_HEIGHT = 630;
+export const OG_WIDTH = CONTENT.og.width;
+export const OG_HEIGHT = CONTENT.og.height;
 
 export interface OgPostInput {
   slug: string;
@@ -117,18 +109,18 @@ function el(
   return { type, props: { style, children } };
 }
 
-// 다크 테마 토큰의 hex 값. satori/resvg는 CSS 변수도 oklch도 못 읽어서
-// blog-preset.ts의 `_dark` 값을 손으로 옮겨 둔다 — 팔레트를 바꾸면 여기도
-// 같이 고쳐야 소셜 미리보기가 사이트와 어긋나지 않는다.
-const PAPER = '#0B0D10'; // paper.50
-const INK = '#E6E8EB'; // ink.950
-const INK_META = '#8B919A'; // ink.600
-const INK_RULE = '#333941'; // ink.border(다크 rgba를 paper.50 위에 합성한 값)
-const ACCENT = '#67E8F9'; // accent.500 — 포인트 cyan
+// 팔레트는 설정(defineContent의 og.palette)에서 온다 — satori/resvg가 CSS
+// 변수를 못 읽어 blog-preset의 다크 토큰 hex를 옮겨 둔 값이라는 사연은 설정
+// 쪽 주석 참고.
+const PAPER = CONTENT.og.palette.paper;
+const INK = CONTENT.og.palette.ink;
+const INK_META = CONTENT.og.palette.inkMeta;
+const INK_RULE = CONTENT.og.palette.inkRule;
+const ACCENT = CONTENT.og.palette.accent;
 // 시리즈 pill 보더. 테스트가 "series가 있을 때만 pill이 나온다"를 이 값의
 // 유무로 판별하므로 export한다 — 값을 리터럴로 복사해 두면 팔레트를 바꿀 때마다
 // 테스트가 색 때문에 깨진다(정작 검증하려는 건 색이 아니라 조건부 렌더다).
-export const OG_PILL_BORDER = 'rgba(103, 232, 249, 0.4)';
+export const OG_PILL_BORDER = CONTENT.og.palette.pillBorder;
 
 /**
  * 1200×630 OG 카드 satori 엘리먼트 트리.

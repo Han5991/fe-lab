@@ -1,8 +1,10 @@
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
-import { dirname, join, relative, resolve } from 'node:path';
+import { dirname, join, relative } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { CONTENT } from '../lib/shared/contentConfig';
+import { CONTENT_PATHS } from '../lib/shared/contentPaths';
 
-const POSTS_DIR = resolve(process.cwd(), '..', 'posts');
+const POSTS_DIR = CONTENT_PATHS.postsDir;
 
 interface Options {
   title?: string;
@@ -97,7 +99,7 @@ export function parseArgs(argv: string[]): Options {
 
 export function todayKST(now: Date = new Date()): string {
   return new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Asia/Seoul',
+    timeZone: CONTENT.timezone.iana,
   }).format(now);
 }
 

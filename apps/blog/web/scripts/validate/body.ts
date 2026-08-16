@@ -11,9 +11,11 @@
  */
 import { existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
-import { isPostFile } from '@/domain/post';
-import { decodeUrlSafe } from '@/lib/shared/url';
-import { SUPPORTED_FENCE_LABELS } from '@/lib/shared/prismLanguages';
+import { isPostFile } from '../../domain/post';
+import { decodeUrlSafe } from '../../lib/shared/url';
+// fence 라벨 허용 목록은 설정(defineContent)의 registries에서 온다 —
+// 기본값은 prismLanguages.ts의 SUPPORTED_FENCE_LABELS와 같다.
+import { CONTENT } from '../../lib/shared/contentConfig';
 import { frontmatterOffset } from './shared';
 import type { Issue, PostRecord, ValidateOptions } from './shared';
 import { resolveSeverity } from './rules';
@@ -262,7 +264,7 @@ export function validateCodeFenceLanguages(
     // ```ts title="a.ts" 처럼 뒤에 메타가 붙는 경우 첫 토큰만 언어다.
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- split은 빈 배열을 만들지 않으므로 [0]은 항상 존재
     const label = opensFence.split(/[\s,{]/)[0]!.toLowerCase();
-    if (!label || SUPPORTED_FENCE_LABELS.has(label)) continue;
+    if (!label || CONTENT.registries.supportedFenceLabels.has(label)) continue;
 
     issues.push({
       file: record.relPath,

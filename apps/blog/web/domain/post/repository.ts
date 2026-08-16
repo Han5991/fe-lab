@@ -1,9 +1,13 @@
 import { readFileSync } from 'node:fs';
-import { join, relative } from 'node:path';
+import { relative } from 'node:path';
 import matter from 'gray-matter';
-import { estimateReadMin } from '@/lib/shared/format';
-import { SEO_DESCRIPTION_MAX_LENGTH as EXCERPT_FALLBACK_LENGTH } from '@/lib/shared/constants';
-import { collectMarkdownFiles, hasFrontmatter } from '@/lib/shared/postFiles';
+import { estimateReadMin } from '../../lib/shared/format';
+import { CONTENT } from '../../lib/shared/contentConfig';
+import { CONTENT_PATHS } from '../../lib/shared/contentPaths';
+import {
+  collectMarkdownFiles,
+  hasFrontmatter,
+} from '../../lib/shared/postFiles';
 import { isPostFile } from './visibility';
 import { isSeriesFolder } from './series';
 // 좁히기 함수(toDateString·toOptionalString·toStringArray)는 서술자 테이블과
@@ -16,7 +20,11 @@ import {
 } from './frontmatterSchema';
 import type { PostData, RawFrontmatter } from './types';
 
-const postsDirectory = join(process.cwd(), '..', 'posts');
+// 콘텐츠 위치는 설정(defineContent)의 단일 출처에서 온다 — 예전의
+// `join(process.cwd(), '..', 'posts')`는 cwd가 앱 루트일 때만 맞았다.
+const postsDirectory = CONTENT_PATHS.postsDir;
+/** excerpt 자동 발췌 길이 — SEO description 예산(seo.descriptionMaxLength)을 재사용 */
+const EXCERPT_FALLBACK_LENGTH = CONTENT.seo.descriptionMaxLength;
 
 /**
  * 마크다운 내용에서 순수 텍스트 추출 (excerpt/readMin 계산용)
@@ -219,7 +227,7 @@ let _cache: PostData[] | null = null;
  * 단, 개발 모드에서는 수정 사항이 즉시 반영되도록 매번 새로 읽어옵니다.
  */
 export function readAllPosts(): PostData[] {
-  if (process.env.NODE_ENV === 'development') {
+  if (CONTENT.runtime.isDevelopment()) {
     return sortByDateDesc(collectPosts(postsDirectory));
   }
 
