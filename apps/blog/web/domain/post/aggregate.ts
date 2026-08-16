@@ -60,7 +60,8 @@ export function getAllSeries(): SeriesSummary[] {
   const series: SeriesSummary[] = Array.from(map.entries()).map(
     ([id, { posts: ps, updated }], idx) => {
       const meta = getSeriesMeta(id);
-      const colorKey = SERIES_COLOR_MAP[id] ?? COLOR_FALLBACK[idx % 3];
+      const colorKey =
+        SERIES_COLOR_MAP[id] ?? COLOR_FALLBACK[idx % COLOR_FALLBACK.length]!;
       return {
         id,
         title: meta?.title ?? id,

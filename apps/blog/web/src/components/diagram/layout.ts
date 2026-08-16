@@ -216,7 +216,9 @@ function placeRow(nodes: DiagramNodeSpec[]): PlacedNode[] {
  * 병렬 갈래"라는 뜻이 흐려진다.
  */
 function placeFan(nodes: DiagramNodeSpec[]): PlacedNode[] {
-  const [source, ...targets] = nodes;
+  // 호출부가 nodes.length > 1 일 때만 팬아웃을 고르므로 첫 노드는 항상 있다.
+  const source = nodes[0]!;
+  const targets = nodes.slice(1);
 
   const sourceWidth = estimateNodeWidth(source);
   const targetWidth = targets.reduce(
@@ -332,14 +334,16 @@ function autoEdges(
   const defaults = { flow: 'sync', emphasis: false, arrow: true } as const;
 
   if (direction === 'fan' && nodes.length > 1) {
+    const source = nodes[0]!;
     return nodes
       .slice(1)
-      .map(node => ({ from: nodes[0].id, to: node.id, ...defaults }));
+      .map(node => ({ from: source.id, to: node.id, ...defaults }));
   }
 
+  // slice(0, -1) 위를 돌므로 index + 1은 항상 원본 범위 안이다.
   return nodes.slice(0, -1).map((node, index) => ({
     from: node.id,
-    to: nodes[index + 1].id,
+    to: nodes[index + 1]!.id,
     ...defaults,
   }));
 }

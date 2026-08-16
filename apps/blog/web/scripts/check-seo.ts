@@ -63,7 +63,8 @@ function metaContent(html: string, key: string): string | null {
     'i',
   );
   const m = html.match(forward) ?? html.match(backward);
-  return m ? decodeEntities(m[1]) : null;
+  // 두 패턴 모두 1번 캡처 그룹이 매치에 항상 참여합니다.
+  return m ? decodeEntities(m[1]!) : null;
 }
 
 /**
@@ -105,9 +106,9 @@ export function parsePageSeo(html: string): PageSeo {
     html.match(/<link[^>]*href="([^"]*)"[^>]*rel="canonical"/i);
   const robots = metaContent(html, 'robots');
   return {
-    title: titleMatch ? decodeEntities(titleMatch[1]).trim() : null,
+    title: titleMatch ? decodeEntities(titleMatch[1]!).trim() : null,
     description: metaContent(html, 'description'),
-    canonical: canonicalMatch ? decodeEntities(canonicalMatch[1]) : null,
+    canonical: canonicalMatch ? decodeEntities(canonicalMatch[1]!) : null,
     ogSiteName: metaContent(html, 'og:site_name'),
     ogLocale: metaContent(html, 'og:locale'),
     ogType: metaContent(html, 'og:type'),

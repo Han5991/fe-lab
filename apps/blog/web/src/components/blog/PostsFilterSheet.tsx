@@ -56,9 +56,9 @@ export const PostsFilterSheet = ({
       const focusables = Array.from(
         root.querySelectorAll<HTMLElement>(focusableSelector),
       ).filter(el => !el.hasAttribute('disabled'));
-      if (focusables.length === 0) return;
-      const first = focusables[0];
-      const last = focusables[focusables.length - 1];
+      const first = focusables.at(0);
+      const last = focusables.at(-1);
+      if (first === undefined || last === undefined) return;
       const active = document.activeElement;
       if (e.shiftKey && active === first) {
         e.preventDefault();

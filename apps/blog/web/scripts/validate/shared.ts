@@ -44,9 +44,10 @@ export interface ValidateOptions {
 export function findFrontmatterLine(raw: string, key: string): number | null {
   const lines = raw.split('\n');
   if (lines[0]?.trim() !== '---') return null;
-  for (let i = 1; i < lines.length; i++) {
-    if (lines[i].trim() === '---') return null;
-    const m = lines[i].match(/^(\w+)\s*:/);
+  for (const [i, line] of lines.entries()) {
+    if (i === 0) continue;
+    if (line.trim() === '---') return null;
+    const m = line.match(/^(\w+)\s*:/);
     if (m && m[1] === key) return i + 1;
   }
   return null;
@@ -56,8 +57,8 @@ export function findFrontmatterLine(raw: string, key: string): number | null {
 export function frontmatterOffset(raw: string): number {
   const lines = raw.split('\n');
   if (lines[0]?.trim() !== '---') return 0;
-  for (let i = 1; i < lines.length; i++) {
-    if (lines[i].trim() === '---') return i + 1;
+  for (const [i, line] of lines.entries()) {
+    if (i !== 0 && line.trim() === '---') return i + 1;
   }
   return 0;
 }
