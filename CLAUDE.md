@@ -80,7 +80,10 @@ The blog (`apps/blog/web/`) is a **statically generated (SSG) Next.js applicatio
    - 폴더는 그냥 폴더다. **`_series.yml`을 둔 폴더만 시리즈**가 된다 — 표시명/설명/order도 그 파일에서 정의
 
    **Frontmatter 전체 목록** — 여기 없는 키는 `lint:posts`가 `unknown-frontmatter-key`로
-   경고합니다. `domain/post/types.ts`의 `RawFrontmatter`가 단일 출처입니다.
+   경고합니다. `domain/post/frontmatterSchema.ts`의 서술자 테이블이 단일
+   출처입니다(`RawFrontmatter`와 허용 키 집합이 여기서 파생되고, 아래 표는
+   `frontmatterSchema.test.ts`가 그 테이블과 글자 단위로 대조합니다 — 표를 고치면
+   테이블의 `doc`도 함께 고칠 것).
 
    | 키              | 필수 | 설명                                                                                                                                                                                                        |
    | :-------------- | :--: | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

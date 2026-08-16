@@ -13,9 +13,11 @@ import {
 } from '@/lib/constants';
 import {
   POST_STATUSES,
+  FRONTMATTER_KEYS,
   isPostStatus,
   isPostFile,
   isPostVisible,
+  rejectionReasonFor,
   resolveExcerpt,
   toDateString,
 } from '@/domain/post';
@@ -27,30 +29,15 @@ import { SUPPORTED_FENCE_LABELS } from '@/src/components/post/prismLanguages';
 const POSTS_DIR = resolve(process.cwd(), '..', 'posts');
 
 /**
- * repository.ts / types.ts / visibility.ts 에서 **실제로 읽는** 키 전체.
- * 여기에 없는 키가 frontmatter에 있으면 unknown-frontmatter-key 경고를 냅니다.
+ * 허용 키의 단일 출처는 **서술자 테이블**(domain/post/frontmatterSchema.ts)입니다.
+ * 예전에는 여기 손으로 쓴 Set이 따로 있어 `RawFrontmatter`와 어긋날 수 있었습니다
+ * (실제로 순서가 달랐고, 어긋나도 아무것도 깨지지 않았습니다).
  *
- * 의도적으로 뺀 키:
- * - `published` — status로 통합됨. 아래 legacy-published-field 규칙이 에러로 잡습니다.
- * - `description` — excerpt와 역할이 겹치는데 어떤 코드도 읽지 않았습니다.
- * - `draft`, `category` — 읽는 코드가 없는 유령 키.
- * - `series` — 시리즈는 폴더 경로로 결정됩니다(repository.ts). frontmatter 값은 무시됩니다.
- * - `order` — `_series.yml` 전용인데 collectMarkdownFiles가 `.yml`을 수집하지 않아
- *             애초에 이 검사에 들어오지 않습니다.
+ * 의도적으로 뺀 키(`published` · `description` · `draft` · `category` · `series` ·
+ * `order`)와 각각의 거부 사유도 같은 파일의 `REJECTED_FRONTMATTER_KEYS`에
+ * 데이터로 있습니다 — 사유가 주석이 아니라 값이라서 그대로 lint 메시지에 실립니다.
  */
-const KNOWN_FRONTMATTER_KEYS = new Set([
-  'title',
-  'seoTitle',
-  'date',
-  'updatedAt',
-  'slug',
-  'excerpt',
-  'thumbnail',
-  'tags',
-  'status',
-  'scheduledDate',
-  'hero',
-]);
+const KNOWN_FRONTMATTER_KEYS = new Set<string>(FRONTMATTER_KEYS);
 
 type Severity = 'error' | 'warning';
 
@@ -190,18 +177,25 @@ export function validatePost(
 
   // unknown frontmatter key 경고 — 오타(예: `tag` → `tags`, `scheduled` → `scheduledDate`) 조기 감지
   for (const key of Object.keys(data)) {
-    if (!KNOWN_FRONTMATTER_KEYS.has(key)) {
-      issues.push({
-        file: relPath,
-        line: findFrontmatterLine(raw, key),
-        severity: 'warning',
-        rule: 'unknown-frontmatter-key',
-        message: `알 수 없는 frontmatter 키: \`${key}\`. 오타가 아닌지 확인하세요. (허용 키: ${[...KNOWN_FRONTMATTER_KEYS].join(', ')})`,
-      });
-    }
+    if (KNOWN_FRONTMATTER_KEYS.has(key)) continue;
+    // `published`는 위의 legacy-published-field(에러)가 이미 더 정확한 메시지를
+    // 냈습니다. 같은 키에 "알 수 없는 키"까지 겹쳐 내면 사실과도 어긋납니다
+    // (모르는 키가 아니라 아는 폐기 키입니다).
+    if (key === 'published') continue;
+    // 일부러 뺀 키는 "오타인지 확인하라"가 아니라 왜 안 받는지를 말해줍니다.
+    const rejection = rejectionReasonFor(key);
+    issues.push({
+      file: relPath,
+      line: findFrontmatterLine(raw, key),
+      severity: 'warning',
+      rule: 'unknown-frontmatter-key',
+      message: rejection
+        ? `\`${key}\`는 일부러 받지 않는 frontmatter 키입니다 — ${rejection}`
+        : `알 수 없는 frontmatter 키: \`${key}\`. 오타가 아닌지 확인하세요. (허용 키: ${FRONTMATTER_KEYS.join(', ')})`,
+    });
   }
 
-  // 문자열이어야 하는 키가 다른 타입이면 repository.ts의 toOptionalString이 값을
+  // 문자열이어야 하는 키가 다른 타입이면 frontmatterSchema.ts의 toOptionalString이 값을
   // 통째로 버리고 폴백합니다(slug는 파일 경로로, excerpt는 본문 앞 160자로,
   // thumbnail은 생성 OG 카드로). 특히 `slug: 123` 같은 실수는 **URL이 조용히
   // 바뀌는** 결과가 되므로 에러로 막습니다.
@@ -257,7 +251,7 @@ export function validatePost(
   // **글자 단위로 완전히 겹쳐서** 중복 콘텐츠 신호가 되고, 실제로 시리즈의
   // 본편/DI편 같은 짝에서 description이 똑같아진 적이 있습니다.
   //
-  // 빈 문자열(`excerpt: ''`)도 같은 취급입니다 — repository.ts의 toOptionalString이
+  // 빈 문자열(`excerpt: ''`)도 같은 취급입니다 — frontmatterSchema.ts의 toOptionalString이
   // 빈 문자열을 "값 없음"으로 떨어뜨려 똑같이 자동 발췌로 폴백하는데, 키가 있다는
   // 이유로 넘어가면 `new-post` 스캐폴딩이 깔아주는 `excerpt: ''`가 영원히 조용합니다.
   if (!('excerpt' in data) || data.excerpt === '') {
@@ -430,7 +424,7 @@ export function validatePost(
         message: `\`tags\`의 모든 원소는 문자열이어야 합니다. 문자열이 아닌 값이 하나라도 있으면 태그 전체가 무시됩니다: ${JSON.stringify(data.tags)}`,
       });
     } else {
-      // 렌더 계층(repository.toStringArray)이 중복을 걷어내므로 화면은 멀쩡하다.
+      // 렌더 계층(frontmatterSchema의 toStringArray)이 중복을 걷어내므로 화면은 멀쩡하다.
       // 다만 frontmatter에 남아 있으면 저자가 눈치채지 못하므로 경고로 알린다.
       const seen = new Set<string>();
       const dupes = new Set<string>();

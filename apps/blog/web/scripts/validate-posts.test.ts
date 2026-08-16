@@ -12,6 +12,7 @@ import {
   type PostRecord,
 } from './validate-posts';
 import { DIAGRAM_NAMES } from '@/domain/post/diagramNames';
+import { FRONTMATTER_KEYS } from '@/domain/post';
 
 function rec(
   data: Record<string, unknown>,
@@ -275,6 +276,42 @@ test('validatePost: 알 수 없는 frontmatter 키 → unknown-frontmatter-key (
   const unknown = issues.find(i => i.rule === 'unknown-frontmatter-key');
   assert.ok(unknown, 'unknown-frontmatter-key 이슈가 있어야 함');
   assert.equal(unknown.severity, 'warning');
+  // 허용 키 목록은 손 목록이 아니라 서술자 테이블(단일 출처)에서 온다.
+  assert.ok(
+    unknown.message.includes(FRONTMATTER_KEYS.join(', ')),
+    '허용 키 안내가 서술자 테이블 순서와 같아야 함',
+  );
+});
+
+test('unknown-frontmatter-key: 일부러 뺀 키는 오타 안내 대신 거부 사유를 알린다', () => {
+  // 사유가 주석에만 있으면 경고를 받은 글쓴이가 소스를 열어야 왜 안 되는지 안다.
+  const issues = validatePost(
+    rec({ title: 'x', status: 'published', description: '중복 역할 키' }),
+    '---\n---\n',
+  );
+  const found = issues.find(i => i.rule === 'unknown-frontmatter-key');
+  assert.ok(found, 'unknown-frontmatter-key 이슈가 있어야 함');
+  assert.equal(found.severity, 'warning');
+  assert.match(found.message, /일부러 받지 않는/);
+  assert.match(found.message, /excerpt/);
+});
+
+test('unknown-frontmatter-key: series/order도 거부 사유를 알린다', () => {
+  const found = (key: string) =>
+    validatePost(
+      rec({ title: 'x', status: 'published', [key]: 'x' }),
+      '---\n---\n',
+    ).find(i => i.rule === 'unknown-frontmatter-key');
+  assert.match(found('series')!.message, /폴더 경로로 결정/);
+  assert.match(found('order')!.message, /_series\.yml/);
+});
+
+test('unknown-frontmatter-key: published는 내지 않는다 — legacy-published-field가 이미 정확히 알린다', () => {
+  // "알 수 없는 키"는 사실과 어긋난다(모르는 키가 아니라 아는 폐기 키다).
+  // 같은 키에 에러와 경고가 겹쳐 나오면 신호만 흐려진다.
+  const found = rules({ title: 'x', status: 'published', published: true });
+  assert.ok(found.includes('legacy-published-field'));
+  assert.ok(!found.includes('unknown-frontmatter-key'));
 });
 
 test('validatePost: 절대/http thumbnail은 fs 검사 없이 통과', () => {
@@ -384,7 +421,7 @@ test('detectDuplicateSlugs: 충돌 없으면 빈 배열', () => {
   assert.deepEqual(detectDuplicateSlugs(records), []);
 });
 
-// 렌더 계층(repository.toStringArray)이 중복을 걷어내므로 화면은 멀쩡하지만,
+// 렌더 계층(frontmatterSchema의 toStringArray)이 중복을 걷어내므로 화면은 멀쩡하지만,
 // frontmatter에 남아 있으면 저자가 눈치채지 못한다. 에러가 아니라 경고인 이유다.
 test('validatePost: 중복 태그 → duplicate-tags 경고', () => {
   const issues = validatePost(
@@ -473,7 +510,7 @@ test('validatePost: excerpt 누락 → missing-excerpt 경고', () => {
 });
 
 test("validatePost: 빈 excerpt('')도 missing-excerpt — 자동 발췌로 폴백된다", () => {
-  // repository.ts의 toOptionalString이 빈 문자열을 "값 없음"으로 떨어뜨린다.
+  // frontmatterSchema.ts의 toOptionalString이 빈 문자열을 "값 없음"으로 떨어뜨린다.
   // new-post 스캐폴딩이 `excerpt: ''`를 깔아주므로 이걸 놓치면 새 글마다 재발한다.
   assert.ok(
     rules({
