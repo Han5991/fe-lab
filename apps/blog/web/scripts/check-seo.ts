@@ -9,6 +9,7 @@ import {
   SEO_DESCRIPTION_MAX_LENGTH,
 } from '../lib/constants';
 import { decodeUrlSafe } from '../lib/url';
+import { ARTIFACTS, type ArtifactRelation } from './artifacts';
 
 /**
  * 빌드 산출물(`out/`)의 HTML을 파싱해 SEO 계약을 검사합니다.
@@ -17,6 +18,10 @@ import { decodeUrlSafe } from '../lib/url';
  * 봅니다. 둘은 서로를 대신하지 못합니다 — 2026-08 감사에서 나온 문제들(h1 2개,
  * description 완전 중복, og:site_name 두 종류, og:locale 누락)은 전부 원문이 아니라
  * 렌더 결과에서만 보이는 것이었습니다.
+ *
+ * HTML 페이지 검사 외에, 파생 산출물(sitemap·rss·llms·검색 인덱스·og 이미지)의
+ * 글 집합 정합성은 `scripts/artifacts.ts`의 레지스트리를 **순회**하며 검사합니다
+ * — 산출물이 늘면 레지스트리에 항목을 더하는 것으로 검사가 자동으로 붙습니다.
  *
  * 사용: `pnpm build` 이후 `npx tsx scripts/check-seo.ts`
  *       (검사 대상 디렉토리를 인자로 줄 수 있습니다: `... scripts/check-seo.ts out`)
@@ -130,28 +135,6 @@ export function collectPages(outDir: string): Map<string, string> {
   return pages;
 }
 
-/**
- * 각 산출물에서 **글 목록에 해당하는 자리**의 URL만 뽑아 포스트 URL로 좁힙니다.
- *
- * 문서 전체에서 정규식으로 긁으면 RSS `content:encoded`의 본문 링크와 이미지 경로
- * (`/posts/feconf/img/…`)까지 딸려 와 "rss에만 있는 글"로 오탐합니다. 그래서
- * 형식마다 목록 위치를 지정해서 읽습니다 — sitemap은 `<loc>`, rss는 `<guid>`,
- * llms.txt는 마크다운 링크의 URL.
- */
-function extractPostUrls(text: string, pattern: RegExp): Set<string> {
-  const postPrefix = `${SITE_URL}/posts/`;
-  return new Set(
-    [...text.matchAll(pattern)]
-      .map(m => decodeUrlSafe(m[1].trim()))
-      // `/posts/` 자체는 아카이브 목록 페이지지 글이 아니다 — sitemap에만 있는 게 정상.
-      .filter(url => url.startsWith(postPrefix) && url !== postPrefix),
-  );
-}
-
-const SITEMAP_LOC = /<loc>([^<]+)<\/loc>/g;
-const RSS_GUID = /<guid[^>]*>([^<]+)<\/guid>/g;
-const LLMS_LINK = /\]\((https?:\/\/[^)\s]+)\)/g;
-
 export function checkPages(pages: Map<string, string>): SeoViolation[] {
   const violations: SeoViolation[] = [];
   const descriptions = new Map<string, string[]>();
@@ -253,38 +236,96 @@ export function checkPages(pages: Map<string, string>): SeoViolation[] {
   return violations;
 }
 
-/** sitemap ↔ rss ↔ llms.txt의 포스트 집합이 어긋나지 않는지 */
-export function checkFeeds(
-  sitemap: string,
-  rss: string,
-  llms: string,
-): SeoViolation[] {
+/** 레지스트리 항목 하나를 out/에서 읽어 온 결과. `urls: null` = 산출물이 없음 */
+export interface CollectedArtifact {
+  name: string;
+  relation: ArtifactRelation;
+  reference?: boolean;
+  urls: Set<string> | null;
+}
+
+/** dir 산출물용: 하위 파일들의 상대 경로('/' 구분, Windows sep 정규화) */
+function listFilesRecursive(dir: string): string[] {
+  const files: string[] = [];
+  const walk = (d: string) => {
+    for (const entry of readdirSync(d, { withFileTypes: true })) {
+      const full = join(d, entry.name);
+      if (entry.isDirectory()) walk(full);
+      else files.push(relative(dir, full).split(sep).join('/'));
+    }
+  };
+  walk(dir);
+  return files;
+}
+
+/** ARTIFACTS 레지스트리를 순회하며 각 산출물의 글 URL 집합을 수집합니다. */
+export function collectArtifacts(outDir: string): CollectedArtifact[] {
+  return ARTIFACTS.map(spec => {
+    const target = join(outDir, spec.path);
+    const urls = !existsSync(target)
+      ? null
+      : spec.kind === 'file'
+        ? spec.extractUrls(readFileSync(target, 'utf8'))
+        : spec.extractUrls(listFilesRecursive(target));
+    return {
+      name: spec.name,
+      relation: spec.relation,
+      reference: spec.reference,
+      urls,
+    };
+  });
+}
+
+/**
+ * 산출물 간 글 집합 정합성 검사.
+ *
+ * reference(sitemap)의 집합을 기준으로 각 산출물을 `relation`에 따라 대조합니다:
+ * exact는 missing+extra 모두, subset은 extra만(덜 담는 게 정상 — og 이미지),
+ * superset은 missing만(더 담는 게 정상 — admin 인덱스) 위반으로 봅니다.
+ *
+ * URL 정규화에서 후행 슬래시는 다루지 않습니다(디코드만) — 한쪽이 슬래시를
+ * 빠뜨리면 missing+extra가 동시에 뜨는데, 그건 감출 오탐이 아니라 실제 링크
+ * 불일치입니다.
+ */
+export function checkArtifacts(collected: CollectedArtifact[]): SeoViolation[] {
   const violations: SeoViolation[] = [];
-  const inSitemap = extractPostUrls(sitemap, SITEMAP_LOC);
-  const inRss = extractPostUrls(rss, RSS_GUID);
-  const inLlms = extractPostUrls(llms, LLMS_LINK);
+  for (const artifact of collected) {
+    if (artifact.urls === null) {
+      violations.push({
+        page: artifact.name,
+        rule: 'missing-artifact',
+        message: `${artifact.name}이 산출물에 없습니다`,
+      });
+    }
+  }
+
+  const ref = collected.find(artifact => artifact.reference);
+  // 기준이 없으면 대조 자체가 성립하지 않는다 — missing-artifact만 보고하고
+  // 끝낸다(기준 부재를 다른 산출물들의 missing-posts 수십 건으로 둔갑시키지 않기).
+  if (!ref?.urls) return violations;
+  const refUrls = ref.urls;
 
   const diff = (a: Set<string>, b: Set<string>) =>
     [...a].filter(url => !b.has(url));
 
-  for (const [name, set] of [
-    ['rss.xml', inRss],
-    ['llms.txt', inLlms],
-  ] as const) {
-    const missing = diff(inSitemap, set);
-    const extra = diff(set, inSitemap);
+  for (const artifact of collected) {
+    if (artifact.reference || artifact.urls === null) continue;
+    const missing =
+      artifact.relation === 'subset' ? [] : diff(refUrls, artifact.urls);
+    const extra =
+      artifact.relation === 'superset' ? [] : diff(artifact.urls, refUrls);
     if (missing.length) {
       violations.push({
-        page: name,
-        rule: 'feed-missing-posts',
-        message: `sitemap에 있는데 ${name}에 없는 글 ${missing.length}편: ${missing.slice(0, 3).join(', ')}${missing.length > 3 ? ' …' : ''}`,
+        page: artifact.name,
+        rule: 'artifact-missing-posts',
+        message: `${ref.name}에 있는데 ${artifact.name}에 없는 글 ${missing.length}편: ${missing.slice(0, 3).join(', ')}${missing.length > 3 ? ' …' : ''}`,
       });
     }
     if (extra.length) {
       violations.push({
-        page: name,
-        rule: 'feed-extra-posts',
-        message: `${name}에만 있는 글 ${extra.length}편: ${extra.slice(0, 3).join(', ')}${extra.length > 3 ? ' …' : ''}`,
+        page: artifact.name,
+        rule: 'artifact-extra-posts',
+        message: `${artifact.name}에만 있는 글 ${extra.length}편: ${extra.slice(0, 3).join(', ')}${extra.length > 3 ? ' …' : ''}`,
       });
     }
   }
@@ -314,30 +355,8 @@ function main() {
     process.exit(1);
   }
   const violations = checkPages(pages);
-
-  const read = (name: string) => {
-    const path = join(outDir, name);
-    return existsSync(path) ? readFileSync(path, 'utf8') : null;
-  };
-  const sitemap = read('sitemap.xml');
-  const rss = read('rss.xml');
-  const llms = read('llms.txt');
-  for (const [name, text] of [
-    ['sitemap.xml', sitemap],
-    ['rss.xml', rss],
-    ['llms.txt', llms],
-  ] as const) {
-    if (!text) {
-      violations.push({
-        page: name,
-        rule: 'missing-artifact',
-        message: `${name}이 산출물에 없습니다`,
-      });
-    }
-  }
-  if (sitemap && rss && llms) {
-    violations.push(...checkFeeds(sitemap, rss, llms));
-  }
+  // 파생 산출물은 레지스트리 순회로 — 없으면 missing-artifact, 있으면 글 집합 대조.
+  violations.push(...checkArtifacts(collectArtifacts(outDir)));
 
   if (violations.length === 0) {
     console.log(`✓ ${pages.size}개 페이지 SEO 검사 통과`);

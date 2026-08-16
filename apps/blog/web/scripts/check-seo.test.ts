@@ -1,6 +1,15 @@
 import assert from 'node:assert/strict';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { test } from 'node:test';
-import { parsePageSeo, checkPages, checkFeeds } from './check-seo';
+import {
+  parsePageSeo,
+  checkPages,
+  checkArtifacts,
+  collectArtifacts,
+  type CollectedArtifact,
+} from './check-seo';
 import { SITE_URL } from '../lib/constants';
 
 /** 위반이 하나도 없는 최소 페이지 — 각 테스트는 여기서 한 가지만 망가뜨린다. */
@@ -172,60 +181,206 @@ test('checkPages: noindex 페이지는 검사하지 않는다', () => {
   assert.deepEqual(rules(new Map([['/admin/', html]])), []);
 });
 
-// ── checkFeeds ───────────────────────────────────────────────────────────────
+// ── checkArtifacts ───────────────────────────────────────────────────────────
+// 산출물 형식별 URL **추출**은 레지스트리 쪽 테스트(artifacts.test.ts)가 잠그고,
+// 여기서는 수집 결과(집합)의 **대조 규칙**(exact/subset/superset)을 잠근다.
 
-const sitemapXml = (slugs: string[]) =>
-  `<urlset><url><loc>${SITE_URL}/</loc></url><url><loc>${SITE_URL}/posts/</loc></url>${slugs
+const urls = (slugs: string[]) =>
+  new Set(slugs.map(s => `${SITE_URL}/posts/${s}/`));
+
+const collected = (
+  over: Partial<CollectedArtifact> = {},
+): CollectedArtifact => ({
+  name: 'rss.xml',
+  relation: 'exact',
+  urls: urls(['a', 'b']),
+  ...over,
+});
+
+const reference = (slugs: string[]): CollectedArtifact =>
+  collected({ name: 'sitemap.xml', reference: true, urls: urls(slugs) });
+
+test('checkArtifacts: 모든 산출물의 글 집합이 기준과 같으면 위반 없음', () => {
+  assert.deepEqual(checkArtifacts([reference(['a', 'b']), collected()]), []);
+});
+
+test('checkArtifacts: exact 산출물에서 글이 빠지면 artifact-missing-posts (손으로 관리하다 6편 누락됐던 회귀)', () => {
+  const found = checkArtifacts([
+    reference(['a', 'b', 'c']),
+    collected({ name: 'llms.txt', urls: urls(['a']) }),
+  ]);
+  assert.ok(found.some(v => v.rule === 'artifact-missing-posts'));
+});
+
+test('checkArtifacts: exact 산출물에 기준에 없는 글이 있으면 artifact-extra-posts', () => {
+  const found = checkArtifacts([
+    reference(['a']),
+    collected({ urls: urls(['a', '유령글']) }),
+  ]);
+  assert.deepEqual(
+    found.map(v => v.rule),
+    ['artifact-extra-posts'],
+  );
+});
+
+test('checkArtifacts: subset(og 이미지)은 덜 담는 것이 정상 — missing을 보지 않는다', () => {
+  // og 카드는 thumbnail이 없는 글만 생성한다. exact로 보면 손수 썸네일을
+  // 지정한 글마다 위반이 떠서 게이트가 항상 실패한다.
+  assert.deepEqual(
+    checkArtifacts([
+      reference(['a', 'b', 'c']),
+      collected({ name: 'og 이미지', relation: 'subset', urls: urls(['a']) }),
+    ]),
+    [],
+  );
+});
+
+test('checkArtifacts: subset이라도 기준에 없는 잔여물은 artifact-extra-posts', () => {
+  // 삭제/이름변경된 글의 og 이미지가 남아 있는 경우.
+  const found = checkArtifacts([
+    reference(['a']),
+    collected({
+      name: 'og 이미지',
+      relation: 'subset',
+      urls: urls(['a', '지운글']),
+    }),
+  ]);
+  assert.deepEqual(
+    found.map(v => v.rule),
+    ['artifact-extra-posts'],
+  );
+});
+
+test('checkArtifacts: superset(admin 인덱스)은 hidden 글이 더 있어도 위반이 아니다', () => {
+  assert.deepEqual(
+    checkArtifacts([
+      reference(['a']),
+      collected({
+        name: 'admin-posts-index.json',
+        relation: 'superset',
+        urls: urls(['a', '초안글']),
+      }),
+    ]),
+    [],
+  );
+});
+
+test('checkArtifacts: superset이라도 발행 글이 빠지면 artifact-missing-posts', () => {
+  const found = checkArtifacts([
+    reference(['a', 'b']),
+    collected({
+      name: 'admin-posts-index.json',
+      relation: 'superset',
+      urls: urls(['a', '초안글']),
+    }),
+  ]);
+  assert.deepEqual(
+    found.map(v => v.rule),
+    ['artifact-missing-posts'],
+  );
+});
+
+test('checkArtifacts: 산출물이 없으면(missing-artifact) 그 산출물만 보고하고 나머지는 계속 대조한다', () => {
+  const found = checkArtifacts([
+    reference(['a', 'b']),
+    collected({ name: 'llms-full.txt', urls: null }),
+    collected({ name: 'rss.xml', urls: urls(['a']) }),
+  ]);
+  assert.deepEqual(
+    found.map(v => v.rule),
+    ['missing-artifact', 'artifact-missing-posts'],
+  );
+});
+
+test('checkArtifacts: 기준(sitemap)이 없으면 대조를 걸지 않는다', () => {
+  // 기준 부재를 다른 산출물들의 missing-posts 수십 건으로 둔갑시키지 않는다.
+  const found = checkArtifacts([
+    collected({ name: 'sitemap.xml', reference: true, urls: null }),
+    collected(),
+  ]);
+  assert.deepEqual(
+    found.map(v => v.rule),
+    ['missing-artifact'],
+  );
+});
+
+test('checkArtifacts: 인코딩 차이는 수집(추출) 단계에서 디코드 정규화돼 오탐하지 않는다', () => {
+  // 추출기가 decodeUrlSafe로 정규화한 집합을 넘긴다는 전제의 확인 —
+  // 실제 추출 정규화는 artifacts.test.ts가 잠근다.
+  const encoded = new Set([`${SITE_URL}/posts/한글/`]);
+  assert.deepEqual(
+    checkArtifacts([
+      collected({ name: 'sitemap.xml', reference: true, urls: encoded }),
+      collected({ urls: new Set([`${SITE_URL}/posts/한글/`]) }),
+    ]),
+    [],
+  );
+});
+
+// ── collectArtifacts + checkArtifacts 통합 (실제 게이트 경로) ────────────────
+
+/** 레지스트리의 모든 산출물이 갖춰진 최소 out/ 픽스처를 만든다. */
+function writeFixtureOut(dir: string, slugs: string[]) {
+  const sitemap = `<urlset><url><loc>${SITE_URL}/</loc></url><url><loc>${SITE_URL}/posts/</loc></url>${slugs
     .map(s => `<url><loc>${SITE_URL}/posts/${s}/</loc></url>`)
     .join('')}</urlset>`;
-const rssXml = (slugs: string[]) =>
-  slugs
+  const rss = slugs
     .map(
       s =>
         `<item><guid isPermaLink="true">${SITE_URL}/posts/${s}/</guid></item>`,
     )
     .join('');
-const llmsTxt = (slugs: string[]) =>
-  slugs.map(s => `- [글](${SITE_URL}/posts/${s}/): 요약`).join('\n');
+  const llms = slugs
+    .map(s => `- [글](${SITE_URL}/posts/${s}/): 요약`)
+    .join('\n');
+  const llmsFull = slugs
+    .map(s => `### [글](${SITE_URL}/posts/${s}/) (2026-01-01)`)
+    .join('\n');
+  const index = JSON.stringify(slugs.map(s => ({ slug: s })));
+  writeFileSync(join(dir, 'sitemap.xml'), sitemap);
+  writeFileSync(join(dir, 'rss.xml'), rss);
+  writeFileSync(join(dir, 'llms.txt'), llms);
+  writeFileSync(join(dir, 'llms-full.txt'), llmsFull);
+  writeFileSync(join(dir, 'search-index.json'), index);
+  writeFileSync(join(dir, 'admin-posts-index.json'), index);
+  mkdirSync(join(dir, 'og'), { recursive: true });
+  for (const s of slugs) writeFileSync(join(dir, 'og', `${s}.png`), '');
+}
 
-test('checkFeeds: 세 산출물의 글 집합이 같으면 위반 없음', () => {
-  const slugs = ['a', 'b', 'c'];
-  assert.deepEqual(
-    checkFeeds(sitemapXml(slugs), rssXml(slugs), llmsTxt(slugs)),
-    [],
-  );
+test('게이트 통합: 온전한 픽스처는 통과하고, 한 산출물에서 글 하나를 빼면 실제로 실패한다', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'check-seo-artifacts-'));
+  try {
+    writeFixtureOut(dir, ['a', 'b']);
+    assert.deepEqual(checkArtifacts(collectArtifacts(dir)), []);
+
+    // rss.xml에서만 글 b를 뺀다 → 게이트가 잡아야 한다.
+    writeFileSync(
+      join(dir, 'rss.xml'),
+      `<item><guid isPermaLink="true">${SITE_URL}/posts/a/</guid></item>`,
+    );
+    const found = checkArtifacts(collectArtifacts(dir));
+    assert.deepEqual(
+      found.map(v => [v.page, v.rule]),
+      [['rss.xml', 'artifact-missing-posts']],
+    );
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
 
-test('checkFeeds: llms.txt에 빠진 글을 잡는다 (손으로 관리하다 6편 누락됐던 회귀)', () => {
-  const found = checkFeeds(
-    sitemapXml(['a', 'b', 'c']),
-    rssXml(['a', 'b', 'c']),
-    llmsTxt(['a']),
-  );
-  assert.ok(found.some(v => v.rule === 'feed-missing-posts'));
-});
-
-test('checkFeeds: 아카이브 목록(/posts/)은 글로 세지 않는다', () => {
-  // sitemap에는 있고 rss에는 없는 게 정상 — 이걸 글로 세면 항상 실패한다.
-  assert.deepEqual(
-    checkFeeds(sitemapXml(['a']), rssXml(['a']), llmsTxt(['a'])),
-    [],
-  );
-});
-
-test('checkFeeds: RSS 본문(content:encoded)의 링크는 글로 세지 않는다', () => {
-  // 본문에 다른 글 링크나 이미지 경로(/posts/시리즈/img/…)가 들어 있어도 오탐하면 안 된다.
-  const rss = `${rssXml(['a'])}<item><description><![CDATA[<a href="${SITE_URL}/posts/딴글/">링크</a><img src="${SITE_URL}/posts/시리즈/img/x.png"/>]]></description></item>`;
-  assert.deepEqual(checkFeeds(sitemapXml(['a']), rss, llmsTxt(['a'])), []);
-});
-
-test('checkFeeds: 한글 slug는 인코딩 차이로 오탐하지 않는다', () => {
-  const encoded = `<urlset><url><loc>${SITE_URL}/posts/${encodeURIComponent('한글')}/</loc></url></urlset>`;
-  const raw = `<item><guid>${SITE_URL}/posts/한글/</guid></item>`;
-  assert.deepEqual(
-    checkFeeds(encoded, raw, `- [글](${SITE_URL}/posts/한글/): 요약`),
-    [],
-  );
+test('게이트 통합: 레지스트리 산출물이 파일째 없으면 missing-artifact', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'check-seo-artifacts-'));
+  try {
+    writeFixtureOut(dir, ['a']);
+    rmSync(join(dir, 'llms-full.txt'));
+    const found = checkArtifacts(collectArtifacts(dir));
+    assert.deepEqual(
+      found.map(v => [v.page, v.rule]),
+      [['llms-full.txt', 'missing-artifact']],
+    );
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 test('checkPages: canonical은 퍼센트 인코딩을 풀어 비교한다 (한글 slug)', () => {
