@@ -11,7 +11,7 @@ import {
   type SeoPost,
 } from './postSeo';
 
-// lib/constants: SITE_URL='https://blog.sangwook.dev', OG_DEFAULT_IMAGE='/og-default.jpg'
+// lib/shared/constants: SITE_URL='https://blog.sangwook.dev', OG_DEFAULT_IMAGE='/og-default.jpg'
 const SITE = 'https://blog.sangwook.dev';
 
 function makePost(over: Partial<SeoPost> = {}): SeoPost {

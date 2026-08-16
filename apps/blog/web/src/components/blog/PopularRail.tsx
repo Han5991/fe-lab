@@ -6,7 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getTopPosts } from '@/domain/analytics';
 import type { PostSummary } from '@/domain/post';
 import { postPath } from '@/domain/post/urls';
-import { fmtNum } from '@/lib/format';
+import { fmtNum } from '@/lib/shared/format';
 
 interface PopularRailProps {
   posts: PostSummary[];

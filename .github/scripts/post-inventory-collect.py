@@ -209,7 +209,7 @@ def main() -> int:
     scanned = 0
     posts = []
     # `.md`만 훑으면 `.mdx` 글이 조용히 빠진다 — 이 스크립트가 없애려던 실패
-    # 모드 그대로다. 미러링 대상인 lib/postFiles.ts의 collectMarkdownFiles가
+    # 모드 그대로다. 미러링 대상인 lib/shared/postFiles.ts의 collectMarkdownFiles가
     # 둘 다 수집하고, 아래 파일명 정규식도 이미 `.mdx`를 상정하고 있다.
     for path in sorted(
         p for pattern in ("*.md", "*.mdx") for p in posts_dir.rglob(pattern)

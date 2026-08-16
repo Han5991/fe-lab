@@ -4,8 +4,8 @@ import {
   POSTS_PATH,
   postUrl,
 } from '../domain/post';
-import { SITE_URL } from '../lib/constants';
-import { decodeUrlSafe } from '../lib/url';
+import { SITE_URL } from '../lib/shared/constants';
+import { decodeUrlSafe } from '../lib/shared/url';
 
 /**
  * 빌드 산출물 레지스트리 — "어떤 산출물이, 어떤 글 집합을, 발행 글 기준(reference)

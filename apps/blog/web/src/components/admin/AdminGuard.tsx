@@ -2,7 +2,7 @@
 
 import { type ReactNode, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { client as supabase } from '@/lib/client';
+import { client as supabase } from '@/lib/platform/client';
 import { useSuspenseQuery } from '@tanstack/react-query';
 
 // admin UI를 로컬(pnpm dev)에서 로그인 없이 개발/확인하기 위한 우회.

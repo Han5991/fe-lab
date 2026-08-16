@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAdminDashboardData } from './useAdminViews';
-import { getKSTDateISO, msUntilKSTMidnight } from '@/lib/dates';
+import { getKSTDateISO, msUntilKSTMidnight } from '@/lib/shared/dates';
 import {
   computeAnalyticsOverview,
   UNIQUES_ESTIMATE_RATIO,

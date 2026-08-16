@@ -7,7 +7,7 @@ import {
   isOptimizableThumbnail,
   thumbnailWebpRelPath,
 } from './thumbnail';
-import { SITE_URL, OG_DEFAULT_IMAGE } from '../../lib/constants';
+import { SITE_URL, OG_DEFAULT_IMAGE } from '../../lib/shared/constants';
 
 // 인코딩 결과 상수 (실제 encodeURIComponent / encodePostSlug 출력으로 확정)
 const ENC_BUNDLER = '%EB%B2%88%EB%93%A4%EB%9F%AC'; // '번들러'

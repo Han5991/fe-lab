@@ -6,11 +6,15 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import Markdown, { defaultUrlTransform, type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
-import { SITE_URL, SITE_NAME, SITE_DESCRIPTION } from '../lib/constants';
-import { resolvePostAssetUrl } from '../domain/post/assetUrl';
-import { parseScheduledDateKST } from '../lib/dates';
+import {
+  SITE_URL,
+  SITE_NAME,
+  SITE_DESCRIPTION,
+} from '../../lib/shared/constants';
+import { resolvePostAssetUrl } from '../../domain/post/assetUrl';
+import { parseScheduledDateKST } from '../../lib/shared/dates';
 import { postUrl, type PostSummary } from '@/domain/post';
-import { POST_SETS } from './artifacts';
+import { POST_SETS } from '../artifacts';
 import { HEADING_COMPONENTS } from '@/src/components/post/markdownHeadings';
 
 /**
@@ -176,8 +180,10 @@ ${rssItems}
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
+  // scripts/render/ 아래 두 단계 위가 앱 루트다.
   const publicDir = path.join(
     path.dirname(fileURLToPath(import.meta.url)),
+    '..',
     '..',
     'public',
   );

@@ -10,12 +10,13 @@ import {
 import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import sharp from 'sharp';
-import { POST_SETS } from './artifacts';
-import { thumbnailWebpRelPath } from '../domain/post/thumbnail';
-import type { PostData } from '../domain/post/types';
+import { POST_SETS } from '../artifacts';
+import { thumbnailWebpRelPath } from '../../domain/post/thumbnail';
+import type { PostData } from '../../domain/post/types';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const ROOT = resolve(__dirname, '..');
+// scripts/render/ 아래 두 단계 위가 앱 루트다.
+const ROOT = resolve(__dirname, '..', '..');
 const POSTS_SOURCE_DIR = resolve(ROOT, '..', 'posts');
 
 /**

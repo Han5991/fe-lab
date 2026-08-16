@@ -14,8 +14,8 @@ import {
   SITE_NAME,
   OG_DEFAULT_IMAGE,
   TITLE_SUFFIX,
-} from '@/lib/constants';
-import { safeJsonLd } from '@/lib/jsonLd';
+} from '@/lib/shared/constants';
+import { safeJsonLd } from '@/lib/shared/jsonLd';
 // 폴백 목록과 하이드레이션 후 목록이 같은 행 컴포넌트를 쓰도록 배럴(index.ts)이
 // 아니라 모듈에서 직접 가져온다.
 import {

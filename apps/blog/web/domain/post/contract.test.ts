@@ -17,14 +17,14 @@ import {
 import { isPostVisible } from './visibility';
 import { isSeriesFolder } from './series';
 import { buildSitemapXml, getPostPriority } from '@/scripts/generate-sitemap';
-import { buildRssXml } from '@/scripts/generate-rss';
+import { buildRssXml } from '@/scripts/render/generate-rss';
 import {
   buildAdminPostsIndex,
   buildPublicSearchIndex,
   CONTENT_PREVIEW_CHARS,
 } from '@/scripts/generate-search-index';
 import { buildLlmsFullText } from '@/scripts/generate-llms-full';
-import { SITE_URL } from '@/lib/constants';
+import { SITE_URL } from '@/lib/shared/constants';
 
 // sitemap lastmod 비교용 — 동적으로 현재 날짜 사용. 하드코딩 시 미래 scheduledDate를
 // 가진 글이 공개되었을 때 contract 테스트가 false failure를 내는 문제를 회피.

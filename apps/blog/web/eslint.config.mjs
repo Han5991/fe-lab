@@ -1,6 +1,7 @@
 import js from '@eslint/js';
 import nextPlugin from '@next/eslint-plugin-next';
 import { defineConfig } from 'eslint/config';
+import boundaries from 'eslint-plugin-boundaries';
 import jsxA11y from 'eslint-plugin-jsx-a11y';
 import reactHooks from 'eslint-plugin-react-hooks';
 import globals from 'globals';
@@ -128,7 +129,7 @@ export default defineConfig([
   {
     // Supabase CLI(`supabase gen types`) 생성 파일 — 손대면 재생성 때 되돌아온다.
     // 생성기 출력 형태(type 별칭·인덱스 시그니처)에 스타일 룰을 묻지 않는다.
-    files: ['lib/database.types.ts'],
+    files: ['lib/platform/database.types.ts'],
     rules: {
       '@typescript-eslint/consistent-type-definitions': 'off',
       '@typescript-eslint/consistent-indexed-object-style': 'off',
@@ -239,7 +240,7 @@ export default defineConfig([
       ],
       // 주의: 아래 selector는 식별자 이름(client/supabase/publicDb)에 매칭하므로,
       // Supabase 클라이언트를 임의 이름으로 alias하면(예: `client as db`) 우회될
-      // 수 있습니다. 클라이언트 import 자체를 lib/client·lib/publicClient로
+      // 수 있습니다. 클라이언트 import 자체를 lib/platform/client·lib/platform/publicClient로
       // 한정하는 컨벤션과 함께 봐야 합니다. 새 클라이언트를 만들면 이 정규식에도
       // 이름을 추가하세요 — 안 그러면 가드에 구멍이 생깁니다.
       'no-restricted-syntax': [
@@ -303,6 +304,223 @@ export default defineConfig([
       '@typescript-eslint/consistent-type-imports': [
         'warn',
         { prefer: 'type-imports' },
+      ],
+    },
+  },
+
+  // ── 레이어 경계 (eslint-plugin-boundaries) ─────────────────────────────────
+  // element는 전부 **폴더 단위**다. `boundaries/files` 카테고리로 파일을 골라
+  // element를 우회 배정하는 뒷문을 열지 않는다 — 폴더에 새 파일이 떨어지면
+  // 자동으로 그 element를 상속하고, element 폴더 밖에 떨어지면
+  // no-unknown-files가 잡는다.
+  //
+  // 레이어 순서(아래→위): shared → content → platform → analytics → build →
+  // render-build → app. 각 레이어는 자기보다 아래 레이어만 import할 수 있고,
+  // app은 빌드 레이어(build·render-build)를 import할 수 없다.
+  //
+  // no-unknown-files와 이 블록 전체는 **LAYERED 4개 폴더에만** 건다. 전역으로
+  // 걸면 앱 루트의 설정 파일들이 전부 unknown이 되고, 오탐 시 탈출구가 없다.
+  {
+    files: ['{domain,lib,scripts,src}/**/*.{js,mjs,cjs,ts,tsx,mts,cts}'],
+    plugins: { boundaries },
+    settings: {
+      // 모노레포에서 lint 실행 cwd가 앱 루트라는 보장이 없으므로(위 next.rootDir와
+      // 같은 이유) element 패턴의 기준 경로를 명시한다.
+      'boundaries/root-path': import.meta.dirname,
+      // 첫 매치 하나만 배정 — scripts/render가 render-build와 build(중첩 폴더)에
+      // 동시에 걸리지 않도록 구체적인 패턴을 앞에 둔다.
+      'boundaries/elements-single-match': true,
+      // v7에서 folder 매칭이 기본이라 mode는 쓰지 않는다.
+      'boundaries/elements': [
+        { type: 'shared', pattern: 'lib/shared' },
+        { type: 'platform', pattern: 'lib/platform' },
+        { type: 'content', pattern: 'domain/post' },
+        { type: 'analytics', pattern: 'domain/analytics' },
+        { type: 'render-build', pattern: 'scripts/render' },
+        { type: 'build', pattern: 'scripts' },
+        { type: 'app', pattern: 'src' },
+      ],
+      // 테스트는 element 배정은 그대로 두고 파일 카테고리 축으로만 표시한다.
+      // 아래 policies 마지막 두 줄이 "테스트는 전부 import 가능 / 프로덕션은
+      // 테스트를 import 불가"를 만든다 — 예전 ignores 방식보다 후자가 공짜다.
+      'boundaries/files': [
+        { category: 'test', pattern: ['**/*.test.*', '**/*.spec.*'] },
+      ],
+      // 'export'를 포함해 배럴의 `export * from`도 의존성으로 센다 — 안 세면
+      // 배럴 한 줄로 모든 경계를 우회할 수 있다(src/components에 배럴 3개).
+      'boundaries/dependency-nodes': ['import', 'dynamic-import', 'export'],
+    },
+    rules: {
+      // element 폴더 밖에 떨어진 파일(예: lib/ 바로 아래 새 파일)을 막는다.
+      'boundaries/no-unknown-files': 'error',
+      'boundaries/dependencies': [
+        'error',
+        {
+          default: 'disallow',
+          // 로컬 element 간 의존뿐 아니라 외부 패키지·node 코어까지 전부 검사
+          // 대상으로 — 레이어별 외부 화이트리스트가 아래 policies다.
+          checkAllOrigins: true,
+          // 같은 element 안의 import도 검사한다. 테스트가 프로덕션 파일과 같은
+          // 폴더(=같은 element)에 살기 때문에, 이걸 꺼 두면 "프로덕션이 테스트를
+          // import 금지"가 가장 흔한 사고(옆자리 *.test.ts import)를 못 잡는다.
+          checkInternals: true,
+          // 평가 규칙: 마지막으로 매치된 policy가 승패를 정한다(last-write-wins).
+          policies: [
+            // 같은 element 안에서는 자유 — 단, 아래 "테스트 import 금지"가
+            // 뒤에 오므로 같은 폴더라도 프로덕션→테스트는 막힌다.
+            {
+              dependency: { relationship: { from: 'internal' } },
+              allow: { to: { module: { origin: '*' } } },
+            },
+            // 로컬 의존: 각 레이어는 자기보다 아래 레이어만. 외부 의존: 실측
+            // 화이트리스트(레이어에 새 외부 의존이 생기면 여기 추가해야 한다).
+            {
+              from: { element: { type: 'shared' } },
+              allow: { to: { module: { origin: 'core' } } },
+            },
+            {
+              from: { element: { type: 'content' } },
+              allow: [
+                { to: { element: { type: 'shared' } } },
+                { to: { module: { origin: 'core' } } },
+                {
+                  to: { module: { origin: 'external', source: 'gray-matter' } },
+                },
+              ],
+            },
+            {
+              from: { element: { type: 'platform' } },
+              allow: [
+                {
+                  to: { element: { types: { anyOf: ['shared', 'content'] } } },
+                },
+                {
+                  to: {
+                    module: {
+                      origin: 'external',
+                      source: [
+                        '@supabase/supabase-js',
+                        '@supabase/postgrest-js',
+                      ],
+                    },
+                  },
+                },
+              ],
+            },
+            {
+              from: { element: { type: 'analytics' } },
+              allow: [
+                {
+                  to: {
+                    element: {
+                      types: { anyOf: ['shared', 'content', 'platform'] },
+                    },
+                  },
+                },
+              ],
+            },
+            {
+              from: { element: { type: 'build' } },
+              allow: [
+                {
+                  to: {
+                    element: {
+                      types: {
+                        anyOf: ['shared', 'content', 'platform', 'analytics'],
+                      },
+                    },
+                  },
+                },
+                { to: { module: { origin: 'core' } } },
+                {
+                  to: { module: { origin: 'external', source: 'gray-matter' } },
+                },
+              ],
+            },
+            {
+              // 렌더 생성기(rss·og·thumbnails)만 React 스택을 만질 수 있다.
+              // build가 이 레이어를 import하지 못하므로 React가 빌드 파이프라인
+              // 전체로 번지는 걸 구조적으로 막는다.
+              from: { element: { type: 'render-build' } },
+              allow: [
+                {
+                  to: {
+                    element: {
+                      types: {
+                        anyOf: [
+                          'shared',
+                          'content',
+                          'platform',
+                          'analytics',
+                          'build',
+                        ],
+                      },
+                    },
+                  },
+                },
+                { to: { module: { origin: 'core' } } },
+                {
+                  to: {
+                    module: {
+                      origin: 'external',
+                      source: [
+                        'react',
+                        'react-dom',
+                        'react-markdown',
+                        'remark-gfm',
+                        'rehype-raw',
+                        'satori',
+                        'sharp',
+                        '@resvg/resvg-js',
+                      ],
+                    },
+                  },
+                },
+              ],
+            },
+            {
+              // app은 빌드 레이어를 모른다. node 코어도 직접 만지지 않는다 —
+              // fs 접근은 전부 content(domain/post)의 일이다(클라이언트 번들
+              // 누수 예방, 계획의 "배럴이 fs를 끌고 온다" 회귀 참고).
+              from: { element: { type: 'app' } },
+              allow: [
+                {
+                  to: {
+                    element: {
+                      types: {
+                        anyOf: ['shared', 'content', 'platform', 'analytics'],
+                      },
+                    },
+                  },
+                },
+                { to: { module: { origin: 'external' } } },
+              ],
+            },
+            {
+              // 좁은 예외: generate-rss 한 파일만 markdownHeadings(app)를 공유한다.
+              // 사이트 본문과 RSS content:encoded가 같은 h1→h2 강등 매핑을 써야
+              // 하기 때문(CLAUDE.md). PR11에서 렌더러 주입으로 방향을 뒤집어 이
+              // 예외를 닫는다 — 그 전까지 render-build의 app 접근은 이 한 쌍뿐.
+              from: { file: { path: 'scripts/render/generate-rss.ts' } },
+              allow: {
+                to: {
+                  element: {
+                    type: 'app',
+                    fileInternalPath: 'components/post/markdownHeadings.tsx',
+                  },
+                },
+              },
+            },
+            // 프로덕션 코드는 테스트 파일을 import할 수 없다.
+            { disallow: { to: { file: { categories: 'test' } } } },
+            // 테스트는 무엇이든 import할 수 있다(마지막 매치가 이기므로
+            // 바로 위 정책보다 뒤에 둬야 테스트→테스트도 허용된다).
+            {
+              from: { file: { categories: 'test' } },
+              allow: { to: { module: { origin: '*' } } },
+            },
+          ],
+        },
       ],
     },
   },

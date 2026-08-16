@@ -1,4 +1,4 @@
-import { parseScheduledDateKST } from '@/lib/dates';
+import { parseScheduledDateKST } from '@/lib/shared/dates';
 import { POST_STATUSES, type PostStatus } from './types';
 
 /**

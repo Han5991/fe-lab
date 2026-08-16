@@ -22,13 +22,13 @@ import {
 // 이름 목록만 있는 모듈에서 가져옵니다. registry.ts(=.tsx 컴포넌트 의존)를 직접
 // 참조하면 이 노드 스크립트가 React·Panda까지 끌고 들어옵니다.
 import { DIAGRAM_NAMES, isDiagramName } from '@/domain/post/diagramNames';
-import { hasAmbiguousTimezone } from '@/lib/dates';
+import { hasAmbiguousTimezone } from '@/lib/shared/dates';
 import {
   TITLE_SUFFIX,
   SEO_TITLE_MAX_LENGTH,
   SEO_DESCRIPTION_MIN_LENGTH,
   SEO_DESCRIPTION_MAX_LENGTH,
-} from '@/lib/constants';
+} from '@/lib/shared/constants';
 import { findFrontmatterLine } from './shared';
 import type { Issue, PostRecord, ValidateOptions } from './shared';
 import { resolveSeverity } from './rules';

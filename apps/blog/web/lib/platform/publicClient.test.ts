@@ -111,7 +111,7 @@ interface WireClient {
 /** 교체 전: supabase-js 전체 클라이언트 */
 const legacyClient = () => createClient(baseUrl, KEY) as unknown as WireClient;
 
-/** 교체 후: lib/publicClient.ts와 **동일한** 생성 방식 */
+/** 교체 후: lib/platform/publicClient.ts와 **동일한** 생성 방식 */
 const publicClient = () =>
   new PostgrestClient(`${baseUrl.replace(/\/+$/, '')}/rest/v1`, {
     headers: { apikey: KEY, Authorization: `Bearer ${KEY}` },

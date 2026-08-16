@@ -3,7 +3,7 @@ import { css } from '@design-system/ui-lib/css';
 import type { PostSummary } from '@/domain/post';
 import { postPath } from '@/domain/post/urls';
 import { resolveThumbnailSrc } from '@/domain/post/thumbnail';
-import { fmtDate } from '@/lib/format';
+import { fmtDate } from '@/lib/shared/format';
 import { Label } from './Label';
 import { tagPillStyle } from './tagPillStyle';
 

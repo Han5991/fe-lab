@@ -71,6 +71,22 @@ test('buildPhases: force 플래그는 sync-posts에만 전달', () => {
   }
 });
 
+test('buildPhases: 렌더 생성기 3개는 scripts/render/ 아래를 가리킨다', () => {
+  // 렌더 생성기(rss·og·thumbnails)는 React 스택을 끄는 render-build 레이어로
+  // 분리됐다. build-content의 경로 문자열은 tsc가 못 보는 하드코딩이라, 파일을
+  // 또 옮기면 여기서 잡는다.
+  const all = buildPhases({
+    skipValidate: false,
+    force: false,
+    strict: false,
+  }).flat();
+  for (const label of ['rss', 'og-images', 'thumbnails']) {
+    const step = all.find(s => s.label === label);
+    assert.ok(step, `${label} 단계가 있어야 한다`);
+    assert.match(step.args[0] ?? '', /^scripts\/render\//, label);
+  }
+});
+
 test('buildPhases: 단계 label은 중복 없음', () => {
   const labels = buildPhases({
     skipValidate: false,

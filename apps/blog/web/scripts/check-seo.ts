@@ -7,8 +7,8 @@ import {
   SEO_TITLE_MAX_LENGTH,
   SEO_DESCRIPTION_MIN_LENGTH,
   SEO_DESCRIPTION_MAX_LENGTH,
-} from '../lib/constants';
-import { decodeUrlSafe } from '../lib/url';
+} from '../lib/shared/constants';
+import { decodeUrlSafe } from '../lib/shared/url';
 import { ARTIFACTS, type ArtifactRelation } from './artifacts';
 
 /**

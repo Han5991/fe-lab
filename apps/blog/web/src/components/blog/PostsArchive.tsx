@@ -14,7 +14,7 @@ import {
 } from '@/domain/post/filtering';
 import { getAllViewCounts } from '@/domain/analytics';
 import { postPath } from '@/domain/post/urls';
-import { fmtDate } from '@/lib/format';
+import { fmtDate } from '@/lib/shared/format';
 
 import { Label } from './Label';
 import type { SortKey } from './SortRadio';

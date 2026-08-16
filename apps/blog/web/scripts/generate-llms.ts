@@ -8,7 +8,7 @@ import {
   SITE_URL as DEFAULT_SITE_URL,
   SITE_AUTHOR_GITHUB,
   SITE_AUTHOR_LINKEDIN,
-} from '../lib/constants';
+} from '../lib/shared/constants';
 import {
   getSeriesMeta,
   isSeriesFolder,

@@ -17,8 +17,8 @@ import {
   SITE_AUTHOR_LINKEDIN,
   SITE_DESCRIPTION_EXPANDED,
   OG_DEFAULT_IMAGE,
-} from '@/lib/constants';
-import { safeJsonLd } from '@/lib/jsonLd';
+} from '@/lib/shared/constants';
+import { safeJsonLd } from '@/lib/shared/jsonLd';
 
 import { Hero, FeaturedPost, PostIndexRow } from '@/src/components/blog';
 import { OssStrip } from '@/src/components/home/OssStrip';

@@ -11,12 +11,13 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import satori, { type SatoriOptions } from 'satori';
 import { Resvg } from '@resvg/resvg-js';
-import { POST_SETS } from './artifacts';
-import { fmtDate } from '../lib/format';
-import { SITE_NAME, SITE_URL } from '../lib/constants';
+import { POST_SETS } from '../artifacts';
+import { fmtDate } from '../../lib/shared/format';
+import { SITE_NAME, SITE_URL } from '../../lib/shared/constants';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const ROOT = resolve(__dirname, '..');
+// scripts/render/ 아래 두 단계 위가 앱 루트다.
+const ROOT = resolve(__dirname, '..', '..');
 const OG_DIR = join(ROOT, 'public', 'og');
 const MANIFEST_PATH = join(ROOT, '.cache', 'og-images.json');
 const FONT_DIR = join(

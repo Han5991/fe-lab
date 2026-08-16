@@ -5,7 +5,7 @@ import {
   RSS_PATH,
   SITE_AUTHOR_GITHUB,
   SITE_AUTHOR_LINKEDIN,
-} from '@/lib/constants';
+} from '@/lib/shared/constants';
 
 import { PageTransition } from './PageTransition';
 import { railGutter, railColumn } from './Rail';

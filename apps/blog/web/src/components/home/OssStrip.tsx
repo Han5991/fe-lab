@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { css, cva } from '@design-system/ui-lib/css';
 // leaf import — 홈에서만 쓰는 프레젠테이션 컴포넌트라 배럴을 물릴 이유가 없다.
 import { postPath } from '@/domain/post/urls';
-import { MERGED_PR_COUNT_FALLBACK } from '@/lib/constants';
+import { MERGED_PR_COUNT_FALLBACK } from '@/lib/shared/constants';
 
 /**
  * 오픈소스 기여를 칩 한 줄로만 노출합니다. 네비에서는 뺐고(SPEC §1), 자세한

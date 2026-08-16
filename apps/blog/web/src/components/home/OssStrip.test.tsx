@@ -6,7 +6,7 @@
  */
 import { afterEach, describe, expect, test } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { MERGED_PR_COUNT_FALLBACK } from '@/lib/constants';
+import { MERGED_PR_COUNT_FALLBACK } from '@/lib/shared/constants';
 import { OssStrip } from './OssStrip';
 
 /** next/link가 테스트 환경에서 후행 슬래시를 떼므로 경로만 비교합니다. */

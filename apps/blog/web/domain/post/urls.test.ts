@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { SITE_URL } from '../../lib/constants';
+import { SITE_URL } from '../../lib/shared/constants';
 import { archivePath, archiveUrl, POSTS_PATH, postPath, postUrl } from './urls';
 
 // ── postPath / postUrl ───────────────────────────────────────────────────────

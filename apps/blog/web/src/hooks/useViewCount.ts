@@ -5,7 +5,7 @@ import {
   getViewCookieExpiry,
   hasViewCookie,
   slugToViewKey,
-} from '@/lib/viewCookie';
+} from '@/lib/shared/viewCookie';
 
 export const useViewCount = (slug: string) => {
   useEffect(() => {

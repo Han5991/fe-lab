@@ -10,7 +10,7 @@ import {
   collectArtifacts,
   type CollectedArtifact,
 } from './check-seo';
-import { SITE_URL } from '../lib/constants';
+import { SITE_URL } from '../lib/shared/constants';
 
 /** 위반이 하나도 없는 최소 페이지 — 각 테스트는 여기서 한 가지만 망가뜨린다. */
 function page(
