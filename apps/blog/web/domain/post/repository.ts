@@ -6,6 +6,14 @@ import { SEO_DESCRIPTION_MAX_LENGTH as EXCERPT_FALLBACK_LENGTH } from '@/lib/con
 import { collectMarkdownFiles, hasFrontmatter } from '@/lib/postFiles';
 import { isPostFile } from './visibility';
 import { isSeriesFolder } from './series';
+// 좁히기 함수(toDateString·toOptionalString·toStringArray)는 서술자 테이블과
+// 같은 파일에 있습니다 — 테이블의 `narrow`와 parsePost가 **같은 함수**를 가리켜야
+// 선언과 실제 동작이 갈라지지 않습니다(frontmatterSchema.ts 참고).
+import {
+  toDateString,
+  toOptionalString,
+  toStringArray,
+} from './frontmatterSchema';
 import type { PostData, RawFrontmatter } from './types';
 
 const postsDirectory = join(process.cwd(), '..', 'posts');
@@ -53,39 +61,6 @@ export function resolveExcerptFrom(
   return plainText.length > EXCERPT_FALLBACK_LENGTH
     ? plainText.slice(0, EXCERPT_FALLBACK_LENGTH) + '...'
     : plainText;
-}
-
-/**
- * frontmatter의 date/updatedAt 값을 'YYYY-MM-DD' 문자열(또는 null)로 정규화합니다.
- * - YAML이 Date 객체로 파싱한 경우(`date: 2025-01-01`) → ISO 날짜 부분
- * - 문자열인 경우(`date: '2025-01-01'`) → 그대로
- * - 그 외 → null
- */
-export function toDateString(value: unknown): string | null {
-  if (value instanceof Date) return value.toISOString().split('T')[0];
-  if (typeof value === 'string') return value;
-  return null;
-}
-
-/** 문자열이 아니면 undefined. 빈 문자열은 값이 없는 것으로 취급합니다. */
-function toOptionalString(value: unknown): string | undefined {
-  return typeof value === 'string' && value !== '' ? value : undefined;
-}
-
-/**
- * `tags`를 string[]로 좁히고 **중복을 제거**합니다. 배열이 아니거나 문자열 아닌
- * 원소가 섞이면 undefined — validate-posts의 invalid-tags 규칙이 별도로 에러를 냅니다.
- *
- * 태그는 의미상 집합입니다. 중복이 그대로 흘러가면 글 메타에 `#ci #ci`가 두 번
- * 찍히고, `getAllTags()`의 개수가 부풀고, 목록 렌더에서 React key가 충돌합니다.
- * 세 증상 모두 원인이 하나라 여기서 한 번만 정규화합니다.
- * (frontmatter에 중복이 남아 있다는 사실 자체는 lint:posts가 경고로 알립니다.)
- */
-function toStringArray(value: unknown): string[] | undefined {
-  if (!Array.isArray(value)) return undefined;
-  return value.every(item => typeof item === 'string')
-    ? Array.from(new Set(value as string[]))
-    : undefined;
 }
 
 /**
