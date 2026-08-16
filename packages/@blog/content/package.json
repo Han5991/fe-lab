@@ -1,0 +1,40 @@
+{
+  "name": "@blog/content",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts",
+    "./seo": "./src/seo/index.ts"
+  },
+  "scripts": {
+    "lint": "eslint . --max-warnings=0",
+    "check-types": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json --noEmit",
+    "test": "node --import tsx --test 'src/**/*.test.ts'"
+  },
+  "dependencies": {
+    "@resvg/resvg-js": "^2.6.2",
+    "gray-matter": "^4.0.3",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "react-markdown": "^10.1.0",
+    "rehype-raw": "^7.0.0",
+    "remark-gfm": "^4.0.1",
+    "satori": "^0.29.0",
+    "sharp": "0.35.3"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^24.13.3",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "eslint": "^10.8.1",
+    "eslint-import-resolver-typescript": "^4.4.5",
+    "eslint-plugin-boundaries": "^7.2.0",
+    "globals": "^17.9.0",
+    "tsx": "^4.23.12",
+    "typescript": "catalog:",
+    "typescript-eslint": "^8.67.0"
+  }
+}

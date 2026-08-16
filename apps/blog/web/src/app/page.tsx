@@ -9,7 +9,7 @@ import {
   POSTS_PATH,
   sortPostsBySeriesOrder,
   type PostSummary,
-} from '@/domain/post';
+} from '@blog/content';
 import {
   SITE_URL,
   SITE_NAME,
@@ -17,8 +17,8 @@ import {
   SITE_AUTHOR_LINKEDIN,
   SITE_DESCRIPTION_EXPANDED,
   OG_DEFAULT_IMAGE,
-} from '@/lib/shared/constants';
-import { safeJsonLd } from '@/lib/shared/jsonLd';
+} from '@blog/content';
+import { safeJsonLd } from '@blog/content';
 
 import { Hero, FeaturedPost, PostIndexRow } from '@/src/components/blog';
 import { OssStrip } from '@/src/components/home/OssStrip';

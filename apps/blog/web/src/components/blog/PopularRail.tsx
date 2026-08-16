@@ -4,9 +4,9 @@ import Link from 'next/link';
 import { css } from '@design-system/ui-lib/css';
 import { useQuery } from '@tanstack/react-query';
 import { getTopPosts } from '@/domain/analytics';
-import type { PostSummary } from '@/domain/post';
-import { postPath } from '@/domain/post/urls';
-import { fmtNum } from '@/lib/shared/format';
+import type { PostSummary } from '@blog/content';
+import { postPath } from '@blog/content';
+import { fmtNum } from '@blog/content';
 
 interface PopularRailProps {
   posts: PostSummary[];

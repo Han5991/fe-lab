@@ -3,7 +3,7 @@ import {
   diffDaysISO,
   formatMonthDayISO,
   getKSTDateISO,
-} from '../../lib/shared/dates';
+} from '@blog/content';
 import type { PostStatDetail, DerivedStats } from './types';
 
 // ── Analytics Overview ──────────────────────────────────────────────────────

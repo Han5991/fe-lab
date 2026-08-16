@@ -1,6 +1,6 @@
-import { sortPostsBySeriesOrder } from '@/domain/post/series';
-import type { PostSummary } from '@/domain/post';
-import type { SeriesSummary } from '@/domain/post/aggregate';
+import { sortPostsBySeriesOrder } from '@blog/content';
+import type { PostSummary } from '@blog/content';
+import type { SeriesSummary } from '@blog/content';
 
 export interface SeriesWithPosts extends SeriesSummary {
   posts: PostSummary[];

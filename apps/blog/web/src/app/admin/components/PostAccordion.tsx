@@ -22,11 +22,12 @@ import {
 import Link from 'next/link';
 import { token } from '@design-system/ui-lib/tokens';
 import { motion, AnimatePresence } from 'motion/react';
-import { formatMonthDayISO, parseScheduledDateKST } from '@/lib/shared/dates';
+import { formatMonthDayISO, parseScheduledDateKST } from '@blog/content';
 import { DateRangeControls, useDateFilter } from './DateRangeControls';
-// leaf import — 클라이언트 컴포넌트라 배럴(@/domain/post) 값 import 금지(node:fs).
-import { postPath } from '@/domain/post/urls';
-import { resolvePostState } from '@/domain/post/visibility';
+// 클라이언트 컴포넌트의 @blog/content 배럴 import — node:fs 모듈(series 등)은
+// next.config.ts의 optimizePackageImports + sideEffects:false가 번들에서 걸러 준다.
+import { postPath } from '@blog/content';
+import { resolvePostState } from '@blog/content';
 
 interface Props {
   post: PostStatDetail;

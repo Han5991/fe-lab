@@ -170,7 +170,7 @@
 > frontmatter 스키마도 다르다. 실제 키는 `status` · `title` · `date` 를 필수로 하고
 > (`status` 가 없으면 아예 포스트로 취급하지 않는다), `series` 는 frontmatter가
 > 아니라 **폴더 경로**로 정해진다. 전체 목록은 CLAUDE.md의 frontmatter 표와
-> `domain/post/types.ts` 의 `RawFrontmatter` 에 있다.
+> `@blog/content`(src/post/types.ts) 의 `RawFrontmatter` 에 있다.
 
 <details>
 <summary>원래 계획 (기록용)</summary>

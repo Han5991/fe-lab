@@ -20,7 +20,15 @@ const nextConfig: NextConfig = {
   //       NODE_ENV: production을 명시하므로 영향받지 않는다.
   //
   // babel-plugin-react-compiler는 지우면 안 된다 — prod 빌드가 여전히 이 경로를 쓴다.
-  experimental: isDev ? { turbopackRustReactCompiler: true } : {},
+  //
+  // optimizePackageImports: @blog/content의 배럴(export *)은 로더(series·service,
+  // node:fs)까지 함께 연다. 클라이언트 컴포넌트가 배럴에서 순수 유틸을 named
+  // import할 때 이 최적화가 실제 사용 모듈로 좁혀 주어, dev(트리셰이킹 없음)에서도
+  // node:fs가 클라이언트 그래프에 들어가지 않는다. 패키지 sideEffects:false와 짝.
+  experimental: {
+    optimizePackageImports: ['@blog/content'],
+    ...(isDev ? { turbopackRustReactCompiler: true } : {}),
+  },
   // dev에서는 키를 생략한다. 예전의 `output: undefined`와 동등하다 — 이 객체의
   // 유일한 소비자인 next의 assignDefaults(dist/server/config.js)가 undefined 값을
   // 키째 건너뛰므로, 키 유무는 관찰되지 않는다(exactOptionalPropertyTypes 대응).

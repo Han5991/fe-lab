@@ -3,7 +3,7 @@
 import { css } from '@design-system/ui-lib/css';
 import Zoom from 'react-medium-image-zoom';
 import 'react-medium-image-zoom/dist/styles.css';
-import { resolvePostAssetUrl } from '@/domain/post/assetUrl';
+import { resolvePostAssetUrl } from '@blog/content';
 
 interface MarkdownImageProps {
   src?: string | undefined;

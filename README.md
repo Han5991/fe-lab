@@ -60,7 +60,7 @@
 
 ## ✅ 테스트 / 검증 전략
 
-- **블로그 회귀 가드** — `apps/blog/web/domain/post/contract.test.ts` + `generate-*.test.ts`가 실제 `apps/blog/posts/` 디렉토리와 빌드 산출물(sitemap·RSS·search-index·llms-full) 불변식을 잠금. 리팩토링/리디자인 시 안전망.
+- **블로그 회귀 가드** — `packages/@blog/content`의 `src/post/contract.test.ts` + `src/scripts/generate-*.test.ts`가 실제 `apps/blog/posts/` 디렉토리와 빌드 산출물(sitemap·RSS·search-index·llms-full) 불변식을 잠금. 리팩토링/리디자인 시 안전망.
 - **테스트 러너**: 블로그는 `node:test` (Node 22.5+ glob), React는 Vitest + RTL + MSW, Next.js는 Jest + next-router-mock, TypeScript는 Jest.
 - **CI**: `pnpm lint` / `check-types` / `test` 병렬 실행 + `pnpm --filter @blog/web lint:posts`로 frontmatter 무결성 확인.
 - **pre-push hook**: 푸시 전 워크스페이스 전체 lint·types·test (turbo 캐시로 보통 < 5초).

@@ -7,15 +7,15 @@ import {
   getAllPostSummaries,
   POSTS_PATH,
   postUrl,
-} from '@/domain/post';
-import { getAllSeries, getAllTags, getAllYears } from '@/domain/post/aggregate';
+} from '@blog/content';
+import { getAllSeries, getAllTags, getAllYears } from '@blog/content';
 import {
   SITE_URL,
   SITE_NAME,
   OG_DEFAULT_IMAGE,
   TITLE_SUFFIX,
-} from '@/lib/shared/constants';
-import { safeJsonLd } from '@/lib/shared/jsonLd';
+} from '@blog/content';
+import { safeJsonLd } from '@blog/content';
 // 폴백 목록과 하이드레이션 후 목록이 같은 행 컴포넌트를 쓰도록 배럴(index.ts)이
 // 아니라 모듈에서 직접 가져온다.
 import {

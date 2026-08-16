@@ -18,7 +18,7 @@ import {
   createAdminApiClient,
   type AdminApiClient,
 } from '../../lib/platform/adminApi';
-import type { PostStatus } from '../post/types';
+import type { PostStatus } from '@blog/content';
 import type { HourlyDistribution, DowDistribution } from './types';
 
 export interface AdminPostIndex {

@@ -1,5 +1,5 @@
 import { css } from '@design-system/ui-lib/css';
-import type { PostSummary } from '@/domain/post/types';
+import type { PostSummary } from '@blog/content';
 
 /**
  * 공개 시각 판정에 필요한 필드를 **한 덩어리로** 받습니다.

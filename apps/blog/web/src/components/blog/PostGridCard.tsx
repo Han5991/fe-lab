@@ -1,9 +1,9 @@
 import Link from 'next/link';
 import { css } from '@design-system/ui-lib/css';
-import type { PostSummary } from '@/domain/post';
-import { postPath } from '@/domain/post/urls';
-import { resolveThumbnailSrc } from '@/domain/post/thumbnail';
-import { fmtDate } from '@/lib/shared/format';
+import type { PostSummary } from '@blog/content';
+import { postPath } from '@blog/content';
+import { resolveThumbnailSrc } from '@blog/content';
+import { fmtDate } from '@blog/content';
 import { Label } from './Label';
 import { tagPillStyle } from './tagPillStyle';
 

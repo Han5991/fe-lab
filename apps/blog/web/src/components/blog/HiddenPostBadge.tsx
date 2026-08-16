@@ -1,6 +1,6 @@
 import { css } from '@design-system/ui-lib/css';
-import { isPostVisible } from '@/domain/post/visibility';
-import type { PostSummary } from '@/domain/post';
+import { isPostVisible } from '@blog/content';
+import type { PostSummary } from '@blog/content';
 
 interface Props {
   post: Pick<PostSummary, 'status' | 'scheduledDate' | 'date'>;

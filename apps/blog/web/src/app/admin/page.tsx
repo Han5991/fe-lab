@@ -8,9 +8,10 @@ import { useAdminDashboardData } from '@/src/hooks/useAdminViews';
 import { useAdminLogout } from '@/src/hooks/useAdminLogout';
 import { LoadingPlaceholder } from '@/src/components/shared/LoadingPlaceholder';
 import Link from 'next/link';
-// leaf import — 클라이언트 컴포넌트에서 배럴(@/domain/post)을 값으로 import하면
-// `export * from './series'`가 모듈 평가 시점에 node:fs를 당겨 와 빌드가 깨진다.
-import { postPath } from '@/domain/post/urls';
+// 클라이언트 컴포넌트의 @blog/content 배럴 import — `export * from './series'`가
+// 모듈 평가 시점에 node:fs를 당겨 오는 문제는 next.config.ts의
+// optimizePackageImports + 패키지 sideEffects:false가 번들에서 걸러 준다.
+import { postPath } from '@blog/content';
 
 function AdminOverviewContent() {
   const { data } = useAdminDashboardData();

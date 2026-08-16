@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { css } from '@design-system/ui-lib/css';
-import { getKSTCutoffDate } from '@/lib/shared/dates';
+import { getKSTCutoffDate } from '@blog/content';
 
 type FilterType = 'all' | '7days' | '30days' | 'custom';
 interface Trend {
@@ -10,7 +10,7 @@ interface Trend {
   view_count: number;
 }
 
-// getKSTCutoffDate는 단위 테스트 커버를 위해 lib/shared/dates.ts로 이동.
+// getKSTCutoffDate는 단위 테스트 커버를 위해 @blog/content(shared/dates)로 이동.
 // 호환을 위해 같은 이름으로 재노출 — 다른 컴포넌트에서 직접 import해도 동작.
 export { getKSTCutoffDate };
 

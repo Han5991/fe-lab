@@ -1,0 +1,250 @@
+import js from '@eslint/js';
+import { defineConfig } from 'eslint/config';
+import boundaries from 'eslint-plugin-boundaries';
+import globals from 'globals';
+import tseslint from 'typescript-eslint';
+
+/**
+ * @blog/content ESLint 구성 — 앱(apps/blog/web)과 같은 엄격 수준.
+ *
+ * 이 패키지의 소스는 앱 program에 소스째 섞이므로(소스 익스포트), 린트 기준이
+ * 앱과 어긋나면 같은 파일이 위치에 따라 다른 판정을 받는다. 앱 구성에서 React·
+ * Next 계열(react-hooks·jsx-a11y·@next/eslint-plugin-next)만 뺀 부분집합이다 —
+ * 여기엔 컴포넌트가 없다(feedRenderer의 createElement 호출은 스크립트 코드다).
+ *
+ * 레이어 경계(boundaries)는 앱에 있던 콘텐츠 레이어 모델을 그대로 옮겨 왔다:
+ * shared → content(post) → seo → build(scripts) → render-build(scripts/render).
+ */
+export default defineConfig([
+  {
+    ignores: ['node_modules/**'],
+  },
+
+  {
+    files: ['**/*.{js,mjs,cjs,ts,mts,cts}'],
+    languageOptions: {
+      // 빌드 스크립트(node)가 중심이지만 shared에는 브라우저에서 도는 순수
+      // 유틸(viewCookie의 document 등)도 있어 앱과 같은 조합으로 둘 다 연다.
+      globals: { ...globals.browser, ...globals.node },
+    },
+  },
+
+  // ── 기본 룰셋: 코어 recommended → typescript-eslint strict + stylistic ──
+  js.configs.recommended,
+  ...tseslint.configs.strict,
+  ...tseslint.configs.stylistic,
+
+  // ── 타입 정보 기반 룰셋 ────────────────────────────────────────────────────
+  ...tseslint.configs.recommendedTypeCheckedOnly,
+  {
+    // 프로덕션 소스는 projectService가 tsconfig.json을 자동 발견한다.
+    languageOptions: {
+      parserOptions: {
+        projectService: true,
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+  },
+  {
+    // 테스트 파일은 tsconfig.json이 exclude하고 tsconfig.test.json이 include한다
+    // — 앱과 같은 분할. check-types가 보는 프로그램과 정확히 같은 타입 환경.
+    files: ['**/*.test.{ts,tsx}', '**/*.spec.{ts,tsx}'],
+    languageOptions: {
+      parserOptions: {
+        projectService: false,
+        project: ['./tsconfig.test.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+  },
+  {
+    // 설정 파일·sync-posts.mjs 등 JS는 tsconfig program에 속하지 않는다.
+    files: ['**/*.{js,mjs,cjs}'],
+    ...tseslint.configs.disableTypeChecked,
+  },
+
+  {
+    // 상대경로·확장자 없는 import의 경로 해석기 — boundaries가 요구한다.
+    settings: {
+      'import/resolver': {
+        typescript: { alwaysTryTypes: true },
+      },
+    },
+  },
+
+  {
+    linterOptions: {
+      reportUnusedDisableDirectives: 'error',
+      reportUnusedInlineConfigs: 'error',
+    },
+  },
+
+  {
+    files: ['**/*.{ts,mts,cts}'],
+    rules: {
+      // node:test의 test()/훅은 러너가 수명을 관리한다 — 앱 구성과 같은 인가.
+      // 서브테스트(t.test())는 인가에 같이 걸리지만 원래 await가 필요하다는
+      // 주의사항도 동일하다(앱 eslint.config.mjs 참고).
+      '@typescript-eslint/no-floating-promises': [
+        'error',
+        {
+          allowForKnownSafeCalls: [
+            {
+              from: 'package',
+              package: 'node:test',
+              name: [
+                'test',
+                'describe',
+                'before',
+                'after',
+                'beforeEach',
+                'afterEach',
+              ],
+            },
+          ],
+        },
+      ],
+      '@typescript-eslint/consistent-type-imports': [
+        'warn',
+        { prefer: 'type-imports' },
+      ],
+    },
+  },
+
+  {
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'warn',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_',
+          destructuredArrayIgnorePattern: '^_',
+        },
+      ],
+    },
+  },
+
+  // ── 레이어 경계 (eslint-plugin-boundaries) ─────────────────────────────────
+  // element는 전부 폴더 단위(배럴 src/index.ts·src/seo/index.ts만 예외로
+  // 스코프 밖). 새 파일이 element 폴더 밖(src/ 바로 아래)에 떨어지면
+  // no-unknown-files가 잡는다.
+  //
+  // 레이어 순서(아래→위): shared → content(post) → seo → build(scripts) →
+  // render-build(scripts/render). 각 레이어는 자기보다 아래 레이어만 import한다.
+  {
+    files: ['src/{shared,post,seo,scripts}/**/*.{js,mjs,cjs,ts,mts,cts}'],
+    plugins: { boundaries },
+    settings: {
+      'boundaries/root-path': import.meta.dirname,
+      // 첫 매치 하나만 배정 — scripts/render가 render-build와 build(중첩 폴더)에
+      // 동시에 걸리지 않도록 구체적인 패턴을 앞에 둔다.
+      'boundaries/elements-single-match': true,
+      'boundaries/elements': [
+        { type: 'shared', pattern: 'src/shared' },
+        { type: 'content', pattern: 'src/post' },
+        { type: 'seo', pattern: 'src/seo' },
+        { type: 'render-build', pattern: 'src/scripts/render' },
+        { type: 'build', pattern: 'src/scripts' },
+      ],
+      'boundaries/files': [
+        { category: 'test', pattern: ['**/*.test.*', '**/*.spec.*'] },
+      ],
+      // 'export' 포함 — 배럴의 `export * from`도 의존성으로 센다.
+      'boundaries/dependency-nodes': ['import', 'dynamic-import', 'export'],
+    },
+    rules: {
+      'boundaries/no-unknown-files': 'error',
+      'boundaries/dependencies': [
+        'error',
+        {
+          default: 'disallow',
+          checkAllOrigins: true,
+          checkInternals: true,
+          // 평가 규칙: 마지막으로 매치된 policy가 승패를 정한다(last-write-wins).
+          policies: [
+            {
+              dependency: { relationship: { from: 'internal' } },
+              allow: { to: { module: { origin: '*' } } },
+            },
+            {
+              from: { element: { type: 'shared' } },
+              allow: { to: { module: { origin: 'core' } } },
+            },
+            {
+              from: { element: { type: 'content' } },
+              allow: [
+                { to: { element: { type: 'shared' } } },
+                { to: { module: { origin: 'core' } } },
+                {
+                  to: { module: { origin: 'external', source: 'gray-matter' } },
+                },
+              ],
+            },
+            {
+              // SEO 빌더는 순수 계산이다 — 콘텐츠와 shared만 읽는다.
+              from: { element: { type: 'seo' } },
+              allow: [
+                {
+                  to: { element: { types: { anyOf: ['shared', 'content'] } } },
+                },
+              ],
+            },
+            {
+              from: { element: { type: 'build' } },
+              allow: [
+                {
+                  to: {
+                    element: { types: { anyOf: ['shared', 'content', 'seo'] } },
+                  },
+                },
+                { to: { module: { origin: 'core' } } },
+                {
+                  to: { module: { origin: 'external', source: 'gray-matter' } },
+                },
+              ],
+            },
+            {
+              // 렌더 생성기(rss·og·thumbnails)만 React 스택을 만질 수 있다.
+              from: { element: { type: 'render-build' } },
+              allow: [
+                {
+                  to: {
+                    element: {
+                      types: { anyOf: ['shared', 'content', 'seo', 'build'] },
+                    },
+                  },
+                },
+                { to: { module: { origin: 'core' } } },
+                {
+                  to: {
+                    module: {
+                      origin: 'external',
+                      source: [
+                        'react',
+                        'react-dom',
+                        'react-markdown',
+                        'remark-gfm',
+                        'rehype-raw',
+                        'satori',
+                        'sharp',
+                        '@resvg/resvg-js',
+                      ],
+                    },
+                  },
+                },
+              ],
+            },
+            // 프로덕션 코드는 테스트 파일을 import할 수 없다.
+            { disallow: { to: { file: { categories: 'test' } } } },
+            // 테스트는 무엇이든 import할 수 있다(마지막 매치가 이긴다).
+            {
+              from: { file: { categories: 'test' } },
+              allow: { to: { module: { origin: '*' } } },
+            },
+          ],
+        },
+      ],
+    },
+  },
+]);

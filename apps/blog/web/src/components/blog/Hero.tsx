@@ -1,5 +1,5 @@
 import { css } from '@design-system/ui-lib/css';
-import { RSS_PATH, SITE_AUTHOR_GITHUB } from '@/lib/shared/constants';
+import { RSS_PATH, SITE_AUTHOR_GITHUB } from '@blog/content';
 
 /** 히어로 pill — 이름 아래 외부 채널. 레퍼런스 `.pill` 수치 그대로. */
 const pill = css({
