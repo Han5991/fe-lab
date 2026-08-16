@@ -17,7 +17,7 @@ import { readFileSync } from 'node:fs';
 import { relative, resolve, posix } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import matter from 'gray-matter';
-import { collectMarkdownFiles, hasFrontmatter } from '@/lib/postFiles';
+import { collectMarkdownFiles, hasFrontmatter } from '@/lib/shared/postFiles';
 import type { Issue, PostRecord, ValidateOptions } from './validate/shared';
 import { validatePost } from './validate/frontmatter';
 import {

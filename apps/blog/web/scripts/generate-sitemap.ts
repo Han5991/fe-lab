@@ -1,8 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { SITE_URL, ABOUT_PAGE_MODIFIED } from '../lib/constants';
-import { parseScheduledDateKST, getKSTDateISO } from '../lib/dates';
+import { SITE_URL, ABOUT_PAGE_MODIFIED } from '../lib/shared/constants';
+import { parseScheduledDateKST, getKSTDateISO } from '../lib/shared/dates';
 import { archiveUrl, postUrl, type PostSummary } from '@/domain/post';
 import { POST_SETS } from './artifacts';
 

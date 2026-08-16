@@ -1,7 +1,7 @@
 'use client';
 
 import { Suspense } from 'react';
-import { client as supabase } from '@/lib/client';
+import { client as supabase } from '@/lib/platform/client';
 import { css, cx } from '@design-system/ui-lib/css';
 import { railGutter } from '@/src/components/Rail';
 import { LogIn } from 'lucide-react';

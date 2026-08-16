@@ -10,8 +10,8 @@ import {
   MERGED_PR_COUNT_FALLBACK,
   ABOUT_PAGE_MODIFIED,
   TITLE_SUFFIX,
-} from '@/lib/constants';
-import { safeJsonLd } from '@/lib/jsonLd';
+} from '@/lib/shared/constants';
+import { safeJsonLd } from '@/lib/shared/jsonLd';
 import { Label } from '@/src/components/blog';
 import { PageBoundary } from '@/src/components/PageBoundary';
 import { railGutter, railColumn } from '@/src/components/Rail';

@@ -3,7 +3,7 @@ import { css } from '@design-system/ui-lib/css';
 import type { PostSummary } from '@/domain/post';
 import { postPath } from '@/domain/post/urls';
 import { resolveThumbnailSrc } from '@/domain/post/thumbnail';
-import { fmtDate } from '@/lib/format';
+import { fmtDate } from '@/lib/shared/format';
 import { ParallelThumb } from '@/src/components/diagram';
 
 /** 레퍼런스 미니 썸네일 칸(150×92)과 같은 비율로 고정합니다. */

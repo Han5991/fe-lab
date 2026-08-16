@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { css } from '@design-system/ui-lib/css';
 
 import { Label } from '@/src/components/blog/Label';
-import { fmtNum } from '@/lib/format';
+import { fmtNum } from '@/lib/shared/format';
 import {
   useAnalyticsOverview,
   UNIQUES_ESTIMATE_RATIO,

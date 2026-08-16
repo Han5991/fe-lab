@@ -18,7 +18,7 @@ import {
   SITE_DESCRIPTION_EXPANDED,
   OG_DEFAULT_IMAGE,
   RSS_PATH,
-} from '@/lib/constants';
+} from '@/lib/shared/constants';
 
 // 제목은 meta·og·twitter 세 곳에 나간다. 한 번만 쓴다.
 const DEFAULT_TITLE = `${SITE_NAME} | 프론트엔드 실험실`;

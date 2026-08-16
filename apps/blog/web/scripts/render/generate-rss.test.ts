@@ -7,7 +7,7 @@ import {
   wrapCdata,
 } from './generate-rss';
 import type { RssPost } from './generate-rss';
-import { parseScheduledDateKST } from '../lib/dates';
+import { parseScheduledDateKST } from '../../lib/shared/dates';
 
 const NOW = new Date('2026-05-16T00:00:00Z');
 const SITE = 'https://example.dev';

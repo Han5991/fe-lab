@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { postUrl } from '../domain/post';
 import type { PostData } from '../domain/post';
 import { POST_SETS } from './artifacts';
-import { SITE_URL as DEFAULT_SITE_URL } from '../lib/constants';
+import { SITE_URL as DEFAULT_SITE_URL } from '../lib/shared/constants';
 
 export interface LlmsFullBuildOptions {
   siteUrl?: string;

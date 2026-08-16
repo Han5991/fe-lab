@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
-import { client } from '@/lib/client';
+import { client } from '@/lib/platform/client';
 
 export function useAdminLogout() {
   const router = useRouter();

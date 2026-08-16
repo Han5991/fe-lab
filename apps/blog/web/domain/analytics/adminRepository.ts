@@ -3,7 +3,7 @@
  *
  * 여기 있는 RPC 4건은 PR #114에서 service_role 한정으로 lockdown 되었기
  * 때문에 anon key로 직접 호출할 수 없고, admin-analytics Edge Function을
- * 경유합니다. 그래서 인증 세션이 붙은 `lib/client.ts`(전체 supabase-js)가
+ * 경유합니다. 그래서 인증 세션이 붙은 `lib/platform/client.ts`(전체 supabase-js)가
  * 필요합니다.
  *
  * 공개 페이지용 함수(repository.ts)와 파일을 분리한 이유는 번들입니다.
@@ -13,8 +13,11 @@
  * 지금은 첫 호출 때 만들어 그 고정점도 없앴습니다.
  */
 
-import { client } from '@/lib/client';
-import { createAdminApiClient, type AdminApiClient } from '@/lib/adminApi';
+import { client } from '@/lib/platform/client';
+import {
+  createAdminApiClient,
+  type AdminApiClient,
+} from '@/lib/platform/adminApi';
 import type { PostStatus } from '@/domain/post/types';
 import type { HourlyDistribution, DowDistribution } from './types';
 

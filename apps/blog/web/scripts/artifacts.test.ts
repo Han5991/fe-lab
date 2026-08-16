@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { ARTIFACTS, type ArtifactSpec } from './artifacts';
-import { SITE_URL } from '../lib/constants';
+import { SITE_URL } from '../lib/shared/constants';
 
 /**
  * 레지스트리 항목별 **URL 추출** 계약. 집합 대조 규칙(exact/subset/superset)은

@@ -5,12 +5,12 @@
  * 이 모듈의 함수만 사용합니다.
  *
  * 여기 있는 3건은 모두 익명(anon) 권한의 순수 PostgREST 호출이라
- * `lib/publicClient.ts`(PostgREST만)로 충분합니다. 인증 세션이 필요한
+ * `lib/platform/publicClient.ts`(PostgREST만)로 충분합니다. 인증 세션이 필요한
  * admin RPC는 `adminRepository.ts`에 따로 있습니다 — 같은 파일에 두면
  * 조회수만 읽는 페이지까지 supabase-js 전체를 받게 됩니다.
  */
 
-import { publicDb } from '@/lib/publicClient';
+import { publicDb } from '@/lib/platform/publicClient';
 
 export interface TopPostRow {
   slug: string;

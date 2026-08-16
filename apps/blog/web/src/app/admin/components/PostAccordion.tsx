@@ -22,7 +22,7 @@ import {
 import Link from 'next/link';
 import { token } from '@design-system/ui-lib/tokens';
 import { motion, AnimatePresence } from 'motion/react';
-import { formatMonthDayISO, parseScheduledDateKST } from '@/lib/dates';
+import { formatMonthDayISO, parseScheduledDateKST } from '@/lib/shared/dates';
 import { DateRangeControls, useDateFilter } from './DateRangeControls';
 // leaf import — 클라이언트 컴포넌트라 배럴(@/domain/post) 값 import 금지(node:fs).
 import { postPath } from '@/domain/post/urls';

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { buildSitemapXml } from './generate-sitemap';
-import { buildRssXml } from './generate-rss';
+import { buildRssXml } from './render/generate-rss';
 import { buildLlmsText } from './generate-llms';
 import { buildLlmsFullText } from './generate-llms-full';
 import { postPath, postUrl } from '../domain/post/urls';

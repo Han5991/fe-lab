@@ -10,9 +10,9 @@ import {
 } from '@/domain/post';
 import { getAllSeries } from '@/domain/post/aggregate';
 import { getSeriesMeta } from '@/domain/post/series';
-import { fmtDate } from '@/lib/format';
-import { OG_DEFAULT_IMAGE, SITE_NAME, SITE_URL } from '@/lib/constants';
-import { safeJsonLd } from '@/lib/jsonLd';
+import { fmtDate } from '@/lib/shared/format';
+import { OG_DEFAULT_IMAGE, SITE_NAME, SITE_URL } from '@/lib/shared/constants';
+import { safeJsonLd } from '@/lib/shared/jsonLd';
 import { HiddenPostBadge } from '@/src/components/blog/HiddenPostBadge';
 import {
   postRowItem,

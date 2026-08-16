@@ -19,7 +19,7 @@ import {
 } from './postSeo';
 import type { Metadata } from 'next';
 import { Rail } from '@/src/components/Rail';
-import { safeJsonLd } from '@/lib/jsonLd';
+import { safeJsonLd } from '@/lib/shared/jsonLd';
 
 interface Props {
   params: Promise<{

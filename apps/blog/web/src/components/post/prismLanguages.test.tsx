@@ -17,7 +17,7 @@ import {
   PRISM_LANGUAGES,
   SUPPORTED_FENCE_LABELS,
   PLAIN_FENCE_LABELS,
-} from './prismLanguages';
+} from '@/lib/shared/prismLanguages';
 
 describe('prism 언어 등록 목록', () => {
   test('CodeBlock이 등록하는 언어와 prismLanguages의 키가 순서까지 일치한다', () => {

@@ -1,9 +1,9 @@
 import { readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import matter from 'gray-matter';
-import { estimateReadMin } from '@/lib/format';
-import { SEO_DESCRIPTION_MAX_LENGTH as EXCERPT_FALLBACK_LENGTH } from '@/lib/constants';
-import { collectMarkdownFiles, hasFrontmatter } from '@/lib/postFiles';
+import { estimateReadMin } from '@/lib/shared/format';
+import { SEO_DESCRIPTION_MAX_LENGTH as EXCERPT_FALLBACK_LENGTH } from '@/lib/shared/constants';
+import { collectMarkdownFiles, hasFrontmatter } from '@/lib/shared/postFiles';
 import { isPostFile } from './visibility';
 import { isSeriesFolder } from './series';
 // 좁히기 함수(toDateString·toOptionalString·toStringArray)는 서술자 테이블과

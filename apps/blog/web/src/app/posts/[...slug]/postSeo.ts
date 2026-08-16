@@ -14,7 +14,7 @@ import {
   type PostData,
 } from '@/domain/post';
 import { resolveAbsoluteThumbnailUrl } from '@/domain/post/thumbnail';
-import { SITE_NAME, SITE_URL, TITLE_SUFFIX } from '@/lib/constants';
+import { SITE_NAME, SITE_URL, TITLE_SUFFIX } from '@/lib/shared/constants';
 
 /**
  * 아래 빌더들이 받는 `slug`는 **디코드된** 값입니다 — page.tsx가

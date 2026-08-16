@@ -239,7 +239,7 @@ The blog (`apps/blog/web/`) is a **statically generated (SSG) Next.js applicatio
 | `apps/blog/posts/{series}/_series.yml`      | 시리즈 선언 — 이 파일이 있어야 시리즈. 표시명·설명·order 메타도 여기    |
 | `apps/blog/web/scripts/build-content.ts`    | predev:web/prebuild 통합 진입점 (validate/sync/sitemap/rss/search/llms) |
 | `apps/blog/web/scripts/check-seo.ts`        | 빌드 산출물 SEO 검사 (CI 게이트)                                        |
-| `apps/blog/web/lib/constants.ts`            | 사이트 이름·URL·`<title>` 접미사·SEO 길이 예산의 단일 소스              |
+| `apps/blog/web/lib/shared/constants.ts`     | 사이트 이름·URL·`<title>` 접미사·SEO 길이 예산의 단일 소스              |
 | `apps/blog/web/design/DIAGRAM_AUTHORING.md` | 다이어그램 저작 가이드 (선언형 태그 prop 표, 복붙 예제, `hero:` 등록법) |
 
 ## Prerequisites
