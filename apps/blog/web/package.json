@@ -12,7 +12,7 @@
     "lint": "eslint .",
     "lint:posts": "npx tsx scripts/validate-posts.ts",
     "check-seo": "npx tsx scripts/check-seo.ts",
-    "check-types": "tsc --noEmit",
+    "check-types": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json --noEmit",
     "test": "pnpm test:node && pnpm test:vitest",
     "test:node": "node --import tsx --test 'domain/**/*.test.ts' 'lib/**/*.test.ts' 'scripts/**/*.test.ts'",
     "test:vitest": "vitest run",
