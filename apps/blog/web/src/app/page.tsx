@@ -3,8 +3,10 @@ import { css, cx } from '@design-system/ui-lib/css';
 import type { Metadata } from 'next';
 
 import {
+  archiveUrl,
   getAllPostSummaries,
   getSeriesMeta,
+  POSTS_PATH,
   sortPostsBySeriesOrder,
   type PostSummary,
 } from '@/domain/post';
@@ -72,7 +74,11 @@ const jsonLd = {
         '@type': 'SearchAction',
         target: {
           '@type': 'EntryPoint',
-          urlTemplate: `${SITE_URL}/posts/?q={search_term_string}`,
+          // `{search_term_string}`은 Google이 치환하는 템플릿 플레이스홀더라
+          // 인코딩되면 안 된다 — archivePath({ q })를 거치면
+          // `%7Bsearch_term_string%7D`가 되어 템플릿으로 인식되지 않는다.
+          // 그래서 여기만 아카이브 절대 URL + 수동 쿼리로 조합한다.
+          urlTemplate: `${archiveUrl()}?q={search_term_string}`,
         },
         'query-input': 'required name=search_term_string',
       },
@@ -195,7 +201,7 @@ export default function HomePage() {
             </ol>
 
             <Link
-              href="/posts/"
+              href={POSTS_PATH}
               className={css({
                 display: 'inline-block',
                 mt: '[14px]',

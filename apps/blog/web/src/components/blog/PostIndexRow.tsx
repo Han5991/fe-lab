@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { css } from '@design-system/ui-lib/css';
 import type { PostSummary } from '@/domain/post';
-import { encodePostSlug } from '@/domain/post/utils';
+import { postPath } from '@/domain/post/urls';
 import { HiddenPostBadge } from './HiddenPostBadge';
 import { postRowBorderRaw, postRowLinkLayoutRaw, postRowMeta } from './postRow';
 
@@ -24,7 +24,7 @@ interface PostIndexRowProps {
 export const PostIndexRow = ({ post }: PostIndexRowProps) => {
   return (
     <Link
-      href={`/posts/${encodePostSlug(post.slug)}/`}
+      href={postPath(post.slug)}
       className={css(postRowBorderRaw, postRowLinkLayoutRaw, {
         // 좌우 패딩 없음(postRowLinkLayoutRaw) — 목록 제목이 Hero·대표 글과
         // 같은 세로선에서 시작해야 한다. 예전 2px 때문에 홈에서 이 목록만

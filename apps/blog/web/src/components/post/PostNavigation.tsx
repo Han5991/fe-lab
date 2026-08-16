@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { css, sva } from '@design-system/ui-lib/css';
 import type { RecipeVariant } from '@design-system/ui-lib/css';
 import type { PostNavItem } from '@/domain/post';
-import { encodePostSlug } from '@/domain/post/utils';
+import { postPath } from '@/domain/post/urls';
 
 interface PostNavigationProps {
   prev: PostNavItem | null;
@@ -91,7 +91,7 @@ const NavCard = ({ href, title, direction, label, clamp }: NavCardProps) => {
   );
 };
 
-const postHref = (item: PostNavItem) => `/posts/${encodePostSlug(item.slug)}/`;
+const postHref = (item: PostNavItem) => postPath(item.slug);
 
 // 한쪽만 있을 때 남은 칸을 차지해 좌/우 정렬을 유지하는 자리끝. 모바일에서는
 // 세로 스택이라 빈 칸이 필요 없다.

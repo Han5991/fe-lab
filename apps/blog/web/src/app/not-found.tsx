@@ -1,6 +1,9 @@
 import Link from 'next/link';
 import { css, cx } from '@design-system/ui-lib/css';
 
+// leaf import — 404 화면은 도메인 데이터가 필요 없는 페이지라, 라우트 상수
+// 하나 때문에 배럴(node:fs를 당기는 series까지)을 물리지 않는다.
+import { POSTS_PATH } from '@/domain/post/urls';
 import { railGutter } from '@/src/components/Rail';
 
 export default function NotFound() {
@@ -81,7 +84,7 @@ export default function NotFound() {
           홈으로 돌아가기
         </Link>
         <Link
-          href="/posts/"
+          href={POSTS_PATH}
           className={css({
             px: '[16px]',
             py: '[8px]',

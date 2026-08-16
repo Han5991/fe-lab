@@ -2,7 +2,12 @@ import { Suspense } from 'react';
 import { css, cx } from '@design-system/ui-lib/css';
 import type { Metadata } from 'next';
 
-import { getAllPostSummaries } from '@/domain/post';
+import {
+  archiveUrl,
+  getAllPostSummaries,
+  POSTS_PATH,
+  postUrl,
+} from '@/domain/post';
 import { getAllSeries, getAllTags, getAllYears } from '@/domain/post/aggregate';
 import {
   SITE_URL,
@@ -30,11 +35,11 @@ const PAGE_DESCRIPTION =
 export const metadata: Metadata = {
   title: PAGE_TITLE,
   description: PAGE_DESCRIPTION,
-  alternates: { canonical: '/posts/' },
+  alternates: { canonical: POSTS_PATH },
   openGraph: {
     title: PAGE_TITLE,
     description: PAGE_DESCRIPTION,
-    url: `${SITE_URL}/posts/`,
+    url: archiveUrl(),
     siteName: SITE_NAME,
     images: [
       {
@@ -64,9 +69,9 @@ export default function PostsPage() {
   const collectionPageJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'CollectionPage',
-    '@id': `${SITE_URL}/posts/`,
+    '@id': archiveUrl(),
     name: 'Posts | Frontend Lab',
-    url: `${SITE_URL}/posts/`,
+    url: archiveUrl(),
     description: '프론트엔드 실험실의 모든 기록들을 확인해보세요.',
     inLanguage: 'ko',
     isPartOf: { '@id': `${SITE_URL}/#website` },
@@ -75,7 +80,9 @@ export default function PostsPage() {
       itemListElement: posts.map((post, index) => ({
         '@type': 'ListItem',
         position: index + 1,
-        item: `${SITE_URL}/posts/${post.slug}/`,
+        // 예전 리터럴 조합은 인코딩이 빠져 있었다 — 한글 slug 글이 생기면
+        // ItemList만 sitemap·페이지 링크와 다른 URL을 말하게 되는 자리였다.
+        item: postUrl(post.slug),
         name: post.title,
       })),
     },
@@ -84,9 +91,9 @@ export default function PostsPage() {
   const blogJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Blog',
-    '@id': `${SITE_URL}/posts/#blog`,
+    '@id': `${archiveUrl()}#blog`,
     name: 'Frontend Lab — 실험 기록들',
-    url: `${SITE_URL}/posts/`,
+    url: archiveUrl(),
     description:
       '프론트엔드 실험실의 모든 기록들. React, TypeScript, 번들러 시리즈 등.',
     inLanguage: 'ko',

@@ -1,7 +1,7 @@
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { getAllPosts } from '../domain/post';
+import { getAllPosts, postUrl } from '../domain/post';
 import type { PostData } from '../domain/post';
 import { SITE_URL as DEFAULT_SITE_URL } from '../lib/constants';
 
@@ -64,7 +64,11 @@ export function buildLlmsFullText(
     });
 
     for (const post of sorted) {
-      const url = `${SITE_URL}/posts/${post.slug}/`;
+      // 예전엔 `${SITE_URL}/posts/${post.slug}/`로 조립해 **인코딩이 빠져 있었다**
+      // — sitemap·rss·llms.txt와 이 파일만 형태가 달랐다. 지역 상수명이
+      // SITE_URL(옵션에서 해석한 값)이라 명시적으로 넘긴다 — 인자를 빼면
+      // lib의 기본값으로 떨어져 주입한 siteUrl이 무시된다.
+      const url = postUrl(post.slug, SITE_URL);
       // `truthy 체크` 의도적: 빈 문자열 excerpt('')도 content fallback으로 처리해
       // 빈 entry를 방지. excerpt 필드를 frontmatter에서 명시적으로 생략하면 동일 효과.
       const excerpt = post.excerpt
@@ -93,7 +97,7 @@ export function buildLlmsFullText(
     lines.push(``);
 
     for (const post of sortedStandalone) {
-      const url = `${SITE_URL}/posts/${post.slug}/`;
+      const url = postUrl(post.slug, SITE_URL);
       const excerpt = post.excerpt
         ? post.excerpt.slice(0, 200)
         : post.content

@@ -13,7 +13,7 @@ import {
   parseTagParam,
 } from '@/domain/post/filtering';
 import { getAllViewCounts } from '@/domain/analytics';
-import { encodePostSlug } from '@/domain/post/utils';
+import { postPath } from '@/domain/post/urls';
 import { fmtDate } from '@/lib/format';
 
 import { Label } from './Label';
@@ -55,7 +55,7 @@ const VIEW_KEYS = ['list', 'cards'] as const satisfies readonly ViewMode[];
  */
 export const ArchiveRow = ({ post }: { post: PostSummary }) => (
   <li className={postRowItem}>
-    <Link href={`/posts/${encodePostSlug(post.slug)}/`} className={postRowLink}>
+    <Link href={postPath(post.slug)} className={postRowLink}>
       <h3 className={postRowTitle}>
         {post.title}
         <HiddenPostBadge post={post} />

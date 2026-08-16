@@ -2,7 +2,8 @@
 
 import { css } from '@design-system/ui-lib/css';
 import Link from 'next/link';
-import { encodePostSlug } from '@/domain/post/utils';
+// leaf import — 클라이언트 컴포넌트라 배럴(@/domain/post) 값 import 금지(node:fs).
+import { postPath } from '@/domain/post/urls';
 import { fmtNum } from '@/lib/format';
 import { Sparkline } from '@/src/components/blog/Sparkline';
 import { token } from '@design-system/ui-lib/tokens';
@@ -51,7 +52,7 @@ export const TopPostsTable = ({ rows }: TopPostsTableProps) => {
             {String(i + 1).padStart(2, '0')}
           </span>
           <Link
-            href={`/posts/${encodePostSlug(p.slug)}/`}
+            href={postPath(p.slug)}
             className={css({
               fontFamily: 'sans',
               fontSize: 'sm',

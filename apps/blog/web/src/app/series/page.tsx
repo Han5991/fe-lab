@@ -2,10 +2,14 @@ import Link from 'next/link';
 import { css, cx } from '@design-system/ui-lib/css';
 import type { Metadata } from 'next';
 
-import { getAllPostSummaries } from '@/domain/post';
+import {
+  archivePath,
+  getAllPostSummaries,
+  POSTS_PATH,
+  postPath,
+} from '@/domain/post';
 import { getAllSeries } from '@/domain/post/aggregate';
 import { getSeriesMeta } from '@/domain/post/series';
-import { encodePostSlug } from '@/domain/post/utils';
 import { fmtDate } from '@/lib/format';
 import { OG_DEFAULT_IMAGE, SITE_NAME, SITE_URL } from '@/lib/constants';
 import { safeJsonLd } from '@/lib/jsonLd';
@@ -145,7 +149,7 @@ export default function SeriesPage() {
               >
                 아직 묶인 시리즈가 없습니다.{' '}
                 <Link
-                  href="/posts/"
+                  href={POSTS_PATH}
                   className={css({
                     color: 'accent.600',
                     _hover: { textDecorationLine: 'underline' },
@@ -174,7 +178,7 @@ export default function SeriesPage() {
                         (글 목록 행이 h3라 시리즈 제목은 h2로 둔다) */}
                     <h2 className={css({ minW: '0' })}>
                       <Link
-                        href={`/posts/?series=${encodeURIComponent(entry.id)}`}
+                        href={archivePath({ series: entry.id })}
                         className={css({
                           display: 'inline-block',
                           _hover: { textDecorationLine: 'underline' },
@@ -205,7 +209,7 @@ export default function SeriesPage() {
                     {entry.posts.map(post => (
                       <li key={post.slug} className={postRowItem}>
                         <Link
-                          href={`/posts/${encodePostSlug(post.slug)}/`}
+                          href={postPath(post.slug)}
                           className={postRowLink}
                         >
                           <h3 className={postRowTitle}>

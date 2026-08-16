@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { css } from '@design-system/ui-lib/css';
 import type { PostSummary } from '@/domain/post';
-import { encodePostSlug } from '@/domain/post/utils';
+import { postPath } from '@/domain/post/urls';
 import { resolveThumbnailSrc } from '@/domain/post/thumbnail';
 import { fmtDate } from '@/lib/format';
 import { ParallelThumb } from '@/src/components/diagram';
@@ -17,7 +17,7 @@ interface FeaturedPostProps {
 }
 
 export const FeaturedPost = ({ post, seriesLabel }: FeaturedPostProps) => {
-  const href = `/posts/${encodePostSlug(post.slug)}/`;
+  const href = postPath(post.slug);
   // 자동 생성 OG 카드는 1200×630 소셜 카드라 150px 칸에서 글자가 뭉갠다.
   // thumbnail이 비었거나 `/og/*`를 가리키면(= 빌드가 OG 카드를 만들어 주는
   // 경우) 이미지 대신 다이어그램 썸네일을 세운다 — 리뉴얼의 시각 아이덴티티다.

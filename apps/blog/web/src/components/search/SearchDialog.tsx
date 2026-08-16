@@ -10,6 +10,8 @@ import {
 import { useRouter } from 'next/navigation';
 import { css } from '@design-system/ui-lib/css';
 import { Search, X, Clock } from 'lucide-react';
+// leaf import — 클라이언트 컴포넌트라 배럴(@/domain/post) 값 import 금지(node:fs).
+import { postPath } from '@/domain/post/urls';
 import { getRecentViews, type RecentView } from '@/src/hooks/useRecentViews';
 
 interface SearchPost {
@@ -171,7 +173,10 @@ export const SearchDialog = () => {
 
   const handleSelect = (slug: string) => {
     closeDialog();
-    router.push(`/posts/${slug}`);
+    // 예전엔 `/posts/${slug}`를 그대로 밀어 넣어, 인코딩도 후행 슬래시도
+    // 없는 이 한 곳만 다른 링크와 형태가 달랐다(대괄호가 든 slug는 App
+    // Router가 동적 세그먼트로 오해한다 — encodePostSlug가 존재하는 이유).
+    router.push(postPath(slug));
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
