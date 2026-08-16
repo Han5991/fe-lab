@@ -42,8 +42,9 @@ import { isBlockMarkdownChild } from './markdownBlocks';
 
 interface PostClientProps {
   post: PostData;
-  thumbnailUrl?: string;
-  seriesIndex?: { current: number; total: number; displayName: string };
+  thumbnailUrl?: string | undefined;
+  seriesIndex?:
+    { current: number; total: number; displayName: string } | undefined;
 }
 
 export default function PostClient({

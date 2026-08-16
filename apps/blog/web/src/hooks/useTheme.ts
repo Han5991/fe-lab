@@ -42,7 +42,7 @@ function subscribe(onChange: () => void) {
 
 export function getSnapshot(): Theme {
   return (
-    (document.documentElement.dataset.theme as Theme | undefined) ?? 'dark'
+    (document.documentElement.dataset['theme'] as Theme | undefined) ?? 'dark'
   );
 }
 
@@ -65,7 +65,7 @@ function prefersReducedMotion(): boolean {
 }
 
 function applyTheme(next: Theme) {
-  document.documentElement.dataset.theme = next;
+  document.documentElement.dataset['theme'] = next;
   listeners.forEach(l => l());
 }
 

@@ -39,24 +39,24 @@ export interface PostData {
    * 원래 제목이 그대로 나가고, 잘림이 실제로 문제인 `<title>`만 이 값으로
    * 바꿉니다 — 제목을 짧게 고쳐서 글의 정체성을 훼손하지 않으려는 분리입니다.
    */
-  seoTitle?: string;
+  seoTitle?: string | undefined;
   date: string | null;
   updatedAt?: string | null;
   content: string;
   readMin: number;
   excerpt?: string;
-  thumbnail?: string;
+  thumbnail?: string | undefined;
   /**
    * 글 상단 히어로 슬롯에 꽂을 다이어그램 **이름**.
    * 유효성은 도메인이 아니라 렌더 계층(레지스트리)과 `lint:posts`가 판정합니다 —
    * 도메인이 UI 컴포넌트 목록을 알면 의존 방향이 뒤집힙니다.
    */
-  hero?: string;
-  tags?: string[];
-  series?: string;
+  hero?: string | undefined;
+  tags?: string[] | undefined;
+  series?: string | undefined;
   // parsePost가 유효한 status 없는 파일을 걸러내므로 항상 채워져 있습니다.
   status: PostStatus;
-  scheduledDate?: string;
+  scheduledDate?: string | undefined;
 }
 
 export type PostSummary = Omit<PostData, 'content'>;

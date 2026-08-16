@@ -69,7 +69,7 @@ const statusChain: Chain = ({ record: { data, relPath }, raw, options }) => {
     });
   }
 
-  if ('status' in data && !isPostStatus(data.status)) {
+  if ('status' in data && !isPostStatus(data['status'])) {
     issues.push({
       file: relPath,
       line: findFrontmatterLine(raw, 'status'),
@@ -166,7 +166,7 @@ const stringFieldChain: Chain = ({
 const titleChain: Chain = ({ record: { data, relPath }, raw, options }) => {
   const issues: Issue[] = [];
 
-  if (!data.title || typeof data.title !== 'string') {
+  if (!data['title'] || typeof data['title'] !== 'string') {
     issues.push({
       file: relPath,
       line: findFrontmatterLine(raw, 'title'),
@@ -181,10 +181,10 @@ const titleChain: Chain = ({ record: { data, relPath }, raw, options }) => {
   // 넣기 때문에 접미사까지 더하면 쉽게 60자를 넘고, 검색 결과에서 뒤가 잘립니다.
   // 제목 자체를 줄이면 글의 정체성이 상하므로 `seoTitle`로 `<title>`만 줄입니다.
   const effectiveTitle =
-    typeof data.seoTitle === 'string' && data.seoTitle !== ''
-      ? data.seoTitle
-      : typeof data.title === 'string'
-        ? data.title
+    typeof data['seoTitle'] === 'string' && data['seoTitle'] !== ''
+      ? data['seoTitle']
+      : typeof data['title'] === 'string'
+        ? data['title']
         : '';
   const renderedTitleLength = effectiveTitle.length + TITLE_SUFFIX.length;
   if (effectiveTitle && renderedTitleLength > SEO_TITLE_MAX_LENGTH) {
@@ -215,7 +215,7 @@ const excerptChain: Chain = ({ record: { data, relPath }, raw, options }) => {
   // 빈 문자열(`excerpt: ''`)도 같은 취급입니다 — frontmatterSchema.ts의 toOptionalString이
   // 빈 문자열을 "값 없음"으로 떨어뜨려 똑같이 자동 발췌로 폴백하는데, 키가 있다는
   // 이유로 넘어가면 `new-post` 스캐폴딩이 깔아주는 `excerpt: ''`가 영원히 조용합니다.
-  if (!('excerpt' in data) || data.excerpt === '') {
+  if (!('excerpt' in data) || data['excerpt'] === '') {
     issues.push({
       file: relPath,
       line:
@@ -225,12 +225,12 @@ const excerptChain: Chain = ({ record: { data, relPath }, raw, options }) => {
       rule: 'missing-excerpt',
       message: `\`excerpt\`가 ${'excerpt' in data ? '비어 있어' : '없어'} 본문 앞 ${SEO_DESCRIPTION_MAX_LENGTH}자 자동 발췌가 meta description으로 나갑니다. 도입부가 비슷한 글끼리 description이 통째로 겹칠 수 있으니 ${SEO_DESCRIPTION_MIN_LENGTH}~${SEO_DESCRIPTION_MAX_LENGTH}자의 고유한 요약을 적어주세요.`,
     });
-  } else if (typeof data.excerpt === 'string') {
-    const len = data.excerpt.length;
+  } else if (typeof data['excerpt'] === 'string') {
+    const len = data['excerpt'].length;
     // check-seo는 최종 HTML만 보므로 "말줄임으로 끝나는 description"이 자동 발췌가
     // 샌 것인지 저자가 그렇게 쓴 것인지 구분하지 못하고 배포를 막는다. 여기서 같은
     // 조건을 먼저 잡아, 로컬은 통과하고 CI만 실패하는 상황을 없앤다.
-    if (/(\.\.\.|…)$/.test(data.excerpt.trimEnd())) {
+    if (/(\.\.\.|…)$/.test(data['excerpt'].trimEnd())) {
       issues.push({
         file: relPath,
         line: findFrontmatterLine(raw, 'excerpt'),
@@ -263,14 +263,14 @@ const dateChain: Chain = ({ record: { data, relPath }, raw, options }) => {
   // sitemap lastmod, RSS pubDate가 모두 이 값을 읽고, `status: scheduled`는 이 값을
   // 공개 시각으로 씁니다(visibility.ts). 없으면 목록에서 날짜가 비고 예약 글은
   // 영원히 비공개가 되는데, 지금까지는 아무 경고 없이 통과했습니다.
-  if (data.date == null) {
+  if (data['date'] == null) {
     issues.push({
       file: relPath,
       line: findFrontmatterLine(raw, 'date'),
       severity: resolveSeverity('missing-date', data, options),
       rule: 'missing-date',
       message:
-        data.status === 'scheduled'
+        data['status'] === 'scheduled'
           ? '`date` 필드가 필요합니다. `status: scheduled`는 `date`를 공개 시각으로 쓰므로, 없으면 영원히 비공개 처리됩니다.'
           : '`date` 필드가 필요합니다. 목록 정렬·아카이브·sitemap·RSS가 모두 이 값을 사용합니다.',
     });
@@ -278,17 +278,21 @@ const dateChain: Chain = ({ record: { data, relPath }, raw, options }) => {
   }
 
   const dateValid =
-    data.date instanceof Date ||
-    (typeof data.date === 'string' && !Number.isNaN(Date.parse(data.date)));
+    data['date'] instanceof Date ||
+    (typeof data['date'] === 'string' &&
+      !Number.isNaN(Date.parse(data['date'])));
   if (!dateValid) {
     issues.push({
       file: relPath,
       line: findFrontmatterLine(raw, 'date'),
       severity: resolveSeverity('invalid-date', data, options),
       rule: 'invalid-date',
-      message: `\`date\`가 유효한 날짜가 아닙니다: ${String(data.date)}`,
+      message: `\`date\`가 유효한 날짜가 아닙니다: ${String(data['date'])}`,
     });
-  } else if (typeof data.date === 'string' && hasAmbiguousTimezone(data.date)) {
+  } else if (
+    typeof data['date'] === 'string' &&
+    hasAmbiguousTimezone(data['date'])
+  ) {
     // date도 sitemap lastmod / rss pubDate에서 parseScheduledDateKST를 거치므로
     // offset 없는 datetime이면 scheduledDate와 동일하게 환경 의존 회귀가 생긴다.
     issues.push({
@@ -296,7 +300,7 @@ const dateChain: Chain = ({ record: { data, relPath }, raw, options }) => {
       line: findFrontmatterLine(raw, 'date'),
       severity: resolveSeverity('ambiguous-date', data, options),
       rule: 'ambiguous-date',
-      message: `\`date\`에 timezone offset이 없어 빌드 환경(UTC)과 로컬(KST)에서 날짜가 어긋날 수 있습니다. \`+09:00\`/\`Z\`를 명시하거나 'YYYY-MM-DD' 형식을 쓰세요: ${data.date}`,
+      message: `\`date\`에 timezone offset이 없어 빌드 환경(UTC)과 로컬(KST)에서 날짜가 어긋날 수 있습니다. \`+09:00\`/\`Z\`를 명시하거나 'YYYY-MM-DD' 형식을 쓰세요: ${data['date']}`,
     });
   }
 
@@ -307,30 +311,30 @@ const dateChain: Chain = ({ record: { data, relPath }, raw, options }) => {
 
 const updatedAtChain: Chain = ({ record: { data, relPath }, raw, options }) => {
   const issues: Issue[] = [];
-  if (data.updatedAt == null) return issues;
+  if (data['updatedAt'] == null) return issues;
 
   const updatedAtValid =
-    data.updatedAt instanceof Date ||
-    (typeof data.updatedAt === 'string' &&
-      !Number.isNaN(Date.parse(data.updatedAt)));
+    data['updatedAt'] instanceof Date ||
+    (typeof data['updatedAt'] === 'string' &&
+      !Number.isNaN(Date.parse(data['updatedAt'])));
   if (!updatedAtValid) {
     issues.push({
       file: relPath,
       line: findFrontmatterLine(raw, 'updatedAt'),
       severity: resolveSeverity('invalid-updated-at', data, options),
       rule: 'invalid-updated-at',
-      message: `\`updatedAt\`이 유효한 날짜가 아닙니다: ${String(data.updatedAt)}`,
+      message: `\`updatedAt\`이 유효한 날짜가 아닙니다: ${String(data['updatedAt'])}`,
     });
   } else if (
-    typeof data.updatedAt === 'string' &&
-    hasAmbiguousTimezone(data.updatedAt)
+    typeof data['updatedAt'] === 'string' &&
+    hasAmbiguousTimezone(data['updatedAt'])
   ) {
     issues.push({
       file: relPath,
       line: findFrontmatterLine(raw, 'updatedAt'),
       severity: resolveSeverity('ambiguous-updated-at', data, options),
       rule: 'ambiguous-updated-at',
-      message: `\`updatedAt\`에 timezone offset이 없어 빌드 환경(UTC)과 로컬(KST)에서 날짜가 어긋날 수 있습니다. \`+09:00\`/\`Z\`를 명시하거나 'YYYY-MM-DD' 형식을 쓰세요: ${data.updatedAt}`,
+      message: `\`updatedAt\`에 timezone offset이 없어 빌드 환경(UTC)과 로컬(KST)에서 날짜가 어긋날 수 있습니다. \`+09:00\`/\`Z\`를 명시하거나 'YYYY-MM-DD' 형식을 쓰세요: ${data['updatedAt']}`,
     });
   }
   return issues;
@@ -349,7 +353,7 @@ const scheduledDateChain: Chain = ({
   // 무따옴표 datetime(`scheduledDate: 2026-06-01T09:00:00+09:00`)은 YAML이 Date
   // 객체로 파싱하고, repository.ts가 문자열이 아닌 값을 버립니다. 그러면 공개 시각이
   // date로 폴백되는데 date는 KST 자정 기준이라 **의도보다 9시간 일찍 공개**됩니다.
-  if ('scheduledDate' in data && typeof data.scheduledDate !== 'string') {
+  if ('scheduledDate' in data && typeof data['scheduledDate'] !== 'string') {
     issues.push({
       file: relPath,
       line: findFrontmatterLine(raw, 'scheduledDate'),
@@ -359,32 +363,32 @@ const scheduledDateChain: Chain = ({
     });
   }
 
-  if (data.status === 'scheduled') {
+  if (data['status'] === 'scheduled') {
     // 공개 시각이 아예 없는 경우는 date 사슬의 missing-date가 잡습니다. 예전에는
     // 여기서 scheduled-without-date로 따로 검사했지만, date가 필수가 되면서 그 조건
     // (`scheduledDate도 date도 없음`)은 missing-date에 완전히 포섭돼 같은 파일에
     // 에러 두 개가 뜰 뿐이었습니다.
     if (
-      typeof data.scheduledDate === 'string' &&
-      Number.isNaN(Date.parse(data.scheduledDate))
+      typeof data['scheduledDate'] === 'string' &&
+      Number.isNaN(Date.parse(data['scheduledDate']))
     ) {
       issues.push({
         file: relPath,
         line: findFrontmatterLine(raw, 'scheduledDate'),
         severity: resolveSeverity('invalid-scheduled-date', data, options),
         rule: 'invalid-scheduled-date',
-        message: `\`scheduledDate\`가 유효한 날짜가 아닙니다: ${data.scheduledDate}`,
+        message: `\`scheduledDate\`가 유효한 날짜가 아닙니다: ${data['scheduledDate']}`,
       });
     } else if (
-      typeof data.scheduledDate === 'string' &&
-      hasAmbiguousTimezone(data.scheduledDate)
+      typeof data['scheduledDate'] === 'string' &&
+      hasAmbiguousTimezone(data['scheduledDate'])
     ) {
       issues.push({
         file: relPath,
         line: findFrontmatterLine(raw, 'scheduledDate'),
         severity: resolveSeverity('ambiguous-scheduled-date', data, options),
         rule: 'ambiguous-scheduled-date',
-        message: `\`scheduledDate\`에 timezone offset이 없어 빌드 환경(UTC)과 로컬(KST)에서 발행 시각이 ~9시간 어긋날 수 있습니다. \`+09:00\` 또는 \`Z\`를 명시하거나 'YYYY-MM-DD' 형식을 쓰세요: ${data.scheduledDate}`,
+        message: `\`scheduledDate\`에 timezone offset이 없어 빌드 환경(UTC)과 로컬(KST)에서 발행 시각이 ~9시간 어긋날 수 있습니다. \`+09:00\` 또는 \`Z\`를 명시하거나 'YYYY-MM-DD' 형식을 쓰세요: ${data['scheduledDate']}`,
       });
     }
   }
@@ -400,7 +404,7 @@ const tagsChain: Chain = ({ record: { data, relPath }, raw, options }) => {
 
   // 배열이 아니거나 문자열 아닌 원소가 섞이면 repository.ts가 tags를 통째로
   // undefined로 떨어뜨립니다(조용한 유실). 그래서 원소 타입까지 검사합니다.
-  if (!Array.isArray(data.tags)) {
+  if (!Array.isArray(data['tags'])) {
     issues.push({
       file: relPath,
       line: findFrontmatterLine(raw, 'tags'),
@@ -408,20 +412,20 @@ const tagsChain: Chain = ({ record: { data, relPath }, raw, options }) => {
       rule: 'invalid-tags',
       message: '`tags`는 배열이어야 합니다. 예: `tags: [bundler, build]`',
     });
-  } else if (data.tags.some(tag => typeof tag !== 'string')) {
+  } else if (data['tags'].some(tag => typeof tag !== 'string')) {
     issues.push({
       file: relPath,
       line: findFrontmatterLine(raw, 'tags'),
       severity: resolveSeverity('invalid-tags', data, options),
       rule: 'invalid-tags',
-      message: `\`tags\`의 모든 원소는 문자열이어야 합니다. 문자열이 아닌 값이 하나라도 있으면 태그 전체가 무시됩니다: ${JSON.stringify(data.tags)}`,
+      message: `\`tags\`의 모든 원소는 문자열이어야 합니다. 문자열이 아닌 값이 하나라도 있으면 태그 전체가 무시됩니다: ${JSON.stringify(data['tags'])}`,
     });
   } else {
     // 렌더 계층(frontmatterSchema의 toStringArray)이 중복을 걷어내므로 화면은 멀쩡하다.
     // 다만 frontmatter에 남아 있으면 저자가 눈치채지 못하므로 경고로 알린다.
     const seen = new Set<string>();
     const dupes = new Set<string>();
-    for (const tag of data.tags as string[]) {
+    for (const tag of data['tags'] as string[]) {
       if (seen.has(tag)) dupes.add(tag);
       seen.add(tag);
     }
@@ -445,14 +449,14 @@ const tagsChain: Chain = ({ record: { data, relPath }, raw, options }) => {
 // 조용히 썸네일로 폴백하기 때문에(글이 죽지 않도록 일부러 그렇게 만들었습니다)
 // 글쓴이는 "왜 다이어그램이 안 나오지" 상태로 방치됩니다. 그 침묵을 여기서 깹니다.
 const heroChain: Chain = ({ record: { data, relPath }, raw, options }) => {
-  if (!('hero' in data) || isDiagramName(data.hero)) return [];
+  if (!('hero' in data) || isDiagramName(data['hero'])) return [];
   return [
     {
       file: relPath,
       line: findFrontmatterLine(raw, 'hero'),
       severity: resolveSeverity('unknown-hero-diagram', data, options),
       rule: 'unknown-hero-diagram',
-      message: `\`hero\`는 등록된 다이어그램 이름이어야 합니다 (${DIAGRAM_NAMES.join(', ')}). 새 다이어그램이라면 domain/post/diagramNames.ts와 src/components/diagram/registry.ts에 먼저 등록하세요: ${JSON.stringify(data.hero)}`,
+      message: `\`hero\`는 등록된 다이어그램 이름이어야 합니다 (${DIAGRAM_NAMES.join(', ')}). 새 다이어그램이라면 domain/post/diagramNames.ts와 src/components/diagram/registry.ts에 먼저 등록하세요: ${JSON.stringify(data['hero'])}`,
     },
   ];
 };
@@ -461,8 +465,9 @@ const heroChain: Chain = ({ record: { data, relPath }, raw, options }) => {
 
 const thumbnailChain: Chain = ({ record, raw, options }) => {
   const { data, relPath, absPath } = record;
-  if (!('thumbnail' in data) || typeof data.thumbnail !== 'string') return [];
-  const thumb = data.thumbnail;
+  if (!('thumbnail' in data) || typeof data['thumbnail'] !== 'string')
+    return [];
+  const thumb = data['thumbnail'];
   if (/^https?:\/\//.test(thumb) || thumb.startsWith('/')) return [];
   const resolved = resolve(dirname(absPath), thumb);
   if (existsSync(resolved)) return [];

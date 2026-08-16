@@ -5,7 +5,7 @@ import { css } from '@design-system/ui-lib/css';
 interface TagDistributionProps {
   tags: { id: string; count: number }[];
   /** 강조할 태그 — bundler 등 시리즈 색을 입힐 ID */
-  highlightId?: string;
+  highlightId?: string | undefined;
 }
 
 export const TagDistribution = ({

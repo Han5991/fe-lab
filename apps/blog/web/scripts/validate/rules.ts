@@ -133,8 +133,8 @@ export function resolveSeverity(
  */
 export function isVisibleFrontmatter(data: Record<string, unknown>): boolean {
   return isPostVisible({
-    status: data.status,
-    date: toDateString(data.date),
-    scheduledDate: toDateString(data.scheduledDate),
+    status: data['status'],
+    date: toDateString(data['date']),
+    scheduledDate: toDateString(data['scheduledDate']),
   } as Parameters<typeof isPostVisible>[0]);
 }

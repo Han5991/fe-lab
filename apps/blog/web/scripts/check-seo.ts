@@ -241,7 +241,7 @@ export function checkPages(pages: Map<string, string>): SeoViolation[] {
 export interface CollectedArtifact {
   name: string;
   relation: ArtifactRelation;
-  reference?: boolean;
+  reference?: boolean | undefined;
   urls: Set<string> | null;
 }
 

@@ -15,12 +15,12 @@ interface AdminPostMeta {
 function isAdminPostMeta(item: unknown): item is AdminPostMeta {
   if (typeof item !== 'object' || item === null) return false;
   const candidate = item as Record<string, unknown>;
-  if (typeof candidate.slug !== 'string') return false;
+  if (typeof candidate['slug'] !== 'string') return false;
   if (
-    candidate.tags !== undefined &&
+    candidate['tags'] !== undefined &&
     !(
-      Array.isArray(candidate.tags) &&
-      candidate.tags.every(t => typeof t === 'string')
+      Array.isArray(candidate['tags']) &&
+      candidate['tags'].every(t => typeof t === 'string')
     )
   ) {
     return false;

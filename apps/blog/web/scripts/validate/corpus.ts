@@ -38,7 +38,7 @@ export function detectDuplicateDescriptions(
   for (const record of records) {
     if (!isPostFile(record.data) || !isVisibleFrontmatter(record.data))
       continue;
-    const description = resolveExcerpt(record.content, record.data.excerpt);
+    const description = resolveExcerpt(record.content, record.data['excerpt']);
     const arr = byDescription.get(description) ?? [];
     arr.push(record);
     byDescription.set(description, arr);
@@ -70,7 +70,7 @@ export function detectDuplicateDescriptions(
 export function detectDuplicateSlugs(records: PostRecord[]): Issue[] {
   const slugMap = new Map<string, string[]>();
   for (const r of records) {
-    const explicit = typeof r.data.slug === 'string' ? r.data.slug : null;
+    const explicit = typeof r.data['slug'] === 'string' ? r.data['slug'] : null;
     const effective = explicit ?? deriveDefaultSlug(r.relPath);
     const arr = slugMap.get(effective) ?? [];
     arr.push(r.relPath);

@@ -25,7 +25,7 @@ import { DeployPipeline } from './DeployPipeline';
 /** 레지스트리에 등록되는 다이어그램이 공통으로 받는 prop. */
 export interface NamedDiagramProps {
   /** 생략하면 각 다이어그램의 기본 설명이 `aria-label`로 쓰입니다. */
-  label?: string;
+  label?: string | undefined;
 }
 
 export const DIAGRAMS: Record<DiagramName, ComponentType<NamedDiagramProps>> = {

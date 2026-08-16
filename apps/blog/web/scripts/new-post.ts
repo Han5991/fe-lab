@@ -8,8 +8,10 @@ interface Options {
   title?: string;
   series?: string;
   status: 'draft' | 'published' | 'scheduled';
-  scheduledDate?: string;
-  slug?: string;
+  // slug/scheduledDate는 buildFrontmatter 호출부가 `opts.slug` 그대로(값이
+  // undefined일 수 있는 채로) 넘기므로 명시적 undefined를 허용해야 한다.
+  scheduledDate?: string | undefined;
+  slug?: string | undefined;
   tags: string[];
 }
 

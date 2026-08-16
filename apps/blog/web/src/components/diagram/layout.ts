@@ -21,9 +21,9 @@ export type DiagramDirection = 'row' | 'fan';
 export interface DiagramNodeSpec {
   /** `<diagram-edge from/to>` 가 참조하는 키. */
   id: string;
-  title?: string;
+  title?: string | undefined;
   /** 핸드오프 §4: 5단어 이내. */
-  desc?: string;
+  desc?: string | undefined;
   tone: DiagramTone;
   shape: DiagramShape;
 }
@@ -62,7 +62,7 @@ export interface DiagramLayout {
   nodes: PlacedNode[];
   edges: PlacedEdge[];
   /** caption을 요청했을 때만 채워진다. `<text>` 의 baseline 좌표다. */
-  caption?: { x: number; y: number };
+  caption?: { x: number; y: number } | undefined;
 }
 
 // ── 상수 ────────────────────────────────────────────────────────────────────
@@ -132,8 +132,8 @@ export function estimateTextWidth(text: string, fontSize: number): number {
  * 상한에 걸린 긴 텍스트는 잘리는 대신 삐져나온다 — 그건 글쓴이가 줄일 신호다.
  */
 export function estimateNodeWidth(node: {
-  title?: string;
-  desc?: string;
+  title?: string | undefined;
+  desc?: string | undefined;
 }): number {
   const titleWidth = node.title
     ? estimateTextWidth(node.title, TITLE_FONT_SIZE)

@@ -42,7 +42,7 @@ export interface OgPostInput {
   slug: string;
   title: string;
   date: string | null;
-  series?: string;
+  series?: string | undefined;
 }
 
 /** 이미지에 들어가는 입력만으로 계산 — 입력이 같으면 재렌더링을 skip합니다. */
@@ -76,7 +76,9 @@ export function ogFileRelPath(slug: string): string {
  * 경로(/og/*)를 가리키는 글. 후자가 없으면 frontmatter가 생성기 출력물을
  * 참조하는 순간 "썸네일 있는 글"로 오인되어 이미지가 사라지는 순환이 생긴다.
  */
-export function needsGeneratedOg(post: { thumbnail?: string }): boolean {
+export function needsGeneratedOg(post: {
+  thumbnail?: string | undefined;
+}): boolean {
   return !post.thumbnail || post.thumbnail.startsWith('/og/');
 }
 
@@ -100,7 +102,10 @@ export function displayTitle(title: string, series?: string): string {
 
 interface OgNode {
   type: string;
-  props: { style?: Record<string, unknown>; children?: OgNode[] | string };
+  props: {
+    style?: Record<string, unknown>;
+    children?: OgNode[] | string | undefined;
+  };
 }
 
 function el(

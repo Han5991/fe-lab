@@ -70,7 +70,9 @@ const callout = sva({
   defaultVariants: { type: 'info' },
 });
 
-type CalloutType = RecipeVariant<typeof callout>['type'];
+// RecipeVariant의 variant prop은 optional이라 exactOptionalPropertyTypes에서는
+// undefined가 유니언에 남는다 — Record 키로 쓰는 여기서는 걷어낸다.
+type CalloutType = NonNullable<RecipeVariant<typeof callout>['type']>;
 
 // 아이콘을 이모지에서 hairline 원형 + 문자 하나로 바꿨다. 이모지는 색을 우리가
 // 통제할 수 없어서 "무채색 베이스 + 포인트 1색" 팔레트 밖으로 튀고, 플랫한

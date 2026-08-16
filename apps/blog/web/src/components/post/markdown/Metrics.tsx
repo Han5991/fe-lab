@@ -25,10 +25,10 @@ import {
  */
 
 interface MetricItem {
-  label?: string;
-  value?: string;
+  label?: string | undefined;
+  value?: string | undefined;
   /** 문서상 값은 'default' | 'success'. raw HTML은 임의 문자열이 올 수 있어 넓게 받는다. */
-  tone?: string;
+  tone?: string | undefined;
 }
 
 function isMetricItem(candidate: unknown): candidate is MetricItem {
@@ -121,9 +121,9 @@ const cardValue = cva({
 });
 
 interface MetricProps {
-  label?: string;
-  value?: string;
-  tone?: string;
+  label?: string | undefined;
+  value?: string | undefined;
+  tone?: string | undefined;
   children?: ReactNode;
 }
 

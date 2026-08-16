@@ -6,9 +6,9 @@ const postsDirectory = join(process.cwd(), '..', 'posts');
 
 export interface SeriesMeta {
   name: string;
-  title?: string;
-  description?: string;
-  order?: string[];
+  title?: string | undefined;
+  description?: string | undefined;
+  order?: string[] | undefined;
 }
 
 const _metaCache = new Map<string, SeriesMeta | null>();
@@ -33,11 +33,11 @@ export function getSeriesMeta(seriesName: string): SeriesMeta | null {
 
   const meta: SeriesMeta = {
     name: seriesName,
-    title: typeof data.title === 'string' ? data.title : undefined,
+    title: typeof data['title'] === 'string' ? data['title'] : undefined,
     description:
-      typeof data.description === 'string' ? data.description : undefined,
-    order: Array.isArray(data.order)
-      ? data.order.filter((s): s is string => typeof s === 'string')
+      typeof data['description'] === 'string' ? data['description'] : undefined,
+    order: Array.isArray(data['order'])
+      ? data['order'].filter((s): s is string => typeof s === 'string')
       : undefined,
   };
 

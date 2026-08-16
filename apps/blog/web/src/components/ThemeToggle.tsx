@@ -14,7 +14,7 @@ import { setTheme } from '@/src/hooks/useTheme';
 export function ThemeToggle() {
   const toggle = () => {
     const current =
-      document.documentElement.dataset.theme === 'light' ? 'light' : 'dark';
+      document.documentElement.dataset['theme'] === 'light' ? 'light' : 'dark';
     setTheme(current === 'dark' ? 'light' : 'dark');
   };
 

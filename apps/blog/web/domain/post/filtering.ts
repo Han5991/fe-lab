@@ -12,7 +12,7 @@ export interface ArchiveFilterParams {
   year: string | null;
   sort: ArchiveSortKey;
   /** 인기순 정렬 시 Supabase post_views로 받은 slug→view_count 맵. 없으면 0 취급. */
-  viewCounts?: Map<string, number>;
+  viewCounts?: Map<string, number> | undefined;
 }
 
 /**
