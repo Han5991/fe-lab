@@ -93,7 +93,7 @@ function LoginForm() {
         )}
 
         <button
-          onClick={() => handleGoogleLogin()}
+          onClick={() => void handleGoogleLogin()}
           disabled={isLoading}
           className={css({
             display: 'flex',

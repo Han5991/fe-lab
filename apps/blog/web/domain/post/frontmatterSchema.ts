@@ -62,7 +62,7 @@ export function toOptionalString(value: unknown): string | undefined {
 export function toStringArray(value: unknown): string[] | undefined {
   if (!Array.isArray(value)) return undefined;
   return value.every(item => typeof item === 'string')
-    ? Array.from(new Set(value as string[]))
+    ? Array.from(new Set(value))
     : undefined;
 }
 

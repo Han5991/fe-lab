@@ -15,7 +15,9 @@ import tseslint from 'typescript-eslint';
  * 동작을 실측한 조합이다. react 계열 정적 검사는 react-hooks recommended-latest
  * (React Compiler 진단 룰 포함)가 담당한다 — next.config.ts의 reactCompiler와 짝.
  *
- * 타입 정보가 필요한 *-type-checked 룰셋은 여기 없다 — 별도 PR 몫.
+ * 타입 정보가 필요한 룰셋은 recommendedTypeCheckedOnly + projectService로 켠다.
+ * 프로덕션 파일은 projectService가 tsconfig.json을 자동 발견하고, 테스트 파일은
+ * 아래 전용 블록이 tsconfig.test.json 프로그램을 쓴다(각 블록 주석 참조).
  */
 export default defineConfig([
   {
@@ -47,6 +49,51 @@ export default defineConfig([
   js.configs.recommended,
   ...tseslint.configs.strict,
   ...tseslint.configs.stylistic,
+
+  // ── 타입 정보 기반 룰셋 ────────────────────────────────────────────────────
+  // recommendedTypeCheckedOnly = recommended 중 타입 정보가 필요한 룰만.
+  // (strict/stylistic 비-타입 룰은 위에서 이미 적용했으므로 *Only로 중복을 피한다)
+  ...tseslint.configs.recommendedTypeCheckedOnly,
+  {
+    // projectService는 파일별로 가장 가까운 tsconfig.json을 자동 발견한다.
+    // 프로덕션 소스는 전부 tsconfig.json 소속이므로 이걸로 충분하다.
+    languageOptions: {
+      parserOptions: {
+        projectService: true,
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+  },
+  {
+    // 테스트 파일은 tsconfig.json이 exclude하고 tsconfig.test.json이 include한다
+    // (프로덕션 전용 엄격 플래그 3개를 끄기 위한 분할 — PR5). projectService의
+    // 자동 발견은 파일명이 tsconfig.json인 것만 찾으므로 테스트 파일이 "어느
+    // 프로젝트에도 없음"으로 떨어진다. allowDefaultProject로 우회하지 않는 이유:
+    // `**` 글롭을 금지해 테스트 위치(domain/·lib/·scripts/·src/)마다 패턴을
+    // 나열해야 하고, 그렇게 열어도 tsconfig.test.json이 아니라 defaultProject
+    // 단일 파일 추론으로 검사돼 check-types가 보는 프로그램과 어긋난다.
+    // 대신 이 블록에서 tsconfig.test.json 프로그램을 명시해 check-types와
+    // 정확히 같은 타입 환경으로 린트한다. 파일 목록은 tsconfig.test.json의
+    // include와 대칭 — 저쪽을 고치면 여기도 함께 고칠 것.
+    files: [
+      '**/*.test.{ts,tsx}',
+      '**/*.spec.{ts,tsx}',
+      'vitest.config.mts',
+      'vitest.setup.ts',
+    ],
+    languageOptions: {
+      parserOptions: {
+        projectService: false,
+        project: ['./tsconfig.test.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+  },
+  {
+    // 설정 파일 등 JS는 어떤 tsconfig 프로그램에도 속하지 않는다 — 타입 룰 해제.
+    files: ['**/*.{js,mjs,cjs}'],
+    ...tseslint.configs.disableTypeChecked,
+  },
 
   nextPlugin.configs['core-web-vitals'],
   {
@@ -85,6 +132,42 @@ export default defineConfig([
     rules: {
       '@typescript-eslint/consistent-type-definitions': 'off',
       '@typescript-eslint/consistent-indexed-object-style': 'off',
+      // 생성기가 union에 `never`를 남긴다(Functions가 빈 스키마일 때 등).
+      '@typescript-eslint/no-redundant-type-constituents': 'off',
+    },
+  },
+
+  {
+    // TS 파일로 한정 — 전역으로 두면 위 disableTypeChecked가 꺼 둔 룰을
+    // .mjs/.cjs에서 옵션과 함께 되켜 버린다(타입 정보 없음 → 로드 에러).
+    files: ['**/*.{ts,tsx,mts,cts}'],
+    rules: {
+      // node:test의 test()/훅은 promise를 반환하지만 러너가 수명을 관리한다 —
+      // 최상위 호출을 await하지 않는 게 표준 사용법이다. 주의: 이 인가는
+      // 심볼 이름+패키지 매칭이라 **서브테스트(t.test())도 함께 인가된다**
+      // (TestContext.test 역시 node:test 선언의 'test'다). 서브테스트는 부모가
+      // 먼저 끝나면 취소되므로 원래 await가 필요하지만, lint가 못 잡는다 —
+      // 현재 저장소에 t.test()/ctx.test() 사용은 0건이고, 쓰게 되면 반드시
+      // await할 것(여기서 'test'를 빼면 최상위 672곳이 전부 걸려 대안이 없다).
+      '@typescript-eslint/no-floating-promises': [
+        'error',
+        {
+          allowForKnownSafeCalls: [
+            {
+              from: 'package',
+              package: 'node:test',
+              name: [
+                'test',
+                'describe',
+                'before',
+                'after',
+                'beforeEach',
+                'afterEach',
+              ],
+            },
+          ],
+        },
+      ],
     },
   },
 

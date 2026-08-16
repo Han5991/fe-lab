@@ -24,19 +24,20 @@ function makeMockClient(response: InvokeResponse): {
 } {
   const calls: CapturedCall[] = [];
 
-  // mock은 제네릭을 any로 우회합니다 — 런타임 동작만 검증하면 되므로 cast 사용.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const mockFunctions: any = {
-    invoke: async (functionName: string, options?: { body?: unknown }) => {
-      calls.push({ functionName, options });
-      return response;
+  const client: FunctionsInvoker = {
+    functions: {
+      invoke<T>(functionName: string, options?: { body?: unknown }) {
+        calls.push({ functionName, options });
+        // mock은 T와 무관하게 고정 응답을 돌려준다 — 런타임 동작만 검증하므로
+        // 제네릭 반환 타입으로의 cast는 의도된 우회다.
+        return Promise.resolve(
+          response as { data: T | null; error: { message: string } | null },
+        );
+      },
     },
   };
 
-  return {
-    client: { functions: mockFunctions } as unknown as FunctionsInvoker,
-    calls,
-  };
+  return { client, calls };
 }
 
 // ── 테스트 ────────────────────────────────────────────────────────────────────
@@ -139,7 +140,7 @@ test('createAdminApiClient: data가 null이면 Error throw (빈 응답)', async 
   const { client } = makeMockClient({
     data: null,
     error: null,
-  } as InvokeResponse);
+  });
 
   const api = createAdminApiClient(client);
 

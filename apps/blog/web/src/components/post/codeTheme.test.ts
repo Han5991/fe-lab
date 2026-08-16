@@ -17,7 +17,9 @@ const HEX = /#[0-9a-f]{3,8}/gi;
 const colorsIn = (style: Record<string, CSSProperties>) =>
   new Set(
     Object.values(style)
-      .flatMap(rules => Object.values(rules))
+      // CSSProperties의 커스텀 프로퍼티 색인이 any라 값 배열도 any[]로 나온다
+      // — 아래 filter가 string으로 좁히기 전까지는 unknown으로 취급한다.
+      .flatMap((rules): unknown[] => Object.values(rules) as unknown[])
       .filter((v): v is string => typeof v === 'string')
       .flatMap(v => v.match(HEX) ?? [])
       .map(hex => hex.toLowerCase()),

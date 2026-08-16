@@ -463,7 +463,7 @@ export default function AdminPage() {
               상세 분석
             </Link>
             <button
-              onClick={handleLogout}
+              onClick={() => void handleLogout()}
               className={css({
                 display: 'flex',
                 alignItems: 'center',

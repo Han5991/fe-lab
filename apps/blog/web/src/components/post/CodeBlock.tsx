@@ -40,7 +40,9 @@ export const LANGUAGE_MODULES: Record<PrismLanguageName, unknown> = {
   css: cssLang,
   javascript,
   jsx,
-  'js-extras': jsExtras,
+  // @types/react-syntax-highlighter가 언어 모듈을 전부 any로 선언한다 —
+  // 값 타입이 unknown인 이 맵에 담기 전에 명시적으로 unknown으로 올린다.
+  'js-extras': jsExtras as unknown,
   jsdoc,
   typescript,
   tsx,
@@ -188,7 +190,7 @@ export function CopyButton({ content }: { content: string }) {
 
   return (
     <button
-      onClick={handleCopy}
+      onClick={() => void handleCopy()}
       // 'Copy'라는 글자를 아이콘으로 바꾸면서 접근 가능한 이름이 사라진다.
       // 상태(복사됨)까지 이름에 실어 스크린리더가 결과를 알 수 있게 한다.
       aria-label={isCopied ? '코드 복사됨' : '코드 복사'}

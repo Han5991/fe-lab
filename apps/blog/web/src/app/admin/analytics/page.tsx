@@ -98,7 +98,7 @@ export default function AdminAnalyticsPage() {
           </Link>
           <button
             type="button"
-            onClick={handleLogout}
+            onClick={() => void handleLogout()}
             className={css({
               display: 'inline-flex',
               alignItems: 'center',

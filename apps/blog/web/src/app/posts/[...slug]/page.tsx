@@ -27,7 +27,9 @@ interface Props {
   }>;
 }
 
-export async function generateStaticParams() {
+// await할 것이 없으므로 동기 함수로 둔다(require-await). Next는 반환값이
+// promise든 아니든 동일하게 처리한다.
+export function generateStaticParams() {
   const slugs = getAllPostSlugs();
   return slugs.map(slug => ({
     slug: slug.split('/'),

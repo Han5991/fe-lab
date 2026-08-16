@@ -33,7 +33,7 @@ export const ShareButton = ({ title }: ShareButtonProps) => {
 
   return (
     <button
-      onClick={handleShare}
+      onClick={() => void handleShare()}
       className={css({
         display: 'flex',
         alignItems: 'center',

@@ -90,6 +90,10 @@ describe('measureLengths', () => {
  * 화면으로는 "그냥 스크롤됐네"로만 보여서 알아채기 어려운 회귀라 여기서 막는다.
  */
 describe('TOC 항목 클릭', () => {
+  // window.scrollTo를 직접 단언하면 unbound-method에 걸린다(mock이더라도
+  // 타입은 여전히 메서드다). stub한 mock 함수를 변수로 들고 단언한다.
+  let scrollToMock: ReturnType<typeof vi.fn>;
+
   const dispatchClick = (el: Element, init: MouseEventInit = {}) => {
     const ev = new MouseEvent('click', {
       bubbles: true,
@@ -122,7 +126,8 @@ describe('TOC 항목 클릭', () => {
       },
     );
     vi.stubGlobal('matchMedia', () => ({ matches: false }));
-    vi.stubGlobal('scrollTo', vi.fn());
+    scrollToMock = vi.fn();
+    vi.stubGlobal('scrollTo', scrollToMock);
   });
 
   afterEach(() => {
@@ -137,7 +142,7 @@ describe('TOC 항목 클릭', () => {
     const ev = dispatchClick(screen.getByRole('link', { name: '들어가며' }));
 
     expect(ev.defaultPrevented).toBe(true);
-    expect(window.scrollTo).toHaveBeenCalled();
+    expect(scrollToMock).toHaveBeenCalled();
   });
 
   test.each([
@@ -154,6 +159,6 @@ describe('TOC 항목 클릭', () => {
     );
 
     expect(ev.defaultPrevented).toBe(false);
-    expect(window.scrollTo).not.toHaveBeenCalled();
+    expect(scrollToMock).not.toHaveBeenCalled();
   });
 });

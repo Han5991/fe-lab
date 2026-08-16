@@ -108,18 +108,22 @@ export const PostsArchiveView = ({
 
   const activeTags = parseTagParam(tagParam);
 
-  const toggleTag = async (tag: string) => {
+  // 핸들러들은 전부 JSX prop(`() => void` 자리)으로만 쓰인다. setParams의
+  // promise는 아무도 기다리지 않으므로 void로 명시해 버린다(no-misused-promises).
+  const toggleTag = (tag: string) => {
     const next = activeTags.includes(tag)
       ? activeTags.filter(t => t !== tag)
       : [...activeTags, tag];
-    await setParams({ tag: next.length ? next.join(',') : null });
+    void setParams({ tag: next.length ? next.join(',') : null });
   };
 
-  const toggleSeries = (id: string) =>
-    setParams({ series: seriesParam === id ? null : id });
+  const toggleSeries = (id: string) => {
+    void setParams({ series: seriesParam === id ? null : id });
+  };
 
-  const toggleYear = (id: string) =>
-    setParams({ year: yearParam === id ? null : id });
+  const toggleYear = (id: string) => {
+    void setParams({ year: yearParam === id ? null : id });
+  };
 
   const filtered = filterAndSortPostsByArchiveParams(posts, {
     q,
@@ -147,10 +151,9 @@ export const PostsArchiveView = ({
   }));
 
   // 네 개를 한 번에 지운다. 개별 setter를 연달아 부르는 것과 URL 쓰기 횟수는
-  // 같지만(nuqs가 전역 큐로 합친다), 무엇을 지우는지가 한 객체로 드러나고
-  // Promise.all 없이 하나의 promise만 기다리면 된다.
-  const clearAll = async () => {
-    await setParams({ q: null, tag: null, series: null, year: null });
+  // 같지만(nuqs가 전역 큐로 합친다), 무엇을 지우는지가 한 객체로 드러난다.
+  const clearAll = () => {
+    void setParams({ q: null, tag: null, series: null, year: null });
   };
 
   // 활성 필터 합산 (FAB·시트 헤더의 N 뱃지 + 정렬도 기본값이 아니면 카운트)
@@ -185,12 +188,15 @@ export const PostsArchiveView = ({
             gap: '7',
           })}
         >
-          <ArchiveSearchBar q={q} onChange={v => setParams({ q: v || null })} />
+          <ArchiveSearchBar
+            q={q}
+            onChange={v => void setParams({ q: v || null })}
+          />
           <PostsFilterPanel
             sort={sort}
-            onSortChange={v => setParams({ sort: v })}
+            onSortChange={v => void setParams({ sort: v })}
             view={view}
-            onViewChange={v => setParams({ view: v })}
+            onViewChange={v => void setParams({ view: v })}
             tagItems={tagItems}
             activeTags={activeTags}
             onToggleTag={toggleTag}
@@ -229,7 +235,7 @@ export const PostsArchiveView = ({
           >
             <ArchiveSearchBar
               q={q}
-              onChange={v => setParams({ q: v || null })}
+              onChange={v => void setParams({ q: v || null })}
             />
           </div>
 
@@ -238,8 +244,8 @@ export const PostsArchiveView = ({
             series={seriesParam || null}
             year={yearParam || null}
             onRemoveTag={toggleTag}
-            onClearSeries={() => setParams({ series: null })}
-            onClearYear={() => setParams({ year: null })}
+            onClearSeries={() => void setParams({ series: null })}
+            onClearYear={() => void setParams({ year: null })}
             onClearAll={clearAll}
           />
 
@@ -365,9 +371,9 @@ export const PostsArchiveView = ({
       >
         <PostsFilterPanel
           sort={sort}
-          onSortChange={v => setParams({ sort: v })}
+          onSortChange={v => void setParams({ sort: v })}
           view={view}
-          onViewChange={v => setParams({ view: v })}
+          onViewChange={v => void setParams({ view: v })}
           tagItems={tagItems}
           activeTags={activeTags}
           onToggleTag={toggleTag}
