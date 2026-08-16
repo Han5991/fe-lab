@@ -224,7 +224,7 @@ export type RawFrontmatter = { [K in FrontmatterKey]?: unknown };
  * `published`는 예외적으로 unknown-frontmatter-key를 내지 않습니다 — 같은 키에
  * 대해 legacy-published-field(에러)가 이미 더 정확한 메시지를 내고 있어서
  * "알 수 없는 키다"라는 말이 사실과도 어긋납니다(모르는 키가 아니라 아는 폐기
- * 키입니다). 그 분기는 validate-posts의 unknown-frontmatter-key 루프에 있습니다.
+ * 키입니다). 그 분기는 scripts/validate/frontmatter.ts의 unknownKeyChain에 있습니다.
  */
 export const REJECTED_FRONTMATTER_KEYS = {
   published:
