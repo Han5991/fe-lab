@@ -24,7 +24,8 @@ import { token } from '@design-system/ui-lib/tokens';
 import { motion, AnimatePresence } from 'motion/react';
 import { formatMonthDayISO, parseScheduledDateKST } from '@/lib/dates';
 import { DateRangeControls, useDateFilter } from './DateRangeControls';
-import { encodePostSlug } from '@/domain/post/utils';
+// leaf import — 클라이언트 컴포넌트라 배럴(@/domain/post) 값 import 금지(node:fs).
+import { postPath } from '@/domain/post/urls';
 import { resolvePostState } from '@/domain/post/visibility';
 
 interface Props {
@@ -127,7 +128,7 @@ export function PostAccordion({ post }: Props) {
             <BarChart3 size={14} />
           </Link>
           <Link
-            href={`/posts/${encodePostSlug(post.slug)}/`}
+            href={postPath(post.slug)}
             target="_blank"
             onClick={e => e.stopPropagation()}
             className={css({

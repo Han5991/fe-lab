@@ -9,6 +9,7 @@ export * from './thumbnail';
 export * from './service';
 export * from './series';
 export * from './utils';
+export * from './urls';
 export * from './aggregate';
 // repository는 인프라(파일시스템)라 통째로 열지 않고, 순수 계산 두 개만 공개합니다.
 // - resolveExcerpt: excerpt 폴백 규칙. 렌더(postSeo)와 검증(lint:posts)이 같은 값을

@@ -1,7 +1,12 @@
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { getAllPosts, encodePostSlug, sortByDateDesc } from '../domain/post';
+import {
+  getAllPosts,
+  archiveUrl,
+  postUrl,
+  sortByDateDesc,
+} from '../domain/post';
 import type { PostData } from '../domain/post';
 import {
   SITE_URL as DEFAULT_SITE_URL,
@@ -21,7 +26,8 @@ import {
  * 예전에는 손으로 관리하는 정적 파일이었습니다. 그러다 보니 마지막 갱신
  * (2026-04-13) 이후에 쓴 글 6편이 통째로 빠졌고, 본문에는 "45+ articles"라고
  * 적혀 있는데 실제 글은 43편이라 숫자까지 틀어져 있었습니다. sitemap·rss와 같은
- * 소스(getAllPosts)에서 뽑으면 그 어긋남이 구조적으로 불가능해집니다.
+ * 소스(getAllPosts)에서 뽑고 URL도 같은 빌더(domain/post/urls.ts)로 조립하면
+ * 그 어긋남이 구조적으로 불가능해집니다.
  */
 
 /** 링크 옆 한 줄 설명의 최대 길이. 색인이므로 짧게 — 전문은 llms-full.txt에 있습니다. */
@@ -86,9 +92,6 @@ export function buildLlmsText(
       ? postDates.reduce((max, d) => (d > max ? d : max))
       : '(미상)');
 
-  const postUrl = (post: PostData) =>
-    `${siteUrl}/posts/${encodePostSlug(post.slug)}/`;
-
   const lines: string[] = [
     `# Frontend Lab`,
     ``,
@@ -103,7 +106,7 @@ export function buildLlmsText(
     `## Docs`,
     ``,
     `- [블로그 홈](${siteUrl}/): Frontend Lab — React, TypeScript, bundler architecture experiments by Sangwook Han.`,
-    `- [전체 포스트 목록](${siteUrl}/posts/): Complete archive of ${posts.length} frontend engineering articles organized by topic and series.`,
+    `- [전체 포스트 목록](${archiveUrl(siteUrl)}): Complete archive of ${posts.length} frontend engineering articles organized by topic and series.`,
     `- [시리즈 목록](${siteUrl}/series/): Multi-part series, each readable in order from part 1.`,
     `- [소개](${siteUrl}/about/): Author profile, open source contributions, and conference talks.`,
     `- [전문 텍스트](${siteUrl}/llms-full.txt): Full post text for retrieval.`,
@@ -138,7 +141,9 @@ export function buildLlmsText(
     if (meta?.description) lines.push(meta.description, ``);
     // 1편부터 읽을 수 있도록 — `_series.yml`의 order가 있으면 그 순서.
     for (const post of sortPostsBySeriesOrder(folderPosts, meta?.order)) {
-      lines.push(`- [${post.title}](${postUrl(post)}): ${toSummary(post)}`);
+      lines.push(
+        `- [${post.title}](${postUrl(post.slug, siteUrl)}): ${toSummary(post)}`,
+      );
     }
     lines.push(``);
   }
@@ -150,7 +155,9 @@ export function buildLlmsText(
     // 인자 없는 localeCompare는 repository.ts가 경고하는 ICU 의존 비교자다.
     const ordered = sortByDateDesc(standalone);
     for (const post of ordered) {
-      lines.push(`- [${post.title}](${postUrl(post)}): ${toSummary(post)}`);
+      lines.push(
+        `- [${post.title}](${postUrl(post.slug, siteUrl)}): ${toSummary(post)}`,
+      );
     }
     lines.push(``);
   }

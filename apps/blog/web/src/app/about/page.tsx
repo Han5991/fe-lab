@@ -15,7 +15,7 @@ import { safeJsonLd } from '@/lib/jsonLd';
 import { Label } from '@/src/components/blog';
 import { PageBoundary } from '@/src/components/PageBoundary';
 import { railGutter, railColumn } from '@/src/components/Rail';
-import { getAllPostSummaries } from '@/domain/post';
+import { archivePath, getAllPostSummaries, postPath } from '@/domain/post';
 import { getAllSeries } from '@/domain/post/aggregate';
 
 import { FEATURED_SERIES } from './featuredSeries';
@@ -310,8 +310,11 @@ export default function AboutPage() {
                     </div>
                   ))}
                 </div>
+                {/* 아래 링크들의 slug는 리터럴이라 인코딩이 필요 없지만,
+                    postPath를 거치면 후행 슬래시 표기가 저절로 통일된다 —
+                    예전엔 이 페이지의 글 링크 중 한 곳만 슬래시가 없었다. */}
                 <Link
-                  href="/posts/2025-retrospect/"
+                  href={postPath('2025-retrospect')}
                   className={css({
                     fontFamily: 'mono',
                     fontSize: 'xs',
@@ -371,27 +374,27 @@ export default function AboutPage() {
                       org: 'Google',
                       description:
                         'Promise.allSettled 병렬 처리로 성능 74% 개선 (408ms → 107ms).',
-                      link: '/posts/ai-opensource-contribution',
+                      link: postPath('ai-opensource-contribution'),
                     },
                     {
                       project: 'Mantine',
                       org: 'Community',
                       description:
                         '27개 PR 병합. 컴포넌트 버그 수정 및 기능 개선.',
-                      link: '/posts/first-open-source-contribution',
+                      link: postPath('first-open-source-contribution'),
                     },
                     {
                       project: 'Node.js',
                       org: 'OpenJS Foundation',
                       description:
                         'util.inspect의 numeric separator 포매팅 버그 수정.',
-                      link: '/posts/nodejs-contribution',
+                      link: postPath('nodejs-contribution'),
                     },
                     {
                       project: 'Next.js',
                       org: 'Vercel',
                       description: 'Next.js 코어 기여.',
-                      link: '/posts/nextjs-contributor',
+                      link: postPath('nextjs-contributor'),
                     },
                   ].map(item => (
                     <Link
@@ -487,12 +490,12 @@ export default function AboutPage() {
                         event: 'FEConf 2025',
                         description:
                           '한국 최대 프론트엔드 컨퍼런스 라이트닝 토크',
-                        link: '/posts/feconf-2025-lightning-speaker',
+                        link: postPath('feconf-2025-lightning-speaker'),
                       },
                       {
                         event: 'TeoConf',
                         description: '개발자 컨퍼런스 발표',
-                        link: '/posts/2025-teoconf-presentation',
+                        link: postPath('2025-teoconf-presentation'),
                       },
                     ].map(item => (
                       <Link
@@ -582,7 +585,7 @@ export default function AboutPage() {
                       // 않고 `q`는 series와 AND로 걸리므로 series 하나만 넘긴다.
                       <Link
                         key={series.id}
-                        href={`/posts/?series=${encodeURIComponent(series.id)}`}
+                        href={archivePath({ series: series.id })}
                         className={css({
                           display: 'flex',
                           justifyContent: 'space-between',

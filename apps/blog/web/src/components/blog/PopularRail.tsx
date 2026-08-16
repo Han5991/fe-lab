@@ -5,7 +5,7 @@ import { css } from '@design-system/ui-lib/css';
 import { useQuery } from '@tanstack/react-query';
 import { getTopPosts } from '@/domain/analytics';
 import type { PostSummary } from '@/domain/post';
-import { encodePostSlug } from '@/domain/post/utils';
+import { postPath } from '@/domain/post/urls';
 import { fmtNum } from '@/lib/format';
 
 interface PopularRailProps {
@@ -79,7 +79,7 @@ export const PopularRail = ({ posts, limit = 5 }: PopularRailProps) => {
             })}
           >
             <Link
-              href={`/posts/${encodePostSlug(post.slug)}/`}
+              href={postPath(post.slug)}
               className={css({
                 display: 'flex',
                 gap: '[10px]',

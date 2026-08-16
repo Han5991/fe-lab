@@ -8,7 +8,9 @@ import { useAdminDashboardData } from '@/src/hooks/useAdminViews';
 import { useAdminLogout } from '@/src/hooks/useAdminLogout';
 import { LoadingPlaceholder } from '@/src/components/shared/LoadingPlaceholder';
 import Link from 'next/link';
-import { encodePostSlug } from '@/domain/post/utils';
+// leaf import — 클라이언트 컴포넌트에서 배럴(@/domain/post)을 값으로 import하면
+// `export * from './series'`가 모듈 평가 시점에 node:fs를 당겨 와 빌드가 깨진다.
+import { postPath } from '@/domain/post/urls';
 
 function AdminOverviewContent() {
   const { data } = useAdminDashboardData();
@@ -237,7 +239,7 @@ function AdminOverviewContent() {
             {topPosts.map((post, i) => (
               <Link
                 key={post.slug}
-                href={`/posts/${encodePostSlug(post.slug)}/`}
+                href={postPath(post.slug)}
                 target="_blank"
                 className={css({
                   display: 'flex',
@@ -338,7 +340,7 @@ function AdminOverviewContent() {
             {recentPosts.map((post, i) => (
               <Link
                 key={post.slug}
-                href={`/posts/${encodePostSlug(post.slug)}/`}
+                href={postPath(post.slug)}
                 target="_blank"
                 className={css({
                   display: 'flex',

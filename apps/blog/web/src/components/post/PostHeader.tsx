@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { css } from '@design-system/ui-lib/css';
 import type { PostData } from '@/domain/post';
+// leaf import — 글 상세에서 쓰는 프레젠테이션 컴포넌트라 배럴(node:fs)을 물리지 않는다.
+import { archivePath } from '@/domain/post/urls';
 import { fmtDate } from '@/lib/format';
 
 interface PostHeaderProps {
@@ -80,10 +82,7 @@ export const PostHeader = ({ post, seriesIndex }: PostHeaderProps) => {
         {tags.map((t, i) => (
           <span key={t}>
             {i > 0 && ' '}
-            <Link
-              href={`/posts/?tag=${encodeURIComponent(t)}`}
-              className={tagLinkStyle}
-            >
+            <Link href={archivePath({ tag: t })} className={tagLinkStyle}>
               #{t}
             </Link>
           </span>

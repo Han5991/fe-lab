@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'vitest';
+import { postPath, postUrl } from '@/domain/post/urls';
 import {
   buildPostMetadata,
   buildPostJsonLd,
@@ -100,7 +101,20 @@ describe('buildPostMetadata', () => {
     const m = buildPostMetadata(makePost(), '번들러/3편');
     expect(m.title).toBe('테스트 글 | Frontend Lab');
     expect(m.description).toBe('요약');
-    expect(m.alternates?.canonical).toBe('/posts/번들러/3편/');
+    // canonical은 페이지 링크와 같은 빌더(postPath)에서 온다 — 인코딩 포함.
+    expect(m.alternates?.canonical).toBe(postPath('번들러/3편'));
+  });
+
+  test('canonical/og:url 인코딩 리터럴 고정 (한글·비ASCII slug)', () => {
+    // 예전엔 `/posts/${slug}/` 리터럴이라 디코드된 slug가 그대로 나갔고,
+    // 페이지 링크(postPath, 인코딩됨)와 canonical이 갈릴 수 있었다.
+    // check-seo는 양쪽을 디코드해 비교하므로 인코딩으로 통일해도 위반이 없다.
+    const m = buildPostMetadata(makePost(), '번들러/3편');
+    expect(m.alternates?.canonical).toBe(
+      '/posts/%EB%B2%88%EB%93%A4%EB%9F%AC/3%ED%8E%B8/',
+    );
+    const og = m.openGraph as Record<string, unknown>;
+    expect(og.url).toBe('/posts/%EB%B2%88%EB%93%A4%EB%9F%AC/3%ED%8E%B8/');
   });
 
   test('seoTitle이 있으면 <title>만 그것을 쓴다 (og:title은 원래 제목)', () => {
@@ -146,7 +160,7 @@ describe('buildPostMetadata', () => {
     expect(og.type).toBe('article');
     // JSON-LD의 datePublished와 동일한 KST ISO 8601 형식
     expect(og.publishedTime).toBe('2025-01-02T00:00:00+09:00');
-    expect(og.url).toBe('/posts/a/');
+    expect(og.url).toBe(postPath('a'));
     const img = (og.images as Array<Record<string, unknown>>)[0];
     expect(img.width).toBe(1200);
     expect(img.height).toBe(630);
@@ -203,7 +217,8 @@ describe('buildPostJsonLd (Schema.org BlogPosting)', () => {
     expect(ld['@type']).toBe('BlogPosting');
     expect(ld.headline).toBe('테스트 글');
     expect(ld.datePublished).toBe('2025-01-02T00:00:00+09:00');
-    expect(ld.url).toBe(`${SITE}/posts/번들러/3편/`);
+    // JSON-LD url도 피드·sitemap과 같은 빌더(postUrl)에서 온다 — 인코딩 포함.
+    expect(ld.url).toBe(postUrl('번들러/3편'));
     expect(ld.inLanguage).toBe('ko');
     expect(ld.isAccessibleForFree).toBe(true);
   });
@@ -281,7 +296,7 @@ describe('buildBreadcrumbJsonLd', () => {
     expect(items[2]).toMatchObject({
       position: 3,
       name: '테스트 글',
-      item: `${SITE}/posts/번들러/3편/`,
+      item: postUrl('번들러/3편'),
     });
   });
 });

@@ -3,6 +3,8 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { css } from '@design-system/ui-lib/css';
+// leaf import — 클라이언트 컴포넌트라 배럴(@/domain/post) 값 import 금지(node:fs).
+import { POSTS_PATH } from '@/domain/post/urls';
 
 /**
  * 헤더 네비게이션.
@@ -11,7 +13,7 @@ import { css } from '@design-system/ui-lib/css';
  * 떼어냈습니다. Layout 자체는 서버 컴포넌트로 남습니다.
  */
 const NAV_ITEMS = [
-  { href: '/posts/', label: '글' },
+  { href: POSTS_PATH, label: '글' },
   { href: '/series/', label: '시리즈' },
   { href: '/about/', label: 'About' },
 ] as const;
@@ -73,7 +75,7 @@ export function NavLinks() {
         // 얹은 글 허브라 레퍼런스 화면 1도 "글"을 활성으로 그려 뒀다.
         const isActive =
           pathname === '/'
-            ? item.href === '/posts/'
+            ? item.href === POSTS_PATH
             : pathname.startsWith(item.href);
         return (
           <Link

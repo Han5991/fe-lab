@@ -1,5 +1,7 @@
 import Link from 'next/link';
 import { css, cva } from '@design-system/ui-lib/css';
+// leaf import — 홈에서만 쓰는 프레젠테이션 컴포넌트라 배럴을 물릴 이유가 없다.
+import { postPath } from '@/domain/post/urls';
 import { MERGED_PR_COUNT_FALLBACK } from '@/lib/constants';
 
 /**
@@ -10,10 +12,10 @@ import { MERGED_PR_COUNT_FALLBACK } from '@/lib/constants';
  * about 쪽을 고칠 때 여기도 함께 갱신하세요.
  */
 const OSS_CHIPS = [
-  { label: 'node.js', href: '/posts/nodejs-contribution/' },
-  { label: 'next.js', href: '/posts/nextjs-contributor/' },
-  { label: 'gemini-cli', href: '/posts/ai-opensource-contribution/' },
-  { label: 'mantine', href: '/posts/first-open-source-contribution/' },
+  { label: 'node.js', href: postPath('nodejs-contribution') },
+  { label: 'next.js', href: postPath('nextjs-contributor') },
+  { label: 'gemini-cli', href: postPath('ai-opensource-contribution') },
+  { label: 'mantine', href: postPath('first-open-source-contribution') },
 ] as const;
 
 const chip = cva({

@@ -9,7 +9,7 @@ import rehypeRaw from 'rehype-raw';
 import { SITE_URL, SITE_NAME, SITE_DESCRIPTION } from '../lib/constants';
 import { resolvePostAssetUrl } from '../domain/post/assetUrl';
 import { parseScheduledDateKST } from '../lib/dates';
-import { getAllPosts, encodePostSlug, type PostSummary } from '@/domain/post';
+import { getAllPosts, postUrl, type PostSummary } from '@/domain/post';
 import { HEADING_COMPONENTS } from '@/src/components/post/markdownHeadings';
 
 /**
@@ -151,8 +151,8 @@ export function buildRssXml(
     .map(
       (post, index) => `    <item>
       <title>${escapeXml(post.title)}</title>
-      <link>${siteUrl}/posts/${encodePostSlug(post.slug)}/</link>
-      <guid isPermaLink="true">${siteUrl}/posts/${encodePostSlug(post.slug)}/</guid>
+      <link>${postUrl(post.slug, siteUrl)}</link>
+      <guid isPermaLink="true">${postUrl(post.slug, siteUrl)}</guid>
       <pubDate>${post.date ? parseScheduledDateKST(post.date).toUTCString() : now.toUTCString()}</pubDate>${post.excerpt ? `\n      <description>${escapeXml(post.excerpt)}</description>` : ''}${post.content && index < fullContentLimit ? `\n      <content:encoded>${wrapCdata(renderContentHtml(post.content, siteUrl, post.relativeDir))}</content:encoded>` : ''}
     </item>`,
     )

@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { css } from '@design-system/ui-lib/css';
 import type { PostSummary } from '@/domain/post';
-import { encodePostSlug } from '@/domain/post/utils';
+import { postPath } from '@/domain/post/urls';
 import { resolveThumbnailSrc } from '@/domain/post/thumbnail';
 import { fmtDate } from '@/lib/format';
 import { Label } from './Label';
@@ -27,7 +27,7 @@ export const PostGridCard = ({ post, priority = false }: PostGridCardProps) => {
   const readMin = post.readMin;
   return (
     <Link
-      href={`/posts/${encodePostSlug(post.slug)}/`}
+      href={postPath(post.slug)}
       className={css({
         display: 'flex',
         flexDir: 'column',

@@ -6,9 +6,27 @@
  * 호출만 합니다 — 동작은 동일.)
  */
 import type { Metadata } from 'next';
-import { resolveExcerpt, type PostData } from '@/domain/post';
+import {
+  archiveUrl,
+  postPath,
+  postUrl,
+  resolveExcerpt,
+  type PostData,
+} from '@/domain/post';
 import { resolveAbsoluteThumbnailUrl } from '@/domain/post/thumbnail';
 import { SITE_NAME, SITE_URL, TITLE_SUFFIX } from '@/lib/constants';
+
+/**
+ * 아래 빌더들이 받는 `slug`는 **디코드된** 값입니다 — page.tsx가
+ * `decodeURIComponent(resolvedParams.slug.join('/'))`로 먼저 풀어서 넘깁니다.
+ * 이미 인코딩된 slug를 넘기면 postPath가 `%`를 다시 인코딩해(`%25…`) canonical과
+ * og:url이 통째로 404를 가리키게 됩니다.
+ *
+ * canonical·og:url은 예전의 리터럴 조합과 달리 **퍼센트 인코딩되어** 나갑니다.
+ * Next의 `new URL()`은 대괄호를 인코딩하지 않아 페이지 링크(postPath, 인코딩됨)와
+ * canonical이 갈릴 수 있었고, check-seo는 양쪽을 디코드해 비교하므로 인코딩으로
+ * 통일해도 새 위반이 생기지 않습니다.
+ */
 
 const OG_IMAGE_WIDTH = 1200;
 const OG_IMAGE_HEIGHT = 630;
@@ -84,13 +102,13 @@ export function buildPostMetadata(post: SeoPost, slug: string): Metadata {
   return {
     title: `${resolveSeoTitle(post)}${TITLE_SUFFIX}`,
     description,
-    alternates: { canonical: `/posts/${slug}/` },
+    alternates: { canonical: postPath(slug) },
     openGraph: {
       // og:title에는 짧은 seoTitle이 아니라 **원래 제목**이 나간다. 잘림이
       // 문제인 건 SERP의 `<title>`이고, 공유 카드는 폭이 넉넉하다.
       title: post.title,
       description,
-      url: `/posts/${slug}/`,
+      url: postPath(slug),
       // 사이트 이름은 상수 하나에서만 온다. 예전엔 여기만 'Frontend Lab Blog'라
       // 홈·목록·about('Frontend Lab')과 어긋나서 og:site_name이 두 종류였다.
       siteName: SITE_NAME,
@@ -122,7 +140,7 @@ export function buildPostJsonLd(
   post: SeoPost,
   slug: string,
 ): Record<string, unknown> {
-  const postUrl = `${SITE_URL}/posts/${slug}/`;
+  const url = postUrl(slug);
   const absoluteThumbnailUrl = resolveAbsoluteThumbnailUrl({ ...post, slug });
   return {
     '@context': 'https://schema.org',
@@ -149,8 +167,8 @@ export function buildPostJsonLd(
     // 선언하지 않은 주제 폴더도 섹션이므로 물리적 폴더(`relativeDir`)를 쓴다
     // — `series`로 쓰면 선언되지 않은 폴더의 글에서만 이 필드가 사라진다.
     ...(post.relativeDir && { articleSection: post.relativeDir }),
-    mainEntityOfPage: { '@type': 'WebPage', '@id': postUrl },
-    url: postUrl,
+    mainEntityOfPage: { '@type': 'WebPage', '@id': url },
+    url,
     author: {
       '@type': 'Person',
       '@id': `${SITE_URL}/#author`,
@@ -187,11 +205,10 @@ export function buildBreadcrumbJsonLd(
   post: Pick<PostData, 'title'>,
   slug: string,
 ): Record<string, unknown> {
-  const postUrl = `${SITE_URL}/posts/${slug}/`;
   const items = [
     { position: 1, name: 'Home', item: `${SITE_URL}/` },
-    { position: 2, name: 'Posts', item: `${SITE_URL}/posts/` },
-    { position: 3, name: post.title, item: postUrl },
+    { position: 2, name: 'Posts', item: archiveUrl() },
+    { position: 3, name: post.title, item: postUrl(slug) },
   ];
   return {
     '@context': 'https://schema.org',

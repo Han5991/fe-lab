@@ -3,7 +3,12 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { SITE_URL, ABOUT_PAGE_MODIFIED } from '../lib/constants';
 import { parseScheduledDateKST, getKSTDateISO } from '../lib/dates';
-import { getAllPosts, encodePostSlug, type PostSummary } from '@/domain/post';
+import {
+  getAllPosts,
+  archiveUrl,
+  postUrl,
+  type PostSummary,
+} from '@/domain/post';
 
 // 고가치 주제 폴더의 글은 우선순위를 높게 설정.
 // 테스트에서 self-describing 패턴으로 참조하기 위해 export.
@@ -98,7 +103,7 @@ export function buildSitemapXml(
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>${siteUrl}/posts/</loc>
+    <loc>${archiveUrl(siteUrl)}</loc>
     <lastmod>${latestContentDate}</lastmod>
     <priority>0.8</priority>
   </url>
@@ -111,7 +116,7 @@ export function buildSitemapXml(
     .map(
       ({ post, lastmod }) => `
   <url>
-    <loc>${siteUrl}/posts/${encodePostSlug(post.slug)}/</loc>
+    <loc>${postUrl(post.slug, siteUrl)}</loc>
     <lastmod>${lastmod}</lastmod>
     <priority>${getPostPriority(post)}</priority>
   </url>`,

@@ -26,7 +26,8 @@ import {
 import Link from 'next/link';
 import { token } from '@design-system/ui-lib/tokens';
 import { usePostDetailStats } from '@/src/hooks/usePostDetailStats';
-import { encodePostSlug } from '@/domain/post/utils';
+// leaf import — 클라이언트 컴포넌트라 배럴(@/domain/post) 값 import 금지(node:fs).
+import { postPath } from '@/domain/post/urls';
 import { formatMonthDayISO } from '@/lib/dates';
 
 // 차트 색상 — GitHub accent(파랑)로 통일. 데이터 강조는 accent 하나로.
@@ -133,7 +134,7 @@ function PostDetailContent() {
             {post.title}
           </h2>
           <Link
-            href={`/posts/${encodePostSlug(post.slug)}/`}
+            href={postPath(post.slug)}
             target="_blank"
             onClick={e => e.stopPropagation()}
             className={css({
