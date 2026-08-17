@@ -50,6 +50,36 @@ the key findings.
 
 The blog (`apps/blog/web/`) is a **statically generated (SSG) Next.js application** with a
 **Supabase BaaS backend**, deployed to **GitHub Pages**. The domain is `https://blog.sangwook.dev`.
+콘텐츠 프레임워크(스키마·로더·공개 판정·URL 계약·빌드 스크립트·2층 검증)는
+**`packages/@blog/content`** 로 떼어져 있고, 앱은 그 소비자다. 코드 배치와 런타임 데이터
+흐름은 `apps/blog/web/README.md`가, 패키지 내부는 `packages/@blog/content/README.md`가 다룬다 —
+이 절은 **운영 규칙과 계약**만 적는다.
+
+#### 레이어 경계 (lint가 강제)
+
+세 층(원고 디렉터리 → 패키지 → 앱)이 한 방향으로만 의존한다. `eslint-plugin-boundaries`가
+**폴더 단위 element**로 강제하므로 경계 위반은 `pnpm lint`에서 잡힌다 — 컨벤션이 아니다.
+
+```
+apps/blog/posts (원고)  →  packages/@blog/content  →  apps/blog/web
+                            shared → post → seo →      lib/platform → domain/analytics → src
+                            scripts → scripts/render
+```
+
+- **`@blog/content` 내부**: `shared`(node 코어만) → `post`(+gray-matter) → `seo`(순수 계산) →
+  `scripts`(빌드) → `scripts/render`(React·satori·sharp·resvg는 여기만). 밖으로 여는 문은
+  `@blog/content`·`@blog/content/seo` 둘뿐. 빌드 스크립트는 API가 아니라 실행 파일이라 앱이
+  `npx tsx node_modules/@blog/content/src/scripts/…` 경로로 부른다
+- **앱 내부**: `lib/platform`(Supabase 어댑터, 외부 의존은 supabase-js·postgrest-js만) →
+  `domain/analytics`(순수 계산 + 저장소, 배럴 `index`·`admin` 둘) → `src`(라우트·컴포넌트·훅).
+  `src`는 저장소를 직접 찌르지 않고 배럴로, `client.from()`·`.rpc()`도 직접 부르지 않는다.
+  **`src`는 node 코어를 못 만진다** — fs 접근은 전부 `@blog/content` 로더의 일(클라이언트 번들
+  누수 예방). `@blog/content`는 앱에서 외부 패키지(`content-pkg`)로 보인다
+- **tsconfig 분할**: `tsconfig.json`(프로덕션, 엄격 플래그 전부) / `tsconfig.test.json`(테스트 —
+  `noUncheckedIndexedAccess`·`noPropertyAccessFromIndexSignature`·`exactOptionalPropertyTypes` 세
+  개만 끔). `check-types`와 ESLint 타입 룰이 같은 분할을 따른다
+- **lint 임계값**: 앱은 `--max-warnings=5`(jsx-a11y 4룰을 키보드 동선 설계 전까지 warn으로 둔 결과
+  정확히 5건), 패키지는 `0`. 앱의 5를 0으로 "고치지" 말 것 — 설계로 풀면서 에러로 올린다
 
 #### SSG (Static Site Generation) 전략
 
@@ -61,16 +91,20 @@ The blog (`apps/blog/web/`) is a **statically generated (SSG) Next.js applicatio
 
 **역할**: 정적 사이트에서 불가능한 **동적 기능**을 담당
 
-| 기능              | 설명                                                    |
-| :---------------- | :------------------------------------------------------ |
-| **조회수 추적**   | `increment_view_count` RPC → `post_views` 테이블에 저장 |
-| **조회 이력**     | `view_history` 테이블에 시간별/일별 조회 기록           |
-| **Admin 인증**    | Google OAuth를 통한 관리자 로그인                       |
-| **Analytics RPC** | 대시보드용 집계 함수 (트렌드, 시간별, 요일별 통계)      |
+| 기능              | 설명                                                                                                                                                                            |
+| :---------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **조회수 추적**   | `increment_view_count` RPC → `post_views` 테이블에 저장                                                                                                                         |
+| **조회 이력**     | `post_view_logs` 테이블에 건별 조회 기록(시간별/요일별 집계의 원천)                                                                                                             |
+| **Admin 인증**    | Google OAuth를 통한 관리자 로그인                                                                                                                                               |
+| **Analytics RPC** | 대시보드용 집계 함수 (트렌드, 시간별, 요일별 통계) — `anon`에는 잠겨 있고 Edge Function `admin-analytics`가 호출자 JWT를 `ADMIN_EMAIL`과 대조한 뒤 `service_role`로 대신 부른다 |
 
-- **클라이언트**: `@supabase/supabase-js`로 브라우저에서 직접 연결 (Anon Key 사용)
-- **로컬 개발**: `supabase start/stop`으로 로컬 Supabase 인스턴스 실행 (Docker 기반)
-- **마이그레이션**: `supabase/migrations/` 디렉토리에 SQL 파일로 스키마 관리
+- **클라이언트 둘**: 공개 페이지는 `lib/platform/publicClient.ts`(`@supabase/postgrest-js`만 —
+  supabase-js 전체를 끌면 Auth·Realtime·Storage·Functions 45KB gzip이 공개 페이지에 딸려오고
+  그중 realtime+phoenix+storage 18.5KB는 어디서도 안 쓰는 죽은 코드였다),
+  Admin은 `lib/platform/client.ts`(`@supabase/supabase-js`, auth 세션 + `functions.invoke`).
+  둘 다 Anon Key. `domain/analytics`의 배럴을 `index`·`admin`으로 나눈 이유가 이 분리다
+- **로컬 개발**: `supabase start/stop`으로 로컬 Supabase 인스턴스 실행 (Docker 기반, `pnpm dev`가 먼저 띄운다)
+- **마이그레이션**: `supabase/migrations/` 디렉토리에 SQL 파일로 스키마 관리. Edge Function은 `supabase/functions/admin-analytics`
 - **프로덕션 URL**: `.env.production`에 Supabase Cloud 프로젝트 URL/Key 설정
 
 #### 콘텐츠 파이프라인
@@ -120,36 +154,40 @@ The blog (`apps/blog/web/`) is a **statically generated (SSG) Next.js applicatio
    > 존재해 어긋나 있었습니다. 지금은 `isPostFile()` 하나를 양쪽이 공유하고,
    > `published`가 남아 있으면 `lint:posts`가 `legacy-published-field` 에러를 냅니다.
 
-3. **빌드 전 처리** (`prebuild` → `@blog/content`의 `src/scripts/build-content.ts` 통합 진입점):
-   - `validate-posts.ts`: frontmatter 필수 필드(`status`·`title`·`date`), 폐기된 `published` 필드, 날짜 형식/timezone 모호성, 끊긴 이미지, 중복 slug 검사 (prebuild에서만 실행, predev:web에서는 skip)
-   - `sync-posts.mjs`: 포스트 디렉토리의 이미지/미디어 파일을 `public/posts/`에 복사 (mtime 기반 incremental — 변경분만 복사)
-   - `generate-sitemap.ts`: 발행된 글 목록으로 `sitemap.xml` 생성
-   - `generate-rss.ts`: RSS 피드(`rss.xml`) 생성
-   - `generate-og-images.ts`: thumbnail이 없거나 `/og/*`를 가리키는 발행 글의 OG 카드 이미지(`public/og/{slug}.png`)를 satori + resvg로 생성 (content hash 기반 incremental, `.cache/og-images.json` manifest)
-   - `generate-search-index.ts`: 검색용 JSON 인덱스(`search-index.json`) 생성 — 본문 미리보기(`contentPreview`) 포함
-   - `generate-llms-full.ts`: AI/LLM용 통합 텍스트(`llms-full.txt`) 생성
-   - `generate-llms.ts`: AI 크롤러용 색인(`llms.txt`) 생성 — 예전엔 손으로 관리하던 정적 파일이라 글 6편이 누락되고 개수도 어긋나 있었다. 이제 sitemap·rss와 같은 소스에서 뽑는다
-4. **정적 빌드**: `next build` → `out/` 디렉토리에 정적 파일 생성
-5. **배포**: GitHub Actions → GitHub Pages
-   - `main` 브랜치 push 시 자동 빌드
+3. **빌드 전 처리** (`predev:web`·`prebuild` → `@blog/content`의 `src/scripts/build-content.ts` 통합 진입점. 아래 파일 경로는 모두 `packages/@blog/content/src/scripts/` 기준). **2단계**로 돈다 — 1단계는 게이트, 2단계 8개는 서로 다른 파일만 쓰므로 **병렬**:
+   - **1단계** `validate-posts.ts`: frontmatter 필수 필드(`status`·`title`·`date`), 폐기된 `published` 필드, 날짜 형식/timezone 모호성, 끊긴 이미지, 중복 slug 검사. predev:web·prebuild **둘 다** 돌고, prebuild만 `--strict`(아래 인용문). 규칙 표는 `validate/rules.ts`(29개), 판정 사슬은 `validate/frontmatter.ts`·`body.ts`·`corpus.ts`
+   - **2단계** (병렬):
+     - `sync-posts.mjs`: 포스트 디렉토리의 이미지/미디어 파일을 `public/posts/`에 복사 (mtime 기반 incremental — 변경분만 복사, orphan 삭제)
+     - `generate-sitemap.ts`: 발행된 글 목록으로 `sitemap.xml` 생성
+     - `render/generate-rss.ts`: RSS 피드(`rss.xml`) 생성 — 전문 HTML은 `render/feedRenderer.ts`(react-dom/server + react-markdown)를 주입받는다
+     - `render/generate-og-images.ts`: thumbnail이 없거나 `/og/*`를 가리키는 발행 글의 OG 카드 이미지(`public/og/{slug}.png`)를 satori + resvg로 생성 (content hash 기반 incremental, `.cache/og-images.json` manifest)
+     - `render/generate-thumbnails.ts`: 로컬 썸네일을 sharp로 `public/thumbs/**/*-thumb.webp`로 최적화 (`.cache/thumbnails.json` manifest, orphan 삭제). `media`·`thumbs`·`og` 출력 디렉터리는 서로 겹치면 안 된다(`assertOutputDirsExclusive`) — 각자 orphan을 지우며 병렬로 돌기 때문
+     - `generate-search-index.ts`: 검색용 JSON 인덱스(`search-index.json`, 공개 글) + `admin-posts-index.json`(비공개 포함) 생성 — 본문 미리보기(`contentPreview`) 포함
+     - `generate-llms-full.ts`: AI/LLM용 통합 텍스트(`llms-full.txt`) 생성
+     - `generate-llms.ts`: AI 크롤러용 색인(`llms.txt`) 생성 — 예전엔 손으로 관리하던 정적 파일이라 글 6편이 누락되고 개수도 어긋나 있었다. 이제 sitemap·rss와 같은 소스에서 뽑는다
+   - 각 스텝은 `npx tsx <절대 경로>`로 spawn되며 cwd에 기대지 않고 `src/shared/contentPaths.ts`로 경로를 푼다. CLI 진입 가드는 `cliEntry.ts`의 `isCliEntry`(realpath 비교 — pnpm 심링크 경로와 ESM 로더 realpath가 달라 순진한 `import.meta.url === argv[1]` 비교는 항상 false였다)
+4. **정적 빌드**: `next build` → `out/` 디렉토리에 정적 파일 생성 → `check-seo`(아래)
+5. **배포**: GitHub Actions(`deploy-blog.yml`) → GitHub Pages
+   - `main` 브랜치 push 시 자동 빌드 — `apps/blog/**`·`packages/@blog/**` 변경일 때만
    - **매일 KST 09:00 (UTC 00:00) cron 자동 빌드** — 예약 발행 글 공개용
    - 수동 트리거(`workflow_dispatch`) 지원
+   - 배포 전에 PR CI와 같은 `quality-checks` 액션을 지나고, 빌드 후 `/posts/`의 프리렌더 링크 개수를 검증한다(CSR bail-out 회귀 가드)
 
 #### 글쓰기 도구 (Authoring DX)
 
 아래 `pnpm` 스크립트는 모두 **`apps/blog/web` 디렉터리에서** 실행한다.
 
-| 도구                                          | 설명                                                                                                                                                                                                                                                                                                                |
-| :-------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `pnpm new-post "제목"`                        | 새 포스트 스캐폴딩. `--series`, `--tags`, `--scheduled`, `--slug`, `--status` 옵션 지원. 한글 제목/파일명 그대로 사용 가능                                                                                                                                                                                          |
-| `pnpm lint:posts`                             | frontmatter 검증. 메타 노트 정책: frontmatter delimiter(`---`)가 없거나 `status`가 없으면 빌드 대상이 아닌 것으로 보고 skip                                                                                                                                                                                         |
-| `pnpm check-seo`                              | 산출물(`out/`) HTML의 SEO 계약 검사 — h1 1개, description 중복·길이·말줄임, `<title>` 60자, canonical 자기참조, og 태그, img alt, 산출물↔발행 글 정합성(`src/scripts/artifacts.ts` 레지스트리 — sitemap·rss·llms·llms-full·search-index·admin-index·og 7종). **`pnpm build`의 마지막 단계라 따로 부를 일은 드물다** |
-| dev 서버 미리보기                             | draft·scheduled 글은 dev 서버가 **실제 라우트**(목록·상세)에 그대로 노출한다 — 상세엔 PreviewBanner, 목록엔 HiddenPostBadge. 게이트는 `@blog/content`(`src/post/service.ts`)의 `shouldIncludeHiddenPosts` 한 곳뿐                                                                                                   |
-| `_series.yml`                                 | **이 파일이 있는 폴더만 시리즈다.** 두면 시리즈 nav가 `order` 기준 chronological 정렬 + 표시명을 폴더명 대신 사용. 지우면 그냥 글을 모아 둔 폴더                                                                                                                                                                    |
-| `<callout type="warning\|info\|tip\|danger">` | 마크다운 헬퍼 컴포넌트 (raw HTML로 작성). `<figure>` + `<figcaption>`, `<file-tree>`도 지원                                                                                                                                                                                                                         |
-| `<dialogue>` · `<metrics>` · `<timeline>`     | 리뉴얼 시그니처 컴포넌트. 역시 raw HTML 커스텀 태그 — 문법은 `blog-components` 스킬                                                                                                                                                                                                                                 |
-| `<diagram>` + frontmatter `hero:`             | 구조 그림. 저작법 전체는 **`apps/blog/web/design/DIAGRAM_AUTHORING.md`** — 요약은 `blog-components` 스킬                                                                                                                                                                                                            |
-| 펜스 메타 `title=` · `<code-tabs>`            | 코드 블록에 파일명을 달거나 npm/pnpm/yarn 탭으로 묶는다. 커스텀 태그가 아니라 **코드 펜스의 메타**다 — `blog-components` 스킬                                                                                                                                                                                       |
+| 도구                                          | 설명                                                                                                                                                                                                                                                                                                                                  |
+| :-------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `pnpm new-post "제목"`                        | 새 포스트 스캐폴딩. `--series`, `--tags`, `--scheduled`, `--slug`, `--status` 옵션 지원. 한글 제목/파일명 그대로 사용 가능                                                                                                                                                                                                            |
+| `pnpm lint:posts`                             | frontmatter 검증. 메타 노트 정책: frontmatter delimiter(`---`)가 없거나 `status`가 없으면 빌드 대상이 아닌 것으로 보고 skip                                                                                                                                                                                                           |
+| `pnpm check-seo`                              | 산출물(`out/`) HTML의 SEO 계약 검사 — h1 1개, description 중복·길이·말줄임, `<title>` 60자, canonical 자기참조, og 태그, img alt, 산출물↔발행 글 정합성(`@blog/content`의 `src/scripts/artifacts.ts` 레지스트리 — sitemap·rss·llms·llms-full·search-index·admin-index·og 7종). **`pnpm build`의 마지막 단계라 따로 부를 일은 드물다** |
+| dev 서버 미리보기                             | draft·scheduled 글은 dev 서버가 **실제 라우트**(목록·상세)에 그대로 노출한다 — 상세엔 PreviewBanner, 목록엔 HiddenPostBadge. 게이트는 `@blog/content`(`src/post/service.ts`)의 `shouldIncludeHiddenPosts` 한 곳뿐                                                                                                                     |
+| `_series.yml`                                 | **이 파일이 있는 폴더만 시리즈다.** 두면 시리즈 nav가 `order` 기준 chronological 정렬 + 표시명을 폴더명 대신 사용. 지우면 그냥 글을 모아 둔 폴더                                                                                                                                                                                      |
+| `<callout type="warning\|info\|tip\|danger">` | 마크다운 헬퍼 컴포넌트 (raw HTML로 작성). `<figure>` + `<figcaption>`, `<file-tree>`도 지원                                                                                                                                                                                                                                           |
+| `<dialogue>` · `<metrics>` · `<timeline>`     | 리뉴얼 시그니처 컴포넌트. 역시 raw HTML 커스텀 태그 — 문법은 `blog-components` 스킬                                                                                                                                                                                                                                                   |
+| `<diagram>` + frontmatter `hero:`             | 구조 그림. 저작법 전체는 **`apps/blog/web/design/DIAGRAM_AUTHORING.md`** — 요약은 `blog-components` 스킬                                                                                                                                                                                                                              |
+| 펜스 메타 `title=` · `<code-tabs>`            | 코드 블록에 파일명을 달거나 npm/pnpm/yarn 탭으로 묶는다. 커스텀 태그가 아니라 **코드 펜스의 메타**다 — `blog-components` 스킬                                                                                                                                                                                                         |
 
 #### 디자인 시스템 · 저작 문법 (스킬로 분리)
 
@@ -176,9 +214,11 @@ The blog (`apps/blog/web/`) is a **statically generated (SSG) Next.js applicatio
 
 #### 클라이언트 사이드 기능 (런타임)
 
-- **조회수 카운팅**: `useViewCount` 훅 → Supabase RPC 호출 (6시간 쿨다운, 쿠키 기반 중복 방지)
-- **댓글**: Giscus (GitHub Discussions 기반)
-- **Analytics 대시보드**: `/admin` 경로, React Query(`useSuspenseQuery`) + Recharts 차트
+- **조회수 카운팅**: `useViewCount` 훅 → `@blog/content`의 `viewCookie`(6시간 쿨다운, RPC 전에 쿠키를 먼저 심어 두 탭 레이스 방지) → `domain/analytics` → `publicClient` RPC
+- **댓글**: Giscus (GitHub Discussions 기반). `NEXT_PUBLIC_GISCUS_*` 4개가 모두 있을 때만 렌더
+- **Analytics 대시보드**: `/admin` 경로, React Query(`useSuspenseQuery`) + Recharts 차트. `AdminGuard`가 세션을 보고, 데이터는 Edge Function `admin-analytics` 경유
+- **검색**: `SearchDialog`가 열릴 때 빌드 산출물 `/search-index.json`을 fetch — 서버 없는 클라이언트 검색
+- **테마**: `layout.tsx`의 pre-paint 인라인 스크립트(쿠키 → `prefers-color-scheme` → dark)가 `html[data-theme]`를 세팅, `useTheme`가 `useSyncExternalStore`로 구독
 - **페이지 전환 애니메이션**: `@ssgoi/react` + Motion 라이브러리
 - **데이터 페칭**: `@tanstack/react-query`로 Supabase 데이터 캐싱/관리
 
@@ -189,7 +229,7 @@ The blog (`apps/blog/web/`) is a **statically generated (SSG) Next.js applicatio
 - **robots.txt**: `/public/robots.txt`
 - **OpenGraph/Twitter Card**: `layout.tsx` 메타데이터에 설정
 - **Google Analytics**: `@next/third-parties` GA4 연동 (`G-ZS9ENFSSQ0`)
-- **Google Tag Manager**: `@next/third-parties` GTM 연동 (`GTM-5SMPQ23P`). GA4와 **별개로** `layout.tsx`에서 함께 로드된다
+- **Google Tag Manager**: `@next/third-parties` GTM 연동 (`GTM-5SMPQ23P`). GA4와 **별개로** `layout.tsx`에서 함께 로드된다(둘 다 `NODE_ENV === 'production'`일 때만)
 - **검색 인증**: Naver 사이트 인증 메타태그 포함
 - **검색 인덱스**: `search-index.json`으로 클라이언트 사이드 검색 지원
 - **llms.txt / llms-full.txt**: 빌드 시 자동 생성 (AI 크롤러용 색인·전문)
@@ -229,17 +269,23 @@ The blog (`apps/blog/web/`) is a **statically generated (SSG) Next.js applicatio
 
 | 파일                                        | 역할                                                                                                                                                                                                                       |
 | :------------------------------------------ | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `next.config.ts`                            | SSG output, trailingSlash 설정                                                                                                                                                                                             |
-| `panda.config.ts`                           | Panda CSS 스타일 설정                                                                                                                                                                                                      |
-| `.env.production`                           | Supabase URL/Key, Giscus 설정                                                                                                                                                                                              |
-| `.env.local`                                | 로컬 개발용 환경변수 (GA, Supabase local 등)                                                                                                                                                                               |
-| `supabase/config.toml`                      | 로컬 Supabase 설정 (Auth, DB, Storage 등)                                                                                                                                                                                  |
-| `.github/workflows/deploy-blog.yml`         | CI/CD 배포 워크플로우                                                                                                                                                                                                      |
+| `next.config.ts`                            | SSG output(개발 모드 제외), trailingSlash + skipTrailingSlashRedirect 짝, images.unoptimized, reactCompiler, `optimizePackageImports: ['@blog/content']`(배럴 import가 fs 모듈을 클라이언트 그래프로 끌지 않게)            |
+| `panda.config.ts`                           | Panda CSS 설정 — preset `@design-system/ui/preset` + `blog-preset`, `strictTokens`, outdir는 `packages/@design-system/ui-lib`                                                                                              |
+| `eslint.config.mjs` (앱·패키지 각각)        | ESLint 10 flat config를 직접 조립(`eslint-config-next` 미사용) + `eslint-plugin-boundaries` 레이어 경계. 두 파일이 같은 엄격 수준을 유지해야 한다 — 패키지 소스가 앱 program에 소스째 섞이기 때문                          |
+| `tsconfig.json` / `tsconfig.test.json`      | 프로덕션/테스트 분할(앱·패키지 동일 구조). 테스트 include는 vitest include 글롭·ESLint 테스트 블록과 대칭 — 한쪽을 고치면 셋을 함께                                                                                        |
+| `.env.production`                           | Supabase URL/Key, Giscus 설정 — 커밋되는 유일한 env 파일(`.gitignore`의 `.env*` 예외). 로컬 `.env.local`은 커밋하지 않는다                                                                                                 |
+| `env.d.ts`                                  | `NEXT_PUBLIC_*` 8개를 `NodeJS.ProcessEnv`에 선언 — `noPropertyAccessFromIndexSignature` 아래서도 점 접근을 쓰기 위해(Next는 멤버 표현식만 인라인)                                                                          |
+| `supabase/config.toml`                      | 로컬 Supabase 설정 (Auth, DB, Storage 등). `supabase/functions/admin-analytics`가 Admin RPC 프록시                                                                                                                         |
+| `vercel.json`                               | 프리뷰 배포 — `main`·`renovate/**` 비활성, `apps/blog`·`packages/@blog` 변경 없으면 `ignoreCommand`로 스킵                                                                                                                 |
+| `.github/workflows/deploy-blog.yml`         | CI/CD 배포 워크플로우. PR CI(`ci.yml`)와 `.github/actions/quality-checks` composite action을 공유한다                                                                                                                      |
 | `apps/blog/posts/{series}/_series.yml`      | 시리즈 선언 — 이 파일이 있어야 시리즈. 표시명·설명·order 메타도 여기                                                                                                                                                       |
-| `packages/@blog/content`                    | 콘텐츠 프레임워크 패키지 — 스키마·로더·공개 판정·URL 계약·빌드 스크립트·2층 검증. 문 두 개(`@blog/content` + `@blog/content/seo`), 소스 익스포트(빌드 스텝 없음)                                                           |
-| `…content/src/scripts/build-content.ts`     | predev:web/prebuild 통합 진입점 (validate/sync/sitemap/rss/search/llms) — 앱 package.json이 `node_modules/@blog/content/…` 파일 경로로 실행                                                                                |
-| `…content/src/scripts/check-seo.ts`         | 빌드 산출물 SEO 검사 (CI 게이트)                                                                                                                                                                                           |
+| `packages/@blog/content`                    | 콘텐츠 프레임워크 패키지 — 스키마·로더·공개 판정·URL 계약·빌드 스크립트·2층 검증. 문 두 개(`@blog/content` + `@blog/content/seo`), 소스 익스포트(빌드 스텝 없음). 내부는 `packages/@blog/content/README.md`                |
+| `…content/src/scripts/build-content.ts`     | predev:web/prebuild 통합 진입점 (validate → sync/sitemap/rss/og-images/thumbnails/search/llms-full/llms 병렬) — 앱 package.json이 `node_modules/@blog/content/…` 파일 경로로 실행                                          |
+| `…content/src/scripts/check-seo.ts`         | 빌드 산출물 SEO 검사 (CI 게이트). 산출물 레지스트리는 같은 폴더의 `artifacts.ts`                                                                                                                                           |
+| `…content/src/scripts/validate/rules.ts`    | `validate-posts`의 규칙 표(29개, severity·scope·`--strict` 승격 대상 6개). 판정 사슬은 옆의 `frontmatter.ts`·`body.ts`·`corpus.ts`                                                                                         |
+| `…content/src/post/frontmatterSchema.ts`    | frontmatter 서술자 테이블 — 이 파일 위 표와 글자 단위로 대조된다(`frontmatterSchema.test.ts`)                                                                                                                              |
 | `…content/src/shared/contentConfig.ts`      | `defineContent({...})` 설정 표면 — 서버·빌드 전용. 클라이언트가 소비하는 리터럴은 `contentValues.ts`(값-only 모듈, `constants.ts`가 재수출)가 갖고, 설정은 그 값을 기본값으로 소비한다. 절대 경로 해석은 `contentPaths.ts` |
+| `apps/blog/web/README.md`                   | 앱의 코드 배치·레이어·런타임 데이터 흐름·스크립트·env                                                                                                                                                                      |
 | `apps/blog/web/design/DIAGRAM_AUTHORING.md` | 다이어그램 저작 가이드 (선언형 태그 prop 표, 복붙 예제, `hero:` 등록법)                                                                                                                                                    |
 
 ## Prerequisites
