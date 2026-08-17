@@ -134,6 +134,72 @@ describe('useTocHook - 목차 추출', () => {
   });
 });
 
+/**
+ * 목차의 원본은 DOM이다 — 상태로 복사하지 않고 useSyncExternalStore로 구독한다.
+ * 그 배관(MutationObserver 구독 → 스냅샷 무효화 → 다시 읽기)이 실제 DOM 변경에
+ * 반응하는지, 그리고 헤딩이 그대로일 때 참조를 유지하는지를 고정한다.
+ */
+describe('useTocHook - 본문 변화 추적', () => {
+  /** MutationObserver 콜백은 마이크로태스크다 — act 안에서 비운다. */
+  const mutate = async (change: () => void) => {
+    await act(async () => {
+      change();
+      await Promise.resolve();
+    });
+  };
+
+  test('본문에 헤딩이 붙으면 목차가 따라 늘어난다', async () => {
+    mountHeadings(HEADINGS);
+    const { result } = renderHook(() => useTocHook());
+
+    await mutate(() => {
+      const el = document.createElement('h2');
+      el.id = 'extra';
+      el.textContent = '덧붙임';
+      el.getBoundingClientRect = () =>
+        ({
+          top: 4400 - scrollY,
+          bottom: 4400 - scrollY + HEADING_HEIGHT,
+        }) as unknown as DOMRect;
+      document.getElementById('post-content')?.appendChild(el);
+    });
+
+    expect(result.current.toc.map(item => item.id)).toEqual([
+      'intro',
+      'setup',
+      'deploy',
+      'wrap',
+      'extra',
+    ]);
+  });
+
+  // 코드 탭 전환처럼 본문 **안쪽만** 바뀌는 일은 흔하다. 그때마다 새 배열을
+  // 돌려주면 아무것도 안 바뀐 채로 차례가 통째로 다시 그려진다.
+  test('헤딩이 그대로면 같은 배열을 유지한다', async () => {
+    mountHeadings(HEADINGS);
+    const { result } = renderHook(() => useTocHook());
+    const before = result.current.toc;
+
+    await mutate(() => {
+      const p = document.createElement('p');
+      p.textContent = '헤딩과 무관한 본문 변경';
+      document.getElementById('post-content')?.appendChild(p);
+    });
+
+    expect(result.current.toc).toBe(before);
+  });
+
+  // TOC와 MobileTOC가 같은 페이지에 함께 마운트된다(PostClient). 둘이 같은
+  // 스냅샷을 봐야 하고, 한쪽이 늦게 구독한다고 목록이 흔들려선 안 된다.
+  test('두 곳에서 함께 구독해도 같은 목차를 본다', () => {
+    mountHeadings(HEADINGS);
+    const first = renderHook(() => useTocHook());
+    const second = renderHook(() => useTocHook());
+
+    expect(second.result.current.toc).toBe(first.result.current.toc);
+  });
+});
+
 describe('useTocHook - 활성 항목', () => {
   const renderToc = (specs: HeadingSpec[] = HEADINGS) => {
     mountHeadings(specs);
