@@ -2,8 +2,16 @@
   "$schema": "https://turbo.build/schema.json",
   "extends": ["//"],
   "tasks": {
+    // 이 패키지의 테스트는 워크스페이스 밖 파일 둘을 읽는다. inputs에 적지 않으면
+    // 그 파일만 바뀐 커밋에서 turbo가 **낡은 PASS를 재생**한다(fail-open):
+    //   - apps/blog/posts/**  : contract·url-consistency 테스트가 실제 원고를 잠근다
+    //   - CLAUDE.md           : frontmatterSchema.test.ts가 루트 표를 글자 단위로 대조한다
     "test": {
-      "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/apps/blog/posts/**"]
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/apps/blog/posts/**",
+        "$TURBO_ROOT$/CLAUDE.md"
+      ]
     }
   }
 }
