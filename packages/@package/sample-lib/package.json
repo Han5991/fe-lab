@@ -24,7 +24,6 @@
     "@package/bundler": "workspace:*",
     "react": "catalog:",
     "react-dom": "catalog:",
-    "tsx": "catalog:",
     "typescript": "catalog:"
   }
 }
