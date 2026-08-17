@@ -41,7 +41,7 @@ export function AdminGuard({ children }: { children: ReactNode }) {
     }
 
     if (!session) {
-      router.replace('/admin/login');
+      router.replace('/admin/login/');
       return;
     }
 
@@ -49,7 +49,7 @@ export function AdminGuard({ children }: { children: ReactNode }) {
     if (session.user.email !== process.env.NEXT_PUBLIC_ADMIN_EMAIL) {
       console.warn(`Unauthorized email attempt: ${session.user.email}`);
       void supabase.auth.signOut().then(() => {
-        router.replace('/admin/login?error=unauthorized');
+        router.replace('/admin/login/?error=unauthorized');
       });
       return;
     }
@@ -61,12 +61,12 @@ export function AdminGuard({ children }: { children: ReactNode }) {
       if (pathname === '/admin/login') return;
 
       if (event === 'SIGNED_OUT' || !currentSession) {
-        router.replace('/admin/login');
+        router.replace('/admin/login/');
       } else if (
         currentSession?.user.email !== process.env.NEXT_PUBLIC_ADMIN_EMAIL
       ) {
         await supabase.auth.signOut();
-        router.replace('/admin/login?error=unauthorized');
+        router.replace('/admin/login/?error=unauthorized');
       }
     });
 

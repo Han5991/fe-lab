@@ -34,6 +34,25 @@ const nextConfig: NextConfig = {
   // 키째 건너뛰므로, 키 유무는 관찰되지 않는다(exactOptionalPropertyTypes 대응).
   ...(isDev ? {} : { output: 'export' as const }),
   trailingSlash: true,
+  // `<Link>`·router.push는 상대 href를 normalizePathTrailingSlash(next/dist/client)에
+  // 통과시키는데, trailingSlash: true일 때 **마지막 세그먼트에 `.`이 있으면 파일로
+  // 간주해 후행 슬래시를 벗긴다**(`/\.[^/]+\/?$/`). 그래서 postPath가 계약대로
+  // `/posts/turborepo-next.js-docker/`를 만들어도 HTML에는 `…docker`로 나갔다 —
+  // GitHub Pages는 `…docker/index.html`을 서빙하므로 클릭마다 301을 한 번 더 타고,
+  // export 모드의 클라이언트 라우터는 `…docker.txt`(없음)를 받으러 갔다가 404 →
+  // MPA 폴백으로 떨어졌다. 이 플래그가 그 정규화를 통째로 끈다(패스스루).
+  //
+  // 대신 **내부 href는 전부 스스로 후행 슬래시를 달아야 한다** — postPath·
+  // POSTS_PATH·archivePath는 원래 그렇고, 리터럴 href도 마찬가지다.
+  // check-seo의 `link-trailing-slash`가 산출물에서 이를 검사한다.
+  //
+  // dev 서버의 자동 리다이렉트(`/posts/foo` → `/posts/foo/`)도 함께 꺼진다 — 두 형태
+  // 모두 200으로 그냥 서빙된다. 잃는 게 없다: 프로덕션은 서버 없는 정적 export라
+  // 리다이렉트는 원래 GitHub Pages 몫이고, 우리 링크는 전부 슬래시를 달고 나간다.
+  // (서버 쪽 "파일" 판정 정규식은 `\.\w+$`라 클라이언트 쪽보다 좁다 — 이 slug는
+  // 서버에서는 어느 방향으로도 리다이렉트되지 않았다. 어긋남은 순전히 클라이언트
+  // 정규화 한 곳이었다.)
+  skipTrailingSlashRedirect: true,
   images: {
     unoptimized: true,
   },

@@ -15,7 +15,7 @@ export function useAdminLogout() {
     // 쿼리를 비운다(partial 매칭). 인증 세션 쿼리(['admin-auth-session'])는
     // prefix가 달라 제외되며, 세션 자체는 위 signOut이 정리한다.
     queryClient.removeQueries({ queryKey: ['admin'] });
-    router.push('/admin/login');
+    router.push('/admin/login/');
   };
 
   return { handleLogout };

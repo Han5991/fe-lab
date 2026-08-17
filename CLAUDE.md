@@ -54,7 +54,7 @@ The blog (`apps/blog/web/`) is a **statically generated (SSG) Next.js applicatio
 #### SSG (Static Site Generation) 전략
 
 - **Next.js `output: 'export'`**: 프로덕션 빌드 시 완전한 정적 HTML 생성 (개발 모드에서는 해제)
-- **`trailingSlash: true`**: GitHub Pages 호환을 위한 후행 슬래시 설정
+- **`trailingSlash: true`**: GitHub Pages 호환을 위한 후행 슬래시 설정. **`skipTrailingSlashRedirect: true`가 짝이다** — 없으면 next/link가 `.`이 든 slug(`turborepo-next.js-docker`)를 파일로 보고 붙인 슬래시를 도로 벗겨 링크가 301을 한 번 더 탄다. 그래서 내부 href는 전부 스스로 후행 슬래시를 달아야 하고(`postPath`·`archivePath`가 그렇게 한다), 산출물은 `check-seo`의 `link-trailing-slash` 규칙이 지킨다
 - **`images.unoptimized: true`**: 정적 호스팅에서 Next.js Image Optimization 사용 불가하므로 비활성화
 
 #### Supabase 백엔드

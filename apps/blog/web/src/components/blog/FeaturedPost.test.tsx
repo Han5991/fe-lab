@@ -12,8 +12,8 @@ import { render, screen } from '@testing-library/react';
 import type { PostSummary } from '@blog/content';
 import { FeaturedPost } from './FeaturedPost';
 
-/** next/link가 테스트 환경에서 후행 슬래시를 떼므로 경로만 비교합니다. */
-const pathOf = (el: Element) => el.getAttribute('href')?.replace(/\/$/, '');
+/** href는 postPath 계약 그대로(후행 슬래시 포함) — vitest.setup.ts가 next.config를 비춰 둔다. */
+const hrefOf = (el: Element) => el.getAttribute('href');
 
 const post = (over: Partial<PostSummary> = {}): PostSummary => ({
   slug: 'parallel-io',
@@ -29,7 +29,7 @@ const post = (over: Partial<PostSummary> = {}): PostSummary => ({
 describe('FeaturedPost', () => {
   test('카드 전체가 글 상세로 가는 링크다', () => {
     render(<FeaturedPost post={post()} />);
-    expect(pathOf(screen.getByRole('link'))).toBe('/posts/parallel-io');
+    expect(hrefOf(screen.getByRole('link'))).toBe('/posts/parallel-io/');
   });
 
   test('메타는 날짜 · 읽기시간(min) 순으로 붙는다', () => {

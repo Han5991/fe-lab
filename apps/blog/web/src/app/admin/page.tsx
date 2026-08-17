@@ -157,7 +157,7 @@ function AdminOverviewContent() {
 
         {/* 상세 분석 링크 */}
         <Link
-          href="/admin/analytics"
+          href="/admin/analytics/"
           className={css({
             bg: 'paper.200',
             borderWidth: '[1px]',
@@ -445,7 +445,7 @@ export default function AdminPage() {
             className={css({ display: 'flex', alignItems: 'center', gap: '2' })}
           >
             <Link
-              href="/admin/analytics"
+              href="/admin/analytics/"
               className={css({
                 display: 'flex',
                 alignItems: 'center',

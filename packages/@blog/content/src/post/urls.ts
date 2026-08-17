@@ -21,6 +21,9 @@ import { encodePostSlug } from './utils';
  *    `post_views`에 저장된 원본(디코드 상태)입니다.
  * 2. **후행 슬래시는 여기서만 붙인다.** `next.config.ts`의 `trailingSlash: true`
  *    때문이고, 다른 곳에서 또 붙이면 한쪽만 고쳐졌을 때 링크가 갈립니다.
+ *    붙인 슬래시가 HTML까지 살아남는 건 같은 파일의 `skipTrailingSlashRedirect`
+ *    덕입니다 — 그게 없으면 next/link가 `.`이 든 slug(`turborepo-next.js-docker`)
+ *    를 파일로 보고 도로 벗깁니다. 산출물은 check-seo `link-trailing-slash`가 봅니다.
  * 3. **상대/절대를 나눈다.** 화면 링크·canonical은 상대(`postPath`), 피드·
  *    JSON-LD는 절대(`postUrl`)입니다. 절대 쪽은 siteUrl을 주입받습니다 —
  *    생성기들이 테스트 결정성을 위해 이미 그렇게 하고 있습니다.
