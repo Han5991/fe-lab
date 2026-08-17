@@ -11,7 +11,7 @@
  * 고정합니다.
  */
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
-import { act, renderHook } from '@testing-library/react';
+import { act, render, renderHook } from '@testing-library/react';
 import { useTocHook } from './tocHooks';
 
 // 기준선은 window.innerHeight * 0.2이라 뷰포트를 1000으로 고정하면 200px이 된다.
@@ -197,6 +197,28 @@ describe('useTocHook - 본문 변화 추적', () => {
     const second = renderHook(() => useTocHook());
 
     expect(second.result.current.toc).toBe(first.result.current.toc);
+  });
+
+  // 스냅샷 캐시는 모듈 스코프에 있어 글이 바뀌어도 살아남는다. 구독(=무효화)은
+  // 커밋 뒤에나 불리므로, 노드 동일성으로 먼저 잡지 않으면 **첫 렌더 한 프레임**
+  // 동안 이전 글의 차례가 그대로 보인다.
+  test('다른 글로 넘어오면 첫 렌더부터 새 글의 목차다', () => {
+    mountHeadings(HEADINGS);
+    renderHook(() => useTocHook()).unmount();
+
+    // 클라이언트 내비게이션 — 본문 노드가 통째로 갈린다.
+    document.body.replaceChildren();
+    mountHeadings([{ id: 'next-post', tag: 'h2', text: '다음 글', top: 400 }]);
+
+    const seen: string[][] = [];
+    const Probe = () => {
+      const { toc } = useTocHook();
+      seen.push(toc.map(item => item.id));
+      return null;
+    };
+    render(<Probe />);
+
+    expect(seen[0]).toEqual(['next-post']);
   });
 });
 

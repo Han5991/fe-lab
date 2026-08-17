@@ -55,9 +55,10 @@ const EMPTY_TOC: TOCItem[] = [];
 let tocSnapshot: TOCItem[] = EMPTY_TOC;
 /** 본문이 바뀌었으니 다시 읽어야 한다는 표시. */
 let tocStale = true;
+/** 그 스냅샷을 읽어 온 본문 노드. 노드가 갈리면 스냅샷은 남의 글 것이다. */
+let readFrom: Element | null = null;
 
-const readToc = (): TOCItem[] => {
-  const content = document.getElementById('post-content');
+const readToc = (content: Element | null): TOCItem[] => {
   if (!content) return EMPTY_TOC;
 
   return Array.from(content.querySelectorAll('h1, h2, h3, h4'))
@@ -82,11 +83,21 @@ const isSameToc = (a: TOCItem[], b: TOCItem[]): boolean =>
   });
 
 const getTocSnapshot = (): TOCItem[] => {
-  // getSnapshot은 **렌더마다** 불린다. 매번 DOM을 훑으면 스크롤 한 프레임마다
-  // querySelectorAll이 도는 셈이라, 본문이 바뀌었다는 알림을 받았을 때만 읽는다.
+  const content = document.getElementById('post-content');
+  // 클라이언트 내비게이션으로 다른 글에 오면 본문 노드가 통째로 갈린다. 그때
+  // 이전 글의 스냅샷이 남아 있는데, subscribe의 무효화는 **커밋 뒤**에나 불려
+  // 첫 렌더에 늦는다 — 한 프레임 동안 남의 차례가 보인다. 노드 동일성으로
+  // 여기서 먼저 잡는다(getElementById는 해시 조회라 렌더마다 불러도 싸다).
+  if (content !== readFrom) {
+    readFrom = content;
+    tocStale = true;
+  }
+
+  // 그 밖에는 **알림을 받았을 때만** 읽는다. getSnapshot은 렌더마다 불리므로
+  // 매번 훑으면 스크롤 한 프레임마다 querySelectorAll이 도는 셈이 된다.
   if (tocStale) {
     tocStale = false;
-    const next = readToc();
+    const next = readToc(content);
     // 코드 탭 전환처럼 본문 안쪽만 바뀐 경우 헤딩은 그대로다. 그때 새 배열을
     // 돌려주면 아무것도 안 바뀐 채로 차례가 통째로 다시 그려진다.
     if (!isSameToc(tocSnapshot, next)) tocSnapshot = next;
@@ -98,8 +109,9 @@ const getTocSnapshot = (): TOCItem[] => {
 const getServerTocSnapshot = (): TOCItem[] => EMPTY_TOC;
 
 const subscribeToc = (onStoreChange: () => void): (() => void) => {
-  // 다른 글로 넘어와 본문이 통째로 갈렸을 수 있다 — 이전 글의 목록을 첫
-  // 스냅샷으로 내보내지 않도록 구독 시점에 무효화한다.
+  // 구독이 끊겨 있던 사이의 변경은 옵저버가 놓친다. 다시 붙을 때 한 번
+  // 무효화해 그 공백을 메운다(본문 노드가 통째로 갈린 경우는 위 getSnapshot이
+  // 노드 동일성으로 먼저 잡는다).
   tocStale = true;
 
   const content = document.getElementById('post-content');
