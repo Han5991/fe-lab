@@ -5,8 +5,8 @@
   "type": "module",
   "dependencies": {
     "@package/sample-lib": "workspace:*",
-    "react": "^19.2.8",
-    "react-dom": "^19.2.8"
+    "react": "catalog:",
+    "react-dom": "catalog:"
   },
   "scripts": {
     "test": "node src/index.js"

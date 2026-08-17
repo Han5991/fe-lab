@@ -26,8 +26,8 @@
   "devDependencies": {
     "@types/estree": "^1.0.9",
     "@types/node": "catalog:",
-    "tsdown": "0.22.14",
-    "tsx": "^4.23.12",
+    "tsdown": "catalog:",
+    "tsx": "catalog:",
     "typescript": "catalog:"
   },
   "dependencies": {
