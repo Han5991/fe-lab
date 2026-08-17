@@ -1,0 +1,92 @@
+name: Push Supabase Migrations
+
+# 왜 deploy-blog.yml 이 아니라 별도 워크플로인가:
+#   deploy-blog.yml 은 매일 00:00 UTC cron 으로도 돈다(예약 발행 글 공개용).
+#   거기에 db push 를 얹으면 스키마 변경이 없는 날에도 매일 프로덕션 DB에
+#   접속하게 되고, 콘텐츠 발행과 스키마 변경이 한 실패 지점에 묶인다.
+#   마이그레이션 파일이 바뀐 push 에서만 도는 게 맞다.
+#
+# 이 워크플로가 존재하는 이유:
+#   프로덕션에는 저장소 마이그레이션이 만든 적 없는 public 함수 9개가 남아 있었다
+#   (2025-06-23 대시보드 SQL 에디터 산물. 첫 마이그레이션보다 6개월 앞선다).
+#   원장 자체는 어긋난 적이 없지만, 적용 경로가 사람 손에만 있으면 언제든 다시
+#   벌어진다. 경로를 여기 하나로 고정한다.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/blog/web/supabase/migrations/**'
+      - '.github/workflows/supabase-migrations.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# 같은 DB에 두 push 가 동시에 붙지 않게 한다. 배포 워크플로의 'pages' 그룹과는
+# 별개 그룹이라 서로 막지 않는다.
+concurrency:
+  group: supabase-migrations
+  cancel-in-progress: false
+
+jobs:
+  push:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/blog/web
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@46f7f98c7f948ad727d22c1e67fab04c223a0520 # v3.0.0
+        with:
+          version: latest
+
+      # 필요한 secret 은 SUPABASE_DB_PASSWORD 하나뿐이다.
+      #
+      # `supabase link` 를 쓰지 않고 --db-url 로 DB에 직접 붙는다. link 는 계정
+      # 단위 personal access token 을 요구하는데, 그건 다른 프로젝트 생성·삭제까지
+      # 되는 넓은 권한이다. DB 접속 문자열은 이 DB 하나로 범위가 좁다.
+      #
+      # ⚠️ 호스트는 반드시 **풀러(pooler)** 여야 한다. 직접 접속 호스트
+      #    db.<ref>.supabase.co 는 AAAA 레코드만 있는 IPv6 전용이고 GitHub Actions
+      #    러너는 IPv4라 이름은 풀려도 접속이 안 된다. 풀러는 A 레코드가 있다.
+      # ⚠️ 포트는 5432(**세션 모드**). 6543은 트랜잭션 모드라 마이그레이션에 부적합하다.
+      - name: Build connection string
+        env:
+          # 프로젝트 ref 는 비밀값이 아니다 — 커밋된 apps/blog/web/.env.production 의
+          # NEXT_PUBLIC_SUPABASE_URL 에 이미 들어 있는 공개 식별자다.
+          REF: anbofhnldllmivlovyqb
+          # 값 출처: `supabase link` 가 기록하는 apps/blog/web/supabase/.temp/pooler-url.
+          # 그 파일은 gitignore 대상이라 저장소에서는 대조할 수 없다. 프로젝트 리전이
+          # 바뀌거나 이 값이 의심스러우면 링크한 로컬에서 아래로 다시 확인할 것:
+          #   cat apps/blog/web/supabase/.temp/pooler-url
+          # (기록된 포트는 6543이지만 여기서는 세션 모드 5432를 쓴다 — 위 주석 참고)
+          REGION_HOST: aws-0-ap-northeast-2.pooler.supabase.com
+          DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: |
+          if [[ -z "$DB_PASSWORD" ]]; then
+            echo "::error::secret SUPABASE_DB_PASSWORD 가 설정돼 있지 않습니다"
+            exit 1
+          fi
+          # --db-url 은 percent-encoded 를 요구한다. 비밀번호에 @ : / # ? 같은 문자가
+          # 있으면 인코딩 없이는 URL 파싱이 깨진다.
+          enc=$(python3 -c 'import os,urllib.parse;print(urllib.parse.quote(os.environ["DB_PASSWORD"], safe=""))')
+          # 인코딩된 형태는 원본과 달라 GitHub 의 자동 마스킹이 안 걸린다. 직접 건다.
+          echo "::add-mask::$enc"
+          url="postgresql://postgres.${REF}:${enc}@${REGION_HOST}:5432/postgres"
+          echo "::add-mask::$url"
+          echo "DB_URL=$url" >> "$GITHUB_ENV"
+
+      # 적용 전에 원장과 저장소 파일의 차이를 로그에 남긴다. 사람 손으로 적용한
+      # 흔적이 있으면 여기서 드러난다.
+      - name: List migrations
+        run: supabase migration list --db-url "$DB_URL"
+
+      # --include-all 은 일부러 안 붙인다. 원장에 없는 옛 마이그레이션까지 한꺼번에
+      # 다시 적용하는 플래그다. 순서 밖 파일이 있으면 push 가 거부하면서 목록을
+      # 알려주니, 그때 사람이 보고 판단하는 편이 안전하다.
+      - name: Push migrations
+        run: supabase db push --db-url "$DB_URL"

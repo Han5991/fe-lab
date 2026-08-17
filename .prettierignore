@@ -64,3 +64,7 @@ pnpm-lock.yaml
 # 기타 불필요한 파일
 *.min.js
 *.min.css
+
+# Supabase CLI 로컬 상태 — `supabase link` 산출물. git은 supabase/.gitignore로
+# 무시하지만 prettier는 .prettierignore만 보므로 여기에도 적어야 format:check가 통과한다
+apps/blog/web/supabase/.temp/
