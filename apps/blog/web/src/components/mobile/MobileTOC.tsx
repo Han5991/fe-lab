@@ -11,6 +11,9 @@ import { Portal } from '@/src/components/Portal';
 /** 목차 항목 한 줄 — level은 헤딩 깊이만큼 들여쓰고, active는 현재 절을 비춘다. */
 const tocItem = cva({
   base: {
+    // 앵커가 인라인이면 글자 폭만 눌리는 자리가 된다. li 한 줄 전체가
+    // 탭 대상이었던 예전 동작을 유지하려면 블록이어야 한다.
+    display: 'block',
     fontSize: 'md',
     cursor: 'pointer',
     transition: '[color 0.2s]',
@@ -162,23 +165,44 @@ export const MobileTOC = () => {
                     })}
                   >
                     {toc.map(item => (
-                      <li
-                        key={item.id}
-                        onClick={() =>
-                          scrollToId({
-                            id: item.id,
-                            headerOffset: 80,
-                            action: () => setIsOpen(false),
-                          })
-                        }
-                        className={tocItem({
-                          level: isTocLevel(item.level)
-                            ? item.level
-                            : undefined,
-                          active: activeId === item.id,
-                        })}
-                      >
-                        {item.text}
+                      <li key={item.id}>
+                        {/* 데스크탑 차례(post/TOC.tsx)와 같은 이유로 앵커다 —
+                            스크롤은 아래 onClick이 가로채지만, href가 있어야
+                            키보드 초점·Enter·새 탭으로 열기가 전부 공짜로
+                            따라온다. li에 onClick만 달았을 때는 마우스로만
+                            닿는 항목이었다. */}
+                        <a
+                          href={`#${item.id}`}
+                          onClick={e => {
+                            // 수정자 키가 눌린 클릭은 가로채지 않는다 — 여기서
+                            // 기본 동작을 막으면 Cmd/Ctrl+클릭의 새 탭까지 막혀
+                            // 앵커로 바꾼 이유가 사라진다.
+                            if (
+                              e.metaKey ||
+                              e.ctrlKey ||
+                              e.shiftKey ||
+                              e.altKey
+                            )
+                              return;
+                            e.preventDefault();
+                            scrollToId({
+                              id: item.id,
+                              headerOffset: 80,
+                              action: () => setIsOpen(false),
+                            });
+                          }}
+                          aria-current={
+                            activeId === item.id ? 'true' : undefined
+                          }
+                          className={tocItem({
+                            level: isTocLevel(item.level)
+                              ? item.level
+                              : undefined,
+                            active: activeId === item.id,
+                          })}
+                        >
+                          {item.text}
+                        </a>
                       </li>
                     ))}
                   </ul>

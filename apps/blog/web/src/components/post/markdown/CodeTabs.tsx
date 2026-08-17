@@ -188,7 +188,6 @@ export function CodeTabs({ children }: { children?: ReactNode }) {
           // 축을 단정하지 않는다. npm/pnpm/yarn 만 있는 게 아니라
           // Next.js/React Router 처럼 프레임워크로 가르기도 한다.
           aria-label="같은 코드의 다른 버전"
-          onKeyDown={onKeyDown}
           className={css({ display: 'flex', overflowX: 'auto', flex: '1' })}
         >
           {items.map((item, i) => {
@@ -209,6 +208,11 @@ export function CodeTabs({ children }: { children?: ReactNode }) {
                 aria-controls={`${baseId}-panel`}
                 // 선택되지 않은 탭은 Tab 키 순회에서 빼고 화살표로만 간다.
                 tabIndex={selected ? 0 : -1}
+                // 화살표 처리는 tablist가 아니라 **탭 자신**이 받는다. 초점은
+                // 언제나 탭 버튼에 있고(위 roving tabIndex), tablist는 초점을
+                // 받지 않는 컨테이너다 — 거기 키 핸들러를 달면 "초점도 못 받는
+                // 요소가 키를 처리한다"가 된다(jsx-a11y/interactive-supports-focus).
+                onKeyDown={onKeyDown}
                 onClick={() => setActive(i)}
                 className={css({
                   pos: 'relative',

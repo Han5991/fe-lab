@@ -257,8 +257,13 @@ export const SearchDialog = () => {
 
   return (
     <>
-      {/* 백드롭 */}
+      {/* 백드롭 — 뒤를 덮는 dim 레이어다. 보조기술에 읽힐 내용이 없으므로
+          role="presentation"으로 트리에서 뺀다. 클릭으로 닫히는 건 포인터
+          편의일 뿐이고, 키보드로 닫는 길은 이 요소가 아니라 위 useEffect의
+          Escape 핸들러와 아래 닫기 버튼이다 — 그래서 여기에 키 핸들러를
+          더 달아도 초점이 오지 않아 아무도 쓰지 못한다. */}
       <div
+        role="presentation"
         className={css({
           pos: 'fixed',
           inset: '0',

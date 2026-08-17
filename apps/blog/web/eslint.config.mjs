@@ -1,4 +1,5 @@
 import { resolve } from 'node:path';
+import eslintComments from '@eslint-community/eslint-plugin-eslint-comments';
 import js from '@eslint/js';
 import nextPlugin from '@next/eslint-plugin-next';
 import { defineConfig } from 'eslint/config';
@@ -116,14 +117,12 @@ export default defineConfig([
         'error',
         { roles: ['tabpanel', 'region'] },
       ],
-      // 아래 4개의 현행 위반(MobileTOC li onClick, CodeTabs tablist,
-      // SearchDialog 백드롭)은 키보드 동선 설계 — 핸들러·role 추가 = DOM/동작
-      // 변경 — 가 필요하다. 동작 무변경이 원칙인 이 PR에서는 에러로 못 올리므로
-      // 경고로 남겨 두고, 후속에서 설계로 풀면서 에러로 올린다.
-      'jsx-a11y/click-events-have-key-events': 'warn',
-      'jsx-a11y/no-noninteractive-element-interactions': 'warn',
-      'jsx-a11y/interactive-supports-focus': 'warn',
-      'jsx-a11y/no-static-element-interactions': 'warn',
+      // 위 4개(click-events-have-key-events · no-noninteractive-element-
+      // interactions · interactive-supports-focus · no-static-element-
+      // interactions)는 예전에 현행 위반 5건 때문에 'warn'으로 내려 두고
+      // --max-warnings=5로 봉해 뒀다. 위반을 설계로 풀었으므로(MobileTOC 앵커,
+      // CodeTabs 키 핸들러를 탭으로, SearchDialog 백드롭 presentation) 여기서
+      // 되돌리지 않는다 — recommended의 'error'가 그대로 산다.
     },
   },
 
@@ -182,6 +181,30 @@ export default defineConfig([
       'import/resolver': {
         typescript: { alwaysTryTypes: true },
       },
+    },
+  },
+
+  // ── disable 주석 정책 ──────────────────────────────────────────────────────
+  // 린트를 통째로 끄지는 않되(기존 non-null assertion 인가들이 정당한 이유와
+  // 함께 남아 있다), **조용히 끄는 것은 막는다.**
+  {
+    plugins: { '@eslint-community/eslint-comments': eslintComments },
+    rules: {
+      // 이유 없는 disable 금지 — `-- 왜 여기서는 안전한가`를 반드시 붙인다.
+      // 이 저장소가 이미 쓰고 있던 서술 방식을 규칙으로 승격한 것이라 기존
+      // 인가는 그대로 통과한다.
+      '@eslint-community/eslint-comments/require-description': 'error',
+      // 룰명 없는 광역 disable(`/* eslint-disable */`) 금지. 한 줄로 파일
+      // 전체의 모든 룰을 끄면 나중에 무엇을 왜 껐는지 복원할 수 없다.
+      '@eslint-community/eslint-comments/no-unlimited-disable': 'error',
+      // a11y는 주석으로 끌 수 없다. 이 계열 위반은 "여기서는 안전하다"가
+      // 성립하지 않는다 — 마우스 없이 닿을 수 없는 요소는 어떤 이유를 적어도
+      // 여전히 닿을 수 없다. 끄고 싶으면 설계로 풀거나 이 설정에서 명시적으로
+      // 룰을 내려야 하고, 그 변경은 리뷰에 보인다.
+      '@eslint-community/eslint-comments/no-restricted-disable': [
+        'error',
+        'jsx-a11y/*',
+      ],
     },
   },
 

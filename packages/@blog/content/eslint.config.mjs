@@ -1,3 +1,4 @@
+import eslintComments from '@eslint-community/eslint-plugin-eslint-comments';
 import js from '@eslint/js';
 import { defineConfig } from 'eslint/config';
 import boundaries from 'eslint-plugin-boundaries';
@@ -69,6 +70,17 @@ export default defineConfig([
       'import/resolver': {
         typescript: { alwaysTryTypes: true },
       },
+    },
+  },
+
+  // ── disable 주석 정책 (앱 eslint.config.mjs와 같은 기준) ───────────────────
+  // 인가 자체를 막지는 않되 조용한 인가를 막는다. 이 패키지의 기존 인가는
+  // 전부 `-- 이유`가 붙어 있어 규칙 승격만으로 통과한다.
+  {
+    plugins: { '@eslint-community/eslint-comments': eslintComments },
+    rules: {
+      '@eslint-community/eslint-comments/require-description': 'error',
+      '@eslint-community/eslint-comments/no-unlimited-disable': 'error',
     },
   },
 
