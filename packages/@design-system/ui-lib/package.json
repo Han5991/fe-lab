@@ -5,7 +5,7 @@
     "build": "pnpm -C ../ui codegen"
   },
   "peerDependencies": {
-    "react": "*"
+    "react": "catalog:"
   },
   "exports": {
     "./css": {

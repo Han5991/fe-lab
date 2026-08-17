@@ -27,7 +27,6 @@
     "@types/estree": "^1.0.9",
     "@types/node": "catalog:",
     "tsdown": "catalog:",
-    "tsx": "catalog:",
     "typescript": "catalog:"
   },
   "dependencies": {

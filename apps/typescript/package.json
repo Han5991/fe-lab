@@ -13,9 +13,7 @@
   },
   "devDependencies": {
     "@package/config": "workspace:*",
-    "@package/core": "workspace:*",
     "@types/node": "catalog:",
-    "msw": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
   }
