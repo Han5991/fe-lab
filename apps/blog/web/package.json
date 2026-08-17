@@ -12,6 +12,8 @@
     "lint": "eslint . --max-warnings=0",
     "lint:posts": "npx tsx node_modules/@blog/content/src/scripts/validate-posts.ts",
     "check-seo": "npx tsx node_modules/@blog/content/src/scripts/check-seo.ts",
+    "gen:types": "mkdir -p .cache && supabase gen types typescript --project-id anbofhnldllmivlovyqb > .cache/db.types.tmp && npx prettier --parser typescript .cache/db.types.tmp > lib/platform/database.types.ts",
+    "gen:types:local": "mkdir -p .cache && supabase gen types typescript --local > .cache/db.types.tmp && npx prettier --parser typescript .cache/db.types.tmp > lib/platform/database.types.ts",
     "check-types": "next typegen && tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json --noEmit",
     "test": "pnpm test:node && pnpm test:vitest",
     "test:node": "node --import tsx --test 'domain/**/*.test.ts' 'lib/**/*.test.ts'",
