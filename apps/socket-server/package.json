@@ -14,7 +14,7 @@
   },
   "dependencies": {},
   "devDependencies": {
-    "@types/node": "^25.9.5",
+    "@types/node": "catalog:",
     "typescript": "catalog:"
   }
 }
