@@ -190,7 +190,6 @@ The blog (`apps/blog/web/`) is a **statically generated (SSG) Next.js applicatio
 - **OpenGraph/Twitter Card**: `layout.tsx` 메타데이터에 설정
 - **Google Analytics**: `@next/third-parties` GA4 연동 (`G-ZS9ENFSSQ0`)
 - **Google Tag Manager**: `@next/third-parties` GTM 연동 (`GTM-5SMPQ23P`). GA4와 **별개로** `layout.tsx`에서 함께 로드된다
-- **GA Proxy**: `apps/ga-proxy/`로 Velog 등 외부 플랫폼 조회수 추적
 - **검색 인증**: Naver 사이트 인증 메타태그 포함
 - **검색 인덱스**: `search-index.json`으로 클라이언트 사이드 검색 지원
 - **llms.txt / llms-full.txt**: 빌드 시 자동 생성 (AI 크롤러용 색인·전문)

@@ -1,4 +1,5 @@
 import { resolve } from 'node:path';
+import eslintComments from '@eslint-community/eslint-plugin-eslint-comments';
 import js from '@eslint/js';
 import nextPlugin from '@next/eslint-plugin-next';
 import { defineConfig } from 'eslint/config';
@@ -116,14 +117,12 @@ export default defineConfig([
         'error',
         { roles: ['tabpanel', 'region'] },
       ],
-      // 아래 4개의 현행 위반(MobileTOC li onClick, CodeTabs tablist,
-      // SearchDialog 백드롭)은 키보드 동선 설계 — 핸들러·role 추가 = DOM/동작
-      // 변경 — 가 필요하다. 동작 무변경이 원칙인 이 PR에서는 에러로 못 올리므로
-      // 경고로 남겨 두고, 후속에서 설계로 풀면서 에러로 올린다.
-      'jsx-a11y/click-events-have-key-events': 'warn',
-      'jsx-a11y/no-noninteractive-element-interactions': 'warn',
-      'jsx-a11y/interactive-supports-focus': 'warn',
-      'jsx-a11y/no-static-element-interactions': 'warn',
+      // 위 4개(click-events-have-key-events · no-noninteractive-element-
+      // interactions · interactive-supports-focus · no-static-element-
+      // interactions)는 예전에 현행 위반 5건 때문에 'warn'으로 내려 두고
+      // --max-warnings=5로 봉해 뒀다. 위반을 설계로 풀었으므로(MobileTOC 앵커,
+      // CodeTabs 키 핸들러를 탭으로, SearchDialog 백드롭 presentation) 여기서
+      // 되돌리지 않는다 — recommended의 'error'가 그대로 산다.
     },
   },
 
@@ -186,10 +185,23 @@ export default defineConfig([
     },
   },
 
+  // ── disable 주석 정책: 인라인 인가 전면 금지 ───────────────────────────────
+  // 룰을 끄는 결정은 **이 파일에서만** 한다. 소스에 흩어진 한 줄짜리 인가는
+  // 리뷰에서 diff 한 줄로 지나가고, 한 번 붙으면 근거가 유효한지 아무도 다시
+  // 묻지 않는다. 여기서 끄면 최소한 "무엇을 왜 껐나"가 한곳에 모인다.
   {
+    plugins: { '@eslint-community/eslint-comments': eslintComments },
     linterOptions: {
-      reportUnusedDisableDirectives: 'error',
+      // 인라인 설정 주석을 **읽지 않는다.** eslint-disable·eslint-enable·
+      // eslint(룰 설정)·globals 전부 무효가 된다.
+      noInlineConfig: true,
       reportUnusedInlineConfigs: 'error',
+    },
+    rules: {
+      // noInlineConfig는 주석을 조용히 무시할 뿐이라, 그것만 켜면 "끈 줄 알았는데
+      // 안 꺼진" 죽은 주석이 소스에 남는다. 주석 자체를 에러로 만들어 그 상태를
+      // 없앤다 — 인가가 필요하면 이 설정 파일에 files 스코프로 적어야 한다.
+      '@eslint-community/eslint-comments/no-use': 'error',
     },
   },
 

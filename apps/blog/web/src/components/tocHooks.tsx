@@ -1,6 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react';
 
 /**
  * 화면 맨 위에서 **고정 헤더가 덮는 높이.**
@@ -40,31 +46,122 @@ interface TOCItem {
   level: number;
 }
 
+/**
+ * 헤딩 목록의 **원본은 DOM**이다 — 마크다운을 렌더한 결과라 이 훅이 소유한
+ * 상태가 아니다. 그래서 상태로 복사하지 않고 외부 저장소로 읽는다.
+ *
+ * 예전에는 마운트 effect에서 `setToc(items)`로 옮겼다. 렌더 → effect → 리렌더가
+ * 한 번 더 도는 데다(`react-hooks/set-state-in-effect`), 클라이언트 내비게이션으로
+ * 들어온 첫 프레임에는 차례가 비어 있다가 뒤늦게 채워졌다. 아래 구독 모델에서는
+ * 첫 렌더의 스냅샷이 이미 실제 헤딩이다.
+ */
+const EMPTY_TOC: TOCItem[] = [];
+
+/**
+ * 훅 인스턴스 하나가 들고 있는 캐시.
+ *
+ * 모듈 전역으로 두면 안 된다. 페이지 전환(SSGOI)은 나가는 글을
+ * `position: absolute`로 띄운 채 새 글을 마운트하므로, 그 사이 `#post-content`가
+ * 문서에 **둘** 있다. 캐시를 공유하면 한쪽 인스턴스가 읽은 결과가 다른 글의
+ * 차례로 새어 든다.
+ */
+interface TocCache {
+  /** 마지막으로 돌려준 스냅샷. 참조가 바뀌면 그 화면이 다시 그려진다. */
+  snapshot: TOCItem[];
+  /** 본문이 바뀌었으니 다시 읽어야 한다는 표시. */
+  stale: boolean;
+  /** 그 스냅샷을 읽어 온 본문 노드. 노드가 갈리면 스냅샷은 남의 글 것이다. */
+  from: Element | null;
+}
+
+const readToc = (content: Element | null): TOCItem[] => {
+  if (!content) return EMPTY_TOC;
+
+  return Array.from(content.querySelectorAll('h1, h2, h3, h4'))
+    .map(header => ({
+      id: header.id,
+      text: header.textContent || '',
+      level: parseInt(header.tagName.substring(1)),
+    }))
+    .filter(item => item.id);
+};
+
+const isSameToc = (a: TOCItem[], b: TOCItem[]): boolean =>
+  a.length === b.length &&
+  a.every((item, i) => {
+    const other = b[i];
+    return (
+      other !== undefined &&
+      item.id === other.id &&
+      item.text === other.text &&
+      item.level === other.level
+    );
+  });
+
+const readSnapshot = (cache: TocCache): TOCItem[] => {
+  const content = document.getElementById('post-content');
+  // 다른 글에 오면 본문 노드가 갈린다. 그때 이전 글의 스냅샷이 남아 있는데
+  // 구독의 무효화는 **커밋 뒤**에나 불려 첫 렌더에 늦는다 — 한 프레임 동안
+  // 남의 차례가 보인다. 노드 동일성으로 여기서 먼저 잡는다(getElementById는
+  // 해시 조회라 렌더마다 불러도 싸다). 전환이 끝나 나가는 글이 사라지면 다음
+  // 렌더의 이 비교가 새 본문을 잡아 스스로 회복한다.
+  if (content !== cache.from) {
+    cache.from = content;
+    cache.stale = true;
+  }
+
+  // 그 밖에는 **알림을 받았을 때만** 읽는다. getSnapshot은 렌더마다 불리므로
+  // 매번 훑으면 스크롤 한 프레임마다 querySelectorAll이 도는 셈이 된다.
+  if (cache.stale) {
+    cache.stale = false;
+    const next = readToc(content);
+    // 코드 탭 전환처럼 본문 안쪽만 바뀐 경우 헤딩은 그대로다. 그때 새 배열을
+    // 돌려주면 아무것도 안 바뀐 채로 차례가 통째로 다시 그려진다.
+    if (!isSameToc(cache.snapshot, next)) cache.snapshot = next;
+  }
+  return cache.snapshot;
+};
+
+/** 서버에는 DOM이 없다. 하이드레이션까지 빈 목록이고 그 직후 실제 헤딩이 온다. */
+const getServerTocSnapshot = (): TOCItem[] => EMPTY_TOC;
+
 export const useTocHook = () => {
-  const [toc, setToc] = useState<TOCItem[]>([]);
+  const cache = useRef<TocCache>({
+    snapshot: EMPTY_TOC,
+    stale: true,
+    from: null,
+  });
+
+  // 구독·스냅샷 함수는 인스턴스마다 하나씩 고정한다. 렌더마다 새로 만들면
+  // useSyncExternalStore가 매번 구독을 끊고 다시 건다.
+  const subscribe = useCallback((onStoreChange: () => void) => {
+    // 구독이 끊겨 있던 사이의 변경은 옵저버가 놓친다. 다시 붙을 때 한 번
+    // 무효화해 그 공백을 메운다.
+    cache.current.stale = true;
+
+    const content = document.getElementById('post-content');
+    // 본문이 없으면 지켜볼 것도 없다(예전 effect의 `if (!content) return`과 같다).
+    if (!content) return () => undefined;
+
+    const observer = new MutationObserver(() => {
+      cache.current.stale = true;
+      onStoreChange();
+    });
+    observer.observe(content, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, []);
+
+  const getSnapshot = useCallback(() => readSnapshot(cache.current), []);
+
+  const toc = useSyncExternalStore(
+    subscribe,
+    getSnapshot,
+    getServerTocSnapshot,
+  );
   const [activeId, setActiveId] = useState('');
   // 지금 화면에 들어와 있는 헤딩들의 [첫, 마지막] 인덱스. 데스크톱 차례가
   // 레일을 **구간**으로 비추는 데 쓴다(아래 두 번째 effect 참고).
   const [activeRange, setActiveRange] = useState<[number, number] | null>(null);
-
-  useEffect(() => {
-    const content = document.getElementById('post-content');
-    if (!content) return;
-
-    const headers = content.querySelectorAll('h1, h2, h3, h4');
-    const items = Array.from(headers)
-      .map(header => ({
-        id: header.id,
-        text: header.textContent || '',
-        level: parseInt(header.tagName.substring(1)),
-      }))
-      .filter(item => item.id);
-
-    // 마운트 시점 DOM 파싱 결과를 상태로 옮기는 정당한 외부 시스템 sync.
-    // useSyncExternalStore로 모델링 가능하지만 1회성 측정이라 over-engineering.
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- 외부 시스템(DOM) 1회 측정
-    setToc(items);
-  }, []);
 
   // 활성 항목은 **매번 스크롤 위치에서 처음부터 다시 계산**한다.
   //
@@ -112,9 +209,12 @@ export const useTocHook = () => {
         }
       });
 
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- effect 첫 줄에서 toc.length > 0 을 확인했고 current는 forEach 인덱스다
-      const currentId = toc[current]!.id;
-      setActiveId(prev => (prev === currentId ? prev : currentId));
+      // effect 첫 줄에서 toc.length > 0 을 확인했고 current는 forEach 인덱스라
+      // 실제로는 항상 잡힌다. 못 잡으면 비출 항목이 없다는 뜻이라 그냥 둔다.
+      const currentId = toc[current]?.id;
+      if (currentId !== undefined) {
+        setActiveId(prev => (prev === currentId ? prev : currentId));
+      }
       // 헤딩이 하나도 안 보이는 구간(긴 절의 한복판)에서는 구간을 만들 수
       // 없다. 그때는 방금 지나온 절 한 줄만 비춘다.
       const range: [number, number] =

@@ -115,10 +115,12 @@ export function measureLengths(d: string, rows: Row[]): [number, number][] {
   rows.forEach((row, i) => {
     // 직전 항목이 끝난 지점에서 출발해, path의 y가 이 항목의 머리에 닿을
     // 때까지 1px씩 전진한다. 그 사이에 곡선이 있으면 자연히 더 걸린다.
-    // i > 0 이면 직전 반복이 out[i-1]을 넣었고 rows[i-1]도 존재한다.
+    // i === 0 이면 둘 다 undefined다(음수 인덱스). 그때는 직전 항목이 없으니
+    // 이 항목의 머리에서 그냥 출발한다.
+    const prevSpan = out[i - 1];
+    const prevRow = rows[i - 1];
     let at =
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- 위 주석: i > 0 이면 둘 다 존재
-      i === 0 ? row.top : out[i - 1]![1] + (row.top - rows[i - 1]!.bottom);
+      prevSpan && prevRow ? prevSpan[1] + (row.top - prevRow.bottom) : row.top;
     while (at < total && probe.getPointAtLength(at).y < row.top) at += 1;
     // 끝도 같은 방식으로 실측한다. 세로 높이만 더하면, 단이 바뀌어 자기
     // 구간 안에 곡선을 품은 항목에서 끝점이 실제보다 위로 잡힌다(곡선은

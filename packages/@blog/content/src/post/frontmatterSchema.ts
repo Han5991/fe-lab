@@ -39,8 +39,8 @@ import { isPostStatus } from './visibility';
  * - 그 외 → null
  */
 export function toDateString(value: unknown): string | null {
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- toISOString()은 항상 'T'를 포함하므로 [0]이 존재
-  if (value instanceof Date) return value.toISOString().split('T')[0]!;
+  // toISOString()은 항상 'T'를 포함하므로 [0]은 실제로는 늘 존재한다.
+  if (value instanceof Date) return value.toISOString().split('T')[0] ?? null;
   if (typeof value === 'string') return value;
   return null;
 }

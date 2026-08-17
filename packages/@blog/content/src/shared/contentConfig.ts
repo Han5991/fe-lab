@@ -379,12 +379,10 @@ function assertOutputDirsExclusive(dirs: DirsConfig): void {
     ['thumbs', normalizeDir(dirs.thumbs)],
     ['og', normalizeDir(dirs.og)],
   ] as const;
-  for (let i = 0; i < outputs.length; i++) {
-    for (let j = i + 1; j < outputs.length; j++) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- 이중 루프 인덱스는 length 안
-      const [aName, a] = outputs[i]!;
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- 이중 루프 인덱스는 length 안
-      const [bName, b] = outputs[j]!;
+  // 값끼리 짝지어 돈다 — 인덱스로 꺼내면 타입이 `| undefined`가 되고, 그걸
+  // 좁히는 방법이 단언밖에 없었다.
+  for (const [i, [aName, a]] of outputs.entries()) {
+    for (const [bName, b] of outputs.slice(i + 1)) {
       const overlaps =
         a === b || a.startsWith(`${b}/`) || b.startsWith(`${a}/`);
       if (overlaps) {
