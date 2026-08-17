@@ -18,28 +18,32 @@
   "dependencies": {
     "@resvg/resvg-js": "^2.6.2",
     "gray-matter": "^4.0.3",
-    "react": "catalog:",
-    "react-dom": "catalog:",
-    "react-markdown": "^10.1.0",
-    "rehype-raw": "^7.0.0",
-    "remark-gfm": "^4.0.1",
+    "react-markdown": "catalog:",
+    "rehype-raw": "catalog:",
+    "remark-gfm": "catalog:",
     "satori": "^0.29.0",
-    "sharp": "0.35.3"
+    "sharp": "^0.35.3"
   },
   "devDependencies": {
-    "@eslint-community/eslint-plugin-eslint-comments": "^4.7.2",
-    "@eslint/js": "^10.0.1",
+    "@eslint-community/eslint-plugin-eslint-comments": "catalog:lint",
+    "@eslint/js": "catalog:lint",
     "@types/node": "catalog:",
-    "@vitest/coverage-v8": "^4.1.10",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
-    "eslint": "^10.8.1",
-    "eslint-import-resolver-typescript": "^4.4.5",
-    "eslint-plugin-boundaries": "^7.2.0",
-    "globals": "^17.9.0",
-    "tsx": "^4.23.12",
+    "@vitest/coverage-v8": "catalog:",
+    "eslint": "catalog:lint",
+    "eslint-import-resolver-typescript": "catalog:lint",
+    "eslint-plugin-boundaries": "catalog:lint",
+    "globals": "catalog:lint",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "tsx": "catalog:",
     "typescript": "catalog:",
-    "typescript-eslint": "^8.67.0",
-    "vitest": "^4.1.10"
+    "typescript-eslint": "catalog:lint",
+    "vitest": "catalog:"
+  },
+  "peerDependencies": {
+    "react": "catalog:",
+    "react-dom": "catalog:"
   }
 }

@@ -294,5 +294,9 @@ apps/blog/posts (원고)  →  packages/@blog/content  →  apps/blog/web
 
 - Node.js / pnpm 버전은 루트 `engines` · `.tool-versions` · `packageManager`가 단일
   출처다. 이 파일에 숫자를 복사해 두지 말 것 — Renovate가 올릴 때마다 어긋난다
+- **두 패키지 이상이 쓰는 의존성은 `pnpm-workspace.yaml`의 catalog가 단일 출처다.**
+  package.json에는 `catalog:`(기본) 또는 `catalog:lint`(eslint 툴체인 — 코어·플러그인
+  버전이 서로 물려 돌아서 소비자가 하나뿐인 플러그인도 여기 둔다)만 적고 숫자는 쓰지
+  않는다. 예외는 `peerDependencies` — 핀이 아니라 호환 범위 선언이라 넓게 둔다
 - 테스트 러너는 워크스페이스 전부 **Vitest** 하나다. 갈리는 것은 환경뿐이고, 환경이
   둘인 `apps/blog/web`만 `test.projects`로 `node`(domain·lib) / `jsdom`(src)을 나눈다

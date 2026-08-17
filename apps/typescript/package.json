@@ -15,8 +15,8 @@
     "@package/config": "workspace:*",
     "@package/core": "workspace:*",
     "@types/node": "catalog:",
-    "msw": "^2.15.0",
+    "msw": "catalog:",
     "typescript": "catalog:",
-    "vitest": "^4.1.10"
+    "vitest": "catalog:"
   }
 }

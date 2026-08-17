@@ -166,9 +166,8 @@ pnpm check-seo                                      # 빌드 산출물(out/) SEO
 | `claude.yml`                | `@claude` 멘션 · 라벨                                 | 온디맨드 Claude Code 에이전트                                                 |
 | `claude-code-review.yml`    | PR opened/synchronize                                 | PR 자동 코드 리뷰                                                             |
 | `claude-deps-audit.yml`     | 매주 월 cron                                          | 죽은 `pnpm overrides` 정리 + `pnpm audit` 후속 PR                             |
-| `claude-lighthouse.yml`     | 매주 수 cron                                          | 배포 사이트 Lighthouse, 베이스라인 대비 회귀 시 이슈                          |
 | `claude-link-rot.yml`       | 매월 1일 cron                                         | 발행 글 외부 링크 검사 → 교체 PR                                              |
-| `claude-post-inventory.yml` | 매월 15일 cron                                        | draft/scheduled 글 현황 이슈 갱신                                             |
+| `claude-post-inventory.yml` | `deploy-blog.yml` 완료 시(workflow_run), dispatch     | draft/scheduled 글 현황 이슈 갱신                                             |
 | `claude-site-smoke.yml`     | 매일 cron                                             | 배포된 HTML/sitemap/rss 스모크 검사                                           |
 
 ---
