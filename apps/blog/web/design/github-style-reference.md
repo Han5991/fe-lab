@@ -1,5 +1,12 @@
 # GitHub — Style Reference
 
+> ⚠️ **폐기된 이전 방향이다.** "GitHub 스타일 · 다크 전용 · 토큰 리컬러" 안은 채택되지
+> 않았다. 현재 블로그는 `packages/@design-system/ui/src/blog-preset.ts`의 semanticTokens로
+> **라이트/다크를 모두** 지원하고, accent는 GitHub 블루가 아니라 시안 계열이며, 아래
+> "수동 교체 지점"(Layout 배경 알파, Giscus 테마 고정, 코드 블록 다크 테마)도 전부 다르게
+> 정착했다. 참고 자료로만 남겨 둔다 — **새 작업의 근거로 쓰지 말 것.** 현행 규칙은
+> `.claude/skills/blog-design-system/SKILL.md`.
+
 > Dark canvas, white octocat, blue action.
 
 **Theme:** dark · **Category:** Developer Tools · **Source:** https://www.github.com
@@ -180,9 +187,10 @@ bottom tab bar. Content is left-aligned with clear hierarchy and ample breathing
 
 ## 이 문서의 용도 (fe-lab 블로그 적용 노트)
 
-이 파일은 `apps/blog/web` 리디자인의 **디자인 시스템 소스 오브 트루스**다. 블로그는
-Panda CSS 프리셋(`@design-system/ui` 의 `blog-preset.ts`)의 토큰을 통해 스타일링되며,
-위 GitHub 레퍼런스를 **다크 전용**으로 이식한다.
+(당시 계획) 이 파일은 `apps/blog/web` 리디자인의 디자인 시스템 소스 오브 트루스로 쓰일
+예정이었다 — 블로그는 Panda CSS 프리셋(`@design-system/ui` 의 `blog-preset.ts`)의 토큰을
+통해 스타일링되며, 위 GitHub 레퍼런스를 **다크 전용**으로 이식한다는 안이었다. **이 안은
+폐기됐다**(문서 머리 참고).
 
 ### 적용 전략 (확정)
 

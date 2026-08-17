@@ -215,11 +215,13 @@ hero: 'deploy-pipeline'
    }
    ```
 
-2. `packages/@blog/content/src/post/diagramNames.ts` 에 이름 한 줄을 넣는다.
+2. `packages/@blog/content/src/shared/contentValues.ts` 의 `DEFAULT_DIAGRAM_NAMES` 에 이름 한
+   줄을 넣는다(`src/post/diagramNames.ts` 의 `DIAGRAM_NAMES`·`DiagramName` 이 여기서 파생된다).
 3. `src/components/diagram/registry.ts` 의 `DIAGRAMS` 에 한 줄을 넣는다.
 
 레지스트리 타입이 `Record<DiagramName, …>` 이라 2·3 중 하나만 하면 컴파일이 막는다.
-이름 목록이 `domain/` 에 따로 있는 이유는 `lint:posts`(node 러너)가 React를 끌어오지 않고
+이름 목록이 컴포넌트와 떨어져 `@blog/content` 쪽(`src/post/diagramNames.ts`, 값은
+`src/shared/contentValues.ts`)에 있는 이유는 `lint:posts`(node 러너)가 React를 끌어오지 않고
 이름만 검사할 수 있어야 해서다.
 
 ---

@@ -118,7 +118,8 @@ description: 블로그(apps/blog/web)와 blog-preset.ts의 시각 시스템 단�
 > 정리 전 실측(뷰포트 1440): 헤더는 640에 고정인데 본문 좌측이 페이지마다
 > 146.5 / 206.5 / 338.5 / 394.5 / 426.5로 흩어져 **최대 248px** 어긋나 있었다.
 
-- 목록 행에 **좌우 패딩을 주지 않는다**(`PostIndexRow`·`PostsArchive`의 `rowLink`).
+- 목록 행에 **좌우 패딩을 주지 않는다**. 단일 출처는 `src/components/blog/postRow.ts`의
+  `postRowLinkLayoutRaw`(홈 `PostIndexRow`·아카이브 `PostsArchive`·`/series` 세 목록이 공유).
   2px만 넣어도 그 목록만 제목 세로선에서 밀려난다. 행 배경을 칠할 일이 생기면
   패딩 대신 음수 마진으로 상쇄할 것
 - 카드 **안쪽** 패딩(`FeaturedPost`의 20px)은 레일과 무관하다. 카드는 원래 지면에서

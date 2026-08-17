@@ -11,12 +11,13 @@ adversarial-review-before-commit routine so it doesn't have to be re-explained e
 ## 1. Fetch ALL review comments (no truncation)
 
 - Pull the **complete** set into a file — review comments, review-thread comments, AND issue
-  comments. **Never** pipe to `head`/`tail` (the user's shell also mangles pipes — see CLAUDE.md
-  Shell Environment). A past session silently dropped ~22 comments to a `head -200`.
+  comments. **Never** pipe to `head`/`tail` (the user's shell also mangles pipes — see the
+  "Shell environment" notes in the user's global `~/.claude/CLAUDE.md`). A past session silently
+  dropped ~22 comments to a `head -200`.
 - Print the **total count** and confirm nothing was truncated before you start fixing.
-- Write to a file, then read it back:
-  - `gh pr view <num> --json comments,reviews,reviewThreads > /tmp/pr-meta.json`
-  - `gh api repos/{owner}/{repo}/pulls/<num>/comments --paginate > /tmp/pr-review-comments.json`
+- Write to a file in the session scratchpad directory, then read it back:
+  - `gh pr view <num> --json comments,reviews,reviewThreads > <scratchpad>/pr-meta.json`
+  - `gh api repos/{owner}/{repo}/pulls/<num>/comments --paginate > <scratchpad>/pr-review-comments.json`
 
 ## 2. Address each comment
 
