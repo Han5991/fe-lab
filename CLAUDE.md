@@ -294,5 +294,5 @@ apps/blog/posts (원고)  →  packages/@blog/content  →  apps/blog/web
 
 - Node.js / pnpm 버전은 루트 `engines` · `.tool-versions` · `packageManager`가 단일
   출처다. 이 파일에 숫자를 복사해 두지 말 것 — Renovate가 올릴 때마다 어긋난다
-- 하한을 정하는 비자명한 제약: `apps/blog/web`·`packages/@blog/content`의 `node --test '<glob>'` 글롭 패턴이
-  **Node 22.5+** 를 요구한다
+- 테스트 러너는 워크스페이스 전부 **Vitest** 하나다. 갈리는 것은 환경뿐이고, 환경이
+  둘인 `apps/blog/web`만 `test.projects`로 `node`(domain·lib) / `jsdom`(src)을 나눈다

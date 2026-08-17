@@ -7,8 +7,7 @@
  *    테이블의 `narrow` 주석 참고) **왕복 프로브**로 일치를 잠급니다.
  * 3. 루트 `CLAUDE.md`의 표 — 생성하지 않는 대신 글자 단위로 대조합니다.
  */
-import assert from 'node:assert/strict';
-import { test } from 'node:test';
+import { expect, test } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import {
@@ -29,7 +28,7 @@ test('RawFrontmatter: 전 필드가 unknown이라 좁히기 없이는 쓸 수 �
   // 새어 들어오면) 아래 expect-error가 미사용이 되어 check-types가 실패합니다.
   // @ts-expect-error — title은 unknown: 좁히기 없이 string에 대입할 수 없어야 한다
   const direct: string = data.title;
-  assert.equal(direct, '값');
+  expect(direct).toBe('값');
 });
 
 // ── 2. parsePost 왕복 프로브 ─────────────────────────────────────────────────
@@ -65,15 +64,14 @@ test('왕복 프로브: parsePost는 테이블의 모든 키를 실제로 읽는
   // 반대 방향(parsePost가 테이블 밖 키를 읽는 경우)은 RawFrontmatter 매핑 타입이
   // 컴파일 에러로 막으므로 여기서는 "테이블에만 있고 안 읽는 키"만 잡으면 됩니다.
   const baseline = parsePost(probeDoc(), 'probe/a.md');
-  assert.ok(baseline, '프로브 문서는 유효한 포스트여야 한다');
+  expect(baseline, '프로브 문서는 유효한 포스트여야 한다').toBeTruthy();
 
   for (const key of FRONTMATTER_KEYS) {
-    assert.notDeepEqual(
+    expect(
       parsePost(probeDoc(key), 'probe/a.md'),
-      baseline,
       `\`${key}\`를 빼도 parsePost 결과가 같다 — parsePost가 이 키를 읽지 않거나, ` +
         '프로브 값이 폴백과 구분되지 않는다. 테이블에서 키를 지웠으면 여기서도 지울 것.',
-    );
+    ).not.toStrictEqual(baseline);
   }
 });
 
@@ -86,31 +84,29 @@ test('kind 라벨은 narrow의 실제 동작과 일치한다', () => {
     const { kind, narrow } = FRONTMATTER_FIELDS[key];
     switch (kind) {
       case 'string':
-        assert.equal(narrow('값'), '값', key);
-        assert.equal(narrow(''), undefined, `${key}: 빈 문자열은 값 없음`);
-        assert.equal(narrow(123), undefined, `${key}: 비문자열은 버린다`);
+        expect(narrow('값'), key).toBe('값');
+        expect(narrow(''), `${key}: 빈 문자열은 값 없음`).toBe(undefined);
+        expect(narrow(123), `${key}: 비문자열은 버린다`).toBe(undefined);
         break;
       case 'date':
-        assert.equal(narrow('2026-01-02'), '2026-01-02', key);
-        assert.equal(
+        expect(narrow('2026-01-02'), key).toBe('2026-01-02');
+        expect(
           narrow(new Date('2026-01-02T00:00:00Z')),
-          '2026-01-02',
           `${key}: YAML Date 객체는 'YYYY-MM-DD'로 정규화`,
-        );
-        assert.equal(narrow(123), null, `${key}: 그 외는 null`);
+        ).toBe('2026-01-02');
+        expect(narrow(123), `${key}: 그 외는 null`).toBe(null);
         break;
       case 'string-array':
-        assert.deepEqual(
-          narrow(['a', 'a', 'b']),
-          ['a', 'b'],
-          `${key}: 중복 제거`,
-        );
-        assert.equal(narrow('a'), undefined, `${key}: 배열 아니면 버린다`);
-        assert.equal(narrow(['a', 1]), undefined, `${key}: 비문자열 원소`);
+        expect(narrow(['a', 'a', 'b']), `${key}: 중복 제거`).toStrictEqual([
+          'a',
+          'b',
+        ]);
+        expect(narrow('a'), `${key}: 배열 아니면 버린다`).toBe(undefined);
+        expect(narrow(['a', 1]), `${key}: 비문자열 원소`).toBe(undefined);
         break;
       case 'enum':
-        assert.equal(narrow('published'), 'published', key);
-        assert.equal(narrow('발행'), undefined, `${key}: enum 밖 값`);
+        expect(narrow('published'), key).toBe('published');
+        expect(narrow('발행'), `${key}: enum 밖 값`).toBe(undefined);
         break;
     }
   }
@@ -120,15 +116,18 @@ test('kind 라벨은 narrow의 실제 동작과 일치한다', () => {
 
 test('일부러 뺀 키는 허용 키와 겹치지 않고, 사유가 비어 있지 않다', () => {
   for (const [key, reason] of Object.entries(REJECTED_FRONTMATTER_KEYS)) {
-    assert.ok(
+    expect(
       !(FRONTMATTER_KEYS as string[]).includes(key),
       `\`${key}\`가 허용 키와 거부 키 양쪽에 있다`,
-    );
-    assert.ok(reason.length > 0, `\`${key}\`의 거부 사유가 비어 있다`);
+    ).toBeTruthy();
+    expect(
+      reason.length > 0,
+      `\`${key}\`의 거부 사유가 비어 있다`,
+    ).toBeTruthy();
   }
-  assert.equal(rejectionReasonFor('완전히모르는키'), undefined);
+  expect(rejectionReasonFor('완전히모르는키')).toBe(undefined);
   // 프로토타입 키로 오탐하지 않는다 (hasOwn을 쓰는 이유)
-  assert.equal(rejectionReasonFor('toString'), undefined);
+  expect(rejectionReasonFor('toString')).toBe(undefined);
 });
 
 // ── 5. 루트 CLAUDE.md 표 동기화 ──────────────────────────────────────────────
@@ -153,9 +152,15 @@ function readClaudeMdTable(): DocTableRow[] {
   const content = readFileSync(claudeMdPath, 'utf8');
 
   const start = content.indexOf('**Frontmatter 전체 목록**');
-  assert.ok(start >= 0, 'CLAUDE.md에서 frontmatter 표 섹션을 찾을 수 없다');
+  expect(
+    start >= 0,
+    'CLAUDE.md에서 frontmatter 표 섹션을 찾을 수 없다',
+  ).toBeTruthy();
   const end = content.indexOf('`series`는 frontmatter가 아니라', start);
-  assert.ok(end > start, 'frontmatter 표 섹션의 끝 표식을 찾을 수 없다');
+  expect(
+    end > start,
+    'frontmatter 표 섹션의 끝 표식을 찾을 수 없다',
+  ).toBeTruthy();
 
   const rows: DocTableRow[] = [];
   for (const line of content.slice(start, end).split('\n')) {
@@ -177,29 +182,26 @@ function readClaudeMdTable(): DocTableRow[] {
 
 test('CLAUDE.md 표: 키 목록과 순서가 서술자 테이블과 같다', () => {
   const rows = readClaudeMdTable();
-  assert.deepEqual(
+  expect(
     rows.map(row => row.key),
-    FRONTMATTER_KEYS,
     '키 집합이나 순서가 다르다 — 테이블(frontmatterSchema.ts)과 CLAUDE.md 표를 함께 고칠 것',
-  );
+  ).toStrictEqual(FRONTMATTER_KEYS);
 });
 
 test('CLAUDE.md 표: 필수 표시(✅)가 required와 같다', () => {
   for (const row of readClaudeMdTable()) {
-    assert.equal(
+    expect(
       row.required,
-      FRONTMATTER_FIELDS[row.key as FrontmatterKey].required,
       `\`${row.key}\`의 필수 여부가 표와 테이블에서 다르다`,
-    );
+    ).toBe(FRONTMATTER_FIELDS[row.key as FrontmatterKey].required);
   }
 });
 
 test('CLAUDE.md 표: 설명 셀이 테이블의 doc과 글자 단위로 같다', () => {
   for (const row of readClaudeMdTable()) {
-    assert.equal(
+    expect(
       row.doc,
-      FRONTMATTER_FIELDS[row.key as FrontmatterKey].doc,
       `\`${row.key}\`의 설명이 표와 테이블에서 다르다 — 한쪽만 고쳤다`,
-    );
+    ).toBe(FRONTMATTER_FIELDS[row.key as FrontmatterKey].doc);
   }
 });

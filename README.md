@@ -89,15 +89,17 @@ apps/blog/posts/**/_series.yml ─┤
 - **블로그 회귀 가드** — `packages/@blog/content`의 `src/post/contract.test.ts`·`src/scripts/contract.test.ts`·`src/scripts/url-consistency.test.ts`·`src/scripts/generate-*.test.ts`가 실제 `apps/blog/posts/` 디렉토리와 빌드 산출물(sitemap·RSS·search-index·llms·llms-full·OG)의 불변식을 잠금. 리팩토링/리디자인 시 안전망.
 - **테스트 러너**:
 
-  | 워크스페이스    | 러너                                                                                          |
-  | --------------- | --------------------------------------------------------------------------------------------- |
-  | `@blog/content` | `node:test` (`src/**/*.test.ts`, tsx 로더)                                                    |
-  | `@blog/web`     | `node:test` (`domain/**`, `lib/**`) + Vitest/jsdom + RTL (`src/**`) — `pnpm test`가 순차 실행 |
-  | `next.js`       | Vitest + jsdom + RTL + next-router-mock (`test:watch` 있음)                                   |
-  | `react`         | Vitest + jsdom + RTL + MSW                                                                    |
-  | `typescript`    | Vitest (node 환경)                                                                            |
+  **러너는 모든 워크스페이스에서 Vitest 하나다.** 갈리는 것은 러너가 아니라 **환경**이고, 환경이 둘인 곳은 `test.projects`로 나눈다.
 
-  `node --test '<glob>'`은 Node 22.5+ 글롭 지원이 필요하고, **매치가 0개여도 exit 0**이므로 글롭을 고칠 땐 실행 개수를 눈으로 확인할 것.
+  | 워크스페이스    | 환경                                                                                          |
+  | --------------- | --------------------------------------------------------------------------------------------- |
+  | `@blog/content` | node (`src/**/*.test.ts`)                                                                     |
+  | `@blog/web`     | projects 둘 — `node`(`domain/**`·`lib/**`) + `jsdom`(`src/**`, RTL). `pnpm test` 한 번에 실행 |
+  | `next.js`       | jsdom + RTL + next-router-mock (`test:watch` 있음)                                            |
+  | `react`         | jsdom + RTL + MSW                                                                             |
+  | `typescript`    | node                                                                                          |
+
+  예전에는 `@blog/content`와 `@blog/web`의 순수 로직이 `node --test`(+`node:assert/strict`)로 돌았다. 러너가 갈리면 단언 API·커버리지 도구·ESLint 인가가 두 벌이 되고, `node --test '<glob>'`은 **매치가 0개여도 exit 0**이라 테스트가 조용히 사라질 수 있었다. Vitest는 매치 0개면 실패한다.
 
 - **CI**(`.github/actions/quality-checks` 공용 composite action): ① `pnpm turbo run lint check-types test` ② `pnpm --filter @blog/web lint:posts` ③ `pnpm format:check` ④ `pnpm build --filter=@blog/web`(prebuild → next build → check-seo). PR CI와 배포 워크플로가 같은 액션을 부른다.
 - **pre-push hook**: 푸시 전 워크스페이스 전체 lint·types·test (turbo 캐시로 보통 < 5초).
@@ -175,7 +177,7 @@ pnpm check-seo                                      # 빌드 산출물(out/) SEO
 
 버전의 단일 출처는 파일이다 — 여기 숫자를 복사해 두지 않는다(Renovate가 올릴 때마다 어긋난다).
 
-- **Node.js**: 루트 `package.json`의 `engines.node` / `.tool-versions` (2026-08 기준 Node 24 계열). 하한을 정하는 비자명한 제약: `node --test '<glob>'`이 22.5+를 요구한다
+- **Node.js**: 루트 `package.json`의 `engines.node` / `.tool-versions` (2026-08 기준 Node 24 계열)
 - **pnpm**: 루트 `package.json`의 `packageManager` / `.tool-versions` (pnpm 11 계열)
 - **TypeScript**: `pnpm-workspace.yaml` catalog (TypeScript 6 계열 — TS5 의미론을 가정하지 말 것)
 

@@ -69,8 +69,8 @@ first run may build dependencies). Package names are `@blog/web`, `@blog/content
 - **Single Workspace Suite**:
 
   ```bash
-  pnpm --filter @blog/content test   # node --test 'src/**/*.test.ts' — content contracts, generators, validation
-  pnpm --filter @blog/web test       # test:node (domain/**, lib/**) then test:vitest (src/**)
+  pnpm --filter @blog/content test   # Vitest, node env — content contracts, generators, validation
+  pnpm --filter @blog/web test       # Vitest, two projects: node (domain/**, lib/**) + jsdom (src/**)
   pnpm test --filter=next.js         # Vitest (jsdom + RTL + next-router-mock)
   pnpm test --filter=react           # Vitest (jsdom + RTL + MSW)
   pnpm test --filter=typescript      # Vitest (node)
@@ -79,17 +79,15 @@ first run may build dependencies). Package names are `@blog/web`, `@blog/content
 - **Single Test File** (Best for TDD/Debugging):
 
   ```bash
-  # Vitest workspaces
   pnpm test --filter=next.js -- src/app/some-feature.test.tsx
   pnpm --filter @blog/web exec vitest run src/components/Rail.test.tsx
+  pnpm --filter @blog/content exec vitest run src/post/urls.test.ts
 
-  # node:test workspaces (blog domain/lib, @blog/content)
-  pnpm --filter @blog/content exec node --import tsx --test src/post/urls.test.ts
+  # One project only (blog/web has two)
+  pnpm --filter @blog/web exec vitest run --project=node
   ```
 
-- **Watch Mode**: `pnpm --filter=next.js run test:watch` (only `apps/next.js` defines it).
-- `node --test '<glob>'` exits 0 even when the glob matches nothing — after moving test files or editing globs, check the
-  executed test count.
+- **Watch Mode**: `pnpm --filter=next.js run test:watch`, `pnpm --filter @blog/web run test:watch`.
 
 ### Blog Content Commands (run in `apps/blog/web`)
 
@@ -149,8 +147,9 @@ first run may build dependencies). Package names are `@blog/web`, `@blog/content
 ## 5. Testing Guidelines
 
 - **Tools**:
-  - `vitest` + `react-testing-library` (Next.js, React/Vite, blog/web `src/**`)
-  - `node --test` (blog/web `domain/**`·`lib/**`; `@blog/content` `src/**` — all content/scripts tests live there now)
+  - `vitest` everywhere — the runner never varies, only the environment does
+  - `react-testing-library` in the jsdom environments (Next.js, React/Vite, blog/web `src/**`)
+  - node environment for pure logic (blog/web `domain/**`·`lib/**`; `@blog/content` `src/**` — all content/scripts tests live there now)
   - `msw` (Network mocking — `apps/react`)
 - **Selectors**: Prefer user-centric selectors:
   1. `getByRole` (button, heading, etc.)

@@ -1,12 +1,11 @@
-import assert from 'node:assert/strict';
-import { test } from 'node:test';
+import { expect, test } from 'vitest';
 import { isAbsolute } from 'node:path';
 import { parseFlags, buildPhases } from './build-content';
 
 // ── parseFlags ───────────────────────────────────────────────────────────────
 
 test('parseFlags: 기본값은 모두 false', () => {
-  assert.deepEqual(parseFlags([]), {
+  expect(parseFlags([])).toStrictEqual({
     skipValidate: false,
     force: false,
     strict: false,
@@ -14,7 +13,7 @@ test('parseFlags: 기본값은 모두 false', () => {
 });
 
 test('parseFlags: --skip-validate / --force / --strict 인식', () => {
-  assert.deepEqual(parseFlags(['--skip-validate', '--force', '--strict']), {
+  expect(parseFlags(['--skip-validate', '--force', '--strict'])).toStrictEqual({
     skipValidate: true,
     force: true,
     strict: true,
@@ -29,12 +28,9 @@ test('buildPhases: 기본 — validate 게이트 phase + 병렬 generate phase',
     force: false,
     strict: false,
   });
-  assert.equal(phases.length, 2);
-  assert.deepEqual(
-    phases[0].map(s => s.label),
-    ['validate-posts'],
-  );
-  assert.deepEqual([...phases[1].map(s => s.label)].sort(), [
+  expect(phases.length).toBe(2);
+  expect(phases[0].map(s => s.label)).toStrictEqual(['validate-posts']);
+  expect([...phases[1].map(s => s.label)].sort()).toStrictEqual([
     'llms',
     'llms-full',
     'og-images',
@@ -52,8 +48,8 @@ test('buildPhases: skip-validate면 generate phase만', () => {
     force: false,
     strict: false,
   });
-  assert.equal(phases.length, 1);
-  assert.ok(phases[0].length >= 7);
+  expect(phases.length).toBe(1);
+  expect(phases[0].length >= 7).toBeTruthy();
 });
 
 test('buildPhases: force 플래그는 sync-posts에만 전달', () => {
@@ -64,10 +60,10 @@ test('buildPhases: force 플래그는 sync-posts에만 전달', () => {
   });
   const all = phases.flat();
   const sync = all.find(s => s.label === 'sync-posts');
-  assert.ok(sync?.args.includes('--force'));
+  expect(sync?.args.includes('--force')).toBeTruthy();
   for (const step of all) {
     if (step.label !== 'sync-posts') {
-      assert.ok(!step.args.includes('--force'), step.label);
+      expect(!step.args.includes('--force'), step.label).toBeTruthy();
     }
   }
 });
@@ -81,10 +77,10 @@ test('buildPhases: 모든 단계의 스크립트 경로는 절대 경로다 (cwd
     strict: false,
   }).flat();
   for (const step of all) {
-    assert.ok(
+    expect(
       isAbsolute(step.args[0] ?? ''),
       `${step.label}: args[0]이 절대 경로여야 한다 (${step.args[0]})`,
-    );
+    ).toBeTruthy();
   }
 });
 
@@ -99,8 +95,8 @@ test('buildPhases: 렌더 생성기 3개는 scripts/render/ 아래를 가리킨�
   }).flat();
   for (const label of ['rss', 'og-images', 'thumbnails']) {
     const step = all.find(s => s.label === label);
-    assert.ok(step, `${label} 단계가 있어야 한다`);
-    assert.match(step.args[0] ?? '', /scripts[/\\]render[/\\]/, label);
+    expect(step, `${label} 단계가 있어야 한다`).toBeTruthy();
+    expect(step?.args[0] ?? '', label).toMatch(/scripts[/\\]render[/\\]/);
   }
 });
 
@@ -112,7 +108,7 @@ test('buildPhases: 단계 label은 중복 없음', () => {
   })
     .flat()
     .map(s => s.label);
-  assert.equal(new Set(labels).size, labels.length);
+  expect(new Set(labels).size).toBe(labels.length);
 });
 
 test('buildPhases: --strict는 validate-posts에만 전달 (predev는 비엄격)', () => {
@@ -123,15 +119,15 @@ test('buildPhases: --strict는 validate-posts에만 전달 (predev는 비엄격)
     force: false,
     strict: true,
   });
-  assert.match(strict[0][0].args[0] ?? '', /validate-posts\.ts$/);
-  assert.deepEqual(strict[0][0].args.slice(1), ['--strict']);
-  assert.ok(strict[1].every(step => !step.args.includes('--strict')));
+  expect(strict[0][0].args[0] ?? '').toMatch(/validate-posts\.ts$/);
+  expect(strict[0][0].args.slice(1)).toStrictEqual(['--strict']);
+  expect(strict[1].every(step => !step.args.includes('--strict'))).toBeTruthy();
 
   const loose = buildPhases({
     skipValidate: false,
     force: false,
     strict: false,
   });
-  assert.match(loose[0][0].args[0] ?? '', /validate-posts\.ts$/);
-  assert.equal(loose[0][0].args.length, 1);
+  expect(loose[0][0].args[0] ?? '').toMatch(/validate-posts\.ts$/);
+  expect(loose[0][0].args.length).toBe(1);
 });

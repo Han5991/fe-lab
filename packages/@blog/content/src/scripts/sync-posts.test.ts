@@ -9,8 +9,7 @@
  * 쪽은 진입 가드(isCliEntry) 덕분에 import 가 안전하므로, 파일 끝의 배선
  * 테스트가 실제 모듈을 import 해 경로 상수와 tsx interop 을 잠급니다.
  */
-import assert from 'node:assert/strict';
-import { test } from 'node:test';
+import { expect, test } from 'vitest';
 import {
   mkdtempSync,
   writeFileSync,
@@ -167,9 +166,12 @@ test('sync: src 파일이 dst로 복사됨', () => {
     writeFile(src, 'a/img.png', 'PNG');
 
     const result = runSync(src, dst);
-    assert.equal(result.status, 0, result.stderr);
-    assert.ok(existsSync(join(dst, 'a/img.png')), 'dst에 파일이 복사되어야 함');
-    assert.ok(result.stdout.includes('1 copied'), result.stdout);
+    expect(result.status, result.stderr).toBe(0);
+    expect(
+      existsSync(join(dst, 'a/img.png')),
+      'dst에 파일이 복사되어야 함',
+    ).toBeTruthy();
+    expect(result.stdout.includes('1 copied'), result.stdout).toBeTruthy();
   });
 });
 
@@ -181,16 +183,16 @@ test('orphan 삭제: src에 없는 dst 파일이 삭제됨', () => {
     writeFile(src, 'real.jpg', 'REAL');
 
     const result = runSync(src, dst);
-    assert.equal(result.status, 0, result.stderr);
-    assert.ok(
+    expect(result.status, result.stderr).toBe(0);
+    expect(
       !existsSync(join(dst, 'orphan.png')),
       'orphan 파일이 삭제되어야 함',
-    );
-    assert.ok(
+    ).toBeTruthy();
+    expect(
       existsSync(join(dst, 'real.jpg')),
       'src 파일은 dst에 복사되어야 함',
-    );
-    assert.ok(result.stdout.includes('1 removed'), result.stdout);
+    ).toBeTruthy();
+    expect(result.stdout.includes('1 removed'), result.stdout).toBeTruthy();
   });
 });
 
@@ -200,17 +202,17 @@ test('orphan dry-run: --dry-orphan 이면 파일이 남아있음', () => {
     writeFile(src, 'real.png', 'REAL');
 
     const result = runSync(src, dst, ['--dry-orphan']);
-    assert.equal(result.status, 0, result.stderr);
+    expect(result.status, result.stderr).toBe(0);
     // dry-orphan 이므로 파일은 삭제되지 않아야 함
-    assert.ok(
+    expect(
       existsSync(join(dst, 'orphan.svg')),
       'dry-orphan이면 파일이 남아야 함',
-    );
-    assert.ok(result.stdout.includes('[dry-orphan]'), result.stdout);
-    assert.ok(
+    ).toBeTruthy();
+    expect(result.stdout.includes('[dry-orphan]'), result.stdout).toBeTruthy();
+    expect(
       result.stdout.includes('dry-orphan: 실제 삭제 안 함'),
       result.stdout,
-    );
+    ).toBeTruthy();
   });
 });
 
@@ -220,10 +222,10 @@ test('orphan: src가 빈 디렉토리면 dst 미디어 파일 전부 삭제', ()
     writeFile(dst, 'c/d/old.png', 'OLD');
 
     const result = runSync(src, dst);
-    assert.equal(result.status, 0, result.stderr);
-    assert.ok(!existsSync(join(dst, 'a/b/old.jpg')));
-    assert.ok(!existsSync(join(dst, 'c/d/old.png')));
-    assert.ok(result.stdout.includes('2 removed'), result.stdout);
+    expect(result.status, result.stderr).toBe(0);
+    expect(!existsSync(join(dst, 'a/b/old.jpg'))).toBeTruthy();
+    expect(!existsSync(join(dst, 'c/d/old.png'))).toBeTruthy();
+    expect(result.stdout.includes('2 removed'), result.stdout).toBeTruthy();
   });
 });
 
@@ -238,6 +240,6 @@ test('실물 sync-posts.mjs: CONTENT_PATHS 배선과 tsx interop', async () => {
     import('./sync-posts.mjs'),
     import('../shared/contentPaths'),
   ]);
-  assert.equal(real.POSTS_SOURCE_DIR, paths.CONTENT_PATHS.postsDir);
-  assert.equal(real.POSTS_TARGET_DIR, paths.CONTENT_PATHS.mediaOutDir);
+  expect(real.POSTS_SOURCE_DIR).toBe(paths.CONTENT_PATHS.postsDir);
+  expect(real.POSTS_TARGET_DIR).toBe(paths.CONTENT_PATHS.mediaOutDir);
 });

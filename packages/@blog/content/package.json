@@ -11,7 +11,9 @@
   "scripts": {
     "lint": "eslint . --max-warnings=0",
     "check-types": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json --noEmit",
-    "test": "node --import tsx --test 'src/**/*.test.ts'"
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@resvg/resvg-js": "^2.6.2",
@@ -28,6 +30,7 @@
     "@eslint-community/eslint-plugin-eslint-comments": "^4.7.2",
     "@eslint/js": "^10.0.1",
     "@types/node": "catalog:",
+    "@vitest/coverage-v8": "^4.1.10",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "eslint": "^10.8.1",
@@ -36,6 +39,7 @@
     "globals": "^17.9.0",
     "tsx": "^4.23.12",
     "typescript": "catalog:",
-    "typescript-eslint": "^8.67.0"
+    "typescript-eslint": "^8.67.0",
+    "vitest": "^4.1.10"
   }
 }

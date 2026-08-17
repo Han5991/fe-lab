@@ -1,5 +1,4 @@
-import assert from 'node:assert/strict';
-import { test } from 'node:test';
+import { expect, test } from 'vitest';
 import { buildLlmsText, toSummary } from './generate-llms';
 import type { PostData } from '../post';
 
@@ -27,25 +26,24 @@ const OPTS = { siteUrl: SITE, resolveSeriesMeta: () => null };
 // ── toSummary ────────────────────────────────────────────────────────────────
 
 test('toSummary: excerpt가 있으면 그대로', () => {
-  assert.equal(toSummary({ excerpt: '요약문', content: '본문' }), '요약문');
+  expect(toSummary({ excerpt: '요약문', content: '본문' })).toBe('요약문');
 });
 
 test('toSummary: excerpt가 비어 있으면 본문으로 폴백 (마크다운 기호 제거)', () => {
-  assert.equal(
-    toSummary({ excerpt: '', content: '# 제목 **굵게**' }),
+  expect(toSummary({ excerpt: '', content: '# 제목 **굵게**' })).toBe(
     '제목 굵게',
   );
 });
 
 test('toSummary: 140자를 넘으면 말줄임', () => {
   const s = toSummary({ excerpt: '가'.repeat(200), content: '' });
-  assert.ok(s.length <= 141, `${s.length}자`);
-  assert.ok(s.endsWith('…'));
+  expect(s.length <= 141, `${s.length}자`).toBeTruthy();
+  expect(s.endsWith('…')).toBeTruthy();
 });
 
 test('toSummary: 개행은 공백 하나로 압축 (링크 한 줄이 깨지지 않도록)', () => {
   // 목록 항목 안에 개행이 들어가면 마크다운 리스트가 끊긴다.
-  assert.equal(toSummary({ excerpt: '앞\n\n뒤', content: '' }), '앞 뒤');
+  expect(toSummary({ excerpt: '앞\n\n뒤', content: '' })).toBe('앞 뒤');
 });
 
 // ── buildLlmsText ────────────────────────────────────────────────────────────
@@ -58,7 +56,10 @@ test('llms: 모든 글이 링크로 나온다 (손으로 관리하다 6편이 �
   ];
   const text = buildLlmsText(posts, OPTS);
   for (const slug of ['a', 'b', 'c']) {
-    assert.ok(text.includes(`${SITE}/posts/${slug}/`), `${slug} 링크가 없음`);
+    expect(
+      text.includes(`${SITE}/posts/${slug}/`),
+      `${slug} 링크가 없음`,
+    ).toBeTruthy();
   }
 });
 
@@ -67,10 +68,10 @@ test('llms: 글 수는 실제 개수 ("45+" 같은 손으로 적은 숫자가 �
     [makePost({ slug: 'a' }), makePost({ slug: 'b' })],
     OPTS,
   );
-  assert.ok(
+  expect(
     text.includes('Complete archive of 2 frontend engineering articles'),
-  );
-  assert.ok(text.includes('- Total posts: 2 articles'));
+  ).toBeTruthy();
+  expect(text.includes('- Total posts: 2 articles')).toBeTruthy();
 });
 
 test('llms: Last updated는 가장 최근 글 날짜 (빌드 날짜가 아님)', () => {
@@ -83,12 +84,12 @@ test('llms: Last updated는 가장 최근 글 날짜 (빌드 날짜가 아님)',
     ],
     OPTS,
   );
-  assert.ok(text.includes('Last updated: 2026-07-31'));
+  expect(text.includes('Last updated: 2026-07-31')).toBeTruthy();
 });
 
 test('llms: 날짜 있는 글이 하나도 없으면 (미상)', () => {
   const text = buildLlmsText([makePost({ slug: 'a', date: null })], OPTS);
-  assert.ok(text.includes('Last updated: (미상)'));
+  expect(text.includes('Last updated: (미상)')).toBeTruthy();
 });
 
 test('llms: 시리즈 글은 시리즈 섹션에, 나머지는 단독 포스트 섹션에', () => {
@@ -103,12 +104,12 @@ test('llms: 시리즈 글은 시리즈 섹션에, 나머지는 단독 포스트 
   );
   const seriesIdx = text.indexOf('## 시리즈: bundler');
   const soloIdx = text.indexOf('## 단독 포스트');
-  assert.ok(seriesIdx > 0 && soloIdx > 0);
-  assert.ok(
+  expect(seriesIdx > 0 && soloIdx > 0).toBeTruthy();
+  expect(
     text.indexOf('시리즈글1') > seriesIdx &&
       text.indexOf('시리즈글1') < soloIdx,
-  );
-  assert.ok(text.indexOf('단독글') > soloIdx);
+  ).toBeTruthy();
+  expect(text.indexOf('단독글') > soloIdx).toBeTruthy();
 });
 
 test('llms: _series.yml이 없는 폴더는 시리즈가 아니다 (/series 페이지와 같은 판정)', () => {
@@ -117,9 +118,9 @@ test('llms: _series.yml이 없는 폴더는 시리즈가 아니다 (/series 페�
     [makePost({ slug: 'only', title: '한편글', series: 'testing' })],
     OPTS,
   );
-  assert.ok(!text.includes('## 시리즈: testing'));
-  assert.ok(text.includes('## 단독 포스트'));
-  assert.ok(text.includes('한편글'));
+  expect(!text.includes('## 시리즈: testing')).toBeTruthy();
+  expect(text.includes('## 단독 포스트')).toBeTruthy();
+  expect(text.includes('한편글')).toBeTruthy();
 });
 
 test('llms: 여러 편이어도 _series.yml이 없으면 단독 포스트로 내려간다', () => {
@@ -133,10 +134,10 @@ test('llms: 여러 편이어도 _series.yml이 없으면 단독 포스트로 내
     ],
     OPTS,
   );
-  assert.ok(!text.includes('## 시리즈: ci'));
-  assert.ok(text.includes('## 단독 포스트'));
+  expect(!text.includes('## 시리즈: ci')).toBeTruthy();
+  expect(text.includes('## 단독 포스트')).toBeTruthy();
   for (const t of ['CI글1', 'CI글2', 'CI글3']) {
-    assert.ok(text.includes(t), `${t}가 빠짐`);
+    expect(text.includes(t), `${t}가 빠짐`).toBeTruthy();
   }
 });
 
@@ -152,8 +153,8 @@ test('llms: _series.yml이 있으면 한 편이어도 시리즈 (표시명·설�
       }),
     },
   );
-  assert.ok(text.includes('## 시리즈: CI 파이프라인'));
-  assert.ok(text.includes('빌드를 빠르게'));
+  expect(text.includes('## 시리즈: CI 파이프라인')).toBeTruthy();
+  expect(text.includes('빌드를 빠르게')).toBeTruthy();
 });
 
 test('llms: _series.yml의 order가 날짜보다 우선한다', () => {
@@ -168,7 +169,7 @@ test('llms: _series.yml의 order가 날짜보다 우선한다', () => {
       resolveSeriesMeta: () => ({ name: 's', order: ['a', 'b'] }),
     },
   );
-  assert.ok(text.indexOf('먼저글') < text.indexOf('나중글'));
+  expect(text.indexOf('먼저글') < text.indexOf('나중글')).toBeTruthy();
 });
 
 test('llms: 시리즈 안에서는 1편부터 (날짜 오름차순)', () => {
@@ -181,8 +182,8 @@ test('llms: 시리즈 안에서는 1편부터 (날짜 오름차순)', () => {
     // 시리즈 섹션 안의 정렬을 보는 테스트이므로 시리즈로 선언해 둔다.
     { siteUrl: SITE, resolveSeriesMeta: () => ({ name: 's' }) },
   );
-  assert.ok(text.indexOf('1편') < text.indexOf('2편'));
-  assert.ok(text.indexOf('2편') < text.indexOf('3편'));
+  expect(text.indexOf('1편') < text.indexOf('2편')).toBeTruthy();
+  expect(text.indexOf('2편') < text.indexOf('3편')).toBeTruthy();
 });
 
 test('llms: 같은 날짜 글은 입력 순서를 지킨다 (빌드마다 흔들리지 않도록)', () => {
@@ -202,17 +203,19 @@ test('llms: 같은 날짜 글은 입력 순서를 지킨다 (빌드마다 흔들
     date: '2026-01-01',
   });
   const text = buildLlmsText([first, second], OPTS);
-  assert.ok(text.indexOf('Z글') < text.indexOf('A글'));
+  expect(text.indexOf('Z글') < text.indexOf('A글')).toBeTruthy();
   // 같은 입력이면 언제나 같은 출력
-  assert.equal(text, buildLlmsText([first, second], OPTS));
+  expect(text).toBe(buildLlmsText([first, second], OPTS));
 });
 
 test('llms: 한글 slug는 URL 인코딩 (sitemap/rss와 동일)', () => {
   const text = buildLlmsText([makePost({ slug: '한글/글' })], OPTS);
-  assert.ok(text.includes(`${SITE}/posts/${encodeURIComponent('한글')}/`));
+  expect(
+    text.includes(`${SITE}/posts/${encodeURIComponent('한글')}/`),
+  ).toBeTruthy();
 });
 
 test('llms: siteUrl은 주입값을 쓴다 (하드코딩 도메인 없음)', () => {
   const text = buildLlmsText([makePost()], OPTS);
-  assert.ok(!text.includes('blog.sangwook.dev'));
+  expect(!text.includes('blog.sangwook.dev')).toBeTruthy();
 });

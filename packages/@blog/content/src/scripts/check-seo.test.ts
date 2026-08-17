@@ -1,8 +1,7 @@
-import assert from 'node:assert/strict';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { test } from 'node:test';
+import { expect, test } from 'vitest';
 import {
   parsePageSeo,
   checkPages,
@@ -44,12 +43,12 @@ const rules = (pages: Map<string, string>) =>
 
 test('parsePageSeo: title / description / canonical / og를 뽑는다', () => {
   const seo = parsePageSeo(page());
-  assert.equal(seo.title, '짧은 제목 | Frontend Lab');
-  assert.equal(seo.canonical, `${SITE_URL}/posts/a/`);
-  assert.equal(seo.ogSiteName, 'Frontend Lab');
-  assert.equal(seo.ogLocale, 'ko_KR');
-  assert.equal(seo.ogType, 'article');
-  assert.equal(seo.h1Count, 1);
+  expect(seo.title).toBe('짧은 제목 | Frontend Lab');
+  expect(seo.canonical).toBe(`${SITE_URL}/posts/a/`);
+  expect(seo.ogSiteName).toBe('Frontend Lab');
+  expect(seo.ogLocale).toBe('ko_KR');
+  expect(seo.ogType).toBe('article');
+  expect(seo.h1Count).toBe(1);
 });
 
 test('parsePageSeo: head의 JSON-LD 안에 있는 "h1" 문자열은 세지 않는다', () => {
@@ -58,13 +57,13 @@ test('parsePageSeo: head의 JSON-LD 안에 있는 "h1" 문자열은 세지 않�
   const html = `<!doctype html><html><head>
     <script type="application/ld+json">{"speakable":{"cssSelector":["h1","h2:first-of-type"]}}</script>
     </head><body><h1>제목</h1></body></html>`;
-  assert.equal(parsePageSeo(html).h1Count, 1);
+  expect(parsePageSeo(html).h1Count).toBe(1);
 });
 
 test('parsePageSeo: content가 앞에 오는 meta도 읽는다', () => {
   const html =
     '<head><meta content="ko_KR" property="og:locale"/></head><body></body>';
-  assert.equal(parsePageSeo(html).ogLocale, 'ko_KR');
+  expect(parsePageSeo(html).ogLocale).toBe('ko_KR');
 });
 
 test('parsePageSeo: alt 속성이 아예 없는 img만 센다', () => {
@@ -73,45 +72,45 @@ test('parsePageSeo: alt 속성이 아예 없는 img만 센다', () => {
     {},
     '<h1>t</h1><img src="a.png"/><img src="b.png" alt=""/><img src="c.png" alt="설명"/>',
   );
-  assert.equal(parsePageSeo(html).imagesMissingAlt, 1);
+  expect(parsePageSeo(html).imagesMissingAlt).toBe(1);
 });
 
 // ── checkPages ───────────────────────────────────────────────────────────────
 
 test('checkPages: 정상 페이지는 위반 없음', () => {
-  assert.deepEqual(rules(new Map([['/posts/a/', page()]])), []);
+  expect(rules(new Map([['/posts/a/', page()]]))).toStrictEqual([]);
 });
 
 test('checkPages: h1이 0개거나 2개면 h1-count', () => {
-  assert.ok(
+  expect(
     rules(new Map([['/posts/a/', page({}, '<p>본문</p>')]])).includes(
       'h1-count',
     ),
-  );
-  assert.ok(
+  ).toBeTruthy();
+  expect(
     rules(
       new Map([['/posts/a/', page({}, '<h1>제목</h1><h1>또 제목</h1>')]]),
     ).includes('h1-count'),
-  );
+  ).toBeTruthy();
 });
 
 test('checkPages: 60자 넘는 <title>은 title-length', () => {
   const long = `${'가'.repeat(50)} | Frontend Lab`;
-  assert.ok(
+  expect(
     rules(new Map([['/posts/a/', page({ title: long })]])).includes(
       'title-length',
     ),
-  );
+  ).toBeTruthy();
 });
 
 test('checkPages: 말줄임으로 끝나는 description은 truncated-description', () => {
   // 본문 앞 160자 자동 발췌가 그대로 나간 경우 — 도입부가 비슷한 글끼리 겹친다.
   const desc = `${'가'.repeat(127)}...`;
-  assert.ok(
+  expect(
     rules(new Map([['/posts/a/', page({ description: desc })]])).includes(
       'truncated-description',
     ),
-  );
+  ).toBeTruthy();
 });
 
 test('checkPages: description이 서로 완전히 같으면 duplicate-description', () => {
@@ -128,17 +127,17 @@ test('checkPages: description이 서로 완전히 같으면 duplicate-descriptio
       ],
     ]),
   );
-  assert.ok(found.includes('duplicate-description'));
+  expect(found.includes('duplicate-description')).toBeTruthy();
 });
 
 test('checkPages: canonical이 자기 URL과 다르면 canonical-mismatch', () => {
-  assert.ok(
+  expect(
     rules(
       new Map([
         ['/posts/a/', page({ canonical: `${SITE_URL}/posts/다른글/` })],
       ]),
     ).includes('canonical-mismatch'),
-  );
+  ).toBeTruthy();
 });
 
 test('checkPages: og:site_name이 다른 페이지를 잡는다', () => {
@@ -159,26 +158,28 @@ test('checkPages: og:site_name이 다른 페이지를 잡는다', () => {
       ],
     ]),
   );
-  assert.deepEqual(found, ['unexpected-og-site-name']);
+  expect(found).toStrictEqual(['unexpected-og-site-name']);
 });
 
 test('checkPages: og:locale 누락을 잡는다', () => {
   const html = page().replace(/<meta property="og:locale"[^>]*>/, '');
-  assert.ok(
+  expect(
     rules(new Map([['/posts/a/', html]])).includes('missing-og-locale'),
-  );
+  ).toBeTruthy();
 });
 
 test('checkPages: og:type 누락을 잡는다', () => {
   // locale과 한 테스트에 묶여 있어서 og:type 규칙만 회귀해도 아무도 몰랐다.
   const html = page().replace(/<meta property="og:type"[^>]*>/, '');
-  assert.ok(rules(new Map([['/posts/a/', html]])).includes('missing-og-type'));
+  expect(
+    rules(new Map([['/posts/a/', html]])).includes('missing-og-type'),
+  ).toBeTruthy();
 });
 
 test('checkPages: noindex 페이지는 검사하지 않는다', () => {
   // /admin, /privacy는 검색 대상이 아니다.
   const html = `<head><meta name="robots" content="noindex, nofollow"/></head><body></body>`;
-  assert.deepEqual(rules(new Map([['/admin/', html]])), []);
+  expect(rules(new Map([['/admin/', html]]))).toStrictEqual([]);
 });
 
 // ── link-trailing-slash ──────────────────────────────────────────────────────
@@ -209,29 +210,26 @@ test('checkPages: 존재하는 페이지로 가는 내부 링크에 후행 슬�
       '<h1>글</h1><a href="/posts/turborepo-next.js-docker">turborepo</a>',
     ),
   );
-  assert.deepEqual(
-    found.map(v => [v.page, v.rule]),
-    [['/posts/', 'link-trailing-slash']],
-  );
-  assert.match(
-    found.map(v => v.message).join('\n'),
+  expect(found.map(v => [v.page, v.rule])).toStrictEqual([
+    ['/posts/', 'link-trailing-slash'],
+  ]);
+  expect(found.map(v => v.message).join('\n')).toMatch(
     /\/posts\/turborepo-next\.js-docker\//,
   );
 });
 
 test('checkPages: 후행 슬래시가 있으면 `.`이 든 slug라도 통과한다', () => {
-  assert.deepEqual(
+  expect(
     rules(
       siteWithDottedPost(
         '<h1>글</h1><a href="/posts/turborepo-next.js-docker/">turborepo</a>',
       ),
     ),
-    [],
-  );
+  ).toStrictEqual([]);
 });
 
 test('checkPages: 쿼리·해시 앞의 경로로 판정한다', () => {
-  assert.deepEqual(
+  expect(
     rules(
       siteWithDottedPost(
         '<h1>글</h1><a href="/posts/turborepo-next.js-docker?ref=x">a</a>' +
@@ -239,12 +237,11 @@ test('checkPages: 쿼리·해시 앞의 경로로 판정한다', () => {
           '<a href="/posts/?tag=a&amp;series=b">c</a>',
       ),
     ),
-    ['link-trailing-slash', 'link-trailing-slash'],
-  );
+  ).toStrictEqual(['link-trailing-slash', 'link-trailing-slash']);
 });
 
 test('checkPages: 파일 링크(/rss.xml)·외부·프로토콜 상대·해시 전용 링크는 보지 않는다', () => {
-  assert.deepEqual(
+  expect(
     rules(
       siteWithDottedPost(
         '<h1>글</h1><a href="/rss.xml">rss</a>' +
@@ -254,8 +251,7 @@ test('checkPages: 파일 링크(/rss.xml)·외부·프로토콜 상대·해시 �
           '<a href="/posts/no-such-page">없는 페이지는 이 규칙의 대상이 아니다</a>',
       ),
     ),
-    [],
-  );
+  ).toStrictEqual([]);
 });
 
 test('checkPages: 인코딩된 href도 디코드해 페이지와 대조한다 (한글 slug)', () => {
@@ -275,7 +271,7 @@ test('checkPages: 인코딩된 href도 디코드해 페이지와 대조한다 (�
       }),
     ],
   ]);
-  assert.deepEqual(rules(pages), ['link-trailing-slash']);
+  expect(rules(pages)).toStrictEqual(['link-trailing-slash']);
 });
 
 test('checkPages: noindex 페이지의 내부 링크도 본다 (색인이 아니라 내비게이션 문제)', () => {
@@ -290,7 +286,7 @@ test('checkPages: noindex 페이지의 내부 링크도 본다 (색인이 아니
       `<head><meta name="robots" content="noindex, nofollow"/></head><body></body>`,
     ],
   ]);
-  assert.deepEqual(rules(pages), ['link-trailing-slash']);
+  expect(rules(pages)).toStrictEqual(['link-trailing-slash']);
 });
 
 // ── checkArtifacts ───────────────────────────────────────────────────────────
@@ -313,7 +309,9 @@ const reference = (slugs: string[]): CollectedArtifact =>
   collected({ name: 'sitemap.xml', reference: true, urls: urls(slugs) });
 
 test('checkArtifacts: 모든 산출물의 글 집합이 기준과 같으면 위반 없음', () => {
-  assert.deepEqual(checkArtifacts([reference(['a', 'b']), collected()]), []);
+  expect(checkArtifacts([reference(['a', 'b']), collected()])).toStrictEqual(
+    [],
+  );
 });
 
 test('checkArtifacts: exact 산출물에서 글이 빠지면 artifact-missing-posts (손으로 관리하다 6편 누락됐던 회귀)', () => {
@@ -321,7 +319,7 @@ test('checkArtifacts: exact 산출물에서 글이 빠지면 artifact-missing-po
     reference(['a', 'b', 'c']),
     collected({ name: 'llms.txt', urls: urls(['a']) }),
   ]);
-  assert.ok(found.some(v => v.rule === 'artifact-missing-posts'));
+  expect(found.some(v => v.rule === 'artifact-missing-posts')).toBeTruthy();
 });
 
 test('checkArtifacts: exact 산출물에 기준에 없는 글이 있으면 artifact-extra-posts', () => {
@@ -329,22 +327,18 @@ test('checkArtifacts: exact 산출물에 기준에 없는 글이 있으면 artif
     reference(['a']),
     collected({ urls: urls(['a', '유령글']) }),
   ]);
-  assert.deepEqual(
-    found.map(v => v.rule),
-    ['artifact-extra-posts'],
-  );
+  expect(found.map(v => v.rule)).toStrictEqual(['artifact-extra-posts']);
 });
 
 test('checkArtifacts: subset(og 이미지)은 덜 담는 것이 정상 — missing을 보지 않는다', () => {
   // og 카드는 thumbnail이 없는 글만 생성한다. exact로 보면 손수 썸네일을
   // 지정한 글마다 위반이 떠서 게이트가 항상 실패한다.
-  assert.deepEqual(
+  expect(
     checkArtifacts([
       reference(['a', 'b', 'c']),
       collected({ name: 'og 이미지', relation: 'subset', urls: urls(['a']) }),
     ]),
-    [],
-  );
+  ).toStrictEqual([]);
 });
 
 test('checkArtifacts: subset이라도 기준에 없는 잔여물은 artifact-extra-posts', () => {
@@ -357,14 +351,11 @@ test('checkArtifacts: subset이라도 기준에 없는 잔여물은 artifact-ext
       urls: urls(['a', '지운글']),
     }),
   ]);
-  assert.deepEqual(
-    found.map(v => v.rule),
-    ['artifact-extra-posts'],
-  );
+  expect(found.map(v => v.rule)).toStrictEqual(['artifact-extra-posts']);
 });
 
 test('checkArtifacts: superset(admin 인덱스)은 hidden 글이 더 있어도 위반이 아니다', () => {
-  assert.deepEqual(
+  expect(
     checkArtifacts([
       reference(['a']),
       collected({
@@ -373,8 +364,7 @@ test('checkArtifacts: superset(admin 인덱스)은 hidden 글이 더 있어도 �
         urls: urls(['a', '초안글']),
       }),
     ]),
-    [],
-  );
+  ).toStrictEqual([]);
 });
 
 test('checkArtifacts: superset이라도 발행 글이 빠지면 artifact-missing-posts', () => {
@@ -386,10 +376,7 @@ test('checkArtifacts: superset이라도 발행 글이 빠지면 artifact-missing
       urls: urls(['a', '초안글']),
     }),
   ]);
-  assert.deepEqual(
-    found.map(v => v.rule),
-    ['artifact-missing-posts'],
-  );
+  expect(found.map(v => v.rule)).toStrictEqual(['artifact-missing-posts']);
 });
 
 test('checkArtifacts: 산출물이 없으면(missing-artifact) 그 산출물만 보고하고 나머지는 계속 대조한다', () => {
@@ -398,10 +385,10 @@ test('checkArtifacts: 산출물이 없으면(missing-artifact) 그 산출물만 
     collected({ name: 'llms-full.txt', urls: null }),
     collected({ name: 'rss.xml', urls: urls(['a']) }),
   ]);
-  assert.deepEqual(
-    found.map(v => v.rule),
-    ['missing-artifact', 'artifact-missing-posts'],
-  );
+  expect(found.map(v => v.rule)).toStrictEqual([
+    'missing-artifact',
+    'artifact-missing-posts',
+  ]);
 });
 
 test('checkArtifacts: 기준(sitemap)이 없으면 대조를 걸지 않는다', () => {
@@ -410,23 +397,19 @@ test('checkArtifacts: 기준(sitemap)이 없으면 대조를 걸지 않는다', 
     collected({ name: 'sitemap.xml', reference: true, urls: null }),
     collected(),
   ]);
-  assert.deepEqual(
-    found.map(v => v.rule),
-    ['missing-artifact'],
-  );
+  expect(found.map(v => v.rule)).toStrictEqual(['missing-artifact']);
 });
 
 test('checkArtifacts: 인코딩 차이는 수집(추출) 단계에서 디코드 정규화돼 오탐하지 않는다', () => {
   // 추출기가 decodeUrlSafe로 정규화한 집합을 넘긴다는 전제의 확인 —
   // 실제 추출 정규화는 artifacts.test.ts가 잠근다.
   const encoded = new Set([`${SITE_URL}/posts/한글/`]);
-  assert.deepEqual(
+  expect(
     checkArtifacts([
       collected({ name: 'sitemap.xml', reference: true, urls: encoded }),
       collected({ urls: new Set([`${SITE_URL}/posts/한글/`]) }),
     ]),
-    [],
-  );
+  ).toStrictEqual([]);
 });
 
 // ── collectArtifacts + checkArtifacts 통합 (실제 게이트 경로) ────────────────
@@ -463,7 +446,7 @@ test('게이트 통합: 온전한 픽스처는 통과하고, 한 산출물에서
   const dir = mkdtempSync(join(tmpdir(), 'check-seo-artifacts-'));
   try {
     writeFixtureOut(dir, ['a', 'b']);
-    assert.deepEqual(checkArtifacts(collectArtifacts(dir)), []);
+    expect(checkArtifacts(collectArtifacts(dir))).toStrictEqual([]);
 
     // rss.xml에서만 글 b를 뺀다 → 게이트가 잡아야 한다.
     writeFileSync(
@@ -471,10 +454,9 @@ test('게이트 통합: 온전한 픽스처는 통과하고, 한 산출물에서
       `<item><guid isPermaLink="true">${SITE_URL}/posts/a/</guid></item>`,
     );
     const found = checkArtifacts(collectArtifacts(dir));
-    assert.deepEqual(
-      found.map(v => [v.page, v.rule]),
-      [['rss.xml', 'artifact-missing-posts']],
-    );
+    expect(found.map(v => [v.page, v.rule])).toStrictEqual([
+      ['rss.xml', 'artifact-missing-posts'],
+    ]);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
@@ -486,10 +468,9 @@ test('게이트 통합: 레지스트리 산출물이 파일째 없으면 missing
     writeFixtureOut(dir, ['a']);
     rmSync(join(dir, 'llms-full.txt'));
     const found = checkArtifacts(collectArtifacts(dir));
-    assert.deepEqual(
-      found.map(v => [v.page, v.rule]),
-      [['llms-full.txt', 'missing-artifact']],
-    );
+    expect(found.map(v => [v.page, v.rule])).toStrictEqual([
+      ['llms-full.txt', 'missing-artifact'],
+    ]);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
@@ -499,55 +480,53 @@ test('checkPages: canonical은 퍼센트 인코딩을 풀어 비교한다 (한�
   // out/의 디렉토리 이름은 `/posts/한글/`인데 canonical은 인코딩된 URL이다.
   // 디코드하지 않으면 한글 slug 글이 하나만 생겨도 배포가 막힌다.
   const encoded = `${SITE_URL}/posts/${encodeURIComponent('한글')}/`;
-  assert.deepEqual(
+  expect(
     rules(new Map([['/posts/한글/', page({ canonical: encoded })]])),
-    [],
-  );
+  ).toStrictEqual([]);
 });
 
 test('checkPages: 인코딩을 풀어도 다르면 여전히 canonical-mismatch', () => {
-  assert.ok(
+  expect(
     rules(
       new Map([
         ['/posts/한글/', page({ canonical: `${SITE_URL}/posts/다른글/` })],
       ]),
     ).includes('canonical-mismatch'),
-  );
+  ).toBeTruthy();
 });
 
 test('checkPages: 장식용 alt=""는 위반이 아니다', () => {
   // 홈의 FeaturedPost는 제목 바로 옆 썸네일이라 의도적으로 alt=""를 쓴다.
   // 이걸 잡으면 손수 썸네일을 지정한 글이 최신 글이 되는 순간, frontmatter로는
   // 고칠 수 없는 이유로 배포가 막힌다.
-  assert.deepEqual(
+  expect(
     rules(
       new Map([['/posts/a/', page({}, '<h1>t</h1><img src="a.png" alt=""/>')]]),
     ),
-    [],
-  );
+  ).toStrictEqual([]);
 });
 
 test('checkPages: alt 속성이 아예 없으면 missing-img-alt', () => {
-  assert.ok(
+  expect(
     rules(
       new Map([['/posts/a/', page({}, '<h1>t</h1><img src="a.png"/>')]]),
     ).includes('missing-img-alt'),
-  );
+  ).toBeTruthy();
 });
 
 test('parsePageSeo: alt 안의 `>`에서 태그가 끊기지 않는다', () => {
   // `alt="22분 > 8분"` 같은 부등호. `[^>]*`로 읽으면 alt가 없는 것처럼 보인다.
   const html = page({}, '<h1>t</h1><img src="a.png" alt="22분 > 8분"/>');
-  assert.equal(parsePageSeo(html).imagesMissingAlt, 0);
+  expect(parsePageSeo(html).imagesMissingAlt).toBe(0);
 });
 
 test('checkPages: og:site_name이 사이트 이름과 다르면 잡는다', () => {
   // 페이지끼리만 비교하면, 모두 같은 상수를 쓰는 지금은 규칙이 영영 발동하지 않는다.
-  assert.ok(
+  expect(
     rules(
       new Map([['/posts/a/', page({ siteName: 'Frontend Lab Blog' })]]),
     ).includes('unexpected-og-site-name'),
-  );
+  ).toBeTruthy();
 });
 
 test('checkPages: 한 페이지만 달라도 잡는다 (다수결이 아니다)', () => {
@@ -571,5 +550,5 @@ test('checkPages: 한 페이지만 달라도 잡는다 (다수결이 아니다)'
       ],
     ]),
   );
-  assert.ok(found.includes('unexpected-og-site-name'));
+  expect(found.includes('unexpected-og-site-name')).toBeTruthy();
 });

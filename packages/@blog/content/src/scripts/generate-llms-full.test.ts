@@ -1,5 +1,4 @@
-import assert from 'node:assert/strict';
-import { test } from 'node:test';
+import { expect, test } from 'vitest';
 import { buildLlmsFullText } from './generate-llms-full';
 import type { PostData } from '../post';
 
@@ -23,17 +22,17 @@ function makePost(over: Partial<PostData> = {}): PostData {
 
 test('llms-full: 헤더/푸터 포함', () => {
   const text = buildLlmsFullText([]);
-  assert.ok(text.startsWith('# Frontend Lab'));
-  assert.ok(text.includes('## Key Facts'));
-  assert.ok(text.includes('## Contact'));
-  assert.ok(text.includes('https://blog.sangwook.dev'));
-  assert.ok(text.includes('https://github.com/Han5991'));
-  assert.ok(text.includes('https://blog.sangwook.dev/rss.xml'));
+  expect(text.startsWith('# Frontend Lab')).toBeTruthy();
+  expect(text.includes('## Key Facts')).toBeTruthy();
+  expect(text.includes('## Contact')).toBeTruthy();
+  expect(text.includes('https://blog.sangwook.dev')).toBeTruthy();
+  expect(text.includes('https://github.com/Han5991')).toBeTruthy();
+  expect(text.includes('https://blog.sangwook.dev/rss.xml')).toBeTruthy();
 });
 
 test('llms-full: Total posts 수 반영', () => {
   const text = buildLlmsFullText([makePost(), makePost({ slug: 'b' })]);
-  assert.ok(text.includes('Total posts: 2+ articles'));
+  expect(text.includes('Total posts: 2+ articles')).toBeTruthy();
 });
 
 test('llms-full: 시리즈 헤더와 단독 헤더', () => {
@@ -41,43 +40,43 @@ test('llms-full: 시리즈 헤더와 단독 헤더', () => {
     makePost({ slug: 'a', series: 'bundler' }),
     makePost({ slug: 'b', series: undefined }),
   ]);
-  assert.ok(text.includes('## 시리즈: bundler'));
-  assert.ok(text.includes('## 단독 포스트'));
+  expect(text.includes('## 시리즈: bundler')).toBeTruthy();
+  expect(text.includes('## 단독 포스트')).toBeTruthy();
 });
 
 test('llms-full: 단독 포스트만 있으면 시리즈 헤더 없음', () => {
   const text = buildLlmsFullText([makePost({ slug: 'a', series: undefined })]);
-  assert.ok(!text.includes('## 시리즈:'));
-  assert.ok(text.includes('## 단독 포스트'));
+  expect(!text.includes('## 시리즈:')).toBeTruthy();
+  expect(text.includes('## 단독 포스트')).toBeTruthy();
 });
 
 test('llms-full: 시리즈 포스트만 있으면 단독 헤더 없음', () => {
   const text = buildLlmsFullText([makePost({ slug: 'a', series: 'bundler' })]);
-  assert.ok(text.includes('## 시리즈: bundler'));
-  assert.ok(!text.includes('## 단독 포스트'));
+  expect(text.includes('## 시리즈: bundler')).toBeTruthy();
+  expect(!text.includes('## 단독 포스트')).toBeTruthy();
 });
 
 test('llms-full: 포스트 entry 형식 = ### [title](url) (date)', () => {
   const text = buildLlmsFullText([
     makePost({ slug: 'my-post', title: 'My Post', date: '2026-05-09' }),
   ]);
-  assert.ok(
+  expect(
     text.includes(
       '### [My Post](https://blog.sangwook.dev/posts/my-post/) (2026-05-09)',
     ),
-  );
+  ).toBeTruthy();
 });
 
 test('llms-full: tags가 있으면 entry에 포함', () => {
   const text = buildLlmsFullText([
     makePost({ slug: 'a', tags: ['react', 'ts'] }),
   ]);
-  assert.ok(text.includes('Tags: react, ts.'));
+  expect(text.includes('Tags: react, ts.')).toBeTruthy();
 });
 
 test('llms-full: tags가 비면 Tags 표기 없음', () => {
   const text = buildLlmsFullText([makePost({ slug: 'a', tags: undefined })]);
-  assert.ok(!text.includes('Tags:'));
+  expect(!text.includes('Tags:')).toBeTruthy();
 });
 
 test('llms-full: excerpt가 200자 초과면 잘림', () => {
@@ -86,8 +85,8 @@ test('llms-full: excerpt가 200자 초과면 잘림', () => {
     makePost({ slug: 'a', excerpt: longExcerpt }),
   ]);
   // 200자 + "..." 확인
-  assert.ok(text.includes('A'.repeat(200) + '...'));
-  assert.ok(!text.includes('A'.repeat(201)));
+  expect(text.includes('A'.repeat(200) + '...')).toBeTruthy();
+  expect(!text.includes('A'.repeat(201))).toBeTruthy();
 });
 
 test('llms-full: excerpt 없으면 content에서 추출 (마크다운 # 만 제거, 개행 유지)', () => {
@@ -96,10 +95,10 @@ test('llms-full: excerpt 없으면 content에서 추출 (마크다운 # 만 제�
   ]);
   // generate-llms-full의 content 추출은 `[#`*\[\]]` 만 제거하고 개행은 보존.
   // `# h1\n본문입니다` → `h1\n본문입니다` (trim 후 slice(0, 200))
-  assert.ok(
+  expect(
     text.includes('h1\n본문입니다...'),
     `expected 'h1\\n본문입니다...' in output, got: ${text.slice(0, 500)}`,
-  );
+  ).toBeTruthy();
 });
 
 test('llms-full: 같은 시리즈 내 포스트는 date 오름차순', () => {
@@ -112,7 +111,7 @@ test('llms-full: 같은 시리즈 내 포스트는 date 오름차순', () => {
   const idxC = text.indexOf('### [C]');
   const idxA = text.indexOf('### [A]');
   // B(1월) < C(2월) < A(3월) 순서
-  assert.ok(idxB > 0 && idxC > idxB && idxA > idxC);
+  expect(idxB > 0 && idxC > idxB && idxA > idxC).toBeTruthy();
 });
 
 test('llms-full: 단독 포스트는 date 내림차순', () => {
@@ -122,5 +121,5 @@ test('llms-full: 단독 포스트는 date 내림차순', () => {
   ]);
   const idxNew = text.indexOf('### [New]');
   const idxOld = text.indexOf('### [Old]');
-  assert.ok(idxNew > 0 && idxNew < idxOld);
+  expect(idxNew > 0 && idxNew < idxOld).toBeTruthy();
 });

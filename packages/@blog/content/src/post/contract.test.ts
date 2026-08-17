@@ -9,8 +9,7 @@
  * 리팩토링/리디자인 시 데이터 형태가 깨지지 않았는지 빠르게 검출하는 가드레일.
  * 콘텐츠 개수 자체는 잠그지 않습니다(글이 추가/숨김되는 정상 변경에 깨지면 안 됨).
  */
-import assert from 'node:assert/strict';
-import { test } from 'node:test';
+import { expect, test } from 'vitest';
 import {
   getAllPosts,
   getAllPostsIncludingHidden,
@@ -21,7 +20,10 @@ import { getSeriesMeta, isSeriesFolder } from './series';
 
 test('contract: 글이 1개 이상 존재 (블로그 동작의 최소 조건)', () => {
   const posts = getAllPostsIncludingHidden();
-  assert.ok(posts.length > 0, 'apps/blog/posts/ 에 1개 이상의 글이 있어야 함');
+  expect(
+    posts.length > 0,
+    'apps/blog/posts/ 에 1개 이상의 글이 있어야 함',
+  ).toBeTruthy();
 });
 
 test('contract: 모든 글은 unique slug 보유', () => {
@@ -32,17 +34,16 @@ test('contract: 모든 글은 unique slug 보유', () => {
     if (seen.has(p.slug)) dup.push(p.slug);
     else seen.add(p.slug);
   }
-  assert.deepEqual(dup, [], `중복 slug 발견: ${dup.join(', ')}`);
+  expect(dup, `중복 slug 발견: ${dup.join(', ')}`).toStrictEqual([]);
 });
 
 test('contract: 모든 글은 title 보유', () => {
   const posts = getAllPostsIncludingHidden();
   const missing = posts.filter(p => !p.title || typeof p.title !== 'string');
-  assert.equal(
+  expect(
     missing.length,
-    0,
     `title 누락: ${missing.map(p => p.slug).join(', ')}`,
-  );
+  ).toBe(0);
 });
 
 test('contract: 모든 글은 readMin >= 1', () => {
@@ -50,11 +51,10 @@ test('contract: 모든 글은 readMin >= 1', () => {
   const invalid = posts.filter(
     p => !Number.isFinite(p.readMin) || p.readMin < 1,
   );
-  assert.equal(
+  expect(
     invalid.length,
-    0,
     `readMin 비정상: ${invalid.map(p => `${p.slug}(${p.readMin})`).join(', ')}`,
-  );
+  ).toBe(0);
 });
 
 test('contract: 공개 글(getAllPosts)은 isPostVisible 기준 일치 (slug 집합 비교)', () => {
@@ -69,7 +69,7 @@ test('contract: 공개 글(getAllPosts)은 isPostVisible 기준 일치 (slug 집
   const expected = all.filter(p => isPostVisible(p, now));
   const visibleSlugs = visible.map(p => p.slug).sort();
   const expectedSlugs = expected.map(p => p.slug).sort();
-  assert.deepEqual(visibleSlugs, expectedSlugs);
+  expect(visibleSlugs).toStrictEqual(expectedSlugs);
 });
 
 test('contract: getAllPosts는 date 내림차순', () => {
@@ -79,10 +79,10 @@ test('contract: getAllPosts는 date 내림차순', () => {
     const b = posts[i + 1].date ?? '';
     // a >= b 여야 함 (null/undefined는 최하위로 정렬됨)
     if (a && b) {
-      assert.ok(
+      expect(
         new Date(a).getTime() >= new Date(b).getTime(),
         `정렬 위배: ${posts[i].slug}(${a}) < ${posts[i + 1].slug}(${b})`,
-      );
+      ).toBeTruthy();
     }
   }
 });
@@ -91,7 +91,7 @@ test('contract: status 값이 유효 enum 범위', () => {
   const valid = new Set(['published', 'draft', 'scheduled']);
   const posts = getAllPostsIncludingHidden();
   const invalid = posts.filter(p => p.status && !valid.has(p.status));
-  assert.equal(invalid.length, 0);
+  expect(invalid.length).toBe(0);
 });
 
 test('contract: scheduled 글은 공개 시각(scheduledDate ?? date)이 파싱 가능', () => {
@@ -100,14 +100,14 @@ test('contract: scheduled 글은 공개 시각(scheduledDate ?? date)이 파싱 
     if (p.status !== 'scheduled') continue;
     // scheduledDate는 시각까지 지정할 때만 쓰는 선택 필드. 없으면 date가 공개 시각.
     const publishAt = p.scheduledDate ?? p.date;
-    assert.ok(
+    expect(
       publishAt,
       `${p.slug}: scheduled인데 scheduledDate도 date도 없음 (영원히 비공개)`,
-    );
-    assert.ok(
-      !Number.isNaN(Date.parse(publishAt)),
+    ).toBeTruthy();
+    expect(
+      !Number.isNaN(Date.parse(publishAt ?? '')),
       `${p.slug}: 공개 시각 파싱 불가 (${publishAt})`,
-    );
+    ).toBeTruthy();
   }
 });
 
@@ -124,7 +124,7 @@ test('contract: series는 _series.yml로 선언된 폴더에만 붙는다', () =
     .filter((p): p is typeof p & { series: string } => Boolean(p.series))
     .filter(p => !isSeriesFolder(p.series))
     .map(p => `${p.slug} (series=${p.series})`);
-  assert.deepEqual(violations, []);
+  expect(violations).toStrictEqual([]);
 });
 
 test('contract: 시리즈로 선언된 폴더는 메타(_series.yml)를 읽을 수 있어야 한다', () => {
@@ -139,39 +139,44 @@ test('contract: 시리즈로 선언된 폴더는 메타(_series.yml)를 읽을 �
         .filter((s): s is string => Boolean(s)),
     ),
   ];
-  assert.ok(seriesIds.length > 0, '선언된 시리즈가 최소 1개는 있어야 함');
+  expect(
+    seriesIds.length > 0,
+    '선언된 시리즈가 최소 1개는 있어야 함',
+  ).toBeTruthy();
   for (const id of seriesIds) {
-    assert.notEqual(
+    expect(
       getSeriesMeta(id),
-      null,
       `${id}: _series.yml을 읽지 못함 — dirs.content 경로 불일치?`,
-    );
+    ).not.toBe(null);
   }
 });
 
 test('contract: 선언되지 않은 폴더의 글은 시리즈 네비게이션이 없다', () => {
   // relativeDir은 있는데 series가 없는 글 = 폴더에는 있지만 시리즈가 아닌 글.
   const grouped = getAllPosts().filter(p => p.relativeDir && !p.series);
-  assert.ok(
+  expect(
     grouped.length > 0,
     '검증이 공허하지 않으려면 시리즈가 아닌 폴더의 공개 글이 최소 1편은 있어야 함',
-  );
+  ).toBeTruthy();
   for (const p of grouped) {
     const nav = getSeriesAdjacentPosts(p.slug);
-    assert.equal(nav.seriesName, null, `${p.slug}: seriesName`);
-    assert.equal(nav.prev, null, `${p.slug}: prev`);
-    assert.equal(nav.next, null, `${p.slug}: next`);
+    expect(nav.seriesName, `${p.slug}: seriesName`).toBe(null);
+    expect(nav.prev, `${p.slug}: prev`).toBe(null);
+    expect(nav.next, `${p.slug}: next`).toBe(null);
   }
 });
 
 test('contract: 선언된 시리즈의 글은 시리즈 네비게이션이 있다 (대조군)', () => {
   const seriesPosts = getAllPosts().filter(p => p.series);
-  assert.ok(seriesPosts.length > 0, '시리즈 글이 최소 1편은 있어야 함');
+  expect(
+    seriesPosts.length > 0,
+    '시리즈 글이 최소 1편은 있어야 함',
+  ).toBeTruthy();
   for (const p of seriesPosts) {
-    assert.ok(
+    expect(
       getSeriesAdjacentPosts(p.slug).seriesName,
       `${p.slug}: 시리즈인데 seriesName이 없음`,
-    );
+    ).toBeTruthy();
   }
 });
 

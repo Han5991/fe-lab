@@ -1,5 +1,4 @@
-import assert from 'node:assert/strict';
-import { test } from 'node:test';
+import { expect, test } from 'vitest';
 import { isSeriesFolder, sortPostsBySeriesOrder } from './series';
 
 interface Fixture {
@@ -24,10 +23,7 @@ test('sortPostsBySeriesOrder: order=[b,a] → b가 a보다 앞', () => {
     makePost({ slug: 'b', date: '2026-01-02' }),
   ];
   const sorted = sortPostsBySeriesOrder(posts, ['b', 'a']);
-  assert.deepEqual(
-    sorted.map(p => p.slug),
-    ['b', 'a'],
-  );
+  expect(sorted.map(p => p.slug)).toStrictEqual(['b', 'a']);
 });
 
 test('sortPostsBySeriesOrder: order는 date를 무시하고 순서를 우선시', () => {
@@ -37,10 +33,7 @@ test('sortPostsBySeriesOrder: order는 date를 무시하고 순서를 우선시'
     makePost({ slug: 'b', date: '2099-12-31' }),
   ];
   const sorted = sortPostsBySeriesOrder(posts, ['b', 'a']);
-  assert.deepEqual(
-    sorted.map(p => p.slug),
-    ['b', 'a'],
-  );
+  expect(sorted.map(p => p.slug)).toStrictEqual(['b', 'a']);
 });
 
 test('sortPostsBySeriesOrder: 3개 이상도 order 순서대로', () => {
@@ -50,10 +43,7 @@ test('sortPostsBySeriesOrder: 3개 이상도 order 순서대로', () => {
     makePost({ slug: 'z', date: '2026-01-03' }),
   ];
   const sorted = sortPostsBySeriesOrder(posts, ['z', 'x', 'y']);
-  assert.deepEqual(
-    sorted.map(p => p.slug),
-    ['z', 'x', 'y'],
-  );
+  expect(sorted.map(p => p.slug)).toStrictEqual(['z', 'x', 'y']);
 });
 
 test('sortPostsBySeriesOrder: order에 slug 없으면 originalSlug로 rank 매칭', () => {
@@ -63,10 +53,7 @@ test('sortPostsBySeriesOrder: order에 slug 없으면 originalSlug로 rank 매�
     makePost({ slug: 'display-b', originalSlug: 'orig-b', date: '2026-01-02' }),
   ];
   const sorted = sortPostsBySeriesOrder(posts, ['orig-b', 'orig-a']);
-  assert.deepEqual(
-    sorted.map(p => p.slug),
-    ['display-b', 'display-a'],
-  );
+  expect(sorted.map(p => p.slug)).toStrictEqual(['display-b', 'display-a']);
 });
 
 test('sortPostsBySeriesOrder: slug 매칭이 originalSlug 매칭보다 우선', () => {
@@ -77,10 +64,7 @@ test('sortPostsBySeriesOrder: slug 매칭이 originalSlug 매칭보다 우선', 
   ];
   // order=['a','b']: 첫 글은 slug='a' → rank 0, 둘째는 slug='b' → rank 1.
   const sorted = sortPostsBySeriesOrder(posts, ['a', 'b']);
-  assert.deepEqual(
-    sorted.map(p => p.slug),
-    ['a', 'b'],
-  );
+  expect(sorted.map(p => p.slug)).toStrictEqual(['a', 'b']);
 });
 
 test('sortPostsBySeriesOrder: order에 둘 다 없는 글은 맨 뒤(POSITIVE_INFINITY)', () => {
@@ -89,10 +73,7 @@ test('sortPostsBySeriesOrder: order에 둘 다 없는 글은 맨 뒤(POSITIVE_IN
     makePost({ slug: 'ranked', date: '2026-12-31' }),
   ];
   const sorted = sortPostsBySeriesOrder(posts, ['ranked']);
-  assert.deepEqual(
-    sorted.map(p => p.slug),
-    ['ranked', 'unranked'],
-  );
+  expect(sorted.map(p => p.slug)).toStrictEqual(['ranked', 'unranked']);
 });
 
 test('sortPostsBySeriesOrder: order 미발견 글끼리는 date localeCompare 오름차순 폴백', () => {
@@ -103,10 +84,7 @@ test('sortPostsBySeriesOrder: order 미발견 글끼리는 date localeCompare �
     makePost({ slug: 'b', date: '2026-02-01' }),
   ];
   const sorted = sortPostsBySeriesOrder(posts, ['nonexistent']);
-  assert.deepEqual(
-    sorted.map(p => p.slug),
-    ['a', 'b', 'c'],
-  );
+  expect(sorted.map(p => p.slug)).toStrictEqual(['a', 'b', 'c']);
 });
 
 test('sortPostsBySeriesOrder: ranked 먼저, 그 뒤 unranked는 date 오름차순', () => {
@@ -116,10 +94,7 @@ test('sortPostsBySeriesOrder: ranked 먼저, 그 뒤 unranked는 date 오름차�
     makePost({ slug: 'u1', date: '2026-01-01' }),
   ];
   const sorted = sortPostsBySeriesOrder(posts, ['r']);
-  assert.deepEqual(
-    sorted.map(p => p.slug),
-    ['r', 'u1', 'u2'],
-  );
+  expect(sorted.map(p => p.slug)).toStrictEqual(['r', 'u1', 'u2']);
 });
 
 test('sortPostsBySeriesOrder: 같은 rank(둘 다 미발견) tie는 date 오름차순', () => {
@@ -128,10 +103,7 @@ test('sortPostsBySeriesOrder: 같은 rank(둘 다 미발견) tie는 date 오름�
     makePost({ slug: 'earlier', date: '2026-01-01' }),
   ];
   const sorted = sortPostsBySeriesOrder(posts, ['x', 'y']);
-  assert.deepEqual(
-    sorted.map(p => p.slug),
-    ['earlier', 'later'],
-  );
+  expect(sorted.map(p => p.slug)).toStrictEqual(['earlier', 'later']);
 });
 
 test('sortPostsBySeriesOrder: order=undefined → 전체 date 오름차순', () => {
@@ -141,10 +113,7 @@ test('sortPostsBySeriesOrder: order=undefined → 전체 date 오름차순', () 
     makePost({ slug: 'c', date: '2026-03-01' }),
   ];
   const sorted = sortPostsBySeriesOrder(posts, undefined);
-  assert.deepEqual(
-    sorted.map(p => p.slug),
-    ['a', 'b', 'c'],
-  );
+  expect(sorted.map(p => p.slug)).toStrictEqual(['a', 'b', 'c']);
 });
 
 test('sortPostsBySeriesOrder: order=[] (빈 배열) → 전체 date 오름차순', () => {
@@ -153,10 +122,7 @@ test('sortPostsBySeriesOrder: order=[] (빈 배열) → 전체 date 오름차순
     makePost({ slug: 'a', date: '2026-01-01' }),
   ];
   const sorted = sortPostsBySeriesOrder(posts, []);
-  assert.deepEqual(
-    sorted.map(p => p.slug),
-    ['a', 'b'],
-  );
+  expect(sorted.map(p => p.slug)).toStrictEqual(['a', 'b']);
 });
 
 test('sortPostsBySeriesOrder: date null/undefined는 (a.date ?? "")로 처리되어 맨 앞', () => {
@@ -168,10 +134,7 @@ test('sortPostsBySeriesOrder: date null/undefined는 (a.date ?? "")로 처리되
   ];
   const sorted = sortPostsBySeriesOrder(posts, undefined);
   // null과 undefined는 둘 다 ''로 취급되어 tie → 안정 정렬로 입력 순서(nullish, undef) 유지.
-  assert.deepEqual(
-    sorted.map(p => p.slug),
-    ['nullish', 'undef', 'has'],
-  );
+  expect(sorted.map(p => p.slug)).toStrictEqual(['nullish', 'undef', 'has']);
 });
 
 test('sortPostsBySeriesOrder: order 경로에서도 date 없는 unranked가 앞', () => {
@@ -181,28 +144,23 @@ test('sortPostsBySeriesOrder: order 경로에서도 date 없는 unranked가 앞'
     makePost({ slug: 'no-date', date: null }),
   ];
   const sorted = sortPostsBySeriesOrder(posts, ['ranked-only']);
-  assert.deepEqual(
-    sorted.map(p => p.slug),
-    ['no-date', 'dated'],
-  );
+  expect(sorted.map(p => p.slug)).toStrictEqual(['no-date', 'dated']);
 });
 
 test('sortPostsBySeriesOrder: 빈 입력 배열 → 빈 배열 반환', () => {
-  assert.deepEqual(sortPostsBySeriesOrder([], ['a', 'b']), []);
-  assert.deepEqual(sortPostsBySeriesOrder([], undefined), []);
-  assert.deepEqual(sortPostsBySeriesOrder([], []), []);
+  expect(sortPostsBySeriesOrder([], ['a', 'b'])).toStrictEqual([]);
+  expect(sortPostsBySeriesOrder([], undefined)).toStrictEqual([]);
+  expect(sortPostsBySeriesOrder([], [])).toStrictEqual([]);
 });
 
 test('sortPostsBySeriesOrder: 단일 원소 배열은 그대로', () => {
   const posts = [makePost({ slug: 'only', date: '2026-01-01' })];
-  assert.deepEqual(
+  expect(
     sortPostsBySeriesOrder(posts, ['only']).map(p => p.slug),
-    ['only'],
-  );
-  assert.deepEqual(
+  ).toStrictEqual(['only']);
+  expect(
     sortPostsBySeriesOrder(posts, undefined).map(p => p.slug),
-    ['only'],
-  );
+  ).toStrictEqual(['only']);
 });
 
 test('sortPostsBySeriesOrder: 특수문자/한글 slug도 정상 정렬', () => {
@@ -212,10 +170,7 @@ test('sortPostsBySeriesOrder: 특수문자/한글 slug도 정상 정렬', () => 
   ];
   // order로 한글 slug 매칭.
   const sorted = sortPostsBySeriesOrder(posts, ['나중-글', '첫-글']);
-  assert.deepEqual(
-    sorted.map(p => p.slug),
-    ['나중-글', '첫-글'],
-  );
+  expect(sorted.map(p => p.slug)).toStrictEqual(['나중-글', '첫-글']);
 });
 
 test('sortPostsBySeriesOrder: 날짜 문자열은 사전식(localeCompare) 비교 — datetime도 일관', () => {
@@ -224,10 +179,7 @@ test('sortPostsBySeriesOrder: 날짜 문자열은 사전식(localeCompare) 비�
     makePost({ slug: 'morning', date: '2026-01-01T09:00:00+09:00' }),
   ];
   const sorted = sortPostsBySeriesOrder(posts, undefined);
-  assert.deepEqual(
-    sorted.map(p => p.slug),
-    ['morning', 'noon'],
-  );
+  expect(sorted.map(p => p.slug)).toStrictEqual(['morning', 'noon']);
 });
 
 test('sortPostsBySeriesOrder: 입력 배열을 변형하지 않음(복사본 정렬)', () => {
@@ -237,12 +189,11 @@ test('sortPostsBySeriesOrder: 입력 배열을 변형하지 않음(복사본 정
   ];
   const before = posts.map(p => p.slug);
   const result = sortPostsBySeriesOrder(posts, undefined);
-  assert.notEqual(result, posts, '새 배열이 반환되어야 함');
-  assert.deepEqual(
+  expect(result, '새 배열이 반환되어야 함').not.toBe(posts);
+  expect(
     posts.map(p => p.slug),
-    before,
     '원본 배열 순서가 보존되어야 함',
-  );
+  ).toStrictEqual(before);
 });
 
 test('sortPostsBySeriesOrder: order 경로에서도 입력 불변', () => {
@@ -252,11 +203,8 @@ test('sortPostsBySeriesOrder: order 경로에서도 입력 불변', () => {
   ];
   const before = posts.map(p => p.slug);
   const result = sortPostsBySeriesOrder(posts, ['b', 'a']);
-  assert.notEqual(result, posts);
-  assert.deepEqual(
-    posts.map(p => p.slug),
-    before,
-  );
+  expect(result).not.toBe(posts);
+  expect(posts.map(p => p.slug)).toStrictEqual(before);
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -271,33 +219,33 @@ test('sortPostsBySeriesOrder: order 경로에서도 입력 불변', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 test('isSeriesFolder: _series.yml이 없으면 시리즈가 아니다', () => {
-  assert.equal(isSeriesFolder('__없는-폴더__'), false);
+  expect(isSeriesFolder('__없는-폴더__')).toBe(false);
 });
 
 test('isSeriesFolder: 편수는 보지 않는다 — 여러 편이어도 선언이 없으면 폴더', () => {
   // 이 함수는 이제 편수를 인자로 받지 않는다. 8편이 모인 폴더라도 선언이
   // 없으면 그냥 폴더라는 것이 규칙의 핵심이라, 시그니처로 못을 박아 둔다.
-  assert.equal(isSeriesFolder.length, 2, '(seriesName, meta?) 두 개여야 함');
-  assert.equal(isSeriesFolder('__없는-폴더__', null), false);
+  expect(isSeriesFolder.length, '(seriesName, meta?) 두 개여야 함').toBe(2);
+  expect(isSeriesFolder('__없는-폴더__', null)).toBe(false);
 });
 
 test('isSeriesFolder: _series.yml이 있으면 시리즈', () => {
   // bundler 폴더에는 실제 _series.yml이 있다. (아래 "null을 명시하면"
   // 테스트와 같은 폴더를 픽스처로 공유한다 — 실제 폴더 의존은 bundler 하나로
   // 유지할 것.)
-  assert.equal(isSeriesFolder('bundler'), true);
+  expect(isSeriesFolder('bundler')).toBe(true);
 });
 
 test('isSeriesFolder: meta를 주입하면 디스크를 읽지 않는다', () => {
   // 스크립트(generate-llms)의 단위 테스트가 실제 posts/ 폴더 상태에 따라
   // 흔들리지 않도록 열어 둔 인자.
-  assert.equal(isSeriesFolder('없는폴더', { name: '없는폴더' }), true);
-  assert.equal(isSeriesFolder('없는폴더', null), false);
+  expect(isSeriesFolder('없는폴더', { name: '없는폴더' })).toBe(true);
+  expect(isSeriesFolder('없는폴더', null)).toBe(false);
 });
 
 test('isSeriesFolder: null을 명시하면 디스크를 읽지 않고 "메타 없음"', () => {
   // `undefined`(미지정 → 조회)와 `null`(메타 없음)이 구분되어야 한다.
   // bundler는 실제로 `_series.yml`이 있는 폴더라, 조회했다면 true가 나온다.
-  assert.equal(isSeriesFolder('bundler', null), false);
-  assert.equal(isSeriesFolder('bundler'), true);
+  expect(isSeriesFolder('bundler', null)).toBe(false);
+  expect(isSeriesFolder('bundler')).toBe(true);
 });

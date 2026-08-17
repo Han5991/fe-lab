@@ -31,6 +31,8 @@ export default defineConfig([
       'public/**',
       'supabase/**',
       '.cache/**',
+      // vitest --coverage의 HTML 리포터가 뱉는 번들된 벤더 JS. 소스가 아니다.
+      'coverage/**',
       'next-env.d.ts',
     ],
   },
@@ -136,40 +138,6 @@ export default defineConfig([
       '@typescript-eslint/consistent-indexed-object-style': 'off',
       // 생성기가 union에 `never`를 남긴다(Functions가 빈 스키마일 때 등).
       '@typescript-eslint/no-redundant-type-constituents': 'off',
-    },
-  },
-
-  {
-    // TS 파일로 한정 — 전역으로 두면 위 disableTypeChecked가 꺼 둔 룰을
-    // .mjs/.cjs에서 옵션과 함께 되켜 버린다(타입 정보 없음 → 로드 에러).
-    files: ['**/*.{ts,tsx,mts,cts}'],
-    rules: {
-      // node:test의 test()/훅은 promise를 반환하지만 러너가 수명을 관리한다 —
-      // 최상위 호출을 await하지 않는 게 표준 사용법이다. 주의: 이 인가는
-      // 심볼 이름+패키지 매칭이라 **서브테스트(t.test())도 함께 인가된다**
-      // (TestContext.test 역시 node:test 선언의 'test'다). 서브테스트는 부모가
-      // 먼저 끝나면 취소되므로 원래 await가 필요하지만, lint가 못 잡는다 —
-      // 현재 저장소에 t.test()/ctx.test() 사용은 0건이고, 쓰게 되면 반드시
-      // await할 것(여기서 'test'를 빼면 최상위 672곳이 전부 걸려 대안이 없다).
-      '@typescript-eslint/no-floating-promises': [
-        'error',
-        {
-          allowForKnownSafeCalls: [
-            {
-              from: 'package',
-              package: 'node:test',
-              name: [
-                'test',
-                'describe',
-                'before',
-                'after',
-                'beforeEach',
-                'afterEach',
-              ],
-            },
-          ],
-        },
-      ],
     },
   },
 

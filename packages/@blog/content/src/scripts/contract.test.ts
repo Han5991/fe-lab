@@ -9,8 +9,7 @@
  *
  * 콘텐츠 개수 자체는 잠그지 않습니다(글이 추가/숨김되는 정상 변경에 깨지면 안 됨).
  */
-import assert from 'node:assert/strict';
-import { test } from 'node:test';
+import { expect, test } from 'vitest';
 import { getAllPosts, getAllPostsIncludingHidden } from '../post/service';
 import { isPostVisible } from '../post/visibility';
 import { isSeriesFolder } from '../post/series';
@@ -32,12 +31,12 @@ test('sitemap: 모든 공개 글이 sitemap에 포함됨', () => {
   const posts = getAllPosts();
   const xml = buildSitemapXml(posts, TODAY);
   for (const p of posts) {
-    assert.ok(
+    expect(
       xml.includes(
         `/posts/${encodeURIComponent(p.slug).replace(/%2F/g, '/')}/`,
       ),
       `sitemap 누락: ${p.slug}`,
-    );
+    ).toBeTruthy();
   }
 });
 
@@ -48,19 +47,19 @@ test('sitemap: draft/미래 scheduled 글은 sitemap에 없음', () => {
     // 한글/특수문자 slug의 hidden 글이 sitemap에 잘못 포함됐을 때 false pass 방지를 위해
     // public 검사와 동일한 인코딩 규칙으로 비교합니다 (디렉토리 구분자 / 는 보존).
     const encodedSlug = encodeURIComponent(p.slug).replace(/%2F/g, '/');
-    assert.ok(
+    expect(
       !xml.includes(`/posts/${encodedSlug}/`),
       `숨김 글이 sitemap에 노출: ${p.slug}`,
-    );
+    ).toBeTruthy();
   }
 });
 
 test('sitemap: 모든 loc은 절대 URL', () => {
   const xml = buildSitemapXml(getAllPosts(), TODAY);
   const locs = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map(m => m[1]);
-  assert.ok(locs.length > 0);
+  expect(locs.length > 0).toBeTruthy();
   for (const loc of locs) {
-    assert.ok(loc.startsWith(SITE_URL), `절대 URL 위배: ${loc}`);
+    expect(loc.startsWith(SITE_URL), `절대 URL 위배: ${loc}`).toBeTruthy();
   }
 });
 
@@ -68,41 +67,41 @@ test('rss: 모든 공개 글이 RSS item으로 등장', () => {
   const posts = getAllPosts();
   const xml = buildRssXml(posts, { now: new Date(TODAY) });
   const itemCount = (xml.match(/<item>/g) || []).length;
-  assert.equal(itemCount, posts.length);
+  expect(itemCount).toBe(posts.length);
 });
 
 test('rss: 모든 link/guid가 SITE_URL prefix', () => {
   const xml = buildRssXml(getAllPosts(), { now: new Date(TODAY) });
   const links = [...xml.matchAll(/<link>([^<]+)<\/link>/g)].map(m => m[1]);
   for (const link of links) {
-    assert.ok(link.startsWith(SITE_URL), `RSS link 비절대: ${link}`);
+    expect(link.startsWith(SITE_URL), `RSS link 비절대: ${link}`).toBeTruthy();
   }
 });
 
 test('search-index: 공개 글 개수와 일치', () => {
   const posts = getAllPosts();
   const idx = buildPublicSearchIndex(posts);
-  assert.equal(idx.length, posts.length);
+  expect(idx.length).toBe(posts.length);
 });
 
 test('search-index: 모든 entry는 필수 키 보유', () => {
   const idx = buildPublicSearchIndex(getAllPosts());
   for (const e of idx) {
-    assert.ok(typeof e.slug === 'string' && e.slug.length > 0);
-    assert.ok(typeof e.title === 'string' && e.title.length > 0);
-    assert.ok(Array.isArray(e.tags));
-    assert.ok(typeof e.contentPreview === 'string');
-    assert.ok(e.contentPreview.length <= CONTENT_PREVIEW_CHARS);
+    expect(typeof e.slug === 'string' && e.slug.length > 0).toBeTruthy();
+    expect(typeof e.title === 'string' && e.title.length > 0).toBeTruthy();
+    expect(Array.isArray(e.tags)).toBeTruthy();
+    expect(typeof e.contentPreview === 'string').toBeTruthy();
+    expect(e.contentPreview.length <= CONTENT_PREVIEW_CHARS).toBeTruthy();
   }
 });
 
 test('search-index(admin): draft/scheduled 포함하여 전체 글 인덱싱', () => {
   const all = getAllPostsIncludingHidden();
   const idx = buildAdminPostsIndex(all);
-  assert.equal(idx.length, all.length);
+  expect(idx.length).toBe(all.length);
   // 적어도 1개의 status 값이 admin index에 존재
   for (const e of idx) {
-    assert.ok(['published', 'draft', 'scheduled'].includes(e.status));
+    expect(['published', 'draft', 'scheduled'].includes(e.status)).toBeTruthy();
   }
 });
 
@@ -110,27 +109,27 @@ test('llms-full: 모든 공개 글 제목이 본문에 등장', () => {
   const posts = getAllPosts();
   const text = buildLlmsFullText(posts);
   for (const p of posts) {
-    assert.ok(
+    expect(
       text.includes(`### [${p.title}]`),
       `llms-full 누락: ${p.slug} (${p.title})`,
-    );
+    ).toBeTruthy();
   }
 });
 
 test('llms-full: Total posts 카운트가 실제 공개 글 수와 일치', () => {
   const posts = getAllPosts();
   const text = buildLlmsFullText(posts);
-  assert.ok(text.includes(`Total posts: ${posts.length}+ articles`));
+  expect(text.includes(`Total posts: ${posts.length}+ articles`)).toBeTruthy();
 });
 
 test('contract: 검색 인덱스의 series는 선언된 시리즈만', () => {
   // 예전엔 폴더에 글을 모아 두는 것만으로 검색 결과에 "📚 폴더명"이 붙었다.
   for (const e of buildPublicSearchIndex(getAllPosts())) {
     if (e.series) {
-      assert.ok(
+      expect(
         isSeriesFolder(e.series),
         `검색 인덱스에 비시리즈: ${e.series}`,
-      );
+      ).toBeTruthy();
     }
   }
 });
@@ -140,10 +139,6 @@ test('contract: sitemap 우선순위는 시리즈가 아니라 폴더 기준이�
   // 우선순위가 조용히 0.6으로 떨어진다.
   const post = getAllPosts().find(p => p.relativeDir === 'typescript');
   if (!post) return; // 콘텐츠가 바뀌어 폴더가 사라지면 이 계약은 무의미해진다
-  assert.equal(
-    post.series,
-    undefined,
-    'typescript 폴더는 시리즈가 아니어야 함',
-  );
-  assert.equal(getPostPriority(post), '0.75');
+  expect(post.series, 'typescript 폴더는 시리즈가 아니어야 함').toBe(undefined);
+  expect(getPostPriority(post)).toBe('0.75');
 });

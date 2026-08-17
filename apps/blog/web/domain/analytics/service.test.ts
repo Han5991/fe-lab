@@ -1,5 +1,4 @@
-import assert from 'node:assert/strict';
-import { test } from 'node:test';
+import { expect, test } from 'vitest';
 import { computeDerivedStats, computeAnalyticsOverview } from './service';
 import type { PostStatDetail } from './types';
 
@@ -20,11 +19,11 @@ function makePost(
 
 test('computeDerivedStats: 빈 트렌드는 0/null로 채움', () => {
   const result = computeDerivedStats(makePost([]));
-  assert.equal(result.weekGrowthRate, null);
-  assert.equal(result.peakDay, null);
-  assert.equal(result.dailyAverage, 0);
-  assert.equal(result.milestones.length, 4);
-  assert.ok(result.milestones.every(m => !m.reached));
+  expect(result.weekGrowthRate).toBe(null);
+  expect(result.peakDay).toBe(null);
+  expect(result.dailyAverage).toBe(0);
+  expect(result.milestones.length).toBe(4);
+  expect(result.milestones.every(m => !m.reached)).toBeTruthy();
 });
 
 test('computeDerivedStats: 피크 일자 식별', () => {
@@ -35,8 +34,8 @@ test('computeDerivedStats: 피크 일자 식별', () => {
       { view_date: '2025-01-03', view_count: 10 },
     ]),
   );
-  assert.equal(result.peakDay?.date, '2025-01-02');
-  assert.equal(result.peakDay?.count, 30);
+  expect(result.peakDay?.date).toBe('2025-01-02');
+  expect(result.peakDay?.count).toBe(30);
 });
 
 test('computeDerivedStats: 일 평균 계산 (소수 1자리 반올림)', () => {
@@ -47,7 +46,7 @@ test('computeDerivedStats: 일 평균 계산 (소수 1자리 반올림)', () => 
       { view_date: '2025-01-03', view_count: 1 },
     ]),
   );
-  assert.equal(result.dailyAverage, 1.3);
+  expect(result.dailyAverage).toBe(1.3);
 });
 
 test('computeDerivedStats: 데이터 1개일 때 span=1로 가드되어 평균 = 본 그 값', () => {
@@ -55,8 +54,8 @@ test('computeDerivedStats: 데이터 1개일 때 span=1로 가드되어 평균 =
   const result = computeDerivedStats(
     makePost([{ view_date: '2025-01-01', view_count: 7 }]),
   );
-  assert.equal(result.dailyAverage, 7);
-  assert.equal(result.peakDay?.count, 7);
+  expect(result.dailyAverage).toBe(7);
+  expect(result.peakDay?.count).toBe(7);
 });
 
 test('computeDerivedStats: 일 평균 분모는 활동일이 아닌 trends span(첫~끝)', () => {
@@ -69,7 +68,7 @@ test('computeDerivedStats: 일 평균 분모는 활동일이 아닌 trends span(
     ]),
   );
   // 합 60, span 30일 → 60/30 = 2.0
-  assert.equal(result.dailyAverage, 2);
+  expect(result.dailyAverage).toBe(2);
 });
 
 test('computeDerivedStats: trends가 비어도 totalViews가 마일스톤 넘으면 reached(date 미상)', () => {
@@ -86,11 +85,11 @@ test('computeDerivedStats: trends가 비어도 totalViews가 마일스톤 넘으
     scheduledDate: null,
   };
   const result = computeDerivedStats(post);
-  assert.equal(result.milestones[0].reached, true);
-  assert.equal(result.milestones[0].target, 100);
-  assert.equal(result.milestones[0].date, null);
-  assert.equal(result.milestones[1].reached, false);
-  assert.equal(result.milestones[1].target, 500);
+  expect(result.milestones[0].reached).toBe(true);
+  expect(result.milestones[0].target).toBe(100);
+  expect(result.milestones[0].date).toBe(null);
+  expect(result.milestones[1].reached).toBe(false);
+  expect(result.milestones[1].target).toBe(500);
 });
 
 test('computeDerivedStats: 누적이 마일스톤을 넘으면 reached=true', () => {
@@ -99,10 +98,10 @@ test('computeDerivedStats: 누적이 마일스톤을 넘으면 reached=true', ()
     view_count: 30,
   })); // 누적 150 → 100은 통과, 500은 미달
   const result = computeDerivedStats(makePost(trends));
-  assert.equal(result.milestones[0].reached, true);
-  assert.equal(result.milestones[0].target, 100);
-  assert.equal(result.milestones[1].reached, false);
-  assert.equal(result.milestones[1].target, 500);
+  expect(result.milestones[0].reached).toBe(true);
+  expect(result.milestones[0].target).toBe(100);
+  expect(result.milestones[1].reached).toBe(false);
+  expect(result.milestones[1].target).toBe(500);
 });
 
 // ── computeAnalyticsOverview ─────────────────────────────────────────────────
@@ -126,28 +125,28 @@ function makePostDetail(
 
 test('computeAnalyticsOverview: 데이터 없으면 total=0, delta=null', () => {
   const result = computeAnalyticsOverview([], '7d', '2026-05-24');
-  assert.equal(result.total, 0);
-  assert.equal(result.totalDelta, null);
-  assert.equal(result.uniques, 0);
-  assert.equal(result.topPosts.length, 0);
+  expect(result.total).toBe(0);
+  expect(result.totalDelta).toBe(null);
+  expect(result.uniques).toBe(0);
+  expect(result.topPosts.length).toBe(0);
 });
 
 test('computeAnalyticsOverview: range=7d → rangeDays=7, totalSeries.length=7', () => {
   const result = computeAnalyticsOverview([], '7d', '2026-05-24');
-  assert.equal(result.rangeDays, 7);
-  assert.equal(result.totalSeries.length, 7);
+  expect(result.rangeDays).toBe(7);
+  expect(result.totalSeries.length).toBe(7);
 });
 
 test('computeAnalyticsOverview: range=30d → rangeDays=30, totalSeries.length=30', () => {
   const result = computeAnalyticsOverview([], '30d', '2026-05-24');
-  assert.equal(result.rangeDays, 30);
-  assert.equal(result.totalSeries.length, 30);
+  expect(result.rangeDays).toBe(30);
+  expect(result.totalSeries.length).toBe(30);
 });
 
 test('computeAnalyticsOverview: range=90d → rangeDays=90, totalSeries.length=90', () => {
   const result = computeAnalyticsOverview([], '90d', '2026-05-24');
-  assert.equal(result.rangeDays, 90);
-  assert.equal(result.totalSeries.length, 90);
+  expect(result.rangeDays).toBe(90);
+  expect(result.totalSeries.length).toBe(90);
 });
 
 test('computeAnalyticsOverview: 90d는 현재/직전 90일 윈도우를 분리 집계', () => {
@@ -161,9 +160,9 @@ test('computeAnalyticsOverview: 90d는 현재/직전 90일 윈도우를 분리 �
     ]),
   ];
   const result = computeAnalyticsOverview(data, '90d', '2026-05-24');
-  assert.equal(result.total, 50);
+  expect(result.total).toBe(50);
   // 직전 20 → (50-20)/20 = 1.5
-  assert.equal(result.totalDelta, 1.5);
+  expect(result.totalDelta).toBe(1.5);
 });
 
 test('computeAnalyticsOverview: 현재 기간 조회수만 total에 포함', () => {
@@ -175,7 +174,7 @@ test('computeAnalyticsOverview: 현재 기간 조회수만 total에 포함', () 
     ]),
   ];
   const result = computeAnalyticsOverview(data, '7d', '2026-05-24');
-  assert.equal(result.total, 10);
+  expect(result.total).toBe(10);
 });
 
 test('computeAnalyticsOverview: 자정 경계에서 todayISO 변경 시 윈도우 갱신', () => {
@@ -190,8 +189,8 @@ test('computeAnalyticsOverview: 자정 경계에서 todayISO 변경 시 윈도�
   const r1 = computeAnalyticsOverview(data, '7d', '2026-05-24');
   // 05-17 기준: 윈도우 05-11~05-17 → 5
   const r2 = computeAnalyticsOverview(data, '7d', '2026-05-17');
-  assert.equal(r1.total, 20);
-  assert.equal(r2.total, 5);
+  expect(r1.total).toBe(20);
+  expect(r2.total).toBe(5);
 });
 
 test('computeAnalyticsOverview: totalDelta — 직전 기간 대비 증감율', () => {
@@ -206,7 +205,7 @@ test('computeAnalyticsOverview: totalDelta — 직전 기간 대비 증감율', 
   ];
   const result = computeAnalyticsOverview(data, '7d', '2026-05-14');
   // (30-10)/10 = 2.0
-  assert.equal(result.totalDelta, 2.0);
+  expect(result.totalDelta).toBe(2.0);
 });
 
 test('computeAnalyticsOverview: uniques는 총 조회수의 추정 비율(0.55)', () => {
@@ -216,7 +215,7 @@ test('computeAnalyticsOverview: uniques는 총 조회수의 추정 비율(0.55)'
   const result = computeAnalyticsOverview(data, '7d', '2026-05-24');
   // 리터럴로 고정 — UNIQUES_ESTIMATE_RATIO(0.55)가 바뀌면 의도적으로 함께 갱신.
   // round(100 * 0.55) = 55.
-  assert.equal(result.uniques, 55);
+  expect(result.uniques).toBe(55);
 });
 
 test('computeAnalyticsOverview: uniquesDelta — 직전 고유추정 대비 증감율, 직전 0이면 null', () => {
@@ -230,15 +229,15 @@ test('computeAnalyticsOverview: uniquesDelta — 직전 고유추정 대비 증�
     ]),
   ];
   const result = computeAnalyticsOverview(data, '7d', '2026-05-14');
-  assert.equal(result.uniques, 110);
-  assert.equal(result.uniquesDelta, 1.0);
+  expect(result.uniques).toBe(110);
+  expect(result.uniquesDelta).toBe(1.0);
 
   // 직전 기간 조회수 0 → uniquesDelta는 null (0 나눗셈 가드)
   const onlyCurrent = [
     makePostDetail('b', [{ view_date: '2026-05-10', view_count: 200 }]),
   ];
   const r2 = computeAnalyticsOverview(onlyCurrent, '7d', '2026-05-14');
-  assert.equal(r2.uniquesDelta, null);
+  expect(r2.uniquesDelta).toBe(null);
 });
 
 test('computeAnalyticsOverview: postsPublished는 published 상태 글만 카운트', () => {
@@ -248,7 +247,7 @@ test('computeAnalyticsOverview: postsPublished는 published 상태 글만 카운
     makePostDetail('draft1', [], 'draft'),
   ];
   const result = computeAnalyticsOverview(data, '7d', '2026-05-24');
-  assert.equal(result.postsPublished, 2);
+  expect(result.postsPublished).toBe(2);
 });
 
 test('computeAnalyticsOverview: topPosts는 내림차순 상위 5개', () => {
@@ -258,9 +257,9 @@ test('computeAnalyticsOverview: topPosts는 내림차순 상위 5개', () => {
     ]),
   );
   const result = computeAnalyticsOverview(data, '7d', '2026-05-24');
-  assert.equal(result.topPosts.length, 5);
+  expect(result.topPosts.length).toBe(5);
   // 첫 번째가 최다 조회
-  assert.ok(result.topPosts[0].views >= result.topPosts[1].views);
+  expect(result.topPosts[0].views >= result.topPosts[1].views).toBeTruthy();
 });
 
 test('computeAnalyticsOverview: postsPublished=0 이면 avgPerPost=0 (0 나눗셈 가드)', () => {
@@ -277,8 +276,8 @@ test('computeAnalyticsOverview: postsPublished=0 이면 avgPerPost=0 (0 나눗�
     ),
   ];
   const result = computeAnalyticsOverview(data, '7d', '2026-05-24');
-  assert.equal(result.postsPublished, 0);
-  assert.equal(result.avgPerPost, 0);
+  expect(result.postsPublished).toBe(0);
+  expect(result.avgPerPost).toBe(0);
 });
 
 test('computeAnalyticsOverview: topPosts delta — 직전 기간 0이면 null (totalDelta와 일관)', () => {
@@ -289,7 +288,7 @@ test('computeAnalyticsOverview: topPosts delta — 직전 기간 0이면 null (t
     ]),
   ];
   const result = computeAnalyticsOverview(data, '7d', '2026-05-24');
-  assert.equal(result.topPosts[0].delta, null);
+  expect(result.topPosts[0].delta).toBe(null);
 });
 
 test('computeDerivedStats: todayISO 주입으로 자정 경계 결정성 확보', () => {
@@ -313,7 +312,7 @@ test('computeDerivedStats: todayISO 주입으로 자정 경계 결정성 확보'
   //   previous7 [05-07, 05-14): 05-13(10) = 10 → growth = 800%
   const r2 = computeDerivedStats(post, '2026-05-21');
 
-  assert.notEqual(r1.weekGrowthRate, r2.weekGrowthRate);
-  assert.equal(r1.weekGrowthRate, 300);
-  assert.equal(r2.weekGrowthRate, 800);
+  expect(r1.weekGrowthRate).not.toBe(r2.weekGrowthRate);
+  expect(r1.weekGrowthRate).toBe(300);
+  expect(r2.weekGrowthRate).toBe(800);
 });
