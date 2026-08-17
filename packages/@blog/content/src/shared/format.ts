@@ -1,6 +1,6 @@
 /**
  * 본문 글자 수 기반 읽기 시간(분) — 한글/영문 혼재 가정.
- * `apps/blog/web/scripts/build-content.ts`와 같은 환산식 (500자/분).
+ * 로더(`src/post/repository.ts`의 `parsePost`)가 `readMin`을 계산할 때 쓴다 (500자/분).
  */
 export function estimateReadMin(content: string): number {
   return Math.max(1, Math.ceil(content.length / 500));

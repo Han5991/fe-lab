@@ -112,8 +112,8 @@ export type SeriesColorKey = 'accent' | 'marker' | 'moss';
 export interface RegistriesConfig {
   /**
    * 이름으로 부를 수 있는 다이어그램 목록. 컴포넌트 매핑은
-   * `src/components/diagram/registry.ts`가 갖고, 검증(lint:posts)과 렌더가
-   * 이 목록을 공유한다 (domain/post/diagramNames.ts 참고).
+   * 앱의 `src/components/diagram/registry.ts`가 갖고, 검증(lint:posts)과 렌더가
+   * 이 목록을 공유한다 (`src/post/diagramNames.ts` 참고).
    */
   diagramNames: readonly string[];
   /** 코드 펜스 라벨 허용 목록. 기본값은 prismLanguages.ts에서 파생 */

@@ -38,7 +38,7 @@ import type { Issue, PostRecord, ValidateOptions } from './shared';
 import { resolveSeverity } from './rules';
 
 /**
- * 허용 키의 단일 출처는 **서술자 테이블**(domain/post/frontmatterSchema.ts)입니다.
+ * 허용 키의 단일 출처는 **서술자 테이블**(src/post/frontmatterSchema.ts)입니다.
  * 예전에는 여기 손으로 쓴 Set이 따로 있어 `RawFrontmatter`와 어긋날 수 있었습니다
  * (실제로 순서가 달랐고, 어긋나도 아무것도 깨지지 않았습니다).
  *
@@ -479,7 +479,7 @@ const heroChain: Chain = ({ record: { data, relPath }, raw, options }) => {
       line: findFrontmatterLine(raw, 'hero'),
       severity: resolveSeverity('unknown-hero-diagram', data, options),
       rule: 'unknown-hero-diagram',
-      message: `\`hero\`는 등록된 다이어그램 이름이어야 합니다 (${DIAGRAM_NAMES.join(', ')}). 새 다이어그램이라면 domain/post/diagramNames.ts와 src/components/diagram/registry.ts에 먼저 등록하세요: ${JSON.stringify(data['hero'])}`,
+      message: `\`hero\`는 등록된 다이어그램 이름이어야 합니다 (${DIAGRAM_NAMES.join(', ')}). 새 다이어그램이라면 @blog/content의 src/shared/contentValues.ts(DEFAULT_DIAGRAM_NAMES)와 앱의 src/components/diagram/registry.ts에 먼저 등록하세요: ${JSON.stringify(data['hero'])}`,
     },
   ];
 };

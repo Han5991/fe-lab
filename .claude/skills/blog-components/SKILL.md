@@ -90,13 +90,17 @@ frontmatter 한 줄. **등록된 이름만** 받는다(선언형 태그는 히�
 hero: deploy-pipeline
 ```
 
-등록된 이름은 `apps/blog/web/src/components/diagram/registry.ts` 에 있고,
-오타는 `lint:posts` 가 `unknown-hero-diagram` 에러로 잡는다.
+등록된 **이름 목록**은 `@blog/content`의 `src/post/diagramNames.ts`(값은
+`src/shared/contentValues.ts`의 `DEFAULT_DIAGRAM_NAMES`)에, 이름 → 컴포넌트 매핑은
+`apps/blog/web/src/components/diagram/registry.ts` 에 있다. 오타는 `lint:posts` 가
+`unknown-hero-diagram` 에러로 잡는다.
 
 ### 선언형으로 안 되는 그림
 
 떨어진 두 노드를 직접 잇거나, 되돌아오는 화살표·분기·그룹 박스가 필요하면 코드로 간다.
-컴포넌트 파일 1개 + `registry.ts` 등록 2줄. 절차는 `design/DIAGRAM_AUTHORING.md`.
+컴포넌트 파일 1개 + `@blog/content`의 `src/shared/contentValues.ts`(`DEFAULT_DIAGRAM_NAMES`)에
+이름 한 줄 + `registry.ts`의 `DIAGRAMS`에 한 줄(레지스트리 타입이 `Record<DiagramName, …>`라
+하나만 하면 컴파일이 막는다). 절차는 `design/DIAGRAM_AUTHORING.md`.
 
 ---
 
@@ -259,7 +263,8 @@ pnpm add typesense
 
 ## 디자인 규칙 (컴포넌트를 고칠 때)
 
-지금 유효한 규칙은 `CLAUDE.md`의 "디자인 시스템" 절과 토큰 정의(`blog-preset.ts`)다.
+지금 유효한 규칙은 `blog-design-system` 스킬(수치·근거)과 `CLAUDE.md`의 "디자인 시스템 ·
+저작 문법" 절(금지선), 그리고 토큰 정의(`blog-preset.ts`)다.
 `apps/blog/web/design/blog-redesign-handoff.md`에는 **왜 그렇게 정했는지**만 남아 있다 —
 착수 시점 초안이라 구현과 다른 값이 섞여 있으니(문서 안에 `⚠️` 표시) 수치의 근거로
 쓰지 말 것. (1:1 대조에 쓰던 `design-reference.html`은 구현 완료 후 삭제됐다.)

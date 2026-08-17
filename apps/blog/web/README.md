@@ -1,40 +1,154 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/pages/api-reference/create-next-app).
+# @blog/web — Frontend Lab 블로그 앱
 
-## Getting Started
+`https://blog.sangwook.dev`를 굽는 **Next.js 16 정적 사이트(SSG)** 앱이다. 원고는
+`apps/blog/posts/`(Markdown + `_series.yml`)에 있고, 그 원고를 읽고·검증하고·산출물을
+만드는 **콘텐츠 프레임워크는 `packages/@blog/content`** 로 떼어져 있다. 이 앱은 그
+프레임워크의 소비자이며, 화면·런타임(Supabase·검색·테마·댓글)·배포 산출물만 담당한다.
 
-First, run the development server:
+운영 규칙(발행 판정, frontmatter 계약, SEO 게이트, 디자인 금지선)은 루트
+[`CLAUDE.md`](../../../CLAUDE.md)의 "Blog Architecture" 절이 단일 출처다. 이 문서는
+**코드가 어떻게 놓여 있고 어떻게 흐르는지**만 다룬다.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+---
+
+## 1. 큰 그림
+
+```
+apps/blog/posts/**            ← Markdown 원고 + _series.yml (워크스페이스 아님)
+        │  읽기(gray-matter) · 공개 판정 · 시리즈 · URL 계약 · SEO DTO
+        ▼
+packages/@blog/content         ← 소스 익스포트 패키지. 문 두 개: `@blog/content` · `@blog/content/seo`
+        │                          + 빌드 스크립트(src/scripts/*, API가 아니라 실행 파일)
+        ▼
+apps/blog/web  (이 앱)
+  ├─ prebuild  = build-content.ts --strict   (validate-posts 게이트 → 병렬 8개: sync·sitemap·rss·
+  │                                            og-images·thumbnails·search-index·llms-full·llms)
+  ├─ next build (output: 'export')            → out/
+  └─ check-seo                                (out/ HTML의 SEO 계약 검사 — 빌드의 마지막 게이트)
+        │
+        ▼
+GitHub Pages (deploy-blog.yml)   +   런타임: Supabase(조회수·Admin·Analytics) · Giscus · GA4/GTM
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- **정적 산출물**: `output: 'export'`(개발 모드에서는 해제), `trailingSlash: true` + `skipTrailingSlashRedirect: true` 짝, `images.unoptimized: true`. 내부 href는 스스로 후행 슬래시를 단다(`postPath`·`archivePath`).
+- **동적 기능**만 Supabase — 조회수 RPC, 조회 이력, Admin Google OAuth, Analytics RPC(Edge Function 경유).
+- **검증은 두 층** — `validate-posts`(frontmatter 원문, prebuild에서 `--strict`)와 `check-seo`(최종 HTML). 둘 다 `pnpm build` 안에 있어 로컬·PR CI·배포가 같은 검사를 지난다.
 
-You can start editing the page by modifying `pages/index.tsx`. The page auto-updates as you edit the file.
+---
 
-[API routes](https://nextjs.org/docs/pages/building-your-application/routing/api-routes) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.ts`.
+## 2. 디렉터리 구조와 레이어
 
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/pages/building-your-application/routing/api-routes) instead of React pages.
+```
+apps/blog/web/
+├─ src/                 app 레이어 (Next App Router · 컴포넌트 · 훅 · 스타일)
+│  ├─ app/              라우트 — /, /posts/, /posts/[...slug]/, /series/, /about/, /privacy/, /admin/**
+│  ├─ components/       blog(목록·아카이브) · post(상세·markdown 커스텀 태그) · diagram · home · admin · mobile · search · preview · shared · Rail · Layout …
+│  ├─ hooks/            useTheme · useViewCount · useRecentViews · useAdminViews · useAnalyticsOverview · usePostDetailStats · useAdminLogout
+│  └─ styles/globals.css
+├─ domain/analytics/    analytics 레이어 — 순수 계산(service) + 저장소(repository·adminRepository) + 배럴 2개(index · admin)
+├─ lib/platform/        platform 레이어 — Supabase 어댑터(client · publicClient · adminApi · database.types)
+├─ supabase/            로컬 Supabase 프로젝트 — config.toml · migrations/(8) · functions/admin-analytics · seed.sql
+├─ public/              robots.txt · favicon · og-default.jpg … (+ 빌드가 생성하는 sitemap/rss/search-index/llms/og/thumbs/posts는 .gitignore)
+├─ design/              DIAGRAM_AUTHORING.md(현행) · blog-redesign-handoff.md · github-style-reference.md(둘 다 이력)
+├─ next.config.ts · panda.config.ts · postcss.config.cjs · vitest.config.mts · vitest.setup.ts
+├─ tsconfig.json(프로덕션) · tsconfig.test.json(테스트) · eslint.config.mjs · turbo.json · vercel.json · env.d.ts
+└─ .env.production      (커밋된 유일한 env — Supabase URL/anon key, Giscus)
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/pages/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+`@/` 별칭은 **앱 루트**를 가리킨다(`tsconfig.json` `paths: {"@/*": ["./*"]}`) — `@/src/components/...`, `@/domain/analytics`, `@/lib/platform/client`. vitest alias도 같다.
 
-## Learn More
+### 레이어 경계 — 컨벤션이 아니라 lint
 
-To learn more about Next.js, take a look at the following resources:
+`eslint.config.mjs`의 `eslint-plugin-boundaries`가 **폴더 단위 element**로 의존 방향을 강제한다(`domain`·`lib`·`src` 세 폴더에만 건다). 기준 경로는 워크스페이스 루트 — `@blog/content`가 pnpm 심링크 realpath로 해석되기 때문.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn-pages-router) - an interactive Next.js tutorial.
+| element (아래 → 위) | 폴더                     | 가져올 수 있는 것                                                                                             |
+| :------------------ | :----------------------- | :------------------------------------------------------------------------------------------------------------ |
+| `content-pkg`       | `packages/@blog/content` | (이 앱에서는 외부 패키지처럼 보인다 — 내부 경계는 패키지 자신의 eslint 설정이 강제)                           |
+| `platform`          | `lib/platform`           | 외부 `@supabase/supabase-js`·`@supabase/postgrest-js`만                                                       |
+| `analytics`         | `domain/analytics`       | `platform`, `content-pkg`(날짜 유틸 등)                                                                       |
+| `app`               | `src`                    | `platform`, `analytics`, `content-pkg`, 임의 외부 패키지. **node 코어 금지** — fs는 `@blog/content` 로더의 일 |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+추가 규칙: 프로덕션 코드는 `*.test.*`를 import 못 함 / `src`는 `domain/*/…Repository`를 직접 찌르지 말고 배럴(`@/domain/analytics`, `@/domain/analytics/admin`)로 / `src`에서 `client.from()`·`.rpc()` 직접 호출 금지(`no-restricted-syntax`) / `domain`은 `src`를, `lib`은 `domain`·`src`를 import 못 함.
 
-## Deploy on Vercel
+`lint`는 `--max-warnings=0`이고, `noInlineConfig: true` + `@eslint-community/eslint-comments/no-use`로 **인라인 `eslint-disable` 주석이 전면 금지**다. 예외는 주석이 아니라 `eslint.config.mjs`에 `files` 스코프로 적는다.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### tsconfig 분할
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/pages/building-your-application/deploying) for more details.
+`tsconfig.json`(프로덕션)은 `strict`에 더해 `noUncheckedIndexedAccess`·`noPropertyAccessFromIndexSignature`·`exactOptionalPropertyTypes`·`verbatimModuleSyntax`·`erasableSyntaxOnly` 등을 켠다. `tsconfig.test.json`은 이를 extends하되 include를 테스트 파일로 뒤집고 **앞의 세 플래그만 끈다**. `check-types`는 두 프로그램을 다 돈다. ESLint의 타입 정보 룰도 같은 분할을 따른다(프로덕션은 `projectService`, 테스트는 `project: tsconfig.test.json`).
+
+---
+
+## 3. 런타임 데이터 흐름
+
+- **글 상세** — `src/app/posts/[...slug]/page.tsx`(서버)가 `@blog/content`의 `getPostBySlug`·`getAdjacentPosts`·`getSeriesAdjacentPosts`·`resolveThumbnailUrl`·`isPostVisible`을 부르고, `generateMetadata`는 `@blog/content/seo`의 `buildPostSeo` DTO를 `nextMetadata.ts`로 1:1 변환한다. 본문은 `PostClient.tsx`가 `react-markdown`(`remark-gfm` → `rehypeCodeMeta` → `rehype-raw` → `rehype-slug`, **순서 고정** — `rehype-raw`가 hast `data.meta`를 버리므로 코드 펜스 메타를 먼저 `data-*`로 옮긴다)으로 렌더. 커스텀 소문자 태그(`callout`·`code-tabs`·`file-tree`·`figure`·`dialogue`·`metrics`·`timeline`·`diagram*`)는 `src/components/post/markdown/`·`diagram/`. 본문 `h1`은 `markdownHeadings.tsx`가 `h2`로 강등하며 RSS 렌더러와 같은 `HEADING_TAG_MAP`을 공유한다.
+- **조회수** — `useViewCount` → `@blog/content`의 `viewCookie`(6시간 쿨다운, RPC 전에 쿠키를 먼저 심어 두 탭 레이스 방지) → `domain/analytics/repository.incrementViewCount` → `lib/platform/publicClient`(PostgREST-only 경량 클라이언트)로 `increment_view_count` RPC.
+- **Admin** — `AdminLayoutClient` → `AdminGuard`(세션 `useSuspenseQuery`, dev에서만 bypass) → React Query 훅 → `@/domain/analytics/admin` 배럴 → `adminRepository` → `lib/platform/adminApi` → Supabase Edge Function `admin-analytics`(호출자 JWT를 `ADMIN_EMAIL`과 대조 후 `service_role`로 RPC). 글 목록은 빌드가 만든 `/admin-posts-index.json`. `domain/analytics/index.ts`와 `admin.ts`를 **일부러 두 배럴**로 나눠 공개 페이지가 auth 세션 supabase-js를 끌고 오지 않게 한다.
+- **검색** — `SearchDialog`가 열릴 때 `/search-index.json`(빌드 산출물)을 fetch + localStorage 최근 본 글.
+- **테마** — `layout.tsx`의 pre-paint 인라인 스크립트(쿠키 → `prefers-color-scheme` → dark)가 `html[data-theme]`를 세팅, `useTheme`가 `useSyncExternalStore`로 구독, `setTheme`은 View Transitions로 전환.
+- **페이지 전환** — `@ssgoi/react`(`PageTransition.tsx`): 썸네일 있는 글은 `/posts/{slug}` hero morph, 없으면 fade.
+- **댓글** — Giscus. `NEXT_PUBLIC_GISCUS_*` 4개가 모두 있을 때만 렌더.
+
+---
+
+## 4. 스크립트
+
+모두 `apps/blog/web`에서 실행. 콘텐츠 스크립트는 패키지에 있는 파일을 **경로로** 실행한다(`npx tsx node_modules/@blog/content/src/scripts/…`) — 그래서 `@blog/content`의 `cliEntry.ts`가 pnpm 심링크와 ESM realpath 차이를 흡수한다.
+
+| 스크립트                   | 하는 일                                                                                                                                     |
+| :------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------ |
+| `pnpm dev`                 | `supabase start`(Docker) → `next dev`. `predev:web`이 먼저 `build-content.ts`(경고 수준)를 돌린다. Next만 띄우려면 `pnpm dev:web`           |
+| `pnpm build`               | `prebuild`(`build-content.ts --strict`) → `next build` → `check-seo`. **이 셋이 한 덩어리** — CI·배포도 이 스크립트 하나를 부른다           |
+| `pnpm lint`                | `eslint . --max-warnings=0` (인라인 `eslint-disable` 금지)                                                                                  |
+| `pnpm check-types`         | `tsc -p tsconfig.json` + `tsc -p tsconfig.test.json`                                                                                        |
+| `pnpm test`                | `test:node`(`domain/**`·`lib/**`, `node --test`) → `test:vitest`(`src/**`, jsdom + RTL). `test:coverage`는 node 쪽 c8                       |
+| `pnpm lint:posts`          | frontmatter·본문 검증(수동, 경고 수준). prebuild에서는 같은 규칙이 `--strict`로 승격                                                        |
+| `pnpm check-seo`           | `out/` HTML 검사 — h1 1개, description 중복·길이, `<title>` 60자, canonical, og, img alt, `link-trailing-slash`, 산출물↔발행 글 정합성(7종) |
+| `pnpm new-post "제목"`     | 스캐폴딩. `--series` `--tags` `--scheduled` `--slug` `--status`                                                                             |
+| `pnpm supabase-start/stop` | 로컬 Supabase 기동/정지                                                                                                                     |
+
+`build-content.ts`는 **2단계** — 1단계 `validate-posts`(게이트), 2단계 `sync-posts`·`sitemap`·`rss`·`og-images`·`thumbnails`·`search-index`·`llms-full`·`llms` 8개 **병렬**. 각 스텝은 cwd에 기대지 않고 `contentPaths`로 경로를 푼다.
+
+---
+
+## 5. 환경 변수
+
+`env.d.ts`가 `NodeJS.ProcessEnv`에 선언한다(`noPropertyAccessFromIndexSignature` 아래서도 `process.env.X` 점 접근을 쓰기 위해 — Next는 멤버 표현식만 인라인한다).
+
+| 변수                                                                  | 용도                                 | 어디서 오나                            |
+| :-------------------------------------------------------------------- | :----------------------------------- | :------------------------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL` · `NEXT_PUBLIC_SUPABASE_ANON_KEY`          | Supabase 클라이언트                  | `.env.production` / 배포 시크릿        |
+| `NEXT_PUBLIC_ADMIN_EMAIL`                                             | Admin 가드                           | 배포 시크릿                            |
+| `NEXT_PUBLIC_GISCUS_REPO` · `_REPO_ID` · `_CATEGORY` · `_CATEGORY_ID` | 댓글                                 | `.env.production`                      |
+| `NEXT_PUBLIC_PR_COUNT`                                                | About의 머지 PR 수(없으면 상수 폴백) | 배포 워크플로가 GitHub에서 가져와 주입 |
+
+로컬 개발용 `.env.local`은 커밋하지 않는다(`.gitignore`의 `.env*`, 예외는 `.env.production`뿐).
+
+---
+
+## 6. 테스트
+
+- **`node --test`** (`domain/**`, `lib/**`): 순수 로직 — analytics service, publicClient가 supabase-js와 바이트 동일한 요청을 만드는지, adminApi 언래핑.
+- **Vitest + jsdom + RTL** (`src/**/*.{test,spec}.{ts,tsx}`): 컴포넌트·훅·라우트 헬퍼. `vitest.setup.ts`가 `next.config`를 읽어 `<Link>`가 실제 빌드와 같은 후행 슬래시 href를 내게 맞춘다.
+- 콘텐츠 계약(실제 `apps/blog/posts` 대상 불변식, 산출물 정합성, URL 인코딩 일관성)은 **`packages/@blog/content`** 의 테스트가 잠근다 — `pnpm --filter @blog/content test`.
+- `node --test '<glob>'`은 매치 0개여도 exit 0이다. 글롭을 고칠 땐 실행 개수를 확인할 것.
+
+---
+
+## 7. 배포 · CI
+
+- **PR / main push**: `.github/workflows/ci.yml` → 공용 `.github/actions/quality-checks`(turbo lint·check-types·test → `lint:posts` → `format:check` → `pnpm build --filter=@blog/web`).
+- **배포**: `.github/workflows/deploy-blog.yml` — `main` push(`apps/blog/**`·`packages/@blog/**`), 매일 KST 09:00 cron(예약 발행), 수동. quality-checks → 시크릿 주입 `--no-cache` 빌드 → `/posts/` 프리렌더 링크 개수 검증(CSR bail-out 회귀 가드) → GitHub Pages.
+- **Vercel 프리뷰**: `vercel.json` — `main`·`renovate/**` 비활성, `apps/blog`·`packages/@blog` 변경 없으면 `ignoreCommand`로 스킵.
+- **Supabase**: 스키마는 `supabase/migrations/`(조회수 테이블·이력·대시보드 RPC·KST 보정·권한 잠금 순), Admin RPC 프록시는 `supabase/functions/admin-analytics`.
+
+---
+
+## 8. 더 읽을 것
+
+| 무엇                                                      | 어디                                                                                          |
+| :-------------------------------------------------------- | :-------------------------------------------------------------------------------------------- |
+| 발행 판정 · frontmatter 계약 · SEO 게이트 · 디자인 금지선 | 루트 [`CLAUDE.md`](../../../CLAUDE.md) "Blog Architecture"                                    |
+| 콘텐츠 프레임워크 내부(레이어·`defineContent`·스크립트)   | [`packages/@blog/content/README.md`](../../../packages/@blog/content/README.md)               |
+| 색·글꼴·레일·코드 블록 테마                               | `.claude/skills/blog-design-system/SKILL.md`, `packages/@design-system/ui/src/blog-preset.ts` |
+| 본문 커스텀 태그 문법                                     | `.claude/skills/blog-components/SKILL.md`                                                     |
+| 다이어그램 저작 · `hero:` 등록법                          | [`design/DIAGRAM_AUTHORING.md`](design/DIAGRAM_AUTHORING.md)                                  |

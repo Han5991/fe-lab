@@ -5,7 +5,7 @@
  * 예전에는 generate-rss.ts가 react-dom/server와 app의 markdownHeadings까지 직접
  * import해서, RSS 빌더를 import하는 모든 곳(테스트 포함)이 React를 끌고 왔고
  * 레이어 경계(render-build → app)에 예외가 필요했다. 렌더러를 분리하고 헤딩
- * 강등은 공유 데이터(lib/shared/markdownHeadings.ts)에서 파생하므로 예외가
+ * 강등은 공유 데이터(src/shared/markdownHeadings.ts)에서 파생하므로 예외가
  * 필요 없다.
  */
 import { createElement, type ReactNode } from 'react';

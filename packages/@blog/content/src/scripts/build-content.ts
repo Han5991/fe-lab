@@ -60,7 +60,7 @@ export function buildPhases(flags: Flags): Step[][] {
       ];
   const generate: Step[] = [
     {
-      // .mjs지만 tsx로 돌린다 — 경로 설정(lib/shared/contentPaths.ts)을
+      // .mjs지만 tsx로 돌린다 — 경로 설정(src/shared/contentPaths.ts)을
       // import하는데, 순 node는 .mjs → 확장자 없는 .ts 체인을 해석하지 못한다.
       label: 'sync-posts',
       cmd: 'tsx',

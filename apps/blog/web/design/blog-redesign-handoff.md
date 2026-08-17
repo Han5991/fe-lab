@@ -11,7 +11,8 @@
 > | 무엇                      | 어디                                            |
 > | :------------------------ | :---------------------------------------------- |
 > | 색·크기·라운드 등 토큰    | `packages/@design-system/ui/src/blog-preset.ts` |
-> | 디자인 시스템 전반의 규칙 | `CLAUDE.md` 의 "디자인 시스템" 절               |
+> | 디자인 시스템 수치와 근거 | `.claude/skills/blog-design-system/SKILL.md`    |
+> | 디자인 금지선             | `CLAUDE.md` 의 "디자인 시스템 · 저작 문법" 절   |
 > | 다이어그램 저작법         | `apps/blog/web/design/DIAGRAM_AUTHORING.md`     |
 > | 마크다운 커스텀 태그      | `.claude/skills/blog-components/SKILL.md`       |
 >
@@ -165,12 +166,13 @@
 >
 > velite/contentlayer도, MDX 전환도 하지 않았다. 로더는 `gray-matter` +
 > `react-markdown` + `rehype-raw` 그대로이고, 커스텀 태그는 raw HTML로 처리한다
-> (§6 참고). CLAUDE.md가 "velite/contentlayer/MDX는 도입하지 않는다"로 못박고 있다.
+> (§6 참고). 루트 `AGENTS.md`가 "MDX/velite/contentlayer는 아니다"로 못박고 있다.
 >
 > frontmatter 스키마도 다르다. 실제 키는 `status` · `title` · `date` 를 필수로 하고
 > (`status` 가 없으면 아예 포스트로 취급하지 않는다), `series` 는 frontmatter가
 > 아니라 **폴더 경로**로 정해진다. 전체 목록은 CLAUDE.md의 frontmatter 표와
-> `@blog/content`(src/post/types.ts) 의 `RawFrontmatter` 에 있다.
+> `@blog/content`(`src/post/frontmatterSchema.ts`)의 서술자 테이블 — `RawFrontmatter`
+> 타입이 거기서 파생된다 — 에 있다.
 
 <details>
 <summary>원래 계획 (기록용)</summary>
@@ -200,7 +202,7 @@
 
 - ~~**시각 기준: `design-reference.html`**~~ — 구현 시 1:1 대조용으로 쓰던 파일이다.
   **구현이 끝나 삭제했다.** 지금의 기준은 구현된 화면 자체이고, 여기서 뽑아낸 수치는
-  `CLAUDE.md`의 "디자인 시스템" 절과 토큰 정의(`blog-preset.ts`)에 옮겨져 있다
+  `blog-design-system` 스킬과 토큰 정의(`blog-preset.ts`)에 옮겨져 있다
 - 스타일링은 기존 스택을 따른다. 기존 블로그가 Panda CSS 기반이면 그대로 사용 — 그대로 Panda CSS를 쓴다
 - 레퍼런스 사이트: antfu.me (구조), blog.maximeheckel.com (다이어그램 히어로), ishadeed.com (인라인 데모)
 - ~~이 문서의 "3. 디자인 토큰"과 "4. 다이어그램 문법"은 CLAUDE.md에 병합해도 좋다~~ — 병합했다.

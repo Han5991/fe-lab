@@ -85,7 +85,7 @@ export const TIMEZONE_UTC_OFFSET_MS = 9 * 60 * 60 * 1000;
 
 /**
  * 다이어그램 이름 기본 목록. 타입 유니언(DiagramName)이 여기서 파생된다.
- * 컴포넌트 매핑(`src/components/diagram/registry.ts`)이 클라이언트 그래프에
- * 있으므로 이름 목록도 값 모듈에 둔다 — domain/post/diagramNames.ts 참고.
+ * 컴포넌트 매핑(앱의 `src/components/diagram/registry.ts`)이 클라이언트 그래프에
+ * 있으므로 이름 목록도 값 모듈에 둔다 — `src/post/diagramNames.ts` 참고.
  */
 export const DEFAULT_DIAGRAM_NAMES = ['deploy-pipeline'] as const;

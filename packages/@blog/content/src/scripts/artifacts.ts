@@ -18,9 +18,9 @@ import { decodeUrlSafe } from '../shared/url';
  * 항목을 더하면 검사가 자동으로 붙고, 산출물이 없으면 `missing-artifact`로
  * 걸립니다.
  *
- * 위치가 domain/이 아니라 scripts/인 이유: 항목이 `out/` 기준 경로와 추출
- * 정규식을 들고 있는 **빌드 도구 관심사**라서다. domain에 두면 도메인이 빌드
- * 산출물 경로를 알게 된다.
+ * 위치가 post/(content 레이어)가 아니라 scripts/(build 레이어)인 이유: 항목이
+ * `out/` 기준 경로와 추출 정규식을 들고 있는 **빌드 도구 관심사**라서다. content에
+ * 두면 로더가 빌드 산출물 경로를 알게 된다.
  *
  * **레지스트리에 없는 산출물**: `public/thumbs/*.webp`는 파일명이
  * `{relativeDir}/{image}-thumb.webp`라 파일에서 글을 되돌릴 수 없어 글 단위
