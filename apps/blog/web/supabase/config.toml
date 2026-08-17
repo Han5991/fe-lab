@@ -132,7 +132,19 @@ enable_refresh_token_rotation = true
 # Requires enable_refresh_token_rotation = true.
 refresh_token_reuse_interval = 10
 # Allow/disallow new user signups to your project.
-enable_signup = true
+#
+# 이 프로젝트의 사용자는 관리자 한 명뿐이다(admin 판정은 ADMIN_EMAIL 과의 이메일 대조).
+# 프로덕션이 이미 false 이고, 로컬을 true 로 두면 `supabase config push` 를 돌렸을 때
+# 프로덕션에 가입이 열린다. 값을 맞춰 그 사고 경로를 없앤다.
+#
+# 로컬에서 잃는 것: 없다. 로컬 Google 로그인은 어차피 동작하지 않는다 —
+# config.toml 의 [auth.external.google] 이 env(GOOGLE_OAUTH_CLIENT_ID) 를 읽는데
+# 그 값은 .env.local 에 있고 그 파일은 Next.js 전용이라 Supabase CLI 가 읽지 않는다
+# (`supabase` 명령마다 "environment variable is unset" 경고가 뜨는 이유). seed.sql 도
+# auth.users 를 만들지 않는다.
+# 나중에 로컬 OAuth 를 실제로 붙이게 되면, 첫 로그인이 곧 가입이므로 이 값을 잠시
+# true 로 되돌려야 한다.
+enable_signup = false
 # Allow/disallow anonymous sign-ins to your project.
 enable_anonymous_sign_ins = false
 # Allow/disallow testing manual linking of accounts
@@ -167,7 +179,9 @@ web3 = 30
 
 [auth.email]
 # Allow/disallow new user signups via email to your project.
-enable_signup = true
+# 로그인 경로는 Google OAuth 하나뿐이다(src/app/admin/login/page.tsx). 이메일/비밀번호
+# 가입은 쓰지도 않고 프로덕션도 false 다 — 위 [auth] enable_signup 과 같은 이유로 맞춘다.
+enable_signup = false
 # If enabled, a user will be required to confirm any email change on both the old, and new email
 # addresses. If disabled, only the new email is required to confirm.
 double_confirm_changes = true
