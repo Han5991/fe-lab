@@ -63,7 +63,10 @@ enabled = true
 sql_paths = ["./seed.sql"]
 
 [realtime]
-enabled = true
+# 이 블로그는 Realtime을 쓰지 않는다. 공개 페이지 클라이언트(lib/platform/publicClient.ts)가
+# supabase-js 대신 postgrest-js만 쓰는 이유가 바로 이것이다 — realtime+phoenix가 번들에
+# 딸려오는데 앱 어디서도 호출하지 않는다. 로컬에서도 띄울 이유가 없다.
+enabled = false
 # Bind realtime via either IPv4 or IPv6. (default: IPv4)
 # ip_version = "IPv6"
 # The maximum length in bytes of HTTP request headers. (default: 4096)
@@ -91,7 +94,15 @@ port = 54324
 # sender_name = "Admin"
 
 [storage]
-enabled = true
+# 이 블로그는 Supabase Storage를 쓰지 않는다(코드 참조 0건). 이미지는 빌드 산출물로
+# public/ 에 들어가고 GitHub Pages가 서빙한다.
+#
+# 끄면 storage-api·imgproxy 이미지를 받지 않는다. 이게 로컬 기동 안정성에 직접 영향을
+# 준다 — supabase start 는 필요한 이미지를 전부 public.ecr.aws 에서 익명으로 받는데,
+# 받을 게 많을수록 rate limit(`toomanyrequests`)에 걸릴 확률이 올라간다. 실제로
+# 2026-08-17에 이것 때문에 기동이 여러 번 막혔다. 안 쓰는 서비스를 끄는 게 가장 확실한
+# 완화책이다.
+enabled = false
 # The maximum file size allowed (e.g. "5MB", "500KB").
 file_size_limit = "50MiB"
 
