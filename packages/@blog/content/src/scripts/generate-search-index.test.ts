@@ -1,5 +1,4 @@
-import assert from 'node:assert/strict';
-import { test } from 'node:test';
+import { expect, test } from 'vitest';
 import {
   buildAdminPostsIndex,
   buildPublicSearchIndex,
@@ -28,38 +27,36 @@ function makePost(over: Partial<PostData> = {}): PostData {
 
 test('toPlainText: 코드 블록 제거', () => {
   const raw = `before\n\`\`\`ts\nconst x = 1;\n\`\`\`\nafter`;
-  assert.equal(toPlainText(raw), 'before after');
+  expect(toPlainText(raw)).toBe('before after');
 });
 
 test('toPlainText: 이미지 마크업 제거', () => {
-  assert.equal(toPlainText('text ![alt](url) more'), 'text more');
+  expect(toPlainText('text ![alt](url) more')).toBe('text more');
 });
 
 test('toPlainText: 링크는 텍스트만 남김', () => {
-  assert.equal(
-    toPlainText('see [Next.js](https://nextjs.org)!'),
+  expect(toPlainText('see [Next.js](https://nextjs.org)!')).toBe(
     'see Next.js!',
   );
 });
 
 test('toPlainText: 마크다운 기호 제거', () => {
-  assert.equal(
-    toPlainText('## hello *world* `code` _emph_ ~strike~'),
+  expect(toPlainText('## hello *world* `code` _emph_ ~strike~')).toBe(
     'hello world code emph strike',
   );
 });
 
 test('toPlainText: HTML 태그가 정상적으로 제거됨', () => {
   // HTML 태그 제거 → 그 다음 마크다운 기호 제거 → 공백 정리 순서.
-  assert.equal(toPlainText('<div>hi</div><br/>there'), 'hi there');
+  expect(toPlainText('<div>hi</div><br/>there')).toBe('hi there');
 });
 
 test('toPlainText: 닫는 태그도 정상 처리', () => {
-  assert.equal(toPlainText('<span>x</span>'), 'x');
+  expect(toPlainText('<span>x</span>')).toBe('x');
 });
 
 test('toPlainText: 연속 공백 압축', () => {
-  assert.equal(toPlainText('a  \n\n  b'), 'a b');
+  expect(toPlainText('a  \n\n  b')).toBe('a b');
 });
 
 test('buildPublicSearchIndex: 필수 필드 모두 포함', () => {
@@ -74,8 +71,8 @@ test('buildPublicSearchIndex: 필수 필드 모두 포함', () => {
       content: 'hello world',
     }),
   ]);
-  assert.equal(idx.length, 1);
-  assert.deepEqual(idx[0], {
+  expect(idx.length).toBe(1);
+  expect(idx[0]).toStrictEqual({
     slug: 'a',
     title: 'A',
     date: '2026-01-01',
@@ -94,15 +91,15 @@ test('buildPublicSearchIndex: 결측 필드는 기본값', () => {
       series: undefined,
     }),
   ]);
-  assert.equal(idx[0].excerpt, '');
-  assert.deepEqual(idx[0].tags, []);
-  assert.equal(idx[0].series, null);
+  expect(idx[0].excerpt).toBe('');
+  expect(idx[0].tags).toStrictEqual([]);
+  expect(idx[0].series).toBe(null);
 });
 
 test('buildPublicSearchIndex: contentPreview는 CONTENT_PREVIEW_CHARS로 제한', () => {
   const long = 'x'.repeat(CONTENT_PREVIEW_CHARS + 1000);
   const idx = buildPublicSearchIndex([makePost({ content: long })]);
-  assert.equal(idx[0].contentPreview.length, CONTENT_PREVIEW_CHARS);
+  expect(idx[0].contentPreview.length).toBe(CONTENT_PREVIEW_CHARS);
 });
 
 test('buildAdminPostsIndex: status/scheduledDate 보존', () => {
@@ -114,25 +111,25 @@ test('buildAdminPostsIndex: status/scheduledDate 보존', () => {
       scheduledDate: '2026-06-01T00:00:00Z',
     }),
   ]);
-  assert.equal(idx[0].status, 'draft');
-  assert.equal(idx[0].scheduledDate, null);
-  assert.equal(idx[1].status, 'scheduled');
-  assert.equal(idx[1].scheduledDate, '2026-06-01T00:00:00Z');
+  expect(idx[0].status).toBe('draft');
+  expect(idx[0].scheduledDate).toBe(null);
+  expect(idx[1].status).toBe('scheduled');
+  expect(idx[1].scheduledDate).toBe('2026-06-01T00:00:00Z');
 });
 
 test('buildAdminPostsIndex: status를 그대로 전달 (published 폴백 없음)', () => {
   // 예전에는 `p.status || 'published'` 폴백이 있었습니다. status가 required가 된
   // 지금, 그 폴백은 draft를 published로 둔갑시킬 수 있는 fail-open 기본값입니다.
   const idx = buildAdminPostsIndex([makePost({ status: 'draft' })]);
-  assert.equal(idx[0].status, 'draft');
+  expect(idx[0].status).toBe('draft');
 });
 
 test('buildAdminPostsIndex: contentPreview 필드 없음 (보안/용량 분리)', () => {
   const idx = buildAdminPostsIndex([makePost({ content: 'should not leak' })]);
-  assert.ok(!('contentPreview' in idx[0]));
+  expect(!('contentPreview' in idx[0])).toBeTruthy();
 });
 
 test('CONTENT_PREVIEW_CHARS 상수가 1500자', () => {
   // 검색 인덱스 크기를 통제하는 핵심 상수. 회귀 잠금.
-  assert.equal(CONTENT_PREVIEW_CHARS, 1500);
+  expect(CONTENT_PREVIEW_CHARS).toBe(1500);
 });

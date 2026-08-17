@@ -1,5 +1,4 @@
-import assert from 'node:assert/strict';
-import { test } from 'node:test';
+import { expect, test } from 'vitest';
 import {
   validatePost,
   validateBodyHeadings,
@@ -45,96 +44,99 @@ function rules(
 // ── validatePost: frontmatter 규칙 ───────────────────────────────────────────
 
 test('validatePost: status 없으면 meta-file-skipped만', () => {
-  assert.deepEqual(rules({ title: '메타' }), ['meta-file-skipped']);
+  expect(rules({ title: '메타' })).toStrictEqual(['meta-file-skipped']);
 });
 
 test('validatePost: slug만 있고 status 없으면 meta-file-skipped (repository와 동일 판정)', () => {
-  assert.deepEqual(rules({ title: '메타', slug: 'x' }), ['meta-file-skipped']);
+  expect(rules({ title: '메타', slug: 'x' })).toStrictEqual([
+    'meta-file-skipped',
+  ]);
 });
 
 // ── 폐기된 published 필드 ────────────────────────────────────────────────────
 
 test('validatePost: published 필드가 남아 있으면 legacy-published-field 에러', () => {
-  assert.ok(
+  expect(
     rules({ title: 'x', published: true }).includes('legacy-published-field'),
-  );
-  assert.ok(
+  ).toBeTruthy();
+  expect(
     rules({ title: 'x', published: false }).includes('legacy-published-field'),
-  );
+  ).toBeTruthy();
 });
 
 test('validatePost: published만 있는 글을 meta-file-skipped로 조용히 넘기지 않는다', () => {
   // 예전 규칙에서는 포스트였던 글이 status 통일 후 빌드에서 통째로 사라지는데,
   // 경고(meta-file-skipped)로만 알리면 놓치기 쉽다. 반드시 에러여야 한다.
   const found = rules({ title: 'x', published: true });
-  assert.ok(found.includes('legacy-published-field'));
-  assert.ok(!found.includes('meta-file-skipped'));
+  expect(found.includes('legacy-published-field')).toBeTruthy();
+  expect(!found.includes('meta-file-skipped')).toBeTruthy();
 });
 
 test('validatePost: status와 published가 공존해도 에러 (published가 조용히 무시됨)', () => {
-  assert.ok(
+  expect(
     rules({ title: 'x', status: 'draft', published: true }).includes(
       'legacy-published-field',
     ),
-  );
+  ).toBeTruthy();
 });
 
 test('validatePost: 정상 글은 이슈 없음', () => {
-  assert.deepEqual(
+  expect(
     rules({
       title: 'x',
       status: 'published',
       date: '2025-01-01',
       excerpt: VALID_EXCERPT,
     }),
-    [],
-  );
+  ).toStrictEqual([]);
 });
 
 test('validatePost: title 누락 → missing-title', () => {
-  assert.ok(rules({ status: 'published' }).includes('missing-title'));
+  expect(rules({ status: 'published' }).includes('missing-title')).toBeTruthy();
 });
 
 test('validatePost: 잘못된 date → invalid-date', () => {
-  assert.ok(
+  expect(
     rules({ title: 'x', status: 'published', date: 'not-a-date' }).includes(
       'invalid-date',
     ),
-  );
+  ).toBeTruthy();
 });
 
 test('validatePost: offset 없는 datetime date → ambiguous-date', () => {
-  assert.ok(
+  expect(
     rules({
       title: 'x',
       status: 'published',
       date: '2026-06-01T09:00:00',
     }).includes('ambiguous-date'),
-  );
+  ).toBeTruthy();
 });
 
 test('validatePost: 잘못된 updatedAt → invalid-updated-at', () => {
-  assert.ok(
+  expect(
     rules({
       title: 'x',
       status: 'published',
       updatedAt: 'not-a-date',
     }).includes('invalid-updated-at'),
-  );
+  ).toBeTruthy();
 });
 
 test('validatePost: offset 없는 datetime updatedAt → ambiguous-updated-at', () => {
-  assert.ok(
+  expect(
     rules({
       title: 'x',
       status: 'published',
       updatedAt: '2026-06-01T09:00:00',
     }).includes('ambiguous-updated-at'),
-  );
+  ).toBeTruthy();
 });
 
 test('validatePost: 잘못된 status → invalid-status', () => {
-  assert.ok(rules({ title: 'x', status: 'foo' }).includes('invalid-status'));
+  expect(
+    rules({ title: 'x', status: 'foo' }).includes('invalid-status'),
+  ).toBeTruthy();
 });
 
 test('validatePost: status가 유효하지 않아도 나머지 검사를 계속한다', () => {
@@ -142,10 +144,10 @@ test('validatePost: status가 유효하지 않아도 나머지 검사를 계속�
   // 파일이라도 오타 하나 고칠 때마다 새 에러가 튀어나오지 않도록 한 번에 전부
   // 알려주기 위한 의도적 동작이라 테스트로 잠근다.
   const found = rules({ status: 'foo', tags: 'notarray' });
-  assert.ok(found.includes('invalid-status'));
-  assert.ok(found.includes('missing-title'));
-  assert.ok(found.includes('invalid-tags'));
-  assert.ok(!found.includes('meta-file-skipped'));
+  expect(found.includes('invalid-status')).toBeTruthy();
+  expect(found.includes('missing-title')).toBeTruthy();
+  expect(found.includes('invalid-tags')).toBeTruthy();
+  expect(!found.includes('meta-file-skipped')).toBeTruthy();
 });
 
 // ── date 필수 ────────────────────────────────────────────────────────────────
@@ -153,10 +155,12 @@ test('validatePost: status가 유효하지 않아도 나머지 검사를 계속�
 // 하다. 예전에는 없어도 조용히 통과했다.
 
 test('validatePost: date 누락 → missing-date', () => {
-  assert.ok(
+  expect(
     rules({ title: 'x', status: 'published' }).includes('missing-date'),
-  );
-  assert.ok(rules({ title: 'x', status: 'draft' }).includes('missing-date'));
+  ).toBeTruthy();
+  expect(
+    rules({ title: 'x', status: 'draft' }).includes('missing-date'),
+  ).toBeTruthy();
 });
 
 test('validatePost: scheduled인데 date가 없으면 missing-date (영원히 비공개)', () => {
@@ -167,88 +171,87 @@ test('validatePost: scheduled인데 date가 없으면 missing-date (영원히 �
     '---\ntitle: x\n---\n',
   );
   const found = issues.filter(i => i.rule === 'missing-date');
-  assert.equal(found.length, 1, 'missing-date가 정확히 하나여야 함(중복 없음)');
-  assert.match(found[0].message, /영원히 비공개/);
-  assert.ok(!issues.some(i => i.rule === 'scheduled-without-date'));
+  expect(found.length, 'missing-date가 정확히 하나여야 함(중복 없음)').toBe(1);
+  expect(found[0].message).toMatch(/영원히 비공개/);
+  expect(!issues.some(i => i.rule === 'scheduled-without-date')).toBeTruthy();
 });
 
 test('validatePost: scheduledDate만 있고 date가 없으면 missing-date', () => {
   // 공개 시각은 scheduledDate로 정해지지만 정렬·아카이브·표시는 여전히 date를 본다.
-  assert.ok(
+  expect(
     rules({
       title: 'x',
       status: 'scheduled',
       scheduledDate: '2026-06-01T09:00:00+09:00',
     }).includes('missing-date'),
-  );
+  ).toBeTruthy();
 });
 
 test('validatePost: scheduled + date만 있으면 이슈 없음 (date 폴백)', () => {
   // scheduledDate는 시각까지 지정할 때만 쓰는 선택 필드.
   // visibility.ts가 date를 공개 시각으로 쓰므로 date만으로 충분하다.
-  assert.deepEqual(
+  expect(
     rules({
       title: 'x',
       status: 'scheduled',
       date: '2026-06-01',
       excerpt: VALID_EXCERPT,
     }),
-    [],
-  );
+  ).toStrictEqual([]);
 });
 
 test('validatePost: 무따옴표 scheduledDate(YAML Date) → unquoted-scheduled-date', () => {
   // 무따옴표 datetime은 YAML이 Date로 파싱 → repository가 버림 → 공개 시각이
   // date(KST 자정)로 폴백 → 의도(09:00+09:00)보다 9시간 일찍 공개된다.
-  assert.ok(
+  expect(
     rules({
       title: 'x',
       status: 'scheduled',
       date: '2026-06-01',
       scheduledDate: new Date('2026-06-01T09:00:00+09:00'),
     }).includes('unquoted-scheduled-date'),
-  );
+  ).toBeTruthy();
 });
 
 test('validatePost: 문자열 아닌 slug/excerpt/thumbnail → non-string-field', () => {
   // slug가 무시되면 파일 경로 기반 slug로 대체되어 URL이 조용히 바뀐다.
-  assert.ok(
+  expect(
     rules({ title: 'x', status: 'published', slug: 123 }).includes(
       'non-string-field',
     ),
-  );
-  assert.ok(
+  ).toBeTruthy();
+  expect(
     rules({ title: 'x', status: 'published', excerpt: 123 }).includes(
       'non-string-field',
     ),
-  );
-  assert.ok(
+  ).toBeTruthy();
+  expect(
     rules({ title: 'x', status: 'published', thumbnail: 123 }).includes(
       'non-string-field',
     ),
-  );
+  ).toBeTruthy();
 });
 
 test('validatePost: scheduledDate가 잘못됨 → invalid-scheduled-date', () => {
-  assert.ok(
+  expect(
     rules({ title: 'x', status: 'scheduled', scheduledDate: 'bad' }).includes(
       'invalid-scheduled-date',
     ),
-  );
+  ).toBeTruthy();
 });
 
 test('validatePost: scheduledDate offset 없음 → ambiguous-scheduled-date', () => {
-  assert.ok(
+  expect(
     rules({
       title: 'x',
       status: 'scheduled',
       scheduledDate: '2026-06-01T09:00:00',
     }).includes('ambiguous-scheduled-date'),
-  );
+  ).toBeTruthy();
 });
 
 test('validatePost: scheduledDate offset 명시 → 이슈 없음', () => {
-  assert.deepEqual(
+  expect(
     rules({
       title: 'x',
       status: 'scheduled',
@@ -256,16 +259,15 @@ test('validatePost: scheduledDate offset 명시 → 이슈 없음', () => {
       scheduledDate: '2026-06-01T09:00:00+09:00',
       excerpt: VALID_EXCERPT,
     }),
-    [],
-  );
+  ).toStrictEqual([]);
 });
 
 test('validatePost: tags가 배열 아님 → invalid-tags', () => {
-  assert.ok(
+  expect(
     rules({ title: 'x', status: 'published', tags: 'notarray' }).includes(
       'invalid-tags',
     ),
-  );
+  ).toBeTruthy();
 });
 
 test('validatePost: 알 수 없는 frontmatter 키 → unknown-frontmatter-key (경고)', () => {
@@ -274,13 +276,13 @@ test('validatePost: 알 수 없는 frontmatter 키 → unknown-frontmatter-key (
     '---\n---\n',
   );
   const unknown = issues.find(i => i.rule === 'unknown-frontmatter-key');
-  assert.ok(unknown, 'unknown-frontmatter-key 이슈가 있어야 함');
-  assert.equal(unknown.severity, 'warning');
+  expect(unknown, 'unknown-frontmatter-key 이슈가 있어야 함').toBeTruthy();
+  expect(unknown?.severity).toBe('warning');
   // 허용 키 목록은 손 목록이 아니라 서술자 테이블(단일 출처)에서 온다.
-  assert.ok(
-    unknown.message.includes(FRONTMATTER_KEYS.join(', ')),
+  expect(
+    unknown?.message.includes(FRONTMATTER_KEYS.join(', ')),
     '허용 키 안내가 서술자 테이블 순서와 같아야 함',
-  );
+  ).toBeTruthy();
 });
 
 test('unknown-frontmatter-key: 일부러 뺀 키는 오타 안내 대신 거부 사유를 알린다', () => {
@@ -290,10 +292,10 @@ test('unknown-frontmatter-key: 일부러 뺀 키는 오타 안내 대신 거부 
     '---\n---\n',
   );
   const found = issues.find(i => i.rule === 'unknown-frontmatter-key');
-  assert.ok(found, 'unknown-frontmatter-key 이슈가 있어야 함');
-  assert.equal(found.severity, 'warning');
-  assert.match(found.message, /일부러 받지 않는/);
-  assert.match(found.message, /excerpt/);
+  expect(found, 'unknown-frontmatter-key 이슈가 있어야 함').toBeTruthy();
+  expect(found?.severity).toBe('warning');
+  expect(found?.message).toMatch(/일부러 받지 않는/);
+  expect(found?.message).toMatch(/excerpt/);
 });
 
 test('unknown-frontmatter-key: series/order도 거부 사유를 알린다', () => {
@@ -302,23 +304,23 @@ test('unknown-frontmatter-key: series/order도 거부 사유를 알린다', () =
       rec({ title: 'x', status: 'published', [key]: 'x' }),
       '---\n---\n',
     ).find(i => i.rule === 'unknown-frontmatter-key');
-    assert.ok(found, `${key}에 unknown-frontmatter-key 이슈가 없다`);
+    if (!found) throw new Error(`${key}에 unknown-frontmatter-key 이슈가 없다`);
     return found.message;
   };
-  assert.match(messageFor('series'), /폴더 경로로 결정/);
-  assert.match(messageFor('order'), /_series\.yml/);
+  expect(messageFor('series')).toMatch(/폴더 경로로 결정/);
+  expect(messageFor('order')).toMatch(/_series\.yml/);
 });
 
 test('unknown-frontmatter-key: published는 내지 않는다 — legacy-published-field가 이미 정확히 알린다', () => {
   // "알 수 없는 키"는 사실과 어긋난다(모르는 키가 아니라 아는 폐기 키다).
   // 같은 키에 에러와 경고가 겹쳐 나오면 신호만 흐려진다.
   const found = rules({ title: 'x', status: 'published', published: true });
-  assert.ok(found.includes('legacy-published-field'));
-  assert.ok(!found.includes('unknown-frontmatter-key'));
+  expect(found.includes('legacy-published-field')).toBeTruthy();
+  expect(!found.includes('unknown-frontmatter-key')).toBeTruthy();
 });
 
 test('validatePost: 절대/http thumbnail은 fs 검사 없이 통과', () => {
-  assert.deepEqual(
+  expect(
     rules({
       title: 'x',
       status: 'published',
@@ -326,9 +328,8 @@ test('validatePost: 절대/http thumbnail은 fs 검사 없이 통과', () => {
       thumbnail: '/abs.png',
       excerpt: VALID_EXCERPT,
     }),
-    [],
-  );
-  assert.deepEqual(
+  ).toStrictEqual([]);
+  expect(
     rules({
       title: 'x',
       status: 'published',
@@ -336,15 +337,14 @@ test('validatePost: 절대/http thumbnail은 fs 검사 없이 통과', () => {
       thumbnail: 'https://cdn/x.png',
       excerpt: VALID_EXCERPT,
     }),
-    [],
-  );
+  ).toStrictEqual([]);
 });
 
 // ── hero (히어로 다이어그램 이름) ────────────────────────────────────────────
 
 test('validatePost: 등록된 hero 이름은 이슈 없음', () => {
   for (const name of DIAGRAM_NAMES) {
-    assert.deepEqual(
+    expect(
       rules({
         title: 'x',
         status: 'published',
@@ -352,9 +352,8 @@ test('validatePost: 등록된 hero 이름은 이슈 없음', () => {
         hero: name,
         excerpt: VALID_EXCERPT,
       }),
-      [],
       `등록된 이름인데 이슈 발생: ${name}`,
-    );
+    ).toStrictEqual([]);
   }
 });
 
@@ -369,20 +368,20 @@ test('validatePost: 미등록 hero 이름 → unknown-hero-diagram 에러', () =
     "---\ntitle: x\nhero: 'deploy-pipelnie'\n---\n",
   );
   const found = issues.find(i => i.rule === 'unknown-hero-diagram');
-  assert.ok(found, 'unknown-hero-diagram 이슈가 있어야 함');
-  assert.equal(found.severity, 'error');
-  assert.equal(found.line, 3);
+  expect(found, 'unknown-hero-diagram 이슈가 있어야 함').toBeTruthy();
+  expect(found?.severity).toBe('error');
+  expect(found?.line).toBe(3);
 });
 
 test('validatePost: 문자열 아닌 hero도 unknown-hero-diagram', () => {
-  assert.ok(
+  expect(
     rules({
       title: 'x',
       status: 'published',
       date: '2025-01-01',
       hero: 3,
     }).includes('unknown-hero-diagram'),
-  );
+  ).toBeTruthy();
 });
 
 test('validatePost: hero는 더 이상 unknown-frontmatter-key 경고를 내지 않는다', () => {
@@ -392,7 +391,7 @@ test('validatePost: hero는 더 이상 unknown-frontmatter-key 경고를 내지 
     date: '2025-01-01',
     hero: DIAGRAM_NAMES[0],
   });
-  assert.ok(!found.includes('unknown-frontmatter-key'));
+  expect(!found.includes('unknown-frontmatter-key')).toBeTruthy();
 });
 
 // ── detectDuplicateSlugs ─────────────────────────────────────────────────────
@@ -403,8 +402,8 @@ test('detectDuplicateSlugs: 명시 slug 충돌 → 양쪽 duplicate-slug', () =>
     rec({ slug: 'dup' }, { relPath: 'b.md' }),
   ];
   const issues = detectDuplicateSlugs(records);
-  assert.equal(issues.length, 2);
-  assert.ok(issues.every(i => i.rule === 'duplicate-slug'));
+  expect(issues.length).toBe(2);
+  expect(issues.every(i => i.rule === 'duplicate-slug')).toBeTruthy();
 });
 
 test('detectDuplicateSlugs: 명시 slug ↔ 파일명 기반 slug 충돌도 검출', () => {
@@ -413,7 +412,7 @@ test('detectDuplicateSlugs: 명시 slug ↔ 파일명 기반 slug 충돌도 검�
     rec({ slug: 'b' }, { relPath: 'a.md' }),
     rec({}, { relPath: 'b.md' }),
   ];
-  assert.equal(detectDuplicateSlugs(records).length, 2);
+  expect(detectDuplicateSlugs(records).length).toBe(2);
 });
 
 test('detectDuplicateSlugs: 충돌 없으면 빈 배열', () => {
@@ -421,7 +420,7 @@ test('detectDuplicateSlugs: 충돌 없으면 빈 배열', () => {
     rec({ slug: 'a' }, { relPath: 'a.md' }),
     rec({ slug: 'b' }, { relPath: 'b.md' }),
   ];
-  assert.deepEqual(detectDuplicateSlugs(records), []);
+  expect(detectDuplicateSlugs(records)).toStrictEqual([]);
 });
 
 // 렌더 계층(frontmatterSchema의 toStringArray)이 중복을 걷어내므로 화면은 멀쩡하지만,
@@ -432,17 +431,17 @@ test('validatePost: 중복 태그 → duplicate-tags 경고', () => {
     '---\ntitle: x\n---\n',
   );
   const dup = issues.find(i => i.rule === 'duplicate-tags');
-  assert.ok(dup, 'duplicate-tags 이슈가 있어야 함');
-  assert.equal(dup?.severity, 'warning');
-  assert.ok(dup?.message.includes('ci'));
+  expect(dup, 'duplicate-tags 이슈가 있어야 함').toBeTruthy();
+  expect(dup?.severity).toBe('warning');
+  expect(dup?.message.includes('ci')).toBeTruthy();
 });
 
 test('validatePost: 중복 없는 태그는 duplicate-tags를 내지 않는다', () => {
-  assert.ok(
+  expect(
     !rules({ title: 'x', status: 'published', tags: ['ci', 'build'] }).includes(
       'duplicate-tags',
     ),
-  );
+  ).toBeTruthy();
 });
 
 // ── 본문 h1 (body-h1) ────────────────────────────────────────────────────────
@@ -458,38 +457,36 @@ function bodyH1Rules(content: string, data: Record<string, unknown> = {}) {
 
 test('validateBodyHeadings: 본문 h1 → body-h1 경고', () => {
   const issues = bodyH1Rules('# 제목\n\n본문');
-  assert.equal(issues.length, 1);
-  assert.equal(issues[0].rule, 'body-h1');
-  assert.equal(issues[0].severity, 'warning');
+  expect(issues.length).toBe(1);
+  expect(issues[0].rule).toBe('body-h1');
+  expect(issues[0].severity).toBe('warning');
 });
 
 test('validateBodyHeadings: h2 이하는 잡지 않는다', () => {
-  assert.deepEqual(bodyH1Rules('## 절\n\n### 소절\n\n#해시태그'), []);
+  expect(bodyH1Rules('## 절\n\n### 소절\n\n#해시태그')).toStrictEqual([]);
 });
 
 test('validateBodyHeadings: 코드 펜스 안의 `# 주석`은 헤딩이 아니다', () => {
   // Dockerfile·yaml 예제의 주석이 h1로 잡히면 고칠 수 없는 경고만 쌓인다.
-  assert.deepEqual(
+  expect(
     bodyH1Rules('```yaml\n# 워크플로우 주석\n on: push\n```\n\n본문'),
-    [],
-  );
+  ).toStrictEqual([]);
 });
 
 test('validateBodyHeadings: 펜스가 닫힌 뒤의 h1은 다시 잡는다', () => {
   const issues = bodyH1Rules('```sh\n# 주석\n```\n\n# 진짜 헤딩');
-  assert.equal(issues.length, 1);
-  assert.ok(issues[0].message.includes('진짜 헤딩'));
+  expect(issues.length).toBe(1);
+  expect(issues[0].message.includes('진짜 헤딩')).toBeTruthy();
 });
 
 test('validateBodyHeadings: 메타 노트(유효한 status 없음)는 검사하지 않는다', () => {
   // 빌드에서 통째로 제외되는 기획 문서라 렌더될 일이 없다.
-  assert.deepEqual(
+  expect(
     validateBodyHeadings(
       rec({ title: '메타' }, { content: '# 제목' }),
       '---\ntitle: x\n---\n',
     ),
-    [],
-  );
+  ).toStrictEqual([]);
 });
 
 test('validateBodyHeadings: line은 frontmatter 오프셋을 더한 실제 파일 줄번호', () => {
@@ -499,30 +496,30 @@ test('validateBodyHeadings: line은 frontmatter 오프셋을 더한 실제 파�
     raw,
   );
   // frontmatter 4줄 + 본문 2번째 줄
-  assert.equal(issues[0].line, 6);
+  expect(issues[0].line).toBe(6);
 });
 
 // ── excerpt (meta description) ───────────────────────────────────────────────
 
 test('validatePost: excerpt 누락 → missing-excerpt 경고', () => {
-  assert.ok(
+  expect(
     rules({ title: 'x', status: 'published', date: '2025-01-01' }).includes(
       'missing-excerpt',
     ),
-  );
+  ).toBeTruthy();
 });
 
 test("validatePost: 빈 excerpt('')도 missing-excerpt — 자동 발췌로 폴백된다", () => {
   // frontmatterSchema.ts의 toOptionalString이 빈 문자열을 "값 없음"으로 떨어뜨린다.
   // new-post 스캐폴딩이 `excerpt: ''`를 깔아주므로 이걸 놓치면 새 글마다 재발한다.
-  assert.ok(
+  expect(
     rules({
       title: 'x',
       status: 'published',
       date: '2025-01-01',
       excerpt: '',
     }).includes('missing-excerpt'),
-  );
+  ).toBeTruthy();
 });
 
 test('validatePost: 너무 짧거나 긴 excerpt → excerpt-length 경고', () => {
@@ -532,38 +529,38 @@ test('validatePost: 너무 짧거나 긴 excerpt → excerpt-length 경고', () 
     date: '2025-01-01',
     excerpt: '짧음',
   });
-  assert.ok(short.includes('excerpt-length'));
-  assert.ok(
+  expect(short.includes('excerpt-length')).toBeTruthy();
+  expect(
     !short.includes('missing-excerpt'),
     '빈 값이 아니면 missing이 아니다',
-  );
+  ).toBeTruthy();
 
-  assert.ok(
+  expect(
     rules({
       title: 'x',
       status: 'published',
       date: '2025-01-01',
       excerpt: '가'.repeat(300),
     }).includes('excerpt-length'),
-  );
+  ).toBeTruthy();
 });
 
 // ── seoTitle (<title> 길이) ──────────────────────────────────────────────────
 
 test('validatePost: title이 길면 long-title 경고', () => {
-  assert.ok(
+  expect(
     rules({
       title: '가'.repeat(60),
       status: 'published',
       date: '2025-01-01',
       excerpt: VALID_EXCERPT,
     }).includes('long-title'),
-  );
+  ).toBeTruthy();
 });
 
 test('validatePost: seoTitle이 짧으면 title이 길어도 long-title이 아니다', () => {
   // <title>은 seoTitle로 조립되므로, 긴 title 자체는 문제가 아니다.
-  assert.ok(
+  expect(
     !rules({
       title: '가'.repeat(60),
       seoTitle: '짧은 제목',
@@ -571,11 +568,11 @@ test('validatePost: seoTitle이 짧으면 title이 길어도 long-title이 아�
       date: '2025-01-01',
       excerpt: VALID_EXCERPT,
     }).includes('long-title'),
-  );
+  ).toBeTruthy();
 });
 
 test('validatePost: seoTitle 자체가 길면 long-title', () => {
-  assert.ok(
+  expect(
     rules({
       title: '짧음',
       seoTitle: '가'.repeat(60),
@@ -583,19 +580,19 @@ test('validatePost: seoTitle 자체가 길면 long-title', () => {
       date: '2025-01-01',
       excerpt: VALID_EXCERPT,
     }).includes('long-title'),
-  );
+  ).toBeTruthy();
 });
 
 test('validatePost: 문자열 아닌 seoTitle → non-string-field', () => {
-  assert.ok(
+  expect(
     rules({ title: 'x', status: 'published', seoTitle: 123 }).includes(
       'non-string-field',
     ),
-  );
+  ).toBeTruthy();
 });
 
 test('validatePost: seoTitle은 알려진 frontmatter 키다', () => {
-  assert.ok(
+  expect(
     !rules({
       title: 'x',
       status: 'published',
@@ -603,7 +600,7 @@ test('validatePost: seoTitle은 알려진 frontmatter 키다', () => {
       seoTitle: '짧은 제목',
       excerpt: VALID_EXCERPT,
     }).includes('unknown-frontmatter-key'),
-  );
+  ).toBeTruthy();
 });
 
 // ── scanBodyLines (코드 펜스 추적) ───────────────────────────────────────────
@@ -615,37 +612,37 @@ const outside = (content: string) =>
     .map(l => l.text);
 
 test('scanBodyLines: 펜스 안쪽은 inFence, 바깥은 본문', () => {
-  assert.deepEqual(outside('앞\n```ts\ncode\n```\n뒤'), ['앞', '뒤']);
+  expect(outside('앞\n```ts\ncode\n```\n뒤')).toStrictEqual(['앞', '뒤']);
 });
 
 test('scanBodyLines: ```로 연 펜스는 ~~~로 닫히지 않는다', () => {
   // 마크다운을 다루는 글이 코드 예시로 ~~~를 품는 경우. 문자를 무시하고 개수만
   // 보면 여기서 펜스가 닫힌 것으로 오인해 뒤의 `# 주석`이 본문으로 새어 나온다.
-  assert.deepEqual(outside('```md\n~~~\n# 주석\n```\n본문'), ['본문']);
+  expect(outside('```md\n~~~\n# 주석\n```\n본문')).toStrictEqual(['본문']);
 });
 
 test('scanBodyLines: ~~~로 연 펜스는 ```로 닫히지 않는다', () => {
-  assert.deepEqual(outside('~~~md\n```\n# 주석\n~~~\n본문'), ['본문']);
+  expect(outside('~~~md\n```\n# 주석\n~~~\n본문')).toStrictEqual(['본문']);
 });
 
 test('scanBodyLines: 여는 펜스보다 짧은 펜스로는 닫히지 않는다', () => {
-  assert.deepEqual(outside('````md\n```\n# 주석\n````\n본문'), ['본문']);
+  expect(outside('````md\n```\n# 주석\n````\n본문')).toStrictEqual(['본문']);
 });
 
 test('scanBodyLines: 라벨이 붙은 펜스는 닫는 펜스가 아니다', () => {
-  assert.deepEqual(outside('```md\n```ts\n# 주석\n```\n본문'), ['본문']);
+  expect(outside('```md\n```ts\n# 주석\n```\n본문')).toStrictEqual(['본문']);
 });
 
 test('scanBodyLines: opensFence는 여는 줄에만, info string을 담는다', () => {
   const opens = scanBodyLines('```ts title="a.ts"\ncode\n```')
     .lines.filter(l => l.opensFence !== null)
     .map(l => l.opensFence);
-  assert.deepEqual(opens, ['ts title="a.ts"']);
+  expect(opens).toStrictEqual(['ts title="a.ts"']);
 });
 
 test('validateBodyHeadings: ``` 안의 ~~~ 때문에 펜스가 새지 않는다', () => {
   // 고칠 수 없는 body-h1 경고가 나오던 회귀.
-  assert.deepEqual(bodyH1Rules('```md\n~~~\n# 코드 예시 주석\n```\n'), []);
+  expect(bodyH1Rules('```md\n~~~\n# 코드 예시 주석\n```\n')).toStrictEqual([]);
 });
 
 // ── strict 모드 (prebuild 전용) ───────────────────────────────────────────────
@@ -658,20 +655,19 @@ function strictErrors(data: Record<string, unknown>): string[] {
 }
 
 test('strict: 발행 글의 excerpt 누락은 에러 (check-seo가 배포를 막기 전에 잡는다)', () => {
-  assert.ok(
+  expect(
     strictErrors({
       title: 'x',
       status: 'published',
       date: '2025-01-01',
     }).includes('missing-excerpt'),
-  );
+  ).toBeTruthy();
 });
 
 test('strict: draft는 여전히 경고 — 빌드에서 빠지므로 check-seo가 볼 일이 없다', () => {
-  assert.deepEqual(
+  expect(
     strictErrors({ title: 'x', status: 'draft', date: '2025-01-01' }),
-    [],
-  );
+  ).toStrictEqual([]);
 });
 
 test('strict가 아니면 발행 글도 경고 — predev가 이 검사를 돌기 때문', () => {
@@ -681,10 +677,7 @@ test('strict가 아니면 발행 글도 경고 — predev가 이 검사를 돌�
     rec({ title: 'x', status: 'published', date: '2025-01-01' }),
     '---\ntitle: x\n---\n',
   );
-  assert.deepEqual(
-    issues.filter(i => i.severity === 'error'),
-    [],
-  );
+  expect(issues.filter(i => i.severity === 'error')).toStrictEqual([]);
 });
 
 test('strict: long-title / excerpt-length도 발행 글에서는 에러', () => {
@@ -694,8 +687,8 @@ test('strict: long-title / excerpt-length도 발행 글에서는 에러', () => 
     date: '2025-01-01',
     excerpt: '짧음',
   });
-  assert.ok(found.includes('long-title'));
-  assert.ok(found.includes('excerpt-length'));
+  expect(found.includes('long-title')).toBeTruthy();
+  expect(found.includes('excerpt-length')).toBeTruthy();
 });
 
 test('strict: body-h1은 에러가 아니다 — 렌더가 h2로 강등해 배포를 막지 않는다', () => {
@@ -703,10 +696,7 @@ test('strict: body-h1은 에러가 아니다 — 렌더가 h2로 강등해 배�
     rec({ title: 'x', status: 'published' }, { content: '# 제목' }),
     '---\ntitle: x\n---\n',
   );
-  assert.deepEqual(
-    issues.map(i => i.severity),
-    ['warning'],
-  );
+  expect(issues.map(i => i.severity)).toStrictEqual(['warning']);
 });
 
 test('strict: 이미지 alt 누락은 발행 글에서 에러, draft에서는 경고', () => {
@@ -722,18 +712,16 @@ test('strict: 이미지 alt 누락은 발행 글에서 에러, draft에서는 �
       { strict: true },
     ).filter(i => i.rule === 'missing-image-alt');
 
-  assert.deepEqual(
-    withAltMissing('published').map(i => i.severity),
-    ['error'],
-  );
-  assert.deepEqual(
-    withAltMissing('draft').map(i => i.severity),
-    ['warning'],
-  );
+  expect(withAltMissing('published').map(i => i.severity)).toStrictEqual([
+    'error',
+  ]);
+  expect(withAltMissing('draft').map(i => i.severity)).toStrictEqual([
+    'warning',
+  ]);
 });
 
 test('alt가 있으면 missing-image-alt를 내지 않는다', () => {
-  assert.deepEqual(
+  expect(
     validateImageReferences(
       rec(
         { title: 'x', status: 'published' },
@@ -742,15 +730,14 @@ test('alt가 있으면 missing-image-alt를 내지 않는다', () => {
       '---\ntitle: x\n---\n',
       { strict: true },
     ),
-    [],
-  );
+  ).toStrictEqual([]);
 });
 
 // ── 이미지 검사 범위 (펜스 · raw HTML · 메타 노트) ──────────────────────────
 
 test('이미지: 코드 펜스 안의 `![](…)`는 코드 예시라 검사하지 않는다', () => {
   // 마크다운 사용법을 설명하는 글의 ```md 블록에서 고칠 수 없는 지적이 나오던 문제.
-  assert.deepEqual(
+  expect(
     validateImageReferences(
       rec(
         { title: 'x', status: 'published' },
@@ -759,21 +746,19 @@ test('이미지: 코드 펜스 안의 `![](…)`는 코드 예시라 검사하�
       '---\ntitle: x\n---\n',
       { strict: true },
     ),
-    [],
-  );
+  ).toStrictEqual([]);
 });
 
 test('이미지: 메타 노트(status 없음)는 alt를 검사하지 않는다', () => {
   // 빌드에서 통째로 빠지는 기획 문서라 렌더될 일이 없다.
   // validatePost·validateBodyHeadings와 같은 기준(isPostFile).
-  assert.deepEqual(
+  expect(
     validateImageReferences(
       rec({ title: '메타' }, { content: '![](https://example.com/a.png)' }),
       '---\ntitle: x\n---\n',
       { strict: true },
     ),
-    [],
-  );
+  ).toStrictEqual([]);
 });
 
 test('strict: status 없는 메타 노트는 발행 대상이 아니다 (에러로 올리지 않는다)', () => {
@@ -784,7 +769,7 @@ test('strict: status 없는 메타 노트는 발행 대상이 아니다 (에러�
     '---\ntitle: x\n---\n',
     { strict: true },
   );
-  assert.ok(!issues.some(i => i.rule === 'missing-image-alt'));
+  expect(!issues.some(i => i.rule === 'missing-image-alt')).toBeTruthy();
 });
 
 test('이미지: 한 줄에 이미지가 여럿이어도 각각 잡는다', () => {
@@ -795,7 +780,7 @@ test('이미지: 한 줄에 이미지가 여럿이어도 각각 잡는다', () =
     ),
     '---\ntitle: x\n---\n',
   );
-  assert.equal(found.length, 2);
+  expect(found.length).toBe(2);
 });
 
 // ── maskNonProse (검사 제외 구간) ─────────────────────────────────────────────
@@ -803,8 +788,8 @@ test('이미지: 한 줄에 이미지가 여럿이어도 각각 잡는다', () =
 test('maskNonProse: 길이를 유지한 채 덮는다 (줄 번호 계산이 어긋나지 않도록)', () => {
   const content = '앞\n```ts\ncode\n```\n뒤';
   const masked = maskNonProse(content);
-  assert.equal(masked.length, content.length);
-  assert.equal(masked.split('\n').length, content.split('\n').length);
+  expect(masked.length).toBe(content.length);
+  expect(masked.split('\n').length).toBe(content.split('\n').length);
 });
 
 test('이미지: 줄 번호는 실제 파일 줄을 가리킨다', () => {
@@ -816,7 +801,7 @@ test('이미지: 줄 번호는 실제 파일 줄을 가리킨다', () => {
     '---\ntitle: x\nstatus: published\n---\n',
   );
   // frontmatter 4줄 + 본문 3번째 줄
-  assert.equal(found[0].line, 7);
+  expect(found[0].line).toBe(7);
 });
 
 // ── setext h1 ────────────────────────────────────────────────────────────────
@@ -825,17 +810,17 @@ test('validateBodyHeadings: setext h1(`제목` + `===`)도 잡는다', () => {
   // ATX만 보면 setext h1은 조용히 h2로 강등되고 경고도 안 나와, 이 규칙이
   // 존재하는 이유(조용한 교정을 드러내기)가 무너진다.
   const issues = bodyH1Rules('제목입니다\n=====\n\n본문');
-  assert.equal(issues.length, 1);
-  assert.equal(issues[0].rule, 'body-h1');
-  assert.equal(issues[0].line, 5);
+  expect(issues.length).toBe(1);
+  expect(issues[0].rule).toBe('body-h1');
+  expect(issues[0].line).toBe(5);
 });
 
 test('validateBodyHeadings: setext h2(`---`)는 h1이 아니므로 잡지 않는다', () => {
-  assert.deepEqual(bodyH1Rules('절 제목\n-----\n\n본문'), []);
+  expect(bodyH1Rules('절 제목\n-----\n\n본문')).toStrictEqual([]);
 });
 
 test('validateBodyHeadings: 코드 펜스 안의 `===`는 setext가 아니다', () => {
-  assert.deepEqual(bodyH1Rules('```text\n제목\n===\n```\n'), []);
+  expect(bodyH1Rules('```text\n제목\n===\n```\n')).toStrictEqual([]);
 });
 
 // ── truncated-excerpt ────────────────────────────────────────────────────────
@@ -844,7 +829,7 @@ test('validatePost: 말줄임으로 끝나는 excerpt → truncated-excerpt', ()
   // check-seo는 최종 HTML만 보므로 자동 발췌가 샌 것과 구분하지 못하고 배포를
   // 막는다. 같은 조건을 여기서 먼저 잡아 로컬/CI 판정을 맞춘다.
   for (const suffix of ['...', '…']) {
-    assert.ok(
+    expect(
       rules({
         title: 'x',
         status: 'published',
@@ -852,19 +837,19 @@ test('validatePost: 말줄임으로 끝나는 excerpt → truncated-excerpt', ()
         excerpt: '가'.repeat(127) + suffix,
       }).includes('truncated-excerpt'),
       suffix,
-    );
+    ).toBeTruthy();
   }
 });
 
 test('validatePost: 정상적으로 끝나는 excerpt는 truncated-excerpt가 아니다', () => {
-  assert.ok(
+  expect(
     !rules({
       title: 'x',
       status: 'published',
       date: '2025-01-01',
       excerpt: VALID_EXCERPT,
     }).includes('truncated-excerpt'),
-  );
+  ).toBeTruthy();
 });
 
 // ── 잘못된 퍼센트 인코딩 (검증기가 죽지 않아야 한다) ─────────────────────────
@@ -879,10 +864,7 @@ test('이미지: 잘못된 퍼센트 시퀀스에도 검증기가 죽지 않는�
     ),
     '---\ntitle: x\n---\n',
   );
-  assert.deepEqual(
-    issues.map(i => i.rule),
-    ['missing-image'],
-  );
+  expect(issues.map(i => i.rule)).toStrictEqual(['missing-image']);
 });
 
 // ── duplicate-description ────────────────────────────────────────────────────
@@ -903,12 +885,12 @@ test('duplicate-description: excerpt가 같은 발행 글 둘을 잡는다', () 
     ],
     { strict: true },
   );
-  assert.deepEqual(
-    issues.map(i => i.rule),
-    ['duplicate-description', 'duplicate-description'],
-  );
-  assert.ok(issues.every(i => i.severity === 'error'));
-  assert.ok(issues[0].message.includes('b.md'));
+  expect(issues.map(i => i.rule)).toStrictEqual([
+    'duplicate-description',
+    'duplicate-description',
+  ]);
+  expect(issues.every(i => i.severity === 'error')).toBeTruthy();
+  expect(issues[0].message.includes('b.md')).toBeTruthy();
 });
 
 test('duplicate-description: excerpt를 비운 글은 자동 발췌로 비교한다', () => {
@@ -918,29 +900,27 @@ test('duplicate-description: excerpt를 비운 글은 자동 발췌로 비교한
     recFor('a.md', { title: 'A', status: 'published' }, intro + '본편 내용'),
     recFor('b.md', { title: 'B', status: 'published' }, intro + 'DI편 내용'),
   ]);
-  assert.equal(issues.length, 2);
-  assert.ok(issues.every(i => i.rule === 'duplicate-description'));
+  expect(issues.length).toBe(2);
+  expect(issues.every(i => i.rule === 'duplicate-description')).toBeTruthy();
 });
 
 test('duplicate-description: 서로 다르면 잡지 않는다', () => {
-  assert.deepEqual(
+  expect(
     detectDuplicateDescriptions([
       recFor('a.md', { title: 'A', status: 'published', excerpt: '요약 A' }),
       recFor('b.md', { title: 'B', status: 'published', excerpt: '요약 B' }),
     ]),
-    [],
-  );
+  ).toStrictEqual([]);
 });
 
 test('duplicate-description: draft와 메타 노트는 비교 대상이 아니다', () => {
-  assert.deepEqual(
+  expect(
     detectDuplicateDescriptions([
       recFor('a.md', { title: 'A', status: 'draft', excerpt: '같은 요약' }),
       recFor('b.md', { title: 'B', status: 'draft', excerpt: '같은 요약' }),
       recFor('c.md', { title: 'C', excerpt: '같은 요약' }),
     ]),
-    [],
-  );
+  ).toStrictEqual([]);
 });
 
 // ── 리뷰 6라운드: 마스킹·헤딩 판정 경계 ─────────────────────────────────────
@@ -948,31 +928,31 @@ test('duplicate-description: draft와 메타 노트는 비교 대상이 아니�
 test('validateBodyHeadings: 1~3칸 들여쓴 ATX h1도 잡는다', () => {
   // CommonMark는 앞 공백 3칸까지 허용한다. 그대로 h1로 렌더되는데 lint가
   // 조용하면 이 규칙이 존재하는 이유가 무너진다.
-  assert.equal(bodyH1Rules('   # 들여쓴 제목').length, 1);
+  expect(bodyH1Rules('   # 들여쓴 제목').length).toBe(1);
   // 4칸부터는 코드 블록이라 헤딩이 아니다.
-  assert.deepEqual(bodyH1Rules('    # 코드 블록'), []);
+  expect(bodyH1Rules('    # 코드 블록')).toStrictEqual([]);
 });
 
 test('validateBodyHeadings: 목록·표·인용 뒤의 `===`는 setext가 아니다', () => {
   // 문단 뒤에만 setext 밑줄이 붙는다. 이걸 안 가리면 손댈 수 없는 경고가 나온다.
   for (const line of ['- 항목', '| a | b |', '> 인용', '1. 항목', '<div>']) {
-    assert.deepEqual(bodyH1Rules(`${line}\n===`), [], line);
+    expect(bodyH1Rules(`${line}\n===`), line).toStrictEqual([]);
   }
 });
 
 test('scanBodyLines: 라벨 없는 펜스는 opensFence가 빈 문자열(null 아님)', () => {
   // "여는 줄이 아니다"(null)와 "열지만 라벨이 없다"('')는 다른 상태다.
   const { lines } = scanBodyLines('```\ncode\n```\n본문');
-  assert.equal(lines[0].opensFence, '');
-  assert.equal(lines[1].opensFence, null);
-  assert.equal(lines[3].opensFence, null);
+  expect(lines[0].opensFence).toBe('');
+  expect(lines[1].opensFence).toBe(null);
+  expect(lines[3].opensFence).toBe(null);
 });
 
 // ── 리뷰 7라운드 ─────────────────────────────────────────────────────────────
 
 test('validateBodyHeadings: 강조로 시작하는 문단 + `===`도 setext h1', () => {
   // `**중요한 제목**`을 목록 마커로 오인하면 진짜 h1을 놓친다.
-  assert.equal(bodyH1Rules('**중요한 제목**\n===').length, 1);
+  expect(bodyH1Rules('**중요한 제목**\n===').length).toBe(1);
 });
 
 // ── 리뷰 8라운드 ─────────────────────────────────────────────────────────────
@@ -982,7 +962,7 @@ test('validateBodyHeadings: 강조로 시작하는 문단 + `===`도 setext h1',
 test('body-h1 메시지는 원문 줄을 인용한다 (마스킹된 줄이 아니라)', () => {
   // 마스킹된 줄을 보여주면 ``# `useEffect` ``가 `: #`로만 찍혀 어디를 고칠지 모른다.
   const issues = bodyH1Rules('# `useEffect` 정리');
-  assert.ok(issues[0].message.endsWith('# `useEffect` 정리'));
+  expect(issues[0].message.endsWith('# `useEffect` 정리')).toBeTruthy();
 });
 
 // ── 리뷰 10라운드: 마스킹이 검사를 끄지 않는다 ───────────────────────────────
@@ -995,18 +975,14 @@ test('이미지: 짝 없는 백틱이 있어도 진짜 문제를 놓치지 않�
     ),
     '---\ntitle: x\n---\n',
   );
-  assert.deepEqual(
-    issues.map(i => i.rule),
-    ['missing-image'],
-  );
+  expect(issues.map(i => i.rule)).toStrictEqual(['missing-image']);
 });
 
 test('scanBodyLines: 끝까지 안 닫힌 펜스는 펜스로 치지 않는다', () => {
   // 닫는 ```를 빠뜨리면 그 아래 본문 전체가 코드로 취급돼 검사가 통째로 멈췄다.
-  assert.deepEqual(
+  expect(
     scanBodyLines('```bash\necho hi\n\n본문').lines.map(l => l.inFence),
-    [false, false, false, false],
-  );
+  ).toStrictEqual([false, false, false, false]);
 });
 
 test('이미지: 안 닫힌 펜스 뒤의 깨진 이미지를 놓치지 않는다', () => {
@@ -1017,28 +993,26 @@ test('이미지: 안 닫힌 펜스 뒤의 깨진 이미지를 놓치지 않는�
     ),
     '---\ntitle: x\n---\n',
   );
-  assert.deepEqual(
-    issues.map(i => i.rule),
-    ['missing-image'],
-  );
+  expect(issues.map(i => i.rule)).toStrictEqual(['missing-image']);
 });
 
 test('scanBodyLines: 산문의 `~~~~ 구분선`이 뒤를 삼키지 않는다', () => {
-  assert.ok(scanBodyLines('~~~~ 구분선\n\n본문').lines.every(l => !l.inFence));
+  expect(
+    scanBodyLines('~~~~ 구분선\n\n본문').lines.every(l => !l.inFence),
+  ).toBeTruthy();
 });
 
 test('scanBodyLines: CRLF 파일에서도 펜스를 인식한다', () => {
   // `.`은 `\r`을 먹지 못해, 예전 정규식은 CRLF 파일에서 펜스를 하나도 못 찾았다.
   // 그러면 아무것도 마스킹되지 않아 코드 예시가 전부 위반으로 잡힌다.
-  assert.equal(
+  expect(
     scanBodyLines('```md\r\n# 주석\r\n```\r').lines.filter(l => l.inFence)
       .length,
-    3,
-  );
+  ).toBe(3);
 });
 
 test('validateBodyHeadings: CRLF 파일의 펜스 안 `# 주석`은 헤딩이 아니다', () => {
-  assert.deepEqual(bodyH1Rules('```sh\r\n# 주석\r\n```\r'), []);
+  expect(bodyH1Rules('```sh\r\n# 주석\r\n```\r')).toStrictEqual([]);
 });
 
 // ── 리뷰 12라운드: 이미지 검사 범위 ──────────────────────────────────────────
@@ -1048,17 +1022,20 @@ test('maskNonProse: 코드 펜스만 덮는다 (짝 맞추기가 필요한 건 �
   // 어긋나면 멀쩡한 산문을 통째로 덮고 그 안의 진짜 문제를 삼켰다.
   const content = '앞 `코드` 와 <!-- 주석\n\n```ts\nx\n```\n\n뒤';
   const masked = maskNonProse(content);
-  assert.equal(masked.length, content.length);
-  assert.ok(masked.includes('`코드`'), '인라인 코드는 남아 있어야 한다');
-  assert.ok(masked.includes('<!-- 주석'), '주석도 남아 있어야 한다');
-  assert.ok(!masked.includes('\nx\n'), '펜스 안은 덮여야 한다');
+  expect(masked.length).toBe(content.length);
+  expect(
+    masked.includes('`코드`'),
+    '인라인 코드는 남아 있어야 한다',
+  ).toBeTruthy();
+  expect(masked.includes('<!-- 주석'), '주석도 남아 있어야 한다').toBeTruthy();
+  expect(!masked.includes('\nx\n'), '펜스 안은 덮여야 한다').toBeTruthy();
 });
 
 test('이미지: 산문에 인용한 <img> 태그는 검사하지 않는다', () => {
   // raw HTML의 alt는 check-seo가 최종 HTML에서 본다(그 검사는 pnpm build의
   // 마지막 단계라 로컬에서도 돈다). 여기서 또 보면, 렌더되면 <code> 텍스트일 뿐인
   // 인용 태그가 빌드를 막는다.
-  assert.deepEqual(
+  expect(
     validateImageReferences(
       rec(
         { title: 'x', status: 'published' },
@@ -1067,8 +1044,7 @@ test('이미지: 산문에 인용한 <img> 태그는 검사하지 않는다', ()
       '---\ntitle: x\n---\n',
       { strict: true },
     ),
-    [],
-  );
+  ).toStrictEqual([]);
 });
 
 test('이미지: 마크다운 빈 alt는 계속 잡는다 (감사에서 나온 4건)', () => {
@@ -1077,10 +1053,7 @@ test('이미지: 마크다운 빈 alt는 계속 잡는다 (감사에서 나온 4
     '---\ntitle: x\n---\n',
     { strict: true },
   );
-  assert.deepEqual(
-    issues.map(i => i.rule),
-    ['missing-image-alt'],
-  );
+  expect(issues.map(i => i.rule)).toStrictEqual(['missing-image-alt']);
 });
 
 test('이미지: 산문의 <!-- --> 짝이 어긋나도 깨진 이미지를 놓치지 않는다', () => {
@@ -1095,34 +1068,30 @@ test('이미지: 산문의 <!-- --> 짝이 어긋나도 깨진 이미지를 놓�
     ),
     '---\ntitle: x\n---\n',
   );
-  assert.deepEqual(
-    issues.map(i => i.rule),
-    ['missing-image'],
-  );
+  expect(issues.map(i => i.rule)).toStrictEqual(['missing-image']);
 });
 
 // ── 리뷰 13라운드 ────────────────────────────────────────────────────────────
 
 test('strict: 에러 범위는 check-seo가 보는 범위와 같다 (공개 전 예약 글은 경고)', () => {
   // 로컬이 CI보다 더 엄격하면, 그 글과 상관없는 이미 발행된 변경까지 배포가 막힌다.
-  assert.deepEqual(
+  expect(
     strictErrors({ title: 'x', status: 'scheduled', date: '2999-12-01' }),
-    [],
-  );
+  ).toStrictEqual([]);
   // 공개일이 지난 예약 글은 이미 빌드에 실리므로 에러.
-  assert.ok(
+  expect(
     strictErrors({
       title: 'x',
       status: 'scheduled',
       date: '2020-01-01',
     }).includes('missing-excerpt'),
-  );
+  ).toBeTruthy();
 });
 
 test('validateBodyHeadings: raw <h1>는 보지 않는다 (check-seo가 센다)', () => {
   // 산문에 인용한 `<h1>`까지 잡혀 고칠 수 없는 경고가 됐다.
-  assert.deepEqual(bodyH1Rules('`<h1>` 태그는 이렇게 씁니다.'), []);
-  assert.deepEqual(bodyH1Rules('<h1>raw 제목</h1>'), []);
+  expect(bodyH1Rules('`<h1>` 태그는 이렇게 씁니다.')).toStrictEqual([]);
+  expect(bodyH1Rules('<h1>raw 제목</h1>')).toStrictEqual([]);
 });
 
 test('안 닫힌 펜스는 unclosed-fence로 알리고 언어 라벨로 보지 않는다', () => {
@@ -1136,8 +1105,8 @@ test('안 닫힌 펜스는 unclosed-fence로 알리고 언어 라벨로 보지 �
     validateCodeFenceLanguages(record, raw),
   );
   const rulesFound = found.map(i => i.rule);
-  assert.ok(rulesFound.includes('unclosed-fence'));
-  assert.ok(!rulesFound.includes('unregistered-code-language'));
+  expect(rulesFound.includes('unclosed-fence')).toBeTruthy();
+  expect(!rulesFound.includes('unregistered-code-language')).toBeTruthy();
 });
 
 // ── 리뷰 14라운드: 원문 날짜 정규화 ─────────────────────────────────────────
@@ -1155,11 +1124,11 @@ test('strict: 무따옴표 date(YAML Date 객체)도 공개 판정에 쓰인다'
       .filter(i => i.rule === 'missing-excerpt')
       .map(i => i.severity);
 
-  assert.deepEqual(asError('2020-01-01'), ['error']);
-  assert.deepEqual(asError(new Date('2020-01-01')), ['error']);
+  expect(asError('2020-01-01')).toStrictEqual(['error']);
+  expect(asError(new Date('2020-01-01'))).toStrictEqual(['error']);
   // 미래 예약은 둘 다 경고
-  assert.deepEqual(asError('2999-01-01'), ['warning']);
-  assert.deepEqual(asError(new Date('2999-01-01')), ['warning']);
+  expect(asError('2999-01-01')).toStrictEqual(['warning']);
+  expect(asError(new Date('2999-01-01'))).toStrictEqual(['warning']);
 });
 
 test('duplicate-description: 공개 전 예약 글은 비교 대상이 아니다', () => {
@@ -1180,7 +1149,7 @@ test('duplicate-description: 공개 전 예약 글은 비교 대상이 아니다
     ],
     { strict: true },
   );
-  assert.deepEqual(issues, []);
+  expect(issues).toStrictEqual([]);
 });
 
 test('duplicate-description: 공개일이 지난 예약 글은 비교 대상이다', () => {
@@ -1200,8 +1169,8 @@ test('duplicate-description: 공개일이 지난 예약 글은 비교 대상이�
     ],
     { strict: true },
   );
-  assert.equal(issues.length, 2);
-  assert.ok(issues.every(i => i.severity === 'error'));
+  expect(issues.length).toBe(2);
+  expect(issues.every(i => i.severity === 'error')).toBeTruthy();
 });
 
 // ── 리뷰 15라운드 ────────────────────────────────────────────────────────────
@@ -1209,8 +1178,8 @@ test('duplicate-description: 공개일이 지난 예약 글은 비교 대상이�
 test('scanBodyLines: 안 닫힌 펜스 위치를 반환값으로 알린다', () => {
   // 예전엔 모듈 변수에 담아 뒀는데, 사이에 maskNonProse가 한 번만 끼어도
   // 그 값이 덮여 unclosed-fence 경고가 엉뚱한 줄을 가리켰다.
-  assert.equal(scanBodyLines('앞\n```bash\necho hi').unclosedFenceAt, 1);
-  assert.equal(scanBodyLines('```bash\necho hi\n```').unclosedFenceAt, null);
+  expect(scanBodyLines('앞\n```bash\necho hi').unclosedFenceAt).toBe(1);
+  expect(scanBodyLines('```bash\necho hi\n```').unclosedFenceAt).toBe(null);
 });
 
 test('unclosed-fence: 사이에 maskNonProse가 끼어도 줄 번호가 맞는다', () => {
@@ -1223,35 +1192,35 @@ test('unclosed-fence: 사이에 maskNonProse가 끼어도 줄 번호가 맞는�
   const issues = validateCodeFenceLanguages(record, raw).filter(
     i => i.rule === 'unclosed-fence',
   );
-  assert.equal(issues.length, 1);
+  expect(issues.length).toBe(1);
   // frontmatter 4줄 + 본문 2번째 줄
-  assert.equal(issues[0].line, 6);
+  expect(issues[0].line).toBe(6);
 });
 
 test('body-h1: 목록 항목의 이어지는 줄 뒤 `===`는 헤딩이 아니다', () => {
   // setext 밑줄은 목록 항목의 lazy continuation이 될 수 없다(CommonMark).
   // 렌더에 h1이 없으니 여기서 경고하면 글쓴이가 고칠 수 없다.
-  assert.deepEqual(bodyH1Rules('- 항목\n  이어지는 줄\n==='), []);
+  expect(bodyH1Rules('- 항목\n  이어지는 줄\n===')).toStrictEqual([]);
 });
 
 test('body-h1: 구분선 뒤의 `===`는 헤딩이 아니다', () => {
-  assert.deepEqual(bodyH1Rules('---\n==='), []);
+  expect(bodyH1Rules('---\n===')).toStrictEqual([]);
 });
 
 test('body-h1: 인용·표의 이어지는 줄 뒤 `===`도 헤딩이 아니다', () => {
-  assert.deepEqual(bodyH1Rules('> 인용\n이어지는 줄\n==='), []);
-  assert.deepEqual(bodyH1Rules('| a | b |\n| - | - |\n==='), []);
+  expect(bodyH1Rules('> 인용\n이어지는 줄\n===')).toStrictEqual([]);
+  expect(bodyH1Rules('| a | b |\n| - | - |\n===')).toStrictEqual([]);
 });
 
 test('body-h1: 블록이 빈 줄로 닫히면 그 뒤 setext h1은 다시 잡는다', () => {
   // 상태를 이어가느라 진짜 h1을 놓치면 규칙 자체가 무의미해진다.
-  assert.equal(bodyH1Rules('- 항목\n\n진짜 제목\n===').length, 1);
+  expect(bodyH1Rules('- 항목\n\n진짜 제목\n===').length).toBe(1);
 });
 
 test('body-h1: setext 헤딩은 문단을 소비한다 (경고 1건)', () => {
-  assert.equal(bodyH1Rules('제목\n===\n===').length, 1);
+  expect(bodyH1Rules('제목\n===\n===').length).toBe(1);
 });
 
 test('body-h1: 들여쓴 코드 블록 뒤의 `===`는 헤딩이 아니다', () => {
-  assert.deepEqual(bodyH1Rules('\n    코드 한 줄\n==='), []);
+  expect(bodyH1Rules('\n    코드 한 줄\n===')).toStrictEqual([]);
 });

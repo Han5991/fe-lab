@@ -1,5 +1,4 @@
-import assert from 'node:assert/strict';
-import { test } from 'node:test';
+import { expect, test } from 'vitest';
 import { sortByDateDesc } from './repository';
 import type { PostData } from './types';
 
@@ -26,7 +25,7 @@ test('sortByDateDesc: 날짜 내림차순(최신이 먼저)', () => {
     makePost({ slug: 'mid', date: '2026-02-01' }),
   ];
   const sorted = sortByDateDesc(posts).map(p => p.slug);
-  assert.deepEqual(sorted, ['new', 'mid', 'old']);
+  expect(sorted).toStrictEqual(['new', 'mid', 'old']);
 });
 
 test('sortByDateDesc: 같은 날짜는 slug로 안정적 2차 정렬 (비결정성 제거)', () => {
@@ -41,13 +40,13 @@ test('sortByDateDesc: 같은 날짜는 slug로 안정적 2차 정렬 (비결정�
     makePost({ slug: 'banana', date: '2026-01-01' }),
     makePost({ slug: 'apple', date: '2026-01-01' }),
   ];
-  assert.deepEqual(
-    sortByDateDesc(a).map(p => p.slug),
-    ['apple', 'banana', 'cherry'],
-  );
+  expect(sortByDateDesc(a).map(p => p.slug)).toStrictEqual([
+    'apple',
+    'banana',
+    'cherry',
+  ]);
   // 입력 순서가 달라도 결과는 동일 (readdir 순서 비의존)
-  assert.deepEqual(
-    sortByDateDesc(a).map(p => p.slug),
+  expect(sortByDateDesc(a).map(p => p.slug)).toStrictEqual(
     sortByDateDesc(b).map(p => p.slug),
   );
 });
@@ -67,10 +66,10 @@ test('sortByDateDesc: 2차 정렬 키는 originalSlug(파일 경로) — 표시 
       date: '2026-01-01',
     }),
   ];
-  assert.deepEqual(
-    sortByDateDesc(posts).map(p => p.originalSlug),
-    ['a-path', 'z-path'],
-  );
+  expect(sortByDateDesc(posts).map(p => p.originalSlug)).toStrictEqual([
+    'a-path',
+    'z-path',
+  ]);
 });
 
 test('sortByDateDesc: 파싱 불가 날짜가 섞여도 결정적 (입력 순서 비의존)', () => {
@@ -88,8 +87,7 @@ test('sortByDateDesc: 파싱 불가 날짜가 섞여도 결정적 (입력 순서
     mk('jan', '2026-01-01'),
   ];
   // 같은 글 집합이면 입력 순서가 달라도 정렬 결과가 동일해야 한다.
-  assert.deepEqual(
-    sortByDateDesc(set1).map(p => p.slug),
+  expect(sortByDateDesc(set1).map(p => p.slug)).toStrictEqual(
     sortByDateDesc(set2).map(p => p.slug),
   );
 });
@@ -99,10 +97,10 @@ test('sortByDateDesc: 한쪽만 날짜가 있으면 날짜 있는 글이 앞으�
     makePost({ slug: 'no-date', date: null }),
     makePost({ slug: 'has-date', date: '2026-01-01' }),
   ];
-  assert.deepEqual(
-    sortByDateDesc(posts).map(p => p.slug),
-    ['has-date', 'no-date'],
-  );
+  expect(sortByDateDesc(posts).map(p => p.slug)).toStrictEqual([
+    'has-date',
+    'no-date',
+  ]);
 });
 
 test('sortByDateDesc: 둘 다 날짜 없으면 제목순(코드포인트)', () => {
@@ -110,10 +108,10 @@ test('sortByDateDesc: 둘 다 날짜 없으면 제목순(코드포인트)', () =
     makePost({ slug: 'b', title: '나중', date: null }),
     makePost({ slug: 'a', title: '가나', date: null }),
   ];
-  assert.deepEqual(
-    sortByDateDesc(posts).map(p => p.title),
-    ['가나', '나중'],
-  );
+  expect(sortByDateDesc(posts).map(p => p.title)).toStrictEqual([
+    '가나',
+    '나중',
+  ]);
 });
 
 test('sortByDateDesc: 입력 배열을 변형하지 않음(순수 함수)', () => {
@@ -123,9 +121,8 @@ test('sortByDateDesc: 입력 배열을 변형하지 않음(순수 함수)', () =
   ];
   const before = posts.map(p => p.slug);
   sortByDateDesc(posts);
-  assert.deepEqual(
+  expect(
     posts.map(p => p.slug),
-    before,
     '원본 배열 순서가 보존되어야 함',
-  );
+  ).toStrictEqual(before);
 });

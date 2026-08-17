@@ -9,8 +9,7 @@
  * 쪽은 진입 가드(isCliEntry) 덕분에 import 가 안전하므로, 파일 끝의 배선
  * 테스트가 실제 모듈을 import 해 경로 상수와 tsx interop 을 잠급니다.
  */
-import assert from 'node:assert/strict';
-import { test } from 'node:test';
+import { expect, test, vi } from 'vitest';
 import {
   mkdtempSync,
   writeFileSync,
@@ -21,6 +20,20 @@ import {
 import { join, dirname } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
+
+/**
+ * 이 파일의 테스트는 전부 자식 node 프로세스를 spawnSync 로 돌린다. 아래
+ * `SPAWN_TIMEOUT_MS`(자식 프로세스 예산)보다 **테스트 타임아웃이 커야** 한다 —
+ * 작으면 러너가 먼저 테스트를 죽여서 자식 예산도, 그 뒤의 status 처리도 도달하지
+ * 못하고 원인이 "무엇이 멈췄는지" 대신 "테스트가 5초를 넘겼다"로만 남는다.
+ *
+ * node --test 시절엔 기본 타임아웃이 없어 이 문제가 없었다. vitest 기본값은
+ * 5초라 자식 예산(10초)이 그대로 도달 불가능해지므로 파일 단위로 올린다.
+ */
+vi.setConfig({ testTimeout: 15_000 });
+
+/** 자식 node 프로세스 예산. 위 testTimeout 보다 작아야 한다(실측 40ms 안팎). */
+const SPAWN_TIMEOUT_MS = 10_000;
 
 // ── inline wrapper builder ─────────────────────────────────────────────────
 
@@ -117,7 +130,7 @@ try {
 
   const result = spawnSync(process.execPath, [wrapperPath, ...extraArgs], {
     encoding: 'utf8',
-    timeout: 10_000,
+    timeout: SPAWN_TIMEOUT_MS,
   });
 
   try {
@@ -167,9 +180,12 @@ test('sync: src 파일이 dst로 복사됨', () => {
     writeFile(src, 'a/img.png', 'PNG');
 
     const result = runSync(src, dst);
-    assert.equal(result.status, 0, result.stderr);
-    assert.ok(existsSync(join(dst, 'a/img.png')), 'dst에 파일이 복사되어야 함');
-    assert.ok(result.stdout.includes('1 copied'), result.stdout);
+    expect(result.status, result.stderr).toBe(0);
+    expect(
+      existsSync(join(dst, 'a/img.png')),
+      'dst에 파일이 복사되어야 함',
+    ).toBeTruthy();
+    expect(result.stdout.includes('1 copied'), result.stdout).toBeTruthy();
   });
 });
 
@@ -181,16 +197,16 @@ test('orphan 삭제: src에 없는 dst 파일이 삭제됨', () => {
     writeFile(src, 'real.jpg', 'REAL');
 
     const result = runSync(src, dst);
-    assert.equal(result.status, 0, result.stderr);
-    assert.ok(
+    expect(result.status, result.stderr).toBe(0);
+    expect(
       !existsSync(join(dst, 'orphan.png')),
       'orphan 파일이 삭제되어야 함',
-    );
-    assert.ok(
+    ).toBeTruthy();
+    expect(
       existsSync(join(dst, 'real.jpg')),
       'src 파일은 dst에 복사되어야 함',
-    );
-    assert.ok(result.stdout.includes('1 removed'), result.stdout);
+    ).toBeTruthy();
+    expect(result.stdout.includes('1 removed'), result.stdout).toBeTruthy();
   });
 });
 
@@ -200,17 +216,17 @@ test('orphan dry-run: --dry-orphan 이면 파일이 남아있음', () => {
     writeFile(src, 'real.png', 'REAL');
 
     const result = runSync(src, dst, ['--dry-orphan']);
-    assert.equal(result.status, 0, result.stderr);
+    expect(result.status, result.stderr).toBe(0);
     // dry-orphan 이므로 파일은 삭제되지 않아야 함
-    assert.ok(
+    expect(
       existsSync(join(dst, 'orphan.svg')),
       'dry-orphan이면 파일이 남아야 함',
-    );
-    assert.ok(result.stdout.includes('[dry-orphan]'), result.stdout);
-    assert.ok(
+    ).toBeTruthy();
+    expect(result.stdout.includes('[dry-orphan]'), result.stdout).toBeTruthy();
+    expect(
       result.stdout.includes('dry-orphan: 실제 삭제 안 함'),
       result.stdout,
-    );
+    ).toBeTruthy();
   });
 });
 
@@ -220,10 +236,10 @@ test('orphan: src가 빈 디렉토리면 dst 미디어 파일 전부 삭제', ()
     writeFile(dst, 'c/d/old.png', 'OLD');
 
     const result = runSync(src, dst);
-    assert.equal(result.status, 0, result.stderr);
-    assert.ok(!existsSync(join(dst, 'a/b/old.jpg')));
-    assert.ok(!existsSync(join(dst, 'c/d/old.png')));
-    assert.ok(result.stdout.includes('2 removed'), result.stdout);
+    expect(result.status, result.stderr).toBe(0);
+    expect(!existsSync(join(dst, 'a/b/old.jpg'))).toBeTruthy();
+    expect(!existsSync(join(dst, 'c/d/old.png'))).toBeTruthy();
+    expect(result.stdout.includes('2 removed'), result.stdout).toBeTruthy();
   });
 });
 
@@ -238,6 +254,6 @@ test('실물 sync-posts.mjs: CONTENT_PATHS 배선과 tsx interop', async () => {
     import('./sync-posts.mjs'),
     import('../shared/contentPaths'),
   ]);
-  assert.equal(real.POSTS_SOURCE_DIR, paths.CONTENT_PATHS.postsDir);
-  assert.equal(real.POSTS_TARGET_DIR, paths.CONTENT_PATHS.mediaOutDir);
+  expect(real.POSTS_SOURCE_DIR).toBe(paths.CONTENT_PATHS.postsDir);
+  expect(real.POSTS_TARGET_DIR).toBe(paths.CONTENT_PATHS.mediaOutDir);
 });

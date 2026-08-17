@@ -4,8 +4,7 @@
  * Supabase client는 mock으로 대체하여 functions.invoke 호출 검증.
  */
 
-import assert from 'node:assert/strict';
-import { test } from 'node:test';
+import { expect, test } from 'vitest';
 import { createAdminApiClient, type FunctionsInvoker } from './adminApi';
 
 // ── mock 헬퍼 ─────────────────────────────────────────────────────────────────
@@ -52,13 +51,13 @@ test('createAdminApiClient: all_post_stats — functions.invoke를 올바른 act
   const api = createAdminApiClient(client);
   const result = await api.call('all_post_stats');
 
-  assert.equal(calls.length, 1);
-  assert.equal(calls[0].functionName, 'admin-analytics');
-  assert.deepEqual(calls[0].options?.body, {
+  expect(calls.length).toBe(1);
+  expect(calls[0].functionName).toBe('admin-analytics');
+  expect(calls[0].options?.body).toStrictEqual({
     action: 'all_post_stats',
     params: undefined,
   });
-  assert.deepEqual(result, mockData);
+  expect(result).toStrictEqual(mockData);
 });
 
 test('createAdminApiClient: post_hourly_distribution — slug 파라미터 전달 확인', async () => {
@@ -73,12 +72,12 @@ test('createAdminApiClient: post_hourly_distribution — slug 파라미터 전�
     slug: 'my-post',
   });
 
-  assert.equal(calls.length, 1);
-  assert.deepEqual(calls[0].options?.body, {
+  expect(calls.length).toBe(1);
+  expect(calls[0].options?.body).toStrictEqual({
     action: 'post_hourly_distribution',
     params: { slug: 'my-post' },
   });
-  assert.deepEqual(result, mockData);
+  expect(result).toStrictEqual(mockData);
 });
 
 test('createAdminApiClient: post_dow_distribution — slug 파라미터 전달 확인', async () => {
@@ -93,11 +92,11 @@ test('createAdminApiClient: post_dow_distribution — slug 파라미터 전달 �
     slug: 'other-post',
   });
 
-  assert.deepEqual(calls[0].options?.body, {
+  expect(calls[0].options?.body).toStrictEqual({
     action: 'post_dow_distribution',
     params: { slug: 'other-post' },
   });
-  assert.deepEqual(result, mockData);
+  expect(result).toStrictEqual(mockData);
 });
 
 test('createAdminApiClient: all_posts_trends — range 파라미터 전달 확인', async () => {
@@ -110,11 +109,11 @@ test('createAdminApiClient: all_posts_trends — range 파라미터 전달 확�
   const api = createAdminApiClient(client);
   const result = await api.call('all_posts_trends', { range: [0, 999] });
 
-  assert.deepEqual(calls[0].options?.body, {
+  expect(calls[0].options?.body).toStrictEqual({
     action: 'all_posts_trends',
     params: { range: [0, 999] },
   });
-  assert.deepEqual(result, mockData);
+  expect(result).toStrictEqual(mockData);
 });
 
 test('createAdminApiClient: error 응답 시 Error throw', async () => {
@@ -125,14 +124,10 @@ test('createAdminApiClient: error 응답 시 Error throw', async () => {
 
   const api = createAdminApiClient(client);
 
-  await assert.rejects(
-    () => api.call('all_post_stats'),
-    (err: Error) => {
-      assert.ok(err instanceof Error);
-      assert.ok(err.message.includes('인증에 실패했습니다.'));
-      return true;
-    },
-  );
+  const rejected = api.call('all_post_stats');
+
+  await expect(rejected).rejects.toBeInstanceOf(Error);
+  await expect(rejected).rejects.toThrow('인증에 실패했습니다.');
 });
 
 test('createAdminApiClient: data가 null이면 Error throw (빈 응답)', async () => {
@@ -144,14 +139,10 @@ test('createAdminApiClient: data가 null이면 Error throw (빈 응답)', async 
 
   const api = createAdminApiClient(client);
 
-  await assert.rejects(
-    () => api.call('all_post_stats'),
-    (err: Error) => {
-      assert.ok(err instanceof Error);
-      assert.ok(err.message.includes('빈 응답'));
-      return true;
-    },
-  );
+  const rejected = api.call('all_post_stats');
+
+  await expect(rejected).rejects.toBeInstanceOf(Error);
+  await expect(rejected).rejects.toThrow('빈 응답');
 });
 
 test('createAdminApiClient: 봉투는 있는데 안이 null이어도 Error throw (빈 응답)', async () => {
@@ -165,14 +156,10 @@ test('createAdminApiClient: 봉투는 있는데 안이 null이어도 Error throw
 
   const api = createAdminApiClient(client);
 
-  await assert.rejects(
-    () => api.call('all_post_stats'),
-    (err: Error) => {
-      assert.ok(err instanceof Error);
-      assert.ok(err.message.includes('빈 응답'));
-      return true;
-    },
-  );
+  const rejected = api.call('all_post_stats');
+
+  await expect(rejected).rejects.toBeInstanceOf(Error);
+  await expect(rejected).rejects.toThrow('빈 응답');
 });
 
 test('createAdminApiClient: 응답 타입이 action의 RPC Returns로 결정된다 (타입 계약)', async () => {
@@ -186,8 +173,8 @@ test('createAdminApiClient: 응답 타입이 action의 RPC Returns로 결정된�
   // get_all_post_stats Returns가 그대로 추론된다.
   const rows = await api.call('all_post_stats');
   const first = rows[0];
-  assert.equal(first.total_views, 100);
-  assert.equal(first.today_views, 5);
+  expect(first.total_views).toBe(100);
+  expect(first.today_views).toBe(5);
 
   // @ts-expect-error — get_all_post_stats 행에는 view_date가 없다
   void first.view_date;
@@ -215,7 +202,7 @@ test('createAdminApiClient: params 계약 — 필수 slug 누락·미등록 acti
   // params가 전부 선택인 action은 생략 가능
   void api.call('all_posts_trends');
 
-  assert.equal(calls.length, 5);
+  expect(calls.length).toBe(5);
 });
 
 test('createAdminApiClient: 여러 번 호출해도 독립적으로 동작', async () => {
@@ -229,7 +216,7 @@ test('createAdminApiClient: 여러 번 호출해도 독립적으로 동작', asy
   await api.call('all_post_stats');
   await api.call('all_post_stats');
 
-  assert.equal(calls.length, 2);
-  assert.equal(calls[0].functionName, 'admin-analytics');
-  assert.equal(calls[1].functionName, 'admin-analytics');
+  expect(calls.length).toBe(2);
+  expect(calls[0].functionName).toBe('admin-analytics');
+  expect(calls[1].functionName).toBe('admin-analytics');
 });

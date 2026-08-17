@@ -1,5 +1,4 @@
-import assert from 'node:assert/strict';
-import { test } from 'node:test';
+import { expect, test } from 'vitest';
 import { buildSitemapXml } from './generate-sitemap';
 import { buildRssXml } from './render/generate-rss';
 import { buildLlmsText } from './generate-llms';
@@ -41,7 +40,7 @@ test('비ASCII slug: 다섯 산출 지점이 모두 같은 인코딩의 URL을 �
   const post = makePost();
   // 기준은 페이지 링크와 같은 규칙(postPath)에서 온 절대 URL.
   const expected = postUrl(SLUG, SITE);
-  assert.equal(expected, `${SITE}${postPath(SLUG)}`);
+  expect(expected).toBe(`${SITE}${postPath(SLUG)}`);
 
   const artifacts: [string, string][] = [
     ['sitemap.xml', buildSitemapXml([post], '2026-01-02', SITE)],
@@ -54,13 +53,13 @@ test('비ASCII slug: 다섯 산출 지점이 모두 같은 인코딩의 URL을 �
   ];
 
   for (const [name, text] of artifacts) {
-    assert.ok(
+    expect(
       text.includes(expected),
       `${name}에 인코딩된 URL(${expected})이 없습니다`,
-    );
-    assert.ok(
+    ).toBeTruthy();
+    expect(
       !text.includes(`${SITE}/posts/${SLUG}/`),
       `${name}에 인코딩되지 않은 URL이 남아 있습니다`,
-    );
+    ).toBeTruthy();
   }
 });

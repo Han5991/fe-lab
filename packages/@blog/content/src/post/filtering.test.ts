@@ -1,5 +1,4 @@
-import assert from 'node:assert/strict';
-import { test } from 'node:test';
+import { expect, test } from 'vitest';
 import {
   filterGroupedEntries,
   filterPostsByQuery,
@@ -38,54 +37,54 @@ const posts = [
 ];
 
 test('filterPostsByQuery: query가 비면 입력 그대로', () => {
-  assert.deepEqual(filterPostsByQuery(posts, ''), posts);
-  assert.deepEqual(filterPostsByQuery(posts, '   '), posts);
+  expect(filterPostsByQuery(posts, '')).toStrictEqual(posts);
+  expect(filterPostsByQuery(posts, '   ')).toStrictEqual(posts);
 });
 
 test('filterPostsByQuery: title 매칭', () => {
   const result = filterPostsByQuery(posts, 'TypeScript');
-  assert.equal(result.length, 1);
-  assert.equal(result[0].title, 'TypeScript 타입');
+  expect(result.length).toBe(1);
+  expect(result[0].title).toBe('TypeScript 타입');
 });
 
 test('filterPostsByQuery: excerpt 매칭, 대소문자 무시', () => {
   const result = filterPostsByQuery(posts, 'VITE');
-  assert.equal(result.length, 1);
-  assert.equal(result[0].excerpt, 'Vite 비교');
+  expect(result.length).toBe(1);
+  expect(result[0].excerpt).toBe('Vite 비교');
 });
 
 test('groupPostsBySeries: series 없는 글은 제외', () => {
   const groups = groupPostsBySeries(posts);
   const seriesNames = groups.map(([name]) => name);
-  assert.deepEqual(seriesNames.sort(), ['bundler', 'typescript']);
+  expect(seriesNames.sort()).toStrictEqual(['bundler', 'typescript']);
 });
 
 test('groupPostsBySeries: 첫 글 date 내림차순 정렬', () => {
   // posts 배열 순서대로 들어가므로 bundler 그룹의 첫 글은 2025-03-01,
   // typescript 그룹의 첫 글은 2025-04-01 → typescript가 먼저
   const groups = groupPostsBySeries(posts);
-  assert.equal(groups[0][0], 'typescript');
-  assert.equal(groups[1][0], 'bundler');
+  expect(groups[0][0]).toBe('typescript');
+  expect(groups[1][0]).toBe('bundler');
 });
 
 test('groupPostsByTags: 글 수 내림차순', () => {
   const groups = groupPostsByTags(posts);
   // build: 2개 / 나머지: 1개
-  assert.equal(groups[0][0], 'build');
-  assert.equal(groups[0][1].length, 2);
+  expect(groups[0][0]).toBe('build');
+  expect(groups[0][1].length).toBe(2);
 });
 
 test('filterGroupedEntries: 그룹명 매칭', () => {
   const entries = groupPostsByTags(posts);
   const filtered = filterGroupedEntries(entries, 'webpack');
-  assert.equal(filtered.length, 1);
-  assert.equal(filtered[0][0], 'webpack');
+  expect(filtered.length).toBe(1);
+  expect(filtered[0][0]).toBe('webpack');
 });
 
 test('filterGroupedEntries: 글 제목 매칭으로 그룹 통과', () => {
   const entries = groupPostsBySeries(posts);
   const filtered = filterGroupedEntries(entries, 'TypeScript');
   // typescript 그룹의 글 제목이 매칭되어 typescript 그룹만 남음
-  assert.equal(filtered.length, 1);
-  assert.equal(filtered[0][0], 'typescript');
+  expect(filtered.length).toBe(1);
+  expect(filtered[0][0]).toBe('typescript');
 });

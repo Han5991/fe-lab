@@ -100,7 +100,7 @@ apps/blog/web/
 | `pnpm build`               | `prebuild`(`build-content.ts --strict`) → `next build` → `check-seo`. **이 셋이 한 덩어리** — CI·배포도 이 스크립트 하나를 부른다           |
 | `pnpm lint`                | `eslint . --max-warnings=0` (인라인 `eslint-disable` 금지)                                                                                  |
 | `pnpm check-types`         | `tsc -p tsconfig.json` + `tsc -p tsconfig.test.json`                                                                                        |
-| `pnpm test`                | `test:node`(`domain/**`·`lib/**`, `node --test`) → `test:vitest`(`src/**`, jsdom + RTL). `test:coverage`는 node 쪽 c8                       |
+| `pnpm test`                | `vitest run` — projects 둘(`node`: `domain/**`·`lib/**`, `jsdom`: `src/**`)을 한 번에. `test:watch`, `test:coverage`(v8)                    |
 | `pnpm lint:posts`          | frontmatter·본문 검증(수동, 경고 수준). prebuild에서는 같은 규칙이 `--strict`로 승격                                                        |
 | `pnpm check-seo`           | `out/` HTML 검사 — h1 1개, description 중복·길이, `<title>` 60자, canonical, og, img alt, `link-trailing-slash`, 산출물↔발행 글 정합성(7종) |
 | `pnpm new-post "제목"`     | 스캐폴딩. `--series` `--tags` `--scheduled` `--slug` `--status`                                                                             |
@@ -127,10 +127,12 @@ apps/blog/web/
 
 ## 6. 테스트
 
-- **`node --test`** (`domain/**`, `lib/**`): 순수 로직 — analytics service, publicClient가 supabase-js와 바이트 동일한 요청을 만드는지, adminApi 언래핑.
-- **Vitest + jsdom + RTL** (`src/**/*.{test,spec}.{ts,tsx}`): 컴포넌트·훅·라우트 헬퍼. `vitest.setup.ts`가 `next.config`를 읽어 `<Link>`가 실제 빌드와 같은 후행 슬래시 href를 내게 맞춘다.
+러너는 **Vitest 하나**고, `vitest.config.mts`의 `test.projects`가 환경만 둘로 나눈다.
+
+- **`node` 프로젝트** (`domain/**`, `lib/**`): 순수 로직 — analytics service, publicClient가 supabase-js와 바이트 동일한 요청을 만드는지, adminApi 언래핑. jsdom을 띄우지 않는다(이 앱의 jsdom 부팅은 파일당 1초 안팎이라 DOM이 필요 없는 테스트까지 태우면 그대로 낭비다).
+- **`jsdom` 프로젝트** (`src/**/*.{test,spec}.{ts,tsx}`): 컴포넌트·훅·라우트 헬퍼. RTL·jest-dom 매처와 `vitest.setup.ts`가 여기에만 붙는다 — 그 셋업이 `next.config`를 읽어 `<Link>`가 실제 빌드와 같은 후행 슬래시 href를 내게 맞춘다.
 - 콘텐츠 계약(실제 `apps/blog/posts` 대상 불변식, 산출물 정합성, URL 인코딩 일관성)은 **`packages/@blog/content`** 의 테스트가 잠근다 — `pnpm --filter @blog/content test`.
-- `node --test '<glob>'`은 매치 0개여도 exit 0이다. 글롭을 고칠 땐 실행 개수를 확인할 것.
+- `include` 글롭은 `tsconfig.test.json`·`eslint.config.mjs`의 테스트 블록과 **대칭**이다. 한쪽을 고치면 셋을 함께 고칠 것.
 
 ---
 

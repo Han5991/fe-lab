@@ -298,5 +298,5 @@ apps/blog/posts (원고)  →  packages/@blog/content  →  apps/blog/web
   package.json에는 `catalog:`(기본) 또는 `catalog:lint`(eslint 툴체인 — 코어·플러그인
   버전이 서로 물려 돌아서 소비자가 하나뿐인 플러그인도 여기 둔다)만 적고 숫자는 쓰지
   않는다. 예외는 `peerDependencies` — 핀이 아니라 호환 범위 선언이라 넓게 둔다
-- 하한을 정하는 비자명한 제약: `apps/blog/web`·`packages/@blog/content`의 `node --test '<glob>'` 글롭 패턴이
-  **Node 22.5+** 를 요구한다
+- 테스트 러너는 워크스페이스 전부 **Vitest** 하나다. 갈리는 것은 환경뿐이고, 환경이
+  둘인 `apps/blog/web`만 `test.projects`로 `node`(domain·lib) / `jsdom`(src)을 나눈다

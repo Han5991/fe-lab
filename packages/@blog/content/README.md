@@ -111,7 +111,8 @@ import 없음)가 갖고, 설정은 그 값을 기본값으로 소비한다 — 
 ```sh
 pnpm --filter @blog/content check-types   # tsconfig.json + tsconfig.test.json
 pnpm --filter @blog/content lint          # --max-warnings=0
-pnpm --filter @blog/content test          # node --test (src/**/*.test.ts)
+pnpm --filter @blog/content test          # vitest run (node 환경, src/**/*.test.ts)
+pnpm --filter @blog/content test:coverage # 같은 스위트 + v8 커버리지
 ```
 
 계약 테스트가 실제 원고·산출물을 잠근다:
@@ -121,5 +122,6 @@ pnpm --filter @blog/content test          # node --test (src/**/*.test.ts)
 - `src/scripts/url-consistency.test.ts` — 비ASCII slug가 sitemap·rss·llms·llms-full·페이지 링크 다섯 곳에서 같은 인코딩인지
 - `src/post/frontmatterSchema.test.ts` — 루트 `CLAUDE.md`의 frontmatter 표를 **글자 단위**로 서술자 테이블과 대조한다. 표의 `**Frontmatter 전체 목록**` 마커와 뒤따르는 `` `series`는 frontmatter가 아니라 `` 문장 사이만 읽으므로 둘 다 살아 있어야 하고, 키 순서·필수 ✅·설명 문구를 고치면 `frontmatterSchema.ts`의 `doc`도 함께 고칠 것
 
-주의: `node --test`는 글롭 매칭이 0개여도 exit 0이다. 테스트 파일을 옮기거나
-글롭을 고칠 때는 **실행된 테스트 개수**를 눈으로 확인할 것.
+이 패키지의 테스트는 전부 node 환경이라 `vitest.config.mts`를 프로젝트로 나누지
+않는다(앱은 `src/`가 jsdom을 요구해 갈린다). `include` 글롭은 `tsconfig.test.json`·
+`eslint.config.mjs`의 테스트 블록과 **대칭**이므로 한쪽을 고치면 셋을 함께 고칠 것.

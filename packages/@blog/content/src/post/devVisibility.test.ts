@@ -8,8 +8,7 @@
  * tsx로 직접 실행되어 NODE_ENV가 **undefined**입니다. 게이트가 `!== 'production'`
  * 같은 느슨한 비교로 바뀌면 draft가 sitemap·RSS에 실려 나갑니다.
  */
-import assert from 'node:assert/strict';
-import { test } from 'node:test';
+import { expect, test } from 'vitest';
 import { getAllPosts, getAllPostsIncludingHidden } from './service';
 import { isPostVisible } from './visibility';
 
@@ -44,7 +43,7 @@ const visibleOnly = <T extends Parameters<typeof isPostVisible>[0]>(
 test('production에서는 공개 글만 반환한다', () => {
   const visible = withNodeEnv('production', () => slugsOf(getAllPosts()));
   const expected = slugsOf(visibleOnly(getAllPostsIncludingHidden()));
-  assert.deepEqual(visible, expected);
+  expect(visible).toStrictEqual(expected);
 });
 
 test('NODE_ENV가 undefined(빌드 스크립트 컨텍스트)여도 공개 글만 반환한다', () => {
@@ -52,25 +51,28 @@ test('NODE_ENV가 undefined(빌드 스크립트 컨텍스트)여도 공개 글�
   // 여기서 draft가 새면 비공개 글이 sitemap과 RSS로 나간다.
   const visible = withNodeEnv(undefined, () => slugsOf(getAllPosts()));
   const expected = slugsOf(visibleOnly(getAllPostsIncludingHidden()));
-  assert.deepEqual(visible, expected);
+  expect(visible).toStrictEqual(expected);
 });
 
 test('development에서는 draft·scheduled까지 전부 반환한다', () => {
   const all = withNodeEnv('development', () => slugsOf(getAllPosts()));
   const everything = slugsOf(getAllPostsIncludingHidden());
-  assert.deepEqual(all, everything);
+  expect(all).toStrictEqual(everything);
 });
 
 test('development의 결과는 production의 상위집합이다', () => {
   const dev = withNodeEnv('development', () => slugsOf(getAllPosts()));
   const prod = withNodeEnv('production', () => slugsOf(getAllPosts()));
   for (const slug of prod) {
-    assert.ok(dev.includes(slug), `dev 목록에 공개 글이 빠짐: ${slug}`);
+    expect(
+      dev.includes(slug),
+      `dev 목록에 공개 글이 빠짐: ${slug}`,
+    ).toBeTruthy();
   }
-  assert.ok(
+  expect(
     dev.length >= prod.length,
     'dev가 production보다 적게 반환할 수는 없다',
-  );
+  ).toBeTruthy();
 });
 
 test('now 주입은 production 경로에서만 의미를 갖는다 (dev는 시각 무관 전체 노출)', () => {
@@ -80,11 +82,11 @@ test('now 주입은 production 경로에서만 의미를 갖는다 (dev는 시�
     slugsOf(getAllPosts(farPast)),
   );
   const prodNow = withNodeEnv('production', () => slugsOf(getAllPosts()));
-  assert.ok(prodPast.length <= prodNow.length);
+  expect(prodPast.length <= prodNow.length).toBeTruthy();
 
   // dev는 now와 무관하게 전부 보여야 한다.
   const devPast = withNodeEnv('development', () =>
     slugsOf(getAllPosts(farPast)),
   );
-  assert.deepEqual(devPast, slugsOf(getAllPostsIncludingHidden()));
+  expect(devPast).toStrictEqual(slugsOf(getAllPostsIncludingHidden()));
 });

@@ -18,7 +18,8 @@ import tseslint from 'typescript-eslint';
  */
 export default defineConfig([
   {
-    ignores: ['node_modules/**'],
+    // coverage/**: vitest --coverage의 HTML 리포터가 뱉는 번들된 벤더 JS. 소스가 아니다.
+    ignores: ['node_modules/**', 'coverage/**'],
   },
 
   {
@@ -49,7 +50,7 @@ export default defineConfig([
   {
     // 테스트 파일은 tsconfig.json이 exclude하고 tsconfig.test.json이 include한다
     // — 앱과 같은 분할. check-types가 보는 프로그램과 정확히 같은 타입 환경.
-    files: ['**/*.test.{ts,tsx}', '**/*.spec.{ts,tsx}'],
+    files: ['**/*.test.{ts,tsx}', '**/*.spec.{ts,tsx}', 'vitest.config.mts'],
     languageOptions: {
       parserOptions: {
         projectService: false,
@@ -90,28 +91,6 @@ export default defineConfig([
   {
     files: ['**/*.{ts,mts,cts}'],
     rules: {
-      // node:test의 test()/훅은 러너가 수명을 관리한다 — 앱 구성과 같은 인가.
-      // 서브테스트(t.test())는 인가에 같이 걸리지만 원래 await가 필요하다는
-      // 주의사항도 동일하다(앱 eslint.config.mjs 참고).
-      '@typescript-eslint/no-floating-promises': [
-        'error',
-        {
-          allowForKnownSafeCalls: [
-            {
-              from: 'package',
-              package: 'node:test',
-              name: [
-                'test',
-                'describe',
-                'before',
-                'after',
-                'beforeEach',
-                'afterEach',
-              ],
-            },
-          ],
-        },
-      ],
       '@typescript-eslint/consistent-type-imports': [
         'warn',
         { prefer: 'type-imports' },

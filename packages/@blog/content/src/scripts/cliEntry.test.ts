@@ -1,5 +1,4 @@
-import assert from 'node:assert/strict';
-import { test } from 'node:test';
+import { expect, test } from 'vitest';
 import { mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -24,10 +23,7 @@ test('isCliEntry: argv[1]이 모듈 자신(실경로)이면 true', () => {
     const script = join(dir, 'entry.ts');
     writeFileSync(script, '');
     const url = pathToFileURL(script).href;
-    assert.equal(
-      withArgv1(script, () => isCliEntry(url)),
-      true,
-    );
+    expect(withArgv1(script, () => isCliEntry(url))).toBe(true);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
@@ -44,12 +40,9 @@ test('isCliEntry: argv[1]이 심링크여도 실경로가 같으면 true (pnpm n
     const link = join(dir, 'link.ts');
     symlinkSync(script, link);
     const realUrl = pathToFileURL(script).href;
-    assert.equal(
-      withArgv1(link, () => isCliEntry(realUrl)),
-      true,
-    );
+    expect(withArgv1(link, () => isCliEntry(realUrl))).toBe(true);
     // 종전 가드(문자열 비교)라면 false였을 조합임을 함께 잠근다.
-    assert.notEqual(pathToFileURL(link).href, realUrl);
+    expect(pathToFileURL(link).href).not.toBe(realUrl);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
@@ -62,8 +55,7 @@ test('isCliEntry: 다른 파일이 진입점이면 false (import 시 우발 실�
     const other = join(dir, 'other.ts');
     writeFileSync(script, '');
     writeFileSync(other, '');
-    assert.equal(
-      withArgv1(other, () => isCliEntry(pathToFileURL(script).href)),
+    expect(withArgv1(other, () => isCliEntry(pathToFileURL(script).href))).toBe(
       false,
     );
   } finally {
@@ -78,20 +70,15 @@ test('isCliEntry: 판정 불가 입력은 전부 안전하게 false', () => {
     writeFileSync(script, '');
     const url = pathToFileURL(script).href;
     // argv[1] 부재 (node -e / REPL)
-    assert.equal(
-      withArgv1(undefined, () => isCliEntry(url)),
-      false,
-    );
+    expect(withArgv1(undefined, () => isCliEntry(url))).toBe(false);
     // argv[1]이 존재하지 않는 경로 → realpath 실패
-    assert.equal(
-      withArgv1(join(dir, 'missing.ts'), () => isCliEntry(url)),
+    expect(withArgv1(join(dir, 'missing.ts'), () => isCliEntry(url))).toBe(
       false,
     );
     // import.meta.url이 file: URL이 아님 → fileURLToPath 실패
-    assert.equal(
+    expect(
       withArgv1(script, () => isCliEntry('https://example.com/entry.ts')),
-      false,
-    );
+    ).toBe(false);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

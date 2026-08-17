@@ -1,5 +1,4 @@
-import assert from 'node:assert/strict';
-import { test } from 'node:test';
+import { expect, test } from 'vitest';
 import { pickAdjacent } from './service';
 import type { PostData } from './types';
 
@@ -27,29 +26,29 @@ const posts = [
 
 test('pickAdjacent: 중간 글 → prev=더 과거, next=더 최신', () => {
   const { prev, next } = pickAdjacent(posts, 'b');
-  assert.equal(prev?.slug, 'a'); // index+1 = 더 과거
-  assert.equal(next?.slug, 'c'); // index-1 = 더 최신
-  assert.equal(prev?.title, 'title-a');
+  expect(prev?.slug).toBe('a'); // index+1 = 더 과거
+  expect(next?.slug).toBe('c'); // index-1 = 더 최신
+  expect(prev?.title).toBe('title-a');
 });
 
 test('pickAdjacent: 최신 글 → next=null', () => {
   const { prev, next } = pickAdjacent(posts, 'c');
-  assert.equal(next, null);
-  assert.equal(prev?.slug, 'b');
+  expect(next).toBe(null);
+  expect(prev?.slug).toBe('b');
 });
 
 test('pickAdjacent: 가장 오래된 글 → prev=null', () => {
   const { prev, next } = pickAdjacent(posts, 'a');
-  assert.equal(prev, null);
-  assert.equal(next?.slug, 'b');
+  expect(prev).toBe(null);
+  expect(next?.slug).toBe('b');
 });
 
 test('pickAdjacent: 존재하지 않는 slug → {null, null}', () => {
-  assert.deepEqual(pickAdjacent(posts, 'nope'), { prev: null, next: null });
+  expect(pickAdjacent(posts, 'nope')).toStrictEqual({ prev: null, next: null });
 });
 
 test('pickAdjacent: 글이 하나뿐이면 prev/next 모두 null', () => {
-  assert.deepEqual(pickAdjacent([makePost({ slug: 'only' })], 'only'), {
+  expect(pickAdjacent([makePost({ slug: 'only' })], 'only')).toStrictEqual({
     prev: null,
     next: null,
   });
@@ -63,8 +62,8 @@ test('pickAdjacent: filterSeries는 같은 시리즈 내에서만 인접 계산'
   ];
   // 필터 후 [x2, x1] → x2의 prev=x1, next=null
   const { prev, next } = pickAdjacent(mixed, 'x2', { filterSeries: 'X' });
-  assert.equal(prev?.slug, 'x1');
-  assert.equal(next, null);
+  expect(prev?.slug).toBe('x1');
+  expect(next).toBe(null);
 });
 
 test('pickAdjacent: filterTag는 해당 태그 글만', () => {
@@ -75,13 +74,13 @@ test('pickAdjacent: filterTag는 해당 태그 글만', () => {
   ];
   // 필터 후 [t3, t1] → t3의 prev=t1
   const { prev, next } = pickAdjacent(tagged, 't3', { filterTag: 'react' });
-  assert.equal(prev?.slug, 't1');
-  assert.equal(next, null);
+  expect(prev?.slug).toBe('t1');
+  expect(next).toBe(null);
 });
 
 test("pickAdjacent: sortOrder='oldest'는 역순이라 prev/next 방향이 뒤집힘", () => {
   // [c,b,a](desc) → reverse → [a,b,c]. 'b'의 prev(index+1)=c(더 최신), next(index-1)=a
   const { prev, next } = pickAdjacent(posts, 'b', { sortOrder: 'oldest' });
-  assert.equal(prev?.slug, 'c');
-  assert.equal(next?.slug, 'a');
+  expect(prev?.slug).toBe('c');
+  expect(next?.slug).toBe('a');
 });

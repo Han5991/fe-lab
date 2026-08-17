@@ -11,8 +11,7 @@
  * 세 호출의 요청(method·경로·쿼리·헤더·본문)을 직접 비교한다.
  */
 
-import assert from 'node:assert/strict';
-import { test, before, after } from 'node:test';
+import { afterAll, beforeAll, expect, test } from 'vitest';
 import { createServer, type Server } from 'node:http';
 import { createClient } from '@supabase/supabase-js';
 import { PostgrestClient } from '@supabase/postgrest-js';
@@ -51,7 +50,7 @@ function normalize(req: CapturedRequest) {
   };
 }
 
-before(async () => {
+beforeAll(async () => {
   server = createServer((req, res) => {
     let body = '';
     req.on('data', c => (body += c));
@@ -88,7 +87,7 @@ before(async () => {
   );
 });
 
-after(() => server.close());
+afterAll(() => server.close());
 
 /**
  * 두 클라이언트의 제네릭이 달라 구조적으로만 같은 쿼리를 태운다. 여기서
@@ -124,7 +123,7 @@ async function requestOf(
 ) {
   captured = [];
   await run(client);
-  assert.equal(captured.length, 1, '요청이 정확히 1건이어야 한다');
+  expect(captured.length, '요청이 정확히 1건이어야 한다').toBe(1);
   return normalize(captured[0]);
 }
 
@@ -155,19 +154,19 @@ for (const { name, run } of SCENARIOS) {
   test(`${name}: PostgrestClient가 supabase-js와 동일한 요청을 보낸다`, async () => {
     const legacy = await requestOf(run, legacyClient());
     const next = await requestOf(run, publicClient());
-    assert.deepEqual(next, legacy);
+    expect(next).toStrictEqual(legacy);
   });
 }
 
 test('anon key가 apikey와 Authorization 양쪽에 실린다', async () => {
   const req = await requestOf(SCENARIOS[0].run, publicClient());
-  assert.equal(req.headers['apikey'], KEY);
-  assert.equal(req.headers['authorization'], `Bearer ${KEY}`);
+  expect(req.headers['apikey']).toBe(KEY);
+  expect(req.headers['authorization']).toBe(`Bearer ${KEY}`);
 });
 
 test('schema를 명시해 Accept-Profile이 빠지지 않는다', async () => {
   // 이 헤더가 없으면 PostgREST가 서버 기본 스키마로 처리한다. 지금 설정에선
   // 결과가 같지만, 노출 스키마가 늘어나면 조용히 달라지는 종류의 차이다.
   const req = await requestOf(SCENARIOS[0].run, publicClient());
-  assert.equal(req.headers['accept-profile'], 'public');
+  expect(req.headers['accept-profile']).toBe('public');
 });

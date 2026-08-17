@@ -11,7 +11,9 @@
   "scripts": {
     "lint": "eslint . --max-warnings=0",
     "check-types": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json --noEmit",
-    "test": "node --import tsx --test 'src/**/*.test.ts'"
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@resvg/resvg-js": "^2.6.2",
@@ -28,6 +30,7 @@
     "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
+    "@vitest/coverage-v8": "catalog:",
     "eslint": "catalog:lint",
     "eslint-import-resolver-typescript": "catalog:lint",
     "eslint-plugin-boundaries": "catalog:lint",
@@ -36,7 +39,8 @@
     "react-dom": "catalog:",
     "tsx": "catalog:",
     "typescript": "catalog:",
-    "typescript-eslint": "catalog:lint"
+    "typescript-eslint": "catalog:lint",
+    "vitest": "catalog:"
   },
   "peerDependencies": {
     "react": "catalog:",
