@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 
 /**
  * 화면 맨 위에서 **고정 헤더가 덮는 높이.**
@@ -40,32 +40,90 @@ interface TOCItem {
   level: number;
 }
 
+/**
+ * 헤딩 목록의 **원본은 DOM**이다 — 마크다운을 렌더한 결과라 이 훅이 소유한
+ * 상태가 아니다. 그래서 상태로 복사하지 않고 외부 저장소로 읽는다.
+ *
+ * 예전에는 마운트 effect에서 `setToc(items)`로 옮겼다. 렌더 → effect → 리렌더가
+ * 한 번 더 도는 데다(`react-hooks/set-state-in-effect`), 클라이언트 내비게이션으로
+ * 들어온 첫 프레임에는 차례가 비어 있다가 뒤늦게 채워졌다. 아래 구독 모델에서는
+ * 첫 렌더의 스냅샷이 이미 실제 헤딩이다.
+ */
+const EMPTY_TOC: TOCItem[] = [];
+
+/** 마지막으로 돌려준 스냅샷. 참조가 바뀌면 이 훅을 쓰는 화면이 다시 그려진다. */
+let tocSnapshot: TOCItem[] = EMPTY_TOC;
+/** 본문이 바뀌었으니 다시 읽어야 한다는 표시. */
+let tocStale = true;
+
+const readToc = (): TOCItem[] => {
+  const content = document.getElementById('post-content');
+  if (!content) return EMPTY_TOC;
+
+  return Array.from(content.querySelectorAll('h1, h2, h3, h4'))
+    .map(header => ({
+      id: header.id,
+      text: header.textContent || '',
+      level: parseInt(header.tagName.substring(1)),
+    }))
+    .filter(item => item.id);
+};
+
+const isSameToc = (a: TOCItem[], b: TOCItem[]): boolean =>
+  a.length === b.length &&
+  a.every((item, i) => {
+    const other = b[i];
+    return (
+      other !== undefined &&
+      item.id === other.id &&
+      item.text === other.text &&
+      item.level === other.level
+    );
+  });
+
+const getTocSnapshot = (): TOCItem[] => {
+  // getSnapshot은 **렌더마다** 불린다. 매번 DOM을 훑으면 스크롤 한 프레임마다
+  // querySelectorAll이 도는 셈이라, 본문이 바뀌었다는 알림을 받았을 때만 읽는다.
+  if (tocStale) {
+    tocStale = false;
+    const next = readToc();
+    // 코드 탭 전환처럼 본문 안쪽만 바뀐 경우 헤딩은 그대로다. 그때 새 배열을
+    // 돌려주면 아무것도 안 바뀐 채로 차례가 통째로 다시 그려진다.
+    if (!isSameToc(tocSnapshot, next)) tocSnapshot = next;
+  }
+  return tocSnapshot;
+};
+
+/** 서버에는 DOM이 없다. 하이드레이션까지 빈 목록이고 그 직후 실제 헤딩이 온다. */
+const getServerTocSnapshot = (): TOCItem[] => EMPTY_TOC;
+
+const subscribeToc = (onStoreChange: () => void): (() => void) => {
+  // 다른 글로 넘어와 본문이 통째로 갈렸을 수 있다 — 이전 글의 목록을 첫
+  // 스냅샷으로 내보내지 않도록 구독 시점에 무효화한다.
+  tocStale = true;
+
+  const content = document.getElementById('post-content');
+  // 본문이 없으면 지켜볼 것도 없다(예전 effect의 `if (!content) return`과 같다).
+  if (!content) return () => undefined;
+
+  const observer = new MutationObserver(() => {
+    tocStale = true;
+    onStoreChange();
+  });
+  observer.observe(content, { childList: true, subtree: true });
+  return () => observer.disconnect();
+};
+
 export const useTocHook = () => {
-  const [toc, setToc] = useState<TOCItem[]>([]);
+  const toc = useSyncExternalStore(
+    subscribeToc,
+    getTocSnapshot,
+    getServerTocSnapshot,
+  );
   const [activeId, setActiveId] = useState('');
   // 지금 화면에 들어와 있는 헤딩들의 [첫, 마지막] 인덱스. 데스크톱 차례가
   // 레일을 **구간**으로 비추는 데 쓴다(아래 두 번째 effect 참고).
   const [activeRange, setActiveRange] = useState<[number, number] | null>(null);
-
-  useEffect(() => {
-    const content = document.getElementById('post-content');
-    if (!content) return;
-
-    const headers = content.querySelectorAll('h1, h2, h3, h4');
-    const items = Array.from(headers)
-      .map(header => ({
-        id: header.id,
-        text: header.textContent || '',
-        level: parseInt(header.tagName.substring(1)),
-      }))
-      .filter(item => item.id);
-
-    // 마운트 시점 DOM 파싱 결과를 상태로 옮기는 정당한 외부 시스템 sync.
-    // useSyncExternalStore로 모델링 가능하지만 1회성 측정이라 over-engineering.
-    // 이 파일의 set-state-in-effect 인가는 eslint.config.mjs에 files 스코프로
-    // 적혀 있다(인라인 disable 주석은 저장소 전체에서 금지).
-    setToc(items);
-  }, []);
 
   // 활성 항목은 **매번 스크롤 위치에서 처음부터 다시 계산**한다.
   //

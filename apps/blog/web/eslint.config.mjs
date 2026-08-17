@@ -203,17 +203,6 @@ export default defineConfig([
       '@eslint-community/eslint-comments/no-use': 'error',
     },
   },
-  {
-    // 인라인 인가를 금지한 대신, 정당한 예외는 **여기에** 파일 단위로 적는다.
-    //
-    // useTocHook의 첫 effect는 마운트 시점에 `#post-content`의 헤딩을 한 번
-    // 읽어 상태로 옮긴다. 서버에는 DOM이 없어 useState의 lazy initializer로는
-    // 읽을 수 없고, useSyncExternalStore로 감싸려면 구독할 대상이 없는 store를
-    // 지어내야 한다 — 1회성 측정에 비해 과하다. 룰이 잡는 "연쇄 렌더" 위험은
-    // 이 effect가 deps 빈 배열로 한 번만 도는 한 존재하지 않는다.
-    files: ['src/components/tocHooks.tsx'],
-    rules: { 'react-hooks/set-state-in-effect': 'off' },
-  },
 
   {
     rules: {
