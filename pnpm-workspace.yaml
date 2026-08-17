@@ -18,7 +18,11 @@ allowBuilds:
   # 이미 설치되므로 스크립트 없이도 동작한다 - 공급망 보수 원칙대로 거부.
   unrs-resolver: false
 
+# 두 개 이상의 워크스페이스 패키지가 쓰는 버전은 전부 여기로 올린다. 패키지의
+# package.json에는 'catalog:'(기본) 또는 'catalog:lint'(아래 named catalog)만 적고,
+# 숫자는 이 파일에만 존재한다 — 한 곳을 올리면 저장소 전체가 같이 움직인다.
 catalog:
+  # 프레임워크 · 언어
   '@pandacss/dev': 1.12.0
   'next': 16.3.0
   typescript: 6.0.3
@@ -27,3 +31,41 @@ catalog:
   '@types/react': 19.2.18
   '@types/react-dom': 19.2.4
   '@types/node': ^24.13.3
+
+  # 런타임 라이브러리
+  '@tanstack/react-query': ^5.101.4
+  react-markdown: ^10.1.0
+  rehype-raw: ^7.0.0
+  remark-gfm: ^4.0.1
+
+  # 빌드 · 실행 도구
+  tsdown: 0.22.14
+  tsx: ^4.23.12
+
+  # 테스트
+  vitest: ^4.1.10
+  jsdom: ^30.0.1
+  msw: ^2.15.0
+  '@vitejs/plugin-react': ^6.0.5
+  '@testing-library/dom': ^10.4.1
+  '@testing-library/jest-dom': ^7.0.1
+  '@testing-library/react': ^16.3.2
+  '@testing-library/user-event': ^14.6.4
+
+# lint 툴체인은 서로 버전이 맞물려 돌아간다(eslint 코어 ↔ @eslint/js ↔ typescript-eslint,
+# next ↔ eslint-config-next). 한 벌로 움직여야 하므로 named catalog로 떼어 둔다.
+# 소비자가 하나뿐인 플러그인도 여기 둔다 — 툴체인 버전 표가 여러 곳으로 흩어지지 않게.
+catalogs:
+  lint:
+    eslint: ^10.8.1
+    '@eslint/js': ^10.0.1
+    '@eslint-community/eslint-plugin-eslint-comments': ^4.7.2
+    '@next/eslint-plugin-next': ^16.3.0
+    eslint-config-next: 16.3.0
+    eslint-import-resolver-typescript: ^4.4.5
+    eslint-plugin-boundaries: ^7.2.0
+    eslint-plugin-jsx-a11y: ^6.10.2
+    eslint-plugin-react-hooks: ^7.1.1
+    eslint-plugin-react-refresh: ^0.5.4
+    globals: ^17.9.0
+    typescript-eslint: ^8.67.0
