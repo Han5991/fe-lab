@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  // Edge Function(Deno) 타입 검사 — `pnpm check-types`의 세 번째 프로그램.
+  //
+  // 앱의 tsconfig.json은 supabase/functions를 exclude하고 eslint도 supabase/**를
+  // ignore한다. 그래서 이 파일이 없으면 Edge Function은 어떤 CI 게이트도 지나지
+  // 않는다 — `lib/platform/adminActions.ts` 계약(action↔RPC 대응, switch 망라)과
+  // `database.types.ts` 대조가 에디터에서만 살아 있고, 깨진 채로 배포까지 간다.
+  //
+  // tsc는 Deno가 아니므로 두 가지를 흉내 낸다:
+  //   - `npm:@supabase/supabase-js@2` → 앱 node_modules의 타입 (paths)
+  //   - Deno 전역 → deno-shim.d.ts
+  // 나머지(확장자 붙은 상대 import)는 allowImportingTsExtensions로 그대로 통한다.
+  //
+  // `_` 로 시작하는 폴더는 배포 대상이 아니다 — CLI의 함수 슬러그 패턴이
+  // `^[A-Za-z][A-Za-z0-9_-]*$`이고, index.ts가 있는 폴더만 함수로 본다(_shared와 같다).
+  "compilerOptions": {
+    "noEmit": true,
+    "target": "esnext",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "lib": ["esnext", "dom", "dom.iterable"],
+    // Deno는 상대 import에 확장자를 요구한다 — 소스의 `.ts`를 그대로 해석한다.
+    "allowImportingTsExtensions": true,
+    // @types/* 자동 포함 금지. Node 전역이 딸려 들어오면 Deno에 없는 API를
+    // 써도 통과한다(이 검사의 존재 이유가 사라진다).
+    "types": [],
+    "skipLibCheck": true,
+    "strict": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "exactOptionalPropertyTypes": true,
+    "paths": {
+      "npm:@supabase/supabase-js@2": [
+        "../../../node_modules/@supabase/supabase-js/dist/index.d.mts"
+      ]
+    }
+  },
+  // entrypoint만 적는다 — import 그래프(_shared·lib/platform)는 따라 들어온다.
+  "files": ["deno-shim.d.ts", "../admin-analytics/index.ts"]
+}

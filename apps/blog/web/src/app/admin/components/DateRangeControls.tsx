@@ -3,12 +3,9 @@
 import { useState } from 'react';
 import { css } from '@design-system/ui-lib/css';
 import { getKSTCutoffDate } from '@blog/content';
+import type { TrendPoint } from '@/domain/analytics';
 
 type FilterType = 'all' | '7days' | '30days' | 'custom';
-interface Trend {
-  view_date: string;
-  view_count: number;
-}
 
 // getKSTCutoffDate는 단위 테스트 커버를 위해 @blog/content(shared/dates)로 이동.
 // 호환을 위해 같은 이름으로 재노출 — 다른 컴포넌트에서 직접 import해도 동작.
@@ -19,11 +16,11 @@ export { getKSTCutoffDate };
  * 메모이제이션은 React Compiler가 호출 단위로 처리합니다.
  */
 function selectTrends(
-  trends: Trend[],
+  trends: TrendPoint[],
   effectiveFilterType: FilterType,
   startDate: string,
   endDate: string,
-): Trend[] {
+): TrendPoint[] {
   if (!trends || trends.length === 0) return [];
 
   const sorted = [...trends].sort((a, b) =>
@@ -50,9 +47,7 @@ function selectTrends(
   return sorted;
 }
 
-export function useDateFilter(
-  trends: { view_date: string; view_count: number }[],
-) {
+export function useDateFilter(trends: TrendPoint[]) {
   const [filterType, setFilterType] = useState<FilterType>('30days');
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');

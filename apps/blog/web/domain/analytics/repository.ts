@@ -11,11 +11,7 @@
  */
 
 import { publicDb } from '../../lib/platform/publicClient';
-
-export interface TopPostRow {
-  slug: string;
-  view_count: number;
-}
+import type { TopPostRow } from './types';
 
 export async function getTopPosts(limit: number): Promise<TopPostRow[]> {
   const { data } = await publicDb
