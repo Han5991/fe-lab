@@ -1,7 +1,7 @@
 name: Claude Post Inventory
 
-# 매월 초안(draft)·예약(scheduled) 글 현황을 이슈 하나에 갱신합니다.
-# 사실 나열만 하며, 발행 권유·재촉은 하지 않습니다.
+# 블로그 배포가 끝날 때마다 초안(draft)·예약(scheduled) 글 현황을 이슈 하나에
+# 갱신합니다. 사실 나열만 하며, 발행 권유·재촉은 하지 않습니다.
 #
 # 역할을 둘로 나눠 둔 이유:
 #   - 수집(post-inventory-collect.py): frontmatter·git 이력·sitemap 대조
@@ -9,11 +9,16 @@ name: Claude Post Inventory
 # 2026-08-04 수동 실행이 7턴 27초 만에 permission denial 4건으로 끝났는데,
 # exit 0이라 잡은 초록이었고 이슈 #163은 7/30 상태 그대로였다. 세는 일을
 # 스크립트로 내리면 그 실패 모드가 사라지고, 수집 결과가 Step Summary에 남는다.
+#
+# 월간 cron 대신 deploy-blog.yml 완료(workflow_run)를 트리거로 쓴다 — 배포마다
+# sitemap이 갱신되므로 그 직후에 봐야 in_sitemap 판정이 그 시점 기준으로 맞다.
+# deploy-blog는 push·매일 cron·수동 실행 전부에서 돌므로 이 워크플로도 그때마다
+# 같이 갱신된다. 배포가 실패하면 sitemap이 그대로이므로 건너뛴다(아래 if).
 
 on:
-  schedule:
-    # 매월 15일 09:00 KST (00:00 UTC) — link-rot(1일)과 날짜를 분리
-    - cron: '0 0 15 * *'
+  workflow_run:
+    workflows: ['Deploy Blog to GitHub Pages']
+    types: [completed]
   workflow_dispatch:
 
 concurrency:
@@ -27,6 +32,9 @@ permissions:
 
 jobs:
   inventory:
+    # workflow_run은 deploy-blog가 실패해도 완료되면 일단 트리거된다.
+    # 배포 실패 시 sitemap이 갱신되지 않으므로 다시 볼 이유가 없어 건너뛴다.
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -35,6 +43,10 @@ jobs:
         with:
           # 초안이 언제 생겼는지 git 이력으로 계산하기 위해 전체 이력 필요
           fetch-depth: 0
+          # workflow_run은 기본 checkout이 default 브랜치 최신 커밋을 받아오지
+          # 않으므로, 트리거한 deploy-blog 런의 커밋을 명시한다. workflow_dispatch로
+          # 수동 실행할 때는 head_sha가 없으므로 일반 checkout으로 폴백한다.
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       # frontmatter·git 이력·sitemap 대조는 세면 끝나는 일이라 스크립트가 맡는다.
       # 2026-08-04 수동 실행이 7턴 27초 만에 denial 4건으로 끝나 이슈가 갱신되지
@@ -55,8 +67,8 @@ jobs:
           display_report: true
 
           prompt: |
-            당신은 블로그 초안·예약글 인벤토리 담당입니다. 월 1회, 현황을
-            사실만 기록합니다. 모든 산출물은 한글로 작성하세요.
+            당신은 블로그 초안·예약글 인벤토리 담당입니다. 블로그가 배포될 때마다
+            현황을 사실만 기록합니다. 모든 산출물은 한글로 작성하세요.
 
             <중요 — 어조 규칙>
             발행을 권유·재촉·평가하는 문구를 절대 쓰지 마세요.
