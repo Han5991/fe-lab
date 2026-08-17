@@ -6,7 +6,8 @@
  * post 도메인과 동일한 캡슐화 정책을 따릅니다.
  */
 
-// 도메인 모델 타입
+// 도메인 모델 타입 + DB 행 타입(TopPostRow·PostStatsRow·PostTrendRow·
+// HourlyDistribution·DowDistribution — database.types.ts에서 파생)
 export * from './types';
 
 // 순수 계산(use-case) + 공유 타입(AnalyticsRange, AnalyticsOverview 등)
@@ -22,4 +23,3 @@ export {
   getAllViewCounts,
   incrementViewCount,
 } from './repository';
-export type { TopPostRow } from './repository';

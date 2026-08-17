@@ -4,7 +4,7 @@ import {
   getAllPostStats,
   getAllPostsTrends,
 } from '@/domain/analytics/admin';
-import type { PostStatDetail } from '@/domain/analytics';
+import type { PostStatDetail, TrendPoint } from '@/domain/analytics';
 
 export type { PostStatDetail };
 
@@ -25,10 +25,7 @@ export function useAdminDashboardData() {
         getAllPostsTrends(),
       ]);
 
-      const trendsMap = new Map<
-        string,
-        { view_date: string; view_count: number }[]
-      >();
+      const trendsMap = new Map<string, TrendPoint[]>();
       for (const t of trends) {
         const arr = trendsMap.get(t.slug) ?? [];
         arr.push({ view_date: t.view_date, view_count: t.view_count });
