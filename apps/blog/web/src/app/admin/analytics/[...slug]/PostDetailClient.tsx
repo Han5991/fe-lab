@@ -26,6 +26,7 @@ import {
 import Link from 'next/link';
 import { token } from '@design-system/ui-lib/tokens';
 import { usePostDetailStats } from '@/src/hooks/usePostDetailStats';
+import { slugFromParams } from './slugFromParams';
 // 클라이언트 컴포넌트의 @blog/content 배럴 import — node:fs 모듈(series 등)은
 // next.config.ts의 optimizePackageImports + sideEffects:false가 번들에서 걸러 준다.
 import { postPath } from '@blog/content';
@@ -60,12 +61,7 @@ const DOW_LABELS = ['일', '월', '화', '수', '목', '금', '토'];
 
 function PostDetailContent() {
   const params = useParams();
-  const slug =
-    typeof params['slug'] === 'string'
-      ? params['slug']
-      : Array.isArray(params['slug'])
-        ? params['slug'].join('/')
-        : '';
+  const slug = slugFromParams(params['slug']);
 
   const { post, hourly, dow, derived } = usePostDetailStats(slug);
 
