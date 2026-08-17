@@ -9,7 +9,7 @@
  * 쪽은 진입 가드(isCliEntry) 덕분에 import 가 안전하므로, 파일 끝의 배선
  * 테스트가 실제 모듈을 import 해 경로 상수와 tsx interop 을 잠급니다.
  */
-import { expect, test } from 'vitest';
+import { expect, test, vi } from 'vitest';
 import {
   mkdtempSync,
   writeFileSync,
@@ -20,6 +20,20 @@ import {
 import { join, dirname } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
+
+/**
+ * 이 파일의 테스트는 전부 자식 node 프로세스를 spawnSync 로 돌린다. 아래
+ * `SPAWN_TIMEOUT_MS`(자식 프로세스 예산)보다 **테스트 타임아웃이 커야** 한다 —
+ * 작으면 러너가 먼저 테스트를 죽여서 자식 예산도, 그 뒤의 status 처리도 도달하지
+ * 못하고 원인이 "무엇이 멈췄는지" 대신 "테스트가 5초를 넘겼다"로만 남는다.
+ *
+ * node --test 시절엔 기본 타임아웃이 없어 이 문제가 없었다. vitest 기본값은
+ * 5초라 자식 예산(10초)이 그대로 도달 불가능해지므로 파일 단위로 올린다.
+ */
+vi.setConfig({ testTimeout: 15_000 });
+
+/** 자식 node 프로세스 예산. 위 testTimeout 보다 작아야 한다(실측 40ms 안팎). */
+const SPAWN_TIMEOUT_MS = 10_000;
 
 // ── inline wrapper builder ─────────────────────────────────────────────────
 
@@ -116,7 +130,7 @@ try {
 
   const result = spawnSync(process.execPath, [wrapperPath, ...extraArgs], {
     encoding: 'utf8',
-    timeout: 10_000,
+    timeout: SPAWN_TIMEOUT_MS,
   });
 
   try {
