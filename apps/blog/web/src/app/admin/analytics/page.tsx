@@ -81,7 +81,7 @@ export default function AdminAnalyticsPage() {
           </span>
           <span className={css({ flex: '1' })} />
           <Link
-            href="/admin"
+            href="/admin/"
             className={css({
               display: 'inline-flex',
               alignItems: 'center',

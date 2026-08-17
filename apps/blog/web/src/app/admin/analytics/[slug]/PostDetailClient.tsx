@@ -753,7 +753,7 @@ export default function PostDetailClient() {
         })}
       >
         <Link
-          href="/admin/analytics"
+          href="/admin/analytics/"
           className={css({
             display: 'flex',
             alignItems: 'center',

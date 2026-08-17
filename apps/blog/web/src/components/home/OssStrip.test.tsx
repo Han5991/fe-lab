@@ -9,8 +9,8 @@ import { render, screen } from '@testing-library/react';
 import { MERGED_PR_COUNT_FALLBACK } from '@blog/content';
 import { OssStrip } from './OssStrip';
 
-/** next/link가 테스트 환경에서 후행 슬래시를 떼므로 경로만 비교합니다. */
-const pathOf = (el: Element) => el.getAttribute('href')?.replace(/\/$/, '');
+/** href는 postPath 계약 그대로(후행 슬래시 포함) — vitest.setup.ts가 next.config를 비춰 둔다. */
+const hrefOf = (el: Element) => el.getAttribute('href');
 
 const originalPrCount = process.env.NEXT_PUBLIC_PR_COUNT;
 
@@ -21,11 +21,11 @@ afterEach(() => {
 describe('OssStrip', () => {
   test('기여 프로젝트 칩이 각 기여 글로 연결된다', () => {
     render(<OssStrip />);
-    expect(pathOf(screen.getByRole('link', { name: 'node.js' }))).toBe(
-      '/posts/nodejs-contribution',
+    expect(hrefOf(screen.getByRole('link', { name: 'node.js' }))).toBe(
+      '/posts/nodejs-contribution/',
     );
-    expect(pathOf(screen.getByRole('link', { name: 'gemini-cli' }))).toBe(
-      '/posts/ai-opensource-contribution',
+    expect(hrefOf(screen.getByRole('link', { name: 'gemini-cli' }))).toBe(
+      '/posts/ai-opensource-contribution/',
     );
   });
 

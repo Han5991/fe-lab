@@ -181,6 +181,118 @@ test('checkPages: noindex 페이지는 검사하지 않는다', () => {
   assert.deepEqual(rules(new Map([['/admin/', html]])), []);
 });
 
+// ── link-trailing-slash ──────────────────────────────────────────────────────
+// next/link는 trailingSlash: true에서도 마지막 세그먼트에 `.`이 있는 경로를 파일로
+// 보고 후행 슬래시를 벗긴다. 2026-08-17 스택 3 검증에서 `/posts/` 아카이브 링크
+// 44개 중 `/posts/turborepo-next.js-docker` 하나만 슬래시가 없는 채 나갔다 —
+// next.config.ts의 skipTrailingSlashRedirect가 근본 수정이고, 이 규칙이 그 회귀 잠금.
+
+/** 링크 대상 페이지 `/posts/turborepo-next.js-docker/`가 함께 존재하는 사이트 */
+const siteWithDottedPost = (archiveBody: string) =>
+  new Map([
+    [
+      '/posts/',
+      page({ path: '/posts/', canonical: `${SITE_URL}/posts/` }, archiveBody),
+    ],
+    [
+      '/posts/turborepo-next.js-docker/',
+      page({
+        canonical: `${SITE_URL}/posts/turborepo-next.js-docker/`,
+        description: '나'.repeat(130),
+      }),
+    ],
+  ]);
+
+test('checkPages: 존재하는 페이지로 가는 내부 링크에 후행 슬래시가 없으면 link-trailing-slash (turborepo-next.js-docker 회귀)', () => {
+  const found = checkPages(
+    siteWithDottedPost(
+      '<h1>글</h1><a href="/posts/turborepo-next.js-docker">turborepo</a>',
+    ),
+  );
+  assert.deepEqual(
+    found.map(v => [v.page, v.rule]),
+    [['/posts/', 'link-trailing-slash']],
+  );
+  assert.match(
+    found.map(v => v.message).join('\n'),
+    /\/posts\/turborepo-next\.js-docker\//,
+  );
+});
+
+test('checkPages: 후행 슬래시가 있으면 `.`이 든 slug라도 통과한다', () => {
+  assert.deepEqual(
+    rules(
+      siteWithDottedPost(
+        '<h1>글</h1><a href="/posts/turborepo-next.js-docker/">turborepo</a>',
+      ),
+    ),
+    [],
+  );
+});
+
+test('checkPages: 쿼리·해시 앞의 경로로 판정한다', () => {
+  assert.deepEqual(
+    rules(
+      siteWithDottedPost(
+        '<h1>글</h1><a href="/posts/turborepo-next.js-docker?ref=x">a</a>' +
+          '<a href="/posts/turborepo-next.js-docker#top">b</a>' +
+          '<a href="/posts/?tag=a&amp;series=b">c</a>',
+      ),
+    ),
+    ['link-trailing-slash', 'link-trailing-slash'],
+  );
+});
+
+test('checkPages: 파일 링크(/rss.xml)·외부·프로토콜 상대·해시 전용 링크는 보지 않는다', () => {
+  assert.deepEqual(
+    rules(
+      siteWithDottedPost(
+        '<h1>글</h1><a href="/rss.xml">rss</a>' +
+          '<a href="https://example.com/posts/turborepo-next.js-docker">x</a>' +
+          '<a href="//example.com/posts/turborepo-next.js-docker">y</a>' +
+          '<a href="#top">z</a>' +
+          '<a href="/posts/no-such-page">없는 페이지는 이 규칙의 대상이 아니다</a>',
+      ),
+    ),
+    [],
+  );
+});
+
+test('checkPages: 인코딩된 href도 디코드해 페이지와 대조한다 (한글 slug)', () => {
+  const pages = new Map([
+    [
+      '/posts/',
+      page(
+        { path: '/posts/', canonical: `${SITE_URL}/posts/` },
+        `<h1>글</h1><a href="/posts/${encodeURIComponent('한글.글')}">a</a>`,
+      ),
+    ],
+    [
+      '/posts/한글.글/',
+      page({
+        canonical: `${SITE_URL}/posts/${encodeURIComponent('한글.글')}/`,
+        description: '나'.repeat(130),
+      }),
+    ],
+  ]);
+  assert.deepEqual(rules(pages), ['link-trailing-slash']);
+});
+
+test('checkPages: noindex 페이지의 내부 링크도 본다 (색인이 아니라 내비게이션 문제)', () => {
+  const pages = new Map([
+    [
+      '/admin/',
+      `<head><meta name="robots" content="noindex, nofollow"/></head>` +
+        `<body><a href="/admin/analytics">통계</a></body>`,
+    ],
+    [
+      '/admin/analytics/',
+      `<head><meta name="robots" content="noindex, nofollow"/></head><body></body>`,
+    ],
+  ]);
+  assert.deepEqual(rules(pages), ['link-trailing-slash']);
+});
+
 // ── checkArtifacts ───────────────────────────────────────────────────────────
 // 산출물 형식별 URL **추출**은 레지스트리 쪽 테스트(artifacts.test.ts)가 잠그고,
 // 여기서는 수집 결과(집합)의 **대조 규칙**(exact/subset/superset)을 잠근다.

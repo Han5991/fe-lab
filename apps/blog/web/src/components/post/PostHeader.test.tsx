@@ -51,22 +51,19 @@ describe('PostHeader', () => {
     );
   });
 
-  // next/link는 next.config의 trailingSlash를 보고 경로를 정규화하는데,
-  // vitest에는 그 설정이 없어 `/posts/?tag=` 가 `/posts?tag=` 로 떨어집니다.
-  // 검증 대상은 쿼리 문자열이므로 후행 슬래시는 선택으로 둡니다.
+  // href는 archivePath 계약(`/posts/?tag=…`) 그대로다 — next/link의 후행 슬래시
+  // 정규화는 vitest.setup.ts가 next.config를 비춰 실제 빌드와 같게 맞춰 둔다.
   const hrefOf = (name: string) =>
     screen.getByRole('link', { name }).getAttribute('href');
 
   test('(회귀) 태그는 아카이브 태그 필터로 가는 링크를 유지한다', () => {
     render(<PostHeader post={{ ...basePost, tags: ['ecs'] }} />);
-    expect(hrefOf('#ecs')).toMatch(/^\/posts\/?\?tag=ecs$/);
+    expect(hrefOf('#ecs')).toBe('/posts/?tag=ecs');
   });
 
   test('태그에 쿼리 특수문자가 있어도 인코딩해서 넘긴다', () => {
     render(<PostHeader post={{ ...basePost, tags: ['c++ & rust'] }} />);
-    expect(hrefOf('#c++ & rust')).toMatch(
-      /^\/posts\/?\?tag=c%2B%2B%20%26%20rust$/,
-    );
+    expect(hrefOf('#c++ & rust')).toBe('/posts/?tag=c%2B%2B%20%26%20rust');
   });
 
   test('excerpt는 있을 때만 그린다', () => {

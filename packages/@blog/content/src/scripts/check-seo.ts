@@ -102,6 +102,24 @@ function countImagesMissingAlt(html: string): number {
   return imgs.filter(tag => !/\salt\s*=/i.test(tag)).length;
 }
 
+/**
+ * `<a href="/…">` — 사이트 내부 링크의 href. 절대 URL(`https://`)·프로토콜
+ * 상대(`//`)·해시·mailto는 제외한다. `&amp;`만 풀면 된다 — href 안에서 실제로
+ * 이스케이프되는 문자는 그것뿐이다(`archivePath`의 `?tag=a&series=b`).
+ */
+const HTML_ANCHOR = /<a\b(?:[^>"']|"[^"]*"|'[^']*')*>/gi;
+export function collectInternalLinks(html: string): string[] {
+  const links: string[] = [];
+  for (const tag of html.match(HTML_ANCHOR) ?? []) {
+    const m = tag.match(/\shref="([^"]*)"/i);
+    if (!m) continue;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- 패턴의 1번 캡처 그룹은 매치에 항상 참여
+    const href = m[1]!.replace(/&amp;/g, '&');
+    if (href.startsWith('/') && !href.startsWith('//')) links.push(href);
+  }
+  return links;
+}
+
 export function parsePageSeo(html: string): PageSeo {
   const titleMatch = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
   const canonicalMatch =
@@ -149,6 +167,26 @@ export function checkPages(pages: Map<string, string>): SeoViolation[] {
     const seo = parsePageSeo(html);
     const add = (rule: string, message: string) =>
       violations.push({ page, rule, message });
+
+    // 내부 링크의 후행 슬래시. `trailingSlash: true` 사이트라 페이지 URL은 전부
+    // `/…/`인데, next/link는 마지막 세그먼트에 `.`이 있는 경로를 파일로 보고
+    // 슬래시를 벗긴다(next.config.ts의 skipTrailingSlashRedirect 주석). 실제로
+    // `/posts/turborepo-next.js-docker`가 그렇게 3개 페이지에 나갔다 — 클릭마다
+    // 301을 한 번 더 타고, export 모드 클라이언트 라우터는 `….txt`를 못 찾아
+    // MPA 폴백으로 떨어진다. "링크 경로 + `/`"가 실제 페이지로 존재할 때만
+    // 잡는다 — `/rss.xml` 같은 파일 링크는 페이지가 아니라 통과한다.
+    // noindex 페이지도 본다(내비게이션 문제이지 색인 문제가 아니다).
+    for (const href of collectInternalLinks(html)) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- split은 항상 1개 이상을 돌려준다
+      const path = href.split(/[?#]/)[0]!;
+      if (path.endsWith('/')) continue;
+      // page 키는 디스크 이름(디코드), href는 퍼센트 인코딩 — canonical과 같은 이유로 풀어 비교
+      if (!pages.has(`${decodeUrlSafe(path)}/`)) continue;
+      add(
+        'link-trailing-slash',
+        `내부 링크에 후행 슬래시가 없습니다: ${href} (페이지는 ${path}/ 에 있습니다)`,
+      );
+    }
 
     // noindex 페이지(admin, 개인정보처리방침)는 검색 대상이 아니다.
     if (seo.robotsNoindex) continue;

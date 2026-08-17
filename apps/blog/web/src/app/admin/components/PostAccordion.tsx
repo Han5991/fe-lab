@@ -116,7 +116,7 @@ export function PostAccordion({ post }: Props) {
           })}
         >
           <Link
-            href={`/admin/analytics/${post.slug}`}
+            href={`/admin/analytics/${post.slug}/`}
             onClick={e => e.stopPropagation()}
             className={css({
               color: 'ink.500',
