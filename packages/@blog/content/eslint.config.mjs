@@ -73,21 +73,17 @@ export default defineConfig([
     },
   },
 
-  // ── disable 주석 정책 (앱 eslint.config.mjs와 같은 기준) ───────────────────
-  // 인가 자체를 막지는 않되 조용한 인가를 막는다. 이 패키지의 기존 인가는
-  // 전부 `-- 이유`가 붙어 있어 규칙 승격만으로 통과한다.
+  // ── disable 주석 정책: 인라인 인가 전면 금지 (앱과 같은 기준) ─────────────
+  // 룰을 끄는 결정은 이 파일에서만 한다. 근거는 앱 eslint.config.mjs 참조.
   {
     plugins: { '@eslint-community/eslint-comments': eslintComments },
-    rules: {
-      '@eslint-community/eslint-comments/require-description': 'error',
-      '@eslint-community/eslint-comments/no-unlimited-disable': 'error',
-    },
-  },
-
-  {
     linterOptions: {
-      reportUnusedDisableDirectives: 'error',
+      noInlineConfig: true,
       reportUnusedInlineConfigs: 'error',
+    },
+    rules: {
+      // 무효가 된 주석이 소스에 남아 "껐다"고 오해시키지 않도록 주석 자체를 막는다.
+      '@eslint-community/eslint-comments/no-use': 'error',
     },
   },
 

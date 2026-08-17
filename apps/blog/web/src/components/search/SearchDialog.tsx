@@ -73,11 +73,26 @@ export const SearchDialog = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [posts, setPosts] = useState<SearchPost[]>([]);
-  const [selectedIndex, setSelectedIndex] = useState(0);
+  // 선택 인덱스는 **어느 검색어에 대한 선택인지**와 함께 들고 다닌다. 예전에는
+  // query가 바뀔 때마다 effect가 0으로 되돌렸는데, 그러면 렌더 → effect →
+  // 리렌더가 한 번 더 돌고(cascading render), 그 사이 한 프레임 동안 이전
+  // 검색어의 인덱스가 새 결과 위에 얹힌 채로 그려진다. 검색어를 함께 들고
+  // 있으면 "과거의 선택"인지 렌더 중에 바로 판정되어 그 프레임이 없다.
+  const [selection, setSelection] = useState({ query: '', index: 0 });
   const [recentViews, setRecentViews] = useState<RecentView[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+
+  // 저장된 선택이 지금 검색어의 것이 아니면 0으로 읽는다 — 되돌리는 effect 없이
+  // 렌더 중에 판정된다.
+  const selectedIndex = selection.query === query ? selection.index : 0;
+  const moveSelection = (next: (prev: number) => number) => {
+    setSelection(prev => ({
+      query,
+      index: next(prev.query === query ? prev.index : 0),
+    }));
+  };
 
   const showRecentViews = !query.trim() && recentViews.length > 0;
   const recentAsPosts: SearchPost[] = !showRecentViews
@@ -134,7 +149,7 @@ export const SearchDialog = () => {
   const closeDialog = useCallback(() => {
     setIsOpen(false);
     setQuery('');
-    setSelectedIndex(0);
+    setSelection({ query: '', index: 0 });
   }, []);
 
   // Cmd+K / Ctrl+K 단축키
@@ -166,12 +181,6 @@ export const SearchDialog = () => {
     };
   }, [isOpen]);
 
-  // query 변경 시 선택 인덱스 초기화 (검색 결과가 달라지므로)
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- query 변경 추적용 1줄 reset
-    setSelectedIndex(0);
-  }, [query]);
-
   const handleSelect = (slug: string) => {
     closeDialog();
     // 예전엔 `/posts/${slug}`를 그대로 밀어 넣어, 인코딩도 후행 슬래시도
@@ -184,11 +193,11 @@ export const SearchDialog = () => {
     switch (e.key) {
       case 'ArrowDown':
         e.preventDefault();
-        setSelectedIndex(prev => Math.min(prev + 1, filteredPosts.length - 1));
+        moveSelection(prev => Math.min(prev + 1, filteredPosts.length - 1));
         break;
       case 'ArrowUp':
         e.preventDefault();
-        setSelectedIndex(prev => Math.max(prev - 1, 0));
+        moveSelection(prev => Math.max(prev - 1, 0));
         break;
       case 'Enter':
         e.preventDefault();

@@ -184,35 +184,35 @@ export default defineConfig([
     },
   },
 
-  // ── disable 주석 정책 ──────────────────────────────────────────────────────
-  // 린트를 통째로 끄지는 않되(기존 non-null assertion 인가들이 정당한 이유와
-  // 함께 남아 있다), **조용히 끄는 것은 막는다.**
+  // ── disable 주석 정책: 인라인 인가 전면 금지 ───────────────────────────────
+  // 룰을 끄는 결정은 **이 파일에서만** 한다. 소스에 흩어진 한 줄짜리 인가는
+  // 리뷰에서 diff 한 줄로 지나가고, 한 번 붙으면 근거가 유효한지 아무도 다시
+  // 묻지 않는다. 여기서 끄면 최소한 "무엇을 왜 껐나"가 한곳에 모인다.
   {
     plugins: { '@eslint-community/eslint-comments': eslintComments },
-    rules: {
-      // 이유 없는 disable 금지 — `-- 왜 여기서는 안전한가`를 반드시 붙인다.
-      // 이 저장소가 이미 쓰고 있던 서술 방식을 규칙으로 승격한 것이라 기존
-      // 인가는 그대로 통과한다.
-      '@eslint-community/eslint-comments/require-description': 'error',
-      // 룰명 없는 광역 disable(`/* eslint-disable */`) 금지. 한 줄로 파일
-      // 전체의 모든 룰을 끄면 나중에 무엇을 왜 껐는지 복원할 수 없다.
-      '@eslint-community/eslint-comments/no-unlimited-disable': 'error',
-      // a11y는 주석으로 끌 수 없다. 이 계열 위반은 "여기서는 안전하다"가
-      // 성립하지 않는다 — 마우스 없이 닿을 수 없는 요소는 어떤 이유를 적어도
-      // 여전히 닿을 수 없다. 끄고 싶으면 설계로 풀거나 이 설정에서 명시적으로
-      // 룰을 내려야 하고, 그 변경은 리뷰에 보인다.
-      '@eslint-community/eslint-comments/no-restricted-disable': [
-        'error',
-        'jsx-a11y/*',
-      ],
-    },
-  },
-
-  {
     linterOptions: {
-      reportUnusedDisableDirectives: 'error',
+      // 인라인 설정 주석을 **읽지 않는다.** eslint-disable·eslint-enable·
+      // eslint(룰 설정)·globals 전부 무효가 된다.
+      noInlineConfig: true,
       reportUnusedInlineConfigs: 'error',
     },
+    rules: {
+      // noInlineConfig는 주석을 조용히 무시할 뿐이라, 그것만 켜면 "끈 줄 알았는데
+      // 안 꺼진" 죽은 주석이 소스에 남는다. 주석 자체를 에러로 만들어 그 상태를
+      // 없앤다 — 인가가 필요하면 이 설정 파일에 files 스코프로 적어야 한다.
+      '@eslint-community/eslint-comments/no-use': 'error',
+    },
+  },
+  {
+    // 인라인 인가를 금지한 대신, 정당한 예외는 **여기에** 파일 단위로 적는다.
+    //
+    // useTocHook의 첫 effect는 마운트 시점에 `#post-content`의 헤딩을 한 번
+    // 읽어 상태로 옮긴다. 서버에는 DOM이 없어 useState의 lazy initializer로는
+    // 읽을 수 없고, useSyncExternalStore로 감싸려면 구독할 대상이 없는 store를
+    // 지어내야 한다 — 1회성 측정에 비해 과하다. 룰이 잡는 "연쇄 렌더" 위험은
+    // 이 effect가 deps 빈 배열로 한 번만 도는 한 존재하지 않는다.
+    files: ['src/components/tocHooks.tsx'],
+    rules: { 'react-hooks/set-state-in-effect': 'off' },
   },
 
   {

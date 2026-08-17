@@ -54,9 +54,13 @@ export function getAllSeries(): SeriesSummary[] {
   const series: SeriesSummary[] = Array.from(map.entries()).map(
     ([id, { posts: ps, updated }], idx) => {
       const meta = getSeriesMeta(id);
-      const colorKey =
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- length로 나눈 나머지 인덱스는 항상 범위 안
-        SERIES_COLOR_MAP[id] ?? COLOR_FALLBACK[idx % COLOR_FALLBACK.length]!;
+      // 폴백 목록이 비면 나머지 연산이 NaN이라 아무 색도 고르지 못한다.
+      // 설정에서 비울 수 있는 값이므로 마지막 기본값을 명시한다.
+      const cycled =
+        COLOR_FALLBACK.length > 0
+          ? COLOR_FALLBACK[idx % COLOR_FALLBACK.length]
+          : undefined;
+      const colorKey = SERIES_COLOR_MAP[id] ?? cycled ?? 'accent';
       return {
         id,
         title: meta?.title ?? id,

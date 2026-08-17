@@ -90,8 +90,8 @@ function extractPostUrls(text: string, pattern: RegExp): Set<string> {
   const postPrefix = `${SITE_URL}${POSTS_PATH}`;
   return new Set(
     [...text.matchAll(pattern)]
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- 이 파일의 패턴들은 전부 1번 캡처 그룹이 매치에 항상 참여
-      .map(m => decodeUrlSafe(m[1]!.trim()))
+      // 이 파일의 패턴들은 전부 1번 캡처 그룹이 매치에 항상 참여한다.
+      .map(m => decodeUrlSafe((m[1] ?? '').trim()))
       // `/posts/` 자체는 아카이브 목록 페이지지 글이 아니다 — sitemap에만 있는 게 정상.
       .filter(url => url.startsWith(postPrefix) && url !== postPrefix),
   );

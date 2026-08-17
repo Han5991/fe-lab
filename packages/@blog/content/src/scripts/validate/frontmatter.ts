@@ -48,6 +48,25 @@ import { resolveSeverity } from './rules';
  */
 const KNOWN_FRONTMATTER_KEYS = new Set<string>(FRONTMATTER_KEYS);
 
+/**
+ * 진단 메시지에 "무엇이 들어왔는지"를 그대로 보여 주기 위한 포매터.
+ *
+ * YAML 값은 임의 타입이라 `String(value)`를 그냥 쓰면 객체가 `[object Object]`가
+ * 되어, 정작 알려 주려던 것 — 무엇이 들어왔나 — 을 못 알려 준다. 객체·배열은
+ * JSON으로 펼치고, 순환 참조처럼 JSON이 실패하는 값만 태그로 떨어뜨린다.
+ */
+function describeValue(value: unknown): string {
+  if (value instanceof Date) return value.toISOString();
+  if (typeof value === 'object' && value !== null) {
+    try {
+      return JSON.stringify(value) ?? Object.prototype.toString.call(value);
+    } catch {
+      return Object.prototype.toString.call(value);
+    }
+  }
+  return String(value);
+}
+
 /** 판정 사슬 하나가 받는 것 전부. 심각도 계산에 data와 options가 함께 필요하다. */
 interface FileContext {
   record: PostRecord;
@@ -291,8 +310,7 @@ const dateChain: Chain = ({ record: { data, relPath }, raw, options }) => {
       line: findFrontmatterLine(raw, 'date'),
       severity: resolveSeverity('invalid-date', data, options),
       rule: 'invalid-date',
-      // eslint-disable-next-line @typescript-eslint/no-base-to-string -- YAML 값은 임의 타입이다. 진단 메시지에 "무엇이 들어왔는지"를 그대로 보여 주는 게 목적이라 Date는 toString, 객체는 '[object Object]' 폴백이 의도된 동작이다.
-      message: `\`date\`가 유효한 날짜가 아닙니다: ${String(data['date'])}`,
+      message: `\`date\`가 유효한 날짜가 아닙니다: ${describeValue(data['date'])}`,
     });
   } else if (
     typeof data['date'] === 'string' &&
@@ -328,8 +346,7 @@ const updatedAtChain: Chain = ({ record: { data, relPath }, raw, options }) => {
       line: findFrontmatterLine(raw, 'updatedAt'),
       severity: resolveSeverity('invalid-updated-at', data, options),
       rule: 'invalid-updated-at',
-      // eslint-disable-next-line @typescript-eslint/no-base-to-string -- 위 invalid-date와 같은 이유: 진단 메시지는 들어온 값을 그대로 보여 준다.
-      message: `\`updatedAt\`이 유효한 날짜가 아닙니다: ${String(data['updatedAt'])}`,
+      message: `\`updatedAt\`이 유효한 날짜가 아닙니다: ${describeValue(data['updatedAt'])}`,
     });
   } else if (
     typeof data['updatedAt'] === 'string' &&

@@ -62,7 +62,8 @@ export const useTocHook = () => {
 
     // 마운트 시점 DOM 파싱 결과를 상태로 옮기는 정당한 외부 시스템 sync.
     // useSyncExternalStore로 모델링 가능하지만 1회성 측정이라 over-engineering.
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- 외부 시스템(DOM) 1회 측정
+    // 이 파일의 set-state-in-effect 인가는 eslint.config.mjs에 files 스코프로
+    // 적혀 있다(인라인 disable 주석은 저장소 전체에서 금지).
     setToc(items);
   }, []);
 
@@ -112,9 +113,12 @@ export const useTocHook = () => {
         }
       });
 
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- effect 첫 줄에서 toc.length > 0 을 확인했고 current는 forEach 인덱스다
-      const currentId = toc[current]!.id;
-      setActiveId(prev => (prev === currentId ? prev : currentId));
+      // effect 첫 줄에서 toc.length > 0 을 확인했고 current는 forEach 인덱스라
+      // 실제로는 항상 잡힌다. 못 잡으면 비출 항목이 없다는 뜻이라 그냥 둔다.
+      const currentId = toc[current]?.id;
+      if (currentId !== undefined) {
+        setActiveId(prev => (prev === currentId ? prev : currentId));
+      }
       // 헤딩이 하나도 안 보이는 구간(긴 절의 한복판)에서는 구간을 만들 수
       // 없다. 그때는 방금 지나온 절 한 줄만 비춘다.
       const range: [number, number] =

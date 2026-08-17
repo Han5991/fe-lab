@@ -22,9 +22,7 @@ function parseLines(raw: string): Line[] {
     .filter(line => line.trim().length > 0)
     .map(line => {
       const normalized = line.replace(/^\t+/, m => '  '.repeat(m.length));
-      const indentMatch = normalized.match(/^( *)/);
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- `( *)`는 매치에 항상 참여한다(빈 문자열 가능)
-      const indent = indentMatch ? indentMatch[1]!.length : 0;
+      const indent = (/^( *)/.exec(normalized)?.[1] ?? '').length;
       const depth = Math.floor(indent / 2);
       const trimmed = normalized.trim();
       const isDir = trimmed.endsWith('/');
@@ -54,34 +52,36 @@ export function FileTree({ children }: FileTreeProps) {
   const lines = parseLines(text);
 
   const rendered: string[] = [];
-  for (let i = 0; i < lines.length; i++) {
-    // 루프 조건이 인덱스 범위를 보장한다 (아래 j 루프도 동일).
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- 위 주석: 루프 조건이 인덱스 범위 보장
-    const line = lines[i]!;
+  // entries()로 도는 이유는 인덱스와 값을 함께 쓰기 때문이다. `lines[i]`로
+  // 꺼내면 타입이 `Line | undefined`가 되고(noUncheckedIndexedAccess), 그걸
+  // 좁히는 유일한 방법이 non-null 단언이었다.
+  for (const [i, line] of lines.entries()) {
+    // 뒤쪽 줄만 본다 — "이 아래에 같은 깊이의 형제가 또 있나"가 커넥터 모양을
+    // 정한다. slice로 잘라 두면 인덱스 산술 없이 값만 보면 된다.
+    const later = lines.slice(i + 1);
+
     const ancestorContinues: boolean[] = [];
     for (let d = 1; d < line.depth; d++) {
       let hasMoreSibling = false;
-      for (let j = i + 1; j < lines.length; j++) {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- 루프 조건 j < lines.length가 범위 보장
-        const later = lines[j]!;
-        if (later.depth < d) break;
-        if (later.depth === d) {
+      for (const candidate of later) {
+        if (candidate.depth < d) break;
+        if (candidate.depth === d) {
           hasMoreSibling = true;
           break;
         }
       }
       ancestorContinues.push(hasMoreSibling);
     }
+
     let isLast = true;
-    for (let j = i + 1; j < lines.length; j++) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- 루프 조건 j < lines.length가 범위 보장
-      const later = lines[j]!;
-      if (later.depth < line.depth) break;
-      if (later.depth === line.depth) {
+    for (const candidate of later) {
+      if (candidate.depth < line.depth) break;
+      if (candidate.depth === line.depth) {
         isLast = false;
         break;
       }
     }
+
     rendered.push(renderTreeLine(line, isLast, ancestorContinues));
   }
 

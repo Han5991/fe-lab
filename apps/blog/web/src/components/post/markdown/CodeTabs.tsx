@@ -135,8 +135,10 @@ export function CodeTabs({ children }: { children?: ReactNode }) {
   // 그대로 흘려보낸다.
   if (items.length === 0) return <>{children}</>;
 
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- 위에서 items.length > 0 을 확인했고 active ≥ 0 이라 인덱스는 항상 범위 안
-  const current = items[Math.min(active, items.length - 1)]!;
+  // active는 0 이상이고 위에서 items.length > 0 을 확인했으므로 인덱스는 항상
+  // 범위 안이다. 타입으로는 증명되지 않으니, 못 고르면 위와 같은 폴백을 쓴다.
+  const current = items[Math.min(active, items.length - 1)];
+  if (!current) return <>{children}</>;
 
   // ←/→ 로 옮기고 Home/End 로 양 끝으로 간다(WAI-ARIA tabs 패턴). 버튼만
   // 으로도 Tab 키 순회는 되지만, 탭 목록 안에서는 이쪽이 기본 조작이다.
