@@ -1,5 +1,24 @@
 # For detailed configuration reference documentation, visit:
 # https://supabase.com/docs/guides/local-development/cli/config
+#
+# ⛔ `supabase config push` 를 습관적으로 돌리지 말 것 (2026-08-17 결정)
+#
+# 이 파일은 **로컬 개발용**이고, 일부 값은 프로덕션과 달라야 정상이다:
+#   site_url                 = http://localhost:3000        (프로덕션: https://blog.sangwook.dev)
+#   additional_redirect_urls = localhost:3000/admin/ …       (프로덕션: blog.sangwook.dev/admin/ …)
+# 이걸 밀어 넣으면 프로덕션 OAuth 리다이렉트 허용목록이 무너져 admin 로그인이 깨진다.
+# 되돌리려면 대시보드에서 손으로 다시 넣어야 한다.
+#
+# `supabase link` 는 매번 "Local config differs from linked project. Try updating
+# supabase/config.toml" 이라고 권하는데, 그건 **이 파일을 고치라는 말**이지 프로덕션에
+# 밀어 넣으라는 말이 아니다. 방향을 반대로 잡는 것이 이 경고의 함정이다.
+#
+# 프로젝트 설정은 Supabase 대시보드에서 직접 바꾼다. 정말 config push 가 필요하면
+# 그때 어떤 키가 밀려 들어가는지 하나씩 확인하고 돌릴 것.
+#
+# 스키마(마이그레이션)는 이야기가 다르다 — 그건 로컬과 프로덕션이 같아야 하는 것이고,
+# .github/workflows/supabase-migrations.yml 이 `supabase db push` 로 자동 적용한다.
+# 두 명령은 이름만 비슷할 뿐 별개다.
 # A string used to distinguish different Supabase projects on the same host. Defaults to the
 # working directory name when running `supabase init`.
 project_id = "web"
