@@ -189,14 +189,15 @@ describe('useTocHook - 본문 변화 추적', () => {
     expect(result.current.toc).toBe(before);
   });
 
-  // TOC와 MobileTOC가 같은 페이지에 함께 마운트된다(PostClient). 둘이 같은
-  // 스냅샷을 봐야 하고, 한쪽이 늦게 구독한다고 목록이 흔들려선 안 된다.
+  // TOC와 MobileTOC가 같은 페이지에 함께 마운트된다(PostClient). 캐시는 인스턴스
+  // 별로 따로 두지만 — 페이지 전환 중 두 글의 본문이 공존할 때 서로에게 새지
+  // 않게 — 같은 본문을 읽으므로 내용은 같아야 한다.
   test('두 곳에서 함께 구독해도 같은 목차를 본다', () => {
     mountHeadings(HEADINGS);
     const first = renderHook(() => useTocHook());
     const second = renderHook(() => useTocHook());
 
-    expect(second.result.current.toc).toBe(first.result.current.toc);
+    expect(second.result.current.toc).toEqual(first.result.current.toc);
   });
 
   // 스냅샷 캐시는 모듈 스코프에 있어 글이 바뀌어도 살아남는다. 구독(=무효화)은

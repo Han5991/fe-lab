@@ -1,6 +1,12 @@
 'use client';
 
-import { useEffect, useState, useSyncExternalStore } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react';
 
 /**
  * 화면 맨 위에서 **고정 헤더가 덮는 높이.**
@@ -51,12 +57,22 @@ interface TOCItem {
  */
 const EMPTY_TOC: TOCItem[] = [];
 
-/** 마지막으로 돌려준 스냅샷. 참조가 바뀌면 이 훅을 쓰는 화면이 다시 그려진다. */
-let tocSnapshot: TOCItem[] = EMPTY_TOC;
-/** 본문이 바뀌었으니 다시 읽어야 한다는 표시. */
-let tocStale = true;
-/** 그 스냅샷을 읽어 온 본문 노드. 노드가 갈리면 스냅샷은 남의 글 것이다. */
-let readFrom: Element | null = null;
+/**
+ * 훅 인스턴스 하나가 들고 있는 캐시.
+ *
+ * 모듈 전역으로 두면 안 된다. 페이지 전환(SSGOI)은 나가는 글을
+ * `position: absolute`로 띄운 채 새 글을 마운트하므로, 그 사이 `#post-content`가
+ * 문서에 **둘** 있다. 캐시를 공유하면 한쪽 인스턴스가 읽은 결과가 다른 글의
+ * 차례로 새어 든다.
+ */
+interface TocCache {
+  /** 마지막으로 돌려준 스냅샷. 참조가 바뀌면 그 화면이 다시 그려진다. */
+  snapshot: TOCItem[];
+  /** 본문이 바뀌었으니 다시 읽어야 한다는 표시. */
+  stale: boolean;
+  /** 그 스냅샷을 읽어 온 본문 노드. 노드가 갈리면 스냅샷은 남의 글 것이다. */
+  from: Element | null;
+}
 
 const readToc = (content: Element | null): TOCItem[] => {
   if (!content) return EMPTY_TOC;
@@ -82,54 +98,64 @@ const isSameToc = (a: TOCItem[], b: TOCItem[]): boolean =>
     );
   });
 
-const getTocSnapshot = (): TOCItem[] => {
+const readSnapshot = (cache: TocCache): TOCItem[] => {
   const content = document.getElementById('post-content');
-  // 클라이언트 내비게이션으로 다른 글에 오면 본문 노드가 통째로 갈린다. 그때
-  // 이전 글의 스냅샷이 남아 있는데, subscribe의 무효화는 **커밋 뒤**에나 불려
-  // 첫 렌더에 늦는다 — 한 프레임 동안 남의 차례가 보인다. 노드 동일성으로
-  // 여기서 먼저 잡는다(getElementById는 해시 조회라 렌더마다 불러도 싸다).
-  if (content !== readFrom) {
-    readFrom = content;
-    tocStale = true;
+  // 다른 글에 오면 본문 노드가 갈린다. 그때 이전 글의 스냅샷이 남아 있는데
+  // 구독의 무효화는 **커밋 뒤**에나 불려 첫 렌더에 늦는다 — 한 프레임 동안
+  // 남의 차례가 보인다. 노드 동일성으로 여기서 먼저 잡는다(getElementById는
+  // 해시 조회라 렌더마다 불러도 싸다). 전환이 끝나 나가는 글이 사라지면 다음
+  // 렌더의 이 비교가 새 본문을 잡아 스스로 회복한다.
+  if (content !== cache.from) {
+    cache.from = content;
+    cache.stale = true;
   }
 
   // 그 밖에는 **알림을 받았을 때만** 읽는다. getSnapshot은 렌더마다 불리므로
   // 매번 훑으면 스크롤 한 프레임마다 querySelectorAll이 도는 셈이 된다.
-  if (tocStale) {
-    tocStale = false;
+  if (cache.stale) {
+    cache.stale = false;
     const next = readToc(content);
     // 코드 탭 전환처럼 본문 안쪽만 바뀐 경우 헤딩은 그대로다. 그때 새 배열을
     // 돌려주면 아무것도 안 바뀐 채로 차례가 통째로 다시 그려진다.
-    if (!isSameToc(tocSnapshot, next)) tocSnapshot = next;
+    if (!isSameToc(cache.snapshot, next)) cache.snapshot = next;
   }
-  return tocSnapshot;
+  return cache.snapshot;
 };
 
 /** 서버에는 DOM이 없다. 하이드레이션까지 빈 목록이고 그 직후 실제 헤딩이 온다. */
 const getServerTocSnapshot = (): TOCItem[] => EMPTY_TOC;
 
-const subscribeToc = (onStoreChange: () => void): (() => void) => {
-  // 구독이 끊겨 있던 사이의 변경은 옵저버가 놓친다. 다시 붙을 때 한 번
-  // 무효화해 그 공백을 메운다(본문 노드가 통째로 갈린 경우는 위 getSnapshot이
-  // 노드 동일성으로 먼저 잡는다).
-  tocStale = true;
-
-  const content = document.getElementById('post-content');
-  // 본문이 없으면 지켜볼 것도 없다(예전 effect의 `if (!content) return`과 같다).
-  if (!content) return () => undefined;
-
-  const observer = new MutationObserver(() => {
-    tocStale = true;
-    onStoreChange();
-  });
-  observer.observe(content, { childList: true, subtree: true });
-  return () => observer.disconnect();
-};
-
 export const useTocHook = () => {
+  const cache = useRef<TocCache>({
+    snapshot: EMPTY_TOC,
+    stale: true,
+    from: null,
+  });
+
+  // 구독·스냅샷 함수는 인스턴스마다 하나씩 고정한다. 렌더마다 새로 만들면
+  // useSyncExternalStore가 매번 구독을 끊고 다시 건다.
+  const subscribe = useCallback((onStoreChange: () => void) => {
+    // 구독이 끊겨 있던 사이의 변경은 옵저버가 놓친다. 다시 붙을 때 한 번
+    // 무효화해 그 공백을 메운다.
+    cache.current.stale = true;
+
+    const content = document.getElementById('post-content');
+    // 본문이 없으면 지켜볼 것도 없다(예전 effect의 `if (!content) return`과 같다).
+    if (!content) return () => undefined;
+
+    const observer = new MutationObserver(() => {
+      cache.current.stale = true;
+      onStoreChange();
+    });
+    observer.observe(content, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, []);
+
+  const getSnapshot = useCallback(() => readSnapshot(cache.current), []);
+
   const toc = useSyncExternalStore(
-    subscribeToc,
-    getTocSnapshot,
+    subscribe,
+    getSnapshot,
     getServerTocSnapshot,
   );
   const [activeId, setActiveId] = useState('');
