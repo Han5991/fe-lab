@@ -21,4 +21,10 @@ describe('slugFromParams', () => {
   it('세그먼트가 없으면 빈 문자열', () => {
     expect(slugFromParams(undefined)).toBe('');
   });
+
+  it('잘못된 percent-encoding은 던지지 않고 원문을 돌려준다 (lookup만 빗나가게)', () => {
+    expect(() => slugFromParams('100%-done')).not.toThrow();
+    expect(slugFromParams('100%-done')).toBe('100%-done');
+    expect(slugFromParams(['a%', 'b'])).toBe('a%/b');
+  });
 });
