@@ -59,6 +59,11 @@ jobs:
           # 프로젝트 ref 는 비밀값이 아니다 — 커밋된 apps/blog/web/.env.production 의
           # NEXT_PUBLIC_SUPABASE_URL 에 이미 들어 있는 공개 식별자다.
           REF: anbofhnldllmivlovyqb
+          # 값 출처: `supabase link` 가 기록하는 apps/blog/web/supabase/.temp/pooler-url.
+          # 그 파일은 gitignore 대상이라 저장소에서는 대조할 수 없다. 프로젝트 리전이
+          # 바뀌거나 이 값이 의심스러우면 링크한 로컬에서 아래로 다시 확인할 것:
+          #   cat apps/blog/web/supabase/.temp/pooler-url
+          # (기록된 포트는 6543이지만 여기서는 세션 모드 5432를 쓴다 — 위 주석 참고)
           REGION_HOST: aws-0-ap-northeast-2.pooler.supabase.com
           DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
         run: |
