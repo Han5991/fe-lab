@@ -3,7 +3,7 @@
  *
  * 예전에는 키 하나를 더하려면 네 곳을 손으로 맞춰야 했습니다:
  * (1) `types.ts`의 `RawFrontmatter`, (2) `repository.ts`의 `parsePost` 좁히기,
- * (3) `scripts/validate-posts.ts`의 허용 키 집합, (4) 루트 `CLAUDE.md`의 표.
+ * (3) `src/scripts/validate-posts.ts`의 허용 키 집합, (4) 루트 `CLAUDE.md`의 표.
  * 넷은 실제로 서로 **다른 순서**를 들고 있었고, 어긋나도 아무것도 깨지지 않았습니다.
  *
  * 지금은 (1)이 이 테이블에서 파생되고(`RawFrontmatter`), (3)이 이 테이블을 읽고,
@@ -28,7 +28,7 @@ import { isPostStatus } from './visibility';
 // 함수**를 가리켜야 "테이블이 선언한 좁히기"와 "실제로 도는 좁히기"가 갈라지지
 // 않으므로 여기로 옮겼습니다.
 //
-// `domain/post/index.ts` 배럴에는 `toDateString`만 올립니다 — 배럴은 "밖에서 쓸
+// `src/post/index.ts` 배럴에는 `toDateString`만 올립니다 — 배럴은 "밖에서 쓸
 // 것"만 큐레이션하는 표면이고(index.ts의 주석 참고), 나머지는 도메인 안에서
 // parsePost와 이 테이블만 씁니다.
 

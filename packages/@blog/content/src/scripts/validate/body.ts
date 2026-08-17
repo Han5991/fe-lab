@@ -275,7 +275,7 @@ export function validateCodeFenceLanguages(
       // 고정 'warning' 규칙이라 options를 비웠다 — SEO_PUBLISH로 바꾸려면 여기까지 배선할 것
       severity: resolveSeverity('unregistered-code-language', record.data, {}),
       rule: 'unregistered-code-language',
-      message: `구문 강조에 등록되지 않은 언어입니다: \`${label}\` — 강조 없이 평문으로 렌더됩니다. lib/shared/prismLanguages.ts에 추가하거나 평문 라벨(text)을 쓰세요.`,
+      message: `구문 강조에 등록되지 않은 언어입니다: \`${label}\` — 강조 없이 평문으로 렌더됩니다. @blog/content의 src/shared/prismLanguages.ts에 추가하거나 평문 라벨(text)을 쓰세요.`,
     });
   }
 

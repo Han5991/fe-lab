@@ -109,7 +109,8 @@ test('resolveContentPaths: appRoot 기준 절대 경로를 만든다', () => {
 });
 
 test('CONTENT_PATHS: 실제 앱 루트에 앵커된다 (cwd 비의존)', () => {
-  // lib/shared/ 의 두 단계 위 = 앱 루트. postsDir는 그 형제의 posts/다.
+  // contentPaths가 자기 위치에서 워크스페이스 루트로 올라가 apps/blog/web을 앱 루트로
+  // 잡는다. postsDir는 그 형제의 posts/다.
   assert.ok(CONTENT_PATHS.appRoot.endsWith(`${sep}blog${sep}web`));
   assert.ok(CONTENT_PATHS.postsDir.endsWith(`${sep}blog${sep}posts`));
 });

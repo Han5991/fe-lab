@@ -2,10 +2,10 @@
  * 실제 `apps/blog/posts/` 디렉토리를 읽어 **빌드 산출물**(sitemap/rss/
  * search-index/llms-full)의 핵심 불변식을 잠그는 회귀 테스트입니다.
  *
- * 도메인 계약(공개 글 필드·시리즈 단일 출처)은 `domain/post/contract.test.ts`에
+ * 도메인 계약(공개 글 필드·시리즈 단일 출처)은 `src/post/contract.test.ts`에
  * 있습니다 — 산출물 계약은 생성기(scripts)를 import해야 해서 여기(scripts/)로
- * 분리했습니다. 도메인 쪽에 두면 domain → scripts 역의존이 생기고, 패키지로
- * 이사할 때 성립하지 않는 방향입니다.
+ * 분리했습니다. post 쪽에 두면 content → build 역의존이 생겨 boundaries가
+ * 막는 방향입니다.
  *
  * 콘텐츠 개수 자체는 잠그지 않습니다(글이 추가/숨김되는 정상 변경에 깨지면 안 됨).
  */

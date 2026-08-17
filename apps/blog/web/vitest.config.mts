@@ -5,9 +5,9 @@ import react from '@vitejs/plugin-react';
 /**
  * 컴포넌트/훅용 vitest 설정 (jsdom 환경).
  *
- * domain/lib/scripts의 순수 로직 테스트는 기존 `node --test`가 담당하고,
- * vitest는 src/ 의 DOM 의존 컴포넌트·훅 테스트만 맡습니다(include 스코프로 분리).
- * 두 러너는 `pnpm test`에서 순차 실행됩니다.
+ * domain/lib의 순수 로직 테스트는 기존 `node --test`가 담당하고(콘텐츠·스크립트
+ * 테스트는 packages/@blog/content로 이사했다), vitest는 src/ 의 DOM 의존 컴포넌트·훅
+ * 테스트만 맡습니다(include 스코프로 분리). 두 러너는 `pnpm test`에서 순차 실행됩니다.
  */
 export default defineConfig({
   plugins: [react()],

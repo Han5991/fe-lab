@@ -28,14 +28,15 @@ import { encodePostSlug } from './utils';
  *    JSON-LD는 절대(`postUrl`)입니다. 절대 쪽은 siteUrl을 주입받습니다 —
  *    생성기들이 테스트 결정성을 위해 이미 그렇게 하고 있습니다.
  *
- * **클라이언트 컴포넌트에서는 이 파일을 leaf로 import하세요**
- * (`@/domain/post/urls`). 배럴(`@/domain/post`)은 `export * from './series'`로
- * 모듈 평가 시점에 `node:fs`를 당겨 오므로, 클라이언트 번들에 배럴을 값으로
- * import하면 빌드가 깨집니다. 서버 코드는 배럴로 가져와도 됩니다.
+ * **클라이언트 컴포넌트에서는 이 모듈이 fs를 끌지 않는다는 점에 기대세요** —
+ * `@blog/content` 배럴은 `export * from './series'`로 모듈 평가 시점에 `node:fs`를
+ * 당겨 오지만, 앱의 next.config가 `optimizePackageImports: ['@blog/content']`로
+ * 배럴 import를 leaf로 좁혀 클라이언트 번들에 fs가 새지 않게 합니다. 서버 코드는
+ * 배럴로 가져와도 됩니다.
  */
 
 /**
- * 글 아카이브 라우트. `lib/shared/constants.ts`의 `RSS_PATH`와 나란히 두고 싶어지지만
+ * 글 아카이브 라우트. `src/shared/constants.ts`의 `RSS_PATH`와 나란히 두고 싶어지지만
  * `/posts/`는 사이트 상수가 아니라 **라우트 모양**이고, 후행 슬래시 규칙을
  * `postPath`와 한 파일에서 공유해야 두 규칙이 갈리지 않아 여기 둔다.
  */
