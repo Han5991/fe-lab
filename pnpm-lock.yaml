@@ -552,7 +552,7 @@ importers:
   packages/@design-system/ui-lib:
     dependencies:
       react:
-        specifier: '*'
+        specifier: 'catalog:'
         version: 19.2.8
 
   packages/@package/bundler:
