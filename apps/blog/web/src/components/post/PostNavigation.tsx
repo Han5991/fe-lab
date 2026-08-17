@@ -3,8 +3,8 @@
 import Link from 'next/link';
 import { css, sva } from '@design-system/ui-lib/css';
 import type { RecipeVariant } from '@design-system/ui-lib/css';
-import type { PostNavItem } from '@/domain/post';
-import { postPath } from '@/domain/post/urls';
+import type { PostNavItem } from '@blog/content';
+import { postPath } from '@blog/content';
 
 interface PostNavigationProps {
   prev: PostNavItem | null;

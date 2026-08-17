@@ -4,10 +4,10 @@ import {
   getAdjacentPosts,
   getSeriesAdjacentPosts,
   getAllPosts,
-} from '@/domain/post';
-import { getSeriesMeta, sortPostsBySeriesOrder } from '@/domain/post/series';
-import { resolveThumbnailUrl } from '@/domain/post/thumbnail';
-import { isPostVisible } from '@/domain/post/visibility';
+} from '@blog/content';
+import { getSeriesMeta, sortPostsBySeriesOrder } from '@blog/content';
+import { resolveThumbnailUrl } from '@blog/content';
+import { isPostVisible } from '@blog/content';
 import { notFound } from 'next/navigation';
 import PostClient from './PostClient';
 import { PreviewBanner } from '@/src/components/preview/PreviewBanner';
@@ -16,11 +16,11 @@ import {
   buildPostSeo,
   buildPostJsonLd,
   buildBreadcrumbJsonLd,
-} from './postSeo';
+} from '@blog/content/seo';
 import { toNextMetadata } from './nextMetadata';
 import type { Metadata } from 'next';
 import { Rail } from '@/src/components/Rail';
-import { safeJsonLd } from '@/lib/shared/jsonLd';
+import { safeJsonLd } from '@blog/content';
 
 interface Props {
   params: Promise<{

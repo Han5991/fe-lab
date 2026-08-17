@@ -1,9 +1,5 @@
 import type { ComponentType } from 'react';
-import {
-  DIAGRAM_NAMES,
-  isDiagramName,
-  type DiagramName,
-} from '@/domain/post/diagramNames';
+import { DIAGRAM_NAMES, isDiagramName, type DiagramName } from '@blog/content';
 import { DeployPipeline } from './DeployPipeline';
 
 /**
@@ -14,7 +10,7 @@ import { DeployPipeline } from './DeployPipeline';
  * 얇은 간접층을 두어 `hero: deploy-pipeline` / `<diagram name="deploy-pipeline">`
  * 로 부를 수 있게 합니다.
  *
- * **새 다이어그램을 추가할 때**: `domain/post/diagramNames.ts`에 이름을 넣고
+ * **새 다이어그램을 추가할 때**: `@blog/content`(src/post/diagramNames.ts)에 이름을 넣고
  * 아래 맵에 한 줄 추가하면 끝입니다. 타입이 `Record<DiagramName, …>`이라
  * 한쪽만 하면 컴파일이 막습니다.
  *

@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  // 테스트 파일 전용 tsconfig — 앱(apps/blog/web)의 분할과 같은 구조.
+  // 프로덕션(tsconfig.json)을 extends하되 include를 테스트 파일로 뒤집는다 —
+  // 프로덕션 소스는 import를 통해 함께 검사된다.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    // 프로덕션 전용 엄격 플래그 — 테스트 코드(및 테스트가 끌어오는 검사)에는 끈다.
+    "noUncheckedIndexedAccess": false,
+    "noPropertyAccessFromIndexSignature": false,
+    "exactOptionalPropertyTypes": false
+  },
+  "include": [
+    "src/**/*.test.ts",
+    "src/**/*.test.tsx",
+    "src/**/*.spec.ts",
+    "src/**/*.spec.tsx"
+  ],
+  "exclude": ["node_modules"]
+}

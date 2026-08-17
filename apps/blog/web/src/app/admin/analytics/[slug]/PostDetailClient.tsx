@@ -26,9 +26,10 @@ import {
 import Link from 'next/link';
 import { token } from '@design-system/ui-lib/tokens';
 import { usePostDetailStats } from '@/src/hooks/usePostDetailStats';
-// leaf import — 클라이언트 컴포넌트라 배럴(@/domain/post) 값 import 금지(node:fs).
-import { postPath } from '@/domain/post/urls';
-import { formatMonthDayISO } from '@/lib/shared/dates';
+// 클라이언트 컴포넌트의 @blog/content 배럴 import — node:fs 모듈(series 등)은
+// next.config.ts의 optimizePackageImports + sideEffects:false가 번들에서 걸러 준다.
+import { postPath } from '@blog/content';
+import { formatMonthDayISO } from '@blog/content';
 
 // 차트 색상 — GitHub accent(파랑)로 통일. 데이터 강조는 accent 하나로.
 const CHART_LINE = token('colors.accent.600');

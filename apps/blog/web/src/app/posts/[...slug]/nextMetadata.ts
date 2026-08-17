@@ -6,7 +6,7 @@
  * 필요하면 postSeo 쪽 계산에 넣어 테스트로 잠글 것).
  */
 import type { Metadata } from 'next';
-import type { PostSeoData } from './postSeo';
+import type { PostSeoData } from '@blog/content/seo';
 
 export function toNextMetadata(seo: PostSeoData): Metadata {
   return {

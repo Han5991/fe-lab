@@ -7,12 +7,12 @@ import {
   getAllPostSummaries,
   POSTS_PATH,
   postPath,
-} from '@/domain/post';
-import { getAllSeries } from '@/domain/post/aggregate';
-import { getSeriesMeta } from '@/domain/post/series';
-import { fmtDate } from '@/lib/shared/format';
-import { OG_DEFAULT_IMAGE, SITE_NAME, SITE_URL } from '@/lib/shared/constants';
-import { safeJsonLd } from '@/lib/shared/jsonLd';
+} from '@blog/content';
+import { getAllSeries } from '@blog/content';
+import { getSeriesMeta } from '@blog/content';
+import { fmtDate } from '@blog/content';
+import { OG_DEFAULT_IMAGE, SITE_NAME, SITE_URL } from '@blog/content';
+import { safeJsonLd } from '@blog/content';
 import { HiddenPostBadge } from '@/src/components/blog/HiddenPostBadge';
 import {
   postRowItem,

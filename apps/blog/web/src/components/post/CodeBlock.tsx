@@ -27,7 +27,7 @@ import {
   PRISM_LANGUAGES,
   GRAMMAR_EXTENSION_ONLY,
   type PrismLanguageName,
-} from '@/lib/shared/prismLanguages';
+} from '@blog/content';
 
 // `Prism` export는 refractor 전 언어(300여 종)를 번들해 gzip 350KB 청크가
 // 된다. 글이 실제로 쓰는 fence는 십여 종뿐이라 PrismLight로 바꾸고 필요한

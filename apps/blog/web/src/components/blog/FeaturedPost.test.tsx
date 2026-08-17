@@ -9,7 +9,7 @@
  */
 import { describe, expect, test } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import type { PostSummary } from '@/domain/post';
+import type { PostSummary } from '@blog/content';
 import { FeaturedPost } from './FeaturedPost';
 
 /** next/link가 테스트 환경에서 후행 슬래시를 떼므로 경로만 비교합니다. */

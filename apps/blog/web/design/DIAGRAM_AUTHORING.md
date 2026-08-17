@@ -215,7 +215,7 @@ hero: 'deploy-pipeline'
    }
    ```
 
-2. `domain/post/diagramNames.ts` 에 이름 한 줄을 넣는다.
+2. `packages/@blog/content/src/post/diagramNames.ts` 에 이름 한 줄을 넣는다.
 3. `src/components/diagram/registry.ts` 의 `DIAGRAMS` 에 한 줄을 넣는다.
 
 레지스트리 타입이 `Record<DiagramName, …>` 이라 2·3 중 하나만 하면 컴파일이 막는다.

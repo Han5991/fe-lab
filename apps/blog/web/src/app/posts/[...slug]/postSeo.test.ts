@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { postPath, postUrl } from '@/domain/post/urls';
+import { postPath, postUrl } from '@blog/content';
 import {
   buildPostSeo,
   buildPostJsonLd,
@@ -9,10 +9,10 @@ import {
   toKstIsoDate,
   countWords,
   type SeoPost,
-} from './postSeo';
+} from '@blog/content/seo';
 import { toNextMetadata } from './nextMetadata';
 
-// lib/shared/constants: SITE_URL='https://blog.sangwook.dev', OG_DEFAULT_IMAGE='/og-default.jpg'
+// @blog/content 설정: SITE_URL='https://blog.sangwook.dev', OG_DEFAULT_IMAGE='/og-default.jpg'
 const SITE = 'https://blog.sangwook.dev';
 
 function makePost(over: Partial<SeoPost> = {}): SeoPost {

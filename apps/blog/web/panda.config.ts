@@ -12,6 +12,10 @@ export default defineConfig({
   include: [
     './src/**/*.{js,jsx,ts,tsx}',
     './node_modules/@design-system/ui/src/**/*.{js,jsx,ts,tsx}',
+    // @blog/content는 지금 css()를 쓰지 않지만, 소스 익스포트 패키지라 스타일
+    // 사용이 생기는 즉시 스캔 대상이어야 한다 — 선제 등록(누락 시 조용히
+    // 스타일이 빠진 채 빌드가 성공한다).
+    './node_modules/@blog/content/src/**/*.{js,jsx,ts,tsx}',
   ],
   // 디자인 토큰 강제: 임의 색/값 대신 토큰만 허용. 임의값이 꼭 필요하면
   // 대괄호 이스케이프(`'[6px]'`)로 명시적으로 표기한다.

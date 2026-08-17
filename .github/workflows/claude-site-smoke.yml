@@ -85,7 +85,7 @@ jobs:
             3. `sitemap`: xml_valid가 true인지, 그리고 저장소의 발행 글이 loc에
                누락 없이 들어있는지. 저장소 쪽 발행 글은 `apps/blog/posts/**`의
                마크다운(`.md`·`.mdx` 둘 다) frontmatter로 판정하며, 규칙은
-               `apps/blog/web/domain/post/visibility.ts`가 단일 출처입니다
+               `packages/@blog/content/src/post/visibility.ts`가 단일 출처입니다
                (status: published, 또는 공개 시각이 지난 scheduled. status 키가
                없으면 포스트가 아님). Grep/Glob/Read로 확인하세요.
                또한 `sitemap.all_lastmod_is_check_date`가 true면 lastmod가 매

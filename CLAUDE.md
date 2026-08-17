@@ -80,7 +80,7 @@ The blog (`apps/blog/web/`) is a **statically generated (SSG) Next.js applicatio
    - 폴더는 그냥 폴더다. **`_series.yml`을 둔 폴더만 시리즈**가 된다 — 표시명/설명/order도 그 파일에서 정의
 
    **Frontmatter 전체 목록** — 여기 없는 키는 `lint:posts`가 `unknown-frontmatter-key`로
-   경고합니다. `domain/post/frontmatterSchema.ts`의 서술자 테이블이 단일
+   경고합니다. `@blog/content`(`packages/@blog/content/src/post/frontmatterSchema.ts`)의 서술자 테이블이 단일
    출처입니다(`RawFrontmatter`와 허용 키 집합이 여기서 파생되고, 아래 표는
    `frontmatterSchema.test.ts`가 그 테이블과 글자 단위로 대조합니다 — 표를 고치면
    테이블의 `doc`도 함께 고칠 것).
@@ -101,12 +101,12 @@ The blog (`apps/blog/web/`) is a **statically generated (SSG) Next.js applicatio
 
    `series`는 frontmatter가 아니라 **폴더 경로**로 결정됩니다(`repository.ts`).
    다만 폴더가 있다고 시리즈가 되는 건 아닙니다 — 그 폴더에 **`_series.yml`이
-   있어야** 시리즈입니다(`domain/post/series.ts`의 `isSeriesFolder`). 편수는
+   있어야** 시리즈입니다(`@blog/content`의 `isSeriesFolder` — `src/post/series.ts`). 편수는
    보지 않습니다. 예전엔 2편 이상이면 선언 없이도 시리즈가 돼서, 고쳐 쓰는
    동안 글을 한곳에 모아 두는 것만으로 배지·시리즈 목록·검색·OG 카드가
    따라붙었습니다. 시리즈에서 빼려면 `_series.yml`을 지우면 됩니다.
 
-2. **콘텐츠 공개 제어** — 축은 `status` **하나뿐**입니다 (`domain/post/visibility.ts`):
+2. **콘텐츠 공개 제어** — 축은 `status` **하나뿐**입니다 (`@blog/content`의 `src/post/visibility.ts`):
    - `status: published` — 공개
    - `status: draft` — 비공개 (빌드에서 제외)
    - `status: scheduled` — 공개 시각이 지나면 공개. 공개 시각은 `scheduledDate ?? date`
@@ -120,7 +120,7 @@ The blog (`apps/blog/web/`) is a **statically generated (SSG) Next.js applicatio
    > 존재해 어긋나 있었습니다. 지금은 `isPostFile()` 하나를 양쪽이 공유하고,
    > `published`가 남아 있으면 `lint:posts`가 `legacy-published-field` 에러를 냅니다.
 
-3. **빌드 전 처리** (`prebuild` → `scripts/build-content.ts` 통합 진입점):
+3. **빌드 전 처리** (`prebuild` → `@blog/content`의 `src/scripts/build-content.ts` 통합 진입점):
    - `validate-posts.ts`: frontmatter 필수 필드(`status`·`title`·`date`), 폐기된 `published` 필드, 날짜 형식/timezone 모호성, 끊긴 이미지, 중복 slug 검사 (prebuild에서만 실행, predev:web에서는 skip)
    - `sync-posts.mjs`: 포스트 디렉토리의 이미지/미디어 파일을 `public/posts/`에 복사 (mtime 기반 incremental — 변경분만 복사)
    - `generate-sitemap.ts`: 발행된 글 목록으로 `sitemap.xml` 생성
@@ -139,17 +139,17 @@ The blog (`apps/blog/web/`) is a **statically generated (SSG) Next.js applicatio
 
 아래 `pnpm` 스크립트는 모두 **`apps/blog/web` 디렉터리에서** 실행한다.
 
-| 도구                                          | 설명                                                                                                                                                                                                                                                                                                            |
-| :-------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `pnpm new-post "제목"`                        | 새 포스트 스캐폴딩. `--series`, `--tags`, `--scheduled`, `--slug`, `--status` 옵션 지원. 한글 제목/파일명 그대로 사용 가능                                                                                                                                                                                      |
-| `pnpm lint:posts`                             | frontmatter 검증. 메타 노트 정책: frontmatter delimiter(`---`)가 없거나 `status`가 없으면 빌드 대상이 아닌 것으로 보고 skip                                                                                                                                                                                     |
-| `pnpm check-seo`                              | 산출물(`out/`) HTML의 SEO 계약 검사 — h1 1개, description 중복·길이·말줄임, `<title>` 60자, canonical 자기참조, og 태그, img alt, 산출물↔발행 글 정합성(`scripts/artifacts.ts` 레지스트리 — sitemap·rss·llms·llms-full·search-index·admin-index·og 7종). **`pnpm build`의 마지막 단계라 따로 부를 일은 드물다** |
-| dev 서버 미리보기                             | draft·scheduled 글은 dev 서버가 **실제 라우트**(목록·상세)에 그대로 노출한다 — 상세엔 PreviewBanner, 목록엔 HiddenPostBadge. 게이트는 `domain/post/service.ts`의 `shouldIncludeHiddenPosts` 한 곳뿐                                                                                                             |
-| `_series.yml`                                 | **이 파일이 있는 폴더만 시리즈다.** 두면 시리즈 nav가 `order` 기준 chronological 정렬 + 표시명을 폴더명 대신 사용. 지우면 그냥 글을 모아 둔 폴더                                                                                                                                                                |
-| `<callout type="warning\|info\|tip\|danger">` | 마크다운 헬퍼 컴포넌트 (raw HTML로 작성). `<figure>` + `<figcaption>`, `<file-tree>`도 지원                                                                                                                                                                                                                     |
-| `<dialogue>` · `<metrics>` · `<timeline>`     | 리뉴얼 시그니처 컴포넌트. 역시 raw HTML 커스텀 태그 — 문법은 `blog-components` 스킬                                                                                                                                                                                                                             |
-| `<diagram>` + frontmatter `hero:`             | 구조 그림. 저작법 전체는 **`apps/blog/web/design/DIAGRAM_AUTHORING.md`** — 요약은 `blog-components` 스킬                                                                                                                                                                                                        |
-| 펜스 메타 `title=` · `<code-tabs>`            | 코드 블록에 파일명을 달거나 npm/pnpm/yarn 탭으로 묶는다. 커스텀 태그가 아니라 **코드 펜스의 메타**다 — `blog-components` 스킬                                                                                                                                                                                   |
+| 도구                                          | 설명                                                                                                                                                                                                                                                                                                                |
+| :-------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `pnpm new-post "제목"`                        | 새 포스트 스캐폴딩. `--series`, `--tags`, `--scheduled`, `--slug`, `--status` 옵션 지원. 한글 제목/파일명 그대로 사용 가능                                                                                                                                                                                          |
+| `pnpm lint:posts`                             | frontmatter 검증. 메타 노트 정책: frontmatter delimiter(`---`)가 없거나 `status`가 없으면 빌드 대상이 아닌 것으로 보고 skip                                                                                                                                                                                         |
+| `pnpm check-seo`                              | 산출물(`out/`) HTML의 SEO 계약 검사 — h1 1개, description 중복·길이·말줄임, `<title>` 60자, canonical 자기참조, og 태그, img alt, 산출물↔발행 글 정합성(`src/scripts/artifacts.ts` 레지스트리 — sitemap·rss·llms·llms-full·search-index·admin-index·og 7종). **`pnpm build`의 마지막 단계라 따로 부를 일은 드물다** |
+| dev 서버 미리보기                             | draft·scheduled 글은 dev 서버가 **실제 라우트**(목록·상세)에 그대로 노출한다 — 상세엔 PreviewBanner, 목록엔 HiddenPostBadge. 게이트는 `@blog/content`(`src/post/service.ts`)의 `shouldIncludeHiddenPosts` 한 곳뿐                                                                                                   |
+| `_series.yml`                                 | **이 파일이 있는 폴더만 시리즈다.** 두면 시리즈 nav가 `order` 기준 chronological 정렬 + 표시명을 폴더명 대신 사용. 지우면 그냥 글을 모아 둔 폴더                                                                                                                                                                    |
+| `<callout type="warning\|info\|tip\|danger">` | 마크다운 헬퍼 컴포넌트 (raw HTML로 작성). `<figure>` + `<figcaption>`, `<file-tree>`도 지원                                                                                                                                                                                                                         |
+| `<dialogue>` · `<metrics>` · `<timeline>`     | 리뉴얼 시그니처 컴포넌트. 역시 raw HTML 커스텀 태그 — 문법은 `blog-components` 스킬                                                                                                                                                                                                                                 |
+| `<diagram>` + frontmatter `hero:`             | 구조 그림. 저작법 전체는 **`apps/blog/web/design/DIAGRAM_AUTHORING.md`** — 요약은 `blog-components` 스킬                                                                                                                                                                                                            |
+| 펜스 메타 `title=` · `<code-tabs>`            | 코드 블록에 파일명을 달거나 npm/pnpm/yarn 탭으로 묶는다. 커스텀 태그가 아니라 **코드 펜스의 메타**다 — `blog-components` 스킬                                                                                                                                                                                       |
 
 #### 디자인 시스템 · 저작 문법 (스킬로 분리)
 
@@ -237,14 +237,15 @@ The blog (`apps/blog/web/`) is a **statically generated (SSG) Next.js applicatio
 | `supabase/config.toml`                      | 로컬 Supabase 설정 (Auth, DB, Storage 등)                                                                                                                                                                                  |
 | `.github/workflows/deploy-blog.yml`         | CI/CD 배포 워크플로우                                                                                                                                                                                                      |
 | `apps/blog/posts/{series}/_series.yml`      | 시리즈 선언 — 이 파일이 있어야 시리즈. 표시명·설명·order 메타도 여기                                                                                                                                                       |
-| `apps/blog/web/scripts/build-content.ts`    | predev:web/prebuild 통합 진입점 (validate/sync/sitemap/rss/search/llms)                                                                                                                                                    |
-| `apps/blog/web/scripts/check-seo.ts`        | 빌드 산출물 SEO 검사 (CI 게이트)                                                                                                                                                                                           |
-| `apps/blog/web/lib/shared/contentConfig.ts` | `defineContent({...})` 설정 표면 — 서버·빌드 전용. 클라이언트가 소비하는 리터럴은 `contentValues.ts`(값-only 모듈, `constants.ts`가 재수출)가 갖고, 설정은 그 값을 기본값으로 소비한다. 절대 경로 해석은 `contentPaths.ts` |
+| `packages/@blog/content`                    | 콘텐츠 프레임워크 패키지 — 스키마·로더·공개 판정·URL 계약·빌드 스크립트·2층 검증. 문 두 개(`@blog/content` + `@blog/content/seo`), 소스 익스포트(빌드 스텝 없음)                                                           |
+| `…content/src/scripts/build-content.ts`     | predev:web/prebuild 통합 진입점 (validate/sync/sitemap/rss/search/llms) — 앱 package.json이 `node_modules/@blog/content/…` 파일 경로로 실행                                                                                |
+| `…content/src/scripts/check-seo.ts`         | 빌드 산출물 SEO 검사 (CI 게이트)                                                                                                                                                                                           |
+| `…content/src/shared/contentConfig.ts`      | `defineContent({...})` 설정 표면 — 서버·빌드 전용. 클라이언트가 소비하는 리터럴은 `contentValues.ts`(값-only 모듈, `constants.ts`가 재수출)가 갖고, 설정은 그 값을 기본값으로 소비한다. 절대 경로 해석은 `contentPaths.ts` |
 | `apps/blog/web/design/DIAGRAM_AUTHORING.md` | 다이어그램 저작 가이드 (선언형 태그 prop 표, 복붙 예제, `hero:` 등록법)                                                                                                                                                    |
 
 ## Prerequisites
 
 - Node.js / pnpm 버전은 루트 `engines` · `.tool-versions` · `packageManager`가 단일
   출처다. 이 파일에 숫자를 복사해 두지 말 것 — Renovate가 올릴 때마다 어긋난다
-- 하한을 정하는 비자명한 제약: `apps/blog/web`의 `node --test '<glob>'` 글롭 패턴이
+- 하한을 정하는 비자명한 제약: `apps/blog/web`·`packages/@blog/content`의 `node --test '<glob>'` 글롭 패턴이
   **Node 22.5+** 를 요구한다

@@ -6,8 +6,8 @@
  */
 import { describe, expect, test } from 'vitest';
 import { attachSeriesPosts } from './seriesIndex';
-import type { PostSummary } from '@/domain/post';
-import type { SeriesSummary } from '@/domain/post/aggregate';
+import type { PostSummary } from '@blog/content';
+import type { SeriesSummary } from '@blog/content';
 
 const post = (
   slug: string,

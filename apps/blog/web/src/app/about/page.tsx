@@ -10,13 +10,13 @@ import {
   MERGED_PR_COUNT_FALLBACK,
   ABOUT_PAGE_MODIFIED,
   TITLE_SUFFIX,
-} from '@/lib/shared/constants';
-import { safeJsonLd } from '@/lib/shared/jsonLd';
+} from '@blog/content';
+import { safeJsonLd } from '@blog/content';
 import { Label } from '@/src/components/blog';
 import { PageBoundary } from '@/src/components/PageBoundary';
 import { railGutter, railColumn } from '@/src/components/Rail';
-import { archivePath, getAllPostSummaries, postPath } from '@/domain/post';
-import { getAllSeries } from '@/domain/post/aggregate';
+import { archivePath, getAllPostSummaries, postPath } from '@blog/content';
+import { getAllSeries } from '@blog/content';
 
 import { FEATURED_SERIES } from './featuredSeries';
 

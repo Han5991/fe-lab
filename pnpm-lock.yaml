@@ -50,6 +50,9 @@ importers:
 
   apps/blog/web:
     dependencies:
+      '@blog/content':
+        specifier: workspace:^
+        version: link:../../../packages/@blog/content
       '@design-system/ui':
         specifier: workspace:^
         version: link:../../../packages/@design-system/ui
@@ -74,9 +77,6 @@ importers:
       '@tanstack/react-query':
         specifier: ^5.101.4
         version: 5.101.4(react@19.2.8)
-      gray-matter:
-        specifier: ^4.0.3
-        version: 4.0.3
       lucide-react:
         specifier: ^1.31.0
         version: 1.31.0(react@19.2.8)
@@ -132,9 +132,6 @@ importers:
       '@pandacss/dev':
         specifier: 'catalog:'
         version: 1.12.0(jsdom@30.0.1(@noble/hashes@1.8.0))(typescript@6.0.3)
-      '@resvg/resvg-js':
-        specifier: ^2.6.2
-        version: 2.6.2
       '@testing-library/dom':
         specifier: ^10.4.1
         version: 10.4.1
@@ -186,12 +183,6 @@ importers:
       jsdom:
         specifier: ^30.0.1
         version: 30.0.1(@noble/hashes@1.8.0)
-      satori:
-        specifier: ^0.29.0
-        version: 0.29.0
-      sharp:
-        specifier: 0.35.3
-        version: 0.35.3(@types/node@24.13.3)
       supabase:
         specifier: ^2.113.0
         version: 2.113.0
@@ -389,6 +380,70 @@ importers:
       vitest:
         specifier: ^4.1.10
         version: 4.1.10(@types/node@25.9.5)(jsdom@30.0.1(@noble/hashes@1.8.0))(msw@2.15.0(@types/node@25.9.5)(typescript@6.0.3))(vite@8.2.1(@types/node@25.9.5)(esbuild@0.28.2)(tsx@4.23.12))
+
+  packages/@blog/content:
+    dependencies:
+      '@resvg/resvg-js':
+        specifier: ^2.6.2
+        version: 2.6.2
+      gray-matter:
+        specifier: ^4.0.3
+        version: 4.0.3
+      react:
+        specifier: 'catalog:'
+        version: 19.2.8
+      react-dom:
+        specifier: 'catalog:'
+        version: 19.2.8(react@19.2.8)
+      react-markdown:
+        specifier: ^10.1.0
+        version: 10.1.0(@types/react@19.2.18)(react@19.2.8)(supports-color@10.2.2)
+      rehype-raw:
+        specifier: ^7.0.0
+        version: 7.0.0
+      remark-gfm:
+        specifier: ^4.0.1
+        version: 4.0.1(supports-color@10.2.2)
+      satori:
+        specifier: ^0.29.0
+        version: 0.29.0
+      sharp:
+        specifier: 0.35.3
+        version: 0.35.3(@types/node@24.13.3)
+    devDependencies:
+      '@eslint/js':
+        specifier: ^10.0.1
+        version: 10.0.1(eslint@10.8.1(supports-color@10.2.2))
+      '@types/node':
+        specifier: ^24.13.3
+        version: 24.13.3
+      '@types/react':
+        specifier: 'catalog:'
+        version: 19.2.18
+      '@types/react-dom':
+        specifier: 'catalog:'
+        version: 19.2.4(@types/react@19.2.18)
+      eslint:
+        specifier: ^10.8.1
+        version: 10.8.1(supports-color@10.2.2)
+      eslint-import-resolver-typescript:
+        specifier: ^4.4.5
+        version: 4.4.5(eslint-plugin-import@2.32.0)(eslint@10.8.1(supports-color@10.2.2))(supports-color@10.2.2)
+      eslint-plugin-boundaries:
+        specifier: ^7.2.0
+        version: 7.2.0(@typescript-eslint/parser@8.67.0(eslint@10.8.1(supports-color@10.2.2))(supports-color@10.2.2)(typescript@6.0.3))(eslint-import-resolver-typescript@4.4.5)(eslint@10.8.1(supports-color@10.2.2))(supports-color@10.2.2)
+      globals:
+        specifier: ^17.9.0
+        version: 17.10.0
+      tsx:
+        specifier: ^4.23.12
+        version: 4.23.12
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+      typescript-eslint:
+        specifier: ^8.67.0
+        version: 8.67.0(eslint@10.8.1(supports-color@10.2.2))(supports-color@10.2.2)(typescript@6.0.3)
 
   packages/@design-system/ui:
     dependencies:

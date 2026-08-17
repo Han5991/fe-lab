@@ -1,3 +1,4 @@
+import { resolve } from 'node:path';
 import js from '@eslint/js';
 import nextPlugin from '@next/eslint-plugin-next';
 import { defineConfig } from 'eslint/config';
@@ -314,31 +315,33 @@ export default defineConfig([
   // 자동으로 그 element를 상속하고, element 폴더 밖에 떨어지면
   // no-unknown-files가 잡는다.
   //
-  // 레이어 순서(아래→위): shared → content → platform → analytics → build →
-  // render-build → app. 각 레이어는 자기보다 아래 레이어만 import할 수 있고,
-  // app은 빌드 레이어(build·render-build)를 import할 수 없다.
+  // 레이어 순서(아래→위): platform → analytics → app. 콘텐츠 레이어(shared·
+  // content·build·render-build)는 packages/@blog/content로 이사했다 — 그쪽
+  // eslint.config.mjs가 같은 모델로 내부 경계를 강제하고, 앱에서는
+  // `@blog/content`가 외부 패키지(external)로 보인다.
   //
-  // no-unknown-files와 이 블록 전체는 **LAYERED 4개 폴더에만** 건다. 전역으로
+  // no-unknown-files와 이 블록 전체는 **LAYERED 3개 폴더에만** 건다. 전역으로
   // 걸면 앱 루트의 설정 파일들이 전부 unknown이 되고, 오탐 시 탈출구가 없다.
   {
-    files: ['{domain,lib,scripts,src}/**/*.{js,mjs,cjs,ts,tsx,mts,cts}'],
+    files: ['{domain,lib,src}/**/*.{js,mjs,cjs,ts,tsx,mts,cts}'],
     plugins: { boundaries },
     settings: {
-      // 모노레포에서 lint 실행 cwd가 앱 루트라는 보장이 없으므로(위 next.rootDir와
-      // 같은 이유) element 패턴의 기준 경로를 명시한다.
-      'boundaries/root-path': import.meta.dirname,
-      // 첫 매치 하나만 배정 — scripts/render가 render-build와 build(중첩 폴더)에
-      // 동시에 걸리지 않도록 구체적인 패턴을 앞에 둔다.
+      // 기준 경로가 **워크스페이스 루트**인 이유: @blog/content는 소스
+      // 익스포트라 import가 pnpm 심링크 realpath(packages/@blog/content/src/…)
+      // 로 해석된다. 기준이 앱 루트면 그 경로가 `../../../packages/…`가 되는데
+      // micromatch의 `**`는 `..` 세그먼트를 건너지 못해 패키지 파일을 어떤
+      // element에도 배정하지 못하고, 반대로 folder 패턴('src')은 경로 어디서든
+      // 매치라 엉뚱하게 app으로 배정된다. 루트를 워크스페이스로 올리고 모든
+      // 패턴을 앱 경로로 앵커해 둘 다 피한다. (lint 실행 cwd 비의존인 것은
+      // 예전과 같다 — next.rootDir 주석 참고.)
+      'boundaries/root-path': resolve(import.meta.dirname, '..', '..', '..'),
       'boundaries/elements-single-match': true,
       // v7에서 folder 매칭이 기본이라 mode는 쓰지 않는다.
       'boundaries/elements': [
-        { type: 'shared', pattern: 'lib/shared' },
-        { type: 'platform', pattern: 'lib/platform' },
-        { type: 'content', pattern: 'domain/post' },
-        { type: 'analytics', pattern: 'domain/analytics' },
-        { type: 'render-build', pattern: 'scripts/render' },
-        { type: 'build', pattern: 'scripts' },
-        { type: 'app', pattern: 'src' },
+        { type: 'content-pkg', pattern: 'packages/@blog/content' },
+        { type: 'platform', pattern: 'apps/blog/web/lib/platform' },
+        { type: 'analytics', pattern: 'apps/blog/web/domain/analytics' },
+        { type: 'app', pattern: 'apps/blog/web/src' },
       ],
       // 테스트는 element 배정은 그대로 두고 파일 카테고리 축으로만 표시한다.
       // 아래 policies 마지막 두 줄이 "테스트는 전부 import 가능 / 프로덕션은
@@ -374,26 +377,11 @@ export default defineConfig([
             },
             // 로컬 의존: 각 레이어는 자기보다 아래 레이어만. 외부 의존: 실측
             // 화이트리스트(레이어에 새 외부 의존이 생기면 여기 추가해야 한다).
-            {
-              from: { element: { type: 'shared' } },
-              allow: { to: { module: { origin: 'core' } } },
-            },
-            {
-              from: { element: { type: 'content' } },
-              allow: [
-                { to: { element: { type: 'shared' } } },
-                { to: { module: { origin: 'core' } } },
-                {
-                  to: { module: { origin: 'external', source: 'gray-matter' } },
-                },
-              ],
-            },
+            // @blog/content는 여기서 외부 패키지다 — analytics가 shared 유틸
+            // (dates)을 그 문으로 가져온다.
             {
               from: { element: { type: 'platform' } },
               allow: [
-                {
-                  to: { element: { types: { anyOf: ['shared', 'content'] } } },
-                },
                 {
                   to: {
                     module: {
@@ -412,83 +400,22 @@ export default defineConfig([
               allow: [
                 {
                   to: {
-                    element: {
-                      types: { anyOf: ['shared', 'content', 'platform'] },
-                    },
+                    element: { types: { anyOf: ['platform', 'content-pkg'] } },
                   },
                 },
               ],
             },
             {
-              from: { element: { type: 'build' } },
-              allow: [
-                {
-                  to: {
-                    element: {
-                      types: {
-                        anyOf: ['shared', 'content', 'platform', 'analytics'],
-                      },
-                    },
-                  },
-                },
-                { to: { module: { origin: 'core' } } },
-                {
-                  to: { module: { origin: 'external', source: 'gray-matter' } },
-                },
-              ],
-            },
-            {
-              // 렌더 생성기(rss·og·thumbnails)만 React 스택을 만질 수 있다.
-              // build가 이 레이어를 import하지 못하므로 React가 빌드 파이프라인
-              // 전체로 번지는 걸 구조적으로 막는다.
-              from: { element: { type: 'render-build' } },
-              allow: [
-                {
-                  to: {
-                    element: {
-                      types: {
-                        anyOf: [
-                          'shared',
-                          'content',
-                          'platform',
-                          'analytics',
-                          'build',
-                        ],
-                      },
-                    },
-                  },
-                },
-                { to: { module: { origin: 'core' } } },
-                {
-                  to: {
-                    module: {
-                      origin: 'external',
-                      source: [
-                        'react',
-                        'react-dom',
-                        'react-markdown',
-                        'remark-gfm',
-                        'rehype-raw',
-                        'satori',
-                        'sharp',
-                        '@resvg/resvg-js',
-                      ],
-                    },
-                  },
-                },
-              ],
-            },
-            {
-              // app은 빌드 레이어를 모른다. node 코어도 직접 만지지 않는다 —
-              // fs 접근은 전부 content(domain/post)의 일이다(클라이언트 번들
-              // 누수 예방, 계획의 "배럴이 fs를 끌고 온다" 회귀 참고).
+              // app은 node 코어를 직접 만지지 않는다 — fs 접근은 전부
+              // @blog/content(로더)의 일이다(클라이언트 번들 누수 예방,
+              // 계획의 "배럴이 fs를 끌고 온다" 회귀 참고).
               from: { element: { type: 'app' } },
               allow: [
                 {
                   to: {
                     element: {
                       types: {
-                        anyOf: ['shared', 'content', 'platform', 'analytics'],
+                        anyOf: ['platform', 'analytics', 'content-pkg'],
                       },
                     },
                   },
@@ -496,9 +423,6 @@ export default defineConfig([
                 { to: { module: { origin: 'external' } } },
               ],
             },
-            // (예전에 있던 generate-rss → app/markdownHeadings 예외는 PR11이
-            // 닫았다 — 헤딩 강등 매핑을 lib/shared/markdownHeadings.ts 데이터로
-            // 내리고, 렌더러는 buildRssXml에 주입한다.)
             // 프로덕션 코드는 테스트 파일을 import할 수 없다.
             { disallow: { to: { file: { categories: 'test' } } } },
             // 테스트는 무엇이든 import할 수 있다(마지막 매치가 이기므로

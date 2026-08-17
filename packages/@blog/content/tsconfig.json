@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  // 자립형 tsconfig — @package/config/tsconfig.json을 extends하지 않는다.
+  // 그쪽의 allowImportingTsExtensions: true가 이 소스를 program에 섞는 앱
+  // (apps/blog/web, 확장자 없는 import)과 불일치해 TS5097을 만든다.
+  // 플래그 구성은 앱 tsconfig.json과 같은 엄격 수준을 유지한다 — 이 패키지의
+  // 소스가 앱 program에도 (import를 통해) 들어가므로 두 검사가 어긋나면 안 된다.
+  "compilerOptions": {
+    "target": "ESNext",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noImplicitReturns": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": true,
+    "verbatimModuleSyntax": true,
+    "erasableSyntaxOnly": true,
+    "noUncheckedSideEffectImports": true,
+    "noUncheckedIndexedAccess": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "exactOptionalPropertyTypes": true,
+    "allowUnusedLabels": false,
+    "allowUnreachableCode": false,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    // 앱 program에 소스째 섞이는 패키지이므로 파일 단위 트랜스파일 안전성이 필수다.
+    "isolatedModules": true,
+    "incremental": true
+  },
+  "include": ["src/**/*.ts", "src/**/*.mts"],
+  "exclude": [
+    "node_modules",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx"
+  ]
+}

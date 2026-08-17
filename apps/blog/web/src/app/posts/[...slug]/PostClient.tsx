@@ -8,7 +8,7 @@ import rehypeRaw from 'rehype-raw';
 import rehypeSlug from 'rehype-slug';
 import { css, cx } from '@design-system/ui-lib/css';
 
-import type { PostData } from '@/domain/post';
+import type { PostData } from '@blog/content';
 import GiscusComments from '@/src/components/GiscusComments';
 import { PageBoundary } from '@/src/components/PageBoundary';
 import { railGutter, railColumn } from '@/src/components/Rail';

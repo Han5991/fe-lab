@@ -1,9 +1,9 @@
 import Link from 'next/link';
 import { css } from '@design-system/ui-lib/css';
-import type { PostData } from '@/domain/post';
+import type { PostData } from '@blog/content';
 // leaf import — 글 상세에서 쓰는 프레젠테이션 컴포넌트라 배럴(node:fs)을 물리지 않는다.
-import { archivePath } from '@/domain/post/urls';
-import { fmtDate } from '@/lib/shared/format';
+import { archivePath } from '@blog/content';
+import { fmtDate } from '@blog/content';
 
 interface PostHeaderProps {
   post: PostData;

@@ -11,9 +11,9 @@
  */
 import { describe, expect, test } from 'vitest';
 
-import { getAllPostSummaries } from '@/domain/post';
-import { getAllSeries } from '@/domain/post/aggregate';
-import { filterAndSortPostsByArchiveParams } from '@/domain/post/filtering';
+import { getAllPostSummaries } from '@blog/content';
+import { getAllSeries } from '@blog/content';
+import { filterAndSortPostsByArchiveParams } from '@blog/content';
 
 import { FEATURED_SERIES } from './featuredSeries';
 
