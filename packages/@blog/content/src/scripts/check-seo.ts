@@ -65,9 +65,9 @@ function metaContent(html: string, key: string): string | null {
     `<meta[^>]*\\scontent="([^"]*)"[^>]*${attr}`,
     'i',
   );
-  const m = html.match(forward) ?? html.match(backward);
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- 두 패턴 모두 1번 캡처 그룹이 매치에 항상 참여
-  return m ? decodeEntities(m[1]!) : null;
+  // 두 패턴 모두 1번 캡처 그룹이 매치에 항상 참여한다.
+  const content = (html.match(forward) ?? html.match(backward))?.[1];
+  return content === undefined ? null : decodeEntities(content);
 }
 
 /**
@@ -111,10 +111,10 @@ const HTML_ANCHOR = /<a\b(?:[^>"']|"[^"]*"|'[^']*')*>/gi;
 export function collectInternalLinks(html: string): string[] {
   const links: string[] = [];
   for (const tag of html.match(HTML_ANCHOR) ?? []) {
-    const m = tag.match(/\shref="([^"]*)"/i);
-    if (!m) continue;
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- 패턴의 1번 캡처 그룹은 매치에 항상 참여
-    const href = m[1]!.replace(/&amp;/g, '&');
+    // 패턴의 1번 캡처 그룹은 매치에 항상 참여한다.
+    const raw = tag.match(/\shref="([^"]*)"/i)?.[1];
+    if (raw === undefined) continue;
+    const href = raw.replace(/&amp;/g, '&');
     if (href.startsWith('/') && !href.startsWith('//')) links.push(href);
   }
   return links;
@@ -126,12 +126,13 @@ export function parsePageSeo(html: string): PageSeo {
     html.match(/<link[^>]*rel="canonical"[^>]*href="([^"]*)"/i) ??
     html.match(/<link[^>]*href="([^"]*)"[^>]*rel="canonical"/i);
   const robots = metaContent(html, 'robots');
+  // 두 패턴 모두 1번 캡처 그룹은 매치에 항상 참여한다.
+  const rawTitle = titleMatch?.[1];
+  const rawCanonical = canonicalMatch?.[1];
   return {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- 패턴의 1번 캡처 그룹은 매치에 항상 참여
-    title: titleMatch ? decodeEntities(titleMatch[1]!).trim() : null,
+    title: rawTitle === undefined ? null : decodeEntities(rawTitle).trim(),
     description: metaContent(html, 'description'),
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- 패턴의 1번 캡처 그룹은 매치에 항상 참여
-    canonical: canonicalMatch ? decodeEntities(canonicalMatch[1]!) : null,
+    canonical: rawCanonical === undefined ? null : decodeEntities(rawCanonical),
     ogSiteName: metaContent(html, 'og:site_name'),
     ogLocale: metaContent(html, 'og:locale'),
     ogType: metaContent(html, 'og:type'),
@@ -177,8 +178,8 @@ export function checkPages(pages: Map<string, string>): SeoViolation[] {
     // 잡는다 — `/rss.xml` 같은 파일 링크는 페이지가 아니라 통과한다.
     // noindex 페이지도 본다(내비게이션 문제이지 색인 문제가 아니다).
     for (const href of collectInternalLinks(html)) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- split은 항상 1개 이상을 돌려준다
-      const path = href.split(/[?#]/)[0]!;
+      // split은 항상 1개 이상을 돌려준다.
+      const path = href.split(/[?#]/)[0] ?? href;
       if (path.endsWith('/')) continue;
       // page 키는 디스크 이름(디코드), href는 퍼센트 인코딩 — canonical과 같은 이유로 풀어 비교
       if (!pages.has(`${decodeUrlSafe(path)}/`)) continue;

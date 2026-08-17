@@ -11,7 +11,7 @@
  * 고정합니다.
  */
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
-import { act, renderHook } from '@testing-library/react';
+import { act, render, renderHook } from '@testing-library/react';
 import { useTocHook } from './tocHooks';
 
 // 기준선은 window.innerHeight * 0.2이라 뷰포트를 1000으로 고정하면 200px이 된다.
@@ -131,6 +131,95 @@ describe('useTocHook - 목차 추출', () => {
 
     expect(result.current.toc).toEqual([]);
     expect(result.current.activeId).toBe('');
+  });
+});
+
+/**
+ * 목차의 원본은 DOM이다 — 상태로 복사하지 않고 useSyncExternalStore로 구독한다.
+ * 그 배관(MutationObserver 구독 → 스냅샷 무효화 → 다시 읽기)이 실제 DOM 변경에
+ * 반응하는지, 그리고 헤딩이 그대로일 때 참조를 유지하는지를 고정한다.
+ */
+describe('useTocHook - 본문 변화 추적', () => {
+  /** MutationObserver 콜백은 마이크로태스크다 — act 안에서 비운다. */
+  const mutate = async (change: () => void) => {
+    await act(async () => {
+      change();
+      await Promise.resolve();
+    });
+  };
+
+  test('본문에 헤딩이 붙으면 목차가 따라 늘어난다', async () => {
+    mountHeadings(HEADINGS);
+    const { result } = renderHook(() => useTocHook());
+
+    await mutate(() => {
+      const el = document.createElement('h2');
+      el.id = 'extra';
+      el.textContent = '덧붙임';
+      el.getBoundingClientRect = () =>
+        ({
+          top: 4400 - scrollY,
+          bottom: 4400 - scrollY + HEADING_HEIGHT,
+        }) as unknown as DOMRect;
+      document.getElementById('post-content')?.appendChild(el);
+    });
+
+    expect(result.current.toc.map(item => item.id)).toEqual([
+      'intro',
+      'setup',
+      'deploy',
+      'wrap',
+      'extra',
+    ]);
+  });
+
+  // 코드 탭 전환처럼 본문 **안쪽만** 바뀌는 일은 흔하다. 그때마다 새 배열을
+  // 돌려주면 아무것도 안 바뀐 채로 차례가 통째로 다시 그려진다.
+  test('헤딩이 그대로면 같은 배열을 유지한다', async () => {
+    mountHeadings(HEADINGS);
+    const { result } = renderHook(() => useTocHook());
+    const before = result.current.toc;
+
+    await mutate(() => {
+      const p = document.createElement('p');
+      p.textContent = '헤딩과 무관한 본문 변경';
+      document.getElementById('post-content')?.appendChild(p);
+    });
+
+    expect(result.current.toc).toBe(before);
+  });
+
+  // TOC와 MobileTOC가 같은 페이지에 함께 마운트된다(PostClient). 캐시는 인스턴스
+  // 별로 따로 두지만 — 페이지 전환 중 두 글의 본문이 공존할 때 서로에게 새지
+  // 않게 — 같은 본문을 읽으므로 내용은 같아야 한다.
+  test('두 곳에서 함께 구독해도 같은 목차를 본다', () => {
+    mountHeadings(HEADINGS);
+    const first = renderHook(() => useTocHook());
+    const second = renderHook(() => useTocHook());
+
+    expect(second.result.current.toc).toEqual(first.result.current.toc);
+  });
+
+  // 스냅샷 캐시는 모듈 스코프에 있어 글이 바뀌어도 살아남는다. 구독(=무효화)은
+  // 커밋 뒤에나 불리므로, 노드 동일성으로 먼저 잡지 않으면 **첫 렌더 한 프레임**
+  // 동안 이전 글의 차례가 그대로 보인다.
+  test('다른 글로 넘어오면 첫 렌더부터 새 글의 목차다', () => {
+    mountHeadings(HEADINGS);
+    renderHook(() => useTocHook()).unmount();
+
+    // 클라이언트 내비게이션 — 본문 노드가 통째로 갈린다.
+    document.body.replaceChildren();
+    mountHeadings([{ id: 'next-post', tag: 'h2', text: '다음 글', top: 400 }]);
+
+    const seen: string[][] = [];
+    const Probe = () => {
+      const { toc } = useTocHook();
+      seen.push(toc.map(item => item.id));
+      return null;
+    };
+    render(<Probe />);
+
+    expect(seen[0]).toEqual(['next-post']);
   });
 });
 

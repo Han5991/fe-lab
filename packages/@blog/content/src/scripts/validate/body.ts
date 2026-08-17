@@ -72,10 +72,8 @@ export function validateImageReferences(
   // raw `<img>`는 이 저장소 50개 글에 **0건**이다.
   // MARKDOWN_IMAGE의 두 캡처 그룹은 매치에 항상 참여합니다(1번은 빈 문자열 가능).
   const found = [...prose.matchAll(MARKDOWN_IMAGE)].map(m => ({
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- 위 주석: 캡처 그룹은 매치에 항상 참여
-    alt: m[1]!,
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- 위 주석: 캡처 그룹은 매치에 항상 참여
-    ref: m[2]!,
+    alt: m[1] ?? '',
+    ref: m[2] ?? '',
     index: m.index,
   }));
 
@@ -103,8 +101,11 @@ export function validateImageReferences(
       continue;
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- split은 빈 배열을 만들지 않으므로 [0]은 항상 존재
-    const cleanRef = decodeUrlSafe(ref.split('#')[0]!.split('?')[0]!);
+    // split은 빈 배열을 만들지 않으므로 [0]은 항상 존재한다 — 기본값은 타입을
+    // 좁히기 위한 것이고, 실제로는 쓰이지 않는다.
+    const [beforeHash = ref] = ref.split('#');
+    const [beforeQuery = beforeHash] = beforeHash.split('?');
+    const cleanRef = decodeUrlSafe(beforeQuery);
     const resolved = resolve(dirname(absPath), cleanRef);
     if (!existsSync(resolved)) {
       issues.push({
@@ -185,10 +186,8 @@ export function scanBodyLines(content: string): ScanResult {
     }
 
     // 2·3번 캡처 그룹은 매치에 항상 참여합니다(3번은 빈 문자열 가능).
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- 위 주석: 캡처 그룹은 매치에 항상 참여
-    const marker = m[2]!;
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- 위 주석: 캡처 그룹은 매치에 항상 참여
-    const rest = m[3]!;
+    const marker = m[2] ?? '';
+    const rest = m[3] ?? '';
     const char = marker.charAt(0);
     const length = marker.length;
     const info = rest.trim();
@@ -220,8 +219,11 @@ export function scanBodyLines(content: string): ScanResult {
     // validateCodeFenceLanguages가 `unclosed-fence`로 따로 알린다 — 라벨 오타보다
     // "펜스가 안 닫혔다"가 더 큰 문제이고, 산문의 `~~~~ 구분선`을 언어 이름으로
     // 보고하는 모순도 사라진다.
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- openedAt의 인덱스는 전부 위 forEach에서 result에 push된 줄
-    result[index] = { ...result[index]!, inFence: false, opensFence: null };
+    // openedAt의 인덱스는 전부 위 forEach에서 result에 push된 줄이다.
+    const opened = result[index];
+    if (opened) {
+      result[index] = { ...opened, inFence: false, opensFence: null };
+    }
   }
 
   return {
@@ -262,8 +264,9 @@ export function validateCodeFenceLanguages(
     if (!opensFence) continue;
 
     // ```ts title="a.ts" 처럼 뒤에 메타가 붙는 경우 첫 토큰만 언어다.
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- split은 빈 배열을 만들지 않으므로 [0]은 항상 존재
-    const label = opensFence.split(/[\s,{]/)[0]!.toLowerCase();
+    // split은 빈 배열을 만들지 않으므로 [0]은 항상 존재한다.
+    const [firstToken = ''] = opensFence.split(/[\s,{]/);
+    const label = firstToken.toLowerCase();
     if (!label || CONTENT.registries.supportedFenceLabels.has(label)) continue;
 
     issues.push({

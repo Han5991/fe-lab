@@ -25,6 +25,7 @@
     "sharp": "0.35.3"
   },
   "devDependencies": {
+    "@eslint-community/eslint-plugin-eslint-comments": "^4.7.2",
     "@eslint/js": "^10.0.1",
     "@types/node": "catalog:",
     "@types/react": "catalog:",

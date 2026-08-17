@@ -135,8 +135,10 @@ export function CodeTabs({ children }: { children?: ReactNode }) {
   // 그대로 흘려보낸다.
   if (items.length === 0) return <>{children}</>;
 
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- 위에서 items.length > 0 을 확인했고 active ≥ 0 이라 인덱스는 항상 범위 안
-  const current = items[Math.min(active, items.length - 1)]!;
+  // active는 0 이상이고 위에서 items.length > 0 을 확인했으므로 인덱스는 항상
+  // 범위 안이다. 타입으로는 증명되지 않으니, 못 고르면 위와 같은 폴백을 쓴다.
+  const current = items[Math.min(active, items.length - 1)];
+  if (!current) return <>{children}</>;
 
   // ←/→ 로 옮기고 Home/End 로 양 끝으로 간다(WAI-ARIA tabs 패턴). 버튼만
   // 으로도 Tab 키 순회는 되지만, 탭 목록 안에서는 이쪽이 기본 조작이다.
@@ -188,7 +190,6 @@ export function CodeTabs({ children }: { children?: ReactNode }) {
           // 축을 단정하지 않는다. npm/pnpm/yarn 만 있는 게 아니라
           // Next.js/React Router 처럼 프레임워크로 가르기도 한다.
           aria-label="같은 코드의 다른 버전"
-          onKeyDown={onKeyDown}
           className={css({ display: 'flex', overflowX: 'auto', flex: '1' })}
         >
           {items.map((item, i) => {
@@ -209,6 +210,11 @@ export function CodeTabs({ children }: { children?: ReactNode }) {
                 aria-controls={`${baseId}-panel`}
                 // 선택되지 않은 탭은 Tab 키 순회에서 빼고 화살표로만 간다.
                 tabIndex={selected ? 0 : -1}
+                // 화살표 처리는 tablist가 아니라 **탭 자신**이 받는다. 초점은
+                // 언제나 탭 버튼에 있고(위 roving tabIndex), tablist는 초점을
+                // 받지 않는 컨테이너다 — 거기 키 핸들러를 달면 "초점도 못 받는
+                // 요소가 키를 처리한다"가 된다(jsx-a11y/interactive-supports-focus).
+                onKeyDown={onKeyDown}
                 onClick={() => setActive(i)}
                 className={css({
                   pos: 'relative',

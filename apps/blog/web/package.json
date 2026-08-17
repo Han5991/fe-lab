@@ -9,10 +9,10 @@
     "prebuild": "npx tsx node_modules/@blog/content/src/scripts/build-content.ts --strict",
     "build": "pnpm prebuild && next build && pnpm check-seo",
     "start": "next start",
-    "lint": "eslint . --max-warnings=5",
+    "lint": "eslint . --max-warnings=0",
     "lint:posts": "npx tsx node_modules/@blog/content/src/scripts/validate-posts.ts",
     "check-seo": "npx tsx node_modules/@blog/content/src/scripts/check-seo.ts",
-    "check-types": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json --noEmit",
+    "check-types": "next typegen && tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json --noEmit",
     "test": "pnpm test:node && pnpm test:vitest",
     "test:node": "node --import tsx --test 'domain/**/*.test.ts' 'lib/**/*.test.ts'",
     "test:vitest": "vitest run",
@@ -48,6 +48,7 @@
     "remark-gfm": "^4.0.1"
   },
   "devDependencies": {
+    "@eslint-community/eslint-plugin-eslint-comments": "^4.7.2",
     "@eslint/js": "^10.0.1",
     "@next/eslint-plugin-next": "^16.3.0",
     "@pandacss/dev": "catalog:",
