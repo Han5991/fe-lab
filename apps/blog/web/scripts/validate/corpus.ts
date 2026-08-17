@@ -5,7 +5,7 @@
  * 파일 단위 사슬과 실행 시점이 다릅니다: 진입점(validate-posts.ts)이 모든 파일을
  * 훑은 **뒤에** 한 번 돕니다.
  */
-import { isPostFile, resolveExcerpt } from '@/domain/post';
+import { isPostFile, resolveExcerpt } from '../../domain/post';
 import type { Issue, PostRecord, ValidateOptions } from './shared';
 import { resolveSeverity, isVisibleFrontmatter } from './rules';
 

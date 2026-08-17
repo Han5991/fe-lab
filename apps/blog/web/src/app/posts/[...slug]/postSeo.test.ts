@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import { postPath, postUrl } from '@/domain/post/urls';
 import {
-  buildPostMetadata,
+  buildPostSeo,
   buildPostJsonLd,
   buildBreadcrumbJsonLd,
   buildDescription,
@@ -10,6 +10,7 @@ import {
   countWords,
   type SeoPost,
 } from './postSeo';
+import { toNextMetadata } from './nextMetadata';
 
 // lib/shared/constants: SITE_URL='https://blog.sangwook.dev', OG_DEFAULT_IMAGE='/og-default.jpg'
 const SITE = 'https://blog.sangwook.dev';
@@ -71,12 +72,12 @@ describe('toKstIsoDate', () => {
   });
 });
 
-describe('buildPostMetadata: full-ISO date', () => {
+describe('buildPostSeo: full-ISO date', () => {
   test('publishedTime도 full-ISO date를 그대로 사용', () => {
-    const og = buildPostMetadata(
+    const og = buildPostSeo(
       makePost({ date: '2026-05-24T09:00:00+09:00' }),
       'a',
-    ).openGraph as Record<string, unknown>;
+    ).openGraph;
     expect(og.publishedTime).toBe('2026-05-24T09:00:00+09:00');
   });
 });
@@ -96,25 +97,26 @@ describe('countWords', () => {
   });
 });
 
-describe('buildPostMetadata', () => {
+describe('buildPostSeo', () => {
   test('title / description / canonical', () => {
-    const m = buildPostMetadata(makePost(), '번들러/3편');
+    const m = buildPostSeo(makePost(), '번들러/3편');
     expect(m.title).toBe('테스트 글 | Frontend Lab');
     expect(m.description).toBe('요약');
     // canonical은 페이지 링크와 같은 빌더(postPath)에서 온다 — 인코딩 포함.
-    expect(m.alternates?.canonical).toBe(postPath('번들러/3편'));
+    expect(m.canonicalPath).toBe(postPath('번들러/3편'));
   });
 
   test('canonical/og:url 인코딩 리터럴 고정 (한글·비ASCII slug)', () => {
     // 예전엔 `/posts/${slug}/` 리터럴이라 디코드된 slug가 그대로 나갔고,
     // 페이지 링크(postPath, 인코딩됨)와 canonical이 갈릴 수 있었다.
     // check-seo는 양쪽을 디코드해 비교하므로 인코딩으로 통일해도 위반이 없다.
-    const m = buildPostMetadata(makePost(), '번들러/3편');
-    expect(m.alternates?.canonical).toBe(
+    const m = buildPostSeo(makePost(), '번들러/3편');
+    expect(m.canonicalPath).toBe(
       '/posts/%EB%B2%88%EB%93%A4%EB%9F%AC/3%ED%8E%B8/',
     );
-    const og = m.openGraph as Record<string, unknown>;
-    expect(og.url).toBe('/posts/%EB%B2%88%EB%93%A4%EB%9F%AC/3%ED%8E%B8/');
+    expect(m.openGraph.url).toBe(
+      '/posts/%EB%B2%88%EB%93%A4%EB%9F%AC/3%ED%8E%B8/',
+    );
   });
 
   test('seoTitle이 있으면 <title>만 그것을 쓴다 (og:title은 원래 제목)', () => {
@@ -124,10 +126,11 @@ describe('buildPostMetadata', () => {
       title: '[Typescript로 설계하는 프로젝트] 아주 긴 원래 제목',
       seoTitle: '[TS 설계] 짧은 제목',
     });
-    const m = buildPostMetadata(post, 'a');
+    const m = buildPostSeo(post, 'a');
     expect(m.title).toBe('[TS 설계] 짧은 제목 | Frontend Lab');
-    const og = m.openGraph as Record<string, unknown>;
-    expect(og.title).toBe('[Typescript로 설계하는 프로젝트] 아주 긴 원래 제목');
+    expect(m.openGraph.title).toBe(
+      '[Typescript로 설계하는 프로젝트] 아주 긴 원래 제목',
+    );
   });
 
   test('seoTitle이 있어도 JSON-LD headline은 원래 제목', () => {
@@ -139,75 +142,82 @@ describe('buildPostMetadata', () => {
   });
 
   test('og:site_name은 사이트 상수 하나에서 온다 (홈/목록과 동일)', () => {
-    const og = buildPostMetadata(makePost(), 'a').openGraph as Record<
-      string,
-      unknown
-    >;
-    expect(og.siteName).toBe('Frontend Lab');
+    expect(buildPostSeo(makePost(), 'a').openGraph.siteName).toBe(
+      'Frontend Lab',
+    );
   });
 
   test('og:locale이 모든 글에 붙는다', () => {
-    const og = buildPostMetadata(makePost(), 'a').openGraph as Record<
-      string,
-      unknown
-    >;
-    expect(og.locale).toBe('ko_KR');
+    expect(buildPostSeo(makePost(), 'a').openGraph.locale).toBe('ko_KR');
   });
 
   test('openGraph: article + publishedTime + 1200x630 이미지', () => {
-    const og = buildPostMetadata(makePost({ date: '2025-01-02' }), 'a')
-      .openGraph as Record<string, unknown>;
+    const og = buildPostSeo(makePost({ date: '2025-01-02' }), 'a').openGraph;
     expect(og.type).toBe('article');
     // JSON-LD의 datePublished와 동일한 KST ISO 8601 형식
     expect(og.publishedTime).toBe('2025-01-02T00:00:00+09:00');
     expect(og.url).toBe(postPath('a'));
-    const img = (og.images as Record<string, unknown>[])[0];
+    const img = og.images[0];
     expect(img.width).toBe(1200);
     expect(img.height).toBe(630);
     expect(img.alt).toBe('테스트 글');
   });
 
   test('twitter: summary_large_image', () => {
-    const tw = buildPostMetadata(makePost(), 'a').twitter as Record<
-      string,
-      unknown
-    >;
+    const tw = buildPostSeo(makePost(), 'a').twitter;
     expect(tw.card).toBe('summary_large_image');
     expect(tw.title).toBe('테스트 글');
   });
 
   test('publishedTime: date 없으면 undefined', () => {
-    const og = buildPostMetadata(makePost({ date: null }), 'a')
-      .openGraph as Record<string, unknown>;
-    expect(og.publishedTime).toBeUndefined();
+    expect(
+      buildPostSeo(makePost({ date: null }), 'a').openGraph.publishedTime,
+    ).toBeUndefined();
   });
 
   test('thumbnail 없으면 OG images[0].url = 빌드 시 생성되는 글별 OG 카드', () => {
-    const og = buildPostMetadata(makePost({ thumbnail: undefined }), 'a')
-      .openGraph as Record<string, unknown>;
-    const img = (og.images as Record<string, unknown>[])[0];
-    expect(img.url).toBe(`${SITE}/og/a.png`);
+    const og = buildPostSeo(makePost({ thumbnail: undefined }), 'a').openGraph;
+    expect(og.images[0].url).toBe(`${SITE}/og/a.png`);
   });
 
   test('thumbnail 없는 한글/중첩 slug는 OG 이미지 URL이 세그먼트별 인코딩', () => {
-    const og = buildPostMetadata(
+    const og = buildPostSeo(
       makePost({ thumbnail: undefined }),
       '번들러/3편',
-    ).openGraph as Record<string, unknown>;
-    const img = (og.images as Record<string, unknown>[])[0];
-    expect(img.url).toBe(
+    ).openGraph;
+    expect(og.images[0].url).toBe(
       `${SITE}/og/%EB%B2%88%EB%93%A4%EB%9F%AC/3%ED%8E%B8.png`,
     );
   });
 
   test('상대 thumbnail은 images[0].url이 절대 URL(SITE_URL prefix)', () => {
-    const og = buildPostMetadata(
+    const og = buildPostSeo(
       makePost({ thumbnail: 'cover.png', relativeDir: '번들러' }),
       'a',
-    ).openGraph as Record<string, unknown>;
-    const img = (og.images as Record<string, unknown>[])[0];
-    expect(img.url as string).toMatch(new RegExp(`^${SITE}/posts/`));
-    expect(img.url as string).toContain('cover.png');
+    ).openGraph;
+    expect(og.images[0].url).toMatch(new RegExp(`^${SITE}/posts/`));
+    expect(og.images[0].url).toContain('cover.png');
+  });
+});
+
+describe('toNextMetadata (앱 어댑터)', () => {
+  test('DTO의 모든 필드가 1:1로 Metadata에 실린다', () => {
+    const seo = buildPostSeo(makePost({ date: '2025-01-02' }), '번들러/3편');
+    const m = toNextMetadata(seo);
+    expect(m.title).toBe(seo.title);
+    expect(m.description).toBe(seo.description);
+    expect(m.alternates?.canonical).toBe(seo.canonicalPath);
+    const og = m.openGraph as Record<string, unknown>;
+    expect(og.title).toBe(seo.openGraph.title);
+    expect(og.url).toBe(seo.openGraph.url);
+    expect(og.siteName).toBe(seo.openGraph.siteName);
+    expect(og.locale).toBe(seo.openGraph.locale);
+    expect(og.type).toBe('article');
+    expect(og.publishedTime).toBe(seo.openGraph.publishedTime);
+    expect(og.images).toEqual(seo.openGraph.images);
+    const tw = m.twitter as Record<string, unknown>;
+    expect(tw.card).toBe('summary_large_image');
+    expect(tw.images).toEqual(seo.twitter.images);
   });
 });
 

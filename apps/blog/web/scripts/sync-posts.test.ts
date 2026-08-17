@@ -4,9 +4,11 @@
  * 임시 src/dst 디렉토리를 만들어 sync 로직을 실행하고
  * orphan 파일 삭제(및 dry-orphan 모드) 동작을 검증합니다.
  *
- * sync-posts.mjs 는 __dirname 기반 하드코딩 경로를 사용하기 때문에
- * 직접 import 하지 않고, 동일한 핵심 로직을 인라인 wrapper 로 래핑한 뒤
- * spawnSync 로 실행하여 경로를 주입합니다.
+ * sync-posts.mjs 는 로드 시점에 CONTENT_PATHS의 실제 경로로 즉시 실행되는
+ * 구조라(진입 가드 없음) 직접 import 하면 진짜 public/을 건드립니다. 그래서
+ * 동일한 핵심 로직을 인라인 wrapper 로 래핑한 뒤 spawnSync 로 실행하여
+ * 임시 경로를 주입합니다. 실제 파일의 경로 배선(CONTENT_PATHS 소비)은
+ * 패키지 이사 후 진입 가드가 생기면 직접 import 로 검증합니다.
  */
 import assert from 'node:assert/strict';
 import { test } from 'node:test';

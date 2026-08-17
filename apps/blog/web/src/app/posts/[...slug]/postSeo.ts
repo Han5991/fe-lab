@@ -2,10 +2,13 @@
  * 포스트 상세 페이지의 SEO 메타데이터 / 구조화 데이터(JSON-LD) 빌더.
  *
  * 이전에는 page.tsx에 인라인되어 단위 테스트가 불가능했습니다. 순수 함수로 분리해
- * 콘텐츠(post) → SEO 출력의 계약을 테스트로 고정합니다. (page.tsx는 이 함수들을
- * 호출만 합니다 — 동작은 동일.)
+ * 콘텐츠(post) → SEO 출력의 계약을 테스트로 고정합니다.
+ *
+ * 반환형은 Next의 `Metadata`가 아니라 **프레임워크 중립 DTO**(PostSeoData)입니다
+ * — 이 모듈은 콘텐츠 → SEO 데이터 계산만 하고, Next Metadata로의 어댑트는 앱
+ * (page.tsx + nextMetadata.ts)이 합니다. next에 묶이지 않아야 이 계산이 나중에
+ * 콘텐츠 패키지로 이사할 수 있습니다.
  */
-import type { Metadata } from 'next';
 import {
   archiveUrl,
   postPath,
@@ -15,6 +18,7 @@ import {
 } from '@/domain/post';
 import { resolveAbsoluteThumbnailUrl } from '@/domain/post/thumbnail';
 import { SITE_NAME, SITE_URL, TITLE_SUFFIX } from '@/lib/shared/constants';
+import { CONTENT } from '@/lib/shared/contentConfig';
 
 /**
  * 아래 빌더들이 받는 `slug`는 **디코드된** 값입니다 — page.tsx가
@@ -28,8 +32,9 @@ import { SITE_NAME, SITE_URL, TITLE_SUFFIX } from '@/lib/shared/constants';
  * 통일해도 새 위반이 생기지 않습니다.
  */
 
-const OG_IMAGE_WIDTH = 1200;
-const OG_IMAGE_HEIGHT = 630;
+// OG 카드 규격 — 생성기(generate-og-images.ts)와 같은 설정 값을 본다.
+const OG_IMAGE_WIDTH = CONTENT.og.width;
+const OG_IMAGE_HEIGHT = CONTENT.og.height;
 
 /** SEO 빌더가 필요로 하는 post 필드만 추린 타입 */
 export type SeoPost = Pick<
@@ -95,14 +100,51 @@ export function countWords(content: string): number {
     .filter(Boolean).length;
 }
 
-/** Next.js generateMetadata가 반환할 Metadata(OG/Twitter/canonical). */
-export function buildPostMetadata(post: SeoPost, slug: string): Metadata {
+/** OG 이미지 한 장의 프레임워크 중립 서술 */
+export interface PostSeoImage {
+  url: string;
+  width: number;
+  height: number;
+  alt: string;
+}
+
+/**
+ * 포스트 SEO 메타데이터의 프레임워크 중립 DTO.
+ * Next `Metadata`로의 변환은 앱 어댑터(nextMetadata.ts)가 한다.
+ */
+export interface PostSeoData {
+  /** `<title>` 전체(접미사 포함) */
+  title: string;
+  description: string;
+  /** canonical 상대 경로 — 페이지 링크와 같은 빌더(postPath), 인코딩 포함 */
+  canonicalPath: string;
+  openGraph: {
+    title: string;
+    description: string;
+    url: string;
+    siteName: string;
+    locale: string;
+    type: 'article';
+    /** KST 기준 완전한 ISO 8601. date가 없으면 undefined */
+    publishedTime: string | undefined;
+    images: PostSeoImage[];
+  };
+  twitter: {
+    card: 'summary_large_image';
+    title: string;
+    description: string;
+    images: string[];
+  };
+}
+
+/** 포스트 상세의 SEO 메타데이터(OG/Twitter/canonical) DTO를 만든다. */
+export function buildPostSeo(post: SeoPost, slug: string): PostSeoData {
   const description = buildDescription(post);
   const absoluteThumbnailUrl = resolveAbsoluteThumbnailUrl({ ...post, slug });
   return {
     title: `${resolveSeoTitle(post)}${TITLE_SUFFIX}`,
     description,
-    alternates: { canonical: postPath(slug) },
+    canonicalPath: postPath(slug),
     openGraph: {
       // og:title에는 짧은 seoTitle이 아니라 **원래 제목**이 나간다. 잘림이
       // 문제인 건 SERP의 `<title>`이고, 공유 카드는 폭이 넉넉하다.
@@ -169,17 +211,19 @@ export function buildPostJsonLd(
     ...(post.relativeDir && { articleSection: post.relativeDir }),
     mainEntityOfPage: { '@type': 'WebPage', '@id': url },
     url,
+    // 저자·발행처 식별값은 설정(defineContent의 author/site)에서 온다 —
+    // 예전에는 여기만 리터럴이라 constants와 어긋날 수 있었다.
     author: {
       '@type': 'Person',
       '@id': `${SITE_URL}/#author`,
-      name: 'Sangwook Han',
-      alternateName: '한상욱',
+      name: CONTENT.author.name,
+      alternateName: CONTENT.author.alternateName,
       url: SITE_URL,
     },
     publisher: {
       '@type': 'Organization',
       '@id': `${SITE_URL}/#organization`,
-      name: 'Frontend Lab',
+      name: SITE_NAME,
       url: SITE_URL,
       logo: {
         '@type': 'ImageObject',

@@ -1,3 +1,4 @@
+import { CONTENT } from '../../lib/shared/contentConfig';
 import { readAllPosts } from './repository';
 import { isPostVisible } from './visibility';
 import { getSeriesMeta, sortPostsBySeriesOrder } from './series';
@@ -25,14 +26,12 @@ function toPostSummary(post: PostData): PostSummary {
  * 결정하는 지점이 늘어나는 순간 이번 리팩토링이 없앤 "판정 규칙 두 벌" 문제가
  * 그대로 되살아납니다.
  *
- * `=== 'development'`로 정확히 비교하는 이유(`!== 'production'`이 아니라):
- * 정적 산출물을 만드는 스크립트들(prebuild/predev:web의 sitemap·rss·search-index·
- * llms-full·og-images)은 tsx로 직접 실행되어 NODE_ENV가 **undefined**입니다.
- * 느슨하게 비교하면 그 스크립트들이 dev로 오인되어 draft가 sitemap과 RSS에
- * 실려 나갑니다. next dev만 'development'를 설정합니다.
+ * 판정은 설정의 `runtime.isDevelopment`를 씁니다 — `=== 'development'` 정확
+ * 비교여야 하는 이유(prebuild 스크립트들은 NODE_ENV가 undefined라 느슨한
+ * 비교는 draft를 sitemap·RSS에 실어 보낸다)는 그 기본값 주석에 있습니다.
  */
 function shouldIncludeHiddenPosts(): boolean {
-  return process.env.NODE_ENV === 'development';
+  return CONTENT.runtime.isDevelopment();
 }
 
 /**
@@ -71,7 +70,7 @@ let _postsBySlugMap: Map<string, PostData> | null = null;
  * 단, 개발 모드에서는 수정한 마크다운이 바로 반영되도록 캐시를 건너뜁니다.
  */
 export function getPostBySlug(slug: string): PostData | null {
-  if (process.env.NODE_ENV === 'development') {
+  if (CONTENT.runtime.isDevelopment()) {
     return getAllPosts().find(post => post.slug === slug) ?? null;
   }
 

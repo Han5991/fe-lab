@@ -1,5 +1,6 @@
 import { createElement, type ComponentProps } from 'react';
 import type { Components } from 'react-markdown';
+import { HEADING_TAG_MAP } from '@/lib/shared/markdownHeadings';
 
 /**
  * 본문 마크다운의 최상위 `#`(h1)을 h2로 강등한다.
@@ -28,11 +29,12 @@ function DemotedH1({
 }: ComponentProps<'h1'> & { node?: unknown }) {
   // rehype-slug가 이미 붙인 id는 props에 실려 그대로 넘어간다 — 목차(TOC)와
   // 앵커 링크가 강등 전후로 동일하게 동작한다.
-  return createElement('h2', props);
+  return createElement(HEADING_TAG_MAP.h1, props);
 }
 
 /**
- * 사이트 본문과 RSS `content:encoded`가 **공유하는** 헤딩 매핑.
+ * 사이트 본문의 헤딩 매핑. RSS `content:encoded`(feedRenderer.ts)와 **같은
+ * 태그 매핑**(lib/shared/markdownHeadings.ts의 HEADING_TAG_MAP)에서 파생한다 —
  * 한쪽만 적용하면 피드 리더에서만 h1이 살아남아 같은 문제가 남는다.
  */
 export const HEADING_COMPONENTS: Pick<Components, 'h1'> = {

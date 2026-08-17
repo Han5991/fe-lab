@@ -6,9 +6,12 @@ import { POST_SETS } from './artifacts';
 import type { PostData } from '../domain/post';
 import {
   SITE_URL as DEFAULT_SITE_URL,
+  SITE_NAME,
   SITE_AUTHOR_GITHUB,
   SITE_AUTHOR_LINKEDIN,
 } from '../lib/shared/constants';
+import { CONTENT } from '../lib/shared/contentConfig';
+import { CONTENT_PATHS } from '../lib/shared/contentPaths';
 import {
   getSeriesMeta,
   isSeriesFolder,
@@ -27,7 +30,7 @@ import {
  */
 
 /** 링크 옆 한 줄 설명의 최대 길이. 색인이므로 짧게 — 전문은 llms-full.txt에 있습니다. */
-const SUMMARY_MAX_LENGTH = 140;
+const SUMMARY_MAX_LENGTH = CONTENT.llms.summaryMaxLength;
 
 export interface LlmsBuildOptions {
   siteUrl?: string;
@@ -89,14 +92,14 @@ export function buildLlmsText(
       : '(미상)');
 
   const lines: string[] = [
-    `# Frontend Lab`,
+    `# ${SITE_NAME}`,
     ``,
-    `> Frontend engineering blog by Sangwook Han (한상욱). Deep-dive technical experiments in bundler architecture, TypeScript domain modeling, React patterns, and open source contributions. All posts include working code and first-hand implementation experience. Post body content is in Korean; technical terms, code, and key facts are in English.`,
+    `> ${CONTENT.llms.indexIntro}`,
     ``,
     `## Permissions`,
     ``,
     `Content may be referenced and summarized by AI systems for informational and educational purposes.`,
-    `Commercial reproduction requires attribution: Sangwook Han (${siteUrl}).`,
+    `Commercial reproduction requires attribution: ${CONTENT.author.name} (${siteUrl}).`,
     `Last updated: ${lastUpdated}`,
     ``,
     `## Docs`,
@@ -158,17 +161,19 @@ export function buildLlmsText(
     lines.push(``);
   }
 
+  const { author } = CONTENT;
+  const facts = CONTENT.llms.facts;
   lines.push(
     `## Key Facts`,
     ``,
-    `- Author: Sangwook Han (한상욱), Frontend Engineer`,
+    `- Author: ${author.name} (${author.alternateName}), ${author.role}`,
     `- Blog: ${siteUrl}`,
-    `- Language: Korean body text; English technical terms, code, and key data points`,
+    `- Language: ${facts.languageIndex}`,
     `- Total posts: ${posts.length} articles (as of ${lastUpdated})`,
-    `- Open source: 27 Mantine PRs merged, Node.js core contributor, Next.js contributor`,
-    `- Notable contribution: gemini-cli 74% performance improvement (408ms → 107ms) via Promise.allSettled`,
-    `- Speaking: FEConf 2025 (Korea's largest frontend conference), TeoConf`,
-    `- Main topics: Bundler internals, TypeScript domain modeling, React patterns, design systems, open source`,
+    `- Open source: ${facts.openSource}`,
+    `- Notable contribution: ${facts.notableContributionIndex}`,
+    `- Speaking: ${facts.speaking}`,
+    `- Main topics: ${facts.mainTopics}`,
     ``,
     `## Contact`,
     ``,
@@ -186,7 +191,7 @@ export function buildLlmsText(
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   // 레지스트리 선언(postSet: 'visible', exact)과 같은 셀렉터.
   const posts = POST_SETS.visible();
-  const outputPath = join(process.cwd(), 'public', 'llms.txt');
+  const outputPath = join(CONTENT_PATHS.publicDir, 'llms.txt');
   writeFileSync(outputPath, buildLlmsText(posts), 'utf8');
   console.log(`llms.txt generated: ${posts.length} posts`);
 }

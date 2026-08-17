@@ -4,7 +4,12 @@ import { fileURLToPath } from 'node:url';
 import { postUrl } from '../domain/post';
 import type { PostData } from '../domain/post';
 import { POST_SETS } from './artifacts';
-import { SITE_URL as DEFAULT_SITE_URL } from '../lib/shared/constants';
+import {
+  SITE_URL as DEFAULT_SITE_URL,
+  SITE_NAME,
+} from '../lib/shared/constants';
+import { CONTENT } from '../lib/shared/contentConfig';
+import { CONTENT_PATHS } from '../lib/shared/contentPaths';
 
 export interface LlmsFullBuildOptions {
   siteUrl?: string;
@@ -20,23 +25,25 @@ export function buildLlmsFullText(
   options: LlmsFullBuildOptions = {},
 ): string {
   const SITE_URL = options.siteUrl ?? DEFAULT_SITE_URL;
+  const { author } = CONTENT;
+  const facts = CONTENT.llms.facts;
   const lines: string[] = [
-    `# Frontend Lab`,
+    `# ${SITE_NAME}`,
     ``,
-    `> Frontend engineering blog by Sangwook Han (한상욱). Deep-dive technical experiments in bundler architecture, TypeScript domain modeling, React patterns, and open source contributions. All posts include working code and first-hand implementation experience. Content primarily in Korean.`,
+    `> ${CONTENT.llms.fullIntro}`,
     ``,
     `## Key Facts`,
     ``,
-    `- Author: Sangwook Han (한상욱), Frontend Engineer`,
+    `- Author: ${author.name} (${author.alternateName}), ${author.role}`,
     `- Blog: ${SITE_URL}`,
-    `- GitHub: https://github.com/Han5991`,
-    `- LinkedIn: https://www.linkedin.com/in/sangwook-han/`,
-    `- Language: Primarily Korean, some English`,
+    `- GitHub: ${author.github}`,
+    `- LinkedIn: ${author.linkedin}`,
+    `- Language: ${facts.languageFull}`,
     `- Total posts: ${posts.length}+ articles`,
-    `- Open source: 27 Mantine PRs merged, Node.js core contributor, Next.js contributor`,
-    `- Notable contribution: gemini-cli 74% performance improvement (408ms → 107ms)`,
-    `- Speaking: FEConf 2025 (Korea's largest frontend conference), TeoConf`,
-    `- Main topics: Bundler internals, TypeScript domain modeling, React patterns, design systems, open source`,
+    `- Open source: ${facts.openSource}`,
+    `- Notable contribution: ${facts.notableContributionFull}`,
+    `- Speaking: ${facts.speaking}`,
+    `- Main topics: ${facts.mainTopics}`,
     ``,
     `---`,
     ``,
@@ -120,12 +127,12 @@ export function buildLlmsFullText(
   lines.push(`## Contact`);
   lines.push(``);
   lines.push(`- Blog: ${SITE_URL}`);
-  lines.push(`- GitHub: https://github.com/Han5991`);
-  lines.push(`- LinkedIn: https://www.linkedin.com/in/sangwook-han/`);
+  lines.push(`- GitHub: ${author.github}`);
+  lines.push(`- LinkedIn: ${author.linkedin}`);
   lines.push(`- RSS: ${SITE_URL}/rss.xml`);
   lines.push(``);
   lines.push(
-    `This content may be used for AI training and retrieval. When citing, please attribute to "Sangwook Han (Frontend Lab, blog.sangwook.dev)".`,
+    `This content may be used for AI training and retrieval. When citing, please attribute to "${author.name} (${SITE_NAME}, ${CONTENT.site.url.replace('https://', '')})".`,
   );
 
   return lines.join('\n');
@@ -134,7 +141,7 @@ export function buildLlmsFullText(
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   // 레지스트리 선언(postSet: 'visible', exact)과 같은 셀렉터.
   const posts = POST_SETS.visible();
-  const outputPath = join(process.cwd(), 'public', 'llms-full.txt');
+  const outputPath = join(CONTENT_PATHS.publicDir, 'llms-full.txt');
   const text = buildLlmsFullText(posts);
   writeFileSync(outputPath, text, 'utf8');
 

@@ -18,17 +18,21 @@ import {
   isPostStatus,
   isPostFile,
   rejectionReasonFor,
-} from '@/domain/post';
+} from '../../domain/post';
 // 이름 목록만 있는 모듈에서 가져옵니다. registry.ts(=.tsx 컴포넌트 의존)를 직접
 // 참조하면 이 노드 스크립트가 React·Panda까지 끌고 들어옵니다.
-import { DIAGRAM_NAMES, isDiagramName } from '@/domain/post/diagramNames';
-import { hasAmbiguousTimezone } from '@/lib/shared/dates';
-import {
-  TITLE_SUFFIX,
-  SEO_TITLE_MAX_LENGTH,
-  SEO_DESCRIPTION_MIN_LENGTH,
-  SEO_DESCRIPTION_MAX_LENGTH,
-} from '@/lib/shared/constants';
+import { DIAGRAM_NAMES, isDiagramName } from '../../domain/post/diagramNames';
+import { hasAmbiguousTimezone } from '../../lib/shared/dates';
+import { CONTENT } from '../../lib/shared/contentConfig';
+
+// SEO 임계값은 설정 표면에서 읽는다 — check-seo와 "정확히 같은 범위"를 보는
+// 게이트이므로, defineContent 오버라이드가 생겨도 두 게이트가 함께 따라간다.
+const {
+  titleSuffix: TITLE_SUFFIX,
+  titleMaxLength: SEO_TITLE_MAX_LENGTH,
+  descriptionMinLength: SEO_DESCRIPTION_MIN_LENGTH,
+  descriptionMaxLength: SEO_DESCRIPTION_MAX_LENGTH,
+} = CONTENT.seo;
 import { findFrontmatterLine } from './shared';
 import type { Issue, PostRecord, ValidateOptions } from './shared';
 import { resolveSeverity } from './rules';

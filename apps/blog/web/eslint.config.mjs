@@ -496,21 +496,9 @@ export default defineConfig([
                 { to: { module: { origin: 'external' } } },
               ],
             },
-            {
-              // 좁은 예외: generate-rss 한 파일만 markdownHeadings(app)를 공유한다.
-              // 사이트 본문과 RSS content:encoded가 같은 h1→h2 강등 매핑을 써야
-              // 하기 때문(CLAUDE.md). PR11에서 렌더러 주입으로 방향을 뒤집어 이
-              // 예외를 닫는다 — 그 전까지 render-build의 app 접근은 이 한 쌍뿐.
-              from: { file: { path: 'scripts/render/generate-rss.ts' } },
-              allow: {
-                to: {
-                  element: {
-                    type: 'app',
-                    fileInternalPath: 'components/post/markdownHeadings.tsx',
-                  },
-                },
-              },
-            },
+            // (예전에 있던 generate-rss → app/markdownHeadings 예외는 PR11이
+            // 닫았다 — 헤딩 강등 매핑을 lib/shared/markdownHeadings.ts 데이터로
+            // 내리고, 렌더러는 buildRssXml에 주입한다.)
             // 프로덕션 코드는 테스트 파일을 import할 수 없다.
             { disallow: { to: { file: { categories: 'test' } } } },
             // 테스트는 무엇이든 import할 수 있다(마지막 매치가 이기므로

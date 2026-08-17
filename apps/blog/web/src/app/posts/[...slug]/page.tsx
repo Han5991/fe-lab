@@ -13,10 +13,11 @@ import PostClient from './PostClient';
 import { PreviewBanner } from '@/src/components/preview/PreviewBanner';
 import { PostNavigation } from '@/src/components/post/PostNavigation';
 import {
-  buildPostMetadata,
+  buildPostSeo,
   buildPostJsonLd,
   buildBreadcrumbJsonLd,
 } from './postSeo';
+import { toNextMetadata } from './nextMetadata';
 import type { Metadata } from 'next';
 import { Rail } from '@/src/components/Rail';
 import { safeJsonLd } from '@/lib/shared/jsonLd';
@@ -47,7 +48,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     };
   }
 
-  return buildPostMetadata(post, slug);
+  // SEO 계산(postSeo)은 프레임워크 중립 DTO를 내고, Next Metadata로의
+  // 변환은 앱 어댑터가 한다.
+  return toNextMetadata(buildPostSeo(post, slug));
 }
 
 export default async function PostPage({ params }: Props) {

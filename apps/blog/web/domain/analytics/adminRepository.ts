@@ -13,12 +13,12 @@
  * 지금은 첫 호출 때 만들어 그 고정점도 없앴습니다.
  */
 
-import { client } from '@/lib/platform/client';
+import { client } from '../../lib/platform/client';
 import {
   createAdminApiClient,
   type AdminApiClient,
-} from '@/lib/platform/adminApi';
-import type { PostStatus } from '@/domain/post/types';
+} from '../../lib/platform/adminApi';
+import type { PostStatus } from '../post/types';
 import type { HourlyDistribution, DowDistribution } from './types';
 
 export interface AdminPostIndex {

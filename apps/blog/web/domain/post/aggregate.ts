@@ -1,3 +1,5 @@
+import { CONTENT } from '../../lib/shared/contentConfig';
+import type { SeriesColorKey } from '../../lib/shared/contentConfig';
 import { getAllPosts } from './service';
 import { getSeriesMeta } from './series';
 import type { PostSummary } from './types';
@@ -8,8 +10,8 @@ export interface SeriesSummary {
   count: number;
   description?: string | undefined;
   updated: string | null;
-  /** 시리즈 컬러 키 — bundler/typescript-patterns/oss-diary 외에는 round-robin */
-  colorKey: 'accent' | 'marker' | 'moss';
+  /** 시리즈 컬러 키 — 등록된 시리즈(registries.seriesColors) 외에는 round-robin */
+  colorKey: SeriesColorKey;
 }
 
 export interface TagSummary {
@@ -17,19 +19,11 @@ export interface TagSummary {
   count: number;
 }
 
-// 키는 폴더명(= post.series). `apps/blog/posts/<폴더>` 와 정확히 일치해야 합니다.
-// 매칭되지 않은 시리즈는 `COLOR_FALLBACK` 라운드로빈으로 색이 배정됩니다.
-const SERIES_COLOR_MAP: Record<string, SeriesSummary['colorKey']> = {
-  bundler: 'accent',
-  '[Typescript로 설계하는 프로젝트]': 'marker',
-  'open-source': 'moss',
-};
-
-const COLOR_FALLBACK: SeriesSummary['colorKey'][] = [
-  'accent',
-  'marker',
-  'moss',
-];
+// 폴더명 → 컬러 키 매핑은 설정(defineContent의 registries)에서 온다 — 예전에는
+// domain이 UI 컬러 토큰 목록을 직접 소유했다. 키 규칙(폴더명과 정확히 일치)은
+// 설정 쪽 주석 참고.
+const SERIES_COLOR_MAP = CONTENT.registries.seriesColors;
+const COLOR_FALLBACK = CONTENT.registries.seriesColorFallback;
 
 /**
  * 모든 시리즈를 최근 글 기준 내림차순으로 반환합니다.

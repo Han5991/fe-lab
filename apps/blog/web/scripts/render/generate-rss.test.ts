@@ -1,12 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import {
-  buildRssXml,
-  escapeXml,
-  renderContentHtml,
-  wrapCdata,
-} from './generate-rss';
+import { buildRssXml, escapeXml, wrapCdata } from './generate-rss';
 import type { RssPost } from './generate-rss';
+import { renderContentHtml } from './feedRenderer';
 import { parseScheduledDateKST } from '../../lib/shared/dates';
 
 const NOW = new Date('2026-05-16T00:00:00Z');
@@ -24,11 +20,13 @@ function makePost(over: Partial<RssPost> = {}): RssPost {
   };
 }
 
+// 진입점과 같은 조합 — buildRssXml은 렌더러를 주입받는다(generate-rss.ts 참고).
 const OPTS = {
   siteUrl: SITE,
   siteName: NAME,
   siteDescription: DESC,
   now: NOW,
+  renderContent: renderContentHtml,
 };
 
 test('escapeXml: &, <, >, ", \' 모두 엔티티로 치환', () => {
@@ -206,6 +204,17 @@ test('rss: content가 있으면 content:encoded에 HTML 전문 포함', () => {
 test('rss: content 없으면 content:encoded 생략', () => {
   const xml = buildRssXml([makePost({ slug: 'a' })], OPTS);
   assert.ok(!xml.includes('<content:encoded>'));
+});
+
+test('rss: renderContent를 주입하지 않으면 content가 있어도 content:encoded 생략', () => {
+  // 빌더는 렌더러를 모른다 — 주입이 없으면 전문 없이 메타데이터만 담는다.
+  const { renderContent: _renderContent, ...noRenderer } = OPTS;
+  const xml = buildRssXml(
+    [makePost({ slug: 'a', content: '# 본문' })],
+    noRenderer,
+  );
+  assert.ok(!xml.includes('<content:encoded>'));
+  assert.equal((xml.match(/<item>/g) || []).length, 1);
 });
 
 test('rss: 상대 경로 이미지는 절대 URL로 변환', () => {

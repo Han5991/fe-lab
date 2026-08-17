@@ -2,6 +2,7 @@ import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { PostData } from '../domain/post';
+import { CONTENT_PATHS } from '../lib/shared/contentPaths';
 import { POST_SETS } from './artifacts';
 
 export const CONTENT_PREVIEW_CHARS = 1500;
@@ -80,10 +81,9 @@ export function buildAdminPostsIndex(
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
-  const outputPath = join(process.cwd(), 'public', 'search-index.json');
+  const outputPath = join(CONTENT_PATHS.publicDir, 'search-index.json');
   const adminOutputPath = join(
-    process.cwd(),
-    'public',
+    CONTENT_PATHS.publicDir,
     'admin-posts-index.json',
   );
 
