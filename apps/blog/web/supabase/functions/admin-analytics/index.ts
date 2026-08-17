@@ -1,14 +1,20 @@
 /**
  * admin-analytics Edge Function
  *
- * admin RPC 4건을 service_role 권한으로 대리 호출합니다.
+ * admin RPC를 service_role 권한으로 대리 호출합니다.
  * 호출자의 JWT를 검증하고 ADMIN_EMAIL과 일치하는지 확인한 후에만 실행합니다.
  *
- * 지원 action:
- *   - all_post_stats        : get_all_post_stats RPC
- *   - all_posts_trends      : get_all_posts_trends RPC (range 페이지네이션 지원)
- *   - post_hourly_distribution : get_post_hourly_distribution RPC
- *   - post_dow_distribution : get_post_dow_distribution RPC
+ * 지원 action과 각각이 부르는 RPC, params 형태는 **`lib/platform/adminActions.ts`가
+ * 단일 출처**입니다(`ADMIN_ACTION_RPC` · `AdminRequest`). 브라우저 클라이언트
+ * (`lib/platform/adminApi.ts`)도 같은 파일을 import 하므로 여기서 목록을 따로
+ * 적지 않습니다 — action을 추가하려면 그 파일에 등록하고 아래 switch에 case를
+ * 더하면 되고, case를 빼먹으면 `default`의 never 대입이 컴파일 에러를 냅니다.
+ *
+ * `supabase/functions` 밖의 파일을 import 하는 것은 의도된 것입니다.
+ * `supabase functions deploy`는 entrypoint의 import 그래프를 따라 밖의 파일도
+ * 번들에 넣습니다(CLI `BindHostModules`). 단, 그 파일들은 Deno가 해석할 수
+ * 있어야 하므로 **import가 없는 순수 모듈**이어야 합니다 — adminActions.ts와
+ * database.types.ts(`supabase gen types` 산출물)가 그렇습니다.
  *
  * 환경변수 (Supabase 자동 주입):
  *   SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY
@@ -20,20 +26,12 @@
 
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { corsHeaders } from '../_shared/cors.ts';
-
-type Action =
-  | 'all_post_stats'
-  | 'all_posts_trends'
-  | 'post_hourly_distribution'
-  | 'post_dow_distribution';
-
-interface RequestBody {
-  action: Action;
-  params?: {
-    slug?: string;
-    range?: [number, number];
-  };
-}
+import {
+  ADMIN_ACTION_RPC,
+  isAdminAction,
+  type AdminRequest,
+} from '../../../lib/platform/adminActions.ts';
+import type { Database } from '../../../lib/platform/database.types.ts';
 
 Deno.serve(async (req: Request) => {
   // OPTIONS preflight 처리
@@ -109,18 +107,35 @@ Deno.serve(async (req: Request) => {
     }
 
     // ── 요청 body 파싱 ──────────────────────────────────────────────
-    const body = (await req.json()) as RequestBody;
-    const { action, params } = body;
+    const raw = (await req.json()) as { action?: unknown } | null;
+    if (!isAdminAction(raw?.action)) {
+      return new Response(
+        JSON.stringify({ error: `알 수 없는 action: ${String(raw?.action)}` }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        },
+      );
+    }
+    // action이 등록된 것이면 body를 그 action의 요청 형태로 본다. params는
+    // JSON에서 온 값이라 필수 필드(slug)는 아래 case에서 런타임으로 한 번 더 확인.
+    const request = raw as AdminRequest;
 
     // ── service_role client로 RPC 호출 ─────────────────────────────
-    const serviceClient = createClient(supabaseUrl, supabaseServiceRoleKey);
+    // Database 제네릭을 주면 아래 rpc() 이름·인자가 database.types.ts와 대조된다.
+    const serviceClient = createClient<Database>(
+      supabaseUrl,
+      supabaseServiceRoleKey,
+    );
 
     let data: unknown;
     let rpcError: unknown;
 
-    switch (action) {
+    switch (request.action) {
       case 'all_post_stats': {
-        const result = await serviceClient.rpc('get_all_post_stats');
+        const result = await serviceClient.rpc(
+          ADMIN_ACTION_RPC[request.action],
+        );
         data = result.data;
         rpcError = result.error;
         break;
@@ -128,35 +143,19 @@ Deno.serve(async (req: Request) => {
 
       case 'all_posts_trends': {
         // 클라이언트가 range 인자로 페이지네이션을 제어합니다.
-        const [from, to] = params?.range ?? [0, 999];
+        const [from, to] = request.params?.range ?? [0, 999];
         const result = await serviceClient
-          .rpc('get_all_posts_trends')
+          .rpc(ADMIN_ACTION_RPC[request.action])
           .range(from, to);
         data = result.data;
         rpcError = result.error;
         break;
       }
 
-      case 'post_hourly_distribution': {
-        if (!params?.slug) {
-          return new Response(
-            JSON.stringify({ error: 'slug 파라미터가 필요합니다.' }),
-            {
-              status: 400,
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            },
-          );
-        }
-        const result = await serviceClient.rpc('get_post_hourly_distribution', {
-          slug_input: params.slug,
-        });
-        data = result.data;
-        rpcError = result.error;
-        break;
-      }
-
+      case 'post_hourly_distribution':
       case 'post_dow_distribution': {
-        if (!params?.slug) {
+        const slug = request.params?.slug;
+        if (typeof slug !== 'string' || slug.length === 0) {
           return new Response(
             JSON.stringify({ error: 'slug 파라미터가 필요합니다.' }),
             {
@@ -165,17 +164,22 @@ Deno.serve(async (req: Request) => {
             },
           );
         }
-        const result = await serviceClient.rpc('get_post_dow_distribution', {
-          slug_input: params.slug,
-        });
+        const result = await serviceClient.rpc(
+          ADMIN_ACTION_RPC[request.action],
+          { slug_input: slug },
+        );
         data = result.data;
         rpcError = result.error;
         break;
       }
 
       default: {
+        // ADMIN_ACTION_RPC에 action을 추가하고 여기 case를 빼먹으면 컴파일 에러.
+        const unhandled: never = request;
         return new Response(
-          JSON.stringify({ error: `알 수 없는 action: ${action}` }),
+          JSON.stringify({
+            error: `처리기가 없는 action: ${JSON.stringify(unhandled)}`,
+          }),
           {
             status: 400,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },

@@ -19,7 +19,12 @@ import {
   type AdminApiClient,
 } from '../../lib/platform/adminApi';
 import type { PostStatus } from '@blog/content';
-import type { HourlyDistribution, DowDistribution } from './types';
+import type {
+  PostStatsRow,
+  PostTrendRow,
+  HourlyDistribution,
+  DowDistribution,
+} from './types';
 
 export interface AdminPostIndex {
   slug: string;
@@ -29,18 +34,6 @@ export interface AdminPostIndex {
   scheduledDate: string | null;
 }
 
-export interface PostStatsRow {
-  slug: string;
-  total_views: number;
-  today_views: number;
-}
-
-export interface PostTrendRow {
-  slug: string;
-  view_date: string;
-  view_count: number;
-}
-
 /** admin-analytics Edge Function 클라이언트 (첫 호출 때 1회 생성) */
 let adminApiInstance: AdminApiClient | null = null;
 function adminApi(): AdminApiClient {
@@ -48,10 +41,18 @@ function adminApi(): AdminApiClient {
   return adminApiInstance;
 }
 
+// 아래 함수들의 응답 타입은 call()이 action → RPC Returns로 추론한다
+// (lib/platform/adminApi.ts). 행 타입을 여기서 다시 적지 않는다.
+//
+// Number()를 남겨 두는 이유: get_all_post_stats의 total_views는 nullable 컬럼
+// (post_views.view_count)에서 오는데 RETURNS TABLE이 bigint로 선언돼 있어 생성
+// 타입은 non-null `number`다. 실제 null이 오면 Number(null) === 0으로 굳어
+// 소비처의 산술이 NaN으로 번지지 않는다.
+
 export async function getAllPostStats(): Promise<PostStatsRow[]> {
   // admin RPC — service_role 한정. Edge Function 경유.
-  const data = await adminApi().call<PostStatsRow[]>('all_post_stats');
-  return (data ?? []).map(s => ({
+  const data = await adminApi().call('all_post_stats');
+  return data.map(s => ({
     slug: s.slug,
     total_views: Number(s.total_views),
     today_views: Number(s.today_views),
@@ -64,10 +65,9 @@ export async function getAllPostsTrends(): Promise<PostTrendRow[]> {
   const all: PostTrendRow[] = [];
   const PAGE = 1000;
   for (let from = 0; ; from += PAGE) {
-    const data = await adminApi().call<PostTrendRow[]>('all_posts_trends', {
-      range: [from, from + PAGE - 1] as [number, number],
+    const rows = await adminApi().call('all_posts_trends', {
+      range: [from, from + PAGE - 1],
     });
-    const rows = data ?? [];
     all.push(
       ...rows.map(t => ({
         slug: t.slug,
@@ -97,11 +97,7 @@ export async function getPostHourlyDistribution(
   slug: string,
 ): Promise<HourlyDistribution[]> {
   // admin RPC — service_role 한정. Edge Function 경유.
-  const data = await adminApi().call<HourlyDistribution[]>(
-    'post_hourly_distribution',
-    { slug },
-  );
-  if (!data) return [];
+  const data = await adminApi().call('post_hourly_distribution', { slug });
   return data.map(h => ({
     hour: Number(h.hour),
     view_count: Number(h.view_count),
@@ -112,11 +108,7 @@ export async function getPostDowDistribution(
   slug: string,
 ): Promise<DowDistribution[]> {
   // admin RPC — service_role 한정. Edge Function 경유.
-  const data = await adminApi().call<DowDistribution[]>(
-    'post_dow_distribution',
-    { slug },
-  );
-  if (!data) return [];
+  const data = await adminApi().call('post_dow_distribution', { slug });
   return data.map(d => ({
     dow: Number(d.dow),
     view_count: Number(d.view_count),

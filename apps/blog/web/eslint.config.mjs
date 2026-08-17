@@ -127,8 +127,9 @@ export default defineConfig([
   },
 
   {
-    // Supabase CLI(`supabase gen types`) 생성 파일 — 손대면 재생성 때 되돌아온다.
-    // 생성기 출력 형태(type 별칭·인덱스 시그니처)에 스타일 룰을 묻지 않는다.
+    // Supabase CLI(`pnpm gen:types` → `supabase gen types --local`) 생성 파일 —
+    // 손대면 재생성 때 되돌아온다. 생성기 출력 형태(type 별칭·인덱스 시그니처)에
+    // 스타일 룰을 묻지 않는다.
     files: ['lib/platform/database.types.ts'],
     rules: {
       '@typescript-eslint/consistent-type-definitions': 'off',

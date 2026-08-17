@@ -8,18 +8,10 @@ import { postPath } from '@blog/content';
 import { fmtNum } from '@blog/content';
 import { Sparkline } from '@/src/components/blog/Sparkline';
 import { token } from '@design-system/ui-lib/tokens';
-
-interface TopPostRow {
-  slug: string;
-  title: string;
-  views: number;
-  /** 직전 기간 대비 증감율. 직전 기간 데이터가 없으면 null (totalDelta와 일관). */
-  delta: number | null;
-  series: number[];
-}
+import type { TopPostSummary } from '@/domain/analytics';
 
 interface TopPostsTableProps {
-  rows: TopPostRow[];
+  rows: TopPostSummary[];
 }
 
 export const TopPostsTable = ({ rows }: TopPostsTableProps) => {

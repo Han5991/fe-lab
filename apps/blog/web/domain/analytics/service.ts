@@ -21,6 +21,16 @@ const RANGE_DAYS: Record<AnalyticsRange, number> = {
  */
 export const UNIQUES_ESTIMATE_RATIO = 0.55;
 
+/** Analytics 대시보드 상위 글 한 줄 — 기간 내 조회수·직전 기간 대비 증감·스파크라인. */
+export interface TopPostSummary {
+  slug: string;
+  title: string;
+  views: number;
+  /** 직전 기간 대비 증감율. 직전 기간 데이터가 없으면 null (totalDelta와 일관). */
+  delta: number | null;
+  series: number[];
+}
+
 export interface AnalyticsOverview {
   range: AnalyticsRange;
   rangeDays: number;
@@ -31,13 +41,7 @@ export interface AnalyticsOverview {
   postsPublished: number;
   avgPerPost: number;
   totalSeries: { date: string; value: number }[];
-  topPosts: {
-    slug: string;
-    title: string;
-    views: number;
-    delta: number | null;
-    series: number[];
-  }[];
+  topPosts: TopPostSummary[];
 }
 
 /**
