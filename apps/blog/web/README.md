@@ -70,7 +70,7 @@ apps/blog/web/
 
 추가 규칙: 프로덕션 코드는 `*.test.*`를 import 못 함 / `src`는 `domain/*/…Repository`를 직접 찌르지 말고 배럴(`@/domain/analytics`, `@/domain/analytics/admin`)로 / `src`에서 `client.from()`·`.rpc()` 직접 호출 금지(`no-restricted-syntax`) / `domain`은 `src`를, `lib`은 `domain`·`src`를 import 못 함.
 
-`lint`는 `--max-warnings=5`다 — jsx-a11y 4개 룰을 키보드 동선 설계가 끝날 때까지 `warn`으로 둔 결과 정확히 5건이 남아 있다. 0으로 "고치지" 말 것(`packages/@blog/content`는 0).
+`lint`는 `--max-warnings=0`이고, `noInlineConfig: true` + `@eslint-community/eslint-comments/no-use`로 **인라인 `eslint-disable` 주석이 전면 금지**다. 예외는 주석이 아니라 `eslint.config.mjs`에 `files` 스코프로 적는다.
 
 ### tsconfig 분할
 
@@ -98,7 +98,7 @@ apps/blog/web/
 | :------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------ |
 | `pnpm dev`                 | `supabase start`(Docker) → `next dev`. `predev:web`이 먼저 `build-content.ts`(경고 수준)를 돌린다. Next만 띄우려면 `pnpm dev:web`           |
 | `pnpm build`               | `prebuild`(`build-content.ts --strict`) → `next build` → `check-seo`. **이 셋이 한 덩어리** — CI·배포도 이 스크립트 하나를 부른다           |
-| `pnpm lint`                | `eslint . --max-warnings=5`                                                                                                                 |
+| `pnpm lint`                | `eslint . --max-warnings=0` (인라인 `eslint-disable` 금지)                                                                                  |
 | `pnpm check-types`         | `tsc -p tsconfig.json` + `tsc -p tsconfig.test.json`                                                                                        |
 | `pnpm test`                | `test:node`(`domain/**`·`lib/**`, `node --test`) → `test:vitest`(`src/**`, jsdom + RTL). `test:coverage`는 node 쪽 c8                       |
 | `pnpm lint:posts`          | frontmatter·본문 검증(수동, 경고 수준). prebuild에서는 같은 규칙이 `--strict`로 승격                                                        |

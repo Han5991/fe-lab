@@ -78,8 +78,10 @@ apps/blog/posts (원고)  →  packages/@blog/content  →  apps/blog/web
 - **tsconfig 분할**: `tsconfig.json`(프로덕션, 엄격 플래그 전부) / `tsconfig.test.json`(테스트 —
   `noUncheckedIndexedAccess`·`noPropertyAccessFromIndexSignature`·`exactOptionalPropertyTypes` 세
   개만 끔). `check-types`와 ESLint 타입 룰이 같은 분할을 따른다
-- **lint 임계값**: 앱은 `--max-warnings=5`(jsx-a11y 4룰을 키보드 동선 설계 전까지 warn으로 둔 결과
-  정확히 5건), 패키지는 `0`. 앱의 5를 0으로 "고치지" 말 것 — 설계로 풀면서 에러로 올린다
+- **lint 임계값**: 앱·패키지 모두 `--max-warnings=0`. 앱에 남아 있던 jsx-a11y 경고 5건은 설계로
+  풀고 룰을 에러로 되돌렸다(#289). 함께 `noInlineConfig: true` +
+  `@eslint-community/eslint-comments/no-use`가 켜져 **인라인 `eslint-disable` 주석이 전면 금지**다 —
+  예외가 필요하면 주석이 아니라 `eslint.config.mjs`에 `files` 스코프로 적을 것
 
 #### SSG (Static Site Generation) 전략
 

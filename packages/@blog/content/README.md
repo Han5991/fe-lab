@@ -44,8 +44,10 @@ shared → content(post) → seo → build(scripts) → render-build(scripts/ren
   새 파일을 `src/` 바로 아래 두면 경계 검사를 아예 받지 않으니 네 폴더 중 한 곳에 둘 것.
   프로덕션은 테스트를 import 못 한다.
 - 앱(`apps/blog/web`)의 eslint 설정과 **같은 엄격 수준**을 유지해야 한다 — 소스
-  익스포트라 이 패키지 파일이 앱 program에 소스째 섞이기 때문. `lint`는
-  `--max-warnings=0`.
+  익스포트라 이 패키지 파일이 앱 program에 소스째 섞이기 때문. `lint`는 양쪽 다
+  `--max-warnings=0`이고, `noInlineConfig` +
+  `@eslint-community/eslint-comments/no-use`로 인라인 `eslint-disable` 주석이 금지다
+  — 예외는 이 설정 파일에 `files` 스코프로 적는다.
 
 ## 디렉터리
 
