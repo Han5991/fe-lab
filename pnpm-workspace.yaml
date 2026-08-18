@@ -39,6 +39,7 @@ catalog:
   remark-gfm: ^4.0.1
 
   # 빌드 · 실행 도구
+  commander: ^15.0.0
   tsdown: 0.22.14
 
   # 테스트
