@@ -34,6 +34,19 @@ export default defineConfig({
     },
   },
   outdir: '../../../packages/@design-system/ui-lib',
+  theme: {
+    extend: {
+      keyframes: {
+        // ReadingProgress(src/components/post/ReadingProgress.tsx)의
+        // scroll-driven 진행 바. width 대신 transform: scaleX()를
+        // 애니메이션해 컴포지터 스레드만으로 처리되게 한다 — width는
+        // 레이아웃을 유발해 스크롤 프레임마다 reflow가 돈다.
+        'reading-progress-fill': {
+          to: { transform: 'scaleX(1)' },
+        },
+      },
+    },
+  },
   globalCss: {
     extend: {
       html: {
@@ -44,12 +57,38 @@ export default defineConfig({
         // 규칙과 같은 결과를 표준 속성으로 한 번 더 준다.
         scrollbarWidth: 'thin',
         scrollbarColor: 'token(colors.ink.border) transparent',
+        // GitHub 폼: 본문/UI 가독성 + 한글 글머리 keep-all.
+        wordBreak: 'keep-all',
+        WebkitFontSmoothing: 'antialiased',
+        MozOsxFontSmoothing: 'grayscale',
+        // <details> 펼침 애니메이션 전제. ::details-content의 block-size를
+        // 0 ↔ auto로 전환하려면 auto 키워드 보간이 필요하다. 실제 전환
+        // 규칙은 본문 prose 스타일(posts/[...slug]/PostClient.tsx)에 있고,
+        // 미지원 브라우저는 애니메이션 없이 즉시 펼쳐지므로 기능 손실은 없다.
+        interpolateSize: 'allow-keywords',
+        // color-scheme: 네이티브 컨트롤/스크롤바를 테마에 맞춘다
+        colorScheme: 'light',
+        '&[data-theme=dark]': {
+          colorScheme: 'dark',
+        },
       },
       body: {
         fontFamily: 'sans',
         wordBreak: 'keep-all',
         WebkitFontSmoothing: 'antialiased',
         MozOsxFontSmoothing: 'grayscale',
+      },
+      // 테마 전환 애니메이션 — View Transitions API(useTheme)로 전체
+      // 페이지를 한 번의 컴포지터 크로스페이드로 전환한다. 예전엔
+      // html.theme-transition * 로 모든 요소에 color/fill transition을
+      // 걸어, 차트·코드 하이라이팅이 많은 페이지(analytics 등)에서 요소
+      // 수만큼 style/paint가 터져 버벅였다. 루트 스냅샷 크로스페이드는
+      // 요소 수와 무관하게 GPU에서 처리돼 매끄럽다. (reduced-motion·
+      // 미지원 브라우저는 useTheme가 즉시 전환하므로 이 pseudo가 생성되지
+      // 않는다.)
+      '::view-transition-old(root), ::view-transition-new(root)': {
+        animationDuration: '[0.26s]',
+        animationTimingFunction: '[ease]',
       },
       // 드래그 선택. 배경만 지정하고 **글자색은 건드리지 않는다.**
       //
