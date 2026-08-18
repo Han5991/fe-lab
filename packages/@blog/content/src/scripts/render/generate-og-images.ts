@@ -30,8 +30,8 @@ const MANIFEST_PATH = join(CONTENT_PATHS.cacheDir, 'og-images.json');
  * 따로 깔아야 했다. 지금은 pretendard가 이 패키지의 dependency이고, 실제 파일
  * 위치는 pnpm이 어떻게 깔았든 resolver가 안다.
  *
- * 호출 시점에 푼다(기본 인자) — 폰트 디렉터리를 주입하는 테스트는 resolve를
- * 아예 타지 않는다.
+ * 호출 시점에 푼다(기본 인자) — 모듈을 import하는 것만으로는 resolve가 돌지
+ * 않고, 폰트 디렉터리를 넘겨 부르면 아예 타지 않는다.
  */
 function resolveFontDir(): string {
   const resolveFrom = createRequire(import.meta.url);
