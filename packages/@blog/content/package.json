@@ -19,6 +19,7 @@
     "@resvg/resvg-js": "^2.6.2",
     "commander": "catalog:",
     "gray-matter": "^4.0.3",
+    "pretendard": "catalog:",
     "react-markdown": "catalog:",
     "rehype-raw": "catalog:",
     "remark-gfm": "catalog:",

@@ -144,8 +144,6 @@ export interface DirsConfig {
   thumbs: string;
   /** generate-og-images 산출물 (orphan 삭제 있음) */
   og: string;
-  /** OG 카드 렌더링용 폰트 디렉터리 (node_modules 호이스팅 위치) */
-  ogFonts: string;
 }
 
 export interface SitemapConfig {
@@ -299,7 +297,6 @@ const DEFAULTS: ContentConfig = {
     media: 'public/posts',
     thumbs: 'public/thumbs',
     og: 'public/og',
-    ogFonts: 'node_modules/pretendard/dist/public/static',
   },
   sitemap: {
     highPriorityFolders: ['bundler', 'typescript', 'open-source'],
