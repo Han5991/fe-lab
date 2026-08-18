@@ -7,6 +7,7 @@
  * import여도 모듈 타입은 정적으로 해석되기 때문에 여기서 다시 확인하지 않는다.
  */
 import { expect, test } from 'vitest';
+import type { Command } from 'commander';
 import { buildProgram } from './program.ts';
 
 const names = () => buildProgram().commands.map(c => c.name());
@@ -47,10 +48,18 @@ test('new-post의 --status는 세 값만 받는다', () => {
 });
 
 test('알 수 없는 옵션은 조용히 무시되지 않는다', () => {
-  const program = buildProgram()
-    .exitOverride()
-    // 규칙 위반 출력은 테스트 로그를 어지럽히므로 삼킨다.
-    .configureOutput({ writeErr: () => undefined, writeOut: () => undefined });
+  const program = buildProgram();
+  // exitOverride·configureOutput은 **커맨드마다** 따로 붙는다. 부모에만 걸면
+  // 서브커맨드가 자기 설정으로 stderr에 쓰고 process.exit까지 부른다.
+  const silence = (cmd: Command) => {
+    cmd.exitOverride().configureOutput({
+      writeErr: () => undefined,
+      writeOut: () => undefined,
+    });
+  };
+  silence(program);
+  program.commands.forEach(silence);
+
   expect(() =>
     program.parse(['node', 'blog-content', 'validate', '--stric']),
   ).toThrow();

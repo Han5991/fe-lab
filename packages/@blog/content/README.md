@@ -107,7 +107,7 @@ import 없음)가 갖고, 설정은 그 값을 기본값으로 소비한다 — 
 | `author`     | `name` · `alternateName` · `role` · `github` · `linkedin`                                                                             |
 | `seo`        | `titleSuffix` · `titleMaxLength`(60) · `descriptionMinLength`(120) · `descriptionMaxLength`(160, 자동 발췌 길이 겸용)                 |
 | `timezone`   | `iana` · `isoOffset` · `utcOffsetMs`                                                                                                  |
-| `runtime`    | `isDevelopment()` — `NODE_ENV === 'development'` 정확 비교(tsx로 도는 생성기를 dev로 오인하지 않게)                                   |
+| `runtime`    | `isDevelopment()` — `NODE_ENV === 'development'` 정확 비교(빌드 스크립트를 dev로 오인하지 않게)                                       |
 | `registries` | `diagramNames` · `supportedFenceLabels` · `seriesColors` · `seriesColorFallback`                                                      |
 | `dirs`       | **앱 루트 기준 상대 경로** — `content`(`../posts`) · `public` · `cache` · `out` · `media` · `thumbs` · `og` · `ogFonts`               |
 | `sitemap`    | `highPriorityFolders`(0.75) · `highPrioritySlugs`(0.8)                                                                                |
