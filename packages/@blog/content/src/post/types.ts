@@ -21,9 +21,9 @@ export type PostStatus = (typeof POST_STATUSES)[number];
  * 가리키는 곳(repository.ts의 import, design/blog-redesign-handoff.md)이 있어서
  * 입니다. **반드시 `export type`이어야 합니다** — 값 re-export로 쓰면
  * types → frontmatterSchema → visibility → types의 진짜 런타임 순환이 생겨
- * `POST_STATUSES`가 TDZ에 걸립니다(컴파일은 통과하고 tsx 스크립트만 죽습니다).
+ * `POST_STATUSES`가 TDZ에 걸립니다(컴파일은 통과하고 빌드 스크립트만 죽습니다).
  */
-export type { RawFrontmatter } from './frontmatterSchema';
+export type { RawFrontmatter } from './frontmatterSchema.ts';
 
 export interface PostData {
   slug: string;

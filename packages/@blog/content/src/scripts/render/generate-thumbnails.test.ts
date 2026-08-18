@@ -5,7 +5,7 @@ import {
   thumbnailContentHash,
   MAX_WIDTH,
   WEBP_QUALITY,
-} from './generate-thumbnails';
+} from './generate-thumbnails.ts';
 
 // ── collectTasks ─────────────────────────────────────────────────────────────
 

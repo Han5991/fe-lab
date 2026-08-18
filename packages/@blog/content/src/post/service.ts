@@ -1,15 +1,20 @@
-import { CONTENT } from '../shared/contentConfig';
-import { readAllPosts } from './repository';
-import { isPostVisible } from './visibility';
-import { getSeriesMeta, sortPostsBySeriesOrder } from './series';
+import { CONTENT } from '../shared/contentConfig.ts';
+import { readAllPosts } from './repository.ts';
+import { isPostVisible } from './visibility.ts';
+import { getSeriesMeta, sortPostsBySeriesOrder } from './series.ts';
 import type {
   PostData,
   PostNavItem,
   AdjacentPostsOptions,
   PostSummary,
-} from './types';
+} from './types.ts';
 
-export type { PostData, PostNavItem, PostStatus, PostSummary } from './types';
+export type {
+  PostData,
+  PostNavItem,
+  PostStatus,
+  PostSummary,
+} from './types.ts';
 
 function toPostSummary(post: PostData): PostSummary {
   const { content: _content, ...summary } = post;

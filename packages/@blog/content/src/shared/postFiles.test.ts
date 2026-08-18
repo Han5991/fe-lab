@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { hasFrontmatter, isMetaFile } from './postFiles';
+import { hasFrontmatter, isMetaFile } from './postFiles.ts';
 
 // ── hasFrontmatter (frontmatter 구간 존재 여부 = 빌드 대상 판별) ──────────────
 

@@ -1,5 +1,5 @@
-import { SITE_URL } from '../shared/constants';
-import { encodePostSlug } from './utils';
+import { SITE_URL } from '../shared/constants.ts';
+import { encodePostSlug } from './utils.ts';
 
 /**
  * 글 URL 조합의 **단일 출처**.
@@ -29,7 +29,7 @@ import { encodePostSlug } from './utils';
  *    생성기들이 테스트 결정성을 위해 이미 그렇게 하고 있습니다.
  *
  * **클라이언트 컴포넌트에서는 이 모듈이 fs를 끌지 않는다는 점에 기대세요** —
- * `@blog/content` 배럴은 `export * from './series'`로 모듈 평가 시점에 `node:fs`를
+ * `@blog/content` 배럴은 `export * from './series.ts'`로 모듈 평가 시점에 `node:fs`를
  * 당겨 오지만, 앱의 next.config가 `optimizePackageImports: ['@blog/content']`로
  * 배럴 import를 leaf로 좁혀 클라이언트 번들에 fs가 새지 않게 합니다. 서버 코드는
  * 배럴로 가져와도 됩니다.

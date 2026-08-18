@@ -1,12 +1,14 @@
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { isCliEntry } from './cliEntry';
-import { postUrl } from '../post';
-import type { PostData } from '../post';
-import { POST_SETS } from './artifacts';
-import { SITE_URL as DEFAULT_SITE_URL, SITE_NAME } from '../shared/constants';
-import { CONTENT } from '../shared/contentConfig';
-import { CONTENT_PATHS } from '../shared/contentPaths';
+import { postUrl } from '../post/index.ts';
+import type { PostData } from '../post/index.ts';
+import { POST_SETS } from './artifacts.ts';
+import {
+  SITE_URL as DEFAULT_SITE_URL,
+  SITE_NAME,
+} from '../shared/constants.ts';
+import { CONTENT } from '../shared/contentConfig.ts';
+import { CONTENT_PATHS } from '../shared/contentPaths.ts';
 
 export interface LlmsFullBuildOptions {
   siteUrl?: string;
@@ -135,7 +137,7 @@ export function buildLlmsFullText(
   return lines.join('\n');
 }
 
-if (isCliEntry(import.meta.url)) {
+export function main() {
   // 레지스트리 선언(postSet: 'visible', exact)과 같은 셀렉터.
   const posts = POST_SETS.visible();
   const outputPath = join(CONTENT_PATHS.publicDir, 'llms-full.txt');

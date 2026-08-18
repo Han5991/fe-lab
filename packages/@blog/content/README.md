@@ -15,17 +15,32 @@
 | `@blog/content`     | 프레임워크 전체 — 타입·visibility·urls·series·로더·shared 유틸        |
 | `@blog/content/seo` | SEO 빌더(`buildPostSeo` 등) — 프레임워크 중립 DTO(`PostSeoData`) 반환 |
 
-빌드 스크립트(`src/scripts/`)는 API가 아니라 실행 파일이다 — 앱 package.json이
-`npx tsx node_modules/@blog/content/src/scripts/…` 파일 경로로 직접 돌린다.
-그래서 CLI 진입 가드는 `src/scripts/cliEntry.ts`의 `isCliEntry`(양쪽을 realpath로
-정규화해 비교)를 쓴다 — 예전의 `import.meta.url === pathToFileURL(process.argv[1]).href`는
-argv[1]이 pnpm 심링크 경로인데 ESM 로더는 모듈을 realpath로 해석해 **항상 false**였고,
-모든 생성기·CLI가 무음 no-op이었다.
+빌드 스크립트(`src/scripts/`)는 API가 아니라 실행 파일이고, package.json의
+`bin`에 걸린 **`blog-content` 하나**로만 나간다. 앱은 서브커맨드 이름만 안다
+(`blog-content sitemap`) — 이름과 옵션을 단계 모듈에 잇는 곳은
+`src/scripts/cli/program.ts`(commander) 하나뿐이라, 패키지 안에서 파일을 옮겨도
+앱은 그대로다. 인자 파싱이 cli 레이어에만 있는 것도 경계다 — 단계 모듈은
+commander를 모른 채 **이미 파싱된 값**을 받고, 도메인 규칙(`--scheduled`를 주면
+status가 scheduled가 된다 같은)은 파싱이 아니므로 단계 쪽에 남는다.
+
+> 예전에는 앱이 `npx tsx node_modules/@blog/content/src/scripts/…`처럼 **파일
+> 경로를 직접** 지목했다. 패키지 내부 배치가 앱 스크립트에 새어 나오는 계약이라
+> 파일을 옮기면 앱이 조용히 깨졌고, "직접 실행인가"를 판정하는 가드
+> (`cliEntry.ts`)까지 따로 필요했다 — pnpm은 심링크 경로로 부르는데 ESM 로더는
+> 모듈을 realpath로 해석해서, 순진한 `import.meta.url === argv[1]` 비교가 **항상
+> false**였고 모든 생성기가 무음 no-op이던 사고가 있었다. 진입점이 하나가 되면서
+> 가드도, 그 함정도 사라졌다.
+
+**로더 없이 node로 그대로 돈다.** shebang이 `#!/usr/bin/env node`다 — 상대
+import가 전부 `.ts` 확장자를 달고 있고(`allowImportingTsExtensions`), 문법은
+`erasableSyntaxOnly`로 묶여 있어 node의 type stripping만으로 실행된다. 빌드
+산출물도, tsx 같은 별도 로더도 없다. 앱 tsconfig에도 같은 플래그가 켜져 있어야
+한다 — 이 소스가 앱 program에 섞이기 때문이다.
 
 ## 레이어 (eslint-plugin-boundaries가 강제)
 
 ```
-shared → content(post) → seo → build(scripts) → render-build(scripts/render)
+shared → content(post) → seo → build(scripts) → render-build(scripts/render) → cli(scripts/cli)
 ```
 
 | element        | 폴더                 | 가져올 수 있는 것                                                                                           |
@@ -63,7 +78,8 @@ src/
 ├─ seo/        postSeo — buildPostSeo · buildPostJsonLd · buildBreadcrumbJsonLd
 └─ scripts/    build-content(진입점) · validate-posts + validate/{rules,frontmatter,body,corpus,shared}
                · check-seo · artifacts(산출물 레지스트리 7종) · generate-{sitemap,search-index,llms,llms-full}
-               · sync-posts.mjs · new-post · cliEntry
+               · sync-posts · new-post
+               ├─ cli/     index(bin 진입점) · program(commander 서브커맨드·옵션 정의)
                └─ render/  generate-rss · feedRenderer · generate-og-images(satori+resvg) · generate-thumbnails(sharp)
 ```
 
@@ -74,8 +90,8 @@ src/
 | 1 (게이트, 단독) | `validate-posts`                                                                                      | `--strict`를 그대로 넘긴다. `--skip-validate`로만 건너뛴다(앱 스크립트는 안 넘김)      |
 | 2 (병렬 8개)     | `sync-posts` · `sitemap` · `rss` · `og-images` · `thumbnails` · `search-index` · `llms-full` · `llms` | 서로 다른 파일만 쓴다. `media`·`thumbs`·`og` 디렉터리는 겹치면 안 됨(각자 orphan 삭제) |
 
-각 스텝은 `npx tsx <절대 경로>`로 spawn되고 cwd에 기대지 않는다 — 경로는 전부
-`contentPaths`로 푼다. 앱의 `predev:web`과 `prebuild`는 같은 명령이고 `prebuild`만
+각 스텝은 `node <cli/index.ts> <서브커맨드>`로 spawn되고 cwd·PATH 어디에도
+기대지 않는다 — 경로는 전부 `contentPaths`로 푼다. 앱의 `predev:web`과 `prebuild`는 같은 명령이고 `prebuild`만
 `--strict`다(검증은 둘 다 돈다).
 
 ## `defineContent` (`src/shared/contentConfig.ts`)
@@ -91,7 +107,7 @@ import 없음)가 갖고, 설정은 그 값을 기본값으로 소비한다 — 
 | `author`     | `name` · `alternateName` · `role` · `github` · `linkedin`                                                                             |
 | `seo`        | `titleSuffix` · `titleMaxLength`(60) · `descriptionMinLength`(120) · `descriptionMaxLength`(160, 자동 발췌 길이 겸용)                 |
 | `timezone`   | `iana` · `isoOffset` · `utcOffsetMs`                                                                                                  |
-| `runtime`    | `isDevelopment()` — `NODE_ENV === 'development'` 정확 비교(tsx로 도는 생성기를 dev로 오인하지 않게)                                   |
+| `runtime`    | `isDevelopment()` — `NODE_ENV === 'development'` 정확 비교(빌드 스크립트를 dev로 오인하지 않게)                                       |
 | `registries` | `diagramNames` · `supportedFenceLabels` · `seriesColors` · `seriesColorFallback`                                                      |
 | `dirs`       | **앱 루트 기준 상대 경로** — `content`(`../posts`) · `public` · `cache` · `out` · `media` · `thumbs` · `og` · `ogFonts`               |
 | `sitemap`    | `highPriorityFolders`(0.75) · `highPrioritySlugs`(0.8)                                                                                |

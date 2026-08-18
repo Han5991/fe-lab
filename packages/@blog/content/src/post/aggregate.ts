@@ -1,8 +1,8 @@
-import { CONTENT } from '../shared/contentConfig';
-import type { SeriesColorKey } from '../shared/contentConfig';
-import { getAllPosts } from './service';
-import { getSeriesMeta } from './series';
-import type { PostSummary } from './types';
+import { CONTENT } from '../shared/contentConfig.ts';
+import type { SeriesColorKey } from '../shared/contentConfig.ts';
+import { getAllPosts } from './service.ts';
+import { getSeriesMeta } from './series.ts';
+import type { PostSummary } from './types.ts';
 
 export interface SeriesSummary {
   id: string;

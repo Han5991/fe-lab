@@ -1,10 +1,9 @@
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { join, relative, resolve, sep } from 'node:path';
-import { isCliEntry } from './cliEntry';
-import { SITE_URL, SITE_NAME } from '../shared/constants';
-import { CONTENT } from '../shared/contentConfig';
-import { decodeUrlSafe } from '../shared/url';
-import { CONTENT_PATHS } from '../shared/contentPaths';
+import { SITE_URL, SITE_NAME } from '../shared/constants.ts';
+import { CONTENT } from '../shared/contentConfig.ts';
+import { decodeUrlSafe } from '../shared/url.ts';
+import { CONTENT_PATHS } from '../shared/contentPaths.ts';
 
 // SEO 임계값은 설정 표면에서 — validate-posts --strict와 같은 출처를 본다.
 const {
@@ -12,7 +11,7 @@ const {
   descriptionMinLength: SEO_DESCRIPTION_MIN_LENGTH,
   descriptionMaxLength: SEO_DESCRIPTION_MAX_LENGTH,
 } = CONTENT.seo;
-import { ARTIFACTS, type ArtifactRelation } from './artifacts';
+import { ARTIFACTS, type ArtifactRelation } from './artifacts.ts';
 
 /**
  * 빌드 산출물(`out/`)의 HTML을 파싱해 SEO 계약을 검사합니다.
@@ -26,8 +25,8 @@ import { ARTIFACTS, type ArtifactRelation } from './artifacts';
  * 글 집합 정합성은 `scripts/artifacts.ts`의 레지스트리를 **순회**하며 검사합니다
  * — 산출물이 늘면 레지스트리에 항목을 더하는 것으로 검사가 자동으로 붙습니다.
  *
- * 사용: `pnpm build` 이후 `npx tsx scripts/check-seo.ts`
- *       (검사 대상 디렉토리를 인자로 줄 수 있습니다: `... scripts/check-seo.ts out`)
+ * 사용: `pnpm build` 이후 `blog-content check-seo`
+ *       (검사 대상 디렉토리를 인자로 줄 수 있습니다: `blog-content check-seo out`)
  */
 
 export interface SeoViolation {
@@ -378,12 +377,10 @@ export function checkArtifacts(collected: CollectedArtifact[]): SeoViolation[] {
   return violations;
 }
 
-function main() {
+export function main(target?: string) {
   // 인자를 주면 그 경로를(cwd 기준, resolve라 절대 경로 인자도 그대로 받는다),
   // 없으면 설정의 out 디렉터리를 검사한다.
-  const outDir = process.argv[2]
-    ? resolve(process.cwd(), process.argv[2])
-    : CONTENT_PATHS.outDir;
+  const outDir = target ? resolve(process.cwd(), target) : CONTENT_PATHS.outDir;
   if (!existsSync(outDir)) {
     console.error(
       `✖ 빌드 산출물이 없습니다: ${outDir}\n  먼저 \`pnpm build\`를 실행하세요.`,
@@ -425,9 +422,4 @@ function main() {
     console.error('');
   }
   process.exit(1);
-}
-
-// 스크립트로 직접 실행될 때만 main()을 호출합니다.
-if (isCliEntry(import.meta.url)) {
-  main();
 }

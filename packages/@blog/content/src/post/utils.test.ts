@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { encodePostSlug } from './utils';
+import { encodePostSlug } from './utils.ts';
 
 test('encodePostSlug: 영숫자/슬래시는 그대로 보존된다', () => {
   expect(encodePostSlug('a/b/c')).toBe('a/b/c');

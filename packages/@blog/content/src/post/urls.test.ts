@@ -1,6 +1,12 @@
 import { expect, test } from 'vitest';
-import { SITE_URL } from '../shared/constants';
-import { archivePath, archiveUrl, POSTS_PATH, postPath, postUrl } from './urls';
+import { SITE_URL } from '../shared/constants.ts';
+import {
+  archivePath,
+  archiveUrl,
+  POSTS_PATH,
+  postPath,
+  postUrl,
+} from './urls.ts';
 
 // ── postPath / postUrl ───────────────────────────────────────────────────────
 

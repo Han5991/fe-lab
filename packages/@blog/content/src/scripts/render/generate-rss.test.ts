@@ -1,8 +1,8 @@
 import { expect, test } from 'vitest';
-import { buildRssXml, escapeXml, wrapCdata } from './generate-rss';
-import type { RssPost } from './generate-rss';
-import { renderContentHtml } from './feedRenderer';
-import { parseScheduledDateKST } from '../../shared/dates';
+import { buildRssXml, escapeXml, wrapCdata } from './generate-rss.ts';
+import type { RssPost } from './generate-rss.ts';
+import { renderContentHtml } from './feedRenderer.ts';
+import { parseScheduledDateKST } from '../../shared/dates.ts';
 
 const NOW = new Date('2026-05-16T00:00:00Z');
 const SITE = 'https://example.dev';

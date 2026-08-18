@@ -3,8 +3,8 @@ import {
   filterAndSortPostsByArchiveParams,
   parseTagParam,
   type ArchiveFilterParams,
-} from './filtering';
-import type { PostSummary } from './types';
+} from './filtering.ts';
+import type { PostSummary } from './types.ts';
 
 type Pickable = Pick<
   PostSummary,

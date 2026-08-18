@@ -19,8 +19,8 @@
  * 스크립트와 런타임이 **같은 목록**을 봐야 하고, 목록을 스크립트 쪽에 두면
  * 도메인이 그걸 볼 수 없습니다(의존 방향이 뒤집힙니다).
  */
-import type { PostStatus } from './types';
-import { isPostStatus } from './visibility';
+import type { PostStatus } from './types.ts';
+import { isPostStatus } from './visibility.ts';
 
 // ---------- 좁히기 함수 ----------
 //

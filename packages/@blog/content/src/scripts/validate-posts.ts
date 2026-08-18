@@ -15,24 +15,23 @@
  */
 import { readFileSync } from 'node:fs';
 import { relative, posix } from 'node:path';
-import { isCliEntry } from './cliEntry';
 import matter from 'gray-matter';
-import { collectMarkdownFiles, hasFrontmatter } from '../shared/postFiles';
-import { CONTENT_PATHS } from '../shared/contentPaths';
-import type { Issue, PostRecord, ValidateOptions } from './validate/shared';
-import { validatePost } from './validate/frontmatter';
+import { collectMarkdownFiles, hasFrontmatter } from '../shared/postFiles.ts';
+import { CONTENT_PATHS } from '../shared/contentPaths.ts';
+import type { Issue, PostRecord, ValidateOptions } from './validate/shared.ts';
+import { validatePost } from './validate/frontmatter.ts';
 import {
   validateImageReferences,
   validateCodeFenceLanguages,
   validateBodyHeadings,
-} from './validate/body';
+} from './validate/body.ts';
 import {
   detectDuplicateSlugs,
   detectDuplicateDescriptions,
-} from './validate/corpus';
+} from './validate/corpus.ts';
 
 // ── 재수출: 기존 import 경로('./validate-posts') 유지 ────────────────────────
-export type { Issue, PostRecord, ValidateOptions } from './validate/shared';
+export type { Issue, PostRecord, ValidateOptions } from './validate/shared.ts';
 export {
   RULES,
   SEO_PUBLISH,
@@ -40,8 +39,8 @@ export {
   isVisibleFrontmatter,
   type RuleId,
   type RuleScope,
-} from './validate/rules';
-export { validatePost } from './validate/frontmatter';
+} from './validate/rules.ts';
+export { validatePost } from './validate/frontmatter.ts';
 export {
   maskNonProse,
   scanBodyLines,
@@ -51,11 +50,11 @@ export {
   validateBodyHeadings,
   type ScannedLine,
   type ScanResult,
-} from './validate/body';
+} from './validate/body.ts';
 export {
   detectDuplicateSlugs,
   detectDuplicateDescriptions,
-} from './validate/corpus';
+} from './validate/corpus.ts';
 
 const POSTS_DIR = CONTENT_PATHS.postsDir;
 
@@ -65,10 +64,7 @@ function format(issue: Issue): string {
   return `  ${tag} ${loc}\n    [${issue.rule}] ${issue.message}`;
 }
 
-function main() {
-  const options: ValidateOptions = {
-    strict: process.argv.includes('--strict'),
-  };
+export function main(options: ValidateOptions) {
   const allFiles = collectMarkdownFiles(POSTS_DIR);
   const records: PostRecord[] = [];
   const allIssues: Issue[] = [];
@@ -116,10 +112,4 @@ function main() {
   }
 
   process.exit(errors.length > 0 ? 1 : 0);
-}
-
-// 스크립트로 직접 실행될 때만 main()을 호출합니다.
-// (테스트 등에서 import할 때 main()이 자동 실행되어 process.exit 하는 것을 방지)
-if (isCliEntry(import.meta.url)) {
-  main();
 }

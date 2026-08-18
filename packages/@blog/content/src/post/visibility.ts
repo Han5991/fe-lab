@@ -1,5 +1,5 @@
-import { parseScheduledDateKST } from '../shared/dates';
-import { POST_STATUSES, type PostStatus } from './types';
+import { parseScheduledDateKST } from '../shared/dates.ts';
+import { POST_STATUSES, type PostStatus } from './types.ts';
 
 /**
  * frontmatter의 `status` 값이 유효한 PostStatus인지 확인합니다.

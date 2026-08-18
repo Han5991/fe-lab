@@ -60,7 +60,7 @@ export default defineConfig([
     },
   },
   {
-    // 설정 파일·sync-posts.mjs 등 JS는 tsconfig program에 속하지 않는다.
+    // 설정 파일(eslint·vitest) 등 JS는 tsconfig program에 속하지 않는다.
     files: ['**/*.{js,mjs,cjs}'],
     ...tseslint.configs.disableTypeChecked,
   },
@@ -118,7 +118,8 @@ export default defineConfig([
   // no-unknown-files가 잡는다.
   //
   // 레이어 순서(아래→위): shared → content(post) → seo → build(scripts) →
-  // render-build(scripts/render). 각 레이어는 자기보다 아래 레이어만 import한다.
+  // render-build(scripts/render) → cli(scripts/cli). 각 레이어는 자기보다 아래
+  // 레이어만 import한다.
   {
     files: ['src/{shared,post,seo,scripts}/**/*.{js,mjs,cjs,ts,mts,cts}'],
     plugins: { boundaries },
@@ -131,6 +132,7 @@ export default defineConfig([
         { type: 'shared', pattern: 'src/shared' },
         { type: 'content', pattern: 'src/post' },
         { type: 'seo', pattern: 'src/seo' },
+        { type: 'cli', pattern: 'src/scripts/cli' },
         { type: 'render-build', pattern: 'src/scripts/render' },
         { type: 'build', pattern: 'src/scripts' },
       ],
@@ -219,6 +221,35 @@ export default defineConfig([
                       ],
                     },
                   },
+                },
+              ],
+            },
+            {
+              // CLI는 단계를 이름에 잇는 진입점이라 모든 단계를 든다. 위 레이어를
+              // 참조하는 유일한 곳이고, 그래서 여기만 최상위에 둔다 — 대신 단계
+              // 모듈은 전부 **동적** import라 부르지 않은 단계의 네이티브 의존
+              // (satori·sharp·resvg)은 로드되지 않는다.
+              from: { element: { type: 'cli' } },
+              allow: [
+                {
+                  to: {
+                    element: {
+                      types: {
+                        anyOf: [
+                          'shared',
+                          'content',
+                          'seo',
+                          'build',
+                          'render-build',
+                        ],
+                      },
+                    },
+                  },
+                },
+                { to: { module: { origin: 'core' } } },
+                {
+                  // 인자 파싱은 CLI만 안다 — 단계 모듈은 파싱된 값을 받는다.
+                  to: { module: { origin: 'external', source: 'commander' } },
                 },
               ],
             },

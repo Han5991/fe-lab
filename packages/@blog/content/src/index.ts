@@ -12,21 +12,21 @@
  * 좁혀 준다. 배럴에 모듈을 추가할 때 이 전제를 깨는 부수효과(모듈 평가 시점
  * I/O 실행)를 넣지 말 것.
  */
-export * from './post';
+export * from './post/index.ts';
 // 옛 domain/post 배럴이 큐레이션에서 뺐지만 앱이 leaf로 쓰던 모듈들 — 패키지
 // 문은 이 배럴 하나뿐이므로 여기서 연다.
-export * from './post/filtering';
-export * from './post/assetUrl';
-export * from './post/diagramNames';
+export * from './post/filtering.ts';
+export * from './post/assetUrl.ts';
+export * from './post/diagramNames.ts';
 // shared 순수 유틸 — 옛 lib/shared. contentPaths(절대 경로 해석)는 node 전용.
-export * from './shared/constants';
-export * from './shared/contentConfig';
-export * from './shared/contentPaths';
-export * from './shared/dates';
-export * from './shared/format';
-export * from './shared/jsonLd';
-export * from './shared/markdownHeadings';
-export * from './shared/postFiles';
-export * from './shared/prismLanguages';
-export * from './shared/url';
-export * from './shared/viewCookie';
+export * from './shared/constants.ts';
+export * from './shared/contentConfig.ts';
+export * from './shared/contentPaths.ts';
+export * from './shared/dates.ts';
+export * from './shared/format.ts';
+export * from './shared/jsonLd.ts';
+export * from './shared/markdownHeadings.ts';
+export * from './shared/postFiles.ts';
+export * from './shared/prismLanguages.ts';
+export * from './shared/url.ts';
+export * from './shared/viewCookie.ts';

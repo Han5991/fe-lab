@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { isPostVisible, resolvePostState } from './visibility';
+import { isPostVisible, resolvePostState } from './visibility.ts';
 
 test('status가 없으면 비공개 (fail-closed)', () => {
   expect(isPostVisible({})).toBe(false);

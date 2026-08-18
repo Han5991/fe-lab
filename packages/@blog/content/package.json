@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@resvg/resvg-js": "^2.6.2",
+    "commander": "catalog:",
     "gray-matter": "^4.0.3",
     "react-markdown": "catalog:",
     "rehype-raw": "catalog:",
@@ -37,7 +38,6 @@
     "globals": "catalog:lint",
     "react": "catalog:",
     "react-dom": "catalog:",
-    "tsx": "catalog:",
     "typescript": "catalog:",
     "typescript-eslint": "catalog:lint",
     "vitest": "catalog:"
@@ -45,5 +45,8 @@
   "peerDependencies": {
     "react": "catalog:",
     "react-dom": "catalog:"
+  },
+  "bin": {
+    "blog-content": "./src/scripts/cli/index.ts"
   }
 }

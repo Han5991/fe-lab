@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { resolvePostAssetUrl } from './assetUrl';
+import { resolvePostAssetUrl } from './assetUrl.ts';
 
 test('절대 URL(https/data)은 그대로 반환', () => {
   expect(resolvePostAssetUrl('https://example.com/x.png', 'dir')).toBe(

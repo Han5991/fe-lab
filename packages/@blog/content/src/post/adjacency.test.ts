@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
-import { pickAdjacent } from './service';
-import type { PostData } from './types';
+import { pickAdjacent } from './service.ts';
+import type { PostData } from './types.ts';
 
 function makePost(over: Partial<PostData> = {}): PostData {
   const slug = over.slug ?? 'slug';

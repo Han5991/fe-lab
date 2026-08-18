@@ -15,10 +15,10 @@ import {
   postUrl,
   resolveExcerpt,
   type PostData,
-} from '../post';
-import { resolveAbsoluteThumbnailUrl } from '../post/thumbnail';
-import { SITE_NAME, SITE_URL, TITLE_SUFFIX } from '../shared/constants';
-import { CONTENT } from '../shared/contentConfig';
+} from '../post/index.ts';
+import { resolveAbsoluteThumbnailUrl } from '../post/thumbnail.ts';
+import { SITE_NAME, SITE_URL, TITLE_SUFFIX } from '../shared/constants.ts';
+import { CONTENT } from '../shared/contentConfig.ts';
 
 /**
  * 아래 빌더들이 받는 `slug`는 **디코드된** 값입니다 — page.tsx가

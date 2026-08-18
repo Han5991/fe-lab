@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
-import { sortByDateDesc } from './repository';
-import type { PostData } from './types';
+import { sortByDateDesc } from './repository.ts';
+import type { PostData } from './types.ts';
 
 function makePost(over: Partial<PostData> = {}): PostData {
   // 실제 데이터처럼 originalSlug는 기본적으로 slug를 따라가되, over로 개별 지정 가능.

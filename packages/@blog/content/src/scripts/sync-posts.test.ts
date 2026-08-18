@@ -1,13 +1,13 @@
 /**
- * sync-posts.mjs 통합 테스트
+ * sync-posts.ts 통합 테스트
  *
  * 임시 src/dst 디렉토리를 만들어 sync 로직을 실행하고
  * orphan 파일 삭제(및 dry-orphan 모드) 동작을 검증합니다.
  *
  * 로직 검증은 인라인 wrapper 를 spawnSync 로 실행해 임시 경로를 주입합니다 —
  * 실물은 경로가 CONTENT_PATHS 고정이라 주입할 손잡이가 없어서입니다. 실물
- * 쪽은 진입 가드(isCliEntry) 덕분에 import 가 안전하므로, 파일 끝의 배선
- * 테스트가 실제 모듈을 import 해 경로 상수와 tsx interop 을 잠급니다.
+ * 쪽은 모듈이 main 만 export 해서 import 가 안전하므로, 파일 끝의 배선
+ * 테스트가 실제 모듈을 import 해 경로 상수를 잠급니다.
  */
 import { expect, test, vi } from 'vitest';
 import {
@@ -245,14 +245,14 @@ test('orphan: src가 빈 디렉토리면 dst 미디어 파일 전부 삭제', ()
 
 // ── 실제 파일의 경로 배선 검증 ──────────────────────────────────────────────
 // 위 테스트들은 로직을 인라인 wrapper로 복제해 임시 경로에서 돌린다(모듈이
-// 로드 시점에 실제 경로로 실행되던 시절의 구조). 진입 가드가 생긴 지금은 실제
-// 모듈을 import해도 동기화가 돌지 않으므로, 진짜 sync-posts.mjs가 (1) tsx의
-// .mjs → .ts import 체인을 지나 로드되고 (2) CONTENT_PATHS의 올바른 필드를
-// 읽는지를 여기서 잠근다 — wrapper 복제본과 실물이 갈라지는 것을 막는 최소 계약.
-test('실물 sync-posts.mjs: CONTENT_PATHS 배선과 tsx interop', async () => {
+// 로드 시점에 실제 경로로 실행되던 시절의 구조). 지금은 모듈이 main만 export해
+// import해도 동기화가 돌지 않으므로, 진짜 sync-posts.ts가 CONTENT_PATHS의 올바른
+// 필드를 읽는지를 여기서 잠근다 — wrapper 복제본과 실물이 갈라지는 것을 막는
+// 최소 계약.
+test('실물 sync-posts.ts: CONTENT_PATHS 배선', async () => {
   const [real, paths] = await Promise.all([
-    import('./sync-posts.mjs'),
-    import('../shared/contentPaths'),
+    import('./sync-posts.ts'),
+    import('../shared/contentPaths.ts'),
   ]);
   expect(real.POSTS_SOURCE_DIR).toBe(paths.CONTENT_PATHS.postsDir);
   expect(real.POSTS_TARGET_DIR).toBe(paths.CONTENT_PATHS.mediaOutDir);

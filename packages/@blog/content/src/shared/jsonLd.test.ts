@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
 
-import { safeJsonLd } from './jsonLd';
+import { safeJsonLd } from './jsonLd.ts';
 
 test('safeJsonLd: 일반 객체는 JSON.stringify와 동일한 직렬화', () => {
   const data = { '@type': 'Person', name: 'Sangwook' };

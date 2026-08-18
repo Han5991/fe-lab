@@ -8,9 +8,7 @@ import {
 } from 'node:fs';
 import { dirname, extname, join, relative } from 'node:path';
 // 경로는 설정(defineContent → contentPaths)의 단일 출처에서 온다.
-// .ts import 때문에 이 파일은 tsx로 실행해야 한다(build-content.ts 참고).
 import { CONTENT_PATHS } from '../shared/contentPaths.ts';
-import { isCliEntry } from './cliEntry.ts';
 
 // 테스트가 경로 배선을 검증할 수 있게 export한다 (sync-posts.test.ts).
 export const POSTS_SOURCE_DIR = CONTENT_PATHS.postsDir;
@@ -26,11 +24,13 @@ const ALLOWED_EXTENSIONS = [
   '.mp4',
 ];
 
-const FORCE = process.argv.includes('--force');
-/** --dry-orphan: orphan 파일을 실제로 삭제하지 않고 목록만 출력합니다 */
-const DRY_ORPHAN = process.argv.includes('--dry-orphan');
+interface MediaFile {
+  full: string;
+  mtimeMs: number;
+  size: number;
+}
 
-function listMediaFiles(dir, results = []) {
+function listMediaFiles(dir: string, results: MediaFile[] = []): MediaFile[] {
   if (!existsSync(dir)) return results;
   for (const item of readdirSync(dir)) {
     const full = join(dir, item);
@@ -46,7 +46,8 @@ function listMediaFiles(dir, results = []) {
   return results;
 }
 
-function syncIncremental() {
+/** @param dryOrphan orphan을 지우지 않고 목록만 출력한다 */
+function syncIncremental(dryOrphan: boolean): void {
   const sourceFiles = listMediaFiles(POSTS_SOURCE_DIR);
   const sourceRelSet = new Set(
     sourceFiles.map(f => relative(POSTS_SOURCE_DIR, f.full)),
@@ -82,7 +83,7 @@ function syncIncremental() {
     for (const t of targetFiles) {
       const rel = relative(POSTS_TARGET_DIR, t.full);
       if (!sourceRelSet.has(rel)) {
-        if (DRY_ORPHAN) {
+        if (dryOrphan) {
           console.log(`  [dry-orphan] would remove: ${rel}`);
         } else {
           console.log(`  [orphan] removing: ${rel}`);
@@ -94,13 +95,13 @@ function syncIncremental() {
   }
 
   const dryNote =
-    DRY_ORPHAN && removed > 0 ? ' (dry-orphan: 실제 삭제 안 함)' : '';
+    dryOrphan && removed > 0 ? ' (dry-orphan: 실제 삭제 안 함)' : '';
   console.log(
     `Synced posts media: ${copied} copied, ${skipped} unchanged, ${removed} removed${dryNote}`,
   );
 }
 
-function syncFull() {
+function syncFull(): void {
   if (existsSync(POSTS_TARGET_DIR)) {
     rmSync(POSTS_TARGET_DIR, { recursive: true, force: true });
   }
@@ -115,21 +116,16 @@ function syncFull() {
   console.log(`Full sync: ${sourceFiles.length} files copied`);
 }
 
-// 다른 형제 스크립트와 같은 진입 가드 — 테스트가 경로 상수를 import해도
-// 실제 public/ 동기화가 돌지 않는다.
-if (isCliEntry(import.meta.url)) {
+export function main(opts: { force: boolean; dryOrphan: boolean }): void {
+  const { force, dryOrphan } = opts;
+
   console.log(
     `Syncing images from ${POSTS_SOURCE_DIR} to ${POSTS_TARGET_DIR}...`,
   );
 
-  try {
-    if (FORCE || !existsSync(POSTS_TARGET_DIR)) {
-      syncFull();
-    } else {
-      syncIncremental();
-    }
-  } catch (error) {
-    console.error('Failed to sync images:', error);
-    process.exit(1);
+  if (force || !existsSync(POSTS_TARGET_DIR)) {
+    syncFull();
+  } else {
+    syncIncremental(dryOrphan);
   }
 }

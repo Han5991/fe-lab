@@ -32,8 +32,8 @@ import {
   TIMEZONE_IANA,
   TIMEZONE_ISO_OFFSET,
   TIMEZONE_UTC_OFFSET_MS,
-} from './contentValues';
-import { SUPPORTED_FENCE_LABELS } from './prismLanguages';
+} from './contentValues.ts';
+import { SUPPORTED_FENCE_LABELS } from './prismLanguages.ts';
 
 // ── 그룹별 타입 ──────────────────────────────────────────────────────────────
 

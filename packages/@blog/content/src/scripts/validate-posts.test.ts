@@ -9,9 +9,9 @@ import {
   detectDuplicateSlugs,
   detectDuplicateDescriptions,
   type PostRecord,
-} from './validate-posts';
-import { DIAGRAM_NAMES } from '../post/diagramNames';
-import { FRONTMATTER_KEYS } from '../post';
+} from './validate-posts.ts';
+import { DIAGRAM_NAMES } from '../post/diagramNames.ts';
+import { FRONTMATTER_KEYS } from '../post/index.ts';
 
 function rec(
   data: Record<string, unknown>,

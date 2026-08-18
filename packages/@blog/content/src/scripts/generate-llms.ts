@@ -1,23 +1,22 @@
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { isCliEntry } from './cliEntry';
-import { archiveUrl, postUrl, sortByDateDesc } from '../post';
-import { POST_SETS } from './artifacts';
-import type { PostData } from '../post';
+import { archiveUrl, postUrl, sortByDateDesc } from '../post/index.ts';
+import { POST_SETS } from './artifacts.ts';
+import type { PostData } from '../post/index.ts';
 import {
   SITE_URL as DEFAULT_SITE_URL,
   SITE_NAME,
   SITE_AUTHOR_GITHUB,
   SITE_AUTHOR_LINKEDIN,
-} from '../shared/constants';
-import { CONTENT } from '../shared/contentConfig';
-import { CONTENT_PATHS } from '../shared/contentPaths';
+} from '../shared/constants.ts';
+import { CONTENT } from '../shared/contentConfig.ts';
+import { CONTENT_PATHS } from '../shared/contentPaths.ts';
 import {
   getSeriesMeta,
   isSeriesFolder,
   sortPostsBySeriesOrder,
   type SeriesMeta,
-} from '../post/series';
+} from '../post/series.ts';
 
 /**
  * `llms.txt` — AI 크롤러용 **색인**입니다. (본문 전문은 `llms-full.txt`)
@@ -187,8 +186,7 @@ export function buildLlmsText(
   return lines.join('\n');
 }
 
-// 스크립트로 직접 실행될 때만 파일 쓰기. (테스트에서 import 시에는 실행 안 됨)
-if (isCliEntry(import.meta.url)) {
+export function main() {
   // 레지스트리 선언(postSet: 'visible', exact)과 같은 셀렉터.
   const posts = POST_SETS.visible();
   const outputPath = join(CONTENT_PATHS.publicDir, 'llms.txt');

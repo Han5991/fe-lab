@@ -6,7 +6,7 @@
  * 통독이 아니라 테이블+이 목록으로 답해지는 상태를 유지합니다.
  */
 import { expect, test } from 'vitest';
-import { RULES, SEO_PUBLISH, resolveSeverity, type RuleId } from './rules';
+import { RULES, SEO_PUBLISH, resolveSeverity, type RuleId } from './rules.ts';
 
 test('RULES: 규칙은 정확히 29개', () => {
   // `non-string-field`가 세다 보면 흔히 빠진다 — 개수를 고정해 추가·삭제가

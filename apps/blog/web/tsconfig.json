@@ -23,6 +23,11 @@
     "esModuleInterop": true,
     "module": "esnext",
     "moduleResolution": "bundler",
+    // 앱 소스는 확장자 없이 import한다(Next 번들러가 푼다). 이 플래그는
+    // @blog/content 때문에 필요하다 — 그 패키지는 상대 import에 `.ts`를 달아
+    // node로 직접 실행되고, 소스째 이 program에 섞이므로 여기서도 허용해야
+    // TS5097이 안 난다. 허용일 뿐 강제가 아니라 앱 코드 스타일은 그대로다.
+    "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "react-jsx",

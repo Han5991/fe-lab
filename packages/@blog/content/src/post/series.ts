@@ -1,8 +1,8 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import matter from 'gray-matter';
-import { CONTENT } from '../shared/contentConfig';
-import { CONTENT_PATHS } from '../shared/contentPaths';
+import { CONTENT } from '../shared/contentConfig.ts';
+import { CONTENT_PATHS } from '../shared/contentPaths.ts';
 
 // repository.ts와 **같은** 설정 값이다. 예전에는 두 파일이 각자
 // `join(process.cwd(), '..', 'posts')`를 선언해, 한쪽만 어긋나면 시리즈

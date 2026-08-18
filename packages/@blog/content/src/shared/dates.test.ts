@@ -8,7 +8,7 @@ import {
   hasAmbiguousTimezone,
   msUntilKSTMidnight,
   parseScheduledDateKST,
-} from './dates';
+} from './dates.ts';
 
 test('getKSTDateISO: KST 자정 직후', () => {
   // 2026-05-09 00:00 KST = 2026-05-08 15:00 UTC

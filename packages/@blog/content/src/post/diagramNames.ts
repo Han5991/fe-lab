@@ -3,7 +3,7 @@
  *
  * 실제 컴포넌트 매핑은 `src/components/diagram/registry.ts`에 있는데, 그 파일은
  * React·Panda를 끌어오는 `.tsx`를 import합니다. `scripts/validate-posts.ts`는
- * `node --import tsx`로 도는 순수 노드 스크립트라 거기까지 딸려 들어오면
+ * node로 그대로 도는 순수 노드 스크립트라 거기까지 딸려 들어오면
  * 검증 스크립트가 UI 번들에 묶입니다. 그래서 "이름 목록"만 값-only 모듈
  * (`contentValues.ts`)에 두고, 레지스트리와 검증 스크립트가 같은 출처를
  * 공유하게 했습니다. 반대 방향도 마찬가지입니다 — registry.ts는 클라이언트
@@ -14,7 +14,7 @@
  * 이면 됩니다. 둘 중 하나만 하면 registry.ts의 `Record<DiagramName, …>`가
  * 컴파일 에러를 냅니다.
  */
-import { DEFAULT_DIAGRAM_NAMES } from '../shared/contentValues';
+import { DEFAULT_DIAGRAM_NAMES } from '../shared/contentValues.ts';
 
 // 타입 유니언(DiagramName)은 **기본값 리터럴**에서 파생됩니다. 런타임 판정
 // (isDiagramName)도 같은 목록을 봅니다 — 설정(registries.diagramNames)의

@@ -63,13 +63,16 @@ The blog (`apps/blog/web/`) is a **statically generated (SSG) Next.js applicatio
 ```
 apps/blog/posts (원고)  →  packages/@blog/content  →  apps/blog/web
                             shared → post → seo →      lib/platform → domain/analytics → src
-                            scripts → scripts/render
+                            scripts → scripts/render → scripts/cli
 ```
 
 - **`@blog/content` 내부**: `shared`(node 코어만) → `post`(+gray-matter) → `seo`(순수 계산) →
-  `scripts`(빌드) → `scripts/render`(React·satori·sharp·resvg는 여기만). 밖으로 여는 문은
-  `@blog/content`·`@blog/content/seo` 둘뿐. 빌드 스크립트는 API가 아니라 실행 파일이라 앱이
-  `npx tsx node_modules/@blog/content/src/scripts/…` 경로로 부른다
+  `scripts`(빌드) → `scripts/render`(React·satori·sharp·resvg는 여기만) → `scripts/cli`(진입점,
+  단계를 동적 import로 든다). 밖으로 여는 문은 `@blog/content`·`@blog/content/seo` 둘뿐.
+  빌드 스크립트는 API가 아니라 실행 파일이라 package.json `bin`의 **`blog-content`** 하나로
+  나가고, 앱은 서브커맨드 이름만 안다(`blog-content build`). shebang은 `node`다 — 상대 import가
+  전부 `.ts` 확장자를 달고(`allowImportingTsExtensions`, 앱 tsconfig에도 켜져 있어야 한다)
+  문법은 `erasableSyntaxOnly`라, node의 type stripping만으로 로더 없이 돈다
 - **앱 내부**: `lib/platform`(Supabase 어댑터, 외부 의존은 supabase-js·postgrest-js만) →
   `domain/analytics`(순수 계산 + 저장소, 배럴 `index`·`admin` 둘) → `src`(라우트·컴포넌트·훅).
   `src`는 저장소를 직접 찌르지 않고 배럴로, `client.from()`·`.rpc()`도 직접 부르지 않는다.
@@ -156,18 +159,20 @@ apps/blog/posts (원고)  →  packages/@blog/content  →  apps/blog/web
    > 존재해 어긋나 있었습니다. 지금은 `isPostFile()` 하나를 양쪽이 공유하고,
    > `published`가 남아 있으면 `lint:posts`가 `legacy-published-field` 에러를 냅니다.
 
-3. **빌드 전 처리** (`predev:web`·`prebuild` → `@blog/content`의 `src/scripts/build-content.ts` 통합 진입점. 아래 파일 경로는 모두 `packages/@blog/content/src/scripts/` 기준). **2단계**로 돈다 — 1단계는 게이트, 2단계 8개는 서로 다른 파일만 쓰므로 **병렬**:
-   - **1단계** `validate-posts.ts`: frontmatter 필수 필드(`status`·`title`·`date`), 폐기된 `published` 필드, 날짜 형식/timezone 모호성, 끊긴 이미지, 중복 slug 검사. predev:web·prebuild **둘 다** 돌고, prebuild만 `--strict`(아래 인용문). 규칙 표는 `validate/rules.ts`(29개), 판정 사슬은 `validate/frontmatter.ts`·`body.ts`·`corpus.ts`
+3. **빌드 전 처리** (`predev:web`·`prebuild` → `blog-content build` 통합 진입점. 아래 파일 경로는 모두 `packages/@blog/content/src/scripts/` 기준이고, 괄호 안이 서브커맨드 이름이다). **2단계**로 돈다 — 1단계는 게이트, 2단계 8개는 서로 다른 파일만 쓰므로 **병렬**:
+   - **1단계** `validate-posts.ts`(`validate`): frontmatter 필수 필드(`status`·`title`·`date`), 폐기된 `published` 필드, 날짜 형식/timezone 모호성, 끊긴 이미지, 중복 slug 검사. predev:web·prebuild **둘 다** 돌고, prebuild만 `--strict`(아래 인용문). 규칙 표는 `validate/rules.ts`(29개), 판정 사슬은 `validate/frontmatter.ts`·`body.ts`·`corpus.ts`
    - **2단계** (병렬):
-     - `sync-posts.mjs`: 포스트 디렉토리의 이미지/미디어 파일을 `public/posts/`에 복사 (mtime 기반 incremental — 변경분만 복사, orphan 삭제)
-     - `generate-sitemap.ts`: 발행된 글 목록으로 `sitemap.xml` 생성
-     - `render/generate-rss.ts`: RSS 피드(`rss.xml`) 생성 — 전문 HTML은 `render/feedRenderer.ts`(react-dom/server + react-markdown)를 주입받는다
-     - `render/generate-og-images.ts`: thumbnail이 없거나 `/og/*`를 가리키는 발행 글의 OG 카드 이미지(`public/og/{slug}.png`)를 satori + resvg로 생성 (content hash 기반 incremental, `.cache/og-images.json` manifest)
-     - `render/generate-thumbnails.ts`: 로컬 썸네일을 sharp로 `public/thumbs/**/*-thumb.webp`로 최적화 (`.cache/thumbnails.json` manifest, orphan 삭제). `media`·`thumbs`·`og` 출력 디렉터리는 서로 겹치면 안 된다(`assertOutputDirsExclusive`) — 각자 orphan을 지우며 병렬로 돌기 때문
-     - `generate-search-index.ts`: 검색용 JSON 인덱스(`search-index.json`, 공개 글) + `admin-posts-index.json`(비공개 포함) 생성 — 본문 미리보기(`contentPreview`) 포함
-     - `generate-llms-full.ts`: AI/LLM용 통합 텍스트(`llms-full.txt`) 생성
-     - `generate-llms.ts`: AI 크롤러용 색인(`llms.txt`) 생성 — 예전엔 손으로 관리하던 정적 파일이라 글 6편이 누락되고 개수도 어긋나 있었다. 이제 sitemap·rss와 같은 소스에서 뽑는다
-   - 각 스텝은 `npx tsx <절대 경로>`로 spawn되며 cwd에 기대지 않고 `src/shared/contentPaths.ts`로 경로를 푼다. CLI 진입 가드는 `cliEntry.ts`의 `isCliEntry`(realpath 비교 — pnpm 심링크 경로와 ESM 로더 realpath가 달라 순진한 `import.meta.url === argv[1]` 비교는 항상 false였다)
+     - `sync-posts.ts`(`sync-posts`): 포스트 디렉토리의 이미지/미디어 파일을 `public/posts/`에 복사 (mtime 기반 incremental — 변경분만 복사, orphan 삭제)
+     - `generate-sitemap.ts`(`sitemap`): 발행된 글 목록으로 `sitemap.xml` 생성
+     - `render/generate-rss.ts`(`rss`): RSS 피드(`rss.xml`) 생성 — 전문 HTML은 `render/feedRenderer.ts`(react-dom/server + react-markdown)를 주입받는다
+     - `render/generate-og-images.ts`(`og-images`): thumbnail이 없거나 `/og/*`를 가리키는 발행 글의 OG 카드 이미지(`public/og/{slug}.png`)를 satori + resvg로 생성 (content hash 기반 incremental, `.cache/og-images.json` manifest)
+     - `render/generate-thumbnails.ts`(`thumbnails`): 로컬 썸네일을 sharp로 `public/thumbs/**/*-thumb.webp`로 최적화 (`.cache/thumbnails.json` manifest, orphan 삭제). `media`·`thumbs`·`og` 출력 디렉터리는 서로 겹치면 안 된다(`assertOutputDirsExclusive`) — 각자 orphan을 지우며 병렬로 돌기 때문
+     - `generate-search-index.ts`(`search-index`): 검색용 JSON 인덱스(`search-index.json`, 공개 글) + `admin-posts-index.json`(비공개 포함) 생성 — 본문 미리보기(`contentPreview`) 포함
+     - `generate-llms-full.ts`(`llms-full`): AI/LLM용 통합 텍스트(`llms-full.txt`) 생성
+     - `generate-llms.ts`(`llms`): AI 크롤러용 색인(`llms.txt`) 생성 — 예전엔 손으로 관리하던 정적 파일이라 글 6편이 누락되고 개수도 어긋나 있었다. 이제 sitemap·rss와 같은 소스에서 뽑는다
+   - 각 스텝은 같은 CLI를 `node <cli/index.ts> <서브커맨드>`로 다시 spawn하며(PATH를 타지 않는다), cwd에 기대지 않고 `src/shared/contentPaths.ts`로 경로를 푼다. 이름과 옵션을 모듈에 잇는 곳은 `src/scripts/cli/program.ts`(commander) 하나뿐이고, `build-content.test.ts`가 두 목록의 어긋남을 잡는다.
+
+     > 예전엔 스텝마다 스크립트 **파일 경로**를 하드코딩하고 `isCliEntry`(realpath 비교)로 "직접 실행인가"를 판정했다. pnpm 심링크 경로와 ESM 로더 realpath가 달라 순진한 `import.meta.url === argv[1]` 비교가 **항상 false**였고, 모든 생성기가 무음 no-op이던 사고에서 나온 가드다. 진입점이 하나가 되면서 가드도 그 함정도 없어졌다 — 단계 모듈은 `main`만 export하고, 부르는 일은 CLI가 한다.
 4. **정적 빌드**: `next build` → `out/` 디렉토리에 정적 파일 생성 → `check-seo`(아래)
 5. **배포**: GitHub Actions(`deploy-blog.yml`) → GitHub Pages
    - `main` 브랜치 push 시 자동 빌드 — `apps/blog/**`·`packages/@blog/**` 변경일 때만
@@ -269,26 +274,27 @@ apps/blog/posts (원고)  →  packages/@blog/content  →  apps/blog/web
 
 #### 주요 설정 파일
 
-| 파일                                        | 역할                                                                                                                                                                                                                       |
-| :------------------------------------------ | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `next.config.ts`                            | SSG output(개발 모드 제외), trailingSlash + skipTrailingSlashRedirect 짝, images.unoptimized, reactCompiler, `optimizePackageImports: ['@blog/content']`(배럴 import가 fs 모듈을 클라이언트 그래프로 끌지 않게)            |
-| `panda.config.ts`                           | Panda CSS 설정 — preset `@design-system/ui/preset` + `blog-preset`, `strictTokens`, outdir는 `packages/@design-system/ui-lib`                                                                                              |
-| `eslint.config.mjs` (앱·패키지 각각)        | ESLint 10 flat config를 직접 조립(`eslint-config-next` 미사용) + `eslint-plugin-boundaries` 레이어 경계. 두 파일이 같은 엄격 수준을 유지해야 한다 — 패키지 소스가 앱 program에 소스째 섞이기 때문                          |
-| `tsconfig.json` / `tsconfig.test.json`      | 프로덕션/테스트 분할(앱·패키지 동일 구조). 테스트 include는 vitest include 글롭·ESLint 테스트 블록과 대칭 — 한쪽을 고치면 셋을 함께                                                                                        |
-| `.env.production`                           | Supabase URL/Key, Giscus 설정 — 커밋되는 유일한 env 파일(`.gitignore`의 `.env*` 예외). 로컬 `.env.local`은 커밋하지 않는다                                                                                                 |
-| `env.d.ts`                                  | `NEXT_PUBLIC_*` 8개를 `NodeJS.ProcessEnv`에 선언 — `noPropertyAccessFromIndexSignature` 아래서도 점 접근을 쓰기 위해(Next는 멤버 표현식만 인라인)                                                                          |
-| `supabase/config.toml`                      | 로컬 Supabase 설정 (Auth, DB, Storage 등). `supabase/functions/admin-analytics`가 Admin RPC 프록시                                                                                                                         |
-| `vercel.json`                               | 프리뷰 배포 — `main`·`renovate/**` 비활성, `apps/blog`·`packages/@blog` 변경 없으면 `ignoreCommand`로 스킵                                                                                                                 |
-| `.github/workflows/deploy-blog.yml`         | CI/CD 배포 워크플로우. PR CI(`ci.yml`)와 `.github/actions/quality-checks` composite action을 공유한다                                                                                                                      |
-| `apps/blog/posts/{series}/_series.yml`      | 시리즈 선언 — 이 파일이 있어야 시리즈. 표시명·설명·order 메타도 여기                                                                                                                                                       |
-| `packages/@blog/content`                    | 콘텐츠 프레임워크 패키지 — 스키마·로더·공개 판정·URL 계약·빌드 스크립트·2층 검증. 문 두 개(`@blog/content` + `@blog/content/seo`), 소스 익스포트(빌드 스텝 없음). 내부는 `packages/@blog/content/README.md`                |
-| `…content/src/scripts/build-content.ts`     | predev:web/prebuild 통합 진입점 (validate → sync/sitemap/rss/og-images/thumbnails/search/llms-full/llms 병렬) — 앱 package.json이 `node_modules/@blog/content/…` 파일 경로로 실행                                          |
-| `…content/src/scripts/check-seo.ts`         | 빌드 산출물 SEO 검사 (CI 게이트). 산출물 레지스트리는 같은 폴더의 `artifacts.ts`                                                                                                                                           |
-| `…content/src/scripts/validate/rules.ts`    | `validate-posts`의 규칙 표(29개, severity·scope·`--strict` 승격 대상 6개). 판정 사슬은 옆의 `frontmatter.ts`·`body.ts`·`corpus.ts`                                                                                         |
-| `…content/src/post/frontmatterSchema.ts`    | frontmatter 서술자 테이블 — 이 파일 위 표와 글자 단위로 대조된다(`frontmatterSchema.test.ts`)                                                                                                                              |
-| `…content/src/shared/contentConfig.ts`      | `defineContent({...})` 설정 표면 — 서버·빌드 전용. 클라이언트가 소비하는 리터럴은 `contentValues.ts`(값-only 모듈, `constants.ts`가 재수출)가 갖고, 설정은 그 값을 기본값으로 소비한다. 절대 경로 해석은 `contentPaths.ts` |
-| `apps/blog/web/README.md`                   | 앱의 코드 배치·레이어·런타임 데이터 흐름·스크립트·env                                                                                                                                                                      |
-| `apps/blog/web/design/DIAGRAM_AUTHORING.md` | 다이어그램 저작 가이드 (선언형 태그 prop 표, 복붙 예제, `hero:` 등록법)                                                                                                                                                    |
+| 파일                                        | 역할                                                                                                                                                                                                                                 |
+| :------------------------------------------ | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `next.config.ts`                            | SSG output(개발 모드 제외), trailingSlash + skipTrailingSlashRedirect 짝, images.unoptimized, reactCompiler, `optimizePackageImports: ['@blog/content']`(배럴 import가 fs 모듈을 클라이언트 그래프로 끌지 않게)                      |
+| `panda.config.ts`                           | Panda CSS 설정 — preset `@design-system/ui/preset` + `blog-preset`, `strictTokens`, outdir는 `packages/@design-system/ui-lib`                                                                                                        |
+| `eslint.config.mjs` (앱·패키지 각각)        | ESLint 10 flat config를 직접 조립(`eslint-config-next` 미사용) + `eslint-plugin-boundaries` 레이어 경계. 두 파일이 같은 엄격 수준을 유지해야 한다 — 패키지 소스가 앱 program에 소스째 섞이기 때문                                    |
+| `tsconfig.json` / `tsconfig.test.json`      | 프로덕션/테스트 분할(앱·패키지 동일 구조). 테스트 include는 vitest include 글롭·ESLint 테스트 블록과 대칭 — 한쪽을 고치면 셋을 함께                                                                                                  |
+| `.env.production`                           | Supabase URL/Key, Giscus 설정 — 커밋되는 유일한 env 파일(`.gitignore`의 `.env*` 예외). 로컬 `.env.local`은 커밋하지 않는다                                                                                                           |
+| `env.d.ts`                                  | `NEXT_PUBLIC_*` 8개를 `NodeJS.ProcessEnv`에 선언 — `noPropertyAccessFromIndexSignature` 아래서도 점 접근을 쓰기 위해(Next는 멤버 표현식만 인라인)                                                                                    |
+| `supabase/config.toml`                      | 로컬 Supabase 설정 (Auth, DB, Storage 등). `supabase/functions/admin-analytics`가 Admin RPC 프록시                                                                                                                                   |
+| `vercel.json`                               | 프리뷰 배포 — `main`·`renovate/**` 비활성, `apps/blog`·`packages/@blog` 변경 없으면 `ignoreCommand`로 스킵                                                                                                                           |
+| `.github/workflows/deploy-blog.yml`         | CI/CD 배포 워크플로우. PR CI(`ci.yml`)와 `.github/actions/quality-checks` composite action을 공유한다                                                                                                                                |
+| `apps/blog/posts/{series}/_series.yml`      | 시리즈 선언 — 이 파일이 있어야 시리즈. 표시명·설명·order 메타도 여기                                                                                                                                                                 |
+| `packages/@blog/content`                    | 콘텐츠 프레임워크 패키지 — 스키마·로더·공개 판정·URL 계약·빌드 스크립트·2층 검증. 문 두 개(`@blog/content` + `@blog/content/seo`) + `bin`의 `blog-content`, 소스 익스포트(빌드 스텝 없음). 내부는 `packages/@blog/content/README.md` |
+| `…content/src/scripts/build-content.ts`     | predev:web/prebuild 통합 진입점 (validate → sync/sitemap/rss/og-images/thumbnails/search/llms-full/llms 병렬) — 앱 package.json은 `blog-content build`로 부른다                                                                      |
+| `…content/src/scripts/cli/`                 | `bin`의 진입점. `index.ts`가 실행, `program.ts`가 commander로 서브커맨드·옵션을 정의하고 단계 모듈을 동적 import한다. 단계나 플래그를 더할 때 고칠 곳                                                                                |
+| `…content/src/scripts/check-seo.ts`         | 빌드 산출물 SEO 검사 (CI 게이트). 산출물 레지스트리는 같은 폴더의 `artifacts.ts`                                                                                                                                                     |
+| `…content/src/scripts/validate/rules.ts`    | `validate-posts`의 규칙 표(29개, severity·scope·`--strict` 승격 대상 6개). 판정 사슬은 옆의 `frontmatter.ts`·`body.ts`·`corpus.ts`                                                                                                   |
+| `…content/src/post/frontmatterSchema.ts`    | frontmatter 서술자 테이블 — 이 파일 위 표와 글자 단위로 대조된다(`frontmatterSchema.test.ts`)                                                                                                                                        |
+| `…content/src/shared/contentConfig.ts`      | `defineContent({...})` 설정 표면 — 서버·빌드 전용. 클라이언트가 소비하는 리터럴은 `contentValues.ts`(값-only 모듈, `constants.ts`가 재수출)가 갖고, 설정은 그 값을 기본값으로 소비한다. 절대 경로 해석은 `contentPaths.ts`           |
+| `apps/blog/web/README.md`                   | 앱의 코드 배치·레이어·런타임 데이터 흐름·스크립트·env                                                                                                                                                                                |
+| `apps/blog/web/design/DIAGRAM_AUTHORING.md` | 다이어그램 저작 가이드 (선언형 태그 prop 표, 복붙 예제, `hero:` 등록법)                                                                                                                                                              |
 
 ## Prerequisites
 

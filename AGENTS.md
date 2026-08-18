@@ -26,7 +26,7 @@ design guardrails) live in `CLAUDE.md` → "Blog Architecture"; the blog app's c
 - **apps/**
   - `blog/web/` (`@blog/web`, Next.js 16, static export): Tech blog. Layers `lib/platform → domain/analytics → src`
     enforced by `eslint-plugin-boundaries`. Content loading/validation/artifact generation is **not** here — it lives in
-    `packages/@blog/content` and the app runs its scripts by file path (`npx tsx node_modules/@blog/content/src/scripts/…`).
+    `packages/@blog/content`, whose scripts the app runs through the `blog-content` bin (`blog-content build`, `… validate`, `… check-seo`).
     Markdown is `gray-matter` + `react-markdown` — **not** MDX/velite/contentlayer.
   - `blog/posts/` (not a workspace): Markdown sources + `_series.yml`. Only folders with `_series.yml` are series.
   - `next.js/` (Next.js 16 + App Router + Turbopack): Core experimentation lab.
@@ -36,8 +36,9 @@ design guardrails) live in `CLAUDE.md` → "Blog Architecture"; the blog app's c
 - **packages/**
   - `@blog/content`: Blog content framework — schema (frontmatter descriptor table), loader, visibility, series, URL
     contract, SEO builders (`@blog/content/seo`), build scripts, two-layer validation (`validate-posts` on sources /
-    `check-seo` on built HTML). Source export, no build step. Internal layers `shared → post → seo → scripts → scripts/render`
-    enforced by boundaries. See `packages/@blog/content/README.md`.
+    `check-seo` on built HTML). Source export, no build step — the `blog-content` bin runs the `.ts` sources on plain node
+    (type stripping; every relative import carries a `.ts` extension). Internal layers
+    `shared → post → seo → scripts → scripts/render → scripts/cli` enforced by boundaries. See `packages/@blog/content/README.md`.
   - `@design-system/ui`: Shared React components + Panda presets (`./preset`, `./blog-preset` = blog token source of truth).
   - `@design-system/ui-lib`: Panda CSS generated tokens/styles (DO NOT EDIT directly).
   - `@package/core`: Shared utilities (HTTP client, status codes, errors).

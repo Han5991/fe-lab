@@ -13,8 +13,8 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import Markdown, { defaultUrlTransform, type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
-import { resolvePostAssetUrl } from '../../post/assetUrl';
-import { HEADING_TAG_MAP } from '../../shared/markdownHeadings';
+import { resolvePostAssetUrl } from '../../post/assetUrl.ts';
+import { HEADING_TAG_MAP } from '../../shared/markdownHeadings.ts';
 
 // 모르는 type 값은 info로 렌더한다 — 폴백을 같은 객체로 공유해 둘이 어긋날 수 없게.
 const CALLOUT_INFO = { icon: 'ℹ️', label: 'Info' };

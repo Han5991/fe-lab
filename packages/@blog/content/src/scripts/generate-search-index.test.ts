@@ -4,8 +4,8 @@ import {
   buildPublicSearchIndex,
   CONTENT_PREVIEW_CHARS,
   toPlainText,
-} from './generate-search-index';
-import type { PostData } from '../post';
+} from './generate-search-index.ts';
+import type { PostData } from '../post/index.ts';
 
 function makePost(over: Partial<PostData> = {}): PostData {
   return {

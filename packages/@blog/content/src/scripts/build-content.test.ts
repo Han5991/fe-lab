@@ -1,24 +1,6 @@
 import { expect, test } from 'vitest';
-import { isAbsolute } from 'node:path';
-import { parseFlags, buildPhases } from './build-content';
-
-// ── parseFlags ───────────────────────────────────────────────────────────────
-
-test('parseFlags: 기본값은 모두 false', () => {
-  expect(parseFlags([])).toStrictEqual({
-    skipValidate: false,
-    force: false,
-    strict: false,
-  });
-});
-
-test('parseFlags: --skip-validate / --force / --strict 인식', () => {
-  expect(parseFlags(['--skip-validate', '--force', '--strict'])).toStrictEqual({
-    skipValidate: true,
-    force: true,
-    strict: true,
-  });
-});
+import { buildPhases } from './build-content.ts';
+import { buildProgram } from './cli/program.ts';
 
 // ── buildPhases ──────────────────────────────────────────────────────────────
 
@@ -68,35 +50,21 @@ test('buildPhases: force 플래그는 sync-posts에만 전달', () => {
   }
 });
 
-test('buildPhases: 모든 단계의 스크립트 경로는 절대 경로다 (cwd 비의존)', () => {
-  // spawn cwd를 호출자 것으로 두는 대신, 스크립트 파일은 build-content 위치
-  // 기준 절대 경로로 지목한다 — 어느 cwd에서 불러도 같은 파일이 돈다.
+test('buildPhases: 모든 단계가 CLI에 등록된 서브커맨드다', () => {
+  // 예전에는 단계마다 스크립트 **파일 경로**를 하드코딩해서, 파일을 옮기면
+  // tsc가 못 보는 문자열이 조용히 썩었다. 이제 단계는 이름만 말하고, 그 이름을
+  // 파일에 잇는 일은 CLI 정의 한 곳이 맡는다 — 둘의 어긋남을 여기서 잡는다.
   const all = buildPhases({
     skipValidate: false,
     force: false,
     strict: false,
   }).flat();
+  const registered = new Set(buildProgram().commands.map(c => c.name()));
   for (const step of all) {
     expect(
-      isAbsolute(step.args[0] ?? ''),
-      `${step.label}: args[0]이 절대 경로여야 한다 (${step.args[0]})`,
+      registered.has(step.command),
+      `${step.label}: ${step.command}가 CLI에 등록돼 있지 않다`,
     ).toBeTruthy();
-  }
-});
-
-test('buildPhases: 렌더 생성기 3개는 scripts/render/ 아래를 가리킨다', () => {
-  // 렌더 생성기(rss·og·thumbnails)는 React 스택을 끄는 render-build 레이어로
-  // 분리됐다. build-content의 경로 문자열은 tsc가 못 보는 하드코딩이라, 파일을
-  // 또 옮기면 여기서 잡는다.
-  const all = buildPhases({
-    skipValidate: false,
-    force: false,
-    strict: false,
-  }).flat();
-  for (const label of ['rss', 'og-images', 'thumbnails']) {
-    const step = all.find(s => s.label === label);
-    expect(step, `${label} 단계가 있어야 한다`).toBeTruthy();
-    expect(step?.args[0] ?? '', label).toMatch(/scripts[/\\]render[/\\]/);
   }
 });
 
@@ -119,8 +87,8 @@ test('buildPhases: --strict는 validate-posts에만 전달 (predev는 비엄격)
     force: false,
     strict: true,
   });
-  expect(strict[0][0].args[0] ?? '').toMatch(/validate-posts\.ts$/);
-  expect(strict[0][0].args.slice(1)).toStrictEqual(['--strict']);
+  expect(strict[0][0].command).toBe('validate');
+  expect(strict[0][0].args).toStrictEqual(['--strict']);
   expect(strict[1].every(step => !step.args.includes('--strict'))).toBeTruthy();
 
   const loose = buildPhases({
@@ -128,6 +96,6 @@ test('buildPhases: --strict는 validate-posts에만 전달 (predev는 비엄격)
     force: false,
     strict: false,
   });
-  expect(loose[0][0].args[0] ?? '').toMatch(/validate-posts\.ts$/);
-  expect(loose[0][0].args.length).toBe(1);
+  expect(loose[0][0].command).toBe('validate');
+  expect(loose[0][0].args).toStrictEqual([]);
 });

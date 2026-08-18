@@ -4,7 +4,7 @@ import {
   filterPostsByQuery,
   groupPostsBySeries,
   groupPostsByTags,
-} from './filtering';
+} from './filtering.ts';
 
 const posts = [
   {

@@ -8,14 +8,13 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { isCliEntry } from '../cliEntry';
 import satori, { type SatoriOptions } from 'satori';
 import { Resvg } from '@resvg/resvg-js';
-import { POST_SETS } from '../artifacts';
-import { fmtDate } from '../../shared/format';
-import { SITE_NAME, SITE_URL } from '../../shared/constants';
-import { CONTENT } from '../../shared/contentConfig';
-import { CONTENT_PATHS } from '../../shared/contentPaths';
+import { POST_SETS } from '../artifacts.ts';
+import { fmtDate } from '../../shared/format.ts';
+import { SITE_NAME, SITE_URL } from '../../shared/constants.ts';
+import { CONTENT } from '../../shared/contentConfig.ts';
+import { CONTENT_PATHS } from '../../shared/contentPaths.ts';
 
 const OG_DIR = CONTENT_PATHS.ogOutDir;
 const MANIFEST_PATH = join(CONTENT_PATHS.cacheDir, 'og-images.json');
@@ -296,7 +295,7 @@ function readManifest(): Record<string, string> {
   return {};
 }
 
-async function main() {
+export async function main() {
   // 외부/직접 썸네일이 명시된 글은 제외, 없거나 /og/*를 가리키는 글만 생성.
   // visible의 **부분집합**이 되므로 레지스트리(artifacts.ts)의 og 항목은
   // exact가 아니라 subset이다 — 베이스 셀렉터는 레지스트리와 공유한다.
@@ -338,13 +337,4 @@ async function main() {
   console.log(
     `✓ og-images: ${rendered} 생성, ${skipped} 스킵, ${orphans.length} 정리 (대상 ${posts.length}개)`,
   );
-}
-
-// 스크립트로 직접 실행될 때만 main()을 호출합니다.
-// (테스트 등에서 import할 때 main()이 자동 실행되는 것을 방지)
-if (isCliEntry(import.meta.url)) {
-  main().catch((e: unknown) => {
-    console.error(e);
-    process.exit(1);
-  });
 }
