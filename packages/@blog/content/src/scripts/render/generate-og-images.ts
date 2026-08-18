@@ -7,6 +7,7 @@ import {
   rmSync,
   writeFileSync,
 } from 'node:fs';
+import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import satori, { type SatoriOptions } from 'satori';
 import { Resvg } from '@resvg/resvg-js';
@@ -18,7 +19,26 @@ import { CONTENT_PATHS } from '../../shared/contentPaths.ts';
 
 const OG_DIR = CONTENT_PATHS.ogOutDir;
 const MANIFEST_PATH = join(CONTENT_PATHS.cacheDir, 'og-images.json');
-const FONT_DIR = CONTENT_PATHS.ogFontDir;
+/**
+ * OG 카드에 쓰는 Pretendard 폰트가 있는 디렉터리.
+ *
+ * 경로를 적지 않고 **resolver에게 묻는다**. 예전에는 설정(`dirs.ogFonts`)에
+ * `node_modules/pretendard/dist/public/static`을 앱 루트 기준 상대 경로로 적어
+ * 뒀는데, 그건 이 패키지가 **소비자의 node_modules 배치**를 안다는 뜻이었다 —
+ * pretendard가 앱에만 선언돼 있어서(그리고 pnpm이 앱 아래에 심링크를 만들어
+ * 줘서) 우연히 돌던 것이고, 이 패키지를 다른 앱이 쓰면 어디에도 안 적힌 의존을
+ * 따로 깔아야 했다. 지금은 pretendard가 이 패키지의 dependency이고, 실제 파일
+ * 위치는 pnpm이 어떻게 깔았든 resolver가 안다.
+ *
+ * 호출 시점에 푼다(기본 인자) — 모듈을 import하는 것만으로는 resolve가 돌지
+ * 않고, 폰트 디렉터리를 넘겨 부르면 아예 타지 않는다.
+ */
+function resolveFontDir(): string {
+  const resolveFrom = createRequire(import.meta.url);
+  return dirname(
+    resolveFrom.resolve('pretendard/dist/public/static/Pretendard-Regular.otf'),
+  );
+}
 
 /**
  * 템플릿 디자인을 바꾸면 올려서 모든 이미지를 재생성하게 합니다.
@@ -258,7 +278,7 @@ export function findOrphanPngs(
   );
 }
 
-export function loadFonts(fontDir = FONT_DIR): SatoriOptions['fonts'] {
+export function loadFonts(fontDir = resolveFontDir()): SatoriOptions['fonts'] {
   const font = (file: string, weight: 400 | 500 | 700) => ({
     name: 'Pretendard',
     data: readFileSync(join(fontDir, file)),

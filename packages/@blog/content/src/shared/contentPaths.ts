@@ -49,8 +49,6 @@ export interface ContentPaths {
   thumbsOutDir: string;
   /** generate-og-images 산출물 */
   ogOutDir: string;
-  /** OG 카드 렌더링 폰트 */
-  ogFontDir: string;
 }
 
 /** 순수 함수 — 테스트가 임의 appRoot로 결과를 검증할 수 있다 */
@@ -68,7 +66,6 @@ export function resolveContentPaths(
     mediaOutDir: resolve(appRoot, dirs.media),
     thumbsOutDir: resolve(appRoot, dirs.thumbs),
     ogOutDir: resolve(appRoot, dirs.og),
-    ogFontDir: resolve(appRoot, dirs.ogFonts),
   };
 }
 
