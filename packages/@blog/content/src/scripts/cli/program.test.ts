@@ -47,20 +47,60 @@ test('new-post의 --status는 세 값만 받는다', () => {
   expect(status?.argChoices).toStrictEqual(['draft', 'published', 'scheduled']);
 });
 
-test('알 수 없는 옵션은 조용히 무시되지 않는다', () => {
+/**
+ * 출력을 삼키고 process.exit을 막은 program. 찍힌 stderr를 함께 돌려준다.
+ *
+ * exitOverride·configureOutput은 **커맨드마다** 따로 붙는다 — 부모에만 걸면
+ * 서브커맨드가 자기 설정으로 stderr에 쓰고 process.exit까지 부른다.
+ */
+function silencedProgram(): { program: Command; stderr: () => string } {
   const program = buildProgram();
-  // exitOverride·configureOutput은 **커맨드마다** 따로 붙는다. 부모에만 걸면
-  // 서브커맨드가 자기 설정으로 stderr에 쓰고 process.exit까지 부른다.
+  const chunks: string[] = [];
   const silence = (cmd: Command) => {
     cmd.exitOverride().configureOutput({
-      writeErr: () => undefined,
+      writeErr: (str: string) => {
+        chunks.push(str);
+      },
       writeOut: () => undefined,
     });
   };
   silence(program);
   program.commands.forEach(silence);
+  return { program, stderr: () => chunks.join('') };
+}
 
+test('알 수 없는 옵션은 조용히 무시되지 않는다', () => {
+  const { program } = silencedProgram();
   expect(() =>
     program.parse(['node', 'blog-content', 'validate', '--stric']),
   ).toThrow();
+});
+
+// ── new-post의 도메인 검증 에러 ──────────────────────────────────────────────
+// 파싱은 commander가 하지만 "제목이 있어야 한다" 같은 규칙은 단계 모듈이 던진다.
+// 액션이 그걸 잡지 않으면 진입점의 마지막 catch까지 올라가 **스택 트레이스**가
+// 찍힌다 — 글쓴이가 볼 것은 스택이 아니라 무엇을 고칠지다.
+
+test('new-post: 제목이 없으면 스택이 아니라 메시지로 알린다', async () => {
+  const { program, stderr } = silencedProgram();
+  await expect(
+    program.parseAsync(['node', 'blog-content', 'new-post']),
+  ).rejects.toThrow();
+  expect(stderr()).toContain('글 제목이 필요합니다');
+  expect(stderr()).not.toContain('at resolveOptions');
+});
+
+test('new-post: 공개 시각 없는 scheduled도 메시지로 알린다', async () => {
+  const { program, stderr } = silencedProgram();
+  await expect(
+    program.parseAsync([
+      'node',
+      'blog-content',
+      'new-post',
+      '제목',
+      '--status',
+      'scheduled',
+    ]),
+  ).rejects.toThrow();
+  expect(stderr()).toContain('--scheduled <ISO 날짜>가 필요합니다');
 });

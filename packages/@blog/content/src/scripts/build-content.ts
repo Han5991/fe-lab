@@ -3,7 +3,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 /**
- * 단계를 돌릴 CLI 진입점 — 이 파일의 형제인 `cli.ts`를 **절대 경로**로 지목한다.
+ * 단계를 돌릴 CLI 진입점 — 형제 디렉터리의 `cli/index.ts`를 **절대 경로**로 지목한다.
  *
  * 각 단계는 별도 프로세스로 띄운다(한 단계가 죽어도 나머지 로그가 남고,
  * 네이티브 의존을 쓰는 단계의 메모리가 서로 섞이지 않는다). 부르는 쪽은

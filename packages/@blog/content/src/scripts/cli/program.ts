@@ -18,6 +18,7 @@
  * 돌지 않아야 커맨드 목록과 옵션을 검사할 수 있다.
  */
 import { Command, Option } from 'commander';
+import type { NewPostOptions } from '../new-post.ts';
 
 /** 인자 없이 도는 생성 단계 — build가 병렬로 돌리는 것들 대부분이 여기다. */
 const PLAIN_STEPS = [
@@ -120,20 +121,33 @@ export function buildProgram(): Command {
     .option('--scheduledDate <date>', '--scheduled의 별칭')
     .option('--slug <slug>', 'URL용 영문 slug')
     .option('--tags <a,b,c>', '쉼표로 구분한 태그')
-    .action(async (titleArg: string | undefined, opts: NewPostRawFlags) => {
-      const { main, resolveOptions, parseTagList } =
-        await import('../new-post.ts');
-      main(
-        resolveOptions({
-          title: opts.title ?? titleArg,
-          series: opts.series,
-          status: opts.status,
-          scheduledDate: opts.scheduled ?? opts.scheduledDate,
-          slug: opts.slug,
-          tags: opts.tags === undefined ? undefined : parseTagList(opts.tags),
-        }),
-      );
-    });
+    .action(
+      async (
+        titleArg: string | undefined,
+        opts: NewPostRawFlags,
+        command: Command,
+      ) => {
+        const { main, resolveOptions, parseTagList } =
+          await import('../new-post.ts');
+        let resolved: NewPostOptions;
+        try {
+          resolved = resolveOptions({
+            title: opts.title ?? titleArg,
+            series: opts.series,
+            status: opts.status,
+            scheduledDate: opts.scheduled ?? opts.scheduledDate,
+            slug: opts.slug,
+            tags: opts.tags === undefined ? undefined : parseTagList(opts.tags),
+          });
+        } catch (e) {
+          // 도메인 검증 실패는 글쓴이가 고칠 수 있는 것이다 — 스택 트레이스 대신
+          // 무엇이 잘못됐는지와 사용법을 보여준다(commander가 exit 1까지 맡는다).
+          // 여기서 안 잡으면 진입점의 마지막 catch까지 올라가 Error가 통째로 찍힌다.
+          command.error(`✖ ${(e as Error).message}`);
+        }
+        main(resolved);
+      },
+    );
 
   program
     .command('sync-posts')
