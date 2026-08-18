@@ -202,7 +202,7 @@ export default function PostClient({
                 },
                 // 본문에서 비켜둔 보조 설명(측정 방법론·재현 환경 고지 등)을 접어두는 블록.
                 // 펼침 애니메이션은 ::details-content의 block-size를 0 ↔ auto로 전환한다.
-                // auto 보간에 필요한 interpolate-size는 globals.css의 :root에 있고,
+                // auto 보간에 필요한 interpolate-size는 panda.config.ts globalCss의 html에 있고,
                 // 미지원 브라우저는 애니메이션 없이 즉시 펼쳐진다(기능 손실 없음).
                 '& details': {
                   my: '6',
