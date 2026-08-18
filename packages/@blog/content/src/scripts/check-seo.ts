@@ -377,10 +377,9 @@ export function checkArtifacts(collected: CollectedArtifact[]): SeoViolation[] {
   return violations;
 }
 
-export function main(argv: string[]) {
+export function main(target?: string) {
   // 인자를 주면 그 경로를(cwd 기준, resolve라 절대 경로 인자도 그대로 받는다),
   // 없으면 설정의 out 디렉터리를 검사한다.
-  const target = argv[0];
   const outDir = target ? resolve(process.cwd(), target) : CONTENT_PATHS.outDir;
   if (!existsSync(outDir)) {
     console.error(

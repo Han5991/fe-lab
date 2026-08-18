@@ -1,7 +1,8 @@
 import { expect, test } from 'vitest';
 import matter from 'gray-matter';
 import {
-  parseArgs,
+  resolveOptions,
+  parseTagList,
   todayKST,
   safeFilename,
   buildPostFilePath,
@@ -13,64 +14,49 @@ import {
   type PostRecord,
 } from './validate-posts.ts';
 
-// ── parseArgs ────────────────────────────────────────────────────────────────
+// ── parseTagList / resolveOptions ────────────────────────────────────────────
+// 문자열을 값으로 바꾸는 일(플래그 파싱)은 commander가 한다. 여기 남은 것은
+// **도메인 규칙** — 옵션끼리의 상호작용과, 파일을 만들 수 없는 조합의 거부다.
 
-test('parseArgs: 위치 인자를 제목으로 쓰고 기본값은 draft/빈 tags', () => {
-  const opts = parseArgs(['글 제목']);
+test('parseTagList: 쉼표 분리 + trim + 빈 항목 제거', () => {
+  expect(parseTagList(' a , b ,, c,')).toStrictEqual(['a', 'b', 'c']);
+});
+
+test('resolveOptions: 기본값은 draft / 빈 tags', () => {
+  const opts = resolveOptions({ title: '글 제목' });
   expect(opts.title).toBe('글 제목');
   expect(opts.status).toBe('draft');
   expect(opts.tags).toStrictEqual([]);
-  expect(opts.series).toBe(undefined);
-  expect(opts.scheduledDate).toBe(undefined);
 });
 
-test('parseArgs: --key value / --key=value 두 형태 모두 지원', () => {
-  expect(parseArgs(['--title', '제목']).title).toBe('제목');
-  expect(parseArgs(['--title=제목']).title).toBe('제목');
-  expect(parseArgs(['--series=bundler']).series).toBe('bundler');
+test('resolveOptions: 제목이 없거나 공백뿐이면 에러', () => {
+  expect(() => resolveOptions({})).toThrow(/글 제목이 필요합니다/);
+  expect(() => resolveOptions({ title: '   ' })).toThrow(
+    /글 제목이 필요합니다/,
+  );
 });
 
-test('parseArgs: --title이 있으면 위치 인자보다 우선', () => {
-  const opts = parseArgs(['무시될 제목', '--title', '진짜 제목']);
-  expect(opts.title).toBe('진짜 제목');
-});
-
-test('parseArgs: -t/-s 축약 옵션', () => {
-  const opts = parseArgs(['-t', '제목', '-s', 'bundler']);
-  expect(opts.title).toBe('제목');
-  expect(opts.series).toBe('bundler');
-});
-
-test('parseArgs: --tags는 쉼표 분리 + trim + 빈 항목 제거', () => {
-  const opts = parseArgs(['--tags', ' a , b ,, c,']);
-  expect(opts.tags).toStrictEqual(['a', 'b', 'c']);
-});
-
-test('parseArgs: --scheduled는 scheduledDate 설정과 함께 status를 scheduled로 강제', () => {
-  const opts = parseArgs(['제목', '--scheduled', '2026-05-01T09:00:00+09:00']);
+test('resolveOptions: --scheduled를 주면 status를 scheduled로 올린다', () => {
+  // 예약 발행 의도는 날짜를 준 것으로 이미 드러난다 — --status를 또 적게 하지 않는다.
+  const opts = resolveOptions({
+    title: '제목',
+    scheduledDate: '2026-05-01T09:00:00+09:00',
+  });
   expect(opts.status).toBe('scheduled');
   expect(opts.scheduledDate).toBe('2026-05-01T09:00:00+09:00');
 });
 
-test('parseArgs: --scheduledDate alias도 동일하게 동작', () => {
-  const opts = parseArgs(['--scheduledDate=2026-05-01']);
-  expect(opts.status).toBe('scheduled');
-  expect(opts.scheduledDate).toBe('2026-05-01');
-});
-
-test('parseArgs: --status 유효값은 그대로 적용', () => {
-  expect(parseArgs(['--status', 'published']).status).toBe('published');
-});
-
-test('parseArgs: --status 잘못된 값은 에러', () => {
-  expect(() => parseArgs(['--status', 'live'])).toThrow(
-    /draft\|published\|scheduled/,
+test('resolveOptions: status만 scheduled고 날짜가 없으면 에러', () => {
+  // 공개 시각 없는 예약 글은 영영 안 뜬다 — 파일을 만들기 전에 막는다.
+  expect(() => resolveOptions({ title: '제목', status: 'scheduled' })).toThrow(
+    /--scheduled <ISO 날짜>가 필요합니다/,
   );
 });
 
-test('parseArgs: 알 수 없는 옵션은 에러 (--/- 모두)', () => {
-  expect(() => parseArgs(['--foo', 'x'])).toThrow(/알 수 없는 옵션: --foo/);
-  expect(() => parseArgs(['-x', 'y'])).toThrow(/알 수 없는 옵션: -x/);
+test('resolveOptions: status 값은 그대로 전달', () => {
+  expect(resolveOptions({ title: '제목', status: 'published' }).status).toBe(
+    'published',
+  );
 });
 
 // ── todayKST ─────────────────────────────────────────────────────────────────

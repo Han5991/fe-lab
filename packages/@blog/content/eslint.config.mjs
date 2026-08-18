@@ -247,6 +247,10 @@ export default defineConfig([
                   },
                 },
                 { to: { module: { origin: 'core' } } },
+                {
+                  // 인자 파싱은 CLI만 안다 — 단계 모듈은 파싱된 값을 받는다.
+                  to: { module: { origin: 'external', source: 'commander' } },
+                },
               ],
             },
             // 프로덕션 코드는 테스트 파일을 import할 수 없다.

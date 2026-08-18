@@ -5,9 +5,10 @@ import { CONTENT_PATHS } from '../shared/contentPaths.ts';
 
 const POSTS_DIR = CONTENT_PATHS.postsDir;
 
-interface Options {
-  title?: string;
-  series?: string;
+/** 실제로 파일을 만들 때 필요한 값 — 원시 입력을 resolveOptions가 여기까지 좁힌다. */
+export interface NewPostOptions {
+  title: string;
+  series?: string | undefined;
   status: 'draft' | 'published' | 'scheduled';
   // slug/scheduledDate는 buildFrontmatter 호출부가 `opts.slug` 그대로(값이
   // undefined일 수 있는 채로) 넘기므로 명시적 undefined를 허용해야 한다.
@@ -16,85 +17,52 @@ interface Options {
   tags: string[];
 }
 
-export function parseArgs(argv: string[]): Options {
-  const opts: Options = { status: 'draft', tags: [] };
-  const positional: string[] = [];
+/** CLI가 넘겨주는 원시 옵션 — 전부 선택이고, 값 검증은 아직 안 끝났다. */
+export interface RawNewPostOptions {
+  title?: string | undefined;
+  series?: string | undefined;
+  status?: NewPostOptions['status'] | undefined;
+  /** `--scheduled` 또는 별칭 `--scheduledDate` */
+  scheduledDate?: string | undefined;
+  slug?: string | undefined;
+  tags?: string[] | undefined;
+}
 
-  for (let i = 0; i < argv.length; i++) {
-    // 루프 조건이 i < length 를 보장한다(본문의 ++i 뒤에도 조건을 다시 지난다).
-    const arg = argv[i];
-    if (arg === undefined) continue;
-    if (arg.startsWith('--')) {
-      const eq = arg.indexOf('=');
-      let key: string;
-      let value: string;
-      if (eq !== -1) {
-        key = arg.slice(2, eq);
-        value = arg.slice(eq + 1);
-      } else {
-        key = arg.slice(2);
-        value = argv[++i] ?? '';
-      }
-      switch (key) {
-        case 'title':
-          opts.title = value;
-          break;
-        case 'series':
-          opts.series = value;
-          break;
-        case 'status':
-          if (
-            value !== 'draft' &&
-            value !== 'published' &&
-            value !== 'scheduled'
-          ) {
-            throw new Error(
-              `status는 draft|published|scheduled 중 하나여야 합니다.`,
-            );
-          }
-          opts.status = value;
-          break;
-        case 'scheduled':
-        case 'scheduledDate':
-          opts.scheduledDate = value;
-          opts.status = 'scheduled';
-          break;
-        case 'slug':
-          opts.slug = value;
-          break;
-        case 'tags':
-          opts.tags = value
-            .split(',')
-            .map(t => t.trim())
-            .filter(Boolean);
-          break;
-        default:
-          throw new Error(`알 수 없는 옵션: --${key}`);
-      }
-    } else if (arg.startsWith('-')) {
-      const key = arg.slice(1);
-      const value = argv[++i] ?? '';
-      switch (key) {
-        case 't':
-          opts.title = value;
-          break;
-        case 's':
-          opts.series = value;
-          break;
-        default:
-          throw new Error(`알 수 없는 옵션: -${key}`);
-      }
-    } else {
-      positional.push(arg);
-    }
+/** `--tags a, b ,,c` → `['a', 'b', 'c']`. 빈 항목은 버린다. */
+export function parseTagList(value: string): string[] {
+  return value
+    .split(',')
+    .map(t => t.trim())
+    .filter(Boolean);
+}
+
+/**
+ * 원시 옵션을 실제 값으로 좁힌다 — 여기 있는 건 파싱이 아니라 **도메인 규칙**이다.
+ *
+ * - `--scheduled`를 준 것 자체가 예약 발행 의도다. `--status scheduled`를 따로
+ *   적지 않아도 되게 status를 올린다(둘을 같이 적어도 결과는 같다).
+ * - 제목이 없으면 파일 이름을 만들 수 없다. 위치 인자든 `--title`이든 CLI가 하나로
+ *   합쳐서 넘기므로, 여기서는 비었는지만 본다.
+ */
+export function resolveOptions(raw: RawNewPostOptions): NewPostOptions {
+  const title = raw.title?.trim();
+  if (!title) {
+    throw new Error('글 제목이 필요합니다.');
   }
-
-  const firstPositional = positional[0];
-  if (!opts.title && firstPositional !== undefined) {
-    opts.title = firstPositional;
+  const status = raw.scheduledDate ? 'scheduled' : (raw.status ?? 'draft');
+  if (status === 'scheduled' && !raw.scheduledDate) {
+    throw new Error(
+      'status: scheduled에는 --scheduled <ISO 날짜>가 필요합니다.',
+    );
   }
-
-  return opts;
+  return {
+    title,
+    series: raw.series,
+    status,
+    scheduledDate: raw.scheduledDate,
+    slug: raw.slug,
+    tags: raw.tags ?? [],
+  };
 }
 
 export function todayKST(now: Date = new Date()): string {
@@ -151,7 +119,7 @@ function yamlQuote(value: string): string {
  * 오늘 날짜를 넣으면 목록에 뜨는 날짜와 실제 공개일이 어긋납니다.
  */
 function resolveDate(
-  status: Options['status'],
+  status: NewPostOptions['status'],
   scheduledDate: string | undefined,
   now: Date,
 ): string {
@@ -171,8 +139,8 @@ function needsScheduledDate(
 }
 
 export function buildFrontmatter(
-  opts: Required<Pick<Options, 'title' | 'status' | 'tags'>> &
-    Pick<Options, 'slug' | 'scheduledDate'>,
+  opts: Required<Pick<NewPostOptions, 'title' | 'status' | 'tags'>> &
+    Pick<NewPostOptions, 'slug' | 'scheduledDate'>,
   now: Date = new Date(),
 ): string {
   const lines = ['---'];
@@ -202,48 +170,7 @@ export function buildFrontmatter(
   return lines.join('\n');
 }
 
-function printUsage() {
-  console.log(`사용법:
-  pnpm new-post "글 제목" [옵션]
-
-옵션:
-  --series <name>          시리즈 폴더 (예: bundler)
-  --status <s>             draft | published | scheduled (기본 draft)
-  --scheduled <날짜>       예약 발행일. 자동으로 status: scheduled 적용.
-                           'YYYY-MM-DD'면 date로만 기록되고(KST 자정 공개),
-                           시각까지 주면 scheduledDate가 추가됩니다.
-  --slug <slug>            URL용 영문 slug (선택)
-  --tags <a,b,c>           쉼표 구분 태그
-
-예시:
-  pnpm new-post "번들러 만들기 3편" --series bundler --tags bundler,build
-  pnpm new-post "릴리스 노트" --scheduled 2026-05-01
-  pnpm new-post "릴리스 노트" --scheduled "2026-05-01T09:00:00+09:00"
-`);
-}
-
-export function main(argv: string[]) {
-  let opts: Options;
-  try {
-    opts = parseArgs(argv);
-  } catch (e) {
-    console.error(`✖ ${(e as Error).message}\n`);
-    printUsage();
-    process.exit(1);
-  }
-
-  if (!opts.title) {
-    printUsage();
-    process.exit(1);
-  }
-
-  if (opts.status === 'scheduled' && !opts.scheduledDate) {
-    console.error(
-      '✖ status: scheduled에는 --scheduled <ISO 날짜>가 필요합니다.',
-    );
-    process.exit(1);
-  }
-
+export function main(opts: NewPostOptions) {
   let targetPath: string;
   try {
     targetPath = buildPostFilePath(POSTS_DIR, opts.title, opts.series);

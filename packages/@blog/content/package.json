@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@resvg/resvg-js": "^2.6.2",
+    "commander": "^15.0.0",
     "gray-matter": "^4.0.3",
     "react-markdown": "catalog:",
     "rehype-raw": "catalog:",

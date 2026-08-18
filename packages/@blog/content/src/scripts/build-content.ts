@@ -30,14 +30,6 @@ export interface Flags {
   strict: boolean;
 }
 
-export function parseFlags(argv: string[]): Flags {
-  return {
-    skipValidate: argv.includes('--skip-validate'),
-    force: argv.includes('--force'),
-    strict: argv.includes('--strict'),
-  };
-}
-
 /**
  * 실행 계획. 바깥 배열은 순차 phase, 안쪽 배열은 병렬 실행 단계.
  *
@@ -121,8 +113,8 @@ function indent(text: string): string {
     .join('\n');
 }
 
-export async function main(argv: string[]) {
-  const phases = buildPhases(parseFlags(argv));
+export async function main(flags: Flags) {
+  const phases = buildPhases(flags);
   const total = phases.reduce((n, phase) => n + phase.length, 0);
   const start = Date.now();
   console.log(`▶ build-content: ${total}개 단계 (${phases.length} phase) 실행`);

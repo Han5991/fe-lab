@@ -17,8 +17,11 @@
 
 빌드 스크립트(`src/scripts/`)는 API가 아니라 실행 파일이고, package.json의
 `bin`에 걸린 **`blog-content` 하나**로만 나간다. 앱은 서브커맨드 이름만 안다
-(`blog-content sitemap`) — 이름을 파일에 잇는 표는 `src/scripts/cli/commands.ts`
-하나뿐이라, 패키지 안에서 파일을 옮겨도 앱은 그대로다.
+(`blog-content sitemap`) — 이름과 옵션을 단계 모듈에 잇는 곳은
+`src/scripts/cli/program.ts`(commander) 하나뿐이라, 패키지 안에서 파일을 옮겨도
+앱은 그대로다. 인자 파싱이 cli 레이어에만 있는 것도 경계다 — 단계 모듈은
+commander를 모른 채 **이미 파싱된 값**을 받고, 도메인 규칙(`--scheduled`를 주면
+status가 scheduled가 된다 같은)은 파싱이 아니므로 단계 쪽에 남는다.
 
 > 예전에는 앱이 `npx tsx node_modules/@blog/content/src/scripts/…`처럼 **파일
 > 경로를 직접** 지목했다. 패키지 내부 배치가 앱 스크립트에 새어 나오는 계약이라
@@ -76,7 +79,7 @@ src/
 └─ scripts/    build-content(진입점) · validate-posts + validate/{rules,frontmatter,body,corpus,shared}
                · check-seo · artifacts(산출물 레지스트리 7종) · generate-{sitemap,search-index,llms,llms-full}
                · sync-posts · new-post
-               ├─ cli/     index(bin 진입점) · commands(서브커맨드 → 단계 모듈 표)
+               ├─ cli/     index(bin 진입점) · program(commander 서브커맨드·옵션 정의)
                └─ render/  generate-rss · feedRenderer · generate-og-images(satori+resvg) · generate-thumbnails(sharp)
 ```
 

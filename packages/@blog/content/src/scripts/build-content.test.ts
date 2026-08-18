@@ -1,24 +1,6 @@
 import { expect, test } from 'vitest';
-import { parseFlags, buildPhases } from './build-content.ts';
-import { COMMANDS } from './cli/commands.ts';
-
-// ── parseFlags ───────────────────────────────────────────────────────────────
-
-test('parseFlags: 기본값은 모두 false', () => {
-  expect(parseFlags([])).toStrictEqual({
-    skipValidate: false,
-    force: false,
-    strict: false,
-  });
-});
-
-test('parseFlags: --skip-validate / --force / --strict 인식', () => {
-  expect(parseFlags(['--skip-validate', '--force', '--strict'])).toStrictEqual({
-    skipValidate: true,
-    force: true,
-    strict: true,
-  });
-});
+import { buildPhases } from './build-content.ts';
+import { buildProgram } from './cli/program.ts';
 
 // ── buildPhases ──────────────────────────────────────────────────────────────
 
@@ -71,16 +53,17 @@ test('buildPhases: force 플래그는 sync-posts에만 전달', () => {
 test('buildPhases: 모든 단계가 CLI에 등록된 서브커맨드다', () => {
   // 예전에는 단계마다 스크립트 **파일 경로**를 하드코딩해서, 파일을 옮기면
   // tsc가 못 보는 문자열이 조용히 썩었다. 이제 단계는 이름만 말하고, 그 이름을
-  // 파일에 잇는 일은 COMMANDS 표 하나가 맡는다 — 둘의 어긋남을 여기서 잡는다.
+  // 파일에 잇는 일은 CLI 정의 한 곳이 맡는다 — 둘의 어긋남을 여기서 잡는다.
   const all = buildPhases({
     skipValidate: false,
     force: false,
     strict: false,
   }).flat();
+  const registered = new Set(buildProgram().commands.map(c => c.name()));
   for (const step of all) {
     expect(
-      Object.hasOwn(COMMANDS, step.command),
-      `${step.label}: ${step.command}가 COMMANDS에 없다`,
+      registered.has(step.command),
+      `${step.label}: ${step.command}가 CLI에 등록돼 있지 않다`,
     ).toBeTruthy();
   }
 });

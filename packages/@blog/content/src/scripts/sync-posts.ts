@@ -116,9 +116,8 @@ function syncFull(): void {
   console.log(`Full sync: ${sourceFiles.length} files copied`);
 }
 
-export function main(argv: string[]): void {
-  const force = argv.includes('--force');
-  const dryOrphan = argv.includes('--dry-orphan');
+export function main(opts: { force: boolean; dryOrphan: boolean }): void {
+  const { force, dryOrphan } = opts;
 
   console.log(
     `Syncing images from ${POSTS_SOURCE_DIR} to ${POSTS_TARGET_DIR}...`,

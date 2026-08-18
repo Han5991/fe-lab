@@ -170,7 +170,7 @@ apps/blog/posts (원고)  →  packages/@blog/content  →  apps/blog/web
      - `generate-search-index.ts`(`search-index`): 검색용 JSON 인덱스(`search-index.json`, 공개 글) + `admin-posts-index.json`(비공개 포함) 생성 — 본문 미리보기(`contentPreview`) 포함
      - `generate-llms-full.ts`(`llms-full`): AI/LLM용 통합 텍스트(`llms-full.txt`) 생성
      - `generate-llms.ts`(`llms`): AI 크롤러용 색인(`llms.txt`) 생성 — 예전엔 손으로 관리하던 정적 파일이라 글 6편이 누락되고 개수도 어긋나 있었다. 이제 sitemap·rss와 같은 소스에서 뽑는다
-   - 각 스텝은 같은 CLI를 `node <cli/index.ts> <서브커맨드>`로 다시 spawn하며(PATH를 타지 않는다), cwd에 기대지 않고 `src/shared/contentPaths.ts`로 경로를 푼다. 이름을 모듈에 잇는 표는 `src/scripts/cli/commands.ts` 하나뿐이고, `build-content.test.ts`가 두 목록의 어긋남을 잡는다.
+   - 각 스텝은 같은 CLI를 `node <cli/index.ts> <서브커맨드>`로 다시 spawn하며(PATH를 타지 않는다), cwd에 기대지 않고 `src/shared/contentPaths.ts`로 경로를 푼다. 이름과 옵션을 모듈에 잇는 곳은 `src/scripts/cli/program.ts`(commander) 하나뿐이고, `build-content.test.ts`가 두 목록의 어긋남을 잡는다.
 
      > 예전엔 스텝마다 스크립트 **파일 경로**를 하드코딩하고 `isCliEntry`(realpath 비교)로 "직접 실행인가"를 판정했다. pnpm 심링크 경로와 ESM 로더 realpath가 달라 순진한 `import.meta.url === argv[1]` 비교가 **항상 false**였고, 모든 생성기가 무음 no-op이던 사고에서 나온 가드다. 진입점이 하나가 되면서 가드도 그 함정도 없어졌다 — 단계 모듈은 `main`만 export하고, 부르는 일은 CLI가 한다.
 4. **정적 빌드**: `next build` → `out/` 디렉토리에 정적 파일 생성 → `check-seo`(아래)
@@ -288,7 +288,7 @@ apps/blog/posts (원고)  →  packages/@blog/content  →  apps/blog/web
 | `apps/blog/posts/{series}/_series.yml`      | 시리즈 선언 — 이 파일이 있어야 시리즈. 표시명·설명·order 메타도 여기                                                                                                                                                                 |
 | `packages/@blog/content`                    | 콘텐츠 프레임워크 패키지 — 스키마·로더·공개 판정·URL 계약·빌드 스크립트·2층 검증. 문 두 개(`@blog/content` + `@blog/content/seo`) + `bin`의 `blog-content`, 소스 익스포트(빌드 스텝 없음). 내부는 `packages/@blog/content/README.md` |
 | `…content/src/scripts/build-content.ts`     | predev:web/prebuild 통합 진입점 (validate → sync/sitemap/rss/og-images/thumbnails/search/llms-full/llms 병렬) — 앱 package.json은 `blog-content build`로 부른다                                                                      |
-| `…content/src/scripts/cli/`                 | `bin`의 진입점. `index.ts`가 디스패치, `commands.ts`가 서브커맨드 → 단계 모듈 표(동적 import). 단계를 더할 때 고칠 곳                                                                                                                |
+| `…content/src/scripts/cli/`                 | `bin`의 진입점. `index.ts`가 실행, `program.ts`가 commander로 서브커맨드·옵션을 정의하고 단계 모듈을 동적 import한다. 단계나 플래그를 더할 때 고칠 곳                                                                                |
 | `…content/src/scripts/check-seo.ts`         | 빌드 산출물 SEO 검사 (CI 게이트). 산출물 레지스트리는 같은 폴더의 `artifacts.ts`                                                                                                                                                     |
 | `…content/src/scripts/validate/rules.ts`    | `validate-posts`의 규칙 표(29개, severity·scope·`--strict` 승격 대상 6개). 판정 사슬은 옆의 `frontmatter.ts`·`body.ts`·`corpus.ts`                                                                                                   |
 | `…content/src/post/frontmatterSchema.ts`    | frontmatter 서술자 테이블 — 이 파일 위 표와 글자 단위로 대조된다(`frontmatterSchema.test.ts`)                                                                                                                                        |

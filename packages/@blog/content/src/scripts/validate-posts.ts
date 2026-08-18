@@ -64,10 +64,7 @@ function format(issue: Issue): string {
   return `  ${tag} ${loc}\n    [${issue.rule}] ${issue.message}`;
 }
 
-export function main(argv: string[]) {
-  const options: ValidateOptions = {
-    strict: argv.includes('--strict'),
-  };
+export function main(options: ValidateOptions) {
   const allFiles = collectMarkdownFiles(POSTS_DIR);
   const records: PostRecord[] = [];
   const allIssues: Issue[] = [];
