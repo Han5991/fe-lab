@@ -5,7 +5,7 @@ import {
   buildViewCookieStr,
   getViewCookieExpiry,
   VIEW_COOLDOWN_HOURS,
-} from './viewCookie';
+} from './viewCookie.ts';
 
 // ── slugToViewKey ───────────────────────────────────────────────────────────
 

@@ -3,9 +3,9 @@ import {
   getAllPostsIncludingHidden,
   POSTS_PATH,
   postUrl,
-} from '../post';
-import { SITE_URL } from '../shared/constants';
-import { decodeUrlSafe } from '../shared/url';
+} from '../post/index.ts';
+import { SITE_URL } from '../shared/constants.ts';
+import { decodeUrlSafe } from '../shared/url.ts';
 
 /**
  * 빌드 산출물 레지스트리 — "어떤 산출물이, 어떤 글 집합을, 발행 글 기준(reference)

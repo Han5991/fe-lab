@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
-import { buildLlmsFullText } from './generate-llms-full';
-import type { PostData } from '../post';
+import { buildLlmsFullText } from './generate-llms-full.ts';
+import type { PostData } from '../post/index.ts';
 
 function makePost(over: Partial<PostData> = {}): PostData {
   return {

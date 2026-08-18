@@ -11,14 +11,14 @@
  */
 import { existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
-import { isPostFile } from '../../post';
-import { decodeUrlSafe } from '../../shared/url';
+import { isPostFile } from '../../post/index.ts';
+import { decodeUrlSafe } from '../../shared/url.ts';
 // fence 라벨 허용 목록은 설정(defineContent)의 registries에서 온다 —
 // 기본값은 prismLanguages.ts의 SUPPORTED_FENCE_LABELS와 같다.
-import { CONTENT } from '../../shared/contentConfig';
-import { frontmatterOffset } from './shared';
-import type { Issue, PostRecord, ValidateOptions } from './shared';
-import { resolveSeverity } from './rules';
+import { CONTENT } from '../../shared/contentConfig.ts';
+import { frontmatterOffset } from './shared.ts';
+import type { Issue, PostRecord, ValidateOptions } from './shared.ts';
+import { resolveSeverity } from './rules.ts';
 
 /** 마크다운 `![alt](src)` — alt는 비어 있을 수 있다. */
 const MARKDOWN_IMAGE = /!\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g;

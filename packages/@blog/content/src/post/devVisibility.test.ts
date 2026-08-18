@@ -9,8 +9,8 @@
  * 같은 느슨한 비교로 바뀌면 draft가 sitemap·RSS에 실려 나갑니다.
  */
 import { expect, test } from 'vitest';
-import { getAllPosts, getAllPostsIncludingHidden } from './service';
-import { isPostVisible } from './visibility';
+import { getAllPosts, getAllPostsIncludingHidden } from './service.ts';
+import { isPostVisible } from './visibility.ts';
 
 const ORIGINAL_NODE_ENV = process.env.NODE_ENV;
 

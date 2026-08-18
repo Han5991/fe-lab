@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
-import { parsePost, extractPlainText, resolveExcerpt } from './repository';
-import { isPostFile } from './visibility';
+import { parsePost, extractPlainText, resolveExcerpt } from './repository.ts';
+import { isPostFile } from './visibility.ts';
 
 // ── 메타 파일 제외 (어떤 글을 가져올지) ───────────────────────────────────────
 

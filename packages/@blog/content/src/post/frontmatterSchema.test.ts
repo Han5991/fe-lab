@@ -17,8 +17,8 @@ import {
   rejectionReasonFor,
   type FrontmatterKey,
   type RawFrontmatter,
-} from './frontmatterSchema';
-import { parsePost } from './repository';
+} from './frontmatterSchema.ts';
+import { parsePost } from './repository.ts';
 
 // ── 1. RawFrontmatter의 "전 필드 unknown" 성질 ───────────────────────────────
 

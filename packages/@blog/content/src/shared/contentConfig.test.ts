@@ -1,15 +1,15 @@
 import { expect, test } from 'vitest';
 import { sep } from 'node:path';
-import { CONTENT, defineContent } from './contentConfig';
-import { DEFAULT_DIAGRAM_NAMES } from './contentValues';
-import { SUPPORTED_FENCE_LABELS } from './prismLanguages';
+import { CONTENT, defineContent } from './contentConfig.ts';
+import { DEFAULT_DIAGRAM_NAMES } from './contentValues.ts';
+import { SUPPORTED_FENCE_LABELS } from './prismLanguages.ts';
 import {
   SITE_NAME,
   SITE_URL,
   TITLE_SUFFIX,
   SEO_DESCRIPTION_MAX_LENGTH,
-} from './constants';
-import { CONTENT_PATHS, resolveContentPaths } from './contentPaths';
+} from './constants.ts';
+import { CONTENT_PATHS, resolveContentPaths } from './contentPaths.ts';
 
 // ── defineContent: 기본값 = 현재값 ───────────────────────────────────────────
 

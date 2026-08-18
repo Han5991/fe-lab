@@ -22,4 +22,4 @@ export {
   SITE_AUTHOR_LINKEDIN,
   RSS_PATH,
   MERGED_PR_COUNT_FALLBACK,
-} from './contentValues';
+} from './contentValues.ts';

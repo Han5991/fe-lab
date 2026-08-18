@@ -10,18 +10,18 @@
  * 콘텐츠 개수 자체는 잠그지 않습니다(글이 추가/숨김되는 정상 변경에 깨지면 안 됨).
  */
 import { expect, test } from 'vitest';
-import { getAllPosts, getAllPostsIncludingHidden } from '../post/service';
-import { isPostVisible } from '../post/visibility';
-import { isSeriesFolder } from '../post/series';
-import { SITE_URL } from '../shared/constants';
-import { buildSitemapXml, getPostPriority } from './generate-sitemap';
-import { buildRssXml } from './render/generate-rss';
+import { getAllPosts, getAllPostsIncludingHidden } from '../post/service.ts';
+import { isPostVisible } from '../post/visibility.ts';
+import { isSeriesFolder } from '../post/series.ts';
+import { SITE_URL } from '../shared/constants.ts';
+import { buildSitemapXml, getPostPriority } from './generate-sitemap.ts';
+import { buildRssXml } from './render/generate-rss.ts';
 import {
   buildAdminPostsIndex,
   buildPublicSearchIndex,
   CONTENT_PREVIEW_CHARS,
-} from './generate-search-index';
-import { buildLlmsFullText } from './generate-llms-full';
+} from './generate-search-index.ts';
+import { buildLlmsFullText } from './generate-llms-full.ts';
 
 // sitemap lastmod 비교용 — 동적으로 현재 날짜 사용. 하드코딩 시 미래 scheduledDate를
 // 가진 글이 공개되었을 때 contract 테스트가 false failure를 내는 문제를 회피.

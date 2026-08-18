@@ -14,9 +14,9 @@ import {
   getAllPosts,
   getAllPostsIncludingHidden,
   getSeriesAdjacentPosts,
-} from './service';
-import { isPostVisible } from './visibility';
-import { getSeriesMeta, isSeriesFolder } from './series';
+} from './service.ts';
+import { isPostVisible } from './visibility.ts';
+import { getSeriesMeta, isSeriesFolder } from './series.ts';
 
 test('contract: 글이 1개 이상 존재 (블로그 동작의 최소 조건)', () => {
   const posts = getAllPostsIncludingHidden();

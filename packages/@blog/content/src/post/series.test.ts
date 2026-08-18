@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { isSeriesFolder, sortPostsBySeriesOrder } from './series';
+import { isSeriesFolder, sortPostsBySeriesOrder } from './series.ts';
 
 interface Fixture {
   slug: string;

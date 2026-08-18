@@ -1,10 +1,9 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
   // 자립형 tsconfig — @package/config/tsconfig.json을 extends하지 않는다.
-  // 그쪽의 allowImportingTsExtensions: true가 이 소스를 program에 섞는 앱
-  // (apps/blog/web, 확장자 없는 import)과 불일치해 TS5097을 만든다.
   // 플래그 구성은 앱 tsconfig.json과 같은 엄격 수준을 유지한다 — 이 패키지의
   // 소스가 앱 program에도 (import를 통해) 들어가므로 두 검사가 어긋나면 안 된다.
+  // allowImportingTsExtensions도 그래서 양쪽에 같이 켜져 있다(아래 참고).
   "compilerOptions": {
     "target": "ESNext",
     "lib": ["dom", "dom.iterable", "esnext"],
@@ -28,6 +27,11 @@
     "esModuleInterop": true,
     "module": "esnext",
     "moduleResolution": "bundler",
+    // 상대 import가 전부 `.ts` 확장자를 달고 있다 — 빌드 스크립트를 node로
+    // 직접 실행하기 위해서다(node의 ESM 로더는 확장자를 생략할 수 없다).
+    // 앱 tsconfig에도 같이 켜 둬야 한다: 이 소스가 앱 program에 섞이므로
+    // 한쪽만 켜면 그쪽에서 TS5097이 난다.
+    "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     // 앱 program에 소스째 섞이는 패키지이므로 파일 단위 트랜스파일 안전성이 필수다.
     "isolatedModules": true,

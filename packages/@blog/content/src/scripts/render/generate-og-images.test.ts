@@ -13,7 +13,7 @@ import {
   OG_HEIGHT,
   OG_PILL_BORDER,
   type OgPostInput,
-} from './generate-og-images';
+} from './generate-og-images.ts';
 
 function post(over: Partial<OgPostInput> = {}): OgPostInput {
   return { slug: 'my-post', title: '테스트 글', date: '2026-06-09', ...over };

@@ -1,12 +1,12 @@
 import { readFileSync } from 'node:fs';
 import { relative } from 'node:path';
 import matter from 'gray-matter';
-import { estimateReadMin } from '../shared/format';
-import { CONTENT } from '../shared/contentConfig';
-import { CONTENT_PATHS } from '../shared/contentPaths';
-import { collectMarkdownFiles, hasFrontmatter } from '../shared/postFiles';
-import { isPostFile } from './visibility';
-import { isSeriesFolder } from './series';
+import { estimateReadMin } from '../shared/format.ts';
+import { CONTENT } from '../shared/contentConfig.ts';
+import { CONTENT_PATHS } from '../shared/contentPaths.ts';
+import { collectMarkdownFiles, hasFrontmatter } from '../shared/postFiles.ts';
+import { isPostFile } from './visibility.ts';
+import { isSeriesFolder } from './series.ts';
 // 좁히기 함수(toDateString·toOptionalString·toStringArray)는 서술자 테이블과
 // 같은 파일에 있습니다 — 테이블의 `narrow`와 parsePost가 **같은 함수**를 가리켜야
 // 선언과 실제 동작이 갈라지지 않습니다(frontmatterSchema.ts 참고).
@@ -14,8 +14,8 @@ import {
   toDateString,
   toOptionalString,
   toStringArray,
-} from './frontmatterSchema';
-import type { PostData, RawFrontmatter } from './types';
+} from './frontmatterSchema.ts';
+import type { PostData, RawFrontmatter } from './types.ts';
 
 // 콘텐츠 위치는 설정(defineContent)의 단일 출처에서 온다 — 예전의
 // `join(process.cwd(), '..', 'posts')`는 cwd가 앱 루트일 때만 맞았다.

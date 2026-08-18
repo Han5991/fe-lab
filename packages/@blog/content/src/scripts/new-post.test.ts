@@ -6,12 +6,12 @@ import {
   safeFilename,
   buildPostFilePath,
   buildFrontmatter,
-} from './new-post';
+} from './new-post.ts';
 import {
   validatePost,
   validateBodyHeadings,
   type PostRecord,
-} from './validate-posts';
+} from './validate-posts.ts';
 
 // ── parseArgs ────────────────────────────────────────────────────────────────
 

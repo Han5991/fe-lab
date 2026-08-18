@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { estimateReadMin, fmtDate, fmtNum } from './format';
+import { estimateReadMin, fmtDate, fmtNum } from './format.ts';
 
 test('estimateReadMin: 빈 문자열도 최소 1분', () => {
   expect(estimateReadMin('')).toBe(1);

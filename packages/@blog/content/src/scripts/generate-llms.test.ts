@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
-import { buildLlmsText, toSummary } from './generate-llms';
-import type { PostData } from '../post';
+import { buildLlmsText, toSummary } from './generate-llms.ts';
+import type { PostData } from '../post/index.ts';
 
 const SITE = 'https://example.dev';
 

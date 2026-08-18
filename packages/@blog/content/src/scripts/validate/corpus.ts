@@ -5,9 +5,9 @@
  * 파일 단위 사슬과 실행 시점이 다릅니다: 진입점(validate-posts.ts)이 모든 파일을
  * 훑은 **뒤에** 한 번 돕니다.
  */
-import { isPostFile, resolveExcerpt } from '../../post';
-import type { Issue, PostRecord, ValidateOptions } from './shared';
-import { resolveSeverity, isVisibleFrontmatter } from './rules';
+import { isPostFile, resolveExcerpt } from '../../post/index.ts';
+import type { Issue, PostRecord, ValidateOptions } from './shared.ts';
+import { resolveSeverity, isVisibleFrontmatter } from './rules.ts';
 
 // 명시 slug가 없으면 파일경로(확장자 제거)를 기본 slug로 사용 — repository.ts의 rawSlug 규칙과 동일
 function deriveDefaultSlug(relPath: string): string {

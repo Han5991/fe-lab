@@ -15,7 +15,7 @@ import {
   TIMEZONE_IANA,
   TIMEZONE_ISO_OFFSET,
   TIMEZONE_UTC_OFFSET_MS,
-} from './contentValues';
+} from './contentValues.ts';
 
 /**
  * 주어진 시점(`d`)의 KST 달력 날짜를 `YYYY-MM-DD`로 반환.

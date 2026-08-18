@@ -1,10 +1,10 @@
 import { expect, test } from 'vitest';
-import { buildSitemapXml } from './generate-sitemap';
-import { buildRssXml } from './render/generate-rss';
-import { buildLlmsText } from './generate-llms';
-import { buildLlmsFullText } from './generate-llms-full';
-import { postPath, postUrl } from '../post/urls';
-import type { PostData } from '../post';
+import { buildSitemapXml } from './generate-sitemap.ts';
+import { buildRssXml } from './render/generate-rss.ts';
+import { buildLlmsText } from './generate-llms.ts';
+import { buildLlmsFullText } from './generate-llms-full.ts';
+import { postPath, postUrl } from '../post/urls.ts';
+import type { PostData } from '../post/index.ts';
 
 /**
  * PR `contract/url`의 핵심 계약: 비ASCII slug가 **다섯 산출 지점**

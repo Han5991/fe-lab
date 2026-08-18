@@ -1,4 +1,4 @@
-import type { PostSummary } from './types';
+import type { PostSummary } from './types.ts';
 
 /**
  * /posts 아카이브의 정렬 키. URL `sort=` 파라미터 값과 동일.

@@ -12,7 +12,7 @@
  */
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { CONTENT, type ContentConfig } from './contentConfig';
+import { CONTENT, type ContentConfig } from './contentConfig.ts';
 
 /**
  * 앱 루트 — 이 파일(packages/@blog/content/src/shared/)에서 워크스페이스

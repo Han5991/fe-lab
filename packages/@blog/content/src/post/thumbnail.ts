@@ -1,6 +1,6 @@
-import { SITE_URL, OG_DEFAULT_IMAGE } from '../shared/constants';
-import type { PostData } from './types';
-import { encodePostSlug } from './utils';
+import { SITE_URL, OG_DEFAULT_IMAGE } from '../shared/constants.ts';
+import type { PostData } from './types.ts';
+import { encodePostSlug } from './utils.ts';
 
 /**
  * 포스트의 thumbnail URL을 해결합니다.

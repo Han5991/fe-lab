@@ -1,4 +1,4 @@
-import { encodePostSlug } from './utils';
+import { encodePostSlug } from './utils.ts';
 
 /**
  * 마크다운 본문 속 상대 URL(이미지 등)을 사이트 경로로 해석합니다.
