@@ -1,12 +1,11 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { isCliEntry } from './cliEntry';
-import { SITE_URL, ABOUT_PAGE_MODIFIED } from '../shared/constants';
-import { CONTENT } from '../shared/contentConfig';
-import { CONTENT_PATHS } from '../shared/contentPaths';
-import { parseScheduledDateKST, getKSTDateISO } from '../shared/dates';
-import { archiveUrl, postUrl, type PostSummary } from '../post';
-import { POST_SETS } from './artifacts';
+import { SITE_URL, ABOUT_PAGE_MODIFIED } from '../shared/constants.ts';
+import { CONTENT } from '../shared/contentConfig.ts';
+import { CONTENT_PATHS } from '../shared/contentPaths.ts';
+import { parseScheduledDateKST, getKSTDateISO } from '../shared/dates.ts';
+import { archiveUrl, postUrl, type PostSummary } from '../post/index.ts';
+import { POST_SETS } from './artifacts.ts';
 
 // 고가치 주제 폴더의 글은 우선순위를 높게 설정. 목록은 설정(defineContent의
 // sitemap 그룹)에서 오고, 테스트에서 self-describing 패턴으로 참조하기 위해
@@ -117,8 +116,7 @@ export function buildSitemapXml(
 </urlset>`;
 }
 
-// 스크립트로 직접 실행될 때만 파일 쓰기. (테스트에서 import 시에는 실행 안 됨)
-if (isCliEntry(import.meta.url)) {
+export function main() {
   const publicDir = CONTENT_PATHS.publicDir;
   // 글 집합은 레지스트리(artifacts.ts)에 선언된 셀렉터를 쓴다 — sitemap은
   // 대조 기준(reference)이라 visible을 exact로 담아야 한다.

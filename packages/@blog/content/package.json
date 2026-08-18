@@ -37,7 +37,6 @@
     "globals": "catalog:lint",
     "react": "catalog:",
     "react-dom": "catalog:",
-    "tsx": "catalog:",
     "typescript": "catalog:",
     "typescript-eslint": "catalog:lint",
     "vitest": "catalog:"
@@ -45,5 +44,8 @@
   "peerDependencies": {
     "react": "catalog:",
     "react-dom": "catalog:"
+  },
+  "bin": {
+    "blog-content": "./src/scripts/cli/index.ts"
   }
 }

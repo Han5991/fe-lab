@@ -1,11 +1,14 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { isCliEntry } from '../cliEntry';
-import { SITE_URL, SITE_NAME, SITE_DESCRIPTION } from '../../shared/constants';
-import { CONTENT_PATHS } from '../../shared/contentPaths';
-import { parseScheduledDateKST } from '../../shared/dates';
-import { postUrl, type PostSummary } from '../../post';
-import { POST_SETS } from '../artifacts';
+import {
+  SITE_URL,
+  SITE_NAME,
+  SITE_DESCRIPTION,
+} from '../../shared/constants.ts';
+import { CONTENT_PATHS } from '../../shared/contentPaths.ts';
+import { parseScheduledDateKST } from '../../shared/dates.ts';
+import { postUrl, type PostSummary } from '../../post/index.ts';
+import { POST_SETS } from '../artifacts.ts';
 
 /**
  * RSS XML 빌더 — **React 없이** 순수 문자열 조립만 한다.
@@ -113,20 +116,13 @@ ${rssItems}
 </rss>`;
 }
 
-if (isCliEntry(import.meta.url)) {
+export async function main() {
   // React 스택은 진입점에서만, 동적 import로 든다 — buildRssXml을 import하는
   // 쪽(테스트·contract)은 react-dom을 로드하지 않는다.
-  // (top-level await는 tsx의 CJS 변환에서 막히므로 promise 체인으로.)
-  import('./feedRenderer')
-    .then(({ renderContentHtml }) => {
-      // 레지스트리 선언(postSet: 'visible', exact)과 같은 셀렉터.
-      const posts = POST_SETS.visible();
-      const rss = buildRssXml(posts, { renderContent: renderContentHtml });
-      fs.writeFileSync(path.join(CONTENT_PATHS.publicDir, 'rss.xml'), rss);
-      console.log('RSS feed generated successfully!');
-    })
-    .catch((e: unknown) => {
-      console.error(e);
-      process.exit(1);
-    });
+  const { renderContentHtml } = await import('./feedRenderer.ts');
+  // 레지스트리 선언(postSet: 'visible', exact)과 같은 셀렉터.
+  const posts = POST_SETS.visible();
+  const rss = buildRssXml(posts, { renderContent: renderContentHtml });
+  fs.writeFileSync(path.join(CONTENT_PATHS.publicDir, 'rss.xml'), rss);
+  console.log('RSS feed generated successfully!');
 }

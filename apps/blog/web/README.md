@@ -97,7 +97,7 @@ apps/blog/web/
 | 스크립트                   | 하는 일                                                                                                                                     |
 | :------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------ |
 | `pnpm dev`                 | `supabase start`(Docker) → `next dev`. `predev:web`이 먼저 `build-content.ts`(경고 수준)를 돌린다. Next만 띄우려면 `pnpm dev:web`           |
-| `pnpm build`               | `prebuild`(`build-content.ts --strict`) → `next build` → `check-seo`. **이 셋이 한 덩어리** — CI·배포도 이 스크립트 하나를 부른다           |
+| `pnpm build`               | `prebuild`(`blog-content build --strict`) → `next build` → `check-seo`. **이 셋이 한 덩어리** — CI·배포도 이 스크립트 하나를 부른다         |
 | `pnpm lint`                | `eslint . --max-warnings=0` (인라인 `eslint-disable` 금지)                                                                                  |
 | `pnpm check-types`         | `tsc -p tsconfig.json` + `tsc -p tsconfig.test.json`                                                                                        |
 | `pnpm test`                | `vitest run` — projects 둘(`node`: `domain/**`·`lib/**`, `jsdom`: `src/**`)을 한 번에. `test:watch`, `test:coverage`(v8)                    |
@@ -106,7 +106,9 @@ apps/blog/web/
 | `pnpm new-post "제목"`     | 스캐폴딩. `--series` `--tags` `--scheduled` `--slug` `--status`                                                                             |
 | `pnpm supabase-start/stop` | 로컬 Supabase 기동/정지                                                                                                                     |
 
-`build-content.ts`는 **2단계** — 1단계 `validate-posts`(게이트), 2단계 `sync-posts`·`sitemap`·`rss`·`og-images`·`thumbnails`·`search-index`·`llms-full`·`llms` 8개 **병렬**. 각 스텝은 cwd에 기대지 않고 `contentPaths`로 경로를 푼다.
+위 스크립트들은 전부 `@blog/content`가 `bin`으로 내놓는 **`blog-content`** 한 진입점을 부른다(`blog-content build`·`validate`·`check-seo`·`new-post`) — 앱은 서브커맨드 이름만 알고, 패키지 내부 파일 배치는 모른다.
+
+`blog-content build`는 **2단계** — 1단계 `validate-posts`(게이트), 2단계 `sync-posts`·`sitemap`·`rss`·`og-images`·`thumbnails`·`search-index`·`llms-full`·`llms` 8개 **병렬**. 각 스텝은 같은 CLI를 서브커맨드로 다시 spawn하며, cwd에 기대지 않고 `contentPaths`로 경로를 푼다.
 
 ---
 

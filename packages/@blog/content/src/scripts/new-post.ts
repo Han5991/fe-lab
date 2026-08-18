@@ -1,8 +1,7 @@
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
-import { isCliEntry } from './cliEntry';
-import { CONTENT } from '../shared/contentConfig';
-import { CONTENT_PATHS } from '../shared/contentPaths';
+import { CONTENT } from '../shared/contentConfig.ts';
+import { CONTENT_PATHS } from '../shared/contentPaths.ts';
 
 const POSTS_DIR = CONTENT_PATHS.postsDir;
 
@@ -223,10 +222,10 @@ function printUsage() {
 `);
 }
 
-function main() {
+export function main(argv: string[]) {
   let opts: Options;
   try {
-    opts = parseArgs(process.argv.slice(2));
+    opts = parseArgs(argv);
   } catch (e) {
     console.error(`✖ ${(e as Error).message}\n`);
     printUsage();
@@ -288,10 +287,4 @@ function main() {
 ` + `    발행 전에 120~160자 요약을 채워 주세요.`,
     );
   }
-}
-
-// 스크립트로 직접 실행될 때만 main()을 호출합니다.
-// (테스트 등에서 import할 때 main()이 자동 실행되어 process.exit 하는 것을 방지)
-if (isCliEntry(import.meta.url)) {
-  main();
 }

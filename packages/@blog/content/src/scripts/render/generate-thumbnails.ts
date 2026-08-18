@@ -8,20 +8,19 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { dirname, join, sep } from 'node:path';
-import { isCliEntry } from '../cliEntry';
 import sharp from 'sharp';
-import { POST_SETS } from '../artifacts';
-import { thumbnailWebpRelPath } from '../../post/thumbnail';
-import type { PostData } from '../../post/types';
-import { CONTENT } from '../../shared/contentConfig';
-import { CONTENT_PATHS } from '../../shared/contentPaths';
+import { POST_SETS } from '../artifacts.ts';
+import { thumbnailWebpRelPath } from '../../post/thumbnail.ts';
+import type { PostData } from '../../post/types.ts';
+import { CONTENT } from '../../shared/contentConfig.ts';
+import { CONTENT_PATHS } from '../../shared/contentPaths.ts';
 
 const POSTS_SOURCE_DIR = CONTENT_PATHS.postsDir;
 
 /**
  * 생성물은 public/posts/가 아니라 public/thumbs/에 둡니다.
  *
- * sync-posts.mjs는 public/posts/ 안에서 posts/에 원본이 없는 미디어를 orphan으로
+ * sync-posts.ts는 public/posts/ 안에서 posts/에 원본이 없는 미디어를 orphan으로
  * 삭제하고(.webp도 대상), build-content의 phase 2에서 두 단계가 병렬로 돌기 때문에
  * 같은 디렉터리를 쓰면 생성물이 지워질 수 있습니다. 두 디렉터리가 서로 배타인지는
  * defineContent가 검증합니다(assertOutputDirsExclusive).
@@ -109,7 +108,7 @@ function listExistingWebps(): string[] {
   );
 }
 
-async function main() {
+export async function main() {
   // thumbs는 파일명에서 글을 되돌릴 수 없어 레지스트리 대조 대상이 아니지만,
   // 글 집합 선택만은 레지스트리의 셀렉터(POST_SETS)를 같이 쓴다.
   const tasks = collectTasks(POST_SETS.visible());
@@ -166,12 +165,4 @@ async function main() {
       `  ⚠ 원본이 없어 건너뛴 썸네일 ${missing.length}개: ${missing.join(', ')}`,
     );
   }
-}
-
-// 스크립트로 직접 실행될 때만 main()을 호출합니다.
-if (isCliEntry(import.meta.url)) {
-  main().catch((e: unknown) => {
-    console.error(e);
-    process.exit(1);
-  });
 }

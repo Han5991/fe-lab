@@ -1,9 +1,8 @@
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { isCliEntry } from './cliEntry';
-import type { PostData } from '../post';
-import { CONTENT_PATHS } from '../shared/contentPaths';
-import { POST_SETS } from './artifacts';
+import type { PostData } from '../post/index.ts';
+import { CONTENT_PATHS } from '../shared/contentPaths.ts';
+import { POST_SETS } from './artifacts.ts';
 
 export const CONTENT_PREVIEW_CHARS = 1500;
 
@@ -80,7 +79,7 @@ export function buildAdminPostsIndex(
   }));
 }
 
-if (isCliEntry(import.meta.url)) {
+export function main() {
   const outputPath = join(CONTENT_PATHS.publicDir, 'search-index.json');
   const adminOutputPath = join(
     CONTENT_PATHS.publicDir,
