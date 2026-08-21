@@ -195,7 +195,7 @@ apps/blog/posts (원고)  →  packages/@blog/content  →  apps/blog/web
 | `<dialogue>` · `<metrics>` · `<timeline>`     | 리뉴얼 시그니처 컴포넌트. 역시 raw HTML 커스텀 태그 — 문법은 `blog-components` 스킬                                                                                                                                                                                                                                                   |
 | `<diagram>` + frontmatter `hero:`             | 구조 그림. 저작법 전체는 **`apps/blog/web/design/DIAGRAM_AUTHORING.md`** — 요약은 `blog-components` 스킬                                                                                                                                                                                                                              |
 | 펜스 메타 `title=` · `<code-tabs>`            | 코드 블록에 파일명을 달거나 npm/pnpm/yarn 탭으로 묶는다. 커스텀 태그가 아니라 **코드 펜스의 메타**다 — `blog-components` 스킬                                                                                                                                                                                                         |
-| `tech-blog-writer` 스킬                       | 글의 구조·톤·어휘 코칭. 소재를 3단계(아이디어 수집 → 아웃라인 → 섹션별 집필) 대화로 구조로 바꾼다. 구조는 소재에서 뽑고 기성 서사 틀에 끼워 맞추지 않으며, 금지 어휘 표로 장르 색을 걷어낸다 — **글쓰기 지침의 단일 출처**                                                                                                            |
+| `tech-blog-writer` 스킬                       | 글의 구조·톤·어휘 코칭. 소재를 3단계(아이디어 수집 → 아웃라인 → 섹션별 집필) 대화로 구조화한다. 구조는 소재에서 뽑고 기성 서사 틀에 끼워 맞추지 않으며, 금지 어휘 표로 장르 색을 걷어낸다 — **글쓰기 지침의 단일 출처**                                                                                                               |
 
 #### 디자인 시스템 · 저작 문법 (스킬로 분리)
 
