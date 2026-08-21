@@ -3,7 +3,10 @@
 This file provides the necessary context, commands, and standards for AI agents operating in this repository (`fe-lab`).
 **READ THIS FIRST** before making changes. Blog-specific rules (publishing, frontmatter contract, SEO gates,
 design guardrails) live in `CLAUDE.md` → "Blog Architecture"; the blog app's code layout is in
-`apps/blog/web/README.md`.
+`apps/blog/web/README.md`. Writing a post itself (structure, tone, forbidden genre vocabulary) is the
+`tech-blog-writer` skill in `.claude/skills/` — the single source. Do not restate its rules here, and do not
+add a second copy elsewhere: this repo already carried four diverging copies of that coaching prompt, two of
+which still taught the Hero's Journey template the skill exists to forbid.
 
 ## 1. Environment & Setup
 
