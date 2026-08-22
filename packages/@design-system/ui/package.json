@@ -32,8 +32,7 @@
     "build": "tsdown",
     "release": "pnpm panda prepare && pnpm build && pnpm publish",
     "build-fast": "tsdown --no-dts",
-    "dev": "pnpm build-fast --watch",
-    "fmt": "prettier --write ."
+    "dev": "pnpm build-fast --watch"
   },
   "files": [
     "dist"

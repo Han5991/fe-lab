@@ -40,7 +40,7 @@ pnpm dev
 
 ```bash
 # 루트 디렉토리에서
-pnpm react
+pnpm dev --filter=react
 ```
 
 React 앱이 실행되면 `http://localhost:5173/socket`으로 접속합니다.

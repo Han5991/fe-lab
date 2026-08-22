@@ -9,22 +9,14 @@
     "check-types": "turbo run check-types",
     "format": "prettier --write \"**/*.{ts,mts,tsx,js,jsx,json,md,mjs,cjs,yml,yaml}\" --ignore-path .prettierignore --cache",
     "format:check": "prettier --check \"**/*.{ts,mts,tsx,js,jsx,json,md,mjs,cjs,yml,yaml}\" --ignore-path .prettierignore --cache",
-    "react": "turbo run dev --filter=react",
-    "typescript": "turbo run dev --filter=typescript",
-    "next": "turbo run dev --filter=next.js",
-    "blog-web": "turbo run dev --filter=@blog/web",
-    "blog-write": "pnpm --filter @blog/web write",
-    "blog-build": "turbo run build --filter=@blog/web",
+    "blog-write": "pnpm --filter @blog/web dev:web",
     "new-post": "pnpm --filter @blog/web new-post",
-    "socket-server": "turbo run dev --filter=socket-server",
-    "socket": "concurrently \"pnpm socket-server\" \"pnpm react\"",
     "clean": "pnpm clean:dist && pnpm clean:modules",
     "clean:dist": "find . -name node_modules -prune -o -type d '(' -name dist -o -name .next -o -name out -o -name .turbo ')' -prune -exec rm -rf {} +",
     "clean:modules": "find . -name node_modules -type d -prune -exec rm -rf {} +",
     "prepare": "lefthook install"
   },
   "devDependencies": {
-    "concurrently": "^10.0.4",
     "lefthook": "^2.1.10",
     "prettier": "^3.9.6",
     "turbo": "^2.10.9"

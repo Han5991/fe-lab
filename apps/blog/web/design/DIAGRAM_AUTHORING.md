@@ -263,5 +263,5 @@ hero: 'deploy-pipeline'
 pnpm lint:posts   # frontmatter + hero 이름 검증 (apps/blog/web)
 ```
 
-그림 자체는 렌더를 눈으로 봐야 한다. `pnpm blog-web` 으로 띄우고 라이트/다크 양쪽에서 확인한다.
+그림 자체는 렌더를 눈으로 봐야 한다. `pnpm blog-write` 로 띄우고 라이트/다크 양쪽에서 확인한다.
 `status: draft` 인 글도 dev 서버는 실제 주소 `/posts/{slug}/` 로 열어준다(상단에 배너가 붙는다).

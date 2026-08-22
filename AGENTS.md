@@ -20,8 +20,9 @@ which still taught the Hero's Journey template the skill exists to forbid.
   - `pnpm build`: Build all apps/packages.
   - `pnpm test` / `pnpm lint` / `pnpm check-types`: Run across the repo (turbo).
   - `pnpm format` / `pnpm format:check`: Prettier write / check — **`format:check` is a CI gate.**
-  - `pnpm blog-web` / `pnpm blog-build`: Blog dev (starts local Supabase via Docker first) / blog build.
-  - `pnpm react` / `pnpm next` / `pnpm typescript` / `pnpm socket-server` / `pnpm socket` (socket-server + react).
+  - `pnpm new-post "제목"` / `pnpm blog-write`: The two writing entrances (scaffold a post / preview without Docker).
+  - There are **no per-app aliases**. Target one app with the filter pattern: `pnpm dev --filter=react`,
+    `pnpm build --filter=@blog/web`, `pnpm dev --filter=socket-server --filter=react` (turbo runs both).
   - `pnpm clean` (`clean:dist` + `clean:modules`).
 
 ## 2. Project Structure
@@ -55,11 +56,9 @@ which still taught the Hero's Journey template the skill exists to forbid.
 
 Do not run `pnpm dev` if you only need one app. Save resources.
 
-- `pnpm blog-web`: Run `apps/blog/web` (starts local Supabase; Next-only: `pnpm --filter @blog/web dev:web`)
-- `pnpm next`: Run `apps/next.js`
-- `pnpm react`: Run `apps/react`
-- `pnpm typescript`: Run `apps/typescript`
-- `pnpm socket-server` / `pnpm socket`: WebSocket server (alone / with `react`)
+- `pnpm dev --filter=@blog/web`: Run `apps/blog/web` (starts local Supabase; writing-only: `pnpm blog-write`)
+- `pnpm dev --filter=<pkg>`: Run one experiment app (`react`, `next.js`, `typescript`, `socket-server`)
+- `pnpm dev --filter=socket-server --filter=react`: WebSocket server paired with the react client
 
 ### Running Tests (Targeted)
 
