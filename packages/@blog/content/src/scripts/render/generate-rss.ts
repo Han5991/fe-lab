@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import type { SiteConfig, TimezoneConfig } from '../../shared/contentConfig.ts';
 import { parseScheduledDateKST } from '../../shared/dates.ts';
-import { postUrl, type PostSummary } from '../../post/index.ts';
+import { postUrl, RSS_PATH, type PostSummary } from '../../post/index.ts';
 import { resolvePostSet } from '../artifacts.ts';
 import type { ContentContext } from '../context.ts';
 
@@ -106,7 +106,7 @@ export function buildRssXml(
     <description>${siteDescription}</description>
     <language>ko</language>
     <lastBuildDate>${now.toUTCString()}</lastBuildDate>
-    <atom:link href="${siteUrl}/rss.xml" rel="self" type="application/rss+xml"/>
+    <atom:link href="${siteUrl}${RSS_PATH}" rel="self" type="application/rss+xml"/>
 ${rssItems}
   </channel>
 </rss>`;
@@ -123,6 +123,8 @@ export async function main(ctx: ContentContext) {
     timezone: ctx.config.timezone,
     renderContent: renderContentHtml,
   });
-  fs.writeFileSync(path.join(ctx.paths.publicDir, 'rss.xml'), rss);
+  // 파일 위치도 링크와 **같은 상수**에서 온다 — 갈리면 atom self URL이 404를
+  // 가리킨다. `path.join`이 앞의 `/`를 흡수한다.
+  fs.writeFileSync(path.join(ctx.paths.publicDir, RSS_PATH), rss);
   console.log('RSS feed generated successfully!');
 }

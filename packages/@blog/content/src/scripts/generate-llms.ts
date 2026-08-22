@@ -1,6 +1,11 @@
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { archiveUrl, postUrl, sortByDateDesc } from '../post/index.ts';
+import {
+  archiveUrl,
+  postUrl,
+  RSS_PATH,
+  sortByDateDesc,
+} from '../post/index.ts';
 import { resolvePostSet } from './artifacts.ts';
 import type { PostData } from '../post/index.ts';
 import {
@@ -222,7 +227,7 @@ export function buildLlmsText(
     `- Blog: ${siteUrl}`,
     `- GitHub: ${author.github}`,
     `- LinkedIn: ${author.linkedin}`,
-    `- RSS: ${siteUrl}/rss.xml`,
+    `- RSS: ${siteUrl}${RSS_PATH}`,
     ``,
   );
 

@@ -13,7 +13,7 @@
  *
  * **개별 상수가 1차이고 그룹 객체는 설정 배선용이다.** 번들러는 모듈의 named
  * export 단위로 털어내지, 객체의 필드 단위로는 못 턴다 — 클라이언트가 쓰는
- * `RSS_PATH` 하나 때문에 `SITE` 객체를 들여오면 홈 히어로 소개문까지 번들에
+ * `SITE_NAME` 하나 때문에 `SITE` 객체를 들여오면 홈 히어로 소개문까지 번들에
  * 실린다(실제로 그렇게 됐던 적이 있다). 그래서 화면 코드는 **개별 상수**를,
  * `content.config.mts`만 그룹 객체를 가져간다. `TIMEZONE`·`DIAGRAM_NAMES`는
  * 예외로 묶음째 쓰는데, 소비하는 함수가 슬라이스를 통째로 받고 크기도 작다.
@@ -55,8 +55,9 @@ export const SITE_DESCRIPTION_EXPANDED =
  * 반면 JPEG는 33KB에 눈에 띄는 손실이 없다.
  */
 export const OG_DEFAULT_IMAGE = '/og-default.jpg';
-/** 사이트 내부 RSS 경로. 절대 URL이 필요하면 `${SITE_URL}${RSS_PATH}`로 조합한다. */
-export const RSS_PATH = '/rss.xml';
+// RSS 경로는 여기 없다 — 피드를 만드는 것도 파일 이름을 정하는 것도 패키지라
+// (`@blog/content`의 `RSS_PATH`) 이 사이트가 고를 수 있는 값이 아니다. 예전엔
+// 여기와 패키지 생성기 셋이 같은 리터럴을 따로 들고 있었다.
 /**
  * `/about/` 페이지를 마지막으로 **손으로 고친** 날짜 ('YYYY-MM-DD').
  * 빌드 날짜를 넣으면 매일 도는 cron 빌드마다 lastmod가 전진해 신호가
@@ -231,7 +232,6 @@ export const SITE = {
   description: SITE_DESCRIPTION,
   descriptionExpanded: SITE_DESCRIPTION_EXPANDED,
   ogDefaultImage: OG_DEFAULT_IMAGE,
-  rssPath: RSS_PATH,
 } as const satisfies SiteConfig;
 
 export const AUTHOR = {

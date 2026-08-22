@@ -38,8 +38,6 @@ export interface SiteConfig {
    * (`.jpg`인 사연은 소비자 값 모듈의 OG_DEFAULT_IMAGE 주석에 있다.)
    */
   ogDefaultImage: string;
-  /** 사이트 내부 RSS 경로. 절대 URL은 `${url}${rssPath}`로 조합 */
-  rssPath: string;
 }
 
 export interface AuthorConfig {

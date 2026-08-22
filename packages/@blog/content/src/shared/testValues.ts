@@ -29,7 +29,6 @@ export const TEST_VALUES: ContentValues = {
     description: '테스트 픽스처 사이트입니다.',
     descriptionExpanded: '테스트 픽스처 사이트의 긴 소개입니다.',
     ogDefaultImage: '/og-default.jpg',
-    rssPath: '/rss.xml',
   },
   author: {
     name: 'Test Author',

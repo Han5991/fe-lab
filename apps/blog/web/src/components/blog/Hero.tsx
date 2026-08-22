@@ -1,4 +1,5 @@
-import { AUTHOR_GITHUB, RSS_PATH } from '@/content.values.mts';
+import { RSS_PATH } from '@blog/content';
+import { AUTHOR_GITHUB } from '@/content.values.mts';
 import { css } from '@design-system/ui-lib/css';
 
 /** 히어로 pill — 이름 아래 외부 채널. 레퍼런스 `.pill` 수치 그대로. */
