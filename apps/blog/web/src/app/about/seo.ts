@@ -8,6 +8,7 @@
  * 둡니다 — 글 상세의 `posts/[...slug]/nextMetadata.ts`와 같은 자리입니다.
  */
 import contentConfig from '@/content.config.mts';
+import { ABOUT_PAGE_MODIFIED } from '@/content.values.mts';
 import type { Metadata } from 'next';
 
 // 사이트 정체성·저자·SEO 예산은 해석된 설정에서 온다 — 값의 출처는
@@ -66,8 +67,11 @@ export function buildAboutJsonLd() {
     name: '한상욱 (Sangwook Han) — About',
     dateCreated: '2024-12-01',
     // 빌드 시각을 넣으면 매일 cron 빌드마다 "수정됨"으로 보고되어 신호가 무의미해진다.
-    // 이 페이지 내용을 실제로 고칠 때 상수를 갱신할 것 (sitemap lastmod와 같은 소스).
-    dateModified: SITE.aboutPageModified,
+    // 이 페이지 내용을 실제로 고칠 때 상수를 갱신할 것. sitemap의 `<lastmod>`도
+    // 같은 상수를 읽으므로(`SITEMAP_STATIC_PAGES`) 두 값이 어긋날 수 없다.
+    // 해석된 설정이 아니라 값 모듈에서 직접 읽는 이유: about 페이지의 존재 자체가
+    // 이 사이트의 사정이라 패키지 `SiteConfig`에 이 축이 없다.
+    dateModified: ABOUT_PAGE_MODIFIED,
     mainEntity: {
       '@type': 'Person',
       '@id': `${SITE.url}/#author`,

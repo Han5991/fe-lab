@@ -1,4 +1,5 @@
-import { AUTHOR_GITHUB, AUTHOR_LINKEDIN, RSS_PATH } from '@/content.values.mts';
+import { RSS_PATH } from '@blog/content';
+import { AUTHOR_GITHUB, AUTHOR_LINKEDIN } from '@/content.values.mts';
 import Link from 'next/link';
 import { css, cx } from '@design-system/ui-lib/css';
 import type { ReactNode } from 'react';

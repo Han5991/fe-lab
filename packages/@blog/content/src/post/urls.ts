@@ -35,11 +35,23 @@ import { encodePostSlug } from './utils.ts';
  */
 
 /**
- * 글 아카이브 라우트. 소비자 값 모듈의 `RSS_PATH`와 나란히 두고 싶어지지만
- * `/posts/`는 사이트 상수가 아니라 **라우트 모양**이고, 후행 슬래시 규칙을
- * `postPath`와 한 파일에서 공유해야 두 규칙이 갈리지 않아 여기 둔다.
+ * 글 아카이브 라우트. `/posts/`는 사이트 상수가 아니라 **라우트 모양**이고,
+ * 후행 슬래시 규칙을 `postPath`와 한 파일에서 공유해야 두 규칙이 갈리지 않아
+ * 여기 둔다.
  */
 export const POSTS_PATH = '/posts/';
+
+/**
+ * RSS 피드 경로. **설정이 아니라 상수다** — 피드를 만드는 것도, `public/`의 어느
+ * 파일이 되는지 정하는 것도 패키지라(`scripts/render/generate-rss.ts`) 소비자가
+ * 고를 수 있는 값이 아니다. `/llms-full.txt`와 같은 부류다.
+ *
+ * 예전에는 `site.rssPath` 설정 항목이었는데, 정작 생성기 셋(rss·llms·llms-full)이
+ * `/rss.xml`을 리터럴로 박고 있어서 덮어도 아무 일이 없었다. 앱은 앱대로 같은
+ * 리터럴을 따로 들고 `<link rel="alternate">`·히어로·푸터에 썼다 — 갈릴 수 있는
+ * 사본이 셋이었다. 지금은 만드는 쪽이 경로도 소유하고 링크는 전부 여기서 온다.
+ */
+export const RSS_PATH = '/rss.xml';
 
 /** 글 상세의 사이트 내부 경로. `<Link href>`·canonical에 쓴다. */
 export function postPath(slug: string): string {

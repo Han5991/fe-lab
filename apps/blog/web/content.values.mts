@@ -13,7 +13,7 @@
  *
  * **개별 상수가 1차이고 그룹 객체는 설정 배선용이다.** 번들러는 모듈의 named
  * export 단위로 털어내지, 객체의 필드 단위로는 못 턴다 — 클라이언트가 쓰는
- * `RSS_PATH` 하나 때문에 `SITE` 객체를 들여오면 홈 히어로 소개문까지 번들에
+ * `SITE_NAME` 하나 때문에 `SITE` 객체를 들여오면 홈 히어로 소개문까지 번들에
  * 실린다(실제로 그렇게 됐던 적이 있다). 그래서 화면 코드는 **개별 상수**를,
  * `content.config.mts`만 그룹 객체를 가져간다. `TIMEZONE`·`DIAGRAM_NAMES`는
  * 예외로 묶음째 쓰는데, 소비하는 함수가 슬라이스를 통째로 받고 크기도 작다.
@@ -30,7 +30,6 @@ import type {
   ContentValues,
   LlmsDocsConfig,
   LlmsFacts,
-  OgPalette,
   SiteConfig,
   SitemapConfig,
   TimezoneConfig,
@@ -55,12 +54,19 @@ export const SITE_DESCRIPTION_EXPANDED =
  * 반면 JPEG는 33KB에 눈에 띄는 손실이 없다.
  */
 export const OG_DEFAULT_IMAGE = '/og-default.jpg';
-/** 사이트 내부 RSS 경로. 절대 URL이 필요하면 `${SITE_URL}${RSS_PATH}`로 조합한다. */
-export const RSS_PATH = '/rss.xml';
+// RSS 경로는 여기 없다 — 피드를 만드는 것도 파일 이름을 정하는 것도 패키지라
+// (`@blog/content`의 `RSS_PATH`) 이 사이트가 고를 수 있는 값이 아니다. 예전엔
+// 여기와 패키지 생성기 셋이 같은 리터럴을 따로 들고 있었다.
 /**
  * `/about/` 페이지를 마지막으로 **손으로 고친** 날짜 ('YYYY-MM-DD').
  * 빌드 날짜를 넣으면 매일 도는 cron 빌드마다 lastmod가 전진해 신호가
  * 무의미해지므로 손으로 관리한다 (generate-sitemap.ts 주석 참고).
+ *
+ * 소비처는 둘이고 **같은 상수를 읽는다** — sitemap의 `<lastmod>`
+ * (`SITEMAP_STATIC_PAGES`)와 about 페이지 JSON-LD의 `dateModified`
+ * (`src/app/about/seo.ts`). 패키지의 `SiteConfig`에는 이 축이 없다: about
+ * 페이지가 있는지조차 그 사이트만 아는 일이라, 콘텐츠 프레임워크가 필수로
+ * 받을 값이 아니다.
  */
 export const ABOUT_PAGE_MODIFIED = '2026-08-10';
 /**
@@ -123,49 +129,23 @@ export function isDiagramName(value: unknown): value is DiagramName {
   );
 }
 
-// ── OG 카드 팔레트 ───────────────────────────────────────────────────────────
+// OG 카드 팔레트는 여기 없다 — 값이 아니라 **디자인 토큰에서 파생**되기 때문이다.
+// `blog-preset.ts`의 다크 색을 `darkColor()`로 뽑아 `content.config.mts`가 조립한다.
+// 이 파일이 아니라 거기인 이유는 값 import 금지(위 제약) 때문이다: 프리셋을 여기서
+// 끌면 화면이 이 모듈의 다른 상수를 쓸 때 Panda 설정까지 클라이언트 번들에 실린다.
+
+// ── sitemap 정적 페이지 · 우선순위 ───────────────────────────────────────────
 
 /**
- * OG 카드(`public/og/*.png`)의 색 — **`blog-preset.ts` 다크 토큰의 hex 사본**이다.
+ * 글이 아닌 정적 페이지 — sitemap에 실린다.
  *
- * 왜 사본인가: satori/resvg는 CSS 변수도 oklch도 못 읽는다. 그래서 토큰을
- * 참조하지 못하고 값을 옮겨 적는다. 팔레트를 바꾸면 여기도 같이 고쳐야
- * 소셜 미리보기가 사이트와 어긋나지 않는다 — 어긋나도 렌더는 성공하므로
- * 아무도 실패로 알려주지 않는다.
- *
- * 패키지에는 이 축의 기본값이 **없다**(`ContentValues['ogPalette']`가 필수).
- * 기본값을 두면 색을 넘기지 않은 사이트의 카드가 남의 색으로 나간다.
+ * `/`와 `/posts/`는 여기 없다. 그 둘은 패키지가 소유한 라우트 모양이라 언제나
+ * 나가고(`generate-sitemap.ts`), 여기에는 **이 사이트에만 있는 페이지**를 적는다.
+ * 패키지 기본값은 비어 있다 — 어떤 페이지가 있는지는 앱만 알기 때문이다.
  */
-export const OG_PALETTE = {
-  paper: '#0B0D10', // paper.50
-  ink: '#E6E8EB', // ink.950
-  inkMeta: '#8B919A', // ink.600
-  inkRule: '#333941', // ink.border(다크 rgba를 paper.50 위에 합성한 값)
-  accent: '#67E8F9', // accent.500 — 포인트 cyan
-  pillBorder: 'rgba(103, 232, 249, 0.4)',
-} as const satisfies OgPalette;
-
-// ── 시리즈 컬러 ──────────────────────────────────────────────────────────────
-
-/**
- * 시리즈 폴더명 → 컬러 키. 키는 `apps/blog/posts/<폴더>`와 **정확히 일치**해야
- * 한다 — 원고 배치를 아는 것은 앱뿐이라 패키지에 기본값을 둘 수 없다.
- * 값은 `blog-preset.ts`의 semanticToken 계열 이름이다.
- */
-export const SERIES_COLORS = {
-  bundler: 'accent',
-  '[Typescript로 설계하는 프로젝트]': 'marker',
-  'open-source': 'moss',
-} as const satisfies ContentValues['seriesColors'];
-
-/** 위에 등록되지 않은 시리즈가 라운드로빈으로 받는 색. */
-export const SERIES_COLOR_FALLBACK = [
-  'accent',
-  'marker',
-  'moss',
-] as const satisfies ContentValues['seriesColorFallback'];
-
-// ── sitemap 우선순위 ─────────────────────────────────────────────────────────
+export const SITEMAP_STATIC_PAGES = [
+  { path: '/about/', priority: '0.7', lastmod: ABOUT_PAGE_MODIFIED },
+] as const satisfies SitemapConfig['staticPages'];
 
 /**
  * sitemap의 `<priority>` 튜닝 — **어떤 글이 대표작인가**라는 편집 판단이라
@@ -184,7 +164,10 @@ export const SITEMAP_PRIORITY = {
     'nextjs-contributor',
     'first-open-source-contribution',
   ],
-} as const satisfies SitemapConfig;
+} as const satisfies Pick<
+  SitemapConfig,
+  'highPriorityFolders' | 'highPrioritySlugs'
+>;
 
 // ── llms.txt 산문 ────────────────────────────────────────────────────────────
 
@@ -231,9 +214,6 @@ export const SITE = {
   description: SITE_DESCRIPTION,
   descriptionExpanded: SITE_DESCRIPTION_EXPANDED,
   ogDefaultImage: OG_DEFAULT_IMAGE,
-  rssPath: RSS_PATH,
-  aboutPageModified: ABOUT_PAGE_MODIFIED,
-  mergedPrCountFallback: MERGED_PR_COUNT_FALLBACK,
 } as const satisfies SiteConfig;
 
 export const AUTHOR = {
@@ -247,8 +227,11 @@ export const AUTHOR = {
 /**
  * `llms.txt`의 `## Docs` 절 — 라벨과 한 줄 설명.
  *
- * URL은 넣지 않는다. 경로 계약(`/`·`/posts/`·`/series/`·`/about/`·
- * `/llms-full.txt`)은 패키지가 조립하고, 여기서 정하는 것은 문구뿐이다.
+ * 패키지가 소유한 셋(`home`·`archive`·`full` → `/`·`/posts/`·`/llms-full.txt`)은
+ * URL을 넣지 않는다 — 그 경로는 패키지가 정의하는 라우트·산출물이라 여기서 정하는
+ * 것은 문구뿐이다. 반대로 `extra`는 **이 사이트에만 있는 페이지**라 경로까지 여기서
+ * 준다. 패키지에는 이 목록의 기본값이 없다(빈 배열) — 소개·시리즈 페이지가 있는지는
+ * 이 앱만 알기 때문이다.
  * `{count}`는 산출 시점의 발행 글 수로 치환된다 — 숫자를 손으로 적어 두면
  * 예전 정적 llms.txt가 그랬듯 실제 글 수와 갈라진다.
  *
@@ -266,16 +249,21 @@ export const LLMS_DOCS = {
     summary:
       'Complete archive of {count} frontend engineering articles organized by topic and series.',
   },
-  series: {
-    label: '시리즈 목록',
-    summary: 'Multi-part series, each readable in order from part 1.',
-  },
-  about: {
-    label: '소개',
-    summary: 'Author profile, open source contributions, and conference talks.',
-  },
   full: {
     label: '전문 텍스트',
     summary: 'Full post text for retrieval.',
   },
+  extra: [
+    {
+      path: '/series/',
+      label: '시리즈 목록',
+      summary: 'Multi-part series, each readable in order from part 1.',
+    },
+    {
+      path: '/about/',
+      label: '소개',
+      summary:
+        'Author profile, open source contributions, and conference talks.',
+    },
+  ],
 } as const satisfies LlmsDocsConfig;

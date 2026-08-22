@@ -29,7 +29,6 @@ const summary = (id: string, count: number): SeriesSummary => ({
   title: id,
   count,
   updated: null,
-  colorKey: 'accent',
 });
 
 describe('attachSeriesPosts', () => {

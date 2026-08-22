@@ -67,18 +67,22 @@ function resolvePostLastmod(
  * sitemap.xml 본문을 생성합니다. (정적 페이지 + 포스트 목록)
  * `today`/`siteUrl`을 주입받아 결정성을 확보합니다 (테스트에서 재현 가능하도록).
  *
- * 정적 페이지(`/`, `/posts/`)의 lastmod는 빌드 날짜가 아니라 **가장 최근 글의 날짜**를
- * 씁니다. 이 사이트는 매일 cron으로 빌드되므로 빌드 날짜를 넣으면 콘텐츠가 그대로인
- * 날에도 lastmod가 전진하고, Google은 그런 사이트의 lastmod 신호를 통째로 무시합니다.
- * `/about/`은 글이 아니라 자동으로 알 수 있는 수정 시각이 없어서, 손으로 관리하는
- * `site.aboutPageModified`(앱 값 모듈)를 씁니다 — JSON-LD `dateModified`와 같은
- * 소스라 두 값이 어긋날 수 없습니다. (여기만 lastmod가 비어 있으면 46개 URL 중 하나만
- * 신호가 없는 상태가 됩니다.)
+ * **언제나 나가는 정적 URL은 `/`와 `/posts/` 둘뿐입니다** — 패키지가 소유한 라우트
+ * 모양(`post/urls.ts`의 `POSTS_PATH`)이라 어떤 사이트에서도 같기 때문입니다. 그
+ * 사이트에만 있는 페이지(`/about/` 같은)는 `sitemap.staticPages`로 소비자가
+ * 선언합니다 — 예전에는 `/about/`이 이 XML에 리터럴로 박혀 있어서, about 페이지가
+ * 없는 소비자도 없는 URL을 색인에 내보냈습니다.
+ *
+ * 정적 URL의 lastmod는 빌드 날짜가 아니라 **가장 최근 글의 날짜**입니다. 매일 cron으로
+ * 빌드되는 사이트에서 빌드 날짜를 넣으면 콘텐츠가 그대로인 날에도 lastmod가 전진하고,
+ * Google은 그런 사이트의 lastmod 신호를 통째로 무시합니다. 글이 아니라 자동으로 알 수
+ * 있는 수정 시각이 없는 페이지는 `staticPages`의 `lastmod`로 값을 직접 줍니다 —
+ * 비워 두면 그 URL만 신호가 없는 상태가 됩니다.
  */
 export function buildSitemapXml(
   posts: SitemapPost[],
   today: string,
-  site: Pick<SiteConfig, 'url' | 'aboutPageModified'>,
+  site: Pick<SiteConfig, 'url'>,
   timezone: TimezoneConfig,
   sitemap: SitemapConfig,
 ): string {
@@ -111,12 +115,16 @@ export function buildSitemapXml(
     <loc>${archiveUrl(siteUrl)}</loc>
     <lastmod>${latestContentDate}</lastmod>
     <priority>0.8</priority>
-  </url>
+  </url>${sitemap.staticPages
+    .map(
+      page => `
   <url>
-    <loc>${siteUrl}/about/</loc>
-    <lastmod>${site.aboutPageModified}</lastmod>
-    <priority>0.7</priority>
-  </url>
+    <loc>${siteUrl}${page.path}</loc>
+    <lastmod>${page.lastmod ?? latestContentDate}</lastmod>
+    <priority>${page.priority}</priority>
+  </url>`,
+    )
+    .join('')}
   ${entries
     .map(
       ({ post, lastmod }) => `

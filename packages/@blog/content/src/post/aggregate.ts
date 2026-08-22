@@ -1,7 +1,3 @@
-import type {
-  RegistriesConfig,
-  SeriesColorKey,
-} from '../shared/contentConfig.ts';
 import type { SeriesMeta } from './series.ts';
 import type { PostData, PostSummary } from './types.ts';
 
@@ -11,8 +7,6 @@ export interface SeriesSummary {
   count: number;
   description?: string | undefined;
   updated: string | null;
-  /** 시리즈 컬러 키 — 등록된 시리즈(registries.seriesColors) 외에는 round-robin */
-  colorKey: SeriesColorKey;
 }
 
 export interface TagSummary {
@@ -29,19 +23,11 @@ export interface Aggregate {
 export interface AggregateDeps {
   getAllPosts: () => PostData[];
   getSeriesMeta: (seriesName: string) => SeriesMeta | null;
-  /**
-   * 폴더명 → 컬러 키 매핑은 설정(defineContent의 registries)에서 온다 — 예전에는
-   * domain이 UI 컬러 토큰 목록을 직접 소유했다. 키 규칙(폴더명과 정확히 일치)은
-   * 설정 쪽 주석 참고.
-   */
-  registries: Pick<RegistriesConfig, 'seriesColors' | 'seriesColorFallback'>;
 }
 
 /** 시리즈/태그/연도 집계 factory. */
 export function createAggregate(deps: AggregateDeps): Aggregate {
-  const { getAllPosts, getSeriesMeta, registries } = deps;
-  const seriesColorMap = registries.seriesColors;
-  const colorFallback = registries.seriesColorFallback;
+  const { getAllPosts, getSeriesMeta } = deps;
 
   /**
    * 모든 시리즈를 최근 글 기준 내림차순으로 반환합니다.
@@ -70,22 +56,14 @@ export function createAggregate(deps: AggregateDeps): Aggregate {
     }
 
     const series: SeriesSummary[] = Array.from(map.entries()).map(
-      ([id, { posts: ps, updated }], idx) => {
+      ([id, { posts: ps, updated }]) => {
         const meta = getSeriesMeta(id);
-        // 폴백 목록이 비면 나머지 연산이 NaN이라 아무 색도 고르지 못한다.
-        // 설정에서 비울 수 있는 값이므로 마지막 기본값을 명시한다.
-        const cycled =
-          colorFallback.length > 0
-            ? colorFallback[idx % colorFallback.length]
-            : undefined;
-        const colorKey = seriesColorMap[id] ?? cycled ?? 'accent';
         return {
           id,
           title: meta?.title ?? id,
           count: ps.length,
           description: meta?.description,
           updated,
-          colorKey,
         };
       },
     );

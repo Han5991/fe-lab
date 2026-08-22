@@ -12,8 +12,8 @@
  * import해서 — 오버라이드를 넣어도 화면·산출물은 그대로인 거짓 표면이었습니다.
  * 기본값이 남은 것은 **사이트와 무관한 값뿐입니다** — SEO 길이 예산, 펜스 라벨,
  * 경로 관례, OG 카드 규격(1200×630). 한 사이트의 데이터였던 나머지(og 팔레트·
- * 시리즈 컬러·llms 산문·sitemap 우선순위)는 필수 항목이 되었거나(`ContentValues`),
- * 중립적인 빈 값으로 바뀌었습니다(sitemap 우선순위·llms facts). 소개 산문처럼
+ * llms 산문·sitemap 우선순위)는 필수 항목이 되었거나(`ContentValues`), 중립적인
+ * 빈 값으로 바뀌었습니다(sitemap 정적 페이지·우선순위·llms facts). 소개 산문처럼
  * 소비자가 이미 선언한 값에서 파생할 수 있는 것은 파생합니다(`site.description`).
  *
  * 이 모듈은 **서버·빌드 전용**입니다 — 클라이언트 컴포넌트가 import하면
@@ -38,15 +38,6 @@ export interface SiteConfig {
    * (`.jpg`인 사연은 소비자 값 모듈의 OG_DEFAULT_IMAGE 주석에 있다.)
    */
   ogDefaultImage: string;
-  /** 사이트 내부 RSS 경로. 절대 URL은 `${url}${rssPath}`로 조합 */
-  rssPath: string;
-  /**
-   * `/about/` 페이지를 마지막으로 **손으로 고친** 날짜 ('YYYY-MM-DD').
-   * 손으로 관리하는 이유는 소비자 값 모듈의 ABOUT_PAGE_MODIFIED 주석에 있다.
-   */
-  aboutPageModified: string;
-  /** merged PR 수 폴백값. CI가 NEXT_PUBLIC_PR_COUNT로 실제 값을 주입한다 */
-  mergedPrCountFallback: string;
 }
 
 export interface AuthorConfig {
@@ -95,9 +86,6 @@ export interface RuntimeConfig {
   isDevelopment: () => boolean;
 }
 
-/** 시리즈 카드 컬러 키 — blog-preset의 semanticToken 계열과 짝 */
-export type SeriesColorKey = 'accent' | 'marker' | 'moss';
-
 export interface RegistriesConfig {
   /**
    * 이름으로 부를 수 있는 다이어그램 목록. **기본값이 없다** — 이름 목록과
@@ -107,12 +95,6 @@ export interface RegistriesConfig {
   diagramNames: readonly string[];
   /** 코드 펜스 라벨 허용 목록. 기본값은 prismLanguages.ts에서 파생 */
   supportedFenceLabels: ReadonlySet<string>;
-  /**
-   * 시리즈 폴더명 → 컬러 키. 키는 `apps/blog/posts/<폴더>`와 정확히 일치해야
-   * 한다. 매칭되지 않은 시리즈는 `seriesColorFallback` 라운드로빈.
-   */
-  seriesColors: Readonly<Record<string, SeriesColorKey>>;
-  seriesColorFallback: readonly SeriesColorKey[];
 }
 
 /**
@@ -135,7 +117,35 @@ export interface DirsConfig {
   og: string;
 }
 
+/**
+ * sitemap의 정적 URL 한 줄 — 글이 아닌 페이지(`/about/` 같은)를 소비자가 선언한다.
+ *
+ * `/`와 `/posts/`는 여기 없다. 그 둘은 패키지가 소유한 **라우트 모양**이라
+ * (`post/urls.ts`의 `POSTS_PATH`) 언제나 나가고, 여기에는 그 사이트에만 있는
+ * 페이지를 적는다. 예전에는 `/about/`이 sitemap XML에 리터럴로 박혀 있어서,
+ * about 페이지가 없는 소비자도 없는 URL을 색인에 내보냈다.
+ */
+export interface SitemapStaticPage {
+  /** 사이트 내부 경로. 후행 슬래시까지 적은 그대로 나간다 */
+  path: string;
+  /** `<priority>` 값. '1.0'처럼 소수 표기를 그대로 내보내려고 문자열이다 */
+  priority: string;
+  /**
+   * 손으로 관리하는 `<lastmod>` ('YYYY-MM-DD').
+   *
+   * 생략하면 **가장 최근 글의 날짜**가 들어간다 — 빌드 날짜가 아니다. 매일
+   * cron으로 빌드되는 사이트에서 빌드 날짜를 넣으면 콘텐츠가 그대로인 날에도
+   * lastmod가 전진하고, Google은 그런 사이트의 lastmod 신호를 통째로 무시한다.
+   */
+  lastmod?: string;
+}
+
 export interface SitemapConfig {
+  /**
+   * 글이 아닌 정적 페이지. 기본값은 비어 있다 — 어떤 페이지가 있는지는
+   * 소비자만 안다.
+   */
+  staticPages: readonly SitemapStaticPage[];
   /**
    * 고가치 주제 **폴더** — 우선순위 0.75. 시리즈가 아니라 폴더 기준이다.
    * (`typescript` 폴더에는 `_series.yml`이 없어 시리즈가 아니지만 우선순위는
@@ -159,9 +169,11 @@ export interface OgConfig {
   width: number;
   height: number;
   /**
-   * 다크 테마 토큰의 hex 값. satori/resvg는 CSS 변수도 oklch도 못 읽어서
-   * blog-preset.ts의 `_dark` 값을 손으로 옮겨 둔다 — 팔레트를 바꾸면 여기도
-   * 같이 고쳐야 소셜 미리보기가 사이트와 어긋나지 않는다.
+   * 카드에 그릴 **리터럴 색**. satori/resvg는 CSS 변수도 oklch도 못 읽어서
+   * 토큰 이름을 넘길 수 없다 — 소비자가 자기 디자인 토큰에서 값을 해석해 준다.
+   *
+   * 기본값을 두지 않는 이유가 여기 있다: 색을 안 넘긴 소비자의 카드가 남의
+   * 사이트 색으로 나가는데, 렌더는 성공하므로 아무도 실패로 알려주지 않는다.
    */
   palette: OgPalette;
 }
@@ -175,9 +187,10 @@ export interface ThumbnailsConfig {
 /**
  * llms.txt `## Docs` 절의 링크 한 줄 — `- [label](url): summary`.
  *
- * **URL은 여기 없다.** 경로 계약(`/`·`/posts/`·`/series/`·`/about/`·
- * `/llms-full.txt`)은 패키지가 소유하고(`src/post/urls.ts`), 소비자가 정하는 것은
- * 표시 라벨과 설명뿐이다.
+ * **URL은 여기 없다.** 이 셋의 경로(`/`·`/posts/`·`/llms-full.txt`)는 패키지가
+ * 정의하는 라우트·산출물이라(`src/post/urls.ts`의 `POSTS_PATH`) 어떤 사이트에서도
+ * 같고, 소비자가 정하는 것은 표시 라벨과 설명뿐이다. 그 사이트에만 있는 페이지는
+ * 경로까지 소비자가 주는 `LlmsExtraDocEntry`로 간다.
  */
 export interface LlmsDocEntry {
   /** 마크다운 링크의 표시 텍스트 */
@@ -186,18 +199,34 @@ export interface LlmsDocEntry {
   summary: string;
 }
 
-/** `## Docs` 절의 다섯 링크. 항목 자체는 고정이고 문구만 소비자가 소유한다 */
+/**
+ * `## Docs` 절에 **더하는** 링크 — 경로까지 소비자가 준다.
+ *
+ * 예전에는 `/series/`와 `/about/`이 절의 고정 항목이라 생성기에 리터럴로 박혀
+ * 있었다. 그런 페이지가 없는 소비자도 없는 URL을 색인에 내보냈고, 문구만 덮을 수
+ * 있을 뿐 항목 자체는 지울 수 없었다.
+ */
+export interface LlmsExtraDocEntry extends LlmsDocEntry {
+  /** 사이트 내부 경로. 후행 슬래시까지 적은 그대로 나간다 */
+  path: string;
+}
+
+/**
+ * `## Docs` 절. 패키지가 소유한 셋은 언제나 나가고, 사이트 고유 페이지는
+ * `extra`로 소비자가 선언한다.
+ */
 export interface LlmsDocsConfig {
   /** 사이트 루트 */
   home: LlmsDocEntry;
   /** 전체 글 목록(archiveUrl) */
   archive: LlmsDocEntry;
-  /** 시리즈 목록 */
-  series: LlmsDocEntry;
-  /** 소개 페이지 */
-  about: LlmsDocEntry;
   /** 전문 텍스트(llms-full.txt) */
   full: LlmsDocEntry;
+  /**
+   * 사이트 고유 페이지. 기본값은 **빈 배열** — 어떤 페이지가 있는지는 소비자만
+   * 안다. 출력 순서는 글 목록 다음, 전문 앞이다.
+   */
+  extra: readonly LlmsExtraDocEntry[];
 }
 
 export interface LlmsConfig {
@@ -292,13 +321,6 @@ export interface ContentValues {
    * 기본값을 두면 소셜 미리보기가 사이트와 다른 색으로 조용히 나가므로 필수다.
    */
   ogPalette: OgPalette;
-  /**
-   * 시리즈 폴더명 → 컬러 키. 키는 `apps/blog/posts/<폴더>`와 정확히 일치해야
-   * 하므로 원고 배치를 아는 앱만 쓸 수 있다.
-   */
-  seriesColors: Readonly<Record<string, SeriesColorKey>>;
-  /** 등록되지 않은 시리즈에 라운드로빈으로 도는 색. 비면 안 된다 */
-  seriesColorFallback: readonly SeriesColorKey[];
 }
 
 /**
@@ -312,14 +334,11 @@ export interface ContentUserConfig extends Pick<
   /** 경로 앵커 — `ContentConfig['root']` 참고. 관례는 `import.meta.url` */
   root: string;
   /**
-   * 사이트 고유 축(`diagramNames`·`seriesColors`·`seriesColorFallback`)은 필수,
-   * 사이트와 무관한 `supportedFenceLabels`만 선택.
+   * 사이트 고유 축(`diagramNames`)은 필수, 사이트와 무관한
+   * `supportedFenceLabels`만 선택.
    */
   registries: Partial<Pick<RegistriesConfig, 'supportedFenceLabels'>> &
-    Pick<
-      RegistriesConfig,
-      'diagramNames' | 'seriesColors' | 'seriesColorFallback'
-    >;
+    Pick<RegistriesConfig, 'diagramNames'>;
   /** 크기(1200×630)는 OG 규격이라 선택, 팔레트는 앱 디자인이라 필수 */
   og: Partial<Omit<OgConfig, 'palette'>> & Pick<OgConfig, 'palette'>;
   seo?: Partial<SeoConfig>;
@@ -365,6 +384,7 @@ export const DEFAULT_SEO: Omit<SeoConfig, 'titleSuffix'> = {
  * (sitemap은 그대로 유효하다).
  */
 export const DEFAULT_SITEMAP: SitemapConfig = {
+  staticPages: [],
   highPriorityFolders: [],
   highPrioritySlugs: [],
 };
@@ -406,15 +426,10 @@ export const DEFAULT_LLMS: Omit<LlmsConfig, 'indexIntro' | 'fullIntro'> = {
       summary:
         'Complete archive of {count} articles organized by topic and series.',
     },
-    series: {
-      label: 'Series',
-      summary: 'Multi-part series, each readable in order from part 1.',
-    },
-    about: {
-      label: 'About',
-      summary: 'Author profile, open source contributions, and talks.',
-    },
     full: { label: 'Full text', summary: 'Full post text for retrieval.' },
+    // 사이트 고유 페이지는 기본값이 없다 — 소개·시리즈 페이지가 있는지조차
+    // 소비자만 안다.
+    extra: [],
   },
   facts: {},
 };
@@ -429,10 +444,7 @@ const DEFAULTS: Omit<
   'root' | 'site' | 'author' | 'timezone' | 'seo' | 'registries' | 'og' | 'llms'
 > & {
   seo: Omit<SeoConfig, 'titleSuffix'>;
-  registries: Omit<
-    RegistriesConfig,
-    'diagramNames' | 'seriesColors' | 'seriesColorFallback'
-  >;
+  registries: Omit<RegistriesConfig, 'diagramNames'>;
   og: Omit<OgConfig, 'palette'>;
   llms: Omit<LlmsConfig, 'indexIntro' | 'fullIntro'>;
 } = {

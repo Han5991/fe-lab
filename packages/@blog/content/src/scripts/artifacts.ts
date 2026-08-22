@@ -1,4 +1,4 @@
-import { POSTS_PATH, postUrl, type PostData } from '../post/index.ts';
+import { POSTS_PATH, postUrl, RSS_PATH, type PostData } from '../post/index.ts';
 import type { ContentApi } from '../post/createContent.ts';
 import { decodeUrlSafe } from '../shared/url.ts';
 
@@ -56,7 +56,11 @@ export type ArtifactRelation = 'exact' | 'subset' | 'superset';
 interface ArtifactSpecBase {
   /** 위반 메시지에 쓰는 이름 */
   name: string;
-  /** out/ 기준 경로 (file이면 파일, dir이면 디렉터리) */
+  /**
+   * out/ 기준 경로 (file이면 파일, dir이면 디렉터리).
+   * `join(outDir, path)`로 풀리므로 앞의 `/`는 있어도 흡수된다 — 경로 상수를
+   * 그대로 쓰는 항목(`RSS_PATH`)이 있다.
+   */
   path: string;
   /** 이 산출물을 만드는 생성기가 쓰는 글 집합 (POST_SET_NAMES 키) */
   postSet: PostSetName;
@@ -160,7 +164,9 @@ export const ARTIFACTS: readonly ArtifactSpec[] = [
   },
   {
     name: 'rss.xml',
-    path: 'rss.xml',
+    // 경로의 소유자는 생성기와 같은 상수다 — 여기만 옛 이름으로 남으면
+    // check-seo가 없는 파일을 찾아 missing-artifact로 죽는다.
+    path: RSS_PATH,
     kind: 'file',
     postSet: 'visible',
     relation: 'exact',

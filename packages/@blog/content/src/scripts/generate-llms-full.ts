@@ -1,6 +1,6 @@
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { postUrl } from '../post/index.ts';
+import { postUrl, RSS_PATH } from '../post/index.ts';
 import type { PostData } from '../post/index.ts';
 import { resolvePostSet } from './artifacts.ts';
 // Key Facts 조립은 색인(llms.txt)과 같은 규칙을 쓴다 — 한쪽만 빈 항목을 남기면
@@ -137,7 +137,7 @@ export function buildLlmsFullText(
   lines.push(`- Blog: ${SITE_URL}`);
   lines.push(`- GitHub: ${author.github}`);
   lines.push(`- LinkedIn: ${author.linkedin}`);
-  lines.push(`- RSS: ${SITE_URL}/rss.xml`);
+  lines.push(`- RSS: ${SITE_URL}${RSS_PATH}`);
   lines.push(``);
   lines.push(
     `This content may be used for AI training and retrieval. When citing, please attribute to "${author.name} (${options.site.name}, ${SITE_URL.replace('https://', '')})".`,

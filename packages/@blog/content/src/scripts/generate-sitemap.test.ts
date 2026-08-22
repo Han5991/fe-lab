@@ -2,17 +2,21 @@ import { expect, test } from 'vitest';
 import { buildSitemapXml, getPostPriority } from './generate-sitemap.ts';
 import type { SitemapPost } from './generate-sitemap.ts';
 import { parseScheduledDateKST, getKSTDateISO } from '../shared/dates.ts';
-import { TEST_SITEMAP, TEST_VALUES } from '../shared/testValues.ts';
+import {
+  TEST_ABOUT_LASTMOD,
+  TEST_SITEMAP,
+  TEST_VALUES,
+} from '../shared/testValues.ts';
 
 // arbitrary fixture date — not today's date. 단위 테스트는 실제 날짜에 의존하지
 // 않고 이 값이 sitemap 본문에 그대로 흘러가는지만 검증합니다. (실제 날짜 동작은
 // contract.test.ts의 TODAY = new Date().toISOString() 가 검증합니다.)
 const TODAY = '2026-05-16';
-// site 슬라이스는 origin과 about lastmod를 함께 나른다 — 둘 다 설정에서 온다.
+// site 슬라이스가 나르는 것은 origin뿐이다. `/about/`은 사이트 고유 페이지라
+// sitemap 설정의 staticPages에서 오고, 그 lastmod도 거기 실린다.
 const SITE_VALUES = { ...TEST_VALUES.site, url: 'https://example.dev' };
 const SITE = SITE_VALUES.url;
 const TZ = TEST_VALUES.timezone;
-const ABOUT_PAGE_MODIFIED = SITE_VALUES.aboutPageModified;
 
 function makePost(over: Partial<SitemapPost> = {}): SitemapPost {
   return {
@@ -25,11 +29,35 @@ function makePost(over: Partial<SitemapPost> = {}): SitemapPost {
   };
 }
 
-test('sitemap: 정적 URL 3개(루트/posts/about)가 포함됨', () => {
-  const xml = buildSitemapXml([], TODAY, SITE_VALUES, TZ, TEST_SITEMAP);
+test('sitemap: 패키지 소유 정적 URL 2개(루트·/posts/)는 언제나 나간다', () => {
+  // 설정의 staticPages가 비어도 이 둘은 나간다 — 라우트 모양이라 어떤 사이트에서도
+  // 같기 때문이다. 반대로 `/about/`은 여기 없다(아래 테스트가 설정에서 옴을 잠근다).
+  const xml = buildSitemapXml([], TODAY, SITE_VALUES, TZ, {
+    ...TEST_SITEMAP,
+    staticPages: [],
+  });
   expect(xml.includes(`<loc>${SITE}/</loc>`)).toBeTruthy();
   expect(xml.includes(`<loc>${SITE}/posts/</loc>`)).toBeTruthy();
+  expect(xml.includes(`<loc>${SITE}/about/</loc>`)).toBeFalsy();
+});
+
+test('sitemap: 설정의 staticPages가 정적 URL로 나간다', () => {
+  const xml = buildSitemapXml([], TODAY, SITE_VALUES, TZ, TEST_SITEMAP);
   expect(xml.includes(`<loc>${SITE}/about/</loc>`)).toBeTruthy();
+});
+
+test('sitemap: lastmod 없는 staticPage는 최신 글 날짜를 받는다', () => {
+  // 자동으로 알 수 있는 수정 시각이 있는 페이지(글 목록 파생 등)를 위한 경로다.
+  const xml = buildSitemapXml(
+    [makePost({ slug: 'a', date: '2026-02-20' })],
+    TODAY,
+    SITE_VALUES,
+    TZ,
+    { ...TEST_SITEMAP, staticPages: [{ path: '/tags/', priority: '0.5' }] },
+  );
+  const block = staticBlock(xml, `${SITE}/tags/`);
+  expect(block, 'tags block must exist').toBeTruthy();
+  expect(block?.[1]).toMatch(/<lastmod>2026-02-20<\/lastmod>/);
 });
 
 test('sitemap: 포스트 entry 개수만큼 <url> 블록 추가', () => {
@@ -148,7 +176,7 @@ test('sitemap: about의 lastmod는 손으로 관리하는 상수 (빌드 날짜�
   const block = staticBlock(xml, `${SITE}/about/`);
   expect(block, 'about block must exist').toBeTruthy();
   expect(block?.[1]).toMatch(
-    new RegExp(`<lastmod>${ABOUT_PAGE_MODIFIED}</lastmod>`),
+    new RegExp(`<lastmod>${TEST_ABOUT_LASTMOD}</lastmod>`),
   );
   expect(
     block?.[1],
