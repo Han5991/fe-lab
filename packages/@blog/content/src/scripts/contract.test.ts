@@ -35,7 +35,7 @@ const TODAY = new Date().toISOString().split('T')[0];
 
 test('sitemap: 모든 공개 글이 sitemap에 포함됨', () => {
   const posts = getAllPosts();
-  const xml = buildSitemapXml(posts, TODAY, site, timezone);
+  const xml = buildSitemapXml(posts, TODAY, site, timezone, testConfig.sitemap);
   for (const p of posts) {
     expect(
       xml.includes(
@@ -47,7 +47,13 @@ test('sitemap: 모든 공개 글이 sitemap에 포함됨', () => {
 });
 
 test('sitemap: draft/미래 scheduled 글은 sitemap에 없음', () => {
-  const xml = buildSitemapXml(getAllPosts(), TODAY, site, timezone);
+  const xml = buildSitemapXml(
+    getAllPosts(),
+    TODAY,
+    site,
+    timezone,
+    testConfig.sitemap,
+  );
   const hidden = getAllPostsIncludingHidden().filter(
     p => !isPostVisible(p, timezone),
   );
@@ -63,7 +69,13 @@ test('sitemap: draft/미래 scheduled 글은 sitemap에 없음', () => {
 });
 
 test('sitemap: 모든 loc은 절대 URL', () => {
-  const xml = buildSitemapXml(getAllPosts(), TODAY, site, timezone);
+  const xml = buildSitemapXml(
+    getAllPosts(),
+    TODAY,
+    site,
+    timezone,
+    testConfig.sitemap,
+  );
   const locs = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map(m => m[1]);
   expect(locs.length > 0).toBeTruthy();
   for (const loc of locs) {
@@ -152,5 +164,6 @@ test('contract: sitemap 우선순위는 시리즈가 아니라 폴더 기준이�
   const post = getAllPosts().find(p => p.relativeDir === 'typescript');
   if (!post) return; // 콘텐츠가 바뀌어 폴더가 사라지면 이 계약은 무의미해진다
   expect(post.series, 'typescript 폴더는 시리즈가 아니어야 함').toBe(undefined);
-  expect(getPostPriority(post)).toBe('0.75');
+  // 우선순위 목록은 설정에서 온다(픽스처의 highPriorityFolders에 이 폴더가 있다).
+  expect(getPostPriority(post, testConfig.sitemap)).toBe('0.75');
 });

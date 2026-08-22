@@ -83,10 +83,28 @@ test('llms: 글 수는 실제 개수 ("45+" 같은 손으로 적은 숫자가 �
     [makePost({ slug: 'a' }), makePost({ slug: 'b' })],
     OPTS,
   );
-  expect(
-    text.includes('Complete archive of 2 frontend engineering articles'),
-  ).toBeTruthy();
+  // 문구는 설정에서, 숫자는 산출 시점에 — `{count}`가 치환된 결과.
+  expect(text.includes('Test archive of 2 posts.')).toBeTruthy();
+  expect(text.includes('{count}'), '치환되지 않은 자리표시자').toBeFalsy();
   expect(text.includes('- Total posts: 2 articles')).toBeTruthy();
+});
+
+test('llms: Docs 절 다섯 줄의 문구는 설정에서 온다', () => {
+  // 예전엔 홈 링크 설명만 이 생성기에 리터럴로 박혀 있어서, 설정을 어떻게 덮어도
+  // 처음 만든 사이트의 이름과 저자 이름이 그대로 나갔다. URL은 반대로 패키지의
+  // 경로 계약이므로 설정에 없다 — 그 짝이 여기서 함께 검증된다.
+  const docs = CONFIG.llms.docs;
+  const text = buildLlmsText([makePost({ slug: 'a' })], OPTS);
+  for (const [entry, url] of [
+    [docs.home, `${SITE}/`],
+    [docs.archive, `${SITE}/posts/`],
+    [docs.series, `${SITE}/series/`],
+    [docs.about, `${SITE}/about/`],
+    [docs.full, `${SITE}/llms-full.txt`],
+  ] as const) {
+    const line = `- [${entry.label}](${url}): ${entry.summary.replace('{count}', '1')}`;
+    expect(text.includes(line), `없는 줄: ${line}`).toBeTruthy();
+  }
 });
 
 test('llms: Last updated는 가장 최근 글 날짜 (빌드 날짜가 아님)', () => {

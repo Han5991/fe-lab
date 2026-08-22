@@ -10,8 +10,11 @@
  * 소비자(앱)의 `content.values.mts`가 소유합니다. 예전엔 이 파일이 그 값들의
  * 기본값을 들고 있었는데, 소비처 대부분이 설정이 아니라 같은 리터럴을 **직접**
  * import해서 — 오버라이드를 넣어도 화면·산출물은 그대로인 거짓 표면이었습니다.
- * 기본값이 남은 것은 사이트와 무관한 값(SEO 길이 예산·펜스 라벨·경로 관례)과
- * 아직 한 사이트의 데이터인 값(og 팔레트·llms 산문·sitemap 우선순위)뿐입니다.
+ * 기본값이 남은 것은 **사이트와 무관한 값뿐입니다** — SEO 길이 예산, 펜스 라벨,
+ * 경로 관례, OG 카드 규격(1200×630). 한 사이트의 데이터였던 나머지(og 팔레트·
+ * 시리즈 컬러·llms 산문·sitemap 우선순위)는 필수 항목이 되었거나(`ContentValues`),
+ * 중립적인 빈 값으로 바뀌었습니다(sitemap 우선순위·llms facts). 소개 산문처럼
+ * 소비자가 이미 선언한 값에서 파생할 수 있는 것은 파생합니다(`site.description`).
  *
  * 이 모듈은 **서버·빌드 전용**입니다 — 클라이언트 컴포넌트가 import하면
  * 설정 객체 전체(og 팔레트·llms 산문·경로)가 번들에 실립니다(defineContent
@@ -169,27 +172,73 @@ export interface ThumbnailsConfig {
   webpQuality: number;
 }
 
+/**
+ * llms.txt `## Docs` 절의 링크 한 줄 — `- [label](url): summary`.
+ *
+ * **URL은 여기 없다.** 경로 계약(`/`·`/posts/`·`/series/`·`/about/`·
+ * `/llms-full.txt`)은 패키지가 소유하고(`src/post/urls.ts`), 소비자가 정하는 것은
+ * 표시 라벨과 설명뿐이다.
+ */
+export interface LlmsDocEntry {
+  /** 마크다운 링크의 표시 텍스트 */
+  label: string;
+  /** 링크 옆 한 줄 설명. `{count}`는 발행 글 수로 치환된다 */
+  summary: string;
+}
+
+/** `## Docs` 절의 다섯 링크. 항목 자체는 고정이고 문구만 소비자가 소유한다 */
+export interface LlmsDocsConfig {
+  /** 사이트 루트 */
+  home: LlmsDocEntry;
+  /** 전체 글 목록(archiveUrl) */
+  archive: LlmsDocEntry;
+  /** 시리즈 목록 */
+  series: LlmsDocEntry;
+  /** 소개 페이지 */
+  about: LlmsDocEntry;
+  /** 전문 텍스트(llms-full.txt) */
+  full: LlmsDocEntry;
+}
+
 export interface LlmsConfig {
   /** llms.txt 링크 옆 한 줄 설명의 최대 길이. 색인이므로 짧게 */
   summaryMaxLength: number;
   /** llms.txt(색인) 머리의 블로그 소개 산문 */
   indexIntro: string;
+  /**
+   * `## Docs` 절 다섯 줄의 라벨·설명.
+   *
+   * 기본값은 사이트를 모르는 중립 문구다 — 예전엔 홈 링크 설명만 생성기에
+   * 리터럴로 박혀 있어서(`Frontend Lab … by Sangwook Han`), 설정을 아무리
+   * 덮어도 그 한 줄만은 남의 사이트 이름을 내보냈다.
+   */
+  docs: LlmsDocsConfig;
   /** llms-full.txt(전문) 머리의 블로그 소개 산문 */
   fullIntro: string;
-  /** Key Facts 절의 저자 소개 산문 */
-  facts: {
-    /** llms.txt용 Language 항목 */
-    languageIndex: string;
-    /** llms-full.txt용 Language 항목 */
-    languageFull: string;
-    openSource: string;
-    /** llms.txt(색인)용 — 기여 방법까지 포함한 긴 문장 */
-    notableContributionIndex: string;
-    /** llms-full.txt용 짧은 문장 */
-    notableContributionFull: string;
-    speaking: string;
-    mainTopics: string;
-  };
+  /** Key Facts 절 — 준 항목만 나간다 */
+  facts: LlmsFacts;
+}
+
+/**
+ * `## Key Facts` 절의 항목들 — **전부 선택**이다.
+ *
+ * 오픈소스 이력·발표 이력처럼 **소비자만 쓸 수 있는 내용**이라 중립 기본값이
+ * 존재할 수 없다. 그렇다고 필수로 만들면 새 소비자가 남의 이력을 지우는
+ * 것부터 해야 한다. 그래서 준 항목만 줄로 나가고, 없는 항목은 줄 자체가
+ * 생략된다(`generate-llms.ts`의 `factLines`).
+ */
+export interface LlmsFacts {
+  /** llms.txt용 Language 항목 */
+  languageIndex?: string;
+  /** llms-full.txt용 Language 항목 */
+  languageFull?: string;
+  openSource?: string;
+  /** llms.txt(색인)용 — 기여 방법까지 포함한 긴 문장 */
+  notableContributionIndex?: string;
+  /** llms-full.txt용 짧은 문장 */
+  notableContributionFull?: string;
+  speaking?: string;
+  mainTopics?: string;
 }
 
 export interface ContentConfig {
@@ -238,6 +287,18 @@ export interface ContentValues {
   timezone: TimezoneConfig;
   /** 이름으로 부를 수 있는 다이어그램. 컴포넌트 매핑은 앱이 갖는다 */
   diagramNames: readonly string[];
+  /**
+   * OG 카드 팔레트 — 앱 디자인 토큰(`blog-preset.ts`의 다크 값)의 hex 사본이다.
+   * 기본값을 두면 소셜 미리보기가 사이트와 다른 색으로 조용히 나가므로 필수다.
+   */
+  ogPalette: OgPalette;
+  /**
+   * 시리즈 폴더명 → 컬러 키. 키는 `apps/blog/posts/<폴더>`와 정확히 일치해야
+   * 하므로 원고 배치를 아는 앱만 쓸 수 있다.
+   */
+  seriesColors: Readonly<Record<string, SeriesColorKey>>;
+  /** 등록되지 않은 시리즈에 라운드로빈으로 도는 색. 비면 안 된다 */
+  seriesColorFallback: readonly SeriesColorKey[];
 }
 
 /**
@@ -250,30 +311,40 @@ export interface ContentUserConfig extends Pick<
 > {
   /** 경로 앵커 — `ContentConfig['root']` 참고. 관례는 `import.meta.url` */
   root: string;
-  /** `diagramNames`만 필수(기본값이 곧 한 사이트의 그림 목록이기 때문) */
-  registries: Partial<Omit<RegistriesConfig, 'diagramNames'>> &
-    Pick<RegistriesConfig, 'diagramNames'>;
+  /**
+   * 사이트 고유 축(`diagramNames`·`seriesColors`·`seriesColorFallback`)은 필수,
+   * 사이트와 무관한 `supportedFenceLabels`만 선택.
+   */
+  registries: Partial<Pick<RegistriesConfig, 'supportedFenceLabels'>> &
+    Pick<
+      RegistriesConfig,
+      'diagramNames' | 'seriesColors' | 'seriesColorFallback'
+    >;
+  /** 크기(1200×630)는 OG 규격이라 선택, 팔레트는 앱 디자인이라 필수 */
+  og: Partial<Omit<OgConfig, 'palette'>> & Pick<OgConfig, 'palette'>;
   seo?: Partial<SeoConfig>;
   runtime?: Partial<RuntimeConfig>;
   dirs?: Partial<DirsConfig>;
   sitemap?: Partial<SitemapConfig>;
-  og?: Partial<Omit<OgConfig, 'palette'>> & { palette?: Partial<OgPalette> };
-  llms?: Partial<Omit<LlmsConfig, 'facts'>> & {
-    facts?: Partial<LlmsConfig['facts']>;
+  llms?: Partial<Omit<LlmsConfig, 'facts' | 'docs'>> & {
+    facts?: LlmsFacts;
+    /** 항목 단위로 병합된다 — 준 링크만 갈아 끼우고 나머지는 기본값 */
+    docs?: Partial<LlmsDocsConfig>;
   };
   thumbnails?: Partial<ThumbnailsConfig>;
 }
 
 // ── 기본값 ───────────────────────────────────────────────────────────────────
-// 사이트 정체성(site·author·timezone·diagramNames)에는 기본값이 없다 —
-// `ContentValues` 주석 참고. 여기 남는 것은 사이트와 무관한 값(SEO 길이 예산·
-// 경로 관례·펜스 라벨)과, 아직 한 사이트의 데이터인 값(og 팔레트·llms 산문·
-// sitemap 우선순위)이다. 후자는 소비자가 늘면 같은 식으로 옮겨야 한다.
+// 사이트 고유 값(`ContentValues`)에는 기본값이 없다. 여기 남는 것은 **어떤
+// 사이트에서도 같은 값**뿐이다 — SEO 길이 예산, 펜스 라벨, 경로 관례, OG 규격.
+// 사이트마다 다른 축은 비워 두거나(sitemap 우선순위·llms facts) 소비자가 이미
+// 준 값에서 파생한다(llms 소개 산문 ← site.description).
 //
-// 아래 DEFAULT_* 슬라이스는 순수 계산 빌더(sitemap·og·thumbnails·seo)가
-// 파라미터 기본값으로 재사용한다 — 진입점(main)은 항상 컨텍스트의 설정을
-// 명시적으로 넘기고, 기본값은 테스트·단독 사용 편의다. DEFAULTS와 같은
-// 객체를 공유하므로 두 벌이 어긋날 수 없다.
+// 아래 DEFAULT_* 슬라이스는 순수 계산 빌더(sitemap·thumbnails·seo)가 파라미터
+// 기본값으로 재사용한다 — 진입점(main)은 항상 컨텍스트의 설정을 명시적으로
+// 넘기고, 기본값은 테스트·단독 사용 편의다. DEFAULTS와 같은 객체를 공유하므로
+// 두 벌이 어긋날 수 없다. og는 예외로 규격(DEFAULT_OG_SIZE)만 기본이 있고
+// 팔레트는 언제나 인자로 온다.
 
 /**
  * SEO 길이 예산의 기본값. 검색 결과에서 잘리지 않는 상한이라 사이트와 무관하다.
@@ -288,27 +359,26 @@ export const DEFAULT_SEO: Omit<SeoConfig, 'titleSuffix'> = {
   descriptionMaxLength: 160,
 };
 
+/**
+ * 우선순위 튜닝의 기본값은 **비어 있다** — 어떤 폴더·글이 고가치인지는 그
+ * 사이트의 편집 판단이다. 비워 두면 모든 글이 같은 기본 우선순위를 받는다
+ * (sitemap은 그대로 유효하다).
+ */
 export const DEFAULT_SITEMAP: SitemapConfig = {
-  highPriorityFolders: ['bundler', 'typescript', 'open-source'],
-  highPrioritySlugs: [
-    'ai-opensource-contribution',
-    'nodejs-contribution',
-    'nextjs-contributor',
-    'first-open-source-contribution',
-  ],
+  highPriorityFolders: [],
+  highPrioritySlugs: [],
 };
 
-export const DEFAULT_OG: OgConfig = {
+/**
+ * OG 카드 **규격**의 기본값. 1200×630은 소셜 카드 표준이라 사이트와 무관하다.
+ *
+ * 팔레트는 여기 없다 — 앱 디자인 토큰의 사본이라 `ContentValues.ogPalette`로
+ * 필수다. 기본 팔레트를 두면 색을 안 넘긴 소비자의 카드가 남의 사이트 색으로
+ * 조용히 나간다(satori는 CSS 변수를 못 읽어 실패조차 하지 않는다).
+ */
+export const DEFAULT_OG_SIZE: Omit<OgConfig, 'palette'> = {
   width: 1200,
   height: 630,
-  palette: {
-    paper: '#0B0D10', // paper.50
-    ink: '#E6E8EB', // ink.950
-    inkMeta: '#8B919A', // ink.600
-    inkRule: '#333941', // ink.border(다크 rgba를 paper.50 위에 합성한 값)
-    accent: '#67E8F9', // accent.500 — 포인트 cyan
-    pillBorder: 'rgba(103, 232, 249, 0.4)',
-  },
 };
 
 export const DEFAULT_THUMBNAILS: ThumbnailsConfig = {
@@ -316,26 +386,37 @@ export const DEFAULT_THUMBNAILS: ThumbnailsConfig = {
   webpQuality: 80,
 };
 
-export const DEFAULT_LLMS: LlmsConfig = {
+/**
+ * llms 산문의 기본값.
+ *
+ * `indexIntro`·`fullIntro`는 여기 없다 — `seo.titleSuffix`가 `site.name`에서
+ * 파생되는 것과 같이, 소비자가 이미 준 `site.description`에서 파생한다.
+ * `facts`는 비어 있다: 오픈소스·발표 이력에 중립 기본값은 없고, 준 항목만
+ * 줄로 나간다.
+ */
+export const DEFAULT_LLMS: Omit<LlmsConfig, 'indexIntro' | 'fullIntro'> = {
   summaryMaxLength: 140,
-  indexIntro:
-    'Frontend engineering blog by Sangwook Han (한상욱). Deep-dive technical experiments in bundler architecture, TypeScript domain modeling, React patterns, and open source contributions. All posts include working code and first-hand implementation experience. Post body content is in Korean; technical terms, code, and key facts are in English.',
-  fullIntro:
-    'Frontend engineering blog by Sangwook Han (한상욱). Deep-dive technical experiments in bundler architecture, TypeScript domain modeling, React patterns, and open source contributions. All posts include working code and first-hand implementation experience. Content primarily in Korean.',
-  facts: {
-    languageIndex:
-      'Korean body text; English technical terms, code, and key data points',
-    languageFull: 'Primarily Korean, some English',
-    openSource:
-      '27 Mantine PRs merged, Node.js core contributor, Next.js contributor',
-    notableContributionIndex:
-      'gemini-cli 74% performance improvement (408ms → 107ms) via Promise.allSettled',
-    notableContributionFull:
-      'gemini-cli 74% performance improvement (408ms → 107ms)',
-    speaking: "FEConf 2025 (Korea's largest frontend conference), TeoConf",
-    mainTopics:
-      'Bundler internals, TypeScript domain modeling, React patterns, design systems, open source',
+  // 라벨·설명 기본값은 **사이트를 모르는 중립 문구**다. 옆의 산문(indexIntro·
+  // facts)이 아직 한 사이트의 데이터인 것과 달리, 여기엔 사이트 이름도 저자
+  // 이름도 넣지 않는다 — 그 리터럴이 생성기에 박혀 있던 것이 원래 문제였다.
+  docs: {
+    home: { label: 'Home', summary: 'Blog home.' },
+    archive: {
+      label: 'All posts',
+      summary:
+        'Complete archive of {count} articles organized by topic and series.',
+    },
+    series: {
+      label: 'Series',
+      summary: 'Multi-part series, each readable in order from part 1.',
+    },
+    about: {
+      label: 'About',
+      summary: 'Author profile, open source contributions, and talks.',
+    },
+    full: { label: 'Full text', summary: 'Full post text for retrieval.' },
   },
+  facts: {},
 };
 
 /**
@@ -345,10 +426,15 @@ export const DEFAULT_LLMS: LlmsConfig = {
  */
 const DEFAULTS: Omit<
   ContentConfig,
-  'root' | 'site' | 'author' | 'timezone' | 'seo' | 'registries'
+  'root' | 'site' | 'author' | 'timezone' | 'seo' | 'registries' | 'og' | 'llms'
 > & {
   seo: Omit<SeoConfig, 'titleSuffix'>;
-  registries: Omit<RegistriesConfig, 'diagramNames'>;
+  registries: Omit<
+    RegistriesConfig,
+    'diagramNames' | 'seriesColors' | 'seriesColorFallback'
+  >;
+  og: Omit<OgConfig, 'palette'>;
+  llms: Omit<LlmsConfig, 'indexIntro' | 'fullIntro'>;
 } = {
   seo: DEFAULT_SEO,
   runtime: {
@@ -359,12 +445,6 @@ const DEFAULTS: Omit<
   },
   registries: {
     supportedFenceLabels: SUPPORTED_FENCE_LABELS,
-    seriesColors: {
-      bundler: 'accent',
-      '[Typescript로 설계하는 프로젝트]': 'marker',
-      'open-source': 'moss',
-    },
-    seriesColorFallback: ['accent', 'marker', 'moss'],
   },
   dirs: {
     content: '../posts',
@@ -376,7 +456,7 @@ const DEFAULTS: Omit<
     og: 'public/og',
   },
   sitemap: DEFAULT_SITEMAP,
-  og: DEFAULT_OG,
+  og: DEFAULT_OG_SIZE,
   thumbnails: DEFAULT_THUMBNAILS,
   llms: DEFAULT_LLMS,
 };
@@ -474,16 +554,18 @@ export function defineContent(user: ContentUserConfig): ContentConfig {
     registries: { ...DEFAULTS.registries, ...user.registries },
     dirs: { ...DEFAULTS.dirs, ...user.dirs },
     sitemap: { ...DEFAULTS.sitemap, ...user.sitemap },
-    og: {
-      ...DEFAULTS.og,
-      ...user.og,
-      palette: { ...DEFAULTS.og.palette, ...user.og?.palette },
-    },
+    // 팔레트는 필수라 병합할 기본값이 없다 — 준 값이 그대로 실린다.
+    og: { ...DEFAULTS.og, ...user.og },
     thumbnails: { ...DEFAULTS.thumbnails, ...user.thumbnails },
     llms: {
       ...DEFAULTS.llms,
       ...user.llms,
+      // `seo.titleSuffix`가 `site.name`에서 파생되는 것과 같은 자리다 — 소개
+      // 산문을 따로 주지 않으면 이미 선언한 사이트 설명을 그대로 쓴다.
+      indexIntro: user.llms?.indexIntro ?? user.site.description,
+      fullIntro: user.llms?.fullIntro ?? user.site.description,
       facts: { ...DEFAULTS.llms.facts, ...user.llms?.facts },
+      docs: { ...DEFAULTS.llms.docs, ...user.llms?.docs },
     },
   };
   assertOutputDirsExclusive(config.dirs);

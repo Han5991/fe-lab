@@ -49,7 +49,10 @@ test('비ASCII slug: 다섯 산출 지점이 모두 같은 인코딩의 URL을 �
   expect(expected).toBe(`${SITE}${postPath(SLUG)}`);
 
   const artifacts: [string, string][] = [
-    ['sitemap.xml', buildSitemapXml([post], '2026-01-02', SITE_VALUES, TZ)],
+    [
+      'sitemap.xml',
+      buildSitemapXml([post], '2026-01-02', SITE_VALUES, TZ, CONFIG.sitemap),
+    ],
     [
       'rss.xml',
       buildRssXml([post], {

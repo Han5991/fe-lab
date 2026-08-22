@@ -19,12 +19,36 @@
  * 잇는 **배선**뿐이다.
  */
 import { defineContent } from '@blog/content';
-import { AUTHOR, DIAGRAM_NAMES, SITE, TIMEZONE } from './content.values.mts';
+import {
+  AUTHOR,
+  DIAGRAM_NAMES,
+  LLMS_DOCS,
+  LLMS_FACTS,
+  LLMS_INTRO,
+  OG_PALETTE,
+  SERIES_COLORS,
+  SERIES_COLOR_FALLBACK,
+  SITE,
+  SITEMAP_PRIORITY,
+  TIMEZONE,
+} from './content.values.mts';
 
 export default defineContent({
   root: import.meta.url,
   site: SITE,
   author: AUTHOR,
   timezone: TIMEZONE,
-  registries: { diagramNames: DIAGRAM_NAMES },
+  registries: {
+    diagramNames: DIAGRAM_NAMES,
+    seriesColors: SERIES_COLORS,
+    seriesColorFallback: SERIES_COLOR_FALLBACK,
+  },
+  og: { palette: OG_PALETTE },
+  sitemap: SITEMAP_PRIORITY,
+  llms: {
+    indexIntro: LLMS_INTRO.index,
+    fullIntro: LLMS_INTRO.full,
+    docs: LLMS_DOCS,
+    facts: LLMS_FACTS,
+  },
 });

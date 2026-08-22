@@ -6,6 +6,7 @@ import type { PostData } from '../post/index.ts';
 import {
   type AuthorConfig,
   type LlmsConfig,
+  type LlmsDocEntry,
   type SiteConfig,
 } from '../shared/contentConfig.ts';
 import type { ContentContext } from './context.ts';
@@ -65,6 +66,43 @@ export function toSummary(
 }
 
 /**
+ * `## Key Facts`의 한 줄 — 값이 없으면 `null`이라 줄 자체가 빠집니다.
+ *
+ * facts는 오픈소스 이력·발표 이력처럼 **소비자만 쓸 수 있는 내용**이라 전부
+ * 선택 항목입니다(`LlmsFacts`). 빈 문자열도 없는 것으로 봅니다 — `- Speaking: `
+ * 같은 빈 줄이 색인에 나가면 크롤러에게는 "없음"이 아니라 "미상"이 됩니다.
+ */
+export function factLine(
+  label: string,
+  value: string | undefined,
+): string | null {
+  return value === undefined || value.trim() === ''
+    ? null
+    : `- ${label}: ${value}`;
+}
+
+/** `factLine`이 섞인 줄 목록에서 살아남은 줄만 남깁니다. */
+export function keepPresent(lines: (string | null)[]): string[] {
+  return lines.filter((line): line is string => line !== null);
+}
+
+/**
+ * `## Docs` 절의 한 줄을 조립합니다.
+ *
+ * **URL은 패키지가, 문구는 소비자가 소유합니다** — 경로는 사이트 구조 계약이라
+ * 여기서 조립하고(`src/post/urls.ts`), 라벨·설명은 설정(`llms.docs`)에서 옵니다.
+ * 예전에는 홈 링크의 설명만 이 파일에 리터럴로 박혀 있어서, 설정을 덮어도 그 한
+ * 줄은 처음 만든 사이트의 이름과 저자 이름을 그대로 내보냈습니다.
+ *
+ * `{count}`는 발행 글 수로 치환합니다. 문구를 통째로 소비자에게 넘기면서도
+ * "몇 편"만은 산출 시점의 실제 개수여야 하기 때문입니다.
+ */
+function docLine(entry: LlmsDocEntry, url: string, count: number): string {
+  const summary = entry.summary.replaceAll('{count}', String(count));
+  return `- [${entry.label}](${url}): ${summary}`;
+}
+
+/**
  * llms.txt 본문을 생성합니다.
  *
  * **시리즈 판정과 정렬은 사이트와 같은 규칙을 씁니다** — `isSeriesFolder`(`_series.yml`이
@@ -104,11 +142,11 @@ export function buildLlmsText(
     ``,
     `## Docs`,
     ``,
-    `- [블로그 홈](${siteUrl}/): Frontend Lab — React, TypeScript, bundler architecture experiments by Sangwook Han.`,
-    `- [전체 포스트 목록](${archiveUrl(siteUrl)}): Complete archive of ${posts.length} frontend engineering articles organized by topic and series.`,
-    `- [시리즈 목록](${siteUrl}/series/): Multi-part series, each readable in order from part 1.`,
-    `- [소개](${siteUrl}/about/): Author profile, open source contributions, and conference talks.`,
-    `- [전문 텍스트](${siteUrl}/llms-full.txt): Full post text for retrieval.`,
+    docLine(llms.docs.home, `${siteUrl}/`, posts.length),
+    docLine(llms.docs.archive, archiveUrl(siteUrl), posts.length),
+    docLine(llms.docs.series, `${siteUrl}/series/`, posts.length),
+    docLine(llms.docs.about, `${siteUrl}/about/`, posts.length),
+    docLine(llms.docs.full, `${siteUrl}/llms-full.txt`, posts.length),
     ``,
   ];
 
@@ -165,14 +203,17 @@ export function buildLlmsText(
   lines.push(
     `## Key Facts`,
     ``,
-    `- Author: ${author.name} (${author.alternateName}), ${author.role}`,
-    `- Blog: ${siteUrl}`,
-    `- Language: ${facts.languageIndex}`,
-    `- Total posts: ${posts.length} articles (as of ${lastUpdated})`,
-    `- Open source: ${facts.openSource}`,
-    `- Notable contribution: ${facts.notableContributionIndex}`,
-    `- Speaking: ${facts.speaking}`,
-    `- Main topics: ${facts.mainTopics}`,
+    // 선택 항목은 값이 없으면 줄째 빠진다 — 순서는 그대로 유지된다.
+    ...keepPresent([
+      `- Author: ${author.name} (${author.alternateName}), ${author.role}`,
+      `- Blog: ${siteUrl}`,
+      factLine('Language', facts.languageIndex),
+      `- Total posts: ${posts.length} articles (as of ${lastUpdated})`,
+      factLine('Open source', facts.openSource),
+      factLine('Notable contribution', facts.notableContributionIndex),
+      factLine('Speaking', facts.speaking),
+      factLine('Main topics', facts.mainTopics),
+    ]),
     ``,
     `## Contact`,
     ``,

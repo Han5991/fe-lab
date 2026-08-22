@@ -3,6 +3,9 @@ import { join } from 'node:path';
 import { postUrl } from '../post/index.ts';
 import type { PostData } from '../post/index.ts';
 import { resolvePostSet } from './artifacts.ts';
+// Key Facts 조립은 색인(llms.txt)과 같은 규칙을 쓴다 — 한쪽만 빈 항목을 남기면
+// 두 산출물이 저자에 대해 서로 다른 말을 하게 된다.
+import { factLine, keepPresent } from './generate-llms.ts';
 import {
   type AuthorConfig,
   type LlmsConfig,
@@ -37,16 +40,18 @@ export function buildLlmsFullText(
     ``,
     `## Key Facts`,
     ``,
-    `- Author: ${author.name} (${author.alternateName}), ${author.role}`,
-    `- Blog: ${SITE_URL}`,
-    `- GitHub: ${author.github}`,
-    `- LinkedIn: ${author.linkedin}`,
-    `- Language: ${facts.languageFull}`,
-    `- Total posts: ${posts.length}+ articles`,
-    `- Open source: ${facts.openSource}`,
-    `- Notable contribution: ${facts.notableContributionFull}`,
-    `- Speaking: ${facts.speaking}`,
-    `- Main topics: ${facts.mainTopics}`,
+    ...keepPresent([
+      `- Author: ${author.name} (${author.alternateName}), ${author.role}`,
+      `- Blog: ${SITE_URL}`,
+      `- GitHub: ${author.github}`,
+      `- LinkedIn: ${author.linkedin}`,
+      factLine('Language', facts.languageFull),
+      `- Total posts: ${posts.length}+ articles`,
+      factLine('Open source', facts.openSource),
+      factLine('Notable contribution', facts.notableContributionFull),
+      factLine('Speaking', facts.speaking),
+      factLine('Main topics', facts.mainTopics),
+    ]),
     ``,
     `---`,
     ``,

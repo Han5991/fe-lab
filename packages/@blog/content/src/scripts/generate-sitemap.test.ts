@@ -1,9 +1,8 @@
 import { expect, test } from 'vitest';
 import { buildSitemapXml, getPostPriority } from './generate-sitemap.ts';
-import { DEFAULT_SITEMAP } from '../shared/contentConfig.ts';
 import type { SitemapPost } from './generate-sitemap.ts';
 import { parseScheduledDateKST, getKSTDateISO } from '../shared/dates.ts';
-import { TEST_VALUES } from '../shared/testValues.ts';
+import { TEST_SITEMAP, TEST_VALUES } from '../shared/testValues.ts';
 
 // arbitrary fixture date — not today's date. 단위 테스트는 실제 날짜에 의존하지
 // 않고 이 값이 sitemap 본문에 그대로 흘러가는지만 검증합니다. (실제 날짜 동작은
@@ -27,7 +26,7 @@ function makePost(over: Partial<SitemapPost> = {}): SitemapPost {
 }
 
 test('sitemap: 정적 URL 3개(루트/posts/about)가 포함됨', () => {
-  const xml = buildSitemapXml([], TODAY, SITE_VALUES, TZ);
+  const xml = buildSitemapXml([], TODAY, SITE_VALUES, TZ, TEST_SITEMAP);
   expect(xml.includes(`<loc>${SITE}/</loc>`)).toBeTruthy();
   expect(xml.includes(`<loc>${SITE}/posts/</loc>`)).toBeTruthy();
   expect(xml.includes(`<loc>${SITE}/about/</loc>`)).toBeTruthy();
@@ -37,21 +36,22 @@ test('sitemap: 포스트 entry 개수만큼 <url> 블록 추가', () => {
   // 정적 URL 개수는 빈 posts 결과로부터 동적으로 산출 — 새 정적 페이지가
   // 추가될 때 이 테스트가 그 사실만으로 깨지지 않도록.
   const staticCount = (
-    buildSitemapXml([], TODAY, SITE_VALUES, TZ).match(/<url>/g) || []
+    buildSitemapXml([], TODAY, SITE_VALUES, TZ, TEST_SITEMAP).match(/<url>/g) ||
+    []
   ).length;
   const posts = [
     makePost({ slug: 'a' }),
     makePost({ slug: 'b' }),
     makePost({ slug: 'c' }),
   ];
-  const xml = buildSitemapXml(posts, TODAY, SITE_VALUES, TZ);
+  const xml = buildSitemapXml(posts, TODAY, SITE_VALUES, TZ, TEST_SITEMAP);
   const count = (xml.match(/<url>/g) || []).length;
   expect(count).toBe(staticCount + posts.length);
 });
 
 test('sitemap: slug의 특수문자가 URL 인코딩됨 (디렉토리 구분자는 보존)', () => {
   const posts = [makePost({ slug: 'series/한글 slug' })];
-  const xml = buildSitemapXml(posts, TODAY, SITE_VALUES, TZ);
+  const xml = buildSitemapXml(posts, TODAY, SITE_VALUES, TZ, TEST_SITEMAP);
   expect(xml.includes('/posts/series/')).toBeTruthy();
   expect(xml.includes(encodeURIComponent('한글 slug'))).toBeTruthy();
   // 디렉토리 구분자는 보존되어 인코딩되지 않음
@@ -66,19 +66,19 @@ test('sitemap: updatedAt 있으면 lastmod = updatedAt YYYY-MM-DD', () => {
       updatedAt: '2026-03-10',
     }),
   ];
-  const xml = buildSitemapXml(posts, TODAY, SITE_VALUES, TZ);
+  const xml = buildSitemapXml(posts, TODAY, SITE_VALUES, TZ, TEST_SITEMAP);
   expect(xml.includes('<lastmod>2026-03-10</lastmod>')).toBeTruthy();
 });
 
 test('sitemap: updatedAt 없으면 lastmod = date', () => {
   const posts = [makePost({ slug: 'a', date: '2025-12-31' })];
-  const xml = buildSitemapXml(posts, TODAY, SITE_VALUES, TZ);
+  const xml = buildSitemapXml(posts, TODAY, SITE_VALUES, TZ, TEST_SITEMAP);
   expect(xml.includes('<lastmod>2025-12-31</lastmod>')).toBeTruthy();
 });
 
 test('sitemap: date도 updatedAt도 없으면 lastmod = today', () => {
   const posts = [makePost({ slug: 'a', date: null, updatedAt: null })];
-  const xml = buildSitemapXml(posts, TODAY, SITE_VALUES, TZ);
+  const xml = buildSitemapXml(posts, TODAY, SITE_VALUES, TZ, TEST_SITEMAP);
   // 정적 URL의 lastmod도 today지만, 포스트의 lastmod도 today여야 함
   expect(xml.includes(`<loc>${SITE}/posts/a/</loc>`)).toBeTruthy();
   // 같은 URL 블록 내에 today가 들어가는지
@@ -108,7 +108,7 @@ test('sitemap: 루트/posts의 lastmod는 빌드 날짜가 아니라 최신 글 
     makePost({ slug: 'newest', date: '2026-02-20' }),
     makePost({ slug: 'mid', date: '2025-08-15' }),
   ];
-  const xml = buildSitemapXml(posts, TODAY, SITE_VALUES, TZ);
+  const xml = buildSitemapXml(posts, TODAY, SITE_VALUES, TZ, TEST_SITEMAP);
 
   for (const loc of [`${SITE}/`, `${SITE}/posts/`]) {
     const block = staticBlock(xml, loc);
@@ -128,7 +128,7 @@ test('sitemap: updatedAt이 가장 최신이면 그 값이 정적 URL lastmod가
     makePost({ slug: 'a', date: '2026-01-01' }),
     makePost({ slug: 'b', date: '2025-06-01', updatedAt: '2026-04-09' }),
   ];
-  const xml = buildSitemapXml(posts, TODAY, SITE_VALUES, TZ);
+  const xml = buildSitemapXml(posts, TODAY, SITE_VALUES, TZ, TEST_SITEMAP);
   const block = staticBlock(xml, `${SITE}/`);
   expect(block).toBeTruthy();
   expect(block?.[1]).toMatch(/<lastmod>2026-04-09<\/lastmod>/);
@@ -143,6 +143,7 @@ test('sitemap: about의 lastmod는 손으로 관리하는 상수 (빌드 날짜�
     TODAY,
     SITE_VALUES,
     TZ,
+    TEST_SITEMAP,
   );
   const block = staticBlock(xml, `${SITE}/about/`);
   expect(block, 'about block must exist').toBeTruthy();
@@ -162,7 +163,7 @@ test('sitemap: date 없는 글이 섞여도 정적 lastmod가 today로 튀지 �
     makePost({ slug: 'dated', date: '2026-02-20' }),
     makePost({ slug: 'undated', date: null, updatedAt: null }),
   ];
-  const xml = buildSitemapXml(posts, TODAY, SITE_VALUES, TZ);
+  const xml = buildSitemapXml(posts, TODAY, SITE_VALUES, TZ, TEST_SITEMAP);
 
   for (const loc of [`${SITE}/`, `${SITE}/posts/`]) {
     const block = staticBlock(xml, loc);
@@ -189,14 +190,14 @@ test('sitemap: 모든 글에 date가 없으면 정적 lastmod는 today로 폴백
     makePost({ slug: 'a', date: null, updatedAt: null }),
     makePost({ slug: 'b', date: null, updatedAt: null }),
   ];
-  const xml = buildSitemapXml(posts, TODAY, SITE_VALUES, TZ);
+  const xml = buildSitemapXml(posts, TODAY, SITE_VALUES, TZ, TEST_SITEMAP);
   const block = staticBlock(xml, `${SITE}/`);
   expect(block).toBeTruthy();
   expect(block?.[1]).toMatch(new RegExp(`<lastmod>${TODAY}</lastmod>`));
 });
 
 test('sitemap: 글이 하나도 없으면 정적 lastmod는 today로 폴백', () => {
-  const xml = buildSitemapXml([], TODAY, SITE_VALUES, TZ);
+  const xml = buildSitemapXml([], TODAY, SITE_VALUES, TZ, TEST_SITEMAP);
   const block = staticBlock(xml, `${SITE}/`);
   expect(block).toBeTruthy();
   expect(block?.[1]).toMatch(new RegExp(`<lastmod>${TODAY}</lastmod>`));
@@ -204,15 +205,17 @@ test('sitemap: 글이 하나도 없으면 정적 lastmod는 today로 폴백', ()
 
 test('getPostPriority: 고우선 slug는 0.8 (HIGH_PRIORITY_SLUGS 전부 0.8)', () => {
   // 상수에서 직접 참조 — slug 목록이 변경되어도 테스트가 자동으로 맞춰짐.
-  for (const slug of DEFAULT_SITEMAP.highPrioritySlugs) {
-    expect(getPostPriority({ slug }), `${slug} priority`).toBe('0.8');
+  for (const slug of TEST_SITEMAP.highPrioritySlugs) {
+    expect(getPostPriority({ slug }, TEST_SITEMAP), `${slug} priority`).toBe(
+      '0.8',
+    );
   }
 });
 
 test('getPostPriority: 고우선 폴더는 0.75 (HIGH_PRIORITY_FOLDERS 전부 0.75)', () => {
-  for (const relativeDir of DEFAULT_SITEMAP.highPriorityFolders) {
+  for (const relativeDir of TEST_SITEMAP.highPriorityFolders) {
     expect(
-      getPostPriority({ slug: 'arbitrary', relativeDir }),
+      getPostPriority({ slug: 'arbitrary', relativeDir }, TEST_SITEMAP),
       `${relativeDir} folder priority`,
     ).toBe('0.75');
   }
@@ -221,24 +224,25 @@ test('getPostPriority: 고우선 폴더는 0.75 (HIGH_PRIORITY_FOLDERS 전부 0.
 test('getPostPriority: 시리즈가 아닌 고우선 폴더도 0.75', () => {
   // `typescript` 폴더에는 `_series.yml`이 없어 글의 series가 비어 있다.
   // 우선순위를 series로 판정하면 이 글이 조용히 0.6으로 떨어진다.
+  expect(TEST_SITEMAP.highPriorityFolders.includes('typescript')).toBeTruthy();
   expect(
-    DEFAULT_SITEMAP.highPriorityFolders.includes('typescript'),
-  ).toBeTruthy();
-  expect(
-    getPostPriority({ slug: 'arbitrary', relativeDir: 'typescript' }),
+    getPostPriority(
+      { slug: 'arbitrary', relativeDir: 'typescript' },
+      TEST_SITEMAP,
+    ),
   ).toBe('0.75');
 });
 
 test('getPostPriority: 그 외는 0.6', () => {
-  expect(getPostPriority({ slug: 'x' })).toBe('0.6');
-  expect(getPostPriority({ slug: 'x', relativeDir: 'random-folder' })).toBe(
-    '0.6',
-  );
+  expect(getPostPriority({ slug: 'x' }, TEST_SITEMAP)).toBe('0.6');
+  expect(
+    getPostPriority({ slug: 'x', relativeDir: 'random-folder' }, TEST_SITEMAP),
+  ).toBe('0.6');
 });
 
 test('sitemap: URL 절대 경로 형식 (loc은 https://...로 시작)', () => {
   const posts = [makePost({ slug: 'a' })];
-  const xml = buildSitemapXml(posts, TODAY, SITE_VALUES, TZ);
+  const xml = buildSitemapXml(posts, TODAY, SITE_VALUES, TZ, TEST_SITEMAP);
   const locs = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map(m => m[1]);
   expect(locs.length >= 4).toBeTruthy();
   for (const loc of locs) {
@@ -247,7 +251,7 @@ test('sitemap: URL 절대 경로 형식 (loc은 https://...로 시작)', () => {
 });
 
 test('sitemap: XML 헤더와 urlset namespace 포함', () => {
-  const xml = buildSitemapXml([], TODAY, SITE_VALUES, TZ);
+  const xml = buildSitemapXml([], TODAY, SITE_VALUES, TZ, TEST_SITEMAP);
   expect(xml.startsWith('<?xml version="1.0" encoding="UTF-8"?>')).toBeTruthy();
   expect(
     xml.includes('xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"'),
@@ -264,7 +268,7 @@ test('sitemap: YYYY-MM-DD date의 lastmod는 KST 기준으로 동일 날짜', ()
   // UTC 자정으로 파싱 후 toISOString().split('T')[0]를 하면 '2025-12-30'이 됩니다.
   // KST 기준으로 날짜를 추출하면 '2025-12-31'이어야 합니다.
   const posts = [makePost({ slug: 'a', date: '2025-12-31' })];
-  const xml = buildSitemapXml(posts, TODAY, SITE_VALUES, TZ);
+  const xml = buildSitemapXml(posts, TODAY, SITE_VALUES, TZ, TEST_SITEMAP);
   expect(
     xml.includes('<lastmod>2025-12-31</lastmod>'),
     'KST 날짜 의도 YYYY-MM-DD의 lastmod가 하루 밀리면 안 됨',
@@ -276,7 +280,7 @@ test('sitemap: YYYY-MM-DD date가 UTC 자정으로 파싱되면 lastmod가 하�
   // (UTC 자정 = 2025-12-31T00:00:00Z이지만 ISO split은 UTC 기준이라 하루 전날이 됨)
   // 수정 후: getKSTDateISO(TZ, parseScheduledDateKST(TZ, '2025-12-31')) = '2025-12-31'
   const posts = [makePost({ slug: 'a', date: '2025-12-31' })];
-  const xml = buildSitemapXml(posts, TODAY, SITE_VALUES, TZ);
+  const xml = buildSitemapXml(posts, TODAY, SITE_VALUES, TZ, TEST_SITEMAP);
   const correctLastmod = getKSTDateISO(
     TZ,
     parseScheduledDateKST(TZ, '2025-12-31'),
@@ -291,7 +295,7 @@ test('sitemap: offset 포함 ISO 8601 date는 KST 날짜로 변환', () => {
   const posts = [
     makePost({ slug: 'a', date: '2026-03-10T09:00:00+09:00', updatedAt: null }),
   ];
-  const xml = buildSitemapXml(posts, TODAY, SITE_VALUES, TZ);
+  const xml = buildSitemapXml(posts, TODAY, SITE_VALUES, TZ, TEST_SITEMAP);
   const expected = getKSTDateISO(
     TZ,
     parseScheduledDateKST(TZ, '2026-03-10T09:00:00+09:00'),

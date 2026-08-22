@@ -141,7 +141,7 @@ export const FRONTMATTER_FIELDS = {
     required: false,
     kind: 'string',
     narrow: toOptionalString,
-    doc: '**`<title>` 전용**의 짧은 제목. 화면 제목·OG 카드·JSON-LD headline은 계속 `title`을 쓴다. `{seoTitle ?? title} | Frontend Lab`이 60자를 넘으면 `lint:posts`가 `long-title` 경고',
+    doc: '**`<title>` 전용**의 짧은 제목. 화면 제목·OG 카드·JSON-LD headline은 계속 `title`을 쓴다. `{seoTitle ?? title} | {site.name}`이 seo.titleMaxLength(기본 60자)를 넘으면 `lint:posts`가 `long-title` 경고',
   },
   date: {
     required: true,
