@@ -215,14 +215,16 @@ hero: 'deploy-pipeline'
    }
    ```
 
-2. `packages/@blog/content/src/shared/contentValues.ts` 의 `DEFAULT_DIAGRAM_NAMES` 에 이름 한
-   줄을 넣는다(`src/post/diagramNames.ts` 의 `DIAGRAM_NAMES`·`DiagramName` 이 여기서 파생된다).
+2. 앱 루트 `content.values.mts` 의 `DIAGRAM_NAMES` 에 이름 한 줄을 넣는다
+   (`DiagramName` 타입이 여기서 파생되고, `content.config.mts` 가 같은 목록을
+   `registries.diagramNames` 로 넘겨 `lint:posts` 도 같은 목록을 본다).
 3. `src/components/diagram/registry.ts` 의 `DIAGRAMS` 에 한 줄을 넣는다.
 
 레지스트리 타입이 `Record<DiagramName, …>` 이라 2·3 중 하나만 하면 컴파일이 막는다.
-이름 목록이 컴포넌트와 떨어져 `@blog/content` 쪽(`src/post/diagramNames.ts`, 값은
-`src/shared/contentValues.ts`)에 있는 이유는 `lint:posts`(node 러너)가 React를 끌어오지 않고
-이름만 검사할 수 있어야 해서다.
+이름 목록이 컴포넌트와 떨어져 `content.values.mts` 에 있는 이유는 `lint:posts`(node 러너)가
+React를 끌어오지 않고 이름만 검사할 수 있어야 해서다. 목록을 패키지가 아니라 앱이 소유하는
+이유는 그 반대다 — 어떤 그림이 있는지는 사이트마다 다르고, 패키지에 기본값을 두면 그 값이
+곧 특정 사이트의 하드코딩이다.
 
 ---
 

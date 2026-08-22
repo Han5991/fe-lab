@@ -35,7 +35,7 @@ import { encodePostSlug } from './utils.ts';
  */
 
 /**
- * 글 아카이브 라우트. `src/shared/constants.ts`의 `RSS_PATH`와 나란히 두고 싶어지지만
+ * 글 아카이브 라우트. 소비자 값 모듈의 `RSS_PATH`와 나란히 두고 싶어지지만
  * `/posts/`는 사이트 상수가 아니라 **라우트 모양**이고, 후행 슬래시 규칙을
  * `postPath`와 한 파일에서 공유해야 두 규칙이 갈리지 않아 여기 둔다.
  */

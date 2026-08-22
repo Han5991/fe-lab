@@ -32,14 +32,14 @@ export interface SiteConfig {
   descriptionExpanded: string;
   /**
    * 글별 OG 카드가 없을 때 쓰는 기본 공유 이미지.
-   * (기본값이 `.jpg`인 사연은 contentValues.ts의 OG_DEFAULT_IMAGE 주석 참고.)
+   * (`.jpg`인 사연은 소비자 값 모듈의 OG_DEFAULT_IMAGE 주석에 있다.)
    */
   ogDefaultImage: string;
   /** 사이트 내부 RSS 경로. 절대 URL은 `${url}${rssPath}`로 조합 */
   rssPath: string;
   /**
    * `/about/` 페이지를 마지막으로 **손으로 고친** 날짜 ('YYYY-MM-DD').
-   * 손으로 관리하는 이유는 contentValues.ts의 ABOUT_PAGE_MODIFIED 주석 참고.
+   * 손으로 관리하는 이유는 소비자 값 모듈의 ABOUT_PAGE_MODIFIED 주석에 있다.
    */
   aboutPageModified: string;
   /** merged PR 수 폴백값. CI가 NEXT_PUBLIC_PR_COUNT로 실제 값을 주입한다 */
@@ -97,9 +97,9 @@ export type SeriesColorKey = 'accent' | 'marker' | 'moss';
 
 export interface RegistriesConfig {
   /**
-   * 이름으로 부를 수 있는 다이어그램 목록. 컴포넌트 매핑은
-   * 앱의 `src/components/diagram/registry.ts`가 갖고, 검증(lint:posts)과 렌더가
-   * 이 목록을 공유한다 (`src/post/diagramNames.ts` 참고).
+   * 이름으로 부를 수 있는 다이어그램 목록. **기본값이 없다** — 이름 목록과
+   * 컴포넌트 매핑(`src/components/diagram/registry.ts`)의 소유자는 앱이고,
+   * 패키지는 검증(lint:posts의 unknown-hero-diagram)에 쓸 이름만 받는다.
    */
   diagramNames: readonly string[];
   /** 코드 펜스 라벨 허용 목록. 기본값은 prismLanguages.ts에서 파생 */

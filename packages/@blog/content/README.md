@@ -101,13 +101,14 @@ flowchart LR
 ```
 src/
 ├─ index.ts · seo/index.ts        익스포트 문 둘 (내부 배럴 post/index.ts는 별개)
-├─ shared/     contentConfig(defineContent) · contentValues(클라이언트 안전 리터럴) · constants(façade)
-│              · contentPaths(절대 경로) · dates · format · jsonLd · url · postFiles · prismLanguages
+├─ shared/     contentConfig(defineContent + ContentValues 계약) · contentPaths(절대 경로)
+│              · testValues(테스트 픽스처 — 패키지 안의 유일한 "어떤 사이트")
+│              · dates · format · jsonLd · url · postFiles · prismLanguages
 │              · markdownHeadings(h1→h2 매핑, 사이트·RSS 공유) · viewCookie
 ├─ post/       createContent(인스턴스 조립) · repository(gray-matter 로더 factory) · service(읽기 API factory)
 │              · visibility(공개 판정 한 곳) · series(_series.yml factory) · urls(postPath·archivePath — 후행 슬래시는 여기서만)
 │              · filtering · sorting · aggregate · thumbnail · assetUrl · frontmatterSchema(서술자 테이블)
-│              · diagramNames · types · utils · testing(테스트 픽스처 인스턴스)
+│              · types · utils · testing(테스트 픽스처 인스턴스)
 ├─ seo/        postSeo — createPostSeo(buildPostSeo·buildPostJsonLd·buildBreadcrumbJsonLd) + 순수 계산
 └─ scripts/    build-content(진입점) · validate-posts + validate/{rules,frontmatter,body,corpus,shared}
                · check-seo · artifacts(산출물 레지스트리 7종) · generate-{sitemap,search-index,llms,llms-full}
@@ -150,27 +151,35 @@ flowchart TD
 
 ## `defineContent` (`src/shared/contentConfig.ts`)
 
-서버·빌드 전용 설정 표면. **`root`(경로 앵커)만 필수**고 나머지는 전부
-기본값이 있다 — 어떤 root 기본값이든 특정 저장소 구조의 하드코딩이 되기
-때문이다. 클라이언트가 소비하는 리터럴은 `contentValues.ts`(값-only,
-import 없음)가 갖고, 설정은 그 값을 기본값으로 소비한다 — 방향은 항상
-`contentConfig → contentValues`. 옵션 그룹(그룹 단위 shallow-Partial 병합 —
-`og.palette`와 `llms.facts`만 한 단계 더 병합):
+서버·빌드 전용 설정 표면. **사이트 고유 값에는 기본값이 없다** —
+`root`(경로 앵커)와 같은 이유로, 어떤 기본값이든 특정 사이트의 하드코딩이기
+때문이다. 그래서 `root` · `site` · `author` · `timezone` ·
+`registries.diagramNames` 가 필수(`ContentValues` 계약)이고, 값 자체는 소비자
+앱의 `content.values.mts`(순수 리터럴, 값 import 없음)가 소유한다 — 방향은 항상
+`content.values → content.config → @blog/content`.
 
-| 그룹         | 키                                                                                                                                    |
-| :----------- | :------------------------------------------------------------------------------------------------------------------------------------ |
-| `root`       | **필수.** 경로 앵커 — `file://` URL(관례: `import.meta.url`) 또는 절대 경로. 상대 경로는 거부(cwd 의존 금지)                          |
-| `site`       | `url` · `name` · `description` · `descriptionExpanded` · `ogDefaultImage` · `rssPath` · `aboutPageModified` · `mergedPrCountFallback` |
-| `author`     | `name` · `alternateName` · `role` · `github` · `linkedin`                                                                             |
-| `seo`        | `titleSuffix` · `titleMaxLength`(60) · `descriptionMinLength`(120) · `descriptionMaxLength`(160, 자동 발췌 길이 겸용)                 |
-| `timezone`   | `iana` · `isoOffset` · `utcOffsetMs`                                                                                                  |
-| `runtime`    | `isDevelopment()` — `NODE_ENV === 'development'` 정확 비교(빌드 스크립트를 dev로 오인하지 않게)                                       |
-| `registries` | `diagramNames` · `supportedFenceLabels` · `seriesColors` · `seriesColorFallback`                                                      |
-| `dirs`       | **앱 루트 기준 상대 경로** — `content`(`../posts`) · `public` · `cache` · `out` · `media` · `thumbs` · `og`                           |
-| `sitemap`    | `highPriorityFolders`(0.75) · `highPrioritySlugs`(0.8)                                                                                |
-| `og`         | `width` · `height` · `palette`(satori용 hex — CSS 변수를 못 읽는다)                                                                   |
-| `thumbnails` | `maxWidth` · `webpQuality`                                                                                                            |
-| `llms`       | `summaryMaxLength` · `indexIntro` · `fullIntro` · `facts.*`                                                                           |
+클라이언트 컴포넌트가 소비하는 값(타임존·다이어그램 이름)도 그 값 모듈에서
+직접 가져간다. 해석된 설정 객체를 클라이언트가 import하면 og 팔레트·llms 산문
+까지 번들에 실리기 때문이다(defineContent 호출 결과라 번들러가 미사용 필드를
+털지 못한다).
+
+나머지 그룹은 기본값이 있고 그룹 단위 shallow-Partial로 병합된다
+(`og.palette`와 `llms.facts`만 한 단계 더 병합):
+
+| 그룹         | 키                                                                                                                                                    |
+| :----------- | :---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `root`       | **필수.** 경로 앵커 — `file://` URL(관례: `import.meta.url`) 또는 절대 경로. 상대 경로는 거부(cwd 의존 금지)                                          |
+| `site`       | **필수(전체).** `url` · `name` · `description` · `descriptionExpanded` · `ogDefaultImage` · `rssPath` · `aboutPageModified` · `mergedPrCountFallback` |
+| `author`     | **필수(전체).** `name` · `alternateName` · `role` · `github` · `linkedin`                                                                             |
+| `seo`        | `titleSuffix` · `titleMaxLength`(60) · `descriptionMinLength`(120) · `descriptionMaxLength`(160, 자동 발췌 길이 겸용)                                 |
+| `timezone`   | **필수(전체).** `iana` · `isoOffset` · `utcOffsetMs`                                                                                                  |
+| `runtime`    | `isDevelopment()` — `NODE_ENV === 'development'` 정확 비교(빌드 스크립트를 dev로 오인하지 않게)                                                       |
+| `registries` | `diagramNames`는 **필수**(사이트마다 다른 그림 목록). `supportedFenceLabels` · `seriesColors` · `seriesColorFallback`은 기본값 있음                   |
+| `dirs`       | **앱 루트 기준 상대 경로** — `content`(`../posts`) · `public` · `cache` · `out` · `media` · `thumbs` · `og`                                           |
+| `sitemap`    | `highPriorityFolders`(0.75) · `highPrioritySlugs`(0.8)                                                                                                |
+| `og`         | `width` · `height` · `palette`(satori용 hex — CSS 변수를 못 읽는다)                                                                                   |
+| `thumbnails` | `maxWidth` · `webpQuality`                                                                                                                            |
+| `llms`       | `summaryMaxLength` · `indexIntro` · `fullIntro` · `facts.*`                                                                                           |
 
 ## 경로 앵커 — `content.config.mts`
 
