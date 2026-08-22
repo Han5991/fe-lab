@@ -15,8 +15,8 @@ import { safeJsonLd } from '@blog/content';
 import { Label } from '@/src/components/blog';
 import { PageBoundary } from '@/src/components/PageBoundary';
 import { railGutter, railColumn } from '@/src/components/Rail';
-import { archivePath, getAllPostSummaries, postPath } from '@blog/content';
-import { getAllSeries } from '@blog/content';
+import { archivePath, postPath } from '@blog/content';
+import { getAllPostSummaries, getAllSeries } from '@/src/content';
 
 import { FEATURED_SERIES } from './featuredSeries';
 

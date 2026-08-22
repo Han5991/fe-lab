@@ -64,7 +64,8 @@ apps/blog/posts/**/_series.yml ─┤
 
 - **레이어 경계는 컨벤션이 아니라 lint다.** 두 워크스페이스 모두 `eslint-plugin-boundaries`가 폴더 단위 element로
   의존 방향을 강제한다(앱: `lib/platform → domain/analytics → src`, 패키지: `shared → post → seo → scripts → scripts/render`).
-  콘텐츠 원본(`apps/blog/posts`)은 패키지로 옮기지 않았다 — 위치는 `defineContent` 설정 한 줄이다.
+  콘텐츠 원본(`apps/blog/posts`)은 패키지로 옮기지 않았다 — 위치는 앱 루트 `content.config.mts`(경로 앵커,
+  `defineContent({ root: import.meta.url })`)의 설정 한 줄이다.
 - **검증은 두 층.** `validate-posts`가 frontmatter 원문을, `check-seo`가 최종 HTML을 본다. 둘 다 `pnpm build`(prebuild → next build → check-seo) 안에 있어 로컬·PR·배포가 같은 검사를 지난다.
 - 자세한 구조·스크립트·데이터 흐름은 [`apps/blog/web/README.md`](apps/blog/web/README.md), 운영 규칙과 콘텐츠 계약은 [`CLAUDE.md`](CLAUDE.md)의 "Blog Architecture" 절.
 

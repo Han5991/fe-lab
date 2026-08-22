@@ -4,12 +4,11 @@ import type { Metadata } from 'next';
 
 import {
   archiveUrl,
-  getAllPostSummaries,
-  getSeriesMeta,
   POSTS_PATH,
   sortPostsBySeriesOrder,
   type PostSummary,
 } from '@blog/content';
+import { getAllPostSummaries, getSeriesMeta } from '@/src/content';
 import {
   SITE_URL,
   SITE_NAME,

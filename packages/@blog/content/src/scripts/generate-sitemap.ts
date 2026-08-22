@@ -1,31 +1,36 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { SITE_URL, ABOUT_PAGE_MODIFIED } from '../shared/constants.ts';
-import { CONTENT } from '../shared/contentConfig.ts';
-import { CONTENT_PATHS } from '../shared/contentPaths.ts';
+import {
+  DEFAULT_SITEMAP,
+  type SitemapConfig,
+} from '../shared/contentConfig.ts';
 import { parseScheduledDateKST, getKSTDateISO } from '../shared/dates.ts';
 import { archiveUrl, postUrl, type PostSummary } from '../post/index.ts';
-import { POST_SETS } from './artifacts.ts';
+import { resolvePostSet } from './artifacts.ts';
+import type { ContentContext } from './context.ts';
 
-// 고가치 주제 폴더의 글은 우선순위를 높게 설정. 목록은 설정(defineContent의
-// sitemap 그룹)에서 오고, 테스트에서 self-describing 패턴으로 참조하기 위해
-// Set으로 감싸 export한다.
-//
-// **시리즈가 아니라 폴더 기준이다.** 목록의 `typescript`에는 `_series.yml`이
-// 없어서 시리즈가 아니고, `post.series`로 비교하면 이 글의 우선순위가 조용히
-// 0.6으로 떨어진다. 우선순위는 "이 주제가 중요한가"의 문제라 연재 여부와
-// 무관하므로, 물리적 폴더(`relativeDir`)를 본다.
-export const HIGH_PRIORITY_FOLDERS = new Set(
-  CONTENT.sitemap.highPriorityFolders,
-);
-export const HIGH_PRIORITY_SLUGS = new Set(CONTENT.sitemap.highPrioritySlugs);
-
-export function getPostPriority(post: {
-  slug: string;
-  relativeDir?: string;
-}): string {
-  if (HIGH_PRIORITY_SLUGS.has(post.slug)) return '0.8';
-  if (post.relativeDir && HIGH_PRIORITY_FOLDERS.has(post.relativeDir)) {
+/**
+ * 고가치 주제의 글은 우선순위를 높게 설정. 목록은 설정(defineContent의
+ * sitemap 그룹)에서 파라미터로 온다.
+ *
+ * **시리즈가 아니라 폴더 기준이다.** 기본 목록의 `typescript`에는 `_series.yml`이
+ * 없어서 시리즈가 아니고, `post.series`로 비교하면 이 글의 우선순위가 조용히
+ * 0.6으로 떨어진다. 우선순위는 "이 주제가 중요한가"의 문제라 연재 여부와
+ * 무관하므로, 물리적 폴더(`relativeDir`)를 본다.
+ */
+export function getPostPriority(
+  post: {
+    slug: string;
+    relativeDir?: string;
+  },
+  sitemap: SitemapConfig = DEFAULT_SITEMAP,
+): string {
+  if (sitemap.highPrioritySlugs.includes(post.slug)) return '0.8';
+  if (
+    post.relativeDir &&
+    sitemap.highPriorityFolders.includes(post.relativeDir)
+  ) {
     return '0.75';
   }
   return '0.6';
@@ -68,6 +73,7 @@ export function buildSitemapXml(
   posts: SitemapPost[],
   today: string,
   siteUrl: string = SITE_URL,
+  sitemap: SitemapConfig = DEFAULT_SITEMAP,
 ): string {
   const entries = posts.map(post => ({
     post,
@@ -109,22 +115,27 @@ export function buildSitemapXml(
   <url>
     <loc>${postUrl(post.slug, siteUrl)}</loc>
     <lastmod>${lastmod}</lastmod>
-    <priority>${getPostPriority(post)}</priority>
+    <priority>${getPostPriority(post, sitemap)}</priority>
   </url>`,
     )
     .join('')}
 </urlset>`;
 }
 
-export function main() {
-  const publicDir = CONTENT_PATHS.publicDir;
+export function main(ctx: ContentContext) {
+  const publicDir = ctx.paths.publicDir;
   // 글 집합은 레지스트리(artifacts.ts)에 선언된 셀렉터를 쓴다 — sitemap은
   // 대조 기준(reference)이라 visible을 exact로 담아야 한다.
-  const posts = POST_SETS.visible();
+  const posts = resolvePostSet(ctx.content, 'visible');
   // KST 기준 오늘 날짜. `new Date().toISOString()`은 UTC라 KST 00:00~09:00 빌드 시
   // 하루 밀린 lastmod를 만들 수 있어 getKSTDateISO()를 사용한다.
   const today = getKSTDateISO();
-  const sitemap = buildSitemapXml(posts, today);
+  const sitemap = buildSitemapXml(
+    posts,
+    today,
+    ctx.config.site.url,
+    ctx.config.sitemap,
+  );
   fs.writeFileSync(path.join(publicDir, 'sitemap.xml'), sitemap);
   console.log('Sitemap generated successfully!');
 }

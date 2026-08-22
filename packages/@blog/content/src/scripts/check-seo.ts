@@ -1,17 +1,20 @@
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { join, relative, resolve, sep } from 'node:path';
 import { SITE_URL, SITE_NAME } from '../shared/constants.ts';
-import { CONTENT } from '../shared/contentConfig.ts';
+// SEO 임계값은 기본 설정 슬라이스에서 — validate-posts(frontmatter.ts)와 같은
+// 출처를 본다. 사이트 정체성 상수와 마찬가지로 seo 예산의 defineContent
+// 오버라이드는 아직 이 게이트에 배선돼 있지 않다(contentValues.ts의 제약 주석
+// 참고 — 오버라이드하려면 두 게이트에 함께 배선할 것).
+import { DEFAULT_SEO } from '../shared/contentConfig.ts';
 import { decodeUrlSafe } from '../shared/url.ts';
-import { CONTENT_PATHS } from '../shared/contentPaths.ts';
+import type { ContentContext } from './context.ts';
+import { ARTIFACTS, type ArtifactRelation } from './artifacts.ts';
 
-// SEO 임계값은 설정 표면에서 — validate-posts --strict와 같은 출처를 본다.
 const {
   titleMaxLength: SEO_TITLE_MAX_LENGTH,
   descriptionMinLength: SEO_DESCRIPTION_MIN_LENGTH,
   descriptionMaxLength: SEO_DESCRIPTION_MAX_LENGTH,
-} = CONTENT.seo;
-import { ARTIFACTS, type ArtifactRelation } from './artifacts.ts';
+} = DEFAULT_SEO;
 
 /**
  * 빌드 산출물(`out/`)의 HTML을 파싱해 SEO 계약을 검사합니다.
@@ -377,10 +380,10 @@ export function checkArtifacts(collected: CollectedArtifact[]): SeoViolation[] {
   return violations;
 }
 
-export function main(target?: string) {
+export function main(ctx: ContentContext, target?: string) {
   // 인자를 주면 그 경로를(cwd 기준, resolve라 절대 경로 인자도 그대로 받는다),
   // 없으면 설정의 out 디렉터리를 검사한다.
-  const outDir = target ? resolve(process.cwd(), target) : CONTENT_PATHS.outDir;
+  const outDir = target ? resolve(process.cwd(), target) : ctx.paths.outDir;
   if (!existsSync(outDir)) {
     console.error(
       `✖ 빌드 산출물이 없습니다: ${outDir}\n  먼저 \`pnpm build\`를 실행하세요.`,

@@ -9,28 +9,14 @@ import {
 } from 'node:fs';
 import { dirname, join, sep } from 'node:path';
 import sharp from 'sharp';
-import { POST_SETS } from '../artifacts.ts';
+import { resolvePostSet } from '../artifacts.ts';
 import { thumbnailWebpRelPath } from '../../post/thumbnail.ts';
 import type { PostData } from '../../post/types.ts';
-import { CONTENT } from '../../shared/contentConfig.ts';
-import { CONTENT_PATHS } from '../../shared/contentPaths.ts';
-
-const POSTS_SOURCE_DIR = CONTENT_PATHS.postsDir;
-
-/**
- * 생성물은 public/posts/가 아니라 public/thumbs/에 둡니다.
- *
- * sync-posts.ts는 public/posts/ 안에서 posts/에 원본이 없는 미디어를 orphan으로
- * 삭제하고(.webp도 대상), build-content의 phase 2에서 두 단계가 병렬로 돌기 때문에
- * 같은 디렉터리를 쓰면 생성물이 지워질 수 있습니다. 두 디렉터리가 서로 배타인지는
- * defineContent가 검증합니다(assertOutputDirsExclusive).
- */
-const THUMBS_DIR = CONTENT_PATHS.thumbsOutDir;
-const MANIFEST_PATH = join(CONTENT_PATHS.cacheDir, 'thumbnails.json');
-
-/** 표시 최대 폭(FeaturedPost가 컨테이너 전체 폭). 이보다 작은 원본은 확대하지 않습니다. */
-export const MAX_WIDTH = CONTENT.thumbnails.maxWidth;
-export const WEBP_QUALITY = CONTENT.thumbnails.webpQuality;
+import {
+  DEFAULT_THUMBNAILS,
+  type ThumbnailsConfig,
+} from '../../shared/contentConfig.ts';
+import type { ContentContext } from '../context.ts';
 
 /** 인코딩 정책을 바꾸면 올려서 전체 재생성하게 합니다. */
 const ENCODE_VERSION = 1;
@@ -63,9 +49,12 @@ export function collectTasks(
 }
 
 /** 원본 바이트 + 인코딩 정책으로 계산 — 둘 다 그대로면 재인코딩을 skip합니다. */
-export function thumbnailContentHash(sourceBytes: Buffer): string {
+export function thumbnailContentHash(
+  sourceBytes: Buffer,
+  thumbs: ThumbnailsConfig = DEFAULT_THUMBNAILS,
+): string {
   return createHash('sha1')
-    .update(`v${ENCODE_VERSION}:${MAX_WIDTH}:${WEBP_QUALITY}:`)
+    .update(`v${ENCODE_VERSION}:${thumbs.maxWidth}:${thumbs.webpQuality}:`)
     .update(sourceBytes)
     .digest('hex');
 }
@@ -80,16 +69,19 @@ export function findOrphanWebps(
   );
 }
 
-async function encodeWebp(sourcePath: string): Promise<Buffer> {
+async function encodeWebp(
+  sourcePath: string,
+  thumbs: ThumbnailsConfig,
+): Promise<Buffer> {
   return sharp(sourcePath)
-    .resize({ width: MAX_WIDTH, withoutEnlargement: true })
-    .webp({ quality: WEBP_QUALITY })
+    .resize({ width: thumbs.maxWidth, withoutEnlargement: true })
+    .webp({ quality: thumbs.webpQuality })
     .toBuffer();
 }
 
-function readManifest(): Record<string, string> {
+function readManifest(manifestPath: string): Record<string, string> {
   try {
-    const parsed: unknown = JSON.parse(readFileSync(MANIFEST_PATH, 'utf8'));
+    const parsed: unknown = JSON.parse(readFileSync(manifestPath, 'utf8'));
     if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
       return parsed as Record<string, string>;
     }
@@ -99,28 +91,39 @@ function readManifest(): Record<string, string> {
   return {};
 }
 
-function listExistingWebps(): string[] {
-  if (!existsSync(THUMBS_DIR)) return [];
+function listExistingWebps(thumbsDir: string): string[] {
+  if (!existsSync(thumbsDir)) return [];
   // readdirSync는 OS 구분자를 쓰지만 outputRel은 항상 '/'로 조립되므로,
   // Windows에서 모든 파일이 orphan으로 오판되지 않도록 정규화해서 비교합니다.
-  return readdirSync(THUMBS_DIR, { recursive: true }).map(p =>
+  return readdirSync(thumbsDir, { recursive: true }).map(p =>
     String(p).split(sep).join('/'),
   );
 }
 
-export async function main() {
+export async function main(ctx: ContentContext) {
+  /**
+   * 생성물은 public/posts/(media)가 아니라 public/thumbs/에 둡니다.
+   * sync-posts.ts는 media 디렉터리 안에서 orphan을 삭제하고(.webp도 대상),
+   * build-content의 phase 2에서 두 단계가 병렬로 돌기 때문에 같은 디렉터리를
+   * 쓰면 생성물이 지워질 수 있습니다. 두 디렉터리가 서로 배타인지는
+   * defineContent가 검증합니다(assertOutputDirsExclusive).
+   */
+  const postsDir = ctx.paths.postsDir;
+  const thumbsDir = ctx.paths.thumbsOutDir;
+  const manifestPath = join(ctx.paths.cacheDir, 'thumbnails.json');
+  const thumbsConfig = ctx.config.thumbnails;
   // thumbs는 파일명에서 글을 되돌릴 수 없어 레지스트리 대조 대상이 아니지만,
-  // 글 집합 선택만은 레지스트리의 셀렉터(POST_SETS)를 같이 쓴다.
-  const tasks = collectTasks(POST_SETS.visible());
-  mkdirSync(THUMBS_DIR, { recursive: true });
+  // 글 집합 선택만은 레지스트리의 셀렉터(resolvePostSet)를 같이 쓴다.
+  const tasks = collectTasks(resolvePostSet(ctx.content, 'visible'));
+  mkdirSync(thumbsDir, { recursive: true });
 
   const expectedRel = new Set(tasks.map(t => t.outputRel));
-  const orphans = findOrphanWebps(listExistingWebps(), expectedRel);
+  const orphans = findOrphanWebps(listExistingWebps(thumbsDir), expectedRel);
   for (const orphan of orphans) {
-    rmSync(join(THUMBS_DIR, orphan));
+    rmSync(join(thumbsDir, orphan));
   }
 
-  const manifest = readManifest();
+  const manifest = readManifest(manifestPath);
   const nextManifest: Record<string, string> = {};
   let encoded = 0;
   let skipped = 0;
@@ -128,7 +131,7 @@ export async function main() {
   const missing: string[] = [];
 
   for (const task of tasks) {
-    const sourcePath = join(POSTS_SOURCE_DIR, task.sourceRel);
+    const sourcePath = join(postsDir, task.sourceRel);
     if (!existsSync(sourcePath)) {
       // 존재하지 않는 썸네일은 validate-posts가 broken-image로 잡습니다.
       // 여기서는 빌드를 막지 않고 건너뛰고, 목록만 보고합니다.
@@ -136,8 +139,8 @@ export async function main() {
       continue;
     }
     const sourceBytes = readFileSync(sourcePath);
-    const hash = thumbnailContentHash(sourceBytes);
-    const outPath = join(THUMBS_DIR, task.outputRel);
+    const hash = thumbnailContentHash(sourceBytes, thumbsConfig);
+    const outPath = join(thumbsDir, task.outputRel);
     nextManifest[task.outputRel] = hash;
 
     if (manifest[task.outputRel] === hash && existsSync(outPath)) {
@@ -145,15 +148,15 @@ export async function main() {
       continue;
     }
 
-    const webp = await encodeWebp(sourcePath);
+    const webp = await encodeWebp(sourcePath, thumbsConfig);
     mkdirSync(dirname(outPath), { recursive: true });
     writeFileSync(outPath, webp);
     savedBytes += sourceBytes.length - webp.length;
     encoded++;
   }
 
-  mkdirSync(dirname(MANIFEST_PATH), { recursive: true });
-  writeFileSync(MANIFEST_PATH, JSON.stringify(nextManifest, null, 2));
+  mkdirSync(dirname(manifestPath), { recursive: true });
+  writeFileSync(manifestPath, JSON.stringify(nextManifest, null, 2));
 
   const savedKb = Math.round(savedBytes / 1024);
   console.log(

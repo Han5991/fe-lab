@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
 import { sep } from 'node:path';
-import { CONTENT, defineContent } from './contentConfig.ts';
+import { defineContent } from './contentConfig.ts';
 import { DEFAULT_DIAGRAM_NAMES } from './contentValues.ts';
 import { SUPPORTED_FENCE_LABELS } from './prismLanguages.ts';
 import {
@@ -9,12 +9,15 @@ import {
   TITLE_SUFFIX,
   SEO_DESCRIPTION_MAX_LENGTH,
 } from './constants.ts';
-import { CONTENT_PATHS, resolveContentPaths } from './contentPaths.ts';
+import { resolveContentPaths } from './contentPaths.ts';
+
+/** 테스트 픽스처 루트 — 경로 무관 검증에 쓰는 임의 절대 경로 */
+const FIXTURE_ROOT = `${sep}tmp${sep}app`;
 
 // ── defineContent: 기본값 = 현재값 ───────────────────────────────────────────
 
-test('defineContent({})는 현재 사이트 값과 같다 (동작 no-op의 근거)', () => {
-  const config = defineContent({});
+test('defineContent({root})는 현재 사이트 값과 같다 (동작 no-op의 근거)', () => {
+  const config = defineContent({ root: FIXTURE_ROOT });
   expect(config.site.url).toBe('https://blog.sangwook.dev');
   expect(config.site.name).toBe('Frontend Lab');
   expect(config.seo.titleSuffix).toBe(' | Frontend Lab');
@@ -27,27 +30,57 @@ test('defineContent({})는 현재 사이트 값과 같다 (동작 no-op의 근�
   expect(config.registries.supportedFenceLabels).toBe(SUPPORTED_FENCE_LABELS);
 });
 
-test('값 모듈(constants 재수출)과 설정 인스턴스(CONTENT)는 같은 값을 본다', () => {
-  // 클라이언트는 값 모듈을, 서버/빌드는 CONTENT를 읽는다. 오버라이드가 {}인
-  // 동안 둘은 동일해야 한다 — 갈라지면 contentValues.ts 머리 주석의 제약 위반.
-  expect(SITE_URL).toBe(CONTENT.site.url);
-  expect(SITE_NAME).toBe(CONTENT.site.name);
-  expect(TITLE_SUFFIX).toBe(CONTENT.seo.titleSuffix);
-  expect(SEO_DESCRIPTION_MAX_LENGTH).toBe(CONTENT.seo.descriptionMaxLength);
+test('값 모듈(constants 재수출)과 설정 기본값은 같은 값을 본다', () => {
+  // 클라이언트는 값 모듈을, 서버/빌드는 defineContent 결과를 읽는다.
+  // 오버라이드가 없는 동안 둘은 동일해야 한다 — 갈라지면 contentValues.ts
+  // 머리 주석의 제약 위반.
+  const config = defineContent({ root: FIXTURE_ROOT });
+  expect(SITE_URL).toBe(config.site.url);
+  expect(SITE_NAME).toBe(config.site.name);
+  expect(TITLE_SUFFIX).toBe(config.seo.titleSuffix);
+  expect(SEO_DESCRIPTION_MAX_LENGTH).toBe(config.seo.descriptionMaxLength);
+});
+
+// ── defineContent: root 검증 ─────────────────────────────────────────────────
+
+test('root 없이 호출하면 defineContent가 던진다 (하드코딩 폴백 없음)', () => {
+  // 타입은 root를 필수로 강제하지만, JS 소비자·잘못된 config 파일을 위해
+  // 런타임에서도 막는다.
+  expect(() =>
+    defineContent({} as unknown as Parameters<typeof defineContent>[0]),
+  ).toThrow(/root/);
+});
+
+test('상대 경로 root는 거부한다 (cwd 의존 금지)', () => {
+  expect(() => defineContent({ root: './apps/blog/web' })).toThrow(
+    /file:\/\/ URL 또는 절대 경로/,
+  );
+});
+
+test('file:// URL root(import.meta.url 관례)를 받는다', () => {
+  const config = defineContent({ root: 'file:///tmp/app/content.config.ts' });
+  expect(config.root).toBe('file:///tmp/app/content.config.ts');
 });
 
 // ── defineContent: 병합 규칙 ─────────────────────────────────────────────────
 
 test('그룹 부분 오버라이드는 나머지 필드를 기본값으로 유지한다', () => {
-  const config = defineContent({ site: { name: 'Other Lab' } });
+  const config = defineContent({
+    root: FIXTURE_ROOT,
+    site: { name: 'Other Lab' },
+  });
   expect(config.site.name).toBe('Other Lab');
   expect(config.site.url).toBe('https://blog.sangwook.dev');
 });
 
 test('seo.titleSuffix는 명시하지 않으면 site.name에서 파생된다', () => {
-  const derived = defineContent({ site: { name: 'Other Lab' } });
+  const derived = defineContent({
+    root: FIXTURE_ROOT,
+    site: { name: 'Other Lab' },
+  });
   expect(derived.seo.titleSuffix).toBe(' | Other Lab');
   const explicit = defineContent({
+    root: FIXTURE_ROOT,
     site: { name: 'Other Lab' },
     seo: { titleSuffix: ' — 별도 접미사' },
   });
@@ -56,6 +89,7 @@ test('seo.titleSuffix는 명시하지 않으면 site.name에서 파생된다', (
 
 test('중첩 객체(og.palette, llms.facts)도 부분 병합된다', () => {
   const config = defineContent({
+    root: FIXTURE_ROOT,
     og: { palette: { accent: '#FF0000' } },
     llms: { facts: { speaking: 'somewhere' } },
   });
@@ -65,44 +99,62 @@ test('중첩 객체(og.palette, llms.facts)도 부분 병합된다', () => {
   expect(config.llms.facts.languageFull).toBe('Primarily Korean, some English');
 });
 
-// ── 산출 디렉터리 상호 배타 검증 (계획 위험 6번) ─────────────────────────────
+// ── 산출 디렉터리 상호 배타 검증 ─────────────────────────────────────────────
 
 test('outputDirs: media/thumbs가 같으면 defineContent가 던진다', () => {
   // sync-posts의 orphan 삭제(.webp 포함)와 thumbnails 생성이 병렬로 돌므로,
   // 같은 디렉터리는 생성물이 지워지는 조용한 파손이다.
-  expect(() => defineContent({ dirs: { thumbs: 'public/posts' } })).toThrow(
-    /겹칩니다/,
-  );
+  expect(() =>
+    defineContent({ root: FIXTURE_ROOT, dirs: { thumbs: 'public/posts' } }),
+  ).toThrow(/겹칩니다/);
 });
 
 test('outputDirs: 포개진 디렉터리(media 안의 thumbs)도 거부한다', () => {
   expect(() =>
-    defineContent({ dirs: { thumbs: 'public/posts/thumbs' } }),
+    defineContent({
+      root: FIXTURE_ROOT,
+      dirs: { thumbs: 'public/posts/thumbs' },
+    }),
   ).toThrow(/겹칩니다/);
   // 정규화('./', '..') 우회도 잡는다.
   expect(() =>
-    defineContent({ dirs: { og: 'public/./posts/../posts' } }),
+    defineContent({
+      root: FIXTURE_ROOT,
+      dirs: { og: 'public/./posts/../posts' },
+    }),
   ).toThrow(/겹칩니다/);
 });
 
 test('outputDirs: 서로 다른 형제 디렉터리는 통과한다', () => {
-  const config = defineContent({ dirs: { thumbs: 'public/thumbs2' } });
+  const config = defineContent({
+    root: FIXTURE_ROOT,
+    dirs: { thumbs: 'public/thumbs2' },
+  });
   expect(config.dirs.thumbs).toBe('public/thumbs2');
 });
 
 // ── resolveContentPaths ──────────────────────────────────────────────────────
 
-test('resolveContentPaths: appRoot 기준 절대 경로를 만든다', () => {
-  const paths = resolveContentPaths(CONTENT, `${sep}tmp${sep}app`);
+test('resolveContentPaths: 절대 경로 root 기준 절대 경로를 만든다', () => {
+  const paths = resolveContentPaths(defineContent({ root: FIXTURE_ROOT }));
+  expect(paths.appRoot).toBe(`${sep}tmp${sep}app`);
   expect(paths.postsDir).toBe(`${sep}tmp${sep}posts`);
   expect(paths.publicDir).toBe(`${sep}tmp${sep}app${sep}public`);
   expect(paths.outDir).toBe(`${sep}tmp${sep}app${sep}out`);
   expect(paths.mediaOutDir).toBe(`${sep}tmp${sep}app${sep}public${sep}posts`);
 });
 
-test('CONTENT_PATHS: 실제 앱 루트에 앵커된다 (cwd 비의존)', () => {
-  // contentPaths가 자기 위치에서 워크스페이스 루트로 올라가 apps/blog/web을 앱 루트로
-  // 잡는다. postsDir는 그 형제의 posts/다.
-  expect(CONTENT_PATHS.appRoot.endsWith(`${sep}blog${sep}web`)).toBeTruthy();
-  expect(CONTENT_PATHS.postsDir.endsWith(`${sep}blog${sep}posts`)).toBeTruthy();
+test('resolveContentPaths: file:// 파일 URL root는 그 파일의 디렉터리가 앵커다', () => {
+  const paths = resolveContentPaths(
+    defineContent({ root: 'file:///tmp/app/content.config.ts' }),
+  );
+  expect(paths.appRoot).toBe(`${sep}tmp${sep}app`);
+  expect(paths.postsDir).toBe(`${sep}tmp${sep}posts`);
+});
+
+test('resolveContentPaths: 후행 슬래시 디렉터리 URL은 그 디렉터리 자체가 앵커다', () => {
+  const paths = resolveContentPaths(
+    defineContent({ root: 'file:///tmp/app/' }),
+  );
+  expect(paths.appRoot).toBe(`${sep}tmp${sep}app`);
 });

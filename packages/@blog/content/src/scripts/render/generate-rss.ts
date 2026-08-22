@@ -5,10 +5,10 @@ import {
   SITE_NAME,
   SITE_DESCRIPTION,
 } from '../../shared/constants.ts';
-import { CONTENT_PATHS } from '../../shared/contentPaths.ts';
 import { parseScheduledDateKST } from '../../shared/dates.ts';
 import { postUrl, type PostSummary } from '../../post/index.ts';
-import { POST_SETS } from '../artifacts.ts';
+import { resolvePostSet } from '../artifacts.ts';
+import type { ContentContext } from '../context.ts';
 
 /**
  * RSS XML 빌더 — **React 없이** 순수 문자열 조립만 한다.
@@ -116,13 +116,18 @@ ${rssItems}
 </rss>`;
 }
 
-export async function main() {
+export async function main(ctx: ContentContext) {
   // React 스택은 진입점에서만, 동적 import로 든다 — buildRssXml을 import하는
   // 쪽(테스트·contract)은 react-dom을 로드하지 않는다.
   const { renderContentHtml } = await import('./feedRenderer.ts');
   // 레지스트리 선언(postSet: 'visible', exact)과 같은 셀렉터.
-  const posts = POST_SETS.visible();
-  const rss = buildRssXml(posts, { renderContent: renderContentHtml });
-  fs.writeFileSync(path.join(CONTENT_PATHS.publicDir, 'rss.xml'), rss);
+  const posts = resolvePostSet(ctx.content, 'visible');
+  const rss = buildRssXml(posts, {
+    siteUrl: ctx.config.site.url,
+    siteName: ctx.config.site.name,
+    siteDescription: ctx.config.site.description,
+    renderContent: renderContentHtml,
+  });
+  fs.writeFileSync(path.join(ctx.paths.publicDir, 'rss.xml'), rss);
   console.log('RSS feed generated successfully!');
 }

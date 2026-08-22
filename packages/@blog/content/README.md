@@ -10,10 +10,15 @@
 
 ## 문 두 개 (소스 익스포트 — 빌드 스텝 없음)
 
-| 문                  | 내용                                                                  |
-| :------------------ | :-------------------------------------------------------------------- |
-| `@blog/content`     | 프레임워크 전체 — 타입·visibility·urls·series·로더·shared 유틸        |
-| `@blog/content/seo` | SEO 빌더(`buildPostSeo` 등) — 프레임워크 중립 DTO(`PostSeoData`) 반환 |
+| 문                  | 내용                                                                                    |
+| :------------------ | :-------------------------------------------------------------------------------------- |
+| `@blog/content`     | 프레임워크 전체 — `createContent`(로더 인스턴스 factory)·타입·visibility·urls·순수 유틸 |
+| `@blog/content/seo` | SEO 빌더 factory(`createPostSeo`) + 순수 계산 — 프레임워크 중립 DTO(`PostSeoData`) 반환 |
+
+fs를 읽는 API는 전부 **인스턴스**다 — 소비자가 `content.config.mts`로 만든
+설정을 `createContent(config)`에 넘겨 로더 묶음(getAllPosts·getPostBySlug·
+getSeriesMeta·getAllSeries…)을 받는다. 캐시는 인스턴스 안에 살아서 루트가
+다른 인스턴스끼리 섞이지 않는다. zero-arg 전역 로더는 없다.
 
 빌드 스크립트(`src/scripts/`)는 API가 아니라 실행 파일이고, package.json의
 `bin`에 걸린 **`blog-content` 하나**로만 나간다. 앱은 서브커맨드 이름만 안다
@@ -72,14 +77,16 @@ src/
 ├─ shared/     contentConfig(defineContent) · contentValues(클라이언트 안전 리터럴) · constants(façade)
 │              · contentPaths(절대 경로) · dates · format · jsonLd · url · postFiles · prismLanguages
 │              · markdownHeadings(h1→h2 매핑, 사이트·RSS 공유) · viewCookie
-├─ post/       repository(gray-matter 로더) · service(읽기 API) · visibility(공개 판정 한 곳)
-│              · series(_series.yml) · urls(postPath·archivePath — 후행 슬래시는 여기서만) · filtering
-│              · sorting · aggregate · thumbnail · assetUrl · frontmatterSchema(서술자 테이블) · diagramNames · types · utils
-├─ seo/        postSeo — buildPostSeo · buildPostJsonLd · buildBreadcrumbJsonLd
+├─ post/       createContent(인스턴스 조립) · repository(gray-matter 로더 factory) · service(읽기 API factory)
+│              · visibility(공개 판정 한 곳) · series(_series.yml factory) · urls(postPath·archivePath — 후행 슬래시는 여기서만)
+│              · filtering · sorting · aggregate · thumbnail · assetUrl · frontmatterSchema(서술자 테이블)
+│              · diagramNames · types · utils · testing(테스트 픽스처 인스턴스)
+├─ seo/        postSeo — createPostSeo(buildPostSeo·buildPostJsonLd·buildBreadcrumbJsonLd) + 순수 계산
 └─ scripts/    build-content(진입점) · validate-posts + validate/{rules,frontmatter,body,corpus,shared}
                · check-seo · artifacts(산출물 레지스트리 7종) · generate-{sitemap,search-index,llms,llms-full}
                · sync-posts · new-post
-               ├─ cli/     index(bin 진입점) · program(commander 서브커맨드·옵션 정의)
+               · context(ContentContext — 스텝이 받는 실행 컨텍스트)
+               ├─ cli/     index(bin 진입점) · program(commander 서브커맨드·옵션 정의) · discoverConfig(설정 발견·로드)
                └─ render/  generate-rss · feedRenderer · generate-og-images(satori+resvg) · generate-thumbnails(sharp)
 ```
 
@@ -90,19 +97,23 @@ src/
 | 1 (게이트, 단독) | `validate-posts`                                                                                      | `--strict`를 그대로 넘긴다. `--skip-validate`로만 건너뛴다(앱 스크립트는 안 넘김)      |
 | 2 (병렬 8개)     | `sync-posts` · `sitemap` · `rss` · `og-images` · `thumbnails` · `search-index` · `llms-full` · `llms` | 서로 다른 파일만 쓴다. `media`·`thumbs`·`og` 디렉터리는 겹치면 안 됨(각자 orphan 삭제) |
 
-각 스텝은 `node <cli/index.ts> <서브커맨드>`로 spawn되고 cwd·PATH 어디에도
-기대지 않는다 — 경로는 전부 `contentPaths`로 푼다. 앱의 `predev:web`과 `prebuild`는 같은 명령이고 `prebuild`만
-`--strict`다(검증은 둘 다 돈다).
+각 스텝은 `node <cli/index.ts> --config <절대경로> <서브커맨드>`로 spawn되고
+cwd·PATH 어디에도 기대지 않는다 — 부모가 발견한 설정 파일을 자식에 명시
+전달하므로(`stepArgv`) 부모와 자식이 다른 설정을 잡을 수 없다. 앱의
+`predev:web`과 `prebuild`는 같은 명령이고 `prebuild`만 `--strict`다(검증은 둘 다 돈다).
 
 ## `defineContent` (`src/shared/contentConfig.ts`)
 
-서버·빌드 전용 설정 표면. 클라이언트가 소비하는 리터럴은 `contentValues.ts`(값-only,
+서버·빌드 전용 설정 표면. **`root`(경로 앵커)만 필수**고 나머지는 전부
+기본값이 있다 — 어떤 root 기본값이든 특정 저장소 구조의 하드코딩이 되기
+때문이다. 클라이언트가 소비하는 리터럴은 `contentValues.ts`(값-only,
 import 없음)가 갖고, 설정은 그 값을 기본값으로 소비한다 — 방향은 항상
 `contentConfig → contentValues`. 옵션 그룹(그룹 단위 shallow-Partial 병합 —
 `og.palette`와 `llms.facts`만 한 단계 더 병합):
 
 | 그룹         | 키                                                                                                                                    |
 | :----------- | :------------------------------------------------------------------------------------------------------------------------------------ |
+| `root`       | **필수.** 경로 앵커 — `file://` URL(관례: `import.meta.url`) 또는 절대 경로. 상대 경로는 거부(cwd 의존 금지)                          |
 | `site`       | `url` · `name` · `description` · `descriptionExpanded` · `ogDefaultImage` · `rssPath` · `aboutPageModified` · `mergedPrCountFallback` |
 | `author`     | `name` · `alternateName` · `role` · `github` · `linkedin`                                                                             |
 | `seo`        | `titleSuffix` · `titleMaxLength`(60) · `descriptionMinLength`(120) · `descriptionMaxLength`(160, 자동 발췌 길이 겸용)                 |
@@ -115,12 +126,32 @@ import 없음)가 갖고, 설정은 그 값을 기본값으로 소비한다 — 
 | `thumbnails` | `maxWidth` · `webpQuality`                                                                                                            |
 | `llms`       | `summaryMaxLength` · `indexIntro` · `fullIntro` · `facts.*`                                                                           |
 
-## 경로 앵커
+## 경로 앵커 — `content.config.mts`
 
-`dirs.*` 설정은 **앱 루트(apps/blog/web) 기준 상대 경로**다. 절대 경로 해석은
-`src/shared/contentPaths.ts`가 자기 위치에서 워크스페이스 루트로 올라가 앱
-루트를 계산한다 — cwd 무관. 콘텐츠 원본(`apps/blog/posts`)은 이 패키지로
-옮기지 않았다(설정 한 줄이므로 필요해질 때 싸게 옮긴다).
+앵커는 **소비자 앱 루트의 `content.config.(m)ts`** 하나다:
+
+```ts
+// apps/blog/web/content.config.mts
+import { defineContent } from '@blog/content';
+export default defineContent({ root: import.meta.url });
+```
+
+`root: import.meta.url`이 계약의 핵심 — **설정 파일의 위치 자체가 앵커**라서
+`dirs.*` 상대 경로가 전부 그 디렉터리 기준으로 풀리고, 이 패키지는 모노레포/
+폴리레포 구조를 전혀 모른다. 절대 경로 해석은 `resolveContentPaths(config)`
+(`src/shared/contentPaths.ts`, 순수 함수)가 한다.
+
+- **CLI**: cwd에서 위로 올라가며 설정 파일을 발견한다(`cli/discoverConfig.ts`).
+  전역 `--config <경로>`로 명시할 수 있고(서브커맨드 이름 **앞**에 적는다),
+  없으면 해결책을 담은 에러가 실행을 막는다 — 폴백은 없다
+- **앱**: `src/content.ts`가 같은 설정 파일을 정적 import해
+  `createContent`/`createPostSeo` 인스턴스를 만든다
+- 파일명이 `.mts`인 이유: `"type": "module"` 없는 패키지에서 `.ts`는 node가
+  CJS로 파싱했다가 ESM으로 재파싱한다(경고 + 오버헤드)
+
+콘텐츠 원본(`apps/blog/posts`)은 이 패키지로 옮기지 않았다(`dirs.content` 한
+줄이므로 필요해질 때 싸게 옮긴다). 실제 코퍼스를 읽는 계약 테스트는
+`src/post/testing.ts`의 `testContent`(테스트 픽스처 인스턴스)로 배선한다.
 
 ## 검증
 

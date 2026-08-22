@@ -11,8 +11,7 @@
  */
 import { describe, expect, test } from 'vitest';
 
-import { getAllPostSummaries } from '@blog/content';
-import { getAllSeries } from '@blog/content';
+import { getAllPostSummaries, getAllSeries } from '@/src/content';
 import { filterAndSortPostsByArchiveParams } from '@blog/content';
 
 import { FEATURED_SERIES } from './featuredSeries';

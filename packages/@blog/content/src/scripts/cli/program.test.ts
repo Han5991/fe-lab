@@ -33,6 +33,13 @@ test('이름은 소문자·하이픈만 쓴다 (셸에서 그대로 치는 이�
   for (const name of names()) expect(name, name).toMatch(/^[a-z][a-z0-9-]*$/);
 });
 
+test('전역 --config 옵션 — 경로 앵커를 명시 지정하는 유일한 채널', () => {
+  // build-content가 자식을 띄울 때 이 옵션으로 설정을 전달한다(stepArgv).
+  // 루트 커맨드의 전역 옵션이라 서브커맨드 이름 앞에 적는다.
+  const flags = buildProgram().options.map(o => o.long);
+  expect(flags).toContain('--config');
+});
+
 test('build는 파이프라인 플래그 3개를 받는다', () => {
   const build = buildProgram().commands.find(c => c.name() === 'build');
   const flags = build?.options.map(o => o.long) ?? [];

@@ -10,13 +10,17 @@
  * 콘텐츠 개수 자체는 잠그지 않습니다(글이 추가/숨김되는 정상 변경에 깨지면 안 됨).
  */
 import { expect, test } from 'vitest';
-import {
+import { isPostVisible } from './visibility.ts';
+import { testContent } from './testing.ts';
+
+// 실제 코퍼스에 앵커한 테스트 인스턴스 — 배선은 testing.ts 참고.
+const {
   getAllPosts,
   getAllPostsIncludingHidden,
   getSeriesAdjacentPosts,
-} from './service.ts';
-import { isPostVisible } from './visibility.ts';
-import { getSeriesMeta, isSeriesFolder } from './series.ts';
+  getSeriesMeta,
+  isSeriesFolder,
+} = testContent;
 
 test('contract: 글이 1개 이상 존재 (블로그 동작의 최소 조건)', () => {
   const posts = getAllPostsIncludingHidden();

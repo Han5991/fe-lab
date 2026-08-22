@@ -1,10 +1,6 @@
 import { expect, test } from 'vitest';
-import {
-  buildSitemapXml,
-  getPostPriority,
-  HIGH_PRIORITY_FOLDERS,
-  HIGH_PRIORITY_SLUGS,
-} from './generate-sitemap.ts';
+import { buildSitemapXml, getPostPriority } from './generate-sitemap.ts';
+import { DEFAULT_SITEMAP } from '../shared/contentConfig.ts';
 import type { SitemapPost } from './generate-sitemap.ts';
 import { parseScheduledDateKST, getKSTDateISO } from '../shared/dates.ts';
 import { ABOUT_PAGE_MODIFIED } from '../shared/constants.ts';
@@ -198,13 +194,13 @@ test('sitemap: 글이 하나도 없으면 정적 lastmod는 today로 폴백', ()
 
 test('getPostPriority: 고우선 slug는 0.8 (HIGH_PRIORITY_SLUGS 전부 0.8)', () => {
   // 상수에서 직접 참조 — slug 목록이 변경되어도 테스트가 자동으로 맞춰짐.
-  for (const slug of HIGH_PRIORITY_SLUGS) {
+  for (const slug of DEFAULT_SITEMAP.highPrioritySlugs) {
     expect(getPostPriority({ slug }), `${slug} priority`).toBe('0.8');
   }
 });
 
 test('getPostPriority: 고우선 폴더는 0.75 (HIGH_PRIORITY_FOLDERS 전부 0.75)', () => {
-  for (const relativeDir of HIGH_PRIORITY_FOLDERS) {
+  for (const relativeDir of DEFAULT_SITEMAP.highPriorityFolders) {
     expect(
       getPostPriority({ slug: 'arbitrary', relativeDir }),
       `${relativeDir} folder priority`,
@@ -215,7 +211,9 @@ test('getPostPriority: 고우선 폴더는 0.75 (HIGH_PRIORITY_FOLDERS 전부 0.
 test('getPostPriority: 시리즈가 아닌 고우선 폴더도 0.75', () => {
   // `typescript` 폴더에는 `_series.yml`이 없어 글의 series가 비어 있다.
   // 우선순위를 series로 판정하면 이 글이 조용히 0.6으로 떨어진다.
-  expect(HIGH_PRIORITY_FOLDERS.has('typescript')).toBeTruthy();
+  expect(
+    DEFAULT_SITEMAP.highPriorityFolders.includes('typescript'),
+  ).toBeTruthy();
   expect(
     getPostPriority({ slug: 'arbitrary', relativeDir: 'typescript' }),
   ).toBe('0.75');

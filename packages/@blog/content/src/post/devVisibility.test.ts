@@ -9,8 +9,12 @@
  * 같은 느슨한 비교로 바뀌면 draft가 sitemap·RSS에 실려 나갑니다.
  */
 import { expect, test } from 'vitest';
-import { getAllPosts, getAllPostsIncludingHidden } from './service.ts';
 import { isPostVisible } from './visibility.ts';
+import { testContent } from './testing.ts';
+
+// runtime.isDevelopment 기본값은 호출 시점에 process.env.NODE_ENV를 읽으므로,
+// 같은 인스턴스로도 NODE_ENV를 바꿔가며 게이트를 검증할 수 있다.
+const { getAllPosts, getAllPostsIncludingHidden } = testContent;
 
 const ORIGINAL_NODE_ENV = process.env.NODE_ENV;
 

@@ -2,14 +2,12 @@ import Link from 'next/link';
 import { css, cx } from '@design-system/ui-lib/css';
 import type { Metadata } from 'next';
 
+import { archivePath, POSTS_PATH, postPath } from '@blog/content';
 import {
-  archivePath,
   getAllPostSummaries,
-  POSTS_PATH,
-  postPath,
-} from '@blog/content';
-import { getAllSeries } from '@blog/content';
-import { getSeriesMeta } from '@blog/content';
+  getAllSeries,
+  getSeriesMeta,
+} from '@/src/content';
 import { fmtDate } from '@blog/content';
 import { OG_DEFAULT_IMAGE, SITE_NAME, SITE_URL } from '@blog/content';
 import { safeJsonLd } from '@blog/content';

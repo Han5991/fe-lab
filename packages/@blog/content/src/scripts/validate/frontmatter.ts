@@ -23,16 +23,18 @@ import {
 // 참조하면 이 노드 스크립트가 React·Panda까지 끌고 들어옵니다.
 import { DIAGRAM_NAMES, isDiagramName } from '../../post/diagramNames.ts';
 import { hasAmbiguousTimezone } from '../../shared/dates.ts';
-import { CONTENT } from '../../shared/contentConfig.ts';
+import { DEFAULT_SEO } from '../../shared/contentConfig.ts';
 
-// SEO 임계값은 설정 표면에서 읽는다 — check-seo와 "정확히 같은 범위"를 보는
-// 게이트이므로, defineContent 오버라이드가 생겨도 두 게이트가 함께 따라간다.
+// SEO 임계값은 기본 설정 슬라이스에서 읽는다 — check-seo와 "정확히 같은 범위"를
+// 보는 게이트라 같은 출처(DEFAULT_SEO)를 본다. 사이트 정체성 상수와 마찬가지로
+// seo 예산 오버라이드는 아직 게이트에 배선돼 있지 않다(contentValues.ts의 제약
+// 주석 참고).
 const {
   titleSuffix: TITLE_SUFFIX,
   titleMaxLength: SEO_TITLE_MAX_LENGTH,
   descriptionMinLength: SEO_DESCRIPTION_MIN_LENGTH,
   descriptionMaxLength: SEO_DESCRIPTION_MAX_LENGTH,
-} = CONTENT.seo;
+} = DEFAULT_SEO;
 import { findFrontmatterLine } from './shared.ts';
 import type { Issue, PostRecord, ValidateOptions } from './shared.ts';
 import { resolveSeverity } from './rules.ts';

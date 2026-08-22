@@ -3,7 +3,9 @@
  *
  * 흩어져 있던 하드코딩(사이트 정체성·SEO 예산·타임존·경로·레지스트리·OG 팔레트·
  * llms 산문)을 한 곳으로 모은 **단일 출처**입니다. 기본값이 곧 현재 사이트의
- * 값이라, `defineContent({})`는 기존 동작과 완전히 같습니다(동작 no-op).
+ * 값이라, `defineContent({ root })`는 기존 동작과 완전히 같습니다(동작 no-op).
+ * `root`(경로 앵커)만 기본값이 없는 필수 항목입니다 — 어떤 기본값이든 특정
+ * 저장소 구조의 하드코딩이 되기 때문입니다.
  *
  * 이 모듈은 **서버·빌드 전용**입니다 — 클라이언트 컴포넌트가 import하면
  * 설정 객체 전체(og 팔레트·llms 산문·경로)가 번들에 실립니다. 클라이언트가
@@ -127,8 +129,8 @@ export interface RegistriesConfig {
 }
 
 /**
- * 경로는 전부 **앱 루트 기준 상대 경로**로 적는다. 절대경로로 푸는 것은
- * node 전용 `contentPaths.ts`(`resolveContentPaths`)의 몫이다.
+ * 경로는 전부 **앱 루트 기준 상대 경로**로 적는다. 앱 루트는 `root`가 정하고,
+ * 절대경로로 푸는 것은 node 전용 `contentPaths.ts`(`resolveContentPaths`)의 몫이다.
  */
 export interface DirsConfig {
   /** 마크다운 원본 디렉터리 */
@@ -207,6 +209,19 @@ export interface LlmsConfig {
 }
 
 export interface ContentConfig {
+  /**
+   * 경로 앵커. `dirs.*`의 상대 경로가 전부 여기 기준으로 풀린다.
+   *
+   * 관례는 `content.config.ts`에서 `root: import.meta.url` — **설정 파일의 위치
+   * 자체가 앵커**가 되어 모노레포/폴리레포 구조와 무관해진다. 받는 형태 둘:
+   * - `file://` URL 문자열(`import.meta.url` 관례) — 그 파일이 있는 디렉터리가
+   *   앵커. 후행 슬래시가 있으면 디렉터리 URL로 보고 그 디렉터리 자체가 앵커
+   * - 절대 디렉터리 경로 — 그대로 앵커 (테스트·CLI 편의)
+   *
+   * 상대 경로는 받지 않는다 — cwd에 따라 다른 곳을 보게 되는 것이 예전
+   * 하드코딩 앵커가 막던 바로 그 사고다.
+   */
+  root: string;
   site: SiteConfig;
   author: AuthorConfig;
   seo: SeoConfig;
@@ -220,8 +235,10 @@ export interface ContentConfig {
   llms: LlmsConfig;
 }
 
-/** defineContent가 받는 부분 설정 — 그룹별로 얕은 Partial, 중첩 객체는 명시 */
+/** defineContent가 받는 부분 설정 — `root`만 필수, 그룹별로 얕은 Partial */
 export interface ContentUserConfig {
+  /** 경로 앵커 — `ContentConfig['root']` 참고. 관례는 `import.meta.url` */
+  root: string;
   site?: Partial<SiteConfig>;
   author?: Partial<AuthorConfig>;
   seo?: Partial<SeoConfig>;
@@ -253,21 +270,81 @@ const DEFAULT_SITE: SiteConfig = {
   mergedPrCountFallback: MERGED_PR_COUNT_FALLBACK,
 };
 
-const DEFAULTS: ContentConfig = {
+// 아래 DEFAULT_* 슬라이스는 순수 계산 빌더(sitemap·llms·og·thumbnails·seo)가
+// 파라미터 기본값으로 재사용한다 — 진입점(main)은 항상 컨텍스트의 설정을
+// 명시적으로 넘기고, 기본값은 테스트·단독 사용 편의다. DEFAULTS와 같은
+// 객체를 공유하므로 두 벌이 어긋날 수 없다.
+
+export const DEFAULT_AUTHOR: AuthorConfig = {
+  name: AUTHOR_NAME,
+  alternateName: AUTHOR_ALTERNATE_NAME,
+  role: AUTHOR_ROLE,
+  github: SITE_AUTHOR_GITHUB,
+  linkedin: SITE_AUTHOR_LINKEDIN,
+};
+
+export const DEFAULT_SEO: SeoConfig = {
+  titleSuffix: ` | ${DEFAULT_SITE.name}`,
+  titleMaxLength: SEO_TITLE_MAX_LENGTH,
+  descriptionMinLength: SEO_DESCRIPTION_MIN_LENGTH,
+  descriptionMaxLength: SEO_DESCRIPTION_MAX_LENGTH,
+};
+
+export const DEFAULT_SITEMAP: SitemapConfig = {
+  highPriorityFolders: ['bundler', 'typescript', 'open-source'],
+  highPrioritySlugs: [
+    'ai-opensource-contribution',
+    'nodejs-contribution',
+    'nextjs-contributor',
+    'first-open-source-contribution',
+  ],
+};
+
+export const DEFAULT_OG: OgConfig = {
+  width: 1200,
+  height: 630,
+  palette: {
+    paper: '#0B0D10', // paper.50
+    ink: '#E6E8EB', // ink.950
+    inkMeta: '#8B919A', // ink.600
+    inkRule: '#333941', // ink.border(다크 rgba를 paper.50 위에 합성한 값)
+    accent: '#67E8F9', // accent.500 — 포인트 cyan
+    pillBorder: 'rgba(103, 232, 249, 0.4)',
+  },
+};
+
+export const DEFAULT_THUMBNAILS: ThumbnailsConfig = {
+  maxWidth: 1200,
+  webpQuality: 80,
+};
+
+export const DEFAULT_LLMS: LlmsConfig = {
+  summaryMaxLength: 140,
+  indexIntro:
+    'Frontend engineering blog by Sangwook Han (한상욱). Deep-dive technical experiments in bundler architecture, TypeScript domain modeling, React patterns, and open source contributions. All posts include working code and first-hand implementation experience. Post body content is in Korean; technical terms, code, and key facts are in English.',
+  fullIntro:
+    'Frontend engineering blog by Sangwook Han (한상욱). Deep-dive technical experiments in bundler architecture, TypeScript domain modeling, React patterns, and open source contributions. All posts include working code and first-hand implementation experience. Content primarily in Korean.',
+  facts: {
+    languageIndex:
+      'Korean body text; English technical terms, code, and key data points',
+    languageFull: 'Primarily Korean, some English',
+    openSource:
+      '27 Mantine PRs merged, Node.js core contributor, Next.js contributor',
+    notableContributionIndex:
+      'gemini-cli 74% performance improvement (408ms → 107ms) via Promise.allSettled',
+    notableContributionFull:
+      'gemini-cli 74% performance improvement (408ms → 107ms)',
+    speaking: "FEConf 2025 (Korea's largest frontend conference), TeoConf",
+    mainTopics:
+      'Bundler internals, TypeScript domain modeling, React patterns, design systems, open source',
+  },
+};
+
+// root는 기본값이 없다(경로 앵커의 하드코딩 금지) — 그래서 Omit.
+const DEFAULTS: Omit<ContentConfig, 'root'> = {
   site: DEFAULT_SITE,
-  author: {
-    name: AUTHOR_NAME,
-    alternateName: AUTHOR_ALTERNATE_NAME,
-    role: AUTHOR_ROLE,
-    github: SITE_AUTHOR_GITHUB,
-    linkedin: SITE_AUTHOR_LINKEDIN,
-  },
-  seo: {
-    titleSuffix: ` | ${DEFAULT_SITE.name}`,
-    titleMaxLength: SEO_TITLE_MAX_LENGTH,
-    descriptionMinLength: SEO_DESCRIPTION_MIN_LENGTH,
-    descriptionMaxLength: SEO_DESCRIPTION_MAX_LENGTH,
-  },
+  author: DEFAULT_AUTHOR,
+  seo: DEFAULT_SEO,
   timezone: {
     iana: TIMEZONE_IANA,
     isoOffset: TIMEZONE_ISO_OFFSET,
@@ -298,55 +375,35 @@ const DEFAULTS: ContentConfig = {
     thumbs: 'public/thumbs',
     og: 'public/og',
   },
-  sitemap: {
-    highPriorityFolders: ['bundler', 'typescript', 'open-source'],
-    highPrioritySlugs: [
-      'ai-opensource-contribution',
-      'nodejs-contribution',
-      'nextjs-contributor',
-      'first-open-source-contribution',
-    ],
-  },
-  og: {
-    width: 1200,
-    height: 630,
-    palette: {
-      paper: '#0B0D10', // paper.50
-      ink: '#E6E8EB', // ink.950
-      inkMeta: '#8B919A', // ink.600
-      inkRule: '#333941', // ink.border(다크 rgba를 paper.50 위에 합성한 값)
-      accent: '#67E8F9', // accent.500 — 포인트 cyan
-      pillBorder: 'rgba(103, 232, 249, 0.4)',
-    },
-  },
-  thumbnails: {
-    maxWidth: 1200,
-    webpQuality: 80,
-  },
-  llms: {
-    summaryMaxLength: 140,
-    indexIntro:
-      'Frontend engineering blog by Sangwook Han (한상욱). Deep-dive technical experiments in bundler architecture, TypeScript domain modeling, React patterns, and open source contributions. All posts include working code and first-hand implementation experience. Post body content is in Korean; technical terms, code, and key facts are in English.',
-    fullIntro:
-      'Frontend engineering blog by Sangwook Han (한상욱). Deep-dive technical experiments in bundler architecture, TypeScript domain modeling, React patterns, and open source contributions. All posts include working code and first-hand implementation experience. Content primarily in Korean.',
-    facts: {
-      languageIndex:
-        'Korean body text; English technical terms, code, and key data points',
-      languageFull: 'Primarily Korean, some English',
-      openSource:
-        '27 Mantine PRs merged, Node.js core contributor, Next.js contributor',
-      notableContributionIndex:
-        'gemini-cli 74% performance improvement (408ms → 107ms) via Promise.allSettled',
-      notableContributionFull:
-        'gemini-cli 74% performance improvement (408ms → 107ms)',
-      speaking: "FEConf 2025 (Korea's largest frontend conference), TeoConf",
-      mainTopics:
-        'Bundler internals, TypeScript domain modeling, React patterns, design systems, open source',
-    },
-  },
+  sitemap: DEFAULT_SITEMAP,
+  og: DEFAULT_OG,
+  thumbnails: DEFAULT_THUMBNAILS,
+  llms: DEFAULT_LLMS,
 };
 
 // ── 검증 ─────────────────────────────────────────────────────────────────────
+
+/**
+ * `root` 형태 검증 — 순수 문자열 검사만 한다(node:path를 끌지 않기 위해).
+ * 실제 디렉터리 해석은 node 전용 `contentPaths.ts`의 몫.
+ */
+function assertValidRoot(root: unknown): asserts root is string {
+  if (typeof root !== 'string' || root.length === 0) {
+    throw new Error(
+      'defineContent: root가 필요합니다 — content.config.ts에서 ' +
+        '`root: import.meta.url`을 권장합니다(설정 파일 위치가 경로 앵커가 됩니다).',
+    );
+  }
+  const isFileUrl = root.startsWith('file://');
+  const isAbsolute = root.startsWith('/') || /^[A-Za-z]:[\\/]/.test(root);
+  if (!isFileUrl && !isAbsolute) {
+    throw new Error(
+      `defineContent: root('${root}')는 file:// URL 또는 절대 경로여야 합니다 — ` +
+        '상대 경로는 cwd에 따라 다른 곳을 보게 되므로 받지 않습니다. ' +
+        '`root: import.meta.url`을 쓰세요.',
+    );
+  }
+}
 
 /** 상대 경로를 세그먼트 정규화한다 ('a/./b' → 'a/b', 'a/../b' → 'b') — 순수 문자열 연산 */
 function normalizeDir(p: string): string {
@@ -396,11 +453,15 @@ function assertOutputDirsExclusive(dirs: DirsConfig): void {
 
 /**
  * 부분 설정을 기본값 위에 병합해 완전한 ContentConfig를 만든다.
- * `seo.titleSuffix`를 명시하지 않으면 (덮어썼을 수 있는) `site.name`에서 파생된다.
+ * `root`만 필수 — 경로 앵커는 기본값이 있을 수 없다(어떤 기본값이든 특정
+ * 저장소 구조의 하드코딩이 된다). `seo.titleSuffix`를 명시하지 않으면
+ * (덮어썼을 수 있는) `site.name`에서 파생된다.
  */
-export function defineContent(user: ContentUserConfig = {}): ContentConfig {
+export function defineContent(user: ContentUserConfig): ContentConfig {
+  assertValidRoot(user.root);
   const site = { ...DEFAULTS.site, ...user.site };
   const config: ContentConfig = {
+    root: user.root,
     site,
     author: { ...DEFAULTS.author, ...user.author },
     seo: {
@@ -428,9 +489,3 @@ export function defineContent(user: ContentUserConfig = {}): ContentConfig {
   assertOutputDirsExclusive(config.dirs);
   return config;
 }
-
-/**
- * 이 사이트의 설정 인스턴스. 기본값이 곧 현재 값이므로 빈 오버라이드다 —
- * 사이트를 바꿀 때는 여기 인자에 명시적으로 적는다.
- */
-export const CONTENT: ContentConfig = defineContent({});
