@@ -1,0 +1,55 @@
+/**
+ * 시리즈 목록(`/series/`)의 SEO 매개변수 — `<head>` 메타데이터와 JSON-LD.
+ *
+ * `PAGE_DESCRIPTION`은 화면 헤더에도 그대로 나가므로 페이지가 가져다 씁니다.
+ * meta description과 눈에 보이는 소개 문구가 갈라지지 않게 하나만 둡니다.
+ */
+import type { Metadata } from 'next';
+import { OG_DEFAULT_IMAGE, SITE_NAME, SITE_URL } from '@blog/content';
+
+const PAGE_TITLE = `시리즈 | ${SITE_NAME}`;
+export const PAGE_DESCRIPTION =
+  '여러 편으로 이어지는 글을 시리즈로 묶었습니다. 번들러 직접 만들기, TypeScript로 설계하는 프로젝트, 우아한 에러 핸들링, ECS 배포 파이프라인까지 — 시리즈마다 1편부터 순서대로, 중간에 길을 잃지 않고 읽을 수 있습니다.';
+
+export function buildSeriesMetadata(): Metadata {
+  return {
+    title: PAGE_TITLE,
+    description: PAGE_DESCRIPTION,
+    alternates: { canonical: '/series/' },
+    openGraph: {
+      title: PAGE_TITLE,
+      description: PAGE_DESCRIPTION,
+      url: `${SITE_URL}/series/`,
+      siteName: SITE_NAME,
+      images: [
+        {
+          url: `${SITE_URL}${OG_DEFAULT_IMAGE}`,
+          width: 1200,
+          height: 630,
+          alt: `${SITE_NAME} Series`,
+        },
+      ],
+      locale: 'ko_KR',
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: PAGE_TITLE,
+      description: PAGE_DESCRIPTION,
+      images: [`${SITE_URL}${OG_DEFAULT_IMAGE}`],
+    },
+  };
+}
+
+export function buildSeriesJsonLd() {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    '@id': `${SITE_URL}/series/`,
+    name: `시리즈 | ${SITE_NAME}`,
+    url: `${SITE_URL}/series/`,
+    description: PAGE_DESCRIPTION,
+    inLanguage: 'ko',
+    isPartOf: { '@id': `${SITE_URL}/#website` },
+  };
+}

@@ -8,85 +8,13 @@ import '@/src/styles/globals.css';
 import { Providers } from './providers';
 import { Layout } from '@/src/components/Layout';
 import { GoogleAnalytics, GoogleTagManager } from '@next/third-parties/google';
-import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import { jetbrainsMono } from './fonts';
 import { THEME_COOKIE_MATCH } from '@/src/hooks/theme-cookie';
-import {
-  SITE_URL,
-  SITE_NAME,
-  SITE_DESCRIPTION_EXPANDED,
-  OG_DEFAULT_IMAGE,
-  RSS_PATH,
-} from '@blog/content';
+import { SITE_NAME, RSS_PATH } from '@blog/content';
+import { buildSiteMetadata } from './siteSeo';
 
-// 제목은 meta·og·twitter 세 곳에 나간다. 한 번만 쓴다.
-const DEFAULT_TITLE = `${SITE_NAME} | 프론트엔드 실험실`;
-
-export const metadata: Metadata = {
-  metadataBase: new URL(SITE_URL),
-  // RSS alternate link는 RootLayout의 <head>에 직접 추가합니다
-  // (Next 16 metadata.alternates.types로는 출력되지 않는 문제 회피)
-  title: DEFAULT_TITLE,
-  description: SITE_DESCRIPTION_EXPANDED,
-  openGraph: {
-    title: DEFAULT_TITLE,
-    description: SITE_DESCRIPTION_EXPANDED,
-    url: SITE_URL,
-    siteName: SITE_NAME,
-    images: [
-      {
-        url: OG_DEFAULT_IMAGE,
-        width: 1200,
-        height: 630,
-        alt: `${SITE_NAME} Blog`,
-      },
-    ],
-    locale: 'ko_KR',
-    type: 'website',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: DEFAULT_TITLE,
-    description: SITE_DESCRIPTION_EXPANDED,
-    images: [OG_DEFAULT_IMAGE],
-  },
-  verification: {
-    other: {
-      'naver-site-verification': '8f6135bb66d952d10dd08c6460797fd98fa26823',
-    },
-  },
-  icons: {
-    icon: [
-      { url: `/favicon.ico`, sizes: 'any' },
-      { url: `/favicon-16x16.png`, type: 'image/png', sizes: '16x16' },
-      { url: `/favicon-32x32.png`, type: 'image/png', sizes: '32x32' },
-    ],
-    shortcut: `/favicon.ico`,
-    apple: [
-      {
-        url: `/apple-touch-icon.png`,
-        sizes: '180x180',
-        type: 'image/png',
-      },
-    ],
-    other: [
-      {
-        rel: 'icon',
-        url: `/android-chrome-192x192.png`,
-        sizes: '192x192',
-        type: 'image/png',
-      },
-      {
-        rel: 'icon',
-        url: `/android-chrome-512x512.png`,
-        sizes: '512x512',
-        type: 'image/png',
-      },
-    ],
-  },
-  manifest: `/site.webmanifest`,
-};
+export const metadata = buildSiteMetadata();
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (

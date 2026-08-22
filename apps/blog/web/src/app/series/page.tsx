@@ -1,6 +1,5 @@
 import Link from 'next/link';
 import { css, cx } from '@design-system/ui-lib/css';
-import type { Metadata } from 'next';
 
 import { archivePath, POSTS_PATH, postPath } from '@blog/content';
 import {
@@ -9,7 +8,6 @@ import {
   getSeriesMeta,
 } from '@/src/content';
 import { fmtDate } from '@blog/content';
-import { OG_DEFAULT_IMAGE, SITE_NAME, SITE_URL } from '@blog/content';
 import { safeJsonLd } from '@blog/content';
 import { HiddenPostBadge } from '@/src/components/blog/HiddenPostBadge';
 import {
@@ -23,38 +21,13 @@ import { PageBoundary } from '@/src/components/PageBoundary';
 import { railGutter, railColumn } from '@/src/components/Rail';
 
 import { attachSeriesPosts } from './seriesIndex';
+import {
+  buildSeriesJsonLd,
+  buildSeriesMetadata,
+  PAGE_DESCRIPTION,
+} from './seo';
 
-const PAGE_TITLE = `시리즈 | ${SITE_NAME}`;
-const PAGE_DESCRIPTION =
-  '여러 편으로 이어지는 글을 시리즈로 묶었습니다. 번들러 직접 만들기, TypeScript로 설계하는 프로젝트, 우아한 에러 핸들링, ECS 배포 파이프라인까지 — 시리즈마다 1편부터 순서대로, 중간에 길을 잃지 않고 읽을 수 있습니다.';
-
-export const metadata: Metadata = {
-  title: PAGE_TITLE,
-  description: PAGE_DESCRIPTION,
-  alternates: { canonical: '/series/' },
-  openGraph: {
-    title: PAGE_TITLE,
-    description: PAGE_DESCRIPTION,
-    url: `${SITE_URL}/series/`,
-    siteName: SITE_NAME,
-    images: [
-      {
-        url: `${SITE_URL}${OG_DEFAULT_IMAGE}`,
-        width: 1200,
-        height: 630,
-        alt: `${SITE_NAME} Series`,
-      },
-    ],
-    locale: 'ko_KR',
-    type: 'website',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: PAGE_TITLE,
-    description: PAGE_DESCRIPTION,
-    images: [`${SITE_URL}${OG_DEFAULT_IMAGE}`],
-  },
-};
+export const metadata = buildSeriesMetadata();
 
 // 레퍼런스 .badge — 배경 accent.50 + 글자 accent.600. 선/아이콘이 아니라
 // 텍스트라 accent.500이 아닌 600을 쓴다(라이트에서 500은 AA 미달).
@@ -70,28 +43,19 @@ const seriesBadge = css({
   py: '[2px]',
 });
 
+const posts = getAllPostSummaries();
+// getAllSeries()는 최근 갱신 순으로 정렬해 돌려준다. 시리즈 "안"의 순서만
+// _series.yml의 order(없으면 날짜 오름차순)로 다시 잡는다.
+const series = attachSeriesPosts(
+  getAllSeries(),
+  posts,
+  id => getSeriesMeta(id)?.order,
+);
+const seriesPostCount = series.reduce((sum, s) => sum + s.posts.length, 0);
+
+const jsonLd = buildSeriesJsonLd();
+
 export default function SeriesPage() {
-  const posts = getAllPostSummaries();
-  // getAllSeries()는 최근 갱신 순으로 정렬해 돌려준다. 시리즈 "안"의 순서만
-  // _series.yml의 order(없으면 날짜 오름차순)로 다시 잡는다.
-  const series = attachSeriesPosts(
-    getAllSeries(),
-    posts,
-    id => getSeriesMeta(id)?.order,
-  );
-  const seriesPostCount = series.reduce((sum, s) => sum + s.posts.length, 0);
-
-  const jsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'CollectionPage',
-    '@id': `${SITE_URL}/series/`,
-    name: `시리즈 | ${SITE_NAME}`,
-    url: `${SITE_URL}/series/`,
-    description: PAGE_DESCRIPTION,
-    inLanguage: 'ko',
-    isPartOf: { '@id': `${SITE_URL}/#website` },
-  };
-
   return (
     <>
       <script
