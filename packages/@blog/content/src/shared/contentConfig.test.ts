@@ -82,25 +82,17 @@ test('seo.titleSuffix는 명시하지 않으면 site.name에서 파생된다', (
 });
 
 test('registries: 사이트 고유 축은 준 값 그대로, 펜스 라벨만 기본값', () => {
-  // diagramNames·seriesColors·seriesColorFallback에는 기본값이 없다 — 어느
-  // 폴더가 어느 색인지는 원고 배치를 아는 앱만 쓸 수 있는 값이다.
+  // diagramNames에는 기본값이 없다 — 어떤 다이어그램을 이름으로 부를 수 있는지는
+  // 컴포넌트 매핑을 가진 앱만 아는 값이다.
   const config = defineContent({
     root: FIXTURE_ROOT,
     site: TEST_VALUES.site,
     author: TEST_VALUES.author,
     timezone: TEST_VALUES.timezone,
     og: { palette: TEST_VALUES.ogPalette },
-    registries: {
-      diagramNames: ['only-this'],
-      seriesColors: { 'only-series': 'moss' },
-      seriesColorFallback: ['moss'],
-    },
+    registries: { diagramNames: ['only-this'] },
   });
   expect([...config.registries.diagramNames]).toStrictEqual(['only-this']);
-  expect(config.registries.seriesColors).toStrictEqual({
-    'only-series': 'moss',
-  });
-  expect([...config.registries.seriesColorFallback]).toStrictEqual(['moss']);
   expect(config.registries.supportedFenceLabels).toBe(SUPPORTED_FENCE_LABELS);
 });
 
@@ -133,7 +125,7 @@ test('llms 소개 산문은 안 주면 site.description에서 파생된다', () 
   expect(explicit.llms.fullIntro).toBe('전문용 소개');
 });
 
-test('사이트 고유 축에는 기본값이 없다 (og 팔레트·시리즈 컬러·sitemap 우선순위)', () => {
+test('사이트 고유 축에는 기본값이 없다 (og 팔레트·sitemap 우선순위)', () => {
   // 이 셋은 예전에 패키지가 이 저장소의 데이터를 기본값으로 들고 있던 자리다.
   // 지금은 소비자가 주지 않으면 존재하지 않거나(필수) 비어 있다.
   expect(DEFAULT_SITEMAP.highPriorityFolders).toStrictEqual([]);

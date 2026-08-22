@@ -145,26 +145,6 @@ export const OG_PALETTE = {
   pillBorder: 'rgba(103, 232, 249, 0.4)',
 } as const satisfies OgPalette;
 
-// ── 시리즈 컬러 ──────────────────────────────────────────────────────────────
-
-/**
- * 시리즈 폴더명 → 컬러 키. 키는 `apps/blog/posts/<폴더>`와 **정확히 일치**해야
- * 한다 — 원고 배치를 아는 것은 앱뿐이라 패키지에 기본값을 둘 수 없다.
- * 값은 `blog-preset.ts`의 semanticToken 계열 이름이다.
- */
-export const SERIES_COLORS = {
-  bundler: 'accent',
-  '[Typescript로 설계하는 프로젝트]': 'marker',
-  'open-source': 'moss',
-} as const satisfies ContentValues['seriesColors'];
-
-/** 위에 등록되지 않은 시리즈가 라운드로빈으로 받는 색. */
-export const SERIES_COLOR_FALLBACK = [
-  'accent',
-  'marker',
-  'moss',
-] as const satisfies ContentValues['seriesColorFallback'];
-
 // ── sitemap 우선순위 ─────────────────────────────────────────────────────────
 
 /**

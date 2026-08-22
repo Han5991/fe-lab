@@ -51,7 +51,6 @@ export function createContent(config: ContentConfig): ContentApi {
   const aggregate = createAggregate({
     getAllPosts: () => service.getAllPosts(),
     getSeriesMeta: seriesReader.getSeriesMeta,
-    registries: config.registries,
   });
 
   return {

@@ -26,8 +26,6 @@ import {
   LLMS_FACTS,
   LLMS_INTRO,
   OG_PALETTE,
-  SERIES_COLORS,
-  SERIES_COLOR_FALLBACK,
   SITE,
   SITEMAP_PRIORITY,
   TIMEZONE,
@@ -38,11 +36,7 @@ export default defineContent({
   site: SITE,
   author: AUTHOR,
   timezone: TIMEZONE,
-  registries: {
-    diagramNames: DIAGRAM_NAMES,
-    seriesColors: SERIES_COLORS,
-    seriesColorFallback: SERIES_COLOR_FALLBACK,
-  },
+  registries: { diagramNames: DIAGRAM_NAMES },
   og: { palette: OG_PALETTE },
   sitemap: SITEMAP_PRIORITY,
   llms: {

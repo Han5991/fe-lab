@@ -61,9 +61,6 @@ export const TEST_VALUES: ContentValues = {
     accent: '#00FF00',
     pillBorder: 'rgba(0, 255, 0, 0.4)',
   },
-  /** 실제 원고 폴더가 아닌 이름 — 매핑이 설정에서 오는지 보기 위해. */
-  seriesColors: { 'fixture-series': 'marker' },
-  seriesColorFallback: ['accent', 'marker', 'moss'],
 };
 
 /**
@@ -97,7 +94,7 @@ export const TEST_SITEMAP: SitemapConfig = {
 /**
  * 테스트가 줄 수 있는 오버라이드.
  *
- * `ContentUserConfig`보다 느슨하다 — 거기서 필수인 축(`registries`의 시리즈 컬러,
+ * `ContentUserConfig`보다 느슨하다 — 거기서 필수인 축(`registries.diagramNames`,
  * `og.palette`)도 여기서는 선택이다. 픽스처가 이미 채워 두므로, 한 필드를 보려는
  * 테스트가 나머지 필수 필드를 의례적으로 다시 적을 이유가 없다.
  */
@@ -127,8 +124,6 @@ export function defineTestContent(
     ...overrides,
     registries: {
       diagramNames: TEST_VALUES.diagramNames,
-      seriesColors: TEST_VALUES.seriesColors,
-      seriesColorFallback: TEST_VALUES.seriesColorFallback,
       ...overrides.registries,
     },
     og: {

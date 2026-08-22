@@ -12,8 +12,8 @@
  * import해서 — 오버라이드를 넣어도 화면·산출물은 그대로인 거짓 표면이었습니다.
  * 기본값이 남은 것은 **사이트와 무관한 값뿐입니다** — SEO 길이 예산, 펜스 라벨,
  * 경로 관례, OG 카드 규격(1200×630). 한 사이트의 데이터였던 나머지(og 팔레트·
- * 시리즈 컬러·llms 산문·sitemap 우선순위)는 필수 항목이 되었거나(`ContentValues`),
- * 중립적인 빈 값으로 바뀌었습니다(sitemap 우선순위·llms facts). 소개 산문처럼
+ * llms 산문·sitemap 우선순위)는 필수 항목이 되었거나(`ContentValues`), 중립적인
+ * 빈 값으로 바뀌었습니다(sitemap 우선순위·llms facts). 소개 산문처럼
  * 소비자가 이미 선언한 값에서 파생할 수 있는 것은 파생합니다(`site.description`).
  *
  * 이 모듈은 **서버·빌드 전용**입니다 — 클라이언트 컴포넌트가 import하면
@@ -95,9 +95,6 @@ export interface RuntimeConfig {
   isDevelopment: () => boolean;
 }
 
-/** 시리즈 카드 컬러 키 — blog-preset의 semanticToken 계열과 짝 */
-export type SeriesColorKey = 'accent' | 'marker' | 'moss';
-
 export interface RegistriesConfig {
   /**
    * 이름으로 부를 수 있는 다이어그램 목록. **기본값이 없다** — 이름 목록과
@@ -107,12 +104,6 @@ export interface RegistriesConfig {
   diagramNames: readonly string[];
   /** 코드 펜스 라벨 허용 목록. 기본값은 prismLanguages.ts에서 파생 */
   supportedFenceLabels: ReadonlySet<string>;
-  /**
-   * 시리즈 폴더명 → 컬러 키. 키는 `apps/blog/posts/<폴더>`와 정확히 일치해야
-   * 한다. 매칭되지 않은 시리즈는 `seriesColorFallback` 라운드로빈.
-   */
-  seriesColors: Readonly<Record<string, SeriesColorKey>>;
-  seriesColorFallback: readonly SeriesColorKey[];
 }
 
 /**
@@ -292,13 +283,6 @@ export interface ContentValues {
    * 기본값을 두면 소셜 미리보기가 사이트와 다른 색으로 조용히 나가므로 필수다.
    */
   ogPalette: OgPalette;
-  /**
-   * 시리즈 폴더명 → 컬러 키. 키는 `apps/blog/posts/<폴더>`와 정확히 일치해야
-   * 하므로 원고 배치를 아는 앱만 쓸 수 있다.
-   */
-  seriesColors: Readonly<Record<string, SeriesColorKey>>;
-  /** 등록되지 않은 시리즈에 라운드로빈으로 도는 색. 비면 안 된다 */
-  seriesColorFallback: readonly SeriesColorKey[];
 }
 
 /**
@@ -312,14 +296,11 @@ export interface ContentUserConfig extends Pick<
   /** 경로 앵커 — `ContentConfig['root']` 참고. 관례는 `import.meta.url` */
   root: string;
   /**
-   * 사이트 고유 축(`diagramNames`·`seriesColors`·`seriesColorFallback`)은 필수,
-   * 사이트와 무관한 `supportedFenceLabels`만 선택.
+   * 사이트 고유 축(`diagramNames`)은 필수, 사이트와 무관한
+   * `supportedFenceLabels`만 선택.
    */
   registries: Partial<Pick<RegistriesConfig, 'supportedFenceLabels'>> &
-    Pick<
-      RegistriesConfig,
-      'diagramNames' | 'seriesColors' | 'seriesColorFallback'
-    >;
+    Pick<RegistriesConfig, 'diagramNames'>;
   /** 크기(1200×630)는 OG 규격이라 선택, 팔레트는 앱 디자인이라 필수 */
   og: Partial<Omit<OgConfig, 'palette'>> & Pick<OgConfig, 'palette'>;
   seo?: Partial<SeoConfig>;
@@ -429,10 +410,7 @@ const DEFAULTS: Omit<
   'root' | 'site' | 'author' | 'timezone' | 'seo' | 'registries' | 'og' | 'llms'
 > & {
   seo: Omit<SeoConfig, 'titleSuffix'>;
-  registries: Omit<
-    RegistriesConfig,
-    'diagramNames' | 'seriesColors' | 'seriesColorFallback'
-  >;
+  registries: Omit<RegistriesConfig, 'diagramNames'>;
   og: Omit<OgConfig, 'palette'>;
   llms: Omit<LlmsConfig, 'indexIntro' | 'fullIntro'>;
 } = {
