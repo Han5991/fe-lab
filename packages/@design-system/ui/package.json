@@ -30,7 +30,6 @@
     "prepare": "pnpm panda codegen && pnpm build",
     "codegen": "panda codegen",
     "build": "tsdown",
-    "release": "pnpm panda prepare && pnpm build && pnpm publish",
     "build-fast": "tsdown --no-dts",
     "dev": "pnpm build-fast --watch"
   },
