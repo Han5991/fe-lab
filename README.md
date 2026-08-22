@@ -114,7 +114,7 @@ pnpm install
 
 # 개발 서버
 pnpm dev              # 전체
-pnpm blog-web         # 블로그 — 로컬 Supabase(Docker)를 먼저 띄운다. Next만: pnpm --filter @blog/web dev:web
+pnpm blog-web         # 블로그 — 로컬 Supabase(Docker)를 먼저 띄운다. 글만 쓸 땐 pnpm blog-write
 pnpm react            # React 실험
 pnpm next             # Next.js 실험
 pnpm typescript       # TypeScript 실험 (tsc --watch)
@@ -138,8 +138,9 @@ pnpm clean            # dist/.next/out/.turbo + node_modules 제거 (clean:dist 
 ### 블로그 글쓰기
 
 ```bash
-# apps/blog/web 디렉토리에서 (스크립트 본체는 @blog/content에 있고 앱이 파일 경로로 실행한다)
-pnpm new-post "글 제목" --series bundler --tags a,b   # 새 포스트 스캐폴딩
+# new-post·blog-write는 루트에서 바로 된다. 나머지는 apps/blog/web에서.
+pnpm new-post "글 제목" --series bundler --tags a,b   # 새 포스트 스캐폴딩 (루트 OK)
+pnpm blog-write                                     # 글 미리보기 — Supabase(Docker) 없이 next dev만 (루트 OK)
 pnpm new-post "예약글" --scheduled "2026-05-01T09:00+09:00"
 pnpm lint:posts                                     # frontmatter·본문 검증 (경고 수준)
 pnpm check-seo                                      # 빌드 산출물(out/) SEO 검사 — pnpm build의 마지막 단계
