@@ -1,10 +1,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import {
-  DEFAULT_SITEMAP,
-  type SiteConfig,
-  type SitemapConfig,
-  type TimezoneConfig,
+import type {
+  SiteConfig,
+  SitemapConfig,
+  TimezoneConfig,
 } from '../shared/contentConfig.ts';
 import { parseScheduledDateKST, getKSTDateISO } from '../shared/dates.ts';
 import { archiveUrl, postUrl, type PostSummary } from '../post/index.ts';
@@ -12,20 +11,22 @@ import { resolvePostSet } from './artifacts.ts';
 import type { ContentContext } from './context.ts';
 
 /**
- * 고가치 주제의 글은 우선순위를 높게 설정. 목록은 설정(defineContent의
- * sitemap 그룹)에서 파라미터로 온다.
+ * 고가치 주제의 글은 우선순위를 높게 설정. 목록은 **언제나 인자로 온다**
+ * (기본값 없음) — 어떤 주제가 중요한지는 그 사이트의 편집 판단이고, 패키지가
+ * 기본 목록을 들면 남의 사이트 글 slug가 여기 남는다. 소유자는 앱의
+ * `content.values.mts`(`SITEMAP_PRIORITY`)다.
  *
- * **시리즈가 아니라 폴더 기준이다.** 기본 목록의 `typescript`에는 `_series.yml`이
- * 없어서 시리즈가 아니고, `post.series`로 비교하면 이 글의 우선순위가 조용히
- * 0.6으로 떨어진다. 우선순위는 "이 주제가 중요한가"의 문제라 연재 여부와
- * 무관하므로, 물리적 폴더(`relativeDir`)를 본다.
+ * **시리즈가 아니라 폴더 기준이다.** 이 저장소의 `typescript` 폴더에는
+ * `_series.yml`이 없어서 시리즈가 아니고, `post.series`로 비교하면 그 글의
+ * 우선순위가 조용히 0.6으로 떨어진다. 우선순위는 "이 주제가 중요한가"의
+ * 문제라 연재 여부와 무관하므로, 물리적 폴더(`relativeDir`)를 본다.
  */
 export function getPostPriority(
   post: {
     slug: string;
     relativeDir?: string;
   },
-  sitemap: SitemapConfig = DEFAULT_SITEMAP,
+  sitemap: SitemapConfig,
 ): string {
   if (sitemap.highPrioritySlugs.includes(post.slug)) return '0.8';
   if (
@@ -79,7 +80,7 @@ export function buildSitemapXml(
   today: string,
   site: Pick<SiteConfig, 'url' | 'aboutPageModified'>,
   timezone: TimezoneConfig,
-  sitemap: SitemapConfig = DEFAULT_SITEMAP,
+  sitemap: SitemapConfig,
 ): string {
   const siteUrl = site.url;
   const entries = posts.map(post => ({

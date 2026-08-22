@@ -13,11 +13,7 @@ import satori, { type SatoriOptions } from 'satori';
 import { Resvg } from '@resvg/resvg-js';
 import { resolvePostSet } from '../artifacts.ts';
 import { fmtDate } from '../../shared/format.ts';
-import {
-  DEFAULT_OG,
-  type OgConfig,
-  type SiteConfig,
-} from '../../shared/contentConfig.ts';
+import type { OgConfig, SiteConfig } from '../../shared/contentConfig.ts';
 import type { ContentContext } from '../context.ts';
 /**
  * OG 카드에 쓰는 Pretendard 폰트가 있는 디렉터리.
@@ -64,7 +60,7 @@ export interface OgPostInput {
 export function ogContentHash(
   post: OgPostInput,
   site: Pick<SiteConfig, 'url' | 'name'>,
-  og: OgConfig = DEFAULT_OG,
+  og: OgConfig,
 ): string {
   return createHash('sha1')
     .update(
@@ -137,24 +133,20 @@ function el(
   return { type, props: { style, children } };
 }
 
-// 시리즈 pill 보더. 테스트가 "series가 있을 때만 pill이 나온다"를 이 값의
-// 유무로 판별하므로 export한다 — 값을 리터럴로 복사해 두면 팔레트를 바꿀 때마다
-// 테스트가 색 때문에 깨진다(정작 검증하려는 건 색이 아니라 조건부 렌더다).
-export const OG_PILL_BORDER = DEFAULT_OG.palette.pillBorder;
-
 /**
  * 1200×630 OG 카드 satori 엘리먼트 트리.
  * 디자인: 블로그 지면과 같은 paper 톤 + 중앙 정렬 구성(카드 썸네일로
  * 축소돼도 좌우 균형 유지) + 상하 룰. 시리즈 pill / 날짜·도메인 푸터.
  *
- * 팔레트는 설정(defineContent의 og.palette)에서 파라미터로 온다 — satori/resvg가
- * CSS 변수를 못 읽어 blog-preset의 다크 토큰 hex를 옮겨 둔 값이라는 사연은 설정
- * 쪽 주석 참고. 기본값 = 패키지 기본 설정(테스트·단독 사용 편의).
+ * 팔레트는 **언제나 인자로 온다**(기본값 없음). satori/resvg가 CSS 변수를 못
+ * 읽어 앱 토큰의 hex를 옮겨 적은 값이라, 패키지가 기본 팔레트를 들면 색을 안
+ * 넘긴 소비자의 카드가 남의 사이트 색으로 조용히 나간다 — 실패조차 하지 않는
+ * 종류의 사고다. 소유자는 앱의 `content.values.mts`(`OG_PALETTE`)다.
  */
 export function ogTemplate(
   post: OgPostInput,
   site: Pick<SiteConfig, 'url' | 'name'>,
-  og: OgConfig = DEFAULT_OG,
+  og: OgConfig,
 ): OgNode {
   const title = displayTitle(post.title, post.series);
   const {
@@ -313,7 +305,7 @@ export async function renderOgPng(
   post: OgPostInput,
   fonts: SatoriOptions['fonts'],
   site: Pick<SiteConfig, 'url' | 'name'>,
-  og: OgConfig = DEFAULT_OG,
+  og: OgConfig,
 ): Promise<Buffer> {
   const svg = await satori(
     ogTemplate(post, site, og) as unknown as Parameters<typeof satori>[0],

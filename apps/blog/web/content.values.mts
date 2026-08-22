@@ -28,7 +28,11 @@
 import type {
   AuthorConfig,
   ContentValues,
+  LlmsDocsConfig,
+  LlmsFacts,
+  OgPalette,
   SiteConfig,
+  SitemapConfig,
   TimezoneConfig,
 } from '@blog/content';
 
@@ -119,6 +123,104 @@ export function isDiagramName(value: unknown): value is DiagramName {
   );
 }
 
+// ── OG 카드 팔레트 ───────────────────────────────────────────────────────────
+
+/**
+ * OG 카드(`public/og/*.png`)의 색 — **`blog-preset.ts` 다크 토큰의 hex 사본**이다.
+ *
+ * 왜 사본인가: satori/resvg는 CSS 변수도 oklch도 못 읽는다. 그래서 토큰을
+ * 참조하지 못하고 값을 옮겨 적는다. 팔레트를 바꾸면 여기도 같이 고쳐야
+ * 소셜 미리보기가 사이트와 어긋나지 않는다 — 어긋나도 렌더는 성공하므로
+ * 아무도 실패로 알려주지 않는다.
+ *
+ * 패키지에는 이 축의 기본값이 **없다**(`ContentValues['ogPalette']`가 필수).
+ * 기본값을 두면 색을 넘기지 않은 사이트의 카드가 남의 색으로 나간다.
+ */
+export const OG_PALETTE = {
+  paper: '#0B0D10', // paper.50
+  ink: '#E6E8EB', // ink.950
+  inkMeta: '#8B919A', // ink.600
+  inkRule: '#333941', // ink.border(다크 rgba를 paper.50 위에 합성한 값)
+  accent: '#67E8F9', // accent.500 — 포인트 cyan
+  pillBorder: 'rgba(103, 232, 249, 0.4)',
+} as const satisfies OgPalette;
+
+// ── 시리즈 컬러 ──────────────────────────────────────────────────────────────
+
+/**
+ * 시리즈 폴더명 → 컬러 키. 키는 `apps/blog/posts/<폴더>`와 **정확히 일치**해야
+ * 한다 — 원고 배치를 아는 것은 앱뿐이라 패키지에 기본값을 둘 수 없다.
+ * 값은 `blog-preset.ts`의 semanticToken 계열 이름이다.
+ */
+export const SERIES_COLORS = {
+  bundler: 'accent',
+  '[Typescript로 설계하는 프로젝트]': 'marker',
+  'open-source': 'moss',
+} as const satisfies ContentValues['seriesColors'];
+
+/** 위에 등록되지 않은 시리즈가 라운드로빈으로 받는 색. */
+export const SERIES_COLOR_FALLBACK = [
+  'accent',
+  'marker',
+  'moss',
+] as const satisfies ContentValues['seriesColorFallback'];
+
+// ── sitemap 우선순위 ─────────────────────────────────────────────────────────
+
+/**
+ * sitemap의 `<priority>` 튜닝 — **어떤 글이 대표작인가**라는 편집 판단이라
+ * 패키지 기본값은 비어 있다.
+ *
+ * 폴더는 시리즈가 아니라 폴더 기준이다(`typescript` 폴더에는 `_series.yml`이
+ * 없어 시리즈가 아니지만 우선순위는 받는다 — generate-sitemap.ts 주석 참고).
+ */
+export const SITEMAP_PRIORITY = {
+  /** 고가치 주제 폴더 — 0.75 */
+  highPriorityFolders: ['bundler', 'typescript', 'open-source'],
+  /** 고가치 개별 글 — 0.8 */
+  highPrioritySlugs: [
+    'ai-opensource-contribution',
+    'nodejs-contribution',
+    'nextjs-contributor',
+    'first-open-source-contribution',
+  ],
+} as const satisfies SitemapConfig;
+
+// ── llms.txt 산문 ────────────────────────────────────────────────────────────
+
+/**
+ * AI 크롤러용 색인·전문의 머리 소개.
+ *
+ * 안 주면 `site.description`이 쓰인다(`defineContent`). 여기서 따로 적는 이유는
+ * 화면용 한 줄 설명과 크롤러용 소개의 목적이 다르기 때문이다 — 이쪽은 영어이고,
+ * 무엇을 다루는 블로그인지와 **본문 언어**까지 알려야 한다.
+ */
+export const LLMS_INTRO = {
+  index:
+    'Frontend engineering blog by Sangwook Han (한상욱). Deep-dive technical experiments in bundler architecture, TypeScript domain modeling, React patterns, and open source contributions. All posts include working code and first-hand implementation experience. Post body content is in Korean; technical terms, code, and key facts are in English.',
+  full: 'Frontend engineering blog by Sangwook Han (한상욱). Deep-dive technical experiments in bundler architecture, TypeScript domain modeling, React patterns, and open source contributions. All posts include working code and first-hand implementation experience. Content primarily in Korean.',
+} as const;
+
+/**
+ * `## Key Facts` 절 — 저자 이력이라 **소비자만 쓸 수 있는 내용**이다.
+ * 패키지에서는 전부 선택 항목이고, 주지 않은 항목은 줄째 생략된다.
+ * 숫자가 든 항목(기여 수·성능 개선치)은 사실이 바뀌면 여기서 고친다.
+ */
+export const LLMS_FACTS = {
+  languageIndex:
+    'Korean body text; English technical terms, code, and key data points',
+  languageFull: 'Primarily Korean, some English',
+  openSource:
+    '27 Mantine PRs merged, Node.js core contributor, Next.js contributor',
+  notableContributionIndex:
+    'gemini-cli 74% performance improvement (408ms → 107ms) via Promise.allSettled',
+  notableContributionFull:
+    'gemini-cli 74% performance improvement (408ms → 107ms)',
+  speaking: "FEConf 2025 (Korea's largest frontend conference), TeoConf",
+  mainTopics:
+    'Bundler internals, TypeScript domain modeling, React patterns, design systems, open source',
+} as const satisfies LlmsFacts;
+
 // ── 설정 배선용 그룹 ─────────────────────────────────────────────────────────
 // `content.config.mts`만 가져간다. 화면 코드가 이 객체를 import하면 위에서 말한
 // 번들 문제가 그대로 돌아오므로, 필요한 개별 상수를 쓸 것.
@@ -141,3 +243,39 @@ export const AUTHOR = {
   github: AUTHOR_GITHUB,
   linkedin: AUTHOR_LINKEDIN,
 } as const satisfies AuthorConfig;
+
+/**
+ * `llms.txt`의 `## Docs` 절 — 라벨과 한 줄 설명.
+ *
+ * URL은 넣지 않는다. 경로 계약(`/`·`/posts/`·`/series/`·`/about/`·
+ * `/llms-full.txt`)은 패키지가 조립하고, 여기서 정하는 것은 문구뿐이다.
+ * `{count}`는 산출 시점의 발행 글 수로 치환된다 — 숫자를 손으로 적어 두면
+ * 예전 정적 llms.txt가 그랬듯 실제 글 수와 갈라진다.
+ *
+ * 라벨이 한국어이고 설명이 영어인 이유는 원래 파일의 관례를 따른 것이다:
+ * 소비자는 AI 크롤러(영어)지만, 링크 텍스트는 사이트 화면의 메뉴 이름과
+ * 같아야 사람이 대조할 수 있다.
+ */
+export const LLMS_DOCS = {
+  home: {
+    label: '블로그 홈',
+    summary: `${SITE_NAME} — React, TypeScript, bundler architecture experiments by ${AUTHOR_NAME}.`,
+  },
+  archive: {
+    label: '전체 포스트 목록',
+    summary:
+      'Complete archive of {count} frontend engineering articles organized by topic and series.',
+  },
+  series: {
+    label: '시리즈 목록',
+    summary: 'Multi-part series, each readable in order from part 1.',
+  },
+  about: {
+    label: '소개',
+    summary: 'Author profile, open source contributions, and conference talks.',
+  },
+  full: {
+    label: '전문 텍스트',
+    summary: 'Full post text for retrieval.',
+  },
+} as const satisfies LlmsDocsConfig;

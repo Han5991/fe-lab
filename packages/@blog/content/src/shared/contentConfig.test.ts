@@ -1,6 +1,12 @@
 import { expect, test } from 'vitest';
 import { sep } from 'node:path';
-import { defineContent, type ContentUserConfig } from './contentConfig.ts';
+import {
+  DEFAULT_LLMS,
+  DEFAULT_OG_SIZE,
+  DEFAULT_SITEMAP,
+  defineContent,
+  type ContentUserConfig,
+} from './contentConfig.ts';
 import { SUPPORTED_FENCE_LABELS } from './prismLanguages.ts';
 import { TEST_VALUES, defineTestContent } from './testValues.ts';
 import { resolveContentPaths } from './contentPaths.ts';
@@ -75,17 +81,27 @@ test('seo.titleSuffix는 명시하지 않으면 site.name에서 파생된다', (
   expect(explicit.seo.titleSuffix).toBe(' — 별도 접미사');
 });
 
-test('registries는 diagramNames만 필수 — 나머지는 기본값이 채워진다', () => {
+test('registries: 사이트 고유 축은 준 값 그대로, 펜스 라벨만 기본값', () => {
+  // diagramNames·seriesColors·seriesColorFallback에는 기본값이 없다 — 어느
+  // 폴더가 어느 색인지는 원고 배치를 아는 앱만 쓸 수 있는 값이다.
   const config = defineContent({
     root: FIXTURE_ROOT,
     site: TEST_VALUES.site,
     author: TEST_VALUES.author,
     timezone: TEST_VALUES.timezone,
-    registries: { diagramNames: ['only-this'] },
+    og: { palette: TEST_VALUES.ogPalette },
+    registries: {
+      diagramNames: ['only-this'],
+      seriesColors: { 'only-series': 'moss' },
+      seriesColorFallback: ['moss'],
+    },
   });
   expect([...config.registries.diagramNames]).toStrictEqual(['only-this']);
+  expect(config.registries.seriesColors).toStrictEqual({
+    'only-series': 'moss',
+  });
+  expect([...config.registries.seriesColorFallback]).toStrictEqual(['moss']);
   expect(config.registries.supportedFenceLabels).toBe(SUPPORTED_FENCE_LABELS);
-  expect(config.registries.seriesColorFallback.length).toBeGreaterThan(0);
 });
 
 test('중첩 객체(og.palette, llms.facts)도 부분 병합된다', () => {
@@ -95,9 +111,56 @@ test('중첩 객체(og.palette, llms.facts)도 부분 병합된다', () => {
     llms: { facts: { speaking: 'somewhere' } },
   });
   expect(config.og.palette.accent).toBe('#FF0000');
-  expect(config.og.palette.paper).toBe('#0B0D10');
+  // 덮지 않은 색은 픽스처 그대로 — 패키지에는 기본 팔레트가 없다.
+  expect(config.og.palette.paper).toBe(TEST_VALUES.ogPalette.paper);
   expect(config.llms.facts.speaking).toBe('somewhere');
-  expect(config.llms.facts.languageFull).toBe('Primarily Korean, some English');
+  // facts는 전부 선택 항목이라, 주지 않은 항목은 채워지지 않는다.
+  expect(config.llms.facts.languageFull).toBeUndefined();
+});
+
+test('llms 소개 산문은 안 주면 site.description에서 파생된다', () => {
+  // `seo.titleSuffix`가 `site.name`에서 파생되는 것과 같은 자리 — 소비자가 이미
+  // 선언한 값이 있으면 패키지가 남의 사이트 산문을 기본값으로 들 이유가 없다.
+  const derived = defineTestContent({ root: FIXTURE_ROOT });
+  expect(derived.llms.indexIntro).toBe(TEST_VALUES.site.description);
+  expect(derived.llms.fullIntro).toBe(TEST_VALUES.site.description);
+
+  const explicit = defineTestContent({
+    root: FIXTURE_ROOT,
+    llms: { indexIntro: '색인용 소개', fullIntro: '전문용 소개' },
+  });
+  expect(explicit.llms.indexIntro).toBe('색인용 소개');
+  expect(explicit.llms.fullIntro).toBe('전문용 소개');
+});
+
+test('사이트 고유 축에는 기본값이 없다 (og 팔레트·시리즈 컬러·sitemap 우선순위)', () => {
+  // 이 셋은 예전에 패키지가 이 저장소의 데이터를 기본값으로 들고 있던 자리다.
+  // 지금은 소비자가 주지 않으면 존재하지 않거나(필수) 비어 있다.
+  expect(DEFAULT_SITEMAP.highPriorityFolders).toStrictEqual([]);
+  expect(DEFAULT_SITEMAP.highPrioritySlugs).toStrictEqual([]);
+  expect(DEFAULT_LLMS.facts).toStrictEqual({});
+  expect(Object.keys(DEFAULT_OG_SIZE)).toStrictEqual(['width', 'height']);
+});
+
+test('llms.docs는 링크 항목 단위로 부분 병합된다', () => {
+  const config = defineTestContent({
+    root: FIXTURE_ROOT,
+    llms: { docs: { home: { label: '홈', summary: '바뀐 설명.' } } },
+  });
+  expect(config.llms.docs.home.summary).toBe('바뀐 설명.');
+  // 주지 않은 항목은 픽스처 그대로 (기본값이 아니라 — defineTestContent 참고).
+  expect(config.llms.docs.full.summary).toBe('Test full text.');
+});
+
+test('llms.docs 기본값에는 사이트·저자 이름이 없다', () => {
+  // 이 축의 기본값은 소비자를 모르는 중립 문구여야 한다. 예전엔 홈 링크 설명이
+  // 생성기에 리터럴로 박혀 있어서 덮을 수단 자체가 없었다.
+  const defaults = Object.values(DEFAULT_LLMS.docs);
+  for (const { label, summary } of defaults) {
+    expect(/Frontend Lab|Sangwook|한상욱/.test(`${label} ${summary}`)).toBe(
+      false,
+    );
+  }
 });
 
 // ── 산출 디렉터리 상호 배타 검증 ─────────────────────────────────────────────

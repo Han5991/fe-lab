@@ -22,9 +22,12 @@ packages/@blog/content         ← 소스 익스포트 패키지. 문 두 개: `
         ▼
 apps/blog/web  (이 앱)
   ├─ content.values.mts   ← 이 사이트의 값 (순수 리터럴). 패키지에는 이 축들의 기본값이
-  │                          없다 — 값의 소유자는 앱이다. 개별 상수(SITE_URL·RSS_PATH…)가
-  │                          1차이고 그룹 객체(SITE·AUTHOR)는 설정 배선 전용이다:
-  │                          화면이 그룹을 import하면 안 쓰는 값까지 번들에 실린다
+  │                          없다 — 값의 소유자는 앱이다. 정체성(SITE·AUTHOR·TIMEZONE)에
+  │                          더해 OG 팔레트·시리즈 컬러·sitemap 우선순위·llms 산문까지.
+  │                          개별 상수(SITE_URL·RSS_PATH…)가 1차이고 그룹 객체(SITE·
+  │                          AUTHOR·OG_PALETTE…)는 설정 배선 전용이다: 화면이 그룹을
+  │                          import하면 안 쓰는 값까지 번들에 실린다.
+  │                          값↔원고 정합성은 src/app/contentValues.test.ts가 잠근다
   ├─ content.config.mts   ← 경로 앵커 + 배선 (root: import.meta.url — 이 파일의 위치가 앵커.
   │                          위 값 모듈을 defineContent에 넘긴다.
   │                          CLI는 cwd walk-up으로 발견, 앱은 src/content.ts가 정적 import)

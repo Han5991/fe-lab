@@ -154,9 +154,16 @@ flowchart TD
 서버·빌드 전용 설정 표면. **사이트 고유 값에는 기본값이 없다** —
 `root`(경로 앵커)와 같은 이유로, 어떤 기본값이든 특정 사이트의 하드코딩이기
 때문이다. 그래서 `root` · `site` · `author` · `timezone` ·
-`registries.diagramNames` 가 필수(`ContentValues` 계약)이고, 값 자체는 소비자
-앱의 `content.values.mts`(순수 리터럴, 값 import 없음)가 소유한다 — 방향은 항상
-`content.values → content.config → @blog/content`.
+`registries.diagramNames` · `registries.seriesColors` ·
+`registries.seriesColorFallback` · `og.palette` 가 필수(`ContentValues` 계약)이고,
+값 자체는 소비자 앱의 `content.values.mts`(순수 리터럴, 값 import 없음)가
+소유한다 — 방향은 항상 `content.values → content.config → @blog/content`.
+
+기본값이 **남아 있는 것은 어떤 사이트에서도 같은 값뿐이다**: SEO 길이 예산,
+펜스 라벨, 경로 관례, OG 카드 규격(1200×630). 사이트마다 다르지만 없어도 도는
+축은 비어 있고(`sitemap` 우선순위 · `llms.facts`), 소비자가 이미 선언한 값에서
+파생할 수 있는 축은 파생한다(`seo.titleSuffix` ← `site.name`,
+`llms.indexIntro`/`fullIntro` ← `site.description`).
 
 클라이언트 컴포넌트가 소비하는 값(타임존·다이어그램 이름)도 그 값 모듈에서
 직접 가져간다. 해석된 설정 객체를 클라이언트가 import하면 og 팔레트·llms 산문
@@ -174,12 +181,12 @@ flowchart TD
 | `seo`        | `titleSuffix` · `titleMaxLength`(60) · `descriptionMinLength`(120) · `descriptionMaxLength`(160, 자동 발췌 길이 겸용)                                 |
 | `timezone`   | **필수(전체).** `iana` · `isoOffset` · `utcOffsetMs`                                                                                                  |
 | `runtime`    | `isDevelopment()` — `NODE_ENV === 'development'` 정확 비교(빌드 스크립트를 dev로 오인하지 않게)                                                       |
-| `registries` | `diagramNames`는 **필수**(사이트마다 다른 그림 목록). `supportedFenceLabels` · `seriesColors` · `seriesColorFallback`은 기본값 있음                   |
+| `registries` | `diagramNames` · `seriesColors` · `seriesColorFallback`이 **필수**(원고 배치를 아는 앱만 쓸 수 있다). `supportedFenceLabels`만 기본값 있음            |
 | `dirs`       | **앱 루트 기준 상대 경로** — `content`(`../posts`) · `public` · `cache` · `out` · `media` · `thumbs` · `og`                                           |
-| `sitemap`    | `highPriorityFolders`(0.75) · `highPrioritySlugs`(0.8)                                                                                                |
-| `og`         | `width` · `height` · `palette`(satori용 hex — CSS 변수를 못 읽는다)                                                                                   |
+| `sitemap`    | `highPriorityFolders`(0.75) · `highPrioritySlugs`(0.8). 기본값은 **빈 배열** — 어떤 글이 대표작인지는 편집 판단이다                                   |
+| `og`         | `palette`가 **필수**(satori용 hex — CSS 변수를 못 읽어 앱 토큰을 옮겨 적은 값). `width` · `height`는 소셜 카드 표준이라 기본값                        |
 | `thumbnails` | `maxWidth` · `webpQuality`                                                                                                                            |
-| `llms`       | `summaryMaxLength` · `indexIntro` · `fullIntro` · `facts.*`                                                                                           |
+| `llms`       | `summaryMaxLength` · `docs.*`(중립 기본값) · `indexIntro`/`fullIntro`(← `site.description`) · `facts.*`(**전부 선택** — 준 항목만 줄로 나간다)        |
 
 ## 경로 앵커 — `content.config.mts`
 

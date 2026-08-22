@@ -1,9 +1,6 @@
 import { expect, test } from 'vitest';
-import { DEFAULT_OG } from '../../shared/contentConfig.ts';
-import { TEST_VALUES } from '../../shared/testValues.ts';
-
-// 카드에 그려지는 사이트 이름·도메인도 설정에서 온다(해시 입력에 포함).
-const SITE = TEST_VALUES.site;
+import { sep } from 'node:path';
+import { defineTestContent } from '../../shared/testValues.ts';
 import {
   ogContentHash,
   displayTitle,
@@ -14,9 +11,18 @@ import {
   findOrphanPngs,
   loadFonts,
   renderOgPng,
-  OG_PILL_BORDER,
   type OgPostInput,
 } from './generate-og-images.ts';
+
+// 카드에 그려지는 사이트 이름·도메인도, 팔레트·크기도 전부 설정에서 온다.
+// 팔레트에는 패키지 기본값이 없으므로(앱 소유) 여기서도 설정을 거쳐 받는다.
+const CONFIG = defineTestContent({ root: `${sep}tmp${sep}app` });
+const SITE = CONFIG.site;
+const OG = CONFIG.og;
+// 시리즈 pill 보더 — "series가 있을 때만 pill이 나온다"를 이 값의 유무로
+// 판별한다. 리터럴로 복사해 두면 팔레트를 바꿀 때마다 색 때문에 깨진다
+// (정작 검증하려는 건 색이 아니라 조건부 렌더다).
+const PILL_BORDER = OG.palette.pillBorder;
 
 function post(over: Partial<OgPostInput> = {}): OgPostInput {
   return { slug: 'my-post', title: '테스트 글', date: '2026-06-09', ...over };
@@ -25,32 +31,30 @@ function post(over: Partial<OgPostInput> = {}): OgPostInput {
 // ── ogContentHash ────────────────────────────────────────────────────────────
 
 test('ogContentHash: 같은 입력이면 같은 해시 (결정적)', () => {
-  expect(ogContentHash(post(), SITE)).toBe(ogContentHash(post(), SITE));
+  expect(ogContentHash(post(), SITE, OG)).toBe(ogContentHash(post(), SITE, OG));
 });
 
 test('ogContentHash: 이미지에 들어가는 필드(title/date/series)가 바뀌면 해시 변경', () => {
-  const base = ogContentHash(post(), SITE);
-  expect(ogContentHash(post({ title: '다른 제목' }), SITE)).not.toBe(base);
-  expect(ogContentHash(post({ date: '2025-01-01' }), SITE)).not.toBe(base);
-  expect(ogContentHash(post({ series: 'bundler' }), SITE)).not.toBe(base);
+  const base = ogContentHash(post(), SITE, OG);
+  expect(ogContentHash(post({ title: '다른 제목' }), SITE, OG)).not.toBe(base);
+  expect(ogContentHash(post({ date: '2025-01-01' }), SITE, OG)).not.toBe(base);
+  expect(ogContentHash(post({ series: 'bundler' }), SITE, OG)).not.toBe(base);
 });
 
 test('ogContentHash: og 설정(팔레트·크기)이 바뀌면 해시 변경 — 설정 오버라이드가 재생성을 트리거', () => {
-  const base = ogContentHash(post(), SITE);
+  const base = ogContentHash(post(), SITE, OG);
   expect(
     ogContentHash(post(), SITE, {
-      ...DEFAULT_OG,
-      palette: { ...DEFAULT_OG.palette, accent: '#FF0000' },
+      ...OG,
+      palette: { ...OG.palette, accent: '#FF0000' },
     }),
   ).not.toBe(base);
-  expect(ogContentHash(post(), SITE, { ...DEFAULT_OG, width: 800 })).not.toBe(
-    base,
-  );
+  expect(ogContentHash(post(), SITE, { ...OG, width: 800 })).not.toBe(base);
 });
 
 test('ogContentHash: slug는 파일 경로일 뿐 해시에 영향 없음', () => {
-  expect(ogContentHash(post({ slug: 'a' }), SITE)).toBe(
-    ogContentHash(post({ slug: 'b' }), SITE),
+  expect(ogContentHash(post({ slug: 'a' }), SITE, OG)).toBe(
+    ogContentHash(post({ slug: 'b' }), SITE, OG),
   );
 });
 
@@ -105,7 +109,7 @@ test('displayTitle: prefix 제거 후 빈 제목이 되면 원본 유지', () =>
 });
 
 test('ogTemplate: 제목/날짜/도메인이 트리에 포함', () => {
-  const json = JSON.stringify(ogTemplate(post(), SITE));
+  const json = JSON.stringify(ogTemplate(post(), SITE, OG));
   expect(json.includes('테스트 글')).toBeTruthy();
   expect(json.includes('2026-06-09')).toBeTruthy();
   expect(json.includes(SITE.url.replace('https://', ''))).toBeTruthy();
@@ -113,12 +117,12 @@ test('ogTemplate: 제목/날짜/도메인이 트리에 포함', () => {
 
 test('ogTemplate: series가 있을 때만 pill 노출', () => {
   const withSeries = JSON.stringify(
-    ogTemplate(post({ series: 'bundler' }), SITE),
+    ogTemplate(post({ series: 'bundler' }), SITE, OG),
   );
   expect(withSeries.includes('bundler')).toBeTruthy();
-  expect(withSeries.includes(OG_PILL_BORDER)).toBeTruthy();
+  expect(withSeries.includes(PILL_BORDER)).toBeTruthy();
   expect(
-    !JSON.stringify(ogTemplate(post(), SITE)).includes(OG_PILL_BORDER),
+    !JSON.stringify(ogTemplate(post(), SITE, OG)).includes(PILL_BORDER),
   ).toBeTruthy();
 });
 
@@ -127,6 +131,7 @@ test('ogTemplate: 시리즈명이 제목 prefix와 중복되면 제목에서 제
     ogTemplate(
       post({ title: '[TS 설계] 당신의 Type', series: '[TS 설계]' }),
       SITE,
+      OG,
     ),
   );
   expect(!json.includes('[TS 설계] 당신의 Type')).toBeTruthy();
@@ -135,13 +140,13 @@ test('ogTemplate: 시리즈명이 제목 prefix와 중복되면 제목에서 제
 
 test('ogTemplate: 제목은 3줄 클램프', () => {
   expect(
-    JSON.stringify(ogTemplate(post(), SITE)).includes('"lineClamp":3'),
+    JSON.stringify(ogTemplate(post(), SITE, OG)).includes('"lineClamp":3'),
   ).toBeTruthy();
 });
 
 test('ogTemplate: datetime이 섞인 date도 날짜 부분만 표기', () => {
   const json = JSON.stringify(
-    ogTemplate(post({ date: '2026-03-16T09:00:00+09:00' }), SITE),
+    ogTemplate(post({ date: '2026-03-16T09:00:00+09:00' }), SITE, OG),
   );
   expect(json.includes('2026-03-16')).toBeTruthy();
 });
@@ -168,11 +173,12 @@ test('renderOgPng: 실제 폰트로 유효한 PNG 생성', async () => {
     }),
     loadFonts(),
     SITE,
+    OG,
   );
   // PNG 시그니처(\x89PNG) + 1200×630 치고 비정상적으로 작지 않은지
   expect([...png.subarray(0, 4)]).toStrictEqual([0x89, 0x50, 0x4e, 0x47]);
   expect(png.length > 10_000, `png too small: ${png.length}B`).toBeTruthy();
   // IHDR의 width/height 확인 (offset 16: width 4B, height 4B big-endian)
-  expect(png.readUInt32BE(16)).toBe(DEFAULT_OG.width);
-  expect(png.readUInt32BE(20)).toBe(DEFAULT_OG.height);
+  expect(png.readUInt32BE(16)).toBe(OG.width);
+  expect(png.readUInt32BE(20)).toBe(OG.height);
 });
