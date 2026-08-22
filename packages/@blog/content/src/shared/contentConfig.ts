@@ -169,9 +169,11 @@ export interface OgConfig {
   width: number;
   height: number;
   /**
-   * 다크 테마 토큰의 hex 값. satori/resvg는 CSS 변수도 oklch도 못 읽어서
-   * blog-preset.ts의 `_dark` 값을 손으로 옮겨 둔다 — 팔레트를 바꾸면 여기도
-   * 같이 고쳐야 소셜 미리보기가 사이트와 어긋나지 않는다.
+   * 카드에 그릴 **리터럴 색**. satori/resvg는 CSS 변수도 oklch도 못 읽어서
+   * 토큰 이름을 넘길 수 없다 — 소비자가 자기 디자인 토큰에서 값을 해석해 준다.
+   *
+   * 기본값을 두지 않는 이유가 여기 있다: 색을 안 넘긴 소비자의 카드가 남의
+   * 사이트 색으로 나가는데, 렌더는 성공하므로 아무도 실패로 알려주지 않는다.
    */
   palette: OgPalette;
 }

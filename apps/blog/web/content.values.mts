@@ -30,7 +30,6 @@ import type {
   ContentValues,
   LlmsDocsConfig,
   LlmsFacts,
-  OgPalette,
   SiteConfig,
   SitemapConfig,
   TimezoneConfig,
@@ -130,27 +129,10 @@ export function isDiagramName(value: unknown): value is DiagramName {
   );
 }
 
-// ── OG 카드 팔레트 ───────────────────────────────────────────────────────────
-
-/**
- * OG 카드(`public/og/*.png`)의 색 — **`blog-preset.ts` 다크 토큰의 hex 사본**이다.
- *
- * 왜 사본인가: satori/resvg는 CSS 변수도 oklch도 못 읽는다. 그래서 토큰을
- * 참조하지 못하고 값을 옮겨 적는다. 팔레트를 바꾸면 여기도 같이 고쳐야
- * 소셜 미리보기가 사이트와 어긋나지 않는다 — 어긋나도 렌더는 성공하므로
- * 아무도 실패로 알려주지 않는다.
- *
- * 패키지에는 이 축의 기본값이 **없다**(`ContentValues['ogPalette']`가 필수).
- * 기본값을 두면 색을 넘기지 않은 사이트의 카드가 남의 색으로 나간다.
- */
-export const OG_PALETTE = {
-  paper: '#0B0D10', // paper.50
-  ink: '#E6E8EB', // ink.950
-  inkMeta: '#8B919A', // ink.600
-  inkRule: '#333941', // ink.border(다크 rgba를 paper.50 위에 합성한 값)
-  accent: '#67E8F9', // accent.500 — 포인트 cyan
-  pillBorder: 'rgba(103, 232, 249, 0.4)',
-} as const satisfies OgPalette;
+// OG 카드 팔레트는 여기 없다 — 값이 아니라 **디자인 토큰에서 파생**되기 때문이다.
+// `blog-preset.ts`의 다크 색을 `darkColor()`로 뽑아 `content.config.mts`가 조립한다.
+// 이 파일이 아니라 거기인 이유는 값 import 금지(위 제약) 때문이다: 프리셋을 여기서
+// 끌면 화면이 이 모듈의 다른 상수를 쓸 때 Panda 설정까지 클라이언트 번들에 실린다.
 
 // ── sitemap 정적 페이지 · 우선순위 ───────────────────────────────────────────
 
