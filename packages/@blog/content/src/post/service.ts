@@ -1,11 +1,5 @@
-import { CONTENT } from '../shared/contentConfig.ts';
-import { readAllPosts } from './repository.ts';
 import { isPostVisible } from './visibility.ts';
-import {
-  getSeriesMeta,
-  sortPostsBySeriesOrder,
-  type SeriesMeta,
-} from './series.ts';
+import { sortPostsBySeriesOrder, type SeriesMeta } from './series.ts';
 import type {
   PostData,
   PostNavItem,
@@ -227,51 +221,4 @@ export function pickAdjacent(
     prev: prevPost ? { slug: prevPost.slug, title: prevPost.title } : null,
     next: nextPost ? { slug: nextPost.slug, title: nextPost.title } : null,
   };
-}
-
-// ---------- 과도기 싱글턴 위임 ----------
-// repository·series의 legacy 인스턴스 위에 구성한다. 소비자들이 createContent로
-// 옮겨 가면 삭제된다.
-
-const legacyService = createPostService({
-  readAllPosts,
-  getSeriesMeta,
-  isDevelopment: () => CONTENT.runtime.isDevelopment(),
-});
-
-export function getAllPosts(now?: Date): PostData[] {
-  return now === undefined
-    ? legacyService.getAllPosts()
-    : legacyService.getAllPosts(now);
-}
-
-export function getAllPostSummaries(): PostSummary[] {
-  return legacyService.getAllPostSummaries();
-}
-
-export function getAllPostsIncludingHidden(): PostData[] {
-  return legacyService.getAllPostsIncludingHidden();
-}
-
-export function getPostBySlug(slug: string): PostData | null {
-  return legacyService.getPostBySlug(slug);
-}
-
-export function getAllPostSlugs(): string[] {
-  return legacyService.getAllPostSlugs();
-}
-
-export function getAdjacentPosts(
-  currentSlug: string,
-  options?: AdjacentPostsOptions,
-): { prev: PostNavItem | null; next: PostNavItem | null } {
-  return legacyService.getAdjacentPosts(currentSlug, options);
-}
-
-export function getSeriesAdjacentPosts(currentSlug: string): {
-  prev: PostNavItem | null;
-  next: PostNavItem | null;
-  seriesName: string | null;
-} {
-  return legacyService.getSeriesAdjacentPosts(currentSlug);
 }

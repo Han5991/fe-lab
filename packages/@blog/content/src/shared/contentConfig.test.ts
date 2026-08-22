@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
 import { sep } from 'node:path';
-import { CONTENT, defineContent } from './contentConfig.ts';
+import { defineContent } from './contentConfig.ts';
 import { DEFAULT_DIAGRAM_NAMES } from './contentValues.ts';
 import { SUPPORTED_FENCE_LABELS } from './prismLanguages.ts';
 import {
@@ -9,7 +9,7 @@ import {
   TITLE_SUFFIX,
   SEO_DESCRIPTION_MAX_LENGTH,
 } from './constants.ts';
-import { CONTENT_PATHS, resolveContentPaths } from './contentPaths.ts';
+import { resolveContentPaths } from './contentPaths.ts';
 
 /** 테스트 픽스처 루트 — 경로 무관 검증에 쓰는 임의 절대 경로 */
 const FIXTURE_ROOT = `${sep}tmp${sep}app`;
@@ -30,13 +30,15 @@ test('defineContent({root})는 현재 사이트 값과 같다 (동작 no-op의 �
   expect(config.registries.supportedFenceLabels).toBe(SUPPORTED_FENCE_LABELS);
 });
 
-test('값 모듈(constants 재수출)과 설정 인스턴스(CONTENT)는 같은 값을 본다', () => {
-  // 클라이언트는 값 모듈을, 서버/빌드는 CONTENT를 읽는다. 오버라이드가 없는
-  // 동안 둘은 동일해야 한다 — 갈라지면 contentValues.ts 머리 주석의 제약 위반.
-  expect(SITE_URL).toBe(CONTENT.site.url);
-  expect(SITE_NAME).toBe(CONTENT.site.name);
-  expect(TITLE_SUFFIX).toBe(CONTENT.seo.titleSuffix);
-  expect(SEO_DESCRIPTION_MAX_LENGTH).toBe(CONTENT.seo.descriptionMaxLength);
+test('값 모듈(constants 재수출)과 설정 기본값은 같은 값을 본다', () => {
+  // 클라이언트는 값 모듈을, 서버/빌드는 defineContent 결과를 읽는다.
+  // 오버라이드가 없는 동안 둘은 동일해야 한다 — 갈라지면 contentValues.ts
+  // 머리 주석의 제약 위반.
+  const config = defineContent({ root: FIXTURE_ROOT });
+  expect(SITE_URL).toBe(config.site.url);
+  expect(SITE_NAME).toBe(config.site.name);
+  expect(TITLE_SUFFIX).toBe(config.seo.titleSuffix);
+  expect(SEO_DESCRIPTION_MAX_LENGTH).toBe(config.seo.descriptionMaxLength);
 });
 
 // ── defineContent: root 검증 ─────────────────────────────────────────────────
@@ -155,12 +157,4 @@ test('resolveContentPaths: 후행 슬래시 디렉터리 URL은 그 디렉터리
     defineContent({ root: 'file:///tmp/app/' }),
   );
   expect(paths.appRoot).toBe(`${sep}tmp${sep}app`);
-});
-
-test('CONTENT_PATHS(과도기): 실제 앱 루트에 앵커된다 (cwd 비의존)', () => {
-  // CONTENT의 가상 root(content.config.ts가 있을 위치)가 apps/blog/web을
-  // 가리킨다. postsDir는 그 형제의 posts/다. 이 싱글턴이 사라지면 이 테스트도
-  // 함께 사라진다.
-  expect(CONTENT_PATHS.appRoot.endsWith(`${sep}blog${sep}web`)).toBeTruthy();
-  expect(CONTENT_PATHS.postsDir.endsWith(`${sep}blog${sep}posts`)).toBeTruthy();
 });

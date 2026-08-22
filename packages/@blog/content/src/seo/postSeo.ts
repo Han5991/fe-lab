@@ -18,7 +18,7 @@ import {
 } from '../post/index.ts';
 import { resolveAbsoluteThumbnailUrl } from '../post/thumbnail.ts';
 import { SITE_NAME, SITE_URL, TITLE_SUFFIX } from '../shared/constants.ts';
-import { CONTENT, type ContentConfig } from '../shared/contentConfig.ts';
+import type { ContentConfig } from '../shared/contentConfig.ts';
 
 /**
  * 아래 빌더들이 받는 `slug`는 **디코드된** 값입니다 — page.tsx가
@@ -287,30 +287,4 @@ export function createPostSeo(
   }
 
   return { buildPostSeo, buildPostJsonLd, buildBreadcrumbJsonLd };
-}
-
-// ---------- 과도기 싱글턴 위임 ----------
-// 소비자들이 createPostSeo(자기 설정)로 옮겨 가면 CONTENT와 함께 삭제된다.
-
-const legacyPostSeo = createPostSeo(CONTENT);
-
-/** @deprecated createPostSeo(config)의 buildPostSeo를 쓸 것 */
-export function buildPostSeo(post: SeoPost, slug: string): PostSeoData {
-  return legacyPostSeo.buildPostSeo(post, slug);
-}
-
-/** @deprecated createPostSeo(config)의 buildPostJsonLd를 쓸 것 */
-export function buildPostJsonLd(
-  post: SeoPost,
-  slug: string,
-): Record<string, unknown> {
-  return legacyPostSeo.buildPostJsonLd(post, slug);
-}
-
-/** @deprecated createPostSeo(config)의 buildBreadcrumbJsonLd를 쓸 것 */
-export function buildBreadcrumbJsonLd(
-  post: Pick<PostData, 'title'>,
-  slug: string,
-): Record<string, unknown> {
-  return legacyPostSeo.buildBreadcrumbJsonLd(post, slug);
 }

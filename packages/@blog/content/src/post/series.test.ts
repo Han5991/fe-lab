@@ -1,5 +1,9 @@
 import { expect, test } from 'vitest';
-import { isSeriesFolder, sortPostsBySeriesOrder } from './series.ts';
+import { sortPostsBySeriesOrder } from './series.ts';
+import { testContent } from './testing.ts';
+
+// 실제 코퍼스(_series.yml)에 앵커한 테스트 인스턴스의 판정을 검증한다.
+const { isSeriesFolder } = testContent;
 
 interface Fixture {
   slug: string;

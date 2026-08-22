@@ -3,11 +3,8 @@ import { relative } from 'node:path';
 import matter from 'gray-matter';
 import { estimateReadMin } from '../shared/format.ts';
 import { SEO_DESCRIPTION_MAX_LENGTH } from '../shared/constants.ts';
-import { CONTENT } from '../shared/contentConfig.ts';
-import { CONTENT_PATHS } from '../shared/contentPaths.ts';
 import { collectMarkdownFiles, hasFrontmatter } from '../shared/postFiles.ts';
 import { isPostFile } from './visibility.ts';
-import { isSeriesFolder } from './series.ts';
 // 좁히기 함수(toDateString·toOptionalString·toStringArray)는 서술자 테이블과
 // 같은 파일에 있습니다 — 테이블의 `narrow`와 parsePost가 **같은 함수**를 가리켜야
 // 선언과 실제 동작이 갈라지지 않습니다(frontmatterSchema.ts 참고).
@@ -275,19 +272,4 @@ export function createRepository(deps: RepositoryDeps): Repository {
   }
 
   return { readAllPosts };
-}
-
-// ---------- 과도기 싱글턴 위임 ----------
-// series.ts의 legacy 인스턴스와 같은 경로 싱글턴에 앵커한다. 소비자들이
-// createContent로 옮겨 가면 CONTENT/CONTENT_PATHS와 함께 삭제된다.
-
-const legacyRepository = createRepository({
-  postsDir: CONTENT_PATHS.postsDir,
-  isDevelopment: () => CONTENT.runtime.isDevelopment(),
-  excerptMaxLength: CONTENT.seo.descriptionMaxLength,
-  isSeriesFolder,
-});
-
-export function readAllPosts(): PostData[] {
-  return legacyRepository.readAllPosts();
 }

@@ -14,12 +14,7 @@ import {
   type LlmsConfig,
 } from '../shared/contentConfig.ts';
 import type { ContentContext } from './context.ts';
-import {
-  getSeriesMeta,
-  isSeriesFolder,
-  sortPostsBySeriesOrder,
-  type SeriesMeta,
-} from '../post/series.ts';
+import { sortPostsBySeriesOrder, type SeriesMeta } from '../post/series.ts';
 
 /**
  * `llms.txt` — AI 크롤러용 **색인**입니다. (본문 전문은 `llms-full.txt`)
@@ -44,11 +39,11 @@ export interface LlmsBuildOptions {
    */
   lastUpdated?: string;
   /**
-   * 시리즈 폴더명 → 메타(`_series.yml`). 기본값은 디스크를 읽는 getSeriesMeta입니다.
-   * (siteUrl·lastUpdated와 같은 이유로 주입 가능 — 단위 테스트가 디스크의
-   * 실제 시리즈 메타에 의존하지 않도록.)
+   * 시리즈 폴더명 → 메타(`_series.yml`). 진입점은 컨텍스트 인스턴스의
+   * getSeriesMeta를 넘긴다. **필수**다 — 디스크를 읽는 기본값을 두면 어느
+   * 루트를 읽을지가 다시 암묵이 된다(단위 테스트는 순수 함수를 넘긴다).
    */
-  resolveSeriesMeta?: (seriesId: string) => SeriesMeta | null;
+  resolveSeriesMeta: (seriesId: string) => SeriesMeta | null;
 }
 
 /**
@@ -85,12 +80,12 @@ export function toSummary(
  */
 export function buildLlmsText(
   posts: PostData[],
-  options: LlmsBuildOptions = {},
+  options: LlmsBuildOptions,
 ): string {
   const siteUrl = options.siteUrl ?? DEFAULT_SITE_URL;
   const llms = options.llms ?? DEFAULT_LLMS;
   const author = options.author ?? DEFAULT_AUTHOR;
-  const seriesMeta = options.resolveSeriesMeta ?? getSeriesMeta;
+  const seriesMeta = options.resolveSeriesMeta;
   const postDates = posts
     .map(p => p.date)
     .filter((d): d is string => Boolean(d));
@@ -136,9 +131,9 @@ export function buildLlmsText(
 
   for (const [seriesId, folderPosts] of byFolder) {
     const meta = seriesMeta(seriesId);
-    // `_series.yml`이 없는 폴더는 시리즈가 아니다 — `/series` 페이지와 같은 판정.
-    // meta를 넘겨 주입된 조회를 쓰게 한다(미지정이면 디스크를 읽는다).
-    if (!isSeriesFolder(seriesId, meta)) {
+    // `_series.yml`이 없는 폴더(meta 없음)는 시리즈가 아니다 — `/series` 페이지와
+    // 같은 판정(isSeriesFolder는 meta가 주어지면 null 여부만 본다).
+    if (meta === null) {
       standalone.push(...folderPosts);
       continue;
     }

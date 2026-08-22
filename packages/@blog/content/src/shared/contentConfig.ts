@@ -489,29 +489,3 @@ export function defineContent(user: ContentUserConfig): ContentConfig {
   assertOutputDirsExclusive(config.dirs);
   return config;
 }
-
-/** URL 문자열에서 마지막 경로 세그먼트 levels개를 떼어낸다 — 순수 문자열 연산 */
-function stripUrlSegments(url: string, levels: number): string {
-  let out = url;
-  for (let i = 0; i < levels; i++) out = out.slice(0, out.lastIndexOf('/'));
-  return out;
-}
-
-/**
- * 이 사이트의 설정 인스턴스 — **과도기 싱글턴**. 소비자가 자기
- * `content.config.mts`를 갖게 되면 삭제된다.
- *
- * root는 "앱에 설정 파일이 있었다면 그 위치"를 가리키는 가상의 파일 URL이다.
- * 이 상수가 fe-lab 워크스페이스의 `apps/blog/web` 전용 하드코딩의 마지막
- * 흔적이고, 진짜 소비는 `createContent(설정)`으로 한다.
- *
- * `new URL(상대경로, import.meta.url)`을 **쓰지 않고** 문자열 연산으로 조립하는
- * 이유: vite·Turbopack이 그 패턴을 정적 에셋 참조로 해석한다(vite는 jsdom
- * 테스트에서 http://localhost:3000/…로 재작성했고, Turbopack은 상수 폴딩 후
- * Module not found로 빌드를 깨뜨렸다). 순수 문자열 연산은 번들러가 손대지
- * 않는다. 6세그먼트 = contentConfig.ts·shared·src·content·@blog·packages —
- * 워크스페이스 루트까지.
- */
-export const CONTENT: ContentConfig = defineContent({
-  root: `${stripUrlSegments(import.meta.url, 6)}/apps/blog/web/content.config.mts`,
-});

@@ -1,10 +1,8 @@
-import { CONTENT } from '../shared/contentConfig.ts';
 import type {
   RegistriesConfig,
   SeriesColorKey,
 } from '../shared/contentConfig.ts';
-import { getAllPosts } from './service.ts';
-import { getSeriesMeta, type SeriesMeta } from './series.ts';
+import type { SeriesMeta } from './series.ts';
 import type { PostData, PostSummary } from './types.ts';
 
 export interface SeriesSummary {
@@ -129,26 +127,4 @@ export function createAggregate(deps: AggregateDeps): Aggregate {
   }
 
   return { getAllSeries, getAllTags, getAllYears };
-}
-
-// ---------- 과도기 싱글턴 위임 ----------
-// service·series의 legacy 인스턴스 위에 구성한다. 소비자들이 createContent로
-// 옮겨 가면 삭제된다.
-
-const legacyAggregate = createAggregate({
-  getAllPosts: () => getAllPosts(),
-  getSeriesMeta,
-  registries: CONTENT.registries,
-});
-
-export function getAllSeries(): SeriesSummary[] {
-  return legacyAggregate.getAllSeries();
-}
-
-export function getAllTags(): TagSummary[] {
-  return legacyAggregate.getAllTags();
-}
-
-export function getAllYears(): { year: string; count: number }[] {
-  return legacyAggregate.getAllYears();
 }

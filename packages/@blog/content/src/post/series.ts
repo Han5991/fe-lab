@@ -1,8 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import matter from 'gray-matter';
-import { CONTENT } from '../shared/contentConfig.ts';
-import { CONTENT_PATHS } from '../shared/contentPaths.ts';
 
 export interface SeriesMeta {
   name: string;
@@ -110,26 +108,6 @@ export function createSeriesReader(deps: SeriesReaderDeps): SeriesReader {
   }
 
   return { getSeriesMeta, isSeriesFolder };
-}
-
-// ---------- 과도기 싱글턴 위임 ----------
-// repository.ts와 **같은** 경로 싱글턴에 앵커한 인스턴스. 소비자들이
-// createContent로 옮겨 가면 CONTENT_PATHS와 함께 삭제된다.
-
-const legacySeriesReader = createSeriesReader({
-  postsDir: CONTENT_PATHS.postsDir,
-  isDevelopment: () => CONTENT.runtime.isDevelopment(),
-});
-
-export function getSeriesMeta(seriesName: string): SeriesMeta | null {
-  return legacySeriesReader.getSeriesMeta(seriesName);
-}
-
-export function isSeriesFolder(
-  seriesName: string,
-  meta?: SeriesMeta | null,
-): boolean {
-  return legacySeriesReader.isSeriesFolder(seriesName, meta);
 }
 
 /**

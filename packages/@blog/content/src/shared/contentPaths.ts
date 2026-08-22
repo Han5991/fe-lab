@@ -13,7 +13,7 @@
  */
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { CONTENT, type ContentConfig } from './contentConfig.ts';
+import type { ContentConfig } from './contentConfig.ts';
 
 export interface ContentPaths {
   appRoot: string;
@@ -60,9 +60,3 @@ export function resolveContentPaths(config: ContentConfig): ContentPaths {
     ogOutDir: resolve(appRoot, dirs.og),
   };
 }
-
-/**
- * 과도기 싱글턴 — CONTENT(가상 root의 설정 인스턴스)에서 푼 절대 경로 집합.
- * 소비자들이 `createContent`/컨텍스트 주입으로 옮겨 가면 CONTENT와 함께 삭제된다.
- */
-export const CONTENT_PATHS: ContentPaths = resolveContentPaths(CONTENT);

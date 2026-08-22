@@ -15,7 +15,7 @@ import { isPostFile } from '../../post/index.ts';
 import { decodeUrlSafe } from '../../shared/url.ts';
 // fence 라벨 허용 목록은 설정(defineContent)의 registries에서 온다 —
 // 기본값은 prismLanguages.ts의 SUPPORTED_FENCE_LABELS와 같다.
-import { CONTENT } from '../../shared/contentConfig.ts';
+import { SUPPORTED_FENCE_LABELS } from '../../shared/prismLanguages.ts';
 import { frontmatterOffset } from './shared.ts';
 import type { Issue, PostRecord, ValidateOptions } from './shared.ts';
 import { resolveSeverity } from './rules.ts';
@@ -267,7 +267,7 @@ export function validateCodeFenceLanguages(
     // split은 빈 배열을 만들지 않으므로 [0]은 항상 존재한다.
     const [firstToken = ''] = opensFence.split(/[\s,{]/);
     const label = firstToken.toLowerCase();
-    if (!label || CONTENT.registries.supportedFenceLabels.has(label)) continue;
+    if (!label || SUPPORTED_FENCE_LABELS.has(label)) continue;
 
     issues.push({
       file: record.relPath,
