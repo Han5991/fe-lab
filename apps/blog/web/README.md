@@ -21,6 +21,9 @@ packages/@blog/content         ← 소스 익스포트 패키지. 문 두 개: `
         │                          + 빌드 스크립트(src/scripts/*, API가 아니라 실행 파일)
         ▼
 apps/blog/web  (이 앱)
+  ├─ content.config.mts   ← 경로 앵커 (root: import.meta.url — 이 파일의 위치가 앵커.
+  │                          CLI는 cwd walk-up으로 발견, 앱은 src/content.ts가 정적 import)
+  ├─ src/content.ts       ← createContent/createPostSeo 인스턴스 조립 — fs 로더·SEO 빌더의 유일한 출처(서버 전용)
   ├─ prebuild  = build-content.ts --strict   (validate-posts 게이트 → 병렬 8개: sync·sitemap·rss·
   │                                            og-images·thumbnails·search-index·llms-full·llms)
   ├─ next build (output: 'export')            → out/
@@ -61,12 +64,12 @@ apps/blog/web/
 
 `eslint.config.mjs`의 `eslint-plugin-boundaries`가 **폴더 단위 element**로 의존 방향을 강제한다(`domain`·`lib`·`src` 세 폴더에만 건다). 기준 경로는 워크스페이스 루트 — `@blog/content`가 pnpm 심링크 realpath로 해석되기 때문.
 
-| element (아래 → 위) | 폴더                     | 가져올 수 있는 것                                                                                             |
-| :------------------ | :----------------------- | :------------------------------------------------------------------------------------------------------------ |
-| `content-pkg`       | `packages/@blog/content` | (이 앱에서는 외부 패키지처럼 보인다 — 내부 경계는 패키지 자신의 eslint 설정이 강제)                           |
-| `platform`          | `lib/platform`           | 외부 `@supabase/supabase-js`·`@supabase/postgrest-js`만                                                       |
-| `analytics`         | `domain/analytics`       | `platform`, `content-pkg`(날짜 유틸 등)                                                                       |
-| `app`               | `src`                    | `platform`, `analytics`, `content-pkg`, 임의 외부 패키지. **node 코어 금지** — fs는 `@blog/content` 로더의 일 |
+| element (아래 → 위) | 폴더                     | 가져올 수 있는 것                                                                                                                                |
+| :------------------ | :----------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `content-pkg`       | `packages/@blog/content` | (이 앱에서는 외부 패키지처럼 보인다 — 내부 경계는 패키지 자신의 eslint 설정이 강제)                                                              |
+| `platform`          | `lib/platform`           | 외부 `@supabase/supabase-js`·`@supabase/postgrest-js`만                                                                                          |
+| `analytics`         | `domain/analytics`       | `platform`, `content-pkg`(날짜 유틸 등)                                                                                                          |
+| `app`               | `src`                    | `platform`, `analytics`, `content-pkg`, 임의 외부 패키지. **node 코어 금지** — fs는 `src/content.ts`가 조립한 `@blog/content` 로더 인스턴스의 일 |
 
 추가 규칙: 프로덕션 코드는 `*.test.*`를 import 못 함 / `src`는 `domain/*/…Repository`를 직접 찌르지 말고 배럴(`@/domain/analytics`, `@/domain/analytics/admin`)로 / `src`에서 `client.from()`·`.rpc()` 직접 호출 금지(`no-restricted-syntax`) / `domain`은 `src`를, `lib`은 `domain`·`src`를 import 못 함.
 
@@ -80,7 +83,7 @@ apps/blog/web/
 
 ## 3. 런타임 데이터 흐름
 
-- **글 상세** — `src/app/posts/[...slug]/page.tsx`(서버)가 `@blog/content`의 `getPostBySlug`·`getAdjacentPosts`·`getSeriesAdjacentPosts`·`resolveThumbnailUrl`·`isPostVisible`을 부르고, `generateMetadata`는 `@blog/content/seo`의 `buildPostSeo` DTO를 `nextMetadata.ts`로 1:1 변환한다. 본문은 `PostClient.tsx`가 `react-markdown`(`remark-gfm` → `rehypeCodeMeta` → `rehype-raw` → `rehype-slug`, **순서 고정** — `rehype-raw`가 hast `data.meta`를 버리므로 코드 펜스 메타를 먼저 `data-*`로 옮긴다)으로 렌더. 커스텀 소문자 태그(`callout`·`code-tabs`·`file-tree`·`figure`·`dialogue`·`metrics`·`timeline`·`diagram*`)는 `src/components/post/markdown/`·`diagram/`. 본문 `h1`은 `markdownHeadings.tsx`가 `h2`로 강등하며 RSS 렌더러와 같은 `HEADING_TAG_MAP`을 공유한다.
+- **글 상세** — `src/app/posts/[...slug]/page.tsx`(서버)가 `@/src/content`(콘텐츠 인스턴스)의 `getPostBySlug`·`getAdjacentPosts`·`getSeriesAdjacentPosts`와 `@blog/content`의 순수 유틸(`resolveThumbnailUrl`·`isPostVisible`)을 부르고, `generateMetadata`는 같은 인스턴스 모듈의 `buildPostSeo` DTO를 `nextMetadata.ts`로 1:1 변환한다. 본문은 `PostClient.tsx`가 `react-markdown`(`remark-gfm` → `rehypeCodeMeta` → `rehype-raw` → `rehype-slug`, **순서 고정** — `rehype-raw`가 hast `data.meta`를 버리므로 코드 펜스 메타를 먼저 `data-*`로 옮긴다)으로 렌더. 커스텀 소문자 태그(`callout`·`code-tabs`·`file-tree`·`figure`·`dialogue`·`metrics`·`timeline`·`diagram*`)는 `src/components/post/markdown/`·`diagram/`. 본문 `h1`은 `markdownHeadings.tsx`가 `h2`로 강등하며 RSS 렌더러와 같은 `HEADING_TAG_MAP`을 공유한다.
 - **조회수** — `useViewCount` → `@blog/content`의 `viewCookie`(6시간 쿨다운, RPC 전에 쿠키를 먼저 심어 두 탭 레이스 방지) → `domain/analytics/repository.incrementViewCount` → `lib/platform/publicClient`(PostgREST-only 경량 클라이언트)로 `increment_view_count` RPC.
 - **Admin** — `AdminLayoutClient` → `AdminGuard`(세션 `useSuspenseQuery`, dev에서만 bypass) → React Query 훅 → `@/domain/analytics/admin` 배럴 → `adminRepository` → `lib/platform/adminApi` → Supabase Edge Function `admin-analytics`(호출자 JWT를 `ADMIN_EMAIL`과 대조 후 `service_role`로 RPC). 글 목록은 빌드가 만든 `/admin-posts-index.json`. `domain/analytics/index.ts`와 `admin.ts`를 **일부러 두 배럴**로 나눠 공개 페이지가 auth 세션 supabase-js를 끌고 오지 않게 한다.
 - **검색** — `SearchDialog`가 열릴 때 `/search-index.json`(빌드 산출물)을 fetch + localStorage 최근 본 글.
@@ -108,7 +111,7 @@ apps/blog/web/
 
 위 스크립트들은 전부 `@blog/content`가 `bin`으로 내놓는 **`blog-content`** 한 진입점을 부른다(`blog-content build`·`validate`·`check-seo`·`new-post`) — 앱은 서브커맨드 이름만 알고, 패키지 내부 파일 배치는 모른다.
 
-`blog-content build`는 **2단계** — 1단계 `validate-posts`(게이트), 2단계 `sync-posts`·`sitemap`·`rss`·`og-images`·`thumbnails`·`search-index`·`llms-full`·`llms` 8개 **병렬**. 각 스텝은 같은 CLI를 서브커맨드로 다시 spawn하며, cwd에 기대지 않고 `contentPaths`로 경로를 푼다.
+`blog-content build`는 **2단계** — 1단계 `validate-posts`(게이트), 2단계 `sync-posts`·`sitemap`·`rss`·`og-images`·`thumbnails`·`search-index`·`llms-full`·`llms` 8개 **병렬**. 경로 앵커는 앱 루트의 `content.config.mts`다 — CLI가 cwd에서 위로 올라가며 발견하고(전역 `--config`로 명시 가능), build는 자식 spawn에 그 절대 경로를 `--config`로 재전달하므로 cwd에 기대지 않는다.
 
 ---
 
