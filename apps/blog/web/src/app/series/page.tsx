@@ -43,19 +43,24 @@ const seriesBadge = css({
   py: '[2px]',
 });
 
-const posts = getAllPostSummaries();
-// getAllSeries()는 최근 갱신 순으로 정렬해 돌려준다. 시리즈 "안"의 순서만
-// _series.yml의 order(없으면 날짜 오름차순)로 다시 잡는다.
-const series = attachSeriesPosts(
-  getAllSeries(),
-  posts,
-  id => getSeriesMeta(id)?.order,
-);
-const seriesPostCount = series.reduce((sum, s) => sum + s.posts.length, 0);
-
+// 글 목록에 기대지 않는 JSON-LD라 한 번만 만든다.
 const jsonLd = buildSeriesJsonLd();
 
 export default function SeriesPage() {
+  // 로더 호출은 컴포넌트 안에 둔다. dev에서 `readAllPosts()`는 캐시를 건너뛰고
+  // 매번 fs를 다시 읽는데(`repository.ts`), 그 설계는 요청마다 호출된다는
+  // 전제 위에 있다 — 모듈 최상위로 올리면 dev 서버가 재시작 전까지 첫 요청
+  // 시점 목록에 고정된다.
+  const posts = getAllPostSummaries();
+  // getAllSeries()는 최근 갱신 순으로 정렬해 돌려준다. 시리즈 "안"의 순서만
+  // _series.yml의 order(없으면 날짜 오름차순)로 다시 잡는다.
+  const series = attachSeriesPosts(
+    getAllSeries(),
+    posts,
+    id => getSeriesMeta(id)?.order,
+  );
+  const seriesPostCount = series.reduce((sum, s) => sum + s.posts.length, 0);
+
   return (
     <>
       <script

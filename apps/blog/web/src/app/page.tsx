@@ -44,11 +44,15 @@ function buildSeriesLabel(
   );
 }
 
-const allPosts = getAllPostSummaries();
-const featured = allPosts[0];
-const recent = allPosts.slice(1, 1 + RECENT_COUNT);
-
 export default function HomePage() {
+  // 로더 호출은 컴포넌트 안에 둔다. dev에서 `readAllPosts()`는 캐시를 건너뛰고
+  // 매번 fs를 다시 읽는데(`repository.ts`), 그 설계는 요청마다 호출된다는
+  // 전제 위에 있다 — 모듈 최상위로 올리면 dev 서버가 재시작 전까지 첫 요청
+  // 시점 목록에 고정돼 글을 추가·수정해도 화면에 반영되지 않는다.
+  const allPosts = getAllPostSummaries();
+  const featured = allPosts[0];
+  const recent = allPosts.slice(1, 1 + RECENT_COUNT);
+
   return (
     <>
       <script

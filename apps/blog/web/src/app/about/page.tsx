@@ -7,7 +7,7 @@ import { PageBoundary } from '@/src/components/PageBoundary';
 import { railGutter, railColumn } from '@/src/components/Rail';
 import { archivePath, postPath } from '@blog/content';
 
-import { ABOUT_STATS, SERIES_POST_COUNTS } from './counts';
+import { getAboutStats, getSeriesPostCounts } from './counts';
 import { FEATURED_SERIES } from './featuredSeries';
 import { buildAboutJsonLd, buildAboutMetadata } from './seo';
 
@@ -16,6 +16,10 @@ export const metadata = buildAboutMetadata();
 const jsonLd = buildAboutJsonLd();
 
 export default function AboutPage() {
+  // 콘텐츠 집계를 읽는 값이라 컴포넌트 안에서 부른다 — 이유는 counts.ts 참고.
+  const stats = getAboutStats();
+  const seriesPostCounts = getSeriesPostCounts();
+
   return (
     <>
       <script
@@ -184,7 +188,7 @@ export default function AboutPage() {
                     borderColor: 'ink.border',
                   })}
                 >
-                  {ABOUT_STATS.map(stat => (
+                  {stats.map(stat => (
                     <div key={stat.label}>
                       <div
                         className={css({
@@ -532,7 +536,7 @@ export default function AboutPage() {
                         </div>
                         {/* 폴더가 사라지면 집계에도 없다 — 0편 대신 배지를 뺀다.
                           (테스트가 막지만 렌더는 fail-soft로 둔다) */}
-                        {SERIES_POST_COUNTS.has(series.id) && (
+                        {seriesPostCounts.has(series.id) && (
                           <span
                             className={css({
                               fontFamily: 'mono',
@@ -545,7 +549,7 @@ export default function AboutPage() {
                               pt: '0.5',
                             })}
                           >
-                            {SERIES_POST_COUNTS.get(series.id)}편
+                            {seriesPostCounts.get(series.id)}편
                           </span>
                         )}
                       </Link>

@@ -24,15 +24,21 @@ import { railGutter, railColumn } from '@/src/components/Rail';
 
 export const metadata = buildPostsMetadata();
 
-const posts = getAllPostSummaries();
-const series = getAllSeries();
-const tags = getAllTags();
-const years = getAllYears();
-
-const collectionPageJsonLd = buildCollectionPageJsonLd(posts);
+// 글 목록에 기대지 않는 JSON-LD라 한 번만 만든다.
 const blogJsonLd = buildBlogJsonLd();
 
 export default function PostsPage() {
+  // 로더 호출은 컴포넌트 안에 둔다. dev에서 `readAllPosts()`는 캐시를 건너뛰고
+  // 매번 fs를 다시 읽는데(`repository.ts`), 그 설계는 요청마다 호출된다는
+  // 전제 위에 있다 — 모듈 최상위로 올리면 dev 서버가 재시작 전까지 첫 요청
+  // 시점 목록에 고정된다. draft·scheduled 글을 그대로 노출하는 목록이라
+  // 글을 쓰는 동안 특히 크게 어긋난다.
+  const posts = getAllPostSummaries();
+  const series = getAllSeries();
+  const tags = getAllTags();
+  const years = getAllYears();
+  const collectionPageJsonLd = buildCollectionPageJsonLd(posts);
+
   return (
     <>
       <script
