@@ -1,4 +1,5 @@
 import { expect, test } from 'vitest';
+import { DEFAULT_OG } from '../../shared/contentConfig.ts';
 import {
   ogContentHash,
   displayTitle,
@@ -9,8 +10,6 @@ import {
   findOrphanPngs,
   loadFonts,
   renderOgPng,
-  OG_WIDTH,
-  OG_HEIGHT,
   OG_PILL_BORDER,
   type OgPostInput,
 } from './generate-og-images.ts';
@@ -151,6 +150,6 @@ test('renderOgPng: 실제 폰트로 유효한 PNG 생성', async () => {
   expect([...png.subarray(0, 4)]).toStrictEqual([0x89, 0x50, 0x4e, 0x47]);
   expect(png.length > 10_000, `png too small: ${png.length}B`).toBeTruthy();
   // IHDR의 width/height 확인 (offset 16: width 4B, height 4B big-endian)
-  expect(png.readUInt32BE(16)).toBe(OG_WIDTH);
-  expect(png.readUInt32BE(20)).toBe(OG_HEIGHT);
+  expect(png.readUInt32BE(16)).toBe(DEFAULT_OG.width);
+  expect(png.readUInt32BE(20)).toBe(DEFAULT_OG.height);
 });

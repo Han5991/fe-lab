@@ -1,10 +1,9 @@
 import { expect, test } from 'vitest';
+import { DEFAULT_THUMBNAILS } from '../../shared/contentConfig.ts';
 import {
   collectTasks,
   findOrphanWebps,
   thumbnailContentHash,
-  MAX_WIDTH,
-  WEBP_QUALITY,
 } from './generate-thumbnails.ts';
 
 // ── collectTasks ─────────────────────────────────────────────────────────────
@@ -69,7 +68,9 @@ test('thumbnailContentHash: 인코딩 정책이 해시에 반영된다', () => {
   const hash = thumbnailContentHash(Buffer.from('x'));
   expect(typeof hash).toBe('string');
   expect(hash.length).toBe(40); // sha1 hex
-  expect(MAX_WIDTH > 0 && WEBP_QUALITY > 0).toBeTruthy();
+  expect(
+    DEFAULT_THUMBNAILS.maxWidth > 0 && DEFAULT_THUMBNAILS.webpQuality > 0,
+  ).toBeTruthy();
 });
 
 // ── findOrphanWebps ──────────────────────────────────────────────────────────

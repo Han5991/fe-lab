@@ -1,9 +1,5 @@
-import {
-  getAllPosts,
-  getAllPostsIncludingHidden,
-  POSTS_PATH,
-  postUrl,
-} from '../post/index.ts';
+import { POSTS_PATH, postUrl, type PostData } from '../post/index.ts';
+import type { ContentApi } from '../post/createContent.ts';
 import { SITE_URL } from '../shared/constants.ts';
 import { decodeUrlSafe } from '../shared/url.ts';
 
@@ -32,15 +28,22 @@ import { decodeUrlSafe } from '../shared/url.ts';
  * 생성기들이 쓰는 글 집합 셀렉터. 레지스트리 항목의 `postSet`이 이 키를
  * 가리키고, 생성기 진입점들도 같은 셀렉터를 불러 씁니다 — 생성기가 각자
  * getAllPosts류를 고르면 레지스트리 선언과 실제 생성 집합이 조용히 어긋날 수
- * 있습니다.
+ * 있습니다. 글을 읽는 인스턴스는 컨텍스트(`ContentContext.content`)에서 온다 —
+ * 이름 → 로더 매핑만 여기 있고, 어느 루트를 읽을지는 호출자가 정한다.
  */
-export const POST_SETS = {
-  /** 공개 글 — isPostVisible 판정을 통과한 글. sitemap·rss·llms·검색 인덱스의 베이스 */
-  visible: getAllPosts,
-  /** draft·scheduled 포함 전체 — admin 대시보드용 */
-  all: getAllPostsIncludingHidden,
-} as const;
-export type PostSetName = keyof typeof POST_SETS;
+export const POST_SET_NAMES = ['visible', 'all'] as const;
+export type PostSetName = (typeof POST_SET_NAMES)[number];
+
+export function resolvePostSet(
+  content: ContentApi,
+  name: PostSetName,
+): PostData[] {
+  return name === 'visible'
+    ? /** 공개 글 — isPostVisible 판정 통과. sitemap·rss·llms·검색 인덱스의 베이스 */
+      content.getAllPosts()
+    : /** draft·scheduled 포함 전체 — admin 대시보드용 */
+      content.getAllPostsIncludingHidden();
+}
 
 /**
  * reference(= 발행 글 집합을 exact로 담는 sitemap) 대비 포함 관계.

@@ -19,6 +19,20 @@
  */
 import { Command, Option } from 'commander';
 import type { NewPostOptions } from '../new-post.ts';
+import type { ContentContext } from '../context.ts';
+
+/**
+ * 컨텍스트 로드 — 전역 `--config`(있으면)를 읽어 content.config.ts를 발견·로드하고
+ * 컨텍스트를 만든다. 발견·검증은 동적 import로 든다(정의만 import한 테스트가
+ * fs를 만지지 않도록).
+ */
+async function loadContext(command: Command): Promise<ContentContext> {
+  const globals = command.optsWithGlobals<{ config?: string }>();
+  const { loadContentConfig } = await import('./discoverConfig.ts');
+  const { createContext } = await import('../context.ts');
+  const { config, configPath } = await loadContentConfig(globals.config);
+  return createContext(config, configPath);
+}
 
 /** 인자 없이 도는 생성 단계 — build가 병렬로 돌리는 것들 대부분이 여기다. */
 const PLAIN_STEPS = [
@@ -63,6 +77,14 @@ export function buildProgram(): Command {
   const program = new Command()
     .name('blog-content')
     .description('블로그 콘텐츠 파이프라인 — 검증·생성·산출물 검사')
+    // 경로 앵커는 content.config.ts에서 온다 — 전역 옵션이라 서브커맨드 이름
+    // **앞**에 적는다(`blog-content --config <경로> build`). 생략하면 cwd에서
+    // 위로 올라가며 찾는다. build가 자식을 띄울 때는 항상 이 옵션으로 자기
+    // 설정을 명시 전달한다(stepArgv).
+    .option(
+      '--config <path>',
+      'content.config.ts 경로 (기본: cwd에서 위로 탐색)',
+    )
     // 오타 옵션을 조용히 무시하지 않는다. 예전 손파서도 알 수 없는 옵션을
     // 에러로 냈으므로 동작이 같다.
     .showHelpAfterError();
@@ -73,32 +95,39 @@ export function buildProgram(): Command {
     .option('--strict', 'SEO 경고를 에러로 올린다 (prebuild에서만 켠다)')
     .option('--skip-validate', 'validate 게이트를 건너뛴다')
     .option('--force', 'sync-posts를 전체 복사로 돌린다')
-    .action(async (opts: Record<string, boolean | undefined>) => {
-      const { main } = await import('../build-content.ts');
-      await main({
-        strict: opts['strict'] ?? false,
-        skipValidate: opts['skipValidate'] ?? false,
-        force: opts['force'] ?? false,
-      });
-    });
+    .action(
+      async (opts: Record<string, boolean | undefined>, command: Command) => {
+        const ctx = await loadContext(command);
+        const { main } = await import('../build-content.ts');
+        await main(ctx, {
+          strict: opts['strict'] ?? false,
+          skipValidate: opts['skipValidate'] ?? false,
+          force: opts['force'] ?? false,
+        });
+      },
+    );
 
   program
     .command('validate')
     .description('frontmatter 원문 검증')
     .option('--strict', 'SEO 경고를 에러로 올린다')
-    .action(async (opts: { strict?: boolean }) => {
+    .action(async (opts: { strict?: boolean }, command: Command) => {
+      const ctx = await loadContext(command);
       const { main } = await import('../validate-posts.ts');
-      main({ strict: opts.strict ?? false });
+      main(ctx, { strict: opts.strict ?? false });
     });
 
   program
     .command('check-seo')
     .description('빌드 산출물(out/) HTML의 SEO 계약 검사')
     .argument('[outDir]', '검사할 디렉터리 (기본: 설정의 out)')
-    .action(async (outDir?: string) => {
-      const { main } = await import('../check-seo.ts');
-      main(outDir);
-    });
+    .action(
+      async (outDir: string | undefined, _opts: unknown, command: Command) => {
+        const ctx = await loadContext(command);
+        const { main } = await import('../check-seo.ts');
+        main(ctx, outDir);
+      },
+    );
 
   program
     .command('new-post')
@@ -145,7 +174,8 @@ export function buildProgram(): Command {
           // 여기서 안 잡으면 진입점의 마지막 catch까지 올라가 Error가 통째로 찍힌다.
           command.error(`✖ ${(e as Error).message}`);
         }
-        main(resolved);
+        const ctx = await loadContext(command);
+        main(ctx, resolved);
       },
     );
 
@@ -154,20 +184,30 @@ export function buildProgram(): Command {
     .description('포스트 미디어를 public/posts/로 동기화')
     .option('--force', '전체 복사 (incremental 대신)')
     .option('--dry-orphan', 'orphan을 지우지 않고 목록만 출력')
-    .action(async (opts: { force?: boolean; dryOrphan?: boolean }) => {
-      const { main } = await import('../sync-posts.ts');
-      main({ force: opts.force ?? false, dryOrphan: opts.dryOrphan ?? false });
-    });
+    .action(
+      async (
+        opts: { force?: boolean; dryOrphan?: boolean },
+        command: Command,
+      ) => {
+        const ctx = await loadContext(command);
+        const { main } = await import('../sync-posts.ts');
+        main(ctx, {
+          force: opts.force ?? false,
+          dryOrphan: opts.dryOrphan ?? false,
+        });
+      },
+    );
 
   for (const step of PLAIN_STEPS) {
     program
       .command(step.name)
       .description(step.describe)
-      .action(async () => {
+      .action(async (_opts: unknown, command: Command) => {
+        const ctx = await loadContext(command);
         const main = await step.load();
         // 단계마다 main이 sync이기도 async이기도 하다(sitemap은 동기,
         // og-images는 sharp/satori 때문에 비동기). 둘 다 기다린다.
-        await Promise.resolve(main());
+        await Promise.resolve(main(ctx));
       });
   }
 

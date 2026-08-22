@@ -1,9 +1,7 @@
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
-import { CONTENT } from '../shared/contentConfig.ts';
-import { CONTENT_PATHS } from '../shared/contentPaths.ts';
-
-const POSTS_DIR = CONTENT_PATHS.postsDir;
+import { TIMEZONE_IANA } from '../shared/contentValues.ts';
+import type { ContentContext } from './context.ts';
 
 /** 실제로 파일을 만들 때 필요한 값 — 원시 입력을 resolveOptions가 여기까지 좁힌다. */
 export interface NewPostOptions {
@@ -67,7 +65,7 @@ export function resolveOptions(raw: RawNewPostOptions): NewPostOptions {
 
 export function todayKST(now: Date = new Date()): string {
   return new Intl.DateTimeFormat('en-CA', {
-    timeZone: CONTENT.timezone.iana,
+    timeZone: TIMEZONE_IANA,
   }).format(now);
 }
 
@@ -170,10 +168,11 @@ export function buildFrontmatter(
   return lines.join('\n');
 }
 
-export function main(opts: NewPostOptions) {
+export function main(ctx: ContentContext, opts: NewPostOptions) {
+  const postsDir = ctx.paths.postsDir;
   let targetPath: string;
   try {
-    targetPath = buildPostFilePath(POSTS_DIR, opts.title, opts.series);
+    targetPath = buildPostFilePath(postsDir, opts.title, opts.series);
   } catch (e) {
     console.error(`✖ ${(e as Error).message}`);
     process.exit(1);
@@ -195,7 +194,7 @@ export function main(opts: NewPostOptions) {
   });
 
   writeFileSync(targetPath, frontmatter, 'utf8');
-  const rel = relative(POSTS_DIR, targetPath);
+  const rel = relative(postsDir, targetPath);
   console.log(`✓ 새 포스트 생성됨: posts/${rel}`);
   console.log(`  status: ${opts.status}`);
   if (opts.series) console.log(`  series: ${opts.series}`);

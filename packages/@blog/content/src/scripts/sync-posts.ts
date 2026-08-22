@@ -7,12 +7,8 @@ import {
   statSync,
 } from 'node:fs';
 import { dirname, extname, join, relative } from 'node:path';
-// 경로는 설정(defineContent → contentPaths)의 단일 출처에서 온다.
-import { CONTENT_PATHS } from '../shared/contentPaths.ts';
-
-// 테스트가 경로 배선을 검증할 수 있게 export한다 (sync-posts.test.ts).
-export const POSTS_SOURCE_DIR = CONTENT_PATHS.postsDir;
-export const POSTS_TARGET_DIR = CONTENT_PATHS.mediaOutDir;
+// 경로는 컨텍스트(ContentContext.paths — content.config.ts에 앵커)에서 온다.
+import type { ContentContext } from './context.ts';
 
 const ALLOWED_EXTENSIONS = [
   '.png',
@@ -47,10 +43,14 @@ function listMediaFiles(dir: string, results: MediaFile[] = []): MediaFile[] {
 }
 
 /** @param dryOrphan orphan을 지우지 않고 목록만 출력한다 */
-function syncIncremental(dryOrphan: boolean): void {
-  const sourceFiles = listMediaFiles(POSTS_SOURCE_DIR);
+export function syncIncremental(
+  sourceDir: string,
+  targetDir: string,
+  dryOrphan: boolean,
+): void {
+  const sourceFiles = listMediaFiles(sourceDir);
   const sourceRelSet = new Set(
-    sourceFiles.map(f => relative(POSTS_SOURCE_DIR, f.full)),
+    sourceFiles.map(f => relative(sourceDir, f.full)),
   );
 
   let copied = 0;
@@ -58,8 +58,8 @@ function syncIncremental(dryOrphan: boolean): void {
   let removed = 0;
 
   for (const src of sourceFiles) {
-    const rel = relative(POSTS_SOURCE_DIR, src.full);
-    const dst = join(POSTS_TARGET_DIR, rel);
+    const rel = relative(sourceDir, src.full);
+    const dst = join(targetDir, rel);
 
     let needsCopy = true;
     if (existsSync(dst)) {
@@ -78,10 +78,10 @@ function syncIncremental(dryOrphan: boolean): void {
     }
   }
 
-  if (existsSync(POSTS_TARGET_DIR)) {
-    const targetFiles = listMediaFiles(POSTS_TARGET_DIR);
+  if (existsSync(targetDir)) {
+    const targetFiles = listMediaFiles(targetDir);
     for (const t of targetFiles) {
-      const rel = relative(POSTS_TARGET_DIR, t.full);
+      const rel = relative(targetDir, t.full);
       if (!sourceRelSet.has(rel)) {
         if (dryOrphan) {
           console.log(`  [dry-orphan] would remove: ${rel}`);
@@ -101,31 +101,34 @@ function syncIncremental(dryOrphan: boolean): void {
   );
 }
 
-function syncFull(): void {
-  if (existsSync(POSTS_TARGET_DIR)) {
-    rmSync(POSTS_TARGET_DIR, { recursive: true, force: true });
+export function syncFull(sourceDir: string, targetDir: string): void {
+  if (existsSync(targetDir)) {
+    rmSync(targetDir, { recursive: true, force: true });
   }
-  mkdirSync(POSTS_TARGET_DIR, { recursive: true });
-  const sourceFiles = listMediaFiles(POSTS_SOURCE_DIR);
+  mkdirSync(targetDir, { recursive: true });
+  const sourceFiles = listMediaFiles(sourceDir);
   for (const src of sourceFiles) {
-    const rel = relative(POSTS_SOURCE_DIR, src.full);
-    const dst = join(POSTS_TARGET_DIR, rel);
+    const rel = relative(sourceDir, src.full);
+    const dst = join(targetDir, rel);
     mkdirSync(dirname(dst), { recursive: true });
     copyFileSync(src.full, dst);
   }
   console.log(`Full sync: ${sourceFiles.length} files copied`);
 }
 
-export function main(opts: { force: boolean; dryOrphan: boolean }): void {
+export function main(
+  ctx: ContentContext,
+  opts: { force: boolean; dryOrphan: boolean },
+): void {
   const { force, dryOrphan } = opts;
+  const sourceDir = ctx.paths.postsDir;
+  const targetDir = ctx.paths.mediaOutDir;
 
-  console.log(
-    `Syncing images from ${POSTS_SOURCE_DIR} to ${POSTS_TARGET_DIR}...`,
-  );
+  console.log(`Syncing images from ${sourceDir} to ${targetDir}...`);
 
-  if (force || !existsSync(POSTS_TARGET_DIR)) {
-    syncFull();
+  if (force || !existsSync(targetDir)) {
+    syncFull(sourceDir, targetDir);
   } else {
-    syncIncremental(dryOrphan);
+    syncIncremental(sourceDir, targetDir, dryOrphan);
   }
 }

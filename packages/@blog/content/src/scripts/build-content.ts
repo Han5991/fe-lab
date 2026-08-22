@@ -1,6 +1,7 @@
 import { spawn } from 'node:child_process';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import type { ContentContext } from './context.ts';
 
 /**
  * 단계를 돌릴 CLI 진입점 — 형제 디렉터리의 `cli/index.ts`를 **절대 경로**로 지목한다.
@@ -77,15 +78,25 @@ interface StepResult {
   output: string;
 }
 
+/**
+ * 자식 프로세스 argv. 부모가 이미 발견·검증한 설정 파일을 절대 경로 `--config`로
+ * **명시 전달**한다 — 자식이 cwd에서 다시 탐색하지 않으므로, 부모와 자식이 서로
+ * 다른 설정을 잡는 일이 구조적으로 불가능하다. `--config`는 루트 커맨드의 전역
+ * 옵션이라 서브커맨드 이름 **앞**에 온다.
+ */
+export function stepArgv(step: Step, configPath: string): string[] {
+  return ['--config', configPath, step.command, ...step.args];
+}
+
 /** 병렬 실행 시 로그가 섞이지 않도록 출력을 모았다가 단계별로 묶어서 보여줍니다. */
-function runStep(step: Step): Promise<StepResult> {
+function runStep(step: Step, configPath: string): Promise<StepResult> {
   return new Promise(resolveStep => {
     const start = Date.now();
-    // cwd는 호출자 것을 그대로 쓴다 — 단계 스크립트들은 전부 자기 위치 기준
-    // 절대 경로(contentPaths)로 동작하므로 cwd에 의존하지 않는다.
+    // cwd는 호출자 것을 그대로 쓴다 — 단계 스크립트들은 경로를 --config로 받은
+    // 설정(절대 경로 앵커)에서 풀므로 cwd에 의존하지 않는다.
     const child = spawn(
       process.execPath,
-      [CLI_PATH, step.command, ...step.args],
+      [CLI_PATH, ...stepArgv(step, configPath)],
       {
         shell: false,
         stdio: ['ignore', 'pipe', 'pipe'],
@@ -113,14 +124,16 @@ function indent(text: string): string {
     .join('\n');
 }
 
-export async function main(flags: Flags) {
+export async function main(ctx: ContentContext, flags: Flags) {
   const phases = buildPhases(flags);
   const total = phases.reduce((n, phase) => n + phase.length, 0);
   const start = Date.now();
   console.log(`▶ build-content: ${total}개 단계 (${phases.length} phase) 실행`);
 
   for (const phase of phases) {
-    const results = await Promise.all(phase.map(runStep));
+    const results = await Promise.all(
+      phase.map(step => runStep(step, ctx.configPath)),
+    );
     let failed = false;
     for (const result of results) {
       const elapsed = (result.elapsedMs / 1000).toFixed(2);

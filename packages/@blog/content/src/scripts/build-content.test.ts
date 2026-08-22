@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { buildPhases } from './build-content.ts';
+import { buildPhases, stepArgv } from './build-content.ts';
 import { buildProgram } from './cli/program.ts';
 
 // ── buildPhases ──────────────────────────────────────────────────────────────
@@ -66,6 +66,28 @@ test('buildPhases: 모든 단계가 CLI에 등록된 서브커맨드다', () => 
       `${step.label}: ${step.command}가 CLI에 등록돼 있지 않다`,
     ).toBeTruthy();
   }
+});
+
+test('stepArgv: 자식에 --config를 서브커맨드 앞에 명시 전달', () => {
+  // 자식이 cwd 탐색으로 다른 설정을 잡는 일이 없도록, 부모가 발견한 설정
+  // 파일의 절대 경로를 전역 옵션으로 재전달한다. 전역 옵션은 서브커맨드
+  // 이름 앞에 와야 commander가 루트 옵션으로 파싱한다.
+  const argv = stepArgv(
+    { label: 'sitemap', command: 'sitemap', args: [] },
+    '/abs/content.config.ts',
+  );
+  expect(argv).toStrictEqual(['--config', '/abs/content.config.ts', 'sitemap']);
+
+  const withFlags = stepArgv(
+    { label: 'validate-posts', command: 'validate', args: ['--strict'] },
+    '/abs/content.config.ts',
+  );
+  expect(withFlags).toStrictEqual([
+    '--config',
+    '/abs/content.config.ts',
+    'validate',
+    '--strict',
+  ]);
 });
 
 test('buildPhases: 단계 label은 중복 없음', () => {

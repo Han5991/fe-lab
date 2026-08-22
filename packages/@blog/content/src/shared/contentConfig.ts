@@ -270,22 +270,81 @@ const DEFAULT_SITE: SiteConfig = {
   mergedPrCountFallback: MERGED_PR_COUNT_FALLBACK,
 };
 
+// 아래 DEFAULT_* 슬라이스는 순수 계산 빌더(sitemap·llms·og·thumbnails·seo)가
+// 파라미터 기본값으로 재사용한다 — 진입점(main)은 항상 컨텍스트의 설정을
+// 명시적으로 넘기고, 기본값은 테스트·단독 사용 편의다. DEFAULTS와 같은
+// 객체를 공유하므로 두 벌이 어긋날 수 없다.
+
+export const DEFAULT_AUTHOR: AuthorConfig = {
+  name: AUTHOR_NAME,
+  alternateName: AUTHOR_ALTERNATE_NAME,
+  role: AUTHOR_ROLE,
+  github: SITE_AUTHOR_GITHUB,
+  linkedin: SITE_AUTHOR_LINKEDIN,
+};
+
+export const DEFAULT_SEO: SeoConfig = {
+  titleSuffix: ` | ${DEFAULT_SITE.name}`,
+  titleMaxLength: SEO_TITLE_MAX_LENGTH,
+  descriptionMinLength: SEO_DESCRIPTION_MIN_LENGTH,
+  descriptionMaxLength: SEO_DESCRIPTION_MAX_LENGTH,
+};
+
+export const DEFAULT_SITEMAP: SitemapConfig = {
+  highPriorityFolders: ['bundler', 'typescript', 'open-source'],
+  highPrioritySlugs: [
+    'ai-opensource-contribution',
+    'nodejs-contribution',
+    'nextjs-contributor',
+    'first-open-source-contribution',
+  ],
+};
+
+export const DEFAULT_OG: OgConfig = {
+  width: 1200,
+  height: 630,
+  palette: {
+    paper: '#0B0D10', // paper.50
+    ink: '#E6E8EB', // ink.950
+    inkMeta: '#8B919A', // ink.600
+    inkRule: '#333941', // ink.border(다크 rgba를 paper.50 위에 합성한 값)
+    accent: '#67E8F9', // accent.500 — 포인트 cyan
+    pillBorder: 'rgba(103, 232, 249, 0.4)',
+  },
+};
+
+export const DEFAULT_THUMBNAILS: ThumbnailsConfig = {
+  maxWidth: 1200,
+  webpQuality: 80,
+};
+
+export const DEFAULT_LLMS: LlmsConfig = {
+  summaryMaxLength: 140,
+  indexIntro:
+    'Frontend engineering blog by Sangwook Han (한상욱). Deep-dive technical experiments in bundler architecture, TypeScript domain modeling, React patterns, and open source contributions. All posts include working code and first-hand implementation experience. Post body content is in Korean; technical terms, code, and key facts are in English.',
+  fullIntro:
+    'Frontend engineering blog by Sangwook Han (한상욱). Deep-dive technical experiments in bundler architecture, TypeScript domain modeling, React patterns, and open source contributions. All posts include working code and first-hand implementation experience. Content primarily in Korean.',
+  facts: {
+    languageIndex:
+      'Korean body text; English technical terms, code, and key data points',
+    languageFull: 'Primarily Korean, some English',
+    openSource:
+      '27 Mantine PRs merged, Node.js core contributor, Next.js contributor',
+    notableContributionIndex:
+      'gemini-cli 74% performance improvement (408ms → 107ms) via Promise.allSettled',
+    notableContributionFull:
+      'gemini-cli 74% performance improvement (408ms → 107ms)',
+    speaking: "FEConf 2025 (Korea's largest frontend conference), TeoConf",
+    mainTopics:
+      'Bundler internals, TypeScript domain modeling, React patterns, design systems, open source',
+  },
+};
+
 // root는 기본값이 없다(경로 앵커의 하드코딩 금지) — 그래서 Omit.
 const DEFAULTS: Omit<ContentConfig, 'root'> = {
   site: DEFAULT_SITE,
-  author: {
-    name: AUTHOR_NAME,
-    alternateName: AUTHOR_ALTERNATE_NAME,
-    role: AUTHOR_ROLE,
-    github: SITE_AUTHOR_GITHUB,
-    linkedin: SITE_AUTHOR_LINKEDIN,
-  },
-  seo: {
-    titleSuffix: ` | ${DEFAULT_SITE.name}`,
-    titleMaxLength: SEO_TITLE_MAX_LENGTH,
-    descriptionMinLength: SEO_DESCRIPTION_MIN_LENGTH,
-    descriptionMaxLength: SEO_DESCRIPTION_MAX_LENGTH,
-  },
+  author: DEFAULT_AUTHOR,
+  seo: DEFAULT_SEO,
   timezone: {
     iana: TIMEZONE_IANA,
     isoOffset: TIMEZONE_ISO_OFFSET,
@@ -316,52 +375,10 @@ const DEFAULTS: Omit<ContentConfig, 'root'> = {
     thumbs: 'public/thumbs',
     og: 'public/og',
   },
-  sitemap: {
-    highPriorityFolders: ['bundler', 'typescript', 'open-source'],
-    highPrioritySlugs: [
-      'ai-opensource-contribution',
-      'nodejs-contribution',
-      'nextjs-contributor',
-      'first-open-source-contribution',
-    ],
-  },
-  og: {
-    width: 1200,
-    height: 630,
-    palette: {
-      paper: '#0B0D10', // paper.50
-      ink: '#E6E8EB', // ink.950
-      inkMeta: '#8B919A', // ink.600
-      inkRule: '#333941', // ink.border(다크 rgba를 paper.50 위에 합성한 값)
-      accent: '#67E8F9', // accent.500 — 포인트 cyan
-      pillBorder: 'rgba(103, 232, 249, 0.4)',
-    },
-  },
-  thumbnails: {
-    maxWidth: 1200,
-    webpQuality: 80,
-  },
-  llms: {
-    summaryMaxLength: 140,
-    indexIntro:
-      'Frontend engineering blog by Sangwook Han (한상욱). Deep-dive technical experiments in bundler architecture, TypeScript domain modeling, React patterns, and open source contributions. All posts include working code and first-hand implementation experience. Post body content is in Korean; technical terms, code, and key facts are in English.',
-    fullIntro:
-      'Frontend engineering blog by Sangwook Han (한상욱). Deep-dive technical experiments in bundler architecture, TypeScript domain modeling, React patterns, and open source contributions. All posts include working code and first-hand implementation experience. Content primarily in Korean.',
-    facts: {
-      languageIndex:
-        'Korean body text; English technical terms, code, and key data points',
-      languageFull: 'Primarily Korean, some English',
-      openSource:
-        '27 Mantine PRs merged, Node.js core contributor, Next.js contributor',
-      notableContributionIndex:
-        'gemini-cli 74% performance improvement (408ms → 107ms) via Promise.allSettled',
-      notableContributionFull:
-        'gemini-cli 74% performance improvement (408ms → 107ms)',
-      speaking: "FEConf 2025 (Korea's largest frontend conference), TeoConf",
-      mainTopics:
-        'Bundler internals, TypeScript domain modeling, React patterns, design systems, open source',
-    },
-  },
+  sitemap: DEFAULT_SITEMAP,
+  og: DEFAULT_OG,
+  thumbnails: DEFAULT_THUMBNAILS,
+  llms: DEFAULT_LLMS,
 };
 
 // ── 검증 ─────────────────────────────────────────────────────────────────────

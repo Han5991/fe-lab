@@ -17,7 +17,7 @@ import { readFileSync } from 'node:fs';
 import { relative, posix } from 'node:path';
 import matter from 'gray-matter';
 import { collectMarkdownFiles, hasFrontmatter } from '../shared/postFiles.ts';
-import { CONTENT_PATHS } from '../shared/contentPaths.ts';
+import type { ContentContext } from './context.ts';
 import type { Issue, PostRecord, ValidateOptions } from './validate/shared.ts';
 import { validatePost } from './validate/frontmatter.ts';
 import {
@@ -56,16 +56,15 @@ export {
   detectDuplicateDescriptions,
 } from './validate/corpus.ts';
 
-const POSTS_DIR = CONTENT_PATHS.postsDir;
-
 function format(issue: Issue): string {
   const tag = issue.severity === 'error' ? '✖' : '⚠';
   const loc = issue.line ? `${issue.file}:${issue.line}` : issue.file;
   return `  ${tag} ${loc}\n    [${issue.rule}] ${issue.message}`;
 }
 
-export function main(options: ValidateOptions) {
-  const allFiles = collectMarkdownFiles(POSTS_DIR);
+export function main(ctx: ContentContext, options: ValidateOptions) {
+  const postsDir = ctx.paths.postsDir;
+  const allFiles = collectMarkdownFiles(postsDir);
   const records: PostRecord[] = [];
   const allIssues: Issue[] = [];
 
@@ -73,7 +72,7 @@ export function main(options: ValidateOptions) {
     const raw = readFileSync(absPath, 'utf8');
     if (!hasFrontmatter(raw)) continue;
     const { data, content } = matter(raw);
-    const relPath = posix.normalize(relative(POSTS_DIR, absPath));
+    const relPath = posix.normalize(relative(postsDir, absPath));
     const record: PostRecord = { absPath, relPath, data, content };
     records.push(record);
     allIssues.push(...validatePost(record, raw, options));

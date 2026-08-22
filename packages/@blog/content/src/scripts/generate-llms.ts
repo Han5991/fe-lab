@@ -1,16 +1,19 @@
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { archiveUrl, postUrl, sortByDateDesc } from '../post/index.ts';
-import { POST_SETS } from './artifacts.ts';
+import { resolvePostSet } from './artifacts.ts';
 import type { PostData } from '../post/index.ts';
 import {
   SITE_URL as DEFAULT_SITE_URL,
   SITE_NAME,
-  SITE_AUTHOR_GITHUB,
-  SITE_AUTHOR_LINKEDIN,
 } from '../shared/constants.ts';
-import { CONTENT } from '../shared/contentConfig.ts';
-import { CONTENT_PATHS } from '../shared/contentPaths.ts';
+import {
+  DEFAULT_AUTHOR,
+  DEFAULT_LLMS,
+  type AuthorConfig,
+  type LlmsConfig,
+} from '../shared/contentConfig.ts';
+import type { ContentContext } from './context.ts';
 import {
   getSeriesMeta,
   isSeriesFolder,
@@ -28,11 +31,11 @@ import {
  * 그 어긋남이 구조적으로 불가능해집니다.
  */
 
-/** 링크 옆 한 줄 설명의 최대 길이. 색인이므로 짧게 — 전문은 llms-full.txt에 있습니다. */
-const SUMMARY_MAX_LENGTH = CONTENT.llms.summaryMaxLength;
-
 export interface LlmsBuildOptions {
   siteUrl?: string;
+  /** 색인 산문·저자 소개 — 진입점은 컨텍스트의 설정을 넘긴다. 기본값 = 패키지 기본 설정 */
+  llms?: LlmsConfig;
+  author?: AuthorConfig;
   /**
    * `Last updated`에 쓸 날짜. 생략하면 **가장 최근 글의 날짜**를 씁니다.
    *
@@ -48,8 +51,14 @@ export interface LlmsBuildOptions {
   resolveSeriesMeta?: (seriesId: string) => SeriesMeta | null;
 }
 
-/** 링크 옆 한 줄 설명. excerpt가 있으면 그것을, 없으면 본문 앞부분을 줄여 씁니다. */
-export function toSummary(post: Pick<PostData, 'excerpt' | 'content'>): string {
+/**
+ * 링크 옆 한 줄 설명. excerpt가 있으면 그것을, 없으면 본문 앞부분을 줄여 씁니다.
+ * 색인이므로 짧게(maxLength) — 전문은 llms-full.txt에 있습니다.
+ */
+export function toSummary(
+  post: Pick<PostData, 'excerpt' | 'content'>,
+  maxLength: number = DEFAULT_LLMS.summaryMaxLength,
+): string {
   const source = (
     post.excerpt && post.excerpt.trim() !== ''
       ? post.excerpt
@@ -57,11 +66,11 @@ export function toSummary(post: Pick<PostData, 'excerpt' | 'content'>): string {
   )
     .replace(/\s+/g, ' ')
     .trim();
-  if (source.length <= SUMMARY_MAX_LENGTH) return source;
+  if (source.length <= maxLength) return source;
   // 잘린 자리에 걸린 단어를 반쪽으로 남기지 않도록 마지막 공백에서 끊습니다.
-  const cut = source.slice(0, SUMMARY_MAX_LENGTH);
+  const cut = source.slice(0, maxLength);
   const lastSpace = cut.lastIndexOf(' ');
-  return `${(lastSpace > SUMMARY_MAX_LENGTH * 0.6 ? cut.slice(0, lastSpace) : cut).trimEnd()}…`;
+  return `${(lastSpace > maxLength * 0.6 ? cut.slice(0, lastSpace) : cut).trimEnd()}…`;
 }
 
 /**
@@ -79,6 +88,8 @@ export function buildLlmsText(
   options: LlmsBuildOptions = {},
 ): string {
   const siteUrl = options.siteUrl ?? DEFAULT_SITE_URL;
+  const llms = options.llms ?? DEFAULT_LLMS;
+  const author = options.author ?? DEFAULT_AUTHOR;
   const seriesMeta = options.resolveSeriesMeta ?? getSeriesMeta;
   const postDates = posts
     .map(p => p.date)
@@ -93,12 +104,12 @@ export function buildLlmsText(
   const lines: string[] = [
     `# ${SITE_NAME}`,
     ``,
-    `> ${CONTENT.llms.indexIntro}`,
+    `> ${llms.indexIntro}`,
     ``,
     `## Permissions`,
     ``,
     `Content may be referenced and summarized by AI systems for informational and educational purposes.`,
-    `Commercial reproduction requires attribution: ${CONTENT.author.name} (${siteUrl}).`,
+    `Commercial reproduction requires attribution: ${author.name} (${siteUrl}).`,
     `Last updated: ${lastUpdated}`,
     ``,
     `## Docs`,
@@ -140,7 +151,7 @@ export function buildLlmsText(
     // 1편부터 읽을 수 있도록 — `_series.yml`의 order가 있으면 그 순서.
     for (const post of sortPostsBySeriesOrder(folderPosts, meta?.order)) {
       lines.push(
-        `- [${post.title}](${postUrl(post.slug, siteUrl)}): ${toSummary(post)}`,
+        `- [${post.title}](${postUrl(post.slug, siteUrl)}): ${toSummary(post, llms.summaryMaxLength)}`,
       );
     }
     lines.push(``);
@@ -154,14 +165,13 @@ export function buildLlmsText(
     const ordered = sortByDateDesc(standalone);
     for (const post of ordered) {
       lines.push(
-        `- [${post.title}](${postUrl(post.slug, siteUrl)}): ${toSummary(post)}`,
+        `- [${post.title}](${postUrl(post.slug, siteUrl)}): ${toSummary(post, llms.summaryMaxLength)}`,
       );
     }
     lines.push(``);
   }
 
-  const { author } = CONTENT;
-  const facts = CONTENT.llms.facts;
+  const facts = llms.facts;
   lines.push(
     `## Key Facts`,
     ``,
@@ -177,8 +187,8 @@ export function buildLlmsText(
     `## Contact`,
     ``,
     `- Blog: ${siteUrl}`,
-    `- GitHub: ${SITE_AUTHOR_GITHUB}`,
-    `- LinkedIn: ${SITE_AUTHOR_LINKEDIN}`,
+    `- GitHub: ${author.github}`,
+    `- LinkedIn: ${author.linkedin}`,
     `- RSS: ${siteUrl}/rss.xml`,
     ``,
   );
@@ -186,10 +196,16 @@ export function buildLlmsText(
   return lines.join('\n');
 }
 
-export function main() {
+export function main(ctx: ContentContext) {
   // 레지스트리 선언(postSet: 'visible', exact)과 같은 셀렉터.
-  const posts = POST_SETS.visible();
-  const outputPath = join(CONTENT_PATHS.publicDir, 'llms.txt');
-  writeFileSync(outputPath, buildLlmsText(posts), 'utf8');
+  const posts = resolvePostSet(ctx.content, 'visible');
+  const outputPath = join(ctx.paths.publicDir, 'llms.txt');
+  const text = buildLlmsText(posts, {
+    siteUrl: ctx.config.site.url,
+    llms: ctx.config.llms,
+    author: ctx.config.author,
+    resolveSeriesMeta: ctx.content.getSeriesMeta,
+  });
+  writeFileSync(outputPath, text, 'utf8');
   console.log(`llms.txt generated: ${posts.length} posts`);
 }

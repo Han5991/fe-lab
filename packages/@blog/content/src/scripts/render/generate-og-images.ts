@@ -11,14 +11,11 @@ import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import satori, { type SatoriOptions } from 'satori';
 import { Resvg } from '@resvg/resvg-js';
-import { POST_SETS } from '../artifacts.ts';
+import { resolvePostSet } from '../artifacts.ts';
 import { fmtDate } from '../../shared/format.ts';
 import { SITE_NAME, SITE_URL } from '../../shared/constants.ts';
-import { CONTENT } from '../../shared/contentConfig.ts';
-import { CONTENT_PATHS } from '../../shared/contentPaths.ts';
-
-const OG_DIR = CONTENT_PATHS.ogOutDir;
-const MANIFEST_PATH = join(CONTENT_PATHS.cacheDir, 'og-images.json');
+import { DEFAULT_OG, type OgConfig } from '../../shared/contentConfig.ts';
+import type { ContentContext } from '../context.ts';
 /**
  * OG 카드에 쓰는 Pretendard 폰트가 있는 디렉터리.
  *
@@ -46,9 +43,6 @@ function resolveFontDir(): string {
  * 5 — 포인트색을 틸에서 cyan(#67E8F9)으로 교체.
  */
 const TEMPLATE_VERSION = 5;
-
-export const OG_WIDTH = CONTENT.og.width;
-export const OG_HEIGHT = CONTENT.og.height;
 
 export interface OgPostInput {
   slug: string;
@@ -128,26 +122,33 @@ function el(
   return { type, props: { style, children } };
 }
 
-// 팔레트는 설정(defineContent의 og.palette)에서 온다 — satori/resvg가 CSS
-// 변수를 못 읽어 blog-preset의 다크 토큰 hex를 옮겨 둔 값이라는 사연은 설정
-// 쪽 주석 참고.
-const PAPER = CONTENT.og.palette.paper;
-const INK = CONTENT.og.palette.ink;
-const INK_META = CONTENT.og.palette.inkMeta;
-const INK_RULE = CONTENT.og.palette.inkRule;
-const ACCENT = CONTENT.og.palette.accent;
 // 시리즈 pill 보더. 테스트가 "series가 있을 때만 pill이 나온다"를 이 값의
 // 유무로 판별하므로 export한다 — 값을 리터럴로 복사해 두면 팔레트를 바꿀 때마다
 // 테스트가 색 때문에 깨진다(정작 검증하려는 건 색이 아니라 조건부 렌더다).
-export const OG_PILL_BORDER = CONTENT.og.palette.pillBorder;
+export const OG_PILL_BORDER = DEFAULT_OG.palette.pillBorder;
 
 /**
  * 1200×630 OG 카드 satori 엘리먼트 트리.
  * 디자인: 블로그 지면과 같은 paper 톤 + 중앙 정렬 구성(카드 썸네일로
  * 축소돼도 좌우 균형 유지) + 상하 룰. 시리즈 pill / 날짜·도메인 푸터.
+ *
+ * 팔레트는 설정(defineContent의 og.palette)에서 파라미터로 온다 — satori/resvg가
+ * CSS 변수를 못 읽어 blog-preset의 다크 토큰 hex를 옮겨 둔 값이라는 사연은 설정
+ * 쪽 주석 참고. 기본값 = 패키지 기본 설정(테스트·단독 사용 편의).
  */
-export function ogTemplate(post: OgPostInput): OgNode {
+export function ogTemplate(
+  post: OgPostInput,
+  og: OgConfig = DEFAULT_OG,
+): OgNode {
   const title = displayTitle(post.title, post.series);
+  const {
+    paper: PAPER,
+    ink: INK,
+    inkMeta: INK_META,
+    inkRule: INK_RULE,
+    accent: ACCENT,
+    pillBorder,
+  } = og.palette;
 
   const rule = el('div', {
     width: '100%',
@@ -171,7 +172,7 @@ export function ogTemplate(post: OgPostInput): OgNode {
         'div',
         {
           display: 'flex',
-          border: `2px solid ${OG_PILL_BORDER}`,
+          border: `2px solid ${pillBorder}`,
           borderRadius: 9999,
           padding: '6px 26px',
           fontSize: 25,
@@ -295,17 +296,18 @@ export function loadFonts(fontDir = resolveFontDir()): SatoriOptions['fonts'] {
 export async function renderOgPng(
   post: OgPostInput,
   fonts: SatoriOptions['fonts'],
+  og: OgConfig = DEFAULT_OG,
 ): Promise<Buffer> {
   const svg = await satori(
-    ogTemplate(post) as unknown as Parameters<typeof satori>[0],
-    { width: OG_WIDTH, height: OG_HEIGHT, fonts },
+    ogTemplate(post, og) as unknown as Parameters<typeof satori>[0],
+    { width: og.width, height: og.height, fonts },
   );
   return Buffer.from(new Resvg(svg).render().asPng());
 }
 
-function readManifest(): Record<string, string> {
+function readManifest(manifestPath: string): Record<string, string> {
   try {
-    const parsed: unknown = JSON.parse(readFileSync(MANIFEST_PATH, 'utf8'));
+    const parsed: unknown = JSON.parse(readFileSync(manifestPath, 'utf8'));
     if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
       return parsed as Record<string, string>;
     }
@@ -315,22 +317,24 @@ function readManifest(): Record<string, string> {
   return {};
 }
 
-export async function main() {
+export async function main(ctx: ContentContext) {
+  const ogDir = ctx.paths.ogOutDir;
+  const manifestPath = join(ctx.paths.cacheDir, 'og-images.json');
   // 외부/직접 썸네일이 명시된 글은 제외, 없거나 /og/*를 가리키는 글만 생성.
   // visible의 **부분집합**이 되므로 레지스트리(artifacts.ts)의 og 항목은
   // exact가 아니라 subset이다 — 베이스 셀렉터는 레지스트리와 공유한다.
-  const posts = POST_SETS.visible().filter(needsGeneratedOg);
+  const posts = resolvePostSet(ctx.content, 'visible').filter(needsGeneratedOg);
 
-  mkdirSync(OG_DIR, { recursive: true });
+  mkdirSync(ogDir, { recursive: true });
 
   const expectedRel = new Set(posts.map(p => ogFileRelPath(p.slug)));
-  const existing = readdirSync(OG_DIR, { recursive: true }).map(p => String(p));
+  const existing = readdirSync(ogDir, { recursive: true }).map(p => String(p));
   const orphans = findOrphanPngs(existing, expectedRel);
   for (const orphan of orphans) {
-    rmSync(join(OG_DIR, orphan));
+    rmSync(join(ogDir, orphan));
   }
 
-  const manifest = readManifest();
+  const manifest = readManifest(manifestPath);
   const nextManifest: Record<string, string> = {};
   let rendered = 0;
   let skipped = 0;
@@ -338,21 +342,21 @@ export async function main() {
 
   for (const post of posts) {
     const hash = ogContentHash(post);
-    const file = join(OG_DIR, ogFileRelPath(post.slug));
+    const file = join(ogDir, ogFileRelPath(post.slug));
     nextManifest[post.slug] = hash;
     if (manifest[post.slug] === hash && existsSync(file)) {
       skipped++;
       continue;
     }
     fonts ??= loadFonts();
-    const png = await renderOgPng(post, fonts);
+    const png = await renderOgPng(post, fonts, ctx.config.og);
     mkdirSync(dirname(file), { recursive: true });
     writeFileSync(file, png);
     rendered++;
   }
 
-  mkdirSync(dirname(MANIFEST_PATH), { recursive: true });
-  writeFileSync(MANIFEST_PATH, JSON.stringify(nextManifest, null, 2));
+  mkdirSync(dirname(manifestPath), { recursive: true });
+  writeFileSync(manifestPath, JSON.stringify(nextManifest, null, 2));
 
   console.log(
     `✓ og-images: ${rendered} 생성, ${skipped} 스킵, ${orphans.length} 정리 (대상 ${posts.length}개)`,

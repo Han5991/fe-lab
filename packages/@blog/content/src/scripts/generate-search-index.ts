@@ -1,8 +1,8 @@
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { PostData } from '../post/index.ts';
-import { CONTENT_PATHS } from '../shared/contentPaths.ts';
-import { POST_SETS } from './artifacts.ts';
+import { resolvePostSet } from './artifacts.ts';
+import type { ContentContext } from './context.ts';
 
 export const CONTENT_PREVIEW_CHARS = 1500;
 
@@ -79,21 +79,20 @@ export function buildAdminPostsIndex(
   }));
 }
 
-export function main() {
-  const outputPath = join(CONTENT_PATHS.publicDir, 'search-index.json');
-  const adminOutputPath = join(
-    CONTENT_PATHS.publicDir,
-    'admin-posts-index.json',
-  );
+export function main(ctx: ContentContext) {
+  const outputPath = join(ctx.paths.publicDir, 'search-index.json');
+  const adminOutputPath = join(ctx.paths.publicDir, 'admin-posts-index.json');
 
   // 산출 파일이 두 개고 글 집합도 각각 다르다 — 레지스트리(artifacts.ts)의
   // 선언(search-index: visible/exact, admin-posts-index: all/superset)과
   // 같은 셀렉터를 쓴다.
-  const publicPosts = buildPublicSearchIndex(POST_SETS.visible());
+  const publicPosts = buildPublicSearchIndex(
+    resolvePostSet(ctx.content, 'visible'),
+  );
   writeFileSync(outputPath, JSON.stringify(publicPosts, null, 2), 'utf8');
   console.log(`Search index generated: ${publicPosts.length} posts`);
 
-  const allPosts = buildAdminPostsIndex(POST_SETS.all());
+  const allPosts = buildAdminPostsIndex(resolvePostSet(ctx.content, 'all'));
   writeFileSync(adminOutputPath, JSON.stringify(allPosts, null, 2), 'utf8');
   console.log(
     `Admin posts index generated: ${allPosts.length} posts (including hidden)`,
