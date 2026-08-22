@@ -1,4 +1,4 @@
-import { getAllPostsIncludingHidden } from '@blog/content';
+import { getAllPostsIncludingHidden } from '@/src/content';
 import PostDetailClient from './PostDetailClient';
 
 // admin은 인증된 본인만 접근하는 페이지이므로 draft·scheduled 글까지 모두 정적 라우트로 생성합니다.

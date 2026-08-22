@@ -4,8 +4,9 @@ import {
   getAdjacentPosts,
   getSeriesAdjacentPosts,
   getAllPosts,
-} from '@blog/content';
-import { getSeriesMeta, sortPostsBySeriesOrder } from '@blog/content';
+  getSeriesMeta,
+} from '@/src/content';
+import { sortPostsBySeriesOrder } from '@blog/content';
 import { resolveThumbnailUrl } from '@blog/content';
 import { isPostVisible } from '@blog/content';
 import { notFound } from 'next/navigation';
@@ -16,7 +17,7 @@ import {
   buildPostSeo,
   buildPostJsonLd,
   buildBreadcrumbJsonLd,
-} from '@blog/content/seo';
+} from '@/src/content';
 import { toNextMetadata } from './nextMetadata';
 import type { Metadata } from 'next';
 import { Rail } from '@/src/components/Rail';

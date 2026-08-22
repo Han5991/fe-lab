@@ -8,8 +8,7 @@ import {
   POSTS_PATH,
   postPath,
 } from '@blog/content';
-import { getAllSeries } from '@blog/content';
-import { getSeriesMeta } from '@blog/content';
+import { getAllSeries, getSeriesMeta } from '@/src/content';
 import { fmtDate } from '@blog/content';
 import { OG_DEFAULT_IMAGE, SITE_NAME, SITE_URL } from '@blog/content';
 import { safeJsonLd } from '@blog/content';

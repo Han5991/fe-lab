@@ -2,13 +2,13 @@ import { Suspense } from 'react';
 import { css, cx } from '@design-system/ui-lib/css';
 import type { Metadata } from 'next';
 
+import { archiveUrl, POSTS_PATH, postUrl } from '@blog/content';
 import {
-  archiveUrl,
   getAllPostSummaries,
-  POSTS_PATH,
-  postUrl,
-} from '@blog/content';
-import { getAllSeries, getAllTags, getAllYears } from '@blog/content';
+  getAllSeries,
+  getAllTags,
+  getAllYears,
+} from '@/src/content';
 import {
   SITE_URL,
   SITE_NAME,

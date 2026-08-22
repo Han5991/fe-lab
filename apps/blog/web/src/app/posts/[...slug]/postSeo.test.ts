@@ -1,15 +1,17 @@
 import { describe, expect, test } from 'vitest';
 import { postPath, postUrl } from '@blog/content';
 import {
-  buildPostSeo,
-  buildPostJsonLd,
-  buildBreadcrumbJsonLd,
   buildDescription,
   resolveSeoTitle,
   toKstIsoDate,
   countWords,
   type SeoPost,
 } from '@blog/content/seo';
+import {
+  buildPostSeo,
+  buildPostJsonLd,
+  buildBreadcrumbJsonLd,
+} from '@/src/content';
 import { toNextMetadata } from './nextMetadata';
 
 // @blog/content 설정: SITE_URL='https://blog.sangwook.dev', OG_DEFAULT_IMAGE='/og-default.jpg'
