@@ -5,6 +5,8 @@ import { buildLlmsText } from './generate-llms.ts';
 import { buildLlmsFullText } from './generate-llms-full.ts';
 import { postPath, postUrl } from '../post/urls.ts';
 import type { PostData } from '../post/index.ts';
+import { defineTestContent } from '../shared/testValues.ts';
+import { sep } from 'node:path';
 
 /**
  * PR `contract/url`의 핵심 계약: 비ASCII slug가 **다섯 산출 지점**
@@ -19,6 +21,10 @@ import type { PostData } from '../post/index.ts';
  */
 
 const SITE = 'https://example.dev';
+// 생성기가 읽는 값은 전부 설정에서 온다 — 산출물 4종이 같은 값을 봐야 URL이 일치한다.
+const CONFIG = defineTestContent({ root: `${sep}tmp${sep}app` });
+const SITE_VALUES = { ...CONFIG.site, url: SITE };
+const TZ = CONFIG.timezone;
 const SLUG = '한글/글 제목';
 
 function makePost(over: Partial<PostData> = {}): PostData {
@@ -43,13 +49,32 @@ test('비ASCII slug: 다섯 산출 지점이 모두 같은 인코딩의 URL을 �
   expect(expected).toBe(`${SITE}${postPath(SLUG)}`);
 
   const artifacts: [string, string][] = [
-    ['sitemap.xml', buildSitemapXml([post], '2026-01-02', SITE)],
-    ['rss.xml', buildRssXml([post], { siteUrl: SITE, now: new Date(0) })],
+    ['sitemap.xml', buildSitemapXml([post], '2026-01-02', SITE_VALUES, TZ)],
+    [
+      'rss.xml',
+      buildRssXml([post], {
+        site: SITE_VALUES,
+        timezone: TZ,
+        now: new Date(0),
+      }),
+    ],
     [
       'llms.txt',
-      buildLlmsText([post], { siteUrl: SITE, resolveSeriesMeta: () => null }),
+      buildLlmsText([post], {
+        site: SITE_VALUES,
+        llms: CONFIG.llms,
+        author: CONFIG.author,
+        resolveSeriesMeta: () => null,
+      }),
     ],
-    ['llms-full.txt', buildLlmsFullText([post], { siteUrl: SITE })],
+    [
+      'llms-full.txt',
+      buildLlmsFullText([post], {
+        site: SITE_VALUES,
+        author: CONFIG.author,
+        llms: CONFIG.llms,
+      }),
+    ],
   ];
 
   for (const [name, text] of artifacts) {

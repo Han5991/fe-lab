@@ -1,6 +1,9 @@
 import { expect, test } from 'vitest';
 import { ARTIFACTS, type ArtifactSpec } from './artifacts.ts';
-import { SITE_URL } from '../shared/constants.ts';
+import { TEST_VALUES } from '../shared/testValues.ts';
+
+// 산출물 URL의 origin은 설정에서 온다 — 추출기도 그 값을 인자로 받는다.
+const SITE_URL = TEST_VALUES.site.url;
 
 /**
  * 레지스트리 항목별 **URL 추출** 계약. 집합 대조 규칙(exact/subset/superset)은
@@ -34,7 +37,7 @@ function specOfKind<K extends ArtifactSpec['kind']>(
 }
 
 function extractFile(name: string, text: string): Set<string> {
-  return specOfKind(name, 'file').extractUrls(text);
+  return specOfKind(name, 'file').extractUrls(text, SITE_URL);
 }
 
 // ── 레지스트리 자체 계약 ─────────────────────────────────────────────────────
@@ -146,7 +149,9 @@ test('JSON 인덱스 추출: 깨진 JSON은 빈 집합 — 게이트는 실패�
 
 test('og 디렉터리 추출: png 경로 → 글 URL, 중첩 slug 보존, png 아닌 파일 무시', () => {
   const og = specOfKind('og 이미지 (og/*.png)', 'dir');
-  expect(og.extractUrls(['a.png', '회고/2024.png', '.DS_Store'])).toStrictEqual(
+  expect(
+    og.extractUrls(['a.png', '회고/2024.png', '.DS_Store'], SITE_URL),
+  ).toStrictEqual(
     new Set([`${SITE_URL}/posts/a/`, `${SITE_URL}/posts/회고/2024/`]),
   );
 });

@@ -2,6 +2,10 @@ import { expect, test } from 'vitest';
 import { computeDerivedStats, computeAnalyticsOverview } from './service';
 import type { PostStatDetail } from './types';
 
+// 기준일은 이제 필수 인자다 — 외부 시계 대신 고정 날짜로 결정성을 얻는다.
+// (타임존 설정을 아는 쪽은 호출부인 훅이고, 이 레이어는 날짜 문자열만 받는다.)
+const TODAY = '2026-05-24';
+
 function makePost(
   trends: { view_date: string; view_count: number }[],
 ): PostStatDetail {
@@ -18,7 +22,7 @@ function makePost(
 }
 
 test('computeDerivedStats: 빈 트렌드는 0/null로 채움', () => {
-  const result = computeDerivedStats(makePost([]));
+  const result = computeDerivedStats(makePost([]), TODAY);
   expect(result.weekGrowthRate).toBe(null);
   expect(result.peakDay).toBe(null);
   expect(result.dailyAverage).toBe(0);
@@ -33,6 +37,7 @@ test('computeDerivedStats: 피크 일자 식별', () => {
       { view_date: '2025-01-02', view_count: 30 },
       { view_date: '2025-01-03', view_count: 10 },
     ]),
+    TODAY,
   );
   expect(result.peakDay?.date).toBe('2025-01-02');
   expect(result.peakDay?.count).toBe(30);
@@ -45,6 +50,7 @@ test('computeDerivedStats: 일 평균 계산 (소수 1자리 반올림)', () => 
       { view_date: '2025-01-02', view_count: 2 },
       { view_date: '2025-01-03', view_count: 1 },
     ]),
+    TODAY,
   );
   expect(result.dailyAverage).toBe(1.3);
 });
@@ -53,6 +59,7 @@ test('computeDerivedStats: 데이터 1개일 때 span=1로 가드되어 평균 =
   // 첫=끝 → diff=0, +1로 span=1. 같은 값이 평균으로 그대로 나와야 함.
   const result = computeDerivedStats(
     makePost([{ view_date: '2025-01-01', view_count: 7 }]),
+    TODAY,
   );
   expect(result.dailyAverage).toBe(7);
   expect(result.peakDay?.count).toBe(7);
@@ -66,6 +73,7 @@ test('computeDerivedStats: 일 평균 분모는 활동일이 아닌 trends span(
       { view_date: '2025-01-01', view_count: 30 },
       { view_date: '2025-01-30', view_count: 30 },
     ]),
+    TODAY,
   );
   // 합 60, span 30일 → 60/30 = 2.0
   expect(result.dailyAverage).toBe(2);
@@ -84,7 +92,7 @@ test('computeDerivedStats: trends가 비어도 totalViews가 마일스톤 넘으
     status: 'published' as const,
     scheduledDate: null,
   };
-  const result = computeDerivedStats(post);
+  const result = computeDerivedStats(post, TODAY);
   expect(result.milestones[0].reached).toBe(true);
   expect(result.milestones[0].target).toBe(100);
   expect(result.milestones[0].date).toBe(null);
@@ -97,7 +105,7 @@ test('computeDerivedStats: 누적이 마일스톤을 넘으면 reached=true', ()
     view_date: `2025-01-0${i + 1}`,
     view_count: 30,
   })); // 누적 150 → 100은 통과, 500은 미달
-  const result = computeDerivedStats(makePost(trends));
+  const result = computeDerivedStats(makePost(trends), TODAY);
   expect(result.milestones[0].reached).toBe(true);
   expect(result.milestones[0].target).toBe(100);
   expect(result.milestones[1].reached).toBe(false);

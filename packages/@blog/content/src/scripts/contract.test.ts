@@ -11,8 +11,7 @@
  */
 import { expect, test } from 'vitest';
 import { isPostVisible } from '../post/visibility.ts';
-import { testContent } from '../post/testing.ts';
-import { SITE_URL } from '../shared/constants.ts';
+import { testConfig, testContent } from '../post/testing.ts';
 import { buildSitemapXml, getPostPriority } from './generate-sitemap.ts';
 import { buildRssXml } from './render/generate-rss.ts';
 import {
@@ -25,13 +24,18 @@ import { buildLlmsFullText } from './generate-llms-full.ts';
 // 실제 코퍼스에 앵커한 테스트 인스턴스 — 배선은 post/testing.ts 참고.
 const { getAllPosts, getAllPostsIncludingHidden, isSeriesFolder } = testContent;
 
+// 생성기가 읽는 값은 전부 설정에서 온다 — 기대값도 같은 설정에서 가져와야
+// "설정이 실제로 흐르는가"까지 함께 잠긴다.
+const { site, timezone, author, llms } = testConfig;
+const SITE_URL = site.url;
+
 // sitemap lastmod 비교용 — 동적으로 현재 날짜 사용. 하드코딩 시 미래 scheduledDate를
 // 가진 글이 공개되었을 때 contract 테스트가 false failure를 내는 문제를 회피.
 const TODAY = new Date().toISOString().split('T')[0];
 
 test('sitemap: 모든 공개 글이 sitemap에 포함됨', () => {
   const posts = getAllPosts();
-  const xml = buildSitemapXml(posts, TODAY);
+  const xml = buildSitemapXml(posts, TODAY, site, timezone);
   for (const p of posts) {
     expect(
       xml.includes(
@@ -43,8 +47,10 @@ test('sitemap: 모든 공개 글이 sitemap에 포함됨', () => {
 });
 
 test('sitemap: draft/미래 scheduled 글은 sitemap에 없음', () => {
-  const xml = buildSitemapXml(getAllPosts(), TODAY);
-  const hidden = getAllPostsIncludingHidden().filter(p => !isPostVisible(p));
+  const xml = buildSitemapXml(getAllPosts(), TODAY, site, timezone);
+  const hidden = getAllPostsIncludingHidden().filter(
+    p => !isPostVisible(p, timezone),
+  );
   for (const p of hidden) {
     // 한글/특수문자 slug의 hidden 글이 sitemap에 잘못 포함됐을 때 false pass 방지를 위해
     // public 검사와 동일한 인코딩 규칙으로 비교합니다 (디렉토리 구분자 / 는 보존).
@@ -57,7 +63,7 @@ test('sitemap: draft/미래 scheduled 글은 sitemap에 없음', () => {
 });
 
 test('sitemap: 모든 loc은 절대 URL', () => {
-  const xml = buildSitemapXml(getAllPosts(), TODAY);
+  const xml = buildSitemapXml(getAllPosts(), TODAY, site, timezone);
   const locs = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map(m => m[1]);
   expect(locs.length > 0).toBeTruthy();
   for (const loc of locs) {
@@ -67,13 +73,17 @@ test('sitemap: 모든 loc은 절대 URL', () => {
 
 test('rss: 모든 공개 글이 RSS item으로 등장', () => {
   const posts = getAllPosts();
-  const xml = buildRssXml(posts, { now: new Date(TODAY) });
+  const xml = buildRssXml(posts, { site, timezone, now: new Date(TODAY) });
   const itemCount = (xml.match(/<item>/g) || []).length;
   expect(itemCount).toBe(posts.length);
 });
 
 test('rss: 모든 link/guid가 SITE_URL prefix', () => {
-  const xml = buildRssXml(getAllPosts(), { now: new Date(TODAY) });
+  const xml = buildRssXml(getAllPosts(), {
+    site,
+    timezone,
+    now: new Date(TODAY),
+  });
   const links = [...xml.matchAll(/<link>([^<]+)<\/link>/g)].map(m => m[1]);
   for (const link of links) {
     expect(link.startsWith(SITE_URL), `RSS link 비절대: ${link}`).toBeTruthy();
@@ -109,7 +119,7 @@ test('search-index(admin): draft/scheduled 포함하여 전체 글 인덱싱', (
 
 test('llms-full: 모든 공개 글 제목이 본문에 등장', () => {
   const posts = getAllPosts();
-  const text = buildLlmsFullText(posts);
+  const text = buildLlmsFullText(posts, { site, author, llms });
   for (const p of posts) {
     expect(
       text.includes(`### [${p.title}]`),
@@ -120,7 +130,7 @@ test('llms-full: 모든 공개 글 제목이 본문에 등장', () => {
 
 test('llms-full: Total posts 카운트가 실제 공개 글 수와 일치', () => {
   const posts = getAllPosts();
-  const text = buildLlmsFullText(posts);
+  const text = buildLlmsFullText(posts, { site, author, llms });
   expect(text.includes(`Total posts: ${posts.length}+ articles`)).toBeTruthy();
 });
 

@@ -5,35 +5,34 @@
  * 파비콘·웹매니페스트·검색엔진 인증처럼 문서 전체에 한 번만 나가는 값들이
  * 모이는 곳입니다. 레이아웃은 이 함수를 부르기만 합니다.
  */
+import contentConfig from '@/content.config.mts';
+
+// 사이트 정체성·저자·SEO 예산은 해석된 설정에서 온다 — 값의 출처는
+// `content.values.mts`이고, 여기서 리터럴을 다시 읽지 않는다(서버 전용 모듈).
+const { site: SITE } = contentConfig;
 import type { Metadata } from 'next';
-import {
-  SITE_URL,
-  SITE_NAME,
-  SITE_DESCRIPTION_EXPANDED,
-  OG_DEFAULT_IMAGE,
-} from '@blog/content';
 
 // 제목은 meta·og·twitter 세 곳에 나간다. 한 번만 쓴다.
-const DEFAULT_TITLE = `${SITE_NAME} | 프론트엔드 실험실`;
+const DEFAULT_TITLE = `${SITE.name} | 프론트엔드 실험실`;
 
 export function buildSiteMetadata(): Metadata {
   return {
-    metadataBase: new URL(SITE_URL),
+    metadataBase: new URL(SITE.url),
     // RSS alternate link는 RootLayout의 <head>에 직접 추가합니다
     // (Next 16 metadata.alternates.types로는 출력되지 않는 문제 회피)
     title: DEFAULT_TITLE,
-    description: SITE_DESCRIPTION_EXPANDED,
+    description: SITE.descriptionExpanded,
     openGraph: {
       title: DEFAULT_TITLE,
-      description: SITE_DESCRIPTION_EXPANDED,
-      url: SITE_URL,
-      siteName: SITE_NAME,
+      description: SITE.descriptionExpanded,
+      url: SITE.url,
+      siteName: SITE.name,
       images: [
         {
-          url: OG_DEFAULT_IMAGE,
+          url: SITE.ogDefaultImage,
           width: 1200,
           height: 630,
-          alt: `${SITE_NAME} Blog`,
+          alt: `${SITE.name} Blog`,
         },
       ],
       locale: 'ko_KR',
@@ -42,8 +41,8 @@ export function buildSiteMetadata(): Metadata {
     twitter: {
       card: 'summary_large_image',
       title: DEFAULT_TITLE,
-      description: SITE_DESCRIPTION_EXPANDED,
-      images: [OG_DEFAULT_IMAGE],
+      description: SITE.descriptionExpanded,
+      images: [SITE.ogDefaultImage],
     },
     verification: {
       other: {

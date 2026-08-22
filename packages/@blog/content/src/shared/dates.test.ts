@@ -3,12 +3,26 @@ import {
   addDaysISO,
   diffDaysISO,
   formatMonthDayISO,
-  getKSTCutoffDate,
-  getKSTDateISO,
+  getKSTCutoffDate as getKSTCutoffDateIn,
+  getKSTDateISO as getKSTDateISOIn,
   hasAmbiguousTimezone,
-  msUntilKSTMidnight,
-  parseScheduledDateKST,
+  msUntilKSTMidnight as msUntilKSTMidnightIn,
+  parseScheduledDateKST as parseScheduledDateKSTIn,
 } from './dates.ts';
+import { TEST_VALUES } from './testValues.ts';
+
+// 타임존은 이제 인자다. 이 파일은 KST 기준의 날짜 산술을 잠그므로, 픽스처의
+// KST 슬라이스를 고정해 감싸고 본문은 계산만 말하게 둔다.
+const TZ = TEST_VALUES.timezone;
+const getKSTDateISO = (d?: Date): string => getKSTDateISOIn(TZ, d);
+const parseScheduledDateKST = (input: string): Date =>
+  parseScheduledDateKSTIn(TZ, input);
+const getKSTCutoffDate = (
+  filterType: '7days' | '30days',
+  todayKST?: string,
+): string => getKSTCutoffDateIn(TZ, filterType, todayKST);
+const msUntilKSTMidnight = (now?: Date): number =>
+  msUntilKSTMidnightIn(TZ, now);
 
 test('getKSTDateISO: KST 자정 직후', () => {
   // 2026-05-09 00:00 KST = 2026-05-08 15:00 UTC

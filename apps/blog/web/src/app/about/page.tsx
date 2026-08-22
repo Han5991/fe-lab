@@ -1,6 +1,7 @@
+import { AUTHOR_GITHUB, AUTHOR_LINKEDIN } from '@/content.values.mts';
 import Link from 'next/link';
 import { css, cx } from '@design-system/ui-lib/css';
-import { SITE_AUTHOR_GITHUB, SITE_AUTHOR_LINKEDIN } from '@blog/content';
+
 import { safeJsonLd } from '@blog/content';
 import { Label } from '@/src/components/blog';
 import { PageBoundary } from '@/src/components/PageBoundary';
@@ -122,7 +123,7 @@ export default function AboutPage() {
                   })}
                 >
                   <a
-                    href={SITE_AUTHOR_GITHUB}
+                    href={AUTHOR_GITHUB}
                     target="_blank"
                     rel="noopener noreferrer"
                     className={css({
@@ -149,7 +150,7 @@ export default function AboutPage() {
                     GitHub →
                   </a>
                   <a
-                    href={SITE_AUTHOR_LINKEDIN}
+                    href={AUTHOR_LINKEDIN}
                     target="_blank"
                     rel="noopener noreferrer"
                     className={css({

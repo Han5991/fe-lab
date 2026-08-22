@@ -1,3 +1,4 @@
+import { OG_DEFAULT_IMAGE } from '@/content.values.mts';
 import Link from 'next/link';
 import { css } from '@design-system/ui-lib/css';
 import type { PostSummary } from '@blog/content';
@@ -110,7 +111,7 @@ export const FeaturedPost = ({ post, seriesLabel }: FeaturedPostProps) => {
       <div className={css({ w: '[150px]', maxW: 'full' })}>
         {hasOwnThumbnail ? (
           <img
-            src={resolveThumbnailSrc(post)}
+            src={resolveThumbnailSrc(post, OG_DEFAULT_IMAGE)}
             alt=""
             width={THUMB_WIDTH}
             height={THUMB_HEIGHT}

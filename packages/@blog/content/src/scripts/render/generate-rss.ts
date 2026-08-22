@@ -1,10 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import {
-  SITE_URL,
-  SITE_NAME,
-  SITE_DESCRIPTION,
-} from '../../shared/constants.ts';
+import type { SiteConfig, TimezoneConfig } from '../../shared/contentConfig.ts';
 import { parseScheduledDateKST } from '../../shared/dates.ts';
 import { postUrl, type PostSummary } from '../../post/index.ts';
 import { resolvePostSet } from '../artifacts.ts';
@@ -53,9 +49,10 @@ export function wrapCdata(html: string): string {
 const DEFAULT_FULL_CONTENT_LIMIT = 20;
 
 interface RssBuildOptions {
-  siteUrl?: string;
-  siteName?: string;
-  siteDescription?: string;
+  /** 사이트 정체성 — 진입점이 컨텍스트의 설정을 넘긴다(기본값 없음) */
+  site: Pick<SiteConfig, 'url' | 'name' | 'description'>;
+  /** 'YYYY-MM-DD' pubDate를 어느 타임존의 자정으로 볼지 */
+  timezone: Pick<TimezoneConfig, 'isoOffset'>;
   /** lastBuildDate / pubDate fallback 시 사용 — 테스트에서 결정성 확보용 */
   now?: Date;
   /**
@@ -80,12 +77,11 @@ interface RssBuildOptions {
  */
 export function buildRssXml(
   posts: RssPost[],
-  options: RssBuildOptions = {},
+  options: RssBuildOptions,
 ): string {
   const {
-    siteUrl = SITE_URL,
-    siteName = SITE_NAME,
-    siteDescription = SITE_DESCRIPTION,
+    site: { url: siteUrl, name: siteName, description: siteDescription },
+    timezone,
     now = new Date(),
     fullContentLimit = DEFAULT_FULL_CONTENT_LIMIT,
     renderContent,
@@ -97,7 +93,7 @@ export function buildRssXml(
       <title>${escapeXml(post.title)}</title>
       <link>${postUrl(post.slug, siteUrl)}</link>
       <guid isPermaLink="true">${postUrl(post.slug, siteUrl)}</guid>
-      <pubDate>${post.date ? parseScheduledDateKST(post.date).toUTCString() : now.toUTCString()}</pubDate>${post.excerpt ? `\n      <description>${escapeXml(post.excerpt)}</description>` : ''}${post.content && renderContent && index < fullContentLimit ? `\n      <content:encoded>${wrapCdata(renderContent(post.content, siteUrl, post.relativeDir))}</content:encoded>` : ''}
+      <pubDate>${post.date ? parseScheduledDateKST(timezone, post.date).toUTCString() : now.toUTCString()}</pubDate>${post.excerpt ? `\n      <description>${escapeXml(post.excerpt)}</description>` : ''}${post.content && renderContent && index < fullContentLimit ? `\n      <content:encoded>${wrapCdata(renderContent(post.content, siteUrl, post.relativeDir))}</content:encoded>` : ''}
     </item>`,
     )
     .join('\n');
@@ -123,9 +119,8 @@ export async function main(ctx: ContentContext) {
   // 레지스트리 선언(postSet: 'visible', exact)과 같은 셀렉터.
   const posts = resolvePostSet(ctx.content, 'visible');
   const rss = buildRssXml(posts, {
-    siteUrl: ctx.config.site.url,
-    siteName: ctx.config.site.name,
-    siteDescription: ctx.config.site.description,
+    site: ctx.config.site,
+    timezone: ctx.config.timezone,
     renderContent: renderContentHtml,
   });
   fs.writeFileSync(path.join(ctx.paths.publicDir, 'rss.xml'), rss);

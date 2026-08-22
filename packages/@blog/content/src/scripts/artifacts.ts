@@ -1,6 +1,5 @@
 import { POSTS_PATH, postUrl, type PostData } from '../post/index.ts';
 import type { ContentApi } from '../post/createContent.ts';
-import { SITE_URL } from '../shared/constants.ts';
 import { decodeUrlSafe } from '../shared/url.ts';
 
 /**
@@ -69,13 +68,16 @@ interface ArtifactSpecBase {
 export type ArtifactSpec =
   | (ArtifactSpecBase & {
       kind: 'file';
-      /** 산출물 텍스트 → 담긴 글 URL 집합 (디코드 정규화 완료 상태) */
-      extractUrls: (text: string) => Set<string>;
+      /**
+       * 산출물 텍스트 → 담긴 글 URL 집합 (디코드 정규화 완료 상태).
+       * `siteUrl`은 설정의 origin — 산출물이 절대 URL로 적혀 있어서 필요하다.
+       */
+      extractUrls: (text: string, siteUrl: string) => Set<string>;
     })
   | (ArtifactSpecBase & {
       kind: 'dir';
       /** 디렉터리 안 파일들의 상대 경로('/' 구분) → 담긴 글 URL 집합 */
-      extractUrls: (relPaths: string[]) => Set<string>;
+      extractUrls: (relPaths: string[], siteUrl: string) => Set<string>;
     });
 
 /**
@@ -89,8 +91,12 @@ export type ArtifactSpec =
  * 인코딩 차이로 오탐하지 않도록 URL은 디코드해서 정규화합니다(`decodeUrlSafe`
  * — 잘못된 시퀀스에 URIError로 도구가 멈추지 않게).
  */
-function extractPostUrls(text: string, pattern: RegExp): Set<string> {
-  const postPrefix = `${SITE_URL}${POSTS_PATH}`;
+function extractPostUrls(
+  text: string,
+  pattern: RegExp,
+  siteUrl: string,
+): Set<string> {
+  const postPrefix = `${siteUrl}${POSTS_PATH}`;
   return new Set(
     [...text.matchAll(pattern)]
       // 이 파일의 패턴들은 전부 1번 캡처 그룹이 매치에 항상 참여한다.
@@ -114,7 +120,7 @@ const LLMS_LINK = /\]\((https?:\/\/[^)\s]+)\)/g;
  * `artifact-missing-posts`로 보고되어 게이트는 확실히 실패하되, 검사 도구가
  * 스택 트레이스로 멈추지는 않는다.
  */
-function extractJsonIndexUrls(text: string): Set<string> {
+function extractJsonIndexUrls(text: string, siteUrl: string): Set<string> {
   let parsed: unknown;
   try {
     parsed = JSON.parse(text);
@@ -128,16 +134,16 @@ function extractJsonIndexUrls(text: string): Set<string> {
         (entry): entry is { slug: string } =>
           typeof (entry as { slug?: unknown } | null)?.slug === 'string',
       )
-      .map(entry => decodeUrlSafe(postUrl(entry.slug))),
+      .map(entry => decodeUrlSafe(postUrl(entry.slug, siteUrl))),
   );
 }
 
 /** `og/{slug}.png` 파일 경로 → 글 URL 집합. 중첩 slug는 하위 폴더로 보존돼 있다. */
-function extractOgImageUrls(relPaths: string[]): Set<string> {
+function extractOgImageUrls(relPaths: string[], siteUrl: string): Set<string> {
   return new Set(
     relPaths
       .filter(p => p.endsWith('.png'))
-      .map(p => decodeUrlSafe(postUrl(p.slice(0, -'.png'.length)))),
+      .map(p => decodeUrlSafe(postUrl(p.slice(0, -'.png'.length), siteUrl))),
   );
 }
 
@@ -150,7 +156,7 @@ export const ARTIFACTS: readonly ArtifactSpec[] = [
     relation: 'exact',
     // 대조 기준. 색인 제출의 원장(원 소스)이고 발행 글 전부를 exact로 담는다.
     reference: true,
-    extractUrls: text => extractPostUrls(text, SITEMAP_LOC),
+    extractUrls: (text, siteUrl) => extractPostUrls(text, SITEMAP_LOC, siteUrl),
   },
   {
     name: 'rss.xml',
@@ -158,7 +164,7 @@ export const ARTIFACTS: readonly ArtifactSpec[] = [
     kind: 'file',
     postSet: 'visible',
     relation: 'exact',
-    extractUrls: text => extractPostUrls(text, RSS_GUID),
+    extractUrls: (text, siteUrl) => extractPostUrls(text, RSS_GUID, siteUrl),
   },
   {
     name: 'llms.txt',
@@ -166,7 +172,7 @@ export const ARTIFACTS: readonly ArtifactSpec[] = [
     kind: 'file',
     postSet: 'visible',
     relation: 'exact',
-    extractUrls: text => extractPostUrls(text, LLMS_LINK),
+    extractUrls: (text, siteUrl) => extractPostUrls(text, LLMS_LINK, siteUrl),
   },
   {
     name: 'llms-full.txt',
@@ -174,7 +180,7 @@ export const ARTIFACTS: readonly ArtifactSpec[] = [
     kind: 'file',
     postSet: 'visible',
     relation: 'exact',
-    extractUrls: text => extractPostUrls(text, LLMS_LINK),
+    extractUrls: (text, siteUrl) => extractPostUrls(text, LLMS_LINK, siteUrl),
   },
   {
     name: 'search-index.json',

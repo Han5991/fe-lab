@@ -1,5 +1,5 @@
+import { AUTHOR_GITHUB, RSS_PATH } from '@/content.values.mts';
 import { css } from '@design-system/ui-lib/css';
-import { RSS_PATH, SITE_AUTHOR_GITHUB } from '@blog/content';
 
 /** 히어로 pill — 이름 아래 외부 채널. 레퍼런스 `.pill` 수치 그대로. */
 const pill = css({
@@ -19,7 +19,7 @@ const pill = css({
 
 // 레퍼런스에는 velog pill도 있지만 크로스포스팅을 접기로 해서 뺐다.
 const PILLS = [
-  { href: SITE_AUTHOR_GITHUB, label: 'github', external: true },
+  { href: AUTHOR_GITHUB, label: 'github', external: true },
   // RSS는 같은 도메인의 정적 파일이라 새 탭으로 열지 않는다.
   { href: RSS_PATH, label: 'rss', external: false },
 ] as const;

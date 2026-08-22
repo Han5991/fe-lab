@@ -19,6 +19,12 @@ import {
   type RawFrontmatter,
 } from './frontmatterSchema.ts';
 import { parsePost } from './repository.ts';
+import { testConfig } from './testing.ts';
+
+// 발췌 길이는 설정에서 온다(기본값 없음) — 픽스처의 SEO 예산을 그대로 쓴다.
+const PARSE_OPTS = {
+  excerptMaxLength: testConfig.seo.descriptionMaxLength,
+};
 
 // ── 1. RawFrontmatter의 "전 필드 unknown" 성질 ───────────────────────────────
 
@@ -63,12 +69,12 @@ function probeDoc(excluded?: FrontmatterKey): string {
 test('왕복 프로브: parsePost는 테이블의 모든 키를 실제로 읽는다', () => {
   // 반대 방향(parsePost가 테이블 밖 키를 읽는 경우)은 RawFrontmatter 매핑 타입이
   // 컴파일 에러로 막으므로 여기서는 "테이블에만 있고 안 읽는 키"만 잡으면 됩니다.
-  const baseline = parsePost(probeDoc(), 'probe/a.md');
+  const baseline = parsePost(probeDoc(), 'probe/a.md', PARSE_OPTS);
   expect(baseline, '프로브 문서는 유효한 포스트여야 한다').toBeTruthy();
 
   for (const key of FRONTMATTER_KEYS) {
     expect(
-      parsePost(probeDoc(key), 'probe/a.md'),
+      parsePost(probeDoc(key), 'probe/a.md', PARSE_OPTS),
       `\`${key}\`를 빼도 parsePost 결과가 같다 — parsePost가 이 키를 읽지 않거나, ` +
         '프로브 값이 폴백과 구분되지 않는다. 테이블에서 키를 지웠으면 여기서도 지울 것.',
     ).not.toStrictEqual(baseline);

@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { SITE_URL } from '../shared/constants.ts';
+import { TEST_VALUES } from '../shared/testValues.ts';
 import {
   archivePath,
   archiveUrl,
@@ -7,6 +7,9 @@ import {
   postPath,
   postUrl,
 } from './urls.ts';
+
+// origin은 설정에서 온다 — 기대값도 픽스처에서 가져와 "설정이 흐르는가"를 함께 잠근다.
+const SITE_URL = TEST_VALUES.site.url;
 
 // ── postPath / postUrl ───────────────────────────────────────────────────────
 
@@ -31,7 +34,7 @@ test('postPath: 인코딩 리터럴 고정 — 한글·공백 세그먼트', () 
 });
 
 test('postUrl: siteUrl을 생략하면 SITE_URL, 주입하면 그 origin을 쓴다', () => {
-  expect(postUrl('a')).toBe(`${SITE_URL}/posts/a/`);
+  expect(postUrl('a', SITE_URL)).toBe(`${SITE_URL}/posts/a/`);
   expect(postUrl('a', 'https://example.dev')).toBe(
     'https://example.dev/posts/a/',
   );
@@ -71,6 +74,6 @@ test('archivePath: 복수 필터는 &로 잇는다', () => {
 });
 
 test('archiveUrl: siteUrl 주입 + POSTS_PATH 규칙 공유', () => {
-  expect(archiveUrl()).toBe(`${SITE_URL}${POSTS_PATH}`);
+  expect(archiveUrl(SITE_URL)).toBe(`${SITE_URL}${POSTS_PATH}`);
   expect(archiveUrl('https://example.dev')).toBe('https://example.dev/posts/');
 });

@@ -10,7 +10,7 @@
  */
 import { expect, test } from 'vitest';
 import { isPostVisible } from './visibility.ts';
-import { testContent } from './testing.ts';
+import { testConfig, testContent } from './testing.ts';
 
 // runtime.isDevelopment 기본값은 호출 시점에 process.env.NODE_ENV를 읽으므로,
 // 같은 인스턴스로도 NODE_ENV를 바꿔가며 게이트를 검증할 수 있다.
@@ -42,7 +42,7 @@ const slugsOf = (posts: { slug: string }[]) => posts.map(p => p.slug).sort();
 // now(Date) 자리에 주입된다 — service.ts가 화살표로 감싸는 이유와 동일.
 const visibleOnly = <T extends Parameters<typeof isPostVisible>[0]>(
   posts: T[],
-) => posts.filter(p => isPostVisible(p));
+) => posts.filter(p => isPostVisible(p, testConfig.timezone));
 
 test('production에서는 공개 글만 반환한다', () => {
   const visible = withNodeEnv('production', () => slugsOf(getAllPosts()));

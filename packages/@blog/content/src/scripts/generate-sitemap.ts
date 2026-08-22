@@ -1,9 +1,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { SITE_URL, ABOUT_PAGE_MODIFIED } from '../shared/constants.ts';
 import {
   DEFAULT_SITEMAP,
+  type SiteConfig,
   type SitemapConfig,
+  type TimezoneConfig,
 } from '../shared/contentConfig.ts';
 import { parseScheduledDateKST, getKSTDateISO } from '../shared/dates.ts';
 import { archiveUrl, postUrl, type PostSummary } from '../post/index.ts';
@@ -47,13 +48,17 @@ export type SitemapPost = Pick<
  * 'YYYY-MM-DD' 형식을 KST 자정으로 파싱한 뒤, KST 기준 날짜 문자열로 추출합니다.
  * UTC 자정으로 파싱하면 `toISOString().split('T')[0]`가 전날 날짜를 반환할 수 있습니다.
  * (예: '2025-12-31' → UTC 자정 파싱 → toISOString() '2025-12-30T15:00:00Z' → '2025-12-30')
- * getKSTDateISO()는 KST 기준 달력 날짜를 정확히 반환합니다.
+ * getKSTDateISO()는 설정 타임존 기준 달력 날짜를 정확히 반환합니다.
  */
-function resolvePostLastmod(post: SitemapPost, fallback: string): string {
+function resolvePostLastmod(
+  post: SitemapPost,
+  fallback: string,
+  timezone: TimezoneConfig,
+): string {
   return post.updatedAt
-    ? getKSTDateISO(parseScheduledDateKST(post.updatedAt))
+    ? getKSTDateISO(timezone, parseScheduledDateKST(timezone, post.updatedAt))
     : post.date
-      ? getKSTDateISO(parseScheduledDateKST(post.date))
+      ? getKSTDateISO(timezone, parseScheduledDateKST(timezone, post.date))
       : fallback;
 }
 
@@ -65,19 +70,21 @@ function resolvePostLastmod(post: SitemapPost, fallback: string): string {
  * 씁니다. 이 사이트는 매일 cron으로 빌드되므로 빌드 날짜를 넣으면 콘텐츠가 그대로인
  * 날에도 lastmod가 전진하고, Google은 그런 사이트의 lastmod 신호를 통째로 무시합니다.
  * `/about/`은 글이 아니라 자동으로 알 수 있는 수정 시각이 없어서, 손으로 관리하는
- * `ABOUT_PAGE_MODIFIED` 상수를 씁니다 — JSON-LD `dateModified`와 같은 소스라
- * 두 값이 어긋날 수 없습니다. (여기만 lastmod가 비어 있으면 46개 URL 중 하나만
+ * `site.aboutPageModified`(앱 값 모듈)를 씁니다 — JSON-LD `dateModified`와 같은
+ * 소스라 두 값이 어긋날 수 없습니다. (여기만 lastmod가 비어 있으면 46개 URL 중 하나만
  * 신호가 없는 상태가 됩니다.)
  */
 export function buildSitemapXml(
   posts: SitemapPost[],
   today: string,
-  siteUrl: string = SITE_URL,
+  site: Pick<SiteConfig, 'url' | 'aboutPageModified'>,
+  timezone: TimezoneConfig,
   sitemap: SitemapConfig = DEFAULT_SITEMAP,
 ): string {
+  const siteUrl = site.url;
   const entries = posts.map(post => ({
     post,
-    lastmod: resolvePostLastmod(post, today),
+    lastmod: resolvePostLastmod(post, today, timezone),
     // date/updatedAt이 둘 다 없는 글의 lastmod는 today로 폴백된 값이라
     // "콘텐츠 날짜"가 아니다. 정적 URL 계산에 섞으면 today가 항상 최댓값이 되어
     // lastmod가 매일 전진하는 원래 버그로 되돌아간다.
@@ -106,7 +113,7 @@ export function buildSitemapXml(
   </url>
   <url>
     <loc>${siteUrl}/about/</loc>
-    <lastmod>${ABOUT_PAGE_MODIFIED}</lastmod>
+    <lastmod>${site.aboutPageModified}</lastmod>
     <priority>0.7</priority>
   </url>
   ${entries
@@ -129,11 +136,12 @@ export function main(ctx: ContentContext) {
   const posts = resolvePostSet(ctx.content, 'visible');
   // KST 기준 오늘 날짜. `new Date().toISOString()`은 UTC라 KST 00:00~09:00 빌드 시
   // 하루 밀린 lastmod를 만들 수 있어 getKSTDateISO()를 사용한다.
-  const today = getKSTDateISO();
+  const today = getKSTDateISO(ctx.config.timezone);
   const sitemap = buildSitemapXml(
     posts,
     today,
-    ctx.config.site.url,
+    ctx.config.site,
+    ctx.config.timezone,
     ctx.config.sitemap,
   );
   fs.writeFileSync(path.join(publicDir, 'sitemap.xml'), sitemap);

@@ -13,8 +13,11 @@ import satori, { type SatoriOptions } from 'satori';
 import { Resvg } from '@resvg/resvg-js';
 import { resolvePostSet } from '../artifacts.ts';
 import { fmtDate } from '../../shared/format.ts';
-import { SITE_NAME, SITE_URL } from '../../shared/constants.ts';
-import { DEFAULT_OG, type OgConfig } from '../../shared/contentConfig.ts';
+import {
+  DEFAULT_OG,
+  type OgConfig,
+  type SiteConfig,
+} from '../../shared/contentConfig.ts';
 import type { ContentContext } from '../context.ts';
 /**
  * OG 카드에 쓰는 Pretendard 폰트가 있는 디렉터리.
@@ -55,11 +58,12 @@ export interface OgPostInput {
 
 /**
  * 이미지에 들어가는 입력만으로 계산 — 입력이 같으면 재렌더링을 skip합니다.
- * og 설정(크기·팔레트)도 렌더 입력이므로 해시에 포함한다 — 설정만 바꿔도
- * 전체가 재생성된다.
+ * og 설정(크기·팔레트)과 카드에 그려지는 사이트 정체성(이름·도메인)도 렌더
+ * 입력이므로 해시에 포함한다 — 설정만 바꿔도 전체가 재생성된다.
  */
 export function ogContentHash(
   post: OgPostInput,
+  site: Pick<SiteConfig, 'url' | 'name'>,
   og: OgConfig = DEFAULT_OG,
 ): string {
   return createHash('sha1')
@@ -70,6 +74,7 @@ export function ogContentHash(
         date: post.date,
         series: post.series ?? null,
         og: { width: og.width, height: og.height, palette: og.palette },
+        site: { name: site.name, url: site.url },
       }),
     )
     .digest('hex');
@@ -148,6 +153,7 @@ export const OG_PILL_BORDER = DEFAULT_OG.palette.pillBorder;
  */
 export function ogTemplate(
   post: OgPostInput,
+  site: Pick<SiteConfig, 'url' | 'name'>,
   og: OgConfig = DEFAULT_OG,
 ): OgNode {
   const title = displayTitle(post.title, post.series);
@@ -171,7 +177,7 @@ export function ogTemplate(
     el(
       'div',
       { fontSize: 27, fontWeight: 500, color: INK, letterSpacing: 3 },
-      SITE_NAME,
+      site.name,
     ),
   ]);
 
@@ -225,7 +231,7 @@ export function ogTemplate(
     el(
       'div',
       { fontSize: 24, fontWeight: 500, color: INK_META },
-      SITE_URL.replace('https://', ''),
+      site.url.replace('https://', ''),
     ),
   ]);
 
@@ -306,10 +312,11 @@ export function loadFonts(fontDir = resolveFontDir()): SatoriOptions['fonts'] {
 export async function renderOgPng(
   post: OgPostInput,
   fonts: SatoriOptions['fonts'],
+  site: Pick<SiteConfig, 'url' | 'name'>,
   og: OgConfig = DEFAULT_OG,
 ): Promise<Buffer> {
   const svg = await satori(
-    ogTemplate(post, og) as unknown as Parameters<typeof satori>[0],
+    ogTemplate(post, site, og) as unknown as Parameters<typeof satori>[0],
     { width: og.width, height: og.height, fonts },
   );
   return Buffer.from(new Resvg(svg).render().asPng());
@@ -351,7 +358,7 @@ export async function main(ctx: ContentContext) {
   let fonts: SatoriOptions['fonts'] | null = null;
 
   for (const post of posts) {
-    const hash = ogContentHash(post, ctx.config.og);
+    const hash = ogContentHash(post, ctx.config.site, ctx.config.og);
     const file = join(ogDir, ogFileRelPath(post.slug));
     nextManifest[post.slug] = hash;
     if (manifest[post.slug] === hash && existsSync(file)) {
@@ -359,7 +366,7 @@ export async function main(ctx: ContentContext) {
       continue;
     }
     fonts ??= loadFonts();
-    const png = await renderOgPng(post, fonts, ctx.config.og);
+    const png = await renderOgPng(post, fonts, ctx.config.site, ctx.config.og);
     mkdirSync(dirname(file), { recursive: true });
     writeFileSync(file, png);
     rendered++;

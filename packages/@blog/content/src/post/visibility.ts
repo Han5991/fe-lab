@@ -1,4 +1,5 @@
 import { parseScheduledDateKST } from '../shared/dates.ts';
+import type { TimezoneConfig } from '../shared/contentConfig.ts';
 import { POST_STATUSES, type PostStatus } from './types.ts';
 
 /**
@@ -51,11 +52,14 @@ export interface VisibilityData {
  * 파싱하면 KST 기준 9시간 일찍 공개되는 버그가 됩니다.
  *
  * @param data
+ * @param timezone 'YYYY-MM-DD'를 어느 타임존의 자정으로 볼지. 해석된 설정의
+ *                 `timezone`(또는 앱 값 모듈의 `TIMEZONE`)을 넘깁니다.
  * @param now 기준 시각. 프로덕션은 빌드 시각(기본 new Date())을 쓰고,
  *            테스트는 경계를 결정적으로 검증하기 위해 주입합니다.
  */
 export function isPostVisible(
   data: VisibilityData,
+  timezone: Pick<TimezoneConfig, 'isoOffset'>,
   now: Date = new Date(),
 ): boolean {
   switch (data.status) {
@@ -64,7 +68,7 @@ export function isPostVisible(
     case 'scheduled': {
       const publishAt = data.scheduledDate ?? data.date;
       if (typeof publishAt !== 'string') return false;
-      return parseScheduledDateKST(publishAt) <= now;
+      return parseScheduledDateKST(timezone, publishAt) <= now;
     }
     default:
       return false;
@@ -86,13 +90,15 @@ export function isPostVisible(
  * 이미 공개돼 조회수가 쌓이는 글을 몇 달째 "예약"으로 표시하고 있었습니다.
  *
  * @param data
+ * @param timezone `isPostVisible`과 같은 타임존 슬라이스.
  * @param now 기준 시각. 테스트는 경계를 결정적으로 검증하기 위해 주입합니다.
  */
 export function resolvePostState(
   data: VisibilityData,
+  timezone: Pick<TimezoneConfig, 'isoOffset'>,
   now: Date = new Date(),
 ): PostStatus {
-  if (isPostVisible(data, now)) return 'published';
+  if (isPostVisible(data, timezone, now)) return 'published';
   // 아직 공개 전인 예약 글만 'scheduled'.
   // status 누락·미지 값은 isPostVisible과 같은 이유로 draft 취급(fail-closed)입니다.
   return data.status === 'scheduled' ? 'scheduled' : 'draft';

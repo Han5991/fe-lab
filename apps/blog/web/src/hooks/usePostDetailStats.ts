@@ -1,4 +1,6 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
+import { getKSTDateISO } from '@blog/content';
+import { TIMEZONE } from '@/content.values.mts';
 import {
   getPostDowDistribution,
   getPostHourlyDistribution,
@@ -63,7 +65,7 @@ export function usePostDetailStats(slug: string): PostDetailStats {
         post: PLACEHOLDER_POST,
         hourly: distributions.hourly,
         dow: distributions.dow,
-        derived: computeDerivedStats(PLACEHOLDER_POST),
+        derived: computeDerivedStats(PLACEHOLDER_POST, getKSTDateISO(TIMEZONE)),
       };
     }
     throw new Error(`Post not found: ${slug}`);
@@ -73,6 +75,6 @@ export function usePostDetailStats(slug: string): PostDetailStats {
     post,
     hourly: distributions.hourly,
     dow: distributions.dow,
-    derived: computeDerivedStats(post),
+    derived: computeDerivedStats(post, getKSTDateISO(TIMEZONE)),
   };
 }

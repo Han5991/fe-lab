@@ -1,6 +1,12 @@
 import { expect, test } from 'vitest';
 import { buildLlmsText, toSummary } from './generate-llms.ts';
 import type { PostData } from '../post/index.ts';
+import { defineTestContent } from '../shared/testValues.ts';
+import { sep } from 'node:path';
+
+// 사이트 정체성·산문·요약 길이는 전부 설정에서 온다.
+const CONFIG = defineTestContent({ root: `${sep}tmp${sep}app` });
+const SUMMARY_MAX = CONFIG.llms.summaryMaxLength;
 
 const SITE = 'https://example.dev';
 
@@ -21,29 +27,38 @@ function makePost(over: Partial<PostData> = {}): PostData {
 
 // 시리즈 메타는 디스크의 `_series.yml`에서 오므로, 단위 테스트에서는 없는 것으로
 // 주입한다 (실제 시리즈 메타가 바뀌어도 이 테스트는 흔들리지 않는다).
-const OPTS = { siteUrl: SITE, resolveSeriesMeta: () => null };
+const OPTS = {
+  site: { ...CONFIG.site, url: SITE },
+  llms: CONFIG.llms,
+  author: CONFIG.author,
+  resolveSeriesMeta: () => null,
+};
 
 // ── toSummary ────────────────────────────────────────────────────────────────
 
 test('toSummary: excerpt가 있으면 그대로', () => {
-  expect(toSummary({ excerpt: '요약문', content: '본문' })).toBe('요약문');
-});
-
-test('toSummary: excerpt가 비어 있으면 본문으로 폴백 (마크다운 기호 제거)', () => {
-  expect(toSummary({ excerpt: '', content: '# 제목 **굵게**' })).toBe(
-    '제목 굵게',
+  expect(toSummary({ excerpt: '요약문', content: '본문' }, SUMMARY_MAX)).toBe(
+    '요약문',
   );
 });
 
+test('toSummary: excerpt가 비어 있으면 본문으로 폴백 (마크다운 기호 제거)', () => {
+  expect(
+    toSummary({ excerpt: '', content: '# 제목 **굵게**' }, SUMMARY_MAX),
+  ).toBe('제목 굵게');
+});
+
 test('toSummary: 140자를 넘으면 말줄임', () => {
-  const s = toSummary({ excerpt: '가'.repeat(200), content: '' });
+  const s = toSummary({ excerpt: '가'.repeat(200), content: '' }, SUMMARY_MAX);
   expect(s.length <= 141, `${s.length}자`).toBeTruthy();
   expect(s.endsWith('…')).toBeTruthy();
 });
 
 test('toSummary: 개행은 공백 하나로 압축 (링크 한 줄이 깨지지 않도록)', () => {
   // 목록 항목 안에 개행이 들어가면 마크다운 리스트가 끊긴다.
-  expect(toSummary({ excerpt: '앞\n\n뒤', content: '' })).toBe('앞 뒤');
+  expect(toSummary({ excerpt: '앞\n\n뒤', content: '' }, SUMMARY_MAX)).toBe(
+    '앞 뒤',
+  );
 });
 
 // ── buildLlmsText ────────────────────────────────────────────────────────────
@@ -100,7 +115,7 @@ test('llms: 시리즈 글은 시리즈 섹션에, 나머지는 단독 포스트 
       makePost({ slug: 's2', title: '시리즈글2', series: 'bundler' }),
     ],
     // 편수가 아니라 `_series.yml`의 존재가 시리즈를 만든다 — 메타를 주입한다.
-    { siteUrl: SITE, resolveSeriesMeta: () => ({ name: 'bundler' }) },
+    { ...OPTS, resolveSeriesMeta: () => ({ name: 'bundler' }) },
   );
   const seriesIdx = text.indexOf('## 시리즈: bundler');
   const soloIdx = text.indexOf('## 단독 포스트');
@@ -145,7 +160,9 @@ test('llms: _series.yml이 있으면 한 편이어도 시리즈 (표시명·설�
   const text = buildLlmsText(
     [makePost({ slug: 'only', title: '한편글', series: 'ci' })],
     {
-      siteUrl: SITE,
+      site: { ...CONFIG.site, url: SITE },
+      llms: CONFIG.llms,
+      author: CONFIG.author,
       resolveSeriesMeta: () => ({
         name: 'ci',
         title: 'CI 파이프라인',
@@ -165,7 +182,9 @@ test('llms: _series.yml의 order가 날짜보다 우선한다', () => {
       makePost({ slug: 'a', title: '먼저글', series: 's', date: '2026-02-01' }),
     ],
     {
-      siteUrl: SITE,
+      site: { ...CONFIG.site, url: SITE },
+      llms: CONFIG.llms,
+      author: CONFIG.author,
       resolveSeriesMeta: () => ({ name: 's', order: ['a', 'b'] }),
     },
   );
@@ -180,7 +199,7 @@ test('llms: 시리즈 안에서는 1편부터 (날짜 오름차순)', () => {
       makePost({ slug: 'p2', title: '2편', series: 's', date: '2026-02-01' }),
     ],
     // 시리즈 섹션 안의 정렬을 보는 테스트이므로 시리즈로 선언해 둔다.
-    { siteUrl: SITE, resolveSeriesMeta: () => ({ name: 's' }) },
+    { ...OPTS, resolveSeriesMeta: () => ({ name: 's' }) },
   );
   expect(text.indexOf('1편') < text.indexOf('2편')).toBeTruthy();
   expect(text.indexOf('2편') < text.indexOf('3편')).toBeTruthy();

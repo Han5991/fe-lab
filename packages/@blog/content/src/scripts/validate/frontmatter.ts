@@ -19,24 +19,9 @@ import {
   isPostFile,
   rejectionReasonFor,
 } from '../../post/index.ts';
-// 이름 목록만 있는 모듈에서 가져옵니다. registry.ts(=.tsx 컴포넌트 의존)를 직접
-// 참조하면 이 노드 스크립트가 React·Panda까지 끌고 들어옵니다.
-import { DIAGRAM_NAMES, isDiagramName } from '../../post/diagramNames.ts';
 import { hasAmbiguousTimezone } from '../../shared/dates.ts';
-import { DEFAULT_SEO } from '../../shared/contentConfig.ts';
-
-// SEO 임계값은 기본 설정 슬라이스에서 읽는다 — check-seo와 "정확히 같은 범위"를
-// 보는 게이트라 같은 출처(DEFAULT_SEO)를 본다. 사이트 정체성 상수와 마찬가지로
-// seo 예산 오버라이드는 아직 게이트에 배선돼 있지 않다(contentValues.ts의 제약
-// 주석 참고).
-const {
-  titleSuffix: TITLE_SUFFIX,
-  titleMaxLength: SEO_TITLE_MAX_LENGTH,
-  descriptionMinLength: SEO_DESCRIPTION_MIN_LENGTH,
-  descriptionMaxLength: SEO_DESCRIPTION_MAX_LENGTH,
-} = DEFAULT_SEO;
 import { findFrontmatterLine } from './shared.ts';
-import type { Issue, PostRecord, ValidateOptions } from './shared.ts';
+import type { Issue, PostRecord, ValidateContext } from './shared.ts';
 import { resolveSeverity } from './rules.ts';
 
 /**
@@ -73,7 +58,7 @@ function describeValue(value: unknown): string {
 interface FileContext {
   record: PostRecord;
   raw: string;
-  options: ValidateOptions;
+  options: ValidateContext;
 }
 
 type Chain = (ctx: FileContext) => Issue[];
@@ -201,7 +186,7 @@ const titleChain: Chain = ({ record: { data, relPath }, raw, options }) => {
     });
   }
 
-  // `<title>`은 `{seoTitle ?? title}{TITLE_SUFFIX}`로 조립됩니다(postSeo.ts).
+  // `<title>`은 `{seoTitle ?? title}{seo.titleSuffix}`로 조립됩니다(postSeo.ts).
   // 이 블로그는 `[Typescript로 설계하는 프로젝트]` 같은 긴 시리즈 접두사를 제목에
   // 넣기 때문에 접미사까지 더하면 쉽게 60자를 넘고, 검색 결과에서 뒤가 잘립니다.
   // 제목 자체를 줄이면 글의 정체성이 상하므로 `seoTitle`로 `<title>`만 줄입니다.
@@ -211,8 +196,9 @@ const titleChain: Chain = ({ record: { data, relPath }, raw, options }) => {
       : typeof data['title'] === 'string'
         ? data['title']
         : '';
-  const renderedTitleLength = effectiveTitle.length + TITLE_SUFFIX.length;
-  if (effectiveTitle && renderedTitleLength > SEO_TITLE_MAX_LENGTH) {
+  const { seo } = options;
+  const renderedTitleLength = effectiveTitle.length + seo.titleSuffix.length;
+  if (effectiveTitle && renderedTitleLength > seo.titleMaxLength) {
     issues.push({
       file: relPath,
       line:
@@ -220,7 +206,7 @@ const titleChain: Chain = ({ record: { data, relPath }, raw, options }) => {
         findFrontmatterLine(raw, 'title'),
       severity: resolveSeverity('long-title', data, options),
       rule: 'long-title',
-      message: `\`<title>\`이 ${renderedTitleLength}자입니다(접미사 \`${TITLE_SUFFIX}\` 포함, 권장 ${SEO_TITLE_MAX_LENGTH}자 이하). 검색 결과에서 잘립니다 — \`seoTitle\`에 ${SEO_TITLE_MAX_LENGTH - TITLE_SUFFIX.length}자 이하의 짧은 제목을 넣으세요(화면 제목과 OG 카드는 \`title\` 그대로 나갑니다).`,
+      message: `\`<title>\`이 ${renderedTitleLength}자입니다(접미사 \`${seo.titleSuffix}\` 포함, 권장 ${seo.titleMaxLength}자 이하). 검색 결과에서 잘립니다 — \`seoTitle\`에 ${seo.titleMaxLength - seo.titleSuffix.length}자 이하의 짧은 제목을 넣으세요(화면 제목과 OG 카드는 \`title\` 그대로 나갑니다).`,
     });
   }
 
@@ -248,7 +234,7 @@ const excerptChain: Chain = ({ record: { data, relPath }, raw, options }) => {
         findFrontmatterLine(raw, 'title'),
       severity: resolveSeverity('missing-excerpt', data, options),
       rule: 'missing-excerpt',
-      message: `\`excerpt\`가 ${'excerpt' in data ? '비어 있어' : '없어'} 본문 앞 ${SEO_DESCRIPTION_MAX_LENGTH}자 자동 발췌가 meta description으로 나갑니다. 도입부가 비슷한 글끼리 description이 통째로 겹칠 수 있으니 ${SEO_DESCRIPTION_MIN_LENGTH}~${SEO_DESCRIPTION_MAX_LENGTH}자의 고유한 요약을 적어주세요.`,
+      message: `\`excerpt\`가 ${'excerpt' in data ? '비어 있어' : '없어'} 본문 앞 ${options.seo.descriptionMaxLength}자 자동 발췌가 meta description으로 나갑니다. 도입부가 비슷한 글끼리 description이 통째로 겹칠 수 있으니 ${options.seo.descriptionMinLength}~${options.seo.descriptionMaxLength}자의 고유한 요약을 적어주세요.`,
     });
   } else if (typeof data['excerpt'] === 'string') {
     const len = data['excerpt'].length;
@@ -265,13 +251,16 @@ const excerptChain: Chain = ({ record: { data, relPath }, raw, options }) => {
           '`excerpt`가 말줄임(`...`/`…`)으로 끝납니다. 자동 발췌가 샌 것과 구분되지 않아 배포 검사(check-seo)가 막습니다 — 문장을 끝맺어 주세요.',
       });
     }
-    if (len < SEO_DESCRIPTION_MIN_LENGTH || len > SEO_DESCRIPTION_MAX_LENGTH) {
+    if (
+      len < options.seo.descriptionMinLength ||
+      len > options.seo.descriptionMaxLength
+    ) {
       issues.push({
         file: relPath,
         line: findFrontmatterLine(raw, 'excerpt'),
         severity: resolveSeverity('excerpt-length', data, options),
         rule: 'excerpt-length',
-        message: `\`excerpt\`가 ${len}자입니다(권장 ${SEO_DESCRIPTION_MIN_LENGTH}~${SEO_DESCRIPTION_MAX_LENGTH}자). 짧으면 검색 스니펫이 비고, 길면 뒤가 잘립니다.`,
+        message: `\`excerpt\`가 ${len}자입니다(권장 ${options.seo.descriptionMinLength}~${options.seo.descriptionMaxLength}자). 짧으면 검색 스니펫이 비고, 길면 뒤가 잘립니다.`,
       });
     }
   }
@@ -474,14 +463,17 @@ const tagsChain: Chain = ({ record: { data, relPath }, raw, options }) => {
 // 조용히 썸네일로 폴백하기 때문에(글이 죽지 않도록 일부러 그렇게 만들었습니다)
 // 글쓴이는 "왜 다이어그램이 안 나오지" 상태로 방치됩니다. 그 침묵을 여기서 깹니다.
 const heroChain: Chain = ({ record: { data, relPath }, raw, options }) => {
-  if (!('hero' in data) || isDiagramName(data['hero'])) return [];
+  const hero = data['hero'];
+  const registered =
+    typeof hero === 'string' && options.diagramNames.includes(hero);
+  if (!('hero' in data) || registered) return [];
   return [
     {
       file: relPath,
       line: findFrontmatterLine(raw, 'hero'),
       severity: resolveSeverity('unknown-hero-diagram', data, options),
       rule: 'unknown-hero-diagram',
-      message: `\`hero\`는 등록된 다이어그램 이름이어야 합니다 (${DIAGRAM_NAMES.join(', ')}). 새 다이어그램이라면 @blog/content의 src/shared/contentValues.ts(DEFAULT_DIAGRAM_NAMES)와 앱의 src/components/diagram/registry.ts에 먼저 등록하세요: ${JSON.stringify(data['hero'])}`,
+      message: `\`hero\`는 등록된 다이어그램 이름이어야 합니다 (${options.diagramNames.join(', ')}). 새 다이어그램이라면 앱의 content.values.mts(DIAGRAM_NAMES)와 src/components/diagram/registry.ts에 먼저 등록하세요: ${JSON.stringify(hero)}`,
     },
   ];
 };
@@ -527,7 +519,7 @@ const POST_LIKE_CHAINS: Chain[] = [
 export function validatePost(
   record: PostRecord,
   raw: string,
-  options: ValidateOptions = {},
+  options: ValidateContext,
 ): Issue[] {
   const ctx: FileContext = { record, raw, options };
   const issues = statusChain(ctx);

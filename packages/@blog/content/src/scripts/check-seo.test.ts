@@ -9,7 +9,13 @@ import {
   collectArtifacts,
   type CollectedArtifact,
 } from './check-seo.ts';
-import { SITE_URL } from '../shared/constants.ts';
+import { TEST_VALUES, defineTestContent } from '../shared/testValues.ts';
+import { sep } from 'node:path';
+
+// 사이트 이름·origin·SEO 예산은 설정에서 온다 — 이 게이트가 읽는 슬라이스도 그것.
+const CONFIG = defineTestContent({ root: `${sep}tmp${sep}app` });
+const SITE_URL = TEST_VALUES.site.url;
+const SITE_NAME = TEST_VALUES.site.name;
 
 /** 위반이 하나도 없는 최소 페이지 — 각 테스트는 여기서 한 가지만 망가뜨린다. */
 function page(
@@ -18,10 +24,10 @@ function page(
 ) {
   const o = {
     path: '/posts/a/',
-    title: '짧은 제목 | Frontend Lab',
+    title: `짧은 제목${CONFIG.seo.titleSuffix}`,
     description: '가'.repeat(130),
     canonical: `${SITE_URL}/posts/a/`,
-    siteName: 'Frontend Lab',
+    siteName: SITE_NAME,
     locale: 'ko_KR',
     type: 'article',
     ...over,
@@ -37,15 +43,15 @@ function page(
 }
 
 const rules = (pages: Map<string, string>) =>
-  checkPages(pages).map(v => v.rule);
+  checkPages(pages, CONFIG).map(v => v.rule);
 
 // ── parsePageSeo ─────────────────────────────────────────────────────────────
 
 test('parsePageSeo: title / description / canonical / og를 뽑는다', () => {
   const seo = parsePageSeo(page());
-  expect(seo.title).toBe('짧은 제목 | Frontend Lab');
+  expect(seo.title).toBe(`짧은 제목${CONFIG.seo.titleSuffix}`);
   expect(seo.canonical).toBe(`${SITE_URL}/posts/a/`);
-  expect(seo.ogSiteName).toBe('Frontend Lab');
+  expect(seo.ogSiteName).toBe(SITE_NAME);
   expect(seo.ogLocale).toBe('ko_KR');
   expect(seo.ogType).toBe('article');
   expect(seo.h1Count).toBe(1);
@@ -209,6 +215,7 @@ test('checkPages: 존재하는 페이지로 가는 내부 링크에 후행 슬�
     siteWithDottedPost(
       '<h1>글</h1><a href="/posts/turborepo-next.js-docker">turborepo</a>',
     ),
+    CONFIG,
   );
   expect(found.map(v => [v.page, v.rule])).toStrictEqual([
     ['/posts/', 'link-trailing-slash'],
@@ -446,14 +453,14 @@ test('게이트 통합: 온전한 픽스처는 통과하고, 한 산출물에서
   const dir = mkdtempSync(join(tmpdir(), 'check-seo-artifacts-'));
   try {
     writeFixtureOut(dir, ['a', 'b']);
-    expect(checkArtifacts(collectArtifacts(dir))).toStrictEqual([]);
+    expect(checkArtifacts(collectArtifacts(dir, SITE_URL))).toStrictEqual([]);
 
     // rss.xml에서만 글 b를 뺀다 → 게이트가 잡아야 한다.
     writeFileSync(
       join(dir, 'rss.xml'),
       `<item><guid isPermaLink="true">${SITE_URL}/posts/a/</guid></item>`,
     );
-    const found = checkArtifacts(collectArtifacts(dir));
+    const found = checkArtifacts(collectArtifacts(dir, SITE_URL));
     expect(found.map(v => [v.page, v.rule])).toStrictEqual([
       ['rss.xml', 'artifact-missing-posts'],
     ]);
@@ -467,7 +474,7 @@ test('게이트 통합: 레지스트리 산출물이 파일째 없으면 missing
   try {
     writeFixtureOut(dir, ['a']);
     rmSync(join(dir, 'llms-full.txt'));
-    const found = checkArtifacts(collectArtifacts(dir));
+    const found = checkArtifacts(collectArtifacts(dir, SITE_URL));
     expect(found.map(v => [v.page, v.rule])).toStrictEqual([
       ['llms-full.txt', 'missing-artifact'],
     ]);

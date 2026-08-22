@@ -46,6 +46,7 @@ export function createContent(config: ContentConfig): ContentApi {
     readAllPosts: repository.readAllPosts,
     getSeriesMeta: seriesReader.getSeriesMeta,
     isDevelopment,
+    timezone: config.timezone,
   });
   const aggregate = createAggregate({
     getAllPosts: () => service.getAllPosts(),

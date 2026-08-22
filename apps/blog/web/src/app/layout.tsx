@@ -3,6 +3,7 @@
 // 542KB 스타일시트라 렌더 블로킹 CSS 청크가 gzip 137KB까지 부풀었다(Lighthouse
 // unused-css-rules에서 100% 미사용으로 잡힌 파일이 이것). 가변 폰트 한 벌이면
 // 같은 서브셋 92개를 @font-face 92개로 덮고, 웨이트는 45~920 축에서 뽑는다.
+import { RSS_PATH, SITE_NAME } from '@/content.values.mts';
 import 'pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css';
 import '@/src/styles/globals.css';
 import { Providers } from './providers';
@@ -11,7 +12,7 @@ import { GoogleAnalytics, GoogleTagManager } from '@next/third-parties/google';
 import type { ReactNode } from 'react';
 import { jetbrainsMono } from './fonts';
 import { THEME_COOKIE_MATCH } from '@/src/hooks/theme-cookie';
-import { SITE_NAME, RSS_PATH } from '@blog/content';
+
 import { buildSiteMetadata } from './siteSeo';
 
 export const metadata = buildSiteMetadata();

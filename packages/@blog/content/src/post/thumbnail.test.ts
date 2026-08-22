@@ -1,12 +1,26 @@
 import { expect, test } from 'vitest';
 import {
-  resolveThumbnailUrl,
-  resolveAbsoluteThumbnailUrl,
-  resolveThumbnailSrc,
+  resolveThumbnailUrl as resolveThumbnailUrlIn,
+  resolveAbsoluteThumbnailUrl as resolveAbsoluteThumbnailUrlIn,
+  resolveThumbnailSrc as resolveThumbnailSrcIn,
   isOptimizableThumbnail,
   thumbnailWebpRelPath,
 } from './thumbnail.ts';
-import { SITE_URL, OG_DEFAULT_IMAGE } from '../shared/constants.ts';
+import { TEST_VALUES } from '../shared/testValues.ts';
+
+// origin·기본 OG 이미지는 설정에서 온다 — 기대값도 픽스처에서 가져온다.
+const SITE = TEST_VALUES.site;
+const SITE_URL = SITE.url;
+const OG_DEFAULT_IMAGE = SITE.ogDefaultImage;
+const resolveThumbnailUrl = (
+  post: Parameters<typeof resolveThumbnailUrlIn>[0],
+): string => resolveThumbnailUrlIn(post, OG_DEFAULT_IMAGE);
+const resolveAbsoluteThumbnailUrl = (
+  post: Parameters<typeof resolveAbsoluteThumbnailUrlIn>[0],
+): string => resolveAbsoluteThumbnailUrlIn(post, SITE);
+const resolveThumbnailSrc = (
+  post: Parameters<typeof resolveThumbnailSrcIn>[0],
+): string => resolveThumbnailSrcIn(post, OG_DEFAULT_IMAGE);
 
 // 인코딩 결과 상수 (실제 encodeURIComponent / encodePostSlug 출력으로 확정)
 const ENC_BUNDLER = '%EB%B2%88%EB%93%A4%EB%9F%AC'; // '번들러'
@@ -128,9 +142,7 @@ test('resolveThumbnailUrl: startsWith("http") quirk — http로 시작하는 비
 });
 
 test('resolveAbsoluteThumbnailUrl: 생성된 OG 카드에 SITE_URL prefix', () => {
-  expect(resolveAbsoluteThumbnailUrl(p({}))).toBe(
-    'https://blog.sangwook.dev/og/my-post.png',
-  );
+  expect(resolveAbsoluteThumbnailUrl(p({}))).toBe(`${SITE_URL}/og/my-post.png`);
 });
 
 test('resolveAbsoluteThumbnailUrl: slug 없으면 기본 OG 이미지에 SITE_URL prefix', () => {
@@ -141,7 +153,7 @@ test('resolveAbsoluteThumbnailUrl: slug 없으면 기본 OG 이미지에 SITE_UR
 
 test('resolveAbsoluteThumbnailUrl: 슬래시 절대 경로에는 SITE_URL prefix', () => {
   expect(resolveAbsoluteThumbnailUrl(p({ thumbnail: '/abs/x.png' }))).toBe(
-    'https://blog.sangwook.dev/abs/x.png',
+    `${SITE_URL}/abs/x.png`,
   );
 });
 
@@ -150,9 +162,7 @@ test('resolveAbsoluteThumbnailUrl: 상대 경로 결과에 SITE_URL prefix (한�
     resolveAbsoluteThumbnailUrl(
       p({ thumbnail: 'cover.png', relativeDir: '번들러/3편' }),
     ),
-  ).toBe(
-    `https://blog.sangwook.dev/posts/${ENC_BUNDLER}/${ENC_3PYEON}/cover.png`,
-  );
+  ).toBe(`${SITE_URL}/posts/${ENC_BUNDLER}/${ENC_3PYEON}/cover.png`);
 });
 
 test('resolveAbsoluteThumbnailUrl: https URL은 prefix 없이 그대로', () => {

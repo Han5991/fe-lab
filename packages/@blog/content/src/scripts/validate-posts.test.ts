@@ -1,17 +1,45 @@
 import { expect, test } from 'vitest';
 import {
-  validatePost,
+  validatePost as validatePostIn,
   validateBodyHeadings,
-  validateImageReferences,
+  validateImageReferences as validateImageReferencesIn,
   validateCodeFenceLanguages,
   scanBodyLines,
   maskNonProse,
   detectDuplicateSlugs,
-  detectDuplicateDescriptions,
+  detectDuplicateDescriptions as detectDuplicateDescriptionsIn,
   type PostRecord,
 } from './validate-posts.ts';
-import { DIAGRAM_NAMES } from '../post/diagramNames.ts';
+import { defineTestContent } from '../shared/testValues.ts';
+import { toValidateContext } from './validate/shared.ts';
+import { sep } from 'node:path';
 import { FRONTMATTER_KEYS } from '../post/index.ts';
+
+// 규칙이 읽는 슬라이스(SEO 예산·타임존·다이어그램 이름)는 설정에서 온다 —
+// 진입점과 같은 변환(toValidateContext)을 써서 게이트가 보는 것과 어긋나지 않게.
+const VALIDATE_CONFIG = defineTestContent({ root: `${sep}tmp${sep}app` });
+const CTX = toValidateContext(VALIDATE_CONFIG);
+const STRICT_CTX = toValidateContext(VALIDATE_CONFIG, { strict: true });
+const DIAGRAM_NAMES = VALIDATE_CONFIG.registries.diagramNames;
+
+// 규칙 함수는 컨텍스트를 필수로 받는다. 이 파일이 보는 축은 규칙 자체이므로
+// 기본 컨텍스트를 채운 래퍼로 감싸고, strict를 보는 테스트만 명시로 넘긴다.
+const validatePost = (
+  record: PostRecord,
+  raw: string,
+  options = CTX,
+): ReturnType<typeof validatePostIn> => validatePostIn(record, raw, options);
+const validateImageReferences = (
+  record: PostRecord,
+  raw: string,
+  options = CTX,
+): ReturnType<typeof validateImageReferencesIn> =>
+  validateImageReferencesIn(record, raw, options);
+const detectDuplicateDescriptions = (
+  records: PostRecord[],
+  options = CTX,
+): ReturnType<typeof detectDuplicateDescriptionsIn> =>
+  detectDuplicateDescriptionsIn(records, options);
 
 function rec(
   data: Record<string, unknown>,
@@ -169,6 +197,7 @@ test('validatePost: scheduled인데 date가 없으면 missing-date (영원히 �
   const issues = validatePost(
     rec({ title: 'x', status: 'scheduled' }),
     '---\ntitle: x\n---\n',
+    CTX,
   );
   const found = issues.filter(i => i.rule === 'missing-date');
   expect(found.length, 'missing-date가 정확히 하나여야 함(중복 없음)').toBe(1);
@@ -274,6 +303,7 @@ test('validatePost: 알 수 없는 frontmatter 키 → unknown-frontmatter-key (
   const issues = validatePost(
     rec({ title: 'x', status: 'published', tag: 'typo' }),
     '---\n---\n',
+    CTX,
   );
   const unknown = issues.find(i => i.rule === 'unknown-frontmatter-key');
   expect(unknown, 'unknown-frontmatter-key 이슈가 있어야 함').toBeTruthy();
@@ -290,6 +320,7 @@ test('unknown-frontmatter-key: 일부러 뺀 키는 오타 안내 대신 거부 
   const issues = validatePost(
     rec({ title: 'x', status: 'published', description: '중복 역할 키' }),
     '---\n---\n',
+    CTX,
   );
   const found = issues.find(i => i.rule === 'unknown-frontmatter-key');
   expect(found, 'unknown-frontmatter-key 이슈가 있어야 함').toBeTruthy();
@@ -303,6 +334,7 @@ test('unknown-frontmatter-key: series/order도 거부 사유를 알린다', () =
     const found = validatePost(
       rec({ title: 'x', status: 'published', [key]: 'x' }),
       '---\n---\n',
+      CTX,
     ).find(i => i.rule === 'unknown-frontmatter-key');
     if (!found) throw new Error(`${key}에 unknown-frontmatter-key 이슈가 없다`);
     return found.message;
@@ -366,6 +398,7 @@ test('validatePost: 미등록 hero 이름 → unknown-hero-diagram 에러', () =
       hero: 'deploy-pipelnie',
     }),
     "---\ntitle: x\nhero: 'deploy-pipelnie'\n---\n",
+    CTX,
   );
   const found = issues.find(i => i.rule === 'unknown-hero-diagram');
   expect(found, 'unknown-hero-diagram 이슈가 있어야 함').toBeTruthy();
@@ -429,6 +462,7 @@ test('validatePost: 중복 태그 → duplicate-tags 경고', () => {
   const issues = validatePost(
     rec({ title: 'x', status: 'published', tags: ['ci', 'ci', 'build'] }),
     '---\ntitle: x\n---\n',
+    CTX,
   );
   const dup = issues.find(i => i.rule === 'duplicate-tags');
   expect(dup, 'duplicate-tags 이슈가 있어야 함').toBeTruthy();
@@ -649,7 +683,7 @@ test('validateBodyHeadings: ``` 안의 ~~~ 때문에 펜스가 새지 않는다'
 
 /** strict 모드에서 나온 에러의 rule 이름만 */
 function strictErrors(data: Record<string, unknown>): string[] {
-  return validatePost(rec(data), '---\ntitle: x\n---\n', { strict: true })
+  return validatePost(rec(data), '---\ntitle: x\n---\n', STRICT_CTX)
     .filter(i => i.severity === 'error')
     .map(i => i.rule);
 }
@@ -676,6 +710,7 @@ test('strict가 아니면 발행 글도 경고 — predev가 이 검사를 돌�
   const issues = validatePost(
     rec({ title: 'x', status: 'published', date: '2025-01-01' }),
     '---\ntitle: x\n---\n',
+    CTX,
   );
   expect(issues.filter(i => i.severity === 'error')).toStrictEqual([]);
 });
@@ -709,7 +744,7 @@ test('strict: 이미지 alt 누락은 발행 글에서 에러, draft에서는 �
         { content: '![](https://example.com/a.png)' },
       ),
       raw,
-      { strict: true },
+      STRICT_CTX,
     ).filter(i => i.rule === 'missing-image-alt');
 
   expect(withAltMissing('published').map(i => i.severity)).toStrictEqual([
@@ -728,7 +763,7 @@ test('alt가 있으면 missing-image-alt를 내지 않는다', () => {
         { content: '![구조 다이어그램](https://example.com/a.png)' },
       ),
       '---\ntitle: x\n---\n',
-      { strict: true },
+      STRICT_CTX,
     ),
   ).toStrictEqual([]);
 });
@@ -744,7 +779,7 @@ test('이미지: 코드 펜스 안의 `![](…)`는 코드 예시라 검사하�
         { content: '```md\n![](https://example.com/a.png)\n```' },
       ),
       '---\ntitle: x\n---\n',
-      { strict: true },
+      STRICT_CTX,
     ),
   ).toStrictEqual([]);
 });
@@ -756,7 +791,7 @@ test('이미지: 메타 노트(status 없음)는 alt를 검사하지 않는다',
     validateImageReferences(
       rec({ title: '메타' }, { content: '![](https://example.com/a.png)' }),
       '---\ntitle: x\n---\n',
-      { strict: true },
+      STRICT_CTX,
     ),
   ).toStrictEqual([]);
 });
@@ -767,7 +802,7 @@ test('strict: status 없는 메타 노트는 발행 대상이 아니다 (에러�
   const issues = validateImageReferences(
     rec({ title: '메타' }, { content: '![](./none.png)' }),
     '---\ntitle: x\n---\n',
-    { strict: true },
+    STRICT_CTX,
   );
   expect(!issues.some(i => i.rule === 'missing-image-alt')).toBeTruthy();
 });
@@ -883,7 +918,7 @@ test('duplicate-description: excerpt가 같은 발행 글 둘을 잡는다', () 
       recFor('a.md', { title: 'A', status: 'published', excerpt: '같은 요약' }),
       recFor('b.md', { title: 'B', status: 'published', excerpt: '같은 요약' }),
     ],
-    { strict: true },
+    STRICT_CTX,
   );
   expect(issues.map(i => i.rule)).toStrictEqual([
     'duplicate-description',
@@ -1042,7 +1077,7 @@ test('이미지: 산문에 인용한 <img> 태그는 검사하지 않는다', ()
         { content: '태그는 `<img src="hero.png">` 처럼 씁니다.' },
       ),
       '---\ntitle: x\n---\n',
-      { strict: true },
+      STRICT_CTX,
     ),
   ).toStrictEqual([]);
 });
@@ -1051,7 +1086,7 @@ test('이미지: 마크다운 빈 alt는 계속 잡는다 (감사에서 나온 4
   const issues = validateImageReferences(
     rec({ title: 'x', status: 'published' }, { content: '![](/a.png)' }),
     '---\ntitle: x\n---\n',
-    { strict: true },
+    STRICT_CTX,
   );
   expect(issues.map(i => i.rule)).toStrictEqual(['missing-image-alt']);
 });
@@ -1119,7 +1154,7 @@ test('strict: 무따옴표 date(YAML Date 객체)도 공개 판정에 쓰인다'
     validatePost(
       rec({ title: 'x', status: 'scheduled', date }),
       '---\ntitle: x\n---\n',
-      { strict: true },
+      STRICT_CTX,
     )
       .filter(i => i.rule === 'missing-excerpt')
       .map(i => i.severity);
@@ -1147,7 +1182,7 @@ test('duplicate-description: 공개 전 예약 글은 비교 대상이 아니다
         excerpt: '같은 요약',
       }),
     ],
-    { strict: true },
+    STRICT_CTX,
   );
   expect(issues).toStrictEqual([]);
 });
@@ -1167,7 +1202,7 @@ test('duplicate-description: 공개일이 지난 예약 글은 비교 대상이�
         excerpt: '같은 요약',
       }),
     ],
-    { strict: true },
+    STRICT_CTX,
   );
   expect(issues.length).toBe(2);
   expect(issues.every(i => i.severity === 'error')).toBeTruthy();

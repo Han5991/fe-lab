@@ -1,5 +1,6 @@
 'use client';
 
+import { TIMEZONE } from '@/content.values.mts';
 import { useState, useEffect } from 'react';
 import { useAdminDashboardData } from './useAdminViews';
 import { getKSTDateISO, msUntilKSTMidnight } from '@blog/content';
@@ -22,7 +23,9 @@ export function useAnalyticsOverview(range: AnalyticsRange) {
   const { data } = useAdminDashboardData();
 
   // KST 기준 오늘 날짜를 state로 관리. 자정마다 setTimeout으로 갱신합니다.
-  const [todayISO, setTodayISO] = useState<string>(() => getKSTDateISO());
+  const [todayISO, setTodayISO] = useState<string>(() =>
+    getKSTDateISO(TIMEZONE),
+  );
 
   useEffect(() => {
     // cancelled flag 패턴: 재귀 setTimeout의 timeoutId 덮어쓰기로 인한
@@ -30,10 +33,10 @@ export function useAnalyticsOverview(range: AnalyticsRange) {
     let cancelled = false;
 
     function scheduleNextMidnight() {
-      const ms = msUntilKSTMidnight();
+      const ms = msUntilKSTMidnight(TIMEZONE);
       setTimeout(() => {
         if (cancelled) return;
-        setTodayISO(getKSTDateISO());
+        setTodayISO(getKSTDateISO(TIMEZONE));
         scheduleNextMidnight(); // 다음 자정도 예약
       }, ms);
     }
