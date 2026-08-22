@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { relative } from 'node:path';
 import matter from 'gray-matter';
 import { estimateReadMin } from '../shared/format.ts';
+import { SEO_DESCRIPTION_MAX_LENGTH } from '../shared/constants.ts';
 import { CONTENT } from '../shared/contentConfig.ts';
 import { CONTENT_PATHS } from '../shared/contentPaths.ts';
 import { collectMarkdownFiles, hasFrontmatter } from '../shared/postFiles.ts';
@@ -16,12 +17,6 @@ import {
   toStringArray,
 } from './frontmatterSchema.ts';
 import type { PostData, RawFrontmatter } from './types.ts';
-
-// 콘텐츠 위치는 설정(defineContent)의 단일 출처에서 온다 — 예전의
-// `join(process.cwd(), '..', 'posts')`는 cwd가 앱 루트일 때만 맞았다.
-const postsDirectory = CONTENT_PATHS.postsDir;
-/** excerpt 자동 발췌 길이 — SEO description 예산(seo.descriptionMaxLength)을 재사용 */
-const EXCERPT_FALLBACK_LENGTH = CONTENT.seo.descriptionMaxLength;
 
 /**
  * 마크다운 내용에서 순수 텍스트 추출 (excerpt/readMin 계산용)
@@ -44,9 +39,17 @@ export function extractPlainText(content: string): string {
  * 똑같은 계산을 해야 해서, 규칙을 여기 한 곳에 두고 양쪽이 함께 씁니다.
  *
  * 잘릴 때만 '...'을 붙입니다(짧은 글에 오해 소지의 말줄임표가 붙지 않도록).
+ *
+ * maxLength 기본값은 SEO description 예산과 같은 상수(contentValues)에서 온다 —
+ * 설정이 `seo.descriptionMaxLength`를 덮어썼다면 그 값을 명시적으로 넘길 것
+ * (createRepository가 그렇게 한다).
  */
-export function resolveExcerpt(content: string, explicit?: unknown): string {
-  return resolveExcerptFrom(extractPlainText(content), explicit);
+export function resolveExcerpt(
+  content: string,
+  explicit?: unknown,
+  maxLength: number = SEO_DESCRIPTION_MAX_LENGTH,
+): string {
+  return resolveExcerptFrom(extractPlainText(content), explicit, maxLength);
 }
 
 /**
@@ -60,16 +63,17 @@ export function resolveExcerpt(content: string, explicit?: unknown): string {
 export function resolveExcerptFrom(
   plainText: string,
   explicit?: unknown,
+  maxLength: number = SEO_DESCRIPTION_MAX_LENGTH,
 ): string {
   const given = toOptionalString(explicit);
   if (given) return given;
-  return plainText.length > EXCERPT_FALLBACK_LENGTH
-    ? plainText.slice(0, EXCERPT_FALLBACK_LENGTH) + '...'
+  return plainText.length > maxLength
+    ? plainText.slice(0, maxLength) + '...'
     : plainText;
 }
 
 /**
- * 마크다운 파일 1개의 내용 + (postsDirectory 기준) 상대 경로를 PostData로 파싱합니다.
+ * 마크다운 파일 1개의 내용 + (postsDir 기준) 상대 경로를 PostData로 파싱합니다.
  *
  * fs에 의존하지 않는 순수 함수라 단위 테스트가 가능합니다 — collectPosts가 파일을
  * 읽어 이 함수에 위임합니다. 빌드에서 제외할 파일은 null을 반환합니다:
@@ -77,11 +81,12 @@ export function resolveExcerptFrom(
  * - 유효한 `status`가 없는 파일 (기획 문서, 발표 스크립트 등)
  *
  * @param fileContents 파일 전체 내용(frontmatter 포함)
- * @param relPath      postsDirectory 기준 상대 경로 (예: '번들러/intro.md')
+ * @param relPath      postsDir 기준 상대 경로 (예: '번들러/intro.md')
  */
 export function parsePost(
   fileContents: string,
   relPath: string,
+  opts?: { excerptMaxLength?: number },
 ): PostData | null {
   // frontmatter delimiter 없는 메타 노트는 스킵 (validate-posts 와 동일 규칙)
   if (!hasFrontmatter(fileContents)) return null;
@@ -115,7 +120,11 @@ export function parsePost(
     updatedAt: toDateString(data.updatedAt),
     content,
     readMin: estimateReadMin(cleanContent),
-    excerpt: resolveExcerptFrom(cleanContent, data.excerpt),
+    excerpt: resolveExcerptFrom(
+      cleanContent,
+      data.excerpt,
+      opts?.excerptMaxLength,
+    ),
     thumbnail: toOptionalString(data.thumbnail),
     // 등록되지 않은 이름인지까지는 여기서 보지 않는다 — 렌더 계층이 폴백하고
     // validate-posts가 unknown-hero-diagram으로 막는다.
@@ -128,7 +137,7 @@ export function parsePost(
 }
 
 /**
- * postsDirectory 아래의 모든 마크다운 파일을 읽어 PostData 배열로 반환합니다.
+ * dirPath 아래의 모든 마크다운 파일을 읽어 PostData 배열로 반환합니다.
  *
  * 파일 I/O(collectMarkdownFiles + readFileSync)만 담당하고, 내용 → PostData
  * 변환은 순수 함수 parsePost에 위임합니다(null이면 메타 파일이므로 제외).
@@ -141,22 +150,36 @@ export function parsePost(
  * 물리적 폴더는 `relativeDir`에 그대로 남습니다 — 시리즈가 아닌 폴더를 알아야
  * 하는 쪽(sitemap 우선순위, JSON-LD articleSection)은 그쪽을 봅니다.
  */
-function collectPosts(dirPath: string): PostData[] {
+function collectPosts(
+  dirPath: string,
+  deps: {
+    isSeriesFolder: (seriesName: string) => boolean;
+    excerptMaxLength?: number;
+  },
+): PostData[] {
   const results: PostData[] = [];
-  // 스캔 한 번 동안만 사는 메모. 모듈 수준 캐시로 올리지 않는 이유는
+  // 스캔 한 번 동안만 사는 메모. 인스턴스 캐시로 올리지 않는 이유는
   // getSeriesMeta가 dev에서 캐시를 우회하는 것과 같습니다 — `_series.yml`을
   // 새로 만들거나 지우면 다음 요청에 바로 반영돼야 합니다.
   const declaredSeries = new Map<string, boolean>();
+  const parseOpts =
+    deps.excerptMaxLength === undefined
+      ? undefined
+      : { excerptMaxLength: deps.excerptMaxLength };
 
   for (const fullPath of collectMarkdownFiles(dirPath)) {
     const fileContents = readFileSync(fullPath, 'utf8');
-    const post = parsePost(fileContents, relative(dirPath, fullPath));
+    const post = parsePost(
+      fileContents,
+      relative(dirPath, fullPath),
+      parseOpts,
+    );
     if (!post) continue;
 
     if (post.series) {
       let declared = declaredSeries.get(post.series);
       if (declared === undefined) {
-        declared = isSeriesFolder(post.series);
+        declared = deps.isSeriesFolder(post.series);
         declaredSeries.set(post.series, declared);
       }
       if (!declared) {
@@ -216,19 +239,55 @@ export function sortByDateDesc(posts: PostData[]): PostData[] {
 
 // ---------- Repository ----------
 
-let _cache: PostData[] | null = null;
+export interface Repository {
+  readAllPosts: () => PostData[];
+}
+
+export interface RepositoryDeps {
+  /** 마크다운 원본 디렉터리 절대 경로 */
+  postsDir: string;
+  /** dev면 캐시를 건너뛰어 수정 사항이 즉시 반영된다 */
+  isDevelopment: () => boolean;
+  /** excerpt 자동 발췌 길이 — SEO description 예산(seo.descriptionMaxLength) 재사용 */
+  excerptMaxLength: number;
+  /** 시리즈 선언 판정 — 같은 postsDir에 앵커한 SeriesReader의 것을 넘길 것 */
+  isSeriesFolder: (seriesName: string) => boolean;
+}
 
 /**
- * 파일시스템에서 모든 포스트 데이터를 읽고 캐싱합니다.
- * 빌드 타임에 한 번만 읽어 O(N²) 파일 읽기를 방지합니다.
- * 단, 개발 모드에서는 수정 사항이 즉시 반영되도록 매번 새로 읽어옵니다.
+ * 파일시스템 로더 factory. 캐시는 인스턴스(클로저) 안에 산다.
+ * 빌드 타임에 한 번만 읽어 O(N²) 파일 읽기를 방지하고,
+ * 개발 모드에서는 수정 사항이 즉시 반영되도록 매번 새로 읽습니다.
  */
-export function readAllPosts(): PostData[] {
-  if (CONTENT.runtime.isDevelopment()) {
-    return sortByDateDesc(collectPosts(postsDirectory));
+export function createRepository(deps: RepositoryDeps): Repository {
+  const { postsDir, isDevelopment, excerptMaxLength, isSeriesFolder } = deps;
+  const collectDeps = { isSeriesFolder, excerptMaxLength };
+  let cache: PostData[] | null = null;
+
+  function readAllPosts(): PostData[] {
+    if (isDevelopment()) {
+      return sortByDateDesc(collectPosts(postsDir, collectDeps));
+    }
+
+    if (cache) return cache;
+    cache = sortByDateDesc(collectPosts(postsDir, collectDeps));
+    return cache;
   }
 
-  if (_cache) return _cache;
-  _cache = sortByDateDesc(collectPosts(postsDirectory));
-  return _cache;
+  return { readAllPosts };
+}
+
+// ---------- 과도기 싱글턴 위임 ----------
+// series.ts의 legacy 인스턴스와 같은 경로 싱글턴에 앵커한다. 소비자들이
+// createContent로 옮겨 가면 CONTENT/CONTENT_PATHS와 함께 삭제된다.
+
+const legacyRepository = createRepository({
+  postsDir: CONTENT_PATHS.postsDir,
+  isDevelopment: () => CONTENT.runtime.isDevelopment(),
+  excerptMaxLength: CONTENT.seo.descriptionMaxLength,
+  isSeriesFolder,
+});
+
+export function readAllPosts(): PostData[] {
+  return legacyRepository.readAllPosts();
 }

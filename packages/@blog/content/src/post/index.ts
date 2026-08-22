@@ -4,6 +4,8 @@
  * 외부에서는 이 파일을 통해 접근합니다.
  */
 export * from './types.ts';
+// 설정에 앵커한 인스턴스 API — 소비자의 기본 진입점 (content.config.ts + createContent)
+export * from './createContent.ts';
 export * from './visibility.ts';
 export * from './thumbnail.ts';
 export * from './service.ts';

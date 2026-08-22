@@ -3,7 +3,9 @@
  *
  * 흩어져 있던 하드코딩(사이트 정체성·SEO 예산·타임존·경로·레지스트리·OG 팔레트·
  * llms 산문)을 한 곳으로 모은 **단일 출처**입니다. 기본값이 곧 현재 사이트의
- * 값이라, `defineContent({})`는 기존 동작과 완전히 같습니다(동작 no-op).
+ * 값이라, `defineContent({ root })`는 기존 동작과 완전히 같습니다(동작 no-op).
+ * `root`(경로 앵커)만 기본값이 없는 필수 항목입니다 — 어떤 기본값이든 특정
+ * 저장소 구조의 하드코딩이 되기 때문입니다.
  *
  * 이 모듈은 **서버·빌드 전용**입니다 — 클라이언트 컴포넌트가 import하면
  * 설정 객체 전체(og 팔레트·llms 산문·경로)가 번들에 실립니다. 클라이언트가
@@ -127,8 +129,8 @@ export interface RegistriesConfig {
 }
 
 /**
- * 경로는 전부 **앱 루트 기준 상대 경로**로 적는다. 절대경로로 푸는 것은
- * node 전용 `contentPaths.ts`(`resolveContentPaths`)의 몫이다.
+ * 경로는 전부 **앱 루트 기준 상대 경로**로 적는다. 앱 루트는 `root`가 정하고,
+ * 절대경로로 푸는 것은 node 전용 `contentPaths.ts`(`resolveContentPaths`)의 몫이다.
  */
 export interface DirsConfig {
   /** 마크다운 원본 디렉터리 */
@@ -207,6 +209,19 @@ export interface LlmsConfig {
 }
 
 export interface ContentConfig {
+  /**
+   * 경로 앵커. `dirs.*`의 상대 경로가 전부 여기 기준으로 풀린다.
+   *
+   * 관례는 `content.config.ts`에서 `root: import.meta.url` — **설정 파일의 위치
+   * 자체가 앵커**가 되어 모노레포/폴리레포 구조와 무관해진다. 받는 형태 둘:
+   * - `file://` URL 문자열(`import.meta.url` 관례) — 그 파일이 있는 디렉터리가
+   *   앵커. 후행 슬래시가 있으면 디렉터리 URL로 보고 그 디렉터리 자체가 앵커
+   * - 절대 디렉터리 경로 — 그대로 앵커 (테스트·CLI 편의)
+   *
+   * 상대 경로는 받지 않는다 — cwd에 따라 다른 곳을 보게 되는 것이 예전
+   * 하드코딩 앵커가 막던 바로 그 사고다.
+   */
+  root: string;
   site: SiteConfig;
   author: AuthorConfig;
   seo: SeoConfig;
@@ -220,8 +235,10 @@ export interface ContentConfig {
   llms: LlmsConfig;
 }
 
-/** defineContent가 받는 부분 설정 — 그룹별로 얕은 Partial, 중첩 객체는 명시 */
+/** defineContent가 받는 부분 설정 — `root`만 필수, 그룹별로 얕은 Partial */
 export interface ContentUserConfig {
+  /** 경로 앵커 — `ContentConfig['root']` 참고. 관례는 `import.meta.url` */
+  root: string;
   site?: Partial<SiteConfig>;
   author?: Partial<AuthorConfig>;
   seo?: Partial<SeoConfig>;
@@ -253,7 +270,8 @@ const DEFAULT_SITE: SiteConfig = {
   mergedPrCountFallback: MERGED_PR_COUNT_FALLBACK,
 };
 
-const DEFAULTS: ContentConfig = {
+// root는 기본값이 없다(경로 앵커의 하드코딩 금지) — 그래서 Omit.
+const DEFAULTS: Omit<ContentConfig, 'root'> = {
   site: DEFAULT_SITE,
   author: {
     name: AUTHOR_NAME,
@@ -348,6 +366,28 @@ const DEFAULTS: ContentConfig = {
 
 // ── 검증 ─────────────────────────────────────────────────────────────────────
 
+/**
+ * `root` 형태 검증 — 순수 문자열 검사만 한다(node:path를 끌지 않기 위해).
+ * 실제 디렉터리 해석은 node 전용 `contentPaths.ts`의 몫.
+ */
+function assertValidRoot(root: unknown): asserts root is string {
+  if (typeof root !== 'string' || root.length === 0) {
+    throw new Error(
+      'defineContent: root가 필요합니다 — content.config.ts에서 ' +
+        '`root: import.meta.url`을 권장합니다(설정 파일 위치가 경로 앵커가 됩니다).',
+    );
+  }
+  const isFileUrl = root.startsWith('file://');
+  const isAbsolute = root.startsWith('/') || /^[A-Za-z]:[\\/]/.test(root);
+  if (!isFileUrl && !isAbsolute) {
+    throw new Error(
+      `defineContent: root('${root}')는 file:// URL 또는 절대 경로여야 합니다 — ` +
+        '상대 경로는 cwd에 따라 다른 곳을 보게 되므로 받지 않습니다. ' +
+        '`root: import.meta.url`을 쓰세요.',
+    );
+  }
+}
+
 /** 상대 경로를 세그먼트 정규화한다 ('a/./b' → 'a/b', 'a/../b' → 'b') — 순수 문자열 연산 */
 function normalizeDir(p: string): string {
   const out: string[] = [];
@@ -396,11 +436,15 @@ function assertOutputDirsExclusive(dirs: DirsConfig): void {
 
 /**
  * 부분 설정을 기본값 위에 병합해 완전한 ContentConfig를 만든다.
- * `seo.titleSuffix`를 명시하지 않으면 (덮어썼을 수 있는) `site.name`에서 파생된다.
+ * `root`만 필수 — 경로 앵커는 기본값이 있을 수 없다(어떤 기본값이든 특정
+ * 저장소 구조의 하드코딩이 된다). `seo.titleSuffix`를 명시하지 않으면
+ * (덮어썼을 수 있는) `site.name`에서 파생된다.
  */
-export function defineContent(user: ContentUserConfig = {}): ContentConfig {
+export function defineContent(user: ContentUserConfig): ContentConfig {
+  assertValidRoot(user.root);
   const site = { ...DEFAULTS.site, ...user.site };
   const config: ContentConfig = {
+    root: user.root,
     site,
     author: { ...DEFAULTS.author, ...user.author },
     seo: {
@@ -430,7 +474,20 @@ export function defineContent(user: ContentUserConfig = {}): ContentConfig {
 }
 
 /**
- * 이 사이트의 설정 인스턴스. 기본값이 곧 현재 값이므로 빈 오버라이드다 —
- * 사이트를 바꿀 때는 여기 인자에 명시적으로 적는다.
+ * 이 사이트의 설정 인스턴스 — **과도기 싱글턴**. 소비자가 자기
+ * `content.config.ts`를 갖게 되면 삭제된다.
+ *
+ * root는 "앱에 content.config.ts가 있었다면 그 위치"를 가리키는 가상의 파일
+ * URL이다(URL 해석은 순수 문자열 연산이라 이 모듈의 node-free 제약을 지킨다).
+ * 이 상수가 fe-lab 워크스페이스의 `apps/blog/web` 전용 하드코딩의 마지막
+ * 흔적이고, 진짜 소비는 `createContent(설정)`으로 한다.
+ *
+ * 상대 경로를 변수로 우회하는 이유: vite·Turbopack은 `new URL('리터럴',
+ * import.meta.url)` 패턴을 정적 에셋 참조로 재작성한다(jsdom 테스트에서
+ * http://localhost:3000/…로 변질돼 root 검증이 터졌다). 첫 인자가 변수면
+ * 번들러가 손대지 않고 런타임 URL 해석으로 남는다.
  */
-export const CONTENT: ContentConfig = defineContent({});
+const LEGACY_APP_ROOT_HINT = '../../../../../apps/blog/web/content.config.ts';
+export const CONTENT: ContentConfig = defineContent({
+  root: new URL(LEGACY_APP_ROOT_HINT, import.meta.url).href,
+});
