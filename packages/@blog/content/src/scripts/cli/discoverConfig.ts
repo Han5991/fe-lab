@@ -23,8 +23,16 @@ import type { ContentConfig } from '../../shared/contentConfig.ts';
 export const CONFIG_FILENAMES = ['content.config.mts', 'content.config.ts'];
 export const CONFIG_FILENAME = CONFIG_FILENAMES[0] as string;
 
-/** startDir에서 파일시스템 루트까지 올라가며 content.config.(m)ts를 찾는다. */
-export function findConfigFile(startDir: string): string | null {
+/**
+ * startDir에서 파일시스템 루트까지 올라가며 content.config.(m)ts를 찾는다.
+ * `stopDir`(포함)에서 탐색을 멈춘다 — 테스트가 not-found 분기를 임시 트리
+ * 안에서 결정적으로 검증하기 위한 경계(프로덕션 호출은 생략해 루트까지 간다).
+ */
+export function findConfigFile(
+  startDir: string,
+  stopDir?: string,
+): string | null {
+  const stop = stopDir === undefined ? undefined : resolve(stopDir);
   let dir = resolve(startDir);
   for (;;) {
     for (const filename of CONFIG_FILENAMES) {
@@ -32,7 +40,7 @@ export function findConfigFile(startDir: string): string | null {
       if (existsSync(candidate)) return candidate;
     }
     const parent = dirname(dir);
-    if (parent === dir) return null;
+    if (parent === dir || dir === stop) return null;
     dir = parent;
   }
 }
@@ -41,16 +49,36 @@ export function findConfigFile(startDir: string): string | null {
  * defineContent 결과의 duck-validation. 모듈 identity 비교(instanceof류)를 쓰지
  * 않는 이유: 설정 파일이 import하는 `@blog/content`와 CLI가 로드된 경로가
  * (pnpm 심링크 등으로) 다른 인스턴스일 수 있어, 구조만 본다.
+ *
+ * 스텝이 실제로 소비하는 표면(경로 7종·runtime 게이트)을 전부 확인한다 —
+ * 손으로 쓴 부분 객체가 여기를 통과해 한참 뒤 스텝 안에서 알 수 없는
+ * TypeError로 죽는 것이 이 검증이 막으려는 사고다.
  */
 function isContentConfig(value: unknown): value is ContentConfig {
   if (typeof value !== 'object' || value === null) return false;
   const config = value as Partial<ContentConfig>;
+  const dirs = config.dirs as Partial<ContentConfig['dirs']> | undefined;
+  const dirKeys = [
+    'content',
+    'public',
+    'cache',
+    'out',
+    'media',
+    'thumbs',
+    'og',
+  ] as const;
   return (
     typeof config.root === 'string' &&
-    typeof config.dirs === 'object' &&
-    config.dirs !== null &&
+    dirs !== undefined &&
+    dirs !== null &&
+    dirKeys.every(key => typeof dirs[key] === 'string') &&
     typeof config.site === 'object' &&
-    config.site !== null
+    config.site !== null &&
+    typeof config.runtime === 'object' &&
+    config.runtime !== null &&
+    typeof config.runtime.isDevelopment === 'function' &&
+    typeof config.timezone === 'object' &&
+    config.timezone !== null
   );
 }
 

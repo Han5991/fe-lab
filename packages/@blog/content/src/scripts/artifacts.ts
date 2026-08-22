@@ -21,7 +21,7 @@ import { decodeUrlSafe } from '../shared/url.ts';
  * **레지스트리에 없는 산출물**: `public/thumbs/*.webp`는 파일명이
  * `{relativeDir}/{image}-thumb.webp`라 파일에서 글을 되돌릴 수 없어 글 단위
  * 집합 대조가 성립하지 않는다. 대신 generate-thumbnails.ts가 글 집합 선택만
- * 아래 POST_SETS를 공유한다.
+ * 아래 resolvePostSet을 공유한다.
  */
 
 /**
@@ -59,7 +59,7 @@ interface ArtifactSpecBase {
   name: string;
   /** out/ 기준 경로 (file이면 파일, dir이면 디렉터리) */
   path: string;
-  /** 이 산출물을 만드는 생성기가 쓰는 글 집합 (POST_SETS 키) */
+  /** 이 산출물을 만드는 생성기가 쓰는 글 집합 (POST_SET_NAMES 키) */
   postSet: PostSetName;
   relation: ArtifactRelation;
   /** 대조 기준 산출물 — 정확히 하나만 true */

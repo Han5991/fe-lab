@@ -77,7 +77,13 @@ export function main(ctx: ContentContext, options: ValidateOptions) {
     records.push(record);
     allIssues.push(...validatePost(record, raw, options));
     allIssues.push(...validateImageReferences(record, raw, options));
-    allIssues.push(...validateCodeFenceLanguages(record, raw));
+    allIssues.push(
+      ...validateCodeFenceLanguages(
+        record,
+        raw,
+        ctx.config.registries.supportedFenceLabels,
+      ),
+    );
     allIssues.push(...validateBodyHeadings(record, raw));
   }
 

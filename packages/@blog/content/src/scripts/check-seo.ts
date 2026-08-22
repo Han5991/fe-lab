@@ -1,8 +1,10 @@
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { join, relative, resolve, sep } from 'node:path';
 import { SITE_URL, SITE_NAME } from '../shared/constants.ts';
-// SEO 임계값은 설정 표면에서 — validate-posts --strict와 같은 출처를 본다.
-// 상수 이름을 유지한 채 기본 설정 슬라이스에서 온다(기본값 = 현재 사이트 값).
+// SEO 임계값은 기본 설정 슬라이스에서 — validate-posts(frontmatter.ts)와 같은
+// 출처를 본다. 사이트 정체성 상수와 마찬가지로 seo 예산의 defineContent
+// 오버라이드는 아직 이 게이트에 배선돼 있지 않다(contentValues.ts의 제약 주석
+// 참고 — 오버라이드하려면 두 게이트에 함께 배선할 것).
 import { DEFAULT_SEO } from '../shared/contentConfig.ts';
 import { decodeUrlSafe } from '../shared/url.ts';
 import type { ContentContext } from './context.ts';

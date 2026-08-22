@@ -38,11 +38,13 @@ function resolveFontDir(): string {
 }
 
 /**
- * 템플릿 디자인을 바꾸면 올려서 모든 이미지를 재생성하게 합니다.
+ * 템플릿 **구조**를 바꾸면 올려서 모든 이미지를 재생성하게 합니다.
  * 4 — 리뉴얼 팔레트(틸 포인트 + #0B0D10 지면) 적용 + 날짜를 하이픈 표기로 통일.
  * 5 — 포인트색을 틸에서 cyan(#67E8F9)으로 교체.
+ * 6 — og 설정(크기·팔레트)이 해시 입력에 들어감 — 설정 오버라이드가 재생성을
+ *     트리거한다(이전엔 팔레트를 바꿔도 기존 이미지가 skip돼 섞였다).
  */
-const TEMPLATE_VERSION = 5;
+const TEMPLATE_VERSION = 6;
 
 export interface OgPostInput {
   slug: string;
@@ -51,8 +53,15 @@ export interface OgPostInput {
   series?: string | undefined;
 }
 
-/** 이미지에 들어가는 입력만으로 계산 — 입력이 같으면 재렌더링을 skip합니다. */
-export function ogContentHash(post: OgPostInput): string {
+/**
+ * 이미지에 들어가는 입력만으로 계산 — 입력이 같으면 재렌더링을 skip합니다.
+ * og 설정(크기·팔레트)도 렌더 입력이므로 해시에 포함한다 — 설정만 바꿔도
+ * 전체가 재생성된다.
+ */
+export function ogContentHash(
+  post: OgPostInput,
+  og: OgConfig = DEFAULT_OG,
+): string {
   return createHash('sha1')
     .update(
       JSON.stringify({
@@ -60,6 +69,7 @@ export function ogContentHash(post: OgPostInput): string {
         title: post.title,
         date: post.date,
         series: post.series ?? null,
+        og: { width: og.width, height: og.height, palette: og.palette },
       }),
     )
     .digest('hex');
@@ -341,7 +351,7 @@ export async function main(ctx: ContentContext) {
   let fonts: SatoriOptions['fonts'] | null = null;
 
   for (const post of posts) {
-    const hash = ogContentHash(post);
+    const hash = ogContentHash(post, ctx.config.og);
     const file = join(ogDir, ogFileRelPath(post.slug));
     nextManifest[post.slug] = hash;
     if (manifest[post.slug] === hash && existsSync(file)) {

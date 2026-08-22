@@ -63,10 +63,11 @@ export function resolveOptions(raw: RawNewPostOptions): NewPostOptions {
   };
 }
 
-export function todayKST(now: Date = new Date()): string {
-  return new Intl.DateTimeFormat('en-CA', {
-    timeZone: TIMEZONE_IANA,
-  }).format(now);
+export function todayKST(
+  now: Date = new Date(),
+  timeZone: string = TIMEZONE_IANA,
+): string {
+  return new Intl.DateTimeFormat('en-CA', { timeZone }).format(now);
 }
 
 export function safeFilename(title: string): string {
@@ -120,10 +121,11 @@ function resolveDate(
   status: NewPostOptions['status'],
   scheduledDate: string | undefined,
   now: Date,
+  timeZone?: string,
 ): string {
   if (status === 'scheduled' && scheduledDate)
     return scheduledDate.slice(0, 10);
-  return todayKST(now);
+  return todayKST(now, timeZone);
 }
 
 /**
@@ -140,10 +142,13 @@ export function buildFrontmatter(
   opts: Required<Pick<NewPostOptions, 'title' | 'status' | 'tags'>> &
     Pick<NewPostOptions, 'slug' | 'scheduledDate'>,
   now: Date = new Date(),
+  timeZone?: string,
 ): string {
   const lines = ['---'];
   lines.push(`title: ${yamlQuote(opts.title)}`);
-  lines.push(`date: ${resolveDate(opts.status, opts.scheduledDate, now)}`);
+  lines.push(
+    `date: ${resolveDate(opts.status, opts.scheduledDate, now, timeZone)}`,
+  );
   lines.push(`status: ${opts.status}`);
   if (needsScheduledDate(opts.scheduledDate)) {
     lines.push(`scheduledDate: ${yamlQuote(opts.scheduledDate)}`);
@@ -185,13 +190,17 @@ export function main(ctx: ContentContext, opts: NewPostOptions) {
 
   mkdirSync(dirname(targetPath), { recursive: true });
 
-  const frontmatter = buildFrontmatter({
-    title: opts.title,
-    status: opts.status,
-    tags: opts.tags,
-    slug: opts.slug,
-    scheduledDate: opts.scheduledDate,
-  });
+  const frontmatter = buildFrontmatter(
+    {
+      title: opts.title,
+      status: opts.status,
+      tags: opts.tags,
+      slug: opts.slug,
+      scheduledDate: opts.scheduledDate,
+    },
+    new Date(),
+    ctx.config.timezone.iana,
+  );
 
   writeFileSync(targetPath, frontmatter, 'utf8');
   const rel = relative(postsDir, targetPath);

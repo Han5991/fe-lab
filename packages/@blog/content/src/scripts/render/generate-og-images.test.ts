@@ -31,6 +31,17 @@ test('ogContentHash: 이미지에 들어가는 필드(title/date/series)가 바�
   expect(ogContentHash(post({ series: 'bundler' }))).not.toBe(base);
 });
 
+test('ogContentHash: og 설정(팔레트·크기)이 바뀌면 해시 변경 — 설정 오버라이드가 재생성을 트리거', () => {
+  const base = ogContentHash(post());
+  expect(
+    ogContentHash(post(), {
+      ...DEFAULT_OG,
+      palette: { ...DEFAULT_OG.palette, accent: '#FF0000' },
+    }),
+  ).not.toBe(base);
+  expect(ogContentHash(post(), { ...DEFAULT_OG, width: 800 })).not.toBe(base);
+});
+
 test('ogContentHash: slug는 파일 경로일 뿐 해시에 영향 없음', () => {
   expect(ogContentHash(post({ slug: 'a' }))).toBe(
     ogContentHash(post({ slug: 'b' })),

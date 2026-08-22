@@ -33,21 +33,19 @@ test('findConfigFile: 시작 디렉터리에서 위로 올라가며 찾는다', 
     expect(findConfigFile(appDir)).toBe(configPath);
   }));
 
-test('findConfigFile: 없으면 null (fs 루트에서 중단)', () =>
+test('findConfigFile: 없으면 null (stopDir로 탐색을 경계 지어 결정적으로 검증)', () =>
   withTmpTree(root => {
-    // 임시 루트 위쪽 어딘가에 진짜 config가 있으면 오탐이므로, 존재하지 않는
-    // 파일명이 아니라 "루트까지 없음"만 임시 트리 안에서 검증할 수는 없다.
-    // 대신 walk-up이 부모로 전진하다 자기 자신(fs 루트)에서 멈추는 종료
-    // 조건은 위 테스트의 탐색 성공과 함께 이 호출이 **반환한다**는 사실로
-    // 커버된다 — 무한 루프면 테스트가 타임아웃한다.
-    const isolated = join(root, 'no-config-here');
+    // stopDir 없이 fs 루트까지 올라가면 임시 트리 **밖**의 진짜 config가 잡힐
+    // 수 있어 not-found 분기를 결정적으로 검증할 수 없다. stopDir(포함)이
+    // 탐색을 임시 트리 안으로 가둔다.
+    const isolated = join(root, 'a', 'b');
     mkdirSync(isolated, { recursive: true });
-    const found = findConfigFile(isolated);
-    // 워크스페이스 상위(예: 저장소 루트)의 config가 잡힐 수는 있으나, 잡혔다면
-    // 그것은 실제 파일이어야 한다.
-    if (found !== null) {
-      expect(found.endsWith(CONFIG_FILENAME)).toBeTruthy();
-    }
+    expect(findConfigFile(isolated, root)).toBe(null);
+
+    // 같은 경계 안에서, 파일이 있으면 stopDir까지 올라가서라도 찾는다.
+    const configPath = join(root, 'content.config.mts');
+    writeFileSync(configPath, 'export default {}\n', 'utf8');
+    expect(findConfigFile(isolated, root)).toBe(configPath);
   }));
 
 test('loadContentConfig: --config 경로가 없으면 명확한 에러', async () => {
@@ -63,7 +61,25 @@ test('loadContentConfig: defineContent 결과가 아니면 duck-validation 에�
     await expect(loadContentConfig(bad)).rejects.toThrow(/default export/);
   }));
 
-test('loadContentConfig: root·dirs·site를 가진 설정 객체를 로드한다', () =>
+test('loadContentConfig: 부분 객체(dirs 일부 누락)는 스텝에 닿기 전에 거부한다', () =>
+  withTmpTree(async root => {
+    // 손으로 쓴 그럴듯한 부분 설정 — 예전 duck-validation(root·dirs·site만
+    // 확인)은 이걸 통과시켜 스텝 안에서 알 수 없는 TypeError로 죽었다.
+    const partial = join(root, CONFIG_FILENAME);
+    writeFileSync(
+      partial,
+      `export default {
+  root: ${JSON.stringify(root)},
+  dirs: { content: '../posts' },
+  site: { url: 'https://example.dev' },
+};
+`,
+      'utf8',
+    );
+    await expect(loadContentConfig(partial)).rejects.toThrow(/default export/);
+  }));
+
+test('loadContentConfig: 스텝이 소비하는 표면을 갖춘 설정 객체를 로드한다', () =>
   withTmpTree(async root => {
     const good = join(root, CONFIG_FILENAME);
     // 실제 defineContent를 import하지 않는 이유: 임시 파일에서 '@blog/content'
@@ -73,8 +89,13 @@ test('loadContentConfig: root·dirs·site를 가진 설정 객체를 로드한�
       good,
       `export default {
   root: ${JSON.stringify(root)},
-  dirs: { content: '../posts' },
+  dirs: {
+    content: '../posts', public: 'public', cache: '.cache', out: 'out',
+    media: 'public/posts', thumbs: 'public/thumbs', og: 'public/og',
+  },
   site: { url: 'https://example.dev' },
+  runtime: { isDevelopment: () => false },
+  timezone: { iana: 'Asia/Seoul' },
 };
 `,
       'utf8',
