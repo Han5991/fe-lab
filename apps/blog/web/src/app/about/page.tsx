@@ -1,112 +1,24 @@
 import Link from 'next/link';
 import { css, cx } from '@design-system/ui-lib/css';
-import type { Metadata } from 'next';
-import {
-  SITE_URL,
-  SITE_NAME,
-  OG_DEFAULT_IMAGE,
-  SITE_AUTHOR_GITHUB,
-  SITE_AUTHOR_LINKEDIN,
-  MERGED_PR_COUNT_FALLBACK,
-  ABOUT_PAGE_MODIFIED,
-  TITLE_SUFFIX,
-} from '@blog/content';
+import { SITE_AUTHOR_GITHUB, SITE_AUTHOR_LINKEDIN } from '@blog/content';
 import { safeJsonLd } from '@blog/content';
 import { Label } from '@/src/components/blog';
 import { PageBoundary } from '@/src/components/PageBoundary';
 import { railGutter, railColumn } from '@/src/components/Rail';
 import { archivePath, postPath } from '@blog/content';
-import { getAllPostSummaries, getAllSeries } from '@/src/content';
 
+import { getAboutStats, getSeriesPostCounts } from './counts';
 import { FEATURED_SERIES } from './featuredSeries';
+import { buildAboutJsonLd, buildAboutMetadata } from './seo';
 
-const PAGE_TITLE = `소개${TITLE_SUFFIX}`;
-// 공유 카드(og·twitter)용 짧은 소개. 검색 결과용 description과 일부러 다르다 —
-// 카드는 한 줄로 읽히는 게 낫고, SERP는 길이 예산(120~160자)을 채워야 한다.
-const SHARE_DESCRIPTION =
-  '프론트엔드 엔지니어 한상욱(Sangwook Han). Mantine 27 PRs, Node.js 코어 기여, gemini-cli 74% 성능 개선. FEConf 2025 발표자.';
+export const metadata = buildAboutMetadata();
 
-export const metadata: Metadata = {
-  title: PAGE_TITLE,
-  description:
-    '프론트엔드 엔지니어 한상욱(Sangwook Han)의 소개 페이지입니다. Mantine·Node.js·Next.js·gemini-cli 오픈소스 기여자이자 FEConf 2025·TeoConf 발표자. 번들러 내부와 TypeScript 설계를 파고듭니다.',
-  alternates: { canonical: '/about/' },
-  openGraph: {
-    title: PAGE_TITLE,
-    description: SHARE_DESCRIPTION,
-    url: `${SITE_URL}/about/`,
-    siteName: SITE_NAME,
-    // 사람 소개 페이지라 website가 아니라 profile이다. 지정하지 않으면
-    // og:type 자체가 빠져서 크롤러가 문서 종류를 추정하게 된다.
-    type: 'profile',
-    firstName: 'Sangwook',
-    lastName: 'Han',
-    username: 'Han5991',
-    locale: 'ko_KR',
-    images: [
-      {
-        url: `${SITE_URL}${OG_DEFAULT_IMAGE}`,
-        width: 1200,
-        height: 630,
-        alt: `${SITE_NAME} Blog`,
-      },
-    ],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: PAGE_TITLE,
-    description: SHARE_DESCRIPTION,
-    images: [`${SITE_URL}${OG_DEFAULT_IMAGE}`],
-  },
-};
-
-const jsonLd = {
-  '@context': 'https://schema.org',
-  '@type': 'ProfilePage',
-  '@id': `${SITE_URL}/about/`,
-  url: `${SITE_URL}/about/`,
-  name: '한상욱 (Sangwook Han) — About',
-  dateCreated: '2024-12-01',
-  // 빌드 시각을 넣으면 매일 cron 빌드마다 "수정됨"으로 보고되어 신호가 무의미해진다.
-  // 이 페이지 내용을 실제로 고칠 때 상수를 갱신할 것 (sitemap lastmod와 같은 소스).
-  dateModified: ABOUT_PAGE_MODIFIED,
-  mainEntity: {
-    '@type': 'Person',
-    '@id': `${SITE_URL}/#author`,
-    name: 'Sangwook Han',
-    alternateName: '한상욱',
-    url: SITE_URL,
-    image: {
-      '@type': 'ImageObject',
-      url: 'https://github.com/Han5991.png?size=400',
-      width: 400,
-      height: 400,
-    },
-    jobTitle: 'Frontend Engineer',
-    description:
-      '번들러 내부 구조, TypeScript 설계 패턴, 오픈소스 기여를 탐구하는 프론트엔드 엔지니어. Mantine, Node.js, gemini-cli, Next.js 오픈소스 기여자.',
-    knowsAbout: [
-      'React',
-      'TypeScript',
-      'JavaScript',
-      'Module Bundlers',
-      'Frontend Architecture',
-      'Open Source',
-    ],
-    sameAs: [SITE_AUTHOR_GITHUB, SITE_AUTHOR_LINKEDIN],
-  },
-};
+const jsonLd = buildAboutJsonLd();
 
 export default function AboutPage() {
-  // PR 수만 비자명: CI가 빌드 타임에 NEXT_PUBLIC_PR_COUNT로 주입, 로컬·실패 시 폴백.
-  // 폴백 값은 홈의 오픈소스 스트립과 같은 숫자를 보여야 해서 상수 하나를 공유한다.
-  const blogPostCount = getAllPostSummaries().length;
-  const mergedPrCount =
-    process.env.NEXT_PUBLIC_PR_COUNT || MERGED_PR_COUNT_FALLBACK;
-  const conferenceCount = '2';
-  // 주요 시리즈 카드의 편수. 손으로 적어두면 글이 늘 때 조용히 어긋나므로
-  // /series 페이지와 같은 집계원(getAllSeries)에서 그때그때 읽는다.
-  const seriesCounts = new Map(getAllSeries().map(s => [s.id, s.count]));
+  // 콘텐츠 집계를 읽는 값이라 컴포넌트 안에서 부른다 — 이유는 counts.ts 참고.
+  const stats = getAboutStats();
+  const seriesPostCounts = getSeriesPostCounts();
 
   return (
     <>
@@ -276,11 +188,7 @@ export default function AboutPage() {
                     borderColor: 'ink.border',
                   })}
                 >
-                  {[
-                    { value: String(blogPostCount), label: '블로그 포스트' },
-                    { value: mergedPrCount, label: 'PR 승인' },
-                    { value: conferenceCount, label: '컨퍼런스' },
-                  ].map(stat => (
+                  {stats.map(stat => (
                     <div key={stat.label}>
                       <div
                         className={css({
@@ -628,7 +536,7 @@ export default function AboutPage() {
                         </div>
                         {/* 폴더가 사라지면 집계에도 없다 — 0편 대신 배지를 뺀다.
                           (테스트가 막지만 렌더는 fail-soft로 둔다) */}
-                        {seriesCounts.has(series.id) && (
+                        {seriesPostCounts.has(series.id) && (
                           <span
                             className={css({
                               fontFamily: 'mono',
@@ -641,7 +549,7 @@ export default function AboutPage() {
                               pt: '0.5',
                             })}
                           >
-                            {seriesCounts.get(series.id)}편
+                            {seriesPostCounts.get(series.id)}편
                           </span>
                         )}
                       </Link>

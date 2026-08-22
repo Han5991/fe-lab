@@ -1,23 +1,14 @@
 import Link from 'next/link';
 import { css, cx } from '@design-system/ui-lib/css';
-import type { Metadata } from 'next';
 
 import {
-  archiveUrl,
   POSTS_PATH,
   sortPostsBySeriesOrder,
   type PostSummary,
 } from '@blog/content';
 import { getAllPostSummaries, getSeriesMeta } from '@/src/content';
-import {
-  SITE_URL,
-  SITE_NAME,
-  SITE_AUTHOR_GITHUB,
-  SITE_AUTHOR_LINKEDIN,
-  SITE_DESCRIPTION_EXPANDED,
-  OG_DEFAULT_IMAGE,
-} from '@blog/content';
 import { safeJsonLd } from '@blog/content';
+import { buildHomeJsonLd, buildHomeMetadata } from './homeSeo';
 
 import { Hero, FeaturedPost, PostIndexRow } from '@/src/components/blog';
 import { OssStrip } from '@/src/components/home/OssStrip';
@@ -25,105 +16,9 @@ import { seriesBadgeLabel } from '@/src/components/home/seriesBadge';
 import { PageBoundary } from '@/src/components/PageBoundary';
 import { railGutter, railColumn } from '@/src/components/Rail';
 
-// 제목은 meta·og·twitter 세 곳에 나가므로 한 번만 쓴다 — 한 곳만 고쳐지면
-// 검색 결과와 공유 카드가 다른 말을 한다.
-const PAGE_TITLE = `${SITE_NAME} | 프론트엔드 실험실`;
+export const metadata = buildHomeMetadata();
 
-export const metadata: Metadata = {
-  title: PAGE_TITLE,
-  description: SITE_DESCRIPTION_EXPANDED,
-  alternates: { canonical: '/' },
-  openGraph: {
-    title: PAGE_TITLE,
-    description: SITE_DESCRIPTION_EXPANDED,
-    url: SITE_URL,
-    siteName: SITE_NAME,
-    images: [
-      {
-        url: `${SITE_URL}${OG_DEFAULT_IMAGE}`,
-        width: 1200,
-        height: 630,
-        alt: `${SITE_NAME} Blog`,
-      },
-    ],
-    locale: 'ko_KR',
-    type: 'website',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: PAGE_TITLE,
-    description: SITE_DESCRIPTION_EXPANDED,
-    images: [`${SITE_URL}${OG_DEFAULT_IMAGE}`],
-  },
-};
-
-const jsonLd = {
-  '@context': 'https://schema.org',
-  '@graph': [
-    {
-      '@type': 'WebSite',
-      '@id': `${SITE_URL}/#website`,
-      name: 'Frontend Lab',
-      alternateName: '프론트엔드 실험실',
-      url: SITE_URL,
-      description: SITE_DESCRIPTION_EXPANDED,
-      inLanguage: 'ko',
-      publisher: { '@id': `${SITE_URL}/#organization` },
-      potentialAction: {
-        '@type': 'SearchAction',
-        target: {
-          '@type': 'EntryPoint',
-          // `{search_term_string}`은 Google이 치환하는 템플릿 플레이스홀더라
-          // 인코딩되면 안 된다 — archivePath({ q })를 거치면
-          // `%7Bsearch_term_string%7D`가 되어 템플릿으로 인식되지 않는다.
-          // 그래서 여기만 아카이브 절대 URL + 수동 쿼리로 조합한다.
-          urlTemplate: `${archiveUrl()}?q={search_term_string}`,
-        },
-        'query-input': 'required name=search_term_string',
-      },
-    },
-    {
-      '@type': 'Organization',
-      '@id': `${SITE_URL}/#organization`,
-      name: 'Frontend Lab',
-      url: SITE_URL,
-      logo: {
-        '@type': 'ImageObject',
-        url: `${SITE_URL}/logo-wordmark.svg`,
-        width: 280,
-        height: 60,
-      },
-      description: SITE_DESCRIPTION_EXPANDED,
-      founder: { '@id': `${SITE_URL}/#author` },
-      sameAs: [SITE_AUTHOR_GITHUB, SITE_AUTHOR_LINKEDIN],
-    },
-    {
-      '@type': 'Person',
-      '@id': `${SITE_URL}/#author`,
-      name: 'Sangwook Han',
-      alternateName: '한상욱',
-      url: SITE_URL,
-      image: {
-        '@type': 'ImageObject',
-        url: 'https://github.com/Han5991.png?size=400',
-        width: 400,
-        height: 400,
-      },
-      jobTitle: 'Frontend Engineer',
-      description:
-        '번들러 내부 구조, TypeScript 설계 패턴, 오픈소스 기여를 탐구하는 프론트엔드 엔지니어. Mantine, Node.js, gemini-cli, Next.js 오픈소스 기여자.',
-      knowsAbout: [
-        'React',
-        'TypeScript',
-        'JavaScript',
-        'Module Bundlers',
-        'Frontend Architecture',
-        'Open Source',
-      ],
-      sameAs: [SITE_AUTHOR_GITHUB, SITE_AUTHOR_LINKEDIN],
-    },
-  ],
-};
+const jsonLd = buildHomeJsonLd();
 
 /** 허브에 노출할 최근 글 수. 대표 글 1개는 제외한 나머지에서 센다. */
 const RECENT_COUNT = 12;
@@ -150,6 +45,10 @@ function buildSeriesLabel(
 }
 
 export default function HomePage() {
+  // 로더 호출은 컴포넌트 안에 둔다. dev에서 `readAllPosts()`는 캐시를 건너뛰고
+  // 매번 fs를 다시 읽는데(`repository.ts`), 그 설계는 요청마다 호출된다는
+  // 전제 위에 있다 — 모듈 최상위로 올리면 dev 서버가 재시작 전까지 첫 요청
+  // 시점 목록에 고정돼 글을 추가·수정해도 화면에 반영되지 않는다.
   const allPosts = getAllPostSummaries();
   const featured = allPosts[0];
   const recent = allPosts.slice(1, 1 + RECENT_COUNT);
