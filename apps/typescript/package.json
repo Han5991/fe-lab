@@ -4,7 +4,6 @@
   "private": true,
   "scripts": {
     "dev": "tsc -watch",
-    "build": "tsc --noEmit",
     "check-types": "tsc --noEmit",
     "test": "vitest run"
   },

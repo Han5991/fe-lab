@@ -31,7 +31,7 @@
 | `next.js`       | `next.js`           | 🧪 실험          | Next.js 16 (App Router, Turbopack), Vitest + RTL + next-router-mock               | 서버 컴포넌트·에러 바운더리·테스팅 전략.                                                                            |
 | `react`         | `react`             | 🧪 실험          | React 19 SPA + Vite 8 + React Router 8 + TanStack Query, Vitest + RTL + MSW       | 라우팅·커스텀 훅·API 모킹·타입 설계 실험(`src/pages/typescript-project-design`).                                    |
 | `typescript`    | `typescript`        | 🧪 실험          | Pure TypeScript + Vitest                                                          | 에러 모델링 등 순수 타입/로직 실험.                                                                                 |
-| `socket-server` | `socket-server`     | 🧪 실험          | Node.js + 의존성 0의 순수 TypeScript WebSocket 서버                               | `react` 앱과 짝지어 실시간 통신 실험(`pnpm socket`). lint/test 스크립트 없음.                                       |
+| `socket-server` | `socket-server`     | 🧪 실험          | Node.js + 의존성 0의 순수 TypeScript WebSocket 서버                               | `react` 앱과 짝지어 실시간 통신 실험(`pnpm dev --filter=socket-server --filter=react`). lint/test 스크립트 없음.    |
 
 ### packages/
 
@@ -112,14 +112,14 @@ apps/blog/posts/**/_series.yml ─┤
 # 의존성 설치 (prepare 스크립트가 lefthook hook 자동 등록)
 pnpm install
 
-# 개발 서버
-pnpm dev              # 전체
-pnpm blog-web         # 블로그 — 로컬 Supabase(Docker)를 먼저 띄운다. Next만: pnpm --filter @blog/web dev:web
-pnpm react            # React 실험
-pnpm next             # Next.js 실험
-pnpm typescript       # TypeScript 실험 (tsc --watch)
-pnpm socket-server    # WebSocket 서버
-pnpm socket           # socket-server + react 동시 실행
+# 글쓰기 (이 저장소의 목적 — 루트 진입로 둘)
+pnpm new-post "제목"              # 새 포스트 스캐폴딩
+pnpm blog-write                   # 글 미리보기 — 콘텐츠 빌드 후 next dev만, Supabase(Docker) 없음
+
+# 개발 서버 — 앱별 별칭은 없다. turbo 동사 + --filter 패턴 하나뿐:
+pnpm dev --filter=@blog/web       # 블로그 풀스택 (로컬 Supabase를 먼저 띄운다)
+pnpm dev --filter=react           # 실험 앱 (react / next.js / typescript / socket-server 동일)
+pnpm dev --filter=socket-server --filter=react   # 짝지어 실행 (turbo가 병렬로 띄운다)
 
 # 검증
 pnpm lint             # 전체 ESLint
@@ -128,8 +128,8 @@ pnpm test             # 전체 테스트
 pnpm format:check     # Prettier check (pnpm format = write)
 
 # 빌드
-pnpm build            # 전체
-pnpm blog-build       # 블로그만 (prebuild → next build → check-seo)
+pnpm build                        # 전체
+pnpm build --filter=@blog/web     # 블로그만 (prebuild → next build → check-seo) — CI와 같은 형태
 
 # 정리
 pnpm clean            # dist/.next/out/.turbo + node_modules 제거 (clean:dist / clean:modules 따로도 가능)
@@ -138,8 +138,9 @@ pnpm clean            # dist/.next/out/.turbo + node_modules 제거 (clean:dist 
 ### 블로그 글쓰기
 
 ```bash
-# apps/blog/web 디렉토리에서 (스크립트 본체는 @blog/content에 있고 앱이 파일 경로로 실행한다)
-pnpm new-post "글 제목" --series bundler --tags a,b   # 새 포스트 스캐폴딩
+# new-post·blog-write는 루트에서 바로 된다. 나머지는 apps/blog/web에서.
+pnpm new-post "글 제목" --series bundler --tags a,b   # 새 포스트 스캐폴딩 (루트 OK)
+pnpm blog-write                                     # 글 미리보기 — Supabase(Docker) 없이 next dev만 (루트 OK)
 pnpm new-post "예약글" --scheduled "2026-05-01T09:00+09:00"
 pnpm lint:posts                                     # frontmatter·본문 검증 (경고 수준)
 pnpm check-seo                                      # 빌드 산출물(out/) SEO 검사 — pnpm build의 마지막 단계
