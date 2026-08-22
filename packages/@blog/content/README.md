@@ -20,6 +20,18 @@ fs를 읽는 API는 전부 **인스턴스**다 — 소비자가 `content.config.
 getSeriesMeta·getAllSeries…)을 받는다. 캐시는 인스턴스 안에 살아서 루트가
 다른 인스턴스끼리 섞이지 않는다. zero-arg 전역 로더는 없다.
 
+```mermaid
+flowchart LR
+  posts(["apps/blog/posts<br/>원고 · Markdown"])
+  pkg[["packages/@blog/content"]]
+  app(["apps/blog/web<br/>Next.js SSG"])
+  posts -->|"gray-matter 로더"| pkg
+  pkg -->|"@blog/content<br/>createContent()"| app
+  pkg -.->|"@blog/content/seo<br/>createPostSeo()"| app
+```
+
+실선은 로더 인스턴스가 나가는 문, 점선은 SEO 빌더가 나가는 문이다.
+
 빌드 스크립트(`src/scripts/`)는 API가 아니라 실행 파일이고, package.json의
 `bin`에 걸린 **`blog-content` 하나**로만 나간다. 앱은 서브커맨드 이름만 안다
 (`blog-content sitemap`) — 이름과 옵션을 단계 모듈에 잇는 곳은
@@ -55,6 +67,21 @@ shared → content(post) → seo → build(scripts) → render-build(scripts/ren
 | `seo`          | `src/seo`            | `shared`·`content` — 순수 계산(node 코어·외부 의존 없음)                                                    |
 | `build`        | `src/scripts`        | `shared`·`content`·`seo` + node 코어 + `gray-matter`                                                        |
 | `render-build` | `src/scripts/render` | 위 전부 + `react`·`react-dom`·`react-markdown`·`remark-gfm`·`rehype-raw`·`satori`·`sharp`·`@resvg/resvg-js` |
+
+```mermaid
+flowchart LR
+  L1["shared<br/>node 코어만"]
+  L2["content · post<br/>+ gray-matter"]
+  L3["seo<br/>순수 계산"]
+  L4["build · scripts<br/>+ gray-matter"]
+  L5["render-build<br/>react · satori · sharp"]
+  L6["cli · scripts/cli<br/>commander 진입점"]
+  L1 --> L2 --> L3 --> L4 --> L5
+  L4 --> L6
+  L5 --> L6
+  classDef highlight fill:#0E8FA3,stroke:#0E8FA3,color:#ffffff;
+  class L5 highlight;
+```
 
 - React 스택은 `render-build`만 만질 수 있다. RSS 전문 HTML도 `generate-rss.ts`(순수
   문자열 빌더)가 `render/feedRenderer.ts`를 **주입받아** 쓴다 — 빌더를 import해도
@@ -102,6 +129,25 @@ cwd·PATH 어디에도 기대지 않는다 — 부모가 발견한 설정 파일
 전달하므로(`stepArgv`) 부모와 자식이 다른 설정을 잡을 수 없다. 앱의
 `predev:web`과 `prebuild`는 같은 명령이고 `prebuild`만 `--strict`다(검증은 둘 다 돈다).
 
+```mermaid
+flowchart TD
+  gate["1단계 · 게이트<br/>validate-posts<br/>(단독 실행)"]
+  subgraph stage2["2단계 · 병렬 8개 — 서로 다른 파일만 쓴다"]
+    direction LR
+    a["sync-posts"]
+    b["sitemap"]
+    c["rss"]
+    d["og-images"]
+    e["thumbnails"]
+    f["search-index"]
+    g["llms-full"]
+    h["llms"]
+  end
+  gate -->|"통과 (또는 --skip-validate)"| stage2
+  classDef gateStyle fill:#0E8FA3,stroke:#0E8FA3,color:#ffffff;
+  class gate gateStyle;
+```
+
 ## `defineContent` (`src/shared/contentConfig.ts`)
 
 서버·빌드 전용 설정 표면. **`root`(경로 앵커)만 필수**고 나머지는 전부
@@ -148,6 +194,23 @@ export default defineContent({ root: import.meta.url });
   `createContent`/`createPostSeo` 인스턴스를 만든다
 - 파일명이 `.mts`인 이유: `"type": "module"` 없는 패키지에서 `.ts`는 node가
   CJS로 파싱했다가 ESM으로 재파싱한다(경고 + 오버헤드)
+
+```mermaid
+flowchart TD
+  cli["CLI · blog-content<br/>cwd에서 위로 walk-up"]
+  webapp["src/content.ts<br/>정적 import"]
+  cfgfile["content.config.mts<br/>root: import.meta.url"]
+  define["defineContent()<br/>shared/contentConfig.ts"]
+  inst["createContent(config)<br/>post/createContent.ts"]
+  api["ContentApi 인스턴스<br/>getAllPosts · getPostBySlug …"]
+  cli -->|"발견"| cfgfile
+  webapp -->|"import"| cfgfile
+  cfgfile -->|"default export"| define
+  define -->|"완전한 ContentConfig"| inst
+  inst --> api
+  classDef anchor fill:#0E8FA3,stroke:#0E8FA3,color:#ffffff;
+  class cfgfile anchor;
+```
 
 콘텐츠 원본(`apps/blog/posts`)은 이 패키지로 옮기지 않았다(`dirs.content` 한
 줄이므로 필요해질 때 싸게 옮긴다). 실제 코퍼스를 읽는 계약 테스트는
