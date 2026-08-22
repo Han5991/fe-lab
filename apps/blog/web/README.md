@@ -47,7 +47,7 @@ apps/blog/web/
 │  └─ styles/globals.css
 ├─ domain/analytics/    analytics 레이어 — 순수 계산(service) + 저장소(repository·adminRepository) + 배럴 2개(index · admin)
 ├─ lib/platform/        platform 레이어 — Supabase 어댑터(client · publicClient · adminApi · database.types)
-├─ supabase/            로컬 Supabase 프로젝트 — config.toml · migrations/(8) · functions/admin-analytics · seed.sql
+├─ supabase/            로컬 Supabase 프로젝트 — config.toml · migrations/ · functions/admin-analytics · seed.sql
 ├─ public/              robots.txt · favicon · og-default.jpg … (+ 빌드가 생성하는 sitemap/rss/search-index/llms/og/thumbs/posts는 .gitignore)
 ├─ design/              DIAGRAM_AUTHORING.md(현행) · blog-redesign-handoff.md · github-style-reference.md(둘 다 이력)
 ├─ next.config.ts · panda.config.ts · postcss.config.cjs · vitest.config.mts · vitest.setup.ts
@@ -92,7 +92,7 @@ apps/blog/web/
 
 ## 4. 스크립트
 
-모두 `apps/blog/web`에서 실행. 콘텐츠 스크립트는 패키지에 있는 파일을 **경로로** 실행한다(`npx tsx node_modules/@blog/content/src/scripts/…`) — 그래서 `@blog/content`의 `cliEntry.ts`가 pnpm 심링크와 ESM realpath 차이를 흡수한다.
+모두 `apps/blog/web`에서 실행(`new-post`·글 미리보기는 루트 `pnpm new-post`·`pnpm blog-write` 단축도 있다). 콘텐츠 스크립트는 `@blog/content`가 `bin`으로 내놓는 **`blog-content` 하나**로 실행한다 — 앱은 서브커맨드 이름만 안다(`blog-content build`).
 
 | 스크립트                   | 하는 일                                                                                                                                     |
 | :------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------ |

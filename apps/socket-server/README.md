@@ -16,8 +16,8 @@ Node.js와 React로 WebSocket을 직접 구현한 학습 프로젝트입니다.
 apps/
 ├── socket-server/          # Node.js WebSocket 서버
 │   └── src/
-│       ├── index.js                    # HTTP 서버 + WebSocket 서버 초기화
-│       └── websocket-server.js         # WebSocket 프로토콜 구현
+│       ├── index.ts                    # HTTP 서버 + WebSocket 서버 초기화
+│       └── websocket-server.ts         # WebSocket 프로토콜 구현
 └── react/src/pages/
     └── SocketDemo.tsx      # React WebSocket 클라이언트
 ```
