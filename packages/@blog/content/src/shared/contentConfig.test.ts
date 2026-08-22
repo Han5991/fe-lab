@@ -125,9 +125,14 @@ test('llms 소개 산문은 안 주면 site.description에서 파생된다', () 
   expect(explicit.llms.fullIntro).toBe('전문용 소개');
 });
 
-test('사이트 고유 축에는 기본값이 없다 (og 팔레트·sitemap 우선순위)', () => {
-  // 이 셋은 예전에 패키지가 이 저장소의 데이터를 기본값으로 들고 있던 자리다.
+test('사이트 고유 축에는 기본값이 없다 (og 팔레트·sitemap 정적 페이지·우선순위)', () => {
+  // 이 축들은 예전에 패키지가 이 저장소의 데이터를 기본값으로 들고 있던 자리다.
   // 지금은 소비자가 주지 않으면 존재하지 않거나(필수) 비어 있다.
+  //
+  // staticPages가 비어 있다는 게 특히 중요하다 — 예전엔 `/about/`이 sitemap
+  // 생성기에 리터럴로 박혀 있어서, about 페이지가 없는 소비자도 없는 URL을
+  // 색인에 내보냈다. 언제나 나가는 정적 URL은 패키지가 소유한 `/`·`/posts/`뿐이다.
+  expect(DEFAULT_SITEMAP.staticPages).toStrictEqual([]);
   expect(DEFAULT_SITEMAP.highPriorityFolders).toStrictEqual([]);
   expect(DEFAULT_SITEMAP.highPrioritySlugs).toStrictEqual([]);
   expect(DEFAULT_LLMS.facts).toStrictEqual({});

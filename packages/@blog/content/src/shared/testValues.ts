@@ -30,8 +30,6 @@ export const TEST_VALUES: ContentValues = {
     descriptionExpanded: '테스트 픽스처 사이트의 긴 소개입니다.',
     ogDefaultImage: '/og-default.jpg',
     rssPath: '/rss.xml',
-    aboutPageModified: '2026-01-01',
-    mergedPrCountFallback: '0',
   },
   author: {
     name: 'Test Author',
@@ -73,9 +71,15 @@ export const TEST_VALUES: ContentValues = {
 export const TEST_LLMS_DOCS: LlmsDocsConfig = {
   home: { label: '픽스처 홈', summary: 'Test Blog home by Test Author.' },
   archive: { label: '픽스처 목록', summary: 'Test archive of {count} posts.' },
-  series: { label: '픽스처 시리즈', summary: 'Test series list.' },
-  about: { label: '픽스처 소개', summary: 'Test about page.' },
   full: { label: '픽스처 전문', summary: 'Test full text.' },
+  /**
+   * 실제 사이트와 같은 두 경로를 쓰되 문구는 픽스처다 — 항목 자체가 생성기
+   * 리터럴이 아니라 **설정에서** 온다는 것을 테스트가 확인할 수 있도록.
+   */
+  extra: [
+    { path: '/series/', label: '픽스처 시리즈', summary: 'Test series list.' },
+    { path: '/about/', label: '픽스처 소개', summary: 'Test about page.' },
+  ],
 };
 
 /**
@@ -86,7 +90,17 @@ export const TEST_LLMS_DOCS: LlmsDocsConfig = {
  * 때문이다(`typescript` 폴더에는 `_series.yml`이 없다). slug는 반대로 실재하지
  * 않는 이름이라, 실제 사이트 설정을 베껴 온 게 아님이 드러난다.
  */
+/** 픽스처 정적 페이지의 lastmod — 테스트가 리터럴을 베끼지 않도록 이름을 준다. */
+export const TEST_ABOUT_LASTMOD = '2026-01-01';
+
 export const TEST_SITEMAP: SitemapConfig = {
+  /**
+   * 실제 사이트와 같은 `/about/`을 쓰되 lastmod는 픽스처 날짜다 — 정적 페이지가
+   * 패키지 리터럴이 아니라 **설정에서** 온다는 것을 테스트가 확인할 수 있도록.
+   */
+  staticPages: [
+    { path: '/about/', priority: '0.7', lastmod: TEST_ABOUT_LASTMOD },
+  ],
   highPriorityFolders: ['typescript'],
   highPrioritySlugs: ['fixture-high-priority'],
 };

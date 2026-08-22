@@ -89,22 +89,37 @@ test('llms: 글 수는 실제 개수 ("45+" 같은 손으로 적은 숫자가 �
   expect(text.includes('- Total posts: 2 articles')).toBeTruthy();
 });
 
-test('llms: Docs 절 다섯 줄의 문구는 설정에서 온다', () => {
+test('llms: Docs 절의 문구는 설정에서, 패키지 소유 경로는 생성기에서 온다', () => {
   // 예전엔 홈 링크 설명만 이 생성기에 리터럴로 박혀 있어서, 설정을 어떻게 덮어도
-  // 처음 만든 사이트의 이름과 저자 이름이 그대로 나갔다. URL은 반대로 패키지의
-  // 경로 계약이므로 설정에 없다 — 그 짝이 여기서 함께 검증된다.
+  // 처음 만든 사이트의 이름과 저자 이름이 그대로 나갔다. 패키지가 소유한 셋의
+  // URL은 반대로 경로 계약이라 설정에 없다 — 그 짝이 여기서 함께 검증된다.
+  // 사이트 고유 페이지(extra)는 경로까지 설정에서 온다.
   const docs = CONFIG.llms.docs;
   const text = buildLlmsText([makePost({ slug: 'a' })], OPTS);
-  for (const [entry, url] of [
-    [docs.home, `${SITE}/`],
-    [docs.archive, `${SITE}/posts/`],
-    [docs.series, `${SITE}/series/`],
-    [docs.about, `${SITE}/about/`],
-    [docs.full, `${SITE}/llms-full.txt`],
-  ] as const) {
+  const expected = [
+    { entry: docs.home, url: `${SITE}/` },
+    { entry: docs.archive, url: `${SITE}/posts/` },
+    ...docs.extra.map(entry => ({ entry, url: `${SITE}${entry.path}` })),
+    { entry: docs.full, url: `${SITE}/llms-full.txt` },
+  ];
+  for (const { entry, url } of expected) {
     const line = `- [${entry.label}](${url}): ${entry.summary.replace('{count}', '1')}`;
     expect(text.includes(line), `없는 줄: ${line}`).toBeTruthy();
   }
+});
+
+test('llms: extra가 비면 사이트 고유 링크는 한 줄도 안 나간다', () => {
+  // 예전엔 `/series/`·`/about/`이 절의 고정 항목이라, 그런 페이지가 없는
+  // 소비자도 없는 URL을 색인에 내보냈다. 지금은 항목 자체가 설정에서 온다.
+  const text = buildLlmsText([makePost({ slug: 'a' })], {
+    ...OPTS,
+    llms: { ...CONFIG.llms, docs: { ...CONFIG.llms.docs, extra: [] } },
+  });
+  expect(text.includes(`${SITE}/about/`)).toBeFalsy();
+  expect(text.includes(`${SITE}/series/`)).toBeFalsy();
+  // 패키지가 소유한 셋은 그대로 나간다.
+  expect(text.includes(`${SITE}/posts/`)).toBeTruthy();
+  expect(text.includes(`${SITE}/llms-full.txt`)).toBeTruthy();
 });
 
 test('llms: Last updated는 가장 최근 글 날짜 (빌드 날짜가 아님)', () => {

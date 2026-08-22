@@ -89,10 +89,11 @@ export function keepPresent(lines: (string | null)[]): string[] {
 /**
  * `## Docs` 절의 한 줄을 조립합니다.
  *
- * **URL은 패키지가, 문구는 소비자가 소유합니다** — 경로는 사이트 구조 계약이라
- * 여기서 조립하고(`src/post/urls.ts`), 라벨·설명은 설정(`llms.docs`)에서 옵니다.
- * 예전에는 홈 링크의 설명만 이 파일에 리터럴로 박혀 있어서, 설정을 덮어도 그 한
- * 줄은 처음 만든 사이트의 이름과 저자 이름을 그대로 내보냈습니다.
+ * **패키지가 소유한 셋(홈·글 목록·전문)은 URL을 여기서 조립하고, 문구만 설정에서
+ * 옵니다** — 그 경로는 패키지가 정의하는 라우트·산출물이라 어떤 사이트에서도
+ * 같기 때문입니다(`src/post/urls.ts`). 그 사이트에만 있는 페이지는 `llms.docs.extra`가
+ * 경로까지 나릅니다. 예전에는 홈 링크의 설명이 이 파일에 리터럴로 박혀 설정을 덮어도
+ * 남의 사이트 이름이 나갔고, `/series/`·`/about/`은 아예 지울 수 없는 고정 항목이었습니다.
  *
  * `{count}`는 발행 글 수로 치환합니다. 문구를 통째로 소비자에게 넘기면서도
  * "몇 편"만은 산출 시점의 실제 개수여야 하기 때문입니다.
@@ -144,8 +145,9 @@ export function buildLlmsText(
     ``,
     docLine(llms.docs.home, `${siteUrl}/`, posts.length),
     docLine(llms.docs.archive, archiveUrl(siteUrl), posts.length),
-    docLine(llms.docs.series, `${siteUrl}/series/`, posts.length),
-    docLine(llms.docs.about, `${siteUrl}/about/`, posts.length),
+    ...llms.docs.extra.map(entry =>
+      docLine(entry, `${siteUrl}${entry.path}`, posts.length),
+    ),
     docLine(llms.docs.full, `${siteUrl}/llms-full.txt`, posts.length),
     ``,
   ];

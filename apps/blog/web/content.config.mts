@@ -28,6 +28,7 @@ import {
   OG_PALETTE,
   SITE,
   SITEMAP_PRIORITY,
+  SITEMAP_STATIC_PAGES,
   TIMEZONE,
 } from './content.values.mts';
 
@@ -38,7 +39,7 @@ export default defineContent({
   timezone: TIMEZONE,
   registries: { diagramNames: DIAGRAM_NAMES },
   og: { palette: OG_PALETTE },
-  sitemap: SITEMAP_PRIORITY,
+  sitemap: { ...SITEMAP_PRIORITY, staticPages: SITEMAP_STATIC_PAGES },
   llms: {
     indexIntro: LLMS_INTRO.index,
     fullIntro: LLMS_INTRO.full,

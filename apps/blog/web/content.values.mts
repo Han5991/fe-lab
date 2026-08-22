@@ -61,6 +61,12 @@ export const RSS_PATH = '/rss.xml';
  * `/about/` 페이지를 마지막으로 **손으로 고친** 날짜 ('YYYY-MM-DD').
  * 빌드 날짜를 넣으면 매일 도는 cron 빌드마다 lastmod가 전진해 신호가
  * 무의미해지므로 손으로 관리한다 (generate-sitemap.ts 주석 참고).
+ *
+ * 소비처는 둘이고 **같은 상수를 읽는다** — sitemap의 `<lastmod>`
+ * (`SITEMAP_STATIC_PAGES`)와 about 페이지 JSON-LD의 `dateModified`
+ * (`src/app/about/seo.ts`). 패키지의 `SiteConfig`에는 이 축이 없다: about
+ * 페이지가 있는지조차 그 사이트만 아는 일이라, 콘텐츠 프레임워크가 필수로
+ * 받을 값이 아니다.
  */
 export const ABOUT_PAGE_MODIFIED = '2026-08-10';
 /**
@@ -145,7 +151,18 @@ export const OG_PALETTE = {
   pillBorder: 'rgba(103, 232, 249, 0.4)',
 } as const satisfies OgPalette;
 
-// ── sitemap 우선순위 ─────────────────────────────────────────────────────────
+// ── sitemap 정적 페이지 · 우선순위 ───────────────────────────────────────────
+
+/**
+ * 글이 아닌 정적 페이지 — sitemap에 실린다.
+ *
+ * `/`와 `/posts/`는 여기 없다. 그 둘은 패키지가 소유한 라우트 모양이라 언제나
+ * 나가고(`generate-sitemap.ts`), 여기에는 **이 사이트에만 있는 페이지**를 적는다.
+ * 패키지 기본값은 비어 있다 — 어떤 페이지가 있는지는 앱만 알기 때문이다.
+ */
+export const SITEMAP_STATIC_PAGES = [
+  { path: '/about/', priority: '0.7', lastmod: ABOUT_PAGE_MODIFIED },
+] as const satisfies SitemapConfig['staticPages'];
 
 /**
  * sitemap의 `<priority>` 튜닝 — **어떤 글이 대표작인가**라는 편집 판단이라
@@ -164,7 +181,10 @@ export const SITEMAP_PRIORITY = {
     'nextjs-contributor',
     'first-open-source-contribution',
   ],
-} as const satisfies SitemapConfig;
+} as const satisfies Pick<
+  SitemapConfig,
+  'highPriorityFolders' | 'highPrioritySlugs'
+>;
 
 // ── llms.txt 산문 ────────────────────────────────────────────────────────────
 
@@ -212,8 +232,6 @@ export const SITE = {
   descriptionExpanded: SITE_DESCRIPTION_EXPANDED,
   ogDefaultImage: OG_DEFAULT_IMAGE,
   rssPath: RSS_PATH,
-  aboutPageModified: ABOUT_PAGE_MODIFIED,
-  mergedPrCountFallback: MERGED_PR_COUNT_FALLBACK,
 } as const satisfies SiteConfig;
 
 export const AUTHOR = {
@@ -227,8 +245,11 @@ export const AUTHOR = {
 /**
  * `llms.txt`의 `## Docs` 절 — 라벨과 한 줄 설명.
  *
- * URL은 넣지 않는다. 경로 계약(`/`·`/posts/`·`/series/`·`/about/`·
- * `/llms-full.txt`)은 패키지가 조립하고, 여기서 정하는 것은 문구뿐이다.
+ * 패키지가 소유한 셋(`home`·`archive`·`full` → `/`·`/posts/`·`/llms-full.txt`)은
+ * URL을 넣지 않는다 — 그 경로는 패키지가 정의하는 라우트·산출물이라 여기서 정하는
+ * 것은 문구뿐이다. 반대로 `extra`는 **이 사이트에만 있는 페이지**라 경로까지 여기서
+ * 준다. 패키지에는 이 목록의 기본값이 없다(빈 배열) — 소개·시리즈 페이지가 있는지는
+ * 이 앱만 알기 때문이다.
  * `{count}`는 산출 시점의 발행 글 수로 치환된다 — 숫자를 손으로 적어 두면
  * 예전 정적 llms.txt가 그랬듯 실제 글 수와 갈라진다.
  *
@@ -246,16 +267,21 @@ export const LLMS_DOCS = {
     summary:
       'Complete archive of {count} frontend engineering articles organized by topic and series.',
   },
-  series: {
-    label: '시리즈 목록',
-    summary: 'Multi-part series, each readable in order from part 1.',
-  },
-  about: {
-    label: '소개',
-    summary: 'Author profile, open source contributions, and conference talks.',
-  },
   full: {
     label: '전문 텍스트',
     summary: 'Full post text for retrieval.',
   },
+  extra: [
+    {
+      path: '/series/',
+      label: '시리즈 목록',
+      summary: 'Multi-part series, each readable in order from part 1.',
+    },
+    {
+      path: '/about/',
+      label: '소개',
+      summary:
+        'Author profile, open source contributions, and conference talks.',
+    },
+  ],
 } as const satisfies LlmsDocsConfig;
