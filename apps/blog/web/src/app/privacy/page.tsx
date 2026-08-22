@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   },
 };
 
-const LAST_UPDATED = '2026년 3월 15일';
+const LAST_UPDATED = '2026년 8월 21일';
 
 export default function PrivacyPage() {
   return (
@@ -127,6 +127,29 @@ export default function PrivacyPage() {
                 </div>
                 <div>
                   <h3 className={css({ fontWeight: 'semibold', mb: '1' })}>
+                    Google Tag Manager · Microsoft Clarity
+                  </h3>
+                  <p className={css({ fontSize: 'sm' })}>
+                    분석 태그 관리에 Google Tag Manager를 사용하며, 이를 통해
+                    Microsoft Clarity가 로드됩니다. Clarity는 사용 행태
+                    분석(히트맵, 세션 리플레이)을 위해 서드파티 쿠키를
+                    사용합니다. 자세한 내용은{' '}
+                    <a
+                      href="https://privacy.microsoft.com/privacystatement"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={css({
+                        color: 'accent.600',
+                        _hover: { color: 'accent.700' },
+                      })}
+                    >
+                      Microsoft 개인정보처리방침
+                    </a>
+                    을 참고하세요.
+                  </p>
+                </div>
+                <div>
+                  <h3 className={css({ fontWeight: 'semibold', mb: '1' })}>
                     Supabase
                   </h3>
                   <p className={css({ fontSize: 'sm' })}>
@@ -172,6 +195,7 @@ export default function PrivacyPage() {
               >
                 <li>조회수 중복 집계 방지 (6시간 쿨다운)</li>
                 <li>Google Analytics 방문자 식별 (익명)</li>
+                <li>Microsoft Clarity 사용 행태 분석 (서드파티 쿠키)</li>
               </ul>
               <p className={css({ mt: '3' })}>
                 브라우저 설정에서 쿠키를 비활성화할 수 있으나, 일부 기능이 정상
