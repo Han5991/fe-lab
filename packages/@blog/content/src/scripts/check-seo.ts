@@ -1,20 +1,20 @@
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { join, relative, resolve, sep } from 'node:path';
-import { SITE_URL, SITE_NAME } from '../shared/constants.ts';
-// SEO 임계값은 기본 설정 슬라이스에서 — validate-posts(frontmatter.ts)와 같은
-// 출처를 본다. 사이트 정체성 상수와 마찬가지로 seo 예산의 defineContent
-// 오버라이드는 아직 이 게이트에 배선돼 있지 않다(contentValues.ts의 제약 주석
-// 참고 — 오버라이드하려면 두 게이트에 함께 배선할 것).
-import { DEFAULT_SEO } from '../shared/contentConfig.ts';
+// 사이트 정체성과 SEO 임계값은 **해석된 설정**에서 온다 — validate-posts
+// (frontmatter.ts)와 정확히 같은 범위를 보는 게이트라 같은 출처를 봐야 한다.
+import type { SeoConfig, SiteConfig } from '../shared/contentConfig.ts';
 import { decodeUrlSafe } from '../shared/url.ts';
 import type { ContentContext } from './context.ts';
 import { ARTIFACTS, type ArtifactRelation } from './artifacts.ts';
 
-const {
-  titleMaxLength: SEO_TITLE_MAX_LENGTH,
-  descriptionMinLength: SEO_DESCRIPTION_MIN_LENGTH,
-  descriptionMaxLength: SEO_DESCRIPTION_MAX_LENGTH,
-} = DEFAULT_SEO;
+/** 이 게이트가 설정에서 읽는 슬라이스 — main이 컨텍스트에서 채운다. */
+export interface SeoCheckConfig {
+  site: Pick<SiteConfig, 'url' | 'name'>;
+  seo: Pick<
+    SeoConfig,
+    'titleMaxLength' | 'descriptionMinLength' | 'descriptionMaxLength'
+  >;
+}
 
 /**
  * 빌드 산출물(`out/`)의 HTML을 파싱해 SEO 계약을 검사합니다.
@@ -162,7 +162,18 @@ export function collectPages(outDir: string): Map<string, string> {
   return pages;
 }
 
-export function checkPages(pages: Map<string, string>): SeoViolation[] {
+export function checkPages(
+  pages: Map<string, string>,
+  config: SeoCheckConfig,
+): SeoViolation[] {
+  const {
+    site: { url: siteUrl, name: siteName },
+    seo: {
+      titleMaxLength: SEO_TITLE_MAX_LENGTH,
+      descriptionMinLength: SEO_DESCRIPTION_MIN_LENGTH,
+      descriptionMaxLength: SEO_DESCRIPTION_MAX_LENGTH,
+    },
+  } = config;
   const violations: SeoViolation[] = [];
   const descriptions = new Map<string, string[]>();
 
@@ -237,24 +248,24 @@ export function checkPages(pages: Map<string, string>): SeoViolation[] {
     if (!seo.canonical) {
       add('missing-canonical', 'canonical이 없습니다');
     } else if (
-      decodeUrlSafe(seo.canonical) !== decodeUrlSafe(`${SITE_URL}${page}`)
+      decodeUrlSafe(seo.canonical) !== decodeUrlSafe(`${siteUrl}${page}`)
     ) {
       add(
         'canonical-mismatch',
-        `canonical이 자기 URL과 다릅니다: ${seo.canonical} ≠ ${SITE_URL}${page}`,
+        `canonical이 자기 URL과 다릅니다: ${seo.canonical} ≠ ${siteUrl}${page}`,
       );
     }
 
-    // 기대값(SITE_NAME)과 직접 비교한다. 페이지끼리만 비교하면, 모든 페이지가
+    // 기대값(설정의 site.name)과 직접 비교한다. 페이지끼리만 비교하면, 모든 페이지가
     // 같은 상수를 쓰게 된 지금은 규칙이 영영 발동하지 않는다 — 나중에 누가
     // 상수를 안 쓰고 문자열을 박아도 "다 같으니 통과"가 되어 버린다.
     if (!seo.ogSiteName) {
       add('missing-og-site-name', 'og:site_name이 없습니다');
     } else {
-      if (seo.ogSiteName !== SITE_NAME) {
+      if (seo.ogSiteName !== siteName) {
         add(
           'unexpected-og-site-name',
-          `og:site_name이 사이트 이름과 다릅니다: ${seo.ogSiteName} ≠ ${SITE_NAME}`,
+          `og:site_name이 사이트 이름과 다릅니다: ${seo.ogSiteName} ≠ ${siteName}`,
         );
       }
     }
@@ -306,14 +317,17 @@ function listFilesRecursive(dir: string): string[] {
 }
 
 /** ARTIFACTS 레지스트리를 순회하며 각 산출물의 글 URL 집합을 수집합니다. */
-export function collectArtifacts(outDir: string): CollectedArtifact[] {
+export function collectArtifacts(
+  outDir: string,
+  siteUrl: string,
+): CollectedArtifact[] {
   return ARTIFACTS.map(spec => {
     const target = join(outDir, spec.path);
     const urls = !existsSync(target)
       ? null
       : spec.kind === 'file'
-        ? spec.extractUrls(readFileSync(target, 'utf8'))
-        : spec.extractUrls(listFilesRecursive(target));
+        ? spec.extractUrls(readFileSync(target, 'utf8'), siteUrl)
+        : spec.extractUrls(listFilesRecursive(target), siteUrl);
     return {
       name: spec.name,
       relation: spec.relation,
@@ -401,9 +415,11 @@ export function main(ctx: ContentContext, target?: string) {
     );
     process.exit(1);
   }
-  const violations = checkPages(pages);
+  const violations = checkPages(pages, ctx.config);
   // 파생 산출물은 레지스트리 순회로 — 없으면 missing-artifact, 있으면 글 집합 대조.
-  violations.push(...checkArtifacts(collectArtifacts(outDir)));
+  violations.push(
+    ...checkArtifacts(collectArtifacts(outDir, ctx.config.site.url)),
+  );
 
   if (violations.length === 0) {
     console.log(`✓ ${pages.size}개 페이지 SEO 검사 통과`);

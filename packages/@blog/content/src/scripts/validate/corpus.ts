@@ -6,7 +6,7 @@
  * 훑은 **뒤에** 한 번 돕니다.
  */
 import { isPostFile, resolveExcerpt } from '../../post/index.ts';
-import type { Issue, PostRecord, ValidateOptions } from './shared.ts';
+import type { Issue, PostRecord, ValidateContext } from './shared.ts';
 import { resolveSeverity, isVisibleFrontmatter } from './rules.ts';
 
 // 명시 slug가 없으면 파일경로(확장자 제거)를 기본 slug로 사용 — repository.ts의 rawSlug 규칙과 동일
@@ -32,13 +32,20 @@ function deriveDefaultSlug(relPath: string): string {
  */
 export function detectDuplicateDescriptions(
   records: PostRecord[],
-  options: ValidateOptions = {},
+  options: ValidateContext,
 ): Issue[] {
   const byDescription = new Map<string, PostRecord[]>();
   for (const record of records) {
-    if (!isPostFile(record.data) || !isVisibleFrontmatter(record.data))
+    if (
+      !isPostFile(record.data) ||
+      !isVisibleFrontmatter(record.data, options.timezone)
+    )
       continue;
-    const description = resolveExcerpt(record.content, record.data['excerpt']);
+    const description = resolveExcerpt(
+      record.content,
+      record.data['excerpt'],
+      options.seo.descriptionMaxLength,
+    );
     const arr = byDescription.get(description) ?? [];
     arr.push(record);
     byDescription.set(description, arr);
@@ -84,7 +91,7 @@ export function detectDuplicateSlugs(records: PostRecord[]): Issue[] {
       issues.push({
         file,
         line: null,
-        severity: resolveSeverity('duplicate-slug', {}, {}),
+        severity: resolveSeverity('duplicate-slug', {}),
         rule: 'duplicate-slug',
         message: `slug \`${slug}\`이(가) 다른 글과 충돌합니다 (명시 slug ↔ 파일명 기반 slug 포함 검사): ${files.filter(f => f !== file).join(', ')}`,
       });

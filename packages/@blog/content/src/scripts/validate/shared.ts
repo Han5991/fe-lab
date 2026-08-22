@@ -6,6 +6,12 @@
  * - CLI 진입점과 재수출은 `../validate-posts.ts`
  */
 
+import type {
+  ContentConfig,
+  SeoConfig,
+  TimezoneConfig,
+} from '../../shared/contentConfig.ts';
+
 export type Severity = 'error' | 'warning';
 
 export interface Issue {
@@ -23,6 +29,21 @@ export interface PostRecord {
   content: string;
 }
 
+/**
+ * 규칙 함수들이 받는 것 — 실행 옵션 + **설정에서 온 슬라이스**.
+ *
+ * 예전에는 SEO 예산·다이어그램 이름·타임존을 규칙 파일이 모듈 스코프 상수로
+ * 직접 읽어서, `defineContent`로 덮어도 이 게이트만 옛 값을 보고 있었다.
+ * `main`이 컨텍스트의 설정으로 채워 넘긴다.
+ */
+export interface ValidateContext extends ValidateOptions {
+  seo: SeoConfig;
+  timezone: Pick<TimezoneConfig, 'isoOffset'>;
+  /** `hero`가 가리킬 수 있는 이름 — 설정의 registries.diagramNames */
+  diagramNames: readonly string[];
+}
+
+/** CLI가 주는 실행 옵션. 설정 슬라이스는 `ValidateContext`가 얹는다. */
 export interface ValidateOptions {
   /**
    * SEO 계약 위반을 에러로 취급할지. **prebuild에서만** 켭니다.
@@ -38,6 +59,24 @@ export interface ValidateOptions {
    * dev 서버가 안 뜨면 도구가 방해물이 됩니다.
    */
   strict?: boolean;
+}
+
+/**
+ * 해석된 설정 + 실행 옵션 → 규칙이 받는 컨텍스트.
+ *
+ * 진입점(validate-posts main)과 테스트가 **같은 변환**을 쓴다 — 테스트가 손으로
+ * 조립하면 게이트가 실제로 보는 슬라이스와 갈라진다.
+ */
+export function toValidateContext(
+  config: Pick<ContentConfig, 'seo' | 'timezone' | 'registries'>,
+  options: ValidateOptions = {},
+): ValidateContext {
+  return {
+    ...options,
+    seo: config.seo,
+    timezone: config.timezone,
+    diagramNames: config.registries.diagramNames,
+  };
 }
 
 /** frontmatter 블록 안에서 `key:` 줄의 1-based 줄 번호. 없으면 null. */

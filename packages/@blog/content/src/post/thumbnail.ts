@@ -1,4 +1,8 @@
-import { SITE_URL, OG_DEFAULT_IMAGE } from '../shared/constants.ts';
+// `ogDefaultImage`·`siteUrl`을 설정 슬라이스가 아니라 **스칼라**로 받는 함수가
+// 있는 이유: 이 둘은 클라이언트 컴포넌트(글 카드)가 부르는데, 소비자가 값을
+// 객체째 넘기면 번들러가 필드 단위로 털어내지 못해 사이트 소개문 같은 큰 값까지
+// 클라이언트 번들에 실린다. 서버 전용인 절대 URL 빌더만 슬라이스를 받는다.
+import type { SiteConfig } from '../shared/contentConfig.ts';
 import type { PostData } from './types.ts';
 import { encodePostSlug } from './utils.ts';
 
@@ -12,10 +16,11 @@ import { encodePostSlug } from './utils.ts';
  */
 export function resolveThumbnailUrl(
   post: Pick<PostData, 'thumbnail' | 'relativeDir' | 'slug'>,
+  ogDefaultImage: string,
 ): string {
   const { thumbnail, relativeDir, slug } = post;
   if (!thumbnail) {
-    return slug ? `/og/${encodePostSlug(slug)}.png` : OG_DEFAULT_IMAGE;
+    return slug ? `/og/${encodePostSlug(slug)}.png` : ogDefaultImage;
   }
   if (thumbnail.startsWith('http') || thumbnail.startsWith('/')) {
     return thumbnail;
@@ -71,9 +76,10 @@ export function thumbnailWebpRelPath(
  */
 export function resolveThumbnailSrc(
   post: Pick<PostData, 'thumbnail' | 'relativeDir' | 'slug'>,
+  ogDefaultImage: string,
 ): string {
   if (!isOptimizableThumbnail(post.thumbnail)) {
-    return resolveThumbnailUrl(post);
+    return resolveThumbnailUrl(post, ogDefaultImage);
   }
   // 디렉터리는 세그먼트별(구분자 보존), 파일명은 통째로 인코딩 —
   // resolveThumbnailUrl과 같은 규칙이라 경로 형태가 어긋나지 않습니다.
@@ -86,8 +92,9 @@ export function resolveThumbnailSrc(
  */
 export function resolveAbsoluteThumbnailUrl(
   post: Pick<PostData, 'thumbnail' | 'relativeDir' | 'slug'>,
+  site: Pick<SiteConfig, 'url' | 'ogDefaultImage'>,
 ): string {
-  const url = resolveThumbnailUrl(post);
+  const url = resolveThumbnailUrl(post, site.ogDefaultImage);
   if (url.startsWith('http')) return url;
-  return `${SITE_URL}${url}`;
+  return `${site.url}${url}`;
 }

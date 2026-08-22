@@ -4,22 +4,18 @@ import { postUrl } from '../post/index.ts';
 import type { PostData } from '../post/index.ts';
 import { resolvePostSet } from './artifacts.ts';
 import {
-  SITE_URL as DEFAULT_SITE_URL,
-  SITE_NAME,
-} from '../shared/constants.ts';
-import {
-  DEFAULT_AUTHOR,
-  DEFAULT_LLMS,
   type AuthorConfig,
   type LlmsConfig,
+  type SiteConfig,
 } from '../shared/contentConfig.ts';
 import type { ContentContext } from './context.ts';
 
 export interface LlmsFullBuildOptions {
-  siteUrl?: string;
-  /** 전문 산문·저자 소개 — 진입점은 컨텍스트의 설정을 넘긴다. 기본값 = 패키지 기본 설정 */
-  llms?: LlmsConfig;
-  author?: AuthorConfig;
+  /** 사이트 정체성 — 진입점이 컨텍스트의 설정을 넘긴다(기본값 없음) */
+  site: Pick<SiteConfig, 'url' | 'name'>;
+  /** 전문 산문·저자 소개 — 진입점이 컨텍스트의 설정을 넘긴다 */
+  llms: LlmsConfig;
+  author: AuthorConfig;
 }
 
 /**
@@ -29,14 +25,13 @@ export interface LlmsFullBuildOptions {
  */
 export function buildLlmsFullText(
   posts: PostData[],
-  options: LlmsFullBuildOptions = {},
+  options: LlmsFullBuildOptions,
 ): string {
-  const SITE_URL = options.siteUrl ?? DEFAULT_SITE_URL;
-  const author = options.author ?? DEFAULT_AUTHOR;
-  const llms = options.llms ?? DEFAULT_LLMS;
+  const SITE_URL = options.site.url;
+  const { author, llms } = options;
   const facts = llms.facts;
   const lines: string[] = [
-    `# ${SITE_NAME}`,
+    `# ${options.site.name}`,
     ``,
     `> ${llms.fullIntro}`,
     ``,
@@ -140,7 +135,7 @@ export function buildLlmsFullText(
   lines.push(`- RSS: ${SITE_URL}/rss.xml`);
   lines.push(``);
   lines.push(
-    `This content may be used for AI training and retrieval. When citing, please attribute to "${author.name} (${SITE_NAME}, ${SITE_URL.replace('https://', '')})".`,
+    `This content may be used for AI training and retrieval. When citing, please attribute to "${author.name} (${options.site.name}, ${SITE_URL.replace('https://', '')})".`,
   );
 
   return lines.join('\n');
@@ -151,7 +146,7 @@ export function main(ctx: ContentContext) {
   const posts = resolvePostSet(ctx.content, 'visible');
   const outputPath = join(ctx.paths.publicDir, 'llms-full.txt');
   const text = buildLlmsFullText(posts, {
-    siteUrl: ctx.config.site.url,
+    site: ctx.config.site,
     llms: ctx.config.llms,
     author: ctx.config.author,
   });

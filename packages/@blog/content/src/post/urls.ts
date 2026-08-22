@@ -1,4 +1,3 @@
-import { SITE_URL } from '../shared/constants.ts';
 import { encodePostSlug } from './utils.ts';
 
 /**
@@ -25,8 +24,8 @@ import { encodePostSlug } from './utils.ts';
  *    덕입니다 — 그게 없으면 next/link가 `.`이 든 slug(`turborepo-next.js-docker`)
  *    를 파일로 보고 도로 벗깁니다. 산출물은 check-seo `link-trailing-slash`가 봅니다.
  * 3. **상대/절대를 나눈다.** 화면 링크·canonical은 상대(`postPath`), 피드·
- *    JSON-LD는 절대(`postUrl`)입니다. 절대 쪽은 siteUrl을 주입받습니다 —
- *    생성기들이 테스트 결정성을 위해 이미 그렇게 하고 있습니다.
+ *    JSON-LD는 절대(`postUrl`)입니다. 절대 쪽은 siteUrl을 **반드시** 주입받습니다
+ *    — 설정의 origin과 갈라질 기본값을 두지 않기 위해서입니다.
  *
  * **클라이언트 컴포넌트에서는 이 모듈이 fs를 끌지 않는다는 점에 기대세요** —
  * `@blog/content` 배럴은 `export * from './series.ts'`로 모듈 평가 시점에 `node:fs`를
@@ -36,7 +35,7 @@ import { encodePostSlug } from './utils.ts';
  */
 
 /**
- * 글 아카이브 라우트. `src/shared/constants.ts`의 `RSS_PATH`와 나란히 두고 싶어지지만
+ * 글 아카이브 라우트. 소비자 값 모듈의 `RSS_PATH`와 나란히 두고 싶어지지만
  * `/posts/`는 사이트 상수가 아니라 **라우트 모양**이고, 후행 슬래시 규칙을
  * `postPath`와 한 파일에서 공유해야 두 규칙이 갈리지 않아 여기 둔다.
  */
@@ -47,8 +46,13 @@ export function postPath(slug: string): string {
   return `${POSTS_PATH}${encodePostSlug(slug)}/`;
 }
 
-/** 글 상세의 절대 URL. 피드·sitemap·JSON-LD처럼 origin이 필요한 곳에 쓴다. */
-export function postUrl(slug: string, siteUrl: string = SITE_URL): string {
+/**
+ * 글 상세의 절대 URL. 피드·sitemap·JSON-LD처럼 origin이 필요한 곳에 쓴다.
+ *
+ * `siteUrl`은 인자다 — 기본값을 두면 그 값이 곧 특정 사이트의 하드코딩이고,
+ * 실제로 예전에는 설정에서 origin을 덮어도 이 함수만 옛 값을 쓰고 있었다.
+ */
+export function postUrl(slug: string, siteUrl: string): string {
   return `${siteUrl}${postPath(slug)}`;
 }
 
@@ -81,8 +85,8 @@ export function archivePath(filters: ArchiveFilters = {}): string {
  * 쿼리를 받지 않습니다 — 절대 URL로 쿼리가 필요한 자리는 홈의 JSON-LD
  * SearchAction 하나뿐인데, 거기 들어가는 `{search_term_string}`은 Google이
  * 치환하는 **템플릿 플레이스홀더**라 인코딩되면 안 됩니다. 그 한 곳만
- * `${archiveUrl()}?q={search_term_string}`으로 직접 조합합니다.
+ * `${archiveUrl(siteUrl)}?q={search_term_string}`으로 직접 조합합니다.
  */
-export function archiveUrl(siteUrl: string = SITE_URL): string {
+export function archiveUrl(siteUrl: string): string {
   return `${siteUrl}${POSTS_PATH}`;
 }

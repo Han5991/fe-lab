@@ -5,37 +5,34 @@
  * 말하는 값만 둡니다. JSON-LD의 `@graph` 세 노드(WebSite·Organization·Person)는
  * 다른 페이지가 `@id`로 참조하는 정의라 홈에서 한 번만 내보냅니다.
  */
+import contentConfig from '@/content.config.mts';
 import type { Metadata } from 'next';
-import {
-  archiveUrl,
-  SITE_URL,
-  SITE_NAME,
-  SITE_AUTHOR_GITHUB,
-  SITE_AUTHOR_LINKEDIN,
-  SITE_DESCRIPTION_EXPANDED,
-  OG_DEFAULT_IMAGE,
-} from '@blog/content';
+import { archiveUrl } from '@blog/content';
+
+// 사이트 정체성·저자·SEO 예산은 해석된 설정에서 온다 — 값의 출처는
+// `content.values.mts`이고, 여기서 리터럴을 다시 읽지 않는다(서버 전용 모듈).
+const { site: SITE, author: AUTHOR } = contentConfig;
 
 // 제목은 meta·og·twitter 세 곳에 나가므로 한 번만 쓴다 — 한 곳만 고쳐지면
 // 검색 결과와 공유 카드가 다른 말을 한다.
-const PAGE_TITLE = `${SITE_NAME} | 프론트엔드 실험실`;
+const PAGE_TITLE = `${SITE.name} | 프론트엔드 실험실`;
 
 export function buildHomeMetadata(): Metadata {
   return {
     title: PAGE_TITLE,
-    description: SITE_DESCRIPTION_EXPANDED,
+    description: SITE.descriptionExpanded,
     alternates: { canonical: '/' },
     openGraph: {
       title: PAGE_TITLE,
-      description: SITE_DESCRIPTION_EXPANDED,
-      url: SITE_URL,
-      siteName: SITE_NAME,
+      description: SITE.descriptionExpanded,
+      url: SITE.url,
+      siteName: SITE.name,
       images: [
         {
-          url: `${SITE_URL}${OG_DEFAULT_IMAGE}`,
+          url: `${SITE.url}${SITE.ogDefaultImage}`,
           width: 1200,
           height: 630,
-          alt: `${SITE_NAME} Blog`,
+          alt: `${SITE.name} Blog`,
         },
       ],
       locale: 'ko_KR',
@@ -44,8 +41,8 @@ export function buildHomeMetadata(): Metadata {
     twitter: {
       card: 'summary_large_image',
       title: PAGE_TITLE,
-      description: SITE_DESCRIPTION_EXPANDED,
-      images: [`${SITE_URL}${OG_DEFAULT_IMAGE}`],
+      description: SITE.descriptionExpanded,
+      images: [`${SITE.url}${SITE.ogDefaultImage}`],
     },
   };
 }
@@ -56,13 +53,13 @@ export function buildHomeJsonLd() {
     '@graph': [
       {
         '@type': 'WebSite',
-        '@id': `${SITE_URL}/#website`,
+        '@id': `${SITE.url}/#website`,
         name: 'Frontend Lab',
         alternateName: '프론트엔드 실험실',
-        url: SITE_URL,
-        description: SITE_DESCRIPTION_EXPANDED,
+        url: SITE.url,
+        description: SITE.descriptionExpanded,
         inLanguage: 'ko',
-        publisher: { '@id': `${SITE_URL}/#organization` },
+        publisher: { '@id': `${SITE.url}/#organization` },
         potentialAction: {
           '@type': 'SearchAction',
           target: {
@@ -71,32 +68,32 @@ export function buildHomeJsonLd() {
             // 인코딩되면 안 된다 — archivePath({ q })를 거치면
             // `%7Bsearch_term_string%7D`가 되어 템플릿으로 인식되지 않는다.
             // 그래서 여기만 아카이브 절대 URL + 수동 쿼리로 조합한다.
-            urlTemplate: `${archiveUrl()}?q={search_term_string}`,
+            urlTemplate: `${archiveUrl(SITE.url)}?q={search_term_string}`,
           },
           'query-input': 'required name=search_term_string',
         },
       },
       {
         '@type': 'Organization',
-        '@id': `${SITE_URL}/#organization`,
+        '@id': `${SITE.url}/#organization`,
         name: 'Frontend Lab',
-        url: SITE_URL,
+        url: SITE.url,
         logo: {
           '@type': 'ImageObject',
-          url: `${SITE_URL}/logo-wordmark.svg`,
+          url: `${SITE.url}/logo-wordmark.svg`,
           width: 280,
           height: 60,
         },
-        description: SITE_DESCRIPTION_EXPANDED,
-        founder: { '@id': `${SITE_URL}/#author` },
-        sameAs: [SITE_AUTHOR_GITHUB, SITE_AUTHOR_LINKEDIN],
+        description: SITE.descriptionExpanded,
+        founder: { '@id': `${SITE.url}/#author` },
+        sameAs: [AUTHOR.github, AUTHOR.linkedin],
       },
       {
         '@type': 'Person',
-        '@id': `${SITE_URL}/#author`,
+        '@id': `${SITE.url}/#author`,
         name: 'Sangwook Han',
         alternateName: '한상욱',
-        url: SITE_URL,
+        url: SITE.url,
         image: {
           '@type': 'ImageObject',
           url: 'https://github.com/Han5991.png?size=400',
@@ -114,7 +111,7 @@ export function buildHomeJsonLd() {
           'Frontend Architecture',
           'Open Source',
         ],
-        sameAs: [SITE_AUTHOR_GITHUB, SITE_AUTHOR_LINKEDIN],
+        sameAs: [AUTHOR.github, AUTHOR.linkedin],
       },
     ],
   };

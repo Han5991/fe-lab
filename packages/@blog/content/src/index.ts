@@ -17,9 +17,10 @@ export * from './post/index.ts';
 // 문은 이 배럴 하나뿐이므로 여기서 연다.
 export * from './post/filtering.ts';
 export * from './post/assetUrl.ts';
-export * from './post/diagramNames.ts';
 // shared 순수 유틸 — 옛 lib/shared. contentPaths(절대 경로 해석)는 node 전용.
-export * from './shared/constants.ts';
+// 사이트 고유 값(SITE_URL·TIMEZONE·다이어그램 이름 …)은 여기서 나가지 않는다 —
+// 소비자의 값 모듈이 소유하고, 이 패키지는 그것을 설정으로 받는다
+// (contentConfig.ts의 `ContentValues`).
 export * from './shared/contentConfig.ts';
 export * from './shared/contentPaths.ts';
 export * from './shared/dates.ts';

@@ -1,5 +1,7 @@
 'use client';
 
+import { TIMEZONE } from '@/content.values.mts';
+import { getKSTDateISO } from '@blog/content';
 import { useState } from 'react';
 import type { PostStatDetail } from '@/src/hooks/useAdminViews';
 import { computeBriefStats } from '@/src/hooks/usePostDetailStats';
@@ -36,12 +38,12 @@ interface Props {
 
 export function PostAccordion({ post }: Props) {
   const [isOpen, setIsOpen] = useState(false);
-  const briefStats = computeBriefStats(post);
+  const briefStats = computeBriefStats(post, getKSTDateISO(TIMEZONE));
 
   // frontmatter의 status(발행 의도)가 아니라 **지금 실제로 공개 중인지**로 배지를
   // 그립니다. 판정은 도메인 함수 하나에 위임합니다 — 예전에는 이 자리에서 규칙을
   // 다시 구현하다 `date` 폴백과 KST 파싱을 둘 다 놓쳤습니다.
-  const state = resolvePostState(post);
+  const state = resolvePostState(post, TIMEZONE);
   // scheduledDate는 시각까지 지정할 때만 쓰는 선택 필드라 보통은 date가 공개 시각입니다.
   const publishAt = post.scheduledDate ?? post.date;
 
@@ -160,7 +162,7 @@ export function PostAccordion({ post }: Props) {
               state === 'scheduled' && publishAt
                 ? // 'YYYY-MM-DD'를 native Date에 넣으면 UTC 자정으로 파싱돼
                   // KST 09:00으로 잘못 표시됩니다.
-                  `예약: ${parseScheduledDateKST(publishAt).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })}`
+                  `예약: ${parseScheduledDateKST(TIMEZONE, publishAt).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })}`
                 : undefined
             }
           >

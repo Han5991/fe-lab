@@ -7,6 +7,14 @@
  */
 import { expect, test } from 'vitest';
 import { RULES, SEO_PUBLISH, resolveSeverity, type RuleId } from './rules.ts';
+import { toValidateContext } from './shared.ts';
+import { defineTestContent } from '../../shared/testValues.ts';
+import { sep } from 'node:path';
+
+// 승격 판정은 설정의 타임존(예약 글이 지금 공개인가)을 본다 — 진입점과 같은 변환.
+const CONFIG = defineTestContent({ root: `${sep}tmp${sep}app` });
+const CTX = toValidateContext(CONFIG);
+const STRICT_CTX = toValidateContext(CONFIG, { strict: true });
 
 test('RULES: 규칙은 정확히 29개', () => {
   // `non-string-field`가 세다 보면 흔히 빠진다 — 개수를 고정해 추가·삭제가
@@ -64,17 +72,15 @@ const PUBLISHED = { title: 'x', status: 'published', date: '2020-01-01' };
 test('resolveSeverity: 센티널 규칙은 strict + 발행 대상일 때만 에러', () => {
   const rule: RuleId = 'missing-excerpt';
   // strict가 아니면 발행 글도 경고 (predev/lint:posts가 이 경로)
-  expect(resolveSeverity(rule, PUBLISHED, {})).toBe('warning');
+  expect(resolveSeverity(rule, PUBLISHED, CTX)).toBe('warning');
   // strict + 발행 → 에러
-  expect(resolveSeverity(rule, PUBLISHED, { strict: true })).toBe('error');
+  expect(resolveSeverity(rule, PUBLISHED, STRICT_CTX)).toBe('error');
   // strict라도 draft는 경고 — 빌드에서 빠지므로 check-seo가 볼 일이 없다
   expect(
-    resolveSeverity(rule, { ...PUBLISHED, status: 'draft' }, { strict: true }),
+    resolveSeverity(rule, { ...PUBLISHED, status: 'draft' }, STRICT_CTX),
   ).toBe('warning');
   // status가 아예 없는 메타 노트는 발행 대상이 아니다
-  expect(resolveSeverity(rule, { title: 'x' }, { strict: true })).toBe(
-    'warning',
-  );
+  expect(resolveSeverity(rule, { title: 'x' }, STRICT_CTX)).toBe('warning');
 });
 
 test('resolveSeverity: 공개 전 예약 글은 strict라도 경고, 공개일이 지나면 에러', () => {
@@ -83,14 +89,14 @@ test('resolveSeverity: 공개 전 예약 글은 strict라도 경고, 공개일�
     resolveSeverity(
       rule,
       { title: 'x', status: 'scheduled', date: '2999-12-01' },
-      { strict: true },
+      STRICT_CTX,
     ),
   ).toBe('warning');
   expect(
     resolveSeverity(
       rule,
       { title: 'x', status: 'scheduled', date: '2020-01-01' },
-      { strict: true },
+      STRICT_CTX,
     ),
   ).toBe('error');
 });
@@ -103,18 +109,18 @@ test('resolveSeverity: 무따옴표 date(YAML Date 객체)도 공개 판정에 �
     resolveSeverity(
       rule,
       { title: 'x', status: 'scheduled', date: new Date('2020-01-01') },
-      { strict: true },
+      STRICT_CTX,
     ),
   ).toBe('error');
 });
 
 test('resolveSeverity: 고정 심각도 규칙은 strict와 무관하게 테이블 값 그대로', () => {
-  expect(resolveSeverity('missing-title', PUBLISHED, {})).toBe('error');
-  expect(
-    resolveSeverity('missing-title', { title: 'x' }, { strict: true }),
-  ).toBe('error');
-  expect(resolveSeverity('duplicate-tags', PUBLISHED, {})).toBe('warning');
-  expect(resolveSeverity('duplicate-tags', PUBLISHED, { strict: true })).toBe(
+  expect(resolveSeverity('missing-title', PUBLISHED, CTX)).toBe('error');
+  expect(resolveSeverity('missing-title', { title: 'x' }, STRICT_CTX)).toBe(
+    'error',
+  );
+  expect(resolveSeverity('duplicate-tags', PUBLISHED, CTX)).toBe('warning');
+  expect(resolveSeverity('duplicate-tags', PUBLISHED, STRICT_CTX)).toBe(
     'warning',
   );
 });

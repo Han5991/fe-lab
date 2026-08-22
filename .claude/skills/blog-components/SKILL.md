@@ -90,15 +90,14 @@ frontmatter 한 줄. **등록된 이름만** 받는다(선언형 태그는 히�
 hero: deploy-pipeline
 ```
 
-등록된 **이름 목록**은 `@blog/content`의 `src/post/diagramNames.ts`(값은
-`src/shared/contentValues.ts`의 `DEFAULT_DIAGRAM_NAMES`)에, 이름 → 컴포넌트 매핑은
-`apps/blog/web/src/components/diagram/registry.ts` 에 있다. 오타는 `lint:posts` 가
+등록된 **이름 목록**은 앱 루트 `content.values.mts`의 `DIAGRAM_NAMES`에, 이름 →
+컴포넌트 매핑은 `apps/blog/web/src/components/diagram/registry.ts` 에 있다. 오타는 `lint:posts` 가
 `unknown-hero-diagram` 에러로 잡는다.
 
 ### 선언형으로 안 되는 그림
 
 떨어진 두 노드를 직접 잇거나, 되돌아오는 화살표·분기·그룹 박스가 필요하면 코드로 간다.
-컴포넌트 파일 1개 + `@blog/content`의 `src/shared/contentValues.ts`(`DEFAULT_DIAGRAM_NAMES`)에
+컴포넌트 파일 1개 + 앱 루트 `content.values.mts`의 `DIAGRAM_NAMES`에
 이름 한 줄 + `registry.ts`의 `DIAGRAMS`에 한 줄(레지스트리 타입이 `Record<DiagramName, …>`라
 하나만 하면 컴파일이 막는다). 절차는 `design/DIAGRAM_AUTHORING.md`.
 

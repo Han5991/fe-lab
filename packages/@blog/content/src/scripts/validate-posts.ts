@@ -18,7 +18,13 @@ import { relative, posix } from 'node:path';
 import matter from 'gray-matter';
 import { collectMarkdownFiles, hasFrontmatter } from '../shared/postFiles.ts';
 import type { ContentContext } from './context.ts';
-import type { Issue, PostRecord, ValidateOptions } from './validate/shared.ts';
+import { toValidateContext } from './validate/shared.ts';
+import type {
+  Issue,
+  PostRecord,
+  ValidateContext,
+  ValidateOptions,
+} from './validate/shared.ts';
 import { validatePost } from './validate/frontmatter.ts';
 import {
   validateImageReferences,
@@ -31,7 +37,12 @@ import {
 } from './validate/corpus.ts';
 
 // ── 재수출: 기존 import 경로('./validate-posts') 유지 ────────────────────────
-export type { Issue, PostRecord, ValidateOptions } from './validate/shared.ts';
+export type {
+  Issue,
+  PostRecord,
+  ValidateContext,
+  ValidateOptions,
+} from './validate/shared.ts';
 export {
   RULES,
   SEO_PUBLISH,
@@ -62,8 +73,11 @@ function format(issue: Issue): string {
   return `  ${tag} ${loc}\n    [${issue.rule}] ${issue.message}`;
 }
 
-export function main(ctx: ContentContext, options: ValidateOptions) {
+export function main(ctx: ContentContext, runOptions: ValidateOptions) {
   const postsDir = ctx.paths.postsDir;
+  // 규칙이 참조하는 설정 슬라이스를 여기서 한 번 채운다 — 규칙 파일이 상수를
+  // 직접 읽던 시절엔 defineContent로 덮어도 이 게이트만 옛 값을 봤다.
+  const options: ValidateContext = toValidateContext(ctx.config, runOptions);
   const allFiles = collectMarkdownFiles(postsDir);
   const records: PostRecord[] = [];
   const allIssues: Issue[] = [];

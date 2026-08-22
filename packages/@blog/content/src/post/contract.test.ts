@@ -11,7 +11,7 @@
  */
 import { expect, test } from 'vitest';
 import { isPostVisible } from './visibility.ts';
-import { testContent } from './testing.ts';
+import { testConfig, testContent } from './testing.ts';
 
 // 실제 코퍼스에 앵커한 테스트 인스턴스 — 배선은 testing.ts 참고.
 const {
@@ -70,7 +70,7 @@ test('contract: 공개 글(getAllPosts)은 isPostVisible 기준 일치 (slug 집
   const visible = getAllPosts(now);
   // PostData를 그대로 넘긴다 — 필드를 골라 넘기면 여기서 가시성 규칙을 재구현하는
   // 꼴이 되어, 규칙이 바뀔 때(예: scheduled의 date 폴백 추가) 조용히 어긋난다.
-  const expected = all.filter(p => isPostVisible(p, now));
+  const expected = all.filter(p => isPostVisible(p, testConfig.timezone, now));
   const visibleSlugs = visible.map(p => p.slug).sort();
   const expectedSlugs = expected.map(p => p.slug).sort();
   expect(visibleSlugs).toStrictEqual(expectedSlugs);

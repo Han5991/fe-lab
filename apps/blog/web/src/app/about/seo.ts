@@ -7,18 +7,14 @@
  * Next `Metadata`에 매인 코드라 프레임워크 중립인 `@blog/content`가 아니라 앱에
  * 둡니다 — 글 상세의 `posts/[...slug]/nextMetadata.ts`와 같은 자리입니다.
  */
+import contentConfig from '@/content.config.mts';
 import type { Metadata } from 'next';
-import {
-  SITE_URL,
-  SITE_NAME,
-  OG_DEFAULT_IMAGE,
-  SITE_AUTHOR_GITHUB,
-  SITE_AUTHOR_LINKEDIN,
-  ABOUT_PAGE_MODIFIED,
-  TITLE_SUFFIX,
-} from '@blog/content';
 
-const PAGE_TITLE = `소개${TITLE_SUFFIX}`;
+// 사이트 정체성·저자·SEO 예산은 해석된 설정에서 온다 — 값의 출처는
+// `content.values.mts`이고, 여기서 리터럴을 다시 읽지 않는다(서버 전용 모듈).
+const { site: SITE, author: AUTHOR, seo: SEO } = contentConfig;
+
+const PAGE_TITLE = `소개${SEO.titleSuffix}`;
 const SEARCH_DESCRIPTION =
   '프론트엔드 엔지니어 한상욱(Sangwook Han)의 소개 페이지입니다. Mantine·Node.js·Next.js·gemini-cli 오픈소스 기여자이자 FEConf 2025·TeoConf 발표자. 번들러 내부와 TypeScript 설계를 파고듭니다.';
 // 공유 카드(og·twitter)용 짧은 소개. 검색 결과용 description과 일부러 다르다 —
@@ -34,8 +30,8 @@ export function buildAboutMetadata(): Metadata {
     openGraph: {
       title: PAGE_TITLE,
       description: SHARE_DESCRIPTION,
-      url: `${SITE_URL}/about/`,
-      siteName: SITE_NAME,
+      url: `${SITE.url}/about/`,
+      siteName: SITE.name,
       // 사람 소개 페이지라 website가 아니라 profile이다. 지정하지 않으면
       // og:type 자체가 빠져서 크롤러가 문서 종류를 추정하게 된다.
       type: 'profile',
@@ -45,10 +41,10 @@ export function buildAboutMetadata(): Metadata {
       locale: 'ko_KR',
       images: [
         {
-          url: `${SITE_URL}${OG_DEFAULT_IMAGE}`,
+          url: `${SITE.url}${SITE.ogDefaultImage}`,
           width: 1200,
           height: 630,
-          alt: `${SITE_NAME} Blog`,
+          alt: `${SITE.name} Blog`,
         },
       ],
     },
@@ -56,7 +52,7 @@ export function buildAboutMetadata(): Metadata {
       card: 'summary_large_image',
       title: PAGE_TITLE,
       description: SHARE_DESCRIPTION,
-      images: [`${SITE_URL}${OG_DEFAULT_IMAGE}`],
+      images: [`${SITE.url}${SITE.ogDefaultImage}`],
     },
   };
 }
@@ -65,19 +61,19 @@ export function buildAboutJsonLd() {
   return {
     '@context': 'https://schema.org',
     '@type': 'ProfilePage',
-    '@id': `${SITE_URL}/about/`,
-    url: `${SITE_URL}/about/`,
+    '@id': `${SITE.url}/about/`,
+    url: `${SITE.url}/about/`,
     name: '한상욱 (Sangwook Han) — About',
     dateCreated: '2024-12-01',
     // 빌드 시각을 넣으면 매일 cron 빌드마다 "수정됨"으로 보고되어 신호가 무의미해진다.
     // 이 페이지 내용을 실제로 고칠 때 상수를 갱신할 것 (sitemap lastmod와 같은 소스).
-    dateModified: ABOUT_PAGE_MODIFIED,
+    dateModified: SITE.aboutPageModified,
     mainEntity: {
       '@type': 'Person',
-      '@id': `${SITE_URL}/#author`,
+      '@id': `${SITE.url}/#author`,
       name: 'Sangwook Han',
       alternateName: '한상욱',
-      url: SITE_URL,
+      url: SITE.url,
       image: {
         '@type': 'ImageObject',
         url: 'https://github.com/Han5991.png?size=400',
@@ -95,7 +91,7 @@ export function buildAboutJsonLd() {
         'Frontend Architecture',
         'Open Source',
       ],
-      sameAs: [SITE_AUTHOR_GITHUB, SITE_AUTHOR_LINKEDIN],
+      sameAs: [AUTHOR.github, AUTHOR.linkedin],
     },
   };
 }

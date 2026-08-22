@@ -1,3 +1,4 @@
+import { TIMEZONE } from '@/content.values.mts';
 import { css } from '@design-system/ui-lib/css';
 import { isPostVisible } from '@blog/content';
 import type { PostSummary } from '@blog/content';
@@ -21,7 +22,7 @@ interface Props {
  */
 export function HiddenPostBadge({ post }: Props) {
   if (process.env.NODE_ENV !== 'development') return null;
-  if (isPostVisible(post)) return null;
+  if (isPostVisible(post, TIMEZONE)) return null;
 
   const label =
     post.status === 'scheduled'

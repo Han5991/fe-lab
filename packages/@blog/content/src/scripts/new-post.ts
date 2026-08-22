@@ -1,6 +1,5 @@
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
-import { TIMEZONE_IANA } from '../shared/contentValues.ts';
 import type { ContentContext } from './context.ts';
 
 /** 실제로 파일을 만들 때 필요한 값 — 원시 입력을 resolveOptions가 여기까지 좁힌다. */
@@ -63,10 +62,11 @@ export function resolveOptions(raw: RawNewPostOptions): NewPostOptions {
   };
 }
 
-export function todayKST(
-  now: Date = new Date(),
-  timeZone: string = TIMEZONE_IANA,
-): string {
+/**
+ * 스캐폴딩 frontmatter의 `date` — 설정 타임존 기준 오늘.
+ * `timeZone`은 인자다(기본값을 두면 그 값이 곧 특정 사이트의 하드코딩).
+ */
+export function todayKST(timeZone: string, now: Date = new Date()): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone }).format(now);
 }
 
@@ -120,12 +120,12 @@ function yamlQuote(value: string): string {
 function resolveDate(
   status: NewPostOptions['status'],
   scheduledDate: string | undefined,
+  timeZone: string,
   now: Date,
-  timeZone?: string,
 ): string {
   if (status === 'scheduled' && scheduledDate)
     return scheduledDate.slice(0, 10);
-  return todayKST(now, timeZone);
+  return todayKST(timeZone, now);
 }
 
 /**
@@ -141,13 +141,13 @@ function needsScheduledDate(
 export function buildFrontmatter(
   opts: Required<Pick<NewPostOptions, 'title' | 'status' | 'tags'>> &
     Pick<NewPostOptions, 'slug' | 'scheduledDate'>,
+  timeZone: string,
   now: Date = new Date(),
-  timeZone?: string,
 ): string {
   const lines = ['---'];
   lines.push(`title: ${yamlQuote(opts.title)}`);
   lines.push(
-    `date: ${resolveDate(opts.status, opts.scheduledDate, now, timeZone)}`,
+    `date: ${resolveDate(opts.status, opts.scheduledDate, timeZone, now)}`,
   );
   lines.push(`status: ${opts.status}`);
   if (needsScheduledDate(opts.scheduledDate)) {
@@ -198,7 +198,6 @@ export function main(ctx: ContentContext, opts: NewPostOptions) {
       slug: opts.slug,
       scheduledDate: opts.scheduledDate,
     },
-    new Date(),
     ctx.config.timezone.iana,
   );
 

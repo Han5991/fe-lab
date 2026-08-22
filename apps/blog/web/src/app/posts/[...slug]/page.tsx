@@ -1,3 +1,4 @@
+import { OG_DEFAULT_IMAGE, TIMEZONE } from '@/content.values.mts';
 import {
   getAllPostSlugs,
   getPostBySlug,
@@ -94,14 +95,14 @@ export default async function PostPage({ params }: Props) {
     }
   }
 
-  const thumbnailUrl = resolveThumbnailUrl(post);
+  const thumbnailUrl = resolveThumbnailUrl(post, OG_DEFAULT_IMAGE);
   const jsonLd = buildPostJsonLd(post, slug);
   const breadcrumbJsonLd = buildBreadcrumbJsonLd(post, slug);
 
   // dev 서버는 draft·scheduled 글도 이 경로로 열어준다(service.ts). 프로덕션과
   // 똑같이 렌더되면 발행 여부를 착각하므로 실제로 비공개일 때만 배너를 얹는다.
   const showHiddenBanner =
-    process.env.NODE_ENV === 'development' && !isPostVisible(post);
+    process.env.NODE_ENV === 'development' && !isPostVisible(post, TIMEZONE);
 
   return (
     <>

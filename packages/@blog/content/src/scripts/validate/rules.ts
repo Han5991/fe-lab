@@ -11,7 +11,7 @@
  * 컴파일(RuleId)이 막고, `rules.test.ts`가 개수·센티널 집합을 잠급니다.
  */
 import { isPostFile, isPostVisible, toDateString } from '../../post/index.ts';
-import type { Severity, ValidateOptions } from './shared.ts';
+import type { Severity, ValidateContext } from './shared.ts';
 
 /**
  * `--strict` 승격 센티널.
@@ -113,12 +113,13 @@ export type RuleId = keyof typeof RULES;
 export function resolveSeverity(
   rule: RuleId,
   data: Record<string, unknown>,
-  options: ValidateOptions,
+  options?: ValidateContext,
 ): Severity {
   const declared = RULES[rule].severity;
+  // 고정 severity 규칙은 설정을 보지 않는다 — 호출부도 options를 생략한다.
   if (declared !== SEO_PUBLISH) return declared;
-  if (!options.strict || !isPostFile(data)) return 'warning';
-  return isVisibleFrontmatter(data) ? 'error' : 'warning';
+  if (!options?.strict || !isPostFile(data)) return 'warning';
+  return isVisibleFrontmatter(data, options.timezone) ? 'error' : 'warning';
 }
 
 /**
@@ -131,10 +132,16 @@ export function resolveSeverity(
  * "비공개"로 판정되어 strict 에러가 조용히 경고로 떨어집니다.
  * repository가 PostData를 만들 때 쓰는 `toDateString`을 똑같이 거칩니다.
  */
-export function isVisibleFrontmatter(data: Record<string, unknown>): boolean {
-  return isPostVisible({
-    status: data['status'],
-    date: toDateString(data['date']),
-    scheduledDate: toDateString(data['scheduledDate']),
-  } as Parameters<typeof isPostVisible>[0]);
+export function isVisibleFrontmatter(
+  data: Record<string, unknown>,
+  timezone: ValidateContext['timezone'],
+): boolean {
+  return isPostVisible(
+    {
+      status: data['status'],
+      date: toDateString(data['date']),
+      scheduledDate: toDateString(data['scheduledDate']),
+    } as Parameters<typeof isPostVisible>[0],
+    timezone,
+  );
 }

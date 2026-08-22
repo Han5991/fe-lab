@@ -1,6 +1,7 @@
+import { SITE_URL } from '@/content.values.mts';
 import { css, cx } from '@design-system/ui-lib/css';
 import type { Metadata } from 'next';
-import { SITE_URL } from '@blog/content';
+
 import { PageBoundary } from '@/src/components/PageBoundary';
 import { railGutter, railColumn } from '@/src/components/Rail';
 

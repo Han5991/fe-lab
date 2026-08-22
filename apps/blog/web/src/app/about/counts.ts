@@ -6,8 +6,8 @@
  * 있다. 모듈 평가 시 한 번 계산해 두면 dev 서버가 재시작 전까지 첫 요청 시점
  * 숫자에 고정돼, 글을 추가해도 화면의 편수가 그대로다.
  */
+import { MERGED_PR_COUNT_FALLBACK } from '@/content.values.mts';
 import { getAllPostSummaries, getAllSeries } from '@/src/content';
-import { MERGED_PR_COUNT_FALLBACK } from '@blog/content';
 
 export interface AboutStat {
   value: string;

@@ -1,5 +1,21 @@
 import { expect, test } from 'vitest';
-import { isPostVisible, resolvePostState } from './visibility.ts';
+import {
+  isPostVisible as isPostVisibleIn,
+  resolvePostState as resolvePostStateIn,
+} from './visibility.ts';
+import { TEST_VALUES } from '../shared/testValues.ts';
+
+// 이 파일이 검증하는 축은 status·날짜 폴백이지 타임존이 아니다. 타임존을 고정한
+// 얇은 래퍼로 감싸 본문은 판정 규칙만 말하게 둔다(타임존 축은 dates.test.ts).
+const TZ = TEST_VALUES.timezone;
+const isPostVisible = (
+  data: Parameters<typeof isPostVisibleIn>[0],
+  now?: Date,
+): boolean => isPostVisibleIn(data, TZ, now);
+const resolvePostState = (
+  data: Parameters<typeof resolvePostStateIn>[0],
+  now?: Date,
+): ReturnType<typeof resolvePostStateIn> => resolvePostStateIn(data, TZ, now);
 
 test('status가 없으면 비공개 (fail-closed)', () => {
   expect(isPostVisible({})).toBe(false);

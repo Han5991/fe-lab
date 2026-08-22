@@ -2,12 +2,17 @@ import { expect, test } from 'vitest';
 import { buildRssXml, escapeXml, wrapCdata } from './generate-rss.ts';
 import type { RssPost } from './generate-rss.ts';
 import { renderContentHtml } from './feedRenderer.ts';
-import { parseScheduledDateKST } from '../../shared/dates.ts';
+import { parseScheduledDateKST as parseScheduledDateKSTIn } from '../../shared/dates.ts';
+import { TEST_VALUES } from '../../shared/testValues.ts';
 
 const NOW = new Date('2026-05-16T00:00:00Z');
 const SITE = 'https://example.dev';
 const NAME = 'Test Blog';
 const DESC = '테스트용 설명';
+// 사이트 정체성·타임존은 설정에서 온다 — 이 파일은 피드 형식을 보므로 값은 고정.
+const TZ = TEST_VALUES.timezone;
+const parseScheduledDateKST = (input: string): Date =>
+  parseScheduledDateKSTIn(TZ, input);
 
 function makePost(over: Partial<RssPost> = {}): RssPost {
   return {
@@ -21,9 +26,8 @@ function makePost(over: Partial<RssPost> = {}): RssPost {
 
 // 진입점과 같은 조합 — buildRssXml은 렌더러를 주입받는다(generate-rss.ts 참고).
 const OPTS = {
-  siteUrl: SITE,
-  siteName: NAME,
-  siteDescription: DESC,
+  site: { ...TEST_VALUES.site, url: SITE, name: NAME, description: DESC },
+  timezone: TZ,
   now: NOW,
   renderContent: renderContentHtml,
 };
@@ -63,7 +67,7 @@ test('rss: lastBuildDate가 now.toUTCString()', () => {
 test('rss: siteDescription에 。이 있으면 channel title은 첫 문장만 사용', () => {
   const xml = buildRssXml([], {
     ...OPTS,
-    siteDescription: '첫 문장。두 번째 문장',
+    site: { ...OPTS.site, description: '첫 문장。두 번째 문장' },
   });
   // channel <title>은 split 결과의 첫 토큰만 사용
   expect(xml.includes('<title>Test Blog | 첫 문장</title>')).toBeTruthy();

@@ -18,7 +18,7 @@ import { decodeUrlSafe } from '../../shared/url.ts';
 // 기본값과 같은 상수(prismLanguages.ts)다.
 import { SUPPORTED_FENCE_LABELS } from '../../shared/prismLanguages.ts';
 import { frontmatterOffset } from './shared.ts';
-import type { Issue, PostRecord, ValidateOptions } from './shared.ts';
+import type { Issue, PostRecord, ValidateContext } from './shared.ts';
 import { resolveSeverity } from './rules.ts';
 
 /** 마크다운 `![alt](src)` — alt는 비어 있을 수 있다. */
@@ -54,7 +54,7 @@ export function maskNonProse(content: string): string {
 export function validateImageReferences(
   record: PostRecord,
   raw: string,
-  options: ValidateOptions = {},
+  options: ValidateContext,
 ): Issue[] {
   const { absPath, relPath } = record;
   const issues: Issue[] = [];
@@ -254,8 +254,8 @@ export function validateCodeFenceLanguages(
     issues.push({
       file: record.relPath,
       line: offset + unclosedFenceAt + 1,
-      // 고정 'warning' 규칙이라 options를 비웠다 — SEO_PUBLISH로 바꾸려면 여기까지 배선할 것
-      severity: resolveSeverity('unclosed-fence', record.data, {}),
+      // 고정 'warning' 규칙이라 설정을 넘기지 않는다 — SEO_PUBLISH로 바꾸려면 여기까지 배선할 것
+      severity: resolveSeverity('unclosed-fence', record.data),
       rule: 'unclosed-fence',
       message:
         '코드 펜스가 끝까지 닫히지 않았습니다 — 닫는 펜스를 넣거나, 구분선이라면 `---`를 쓰세요. (닫히지 않은 펜스는 코드 블록으로 보지 않습니다)',
@@ -274,8 +274,8 @@ export function validateCodeFenceLanguages(
     issues.push({
       file: record.relPath,
       line: offset + index + 1,
-      // 고정 'warning' 규칙이라 options를 비웠다 — SEO_PUBLISH로 바꾸려면 여기까지 배선할 것
-      severity: resolveSeverity('unregistered-code-language', record.data, {}),
+      // 고정 'warning' 규칙이라 설정을 넘기지 않는다 — SEO_PUBLISH로 바꾸려면 여기까지 배선할 것
+      severity: resolveSeverity('unregistered-code-language', record.data),
       rule: 'unregistered-code-language',
       message: `구문 강조에 등록되지 않은 언어입니다: \`${label}\` — 강조 없이 평문으로 렌더됩니다. @blog/content의 src/shared/prismLanguages.ts에 추가하거나 평문 라벨(text)을 쓰세요.`,
     });
@@ -408,8 +408,8 @@ export function validateBodyHeadings(record: PostRecord, raw: string): Issue[] {
     issues.push({
       file: record.relPath,
       line: offset + index + 1,
-      // 고정 'warning' 규칙이라 options를 비웠다 — SEO_PUBLISH로 바꾸려면 여기까지 배선할 것
-      severity: resolveSeverity('body-h1', record.data, {}),
+      // 고정 'warning' 규칙이라 설정을 넘기지 않는다 — SEO_PUBLISH로 바꾸려면 여기까지 배선할 것
+      severity: resolveSeverity('body-h1', record.data),
       rule: 'body-h1',
       message: `본문에 h1(${isAtx ? '`# `' : '밑줄 `===`'})이 있습니다 — 페이지의 h1은 글 제목 하나뿐이어야 합니다. 제목의 중복이면 줄을 지우고, 절 제목이면 \`## \`로 내리세요. (렌더 시에는 h2로 강등되지만 원문은 그대로입니다): ${(originalLines[index] ?? text).trim()}`,
     });

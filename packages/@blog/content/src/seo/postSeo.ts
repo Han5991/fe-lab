@@ -17,7 +17,6 @@ import {
   type PostData,
 } from '../post/index.ts';
 import { resolveAbsoluteThumbnailUrl } from '../post/thumbnail.ts';
-import { SITE_NAME, SITE_URL, TITLE_SUFFIX } from '../shared/constants.ts';
 import type { ContentConfig } from '../shared/contentConfig.ts';
 
 /**
@@ -70,20 +69,26 @@ export function resolveSeoTitle(
  */
 export function buildDescription(
   post: Pick<PostData, 'excerpt' | 'content'>,
+  descriptionMaxLength: number,
 ): string {
-  return resolveExcerpt(post.content, post.excerpt);
+  return resolveExcerpt(post.content, post.excerpt, descriptionMaxLength);
 }
 
 /**
- * 'YYYY-MM-DD' → KST ISO(`...T00:00:00+09:00`). null/undefined면 undefined.
+ * 'YYYY-MM-DD' → 설정 타임존의 자정 ISO(`...T00:00:00+09:00`).
+ * null/undefined면 undefined.
+ *
  * validate-posts가 권장하는 offset 포함 full-ISO(`2026-05-24T09:00:00+09:00`)는
  * 이미 완전한 형식이므로 그대로 반환한다 (suffix를 덧붙이면 invalid ISO가 됨).
+ * offset은 인자다 — 예전엔 `+09:00`이 여기 박혀 있어, 설정으로 타임존을 덮어도
+ * JSON-LD·OG의 발행 시각만 KST로 남았다.
  */
 export function toKstIsoDate(
   date: string | null | undefined,
+  isoOffset: string,
 ): string | undefined {
   if (!date) return undefined;
-  return date.includes('T') ? date : `${date}T00:00:00+09:00`;
+  return date.includes('T') ? date : `${date}T00:00:00${isoOffset}`;
 }
 
 /** 마크다운 본문의 대략적 단어 수(JSON-LD wordCount용). 기호 제거 후 공백 분할. */
@@ -145,24 +150,31 @@ export interface PostSeoBuilders {
 /**
  * 설정에 앵커한 SEO 빌더 factory.
  *
- * 설정에서 읽는 것은 OG 카드 규격(og.width/height — 생성기
- * generate-og-images와 같은 값)과 저자 식별값(author)이다. 사이트 정체성
- * (SITE_NAME·SITE_URL·TITLE_SUFFIX)은 클라이언트 값 모듈(contentValues)의
- * 상수를 그대로 쓴다 — 그 값을 설정으로 덮으려면 contentValues의 리터럴을
- * 함께 고쳐야 한다는 제약은 contentValues.ts 머리 주석 참고.
+ * 사이트 정체성(`site`)·저자(`author`)·OG 카드 규격(`og` — 생성기
+ * generate-og-images와 같은 값)·SEO 예산(`seo`)·타임존을 **전부 설정에서**
+ * 읽는다. 예전에는 정체성만 모듈 스코프 상수라, 설정으로 사이트 이름이나
+ * origin을 덮어도 메타 태그와 JSON-LD는 옛 값을 내보냈다.
  */
 export function createPostSeo(
-  config: Pick<ContentConfig, 'og' | 'author'>,
+  config: Pick<ContentConfig, 'og' | 'author' | 'site' | 'seo' | 'timezone'>,
 ): PostSeoBuilders {
   const ogImageWidth = config.og.width;
   const ogImageHeight = config.og.height;
+  const { site, seo, timezone } = config;
+  const describe = (post: Parameters<typeof buildDescription>[0]) =>
+    buildDescription(post, seo.descriptionMaxLength);
+  const toIsoDate = (date: string | null | undefined) =>
+    toKstIsoDate(date, timezone.isoOffset);
+  const absoluteThumbnail = (
+    post: Parameters<typeof resolveAbsoluteThumbnailUrl>[0],
+  ) => resolveAbsoluteThumbnailUrl(post, site);
 
   /** 포스트 상세의 SEO 메타데이터(OG/Twitter/canonical) DTO를 만든다. */
   function buildPostSeo(post: SeoPost, slug: string): PostSeoData {
-    const description = buildDescription(post);
-    const absoluteThumbnailUrl = resolveAbsoluteThumbnailUrl({ ...post, slug });
+    const description = describe(post);
+    const absoluteThumbnailUrl = absoluteThumbnail({ ...post, slug });
     return {
-      title: `${resolveSeoTitle(post)}${TITLE_SUFFIX}`,
+      title: `${resolveSeoTitle(post)}${seo.titleSuffix}`,
       description,
       canonicalPath: postPath(slug),
       openGraph: {
@@ -173,12 +185,12 @@ export function createPostSeo(
         url: postPath(slug),
         // 사이트 이름은 상수 하나에서만 온다. 예전엔 여기만 'Frontend Lab Blog'라
         // 홈·목록·about('Frontend Lab')과 어긋나서 og:site_name이 두 종류였다.
-        siteName: SITE_NAME,
+        siteName: site.name,
         // 홈·목록에만 있고 글에는 없어서 44/46 페이지에 og:locale이 빠져 있었다.
         locale: 'ko_KR',
         type: 'article',
         // JSON-LD(datePublished)와 동일하게 KST 기준 완전한 ISO 8601로 통일
-        publishedTime: toKstIsoDate(post.date),
+        publishedTime: toIsoDate(post.date),
         images: [
           {
             url: absoluteThumbnailUrl,
@@ -202,18 +214,18 @@ export function createPostSeo(
     post: SeoPost,
     slug: string,
   ): Record<string, unknown> {
-    const url = postUrl(slug);
-    const absoluteThumbnailUrl = resolveAbsoluteThumbnailUrl({ ...post, slug });
+    const url = postUrl(slug, site.url);
+    const absoluteThumbnailUrl = absoluteThumbnail({ ...post, slug });
     return {
       '@context': 'https://schema.org',
       '@type': 'BlogPosting',
       headline: post.title,
-      datePublished: toKstIsoDate(post.date),
+      datePublished: toIsoDate(post.date),
       // updatedAt이 있으면 그것을, 없으면 date를 dateModified로.
       dateModified: post.updatedAt
-        ? toKstIsoDate(post.updatedAt)
-        : toKstIsoDate(post.date),
-      description: buildDescription(post),
+        ? toIsoDate(post.updatedAt)
+        : toIsoDate(post.date),
+      description: describe(post),
       image: {
         '@type': 'ImageObject',
         url: absoluteThumbnailUrl,
@@ -235,24 +247,24 @@ export function createPostSeo(
       // 예전에는 여기만 리터럴이라 constants와 어긋날 수 있었다.
       author: {
         '@type': 'Person',
-        '@id': `${SITE_URL}/#author`,
+        '@id': `${site.url}/#author`,
         name: config.author.name,
         alternateName: config.author.alternateName,
-        url: SITE_URL,
+        url: site.url,
       },
       publisher: {
         '@type': 'Organization',
-        '@id': `${SITE_URL}/#organization`,
-        name: SITE_NAME,
-        url: SITE_URL,
+        '@id': `${site.url}/#organization`,
+        name: site.name,
+        url: site.url,
         logo: {
           '@type': 'ImageObject',
-          url: `${SITE_URL}/logo-wordmark.svg`,
+          url: `${site.url}/logo-wordmark.svg`,
           width: 280,
           height: 60,
         },
       },
-      isPartOf: { '@id': `${SITE_URL}/#website` },
+      isPartOf: { '@id': `${site.url}/#website` },
       speakable: {
         '@type': 'SpeakableSpecification',
         cssSelector: [
@@ -270,9 +282,9 @@ export function createPostSeo(
     slug: string,
   ): Record<string, unknown> {
     const items = [
-      { position: 1, name: 'Home', item: `${SITE_URL}/` },
-      { position: 2, name: 'Posts', item: archiveUrl() },
-      { position: 3, name: post.title, item: postUrl(slug) },
+      { position: 1, name: 'Home', item: `${site.url}/` },
+      { position: 2, name: 'Posts', item: archiveUrl(site.url) },
+      { position: 3, name: post.title, item: postUrl(slug, site.url) },
     ];
     return {
       '@context': 'https://schema.org',

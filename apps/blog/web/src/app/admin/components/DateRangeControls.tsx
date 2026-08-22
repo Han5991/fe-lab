@@ -1,5 +1,6 @@
 'use client';
 
+import { TIMEZONE } from '@/content.values.mts';
 import { useState } from 'react';
 import { css } from '@design-system/ui-lib/css';
 import { getKSTCutoffDate } from '@blog/content';
@@ -40,7 +41,7 @@ function selectTrends(
   // RPC가 KST view_date를 반환하므로 cutoff도 KST 기준으로 계산합니다.
   // 브라우저 로컬 TZ에서 new Date() + toISOString()을 쓰면 비-KST 환경에서 1일 shift.
   if (effectiveFilterType === '7days' || effectiveFilterType === '30days') {
-    const cutoffStr = getKSTCutoffDate(effectiveFilterType);
+    const cutoffStr = getKSTCutoffDate(TIMEZONE, effectiveFilterType);
     return sorted.filter(t => t.view_date >= cutoffStr);
   }
 
@@ -59,7 +60,8 @@ export function useDateFilter(trends: TrendPoint[]) {
   // 브라우저 로컬 TZ에서 new Date() + toISOString()을 쓰면 비-KST 환경에서 1일 shift.
   const canFallBack = filterType === '30days' && trends && trends.length > 0;
   const autoFellBackToAll = Boolean(
-    canFallBack && !trends.some(t => t.view_date >= getKSTCutoffDate('30days')),
+    canFallBack &&
+    !trends.some(t => t.view_date >= getKSTCutoffDate(TIMEZONE, '30days')),
   );
   const effectiveFilterType: FilterType = autoFellBackToAll
     ? 'all'

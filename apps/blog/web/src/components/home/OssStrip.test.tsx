@@ -6,7 +6,7 @@
  */
 import { afterEach, describe, expect, test } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { MERGED_PR_COUNT_FALLBACK } from '@blog/content';
+import { MERGED_PR_COUNT_FALLBACK } from '@/content.values.mts';
 import { OssStrip } from './OssStrip';
 
 /** href는 postPath 계약 그대로(후행 슬래시 포함) — vitest.setup.ts가 next.config를 비춰 둔다. */

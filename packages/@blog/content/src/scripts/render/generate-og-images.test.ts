@@ -1,5 +1,9 @@
 import { expect, test } from 'vitest';
 import { DEFAULT_OG } from '../../shared/contentConfig.ts';
+import { TEST_VALUES } from '../../shared/testValues.ts';
+
+// 카드에 그려지는 사이트 이름·도메인도 설정에서 온다(해시 입력에 포함).
+const SITE = TEST_VALUES.site;
 import {
   ogContentHash,
   displayTitle,
@@ -21,30 +25,32 @@ function post(over: Partial<OgPostInput> = {}): OgPostInput {
 // ── ogContentHash ────────────────────────────────────────────────────────────
 
 test('ogContentHash: 같은 입력이면 같은 해시 (결정적)', () => {
-  expect(ogContentHash(post())).toBe(ogContentHash(post()));
+  expect(ogContentHash(post(), SITE)).toBe(ogContentHash(post(), SITE));
 });
 
 test('ogContentHash: 이미지에 들어가는 필드(title/date/series)가 바뀌면 해시 변경', () => {
-  const base = ogContentHash(post());
-  expect(ogContentHash(post({ title: '다른 제목' }))).not.toBe(base);
-  expect(ogContentHash(post({ date: '2025-01-01' }))).not.toBe(base);
-  expect(ogContentHash(post({ series: 'bundler' }))).not.toBe(base);
+  const base = ogContentHash(post(), SITE);
+  expect(ogContentHash(post({ title: '다른 제목' }), SITE)).not.toBe(base);
+  expect(ogContentHash(post({ date: '2025-01-01' }), SITE)).not.toBe(base);
+  expect(ogContentHash(post({ series: 'bundler' }), SITE)).not.toBe(base);
 });
 
 test('ogContentHash: og 설정(팔레트·크기)이 바뀌면 해시 변경 — 설정 오버라이드가 재생성을 트리거', () => {
-  const base = ogContentHash(post());
+  const base = ogContentHash(post(), SITE);
   expect(
-    ogContentHash(post(), {
+    ogContentHash(post(), SITE, {
       ...DEFAULT_OG,
       palette: { ...DEFAULT_OG.palette, accent: '#FF0000' },
     }),
   ).not.toBe(base);
-  expect(ogContentHash(post(), { ...DEFAULT_OG, width: 800 })).not.toBe(base);
+  expect(ogContentHash(post(), SITE, { ...DEFAULT_OG, width: 800 })).not.toBe(
+    base,
+  );
 });
 
 test('ogContentHash: slug는 파일 경로일 뿐 해시에 영향 없음', () => {
-  expect(ogContentHash(post({ slug: 'a' }))).toBe(
-    ogContentHash(post({ slug: 'b' })),
+  expect(ogContentHash(post({ slug: 'a' }), SITE)).toBe(
+    ogContentHash(post({ slug: 'b' }), SITE),
   );
 });
 
@@ -99,24 +105,29 @@ test('displayTitle: prefix 제거 후 빈 제목이 되면 원본 유지', () =>
 });
 
 test('ogTemplate: 제목/날짜/도메인이 트리에 포함', () => {
-  const json = JSON.stringify(ogTemplate(post()));
+  const json = JSON.stringify(ogTemplate(post(), SITE));
   expect(json.includes('테스트 글')).toBeTruthy();
   expect(json.includes('2026-06-09')).toBeTruthy();
-  expect(json.includes('blog.sangwook.dev')).toBeTruthy();
+  expect(json.includes(SITE.url.replace('https://', ''))).toBeTruthy();
 });
 
 test('ogTemplate: series가 있을 때만 pill 노출', () => {
-  const withSeries = JSON.stringify(ogTemplate(post({ series: 'bundler' })));
+  const withSeries = JSON.stringify(
+    ogTemplate(post({ series: 'bundler' }), SITE),
+  );
   expect(withSeries.includes('bundler')).toBeTruthy();
   expect(withSeries.includes(OG_PILL_BORDER)).toBeTruthy();
   expect(
-    !JSON.stringify(ogTemplate(post())).includes(OG_PILL_BORDER),
+    !JSON.stringify(ogTemplate(post(), SITE)).includes(OG_PILL_BORDER),
   ).toBeTruthy();
 });
 
 test('ogTemplate: 시리즈명이 제목 prefix와 중복되면 제목에서 제거', () => {
   const json = JSON.stringify(
-    ogTemplate(post({ title: '[TS 설계] 당신의 Type', series: '[TS 설계]' })),
+    ogTemplate(
+      post({ title: '[TS 설계] 당신의 Type', series: '[TS 설계]' }),
+      SITE,
+    ),
   );
   expect(!json.includes('[TS 설계] 당신의 Type')).toBeTruthy();
   expect(json.includes('당신의 Type')).toBeTruthy();
@@ -124,13 +135,13 @@ test('ogTemplate: 시리즈명이 제목 prefix와 중복되면 제목에서 제
 
 test('ogTemplate: 제목은 3줄 클램프', () => {
   expect(
-    JSON.stringify(ogTemplate(post())).includes('"lineClamp":3'),
+    JSON.stringify(ogTemplate(post(), SITE)).includes('"lineClamp":3'),
   ).toBeTruthy();
 });
 
 test('ogTemplate: datetime이 섞인 date도 날짜 부분만 표기', () => {
   const json = JSON.stringify(
-    ogTemplate(post({ date: '2026-03-16T09:00:00+09:00' })),
+    ogTemplate(post({ date: '2026-03-16T09:00:00+09:00' }), SITE),
   );
   expect(json.includes('2026-03-16')).toBeTruthy();
 });
@@ -156,6 +167,7 @@ test('renderOgPng: 실제 폰트로 유효한 PNG 생성', async () => {
       series: 'bundler',
     }),
     loadFonts(),
+    SITE,
   );
   // PNG 시그니처(\x89PNG) + 1200×630 치고 비정상적으로 작지 않은지
   expect([...png.subarray(0, 4)]).toStrictEqual([0x89, 0x50, 0x4e, 0x47]);

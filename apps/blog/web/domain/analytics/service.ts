@@ -1,9 +1,4 @@
-import {
-  addDaysISO,
-  diffDaysISO,
-  formatMonthDayISO,
-  getKSTDateISO,
-} from '@blog/content';
+import { addDaysISO, diffDaysISO, formatMonthDayISO } from '@blog/content';
 import type { PostStatDetail, DerivedStats } from './types';
 
 // ── Analytics Overview ──────────────────────────────────────────────────────
@@ -152,13 +147,15 @@ const MILESTONE_TARGETS = [100, 500, 1000, 5000] as const;
  * 트렌드 데이터에서 파생 통계를 계산합니다.
  * (주간 성장률, 피크 일자, 일 평균, 마일스톤)
  *
- * todayISO 파라미터로 기준일을 주입받습니다(기본값은 KST 오늘).
+ * todayISO 파라미터로 기준일을 **필수로** 주입받습니다.
  * computeAnalyticsOverview와 동일한 패턴으로 외부 시계 의존을 격리해
- * 자정 경계 테스트를 가능하게 합니다.
+ * 자정 경계 테스트를 가능하게 합니다. 기본값이 없는 이유는 하나 더 있습니다 —
+ * KST 오늘을 계산하려면 타임존 설정이 필요한데, 그 값은 앱 값 모듈이 소유하고
+ * 이 레이어는 설정을 모릅니다(호출부인 훅이 계산해 넘깁니다).
  */
 export function computeDerivedStats(
   post: PostStatDetail,
-  todayISO: string = getKSTDateISO(),
+  todayISO: string,
 ): DerivedStats {
   const trends = post.trends;
 

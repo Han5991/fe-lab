@@ -4,14 +4,9 @@ import { archiveUrl, postUrl, sortByDateDesc } from '../post/index.ts';
 import { resolvePostSet } from './artifacts.ts';
 import type { PostData } from '../post/index.ts';
 import {
-  SITE_URL as DEFAULT_SITE_URL,
-  SITE_NAME,
-} from '../shared/constants.ts';
-import {
-  DEFAULT_AUTHOR,
-  DEFAULT_LLMS,
   type AuthorConfig,
   type LlmsConfig,
+  type SiteConfig,
 } from '../shared/contentConfig.ts';
 import type { ContentContext } from './context.ts';
 import { sortPostsBySeriesOrder, type SeriesMeta } from '../post/series.ts';
@@ -27,10 +22,11 @@ import { sortPostsBySeriesOrder, type SeriesMeta } from '../post/series.ts';
  */
 
 export interface LlmsBuildOptions {
-  siteUrl?: string;
-  /** 색인 산문·저자 소개 — 진입점은 컨텍스트의 설정을 넘긴다. 기본값 = 패키지 기본 설정 */
-  llms?: LlmsConfig;
-  author?: AuthorConfig;
+  /** 사이트 정체성 — 진입점이 컨텍스트의 설정을 넘긴다(기본값 없음) */
+  site: Pick<SiteConfig, 'url' | 'name'>;
+  /** 색인 산문·저자 소개 — 진입점이 컨텍스트의 설정을 넘긴다 */
+  llms: LlmsConfig;
+  author: AuthorConfig;
   /**
    * `Last updated`에 쓸 날짜. 생략하면 **가장 최근 글의 날짜**를 씁니다.
    *
@@ -52,7 +48,7 @@ export interface LlmsBuildOptions {
  */
 export function toSummary(
   post: Pick<PostData, 'excerpt' | 'content'>,
-  maxLength: number = DEFAULT_LLMS.summaryMaxLength,
+  maxLength: number,
 ): string {
   const source = (
     post.excerpt && post.excerpt.trim() !== ''
@@ -82,9 +78,8 @@ export function buildLlmsText(
   posts: PostData[],
   options: LlmsBuildOptions,
 ): string {
-  const siteUrl = options.siteUrl ?? DEFAULT_SITE_URL;
-  const llms = options.llms ?? DEFAULT_LLMS;
-  const author = options.author ?? DEFAULT_AUTHOR;
+  const siteUrl = options.site.url;
+  const { llms, author } = options;
   const seriesMeta = options.resolveSeriesMeta;
   const postDates = posts
     .map(p => p.date)
@@ -97,7 +92,7 @@ export function buildLlmsText(
       : '(미상)');
 
   const lines: string[] = [
-    `# ${SITE_NAME}`,
+    `# ${options.site.name}`,
     ``,
     `> ${llms.indexIntro}`,
     ``,
@@ -196,7 +191,7 @@ export function main(ctx: ContentContext) {
   const posts = resolvePostSet(ctx.content, 'visible');
   const outputPath = join(ctx.paths.publicDir, 'llms.txt');
   const text = buildLlmsText(posts, {
-    siteUrl: ctx.config.site.url,
+    site: ctx.config.site,
     llms: ctx.config.llms,
     author: ctx.config.author,
     resolveSeriesMeta: ctx.content.getSeriesMeta,

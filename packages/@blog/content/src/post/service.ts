@@ -1,4 +1,5 @@
 import { isPostVisible } from './visibility.ts';
+import type { TimezoneConfig } from '../shared/contentConfig.ts';
 import { sortPostsBySeriesOrder, type SeriesMeta } from './series.ts';
 import type {
   PostData,
@@ -52,13 +53,15 @@ export interface PostServiceDeps {
    * 실어 보낸다)는 설정 기본값 주석에 있습니다.
    */
   isDevelopment: () => boolean;
+  /** 예약 발행 시각('YYYY-MM-DD')을 어느 타임존의 자정으로 볼지 */
+  timezone: Pick<TimezoneConfig, 'isoOffset'>;
 }
 
 /**
  * 포스트 조회 서비스 factory. slug 조회 캐시는 인스턴스(클로저) 안에 산다.
  */
 export function createPostService(deps: PostServiceDeps): PostService {
-  const { readAllPosts, getSeriesMeta, isDevelopment } = deps;
+  const { readAllPosts, getSeriesMeta, isDevelopment, timezone } = deps;
   let postsBySlugMap: Map<string, PostData> | null = null;
 
   /**
@@ -72,7 +75,7 @@ export function createPostService(deps: PostServiceDeps): PostService {
     if (isDevelopment()) return posts;
     // 화살표로 감싸 Array.filter의 index가 isPostVisible의 now에 주입되는 것을 방지.
     // now는 주입 가능(기본 빌드 시각) — 테스트가 고정 시각으로 경계를 검증할 수 있음.
-    return posts.filter(post => isPostVisible(post, now));
+    return posts.filter(post => isPostVisible(post, timezone, now));
   }
 
   /** 홈/목록 등 요약 뷰에서 사용하는 경량 포스트 목록 */

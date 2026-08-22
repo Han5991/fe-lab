@@ -21,7 +21,12 @@ packages/@blog/content         ← 소스 익스포트 패키지. 문 두 개: `
         │                          + 빌드 스크립트(src/scripts/*, API가 아니라 실행 파일)
         ▼
 apps/blog/web  (이 앱)
-  ├─ content.config.mts   ← 경로 앵커 (root: import.meta.url — 이 파일의 위치가 앵커.
+  ├─ content.values.mts   ← 이 사이트의 값 (순수 리터럴). 패키지에는 이 축들의 기본값이
+  │                          없다 — 값의 소유자는 앱이다. 개별 상수(SITE_URL·RSS_PATH…)가
+  │                          1차이고 그룹 객체(SITE·AUTHOR)는 설정 배선 전용이다:
+  │                          화면이 그룹을 import하면 안 쓰는 값까지 번들에 실린다
+  ├─ content.config.mts   ← 경로 앵커 + 배선 (root: import.meta.url — 이 파일의 위치가 앵커.
+  │                          위 값 모듈을 defineContent에 넘긴다.
   │                          CLI는 cwd walk-up으로 발견, 앱은 src/content.ts가 정적 import)
   ├─ src/content.ts       ← createContent/createPostSeo 인스턴스 조립 — fs 로더·SEO 빌더의 유일한 출처(서버 전용)
   ├─ prebuild  = build-content.ts --strict   (validate-posts 게이트 → 병렬 8개: sync·sitemap·rss·

@@ -1,5 +1,8 @@
 import { expect, test } from 'vitest';
 import matter from 'gray-matter';
+import { TEST_VALUES, defineTestContent } from '../shared/testValues.ts';
+import { toValidateContext } from './validate/shared.ts';
+import { sep } from 'node:path';
 import {
   resolveOptions,
   parseTagList,
@@ -63,12 +66,12 @@ test('resolveOptions: status 값은 그대로 전달', () => {
 
 test('todayKST: UTC 기준 전날 밤이어도 KST 날짜로 계산', () => {
   // UTC 1/31 16:00 == KST 2/1 01:00
-  expect(todayKST(new Date('2026-01-31T16:00:00Z'))).toBe('2026-02-01');
+  expect(todayKST(TZ, new Date('2026-01-31T16:00:00Z'))).toBe('2026-02-01');
 });
 
 test('todayKST: KST 자정 직전이면 같은 날 유지', () => {
   // UTC 1/31 14:00 == KST 1/31 23:00
-  expect(todayKST(new Date('2026-01-31T14:00:00Z'))).toBe('2026-01-31');
+  expect(todayKST(TZ, new Date('2026-01-31T14:00:00Z'))).toBe('2026-01-31');
 });
 
 // ── safeFilename ─────────────────────────────────────────────────────────────
@@ -143,10 +146,17 @@ test('buildPostFilePath: 절대 경로/빈 세그먼트/특수문자 시리즈�
 // ── buildFrontmatter ─────────────────────────────────────────────────────────
 
 const NOW = new Date('2026-06-09T12:00:00+09:00');
+// 타임존은 설정에서 온다(기본값 없음) — 픽스처 값을 고정해 쓴다.
+const TZ = TEST_VALUES.timezone.iana;
+// 검증 게이트가 읽는 슬라이스는 진입점과 같은 변환으로 만든다.
+const VALIDATE_CONFIG = defineTestContent({ root: `${sep}tmp${sep}app` });
+const ctx = (options?: { strict?: boolean }) =>
+  toValidateContext(VALIDATE_CONFIG, options);
 
 test('buildFrontmatter: 기본 골격 — 본문은 `## `로 시작한다 (h1을 깔지 않는다)', () => {
   const raw = buildFrontmatter(
     { title: '제목', status: 'draft', tags: ['a', 'b'] },
+    TZ,
     NOW,
   );
   expect(raw).toBe(
@@ -176,6 +186,7 @@ test('buildFrontmatter: 시각까지 지정한 예약글은 scheduledDate를 추
       scheduledDate: '2026-05-01T09:00:00+09:00',
       slug: 'release-note',
     },
+    TZ,
     NOW,
   );
   expect(raw).toMatch(/scheduledDate: '2026-05-01T09:00:00\+09:00'/);
@@ -193,6 +204,7 @@ test('buildFrontmatter: 날짜만 지정한 예약글은 scheduledDate 없이 da
       tags: [],
       scheduledDate: '2026-05-01',
     },
+    TZ,
     NOW,
   );
   expect(raw).toMatch(/date: 2026-05-01/);
@@ -203,6 +215,7 @@ test('buildFrontmatter: 특수문자 slug도 YAML 구조를 깨지 않고 round-
   const slug = 'my: [edge] slug';
   const raw = buildFrontmatter(
     { title: '제목', status: 'draft', tags: [], slug },
+    TZ,
     NOW,
   );
   expect(matter(raw).data.slug).toBe(slug);
@@ -210,14 +223,18 @@ test('buildFrontmatter: 특수문자 slug도 YAML 구조를 깨지 않고 round-
 
 test('buildFrontmatter: 제목의 작은따옴표가 escape되어 round-trip 보존', () => {
   const title = "Don't Panic: 번들러 'core' 이야기";
-  const raw = buildFrontmatter({ title, status: 'draft', tags: [] }, NOW);
+  const raw = buildFrontmatter({ title, status: 'draft', tags: [] }, TZ, NOW);
   expect(matter(raw).data.title).toBe(title);
 });
 
 test('buildFrontmatter: 특수문자 태그도 YAML 구조를 깨지 않고 round-trip', () => {
   // 인용 없이 직렬화하면 `tags: [foo: bar]`가 배열 속 맵으로 파싱되는 회귀 방지
   const tags = ['foo: bar', "don't", 'c++', '[edge]'];
-  const raw = buildFrontmatter({ title: '제목', status: 'draft', tags }, NOW);
+  const raw = buildFrontmatter(
+    { title: '제목', status: 'draft', tags },
+    TZ,
+    NOW,
+  );
   expect(matter(raw).data.tags).toStrictEqual(tags);
 });
 
@@ -235,7 +252,7 @@ function recordOf(raw: string): PostRecord {
  * 요약까지 지어낼 수는 없으니, 글을 쓰고 나서 채우라는 신호로 남긴다.
  */
 function scaffoldIssues(raw: string) {
-  const issues = validatePost(recordOf(raw), raw);
+  const issues = validatePost(recordOf(raw), raw, ctx());
   expect(
     issues.filter(i => i.severity === 'error'),
     '스캐폴드가 에러를 내면 글을 시작하자마자 dev 서버가 막힌다',
@@ -246,6 +263,7 @@ function scaffoldIssues(raw: string) {
 test('계약: draft 스캐폴드는 에러 없음 (excerpt 알림만)', () => {
   const raw = buildFrontmatter(
     { title: '새 글', status: 'draft', tags: ['a'] },
+    TZ,
     NOW,
   );
   expect(scaffoldIssues(raw)).toStrictEqual(['missing-excerpt']);
@@ -254,6 +272,7 @@ test('계약: draft 스캐폴드는 에러 없음 (excerpt 알림만)', () => {
 test('계약: published 스캐폴드(slug 포함)는 에러 없음', () => {
   const raw = buildFrontmatter(
     { title: '새 글', status: 'published', tags: [], slug: 'new-post' },
+    TZ,
     NOW,
   );
   expect(scaffoldIssues(raw)).toStrictEqual(['missing-excerpt']);
@@ -267,6 +286,7 @@ test('계약: scheduled 스캐폴드(offset 포함 날짜)는 에러 없음', ()
       tags: [],
       scheduledDate: '2026-12-01T09:00:00+09:00',
     },
+    TZ,
     NOW,
   );
   expect(scaffoldIssues(raw)).toStrictEqual(['missing-excerpt']);
@@ -277,9 +297,10 @@ test('계약: strict(prebuild)에서는 발행 상태 스캐폴드가 에러 —
   // check-seo가 배포를 막는다. 그 실패를 CI가 아니라 빌드 직전에 당겨 온다.
   const raw = buildFrontmatter(
     { title: '새 글', status: 'published', tags: [] },
+    TZ,
     NOW,
   );
-  const errors = validatePost(recordOf(raw), raw, { strict: true }).filter(
+  const errors = validatePost(recordOf(raw), raw, ctx({ strict: true })).filter(
     i => i.severity === 'error',
   );
   expect(errors.map(i => i.rule)).toStrictEqual(['missing-excerpt']);
@@ -288,10 +309,11 @@ test('계약: strict(prebuild)에서는 발행 상태 스캐폴드가 에러 —
 test('계약: strict여도 draft 스캐폴드는 에러가 아니다 (쓰는 중엔 막지 않는다)', () => {
   const raw = buildFrontmatter(
     { title: '새 글', status: 'draft', tags: [] },
+    TZ,
     NOW,
   );
   expect(
-    validatePost(recordOf(raw), raw, { strict: true }).filter(
+    validatePost(recordOf(raw), raw, ctx({ strict: true })).filter(
       i => i.severity === 'error',
     ),
   ).toStrictEqual([]);
@@ -302,6 +324,7 @@ test('계약: 스캐폴드 본문에는 h1이 없다 (body-h1 경고가 나지 �
   // 깔아주던 탓에 예전 글 22편이 h1을 두 개씩 갖고 있었다.
   const raw = buildFrontmatter(
     { title: '새 글', status: 'draft', tags: [] },
+    TZ,
     NOW,
   );
   const { data, content } = matter(raw);

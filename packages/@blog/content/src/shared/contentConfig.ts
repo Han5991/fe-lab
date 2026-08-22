@@ -2,39 +2,23 @@
  * 콘텐츠 파이프라인 설정 표면 — `defineContent({...})`.
  *
  * 흩어져 있던 하드코딩(사이트 정체성·SEO 예산·타임존·경로·레지스트리·OG 팔레트·
- * llms 산문)을 한 곳으로 모은 **단일 출처**입니다. 기본값이 곧 현재 사이트의
- * 값이라, `defineContent({ root })`는 기존 동작과 완전히 같습니다(동작 no-op).
- * `root`(경로 앵커)만 기본값이 없는 필수 항목입니다 — 어떤 기본값이든 특정
- * 저장소 구조의 하드코딩이 되기 때문입니다.
+ * llms 산문)을 한 곳으로 모은 **단일 출처**입니다.
+ *
+ * **사이트 고유 값에는 기본값이 없습니다** — `root`(경로 앵커)와 같은 이유로,
+ * 어떤 기본값이든 특정 사이트의 하드코딩이기 때문입니다. 그래서 `root`·`site`·
+ * `author`·`timezone`·`registries.diagramNames`가 필수 항목이고, 값 자체는
+ * 소비자(앱)의 `content.values.mts`가 소유합니다. 예전엔 이 파일이 그 값들의
+ * 기본값을 들고 있었는데, 소비처 대부분이 설정이 아니라 같은 리터럴을 **직접**
+ * import해서 — 오버라이드를 넣어도 화면·산출물은 그대로인 거짓 표면이었습니다.
+ * 기본값이 남은 것은 사이트와 무관한 값(SEO 길이 예산·펜스 라벨·경로 관례)과
+ * 아직 한 사이트의 데이터인 값(og 팔레트·llms 산문·sitemap 우선순위)뿐입니다.
  *
  * 이 모듈은 **서버·빌드 전용**입니다 — 클라이언트 컴포넌트가 import하면
- * 설정 객체 전체(og 팔레트·llms 산문·경로)가 번들에 실립니다. 클라이언트가
- * 소비하는 리터럴은 `contentValues.ts`(값-only 모듈)에 있고, 이 모듈은 그
- * 값을 **기본값으로 소비**합니다(의존 방향: config → 값 모듈). 경로를
- * 절대경로로 푸는 쪽은 node 전용인 `contentPaths.ts`입니다.
+ * 설정 객체 전체(og 팔레트·llms 산문·경로)가 번들에 실립니다(defineContent
+ * 호출 결과라 번들러가 미사용 필드를 털지 못합니다). 클라이언트도 보는 값은
+ * 앱의 값 모듈에서 직접 가져갑니다. 경로를 절대경로로 푸는 쪽은 node 전용인
+ * `contentPaths.ts`입니다.
  */
-import {
-  ABOUT_PAGE_MODIFIED,
-  AUTHOR_ALTERNATE_NAME,
-  AUTHOR_NAME,
-  AUTHOR_ROLE,
-  DEFAULT_DIAGRAM_NAMES,
-  MERGED_PR_COUNT_FALLBACK,
-  OG_DEFAULT_IMAGE,
-  RSS_PATH,
-  SEO_DESCRIPTION_MAX_LENGTH,
-  SEO_DESCRIPTION_MIN_LENGTH,
-  SEO_TITLE_MAX_LENGTH,
-  SITE_AUTHOR_GITHUB,
-  SITE_AUTHOR_LINKEDIN,
-  SITE_DESCRIPTION,
-  SITE_DESCRIPTION_EXPANDED,
-  SITE_NAME,
-  SITE_URL,
-  TIMEZONE_IANA,
-  TIMEZONE_ISO_OFFSET,
-  TIMEZONE_UTC_OFFSET_MS,
-} from './contentValues.ts';
 import { SUPPORTED_FENCE_LABELS } from './prismLanguages.ts';
 
 // ── 그룹별 타입 ──────────────────────────────────────────────────────────────
@@ -48,14 +32,14 @@ export interface SiteConfig {
   descriptionExpanded: string;
   /**
    * 글별 OG 카드가 없을 때 쓰는 기본 공유 이미지.
-   * (기본값이 `.jpg`인 사연은 contentValues.ts의 OG_DEFAULT_IMAGE 주석 참고.)
+   * (`.jpg`인 사연은 소비자 값 모듈의 OG_DEFAULT_IMAGE 주석에 있다.)
    */
   ogDefaultImage: string;
   /** 사이트 내부 RSS 경로. 절대 URL은 `${url}${rssPath}`로 조합 */
   rssPath: string;
   /**
    * `/about/` 페이지를 마지막으로 **손으로 고친** 날짜 ('YYYY-MM-DD').
-   * 손으로 관리하는 이유는 contentValues.ts의 ABOUT_PAGE_MODIFIED 주석 참고.
+   * 손으로 관리하는 이유는 소비자 값 모듈의 ABOUT_PAGE_MODIFIED 주석에 있다.
    */
   aboutPageModified: string;
   /** merged PR 수 폴백값. CI가 NEXT_PUBLIC_PR_COUNT로 실제 값을 주입한다 */
@@ -113,9 +97,9 @@ export type SeriesColorKey = 'accent' | 'marker' | 'moss';
 
 export interface RegistriesConfig {
   /**
-   * 이름으로 부를 수 있는 다이어그램 목록. 컴포넌트 매핑은
-   * 앱의 `src/components/diagram/registry.ts`가 갖고, 검증(lint:posts)과 렌더가
-   * 이 목록을 공유한다 (`src/post/diagramNames.ts` 참고).
+   * 이름으로 부를 수 있는 다이어그램 목록. **기본값이 없다** — 이름 목록과
+   * 컴포넌트 매핑(`src/components/diagram/registry.ts`)의 소유자는 앱이고,
+   * 패키지는 검증(lint:posts의 unknown-hero-diagram)에 쓸 이름만 받는다.
    */
   diagramNames: readonly string[];
   /** 코드 펜스 라벨 허용 목록. 기본값은 prismLanguages.ts에서 파생 */
@@ -235,16 +219,42 @@ export interface ContentConfig {
   llms: LlmsConfig;
 }
 
-/** defineContent가 받는 부분 설정 — `root`만 필수, 그룹별로 얕은 Partial */
-export interface ContentUserConfig {
+/**
+ * 소비자가 **반드시 선언해야 하는 사이트 고유 값**의 계약.
+ *
+ * 관례는 앱 루트의 `content.values.mts` — 순수 리터럴만 담고, 그 옆
+ * `content.config.mts`가 `defineContent`에 넘긴다. 값 모듈이 값 import 없이
+ * 이 계약을 만족하는지 확인할 수 있도록(`satisfies`), 그룹 타입은 각각
+ * 따로도 공개한다.
+ *
+ * 여기 모인 것들의 공통점은 **어떤 기본값도 특정 사이트의 하드코딩**이라는
+ * 점이다 — `root`와 같은 이유로 기본값을 두지 않는다. `diagramNames`가 여기
+ * 있는 이유는 조금 다르다: 실제 소유자는 이름→컴포넌트 매핑을 가진 앱이고,
+ * 패키지는 검증(`lint:posts`의 `unknown-hero-diagram`)에 쓸 이름만 필요하다.
+ */
+export interface ContentValues {
+  site: SiteConfig;
+  author: AuthorConfig;
+  timezone: TimezoneConfig;
+  /** 이름으로 부를 수 있는 다이어그램. 컴포넌트 매핑은 앱이 갖는다 */
+  diagramNames: readonly string[];
+}
+
+/**
+ * defineContent가 받는 설정 — 사이트 고유 값(`ContentValues`)과 `root`는 필수,
+ * 나머지는 그룹별로 얕은 Partial.
+ */
+export interface ContentUserConfig extends Pick<
+  ContentValues,
+  'site' | 'author' | 'timezone'
+> {
   /** 경로 앵커 — `ContentConfig['root']` 참고. 관례는 `import.meta.url` */
   root: string;
-  site?: Partial<SiteConfig>;
-  author?: Partial<AuthorConfig>;
+  /** `diagramNames`만 필수(기본값이 곧 한 사이트의 그림 목록이기 때문) */
+  registries: Partial<Omit<RegistriesConfig, 'diagramNames'>> &
+    Pick<RegistriesConfig, 'diagramNames'>;
   seo?: Partial<SeoConfig>;
-  timezone?: Partial<TimezoneConfig>;
   runtime?: Partial<RuntimeConfig>;
-  registries?: Partial<RegistriesConfig>;
   dirs?: Partial<DirsConfig>;
   sitemap?: Partial<SitemapConfig>;
   og?: Partial<Omit<OgConfig, 'palette'>> & { palette?: Partial<OgPalette> };
@@ -254,40 +264,28 @@ export interface ContentUserConfig {
   thumbnails?: Partial<ThumbnailsConfig>;
 }
 
-// ── 기본값 (= 현재 사이트의 값) ──────────────────────────────────────────────
-// 클라이언트도 보는 리터럴은 `contentValues.ts`에서 온다 — 값 자체(와 그 사연
-// 주석)를 고치려면 그쪽을 볼 것. 서버 전용 기본값(og 팔레트·llms 산문·경로·
-// 레지스트리)만 여기 직접 둔다.
-
-const DEFAULT_SITE: SiteConfig = {
-  url: SITE_URL,
-  name: SITE_NAME,
-  description: SITE_DESCRIPTION,
-  descriptionExpanded: SITE_DESCRIPTION_EXPANDED,
-  ogDefaultImage: OG_DEFAULT_IMAGE,
-  rssPath: RSS_PATH,
-  aboutPageModified: ABOUT_PAGE_MODIFIED,
-  mergedPrCountFallback: MERGED_PR_COUNT_FALLBACK,
-};
-
-// 아래 DEFAULT_* 슬라이스는 순수 계산 빌더(sitemap·llms·og·thumbnails·seo)가
+// ── 기본값 ───────────────────────────────────────────────────────────────────
+// 사이트 정체성(site·author·timezone·diagramNames)에는 기본값이 없다 —
+// `ContentValues` 주석 참고. 여기 남는 것은 사이트와 무관한 값(SEO 길이 예산·
+// 경로 관례·펜스 라벨)과, 아직 한 사이트의 데이터인 값(og 팔레트·llms 산문·
+// sitemap 우선순위)이다. 후자는 소비자가 늘면 같은 식으로 옮겨야 한다.
+//
+// 아래 DEFAULT_* 슬라이스는 순수 계산 빌더(sitemap·og·thumbnails·seo)가
 // 파라미터 기본값으로 재사용한다 — 진입점(main)은 항상 컨텍스트의 설정을
 // 명시적으로 넘기고, 기본값은 테스트·단독 사용 편의다. DEFAULTS와 같은
 // 객체를 공유하므로 두 벌이 어긋날 수 없다.
 
-export const DEFAULT_AUTHOR: AuthorConfig = {
-  name: AUTHOR_NAME,
-  alternateName: AUTHOR_ALTERNATE_NAME,
-  role: AUTHOR_ROLE,
-  github: SITE_AUTHOR_GITHUB,
-  linkedin: SITE_AUTHOR_LINKEDIN,
-};
-
-export const DEFAULT_SEO: SeoConfig = {
-  titleSuffix: ` | ${DEFAULT_SITE.name}`,
-  titleMaxLength: SEO_TITLE_MAX_LENGTH,
-  descriptionMinLength: SEO_DESCRIPTION_MIN_LENGTH,
-  descriptionMaxLength: SEO_DESCRIPTION_MAX_LENGTH,
+/**
+ * SEO 길이 예산의 기본값. 검색 결과에서 잘리지 않는 상한이라 사이트와 무관하다.
+ *
+ * `titleSuffix`는 여기 없다 — `site.name`에서 파생되므로 사이트를 알아야 정해진다
+ * (defineContent가 만든다). 예산을 보는 두 게이트(`validate-posts`·`check-seo`)는
+ * 해석된 설정의 `seo`를 받아 쓴다.
+ */
+export const DEFAULT_SEO: Omit<SeoConfig, 'titleSuffix'> = {
+  titleMaxLength: 60,
+  descriptionMinLength: 120,
+  descriptionMaxLength: 160,
 };
 
 export const DEFAULT_SITEMAP: SitemapConfig = {
@@ -340,16 +338,19 @@ export const DEFAULT_LLMS: LlmsConfig = {
   },
 };
 
-// root는 기본값이 없다(경로 앵커의 하드코딩 금지) — 그래서 Omit.
-const DEFAULTS: Omit<ContentConfig, 'root'> = {
-  site: DEFAULT_SITE,
-  author: DEFAULT_AUTHOR,
+/**
+ * 소비자가 안 주면 쓰는 값. `ContentValues`(사이트 고유)와 `root`는 여기 없다 —
+ * 기본값을 두는 순간 특정 사이트의 하드코딩이기 때문이다. `seo.titleSuffix`도
+ * 없다(site.name 파생이라 defineContent가 만든다).
+ */
+const DEFAULTS: Omit<
+  ContentConfig,
+  'root' | 'site' | 'author' | 'timezone' | 'seo' | 'registries'
+> & {
+  seo: Omit<SeoConfig, 'titleSuffix'>;
+  registries: Omit<RegistriesConfig, 'diagramNames'>;
+} = {
   seo: DEFAULT_SEO,
-  timezone: {
-    iana: TIMEZONE_IANA,
-    isoOffset: TIMEZONE_ISO_OFFSET,
-    utcOffsetMs: TIMEZONE_UTC_OFFSET_MS,
-  },
   runtime: {
     // 대괄호 접근인 이유: 이 패키지의 tsconfig에는 Next의 ProcessEnv 증강
     // (next-env.d.ts)이 없어 NODE_ENV가 인덱스 시그니처로만 보인다
@@ -357,7 +358,6 @@ const DEFAULTS: Omit<ContentConfig, 'root'> = {
     isDevelopment: () => process.env['NODE_ENV'] === 'development',
   },
   registries: {
-    diagramNames: DEFAULT_DIAGRAM_NAMES,
     supportedFenceLabels: SUPPORTED_FENCE_LABELS,
     seriesColors: {
       bundler: 'accent',
@@ -452,24 +452,24 @@ function assertOutputDirsExclusive(dirs: DirsConfig): void {
 // ── defineContent ────────────────────────────────────────────────────────────
 
 /**
- * 부분 설정을 기본값 위에 병합해 완전한 ContentConfig를 만든다.
- * `root`만 필수 — 경로 앵커는 기본값이 있을 수 없다(어떤 기본값이든 특정
- * 저장소 구조의 하드코딩이 된다). `seo.titleSuffix`를 명시하지 않으면
- * (덮어썼을 수 있는) `site.name`에서 파생된다.
+ * 소비자 설정을 기본값 위에 병합해 완전한 ContentConfig를 만든다.
+ *
+ * 사이트 고유 값(`root`·`site`·`author`·`timezone`·`registries.diagramNames`)은
+ * 그대로 실린다 — 기본값이 없으므로 병합할 것도 없다(`ContentValues` 참고).
+ * `seo.titleSuffix`를 명시하지 않으면 `site.name`에서 파생된다.
  */
 export function defineContent(user: ContentUserConfig): ContentConfig {
   assertValidRoot(user.root);
-  const site = { ...DEFAULTS.site, ...user.site };
   const config: ContentConfig = {
     root: user.root,
-    site,
-    author: { ...DEFAULTS.author, ...user.author },
+    site: user.site,
+    author: user.author,
     seo: {
       ...DEFAULTS.seo,
-      titleSuffix: ` | ${site.name}`,
+      titleSuffix: ` | ${user.site.name}`,
       ...user.seo,
     },
-    timezone: { ...DEFAULTS.timezone, ...user.timezone },
+    timezone: user.timezone,
     runtime: { ...DEFAULTS.runtime, ...user.runtime },
     registries: { ...DEFAULTS.registries, ...user.registries },
     dirs: { ...DEFAULTS.dirs, ...user.dirs },

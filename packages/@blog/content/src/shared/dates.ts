@@ -6,16 +6,18 @@
  * 클라이언트에서 'today/recent7/30d' 같은 윈도우를 만들 때도 KST 기준이어야
  * RPC 결과와 1대1로 매칭됩니다.
  *
- * 타임존 식별자(IANA 이름·ISO offset·ms 오프셋)는 값-only 모듈
- * (`contentValues.ts`)에서 옵니다 — 셋이 같은 타임존을 가리켜야 합니다.
- * 이 헬퍼들은 admin 클라이언트 컴포넌트가 쓰므로 설정 객체
- * (`contentConfig.ts`)를 import하면 안 됩니다(번들 누출).
+ * 타임존 식별자(IANA 이름·ISO offset·ms 오프셋)는 **인자로 받습니다** —
+ * 해석된 설정의 `timezone` 슬라이스, 또는 앱 값 모듈의 `TIMEZONE`을 그대로
+ * 넘기면 됩니다. 예전에는 모듈 스코프 리터럴을 직접 읽어서, 설정으로 타임존을
+ * 덮어도 이 헬퍼들만 옛 값을 보고 있었습니다.
+ *
+ * 이 헬퍼들은 admin 클라이언트 컴포넌트가 쓰므로 설정 **객체**를 값으로
+ * import하면 안 됩니다(번들 누출) — 타입만 가져옵니다.
+ *
+ * 이름의 `KST`는 이 저장소가 실제로 쓰는 타임존을 가리키는 관용 이름으로
+ * 남겨 뒀습니다. 계산 자체는 넘겨받은 타임존을 따릅니다.
  */
-import {
-  TIMEZONE_IANA,
-  TIMEZONE_ISO_OFFSET,
-  TIMEZONE_UTC_OFFSET_MS,
-} from './contentValues.ts';
+import type { TimezoneConfig } from './contentConfig.ts';
 
 /**
  * 주어진 시점(`d`)의 KST 달력 날짜를 `YYYY-MM-DD`로 반환.
@@ -23,9 +25,12 @@ import {
  * 직접 `setHours(0,0,0,0)` + `toISOString()` 같이 짜면 브라우저 TZ에 따라
  * 0~1일 시프트가 발생합니다. 항상 이 헬퍼를 사용하세요.
  */
-export function getKSTDateISO(d: Date = new Date()): string {
+export function getKSTDateISO(
+  timezone: Pick<TimezoneConfig, 'iana'>,
+  d: Date = new Date(),
+): string {
   return new Intl.DateTimeFormat('en-CA', {
-    timeZone: TIMEZONE_IANA,
+    timeZone: timezone.iana,
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
@@ -68,16 +73,19 @@ export function diffDaysISO(a: string, b: string): number {
  *   `+09:00` 또는 `Z`를 명시하거나 `'YYYY-MM-DD'` 짧은 형식을 사용하세요.
  *
  * @example
- * parseScheduledDateKST('2026-05-24')
+ * parseScheduledDateKST(TIMEZONE, '2026-05-24')
  * // → Date("2026-05-23T15:00:00Z")  ← KST 자정 = UTC 전날 15시
  *
- * parseScheduledDateKST('2026-05-24T09:00:00+09:00')
+ * parseScheduledDateKST(TIMEZONE, '2026-05-24T09:00:00+09:00')
  * // → Date("2026-05-24T00:00:00Z")
  */
-export function parseScheduledDateKST(input: string): Date {
+export function parseScheduledDateKST(
+  timezone: Pick<TimezoneConfig, 'isoOffset'>,
+  input: string,
+): Date {
   // 'YYYY-MM-DD' 형식 여부 확인 (시간 없음)
   if (/^\d{4}-\d{2}-\d{2}$/.test(input)) {
-    return new Date(`${input}T00:00:00${TIMEZONE_ISO_OFFSET}`);
+    return new Date(`${input}T00:00:00${timezone.isoOffset}`);
   }
   return new Date(input);
 }
@@ -132,14 +140,15 @@ export function formatMonthDayISO(iso: string): string {
  * @returns cutoff 날짜 (이 날짜 이후 데이터가 필터링 대상).
  *
  * @example
- * getKSTCutoffDate('7days', '2026-05-25')  // → '2026-05-18'
- * getKSTCutoffDate('30days', '2026-05-25') // → '2026-04-25'
+ * getKSTCutoffDate(TIMEZONE, '7days', '2026-05-25')  // → '2026-05-18'
+ * getKSTCutoffDate(TIMEZONE, '30days', '2026-05-25') // → '2026-04-25'
  */
 export function getKSTCutoffDate(
+  timezone: Pick<TimezoneConfig, 'iana'>,
   filterType: '7days' | '30days',
   todayKST?: string,
 ): string {
-  const today = todayKST ?? getKSTDateISO();
+  const today = todayKST ?? getKSTDateISO(timezone);
   if (filterType === '7days') return addDaysISO(today, -7);
   return addDaysISO(today, -30);
 }
@@ -151,8 +160,11 @@ export function getKSTCutoffDate(
  * useAnalyticsOverview가 자정마다 차트 윈도우를 리셋하는 setTimeout 스케줄에 씁니다.
  * now를 주입받아 결정적으로 테스트할 수 있습니다.
  */
-export function msUntilKSTMidnight(now: Date = new Date()): number {
-  const kstOffset = TIMEZONE_UTC_OFFSET_MS; // KST = UTC+9시간
+export function msUntilKSTMidnight(
+  timezone: Pick<TimezoneConfig, 'utcOffsetMs'>,
+  now: Date = new Date(),
+): number {
+  const kstOffset = timezone.utcOffsetMs;
   const nowKST = now.getTime() + kstOffset;
   const midnightKST = Math.ceil(nowKST / 86400000) * 86400000;
   return midnightKST - nowKST + 60_000;

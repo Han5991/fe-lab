@@ -2,7 +2,6 @@ import { readFileSync } from 'node:fs';
 import { relative } from 'node:path';
 import matter from 'gray-matter';
 import { estimateReadMin } from '../shared/format.ts';
-import { SEO_DESCRIPTION_MAX_LENGTH } from '../shared/constants.ts';
 import { collectMarkdownFiles, hasFrontmatter } from '../shared/postFiles.ts';
 import { isPostFile } from './visibility.ts';
 // 좁히기 함수(toDateString·toOptionalString·toStringArray)는 서술자 테이블과
@@ -37,14 +36,14 @@ export function extractPlainText(content: string): string {
  *
  * 잘릴 때만 '...'을 붙입니다(짧은 글에 오해 소지의 말줄임표가 붙지 않도록).
  *
- * maxLength 기본값은 SEO description 예산과 같은 상수(contentValues)에서 온다 —
- * 설정이 `seo.descriptionMaxLength`를 덮어썼다면 그 값을 명시적으로 넘길 것
- * (createRepository가 그렇게 한다).
+ * `maxLength`는 인자다 — 설정의 `seo.descriptionMaxLength`를 넘긴다
+ * (createRepository가 그렇게 한다). 기본값을 두면 설정을 덮었을 때 발췌 길이만
+ * 옛 예산을 따라, lint:posts가 경고하는 길이와 실제 description이 갈라진다.
  */
 export function resolveExcerpt(
   content: string,
-  explicit?: unknown,
-  maxLength: number = SEO_DESCRIPTION_MAX_LENGTH,
+  explicit: unknown,
+  maxLength: number,
 ): string {
   return resolveExcerptFrom(extractPlainText(content), explicit, maxLength);
 }
@@ -59,8 +58,8 @@ export function resolveExcerpt(
  */
 export function resolveExcerptFrom(
   plainText: string,
-  explicit?: unknown,
-  maxLength: number = SEO_DESCRIPTION_MAX_LENGTH,
+  explicit: unknown,
+  maxLength: number,
 ): string {
   const given = toOptionalString(explicit);
   if (given) return given;
@@ -83,7 +82,7 @@ export function resolveExcerptFrom(
 export function parsePost(
   fileContents: string,
   relPath: string,
-  opts?: { excerptMaxLength?: number },
+  opts: { excerptMaxLength: number },
 ): PostData | null {
   // frontmatter delimiter 없는 메타 노트는 스킵 (validate-posts 와 동일 규칙)
   if (!hasFrontmatter(fileContents)) return null;
@@ -120,7 +119,7 @@ export function parsePost(
     excerpt: resolveExcerptFrom(
       cleanContent,
       data.excerpt,
-      opts?.excerptMaxLength,
+      opts.excerptMaxLength,
     ),
     thumbnail: toOptionalString(data.thumbnail),
     // 등록되지 않은 이름인지까지는 여기서 보지 않는다 — 렌더 계층이 폴백하고
@@ -151,7 +150,7 @@ function collectPosts(
   dirPath: string,
   deps: {
     isSeriesFolder: (seriesName: string) => boolean;
-    excerptMaxLength?: number;
+    excerptMaxLength: number;
   },
 ): PostData[] {
   const results: PostData[] = [];
@@ -159,10 +158,7 @@ function collectPosts(
   // getSeriesMeta가 dev에서 캐시를 우회하는 것과 같습니다 — `_series.yml`을
   // 새로 만들거나 지우면 다음 요청에 바로 반영돼야 합니다.
   const declaredSeries = new Map<string, boolean>();
-  const parseOpts =
-    deps.excerptMaxLength === undefined
-      ? undefined
-      : { excerptMaxLength: deps.excerptMaxLength };
+  const parseOpts = { excerptMaxLength: deps.excerptMaxLength };
 
   for (const fullPath of collectMarkdownFiles(dirPath)) {
     const fileContents = readFileSync(fullPath, 'utf8');

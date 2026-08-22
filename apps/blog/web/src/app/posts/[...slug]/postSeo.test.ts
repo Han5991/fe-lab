@@ -12,10 +12,13 @@ import {
   buildPostJsonLd,
   buildBreadcrumbJsonLd,
 } from '@/src/content';
+import contentConfig from '@/content.config.mts';
 import { toNextMetadata } from './nextMetadata';
 
-// @blog/content 설정: SITE_URL='https://blog.sangwook.dev', OG_DEFAULT_IMAGE='/og-default.jpg'
-const SITE = 'https://blog.sangwook.dev';
+// 기대값은 이 앱의 해석된 설정에서 온다 — 빌더가 읽는 것과 같은 출처.
+const SITE = contentConfig.site.url;
+const ISO_OFFSET = contentConfig.timezone.isoOffset;
+const DESC_MAX = contentConfig.seo.descriptionMaxLength;
 
 function makePost(over: Partial<SeoPost> = {}): SeoPost {
   return {
@@ -34,43 +37,50 @@ function makePost(over: Partial<SeoPost> = {}): SeoPost {
 
 describe('buildDescription', () => {
   test('excerpt가 있으면 그대로', () => {
-    expect(buildDescription({ excerpt: '요약문', content: 'x' })).toBe(
-      '요약문',
-    );
+    expect(
+      buildDescription({ excerpt: '요약문', content: 'x' }, DESC_MAX),
+    ).toBe('요약문');
   });
 
   test('excerpt가 없고 본문이 160자 초과면 160자 + "..."', () => {
-    const d = buildDescription({
-      excerpt: undefined,
-      content: '가'.repeat(200),
-    });
+    const d = buildDescription(
+      {
+        excerpt: undefined,
+        content: '가'.repeat(200),
+      },
+      DESC_MAX,
+    );
     expect(d).toBe('가'.repeat(160) + '...');
   });
 
   test('excerpt가 없고 본문이 160자 이하면 "..." 없이 그대로', () => {
-    expect(buildDescription({ excerpt: undefined, content: '짧은 본문' })).toBe(
-      '짧은 본문',
-    );
+    expect(
+      buildDescription({ excerpt: undefined, content: '짧은 본문' }, DESC_MAX),
+    ).toBe('짧은 본문');
   });
 });
 
 describe('toKstIsoDate', () => {
   test('YYYY-MM-DD → KST ISO', () => {
-    expect(toKstIsoDate('2025-01-02')).toBe('2025-01-02T00:00:00+09:00');
+    expect(toKstIsoDate('2025-01-02', ISO_OFFSET)).toBe(
+      '2025-01-02T00:00:00+09:00',
+    );
   });
 
   test('null/undefined → undefined', () => {
-    expect(toKstIsoDate(null)).toBeUndefined();
-    expect(toKstIsoDate(undefined)).toBeUndefined();
+    expect(toKstIsoDate(null, ISO_OFFSET)).toBeUndefined();
+    expect(toKstIsoDate(undefined, ISO_OFFSET)).toBeUndefined();
   });
 
   test('offset 포함 full-ISO는 suffix 없이 그대로 반환 (invalid ISO 방지)', () => {
     // validate-posts가 권장하는 형식 — suffix를 덧붙이면
     // '...+09:00T00:00:00+09:00' 같은 깨진 값이 됐던 회귀 케이스
-    expect(toKstIsoDate('2026-05-24T09:00:00+09:00')).toBe(
+    expect(toKstIsoDate('2026-05-24T09:00:00+09:00', ISO_OFFSET)).toBe(
       '2026-05-24T09:00:00+09:00',
     );
-    expect(toKstIsoDate('2026-05-24T00:00:00Z')).toBe('2026-05-24T00:00:00Z');
+    expect(toKstIsoDate('2026-05-24T00:00:00Z', ISO_OFFSET)).toBe(
+      '2026-05-24T00:00:00Z',
+    );
   });
 });
 
@@ -230,7 +240,7 @@ describe('buildPostJsonLd (Schema.org BlogPosting)', () => {
     expect(ld.headline).toBe('테스트 글');
     expect(ld.datePublished).toBe('2025-01-02T00:00:00+09:00');
     // JSON-LD url도 피드·sitemap과 같은 빌더(postUrl)에서 온다 — 인코딩 포함.
-    expect(ld.url).toBe(postUrl('번들러/3편'));
+    expect(ld.url).toBe(postUrl('번들러/3편', SITE));
     expect(ld.inLanguage).toBe('ko');
     expect(ld.isAccessibleForFree).toBe(true);
   });
@@ -308,7 +318,7 @@ describe('buildBreadcrumbJsonLd', () => {
     expect(items[2]).toMatchObject({
       position: 3,
       name: '테스트 글',
-      item: postUrl('번들러/3편'),
+      item: postUrl('번들러/3편', SITE),
     });
   });
 });
@@ -329,17 +339,20 @@ describe('buildDescription: 도메인 폴백 재사용', () => {
   test('평문이 없는 본문에서도 마크다운 기호가 새지 않는다', () => {
     // 예전에는 마크다운 원문을 그대로 잘라, 이미지·코드만 있는 글의 description이
     // `![](...)` 같은 기호로 채워졌다.
-    const d = buildDescription({
-      excerpt: undefined,
-      content: '![](./a.png)\n\n```ts\ncode\n```',
-    });
+    const d = buildDescription(
+      {
+        excerpt: undefined,
+        content: '![](./a.png)\n\n```ts\ncode\n```',
+      },
+      DESC_MAX,
+    );
     expect(d).not.toContain('![');
     expect(d).not.toContain('```');
   });
 
   test('parsePost가 만드는 excerpt와 같은 규칙', () => {
     const content = '가'.repeat(300);
-    expect(buildDescription({ excerpt: undefined, content })).toBe(
+    expect(buildDescription({ excerpt: undefined, content }, DESC_MAX)).toBe(
       '가'.repeat(160) + '...',
     );
   });
