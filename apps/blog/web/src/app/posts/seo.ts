@@ -6,10 +6,6 @@
  * 수 있어, 페이지가 이미 가진 배열을 그대로 넘기게 둡니다.
  */
 import contentConfig from '@/content.config.mts';
-
-// 사이트 정체성·저자·SEO 예산은 해석된 설정에서 온다 — 값의 출처는
-// `content.values.mts`이고, 여기서 리터럴을 다시 읽지 않는다(서버 전용 모듈).
-const { site: SITE, seo: SEO } = contentConfig;
 import type { Metadata } from 'next';
 import {
   archiveUrl,
@@ -17,6 +13,10 @@ import {
   POSTS_PATH,
   type PostSummary,
 } from '@blog/content';
+
+// 사이트 정체성·저자·SEO 예산은 해석된 설정에서 온다 — 값의 출처는
+// `content.values.mts`이고, 여기서 리터럴을 다시 읽지 않는다(서버 전용 모듈).
+const { site: SITE, seo: SEO } = contentConfig;
 
 // `<title>`·description을 세 곳(meta·og·twitter)에 각각 적으면 한 곳만 고쳐졌을 때
 // 공유 카드와 검색 결과가 서로 다른 말을 한다. 페이지당 한 번만 쓴다 — /series가

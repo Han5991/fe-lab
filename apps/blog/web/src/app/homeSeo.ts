@@ -6,12 +6,12 @@
  * 다른 페이지가 `@id`로 참조하는 정의라 홈에서 한 번만 내보냅니다.
  */
 import contentConfig from '@/content.config.mts';
+import type { Metadata } from 'next';
+import { archiveUrl } from '@blog/content';
 
 // 사이트 정체성·저자·SEO 예산은 해석된 설정에서 온다 — 값의 출처는
 // `content.values.mts`이고, 여기서 리터럴을 다시 읽지 않는다(서버 전용 모듈).
 const { site: SITE, author: AUTHOR } = contentConfig;
-import type { Metadata } from 'next';
-import { archiveUrl } from '@blog/content';
 
 // 제목은 meta·og·twitter 세 곳에 나가므로 한 번만 쓴다 — 한 곳만 고쳐지면
 // 검색 결과와 공유 카드가 다른 말을 한다.

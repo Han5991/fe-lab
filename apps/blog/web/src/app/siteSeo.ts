@@ -6,11 +6,11 @@
  * 모이는 곳입니다. 레이아웃은 이 함수를 부르기만 합니다.
  */
 import contentConfig from '@/content.config.mts';
+import type { Metadata } from 'next';
 
 // 사이트 정체성·저자·SEO 예산은 해석된 설정에서 온다 — 값의 출처는
 // `content.values.mts`이고, 여기서 리터럴을 다시 읽지 않는다(서버 전용 모듈).
 const { site: SITE } = contentConfig;
-import type { Metadata } from 'next';
 
 // 제목은 meta·og·twitter 세 곳에 나간다. 한 번만 쓴다.
 const DEFAULT_TITLE = `${SITE.name} | 프론트엔드 실험실`;

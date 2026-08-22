@@ -8,11 +8,11 @@
  * 둡니다 — 글 상세의 `posts/[...slug]/nextMetadata.ts`와 같은 자리입니다.
  */
 import contentConfig from '@/content.config.mts';
+import type { Metadata } from 'next';
 
 // 사이트 정체성·저자·SEO 예산은 해석된 설정에서 온다 — 값의 출처는
 // `content.values.mts`이고, 여기서 리터럴을 다시 읽지 않는다(서버 전용 모듈).
 const { site: SITE, author: AUTHOR, seo: SEO } = contentConfig;
-import type { Metadata } from 'next';
 
 const PAGE_TITLE = `소개${SEO.titleSuffix}`;
 const SEARCH_DESCRIPTION =

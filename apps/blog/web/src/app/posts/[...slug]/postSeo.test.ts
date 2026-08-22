@@ -42,20 +42,16 @@ describe('buildDescription', () => {
     ).toBe('요약문');
   });
 
-  test(
-    'excerpt가 없고 본문이 160자 초과면 160자 + "..."',
-    () => {
-      const d = buildDescription(
-        {
-          excerpt: undefined,
-          content: '가'.repeat(200),
-        },
-        DESC_MAX,
-      );
-      expect(d).toBe('가'.repeat(160) + '...');
-    },
-    DESC_MAX,
-  );
+  test('excerpt가 없고 본문이 160자 초과면 160자 + "..."', () => {
+    const d = buildDescription(
+      {
+        excerpt: undefined,
+        content: '가'.repeat(200),
+      },
+      DESC_MAX,
+    );
+    expect(d).toBe('가'.repeat(160) + '...');
+  });
 
   test('excerpt가 없고 본문이 160자 이하면 "..." 없이 그대로', () => {
     expect(
@@ -340,23 +336,19 @@ describe('resolveSeoTitle', () => {
 });
 
 describe('buildDescription: 도메인 폴백 재사용', () => {
-  test(
-    '평문이 없는 본문에서도 마크다운 기호가 새지 않는다',
-    () => {
-      // 예전에는 마크다운 원문을 그대로 잘라, 이미지·코드만 있는 글의 description이
-      // `![](...)` 같은 기호로 채워졌다.
-      const d = buildDescription(
-        {
-          excerpt: undefined,
-          content: '![](./a.png)\n\n```ts\ncode\n```',
-        },
-        DESC_MAX,
-      );
-      expect(d).not.toContain('![');
-      expect(d).not.toContain('```');
-    },
-    DESC_MAX,
-  );
+  test('평문이 없는 본문에서도 마크다운 기호가 새지 않는다', () => {
+    // 예전에는 마크다운 원문을 그대로 잘라, 이미지·코드만 있는 글의 description이
+    // `![](...)` 같은 기호로 채워졌다.
+    const d = buildDescription(
+      {
+        excerpt: undefined,
+        content: '![](./a.png)\n\n```ts\ncode\n```',
+      },
+      DESC_MAX,
+    );
+    expect(d).not.toContain('![');
+    expect(d).not.toContain('```');
+  });
 
   test('parsePost가 만드는 excerpt와 같은 규칙', () => {
     const content = '가'.repeat(300);

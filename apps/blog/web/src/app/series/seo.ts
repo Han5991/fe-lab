@@ -5,11 +5,11 @@
  * meta description과 눈에 보이는 소개 문구가 갈라지지 않게 하나만 둡니다.
  */
 import contentConfig from '@/content.config.mts';
+import type { Metadata } from 'next';
 
 // 사이트 정체성·저자·SEO 예산은 해석된 설정에서 온다 — 값의 출처는
 // `content.values.mts`이고, 여기서 리터럴을 다시 읽지 않는다(서버 전용 모듈).
 const { site: SITE } = contentConfig;
-import type { Metadata } from 'next';
 
 const PAGE_TITLE = `시리즈 | ${SITE.name}`;
 export const PAGE_DESCRIPTION =
