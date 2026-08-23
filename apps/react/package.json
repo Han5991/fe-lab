@@ -41,7 +41,7 @@
     "msw": "catalog:",
     "typescript": "catalog:",
     "typescript-eslint": "catalog:lint",
-    "vite": "^8.2.1",
+    "vite": "^8.2.2",
     "vite-tsconfig-paths": "^6.1.1",
     "vitest": "catalog:"
   },
