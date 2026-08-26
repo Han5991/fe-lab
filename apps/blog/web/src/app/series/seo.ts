@@ -5,11 +5,16 @@
  * meta description과 눈에 보이는 소개 문구가 갈라지지 않게 하나만 둡니다.
  */
 import contentConfig from '@/content.config.mts';
+import { SERIES_PATH } from '@/content.values.mts';
 import type { Metadata } from 'next';
 
 // 사이트 정체성·저자·SEO 예산은 해석된 설정에서 온다 — 값의 출처는
 // `content.values.mts`이고, 여기서 리터럴을 다시 읽지 않는다(서버 전용 모듈).
 const { site: SITE } = contentConfig;
+
+// 절대 URL은 상대 경로에서 한 번만 파생한다(`@blog/content`의 postPath→postUrl과
+// 같은 관례). og url·JSON-LD `@id`·url이 이 하나를 공유한다.
+const SERIES_URL = `${SITE.url}${SERIES_PATH}`;
 
 const PAGE_TITLE = `시리즈 | ${SITE.name}`;
 export const PAGE_DESCRIPTION =
@@ -19,11 +24,11 @@ export function buildSeriesMetadata(): Metadata {
   return {
     title: PAGE_TITLE,
     description: PAGE_DESCRIPTION,
-    alternates: { canonical: '/series/' },
+    alternates: { canonical: SERIES_PATH },
     openGraph: {
       title: PAGE_TITLE,
       description: PAGE_DESCRIPTION,
-      url: `${SITE.url}/series/`,
+      url: SERIES_URL,
       siteName: SITE.name,
       images: [
         {
@@ -49,9 +54,9 @@ export function buildSeriesJsonLd() {
   return {
     '@context': 'https://schema.org',
     '@type': 'CollectionPage',
-    '@id': `${SITE.url}/series/`,
+    '@id': SERIES_URL,
     name: `시리즈 | ${SITE.name}`,
-    url: `${SITE.url}/series/`,
+    url: SERIES_URL,
     description: PAGE_DESCRIPTION,
     inLanguage: 'ko',
     isPartOf: { '@id': `${SITE.url}/#website` },

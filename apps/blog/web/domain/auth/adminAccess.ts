@@ -8,10 +8,24 @@
  */
 
 /**
+ * admin 영역의 루트. 아래 경로는 전부 여기서 파생된다 — `/admin`을 여러 번
+ * 적어 두면 영역을 옮길 때 한 곳만 고쳐지고 나머지가 조용히 어긋난다.
+ * 후행 슬래시는 붙이지 않는다(필요한 쪽이 붙인다).
+ */
+export const ADMIN_BASE_PATH = '/admin';
+
+/**
+ * 로그인 화면의 무슬래시형. dev 서버가 `skipTrailingSlashRedirect`로 두 형태를
+ * 모두 200으로 서빙하므로 `isAdminLoginPath`가 이 형태도 알아야 한다.
+ * **판정 전용이다** — 내부 이동에는 아래 canonical을 쓴다.
+ */
+const ADMIN_LOGIN_PATH_NO_SLASH = `${ADMIN_BASE_PATH}/login`;
+
+/**
  * 로그인 화면의 canonical 경로. `trailingSlash: true`라 내부 이동은 언제나
  * 슬래시형을 쓴다(next.config.ts의 후행 슬래시 계약).
  */
-export const ADMIN_LOGIN_PATH = '/admin/login/';
+export const ADMIN_LOGIN_PATH = `${ADMIN_LOGIN_PATH_NO_SLASH}/`;
 
 /** 허용되지 않은 계정으로 로그인했을 때 보내는 경로. */
 export const ADMIN_LOGIN_UNAUTHORIZED_PATH = `${ADMIN_LOGIN_PATH}?error=unauthorized`;
@@ -24,8 +38,11 @@ export const ADMIN_LOGIN_UNAUTHORIZED_PATH = `${ADMIN_LOGIN_PATH}?error=unauthor
  * 아니라 **Supabase 대시보드의 허용 리다이렉트 목록과 짝**이다. 목록이 정확
  * 일치로 걸려 있을 때 코드만 슬래시형으로 바꾸면 프로덕션 로그인이 깨진다 —
  * 바꿀 때는 둘을 함께 바꿀 것.
+ *
+ * 그래서 `ADMIN_BASE_PATH`를 그대로 쓴다. 슬래시를 붙이는 파생을 여기 두면
+ * 위 계약이 코드 모양으로는 안 보이게 된다.
  */
-export const ADMIN_LOGIN_REDIRECT_PATH = '/admin';
+export const ADMIN_LOGIN_REDIRECT_PATH = ADMIN_BASE_PATH;
 
 /**
  * 로그인 후 돌아올 **절대 URL**.
@@ -51,7 +68,9 @@ export function adminLoginRedirectUrl(origin: string): string {
  * 무한 루프가 생기지 않아야 한다.
  */
 export function isAdminLoginPath(pathname: string | null | undefined): boolean {
-  return pathname === '/admin/login' || pathname === ADMIN_LOGIN_PATH;
+  return (
+    pathname === ADMIN_LOGIN_PATH_NO_SLASH || pathname === ADMIN_LOGIN_PATH
+  );
 }
 
 /**

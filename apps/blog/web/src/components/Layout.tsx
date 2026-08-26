@@ -1,5 +1,10 @@
 import { RSS_PATH } from '@blog/content';
-import { AUTHOR_GITHUB, AUTHOR_LINKEDIN } from '@/content.values.mts';
+import {
+  ABOUT_PATH,
+  AUTHOR_GITHUB,
+  AUTHOR_LINKEDIN,
+  PRIVACY_PATH,
+} from '@/content.values.mts';
 import Link from 'next/link';
 import { css, cx } from '@design-system/ui-lib/css';
 import type { ReactNode } from 'react';
@@ -35,8 +40,8 @@ const footerLink = css({
 });
 
 const FOOTER_LINKS = [
-  { href: '/about/', label: 'About', internal: true },
-  { href: '/privacy/', label: '개인정보', internal: true },
+  { href: ABOUT_PATH, label: 'About', internal: true },
+  { href: PRIVACY_PATH, label: '개인정보', internal: true },
   { href: AUTHOR_GITHUB, label: 'GitHub', internal: false },
   { href: AUTHOR_LINKEDIN, label: 'LinkedIn', internal: false },
   { href: RSS_PATH, label: 'RSS', internal: false },

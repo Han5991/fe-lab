@@ -40,6 +40,11 @@ describe('isAdminEmail', () => {
 });
 
 describe('경로 상수', () => {
+  test('로그인 경로는 파생되지만 값은 슬래시형 canonical 그대로다', () => {
+    // ADMIN_BASE_PATH에서 조립하므로, 파생이 어긋나면 여기서 먼저 걸린다.
+    expect(ADMIN_LOGIN_PATH).toBe('/admin/login/');
+  });
+
   test('unauthorized 경로는 로그인 경로에서 파생된다', () => {
     expect(ADMIN_LOGIN_UNAUTHORIZED_PATH).toBe(
       `${ADMIN_LOGIN_PATH}?error=unauthorized`,

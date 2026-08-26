@@ -1,4 +1,4 @@
-import { SITE_URL } from '@/content.values.mts';
+import { PRIVACY_PATH, SITE_NAME, SITE_URL } from '@/content.values.mts';
 import { css, cx } from '@design-system/ui-lib/css';
 import type { Metadata } from 'next';
 
@@ -6,10 +6,10 @@ import { PageBoundary } from '@/src/components/PageBoundary';
 import { railGutter, railColumn } from '@/src/components/Rail';
 
 export const metadata: Metadata = {
-  title: '개인정보처리방침 | Frontend Lab',
+  title: `개인정보처리방침 | ${SITE_NAME}`,
   description: 'Frontend Lab 블로그의 개인정보처리방침입니다.',
   alternates: {
-    canonical: '/privacy/',
+    canonical: PRIVACY_PATH,
   },
   robots: {
     index: false,
