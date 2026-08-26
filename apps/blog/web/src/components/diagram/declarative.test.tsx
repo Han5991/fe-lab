@@ -338,7 +338,7 @@ describe('Diagram — 이름 레지스트리', () => {
 });
 
 describe('마크다운 왕복', () => {
-  /** PostClient의 플러그인·컴포넌트 구성을 그대로 흉내 낸다. */
+  /** PostBody의 플러그인·컴포넌트 구성을 그대로 흉내 낸다. */
   function renderMarkdown(markdown: string) {
     return render(
       <ReactMarkdown

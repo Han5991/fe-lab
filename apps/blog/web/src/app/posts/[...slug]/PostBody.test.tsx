@@ -24,11 +24,26 @@ describe('파이프라인 배선', () => {
     ]);
   });
 
-  test('블록 판정 Set의 컴포넌트는 전부 components 매핑에도 있다', () => {
-    const mapped = new Set(Object.values(buildPostComponents('dir') ?? {}));
-    for (const component of BLOCK_MARKDOWN_COMPONENTS) {
-      expect(mapped).toContain(component);
-    }
+  test('블록 판정 Set ↔ 매핑의 블록 컨테이너 태그가 정확히 일치한다', () => {
+    const components = buildPostComponents('dir') ?? {};
+    // 최상위 블록 컨테이너 태그의 단일 목록. 새 블록 태그를 매핑에 더할 때는
+    // markdownBlocks.ts의 Set과 이 목록을 **함께** 늘린다 — 매핑에만 더하면
+    // p 매퍼가 <p>를 유지해 <p><div> 무효 중첩(hydration mismatch)으로 새고,
+    // Set에만 더하면 아래 완전 일치가 깨져 여기서 잡힌다.
+    const blockTags = [
+      'callout',
+      'code-tabs',
+      'diagram',
+      'dialogue',
+      'figure',
+      'file-tree',
+      'metrics',
+      'timeline',
+    ] as const;
+    const mappedBlocks = new Set(
+      blockTags.map(tag => (components as Record<string, unknown>)[tag]),
+    );
+    expect(mappedBlocks).toEqual(BLOCK_MARKDOWN_COMPONENTS);
   });
 });
 

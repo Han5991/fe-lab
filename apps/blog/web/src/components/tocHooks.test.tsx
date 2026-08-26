@@ -189,7 +189,7 @@ describe('useTocHook - 본문 변화 추적', () => {
     expect(result.current.toc).toBe(before);
   });
 
-  // TOC와 MobileTOC가 같은 페이지에 함께 마운트된다(PostClient). 캐시는 인스턴스
+  // TOC와 MobileTOC가 같은 페이지에 함께 마운트된다(글 상세 page.tsx). 캐시는 인스턴스
   // 별로 따로 두지만 — 페이지 전환 중 두 글의 본문이 공존할 때 서로에게 새지
   // 않게 — 같은 본문을 읽으므로 내용은 같아야 한다.
   test('두 곳에서 함께 구독해도 같은 목차를 본다', () => {

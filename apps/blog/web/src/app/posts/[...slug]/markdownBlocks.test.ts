@@ -11,7 +11,7 @@ import { Step, Timeline } from '@/src/components/post/markdown/Timeline';
 import { Diagram } from '@/src/components/diagram';
 
 // react-markdown이 <p>로 감싼 자식을 isBlockMarkdownChild가 어떻게 분류하는지 검증.
-// true면 PostClient가 <p>를 <div>로 교체해 무효 중첩(<p><div></div></p>) → hydration
+// true면 PostBody의 p 매퍼가 <p>를 <div>로 교체해 무효 중첩(<p><div></div></p>) → hydration
 // mismatch를 막는다. 각 케이스는 실제 렌더 시 child가 갖는 type/props 형태를 흉내낸다.
 describe('isBlockMarkdownChild', () => {
   describe('직접 매핑된 커스텀 블록 컴포넌트는 identity로 블록 판정', () => {

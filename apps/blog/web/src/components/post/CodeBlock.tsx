@@ -19,6 +19,13 @@ import { css, cx } from '@design-system/ui-lib/css';
 import { token } from '@design-system/ui-lib/tokens';
 import { codeText, isBlockCode } from './markdownCode';
 import { toDualTheme } from './codeTheme';
+import {
+  CODE_BORDER,
+  CODE_CHROME,
+  CODE_META,
+  CODE_SELECTION,
+  CODE_SURFACE,
+} from './codeChrome';
 import { CopyButton } from './CopyButton';
 import { MermaidLazy } from './MermaidLazy';
 import {
@@ -110,28 +117,6 @@ SyntaxHighlighter.alias(
       .map(([name, aliases]) => [name, [...aliases]] as const),
   ),
 );
-
-// ─────────────────────────────────────────────────────────────────────────
-// 코드 표면도 테마를 탄다.
-//
-// 예전에는 "코드 표면은 테마와 무관하게 항상 어둡다"가 규칙이었다. 이유는
-// 하나뿐이었다 — vscDarkPlus의 구문 색이 다크 배경 전용 고정값이라 배경만
-// 밝히면 대비가 무너졌기 때문이다. 그래서 크롬 색도 토큰을 못 쓰고 다크
-// 팔레트에서 뽑은 hex를 박아 뒀다.
-//
-// 그 전제를 codeTheme.ts가 걷어냈다(구문 색이 라이트/다크 두 벌이 됐다).
-// 남은 크롬 색은 이제 평범한 semanticToken이면 된다.
-// ─────────────────────────────────────────────────────────────────────────
-const CODE_SURFACE = 'code.surface';
-const CODE_CHROME = 'code.chrome';
-// 보더·메타 텍스트는 코드 전용 토큰을 따로 두지 않는다. 라이트/다크가 함께
-// 도는 지금은 본문에서 쓰는 hairline·서브 텍스트와 같은 값이 맞다.
-const CODE_BORDER = 'ink.border';
-const CODE_META = 'ink.600';
-// 드래그 선택 배경만 전용 토큰을 유지한다. 전역 ::selection(panda.config)의
-// selection.bg는 라이트에서 옅은 하늘색이라, 코드 표면 위 파란 계열 토큰
-// (string #0A3069, number #0550AE)을 지워버린다.
-const CODE_SELECTION = 'code.selection';
 
 // 구문 강조 한 벌을 라이트/다크 두 벌로. 다크 값은 vscDarkPlus 그대로라
 // 다크 화면은 바뀌지 않는다(codeTheme.ts 주석 참고).

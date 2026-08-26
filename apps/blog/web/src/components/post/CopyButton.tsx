@@ -3,11 +3,7 @@
 import { useState } from 'react';
 import { Check, Clipboard } from 'lucide-react';
 import { css } from '@design-system/ui-lib/css';
-
-// CodeBlock 상단 바와 같은 메타/액센트 색. 상수 출처는 CodeBlock.tsx의
-// 크롬 팔레트 주석 참고 — 여기는 버튼이 쓰는 둘만 든다.
-const CODE_META = 'ink.600';
-const CODE_ACCENT = 'accent.600';
+import { CODE_ACCENT, CODE_META } from './codeChrome';
 
 // CodeBlock과 CodeTabs가 같은 버튼을 쓴다 — 탭 안에서는 상단 바를 탭이
 // 가져가므로 복사 버튼도 그쪽에서 그린다(복사 대상은 열려 있는 탭의 코드).
