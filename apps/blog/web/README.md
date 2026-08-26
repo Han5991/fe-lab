@@ -59,6 +59,7 @@ apps/blog/web/
 │  ├─ hooks/            useTheme · useViewCount · useRecentViews · useAdminViews · useAnalyticsOverview · usePostDetailStats · useAdminLogout
 │  └─ styles/globals.css
 ├─ domain/analytics/    analytics 레이어 — 순수 계산(service) + 저장소(repository·adminRepository) + 배럴 2개(index · admin)
+├─ domain/auth/         auth 레이어 — 세션 저장소(repository, DI 팩토리) + 관리자·로그인 경로 판정(adminAccess) + 배럴 1개
 ├─ lib/platform/        platform 레이어 — Supabase 어댑터(client · publicClient · adminApi · database.types)
 ├─ supabase/            로컬 Supabase 프로젝트 — config.toml · migrations/ · functions/admin-analytics · seed.sql
 ├─ public/              robots.txt · favicon · og-default.jpg … (+ 빌드가 생성하는 sitemap/rss/search-index/llms/og/thumbs/posts는 .gitignore)
@@ -68,18 +69,19 @@ apps/blog/web/
 └─ .env.production      (커밋된 유일한 env — Supabase URL/anon key, Giscus)
 ```
 
-`@/` 별칭은 **앱 루트**를 가리킨다(`tsconfig.json` `paths: {"@/*": ["./*"]}`) — `@/src/components/...`, `@/domain/analytics`, `@/lib/platform/client`. vitest alias도 같다.
+`@/` 별칭은 **앱 루트**를 가리킨다(`tsconfig.json` `paths: {"@/*": ["./*"]}`) — `@/src/components/...`, `@/domain/analytics`, `@/domain/auth`. vitest alias도 같다.
 
 ### 레이어 경계 — 컨벤션이 아니라 lint
 
 `eslint.config.mjs`의 `eslint-plugin-boundaries`가 **폴더 단위 element**로 의존 방향을 강제한다(`domain`·`lib`·`src` 세 폴더에만 건다). 기준 경로는 워크스페이스 루트 — `@blog/content`가 pnpm 심링크 realpath로 해석되기 때문.
 
-| element (아래 → 위) | 폴더                     | 가져올 수 있는 것                                                                                                                                |
-| :------------------ | :----------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------- |
-| `content-pkg`       | `packages/@blog/content` | (이 앱에서는 외부 패키지처럼 보인다 — 내부 경계는 패키지 자신의 eslint 설정이 강제)                                                              |
-| `platform`          | `lib/platform`           | 외부 `@supabase/supabase-js`·`@supabase/postgrest-js`만                                                                                          |
-| `analytics`         | `domain/analytics`       | `platform`, `content-pkg`(날짜 유틸 등)                                                                                                          |
-| `app`               | `src`                    | `platform`, `analytics`, `content-pkg`, 임의 외부 패키지. **node 코어 금지** — fs는 `src/content.ts`가 조립한 `@blog/content` 로더 인스턴스의 일 |
+| element (아래 → 위) | 폴더                     | 가져올 수 있는 것                                                                                                                                                                  |
+| :------------------ | :----------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `content-pkg`       | `packages/@blog/content` | (이 앱에서는 외부 패키지처럼 보인다 — 내부 경계는 패키지 자신의 eslint 설정이 강제)                                                                                                |
+| `platform`          | `lib/platform`           | 외부 `@supabase/supabase-js`·`@supabase/postgrest-js`만                                                                                                                            |
+| `analytics`         | `domain/analytics`       | `platform`, `content-pkg`(날짜 유틸 등)                                                                                                                                            |
+| `auth`              | `domain/auth`            | `platform`만 — supabase 타입은 이 레이어에서 구조적 부분형으로 끝낸다                                                                                                              |
+| `app`               | `src`                    | `analytics`, `auth`, `content-pkg`, 임의 외부 패키지. **platform·node 코어 금지** — Supabase 접근은 도메인 경유, fs는 `src/content.ts`가 조립한 `@blog/content` 로더 인스턴스의 일 |
 
 추가 규칙: 프로덕션 코드는 `*.test.*`를 import 못 함 / `src`는 `domain/*/…Repository`를 직접 찌르지 말고 배럴(`@/domain/analytics`, `@/domain/analytics/admin`)로 / `src`에서 `client.from()`·`.rpc()` 직접 호출 금지(`no-restricted-syntax`) / `domain`은 `src`를, `lib`은 `domain`·`src`를 import 못 함.
 
@@ -95,7 +97,7 @@ apps/blog/web/
 
 - **글 상세** — `src/app/posts/[...slug]/page.tsx`(서버)가 `@/src/content`(콘텐츠 인스턴스)의 `getPostBySlug`·`getAdjacentPosts`·`getSeriesAdjacentPosts`와 `@blog/content`의 순수 유틸(`resolveThumbnailUrl`·`isPostVisible`)을 부르고, `generateMetadata`는 같은 인스턴스 모듈의 `buildPostSeo` DTO를 `nextMetadata.ts`로 1:1 변환한다. **본문 컴파일은 빌드 타임의 일이다** — 같은 폴더의 `PostBody.tsx`(서버 컴포넌트)가 `react-markdown`(`remark-gfm` → `rehypeCodeMeta` → `rehype-raw` → `rehype-slug`, **순서 고정** — `rehype-raw`가 hast `data.meta`를 버리므로 코드 펜스 메타를 먼저 `data-*`로 옮긴다)으로 렌더하므로, 마크다운 파이프라인과 구문 강조(react-syntax-highlighter)는 클라이언트 번들에 실리지 않는다. 상호작용은 잎으로 내려간 클라이언트 컴포넌트가 각자 진다 — `PostRuntime`(조회수·최근 본 글 부수효과)·`CopyButton`·`CodeTabsPanels`(탭 상태 — 자식 훑기는 서버 파서 `CodeTabs`가 한다)·`MermaidLazy`(ssr:false 동적 로드)·`MarkdownImage`(줌)·`TOC`. 커스텀 소문자 태그(`callout`·`code-tabs`·`file-tree`·`figure`·`dialogue`·`metrics`·`timeline`·`diagram*`)는 `src/components/post/markdown/`·`diagram/`. 본문 `h1`은 `markdownHeadings.tsx`가 `h2`로 강등하며 RSS 렌더러와 같은 `HEADING_TAG_MAP`을 공유한다.
 - **조회수** — `useViewCount` → `@blog/content`의 `viewCookie`(6시간 쿨다운, RPC 전에 쿠키를 먼저 심어 두 탭 레이스 방지) → `domain/analytics/repository.incrementViewCount` → `lib/platform/publicClient`(PostgREST-only 경량 클라이언트)로 `increment_view_count` RPC.
-- **Admin** — `AdminLayoutClient` → `AdminGuard`(세션 `useSuspenseQuery`, dev에서만 bypass) → React Query 훅 → `@/domain/analytics/admin` 배럴 → `adminRepository` → `lib/platform/adminApi` → Supabase Edge Function `admin-analytics`(호출자 JWT를 `ADMIN_EMAIL`과 대조 후 `service_role`로 RPC). 글 목록은 빌드가 만든 `/admin-posts-index.json`. `domain/analytics/index.ts`와 `admin.ts`를 **일부러 두 배럴**로 나눠 공개 페이지가 auth 세션 supabase-js를 끌고 오지 않게 한다.
+- **Admin** — `AdminLayoutClient` → `AdminGuard`(세션 `useSuspenseQuery`, dev에서만 bypass) → React Query 훅 → `@/domain/analytics/admin` 배럴 → `adminRepository` → `lib/platform/adminApi` → Supabase Edge Function `admin-analytics`(호출자 JWT를 `ADMIN_EMAIL`과 대조 후 `service_role`로 RPC). 세션·로그인·로그아웃과 관리자 판정(이메일 대조·로그인 경로)은 전부 `@/domain/auth` 배럴 경유 — 가드·로그인 페이지가 `client.auth`를 직접 만지지 않는다. 글 목록은 빌드가 만든 `/admin-posts-index.json`(`getAdminPostsIndex` 한 곳이 읽는다). `domain/analytics/index.ts`와 `admin.ts`를 **일부러 두 배럴**로 나눠 공개 페이지가 auth 세션 supabase-js를 끌고 오지 않게 한다.
 - **검색** — `SearchDialog`가 열릴 때 `/search-index.json`(빌드 산출물)을 fetch + localStorage 최근 본 글.
 - **테마** — `layout.tsx`의 pre-paint 인라인 스크립트(쿠키 → `prefers-color-scheme` → dark)가 `html[data-theme]`를 세팅, `useTheme`가 `useSyncExternalStore`로 구독, `setTheme`은 View Transitions로 전환.
 - **페이지 전환** — `@ssgoi/react`(`PageTransition.tsx`): 썸네일 있는 글은 `/posts/{slug}` hero morph, 없으면 fade.

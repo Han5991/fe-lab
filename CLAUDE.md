@@ -54,7 +54,7 @@ The blog (`apps/blog/web/`) is a **statically generated (SSG) Next.js applicatio
 
 ```
 apps/blog/posts (원고)  →  packages/@blog/content  →  apps/blog/web
-                            shared → post → seo →      lib/platform → domain/analytics → src
+                            shared → post → seo →      lib/platform → domain/{analytics,auth} → src
                             scripts → scripts/render → scripts/cli
 ```
 
@@ -66,8 +66,11 @@ apps/blog/posts (원고)  →  packages/@blog/content  →  apps/blog/web
   전부 `.ts` 확장자를 달고(`allowImportingTsExtensions`, 앱 tsconfig에도 켜져 있어야 한다)
   문법은 `erasableSyntaxOnly`라, node의 type stripping만으로 로더 없이 돈다
 - **앱 내부**: `lib/platform`(Supabase 어댑터, 외부 의존은 supabase-js·postgrest-js만) →
-  `domain/analytics`(순수 계산 + 저장소, 배럴 `index`·`admin` 둘) → `src`(라우트·컴포넌트·훅).
-  `src`는 저장소를 직접 찌르지 않고 배럴로, `client.from()`·`.rpc()`도 직접 부르지 않는다.
+  `domain/analytics`(순수 계산 + 저장소, 배럴 `index`·`admin` 둘)·`domain/auth`(세션·관리자
+  판정·로그인 경로 계약) → `src`(라우트·컴포넌트·훅). `src`는 저장소를 직접 찌르지 않고
+  배럴로 — **platform 자체를 import할 수 없다**(boundaries에서 app→platform 허용이 없다.
+  Supabase 접근은 전부 도메인 경유고, 예전 유일한 예외였던 auth 직접 호출은 `domain/auth`가
+  흡수했다).
   **`src`는 node 코어를 못 만진다** — fs 접근은 전부 `@blog/content` 로더의 일(클라이언트 번들
   누수 예방). `@blog/content`는 앱에서 외부 패키지(`content-pkg`)로 보인다
 - **tsconfig 분할**: `tsconfig.json`(프로덕션, 엄격 플래그 전부) / `tsconfig.test.json`(테스트 —

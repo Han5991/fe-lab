@@ -26,10 +26,16 @@ import type {
   DowDistribution,
 } from './types';
 
+// admin-posts-index.json 산출물의 행 계약 부분집합 — 필드 정의의 출처는
+// @blog/content의 generate-search-index.ts(AdminPostsIndexEntry)다. 여기에는
+// admin 화면이 실제로 읽는 축만 든다. 산출물에 있는데 이 타입에 없는 필드가
+// 필요해지면 여기 늘릴 것 — 예전 태그 분포 훅이 이 타입에 tags가 없다는
+// 이유로 src에서 같은 파일을 따로 fetch(타입까지 재선언)했다.
 export interface AdminPostIndex {
   slug: string;
   title: string;
   date: string | null;
+  tags: string[];
   status: PostStatus;
   scheduledDate: string | null;
 }
@@ -80,6 +86,29 @@ export async function getAllPostsTrends(): Promise<PostTrendRow[]> {
   return all;
 }
 
+/**
+ * 응답 행이 AdminPostIndex 모양인지 — 산출물 검증은 이 저장소의 일이다.
+ * 소비자(useSuspenseQuery 훅들)는 throw가 곧 페이지 전체 ErrorBoundary라,
+ * 손으로 고쳐진 파일이나 형식이 어긋난 배포에 화면째 깨지면 안 된다.
+ */
+function isAdminPostIndexRow(item: unknown): item is AdminPostIndex {
+  if (typeof item !== 'object' || item === null) return false;
+  const row = item as Record<string, unknown>;
+  return (
+    typeof row['slug'] === 'string' &&
+    typeof row['title'] === 'string' &&
+    // date는 소비처(useAdminViews)가 폴백 없이 화면에 그대로 쓰므로 모양을
+    // 확인한다. status는 문자열이면 충분 — enum 값 검사까지 하면 발행 상태가
+    // 늘어날 때 여기가 조용한 필터가 된다(소비처는 문자열 비교·폴백만 함).
+    (typeof row['date'] === 'string' || row['date'] === null) &&
+    typeof row['status'] === 'string' &&
+    (typeof row['scheduledDate'] === 'string' ||
+      row['scheduledDate'] === null) &&
+    Array.isArray(row['tags']) &&
+    row['tags'].every(t => typeof t === 'string')
+  );
+}
+
 export async function getAdminPostsIndex(): Promise<AdminPostIndex[]> {
   // 서버 환경(SSG prerender 포함)에서는 상대 URL fetch가 ERR_INVALID_URL.
   // 어차피 admin은 클라이언트 hydration 후에만 유효하므로 SSR에선 빈 배열로 대기.
@@ -90,7 +119,11 @@ export async function getAdminPostsIndex(): Promise<AdminPostIndex[]> {
       `admin-posts-index.json fetch failed: ${res.status} ${res.statusText}`,
     );
   }
-  return (await res.json()) as AdminPostIndex[];
+  // 배열이 아니거나 모양이 어긋난 행은 조용히 거른다 — 검증이 여기 한 곳에
+  // 있어야 소비자마다 방어 코드가 다시 자라지 않는다(예전 태그 분포 훅이
+  // 자기 가드를 따로 들고 있었다).
+  const json: unknown = await res.json();
+  return Array.isArray(json) ? json.filter(isAdminPostIndexRow) : [];
 }
 
 export async function getPostHourlyDistribution(
