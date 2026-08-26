@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic';
 import { usePathname } from 'next/navigation';
 import { Suspense } from 'react';
 import { css } from '@design-system/ui-lib/css';
+import { isAdminLoginPath } from '@/domain/auth';
 
 const AdminGuard = dynamic(
   () => import('@/src/components/admin/AdminGuard').then(mod => mod.AdminGuard),
@@ -27,8 +28,7 @@ function AuthFallback() {
 
 export function AdminLayoutClient({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isLoginPage =
-    pathname === '/admin/login' || pathname === '/admin/login/';
+  const isLoginPage = isAdminLoginPath(pathname);
 
   const content = isLoginPage ? children : <AdminGuard>{children}</AdminGuard>;
 

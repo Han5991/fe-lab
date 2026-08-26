@@ -1,7 +1,7 @@
 'use client';
 
 import { Suspense } from 'react';
-import { client as supabase } from '@/lib/platform/client';
+import { signInAdminWithGoogle } from '@/domain/auth';
 import { css, cx } from '@design-system/ui-lib/css';
 import { railGutter } from '@/src/components/Rail';
 import { LogIn } from 'lucide-react';
@@ -12,13 +12,7 @@ function LoginForm() {
   const searchParams = useSearchParams();
 
   const { mutateAsync: handleGoogleLogin, isPending: isLoading } = useMutation({
-    mutationFn: () =>
-      supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/admin`,
-        },
-      }),
+    mutationFn: () => signInAdminWithGoogle(`${window.location.origin}/admin`),
     onError: () => alert('로그인 중 오류가 발생했습니다.'),
   });
 

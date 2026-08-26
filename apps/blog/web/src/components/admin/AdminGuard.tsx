@@ -2,8 +2,16 @@
 
 import { type ReactNode, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { client as supabase } from '@/lib/platform/client';
 import { useSuspenseQuery } from '@tanstack/react-query';
+import {
+  ADMIN_LOGIN_PATH,
+  ADMIN_LOGIN_UNAUTHORIZED_PATH,
+  getAdminSession,
+  isAdminEmail,
+  isAdminLoginPath,
+  signOutAdmin,
+  subscribeAdminSession,
+} from '@/domain/auth';
 
 // admin UI를 로컬(pnpm dev)에서 로그인 없이 개발/확인하기 위한 우회.
 // NODE_ENV로 자동 게이팅된다 → 프로덕션 빌드에선 false로 인라인되어 아래 우회
@@ -18,72 +26,54 @@ export function AdminGuard({ children }: { children: ReactNode }) {
 
   const { data: session } = useSuspenseQuery({
     queryKey: ['admin-auth-session'],
-    queryFn: async () => {
-      if (DEV_BYPASS) return null; // 우회 시 supabase 세션 조회 생략
-      const {
-        data: { session },
-        error,
-      } = await supabase.auth.getSession();
-
-      if (error) {
-        console.error('Auth guard error:', error);
-        return null;
-      }
-      return session;
-    },
+    // 우회 시 supabase 세션 조회 생략. 조회 실패→null 수렴은 저장소가 한다.
+    queryFn: () => (DEV_BYPASS ? null : getAdminSession()),
   });
 
   useEffect(() => {
     if (DEV_BYPASS) return; // 우회: redirect/auth 리스너 skip
     // Skip guard for the login page itself to prevent infinite loops
-    if (pathname === '/admin/login') {
+    if (isAdminLoginPath(pathname)) {
       return;
     }
 
     if (!session) {
-      router.replace('/admin/login/');
+      router.replace(ADMIN_LOGIN_PATH);
       return;
     }
 
-    // Additional security check: Only allow the configured admin email
-    if (session.user.email !== process.env.NEXT_PUBLIC_ADMIN_EMAIL) {
+    // 화면 쪽 관리자 판정 — 실제 강제는 Edge Function이 한다(domain/auth 참고).
+    if (!isAdminEmail(session.user.email)) {
       console.warn(`Unauthorized email attempt: ${session.user.email}`);
-      void supabase.auth.signOut().then(() => {
-        router.replace('/admin/login/?error=unauthorized');
+      void signOutAdmin().then(() => {
+        router.replace(ADMIN_LOGIN_UNAUTHORIZED_PATH);
       });
       return;
     }
 
     // Listen for auth state changes (e.g., logging out from another tab)
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
-      if (pathname === '/admin/login') return;
+    return subscribeAdminSession((currentSession, event) => {
+      if (isAdminLoginPath(pathname)) return;
 
       if (event === 'SIGNED_OUT' || !currentSession) {
-        router.replace('/admin/login/');
-      } else if (
-        currentSession?.user.email !== process.env.NEXT_PUBLIC_ADMIN_EMAIL
-      ) {
-        await supabase.auth.signOut();
-        router.replace('/admin/login/?error=unauthorized');
+        router.replace(ADMIN_LOGIN_PATH);
+      } else if (!isAdminEmail(currentSession.user.email)) {
+        void signOutAdmin().then(() => {
+          router.replace(ADMIN_LOGIN_UNAUTHORIZED_PATH);
+        });
       }
     });
-
-    return () => {
-      subscription.unsubscribe();
-    };
   }, [session, router, pathname]);
 
   if (DEV_BYPASS) {
     return children; // dev 전용 우회 (프로덕션은 위 게이팅으로 도달 불가)
   }
 
-  if (pathname === '/admin/login') {
+  if (isAdminLoginPath(pathname)) {
     return children;
   }
 
-  if (!session || session.user.email !== process.env.NEXT_PUBLIC_ADMIN_EMAIL) {
+  if (!session || !isAdminEmail(session.user.email)) {
     return null; // Don't flash content before redirect
   }
 

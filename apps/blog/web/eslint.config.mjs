@@ -322,6 +322,7 @@ export default defineConfig([
         { type: 'content-pkg', pattern: 'packages/@blog/content' },
         { type: 'platform', pattern: 'apps/blog/web/lib/platform' },
         { type: 'analytics', pattern: 'apps/blog/web/domain/analytics' },
+        { type: 'auth', pattern: 'apps/blog/web/domain/auth' },
         { type: 'app', pattern: 'apps/blog/web/src' },
       ],
       // 테스트는 element 배정은 그대로 두고 파일 카테고리 축으로만 표시한다.
@@ -387,16 +388,28 @@ export default defineConfig([
               ],
             },
             {
+              // auth는 세션 API(client.auth)를 만지는 유일한 레이어다 —
+              // supabase 타입도 여기서 끝내므로(구조적 부분형) 외부 의존이 없다.
+              from: { element: { type: 'auth' } },
+              allow: [{ to: { element: { types: { anyOf: ['platform'] } } } }],
+            },
+            {
               // app은 node 코어를 직접 만지지 않는다 — fs 접근은 전부
               // @blog/content(로더)의 일이다(클라이언트 번들 누수 예방,
               // 계획의 "배럴이 fs를 끌고 온다" 회귀 참고).
+              //
+              // platform도 직접 만지지 않는다 — Supabase 접근은 전부 도메인
+              // 레이어(analytics·auth) 경유다. 예전에는 auth 세 파일(가드·
+              // 로그아웃·로그인)이 예외로 client를 직접 import했고, 그걸 막던
+              // no-restricted-syntax는 변수 이름 기반이라 alias로 우회 가능했다.
+              // 여기서 import 경로 자체를 끊으면 우회가 없다.
               from: { element: { type: 'app' } },
               allow: [
                 {
                   to: {
                     element: {
                       types: {
-                        anyOf: ['platform', 'analytics', 'content-pkg'],
+                        anyOf: ['analytics', 'auth', 'content-pkg'],
                       },
                     },
                   },
