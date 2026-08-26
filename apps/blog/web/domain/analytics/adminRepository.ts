@@ -97,6 +97,13 @@ function isAdminPostIndexRow(item: unknown): item is AdminPostIndex {
   return (
     typeof row['slug'] === 'string' &&
     typeof row['title'] === 'string' &&
+    // date는 소비처(useAdminViews)가 폴백 없이 화면에 그대로 쓰므로 모양을
+    // 확인한다. status는 문자열이면 충분 — enum 값 검사까지 하면 발행 상태가
+    // 늘어날 때 여기가 조용한 필터가 된다(소비처는 문자열 비교·폴백만 함).
+    (typeof row['date'] === 'string' || row['date'] === null) &&
+    typeof row['status'] === 'string' &&
+    (typeof row['scheduledDate'] === 'string' ||
+      row['scheduledDate'] === null) &&
     Array.isArray(row['tags']) &&
     row['tags'].every(t => typeof t === 'string')
   );
