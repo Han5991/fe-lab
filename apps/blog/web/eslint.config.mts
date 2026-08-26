@@ -261,6 +261,44 @@ export default defineConfig([
     },
   },
   {
+    // 공개 페이지가 여는 배럴은 모듈 최상위에 부수효과를 두지 않습니다.
+    // 번들러가 부수효과로 보는 순간, 거기 매달린 모듈 전부를 공개 청크에서
+    // 떨궈내지 못합니다 — #326에서 `new AnalyticsService()` 하나가 계산 모듈
+    // 전체를 모든 공개 페이지에 실었습니다. 싱글톤 생성은 admin 전용 배럴
+    // (domain/*/admin.ts, domain/auth/index.ts)의 일이라 그쪽은 대상이 아닙니다.
+    // 새 공개 배럴이 생기면 이 files 목록에 추가하세요. 산출물 쪽 안전망은
+    // `pnpm build` 마지막의 check-bundle(마커 검사)이 맡습니다 — 이 룰은 원인을,
+    // 그쪽은 결과를 봅니다.
+    files: ['domain/analytics/index.ts'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'Program > ExpressionStatement > NewExpression',
+          message:
+            '공개 배럴의 모듈 최상위 부수효과는 공개 청크 누수를 만듭니다. 싱글톤 생성은 admin 배럴로 옮기세요.',
+        },
+        {
+          selector: 'Program > ExpressionStatement > CallExpression',
+          message:
+            '공개 배럴의 모듈 최상위 부수효과는 공개 청크 누수를 만듭니다. 호출이 필요하면 소비자 쪽으로 옮기세요.',
+        },
+        {
+          selector:
+            ':matches(Program, Program > ExportNamedDeclaration) > VariableDeclaration > VariableDeclarator > NewExpression.init',
+          message:
+            '공개 배럴의 모듈 최상위 new는 번들러에 부수효과입니다. 싱글톤 생성은 admin 배럴로 옮기세요.',
+        },
+        {
+          selector:
+            ':matches(Program, Program > ExportNamedDeclaration) > VariableDeclaration > VariableDeclarator > CallExpression.init',
+          message:
+            '공개 배럴의 모듈 최상위 호출은 번들러에 부수효과입니다. 값이 필요하면 소비자 쪽에서 만드세요.',
+        },
+      ],
+    },
+  },
+  {
     // lib(최하위)은 domain·src를 import할 수 없습니다.
     files: ['lib/**/*.{ts,tsx}'],
     ignores: ['**/*.test.{ts,tsx}'],

@@ -27,6 +27,7 @@
  */
 import type {
   AuthorConfig,
+  BundleGuardsConfig,
   ContentValues,
   LlmsDocsConfig,
   LlmsFacts,
@@ -161,6 +162,24 @@ export function isDiagramName(value: unknown): value is DiagramName {
 export const SITEMAP_STATIC_PAGES = [
   { path: ABOUT_PATH, priority: '0.7', lastmod: ABOUT_PAGE_MODIFIED },
 ] as const satisfies SitemapConfig['staticPages'];
+
+// ── 번들 누수 가드 마커 (check-bundle 배선 전용) ─────────────────────────────
+//
+// admin 전용 코드가 공개 페이지 청크에 실리면 `pnpm build`의 check-bundle이
+// 실패한다(#326에서 실제로 있었던 누수의 회귀 가드). 마커는 minify를 살아남는
+// 문자열이어야 한다 — export 이름(Turbopack이 청크에 문자열로 등록), 문자열
+// 리터럴(Edge Function 이름), 라이브러리 클래스명. 각 마커는 admin 청크에
+// 실재해야 통과다(양성 대조 — 코드에서 이름을 바꾸면 여기도 함께 바꿀 것).
+
+export const BUNDLE_GUARD_MARKERS = [
+  // domain/analytics의 admin 전용 계산 (overview.ts·derivedStats.ts)
+  'computeAnalyticsOverview',
+  'computeDerivedStats',
+  // Edge Function 이름 — lib/platform/adminApi.ts의 문자열 리터럴
+  'admin-analytics',
+  // 세션용 supabase-js의 auth 클라이언트 — domain/*/admin 배럴 분리가 지키는 것
+  'GoTrueClient',
+] as const satisfies BundleGuardsConfig['markers'];
 
 /**
  * sitemap의 `<priority>` 튜닝 — **어떤 글이 대표작인가**라는 편집 판단이라

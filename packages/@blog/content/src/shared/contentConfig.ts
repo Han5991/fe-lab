@@ -178,6 +178,31 @@ export interface OgConfig {
   palette: OgPalette;
 }
 
+/**
+ * 번들 누수 가드 — 공개 페이지 청크에 있으면 안 되는 문자열 마커의 선언.
+ *
+ * 검사(`check-bundle`)는 산출물의 페이지 HTML을 `adminPathPrefix`로 공개/admin
+ * 두 무리로 나누고, 각 무리가 도달하는 청크(HTML의 script 참조 + 청크가 다시
+ * 여는 청크의 폐포)를 모아 마커와 대조한다. 마커가 공개 쪽에 있으면 누수,
+ * **admin 쪽에 없어도 실패다** — 번들러가 export 이름을 문자열로 남기는 방식이
+ * 바뀌어 마커가 죽으면, 음성 검사만으로는 "누수 없음"과 "검사 무력화"가
+ * 구분되지 않는다(fail-closed).
+ */
+export interface BundleGuardsConfig {
+  /**
+   * admin 영역의 URL 경로 접두 (예: '/admin/'). 이 접두로 시작하는 페이지가
+   * admin, 나머지 전부가 공개다.
+   */
+  adminPathPrefix: string;
+  /**
+   * 금지 마커 — minify를 살아남는 문자열만 의미가 있다: 문자열 리터럴(Edge
+   * Function 이름), 라이브러리 클래스명(GoTrueClient), 그리고 Turbopack이
+   * 청크에 문자열로 등록하는 **export 이름**. 비어 있으면 검사를 건너뛴다
+   * (admin 영역이 없는 사이트).
+   */
+  markers: readonly string[];
+}
+
 export interface ThumbnailsConfig {
   /** 표시 최대 폭(FeaturedPost가 컨테이너 전체 폭). 작은 원본은 확대하지 않음 */
   maxWidth: number;
@@ -294,6 +319,7 @@ export interface ContentConfig {
   sitemap: SitemapConfig;
   og: OgConfig;
   thumbnails: ThumbnailsConfig;
+  bundleGuards: BundleGuardsConfig;
   llms: LlmsConfig;
 }
 
@@ -351,6 +377,8 @@ export interface ContentUserConfig extends Pick<
     docs?: Partial<LlmsDocsConfig>;
   };
   thumbnails?: Partial<ThumbnailsConfig>;
+  /** 마커는 사이트 고유(admin 영역의 코드 이름)라 앱이 준다 — 기본은 빈 목록(검사 스킵) */
+  bundleGuards?: Partial<BundleGuardsConfig>;
 }
 
 // ── 기본값 ───────────────────────────────────────────────────────────────────
@@ -407,6 +435,16 @@ export const DEFAULT_THUMBNAILS: ThumbnailsConfig = {
 };
 
 /**
+ * 번들 가드의 기본값. 경로 접두 `/admin/`은 경로 **관례**(dirs와 같은 축)지만,
+ * 마커는 그 사이트 admin 코드의 이름이라 기본값을 둘 수 없다 — 비워 두면
+ * `check-bundle`이 검사를 건너뛴다(admin 영역이 없는 사이트가 유효한 상태).
+ */
+export const DEFAULT_BUNDLE_GUARDS: BundleGuardsConfig = {
+  adminPathPrefix: '/admin/',
+  markers: [],
+};
+
+/**
  * llms 산문의 기본값.
  *
  * `indexIntro`·`fullIntro`는 여기 없다 — `seo.titleSuffix`가 `site.name`에서
@@ -449,6 +487,7 @@ const DEFAULTS: Omit<
   llms: Omit<LlmsConfig, 'indexIntro' | 'fullIntro'>;
 } = {
   seo: DEFAULT_SEO,
+  bundleGuards: DEFAULT_BUNDLE_GUARDS,
   runtime: {
     // 대괄호 접근인 이유: 이 패키지의 tsconfig에는 Next의 ProcessEnv 증강
     // (next-env.d.ts)이 없어 NODE_ENV가 인덱스 시그니처로만 보인다
@@ -569,6 +608,7 @@ export function defineContent(user: ContentUserConfig): ContentConfig {
     // 팔레트는 필수라 병합할 기본값이 없다 — 준 값이 그대로 실린다.
     og: { ...DEFAULTS.og, ...user.og },
     thumbnails: { ...DEFAULTS.thumbnails, ...user.thumbnails },
+    bundleGuards: { ...DEFAULTS.bundleGuards, ...user.bundleGuards },
     llms: {
       ...DEFAULTS.llms,
       ...user.llms,
