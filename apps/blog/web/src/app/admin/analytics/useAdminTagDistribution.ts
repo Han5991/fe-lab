@@ -8,8 +8,8 @@ import { getAdminPostsIndex } from '@/domain/analytics/admin';
  * (analytics/page.tsx는 client 컴포넌트라 server-side getAllTags()를 못 쓴다)
  *
  * 인덱스 접근은 도메인 저장소(getAdminPostsIndex) 경유다 — 예전에는 이 훅이
- * `/admin-posts-index.json`을 직접 fetch해 저장소와 같은 코드가 두 벌이었다
- * (도메인 행 타입에 tags가 없어서였고, 지금은 있다).
+ * `/admin-posts-index.json`을 직접 fetch해 저장소와 같은 코드가 두 벌이었다.
+ * 형식 검증도 저장소가 한다(어긋난 행은 걸러져 온다).
  */
 export function useAdminTagDistribution() {
   const { data } = useSuspenseQuery({
@@ -18,12 +18,7 @@ export function useAdminTagDistribution() {
       const posts = await getAdminPostsIndex();
       const counts = new Map<string, number>();
       for (const post of posts) {
-        // 산출물의 tags는 언제나 배열이지만(generate-search-index.ts의
-        // `p.tags || []`), 파일이 손으로 고쳐졌거나 형식이 어긋난 경우에도
-        // useSuspenseQuery가 페이지째 throw하지 않도록 원소를 방어적으로 거른다.
-        if (!Array.isArray(post.tags)) continue;
         for (const tag of post.tags) {
-          if (typeof tag !== 'string') continue;
           counts.set(tag, (counts.get(tag) ?? 0) + 1);
         }
       }
@@ -31,6 +26,12 @@ export function useAdminTagDistribution() {
         .map(([id, count]) => ({ id, count }))
         .sort((a, b) => b.count - a.count || a.id.localeCompare(b.id));
     },
+    // getAdminPostsIndex는 SSG prerender에서 빈 배열을 돌려준다(위 저장소의
+    // window 가드). 그 빈 결과가 hydration 캐시에 씨앗으로 남으면 전역
+    // staleTime(5분) 동안 빈 차트로 고정되므로, useAdminViews와 같은 이유로
+    // 마운트마다 다시 받아온다.
+    staleTime: 0,
+    refetchOnMount: 'always',
   });
   return data;
 }

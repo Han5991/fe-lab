@@ -12,6 +12,10 @@ function LoginForm() {
   const searchParams = useSearchParams();
 
   const { mutateAsync: handleGoogleLogin, isPending: isLoading } = useMutation({
+    // redirectTo의 무슬래시 `/admin`은 후행 슬래시 계약과 어긋나 로그인마다
+    // GitHub Pages 301을 한 번 더 탄다. 다만 이 값은 Supabase 대시보드의
+    // 허용 리다이렉트 목록과 짝이라, 코드만 슬래시형으로 바꾸면 목록이
+    // 정확 일치일 때 프로덕션 로그인이 깨진다 — 바꿀 때는 둘을 함께 바꿀 것.
     mutationFn: () => signInAdminWithGoogle(`${window.location.origin}/admin`),
     onError: () => alert('로그인 중 오류가 발생했습니다.'),
   });

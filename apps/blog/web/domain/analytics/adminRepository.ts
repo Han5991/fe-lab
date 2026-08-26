@@ -86,6 +86,22 @@ export async function getAllPostsTrends(): Promise<PostTrendRow[]> {
   return all;
 }
 
+/**
+ * 응답 행이 AdminPostIndex 모양인지 — 산출물 검증은 이 저장소의 일이다.
+ * 소비자(useSuspenseQuery 훅들)는 throw가 곧 페이지 전체 ErrorBoundary라,
+ * 손으로 고쳐진 파일이나 형식이 어긋난 배포에 화면째 깨지면 안 된다.
+ */
+function isAdminPostIndexRow(item: unknown): item is AdminPostIndex {
+  if (typeof item !== 'object' || item === null) return false;
+  const row = item as Record<string, unknown>;
+  return (
+    typeof row['slug'] === 'string' &&
+    typeof row['title'] === 'string' &&
+    Array.isArray(row['tags']) &&
+    row['tags'].every(t => typeof t === 'string')
+  );
+}
+
 export async function getAdminPostsIndex(): Promise<AdminPostIndex[]> {
   // 서버 환경(SSG prerender 포함)에서는 상대 URL fetch가 ERR_INVALID_URL.
   // 어차피 admin은 클라이언트 hydration 후에만 유효하므로 SSR에선 빈 배열로 대기.
@@ -96,7 +112,11 @@ export async function getAdminPostsIndex(): Promise<AdminPostIndex[]> {
       `admin-posts-index.json fetch failed: ${res.status} ${res.statusText}`,
     );
   }
-  return (await res.json()) as AdminPostIndex[];
+  // 배열이 아니거나 모양이 어긋난 행은 조용히 거른다 — 검증이 여기 한 곳에
+  // 있어야 소비자마다 방어 코드가 다시 자라지 않는다(예전 태그 분포 훅이
+  // 자기 가드를 따로 들고 있었다).
+  const json: unknown = await res.json();
+  return Array.isArray(json) ? json.filter(isAdminPostIndexRow) : [];
 }
 
 export async function getPostHourlyDistribution(
