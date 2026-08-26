@@ -82,7 +82,31 @@ const grid = cva({
   defaultVariants: { columns: 1 },
 });
 
-type GridColumns = RecipeVariant<typeof grid>['columns'];
+// RecipeVariant의 variant prop은 optional이라 undefined가 유니언에 남는다.
+// 여기서는 언제나 값을 정하므로 걷어낸다(Callout의 CalloutType과 같은 이유).
+type GridColumns = NonNullable<RecipeVariant<typeof grid>['columns']>;
+
+/**
+ * 항목 수를 열 수로 자른다 — 1열 미만·4열 초과는 레이아웃이 망가진다
+ * (핸드오프 §6 "2~4열 그리드").
+ *
+ * `Math.min(Math.max(count, 1), 4)`로 계산하면 결과가 `number`라 레시피에 넘길
+ * 때 캐스트가 필요했다. 클램프가 1~4만 낸다는 것은 사람만 알고 타입은 모르기
+ * 때문이다.
+ *
+ * 분기로 적으면 반환값마다 컴파일러가 확인한다. 잡히는 건 **레시피에서 열이
+ * 사라지는 쪽**이다 — 예를 들어 4열 variant를 지우면 `return 4`가 TS2322로
+ * 걸린다(캐스트 버전은 `number`를 좁은 유니언으로 단언하는 것이라 그대로
+ * 통과하고, 없는 클래스를 런타임에 요구하게 된다). 반대로 5열이 **생기는**
+ * 것은 잡히지 않는다. 유니언이 넓어질 뿐이라 1~4는 여전히 유효해서다 —
+ * 열을 늘릴 때는 이 함수도 함께 고쳐야 한다.
+ */
+function clampColumns(count: number): GridColumns {
+  if (count <= 1) return 1;
+  if (count === 2) return 2;
+  if (count === 3) return 3;
+  return 4;
+}
 
 const card = css({
   bg: 'paper.100',
@@ -152,9 +176,7 @@ interface MetricsProps {
 export function Metrics({ items, children }: MetricsProps) {
   const parsed = parseItemsProp(items, isMetricItem);
   const fallback = parsed ? null : markdownChildren(children);
-  // 1열 미만·4열 초과는 레이아웃이 망가지므로 잘라낸다(핸드오프 §6 "2~4열 그리드").
-  const count = parsed?.length ?? fallback?.length ?? 0;
-  const columns = Math.min(Math.max(count, 1), 4) as GridColumns;
+  const columns = clampColumns(parsed?.length ?? fallback?.length ?? 0);
 
   return (
     <div className={grid({ columns })}>
