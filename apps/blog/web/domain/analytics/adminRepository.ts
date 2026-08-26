@@ -14,10 +14,7 @@
  */
 
 import { client } from '../../lib/platform/client';
-import {
-  createAdminApiClient,
-  type AdminApiClient,
-} from '../../lib/platform/adminApi';
+import { AdminApiClient, type AdminApi } from '../../lib/platform/adminApi';
 import type { PostStatus } from '@blog/content';
 import type {
   PostStatsRow,
@@ -40,10 +37,15 @@ export interface AdminPostIndex {
   scheduledDate: string | null;
 }
 
-/** admin-analytics Edge Function 클라이언트 (첫 호출 때 1회 생성) */
-let adminApiInstance: AdminApiClient | null = null;
-function adminApi(): AdminApiClient {
-  adminApiInstance ??= createAdminApiClient(client);
+/**
+ * admin-analytics Edge Function 클라이언트 (첫 호출 때 1회 생성).
+ *
+ * 보관 타입이 `AdminApiClient`(클래스)가 아니라 `AdminApi`(계약)인 건 의도다 —
+ * 이 파일이 의존하는 건 `call()` 하나이지 그 구현이 아니다.
+ */
+let adminApiInstance: AdminApi | null = null;
+function adminApi(): AdminApi {
+  adminApiInstance ??= new AdminApiClient(client);
   return adminApiInstance;
 }
 

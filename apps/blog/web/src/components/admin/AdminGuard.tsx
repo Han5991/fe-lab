@@ -6,11 +6,9 @@ import { useSuspenseQuery } from '@tanstack/react-query';
 import {
   ADMIN_LOGIN_PATH,
   ADMIN_LOGIN_UNAUTHORIZED_PATH,
-  getAdminSession,
+  authRepository,
   isAdminEmail,
   isAdminLoginPath,
-  signOutAdmin,
-  subscribeAdminSession,
 } from '@/domain/auth';
 
 // admin UI를 로컬(pnpm dev)에서 로그인 없이 개발/확인하기 위한 우회.
@@ -27,7 +25,7 @@ export function AdminGuard({ children }: { children: ReactNode }) {
   const { data: session } = useSuspenseQuery({
     queryKey: ['admin-auth-session'],
     // 우회 시 supabase 세션 조회 생략. 조회 실패→null 수렴은 저장소가 한다.
-    queryFn: () => (DEV_BYPASS ? null : getAdminSession()),
+    queryFn: () => (DEV_BYPASS ? null : authRepository.getAdminSession()),
   });
 
   useEffect(() => {
@@ -45,20 +43,20 @@ export function AdminGuard({ children }: { children: ReactNode }) {
     // 화면 쪽 관리자 판정 — 실제 강제는 Edge Function이 한다(domain/auth 참고).
     if (!isAdminEmail(session.user.email)) {
       console.warn(`Unauthorized email attempt: ${session.user.email}`);
-      void signOutAdmin().then(() => {
+      void authRepository.signOutAdmin().then(() => {
         router.replace(ADMIN_LOGIN_UNAUTHORIZED_PATH);
       });
       return;
     }
 
     // Listen for auth state changes (e.g., logging out from another tab)
-    return subscribeAdminSession((currentSession, event) => {
+    return authRepository.subscribeAdminSession((currentSession, event) => {
       if (isAdminLoginPath(pathname)) return;
 
       if (event === 'SIGNED_OUT' || !currentSession) {
         router.replace(ADMIN_LOGIN_PATH);
       } else if (!isAdminEmail(currentSession.user.email)) {
-        void signOutAdmin().then(() => {
+        void authRepository.signOutAdmin().then(() => {
           router.replace(ADMIN_LOGIN_UNAUTHORIZED_PATH);
         });
       }

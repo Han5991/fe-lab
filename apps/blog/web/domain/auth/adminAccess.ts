@@ -17,6 +17,32 @@ export const ADMIN_LOGIN_PATH = '/admin/login/';
 export const ADMIN_LOGIN_UNAUTHORIZED_PATH = `${ADMIN_LOGIN_PATH}?error=unauthorized`;
 
 /**
+ * OAuth를 마친 브라우저가 돌아올 경로.
+ *
+ * **무슬래시인 것이 의도다.** `trailingSlash: true` 계약과는 어긋나서 로그인
+ * 때마다 GitHub Pages 301을 한 번 더 타지만, 이 값은 코드 혼자 정하는 게
+ * 아니라 **Supabase 대시보드의 허용 리다이렉트 목록과 짝**이다. 목록이 정확
+ * 일치로 걸려 있을 때 코드만 슬래시형으로 바꾸면 프로덕션 로그인이 깨진다 —
+ * 바꿀 때는 둘을 함께 바꿀 것.
+ */
+export const ADMIN_LOGIN_REDIRECT_PATH = '/admin';
+
+/**
+ * 로그인 후 돌아올 **절대 URL**.
+ *
+ * origin을 인자로 받는 이유: 이 값을 아는 건 브라우저뿐이다. 사이트가 정적
+ * export라 런타임 서버가 없고(요청 Host를 볼 곳이 없다), Next도 클라이언트에
+ * origin을 주지 않는다(`next/navigation`은 path·query까지만). 그렇다고
+ * `SITE_URL`로 고정하면 로컬·프리뷰에서 프로덕션으로 튕겨 로그인이 깨진다.
+ *
+ * 절대 URL이어야 하는 이유는 이 값을 쓰는 쪽이 Supabase **서버**이기 때문이다
+ * — 토큰 교환을 마친 뒤 302 Location에 그대로 실어 보낸다.
+ */
+export function adminLoginRedirectUrl(origin: string): string {
+  return `${origin}${ADMIN_LOGIN_REDIRECT_PATH}`;
+}
+
+/**
  * 현재 경로가 로그인 화면인가.
  *
  * 프로덕션(정적 export)의 pathname은 슬래시형이지만, dev 서버는

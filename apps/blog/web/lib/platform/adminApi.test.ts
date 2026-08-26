@@ -5,7 +5,7 @@
  */
 
 import { expect, test } from 'vitest';
-import { createAdminApiClient, type FunctionsInvoker } from './adminApi';
+import { AdminApiClient, type FunctionsInvoker } from './adminApi';
 
 // ── mock 헬퍼 ─────────────────────────────────────────────────────────────────
 
@@ -41,14 +41,14 @@ function makeMockClient(response: InvokeResponse): {
 
 // ── 테스트 ────────────────────────────────────────────────────────────────────
 
-test('createAdminApiClient: all_post_stats — functions.invoke를 올바른 action으로 호출', async () => {
+test('AdminApiClient: all_post_stats — functions.invoke를 올바른 action으로 호출', async () => {
   const mockData = [{ slug: 'post-a', total_views: 100, today_views: 5 }];
   const { client, calls } = makeMockClient({
     data: { data: mockData },
     error: null,
   });
 
-  const api = createAdminApiClient(client);
+  const api = new AdminApiClient(client);
   const result = await api.call('all_post_stats');
 
   expect(calls.length).toBe(1);
@@ -60,14 +60,14 @@ test('createAdminApiClient: all_post_stats — functions.invoke를 올바른 act
   expect(result).toStrictEqual(mockData);
 });
 
-test('createAdminApiClient: post_hourly_distribution — slug 파라미터 전달 확인', async () => {
+test('AdminApiClient: post_hourly_distribution — slug 파라미터 전달 확인', async () => {
   const mockData = [{ hour: 9, view_count: 3 }];
   const { client, calls } = makeMockClient({
     data: { data: mockData },
     error: null,
   });
 
-  const api = createAdminApiClient(client);
+  const api = new AdminApiClient(client);
   const result = await api.call('post_hourly_distribution', {
     slug: 'my-post',
   });
@@ -80,14 +80,14 @@ test('createAdminApiClient: post_hourly_distribution — slug 파라미터 전�
   expect(result).toStrictEqual(mockData);
 });
 
-test('createAdminApiClient: post_dow_distribution — slug 파라미터 전달 확인', async () => {
+test('AdminApiClient: post_dow_distribution — slug 파라미터 전달 확인', async () => {
   const mockData = [{ dow: 1, view_count: 10 }];
   const { client, calls } = makeMockClient({
     data: { data: mockData },
     error: null,
   });
 
-  const api = createAdminApiClient(client);
+  const api = new AdminApiClient(client);
   const result = await api.call('post_dow_distribution', {
     slug: 'other-post',
   });
@@ -99,14 +99,14 @@ test('createAdminApiClient: post_dow_distribution — slug 파라미터 전달 �
   expect(result).toStrictEqual(mockData);
 });
 
-test('createAdminApiClient: all_posts_trends — range 파라미터 전달 확인', async () => {
+test('AdminApiClient: all_posts_trends — range 파라미터 전달 확인', async () => {
   const mockData = [{ slug: 'post-a', view_date: '2026-05-01', view_count: 5 }];
   const { client, calls } = makeMockClient({
     data: { data: mockData },
     error: null,
   });
 
-  const api = createAdminApiClient(client);
+  const api = new AdminApiClient(client);
   const result = await api.call('all_posts_trends', { range: [0, 999] });
 
   expect(calls[0].options?.body).toStrictEqual({
@@ -116,13 +116,13 @@ test('createAdminApiClient: all_posts_trends — range 파라미터 전달 확�
   expect(result).toStrictEqual(mockData);
 });
 
-test('createAdminApiClient: error 응답 시 Error throw', async () => {
+test('AdminApiClient: error 응답 시 Error throw', async () => {
   const { client } = makeMockClient({
     data: null,
     error: { message: '인증에 실패했습니다.' },
   });
 
-  const api = createAdminApiClient(client);
+  const api = new AdminApiClient(client);
 
   const rejected = api.call('all_post_stats');
 
@@ -130,14 +130,14 @@ test('createAdminApiClient: error 응답 시 Error throw', async () => {
   await expect(rejected).rejects.toThrow('인증에 실패했습니다.');
 });
 
-test('createAdminApiClient: data가 null이면 Error throw (빈 응답)', async () => {
+test('AdminApiClient: data가 null이면 Error throw (빈 응답)', async () => {
   // error도 없고 data도 없는 비정상 응답
   const { client } = makeMockClient({
     data: null,
     error: null,
   });
 
-  const api = createAdminApiClient(client);
+  const api = new AdminApiClient(client);
 
   const rejected = api.call('all_post_stats');
 
@@ -145,7 +145,7 @@ test('createAdminApiClient: data가 null이면 Error throw (빈 응답)', async 
   await expect(rejected).rejects.toThrow('빈 응답');
 });
 
-test('createAdminApiClient: 봉투는 있는데 안이 null이어도 Error throw (빈 응답)', async () => {
+test('AdminApiClient: 봉투는 있는데 안이 null이어도 Error throw (빈 응답)', async () => {
   // Edge Function은 성공 시 항상 { data: Returns }를 준다(0행이어도 []).
   // { data: null }은 프로토콜 위반이므로 []로 삼키지 않고 실패시킨다 —
   // 그래야 대시보드가 조용히 0으로 보이는 대신 에러가 드러난다.
@@ -154,7 +154,7 @@ test('createAdminApiClient: 봉투는 있는데 안이 null이어도 Error throw
     error: null,
   });
 
-  const api = createAdminApiClient(client);
+  const api = new AdminApiClient(client);
 
   const rejected = api.call('all_post_stats');
 
@@ -162,12 +162,12 @@ test('createAdminApiClient: 봉투는 있는데 안이 null이어도 Error throw
   await expect(rejected).rejects.toThrow('빈 응답');
 });
 
-test('createAdminApiClient: 응답 타입이 action의 RPC Returns로 결정된다 (타입 계약)', async () => {
+test('AdminApiClient: 응답 타입이 action의 RPC Returns로 결정된다 (타입 계약)', async () => {
   const { client } = makeMockClient({
     data: { data: [{ slug: 'post-a', total_views: 100, today_views: 5 }] },
     error: null,
   });
-  const api = createAdminApiClient(client);
+  const api = new AdminApiClient(client);
 
   // call<T>()로 응답 타입을 손으로 적지 않는다 — database.types.ts의
   // get_all_post_stats Returns가 그대로 추론된다.
@@ -180,12 +180,12 @@ test('createAdminApiClient: 응답 타입이 action의 RPC Returns로 결정된�
   void first.view_date;
 });
 
-test('createAdminApiClient: params 계약 — 필수 slug 누락·미등록 action은 컴파일 에러', () => {
+test('AdminApiClient: params 계약 — 필수 slug 누락·미등록 action은 컴파일 에러', () => {
   const { client, calls } = makeMockClient({
     data: { data: [] },
     error: null,
   });
-  const api = createAdminApiClient(client);
+  const api = new AdminApiClient(client);
 
   // 아래는 전부 타입 계약 검증이다. tsc(tsconfig.test.json)가 @ts-expect-error
   // 줄에서 에러가 사라지면 "unused directive"로 실패시킨다.
@@ -205,14 +205,14 @@ test('createAdminApiClient: params 계약 — 필수 slug 누락·미등록 acti
   expect(calls.length).toBe(5);
 });
 
-test('createAdminApiClient: 여러 번 호출해도 독립적으로 동작', async () => {
+test('AdminApiClient: 여러 번 호출해도 독립적으로 동작', async () => {
   const mockData = { slug: 'x', total_views: 1, today_views: 0 };
   const { client, calls } = makeMockClient({
     data: { data: [mockData] },
     error: null,
   });
 
-  const api = createAdminApiClient(client);
+  const api = new AdminApiClient(client);
   await api.call('all_post_stats');
   await api.call('all_post_stats');
 
