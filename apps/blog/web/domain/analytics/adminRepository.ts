@@ -26,10 +26,16 @@ import type {
   DowDistribution,
 } from './types';
 
+// admin-posts-index.json 산출물의 행 계약 부분집합 — 필드 정의의 출처는
+// @blog/content의 generate-search-index.ts(AdminPostsIndexEntry)다. 여기에는
+// admin 화면이 실제로 읽는 축만 든다. 산출물에 있는데 이 타입에 없는 필드가
+// 필요해지면 여기 늘릴 것 — 예전 태그 분포 훅이 이 타입에 tags가 없다는
+// 이유로 src에서 같은 파일을 따로 fetch(타입까지 재선언)했다.
 export interface AdminPostIndex {
   slug: string;
   title: string;
   date: string | null;
+  tags: string[];
   status: PostStatus;
   scheduledDate: string | null;
 }
