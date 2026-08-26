@@ -1,7 +1,3 @@
-// 임시 경계 고정 — 이 지시어는 다음 커밋(경계 플립)이 제거한다. 페이지가
-// 레이아웃을 흡수하는 이 커밋의 diff에서 클라이언트/서버 경계 변화를 떼어 놓는다.
-'use client';
-
 import { Children, type ComponentProps } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';

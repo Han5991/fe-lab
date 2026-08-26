@@ -1,5 +1,3 @@
-'use client';
-
 import { PrismLight as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/cjs/styles/prism';
 import markup from 'react-syntax-highlighter/dist/cjs/languages/prism/markup';
