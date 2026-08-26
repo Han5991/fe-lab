@@ -10,6 +10,13 @@ export type Theme = 'light' | 'dark';
 // useSyncExternalStore로 읽어 effect 내 setState 없이 외부 상태를 구독한다.
 const listeners = new Set<() => void>();
 
+// 쿠키 값도 data-theme 속성도 브라우저가 주는 그냥 문자열이다. 둘 다 Theme라고
+// 단정하는 대신 여기서 리터럴 비교로 좁힌다 — 반환 타입이 단언이 아니라 컴파일러가
+// 확인한 결과가 되고, 유니온에 값을 더하면 이 한 곳만 고치면 된다.
+function toTheme(value: string | undefined): Theme | null {
+  return value === 'light' || value === 'dark' ? value : null;
+}
+
 // readCookie/writeCookie/systemTheme/getSnapshot은 순수 헬퍼로 단위 테스트에서
 // 직접 검증하려고 export한다(sibling useRecentViews와 동일한 컨벤션).
 export function readCookie(): Theme | null {
@@ -19,7 +26,7 @@ export function readCookie(): Theme | null {
     typeof document !== 'undefined'
       ? document.cookie.match(new RegExp(THEME_COOKIE_MATCH))
       : null;
-  return m ? (m[1] as Theme) : null;
+  return toTheme(m?.[1]);
 }
 
 export function writeCookie(t: Theme) {
@@ -41,9 +48,9 @@ function subscribe(onChange: () => void) {
 }
 
 export function getSnapshot(): Theme {
-  return (
-    (document.documentElement.dataset['theme'] as Theme | undefined) ?? 'dark'
-  );
+  // 속성이 없을 때뿐 아니라 모르는 값이 들어 있을 때도 dark로 떨어뜨린다. 그래야
+  // 반환값이 getServerSnapshot과 같은 두 값 안에 머물러 hydration이 어긋나지 않는다.
+  return toTheme(document.documentElement.dataset['theme']) ?? 'dark';
 }
 
 // SSG/SSR 기본은 dark (html data-theme="dark"와 일치 → hydration 안정)

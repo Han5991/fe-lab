@@ -15,7 +15,7 @@
 
 import { client } from '../../lib/platform/client';
 import { AdminApiClient, type AdminApi } from '../../lib/platform/adminApi';
-import type { PostStatus } from '@blog/content';
+import { isRecord, type PostStatus } from '@blog/content';
 import type {
   PostStatsRow,
   PostTrendRow,
@@ -93,9 +93,8 @@ export async function getAllPostsTrends(): Promise<PostTrendRow[]> {
  * 소비자(useSuspenseQuery 훅들)는 throw가 곧 페이지 전체 ErrorBoundary라,
  * 손으로 고쳐진 파일이나 형식이 어긋난 배포에 화면째 깨지면 안 된다.
  */
-function isAdminPostIndexRow(item: unknown): item is AdminPostIndex {
-  if (typeof item !== 'object' || item === null) return false;
-  const row = item as Record<string, unknown>;
+function isAdminPostIndexRow(row: unknown): row is AdminPostIndex {
+  if (!isRecord(row)) return false;
   return (
     typeof row['slug'] === 'string' &&
     typeof row['title'] === 'string' &&

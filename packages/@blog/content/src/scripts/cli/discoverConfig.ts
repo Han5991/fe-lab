@@ -13,6 +13,7 @@
 import { existsSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { isRecord } from '../../shared/guards.ts';
 import type { ContentConfig } from '../../shared/contentConfig.ts';
 
 /**
@@ -57,23 +58,6 @@ export function findConfigFile(
  * 손으로 쓴 부분 객체가 여기를 통과해 한참 뒤 스텝 안에서 알 수 없는
  * TypeError로 죽는 것이 이 검증이 막으려는 사고다.
  */
-/**
- * "객체이긴 하다"까지만 좁힌다 — 값은 전부 `unknown`으로 남는다.
- *
- * `as Partial<ContentConfig>`로 내려다보지 않는 이유: 그 단언은 **사실보다 크게
- * 주장한다.** 손으로 쓴 객체가 들어와도 `root`는 `string | undefined`, `dirs`는
- * 온전한 경로 묶음이라고 타입이 믿어 버리는데, 이 함수가 존재하는 이유가 바로
- * 그걸 못 믿기 때문이다. 검사 도중에 검사 대상의 모양을 가정하면 앞뒤가 맞지
- * 않는다. 이쪽은 "null 아닌 객체는 문자열 키로 읽을 수 있고 값은 모른다"만
- * 말하므로 런타임 검사와 어긋날 여지가 없다.
- *
- * (`noPropertyAccessFromIndexSignature`가 켜져 있어 아래 읽기는 전부 대괄호다.
- *  검증되지 않은 입력이라는 표시로 읽으면 된다 — 알려진 모양은 점으로 읽는다.)
- */
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null;
-}
-
 function isContentConfig(value: unknown): value is ContentConfig {
   if (!isRecord(value)) return false;
 

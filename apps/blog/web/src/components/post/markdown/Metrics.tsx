@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { isRecord } from '@blog/content';
 import { css, cva } from '@design-system/ui-lib/css';
 import type { RecipeVariant } from '@design-system/ui-lib/css';
 
@@ -32,8 +33,10 @@ interface MetricItem {
 }
 
 function isMetricItem(candidate: unknown): candidate is MetricItem {
-  if (typeof candidate !== 'object' || candidate === null) return false;
-  const { label, value, tone } = candidate as MetricItem;
+  if (!isRecord(candidate)) return false;
+  const label = candidate['label'];
+  const value = candidate['value'];
+  const tone = candidate['tone'];
   // 읽는 필드는 전부 "없거나 문자열"이어야 한다. 하나라도 객체/배열이면 그대로
   // JSX 자식이 되어 React가 throw한다(`isOptionalString` 주석 참고).
   if (

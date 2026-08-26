@@ -25,6 +25,7 @@ export * from './shared/contentConfig.ts';
 export * from './shared/contentPaths.ts';
 export * from './shared/dates.ts';
 export * from './shared/format.ts';
+export * from './shared/guards.ts';
 export * from './shared/jsonLd.ts';
 export * from './shared/markdownHeadings.ts';
 export * from './shared/postFiles.ts';

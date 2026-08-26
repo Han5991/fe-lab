@@ -37,7 +37,11 @@ export const PostsFilterSheet = ({
     // Escape로 닫기 + Tab을 시트 내부로 묶어 포커스 트랩.
     const focusableSelector =
       'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])';
-    previouslyFocusedRef.current = document.activeElement as HTMLElement | null;
+    // activeElement는 Element라 focus()가 없는 것(SVG 등)도 올 수 있다. 시트를 닫을 때
+    // 되돌릴 대상이므로, 실제로 되돌릴 수 있는 것만 기억하고 아니면 비워 둔다.
+    const active = document.activeElement;
+    previouslyFocusedRef.current =
+      active instanceof HTMLElement ? active : null;
     // 다음 frame에 시트가 마운트된 후 첫 focusable로 포커스를 옮깁니다.
     const focusFirst = requestAnimationFrame(() => {
       const first =

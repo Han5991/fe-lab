@@ -14,6 +14,7 @@ import { Resvg } from '@resvg/resvg-js';
 import { resolvePostSet } from '../artifacts.ts';
 import { fmtDate } from '../../shared/format.ts';
 import type { OgConfig, SiteConfig } from '../../shared/contentConfig.ts';
+import { isRecord } from '../../shared/guards.ts';
 import type { ContentContext } from '../context.ts';
 /**
  * OG 카드에 쓰는 Pretendard 폰트가 있는 디렉터리.
@@ -117,12 +118,23 @@ export function displayTitle(title: string, series?: string): string {
   return rest || title;
 }
 
+/**
+ * satori에 넘기는 엘리먼트 노드. satori의 인자 타입은 `ReactNode`이고, React
+ * 엘리먼트는 `type`·`props`·**`key`** 셋을 요구한다 — 그래서 `key`가 여기 있다.
+ *
+ * 예전에는 key 없이 만들고 `as unknown as Parameters<typeof satori>[0]`로 넘겼다.
+ * 이중 단언은 "두 타입에 겹치는 게 없다"는 선언이라, 필드 하나가 모자란 대가로
+ * **트리 전체가 검사 밖으로** 나갔다(자식 배열 모양도, 스타일 객체도). 값은
+ * React가 키 없는 엘리먼트에 넣는 것과 같은 null이고, satori는 이 필드를 읽어
+ * 노드 key로 그대로 흘린다.
+ */
 interface OgNode {
   type: string;
   props: {
     style?: Record<string, unknown>;
     children?: OgNode[] | string | undefined;
   };
+  key: string | null;
 }
 
 function el(
@@ -130,7 +142,7 @@ function el(
   style: Record<string, unknown>,
   children?: OgNode[] | string,
 ): OgNode {
-  return { type, props: { style, children } };
+  return { type, props: { style, children }, key: null };
 }
 
 /**
@@ -308,23 +320,37 @@ export async function renderOgPng(
   site: Pick<SiteConfig, 'url' | 'name'>,
   og: OgConfig,
 ): Promise<Buffer> {
-  const svg = await satori(
-    ogTemplate(post, site, og) as unknown as Parameters<typeof satori>[0],
-    { width: og.width, height: og.height, fonts },
-  );
+  const svg = await satori(ogTemplate(post, site, og), {
+    width: og.width,
+    height: og.height,
+    fonts,
+  });
   return Buffer.from(new Resvg(svg).render().asPng());
 }
 
+/**
+ * manifest를 읽어 slug → 해시 표로 만듭니다.
+ *
+ * `JSON.parse`는 `any`를 주므로 `unknown`으로 받고, **값이 실제로 문자열인
+ * 항목만** 표에 담습니다. 예전에는 "객체다"까지만 확인하고 값의 타입은 단언으로
+ * 주장했는데, 손으로 고쳤거나 다른 버전이 쓴 manifest가 들어와도 타입은 계속
+ * 문자열이라고 믿었습니다. 항목 수는 글 수만큼이라 순회 비용은 무시할 수준이고,
+ * 걸러진 항목은 해시 불일치와 같은 결과(그 글만 다시 렌더)라 안전합니다.
+ */
 function readManifest(manifestPath: string): Record<string, string> {
+  const manifest: Record<string, string> = {};
+  let parsed: unknown;
   try {
-    const parsed: unknown = JSON.parse(readFileSync(manifestPath, 'utf8'));
-    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-      return parsed as Record<string, string>;
-    }
+    parsed = JSON.parse(readFileSync(manifestPath, 'utf8'));
   } catch {
     // 없거나 깨진 manifest는 전체 재생성으로 처리
+    return manifest;
   }
-  return {};
+  if (!isRecord(parsed)) return manifest;
+  for (const [key, value] of Object.entries(parsed)) {
+    if (typeof value === 'string') manifest[key] = value;
+  }
+  return manifest;
 }
 
 export async function main(ctx: ContentContext) {

@@ -172,7 +172,11 @@ export function buildProgram(): Command {
           // 도메인 검증 실패는 글쓴이가 고칠 수 있는 것이다 — 스택 트레이스 대신
           // 무엇이 잘못됐는지와 사용법을 보여준다(commander가 exit 1까지 맡는다).
           // 여기서 안 잡으면 진입점의 마지막 catch까지 올라가 Error가 통째로 찍힌다.
-          command.error(`✖ ${(e as Error).message}`);
+          //
+          // `e`는 unknown이다(useUnknownInCatchVariables). Error라고 단언하면
+          // Error가 아닌 것이 던져졌을 때 `✖ undefined`만 남아 원인이 사라지므로,
+          // 좁혀서 쓰고 아닌 값은 그대로 찍는다(new-post.ts와 같은 처리).
+          command.error(`✖ ${e instanceof Error ? e.message : String(e)}`);
         }
         const ctx = await loadContext(command);
         main(ctx, resolved);

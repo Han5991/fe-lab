@@ -16,6 +16,7 @@ import {
   DEFAULT_THUMBNAILS,
   type ThumbnailsConfig,
 } from '../../shared/contentConfig.ts';
+import { isRecord } from '../../shared/guards.ts';
 import type { ContentContext } from '../context.ts';
 
 /** 인코딩 정책을 바꾸면 올려서 전체 재생성하게 합니다. */
@@ -79,16 +80,29 @@ async function encodeWebp(
     .toBuffer();
 }
 
+/**
+ * manifest를 읽어 출력 경로 → 해시 표로 만듭니다.
+ *
+ * `JSON.parse`는 `any`를 주므로 `unknown`으로 받고, **값이 실제로 문자열인
+ * 항목만** 표에 담습니다. 예전에는 "객체다"까지만 확인하고 값의 타입은 단언으로
+ * 주장했는데, 손으로 고쳤거나 다른 버전이 쓴 manifest가 들어와도 타입은 계속
+ * 문자열이라고 믿었습니다. 항목 수는 글 수만큼이라 순회 비용은 무시할 수준이고,
+ * 걸러진 항목은 해시 불일치와 같은 결과(그 이미지만 다시 인코딩)라 안전합니다.
+ */
 function readManifest(manifestPath: string): Record<string, string> {
+  const manifest: Record<string, string> = {};
+  let parsed: unknown;
   try {
-    const parsed: unknown = JSON.parse(readFileSync(manifestPath, 'utf8'));
-    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-      return parsed as Record<string, string>;
-    }
+    parsed = JSON.parse(readFileSync(manifestPath, 'utf8'));
   } catch {
     // 없거나 깨진 manifest는 전체 재생성으로 처리
+    return manifest;
   }
-  return {};
+  if (!isRecord(parsed)) return manifest;
+  for (const [key, value] of Object.entries(parsed)) {
+    if (typeof value === 'string') manifest[key] = value;
+  }
+  return manifest;
 }
 
 function listExistingWebps(thumbsDir: string): string[] {

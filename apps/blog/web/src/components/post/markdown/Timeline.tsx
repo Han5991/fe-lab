@@ -1,5 +1,6 @@
 import { cloneElement, isValidElement } from 'react';
 import type { ReactElement, ReactNode } from 'react';
+import { isRecord } from '@blog/content';
 import { css, cva } from '@design-system/ui-lib/css';
 
 import {
@@ -29,8 +30,10 @@ interface TimelineStep {
 }
 
 function isTimelineStep(candidate: unknown): candidate is TimelineStep {
-  if (typeof candidate !== 'object' || candidate === null) return false;
-  const { title, desc, result } = candidate as TimelineStep;
+  if (!isRecord(candidate)) return false;
+  const title = candidate['title'];
+  const desc = candidate['desc'];
+  const result = candidate['result'];
   // 읽는 필드는 전부 "없거나 문자열"이어야 한다. 하나라도 객체/배열이면 그대로
   // JSX 자식이 되어 React가 throw한다(`isOptionalString` 주석 참고).
   if (
