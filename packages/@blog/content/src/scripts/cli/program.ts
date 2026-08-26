@@ -130,6 +130,18 @@ export function buildProgram(): Command {
     );
 
   program
+    .command('check-bundle')
+    .description('빌드 산출물(out/) JS 청크의 admin 코드 누수 검사')
+    .argument('[outDir]', '검사할 디렉터리 (기본: 설정의 out)')
+    .action(
+      async (outDir: string | undefined, _opts: unknown, command: Command) => {
+        const ctx = await loadContext(command);
+        const { main } = await import('../check-bundle.ts');
+        main(ctx, outDir);
+      },
+    );
+
+  program
     .command('new-post')
     .description('새 포스트 스캐폴딩')
     .argument('[title]', '글 제목')

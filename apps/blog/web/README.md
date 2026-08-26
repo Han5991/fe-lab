@@ -37,7 +37,8 @@ apps/blog/web  (이 앱)
   ├─ prebuild  = build-content.ts --strict   (validate-posts 게이트 → 병렬 8개: sync·sitemap·rss·
   │                                            og-images·thumbnails·search-index·llms-full·llms)
   ├─ next build (output: 'export')            → out/
-  └─ check-seo                                (out/ HTML의 SEO 계약 검사 — 빌드의 마지막 게이트)
+  ├─ check-seo                                (out/ HTML의 SEO 계약 검사)
+  └─ check-bundle                             (out/ JS 청크의 admin 코드 누수 검사 — 빌드의 마지막 게이트)
         │
         ▼
 GitHub Pages (deploy-blog.yml)   +   런타임: Supabase(조회수·Admin·Analytics) · Giscus · GA4/GTM
@@ -45,7 +46,7 @@ GitHub Pages (deploy-blog.yml)   +   런타임: Supabase(조회수·Admin·Analy
 
 - **정적 산출물**: `output: 'export'`(개발 모드에서는 해제), `trailingSlash: true` + `skipTrailingSlashRedirect: true` 짝, `images.unoptimized: true`. 내부 href는 스스로 후행 슬래시를 단다(`postPath`·`archivePath`).
 - **동적 기능**만 Supabase — 조회수 RPC, 조회 이력, Admin Google OAuth, Analytics RPC(Edge Function 경유).
-- **검증은 두 층** — `validate-posts`(frontmatter 원문, prebuild에서 `--strict`)와 `check-seo`(최종 HTML). 둘 다 `pnpm build` 안에 있어 로컬·PR CI·배포가 같은 검사를 지난다.
+- **검증은 세 게이트** — `validate-posts`(frontmatter 원문, prebuild에서 `--strict`)·`check-seo`(최종 HTML)·`check-bundle`(JS 청크의 admin 코드 누수). 셋 다 `pnpm build` 안에 있어 로컬·PR CI·배포가 같은 검사를 지난다.
 
 ---
 
@@ -109,19 +110,20 @@ apps/blog/web/
 
 모두 `apps/blog/web`에서 실행(`new-post`·글 미리보기는 루트 `pnpm new-post`·`pnpm blog-write` 단축도 있다). 콘텐츠 스크립트는 `@blog/content`가 `bin`으로 내놓는 **`blog-content` 하나**로 실행한다 — 앱은 서브커맨드 이름만 안다(`blog-content build`).
 
-| 스크립트                   | 하는 일                                                                                                                                     |
-| :------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------ |
-| `pnpm dev`                 | `supabase start`(Docker) → `next dev`. `predev:web`이 먼저 `build-content.ts`(경고 수준)를 돌린다. Next만 띄우려면 `pnpm dev:web`           |
-| `pnpm build`               | `prebuild`(`blog-content build --strict`) → `next build` → `check-seo`. **이 셋이 한 덩어리** — CI·배포도 이 스크립트 하나를 부른다         |
-| `pnpm lint`                | `eslint . --max-warnings=0` (인라인 `eslint-disable` 금지)                                                                                  |
-| `pnpm check-types`         | `tsc -p tsconfig.json` + `tsc -p tsconfig.test.json`                                                                                        |
-| `pnpm test`                | `vitest run` — projects 둘(`node`: `domain/**`·`lib/**`, `jsdom`: `src/**`)을 한 번에. `test:watch`, `test:coverage`(v8)                    |
-| `pnpm lint:posts`          | frontmatter·본문 검증(수동, 경고 수준). prebuild에서는 같은 규칙이 `--strict`로 승격                                                        |
-| `pnpm check-seo`           | `out/` HTML 검사 — h1 1개, description 중복·길이, `<title>` 60자, canonical, og, img alt, `link-trailing-slash`, 산출물↔발행 글 정합성(7종) |
-| `pnpm new-post "제목"`     | 스캐폴딩. `--series` `--tags` `--scheduled` `--slug` `--status`                                                                             |
-| `pnpm supabase-start/stop` | 로컬 Supabase 기동/정지                                                                                                                     |
+| 스크립트                   | 하는 일                                                                                                                                                          |
+| :------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm dev`                 | `supabase start`(Docker) → `next dev`. `predev:web`이 먼저 `build-content.ts`(경고 수준)를 돌린다. Next만 띄우려면 `pnpm dev:web`                                |
+| `pnpm build`               | `prebuild`(`blog-content build --strict`) → `next build` → `check-seo` → `check-bundle`. **이 넷이 한 덩어리** — CI·배포도 이 스크립트 하나를 부른다             |
+| `pnpm lint`                | `eslint . --max-warnings=0` (인라인 `eslint-disable` 금지)                                                                                                       |
+| `pnpm check-types`         | `tsc -p tsconfig.json` + `tsc -p tsconfig.test.json`                                                                                                             |
+| `pnpm test`                | `vitest run` — projects 둘(`node`: `domain/**`·`lib/**`, `jsdom`: `src/**`)을 한 번에. `test:watch`, `test:coverage`(v8)                                         |
+| `pnpm lint:posts`          | frontmatter·본문 검증(수동, 경고 수준). prebuild에서는 같은 규칙이 `--strict`로 승격                                                                             |
+| `pnpm check-seo`           | `out/` HTML 검사 — h1 1개, description 중복·길이, `<title>` 60자, canonical, og, img alt, `link-trailing-slash`, 산출물↔발행 글 정합성(7종)                      |
+| `pnpm check-bundle`        | `out/` JS 청크 검사 — 공개 페이지가 도달하는 청크에 admin 마커(`content.values.mts`의 `BUNDLE_GUARD_MARKERS`)가 있으면 실패, admin 청크에 없어도 실패(양성 대조) |
+| `pnpm new-post "제목"`     | 스캐폴딩. `--series` `--tags` `--scheduled` `--slug` `--status`                                                                                                  |
+| `pnpm supabase-start/stop` | 로컬 Supabase 기동/정지                                                                                                                                          |
 
-위 스크립트들은 전부 `@blog/content`가 `bin`으로 내놓는 **`blog-content`** 한 진입점을 부른다(`blog-content build`·`validate`·`check-seo`·`new-post`) — 앱은 서브커맨드 이름만 알고, 패키지 내부 파일 배치는 모른다.
+위 스크립트들은 전부 `@blog/content`가 `bin`으로 내놓는 **`blog-content`** 한 진입점을 부른다(`blog-content build`·`validate`·`check-seo`·`check-bundle`·`new-post`) — 앱은 서브커맨드 이름만 알고, 패키지 내부 파일 배치는 모른다.
 
 `blog-content build`는 **2단계** — 1단계 `validate-posts`(게이트), 2단계 `sync-posts`·`sitemap`·`rss`·`og-images`·`thumbnails`·`search-index`·`llms-full`·`llms` 8개 **병렬**. 경로 앵커는 앱 루트의 `content.config.mts`다 — CLI가 cwd에서 위로 올라가며 발견하고(전역 `--config`로 명시 가능), build는 자식 spawn에 그 절대 경로를 `--config`로 재전달하므로 cwd에 기대지 않는다.
 

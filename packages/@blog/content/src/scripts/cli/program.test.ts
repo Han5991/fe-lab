@@ -15,6 +15,7 @@ const names = () => buildProgram().commands.map(c => c.name());
 test('서브커맨드 목록 — 앱 스크립트와 build 파이프라인이 부르는 이름', () => {
   expect([...names()].sort()).toStrictEqual([
     'build',
+    'check-bundle',
     'check-seo',
     'llms',
     'llms-full',

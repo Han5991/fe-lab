@@ -22,6 +22,7 @@ import { defineContent } from '@blog/content';
 import { darkColor } from '@design-system/ui/blog-preset';
 import {
   AUTHOR,
+  BUNDLE_GUARD_MARKERS,
   DIAGRAM_NAMES,
   LLMS_DOCS,
   LLMS_FACTS,
@@ -60,6 +61,7 @@ export default defineContent({
     },
   },
   sitemap: { ...SITEMAP_PRIORITY, staticPages: SITEMAP_STATIC_PAGES },
+  bundleGuards: { markers: BUNDLE_GUARD_MARKERS },
   llms: {
     indexIntro: LLMS_INTRO.index,
     fullIntro: LLMS_INTRO.full,
