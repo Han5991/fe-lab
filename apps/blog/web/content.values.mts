@@ -163,13 +163,25 @@ export const SITEMAP_STATIC_PAGES = [
   { path: ABOUT_PATH, priority: '0.7', lastmod: ABOUT_PAGE_MODIFIED },
 ] as const satisfies SitemapConfig['staticPages'];
 
-// ── 번들 누수 가드 마커 (check-bundle 배선 전용) ─────────────────────────────
+// ── 번들 누수 가드 (check-bundle 배선 전용) ──────────────────────────────────
 //
 // admin 전용 코드가 공개 페이지 청크에 실리면 `pnpm build`의 check-bundle이
-// 실패한다(#326에서 실제로 있었던 누수의 회귀 가드). 마커는 minify를 살아남는
-// 문자열이어야 한다 — export 이름(Turbopack이 청크에 문자열로 등록), 문자열
-// 리터럴(Edge Function 이름), 라이브러리 클래스명. 각 마커는 admin 청크에
-// 실재해야 통과다(양성 대조 — 코드에서 이름을 바꾸면 여기도 함께 바꿀 것).
+// 실패한다(#326에서 실제로 있었던 누수의 회귀 가드). **경로 접두도 마커도 이
+// 사이트의 값이라 앱이 소유한다** — 패키지에는 이 축의 기본값이 없다(admin
+// 라우트 주소는 소비 사이트만 아는 값이다).
+//
+// 마커는 minify를 살아남는 문자열이어야 한다 — export 이름(Turbopack이 청크에
+// 문자열로 등록), 문자열 리터럴(Edge Function 이름), 라이브러리 클래스명.
+// 각 마커는 admin 청크에 실재해야 통과다(양성 대조 — 코드에서 이름을 바꾸면
+// 여기도 함께 바꿀 것).
+
+/**
+ * admin 라우트의 경로 접두. `domain/auth/adminAccess`의 `ADMIN_BASE_PATH`
+ * (`'/admin'`)와 짝이지만 직접 파생하지 않는다 — 이 모듈은 값 import가 금지고
+ * (순수 리터럴 계약), adminAccess는 import 0개를 유지해야 하는 모듈이라 어느
+ * 방향으로도 잇지 못한다. 대신 `contentValues.test.ts`가 두 값을 잠근다.
+ */
+export const ADMIN_PATH_PREFIX = '/admin/';
 
 export const BUNDLE_GUARD_MARKERS = [
   // domain/analytics의 admin 전용 계산 (overview.ts·derivedStats.ts)

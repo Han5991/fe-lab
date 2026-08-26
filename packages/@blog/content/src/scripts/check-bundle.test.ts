@@ -5,7 +5,7 @@ import {
   collectChunkRefs,
   runCheckBundle,
 } from './check-bundle.ts';
-import { DEFAULT_BUNDLE_GUARDS } from '../shared/contentConfig.ts';
+import type { BundleGuardsConfig } from '../shared/contentConfig.ts';
 
 /** 청크 stem은 실제 산출물처럼 해시 모양으로 — 우연한 부분 일치가 없어야 한다. */
 const page = (...chunks: string[]) =>
@@ -13,8 +13,11 @@ const page = (...chunks: string[]) =>
     .map(c => `<script src="/_next/static/chunks/${c}" async></script>`)
     .join('')}</head><body></body></html>`;
 
-const guards = (markers: string[]) => ({
-  ...DEFAULT_BUNDLE_GUARDS,
+// 패키지에는 기본값이 없다 — 테스트가 곧 이 축을 선언하는 소비 사이트다.
+const guards = (
+  markers: BundleGuardsConfig['markers'],
+): BundleGuardsConfig => ({
+  adminPathPrefix: '/admin/',
   markers,
 });
 

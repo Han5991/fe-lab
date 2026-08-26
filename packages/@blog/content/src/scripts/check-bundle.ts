@@ -161,9 +161,11 @@ export function runCheckBundle(
 }
 
 export function main(ctx: ContentContext, target?: string) {
+  // 선언 자체가 없는 사이트(admin 영역 없음)는 검사 대상이 아니다. 마커만 비운
+  // 반쪽 선언은 타입이 막으므로(BundleGuardsConfig 참고) 여기 올 수 없다.
   const guards = ctx.content.config.bundleGuards;
-  if (guards.markers.length === 0) {
-    console.log('✓ check-bundle: 마커 미설정 — 검사 스킵');
+  if (!guards) {
+    console.log('✓ check-bundle: bundleGuards 미선언 — 검사 스킵');
     return;
   }
 

@@ -192,15 +192,22 @@ export interface BundleGuardsConfig {
   /**
    * admin 영역의 URL 경로 접두 (예: '/admin/'). 이 접두로 시작하는 페이지가
    * admin, 나머지 전부가 공개다.
+   *
+   * **패키지에 기본값이 없다** — 이 값은 소비 사이트의 라우트 주소라서, 어떤
+   * 기본값이든 특정 사이트의 하드코딩이다(`ContentValues`와 같은 이유). 그래서
+   * 이 축은 반쪽 선언이 불가능하다: 선언하려면 경로와 마커를 함께 준다.
    */
   adminPathPrefix: string;
   /**
    * 금지 마커 — minify를 살아남는 문자열만 의미가 있다: 문자열 리터럴(Edge
    * Function 이름), 라이브러리 클래스명(GoTrueClient), 그리고 Turbopack이
-   * 청크에 문자열로 등록하는 **export 이름**. 비어 있으면 검사를 건너뛴다
-   * (admin 영역이 없는 사이트).
+   * 청크에 문자열로 등록하는 **export 이름**.
+   *
+   * 비어 있을 수 없다(타입이 막는다) — 마커 없는 선언은 검사가 아무것도 보지
+   * 않으면서 도는 척만 하는 상태다. 검사를 끄려면 마커를 비우는 게 아니라
+   * `bundleGuards` 선언 자체를 지운다.
    */
-  markers: readonly string[];
+  markers: readonly [string, ...string[]];
 }
 
 export interface ThumbnailsConfig {
@@ -319,7 +326,8 @@ export interface ContentConfig {
   sitemap: SitemapConfig;
   og: OgConfig;
   thumbnails: ThumbnailsConfig;
-  bundleGuards: BundleGuardsConfig;
+  /** 선언한 사이트에만 있다 — 없으면 `check-bundle`이 검사를 건너뛴다 */
+  bundleGuards?: BundleGuardsConfig;
   llms: LlmsConfig;
 }
 
@@ -377,8 +385,11 @@ export interface ContentUserConfig extends Pick<
     docs?: Partial<LlmsDocsConfig>;
   };
   thumbnails?: Partial<ThumbnailsConfig>;
-  /** 마커는 사이트 고유(admin 영역의 코드 이름)라 앱이 준다 — 기본은 빈 목록(검사 스킵) */
-  bundleGuards?: Partial<BundleGuardsConfig>;
+  /**
+   * `Partial`이 아닌 것이 의도다 — admin 경로도 마커도 그 사이트의 값이라
+   * 패키지가 반쪽을 채워 줄 수 없다. 선언하려면 통째로, 안 하면 검사 없음.
+   */
+  bundleGuards?: BundleGuardsConfig;
 }
 
 // ── 기본값 ───────────────────────────────────────────────────────────────────
@@ -435,16 +446,6 @@ export const DEFAULT_THUMBNAILS: ThumbnailsConfig = {
 };
 
 /**
- * 번들 가드의 기본값. 경로 접두 `/admin/`은 경로 **관례**(dirs와 같은 축)지만,
- * 마커는 그 사이트 admin 코드의 이름이라 기본값을 둘 수 없다 — 비워 두면
- * `check-bundle`이 검사를 건너뛴다(admin 영역이 없는 사이트가 유효한 상태).
- */
-export const DEFAULT_BUNDLE_GUARDS: BundleGuardsConfig = {
-  adminPathPrefix: '/admin/',
-  markers: [],
-};
-
-/**
  * llms 산문의 기본값.
  *
  * `indexIntro`·`fullIntro`는 여기 없다 — `seo.titleSuffix`가 `site.name`에서
@@ -479,7 +480,18 @@ export const DEFAULT_LLMS: Omit<LlmsConfig, 'indexIntro' | 'fullIntro'> = {
  */
 const DEFAULTS: Omit<
   ContentConfig,
-  'root' | 'site' | 'author' | 'timezone' | 'seo' | 'registries' | 'og' | 'llms'
+  // bundleGuards가 여기 있는 이유는 다른 키들과 같다 — admin 경로 접두는 소비
+  // 사이트의 URL이고 마커는 그 사이트 admin 코드의 이름이라, 어떤 기본값도
+  // 특정 사이트의 하드코딩이다. 기본값이 없는 축은 선언 안 하면 없는 축이다.
+  | 'root'
+  | 'site'
+  | 'author'
+  | 'timezone'
+  | 'seo'
+  | 'registries'
+  | 'og'
+  | 'llms'
+  | 'bundleGuards'
 > & {
   seo: Omit<SeoConfig, 'titleSuffix'>;
   registries: Omit<RegistriesConfig, 'diagramNames'>;
@@ -487,7 +499,6 @@ const DEFAULTS: Omit<
   llms: Omit<LlmsConfig, 'indexIntro' | 'fullIntro'>;
 } = {
   seo: DEFAULT_SEO,
-  bundleGuards: DEFAULT_BUNDLE_GUARDS,
   runtime: {
     // 대괄호 접근인 이유: 이 패키지의 tsconfig에는 Next의 ProcessEnv 증강
     // (next-env.d.ts)이 없어 NODE_ENV가 인덱스 시그니처로만 보인다
@@ -608,7 +619,9 @@ export function defineContent(user: ContentUserConfig): ContentConfig {
     // 팔레트는 필수라 병합할 기본값이 없다 — 준 값이 그대로 실린다.
     og: { ...DEFAULTS.og, ...user.og },
     thumbnails: { ...DEFAULTS.thumbnails, ...user.thumbnails },
-    bundleGuards: { ...DEFAULTS.bundleGuards, ...user.bundleGuards },
+    // 병합할 기본값이 없다 — 준 사이트에만 있고, 통째로 실린다(조건 스프레드는
+    // exactOptionalPropertyTypes 때문: undefined를 optional 필드에 대입할 수 없다).
+    ...(user.bundleGuards ? { bundleGuards: user.bundleGuards } : {}),
     llms: {
       ...DEFAULTS.llms,
       ...user.llms,

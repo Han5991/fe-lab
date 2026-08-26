@@ -21,6 +21,7 @@
 import { defineContent } from '@blog/content';
 import { darkColor } from '@design-system/ui/blog-preset';
 import {
+  ADMIN_PATH_PREFIX,
   AUTHOR,
   BUNDLE_GUARD_MARKERS,
   DIAGRAM_NAMES,
@@ -61,7 +62,12 @@ export default defineContent({
     },
   },
   sitemap: { ...SITEMAP_PRIORITY, staticPages: SITEMAP_STATIC_PAGES },
-  bundleGuards: { markers: BUNDLE_GUARD_MARKERS },
+  // 통째 선언이다(Partial 아님) — 경로 접두도 마커도 이 사이트의 값이라
+  // 패키지가 반쪽을 채워 줄 수 없다.
+  bundleGuards: {
+    adminPathPrefix: ADMIN_PATH_PREFIX,
+    markers: BUNDLE_GUARD_MARKERS,
+  },
   llms: {
     indexIntro: LLMS_INTRO.index,
     fullIntro: LLMS_INTRO.full,
