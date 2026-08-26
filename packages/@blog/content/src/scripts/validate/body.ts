@@ -22,7 +22,7 @@ import type { Issue, PostRecord, ValidateContext } from './shared.ts';
 import { resolveSeverity } from './rules.ts';
 
 /** 마크다운 `![alt](src)` — alt는 비어 있을 수 있다. */
-const MARKDOWN_IMAGE = /!\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g;
+const MARKDOWN_IMAGE = /!\[([^\]]*)]\(([^)\s]+)(?:\s+"[^"]*")?\)/g;
 
 /** 개행은 남기고 나머지만 공백으로 — 줄 번호 계산이 어긋나지 않도록. */
 function blank(text: string): string {
