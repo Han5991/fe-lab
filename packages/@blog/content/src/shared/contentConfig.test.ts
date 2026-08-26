@@ -37,6 +37,27 @@ test('사이트와 무관한 축에는 기본값이 남아 있다', () => {
   expect(config.dirs.content).toBe('../posts');
 });
 
+// ── bundleGuards: 선언한 사이트에만 있는 축 ──────────────────────────────────
+
+test('bundleGuards를 안 주면 설정에 키 자체가 없다 — 미선언 = 검사 없음', () => {
+  // "빈 기본값"도 아니고 "undefined 값"도 아니다 — 축이 없다. check-bundle의
+  // 스킵 판정(`!guards`)이 이 계약 위에 서 있다.
+  const config = defineTestContent({ root: FIXTURE_ROOT });
+  expect('bundleGuards' in config).toBe(false);
+});
+
+test('bundleGuards는 준 값이 통째로 실린다 — 패키지가 채우는 반쪽이 없다', () => {
+  const guards = {
+    admin: { pathPrefix: '/admin/', markers: ['GoTrueClient'] },
+    serverOnly: [{ marker: 'server prose', artifact: 'llms.txt' }],
+  } as const;
+  const config = defineTestContent({
+    root: FIXTURE_ROOT,
+    bundleGuards: guards,
+  });
+  expect(config.bundleGuards).toBe(guards);
+});
+
 // ── defineContent: root 검증 ─────────────────────────────────────────────────
 
 test('root 없이 호출하면 defineContent가 던진다 (하드코딩 폴백 없음)', () => {

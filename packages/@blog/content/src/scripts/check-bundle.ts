@@ -1,27 +1,32 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import type { BundleGuardsConfig } from '../shared/contentConfig.ts';
+import type {
+  BundleGuardsConfig,
+  ServerOnlyMarker,
+} from '../shared/contentConfig.ts';
 import type { ContentContext } from './context.ts';
 import { collectPages } from './check-seo.ts';
 
 /**
- * 빌드 산출물(`out/`)의 JS 청크에서 **admin 전용 코드의 공개 페이지 누수**를
- * 검사합니다.
+ * 빌드 산출물(`out/`)에서 **있어선 안 되는 곳에 실린 코드·값**을 검사합니다.
+ * `check-seo`가 HTML의 SEO 계약을 보는 것과 같은 자리(빌드 마지막 단계)의
+ * 번들 계약 게이트로, 계열 둘을 봅니다(각각 선택 — `BundleGuardsConfig`):
  *
- * `check-seo`가 HTML의 SEO 계약을 보는 것과 같은 자리(빌드 마지막 단계)에서,
- * 이 게이트는 번들 계약을 봅니다: 페이지를 `adminPathPrefix`로 공개/admin 두
- * 무리로 나누고, 각 무리가 도달하는 청크를 모아 설정의 마커와 대조합니다.
+ * - **admin 누수**: 페이지를 `admin.pathPrefix`로 공개/admin 두 무리로 나누고,
+ *   각 무리가 도달하는 청크를 모아 마커와 대조합니다. 공개 쪽에 있으면
+ *   `bundle-leak`, admin 쪽에 없어도 `marker-dead`.
+ * - **서버 전용 값 누수**: 설정 객체·그룹 객체가 클라이언트 그래프로 새면
+ *   화면이 안 쓰는 값(llms 산문 등)까지 번들에 실립니다. 마커는 어떤 페이지
+ *   HTML·청크에도 없어야 하고(`server-leak`), 앵커 산출물에는 있어야
+ *   합니다(`marker-dead`).
  *
  * 도달 청크는 HTML의 script 참조에서 출발해 **폐포**로 구합니다 — 청크가 다른
  * 청크를 파일명 문자열로 여는 지연 로드가 실재해서(HTML만 보면 놓친다),
  * 포함된 청크 본문에 이름이 등장하는 청크를 반복해서 더합니다.
  *
- * 검사는 대칭 두 방향입니다:
- * - **음성**: 마커가 공개 도달 청크에 있으면 누수(`bundle-leak`).
- * - **양성**: 마커가 admin 도달 청크 어디에도 없으면 실패(`marker-dead`) —
- *   번들러가 export 이름을 문자열로 남기는 방식이 바뀌어 마커가 죽으면,
- *   음성 검사만으로는 "누수 없음"과 "검사 무력화"가 구분되지 않습니다.
- *   `isCliEntry`의 무음 no-op 사고에서 배운 fail-closed와 같은 원리입니다.
+ * 두 계열 모두 양성 대조(`marker-dead`)를 가집니다 — 마커가 죽으면 음성
+ * 검사만으로는 "누수 없음"과 "검사 무력화"가 구분되지 않습니다. `isCliEntry`의
+ * 무음 no-op 사고에서 배운 fail-closed와 같은 원리입니다.
  *
  * 사용: `pnpm build`의 마지막 단계 — `blog-content check-bundle`
  */
@@ -29,7 +34,7 @@ import { collectPages } from './check-seo.ts';
 export interface BundleViolation {
   /** 무엇에 대한 위반인가 — 마커 이름 */
   marker: string;
-  rule: 'bundle-leak' | 'marker-dead';
+  rule: 'bundle-leak' | 'server-leak' | 'marker-dead';
   message: string;
 }
 
@@ -93,8 +98,8 @@ export function classifyChunkRefs(
   return { publicRefs, adminRefs };
 }
 
-/** 마커 대조 — 음성(공개에 없어야)과 양성(admin에 있어야)을 함께 본다. */
-export function checkMarkers(
+/** admin 마커 대조 — 음성(공개에 없어야)과 양성(admin에 있어야)을 함께 본다. */
+export function checkAdminMarkers(
   markers: readonly string[],
   publicChunks: ReadonlySet<string>,
   adminChunks: ReadonlySet<string>,
@@ -143,21 +148,76 @@ function readChunkSources(outDir: string): Map<string, string> {
   return sources;
 }
 
+/**
+ * 서버 전용 마커 대조 — 어떤 페이지 HTML·청크에도 없어야 하고(`server-leak`),
+ * 앵커 산출물에는 있어야 한다(`marker-dead`). 산출물 본문은 호출자가 읽어
+ * 넘긴다(없는 파일은 null) — 이 함수는 fs를 모른다.
+ */
+export function checkServerOnlyMarkers(
+  entries: readonly ServerOnlyMarker[],
+  pages: ReadonlyMap<string, string>,
+  sources: ReadonlyMap<string, string>,
+  artifacts: ReadonlyMap<string, string | null>,
+): BundleViolation[] {
+  const violations: BundleViolation[] = [];
+  for (const { marker, artifact } of entries) {
+    for (const [name, body] of sources) {
+      if (body.includes(marker)) {
+        violations.push({
+          marker,
+          rule: 'server-leak',
+          message: `청크 ${name}에 서버 전용 값 '${marker}'가 있습니다 — 설정 객체나 그룹 객체가 클라이언트 그래프로 샜습니다.`,
+        });
+      }
+    }
+    for (const [path, html] of pages) {
+      if (html.includes(marker)) {
+        violations.push({
+          marker,
+          rule: 'server-leak',
+          message: `페이지 ${path}에 서버 전용 값 '${marker}'가 있습니다 — 화면에 렌더될 일이 없는 값이 페이지로 나왔습니다.`,
+        });
+      }
+    }
+    const anchor = artifacts.get(artifact);
+    if (anchor == null || !anchor.includes(marker)) {
+      violations.push({
+        marker,
+        rule: 'marker-dead',
+        message: `'${marker}'가 앵커 산출물 ${artifact}에 없습니다 — 값이 바뀌어 마커가 죽었으면 설정(bundleGuards.serverOnly)을 함께 갱신하세요.`,
+      });
+    }
+  }
+  return violations;
+}
+
 export function runCheckBundle(
   pages: ReadonlyMap<string, string>,
   sources: ReadonlyMap<string, string>,
   guards: BundleGuardsConfig,
+  artifacts: ReadonlyMap<string, string | null>,
 ): BundleViolation[] {
-  const { publicRefs, adminRefs } = classifyChunkRefs(
-    pages,
-    guards.adminPathPrefix,
-  );
-  return checkMarkers(
-    guards.markers,
-    chunkClosure(publicRefs, sources),
-    chunkClosure(adminRefs, sources),
-    sources,
-  );
+  const violations: BundleViolation[] = [];
+  if (guards.admin) {
+    const { publicRefs, adminRefs } = classifyChunkRefs(
+      pages,
+      guards.admin.pathPrefix,
+    );
+    violations.push(
+      ...checkAdminMarkers(
+        guards.admin.markers,
+        chunkClosure(publicRefs, sources),
+        chunkClosure(adminRefs, sources),
+        sources,
+      ),
+    );
+  }
+  if (guards.serverOnly) {
+    violations.push(
+      ...checkServerOnlyMarkers(guards.serverOnly, pages, sources, artifacts),
+    );
+  }
+  return violations;
 }
 
 export function main(ctx: ContentContext, target?: string) {
@@ -190,10 +250,23 @@ export function main(ctx: ContentContext, target?: string) {
     process.exit(1);
   }
 
-  const violations = runCheckBundle(pages, sources, guards);
+  // serverOnly의 앵커 산출물을 읽는다 — 없는 파일은 null로 넘겨 검사 함수가
+  // marker-dead로 보고한다(여기서 미리 실패시키면 위반 목록이 갈라진다).
+  const artifacts = new Map<string, string | null>();
+  for (const { artifact } of guards.serverOnly ?? []) {
+    const anchorPath = join(outDir, artifact);
+    artifacts.set(
+      artifact,
+      existsSync(anchorPath) ? readFileSync(anchorPath, 'utf8') : null,
+    );
+  }
+
+  const violations = runCheckBundle(pages, sources, guards, artifacts);
   if (violations.length === 0) {
+    const adminCount = guards.admin?.markers.length ?? 0;
+    const serverCount = guards.serverOnly?.length ?? 0;
     console.log(
-      `✓ ${guards.markers.length}개 마커 번들 누수 검사 통과 (청크 ${sources.size}개)`,
+      `✓ 번들 누수 검사 통과 — admin 마커 ${adminCount}개 · 서버 전용 ${serverCount}개 (청크 ${sources.size}개)`,
     );
     return;
   }

@@ -28,6 +28,7 @@ import {
   LLMS_DOCS,
   LLMS_FACTS,
   LLMS_INTRO,
+  SERVER_ONLY_MARKERS,
   SITE,
   SITEMAP_PRIORITY,
   SITEMAP_STATIC_PAGES,
@@ -62,11 +63,11 @@ export default defineContent({
     },
   },
   sitemap: { ...SITEMAP_PRIORITY, staticPages: SITEMAP_STATIC_PAGES },
-  // 통째 선언이다(Partial 아님) — 경로 접두도 마커도 이 사이트의 값이라
-  // 패키지가 반쪽을 채워 줄 수 없다.
+  // 계열마다 통째 선언이다(Partial 아님) — 경로 접두도 마커도 산문도 이
+  // 사이트의 값이라 패키지가 반쪽을 채워 줄 수 없다.
   bundleGuards: {
-    adminPathPrefix: ADMIN_PATH_PREFIX,
-    markers: BUNDLE_GUARD_MARKERS,
+    admin: { pathPrefix: ADMIN_PATH_PREFIX, markers: BUNDLE_GUARD_MARKERS },
+    serverOnly: SERVER_ONLY_MARKERS,
   },
   llms: {
     indexIntro: LLMS_INTRO.index,

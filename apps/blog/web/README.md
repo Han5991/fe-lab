@@ -110,18 +110,18 @@ apps/blog/web/
 
 모두 `apps/blog/web`에서 실행(`new-post`·글 미리보기는 루트 `pnpm new-post`·`pnpm blog-write` 단축도 있다). 콘텐츠 스크립트는 `@blog/content`가 `bin`으로 내놓는 **`blog-content` 하나**로 실행한다 — 앱은 서브커맨드 이름만 안다(`blog-content build`).
 
-| 스크립트                   | 하는 일                                                                                                                                                          |
-| :------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `pnpm dev`                 | `supabase start`(Docker) → `next dev`. `predev:web`이 먼저 `build-content.ts`(경고 수준)를 돌린다. Next만 띄우려면 `pnpm dev:web`                                |
-| `pnpm build`               | `prebuild`(`blog-content build --strict`) → `next build` → `check-seo` → `check-bundle`. **이 넷이 한 덩어리** — CI·배포도 이 스크립트 하나를 부른다             |
-| `pnpm lint`                | `eslint . --max-warnings=0` (인라인 `eslint-disable` 금지)                                                                                                       |
-| `pnpm check-types`         | `tsc -p tsconfig.json` + `tsc -p tsconfig.test.json`                                                                                                             |
-| `pnpm test`                | `vitest run` — projects 둘(`node`: `domain/**`·`lib/**`, `jsdom`: `src/**`)을 한 번에. `test:watch`, `test:coverage`(v8)                                         |
-| `pnpm lint:posts`          | frontmatter·본문 검증(수동, 경고 수준). prebuild에서는 같은 규칙이 `--strict`로 승격                                                                             |
-| `pnpm check-seo`           | `out/` HTML 검사 — h1 1개, description 중복·길이, `<title>` 60자, canonical, og, img alt, `link-trailing-slash`, 산출물↔발행 글 정합성(7종)                      |
-| `pnpm check-bundle`        | `out/` JS 청크 검사 — 공개 페이지가 도달하는 청크에 admin 마커(`content.values.mts`의 `BUNDLE_GUARD_MARKERS`)가 있으면 실패, admin 청크에 없어도 실패(양성 대조) |
-| `pnpm new-post "제목"`     | 스캐폴딩. `--series` `--tags` `--scheduled` `--slug` `--status`                                                                                                  |
-| `pnpm supabase-start/stop` | 로컬 Supabase 기동/정지                                                                                                                                          |
+| 스크립트                   | 하는 일                                                                                                                                                                                                                                      |
+| :------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm dev`                 | `supabase start`(Docker) → `next dev`. `predev:web`이 먼저 `build-content.ts`(경고 수준)를 돌린다. Next만 띄우려면 `pnpm dev:web`                                                                                                            |
+| `pnpm build`               | `prebuild`(`blog-content build --strict`) → `next build` → `check-seo` → `check-bundle`. **이 넷이 한 덩어리** — CI·배포도 이 스크립트 하나를 부른다                                                                                         |
+| `pnpm lint`                | `eslint . --max-warnings=0` (인라인 `eslint-disable` 금지)                                                                                                                                                                                   |
+| `pnpm check-types`         | `tsc -p tsconfig.json` + `tsc -p tsconfig.test.json`                                                                                                                                                                                         |
+| `pnpm test`                | `vitest run` — projects 둘(`node`: `domain/**`·`lib/**`, `jsdom`: `src/**`)을 한 번에. `test:watch`, `test:coverage`(v8)                                                                                                                     |
+| `pnpm lint:posts`          | frontmatter·본문 검증(수동, 경고 수준). prebuild에서는 같은 규칙이 `--strict`로 승격                                                                                                                                                         |
+| `pnpm check-seo`           | `out/` HTML 검사 — h1 1개, description 중복·길이, `<title>` 60자, canonical, og, img alt, `link-trailing-slash`, 산출물↔발행 글 정합성(7종)                                                                                                  |
+| `pnpm check-bundle`        | `out/` 번들 계약 검사, 두 계열 — admin 마커가 공개 도달 청크에 있으면 실패, 서버 전용 마커(llms 산문 카나리아)가 어떤 청크·페이지에든 있으면 실패. 둘 다 양성 대조 포함(admin 청크·앵커 산출물에 실재해야 통과). 선언은 `content.values.mts` |
+| `pnpm new-post "제목"`     | 스캐폴딩. `--series` `--tags` `--scheduled` `--slug` `--status`                                                                                                                                                                              |
+| `pnpm supabase-start/stop` | 로컬 Supabase 기동/정지                                                                                                                                                                                                                      |
 
 위 스크립트들은 전부 `@blog/content`가 `bin`으로 내놓는 **`blog-content`** 한 진입점을 부른다(`blog-content build`·`validate`·`check-seo`·`check-bundle`·`new-post`) — 앱은 서브커맨드 이름만 알고, 패키지 내부 파일 배치는 모른다.
 

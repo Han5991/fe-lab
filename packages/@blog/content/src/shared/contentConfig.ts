@@ -179,25 +179,22 @@ export interface OgConfig {
 }
 
 /**
- * 번들 누수 가드 — 공개 페이지 청크에 있으면 안 되는 문자열 마커의 선언.
+ * admin 전용 코드의 공개 페이지 누수 선언.
  *
- * 검사(`check-bundle`)는 산출물의 페이지 HTML을 `adminPathPrefix`로 공개/admin
- * 두 무리로 나누고, 각 무리가 도달하는 청크(HTML의 script 참조 + 청크가 다시
- * 여는 청크의 폐포)를 모아 마커와 대조한다. 마커가 공개 쪽에 있으면 누수,
- * **admin 쪽에 없어도 실패다** — 번들러가 export 이름을 문자열로 남기는 방식이
- * 바뀌어 마커가 죽으면, 음성 검사만으로는 "누수 없음"과 "검사 무력화"가
- * 구분되지 않는다(fail-closed).
+ * 검사(`check-bundle`)는 산출물의 페이지 HTML을 `pathPrefix`로 공개/admin 두
+ * 무리로 나누고, 각 무리가 도달하는 청크(HTML의 script 참조 + 청크가 다시
+ * 여는 청크의 폐포)를 모아 마커와 대조한다. 마커가 공개 쪽에 있으면 누수
+ * (`bundle-leak`), **admin 쪽에 없어도 실패다**(`marker-dead`) — 번들러가
+ * export 이름을 문자열로 남기는 방식이 바뀌어 마커가 죽으면, 음성 검사만으로는
+ * "누수 없음"과 "검사 무력화"가 구분되지 않는다(fail-closed).
  */
-export interface BundleGuardsConfig {
+export interface AdminBundleGuard {
   /**
    * admin 영역의 URL 경로 접두 (예: '/admin/'). 이 접두로 시작하는 페이지가
-   * admin, 나머지 전부가 공개다.
-   *
-   * **패키지에 기본값이 없다** — 이 값은 소비 사이트의 라우트 주소라서, 어떤
-   * 기본값이든 특정 사이트의 하드코딩이다(`ContentValues`와 같은 이유). 그래서
-   * 이 축은 반쪽 선언이 불가능하다: 선언하려면 경로와 마커를 함께 준다.
+   * admin, 나머지 전부가 공개다. **패키지에 기본값이 없다** — 소비 사이트의
+   * 라우트 주소라서, 어떤 기본값이든 특정 사이트의 하드코딩이다.
    */
-  adminPathPrefix: string;
+  pathPrefix: string;
   /**
    * 금지 마커 — minify를 살아남는 문자열만 의미가 있다: 문자열 리터럴(Edge
    * Function 이름), 라이브러리 클래스명(GoTrueClient), 그리고 Turbopack이
@@ -205,9 +202,37 @@ export interface BundleGuardsConfig {
    *
    * 비어 있을 수 없다(타입이 막는다) — 마커 없는 선언은 검사가 아무것도 보지
    * 않으면서 도는 척만 하는 상태다. 검사를 끄려면 마커를 비우는 게 아니라
-   * `bundleGuards` 선언 자체를 지운다.
+   * 선언 자체를 지운다.
    */
   markers: readonly [string, ...string[]];
+}
+
+/**
+ * 서버/빌드 전용 값의 클라이언트 유입 선언.
+ *
+ * admin 누수와 다른 두 번째 계열이다: 설정 객체나 값 모듈의 그룹 객체를
+ * 클라이언트 그래프가 import하면, 화면이 안 쓰는 값(llms 산문·og 팔레트)까지
+ * 번들에 실린다 — 번들러는 객체 필드를 못 털어낸다. 마커는 **어떤 페이지
+ * HTML·청크에도** 없어야 하고, 대신 `artifact`(outDir 기준 상대 경로)에는
+ * **있어야 한다** — 산출물이 마커의 살아 있음을 증명하는 앵커라, 값이 바뀌어
+ * 마커가 죽으면 admin 계열과 같은 원리로 검사가 실패한다.
+ *
+ * 그래서 마커는 "화면에 렌더될 일이 없는 서버 전용 산문"에서 골라야 한다 —
+ * 화면에도 나가는 값(사이트 설명 등)을 넣으면 정상 렌더가 누수로 잡힌다.
+ */
+export interface ServerOnlyMarker {
+  marker: string;
+  /** 마커가 반드시 존재해야 하는 산출물 — outDir 기준 상대 경로 (예: 'llms.txt') */
+  artifact: string;
+}
+
+/**
+ * 번들 누수 가드 — 두 계열이 각각 선택이고, 선언하면 통째다. 패키지에 어느
+ * 계열의 기본값도 없다: 경로 접두·마커·산문 전부 소비 사이트의 값이다.
+ */
+export interface BundleGuardsConfig {
+  admin?: AdminBundleGuard;
+  serverOnly?: readonly [ServerOnlyMarker, ...ServerOnlyMarker[]];
 }
 
 export interface ThumbnailsConfig {

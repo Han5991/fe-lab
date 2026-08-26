@@ -191,7 +191,25 @@ export const BUNDLE_GUARD_MARKERS = [
   'admin-analytics',
   // 세션용 supabase-js의 auth 클라이언트 — domain/*/admin 배럴 분리가 지키는 것
   'GoTrueClient',
-] as const satisfies BundleGuardsConfig['markers'];
+] as const satisfies NonNullable<BundleGuardsConfig['admin']>['markers'];
+
+/**
+ * 서버/빌드 전용 값의 클라이언트 유입 감지 — admin 누수와 다른 두 번째
+ * 계열이다. 설정 객체나 값 모듈의 그룹 객체를 클라이언트 그래프가 import하면
+ * 화면이 안 쓰는 값까지 번들에 실린다(위 "그룹 객체는 설정 배선 전용" 규칙이
+ * 막는 바로 그 사고 — 실제로 홈 히어로 소개문이 그렇게 샜다).
+ *
+ * llms 산문을 카나리아로 쓴다: 어떤 화면에도 렌더되지 않는 서버 전용 값이면서
+ * `LLMS_INTRO` 그룹·설정 객체 어느 쪽이 새도 함께 실려 온다. 앵커 산출물
+ * (llms.txt)이 살아 있음을 증명하므로, 산문을 고치면 이 선언도 함께 고칠 것
+ * (안 고치면 marker-dead로 빌드가 막히며 알려 준다).
+ */
+export const SERVER_ONLY_MARKERS = [
+  {
+    marker: 'Deep-dive technical experiments in bundler architecture',
+    artifact: 'llms.txt',
+  },
+] as const satisfies BundleGuardsConfig['serverOnly'];
 
 /**
  * sitemap의 `<priority>` 튜닝 — **어떤 글이 대표작인가**라는 편집 판단이라
