@@ -56,7 +56,7 @@ const MERMAID_VARS = {
 } as const;
 
 /**
- * 도표를 감싸는 박스. CodeBlock의 로딩 placeholder(`mermaidBoxStyle`)가 같은
+ * 도표를 감싸는 박스. MermaidLazy의 로딩 placeholder(`mermaidBoxStyle`)가 같은
  * 여백·보더를 써야 청크가 도착할 때 자리가 안 튀는데, 두 파일이 값을 따로
  * 들고 있어 한쪽만 바뀌기 쉽다. 비교 가능하도록 상수로 빼서 export한다
  * (CodeBlock.test.tsx가 대조한다).

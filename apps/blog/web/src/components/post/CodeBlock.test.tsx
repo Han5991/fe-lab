@@ -9,7 +9,8 @@
  *      한쪽만 바뀌면 청크가 도착하는 순간 본문이 밀린다.
  */
 import { describe, expect, test, vi } from 'vitest';
-import { registerOnce, mermaidBoxStyle } from './CodeBlock';
+import { registerOnce } from './CodeBlock';
+import { mermaidBoxStyle } from './MermaidLazy';
 import { mermaidContainerStyle } from './MermaidChart';
 
 // MermaidChart는 mermaid(raw 1.1MB)를 정적 import한다. 여기서 필요한 건 컨테이너
