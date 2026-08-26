@@ -1,7 +1,3 @@
-'use client';
-
-import { useState } from 'react';
-import dynamic from 'next/dynamic';
 import { PrismLight as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/cjs/styles/prism';
 import markup from 'react-syntax-highlighter/dist/cjs/languages/prism/markup';
@@ -18,11 +14,20 @@ import markdown from 'react-syntax-highlighter/dist/cjs/languages/prism/markdown
 import docker from 'react-syntax-highlighter/dist/cjs/languages/prism/docker';
 import jsExtras from 'react-syntax-highlighter/dist/cjs/languages/prism/js-extras';
 import jsdoc from 'react-syntax-highlighter/dist/cjs/languages/prism/jsdoc';
-import { Check, Clipboard, FileCode } from 'lucide-react';
+import { FileCode } from 'lucide-react';
 import { css, cx } from '@design-system/ui-lib/css';
 import { token } from '@design-system/ui-lib/tokens';
 import { codeText, isBlockCode } from './markdownCode';
 import { toDualTheme } from './codeTheme';
+import {
+  CODE_BORDER,
+  CODE_CHROME,
+  CODE_META,
+  CODE_SELECTION,
+  CODE_SURFACE,
+} from './codeChrome';
+import { CopyButton } from './CopyButton';
+import { MermaidLazy } from './MermaidLazy';
 import {
   PRISM_LANGUAGES,
   GRAMMAR_EXTENSION_ONLY,
@@ -113,29 +118,6 @@ SyntaxHighlighter.alias(
   ),
 );
 
-// ─────────────────────────────────────────────────────────────────────────
-// 코드 표면도 테마를 탄다.
-//
-// 예전에는 "코드 표면은 테마와 무관하게 항상 어둡다"가 규칙이었다. 이유는
-// 하나뿐이었다 — vscDarkPlus의 구문 색이 다크 배경 전용 고정값이라 배경만
-// 밝히면 대비가 무너졌기 때문이다. 그래서 크롬 색도 토큰을 못 쓰고 다크
-// 팔레트에서 뽑은 hex를 박아 뒀다.
-//
-// 그 전제를 codeTheme.ts가 걷어냈다(구문 색이 라이트/다크 두 벌이 됐다).
-// 남은 크롬 색은 이제 평범한 semanticToken이면 된다.
-// ─────────────────────────────────────────────────────────────────────────
-const CODE_SURFACE = 'code.surface';
-const CODE_CHROME = 'code.chrome';
-// 보더·메타 텍스트는 코드 전용 토큰을 따로 두지 않는다. 라이트/다크가 함께
-// 도는 지금은 본문에서 쓰는 hairline·서브 텍스트와 같은 값이 맞다.
-const CODE_BORDER = 'ink.border';
-const CODE_META = 'ink.600';
-const CODE_ACCENT = 'accent.600';
-// 드래그 선택 배경만 전용 토큰을 유지한다. 전역 ::selection(panda.config)의
-// selection.bg는 라이트에서 옅은 하늘색이라, 코드 표면 위 파란 계열 토큰
-// (string #0A3069, number #0550AE)을 지워버린다.
-const CODE_SELECTION = 'code.selection';
-
 // 구문 강조 한 벌을 라이트/다크 두 벌로. 다크 값은 vscDarkPlus 그대로라
 // 다크 화면은 바뀌지 않는다(codeTheme.ts 주석 참고).
 const CODE_THEME = toDualTheme(vscDarkPlus);
@@ -143,77 +125,6 @@ const CODE_THEME = toDualTheme(vscDarkPlus);
 // 스크롤 없이 펼치는 코드의 한계. 레퍼런스(fumadocs)와 같은 600px이다.
 // 이걸 넘는 블록은 글의 흐름을 끊고 목차·본문 위치 감각을 통째로 지운다.
 const CODE_MAX_HEIGHT = 600;
-
-// mermaid는 d3·dagre까지 끌고 와 raw 1.1MB(gzip 360KB)짜리 청크가 된다.
-// 정적 import면 CodeBlock을 쓰는 모든 글 — 즉 mermaid 다이어그램이 하나도
-// 없는 글까지 — 이 청크를 초기 로드에 포함한다(71편 중 mermaid를 쓰는 건 6편).
-// 아래 `language === 'mermaid'` 분기에 도달할 때만 받아오도록 분리한다.
-// MermaidChart는 원래도 useEffect 안에서만 렌더하므로 ssr: false로 잃는 건 없다.
-const MermaidChart = dynamic(
-  () => import('./MermaidChart').then(m => m.MermaidChart),
-  {
-    ssr: false,
-    // 청크를 받는 동안 도표 자리를 잡아둬 레이아웃 시프트를 막는다.
-    loading: () => <div className={mermaidBoxStyle} />,
-  },
-);
-
-// MermaidChart 내부 컨테이너와 같은 박스 — placeholder와 실제 도표의 자리가
-// 어긋나지 않게 여기서도 동일한 여백/테두리를 쓴다. 값을 한쪽만 고치면 청크가
-// 도착하는 순간 레이아웃이 튀므로, 동일성은 CodeBlock.test.tsx가 못박는다.
-// (한 상수로 합치지 않는 이유: CodeBlock이 MermaidChart 모듈을 정적으로 참조하는
-//  순간 위 dynamic import가 무의미해져 mermaid 청크가 초기 로드로 돌아온다.)
-export const mermaidBoxStyle = css({
-  my: '10',
-  p: '6',
-  minH: '[120px]',
-  bg: 'paper.100',
-  rounded: 'card',
-  borderWidth: 'hairline',
-  borderColor: 'ink.border',
-});
-
-// CodeTabs도 같은 버튼을 쓴다 — 탭 안에서는 상단 바를 탭이 가져가므로
-// 복사 버튼도 그쪽에서 그린다(복사 대상은 열려 있는 탭의 코드).
-export function CopyButton({ content }: { content: string }) {
-  const [isCopied, setIsCopied] = useState(false);
-
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(content);
-      setIsCopied(true);
-      setTimeout(() => setIsCopied(false), 2000);
-    } catch (err) {
-      console.error('Copy failed', err);
-    }
-  };
-
-  return (
-    <button
-      onClick={() => void handleCopy()}
-      // 'Copy'라는 글자를 아이콘으로 바꾸면서 접근 가능한 이름이 사라진다.
-      // 상태(복사됨)까지 이름에 실어 스크린리더가 결과를 알 수 있게 한다.
-      aria-label={isCopied ? '코드 복사됨' : '코드 복사'}
-      className={css({
-        display: 'inline-flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        w: '7',
-        h: '7',
-        color: CODE_META,
-        bg: 'transparent',
-        rounded: 'control',
-        cursor: 'pointer',
-        transition: '[color 0.15s, background-color 0.15s]',
-        _hover: { color: CODE_ACCENT, bg: 'paper.300' },
-        // 아이콘만 남으면 키보드 포커스가 어디 있는지 안 보인다.
-        _focusVisible: { outline: '[2px solid]', outlineColor: 'accent.500' },
-      })}
-    >
-      {isCopied ? <Check size={15} /> : <Clipboard size={15} />}
-    </button>
-  );
-}
 
 interface CodeBlockProps {
   node?: unknown;
@@ -255,7 +166,7 @@ export function CodeBlock({
   const isBlock = isBlockCode(children, className);
 
   if (language === 'mermaid') {
-    return <MermaidChart chart={content} />;
+    return <MermaidLazy chart={content} />;
   }
 
   return isBlock ? (

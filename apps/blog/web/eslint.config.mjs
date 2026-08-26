@@ -112,7 +112,7 @@ export default defineConfig([
   jsxA11y.flatConfigs.recommended,
   {
     rules: {
-      // 스크롤 표 래퍼(role="region"+aria-label+tabIndex=0, PostClient.tsx)는 axe
+      // 스크롤 표 래퍼(role="region"+aria-label+tabIndex=0, PostBody.tsx)는 axe
       // scrollable-region-focusable이 요구하는 패턴이다 — 마우스 없이 스크롤할
       // 방법이 있어야 한다. 룰 기본 허용 목록(tabpanel)에 region을 더한다.
       'jsx-a11y/no-noninteractive-tabindex': [

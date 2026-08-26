@@ -6,7 +6,7 @@ import rehypeSlug from 'rehype-slug';
 
 import { HEADING_COMPONENTS } from './markdownHeadings';
 
-/** PostClient와 같은 플러그인 스택으로 본문을 렌더한다 */
+/** PostBody와 같은 플러그인 스택으로 본문을 렌더한다 */
 function renderMarkdown(markdown: string) {
   return render(
     <ReactMarkdown

@@ -15,7 +15,7 @@ import { isBlockCode } from '@/src/components/post/markdownCode';
 // Msg/Metric/Step은 컨테이너 안에서만 쓰이므로 <p> 직계 자식으로 올 일이 없다.
 // Diagram도 같은 이유로 컨테이너만 등록한다(DiagramNodeTag/DiagramEdgeTag는
 // <diagram> 안에서 좌표 계산용 메타로만 소비되어 DOM에 직접 나오지 않는다).
-const BLOCK_MARKDOWN_COMPONENTS = new Set<ElementType>([
+export const BLOCK_MARKDOWN_COMPONENTS = new Set<ElementType>([
   Callout,
   CodeTabs,
   Diagram,

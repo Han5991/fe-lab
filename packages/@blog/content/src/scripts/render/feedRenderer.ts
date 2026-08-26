@@ -49,7 +49,7 @@ const HEADING_COMPONENTS = Object.fromEntries(
 
 /**
  * 피드 리더에는 사이트의 스타일드 컴포넌트가 없으므로 커스텀 마크다운 헬퍼를
- * 의미가 통하는 표준 HTML로 매핑한다 (사이트 쪽 매핑: PostClient.tsx의
+ * 의미가 통하는 표준 HTML로 매핑한다 (사이트 쪽 매핑: PostBody.tsx의
  * callout → Callout, file-tree → FileTree). figure는 표준 HTML이라 매핑 불필요.
  */
 const FEED_COMPONENTS = {

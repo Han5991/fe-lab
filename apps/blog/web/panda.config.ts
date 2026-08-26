@@ -63,7 +63,7 @@ export default defineConfig({
         MozOsxFontSmoothing: 'grayscale',
         // <details> 펼침 애니메이션 전제. ::details-content의 block-size를
         // 0 ↔ auto로 전환하려면 auto 키워드 보간이 필요하다. 실제 전환
-        // 규칙은 본문 prose 스타일(posts/[...slug]/PostClient.tsx)에 있고,
+        // 규칙은 본문 prose 스타일(posts/[...slug]/PostBody.tsx)에 있고,
         // 미지원 브라우저는 애니메이션 없이 즉시 펼쳐지므로 기능 손실은 없다.
         interpolateSize: 'allow-keywords',
         // color-scheme: 네이티브 컨트롤/스크롤바를 테마에 맞춘다

@@ -16,7 +16,7 @@ export { DeployPipeline } from './DeployPipeline';
 
 /**
  * 선언형 다이어그램 — 마크다운에서 `<diagram>` / `<diagram-node>` /
- * `<diagram-edge>` 로 쓴다. PostClient의 components 맵에 소문자 태그로 등록한다.
+ * `<diagram-edge>` 로 쓴다. PostBody의 components 맵에 소문자 태그로 등록한다.
  */
 export {
   Diagram,
