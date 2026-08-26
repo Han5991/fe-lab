@@ -5,15 +5,18 @@ import {
   getPostDowDistribution,
   getPostHourlyDistribution,
 } from '@/domain/analytics/admin';
-import { computeDerivedStats } from '@/domain/analytics';
+import { analyticsService } from '@/domain/analytics';
 import { useAdminDashboardData } from './useAdminViews';
 import type {
   PostDetailStats,
+  PostStatDetail,
   HourlyDistribution,
   DowDistribution,
 } from '@/domain/analytics';
 
-export { computeDerivedStats as computeBriefStats } from '@/domain/analytics';
+/** admin 목록의 간이 통계 — 상세 훅과 같은 계산을 화면 이름으로 다시 낸다. */
+export const computeBriefStats = (post: PostStatDetail, todayISO: string) =>
+  analyticsService.computeDerivedStats(post, todayISO);
 
 // SSR/prerender에서 useAdminDashboardData가 빈 배열일 때 쓰는 placeholder.
 // 클라이언트 hydration 후 진짜 post로 즉시 교체됩니다.
@@ -65,7 +68,10 @@ export function usePostDetailStats(slug: string): PostDetailStats {
         post: PLACEHOLDER_POST,
         hourly: distributions.hourly,
         dow: distributions.dow,
-        derived: computeDerivedStats(PLACEHOLDER_POST, getKSTDateISO(TIMEZONE)),
+        derived: analyticsService.computeDerivedStats(
+          PLACEHOLDER_POST,
+          getKSTDateISO(TIMEZONE),
+        ),
       };
     }
     throw new Error(`Post not found: ${slug}`);
@@ -75,6 +81,9 @@ export function usePostDetailStats(slug: string): PostDetailStats {
     post,
     hourly: distributions.hourly,
     dow: distributions.dow,
-    derived: computeDerivedStats(post, getKSTDateISO(TIMEZONE)),
+    derived: analyticsService.computeDerivedStats(
+      post,
+      getKSTDateISO(TIMEZONE),
+    ),
   };
 }

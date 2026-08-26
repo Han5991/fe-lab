@@ -4,10 +4,7 @@ import { TIMEZONE } from '@/content.values.mts';
 import { useState, useEffect } from 'react';
 import { useAdminDashboardData } from './useAdminViews';
 import { getKSTDateISO, msUntilKSTMidnight } from '@blog/content';
-import {
-  computeAnalyticsOverview,
-  UNIQUES_ESTIMATE_RATIO,
-} from '@/domain/analytics';
+import { analyticsService, UNIQUES_ESTIMATE_RATIO } from '@/domain/analytics';
 import type { AnalyticsRange } from '@/domain/analytics';
 
 export { UNIQUES_ESTIMATE_RATIO };
@@ -47,5 +44,5 @@ export function useAnalyticsOverview(range: AnalyticsRange) {
     };
   }, []);
 
-  return computeAnalyticsOverview(data, range, todayISO);
+  return analyticsService.computeOverview(data, range, todayISO);
 }

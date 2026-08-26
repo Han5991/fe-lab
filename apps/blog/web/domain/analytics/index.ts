@@ -10,8 +10,26 @@
 // HourlyDistribution·DowDistribution — database.types.ts에서 파생)
 export * from './types';
 
-// 순수 계산(use-case) + 공유 타입(AnalyticsRange, AnalyticsOverview 등)
-export * from './service';
+// 순수 계산(use-case) — 개요·글별 파생 통계. 계산 모듈(`overview`·`derivedStats`)은
+// 배럴 밖으로 내보내지 않는다: 소비자가 붙는 문은 아래 싱글톤 하나다.
+export type {
+  AnalyticsRange,
+  AnalyticsOverview,
+  TopPostSummary,
+} from './overview';
+export { UNIQUES_ESTIMATE_RATIO } from './overview';
+export type { AnalyticsCalculator } from './service';
+
+import { AnalyticsService, type AnalyticsCalculator } from './service';
+
+/**
+ * 이 앱의 analytics 계산기 — 모듈이 처음 열릴 때 만들어 두는 싱글톤.
+ *
+ * 상태가 없어 인스턴스가 여럿이어도 결과는 같지만, 저장소(`authRepository`)와
+ * 같은 모양으로 하나만 둔다. 타입을 클래스가 아니라 계약(`AnalyticsCalculator`)
+ * 으로 못 박는 것도 같은 이유다.
+ */
+export const analyticsService: AnalyticsCalculator = new AnalyticsService();
 
 // 데이터 접근(PostgREST). 의도적으로 공개하는 함수만 노출.
 //
