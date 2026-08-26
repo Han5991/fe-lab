@@ -295,6 +295,18 @@ export default defineConfig([
           message:
             '공개 배럴의 모듈 최상위 호출은 번들러에 부수효과입니다. 값이 필요하면 소비자 쪽에서 만드세요.',
         },
+        // default export 경로도 막는다 — `export default new X()`는 위 두 계열
+        // (표현식문·변수 초기화) 어느 쪽에도 매치되지 않는다(리뷰 지적).
+        {
+          selector: 'Program > ExportDefaultDeclaration > NewExpression',
+          message:
+            '공개 배럴의 모듈 최상위 new는 번들러에 부수효과입니다. 싱글톤 생성은 admin 배럴로 옮기세요.',
+        },
+        {
+          selector: 'Program > ExportDefaultDeclaration > CallExpression',
+          message:
+            '공개 배럴의 모듈 최상위 호출은 번들러에 부수효과입니다. 값이 필요하면 소비자 쪽에서 만드세요.',
+        },
       ],
     },
   },

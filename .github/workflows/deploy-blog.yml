@@ -62,7 +62,7 @@ jobs:
       # 않는다. 아무도 안 보고 있는 시각에 검사 없이 배포되던 경로였다.
       #
       # build-blog: 'false' — 아래 "Build blog" 스텝이 Pages base path와 시크릿을
-      # 넣어 --no-cache로 다시 빌드하고 거기서 check-seo까지 돈다. 여기서 또
+      # 넣어 --no-cache로 다시 빌드하고 거기서 check-seo·check-bundle까지 돈다. 여기서 또
       # 빌드하면 같은 일을 두 번 한다.
       - name: Quality checks
         uses: ./.github/actions/quality-checks
@@ -139,8 +139,8 @@ jobs:
             exit 1
           fi
 
-      # 최종 HTML의 SEO 계약 검사(check-seo)는 위 "Build blog" 스텝 안에서 이미 돈다 —
-      # `build` 스크립트가 prebuild → next build → check-seo로 정의돼 있다.
+      # 최종 산출물 검사(check-seo·check-bundle)는 위 "Build blog" 스텝 안에서 이미 돈다 —
+      # `build` 스크립트가 prebuild → next build → check-seo → check-bundle로 정의돼 있다.
       # 여기에 같은 스텝을 또 두면 위반이 있을 때 "Build blog"에서 이미 잡이 실패해
       # **절대 도달하지 못하는 죽은 게이트**가 된다. 검사가 도는 곳은 build 하나다.
 

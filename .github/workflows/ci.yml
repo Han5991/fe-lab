@@ -51,7 +51,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       # Turbopack FileSystem Cache — quality-checks의 마지막 스텝이 블로그를 실제로
-      # 빌드한다(check-seo가 산출물 HTML을 봐야 하므로). 그 캐시는
+      # 빌드한다(check-seo·check-bundle이 산출물을 봐야 하므로). 그 캐시는
       # apps/blog/web/.next/cache 에 쌓이는데, 위의 caching-for-turbo는 turbo 태스크
       # 아티팩트 전용이고 turbo.json의 build outputs가 "!.next/cache/**"로 이
       # 디렉터리를 명시 제외하므로 그쪽으로는 원리적으로 복원되지 않는다.
