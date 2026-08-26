@@ -3,7 +3,14 @@
   "compilerOptions": {
     "target": "ESNext",
     "lib": ["dom", "dom.iterable", "esnext"],
-    "allowJs": true,
+    // **키를 지우면 안 된다.** next(dev·build·typegen)가 시작할 때
+    // `writeConfigurationDefaults`로 tsconfig를 다시 쓰는데, allowJs는 거기서
+    // 'suggested'라 **키가 없을 때만** true를 넣는다. 끄려면 지우지 말고 false로
+    // 남겨 둘 것 — 값이 있으면 그대로 둔다.
+    // false인 이유: include에 js 글롭이 없어도 .ts에서 import하면 program에
+    // 딸려 들어오고, 그 파일은 checkJs 없이 무검사로 지나간다. 막아 두면 그런
+    // import가 조용히 통과하는 대신 컴파일 에러가 된다.
+    "allowJs": false,
     "skipLibCheck": true,
     "strict": true,
     "noImplicitReturns": true,
