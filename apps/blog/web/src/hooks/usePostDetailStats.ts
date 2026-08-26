@@ -2,10 +2,10 @@ import { useSuspenseQuery } from '@tanstack/react-query';
 import { getKSTDateISO } from '@blog/content';
 import { TIMEZONE } from '@/content.values.mts';
 import {
+  analyticsService,
   getPostDowDistribution,
   getPostHourlyDistribution,
 } from '@/domain/analytics/admin';
-import { analyticsService } from '@/domain/analytics';
 import { useAdminDashboardData } from './useAdminViews';
 import type {
   PostDetailStats,

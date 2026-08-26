@@ -11,7 +11,14 @@
 export * from './types';
 
 // 순수 계산(use-case) — 개요·글별 파생 통계. 계산 모듈(`overview`·`derivedStats`)은
-// 배럴 밖으로 내보내지 않는다: 소비자가 붙는 문은 아래 싱글톤 하나다.
+// 배럴 밖으로 내보내지 않는다: 소비자가 붙는 문은 admin 배럴의 싱글톤
+// (`analyticsService`) 하나다.
+//
+// 싱글톤이 여기 없는 것은 의도다. 모듈 최상위 `new`는 번들러에 부수효과라
+// (adminApi.ts가 경고하는 그 함정), 이 배럴을 여는 공개 페이지(홈·글 목록·
+// 글 상세) 청크에 파사드와 계산 모듈이 통째로 실렸다(실측 +4KB). 소비자가
+// admin 훅뿐이므로 생성은 admin.ts가 한다. 여기서 다시 내보내지도 말 것 —
+// re-export만으로 모듈 그래프가 도로 이어진다.
 export type {
   AnalyticsRange,
   AnalyticsOverview,
@@ -19,17 +26,6 @@ export type {
 } from './overview';
 export { UNIQUES_ESTIMATE_RATIO } from './overview';
 export type { AnalyticsCalculator } from './service';
-
-import { AnalyticsService, type AnalyticsCalculator } from './service';
-
-/**
- * 이 앱의 analytics 계산기 — 모듈이 처음 열릴 때 만들어 두는 싱글톤.
- *
- * 상태가 없어 인스턴스가 여럿이어도 결과는 같지만, 저장소(`authRepository`)와
- * 같은 모양으로 하나만 둔다. 타입을 클래스가 아니라 계약(`AnalyticsCalculator`)
- * 으로 못 박는 것도 같은 이유다.
- */
-export const analyticsService: AnalyticsCalculator = new AnalyticsService();
 
 // 데이터 접근(PostgREST). 의도적으로 공개하는 함수만 노출.
 //
