@@ -37,7 +37,11 @@
     "isolatedModules": true,
     "incremental": true
   },
-  "include": ["src/**/*.ts", "src/**/*.mts"],
+  // 루트의 `eslint.config.mts`도 프로그램에 든다. 앱은 include가 루트 기준
+  // 글롭이라 자동으로 들어오지만 여기는 src 아래만 보므로 명시한다 —
+  // 빠뜨리면 tsc가 "에러 0"을 말하는데 그건 검사해서가 아니라 파일을 본 적이
+  // 없어서다(ESLint의 projectService도 "not found by the project service"로 운다).
+  "include": ["src/**/*.ts", "src/**/*.mts", "eslint.config.mts"],
   "exclude": [
     "node_modules",
     "**/*.test.ts",
