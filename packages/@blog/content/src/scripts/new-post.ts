@@ -174,7 +174,7 @@ export function buildFrontmatter(
 }
 
 export function main(ctx: ContentContext, opts: NewPostOptions) {
-  const postsDir = ctx.paths.postsDir;
+  const postsDir = ctx.content.paths.postsDir;
   let targetPath: string;
   try {
     targetPath = buildPostFilePath(postsDir, opts.title, opts.series);
@@ -198,7 +198,7 @@ export function main(ctx: ContentContext, opts: NewPostOptions) {
       slug: opts.slug,
       scheduledDate: opts.scheduledDate,
     },
-    ctx.config.timezone.iana,
+    ctx.content.config.timezone.iana,
   );
 
   writeFileSync(targetPath, frontmatter, 'utf8');

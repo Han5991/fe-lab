@@ -121,8 +121,8 @@ export function main(
   opts: { force: boolean; dryOrphan: boolean },
 ): void {
   const { force, dryOrphan } = opts;
-  const sourceDir = ctx.paths.postsDir;
-  const targetDir = ctx.paths.mediaOutDir;
+  const sourceDir = ctx.content.paths.postsDir;
+  const targetDir = ctx.content.paths.mediaOutDir;
 
   console.log(`Syncing images from ${sourceDir} to ${targetDir}...`);
 

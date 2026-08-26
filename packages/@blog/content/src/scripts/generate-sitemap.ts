@@ -139,19 +139,19 @@ export function buildSitemapXml(
 }
 
 export function main(ctx: ContentContext) {
-  const publicDir = ctx.paths.publicDir;
+  const publicDir = ctx.content.paths.publicDir;
   // 글 집합은 레지스트리(artifacts.ts)에 선언된 셀렉터를 쓴다 — sitemap은
   // 대조 기준(reference)이라 visible을 exact로 담아야 한다.
   const posts = resolvePostSet(ctx.content, 'visible');
   // KST 기준 오늘 날짜. `new Date().toISOString()`은 UTC라 KST 00:00~09:00 빌드 시
   // 하루 밀린 lastmod를 만들 수 있어 getKSTDateISO()를 사용한다.
-  const today = getKSTDateISO(ctx.config.timezone);
+  const today = getKSTDateISO(ctx.content.config.timezone);
   const sitemap = buildSitemapXml(
     posts,
     today,
-    ctx.config.site,
-    ctx.config.timezone,
-    ctx.config.sitemap,
+    ctx.content.config.site,
+    ctx.content.config.timezone,
+    ctx.content.config.sitemap,
   );
   fs.writeFileSync(path.join(publicDir, 'sitemap.xml'), sitemap);
   console.log('Sitemap generated successfully!');

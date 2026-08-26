@@ -108,10 +108,10 @@ export async function main(ctx: ContentContext) {
    * 쓰면 생성물이 지워질 수 있습니다. 두 디렉터리가 서로 배타인지는
    * defineContent가 검증합니다(assertOutputDirsExclusive).
    */
-  const postsDir = ctx.paths.postsDir;
-  const thumbsDir = ctx.paths.thumbsOutDir;
-  const manifestPath = join(ctx.paths.cacheDir, 'thumbnails.json');
-  const thumbsConfig = ctx.config.thumbnails;
+  const postsDir = ctx.content.paths.postsDir;
+  const thumbsDir = ctx.content.paths.thumbsOutDir;
+  const manifestPath = join(ctx.content.paths.cacheDir, 'thumbnails.json');
+  const thumbsConfig = ctx.content.config.thumbnails;
   // thumbs는 파일명에서 글을 되돌릴 수 없어 레지스트리 대조 대상이 아니지만,
   // 글 집합 선택만은 레지스트리의 셀렉터(resolvePostSet)를 같이 쓴다.
   const tasks = collectTasks(resolvePostSet(ctx.content, 'visible'));

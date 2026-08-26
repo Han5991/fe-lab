@@ -119,12 +119,12 @@ export async function main(ctx: ContentContext) {
   // 레지스트리 선언(postSet: 'visible', exact)과 같은 셀렉터.
   const posts = resolvePostSet(ctx.content, 'visible');
   const rss = buildRssXml(posts, {
-    site: ctx.config.site,
-    timezone: ctx.config.timezone,
+    site: ctx.content.config.site,
+    timezone: ctx.content.config.timezone,
     renderContent: renderContentHtml,
   });
   // 파일 위치도 링크와 **같은 상수**에서 온다 — 갈리면 atom self URL이 404를
   // 가리킨다. `path.join`이 앞의 `/`를 흡수한다.
-  fs.writeFileSync(path.join(ctx.paths.publicDir, RSS_PATH), rss);
+  fs.writeFileSync(path.join(ctx.content.paths.publicDir, RSS_PATH), rss);
   console.log('RSS feed generated successfully!');
 }

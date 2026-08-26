@@ -397,7 +397,9 @@ export function checkArtifacts(collected: CollectedArtifact[]): SeoViolation[] {
 export function main(ctx: ContentContext, target?: string) {
   // 인자를 주면 그 경로를(cwd 기준, resolve라 절대 경로 인자도 그대로 받는다),
   // 없으면 설정의 out 디렉터리를 검사한다.
-  const outDir = target ? resolve(process.cwd(), target) : ctx.paths.outDir;
+  const outDir = target
+    ? resolve(process.cwd(), target)
+    : ctx.content.paths.outDir;
   if (!existsSync(outDir)) {
     console.error(
       `✖ 빌드 산출물이 없습니다: ${outDir}\n  먼저 \`pnpm build\`를 실행하세요.`,
@@ -415,10 +417,10 @@ export function main(ctx: ContentContext, target?: string) {
     );
     process.exit(1);
   }
-  const violations = checkPages(pages, ctx.config);
+  const violations = checkPages(pages, ctx.content.config);
   // 파생 산출물은 레지스트리 순회로 — 없으면 missing-artifact, 있으면 글 집합 대조.
   violations.push(
-    ...checkArtifacts(collectArtifacts(outDir, ctx.config.site.url)),
+    ...checkArtifacts(collectArtifacts(outDir, ctx.content.config.site.url)),
   );
 
   if (violations.length === 0) {

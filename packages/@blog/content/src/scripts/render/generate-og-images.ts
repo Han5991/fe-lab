@@ -328,8 +328,8 @@ function readManifest(manifestPath: string): Record<string, string> {
 }
 
 export async function main(ctx: ContentContext) {
-  const ogDir = ctx.paths.ogOutDir;
-  const manifestPath = join(ctx.paths.cacheDir, 'og-images.json');
+  const ogDir = ctx.content.paths.ogOutDir;
+  const manifestPath = join(ctx.content.paths.cacheDir, 'og-images.json');
   // 외부/직접 썸네일이 명시된 글은 제외, 없거나 /og/*를 가리키는 글만 생성.
   // visible의 **부분집합**이 되므로 레지스트리(artifacts.ts)의 og 항목은
   // exact가 아니라 subset이다 — 베이스 셀렉터는 레지스트리와 공유한다.
@@ -351,7 +351,11 @@ export async function main(ctx: ContentContext) {
   let fonts: SatoriOptions['fonts'] | null = null;
 
   for (const post of posts) {
-    const hash = ogContentHash(post, ctx.config.site, ctx.config.og);
+    const hash = ogContentHash(
+      post,
+      ctx.content.config.site,
+      ctx.content.config.og,
+    );
     const file = join(ogDir, ogFileRelPath(post.slug));
     nextManifest[post.slug] = hash;
     if (manifest[post.slug] === hash && existsSync(file)) {
@@ -359,7 +363,12 @@ export async function main(ctx: ContentContext) {
       continue;
     }
     fonts ??= loadFonts();
-    const png = await renderOgPng(post, fonts, ctx.config.site, ctx.config.og);
+    const png = await renderOgPng(
+      post,
+      fonts,
+      ctx.content.config.site,
+      ctx.content.config.og,
+    );
     mkdirSync(dirname(file), { recursive: true });
     writeFileSync(file, png);
     rendered++;
