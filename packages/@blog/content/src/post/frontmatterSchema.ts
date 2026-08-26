@@ -195,10 +195,22 @@ export const FRONTMATTER_FIELDS = {
 
 export type FrontmatterKey = keyof typeof FRONTMATTER_FIELDS;
 
+/**
+ * 테이블에 **직접** 있는 키인가.
+ *
+ * `Object.keys`가 `keyof`가 아니라 `string[]`을 주는 것은 TS의 의도된 후퇴입니다
+ * — 런타임 객체에는 선언에 없는 키가 있을 수 있으니까요. 그래서 예전에는 키
+ * 목록에 `as FrontmatterKey[]`가 붙어 있었는데, 그 단언은 후퇴를 말로만 취소할
+ * 뿐 아무것도 확인하지 않습니다. 이쪽은 같은 주장을 원소마다 테이블 조회로
+ * 확인합니다(`hasOwn`이라 프로토타입 체인의 이름은 통과하지 못합니다).
+ */
+function isFrontmatterKey(key: string): key is FrontmatterKey {
+  return Object.hasOwn(FRONTMATTER_FIELDS, key);
+}
+
 /** 선언 순서(= CLAUDE.md 표 순서)를 유지한 키 목록. */
-export const FRONTMATTER_KEYS = Object.keys(
-  FRONTMATTER_FIELDS,
-) as FrontmatterKey[];
+export const FRONTMATTER_KEYS =
+  Object.keys(FRONTMATTER_FIELDS).filter(isFrontmatterKey);
 
 /**
  * frontmatter를 파싱한 **직후**의 원시 형태.
@@ -241,9 +253,17 @@ export const REJECTED_FRONTMATTER_KEYS = {
 
 export type RejectedFrontmatterKey = keyof typeof REJECTED_FRONTMATTER_KEYS;
 
+/**
+ * 거부 목록에 **직접** 있는 키인가. 위 `isFrontmatterKey`와 같은 이유로 술어이고,
+ * `hasOwn`이라 `toString` 같은 프로토타입 이름은 걸리지 않습니다.
+ */
+function isRejectedFrontmatterKey(key: string): key is RejectedFrontmatterKey {
+  return Object.hasOwn(REJECTED_FRONTMATTER_KEYS, key);
+}
+
 /** 거부 사유를 찾습니다. 그냥 오타인 키는 undefined입니다. */
 export function rejectionReasonFor(key: string): string | undefined {
-  return Object.hasOwn(REJECTED_FRONTMATTER_KEYS, key)
-    ? REJECTED_FRONTMATTER_KEYS[key as RejectedFrontmatterKey]
+  return isRejectedFrontmatterKey(key)
+    ? REJECTED_FRONTMATTER_KEYS[key]
     : undefined;
 }

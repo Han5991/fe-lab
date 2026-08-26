@@ -74,10 +74,13 @@ function format(issue: Issue): string {
 }
 
 export function main(ctx: ContentContext, runOptions: ValidateOptions) {
-  const postsDir = ctx.paths.postsDir;
+  const postsDir = ctx.content.paths.postsDir;
   // 규칙이 참조하는 설정 슬라이스를 여기서 한 번 채운다 — 규칙 파일이 상수를
   // 직접 읽던 시절엔 defineContent로 덮어도 이 게이트만 옛 값을 봤다.
-  const options: ValidateContext = toValidateContext(ctx.config, runOptions);
+  const options: ValidateContext = toValidateContext(
+    ctx.content.config,
+    runOptions,
+  );
   const allFiles = collectMarkdownFiles(postsDir);
   const records: PostRecord[] = [];
   const allIssues: Issue[] = [];
@@ -95,7 +98,7 @@ export function main(ctx: ContentContext, runOptions: ValidateOptions) {
       ...validateCodeFenceLanguages(
         record,
         raw,
-        ctx.config.registries.supportedFenceLabels,
+        ctx.content.config.registries.supportedFenceLabels,
       ),
     );
     allIssues.push(...validateBodyHeadings(record, raw));

@@ -1,5 +1,5 @@
-import { Children, type ComponentProps } from 'react';
-import ReactMarkdown from 'react-markdown';
+import { Children } from 'react';
+import ReactMarkdown, { type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import rehypeSlug from 'rehype-slug';
@@ -42,13 +42,43 @@ export const POST_REMARK_PLUGINS = [remarkGfm];
 // 버리기 때문이다. 먼저 속성으로 옮겨두면 그 왕복을 지나 살아남는다.
 export const POST_REHYPE_PLUGINS = [rehypeCodeMeta, rehypeRaw, rehypeSlug];
 
-type MarkdownComponents = ComponentProps<typeof ReactMarkdown>['components'];
+/**
+ * react-markdown의 `Components`에 **커스텀 태그를 더한 것**.
+ *
+ * 그 타입은 키가 `keyof JSX.IntrinsicElements`로 닫혀 있어 `callout`·`diagram`
+ * 같은 태그를 표현하지 못한다. 런타임은 rehype-raw가 살려 낸 임의 태그를 그대로
+ * 받으므로 못 담는 것은 타입뿐이다 — 교집합으로 그 태그들만 더한다. 결과가
+ * `Components`의 부분형이라 `<ReactMarkdown components={…}>`에 그대로 들어간다.
+ *
+ * 예전에는 `as MarkdownComponents` 단언으로 넘겼다. 그러면 이 문제는 가려지지만
+ * **표준 태그 매퍼(p·code·img·table·li)와 헤딩 스프레드까지 함께 느슨해지고**,
+ * 오타 난 태그(`dialouge:`)나 빠뜨린 태그가 조용히 통과한다 — 커스텀 태그를 못
+ * 적는다는 좁은 사실 때문에 객체 전체의 검사를 포기하는 거래였다. 애노테이션이면
+ * 목록에 없는 키는 초과 프로퍼티로, 빠진 키는 누락으로 걸린다.
+ *
+ * `satisfies`로는 안 된다 — `Components`가 전부 optional인 weak type이라
+ * "has no properties in common"으로 막힌다.
+ */
+type PostComponents = Components & {
+  callout: typeof Callout;
+  'code-tabs': typeof CodeTabs;
+  'file-tree': typeof FileTree;
+  dialogue: typeof Dialogue;
+  msg: typeof Msg;
+  metrics: typeof Metrics;
+  metric: typeof Metric;
+  timeline: typeof Timeline;
+  step: typeof Step;
+  diagram: typeof Diagram;
+  'diagram-node': typeof DiagramNodeTag;
+  'diagram-edge': typeof DiagramEdgeTag;
+};
 
 /**
  * 본문 components 매핑. `img` 매퍼가 글의 `relativeDir`을 닫아 잡으므로
  * 상수가 아니라 팩토리다.
  */
-export function buildPostComponents(relativeDir: string): MarkdownComponents {
+export function buildPostComponents(relativeDir: string): PostComponents {
   return {
     // 본문 h1 → h2 강등. 페이지의 h1은 PostHeader의 글 제목
     // 하나뿐이어야 한다(markdownHeadings.tsx 참고).
@@ -151,7 +181,7 @@ export function buildPostComponents(relativeDir: string): MarkdownComponents {
     diagram: Diagram,
     'diagram-node': DiagramNodeTag,
     'diagram-edge': DiagramEdgeTag,
-  } as MarkdownComponents;
+  };
 }
 
 interface PostBodyProps {

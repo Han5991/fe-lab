@@ -1,5 +1,6 @@
 import { cloneElement, isValidElement } from 'react';
 import type { ReactElement, ReactNode } from 'react';
+import { isRecord } from '@blog/content';
 import { css, cva } from '@design-system/ui-lib/css';
 
 import {
@@ -29,8 +30,10 @@ interface TimelineStep {
 }
 
 function isTimelineStep(candidate: unknown): candidate is TimelineStep {
-  if (typeof candidate !== 'object' || candidate === null) return false;
-  const { title, desc, result } = candidate as TimelineStep;
+  if (!isRecord(candidate)) return false;
+  const title = candidate['title'];
+  const desc = candidate['desc'];
+  const result = candidate['result'];
   // 읽는 필드는 전부 "없거나 문자열"이어야 한다. 하나라도 객체/배열이면 그대로
   // JSX 자식이 되어 React가 throw한다(`isOptionalString` 주석 참고).
   if (
@@ -190,15 +193,19 @@ export function Timeline({ steps, children }: TimelineProps) {
 /**
  * children으로 받은 `<step>` 중 마지막 것에만 `isLast`를 켠다.
  *
- * `:last-child` CSS로도 할 수 있지만, 마크다운이 자식을 어떻게 감싸든 결과가 같도록
- * 렌더 시점에 계산한다. Step이 아닌 노드에 prop을 주입하면 DOM 경고가 나므로
- * 타입이 Step인 엘리먼트만 손댄다.
+ * **왜 `:last-child` CSS가 아닌가.** 흔히 드는 이유(마크다운이 끼워 넣는 개행
+ * 텍스트·`<p>` 래퍼가 판정을 어긋나게 한다)는 여기서는 이유가 못 된다 —
+ * 그건 `markdownChildren`이 이미 걷어낸 뒤다. 남는 이유는 하나다:
+ * **마지막 자식이 Step이 아닐 수 있다.** 그 함수는 공백과 문단 래퍼만
+ * 정리하고 나머지 노드는 그대로 통과시키므로, 저자가 `<timeline>` 안에
+ * 이미지나 문장을 하나 남겨 두면 그게 마지막 자식이 된다. `:last-child`는
+ * 그걸 집고, 정작 마지막 Step은 레일을 허공으로 늘어뜨린 채 남는다.
+ *
+ * Step이 아닌 노드에 prop을 주입하면 DOM 경고가 나므로 타입이 Step인
+ * 엘리먼트만 손댄다.
  */
 function withLastFlag(nodes: ReactNode[]): ReactNode[] {
-  const lastStepIndex = nodes.reduce<number>(
-    (last, node, index) => (isStepElement(node) ? index : last),
-    -1,
-  );
+  const lastStepIndex = nodes.findLastIndex(isStepElement);
 
   return nodes.map((node, index) =>
     isStepElement(node)

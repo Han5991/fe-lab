@@ -1,4 +1,4 @@
-import { isValidElement, type ElementType, type ReactNode } from 'react';
+import { isValidElement, type ReactElement, type ReactNode } from 'react';
 
 import { Diagram } from '@/src/components/diagram';
 import { Callout } from '@/src/components/post/markdown/Callout';
@@ -15,7 +15,13 @@ import { isBlockCode } from '@/src/components/post/markdownCode';
 // Msg/Metric/Step은 컨테이너 안에서만 쓰이므로 <p> 직계 자식으로 올 일이 없다.
 // Diagram도 같은 이유로 컨테이너만 등록한다(DiagramNodeTag/DiagramEdgeTag는
 // <diagram> 안에서 좌표 계산용 메타로만 소비되어 DOM에 직접 나오지 않는다).
-export const BLOCK_MARKDOWN_COMPONENTS = new Set<ElementType>([
+//
+// 원소 타입이 `ElementType`이 아니라 **`ReactElement['type']`**인 건 조회하는
+// 값에 맞춘 것이다. 둘은 문자열 쪽이 다르다 — `ElementType`은
+// `keyof JSX.IntrinsicElements`(태그명 리터럴 유니온)라 임의의 `string`을 받지
+// 않고, `ReactElement['type']`은 `string | JSXElementConstructor<any>`다. 전자로
+// 두면 `has(child.type)`마다 인자를 캐스트해야 한다.
+export const BLOCK_MARKDOWN_COMPONENTS = new Set<ReactElement['type']>([
   Callout,
   CodeTabs,
   Diagram,
@@ -30,13 +36,17 @@ export const BLOCK_MARKDOWN_COMPONENTS = new Set<ElementType>([
 // <p>를 조기 종료 → hydration mismatch. 직접 매핑된 블록은 identity로, 인라인
 // 래퍼(img/code)를 거치는 것은 공개 prop으로 식별한다(react-markdown 내부 node 비의존).
 export function isBlockMarkdownChild(child: unknown): boolean {
+  // children을 `unknown`이 아니라 `ReactNode`로 적는다. `isValidElement<P>`의 P는
+  // 어차피 검증되지 않는 주장이므로 `unknown`으로 둔 뒤 캐스트해도 안전해지는 게
+  // 아니고, 실제로 여기 오는 값은 엘리먼트의 children이며 `isBlockCode`가 받는
+  // 타입도 그것이다 — 주장을 한 번만 하고 캐스트를 없앤다.
   if (
-    !isValidElement<{ className?: string; src?: string; children?: unknown }>(
+    !isValidElement<{ className?: string; src?: string; children?: ReactNode }>(
       child,
     )
   )
     return false;
-  if (BLOCK_MARKDOWN_COMPONENTS.has(child.type as ElementType)) return true;
+  if (BLOCK_MARKDOWN_COMPONENTS.has(child.type)) return true;
   const { className, src, children } = child.props;
   // img → MarkdownImage가 <Zoom>의 블록 <div>를 렌더하므로 <p>에 둘 수 없다.
   if (typeof src === 'string') return true;
@@ -44,5 +54,5 @@ export function isBlockMarkdownChild(child: unknown): boolean {
   // 똑같이 isBlockCode로 위임한다. 두 곳이 기준이 갈리면(언어 className 정규식이나, 문자열이
   // 아닌 raw HTML <code> children 처리) 한쪽은 <p> 유지·다른 쪽은 <div> 렌더가 되어
   // <p> 안에 <div>가 들어가는 hydration mismatch가 난다.
-  return isBlockCode(children as ReactNode, className);
+  return isBlockCode(children, className);
 }

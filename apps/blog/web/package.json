@@ -62,6 +62,7 @@
     "@vitest/coverage-v8": "catalog:",
     "babel-plugin-react-compiler": "^1.0.0",
     "eslint": "catalog:lint",
+    "jiti": "catalog:lint",
     "eslint-import-resolver-typescript": "catalog:lint",
     "eslint-plugin-boundaries": "catalog:lint",
     "eslint-plugin-jsx-a11y": "catalog:lint",

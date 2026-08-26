@@ -48,11 +48,32 @@ const HEADING_COMPONENTS = Object.fromEntries(
 );
 
 /**
+ * react-markdown의 `Components`에 **커스텀 태그를 더한 것**.
+ *
+ * 그 타입은 키가 `keyof JSX.IntrinsicElements`로 닫혀 있어(index.d.ts) `callout`·
+ * `file-tree` 같은 태그를 표현하지 못한다. 런타임은 rehype-raw가 살려 낸 임의
+ * 태그를 그대로 받으므로, 못 담는 것은 타입뿐이다 — 교집합으로 그 둘만 더한다.
+ * `Components`의 부분형이라 `<Markdown components={…}>`에 그대로 들어간다.
+ *
+ * 예전에는 `as unknown as Components` 이중 단언으로 넘겼다. 그러면 이 문제는
+ * 가려지지만 **헤딩 매핑과 prop 모양까지 함께 검사에서 빠진다** — 커스텀 태그를
+ * 못 적는다는 좁은 사실 때문에 객체 전체의 타입을 포기하는 거래였다.
+ */
+type FeedComponents = Components & {
+  callout: (props: {
+    type?: string;
+    title?: string;
+    children?: ReactNode;
+  }) => ReactNode;
+  'file-tree': (props: { children?: ReactNode }) => ReactNode;
+};
+
+/**
  * 피드 리더에는 사이트의 스타일드 컴포넌트가 없으므로 커스텀 마크다운 헬퍼를
  * 의미가 통하는 표준 HTML로 매핑한다 (사이트 쪽 매핑: PostBody.tsx의
  * callout → Callout, file-tree → FileTree). figure는 표준 HTML이라 매핑 불필요.
  */
-const FEED_COMPONENTS = {
+const FEED_COMPONENTS: FeedComponents = {
   ...HEADING_COMPONENTS,
   callout: (props: { type?: string; title?: string; children?: ReactNode }) => {
     const meta = CALLOUT_META[props.type ?? ''] ?? CALLOUT_INFO;
@@ -73,7 +94,7 @@ const FEED_COMPONENTS = {
   },
   'file-tree': (props: { children?: ReactNode }) =>
     createElement('pre', null, props.children),
-} as unknown as Components;
+};
 
 /**
  * 마크다운 본문을 피드용 HTML로 렌더링합니다.

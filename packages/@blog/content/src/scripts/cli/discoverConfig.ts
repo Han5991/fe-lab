@@ -13,6 +13,7 @@
 import { existsSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { isRecord } from '../../shared/guards.ts';
 import type { ContentConfig } from '../../shared/contentConfig.ts';
 
 /**
@@ -20,8 +21,11 @@ import type { ContentConfig } from '../../shared/contentConfig.ts';
  * 대개 그렇다)에서 `.ts`는 node가 CommonJS로 먼저 파싱했다가 ESM으로 재파싱해
  * 경고와 오버헤드를 내므로, 확장자로 ESM을 못박는 `.mts`를 권장한다.
  */
-export const CONFIG_FILENAMES = ['content.config.mts', 'content.config.ts'];
-export const CONFIG_FILENAME = CONFIG_FILENAMES[0] as string;
+export const CONFIG_FILENAMES = [
+  'content.config.mts',
+  'content.config.ts',
+] as const;
+export const CONFIG_FILENAME = CONFIG_FILENAMES[0];
 
 /**
  * startDir에서 파일시스템 루트까지 올라가며 content.config.(m)ts를 찾는다.
@@ -55,9 +59,10 @@ export function findConfigFile(
  * TypeError로 죽는 것이 이 검증이 막으려는 사고다.
  */
 function isContentConfig(value: unknown): value is ContentConfig {
-  if (typeof value !== 'object' || value === null) return false;
-  const config = value as Partial<ContentConfig>;
-  const dirs = config.dirs as Partial<ContentConfig['dirs']> | undefined;
+  if (!isRecord(value)) return false;
+
+  const dirs = value['dirs'];
+  const runtime = value['runtime'];
   const dirKeys = [
     'content',
     'public',
@@ -67,18 +72,15 @@ function isContentConfig(value: unknown): value is ContentConfig {
     'thumbs',
     'og',
   ] as const;
+
   return (
-    typeof config.root === 'string' &&
-    dirs !== undefined &&
-    dirs !== null &&
+    typeof value['root'] === 'string' &&
+    isRecord(dirs) &&
     dirKeys.every(key => typeof dirs[key] === 'string') &&
-    typeof config.site === 'object' &&
-    config.site !== null &&
-    typeof config.runtime === 'object' &&
-    config.runtime !== null &&
-    typeof config.runtime.isDevelopment === 'function' &&
-    typeof config.timezone === 'object' &&
-    config.timezone !== null
+    isRecord(value['site']) &&
+    isRecord(runtime) &&
+    typeof runtime['isDevelopment'] === 'function' &&
+    isRecord(value['timezone'])
   );
 }
 
@@ -116,14 +118,16 @@ export async function loadContentConfig(
     configPath = found;
   }
 
-  const mod = (await import(pathToFileURL(configPath).href)) as {
-    default?: unknown;
-  };
-  if (!isContentConfig(mod.default)) {
+  // 동적 import는 명세자가 리터럴이 아니면 `any`를 준다. `unknown`으로 받아
+  // 두면 단언 없이도 안전하게 좁힐 수 있다 — `default` 키가 있다고 미리 말할
+  // 필요도 없어진다(그것도 이 아래 검사가 확인할 일이다).
+  const mod: unknown = await import(pathToFileURL(configPath).href);
+  const exported = isRecord(mod) ? mod['default'] : undefined;
+  if (!isContentConfig(exported)) {
     throw new Error(
       `${configPath}: defineContent({ root: import.meta.url, ... }) 결과를 ` +
         `default export 해야 합니다.`,
     );
   }
-  return { config: mod.default, configPath };
+  return { config: exported, configPath };
 }

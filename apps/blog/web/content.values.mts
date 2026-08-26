@@ -57,6 +57,21 @@ export const OG_DEFAULT_IMAGE = '/og-default.jpg';
 // RSS 경로는 여기 없다 — 피드를 만드는 것도 파일 이름을 정하는 것도 패키지라
 // (`@blog/content`의 `RSS_PATH`) 이 사이트가 고를 수 있는 값이 아니다. 예전엔
 // 여기와 패키지 생성기 셋이 같은 리터럴을 따로 들고 있었다.
+
+// ── 이 사이트에만 있는 정적 페이지 경로 ──────────────────────────────────────
+//
+// `trailingSlash: true`라 후행 슬래시를 포함한다. 내비게이션 href·canonical·
+// og url·JSON-LD `@id`·sitemap이 **전부 여기서 온다** — 예전에는 파일마다 같은
+// 리터럴을 적어 `/about/` 하나가 네 곳(seo 모듈 안에서만 세 번, Layout, sitemap
+// 목록)에 흩어져 있었다. 라우트 디렉터리를 옮기면 nav만 고쳐지고 canonical·
+// JSON-LD가 옛 주소에 남는다.
+//
+// `/`와 `/posts/`는 여기 없다 — 그 둘은 패키지가 소유한 라우트 모양이라
+// `@blog/content`의 `POSTS_PATH`·`postPath`가 단일 출처다.
+
+export const ABOUT_PATH = '/about/';
+export const SERIES_PATH = '/series/';
+export const PRIVACY_PATH = '/privacy/';
 /**
  * `/about/` 페이지를 마지막으로 **손으로 고친** 날짜 ('YYYY-MM-DD').
  * 빌드 날짜를 넣으면 매일 도는 cron 빌드마다 lastmod가 전진해 신호가
@@ -144,7 +159,7 @@ export function isDiagramName(value: unknown): value is DiagramName {
  * 패키지 기본값은 비어 있다 — 어떤 페이지가 있는지는 앱만 알기 때문이다.
  */
 export const SITEMAP_STATIC_PAGES = [
-  { path: '/about/', priority: '0.7', lastmod: ABOUT_PAGE_MODIFIED },
+  { path: ABOUT_PATH, priority: '0.7', lastmod: ABOUT_PAGE_MODIFIED },
 ] as const satisfies SitemapConfig['staticPages'];
 
 /**
@@ -255,12 +270,12 @@ export const LLMS_DOCS = {
   },
   extra: [
     {
-      path: '/series/',
+      path: SERIES_PATH,
       label: '시리즈 목록',
       summary: 'Multi-part series, each readable in order from part 1.',
     },
     {
-      path: '/about/',
+      path: ABOUT_PATH,
       label: '소개',
       summary:
         'Author profile, open source contributions, and conference talks.',

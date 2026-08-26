@@ -237,11 +237,11 @@ export function buildLlmsText(
 export function main(ctx: ContentContext) {
   // 레지스트리 선언(postSet: 'visible', exact)과 같은 셀렉터.
   const posts = resolvePostSet(ctx.content, 'visible');
-  const outputPath = join(ctx.paths.publicDir, 'llms.txt');
+  const outputPath = join(ctx.content.paths.publicDir, 'llms.txt');
   const text = buildLlmsText(posts, {
-    site: ctx.config.site,
-    llms: ctx.config.llms,
-    author: ctx.config.author,
+    site: ctx.content.config.site,
+    llms: ctx.content.config.llms,
+    author: ctx.content.config.author,
     resolveSeriesMeta: ctx.content.getSeriesMeta,
   });
   writeFileSync(outputPath, text, 'utf8');

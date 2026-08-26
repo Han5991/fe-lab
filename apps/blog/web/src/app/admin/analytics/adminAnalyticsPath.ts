@@ -1,7 +1,10 @@
 import { encodePostSlug } from '@blog/content';
+// 배럴(`@/domain/auth`)이 아니라 이 모듈을 직접 연다 — 배럴은 세션용 supabase-js를
+// 모듈 스코프에서 끌어오고, 여기 필요한 건 경로 상수 하나뿐이다.
+import { ADMIN_BASE_PATH } from '@/domain/auth/adminAccess';
 
 /** admin 통계 목록(`/admin/analytics/`). 후행 슬래시는 next.config의 trailingSlash 계약. */
-export const ADMIN_ANALYTICS_PATH = '/admin/analytics/';
+export const ADMIN_ANALYTICS_PATH = `${ADMIN_BASE_PATH}/analytics/`;
 
 /**
  * 글 하나의 admin 통계 상세 경로.

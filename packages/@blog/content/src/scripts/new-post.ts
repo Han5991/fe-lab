@@ -174,12 +174,15 @@ export function buildFrontmatter(
 }
 
 export function main(ctx: ContentContext, opts: NewPostOptions) {
-  const postsDir = ctx.paths.postsDir;
+  const postsDir = ctx.content.paths.postsDir;
   let targetPath: string;
   try {
     targetPath = buildPostFilePath(postsDir, opts.title, opts.series);
   } catch (e) {
-    console.error(`✖ ${(e as Error).message}`);
+    // `e`는 unknown이다(useUnknownInCatchVariables). Error라고 단언하면 Error가
+    // 아닌 것이 던져졌을 때 `✖ undefined`만 남아 원인이 사라지므로, 좁혀서 쓰고
+    // 아닌 값은 그대로 찍는다(cli/program.ts의 new-post 액션과 같은 처리).
+    console.error(`✖ ${e instanceof Error ? e.message : String(e)}`);
     process.exit(1);
   }
 
@@ -198,7 +201,7 @@ export function main(ctx: ContentContext, opts: NewPostOptions) {
       slug: opts.slug,
       scheduledDate: opts.scheduledDate,
     },
-    ctx.config.timezone.iana,
+    ctx.content.config.timezone.iana,
   );
 
   writeFileSync(targetPath, frontmatter, 'utf8');

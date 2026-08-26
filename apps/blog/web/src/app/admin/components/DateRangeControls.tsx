@@ -8,6 +8,24 @@ import type { TrendPoint } from '@/domain/analytics';
 
 type FilterType = 'all' | '7days' | '30days' | 'custom';
 
+/**
+ * select에 그릴 옵션 — 키가 곧 value, 값이 라벨이고 순서가 화면 순서다.
+ * `satisfies Record<FilterType, string>`이라 유니온에 없는 키를 넣거나 있는 키를
+ * 빠뜨리면 컴파일이 막힌다. 렌더와 아래 판정이 같은 레코드를 읽으므로,
+ * 화면에 있는 옵션인데 상태로는 못 올라가는 조합이 생길 수 없다.
+ */
+const FILTER_LABELS = {
+  '30days': '지난 30일',
+  '7days': '지난 7일',
+  all: '전체',
+  custom: '직접선택',
+} as const satisfies Record<FilterType, string>;
+
+/** select의 value는 그냥 string이다 — 등록된 옵션일 때만 FilterType으로 다룬다. */
+function isFilterType(value: string): value is FilterType {
+  return Object.hasOwn(FILTER_LABELS, value);
+}
+
 // getKSTCutoffDate는 단위 테스트 커버를 위해 @blog/content(shared/dates)로 이동.
 // 호환을 위해 같은 이름으로 재노출 — 다른 컴포넌트에서 직접 import해도 동작.
 export { getKSTCutoffDate };
@@ -127,13 +145,17 @@ export function DateRangeControls({
     >
       <select
         value={filterType}
-        onChange={e => setFilterType(e.target.value as FilterType)}
+        onChange={e => {
+          const next = e.target.value;
+          if (isFilterType(next)) setFilterType(next);
+        }}
         className={inputClass}
       >
-        <option value="30days">지난 30일</option>
-        <option value="7days">지난 7일</option>
-        <option value="all">전체</option>
-        <option value="custom">직접선택</option>
+        {Object.entries(FILTER_LABELS).map(([value, label]) => (
+          <option key={value} value={value}>
+            {label}
+          </option>
+        ))}
       </select>
 
       {filterType === 'custom' && (

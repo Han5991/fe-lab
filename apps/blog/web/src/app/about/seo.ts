@@ -8,12 +8,16 @@
  * 둡니다 — 글 상세의 `posts/[...slug]/nextMetadata.ts`와 같은 자리입니다.
  */
 import contentConfig from '@/content.config.mts';
-import { ABOUT_PAGE_MODIFIED } from '@/content.values.mts';
+import { ABOUT_PAGE_MODIFIED, ABOUT_PATH } from '@/content.values.mts';
 import type { Metadata } from 'next';
 
 // 사이트 정체성·저자·SEO 예산은 해석된 설정에서 온다 — 값의 출처는
 // `content.values.mts`이고, 여기서 리터럴을 다시 읽지 않는다(서버 전용 모듈).
 const { site: SITE, author: AUTHOR, seo: SEO } = contentConfig;
+
+// 절대 URL은 상대 경로에서 한 번만 파생한다(`@blog/content`의 postPath→postUrl과
+// 같은 관례). og url·JSON-LD `@id`·url이 이 하나를 공유한다.
+const ABOUT_URL = `${SITE.url}${ABOUT_PATH}`;
 
 const PAGE_TITLE = `소개${SEO.titleSuffix}`;
 const SEARCH_DESCRIPTION =
@@ -27,11 +31,11 @@ export function buildAboutMetadata(): Metadata {
   return {
     title: PAGE_TITLE,
     description: SEARCH_DESCRIPTION,
-    alternates: { canonical: '/about/' },
+    alternates: { canonical: ABOUT_PATH },
     openGraph: {
       title: PAGE_TITLE,
       description: SHARE_DESCRIPTION,
-      url: `${SITE.url}/about/`,
+      url: ABOUT_URL,
       siteName: SITE.name,
       // 사람 소개 페이지라 website가 아니라 profile이다. 지정하지 않으면
       // og:type 자체가 빠져서 크롤러가 문서 종류를 추정하게 된다.
@@ -62,8 +66,8 @@ export function buildAboutJsonLd() {
   return {
     '@context': 'https://schema.org',
     '@type': 'ProfilePage',
-    '@id': `${SITE.url}/about/`,
-    url: `${SITE.url}/about/`,
+    '@id': ABOUT_URL,
+    url: ABOUT_URL,
     name: '한상욱 (Sangwook Han) — About',
     dateCreated: '2024-12-01',
     // 빌드 시각을 넣으면 매일 cron 빌드마다 "수정됨"으로 보고되어 신호가 무의미해진다.

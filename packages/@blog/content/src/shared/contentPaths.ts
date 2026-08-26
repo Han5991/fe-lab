@@ -48,15 +48,14 @@ function resolveAppRoot(root: string): string {
 /** 순수 함수 — 테스트가 임의 root의 설정으로 결과를 검증할 수 있다 */
 export function resolveContentPaths(config: ContentConfig): ContentPaths {
   const appRoot = resolveAppRoot(config.root);
-  const { dirs } = config;
   return {
     appRoot,
-    postsDir: resolve(appRoot, dirs.content),
-    publicDir: resolve(appRoot, dirs.public),
-    cacheDir: resolve(appRoot, dirs.cache),
-    outDir: resolve(appRoot, dirs.out),
-    mediaOutDir: resolve(appRoot, dirs.media),
-    thumbsOutDir: resolve(appRoot, dirs.thumbs),
-    ogOutDir: resolve(appRoot, dirs.og),
+    postsDir: resolve(appRoot, config.dirs.content),
+    publicDir: resolve(appRoot, config.dirs.public),
+    cacheDir: resolve(appRoot, config.dirs.cache),
+    outDir: resolve(appRoot, config.dirs.out),
+    mediaOutDir: resolve(appRoot, config.dirs.media),
+    thumbsOutDir: resolve(appRoot, config.dirs.thumbs),
+    ogOutDir: resolve(appRoot, config.dirs.og),
   };
 }

@@ -210,12 +210,10 @@ export const SearchDialog = () => {
 
   // 선택된 항목으로 스크롤
   useEffect(() => {
-    if (listRef.current) {
-      const selected = listRef.current.children[selectedIndex] as HTMLElement;
-      if (selected) {
-        selected.scrollIntoView({ block: 'nearest' });
-      }
-    }
+    // scrollIntoView는 Element에 있으니 HTMLElement까지 좁힐 이유가 없다.
+    // children[i]는 범위를 벗어나면 undefined라 옵셔널 체이닝이 그대로 그 검사다.
+    const selected = listRef.current?.children[selectedIndex];
+    selected?.scrollIntoView({ block: 'nearest' });
   }, [selectedIndex]);
 
   if (!isOpen) {

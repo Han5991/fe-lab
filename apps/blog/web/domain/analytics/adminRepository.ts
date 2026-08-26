@@ -14,11 +14,8 @@
  */
 
 import { client } from '../../lib/platform/client';
-import {
-  createAdminApiClient,
-  type AdminApiClient,
-} from '../../lib/platform/adminApi';
-import type { PostStatus } from '@blog/content';
+import { AdminApiClient, type AdminApi } from '../../lib/platform/adminApi';
+import { isRecord, type PostStatus } from '@blog/content';
 import type {
   PostStatsRow,
   PostTrendRow,
@@ -40,10 +37,15 @@ export interface AdminPostIndex {
   scheduledDate: string | null;
 }
 
-/** admin-analytics Edge Function 클라이언트 (첫 호출 때 1회 생성) */
-let adminApiInstance: AdminApiClient | null = null;
-function adminApi(): AdminApiClient {
-  adminApiInstance ??= createAdminApiClient(client);
+/**
+ * admin-analytics Edge Function 클라이언트 (첫 호출 때 1회 생성).
+ *
+ * 보관 타입이 `AdminApiClient`(클래스)가 아니라 `AdminApi`(계약)인 건 의도다 —
+ * 이 파일이 의존하는 건 `call()` 하나이지 그 구현이 아니다.
+ */
+let adminApiInstance: AdminApi | null = null;
+function adminApi(): AdminApi {
+  adminApiInstance ??= new AdminApiClient(client);
   return adminApiInstance;
 }
 
@@ -91,9 +93,8 @@ export async function getAllPostsTrends(): Promise<PostTrendRow[]> {
  * 소비자(useSuspenseQuery 훅들)는 throw가 곧 페이지 전체 ErrorBoundary라,
  * 손으로 고쳐진 파일이나 형식이 어긋난 배포에 화면째 깨지면 안 된다.
  */
-function isAdminPostIndexRow(item: unknown): item is AdminPostIndex {
-  if (typeof item !== 'object' || item === null) return false;
-  const row = item as Record<string, unknown>;
+function isAdminPostIndexRow(row: unknown): row is AdminPostIndex {
+  if (!isRecord(row)) return false;
   return (
     typeof row['slug'] === 'string' &&
     typeof row['title'] === 'string' &&

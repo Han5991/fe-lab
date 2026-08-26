@@ -56,10 +56,20 @@ interface Collected {
   rest: ReactNode[];
 }
 
+/**
+ * 코드 펜스 엘리먼트에서 이 모듈이 읽고 쓰는 prop.
+ *
+ * `ReactElement<P>`의 **제네릭 인자로 넘긴다.** React 19 타입에서 `P`의 기본값이
+ * `any`에서 `unknown`으로 바뀌어, 맨 `ReactElement`는 `props`가 `unknown`이고
+ * 읽을 때마다 캐스트가 필요하다. 좁힐 때(`isValidElement<CodeElementProps>`)
+ * 한 번 채워 두면 그 뒤로는 캐스트 없이 읽고 `cloneElement`에 넘길 수 있다.
+ */
 interface CodeElementProps {
   'data-tab'?: string;
   className?: string;
   children?: ReactNode;
+  /** 자식 코드 블록이 자기 크롬(언어 라벨·보더)을 끄게 하는 표식. */
+  'data-bare'?: boolean;
 }
 
 /**
@@ -69,11 +79,13 @@ interface CodeElementProps {
  * `<pre>` 안에 놓여 무효 중첩이 된다. 어차피 코드 블록의 상자는 CodeBlock이
  * 직접 그리므로 래퍼는 필요 없다.
  */
-function unwrapPre(node: ReactElement): ReactElement | null {
+function unwrapPre(
+  node: ReactElement<CodeElementProps>,
+): ReactElement<CodeElementProps> | null {
   if (node.type !== 'pre') return node;
-  const inner = Children.toArray(
-    (node.props as { children?: ReactNode }).children,
-  ).find(isValidElement);
+  const inner = Children.toArray(node.props.children).find(
+    isValidElement<CodeElementProps>,
+  );
   return inner ?? null;
 }
 
@@ -99,7 +111,9 @@ function collectTabs(children: ReactNode): Collected {
     // 코드 펜스는 언제나 `<pre>`로 온다. raw HTML로 직접 쓴 <pre>도 같은
     // 취급이지만, 그건 어차피 코드를 담는 상자라 탭에 들어가도 무방하다.
     const code =
-      isValidElement(child) && child.type === 'pre' ? unwrapPre(child) : null;
+      isValidElement<CodeElementProps>(child) && child.type === 'pre'
+        ? unwrapPre(child)
+        : null;
     if (!code) {
       // 마크다운이 블록 사이에 끼워 넣는 공백 텍스트까지 남기면 탭 아래에
       // 빈 줄이 생긴다. 그것만 걸러내고 나머지는 전부 보존한다.
@@ -108,11 +122,11 @@ function collectTabs(children: ReactNode): Collected {
       return;
     }
 
-    const props = code.props as CodeElementProps;
+    const props = code.props;
     const language = /language-(\w+)/.exec(props.className ?? '')?.[1];
     tabs.push({
       label: props['data-tab'] ?? language ?? `코드 ${tabs.length + 1}`,
-      content: cloneElement(code, { 'data-bare': true } as CodeElementProps),
+      content: cloneElement(code, { 'data-bare': true }),
       code: codeText(props.children).replace(/\n$/, ''),
     });
   });
@@ -126,7 +140,7 @@ export function CodeTabs({ children }: { children?: ReactNode }) {
   // 코드 블록이 하나도 없으면 이 컴포넌트가 할 일이 없다. 글쓴이가 태그만
   // 열어 두고 안을 안 채웠거나 빈 줄을 빠뜨린 경우라, 내용을 숨기지 말고
   // 그대로 흘려보낸다.
-  if (tabs.length === 0) return <>{children}</>;
+  if (tabs.length === 0) return children;
 
   const box = (
     <CodeTabsPanels

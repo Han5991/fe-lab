@@ -149,11 +149,11 @@ export function buildLlmsFullText(
 export function main(ctx: ContentContext) {
   // 레지스트리 선언(postSet: 'visible', exact)과 같은 셀렉터.
   const posts = resolvePostSet(ctx.content, 'visible');
-  const outputPath = join(ctx.paths.publicDir, 'llms-full.txt');
+  const outputPath = join(ctx.content.paths.publicDir, 'llms-full.txt');
   const text = buildLlmsFullText(posts, {
-    site: ctx.config.site,
-    llms: ctx.config.llms,
-    author: ctx.config.author,
+    site: ctx.content.config.site,
+    llms: ctx.content.config.llms,
+    author: ctx.content.config.author,
   });
   writeFileSync(outputPath, text, 'utf8');
 

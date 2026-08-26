@@ -1,7 +1,7 @@
 'use client';
 
 import { Suspense } from 'react';
-import { signInAdminWithGoogle } from '@/domain/auth';
+import { adminLoginRedirectUrl, authRepository } from '@/domain/auth';
 import { css, cx } from '@design-system/ui-lib/css';
 import { railGutter } from '@/src/components/Rail';
 import { LogIn } from 'lucide-react';
@@ -11,12 +11,17 @@ import { useMutation } from '@tanstack/react-query';
 function LoginForm() {
   const searchParams = useSearchParams();
 
-  const { mutateAsync: handleGoogleLogin, isPending: isLoading } = useMutation({
-    // redirectTo의 무슬래시 `/admin`은 후행 슬래시 계약과 어긋나 로그인마다
-    // GitHub Pages 301을 한 번 더 탄다. 다만 이 값은 Supabase 대시보드의
-    // 허용 리다이렉트 목록과 짝이라, 코드만 슬래시형으로 바꾸면 목록이
-    // 정확 일치일 때 프로덕션 로그인이 깨진다 — 바꿀 때는 둘을 함께 바꿀 것.
-    mutationFn: () => signInAdminWithGoogle(`${window.location.origin}/admin`),
+  // mutateAsync가 아니라 mutate다 — 반환값을 쓸 데가 없고(성공하면 브라우저가
+  // Google로 떠난다) 실패는 onError가 받는다. mutate는 void를 반환하므로
+  // 호출부에 no-floating-promises를 달래는 `void` 연산자가 필요 없다.
+  const { mutate: handleGoogleLogin, isPending: isLoading } = useMutation({
+    // 돌아올 주소의 계약(경로 모양, Supabase 대시보드 목록과의 짝)은
+    // domain/auth가 갖는다. 화면이 보태는 건 origin 하나뿐이다 — 그걸
+    // 아는 건 브라우저뿐이라 여기서만 읽을 수 있다.
+    mutationFn: () =>
+      authRepository.signInAdminWithGoogle(
+        adminLoginRedirectUrl(window.location.origin),
+      ),
     onError: () => alert('로그인 중 오류가 발생했습니다.'),
   });
 
@@ -91,7 +96,7 @@ function LoginForm() {
         )}
 
         <button
-          onClick={() => void handleGoogleLogin()}
+          onClick={() => handleGoogleLogin()}
           disabled={isLoading}
           className={css({
             display: 'flex',

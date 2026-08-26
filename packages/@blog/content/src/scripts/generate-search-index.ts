@@ -80,8 +80,11 @@ export function buildAdminPostsIndex(
 }
 
 export function main(ctx: ContentContext) {
-  const outputPath = join(ctx.paths.publicDir, 'search-index.json');
-  const adminOutputPath = join(ctx.paths.publicDir, 'admin-posts-index.json');
+  const outputPath = join(ctx.content.paths.publicDir, 'search-index.json');
+  const adminOutputPath = join(
+    ctx.content.paths.publicDir,
+    'admin-posts-index.json',
+  );
 
   // 산출 파일이 두 개고 글 집합도 각각 다르다 — 레지스트리(artifacts.ts)의
   // 선언(search-index: visible/exact, admin-posts-index: all/superset)과

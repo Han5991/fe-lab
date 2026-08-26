@@ -6,6 +6,7 @@ import { css } from '@design-system/ui-lib/css';
 // 클라이언트 컴포넌트의 @blog/content 배럴 import — node:fs 모듈(series 등)은
 // next.config.ts의 optimizePackageImports + sideEffects:false가 번들에서 걸러 준다.
 import { POSTS_PATH } from '@blog/content';
+import { ABOUT_PATH, SERIES_PATH } from '@/content.values.mts';
 
 /**
  * 헤더 네비게이션.
@@ -15,8 +16,8 @@ import { POSTS_PATH } from '@blog/content';
  */
 const NAV_ITEMS = [
   { href: POSTS_PATH, label: '글' },
-  { href: '/series/', label: '시리즈' },
-  { href: '/about/', label: 'About' },
+  { href: SERIES_PATH, label: '시리즈' },
+  { href: ABOUT_PATH, label: 'About' },
 ] as const;
 
 // 터치 타겟은 의사요소로 넓힌다. Layout에서 옮겨올 때 빠진 px/py를 그대로

@@ -10,7 +10,12 @@
  * `resolveSeverity`를 통해 여기서 읽습니다. 규칙을 추가하면 여기 한 줄이 없을 때
  * 컴파일(RuleId)이 막고, `rules.test.ts`가 개수·센티널 집합을 잠급니다.
  */
-import { isPostFile, isPostVisible, toDateString } from '../../post/index.ts';
+import {
+  isPostFile,
+  isPostStatus,
+  isPostVisible,
+  toDateString,
+} from '../../post/index.ts';
 import type { Severity, ValidateContext } from './shared.ts';
 
 /**
@@ -131,17 +136,25 @@ export function resolveSeverity(
  * `new-post`가 정확히 그렇게 씁니다. 그대로 넘기면 이미 공개된 예약 글이
  * "비공개"로 판정되어 strict 에러가 조용히 경고로 떨어집니다.
  * repository가 PostData를 만들 때 쓰는 `toDateString`을 똑같이 거칩니다.
+ *
+ * status도 같은 이유로 한 번 걸러 넘깁니다. 원문의 status는 무엇이든 될 수 있고
+ * (`status: 3`), enum 밖 값은 `isPostVisible`이 어차피 fail-closed로 비공개
+ * 판정하므로 미지정으로 넘기는 것과 결론이 같습니다. 예전에는 이 객체 전체에
+ * `as Parameters<typeof isPostVisible>[0]`가 붙어 있었는데, 그 단언은 값을 하나도
+ * 확인하지 않으면서 **인자 계약이 늘어나도 조용히 통과**합니다(부분 객체를
+ * 상위 타입으로 단언하는 방향이라 컴파일러가 막지 않습니다).
  */
 export function isVisibleFrontmatter(
   data: Record<string, unknown>,
   timezone: ValidateContext['timezone'],
 ): boolean {
+  const status = data['status'];
   return isPostVisible(
     {
-      status: data['status'],
+      status: isPostStatus(status) ? status : undefined,
       date: toDateString(data['date']),
       scheduledDate: toDateString(data['scheduledDate']),
-    } as Parameters<typeof isPostVisible>[0],
+    },
     timezone,
   );
 }
