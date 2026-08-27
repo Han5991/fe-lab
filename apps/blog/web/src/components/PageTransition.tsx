@@ -4,6 +4,11 @@ import type { ReactNode } from 'react';
 import { Ssgoi, type SsgoiConfig } from '@ssgoi/react';
 import { hero, fade } from '@ssgoi/react/view-transitions';
 import { css } from '@design-system/ui-lib/css';
+import {
+  POST_HERO_TRANSITION_GLOB,
+  POST_PLAIN_TRANSITION_GLOB,
+  POSTS_TRANSITION_ID,
+} from '@/shared/transitions';
 
 // ssgoi v6 path-factory API. (v6에는 defaultTransition이 없고, 모든 전환을
 // path 기반 팩토리로 매칭한다. 매처는 first-hit이라 더 구체적인 규칙을 먼저 둔다.)
@@ -17,7 +22,10 @@ import { css } from '@design-system/ui-lib/css';
 // "정방향(direct) 전체 검사 → symmetric 검사"의 2-pass라서, fade 와일드카드 {*,*}가
 // direct pass에서 back(/posts/*→/posts)을 먼저 가로채 hero의 symmetric(2nd pass)보다
 // 앞선다. → hero를 양방향 explicit 엔트리로 펼쳐 back도 direct 매칭이 되게 한다.
-const heroEntries = hero({ paths: ['/posts', '/posts/*'], type: 'static' });
+const heroEntries = hero({
+  paths: [POSTS_TRANSITION_ID, POST_HERO_TRANSITION_GLOB],
+  type: 'static',
+});
 const heroBidirectional = [
   ...heroEntries,
   ...heroEntries.map(e => ({ ...e, from: e.to, to: e.from })),
@@ -33,7 +41,9 @@ const config: SsgoiConfig = {
   ],
   // 데스크탑/모바일 동작 통일. 긴 글 상세(/posts/*, /posts-plain/*)는 항상 맨 위에서
   // 시작, 글 목록(/posts)은 back 시 스크롤 위치 복원.
-  preserveScroll: { exclude: ['/posts/*', '/posts-plain/*'] },
+  preserveScroll: {
+    exclude: [POST_HERO_TRANSITION_GLOB, POST_PLAIN_TRANSITION_GLOB],
+  },
 };
 
 export const PageTransition = ({ children }: { children: ReactNode }) => (

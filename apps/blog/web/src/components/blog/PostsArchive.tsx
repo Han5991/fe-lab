@@ -6,7 +6,7 @@ import { useQueryStates, parseAsString, parseAsStringLiteral } from 'nuqs';
 import { useQuery } from '@tanstack/react-query';
 import { css } from '@design-system/ui-lib/css';
 
-import type { PostSummary } from '@blog/content';
+import type { ArchiveFilters, PostSummary } from '@blog/content';
 import type { SeriesSummary, TagSummary } from '@blog/content';
 import {
   filterAndSortPostsByArchiveParams,
@@ -76,6 +76,13 @@ export const PostsArchiveView = ({
   // 아카이브의 URL 상태 6개는 한 덩어리로 움직인다(검색어·태그·시리즈·연도·정렬·뷰).
   // 파서 맵 하나로 묶으면 "이 화면의 URL 계약"이 한자리에 남고, clearAll처럼 여러
   // 개를 동시에 지우는 동작이 setParams 한 번으로 표현된다.
+  //
+  // `satisfies`의 Record 절반이 링크 쪽 계약과 잠근다 — 필터 링크를 만드는
+  // `archivePath`(`@blog/content`의 ArchiveFilters: q·tag·series)가 내보내는
+  // 쿼리 키는 전부 이 파서 맵에 있어야 읽힌다. 키 이름이 한쪽만 바뀌면 태그·
+  // 시리즈 필터 링크가 경고 없이 빈 목록으로 떨어지는데, 예전엔 두 정의가
+  // 독립이라 그 어긋남을 아무것도 잡지 않았다. year·sort·view는 이 화면만
+  // 아는 상태라 링크 계약 밖이다(인덱스 시그니처 쪽이 받는다).
   const [
     { q, tag: tagParam, series: seriesParam, year: yearParam, sort, view },
     setParams,
@@ -86,7 +93,8 @@ export const PostsArchiveView = ({
     year: parseAsString.withDefault(''),
     sort: parseAsStringLiteral(SORT_KEYS).withDefault('recent'),
     view: parseAsStringLiteral(VIEW_KEYS).withDefault('cards'),
-  });
+  } satisfies Record<keyof Required<ArchiveFilters>, unknown> &
+    Record<string, unknown>);
   const [sheetOpen, setSheetOpen] = useState(false);
 
   // 인기순 정렬은 Supabase post_views 테이블 기반. 'popular'를 누르기 전까지는

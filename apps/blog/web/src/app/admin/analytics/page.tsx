@@ -10,6 +10,7 @@ import { useAdminLogout } from '@/src/hooks/useAdminLogout';
 import { LoadingPlaceholder } from '@/src/components/shared/LoadingPlaceholder';
 import { Label } from '@/src/components/blog/Label';
 
+import { ADMIN_PATH } from '@/shared/routes';
 import { AnalyticsContent } from './AnalyticsContent';
 import { useAdminTagDistribution } from './useAdminTagDistribution';
 import { PostList } from '../components/PostList';
@@ -81,7 +82,7 @@ export default function AdminAnalyticsPage() {
           </span>
           <span className={css({ flex: '1' })} />
           <Link
-            href="/admin/"
+            href={ADMIN_PATH}
             className={css({
               display: 'inline-flex',
               alignItems: 'center',

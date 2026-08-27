@@ -1,10 +1,6 @@
 import { RSS_PATH } from '@blog/content';
-import {
-  ABOUT_PATH,
-  AUTHOR_GITHUB,
-  AUTHOR_LINKEDIN,
-  PRIVACY_PATH,
-} from '@/content.values.mts';
+import { AUTHOR_GITHUB, AUTHOR_LINKEDIN } from '@/content.values.mts';
+import { ABOUT_PATH, HOME_PATH, PRIVACY_PATH } from '@/shared/routes';
 import Link from 'next/link';
 import { css, cx } from '@design-system/ui-lib/css';
 import type { ReactNode } from 'react';
@@ -98,7 +94,7 @@ export const Layout = ({ children }: LayoutProps) => {
             {/* 로고 표기만 sangwook.dev. metadata/JSON-LD의 사이트명(Frontend Lab)은
                 검색 색인 보호를 위해 그대로 둔다. */}
             <Link
-              href="/"
+              href={HOME_PATH}
               className={css({
                 fontFamily: 'mono',
                 fontWeight: 'medium',

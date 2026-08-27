@@ -59,20 +59,18 @@ export const OG_DEFAULT_IMAGE = '/og-default.jpg';
 // (`@blog/content`의 `RSS_PATH`) 이 사이트가 고를 수 있는 값이 아니다. 예전엔
 // 여기와 패키지 생성기 셋이 같은 리터럴을 따로 들고 있었다.
 
-// ── 이 사이트에만 있는 정적 페이지 경로 ──────────────────────────────────────
+// ── 정적 페이지 경로의 배선용 사본 ───────────────────────────────────────────
 //
-// `trailingSlash: true`라 후행 슬래시를 포함한다. 내비게이션 href·canonical·
-// og url·JSON-LD `@id`·sitemap이 **전부 여기서 온다** — 예전에는 파일마다 같은
-// 리터럴을 적어 `/about/` 하나가 네 곳(seo 모듈 안에서만 세 번, Layout, sitemap
-// 목록)에 흩어져 있었다. 라우트 디렉터리를 옮기면 nav만 고쳐지고 canonical·
-// JSON-LD가 옛 주소에 남는다.
+// 라우트 경로의 단일 출처는 `shared/routes.ts`다 — 내비게이션 href·canonical·
+// og url·JSON-LD `@id`는 전부 거기서 온다. 이 모듈은 값 import 금지(위 제약)라
+// 그걸 가져오지 못해, sitemap·llms 배선에 쓰는 사본만 **비공개**로 든다.
+// 어긋남은 `contentValues.test.ts`가 잠근다 (아래 ADMIN/POSTS 접두와 같은 패턴).
 //
 // `/`와 `/posts/`는 여기 없다 — 그 둘은 패키지가 소유한 라우트 모양이라
 // `@blog/content`의 `POSTS_PATH`·`postPath`가 단일 출처다.
 
-export const ABOUT_PATH = '/about/';
-export const SERIES_PATH = '/series/';
-export const PRIVACY_PATH = '/privacy/';
+const ABOUT_PATH = '/about/';
+const SERIES_PATH = '/series/';
 /**
  * `/about/` 페이지를 마지막으로 **손으로 고친** 날짜 ('YYYY-MM-DD').
  * 빌드 날짜를 넣으면 매일 도는 cron 빌드마다 lastmod가 전진해 신호가
@@ -175,10 +173,9 @@ export const SITEMAP_STATIC_PAGES = [
 // 문자열로 등록), 문자열 리터럴, 라이브러리 클래스명.
 
 /**
- * admin 라우트의 경로 접두. `domain/auth/adminAccess`의 `ADMIN_BASE_PATH`
- * (`'/admin'`)와 짝이지만 직접 파생하지 않는다 — 이 모듈은 값 import가 금지고
- * (순수 리터럴 계약), adminAccess는 import 0개를 유지해야 하는 모듈이라 어느
- * 방향으로도 잇지 못한다. 대신 `contentValues.test.ts`가 두 값을 잠근다.
+ * admin 라우트의 경로 접두. `shared/routes.ts`의 `ADMIN_BASE_PATH`(`'/admin'`)
+ * 와 짝이지만 직접 파생하지 않는다 — 이 모듈은 값 import가 금지다(순수 리터럴
+ * 계약). 대신 `contentValues.test.ts`가 두 값을 잠근다.
  */
 export const ADMIN_PATH_PREFIX = '/admin/';
 

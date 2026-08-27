@@ -23,6 +23,7 @@ import { toNextMetadata } from './nextMetadata';
 import type { Metadata } from 'next';
 import { Rail, railGutter, railColumn } from '@/src/components/Rail';
 import { safeJsonLd } from '@blog/content';
+import { postTransitionId } from '@/shared/transitions';
 import GiscusComments from '@/src/components/GiscusComments';
 import { PageBoundary } from '@/src/components/PageBoundary';
 import { BackToTop } from '@/src/components/mobile/BackToTop';
@@ -144,9 +145,7 @@ export default async function PostPage({ params }: Props) {
       <PageBoundary
         // 썸네일 있으면 /posts/*(hero 모핑 대상), 없으면 /posts-plain/*(fade 폴백)으로
         // 분기해 전환 매칭을 라우팅한다. (URL은 그대로 /posts/{slug})
-        transitionId={
-          thumbnailUrl ? `/posts/${post.slug}` : `/posts-plain/${post.slug}`
-        }
+        transitionId={postTransitionId(post.slug, Boolean(thumbnailUrl))}
         className={cx(
           railGutter,
           css({ py: { base: '10', md: '14' }, bg: 'paper.50' }),

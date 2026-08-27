@@ -54,7 +54,7 @@ The blog (`apps/blog/web/`) is a **statically generated (SSG) Next.js applicatio
 
 ```
 apps/blog/posts (원고)  →  packages/@blog/content  →  apps/blog/web
-                            shared → post → seo →      lib/platform → domain/{analytics,auth} → src
+                            shared → post → seo →      shared → lib/platform → domain/{analytics,auth} → src
                             scripts → scripts/render → scripts/cli
 ```
 
@@ -65,14 +65,19 @@ apps/blog/posts (원고)  →  packages/@blog/content  →  apps/blog/web
   나가고, 앱은 서브커맨드 이름만 안다(`blog-content build`). shebang은 `node`다 — 상대 import가
   전부 `.ts` 확장자를 달고(`allowImportingTsExtensions`, 앱 tsconfig에도 켜져 있어야 한다)
   문법은 `erasableSyntaxOnly`라, node의 type stripping만으로 로더 없이 돈다
-- **앱 내부**: `lib/platform`(Supabase 어댑터, 외부 의존은 supabase-js·postgrest-js만) →
+- **앱 내부**: `shared`(최하단 — 앱 소유 라우트 경로 `routes.ts`·페이지 전환 네임스페이스
+  `transitions.ts`의 단일 출처. 모든 레이어가 import 가능하고, 자신은 `@blog/content`만 연다) →
+  `lib/platform`(Supabase 어댑터, 외부 의존은 supabase-js·postgrest-js만) →
   `domain/analytics`(순수 계산 + 저장소, 배럴 `index`·`admin` 둘)·`domain/auth`(세션·관리자
-  판정·로그인 경로 계약) → `src`(라우트·컴포넌트·훅). `src`는 저장소를 직접 찌르지 않고
+  이메일 판정) → `src`(라우트·컴포넌트·훅). `src`는 저장소를 직접 찌르지 않고
   배럴로 — **platform 자체를 import할 수 없다**(boundaries에서 app→platform 허용이 없다.
   Supabase 접근은 전부 도메인 경유고, 예전 유일한 예외였던 auth 직접 호출은 `domain/auth`가
   흡수했다).
   **`src`는 node 코어를 못 만진다** — fs 접근은 전부 `@blog/content` 로더의 일(클라이언트 번들
-  누수 예방). `@blog/content`는 앱에서 외부 패키지(`content-pkg`)로 보인다
+  누수 예방). `@blog/content`는 앱에서 외부 패키지(`content-pkg`)로 보인다.
+  라우트 경로 리터럴을 화면·설정에 직접 적지 말 것 — 앱 소유 경로(`/admin`·`/about`…)는
+  `@/shared/routes`, 글·아카이브·RSS는 패키지(`postPath`·`archivePath`·`RSS_PATH`)가 단일
+  출처다(값 모듈의 사본 둘만 예외 — `contentValues.test.ts`가 잠근다)
 - **tsconfig 분할**: `tsconfig.json`(프로덕션, 엄격 플래그 전부) / `tsconfig.test.json`(테스트 —
   `noUncheckedIndexedAccess`·`noPropertyAccessFromIndexSignature`·`exactOptionalPropertyTypes` 세
   개만 끔). `check-types`와 ESLint 타입 룰이 같은 분할을 따른다

@@ -5,7 +5,7 @@ import react from '@vitejs/plugin-react';
 /**
  * 러너는 vitest 하나이고, **환경**만 두 프로젝트로 나눈다.
  *
- * - `node`: domain/·lib/ 의 순수 로직·와이어 계약. jsdom을 띄우지 않는다 —
+ * - `node`: shared/·domain/·lib/ 의 순수 로직·와이어 계약. jsdom을 띄우지 않는다 —
  *   이 앱에서 jsdom 부팅은 파일당 1초 안팎이라(전체 환경 셋업 40초대) DOM이
  *   필요 없는 테스트까지 태우면 그대로 낭비다.
  * - `jsdom`: src/ 의 컴포넌트·훅. RTL·jest-dom 매처와 next.config 미러링
@@ -26,7 +26,12 @@ const alias = { '@/': fileURLToPath(new URL('./', import.meta.url)) };
 export default defineConfig({
   test: {
     coverage: {
-      include: ['domain/**/*.ts', 'lib/**/*.ts', 'src/**/*.{ts,tsx}'],
+      include: [
+        'shared/**/*.ts',
+        'domain/**/*.ts',
+        'lib/**/*.ts',
+        'src/**/*.{ts,tsx}',
+      ],
       exclude: [
         '**/*.test.{ts,tsx}',
         '**/*.config.*',
@@ -40,7 +45,11 @@ export default defineConfig({
         test: {
           name: 'node',
           environment: 'node',
-          include: ['domain/**/*.{test,spec}.ts', 'lib/**/*.{test,spec}.ts'],
+          include: [
+            'shared/**/*.{test,spec}.ts',
+            'domain/**/*.{test,spec}.ts',
+            'lib/**/*.{test,spec}.ts',
+          ],
         },
       },
       {

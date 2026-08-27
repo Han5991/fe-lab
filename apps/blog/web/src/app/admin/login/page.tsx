@@ -1,7 +1,8 @@
 'use client';
 
 import { Suspense } from 'react';
-import { adminLoginRedirectUrl, authRepository } from '@/domain/auth';
+import { authRepository } from '@/domain/auth';
+import { adminLoginRedirectUrl } from '@/shared/routes';
 import { css, cx } from '@design-system/ui-lib/css';
 import { railGutter } from '@/src/components/Rail';
 import { LogIn } from 'lucide-react';

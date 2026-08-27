@@ -6,7 +6,7 @@ import { css } from '@design-system/ui-lib/css';
 // 클라이언트 컴포넌트의 @blog/content 배럴 import — node:fs 모듈(series 등)은
 // next.config.ts의 optimizePackageImports + sideEffects:false가 번들에서 걸러 준다.
 import { POSTS_PATH } from '@blog/content';
-import { ABOUT_PATH, SERIES_PATH } from '@/content.values.mts';
+import { ABOUT_PATH, SERIES_PATH } from '@/shared/routes';
 
 /**
  * 헤더 네비게이션.
