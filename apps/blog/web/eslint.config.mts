@@ -195,7 +195,7 @@ export default defineConfig([
     },
   },
 
-  // ── 아키텍처 경계 강제 (헥사고날 레이어링: src → domain → lib) ──────────────
+  // ── 아키텍처 경계 강제 (헥사고날 레이어링: src → domain → lib → shared) ─────
   // 경계를 컨벤션이 아니라 lint로 강제해 회귀를 막습니다.
   {
     // src(상위)는 domain/<x>의 공개 API(배럴)만 쓰고, repository(인프라)를 직접
@@ -311,7 +311,7 @@ export default defineConfig([
     },
   },
   {
-    // lib(최하위)은 domain·src를 import할 수 없습니다.
+    // lib은 domain·src(상위 레이어)를 import할 수 없습니다. 아래로는 shared만 연다.
     files: ['lib/**/*.{ts,tsx}'],
     ignores: ['**/*.test.{ts,tsx}'],
     rules: {
@@ -321,8 +321,34 @@ export default defineConfig([
           patterns: [
             {
               group: ['**/domain', '**/domain/**', '**/src', '**/src/**'],
+              message: 'lib은 상위 레이어(domain·src)를 import할 수 없습니다.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    // shared(최하단)는 어떤 상위 레이어도 import할 수 없습니다 — 모든 레이어가
+    // 기대는 라우트 상수 같은 순수 계약만 둡니다(외부는 @blog/content만, boundaries).
+    files: ['shared/**/*.{ts,tsx}'],
+    ignores: ['**/*.test.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: [
+                '**/lib',
+                '**/lib/**',
+                '**/domain',
+                '**/domain/**',
+                '**/src',
+                '**/src/**',
+              ],
               message:
-                'lib은 최하위 레이어입니다. domain·src를 import할 수 없습니다.',
+                'shared는 최하단 레이어입니다. lib·domain·src를 import할 수 없습니다.',
             },
           ],
         },
@@ -346,15 +372,16 @@ export default defineConfig([
   // 자동으로 그 element를 상속하고, element 폴더 밖에 떨어지면
   // no-unknown-files가 잡는다.
   //
-  // 레이어 순서(아래→위): platform → analytics → app. 콘텐츠 레이어(shared·
-  // content·build·render-build)는 packages/@blog/content로 이사했다 — 그쪽
-  // eslint.config.mjs가 같은 모델로 내부 경계를 강제하고, 앱에서는
-  // `@blog/content`가 외부 패키지(external)로 보인다.
+  // 레이어 순서(아래→위): shared → platform → analytics → app. shared는 모든
+  // 레이어가 쓸 수 있는 최하단(라우트 상수 등 순수 계약)이다. 콘텐츠 레이어는
+  // packages/@blog/content로 이사했다 — 그쪽 eslint.config.mjs가 같은 모델로
+  // 내부 경계를 강제하고, 앱에서는 `@blog/content`가 외부 패키지(external)로
+  // 보인다.
   //
-  // no-unknown-files와 이 블록 전체는 **LAYERED 3개 폴더에만** 건다. 전역으로
+  // no-unknown-files와 이 블록 전체는 **LAYERED 4개 폴더에만** 건다. 전역으로
   // 걸면 앱 루트의 설정 파일들이 전부 unknown이 되고, 오탐 시 탈출구가 없다.
   {
-    files: ['{domain,lib,src}/**/*.{js,mjs,cjs,ts,tsx,mts,cts}'],
+    files: ['{domain,lib,shared,src}/**/*.{js,mjs,cjs,ts,tsx,mts,cts}'],
     plugins: { boundaries },
     settings: {
       // 기준 경로가 **워크스페이스 루트**인 이유: @blog/content는 소스
@@ -370,6 +397,7 @@ export default defineConfig([
       // v7에서 folder 매칭이 기본이라 mode는 쓰지 않는다.
       'boundaries/elements': [
         { type: 'content-pkg', pattern: 'packages/@blog/content' },
+        { type: 'shared', pattern: 'apps/blog/web/shared' },
         { type: 'platform', pattern: 'apps/blog/web/lib/platform' },
         { type: 'analytics', pattern: 'apps/blog/web/domain/analytics' },
         { type: 'auth', pattern: 'apps/blog/web/domain/auth' },
@@ -409,11 +437,20 @@ export default defineConfig([
             },
             // 로컬 의존: 각 레이어는 자기보다 아래 레이어만. 외부 의존: 실측
             // 화이트리스트(레이어에 새 외부 의존이 생기면 여기 추가해야 한다).
-            // @blog/content는 여기서 외부 패키지다 — analytics가 shared 유틸
+            // @blog/content는 여기서 외부 패키지다 — analytics가 패키지 유틸
             // (dates)을 그 문으로 가져온다.
+            {
+              // shared(최하단)는 앱 내부 어디에도 기대지 않는다 — 패키지의
+              // 라우트 계약(encodePostSlug·POSTS_PATH)만 가져온다.
+              from: { element: { type: 'shared' } },
+              allow: [
+                { to: { element: { types: { anyOf: ['content-pkg'] } } } },
+              ],
+            },
             {
               from: { element: { type: 'platform' } },
               allow: [
+                { to: { element: { types: { anyOf: ['shared'] } } } },
                 {
                   to: {
                     module: {
@@ -432,7 +469,9 @@ export default defineConfig([
               allow: [
                 {
                   to: {
-                    element: { types: { anyOf: ['platform', 'content-pkg'] } },
+                    element: {
+                      types: { anyOf: ['shared', 'platform', 'content-pkg'] },
+                    },
                   },
                 },
               ],
@@ -441,7 +480,11 @@ export default defineConfig([
               // auth는 세션 API(client.auth)를 만지는 유일한 레이어다 —
               // supabase 타입도 여기서 끝내므로(구조적 부분형) 외부 의존이 없다.
               from: { element: { type: 'auth' } },
-              allow: [{ to: { element: { types: { anyOf: ['platform'] } } } }],
+              allow: [
+                {
+                  to: { element: { types: { anyOf: ['shared', 'platform'] } } },
+                },
+              ],
             },
             {
               // app은 node 코어를 직접 만지지 않는다 — fs 접근은 전부
@@ -459,7 +502,7 @@ export default defineConfig([
                   to: {
                     element: {
                       types: {
-                        anyOf: ['analytics', 'auth', 'content-pkg'],
+                        anyOf: ['shared', 'analytics', 'auth', 'content-pkg'],
                       },
                     },
                   },
