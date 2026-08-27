@@ -179,29 +179,48 @@ export interface OgConfig {
 }
 
 /**
- * 번들 누수 가드 — 공개 페이지 청크에 있으면 안 되는 문자열 마커의 선언.
- *
- * 검사(`check-bundle`)는 산출물의 페이지 HTML을 `adminPathPrefix`로 공개/admin
- * 두 무리로 나누고, 각 무리가 도달하는 청크(HTML의 script 참조 + 청크가 다시
- * 여는 청크의 폐포)를 모아 마커와 대조한다. 마커가 공개 쪽에 있으면 누수,
- * **admin 쪽에 없어도 실패다** — 번들러가 export 이름을 문자열로 남기는 방식이
- * 바뀌어 마커가 죽으면, 음성 검사만으로는 "누수 없음"과 "검사 무력화"가
- * 구분되지 않는다(fail-closed).
+ * 페이지 집합 — 경로 접두 아래(`under`) 또는 그 여집합(`notUnder`).
+ * 접두 값(예: '/admin/')은 소비 사이트의 라우트 주소라 언제나 선언에서 온다.
  */
-export interface BundleGuardsConfig {
-  /**
-   * admin 영역의 URL 경로 접두 (예: '/admin/'). 이 접두로 시작하는 페이지가
-   * admin, 나머지 전부가 공개다.
-   */
-  adminPathPrefix: string;
-  /**
-   * 금지 마커 — minify를 살아남는 문자열만 의미가 있다: 문자열 리터럴(Edge
-   * Function 이름), 라이브러리 클래스명(GoTrueClient), 그리고 Turbopack이
-   * 청크에 문자열로 등록하는 **export 이름**. 비어 있으면 검사를 건너뛴다
-   * (admin 영역이 없는 사이트).
-   */
-  markers: readonly string[];
+export type PageSelector = { under: string } | { notUnder: string };
+
+/**
+ * 마커를 찾을 자리 — **패키지가 실제로 계산하는 것들만** 어휘로 갖는다:
+ * 페이지 HTML, 페이지가 도달하는 청크(script 참조 + 청크가 파일명 문자열로
+ * 여는 지연 로드의 폐포), 산출물 파일. "admin"이니 "서버 전용"이니 하는 분류는
+ * 소비자의 말이라 여기 없다 — 그 이름은 규칙의 `label`로 소비자가 붙인다.
+ */
+export type MarkerScope =
+  | { kind: 'chunks'; of?: PageSelector }
+  | { kind: 'pages'; of?: PageSelector }
+  | { kind: 'artifact'; path: string };
+
+/**
+ * 번들 규칙 하나 — 마커는 `forbiddenIn`의 모든 스코프에 없어야 하고,
+ * `requiredIn`의 모든 스코프에 있어야 한다.
+ *
+ * `requiredIn`이 규칙마다 필수(비어 있을 수 없는 튜플)인 것이 요점이다:
+ * 양성 대조 없는 음성 검사는 마커가 죽는 순간(코드 이름 변경, 번들러 출력
+ * 변화) "누수 없음"과 "검사 무력화"를 구분하지 못한다. 모든 규칙이 자기
+ * 마커의 살아 있음을 어디서 증명할지 함께 선언한다(fail-closed).
+ *
+ * 마커는 minify를 살아남는 문자열만 의미가 있다: 문자열 리터럴, 라이브러리
+ * 클래스명, Turbopack이 청크에 문자열로 등록하는 export 이름.
+ */
+export interface BundleRule {
+  /** 위반 메시지에 쓸 이 규칙의 이름 — 분류 어휘는 소비자가 정한다 */
+  label: string;
+  marker: string;
+  forbiddenIn: readonly [MarkerScope, ...MarkerScope[]];
+  requiredIn: readonly [MarkerScope, ...MarkerScope[]];
 }
+
+/**
+ * 번들 누수 가드 — 규칙의 목록이 곧 선언이다. 패키지에 기본 규칙이 없다
+ * (경로 접두·마커·산출물 이름 전부 소비 사이트의 값이다). 비어 있을 수 없다 —
+ * 검사를 끄려면 선언 자체를 지운다.
+ */
+export type BundleGuardsConfig = readonly [BundleRule, ...BundleRule[]];
 
 export interface ThumbnailsConfig {
   /** 표시 최대 폭(FeaturedPost가 컨테이너 전체 폭). 작은 원본은 확대하지 않음 */
@@ -319,7 +338,8 @@ export interface ContentConfig {
   sitemap: SitemapConfig;
   og: OgConfig;
   thumbnails: ThumbnailsConfig;
-  bundleGuards: BundleGuardsConfig;
+  /** 선언한 사이트에만 있다 — 없으면 `check-bundle`이 검사를 건너뛴다 */
+  bundleGuards?: BundleGuardsConfig;
   llms: LlmsConfig;
 }
 
@@ -377,8 +397,11 @@ export interface ContentUserConfig extends Pick<
     docs?: Partial<LlmsDocsConfig>;
   };
   thumbnails?: Partial<ThumbnailsConfig>;
-  /** 마커는 사이트 고유(admin 영역의 코드 이름)라 앱이 준다 — 기본은 빈 목록(검사 스킵) */
-  bundleGuards?: Partial<BundleGuardsConfig>;
+  /**
+   * 규칙 목록이 통째로 실린다 — 접두·마커·산출물 이름 전부 그 사이트의 값이라
+   * 패키지가 채워 줄 반쪽이 없다. 선언하면 규칙 1개 이상, 안 하면 검사 없음.
+   */
+  bundleGuards?: BundleGuardsConfig;
 }
 
 // ── 기본값 ───────────────────────────────────────────────────────────────────
@@ -435,16 +458,6 @@ export const DEFAULT_THUMBNAILS: ThumbnailsConfig = {
 };
 
 /**
- * 번들 가드의 기본값. 경로 접두 `/admin/`은 경로 **관례**(dirs와 같은 축)지만,
- * 마커는 그 사이트 admin 코드의 이름이라 기본값을 둘 수 없다 — 비워 두면
- * `check-bundle`이 검사를 건너뛴다(admin 영역이 없는 사이트가 유효한 상태).
- */
-export const DEFAULT_BUNDLE_GUARDS: BundleGuardsConfig = {
-  adminPathPrefix: '/admin/',
-  markers: [],
-};
-
-/**
  * llms 산문의 기본값.
  *
  * `indexIntro`·`fullIntro`는 여기 없다 — `seo.titleSuffix`가 `site.name`에서
@@ -479,7 +492,18 @@ export const DEFAULT_LLMS: Omit<LlmsConfig, 'indexIntro' | 'fullIntro'> = {
  */
 const DEFAULTS: Omit<
   ContentConfig,
-  'root' | 'site' | 'author' | 'timezone' | 'seo' | 'registries' | 'og' | 'llms'
+  // bundleGuards가 여기 있는 이유는 다른 키들과 같다 — admin 경로 접두는 소비
+  // 사이트의 URL이고 마커는 그 사이트 admin 코드의 이름이라, 어떤 기본값도
+  // 특정 사이트의 하드코딩이다. 기본값이 없는 축은 선언 안 하면 없는 축이다.
+  | 'root'
+  | 'site'
+  | 'author'
+  | 'timezone'
+  | 'seo'
+  | 'registries'
+  | 'og'
+  | 'llms'
+  | 'bundleGuards'
 > & {
   seo: Omit<SeoConfig, 'titleSuffix'>;
   registries: Omit<RegistriesConfig, 'diagramNames'>;
@@ -487,7 +511,6 @@ const DEFAULTS: Omit<
   llms: Omit<LlmsConfig, 'indexIntro' | 'fullIntro'>;
 } = {
   seo: DEFAULT_SEO,
-  bundleGuards: DEFAULT_BUNDLE_GUARDS,
   runtime: {
     // 대괄호 접근인 이유: 이 패키지의 tsconfig에는 Next의 ProcessEnv 증강
     // (next-env.d.ts)이 없어 NODE_ENV가 인덱스 시그니처로만 보인다
@@ -608,7 +631,9 @@ export function defineContent(user: ContentUserConfig): ContentConfig {
     // 팔레트는 필수라 병합할 기본값이 없다 — 준 값이 그대로 실린다.
     og: { ...DEFAULTS.og, ...user.og },
     thumbnails: { ...DEFAULTS.thumbnails, ...user.thumbnails },
-    bundleGuards: { ...DEFAULTS.bundleGuards, ...user.bundleGuards },
+    // 병합할 기본값이 없다 — 준 사이트에만 있고, 통째로 실린다(조건 스프레드는
+    // exactOptionalPropertyTypes 때문: undefined를 optional 필드에 대입할 수 없다).
+    ...(user.bundleGuards ? { bundleGuards: user.bundleGuards } : {}),
     llms: {
       ...DEFAULTS.llms,
       ...user.llms,

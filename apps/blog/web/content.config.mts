@@ -22,7 +22,7 @@ import { defineContent } from '@blog/content';
 import { darkColor } from '@design-system/ui/blog-preset';
 import {
   AUTHOR,
-  BUNDLE_GUARD_MARKERS,
+  BUNDLE_GUARDS,
   DIAGRAM_NAMES,
   LLMS_DOCS,
   LLMS_FACTS,
@@ -61,7 +61,9 @@ export default defineContent({
     },
   },
   sitemap: { ...SITEMAP_PRIORITY, staticPages: SITEMAP_STATIC_PAGES },
-  bundleGuards: { markers: BUNDLE_GUARD_MARKERS },
+  // 규칙 목록이 통째로 실린다 — 어느 코드가 어느 라우트의 것인가는 이
+  // 사이트의 어휘라 패키지가 채워 줄 반쪽이 없다.
+  bundleGuards: BUNDLE_GUARDS,
   llms: {
     indexIntro: LLMS_INTRO.index,
     fullIntro: LLMS_INTRO.full,

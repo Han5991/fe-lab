@@ -163,23 +163,120 @@ export const SITEMAP_STATIC_PAGES = [
   { path: ABOUT_PATH, priority: '0.7', lastmod: ABOUT_PAGE_MODIFIED },
 ] as const satisfies SitemapConfig['staticPages'];
 
-// ── 번들 누수 가드 마커 (check-bundle 배선 전용) ─────────────────────────────
+// ── 번들 규칙 (check-bundle 배선 전용) ───────────────────────────────────────
 //
-// admin 전용 코드가 공개 페이지 청크에 실리면 `pnpm build`의 check-bundle이
-// 실패한다(#326에서 실제로 있었던 누수의 회귀 가드). 마커는 minify를 살아남는
-// 문자열이어야 한다 — export 이름(Turbopack이 청크에 문자열로 등록), 문자열
-// 리터럴(Edge Function 이름), 라이브러리 클래스명. 각 마커는 admin 청크에
-// 실재해야 통과다(양성 대조 — 코드에서 이름을 바꾸면 여기도 함께 바꿀 것).
+// "어느 코드·값이 어느 라우트의 것인가"는 이 사이트의 어휘라 앱이 통째로
+// 선언한다 — 패키지는 스코프(페이지·도달 청크·산출물)를 평가할 뿐, admin이니
+// 서버 전용이니 하는 분류를 모른다. 규칙마다 음성(forbiddenIn)과
+// 양성(requiredIn — 마커가 살아 있음의 증명)이 짝이다: 코드에서 이름·문구를
+// 바꾸면 여기도 함께 바꿀 것(안 바꾸면 marker-dead로 빌드가 막히며 알려 준다).
+//
+// 마커는 minify를 살아남는 문자열이어야 한다 — export 이름(Turbopack이 청크에
+// 문자열로 등록), 문자열 리터럴, 라이브러리 클래스명.
 
-export const BUNDLE_GUARD_MARKERS = [
-  // domain/analytics의 admin 전용 계산 (overview.ts·derivedStats.ts)
-  'computeAnalyticsOverview',
-  'computeDerivedStats',
-  // Edge Function 이름 — lib/platform/adminApi.ts의 문자열 리터럴
-  'admin-analytics',
-  // 세션용 supabase-js의 auth 클라이언트 — domain/*/admin 배럴 분리가 지키는 것
-  'GoTrueClient',
-] as const satisfies BundleGuardsConfig['markers'];
+/**
+ * admin 라우트의 경로 접두. `domain/auth/adminAccess`의 `ADMIN_BASE_PATH`
+ * (`'/admin'`)와 짝이지만 직접 파생하지 않는다 — 이 모듈은 값 import가 금지고
+ * (순수 리터럴 계약), adminAccess는 import 0개를 유지해야 하는 모듈이라 어느
+ * 방향으로도 잇지 못한다. 대신 `contentValues.test.ts`가 두 값을 잠근다.
+ */
+export const ADMIN_PATH_PREFIX = '/admin/';
+
+/**
+ * 글 라우트의 경로 접두 — 패키지 소유 라우트(`POSTS_PATH`)의 사본.
+ * 같은 이유(값 import 금지)로 직접 파생하지 못하고 `contentValues.test.ts`가
+ * 잠근다.
+ */
+export const POSTS_PATH_PREFIX = '/posts/';
+
+// 스코프 조각 — 규칙들이 공유한다.
+const PUBLIC_CHUNKS = {
+  kind: 'chunks',
+  of: { notUnder: ADMIN_PATH_PREFIX },
+} as const;
+const ADMIN_CHUNKS = {
+  kind: 'chunks',
+  of: { under: ADMIN_PATH_PREFIX },
+} as const;
+const OUTSIDE_POSTS_CHUNKS = {
+  kind: 'chunks',
+  of: { notUnder: POSTS_PATH_PREFIX },
+} as const;
+const POSTS_CHUNKS = {
+  kind: 'chunks',
+  of: { under: POSTS_PATH_PREFIX },
+} as const;
+
+export const BUNDLE_GUARDS = [
+  // admin 전용 코드가 공개 청크에 실리면 실패 — #326에서 실제로 있었던 누수.
+  // 앞 둘은 domain/analytics의 admin 계산 export 이름, 셋째는 Edge Function
+  // 이름 리터럴, 넷째는 세션용 supabase-js(auth 클라이언트 클래스명 —
+  // domain/*/admin 배럴 분리가 지키는 것).
+  {
+    label: 'admin 전용 계산',
+    marker: 'computeAnalyticsOverview',
+    forbiddenIn: [PUBLIC_CHUNKS],
+    requiredIn: [ADMIN_CHUNKS],
+  },
+  {
+    label: 'admin 전용 계산',
+    marker: 'computeDerivedStats',
+    forbiddenIn: [PUBLIC_CHUNKS],
+    requiredIn: [ADMIN_CHUNKS],
+  },
+  {
+    label: 'admin Edge Function 클라이언트',
+    marker: 'admin-analytics',
+    forbiddenIn: [PUBLIC_CHUNKS],
+    requiredIn: [ADMIN_CHUNKS],
+  },
+  {
+    label: '세션용 supabase-js',
+    marker: 'GoTrueClient',
+    forbiddenIn: [PUBLIC_CHUNKS],
+    requiredIn: [ADMIN_CHUNKS],
+  },
+  // admin 대시보드의 차트 라이브러리 — 공개 페이지에는 차트가 없다.
+  {
+    label: 'admin 차트(Recharts)',
+    marker: 'recharts',
+    forbiddenIn: [PUBLIC_CHUNKS],
+    requiredIn: [ADMIN_CHUNKS],
+  },
+  // 글 상세에서만 지연 로드되는 것들 — 다른 라우트 청크에 실리면 실패.
+  {
+    label: '글 전용 다이어그램(Mermaid)',
+    marker: 'mermaid',
+    forbiddenIn: [OUTSIDE_POSTS_CHUNKS],
+    requiredIn: [POSTS_CHUNKS],
+  },
+  {
+    label: '글 전용 댓글(Giscus)',
+    marker: 'giscus.app',
+    forbiddenIn: [OUTSIDE_POSTS_CHUNKS],
+    requiredIn: [POSTS_CHUNKS],
+  },
+  // 서버/빌드 전용 값의 클라이언트 유입 — 설정 객체나 값 모듈의 그룹 객체를
+  // 클라이언트가 import하면 화면이 안 쓰는 값까지 번들에 실린다(위 "그룹
+  // 객체는 설정 배선 전용" 규칙이 막는 바로 그 사고 — 실제로 홈 히어로
+  // 소개문이 그렇게 샜다). llms 산문은 어떤 화면에도 렌더되지 않는 서버 전용
+  // 값이면서 `LLMS_INTRO` 그룹·설정 객체 어느 쪽이 새도 함께 실려 온다.
+  {
+    label: '서버 전용 값(llms 산문)',
+    marker: 'Deep-dive technical experiments in bundler architecture',
+    forbiddenIn: [{ kind: 'chunks' }, { kind: 'pages' }],
+    requiredIn: [{ kind: 'artifact', path: 'llms.txt' }],
+  },
+  // 구문 강조는 빌드 타임의 일이다(#319) — 하이라이트된 마크업(`class="token`)은
+  // 글 HTML에만 있고 어떤 청크에도 없다. 렌더가 클라이언트로 돌아가면 글
+  // HTML에서 마크업이 사라져 marker-dead로 걸린다.
+  {
+    label: '빌드 타임 구문 강조',
+    marker: 'class="token',
+    forbiddenIn: [{ kind: 'chunks' }],
+    requiredIn: [{ kind: 'pages', of: { under: POSTS_PATH_PREFIX } }],
+  },
+] as const satisfies BundleGuardsConfig;
 
 /**
  * sitemap의 `<priority>` 튜닝 — **어떤 글이 대표작인가**라는 편집 판단이라

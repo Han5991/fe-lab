@@ -10,7 +10,14 @@
  * 사라지고, 빌드는 그대로 성공합니다.
  */
 import { expect, test } from 'vitest';
-import { SITEMAP_PRIORITY, SITEMAP_STATIC_PAGES } from '@/content.values.mts';
+import {
+  ADMIN_PATH_PREFIX,
+  POSTS_PATH_PREFIX,
+  SITEMAP_PRIORITY,
+  SITEMAP_STATIC_PAGES,
+} from '@/content.values.mts';
+import { ADMIN_BASE_PATH } from '@/domain/auth/adminAccess';
+import { POSTS_PATH } from '@blog/content';
 import { getAllPosts } from '@/src/content';
 
 const posts = getAllPosts();
@@ -40,6 +47,21 @@ test('sitemap 정적 페이지는 후행 슬래시를 단 사이트 내부 경�
       true,
     );
   }
+});
+
+test('check-bundle의 admin 경로 접두는 실제 admin 라우트 계약에서 파생된 값이다', () => {
+  // 두 상수는 직접 잇지 못한다 — 값 모듈은 import 금지, adminAccess는 import
+  // 0개 유지(각 파일 주석 참고). 파생 대신 여기서 잠근다: admin 라우트를 옮기면
+  // 이 테스트가 값 모듈의 사본을 함께 고치라고 알린다. 어긋난 채 두면
+  // check-bundle이 admin 페이지를 공개로 분류해 marker-dead(전 마커)로 빌드가
+  // 막히지만, 그 메시지보다 이쪽이 원인을 바로 말해 준다.
+  expect(ADMIN_PATH_PREFIX).toBe(`${ADMIN_BASE_PATH}/`);
+});
+
+test('번들 규칙의 글 라우트 접두는 패키지 라우트 계약(POSTS_PATH)과 같다', () => {
+  // 값 모듈은 import 금지라 사본을 든다 — 어긋나면 글 전용 규칙(Mermaid·
+  // Giscus·구문 강조)이 글 페이지를 딴 무리로 분류해 marker-dead로 막힌다.
+  expect(POSTS_PATH_PREFIX).toBe(POSTS_PATH);
 });
 
 test('sitemap 정적 페이지의 lastmod는 YYYY-MM-DD다', () => {
