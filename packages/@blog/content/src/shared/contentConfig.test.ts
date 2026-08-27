@@ -46,11 +46,15 @@ test('bundleGuards를 안 주면 설정에 키 자체가 없다 — 미선언 = 
   expect('bundleGuards' in config).toBe(false);
 });
 
-test('bundleGuards는 준 값이 통째로 실린다 — 패키지가 채우는 반쪽이 없다', () => {
-  const guards = {
-    admin: { pathPrefix: '/admin/', markers: ['GoTrueClient'] },
-    serverOnly: [{ marker: 'server prose', artifact: 'llms.txt' }],
-  } as const;
+test('bundleGuards는 준 규칙 목록이 통째로 실린다 — 패키지가 채우는 반쪽이 없다', () => {
+  const guards = [
+    {
+      label: 'admin 전용 코드',
+      marker: 'GoTrueClient',
+      forbiddenIn: [{ kind: 'chunks', of: { notUnder: '/admin/' } }],
+      requiredIn: [{ kind: 'chunks', of: { under: '/admin/' } }],
+    },
+  ] as const;
   const config = defineTestContent({
     root: FIXTURE_ROOT,
     bundleGuards: guards,

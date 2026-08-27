@@ -179,61 +179,48 @@ export interface OgConfig {
 }
 
 /**
- * admin 전용 코드의 공개 페이지 누수 선언.
- *
- * 검사(`check-bundle`)는 산출물의 페이지 HTML을 `pathPrefix`로 공개/admin 두
- * 무리로 나누고, 각 무리가 도달하는 청크(HTML의 script 참조 + 청크가 다시
- * 여는 청크의 폐포)를 모아 마커와 대조한다. 마커가 공개 쪽에 있으면 누수
- * (`bundle-leak`), **admin 쪽에 없어도 실패다**(`marker-dead`) — 번들러가
- * export 이름을 문자열로 남기는 방식이 바뀌어 마커가 죽으면, 음성 검사만으로는
- * "누수 없음"과 "검사 무력화"가 구분되지 않는다(fail-closed).
+ * 페이지 집합 — 경로 접두 아래(`under`) 또는 그 여집합(`notUnder`).
+ * 접두 값(예: '/admin/')은 소비 사이트의 라우트 주소라 언제나 선언에서 온다.
  */
-export interface AdminBundleGuard {
-  /**
-   * admin 영역의 URL 경로 접두 (예: '/admin/'). 이 접두로 시작하는 페이지가
-   * admin, 나머지 전부가 공개다. **패키지에 기본값이 없다** — 소비 사이트의
-   * 라우트 주소라서, 어떤 기본값이든 특정 사이트의 하드코딩이다.
-   */
-  pathPrefix: string;
-  /**
-   * 금지 마커 — minify를 살아남는 문자열만 의미가 있다: 문자열 리터럴(Edge
-   * Function 이름), 라이브러리 클래스명(GoTrueClient), 그리고 Turbopack이
-   * 청크에 문자열로 등록하는 **export 이름**.
-   *
-   * 비어 있을 수 없다(타입이 막는다) — 마커 없는 선언은 검사가 아무것도 보지
-   * 않으면서 도는 척만 하는 상태다. 검사를 끄려면 마커를 비우는 게 아니라
-   * 선언 자체를 지운다.
-   */
-  markers: readonly [string, ...string[]];
-}
+export type PageSelector = { under: string } | { notUnder: string };
 
 /**
- * 서버/빌드 전용 값의 클라이언트 유입 선언.
- *
- * admin 누수와 다른 두 번째 계열이다: 설정 객체나 값 모듈의 그룹 객체를
- * 클라이언트 그래프가 import하면, 화면이 안 쓰는 값(llms 산문·og 팔레트)까지
- * 번들에 실린다 — 번들러는 객체 필드를 못 털어낸다. 마커는 **어떤 페이지
- * HTML·청크에도** 없어야 하고, 대신 `artifact`(outDir 기준 상대 경로)에는
- * **있어야 한다** — 산출물이 마커의 살아 있음을 증명하는 앵커라, 값이 바뀌어
- * 마커가 죽으면 admin 계열과 같은 원리로 검사가 실패한다.
- *
- * 그래서 마커는 "화면에 렌더될 일이 없는 서버 전용 산문"에서 골라야 한다 —
- * 화면에도 나가는 값(사이트 설명 등)을 넣으면 정상 렌더가 누수로 잡힌다.
+ * 마커를 찾을 자리 — **패키지가 실제로 계산하는 것들만** 어휘로 갖는다:
+ * 페이지 HTML, 페이지가 도달하는 청크(script 참조 + 청크가 파일명 문자열로
+ * 여는 지연 로드의 폐포), 산출물 파일. "admin"이니 "서버 전용"이니 하는 분류는
+ * 소비자의 말이라 여기 없다 — 그 이름은 규칙의 `label`로 소비자가 붙인다.
  */
-export interface ServerOnlyMarker {
+export type MarkerScope =
+  | { kind: 'chunks'; of?: PageSelector }
+  | { kind: 'pages'; of?: PageSelector }
+  | { kind: 'artifact'; path: string };
+
+/**
+ * 번들 규칙 하나 — 마커는 `forbiddenIn`의 모든 스코프에 없어야 하고,
+ * `requiredIn`의 모든 스코프에 있어야 한다.
+ *
+ * `requiredIn`이 규칙마다 필수(비어 있을 수 없는 튜플)인 것이 요점이다:
+ * 양성 대조 없는 음성 검사는 마커가 죽는 순간(코드 이름 변경, 번들러 출력
+ * 변화) "누수 없음"과 "검사 무력화"를 구분하지 못한다. 모든 규칙이 자기
+ * 마커의 살아 있음을 어디서 증명할지 함께 선언한다(fail-closed).
+ *
+ * 마커는 minify를 살아남는 문자열만 의미가 있다: 문자열 리터럴, 라이브러리
+ * 클래스명, Turbopack이 청크에 문자열로 등록하는 export 이름.
+ */
+export interface BundleRule {
+  /** 위반 메시지에 쓸 이 규칙의 이름 — 분류 어휘는 소비자가 정한다 */
+  label: string;
   marker: string;
-  /** 마커가 반드시 존재해야 하는 산출물 — outDir 기준 상대 경로 (예: 'llms.txt') */
-  artifact: string;
+  forbiddenIn: readonly [MarkerScope, ...MarkerScope[]];
+  requiredIn: readonly [MarkerScope, ...MarkerScope[]];
 }
 
 /**
- * 번들 누수 가드 — 두 계열이 각각 선택이고, 선언하면 통째다. 패키지에 어느
- * 계열의 기본값도 없다: 경로 접두·마커·산문 전부 소비 사이트의 값이다.
+ * 번들 누수 가드 — 규칙의 목록이 곧 선언이다. 패키지에 기본 규칙이 없다
+ * (경로 접두·마커·산출물 이름 전부 소비 사이트의 값이다). 비어 있을 수 없다 —
+ * 검사를 끄려면 선언 자체를 지운다.
  */
-export interface BundleGuardsConfig {
-  admin?: AdminBundleGuard;
-  serverOnly?: readonly [ServerOnlyMarker, ...ServerOnlyMarker[]];
-}
+export type BundleGuardsConfig = readonly [BundleRule, ...BundleRule[]];
 
 export interface ThumbnailsConfig {
   /** 표시 최대 폭(FeaturedPost가 컨테이너 전체 폭). 작은 원본은 확대하지 않음 */
@@ -411,8 +398,8 @@ export interface ContentUserConfig extends Pick<
   };
   thumbnails?: Partial<ThumbnailsConfig>;
   /**
-   * `Partial`이 아닌 것이 의도다 — admin 경로도 마커도 그 사이트의 값이라
-   * 패키지가 반쪽을 채워 줄 수 없다. 선언하려면 통째로, 안 하면 검사 없음.
+   * 규칙 목록이 통째로 실린다 — 접두·마커·산출물 이름 전부 그 사이트의 값이라
+   * 패키지가 채워 줄 반쪽이 없다. 선언하면 규칙 1개 이상, 안 하면 검사 없음.
    */
   bundleGuards?: BundleGuardsConfig;
 }

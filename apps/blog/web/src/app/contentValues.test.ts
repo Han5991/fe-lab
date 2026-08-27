@@ -12,10 +12,12 @@
 import { expect, test } from 'vitest';
 import {
   ADMIN_PATH_PREFIX,
+  POSTS_PATH_PREFIX,
   SITEMAP_PRIORITY,
   SITEMAP_STATIC_PAGES,
 } from '@/content.values.mts';
 import { ADMIN_BASE_PATH } from '@/domain/auth/adminAccess';
+import { POSTS_PATH } from '@blog/content';
 import { getAllPosts } from '@/src/content';
 
 const posts = getAllPosts();
@@ -54,6 +56,12 @@ test('check-bundle의 admin 경로 접두는 실제 admin 라우트 계약에서
   // check-bundle이 admin 페이지를 공개로 분류해 marker-dead(전 마커)로 빌드가
   // 막히지만, 그 메시지보다 이쪽이 원인을 바로 말해 준다.
   expect(ADMIN_PATH_PREFIX).toBe(`${ADMIN_BASE_PATH}/`);
+});
+
+test('번들 규칙의 글 라우트 접두는 패키지 라우트 계약(POSTS_PATH)과 같다', () => {
+  // 값 모듈은 import 금지라 사본을 든다 — 어긋나면 글 전용 규칙(Mermaid·
+  // Giscus·구문 강조)이 글 페이지를 딴 무리로 분류해 marker-dead로 막힌다.
+  expect(POSTS_PATH_PREFIX).toBe(POSTS_PATH);
 });
 
 test('sitemap 정적 페이지의 lastmod는 YYYY-MM-DD다', () => {

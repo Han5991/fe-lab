@@ -1,12 +1,18 @@
 import { expect, test, vi } from 'vitest';
 import {
   chunkClosure,
-  classifyChunkRefs,
+  checkRules,
   collectChunkRefs,
+  describeScope,
+  findMarkerIn,
   main,
-  runCheckBundle,
+  selectPages,
+  type ScopeInputs,
 } from './check-bundle.ts';
-import type { BundleGuardsConfig } from '../shared/contentConfig.ts';
+import type {
+  BundleGuardsConfig,
+  BundleRule,
+} from '../shared/contentConfig.ts';
 import type { ContentContext } from './context.ts';
 
 /** 청크 stem은 실제 산출물처럼 해시 모양으로 — 우연한 부분 일치가 없어야 한다. */
@@ -15,14 +21,28 @@ const page = (...chunks: string[]) =>
     .map(c => `<script src="/_next/static/chunks/${c}" async></script>`)
     .join('')}</head><body></body></html>`;
 
-// 패키지에는 기본값이 없다 — 테스트가 곧 이 축을 선언하는 소비 사이트다.
-const adminGuards = (
-  markers: NonNullable<BundleGuardsConfig['admin']>['markers'],
-): BundleGuardsConfig => ({
-  admin: { pathPrefix: '/admin/', markers },
+const inputs = (over: Partial<ScopeInputs>): ScopeInputs => ({
+  pages: new Map(),
+  sources: new Map(),
+  artifacts: new Map(),
+  ...over,
 });
 
-const NO_ARTIFACTS: ReadonlyMap<string, string | null> = new Map();
+// 패키지에는 기본 규칙이 없다 — 테스트가 곧 규칙을 선언하는 소비 사이트다.
+// "admin"이라는 말이 이 파일(소비자 역할)에만 있고 구현에는 없다는 것이 요점.
+const ADMIN_RULE: BundleRule = {
+  label: 'admin 전용 코드',
+  marker: 'GoTrueClient',
+  forbiddenIn: [{ kind: 'chunks', of: { notUnder: '/admin/' } }],
+  requiredIn: [{ kind: 'chunks', of: { under: '/admin/' } }],
+};
+
+const SERVER_RULE: BundleRule = {
+  label: '서버 전용 값',
+  marker: 'llms-only prose',
+  forbiddenIn: [{ kind: 'chunks' }, { kind: 'pages' }],
+  requiredIn: [{ kind: 'artifact', path: 'llms.txt' }],
+};
 
 // ── main: 미선언 스킵 ────────────────────────────────────────────────────────
 
@@ -87,205 +107,175 @@ test('chunkClosure: 존재하지 않는 청크 참조는 무시한다', () => {
   );
 });
 
-// ── classifyChunkRefs ────────────────────────────────────────────────────────
+// ── selectPages ──────────────────────────────────────────────────────────────
 
-test('classifyChunkRefs: pathPrefix로 공개/admin 참조를 가른다', () => {
+test('selectPages: under는 접두 아래를, notUnder는 그 여집합을 고른다', () => {
   const pages = new Map([
-    ['/', page('pub111.js')],
-    ['/posts/a/', page('pub111.js', 'pub222.js')],
-    ['/admin/', page('adm111.js')],
-    ['/admin/analytics/', page('adm111.js', 'adm222.js')],
+    ['/', 'home'],
+    ['/posts/a/', 'post'],
+    ['/admin/', 'admin'],
+    ['/admin/analytics/', 'analytics'],
   ]);
-  const { publicRefs, adminRefs } = classifyChunkRefs(pages, '/admin/');
-  expect(publicRefs).toStrictEqual(new Set(['pub111.js', 'pub222.js']));
-  expect(adminRefs).toStrictEqual(new Set(['adm111.js', 'adm222.js']));
+  expect([...selectPages(pages, { under: '/admin/' }).keys()]).toStrictEqual([
+    '/admin/',
+    '/admin/analytics/',
+  ]);
+  expect([...selectPages(pages, { notUnder: '/admin/' }).keys()]).toStrictEqual(
+    ['/', '/posts/a/'],
+  );
+  expect(selectPages(pages).size).toBe(4);
 });
 
-// ── admin 계열 ───────────────────────────────────────────────────────────────
+// ── findMarkerIn ─────────────────────────────────────────────────────────────
 
-test('admin 마커가 admin 청크에만 있으면 통과한다', () => {
-  const pages = new Map([
-    ['/', page('pub111.js')],
-    ['/admin/', page('adm111.js')],
-  ]);
-  const sources = new Map([
-    ['pub111.js', 'clean'],
-    ['adm111.js', 'computeAnalyticsOverview'],
-  ]);
+test('findMarkerIn(chunks): 셀렉터 페이지의 도달 폐포에서 마커 위치를 찾는다', () => {
+  const io = inputs({
+    pages: new Map([
+      ['/', page('pub111.js')],
+      ['/admin/', page('adm111.js')],
+    ]),
+    sources: new Map([
+      ['pub111.js', 'loadChunk("lazy99")'],
+      ['lazy99.js', 'MARK'],
+      ['adm111.js', 'MARK'],
+    ]),
+  });
+  // 전이 청크(lazy99)가 잡히는 것이 요점 — HTML만 보면 놓치는 자리.
   expect(
-    runCheckBundle(
-      pages,
-      sources,
-      adminGuards(['computeAnalyticsOverview']),
-      NO_ARTIFACTS,
-    ),
+    findMarkerIn({ kind: 'chunks', of: { notUnder: '/admin/' } }, 'MARK', io),
+  ).toStrictEqual(['lazy99.js']);
+  expect(
+    findMarkerIn({ kind: 'chunks', of: { under: '/admin/' } }, 'MARK', io),
+  ).toStrictEqual(['adm111.js']);
+});
+
+test('findMarkerIn(artifact): 없는 파일(null)은 "없다"로 수렴한다', () => {
+  const io = inputs({ artifacts: new Map([['llms.txt', null]]) });
+  expect(
+    findMarkerIn({ kind: 'artifact', path: 'llms.txt' }, 'MARK', io),
   ).toStrictEqual([]);
 });
 
-test('공개 페이지가 직접 참조하는 청크의 admin 마커는 bundle-leak', () => {
-  const pages = new Map([
-    ['/', page('pub111.js')],
-    ['/admin/', page('adm111.js')],
-  ]);
-  const sources = new Map([
-    ['pub111.js', 'computeAnalyticsOverview'],
-    ['adm111.js', 'computeAnalyticsOverview'],
-  ]);
-  const rules = runCheckBundle(
-    pages,
-    sources,
-    adminGuards(['computeAnalyticsOverview']),
-    NO_ARTIFACTS,
-  ).map(v => v.rule);
-  expect(rules).toStrictEqual(['bundle-leak']);
+// ── checkRules ───────────────────────────────────────────────────────────────
+
+test('마커가 요구 스코프에만 있으면 통과한다', () => {
+  const io = inputs({
+    pages: new Map([
+      ['/', page('pub111.js')],
+      ['/admin/', page('adm111.js')],
+    ]),
+    sources: new Map([
+      ['pub111.js', 'clean'],
+      ['adm111.js', 'GoTrueClient'],
+    ]),
+  });
+  expect(checkRules([ADMIN_RULE], io)).toStrictEqual([]);
 });
 
-test('전이로만 도달하는 청크의 admin 마커도 bundle-leak — HTML만 보면 놓치는 자리', () => {
-  const pages = new Map([
-    ['/', page('pub111.js')],
-    ['/admin/', page('adm111.js')],
-  ]);
-  const sources = new Map([
-    ['pub111.js', 'loadChunk("lazy99")'],
-    ['lazy99.js', 'computeAnalyticsOverview'],
-    ['adm111.js', 'computeAnalyticsOverview'],
-  ]);
-  const rules = runCheckBundle(
-    pages,
-    sources,
-    adminGuards(['computeAnalyticsOverview']),
-    NO_ARTIFACTS,
-  ).map(v => v.rule);
-  expect(rules).toStrictEqual(['bundle-leak']);
+test('금지 스코프의 마커는 leak — 공유 청크도 금지 스코프에 들면 잡힌다', () => {
+  const io = inputs({
+    pages: new Map([
+      ['/', page('shared1.js')],
+      ['/admin/', page('shared1.js')],
+    ]),
+    sources: new Map([['shared1.js', 'GoTrueClient']]),
+  });
+  const rules = checkRules([ADMIN_RULE], io).map(v => v.rule);
+  expect(rules).toStrictEqual(['leak']);
 });
 
-test('공개·admin이 공유하는 청크의 admin 마커도 bundle-leak — 공개가 로드하는 사실이 기준', () => {
-  const pages = new Map([
-    ['/', page('shared1.js')],
-    ['/admin/', page('shared1.js')],
+test('요구 스코프에 마커가 없으면 marker-dead — 검사 무력화를 잡는 양성 대조', () => {
+  const io = inputs({
+    pages: new Map([
+      ['/', page('pub111.js')],
+      ['/admin/', page('adm111.js')],
+    ]),
+    sources: new Map([
+      ['pub111.js', 'clean'],
+      ['adm111.js', 'clean'],
+    ]),
+  });
+  expect(checkRules([ADMIN_RULE], io).map(v => v.rule)).toStrictEqual([
+    'marker-dead',
   ]);
-  const sources = new Map([['shared1.js', 'computeAnalyticsOverview']]);
-  const rules = runCheckBundle(
-    pages,
-    sources,
-    adminGuards(['computeAnalyticsOverview']),
-    NO_ARTIFACTS,
-  ).map(v => v.rule);
-  expect(rules).toStrictEqual(['bundle-leak']);
 });
 
-test('admin 마커가 admin 청크 어디에도 없으면 marker-dead — 검사 무력화를 잡는 양성 대조', () => {
-  const pages = new Map([
-    ['/', page('pub111.js')],
-    ['/admin/', page('adm111.js')],
+test('서버 전용 모양의 규칙 — 청크·페이지 금지에 산출물 앵커', () => {
+  const clean = inputs({
+    pages: new Map([['/', page('pub111.js')]]),
+    sources: new Map([['pub111.js', 'clean']]),
+    artifacts: new Map([['llms.txt', 'llms-only prose']]),
+  });
+  expect(checkRules([SERVER_RULE], clean)).toStrictEqual([]);
+
+  const leaked = inputs({
+    pages: new Map([['/', page('pub111.js')]]),
+    sources: new Map([['pub111.js', 'x llms-only prose y']]),
+    artifacts: new Map([['llms.txt', 'llms-only prose']]),
+  });
+  expect(checkRules([SERVER_RULE], leaked).map(v => v.rule)).toStrictEqual([
+    'leak',
   ]);
-  const sources = new Map([
-    ['pub111.js', 'clean'],
-    ['adm111.js', 'clean'],
+
+  const stale = inputs({
+    pages: new Map([['/', page('pub111.js')]]),
+    sources: new Map([['pub111.js', 'clean']]),
+    artifacts: new Map([['llms.txt', '문구가 바뀌었다']]),
+  });
+  expect(checkRules([SERVER_RULE], stale).map(v => v.rule)).toStrictEqual([
+    'marker-dead',
   ]);
-  const violations = runCheckBundle(
-    pages,
-    sources,
-    adminGuards(['computeAnalyticsOverview']),
-    NO_ARTIFACTS,
-  );
-  expect(violations.map(v => v.rule)).toStrictEqual(['marker-dead']);
 });
 
-test('admin 마커별로 독립 판정한다 — 산 마커의 누수와 죽은 마커가 함께 보고된다', () => {
-  const pages = new Map([
-    ['/', page('pub111.js')],
-    ['/admin/', page('adm111.js')],
-  ]);
-  const sources = new Map([
-    ['pub111.js', 'GoTrueClient'],
-    ['adm111.js', 'GoTrueClient'],
-  ]);
-  const violations = runCheckBundle(
-    pages,
-    sources,
-    adminGuards(['GoTrueClient', 'computeAnalyticsOverview']),
-    NO_ARTIFACTS,
-  );
+test('규칙은 독립이다 — 한 규칙의 leak과 다른 규칙의 marker-dead가 함께 보고된다', () => {
+  const io = inputs({
+    pages: new Map([
+      ['/', page('pub111.js')],
+      ['/admin/', page('adm111.js')],
+    ]),
+    sources: new Map([
+      ['pub111.js', 'x llms-only prose y'],
+      ['adm111.js', 'GoTrueClient'],
+    ]),
+    artifacts: new Map([['llms.txt', 'llms-only prose']]),
+  });
+  const rules: BundleGuardsConfig = [ADMIN_RULE, SERVER_RULE];
+  const violations = checkRules(rules, io);
   expect(violations.map(v => [v.rule, v.marker])).toStrictEqual([
-    ['bundle-leak', 'GoTrueClient'],
-    ['marker-dead', 'computeAnalyticsOverview'],
+    ['leak', 'llms-only prose'],
   ]);
 });
 
-// ── serverOnly 계열 ──────────────────────────────────────────────────────────
-
-const SERVER_GUARDS: BundleGuardsConfig = {
-  serverOnly: [{ marker: 'llms-only prose', artifact: 'llms.txt' }],
-};
-
-test('서버 전용 마커가 앵커 산출물에만 있으면 통과한다', () => {
-  const pages = new Map([['/', page('pub111.js')]]);
-  const sources = new Map([['pub111.js', 'clean']]);
-  const artifacts = new Map([['llms.txt', '# doc\nllms-only prose here']]);
-  expect(
-    runCheckBundle(pages, sources, SERVER_GUARDS, artifacts),
-  ).toStrictEqual([]);
-});
-
-test('서버 전용 마커가 청크에 있으면 server-leak — 설정/그룹 객체 유입', () => {
-  const pages = new Map([['/', page('pub111.js')]]);
-  const sources = new Map([['pub111.js', 'x "llms-only prose" y']]);
-  const artifacts = new Map([['llms.txt', 'llms-only prose']]);
-  const rules = runCheckBundle(pages, sources, SERVER_GUARDS, artifacts).map(
-    v => v.rule,
-  );
-  expect(rules).toStrictEqual(['server-leak']);
-});
-
-test('서버 전용 마커는 admin 청크·페이지 HTML도 금지다 — 계열이 공개/admin 구분과 무관', () => {
-  const pages = new Map([['/admin/', 'x llms-only prose y']]);
-  const sources = new Map([['adm111.js', 'clean']]);
-  const artifacts = new Map([['llms.txt', 'llms-only prose']]);
-  const rules = runCheckBundle(pages, sources, SERVER_GUARDS, artifacts).map(
-    v => v.rule,
-  );
-  expect(rules).toStrictEqual(['server-leak']);
-});
-
-test('앵커 산출물이 없거나 마커를 잃으면 marker-dead — 값이 바뀌면 선언도 갱신', () => {
-  const pages = new Map([['/', page('pub111.js')]]);
-  const sources = new Map([['pub111.js', 'clean']]);
-  const missing = runCheckBundle(
-    pages,
-    sources,
-    SERVER_GUARDS,
-    new Map([['llms.txt', null]]),
-  ).map(v => v.rule);
-  expect(missing).toStrictEqual(['marker-dead']);
-
-  const stale = runCheckBundle(
-    pages,
-    sources,
-    SERVER_GUARDS,
-    new Map([['llms.txt', '문구가 바뀌었다']]),
-  ).map(v => v.rule);
-  expect(stale).toStrictEqual(['marker-dead']);
-});
-
-test('두 계열은 독립이다 — admin 통과 + serverOnly 누수가 함께 보고된다', () => {
-  const pages = new Map([
-    ['/', page('pub111.js')],
-    ['/admin/', page('adm111.js')],
+test('requiredIn이 여럿이면 전부에 있어야 한다 (AND)', () => {
+  const rule: BundleRule = {
+    label: '두 앵커',
+    marker: 'MARK',
+    forbiddenIn: [{ kind: 'pages', of: { notUnder: '/posts/' } }],
+    requiredIn: [
+      { kind: 'pages', of: { under: '/posts/' } },
+      { kind: 'artifact', path: 'a.txt' },
+    ],
+  };
+  const io = inputs({
+    pages: new Map([['/posts/a/', 'MARK']]),
+    artifacts: new Map([['a.txt', 'no marker here']]),
+  });
+  expect(checkRules([rule], io).map(v => v.rule)).toStrictEqual([
+    'marker-dead',
   ]);
-  const sources = new Map([
-    ['pub111.js', 'x "llms-only prose" y'],
-    ['adm111.js', 'GoTrueClient'],
-  ]);
-  const artifacts = new Map([['llms.txt', 'llms-only prose']]);
-  const violations = runCheckBundle(
-    pages,
-    sources,
-    {
-      admin: { pathPrefix: '/admin/', markers: ['GoTrueClient'] },
-      serverOnly: [{ marker: 'llms-only prose', artifact: 'llms.txt' }],
-    },
-    artifacts,
+});
+
+// ── describeScope ────────────────────────────────────────────────────────────
+
+test('describeScope: 위반 메시지가 스코프를 사람 말로 서술한다', () => {
+  expect(describeScope({ kind: 'chunks' })).toBe('전체 도달 청크');
+  expect(describeScope({ kind: 'chunks', of: { notUnder: '/admin/' } })).toBe(
+    "'/admin/' 밖 페이지의 도달 청크",
   );
-  expect(violations.map(v => v.rule)).toStrictEqual(['server-leak']);
+  expect(describeScope({ kind: 'pages', of: { under: '/posts/' } })).toBe(
+    "'/posts/' 아래 페이지의 페이지 HTML",
+  );
+  expect(describeScope({ kind: 'artifact', path: 'llms.txt' })).toBe(
+    '산출물 llms.txt',
+  );
 });

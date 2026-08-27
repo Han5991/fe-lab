@@ -21,14 +21,12 @@
 import { defineContent } from '@blog/content';
 import { darkColor } from '@design-system/ui/blog-preset';
 import {
-  ADMIN_PATH_PREFIX,
   AUTHOR,
-  BUNDLE_GUARD_MARKERS,
+  BUNDLE_GUARDS,
   DIAGRAM_NAMES,
   LLMS_DOCS,
   LLMS_FACTS,
   LLMS_INTRO,
-  SERVER_ONLY_MARKERS,
   SITE,
   SITEMAP_PRIORITY,
   SITEMAP_STATIC_PAGES,
@@ -63,12 +61,9 @@ export default defineContent({
     },
   },
   sitemap: { ...SITEMAP_PRIORITY, staticPages: SITEMAP_STATIC_PAGES },
-  // 계열마다 통째 선언이다(Partial 아님) — 경로 접두도 마커도 산문도 이
-  // 사이트의 값이라 패키지가 반쪽을 채워 줄 수 없다.
-  bundleGuards: {
-    admin: { pathPrefix: ADMIN_PATH_PREFIX, markers: BUNDLE_GUARD_MARKERS },
-    serverOnly: SERVER_ONLY_MARKERS,
-  },
+  // 규칙 목록이 통째로 실린다 — 어느 코드가 어느 라우트의 것인가는 이
+  // 사이트의 어휘라 패키지가 채워 줄 반쪽이 없다.
+  bundleGuards: BUNDLE_GUARDS,
   llms: {
     indexIntro: LLMS_INTRO.index,
     fullIntro: LLMS_INTRO.full,
