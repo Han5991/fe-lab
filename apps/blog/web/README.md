@@ -86,7 +86,7 @@ apps/blog/web/
 | `auth`              | `domain/auth`            | `shared`, `platform` — supabase 타입은 이 레이어에서 구조적 부분형으로 끝낸다                                                                                                                |
 | `app`               | `src`                    | `shared`, `analytics`, `auth`, `content-pkg`, 임의 외부 패키지. **platform·node 코어 금지** — Supabase 접근은 도메인 경유, fs는 `src/content.ts`가 조립한 `@blog/content` 로더 인스턴스의 일 |
 
-추가 규칙: 프로덕션 코드는 `*.test.*`를 import 못 함 / `src`는 `domain/*/…Repository`를 직접 찌르지 말고 배럴(`@/domain/analytics`, `@/domain/analytics/admin`)로 / `src`에서 `client.from()`·`.rpc()` 직접 호출 금지(`no-restricted-syntax`) / `domain`은 `src`를, `lib`은 `domain`·`src`를, `shared`는 `lib`·`domain`·`src`를 import 못 함.
+추가 규칙: 프로덕션 코드는 `*.test.*`를 import 못 함 / `src`는 `domain/*/…Repository`를 직접 찌르지 말고 배럴(`@/domain/analytics`, `@/domain/analytics/admin`)로 / `src`에서 `client.from()`·`.rpc()` 직접 호출 금지(`no-restricted-syntax`) / `domain`은 `src`를, `lib`은 `domain`·`src`를, `shared`는 `lib`·`domain`·`src`를 import 못 함. `shared`는 모든 레이어가 여는 유일한 폴더라 모듈 **모양**까지 잠근다 — 재수출(`export … from`)·모듈 최상위 문(부수효과, `'use client'` 포함)·`.tsx` 전면 금지. 입장 기준은 [`shared/README.md`](./shared/README.md).
 
 `lint`는 `--max-warnings=0`이고, `noInlineConfig: true` + `@eslint-community/eslint-comments/no-use`로 **인라인 `eslint-disable` 주석이 전면 금지**다. 예외는 주석이 아니라 `eslint.config.mjs`에 `files` 스코프로 적는다.
 

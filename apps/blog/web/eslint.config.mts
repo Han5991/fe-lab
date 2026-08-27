@@ -331,6 +331,20 @@ export default defineConfig([
   {
     // shared(최하단)는 어떤 상위 레이어도 import할 수 없습니다 — 모든 레이어가
     // 기대는 라우트 상수 같은 순수 계약만 둡니다(외부는 @blog/content만, boundaries).
+    //
+    // shared는 **모든 레이어가 여는 유일한 폴더**라, 여기 뚫린 구멍은 앱 전체가
+    // 공유한다. 그래서 import 방향(위 boundaries)에 더해 모듈의 **모양**까지 잠근다:
+    //
+    // (1) 재수출 금지 — `export … from` / `export * from`은 shared를 다른 모듈의
+    //     2차 문으로 만드는 세탁 통로다. 특히 @blog/content 재수출은 배럴 좁히기
+    //     (next.config의 optimizePackageImports가 '@blog/content' import 문만
+    //     좁힌다)를 우회해 node:fs가 클라이언트 번들로 새는 길을 다시 연다.
+    //     shared는 자기 선언만 내보낸다 — 패키지가 필요하면 소비자가 직접 연다.
+    // (2) 모듈 최상위 문(statement) 금지 — 어디서나 import되는 모듈이라 부수효과가
+    //     생기면 모든 청크에 함께 실린다(공개 배럴 규칙과 같은 이유). 'use client'
+    //     지시문도 여기 걸린다 — shared는 클라이언트 경계가 아니다. 파생 상수의
+    //     순수 함수 호출(`export const X = f(Y)`)은 문이 아니라 초기화라 걸리지
+    //     않는다 — transitions.ts가 그 형태다.
     files: ['shared/**/*.{ts,tsx}'],
     ignores: ['**/*.test.{ts,tsx}'],
     rules: {
@@ -351,6 +365,40 @@ export default defineConfig([
                 'shared는 최하단 레이어입니다. lib·domain·src를 import할 수 없습니다.',
             },
           ],
+        },
+      ],
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'ExportAllDeclaration',
+          message:
+            'shared에서 재수출(export * from)은 금지입니다 — shared가 다른 모듈의 2차 문이 되어 경계·배럴 최적화를 우회합니다. 자기 선언만 내보내세요.',
+        },
+        {
+          selector: 'ExportNamedDeclaration[source]',
+          message:
+            'shared에서 재수출(export … from)은 금지입니다 — 필요한 쪽이 원본 모듈을 직접 여세요.',
+        },
+        {
+          selector: 'Program > ExpressionStatement',
+          message:
+            'shared 모듈 최상위에는 문(statement)을 두지 않습니다 — 모든 레이어에 실려 가는 모듈이라 부수효과·지시문(use client)이 앱 전체에 퍼집니다.',
+        },
+      ],
+    },
+  },
+  {
+    // shared에는 컴포넌트가 없다 — .tsx 자체를 막는다. JSX 자동 런타임은 react
+    // import 없이 컴파일되므로 boundaries의 외부 의존 차단만으로는 못 잡는다.
+    // 컴포넌트는 src/, 여러 화면이 공유하는 컴포넌트도 src/components/shared/다.
+    files: ['shared/**/*.tsx'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'Program',
+          message:
+            'shared에는 .tsx(컴포넌트)를 두지 않습니다 — 순수 계약(.ts)만. 공유 컴포넌트는 src/components/shared/로.',
         },
       ],
     },
