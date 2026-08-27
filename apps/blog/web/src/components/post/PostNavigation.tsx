@@ -5,6 +5,7 @@ import { css, sva } from '@design-system/ui-lib/css';
 import type { RecipeVariant } from '@design-system/ui-lib/css';
 import type { PostNavItem } from '@blog/content';
 import { postPath } from '@blog/content';
+import { SERIES_PATH } from '@/shared/routes';
 
 interface PostNavigationProps {
   prev: PostNavItem | null;
@@ -154,7 +155,7 @@ export const PostNavigation = ({
             ) : (
               // 마지막 편. 여기서 끊기면 갈 곳이 없어 시리즈 목록으로 보낸다.
               <NavCard
-                href="/series/"
+                href={SERIES_PATH}
                 title="다른 시리즈 둘러보기"
                 direction="next"
                 label="시리즈 목록 →"

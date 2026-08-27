@@ -12,6 +12,7 @@ import Link from 'next/link';
 // 모듈 평가 시점에 node:fs를 당겨 오는 문제는 next.config.ts의
 // optimizePackageImports + 패키지 sideEffects:false가 번들에서 걸러 준다.
 import { postPath } from '@blog/content';
+import { ADMIN_ANALYTICS_PATH } from '@/shared/routes';
 
 function AdminOverviewContent() {
   const { data } = useAdminDashboardData();
@@ -157,7 +158,7 @@ function AdminOverviewContent() {
 
         {/* 상세 분석 링크 */}
         <Link
-          href="/admin/analytics/"
+          href={ADMIN_ANALYTICS_PATH}
           className={css({
             bg: 'paper.200',
             borderWidth: '[1px]',
@@ -445,7 +446,7 @@ export default function AdminPage() {
             className={css({ display: 'flex', alignItems: 'center', gap: '2' })}
           >
             <Link
-              href="/admin/analytics/"
+              href={ADMIN_ANALYTICS_PATH}
               className={css({
                 display: 'flex',
                 alignItems: 'center',

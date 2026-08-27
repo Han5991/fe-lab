@@ -1,4 +1,5 @@
 import { css } from '@design-system/ui-lib/css';
+import { postHeroKey } from '@/shared/transitions';
 import { DIAGRAMS, isDiagramName } from '@/src/components/diagram/registry';
 
 interface PostHeroProps {
@@ -34,7 +35,7 @@ export const PostHero = ({
   // 목록 카드는 실제 썸네일이 있는 글에만 data-hero-exit-key를 붙인다
   // (PostGridCard). 다이어그램으로 갈아끼워도 짝이 어긋나지 않도록 enter 키는
   // "썸네일 보유 여부" 기준으로 그대로 유지한다.
-  const heroEnterKey = thumbnailUrl ? `post-${slug}` : undefined;
+  const heroEnterKey = thumbnailUrl ? postHeroKey(slug) : undefined;
 
   if (Diagram) {
     return (

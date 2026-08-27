@@ -8,7 +8,7 @@ import { css } from '@design-system/ui-lib/css';
 // 모듈 스코프에서 supabase 클라이언트를 바인딩하므로, 판정 하나 때문에
 // 인증 세션 스택이 AdminGuard의 dynamic(ssr:false) 분리 밖(이 파일은 즉시
 // 로드된다)으로 끌려 나온다.
-import { isAdminLoginPath } from '@/domain/auth/adminAccess';
+import { isAdminLoginPath } from '@/shared/routes';
 
 const AdminGuard = dynamic(
   () => import('@/src/components/admin/AdminGuard').then(mod => mod.AdminGuard),

@@ -8,6 +8,7 @@ import {
 } from '@blog/content';
 import { getAllPostSummaries, getSeriesMeta } from '@/src/content';
 import { safeJsonLd } from '@blog/content';
+import { HOME_TRANSITION_ID } from '@/shared/transitions';
 import { buildHomeJsonLd, buildHomeMetadata } from './homeSeo';
 
 import { Hero, FeaturedPost, PostIndexRow } from '@/src/components/blog';
@@ -59,7 +60,7 @@ export default function HomePage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }}
       />
-      <PageBoundary transitionId="/">
+      <PageBoundary transitionId={HOME_TRANSITION_ID}>
         <div className={cx(css({ bg: 'paper.50' }), railGutter)}>
           <div
             className={cx(

@@ -2,7 +2,8 @@
 
 import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
-import { ADMIN_LOGIN_PATH, authRepository } from '@/domain/auth';
+import { authRepository } from '@/domain/auth';
+import { ADMIN_LOGIN_PATH } from '@/shared/routes';
 
 export function useAdminLogout() {
   const router = useRouter();

@@ -7,6 +7,7 @@ import { Label } from '@/src/components/blog';
 import { PageBoundary } from '@/src/components/PageBoundary';
 import { railGutter, railColumn } from '@/src/components/Rail';
 import { archivePath, postPath } from '@blog/content';
+import { ABOUT_TRANSITION_ID } from '@/shared/transitions';
 
 import { getAboutStats, getSeriesPostCounts } from './counts';
 import { FEATURED_SERIES } from './featuredSeries';
@@ -27,7 +28,7 @@ export default function AboutPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }}
       />
-      <PageBoundary transitionId="/about">
+      <PageBoundary transitionId={ABOUT_TRANSITION_ID}>
         <div className={css({ bg: 'paper.50' })}>
           {/* Header */}
           {/* 배경은 화면 끝까지 가야 하므로 거터는 <header> 안쪽에 둔다 —

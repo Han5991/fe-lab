@@ -12,11 +12,12 @@
 import { expect, test } from 'vitest';
 import {
   ADMIN_PATH_PREFIX,
+  LLMS_DOCS,
   POSTS_PATH_PREFIX,
   SITEMAP_PRIORITY,
   SITEMAP_STATIC_PAGES,
 } from '@/content.values.mts';
-import { ADMIN_BASE_PATH } from '@/domain/auth/adminAccess';
+import { ABOUT_PATH, ADMIN_BASE_PATH, SERIES_PATH } from '@/shared/routes';
 import { POSTS_PATH } from '@blog/content';
 import { getAllPosts } from '@/src/content';
 
@@ -50,12 +51,23 @@ test('sitemap 정적 페이지는 후행 슬래시를 단 사이트 내부 경�
 });
 
 test('check-bundle의 admin 경로 접두는 실제 admin 라우트 계약에서 파생된 값이다', () => {
-  // 두 상수는 직접 잇지 못한다 — 값 모듈은 import 금지, adminAccess는 import
-  // 0개 유지(각 파일 주석 참고). 파생 대신 여기서 잠근다: admin 라우트를 옮기면
-  // 이 테스트가 값 모듈의 사본을 함께 고치라고 알린다. 어긋난 채 두면
-  // check-bundle이 admin 페이지를 공개로 분류해 marker-dead(전 마커)로 빌드가
-  // 막히지만, 그 메시지보다 이쪽이 원인을 바로 말해 준다.
+  // 두 상수는 직접 잇지 못한다 — 값 모듈은 import 금지(파일 주석 참고).
+  // 파생 대신 여기서 잠근다: admin 라우트를 옮기면 이 테스트가 값 모듈의
+  // 사본을 함께 고치라고 알린다. 어긋난 채 두면 check-bundle이 admin 페이지를
+  // 공개로 분류해 marker-dead(전 마커)로 빌드가 막히지만, 그 메시지보다
+  // 이쪽이 원인을 바로 말해 준다.
   expect(ADMIN_PATH_PREFIX).toBe(`${ADMIN_BASE_PATH}/`);
+});
+
+test('sitemap·llms에 배선된 정적 페이지 경로는 shared/routes의 라우트 계약과 같다', () => {
+  // 값 모듈은 import 금지라 about·series 경로의 비공개 사본을 든다 — 라우트를
+  // 옮기면 nav·canonical(shared/routes 소비자)만 고쳐지고 sitemap·llms가 옛
+  // 주소를 내보내는 사고를 여기서 잡는다.
+  expect(SITEMAP_STATIC_PAGES.map(page => page.path)).toContain(ABOUT_PATH);
+  expect(LLMS_DOCS.extra.map(doc => doc.path)).toEqual([
+    SERIES_PATH,
+    ABOUT_PATH,
+  ]);
 });
 
 test('번들 규칙의 글 라우트 접두는 패키지 라우트 계약(POSTS_PATH)과 같다', () => {

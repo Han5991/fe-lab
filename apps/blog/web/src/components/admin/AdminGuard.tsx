@@ -3,13 +3,12 @@
 import { type ReactNode, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useSuspenseQuery } from '@tanstack/react-query';
+import { authRepository, isAdminEmail } from '@/domain/auth';
 import {
   ADMIN_LOGIN_PATH,
   ADMIN_LOGIN_UNAUTHORIZED_PATH,
-  authRepository,
-  isAdminEmail,
   isAdminLoginPath,
-} from '@/domain/auth';
+} from '@/shared/routes';
 
 // admin UI를 로컬(pnpm dev)에서 로그인 없이 개발/확인하기 위한 우회.
 // NODE_ENV로 자동 게이팅된다 → 프로덕션 빌드에선 false로 인라인되어 아래 우회

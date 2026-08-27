@@ -5,7 +5,7 @@
  * meta description과 눈에 보이는 소개 문구가 갈라지지 않게 하나만 둡니다.
  */
 import contentConfig from '@/content.config.mts';
-import { SERIES_PATH } from '@/content.values.mts';
+import { SERIES_PATH } from '@/shared/routes';
 import type { Metadata } from 'next';
 
 // 사이트 정체성·저자·SEO 예산은 해석된 설정에서 온다 — 값의 출처는
