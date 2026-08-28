@@ -10,9 +10,9 @@
  * 부수효과라, 여기서 뭘 가져가든(순수 판정 하나라도) 인증 세션용 supabase-js
  * 전체가 번들에 딸려온다 — 번들러는 부수효과 있는 모듈을 못 털어낸다
  * (analytics가 index/admin 두 배럴로 갈라진 것과 같은 이유). `isAdminEmail`
- * **판정만** 필요한 소비자는 `@/domain/auth/adminAccess`를 직접 import할 것 —
+ * **판정만** 필요한 소비자는 `@/src/domain/auth/adminAccess`를 직접 import할 것 —
  * 그 모듈은 import가 없는 순수 함수다. 경로 상수(`ADMIN_LOGIN_PATH`·
- * `isAdminLoginPath`…)는 이 도메인이 아니라 `@/shared/routes`(최하단 레이어)가
+ * `isAdminLoginPath`…)는 이 도메인이 아니라 `@/src/shared/routes`(최하단 레이어)가
  * 단일 출처다.
  */
 import { client } from '../../lib/platform/client';

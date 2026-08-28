@@ -5,7 +5,7 @@ import { renderHook } from '@testing-library/react';
 const { incrementViewCount } = vi.hoisted(() => ({
   incrementViewCount: vi.fn(() => Promise.resolve()),
 }));
-vi.mock('@/domain/analytics', () => ({ incrementViewCount }));
+vi.mock('@/src/domain/analytics', () => ({ incrementViewCount }));
 
 import { useViewCount } from './useViewCount';
 

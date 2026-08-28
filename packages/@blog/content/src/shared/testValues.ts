@@ -18,7 +18,6 @@ import {
   type LlmsDocsConfig,
   type OgConfig,
   type OgPalette,
-  type RegistriesConfig,
   type SitemapConfig,
 } from './contentConfig.ts';
 
@@ -116,7 +115,7 @@ export type TestContentOverrides = Omit<
   'root' | 'registries' | 'og'
 > & {
   root: string;
-  registries?: Partial<RegistriesConfig>;
+  registries?: Partial<ContentUserConfig['registries']>;
   og?: Partial<Omit<OgConfig, 'palette'>> & { palette?: Partial<OgPalette> };
 };
 

@@ -3,53 +3,65 @@
  *
  * repository.ts 와 validate-posts.ts 에서 동일한 로직이 중복 구현되어 있었습니다.
  * - 두 곳 모두 `.md` / `.mdx` 를 재귀 수집
- * - 메타 파일(PLAN.md 등) 제외 규칙이 별개로 관리되어 표류 가능
+ * - 메타 파일 제외 규칙이 별개로 관리되어 표류 가능
  *
  * 이 모듈로 통합하여 동작 불일치를 방지합니다.
+ *
+ * 어떤 파일명이 메타 파일(작업 노트)인지는 **이 패키지가 정하지 않는다** —
+ * 그 사이트 글쓰기 워크플로의 어휘라 설정(`registries.metaFilenames`)이 주고,
+ * 여기는 받은 집합으로 판정만 한다(check-bundle의 BUNDLE_GUARDS와 같은 분리).
  */
 
 import { readdirSync, statSync } from 'node:fs';
 import { basename, join } from 'node:path';
 
-/** repository.ts 와 validate-posts.ts 모두가 스킵하는 메타 파일 이름 목록 */
-const META_FILENAMES = new Set(['PLAN.md', 'THUMBNAIL_LOG.md', 'STUDY_LOG.md']);
-
 /**
  * 파일 이름만으로 빌드 대상에서 제외할 메타 파일인지 판단합니다.
  *
  * @param absPath 절대 경로 또는 파일 이름
+ * @param metaFilenames 이름으로 제외할 파일 집합 — `registries.metaFilenames`
  */
-export function isMetaFile(absPath: string): boolean {
+export function isMetaFile(
+  absPath: string,
+  metaFilenames: ReadonlySet<string>,
+): boolean {
   // host OS 기준 path.basename으로 파일명만 추출(빌드는 POSIX에서 실행).
   // (이전 'absPath.split("/")' 보다 견고하나, POSIX에서는 백슬래시 경로를 분리하지 않음)
-  return META_FILENAMES.has(basename(absPath));
+  return metaFilenames.has(basename(absPath));
 }
 
 /**
  * 디렉토리를 재귀 순회하여 `.md` / `.mdx` 파일의 절대 경로를 모두 반환합니다.
  *
- * 메타 파일(META_FILENAMES)은 자동으로 제외됩니다.
+ * 메타 파일(`metaFilenames`에 이름이 있는 파일)은 자동으로 제외됩니다.
  *
  * 내부 누적 배열은 외부 노출하지 않고 private helper로 격리합니다.
  * (이전 시그니처는 acc를 public API에 두어 호출자가 실수로 외부 배열을 넘기면
  * 의도치 않게 오염되는 위험이 있었음)
  */
-export function collectMarkdownFiles(dir: string): string[] {
+export function collectMarkdownFiles(
+  dir: string,
+  metaFilenames: ReadonlySet<string>,
+): string[] {
   const acc: string[] = [];
-  walk(dir, acc);
+  walk(dir, metaFilenames, acc);
   return acc;
 }
 
-function walk(dir: string, acc: string[]): void {
+function walk(
+  dir: string,
+  metaFilenames: ReadonlySet<string>,
+  acc: string[],
+): void {
   for (const item of readdirSync(dir)) {
     const full = join(dir, item);
     const stat = statSync(full);
     if (stat.isDirectory()) {
-      walk(full, acc);
+      walk(full, metaFilenames, acc);
       continue;
     }
     if (item.endsWith('.md') || item.endsWith('.mdx')) {
-      if (!isMetaFile(full)) {
+      if (!isMetaFile(full, metaFilenames)) {
         acc.push(full);
       }
     }

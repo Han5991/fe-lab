@@ -27,6 +27,7 @@ import {
   LLMS_DOCS,
   LLMS_FACTS,
   LLMS_INTRO,
+  META_FILENAMES,
   SITE,
   SITEMAP_PRIORITY,
   SITEMAP_STATIC_PAGES,
@@ -38,7 +39,7 @@ export default defineContent({
   site: SITE,
   author: AUTHOR,
   timezone: TIMEZONE,
-  registries: { diagramNames: DIAGRAM_NAMES },
+  registries: { diagramNames: DIAGRAM_NAMES, metaFilenames: META_FILENAMES },
   og: {
     /**
      * OG 카드 색은 **디자인 토큰에서 뽑는다**. satori/resvg가 CSS 변수도 oklch도

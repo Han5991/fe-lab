@@ -41,6 +41,7 @@ export function createContent(config: ContentConfig): ContentApi {
     isDevelopment,
     excerptMaxLength: config.seo.descriptionMaxLength,
     isSeriesFolder: name => seriesReader.isSeriesFolder(name),
+    metaFilenames: config.registries.metaFilenames,
   });
   const service = createPostService({
     readAllPosts: repository.readAllPosts,

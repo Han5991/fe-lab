@@ -4,7 +4,7 @@ import { TIMEZONE } from '@/content.values.mts';
 import { useState } from 'react';
 import { css } from '@design-system/ui-lib/css';
 import { getKSTCutoffDate } from '@blog/content';
-import type { TrendPoint } from '@/domain/analytics';
+import type { TrendPoint } from '@/src/domain/analytics';
 
 type FilterType = 'all' | '7days' | '30days' | 'custom';
 

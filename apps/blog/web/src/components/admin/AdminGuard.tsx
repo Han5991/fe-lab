@@ -3,12 +3,12 @@
 import { type ReactNode, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { authRepository, isAdminEmail } from '@/domain/auth';
+import { authRepository, isAdminEmail } from '@/src/domain/auth';
 import {
   ADMIN_LOGIN_PATH,
   ADMIN_LOGIN_UNAUTHORIZED_PATH,
   isAdminLoginPath,
-} from '@/shared/routes';
+} from '@/src/shared/routes';
 
 // admin UI를 로컬(pnpm dev)에서 로그인 없이 개발/확인하기 위한 우회.
 // NODE_ENV로 자동 게이팅된다 → 프로덕션 빌드에선 false로 인라인되어 아래 우회
@@ -39,7 +39,7 @@ export function AdminGuard({ children }: { children: ReactNode }) {
       return;
     }
 
-    // 화면 쪽 관리자 판정 — 실제 강제는 Edge Function이 한다(domain/auth 참고).
+    // 화면 쪽 관리자 판정 — 실제 강제는 Edge Function이 한다(src/domain/auth 참고).
     if (!isAdminEmail(session.user.email)) {
       console.warn(`Unauthorized email attempt: ${session.user.email}`);
       void authRepository.signOutAdmin().then(() => {

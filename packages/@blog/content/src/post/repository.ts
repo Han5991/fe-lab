@@ -151,6 +151,7 @@ function collectPosts(
   deps: {
     isSeriesFolder: (seriesName: string) => boolean;
     excerptMaxLength: number;
+    metaFilenames: ReadonlySet<string>;
   },
 ): PostData[] {
   const results: PostData[] = [];
@@ -160,7 +161,7 @@ function collectPosts(
   const declaredSeries = new Map<string, boolean>();
   const parseOpts = { excerptMaxLength: deps.excerptMaxLength };
 
-  for (const fullPath of collectMarkdownFiles(dirPath)) {
+  for (const fullPath of collectMarkdownFiles(dirPath, deps.metaFilenames)) {
     const fileContents = readFileSync(fullPath, 'utf8');
     const post = parsePost(
       fileContents,
@@ -245,6 +246,8 @@ export interface RepositoryDeps {
   excerptMaxLength: number;
   /** 시리즈 선언 판정 — 같은 postsDir에 앵커한 SeriesReader의 것을 넘길 것 */
   isSeriesFolder: (seriesName: string) => boolean;
+  /** 이름만 보고 건너뛸 작업 노트 파일 — `registries.metaFilenames` */
+  metaFilenames: ReadonlySet<string>;
 }
 
 /**
@@ -253,8 +256,14 @@ export interface RepositoryDeps {
  * 개발 모드에서는 수정 사항이 즉시 반영되도록 매번 새로 읽습니다.
  */
 export function createRepository(deps: RepositoryDeps): Repository {
-  const { postsDir, isDevelopment, excerptMaxLength, isSeriesFolder } = deps;
-  const collectDeps = { isSeriesFolder, excerptMaxLength };
+  const {
+    postsDir,
+    isDevelopment,
+    excerptMaxLength,
+    isSeriesFolder,
+    metaFilenames,
+  } = deps;
+  const collectDeps = { isSeriesFolder, excerptMaxLength, metaFilenames };
   let cache: PostData[] | null = null;
 
   function readAllPosts(): PostData[] {

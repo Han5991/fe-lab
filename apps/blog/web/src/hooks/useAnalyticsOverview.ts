@@ -4,9 +4,9 @@ import { TIMEZONE } from '@/content.values.mts';
 import { useState, useEffect } from 'react';
 import { useAdminDashboardData } from './useAdminViews';
 import { getKSTDateISO, msUntilKSTMidnight } from '@blog/content';
-import { analyticsService } from '@/domain/analytics/admin';
-import { UNIQUES_ESTIMATE_RATIO } from '@/domain/analytics';
-import type { AnalyticsRange } from '@/domain/analytics';
+import { analyticsService } from '@/src/domain/analytics/admin';
+import { UNIQUES_ESTIMATE_RATIO } from '@/src/domain/analytics';
+import type { AnalyticsRange } from '@/src/domain/analytics';
 
 export { UNIQUES_ESTIMATE_RATIO };
 

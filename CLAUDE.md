@@ -54,8 +54,9 @@ The blog (`apps/blog/web/`) is a **statically generated (SSG) Next.js applicatio
 
 ```
 apps/blog/posts (원고)  →  packages/@blog/content  →  apps/blog/web
-                            shared → post → seo →      shared → lib/platform → domain/{analytics,auth} → src
-                            scripts → scripts/render → scripts/cli
+                            shared → post → seo →      src/shared → src/lib/platform → src/domain/{analytics,auth}
+                            scripts → scripts/render     → src 나머지(app 레이어: app·components·hooks)
+                            → scripts/cli
 ```
 
 - **`@blog/content` 내부**: `shared`(node 코어만) → `post`(+gray-matter) → `seo`(순수 계산) →
@@ -65,18 +66,20 @@ apps/blog/posts (원고)  →  packages/@blog/content  →  apps/blog/web
   나가고, 앱은 서브커맨드 이름만 안다(`blog-content build`). shebang은 `node`다 — 상대 import가
   전부 `.ts` 확장자를 달고(`allowImportingTsExtensions`, 앱 tsconfig에도 켜져 있어야 한다)
   문법은 `erasableSyntaxOnly`라, node의 type stripping만으로 로더 없이 돈다
-- **앱 내부**: `shared`(최하단 — 앱 소유 라우트 경로 `routes.ts`·페이지 전환 네임스페이스
-  `transitions.ts`의 단일 출처. 모든 레이어가 import 가능하고, 자신은 `@blog/content`만 연다) →
-  `lib/platform`(Supabase 어댑터, 외부 의존은 supabase-js·postgrest-js만) →
-  `domain/analytics`(순수 계산 + 저장소, 배럴 `index`·`admin` 둘)·`domain/auth`(세션·관리자
-  이메일 판정) → `src`(라우트·컴포넌트·훅). `src`는 저장소를 직접 찌르지 않고
-  배럴로 — **platform 자체를 import할 수 없다**(boundaries에서 app→platform 허용이 없다.
-  Supabase 접근은 전부 도메인 경유고, 예전 유일한 예외였던 auth 직접 호출은 `domain/auth`가
-  흡수했다).
-  **`src`는 node 코어를 못 만진다** — fs 접근은 전부 `@blog/content` 로더의 일(클라이언트 번들
-  누수 예방). `@blog/content`는 앱에서 외부 패키지(`content-pkg`)로 보인다.
+- **앱 내부**: 레이어 전부가 `src/` 안의 형제 폴더다. `src/shared`(최하단 — 앱 소유 라우트
+  경로 `routes.ts`·페이지 전환 네임스페이스 `transitions.ts`의 단일 출처. 모든 레이어가 import
+  가능하고, 자신은 `@blog/content`만 연다) →
+  `src/lib/platform`(Supabase 어댑터, 외부 의존은 supabase-js·postgrest-js만) →
+  `src/domain/analytics`(순수 계산 + 저장소, 배럴 `index`·`admin` 둘)·`src/domain/auth`(세션·관리자
+  이메일 판정) → app 레이어(`src`의 나머지 — `app`·`components`·`hooks`·`styles`·`content.ts`.
+  boundaries element는 첫 매치 우선이라 `src` 폴백으로 잡는다). app 레이어는 저장소를 직접
+  찌르지 않고 배럴로 — **platform 자체를 import할 수 없다**(boundaries에서 app→platform 허용이
+  없다. Supabase 접근은 전부 도메인 경유고, 예전 유일한 예외였던 auth 직접 호출은
+  `src/domain/auth`가 흡수했다).
+  **app 레이어는 node 코어를 못 만진다** — fs 접근은 전부 `@blog/content` 로더의 일(클라이언트
+  번들 누수 예방). `@blog/content`는 앱에서 외부 패키지(`content-pkg`)로 보인다.
   라우트 경로 리터럴을 화면·설정에 직접 적지 말 것 — 앱 소유 경로(`/admin`·`/about`…)는
-  `@/shared/routes`, 글·아카이브·RSS는 패키지(`postPath`·`archivePath`·`RSS_PATH`)가 단일
+  `@/src/shared/routes`, 글·아카이브·RSS는 패키지(`postPath`·`archivePath`·`RSS_PATH`)가 단일
   출처다(값 모듈의 사본 둘만 예외 — `contentValues.test.ts`가 잠근다)
 - **tsconfig 분할**: `tsconfig.json`(프로덕션, 엄격 플래그 전부) / `tsconfig.test.json`(테스트 —
   `noUncheckedIndexedAccess`·`noPropertyAccessFromIndexSignature`·`exactOptionalPropertyTypes` 세
@@ -103,11 +106,11 @@ apps/blog/posts (원고)  →  packages/@blog/content  →  apps/blog/web
 | **Admin 인증**    | Google OAuth를 통한 관리자 로그인                                                                                                                                               |
 | **Analytics RPC** | 대시보드용 집계 함수 (트렌드, 시간별, 요일별 통계) — `anon`에는 잠겨 있고 Edge Function `admin-analytics`가 호출자 JWT를 `ADMIN_EMAIL`과 대조한 뒤 `service_role`로 대신 부른다 |
 
-- **클라이언트 둘**: 공개 페이지는 `lib/platform/publicClient.ts`(`@supabase/postgrest-js`만 —
+- **클라이언트 둘**: 공개 페이지는 `src/lib/platform/publicClient.ts`(`@supabase/postgrest-js`만 —
   supabase-js 전체를 끌면 Auth·Realtime·Storage·Functions 45KB gzip이 공개 페이지에 딸려오고
   그중 realtime+phoenix+storage 18.5KB는 어디서도 안 쓰는 죽은 코드였다),
-  Admin은 `lib/platform/client.ts`(`@supabase/supabase-js`, auth 세션 + `functions.invoke`).
-  둘 다 Anon Key. `domain/analytics`의 배럴을 `index`·`admin`으로 나눈 이유가 이 분리다
+  Admin은 `src/lib/platform/client.ts`(`@supabase/supabase-js`, auth 세션 + `functions.invoke`).
+  둘 다 Anon Key. `src/domain/analytics`의 배럴을 `index`·`admin`으로 나눈 이유가 이 분리다
 - **로컬 개발**: `supabase start/stop`으로 로컬 Supabase 인스턴스 실행 (Docker 기반, `pnpm dev`가 먼저 띄운다)
 - **마이그레이션**: `supabase/migrations/` 디렉토리에 SQL 파일로 스키마 관리. Edge Function은 `supabase/functions/admin-analytics`
 - **프로덕션 URL**: `.env.production`에 Supabase Cloud 프로젝트 URL/Key 설정
@@ -231,7 +234,7 @@ apps/blog/posts (원고)  →  packages/@blog/content  →  apps/blog/web
 
 #### 클라이언트 사이드 기능 (런타임)
 
-- **조회수 카운팅**: `useViewCount` 훅 → `@blog/content`의 `viewCookie`(6시간 쿨다운, RPC 전에 쿠키를 먼저 심어 두 탭 레이스 방지) → `domain/analytics` → `publicClient` RPC
+- **조회수 카운팅**: `useViewCount` 훅 → `@blog/content`의 `viewCookie`(6시간 쿨다운, RPC 전에 쿠키를 먼저 심어 두 탭 레이스 방지) → `src/domain/analytics` → `publicClient` RPC
 - **댓글**: Giscus (GitHub Discussions 기반). `NEXT_PUBLIC_GISCUS_*` 4개가 모두 있을 때만 렌더
 - **Analytics 대시보드**: `/admin` 경로, React Query(`useSuspenseQuery`) + Recharts 차트. `AdminGuard`가 세션을 보고, 데이터는 Edge Function `admin-analytics` 경유
 - **검색**: `SearchDialog`가 열릴 때 빌드 산출물 `/search-index.json`을 fetch — 서버 없는 클라이언트 검색

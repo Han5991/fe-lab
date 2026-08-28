@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { ADMIN_ANALYTICS_PATH, adminAnalyticsPostPath } from '@/shared/routes';
+import {
+  ADMIN_ANALYTICS_PATH,
+  adminAnalyticsPostPath,
+} from '@/src/shared/routes';
 import { slugFromParams } from './slugFromParams';
 
 /** 링크가 만든 경로를 라우트가 useParams()로 받는 모양(인코딩된 세그먼트 배열)으로 되돌린다. */
@@ -34,7 +37,7 @@ describe('slugFromParams', () => {
   });
 
   it('링크 → 라우트 왕복: adminAnalyticsPostPath가 만든 경로의 세그먼트를 넣으면 원래 slug가 나온다', () => {
-    // 링크 쪽 인코딩(shared/routes의 adminAnalyticsPostPath)과 라우트 쪽
+    // 링크 쪽 인코딩(src/shared/routes의 adminAnalyticsPostPath)과 라우트 쪽
     // 디코드가 서로의 역함수임을 잠근다 — 한쪽만 바뀌면 한글·폴더 slug 글의
     // 통계 화면이 빈 placeholder로 떨어진다.
     for (const slug of [

@@ -61,7 +61,7 @@ export const OG_DEFAULT_IMAGE = '/og-default.jpg';
 
 // ── 정적 페이지 경로의 배선용 사본 ───────────────────────────────────────────
 //
-// 라우트 경로의 단일 출처는 `shared/routes.ts`다 — 내비게이션 href·canonical·
+// 라우트 경로의 단일 출처는 `src/shared/routes.ts`다 — 내비게이션 href·canonical·
 // og url·JSON-LD `@id`는 전부 거기서 온다. 이 모듈은 값 import 금지(위 제약)라
 // 그걸 가져오지 못해, sitemap·llms 배선에 쓰는 사본만 **비공개**로 든다.
 // 어긋남은 `contentValues.test.ts`가 잠근다 (아래 ADMIN/POSTS 접두와 같은 패턴).
@@ -143,6 +143,21 @@ export function isDiagramName(value: unknown): value is DiagramName {
   );
 }
 
+/**
+ * 포스트 디렉터리에서 **이름만 보고** 빌드 대상에서 제외하는 작업 노트 파일.
+ *
+ * 이 파일들은 frontmatter가 없어 어차피 메타 노트로 걸러지지만(fail-closed),
+ * 이름 제외는 내용과 무관하게 결정적이다 — 로그 본문 첫 줄에 `---` 구분선이
+ * 생겨도 포스트가 되지 않는다. 무엇이 작업 노트인지는 이 저장소의 글쓰기
+ * 워크플로가 정하는 어휘라 앱이 소유하고, 패키지(`collectMarkdownFiles`)는
+ * 받은 집합으로 판정만 한다. 설정 배선 전용 — 화면은 쓰지 않는다.
+ */
+export const META_FILENAMES = [
+  'PLAN.md',
+  'THUMBNAIL_LOG.md',
+  'STUDY_LOG.md',
+] as const;
+
 // OG 카드 팔레트는 여기 없다 — 값이 아니라 **디자인 토큰에서 파생**되기 때문이다.
 // `blog-preset.ts`의 다크 색을 `darkColor()`로 뽑아 `content.config.mts`가 조립한다.
 // 이 파일이 아니라 거기인 이유는 값 import 금지(위 제약) 때문이다: 프리셋을 여기서
@@ -173,7 +188,7 @@ export const SITEMAP_STATIC_PAGES = [
 // 문자열로 등록), 문자열 리터럴, 라이브러리 클래스명.
 
 /**
- * admin 라우트의 경로 접두. `shared/routes.ts`의 `ADMIN_BASE_PATH`(`'/admin'`)
+ * admin 라우트의 경로 접두. `src/shared/routes.ts`의 `ADMIN_BASE_PATH`(`'/admin'`)
  * 와 짝이지만 직접 파생하지 않는다 — 이 모듈은 값 import가 금지다(순수 리터럴
  * 계약). 대신 `contentValues.test.ts`가 두 값을 잠근다.
  */
@@ -206,9 +221,9 @@ const POSTS_CHUNKS = {
 
 export const BUNDLE_GUARDS = [
   // admin 전용 코드가 공개 청크에 실리면 실패 — #326에서 실제로 있었던 누수.
-  // 앞 둘은 domain/analytics의 admin 계산 export 이름, 셋째는 Edge Function
+  // 앞 둘은 src/domain/analytics의 admin 계산 export 이름, 셋째는 Edge Function
   // 이름 리터럴, 넷째는 세션용 supabase-js(auth 클라이언트 클래스명 —
-  // domain/*/admin 배럴 분리가 지키는 것).
+  // src/domain/*/admin 배럴 분리가 지키는 것).
   {
     label: 'admin 전용 계산',
     marker: 'computeAnalyticsOverview',

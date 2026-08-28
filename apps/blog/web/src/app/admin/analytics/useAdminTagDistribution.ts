@@ -1,7 +1,7 @@
 'use client';
 
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { getAdminPostsIndex } from '@/domain/analytics/admin';
+import { getAdminPostsIndex } from '@/src/domain/analytics/admin';
 
 /**
  * admin 포스트 인덱스에서 태그별 빈도수를 계산한다.

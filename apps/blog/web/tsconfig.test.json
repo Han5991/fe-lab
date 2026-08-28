@@ -14,7 +14,7 @@
     "next-env.d.ts",
     "**/*.test.ts",
     "**/*.test.tsx",
-    // vitest 두 프로젝트의 include 글롭(node: domain·lib, jsdom: src)을 합친 것과
+    // vitest 두 프로젝트의 include 글롭(node: src/{shared,domain,lib}, jsdom: 나머지 src)을 합친 것과
     // 대칭 — .spec 파일이 생겨도 프로덕션 tsconfig(무거운 플래그) 쪽으로 떨어지지
     // 않게 미리 라우팅해 둔다.
     "**/*.spec.ts",

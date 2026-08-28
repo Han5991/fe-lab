@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { incrementViewCount } from '@/domain/analytics';
+import { incrementViewCount } from '@/src/domain/analytics';
 import {
   buildViewCookieStr,
   getViewCookieExpiry,

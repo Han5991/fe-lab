@@ -5,14 +5,14 @@ import {
   analyticsService,
   getPostDowDistribution,
   getPostHourlyDistribution,
-} from '@/domain/analytics/admin';
+} from '@/src/domain/analytics/admin';
 import { useAdminDashboardData } from './useAdminViews';
 import type {
   PostDetailStats,
   PostStatDetail,
   HourlyDistribution,
   DowDistribution,
-} from '@/domain/analytics';
+} from '@/src/domain/analytics';
 
 /** admin 목록의 간이 통계 — 상세 훅과 같은 계산을 화면 이름으로 다시 낸다. */
 export const computeBriefStats = (post: PostStatDetail, todayISO: string) =>

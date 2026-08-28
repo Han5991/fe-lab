@@ -12,7 +12,7 @@ import {
   filterAndSortPostsByArchiveParams,
   parseTagParam,
 } from '@blog/content';
-import { getAllViewCounts } from '@/domain/analytics';
+import { getAllViewCounts } from '@/src/domain/analytics';
 import { postPath } from '@blog/content';
 import { fmtDate } from '@blog/content';
 

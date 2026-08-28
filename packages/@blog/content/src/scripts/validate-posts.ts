@@ -81,7 +81,10 @@ export function main(ctx: ContentContext, runOptions: ValidateOptions) {
     ctx.content.config,
     runOptions,
   );
-  const allFiles = collectMarkdownFiles(postsDir);
+  const allFiles = collectMarkdownFiles(
+    postsDir,
+    ctx.content.config.registries.metaFilenames,
+  );
   const records: PostRecord[] = [];
   const allIssues: Issue[] = [];
 

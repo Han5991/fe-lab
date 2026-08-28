@@ -1,6 +1,6 @@
 import { SITE_NAME, SITE_URL } from '@/content.values.mts';
-import { PRIVACY_PATH } from '@/shared/routes';
-import { PRIVACY_TRANSITION_ID } from '@/shared/transitions';
+import { PRIVACY_PATH } from '@/src/shared/routes';
+import { PRIVACY_TRANSITION_ID } from '@/src/shared/transitions';
 import { css, cx } from '@design-system/ui-lib/css';
 import type { Metadata } from 'next';
 

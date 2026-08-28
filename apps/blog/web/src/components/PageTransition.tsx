@@ -8,7 +8,7 @@ import {
   POST_HERO_TRANSITION_GLOB,
   POST_PLAIN_TRANSITION_GLOB,
   POSTS_TRANSITION_ID,
-} from '@/shared/transitions';
+} from '@/src/shared/transitions';
 
 // ssgoi v6 path-factory API. (v6에는 defaultTransition이 없고, 모든 전환을
 // path 기반 팩토리로 매칭한다. 매처는 first-hit이라 더 구체적인 규칙을 먼저 둔다.)

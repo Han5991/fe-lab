@@ -5,7 +5,7 @@ import type { PostSummary } from '@blog/content';
 import { postPath } from '@blog/content';
 import { resolveThumbnailSrc } from '@blog/content';
 import { fmtDate } from '@blog/content';
-import { postHeroKey } from '@/shared/transitions';
+import { postHeroKey } from '@/src/shared/transitions';
 import { Label } from './Label';
 import { tagPillStyle } from './tagPillStyle';
 

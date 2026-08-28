@@ -95,6 +95,14 @@ export interface RegistriesConfig {
   diagramNames: readonly string[];
   /** 코드 펜스 라벨 허용 목록. 기본값은 prismLanguages.ts에서 파생 */
   supportedFenceLabels: ReadonlySet<string>;
+  /**
+   * 포스트 수집이 **이름만 보고** 건너뛸 작업 노트 파일 목록(예: PLAN.md).
+   * 이름의 소유자는 앱이다 — 무엇이 작업 노트인지는 그 사이트의 글쓰기
+   * 워크플로가 정하지, 패키지가 정할 수 있는 게 아니다. 기본값은 빈 집합:
+   * frontmatter 없는 문서는 어차피 메타 노트로 걸러지므로(`hasFrontmatter`),
+   * 이름 스킵이 없는 것은 어떤 사이트에서도 안전하다.
+   */
+  metaFilenames: ReadonlySet<string>;
 }
 
 /**
@@ -380,11 +388,15 @@ export interface ContentUserConfig extends Pick<
   /** 경로 앵커 — `ContentConfig['root']` 참고. 관례는 `import.meta.url` */
   root: string;
   /**
-   * 사이트 고유 축(`diagramNames`)은 필수, 사이트와 무관한
-   * `supportedFenceLabels`만 선택.
+   * 사이트 고유 축(`diagramNames`)은 필수. 사이트와 무관한
+   * `supportedFenceLabels`와, 없어도 안전한 `metaFilenames`(기본 빈 목록)는
+   * 선택. `metaFilenames`는 배열로 받는다 — 값 모듈은 순수 리터럴이라 `Set`을
+   * 만들 수 없고, 판정용 집합으로 바꾸는 것은 defineContent의 몫이다.
    */
   registries: Partial<Pick<RegistriesConfig, 'supportedFenceLabels'>> &
-    Pick<RegistriesConfig, 'diagramNames'>;
+    Pick<RegistriesConfig, 'diagramNames'> & {
+      metaFilenames?: readonly string[];
+    };
   /** 크기(1200×630)는 OG 규격이라 선택, 팔레트는 앱 디자인이라 필수 */
   og: Partial<Omit<OgConfig, 'palette'>> & Pick<OgConfig, 'palette'>;
   seo?: Partial<SeoConfig>;
@@ -519,6 +531,7 @@ const DEFAULTS: Omit<
   },
   registries: {
     supportedFenceLabels: SUPPORTED_FENCE_LABELS,
+    metaFilenames: new Set<string>(),
   },
   dirs: {
     content: '../posts',
@@ -625,7 +638,12 @@ export function defineContent(user: ContentUserConfig): ContentConfig {
     },
     timezone: user.timezone,
     runtime: { ...DEFAULTS.runtime, ...user.runtime },
-    registries: { ...DEFAULTS.registries, ...user.registries },
+    registries: {
+      ...DEFAULTS.registries,
+      ...user.registries,
+      // 사용자는 배열(순수 리터럴)로 주고, 판정(has)에 쓰는 집합은 여기서 만든다.
+      metaFilenames: new Set(user.registries.metaFilenames ?? []),
+    },
     dirs: { ...DEFAULTS.dirs, ...user.dirs },
     sitemap: { ...DEFAULTS.sitemap, ...user.sitemap },
     // 팔레트는 필수라 병합할 기본값이 없다 — 준 값이 그대로 실린다.

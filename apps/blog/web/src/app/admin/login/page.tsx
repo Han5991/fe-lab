@@ -1,8 +1,8 @@
 'use client';
 
 import { Suspense } from 'react';
-import { authRepository } from '@/domain/auth';
-import { adminLoginRedirectUrl } from '@/shared/routes';
+import { authRepository } from '@/src/domain/auth';
+import { adminLoginRedirectUrl } from '@/src/shared/routes';
 import { css, cx } from '@design-system/ui-lib/css';
 import { railGutter } from '@/src/components/Rail';
 import { LogIn } from 'lucide-react';
@@ -17,7 +17,7 @@ function LoginForm() {
   // 호출부에 no-floating-promises를 달래는 `void` 연산자가 필요 없다.
   const { mutate: handleGoogleLogin, isPending: isLoading } = useMutation({
     // 돌아올 주소의 계약(경로 모양, Supabase 대시보드 목록과의 짝)은
-    // domain/auth가 갖는다. 화면이 보태는 건 origin 하나뿐이다 — 그걸
+    // src/domain/auth가 갖는다. 화면이 보태는 건 origin 하나뿐이다 — 그걸
     // 아는 건 브라우저뿐이라 여기서만 읽을 수 있다.
     mutationFn: () =>
       authRepository.signInAdminWithGoogle(

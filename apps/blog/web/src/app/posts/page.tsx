@@ -8,7 +8,7 @@ import {
   getAllYears,
 } from '@/src/content';
 import { safeJsonLd } from '@blog/content';
-import { POSTS_TRANSITION_ID } from '@/shared/transitions';
+import { POSTS_TRANSITION_ID } from '@/src/shared/transitions';
 import {
   buildBlogJsonLd,
   buildCollectionPageJsonLd,
