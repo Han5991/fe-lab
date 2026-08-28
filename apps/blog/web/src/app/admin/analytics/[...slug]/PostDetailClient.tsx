@@ -26,7 +26,7 @@ import {
 import Link from 'next/link';
 import { token } from '@design-system/ui-lib/tokens';
 import { usePostDetailStats } from '@/src/hooks/usePostDetailStats';
-import { ADMIN_ANALYTICS_PATH } from '@/shared/routes';
+import { ADMIN_ANALYTICS_PATH } from '@/src/shared/routes';
 import { slugFromParams } from './slugFromParams';
 // 클라이언트 컴포넌트의 @blog/content 배럴 import — node:fs 모듈(series 등)은
 // next.config.ts의 optimizePackageImports + sideEffects:false가 번들에서 걸러 준다.

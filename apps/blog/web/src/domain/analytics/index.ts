@@ -29,7 +29,7 @@ export type { AnalyticsCalculator } from './service';
 
 // 데이터 접근(PostgREST). 의도적으로 공개하는 함수만 노출.
 //
-// admin 전용 함수는 여기 없습니다 — `@/domain/analytics/admin` 배럴로 나갔습니다.
+// admin 전용 함수는 여기 없습니다 — `@/src/domain/analytics/admin` 배럴로 나갔습니다.
 // 한 배럴에 두면 공개 페이지 번들에 인증 세션용 supabase-js가 따라붙습니다
 // (이유는 admin.ts 주석 참고). 이 배럴은 익명 권한으로 되는 것만 담습니다.
 export {

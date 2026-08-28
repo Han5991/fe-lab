@@ -8,7 +8,7 @@ import { postPath } from '@blog/content';
 import { fmtNum } from '@blog/content';
 import { Sparkline } from '@/src/components/blog/Sparkline';
 import { token } from '@design-system/ui-lib/tokens';
-import type { TopPostSummary } from '@/domain/analytics';
+import type { TopPostSummary } from '@/src/domain/analytics';
 
 interface TopPostsTableProps {
   rows: TopPostSummary[];

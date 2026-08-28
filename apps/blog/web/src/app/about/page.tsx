@@ -7,7 +7,7 @@ import { Label } from '@/src/components/blog';
 import { PageBoundary } from '@/src/components/PageBoundary';
 import { railGutter, railColumn } from '@/src/components/Rail';
 import { archivePath, postPath } from '@blog/content';
-import { ABOUT_TRANSITION_ID } from '@/shared/transitions';
+import { ABOUT_TRANSITION_ID } from '@/src/shared/transitions';
 
 import { getAboutStats, getSeriesPostCounts } from './counts';
 import { FEATURED_SERIES } from './featuredSeries';

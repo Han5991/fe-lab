@@ -17,7 +17,7 @@ import {
   SITEMAP_PRIORITY,
   SITEMAP_STATIC_PAGES,
 } from '@/content.values.mts';
-import { ABOUT_PATH, ADMIN_BASE_PATH, SERIES_PATH } from '@/shared/routes';
+import { ABOUT_PATH, ADMIN_BASE_PATH, SERIES_PATH } from '@/src/shared/routes';
 import { POSTS_PATH } from '@blog/content';
 import { getAllPosts } from '@/src/content';
 
@@ -59,9 +59,9 @@ test('check-bundle의 admin 경로 접두는 실제 admin 라우트 계약에서
   expect(ADMIN_PATH_PREFIX).toBe(`${ADMIN_BASE_PATH}/`);
 });
 
-test('sitemap·llms에 배선된 정적 페이지 경로는 shared/routes의 라우트 계약과 같다', () => {
+test('sitemap·llms에 배선된 정적 페이지 경로는 src/shared/routes의 라우트 계약과 같다', () => {
   // 값 모듈은 import 금지라 about·series 경로의 비공개 사본을 든다 — 라우트를
-  // 옮기면 nav·canonical(shared/routes 소비자)만 고쳐지고 sitemap·llms가 옛
+  // 옮기면 nav·canonical(src/shared/routes 소비자)만 고쳐지고 sitemap·llms가 옛
   // 주소를 내보내는 사고를 여기서 잡는다.
   expect(SITEMAP_STATIC_PAGES.map(page => page.path)).toContain(ABOUT_PATH);
   expect(LLMS_DOCS.extra.map(doc => doc.path)).toEqual([

@@ -8,7 +8,7 @@ import {
 } from '@blog/content';
 import { getAllPostSummaries, getSeriesMeta } from '@/src/content';
 import { safeJsonLd } from '@blog/content';
-import { HOME_TRANSITION_ID } from '@/shared/transitions';
+import { HOME_TRANSITION_ID } from '@/src/shared/transitions';
 import { buildHomeJsonLd, buildHomeMetadata } from './homeSeo';
 
 import { Hero, FeaturedPost, PostIndexRow } from '@/src/components/blog';

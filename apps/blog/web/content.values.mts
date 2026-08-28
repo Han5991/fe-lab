@@ -61,7 +61,7 @@ export const OG_DEFAULT_IMAGE = '/og-default.jpg';
 
 // ── 정적 페이지 경로의 배선용 사본 ───────────────────────────────────────────
 //
-// 라우트 경로의 단일 출처는 `shared/routes.ts`다 — 내비게이션 href·canonical·
+// 라우트 경로의 단일 출처는 `src/shared/routes.ts`다 — 내비게이션 href·canonical·
 // og url·JSON-LD `@id`는 전부 거기서 온다. 이 모듈은 값 import 금지(위 제약)라
 // 그걸 가져오지 못해, sitemap·llms 배선에 쓰는 사본만 **비공개**로 든다.
 // 어긋남은 `contentValues.test.ts`가 잠근다 (아래 ADMIN/POSTS 접두와 같은 패턴).
@@ -173,7 +173,7 @@ export const SITEMAP_STATIC_PAGES = [
 // 문자열로 등록), 문자열 리터럴, 라이브러리 클래스명.
 
 /**
- * admin 라우트의 경로 접두. `shared/routes.ts`의 `ADMIN_BASE_PATH`(`'/admin'`)
+ * admin 라우트의 경로 접두. `src/shared/routes.ts`의 `ADMIN_BASE_PATH`(`'/admin'`)
  * 와 짝이지만 직접 파생하지 않는다 — 이 모듈은 값 import가 금지다(순수 리터럴
  * 계약). 대신 `contentValues.test.ts`가 두 값을 잠근다.
  */
@@ -206,9 +206,9 @@ const POSTS_CHUNKS = {
 
 export const BUNDLE_GUARDS = [
   // admin 전용 코드가 공개 청크에 실리면 실패 — #326에서 실제로 있었던 누수.
-  // 앞 둘은 domain/analytics의 admin 계산 export 이름, 셋째는 Edge Function
+  // 앞 둘은 src/domain/analytics의 admin 계산 export 이름, 셋째는 Edge Function
   // 이름 리터럴, 넷째는 세션용 supabase-js(auth 클라이언트 클래스명 —
-  // domain/*/admin 배럴 분리가 지키는 것).
+  // src/domain/*/admin 배럴 분리가 지키는 것).
   {
     label: 'admin 전용 계산',
     marker: 'computeAnalyticsOverview',

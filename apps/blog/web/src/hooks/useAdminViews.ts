@@ -3,8 +3,8 @@ import {
   getAdminPostsIndex,
   getAllPostStats,
   getAllPostsTrends,
-} from '@/domain/analytics/admin';
-import type { PostStatDetail, TrendPoint } from '@/domain/analytics';
+} from '@/src/domain/analytics/admin';
+import type { PostStatDetail, TrendPoint } from '@/src/domain/analytics';
 
 export type { PostStatDetail };
 

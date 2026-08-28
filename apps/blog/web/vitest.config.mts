@@ -1,15 +1,16 @@
 import { fileURLToPath } from 'node:url';
-import { defineConfig } from 'vitest/config';
+import { configDefaults, defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 
 /**
  * 러너는 vitest 하나이고, **환경**만 두 프로젝트로 나눈다.
  *
- * - `node`: shared/·domain/·lib/ 의 순수 로직·와이어 계약. jsdom을 띄우지 않는다 —
- *   이 앱에서 jsdom 부팅은 파일당 1초 안팎이라(전체 환경 셋업 40초대) DOM이
- *   필요 없는 테스트까지 태우면 그대로 낭비다.
- * - `jsdom`: src/ 의 컴포넌트·훅. RTL·jest-dom 매처와 next.config 미러링
- *   셋업(vitest.setup.ts)이 여기에만 붙는다.
+ * - `node`: src/{shared,domain,lib}/ 의 순수 로직·와이어 계약. jsdom을 띄우지
+ *   않는다 — 이 앱에서 jsdom 부팅은 파일당 1초 안팎이라(전체 환경 셋업 40초대)
+ *   DOM이 필요 없는 테스트까지 태우면 그대로 낭비다.
+ * - `jsdom`: 나머지 src/(app 레이어)의 컴포넌트·훅. RTL·jest-dom 매처와
+ *   next.config 미러링 셋업(vitest.setup.ts)이 여기에만 붙는다. 레이어 세 폴더는
+ *   node 프로젝트 소속이므로 exclude로 겹침을 끊는다.
  *
  * 예전에는 이 경계가 러너 경계(node --test vs vitest)였다. 러너가 갈리면
  * 단언 API·커버리지 도구·lint 인가가 두 벌이 되고, `node --test`는 글롭이
@@ -26,12 +27,7 @@ const alias = { '@/': fileURLToPath(new URL('./', import.meta.url)) };
 export default defineConfig({
   test: {
     coverage: {
-      include: [
-        'shared/**/*.ts',
-        'domain/**/*.ts',
-        'lib/**/*.ts',
-        'src/**/*.{ts,tsx}',
-      ],
+      include: ['src/**/*.{ts,tsx}'],
       exclude: [
         '**/*.test.{ts,tsx}',
         '**/*.config.*',
@@ -46,9 +42,9 @@ export default defineConfig({
           name: 'node',
           environment: 'node',
           include: [
-            'shared/**/*.{test,spec}.ts',
-            'domain/**/*.{test,spec}.ts',
-            'lib/**/*.{test,spec}.ts',
+            'src/shared/**/*.{test,spec}.ts',
+            'src/domain/**/*.{test,spec}.ts',
+            'src/lib/**/*.{test,spec}.ts',
           ],
         },
       },
@@ -60,6 +56,9 @@ export default defineConfig({
           environment: 'jsdom',
           setupFiles: ['./vitest.setup.ts'],
           include: ['src/**/*.{test,spec}.{ts,tsx}'],
+          // 레이어 세 폴더는 node 프로젝트가 돌린다 — 여기서 겹치면 같은
+          // 테스트가 두 번(그중 한 번은 불필요한 jsdom 위에서) 돈다.
+          exclude: [...configDefaults.exclude, 'src/{shared,domain,lib}/**'],
         },
       },
     ],

@@ -1,6 +1,6 @@
 # shared — 최하단 레이어
 
-모든 레이어(lib·domain·src)가 import할 수 있는 **유일한** 폴더다. 그래서 여기
+모든 레이어(platform·domain·app)가 import할 수 있는 **유일한** 폴더다. 그래서 여기
 뚫린 구멍은 앱 전체가 공유한다 — 이 폴더는 저장소에서 가장 엄격하게 관리한다.
 
 ## 입장 기준 — 전부 만족해야 들어온다
@@ -8,7 +8,7 @@
 1. **순수 계약만** — 리터럴 상수와 순수 함수. IO(fs·fetch·Supabase)·상태·React·훅 금지.
 2. **두 레이어 이상이 소비** — 한 레이어만 쓰면 그 레이어에 둔다. shared는 편한
    잡동사니 통(utils)이 아니다.
-3. **의존은 `@blog/content`뿐** — 상위 레이어(lib·domain·src)·외부 패키지·node
+3. **의존은 `@blog/content`뿐** — 상위 레이어(platform·domain·app)·외부 패키지·node
    코어 전부 금지.
 4. **재수출 금지** — `export … from`으로 다른 모듈의 2차 문을 만들지 않는다.
    자기 선언만 내보낸다. 특히 `@blog/content` 재수출은 배럴 좁히기

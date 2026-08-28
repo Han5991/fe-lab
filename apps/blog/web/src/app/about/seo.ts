@@ -9,7 +9,7 @@
  */
 import contentConfig from '@/content.config.mts';
 import { ABOUT_PAGE_MODIFIED } from '@/content.values.mts';
-import { ABOUT_PATH } from '@/shared/routes';
+import { ABOUT_PATH } from '@/src/shared/routes';
 import type { Metadata } from 'next';
 
 // 사이트 정체성·저자·SEO 예산은 해석된 설정에서 온다 — 값의 출처는

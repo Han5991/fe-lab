@@ -4,9 +4,9 @@
  * admin RPC를 service_role 권한으로 대리 호출합니다.
  * 호출자의 JWT를 검증하고 ADMIN_EMAIL과 일치하는지 확인한 후에만 실행합니다.
  *
- * 지원 action과 각각이 부르는 RPC, params 형태는 **`lib/platform/adminActions.ts`가
+ * 지원 action과 각각이 부르는 RPC, params 형태는 **`src/lib/platform/adminActions.ts`가
  * 단일 출처**입니다(`ADMIN_ACTION_RPC` · `AdminRequest`). 브라우저 클라이언트
- * (`lib/platform/adminApi.ts`)도 같은 파일을 import 하므로 여기서 목록을 따로
+ * (`src/lib/platform/adminApi.ts`)도 같은 파일을 import 하므로 여기서 목록을 따로
  * 적지 않습니다 — action을 추가하려면 그 파일에 등록하고 아래 switch에 case를
  * 더하면 되고, case를 빼먹으면 `default`의 never 대입이 컴파일 에러를 냅니다.
  *
@@ -30,8 +30,8 @@ import {
   ADMIN_ACTION_RPC,
   isAdminAction,
   type AdminRequest,
-} from '../../../lib/platform/adminActions.ts';
-import type { Database } from '../../../lib/platform/database.types.ts';
+} from '../../../src/lib/platform/adminActions.ts';
+import type { Database } from '../../../src/lib/platform/database.types.ts';
 
 Deno.serve(async (req: Request) => {
   // OPTIONS preflight 처리

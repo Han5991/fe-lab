@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { css, cx } from '@design-system/ui-lib/css';
 
 import { archivePath, POSTS_PATH, postPath } from '@blog/content';
-import { SERIES_TRANSITION_ID } from '@/shared/transitions';
+import { SERIES_TRANSITION_ID } from '@/src/shared/transitions';
 import {
   getAllPostSummaries,
   getAllSeries,

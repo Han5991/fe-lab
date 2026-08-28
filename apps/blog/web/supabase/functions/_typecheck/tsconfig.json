@@ -4,7 +4,7 @@
   //
   // 앱의 tsconfig.json은 supabase/functions를 exclude하고 eslint도 supabase/**를
   // ignore한다. 그래서 이 파일이 없으면 Edge Function은 어떤 CI 게이트도 지나지
-  // 않는다 — `lib/platform/adminActions.ts` 계약(action↔RPC 대응, switch 망라)과
+  // 않는다 — `src/lib/platform/adminActions.ts` 계약(action↔RPC 대응, switch 망라)과
   // `database.types.ts` 대조가 에디터에서만 살아 있고, 깨진 채로 배포까지 간다.
   //
   // tsc는 Deno가 아니므로 두 가지를 흉내 낸다:
@@ -37,6 +37,6 @@
       ]
     }
   },
-  // entrypoint만 적는다 — import 그래프(_shared·lib/platform)는 따라 들어온다.
+  // entrypoint만 적는다 — import 그래프(_shared·src/lib/platform)는 따라 들어온다.
   "files": ["deno-shim.d.ts", "../admin-analytics/index.ts"]
 }

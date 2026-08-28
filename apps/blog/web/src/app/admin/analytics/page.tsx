@@ -10,7 +10,7 @@ import { useAdminLogout } from '@/src/hooks/useAdminLogout';
 import { LoadingPlaceholder } from '@/src/components/shared/LoadingPlaceholder';
 import { Label } from '@/src/components/blog/Label';
 
-import { ADMIN_PATH } from '@/shared/routes';
+import { ADMIN_PATH } from '@/src/shared/routes';
 import { AnalyticsContent } from './AnalyticsContent';
 import { useAdminTagDistribution } from './useAdminTagDistribution';
 import { PostList } from '../components/PostList';

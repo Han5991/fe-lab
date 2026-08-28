@@ -23,7 +23,7 @@ import { toNextMetadata } from './nextMetadata';
 import type { Metadata } from 'next';
 import { Rail, railGutter, railColumn } from '@/src/components/Rail';
 import { safeJsonLd } from '@blog/content';
-import { postTransitionId } from '@/shared/transitions';
+import { postTransitionId } from '@/src/shared/transitions';
 import GiscusComments from '@/src/components/GiscusComments';
 import { PageBoundary } from '@/src/components/PageBoundary';
 import { BackToTop } from '@/src/components/mobile/BackToTop';

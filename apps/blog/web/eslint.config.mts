@@ -74,7 +74,7 @@ export default defineConfig([
     // (프로덕션 전용 엄격 플래그 3개를 끄기 위한 분할 — PR5). projectService의
     // 자동 발견은 파일명이 tsconfig.json인 것만 찾으므로 테스트 파일이 "어느
     // 프로젝트에도 없음"으로 떨어진다. allowDefaultProject로 우회하지 않는 이유:
-    // `**` 글롭을 금지해 테스트 위치(domain/·lib/·scripts/·src/)마다 패턴을
+    // `**` 글롭을 금지해 테스트 위치마다 패턴을
     // 나열해야 하고, 그렇게 열어도 tsconfig.test.json이 아니라 defaultProject
     // 단일 파일 추론으로 검사돼 check-types가 보는 프로그램과 어긋난다.
     // 대신 이 블록에서 tsconfig.test.json 프로그램을 명시해 check-types와
@@ -132,7 +132,7 @@ export default defineConfig([
     // Supabase CLI(`pnpm gen:types` → `supabase gen types --local`) 생성 파일 —
     // 손대면 재생성 때 되돌아온다. 생성기 출력 형태(type 별칭·인덱스 시그니처)에
     // 스타일 룰을 묻지 않는다.
-    files: ['lib/platform/database.types.ts'],
+    files: ['src/lib/platform/database.types.ts'],
     rules: {
       '@typescript-eslint/consistent-type-definitions': 'off',
       '@typescript-eslint/consistent-indexed-object-style': 'off',
@@ -195,15 +195,22 @@ export default defineConfig([
     },
   },
 
-  // ── 아키텍처 경계 강제 (헥사고날 레이어링: src → domain → lib → shared) ─────
-  // 경계를 컨벤션이 아니라 lint로 강제해 회귀를 막습니다.
+  // ── 아키텍처 경계 강제 (헥사고날 레이어링: app → domain → lib/platform → shared,
+  // 전부 src/ 안의 형제 폴더) ─────
+  // 경계를 컨벤션이 아니라 lint로 강제해 회귀를 막습니다. import **방향**은
+  // 아래 boundaries 블록이 전담한다 — 해석된 경로 기반이라 alias·상대경로 어느
+  // 쪽도 우회할 수 없다. (예전에는 경로 문자열 기반 no-restricted-imports 블록이
+  // 방향을 이중으로 막았지만, 레이어가 전부 src/ 안으로 들어오면서 상대경로에
+  // `src` 세그먼트가 사라져 그 방식으로는 방향을 표현할 수 없다.)
+  // 이 블록들은 boundaries가 못 보는 결을 맡는다 — 배럴 강제(같은 element 안의
+  // 파일 단위)와 Supabase 호출 문법, 모듈 모양.
   {
-    // src(상위)는 domain/<x>의 공개 API(배럴)만 쓰고, repository(인프라)를 직접
-    // 찌르거나 Supabase client를 직접 호출하지 않습니다.
+    // app 레이어(src에서 레이어 폴더 제외)는 domain/<x>의 공개 API(배럴)만 쓰고,
+    // repository(인프라)를 직접 찌르거나 Supabase client를 직접 호출하지 않습니다.
     files: ['src/**/*.{ts,tsx}'],
-    ignores: ['**/*.test.{ts,tsx}'],
+    ignores: ['src/{shared,domain,lib}/**', '**/*.test.{ts,tsx}'],
     rules: {
-      // `**/` 접두로 alias(@/domain/...)와 상대경로(../../domain/...) 양쪽을 차단.
+      // `**/` 접두로 alias(@/src/domain/...)와 상대경로(../../domain/...) 양쪽을 차단.
       'no-restricted-imports': [
         'error',
         {
@@ -215,14 +222,14 @@ export default defineConfig([
                 '**/domain/*/*[rR]epository.*',
               ],
               message:
-                'repository는 인프라 레이어입니다. domain/<x> 공개 API(배럴, 예: @/domain/analytics, @/domain/analytics/admin)를 통해 접근하세요.',
+                'repository는 인프라 레이어입니다. domain/<x> 공개 API(배럴, 예: @/src/domain/analytics, @/src/domain/analytics/admin)를 통해 접근하세요.',
             },
           ],
         },
       ],
       // 주의: 아래 selector는 식별자 이름(client/supabase/publicDb)에 매칭하므로,
       // Supabase 클라이언트를 임의 이름으로 alias하면(예: `client as db`) 우회될
-      // 수 있습니다. 클라이언트 import 자체를 lib/platform/client·lib/platform/publicClient로
+      // 수 있습니다. 클라이언트 import 자체를 src/lib/platform/client·publicClient로
       // 한정하는 컨벤션과 함께 봐야 합니다. 새 클라이언트를 만들면 이 정규식에도
       // 이름을 추가하세요 — 안 그러면 가드에 구멍이 생깁니다.
       'no-restricted-syntax': [
@@ -243,33 +250,15 @@ export default defineConfig([
     },
   },
   {
-    // domain(중간)은 상위 레이어(src)를 import할 수 없습니다(역방향 의존 금지).
-    files: ['domain/**/*.{ts,tsx}'],
-    ignores: ['**/*.test.{ts,tsx}'],
-    rules: {
-      'no-restricted-imports': [
-        'error',
-        {
-          patterns: [
-            {
-              group: ['**/src', '**/src/**'],
-              message: 'domain은 상위 레이어(src)를 import할 수 없습니다.',
-            },
-          ],
-        },
-      ],
-    },
-  },
-  {
     // 공개 페이지가 여는 배럴은 모듈 최상위에 부수효과를 두지 않습니다.
     // 번들러가 부수효과로 보는 순간, 거기 매달린 모듈 전부를 공개 청크에서
     // 떨궈내지 못합니다 — #326에서 `new AnalyticsService()` 하나가 계산 모듈
     // 전체를 모든 공개 페이지에 실었습니다. 싱글톤 생성은 admin 전용 배럴
-    // (domain/*/admin.ts, domain/auth/index.ts)의 일이라 그쪽은 대상이 아닙니다.
+    // (src/domain/*/admin.ts, src/domain/auth/index.ts)의 일이라 그쪽은 대상이 아닙니다.
     // 새 공개 배럴이 생기면 이 files 목록에 추가하세요. 산출물 쪽 안전망은
     // `pnpm build` 마지막의 check-bundle(마커 검사)이 맡습니다 — 이 룰은 원인을,
     // 그쪽은 결과를 봅니다.
-    files: ['domain/analytics/index.ts'],
+    files: ['src/domain/analytics/index.ts'],
     rules: {
       'no-restricted-syntax': [
         'error',
@@ -311,29 +300,10 @@ export default defineConfig([
     },
   },
   {
-    // lib은 domain·src(상위 레이어)를 import할 수 없습니다. 아래로는 shared만 연다.
-    files: ['lib/**/*.{ts,tsx}'],
-    ignores: ['**/*.test.{ts,tsx}'],
-    rules: {
-      'no-restricted-imports': [
-        'error',
-        {
-          patterns: [
-            {
-              group: ['**/domain', '**/domain/**', '**/src', '**/src/**'],
-              message: 'lib은 상위 레이어(domain·src)를 import할 수 없습니다.',
-            },
-          ],
-        },
-      ],
-    },
-  },
-  {
-    // shared(최하단)는 어떤 상위 레이어도 import할 수 없습니다 — 모든 레이어가
-    // 기대는 라우트 상수 같은 순수 계약만 둡니다(외부는 @blog/content만, boundaries).
-    //
+    // shared(최하단)의 import 방향(상위 레이어 금지, 외부는 @blog/content만)은
+    // 아래 boundaries가 강제한다. 이 블록은 모듈의 **모양**을 잠근다 —
     // shared는 **모든 레이어가 여는 유일한 폴더**라, 여기 뚫린 구멍은 앱 전체가
-    // 공유한다. 그래서 import 방향(위 boundaries)에 더해 모듈의 **모양**까지 잠근다:
+    // 공유하기 때문이다:
     //
     // (1) 재수출 금지 — `export … from` / `export * from`은 shared를 다른 모듈의
     //     2차 문으로 만드는 세탁 통로다. 특히 @blog/content 재수출은 배럴 좁히기
@@ -345,28 +315,9 @@ export default defineConfig([
     //     지시문도 여기 걸린다 — shared는 클라이언트 경계가 아니다. 파생 상수의
     //     순수 함수 호출(`export const X = f(Y)`)은 문이 아니라 초기화라 걸리지
     //     않는다 — transitions.ts가 그 형태다.
-    files: ['shared/**/*.{ts,tsx}'],
+    files: ['src/shared/**/*.{ts,tsx}'],
     ignores: ['**/*.test.{ts,tsx}'],
     rules: {
-      'no-restricted-imports': [
-        'error',
-        {
-          patterns: [
-            {
-              group: [
-                '**/lib',
-                '**/lib/**',
-                '**/domain',
-                '**/domain/**',
-                '**/src',
-                '**/src/**',
-              ],
-              message:
-                'shared는 최하단 레이어입니다. lib·domain·src를 import할 수 없습니다.',
-            },
-          ],
-        },
-      ],
       'no-restricted-syntax': [
         'error',
         {
@@ -391,7 +342,7 @@ export default defineConfig([
     // shared에는 컴포넌트가 없다 — .tsx 자체를 막는다. JSX 자동 런타임은 react
     // import 없이 컴파일되므로 boundaries의 외부 의존 차단만으로는 못 잡는다.
     // 컴포넌트는 src/, 여러 화면이 공유하는 컴포넌트도 src/components/shared/다.
-    files: ['shared/**/*.tsx'],
+    files: ['src/shared/**/*.tsx'],
     rules: {
       'no-restricted-syntax': [
         'error',
@@ -417,19 +368,19 @@ export default defineConfig([
   // ── 레이어 경계 (eslint-plugin-boundaries) ─────────────────────────────────
   // element는 전부 **폴더 단위**다. `boundaries/files` 카테고리로 파일을 골라
   // element를 우회 배정하는 뒷문을 열지 않는다 — 폴더에 새 파일이 떨어지면
-  // 자동으로 그 element를 상속하고, element 폴더 밖에 떨어지면
-  // no-unknown-files가 잡는다.
+  // 자동으로 그 element를 상속한다.
   //
-  // 레이어 순서(아래→위): shared → platform → analytics → app. shared는 모든
-  // 레이어가 쓸 수 있는 최하단(라우트 상수 등 순수 계약)이다. 콘텐츠 레이어는
-  // packages/@blog/content로 이사했다 — 그쪽 eslint.config.mjs가 같은 모델로
-  // 내부 경계를 강제하고, 앱에서는 `@blog/content`가 외부 패키지(external)로
-  // 보인다.
+  // 레이어 순서(아래→위): shared → platform → analytics·auth → app. 전부 src/
+  // 안의 형제 폴더이고, app은 src에서 레이어 폴더를 뺀 나머지(app·components·
+  // hooks·styles·content.ts)다. shared는 모든 레이어가 쓸 수 있는 최하단(라우트
+  // 상수 등 순수 계약)이다. 콘텐츠 레이어는 packages/@blog/content로 이사했다 —
+  // 그쪽 eslint.config.mjs가 같은 모델로 내부 경계를 강제하고, 앱에서는
+  // `@blog/content`가 외부 패키지(external)로 보인다.
   //
-  // no-unknown-files와 이 블록 전체는 **LAYERED 4개 폴더에만** 건다. 전역으로
-  // 걸면 앱 루트의 설정 파일들이 전부 unknown이 되고, 오탐 시 탈출구가 없다.
+  // 이 블록 전체는 **src/에만** 건다. 전역으로 걸면 앱 루트의 설정 파일들이
+  // 전부 unknown이 되고, 오탐 시 탈출구가 없다.
   {
-    files: ['{domain,lib,shared,src}/**/*.{js,mjs,cjs,ts,tsx,mts,cts}'],
+    files: ['src/**/*.{js,mjs,cjs,ts,tsx,mts,cts}'],
     plugins: { boundaries },
     settings: {
       // 기준 경로가 **워크스페이스 루트**인 이유: @blog/content는 소스
@@ -443,12 +394,24 @@ export default defineConfig([
       'boundaries/root-path': resolve(import.meta.dirname, '..', '..', '..'),
       'boundaries/elements-single-match': true,
       // v7에서 folder 매칭이 기본이라 mode는 쓰지 않는다.
+      //
+      // **배열 순서가 곧 우선순위다** — single-match는 첫 매치에서 멈추므로,
+      // src 폴백(app)보다 구체 패턴(src/shared 등)이 반드시 앞에 와야 한다.
+      // 순서가 뒤집히면 레이어 파일이 전부 app으로 배정돼 경계가 조용히 죽는다.
       'boundaries/elements': [
         { type: 'content-pkg', pattern: 'packages/@blog/content' },
-        { type: 'shared', pattern: 'apps/blog/web/shared' },
-        { type: 'platform', pattern: 'apps/blog/web/lib/platform' },
-        { type: 'analytics', pattern: 'apps/blog/web/domain/analytics' },
-        { type: 'auth', pattern: 'apps/blog/web/domain/auth' },
+        { type: 'shared', pattern: 'apps/blog/web/src/shared' },
+        { type: 'platform', pattern: 'apps/blog/web/src/lib/platform' },
+        { type: 'analytics', pattern: 'apps/blog/web/src/domain/analytics' },
+        { type: 'auth', pattern: 'apps/blog/web/src/domain/auth' },
+        // 레이어 부모 폴더 직속(src/lib·src/domain 바로 아래)에 떨어진 파일의
+        // 격리 element — 예전 no-unknown-files가 잡던 자리다. 어떤 policy에도
+        // 없으므로 이 파일이 무언가를 import하거나 import되는 순간 에러가 난다.
+        {
+          type: 'layer-root',
+          pattern: ['apps/blog/web/src/lib', 'apps/blog/web/src/domain'],
+        },
+        // src 폴백 — 위 어디에도 안 걸린 src 파일은 전부 app 레이어다.
         { type: 'app', pattern: 'apps/blog/web/src' },
       ],
       // 테스트는 element 배정은 그대로 두고 파일 카테고리 축으로만 표시한다.
@@ -462,8 +425,9 @@ export default defineConfig([
       'boundaries/dependency-nodes': ['import', 'dynamic-import', 'export'],
     },
     rules: {
-      // element 폴더 밖에 떨어진 파일(예: lib/ 바로 아래 새 파일)을 막는다.
-      'boundaries/no-unknown-files': 'error',
+      // no-unknown-files는 뺐다 — app이 src 전체의 폴백 element라 unknown 파일이
+      // 존재할 수 없어 죽은 게이트가 된다. 스트레이 파일 방어는 layer-root
+      // 격리 element(위)가 잇는다.
       'boundaries/dependencies': [
         'error',
         {

@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { css } from '@design-system/ui-lib/css';
 import { useQuery } from '@tanstack/react-query';
-import { getTopPosts } from '@/domain/analytics';
+import { getTopPosts } from '@/src/domain/analytics';
 import type { PostSummary } from '@blog/content';
 import { postPath } from '@blog/content';
 import { fmtNum } from '@blog/content';

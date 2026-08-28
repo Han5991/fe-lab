@@ -1,6 +1,6 @@
 import { RSS_PATH } from '@blog/content';
 import { AUTHOR_GITHUB, AUTHOR_LINKEDIN } from '@/content.values.mts';
-import { ABOUT_PATH, HOME_PATH, PRIVACY_PATH } from '@/shared/routes';
+import { ABOUT_PATH, HOME_PATH, PRIVACY_PATH } from '@/src/shared/routes';
 import Link from 'next/link';
 import { css, cx } from '@design-system/ui-lib/css';
 import type { ReactNode } from 'react';

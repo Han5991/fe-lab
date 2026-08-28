@@ -1,5 +1,5 @@
 import { css } from '@design-system/ui-lib/css';
-import { postHeroKey } from '@/shared/transitions';
+import { postHeroKey } from '@/src/shared/transitions';
 import { DIAGRAMS, isDiagramName } from '@/src/components/diagram/registry';
 
 interface PostHeroProps {
