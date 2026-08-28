@@ -143,6 +143,21 @@ export function isDiagramName(value: unknown): value is DiagramName {
   );
 }
 
+/**
+ * 포스트 디렉터리에서 **이름만 보고** 빌드 대상에서 제외하는 작업 노트 파일.
+ *
+ * 이 파일들은 frontmatter가 없어 어차피 메타 노트로 걸러지지만(fail-closed),
+ * 이름 제외는 내용과 무관하게 결정적이다 — 로그 본문 첫 줄에 `---` 구분선이
+ * 생겨도 포스트가 되지 않는다. 무엇이 작업 노트인지는 이 저장소의 글쓰기
+ * 워크플로가 정하는 어휘라 앱이 소유하고, 패키지(`collectMarkdownFiles`)는
+ * 받은 집합으로 판정만 한다. 설정 배선 전용 — 화면은 쓰지 않는다.
+ */
+export const META_FILENAMES = [
+  'PLAN.md',
+  'THUMBNAIL_LOG.md',
+  'STUDY_LOG.md',
+] as const;
+
 // OG 카드 팔레트는 여기 없다 — 값이 아니라 **디자인 토큰에서 파생**되기 때문이다.
 // `blog-preset.ts`의 다크 색을 `darkColor()`로 뽑아 `content.config.mts`가 조립한다.
 // 이 파일이 아니라 거기인 이유는 값 import 금지(위 제약) 때문이다: 프리셋을 여기서
