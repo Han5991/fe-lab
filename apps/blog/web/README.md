@@ -25,7 +25,7 @@ apps/blog/web  (이 앱)
   │                          없다 — 값의 소유자는 앱이다. 정체성(SITE·AUTHOR·TIMEZONE)에
   │                          더해 sitemap 우선순위/정적 페이지·llms 산문까지.
   │                          (og 팔레트·폰트는 여기 없다 — 파생값이라 content.config.mts가
-  │                           darkColor()·join() 경로 조립으로 뽑는다)
+  │                           themeColor()·join() 경로 조립으로 뽑는다)
   │                          개별 상수(SITE_URL·SITE_NAME…)가 1차이고 그룹 객체(SITE·
   │                          AUTHOR·SITEMAP_PRIORITY…)는 설정 배선 전용이다: 화면이 그룹을
   │                          import하면 안 쓰는 값까지 번들에 실린다.
@@ -68,7 +68,7 @@ apps/blog/web/
 ├─ public/              robots.txt · favicon · og-default.jpg … (+ 빌드가 생성하는 sitemap/rss/search-index/llms/og/thumbs/posts는 .gitignore)
 ├─ design/              DIAGRAM_AUTHORING.md(현행) · blog-redesign-handoff.md · github-style-reference.md(둘 다 이력)
 ├─ next.config.ts · panda.config.ts · postcss.config.cjs · vitest.config.mts · vitest.setup.ts
-├─ tsconfig.json(프로덕션) · tsconfig.test.json(테스트) · eslint.config.mjs · turbo.json · vercel.json · env.d.ts
+├─ tsconfig.json(프로덕션) · tsconfig.test.json(테스트) · eslint.config.mts · turbo.json · vercel.json · env.d.ts
 └─ .env.production      (커밋된 유일한 env — Supabase URL/anon key, Giscus)
 ```
 
@@ -76,7 +76,7 @@ apps/blog/web/
 
 ### 레이어 경계 — 컨벤션이 아니라 lint
 
-`eslint.config.mjs`의 `eslint-plugin-boundaries`가 **폴더 단위 element**로 의존 방향을 강제한다(`src/` 전체에 건다 — element는 첫 매치 우선이라 구체 패턴이 `src` 폴백보다 앞에 있어야 한다). 기준 경로는 워크스페이스 루트 — `@blog/content`가 pnpm 심링크 realpath로 해석되기 때문.
+`eslint.config.mts`의 `eslint-plugin-boundaries`가 **폴더 단위 element**로 의존 방향을 강제한다(`src/` 전체에 건다 — element는 첫 매치 우선이라 구체 패턴이 `src` 폴백보다 앞에 있어야 한다). 기준 경로는 워크스페이스 루트 — `@blog/content`가 pnpm 심링크 realpath로 해석되기 때문.
 
 | element (아래 → 위) | 폴더                     | 가져올 수 있는 것                                                                                                                                                                            |
 | :------------------ | :----------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -89,7 +89,7 @@ apps/blog/web/
 
 추가 규칙: 프로덕션 코드는 `*.test.*`를 import 못 함 / app 레이어는 `domain/*/…Repository`를 직접 찌르지 말고 배럴(`@/src/domain/analytics`, `@/src/domain/analytics/admin`)로 / app 레이어에서 `client.from()`·`.rpc()` 직접 호출 금지(`no-restricted-syntax`) / 역방향(analytics·auth→app, platform→domain·app, shared→상위 전부)은 boundaries가 막는다 — 해석 경로 기반이라 alias·상대경로 어느 쪽도 우회 불가. `shared`는 모든 레이어가 여는 유일한 폴더라 모듈 **모양**까지 잠근다 — 재수출(`export … from`)·모듈 최상위 문(부수효과, `'use client'` 포함)·`.tsx` 전면 금지. 입장 기준은 [`src/shared/README.md`](./src/shared/README.md).
 
-`lint`는 `--max-warnings=0`이고, `noInlineConfig: true` + `@eslint-community/eslint-comments/no-use`로 **인라인 `eslint-disable` 주석이 전면 금지**다. 예외는 주석이 아니라 `eslint.config.mjs`에 `files` 스코프로 적는다.
+`lint`는 `--max-warnings=0`이고, `noInlineConfig: true` + `@eslint-community/eslint-comments/no-use`로 **인라인 `eslint-disable` 주석이 전면 금지**다. 예외는 주석이 아니라 `eslint.config.mts`에 `files` 스코프로 적는다.
 
 ### tsconfig 분할
 
@@ -154,7 +154,7 @@ apps/blog/web/
 - **`node` 프로젝트** (`src/shared/**`, `src/domain/**`, `src/lib/**`): 순수 로직 — analytics service, publicClient가 supabase-js와 바이트 동일한 요청을 만드는지, adminApi 언래핑. jsdom을 띄우지 않는다(이 앱의 jsdom 부팅은 파일당 1초 안팎이라 DOM이 필요 없는 테스트까지 태우면 그대로 낭비다).
 - **`jsdom` 프로젝트** (레이어 세 폴더를 제외한 `src/**/*.{test,spec}.{ts,tsx}`): 컴포넌트·훅·라우트 헬퍼. RTL·jest-dom 매처와 `vitest.setup.ts`가 여기에만 붙는다 — 그 셋업이 `next.config`를 읽어 `<Link>`가 실제 빌드와 같은 후행 슬래시 href를 내게 맞춘다.
 - 콘텐츠 계약(실제 `apps/blog/posts` 대상 불변식, 산출물 정합성, URL 인코딩 일관성)은 **`packages/@blog/content`** 의 테스트가 잠근다 — `pnpm --filter @blog/content test`.
-- `include` 글롭은 `tsconfig.test.json`·`eslint.config.mjs`의 테스트 블록과 **대칭**이다. 한쪽을 고치면 셋을 함께 고칠 것.
+- `include` 글롭은 `tsconfig.test.json`·`eslint.config.mts`의 테스트 블록과 **대칭**이다. 한쪽을 고치면 셋을 함께 고칠 것.
 
 ---
 

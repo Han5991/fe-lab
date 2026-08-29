@@ -159,7 +159,7 @@ export const META_FILENAMES = [
 ] as const;
 
 // OG 카드 팔레트는 여기 없다 — 값이 아니라 **디자인 토큰에서 파생**되기 때문이다.
-// `blog-preset.ts`의 다크 색을 `darkColor()`로 뽑아 `content.config.mts`가 조립한다.
+// `blog-preset.ts`의 다크 색을 `themeColor('dark', …)`로 뽑아 `content.config.mts`가 조립한다.
 // 이 파일이 아니라 거기인 이유는 값 import 금지(위 제약) 때문이다: 프리셋을 여기서
 // 끌면 화면이 이 모듈의 다른 상수를 쓸 때 Panda 설정까지 클라이언트 번들에 실린다.
 

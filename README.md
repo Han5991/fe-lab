@@ -29,7 +29,7 @@
 | `blog/web`      | `@blog/web`         | 🚀 블로그 (운영) | Next.js 16 (`output: 'export'`, React Compiler), Panda CSS, Supabase, React Query | SSG + 동적 기능 하이브리드. 콘텐츠 로딩·검증·산출물 생성은 전부 `@blog/content`에 위임. 도메인 `blog.sangwook.dev`. |
 | `blog/posts`    | (워크스페이스 아님) | 📝 콘텐츠        | Markdown (`.md`) + `_series.yml`                                                  | 주제별 폴더 구조, frontmatter 기반 메타. **`_series.yml`을 둔 폴더만 시리즈**. MDX 아님.                            |
 | `next.js`       | `next.js`           | 🧪 실험          | Next.js 16 (App Router, Turbopack), Vitest + RTL + next-router-mock               | 서버 컴포넌트·에러 바운더리·테스팅 전략.                                                                            |
-| `react`         | `react`             | 🧪 실험          | React 19 SPA + Vite 8 + React Router 8 + TanStack Query, Vitest + RTL + MSW       | 라우팅·커스텀 훅·API 모킹·타입 설계 실험(`src/pages/typescript-project-design`).                                    |
+| `react`         | `react`             | 🧪 실험          | React 19 SPA + Vite 8 + React Router 8 + TanStack Query, Vitest + RTL + MSW       | 라우팅·커스텀 훅·API 모킹·타입 설계 실험(`apps/react/src/pages/typescript-project-design`).                         |
 | `typescript`    | `typescript`        | 🧪 실험          | Pure TypeScript + Vitest                                                          | 에러 모델링 등 순수 타입/로직 실험.                                                                                 |
 | `socket-server` | `socket-server`     | 🧪 실험          | Node.js + 의존성 0의 순수 TypeScript WebSocket 서버                               | `react` 앱과 짝지어 실시간 통신 실험(`pnpm dev --filter=socket-server --filter=react`). lint/test 스크립트 없음.    |
 
@@ -54,19 +54,25 @@
 apps/blog/posts/**/*.md ─┐
 apps/blog/posts/**/_series.yml ─┤
                                 ▼
-            packages/@blog/content            (shared → post → seo → scripts → scripts/render)
-            ├─ 로더·공개 판정·시리즈·URL 계약  ─▶  apps/blog/web  (lib/platform → domain/analytics → src)
+            packages/@blog/content            (shared → post → seo → scripts → scripts/render → scripts/cli)
+            ├─ 로더·공개 판정·시리즈·URL 계약  ─▶  apps/blog/web  (src/shared → src/lib/platform
+            │                                 ─▶   → src/domain/{analytics,auth} → app 레이어)
             ├─ SEO 빌더 (@blog/content/seo)    ─▶     ├─ next build (output: 'export')  ─▶  out/  ─▶  GitHub Pages
-            └─ 빌드 스크립트 (build-content)   ─▶     │     └─ check-seo (산출 HTML 검사 게이트)
-                 validate-posts 게이트 → 병렬 8개     └─ 런타임: Supabase (조회수·Admin·Analytics), Giscus, GA4/GTM
-                 (sync·sitemap·rss·og-images·thumbnails·search-index·llms-full·llms)
+            └─ 빌드 스크립트 (build-content)   ─▶     │     ├─ check-seo    (산출 HTML 게이트)
+                 validate-posts 게이트 → 병렬 8개     │     └─ check-bundle (JS 청크 누수 게이트)
+                 (sync·sitemap·rss·og-images·          └─ 런타임: Supabase (조회수·Admin·Analytics), Giscus, GA4/GTM
+                  thumbnails·search-index·llms-full·llms)
 ```
 
 - **레이어 경계는 컨벤션이 아니라 lint다.** 두 워크스페이스 모두 `eslint-plugin-boundaries`가 폴더 단위 element로
-  의존 방향을 강제한다(앱: `lib/platform → domain/analytics → src`, 패키지: `shared → post → seo → scripts → scripts/render`).
+  의존 방향을 강제한다 — 앱은 `src/shared`(최하단, 라우트 경로·전환 네임스페이스) → `src/lib/platform`(Supabase
+  어댑터) → `src/domain/{analytics,auth}` → app 레이어(`src`의 나머지), 패키지는
+  `shared → post → seo → scripts → scripts/render → scripts/cli`. 앱 레이어는 platform을 직접 import할 수 없다.
   콘텐츠 원본(`apps/blog/posts`)은 패키지로 옮기지 않았다 — 위치는 앱 루트 `content.config.mts`(경로 앵커,
   `defineContent({ root: import.meta.url })`)의 설정 한 줄이다.
-- **검증은 두 층.** `validate-posts`가 frontmatter 원문을, `check-seo`가 최종 HTML을 본다. 둘 다 `pnpm build`(prebuild → next build → check-seo) 안에 있어 로컬·PR·배포가 같은 검사를 지난다.
+- **검증은 두 층 + 번들 게이트.** `validate-posts`가 frontmatter 원문을, `check-seo`가 최종 HTML을,
+  `check-bundle`이 공개 페이지 JS 청크의 admin·서버 전용 코드 누수를 본다. 셋 다
+  `pnpm build`(prebuild → next build → check-seo → check-bundle) 안에 있어 로컬·PR·배포가 같은 검사를 지난다.
 - 자세한 구조·스크립트·데이터 흐름은 [`apps/blog/web/README.md`](apps/blog/web/README.md), 운영 규칙과 콘텐츠 계약은 [`CLAUDE.md`](CLAUDE.md)의 "Blog Architecture" 절.
 
 ---
@@ -102,7 +108,7 @@ apps/blog/posts/**/_series.yml ─┤
 
   예전에는 `@blog/content`와 `@blog/web`의 순수 로직이 `node --test`(+`node:assert/strict`)로 돌았다. 러너가 갈리면 단언 API·커버리지 도구·ESLint 인가가 두 벌이 되고, `node --test '<glob>'`은 **매치가 0개여도 exit 0**이라 테스트가 조용히 사라질 수 있었다. Vitest는 매치 0개면 실패한다.
 
-- **CI**(`.github/actions/quality-checks` 공용 composite action): ① `pnpm turbo run lint check-types test` ② `pnpm --filter @blog/web lint:posts` ③ `pnpm format:check` ④ `pnpm build --filter=@blog/web`(prebuild → next build → check-seo). PR CI와 배포 워크플로가 같은 액션을 부른다.
+- **CI**(`.github/actions/quality-checks` 공용 composite action): ① `pnpm turbo run lint check-types test` ② `pnpm --filter @blog/web lint:posts` ③ `pnpm format:check` ④ `pnpm build --filter=@blog/web`(prebuild → next build → check-seo → check-bundle). PR CI와 배포 워크플로가 같은 액션을 부른다.
 - **pre-push hook**: 푸시 전 워크스페이스 전체 lint·types·test (turbo 캐시로 보통 < 5초).
 
 ---
@@ -130,7 +136,7 @@ pnpm format:check     # Prettier check (pnpm format = write)
 
 # 빌드
 pnpm build                        # 전체
-pnpm build --filter=@blog/web     # 블로그만 (prebuild → next build → check-seo) — CI와 같은 형태
+pnpm build --filter=@blog/web     # 블로그만 (prebuild → next build → check-seo → check-bundle) — CI와 같은 형태
 
 # 정리
 pnpm clean            # dist/.next/out/.turbo + node_modules 제거 (clean:dist / clean:modules 따로도 가능)
@@ -144,7 +150,7 @@ pnpm new-post "글 제목" --series bundler --tags a,b   # 새 포스트 스캐�
 pnpm blog-write                                     # 글 미리보기 — Supabase(Docker) 없이 next dev만 (루트 OK)
 pnpm new-post "예약글" --scheduled "2026-05-01T09:00+09:00"
 pnpm lint:posts                                     # frontmatter·본문 검증 (경고 수준)
-pnpm check-seo                                      # 빌드 산출물(out/) SEO 검사 — pnpm build의 마지막 단계
+pnpm check-seo                                      # 빌드 산출물(out/) SEO 검사 — pnpm build 안의 게이트
 ```
 
 ---

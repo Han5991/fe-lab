@@ -10,7 +10,7 @@ claude-post-inventory 워크플로우의 수집 담당이다. 예전에는 Claud
   - 이 스크립트: 수집. frontmatter 파싱, git 최초/최종 커밋일, sitemap 대조
   - Claude:      서술. 표 렌더링과 이슈 갱신
 
-**판정 규칙의 단일 출처는 여기가 아니다.** `apps/blog/web/domain/post/`의
+**판정 규칙의 단일 출처는 여기가 아니다.** `packages/@blog/content/src/post/`의
 `visibility.ts`(isPostFile / isPostVisible)와 `repository.ts`(slug·series 유도)가
 원본이고, 이 스크립트는 그 규칙을 미러링한다. 규칙이 바뀌면 여기도 함께 고칠 것.
 미러링을 감수한 이유는 원본이 TypeScript라 그대로 쓰려면 pnpm install + tsx가
@@ -37,7 +37,7 @@ from xml.etree import ElementTree
 
 KST = timezone(timedelta(hours=9))
 
-# domain/post/types.ts 의 POST_STATUSES 와 같은 집합.
+# packages/@blog/content/src/post/types.ts 의 POST_STATUSES 와 같은 집합.
 POST_STATUSES = {"published", "draft", "scheduled"}
 
 USER_AGENT = "fe-lab-post-inventory/1 (+https://github.com/Han5991/fe-lab)"

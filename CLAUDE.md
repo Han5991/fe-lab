@@ -36,7 +36,15 @@ the key findings.
 
 ## Key Design Patterns
 
-테스트 요소 선택은 `data-testid` 속성으로 하고, 외부 의존성은 mock한다.
+테스트는 **사용자가 보는 것으로** 요소를 고른다 — `getByRole` → `getByLabelText` →
+`getByPlaceholderText` → `getByText` 순이고 `getByTestId`는 최후 수단이다(전체 순위는
+`AGENTS.md` §5가 단일 출처). 블로그 스택에는 `data-testid`가 한 건도 없다.
+
+외부 의존성은 **mock보다 주입으로 끊는 것이 먼저다.** `@blog/content`는 설정을
+`defineTestContent`로, 경로를 tmpdir로, 시각을 `isPostVisible(data, timezone, now)`의 `now`
+인자로 받는다. 픽스처 값은 실제 사이트 값과 **일부러 다르게** 둬서, 소비처가 주입을 무시하고
+상수를 직접 읽으면 테스트가 깨진다(`src/shared/testValues.ts`) — mock으로는 못 잡는 실패다.
+`vi.mock`은 그렇게 끊을 수 없는 자리에만 쓰고, MSW는 `apps/react`에만 있다.
 
 ### Blog Architecture
 
@@ -84,10 +92,16 @@ apps/blog/posts (원고)  →  packages/@blog/content  →  apps/blog/web
 - **tsconfig 분할**: `tsconfig.json`(프로덕션, 엄격 플래그 전부) / `tsconfig.test.json`(테스트 —
   `noUncheckedIndexedAccess`·`noPropertyAccessFromIndexSignature`·`exactOptionalPropertyTypes` 세
   개만 끔). `check-types`와 ESLint 타입 룰이 같은 분할을 따른다
-- **lint 임계값**: 앱·패키지 모두 `--max-warnings=0`. 앱에 남아 있던 jsx-a11y 경고 5건은 설계로
-  풀고 룰을 에러로 되돌렸다(#289). 함께 `noInlineConfig: true` +
+- **lint 임계값**: 블로그 앱·`@blog/content` 둘 다 `--max-warnings=0`. 앱에 남아 있던 jsx-a11y
+  경고 5건은 설계로 풀고 룰을 에러로 되돌렸다(#289). 함께 `noInlineConfig: true` +
   `@eslint-community/eslint-comments/no-use`가 켜져 **인라인 `eslint-disable` 주석이 전면 금지**다 —
-  예외가 필요하면 주석이 아니라 `eslint.config.mjs`에 `files` 스코프로 적을 것
+  예외가 필요하면 주석이 아니라 `eslint.config.mts`에 `files` 스코프로 적을 것.
+  **이 임계값은 블로그 스택 둘에만 건다.** 실험실은 세 단이다 — `apps/react`·`apps/next.js`는
+  `eslint .`(경고 허용, `noInlineConfig` 없음)이고, `apps/typescript`·`apps/socket-server`는
+  **린트하지 않는다**(lint 스크립트도 eslint 설정 파일도 없다 — `check-types`·`test`만 돈다).
+  저장소 전체 eslint 설정은 넷뿐이다. 규율을 자산에만 거는 건 의도된 배분이다(루트 README
+  "블로그는 실제로 쓰는 자산이라 신중하게"). 실험 앱 코드를 고칠 때 블로그 기준을 강제하지
+  말 것 — `apps/typescript`에서 `pnpm lint`를 찾지도 말 것
 
 #### SSG (Static Site Generation) 전략
 
@@ -175,7 +189,7 @@ apps/blog/posts (원고)  →  packages/@blog/content  →  apps/blog/web
      - `generate-llms.ts`(`llms`): AI 크롤러용 색인(`llms.txt`) 생성 — 예전엔 손으로 관리하던 정적 파일이라 글 6편이 누락되고 개수도 어긋나 있었다. 이제 sitemap·rss와 같은 소스에서 뽑는다
    - **경로 앵커는 앱 루트의 `content.config.mts`다** — `defineContent({ root: import.meta.url })`을 default export 하는 파일의 위치가 앵커라서 패키지는 모노레포 구조를 모른다. CLI는 cwd에서 위로 올라가며 이 파일을 발견하고(전역 `--config <경로>`로 명시 가능, 서브커맨드 이름 **앞**에 적는다), 폴백은 없다. 각 스텝은 같은 CLI를 `node <cli/index.ts> --config <절대경로> <서브커맨드>`로 다시 spawn하며(PATH를 타지 않는다) 부모가 발견한 설정을 자식에 명시 전달한다. 이름과 옵션을 모듈에 잇는 곳은 `src/scripts/cli/program.ts`(commander) 하나뿐이고, `build-content.test.ts`가 두 목록의 어긋남을 잡는다. 앱 코드는 `apps/blog/web/src/content.ts`가 같은 설정으로 만든 `createContent`/`createPostSeo` **인스턴스**에서 로더·SEO 빌더를 가져온다(zero-arg 전역 로더 없음).
 
-   - **사이트 고유 값의 소유자는 앱이다** — `content.values.mts`(순수 리터럴)가 `SITE`·`AUTHOR`·`TIMEZONE`·`DIAGRAM_NAMES`에 더해 `SITEMAP_PRIORITY`·`SITEMAP_STATIC_PAGES`·`LLMS_INTRO`·`LLMS_FACTS`·`LLMS_DOCS`까지 갖고, `content.config.mts`가 그걸 `defineContent`에 넘긴다. **예외가 og 팔레트·폰트다** — 이 둘은 값 모듈이 못 푸는 파생값이라(값 import 금지) `content.config.mts`가 뽑는다: 팔레트는 디자인 토큰에서 `darkColor()`로, 폰트는 pretendard 배포판 파일을 `join()` 경로 조립로 가리키는 서술자(`og.fonts` — name·weight·path)로. `createRequire().resolve`가 아닌 이유는 그 파일 주석에 — 이 설정 파일은 Next 서버 그래프에도 실려서 Turbopack이 resolve 호출을 정적 분석해 폰트 파일 전부를 모듈로 끌다 빌드가 깨진다. 패키지에는 이 축들의 기본값이 **없다**(`ContentValues` 계약이 필수로 강제). 소비도 전부 설정을 거친다 — `postUrl(slug, siteUrl)`·`isPostVisible(post, timezone)`처럼 인자로 받고, 빌드 스크립트는 `ctx.config`를 읽는다. 예전에는 패키지가 리터럴을 들고 소비처 20여 곳이 설정 대신 그것을 직접 import해서, `defineContent`에 오버라이드를 넣어도 화면·산출물은 그대로인 **거짓 표면**이었다. 서버 SEO 모듈은 `content.config.mts`의 해석된 설정을, 화면·클라이언트 그래프는 `content.values.mts`의 **개별 상수**를 읽는다. 설정 객체를 클라이언트로 끌면 og 팔레트·llms 산문까지 번들에 실리고, 값 모듈의 그룹 객체(`SITE`)를 끌어도 마찬가지다 — 번들러는 모듈의 named export 단위로만 털어낸다(실제로 홈 히어로 소개문이 그렇게 새서 개별 상수로 되돌렸다). 같은 이유로 클라이언트가 부르는 `resolveThumbnailSrc`는 설정 슬라이스가 아니라 `ogDefaultImage` **스칼라**를 받는다
+   - **사이트 고유 값의 소유자는 앱이다** — `content.values.mts`(순수 리터럴)가 `SITE`·`AUTHOR`·`TIMEZONE`·`DIAGRAM_NAMES`에 더해 `SITEMAP_PRIORITY`·`SITEMAP_STATIC_PAGES`·`LLMS_INTRO`·`LLMS_FACTS`·`LLMS_DOCS`까지 갖고, `content.config.mts`가 그걸 `defineContent`에 넘긴다. **예외가 og 팔레트·폰트다** — 이 둘은 값 모듈이 못 푸는 파생값이라(값 import 금지) `content.config.mts`가 뽑는다: 팔레트는 디자인 토큰에서 `themeColor('dark', …)`로, 폰트는 pretendard 배포판 파일을 `join()` 경로 조립로 가리키는 서술자(`og.fonts` — name·weight·path)로. `createRequire().resolve`가 아닌 이유는 그 파일 주석에 — 이 설정 파일은 Next 서버 그래프에도 실려서 Turbopack이 resolve 호출을 정적 분석해 폰트 파일 전부를 모듈로 끌다 빌드가 깨진다. 패키지에는 이 축들의 기본값이 **없다**(`ContentValues` 계약이 필수로 강제). 소비도 전부 설정을 거친다 — `postUrl(slug, siteUrl)`·`isPostVisible(post, timezone)`처럼 인자로 받고, 빌드 스크립트는 `ctx.config`를 읽는다. 예전에는 패키지가 리터럴을 들고 소비처 20여 곳이 설정 대신 그것을 직접 import해서, `defineContent`에 오버라이드를 넣어도 화면·산출물은 그대로인 **거짓 표면**이었다. 서버 SEO 모듈은 `content.config.mts`의 해석된 설정을, 화면·클라이언트 그래프는 `content.values.mts`의 **개별 상수**를 읽는다. 설정 객체를 클라이언트로 끌면 og 팔레트·llms 산문까지 번들에 실리고, 값 모듈의 그룹 객체(`SITE`)를 끌어도 마찬가지다 — 번들러는 모듈의 named export 단위로만 털어낸다(실제로 홈 히어로 소개문이 그렇게 새서 개별 상수로 되돌렸다). 같은 이유로 클라이언트가 부르는 `resolveThumbnailSrc`는 설정 슬라이스가 아니라 `ogDefaultImage` **스칼라**를 받는다
 
      > 예전엔 스텝마다 스크립트 **파일 경로**를 하드코딩하고 `isCliEntry`(realpath 비교)로 "직접 실행인가"를 판정했다. pnpm 심링크 경로와 ESM 로더 realpath가 달라 순진한 `import.meta.url === argv[1]` 비교가 **항상 false**였고, 모든 생성기가 무음 no-op이던 사고에서 나온 가드다. 진입점이 하나가 되면서 가드도 그 함정도 없어졌다 — 단계 모듈은 `main`만 export하고, 부르는 일은 CLI가 한다.
 4. **정적 빌드**: `next build` → `out/` 디렉토리에 정적 파일 생성 → `check-seo`·`check-bundle`(아래)
@@ -222,7 +236,7 @@ apps/blog/posts (원고)  →  packages/@blog/content  →  apps/blog/web
 - 색은 전부 `packages/@design-system/ui/src/blog-preset.ts`에서 온다.
   **컴포넌트에서 hex를 직접 쓰지 않는다.** 다이어그램 SVG도 마찬가지로
   `currentColor` 또는 Panda `css()`로 토큰에 연결한다. CSS 변수를 못 읽는
-  렌더러(satori/sharp — OG 카드)는 같은 파일의 `darkColor('paper.50')`으로
+  렌더러(satori/sharp — OG 카드)는 같은 파일의 `themeColor('dark', 'paper.50')`으로
   뽑는다. **hex를 옮겨 적지 않는다**
 - 레일·거터의 단일 출처는 `src/components/Rail.tsx`다. **페이지에서 `maxW`와 `px`를
   직접 쓰지 않는다.** 거터는 언제나 레일 바깥이다
@@ -292,7 +306,7 @@ apps/blog/posts (원고)  →  packages/@blog/content  →  apps/blog/web
 | :------------------------------------------ | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `next.config.ts`                            | SSG output(개발 모드 제외), trailingSlash + skipTrailingSlashRedirect 짝, images.unoptimized, reactCompiler, `optimizePackageImports: ['@blog/content']`(배럴 import가 fs 모듈을 클라이언트 그래프로 끌지 않게)                                                                                                                                                                                                                                                                                                         |
 | `panda.config.ts`                           | Panda CSS 설정 — preset `@design-system/ui/preset` + `blog-preset`, `strictTokens`, outdir는 `packages/@design-system/ui-lib`                                                                                                                                                                                                                                                                                                                                                                                           |
-| `eslint.config.mjs` (앱·패키지 각각)        | ESLint 10 flat config를 직접 조립(`eslint-config-next` 미사용) + `eslint-plugin-boundaries` 레이어 경계. 두 파일이 같은 엄격 수준을 유지해야 한다 — 패키지 소스가 앱 program에 소스째 섞이기 때문                                                                                                                                                                                                                                                                                                                       |
+| `eslint.config.mts` (앱·패키지 각각)        | ESLint 10 flat config를 직접 조립(`eslint-config-next` 미사용) + `eslint-plugin-boundaries` 레이어 경계. 두 파일이 같은 엄격 수준을 유지해야 한다 — 패키지 소스가 앱 program에 소스째 섞이기 때문                                                                                                                                                                                                                                                                                                                       |
 | `tsconfig.json` / `tsconfig.test.json`      | 프로덕션/테스트 분할(앱·패키지 동일 구조). 테스트 include는 vitest include 글롭·ESLint 테스트 블록과 대칭 — 한쪽을 고치면 셋을 함께                                                                                                                                                                                                                                                                                                                                                                                     |
 | `.env.production`                           | Supabase URL/Key, Giscus 설정 — 커밋되는 유일한 env 파일(`.gitignore`의 `.env*` 예외). 로컬 `.env.local`은 커밋하지 않는다                                                                                                                                                                                                                                                                                                                                                                                              |
 | `env.d.ts`                                  | `NEXT_PUBLIC_*` 8개를 `NodeJS.ProcessEnv`에 선언 — `noPropertyAccessFromIndexSignature` 아래서도 점 접근을 쓰기 위해(Next는 멤버 표현식만 인라인)                                                                                                                                                                                                                                                                                                                                                                       |

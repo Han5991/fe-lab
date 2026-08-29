@@ -21,7 +21,7 @@
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { defineContent } from '@blog/content';
-import { darkColor } from '@design-system/ui/blog-preset';
+import { themeColor } from '@design-system/ui/blog-preset';
 import {
   AUTHOR,
   BUNDLE_GUARDS,
@@ -69,15 +69,15 @@ export default defineContent({
      * **다크만 쓴다** — OG 카드는 지면이 `paper.50` 다크인 한 가지 디자인이다.
      */
     palette: {
-      paper: darkColor('paper.50'),
-      ink: darkColor('ink.950'),
-      inkMeta: darkColor('ink.600'),
+      paper: themeColor('dark', 'paper.50'),
+      ink: themeColor('dark', 'ink.950'),
+      inkMeta: themeColor('dark', 'ink.600'),
       // 카드의 가로 룰. 같은 자리의 `ink.border`는 rgba라 카드 지면 위에서
       // 합성이 필요한데, 불투명 짝이 `ink.200`이라 그쪽을 쓴다.
-      inkRule: darkColor('ink.200'),
-      accent: darkColor('accent.500'),
+      inkRule: themeColor('dark', 'ink.200'),
+      accent: themeColor('dark', 'accent.500'),
       // 시리즈 pill의 2px 보더 — 반투명 accent.
-      pillBorder: darkColor('accent.200'),
+      pillBorder: themeColor('dark', 'accent.200'),
     },
     // 카드 템플릿이 쓰는 세 웨이트(400·500·700). name은 satori 등록용이다.
     fonts: [

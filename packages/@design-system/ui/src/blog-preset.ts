@@ -4,13 +4,13 @@ import { definePreset, defineSemanticTokens } from '@pandacss/dev';
  * 테마-가변 색 팔레트 — 아래 `blogPreset`의 `semanticTokens.colors`가 그대로 쓴다.
  *
  * 프리셋 안에 인라인으로 두지 않고 이름을 준 이유: **CSS 변수를 못 읽는 렌더러**가
- * 같은 값을 읽어야 하기 때문이다(`darkColor` 참고). 예전에는 그런 소비처가 hex를
+ * 같은 값을 읽어야 하기 때문이다(`themeColor` 참고). 예전에는 그런 소비처가 hex를
  * 손으로 옮겨 적었다.
  *
  * `defineSemanticTokens.colors`로 감싼 이유는 둘이다. Panda의 시맨틱 토큰 계약을
  * **여기서** 검증받고(조건 키 오타·잘못된 값 모양이 이 파일에서 잡힌다), 그러면서도
  * 리터럴 타입을 잃지 않는다 — 이 헬퍼는 `<Value>(definition) => Value` 제네릭이라
- * 키가 좁혀진 채로 나온다. `darkColor`의 이름 검사가 그 위에 선다.
+ * 키가 좁혀진 채로 나온다. `themeColor`의 이름 검사가 그 위에 선다.
  */
 const blogColors = defineSemanticTokens.colors({
   // ─────────────────────────────────────────────────────────────
@@ -274,19 +274,31 @@ const blogColors = defineSemanticTokens.colors({
   'code.muted': { value: { base: '#5b636d', _dark: '#808080' } },
 });
 
+/** 팔레트가 값을 갖는 두 테마. */
+export type BlogTheme = 'light' | 'dark';
+
+/** 팔레트 색 이름. 오타가 컴파일 에러가 되도록 키로 좁혀 둔다. */
+export type BlogColorName = keyof typeof blogColors;
+
 /**
- * 다크 테마의 색 값 — **CSS 변수를 못 읽는 렌더러용**.
+ * 한 테마의 색 값 — **CSS 변수를 못 읽는 렌더러용**.
  *
  * 화면은 토큰 이름으로 색을 쓰지만(`css({ color: 'ink.950' })`), satori/sharp처럼
  * CSS 변수도 oklch도 읽지 못하는 렌더러는 리터럴 값이 필요하다 — 블로그 OG 카드
- * (`public/og/*.png`)가 그렇다. 그런 소비처가 값을 손으로 옮겨 적으면 팔레트를
- * 바꿔도 그림만 옛 색으로 남는데, 렌더는 성공하므로 아무도 실패로 알려주지 않는다.
- * 여기서 뽑아 쓰면 출처가 하나다.
+ * (`public/og/*.png`)와 mermaid 도표가 그렇다. 그런 소비처가 값을 손으로 옮겨
+ * 적으면 팔레트를 바꿔도 그림만 옛 색으로 남는데, 렌더는 성공하므로 아무도 실패로
+ * 알려주지 않는다. 여기서 뽑아 쓰면 출처가 하나다.
  *
- * 이름은 `blogColors`의 키로 좁혀져 있어 오타가 컴파일 에러다.
+ * **테마를 고르는 분기는 여기 한 곳에만 둔다.** 예전에는 테마별 함수를 따로 두었는데
+ * (`darkColor`/`lightColor`), 두 벌이 다 필요한 소비처(mermaid)가 결국 자기 쪽에서
+ * 다시 `theme === 'light' ? … : …`를 쓰게 됐다. 분기가 둘이 되면 한쪽만 고쳐질
+ * 자리가 생긴다 — 이 파일이 애초에 없애려던 종류의 사본이다. 한 벌만 필요한
+ * 소비처(OG 카드)도 `themeColor('dark', …)`로 테마를 명시한다. 이름에 테마를
+ * 숨기면 "왜 다크인가"가 호출부에서 사라진다.
  */
-export function darkColor(name: keyof typeof blogColors): string {
-  return blogColors[name].value._dark;
+export function themeColor(theme: BlogTheme, name: BlogColorName): string {
+  const { base, _dark } = blogColors[name].value;
+  return theme === 'light' ? base : _dark;
 }
 
 export const blogPreset = definePreset({

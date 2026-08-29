@@ -2,16 +2,21 @@
   "$schema": "https://turbo.build/schema.json",
   "extends": ["//"],
   "tasks": {
-    // 이 패키지의 테스트는 워크스페이스 밖 파일 둘을 읽는다. inputs에 적지 않으면
-    // 그 파일만 바뀐 커밋에서 turbo가 **낡은 PASS를 재생**한다(fail-open):
-    //   - apps/blog/posts/**  : contract·url-consistency 테스트가 실제 원고를 잠근다
-    //   - CLAUDE.md           : frontmatterSchema.test.ts가 루트 표를 글자 단위로 대조한다
+    // 이 패키지의 테스트는 워크스페이스 밖 파일을 읽는다.
+    //   - apps/blog/posts/**       : contract·url-consistency가 실제 원고를 잠근다
+    //   - 루트 문서 7 + .github/   : docPaths가 거기 인용된 경로의 존재를 검사한다
+    //   - 저장소의 파일 목록        : 같은 테스트가 "그 경로가 실재하나"를 git ls-files로 본다
+    //
+    // 마지막 항목 때문에 이 태스크는 사실상 **트리 전체가 입력**이다. 파일을 옮기거나
+    // 지우면 인용이 죽는데, 그 이동은 이 패키지 밖에서 일어난다. inputs 글롭으로 그걸
+    // 다 적으면 목록이 곧 어긋나고, 어긋난 목록은 turbo가 **낡은 PASS를 재생**하게
+    // 만든다(fail-open). 그래서 목록을 늘리는 대신 캐시를 끈다 — 테스트 716개가
+    // 캐시 미스로 돌아도 1.7초라 아낄 것이 없고, 조용히 통과하는 쪽이 훨씬 비싸다.
+    //
+    // `cache: false`면 turbo는 inputs를 읽지 않는다. 그래서 여기 목록을 두지 않는다 —
+    // 두면 "이게 입력의 전부"라고 주장하는 죽은 설정이 된다.
     "test": {
-      "inputs": [
-        "$TURBO_DEFAULT$",
-        "$TURBO_ROOT$/apps/blog/posts/**",
-        "$TURBO_ROOT$/CLAUDE.md"
-      ]
+      "cache": false
     }
   }
 }

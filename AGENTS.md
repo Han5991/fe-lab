@@ -28,7 +28,7 @@ which still taught the Hero's Journey template the skill exists to forbid.
 ## 2. Project Structure
 
 - **apps/**
-  - `blog/web/` (`@blog/web`, Next.js 16, static export): Tech blog. Layers `lib/platform → domain/analytics → src`
+  - `blog/web/` (`@blog/web`, Next.js 16, static export): Tech blog. Layers `src/shared → src/lib/platform → src/domain/{analytics,auth}` → app layer
     enforced by `eslint-plugin-boundaries`. Content loading/validation/artifact generation is **not** here — it lives in
     `packages/@blog/content`, whose scripts the app runs through the `blog-content` bin (`blog-content build`, `… validate`, `… check-seo`).
     Markdown is `gray-matter` + `react-markdown` — **not** MDX/velite/contentlayer.
@@ -73,7 +73,7 @@ first run may build dependencies). Package names are `@blog/web`, `@blog/content
 
   ```bash
   pnpm --filter @blog/content test   # Vitest, node env — content contracts, generators, validation
-  pnpm --filter @blog/web test       # Vitest, two projects: node (domain/**, lib/**) + jsdom (src/**)
+  pnpm --filter @blog/web test       # Vitest, two projects: node (src/shared, src/domain, src/lib) + jsdom (rest of src)
   pnpm test --filter=next.js         # Vitest (jsdom + RTL + next-router-mock)
   pnpm test --filter=react           # Vitest (jsdom + RTL + MSW)
   pnpm test --filter=typescript      # Vitest (node)
@@ -152,7 +152,7 @@ first run may build dependencies). Package names are `@blog/web`, `@blog/content
 - **Tools**:
   - `vitest` everywhere — the runner never varies, only the environment does
   - `react-testing-library` in the jsdom environments (Next.js, React/Vite, blog/web `src/**`)
-  - node environment for pure logic (blog/web `domain/**`·`lib/**`; `@blog/content` `src/**` — all content/scripts tests live there now)
+  - node environment for pure logic (blog/web `src/shared`·`src/domain`·`src/lib`; `@blog/content` `src/**` — all content/scripts tests live there now)
   - `msw` (Network mocking — `apps/react`)
 - **Selectors**: Prefer user-centric selectors:
   1. `getByRole` (button, heading, etc.)
@@ -160,24 +160,36 @@ first run may build dependencies). Package names are `@blog/web`, `@blog/content
   3. `getByPlaceholderText`
   4. `getByText`
   5. `getByTestId` (Last resort: use `data-testid="identifier"`)
-- **Mocking**: Use MSW for API calls. Avoid mocking internal hook implementations if possible (test behavior, not implementation).
+- **Mocking**: Prefer **injection over mocking**. `@blog/content` takes its config through `defineTestContent`, its
+  paths through a tmpdir, and its clock through the `now` argument of `isPostVisible(data, timezone, now)`; the
+  fixture values are deliberately different from the real site values (`src/shared/testValues.ts`), so a consumer
+  that ignores the injection and reads a constant directly fails the test — a failure a mock cannot catch. Reach for
+  `vi.mock` only where a seam cannot be injected, and never to stub internal hook implementations (test behavior, not
+  implementation). MSW exists in `apps/react` only.
 - **Contract tests**: `packages/@blog/content/src/post/contract.test.ts` and `src/scripts/contract.test.ts` read the real
   `apps/blog/posts/` — they are the safety net for content/pipeline refactors. `src/post/frontmatterSchema.test.ts` diffs the
   frontmatter table in root `CLAUDE.md` character-for-character against the descriptor table; edit both together.
 
 ## 6. Git & Workflow
 
-- **Commit Messages**: Conventional Commits.
-  - `feat(scope): ...`
-  - `fix(scope): ...`
-  - `docs(scope): ...`
-  - `refactor(scope): ...`
-  - `test(scope): ...`
-- **Scope**: `blog`, `content`, `next`, `react`, `ui`, `core`, `deps`, `ci`, etc.
-- **Hooks (lefthook)**: pre-commit runs prettier on staged files (`apps/blog/posts/**` excluded); pre-push runs
-  `pnpm lint` / `check-types` / `test` in parallel. Bypass only when necessary: `LEFTHOOK=0` or `--no-verify`.
+- **Commit Messages**: Conventional Commits, Korean subject line, declarative (`~한다`) — the subject states the rule
+  the commit establishes, not a summary of the files it touched.
+  - `feat(scope): ...` / `fix(scope): ...` / `docs(scope): ...` / `refactor(scope): ...` / `test(scope): ...`
+  - Two non-standard types are used on purpose: `strict(scope)` for a TypeScript/lint tightening step, and
+    `blog(scope)` for work whose point is the writing — the post itself, plus whatever rendering or tooling that post
+    needed (e.g. `728d021` moved series resolution to one place while finishing a series). Do not invent others.
+  - **No AI attribution trailers** (`Co-Authored-By: Claude`, `Claude-Session:`, …). Nothing enforces this, and
+    squash merge is how it leaks in — the trailer rides along in a sub-commit body and lands on `main`. Strip it
+    from every sub-commit before the PR is squashed, not after.
+- **Scope**: the workspace or area the change lands in. Blog work splits by package: `blog` (posts/authoring),
+  `blog-web` (the Next.js app), `blog-content` (`@blog/content`). Also in active use: `ci`, `deps`, `claude`,
+  `bundler`, `supabase`, `react`, `next`, `renovate`, `vercel`, `turbo`.
+- **Hooks (lefthook)**: `pre-commit` runs prettier on staged files (`apps/blog/posts/**` excluded); `pre-push` runs
+  `pnpm lint` / `check-types` / `test` in parallel. There is no `commit-msg` hook — the message rules above are
+  held by hand. Bypass only when necessary: `LEFTHOOK=0` or `--no-verify`.
 - **PRs**: Self-review required. Verify `pnpm lint`, `pnpm check-types`, `pnpm test`, `pnpm format:check` pass before
-  submitting — CI (`.github/actions/quality-checks`) runs those plus `lint:posts` and the blog build (`prebuild → next build → check-seo`).
+  submitting — CI (`.github/actions/quality-checks`) runs those plus `lint:posts` and the blog build
+  (`prebuild → next build → check-seo → check-bundle`).
 
 ## 7. Troubleshooting
 

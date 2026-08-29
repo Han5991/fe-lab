@@ -249,4 +249,4 @@ pnpm --filter @blog/content test:coverage # 같은 스위트 + v8 커버리지
 
 이 패키지의 테스트는 전부 node 환경이라 `vitest.config.mts`를 프로젝트로 나누지
 않는다(앱은 `src/`가 jsdom을 요구해 갈린다). `include` 글롭은 `tsconfig.test.json`·
-`eslint.config.mjs`의 테스트 블록과 **대칭**이므로 한쪽을 고치면 셋을 함께 고칠 것.
+`eslint.config.mts`의 테스트 블록과 **대칭**이므로 한쪽을 고치면 셋을 함께 고칠 것.
