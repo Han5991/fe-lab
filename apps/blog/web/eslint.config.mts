@@ -19,7 +19,7 @@ import tseslint from 'typescript-eslint';
  *
  * CSS 변수를 못 읽는 렌더러(satori/sharp의 OG 카드, mermaid)는 여기 걸리지 않는다 —
  * 그쪽은 `css()` 값이 아니라 평범한 문자열 상수다. 팔레트와의 정합은 각자
- * `darkColor()` 파생과 `mermaidTheme.test.ts` 잠금 테스트가 본다.
+ * `themeColor()` 파생과 `mermaidTheme.test.ts` 잠금 테스트가 본다.
  *
  * `no-restricted-syntax`는 블록마다 통째로 덮어써지므로(뒤 블록이 이김) 이 항목을
  * 이 룰을 쓰는 **모든 블록에 함께** 펼친다. 새 블록에서 이 룰을 켜면 여기도 넣을 것.

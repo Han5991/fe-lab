@@ -25,7 +25,7 @@ apps/blog/web  (이 앱)
   │                          없다 — 값의 소유자는 앱이다. 정체성(SITE·AUTHOR·TIMEZONE)에
   │                          더해 sitemap 우선순위/정적 페이지·llms 산문까지.
   │                          (og 팔레트·폰트는 여기 없다 — 파생값이라 content.config.mts가
-  │                           darkColor()·join() 경로 조립으로 뽑는다)
+  │                           themeColor()·join() 경로 조립으로 뽑는다)
   │                          개별 상수(SITE_URL·SITE_NAME…)가 1차이고 그룹 객체(SITE·
   │                          AUTHOR·SITEMAP_PRIORITY…)는 설정 배선 전용이다: 화면이 그룹을
   │                          import하면 안 쓰는 값까지 번들에 실린다.

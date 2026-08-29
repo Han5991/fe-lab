@@ -173,7 +173,7 @@ function el(
  * 소비자가 자기 디자인 토큰에서 해석해 넘기는 리터럴 색이라, 패키지가 기본 팔레트를
  * 들면 색을 안 넘긴 소비자의 카드가 남의 사이트 색으로 조용히 나간다 — 실패조차
  * 하지 않는 종류의 사고다. 이 저장소에서는 `content.config.mts`가 디자인 시스템의
- * `darkColor()`로 뽑는다.
+ * `themeColor('dark', …)`로 뽑는다.
  */
 export function ogTemplate(
   post: OgPostInput,

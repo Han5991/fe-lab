@@ -4,13 +4,13 @@ import { definePreset, defineSemanticTokens } from '@pandacss/dev';
  * 테마-가변 색 팔레트 — 아래 `blogPreset`의 `semanticTokens.colors`가 그대로 쓴다.
  *
  * 프리셋 안에 인라인으로 두지 않고 이름을 준 이유: **CSS 변수를 못 읽는 렌더러**가
- * 같은 값을 읽어야 하기 때문이다(`darkColor` 참고). 예전에는 그런 소비처가 hex를
+ * 같은 값을 읽어야 하기 때문이다(`themeColor` 참고). 예전에는 그런 소비처가 hex를
  * 손으로 옮겨 적었다.
  *
  * `defineSemanticTokens.colors`로 감싼 이유는 둘이다. Panda의 시맨틱 토큰 계약을
  * **여기서** 검증받고(조건 키 오타·잘못된 값 모양이 이 파일에서 잡힌다), 그러면서도
  * 리터럴 타입을 잃지 않는다 — 이 헬퍼는 `<Value>(definition) => Value` 제네릭이라
- * 키가 좁혀진 채로 나온다. `darkColor`의 이름 검사가 그 위에 선다.
+ * 키가 좁혀진 채로 나온다. `themeColor`의 이름 검사가 그 위에 선다.
  */
 const blogColors = defineSemanticTokens.colors({
   // ─────────────────────────────────────────────────────────────
@@ -289,24 +289,17 @@ export type BlogColorName = keyof typeof blogColors;
  * 적으면 팔레트를 바꿔도 그림만 옛 색으로 남는데, 렌더는 성공하므로 아무도 실패로
  * 알려주지 않는다. 여기서 뽑아 쓰면 출처가 하나다.
  *
- * **테마를 고르는 분기는 여기 한 곳에만 둔다.** 예전에는 `darkColor`/`lightColor`
- * 둘로 갈라 두었는데, 두 벌이 다 필요한 소비처(mermaid)가 결국 자기 쪽에서 다시
- * `theme === 'light' ? … : …`를 쓰게 됐다. 분기가 둘이 되면 한쪽만 고쳐질 자리가
- * 생긴다 — 이 파일이 애초에 없애려던 종류의 사본이다.
+ * **테마를 고르는 분기는 여기 한 곳에만 둔다.** 예전에는 테마별 함수를 따로 두었는데
+ * (`darkColor`/`lightColor`), 두 벌이 다 필요한 소비처(mermaid)가 결국 자기 쪽에서
+ * 다시 `theme === 'light' ? … : …`를 쓰게 됐다. 분기가 둘이 되면 한쪽만 고쳐질
+ * 자리가 생긴다 — 이 파일이 애초에 없애려던 종류의 사본이다. 한 벌만 필요한
+ * 소비처(OG 카드)도 `themeColor('dark', …)`로 테마를 명시한다. 이름에 테마를
+ * 숨기면 "왜 다크인가"가 호출부에서 사라진다.
  */
 export function themeColor(theme: BlogTheme, name: BlogColorName): string {
   const { base, _dark } = blogColors[name].value;
   return theme === 'light' ? base : _dark;
 }
-
-/**
- * 다크 값 — 한 벌만 쓰는 소비처를 위한 이름.
- *
- * OG 카드는 다크로만 그리므로 호출부에서 테마를 매번 적을 이유가 없다
- * (`content.config.mts`의 og 팔레트 6줄). 값 계산은 `themeColor`가 한다.
- */
-export const darkColor = (name: BlogColorName): string =>
-  themeColor('dark', name);
 
 export const blogPreset = definePreset({
   name: '@design-system/blog',

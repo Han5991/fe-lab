@@ -27,7 +27,7 @@ let renderSeq = 0;
  *
  * 보더는 테마마다 출처가 다르다 — **다크는 ①이고 라이트만 ③이다.** 다크
  * `#333941`은 `ink.200`의 다크 값과 같다. OG 카드도 같은 자리에서 같은 선택을
- * 한다(`content.config.mts`의 `inkRule: darkColor('ink.200')` — "`ink.border`는
+ * 한다(`content.config.mts`의 `inkRule: themeColor('dark', 'ink.200')` — "`ink.border`는
  * rgba라 합성이 필요한데 불투명 짝이 `ink.200`이라 그쪽을 쓴다"). 라이트
  * `ink.200`은 `#d8d8d4`로 `#dedede`와 달라, 그쪽만 손으로 고른 값으로 남는다.
  *
