@@ -277,7 +277,7 @@ const blogColors = defineSemanticTokens.colors({
 /**
  * 다크 테마의 색 값 — **CSS 변수를 못 읽는 렌더러용**.
  *
- * 화면은 토큰 이름으로 색을 쓰지만(`css({ color: 'ink.950' })`), satori/resvg처럼
+ * 화면은 토큰 이름으로 색을 쓰지만(`css({ color: 'ink.950' })`), satori/sharp처럼
  * CSS 변수도 oklch도 읽지 못하는 렌더러는 리터럴 값이 필요하다 — 블로그 OG 카드
  * (`public/og/*.png`)가 그렇다. 그런 소비처가 값을 손으로 옮겨 적으면 팔레트를
  * 바꿔도 그림만 옛 색으로 남는데, 렌더는 성공하므로 아무도 실패로 알려주지 않는다.

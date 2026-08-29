@@ -60,7 +60,7 @@ apps/blog/posts (원고)  →  packages/@blog/content  →  apps/blog/web
 ```
 
 - **`@blog/content` 내부**: `shared`(node 코어만) → `post`(+gray-matter) → `seo`(순수 계산) →
-  `scripts`(빌드) → `scripts/render`(React·satori·sharp·resvg는 여기만) → `scripts/cli`(진입점,
+  `scripts`(빌드) → `scripts/render`(React·satori·sharp는 여기만) → `scripts/cli`(진입점,
   단계를 동적 import로 든다). 밖으로 여는 문은 `@blog/content`·`@blog/content/seo` 둘뿐.
   빌드 스크립트는 API가 아니라 실행 파일이라 package.json `bin`의 **`blog-content`** 하나로
   나가고, 앱은 서브커맨드 이름만 안다(`blog-content build`). shebang은 `node`다 — 상대 import가
@@ -168,7 +168,7 @@ apps/blog/posts (원고)  →  packages/@blog/content  →  apps/blog/web
      - `sync-posts.ts`(`sync-posts`): 포스트 디렉토리의 이미지/미디어 파일을 `public/posts/`에 복사 (mtime 기반 incremental — 변경분만 복사, orphan 삭제)
      - `generate-sitemap.ts`(`sitemap`): 발행된 글 목록으로 `sitemap.xml` 생성
      - `render/generate-rss.ts`(`rss`): RSS 피드(`rss.xml`) 생성 — 전문 HTML은 `render/feedRenderer.ts`(react-dom/server + react-markdown)를 주입받는다
-     - `render/generate-og-images.ts`(`og-images`): thumbnail이 없거나 `/og/*`를 가리키는 발행 글의 OG 카드 이미지(`public/og/{slug}.png`)를 satori + resvg로 생성 (content hash 기반 incremental, `.cache/og-images.json` manifest)
+     - `render/generate-og-images.ts`(`og-images`): thumbnail이 없거나 `/og/*`를 가리키는 발행 글의 OG 카드 이미지(`public/og/{slug}.png`)를 satori + sharp로 생성 (content hash 기반 incremental, `.cache/og-images.json` manifest)
      - `render/generate-thumbnails.ts`(`thumbnails`): 로컬 썸네일을 sharp로 `public/thumbs/**/*-thumb.webp`로 최적화 (`.cache/thumbnails.json` manifest, orphan 삭제). `media`·`thumbs`·`og` 출력 디렉터리는 서로 겹치면 안 된다(`assertOutputDirsExclusive`) — 각자 orphan을 지우며 병렬로 돌기 때문
      - `generate-search-index.ts`(`search-index`): 검색용 JSON 인덱스(`search-index.json`, 공개 글) + `admin-posts-index.json`(비공개 포함) 생성 — 본문 미리보기(`contentPreview`) 포함
      - `generate-llms-full.ts`(`llms-full`): AI/LLM용 통합 텍스트(`llms-full.txt`) 생성
@@ -222,7 +222,7 @@ apps/blog/posts (원고)  →  packages/@blog/content  →  apps/blog/web
 - 색은 전부 `packages/@design-system/ui/src/blog-preset.ts`에서 온다.
   **컴포넌트에서 hex를 직접 쓰지 않는다.** 다이어그램 SVG도 마찬가지로
   `currentColor` 또는 Panda `css()`로 토큰에 연결한다. CSS 변수를 못 읽는
-  렌더러(satori/resvg — OG 카드)는 같은 파일의 `darkColor('paper.50')`으로
+  렌더러(satori/sharp — OG 카드)는 같은 파일의 `darkColor('paper.50')`으로
   뽑는다. **hex를 옮겨 적지 않는다**
 - 레일·거터의 단일 출처는 `src/components/Rail.tsx`다. **페이지에서 `maxW`와 `px`를
   직접 쓰지 않는다.** 거터는 언제나 레일 바깥이다

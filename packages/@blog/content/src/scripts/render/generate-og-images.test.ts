@@ -163,7 +163,7 @@ test('findOrphanPngs: png 아닌 파일/디렉토리는 건드리지 않음', ()
   expect(findOrphanPngs(['dir', 'x.txt'], new Set())).toStrictEqual([]);
 });
 
-// ── 렌더링 e2e (satori + resvg + Pretendard 실로딩) ─────────────────────────
+// ── 렌더링 e2e (satori + sharp + Pretendard 실로딩) ─────────────────────────
 
 test('renderOgPng: 실제 폰트로 유효한 PNG 생성', async () => {
   const png = await renderOgPng(
