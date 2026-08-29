@@ -10,6 +10,7 @@
  *
  * 프로덕션 코드는 이 모듈을 import하지 않는다(배럴에도 없다).
  */
+import { createRequire } from 'node:module';
 import {
   defineContent,
   type ContentConfig,
@@ -17,9 +18,20 @@ import {
   type ContentValues,
   type LlmsDocsConfig,
   type OgConfig,
+  type OgFontsConfig,
   type OgPalette,
   type SitemapConfig,
 } from './contentConfig.ts';
+
+/**
+ * 픽스처 폰트 파일 — devDependency인 pretendard의 OTF를 resolve한다.
+ *
+ * 렌더 e2e(satori)가 실제 글리프를 그려야 해서 파일만은 진짜 폰트가 필요하다.
+ * 프로덕션에는 이 의존이 없다 — 폰트는 소비자가 `og.fonts`로 서술한다.
+ */
+const testRequire = createRequire(import.meta.url);
+const testFontPath = (file: string): string =>
+  testRequire.resolve(`pretendard/dist/public/static/${file}`);
 
 export const TEST_VALUES: ContentValues = {
   site: {
@@ -57,6 +69,28 @@ export const TEST_VALUES: ContentValues = {
     accent: '#00FF00',
     pillBorder: 'rgba(0, 255, 0, 0.4)',
   },
+  /**
+   * 파일은 진짜 폰트여야 하지만(satori e2e) 이름은 실제 사이트('Pretendard')와
+   * 일부러 다르다 — 서술자가 리터럴이 아니라 설정에서 렌더로 흐르는지 보기 위해.
+   * 템플릿이 쓰는 세 웨이트(400·500·700)를 덮는다.
+   */
+  ogFonts: [
+    {
+      name: 'Test Sans',
+      weight: 400,
+      path: testFontPath('Pretendard-Regular.otf'),
+    },
+    {
+      name: 'Test Sans',
+      weight: 500,
+      path: testFontPath('Pretendard-Medium.otf'),
+    },
+    {
+      name: 'Test Sans',
+      weight: 700,
+      path: testFontPath('Pretendard-Bold.otf'),
+    },
+  ],
 };
 
 /**
@@ -116,7 +150,10 @@ export type TestContentOverrides = Omit<
 > & {
   root: string;
   registries?: Partial<ContentUserConfig['registries']>;
-  og?: Partial<Omit<OgConfig, 'palette'>> & { palette?: Partial<OgPalette> };
+  og?: Partial<Omit<OgConfig, 'palette' | 'fonts'>> & {
+    palette?: Partial<OgPalette>;
+    fonts?: OgFontsConfig;
+  };
 };
 
 /**
@@ -141,6 +178,7 @@ export function defineTestContent(
     og: {
       ...overrides.og,
       palette: { ...TEST_VALUES.ogPalette, ...overrides.og?.palette },
+      fonts: overrides.og?.fonts ?? TEST_VALUES.ogFonts,
     },
     sitemap: { ...TEST_SITEMAP, ...overrides.sitemap },
     llms: {

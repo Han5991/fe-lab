@@ -1,8 +1,11 @@
 import { expect, test } from 'vitest';
-import { sep } from 'node:path';
+import { mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join, sep } from 'node:path';
 import { defineTestContent } from '../../shared/testValues.ts';
 import {
   ogContentHash,
+  ogFontsCacheKey,
   displayTitle,
   needsGeneratedOg,
   ogFileRelPath,
@@ -14,11 +17,14 @@ import {
   type OgPostInput,
 } from './generate-og-images.ts';
 
-// 카드에 그려지는 사이트 이름·도메인도, 팔레트·크기도 전부 설정에서 온다.
-// 팔레트에는 패키지 기본값이 없으므로(앱 소유) 여기서도 설정을 거쳐 받는다.
+// 카드에 그려지는 사이트 이름·도메인도, 팔레트·크기·폰트도 전부 설정에서 온다.
+// 팔레트·폰트에는 패키지 기본값이 없으므로(앱 소유) 여기서도 설정을 거쳐 받는다.
 const CONFIG = defineTestContent({ root: `${sep}tmp${sep}app` });
 const SITE = CONFIG.site;
 const OG = CONFIG.og;
+// 폰트 캐시 키는 main이 파일을 읽어 계산해 넘기는 값 — 해시 테스트에는 파일이
+// 필요 없으므로 고정 문자열을 쓴다.
+const FONTS_KEY = 'fixture-fonts-key';
 // 시리즈 pill 보더 — "series가 있을 때만 pill이 나온다"를 이 값의 유무로
 // 판별한다. 리터럴로 복사해 두면 팔레트를 바꿀 때마다 색 때문에 깨진다
 // (정작 검증하려는 건 색이 아니라 조건부 렌더다).
@@ -31,30 +37,74 @@ function post(over: Partial<OgPostInput> = {}): OgPostInput {
 // ── ogContentHash ────────────────────────────────────────────────────────────
 
 test('ogContentHash: 같은 입력이면 같은 해시 (결정적)', () => {
-  expect(ogContentHash(post(), SITE, OG)).toBe(ogContentHash(post(), SITE, OG));
+  expect(ogContentHash(post(), SITE, OG, FONTS_KEY)).toBe(
+    ogContentHash(post(), SITE, OG, FONTS_KEY),
+  );
 });
 
 test('ogContentHash: 이미지에 들어가는 필드(title/date/series)가 바뀌면 해시 변경', () => {
-  const base = ogContentHash(post(), SITE, OG);
-  expect(ogContentHash(post({ title: '다른 제목' }), SITE, OG)).not.toBe(base);
-  expect(ogContentHash(post({ date: '2025-01-01' }), SITE, OG)).not.toBe(base);
-  expect(ogContentHash(post({ series: 'bundler' }), SITE, OG)).not.toBe(base);
+  const base = ogContentHash(post(), SITE, OG, FONTS_KEY);
+  expect(
+    ogContentHash(post({ title: '다른 제목' }), SITE, OG, FONTS_KEY),
+  ).not.toBe(base);
+  expect(
+    ogContentHash(post({ date: '2025-01-01' }), SITE, OG, FONTS_KEY),
+  ).not.toBe(base);
+  expect(
+    ogContentHash(post({ series: 'bundler' }), SITE, OG, FONTS_KEY),
+  ).not.toBe(base);
 });
 
 test('ogContentHash: og 설정(팔레트·크기)이 바뀌면 해시 변경 — 설정 오버라이드가 재생성을 트리거', () => {
-  const base = ogContentHash(post(), SITE, OG);
+  const base = ogContentHash(post(), SITE, OG, FONTS_KEY);
   expect(
-    ogContentHash(post(), SITE, {
-      ...OG,
-      palette: { ...OG.palette, accent: '#FF0000' },
-    }),
+    ogContentHash(
+      post(),
+      SITE,
+      { ...OG, palette: { ...OG.palette, accent: '#FF0000' } },
+      FONTS_KEY,
+    ),
   ).not.toBe(base);
-  expect(ogContentHash(post(), SITE, { ...OG, width: 800 })).not.toBe(base);
+  expect(
+    ogContentHash(post(), SITE, { ...OG, width: 800 }, FONTS_KEY),
+  ).not.toBe(base);
+});
+
+test('ogContentHash: 폰트 캐시 키가 바뀌면 해시 변경 — 폰트 교체가 재생성을 트리거', () => {
+  expect(ogContentHash(post(), SITE, OG, 'other-fonts')).not.toBe(
+    ogContentHash(post(), SITE, OG, FONTS_KEY),
+  );
 });
 
 test('ogContentHash: slug는 파일 경로일 뿐 해시에 영향 없음', () => {
-  expect(ogContentHash(post({ slug: 'a' }), SITE, OG)).toBe(
-    ogContentHash(post({ slug: 'b' }), SITE, OG),
+  expect(ogContentHash(post({ slug: 'a' }), SITE, OG, FONTS_KEY)).toBe(
+    ogContentHash(post({ slug: 'b' }), SITE, OG, FONTS_KEY),
+  );
+});
+
+// ── ogFontsCacheKey ──────────────────────────────────────────────────────────
+
+test('ogFontsCacheKey: 서술자·파일 내용이 같으면 같은 키, 내용이 바뀌면 다른 키', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'og-fonts-'));
+  const file = join(dir, 'a.otf');
+  writeFileSync(file, 'glyphs-v1');
+  const fonts = [{ name: 'F', weight: 400, path: file }] as const;
+  const base = ogFontsCacheKey(fonts);
+  expect(ogFontsCacheKey(fonts)).toBe(base);
+  writeFileSync(file, 'glyphs-v2');
+  expect(ogFontsCacheKey(fonts)).not.toBe(base);
+});
+
+test('ogFontsCacheKey: 같은 파일이라도 서술자(name·weight)가 다르면 다른 키', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'og-fonts-'));
+  const file = join(dir, 'a.otf');
+  writeFileSync(file, 'glyphs');
+  const base = ogFontsCacheKey([{ name: 'F', weight: 400, path: file }]);
+  expect(ogFontsCacheKey([{ name: 'G', weight: 400, path: file }])).not.toBe(
+    base,
+  );
+  expect(ogFontsCacheKey([{ name: 'F', weight: 700, path: file }])).not.toBe(
+    base,
   );
 });
 
@@ -163,15 +213,15 @@ test('findOrphanPngs: png 아닌 파일/디렉토리는 건드리지 않음', ()
   expect(findOrphanPngs(['dir', 'x.txt'], new Set())).toStrictEqual([]);
 });
 
-// ── 렌더링 e2e (satori + sharp + Pretendard 실로딩) ─────────────────────────
+// ── 렌더링 e2e (satori + sharp + 실제 폰트 파일 로딩) ────────────────────────
 
-test('renderOgPng: 실제 폰트로 유효한 PNG 생성', async () => {
+test('renderOgPng: 설정의 폰트 서술자로 유효한 PNG 생성', async () => {
   const png = await renderOgPng(
     post({
       title: '번들러 만들기: 아주 긴 한글 제목도 안전하게 렌더링',
       series: 'bundler',
     }),
-    loadFonts(),
+    loadFonts(OG.fonts),
     SITE,
     OG,
   );
