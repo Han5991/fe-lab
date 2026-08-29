@@ -20,10 +20,16 @@ let renderSeq = 0;
  *      `darkColor`와 글자 단위로 대조한다.
  *   2. 알파 토큰을 지면 위에 합성한 값 — `secondaryColor`는 `accent.50`을
  *      `paper.50` 위에 올린 결과다. 테스트가 합성을 다시 계산해 대조한다.
- *   3. **눈으로 고른 값** — 보더 회색 `#dedede`/`#333941` 둘뿐이다. 예전 주석은
- *      이것도 `ink.border` 합성이라고 적었지만 사실이 아니다(0.10 알파를 지면에
- *      올리면 라이트는 `#e6e6e6`가 나온다). 팔레트가 움직이면 다시 골라야 하므로,
- *      테스트는 값 자체가 아니라 **고를 때 본 지면과 알파**가 그대로인지를 잠근다.
+ *   3. **눈으로 고른 값** — 라이트 보더 `#dedede` 하나뿐이다. 예전 주석은 보더
+ *      둘 다 `ink.border` 합성이라고 적었지만 사실이 아니다(0.10 알파를 지면에
+ *      올리면 `#e6e6e6`가 나온다). 팔레트가 움직이면 다시 골라야 하므로, 테스트는
+ *      값 자체가 아니라 **고를 때 본 지면과 알파**가 그대로인지를 잠근다.
+ *
+ * 보더는 테마마다 출처가 다르다 — **다크는 ①이고 라이트만 ③이다.** 다크
+ * `#333941`은 `ink.200`의 다크 값과 같다. OG 카드도 같은 자리에서 같은 선택을
+ * 한다(`content.config.mts`의 `inkRule: darkColor('ink.200')` — "`ink.border`는
+ * rgba라 합성이 필요한데 불투명 짝이 `ink.200`이라 그쪽을 쓴다"). 라이트
+ * `ink.200`은 `#d8d8d4`로 `#dedede`와 달라, 그쪽만 손으로 고른 값으로 남는다.
  *
  * 팔레트를 바꾸면 위 테스트가 먼저 깨진다.
  */
@@ -33,7 +39,7 @@ export const MERMAID_VARS = {
     mainBkg: '#f7f7f5', // paper.100 — 노드 채움
     primaryColor: '#f7f7f5',
     primaryTextColor: '#1a1a1a', // ink.950
-    primaryBorderColor: '#dedede', // 눈으로 고른 회색 (③ — 합성값 아님)
+    primaryBorderColor: '#dedede', // ③ 눈으로 고른 회색 (ink.200 라이트와 다르다)
     secondaryColor: '#e6f4f7', // accent.50을 paper.50 위에 합성
     secondaryBorderColor: '#0891b2', // accent.500
     tertiaryColor: '#ededea', // paper.200
@@ -51,7 +57,7 @@ export const MERMAID_VARS = {
     mainBkg: '#14171c',
     primaryColor: '#14171c',
     primaryTextColor: '#e6e8eb',
-    primaryBorderColor: '#333941', // 눈으로 고른 회색 (③ — 합성값 아님)
+    primaryBorderColor: '#333941', // ① ink.200 다크 그대로
     secondaryColor: '#182c31', // accent.50을 paper.50 위에 합성
     secondaryBorderColor: '#67e8f9',
     tertiaryColor: '#1b1f26',
