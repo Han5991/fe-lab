@@ -10,6 +10,30 @@ import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
 /**
+ * Panda 대괄호 이스케이프로 색을 직접 박는 것을 막는다.
+ *
+ * `strictTokens: true`는 토큰 밖 값을 막지만 `'[#1f6feb]'` 이스케이프는 통과시킨다 —
+ * "여긴 의도적으로 토큰을 벗어난다"를 남기라는 장치이고, 색에는 그 의도가 성립하지
+ * 않는다. 2026-07-05 리디자인이 `[#1f6feb]`·`[#f85149]`를 그대로 실어 라이트에서
+ * 색이 안 바뀌는 회귀가 났고, 그건 lint가 아니라 화면을 보고서야 발견됐다.
+ *
+ * CSS 변수를 못 읽는 렌더러(satori/sharp의 OG 카드, mermaid)는 여기 걸리지 않는다 —
+ * 그쪽은 `css()` 값이 아니라 평범한 문자열 상수다. 팔레트와의 정합은 각자
+ * `darkColor()` 파생과 `mermaidTheme.test.ts` 잠금 테스트가 본다.
+ *
+ * `no-restricted-syntax`는 블록마다 통째로 덮어써지므로(뒤 블록이 이김) 이 항목을
+ * 이 룰을 쓰는 **모든 블록에 함께** 펼친다. 새 블록에서 이 룰을 켜면 여기도 넣을 것.
+ * 그 결과 실제 커버 범위는 app 레이어·`src/shared`·공개 배럴이다 — 스타일이 사는
+ * 곳 전부다. `src/lib`·`src/domain`은 이 룰을 켜는 블록이 없어 빠져 있는데, 그쪽엔
+ * 색이 없다(어댑터와 순수 계산).
+ */
+const NO_ESCAPED_HEX = {
+  selector: 'Literal[value=/^\\[#/]',
+  message:
+    '색은 blog-preset.ts의 토큰에서 옵니다. `[#hex]` 대괄호 이스케이프로 색을 직접 박지 마세요 — 라이트/다크 한쪽에서만 맞는 값이 됩니다.',
+} as const;
+
+/**
  * ESLint 10 구성 — `eslint-config-next`를 걷어내고 플러그인을 직접 조립한다.
  *
  * 프리셋이 끌고 오는 eslint-plugin-react@7.x가 ESLint 10에서 제거된
@@ -234,6 +258,7 @@ export default defineConfig([
       // 이름을 추가하세요 — 안 그러면 가드에 구멍이 생깁니다.
       'no-restricted-syntax': [
         'error',
+        NO_ESCAPED_HEX,
         {
           selector:
             "CallExpression[callee.property.name='from'][callee.object.name=/^(client|supabase|publicDb)$/]",
@@ -262,6 +287,7 @@ export default defineConfig([
     rules: {
       'no-restricted-syntax': [
         'error',
+        NO_ESCAPED_HEX,
         {
           selector: 'Program > ExpressionStatement > NewExpression',
           message:
@@ -320,6 +346,7 @@ export default defineConfig([
     rules: {
       'no-restricted-syntax': [
         'error',
+        NO_ESCAPED_HEX,
         {
           selector: 'ExportAllDeclaration',
           message:
@@ -346,6 +373,7 @@ export default defineConfig([
     rules: {
       'no-restricted-syntax': [
         'error',
+        NO_ESCAPED_HEX,
         {
           selector: 'Program',
           message:
