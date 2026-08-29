@@ -22,10 +22,11 @@
  * 글롭(`**`·`{slug}`)·빌드 산출물(`out/`·`public/og/`)·패키지 이름은 건너뜁니다.
  * 파일이 아니라 패턴이거나, 빌드 전에는 존재하지 않기 때문입니다.
  */
-import { existsSync, readdirSync } from 'node:fs';
+import { existsSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
-import { dirname, join, relative, resolve } from 'node:path';
+import { dirname, join, normalize, resolve } from 'node:path';
 import { describe, expect, test } from 'vitest';
 
 const REPO_ROOT = fileURLToPath(new URL('../../../../../', import.meta.url));
@@ -63,12 +64,32 @@ const isPattern = (p: string) =>
   p.startsWith('@') ||
   p.startsWith('http');
 
+/**
+ * 빌드가 만드는 파일 — 검사에서 뺍니다.
+ *
+ * 이름 목록은 `apps/blog/web/.gitignore`의 "generated blog content artifacts" 절과
+ * 같아야 합니다. 이것들은 **추적되지 않으므로 신선한 체크아웃에는 없습니다** —
+ * 로컬에서만 있는 파일을 근거로 통과시키면 CI에서만 빨간불이 납니다.
+ * CI 순서상 `quality-checks`는 `test`를 먼저 돌리고 `build`가 뒤에 오므로,
+ * 테스트 시점에는 확실히 없습니다.
+ */
+const GENERATED_FILES = new Set([
+  'rss.xml',
+  'sitemap.xml',
+  'search-index.json',
+  'admin-posts-index.json',
+  'llms-full.txt',
+  'llms.txt',
+]);
+
 const isArtifact = (p: string) =>
   p.startsWith('out/') ||
   p.startsWith('public/og/') ||
   p.startsWith('public/thumbs/') ||
   p.startsWith('.cache/') ||
-  p.startsWith('node_modules/');
+  p.startsWith('node_modules/') ||
+  GENERATED_FILES.has(p) ||
+  GENERATED_FILES.has(p.split('/').pop() ?? '');
 
 /**
  * **일부러 검사하지 않는 인용과 그 사유.**
@@ -89,12 +110,37 @@ const NOT_CHECKED: Readonly<Record<string, string>> = {
     '워크스페이스 이름(apps/next.js). 확장자처럼 보이지만 경로가 아니다',
 };
 
-/** 백틱 안의 토큰 중 파일 경로로 보이는 것. */
+/**
+ * 확장자가 없어도 **저장소 경로가 분명한** 토큰.
+ *
+ * 파일뿐 아니라 폴더도 드리프트한다. `fbff1f2`가 레이어를 `src/` 안으로 옮긴 뒤
+ * `AGENTS.md`가 `blog/web/domain`·`blog/web/lib`을 계속 가리키고 있었는데,
+ * 확장자만 보던 첫 판은 이걸 통째로 놓쳤다. 워크스페이스 접두어로 시작하는
+ * 토큰은 산문이 아니라 경로 주장이므로 검사한다.
+ */
+const REPO_PREFIX = /^(apps|packages|\.github|supabase|src)\//;
+
+/**
+ * 마지막 칸에 점이 있는데 아는 확장자가 아니면 경로가 아니다 —
+ * `repository.incrementViewCount`처럼 모듈의 **멤버**를 가리키는 표기다.
+ */
+const isMemberRef = (t: string) => {
+  const last = t.split('/').pop() ?? '';
+  return last.includes('.') && !PATH_EXT.test(last);
+};
+
+const looksLikePath = (t: string) =>
+  (PATH_EXT.test(t) || REPO_PREFIX.test(t)) && !isMemberRef(t);
+
+/** 백틱 안의 토큰 중 파일·폴더 경로로 보이는 것. */
 const pathsIn = (markdown: string): string[] => {
-  const tokens = [...markdown.matchAll(/`([^`\n]+)`/g)].map(m => m[1].trim());
+  const tokens = [...markdown.matchAll(/`([^`\n]+)`/g)]
+    .map(m => m[1].trim())
+    // 폴더를 가리키는 후행 슬래시는 벗기고 본다(`apps/blog/posts/`).
+    .map(t => (t.endsWith('/') ? t.slice(0, -1) : t));
   return tokens.filter(
     t =>
-      PATH_EXT.test(t) &&
+      looksLikePath(t) &&
       !t.includes(' ') &&
       // `…content/src/scripts/check-seo.ts`처럼 앞을 줄인 표기는 경로가 아니라
       // 표를 좁히려고 쓴 축약이다(CLAUDE.md의 설정 파일 표).
@@ -106,35 +152,40 @@ const pathsIn = (markdown: string): string[] => {
 };
 
 /**
- * 저장소의 소스 파일 목록 — 경로 끝(suffix)과 파일명 단독 인용을 확인하는 데 씁니다.
- * node_modules·빌드 산출물·.git은 걷습니다.
+ * 저장소의 **추적되는** 파일 목록.
+ *
+ * 워킹 트리를 걷지 않고 `git ls-files`를 쓴다. "존재한다"의 기준을 CI가 보는 것과
+ * 같게 맞추기 위해서다 — 로컬에는 빌드 산출물·무시된 파일이 널려 있어서, 트리를
+ * 걸으면 신선한 체크아웃에는 없는 파일을 근거로 통과시킨다. 이 파일 자신이 검사하는
+ * 문서 중 하나가 `search-index.json`을 인용하는데, 그건 `public/`에만 생기는
+ * 무시된 산출물이라 정확히 그 함정에 걸렸다.
+ *
+ * 부수효과로 node_modules·dist·out·.next도 자동으로 빠진다.
  */
-const SKIP_DIRS = new Set([
-  'node_modules',
-  '.git',
-  '.next',
-  '.turbo',
-  'out',
-  'dist',
-  'coverage',
-  '.cache',
-]);
+const ALL_FILES = execFileSync('git', ['ls-files'], {
+  cwd: REPO_ROOT,
+  encoding: 'utf8',
+  maxBuffer: 32 * 1024 * 1024,
+})
+  .split('\n')
+  .filter(Boolean);
 
-const collectFiles = (dir: string, acc: string[] = []): string[] => {
-  for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    if (entry.name.startsWith('.') && entry.name !== '.github') continue;
-    const full = join(dir, entry.name);
-    if (entry.isDirectory()) {
-      if (SKIP_DIRS.has(entry.name)) continue;
-      collectFiles(full, acc);
-    } else {
-      acc.push(relative(REPO_ROOT, full));
-    }
-  }
-  return acc;
-};
+const TRACKED = new Set(ALL_FILES);
 
-const ALL_FILES = collectFiles(REPO_ROOT);
+/**
+ * 추적되는 파일 경로에서 유도한 **디렉터리** 집합.
+ *
+ * 문서는 파일뿐 아니라 폴더도 가리킨다(`apps/blog/posts`, `src/domain/analytics`).
+ * `git ls-files`는 파일만 주므로 상위 경로를 직접 접어 만든다.
+ */
+const TRACKED_DIRS = new Set(
+  ALL_FILES.flatMap(f => {
+    const parts = f.split('/');
+    return parts.slice(0, -1).map((_, i) => parts.slice(0, i + 1).join('/'));
+  }),
+);
+
+const isTracked = (p: string) => TRACKED.has(p) || TRACKED_DIRS.has(p);
 
 /**
  * 이 경로가 실제 파일을 가리키는지.
@@ -165,10 +216,23 @@ const BARE_NAME_SCOPE = [
 const inScope = (file: string) =>
   !file.includes('/') || BARE_NAME_SCOPE.some(s => file.startsWith(`${s}/`));
 
+/** 확장자를 안 적은 모듈 참조(`src/lib/platform/adminApi`)까지 후보로 넓힌다. */
+const CANDIDATE_EXT = ['', '.ts', '.tsx', '.mts', '.mjs'];
+
+const suffixHit = (p: string) =>
+  CANDIDATE_EXT.some(ext => {
+    const q = p + ext;
+    if (TRACKED_DIRS.has(q)) return true;
+    return (
+      ALL_FILES.some(f => inScope(f) && f.endsWith(`/${q}`)) ||
+      [...TRACKED_DIRS].some(d => inScope(d) && d.endsWith(`/${q}`))
+    );
+  });
+
 const resolvesToFile = (docDir: string, p: string): boolean => {
-  if (existsSync(resolve(REPO_ROOT, docDir, p))) return true;
-  if (existsSync(resolve(REPO_ROOT, p))) return true;
-  return ALL_FILES.some(f => inScope(f) && (f === p || f.endsWith(`/${p}`)));
+  if (isTracked(normalize(join(docDir, p)))) return true;
+  if (isTracked(p)) return true;
+  return suffixHit(p);
 };
 
 describe('문서가 인용한 파일 경로', () => {

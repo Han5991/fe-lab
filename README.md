@@ -29,7 +29,7 @@
 | `blog/web`      | `@blog/web`         | 🚀 블로그 (운영) | Next.js 16 (`output: 'export'`, React Compiler), Panda CSS, Supabase, React Query | SSG + 동적 기능 하이브리드. 콘텐츠 로딩·검증·산출물 생성은 전부 `@blog/content`에 위임. 도메인 `blog.sangwook.dev`. |
 | `blog/posts`    | (워크스페이스 아님) | 📝 콘텐츠        | Markdown (`.md`) + `_series.yml`                                                  | 주제별 폴더 구조, frontmatter 기반 메타. **`_series.yml`을 둔 폴더만 시리즈**. MDX 아님.                            |
 | `next.js`       | `next.js`           | 🧪 실험          | Next.js 16 (App Router, Turbopack), Vitest + RTL + next-router-mock               | 서버 컴포넌트·에러 바운더리·테스팅 전략.                                                                            |
-| `react`         | `react`             | 🧪 실험          | React 19 SPA + Vite 8 + React Router 8 + TanStack Query, Vitest + RTL + MSW       | 라우팅·커스텀 훅·API 모킹·타입 설계 실험(`src/pages/typescript-project-design`).                                    |
+| `react`         | `react`             | 🧪 실험          | React 19 SPA + Vite 8 + React Router 8 + TanStack Query, Vitest + RTL + MSW       | 라우팅·커스텀 훅·API 모킹·타입 설계 실험(`apps/react/src/pages/typescript-project-design`).                         |
 | `typescript`    | `typescript`        | 🧪 실험          | Pure TypeScript + Vitest                                                          | 에러 모델링 등 순수 타입/로직 실험.                                                                                 |
 | `socket-server` | `socket-server`     | 🧪 실험          | Node.js + 의존성 0의 순수 TypeScript WebSocket 서버                               | `react` 앱과 짝지어 실시간 통신 실험(`pnpm dev --filter=socket-server --filter=react`). lint/test 스크립트 없음.    |
 

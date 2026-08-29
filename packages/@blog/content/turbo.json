@@ -2,15 +2,27 @@
   "$schema": "https://turbo.build/schema.json",
   "extends": ["//"],
   "tasks": {
-    // 이 패키지의 테스트는 워크스페이스 밖 파일 둘을 읽는다. inputs에 적지 않으면
+    // 이 패키지의 테스트는 워크스페이스 밖 파일을 읽는다. inputs에 적지 않으면
     // 그 파일만 바뀐 커밋에서 turbo가 **낡은 PASS를 재생**한다(fail-open):
     //   - apps/blog/posts/**  : contract·url-consistency 테스트가 실제 원고를 잠근다
-    //   - CLAUDE.md           : frontmatterSchema.test.ts가 루트 표를 글자 단위로 대조한다
+    //   - CLAUDE.md 외 문서 6 : docPaths.test.ts가 인용된 경로의 존재를 검사한다
+    //   - 저장소의 파일 목록   : 같은 테스트가 "그 경로가 실재하나"를 git ls-files로 본다
+    //
+    // 마지막 항목 때문에 이 태스크는 사실상 **트리 전체가 입력**이다. 파일을 옮기거나
+    // 지우면 문서 인용이 죽는데, 그 이동은 이 패키지 밖에서 일어난다. 글롭으로 그걸
+    // 다 적으면 목록이 곧 어긋나므로 캐시를 끈다 — 이 패키지의 테스트 716개는
+    // 캐시 미스로 돌아도 1.7초라 아낄 것이 없고, 조용히 통과하는 쪽이 훨씬 비싸다.
     "test": {
+      "cache": false,
       "inputs": [
         "$TURBO_DEFAULT$",
         "$TURBO_ROOT$/apps/blog/posts/**",
-        "$TURBO_ROOT$/CLAUDE.md"
+        "$TURBO_ROOT$/CLAUDE.md",
+        "$TURBO_ROOT$/AGENTS.md",
+        "$TURBO_ROOT$/README.md",
+        "$TURBO_ROOT$/apps/blog/web/README.md",
+        "$TURBO_ROOT$/apps/blog/web/src/shared/README.md",
+        "$TURBO_ROOT$/apps/blog/web/design/DIAGRAM_AUTHORING.md"
       ]
     }
   }
