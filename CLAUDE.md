@@ -36,7 +36,15 @@ the key findings.
 
 ## Key Design Patterns
 
-테스트 요소 선택은 `data-testid` 속성으로 하고, 외부 의존성은 mock한다.
+테스트는 **사용자가 보는 것으로** 요소를 고른다 — `getByRole` → `getByLabelText` →
+`getByPlaceholderText` → `getByText` 순이고 `getByTestId`는 최후 수단이다(전체 순위는
+`AGENTS.md` §5가 단일 출처). 블로그 스택에는 `data-testid`가 한 건도 없다.
+
+외부 의존성은 **mock보다 주입으로 끊는 것이 먼저다.** `@blog/content`는 설정을
+`defineTestContent`로, 경로를 tmpdir로, 시각을 `isPostVisible(data, timezone, now)`의 `now`
+인자로 받는다. 픽스처 값은 실제 사이트 값과 **일부러 다르게** 둬서, 소비처가 주입을 무시하고
+상수를 직접 읽으면 테스트가 깨진다(`src/shared/testValues.ts`) — mock으로는 못 잡는 실패다.
+`vi.mock`은 그렇게 끊을 수 없는 자리에만 쓰고, MSW는 `apps/react`에만 있다.
 
 ### Blog Architecture
 

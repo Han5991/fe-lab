@@ -160,7 +160,12 @@ first run may build dependencies). Package names are `@blog/web`, `@blog/content
   3. `getByPlaceholderText`
   4. `getByText`
   5. `getByTestId` (Last resort: use `data-testid="identifier"`)
-- **Mocking**: Use MSW for API calls. Avoid mocking internal hook implementations if possible (test behavior, not implementation).
+- **Mocking**: Prefer **injection over mocking**. `@blog/content` takes its config through `defineTestContent`, its
+  paths through a tmpdir, and its clock through the `now` argument of `isPostVisible(data, timezone, now)`; the
+  fixture values are deliberately different from the real site values (`src/shared/testValues.ts`), so a consumer
+  that ignores the injection and reads a constant directly fails the test — a failure a mock cannot catch. Reach for
+  `vi.mock` only where a seam cannot be injected, and never to stub internal hook implementations (test behavior, not
+  implementation). MSW exists in `apps/react` only.
 - **Contract tests**: `packages/@blog/content/src/post/contract.test.ts` and `src/scripts/contract.test.ts` read the real
   `apps/blog/posts/` — they are the safety net for content/pipeline refactors. `src/post/frontmatterSchema.test.ts` diffs the
   frontmatter table in root `CLAUDE.md` character-for-character against the descriptor table; edit both together.
