@@ -37,7 +37,7 @@ from xml.etree import ElementTree
 
 KST = timezone(timedelta(hours=9))
 
-# domain/post/types.ts 의 POST_STATUSES 와 같은 집합.
+# packages/@blog/content/src/post/types.ts 의 POST_STATUSES 와 같은 집합.
 POST_STATUSES = {"published", "draft", "scheduled"}
 
 USER_AGENT = "fe-lab-post-inventory/1 (+https://github.com/Han5991/fe-lab)"

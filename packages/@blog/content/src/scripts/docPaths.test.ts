@@ -45,6 +45,21 @@ const DOCS = [
   'packages/@blog/content/README.md',
 ] as const;
 
+/**
+ * `.github/`의 스크립트·워크플로도 경로를 인용합니다 — 문서가 아니라 코드지만,
+ * **리팩터 때 열리지 않는 코드**라 산문과 같은 이유로 뒤처집니다.
+ *
+ * 실제로 `post-inventory-collect.py`는 판정 규칙의 출처를 두 곳에서 가리키는데
+ * 둘 다 옛 경로였습니다. 이 PR이 13행을 고치고 40행을 놓쳤고, `.md`만 보던 검사는
+ * 그걸 잡지 못했습니다 — 리뷰가 손으로 잡아 준 뒤에야 알았습니다.
+ *
+ * 앱·패키지 소스 주석은 대상이 아닙니다. 거기 있는 파일 인용 137건 중 죽은 것은
+ * 0건인데, 코드와 함께 편집기에 열리기 때문입니다. 드리프트는 **같이 안 열리는
+ * 파일**에 생깁니다.
+ */
+const CODE_PREFIXES = ['.github/scripts/', '.github/workflows/'] as const;
+const CODE_EXT = /\.(py|ya?ml)$/;
+
 /** 경로로 볼 확장자. 이 목록에 없는 것은 경로로 취급하지 않습니다. */
 const PATH_EXT =
   /\.(ts|tsx|mts|cts|mjs|cjs|js|jsx|json|md|ya?ml|toml|css|sql)$/;
@@ -82,12 +97,14 @@ const GENERATED_FILES = new Set([
   'llms.txt',
 ]);
 
+/** 경로 어디에든 이 구간이 있으면 빌드 산출물이다(`apps/blog/web/.next/cache`). */
+const ARTIFACT_SEGMENT =
+  /(^|\/)(out|node_modules|\.next|\.turbo|\.cache|\.temp|dist|coverage)(\/|$)/;
+
 const isArtifact = (p: string) =>
-  p.startsWith('out/') ||
+  ARTIFACT_SEGMENT.test(p) ||
   p.startsWith('public/og/') ||
   p.startsWith('public/thumbs/') ||
-  p.startsWith('.cache/') ||
-  p.startsWith('node_modules/') ||
   GENERATED_FILES.has(p) ||
   GENERATED_FILES.has(p.split('/').pop() ?? '');
 
@@ -235,6 +252,25 @@ const resolvesToFile = (docDir: string, p: string): boolean => {
   return suffixHit(p);
 };
 
+/**
+ * 코드 파일에서 저장소 경로로 보이는 토큰을 뽑습니다.
+ *
+ * 백틱이 아니라 **모양**으로 찾습니다 — YAML에는 인라인 코드 표기가 없고, 파이썬
+ * 주석도 그냥 평문으로 적습니다. 대신 `apps/`·`packages/`로 시작하는 것만 봅니다.
+ */
+const CODE_PATH = /(apps|packages)\/[A-Za-z0-9@_.-]+(?:\/[A-Za-z0-9@_.-]+)*/g;
+
+const pathsInCode = (source: string): string[] =>
+  [...source.matchAll(CODE_PATH)]
+    .map(m => m[0])
+    // 문장 끝의 마침표·슬래시를 벗긴다(`… pooler-url.`, `apps/blog/`).
+    .map(t => t.replace(/[./]+$/, ''))
+    .filter(t => !isPattern(t) && !isArtifact(t) && !(t in NOT_CHECKED));
+
+const CODE_FILES = ALL_FILES.filter(
+  f => CODE_PREFIXES.some(prefix => f.startsWith(prefix)) && CODE_EXT.test(f),
+);
+
 describe('문서가 인용한 파일 경로', () => {
   test.each(DOCS)('%s의 경로가 전부 존재한다', async doc => {
     const markdown = await readFile(resolve(REPO_ROOT, doc), 'utf8');
@@ -249,6 +285,19 @@ describe('문서가 인용한 파일 경로', () => {
   test('검사 대상 문서가 전부 존재한다', () => {
     const missing = DOCS.filter(d => !existsSync(resolve(REPO_ROOT, d)));
     expect(missing).toEqual([]);
+  });
+
+  test.each(CODE_FILES)('%s의 경로가 전부 존재한다', async file => {
+    const source = await readFile(resolve(REPO_ROOT, file), 'utf8');
+    const missing = [...new Set(pathsInCode(source))].filter(
+      p => !resolvesToFile(dirname(file), p),
+    );
+    expect(missing).toEqual([]);
+  });
+
+  test('검사 대상 코드 파일이 비어 있지 않다 (양성 대조)', () => {
+    // CODE_PREFIXES가 오타로 아무것도 안 잡으면 검사가 조용히 죽는다.
+    expect(CODE_FILES.length).toBeGreaterThan(3);
   });
 
   test('검사가 실제로 경로를 걷어낸다 (양성 대조)', async () => {
