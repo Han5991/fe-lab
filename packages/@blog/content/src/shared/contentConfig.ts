@@ -173,6 +173,39 @@ export interface OgPalette {
   pillBorder: string;
 }
 
+/** CSS 숫자 웨이트 — satori가 받는 범위 그대로 */
+export type OgFontWeight = 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900;
+
+/**
+ * OG 카드 렌더에 쓸 폰트 하나의 서술자 — satori의 폰트 입력
+ * (`{ name, data, weight, style }`)과 1:1이고, 파일을 읽는 것만 생성기의 몫이다.
+ *
+ * `path`는 **절대 경로**다 — 자기 폰트 배포판에서 `content.config.mts`가
+ * 만든다. `createRequire().resolve`가 정석이지만, 설정 파일이 앱 서버 그래프에
+ * 함께 실리는 소비자는 번들러가 resolve 호출을 정적 분석해 폰트 파일을 모듈로
+ * 끌 수 있다 — 그때는 `import.meta.url` 기준 경로 조립(`join`)이 대안이다
+ * (번들러에 불투명하고, 직접 의존은 pnpm이 자기 node_modules 심링크를
+ * 보장한다). 상대 경로는 받지 않는다(`root`와 같은 이유 — cwd에 따라 다른
+ * 파일을 읽게 된다).
+ */
+export interface OgFont {
+  /** satori에 등록할 패밀리 이름 */
+  name: string;
+  /** 폰트 파일의 절대 경로. otf/ttf/woff — satori는 woff2를 못 읽는다 */
+  path: string;
+  weight: OgFontWeight;
+  /** 생략하면 'normal' */
+  style?: 'normal' | 'italic';
+}
+
+/**
+ * OG 폰트 선언 — 비어 있을 수 없다(폰트 없는 satori는 글자를 그리지 못한다).
+ * 카드 템플릿(generate-og-images.ts)은 400·500·700 웨이트를 쓰므로 그 셋을
+ * 덮는 것이 기대 모양이다 — 빠진 웨이트는 satori가 가까운 웨이트로 대체해
+ * 실패 없이 조용히 다르게 나온다.
+ */
+export type OgFontsConfig = readonly [OgFont, ...OgFont[]];
+
 export interface OgConfig {
   width: number;
   height: number;
@@ -184,6 +217,12 @@ export interface OgConfig {
    * 사이트 색으로 나가는데, 렌더는 성공하므로 아무도 실패로 알려주지 않는다.
    */
   palette: OgPalette;
+  /**
+   * 카드에 그릴 폰트 — 팔레트와 같은 이유로 기본값이 없다. 폰트는 사이트의
+   * 타이포그래피 선택이고, 패키지가 특정 배포판을 dependency로 들면 그 폰트가
+   * 모든 소비자의 카드에 나간다. 파일 위치까지 소비자가 서술한다(`OgFont`).
+   */
+  fonts: OgFontsConfig;
 }
 
 /**
@@ -375,6 +414,13 @@ export interface ContentValues {
    * 기본값을 두면 소셜 미리보기가 사이트와 다른 색으로 조용히 나가므로 필수다.
    */
   ogPalette: OgPalette;
+  /**
+   * OG 카드 폰트 — 팔레트처럼 사이트 선택이라 필수다. 값 모듈은 값 import가
+   * 금지라 경로를 못 푸므로 `content.config.mts`가 자기 폰트 배포판에서 절대
+   * 경로를 만들어 채운다 — 팔레트의 `darkColor()`와 같은 자리다. 만드는 방법
+   * (resolve가 정석이되 번들되는 설정 파일은 경로 조립)은 `OgFont` 주석 참고.
+   */
+  ogFonts: OgFontsConfig;
 }
 
 /**
@@ -397,8 +443,9 @@ export interface ContentUserConfig extends Pick<
     Pick<RegistriesConfig, 'diagramNames'> & {
       metaFilenames?: readonly string[];
     };
-  /** 크기(1200×630)는 OG 규격이라 선택, 팔레트는 앱 디자인이라 필수 */
-  og: Partial<Omit<OgConfig, 'palette'>> & Pick<OgConfig, 'palette'>;
+  /** 크기(1200×630)는 OG 규격이라 선택, 팔레트·폰트는 사이트 선택이라 필수 */
+  og: Partial<Omit<OgConfig, 'palette' | 'fonts'>> &
+    Pick<OgConfig, 'palette' | 'fonts'>;
   seo?: Partial<SeoConfig>;
   runtime?: Partial<RuntimeConfig>;
   dirs?: Partial<DirsConfig>;
@@ -458,8 +505,10 @@ export const DEFAULT_SITEMAP: SitemapConfig = {
  * 팔레트는 여기 없다 — 앱 디자인 토큰의 사본이라 `ContentValues.ogPalette`로
  * 필수다. 기본 팔레트를 두면 색을 안 넘긴 소비자의 카드가 남의 사이트 색으로
  * 조용히 나간다(satori는 CSS 변수를 못 읽어 실패조차 하지 않는다).
+ * 폰트도 없다 — 사이트 타이포그래피 선택이라 `ContentValues.ogFonts`로 필수고,
+ * 기본 폰트를 두려면 패키지가 특정 폰트 배포판을 dependency로 들어야 한다.
  */
-export const DEFAULT_OG_SIZE: Omit<OgConfig, 'palette'> = {
+export const DEFAULT_OG_SIZE: Omit<OgConfig, 'palette' | 'fonts'> = {
   width: 1200,
   height: 630,
 };
@@ -519,7 +568,7 @@ const DEFAULTS: Omit<
 > & {
   seo: Omit<SeoConfig, 'titleSuffix'>;
   registries: Omit<RegistriesConfig, 'diagramNames'>;
-  og: Omit<OgConfig, 'palette'>;
+  og: Omit<OgConfig, 'palette' | 'fonts'>;
   llms: Omit<LlmsConfig, 'indexIntro' | 'fullIntro'>;
 } = {
   seo: DEFAULT_SEO,
@@ -569,6 +618,39 @@ function assertValidRoot(root: unknown): asserts root is string {
         '상대 경로는 cwd에 따라 다른 곳을 보게 되므로 받지 않습니다. ' +
         '`root: import.meta.url`을 쓰세요.',
     );
+  }
+}
+
+/**
+ * `og.fonts` 형태 검증 — `root`처럼 순수 문자열 검사만 한다.
+ *
+ * 상대 경로 폰트는 생성기의 `readFileSync`가 cwd 기준으로 읽어, cwd에 따라
+ * 다른 파일(또는 ENOENT)이 된다 — 실패가 빌드의 og 단계에서야 나서 원인과
+ * 멀어지므로 선언 시점에 막는다. 파일이 실제로 있는지는 검사하지 않는다
+ * (fs를 끌지 않기 위해 — 없는 파일은 og 단계가 경로와 함께 던진다).
+ */
+function assertValidOgFonts(
+  fonts: readonly OgFont[] | undefined,
+): asserts fonts is OgFontsConfig {
+  // Array.isArray를 안 쓰는 이유: readonly 배열 유니온을 any[]로 좁혀 아래
+  // 순회가 전부 unsafe-any가 된다. 배열 아닌 값은 순회가 던져서 어차피 잡힌다.
+  if (fonts === undefined || fonts.length === 0) {
+    throw new Error(
+      'defineContent: og.fonts가 필요합니다 — OG 카드 폰트는 사이트 선택이라 ' +
+        '기본값이 없습니다. content.config.mts에서 폰트 서술자 배열' +
+        '([{ name, weight, path }, …])을 선언하세요.',
+    );
+  }
+  for (const font of fonts) {
+    const isAbsolute =
+      font.path.startsWith('/') || /^[A-Za-z]:[\\/]/.test(font.path);
+    if (!isAbsolute) {
+      throw new Error(
+        `defineContent: og.fonts '${font.name}'의 경로('${font.path}')는 절대 경로여야 합니다 — ` +
+          '상대 경로는 cwd에 따라 다른 파일을 읽게 되므로 받지 않습니다. ' +
+          'createRequire(import.meta.url).resolve(...)로 뽑는 것을 권장합니다.',
+      );
+    }
   }
 }
 
@@ -627,6 +709,7 @@ function assertOutputDirsExclusive(dirs: DirsConfig): void {
  */
 export function defineContent(user: ContentUserConfig): ContentConfig {
   assertValidRoot(user.root);
+  assertValidOgFonts(user.og?.fonts);
   const config: ContentConfig = {
     root: user.root,
     site: user.site,

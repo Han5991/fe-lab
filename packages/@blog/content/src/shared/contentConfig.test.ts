@@ -85,6 +85,37 @@ test('file:// URL root(import.meta.url 관례)를 받는다', () => {
   expect(config.root).toBe('file:///tmp/app/content.config.mts');
 });
 
+// ── defineContent: og.fonts 검증 ─────────────────────────────────────────────
+
+test('og.fonts 없이 호출하면 defineContent가 던진다 (기본 폰트 없음)', () => {
+  // 타입은 fonts를 필수로 강제하지만, JS 소비자·잘못된 config 파일을 위해
+  // 런타임에서도 막는다 — 폰트 없는 satori 렌더는 og 단계에서야 터진다.
+  expect(() =>
+    defineContent({
+      root: FIXTURE_ROOT,
+      site: TEST_VALUES.site,
+      author: TEST_VALUES.author,
+      timezone: TEST_VALUES.timezone,
+      registries: { diagramNames: TEST_VALUES.diagramNames },
+      og: { palette: TEST_VALUES.ogPalette } as ContentUserConfig['og'],
+    }),
+  ).toThrow(/og\.fonts/);
+});
+
+test('og.fonts: 상대 경로 폰트는 거부한다 (cwd 의존 금지)', () => {
+  expect(() =>
+    defineTestContent({
+      root: FIXTURE_ROOT,
+      og: { fonts: [{ name: 'F', weight: 400, path: 'fonts/a.otf' }] },
+    }),
+  ).toThrow(/절대 경로/);
+});
+
+test('og.fonts: 준 서술자가 그대로 실린다 — 패키지에 기본 폰트가 없다', () => {
+  const config = defineTestContent({ root: FIXTURE_ROOT });
+  expect(config.og.fonts).toBe(TEST_VALUES.ogFonts);
+});
+
 // ── defineContent: 병합 규칙 ─────────────────────────────────────────────────
 
 test('기본값이 있는 그룹의 부분 오버라이드는 나머지를 기본값으로 유지한다', () => {
@@ -114,7 +145,7 @@ test('registries: 사이트 고유 축은 준 값 그대로, 펜스 라벨만 �
     site: TEST_VALUES.site,
     author: TEST_VALUES.author,
     timezone: TEST_VALUES.timezone,
-    og: { palette: TEST_VALUES.ogPalette },
+    og: { palette: TEST_VALUES.ogPalette, fonts: TEST_VALUES.ogFonts },
     registries: { diagramNames: ['only-this'] },
   });
   expect([...config.registries.diagramNames]).toStrictEqual(['only-this']);

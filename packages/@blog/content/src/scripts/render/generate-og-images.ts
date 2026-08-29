@@ -7,35 +7,26 @@ import {
   rmSync,
   writeFileSync,
 } from 'node:fs';
-import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import satori, { type SatoriOptions } from 'satori';
 import sharp from 'sharp';
 import { resolvePostSet } from '../artifacts.ts';
 import { fmtDate } from '../../shared/format.ts';
-import type { OgConfig, SiteConfig } from '../../shared/contentConfig.ts';
+import type {
+  OgConfig,
+  OgFontsConfig,
+  SiteConfig,
+} from '../../shared/contentConfig.ts';
 import { isRecord } from '../../shared/guards.ts';
 import type { ContentContext } from '../context.ts';
-/**
- * OG 카드에 쓰는 Pretendard 폰트가 있는 디렉터리.
- *
- * 경로를 적지 않고 **resolver에게 묻는다**. 예전에는 설정(`dirs.ogFonts`)에
- * `node_modules/pretendard/dist/public/static`을 앱 루트 기준 상대 경로로 적어
- * 뒀는데, 그건 이 패키지가 **소비자의 node_modules 배치**를 안다는 뜻이었다 —
- * pretendard가 앱에만 선언돼 있어서(그리고 pnpm이 앱 아래에 심링크를 만들어
- * 줘서) 우연히 돌던 것이고, 이 패키지를 다른 앱이 쓰면 어디에도 안 적힌 의존을
- * 따로 깔아야 했다. 지금은 pretendard가 이 패키지의 dependency이고, 실제 파일
- * 위치는 pnpm이 어떻게 깔았든 resolver가 안다.
- *
- * 호출 시점에 푼다(기본 인자) — 모듈을 import하는 것만으로는 resolve가 돌지
- * 않고, 폰트 디렉터리를 넘겨 부르면 아예 타지 않는다.
+/*
+ * 폰트는 **설정에서 온다**(`og.fonts` — OgFont 서술자 배열). 예전에는
+ * pretendard가 이 패키지의 dependency였고 파일 위치를 여기서 resolve했는데,
+ * 팔레트는 소비자가 주면서 폰트만 패키지가 정하는 비대칭이었다 — 폰트도
+ * 팔레트와 같은 사이트 타이포그래피 선택이다. 지금은 소비자가
+ * `content.config.mts`에서 자기 폰트 배포판을 resolve해 서술자로 넘기고,
+ * 이 모듈은 파일을 읽어 satori에 잇기만 한다(`loadFonts`).
  */
-function resolveFontDir(): string {
-  const resolveFrom = createRequire(import.meta.url);
-  return dirname(
-    resolveFrom.resolve('pretendard/dist/public/static/Pretendard-Regular.otf'),
-  );
-}
 
 /**
  * 템플릿 **구조**를 바꾸면 올려서 모든 이미지를 재생성하게 합니다.
@@ -43,8 +34,10 @@ function resolveFontDir(): string {
  * 5 — 포인트색을 틸에서 cyan(#67E8F9)으로 교체.
  * 6 — og 설정(크기·팔레트)이 해시 입력에 들어감 — 설정 오버라이드가 재생성을
  *     트리거한다(이전엔 팔레트를 바꿔도 기존 이미지가 skip돼 섞였다).
+ * 7 — 폰트가 설정 주입(og.fonts)이 되면서 폰트 정체성(ogFontsCacheKey)이 해시
+ *     입력에 들어감 — 폰트를 바꿔도 기존 이미지가 skip되지 않는다.
  */
-const TEMPLATE_VERSION = 6;
+const TEMPLATE_VERSION = 7;
 
 export interface OgPostInput {
   slug: string;
@@ -54,14 +47,39 @@ export interface OgPostInput {
 }
 
 /**
+ * 폰트 정체성의 캐시 키 — 서술자(name·weight·style)와 **파일 내용**의 해시.
+ *
+ * 경로는 넣지 않는다: pnpm store 경로는 기계·버전 배치마다 달라, 내용이 같아도
+ * 재생성을 트리거하는 잡음이 된다. 내용 해시는 반대로 폰트 배포판이 올라
+ * 글리프가 바뀌면 경로가 어떻든 재생성을 트리거한다. `main`이 빌드당 한 번
+ * 계산해 글마다 `ogContentHash`에 넘긴다.
+ */
+export function ogFontsCacheKey(fonts: OgFontsConfig): string {
+  const hash = createHash('sha1');
+  for (const font of fonts) {
+    hash.update(
+      JSON.stringify({
+        name: font.name,
+        weight: font.weight,
+        style: font.style ?? 'normal',
+      }),
+    );
+    hash.update(readFileSync(font.path));
+  }
+  return hash.digest('hex');
+}
+
+/**
  * 이미지에 들어가는 입력만으로 계산 — 입력이 같으면 재렌더링을 skip합니다.
- * og 설정(크기·팔레트)과 카드에 그려지는 사이트 정체성(이름·도메인)도 렌더
- * 입력이므로 해시에 포함한다 — 설정만 바꿔도 전체가 재생성된다.
+ * og 설정(크기·팔레트)과 카드에 그려지는 사이트 정체성(이름·도메인), 그리고
+ * 폰트 정체성(`ogFontsCacheKey`)도 렌더 입력이므로 해시에 포함한다 —
+ * 설정만 바꿔도 전체가 재생성된다.
  */
 export function ogContentHash(
   post: OgPostInput,
   site: Pick<SiteConfig, 'url' | 'name'>,
   og: OgConfig,
+  fontsKey: string,
 ): string {
   return createHash('sha1')
     .update(
@@ -71,6 +89,7 @@ export function ogContentHash(
         date: post.date,
         series: post.series ?? null,
         og: { width: og.width, height: og.height, palette: og.palette },
+        fonts: fontsKey,
         site: { name: site.name, url: site.url },
       }),
     )
@@ -300,18 +319,14 @@ export function findOrphanPngs(
   );
 }
 
-export function loadFonts(fontDir = resolveFontDir()): SatoriOptions['fonts'] {
-  const font = (file: string, weight: 400 | 500 | 700) => ({
-    name: 'Pretendard',
-    data: readFileSync(join(fontDir, file)),
-    weight,
-    style: 'normal' as const,
-  });
-  return [
-    font('Pretendard-Regular.otf', 400),
-    font('Pretendard-Medium.otf', 500),
-    font('Pretendard-Bold.otf', 700),
-  ];
+/** 서술자의 파일을 읽어 satori 폰트 입력으로 바꾼다 — 매핑 이상을 하지 않는다. */
+export function loadFonts(fonts: OgFontsConfig): SatoriOptions['fonts'] {
+  return fonts.map(font => ({
+    name: font.name,
+    data: readFileSync(font.path),
+    weight: font.weight,
+    style: font.style ?? 'normal',
+  }));
 }
 
 export async function renderOgPng(
@@ -375,12 +390,15 @@ export async function main(ctx: ContentContext) {
   let rendered = 0;
   let skipped = 0;
   let fonts: SatoriOptions['fonts'] | null = null;
+  // skip 판정에도 폰트 정체성이 필요하므로 렌더 여부와 무관하게 한 번 계산한다.
+  const fontsKey = ogFontsCacheKey(ctx.content.config.og.fonts);
 
   for (const post of posts) {
     const hash = ogContentHash(
       post,
       ctx.content.config.site,
       ctx.content.config.og,
+      fontsKey,
     );
     const file = join(ogDir, ogFileRelPath(post.slug));
     nextManifest[post.slug] = hash;
@@ -388,7 +406,7 @@ export async function main(ctx: ContentContext) {
       skipped++;
       continue;
     }
-    fonts ??= loadFonts();
+    fonts ??= loadFonts(ctx.content.config.og.fonts);
     const png = await renderOgPng(
       post,
       fonts,

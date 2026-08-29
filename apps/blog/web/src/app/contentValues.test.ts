@@ -10,6 +10,8 @@
  * 사라지고, 빌드는 그대로 성공합니다.
  */
 import { expect, test } from 'vitest';
+import { existsSync } from 'node:fs';
+import contentConfig from '@/content.config.mts';
 import {
   ADMIN_PATH_PREFIX,
   LLMS_DOCS,
@@ -84,5 +86,16 @@ test('sitemap 정적 페이지의 lastmod는 YYYY-MM-DD다', () => {
     expect(page.lastmod, `날짜 형식 아님: ${page.path}`).toMatch(
       /^\d{4}-\d{2}-\d{2}$/,
     );
+  }
+});
+
+test('og.fonts 경로는 실제 파일을 가리킨다 — pretendard 배포 구조 가정을 잠근다', () => {
+  // content.config.mts는 번들러(Turbopack)의 resolve 정적 분석을 피하려고
+  // 모듈 해석 대신 경로 조립(join)으로 폰트 위치를 만든다 — pretendard가
+  // 내부 배치(dist/public/static)를 바꾸면 타입도 lint도 못 잡고 빌드의 og
+  // 단계에서야 ENOENT가 난다. Renovate가 pretendard를 올리는 PR에서 이
+  // 테스트가 먼저, 경로와 함께 실패하게 한다.
+  for (const font of contentConfig.og.fonts) {
+    expect(existsSync(font.path), `없는 폰트 파일: ${font.path}`).toBe(true);
   }
 });

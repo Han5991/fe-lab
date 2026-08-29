@@ -18,6 +18,8 @@
  * 있었다(설정으로 덮어도 화면·산출물은 그대로였다). 여기 남는 것은 값을 설정에
  * 잇는 **배선**뿐이다.
  */
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { defineContent } from '@blog/content';
 import { darkColor } from '@design-system/ui/blog-preset';
 import {
@@ -33,6 +35,23 @@ import {
   SITEMAP_STATIC_PAGES,
   TIMEZONE,
 } from './content.values.mts';
+
+/**
+ * OG 카드 폰트 파일의 위치 — 팔레트처럼 **파생값**이라 값 모듈이 아니라 여기서
+ * 푼다(값 모듈은 값 import 금지). satori는 웹폰트 CSS(woff2)를 못 읽어 OTF
+ * 정적 웨이트가 필요한데, 화면 웹폰트(`layout.tsx`)와 같은 pretendard 배포판에서
+ * 가져오므로 카드와 지면의 글자가 한 버전으로 묶인다. 파일을 읽는 것은
+ * 생성기의 몫이고 여기는 위치만 서술한다.
+ *
+ * `createRequire().resolve`가 아니라 경로 조립인 이유: 이 파일은 앱의 서버
+ * 그래프에도 실리는데(`src/content.ts`), Turbopack이 resolve 호출의 동적
+ * 세그먼트를 글롭해 폰트 파일 전부를 모듈로 끌려다 빌드가 깨진다(otf/ttf
+ * 로더 없음). `join()`은 번들러에 불투명하고, pretendard는 이 앱의 **직접
+ * 의존**이라 pnpm이 앱 바로 아래 `node_modules/pretendard` 심링크를 보장한다.
+ */
+const appRoot = dirname(fileURLToPath(import.meta.url));
+const pretendardStatic = (file: string): string =>
+  join(appRoot, 'node_modules', 'pretendard', 'dist', 'public', 'static', file);
 
 export default defineContent({
   root: import.meta.url,
@@ -60,6 +79,24 @@ export default defineContent({
       // 시리즈 pill의 2px 보더 — 반투명 accent.
       pillBorder: darkColor('accent.200'),
     },
+    // 카드 템플릿이 쓰는 세 웨이트(400·500·700). name은 satori 등록용이다.
+    fonts: [
+      {
+        name: 'Pretendard',
+        weight: 400,
+        path: pretendardStatic('Pretendard-Regular.otf'),
+      },
+      {
+        name: 'Pretendard',
+        weight: 500,
+        path: pretendardStatic('Pretendard-Medium.otf'),
+      },
+      {
+        name: 'Pretendard',
+        weight: 700,
+        path: pretendardStatic('Pretendard-Bold.otf'),
+      },
+    ],
   },
   sitemap: { ...SITEMAP_PRIORITY, staticPages: SITEMAP_STATIC_PAGES },
   // 규칙 목록이 통째로 실린다 — 어느 코드가 어느 라우트의 것인가는 이

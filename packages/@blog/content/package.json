@@ -18,7 +18,6 @@
   "dependencies": {
     "commander": "catalog:",
     "gray-matter": "^4.0.3",
-    "pretendard": "catalog:",
     "react-markdown": "catalog:",
     "rehype-raw": "catalog:",
     "remark-gfm": "catalog:",
@@ -37,6 +36,7 @@
     "eslint-import-resolver-typescript": "catalog:lint",
     "eslint-plugin-boundaries": "catalog:lint",
     "globals": "catalog:lint",
+    "pretendard": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
     "typescript": "catalog:",
