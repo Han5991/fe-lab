@@ -192,7 +192,7 @@ astryx는 main에 머지될 때마다 Deploy 워크플로우가 돕니다. 그 �
 
 ### 낭비를 걷어내도 test는 여전히 크리티컬 패스였습니다
 
-1부의 PR로 총 연산량은 줄었습니다. 그런데 그 뒤 deploy 파이프라인을 병렬화하고 죽은 Next.js 캐시를 살려내고 나니(각각 [deploy job은 이제 27초면 끝납니다](https://blog.sangwook.dev/posts/deploy-pipeline-parallel/)와 [캐시가 hit인데 매번 콜드 빌드였습니다](https://blog.sangwook.dev/posts/cache-hit-cold-build/)에 기록해 뒀습니다) 병목이 세 번 이동해서 결국 `test` job 위에 앉았습니다. 그사이 스위트도 자라 359개 파일 / 7,118개 테스트가 되어 있었습니다.
+1부의 PR로 총 연산량은 줄었습니다. 그런데 그 뒤 deploy 파이프라인을 병렬화하고 죽은 Next.js 캐시를 살려내고 나니(캐시 이야기는 [캐시가 hit인데 매번 콜드 빌드였습니다](https://blog.sangwook.dev/posts/cache-hit-cold-build/)에 기록해 뒀습니다) 병목이 세 번 이동해서 결국 `test` job 위에 앉았습니다. 그사이 스위트도 자라 359개 파일 / 7,118개 테스트가 되어 있었습니다.
 
 1부에서 얻은 교훈이 여기서 그대로 판단 근거가 됩니다. **코어가 포화된 곳에서 재라.** 그래서 이번에도 로컬이 아니라 실제 CI 실행 로그를 열었습니다. 근거 PR은 [#4103](https://github.com/facebook/astryx/pull/4103), 문제 정의는 이슈 [#4339](https://github.com/facebook/astryx/issues/4339)에 정리했습니다. 바뀐 파일은 `.github/workflows/ci.yml` **하나, +36/-13줄**입니다.
 
