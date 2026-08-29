@@ -92,10 +92,14 @@ apps/blog/posts (원고)  →  packages/@blog/content  →  apps/blog/web
 - **tsconfig 분할**: `tsconfig.json`(프로덕션, 엄격 플래그 전부) / `tsconfig.test.json`(테스트 —
   `noUncheckedIndexedAccess`·`noPropertyAccessFromIndexSignature`·`exactOptionalPropertyTypes` 세
   개만 끔). `check-types`와 ESLint 타입 룰이 같은 분할을 따른다
-- **lint 임계값**: 앱·패키지 모두 `--max-warnings=0`. 앱에 남아 있던 jsx-a11y 경고 5건은 설계로
-  풀고 룰을 에러로 되돌렸다(#289). 함께 `noInlineConfig: true` +
+- **lint 임계값**: 블로그 앱·`@blog/content` 둘 다 `--max-warnings=0`. 앱에 남아 있던 jsx-a11y
+  경고 5건은 설계로 풀고 룰을 에러로 되돌렸다(#289). 함께 `noInlineConfig: true` +
   `@eslint-community/eslint-comments/no-use`가 켜져 **인라인 `eslint-disable` 주석이 전면 금지**다 —
-  예외가 필요하면 주석이 아니라 `eslint.config.mts`에 `files` 스코프로 적을 것
+  예외가 필요하면 주석이 아니라 `eslint.config.mts`에 `files` 스코프로 적을 것.
+  **이 임계값은 블로그 스택 둘에만 건다** — `apps/{react,next.js,typescript,socket-server}`는
+  실험실이라 `eslint .`(경고 허용)이고 `noInlineConfig`도 없다. 규율을 자산에만 거는 건
+  의도된 배분이다(루트 README "블로그는 실제로 쓰는 자산이라 신중하게"). 실험 앱 코드를
+  고칠 때 블로그 기준을 강제하지 말 것
 
 #### SSG (Static Site Generation) 전략
 

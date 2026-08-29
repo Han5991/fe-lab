@@ -172,17 +172,23 @@ first run may build dependencies). Package names are `@blog/web`, `@blog/content
 
 ## 6. Git & Workflow
 
-- **Commit Messages**: Conventional Commits.
-  - `feat(scope): ...`
-  - `fix(scope): ...`
-  - `docs(scope): ...`
-  - `refactor(scope): ...`
-  - `test(scope): ...`
-- **Scope**: `blog`, `content`, `next`, `react`, `ui`, `core`, `deps`, `ci`, etc.
-- **Hooks (lefthook)**: pre-commit runs prettier on staged files (`apps/blog/posts/**` excluded); pre-push runs
-  `pnpm lint` / `check-types` / `test` in parallel. Bypass only when necessary: `LEFTHOOK=0` or `--no-verify`.
+- **Commit Messages**: Conventional Commits, Korean subject line, declarative (`~한다`) — the subject states the rule
+  the commit establishes, not a summary of the files it touched.
+  - `feat(scope): ...` / `fix(scope): ...` / `docs(scope): ...` / `refactor(scope): ...` / `test(scope): ...`
+  - Two non-standard types are used on purpose: `strict(scope)` for a TypeScript/lint tightening step, and
+    `blog(scope)` for prose-only changes to `apps/blog/posts/**`. Do not invent others.
+  - **No AI attribution trailers** (`Co-Authored-By: Claude`, `Claude-Session:`, …). Nothing enforces this, and
+    squash merge is how it leaks in — the trailer rides along in a sub-commit body and lands on `main`. Strip it
+    from every sub-commit before the PR is squashed, not after.
+- **Scope**: the workspace or area the change lands in. Blog work splits by package: `blog` (posts/authoring),
+  `blog-web` (the Next.js app), `blog-content` (`@blog/content`). Also in active use: `ci`, `deps`, `claude`,
+  `bundler`, `supabase`, `react`, `next`, `renovate`, `vercel`, `turbo`.
+- **Hooks (lefthook)**: `pre-commit` runs prettier on staged files (`apps/blog/posts/**` excluded); `pre-push` runs
+  `pnpm lint` / `check-types` / `test` in parallel. There is no `commit-msg` hook — the message rules above are
+  held by hand. Bypass only when necessary: `LEFTHOOK=0` or `--no-verify`.
 - **PRs**: Self-review required. Verify `pnpm lint`, `pnpm check-types`, `pnpm test`, `pnpm format:check` pass before
-  submitting — CI (`.github/actions/quality-checks`) runs those plus `lint:posts` and the blog build (`prebuild → next build → check-seo`).
+  submitting — CI (`.github/actions/quality-checks`) runs those plus `lint:posts` and the blog build
+  (`prebuild → next build → check-seo → check-bundle`).
 
 ## 7. Troubleshooting
 
