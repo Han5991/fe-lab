@@ -416,8 +416,9 @@ export interface ContentValues {
   ogPalette: OgPalette;
   /**
    * OG 카드 폰트 — 팔레트처럼 사이트 선택이라 필수다. 값 모듈은 값 import가
-   * 금지라 경로를 못 푸므로, 관례상 `content.config.mts`가 자기 폰트 배포판에서
-   * `require.resolve`로 뽑아 채운다 — 팔레트의 `darkColor()`와 같은 자리다.
+   * 금지라 경로를 못 푸므로 `content.config.mts`가 자기 폰트 배포판에서 절대
+   * 경로를 만들어 채운다 — 팔레트의 `darkColor()`와 같은 자리다. 만드는 방법
+   * (resolve가 정석이되 번들되는 설정 파일은 경로 조립)은 `OgFont` 주석 참고.
    */
   ogFonts: OgFontsConfig;
 }
