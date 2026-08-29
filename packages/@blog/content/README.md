@@ -60,13 +60,13 @@ import가 전부 `.ts` 확장자를 달고 있고(`allowImportingTsExtensions`),
 shared → content(post) → seo → build(scripts) → render-build(scripts/render) → cli(scripts/cli)
 ```
 
-| element        | 폴더                 | 가져올 수 있는 것                                                                                           |
-| :------------- | :------------------- | :---------------------------------------------------------------------------------------------------------- |
-| `shared`       | `src/shared`         | node 코어만                                                                                                 |
-| `content`      | `src/post`           | `shared` + node 코어 + `gray-matter`                                                                        |
-| `seo`          | `src/seo`            | `shared`·`content` — 순수 계산(node 코어·외부 의존 없음)                                                    |
-| `build`        | `src/scripts`        | `shared`·`content`·`seo` + node 코어 + `gray-matter`                                                        |
-| `render-build` | `src/scripts/render` | 위 전부 + `react`·`react-dom`·`react-markdown`·`remark-gfm`·`rehype-raw`·`satori`·`sharp`·`@resvg/resvg-js` |
+| element        | 폴더                 | 가져올 수 있는 것                                                                         |
+| :------------- | :------------------- | :---------------------------------------------------------------------------------------- |
+| `shared`       | `src/shared`         | node 코어만                                                                               |
+| `content`      | `src/post`           | `shared` + node 코어 + `gray-matter`                                                      |
+| `seo`          | `src/seo`            | `shared`·`content` — 순수 계산(node 코어·외부 의존 없음)                                  |
+| `build`        | `src/scripts`        | `shared`·`content`·`seo` + node 코어 + `gray-matter`                                      |
+| `render-build` | `src/scripts/render` | 위 전부 + `react`·`react-dom`·`react-markdown`·`remark-gfm`·`rehype-raw`·`satori`·`sharp` |
 
 ```mermaid
 flowchart LR
@@ -115,7 +115,7 @@ src/
                · sync-posts · new-post
                · context(ContentContext — 스텝이 받는 실행 컨텍스트)
                ├─ cli/     index(bin 진입점) · program(commander 서브커맨드·옵션 정의) · discoverConfig(설정 발견·로드)
-               └─ render/  generate-rss · feedRenderer · generate-og-images(satori+resvg) · generate-thumbnails(sharp)
+               └─ render/  generate-rss · feedRenderer · generate-og-images(satori+sharp) · generate-thumbnails(sharp)
 ```
 
 ## `build-content.ts` — 2단계

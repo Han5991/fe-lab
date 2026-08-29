@@ -16,7 +16,6 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "@resvg/resvg-js": "^2.6.2",
     "commander": "catalog:",
     "gray-matter": "^4.0.3",
     "pretendard": "catalog:",

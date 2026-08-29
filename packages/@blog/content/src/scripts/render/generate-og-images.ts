@@ -10,7 +10,7 @@ import {
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import satori, { type SatoriOptions } from 'satori';
-import { Resvg } from '@resvg/resvg-js';
+import sharp from 'sharp';
 import { resolvePostSet } from '../artifacts.ts';
 import { fmtDate } from '../../shared/format.ts';
 import type { OgConfig, SiteConfig } from '../../shared/contentConfig.ts';
@@ -150,7 +150,7 @@ function el(
  * 디자인: 블로그 지면과 같은 paper 톤 + 중앙 정렬 구성(카드 썸네일로
  * 축소돼도 좌우 균형 유지) + 상하 룰. 시리즈 pill / 날짜·도메인 푸터.
  *
- * 팔레트는 **언제나 인자로 온다**(기본값 없음). satori/resvg가 CSS 변수를 못 읽어
+ * 팔레트는 **언제나 인자로 온다**(기본값 없음). satori/sharp가 CSS 변수를 못 읽어
  * 소비자가 자기 디자인 토큰에서 해석해 넘기는 리터럴 색이라, 패키지가 기본 팔레트를
  * 들면 색을 안 넘긴 소비자의 카드가 남의 사이트 색으로 조용히 나간다 — 실패조차
  * 하지 않는 종류의 사고다. 이 저장소에서는 `content.config.mts`가 디자인 시스템의
@@ -325,7 +325,7 @@ export async function renderOgPng(
     height: og.height,
     fonts,
   });
-  return Buffer.from(new Resvg(svg).render().asPng());
+  return sharp(Buffer.from(svg)).png().toBuffer();
 }
 
 /**

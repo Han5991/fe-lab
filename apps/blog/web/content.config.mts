@@ -42,7 +42,7 @@ export default defineContent({
   registries: { diagramNames: DIAGRAM_NAMES, metaFilenames: META_FILENAMES },
   og: {
     /**
-     * OG 카드 색은 **디자인 토큰에서 뽑는다**. satori/resvg가 CSS 변수도 oklch도
+     * OG 카드 색은 **디자인 토큰에서 뽑는다**. satori/sharp가 CSS 변수도 oklch도
      * 못 읽어 카드 렌더에는 리터럴 색이 필요한데, 예전에는 그래서 값 모듈이
      * hex를 손으로 옮겨 적었다 — 팔레트를 바꾸면 카드만 옛 색으로 남았고,
      * 렌더는 성공하므로 아무도 실패로 알려주지 않았다.

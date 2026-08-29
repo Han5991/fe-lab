@@ -48,7 +48,7 @@ const PLAIN_STEPS = [
   },
   {
     name: 'og-images',
-    describe: 'OG 카드 이미지 생성 (satori + resvg, incremental)',
+    describe: 'OG 카드 이미지 생성 (satori + sharp, incremental)',
     load: async () => (await import('../render/generate-og-images.ts')).main,
   },
   {

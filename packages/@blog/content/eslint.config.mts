@@ -217,7 +217,6 @@ export default defineConfig([
                         'rehype-raw',
                         'satori',
                         'sharp',
-                        '@resvg/resvg-js',
                       ],
                     },
                   },
@@ -228,7 +227,7 @@ export default defineConfig([
               // CLI는 단계를 이름에 잇는 진입점이라 모든 단계를 든다. 위 레이어를
               // 참조하는 유일한 곳이고, 그래서 여기만 최상위에 둔다 — 대신 단계
               // 모듈은 전부 **동적** import라 부르지 않은 단계의 네이티브 의존
-              // (satori·sharp·resvg)은 로드되지 않는다.
+              // (satori·sharp)은 로드되지 않는다.
               from: { element: { type: 'cli' } },
               allow: [
                 {

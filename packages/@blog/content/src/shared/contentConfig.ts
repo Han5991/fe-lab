@@ -177,7 +177,7 @@ export interface OgConfig {
   width: number;
   height: number;
   /**
-   * 카드에 그릴 **리터럴 색**. satori/resvg는 CSS 변수도 oklch도 못 읽어서
+   * 카드에 그릴 **리터럴 색**. satori/sharp는 CSS 변수도 oklch도 못 읽어서
    * 토큰 이름을 넘길 수 없다 — 소비자가 자기 디자인 토큰에서 값을 해석해 준다.
    *
    * 기본값을 두지 않는 이유가 여기 있다: 색을 안 넘긴 소비자의 카드가 남의
