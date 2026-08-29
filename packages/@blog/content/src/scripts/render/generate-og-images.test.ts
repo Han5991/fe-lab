@@ -1,9 +1,11 @@
-import { expect, test } from 'vitest';
-import { mkdtempSync, writeFileSync } from 'node:fs';
+import { expect, test, vi } from 'vitest';
+import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, sep } from 'node:path';
-import { defineTestContent } from '../../shared/testValues.ts';
+import { TEST_VALUES, defineTestContent } from '../../shared/testValues.ts';
+import { createContext } from '../context.ts';
 import {
+  main,
   ogContentHash,
   ogFontsCacheKey,
   displayTitle,
@@ -231,4 +233,53 @@ test('renderOgPng: 설정의 폰트 서술자로 유효한 PNG 생성', async ()
   // IHDR의 width/height 확인 (offset 16: width 4B, height 4B big-endian)
   expect(png.readUInt32BE(16)).toBe(OG.width);
   expect(png.readUInt32BE(20)).toBe(OG.height);
+});
+
+// ── main: 통합 (설정 → 폰트 키 → 해시 → 렌더/스킵 배선) ─────────────────────
+//
+// 개별 함수(ogFontsCacheKey·ogContentHash·loadFonts)는 위에서 단위 테스트되지만,
+// 그것들을 잇는 배선은 main 안에만 있다 — fontsKey를 해시에 빼먹거나 skip 판정
+// 순서를 바꿔도 단위 테스트는 통과한다. 실제 임시 코퍼스로 main을 세 번 돌려
+// 생성 → 스킵 → 폰트 변경 시 재생성을 확인한다.
+
+test('main: 생성 → 재실행 스킵 → 폰트 서술자 변경 시 재생성', async () => {
+  const tmp = mkdtempSync(join(tmpdir(), 'og-main-'));
+  const root = join(tmp, 'app');
+  const postsDir = join(tmp, 'posts');
+  mkdirSync(root, { recursive: true });
+  mkdirSync(postsDir, { recursive: true });
+  // thumbnail 없는 발행 글 하나 — needsGeneratedOg 대상이다.
+  writeFileSync(
+    join(postsDir, 'main-wiring.md'),
+    '---\nstatus: published\ntitle: 배선 테스트 글\ndate: 2020-01-01\n---\n\n본문.\n',
+  );
+
+  const runMain = async (
+    config: ReturnType<typeof defineTestContent>,
+  ): Promise<string> => {
+    const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    try {
+      await main(createContext(config, join(root, 'content.config.mts')));
+      const summary = log.mock.calls.map(args => String(args[0])).at(-1);
+      return summary ?? '';
+    } finally {
+      log.mockRestore();
+    }
+  };
+
+  const config = defineTestContent({ root });
+  expect(await runMain(config)).toContain('1 생성, 0 스킵');
+  const png = join(config.dirs.og, 'main-wiring.png');
+  expect(existsSync(join(root, png))).toBe(true);
+
+  // 같은 설정 재실행 — manifest 해시가 맞아 렌더 없이 스킵된다.
+  expect(await runMain(config)).toContain('0 생성, 1 스킵');
+
+  // 폰트 서술자만 변경(파일은 같은 픽스처) — fontsKey가 해시에 흐르지 않으면
+  // 여기도 스킵되어 배선 회귀가 잡힌다.
+  const renamedFonts = defineTestContent({
+    root,
+    og: { fonts: [{ ...TEST_VALUES.ogFonts[0], name: 'Renamed Sans' }] },
+  });
+  expect(await runMain(renamedFonts)).toContain('1 생성, 0 스킵');
 });
