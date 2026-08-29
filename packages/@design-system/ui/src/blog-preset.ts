@@ -274,33 +274,39 @@ const blogColors = defineSemanticTokens.colors({
   'code.muted': { value: { base: '#5b636d', _dark: '#808080' } },
 });
 
+/** 팔레트가 값을 갖는 두 테마. */
+export type BlogTheme = 'light' | 'dark';
+
+/** 팔레트 색 이름. 오타가 컴파일 에러가 되도록 키로 좁혀 둔다. */
+export type BlogColorName = keyof typeof blogColors;
+
 /**
- * 다크 테마의 색 값 — **CSS 변수를 못 읽는 렌더러용**.
+ * 한 테마의 색 값 — **CSS 변수를 못 읽는 렌더러용**.
  *
  * 화면은 토큰 이름으로 색을 쓰지만(`css({ color: 'ink.950' })`), satori/sharp처럼
  * CSS 변수도 oklch도 읽지 못하는 렌더러는 리터럴 값이 필요하다 — 블로그 OG 카드
- * (`public/og/*.png`)가 그렇다. 그런 소비처가 값을 손으로 옮겨 적으면 팔레트를
- * 바꿔도 그림만 옛 색으로 남는데, 렌더는 성공하므로 아무도 실패로 알려주지 않는다.
- * 여기서 뽑아 쓰면 출처가 하나다.
+ * (`public/og/*.png`)와 mermaid 도표가 그렇다. 그런 소비처가 값을 손으로 옮겨
+ * 적으면 팔레트를 바꿔도 그림만 옛 색으로 남는데, 렌더는 성공하므로 아무도 실패로
+ * 알려주지 않는다. 여기서 뽑아 쓰면 출처가 하나다.
  *
- * 이름은 `blogColors`의 키로 좁혀져 있어 오타가 컴파일 에러다.
+ * **테마를 고르는 분기는 여기 한 곳에만 둔다.** 예전에는 `darkColor`/`lightColor`
+ * 둘로 갈라 두었는데, 두 벌이 다 필요한 소비처(mermaid)가 결국 자기 쪽에서 다시
+ * `theme === 'light' ? … : …`를 쓰게 됐다. 분기가 둘이 되면 한쪽만 고쳐질 자리가
+ * 생긴다 — 이 파일이 애초에 없애려던 종류의 사본이다.
  */
-export function darkColor(name: keyof typeof blogColors): string {
-  return blogColors[name].value._dark;
+export function themeColor(theme: BlogTheme, name: BlogColorName): string {
+  const { base, _dark } = blogColors[name].value;
+  return theme === 'light' ? base : _dark;
 }
 
 /**
- * 라이트 테마의 색 값 — `darkColor`의 짝.
+ * 다크 값 — 한 벌만 쓰는 소비처를 위한 이름.
  *
- * OG 카드는 다크 한 벌만 그리므로 `darkColor` 하나로 충분했지만, mermaid는
- * 라이트/다크 두 벌을 **둘 다 리터럴로** 받는다(CSS 변수를 못 읽고 SVG를 문자열로
- * 만들어 주입한다). `MermaidChart`가 그 두 벌을 손으로 옮겨 적고 있어서,
- * `mermaidTheme.test.ts`가 여기서 뽑은 값과 대조해 팔레트와 갈라지는 순간
- * 테스트가 먼저 깨지게 한다.
+ * OG 카드는 다크로만 그리므로 호출부에서 테마를 매번 적을 이유가 없다
+ * (`content.config.mts`의 og 팔레트 6줄). 값 계산은 `themeColor`가 한다.
  */
-export function lightColor(name: keyof typeof blogColors): string {
-  return blogColors[name].value.base;
-}
+export const darkColor = (name: BlogColorName): string =>
+  themeColor('dark', name);
 
 export const blogPreset = definePreset({
   name: '@design-system/blog',

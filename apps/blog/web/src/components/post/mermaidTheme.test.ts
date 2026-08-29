@@ -10,7 +10,7 @@
  * 같은 종류의 조용한 실패다.
  *
  * 값의 출처가 셋이라 잠그는 방법도 셋이다(`MermaidChart.tsx` 머리 주석 참고).
- *   ① 토큰 그대로   → `lightColor`/`darkColor`와 글자 단위 대조
+ *   ① 토큰 그대로   → `themeColor`와 글자 단위 대조
  *   ② 알파 합성     → 합성을 다시 계산해 대조
  *   ③ 눈으로 고름   → 값이 아니라 **고를 때 본 지면과 알파**를 잠근다.
  *                     팔레트가 움직이면 여기서 깨지고, 사람이 다시 골라야 한다.
@@ -22,17 +22,19 @@
  * 막겠다고 선언한 바로 그 조용한 실패다.
  */
 import { describe, expect, test, vi } from 'vitest';
-import { lightColor, darkColor } from '@design-system/ui/blog-preset';
+import {
+  themeColor,
+  type BlogColorName,
+  type BlogTheme,
+} from '@design-system/ui/blog-preset';
 import { MERMAID_VARS } from './MermaidChart';
 
 // MermaidChart는 mermaid(raw 1.1MB)를 정적 import한다. 여기서 필요한 건 색 상수
 // 뿐이라 실제 패키지는 로드하지 않는다(CodeBlock.test.tsx와 같은 처리).
 vi.mock('mermaid', () => ({ default: {} }));
 
-type Theme = 'light' | 'dark';
-const THEMES: readonly Theme[] = ['light', 'dark'];
-const color = (theme: Theme, name: Parameters<typeof lightColor>[0]) =>
-  theme === 'light' ? lightColor(name) : darkColor(name);
+// 테마 분기는 프리셋의 `themeColor` 안에만 있다 — 여기서 다시 만들지 않는다.
+const THEMES: readonly BlogTheme[] = ['light', 'dark'];
 
 /** ① 토큰 값을 그대로 쓰는 자리 — mermaid 키 → 토큰 이름. */
 const FROM_TOKEN = {
@@ -47,15 +49,12 @@ const FROM_TOKEN = {
   clusterBkg: 'paper.200',
   titleColor: 'ink.950',
   edgeLabelBackground: 'paper.50',
-} as const satisfies Record<string, Parameters<typeof lightColor>[0]>;
+} as const satisfies Record<string, BlogColorName>;
 
 /** ② 알파 토큰을 지면 위에 합성한 자리 — mermaid 키 → [알파 토큰, 지면 토큰]. */
 const FROM_COMPOSITE = {
   secondaryColor: ['accent.50', 'paper.50'],
-} as const satisfies Record<
-  string,
-  readonly [Parameters<typeof lightColor>[0], Parameters<typeof lightColor>[0]]
->;
+} as const satisfies Record<string, readonly [BlogColorName, BlogColorName]>;
 
 /**
  * 보더 네 자리는 **테마마다 출처가 다르다.**
@@ -123,8 +122,8 @@ describe.each(THEMES)('MERMAID_VARS.%s', theme => {
     '%s는 토큰 %s와 같다',
     (key, tokenName) => {
       expect(
-        MERMAID_VARS[theme][key as keyof (typeof MERMAID_VARS)[Theme]],
-      ).toBe(color(theme, tokenName));
+        MERMAID_VARS[theme][key as keyof (typeof MERMAID_VARS)[BlogTheme]],
+      ).toBe(themeColor(theme, tokenName));
     },
   );
 
@@ -132,15 +131,20 @@ describe.each(THEMES)('MERMAID_VARS.%s', theme => {
     '%s는 %s를 지면 위에 합성한 값이다',
     (key, [alphaToken, surfaceToken]) => {
       expect(
-        MERMAID_VARS[theme][key as keyof (typeof MERMAID_VARS)[Theme]],
-      ).toBe(composite(color(theme, alphaToken), color(theme, surfaceToken)));
+        MERMAID_VARS[theme][key as keyof (typeof MERMAID_VARS)[BlogTheme]],
+      ).toBe(
+        composite(
+          themeColor(theme, alphaToken),
+          themeColor(theme, surfaceToken),
+        ),
+      );
     },
   );
 
   test('보더 네 자리가 모두 같은 값이다', () => {
     const source = BORDER_SOURCE[theme];
     const expected =
-      source.kind === 'token' ? color(theme, source.token) : source.value;
+      source.kind === 'token' ? themeColor(theme, source.token) : source.value;
     for (const key of BORDER_KEYS) {
       expect(MERMAID_VARS[theme][key]).toBe(expected);
     }
@@ -151,15 +155,15 @@ describe.each(THEMES)('MERMAID_VARS.%s', theme => {
     if (source.kind === 'token') {
       // 다크는 ink.200을 그대로 쓴다 — 토큰이 움직이면 여기서 바로 깨진다.
       expect(MERMAID_VARS[theme].primaryBorderColor).toBe(
-        color(theme, source.token),
+        themeColor(theme, source.token),
       );
       return;
     }
     // 라이트는 유도할 값이 없으므로 고를 때 본 재료를 잠근다.
-    expect(color(theme, 'paper.50')).toBe(source.surface);
-    expect(color(theme, 'ink.border')).toBe(source.borderAlpha);
+    expect(themeColor(theme, 'paper.50')).toBe(source.surface);
+    expect(themeColor(theme, 'ink.border')).toBe(source.borderAlpha);
     // 팔레트가 이 값을 갖게 되면 ①로 옮겨야 한다. 그 시점을 여기서 알린다.
-    expect(color(theme, source.notEqualTo)).not.toBe(source.value);
+    expect(themeColor(theme, source.notEqualTo)).not.toBe(source.value);
   });
 
   test('팔레트로 설명되지 않는 색이 새로 늘지 않았다', () => {

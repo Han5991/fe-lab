@@ -16,8 +16,8 @@ let renderSeq = 0;
  * 쓰면 겹친 도형에서 톤이 어긋나므로, 불투명 값을 리터럴로 적는다. 값의 출처는
  * 세 갈래이고 `mermaidTheme.test.ts`가 갈래별로 잠근다.
  *
- *   1. 토큰 값 그대로 — `paper.*`·`ink.*`·`accent.500`. 테스트가 `lightColor`/
- *      `darkColor`와 글자 단위로 대조한다.
+ *   1. 토큰 값 그대로 — `paper.*`·`ink.*`·`accent.500`. 테스트가 프리셋의
+ *      `themeColor`와 글자 단위로 대조한다.
  *   2. 알파 토큰을 지면 위에 합성한 값 — `secondaryColor`는 `accent.50`을
  *      `paper.50` 위에 올린 결과다. 테스트가 합성을 다시 계산해 대조한다.
  *   3. **눈으로 고른 값** — 라이트 보더 `#dedede` 하나뿐이다. 예전 주석은 보더
