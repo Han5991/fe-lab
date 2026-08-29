@@ -289,6 +289,19 @@ export function darkColor(name: keyof typeof blogColors): string {
   return blogColors[name].value._dark;
 }
 
+/**
+ * 라이트 테마의 색 값 — `darkColor`의 짝.
+ *
+ * OG 카드는 다크 한 벌만 그리므로 `darkColor` 하나로 충분했지만, mermaid는
+ * 라이트/다크 두 벌을 **둘 다 리터럴로** 받는다(CSS 변수를 못 읽고 SVG를 문자열로
+ * 만들어 주입한다). `MermaidChart`가 그 두 벌을 손으로 옮겨 적고 있어서,
+ * `mermaidTheme.test.ts`가 여기서 뽑은 값과 대조해 팔레트와 갈라지는 순간
+ * 테스트가 먼저 깨지게 한다.
+ */
+export function lightColor(name: keyof typeof blogColors): string {
+  return blogColors[name].value.base;
+}
+
 export const blogPreset = definePreset({
   name: '@design-system/blog',
   theme: {
