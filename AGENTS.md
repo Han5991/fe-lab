@@ -28,7 +28,7 @@ which still taught the Hero's Journey template the skill exists to forbid.
 ## 2. Project Structure
 
 - **apps/**
-  - `blog/web/` (`@blog/web`, Next.js 16, static export): Tech blog. Layers `lib/platform → domain/analytics → src`
+  - `blog/web/` (`@blog/web`, Next.js 16, static export): Tech blog. Layers `src/shared → src/lib/platform → src/domain/{analytics,auth}` → app layer
     enforced by `eslint-plugin-boundaries`. Content loading/validation/artifact generation is **not** here — it lives in
     `packages/@blog/content`, whose scripts the app runs through the `blog-content` bin (`blog-content build`, `… validate`, `… check-seo`).
     Markdown is `gray-matter` + `react-markdown` — **not** MDX/velite/contentlayer.
@@ -73,7 +73,7 @@ first run may build dependencies). Package names are `@blog/web`, `@blog/content
 
   ```bash
   pnpm --filter @blog/content test   # Vitest, node env — content contracts, generators, validation
-  pnpm --filter @blog/web test       # Vitest, two projects: node (domain/**, lib/**) + jsdom (src/**)
+  pnpm --filter @blog/web test       # Vitest, two projects: node (src/shared, src/domain, src/lib) + jsdom (rest of src)
   pnpm test --filter=next.js         # Vitest (jsdom + RTL + next-router-mock)
   pnpm test --filter=react           # Vitest (jsdom + RTL + MSW)
   pnpm test --filter=typescript      # Vitest (node)
@@ -152,7 +152,7 @@ first run may build dependencies). Package names are `@blog/web`, `@blog/content
 - **Tools**:
   - `vitest` everywhere — the runner never varies, only the environment does
   - `react-testing-library` in the jsdom environments (Next.js, React/Vite, blog/web `src/**`)
-  - node environment for pure logic (blog/web `domain/**`·`lib/**`; `@blog/content` `src/**` — all content/scripts tests live there now)
+  - node environment for pure logic (blog/web `src/shared`·`src/domain`·`src/lib`; `@blog/content` `src/**` — all content/scripts tests live there now)
   - `msw` (Network mocking — `apps/react`)
 - **Selectors**: Prefer user-centric selectors:
   1. `getByRole` (button, heading, etc.)
@@ -176,7 +176,8 @@ first run may build dependencies). Package names are `@blog/web`, `@blog/content
   the commit establishes, not a summary of the files it touched.
   - `feat(scope): ...` / `fix(scope): ...` / `docs(scope): ...` / `refactor(scope): ...` / `test(scope): ...`
   - Two non-standard types are used on purpose: `strict(scope)` for a TypeScript/lint tightening step, and
-    `blog(scope)` for prose-only changes to `apps/blog/posts/**`. Do not invent others.
+    `blog(scope)` for work whose point is the writing — the post itself, plus whatever rendering or tooling that post
+    needed (e.g. `728d021` moved series resolution to one place while finishing a series). Do not invent others.
   - **No AI attribution trailers** (`Co-Authored-By: Claude`, `Claude-Session:`, …). Nothing enforces this, and
     squash merge is how it leaks in — the trailer rides along in a sub-commit body and lands on `main`. Strip it
     from every sub-commit before the PR is squashed, not after.
