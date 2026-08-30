@@ -99,7 +99,9 @@ test('AdminApiClient: post_dow_distribution — slug 파라미터 전달 확인'
   expect(result).toStrictEqual(mockData);
 });
 
-test('AdminApiClient: all_posts_trends — range 파라미터 전달 확인', async () => {
+test('AdminApiClient: all_posts_trends — params 없이 한 번만 호출한다', async () => {
+  // 1000행 cap 페이징은 Edge Function 안에서 돈다. 예전엔 여기서 range를
+  // 바꿔가며 직렬로 여러 번 불렀고, 그러면 왕복마다 JWT 검증까지 반복됐다.
   const mockData = [{ slug: 'post-a', view_date: '2026-05-01', view_count: 5 }];
   const { client, calls } = makeMockClient({
     data: { data: mockData },
@@ -107,11 +109,12 @@ test('AdminApiClient: all_posts_trends — range 파라미터 전달 확인', as
   });
 
   const api = new AdminApiClient(client);
-  const result = await api.call('all_posts_trends', { range: [0, 999] });
+  const result = await api.call('all_posts_trends');
 
+  expect(calls).toHaveLength(1);
   expect(calls[0].options?.body).toStrictEqual({
     action: 'all_posts_trends',
-    params: { range: [0, 999] },
+    params: undefined,
   });
   expect(result).toStrictEqual(mockData);
 });

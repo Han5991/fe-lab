@@ -142,13 +142,42 @@ Deno.serve(async (req: Request) => {
       }
 
       case 'all_posts_trends': {
-        // 클라이언트가 range 인자로 페이지네이션을 제어합니다.
-        const [from, to] = request.params?.range ?? [0, 999];
-        const result = await serviceClient
-          .rpc(ADMIN_ACTION_RPC[request.action])
-          .range(from, to);
-        data = result.data;
-        rpcError = result.error;
+        // PostgREST 는 한 응답에 max_rows(1000) 까지만 준다. 그 페이징을 여기서
+        // 돌아 한 응답으로 합친다 — 브라우저가 range 를 바꿔가며 직렬로 부르면
+        // 페이지마다 인터넷 왕복과 JWT 검증(auth.getUser())이 통째로 반복된다.
+        // 여기 루프는 같은 리전 안이고 인증은 이미 위에서 한 번 끝났다.
+        const PAGE = 1000;
+        // 폭주 방지. 도달하면 조용히 자르지 않고 실패시킨다 — 잘린 추이는
+        // 화면에서 "조회수가 줄어든 것"과 구분되지 않는다.
+        const MAX_PAGES = 50;
+        const rows: Database['public']['Functions']['get_all_posts_trends']['Returns'] =
+          [];
+        let complete = false;
+        for (let page = 0; page < MAX_PAGES; page += 1) {
+          const from = page * PAGE;
+          const result = await serviceClient
+            .rpc(ADMIN_ACTION_RPC[request.action])
+            .range(from, from + PAGE - 1);
+          if (result.error) {
+            rpcError = result.error;
+            complete = true;
+            break;
+          }
+          const chunk = result.data ?? [];
+          // push(...chunk) 를 쓰지 않는 건 스프레드가 행 수만큼 인자를 쌓기 때문.
+          for (const row of chunk) rows.push(row);
+          if (chunk.length < PAGE) {
+            complete = true;
+            break;
+          }
+        }
+        if (!complete && !rpcError) {
+          rpcError = {
+            message: `추이 행이 상한(${MAX_PAGES * PAGE}행)을 넘었습니다.`,
+          };
+          break;
+        }
+        data = rows;
         break;
       }
 

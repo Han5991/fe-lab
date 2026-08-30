@@ -50,42 +50,27 @@ function adminApi(): AdminApi {
 }
 
 // 아래 함수들의 응답 타입은 call()이 action → RPC Returns로 추론한다
-// (lib/platform/adminApi.ts). 행 타입을 여기서 다시 적지 않는다.
+// (lib/platform/adminApi.ts). 행 타입을 여기서 다시 적지 않으므로, 행을 그대로
+// 흘려보내면 될 뿐 필드를 옮겨 적는 map 은 필요 없다.
 //
-// Number()를 남겨 두는 이유: get_all_post_stats의 total_views는 nullable 컬럼
-// (post_views.view_count)에서 오는데 RETURNS TABLE이 bigint로 선언돼 있어 생성
-// 타입은 non-null `number`다. 실제 null이 오면 Number(null) === 0으로 굳어
-// 소비처의 산술이 NaN으로 번지지 않는다.
+// bigint 도 마찬가지다 — PostgREST 는 이걸 JSON number 로 직렬화한다(문자열이
+// 아니다). 그래서 Number() 는 형변환이 아니라 null 방어로만 값을 한다. RPC 넷 중
+// 그 방어가 필요한 축은 get_all_post_stats.total_views 하나뿐이다:
+// post_views.view_count(nullable)를 coalesce 없이 그대로 내보내는데 RETURNS TABLE
+// 이 bigint 라 생성 타입은 non-null number 다. 나머지는 SQL 이 coalesce(...,0) 이나
+// count(*)/extract()::int 로 이미 not-null 을 보장한다.
 
 export async function getAllPostStats(): Promise<PostStatsRow[]> {
   // admin RPC — service_role 한정. Edge Function 경유.
   const data = await adminApi().call('all_post_stats');
-  return data.map(s => ({
-    slug: s.slug,
-    total_views: Number(s.total_views),
-    today_views: Number(s.today_views),
-  }));
+  // null 이 오면 Number(null) === 0 으로 굳어 소비처의 산술이 NaN 으로 번지지 않는다.
+  return data.map(s => ({ ...s, total_views: Number(s.total_views) }));
 }
 
 export async function getAllPostsTrends(): Promise<PostTrendRow[]> {
   // admin RPC — service_role 한정. Edge Function 경유.
-  // PostgREST 1000-row cap을 피하기 위해 range 페이지네이션을 Edge Function에 위임합니다.
-  const all: PostTrendRow[] = [];
-  const PAGE = 1000;
-  for (let from = 0; ; from += PAGE) {
-    const rows = await adminApi().call('all_posts_trends', {
-      range: [from, from + PAGE - 1],
-    });
-    all.push(
-      ...rows.map(t => ({
-        slug: t.slug,
-        view_date: t.view_date,
-        view_count: Number(t.view_count),
-      })),
-    );
-    if (rows.length < PAGE) break;
-  }
-  return all;
+  // PostgREST의 1000행 cap 페이징은 Edge Function 안에서 돈다(왕복 1회).
+  return adminApi().call('all_posts_trends');
 }
 
 /**
@@ -131,20 +116,12 @@ export async function getPostHourlyDistribution(
   slug: string,
 ): Promise<HourlyDistribution[]> {
   // admin RPC — service_role 한정. Edge Function 경유.
-  const data = await adminApi().call('post_hourly_distribution', { slug });
-  return data.map(h => ({
-    hour: Number(h.hour),
-    view_count: Number(h.view_count),
-  }));
+  return adminApi().call('post_hourly_distribution', { slug });
 }
 
 export async function getPostDowDistribution(
   slug: string,
 ): Promise<DowDistribution[]> {
   // admin RPC — service_role 한정. Edge Function 경유.
-  const data = await adminApi().call('post_dow_distribution', { slug });
-  return data.map(d => ({
-    dow: Number(d.dow),
-    view_count: Number(d.view_count),
-  }));
+  return adminApi().call('post_dow_distribution', { slug });
 }

@@ -37,10 +37,14 @@ export type AdminActionRpc<A extends AdminAction = AdminAction> =
 export interface AdminActionParams {
   all_post_stats: undefined;
   /**
-   * PostgREST 1000-row cap을 피하는 range 페이지네이션(inclusive, 0-base).
-   * 생략하면 Edge Function 기본값 `[0, 999]`.
+   * params 없음 — PostgREST의 1000행 cap(`config.toml`의 `max_rows`)은 Edge
+   * Function이 안에서 range를 돌려 모아 넘긴다.
+   *
+   * 예전엔 브라우저가 `range`를 바꿔가며 직렬로 여러 번 불렀다. 그러면 페이지
+   * 수만큼 인터넷 왕복이 늘 뿐 아니라 요청마다 JWT 검증(`auth.getUser()`)까지
+   * 다시 돌아, 데이터가 늘수록 비용이 곱으로 붙었다.
    */
-  all_posts_trends: { range?: [number, number] } | undefined;
+  all_posts_trends: undefined;
   post_hourly_distribution: { slug: string };
   post_dow_distribution: { slug: string };
 }
