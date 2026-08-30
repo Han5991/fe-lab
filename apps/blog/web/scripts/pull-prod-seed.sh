@@ -24,9 +24,9 @@ echo "▸ 프로덕션 public 데이터 덤프"
 # 덤프가 중간에 죽어도 seed.sql 이 반쯤 덮이지 않도록 임시 파일을 거친다.
 "$CLI" db dump --linked --data-only --schema public -f "$TMP"
 
-# seed.sql 은 커밋되는 파일이다(supabase/.gitignore 는 .temp·.branches 만 뺀다).
 # --schema 가 어떤 이유로든 새면 auth.users·identities·refresh_tokens·flow_state
-# (provider_access_token 컬럼) 까지 담기므로, 파일에 닿기 전에 막는다.
+# (provider_access_token 컬럼) 까지 담긴다. seed.sql 은 gitignore 대상이라 저장소로
+# 새지는 않지만, 그래도 디스크에 평문 토큰을 떨궈 둘 이유는 없다 — 파일에 닿기 전에 막는다.
 if grep -E '^INSERT INTO ' "$TMP" | grep -qv '^INSERT INTO "public"\.'; then
   echo "✗ public 밖 스키마가 덤프에 섞였다 — $SEED 를 갱신하지 않는다:" >&2
   grep -oE '^INSERT INTO "[a-z_]+"\."[a-z_]+"' "$TMP" | grep -v '^INSERT INTO "public"' | sort -u >&2
@@ -34,8 +34,8 @@ if grep -E '^INSERT INTO ' "$TMP" | grep -qv '^INSERT INTO "public"\.'; then
 fi
 
 # pg_dump 17.5+ 가 붙이는 `-- \restrict <랜덤토큰>` 두 줄을 걷어낸다. CLI 가 이미 주석으로
-# 만들어 두어 로더에 아무 영향이 없는데, 토큰은 실행마다 새로 생성돼서 데이터가 한 줄도
-# 바뀌지 않은 날에도 커밋되는 이 파일에 diff 를 남긴다.
+# 만들어 두어 로더에 아무 영향이 없는데, 토큰은 실행마다 새로 생성된다 — 남겨 두면 같은
+# 데이터를 두 번 떠서 비교할 때 이 줄만 늘 달라 보여 진짜 변화가 묻힌다.
 sed -e '/^-- \\restrict /d' -e '/^-- \\unrestrict /d' "$TMP" > "$SEED"
 echo "▸ $SEED 갱신 — 데이터 $(grep -c $'^\t(' "$SEED" || true) 행"
 

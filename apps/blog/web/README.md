@@ -64,7 +64,7 @@ apps/blog/web/
 │  ├─ domain/auth/      auth 레이어 — 세션 저장소(repository, DI 팩토리) + 관리자 이메일 판정(adminAccess) + 배럴 1개
 │  ├─ lib/platform/     platform 레이어 — Supabase 어댑터(client · publicClient · adminApi · adminActions · database.types)
 │  └─ shared/           최하단 레이어 — 앱 소유 라우트 경로의 단일 출처(routes) + 페이지 전환 네임스페이스(transitions). 모든 레이어가 import 가능
-├─ supabase/            로컬 Supabase 프로젝트(CLI 소유 — 앱 소스 아님) — config.toml · migrations/ · functions/admin-analytics(Deno) · seed.sql
+├─ supabase/            로컬 Supabase 프로젝트(CLI 소유 — 앱 소스 아님) — config.toml · migrations/ · functions/admin-analytics(Deno). seed.sql은 프로덕션 데이터 사본이라 .gitignore — `pnpm seed:pull`로 만든다(없어도 db reset은 지나간다)
 ├─ public/              robots.txt · favicon · og-default.jpg … (+ 빌드가 생성하는 sitemap/rss/search-index/llms/og/thumbs/posts는 .gitignore)
 ├─ design/              DIAGRAM_AUTHORING.md(현행) · blog-redesign-handoff.md · github-style-reference.md(둘 다 이력)
 ├─ next.config.ts · panda.config.ts · postcss.config.cjs · vitest.config.mts · vitest.setup.ts
