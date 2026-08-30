@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  // 에디터를 위한 얇은 포인터. 설정 본체는 `_typecheck/tsconfig.json` 이고,
+  // `pnpm check-types` 는 계속 그쪽을 직접 지목한다(`-p .../_typecheck/tsconfig.json`).
+  //
+  // 이 파일이 필요한 이유: 에디터의 TS 서버는 소스 파일에서 디렉터리를 **위로**
+  // 올라가며 tsconfig.json 을 찾는다. 본체가 `_typecheck/` **안에** 있어 그 탐색에
+  // 걸리지 않고, 앱 tsconfig 는 `supabase/functions` 를 exclude 한다. 그래서
+  // admin-analytics/index.ts 가 어느 프로젝트에도 속하지 않은 채(inferred project)
+  // 기본 옵션으로 열려 `Deno` 전역·`npm:` import·`.ts` 확장자가 전부 에러로 보였다 —
+  // `pnpm check-types` 는 멀쩡히 통과하는데 에디터에만 빨간 줄이 서는 상태였다.
+  "extends": "./_typecheck/tsconfig.json"
+}
