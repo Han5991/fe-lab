@@ -31,6 +31,7 @@ import {
   isAdminAction,
   type AdminRequest,
 } from '../../../src/lib/platform/adminActions.ts';
+import { collectPagedRows } from '../../../src/lib/platform/paging.ts';
 import type { Database } from '../../../src/lib/platform/database.types.ts';
 
 Deno.serve(async (req: Request) => {
@@ -142,13 +143,29 @@ Deno.serve(async (req: Request) => {
       }
 
       case 'all_posts_trends': {
-        // 클라이언트가 range 인자로 페이지네이션을 제어합니다.
-        const [from, to] = request.params?.range ?? [0, 999];
-        const result = await serviceClient
-          .rpc(ADMIN_ACTION_RPC[request.action])
-          .range(from, to);
-        data = result.data;
-        rpcError = result.error;
+        // PostgREST 는 한 응답에 max_rows(1000) 까지만 준다. 그 페이징을 여기서
+        // 돌아 한 응답으로 합친다 — 브라우저가 range 를 바꿔가며 직렬로 부르면
+        // 페이지마다 인터넷 왕복과 JWT 검증(auth.getUser())이 통째로 반복된다.
+        // 여기 루프는 같은 리전 안이고 인증은 이미 위에서 한 번 끝났다.
+        //
+        // 루프 자체는 collectPagedRows 에 있다. 이 파일에는 테스트 하네스가 없어서,
+        // 종료 조건과 상한을 CI 가 보려면 앱 쪽 순수 모듈이어야 한다(paging.test.ts).
+        try {
+          data = await collectPagedRows(
+            async (from, to) => {
+              const result = await serviceClient
+                .rpc(ADMIN_ACTION_RPC[request.action])
+                .range(from, to);
+              if (result.error) throw result.error;
+              return result.data ?? [];
+            },
+            // pageSize 는 서버의 max_rows 와 같아야 한다 — 더 작으면 매 페이지가
+            // 짧은 페이지로 보여 첫 장에서 멈춘다.
+            { pageSize: 1000, maxPages: 50 },
+          );
+        } catch (err) {
+          rpcError = err;
+        }
         break;
       }
 

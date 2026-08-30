@@ -30,7 +30,24 @@ import { adminAnalyticsPostPath } from '@/src/shared/routes';
 // 클라이언트 컴포넌트의 @blog/content 배럴 import — node:fs 모듈(series 등)은
 // next.config.ts의 optimizePackageImports + sideEffects:false가 번들에서 걸러 준다.
 import { postPath } from '@blog/content';
-import { resolvePostState } from '@blog/content';
+import { resolvePostState, type PostStatus } from '@blog/content';
+
+/**
+ * 상태 배지의 색과 라벨. 배지는 **상태만** 말합니다 — 공개 예정일은 옆 날짜
+ * 칼럼에 이미 있고, 예약 글의 정확한 시각은 title 툴팁이 답합니다.
+ *
+ * 삼항 체인이 아니라 레코드인 건 망라 때문입니다. 체인의 마지막 가지는 남은
+ * 상태를 전부 받아서, `PostStatus`가 늘면 새 상태가 조용히 '예약'으로 그려집니다.
+ * `satisfies`가 그 자리를 컴파일 에러로 만듭니다.
+ *
+ * 배경·테두리는 세 상태가 같은 값이라 여기 두지 않습니다 — 상태에 따라 달라지는
+ * 축만 남겨야 배지가 무엇으로 갈리는지가 읽힙니다.
+ */
+const STATUS_BADGE = {
+  published: { color: 'moss.600', label: '공개' },
+  draft: { color: 'ink.500', label: '비공개' },
+  scheduled: { color: 'spot.600', label: '예약' },
+} as const satisfies Record<PostStatus, { color: string; label: string }>;
 
 interface Props {
   post: PostStatDetail;
@@ -62,29 +79,7 @@ export function PostAccordion({ post }: Props) {
     views: d.view_count,
   }));
 
-  const statusStyle =
-    state === 'published'
-      ? {
-          bg: 'paper.100' as const,
-          color: 'moss.600' as const,
-          borderColor: 'ink.border' as const,
-          label: '공개',
-        }
-      : state === 'draft'
-        ? {
-            bg: 'paper.100' as const,
-            color: 'ink.500' as const,
-            borderColor: 'ink.border' as const,
-            label: '비공개',
-          }
-        : {
-            bg: 'paper.100' as const,
-            color: 'spot.600' as const,
-            borderColor: 'ink.border' as const,
-            // 공개 예정일은 옆 날짜 칼럼에 이미 있으므로 배지는 상태만 말합니다.
-            // 정확한 시각은 title 툴팁으로.
-            label: '예약',
-          };
+  const badge = STATUS_BADGE[state];
 
   return (
     <div
@@ -153,10 +148,10 @@ export function PostAccordion({ post }: Props) {
               py: '0.5',
               rounded: 'full',
               flexShrink: 0,
-              bg: statusStyle.bg,
-              color: statusStyle.color,
+              bg: 'paper.100',
+              color: badge.color,
               borderWidth: '[1px]',
-              borderColor: statusStyle.borderColor,
+              borderColor: 'ink.border',
             })}
             title={
               state === 'scheduled' && publishAt
@@ -166,7 +161,7 @@ export function PostAccordion({ post }: Props) {
                 : undefined
             }
           >
-            {statusStyle.label}
+            {badge.label}
           </span>
           <span
             className={css({

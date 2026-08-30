@@ -18,6 +18,7 @@
     "test:coverage": "vitest run --coverage",
     "new-post": "blog-content new-post",
     "gen:types": "mkdir -p .cache && supabase gen types --lang typescript --local --schema public > .cache/database.types.ts && mv .cache/database.types.ts src/lib/platform/database.types.ts && prettier --write src/lib/platform/database.types.ts",
+    "seed:pull": "./scripts/pull-prod-seed.sh",
     "supabase-stop": "supabase stop --all --no-backup --debug",
     "supabase-start": "pnpm supabase-stop && pnpm supabase start"
   },
