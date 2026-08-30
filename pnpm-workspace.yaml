@@ -51,7 +51,7 @@ catalog:
   '@vitejs/plugin-react': ^6.0.5
   '@testing-library/dom': ^10.4.1
   '@testing-library/jest-dom': ^7.0.1
-  '@testing-library/react': ^16.3.2
+  '@testing-library/react': ^16.3.3
   '@testing-library/user-event': ^14.6.6
 
 # lint 툴체인은 서로 버전이 맞물려 돌아간다(eslint 코어 ↔ @eslint/js ↔ typescript-eslint,
