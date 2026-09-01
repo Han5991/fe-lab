@@ -65,7 +65,7 @@ Next.js standalone 모드는 애플리케이션을 컴파일하여 런타임에 
 
 이런 구조를 통해 각 애플리케이션과 공통 패키지를 독립적이면서도 효율적으로 관리할 수 있습니다.
 
-## 3. Turborepo를 활용한 효율적인 도커라이징 방법 소개 [(feat:공식문서)](https://turbo.hector.im/repo/docs/handbook/deploying-with-docker)
+## 3. Turborepo를 활용한 효율적인 도커라이징 방법 소개 [(feat:공식문서)](https://turborepo.dev/docs/guides/tools/docker)
 
 ### DockerFile 작성하기
 
