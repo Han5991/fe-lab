@@ -18,6 +18,12 @@ overrides:
   # 7.1.3+. 같은 이유로 in-range 승급 불가 → permanent override.
   # 제거 조건: @pandacss/core가 7.1.3+로 핀을 올리면 삭제.
   postcss-selector-parser: 7.1.6
+  # satori 0.33.4가 fflate를 0.7.3으로 exact 핀 고정해 GHSA(medium, unzipSync가
+  # 손상된 ZIP64 아카이브에서 무한 루프)를 report한다. 패치는 0.7.5+.
+  # 형제 의존자 @shuding/opentype.js는 ^0.7.3이라 승급 가능하지만, satori의 exact 핀
+  # 때문에 lock file maintenance가 두 벌을 취약한 0.7.3 한 벌로 dedupe해 버린다.
+  # 제거 조건: satori가 0.7.5+로 핀을 올리면 삭제.
+  fflate: 0.7.5
 
 allowBuilds:
   esbuild: true
