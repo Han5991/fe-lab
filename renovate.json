@@ -11,7 +11,7 @@
   ],
   "timezone": "Asia/Seoul",
   "schedule": ["before 10am on monday"],
-  "prHourlyLimit": 2,
+  "prHourlyLimit": 0,
   "prConcurrentLimit": 10,
   "rangeStrategy": "bump",
   "labels": ["dependencies"],
@@ -39,16 +39,9 @@
       "semanticCommitScope": "ci"
     },
     {
-      "description": "devDependencies의 minor/patch는 자동 머지",
-      "matchDepTypes": ["devDependencies"],
+      "description": "dependencies·devDependencies 모두 minor/patch까지 자동 머지. 예전에는 프로덕션 dependencies만 patch로 좁혀 뒀는데, 그 결과 프로덕션 minor가 어느 규칙에도 안 걸려 automerge도 deps-major 라벨도 없이 열린 채 쌓였다(lucide-react·mermaid·motion·nuqs·@supabase/postgrest-js·magic-string). 블로그는 build 안에 check-seo·check-bundle까지 게이트가 있어 회귀는 머지 전에 잡힌다. 런타임 자체(.tool-versions의 node·pnpm, engines, packageManager)는 여전히 어느 규칙에도 안 걸려 수동이다 — 자동으로 올리면 asdf에 안 깔린 버전을 가리켜 로컬이 죽는다",
+      "matchDepTypes": ["dependencies", "devDependencies"],
       "matchUpdateTypes": ["minor", "patch"],
-      "automerge": true,
-      "platformAutomerge": true
-    },
-    {
-      "description": "프로덕션 의존성은 patch만 자동 머지",
-      "matchDepTypes": ["dependencies"],
-      "matchUpdateTypes": ["patch"],
       "automerge": true,
       "platformAutomerge": true
     },
@@ -83,6 +76,12 @@
     {
       "description": "@ssgoi/react는 업데이트 제안을 막는다. v7이 PageTransition의 API(paths·preserveScroll, AnyTransitionConfig 형태 등)와 비호환이라 마이그레이션 없이는 빌드가 깨진다(#246). 마이그레이션을 마치면 이 규칙을 지울 것",
       "matchPackageNames": ["@ssgoi/react"],
+      "enabled": false
+    },
+    {
+      "description": "typescript major(v7)는 제안을 막는다. 이 저장소는 TS6 시맨틱을 전제로 tsconfig와 소스를 맞춰 뒀고(CLAUDE.md), v7은 별도 마이그레이션 작업이다. PR #244를 머지 없이 닫아 Renovate가 이미 7.x를 암묵적으로 무시하고 있지만, 대시보드의 recreate 체크박스 한 번이면 되살아나고 사유가 코드에 남지 않는다. major만 막으므로 6.x의 minor/patch는 계속 올라온다. 마이그레이션을 마치면 이 규칙을 지울 것",
+      "matchPackageNames": ["typescript"],
+      "matchUpdateTypes": ["major"],
       "enabled": false
     },
     {
