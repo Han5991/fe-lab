@@ -21,7 +21,7 @@
     "react-markdown": "catalog:",
     "rehype-raw": "catalog:",
     "remark-gfm": "catalog:",
-    "satori": "^0.29.0",
+    "satori": "^0.33.4",
     "sharp": "^0.35.4"
   },
   "devDependencies": {
