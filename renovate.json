@@ -39,16 +39,9 @@
       "semanticCommitScope": "ci"
     },
     {
-      "description": "devDependencies의 minor/patch는 자동 머지",
-      "matchDepTypes": ["devDependencies"],
+      "description": "dependencies·devDependencies 모두 minor/patch까지 자동 머지. 예전에는 프로덕션 dependencies만 patch로 좁혀 뒀는데, 그 결과 프로덕션 minor가 어느 규칙에도 안 걸려 automerge도 deps-major 라벨도 없이 열린 채 쌓였다(lucide-react·mermaid·motion·nuqs·@supabase/postgrest-js·magic-string). 블로그는 build 안에 check-seo·check-bundle까지 게이트가 있어 회귀는 머지 전에 잡힌다. 런타임 자체(.tool-versions의 node·pnpm, engines, packageManager)는 여전히 어느 규칙에도 안 걸려 수동이다 — 자동으로 올리면 asdf에 안 깔린 버전을 가리켜 로컬이 죽는다",
+      "matchDepTypes": ["dependencies", "devDependencies"],
       "matchUpdateTypes": ["minor", "patch"],
-      "automerge": true,
-      "platformAutomerge": true
-    },
-    {
-      "description": "프로덕션 의존성은 patch만 자동 머지",
-      "matchDepTypes": ["dependencies"],
-      "matchUpdateTypes": ["patch"],
       "automerge": true,
       "platformAutomerge": true
     },
