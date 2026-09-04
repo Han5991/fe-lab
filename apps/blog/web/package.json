@@ -71,7 +71,7 @@
     "eslint-plugin-react-hooks": "catalog:lint",
     "globals": "catalog:lint",
     "jsdom": "catalog:",
-    "supabase": "^2.113.0",
+    "supabase": "^2.116.0",
     "typescript": "catalog:",
     "typescript-eslint": "catalog:lint",
     "vitest": "catalog:"
