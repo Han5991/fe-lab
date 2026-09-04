@@ -17,7 +17,7 @@
   "labels": ["dependencies"],
   "lockFileMaintenance": {
     "enabled": true,
-    "schedule": ["before 10am on monday"],
+    "schedule": ["before 10am on the first day of the month"],
     "automerge": true,
     "platformAutomerge": true
   },
