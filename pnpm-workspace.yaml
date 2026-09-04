@@ -86,4 +86,4 @@ catalogs:
     # jiti >=2.2를 요구한다(lib/config/config-loader.js).
     jiti: ^2.7.0
     globals: ^17.12.0
-    typescript-eslint: ^8.67.0
+    typescript-eslint: ^8.69.0
