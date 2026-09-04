@@ -11,7 +11,7 @@
   ],
   "timezone": "Asia/Seoul",
   "schedule": ["before 10am on monday"],
-  "prHourlyLimit": 2,
+  "prHourlyLimit": 0,
   "prConcurrentLimit": 10,
   "rangeStrategy": "bump",
   "labels": ["dependencies"],
