@@ -6,6 +6,18 @@ overrides:
   # next(8.4.31 고정)와 @pandacss/*(8.5.14 고정)가 각자 exact 핀을 걸어서, 오버라이드를
   # 빼면 postcss가 8.4.31/8.5.14/8.5.18 세 벌로 갈라진다. 한 벌로 dedupe하기 위해 유지.
   postcss: 8.5.26
+  # @pandacss/core(및 형제 패키지) 1.12.0/1.12.1이 browserslist를 4.28.1로 exact 핀
+  # 고정해 pnpm audit이 GHSA-c83g-rgw3-j3cx·GHSA-73wf-gq98-2v4g(무제한 메모리 증가 ·
+  # prototype write 크래시, 둘 다 high)를 report한다. 패치 버전(4.28.7+)이 나와도
+  # 핀이 그대로라 in-range 승급이 불가능해 permanent override로 고정. 이미 다른
+  # 의존자(babel-helper-compilation-targets 등)가 4.28.8을 쓰고 있어 dedupe도 겸한다.
+  # 제거 조건: @pandacss/core가 4.28.7+로 핀을 올리면 삭제.
+  browserslist: 4.28.8
+  # 같은 @pandacss/core가 postcss-selector-parser도 7.1.1로 exact 핀 고정해
+  # GHSA-w9m9-85wc-3x92(uncontrolled AST recursion DoS, low)를 report한다. 패치는
+  # 7.1.3+. 같은 이유로 in-range 승급 불가 → permanent override.
+  # 제거 조건: @pandacss/core가 7.1.3+로 핀을 올리면 삭제.
+  postcss-selector-parser: 7.1.6
 
 allowBuilds:
   esbuild: true
