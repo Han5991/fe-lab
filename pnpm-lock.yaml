@@ -110,8 +110,8 @@ catalogs:
       specifier: ^0.5.5
       version: 0.5.5
     globals:
-      specifier: ^17.9.0
-      version: 17.10.0
+      specifier: ^17.12.0
+      version: 17.12.0
     jiti:
       specifier: ^2.7.0
       version: 2.7.0
@@ -272,7 +272,7 @@ importers:
         version: 7.1.1(eslint@10.8.1(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)
       globals:
         specifier: catalog:lint
-        version: 17.10.0
+        version: 17.12.0
       jiti:
         specifier: catalog:lint
         version: 2.7.0
@@ -415,7 +415,7 @@ importers:
         version: 0.5.5(eslint@10.8.1(jiti@2.7.0)(supports-color@10.2.2))
       globals:
         specifier: catalog:lint
-        version: 17.10.0
+        version: 17.12.0
       jsdom:
         specifier: 'catalog:'
         version: 30.0.1(@noble/hashes@1.8.0)
@@ -515,7 +515,7 @@ importers:
         version: 7.2.0(@typescript-eslint/parser@8.67.0(eslint@10.8.1(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)(typescript@6.0.3))(eslint-import-resolver-typescript@4.4.5)(eslint@10.8.1(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)
       globals:
         specifier: catalog:lint
-        version: 17.10.0
+        version: 17.12.0
       jiti:
         specifier: catalog:lint
         version: 2.7.0
@@ -3600,8 +3600,8 @@ packages:
     resolution: {integrity: sha512-ob/2LcVVaVGCYN+r14cnwnoDPUufjiYgSqRhiFD0Q1iI4Odora5RE8Iv1D24hAz5oMophRGkGz+yuvQmmUMnMw==}
     engines: {node: '>=18'}
 
-  globals@17.10.0:
-    resolution: {integrity: sha512-V0kztuWST2k8A/VbxAY8+L+7+Rgo3fyA24IHRLrZp7HOzJjV0gHSaZUjK9lpP/IrBSNite2tZ1prhRkinRu1CA==}
+  globals@17.12.0:
+    resolution: {integrity: sha512-cezEd/DTyyht9cvSSURyygXPfy04GtWO/5e6ZPvH7fCtjKz9PYOmuawphw1Ctd1f6C+5JypXfGD7ahNMXvevBA==}
     engines: {node: '>=18'}
 
   globalthis@1.0.4:
@@ -8666,7 +8666,7 @@ snapshots:
 
   globals@16.4.0: {}
 
-  globals@17.10.0: {}
+  globals@17.12.0: {}
 
   globalthis@1.0.4:
     dependencies:
