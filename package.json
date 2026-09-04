@@ -17,7 +17,7 @@
     "prepare": "lefthook install"
   },
   "devDependencies": {
-    "lefthook": "^2.1.10",
+    "lefthook": "^2.1.12",
     "prettier": "^3.9.6",
     "turbo": "^2.10.12"
   },
