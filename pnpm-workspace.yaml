@@ -71,7 +71,7 @@ catalog:
 # 소비자가 하나뿐인 플러그인도 여기 둔다 — 툴체인 버전 표가 여러 곳으로 흩어지지 않게.
 catalogs:
   lint:
-    eslint: ^10.8.1
+    eslint: ^10.9.1
     '@eslint/js': ^10.0.1
     '@eslint-community/eslint-plugin-eslint-comments': ^4.7.2
     '@next/eslint-plugin-next': ^16.3.0
