@@ -212,7 +212,8 @@ export default defineConfig([
     },
   },
   {
-    // SSG(GitHub Pages) 환경이라 next/image 자체가 비활성 — 의도적 <img> 사용
+    // SSG 정적 호스팅(Cloudflare Workers assets)이라 next/image 자체가 비활성 —
+    // 의도적 <img> 사용
     files: ['src/**/*.{ts,tsx}'],
     rules: {
       '@next/next/no-img-element': 'off',

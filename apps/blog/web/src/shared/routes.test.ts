@@ -29,7 +29,8 @@ import {
 describe('정적 페이지 경로', () => {
   test('내부 링크 경로는 후행 슬래시를 단 절대 경로다 — trailingSlash 계약', () => {
     // next.config.ts의 trailingSlash: true. 여기서 어긋나면 링크마다
-    // GitHub Pages 301을 한 번 더 탄다.
+    // wrangler.jsonc의 html_handling: force-trailing-slash가 내는 307을
+    // 한 번 더 탄다.
     for (const path of [
       ABOUT_PATH,
       SERIES_PATH,

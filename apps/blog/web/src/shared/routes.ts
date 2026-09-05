@@ -55,10 +55,11 @@ export const ADMIN_LOGIN_UNAUTHORIZED_PATH = `${ADMIN_LOGIN_PATH}?error=unauthor
  * OAuth를 마친 브라우저가 돌아올 경로.
  *
  * **무슬래시인 것이 의도다.** `trailingSlash: true` 계약과는 어긋나서 로그인
- * 때마다 GitHub Pages 301을 한 번 더 타지만, 이 값은 코드 혼자 정하는 게
- * 아니라 **Supabase 대시보드의 허용 리다이렉트 목록과 짝**이다. 목록이 정확
- * 일치로 걸려 있을 때 코드만 슬래시형으로 바꾸면 프로덕션 로그인이 깨진다 —
- * 바꿀 때는 둘을 함께 바꿀 것.
+ * 때마다 후행 슬래시를 붙이는 307을 한 번 더 타지만(`wrangler.jsonc`의
+ * `html_handling: force-trailing-slash`가 내는 코드다), 이 값은 코드 혼자
+ * 정하는 게 아니라 **Supabase 대시보드의 허용 리다이렉트 목록과 짝**이다.
+ * 목록이 정확 일치로 걸려 있을 때 코드만 슬래시형으로 바꾸면 프로덕션 로그인이
+ * 깨진다 — 바꿀 때는 둘을 함께 바꿀 것.
  *
  * 그래서 `ADMIN_BASE_PATH`를 그대로 쓴다. 슬래시를 붙이는 파생을 여기 두면
  * 위 계약이 코드 모양으로는 안 보이게 된다.
