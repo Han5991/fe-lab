@@ -2,15 +2,31 @@
   // 정적 전용 Worker — main이 없으므로 out/ 의 파일만 서빙한다.
   "name": "blog",
   "compatibility_date": "2026-09-05",
+
+  // 이 사이트의 실제 주소. 대시보드에서 붙인 커스텀 도메인을 여기 선언해 두어야
+  // 저장소만 보고도 어디에 배포되는지 알 수 있고, wrangler deploy가 그 상태를
+  // 유지한다. custom_domain은 해당 호스트의 DNS 레코드를 Worker가 소유한다는 뜻이라
+  // 같은 이름의 A/CNAME이 따로 있으면 배포가 거부된다(전환 때 실제로 그랬다).
+  "routes": [{ "pattern": "blog.sangwook.dev", "custom_domain": true }],
+
+  // blog.<subdomain>.workers.dev 를 끈다. 켜 두면 같은 사이트가 두 주소로 열려
+  // 중복 콘텐츠가 된다 — canonical이 막아 주긴 하지만, 색인 이력이 아픈 사이트라
+  // 표면 자체를 없애는 쪽을 택했다. 스테이징이 필요하면 여기를 true로.
+  "workers_dev": false,
+
   "assets": {
     "directory": "./out",
 
     // next.config.ts 의 trailingSlash: true 와 짝을 맞춘다.
-    // out/posts/index.html 을 /posts/ 로 서빙하고, /posts 로 들어오면 308로 슬래시를 붙인다.
+    // out/posts/index.html 을 /posts/ 로 서빙하고, /posts 로 들어오면 슬래시를 붙인다.
     // 기본값(auto-trailing-slash)은 양쪽 다 200을 주므로 정규 URL이 둘로 갈라진다.
+    // 다만 이때 나가는 코드는 **307**이다(GitHub Pages는 301이었다) — 내부 링크·
+    // sitemap·canonical이 전부 슬래시를 달고 나가므로 크롤러가 밟을 일은 드물지만,
+    // 외부 유입 링크에는 영구가 아닌 임시 리다이렉트가 나간다. 상태 코드를 고르는
+    // 옵션은 없어서, 바꾸려면 Redirect Rule로 덮어야 한다.
     "html_handling": "force-trailing-slash",
 
     // src/app/not-found.tsx → out/404.html
-    "not_found_handling": "404-page"
-  }
+    "not_found_handling": "404-page",
+  },
 }
