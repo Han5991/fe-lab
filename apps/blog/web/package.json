@@ -12,6 +12,7 @@
     "lint:posts": "blog-content validate",
     "check-seo": "blog-content check-seo",
     "check-bundle": "blog-content check-bundle",
+    "deploy": "wrangler deploy",
     "check-types": "next typegen && tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json --noEmit && tsc -p supabase/functions/_typecheck/tsconfig.json --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -49,6 +50,7 @@
     "remark-gfm": "catalog:"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "catalog:",
     "@eslint-community/eslint-plugin-eslint-comments": "catalog:lint",
     "@eslint/js": "catalog:lint",
     "@next/eslint-plugin-next": "catalog:lint",
@@ -74,6 +76,7 @@
     "supabase": "^2.116.0",
     "typescript": "catalog:",
     "typescript-eslint": "catalog:lint",
-    "vitest": "catalog:"
+    "vitest": "catalog:",
+    "wrangler": "catalog:"
   }
 }
