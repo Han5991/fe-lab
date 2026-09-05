@@ -1,0 +1,7 @@
+{
+  // sangwook.dev → blog.sangwook.dev 리다이렉트 전용 Worker.
+  // 정적 자산이 없으므로 assets 없이 main 하나만 둔다.
+  "name": "sangwook-apex-redirect",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-05"
+}

@@ -8,10 +8,10 @@
 
 ## 🎯 이 저장소의 두 가지 목적
 
-| 목적                         | 어디                                                                        | 자세히                                                                                                                                                                               |
-| ---------------------------- | --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **🚀 운영 중인 기술 블로그** | `apps/blog/posts` → `packages/@blog/content` → `apps/blog/web`              | Markdown 원고를 콘텐츠 프레임워크 패키지가 읽어 Next.js SSG로 굽고, GitHub Pages에 배포. 조회수/Admin/Analytics는 Supabase. 콘텐츠 파이프라인이 깨지지 않도록 회귀 테스트로 잠가 둠. |
-| **🧪 새 기술/패턴 실험실**   | `apps/{react,next.js,typescript,socket-server}` + `packages/@package/**` 등 | 한 가지 주제에 한 앱을 붙여 두고, 디자인 시스템·번들러·실시간 통신·타입 설계 등을 자유롭게 시도.                                                                                     |
+| 목적                         | 어디                                                                        | 자세히                                                                                                                                                                                     |
+| ---------------------------- | --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **🚀 운영 중인 기술 블로그** | `apps/blog/posts` → `packages/@blog/content` → `apps/blog/web`              | Markdown 원고를 콘텐츠 프레임워크 패키지가 읽어 Next.js SSG로 굽고, Cloudflare Workers에 배포. 조회수/Admin/Analytics는 Supabase. 콘텐츠 파이프라인이 깨지지 않도록 회귀 테스트로 잠가 둠. |
+| **🧪 새 기술/패턴 실험실**   | `apps/{react,next.js,typescript,socket-server}` + `packages/@package/**` 등 | 한 가지 주제에 한 앱을 붙여 두고, 디자인 시스템·번들러·실시간 통신·타입 설계 등을 자유롭게 시도.                                                                                           |
 
 블로그는 실제로 쓰는 자산이라 신중하게, 그 외 워크스페이스는 부담 없이 실험합니다.
 
@@ -57,7 +57,7 @@ apps/blog/posts/**/_series.yml ─┤
             packages/@blog/content            (shared → post → seo → scripts → scripts/render → scripts/cli)
             ├─ 로더·공개 판정·시리즈·URL 계약  ─▶  apps/blog/web  (src/shared → src/lib/platform
             │                                 ─▶   → src/domain/{analytics,auth} → app 레이어)
-            ├─ SEO 빌더 (@blog/content/seo)    ─▶     ├─ next build (output: 'export')  ─▶  out/  ─▶  GitHub Pages
+            ├─ SEO 빌더 (@blog/content/seo)    ─▶     ├─ next build (output: 'export')  ─▶  out/  ─▶  Cloudflare Workers
             └─ 빌드 스크립트 (build-content)   ─▶     │     ├─ check-seo    (산출 HTML 게이트)
                  validate-posts 게이트 → 병렬 8개     │     └─ check-bundle (JS 청크 누수 게이트)
                  (sync·sitemap·rss·og-images·          └─ 런타임: Supabase (조회수·Admin·Analytics), Giscus, GA4/GTM
@@ -157,26 +157,27 @@ pnpm check-seo                                      # 빌드 산출물(out/) SEO
 
 ## 🌐 외부 서비스 & 배포
 
-| 서비스                     | 역할                                                                                                                                                  |
-| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **GitHub Pages**           | 블로그 정적 호스팅 — `main` push(`apps/blog/**`·`packages/@blog/**` 변경 시) + 매일 KST 09:00 cron(예약 발행) + 수동 실행(`workflow_dispatch`)        |
-| **Supabase Cloud**         | 블로그 조회수·Admin 인증(Google OAuth)·Analytics RPC. 로컬은 `supabase start`(Docker)                                                                 |
-| **Google Analytics / GTM** | GA4(`G-ZS9ENFSSQ0`) + GTM(`GTM-5SMPQ23P`), 둘 다 `@next/third-parties`로 로드. GTM 컨테이너 내용은 저장소 밖(웹 콘솔)                                 |
-| **Giscus**                 | 댓글 (GitHub Discussions 기반)                                                                                                                        |
-| **Vercel Preview**         | 블로그 PR 미리보기 — `main`·`renovate/**` 브랜치 제외, `apps/blog`·`packages/@blog` 변경이 없으면 `ignoreCommand`로 스킵(`apps/blog/web/vercel.json`) |
+| 서비스                     | 역할                                                                                                                                                                                                                                |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Cloudflare Workers**     | 블로그 정적 호스팅(`apps/blog/web/wrangler.jsonc`) — `main` push(`apps/blog/**`·`packages/@blog/**` 변경 시) + 매일 KST 09:00 cron(예약 발행) + 수동 실행(`workflow_dispatch`). apex 리다이렉트는 별도 Worker(`apps/blog/redirect`) |
+| **Supabase Cloud**         | 블로그 조회수·Admin 인증(Google OAuth)·Analytics RPC. 로컬은 `supabase start`(Docker)                                                                                                                                               |
+| **Google Analytics / GTM** | GA4(`G-ZS9ENFSSQ0`) + GTM(`GTM-5SMPQ23P`), 둘 다 `@next/third-parties`로 로드. GTM 컨테이너 내용은 저장소 밖(웹 콘솔)                                                                                                               |
+| **Giscus**                 | 댓글 (GitHub Discussions 기반)                                                                                                                                                                                                      |
+| **Vercel Preview**         | 블로그 PR 미리보기 — `main`·`renovate/**` 브랜치 제외, `apps/blog`·`packages/@blog` 변경이 없으면 `ignoreCommand`로 스킵(`apps/blog/web/vercel.json`)                                                                               |
 
 ### CI / 자동화 (`.github/workflows/`)
 
-| 워크플로                    | 트리거                                                | 하는 일                                                                       |
-| --------------------------- | ----------------------------------------------------- | ----------------------------------------------------------------------------- |
-| `ci.yml`                    | `pull_request`, `push: main`                          | quality-checks 4단계 + Next 빌드 캐시 복원                                    |
-| `deploy-blog.yml`           | `push: main`(블로그 경로), cron `0 0 * * *`, dispatch | quality-checks → 시크릿 주입 빌드 → `/posts/` 프리렌더 링크 검증 → Pages 배포 |
-| `claude.yml`                | `@claude` 멘션 · 라벨                                 | 온디맨드 Claude Code 에이전트                                                 |
-| `claude-code-review.yml`    | PR opened/synchronize                                 | PR 자동 코드 리뷰                                                             |
-| `claude-deps-audit.yml`     | 매주 월 cron                                          | 죽은 `pnpm overrides` 정리 + `pnpm audit` 후속 PR                             |
-| `claude-link-rot.yml`       | 매월 1일 cron                                         | 발행 글 외부 링크 검사 → 교체 PR                                              |
-| `claude-post-inventory.yml` | `deploy-blog.yml` 완료 시(workflow_run), dispatch     | draft/scheduled 글 현황 이슈 갱신                                             |
-| `claude-site-smoke.yml`     | 매일 cron                                             | 배포된 HTML/sitemap/rss 스모크 검사                                           |
+| 워크플로                    | 트리거                                                | 하는 일                                                                         |
+| --------------------------- | ----------------------------------------------------- | ------------------------------------------------------------------------------- |
+| `ci.yml`                    | `pull_request`, `push: main`                          | quality-checks 4단계 + Next 빌드 캐시 복원                                      |
+| `deploy-blog.yml`           | `push: main`(블로그 경로), cron `0 0 * * *`, dispatch | quality-checks → 시크릿 주입 빌드 → `/posts/` 프리렌더 링크 검증 → Workers 배포 |
+| `deploy-redirect.yml`       | `push: main`(`apps/blog/redirect/**`), dispatch       | 리다이렉트 규칙 테스트 → apex Worker 배포                                       |
+| `claude.yml`                | `@claude` 멘션 · 라벨                                 | 온디맨드 Claude Code 에이전트                                                   |
+| `claude-code-review.yml`    | PR opened/synchronize                                 | PR 자동 코드 리뷰                                                               |
+| `claude-deps-audit.yml`     | 매주 월 cron                                          | 죽은 `pnpm overrides` 정리 + `pnpm audit` 후속 PR                               |
+| `claude-link-rot.yml`       | 매월 1일 cron                                         | 발행 글 외부 링크 검사 → 교체 PR                                                |
+| `claude-post-inventory.yml` | `deploy-blog.yml` 완료 시(workflow_run), dispatch     | draft/scheduled 글 현황 이슈 갱신                                               |
+| `claude-site-smoke.yml`     | 매일 cron                                             | 배포된 HTML/sitemap/rss 스모크 검사                                             |
 
 ---
 

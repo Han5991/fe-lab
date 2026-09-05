@@ -1,0 +1,16 @@
+{
+  // 정적 전용 Worker — main이 없으므로 out/ 의 파일만 서빙한다.
+  "name": "blog",
+  "compatibility_date": "2026-09-05",
+  "assets": {
+    "directory": "./out",
+
+    // next.config.ts 의 trailingSlash: true 와 짝을 맞춘다.
+    // out/posts/index.html 을 /posts/ 로 서빙하고, /posts 로 들어오면 308로 슬래시를 붙인다.
+    // 기본값(auto-trailing-slash)은 양쪽 다 200을 주므로 정규 URL이 둘로 갈라진다.
+    "html_handling": "force-trailing-slash",
+
+    // src/app/not-found.tsx → out/404.html
+    "not_found_handling": "404-page"
+  }
+}

@@ -41,7 +41,7 @@ apps/blog/web  (이 앱)
   └─ check-bundle                             (out/ JS 청크의 admin 코드 누수 검사 — 빌드의 마지막 게이트)
         │
         ▼
-GitHub Pages (deploy-blog.yml)   +   런타임: Supabase(조회수·Admin·Analytics) · Giscus · GA4/GTM
+Cloudflare Workers (deploy-blog.yml)  +  런타임: Supabase(조회수·Admin·Analytics) · Giscus · GA4/GTM
 ```
 
 - **정적 산출물**: `output: 'export'`(개발 모드에서는 해제), `trailingSlash: true` + `skipTrailingSlashRedirect: true` 짝, `images.unoptimized: true`. 내부 href는 스스로 후행 슬래시를 단다(`postPath`·`archivePath`).
@@ -161,7 +161,7 @@ apps/blog/web/
 ## 7. 배포 · CI
 
 - **PR / main push**: `.github/workflows/ci.yml` → 공용 `.github/actions/quality-checks`(turbo lint·check-types·test → `lint:posts` → `format:check` → `pnpm build --filter=@blog/web`).
-- **배포**: `.github/workflows/deploy-blog.yml` — `main` push(`apps/blog/**`·`packages/@blog/**`), 매일 KST 09:00 cron(예약 발행), 수동. quality-checks → 시크릿 주입 `--no-cache` 빌드 → `/posts/` 프리렌더 링크 개수 검증(CSR bail-out 회귀 가드) → GitHub Pages.
+- **배포**: `.github/workflows/deploy-blog.yml` — `main` push(`apps/blog/**`·`packages/@blog/**`), 매일 KST 09:00 cron(예약 발행), 수동. quality-checks → 시크릿 주입 `--no-cache` 빌드 → `/posts/` 프리렌더 링크 개수 검증(CSR bail-out 회귀 가드) → Cloudflare Workers(`wrangler.jsonc`).
 - **Vercel 프리뷰**: `vercel.json` — `main`·`renovate/**` 비활성, `apps/blog`·`packages/@blog` 변경 없으면 `ignoreCommand`로 스킵.
 - **Supabase**: 스키마는 `supabase/migrations/`(조회수 테이블·이력·대시보드 RPC·KST 보정·권한 잠금 순), Admin RPC 프록시는 `supabase/functions/admin-analytics`.
 

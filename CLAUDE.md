@@ -49,7 +49,9 @@ the key findings.
 ### Blog Architecture
 
 The blog (`apps/blog/web/`) is a **statically generated (SSG) Next.js application** with a
-**Supabase BaaS backend**, deployed to **GitHub Pages**. The domain is `https://blog.sangwook.dev`.
+**Supabase BaaS backend**, deployed to **Cloudflare Workers**(정적 자산 Worker —
+`apps/blog/web/wrangler.jsonc`). The domain is `https://blog.sangwook.dev`.
+apex(`sangwook.dev`) → blog 리다이렉트는 별도 Worker(`apps/blog/redirect`)가 맡는다.
 콘텐츠 프레임워크(스키마·로더·공개 판정·URL 계약·빌드 스크립트·2층 검증)는
 **`packages/@blog/content`** 로 떼어져 있고, 앱은 그 소비자다. 코드 배치와 런타임 데이터
 흐름은 `apps/blog/web/README.md`가, 패키지 내부는 `packages/@blog/content/README.md`가 다룬다 —
@@ -97,16 +99,19 @@ apps/blog/posts (원고)  →  packages/@blog/content  →  apps/blog/web
   `@eslint-community/eslint-comments/no-use`가 켜져 **인라인 `eslint-disable` 주석이 전면 금지**다 —
   예외가 필요하면 주석이 아니라 `eslint.config.mts`에 `files` 스코프로 적을 것.
   **이 임계값은 블로그 스택 둘에만 건다.** 실험실은 세 단이다 — `apps/react`·`apps/next.js`는
-  `eslint .`(경고 허용, `noInlineConfig` 없음)이고, `apps/typescript`·`apps/socket-server`는
-  **린트하지 않는다**(lint 스크립트도 eslint 설정 파일도 없다 — `check-types`·`test`만 돈다).
-  저장소 전체 eslint 설정은 넷뿐이다. 규율을 자산에만 거는 건 의도된 배분이다(루트 README
+  `eslint .`(경고 허용, `noInlineConfig` 없음)이고, `apps/typescript`·`apps/socket-server`·
+  `apps/blog/redirect`는 **린트하지 않는다**(lint 스크립트도 eslint 설정 파일도 없다 —
+  `check-types`·`test`만 돈다). 저장소 전체 eslint 설정은 넷뿐이다.
+  `apps/blog/redirect`가 블로그 경로에 있으면서도 이쪽인 이유는 크기다 — 순수 함수
+  하나에 테스트 10개라, 다섯 번째 설정을 만들 값보다 표를 늘리는 비용이 크다.
+  코드가 늘면 `apps/react` 수준의 완화된 설정을 붙일 것. 규율을 자산에만 거는 건 의도된 배분이다(루트 README
   "블로그는 실제로 쓰는 자산이라 신중하게"). 실험 앱 코드를 고칠 때 블로그 기준을 강제하지
   말 것 — `apps/typescript`에서 `pnpm lint`를 찾지도 말 것
 
 #### SSG (Static Site Generation) 전략
 
 - **Next.js `output: 'export'`**: 프로덕션 빌드 시 완전한 정적 HTML 생성 (개발 모드에서는 해제)
-- **`trailingSlash: true`**: GitHub Pages 호환을 위한 후행 슬래시 설정. **`skipTrailingSlashRedirect: true`가 짝이다** — 없으면 next/link가 `.`이 든 slug(`turborepo-next.js-docker`)를 파일로 보고 붙인 슬래시를 도로 벗겨 링크가 301을 한 번 더 탄다. 그래서 내부 href는 전부 스스로 후행 슬래시를 달아야 하고(`postPath`·`archivePath`가 그렇게 한다), 산출물은 `check-seo`의 `link-trailing-slash` 규칙이 지킨다
+- **`trailingSlash: true`**: 후행 슬래시 설정. 호스팅 쪽 짝은 `wrangler.jsonc`의 **`html_handling: force-trailing-slash`**다 — 기본값(`auto-trailing-slash`)은 슬래시 유무 양쪽에 200을 주어 정규 URL이 둘로 갈라진다. **`skipTrailingSlashRedirect: true`가 짝이다** — 없으면 next/link가 `.`이 든 slug(`turborepo-next.js-docker`)를 파일로 보고 붙인 슬래시를 도로 벗겨 링크가 301을 한 번 더 탄다. 그래서 내부 href는 전부 스스로 후행 슬래시를 달아야 하고(`postPath`·`archivePath`가 그렇게 한다), 산출물은 `check-seo`의 `link-trailing-slash` 규칙이 지킨다
 - **`images.unoptimized: true`**: 정적 호스팅에서 Next.js Image Optimization 사용 불가하므로 비활성화
 
 #### Supabase 백엔드
@@ -193,11 +198,19 @@ apps/blog/posts (원고)  →  packages/@blog/content  →  apps/blog/web
 
      > 예전엔 스텝마다 스크립트 **파일 경로**를 하드코딩하고 `isCliEntry`(realpath 비교)로 "직접 실행인가"를 판정했다. pnpm 심링크 경로와 ESM 로더 realpath가 달라 순진한 `import.meta.url === argv[1]` 비교가 **항상 false**였고, 모든 생성기가 무음 no-op이던 사고에서 나온 가드다. 진입점이 하나가 되면서 가드도 그 함정도 없어졌다 — 단계 모듈은 `main`만 export하고, 부르는 일은 CLI가 한다.
 4. **정적 빌드**: `next build` → `out/` 디렉토리에 정적 파일 생성 → `check-seo`·`check-bundle`(아래)
-5. **배포**: GitHub Actions(`deploy-blog.yml`) → GitHub Pages
-   - `main` 브랜치 push 시 자동 빌드 — `apps/blog/**`·`packages/@blog/**` 변경일 때만
+5. **배포**: GitHub Actions(`deploy-blog.yml`) → `cloudflare/wrangler-action` → Cloudflare Workers
+   - `main` 브랜치 push 시 자동 빌드 — `apps/blog/**`(단 `apps/blog/redirect/**` 제외)·`packages/@blog/**` 변경일 때만
    - **매일 KST 09:00 (UTC 00:00) cron 자동 빌드** — 예약 발행 글 공개용
    - 수동 트리거(`workflow_dispatch`) 지원
    - 배포 전에 PR CI와 같은 `quality-checks` 액션을 지나고, 빌드 후 `/posts/`의 프리렌더 링크 개수를 검증한다(CSR bail-out 회귀 가드)
+   - **`environment: github-pages`는 이름과 달리 남아 있다.** 빌드가 읽는
+     `NEXT_PUBLIC_SUPABASE_URL`·`NEXT_PUBLIC_SUPABASE_ANON_KEY`·`NEXT_PUBLIC_ADMIN_EMAIL`
+     셋이 저장소 시크릿이 아니라 **이 환경의 시크릿**이라, 블록을 지우면 셋이 빈
+     문자열이 되고 `@next/env`가 이미 정의된 키를 `.env.production`으로 덮어쓰지
+     않아(`override: false`) 빈 값이 그대로 남는다 — 빌드는 통과하는데 조회수·Admin이
+     죽은 사이트가 나간다. 개명하려면 새 환경에 값을 다시 넣어야 한다(GitHub은 환경
+     개명을 지원하지 않고 시크릿 값은 되읽을 수 없다)
+   - apex 리다이렉트 Worker는 `deploy-redirect.yml`이 따로 배포한다(`apps/blog/redirect/**` 변경 시)
 
 #### 글쓰기 도구 (Authoring DX)
 
@@ -312,7 +325,10 @@ apps/blog/posts (원고)  →  packages/@blog/content  →  apps/blog/web
 | `env.d.ts`                                  | `NEXT_PUBLIC_*` 8개를 `NodeJS.ProcessEnv`에 선언 — `noPropertyAccessFromIndexSignature` 아래서도 점 접근을 쓰기 위해(Next는 멤버 표현식만 인라인)                                                                                                                                                                                                                                                                                                                                                                       |
 | `supabase/config.toml`                      | 로컬 Supabase 설정 (Auth, DB, Storage 등). `supabase/functions/admin-analytics`가 Admin RPC 프록시                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | `vercel.json`                               | 프리뷰 배포 — `main`·`renovate/**` 비활성, `apps/blog`·`packages/@blog` 변경 없으면 `ignoreCommand`로 스킵                                                                                                                                                                                                                                                                                                                                                                                                              |
-| `.github/workflows/deploy-blog.yml`         | CI/CD 배포 워크플로우. PR CI(`ci.yml`)와 `.github/actions/quality-checks` composite action을 공유한다                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `apps/blog/web/wrangler.jsonc`              | 블로그 정적 자산 Worker — `main` 없이 `assets.directory: ./out`만. `html_handling: force-trailing-slash`가 `next.config.ts`의 `trailingSlash: true`와 짝이고, `not_found_handling: 404-page`가 `out/404.html`을 물린다                                                                                                                                                                                                                                                                                                  |
+| `apps/blog/redirect/`                       | apex 리다이렉트 Worker — `sangwook.dev` → `blog.sangwook.dev`. Vercel의 `apps/next.js` `redirects()`를 순수 함수로 옮긴 것. 파일 경로에 후행 슬래시를 붙이지 않는 판정이 핵심이고(과거 `sitemap.xml` 6개월 404의 원인) `src/redirect.test.ts`가 308·쿼리스트링과 함께 잠근다                                                                                                                                                                                                                                            |
+| `.github/workflows/deploy-blog.yml`         | CI/CD 배포 워크플로우 — `cloudflare/wrangler-action`으로 Workers에 올린다. PR CI(`ci.yml`)와 `.github/actions/quality-checks` composite action을 공유한다. `environment: github-pages`는 시크릿이 그 환경에 있어 이름만 남은 것                                                                                                                                                                                                                                                                                         |
+| `.github/workflows/deploy-redirect.yml`     | apex 리다이렉트 Worker 배포 — `apps/blog/redirect/**` 변경 시. 배포 전에 리다이렉트 규칙 테스트를 게이트로 지난다                                                                                                                                                                                                                                                                                                                                                                                                       |
 | `apps/blog/posts/{series}/_series.yml`      | 시리즈 선언 — 이 파일이 있어야 시리즈. 표시명·설명·order 메타도 여기                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `packages/@blog/content`                    | 콘텐츠 프레임워크 패키지 — 스키마·로더·공개 판정·URL 계약·빌드 스크립트·2층 검증. 문 두 개(`@blog/content` + `@blog/content/seo`) + `bin`의 `blog-content`, 소스 익스포트(빌드 스텝 없음). 내부는 `packages/@blog/content/README.md`                                                                                                                                                                                                                                                                                    |
 | `…content/src/scripts/build-content.ts`     | predev:web/prebuild 통합 진입점 (validate → sync/sitemap/rss/og-images/thumbnails/search/llms-full/llms 병렬) — 앱 package.json은 `blog-content build`로 부른다                                                                                                                                                                                                                                                                                                                                                         |

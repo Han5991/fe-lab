@@ -17,7 +17,10 @@ name: Claude Post Inventory
 
 on:
   workflow_run:
-    workflows: ['Deploy Blog to GitHub Pages']
+    # workflow_run은 파일 경로가 아니라 워크플로의 `name`으로 매칭한다 —
+    # deploy-blog.yml의 name을 고치면 여기도 함께 고쳐야 한다. 어긋나면
+    # 실패가 아니라 **아예 실행되지 않아서** Actions 탭에 흔적도 남지 않는다.
+    workflows: ['Deploy Blog to Cloudflare Workers']
     types: [completed]
   workflow_dispatch:
 

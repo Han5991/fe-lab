@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  // 자립형 tsconfig. 플래그 구성은 `@blog/content`·블로그 앱과 같은 엄격 수준을
+  // 유지하되, 두 축만 다르다:
+  //   - lib에 dom이 없다. 이 코드는 브라우저가 아니라 workerd에서 돈다.
+  //   - types를 @cloudflare/workers-types 하나로 고정한다. 명시하면 @types/* 자동
+  //     포함이 꺼져서, 호이스팅으로 딸려 온 @types/node의 전역이 Worker 전역
+  //     (Request·Response·URL)을 덮어쓰는 일이 생기지 않는다.
+  "compilerOptions": {
+    "target": "ESNext",
+    "lib": ["esnext"],
+    "types": ["@cloudflare/workers-types"],
+    "skipLibCheck": true,
+    "strict": true,
+    "noImplicitReturns": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": true,
+    "verbatimModuleSyntax": true,
+    "erasableSyntaxOnly": true,
+    "noUncheckedSideEffectImports": true,
+    "noUncheckedIndexedAccess": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "exactOptionalPropertyTypes": true,
+    "allowUnusedLabels": false,
+    "allowUnreachableCode": false,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "isolatedModules": true
+  },
+  // 테스트도 같은 program에 넣는다 — 파일이 둘뿐이라 tsconfig를 쪼갤 이유가 없고,
+  // 쪼개면 테스트가 타입 검사에서 조용히 빠진다.
+  "include": ["src/**/*.ts"]
+}
