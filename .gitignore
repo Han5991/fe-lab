@@ -21,6 +21,9 @@ coverage
 # Vercel
 .vercel
 
+# Cloudflare — `wrangler dev`가 만드는 miniflare 로컬 상태(캐시·KV·D1·R2)
+.wrangler/
+
 # Build Outputs
 .next/
 out/

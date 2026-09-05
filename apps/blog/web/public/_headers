@@ -1,0 +1,28 @@
+# Cloudflare Workers 정적 자산의 응답 헤더 규칙.
+#
+# 이 파일 자체는 서빙되지 않는다 — wrangler가 파싱해 자산 응답에만 적용한다
+# (Worker 코드가 만든 응답에는 안 붙지만, 이 Worker는 main이 없는 정적 전용이라
+# 모든 응답이 자산 응답이다). 문법은 첫 줄이 URL 패턴, 이어지는 들여쓴 줄이 헤더다.
+# 패턴당 splat(*)은 하나만, 규칙 100개·줄당 2000자 한도, `#`으로 시작하면 주석.
+#
+# 일부러 건드리지 않는 것 둘:
+#  - HTML(`/`, `/posts/*` …)은 기본값 `max-age=0, must-revalidate`를 그대로 둔다.
+#    새 글이 배포 즉시 보이는 게 그 헤더 덕이라, 여기 캐시를 걸면 발행이 늦게 반영된다.
+#  - `/og/*.png`·`/favicon.ico`는 파일명이 고정이다(내용이 바뀌어도 이름이 그대로).
+#    immutable을 걸면 낡은 카드가 나가고, og 카드는 소셜 크롤러만 받아 가므로
+#    재방문 이득도 없다.
+
+# Next.js 자산은 파일명에 콘텐츠 해시가 박혀 있다(`2-m-ljjp3f95y.css`). 내용이 바뀌면
+# 이름이 바뀌므로 낡은 파일이 나갈 경로가 구조적으로 없고, 그래서 immutable이 안전하다.
+# 기본값 그대로 두면 재방문자가 홈에서만 14개 자산을 조건부 요청으로 다시 확인하는데
+# (실측 전부 304), 그중에 렌더 블로킹 CSS가 있어 첫 페인트가 왕복 한 번만큼 늦어진다.
+/_next/static/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# 프리뷰 URL을 색인에서 뺀다. wrangler.jsonc의 `workers_dev: false`가 프로덕션 사본은
+# 닫았지만, PR 프리뷰를 살리려고 켠 `preview_urls: true`가 색인 가능한 표면을 도로 연다
+# — PR마다 블로그 전체 사본이 크롤 가능한 주소로 뜬다. 색인 이력이 아픈 사이트라 막는다.
+# 호스트의 placeholder는 `.`을 넘지 않으므로 :version은 `<alias>-blog`,
+# :subdomain은 계정 서브도메인에 붙는다. 커스텀 도메인(blog.sangwook.dev)은 안 걸린다.
+https://:version.:subdomain.workers.dev/*
+  X-Robots-Tag: noindex
