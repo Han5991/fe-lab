@@ -112,7 +112,15 @@ jobs:
           alias_url=""
           version_url=""
           for u in "${urls[@]}"; do
-            if [[ "$u" == "https://${ALIAS}-"* ]]; then alias_url="$u"; else version_url="$u"; fi
+            if [[ "$u" == "https://${ALIAS}-"* ]]; then
+              alias_url="$u"
+            elif [[ -z "$version_url" ]]; then
+              version_url="$u"
+            else
+              # 버전 URL 후보가 둘 이상이면 wrangler 출력 포맷이 바뀐 것이다.
+              # 조용히 덮어쓰면 엉뚱한 주소가 PR 코멘트에 올라간다.
+              echo "::warning::예상 밖의 workers.dev URL: $u (첫 번째 $version_url 를 유지)"
+            fi
           done
           [[ -n "$version_url" ]] || version_url="$ACTION_URL"
           if [[ -z "$version_url" && -z "$alias_url" ]]; then

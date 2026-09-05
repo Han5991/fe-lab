@@ -140,7 +140,8 @@ jobs:
 
       # wrangler.jsonc가 main 없이 assets만 선언한 정적 Worker라, 이 스텝은 out/을
       # 그대로 업로드한다. wranglerVersion을 주지 않는 이유는 워킹 디렉터리에 이미
-      # wrangler(catalog 단일 출처)가 설치돼 있어 액션이 그것을 재사용하기 때문이다.
+      # wrangler가 설치돼 있어 액션이 그것을 재사용하기 때문이다 — 버전의 단일
+      # 출처는 apps/blog/web/package.json이다(소비자가 이 앱 하나뿐이라 catalog에서 뺐다).
       # packageManager를 명시하는 이유는 액션의 자동 감지가 **워킹 디렉터리에 있는
       # 락파일만** 보기 때문 — 모노레포 루트의 pnpm-lock.yaml은 못 보고 npm으로
       # 폴백하는데, npm은 package.json의 `workspace:^`를 읽지 못한다.
