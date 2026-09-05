@@ -3,9 +3,7 @@ name: Deploy Blog to Cloudflare Workers
 on:
   push:
     branches: [main]
-    # `!` 부정 패턴은 뒤에 오는 것이 앞을 덮는다 — redirect Worker는 자기
-    # 워크플로(deploy-redirect.yml)가 배포하므로 블로그 빌드까지 끌고 오지 않는다.
-    paths: ['apps/blog/**', '!apps/blog/redirect/**', 'packages/@blog/**']
+    paths: ['apps/blog/**', 'packages/@blog/**']
 
   # 매일 KST 09:00 (UTC 00:00) 자동 빌드 — 예약 발행(scheduled) 글 공개용
   schedule:

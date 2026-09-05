@@ -10,7 +10,7 @@ name: Preview Blog on Cloudflare Workers
 
 on:
   pull_request:
-    paths: ['apps/blog/**', '!apps/blog/redirect/**', 'packages/@blog/**']
+    paths: ['apps/blog/**', 'packages/@blog/**']
 
 concurrency:
   # 같은 PR에 push가 쌓이면 이전 프리뷰 빌드를 취소한다(마지막 것만 의미가 있다).
