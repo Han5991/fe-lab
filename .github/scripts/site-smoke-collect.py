@@ -312,7 +312,7 @@ def collect_cache(get, home_text: str, html_pages: list[tuple[str, dict]]) -> di
     """
     probes = [
         cache_probe(
-            meta.get("url") or path,
+            meta["url"],
             meta.get("status"),
             meta.get("cache_control"),
             "html",
@@ -320,7 +320,9 @@ def collect_cache(get, home_text: str, html_pages: list[tuple[str, dict]]) -> di
             HTML_CACHE_EXPECT_ABSENT,
             meta.get("error"),
         )
-        for path, meta in html_pages
+        # 경로는 meta["url"]에 절대 URL로 이미 들어 있다(fetch가 세 반환 경로
+        # 전부에서 채운다). 튜플의 첫 값은 호출부의 가독성용이라 여기선 버린다.
+        for _path, meta in html_pages
     ]
 
     assets = pick_static_assets(home_text)
