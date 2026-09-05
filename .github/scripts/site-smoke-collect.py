@@ -137,6 +137,54 @@ def fetch(
             return meta, ""
 
 
+# apex(sangwook.dev·www) → blog 리다이렉트는 **저장소에 없다.** Cloudflare
+# Redirect Rules가 대시보드에서 처리하므로 유닛 테스트가 잡아 주지 않는다.
+# 하필 이 판정은 과거 sitemap.xml을 6개월간 404로 만든 자리라, 여기서 실측한다.
+#
+# 기대 계약: 308로 blog.sangwook.dev의 같은 경로. 단 확장자 없는 경로에는 후행
+# 슬래시가 붙고, 파일 경로에는 붙지 않는다(붙으면 정적 호스팅에서 404).
+APEX_PROBES = [
+    {"origin": "https://sangwook.dev", "path": "/", "expect": "https://blog.sangwook.dev/"},
+    {"origin": "https://sangwook.dev", "path": "/about", "expect": "https://blog.sangwook.dev/about/"},
+    {"origin": "https://sangwook.dev", "path": "/sitemap.xml", "expect": "https://blog.sangwook.dev/sitemap.xml"},
+    {"origin": "https://www.sangwook.dev", "path": "/", "expect": "https://blog.sangwook.dev/"},
+]
+
+
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    """리다이렉트를 따라가지 않는다 — 상태 코드와 Location 자체가 검사 대상이다."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):  # noqa: D102
+        return None
+
+
+def fetch_redirect(url: str) -> dict:
+    """리다이렉트를 따라가지 않고 (status, location) 을 본다. 실패해도 안 던진다."""
+    opener = urllib.request.build_opener(_NoRedirect)
+    request = urllib.request.Request(
+        url, headers={"User-Agent": USER_AGENT, "Accept": "*/*"}
+    )
+    try:
+        with opener.open(request, timeout=30) as response:
+            return {"url": url, "status": response.status, "location": response.headers.get("Location"), "error": None}
+    except urllib.error.HTTPError as error:
+        return {"url": url, "status": error.code, "location": error.headers.get("Location") if error.headers else None, "error": None}
+    except Exception as error:
+        return {"url": url, "status": None, "location": None, "error": f"{type(error).__name__}: {error}"}
+
+
+def collect_apex() -> dict:
+    """apex·www 리다이렉트 실측. 각 항목에 기대값과 일치 여부를 함께 남긴다."""
+    results = []
+    for probe in APEX_PROBES:
+        got = fetch_redirect(probe["origin"] + probe["path"])
+        got["expected_location"] = probe["expect"]
+        got["expected_status"] = 308
+        got["matches"] = got["status"] == 308 and got["location"] == probe["expect"]
+        results.append(got)
+    return {"probes": results, "all_match": all(r["matches"] for r in results)}
+
+
 def html_facts(meta: dict, text: str) -> dict:
     """"200이고 실제 콘텐츠가 있는 HTML인가"를 판정할 재료."""
     match = TITLE_RE.search(text)
@@ -288,6 +336,8 @@ def write_step_summary(facts: dict) -> None:
         f"| 홈 `/` | HTTP {home['status']} · {home['bytes']:,} bytes · title={home['title']!r} |",
         f"| 목록 `/posts/` | HTTP {index['status']} · {index['bytes']:,} bytes |",
         f"| `/posts/` 정적 앵커 | {facts['posts_index']['post_anchor_count']}개 |",
+        f"| apex 리다이렉트 | {'정상' if facts['apex']['all_match'] else '⚠️ 불일치'} "
+        f"({sum(1 for p in facts['apex']['probes'] if p['matches'])}/{len(facts['apex']['probes'])}) |",
         f"| `/sitemap.xml` | HTTP {sitemap['status']} · XML {'유효' if sitemap['xml_valid'] else '무효'} · url {sitemap['url_count']}개 |",
         f"| lastmod 분포 | 서로 다른 날짜 {sitemap['distinct_lastmod_count']}종 · 전부 검사당일={sitemap['all_lastmod_is_check_date']} |",
         f"| `/rss.xml` | HTTP {rss['status']} · XML {'유효' if rss['xml_valid'] else '무효'} · item {rss['item_count']}개 |",
@@ -342,6 +392,9 @@ def main() -> int:
     rss_meta, rss_text = get("/rss.xml")
     robots_meta, robots_text = get("/robots.txt")
 
+    # 블로그 자신이 아니라 apex 도메인을 본다(base_url과 무관하게 고정).
+    apex = collect_apex()
+
     # 목록 페이지는 최신순이므로 등장 순서를 보존한 첫 앵커가 가장 최근 글이다.
     # 쿼리·프래그먼트를 떼고, 목록 자신(`/posts/`)은 개별 글이 아니므로 뺀다.
     normalized_anchors = (
@@ -372,6 +425,7 @@ def main() -> int:
         "sitemap": {**sitemap_meta, **parse_sitemap(sitemap_text, today_utc, today_kst)},
         "rss": {**rss_meta, **parse_rss(rss_text)},
         "robots": {**robots_meta, **parse_robots(robots_text)},
+        "apex": apex,
     }
 
     # 글 상세 1개: 목록의 최신 글을 우선하고, 목록이 비었으면 sitemap에서 고른다.

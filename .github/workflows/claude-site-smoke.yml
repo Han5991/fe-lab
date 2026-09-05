@@ -93,6 +93,13 @@ jobs:
             4. `rss`: xml_valid가 true이고 item_count가 1 이상인지
             5. `robots`: status 200이고 references_sitemap이 true인지
             6. `article`: status 200이고 has_canonical, has_og_title이 true인지
+            7. `apex.all_match`가 true인지. false면 어떤 probe가 왜 어긋났는지
+               (status/location 실측값과 expected_*) 를 그대로 인용하세요.
+               **이 판정은 저장소 코드가 아니라 Cloudflare Redirect Rules가 냅니다**
+               (zone sangwook.dev, http_request_dynamic_redirect 단계). 코드에서
+               원인을 찾지 말고 규칙을 보라고 이슈에 적으세요. 과거 이 판정이
+               어긋나 sitemap.xml이 6개월간 404였습니다 — 유닛 테스트가 없는
+               자리라 이 검사가 유일한 그물입니다.
             </판정 항목>
 
             <보고 규칙>

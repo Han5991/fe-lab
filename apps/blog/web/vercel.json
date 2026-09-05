@@ -1,10 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "ignoreCommand": "git diff --quiet \"${VERCEL_GIT_PREVIOUS_SHA:-HEAD^}\" HEAD -- :/apps/blog :/packages/@blog || exit 1",
   "git": {
-    "deploymentEnabled": {
-      "main": false,
-      "renovate/**": false
-    }
+    "deploymentEnabled": false
   }
 }
