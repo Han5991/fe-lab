@@ -68,7 +68,7 @@ apps/blog/web/
 ├─ public/              robots.txt · favicon · og-default.jpg … (+ 빌드가 생성하는 sitemap/rss/search-index/llms/og/thumbs/posts는 .gitignore)
 ├─ design/              DIAGRAM_AUTHORING.md(현행) · blog-redesign-handoff.md · github-style-reference.md(둘 다 이력)
 ├─ next.config.ts · panda.config.ts · postcss.config.cjs · vitest.config.mts · vitest.setup.ts
-├─ tsconfig.json(프로덕션) · tsconfig.test.json(테스트) · eslint.config.mts · turbo.json · vercel.json · env.d.ts
+├─ tsconfig.json(프로덕션) · tsconfig.test.json(테스트) · eslint.config.mts · turbo.json · wrangler.jsonc · env.d.ts
 └─ .env.production      (커밋된 유일한 env — Supabase URL/anon key, Giscus)
 ```
 
@@ -162,7 +162,7 @@ apps/blog/web/
 
 - **PR / main push**: `.github/workflows/ci.yml` → 공용 `.github/actions/quality-checks`(turbo lint·check-types·test → `lint:posts` → `format:check` → `pnpm build --filter=@blog/web`).
 - **배포**: `.github/workflows/deploy-blog.yml` — `main` push(`apps/blog/**`·`packages/@blog/**`), 매일 KST 09:00 cron(예약 발행), 수동. quality-checks → 시크릿 주입 `--no-cache` 빌드 → `/posts/` 프리렌더 링크 개수 검증(CSR bail-out 회귀 가드) → Cloudflare Workers(`wrangler.jsonc`).
-- **Vercel 프리뷰**: `vercel.json` — `main`·`renovate/**` 비활성, `apps/blog`·`packages/@blog` 변경 없으면 `ignoreCommand`로 스킵.
+- **PR 프리뷰**: `.github/workflows/preview-blog.yml` — `wrangler versions upload`로 버전만 올리고(트래픽 이동 없음) 브랜치 고정 alias URL과 커밋별 URL을 PR에 코멘트한다. Vercel은 더 이상 쓰지 않는다.
 - **Supabase**: 스키마는 `supabase/migrations/`(조회수 테이블·이력·대시보드 RPC·KST 보정·권한 잠금 순), Admin RPC 프록시는 `supabase/functions/admin-analytics`.
 
 ---

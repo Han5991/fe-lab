@@ -1,0 +1,151 @@
+name: Preview Blog on Cloudflare Workers
+
+# PR마다 블로그를 빌드해 **버전 프리뷰 URL**로 올리고 그 주소를 PR에 코멘트한다.
+# 프로덕션(deploy-blog.yml)은 건드리지 않는다 — `wrangler versions upload`는 버전만
+# 만들고 트래픽을 옮기지 않으므로 blog.sangwook.dev는 그대로다.
+#
+# 프리뷰 URL이 나오려면 wrangler.jsonc의 `preview_urls: true`가 필요하다. 이 값의
+# 기본값은 `workers_dev`를 따라가는데 우리는 그걸 false로 뒀으므로(중복 콘텐츠 차단)
+# 명시적으로 켜 두었다 — 거기를 끄면 이 워크플로가 조용히 URL 없이 끝난다.
+
+on:
+  pull_request:
+    paths: ['apps/blog/**', 'packages/@blog/**']
+
+concurrency:
+  # 같은 PR에 push가 쌓이면 이전 프리뷰 빌드를 취소한다(마지막 것만 의미가 있다).
+  group: preview-blog-${{ github.head_ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write # 프리뷰 URL 코멘트
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # 포크 PR에는 시크릿이 없어 빌드가 반쯤 깨진 프리뷰가 나온다. 같은 저장소의
+    # 브랜치일 때만 돈다.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+        with:
+          # 버전은 루트 package.json의 packageManager 필드를 단일 source of truth로 사용
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: '.tool-versions'
+          cache: 'pnpm'
+          cache-dependency-path: '**/pnpm-lock.yaml'
+
+      - name: Caching for Turborepo
+        uses: rharkor/caching-for-turbo@2238fae6eb9a9936f92356f54cb3660200d105e7 # v2.5.1
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Restore Next.js build cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: apps/blog/web/.next/cache
+          key: blog-next-preview-v1-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+          restore-keys: |
+            blog-next-preview-v1-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
+
+      # `environment:`를 쓰지 않는다. github-pages 환경의 배포 브랜치 정책이 main
+      # 하나라 PR 브랜치에서는 잡 자체가 막히고, 열어 주면 그 환경에 같이 있는
+      # GOOGLE_OAUTH_CLIENT_SECRET(진짜 시크릿)까지 모든 PR에서 읽히게 된다.
+      # 필요 없다 — 빌드가 읽는 NEXT_PUBLIC_* 값은 전부 커밋된 .env.production에 있다.
+      - name: Build blog
+        run: pnpm build --filter=@blog/web
+        env:
+          NODE_ENV: production
+
+      # 브랜치 고정 alias. 커밋마다 바뀌는 버전 URL과 달리 리뷰 내내 같은 주소를
+      # 쓸 수 있다. alias는 영숫자와 하이픈만 받고 63자 제한이 있어 정규화가 필요하다
+      # (`chore/cloudflare-domain-cleanup` → `chore-cloudflare-domain-cleanup`).
+      - name: Compute preview alias
+        id: alias
+        env:
+          BRANCH: ${{ github.head_ref }}
+        run: |
+          alias=$(printf '%s' "$BRANCH" \
+            | tr '[:upper:]' '[:lower:]' \
+            | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//' \
+            | cut -c1-63 \
+            | sed -E 's/-+$//')
+          # 숫자로 시작하는 호스트 레이블도 유효하지만, 빈 값만은 막는다.
+          [[ -n "$alias" ]] || alias="pr-${{ github.event.pull_request.number }}"
+          echo "alias=$alias" >> "$GITHUB_OUTPUT"
+          echo "alias: $alias"
+
+      # 버전만 업로드한다(트래픽 이동 없음). 버전 URL과 alias URL이 stdout에 찍힌다.
+      - name: Upload preview version
+        id: upload
+        uses: cloudflare/wrangler-action@ebbaa1584979971c8614a24965b4405ff95890e0 # v4.0.0
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: apps/blog/web
+          packageManager: pnpm
+          command: versions upload --preview-alias "${{ steps.alias.outputs.alias }}" --message "PR #${{ github.event.pull_request.number }} (${{ github.event.pull_request.head.sha }})"
+
+      # wrangler가 찍는 workers.dev URL 둘을 갈라 담는다. alias를 포함한 쪽이 브랜치
+      # 고정 URL, 나머지가 이번 커밋의 버전 URL이다. wrangler-action의 deployment-url
+      # 출력은 versions upload에서 비는 경우가 있어 stdout 파싱을 1차로 쓴다.
+      - name: Resolve preview URLs
+        id: url
+        env:
+          ALIAS: ${{ steps.alias.outputs.alias }}
+          ACTION_URL: ${{ steps.upload.outputs.deployment-url }}
+          COMMAND_OUTPUT: ${{ steps.upload.outputs.command-output }}
+        run: |
+          mapfile -t urls < <(printf '%s' "$COMMAND_OUTPUT" \
+            | grep -oE 'https://[a-z0-9-]+\.[a-z0-9-]+\.workers\.dev' | sort -u || true)
+          alias_url=""
+          version_url=""
+          for u in "${urls[@]}"; do
+            if [[ "$u" == "https://${ALIAS}-"* ]]; then
+              alias_url="$u"
+            elif [[ -z "$version_url" ]]; then
+              version_url="$u"
+            else
+              # 버전 URL 후보가 둘 이상이면 wrangler 출력 포맷이 바뀐 것이다.
+              # 조용히 덮어쓰면 엉뚱한 주소가 PR 코멘트에 올라간다.
+              echo "::warning::예상 밖의 workers.dev URL: $u (첫 번째 $version_url 를 유지)"
+            fi
+          done
+          [[ -n "$version_url" ]] || version_url="$ACTION_URL"
+          if [[ -z "$version_url" && -z "$alias_url" ]]; then
+            echo "::warning::프리뷰 URL을 찾지 못했습니다 — wrangler.jsonc의 preview_urls가 꺼져 있는지 확인하세요"
+          fi
+          echo "version_url=$version_url" >> "$GITHUB_OUTPUT"
+          echo "alias_url=$alias_url" >> "$GITHUB_OUTPUT"
+          echo "version: ${version_url:-(none)}"
+          echo "alias:   ${alias_url:-(none)}"
+
+      - name: Comment preview URL on PR
+        if: steps.url.outputs.version_url != '' || steps.url.outputs.alias_url != ''
+        uses: marocchino/sticky-pull-request-comment@5770ad5eb8f42dd2c4f34da00c94c5381e49af88 # v3.0.5
+        with:
+          header: cloudflare-preview
+          message: |
+            ### 🔍 Cloudflare 프리뷰
+
+            | | |
+            | :-- | :-- |
+            | **브랜치 프리뷰** (고정) | ${{ steps.url.outputs.alias_url }} |
+            | 이 커밋 | ${{ steps.url.outputs.version_url }} |
+            | 커밋 SHA | `${{ github.event.pull_request.head.sha }}` |
+
+            브랜치 프리뷰 주소는 커밋마다 바뀌지 않으니 리뷰 내내 그대로 쓰시면 됩니다.
+
+            프로덕션(`blog.sangwook.dev`)은 그대로입니다 — 이 단계는 버전만 올리고
+            트래픽을 옮기지 않습니다. Admin 로그인은 프리뷰에서 동작하지 않을 수 있습니다.

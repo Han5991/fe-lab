@@ -66,15 +66,6 @@ catalog:
   # 빌드 · 실행 도구
   commander: ^15.0.0
   tsdown: 0.22.14
-  # Cloudflare Workers 배포 CLI. 소비자가 둘이다 — @blog/web(정적 자산 Worker),
-  # @blog/redirect(apex 리다이렉트 Worker). CI의 wrangler-action은 wranglerVersion을
-  # 주지 않으면 **워킹 디렉터리에 이미 설치된 wrangler를 그대로 쓰므로**, 이 한 줄이
-  # 로컬·CI 양쪽의 실효 버전이다(직접 설치하러 가면 pnpm 워크스페이스에서 npm이
-  # workspace:^ 프로토콜을 못 읽고 깨진다).
-  wrangler: ^4.129.0
-  # wrangler의 optional peer(^5.20260903.1). 선언하지 않으면 pnpm이 소비자마다
-  # 최신본을 따로 끌어와 두 벌로 갈라지므로, 여기서 한 벌로 고정한다.
-  '@cloudflare/workers-types': 5.20260903.1
 
   # 테스트
   vitest: ^4.1.11

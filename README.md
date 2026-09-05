@@ -157,13 +157,14 @@ pnpm check-seo                                      # 빌드 산출물(out/) SEO
 
 ## 🌐 외부 서비스 & 배포
 
-| 서비스                     | 역할                                                                                                                                                                                                                                |
-| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Cloudflare Workers**     | 블로그 정적 호스팅(`apps/blog/web/wrangler.jsonc`) — `main` push(`apps/blog/**`·`packages/@blog/**` 변경 시) + 매일 KST 09:00 cron(예약 발행) + 수동 실행(`workflow_dispatch`). apex 리다이렉트는 별도 Worker(`apps/blog/redirect`) |
-| **Supabase Cloud**         | 블로그 조회수·Admin 인증(Google OAuth)·Analytics RPC. 로컬은 `supabase start`(Docker)                                                                                                                                               |
-| **Google Analytics / GTM** | GA4(`G-ZS9ENFSSQ0`) + GTM(`GTM-5SMPQ23P`), 둘 다 `@next/third-parties`로 로드. GTM 컨테이너 내용은 저장소 밖(웹 콘솔)                                                                                                               |
-| **Giscus**                 | 댓글 (GitHub Discussions 기반)                                                                                                                                                                                                      |
-| **Vercel Preview**         | 블로그 PR 미리보기 — `main`·`renovate/**` 브랜치 제외, `apps/blog`·`packages/@blog` 변경이 없으면 `ignoreCommand`로 스킵(`apps/blog/web/vercel.json`)                                                                               |
+| 서비스                        | 역할                                                                                                                                                                                                            |
+| ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Cloudflare Workers**        | 블로그 정적 호스팅(`apps/blog/web/wrangler.jsonc`) — `main` push(`apps/blog/**`·`packages/@blog/**` 변경 시) + 매일 KST 09:00 cron(예약 발행) + 수동 실행(`workflow_dispatch`). PR에는 버전 프리뷰 URL이 붙는다 |
+| **Cloudflare Redirect Rules** | apex·www → blog 리다이렉트. **저장소가 아니라 대시보드에 있다**(zone `sangwook.dev`, `http_request_dynamic_redirect`)                                                                                           |
+| **Supabase Cloud**            | 블로그 조회수·Admin 인증(Google OAuth)·Analytics RPC. 로컬은 `supabase start`(Docker)                                                                                                                           |
+| **Google Analytics / GTM**    | GA4(`G-ZS9ENFSSQ0`) + GTM(`GTM-5SMPQ23P`), 둘 다 `@next/third-parties`로 로드. GTM 컨테이너 내용은 저장소 밖(웹 콘솔)                                                                                           |
+| **Giscus**                    | 댓글 (GitHub Discussions 기반)                                                                                                                                                                                  |
+| **Vercel**                    | 더 이상 쓰지 않는다. PR 프리뷰는 Cloudflare(`preview-blog.yml`)가 낸다. 도메인 등록만 아직 Vercel(Name.com)에 남아 있다                                                                                         |
 
 ### CI / 자동화 (`.github/workflows/`)
 
@@ -171,7 +172,7 @@ pnpm check-seo                                      # 빌드 산출물(out/) SEO
 | --------------------------- | ----------------------------------------------------- | ------------------------------------------------------------------------------- |
 | `ci.yml`                    | `pull_request`, `push: main`                          | quality-checks 4단계 + Next 빌드 캐시 복원                                      |
 | `deploy-blog.yml`           | `push: main`(블로그 경로), cron `0 0 * * *`, dispatch | quality-checks → 시크릿 주입 빌드 → `/posts/` 프리렌더 링크 검증 → Workers 배포 |
-| `deploy-redirect.yml`       | `push: main`(`apps/blog/redirect/**`), dispatch       | 리다이렉트 규칙 테스트 → apex Worker 배포                                       |
+| `preview-blog.yml`          | `pull_request`(블로그 경로)                           | 빌드 → `wrangler versions upload` → 프리뷰 URL을 PR에 코멘트                    |
 | `claude.yml`                | `@claude` 멘션 · 라벨                                 | 온디맨드 Claude Code 에이전트                                                   |
 | `claude-code-review.yml`    | PR opened/synchronize                                 | PR 자동 코드 리뷰                                                               |
 | `claude-deps-audit.yml`     | 매주 월 cron                                          | 죽은 `pnpm overrides` 정리 + `pnpm audit` 후속 PR                               |

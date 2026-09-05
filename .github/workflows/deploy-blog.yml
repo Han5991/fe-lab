@@ -3,9 +3,7 @@ name: Deploy Blog to Cloudflare Workers
 on:
   push:
     branches: [main]
-    # `!` 부정 패턴은 뒤에 오는 것이 앞을 덮는다 — redirect Worker는 자기
-    # 워크플로(deploy-redirect.yml)가 배포하므로 블로그 빌드까지 끌고 오지 않는다.
-    paths: ['apps/blog/**', '!apps/blog/redirect/**', 'packages/@blog/**']
+    paths: ['apps/blog/**', 'packages/@blog/**']
 
   # 매일 KST 09:00 (UTC 00:00) 자동 빌드 — 예약 발행(scheduled) 글 공개용
   schedule:
@@ -22,14 +20,12 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    # 배포 대상은 Cloudflare인데 환경 이름이 `github-pages`인 이유: 아래 Build blog
-    # 스텝이 읽는 NEXT_PUBLIC_SUPABASE_URL·NEXT_PUBLIC_SUPABASE_ANON_KEY·
-    # NEXT_PUBLIC_ADMIN_EMAIL 셋이 **이 환경의 시크릿**이다(저장소 시크릿에는 없다).
-    # 이 블록을 지우면 셋이 조용히 빈 문자열이 되어, 빌드는 통과하는데 조회수·
-    # Admin 로그인이 죽은 사이트가 배포된다.
-    # 이름을 바꾸려면 새 환경을 만들고 값을 다시 입력해야 한다(GitHub은 환경 개명을
-    # 지원하지 않고, 시크릿 값은 되읽을 수 없다) — 이번 이전의 범위 밖이라 남겨 둔다.
-    # 허용 브랜치 정책은 main 하나이며, 이 워크플로의 세 트리거 전부 main에서 돈다.
+    # 이름이 `github-pages`인 건 GitHub Pages 시절의 잔재다. 지금 이 환경이 하는
+    # 일은 **배포 브랜치 게이트 하나**뿐 — 허용 브랜치 정책이 main 하나라,
+    # workflow_dispatch로 엉뚱한 브랜치를 프로덕션에 올리는 걸 막는다.
+    # 시크릿은 더 이상 여기서 읽지 않는다(전부 .env.production으로 내렸다).
+    # 남아 있는 GOOGLE_OAUTH_* 시크릿은 이 워크플로가 쓰지 않는다.
+    # 개명하려면 새 환경을 만들어야 한다 — GitHub은 환경 개명을 지원하지 않는다.
     environment:
       name: github-pages
     steps:
@@ -106,9 +102,10 @@ jobs:
       - name: Build blog
         run: pnpm build --filter=@blog/web --no-cache
         env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          NEXT_PUBLIC_ADMIN_EMAIL: ${{ secrets.NEXT_PUBLIC_ADMIN_EMAIL }}
+          # NEXT_PUBLIC_* 값은 전부 커밋된 .env.production이 준다. 예전에는 셋을
+          # 여기서 environment 시크릿으로 덮었는데, 빌드 타임에 클라이언트 번들로
+          # 인라인되는 값이라 애초에 시크릿이 아니었다(근거는 그 파일 주석).
+          # 시크릿으로 두면 값이 두 곳에 살아 조용히 갈리기만 한다.
           NEXT_PUBLIC_PR_COUNT: ${{ steps.pr_count.outputs.count }}
           NODE_ENV: production
 
@@ -143,7 +140,8 @@ jobs:
 
       # wrangler.jsonc가 main 없이 assets만 선언한 정적 Worker라, 이 스텝은 out/을
       # 그대로 업로드한다. wranglerVersion을 주지 않는 이유는 워킹 디렉터리에 이미
-      # wrangler(catalog 단일 출처)가 설치돼 있어 액션이 그것을 재사용하기 때문이다.
+      # wrangler가 설치돼 있어 액션이 그것을 재사용하기 때문이다 — 버전의 단일
+      # 출처는 apps/blog/web/package.json이다(소비자가 이 앱 하나뿐이라 catalog에서 뺐다).
       # packageManager를 명시하는 이유는 액션의 자동 감지가 **워킹 디렉터리에 있는
       # 락파일만** 보기 때문 — 모노레포 루트의 pnpm-lock.yaml은 못 보고 npm으로
       # 폴백하는데, npm은 package.json의 `workspace:^`를 읽지 못한다.
