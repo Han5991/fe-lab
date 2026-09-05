@@ -59,9 +59,10 @@ jobs:
       # 예약 발행 글을 공개하는 이 워크플로는 push가 아니라서 ci.yml이 아예 돌지
       # 않는다. 아무도 안 보고 있는 시각에 검사 없이 배포되던 경로였다.
       #
-      # build-blog: 'false' — 아래 "Build blog" 스텝이 시크릿을 넣어 --no-cache로
-      # 다시 빌드하고 거기서 check-seo·check-bundle까지 돈다. 여기서 또 빌드하면
-      # 같은 일을 두 번 한다.
+      # build-blog: 'false' — 아래 "Build blog" 스텝이 --no-cache로 다시 빌드하고
+      # 거기서 check-seo·check-bundle까지 돈다. 여기서 또 빌드하면 같은 일을 두 번
+      # 한다. (그 스텝이 주입하는 건 NEXT_PUBLIC_PR_COUNT뿐이다 — 나머지
+      # NEXT_PUBLIC_*은 커밋된 .env.production에서 온다. 위 주석 참고.)
       - name: Quality checks
         uses: ./.github/actions/quality-checks
         with:

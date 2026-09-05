@@ -168,17 +168,18 @@ pnpm check-seo                                      # 빌드 산출물(out/) SEO
 
 ### CI / 자동화 (`.github/workflows/`)
 
-| 워크플로                    | 트리거                                                | 하는 일                                                                         |
-| --------------------------- | ----------------------------------------------------- | ------------------------------------------------------------------------------- |
-| `ci.yml`                    | `pull_request`, `push: main`                          | quality-checks 4단계 + Next 빌드 캐시 복원                                      |
-| `deploy-blog.yml`           | `push: main`(블로그 경로), cron `0 0 * * *`, dispatch | quality-checks → 시크릿 주입 빌드 → `/posts/` 프리렌더 링크 검증 → Workers 배포 |
-| `preview-blog.yml`          | `pull_request`(블로그 경로)                           | 빌드 → `wrangler versions upload` → 프리뷰 URL을 PR에 코멘트                    |
-| `claude.yml`                | `@claude` 멘션 · 라벨                                 | 온디맨드 Claude Code 에이전트                                                   |
-| `claude-code-review.yml`    | PR opened/synchronize                                 | PR 자동 코드 리뷰                                                               |
-| `claude-deps-audit.yml`     | 매주 월 cron                                          | 죽은 `pnpm overrides` 정리 + `pnpm audit` 후속 PR                               |
-| `claude-link-rot.yml`       | 매월 1일 cron                                         | 발행 글 외부 링크 검사 → 교체 PR                                                |
-| `claude-post-inventory.yml` | `deploy-blog.yml` 완료 시(workflow_run), dispatch     | draft/scheduled 글 현황 이슈 갱신                                               |
-| `claude-site-smoke.yml`     | 매일 cron                                             | 배포된 HTML/sitemap/rss 스모크 검사                                             |
+| 워크플로                    | 트리거                                                                       | 하는 일                                                                                                                                                                                                        |
+| --------------------------- | ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ci.yml`                    | `pull_request`, `push: main`                                                 | quality-checks 4단계 + Next 빌드 캐시 복원                                                                                                                                                                     |
+| `deploy-blog.yml`           | `push: main`(블로그 경로), cron `0 0 * * *`, dispatch                        | quality-checks → `--no-cache` 빌드 → `/posts/` 프리렌더 링크 검증 → Workers 배포. 빌드 스텝이 넣는 env는 `NEXT_PUBLIC_PR_COUNT`·`NODE_ENV` 둘뿐이고 나머지 `NEXT_PUBLIC_*`은 커밋된 `.env.production`에서 온다 |
+| `preview-blog.yml`          | `pull_request`(블로그 경로)                                                  | 빌드 → `wrangler versions upload` → 프리뷰 URL을 PR에 코멘트                                                                                                                                                   |
+| `supabase-migrations.yml`   | `push: main`(`apps/blog/web/supabase/migrations/**`·워크플로 자신), dispatch | `supabase migration list`로 원장↔파일 차이를 로그에 남긴 뒤 `supabase db push`(풀러 5432 세션 모드, `--db-url`). 대시보드 SQL 에디터로 손대던 경로를 여기 하나로 고정                                          |
+| `claude.yml`                | `@claude` 멘션 · 라벨                                                        | 온디맨드 Claude Code 에이전트                                                                                                                                                                                  |
+| `claude-code-review.yml`    | PR opened/synchronize                                                        | PR 자동 코드 리뷰                                                                                                                                                                                              |
+| `claude-deps-audit.yml`     | 매주 월 cron                                                                 | 죽은 `pnpm overrides` 정리 + `pnpm audit` 후속 PR                                                                                                                                                              |
+| `claude-link-rot.yml`       | 매월 1일 cron                                                                | 발행 글 외부 링크 검사 → 교체 PR                                                                                                                                                                               |
+| `claude-post-inventory.yml` | `deploy-blog.yml` 완료 시(workflow_run), dispatch                            | draft/scheduled 글 현황 이슈 갱신                                                                                                                                                                              |
+| `claude-site-smoke.yml`     | 매일 cron                                                                    | 배포된 HTML/sitemap/rss 스모크 검사                                                                                                                                                                            |
 
 ---
 

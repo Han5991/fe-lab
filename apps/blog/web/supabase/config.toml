@@ -114,7 +114,7 @@ port = 54324
 
 [storage]
 # 이 블로그는 Supabase Storage를 쓰지 않는다(코드 참조 0건). 이미지는 빌드 산출물로
-# public/ 에 들어가고 GitHub Pages가 서빙한다.
+# public/ 에 들어가고 정적 호스팅(Cloudflare Workers assets)이 서빙한다.
 #
 # 끄면 storage-api·imgproxy 이미지를 받지 않는다. 이게 로컬 기동 안정성에 직접 영향을
 # 준다 — supabase start 는 필요한 이미지를 전부 public.ecr.aws 에서 익명으로 받는데,

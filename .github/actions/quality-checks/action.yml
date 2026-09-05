@@ -15,7 +15,7 @@ inputs:
   build-blog:
     description: >-
       블로그를 빌드해 산출물 검사(check-seo·check-bundle)까지 돌릴지 여부.
-      배포 워크플로는 뒤에 자체 빌드 스텝(--no-cache + Pages base path + 시크릿)이
+      배포 워크플로는 뒤에 자체 빌드 스텝(--no-cache + NEXT_PUBLIC_PR_COUNT 주입)이
       있으므로 'false'로 넘겨 중복 빌드를 피합니다.
     required: false
     default: 'true'

@@ -8,12 +8,13 @@
 # 일부러 건드리지 않는 것 둘:
 #  - HTML(`/`, `/posts/*` …)은 기본값 `max-age=0, must-revalidate`를 그대로 둔다.
 #    새 글이 배포 즉시 보이는 게 그 헤더 덕이라, 여기 캐시를 걸면 발행이 늦게 반영된다.
-#  - `/og/*.png`·`/favicon.ico`는 파일명이 고정이다(`{slug}.png` — 내용이 바뀌어도
-#    이름이 그대로). 그래서 immutable을 걸면 낡은 카드가 그대로 나간다.
-#    **og 카드가 소셜 크롤러 전용이라서가 아니다** — `resolveThumbnailSrc`가 이걸
-#    글 페이지 히어로 이미지로도 쓴다(산출물 33개 페이지, 글마다 1개). 즉 재방문
-#    이득은 실재하고, 다만 immutable로는 못 받는다. 짧은 `max-age`(+재검증)이나
-#    og 파일명에 콘텐츠 해시를 넣는 쪽이 후속 과제다.
+#  - 파비콘 계열(`/favicon.ico`·`/favicon-16x16.png`·`/favicon-32x32.png`·
+#    `/apple-touch-icon.png`·`/android-chrome-*.png`)도 그대로 둔다. 산출물 HTML
+#    101개 **전부**의 <head>에 7개가 선언돼 있는데, wrangler dev를 Chrome으로 여섯 번
+#    오가며 잡은 요청 목록에는 파비콘 요청이 한 건도 없었다. 다만 이 관측만으로는
+#    브라우저가 자기 파비콘 캐시로 들고 있어 안 받는 것인지, Chrome이 파비콘을
+#    렌더러 밖에서 받아 DevTools 목록에 안 띄우는 것인지 가르지 못한다 — 줄일
+#    왕복이 있는지부터 확인이 안 돼서 손대지 않았다.
 
 # Next.js 자산은 파일명에 콘텐츠 해시가 박혀 있다(`2-m-ljjp3f95y.css`). 내용이 바뀌면
 # 이름이 바뀌므로 낡은 파일이 나갈 경로가 구조적으로 없고, 그래서 immutable이 안전하다.
@@ -21,6 +22,76 @@
 # (실측 전부 304), 그중에 렌더 블로킹 CSS가 있어 첫 페인트가 왕복 한 번만큼 늦어진다.
 /_next/static/*
   Cache-Control: public, max-age=31536000, immutable
+
+# ── 화면에 그려지는 이미지: 하루 캐시 + 재검증 ───────────────────────────────
+#
+# 아래 세 계열은 전부 파일명이 고정이다(`{slug}.png`, 원고가 정한 파일명). 내용이
+# 바뀌어도 이름이 그대로라 immutable을 걸 수 없다 — 걸면 글을 고쳐 재배포해도 남의
+# 브라우저에서는 낡은 그림이 계속 나가고, 되돌릴 방법이 없다. 대신
+# `max-age=86400 + must-revalidate`로 낡을 수 있는 창을 하루로 묶는다. must-revalidate가
+# 그 상한을 강제하고(만료 뒤에는 재검증에 성공해야만 쓸 수 있다), 만료 뒤 비용은
+# 지금과 같은 304 왕복 한 번이되 방문마다가 아니라 하루 한 번이다.
+#
+# 하루로 잡은 건 배포 리듬 때문이다. main push + 매일 09:00 KST cron으로 나가므로,
+# 그림을 고쳐 올리면 늦어도 다음 날에는 모두가 새 것을 본다. 더 길게 잡으면 그
+# 보장이 깨지고, 더 짧게 잡으면 재방문(대개 하루 이상 뒤)에서 이득이 사라진다.
+#
+# 재방문 비용이 실재한다는 근거 — wrangler dev를 Chrome으로 열어 같은 글
+# (`/posts/feconf-2025-lightning-speaker/` — 산출물에서 이미지가 가장 많은 글이다)을
+# 두 번 방문했을 때, og 히어로 1개와 본문 이미지 8개가 전부 조건부 요청 → 304로
+# 다시 확인됐다. 파일명에 콘텐츠 해시를 넣으면 immutable로 올릴 수 있지만, 그건 URL이
+# 바뀌는 일이라 sitemap·RSS·og:image까지 걸리는 별건이다.
+
+# /og/{slug}.png — 34개 1.5MB. 소셜 크롤러 전용이 아니다. 같은 파일을
+# resolveThumbnailUrl이 글 상세 히어로 <img>로(산출물 33개 페이지, 글마다 1개),
+# resolveThumbnailSrc가 목록·홈 카드 <img>로 쓴다. 이 디렉터리에는 빌드가 만든
+# png 말고 들어올 게 없어(gitignore된 생성 전용 — generate-og-images만 쓴다) splat
+# 하나로 충분하다. 이름이 비슷한 `/og-default.jpg`는 `/og/` 아래가 아니라 안 걸리는데,
+# 그건 og:image·twitter:image 메타에만 절대 URL로 나가서 브라우저가 받을 일이 없다.
+/og/*
+  Cache-Control: public, max-age=86400, must-revalidate
+
+# /thumbs/**/*.webp — generate-thumbnails가 원고 썸네일을 최적화해 만든 것.
+# 목록 카드(PostGridCard·FeaturedPost의 resolveThumbnailSrc)가 <img>로 쓴다.
+# 여기도 생성 전용 디렉터리라 webp 말고는 없다.
+/thumbs/*
+  Cache-Control: public, max-age=86400, must-revalidate
+
+# /posts/** 의 본문 이미지와 원고 썸네일 원본(산출물 42개, 45MB). 산출물 HTML에서
+# <img>로 나가는 건 33개 — 본문 이미지 23개와, 원고가 thumbnail을 지정한 글의 상세
+# 히어로 10개다(resolveThumbnailUrl은 webp로 바꾸지 않는다). 목록·홈 카드는 여기가
+# 아니라 /thumbs/의 webp를 쓴다. 확장자를 하나씩 적는 이유는 이 접두사 아래에 글 HTML
+# (`/posts/{slug}/`)이 같이 살기 때문이다 — `/posts/*`로 걸면 HTML까지 캐시돼
+# 위의 금지선을 깬다. 패턴은 `^/posts/(.*)\.png$`처럼 양끝이 고정되므로 슬래시로
+# 끝나는 글 주소는 걸리지 않는다.
+#
+# 확장자 목록은 sync-posts.ts의 ALLOWED_EXTENSIONS를 그대로 옮긴 것이다(그 파일이
+# 공개 디렉터리로 복사하는 유일한 목록이라, 여기 없는 확장자는 산출물에도 없다).
+# 거기가 늘면 여기도 늘려야 한다. 소문자만 적는 것도 그쪽을 따랐는데, sync-posts는
+# 확장자 판정만 소문자로 하고 파일명은 원본 그대로 복사한다 — `.PNG`로 쓴 원고가
+# 들어오면 이 규칙에서 빠진다(지금은 없다).
+/posts/*.png
+  Cache-Control: public, max-age=86400, must-revalidate
+/posts/*.jpg
+  Cache-Control: public, max-age=86400, must-revalidate
+/posts/*.jpeg
+  Cache-Control: public, max-age=86400, must-revalidate
+/posts/*.gif
+  Cache-Control: public, max-age=86400, must-revalidate
+/posts/*.svg
+  Cache-Control: public, max-age=86400, must-revalidate
+/posts/*.webp
+  Cache-Control: public, max-age=86400, must-revalidate
+/posts/*.mp4
+  Cache-Control: public, max-age=86400, must-revalidate
+
+# site.webmanifest — 이미지는 아니지만 같은 근거로 건다. 재방문 측정에서 문서를
+# 열 때마다 조건부 요청 → 304로 다시 확인됐고(파비콘과 달리 브라우저가 따로
+# 들고 있지 않다), 파일명이 고정이며 내용은 아이콘 목록과 이름·색·display 같은 설치
+# 메타뿐이라 거의 바뀌지 않는다. 하루 늦게 반영돼도 영향은 그 설치 메타에 그친다.
+# splat이 없으니 이 파일 하나만 걸린다.
+/site.webmanifest
+  Cache-Control: public, max-age=86400, must-revalidate
 
 # 프리뷰 URL을 색인에서 뺀다. wrangler.jsonc의 `workers_dev: false`가 프로덕션 사본은
 # 닫았지만, PR 프리뷰를 살리려고 켠 `preview_urls: true`가 색인 가능한 표면을 도로 연다

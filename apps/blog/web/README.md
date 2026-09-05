@@ -69,7 +69,7 @@ apps/blog/web/
 ├─ design/              DIAGRAM_AUTHORING.md(현행) · blog-redesign-handoff.md · github-style-reference.md(둘 다 이력)
 ├─ next.config.ts · panda.config.ts · postcss.config.cjs · vitest.config.mts · vitest.setup.ts
 ├─ tsconfig.json(프로덕션) · tsconfig.test.json(테스트) · eslint.config.mts · turbo.json · wrangler.jsonc · env.d.ts
-└─ .env.production      (커밋된 유일한 env — Supabase URL/anon key, Giscus)
+└─ .env.production      (커밋된 유일한 env — Supabase URL/anon key, Giscus, 관리자 이메일. 왜 시크릿이 아닌지는 §5)
 ```
 
 `@/` 별칭은 **앱 루트**를 가리킨다(`tsconfig.json` `paths: {"@/*": ["./*"]}`) — `@/src/components/...`, `@/src/domain/analytics`, `@/src/shared/routes`. vitest alias도 같다.
@@ -136,12 +136,12 @@ apps/blog/web/
 
 `env.d.ts`가 `NodeJS.ProcessEnv`에 선언한다(`noPropertyAccessFromIndexSignature` 아래서도 `process.env.X` 점 접근을 쓰기 위해 — Next는 멤버 표현식만 인라인한다).
 
-| 변수                                                                  | 용도                                 | 어디서 오나                            |
-| :-------------------------------------------------------------------- | :----------------------------------- | :------------------------------------- |
-| `NEXT_PUBLIC_SUPABASE_URL` · `NEXT_PUBLIC_SUPABASE_ANON_KEY`          | Supabase 클라이언트                  | `.env.production` / 배포 시크릿        |
-| `NEXT_PUBLIC_ADMIN_EMAIL`                                             | Admin 가드                           | 배포 시크릿                            |
-| `NEXT_PUBLIC_GISCUS_REPO` · `_REPO_ID` · `_CATEGORY` · `_CATEGORY_ID` | 댓글                                 | `.env.production`                      |
-| `NEXT_PUBLIC_PR_COUNT`                                                | About의 머지 PR 수(없으면 상수 폴백) | 배포 워크플로가 GitHub에서 가져와 주입 |
+| 변수                                                                  | 용도                                 | 어디서 오나                                                                                                                                                                                                                                                                                                         |
+| :-------------------------------------------------------------------- | :----------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `NEXT_PUBLIC_SUPABASE_URL` · `NEXT_PUBLIC_SUPABASE_ANON_KEY`          | Supabase 클라이언트                  | `.env.production`(커밋됨)                                                                                                                                                                                                                                                                                           |
+| `NEXT_PUBLIC_ADMIN_EMAIL`                                             | Admin 가드                           | `.env.production`(커밋됨). 시크릿이 아니다 — `NEXT_PUBLIC_*`이라 빌드 타임에 클라이언트 번들로 인라인되므로 애초에 감출 수 없고, 여기 값은 화면 안내용이다. 실제 접근 강제는 Edge Function `admin-analytics`가 호출자 JWT를 별개의 진짜 시크릿 `ADMIN_EMAIL`과 대조하며 한다(`src/domain/auth/adminAccess.ts` 주석) |
+| `NEXT_PUBLIC_GISCUS_REPO` · `_REPO_ID` · `_CATEGORY` · `_CATEGORY_ID` | 댓글                                 | `.env.production`                                                                                                                                                                                                                                                                                                   |
+| `NEXT_PUBLIC_PR_COUNT`                                                | About의 머지 PR 수(없으면 상수 폴백) | 배포 워크플로가 GitHub에서 가져와 주입                                                                                                                                                                                                                                                                              |
 
 로컬 개발용 `.env.local`은 커밋하지 않는다(`.gitignore`의 `.env*`, 예외는 `.env.production`뿐).
 
@@ -161,9 +161,9 @@ apps/blog/web/
 ## 7. 배포 · CI
 
 - **PR / main push**: `.github/workflows/ci.yml` → 공용 `.github/actions/quality-checks`(turbo lint·check-types·test → `lint:posts` → `format:check` → `pnpm build --filter=@blog/web`).
-- **배포**: `.github/workflows/deploy-blog.yml` — `main` push(`apps/blog/**`·`packages/@blog/**`), 매일 KST 09:00 cron(예약 발행), 수동. quality-checks → 시크릿 주입 `--no-cache` 빌드 → `/posts/` 프리렌더 링크 개수 검증(CSR bail-out 회귀 가드) → Cloudflare Workers(`wrangler.jsonc`).
+- **배포**: `.github/workflows/deploy-blog.yml` — `main` push(`apps/blog/**`·`packages/@blog/**`), 매일 KST 09:00 cron(예약 발행), 수동. quality-checks → `--no-cache` 빌드 → `/posts/` 프리렌더 링크 개수 검증(CSR bail-out 회귀 가드) → Cloudflare Workers(`wrangler.jsonc`). 빌드 스텝이 넣는 env는 `NEXT_PUBLIC_PR_COUNT`(GitHub에서 가져온 머지 PR 수)와 `NODE_ENV` 둘뿐이다 — 나머지 `NEXT_PUBLIC_*`은 커밋된 `.env.production`에서 온다.
 - **PR 프리뷰**: `.github/workflows/preview-blog.yml` — `wrangler versions upload`로 버전만 올리고(트래픽 이동 없음) 브랜치 고정 alias URL과 커밋별 URL을 PR에 코멘트한다. Vercel은 더 이상 쓰지 않는다.
-- **Supabase**: 스키마는 `supabase/migrations/`(조회수 테이블·이력·대시보드 RPC·KST 보정·권한 잠금 순), Admin RPC 프록시는 `supabase/functions/admin-analytics`.
+- **Supabase**: 스키마는 `supabase/migrations/`(조회수 테이블·이력·대시보드 RPC·KST 보정·권한 잠금 순), Admin RPC 프록시는 `supabase/functions/admin-analytics`. 프로덕션 적용은 `.github/workflows/supabase-migrations.yml`이 한다 — `supabase/migrations/**`(와 워크플로 자신)가 바뀐 `main` push와 수동 실행에서만 돌고, `migration list`로 원장과 파일의 차이를 로그에 남긴 뒤 `db push`한다(대시보드 SQL 에디터로 손대던 경로를 여기 하나로 고정).
 
 ---
 
