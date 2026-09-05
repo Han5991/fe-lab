@@ -164,7 +164,7 @@ pnpm check-seo                                      # 빌드 산출물(out/) SEO
 | **Supabase Cloud**            | 블로그 조회수·Admin 인증(Google OAuth)·Analytics RPC. 로컬은 `supabase start`(Docker)                                                                                                                           |
 | **Google Analytics / GTM**    | GA4(`G-ZS9ENFSSQ0`) + GTM(`GTM-5SMPQ23P`), 둘 다 `@next/third-parties`로 로드. GTM 컨테이너 내용은 저장소 밖(웹 콘솔)                                                                                           |
 | **Giscus**                    | 댓글 (GitHub Discussions 기반)                                                                                                                                                                                  |
-| **Vercel**                    | 더 이상 쓰지 않는다. `vercel.json`이 배포를 끄고 있고, PR 프리뷰는 Cloudflare(`preview-blog.yml`)가 낸다. 도메인 등록만 아직 Vercel(Name.com)에 남아 있다                                                       |
+| **Vercel**                    | 더 이상 쓰지 않는다. PR 프리뷰는 Cloudflare(`preview-blog.yml`)가 낸다. 도메인 등록만 아직 Vercel(Name.com)에 남아 있다                                                                                         |
 
 ### CI / 자동화 (`.github/workflows/`)
 
