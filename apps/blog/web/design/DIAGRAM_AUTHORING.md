@@ -155,7 +155,7 @@ viewBox 폭은 노드 텍스트 길이의 합이라 노드 개수가 그대로 �
 <!-- prettier-ignore -->
 ```html
 <diagram label="정적 페이지가 조회수를 Supabase RPC로 비동기 전송하고 집계 결과만 다시 읽는 흐름" caption="점선 = 렌더를 막지 않는 경로">
-  <diagram-node id="page" title="정적 페이지" desc="GitHub Pages"></diagram-node>
+  <diagram-node id="page" title="정적 페이지" desc="Cloudflare Workers"></diagram-node>
   <diagram-node id="rpc" title="increment RPC" desc="6시간 쿨다운"></diagram-node>
   <diagram-node id="db" title="post_views" desc="집계 테이블" tone="accent"></diagram-node>
   <diagram-edge from="page" to="rpc" flow="async"></diagram-edge>
