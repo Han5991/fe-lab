@@ -23,8 +23,9 @@ jobs:
     # 이름이 `github-pages`인 건 GitHub Pages 시절의 잔재다. 지금 이 환경이 하는
     # 일은 **배포 브랜치 게이트 하나**뿐 — 허용 브랜치 정책이 main 하나라,
     # workflow_dispatch로 엉뚱한 브랜치를 프로덕션에 올리는 걸 막는다.
-    # 시크릿은 더 이상 여기서 읽지 않는다(전부 .env.production으로 내렸다).
-    # 남아 있는 GOOGLE_OAUTH_* 시크릿은 이 워크플로가 쓰지 않는다.
+    # 이 환경에는 시크릿이 **하나도 없다**. 빌드가 읽는 NEXT_PUBLIC_*은 전부
+    # 커밋된 .env.production에서 오고, 아무도 안 읽던 GOOGLE_OAUTH_* 둘도 지웠다
+    # (정본은 Supabase 대시보드와 로컬 .env.local이다).
     # 개명하려면 새 환경을 만들어야 한다 — GitHub은 환경 개명을 지원하지 않는다.
     environment:
       name: github-pages

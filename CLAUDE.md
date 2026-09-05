@@ -223,11 +223,15 @@ apps/blog/posts (원고)  →  packages/@blog/content  →  apps/blog/web
    - **`environment: github-pages`는 이름만 잔재다.** 지금 하는 일은 배포 브랜치
      게이트 하나 — 허용 브랜치가 `main`뿐이라 `workflow_dispatch`로 엉뚱한 브랜치를
      프로덕션에 올리는 걸 막는다. 개명하려면 새 환경을 만들어야 한다(GitHub은 환경
-     개명을 지원하지 않는다)
+     개명을 지원하지 않는다). **이 환경의 시크릿은 0개다** — 2026-09-06에 아무도
+     읽지 않던 5개를 지웠다(`NEXT_PUBLIC_*` 셋은 커밋된 `.env.production`과 중복이라
+     애초에 시크릿이 아니었고, `GOOGLE_OAUTH_*` 둘은 정본이 Supabase 대시보드와
+     로컬 `.env.local`이다 — CI는 한 번도 읽은 적이 없다)
    - **PR 프리뷰는 `preview-blog.yml`이 따로 낸다** — `wrangler versions upload`로
      버전만 올리고(트래픽 이동 없음) 프리뷰 URL을 PR에 코멘트한다. 이 워크플로는
-     `environment:`를 쓰지 않는다(브랜치 정책에 막히고, 열면 그 환경의
-     `GOOGLE_OAUTH_CLIENT_SECRET`까지 모든 PR에 노출된다). 프리뷰 URL이 나오려면
+     `environment:`를 쓰지 않는다(브랜치 정책에 막힌다 — 예전엔 열면 그 환경의
+     `GOOGLE_OAUTH_CLIENT_SECRET`까지 모든 PR에 노출된다는 이유가 하나 더 있었지만,
+     그 시크릿은 지웠다). 프리뷰 URL이 나오려면
      `wrangler.jsonc`의 **`preview_urls: true`** 가 필요하다 — 기본값이 `workers_dev`를
      따라가는데 그건 false로 꺼 두었기 때문이다(중복 콘텐츠 차단). 둘은 한 짝이다
 

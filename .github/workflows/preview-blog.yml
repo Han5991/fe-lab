@@ -60,9 +60,11 @@ jobs:
             blog-next-preview-v1-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
 
       # `environment:`를 쓰지 않는다. github-pages 환경의 배포 브랜치 정책이 main
-      # 하나라 PR 브랜치에서는 잡 자체가 막히고, 열어 주면 그 환경에 같이 있는
-      # GOOGLE_OAUTH_CLIENT_SECRET(진짜 시크릿)까지 모든 PR에서 읽히게 된다.
-      # 필요 없다 — 빌드가 읽는 NEXT_PUBLIC_* 값은 전부 커밋된 .env.production에 있다.
+      # 하나라 PR 브랜치에서는 잡 자체가 막힌다. 필요도 없다 — 빌드가 읽는
+      # NEXT_PUBLIC_* 값은 전부 커밋된 .env.production에 있다.
+      # (예전엔 이유가 하나 더 있었다: 그 환경에 GOOGLE_OAUTH_CLIENT_SECRET이
+      #  같이 있어서, 환경을 열면 그것까지 모든 PR에서 읽혔다. 그 시크릿은
+      #  아무도 안 쓰는 사본이라 지웠으므로 지금은 브랜치 정책만 남았다.)
       - name: Build blog
         run: pnpm build --filter=@blog/web
         env:
