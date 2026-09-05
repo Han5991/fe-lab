@@ -66,7 +66,9 @@ jobs:
             `site-smoke-facts.json` (저장소 루트)에 이번 실행의 실측값이 있습니다.
             HTTP 상태, 바이트 수, `/posts/`의 정적 앵커 목록, sitemap의 loc과
             lastmod 분포, rss item 수, robots.txt의 sitemap 참조, 글 상세의
-            canonical/og:title이 전부 들어 있습니다. 이 파일을 Read 하세요.
+            canonical/og:title, apex(`sangwook.dev`) 리다이렉트 probe(`apex` 키),
+            자산·HTML의 Cache-Control probe(`cache` 키)가 전부 들어 있습니다.
+            이 파일을 Read 하세요.
             페이지를 다시 가져오려 하지 마세요 — 네트워크 도구는 없습니다.
             </입력>
 
@@ -100,6 +102,15 @@ jobs:
                원인을 찾지 말고 규칙을 보라고 이슈에 적으세요. 과거 이 판정이
                어긋나 sitemap.xml이 6개월간 404였습니다 — 유닛 테스트가 없는
                자리라 이 검사가 유일한 그물입니다.
+
+            8. `cache.all_match`가 true인지. false면 어긋난 probe의 `url`·`kind`·
+               `status`·`cache_control`·`missing`·`unexpected`를 그대로 인용하세요.
+               헤더의 출처는 `apps/blog/web/public/_headers`입니다. 두 방향 모두
+               사고입니다 — 정적 자산에서 `immutable`이 빠지면 재방문자가 자산마다
+               조건부 요청을 다시 보내고, 반대로 **HTML에 `immutable`이 붙으면 새 글
+               발행이 브라우저 캐시가 만료될 때까지 안 보입니다**(후자가 더 나쁩니다).
+               `assets` 표본이 0개인 경우도 false입니다 — 그건 검사가 무력화된 것이지
+               통과가 아닙니다.
             </판정 항목>
 
             <보고 규칙>
