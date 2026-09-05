@@ -93,8 +93,8 @@ jobs:
         id: upload
         uses: cloudflare/wrangler-action@ebbaa1584979971c8614a24965b4405ff95890e0 # v4.0.0
         with:
+          # accountId는 넘기지 않는다 — wrangler.jsonc의 account_id가 단일 출처다.
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: apps/blog/web
           packageManager: pnpm
           command: versions upload --preview-alias "${{ steps.alias.outputs.alias }}" --message "PR #${{ github.event.pull_request.number }} (${{ github.event.pull_request.head.sha }})"
