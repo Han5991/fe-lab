@@ -203,13 +203,23 @@ apps/blog/posts (원고)  →  packages/@blog/content  →  apps/blog/web
    - **매일 KST 09:00 (UTC 00:00) cron 자동 빌드** — 예약 발행 글 공개용
    - 수동 트리거(`workflow_dispatch`) 지원
    - 배포 전에 PR CI와 같은 `quality-checks` 액션을 지나고, 빌드 후 `/posts/`의 프리렌더 링크 개수를 검증한다(CSR bail-out 회귀 가드)
-   - **`environment: github-pages`는 이름과 달리 남아 있다.** 빌드가 읽는
-     `NEXT_PUBLIC_SUPABASE_URL`·`NEXT_PUBLIC_SUPABASE_ANON_KEY`·`NEXT_PUBLIC_ADMIN_EMAIL`
-     셋이 저장소 시크릿이 아니라 **이 환경의 시크릿**이라, 블록을 지우면 셋이 빈
-     문자열이 되고 `@next/env`가 이미 정의된 키를 `.env.production`으로 덮어쓰지
-     않아(`override: false`) 빈 값이 그대로 남는다 — 빌드는 통과하는데 조회수·Admin이
-     죽은 사이트가 나간다. 개명하려면 새 환경에 값을 다시 넣어야 한다(GitHub은 환경
-     개명을 지원하지 않고 시크릿 값은 되읽을 수 없다)
+   - **빌드가 읽는 `NEXT_PUBLIC_*`은 전부 커밋된 `.env.production`에 있다.** 예전엔
+     Supabase 둘과 `NEXT_PUBLIC_ADMIN_EMAIL`을 `github-pages` 환경 시크릿으로 덮었는데,
+     이 값들은 빌드 타임에 **클라이언트 번들로 인라인**되므로 애초에 시크릿이 아니었다
+     (`src/domain/auth/adminAccess.ts` 주석: 실제 강제는 Edge Function이 호출자 JWT를
+     별개의 진짜 시크릿 `ADMIN_EMAIL`과 대조하며 한다). 시크릿으로 두면 값이 두 곳에
+     살아 프로덕션과 프리뷰가 조용히 갈리기만 한다. 워크플로가 주입하는 건
+     `NEXT_PUBLIC_PR_COUNT` 하나뿐이다
+   - **`environment: github-pages`는 이름만 잔재다.** 지금 하는 일은 배포 브랜치
+     게이트 하나 — 허용 브랜치가 `main`뿐이라 `workflow_dispatch`로 엉뚱한 브랜치를
+     프로덕션에 올리는 걸 막는다. 개명하려면 새 환경을 만들어야 한다(GitHub은 환경
+     개명을 지원하지 않는다)
+   - **PR 프리뷰는 `preview-blog.yml`이 따로 낸다** — `wrangler versions upload`로
+     버전만 올리고(트래픽 이동 없음) 프리뷰 URL을 PR에 코멘트한다. 이 워크플로는
+     `environment:`를 쓰지 않는다(브랜치 정책에 막히고, 열면 그 환경의
+     `GOOGLE_OAUTH_CLIENT_SECRET`까지 모든 PR에 노출된다). 프리뷰 URL이 나오려면
+     `wrangler.jsonc`의 **`preview_urls: true`** 가 필요하다 — 기본값이 `workers_dev`를
+     따라가는데 그건 false로 꺼 두었기 때문이다(중복 콘텐츠 차단). 둘은 한 짝이다
    - apex 리다이렉트 Worker는 `deploy-redirect.yml`이 따로 배포한다(`apps/blog/redirect/**` 변경 시)
 
 #### 글쓰기 도구 (Authoring DX)

@@ -11,8 +11,15 @@
 
   // blog.<subdomain>.workers.dev 를 끈다. 켜 두면 같은 사이트가 두 주소로 열려
   // 중복 콘텐츠가 된다 — canonical이 막아 주긴 하지만, 색인 이력이 아픈 사이트라
-  // 표면 자체를 없애는 쪽을 택했다. 스테이징이 필요하면 여기를 true로.
+  // 표면 자체를 없애는 쪽을 택했다.
   "workers_dev": false,
+
+  // **workers_dev와 짝지어 반드시 명시해야 한다.** preview_urls의 기본값은
+  // workers_dev를 따라가므로(문서: "disabled by default when workers_dev is
+  // disabled"), 위를 false로 두는 순간 PR 프리뷰 URL까지 조용히 같이 꺼진다.
+  // 프로덕션 사본은 닫되 버전별 프리뷰는 살리는 것이 의도다 —
+  // `wrangler versions upload`가 <version>-blog.<subdomain>.workers.dev 를 낸다.
+  "preview_urls": true,
 
   "assets": {
     "directory": "./out",
