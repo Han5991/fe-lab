@@ -41,7 +41,10 @@ const DOCS = [
   'README.md',
   'apps/blog/web/README.md',
   'apps/blog/web/src/shared/README.md',
-  'apps/blog/web/design/DIAGRAM_AUTHORING.md',
+  'apps/blog/web/design/redesign-decisions.md',
+  '.claude/skills/blog-diagrams/SKILL.md',
+  '.claude/skills/blog-components/SKILL.md',
+  '.claude/skills/blog-design-system/SKILL.md',
   'packages/@blog/content/README.md',
 ] as const;
 
@@ -120,8 +123,10 @@ const isArtifact = (p: string) =>
 const NOT_CHECKED: Readonly<Record<string, string>> = {
   'cliEntry.ts':
     '지워진 가드. 패키지 README가 "진입점이 하나가 되면서 사라졌다"고 과거를 기록한다',
-  'src/components/diagram/MyDiagram.tsx':
-    '다이어그램 저작 가이드의 예제 — "이 파일을 만든다"는 지시문이지 실재 파일이 아니다',
+  'github-style-reference.md':
+    '채택되지 않은 GitHub 스타일 안의 레퍼런스. 지웠고, 결정 기록이 왜 지웠는지를 남긴다',
+  'apps/blog/web/src/components/diagram/MyDiagram.tsx':
+    'blog-diagrams 스킬의 예제 — "이 파일을 만든다"는 지시문이지 실재 파일이 아니다',
   'UserCard.tsx': 'AGENTS.md의 명명 규칙 예시',
   'next.js':
     '워크스페이스 이름(apps/next.js). 확장자처럼 보이지만 경로가 아니다',

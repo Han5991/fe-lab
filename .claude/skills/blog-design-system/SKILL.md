@@ -7,15 +7,11 @@ description: 블로그(apps/blog/web)와 blog-preset.ts의 시각 시스템 단�
 
 리뉴얼 때 쓰던 시각 기준 파일(`design-reference.html`)은 구현이 끝나 **삭제했다.**
 이제 기준은 **구현된 화면 자체**다 — 홈(`/`)과 글 상세를 dev 서버로 열어 대조한다.
-원래의 디자인 의도와 결정 배경은 `apps/blog/web/design/blog-redesign-handoff.md`에
+원래의 디자인 의도와 결정 배경은 `apps/blog/web/design/redesign-decisions.md`에
 남아 있고, 수치는 아래 항목들이 단일 출처다.
 
-> 핸드오프는 **착수 시점 초안**이지 사양서가 아니다. 만들면서 바뀐 값(포인트색,
-> 배지 라운드, 다이어그램 라벨 크기)과 아예 채택하지 않은 절(§7 MDX·velite 전환)이
-> 있고, 문서 안에 `⚠️`로 표시해 뒀다. 그 파일의 수치를 근거로 코드를 고치지 말 것.
-
-> `apps/blog/web/design/github-style-reference.md`는 **폐기된 이전 방향**(GitHub 스타일
-> 다크 전용)이다. 참고 자료로 남겨둔 것뿐이니 새 작업의 근거로 쓰지 말 것.
+> 그 문서는 **왜 그렇게 정했는지**만 답한다. 값은 만들면서 바뀐 것이 있으니
+> (포인트색, 배지 라운드, 다이어그램 라벨 크기) 수치의 근거로 쓰지 말 것.
 
 ## 컬러 토큰
 

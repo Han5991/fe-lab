@@ -1,3 +1,8 @@
+---
+name: blog-diagrams
+description: 블로그 글(apps/blog/posts/*.md)에 구조 다이어그램을 넣는 방법 — 선언형 <diagram>·<diagram-node>·<diagram-edge>의 prop과 자동 배치·자동 연결 규칙, 노드 개수와 폭 감각, frontmatter hero: 슬롯, 이름 레지스트리에 새 그림을 코드로 등록하는 절차, 지켜야 할 문법(2색·실선/점선·부제 5단어). 글에 구조 그림을 넣을 때, 선이 사라지거나 그림이 안 나올 때, 새 히어로 다이어그램을 추가할 때 사용한다. 대화 버블·수치 카드 등 다른 커스텀 태그는 blog-components 스킬.
+---
+
 # 다이어그램 저작 가이드
 
 글에 구조 그림을 넣는 방법. 대상은 **글 쓰는 사람**이고, 대부분의 경우 마크다운만 쓰면 된다.
@@ -112,6 +117,9 @@ viewBox 폭은 노드 텍스트 길이의 합이라 노드 개수가 그대로 �
 > 선언형만의 문제가 아니다 — **그림 하나에 담는 노드 수를 줄이는 것**이 지금으로선
 > 유일한 대응이다.
 
+폰트 크기의 단일 출처는 `apps/blog/web/src/components/diagram/layout.ts` 의
+`TITLE_FONT_SIZE` / `DESC_FONT_SIZE` 다.
+
 ---
 
 ## 3. 복붙 예제 3개
@@ -198,7 +206,7 @@ hero: 'deploy-pipeline'
 
 ## 5. 새 다이어그램을 코드로 추가하기
 
-1. `src/components/diagram/MyDiagram.tsx` 를 만든다. **프리미티브만 조합한다** —
+1. `apps/blog/web/src/components/diagram/MyDiagram.tsx` 를 만든다. **프리미티브만 조합한다** —
    `DiagramFrame` / `DiagramNode` / `DiagramEdge` / `DiagramLabel`. 새 `<rect>`·`<path>` 를
    직접 쓰면 §6의 색·굵기 규칙이 강제되지 않는다. 좌표는 `DeployPipeline.tsx` 를 본뜬다.
 
@@ -215,10 +223,10 @@ hero: 'deploy-pipeline'
    }
    ```
 
-2. 앱 루트 `content.values.mts` 의 `DIAGRAM_NAMES` 에 이름 한 줄을 넣는다
+2. 앱 루트 `apps/blog/web/content.values.mts` 의 `DIAGRAM_NAMES` 에 이름 한 줄을 넣는다
    (`DiagramName` 타입이 여기서 파생되고, `content.config.mts` 가 같은 목록을
    `registries.diagramNames` 로 넘겨 `lint:posts` 도 같은 목록을 본다).
-3. `src/components/diagram/registry.ts` 의 `DIAGRAMS` 에 한 줄을 넣는다.
+3. `apps/blog/web/src/components/diagram/registry.ts` 의 `DIAGRAMS` 에 한 줄을 넣는다.
 
 레지스트리 타입이 `Record<DiagramName, …>` 이라 2·3 중 하나만 하면 컴파일이 막는다.
 이름 목록이 컴포넌트와 떨어져 `content.values.mts` 에 있는 이유는 `lint:posts`(node 러너)가
@@ -228,17 +236,20 @@ React를 끌어오지 않고 이름만 검사할 수 있어야 해서다. 목록
 
 ---
 
-## 6. 다이어그램 문법 (핸드오프 §4 — 지킬 것)
+## 6. 지켜야 할 문법
 
 프리미티브가 대부분 강제하지만, 글쓴이가 지켜야 하는 부분이 남아 있다.
 
 - **노드**: 라운드 사각형 `rx=8`, 스트로크 1px. (`shape="pill"` 은 상태 뱃지 같은 예외에만)
 - **선**: 실선 = 동기 호출 / 점선(`3 3`) = 비동기·데이터 흐름. **뜻대로 골라 쓴다.**
   전부 실선이어도 괜찮다 — 다양해 보이려고 점선을 섞지 말 것.
-- **색은 2색뿐**: 회색(구조) + 액센트(핵심 경로). 액센트은 **그 글이 실제로 다루는 지점 하나**에만.
+- **색은 2색뿐**: 회색(구조) + 액센트(핵심 경로). 액센트는 **그 글이 실제로 다루는 지점 하나**에만.
   노드 절반이 액센트이면 강조가 아니라 배경색이다.
 - **부제는 5단어 이내.** 문장을 넣지 않는다. 설명은 본문이 한다.
 - 색을 직접 쓰지 않는다. 하드코딩된 색은 다크모드에서 그대로 남아 깨진다.
+
+이 규칙들이 왜 이렇게 정해졌는지(그리고 착수 시점 초안과 어디서 갈렸는지)는
+`apps/blog/web/design/redesign-decisions.md` 의 "다이어그램" 절에 있다.
 
 ### 그리기 전에 물어볼 것
 
@@ -249,21 +260,19 @@ React를 끌어오지 않고 이름만 검사할 수 있어야 해서다. 목록
 
 ---
 
-## 7. 실제로 쓰인 곳
-
-| 글                                                   | 위치               | 형태                    |
-| :--------------------------------------------------- | :----------------- | :---------------------- |
-| `bundler/…2. 코드를 데이터로 보는 법 (AST Graph).md` | 6장 DFS & Graph    | 선언형 `row` 4노드      |
-| `testing/매일 쓰던 getByRole…md`                     | 3장 필터 체인 순서 | 선언형 `row` 3노드      |
-| `nextjs deploy/ecs와 code deploy…md`                 | 히어로             | `hero: deploy-pipeline` |
-
----
-
-## 8. 확인
+## 7. 확인
 
 ```bash
-pnpm lint:posts   # frontmatter + hero 이름 검증 (apps/blog/web)
+pnpm --filter @blog/web run lint:posts   # frontmatter + hero 이름 검증
 ```
 
 그림 자체는 렌더를 눈으로 봐야 한다. `pnpm blog-write` 로 띄우고 라이트/다크 양쪽에서 확인한다.
 `status: draft` 인 글도 dev 서버는 실제 주소 `/posts/{slug}/` 로 열어준다(상단에 배너가 붙는다).
+
+기존 예시를 보고 싶으면 목록을 문서에서 찾지 말고 저장소에 물어본다 — 글이 늘 때마다
+목록은 뒤처지지만 아래는 안 그렇다:
+
+```bash
+grep -rl '<diagram' apps/blog/posts/   # 본문 선언형
+grep -rl '^hero:' apps/blog/posts/     # 히어로 슬롯
+```
