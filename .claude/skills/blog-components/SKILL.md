@@ -1,6 +1,6 @@
 ---
 name: blog-components
-description: 블로그 글(apps/blog/posts/*.md)에서 쓸 수 있는 커스텀 마크다운 컴포넌트 전체 목록과 문법 — 다이어그램, 대화 버블, 성과 수치 카드, 시도 타임라인, 콜아웃, 파일트리, 그림 캡션. 글을 쓰거나 고칠 때, "이거 어떻게 넣지" 싶을 때, 본문에 구조·수치·대화를 시각화해 넣고 싶을 때 사용한다.
+description: 블로그 글(apps/blog/posts/*.md)에서 쓸 수 있는 커스텀 마크다운 컴포넌트 전체 목록과 문법 — 다이어그램, 대화 버블, 성과 수치 카드, 시도 타임라인, 콜아웃, 파일트리, 그림 캡션, 코드 펜스 title=·code-tabs. 글을 쓰거나 고칠 때, "이거 어떻게 넣지" 싶을 때, 본문에 구조·수치·대화를 시각화해 넣고 싶을 때 사용한다. 다이어그램만 깊게 다룰 때는 blog-diagrams 스킬.
 ---
 
 # 블로그 커스텀 컴포넌트
@@ -24,16 +24,16 @@ MDX가 아니라 `react-markdown` + `rehype-raw`다.
 
 ## 컴포넌트 목록
 
-| 태그          | 용도                                      | 상세                                                                         |
-| :------------ | :---------------------------------------- | :--------------------------------------------------------------------------- |
-| `<diagram>`   | 구조·흐름 다이어그램 (SVG, 다크모드 자동) | [아래](#diagram) · 전체 가이드는 `apps/blog/web/design/DIAGRAM_AUTHORING.md` |
-| `<dialogue>`  | 도입부 슬랙·구두 대화 재현                | [아래](#dialogue)                                                            |
-| `<metrics>`   | before/after 성과 수치 카드               | [아래](#metrics)                                                             |
-| `<timeline>`  | 시도1 실패 → 시도2 실패 → 시도3 성공 서사 | [아래](#timeline)                                                            |
-| `<callout>`   | 강조 박스 (info/tip/warning/danger)       | [아래](#callout)                                                             |
-| `<file-tree>` | 디렉토리 구조                             | [아래](#file-tree)                                                           |
-| `<figure>`    | 그림 + 캡션                               | [아래](#figure)                                                              |
-| `<code-tabs>` | 같은 명령을 도구별로 (npm/pnpm/yarn)      | [아래](#code-tabs)                                                           |
+| 태그          | 용도                                      | 상세                                                  |
+| :------------ | :---------------------------------------- | :---------------------------------------------------- |
+| `<diagram>`   | 구조·흐름 다이어그램 (SVG, 다크모드 자동) | [아래](#diagram) · 전체 가이드는 `blog-diagrams` 스킬 |
+| `<dialogue>`  | 도입부 슬랙·구두 대화 재현                | [아래](#dialogue)                                     |
+| `<metrics>`   | before/after 성과 수치 카드               | [아래](#metrics)                                      |
+| `<timeline>`  | 시도1 실패 → 시도2 실패 → 시도3 성공 서사 | [아래](#timeline)                                     |
+| `<callout>`   | 강조 박스 (info/tip/warning/danger)       | [아래](#callout)                                      |
+| `<file-tree>` | 디렉토리 구조                             | [아래](#file-tree)                                    |
+| `<figure>`    | 그림 + 캡션                               | [아래](#figure)                                       |
+| `<code-tabs>` | 같은 명령을 도구별로 (npm/pnpm/yarn)      | [아래](#code-tabs)                                    |
 
 코드 블록(` ```ts `)과 Mermaid(` ```mermaid `)는 태그 없이 그냥 쓰면 된다.
 코드 블록에는 **파일명을 달 수 있다** — [아래](#code-tabs).
@@ -79,7 +79,7 @@ PNG를 붙이지 말 것. SVG라 다크모드 색이 따라오고, 좁은 화면
 **가장 헷갈리는 규칙**: `<diagram-edge>`를 **하나라도** 쓰면 자동 연결이 꺼진다.
 한 구간만 강조하려고 엣지 하나만 추가하면 나머지 선이 전부 사라진다 — 그럴 땐 전부 명시할 것.
 
-**문법 규칙**(핸드오프 §4): 회색+액센트 **2색만**, 실선=동기·점선=비동기, 부제 5단어 이내.
+**문법 규칙**: 회색+액센트 **2색만**, 실선=동기·점선=비동기, 부제 5단어 이내.
 포인트색은 **핵심 경로에만** — 다 칠하면 강조가 아니다.
 
 ### 글 맨 위 히어로로 쓰기
@@ -99,7 +99,7 @@ hero: deploy-pipeline
 떨어진 두 노드를 직접 잇거나, 되돌아오는 화살표·분기·그룹 박스가 필요하면 코드로 간다.
 컴포넌트 파일 1개 + 앱 루트 `content.values.mts`의 `DIAGRAM_NAMES`에
 이름 한 줄 + `registry.ts`의 `DIAGRAMS`에 한 줄(레지스트리 타입이 `Record<DiagramName, …>`라
-하나만 하면 컴파일이 막는다). 절차는 `design/DIAGRAM_AUTHORING.md`.
+하나만 하면 컴파일이 막는다). 절차는 `blog-diagrams` 스킬.
 
 ---
 
@@ -264,9 +264,9 @@ pnpm add typesense
 
 지금 유효한 규칙은 `blog-design-system` 스킬(수치·근거)과 `CLAUDE.md`의 "디자인 시스템 ·
 저작 문법" 절(금지선), 그리고 토큰 정의(`blog-preset.ts`)다.
-`apps/blog/web/design/blog-redesign-handoff.md`에는 **왜 그렇게 정했는지**만 남아 있다 —
-착수 시점 초안이라 구현과 다른 값이 섞여 있으니(문서 안에 `⚠️` 표시) 수치의 근거로
-쓰지 말 것. (1:1 대조에 쓰던 `design-reference.html`은 구현 완료 후 삭제됐다.)
+`apps/blog/web/design/redesign-decisions.md`에는 **왜 그렇게 정했는지**만 남아 있다 —
+만들면서 바뀐 값이 있으니 수치의 근거로 쓰지 말 것. (1:1 대조에 쓰던
+`design-reference.html`은 구현 완료 후 삭제됐다.)
 
 - 색은 Panda semanticTokens만. `strictTokens: true` 라 임의 값은 `'[14px]'` 로 이스케이프
 - **글자엔 `accent.600`, 선·아이콘엔 `accent.500`** (라이트 모드 WCAG AA 때문에 나뉜다)

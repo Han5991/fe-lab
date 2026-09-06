@@ -66,7 +66,7 @@ apps/blog/web/
 │  └─ shared/           최하단 레이어 — 앱 소유 라우트 경로의 단일 출처(routes) + 페이지 전환 네임스페이스(transitions). 모든 레이어가 import 가능
 ├─ supabase/            로컬 Supabase 프로젝트(CLI 소유 — 앱 소스 아님) — config.toml · migrations/ · functions/admin-analytics(Deno). seed.sql은 프로덕션 데이터 사본이라 .gitignore — `pnpm seed:pull`로 만든다(없어도 db reset은 지나간다)
 ├─ public/              robots.txt · favicon · og-default.jpg … (+ 빌드가 생성하는 sitemap/rss/search-index/llms/og/thumbs/posts는 .gitignore)
-├─ design/              DIAGRAM_AUTHORING.md(현행) · blog-redesign-handoff.md · github-style-reference.md(둘 다 이력)
+├─ design/              redesign-decisions.md — 리뉴얼 결정 기록(왜 그렇게 정했는지. 현행 수치의 출처는 아니다)
 ├─ next.config.ts · panda.config.ts · postcss.config.cjs · vitest.config.mts · vitest.setup.ts
 ├─ tsconfig.json(프로덕션) · tsconfig.test.json(테스트) · eslint.config.mts · turbo.json · wrangler.jsonc · env.d.ts
 └─ .env.production      (커밋된 유일한 env — Supabase URL/anon key, Giscus, 관리자 이메일. 왜 시크릿이 아닌지는 §5)
@@ -175,4 +175,5 @@ apps/blog/web/
 | 콘텐츠 프레임워크 내부(레이어·`defineContent`·스크립트)   | [`packages/@blog/content/README.md`](../../../packages/@blog/content/README.md)               |
 | 색·글꼴·레일·코드 블록 테마                               | `.claude/skills/blog-design-system/SKILL.md`, `packages/@design-system/ui/src/blog-preset.ts` |
 | 본문 커스텀 태그 문법                                     | `.claude/skills/blog-components/SKILL.md`                                                     |
-| 다이어그램 저작 · `hero:` 등록법                          | [`design/DIAGRAM_AUTHORING.md`](design/DIAGRAM_AUTHORING.md)                                  |
+| 다이어그램 저작 · `hero:` 등록법                          | `.claude/skills/blog-diagrams/SKILL.md`                                                       |
+| 리뉴얼에서 무엇을 왜 그렇게 정했는지                      | [`design/redesign-decisions.md`](design/redesign-decisions.md)                                |
