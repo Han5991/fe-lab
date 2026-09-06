@@ -21,6 +21,24 @@ jobs:
       (github.event_name == 'issues' && github.event.action == 'labeled' && github.event.label.name == 'claude') ||
       (github.event_name == 'issues' && github.event.action != 'labeled' && (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude')))
     runs-on: ubuntu-latest
+
+    # 한 스레드(PR·이슈)에서는 멘션 잡을 **한 번에 하나만** 돌린다.
+    #
+    # 아래 "Verify Claude actually replied"는 잡 시작 시각 이후의 claude[bot] 코멘트를
+    # 세는데, 같은 스레드에 멘션이 겹치면 먼저 시작한 잡이 **나중 잡의 답변**을 자기
+    # 것으로 세어 통과해 버린다 — 그 스텝이 막으려던 "초록인데 답이 없다"가 그대로
+    # 재발하는 경로다.
+    #
+    # 답변에 실행 식별자를 심어 대조하는 방법도 있지만, 그건 모델이 지시를 지켜야
+    # 성립한다 — 검증 스텝은 바로 그걸 못 믿어서 있는 것이라 순환이다. 직렬화는
+    # 모델과 무관하게 시각 창이 겹치지 않도록 만든다.
+    #
+    # cancel-in-progress는 false다. 멘션은 각각 사람이 던진 질문이라 나중 것이
+    # 먼저 것을 취소하면 안 되고, 취소는 성공이 아니므로 허위 초록도 아니다.
+    concurrency:
+      group: claude-mention-${{ github.event.issue.number || github.event.pull_request.number }}
+      cancel-in-progress: false
+
     permissions:
       contents: read
       pull-requests: read
@@ -32,6 +50,14 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 1
+
+      # 게시 여부를 나중에 판정하기 위한 기준 시각. 트리거 이벤트가 다섯이라
+      # (issue_comment · pull_request_review_comment · pull_request_review ·
+      #  issues opened/assigned/labeled) 이벤트 페이로드에서 공통으로 뽑을 수 있는
+      # 시각이 없어 여기서 직접 찍는다.
+      - name: Record start time
+        id: start
+        run: echo "at=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
 
       - name: Run Claude Code
         id: claude
@@ -51,11 +77,116 @@ jobs:
           # 실행 리포트를 Actions Step Summary에 남긴다.
           display_report: true
 
-          # Optional: Give a custom prompt to Claude. If this is not specified, Claude will perform the instructions specified in the comment that tagged it.
-          prompt: '사용자의 요청을 수행하되, 모든 답변과 설명은 반드시 한글로 작성해주세요. ${{ github.event.comment.body || github.event.review.body || github.event.issue.body }}'
+          # prompt가 있으면 액션은 **agent 모드**로 붙는다(로그의
+          # "Auto-detected mode: agent"). agent 모드에서는 액션이 답변을 대신
+          # 게시해 주지 않는다 — 모델이 직접 `gh ... comment`를 불러야 한다.
+          # 그래서 아래 <posting>과 claude_args의 허용 목록이 한 짝이다.
+          #
+          # 사용자 요청 본문은 **맨 뒤**에 둔다. 지시문 사이에 끼워 넣으면
+          # 코멘트 내용이 위 규약을 덮어쓸 여지가 생긴다.
+          prompt: |
+            모든 답변과 설명은 반드시 한글로 작성해주세요.
 
-          # Optional: Add claude_args to customize behavior and configuration
-          # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
-          # or https://docs.claude.com/en/docs/claude-code/sdk#command-line for available options
-          # claude_args: '--model claude-opus-4-1-20250805 --allowed-tools Bash(gh pr:*)'
+            REPO: ${{ github.repository }}
+            NUMBER: ${{ github.event.issue.number || github.event.pull_request.number }}
+
+            <single_turn>
+            **이 실행은 단발성입니다.** 당신의 턴이 끝나면 GitHub Actions 잡이 그
+            자리에서 종료됩니다. 그러므로:
+
+            - 백그라운드 작업이나 서브에이전트의 완료를 **기다리지 마세요**. 알림은
+              오지 않습니다. "완료되면 알려드리겠습니다" 같은 말로 턴을 끝내면
+              답변은 게시되지 않고 잡만 초록으로 끝납니다.
+            - 모든 조사와 판단을 **이 턴 안에서** 끝내세요.
+            - **마지막 행동은 반드시 코멘트 게시**여야 합니다(아래 <posting>).
+              시간이나 토큰이 모자라면 조사 범위를 줄이되, 게시는 건너뛰지 마세요.
+              다 보지 못했다면 답변에 "확인하지 못한 범위"를 적고 게시하세요.
+            </single_turn>
+
+            <posting>
+            **액션이 답변을 대신 올려주지 않습니다.** 당신이 직접 게시해야 합니다.
+
+            본문은 Write 도구로 `reply.md`에 먼저 쓰세요. 백틱과 따옴표가 들어가므로
+            `--body`로 셸에 직접 넘기지 말고 반드시 `--body-file`을 씁니다.
+
+            대상이 PR인지 이슈인지는 `gh pr view <NUMBER>`가 성공하는지로 판별합니다.
+
+            - PR이면:   `gh pr comment <NUMBER> --body-file reply.md`
+            - 이슈면:   `gh issue comment <NUMBER> --body-file reply.md`
+
+            멘션마다 새 코멘트를 남깁니다. `--edit-last`를 쓰지 마세요 — 이전 대화를
+            덮어씁니다.
+            </posting>
+
+            <bash_limits>
+            Bash는 좁게 허용돼 있고 워크스페이스 밖 쓰기가 막혀 있습니다. 아래를
+            시도하면 거부당하고 턴만 소모합니다.
+
+            - 파이프(`|`)·리다이렉션(`>`)·`&&`·`;`로 명령을 잇지 마세요.
+              한 번에 **명령 하나**만 실행합니다.
+            - `mkdir`·임시 파일 저장으로 diff를 쌓아두려 하지 마세요.
+            - **큰 PR의 diff는 통째로 받지 마세요.** `gh pr diff <번호> --name-only`로
+              파일 목록을 받고, 각 파일의 현재 내용은 Read로 읽습니다(체크아웃돼
+              있습니다). 체크아웃은 shallow(fetch-depth: 1)이므로 로컬 git 히스토리에
+              의존하지 마세요.
+            </bash_limits>
+
+            ────────────────────────────────────────
+            아래가 당신이 응답해야 할 요청입니다.
+
+            ${{ github.event.comment.body || github.event.review.body || github.event.issue.body }}
+
+          # agent 모드는 여기 나열된 도구만 쓸 수 있다. 예전엔 이 줄이 통째로
+          # 주석이라 허용 목록이 없었고, 그래서 멘션 봇은 조사도 게시도 하지 못한 채
+          # 권한 거부만 쌓다 끝났다(#374에서 15턴·거부 10건·코멘트 0건).
+          # 게시 명령(`gh pr comment`·`gh issue comment`)이 여기 있어야 <posting>이
+          # 실제로 수행된다.
+          #
+          # `gh api`는 일부러 뺐다 — 사실상 모든 write 엔드포인트를 여는 와일드카드다.
+          #
+          # Task·ScheduleWakeup은 allowed-tools에 없어도 붙는 도구라 명시적으로 막는다.
+          # 단발성 잡에서 서브에이전트를 띄우고 "완료되면 알림을 받겠다"며 턴을 끝내면
+          # 답변이 통째로 날아간다(#311에서 실제로 발생). <single_turn>과 같은 것을
+          # 도구 레벨에서 한 번 더 막는 것이다.
+          claude_args: >-
+            --allowed-tools
+            "Read,Grep,Glob,Write,mcp__github_ci__get_ci_status,mcp__github_ci__get_workflow_run_details,mcp__github_ci__download_job_log,Bash(gh pr comment:*),Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr list:*),Bash(gh pr checks:*),Bash(gh issue comment:*),Bash(gh issue view:*),Bash(gh issue list:*),Bash(gh search:*)"
+            --disallowed-tools
+            "Task,ScheduleWakeup,TaskOutput,TaskStop"
+
+      # 초록 체크가 "답변했다"를 뜻하도록 만든다.
+      #
+      # agent 모드는 모델이 게시를 건너뛰어도 잡이 성공으로 끝난다. 이 저장소는 그걸로
+      # 세 번 속았다 — #301·#311(리뷰 워크플로), 그리고 #374의 멘션. 사람이 코멘트를
+      # 직접 확인하기 전에는 "답이 없다"와 "볼 게 없다"가 구분되지 않는다.
+      #
+      # 그래서 잡 시작 이후에 claude[bot] 코멘트가 실제로 생겼는지 보고, 없으면 실패시킨다.
+      - name: Verify Claude actually replied
+        if: always() && steps.claude.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NUMBER: ${{ github.event.issue.number || github.event.pull_request.number }}
+          SINCE: ${{ steps.start.outputs.at }}
+        run: |
+          set -euo pipefail
+
+          comments="$(
+            gh api --paginate --slurp \
+              -H 'Accept: application/vnd.github+json' \
+              "repos/${GITHUB_REPOSITORY}/issues/${NUMBER}/comments?per_page=100"
+          )"
+          posted="$(
+            jq -r --arg since "$SINCE" \
+              '[.[][] | select(.user.login == "claude[bot]" and .created_at > $since)] | length' \
+              <<< "$comments"
+          )"
+
+          if [ "$posted" -gt 0 ]; then
+            echo "claude[bot] 코멘트 ${posted}건 게시됨 (기준 $SINCE)"
+            exit 0
+          fi
+
+          echo "::error::Claude가 답변을 게시하지 않았습니다. 잡은 성공했지만 코멘트가 없습니다."
+          echo "Actions Step Summary의 Final Result와 permission_denials를 확인하세요." >&2
+          exit 1
 
