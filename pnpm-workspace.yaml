@@ -65,7 +65,7 @@ catalog:
 
   # 빌드 · 실행 도구
   commander: ^15.0.0
-  tsdown: 0.22.14
+  tsdown: 0.23.0
 
   # 테스트
   vitest: ^4.1.11
