@@ -68,8 +68,8 @@ catalog:
   tsdown: 0.23.0
 
   # 테스트
-  vitest: ^4.1.11
-  '@vitest/coverage-v8': ^4.1.11
+  vitest: ^5.0.0
+  '@vitest/coverage-v8': ^5.0.0
   jsdom: ^30.0.1
   msw: ^2.15.0
   '@vitejs/plugin-react': ^6.1.1
