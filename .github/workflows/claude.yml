@@ -21,6 +21,24 @@ jobs:
       (github.event_name == 'issues' && github.event.action == 'labeled' && github.event.label.name == 'claude') ||
       (github.event_name == 'issues' && github.event.action != 'labeled' && (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude')))
     runs-on: ubuntu-latest
+
+    # 한 스레드(PR·이슈)에서는 멘션 잡을 **한 번에 하나만** 돌린다.
+    #
+    # 아래 "Verify Claude actually replied"는 잡 시작 시각 이후의 claude[bot] 코멘트를
+    # 세는데, 같은 스레드에 멘션이 겹치면 먼저 시작한 잡이 **나중 잡의 답변**을 자기
+    # 것으로 세어 통과해 버린다 — 그 스텝이 막으려던 "초록인데 답이 없다"가 그대로
+    # 재발하는 경로다.
+    #
+    # 답변에 실행 식별자를 심어 대조하는 방법도 있지만, 그건 모델이 지시를 지켜야
+    # 성립한다 — 검증 스텝은 바로 그걸 못 믿어서 있는 것이라 순환이다. 직렬화는
+    # 모델과 무관하게 시각 창이 겹치지 않도록 만든다.
+    #
+    # cancel-in-progress는 false다. 멘션은 각각 사람이 던진 질문이라 나중 것이
+    # 먼저 것을 취소하면 안 되고, 취소는 성공이 아니므로 허위 초록도 아니다.
+    concurrency:
+      group: claude-mention-${{ github.event.issue.number || github.event.pull_request.number }}
+      cancel-in-progress: false
+
     permissions:
       contents: read
       pull-requests: read
