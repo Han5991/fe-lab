@@ -19,9 +19,7 @@ Reactions on reviews, review comments, and issue comments do not qualify.
 review is published, a follow-up step reads the reviewer's `review-verdict.txt`
 and adds the `+1` when the verdict is `PASS` — that is, when the review found no
 `critical` or `high` severity finding. It removes the reaction when the verdict is
-`BLOCK`, when the file is missing, or when the review step failed, so the reaction
-means **"the last review pass on the current head found nothing blocking"**, never
-"nobody looked".
+`BLOCK`, when the file is missing, or when the review step failed.
 
 The workflow runs on `opened` and `synchronize`, so the reaction tracks the current
 head: a new push re-evaluates and can take the 👍 away.
@@ -29,12 +27,26 @@ head: a new push re-evaluates and can take the 👍 away.
 Two things this reaction is **not**:
 
 - Not a human approval. It is a bot verdict on code and prose quality.
-- Not a CI result. `UNSTABLE` means a required check is still failing or pending —
-  read the `mergeStateStatus` column, do not assume green.
+- Not a CI result. `UNSTABLE` in GitHub's `MergeStateStatus` means _mergeable with a
+  non-passing **non-required** check_; a failing or pending **required** check yields
+  `BLOCKED`, which this filter already excludes. So a listed row's required checks are
+  green — but a non-required one may not be. Read the column, do not treat it as "CI is
+  entirely green".
 
-Bot-authored PRs are mostly not reviewed at all (the workflow skips non-human
-actors except Renovate `deps-major`), so Renovate PRs will usually have no
-reaction. Their gate is CI, not this skill.
+### Absence of the reaction is not a verdict
+
+**A missing 👍 does not mean the review found something.** It collapses four different
+states, and only the first is a real verdict:
+
+| Why there is no reaction                                                                                                                                    | How to tell                                                                                                     |
+| :---------------------------------------------------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------- |
+| Review ran and found `critical`/`high`                                                                                                                      | A `claude[bot]` summary comment exists with those severities                                                    |
+| **PR touches `.github/workflows/claude-code-review.yml`** — `claude-code-action` refuses to run when that file differs from the default branch, and exits 0 | Run finishes in ~10s; Actions annotation `Skipping action due to workflow validation`; no `claude[bot]` comment |
+| **Fork PR** — `secrets.CLAUDE_CODE_OAUTH_TOKEN` is unavailable, so the review step fails                                                                    | The `claude-review` check is red                                                                                |
+| Bot-authored PR — the workflow skips non-human actors except Renovate `deps-major`                                                                          | The job is skipped entirely                                                                                     |
+
+When a PR you expected is missing from the list, check which of these it is before
+reporting it as "review found problems". The first is the only one that means that.
 
 ## Workflow
 
@@ -44,6 +56,12 @@ reaction. Their gate is CI, not this skill.
 2. Enumerate open PR numbers, then fetch each PR individually and filter the
    individual result. Do not request or filter `mergeStateStatus` from
    `gh pr list`: its aggregate results can disagree with a direct PR query.
+
+   **`UNKNOWN` is not a state, it is "not computed yet."** GitHub calculates
+   mergeability lazily, so the first query after a push returns `UNKNOWN`. Dropping
+   those rows silently removes healthy PRs from the list. Re-query once, and if it
+   is still `UNKNOWN`, report it separately rather than as "not merge-ready".
+
 3. For each `CLEAN` or `UNSTABLE` PR, use GitHub's issue reactions endpoint to
    fetch every page of top-level `+1` reactions. Pull requests use their PR
    number as the issue number for this endpoint. Match the actor login exactly.
@@ -54,21 +72,32 @@ reaction. Their gate is CI, not this skill.
    set -euo pipefail
 
    reactor='github-actions[bot]'
+   fields='number,title,url,author,headRefName,baseRefName,mergeStateStatus,updatedAt'
 
    open_pr_numbers="$(
      gh pr list --state open --limit 1000 --json number --jq '.[].number'
    )"
    good_prs=()
+   unknown_prs=()
 
    if [[ -n "$open_pr_numbers" ]]; then
      while IFS= read -r pr_number; do
-       eligible_pr="$(
-         gh pr view "$pr_number" \
-           --json number,title,url,author,headRefName,baseRefName,mergeStateStatus,isDraft,updatedAt \
-           --jq 'select(.mergeStateStatus == "CLEAN" or .mergeStateStatus == "UNSTABLE")'
-       )"
+       pr="$(gh pr view "$pr_number" --json "$fields")"
+       state="$(jq -r '.mergeStateStatus' <<< "$pr")"
 
-       if [[ -z "$eligible_pr" ]]; then
+       # 지연 계산이라 push 직후 첫 조회는 UNKNOWN이다. 한 번 더 묻는다.
+       if [[ "$state" == "UNKNOWN" ]]; then
+         sleep 3
+         pr="$(gh pr view "$pr_number" --json "$fields")"
+         state="$(jq -r '.mergeStateStatus' <<< "$pr")"
+       fi
+
+       if [[ "$state" == "UNKNOWN" ]]; then
+         unknown_prs+=("$pr")
+         continue
+       fi
+
+       if [[ "$state" != "CLEAN" && "$state" != "UNSTABLE" ]]; then
          continue
        fi
 
@@ -84,13 +113,18 @@ reaction. Their gate is CI, not this skill.
        )"
 
        if [[ "$has_plus_one" == "true" ]]; then
-         good_prs+=("$eligible_pr")
+         good_prs+=("$pr")
        fi
      done <<< "$open_pr_numbers"
    fi
 
+   echo "--- GOOD ---"
    if ((${#good_prs[@]} > 0)); then
      printf '%s\n' "${good_prs[@]}"
+   fi
+   echo "--- UNKNOWN (mergeability not computed) ---"
+   if ((${#unknown_prs[@]} > 0)); then
+     printf '%s\n' "${unknown_prs[@]}"
    fi
    ```
 
@@ -104,9 +138,15 @@ reaction. Their gate is CI, not this skill.
    - author login
    - base and head branches as `base ← head`
    - update time
-6. If the result is empty, explicitly say that the repository has no open PRs
+6. If any PR landed in the `UNKNOWN` bucket, list those separately under a
+   "mergeability not computed yet" heading and say they may qualify on a re-run.
+   Never fold them into the "no good PRs" answer — that reports a transient
+   computation state as a fact.
+7. If the result is empty, explicitly say that the repository has no open PRs
    that are `CLEAN` or `UNSTABLE` and carry a `+1` reaction from
-   `github-actions[bot]`.
+   `github-actions[bot]`. Do **not** phrase this as "the reviews found problems" —
+   see "Absence of the reaction is not a verdict" above for the four states an
+   empty list can mean.
 
 ## Failures
 

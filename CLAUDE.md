@@ -51,12 +51,22 @@ See the `/pr-fix` skill for the full reviewed-PR loop.
 없을 때만 PASS**다.
 
 - **fail-closed다.** 판정 파일이 없거나 리뷰 스텝이 실패하면 리액션을 **뗀다** —
-  "통과"가 아니라 "판정 불가"이기 때문이다. `synchronize`에도 돌므로 리액션은 항상
-  현재 head 기준이다
-- 사람의 승인도, CI 결과도 아니다. `/list-good-prs`가 이걸 `mergeStateStatus`와 **함께**
-  보는 이유다(`UNSTABLE`은 체크가 아직 빨갛거나 대기 중이라는 뜻)
-- 봇 PR은 대개 리뷰 자체가 안 돌아(Renovate `deps-major`만 예외) 리액션이 없다.
-  그쪽 게이트는 CI다
+  "통과"가 아니라 "판정 불가"이기 때문이다. 다만 로그는 둘을 **구분해서** 찍는다
+  (`판정 불가: …` vs `판정: BLOCK`). 같은 줄로 찍으면 리뷰어가 판정 파일을 영영 안
+  쓰는 무음 no-op이 "매번 지적이 나오는 정상 동작"과 구분되지 않는다
+- **선언과 코멘트가 어긋나면 BLOCK으로 되돌린다.** 판정과 요약 코멘트는 둘 다 모델
+  출력이라 서로를 검사하지 않는다. PASS인데 `review.md`에 critical·high가 있으면
+  스텝이 잡아 되돌린다
+- `synchronize`에도 돌고 concurrency로 직렬화되므로 리액션은 현재 head 기준이다.
+  연속 push로 실행이 겹치면 옛 실행이 취소되고, 취소된 실행은 리액션을 건드리지
+  않는다(`!cancelled()`)
+- 사람의 승인도, CI 결과도 아니다. `/list-good-prs`가 이걸 `mergeStateStatus`와
+  **함께** 보는 이유다 — 다만 `UNSTABLE`은 **필수가 아닌** 체크가 안 통과했다는
+  뜻이고, 필수 체크가 빨갛거나 대기 중이면 `BLOCKED`라 애초에 걸러진다
+- **리액션이 없다고 지적이 있는 건 아니다.** 네 가지가 겹쳐 있다 — 지적이 있었거나,
+  PR이 `claude-code-review.yml`을 고쳐 리뷰가 스킵됐거나(이 저장소의 상시 함정),
+  fork PR이라 토큰이 없어 실패했거나, 봇 PR이라 잡이 아예 안 돈 것이다.
+  구분법은 `/list-good-prs` 스킬의 표에 있다
 
 ### Response Style
 
