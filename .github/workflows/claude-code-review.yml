@@ -33,9 +33,34 @@ jobs:
     #   github.event.pull_request.author_association == 'FIRST_TIME_CONTRIBUTOR'
 
     runs-on: ubuntu-latest
+
+    # 같은 PR에서는 리뷰를 한 번에 하나만 돌린다.
+    #
+    # 리액션은 head SHA에 묶이지 않고 PR에 붙으므로, 연속 push로 두 실행이 겹치면
+    # **늦게 끝난 쪽이 이긴다**. 먼저 시작한 실행(옛 head, BLOCK)이 나중 실행
+    # (새 head, PASS)보다 뒤에 끝나면 방금 붙은 👍를 도로 떼고, 반대 순서면 이미
+    # 고쳐진 head에 옛 PASS가 남는다. 후자는 `/list-good-prs`가 리뷰에 걸린 PR을
+    # 머지 가능으로 보고하는 경로다.
+    #
+    # cancel-in-progress: true다 — 옛 head에 대한 리뷰는 새 push가 오는 순간
+    # 쓸모가 없다. 취소된 실행은 아래 리액션 스텝을 타지 않는다(`!cancelled()`).
+    concurrency:
+      group: claude-review-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+
     permissions:
       contents: read
-      pull-requests: read
+      # 리뷰 뒤 판정을 PR의 👍 리액션으로 남기는 스텝 때문에 write다.
+      #
+      # 리액션은 pulls가 아니라 **issues** 엔드포인트를 쓰지만(PR 번호 = 이슈 번호),
+      # 필요한 권한은 URL이 아니라 **대상 리소스**가 정한다. GitHub 문서는 이
+      # 엔드포인트를 Issues(write)와 Pull requests(write) 양쪽에 올려 두는데,
+      # 이 워크플로는 `pull_request`로만 도니 대상은 언제나 PR이다.
+      #
+      # 근거는 같은 저장소에 있다 — preview-blog.yml은 `pull-requests: write`만
+      # 선언하고 `issues` 권한 없이 PR에 코멘트를 단다(같은 /issues/{n}/ 계열).
+      # 그래서 여기도 pull-requests만 올리고 issues는 read로 둔다.
+      pull-requests: write
       issues: read
       id-token: write
       # mcp__github_ci__* 서버는 설치 전에 워크플로 토큰의 actions:read를 실제로
@@ -411,7 +436,8 @@ jobs:
             - 제안: 고친 문장 또는 구체적 방향
             - 확신도: high / medium / low
 
-            심각도는 critical / high / medium 중 하나.
+            심각도는 critical / high / medium 중 하나. **이 표기가 리액션을 좌우한다** —
+            다음 스텝이 이 코멘트에서 `[critical]`·`[high]`를 찾아 👍를 붙일지 정한다.
 
             <details>
             <summary>낮은 심각도 · 확신도 낮음 (N건)</summary>
@@ -457,6 +483,7 @@ jobs:
             무엇이 왜 기준에 미달하는지에 집중하세요.
             </output_format>
 
+
           # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
           # or https://docs.claude.com/en/docs/claude-code/sdk#command-line for available options
           # Write는 요약 코멘트 --body-file 작성용.
@@ -483,3 +510,89 @@ jobs:
             "Read,Grep,Glob,Write,mcp__github_inline_comment__create_inline_comment,mcp__github_ci__get_ci_status,mcp__github_ci__get_workflow_run_details,mcp__github_ci__download_job_log,Bash(gh issue view:*),Bash(gh search:*),Bash(gh issue list:*),Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr list:*)"
             --disallowed-tools
             "Task,ScheduleWakeup,TaskOutput,TaskStop"
+
+      # 리뷰 결과를 PR의 👍 리액션 하나로 요약한다. `/list-good-prs` 스킬이
+      # "머지 가능 + 리뷰 통과" PR을 이걸로 고른다 — 요약 코멘트 본문을 파싱하는
+      # 것보다 출력 형식 변경에 강하고, 리뷰가 죽었는지도 구분된다.
+      #
+      # 판정의 단일 출처는 **게시한 코멘트 본문(review.md)**이다. 리뷰 스텝이
+      # 실패했거나 그 파일이 없으면 **리액션을 뗀다** — 통과가 아니라 판정 불가이므로
+      # fail-closed다. synchronize에도 돌기 때문에, 고쳐서 PASS가 되면 다시 붙고
+      # 새 지적이 나오면 다시 떨어진다.
+      #
+      # 프롬프트에 판정 파일을 쓰게 하던 방식은 버렸다. 판정과 코멘트가 어긋날 수
+      # 있었고, 그 지시가 프롬프트를 21,000바이트 한계 너머로 밀어 워크플로 자체가
+      # 거부됐다(workflowPromptSize.test.ts가 이제 그 한계를 지킨다).
+      #
+      # 리액션 주체는 github-actions[bot](GITHUB_TOKEN)이다. claude[bot]은 OAuth
+      # 앱이라 이 엔드포인트를 쓰지 않으므로, 소비하는 쪽도 이 로그인을 봐야 한다.
+      - name: Mark review verdict with a reaction
+        # always()가 아니라 !cancelled()다. 취소는 판정이 아니다 — always()면 취소된
+        # 실행이 BLOCK으로 떨어져, 앞선 성공 실행이 붙여 둔 유효한 👍를 떼어 간다.
+        # 위 concurrency의 cancel-in-progress와 한 짝이다.
+        if: ${{ !cancelled() }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REVIEW_OUTCOME: ${{ steps.claude-review.outcome }}
+          REACTOR: 'github-actions[bot]'
+        run: |
+          set -euo pipefail
+
+          # 판정은 **게시한 코멘트 본문(review.md)에서 도출한다.** 리뷰어에게 판정
+          # 파일을 따로 쓰게 하던 방식은 두 가지가 문제였다 — 판정과 코멘트가 둘 다
+          # 모델 출력이라 서로 어긋날 수 있었고(요약엔 critical인데 PASS), 지시가
+          # 프롬프트를 700바이트쯤 불려 21,000바이트 한계를 넘겼다(아래 주석 참고).
+          #
+          # 판정 불가와 BLOCK은 결과가 같아도 원인이 다르다. 둘을 같은 줄로 찍으면
+          # "리뷰가 게시 단계에 닿지도 못한 무음 실패"가 "매번 지적이 나오는 정상
+          # 동작"과 구분되지 않는다 — 이 저장소가 가장 크게 데인 실패 형태다.
+          if [[ "$REVIEW_OUTCOME" != "success" ]]; then
+            verdict="BLOCK"
+            echo "판정 불가: 리뷰 스텝이 $REVIEW_OUTCOME 로 끝났다 → 리액션 제거"
+          elif [[ ! -f review.md ]]; then
+            verdict="BLOCK"
+            echo "판정 불가: review.md 가 없다 → 리액션 제거"
+            echo "::warning::리뷰 스텝은 성공했는데 review.md가 없습니다. 게시 단계에 닿지 못했을 수 있습니다."
+          elif grep -qiE '\[(critical|high)\]' review.md; then
+            verdict="BLOCK"
+            echo "판정: BLOCK (요약에 critical/high 지적이 있다)"
+          else
+            verdict="PASS"
+            echo "판정: PASS (critical/high 지적 없음)"
+          fi
+
+          # --paginate 는 페이지마다 따로 출력하므로 --slurp 로 배열째 받는다.
+          # gh는 --slurp 와 --jq 를 같이 못 쓴다("the `--slurp` option is not
+          # supported with `--jq`") — 그렇게 쓰면 gh가 사용법만 뱉고 빈 문자열이
+          # 나와서, 리액션이 있는데도 "없음"으로 읽힌다. 그래서 조회와 추출을
+          # 두 단계로 나눈다. 이러면 gh가 실패할 때 set -e 가 스텝을 세운다.
+          reactions="$(
+            gh api --paginate --slurp \
+              -H 'Accept: application/vnd.github+json' \
+              "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/reactions?content=%2B1&per_page=100"
+          )"
+          existing="$(
+            jq -r --arg reactor "$REACTOR" \
+              '[.[][] | select(.content == "+1" and .user.login == $reactor) | .id] | first // empty' \
+              <<< "$reactions"
+          )"
+
+          if [[ "$verdict" == "PASS" ]]; then
+            if [[ -z "$existing" ]]; then
+              gh api --method POST \
+                -H 'Accept: application/vnd.github+json' \
+                "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/reactions" \
+                -f content='+1' >/dev/null
+              echo "👍 추가했다"
+            else
+              echo "👍 이미 있다 — 그대로 둔다"
+            fi
+          elif [[ -n "$existing" ]]; then
+            gh api --method DELETE \
+              -H 'Accept: application/vnd.github+json' \
+              "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/reactions/${existing}" >/dev/null
+            echo "👍 제거했다"
+          else
+            echo "👍 없다 — 그대로 둔다"
+          fi

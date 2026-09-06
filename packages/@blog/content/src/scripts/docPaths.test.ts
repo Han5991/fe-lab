@@ -46,6 +46,7 @@ const DOCS = [
   '.claude/skills/blog-components/SKILL.md',
   '.claude/skills/blog-design-system/SKILL.md',
   '.claude/skills/repair-pr/SKILL.md',
+  '.claude/skills/list-good-prs/SKILL.md',
   'packages/@blog/content/README.md',
 ] as const;
 
@@ -128,6 +129,8 @@ const NOT_CHECKED: Readonly<Record<string, string>> = {
     '채택되지 않은 GitHub 스타일 안의 레퍼런스. 지웠고, 결정 기록이 왜 지웠는지를 남긴다',
   'SKILL.md':
     '스킬 문서의 자기 참조("this SKILL.md가 있는 디렉터리"). 특정 파일을 가리키는 주장이 아니다',
+  'review.md':
+    '리뷰 워크플로가 CI 워크스페이스에 만드는 런타임 파일(게시할 코멘트 본문). 저장소에는 없다',
   'apps/blog/web/src/components/diagram/MyDiagram.tsx':
     'blog-diagrams 스킬의 예제 — "이 파일을 만든다"는 지시문이지 실재 파일이 아니다',
   'UserCard.tsx': 'AGENTS.md의 명명 규칙 예시',
