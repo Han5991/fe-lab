@@ -5,7 +5,7 @@ packages:
 overrides:
   # next(8.4.31 고정)와 @pandacss/*(8.5.14 고정)가 각자 exact 핀을 걸어서, 오버라이드를
   # 빼면 postcss가 8.4.31/8.5.14/8.5.18 세 벌로 갈라진다. 한 벌로 dedupe하기 위해 유지.
-  postcss: 8.5.26
+  postcss: 8.5.28
   # @pandacss/core(및 형제 패키지) 1.12.0/1.12.1이 browserslist를 4.28.1로 exact 핀
   # 고정해 pnpm audit이 GHSA-c83g-rgw3-j3cx·GHSA-73wf-gq98-2v4g(무제한 메모리 증가 ·
   # prototype write 크래시, 둘 다 high)를 report한다. 패치 버전(4.28.7+)이 나와도
