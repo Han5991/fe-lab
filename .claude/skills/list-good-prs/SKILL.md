@@ -16,10 +16,10 @@ Reactions on reviews, review comments, and issue comments do not qualify.
 ## Where the reaction comes from
 
 `.github/workflows/claude-code-review.yml` posts it. After the `claude[bot]`
-review is published, a follow-up step reads the reviewer's `review-verdict.txt`
-and adds the `+1` when the verdict is `PASS` — that is, when the review found no
-`critical` or `high` severity finding. It removes the reaction when the verdict is
-`BLOCK`, when the file is missing, or when the review step failed.
+review is published, a follow-up step reads the severities out of the posted comment
+body and adds the `+1` when it contains no `[critical]` or `[high]` finding. It removes
+the reaction when one is present, when the review step failed, or when the review never
+reached the posting stage.
 
 The workflow runs on `opened` and `synchronize`, so the reaction tracks the current
 head: a new push re-evaluates and can take the 👍 away.

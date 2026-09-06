@@ -436,7 +436,8 @@ jobs:
             - 제안: 고친 문장 또는 구체적 방향
             - 확신도: high / medium / low
 
-            심각도는 critical / high / medium 중 하나.
+            심각도는 critical / high / medium 중 하나. **이 표기가 리액션을 좌우한다** —
+            다음 스텝이 이 코멘트에서 `[critical]`·`[high]`를 찾아 👍를 붙일지 정한다.
 
             <details>
             <summary>낮은 심각도 · 확신도 낮음 (N건)</summary>
@@ -482,27 +483,6 @@ jobs:
             무엇이 왜 기준에 미달하는지에 집중하세요.
             </output_format>
 
-            <verdict_file>
-            **이건 코멘트에 쓰는 내용이 아닙니다.** 위 <output_format>의 `##` 절들과
-            달리, 아래는 파일 하나를 만들라는 지시입니다. 이 절의 제목이나 내용을
-            리뷰 코멘트 본문에 옮겨 적지 마세요.
-
-            게시가 **끝난 뒤 마지막으로** Write 도구로 워크스페이스 루트(체크아웃된
-            저장소 최상위, `review.md`를 쓴 곳과 같은 자리)에 `review-verdict.txt`를
-            만드세요. 내용은 아래 한 단어뿐이어야 합니다.
-
-            - `BLOCK` — 이번 리뷰에 심각도 **critical 또는 high** 항목이 하나라도 있다
-            - `PASS`  — 그 외(medium·low만 있거나 지적이 없다)
-
-            다음 스텝이 이 파일을 읽어 PR에 👍 리액션을 붙이거나 뗍니다.
-            `/list-good-prs` 스킬이 그 리액션으로 "머지 가능 + 리뷰 통과" PR을
-            고르므로, 판정은 요약 코멘트의 심각도와 반드시 일치해야 합니다.
-            (일치하지 않으면 다음 스텝이 `review.md`를 다시 읽어 BLOCK으로 되돌립니다 —
-            어긋난 PASS는 통과하지 못합니다.)
-
-            파일을 만들지 않으면 리액션은 **제거**됩니다. 리뷰를 끝까지 하지
-            못했다면 통과로 보이게 하지 말고 그냥 만들지 마세요.
-            </verdict_file>
 
           # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
           # or https://docs.claude.com/en/docs/claude-code/sdk#command-line for available options
@@ -535,10 +515,14 @@ jobs:
       # "머지 가능 + 리뷰 통과" PR을 이걸로 고른다 — 요약 코멘트 본문을 파싱하는
       # 것보다 출력 형식 변경에 강하고, 리뷰가 죽었는지도 구분된다.
       #
-      # 판정의 단일 출처는 앞 스텝이 남긴 review-verdict.txt다. 리뷰 스텝이
-      # 실패했거나 파일이 없으면 **리액션을 뗀다** — 통과가 아니라 판정 불가이므로
+      # 판정의 단일 출처는 **게시한 코멘트 본문(review.md)**이다. 리뷰 스텝이
+      # 실패했거나 그 파일이 없으면 **리액션을 뗀다** — 통과가 아니라 판정 불가이므로
       # fail-closed다. synchronize에도 돌기 때문에, 고쳐서 PASS가 되면 다시 붙고
       # 새 지적이 나오면 다시 떨어진다.
+      #
+      # 프롬프트에 판정 파일을 쓰게 하던 방식은 버렸다. 판정과 코멘트가 어긋날 수
+      # 있었고, 그 지시가 프롬프트를 21,000바이트 한계 너머로 밀어 워크플로 자체가
+      # 거부됐다(workflowPromptSize.test.ts가 이제 그 한계를 지킨다).
       #
       # 리액션 주체는 github-actions[bot](GITHUB_TOKEN)이다. claude[bot]은 OAuth
       # 앱이라 이 엔드포인트를 쓰지 않으므로, 소비하는 쪽도 이 로그인을 봐야 한다.
@@ -555,30 +539,27 @@ jobs:
         run: |
           set -euo pipefail
 
-          # 판정 불가와 BLOCK은 **결과가 같아도 원인이 다르다.** 둘을 같은 줄로
-          # 찍으면 "리뷰어가 판정 파일을 영영 안 쓰는 무음 no-op"이 "매번 지적이
-          # 나오는 정상 동작"과 구분되지 않는다 — 이 저장소가 가장 크게 데인
-          # 실패 형태다(isCliEntry 사고). 그래서 사유를 따로 남긴다.
+          # 판정은 **게시한 코멘트 본문(review.md)에서 도출한다.** 리뷰어에게 판정
+          # 파일을 따로 쓰게 하던 방식은 두 가지가 문제였다 — 판정과 코멘트가 둘 다
+          # 모델 출력이라 서로 어긋날 수 있었고(요약엔 critical인데 PASS), 지시가
+          # 프롬프트를 700바이트쯤 불려 21,000바이트 한계를 넘겼다(아래 주석 참고).
+          #
+          # 판정 불가와 BLOCK은 결과가 같아도 원인이 다르다. 둘을 같은 줄로 찍으면
+          # "리뷰가 게시 단계에 닿지도 못한 무음 실패"가 "매번 지적이 나오는 정상
+          # 동작"과 구분되지 않는다 — 이 저장소가 가장 크게 데인 실패 형태다.
           if [[ "$REVIEW_OUTCOME" != "success" ]]; then
             verdict="BLOCK"
             echo "판정 불가: 리뷰 스텝이 $REVIEW_OUTCOME 로 끝났다 → 리액션 제거"
-          elif [[ ! -f review-verdict.txt ]]; then
+          elif [[ ! -f review.md ]]; then
             verdict="BLOCK"
-            echo "판정 불가: review-verdict.txt 가 없다(리뷰어가 안 썼다) → 리액션 제거"
-            echo "::warning::리뷰는 성공했는데 판정 파일이 없습니다. 프롬프트의 <verdict_file>이 지켜지지 않았습니다."
+            echo "판정 불가: review.md 가 없다 → 리액션 제거"
+            echo "::warning::리뷰 스텝은 성공했는데 review.md가 없습니다. 게시 단계에 닿지 못했을 수 있습니다."
+          elif grep -qiE '\[(critical|high)\]' review.md; then
+            verdict="BLOCK"
+            echo "판정: BLOCK (요약에 critical/high 지적이 있다)"
           else
-            verdict="$(tr -d '[:space:]' < review-verdict.txt)"
-            echo "판정: $verdict (리뷰어 선언)"
-
-            # 판정과 실제 코멘트가 어긋날 수 있다 — 둘 다 모델 출력이고 서로를
-            # 검사하지 않는다. 요약에 critical/high가 있는데 PASS가 나오면 지적이
-            # 달린 PR이 머지 가능으로 보고된다. 게시 본문(review.md)을 다시 읽어
-            # 대조하고, 어긋나면 BLOCK으로 되돌린다(fail-closed).
-            if [[ "$verdict" == "PASS" && -f review.md ]] &&
-               grep -qiE '\[(critical|high)\]' review.md; then
-              verdict="BLOCK"
-              echo "::warning::PASS로 선언됐지만 review.md에 critical/high 지적이 있습니다. BLOCK으로 되돌립니다."
-            fi
+            verdict="PASS"
+            echo "판정: PASS (critical/high 지적 없음)"
           fi
 
           # --paginate 는 페이지마다 따로 출력하므로 --slurp 로 배열째 받는다.

@@ -46,7 +46,7 @@ See the `/pr-fix` skill for the full reviewed-PR loop.
 
 #### 리뷰 판정 = PR의 👍 리액션
 
-`claude-code-review.yml`이 리뷰를 게시한 뒤, 리뷰어가 남긴 `review-verdict.txt`를 읽어
+`claude-code-review.yml`이 리뷰를 게시한 뒤, **게시한 코멘트 본문**에서 심각도를 읽어
 `github-actions[bot]` 이름으로 PR에 👍를 붙이거나 뗀다. **critical·high 지적이 하나도
 없을 때만 PASS**다.
 
@@ -54,9 +54,12 @@ See the `/pr-fix` skill for the full reviewed-PR loop.
   "통과"가 아니라 "판정 불가"이기 때문이다. 다만 로그는 둘을 **구분해서** 찍는다
   (`판정 불가: …` vs `판정: BLOCK`). 같은 줄로 찍으면 리뷰어가 판정 파일을 영영 안
   쓰는 무음 no-op이 "매번 지적이 나오는 정상 동작"과 구분되지 않는다
-- **선언과 코멘트가 어긋나면 BLOCK으로 되돌린다.** 판정과 요약 코멘트는 둘 다 모델
-  출력이라 서로를 검사하지 않는다. PASS인데 `review.md`에 critical·high가 있으면
-  스텝이 잡아 되돌린다
+- **출처가 하나다.** 예전엔 리뷰어가 판정 파일을 따로 쓰게 했는데, 판정과 코멘트가
+  둘 다 모델 출력이라 서로 어긋날 수 있었다. 지금은 코멘트 하나에서 도출하므로
+  모순이 생길 자리가 없다
+- **프롬프트에는 21,000바이트 한계가 있다.** 넘으면 GitHub이 워크플로 파일을 통째로
+  거부하는데, 실패가 조용하다 — PR 체크 목록에 그 워크플로가 아예 안 나타난다.
+  `workflowPromptSize.test.ts`가 예산(20,500B)을 지킨다
 - `synchronize`에도 돌고 concurrency로 직렬화되므로 리액션은 현재 head 기준이다.
   연속 push로 실행이 겹치면 옛 실행이 취소되고, 취소된 실행은 리액션을 건드리지
   않는다(`!cancelled()`)
