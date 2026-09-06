@@ -23,7 +23,7 @@ overrides:
   # 형제 의존자 @shuding/opentype.js는 ^0.7.3이라 승급 가능하지만, satori의 exact 핀
   # 때문에 lock file maintenance가 두 벌을 취약한 0.7.3 한 벌로 dedupe해 버린다.
   # 제거 조건: satori가 0.7.5+로 핀을 올리면 삭제.
-  fflate: 0.7.5
+  fflate: 0.8.3
 
 allowBuilds:
   esbuild: true
