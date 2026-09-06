@@ -28,6 +28,21 @@ Before committing PR fixes:
 
 See the `/pr-fix` skill for the full reviewed-PR loop.
 
+#### PR·이슈 스킬
+
+| 스킬         | 언제                                                                       |
+| :----------- | :------------------------------------------------------------------------- |
+| `/pr-fix`    | 리뷰 코멘트가 많이 쌓인 PR — 전량 페이지네이션 → 심각도 분류 → 라운드 수렴 |
+| `/repair-pr` | 빨갛거나 충돌난 PR을 **한 번에** 초록으로 — 충돌 → 봇 스레드 → CI 순서     |
+| `/add-issue` | 근거를 증명한 뒤 이슈로 남긴다(근본 원인 확인 + main 대조). 구현은 안 한다 |
+| `/write-prd` | 기능 아이디어를 결정 원장으로 몰아 빈칸 없는 이슈로 만든다                 |
+
+`/add-issue`와 `/write-prd`는 **사용자가 이름을 부를 때만** 돈다. 버그 제보나 기능
+아이디어를 닮았다는 이유로 자동 선택되지 않는다 — 둘 다 이슈를 실제로 만들기 때문이다.
+
+`/pr-fix`와 `/repair-pr`은 겹치지 않는다 — 전자는 **넓이**(코멘트 전량 처리), 후자는
+**한 번의 기계적 복구 패스**다. 둘 다 해당하면 `/pr-fix`부터.
+
 ### Response Style
 
 When output would be large, chunk it and summarize rather than dumping everything in one message.

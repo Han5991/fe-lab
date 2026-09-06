@@ -1,0 +1,108 @@
+---
+name: repair-pr
+description: One-shot GitHub pull request repair workflow for the current or specified repository. Use when asked to repair a PR by resolving merge conflicts, handling unresolved review feedback from claude[bot], explaining incorrect feedback in English, fixing failing CI, committing each distinct repair problem separately, pushing once, and resolving handled bot review threads.
+---
+
+# Repair PR
+
+## Goal
+
+Repair the current or specified GitHub PR once, then stop. Handle merge conflicts, unresolved review feedback from `claude[bot]`, and CI failures in that order. Correct actionable findings, explain objectively incorrect findings in English in their inline threads, and resolve handled threads. Create a separate commit for each distinct repair problem that changes files, but push only once after all local changes are complete.
+
+## This Repository
+
+- The review bot here is `claude[bot]` (posted by `.github/workflows/claude-code-review.yml`).
+  `chatgpt-codex-connector[bot]` has never commented on this repository. The bundled helper
+  reads the login from `REPAIR_PR_REVIEW_AUTHOR` and defaults to `claude[bot]`; override the
+  environment variable only when working on a repository reviewed by a different bot.
+- That workflow posts **one summary comment** (its body starts with `## 리뷰 요약`) plus
+  inline review threads carrying `suggestion` blocks. Only the inline threads are review
+  threads; the summary comment is not one. Read the summary for context, but drive the work
+  from unresolved inline threads.
+- **Never put `Co-Authored-By` or any other AI attribution trailer in a commit message.**
+  The repository instructions forbid it, and that overrides any default harness behavior.
+- Derive validation commands from the touched workspace. Blog stack changes
+  (`apps/blog/**`, `packages/@blog/**`) run lint at `--max-warnings=0` and forbid inline
+  `eslint-disable` comments; `apps/typescript` and `apps/socket-server` have no lint script
+  at all. Do not impose blog-stack strictness on the experiment apps.
+
+## Relationship To `/pr-fix`
+
+Both skills answer PR review feedback, and they do not overlap:
+
+- **`/repair-pr` (this skill)** — one shot, then stop. It handles merge conflicts, `claude[bot]`
+  review threads, and CI failures in that order, commits each distinct problem separately,
+  pushes once, and resolves the threads it handled. Use it when a PR is red or conflicted and
+  you want it driven back to green in a single pass.
+- **`/pr-fix`** — the reviewed-PR loop. It fetches _every_ review comment with full pagination
+  (no `head -N` truncation), states the total count, triages by severity, and converges across
+  rounds. Use it when a PR has accumulated a large or multi-author comment set.
+
+When both would apply, prefer `/pr-fix` for breadth and `/repair-pr` for a single mechanical
+repair pass.
+
+## Workflow
+
+1. Resolve the PR context.
+   - Confirm the current directory belongs to a Git repository with a GitHub remote, `gh` and Node.js are installed, and `gh auth status` works.
+   - Read the applicable `AGENTS.md` and any equivalent repository-local instructions before changing code. Follow their scope rules, required documentation updates, validation commands, and commit conventions.
+   - If the user provided a PR number or URL, use it; otherwise use `gh pr view --json number,url,baseRefName,headRefName`.
+   - Before making repair commits, confirm the worktree is clean with `git status --short`. If it is dirty, stop and ask how to handle the pre-existing changes.
+   - If the user provided a PR number or URL, check out the PR branch with `gh pr checkout <pr>` before making commits. Otherwise, assert that the current branch matches the PR `headRefName`; if it does not, stop before changing files.
+   - Resolve the bundled helper relative to this `SKILL.md`, not relative to the target repository. Run `node "<skill-directory>/scripts/repair-pr.mjs" status --pr <pr>` to collect merge state, unresolved `claude[bot]` review threads, and failing checks.
+
+2. Resolve merge conflicts first.
+   - Treat `mergeStateStatus: DIRTY` or GitHub reporting conflicts as the conflict signal.
+   - Fetch the PR base branch and merge it into the PR branch; do not rebase.
+   - Identify the correct remote for the PR and merge its remote-tracking base ref. Do not assume the remote is named `origin`.
+   - Resolve conflicts using the code, tests, and applicable repository contracts. Do not choose `--ours` or `--theirs` blindly.
+   - Run focused verification for the resolved area, then `git add` the intended files and commit the merge or conflict repair before moving on.
+
+3. Apply bot review feedback.
+   - Consider only unresolved, non-outdated review threads with at least one comment authored by `claude[bot]`.
+   - Ignore approvals, resolved threads, outdated threads, duplicates, non-actionable notes, and review threads that do not include `claude[bot]` feedback.
+   - Evaluate each finding against the current diff, applicable contracts, implementation behavior, and tests. Do not assume the review is correct merely because the bot authored it.
+   - Handle each distinct actionable finding independently. Do not combine findings merely because they affect the same behavior or file. If multiple threads are duplicate reports of the same root cause, treat them as one problem.
+   - Implement the smallest correct fix for one problem, including any documentation or repository-instruction update required by that fix or its public-contract change.
+   - Run focused tests for that problem, then commit it before starting the next problem. One commit may handle multiple review threads only when they are duplicate reports of the same root cause.
+   - When a finding is objectively incorrect, do not change correct code to appease it. Record the thread id and prepare a concise English reply for that same inline thread. Explain the review's incorrect assumption and cite concrete evidence such as the relevant behavior, invariant, or test; do not merely state that the finding is wrong.
+   - Record actionable fixed thread ids separately from incorrect thread ids. Do not resolve either kind until the final push succeeds, if a push is required.
+   - Treat uncertain or ambiguous findings as blockers, not as incorrect findings. Leave their threads unresolved and report what evidence or decision is missing. Also leave a thread unresolved when applying its suggestion would cause a regression but the review's premise cannot be conclusively disproved.
+
+4. Fix CI failures.
+   - Use `gh pr checks <pr> --json name,state,bucket,link,workflow` to identify failing checks.
+   - For GitHub Actions failures, inspect logs with `gh run view <run-id> --log` or job logs from `gh api` when needed.
+   - Treat external checks as report-only unless their logs are available through `gh`.
+   - Identify each independent root cause. Multiple failing checks caused by the same root cause are one problem; unrelated root causes are separate problems.
+   - Fix one root cause, run focused local verification, and commit that fix before starting the next root cause.
+
+5. Finish once.
+   - Run the validation required by the repository instructions plus the closest relevant checks for every touched area. Derive commands from the target project instead of assuming a language, package manager, or directory layout.
+   - Re-run the bundled helper's `status --pr <pr>` command once for a final summary.
+   - If any commits were created, push once with `git push` for the current branch after every repair commit is ready. Do not push intermediate commits. Because this workflow merges instead of rebasing, do not force-push.
+   - After the final push succeeds, or immediately when no push is needed, post each prepared incorrect-finding explanation to its original inline thread with the bundled helper's `reply-thread <thread-id> --body <english-explanation>` command. Use `--body-file <path>` instead of `--body` when the explanation contains multiline or shell-sensitive text.
+   - Resolve an incorrect-finding thread with `resolve-thread <thread-id>` only after its inline reply succeeds. If the reply fails, leave the thread unresolved and report the failure.
+   - Resolve each actionable fixed thread with `resolve-thread <thread-id>` after the final push succeeds, or immediately when no push is needed. Do not resolve ambiguous, blocked, or otherwise unhandled threads.
+   - Do not start a monitoring loop or keep polling checks after the final status check.
+
+## Helper
+
+Resolve `<skill-directory>` as the directory containing this `SKILL.md`. The target repository does not need its own copy of the helper.
+
+```bash
+node "<skill-directory>/scripts/repair-pr.mjs" status
+node "<skill-directory>/scripts/repair-pr.mjs" status --pr 123 --json
+node "<skill-directory>/scripts/repair-pr.mjs" reply-thread PRRT_kwDO... --body "The review assumes ..., but ..."
+node "<skill-directory>/scripts/repair-pr.mjs" reply-thread PRRT_kwDO... --body-file /path/to/reply.md
+node "<skill-directory>/scripts/repair-pr.mjs" resolve-thread PRRT_kwDO...
+```
+
+The helper is an inventory and review-thread mutation aid. It does not implement code fixes, stage changes, commit, push, or decide whether a review comment is correct.
+
+## Commit And Push Rules
+
+- Create one commit for the merge-conflict repair and one separate commit for every distinct actionable review problem and independent CI root cause that changes files.
+- Never combine independent problems in one commit. Duplicate reports of the same root cause are one problem and may share one commit.
+- Stage only files that belong to the current problem.
+- Push exactly once at the end if at least one commit was created.
+- If no local changes were needed, do not create an empty commit and do not push.

@@ -45,6 +45,7 @@ const DOCS = [
   '.claude/skills/blog-diagrams/SKILL.md',
   '.claude/skills/blog-components/SKILL.md',
   '.claude/skills/blog-design-system/SKILL.md',
+  '.claude/skills/repair-pr/SKILL.md',
   'packages/@blog/content/README.md',
 ] as const;
 
@@ -125,6 +126,8 @@ const NOT_CHECKED: Readonly<Record<string, string>> = {
     '지워진 가드. 패키지 README가 "진입점이 하나가 되면서 사라졌다"고 과거를 기록한다',
   'github-style-reference.md':
     '채택되지 않은 GitHub 스타일 안의 레퍼런스. 지웠고, 결정 기록이 왜 지웠는지를 남긴다',
+  'SKILL.md':
+    '스킬 문서의 자기 참조("this SKILL.md가 있는 디렉터리"). 특정 파일을 가리키는 주장이 아니다',
   'apps/blog/web/src/components/diagram/MyDiagram.tsx':
     'blog-diagrams 스킬의 예제 — "이 파일을 만든다"는 지시문이지 실재 파일이 아니다',
   'UserCard.tsx': 'AGENTS.md의 명명 규칙 예시',
