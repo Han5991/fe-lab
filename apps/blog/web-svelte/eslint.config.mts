@@ -82,6 +82,21 @@ export default tseslint.config(
     rules: { 'svelte/no-at-html-tags': 'off' },
   },
   {
+    // Giscus는 **자기 자신을 iframe으로 갈아치우는 서드파티 스크립트**다.
+    //
+    // 붙이는 방법이 `<script src=giscus.app/client.js data-*>` 태그 하나뿐이고,
+    // 그 스크립트가 자기 부모 안에 iframe을 만들어 넣는다. Svelte 템플릿으로는
+    // 표현할 수 없다 — `{@html}`로 넣은 script는 실행되지 않는다.
+    //
+    // 룰이 막으려는 것은 **Svelte가 관리하는 자식**과 실제 DOM이 어긋나는
+    // 것이다. 여기 호스트 div는 템플릿에 자식이 하나도 없어서 Svelte가 그 안을
+    // 건드릴 일이 없고, 정리는 컴포넌트가 사라질 때 div째 없어지는 것으로
+    // 끝난다. React 판은 `@giscus/react`가 같은 일을 대신해 줘서 이 자리가
+    // 보이지 않을 뿐, 하는 일은 똑같다.
+    files: ['src/lib/client/Comments.svelte'],
+    rules: { 'svelte/no-dom-manipulating': 'off' },
+  },
+  {
     files: ['**/*.svelte', '**/*.svelte.ts'],
     languageOptions: {
       parserOptions: {
