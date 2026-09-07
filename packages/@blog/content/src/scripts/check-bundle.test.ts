@@ -15,11 +15,25 @@ import type {
 } from '../shared/contentConfig.ts';
 import type { ContentContext } from './context.ts';
 
-/** 청크 stem은 실제 산출물처럼 해시 모양으로 — 우연한 부분 일치가 없어야 한다. */
+/**
+ * 청크 stem은 실제 산출물처럼 해시 모양으로 — 우연한 부분 일치가 없어야 한다.
+ *
+ * 참조와 `sources` 키는 **사이트 절대 경로**다. 예전엔 basename이었는데, 청크
+ * 디렉터리를 프레임워크마다 다르게 두므로(`_next/static/chunks` vs
+ * `_app/immutable/chunks`) 경로 관례를 지우고 전체 경로를 키로 삼았다.
+ */
+const chunkPath = (name: string) => `/_next/static/chunks/${name}`;
+
 const page = (...chunks: string[]) =>
   `<!doctype html><html><head>${chunks
-    .map(c => `<script src="/_next/static/chunks/${c}" async></script>`)
+    .map(c => `<script src="${chunkPath(c)}" async></script>`)
     .join('')}</head><body></body></html>`;
+
+/** basename 목록을 경로 키 Map으로 — 픽스처를 읽기 쉽게 둔다. */
+const chunkSources = (entries: Record<string, string>) =>
+  new Map(
+    Object.entries(entries).map(([name, body]) => [chunkPath(name), body]),
+  );
 
 const inputs = (over: Partial<ScopeInputs>): ScopeInputs => ({
   pages: new Map(),
@@ -71,18 +85,39 @@ test('main: bundleGuards 미선언이면 fs를 만지기 전에 스킵을 알리
 // ── collectChunkRefs ─────────────────────────────────────────────────────────
 
 test('collectChunkRefs: script·preload를 가리지 않고 청크 경로를 중복 없이 뽑는다', () => {
-  const html = `<link rel="preload" href="/_next/static/chunks/aaa111.js"/>
-    <script src="/_next/static/chunks/bbb222.js"></script>
-    <script src="/_next/static/chunks/aaa111.js"></script>`;
+  const html = `<link rel="preload" href="${chunkPath('aaa111.js')}"/>
+    <script src="${chunkPath('bbb222.js')}"></script>
+    <script src="${chunkPath('aaa111.js')}"></script>`;
   expect(collectChunkRefs(html).sort()).toStrictEqual([
-    'aaa111.js',
-    'bbb222.js',
+    chunkPath('aaa111.js'),
+    chunkPath('bbb222.js'),
   ]);
 });
 
-test('collectChunkRefs: 청크 밖 JS(/_next/static/media 등)는 무시한다', () => {
-  const html = `<script src="/_next/static/media/font.js"></script>`;
-  expect(collectChunkRefs(html)).toStrictEqual([]);
+test('collectChunkRefs: 디렉터리로 청크를 가리지 않는다 — 문서가 부른 JS는 전부 센다', () => {
+  // 예전에는 `/_next/static/chunks/` 아래만 청크로 쳤다. 그 관례는 Next.js의
+  // 것이고 다른 번들러는 다른 곳에 쏟는다(`_app/immutable/chunks`). 경로로
+  // 거르면 그쪽 산출물에서 **하나도 못 찾는다** — "누수 0건"이 아니라 검사
+  // 무력화다. 문서가 부른 JS는 어디 있든 브라우저가 실행한다.
+  const html = `<script src="/_next/static/media/font.js"></script>
+    <script src="/other/place/thing.js"></script>`;
+  expect(collectChunkRefs(html).sort()).toStrictEqual([
+    '/_next/static/media/font.js',
+    '/other/place/thing.js',
+  ]);
+});
+
+test('collectChunkRefs: 페이지 기준 상대 참조도 절대 경로로 푼다', () => {
+  // SvelteKit 기본 산출물의 모양이다.
+  const html = `<link rel="modulepreload" href="./_app/immutable/chunks/abc.js"/>`;
+  expect(collectChunkRefs(html, '/posts/foo/')).toStrictEqual([
+    '/posts/foo/_app/immutable/chunks/abc.js',
+  ]);
+});
+
+test('collectChunkRefs: CSS는 청크가 아니다', () => {
+  const html = `<link rel="stylesheet" href="/a.css"/><script src="/b.js"></script>`;
+  expect(collectChunkRefs(html)).toStrictEqual(['/b.js']);
 });
 
 // ── chunkClosure ─────────────────────────────────────────────────────────────
@@ -90,21 +125,21 @@ test('collectChunkRefs: 청크 밖 JS(/_next/static/media 등)는 무시한다',
 test('chunkClosure: 청크 본문이 stem으로 여는 청크까지 전이로 포함한다', () => {
   // 실제 산출물의 형태다 — async 청크는 HTML이 아니라 다른 청크가 파일명
   // 문자열로 연다(공개 그래프의 SVG 유틸 청크가 그랬다).
-  const sources = new Map([
-    ['aaa111.js', 'loadChunk("bbb222")'],
-    ['bbb222.js', 'leaf'],
-    ['ccc333.js', 'unreachable'],
-  ]);
-  expect(chunkClosure(['aaa111.js'], sources)).toStrictEqual(
-    new Set(['aaa111.js', 'bbb222.js']),
+  const sources = chunkSources({
+    'aaa111.js': 'loadChunk("bbb222")',
+    'bbb222.js': 'leaf',
+    'ccc333.js': 'unreachable',
+  });
+  expect(chunkClosure([chunkPath('aaa111.js')], sources)).toStrictEqual(
+    new Set([chunkPath('aaa111.js'), chunkPath('bbb222.js')]),
   );
 });
 
 test('chunkClosure: 존재하지 않는 청크 참조는 무시한다', () => {
-  const sources = new Map([['aaa111.js', 'x']]);
-  expect(chunkClosure(['aaa111.js', 'ghost.js'], sources)).toStrictEqual(
-    new Set(['aaa111.js']),
-  );
+  const sources = chunkSources({ 'aaa111.js': 'x' });
+  expect(
+    chunkClosure([chunkPath('aaa111.js'), chunkPath('ghost.js')], sources),
+  ).toStrictEqual(new Set([chunkPath('aaa111.js')]));
 });
 
 // ── selectPages ──────────────────────────────────────────────────────────────
@@ -134,19 +169,19 @@ test('findMarkerIn(chunks): 셀렉터 페이지의 도달 폐포에서 마커 �
       ['/', page('pub111.js')],
       ['/admin/', page('adm111.js')],
     ]),
-    sources: new Map([
-      ['pub111.js', 'loadChunk("lazy99")'],
-      ['lazy99.js', 'MARK'],
-      ['adm111.js', 'MARK'],
-    ]),
+    sources: chunkSources({
+      'pub111.js': 'loadChunk("lazy99")',
+      'lazy99.js': 'MARK',
+      'adm111.js': 'MARK',
+    }),
   });
   // 전이 청크(lazy99)가 잡히는 것이 요점 — HTML만 보면 놓치는 자리.
   expect(
     findMarkerIn({ kind: 'chunks', of: { notUnder: '/admin/' } }, 'MARK', io),
-  ).toStrictEqual(['lazy99.js']);
+  ).toStrictEqual([chunkPath('lazy99.js')]);
   expect(
     findMarkerIn({ kind: 'chunks', of: { under: '/admin/' } }, 'MARK', io),
-  ).toStrictEqual(['adm111.js']);
+  ).toStrictEqual([chunkPath('adm111.js')]);
 });
 
 test('findMarkerIn(artifact): 없는 파일(null)은 "없다"로 수렴한다', () => {
@@ -164,10 +199,10 @@ test('마커가 요구 스코프에만 있으면 통과한다', () => {
       ['/', page('pub111.js')],
       ['/admin/', page('adm111.js')],
     ]),
-    sources: new Map([
-      ['pub111.js', 'clean'],
-      ['adm111.js', 'GoTrueClient'],
-    ]),
+    sources: chunkSources({
+      'pub111.js': 'clean',
+      'adm111.js': 'GoTrueClient',
+    }),
   });
   expect(checkRules([ADMIN_RULE], io)).toStrictEqual([]);
 });
@@ -178,7 +213,7 @@ test('금지 스코프의 마커는 leak — 공유 청크도 금지 스코프�
       ['/', page('shared1.js')],
       ['/admin/', page('shared1.js')],
     ]),
-    sources: new Map([['shared1.js', 'GoTrueClient']]),
+    sources: chunkSources({ 'shared1.js': 'GoTrueClient' }),
   });
   const rules = checkRules([ADMIN_RULE], io).map(v => v.rule);
   expect(rules).toStrictEqual(['leak']);
@@ -190,10 +225,10 @@ test('요구 스코프에 마커가 없으면 marker-dead — 검사 무력화�
       ['/', page('pub111.js')],
       ['/admin/', page('adm111.js')],
     ]),
-    sources: new Map([
-      ['pub111.js', 'clean'],
-      ['adm111.js', 'clean'],
-    ]),
+    sources: chunkSources({
+      'pub111.js': 'clean',
+      'adm111.js': 'clean',
+    }),
   });
   expect(checkRules([ADMIN_RULE], io).map(v => v.rule)).toStrictEqual([
     'marker-dead',
@@ -203,14 +238,14 @@ test('요구 스코프에 마커가 없으면 marker-dead — 검사 무력화�
 test('서버 전용 모양의 규칙 — 청크·페이지 금지에 산출물 앵커', () => {
   const clean = inputs({
     pages: new Map([['/', page('pub111.js')]]),
-    sources: new Map([['pub111.js', 'clean']]),
+    sources: chunkSources({ 'pub111.js': 'clean' }),
     artifacts: new Map([['llms.txt', 'llms-only prose']]),
   });
   expect(checkRules([SERVER_RULE], clean)).toStrictEqual([]);
 
   const leaked = inputs({
     pages: new Map([['/', page('pub111.js')]]),
-    sources: new Map([['pub111.js', 'x llms-only prose y']]),
+    sources: chunkSources({ 'pub111.js': 'x llms-only prose y' }),
     artifacts: new Map([['llms.txt', 'llms-only prose']]),
   });
   expect(checkRules([SERVER_RULE], leaked).map(v => v.rule)).toStrictEqual([
@@ -219,7 +254,7 @@ test('서버 전용 모양의 규칙 — 청크·페이지 금지에 산출물 �
 
   const stale = inputs({
     pages: new Map([['/', page('pub111.js')]]),
-    sources: new Map([['pub111.js', 'clean']]),
+    sources: chunkSources({ 'pub111.js': 'clean' }),
     artifacts: new Map([['llms.txt', '문구가 바뀌었다']]),
   });
   expect(checkRules([SERVER_RULE], stale).map(v => v.rule)).toStrictEqual([
@@ -233,10 +268,10 @@ test('규칙은 독립이다 — 한 규칙의 leak과 다른 규칙의 marker-d
       ['/', page('pub111.js')],
       ['/admin/', page('adm111.js')],
     ]),
-    sources: new Map([
-      ['pub111.js', 'x llms-only prose y'],
-      ['adm111.js', 'GoTrueClient'],
-    ]),
+    sources: chunkSources({
+      'pub111.js': 'x llms-only prose y',
+      'adm111.js': 'GoTrueClient',
+    }),
     artifacts: new Map([['llms.txt', 'llms-only prose']]),
   });
   const rules: BundleGuardsConfig = [ADMIN_RULE, SERVER_RULE];

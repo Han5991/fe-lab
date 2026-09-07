@@ -7,6 +7,7 @@ import type {
 } from '../shared/contentConfig.ts';
 import type { ContentContext } from './context.ts';
 import { collectPages } from './check-seo.ts';
+import { collectAssetRefs } from './assetRefs.ts';
 
 /**
  * 빌드 산출물(`out/`)에서 **있어선 안 되는 곳에 실린 코드·값**을 검사합니다.
@@ -28,6 +29,11 @@ import { collectPages } from './check-seo.ts';
  * 도달 청크는 HTML의 script 참조에서 출발해 **폐포**로 구합니다 — 청크가 다른
  * 청크를 파일명 문자열로 여는 지연 로드가 실재해서(HTML만 보면 놓친다),
  * 포함된 청크 본문에 이름이 등장하는 청크를 반복해서 더합니다.
+ *
+ * 참조 수집도 청크 목록도 **경로 관례를 가정하지 않습니다**(`assetRefs.ts`,
+ * `readChunkSources`). 예전에는 `_next/static/chunks/`를 박아 두어 Next.js
+ * 산출물에서만 돌았고, 다른 프레임워크에서는 "누수 0건"이 아니라 검사가
+ * 무력화된 상태가 됩니다.
  *
  * 사용: `pnpm build`의 마지막 단계 — `blog-content check-bundle`
  */
@@ -51,21 +57,19 @@ export interface ScopeInputs {
 }
 
 /**
- * HTML이 직접 참조하는 청크 파일명(basename) 목록.
+ * HTML이 직접 참조하는 JS 경로 — 사이트 루트 기준 절대 경로.
  *
- * script src·preload href 등 태그 종류를 가리지 않고 경로 패턴으로 뽑는다 —
- * 어떤 태그로 실렸든 브라우저가 로드하는 것은 같다.
+ * **경로 관례를 가정하지 않는다.** 예전에는 `/_next/static/chunks/`를 정규식에
+ * 박아 두었다. Next.js 산출물 전용이라 다른 프레임워크의 `out/`에서는 청크를
+ * 하나도 못 찾고, 그러면 "누수 0건"이 아니라 **검사가 무력화된 것**이다.
+ * 양성 대조(marker-dead)가 전 규칙에서 실패하며 알려 주긴 하지만 원인을 말해
+ * 주지는 않는다.
+ *
+ * 수집은 `measure-bundle`과 같은 모듈이 한다(`assetRefs.ts`) — 둘이 각자
+ * 긁으면 "무엇이 첫 로드에 오는가"의 답이 갈린다.
  */
-export function collectChunkRefs(html: string): string[] {
-  const refs = new Set<string>();
-  for (const m of html.matchAll(
-    /\/_next\/static\/chunks\/([A-Za-z0-9._-]+\.js)/g,
-  )) {
-    // 패턴의 1번 캡처 그룹은 매치에 항상 참여한다.
-    const name = m[1];
-    if (name !== undefined) refs.add(name);
-  }
-  return [...refs];
+export function collectChunkRefs(html: string, pagePath = '/'): string[] {
+  return collectAssetRefs(html, pagePath).filter(ref => ref.endsWith('.js'));
 }
 
 /**
@@ -89,8 +93,10 @@ export function chunkClosure(
     if (body === undefined) continue;
     for (const [candidate] of sources) {
       if (included.has(candidate)) continue;
-      const stem = candidate.replace(/\.js$/, '');
-      if (body.includes(stem)) queue.push(candidate);
+      // stem은 **파일명**에서 뽑는다 — 키가 경로가 되면서 디렉터리까지 넣으면
+      // 지연 로드가 문자열로 드는 이름과 안 맞는다(번들러는 파일명만 적는다).
+      const stem = candidate.slice(candidate.lastIndexOf('/') + 1, -3);
+      if (stem.length > 0 && body.includes(stem)) queue.push(candidate);
     }
   }
   return included;
@@ -144,8 +150,8 @@ export function findMarkerIn(
   switch (scope.kind) {
     case 'chunks': {
       const refs = new Set<string>();
-      for (const [, html] of selectPages(inputs.pages, scope.of)) {
-        for (const ref of collectChunkRefs(html)) refs.add(ref);
+      for (const [path, html] of selectPages(inputs.pages, scope.of)) {
+        for (const ref of collectChunkRefs(html, path)) refs.add(ref);
       }
       const locations: string[] = [];
       for (const name of chunkClosure(refs, inputs.sources)) {
@@ -198,20 +204,28 @@ export function checkRules(
   return violations;
 }
 
-/** `_next/static/chunks/` 아래의 모든 .js — basename → 본문. */
+/**
+ * 산출물의 모든 `.js` — 사이트 절대 경로 → 본문.
+ *
+ * 청크 디렉터리를 알아서 찾지 않는다. 번들러마다 다르고(`_next/static/chunks`
+ * vs `_app/immutable/chunks`), 관례를 박아 두면 다른 프레임워크에서 조용히
+ * 빈손이 된다. 전부 읽고 **도달 여부로 거른다** — 어차피 페이지가 참조하지
+ * 않는 파일은 폐포에 들어오지 않는다.
+ *
+ * 키가 basename이 아니라 경로인 것도 같은 이유다. 디렉터리가 여럿이면
+ * 파일명이 겹칠 수 있고, 겹치면 한쪽이 조용히 덮인다.
+ */
 function readChunkSources(outDir: string): Map<string, string> {
-  const chunksDir = join(outDir, '_next', 'static', 'chunks');
   const sources = new Map<string, string>();
-  if (!existsSync(chunksDir)) return sources;
-  const walk = (dir: string) => {
+  const walk = (dir: string, prefix: string) => {
     for (const entry of readdirSync(dir, { withFileTypes: true })) {
       const full = join(dir, entry.name);
-      if (entry.isDirectory()) walk(full);
+      if (entry.isDirectory()) walk(full, `${prefix}/${entry.name}`);
       else if (entry.name.endsWith('.js'))
-        sources.set(entry.name, readFileSync(full, 'utf8'));
+        sources.set(`${prefix}/${entry.name}`, readFileSync(full, 'utf8'));
     }
   };
-  walk(chunksDir);
+  walk(outDir, '');
   return sources;
 }
 
