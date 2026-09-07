@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@blog/content": "workspace:^",
+    "@blog/site-values": "workspace:^",
     "@design-system/ui": "workspace:^",
     "pretendard": "catalog:"
   },

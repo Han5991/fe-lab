@@ -19,6 +19,8 @@ import {
   DIAGRAM_NAMES,
   META_FILENAMES,
   SITE,
+  SITEMAP_PRIORITY,
+  SITEMAP_STATIC_PAGES,
   TIMEZONE,
 } from './content.values.mts';
 
@@ -42,6 +44,7 @@ export default defineContent({
     thumbs: 'static/thumbs',
     og: 'static/og',
   },
+  sitemap: { ...SITEMAP_PRIORITY, staticPages: SITEMAP_STATIC_PAGES },
   og: {
     // 팔레트는 값이 아니라 디자인 토큰에서 파생된다 — hex를 옮겨 적지 않는다.
     palette: {
