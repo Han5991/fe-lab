@@ -139,13 +139,20 @@ apps/blog/posts (원고)  →  packages/@blog/content  →  apps/blog/web
 - **앱 내부**: 레이어 전부가 `src/` 안의 형제 폴더다. `src/shared`(최하단 — 앱 소유 라우트
   경로 `routes.ts`·페이지 전환 네임스페이스 `transitions.ts`의 단일 출처. 모든 레이어가 import
   가능하고, 자신은 `@blog/content`만 연다) →
-  `src/lib/platform`(Supabase 어댑터, 외부 의존은 supabase-js·postgrest-js만) →
-  `src/domain/analytics`(순수 계산 + 저장소, 배럴 `index`·`admin` 둘)·`src/domain/auth`(세션·관리자
-  이메일 판정) → app 레이어(`src`의 나머지 — `app`·`components`·`hooks`·`styles`·`content.ts`.
+  `src/lib/platform`(Supabase 클라이언트 **생성** 둘 — env를 읽어 `client`·`publicDb`를 만든다.
+  외부 의존은 supabase-js·postgrest-js) →
+  `src/domain/analytics`(그 클라이언트를 `@blog/analytics`에 꽂는 **배선** 배럴 `index`·`admin`
+  둘)·`src/domain/auth`(세션 배럴 + 관리자 이메일 판정) → app 레이어(`src`의 나머지 — `app`·`components`·`hooks`·`styles`·`content.ts`.
   boundaries element는 첫 매치 우선이라 `src` 폴백으로 잡는다). app 레이어는 저장소를 직접
   찌르지 않고 배럴로 — **platform 자체를 import할 수 없다**(boundaries에서 app→platform 허용이
   없다. Supabase 접근은 전부 도메인 경유고, 예전 유일한 예외였던 auth 직접 호출은
   `src/domain/auth`가 흡수했다).
+  **계산·계약·저장소는 `@blog/analytics` 패키지에 있다** — 조회수·대시보드 도메인 2,560줄에
+  `react`·`next/` import가 0이라 프레임워크 중립이었고, 앱에 묶여 있던 것은 URL·키를
+  `process.env.NEXT_PUBLIC_*`에서 읽어 **클라이언트를 만드는 일** 하나였다. 그래서 저장소는
+  클라이언트를 주입받고(`createPublicAnalytics(db)`·`createAdminAnalytics(api)`), 앱 배럴 둘이
+  그 주입을 한다. app 레이어는 그 패키지를 직접 열 수 없다(platform과 같은 이유 — boundaries에
+  app→analytics-pkg 허용이 없다).
   **app 레이어는 node 코어를 못 만진다** — fs 접근은 전부 `@blog/content` 로더의 일(클라이언트
   번들 누수 예방). `@blog/content`는 앱에서 외부 패키지(`content-pkg`)로 보인다.
   라우트 경로 리터럴을 화면·설정에 직접 적지 말 것 — 앱 소유 경로(`/admin`·`/about`…)는
@@ -186,7 +193,8 @@ apps/blog/posts (원고)  →  packages/@blog/content  →  apps/blog/web
   supabase-js 전체를 끌면 Auth·Realtime·Storage·Functions 45KB gzip이 공개 페이지에 딸려오고
   그중 realtime+phoenix+storage 18.5KB는 어디서도 안 쓰는 죽은 코드였다),
   Admin은 `src/lib/platform/client.ts`(`@supabase/supabase-js`, auth 세션 + `functions.invoke`).
-  둘 다 Anon Key. `src/domain/analytics`의 배럴을 `index`·`admin`으로 나눈 이유가 이 분리다
+  둘 다 Anon Key. `src/domain/analytics`의 배럴을 `index`·`admin`으로 나눈 이유가 이 분리다 —
+  두 배럴이 하는 일은 이 클라이언트를 `@blog/analytics`의 저장소 팩토리에 꽂는 것뿐이다
 - **로컬 개발**: `supabase start/stop`으로 로컬 Supabase 인스턴스 실행 (Docker 기반, `pnpm dev`가 먼저 띄운다)
 - **마이그레이션**: `supabase/migrations/` 디렉토리에 SQL 파일로 스키마 관리. Edge Function은 `supabase/functions/admin-analytics`
 - **프로덕션 URL**: `.env.production`에 Supabase Cloud 프로젝트 URL/Key 설정
@@ -332,7 +340,7 @@ apps/blog/posts (원고)  →  packages/@blog/content  →  apps/blog/web
 
 #### 클라이언트 사이드 기능 (런타임)
 
-- **조회수 카운팅**: `useViewCount` 훅 → `@blog/content`의 `viewCookie`(6시간 쿨다운, RPC 전에 쿠키를 먼저 심어 두 탭 레이스 방지) → `src/domain/analytics` → `publicClient` RPC
+- **조회수 카운팅**: `useViewCount` 훅 → `@blog/content`의 `viewCookie`(6시간 쿨다운, RPC 전에 쿠키를 먼저 심어 두 탭 레이스 방지) → `src/domain/analytics` 배럴 → `@blog/analytics`의 저장소 → `publicClient` RPC
 - **댓글**: Giscus (GitHub Discussions 기반). `NEXT_PUBLIC_GISCUS_*` 4개가 모두 있을 때만 렌더
 - **Analytics 대시보드**: `/admin` 경로, React Query(`useSuspenseQuery`) + Recharts 차트. `AdminGuard`가 세션을 보고, 데이터는 Edge Function `admin-analytics` 경유
 - **검색**: `SearchDialog`가 열릴 때 빌드 산출물 `/search-index.json`을 fetch — 서버 없는 클라이언트 검색
@@ -401,6 +409,7 @@ apps/blog/posts (원고)  →  packages/@blog/content  →  apps/blog/web
 | `.github/workflows/deploy-blog.yml`          | CI/CD 배포 워크플로우 — `cloudflare/wrangler-action`으로 Workers에 올린다. PR CI(`ci.yml`)와 `.github/actions/quality-checks` composite action을 공유한다. `environment: github-pages`는 이름만 잔재다 — 지금 하는 일은 배포 브랜치 게이트뿐이고, 빌드가 읽는 `NEXT_PUBLIC_*`은 전부 커밋된 `.env.production`에서 온다                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | `.github/workflows/supabase-migrations.yml`  | 프로덕션 스키마 적용 — `apps/blog/web/supabase/migrations/**`(와 이 워크플로 자신)가 바뀐 `main` push와 수동 실행에서만 돈다. `supabase migration list`로 원장↔파일 차이를 로그에 남긴 뒤 `db push`한다. `deploy-blog.yml`과 분리한 이유는 그쪽이 매일 cron으로도 돌기 때문이다 — 스키마 변경이 없는 날에도 프로덕션 DB에 접속하게 되고, 콘텐츠 발행과 스키마 변경이 한 실패 지점에 묶인다. 적용 경로를 사람 손(대시보드 SQL 에디터)에서 여기 하나로 고정한 것이 존재 이유다                                                                                                                                                                                                                                                                                                                             |
 | `apps/blog/posts/{series}/_series.yml`       | 시리즈 선언 — 이 파일이 있어야 시리즈. 표시명·설명·order 메타도 여기                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `packages/@blog/analytics`                   | 조회수·대시보드 도메인 패키지 — 순수 계산(개요·파생 통계)·계약(`AdminApi`·`AuthApi`)·저장소 팩토리·`database.types.ts`(`gen:types` 산출물)·Edge Function과 공유하는 `adminActions.ts`. **클라이언트를 만들지 않는다**(주입받는다) — `@supabase/*`는 타입으로만 쓰고, 값으로 여는 것은 `@blog/content/dates` 하나다. 앱은 `src/domain/{analytics,auth}` 배럴로만 연다                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | `packages/@blog/content`                     | 콘텐츠 프레임워크 패키지 — 스키마·로더·공개 판정·URL 계약·빌드 스크립트·2층 검증. 문 셋(`@blog/content` + `@blog/content/seo` + 클라이언트용 `@blog/content/urls`) + `bin`의 `blog-content`, 소스 익스포트(빌드 스텝 없음). 내부는 `packages/@blog/content/README.md`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `…content/src/scripts/build-content.ts`      | predev:web/prebuild 통합 진입점 (validate → sync/sitemap/rss/og-images/thumbnails/search/llms-full/llms 병렬) — 앱 package.json은 `blog-content build`로 부른다                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | `…content/src/scripts/cli/`                  | `bin`의 진입점. `index.ts`가 실행, `program.ts`가 commander로 서브커맨드·옵션을 정의하고 단계 모듈을 동적 import한다. 단계나 플래그를 더할 때 고칠 곳                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
