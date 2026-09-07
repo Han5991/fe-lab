@@ -238,7 +238,27 @@ export type PageSelector = { under: string } | { notUnder: string };
  * 소비자의 말이라 여기 없다 — 그 이름은 규칙의 `label`로 소비자가 붙인다.
  */
 export type MarkerScope =
+  /**
+   * 페이지가 **도달할 수 있는** 청크 — 직접 참조 + 지연 로드 폐포.
+   *
+   * **번들러에 따라 뜻이 크게 달라진다.** Next.js 산출물에서는 홈의 폐포가
+   * 116개 중 13개로 좁지만, SvelteKit에서는 클라이언트 라우터가 모든 라우트
+   * 청크 이름을 매니페스트로 싣기 때문에 **어느 페이지에서든 폐포가 앱
+   * 전체**가 된다(115/115). 즉 "이 코드가 저 페이지에 도달하는가"를 묻는
+   * 이 스코프는 SvelteKit에서 언제나 참이다.
+   *
+   * 지연 로드까지 포함해 "언젠가 받을 수 있는가"를 물어야 할 때만 쓸 것.
+   * "첫 로드에 오는가"를 묻고 싶다면 `initial`이다.
+   */
   | { kind: 'chunks'; of?: PageSelector }
+  /**
+   * 문서가 **직접 참조하는** JS — 지연 로드는 세지 않는다.
+   *
+   * 브라우저가 첫 로드에 받는 것이 정확히 이것이고, 그 정의는 번들러와
+   * 무관하다. `chunks`가 SvelteKit에서 앱 전체로 번지는 것을 보고 추가했다 —
+   * 누수 규칙이 실제로 묻고 싶은 것은 대개 이쪽이다.
+   */
+  | { kind: 'initial'; of?: PageSelector }
   | { kind: 'pages'; of?: PageSelector }
   | { kind: 'artifact'; path: string };
 
