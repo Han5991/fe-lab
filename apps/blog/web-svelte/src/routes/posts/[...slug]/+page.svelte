@@ -6,6 +6,7 @@
   import Comments from '$lib/client/Comments.svelte';
   import ImageZoom from '$lib/client/ImageZoom.svelte';
   import Mermaid from '$lib/client/Mermaid.svelte';
+  import RecordRecentView from '$lib/client/RecordRecentView.svelte';
 
   const { data }: PageProps = $props();
 
@@ -70,3 +71,4 @@
 <!-- 점진적 향상 — 서버는 아무 일도 하지 않고, 필요할 때만 청크를 받는다. -->
 <Mermaid />
 <ImageZoom />
+<RecordRecentView slug={data.post.slug} title={data.post.title} />

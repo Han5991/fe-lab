@@ -12,8 +12,13 @@ import { ABOUT_PATH, SERIES_PATH } from '$lib/shared/routes';
  * `optimizePackageImports: ['@blog/content']`로 이 누수를 막는데, 그건 Next
  * 전용 최적화라 여기에는 없다.
  *
- * 그래서 URL 계약(`postPath`·`POSTS_PATH`)은 **전부 서버에서 풀어** 문자열로
+ * 그래서 URL 계약(`postPath`·`POSTS_PATH`)은 **서버에서 풀어** 문자열로
  * 내려보낸다. 화면은 완성된 href만 받는다.
+ *
+ * 서버가 미리 풀 수 없는 자리가 하나 있다 — 검색 다이얼로그는 목록을
+ * 브라우저에서 `/search-index.json`으로 받으므로 href도 거기서 만들어야 한다.
+ * 그 자리를 위해 패키지가 URL 계약만 내놓는 문을 따로 냈다
+ * (`@blog/content/urls`, `post/urls.ts` 주석). 계약을 베껴 적는 대신 문을 쓴다.
  */
 export const load = () => ({
   site: { name: SITE_NAME, url: SITE_URL, ogDefaultImage: OG_DEFAULT_IMAGE },

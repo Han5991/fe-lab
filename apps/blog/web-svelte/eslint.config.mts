@@ -60,10 +60,9 @@ export default tseslint.config(
       // href를 `resolve()`로 감싸라는 룰을 끈다.
       //
       // 이 앱의 내부 href는 **라우트 ID가 아니라 콘텐츠 URL 계약**에서 온다 —
-      // `postPath(slug)`가 만든 문자열을 서버가 계산해 내려보낸다(그렇게 하는
-      // 이유는 `+layout.server.ts` 주석에 있다: 화면이 `@blog/content`를 직접
-      // import하면 node:fs가 클라이언트 그래프에 들어간다). `resolve()`는 그런
-      // 런타임 문자열에 걸 수 없고, base path도 비어 있어 얻을 것이 없다.
+      // `postPath(slug)`가 만든 문자열이고, 대개 서버가 계산해 내려보낸다
+      // (그 이유는 `+layout.server.ts` 주석에 있다). `resolve()`는 그런 런타임
+      // 문자열에 걸 수 없고, base path도 비어 있어 얻을 것이 없다.
       'svelte/no-navigation-without-resolve': 'off',
     },
   },
