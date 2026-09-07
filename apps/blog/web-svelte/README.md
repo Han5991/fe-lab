@@ -10,14 +10,46 @@
 - SvelteKit + `adapter-static` 정적 export (`build/`) — **49 페이지**
 - 공개 라우트 5개: `/` · `/posts/` · `/posts/[...slug]/` · `/series/` · `/about/` · `/privacy/`
 - 마크다운 렌더 — remark/rehype를 **빌드 타임에** 돌려 HTML 문자열까지 서버에서 만든다
+- 커스텀 태그 9종 — `callout`·`file-tree`·`figure`·`dialogue`/`msg`·
+  `metrics`/`metric`·`timeline`/`step`. HAST를 다시 쓰는 방식이라 **클라이언트 JS 0**
+- Vitest(node) — 변환 계층 계약 테스트 21개
 - Panda CSS — React 판과 **같은 프리셋**(`@design-system/ui/blog-preset`), `strictTokens`
 - 사이트 값은 `@blog/site-values` (React 판과 공유)
 - ESLint — `--max-warnings=0`, 인라인 `eslint-disable` 금지, 타입 정보 룰
 - **`check-seo`가 `pnpm build` 안의 게이트다** — React 판과 같은 자리
 
-아직 없는 것: 커스텀 태그 15종(지금은 알 수 없는 요소로 통과), Mermaid·구문
-강조·이미지 줌, 런타임 기능(조회수·댓글·검색·테마·전환), Admin, `check-bundle`
-규칙 선언, 배포 배선.
+아직 없는 것: `code-tabs`(상호작용)·`diagram` 계열 3종(배치 계산) — 지우지 않고
+통과시키므로 내용은 보이되 스타일이 없다. 그리고 코드 블록 테마·Mermaid·이미지
+줌, 런타임 기능(조회수·댓글·검색·테마·전환), Admin, `check-bundle` 규칙 선언,
+배포 배선.
+
+### 커스텀 태그는 왜 Svelte 컴포넌트가 아닌가
+
+React 판은 `react-markdown`의 컴포넌트 맵(`callout: Callout`)으로 태그를
+컴포넌트에 잇는다. Svelte에서 같은 구조를 만들려면 HAST 트리를 `load` 데이터로
+화면에 넘겨야 하는데, **SvelteKit은 `load` 데이터를 하이드레이션용으로 HTML에
+직렬화한다** — 트리를 문서에 한 번 더 싣게 되고, 지금 재고 있는 HTML 크기가
+부풀어 오른다.
+
+이 9종은 전부 프레젠테이션이다(상태도 이벤트도 없다). 빌드 타임에 클래스가
+붙은 마크업으로 구우면 클라이언트 JS가 0이고 문서에는 결과만 남는다.
+상호작용이 필요한 `code-tabs`는 이 방식으로 안 되므로 따로 다룬다.
+
+### 원고가 실제로 쓰는 태그
+
+70편 전수 조사 결과다. 이식 우선순위와 **검증 가능성**이 여기서 갈린다.
+
+| 태그                                                                        |  사용 |
+| :-------------------------------------------------------------------------- | ----: |
+| `diagram-node`                                                              |    11 |
+| `diagram-edge`                                                              |     5 |
+| `diagram` · `file-tree`                                                     |     3 |
+| `figure`                                                                    |     2 |
+| `callout`·`code-tabs`·`dialogue`·`msg`·`metrics`·`metric`·`timeline`·`step` | **0** |
+
+8종은 한 번도 쓰인 적이 없어 **실제 글로는 검증할 수 없다.** 그래서 계약을
+픽스처 테스트로 잠갔다 — 누가 처음 쓰는 날 그때 처음 깨지는 것이 아니라,
+여기서 먼저 깨져야 한다.
 
 ## 옮기며 드러난 프레임워크 차이
 
