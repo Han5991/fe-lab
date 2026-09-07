@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  // 자립형 tsconfig — `@blog/content`와 같은 엄격 수준을 유지한다. 이 소스가
+  // 두 앱의 program에 그대로 섞이므로 검사가 어긋나면 한쪽에서만 잡힌다.
+  "compilerOptions": {
+    "target": "ESNext",
+    // 타입 import 하나가 @blog/content의 소스 그래프를 통째로 program에 끌어온다
+    // (node:fs·console). 그 패키지와 같은 lib을 준다 — 여기서만 좁히면
+    // "이 패키지는 순수 리터럴인데 왜 dom이 필요한가"가 아니라 그냥 못 돈다.
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "skipLibCheck": true,
+    "allowJs": true,
+    // 자동 @types 포함은 이 tsconfig의 디렉터리 기준으로 도는데, program에 섞여
+    // 들어온 `@blog/content` 소스는 node 빌트인을 쓴다. 명시하지 않으면
+    // "Cannot find name 'node:fs'"가 그 파일들에서 난다.
+    "types": ["node"],
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitOverride": true,
+    "verbatimModuleSyntax": true,
+    // 값 모듈은 node의 type stripping만으로 실행돼야 한다 —
+    // `content.config.mts`를 blog-content CLI가 plain node로 로드한다.
+    "erasableSyntaxOnly": true,
+    "noUncheckedIndexedAccess": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "exactOptionalPropertyTypes": true,
+    "noEmit": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "isolatedModules": true
+  },
+  "include": ["src/**/*.ts"]
+}
