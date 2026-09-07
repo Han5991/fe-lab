@@ -18,12 +18,13 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "new-post": "blog-content new-post",
-    "gen:types": "mkdir -p .cache && supabase gen types --lang typescript --local --schema public > .cache/database.types.ts && mv .cache/database.types.ts src/lib/platform/database.types.ts && prettier --write src/lib/platform/database.types.ts",
+    "gen:types": "mkdir -p .cache && supabase gen types --lang typescript --local --schema public > .cache/database.types.ts && mv .cache/database.types.ts ../../../packages/@blog/analytics/src/database.types.ts && prettier --write ../../../packages/@blog/analytics/src/database.types.ts",
     "seed:pull": "./scripts/pull-prod-seed.sh",
     "supabase-stop": "supabase stop --all --no-backup --debug",
     "supabase-start": "pnpm supabase-stop && pnpm supabase start"
   },
   "dependencies": {
+    "@blog/analytics": "workspace:^",
     "@blog/content": "workspace:^",
     "@blog/diagram": "workspace:^",
     "@blog/site-values": "workspace:^",
@@ -32,7 +33,7 @@
     "@giscus/react": "^3.1.0",
     "@next/third-parties": "^16.3.4",
     "@ssgoi/react": "6.6.10",
-    "@supabase/postgrest-js": "^2.115.0",
+    "@supabase/postgrest-js": "catalog:",
     "@supabase/supabase-js": "^2.115.0",
     "@tanstack/react-query": "catalog:",
     "lucide-react": "^1.40.0",

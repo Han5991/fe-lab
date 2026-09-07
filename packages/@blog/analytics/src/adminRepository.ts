@@ -70,13 +70,19 @@ function isAdminPostIndexRow(row: unknown): row is AdminPostIndex {
   );
 }
 
-/** admin 화면이 쓰는 데이터 접근 묶음. */
+/**
+ * admin 화면이 쓰는 데이터 접근 묶음.
+ *
+ * 메서드가 아니라 **함수 프로퍼티**다 — 소비자(앱의 admin 배럴)가 떼어 쓰고,
+ * 구현은 `api`를 클로저로 든 화살표 함수라 수신자가 없다
+ * (`publicRepository.ts`의 같은 주석 참고).
+ */
 export interface AdminAnalytics {
-  getAllPostStats(): Promise<PostStatsRow[]>;
-  getAllPostsTrends(): Promise<PostTrendRow[]>;
-  getAdminPostsIndex(): Promise<AdminPostIndex[]>;
-  getPostHourlyDistribution(slug: string): Promise<HourlyDistribution[]>;
-  getPostDowDistribution(slug: string): Promise<DowDistribution[]>;
+  getAllPostStats: () => Promise<PostStatsRow[]>;
+  getAllPostsTrends: () => Promise<PostTrendRow[]>;
+  getAdminPostsIndex: () => Promise<AdminPostIndex[]>;
+  getPostHourlyDistribution: (slug: string) => Promise<HourlyDistribution[]>;
+  getPostDowDistribution: (slug: string) => Promise<DowDistribution[]>;
 }
 
 /**
@@ -98,19 +104,19 @@ export interface AdminAnalytics {
  */
 export function createAdminAnalytics(api: AdminApi): AdminAnalytics {
   return {
-    async getAllPostStats() {
+    getAllPostStats: async () => {
       // admin RPC — service_role 한정. Edge Function 경유.
       const data = await api.call('all_post_stats');
       // null이 오면 Number(null) === 0으로 굳어 소비처의 산술이 NaN으로 번지지 않는다.
       return data.map(s => ({ ...s, total_views: Number(s.total_views) }));
     },
 
-    async getAllPostsTrends() {
+    getAllPostsTrends: async () => {
       // PostgREST의 1000행 cap 페이징은 Edge Function 안에서 돈다(왕복 1회).
       return api.call('all_posts_trends');
     },
 
-    async getAdminPostsIndex() {
+    getAdminPostsIndex: async () => {
       // 서버 환경(프리렌더 포함)에서는 상대 URL fetch가 ERR_INVALID_URL이다.
       // 어차피 admin은 클라이언트에서만 유효하므로 서버에선 빈 배열로 대기한다.
       if (typeof window === 'undefined') return [];
@@ -127,11 +133,11 @@ export function createAdminAnalytics(api: AdminApi): AdminAnalytics {
       return Array.isArray(json) ? json.filter(isAdminPostIndexRow) : [];
     },
 
-    async getPostHourlyDistribution(slug: string) {
+    getPostHourlyDistribution: async (slug: string) => {
       return api.call('post_hourly_distribution', { slug });
     },
 
-    async getPostDowDistribution(slug: string) {
+    getPostDowDistribution: async (slug: string) => {
       return api.call('post_dow_distribution', { slug });
     },
   };

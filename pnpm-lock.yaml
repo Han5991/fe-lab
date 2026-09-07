@@ -110,6 +110,9 @@ catalogs:
     '@pandacss/dev':
       specifier: 1.12.0
       version: 1.12.0
+    '@supabase/postgrest-js':
+      specifier: ^2.115.0
+      version: 2.115.0
     '@tanstack/react-query':
       specifier: ^5.102.8
       version: 5.102.8
@@ -242,6 +245,9 @@ importers:
 
   apps/blog/web:
     dependencies:
+      '@blog/analytics':
+        specifier: workspace:^
+        version: link:../../../packages/@blog/analytics
       '@blog/content':
         specifier: workspace:^
         version: link:../../../packages/@blog/content
@@ -267,7 +273,7 @@ importers:
         specifier: 6.6.10
         version: 6.6.10(supports-color@10.2.2)
       '@supabase/postgrest-js':
-        specifier: ^2.115.0
+        specifier: 'catalog:'
         version: 2.115.0
       '@supabase/supabase-js':
         specifier: ^2.115.0
@@ -675,6 +681,42 @@ importers:
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
+      vitest:
+        specifier: 'catalog:'
+        version: 5.0.0(@types/node@24.13.3)(@vitest/coverage-v8@5.0.0)(jsdom@30.0.1(@noble/hashes@1.8.0))(msw@2.15.0(@types/node@24.13.3)(typescript@6.0.3))(vite@8.2.2(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0))
+
+  packages/@blog/analytics:
+    devDependencies:
+      '@blog/content':
+        specifier: workspace:^
+        version: link:../content
+      '@eslint-community/eslint-plugin-eslint-comments':
+        specifier: catalog:lint
+        version: 4.7.2(eslint@10.9.1(jiti@2.7.0)(supports-color@10.2.2))
+      '@eslint/js':
+        specifier: catalog:lint
+        version: 10.0.1(eslint@10.9.1(jiti@2.7.0)(supports-color@10.2.2))
+      '@supabase/postgrest-js':
+        specifier: 'catalog:'
+        version: 2.115.0
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.13.3
+      eslint:
+        specifier: catalog:lint
+        version: 10.9.1(jiti@2.7.0)(supports-color@10.2.2)
+      globals:
+        specifier: catalog:lint
+        version: 17.12.0
+      jiti:
+        specifier: catalog:lint
+        version: 2.7.0
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+      typescript-eslint:
+        specifier: catalog:lint
+        version: 8.69.0(eslint@10.9.1(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)(typescript@6.0.3)
       vitest:
         specifier: 'catalog:'
         version: 5.0.0(@types/node@24.13.3)(@vitest/coverage-v8@5.0.0)(jsdom@30.0.1(@noble/hashes@1.8.0))(msw@2.15.0(@types/node@24.13.3)(typescript@6.0.3))(vite@8.2.2(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0))

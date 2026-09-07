@@ -1,7 +1,8 @@
 /**
  * Auth domain의 공개 API — admin 화면(가드·로그인·로그아웃)이 쓴다.
  *
- * 실제 supabase 클라이언트 바인딩은 여기(배럴)서 한다 — repository.ts는
+ * 실제 supabase 클라이언트 바인딩은 여기(배럴)서 한다 — 저장소
+ * (`@blog/analytics`의 `AuthRepository`)는
  * 런타임 import가 없는 순수 클래스라 node 테스트가 가짜 클라이언트를 주입해
  * 열어 볼 수 있고, `lib/platform/client`의 모듈 최상위 createClient(env 없으면
  * throw)는 실제 소비자(admin 화면)가 이 배럴을 여는 순간에만 평가된다.
@@ -16,7 +17,7 @@
  * 단일 출처다.
  */
 import { client } from '../../lib/platform/client';
-import { AuthRepository, type AuthApi } from './repository';
+import { AuthRepository, type AuthApi } from '@blog/analytics';
 
 /**
  * 이 앱의 auth 저장소 — 모듈이 처음 열릴 때 만들어 두는 싱글톤이다.
@@ -37,4 +38,4 @@ export type {
   AuthApi,
   AuthFailure,
   AuthOAuthResult,
-} from './repository';
+} from '@blog/analytics';

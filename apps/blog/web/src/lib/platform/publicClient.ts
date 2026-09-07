@@ -1,5 +1,5 @@
 import { PostgrestClient } from '@supabase/postgrest-js';
-import type { Database } from './database.types';
+import type { Database } from '@blog/analytics';
 
 /**
  * 공개 페이지 전용 Supabase 데이터 클라이언트 (PostgREST만).

@@ -13,7 +13,7 @@ const NEVER_CALLED: AdminApi = {
     throw new Error('이 테스트는 Edge Function을 부르지 않는다');
   },
 };
-const { getAdminPostsIndex } = createAdminAnalytics(NEVER_CALLED);
+const repo = createAdminAnalytics(NEVER_CALLED);
 
 const VALID_ROW = {
   slug: 'a-post',
@@ -50,7 +50,7 @@ describe('getAdminPostsIndex', () => {
   test('정상 행은 그대로 통과한다', async () => {
     stubFetch([VALID_ROW]);
 
-    await expect(getAdminPostsIndex()).resolves.toEqual([VALID_ROW]);
+    await expect(repo.getAdminPostsIndex()).resolves.toEqual([VALID_ROW]);
   });
 
   test('모양이 어긋난 행만 걸러진다 — 페이지째 깨지는 대신', async () => {
@@ -63,19 +63,19 @@ describe('getAdminPostsIndex', () => {
       null,
     ]);
 
-    await expect(getAdminPostsIndex()).resolves.toEqual([VALID_ROW]);
+    await expect(repo.getAdminPostsIndex()).resolves.toEqual([VALID_ROW]);
   });
 
   test('비배열 응답이면 빈 배열 — 손으로 고쳐진 파일에도 화면은 산다', async () => {
     stubFetch({ broken: true });
 
-    await expect(getAdminPostsIndex()).resolves.toEqual([]);
+    await expect(repo.getAdminPostsIndex()).resolves.toEqual([]);
   });
 
   test('HTTP 실패는 상태를 담아 throw한다 (ErrorBoundary가 안내할 축)', async () => {
     stubFetch(null, false);
 
-    await expect(getAdminPostsIndex()).rejects.toThrow('500');
+    await expect(repo.getAdminPostsIndex()).rejects.toThrow('500');
   });
 
   test('서버 환경(window 없음)에서는 fetch 없이 빈 배열로 대기한다', async () => {
@@ -83,7 +83,7 @@ describe('getAdminPostsIndex', () => {
     const fetchMock = stubFetch([VALID_ROW]);
     vi.unstubAllGlobals(); // window 제거 — fetch stub도 함께 걷힌다
 
-    await expect(getAdminPostsIndex()).resolves.toEqual([]);
+    await expect(repo.getAdminPostsIndex()).resolves.toEqual([]);
     expect(fetchMock).not.toHaveBeenCalled();
   });
 });

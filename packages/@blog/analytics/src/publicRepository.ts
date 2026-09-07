@@ -17,9 +17,16 @@ import type { TopPostRow } from './types.ts';
  * 읽는가** 하나뿐이었고, 그건 앱이 아는 것이다. 그래서 앱이 만든 클라이언트를
  * 받고, 이 패키지는 어느 프레임워크에서 도는지 모른다.
  */
+/**
+ * 메서드가 아니라 **함수 프로퍼티**로 선언한다. 소비자가 배럴에서
+ * `const { getTopPosts } = createPublicAnalytics(db)`처럼 떼어 쓰는데, 메서드
+ * 시그니처면 `unbound-method`가 (옳게) 경고한다 — 구현이 `this`를 안 쓴다는 걸
+ * 타입이 말해 주지 않기 때문이다. 아래 구현은 전부 `db`를 클로저로 든 화살표
+ * 함수라 수신자가 아예 없다.
+ */
 export interface PublicAnalytics {
   /** 조회수 상위 `limit`편. */
-  getTopPosts(limit: number): Promise<TopPostRow[]>;
+  getTopPosts: (limit: number) => Promise<TopPostRow[]>;
   /**
    * 모든 글의 조회수(정렬·limit 없음). 아카이브의 '인기순' 정렬처럼 전체
    * slug→view_count 맵이 필요할 때 쓴다.
@@ -28,9 +35,9 @@ export interface PublicAnalytics {
    * 넘어야 한다(`getAllPostsTrends`와 달리 post×day가 아니다). 그 전까지는
    * 페이지네이션이 필요 없다.
    */
-  getAllViewCounts(): Promise<TopPostRow[]>;
+  getAllViewCounts: () => Promise<TopPostRow[]>;
   /** 조회수 +1. 쿨다운 판정은 호출자(쿠키)의 몫이다. */
-  incrementViewCount(slug: string): Promise<void>;
+  incrementViewCount: (slug: string) => Promise<void>;
 }
 
 export function createPublicAnalytics(
@@ -41,7 +48,7 @@ export function createPublicAnalytics(
     (data ?? []).map(d => ({ slug: d.slug, view_count: d.view_count ?? 0 }));
 
   return {
-    async getTopPosts(limit) {
+    getTopPosts: async limit => {
       const { data } = await db
         .from('post_views')
         .select('slug, view_count')
@@ -50,12 +57,12 @@ export function createPublicAnalytics(
       return rows(data);
     },
 
-    async getAllViewCounts() {
+    getAllViewCounts: async () => {
       const { data } = await db.from('post_views').select('slug, view_count');
       return rows(data);
     },
 
-    async incrementViewCount(slug) {
+    incrementViewCount: async slug => {
       const { error } = await db.rpc('increment_view_count', {
         slug_input: slug,
       });

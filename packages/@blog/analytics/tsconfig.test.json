@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  // 테스트만 세 플래그를 끈다 — 앱·`@blog/content`와 같은 분할이다.
+  // 픽스처는 자기 모양을 알고 있어서, 인덱스 접근마다 좁히기를 요구하면
+  // 검사가 아니라 잡음이 된다.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noUncheckedIndexedAccess": false,
+    "noPropertyAccessFromIndexSignature": false,
+    "exactOptionalPropertyTypes": false
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": []
+}

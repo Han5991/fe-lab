@@ -153,19 +153,6 @@ export default defineConfig([
   },
 
   {
-    // Supabase CLI(`pnpm gen:types` → `supabase gen types --local`) 생성 파일 —
-    // 손대면 재생성 때 되돌아온다. 생성기 출력 형태(type 별칭·인덱스 시그니처)에
-    // 스타일 룰을 묻지 않는다.
-    files: ['src/lib/platform/database.types.ts'],
-    rules: {
-      '@typescript-eslint/consistent-type-definitions': 'off',
-      '@typescript-eslint/consistent-indexed-object-style': 'off',
-      // 생성기가 union에 `never`를 남긴다(Functions가 빈 스키마일 때 등).
-      '@typescript-eslint/no-redundant-type-constituents': 'off',
-    },
-  },
-
-  {
     // 별칭(@/)·확장자 없는 import의 경로 해석기. config-next가 사설 트리로
     // 제공하던 것을 명시 선언으로 바꾼다. 지금 이 설정을 읽는 룰은 없지만,
     // eslint-module-utils 기반 플러그인(boundaries 등)이 들어오는 즉시 이게
@@ -429,6 +416,7 @@ export default defineConfig([
       // 순서가 뒤집히면 레이어 파일이 전부 app으로 배정돼 경계가 조용히 죽는다.
       'boundaries/elements': [
         { type: 'content-pkg', pattern: 'packages/@blog/content' },
+        { type: 'analytics-pkg', pattern: 'packages/@blog/analytics' },
         { type: 'shared', pattern: 'apps/blog/web/src/shared' },
         { type: 'platform', pattern: 'apps/blog/web/src/lib/platform' },
         { type: 'analytics', pattern: 'apps/blog/web/src/domain/analytics' },
@@ -480,6 +468,11 @@ export default defineConfig([
             // 화이트리스트(레이어에 새 외부 의존이 생기면 여기 추가해야 한다).
             // @blog/content는 여기서 외부 패키지다 — analytics가 패키지 유틸
             // (dates)을 그 문으로 가져온다.
+            //
+            // @blog/analytics도 마찬가지다. **app에는 허용하지 않는다** —
+            // platform과 같은 이유로, Supabase 접근은 전부 도메인 배럴 경유다.
+            // 그 패키지에는 계산·계약·저장소가 있고 클라이언트를 만드는 일만
+            // 이 앱에 남았다(도메인 배럴 둘이 그 배선이다).
             {
               // shared(최하단)는 앱 내부 어디에도 기대지 않는다 — 패키지의
               // 라우트 계약(encodePostSlug·POSTS_PATH)만 가져온다.
@@ -491,7 +484,11 @@ export default defineConfig([
             {
               from: { element: { type: 'platform' } },
               allow: [
-                { to: { element: { types: { anyOf: ['shared'] } } } },
+                {
+                  to: {
+                    element: { types: { anyOf: ['shared', 'analytics-pkg'] } },
+                  },
+                },
                 {
                   to: {
                     module: {
@@ -511,7 +508,14 @@ export default defineConfig([
                 {
                   to: {
                     element: {
-                      types: { anyOf: ['shared', 'platform', 'content-pkg'] },
+                      types: {
+                        anyOf: [
+                          'shared',
+                          'platform',
+                          'content-pkg',
+                          'analytics-pkg',
+                        ],
+                      },
                     },
                   },
                 },
@@ -523,7 +527,11 @@ export default defineConfig([
               from: { element: { type: 'auth' } },
               allow: [
                 {
-                  to: { element: { types: { anyOf: ['shared', 'platform'] } } },
+                  to: {
+                    element: {
+                      types: { anyOf: ['shared', 'platform', 'analytics-pkg'] },
+                    },
+                  },
                 },
               ],
             },
