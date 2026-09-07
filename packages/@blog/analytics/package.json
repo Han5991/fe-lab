@@ -5,18 +5,23 @@
   "type": "module",
   "sideEffects": false,
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./types": "./src/types.ts"
   },
   "scripts": {
     "lint": "eslint . --max-warnings=0",
     "check-types": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
+  },
+  "dependencies": {
+    "@blog/content": "workspace:^"
   },
   "devDependencies": {
-    "@blog/content": "workspace:^",
     "@eslint-community/eslint-plugin-eslint-comments": "catalog:lint",
     "@eslint/js": "catalog:lint",
     "@supabase/postgrest-js": "catalog:",
+    "@vitest/coverage-v8": "catalog:",
     "@types/node": "catalog:",
     "eslint": "catalog:lint",
     "globals": "catalog:lint",

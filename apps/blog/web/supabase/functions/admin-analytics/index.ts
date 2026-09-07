@@ -6,7 +6,7 @@
  *
  * 지원 action과 각각이 부르는 RPC, params 형태는 **`@blog/analytics`의 `src/adminActions.ts`가
  * 단일 출처**입니다(`ADMIN_ACTION_RPC` · `AdminRequest`). 브라우저 클라이언트
- * (`src/lib/platform/adminApi.ts`)도 같은 파일을 import 하므로 여기서 목록을 따로
+ * (`@blog/analytics`의 `adminApi.ts`)도 같은 파일을 import 하므로 여기서 목록을 따로
  * 적지 않습니다 — action을 추가하려면 그 파일에 등록하고 아래 switch에 case를
  * 더하면 되고, case를 빼먹으면 `default`의 never 대입이 컴파일 에러를 냅니다.
  *

@@ -9,6 +9,6 @@
     "noPropertyAccessFromIndexSignature": false,
     "exactOptionalPropertyTypes": false
   },
-  "include": ["src/**/*.ts"],
+  "include": ["src/**/*.ts", "vitest.config.ts"],
   "exclude": []
 }

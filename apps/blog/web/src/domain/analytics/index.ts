@@ -15,18 +15,12 @@ import { createPublicAnalytics, type PublicAnalytics } from '@blog/analytics';
 
 // 도메인 모델 타입 + DB 행 타입(TopPostRow·PostStatsRow·PostTrendRow·
 // HourlyDistribution·DowDistribution — database.types.ts에서 파생)
-export type {
-  PostViewsRow,
-  TopPostRow,
-  PostStatsRow,
-  PostTrendRow,
-  TrendPoint,
-  HourlyDistribution,
-  DowDistribution,
-  PostStatDetail,
-  DerivedStats,
-  PostDetailStats,
-} from '@blog/analytics';
+//
+// 패키지의 **타입 전용 문**에서 `export *`로 받는다. 이름을 손으로 나열하면
+// 패키지에 타입이 하나 늘 때 이 배럴에만 조용히 도착하지 않는데, 아무도 그걸
+// 알려 주지 않는다(초안이 그랬다). 큰 배럴(`@blog/analytics`)로 `export *`를
+// 하지 않는 이유는 그쪽에 admin 저장소·세션 클래스가 함께 있어서다.
+export * from '@blog/analytics/types';
 
 // 순수 계산(use-case) — 개요·글별 파생 통계. 계산 함수 자체는 배럴 밖으로
 // 내보내지 않는다: 소비자가 붙는 문은 admin 배럴의 싱글톤(`analyticsService`)

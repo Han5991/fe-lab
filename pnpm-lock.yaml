@@ -686,10 +686,11 @@ importers:
         version: 5.0.0(@types/node@24.13.3)(@vitest/coverage-v8@5.0.0)(jsdom@30.0.1(@noble/hashes@1.8.0))(msw@2.15.0(@types/node@24.13.3)(typescript@6.0.3))(vite@8.2.2(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0))
 
   packages/@blog/analytics:
-    devDependencies:
+    dependencies:
       '@blog/content':
         specifier: workspace:^
         version: link:../content
+    devDependencies:
       '@eslint-community/eslint-plugin-eslint-comments':
         specifier: catalog:lint
         version: 4.7.2(eslint@10.9.1(jiti@2.7.0)(supports-color@10.2.2))
@@ -702,6 +703,9 @@ importers:
       '@types/node':
         specifier: 'catalog:'
         version: 24.13.3
+      '@vitest/coverage-v8':
+        specifier: 'catalog:'
+        version: 5.0.0(vitest@5.0.0)
       eslint:
         specifier: catalog:lint
         version: 10.9.1(jiti@2.7.0)(supports-color@10.2.2)

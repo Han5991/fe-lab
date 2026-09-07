@@ -17,7 +17,8 @@
 apps/blog/posts/**            ← Markdown 원고 + _series.yml (워크스페이스 아님)
         │  읽기(gray-matter) · 공개 판정 · 시리즈 · URL 계약 · SEO DTO
         ▼
-packages/@blog/content         ← 소스 익스포트 패키지. 문 두 개: `@blog/content` · `@blog/content/seo`
+packages/@blog/content         ← 소스 익스포트 패키지. 문 넷: `@blog/content` · `/seo` · 클라이언트용 `/urls` · `/dates`
+packages/@blog/analytics       ← 조회수·대시보드 도메인. 문 둘: `@blog/analytics` · `/types`. 클라이언트는 앱이 주입한다
         │                          + 빌드 스크립트(src/scripts/*, API가 아니라 실행 파일)
         ▼
 apps/blog/web  (이 앱)
@@ -87,7 +88,7 @@ apps/blog/web/
 | `auth`              | `src/domain/auth`        | `shared`, `platform`, `analytics-pkg` — supabase 타입은 `AuthRepository`가 구조적 부분형으로 끝낸다                                                                                          |
 | `app`               | `src` 나머지 전부        | `shared`, `analytics`, `auth`, `content-pkg`, 임의 외부 패키지. **platform·node 코어 금지** — Supabase 접근은 도메인 경유, fs는 `src/content.ts`가 조립한 `@blog/content` 로더 인스턴스의 일 |
 
-추가 규칙: 프로덕션 코드는 `*.test.*`를 import 못 함 / app 레이어는 `domain/*/…Repository`를 직접 찌르지 말고 배럴(`@/src/domain/analytics`, `@/src/domain/analytics/admin`)로 / app 레이어에서 `client.from()`·`.rpc()` 직접 호출 금지(`no-restricted-syntax`) / 역방향(analytics·auth→app, platform→domain·app, shared→상위 전부)은 boundaries가 막는다 — 해석 경로 기반이라 alias·상대경로 어느 쪽도 우회 불가. `shared`는 모든 레이어가 여는 유일한 폴더라 모듈 **모양**까지 잠근다 — 재수출(`export … from`)·모듈 최상위 문(부수효과, `'use client'` 포함)·`.tsx` 전면 금지. 입장 기준은 [`src/shared/README.md`](./src/shared/README.md).
+추가 규칙: 프로덕션 코드는 `*.test.*`를 import 못 함 / app 레이어는 `@blog/analytics`를 직접 열 수 없고 배럴(`@/src/domain/analytics`, `@/src/domain/analytics/admin`)로만 — app 레이어에서 `client.from()`·`.rpc()` 직접 호출 금지(`no-restricted-syntax`) / 역방향(analytics·auth→app, platform→domain·app, shared→상위 전부)은 boundaries가 막는다 — 해석 경로 기반이라 alias·상대경로 어느 쪽도 우회 불가. `shared`는 모든 레이어가 여는 유일한 폴더라 모듈 **모양**까지 잠근다 — 재수출(`export … from`)·모듈 최상위 문(부수효과, `'use client'` 포함)·`.tsx` 전면 금지. 입장 기준은 [`src/shared/README.md`](./src/shared/README.md).
 
 `lint`는 `--max-warnings=0`이고, `noInlineConfig: true` + `@eslint-community/eslint-comments/no-use`로 **인라인 `eslint-disable` 주석이 전면 금지**다. 예외는 주석이 아니라 `eslint.config.mts`에 `files` 스코프로 적는다.
 

@@ -222,23 +222,12 @@ export default defineConfig([
     files: ['src/**/*.{ts,tsx}'],
     ignores: ['src/{shared,domain,lib}/**', '**/*.test.{ts,tsx}'],
     rules: {
-      // `**/` 접두로 alias(@/src/domain/...)와 상대경로(../../domain/...) 양쪽을 차단.
-      'no-restricted-imports': [
-        'error',
-        {
-          patterns: [
-            {
-              // adminRepository처럼 접두사가 붙은 것도 함께 막습니다.
-              group: [
-                '**/domain/*/*[rR]epository',
-                '**/domain/*/*[rR]epository.*',
-              ],
-              message:
-                'repository는 인프라 레이어입니다. domain/<x> 공개 API(배럴, 예: @/src/domain/analytics, @/src/domain/analytics/admin)를 통해 접근하세요.',
-            },
-          ],
-        },
-      ],
+      // 저장소 직접 import 차단은 **boundaries가 통째로 대신한다.** 예전에는
+      // 여기서 `**/domain/*/*[rR]epository`를 막았는데, 저장소가
+      // `@blog/analytics`로 나가면서 그 글롭에 걸릴 파일이 하나도 남지 않았다 —
+      // 죽은 게이트다. 지금은 app 레이어의 boundaries 허용 목록에
+      // `analytics-pkg`가 아예 없어서, 배럴을 우회하는 어떤 경로도 통하지
+      // 않는다(alias·상대경로·deep import 전부. 해석 경로 기반이다).
       // 주의: 아래 selector는 식별자 이름(client/supabase/publicDb)에 매칭하므로,
       // Supabase 클라이언트를 임의 이름으로 alias하면(예: `client as db`) 우회될
       // 수 있습니다. 클라이언트 import 자체를 src/lib/platform/client·publicClient로

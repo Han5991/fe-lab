@@ -1,21 +1,21 @@
 /**
  * Auth 저장소 — supabase 세션 API(client.auth)를 만지는 유일한 곳.
  *
- * 예전에는 `src`의 세 파일(AdminGuard·useAdminLogout·로그인 페이지)이
- * `lib/platform/client`를 직접 import해 `.auth.*`를 불렀다 — 레이어 규칙
- * ("src는 저장소를 직접 찌르지 않는다")의 유일한 예외였고, lint 가드는
- * `.from()`/`.rpc()`만 봐서 잡지 못했다. 이 모듈이 생기면서 app 레이어의
- * platform 접근 허용 자체가 boundaries에서 빠졌다(eslint.config.mjs) —
- * 이름 우회가 아니라 import 경로 단위로 막힌다.
+ * 소비자의 화면 코드는 supabase 클라이언트를 직접 만지지 않는다 — 세션을 읽고
+ * 로그인·로그아웃을 시작하는 길이 이 네 메서드뿐이어야, 그 규칙을 import 경로
+ * 단위로 강제할 수 있다(`apps/blog/web`에서는 boundaries가 app 레이어의
+ * platform 접근을 아예 막는다. 예전에 가드·로그아웃·로그인 세 파일이 예외였고,
+ * `.from()`/`.rpc()`만 보던 lint 가드는 `.auth.*`를 잡지 못했다).
  *
  * supabase-js의 타입은 여기서 끝낸다: 소비자에게는 판정에 필요한 최소
  * 모양(AdminSession)만 노출하고, 클라이언트는 구조적 부분형(AuthClientLike)
  * 으로 받아 테스트가 가짜 클라이언트를 주입할 수 있게 한다
- * (lib/platform/adminApi.ts의 FunctionsInvoker와 같은 관례).
+ * (./adminApi.ts의 FunctionsInvoker와 같은 관례).
  *
- * 이 파일은 **런타임 import가 없다** — `lib/platform/client`는 import 시점에
- * env 부재로 throw하므로(모듈 최상위 createClient), 여기서 끌면 node 테스트가
- * 팩토리를 열어 보지도 못한다. 실제 클라이언트 바인딩은 배럴(index.ts)이 한다.
+ * 이 파일은 **런타임 import가 없다.** 앱의 supabase 클라이언트는 모듈 최상위
+ * `createClient()`가 env 부재로 throw하므로, 여기서 끌면 node 테스트가 이 클래스를
+ * 열어 보지도 못한다. 실제 바인딩은 소비자가 한다(`apps/blog/web`에서는
+ * `src/domain/auth/index.ts`가 `client.auth`를 넘긴다).
  */
 
 /** 세션에서 판정에 쓰는 최소 모양 — supabase Session의 구조적 부분형. */
@@ -52,7 +52,7 @@ export interface AuthOAuthResult {
  * 구현이 하나뿐이라 클래스 타입을 그대로 써도 컴파일은 되지만, 그러면 소비자가
  * 가짜로 대체할 수 없다 — 클래스에 `#auth` 프라이빗 필드가 있어 타입이 사실상
  * nominal이 되고, 같은 모양의 평범한 객체는 절대 대입되지 않는다
- * (lib/platform/adminApi.ts의 AdminApi와 같은 관례).
+ * (./adminApi.ts의 AdminApi와 같은 관례).
  */
 export interface AuthApi {
   getAdminSession(): Promise<AdminSession | null>;

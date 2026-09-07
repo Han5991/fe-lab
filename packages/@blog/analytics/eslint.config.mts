@@ -17,7 +17,7 @@ import tseslint from 'typescript-eslint';
  * 예외가 필요하면 주석이 아니라 이 파일에 `files` 스코프로 적는다.
  *
  * `eslint-plugin-boundaries`는 두지 않는다 — 이 패키지는 레이어가 아니라
- * 파일 열둘의 평평한 묶음이고, 방향은 `index.ts` 하나로 정리된다.
+ * 소스 열셋(테스트까지 스물)의 평평한 묶음이고, 방향은 `index.ts` 하나로 정리된다.
  */
 export default tseslint.config(
   { ignores: ['node_modules/**'] },
