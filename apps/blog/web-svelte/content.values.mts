@@ -34,6 +34,28 @@ export const BUNDLE_GUARDS = [
     requiredIn: [{ kind: 'artifact', path: 'llms.txt' }],
   },
   {
+    // mermaid는 d3·dagre까지 끌고 와 gzip 360KB짜리다. 원고 70편 중 쓰는 곳은
+    // 10곳뿐이라, 글 밖 페이지가 이걸 받으면 안 된다. Mermaid.svelte가
+    // `await import()`로 늦추는데, 그 늦춤이 실제로 유지되는지는 코드를 읽어서는
+    // 알 수 없다 — 청크 폐포를 봐야 안다. React 판이 같은 규칙을 갖고 있다.
+    label: '글 전용 다이어그램(Mermaid)',
+    // 마커가 `mermaid`이면 **자기 셀렉터에 걸린다** — Mermaid.svelte가
+    // `code.language-mermaid`를 찾는 문자열이 글 페이지 청크에 그대로 남아
+    // 첫 로드에서 발화한다(실제로 그랬다). 라이브러리 본체에만 있는 문법
+    // 키워드를 쓴다.
+    marker: 'sequenceDiagram',
+    // **`chunks`가 아니라 `initial`이다.** SvelteKit의 클라이언트 라우터는 모든
+    // 라우트 청크 이름을 매니페스트로 싣기 때문에, 어느 페이지에서 출발하든
+    // 도달 폐포가 앱 전체가 된다(측정: 115/115. Next.js는 홈에서 13/116).
+    // "도달하는가"를 물으면 언제나 참이라 규칙이 성립하지 않는다.
+    //
+    // 규칙이 실제로 묻고 싶은 것은 **첫 로드에 오는가**이고, 그 답은 문서가
+    // 직접 가리킨 JS에 있다. 그래서 React 판보다 규칙이 세다 — 글 페이지에서도
+    // mermaid는 첫 로드에 오지 않아야 한다(마운트 후 `await import()`).
+    forbiddenIn: [{ kind: 'initial' }],
+    requiredIn: [{ kind: 'chunks', of: { under: '/posts/' } }],
+  },
+  {
     // 구문 강조는 **빌드 타임**이다. 파서(refractor)가 클라이언트 청크에
     // 실리면 이 마커가 거기서도 보인다 — React 판이 같은 규칙을 갖고 있고,
     // 그쪽은 PrismLight로 언어를 골라 담기 전 gzip 350KB짜리 청크였던 적이
