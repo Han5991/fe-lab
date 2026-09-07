@@ -49,7 +49,37 @@ export default tseslint.config(
       '@eslint-community/eslint-comments/no-use': 'error',
       '@typescript-eslint/consistent-type-imports': 'warn',
       '@typescript-eslint/consistent-type-definitions': ['error', 'interface'],
+      // 숫자 보간을 허용한다. `${count}편` 같은 표현이 Svelte 템플릿에서는
+      // 일상적인데(JSX의 `{count}`에 해당한다), 기본값은 이걸 막아 String()
+      // 래핑을 강요한다. 의도치 않은 객체·null 보간을 막는다는 룰의 목적은
+      // 숫자를 허용해도 그대로 남는다.
+      '@typescript-eslint/restrict-template-expressions': [
+        'error',
+        { allowNumber: true },
+      ],
+      // href를 `resolve()`로 감싸라는 룰을 끈다.
+      //
+      // 이 앱의 내부 href는 **라우트 ID가 아니라 콘텐츠 URL 계약**에서 온다 —
+      // `postPath(slug)`가 만든 문자열을 서버가 계산해 내려보낸다(그렇게 하는
+      // 이유는 `+layout.server.ts` 주석에 있다: 화면이 `@blog/content`를 직접
+      // import하면 node:fs가 클라이언트 그래프에 들어간다). `resolve()`는 그런
+      // 런타임 문자열에 걸 수 없고, base path도 비어 있어 얻을 것이 없다.
+      'svelte/no-navigation-without-resolve': 'off',
     },
+  },
+  {
+    // 글 본문만 `{@html}`을 쓴다.
+    //
+    // 삽입되는 HTML은 **빌드 타임에** 이 저장소의 원고에서 만들어진다
+    // (`src/lib/server/markdown.ts` — remark/rehype). 사용자 입력이 닿는
+    // 경로가 없으므로 XSS 표면이 아니고, raw HTML을 살리는 것이 이 블로그
+    // 저작 문법의 전제다(`<callout>` 같은 커스텀 태그). 예외를 파일 스코프로
+    // 둬서 다른 화면이 실수로 같은 문을 열 수 없게 한다.
+    // 글롭에서 `[...slug]`는 **문자 클래스**로 해석돼 실제 파일에 매치되지
+    // 않는다(처음에 그렇게 적었다가 예외가 조용히 안 걸렸다). 디렉터리
+    // 와일드카드로 우회한다 — posts 아래 페이지는 글 상세 하나뿐이다.
+    files: ['src/routes/posts/**/+page.svelte'],
+    rules: { 'svelte/no-at-html-tags': 'off' },
   },
   {
     files: ['**/*.svelte', '**/*.svelte.ts'],
