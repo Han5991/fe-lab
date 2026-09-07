@@ -16,6 +16,12 @@
  *
  * 이름의 `KST`는 이 저장소가 실제로 쓰는 타임존을 가리키는 관용 이름으로
  * 남겨 뒀습니다. 계산 자체는 넘겨받은 타임존을 따릅니다.
+ *
+ * **`@blog/content/dates`로도 열려 있다** — `@blog/content/urls`와 같은 이유다.
+ * 배럴은 `node:fs`를 함께 열어서, 클라이언트 그래프(또는 `@blog/analytics`처럼
+ * 클라이언트로 흘러 들어가는 패키지)가 배럴로 이 헬퍼를 들이면 fs가 통째로
+ * externalize된다. 이 모듈은 타입 하나만 import하는 순수 계산이라 어디서
+ * 열어도 안전하다.
  */
 import type { TimezoneConfig } from './contentConfig.ts';
 

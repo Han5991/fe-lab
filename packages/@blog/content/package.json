@@ -7,7 +7,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./seo": "./src/seo/index.ts",
-    "./urls": "./src/post/urls.ts"
+    "./urls": "./src/post/urls.ts",
+    "./dates": "./src/shared/dates.ts"
   },
   "scripts": {
     "lint": "eslint . --max-warnings=0",
