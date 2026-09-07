@@ -245,6 +245,9 @@ importers:
       '@blog/content':
         specifier: workspace:^
         version: link:../../../packages/@blog/content
+      '@blog/diagram':
+        specifier: workspace:^
+        version: link:../../../packages/@blog/diagram
       '@blog/site-values':
         specifier: workspace:^
         version: link:../../../packages/@blog/site-values
@@ -408,6 +411,9 @@ importers:
       '@blog/content':
         specifier: workspace:^
         version: link:../../../packages/@blog/content
+      '@blog/diagram':
+        specifier: workspace:^
+        version: link:../../../packages/@blog/diagram
       '@blog/site-values':
         specifier: workspace:^
         version: link:../../../packages/@blog/site-values
@@ -739,6 +745,15 @@ importers:
       typescript-eslint:
         specifier: catalog:lint
         version: 8.69.0(eslint@10.9.1(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)(typescript@6.0.3)
+      vitest:
+        specifier: 'catalog:'
+        version: 5.0.0(@types/node@24.13.3)(@vitest/coverage-v8@5.0.0)(jsdom@30.0.1(@noble/hashes@1.8.0))(msw@2.15.0(@types/node@24.13.3)(typescript@6.0.3))(vite@8.2.2(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0))
+
+  packages/@blog/diagram:
+    devDependencies:
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
       vitest:
         specifier: 'catalog:'
         version: 5.0.0(@types/node@24.13.3)(@vitest/coverage-v8@5.0.0)(jsdom@30.0.1(@noble/hashes@1.8.0))(msw@2.15.0(@types/node@24.13.3)(typescript@6.0.3))(vite@8.2.2(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0))

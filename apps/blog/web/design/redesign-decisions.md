@@ -87,7 +87,7 @@ GA 추적 코드를 함께 걷어냈다.
 흐름, 부제는 5단어 이내, 노드는 라운드 사각형 `rx=8` 에 스트로크 1px.
 
 **라벨 크기는 의도가 14px + 12px였는데 12px + 11px로 정착했다.** 640px 폭 안에 노드
-서넛이 들어가야 해서다. 단일 출처는 `apps/blog/web/src/components/diagram/layout.ts` 의
+서넛이 들어가야 해서다. 단일 출처는 `packages/@blog/diagram/src/layout.ts` 의
 `TITLE_FONT_SIZE` / `DESC_FONT_SIZE`.
 
 강조 노드를 고르는 prop은 `tone="accent"` 다. 초안 시절 색 이름을 그대로 쓴 `tone="teal"`

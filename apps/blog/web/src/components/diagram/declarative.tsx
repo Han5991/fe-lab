@@ -21,7 +21,7 @@ import {
   type DiagramNodeSpec,
   type DiagramShape,
   type DiagramTone,
-} from './layout';
+} from '@blog/diagram';
 
 /**
  * `<diagram>` / `<diagram-node>` / `<diagram-edge>` — 코드 없이 그리는 다이어그램.
@@ -146,6 +146,19 @@ export function Diagram({
     direction: toDirection(direction),
     hasCaption: Boolean(caption),
   });
+
+  // 경고는 여기가 한다. 레이아웃 엔진(`@blog/diagram`)은 두 앱이 공유하는 순수
+  // 계산기라 NODE_ENV도 콘솔도 모른다 — **무엇이 버려졌는지만 알려 주고**,
+  // 그걸 개발 중에 떠들지는 소비하는 앱이 정한다.
+  if (
+    process.env.NODE_ENV === 'development' &&
+    layout.droppedEdges.length > 0
+  ) {
+    console.warn(
+      `[diagram] 연결할 수 없는 엣지를 무시했습니다: ${layout.droppedEdges.join(', ')}. ` +
+        `<diagram-node id="…"> 값과 <diagram-edge from/to> 값이 같은지 확인하세요.`,
+    );
+  }
 
   return (
     <div className={block}>

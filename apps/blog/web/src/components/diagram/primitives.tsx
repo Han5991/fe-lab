@@ -1,6 +1,17 @@
 import type { ReactNode } from 'react';
 import { css, cva, sva } from '@design-system/ui-lib/css';
 import type { RecipeVariant } from '@design-system/ui-lib/css';
+import type { DiagramFlow, DiagramTone } from '@blog/diagram';
+
+export type { DiagramFlow, DiagramTone };
+
+/**
+ * 두 유니언이 **정확히 같은가**를 타입 수준으로 묻는다. 값이 남지 않는다.
+ *
+ * 한쪽 방향만 보면(`extends`) recipe에 variant를 더하는 것을 못 잡는다 —
+ * 그러면 화면에는 있는데 레이아웃 엔진이 모르는 tone이 생긴다.
+ */
+type Exactly<A, B> = [A] extends [B] ? ([B] extends [A] ? true : never) : never;
 
 /**
  * 다이어그램 프리미티브 — 핸드오프 §4 "다이어그램 문법"을 코드로 강제한다.
@@ -101,14 +112,21 @@ const node = cva({
 /**
  * 노드의 **역할**. 색 이름이 아니다.
  *
+ * **선언은 이제 `@blog/diagram`에 있다** — SvelteKit 판이 같은 레이아웃 엔진을
+ * 쓰면서 값 목록이 한 곳이어야 했다. 예전의 "recipe에서 파생" 성질은 아래
+ * `assertToneVariants`가 타입 수준에서 대신 지킨다: recipe에 variant를 더하거나
+ * 빼면 패키지 선언과 어긋나 **컴파일이 막힌다**.
+ *
  * 원래 `'gray' | 'teal'`이었는데, 포인트색을 틸에서 cyan으로 바꾸자 값 이름이
  * 곧바로 거짓말이 됐다. 이 값이 뜻하는 건 "청록색"이 아니라 "핵심 경로"이므로
  * 팔레트와 무관한 이름으로 바꿨다. 옛 `tone="teal"`은 `declarative.tsx`가
  * 별칭으로 받아준다.
  *
- * 값 목록은 recipe의 variant 키에서 파생된다 — 따로 관리하지 않는다.
  */
-export type DiagramTone = RecipeVariant<typeof node>['tone'];
+export type DiagramToneMatchesPackage = Exactly<
+  NonNullable<RecipeVariant<typeof node>['tone']>,
+  DiagramTone
+>;
 
 // SVG 안 font-size는 user unit이라 viewBox 좌표와 같은 축이다. 타이포 스케일
 // 토큰(rem 기반)을 끌어오면 루트 폰트 크기에 따라 도형과 글자 비율이 어긋나므로,
@@ -214,8 +232,14 @@ const edge = sva({
   defaultVariants: { emphasis: false, flow: 'sync' },
 });
 
-/** 값 목록은 recipe의 variant 키에서 파생된다 — 따로 관리하지 않는다. */
-export type DiagramFlow = RecipeVariant<typeof edge>['flow'];
+/**
+ * flow도 tone과 같다 — 선언은 `@blog/diagram`, recipe는 그것을 만족해야 한다.
+ * 어긋나면 `never`가 되어 컴파일이 막힌다.
+ */
+export type DiagramFlowMatchesPackage = Exactly<
+  NonNullable<RecipeVariant<typeof edge>['flow']>,
+  DiagramFlow
+>;
 
 interface Segment {
   x1: number;
