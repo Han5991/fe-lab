@@ -142,6 +142,23 @@ export function buildProgram(): Command {
     );
 
   program
+    .command('measure-bundle')
+    .description('빌드 산출물(out/)의 첫 로드 전송량 측정 — 게이트가 아니다')
+    .argument('[outDir]', '측정할 디렉터리 (기본: 설정의 out)')
+    .option('--json <path>', '측정 결과를 JSON으로 저장할 경로')
+    .action(
+      async (
+        outDir: string | undefined,
+        opts: { json?: string },
+        command: Command,
+      ) => {
+        const ctx = await loadContext(command);
+        const { main } = await import('../measure-bundle.ts');
+        main(ctx, outDir, opts.json);
+      },
+    );
+
+  program
     .command('new-post')
     .description('새 포스트 스캐폴딩')
     .argument('[title]', '글 제목')
