@@ -2,6 +2,7 @@ import { h } from 'hastscript';
 import type { Element, ElementContent, Root, RootContent, Text } from 'hast';
 import { visit } from 'unist-util-visit';
 import { css } from '../../../../styled-system/css';
+import { transformDiagram } from './diagram.ts';
 import { renderFileTree } from './fileTree.ts';
 
 /**
@@ -15,10 +16,16 @@ import { renderFileTree } from './fileTree.ts';
  * 하이드레이션용으로 HTML에 직렬화한다.** 즉 트리를 통째로 문서에 한 번 더
  * 싣게 되고, 지금 재고 있는 바로 그 HTML 크기가 부풀어 오른다.
  *
- * 이 태그 9종은 전부 **프레젠테이션**이다(상태도 이벤트도 없다). 그러면 빌드
+ * 이 태그들은 전부 **프레젠테이션**이다(상태도 이벤트도 없다). 그러면 빌드
  * 타임에 클래스가 붙은 마크업으로 굽는 편이 정직하다 — 클라이언트 JS가 0이고,
  * 문서에는 결과 HTML만 남는다. 상호작용이 필요한 `<code-tabs>`는 이 파일에
  * 없다(다음 단계).
+ *
+ * `<diagram>`은 자식(`diagram-node`·`diagram-edge`)을 **자기가 읽어** SVG를
+ * 만들므로 이 표에 자식 태그가 없다 — 좌표는 형제를 전부 알아야 정해진다.
+ * 부모가 통째로 교체되면 자식 선언은 트리에서 사라지고, 단독으로 쓰인
+ * `<diagram-node>`는 변환되지 않은 채 통과한다(React 판도 아무것도 그리지
+ * 않는다).
  *
  * Panda의 `css()`는 빌드 타임 정적 추출이라 여기서 부르는 것으로 충분하다 —
  * `panda.config.ts`의 `include`가 `src/**`를 훑는다.
@@ -552,6 +559,7 @@ const TRANSFORMS: Record<string, (node: Element) => Element> = {
   metric: transformMetric,
   timeline: transformTimeline,
   step: transformStep,
+  diagram: transformDiagram,
 };
 
 /** 이 파일이 아는 태그 — 테스트와 커버리지 대조에 쓴다. */

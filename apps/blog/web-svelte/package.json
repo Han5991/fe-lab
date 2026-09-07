@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "@blog/content": "workspace:^",
+    "@blog/diagram": "workspace:^",
     "@blog/site-values": "workspace:^",
     "@design-system/ui": "workspace:^",
     "hastscript": "^9.0.1",
