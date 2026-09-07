@@ -1,0 +1,41 @@
+{
+  "name": "@blog/web-svelte",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "predev": "blog-content build",
+    "dev": "vite dev",
+    "prebuild": "blog-content build --strict",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint . --max-warnings=0",
+    "check-types": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+    "measure": "blog-content measure-bundle"
+  },
+  "engines": {
+    "node": ">=24.20.0"
+  },
+  "dependencies": {
+    "@blog/content": "workspace:^",
+    "@design-system/ui": "workspace:^",
+    "pretendard": "catalog:"
+  },
+  "devDependencies": {
+    "@eslint-community/eslint-plugin-eslint-comments": "catalog:lint",
+    "@eslint/js": "catalog:lint",
+    "@pandacss/dev": "catalog:",
+    "@sveltejs/adapter-static": "^3.0.10",
+    "@sveltejs/kit": "^2.49.2",
+    "@sveltejs/vite-plugin-svelte": "^6.2.1",
+    "@types/node": "catalog:",
+    "eslint": "catalog:lint",
+    "eslint-plugin-svelte": "^3.14.0",
+    "globals": "catalog:lint",
+    "svelte": "^5.44.2",
+    "svelte-check": "^4.4.1",
+    "typescript": "catalog:",
+    "typescript-eslint": "catalog:lint",
+    "vite": "^8.2.2"
+  }
+}
