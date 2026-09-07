@@ -6,6 +6,8 @@ import remarkParse from 'remark-parse';
 import remarkRehype from 'remark-rehype';
 import { unified } from 'unified';
 import { HEADING_TAG_MAP, resolvePostAssetUrl } from '@blog/content';
+import { codeBlocks } from './codeBlock.ts';
+import { codeMeta } from './codeMeta.ts';
 import { customTags } from './customTags.ts';
 import type { Element, Root } from 'hast';
 import { visit } from 'unist-util-visit';
@@ -67,9 +69,12 @@ const processor = () =>
     // allowDangerousHtml + rehype-raw: 본문의 raw HTML(커스텀 태그·figure·callout)을
     // 버리지 않고 HAST 노드로 살린다. 원고는 이 저장소가 쓰는 것이라 신뢰 경계 안이다.
     .use(remarkRehype, { allowDangerousHtml: true })
+    // rehype-raw보다 **먼저** — 그 왕복에서 `data.meta`가 사라진다.
+    .use(codeMeta)
     .use(rehypeRaw)
     .use(demoteHeadings)
     .use(customTags)
+    .use(codeBlocks)
     .use(rehypeSlug)
     .use(rehypeStringify, { allowDangerousHtml: true });
 

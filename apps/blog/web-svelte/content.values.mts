@@ -34,6 +34,16 @@ export const BUNDLE_GUARDS = [
     requiredIn: [{ kind: 'artifact', path: 'llms.txt' }],
   },
   {
+    // 구문 강조는 **빌드 타임**이다. 파서(refractor)가 클라이언트 청크에
+    // 실리면 이 마커가 거기서도 보인다 — React 판이 같은 규칙을 갖고 있고,
+    // 그쪽은 PrismLight로 언어를 골라 담기 전 gzip 350KB짜리 청크였던 적이
+    // 있다. 양성 대조는 글 페이지다(코드 펜스가 500개라 반드시 있다).
+    label: '빌드 타임 구문 강조',
+    marker: 'class="token',
+    forbiddenIn: [{ kind: 'chunks' }],
+    requiredIn: [{ kind: 'pages', of: { under: '/posts/' } }],
+  },
+  {
     // **이 규칙의 값은 양성 쪽에 있다.** 청크 스캔이 이 산출물 모양에서
     // 실제로 돌고 있는지를 묻는다 — 하나도 못 찾으면 다른 모든 규칙이
     // "누수 없음"으로 조용히 통과한다. 음성 쪽(정적 텍스트 파일에 클라이언트
