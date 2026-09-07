@@ -5,16 +5,30 @@
 
 전체 계획과 결정 원장은 [이슈 #392](https://github.com/Han5991/fe-lab/issues/392).
 
-## 지금 있는 것 (PR 1 — 뼈대)
+## 지금 있는 것
 
-- SvelteKit + `adapter-static` 정적 export (`build/`)
+- SvelteKit + `adapter-static` 정적 export (`build/`) — **49 페이지**
+- 공개 라우트 5개: `/` · `/posts/` · `/posts/[...slug]/` · `/series/` · `/about/` · `/privacy/`
+- 마크다운 렌더 — remark/rehype를 **빌드 타임에** 돌려 HTML 문자열까지 서버에서 만든다
 - Panda CSS — React 판과 **같은 프리셋**(`@design-system/ui/blog-preset`), `strictTokens`
-- 자체 `content.config.mts` / `content.values.mts` (경로 앵커 + 사이트 값)
+- 사이트 값은 `@blog/site-values` (React 판과 공유)
 - ESLint — `--max-warnings=0`, 인라인 `eslint-disable` 금지, 타입 정보 룰
-- 페이지 하나(`/`) — 정적 export와 토큰 배선이 살아 있는지만 확인한다
+- **`check-seo`가 `pnpm build` 안의 게이트다** — React 판과 같은 자리
 
-콘텐츠 파이프라인(`blog-content build`)은 `predev`/`prebuild`에 배선돼 있지만
-아직 화면이 소비하지 않는다. 글·라우트는 PR 2부터.
+아직 없는 것: 커스텀 태그 15종(지금은 알 수 없는 요소로 통과), Mermaid·구문
+강조·이미지 줌, 런타임 기능(조회수·댓글·검색·테마·전환), Admin, `check-bundle`
+규칙 선언, 배포 배선.
+
+## 옮기며 드러난 프레임워크 차이
+
+읽어서는 안 보이고 지어 봐야 나온 것들이다. 전부 빌드가 실패로 잡아 줬다.
+
+| 무엇                     | React(Next)                                                     | SvelteKit                                                                                                                                                                                 |
+| :----------------------- | :-------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **경로 앵커**            | `content.config.mts`의 `import.meta.url`이 원래 파일을 가리킨다 | Vite가 설정을 서버 번들로 옮겨 `import.meta.url`이 **출력 파일**이 된다 → `../posts`가 `.svelte-kit/output/server/posts`로 풀려 ENOENT. 앱 그래프에서만 앵커를 덮는다(`__CONTENT_ROOT__`) |
+| **catch-all 파라미터**   | `['foo']` 세그먼트 배열                                         | `[...slug]`가 후행 슬래시를 삼켜 `'foo/'` → 전 글이 404. 정규화가 필요하다                                                                                                                |
+| **배럴 클라이언트 누수** | `optimizePackageImports: ['@blog/content']`가 막는다            | 그 최적화가 없어 화면이 `@blog/content`를 import하면 `node:fs`가 브라우저용으로 externalize된다. URL 계약을 **서버에서 풀어** 문자열로 내려보낸다                                         |
+| **본문 자산 경로**       | `MarkdownImage`가 런타임에 푼다                                 | 빌드 타임에 HAST를 훑어 `resolvePostAssetUrl`로 다시 쓴다(안 하면 프리렌더 크롤러가 404)                                                                                                  |
 
 ## 실행
 
@@ -65,9 +79,10 @@ pnpm --filter @blog/web-svelte measure  # 첫 로드 전송량 측정
 
 ## 알려진 것
 
-- **`content.values.mts`가 React 판의 부분 사본이다.** 사이트 정체성이 두 곳에
-  살아 있어 한쪽만 고치면 산출물이 조용히 갈라진다. 해소는 PR 2 — 파일 상단
-  주석에 선택지 셋을 적어 뒀다
+- **`.svelte` 파일은 `pnpm format:check`가 보지 않는다.** 루트 prettier 글롭에
+  `svelte`가 없고 `prettier-plugin-svelte`도 없다. ESLint(`eslint-plugin-svelte`)는
+  보므로 규율이 통째로 빠진 것은 아니지만, 포매팅은 손으로 맞추는 상태다.
+  루트 도구를 바꾸는 일이라 별도 변경으로 둔다
 - **`check-bundle`은 이 앱에 아직 걸 수 없다.** `collectChunkRefs`가
   `/_next/static/chunks/`를 정규식에 박아 두어 SvelteKit 산출물에서 청크를
   하나도 못 찾는다("누수 0건"이 아니라 검사 무력화). 일반화는 PR 4
