@@ -4,15 +4,17 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "//sync": "`.svelte-kit/`(svelte-kit sync)와 `styled-system/`(panda codegen)은 둘 다 **생성물이고 커밋하지 않는다**. tsconfig.json이 전자를 extends하고 화면 코드가 후자를 import하므로, 깨끗한 체크아웃에서는 tsconfig를 읽거나 빌드하는 태스크가 전부 죽는다 — CI에서 `check-types`가 `Cannot find module '../../styled-system/css'`로, `lint`가 265개 에러로, `test`가 파일 전부 로드 실패로 넘어졌다. 로컬에서는 한 번 만들어 둔 것이 남아 있어 보이지 않았다. 순서가 있다: panda가 tsconfig를 읽으므로 **sync가 먼저**다. pnpm의 prepare로는 부족하다 — pnpm은 워크스페이스 패키지의 prepare를 install마다 돌리지 않고, turbo는 태스크를 병렬로 돌려 순서를 보장하지 않는다. 그래서 생성물이 필요한 태스크가 **각자** 먼저 부른다(idempotent하고 몇 초면 끝난다).",
+    "sync": "svelte-kit sync && panda codegen",
     "predev": "blog-content build",
     "dev": "vite dev",
     "prebuild": "blog-content build --strict",
-    "build": "vite build && pnpm check-seo",
+    "build": "pnpm sync && vite build && pnpm check-seo",
     "preview": "vite preview",
     "check-seo": "blog-content check-seo",
-    "lint": "eslint . --max-warnings=0",
-    "check-types": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-    "test": "vitest run",
+    "lint": "pnpm sync && eslint . --max-warnings=0",
+    "check-types": "pnpm sync && svelte-check --tsconfig ./tsconfig.json",
+    "test": "pnpm sync && vitest run",
     "measure": "blog-content measure-bundle"
   },
   "engines": {
