@@ -12,6 +12,15 @@ description: >-
 # 호출 전제: 저장소가 checkout되어 있고 pnpm/Node 설치와 `pnpm install`이 끝나 있어야 합니다.
 
 inputs:
+  build-blog-svelte:
+    description: >-
+      SvelteKit 판(`@blog/web-svelte`)을 빌드해 산출물 검사(check-seo·check-bundle)까지
+      돌릴지 여부. 이 앱은 **프로덕션에 배포되지 않으므로**(프리뷰 URL 전용) 배포
+      워크플로는 'false'로 넘깁니다 — 매일 도는 cron 배포에 관계없는 빌드를 얹지
+      않기 위해서입니다. PR CI에서는 켜 둡니다: 이 앱의 게이트가 도는 자리가
+      여기뿐입니다.
+    required: false
+    default: 'true'
   build-blog:
     description: >-
       블로그를 빌드해 산출물 검사(check-seo·check-bundle)까지 돌릴지 여부.
@@ -48,3 +57,13 @@ runs:
       if: inputs.build-blog == 'true'
       shell: bash
       run: pnpm build --filter=@blog/web
+
+    # SvelteKit 판도 같은 게이트 둘을 지난다(`check-seo`·`check-bundle`).
+    #
+    # **이 스텝이 없는 동안 그 게이트는 CI에서 한 번도 돈 적이 없었다.** 위
+    # `--filter=@blog/web`이 React 판만 빌드하는데, 두 앱의 산출물 검사는 각자의
+    # `build` 스크립트 안에 있기 때문이다. 로컬에서만 도는 게이트는 게이트가 아니다.
+    - name: Build blog (SvelteKit) + artifact checks
+      if: inputs.build-blog-svelte == 'true'
+      shell: bash
+      run: pnpm build --filter=@blog/web-svelte
