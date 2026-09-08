@@ -8,6 +8,7 @@
     HourlyDistribution,
     PostStatDetail,
   } from '@blog/analytics';
+  import { dowPoints, hourlyPoints } from '$lib/admin/distribution';
   import Rail from '$lib/components/Rail.svelte';
   import AreaChart from '$lib/admin/charts/AreaChart.svelte';
   import BarChart from '$lib/admin/charts/BarChart.svelte';
@@ -40,22 +41,29 @@
     post === null ? null : analyticsService.computeDerivedStats(post, todayISO),
   );
 
-  const DOW_LABELS = ['일', '월', '화', '수', '목', '금', '토'];
-
   onMount(() => {
-    Promise.all([
-      loadDashboard(),
-      getPostHourlyDistribution(data.slug),
-      getPostDowDistribution(data.slug),
-    ]).then(
-      ([posts, hourlyRows, dowRows]) => {
+    // 대시보드와 분포 둘을 **따로** 다룬다. 한 묶음(`Promise.all`)으로 두면
+    // 분포 RPC 하나가 실패할 때 성공한 대시보드까지 버려져 화면 전체가 에러가
+    // 된다 — KPI와 추이는 그것 없이도 그릴 수 있다. React 판이 분포 둘만
+    // try/catch로 감싸 빈 배열로 떨어뜨리는 것과 같은 판단이다.
+    loadDashboard().then(
+      posts => {
         post = posts.find(p => p.slug === data.slug) ?? null;
-        hourly = hourlyRows;
-        dow = dowRows;
         if (post === null) error = '이 글의 통계를 찾지 못했습니다.';
       },
       (cause: unknown) => (error = String(cause)),
     );
+
+    void getPostHourlyDistribution(data.slug)
+      .then(rows => (hourly = rows))
+      .catch((cause: unknown) => {
+        console.error('시간대 분포를 받지 못했습니다:', cause);
+      });
+    void getPostDowDistribution(data.slug)
+      .then(rows => (dow = rows))
+      .catch((cause: unknown) => {
+        console.error('요일 분포를 받지 못했습니다:', cause);
+      });
   });
 
   const card = css({
@@ -144,21 +152,12 @@
 
       <section class={section}>
         <h2 class={h2}>시간대 분포 (KST)</h2>
-        <BarChart
-          label="시간대별 조회수"
-          data={hourly.map(h => ({ label: String(h.hour), value: h.view_count }))}
-        />
+        <BarChart label="시간대별 조회수" data={hourlyPoints(hourly)} />
       </section>
 
       <section class={section}>
         <h2 class={h2}>요일 분포 (KST)</h2>
-        <BarChart
-          label="요일별 조회수"
-          data={dow.map(d => ({
-            label: DOW_LABELS[d.dow] ?? String(d.dow),
-            value: d.view_count,
-          }))}
-        />
+        <BarChart label="요일별 조회수" data={dowPoints(dow)} />
       </section>
 
       <section class={section}>

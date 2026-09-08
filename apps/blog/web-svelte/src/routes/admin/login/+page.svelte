@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { page } from '$app/state';
   import { onMount } from 'svelte';
   import { css } from '../../../../styled-system/css';
   import Rail from '$lib/components/Rail.svelte';
@@ -16,13 +15,25 @@
   let error = $state<string | null>(null);
   let busy = $state(false);
   let redirectTo = $state(ADMIN_PATH);
+  let unauthorized = $state(false);
 
-  const unauthorized = $derived(page.url.searchParams.get('e') === 'unauthorized');
 
   onMount(() => {
     // 정적 export라 origin을 빌드 타임에 알 수 없다 — 프리뷰 URL과 커스텀
     // 도메인이 갈리므로 브라우저에서 읽는다.
     redirectTo = `${window.location.origin}${ADMIN_PATH}`;
+
+    // **쿼리는 `$app/state`의 `page`로 읽지 않는다.** 프리렌더 중에
+    // `url.searchParams`에 손대면 SvelteKit이 던진다 — 정적 산출물은 쿼리마다
+    // 다를 수 없으니 올바른 제지다(`Cannot access url.searchParams on a page
+    // with prerendering enabled`). 이 값은 리다이렉트로 붙는 것이라 브라우저에만
+    // 존재한다.
+    //
+    // 초안은 `$derived`로 읽고도 빌드가 통과했는데, 가드가 망가져 있어서 이
+    // 페이지가 프리렌더 중 **아예 렌더되지 않았기** 때문이다. 가드를 고치자
+    // 바로 터졌다.
+    unauthorized =
+      new URL(window.location.href).searchParams.get('error') === 'unauthorized';
   });
 
   async function signIn() {

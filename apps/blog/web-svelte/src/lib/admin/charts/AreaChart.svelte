@@ -37,6 +37,15 @@
   const cursor = $derived(hovered === null ? undefined : coords[hovered]);
   const hoveredPoint = $derived(hovered === null ? undefined : data[hovered]);
 
+  /**
+   * 마우스 x → 가장 가까운 데이터 점.
+   *
+   * **`preserveAspectRatio="none"`이 이 계산의 전제다.** 기본값(`xMidYMid meet`)은
+   * viewBox를 비율 유지로 맞추고 남는 폭을 좌우 여백으로 두는데, 이 차트는
+   * 1200px 레일 안에서 720px viewBox를 쓰므로 양쪽에 200px씩 빈 자리가 생긴다.
+   * 아래 식은 viewBox가 요소를 꽉 채운다고 가정하므로, 그 여백만큼 어긋나
+   * 커서가 엉뚱한 점에 붙는다(초안이 그랬다).
+   */
   function onMove(event: MouseEvent & { currentTarget: SVGSVGElement }) {
     if (coords.length === 0) return;
     const rect = event.currentTarget.getBoundingClientRect();
@@ -62,6 +71,7 @@
   <svg
     class={surface}
     viewBox="0 0 {box.width} {box.height}"
+    preserveAspectRatio="none"
     style="width:100%;height:{height}px"
     role="img"
     aria-label="일별 조회수 추이"

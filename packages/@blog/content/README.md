@@ -119,7 +119,7 @@ flowchart LR
 
 ```
 src/
-├─ index.ts · seo/index.ts        익스포트 문 둘 (내부 배럴 post/index.ts는 별개)
+├─ index.ts · seo/index.ts · client.ts   익스포트 문 셋 (내부 배럴 post/index.ts는 별개)
 ├─ shared/     contentConfig(defineContent + ContentValues 계약) · contentPaths(절대 경로)
 │              · testValues(테스트 픽스처 — 패키지 안의 유일한 "어떤 사이트")
 │              · dates · format · jsonLd · url · postFiles · prismLanguages

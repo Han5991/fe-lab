@@ -5,7 +5,7 @@
   import type { PostStatDetail } from '@blog/analytics';
   import Rail from '$lib/components/Rail.svelte';
   import { loadDashboard } from '$lib/admin/store.svelte';
-  import { ADMIN_ANALYTICS_PATH } from '$lib/shared/routes';
+  import { adminAnalyticsPostPath } from '$lib/shared/routes';
 
   /**
    * 글별 통계 목록 — 검색 + 정렬.
@@ -136,7 +136,7 @@
             <tr>
               <td class={td}>
                 <a
-                  href={`${ADMIN_ANALYTICS_PATH}${post.slug}/`}
+                  href={adminAnalyticsPostPath(post.slug)}
                   class={css({ color: 'ink.950', textDecoration: 'none' })}>{post.title}</a
                 >
                 {#if post.status !== 'published'}

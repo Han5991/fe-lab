@@ -82,9 +82,12 @@ export function areaPath(points: Point[], box: PlotBox): string {
  */
 export function yTicks(points: Point[], count = 4): number[] {
   const max = scaleMax(points.map(p => p.value));
-  return Array.from({ length: count + 1 }, (_, i) =>
+  const ticks = Array.from({ length: count + 1 }, (_, i) =>
     Math.round((max / count) * i),
   );
+  // 반올림하면 같은 값이 겹친다 — 상한이 작을 때(데이터가 없어 max가 1일 때가
+  // 대표적이다) `0 0 1 1 1`이 되어 축에 같은 숫자가 여러 번 찍힌다.
+  return [...new Set(ticks)];
 }
 
 /**

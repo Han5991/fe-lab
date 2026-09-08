@@ -10,7 +10,7 @@
   import Sparkline from '$lib/admin/charts/Sparkline.svelte';
   import { analyticsService } from '$lib/domain/admin';
   import { loadDashboard } from '$lib/admin/store.svelte';
-  import { ADMIN_ANALYTICS_PATH } from '$lib/shared/routes';
+  import { adminAnalyticsPostPath } from '$lib/shared/routes';
 
   /**
    * 대시보드 — 기간 합계·증감·상위 글·일별 추이.
@@ -168,7 +168,7 @@
               })}
             >
               <a
-                href={`${ADMIN_ANALYTICS_PATH}${post.slug}/`}
+                href={adminAnalyticsPostPath(post.slug)}
                 class={css({ color: 'ink.950', textDecoration: 'none', mr: 'auto' })}
                 >{post.title}</a
               >

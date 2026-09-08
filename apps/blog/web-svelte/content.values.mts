@@ -104,6 +104,22 @@ export const BUNDLE_GUARDS = [
     requiredIn: [{ kind: 'initial', of: { under: '/admin/' } }],
   },
   {
+    // 관리자 주소가 공개 페이지 첫 로드에 실리면 안 된다.
+    //
+    // **이 규칙은 실제 누수를 잡고 만들어졌다.** 값을 `$env/static/public`에
+    // 뒀더니 글 페이지 청크에 평문으로 실렸고, `@blog/site-values`로 옮겨도
+    // 똑같았다 — 두 경우 다 공개 페이지가 **같은 모듈**의 다른 값을 읽기
+    // 때문이다(Supabase 좌표 / Giscus 좌표). 청킹은 모듈 단위라, 값을 admin만
+    // 여는 모듈로 옮기는 것이 유일한 해법이었다(`lib/domain/adminAccess.ts`).
+    //
+    // 시크릿은 아니다(클라이언트 판정이라 어차피 번들에 있다). 다만 글마다
+    // 평문 주소가 실릴 이유는 없다.
+    label: 'admin 전용 값(관리자 주소)',
+    marker: 'rewq5991@gmail.com',
+    forbiddenIn: [{ kind: 'initial', of: { notUnder: '/admin/' } }],
+    requiredIn: [{ kind: 'initial', of: { under: '/admin/' } }],
+  },
+  {
     // 댓글은 **글에만** 붙는다. Comments.svelte를 레이아웃으로 올리면 홈·목록·
     // 소개까지 giscus 로더를 첫 로드에 받는데, 화면에는 아무 변화가 없어
     // 눈으로는 알 수 없다. React 판은 글 페이지에서만 `GiscusComments`를

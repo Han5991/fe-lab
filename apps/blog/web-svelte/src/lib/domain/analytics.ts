@@ -18,7 +18,8 @@ let repository: PublicAnalytics | null = null;
 const repo = (): PublicAnalytics =>
   (repository ??= createPublicAnalytics(publicDb));
 
+// 조회수 증가 하나만 내보낸다. `getTopPosts`·`getAllViewCounts`도 패키지에 있지만
+// 이 앱의 공개 화면이 아직 인기순 정렬을 하지 않는다 — 쓰지 않는 문을 열어 두면
+// "이 배럴이 무엇을 위한 것인가"가 흐려진다. 필요해지면 그때 연다.
 export const incrementViewCount = (slug: string) =>
   repo().incrementViewCount(slug);
-export const getAllViewCounts = () => repo().getAllViewCounts();
-export const getTopPosts = (limit: number) => repo().getTopPosts(limit);

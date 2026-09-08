@@ -25,63 +25,88 @@
    * 강제는 Edge Function `admin-analytics`가 호출자 JWT를 진짜 시크릿
    * `ADMIN_EMAIL`과 대조하며 한다. 이 파일을 통째로 지워도 데이터는 안 나온다.
    *
-   * 상태를 셋으로 둔다 — `checking`(세션 확인 중) · `denied`(리다이렉트 진행 중)
-   * · `allowed`. 첫 상태에서 본문을 그리지 않는 이유는 깜빡임이다: 세션이 없는
+   * ## 세션 상태와 판정을 나눈다
+   *
+   * 초안은 `onMount` 안에서 `gate`를 직접 세웠는데, 그게 **가드를 통째로
+   * 망가뜨렸다.** SvelteKit은 `/admin/` 아래를 오갈 때 이 레이아웃을 다시
+   * 마운트하지 않는다 — `onMount`는 전체 로드당 한 번뿐이다. 그래서
+   * ① 비로그인 방문자를 로그인 화면으로 보내면 `gate`가 `denied`에 굳어 **로그인
+   * 화면 자체가 렌더되지 않았고**(영원한 "이동합니다…"), ② 첫 진입이 로그인
+   * 화면이면 `allowed`로 굳어 거기서 대시보드로 클릭해 들어가는 길이 **세션
+   * 검사를 통과하지 않았다.**
+   *
+   * React 판이 이 함정에 빠지지 않는 이유는 렌더마다 `isAdminLoginPath(pathname)`을
+   * 다시 보기 때문이다. 여기서도 같게 만든다: `onMount`는 **세션을 읽고 구독하는
+   * 일만** 하고, "지금 이 경로에서 무엇을 보여줄지"는 경로와 세션에서 매번
+   * 파생시킨다.
+   *
+   * 판정이 나기 전에 본문을 그리지 않는 이유는 깜빡임이다: 세션이 없는
    * 방문자에게 대시보드가 한 프레임 보였다가 사라지면, 그 한 프레임 동안 빈
    * 숫자가 아니라 **이전 계정의 화면**처럼 읽힌다.
    */
   const { children }: { children: Snippet } = $props();
 
-  type Gate = 'checking' | 'denied' | 'allowed';
-  let gate = $state<Gate>('checking');
+  /** 세션 자체의 상태 — 경로와 무관하다. */
+  type SessionState = 'loading' | 'none' | 'wrong' | 'ok';
+  let sessionState = $state<SessionState>('loading');
   let email = $state<string | null>(null);
 
   const onLoginPage = $derived(isAdminLoginPath(page.url.pathname));
+  /** 로그인 화면은 가드를 지나지 않는다(무한 리다이렉트 방지). */
+  const allowed = $derived(onLoginPage || sessionState === 'ok');
 
   onMount(() => {
-    if (onLoginPage) {
-      gate = 'allowed';
-      return;
-    }
     let cancelled = false;
 
-    const decide = (session: { user: { email?: string | undefined } } | null) => {
+    const apply = (session: { user: { email?: string | undefined } } | null) => {
       if (cancelled) return;
       if (!session) {
-        gate = 'denied';
-        void goto(ADMIN_LOGIN_PATH);
+        sessionState = 'none';
+        email = null;
+        // 세션이 사라지면 캐시도 함께 버린다. 로그아웃 버튼만 비우면 다른 탭에서
+        // 로그아웃했을 때 이전 계정의 집계가 이 탭에 남는다.
+        clearAdminCache();
         return;
       }
       if (!isAdminEmail(session.user.email)) {
-        gate = 'denied';
-        // 잘못된 계정은 세션을 끊고 안내로 보낸다 — 그대로 두면 다음 방문에
-        // 같은 화면을 다시 만난다.
-        void authRepository
-          .signOutAdmin()
-          .then(() => goto(ADMIN_LOGIN_UNAUTHORIZED_PATH));
+        sessionState = 'wrong';
+        email = null;
+        clearAdminCache();
         return;
       }
       email = session.user.email ?? null;
-      gate = 'allowed';
+      sessionState = 'ok';
     };
 
-    loadSession().then(decide, () => {
-      if (cancelled) return;
-      // 세션 조회가 실패하면 **막는다**(fail-closed). 로컬 Supabase가 떠 있지
-      // 않으면 여기로 온다 — 그때 대시보드를 열어 주면 빈 화면이 "데이터 없음"
-      // 처럼 보인다.
-      gate = 'denied';
-      void goto(ADMIN_LOGIN_PATH);
+    // 조회 실패는 저장소가 이미 `null`로 수렴시킨다(`AuthRepository`) — 여기
+    // 거부 핸들러는 그 계약이 바뀌었을 때를 위한 fail-closed 폴백이다.
+    loadSession().then(apply, () => {
+      apply(null);
     });
 
     // 다른 탭에서 로그아웃하면 여기도 따라 나간다.
-    const unsubscribe = authRepository.subscribeAdminSession(session => {
-      if (!cancelled) decide(session);
-    });
+    const unsubscribe = authRepository.subscribeAdminSession(apply);
     return () => {
       cancelled = true;
       unsubscribe();
     };
+  });
+
+  /**
+   * 리다이렉트는 **경로가 바뀔 때도 다시 판정돼야 한다** — 그래서 `onMount`가
+   * 아니라 이펙트다. 로그인 화면에서는 아무것도 하지 않는다.
+   */
+  $effect(() => {
+    if (onLoginPage) return;
+    if (sessionState === 'none') {
+      void goto(ADMIN_LOGIN_PATH);
+    } else if (sessionState === 'wrong') {
+      // 잘못된 계정은 세션을 끊고 안내로 보낸다 — 그대로 두면 다음 방문에
+      // 같은 화면을 다시 만난다.
+      void authRepository
+        .signOutAdmin()
+        .then(() => goto(ADMIN_LOGIN_UNAUTHORIZED_PATH));
+    }
   });
 
   async function logout() {
@@ -117,7 +142,7 @@
       >
       <a href={ADMIN_ANALYTICS_PATH} class={link}>글별 통계</a>
       <a href={HOME_PATH} class="{link} {css({ ml: 'auto' })}">사이트로</a>
-      {#if gate === 'allowed' && !onLoginPage}
+      {#if allowed && !onLoginPage}
         <button
           type="button"
           class={css({
@@ -141,12 +166,12 @@
   </Rail>
 </header>
 
-{#if gate === 'allowed'}
+{#if allowed}
   {@render children()}
 {:else}
   <Rail>
     <p class={css({ my: '16', color: 'ink.500', fontSize: 'sm' })}>
-      {gate === 'checking' ? '세션 확인 중…' : '로그인 화면으로 이동합니다…'}
+      {sessionState === 'loading' ? '세션 확인 중…' : '로그인 화면으로 이동합니다…'}
     </p>
   </Rail>
 {/if}

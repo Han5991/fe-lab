@@ -20,6 +20,7 @@ export default defineConfig({
       'src/lib/server/**/*.test.ts',
       'src/lib/client/**/*.test.ts',
       'src/lib/admin/**/*.test.ts',
+      'src/lib/shared/**/*.test.ts',
     ],
   },
 });

@@ -1,5 +1,6 @@
 <script lang="ts">
   import { page } from '$app/state';
+  import Seo from '$lib/components/Seo.svelte';
 
   /**
    * Admin 화면의 head — **레이아웃에서 한 번만** 쓴다.
@@ -20,15 +21,11 @@
   );
 </script>
 
-<svelte:head>
-  <title>admin | {site.name}</title>
-  <meta name="robots" content="noindex, nofollow" />
-  <meta name="description" content="관리자 전용 화면입니다." />
-  <link rel="canonical" href={`${site.url}${page.url.pathname}`} />
-  <meta property="og:title" content="admin | {site.name}" />
-  <meta property="og:site_name" content={site.name} />
-  <meta property="og:locale" content="ko_KR" />
-  <meta property="og:type" content="website" />
-  <meta property="og:url" content={`${site.url}${page.url.pathname}`} />
-  <meta property="og:image" content={`${site.url}${site.ogDefaultImage}`} />
-</svelte:head>
+<Seo
+  title="admin | {site.name}"
+  description="관리자 전용 화면입니다."
+  canonical={`${site.url}${page.url.pathname}`}
+  ogImage={`${site.url}${site.ogDefaultImage}`}
+  siteName={site.name}
+  noindex
+/>
