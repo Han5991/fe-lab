@@ -161,9 +161,9 @@ apps/blog/web/
 
 ## 7. 배포 · CI
 
-- **PR / main push**: `.github/workflows/ci.yml` → 공용 `.github/actions/quality-checks`(turbo lint·check-types·test → `lint:posts` → `format:check` → `pnpm build --filter=@blog/web`).
+- **PR / main push**: `.github/workflows/ci.yml` → 공용 `.github/actions/quality-checks`(turbo lint·check-types·test → `lint:posts` → `format:check` → `pnpm build --filter=@blog/web` → `pnpm build --filter=@blog/web-svelte`).
 - **배포**: `.github/workflows/deploy-blog.yml` — `main` push(`apps/blog/**`·`packages/@blog/**`), 매일 KST 09:00 cron(예약 발행), 수동. quality-checks → `--no-cache` 빌드 → `/posts/` 프리렌더 링크 개수 검증(CSR bail-out 회귀 가드) → Cloudflare Workers(`wrangler.jsonc`). 빌드 스텝이 넣는 env는 `NEXT_PUBLIC_PR_COUNT`(GitHub에서 가져온 머지 PR 수)와 `NODE_ENV` 둘뿐이다 — 나머지 `NEXT_PUBLIC_*`은 커밋된 `.env.production`에서 온다.
-- **PR 프리뷰**: `.github/workflows/preview-blog.yml` — `wrangler versions upload`로 버전만 올리고(트래픽 이동 없음) 브랜치 고정 alias URL과 커밋별 URL을 PR에 코멘트한다. Vercel은 더 이상 쓰지 않는다.
+- **PR 프리뷰**: `.github/workflows/preview-blog.yml` — `wrangler versions upload`로 버전만 올리고(트래픽 이동 없음) 브랜치 고정 alias URL과 커밋별 URL을 PR에 코멘트한다. 앱 둘을 매트릭스로 돌리므로 SvelteKit 판(`apps/blog/web-svelte`) 프리뷰도 같은 워크플로가 자기 Worker에 낸다. Vercel은 더 이상 쓰지 않는다.
 - **Supabase**: 스키마는 `supabase/migrations/`(조회수 테이블·이력·대시보드 RPC·KST 보정·권한 잠금 순), Admin RPC 프록시는 `supabase/functions/admin-analytics`. 프로덕션 적용은 `.github/workflows/supabase-migrations.yml`이 한다 — `supabase/migrations/**`(와 워크플로 자신)가 바뀐 `main` push와 수동 실행에서만 돌고, `migration list`로 원장과 파일의 차이를 로그에 남긴 뒤 `db push`한다(대시보드 SQL 에디터로 손대던 경로를 여기 하나로 고정).
 
 ---

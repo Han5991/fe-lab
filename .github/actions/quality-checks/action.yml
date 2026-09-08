@@ -1,6 +1,6 @@
 name: Quality checks
 description: >-
-  lint · type check · test · 포스트 frontmatter · 포맷 · (선택) 블로그 빌드 + 산출물 SEO 검사.
+  lint · type check · test · 포스트 frontmatter · 포맷 · (선택) 블로그 빌드 둘 + 산출물 검사.
   PR CI와 배포 워크플로가 **같은 정의**를 쓰도록 한곳에 모읍니다.
 
 # 재사용 워크플로(workflow_call)가 아니라 composite action인 이유:
@@ -17,8 +17,8 @@ inputs:
       SvelteKit 판(`@blog/web-svelte`)을 빌드해 산출물 검사(check-seo·check-bundle)까지
       돌릴지 여부. 이 앱은 **프로덕션에 배포되지 않으므로**(프리뷰 URL 전용) 배포
       워크플로는 'false'로 넘깁니다 — 매일 도는 cron 배포에 관계없는 빌드를 얹지
-      않기 위해서입니다. PR CI에서는 켜 둡니다: 이 앱의 게이트가 도는 자리가
-      여기뿐입니다.
+      않기 위해서입니다. PR CI에서는 켜 둡니다: `preview-blog.yml`도 같은 `build`를
+      부르지만 그쪽은 포크 PR에서 잡째 건너뛰므로, 항상 도는 게이트는 여기입니다.
     required: false
     default: 'true'
   build-blog:
@@ -63,6 +63,9 @@ runs:
     # **이 스텝이 없는 동안 그 게이트는 CI에서 한 번도 돈 적이 없었다.** 위
     # `--filter=@blog/web`이 React 판만 빌드하는데, 두 앱의 산출물 검사는 각자의
     # `build` 스크립트 안에 있기 때문이다. 로컬에서만 도는 게이트는 게이트가 아니다.
+    #
+    # `preview-blog.yml`도 같은 `build`를 부르지만 그것에 기대지 않는다 — 그쪽은
+    # 포크 PR에서 잡 전체가 건너뛰어지고, 블로그 경로가 안 바뀐 PR에는 아예 안 돈다.
     - name: Build blog (SvelteKit) + artifact checks
       if: inputs.build-blog-svelte == 'true'
       shell: bash

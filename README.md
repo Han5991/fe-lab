@@ -103,17 +103,21 @@ apps/blog/posts/**/_series.yml ─┤
 
   **러너는 모든 워크스페이스에서 Vitest 하나다.** 갈리는 것은 러너가 아니라 **환경**이고, 환경이 둘인 곳은 `test.projects`로 나눈다.
 
-  | 워크스페이스    | 환경                                                                                          |
-  | --------------- | --------------------------------------------------------------------------------------------- |
-  | `@blog/content` | node (`src/**/*.test.ts`)                                                                     |
-  | `@blog/web`     | projects 둘 — `node`(`domain/**`·`lib/**`) + `jsdom`(`src/**`, RTL). `pnpm test` 한 번에 실행 |
-  | `next.js`       | jsdom + RTL + next-router-mock (`test:watch` 있음)                                            |
-  | `react`         | jsdom + RTL + MSW                                                                             |
-  | `typescript`    | node                                                                                          |
+  | 워크스페이스       | 환경                                                                                          |
+  | ------------------ | --------------------------------------------------------------------------------------------- |
+  | `@blog/content`    | node (`src/**/*.test.ts`)                                                                     |
+  | `@blog/analytics`  | node                                                                                          |
+  | `@blog/web`        | projects 둘 — `node`(`domain/**`·`lib/**`) + `jsdom`(`src/**`, RTL). `pnpm test` 한 번에 실행 |
+  | `@blog/web-svelte` | node 하나 — 화면 대신 순수 함수로 떨어지는 계약(마크다운 변환·좌표 계산·라우트·검색)을 잠근다 |
+  | `next.js`          | jsdom + RTL + next-router-mock (`test:watch` 있음)                                            |
+  | `react`            | jsdom + RTL + MSW                                                                             |
+  | `typescript`       | node                                                                                          |
+
+  `socket-server`에는 `test` 스크립트가 없다 — `check-types`만 돈다.
 
   예전에는 `@blog/content`와 `@blog/web`의 순수 로직이 `node --test`(+`node:assert/strict`)로 돌았다. 러너가 갈리면 단언 API·커버리지 도구·ESLint 인가가 두 벌이 되고, `node --test '<glob>'`은 **매치가 0개여도 exit 0**이라 테스트가 조용히 사라질 수 있었다. Vitest는 매치 0개면 실패한다.
 
-- **CI**(`.github/actions/quality-checks` 공용 composite action): ① `pnpm turbo run lint check-types test` ② `pnpm --filter @blog/web lint:posts` ③ `pnpm format:check` ④ `pnpm build --filter=@blog/web`(prebuild → next build → check-seo → check-bundle). PR CI와 배포 워크플로가 같은 액션을 부른다.
+- **CI**(`.github/actions/quality-checks` 공용 composite action): ① `pnpm turbo run lint check-types test` ② `pnpm --filter @blog/web lint:posts` ③ `pnpm format:check` ④ `pnpm build --filter=@blog/web`(prebuild → next build → check-seo → check-bundle) ⑤ `pnpm build --filter=@blog/web-svelte`(SvelteKit 판의 같은 게이트 둘). 뒤의 둘은 각각 `build-blog`·`build-blog-svelte` 입력으로 끌 수 있고, 배포 워크플로가 둘 다 끈다. PR CI와 배포 워크플로가 같은 액션을 부른다.
 - **pre-push hook**: 푸시 전 워크스페이스 전체 lint·types·test (turbo 캐시로 보통 < 5초).
 
 ---
@@ -174,18 +178,18 @@ pnpm check-seo                                      # 빌드 산출물(out/) SEO
 
 ### CI / 자동화 (`.github/workflows/`)
 
-| 워크플로                    | 트리거                                                                       | 하는 일                                                                                                                                                                                                                                           |
-| --------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ci.yml`                    | `pull_request`, `push: main`                                                 | quality-checks(lint·types·test·frontmatter·포맷) + **블로그 두 판**을 빌드해 산출물 검사까지 — SvelteKit 판 게이트가 도는 자리는 여기뿐이다(`build-blog-svelte` 입력으로 끄며, `deploy-blog.yml`이 끈다). Next 빌드 캐시 복원 포함                |
-| `deploy-blog.yml`           | `push: main`(블로그 경로), cron `0 0 * * *`, dispatch                        | quality-checks → `--no-cache` 빌드 → `/posts/` 프리렌더 링크 검증 → Workers 배포. 빌드 스텝이 넣는 env는 `NEXT_PUBLIC_PR_COUNT`·`NODE_ENV` 둘뿐이고 나머지 `NEXT_PUBLIC_*`은 커밋된 `.env.production`에서 온다                                    |
-| `preview-blog.yml`          | `pull_request`(블로그 경로)                                                  | **앱 둘을 매트릭스로** 빌드 → `wrangler versions upload` → 프리뷰 URL을 PR에 코멘트(앱마다 자기 Worker·자기 sticky 코멘트). 체크 이름은 `preview`(Next.js)·`preview-svelte`로 못 박는다 — 매트릭스가 이름을 바꾸면 required check가 영영 대기한다 |
-| `supabase-migrations.yml`   | `push: main`(`apps/blog/web/supabase/migrations/**`·워크플로 자신), dispatch | `supabase migration list`로 원장↔파일 차이를 로그에 남긴 뒤 `supabase db push`(풀러 5432 세션 모드, `--db-url`). 대시보드 SQL 에디터로 손대던 경로를 여기 하나로 고정                                                                             |
-| `claude.yml`                | `@claude` 멘션 · 라벨                                                        | 온디맨드 Claude Code 에이전트                                                                                                                                                                                                                     |
-| `claude-code-review.yml`    | PR opened/synchronize                                                        | PR 자동 코드 리뷰                                                                                                                                                                                                                                 |
-| `claude-deps-audit.yml`     | 매주 월 cron                                                                 | 죽은 `pnpm overrides` 정리 + `pnpm audit` 후속 PR                                                                                                                                                                                                 |
-| `claude-link-rot.yml`       | 매월 1일 cron                                                                | 발행 글 외부 링크 검사 → 교체 PR                                                                                                                                                                                                                  |
-| `claude-post-inventory.yml` | `deploy-blog.yml` 완료 시(workflow_run), dispatch                            | draft/scheduled 글 현황 이슈 갱신                                                                                                                                                                                                                 |
-| `claude-site-smoke.yml`     | 매일 cron                                                                    | 배포된 HTML/sitemap/rss 스모크 검사                                                                                                                                                                                                               |
+| 워크플로                    | 트리거                                                                       | 하는 일                                                                                                                                                                                                                                                                                                    |
+| --------------------------- | ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ci.yml`                    | `pull_request`, `push: main`                                                 | quality-checks(lint·types·test·frontmatter·포맷) + **블로그 두 판**을 빌드해 산출물 검사까지 — SvelteKit 판 게이트가 **항상** 도는 자리다(`preview-blog.yml`도 같은 빌드를 부르지만 포크 PR·비블로그 PR에는 안 돈다). `build-blog-svelte` 입력으로 끄며 `deploy-blog.yml`이 끈다. Next 빌드 캐시 복원 포함 |
+| `deploy-blog.yml`           | `push: main`(블로그 경로), cron `0 0 * * *`, dispatch                        | quality-checks → `--no-cache` 빌드 → `/posts/` 프리렌더 링크 검증 → Workers 배포. 빌드 스텝이 넣는 env는 `NEXT_PUBLIC_PR_COUNT`·`NODE_ENV` 둘뿐이고 나머지 `NEXT_PUBLIC_*`은 커밋된 `.env.production`에서 온다                                                                                             |
+| `preview-blog.yml`          | `pull_request`(블로그 경로)                                                  | **앱 둘을 매트릭스로** 빌드 → `wrangler versions upload` → 프리뷰 URL을 PR에 코멘트(앱마다 자기 Worker·자기 sticky 코멘트). 체크 이름은 `preview`(Next.js)·`preview-svelte`로 못 박는다 — 매트릭스가 이름을 바꾸면 required check가 영영 대기한다                                                          |
+| `supabase-migrations.yml`   | `push: main`(`apps/blog/web/supabase/migrations/**`·워크플로 자신), dispatch | `supabase migration list`로 원장↔파일 차이를 로그에 남긴 뒤 `supabase db push`(풀러 5432 세션 모드, `--db-url`). 대시보드 SQL 에디터로 손대던 경로를 여기 하나로 고정                                                                                                                                      |
+| `claude.yml`                | `@claude` 멘션 · 라벨                                                        | 온디맨드 Claude Code 에이전트                                                                                                                                                                                                                                                                              |
+| `claude-code-review.yml`    | PR opened/synchronize                                                        | PR 자동 코드 리뷰                                                                                                                                                                                                                                                                                          |
+| `claude-deps-audit.yml`     | 매주 월 cron                                                                 | 죽은 `pnpm overrides` 정리 + `pnpm audit` 후속 PR                                                                                                                                                                                                                                                          |
+| `claude-link-rot.yml`       | 매월 1일 cron                                                                | 발행 글 외부 링크 검사 → 교체 PR                                                                                                                                                                                                                                                                           |
+| `claude-post-inventory.yml` | `deploy-blog.yml` 완료 시(workflow_run), dispatch                            | draft/scheduled 글 현황 이슈 갱신                                                                                                                                                                                                                                                                          |
+| `claude-site-smoke.yml`     | 매일 cron                                                                    | 배포된 HTML/sitemap/rss 스모크 검사                                                                                                                                                                                                                                                                        |
 
 ---
 

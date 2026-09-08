@@ -8,7 +8,7 @@
 ## 지금 있는 것
 
 - SvelteKit + `adapter-static` 정적 export (`build/`) — **99 페이지**(공개 50 + admin 49)
-- 공개 라우트 6개: `/` · `/posts/` · `/posts/[...slug]/` · `/series/` · `/about/` · `/privacy/`
+- 공개 라우트 7개: `/` · `/posts/` · `/posts/[...slug]/` · `/series/` · `/about/` · `/privacy/` · `/404/`
 - Admin 라우트 4개: `/admin/` · `/admin/analytics/` · `/admin/analytics/[...slug]/` ·
   `/admin/login/` — 인증 가드, Google OAuth, 대시보드·글별 통계·글 상세
 - 마크다운 렌더 — remark/rehype를 **빌드 타임에** 돌려 HTML 문자열까지 서버에서 만든다
@@ -19,7 +19,7 @@
 - 차트 — Recharts 없이 SVG를 직접 그린다(영역·막대·스파크라인). 좌표 계산은
   `lib/admin/charts/geometry.ts`의 순수 함수고 테스트가 잠근다
 - 데이터 캐시 — React Query 없이 `lib/admin/store.svelte.ts`(약속을 모듈에 든다)
-- Vitest(node) — 계약 테스트 **80개** / 파일 10개
+- Vitest(node) — 계약 테스트 **88개** / 파일 12개
 - **`check-seo`·`check-bundle`이 `pnpm build` 안의 게이트다** — 번들 규칙 **11개**
   (admin 전용 다섯 · 글 전용 둘 · 검색 · 서버 전용 값 · 빌드 타임 강조 · 스캔 생존).
   **CI에서도 돈다** — `quality-checks` 액션의 `build-blog-svelte` 스텝이 그 자리다
@@ -27,7 +27,6 @@
 - 사이트 값은 `@blog/site-values`, 조회수·대시보드 도메인은 `@blog/analytics`
   (둘 다 React 판과 공유)
 - ESLint — `--max-warnings=0`, 인라인 `eslint-disable` 금지, 타입 정보 룰
-
 - 배포 — 전용 Worker(`blog-svelte`)에 PR마다 프리뷰 URL. 아래 「배포」 절
 
 아직 없는 것: `code-tabs`(상호작용) — 지우지 않고 통과시키므로 내용은 보이되
@@ -100,6 +99,14 @@ pnpm --filter @blog/web-svelte measure  # 첫 로드 전송량 측정
   호스트에만 거는데, 이 앱은 프로덕션 도메인 자체가 없으므로 색인될 이유가 어디에도
   없다. 함께 `/_app/immutable/*`에 1년 `immutable` — SvelteKit이 콘텐츠 해시를 박는
   디렉터리가 거기다. HTML에는 캐시를 걸지 않는다(새 글이 늦게 반영된다)
+- **첫 Worker는 CI가 한 번만 만든다.** `wrangler versions upload`는 **이미 존재하는**
+  Worker에만 버전을 얹는다 — 없으면 "You cannot upload a new version of a Worker that
+  does not yet exist"로 거절한다. 그런데 이 앱을 `deploy`하는 경로는 저장소 어디에도
+  없으므로(그게 결정 원장이다) 프리뷰 잡이 Worker 존재를 확인하고 없을 때만 `deploy`를
+  한 번 돌린다. **그 deploy가 프로덕션 표면을 만들지 않는다** — `routes`가 없고
+  `workers_dev`도 false라 활성 버전에 닿을 수 있는 주소가 하나도 없다. 부트스트랩은
+  `bootstrap: true`인 앱에만 걸리는데, 존재 확인이 네트워크·토큰 문제로 오탐하더라도
+  그것이 **프로덕션 Worker(`blog`)에는 절대 닿지 않게** 하기 위해서다
 - **404는 복사로 만든다.** `trailingSlash: always`라 404 라우트가 `build/404/index.html`로
   나가는데 Workers의 `not_found_handling: 404-page`는 루트 `404.html`을 문다. 어댑터의
   `fallback` 옵션을 주면 만들어 주지만, 그 순간 "모든 라우트가 프리렌더 가능한가"
@@ -107,7 +114,9 @@ pnpm --filter @blog/web-svelte measure  # 첫 로드 전송량 측정
   택했다
 - **CI 자리 둘** — `quality-checks` 액션의 `build-blog-svelte` 스텝(빌드 + `check-seo` +
   `check-bundle`. `deploy-blog.yml`은 `'false'`로 끈다: 매일 도는 cron 배포에 관계없는
-  빌드를 얹지 않는다)과 `preview-blog.yml`의 매트릭스(체크 이름 `preview-svelte`)
+  빌드를 얹지 않는다)과 `preview-blog.yml`의 매트릭스(체크 이름 `preview-svelte`).
+  프리뷰 쪽도 같은 `build`를 부르므로 게이트가 두 번 도는데, 그쪽은 포크 PR에서 잡째
+  건너뛰어지므로 **항상 도는 것은 `quality-checks` 쪽 하나**다
 - **Supabase는 로컬만 가리킨다.** 프리뷰에서 조회수·Admin이 동작하지 않는 것은
   버그가 아니라 결정 원장의 항목이다
 

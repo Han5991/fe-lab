@@ -89,8 +89,9 @@ first run may build dependencies). Package names are `@blog/web`, `@blog/web-sve
 
   ```bash
   pnpm --filter @blog/content test   # Vitest, node env — content contracts, generators, validation
+  pnpm --filter @blog/analytics test # Vitest, node env — view-count/dashboard calculations and contracts
   pnpm --filter @blog/web test       # Vitest, two projects: node (src/shared, src/domain, src/lib) + jsdom (rest of src)
-  pnpm --filter @blog/web-svelte test # Vitest, node only — contract tests (loader, geometry, URLs, bundle rules)
+  pnpm --filter @blog/web-svelte test # Vitest, node only — markdown transforms, diagram/chart geometry, routes, search
   pnpm test --filter=next.js         # Vitest (jsdom + RTL + next-router-mock)
   pnpm test --filter=react           # Vitest (jsdom + RTL + MSW)
   pnpm test --filter=typescript      # Vitest (node)
@@ -199,14 +200,16 @@ first run may build dependencies). Package names are `@blog/web`, `@blog/web-sve
     squash merge is how it leaks in — the trailer rides along in a sub-commit body and lands on `main`. Strip it
     from every sub-commit before the PR is squashed, not after.
 - **Scope**: the workspace or area the change lands in. Blog work splits by package: `blog` (posts/authoring),
-  `blog-web` (the Next.js app), `blog-content` (`@blog/content`). Also in active use: `ci`, `deps`, `claude`,
-  `bundler`, `supabase`, `react`, `next`, `renovate`, `vercel`, `turbo`.
+  `blog-web` (the Next.js app), `blog-web-svelte` (the SvelteKit rebuild), `blog-content` (`@blog/content`),
+  `blog-analytics` (`@blog/analytics`). Also in active use: `ci`, `deps`, `claude`, `bundler`, `supabase`,
+  `react`, `next`, `renovate`, `vercel`, `turbo`.
 - **Hooks (lefthook)**: `pre-commit` runs prettier on staged files (`apps/blog/posts/**` excluded); `pre-push` runs
   `pnpm lint` / `check-types` / `test` in parallel. There is no `commit-msg` hook — the message rules above are
   held by hand. Bypass only when necessary: `LEFTHOOK=0` or `--no-verify`.
 - **PRs**: Self-review required. Verify `pnpm lint`, `pnpm check-types`, `pnpm test`, `pnpm format:check` pass before
-  submitting — CI (`.github/actions/quality-checks`) runs those plus `lint:posts` and the blog build
-  (`prebuild → next build → check-seo → check-bundle`).
+  submitting — CI (`.github/actions/quality-checks`) runs those plus `lint:posts` and **both** blog builds
+  (each ending in `check-seo → check-bundle`). Run the SvelteKit one with `.svelte-kit/` and `styled-system/`
+  deleted — they are generated and gitignored, so a warm tree hides failures that only appear on a clean checkout.
 
 ## 7. Troubleshooting
 

@@ -125,10 +125,12 @@ The blog (`apps/blog/web/`) is a **statically generated (SSG) Next.js applicatio
   `@blog/diagram`(다이어그램 좌표 계산)을 두 앱이 함께 읽는다. **사본을 만들지 말 것** —
   한쪽만 고치면 두 산출물이 조용히 갈린다(sitemap·RSS·OG 카드는 그대로 생성되고 빌드도
   성공한다. 이 저장소가 `published` 필드 이중화에서 이미 겪은 실패 모양이다)
-- **공유하지 않는 것은 번들 규칙(`BUNDLE_GUARDS`)이다.** 마커가 프레임워크의 어휘라서다
-  (`recharts`·`GoTrueClient`는 React 판의 것이고, Svelte 판은 그 라이브러리를 아예 쓰지
-  않는다). 각 앱의 `content.values.mts`가 자기 규칙을 선언하고, 패키지는 규칙이 쓰는 경로
-  접두까지만 준다
+- **공유하지 않는 것은 번들 규칙(`BUNDLE_GUARDS`)이다.** 마커가 프레임워크의 어휘라서다.
+  겹치는 마커도 있지만(`GoTrueClient`·`mermaid`는 두 판이 같은 라이브러리를 쓴다)
+  `recharts`는 React 판에만 있고(Svelte 판은 차트 SVG를 직접 그린다), 무엇보다 **번들러가
+  다르면 살아남는 식별자가 다르다** — rolldown이 지운 함수 이름이 Turbopack에서는 남는다.
+  각 앱의 `content.values.mts`가 자기 규칙을 선언하고, 패키지는 규칙이 쓰는 경로 접두까지만
+  준다
 - **게이트는 같다** — `pnpm build`가 `check-seo`·`check-bundle`로 끝나고, lint는
   `--max-warnings=0` + `noInlineConfig`다. 다만 **생성물이 커밋되지 않는다**:
   `.svelte-kit/`(svelte-kit sync)와 `styled-system/`(panda codegen) 둘 다 gitignore라,
@@ -137,6 +139,10 @@ The blog (`apps/blog/web/`) is a **statically generated (SSG) Next.js applicatio
   자리다 — 검증은 **생성물을 지운 상태**에서 할 것
 - **배포는 프리뷰 URL뿐이다** — 전용 Worker(`blog-svelte`)에 `wrangler versions upload`로
   버전만 올린다. 커스텀 도메인도, 트래픽 이동도, 프로덕션 배포 경로도 없다.
+  단 **Worker 자체를 만드는 일은 한 번 필요하다**(`versions upload`는 존재하는 Worker에만
+  버전을 얹는다). 프리뷰 잡이 존재를 확인하고 없을 때만 `deploy`를 돌리는데, `routes`도
+  `workers_dev`도 없어 그 활성 버전에 닿을 주소가 없다 — 부트스트랩은 매트릭스의
+  `bootstrap: true`인 앱에만 걸려서, 존재 확인이 오탐해도 프로덕션 Worker에는 닿지 않는다.
   `static/_headers`가 전 경로에 `X-Robots-Tag: noindex`를 건다(프로덕션 도메인이 없으니
   색인될 이유도 없다). 최종 배포 대상을 고르는 것은 비교가 끝난 뒤의 별도 결정이다
 - **Supabase는 로컬 인스턴스만 가리킨다.** 결정 원장의 항목이라, 배포된 프리뷰에서
@@ -199,7 +205,8 @@ apps/blog/posts (원고)  →  packages/@blog/content  →  apps/blog/web
   예외가 필요하면 주석이 아니라 `eslint.config.mts`에 `files` 스코프로 적을 것.
   **이 임계값은 블로그 스택에만 건다.** 실험실은 세 단이다 — `apps/react`·`apps/next.js`는
   `eslint .`(경고 허용, `noInlineConfig` 없음)이고, `apps/typescript`·`apps/socket-server`는
-  **린트하지 않는다**(lint 스크립트도 eslint 설정 파일도 없다 — `check-types`·`test`만 돈다).
+  **린트하지 않는다**(lint 스크립트도 eslint 설정 파일도 없다). `apps/typescript`는
+  `check-types`·`test`가, `apps/socket-server`는 `check-types`만 돈다.
   저장소 전체 eslint 설정은 여섯뿐이다. 규율을 자산에만 거는 건 의도된 배분이다(루트 README
   "블로그는 실제로 쓰는 자산이라 신중하게"). 실험 앱 코드를 고칠 때 블로그 기준을 강제하지
   말 것 — `apps/typescript`에서 `pnpm lint`를 찾지도 말 것
@@ -470,5 +477,5 @@ apps/blog/posts (원고)  →  packages/@blog/content  →  apps/blog/web
   않는다. 예외는 `peerDependencies` — 핀이 아니라 호환 범위 선언이라 넓게 둔다
 - 테스트 러너는 워크스페이스 전부 **Vitest** 하나다. 갈리는 것은 환경뿐이고, 환경이
   둘인 `apps/blog/web`만 `test.projects`로 `node`(domain·lib) / `jsdom`(src)을 나눈다.
-  `apps/blog/web-svelte`는 node 하나다 — 화면이 아니라 계약(로더·좌표 계산·URL·번들 규칙)을
-  잠그기 때문이다
+  `apps/blog/web-svelte`도 node 하나다 — 화면을 렌더해 보는 대신 마크다운 변환·다이어그램과
+  차트의 좌표 계산·라우트 경로·검색처럼 **순수 함수로 떨어지는 계약**을 잠그기 때문이다
