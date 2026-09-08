@@ -1,8 +1,20 @@
 import { error } from '@sveltejs/kit';
 import {
+  archivePath,
+  fmtDate,
+  postPath,
+  resolveThumbnailUrl,
+  sortPostsBySeriesOrder,
+} from '@blog/content';
+import { OG_DEFAULT_IMAGE } from '@blog/site-values';
+import {
   buildPostSeo,
+  getAdjacentPosts,
   getAllPostSlugs,
+  getAllPosts,
   getPostBySlug,
+  getSeriesAdjacentPosts,
+  getSeriesMeta,
 } from '$lib/server/content';
 import { renderMarkdown } from '$lib/server/markdown';
 
@@ -23,19 +35,78 @@ export const entries = () => getAllPostSlugs().map(slug => ({ slug }));
  */
 const normalizeSlug = (raw: string): string => raw.replace(/\/+$/, '');
 
+/** 메타 줄에 인라인시킬 태그 — 최대 4개, 각자 아카이브 필터로 간다. */
+const MAX_TAGS = 4;
+
 export const load = ({ params }: { params: { slug: string } }) => {
   const slug = normalizeSlug(params.slug);
   const post = getPostBySlug(slug);
   if (!post) error(404, `글을 찾을 수 없습니다: ${slug}`);
+
+  // 시리즈 안 위치. `_series.yml`의 order를 따르고, 없으면 날짜 오름차순이다.
+  let seriesIndex:
+    { current: number; total: number; displayName: string } | undefined;
+  const seriesPosts = post.series
+    ? getAllPosts().filter(p => p.series === post.series)
+    : [];
+  if (post.series && seriesPosts.length > 0) {
+    const meta = getSeriesMeta(post.series);
+    const ordered = sortPostsBySeriesOrder(seriesPosts, meta?.order);
+    const idx = ordered.findIndex(p => p.slug === slug);
+    if (idx !== -1) {
+      seriesIndex = {
+        current: idx + 1,
+        total: ordered.length,
+        displayName: meta?.title ?? post.series,
+      };
+    }
+  }
+
+  // 썸네일이 없는 글은 undefined로 둬서 히어로 슬롯에서 빠진다 — 그 자리는
+  // `hero:` 다이어그램이 있으면 그것이, 없으면 아무것도 채우지 않는다.
+  const thumbnailUrl = post.thumbnail
+    ? resolveThumbnailUrl(post, OG_DEFAULT_IMAGE)
+    : undefined;
+
+  const { prev, next } = getAdjacentPosts(slug);
+  const series = getSeriesAdjacentPosts(slug);
+  const navItem = (item: { slug: string; title: string } | null) =>
+    item ? { href: postPath(item.slug), title: item.title } : null;
 
   return {
     post: {
       slug: post.slug,
       title: post.title,
       date: post.date,
+      dateLabel: fmtDate(post.date),
       readMin: post.readMin,
-      tags: post.tags ?? [],
+      excerpt: post.excerpt ?? '',
+      // frontmatter 값 그대로다 — 경로 해석이 없어 계산을 거칠 이유가 없다.
+      hero: post.hero,
+      thumbnailUrl,
+      tags: (post.tags ?? []).slice(0, MAX_TAGS).map(tag => ({
+        tag,
+        href: archivePath({ tag }),
+      })),
       html: renderMarkdown(post.content, post.relativeDir),
+    },
+    seriesIndex,
+    nav: {
+      prev: navItem(prev),
+      next: navItem(next),
+      /**
+       * 시리즈 글이면 시리즈 네비만, 아니면 전체 이전/다음만 그린다. 둘을 같이
+       * 그리면 순서 개념이 둘이 되어 같은 글이 `다음 편`이자 `이전 글`로 잡힌다
+       * — 연달아 발행한 시리즈에서 실제로 그랬다.
+       */
+      series:
+        series.seriesName && (series.prev || series.next)
+          ? {
+              seriesName: series.seriesName,
+              prev: navItem(series.prev),
+              next: navItem(series.next),
+            }
+          : null,
     },
     seo: buildPostSeo(post, post.slug),
   };

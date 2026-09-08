@@ -30,6 +30,7 @@ export const {
   getPostBySlug,
   getAllPostSlugs,
   getAdjacentPosts,
+  getSeriesAdjacentPosts,
   getAllSeries,
   getSeriesMeta,
   // admin은 draft·scheduled의 통계도 연다 — 목록에는 보이는데 상세가 404가
