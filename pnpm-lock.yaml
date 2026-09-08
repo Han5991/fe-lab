@@ -185,6 +185,9 @@ catalogs:
     vitest:
       specifier: ^5.0.0
       version: 5.0.0
+    wrangler:
+      specifier: ^4.129.0
+      version: 4.129.0
   lint:
     '@eslint-community/eslint-plugin-eslint-comments':
       specifier: ^4.7.2
@@ -412,7 +415,7 @@ importers:
         specifier: 'catalog:'
         version: 5.0.0(@types/node@24.13.3)(@vitest/coverage-v8@5.0.0)(jsdom@30.0.1(@noble/hashes@1.8.0))(msw@2.15.0(@types/node@24.13.3)(typescript@6.0.3))(vite@8.2.2(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0))
       wrangler:
-        specifier: ^4.129.0
+        specifier: 'catalog:'
         version: 4.129.0(@cloudflare/workers-types@5.20260903.1)
 
   apps/blog/web-svelte:
@@ -526,6 +529,9 @@ importers:
       vitest:
         specifier: 'catalog:'
         version: 5.0.0(@types/node@24.13.3)(@vitest/coverage-v8@5.0.0)(jsdom@30.0.1(@noble/hashes@1.8.0))(msw@2.15.0(@types/node@24.13.3)(typescript@6.0.3))(vite@8.2.2(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0))
+      wrangler:
+        specifier: 'catalog:'
+        version: 4.129.0(@cloudflare/workers-types@5.20260903.1)
 
   apps/next.js:
     dependencies:

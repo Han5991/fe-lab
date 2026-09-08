@@ -80,6 +80,6 @@
     "typescript": "catalog:",
     "typescript-eslint": "catalog:lint",
     "vitest": "catalog:",
-    "wrangler": "^4.129.0"
+    "wrangler": "catalog:"
   }
 }

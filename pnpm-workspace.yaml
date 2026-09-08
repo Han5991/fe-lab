@@ -68,6 +68,11 @@ catalog:
   # 빌드 · 실행 도구
   commander: ^15.0.0
   tsdown: 0.23.0
+  # 블로그 두 판이 각자 자기 Worker에 올라가므로 소비자가 둘이다. 버전이 갈리면
+  # 두 사이트가 서로 다른 wrangler로 배포되고, `cloudflare/wrangler-action`이
+  # `wranglerVersion` 없이 **워킹 디렉터리에 설치된 것을 재사용**하므로 그 갈림이
+  # 조용히 CI까지 간다.
+  wrangler: ^4.129.0
 
   # 테스트
   vitest: ^5.0.0
