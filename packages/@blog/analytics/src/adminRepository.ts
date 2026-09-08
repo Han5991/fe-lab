@@ -15,28 +15,13 @@
  */
 
 import type { AdminApi } from './adminApi.ts';
-import type { PostStatus } from '@blog/content';
+import { isRecord, type PostStatus } from '@blog/content/client';
 import type {
   PostStatsRow,
   PostTrendRow,
   HourlyDistribution,
   DowDistribution,
 } from './types.ts';
-
-/**
- * `unknown`을 객체로 좁히는 가드 — `@blog/content`의 `shared/guards.ts`와 **같은
- * 판정**이어야 한다. 사본을 두는 이유는 그 배럴이 `node:fs`를 함께 열고 이
- * 파일은 admin 화면의 클라이언트 그래프에 실리기 때문이다.
- *
- * **`!Array.isArray`를 반드시 함께 둔다.** `typeof [] === 'object'`라 빼면 배열이
- * 통과한다. 여기서는 뒤이어 필드를 확인하므로 결과가 같지만(거부 시점만
- * 늦어진다), 저 파일이 존재하는 이유가 정확히 이 한 줄이 자리마다 달랐던
- * 사고다 — 일곱 군데 중 둘만 갖고 있었다. 사본을 만들 때 느슨한 쪽으로
- * 적으면 그 사고를 그대로 재현한다(초안이 실제로 그랬다).
- */
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
 
 /**
  * `admin-posts-index.json` 산출물의 행 계약 부분집합 — 필드 정의의 출처는

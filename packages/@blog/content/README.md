@@ -8,28 +8,30 @@
 단일 출처는 루트 `CLAUDE.md`의 "Blog Architecture" 절이다. 여기는 **패키지의
 모양**만 적는다.
 
-## 문 넷 (소스 익스포트 — 빌드 스텝 없음)
+## 문 셋 (소스 익스포트 — 빌드 스텝 없음)
 
-| 문                    | 내용                                                                                      |
-| :-------------------- | :---------------------------------------------------------------------------------------- |
-| `@blog/content`       | 프레임워크 전체 — `createContent`(로더 인스턴스 factory)·타입·visibility·urls·순수 유틸   |
-| `@blog/content/seo`   | SEO 빌더 factory(`createPostSeo`) + 순수 계산 — 프레임워크 중립 DTO(`PostSeoData`) 반환   |
-| `@blog/content/urls`  | URL 계약만(`postPath`·`postUrl`·`archivePath`·`POSTS_PATH`·`RSS_PATH`) — **클라이언트용** |
-| `@blog/content/dates` | KST 날짜 계산만(`addDaysISO`·`diffDaysISO`·`formatMonthDayISO`…) — **클라이언트용**       |
+| 문                     | 내용                                                                                    |
+| :--------------------- | :-------------------------------------------------------------------------------------- |
+| `@blog/content`        | 프레임워크 전체 — `createContent`(로더 인스턴스 factory)·타입·visibility·urls·순수 유틸 |
+| `@blog/content/seo`    | SEO 빌더 factory(`createPostSeo`) + 순수 계산 — 프레임워크 중립 DTO(`PostSeoData`) 반환 |
+| `@blog/content/client` | **클라이언트에서 안전한 것 전부** — URL 계약·KST 날짜·순수 유틸·공개 판정               |
 
-뒤의 문 둘은 **번들러 때문에 있다.** 첫 번째 문은 `export * from './series.ts'`로
+세 번째 문은 **번들러 때문에 있다.** 첫 번째 문은 `export * from './series.ts'`로
 `node:fs`를 함께 여는데, 그 배럴을 클라이언트 그래프에서 열어도 안전한지는
 번들러가 정한다 — `apps/blog/web`은 next.config의
 `optimizePackageImports: ['@blog/content']`가 배럴 import를 leaf로 좁혀 주지만,
 Vite/rolldown에는 대응물이 없어 `apps/blog/web-svelte`가 배럴에서 `postPath`
-하나를 들여오자 fs·path·url이 브라우저용 빈 스텁으로 externalize됐다. URL 계약을
-소비자가 베껴 적지 않게 하는 것이 `post/urls.ts`의 존재 이유고 그 이유는
-프레임워크와 무관하므로, 순수 leaf인 그 파일에 문을 따로 냈다. `shared/dates.ts`도
-같은 이유로 나왔다 — `@blog/analytics`의 계산 둘이 KST 헬퍼를 쓰는데, 그 코드는
-두 앱의 admin 화면 클라이언트 그래프에 실린다. 서버 코드는 계속 배럴로 가져온다.
+하나를 들여오자 fs·path·url이 브라우저용 빈 스텁으로 externalize됐다.
 
-**새 문은 이 기준으로만 낸다**: 순수 leaf(모듈 평가 시 I/O 없음)이고, 클라이언트
-그래프에 실리는 소비자가 실제로 있고, 계약이라 베껴 적으면 갈릴 수 있는 것.
+**처음에는 leaf마다 문을 냈다** — `/urls`, 다음에 `/dates`, 그다음 `/viewCookie`.
+세 번째에서 그만뒀다. 기준이 "이 모듈이 클라이언트에서 안전한가" 하나뿐이므로
+문도 하나여야 한다. leaf마다 내면 소비자가 어느 문으로 들어갈지 매번 물어야 하고,
+문 목록이 곧 "무엇이 순수한가"의 두 번째 사본이 된다.
+
+문에 무엇이 들어오는지는 **성질로 정한다**: 모듈 평가 시점에 I/O가 없고 전이
+import에도 없는 것. `src/clientDoor.test.ts`가 이 문에서 시작해 import 그래프를
+전부 따라가며 `node:` 빌트인이 하나도 없는지 확인한다 — 목록을 손으로 관리하는
+대신 성질을 검사하고, 위반한 파일 이름을 그대로 실패 메시지에 낸다.
 
 fs를 읽는 API는 전부 **인스턴스**다 — 소비자가 `content.config.mts`로 만든
 설정을 `createContent(config)`에 넘겨 로더 묶음(getAllPosts·getPostBySlug·
@@ -44,11 +46,10 @@ flowchart LR
   posts -->|"gray-matter 로더"| pkg
   pkg -->|"@blog/content<br/>createContent()"| app
   pkg -.->|"@blog/content/seo<br/>createPostSeo()"| app
-  pkg -.->|"@blog/content/urls<br/>postPath()"| app
-  pkg -.->|"@blog/content/dates<br/>addDaysISO()"| app
+  pkg -.->|"@blog/content/client<br/>postPath() · addDaysISO()"| app
 ```
 
-실선은 로더 인스턴스가 나가는 문, 점선 셋은 SEO 빌더·URL 계약·날짜 계산이 나가는 문이다.
+실선은 로더 인스턴스가 나가는 문, 점선 둘은 SEO 빌더와 클라이언트 안전 집합이 나가는 문이다.
 
 빌드 스크립트(`src/scripts/`)는 API가 아니라 실행 파일이고, package.json의
 `bin`에 걸린 **`blog-content` 하나**로만 나간다. 앱은 서브커맨드 이름만 안다

@@ -1,8 +1,8 @@
 <script lang="ts">
-  // 배럴(`@blog/content`)이 아니라 **URL 계약 전용 문**이다 — 배럴은
-  // `node:fs`를 함께 열어 클라이언트 그래프에서 빈 스텁으로 externalize된다
-  // (이 컴포넌트가 그 문을 만든 계기다: `post/urls.ts` 주석).
-  import { postPath } from '@blog/content/urls';
+  // 배럴(`@blog/content`)이 아니라 **클라이언트 문**이다 — 배럴은 `node:fs`를
+  // 함께 열어 클라이언트 그래프에서 빈 스텁으로 externalize된다(이 컴포넌트가
+  // 그 문을 만든 계기다: `packages/@blog/content/src/client.ts` 주석).
+  import { postPath } from '@blog/content/client';
   import { goto } from '$app/navigation';
   import { css } from '../../../styled-system/css';
   import { getRecentViews, type RecentView } from './recentViews';

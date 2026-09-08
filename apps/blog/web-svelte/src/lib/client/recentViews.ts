@@ -1,4 +1,4 @@
-import { isRecord } from '../shared/guards.ts';
+import { isRecord } from '@blog/content/client';
 
 /**
  * 최근 본 글 — `localStorage`에 다섯 편.

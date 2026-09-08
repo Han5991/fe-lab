@@ -1,4 +1,4 @@
-import { isRecord } from '../shared/guards.ts';
+import { isRecord } from '@blog/content/client';
 
 /**
  * 검색의 **순수 부분** — 인덱스 파싱, 필터링, 스니펫, 하이라이트 조각.
