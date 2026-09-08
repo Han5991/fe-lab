@@ -1,3 +1,15 @@
+# 이 앱의 env는 **커밋한다** — 루트 .gitignore의 `.env`를 되돌린다.
+#
+# 담긴 값이 전부 `PUBLIC_*`이라 빌드 타임에 클라이언트 번들로 인라인되므로
+# 애초에 감출 수 없고(`apps/blog/web/.env.production`과 같은 판단), Supabase
+# 좌표는 로컬 인스턴스를 가리킨다. 파일명이 `.env.production`이 아닌 이유는
+# `svelte-kit sync`가 `$env/static/public`의 타입을 만들 때 프로덕션 모드로
+# 돌지 않아서다 — 그 파일은 타입 생성에서 안 보이고, 검사만 빨갛게 된다.
+!.env
+
+# 로컬 인스턴스의 키가 다르면 이걸로 덮는다(커밋하지 않는다).
+.env.local
+
 # SvelteKit
 .svelte-kit/
 /build/

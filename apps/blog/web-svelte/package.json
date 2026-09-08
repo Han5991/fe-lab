@@ -20,9 +20,12 @@
     "node": ">=24.20.0"
   },
   "dependencies": {
+    "@blog/analytics": "workspace:^",
     "@blog/content": "workspace:^",
     "@blog/diagram": "workspace:^",
     "@blog/site-values": "workspace:^",
+    "@supabase/postgrest-js": "catalog:",
+    "@supabase/supabase-js": "catalog:",
     "@design-system/ui": "workspace:^",
     "hastscript": "^9.0.1",
     "mermaid": "^11.17.2",
