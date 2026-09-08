@@ -20,7 +20,7 @@
   siteName={data.site.name}
 />
 
-<Rail>
+<Rail width="wide">
   <h1 class={css({ fontSize: '3xl', fontWeight: 'bold', color: 'ink.950', mt: '16' })}>
     글
   </h1>

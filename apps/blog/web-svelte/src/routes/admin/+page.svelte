@@ -76,7 +76,7 @@
     });
 </script>
 
-<Rail>
+<Rail width="wide">
   <div class={css({ my: '10', display: 'flex', flexDirection: 'column', gap: '8' })}>
     <div class={css({ display: 'flex', alignItems: 'baseline', gap: '3' })}>
       <h1 class={css({ fontSize: '2xl', fontWeight: 'bold', color: 'ink.950', mr: 'auto' })}>

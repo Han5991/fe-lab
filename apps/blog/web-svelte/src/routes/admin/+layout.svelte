@@ -130,7 +130,7 @@
 <header
   class={css({ borderBottomWidth: 'hairline', borderColor: 'ink.border', py: '4' })}
 >
-  <Rail>
+  <Rail width="wide">
     <nav
       class={css({ display: 'flex', alignItems: 'baseline', gap: '5' })}
       aria-label="관리"
@@ -169,7 +169,7 @@
 {#if allowed}
   {@render children()}
 {:else}
-  <Rail>
+  <Rail width="wide">
     <p class={css({ my: '16', color: 'ink.500', fontSize: 'sm' })}>
       {sessionState === 'loading' ? '세션 확인 중…' : '로그인 화면으로 이동합니다…'}
     </p>

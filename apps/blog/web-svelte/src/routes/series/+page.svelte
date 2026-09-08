@@ -20,7 +20,7 @@
   siteName={data.site.name}
 />
 
-<Rail>
+<Rail width="text">
   <h1 class={css({ fontSize: '3xl', fontWeight: 'bold', color: 'ink.950', mt: '16' })}>
     시리즈
   </h1>
