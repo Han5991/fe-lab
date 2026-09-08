@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { page } from '$app/state';
+  import type { PageProps } from './$types';
   import { css } from '../../../styled-system/css';
   import Rail from '$lib/components/Rail.svelte';
   import Seo from '$lib/components/Seo.svelte';
-  import { HOME_PATH } from '$lib/shared/routes';
+  import { HOME_PATH, NOT_FOUND_PATH } from '$lib/shared/routes';
   import { POSTS_PATH } from '@blog/content/client';
 
   /**
@@ -22,17 +22,15 @@
    *
    * React 판도 같은 모양이다 — `not-found.tsx`가 `out/404.html`과 `/404/` 둘 다 낸다.
    */
-  const site = $derived(
-    page.data['site'] as { name: string; url: string; ogDefaultImage: string },
-  );
+  const { data }: PageProps = $props();
 </script>
 
 <Seo
-  title="페이지를 찾을 수 없습니다 | {site.name}"
+  title={`페이지를 찾을 수 없습니다 | ${data.site.name}`}
   description="요청하신 주소에 해당하는 페이지가 없습니다."
-  canonical={`${site.url}/404/`}
-  ogImage={`${site.url}${site.ogDefaultImage}`}
-  siteName={site.name}
+  canonical={`${data.site.url}${NOT_FOUND_PATH}`}
+  ogImage={`${data.site.url}${data.site.ogDefaultImage}`}
+  siteName={data.site.name}
   noindex
 />
 
