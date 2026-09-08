@@ -11,9 +11,10 @@ name: Preview Blog on Cloudflare Workers
 # **앱 둘을 매트릭스로 돌린다** — Next.js 판(`apps/blog/web`)과 SvelteKit 판
 # (`apps/blog/web-svelte`). 각자 자기 Worker에 올라가므로 서로 트래픽을 건드리지
 # 않고, 같은 브랜치 alias를 써도 충돌하지 않는다(Worker가 다르다). 파일을 둘로
-# 나누지 않은 이유는 다른 것이 네 줄뿐이기 때문이다: 작업 디렉터리, 빌드 필터,
-# Next 전용 캐시, PR 코멘트의 머리말. 나머지 100줄(alias 정규화, URL 파싱, 포크
-# 가드)이 둘로 갈리면 한쪽만 고쳐지는 자리가 된다.
+# 나누지 않은 이유는 갈리는 것이 매트릭스 키 몇 개뿐이기 때문이다: 작업 디렉터리,
+# 빌드 필터, 워커 이름, 부트스트랩 허용 여부, Next 전용 캐시, PR 코멘트의 머리말.
+# 나머지(alias 정규화, URL 파싱, 포크 가드)가 둘로 갈리면 한쪽만 고쳐지는 자리가
+# 된다.
 
 on:
   pull_request:
@@ -51,6 +52,8 @@ jobs:
             check: preview
             comment: cloudflare-preview
             worker: blog
+            # **프로덕션 Worker다. 부트스트랩을 절대 걸지 않는다** — 아래 참조.
+            bootstrap: false
             note: >-
               프로덕션(`blog.sangwook.dev`)은 그대로입니다 — 이 단계는 버전만 올리고
               트래픽을 옮기지 않습니다. Admin 로그인은 프리뷰에서 동작하지 않을 수 있습니다.
@@ -60,6 +63,7 @@ jobs:
             check: preview-svelte
             comment: cloudflare-preview-svelte
             worker: blog-svelte
+            bootstrap: true
             note: >-
               이 앱은 **프리뷰 URL로만** 열립니다(프로덕션 도메인이 없습니다).
               Supabase는 로컬 인스턴스만 가리키므로 조회수·Admin은 동작하지 않습니다 —
@@ -136,6 +140,45 @@ jobs:
           [[ -n "$alias" ]] || alias="pr-${{ github.event.pull_request.number }}"
           echo "alias=$alias" >> "$GITHUB_OUTPUT"
           echo "alias: $alias (워커 $WORKER, 예산 ${budget}자)"
+
+      # **`versions upload`는 이미 존재하는 Worker에만 버전을 얹는다.** 없으면
+      # wrangler가 통째로 거절한다 — "You cannot upload a new version of a Worker
+      # that does not yet exist. Please run the `deploy` command first." 그런데 이
+      # 저장소에서 SvelteKit 판을 `deploy`하는 경로는 어디에도 없다(결정 원장:
+      # 프리뷰 URL 전용). 그래서 첫 Worker는 여기서 한 번만 만든다.
+      #
+      # **여기서 `deploy`가 프로덕션 표면을 만들지 않는다.** 그 Worker의
+      # `wrangler.jsonc`에는 `routes`가 없고 `workers_dev`도 false라, 활성 버전이
+      # 생겨도 그것에 닿을 수 있는 주소가 하나도 없다. 열리는 것은 여전히
+      # `preview_urls`가 내는 주소뿐이다.
+      #
+      # **`bootstrap: true`인 앱에만 건다.** 존재 확인은 네트워크·토큰 문제로도
+      # 실패할 수 있는데, 그 오탐이 `blog`(프로덕션 Worker)에 닿으면 PR 브랜치의
+      # 빌드가 `blog.sangwook.dev`로 나간다. 매트릭스 플래그로 그 경로를 아예
+      # 없앤다 — 오탐이 나도 최악이 "주소 없는 Worker에 deploy 한 번"이다.
+      - name: Check whether the Worker exists
+        id: worker
+        if: matrix.bootstrap
+        working-directory: apps/blog/${{ matrix.app }}
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          if pnpm exec wrangler versions list >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "${{ matrix.worker }}: 이미 있음 — 부트스트랩 건너뜀"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "${{ matrix.worker }}: 없음 — deploy로 한 번 만든다"
+          fi
+
+      - name: Bootstrap the Worker (first run only)
+        if: matrix.bootstrap && steps.worker.outputs.exists == 'false'
+        uses: cloudflare/wrangler-action@ebbaa1584979971c8614a24965b4405ff95890e0 # v4.0.0
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          workingDirectory: apps/blog/${{ matrix.app }}
+          packageManager: pnpm
+          command: deploy
 
       # 버전만 업로드한다(트래픽 이동 없음). 버전 URL과 alias URL이 stdout에 찍힌다.
       - name: Upload preview version
