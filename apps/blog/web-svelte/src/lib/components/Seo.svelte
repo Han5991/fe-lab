@@ -14,6 +14,7 @@
     ogType = 'website',
     siteName,
     locale = 'ko_KR',
+    noindex = false,
   }: {
     title: string;
     description: string;
@@ -22,6 +23,15 @@
     ogType?: 'website' | 'article';
     siteName: string;
     locale?: string;
+    /**
+     * 검색 대상이 아닌 화면(admin·개인정보처리방침). robots.txt의 Disallow는
+     * 크롤만 막고 색인은 막지 못하므로 메타로 명시한다 — React 판의 admin
+     * layout이 같은 이유로 같은 값을 넣는다.
+     *
+     * `check-seo`도 이 값을 본다: noindex 페이지는 description 중복·길이 검사에서
+     * 빠진다(색인되지 않는 화면끼리 설명이 같은 것은 문제가 아니다).
+     */
+    noindex?: boolean;
   } = $props();
 </script>
 
@@ -36,5 +46,8 @@
   <meta property="og:type" content={ogType} />
   <meta property="og:site_name" content={siteName} />
   <meta property="og:locale" content={locale} />
+  {#if noindex}
+    <meta name="robots" content="noindex, nofollow" />
+  {/if}
   <meta name="twitter:card" content="summary_large_image" />
 </svelte:head>

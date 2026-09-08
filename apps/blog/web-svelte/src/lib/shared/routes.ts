@@ -13,3 +13,14 @@ export const HOME_PATH = '/';
 export const ABOUT_PATH = '/about/';
 export const SERIES_PATH = '/series/';
 export const PRIVACY_PATH = '/privacy/';
+
+/** Admin 대시보드. 정적 export지만 데이터는 전부 브라우저에서 받는다. */
+export const ADMIN_PATH = '/admin/';
+export const ADMIN_ANALYTICS_PATH = '/admin/analytics/';
+export const ADMIN_LOGIN_PATH = '/admin/login/';
+/** 잘못된 계정으로 들어왔을 때 — 로그인 화면이 안내 문구를 띄운다. */
+export const ADMIN_LOGIN_UNAUTHORIZED_PATH = '/admin/login/?e=unauthorized';
+
+/** 로그인 화면 자신은 가드를 지나지 않는다(무한 리다이렉트 방지). */
+export const isAdminLoginPath = (pathname: string): boolean =>
+  pathname.replace(/\/*$/, '/') === ADMIN_LOGIN_PATH;

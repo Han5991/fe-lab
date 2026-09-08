@@ -66,6 +66,44 @@ export const BUNDLE_GUARDS = [
     requiredIn: [{ kind: 'pages', of: { under: '/posts/' } }],
   },
   {
+    // Admin 계산은 admin 화면에만 있어야 한다. 공개 배럴(`lib/domain/analytics`)이
+    // admin 배럴(`lib/domain/admin`)을 여는 순간 개요·파생 통계 계산이 글 페이지
+    // 청크에 실린다 — React 판에서 실제로 그랬고(실측 +4KB) 두 배럴을 나눈 이유가
+    // 그것이다.
+    //
+    // **마커가 React 판과 다르다.** 그쪽은 `computeAnalyticsOverview`(자유 함수
+    // 이름)를 쓰는데, rolldown은 그걸 minify로 지운다(실측: 청크 0개). 여기서는
+    // 클래스 메서드 이름을 쓴다 — 프로퍼티라 살아남는다. 번들러가 갈리면
+    // "무엇이 문자열로 남는가"도 갈린다는 뜻이고, 그래서 규칙마다 양성 대조가
+    // 필수다: 마커가 죽으면 검사가 무력화되는 대신 실패한다.
+    label: 'admin 전용 계산',
+    marker: 'computeDerivedStats',
+    forbiddenIn: [{ kind: 'initial', of: { notUnder: '/admin/' } }],
+    requiredIn: [{ kind: 'initial', of: { under: '/admin/' } }],
+  },
+  {
+    // Edge Function 호출 — admin RPC 넷은 service_role 한정이라 이 경로로만 간다.
+    label: 'admin Edge Function 클라이언트',
+    marker: 'admin-analytics',
+    forbiddenIn: [{ kind: 'initial', of: { notUnder: '/admin/' } }],
+    requiredIn: [{ kind: 'initial', of: { under: '/admin/' } }],
+  },
+  {
+    // 인증 세션용 supabase-js 전체(gzip 45KB). 조회수만 읽는 글 페이지는
+    // PostgREST만 담은 클라이언트를 쓴다 — `lib/platform/publicClient.ts` 주석.
+    label: '세션용 supabase-js',
+    marker: 'GoTrueClient',
+    forbiddenIn: [{ kind: 'initial', of: { notUnder: '/admin/' } }],
+    requiredIn: [{ kind: 'initial', of: { under: '/admin/' } }],
+  },
+  {
+    // 비공개 글까지 담긴 인덱스. 공개 화면이 이걸 받으면 draft 제목이 노출된다.
+    label: 'admin 전용 산출물(비공개 글 인덱스)',
+    marker: 'admin-posts-index',
+    forbiddenIn: [{ kind: 'initial', of: { notUnder: '/admin/' } }],
+    requiredIn: [{ kind: 'initial', of: { under: '/admin/' } }],
+  },
+  {
     // 댓글은 **글에만** 붙는다. Comments.svelte를 레이아웃으로 올리면 홈·목록·
     // 소개까지 giscus 로더를 첫 로드에 받는데, 화면에는 아무 변화가 없어
     // 눈으로는 알 수 없다. React 판은 글 페이지에서만 `GiscusComments`를
