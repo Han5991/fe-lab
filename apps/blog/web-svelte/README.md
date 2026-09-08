@@ -7,7 +7,7 @@
 
 ## 지금 있는 것
 
-- SvelteKit + `adapter-static` 정적 export (`build/`) — **98 페이지**(공개 49 + admin 49)
+- SvelteKit + `adapter-static` 정적 export (`build/`) — **99 페이지**(공개 50 + admin 49)
 - 공개 라우트 6개: `/` · `/posts/` · `/posts/[...slug]/` · `/series/` · `/about/` · `/privacy/`
 - Admin 라우트 4개: `/admin/` · `/admin/analytics/` · `/admin/analytics/[...slug]/` ·
   `/admin/login/` — 인증 가드, Google OAuth, 대시보드·글별 통계·글 상세
@@ -20,16 +20,18 @@
   `lib/admin/charts/geometry.ts`의 순수 함수고 테스트가 잠근다
 - 데이터 캐시 — React Query 없이 `lib/admin/store.svelte.ts`(약속을 모듈에 든다)
 - Vitest(node) — 계약 테스트 **80개** / 파일 10개
-- **`check-seo`·`check-bundle`이 `pnpm build` 안의 게이트다** — 번들 규칙 **10개**
-  (admin 전용 넷 · 글 전용 둘 · 검색 · 서버 전용 값 · 빌드 타임 강조 · 스캔 생존)
+- **`check-seo`·`check-bundle`이 `pnpm build` 안의 게이트다** — 번들 규칙 **11개**
+  (admin 전용 다섯 · 글 전용 둘 · 검색 · 서버 전용 값 · 빌드 타임 강조 · 스캔 생존).
+  **CI에서도 돈다** — `quality-checks` 액션의 `build-blog-svelte` 스텝이 그 자리다
 - Panda CSS — React 판과 **같은 프리셋**(`@design-system/ui/blog-preset`), `strictTokens`
 - 사이트 값은 `@blog/site-values`, 조회수·대시보드 도메인은 `@blog/analytics`
   (둘 다 React 판과 공유)
 - ESLint — `--max-warnings=0`, 인라인 `eslint-disable` 금지, 타입 정보 룰
 
+- 배포 — 전용 Worker(`blog-svelte`)에 PR마다 프리뷰 URL. 아래 「배포」 절
+
 아직 없는 것: `code-tabs`(상호작용) — 지우지 않고 통과시키므로 내용은 보이되
-스타일이 없다. 페이지 전환 애니메이션. 그리고 배포 배선(전용 Worker + 프리뷰
-워크플로).
+스타일이 없다. 페이지 전환 애니메이션.
 
 **Supabase는 로컬 인스턴스만 가리킨다**(`.env`) — 결정 원장의 항목이다. 배포된
 프리뷰에서 조회수·Admin이 동작하지 않는 것은 버그가 아니라 그 결정의 결과다.
@@ -82,6 +84,32 @@ pnpm lint --filter=@blog/web-svelte
 pnpm check-types --filter=@blog/web-svelte
 pnpm --filter @blog/web-svelte measure  # 첫 로드 전송량 측정
 ```
+
+## 배포
+
+**프리뷰 URL뿐이다.** 전용 Worker `blog-svelte`(`wrangler.jsonc`)에 PR마다
+`wrangler versions upload`로 버전만 올린다 — 트래픽 이동도, 커스텀 도메인도 없다.
+운영 블로그(`blog.sangwook.dev`)는 React 판 Worker가 계속 서빙하고 이 앱은 그 근처에도
+가지 않는다. 최종 배포 대상을 고르는 것은 비교가 끝난 뒤의 별도 결정이다.
+
+- **`routes`가 없다** — React 판 `wrangler.jsonc`에는 `custom_domain: true`가 있지만
+  여기엔 없다. `workers_dev: false` + `preview_urls: true`라 열리는 주소는 프리뷰뿐이다
+  (`preview_urls`의 기본값이 `workers_dev`를 따라가므로 명시가 필요하다 — 빠뜨리면
+  워크플로가 조용히 URL 없이 끝난다)
+- **`static/_headers`가 전 경로에 `X-Robots-Tag: noindex`를 건다.** React 판은 프리뷰
+  호스트에만 거는데, 이 앱은 프로덕션 도메인 자체가 없으므로 색인될 이유가 어디에도
+  없다. 함께 `/_app/immutable/*`에 1년 `immutable` — SvelteKit이 콘텐츠 해시를 박는
+  디렉터리가 거기다. HTML에는 캐시를 걸지 않는다(새 글이 늦게 반영된다)
+- **404는 복사로 만든다.** `trailingSlash: always`라 404 라우트가 `build/404/index.html`로
+  나가는데 Workers의 `not_found_handling: 404-page`는 루트 `404.html`을 문다. 어댑터의
+  `fallback` 옵션을 주면 만들어 주지만, 그 순간 "모든 라우트가 프리렌더 가능한가"
+  검사가 통째로 꺼진다(어댑터 소스). 정적 export의 계약이 그 검사라 `emit-404` 복사를
+  택했다
+- **CI 자리 둘** — `quality-checks` 액션의 `build-blog-svelte` 스텝(빌드 + `check-seo` +
+  `check-bundle`. `deploy-blog.yml`은 `'false'`로 끈다: 매일 도는 cron 배포에 관계없는
+  빌드를 얹지 않는다)과 `preview-blog.yml`의 매트릭스(체크 이름 `preview-svelte`)
+- **Supabase는 로컬만 가리킨다.** 프리뷰에서 조회수·Admin이 동작하지 않는 것은
+  버그가 아니라 결정 원장의 항목이다
 
 ## 기준선 (2026-09-07)
 

@@ -32,6 +32,13 @@ which still taught the Hero's Journey template the skill exists to forbid.
     enforced by `eslint-plugin-boundaries`. Content loading/validation/artifact generation is **not** here — it lives in
     `packages/@blog/content`, whose scripts the app runs through the `blog-content` bin (`blog-content build`, `… validate`, `… check-seo`).
     Markdown is `gray-matter` + `react-markdown` — **not** MDX/velite/contentlayer.
+  - `blog/web-svelte/` (`@blog/web-svelte`, SvelteKit 2 + Svelte 5 runes, `adapter-static`): **The same site rebuilt in
+    parallel** to compare bundles and authoring DX (issue #392). It does **not** replace `blog/web`; both stay.
+    Shares the manuscripts and `@blog/content` / `@blog/site-values` / `@blog/analytics` / `@blog/diagram` with the React
+    app — never fork those into a copy. Same gates (`check-seo` + `check-bundle` inside `pnpm build`, `--max-warnings=0`,
+    `noInlineConfig`), but `.svelte-kit/` and `styled-system/` are **generated and gitignored**, so every task that needs
+    them runs `pnpm sync` first — verify with those directories deleted, not with a warm tree.
+    Deployed to preview URLs only (its own Worker, no custom domain); Supabase points at the local instance only.
   - `blog/posts/` (not a workspace): Markdown sources + `_series.yml`. Only folders with `_series.yml` are series.
   - `next.js/` (Next.js 16 + App Router + Turbopack): Core experimentation lab.
   - `react/` (Vite 8 + React 19 + React Router 8 + TanStack Query): SPA experimentation lab.
@@ -43,6 +50,14 @@ which still taught the Hero's Journey template the skill exists to forbid.
     `check-seo` on built HTML). Source export, no build step — the `blog-content` bin runs the `.ts` sources on plain node
     (type stripping; every relative import carries a `.ts` extension). Internal layers
     `shared → post → seo → scripts → scripts/render → scripts/cli` enforced by boundaries. See `packages/@blog/content/README.md`.
+  - `@blog/analytics`: View-count / dashboard domain — pure calculations, contracts (`AdminApi`, `AuthApi`), repository
+    factories, `database.types.ts`. **Does not create Supabase clients — they are injected**; `@supabase/*` is a
+    type-only import. Framework-neutral, shared by both blog apps. See `packages/@blog/analytics/README.md`.
+  - `@blog/diagram`: Coordinate math for the declarative diagram tags. Knows no framework — it returns numbers; drawing
+    (SVG elements, colors, classes) belongs to the consuming app, so one manuscript renders pixel-identically in both.
+  - `@blog/site-values`: Site identity literals (name, URL, author, timezone…) — the single source both blog apps read.
+    Pure literals, **no value imports**. Bundle rules (`BUNDLE_GUARDS`) are deliberately _not_ here: markers are
+    framework vocabulary, so each app declares its own.
   - `@design-system/ui`: Shared React components + Panda presets (`./preset`, `./blog-preset` = blog token source of truth).
   - `@design-system/ui-lib`: Panda CSS generated tokens/styles (DO NOT EDIT directly).
   - `@package/core`: Shared utilities (HTTP client, status codes, errors).
@@ -57,6 +72,7 @@ which still taught the Hero's Journey template the skill exists to forbid.
 Do not run `pnpm dev` if you only need one app. Save resources.
 
 - `pnpm dev --filter=@blog/web`: Run `apps/blog/web` (starts local Supabase; writing-only: `pnpm blog-write`)
+- `pnpm dev --filter=@blog/web-svelte`: Run the SvelteKit rebuild (`apps/blog/web-svelte`)
 - `pnpm dev --filter=<pkg>`: Run one experiment app (`react`, `next.js`, `typescript`, `socket-server`)
 - `pnpm dev --filter=socket-server --filter=react`: WebSocket server paired with the react client
 
@@ -66,7 +82,7 @@ Do not run `pnpm dev` if you only need one app. Save resources.
 
 **Pattern**: `pnpm test --filter=<package_name> -- <test_args>` (turbo passthrough; the args are hashed into the task
 key, so a run with new args is a cache miss while identical re-runs still hit, and `test` depends on `^build`, so the
-first run may build dependencies). Package names are `@blog/web`, `@blog/content`, `next.js`, `react`, `typescript` —
+first run may build dependencies). Package names are `@blog/web`, `@blog/web-svelte`, `@blog/content`, `@blog/analytics`, `next.js`, `react`, `typescript` —
 **not** folder paths.
 
 - **Single Workspace Suite**:
@@ -74,6 +90,7 @@ first run may build dependencies). Package names are `@blog/web`, `@blog/content
   ```bash
   pnpm --filter @blog/content test   # Vitest, node env — content contracts, generators, validation
   pnpm --filter @blog/web test       # Vitest, two projects: node (src/shared, src/domain, src/lib) + jsdom (rest of src)
+  pnpm --filter @blog/web-svelte test # Vitest, node only — contract tests (loader, geometry, URLs, bundle rules)
   pnpm test --filter=next.js         # Vitest (jsdom + RTL + next-router-mock)
   pnpm test --filter=react           # Vitest (jsdom + RTL + MSW)
   pnpm test --filter=typescript      # Vitest (node)
