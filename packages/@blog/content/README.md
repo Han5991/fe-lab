@@ -8,12 +8,23 @@
 단일 출처는 루트 `CLAUDE.md`의 "Blog Architecture" 절이다. 여기는 **패키지의
 모양**만 적는다.
 
-## 문 두 개 (소스 익스포트 — 빌드 스텝 없음)
+## 문 셋 (소스 익스포트 — 빌드 스텝 없음)
 
-| 문                  | 내용                                                                                    |
-| :------------------ | :-------------------------------------------------------------------------------------- |
-| `@blog/content`     | 프레임워크 전체 — `createContent`(로더 인스턴스 factory)·타입·visibility·urls·순수 유틸 |
-| `@blog/content/seo` | SEO 빌더 factory(`createPostSeo`) + 순수 계산 — 프레임워크 중립 DTO(`PostSeoData`) 반환 |
+| 문                   | 내용                                                                                      |
+| :------------------- | :---------------------------------------------------------------------------------------- |
+| `@blog/content`      | 프레임워크 전체 — `createContent`(로더 인스턴스 factory)·타입·visibility·urls·순수 유틸   |
+| `@blog/content/seo`  | SEO 빌더 factory(`createPostSeo`) + 순수 계산 — 프레임워크 중립 DTO(`PostSeoData`) 반환   |
+| `@blog/content/urls` | URL 계약만(`postPath`·`postUrl`·`archivePath`·`POSTS_PATH`·`RSS_PATH`) — **클라이언트용** |
+
+세 번째 문은 **번들러 때문에 있다.** 첫 번째 문은 `export * from './series.ts'`로
+`node:fs`를 함께 여는데, 그 배럴을 클라이언트 그래프에서 열어도 안전한지는
+번들러가 정한다 — `apps/blog/web`은 next.config의
+`optimizePackageImports: ['@blog/content']`가 배럴 import를 leaf로 좁혀 주지만,
+Vite/rolldown에는 대응물이 없어 `apps/blog/web-svelte`가 배럴에서 `postPath`
+하나를 들여오자 fs·path·url이 브라우저용 빈 스텁으로 externalize됐다. URL 계약을
+소비자가 베껴 적지 않게 하는 것이 `post/urls.ts`의 존재 이유고 그 이유는
+프레임워크와 무관하므로, 순수 leaf인 그 파일에 문을 따로 냈다. 서버 코드는 계속
+배럴로 가져온다.
 
 fs를 읽는 API는 전부 **인스턴스**다 — 소비자가 `content.config.mts`로 만든
 설정을 `createContent(config)`에 넘겨 로더 묶음(getAllPosts·getPostBySlug·
@@ -28,9 +39,10 @@ flowchart LR
   posts -->|"gray-matter 로더"| pkg
   pkg -->|"@blog/content<br/>createContent()"| app
   pkg -.->|"@blog/content/seo<br/>createPostSeo()"| app
+  pkg -.->|"@blog/content/urls<br/>postPath()"| app
 ```
 
-실선은 로더 인스턴스가 나가는 문, 점선은 SEO 빌더가 나가는 문이다.
+실선은 로더 인스턴스가 나가는 문, 점선 둘은 SEO 빌더와 URL 계약이 나가는 문이다.
 
 빌드 스크립트(`src/scripts/`)는 API가 아니라 실행 파일이고, package.json의
 `bin`에 걸린 **`blog-content` 하나**로만 나간다. 앱은 서브커맨드 이름만 안다

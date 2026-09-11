@@ -6,7 +6,8 @@
   "sideEffects": false,
   "exports": {
     ".": "./src/index.ts",
-    "./seo": "./src/seo/index.ts"
+    "./seo": "./src/seo/index.ts",
+    "./urls": "./src/post/urls.ts"
   },
   "scripts": {
     "lint": "eslint . --max-warnings=0",

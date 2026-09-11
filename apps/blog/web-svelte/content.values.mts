@@ -66,6 +66,37 @@ export const BUNDLE_GUARDS = [
     requiredIn: [{ kind: 'pages', of: { under: '/posts/' } }],
   },
   {
+    // 댓글은 **글에만** 붙는다. Comments.svelte를 레이아웃으로 올리면 홈·목록·
+    // 소개까지 giscus 로더를 첫 로드에 받는데, 화면에는 아무 변화가 없어
+    // 눈으로는 알 수 없다. React 판은 글 페이지에서만 `GiscusComments`를
+    // 렌더하므로 같은 계약이다.
+    //
+    // `pages`도 막는 이유는 방향이 다르다: giscus는 마운트 후 스크립트를
+    // 붙이는 것이라 **HTML에는 흔적이 없어야** 한다. 프리렌더가 iframe이나
+    // 로더 태그를 산출물에 구워 버리면 정적 HTML에 서드파티 스크립트가
+    // 박히는 셈이다.
+    label: '글 전용 댓글(Giscus)',
+    marker: 'giscus.app',
+    forbiddenIn: [
+      { kind: 'initial', of: { notUnder: '/posts/' } },
+      { kind: 'pages' },
+    ],
+    requiredIn: [{ kind: 'initial', of: { under: '/posts/' } }],
+  },
+  {
+    // 검색은 **산출물 fetch**로 남아 있어야 한다.
+    //
+    // 양성 쪽이 이 규칙의 값이다 — 인덱스 경로 문자열이 첫 로드 JS에 있다는
+    // 것이 곧 "열 때 받는다"의 증거다. 인덱스를 서버 로드로 옮겨 페이지에
+    // 굽는 순간(44편 × 본문 미리보기) 이 문자열이 사라져 규칙이 걸린다.
+    // 음성 쪽(HTML에 경로가 없어야 한다)은 그보다 약하지만, 짝이 없으면
+    // 규칙이 성립하지 않는다.
+    label: '검색 인덱스는 열 때 받는다',
+    marker: 'search-index.json',
+    forbiddenIn: [{ kind: 'pages' }],
+    requiredIn: [{ kind: 'initial' }],
+  },
+  {
     // **이 규칙의 값은 양성 쪽에 있다.** 청크 스캔이 이 산출물 모양에서
     // 실제로 돌고 있는지를 묻는다 — 하나도 못 찾으면 다른 모든 규칙이
     // "누수 없음"으로 조용히 통과한다. 음성 쪽(정적 텍스트 파일에 클라이언트

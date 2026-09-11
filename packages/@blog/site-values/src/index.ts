@@ -311,3 +311,24 @@ export const LLMS_DOCS = {
     },
   ],
 } as const satisfies LlmsDocsConfig;
+
+// ── Giscus (댓글) ────────────────────────────────────────────────────────────
+
+/**
+ * GitHub Discussions 기반 댓글 위젯의 좌표.
+ *
+ * **비밀값이 아니다.** 공개 저장소의 discussion 카테고리를 가리키는 식별자라
+ * 브라우저에 그대로 나간다. `apps/blog/web`은 이것을 `NEXT_PUBLIC_GISCUS_*`
+ * 환경 변수로 읽는데(커밋된 `.env.production`에 있다), 그쪽 배선을 바꾸는 것은
+ * 이 실험의 범위가 아니라 여기에 사본이 하나 생긴다.
+ *
+ * **후속으로 남긴다**: React 판도 이 값을 읽게 하면 사본이 사라진다. 지금
+ * 옮기지 않는 이유는 `NEXT_PUBLIC_*`이 빌드 타임 인라인이라 CI·배포 배선까지
+ * 함께 봐야 하고, 그건 운영 앱을 건드리는 일이기 때문이다.
+ */
+export const GISCUS = {
+  repo: 'Han5991/fe-lab',
+  repoId: 'R_kgDON9_lww',
+  category: 'General',
+  categoryId: 'DIC_kwDON9_lw84C0OQP',
+} as const;

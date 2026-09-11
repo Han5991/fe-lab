@@ -5,6 +5,9 @@
  * 시리즈 선언(series) · URL 계약(urls) · 순수 유틸(shared)을 한 문으로 연다.
  * SEO 빌더는 별도 문(`@blog/content/seo`)이고, 빌드 스크립트(src/scripts/)는
  * API가 아니라 실행 파일이라 문을 열지 않는다 — 앱이 파일 경로로 직접 돌린다.
+ * URL 계약에는 **클라이언트 전용 문**(`@blog/content/urls`)이 하나 더 있다 —
+ * 이 배럴을 클라이언트 그래프에서 여는 것이 안전한지는 번들러가 정하기 때문이다
+ * (아래 문단과 `post/urls.ts` 주석).
  *
  * 이 배럴은 `series.ts`·`service.ts` 등 node 전용 모듈(node:fs)을 함께 연다.
  * 클라이언트 번들이 안전한 이유는 두 겹이다: package.json `sideEffects: false` +

@@ -27,11 +27,22 @@ import { encodePostSlug } from './utils.ts';
  *    JSON-LD는 절대(`postUrl`)입니다. 절대 쪽은 siteUrl을 **반드시** 주입받습니다
  *    — 설정의 origin과 갈라질 기본값을 두지 않기 위해서입니다.
  *
- * **클라이언트 컴포넌트에서는 이 모듈이 fs를 끌지 않는다는 점에 기대세요** —
- * `@blog/content` 배럴은 `export * from './series.ts'`로 모듈 평가 시점에 `node:fs`를
- * 당겨 오지만, 앱의 next.config가 `optimizePackageImports: ['@blog/content']`로
- * 배럴 import를 leaf로 좁혀 클라이언트 번들에 fs가 새지 않게 합니다. 서버 코드는
- * 배럴로 가져와도 됩니다.
+ * **클라이언트 코드는 배럴이 아니라 `@blog/content/urls`로 들여오세요.**
+ *
+ * 이 모듈은 `./utils.ts` 하나만 의존하는 순수 leaf라 어디서든 안전하지만,
+ * 배럴(`@blog/content`)은 `export * from './series.ts'`로 `node:fs`를 함께
+ * 엽니다. 그 배럴을 클라이언트 그래프에서 여는 것이 안전한지는 **번들러가
+ * 정합니다** — `apps/blog/web`은 next.config의
+ * `optimizePackageImports: ['@blog/content']`가 배럴 import를 leaf로 좁혀 주지만,
+ * 그건 Next 전용 최적화입니다. Vite/rolldown에는 대응물이 없어
+ * `apps/blog/web-svelte`의 SearchDialog가 배럴에서 `postPath` 하나를 들여오자
+ * fs·path·url이 통째로 브라우저용 빈 스텁으로 externalize됐습니다(빌드는
+ * 성공하고 런타임에만 깨지는 종류입니다).
+ *
+ * 그래서 이 파일에 전용 문을 냈습니다. 소비자가 URL 계약을 **베껴 적지 않고**
+ * 쓸 수 있어야 하는 것이 이 모듈의 존재 이유고(위 세 가지가 24곳에서 갈렸던
+ * 이력), 그 이유는 프레임워크와 무관합니다. 서버 코드는 계속 배럴로 가져와도
+ * 됩니다.
  */
 
 /**

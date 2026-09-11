@@ -3,8 +3,10 @@
   import { css } from '../../../../styled-system/css';
   import Rail from '$lib/components/Rail.svelte';
   import Seo from '$lib/components/Seo.svelte';
+  import Comments from '$lib/client/Comments.svelte';
   import ImageZoom from '$lib/client/ImageZoom.svelte';
   import Mermaid from '$lib/client/Mermaid.svelte';
+  import RecordRecentView from '$lib/client/RecordRecentView.svelte';
 
   const { data }: PageProps = $props();
 
@@ -62,9 +64,11 @@
     <!-- 빌드 타임에 remark/rehype로 만든 HTML. 원고는 이 저장소가 쓰는 것이라
          신뢰 경계 안이고, 파서는 클라이언트 번들에 실리지 않는다. -->
     <div id="post-content" class={prose}>{@html data.post.html}</div>
+    <Comments />
   </article>
 </Rail>
 
 <!-- 점진적 향상 — 서버는 아무 일도 하지 않고, 필요할 때만 청크를 받는다. -->
 <Mermaid />
 <ImageZoom />
+<RecordRecentView slug={data.post.slug} title={data.post.title} />

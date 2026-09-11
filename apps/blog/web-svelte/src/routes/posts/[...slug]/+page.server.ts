@@ -30,6 +30,7 @@ export const load = ({ params }: { params: { slug: string } }) => {
 
   return {
     post: {
+      slug: post.slug,
       title: post.title,
       date: post.date,
       readMin: post.readMin,
