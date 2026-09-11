@@ -113,6 +113,9 @@ catalogs:
     '@supabase/postgrest-js':
       specifier: ^2.115.0
       version: 2.115.0
+    '@supabase/supabase-js':
+      specifier: ^2.115.0
+      version: 2.115.0
     '@tanstack/react-query':
       specifier: ^5.102.8
       version: 5.102.8
@@ -276,7 +279,7 @@ importers:
         specifier: 'catalog:'
         version: 2.115.0
       '@supabase/supabase-js':
-        specifier: ^2.115.0
+        specifier: 'catalog:'
         version: 2.115.0
       '@tanstack/react-query':
         specifier: 'catalog:'
@@ -414,6 +417,9 @@ importers:
 
   apps/blog/web-svelte:
     dependencies:
+      '@blog/analytics':
+        specifier: workspace:^
+        version: link:../../../packages/@blog/analytics
       '@blog/content':
         specifier: workspace:^
         version: link:../../../packages/@blog/content
@@ -426,6 +432,12 @@ importers:
       '@design-system/ui':
         specifier: workspace:^
         version: link:../../../packages/@design-system/ui
+      '@supabase/postgrest-js':
+        specifier: 'catalog:'
+        version: 2.115.0
+      '@supabase/supabase-js':
+        specifier: 'catalog:'
+        version: 2.115.0
       hastscript:
         specifier: ^9.0.1
         version: 9.0.1

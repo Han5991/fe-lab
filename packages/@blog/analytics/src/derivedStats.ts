@@ -4,7 +4,7 @@
  * 대시보드 개요(N개 글 × 기간)는 `overview.ts`다.
  */
 
-import { addDaysISO, diffDaysISO } from '@blog/content/dates';
+import { addDaysISO, diffDaysISO } from '@blog/content/client';
 import { percentDelta } from './delta.ts';
 import type { DerivedStats, PostStatDetail, TrendPoint } from './types.ts';
 

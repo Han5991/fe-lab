@@ -7,6 +7,7 @@
   import ImageZoom from '$lib/client/ImageZoom.svelte';
   import Mermaid from '$lib/client/Mermaid.svelte';
   import RecordRecentView from '$lib/client/RecordRecentView.svelte';
+  import ViewCount from '$lib/client/ViewCount.svelte';
 
   const { data }: PageProps = $props();
 
@@ -72,3 +73,4 @@
 <Mermaid />
 <ImageZoom />
 <RecordRecentView slug={data.post.slug} title={data.post.title} />
+<ViewCount slug={data.post.slug} />

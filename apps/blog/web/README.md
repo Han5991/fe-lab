@@ -17,7 +17,7 @@
 apps/blog/posts/**            ← Markdown 원고 + _series.yml (워크스페이스 아님)
         │  읽기(gray-matter) · 공개 판정 · 시리즈 · URL 계약 · SEO DTO
         ▼
-packages/@blog/content         ← 소스 익스포트 패키지. 문 넷: `@blog/content` · `/seo` · 클라이언트용 `/urls` · `/dates`
+packages/@blog/content         ← 소스 익스포트 패키지. 문 셋: `@blog/content` · `/seo` · 클라이언트용 `/client`
 packages/@blog/analytics       ← 조회수·대시보드 도메인. 문 둘: `@blog/analytics` · `/types`. 클라이언트는 앱이 주입한다
         │                          + 빌드 스크립트(src/scripts/*, API가 아니라 실행 파일)
         ▼

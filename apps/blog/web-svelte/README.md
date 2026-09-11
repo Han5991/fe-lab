@@ -7,24 +7,32 @@
 
 ## 지금 있는 것
 
-- SvelteKit + `adapter-static` 정적 export (`build/`) — **49 페이지**
-- 공개 라우트 5개: `/` · `/posts/` · `/posts/[...slug]/` · `/series/` · `/about/` · `/privacy/`
+- SvelteKit + `adapter-static` 정적 export (`build/`) — **98 페이지**(공개 49 + admin 49)
+- 공개 라우트 6개: `/` · `/posts/` · `/posts/[...slug]/` · `/series/` · `/about/` · `/privacy/`
+- Admin 라우트 4개: `/admin/` · `/admin/analytics/` · `/admin/analytics/[...slug]/` ·
+  `/admin/login/` — 인증 가드, Google OAuth, 대시보드·글별 통계·글 상세
 - 마크다운 렌더 — remark/rehype를 **빌드 타임에** 돌려 HTML 문자열까지 서버에서 만든다
-- 커스텀 태그 10종 — `callout`·`file-tree`·`figure`·`dialogue`/`msg`·
-  `metrics`/`metric`·`timeline`/`step`·`diagram`. HAST를 다시 쓰는 방식이라
-  **클라이언트 JS 0**
+- 커스텀 태그 13종 — HAST를 다시 쓰는 방식이라 **클라이언트 JS 0**
 - 코드 블록 — 빌드 타임 구문 강조(refractor), `title=` 메타, 코드 크롬
-- Vitest(node) — 변환 계층 계약 테스트 34개
-- **`check-bundle`도 `pnpm build` 안의 게이트다** — 규칙 2개
+- 런타임 기능 — 테마 토글 · Mermaid(지연 로드) · 이미지 줌 · ⌘K 검색 ·
+  최근 본 글 · Giscus 댓글 · 조회수
+- 차트 — Recharts 없이 SVG를 직접 그린다(영역·막대·스파크라인). 좌표 계산은
+  `lib/admin/charts/geometry.ts`의 순수 함수고 테스트가 잠근다
+- 데이터 캐시 — React Query 없이 `lib/admin/store.svelte.ts`(약속을 모듈에 든다)
+- Vitest(node) — 계약 테스트 **80개** / 파일 10개
+- **`check-seo`·`check-bundle`이 `pnpm build` 안의 게이트다** — 번들 규칙 **10개**
+  (admin 전용 넷 · 글 전용 둘 · 검색 · 서버 전용 값 · 빌드 타임 강조 · 스캔 생존)
 - Panda CSS — React 판과 **같은 프리셋**(`@design-system/ui/blog-preset`), `strictTokens`
-- 사이트 값은 `@blog/site-values` (React 판과 공유)
+- 사이트 값은 `@blog/site-values`, 조회수·대시보드 도메인은 `@blog/analytics`
+  (둘 다 React 판과 공유)
 - ESLint — `--max-warnings=0`, 인라인 `eslint-disable` 금지, 타입 정보 룰
-- **`check-seo`가 `pnpm build` 안의 게이트다** — React 판과 같은 자리
 
-아직 없는 것: `code-tabs`(상호작용)·`diagram` 계열 3종(배치 계산) — 지우지 않고
-통과시키므로 내용은 보이되 스타일이 없다. 그리고 코드 블록 테마·Mermaid·이미지
-줌, 런타임 기능(조회수·댓글·검색·테마·전환), Admin, `check-bundle` 규칙 선언,
-배포 배선.
+아직 없는 것: `code-tabs`(상호작용) — 지우지 않고 통과시키므로 내용은 보이되
+스타일이 없다. 페이지 전환 애니메이션. 그리고 배포 배선(전용 Worker + 프리뷰
+워크플로).
+
+**Supabase는 로컬 인스턴스만 가리킨다**(`.env`) — 결정 원장의 항목이다. 배포된
+프리뷰에서 조회수·Admin이 동작하지 않는 것은 버그가 아니라 그 결정의 결과다.
 
 ### 커스텀 태그는 왜 Svelte 컴포넌트가 아닌가
 
