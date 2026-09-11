@@ -15,6 +15,12 @@
   // 281px(15% 넓음)로 갈려 차례 항목의 줄바꿈이 어긋나면서 드러났다.
   // `content.config.mts`가 드는 정적 OTF는 OG 카드(satori)용이라 이것과 별개다.
   import 'pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css';
+  // 모노 웹폰트. React 판은 `next/font/google`이 같은 얼굴을 받아
+  // `--font-jetbrains`에 꽂는데, 이 앱에는 그 대응물이 없어 토큰의 폴백
+  // 리터럴(`'JetBrains Mono'`)만 남아 있었다 — 설치돼 있지 않은 기계에서는
+  // 시스템 모노로 떨어진다. 폭은 둘 다 0.6em 고정폭이라 레이아웃이 흔들리지
+  // 않아 눈에 안 띄었고, 글자 모양만 달랐다.
+  import '@fontsource-variable/jetbrains-mono';
   import '../styles/globals.css';
 
   const { children }: LayoutProps = $props();

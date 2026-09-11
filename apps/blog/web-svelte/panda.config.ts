@@ -49,7 +49,18 @@ export default defineConfig({
   },
   globalCss: {
     extend: {
-      html: { bg: 'paper.50', color: 'ink.950', wordBreak: 'keep-all' },
+      html: {
+        bg: 'paper.50',
+        color: 'ink.950',
+        wordBreak: 'keep-all',
+        /**
+         * `mono` 토큰이 읽는 변수(`var(--font-jetbrains, 'JetBrains Mono')`).
+         * fontsource 가변 배포판의 family 이름은 `JetBrains Mono Variable`이라
+         * 토큰의 폴백 리터럴과 맞지 않는다 — React 판이 `next/font`로 같은
+         * 변수를 채우는 자리를 여기서 채운다.
+         */
+        '--font-jetbrains': "'JetBrains Mono Variable'",
+      },
       body: { fontFamily: 'sans', margin: '0' },
       /**
        * 구문 강조 색 — Prism 토큰 클래스를 `code.*` 역할 토큰에 잇는다.
