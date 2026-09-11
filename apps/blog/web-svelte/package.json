@@ -27,6 +27,7 @@
     "@blog/site-values": "workspace:^",
     "@design-system/ui": "workspace:^",
     "hastscript": "^9.0.1",
+    "mermaid": "^11.17.2",
     "pretendard": "catalog:",
     "refractor": "^5.0.0",
     "rehype-raw": "catalog:",

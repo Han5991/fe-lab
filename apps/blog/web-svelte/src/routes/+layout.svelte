@@ -2,6 +2,7 @@
   import type { LayoutProps } from './$types';
   import { css } from '../../styled-system/css';
   import Rail from '$lib/components/Rail.svelte';
+  import ThemeToggle from '$lib/client/ThemeToggle.svelte';
   import { HOME_PATH } from '$lib/shared/routes';
   import '../styles/globals.css';
 
@@ -41,6 +42,7 @@
       {#each nav as item (item.href)}
         <a href={item.href} class={link}>{item.label}</a>
       {/each}
+      <ThemeToggle />
     </nav>
   </Rail>
 </header>

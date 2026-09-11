@@ -1,9 +1,33 @@
 <!doctype html>
-<html lang="ko" data-theme="light">
+<html lang="ko" data-theme="dark">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" href="%sveltekit.assets%/favicon.ico" />
+    <!--
+      테마 초기화 — paint 전에 쿠키 → 없으면 시스템 설정 순으로 반영해 FOUC를
+      막는다. hydration 전에 돌아야 해서 모듈을 import할 수 없고, 정규식은
+      `src/lib/shared/theme.ts`와 같은 문자열이어야 한다(themeScript.test.ts가
+      두 곳을 대조한다). 실패해도 화면이 안 뜨면 안 되므로 catch에서 dark로.
+    -->
+    <script>
+      (function () {
+        try {
+          var m = document.cookie.match(
+            new RegExp('(?:^|;\\s*)theme=(dark|light)'),
+          );
+          var t = m
+            ? m[1]
+            : window.matchMedia &&
+                window.matchMedia('(prefers-color-scheme: dark)').matches
+              ? 'dark'
+              : 'light';
+          document.documentElement.dataset.theme = t;
+        } catch (e) {
+          document.documentElement.dataset.theme = 'dark';
+        }
+      })();
+    </script>
     %sveltekit.head%
   </head>
   <body data-sveltekit-preload-data="hover">

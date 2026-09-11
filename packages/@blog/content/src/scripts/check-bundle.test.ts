@@ -184,6 +184,53 @@ test('findMarkerIn(chunks): 셀렉터 페이지의 도달 폐포에서 마커 �
   ).toStrictEqual([chunkPath('adm111.js')]);
 });
 
+test('findMarkerIn(initial): 폐포를 따르지 않고 문서가 가리킨 것만 본다', () => {
+  // `chunks`와 갈라지는 자리다. 지연 로드된 lazy99에 마커가 있어도 첫 로드에는
+  // 오지 않는다 — SvelteKit처럼 라우터 매니페스트가 모든 청크 이름을 싣는
+  // 산출물에서는 폐포가 앱 전체라, 이 구분이 없으면 규칙이 언제나 발화한다.
+  const io = inputs({
+    pages: new Map([['/', page('pub111.js')]]),
+    sources: chunkSources({
+      'pub111.js': 'loadChunk("lazy99")',
+      'lazy99.js': 'MARK',
+    }),
+  });
+  expect(findMarkerIn({ kind: 'chunks' }, 'MARK', io)).toStrictEqual([
+    chunkPath('lazy99.js'),
+  ]);
+  expect(findMarkerIn({ kind: 'initial' }, 'MARK', io)).toStrictEqual([]);
+});
+
+test('findMarkerIn(initial): 첫 로드에 있으면 잡는다', () => {
+  const io = inputs({
+    pages: new Map([['/', page('pub111.js')]]),
+    sources: chunkSources({ 'pub111.js': 'MARK' }),
+  });
+  expect(findMarkerIn({ kind: 'initial' }, 'MARK', io)).toStrictEqual([
+    chunkPath('pub111.js'),
+  ]);
+});
+
+test('findMarkerIn(initial): 셀렉터로 페이지를 고른다', () => {
+  const io = inputs({
+    pages: new Map([
+      ['/', page('pub111.js')],
+      ['/admin/', page('adm111.js')],
+    ]),
+    sources: chunkSources({ 'pub111.js': 'clean', 'adm111.js': 'MARK' }),
+  });
+  expect(
+    findMarkerIn({ kind: 'initial', of: { notUnder: '/admin/' } }, 'MARK', io),
+  ).toStrictEqual([]);
+  expect(
+    findMarkerIn({ kind: 'initial', of: { under: '/admin/' } }, 'MARK', io),
+  ).toStrictEqual([chunkPath('adm111.js')]);
+});
+
+test('describeScope: initial은 "첫 로드 JS"로 읽힌다', () => {
+  expect(describeScope({ kind: 'initial' })).toContain('첫 로드');
+});
+
 test('findMarkerIn(artifact): 없는 파일(null)은 "없다"로 수렴한다', () => {
   const io = inputs({ artifacts: new Map([['llms.txt', null]]) });
   expect(

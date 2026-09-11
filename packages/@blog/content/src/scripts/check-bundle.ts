@@ -134,6 +134,8 @@ export function describeScope(scope: MarkerScope): string {
   switch (scope.kind) {
     case 'chunks':
       return `${of(scope.of)} 도달 청크`;
+    case 'initial':
+      return `${of(scope.of)} 첫 로드 JS`;
     case 'pages':
       return `${of(scope.of)} 페이지 HTML`;
     case 'artifact':
@@ -158,6 +160,16 @@ export function findMarkerIn(
         if (inputs.sources.get(name)?.includes(marker)) locations.push(name);
       }
       return locations.sort();
+    }
+    case 'initial': {
+      // 폐포를 구하지 않는다 — 문서가 가리킨 것만이 첫 로드다.
+      const locations: string[] = [];
+      for (const [path, html] of selectPages(inputs.pages, scope.of)) {
+        for (const ref of collectChunkRefs(html, path)) {
+          if (inputs.sources.get(ref)?.includes(marker)) locations.push(ref);
+        }
+      }
+      return [...new Set(locations)].sort();
     }
     case 'pages': {
       const locations: string[] = [];
