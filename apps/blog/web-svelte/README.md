@@ -10,8 +10,10 @@
 - SvelteKit + `adapter-static` 정적 export (`build/`) — **49 페이지**
 - 공개 라우트 5개: `/` · `/posts/` · `/posts/[...slug]/` · `/series/` · `/about/` · `/privacy/`
 - 마크다운 렌더 — remark/rehype를 **빌드 타임에** 돌려 HTML 문자열까지 서버에서 만든다
-- 커스텀 태그 9종 — `callout`·`file-tree`·`figure`·`dialogue`/`msg`·
-  `metrics`/`metric`·`timeline`/`step`. HAST를 다시 쓰는 방식이라 **클라이언트 JS 0**
+- 커스텀 태그 10종 — `callout`·`file-tree`·`figure`·`dialogue`/`msg`·
+  `metrics`/`metric`·`timeline`/`step`·`diagram`. HAST를 다시 쓰는 방식이라
+  **클라이언트 JS 0**
+- 코드 블록 — 빌드 타임 구문 강조(refractor), `title=` 메타, 코드 크롬
 - Vitest(node) — 변환 계층 계약 테스트 34개
 - **`check-bundle`도 `pnpm build` 안의 게이트다** — 규칙 2개
 - Panda CSS — React 판과 **같은 프리셋**(`@design-system/ui/blog-preset`), `strictTokens`

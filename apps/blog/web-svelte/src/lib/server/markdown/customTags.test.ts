@@ -147,10 +147,13 @@ test('timeline: 모르는 result는 fail로 떨어진다', () => {
 });
 
 test('아직 다루지 않는 태그는 지우지 않고 그대로 통과시킨다', () => {
-  // code-tabs는 다음 단계다. 통과시키면 내용은 보이되 스타일이 없고, 지우면
-  // 글의 일부가 조용히 사라진다 — 후자가 훨씬 나쁘다.
+  // code-tabs는 다음 단계다. 통과시키면 탭 상자 없이 코드 블록이 차례로
+  // 나오고, 지우면 글의 일부가 조용히 사라진다 — 후자가 훨씬 나쁘다.
   const html = render(
     '<code-tabs>\n\n```bash tab="npm"\nnpm i\n```\n\n</code-tabs>',
   );
-  expect(html).toContain('npm i');
+  expect(html).toContain('<code-tabs>');
+  // 안쪽 코드 블록은 정상으로 렌더된다(내용이 토큰으로 쪼개지므로 조각으로 본다).
+  expect(html).toContain('npm');
+  expect(html).toContain('language-bash');
 });
