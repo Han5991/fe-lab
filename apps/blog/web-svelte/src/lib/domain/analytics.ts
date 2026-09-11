@@ -18,8 +18,17 @@ let repository: PublicAnalytics | null = null;
 const repo = (): PublicAnalytics =>
   (repository ??= createPublicAnalytics(publicDb));
 
-// 조회수 증가 하나만 내보낸다. `getTopPosts`·`getAllViewCounts`도 패키지에 있지만
-// 이 앱의 공개 화면이 아직 인기순 정렬을 하지 않는다 — 쓰지 않는 문을 열어 두면
-// "이 배럴이 무엇을 위한 것인가"가 흐려진다. 필요해지면 그때 연다.
+// 공개 화면이 실제로 쓰는 셋만 연다. 아카이브가 '인기순' 정렬과 인기 글 레일을
+// 갖추면서 조회수 읽기 둘이 더 열렸다 — 쓰지 않는 문을 미리 열어 두지 않는
+// 규칙은 그대로다(열어 두면 "이 배럴이 무엇을 위한 것인가"가 흐려진다).
 export const incrementViewCount = (slug: string) =>
   repo().incrementViewCount(slug);
+
+/** 인기 글 레일 — 상위 `limit`편. */
+export const getTopPosts = (limit: number) => repo().getTopPosts(limit);
+
+/**
+ * 아카이브의 '인기순' 정렬 — 전체 slug→조회수. 그 정렬을 고르기 전에는 부르지
+ * 않는다(React 판의 `enabled: sort === 'popular'`와 같은 늦춤).
+ */
+export const getAllViewCounts = () => repo().getAllViewCounts();

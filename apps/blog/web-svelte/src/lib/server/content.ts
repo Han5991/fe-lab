@@ -32,6 +32,8 @@ export const {
   getAdjacentPosts,
   getSeriesAdjacentPosts,
   getAllSeries,
+  getAllTags,
+  getAllYears,
   getSeriesMeta,
   // admin은 draft·scheduled의 통계도 연다 — 목록에는 보이는데 상세가 404가
   // 되지 않으려면 그 라우트도 프리렌더돼야 한다.

@@ -37,3 +37,30 @@ export const postRowMetaRaw = css.raw({
   fontVariantNumeric: 'tabular-nums',
 });
 export const postRowMeta = css(postRowMetaRaw);
+
+/**
+ * li로 감싸는 목록(아카이브)의 행. 마지막 행에는 아래 보더를 더해 목록이 열린
+ * 채로 끝나지 않게 한다 — 홈은 행이 li 없이 링크 하나라 컨테이너가
+ * `:last-child`로 붙이지만, 여기서는 행이 스스로 안다.
+ */
+export const postRowItem = css(postRowBorderRaw, {
+  _last: { borderBottomWidth: 'hairline', borderBottomStyle: 'solid' },
+});
+
+/**
+ * 아카이브의 행 링크. hover는 제목(h3)만 색+밑줄로 반응한다.
+ * (홈 `PostIndexRow`는 밑줄 없이 색만 바꾸는 자기 hover를 로컬로 갖는다)
+ */
+export const postRowLink = css(postRowLinkLayoutRaw, {
+  _hover: { '& h3': { color: 'accent.600', textDecorationLine: 'underline' } },
+});
+
+/** 행 제목(h3). 위 `postRowLink`의 hover가 이 색·transition을 상대로 동작한다. */
+export const postRowTitle = css({
+  minW: '0',
+  fontSize: '[14px]',
+  fontWeight: 'normal',
+  lineHeight: 'snug',
+  color: 'ink.950',
+  transition: '[color 0.15s]',
+});
