@@ -1,0 +1,43 @@
+{
+  "name": "@blog/web-svelte",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "//sync": "`.svelte-kit/`(svelte-kit sync)와 `styled-system/`(panda codegen)은 둘 다 **생성물이고 커밋하지 않는다**. tsconfig.json이 전자를 extends하고 화면 코드가 후자를 import하므로, 깨끗한 체크아웃에서는 tsconfig를 읽거나 빌드하는 태스크가 전부 죽는다 — CI에서 `check-types`가 `Cannot find module '../../styled-system/css'`로, `lint`가 265개 에러로, `test`가 파일 전부 로드 실패로 넘어졌다. 로컬에서는 한 번 만들어 둔 것이 남아 있어 보이지 않았다. 순서가 있다: panda가 tsconfig를 읽으므로 **sync가 먼저**다. pnpm의 prepare로는 부족하다 — pnpm은 워크스페이스 패키지의 prepare를 install마다 돌리지 않고, turbo는 태스크를 병렬로 돌려 순서를 보장하지 않는다. 그래서 생성물이 필요한 태스크가 **각자** 먼저 부른다(idempotent하고 몇 초면 끝난다).",
+    "sync": "svelte-kit sync && panda codegen",
+    "predev": "blog-content build",
+    "dev": "vite dev",
+    "prebuild": "blog-content build --strict",
+    "build": "pnpm sync && vite build",
+    "preview": "vite preview",
+    "lint": "pnpm sync && eslint . --max-warnings=0",
+    "check-types": "pnpm sync && svelte-check --tsconfig ./tsconfig.json",
+    "measure": "blog-content measure-bundle"
+  },
+  "engines": {
+    "node": ">=24.20.0"
+  },
+  "dependencies": {
+    "@blog/content": "workspace:^",
+    "@design-system/ui": "workspace:^",
+    "pretendard": "catalog:"
+  },
+  "devDependencies": {
+    "@eslint-community/eslint-plugin-eslint-comments": "catalog:lint",
+    "@eslint/js": "catalog:lint",
+    "@pandacss/dev": "catalog:",
+    "@sveltejs/adapter-static": "^3.0.10",
+    "@sveltejs/kit": "^2.49.2",
+    "@sveltejs/vite-plugin-svelte": "^6.2.1",
+    "@types/node": "catalog:",
+    "eslint": "catalog:lint",
+    "eslint-plugin-svelte": "^3.14.0",
+    "globals": "catalog:lint",
+    "svelte": "^5.44.2",
+    "svelte-check": "^4.4.1",
+    "typescript": "catalog:",
+    "typescript-eslint": "catalog:lint",
+    "vite": "^8.2.2"
+  }
+}

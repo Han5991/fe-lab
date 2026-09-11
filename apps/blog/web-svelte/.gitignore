@@ -1,0 +1,18 @@
+# SvelteKit
+.svelte-kit/
+/build/
+
+# Panda codegen (outdir) — 이 앱 전용이라 ui-lib를 공유하지 않는다
+/styled-system/
+
+# 콘텐츠 파이프라인 산출물 (blog-content build가 다시 만든다)
+/static/rss.xml
+/static/sitemap.xml
+/static/search-index.json
+/static/admin-posts-index.json
+/static/llms-full.txt
+/static/llms.txt
+/static/posts/
+/static/thumbs/
+/static/og/
+/.cache/
