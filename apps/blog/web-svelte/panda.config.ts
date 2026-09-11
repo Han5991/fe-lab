@@ -65,23 +65,47 @@ export default defineConfig({
        * 따로 색을 주는데(`code.keywordFlow`), Prism 클래스로는 일반 키워드와
        * 구분되지 않는다. 이 목록에 없는 토큰은 `code.fg`로 떨어진다.
        */
+      /**
+       * **언어마다 기본 글자색이 다르다.** 토큰 클래스가 안 붙은 맨 식별자
+       * (`mainAxios`·`axios` 같은 것)가 받는 색이고, JS 계열에서는 그것이
+       * `code.fg`가 아니라 `code.property`다 — VS Code의 색 규칙이 그렇고,
+       * React 판이 쓰는 테마(vscDarkPlus)에도 `code[class*="language-javascript"]`
+       * 같은 항목으로 들어 있다. 여기에만 없으면 `axios.create()`의 앞쪽 절반이
+       * 두 사이트에서 다른 색이 된다.
+       */
+      'code[class*="language-javascript"], code[class*="language-jsx"], code[class*="language-typescript"], code[class*="language-tsx"]':
+        { color: 'code.property' },
+      'code[class*="language-css"]': { color: 'code.string' },
+
       '.token.comment, .token.prolog, .token.cdata': { color: 'code.comment' },
       '.token.punctuation': { color: 'code.fg' },
-      '.token.namespace, .token.doctype, .token.entity': {
+      // `script`는 HTML 펜스 안의 `<script>` 본문이다. 규칙이 없으면 부모인
+      // `tag`의 초록을 물려받아 자바스크립트 한 덩어리가 통째로 초록이 된다.
+      '.token.namespace, .token.doctype, .token.entity, .token.script': {
         color: 'code.muted',
       },
-      '.token.property, .token.attr-name, .token.variable, .token.parameter': {
-        color: 'code.property',
-      },
-      '.token.keyword, .token.boolean, .token.atrule, .token.important': {
-        color: 'code.keyword',
-      },
+      // `property-access`는 js-extras가 내는 것이라 목록에 없으면 통째로
+      // 무채색이 된다 — 원고 전체에서 748번 나온다. React 판에서 이 자리가
+      // 파랗게 보이는 것은 규칙 때문이 아니라 `code` 요소의 기본색이 그 색이기
+      // 때문인데, 결과가 같으므로 여기서는 역할로 이어 준다.
+      '.token.property, .token.property-access, .token.attr-name, .token.variable, .token.parameter':
+        {
+          color: 'code.property',
+        },
+      // `instruction`은 bash·docker 펜스의 명령 키워드다(RUN·COPY…).
+      '.token.keyword, .token.boolean, .token.atrule, .token.important, .token.instruction':
+        {
+          color: 'code.keyword',
+        },
       '.token.tag, .token.constant': { color: 'code.tag' },
-      '.token.string, .token.char, .token.attr-value, .token.builtin': {
-        color: 'code.string',
-      },
+      '.token.string, .token.template-string, .token.char, .token.attr-value, .token.builtin':
+        {
+          color: 'code.string',
+        },
       '.token.number, .token.symbol, .token.unit': { color: 'code.number' },
-      '.token.function, .token.function-name': { color: 'code.function' },
+      '.token.function, .token.function-name, .token.generic-function': {
+        color: 'code.function',
+      },
       '.token.class-name, .token.maybe-class-name, .token.known-class-name': {
         color: 'code.class',
       },
