@@ -6,9 +6,12 @@
  * OG 카드는 그대로 생성되고 빌드도 성공한다) 값을 패키지로 빼고 여기는 그대로
  * 다시 내보낸다. `apps/blog/web/content.values.mts`와 같은 모양이다.
  *
- * **여기 남는 것은 번들 규칙뿐이다.** 마커가 이 앱의 어휘이기 때문이다 —
- * React 판의 `recharts`·`GoTrueClient`·`mermaid`는 여기 없고, 대신 이 앱이
- * 지켜야 할 것을 따로 적는다.
+ * **여기 남는 것은 번들 규칙뿐이다.** 마커가 이 앱의 어휘이기 때문이다. 겹치는
+ * 것도 있고(`GoTrueClient`·`mermaid`는 두 판이 같은 라이브러리를 쓰므로 양쪽에
+ * 있다) 한쪽에만 있는 것도 있다 — React 판의 차트는 `recharts`지만 이 앱은 SVG를
+ * 직접 그리므로 그 마커가 성립하지 않고, 대신 좌표 계산 함수 이름을 마커로 쓴다.
+ * 무엇보다 **번들러가 다르면 살아남는 식별자가 다르다**(rolldown이 지운 이름이
+ * Turbopack에서는 남는다). 그래서 규칙은 공유하지 않고 앱마다 자기 것을 적는다.
  */
 import type { BundleGuardsConfig } from '@blog/content';
 

@@ -16,6 +16,12 @@ export const ABOUT_PATH = '/about/';
 export const SERIES_PATH = '/series/';
 export const PRIVACY_PATH = '/privacy/';
 
+/**
+ * 없는 주소. 라우트로 프리렌더한 뒤 빌드가 `build/404.html`로도 복사하고,
+ * `wrangler.jsonc`의 `not_found_handling: 404-page`가 그 파일을 문다.
+ */
+export const NOT_FOUND_PATH = '/404/';
+
 /** Admin 대시보드. 정적 export지만 데이터는 전부 브라우저에서 받는다. */
 export const ADMIN_PATH = '/admin/';
 export const ADMIN_ANALYTICS_PATH = '/admin/analytics/';
