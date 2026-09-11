@@ -1,7 +1,13 @@
 <script lang="ts">
   import { css } from '../../../styled-system/css';
   import type { TocItem } from '$lib/shared/tocTypes';
-  import { HEADER_OFFSET, buildPath, measureLengths, type Row } from '$lib/shared/tocRail';
+  import {
+    HEADER_OFFSET,
+    activeSpan,
+    buildPath,
+    measureLengths,
+    type Row,
+  } from '$lib/shared/tocRail';
 
   /**
    * 글 차례 — 항목들을 잇는 **레일 한 줄**을 그리고, 지금 읽고 있는 구간만
@@ -78,11 +84,10 @@
   });
 
   /**
-   * 활성 항목은 **매번 스크롤 위치에서 처음부터 다시 계산한다.**
-   *
-   * 관찰 결과를 Set에 누적하면 콜백이 한 번만 어긋나도 이전 헤딩이 남아 구간이
-   * 통째로 늘어나고, 누적된 상태라 스스로 회복하지 못한다. 매 프레임 다시
-   * 찾으면 누적될 상태가 없다.
+   * 활성 항목은 **매번 스크롤 위치에서 처음부터 다시 계산한다.** 판정 규칙은
+   * `tocRail.ts`의 `activeSpan`이 갖고 있고 모바일 차례가 같은 것을 쓴다 —
+   * 두 화면이 각자 규칙을 들면 "데스크톱에서는 켜졌는데 모바일에서는 아니다"가
+   * 조용히 생긴다. 여기가 하는 일은 재는 것뿐이다.
    */
   $effect(() => {
     if (items.length === 0) return;
@@ -90,27 +95,17 @@
 
     const compute = () => {
       raf = 0;
-      const line = window.innerHeight * 0.2;
-      let current = 0;
-      let first = -1;
-      let last = -1;
-      items.forEach((item, i) => {
-        const el = document.getElementById(item.id);
-        if (!el) return;
-        const { top, bottom } = el.getBoundingClientRect();
-        if (top <= line) current = i;
-        // 헤더에 가려지는 구간(0 ~ HEADER_OFFSET)은 "보인다"로 치지 않는다.
-        if (top >= HEADER_OFFSET && bottom <= window.innerHeight) {
-          if (first === -1) first = i;
-          last = i;
-        }
-      });
+      const { current, range } = activeSpan(
+        items.map(item => {
+          const el = document.getElementById(item.id);
+          if (!el) return null;
+          const { top, bottom } = el.getBoundingClientRect();
+          return { top, bottom };
+        }),
+        window.innerHeight,
+      );
 
       activeId = items[current]?.id ?? '';
-      // 헤딩이 하나도 안 보이는 구간(긴 절의 한복판)에서는 방금 지나온 절
-      // 한 줄만 비춘다.
-      const range: [number, number] =
-        first === -1 ? [current, current] : [first, last];
       if (activeRange?.[0] !== range[0] || activeRange[1] !== range[1]) {
         activeRange = range;
       }

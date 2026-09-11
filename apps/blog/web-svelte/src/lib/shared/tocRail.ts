@@ -90,3 +90,56 @@ export function measureLengths(
   });
   return out;
 }
+
+/** 헤딩 하나의 뷰포트 세로 위치. 요소가 없으면 `null`. */
+export interface HeadingRect {
+  top: number;
+  bottom: number;
+}
+
+/** 활성 판정 결과 — 지금 읽는 항목 하나와, 화면에 들어와 있는 구간. */
+export interface ActiveSpan {
+  /** 화면 위 기준선을 마지막으로 지난 항목. 차례의 `aria-current`가 쓴다. */
+  current: number;
+  /** 레일 하이라이트가 덮는 [첫, 마지막]. 아무것도 안 보이면 `current` 하나. */
+  range: [number, number];
+}
+
+/**
+ * 활성 구간 판정 — **데스크톱 차례와 모바일 차례가 같은 규칙을 쓴다.**
+ *
+ * 측정(DOM)과 판정(계산)을 갈라 둔 것이 요점이다. 화면 둘이 각자 규칙을 들면
+ * "데스크톱에서는 이 절이 켜졌는데 모바일에서는 아니다"가 조용히 생기고, 그건
+ * 스크롤을 해 봐야만 보인다. React 판은 `useTocHook` 하나를 두 화면이 부르는
+ * 방식으로 같은 것을 지킨다.
+ *
+ * 누적 상태가 없다 — 스크롤 위치에서 매번 처음부터 다시 센다. 관찰 결과를
+ * Set에 쌓으면 콜백이 한 번만 어긋나도 이전 헤딩이 남아 구간이 통째로 늘어나고,
+ * 누적된 상태라 스스로 회복하지 못한다.
+ */
+export function activeSpan(
+  rects: readonly (HeadingRect | null)[],
+  viewportHeight: number,
+): ActiveSpan {
+  // 화면 위 20% 선. 헤딩이 여기를 지나가면 그 절을 읽고 있다고 본다.
+  const line = viewportHeight * 0.2;
+  let current = 0;
+  let first = -1;
+  let last = -1;
+
+  rects.forEach((rect, i) => {
+    if (rect === null) return;
+    if (rect.top <= line) current = i;
+    // 헤더에 가려지는 구간(0 ~ HEADER_OFFSET)은 "보인다"로 치지 않는다.
+    if (rect.top >= HEADER_OFFSET && rect.bottom <= viewportHeight) {
+      if (first === -1) first = i;
+      last = i;
+    }
+  });
+
+  // 헤딩이 하나도 안 보이는 구간(긴 절의 한복판)에서는 방금 지나온 절 한 줄만.
+  return {
+    current,
+    range: first === -1 ? [current, current] : [first, last],
+  };
+}

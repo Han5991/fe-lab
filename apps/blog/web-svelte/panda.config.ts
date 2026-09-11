@@ -30,6 +30,23 @@ export default defineConfig({
     },
   },
   outdir: 'styled-system',
+  theme: {
+    extend: {
+      keyframes: {
+        /**
+         * `ReadingProgress.svelte`의 스크롤 구동 진행 바. React 판
+         * `panda.config.ts`와 **같은 정의**다 — 한쪽만 바꾸면 같은
+         * 컴포넌트가 두 사이트에서 다르게 움직인다.
+         *
+         * width 대신 `transform: scaleX()`를 애니메이션해 컴포지터
+         * 스레드만으로 처리되게 한다.
+         */
+        'reading-progress-fill': {
+          to: { transform: 'scaleX(1)' },
+        },
+      },
+    },
+  },
   globalCss: {
     extend: {
       html: { bg: 'paper.50', color: 'ink.950', wordBreak: 'keep-all' },

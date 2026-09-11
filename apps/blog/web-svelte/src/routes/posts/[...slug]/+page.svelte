@@ -6,6 +6,11 @@
   import PostHero from '$lib/components/PostHero.svelte';
   import PostNavigation from '$lib/components/PostNavigation.svelte';
   import Toc from '$lib/client/Toc.svelte';
+  import MobileToc from '$lib/client/MobileToc.svelte';
+  import ReadingProgress from '$lib/components/ReadingProgress.svelte';
+  import BackToTop from '$lib/client/BackToTop.svelte';
+  import ShareButton from '$lib/client/ShareButton.svelte';
+  import CopyCode from '$lib/client/CopyCode.svelte';
   import Rail from '$lib/components/Rail.svelte';
   import { postProse } from '$lib/shared/postProse';
   import Comments from '$lib/client/Comments.svelte';
@@ -37,6 +42,19 @@
     mx: { base: 'auto', lg: '0' },
     w: 'full',
   });
+
+  /** 본문과 댓글 사이 — 공유 버튼 한 줄. */
+  const shareRow = css({
+    mt: '14',
+    pt: '6',
+    borderTopWidth: 'hairline',
+    borderColor: 'ink.border',
+    display: 'flex',
+    justifyContent: 'flex-end',
+  });
+
+  /** 모바일 차례는 좁은 화면에만 — 넓은 화면은 오른쪽 레일 차례가 맡는다. */
+  const mobileOnly = css({ display: 'block', lg: { display: 'none' } });
 </script>
 
 <Seo
@@ -48,6 +66,13 @@
   ogType="article"
   siteName={data.site.name}
 />
+
+<ReadingProgress />
+<BackToTop />
+
+<div class={mobileOnly}>
+  <MobileToc items={data.toc} />
+</div>
 
 <div class={css({ py: { base: '10', md: '14' }, bg: 'paper.50' })}>
   <Rail width="wide" class={shell}>
@@ -72,6 +97,8 @@
            것이라 신뢰 경계 안이고, 파서는 클라이언트 번들에 실리지 않는다. -->
       <div id="post-content" class={postProse}>{@html data.post.html}</div>
 
+      <div class={shareRow}><ShareButton title={data.post.title} /></div>
+
       <div class={css({ mt: '10' })}><Comments /></div>
     </article>
 
@@ -87,5 +114,6 @@
 <!-- 점진적 향상 — 서버는 아무 일도 하지 않고, 필요할 때만 청크를 받는다. -->
 <Mermaid />
 <ImageZoom />
+<CopyCode />
 <RecordRecentView slug={data.post.slug} title={data.post.title} />
 <ViewCount slug={data.post.slug} />

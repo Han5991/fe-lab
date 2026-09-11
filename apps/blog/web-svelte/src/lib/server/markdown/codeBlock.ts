@@ -16,11 +16,7 @@ import markup from 'refractor/markup';
 import tsx from 'refractor/tsx';
 import typescript from 'refractor/typescript';
 import yaml from 'refractor/yaml';
-import {
-  GRAMMAR_EXTENSION_ONLY,
-  PLAIN_FENCE_LABELS,
-  PRISM_LANGUAGES,
-} from '@blog/content';
+import { GRAMMAR_EXTENSION_ONLY, PRISM_LANGUAGES } from '@blog/content';
 import { css } from '../../../../styled-system/css';
 
 /**
@@ -106,17 +102,22 @@ const ALIASES = new Map<string, string>(
   ),
 );
 
-const PLAIN = new Set<string>(PLAIN_FENCE_LABELS);
-
 // ── 스타일 ───────────────────────────────────────────────────────────────────
 
 const shell = css({
-  my: '6',
+  mx: '0',
+  // React 판과 같은 비대칭 여백이다 — 위 32 / 아래 48. 코드가 끝난 뒤를 더
+  // 비워야 다음 문단이 블록에 붙어 읽히지 않는다.
+  mt: '8',
+  mb: '12',
+  pos: 'relative',
   rounded: 'card',
   borderWidth: 'hairline',
   borderColor: 'ink.border',
   overflow: 'hidden',
   bg: 'code.surface',
+  // 파일명·복사 버튼까지 포함해 상자 안쪽 전체를 덮는다.
+  '&::selection, & ::selection': { bg: 'code.selection' },
 });
 
 const bar = css({
@@ -125,29 +126,144 @@ const bar = css({
   gap: '2',
   px: '4',
   py: '2',
+  // 라벨이 없는 블록(복사 버튼만 있는 바)도 같은 높이로 선다.
+  minH: '[36px]',
   bg: 'code.chrome',
   borderBottomWidth: 'hairline',
   borderColor: 'ink.border',
+});
+
+/** 파일명·언어 라벨 공통. 파일명일 때만 말줄임이 더 붙는다. */
+const barLabel = css({
   fontFamily: 'mono',
-  fontSize: '[12px]',
+  fontSize: 'xs',
+  letterSpacing: 'mono',
   color: 'ink.600',
 });
 
-const barTitle = css({ color: 'accent.600' });
+const barCaption = css({
+  fontFamily: 'mono',
+  fontSize: 'xs',
+  letterSpacing: 'mono',
+  color: 'ink.600',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+});
+
+const barIcon = css({ color: 'ink.600', flexShrink: '0' });
+
+const barSpacer = css({ ml: 'auto' });
+
+/**
+ * 복사 버튼 — **마크업은 빌드 타임에 굽고, 동작만 클라이언트가 붙인다**
+ * (`lib/client/CopyCode.svelte`). React 판도 버튼은 프리렌더된 HTML에 있고
+ * 하이드레이션 전까지는 눌러도 아무 일이 없다. 같은 계약이다.
+ *
+ * 아이콘 둘을 함께 굽고 `data-copied`로 무엇을 보일지 고른다 — 복사 직후
+ * 아이콘을 갈아 끼우는 일이 DOM 조작이 아니라 속성 하나가 된다.
+ */
+const copyButton = css({
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  w: '7',
+  h: '7',
+  color: 'ink.600',
+  bg: 'transparent',
+  rounded: 'control',
+  cursor: 'pointer',
+  transition: '[color 0.15s, background-color 0.15s]',
+  _hover: { color: 'accent.600', bg: 'paper.300' },
+  // 아이콘만 남으면 키보드 포커스가 어디 있는지 안 보인다.
+  _focusVisible: { outline: '[2px solid]', outlineColor: 'accent.500' },
+  '& [data-check]': { display: 'none' },
+  '&[data-copied] [data-check]': { display: 'inline' },
+  '&[data-copied] [data-clip]': { display: 'none' },
+});
 
 const body = css({
   m: '0',
-  px: '4',
-  py: '4',
+  // React 판의 SyntaxHighlighter customStyle과 같은 값이다(20px / 24px).
+  px: '6',
+  py: '5',
   overflowX: 'auto',
   // 600px을 넘는 코드는 블록 안에서 세로로 스크롤된다(React 판과 같은 규칙).
   maxH: '[600px]',
   overflowY: 'auto',
   fontFamily: 'mono',
   fontSize: '[13px]',
+  // 1.7이다 — React 판의 테마는 `code`에 1.5를 걸지만 그 `code`는 인라인이라
+  // 줄 높이를 정하는 것은 블록인 `pre`의 1.7이다. 실측으로 양쪽 줄 간격이
+  // 22.1px로 같다. 여기를 1.5로 내렸더니 같은 9줄짜리 블록이 23px 짧아졌다.
   lineHeight: 'proseLoose',
   color: 'code.fg',
 });
+
+/**
+ * lucide 아이콘을 HAST로 직접 짓는다 — 이 앱은 아이콘 패키지를 들이지 않고
+ * 쓰는 것만 그려 넣는다. path 값은 lucide의 `file-code`·`clipboard`·`check`와
+ * 같고, 겉 속성도 lucide가 붙이는 것과 같다.
+ */
+const iconAttrs = {
+  viewBox: '0 0 24 24',
+  fill: 'none',
+  stroke: 'currentColor',
+  strokeWidth: '2',
+  strokeLinecap: 'round',
+  strokeLinejoin: 'round',
+  'aria-hidden': 'true',
+} as const;
+
+const fileCodeIcon = {
+  ...iconAttrs,
+  width: '14',
+  height: '14',
+  class: barIcon,
+};
+
+const FILE_CODE_PATHS: Element[] = [
+  h('path', {
+    d: 'M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z',
+  }),
+  h('path', { d: 'M14 2v5a1 1 0 0 0 1 1h5' }),
+  h('path', { d: 'M10 12.5 8 15l2 2.5' }),
+  h('path', { d: 'm14 12.5 2 2.5-2 2.5' }),
+];
+
+/**
+ * 복사 버튼 한 벌. `data-copy-code`가 클라이언트가 찾는 표식이고, 복사 대상은
+ * 같은 `figure` 안의 `pre code`라 코드 본문을 속성으로 한 번 더 싣지 않는다.
+ */
+function copyButtonNode(): Element {
+  return h(
+    'button',
+    {
+      type: 'button',
+      'data-copy-code': '',
+      'aria-label': '코드 복사',
+      class: copyButton,
+    },
+    [
+      h('svg', { ...iconAttrs, width: '15', height: '15', 'data-clip': '' }, [
+        h('rect', {
+          width: '8',
+          height: '4',
+          x: '8',
+          y: '2',
+          rx: '1',
+          ry: '1',
+        }),
+        h('path', {
+          d: 'M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2',
+        }),
+      ]),
+      h('svg', { ...iconAttrs, width: '15', height: '15', 'data-check': '' }, [
+        h('path', { d: 'M20 6 9 17l-5-5' }),
+      ]),
+    ],
+  );
+}
 
 // ── 변환 ─────────────────────────────────────────────────────────────────────
 
@@ -198,7 +314,11 @@ function highlight(
  *
  * 상단 바는 **파일명이 있으면 경로를, 없으면 언어 라벨**을 보여준다. 둘은 한
  * 줄을 나눠 쓰지 않는다(파일명이 있으면 언어 라벨은 빠진다) — `blog-components`
- * 스킬이 규정한 계약이다.
+ * 스킬이 규정한 계약이다. 라벨이 둘 다 없어도 **바 자체는 선다** — 복사 버튼이
+ * 거기 있기 때문이다(React 판과 같다).
+ *
+ * 상자는 `figure`, 파일명은 `figcaption`이다. 파일명을 다는 순간 이 상자는
+ * "캡션이 붙은 도형"이 되고, 그 관계를 마크업으로 남긴다.
  */
 export function codeBlocks() {
   return (tree: Root) => {
@@ -222,30 +342,33 @@ export function codeBlocks() {
 
       const title = attr(code, 'dataTitle');
       const source = textOf(code).replace(/\n$/, '');
-      const barLabel =
-        title ?? (label !== undefined && !PLAIN.has(label) ? label : undefined);
 
-      const children: Element[] = [];
-      if (barLabel !== undefined) {
-        children.push(
-          h('div', { class: bar }, [
-            h('span', { class: title !== undefined ? barTitle : '' }, [
-              barLabel,
-            ]),
-          ]),
-        );
-      }
-      children.push(
-        h('pre', { class: body }, [
+      // 파일명이 있으면 아이콘 + figcaption, 없으면 언어 라벨 한 줄. 평문
+      // 펜스(`text`·`console`…)도 라벨을 낸다 — React 판이 fence 라벨을 그대로
+      // 찍으므로, 여기서만 감추면 같은 원고가 두 사이트에서 다르게 보인다.
+      const barLead: Element[] =
+        title !== undefined
+          ? [
+              h('svg', fileCodeIcon, FILE_CODE_PATHS),
+              h('figcaption', { class: barCaption, title }, [title]),
+            ]
+          : label !== undefined
+            ? [h('span', { class: barLabel }, [label])]
+            : [];
+
+      parent.children[index] = h('figure', { class: shell }, [
+        h('div', { class: bar }, [
+          ...barLead,
+          h('div', { class: barSpacer }, [copyButtonNode()]),
+        ]),
+        h('pre', { class: body, tabindex: 0 }, [
           h(
             'code',
             label === undefined ? {} : { class: `language-${label}` },
             highlight(source, label),
           ),
         ]),
-      );
-
-      parent.children[index] = h('div', { class: shell }, children);
+      ]);
     });
   };
 }
