@@ -249,3 +249,49 @@ export function codeBlocks() {
     });
   };
 }
+
+/**
+ * 인라인 `` `코드` `` — 본문에 얹히는 칩.
+ *
+ * **`codeBlocks`가 안 보는 자리다.** 그쪽은 `<pre><code>`만 다시 쓰므로, 문단
+ * 안의 `<code>`는 클래스가 하나도 안 붙은 채로 나갔다. 글 전체에 수백 번 나오는
+ * 요소라 이것만으로 본문이 리액트 판과 완전히 다르게 읽혔다(산출물 대조에서
+ * `<code>baseUrl</code>` 대 `<code class="bg_paper.200 …">baseUrl</code>`로 잡혔다).
+ *
+ * `pre` 안쪽은 건드리지 않는다 — 거기 `<code>`는 이미 강조된 본문이고 칩 배경을
+ * 얹으면 블록 안에 칩이 하나 더 생긴다.
+ */
+const inlineCode = css({
+  bg: 'paper.200',
+  color: 'ink.900',
+  px: '1.5',
+  py: '0.5',
+  // 인라인 코드는 서브 서피스(paper.100) 위에 얹히는 칩이라 chip과 같은
+  // 8px(control) 라운드를 쓴다.
+  rounded: 'control',
+  fontFamily: 'mono',
+  fontSize: '[0.9em]',
+  fontWeight: 'normal',
+  whiteSpace: 'pre-wrap',
+  wordBreak: 'break-word',
+  overflowWrap: 'anywhere',
+});
+
+export function inlineCodeChips() {
+  return (tree: Root) => {
+    visit(tree, 'element', (node: Element, _index, parent) => {
+      if (node.tagName !== 'code') return;
+      // 블록 코드의 <code>는 부모가 <pre>다. 그건 codeBlocks의 몫.
+      if (parent?.type === 'element' && parent.tagName === 'pre') return;
+
+      const existing = node.properties.className;
+      const classes = Array.isArray(existing)
+        ? existing.filter((c): c is string => typeof c === 'string')
+        : [];
+      // 펜스 라벨(`language-*`)이 붙은 것은 블록 쪽이라 건드리지 않는다.
+      if (classes.some(c => c.startsWith('language-'))) return;
+
+      node.properties.className = [...classes, inlineCode];
+    });
+  };
+}

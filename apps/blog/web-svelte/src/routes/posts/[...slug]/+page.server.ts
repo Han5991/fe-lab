@@ -16,7 +16,7 @@ import {
   getSeriesAdjacentPosts,
   getSeriesMeta,
 } from '$lib/server/content';
-import { renderMarkdown } from '$lib/server/markdown';
+import { renderPost } from '$lib/server/markdown';
 
 /**
  * 프리렌더 대상 열거 — 정적 export라 SvelteKit이 어떤 slug가 있는지 알아야 한다.
@@ -68,6 +68,9 @@ export const load = ({ params }: { params: { slug: string } }) => {
     ? resolveThumbnailUrl(post, OG_DEFAULT_IMAGE)
     : undefined;
 
+  // 본문 HTML과 차례를 한 번의 파싱으로 함께 받는다.
+  const { html, toc } = renderPost(post.content, post.relativeDir);
+
   const { prev, next } = getAdjacentPosts(slug);
   const series = getSeriesAdjacentPosts(slug);
   const navItem = (item: { slug: string; title: string } | null) =>
@@ -88,8 +91,9 @@ export const load = ({ params }: { params: { slug: string } }) => {
         tag,
         href: archivePath({ tag }),
       })),
-      html: renderMarkdown(post.content, post.relativeDir),
+      html,
     },
+    toc,
     seriesIndex,
     nav: {
       prev: navItem(prev),

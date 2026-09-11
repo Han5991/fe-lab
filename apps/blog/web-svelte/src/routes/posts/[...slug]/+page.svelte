@@ -5,6 +5,7 @@
   import PostHeader from '$lib/components/PostHeader.svelte';
   import PostHero from '$lib/components/PostHero.svelte';
   import PostNavigation from '$lib/components/PostNavigation.svelte';
+  import Toc from '$lib/client/Toc.svelte';
   import Rail from '$lib/components/Rail.svelte';
   import { postProse } from '$lib/shared/postProse';
   import Comments from '$lib/client/Comments.svelte';
@@ -73,6 +74,8 @@
 
       <div class={css({ mt: '10' })}><Comments /></div>
     </article>
+
+    <Toc items={data.toc} />
   </Rail>
 </div>
 
