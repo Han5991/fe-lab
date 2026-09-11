@@ -14,6 +14,7 @@
     "check-seo": "blog-content check-seo",
     "lint": "pnpm sync && eslint . --max-warnings=0",
     "check-types": "pnpm sync && svelte-check --tsconfig ./tsconfig.json",
+    "test": "pnpm sync && vitest run",
     "measure": "blog-content measure-bundle"
   },
   "engines": {
@@ -23,6 +24,7 @@
     "@blog/content": "workspace:^",
     "@blog/site-values": "workspace:^",
     "@design-system/ui": "workspace:^",
+    "hastscript": "^9.0.1",
     "pretendard": "catalog:",
     "rehype-raw": "catalog:",
     "rehype-slug": "^6.0.0",
@@ -49,6 +51,7 @@
     "svelte-check": "^4.4.1",
     "typescript": "catalog:",
     "typescript-eslint": "catalog:lint",
-    "vite": "^8.2.2"
+    "vite": "^8.2.2",
+    "vitest": "catalog:"
   }
 }

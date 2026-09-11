@@ -6,6 +6,7 @@ import remarkParse from 'remark-parse';
 import remarkRehype from 'remark-rehype';
 import { unified } from 'unified';
 import { HEADING_TAG_MAP, resolvePostAssetUrl } from '@blog/content';
+import { customTags } from './customTags.ts';
 import type { Element, Root } from 'hast';
 import { visit } from 'unist-util-visit';
 
@@ -17,10 +18,9 @@ import { visit } from 'unist-util-visit';
  * `{@html}`로 꽂는다 — 파서가 클라이언트 번들에 실리지 않는다. 이것이 이
  * 실험에서 재려는 차이 중 하나다.
  *
- * **커스텀 태그 15종은 아직 살아나지 않는다.** `rehype-raw`가 raw HTML을
- * 노드로 살려 두므로 `<callout>` 같은 태그는 **알 수 없는 요소로 그대로**
- * 통과한다(브라우저가 인라인 요소로 렌더한다 — 내용은 보이되 스타일이 없다).
- * HAST → Svelte 컴포넌트 매핑은 PR 4의 일이다.
+ * 커스텀 태그는 `customTags`가 스타일 붙은 HAST로 다시 쓴다 — 왜 Svelte
+ * 컴포넌트로 매핑하지 않았는지는 그 파일의 주석에 있다. 아직 남은 것은
+ * 상호작용이 필요한 `<code-tabs>`와 배치 계산이 필요한 `<diagram>` 계열이다.
  *
  * h1 강등은 `@blog/content`의 `HEADING_TAG_MAP`을 읽는다 — 사이트 본문과 RSS
  * `content:encoded`가 같은 매핑을 공유해야 하므로 여기서 리터럴을 적지 않는다.
@@ -69,6 +69,7 @@ const processor = () =>
     .use(remarkRehype, { allowDangerousHtml: true })
     .use(rehypeRaw)
     .use(demoteHeadings)
+    .use(customTags)
     .use(rehypeSlug)
     .use(rehypeStringify, { allowDangerousHtml: true });
 
