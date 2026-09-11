@@ -5,9 +5,9 @@
  * (여기는 N개 글 × 기간, 저기는 글 하나 × 전 기간).
  */
 
-import { addDaysISO, formatMonthDayISO } from '@blog/content';
-import { percentDelta } from './delta';
-import type { PostStatDetail } from './types';
+import { addDaysISO, formatMonthDayISO } from '@blog/content/dates';
+import { percentDelta } from './delta.ts';
+import type { PostStatDetail } from './types.ts';
 
 export type AnalyticsRange = '7d' | '30d' | '90d';
 

@@ -4,7 +4,7 @@
 
 import { readFileSync } from 'node:fs';
 import { expect, test } from 'vitest';
-import { ADMIN_ACTION_RPC, isAdminAction } from './adminActions';
+import { ADMIN_ACTION_RPC, isAdminAction } from './adminActions.ts';
 
 test('isAdminAction: 등록된 action만 통과한다', () => {
   for (const action of Object.keys(ADMIN_ACTION_RPC)) {

@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  // 자립형 tsconfig — `@blog/content`와 같은 엄격 수준. 이 소스가 두 앱의
+  // program에 그대로 섞이므로 검사가 어긋나면 한쪽에서만 잡힌다.
+  "compilerOptions": {
+    "target": "ESNext",
+    // `fetch`·`window`를 쓴다(산출물 인덱스 fetch, SSR 판정). node도 필요한 건
+    // 타입 import 하나가 @blog/content 소스 그래프를 program에 끌어오기 때문이다
+    // — `@blog/site-values`의 tsconfig 주석과 같은 이유.
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "types": ["node"],
+    "skipLibCheck": true,
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
+    "verbatimModuleSyntax": true,
+    "erasableSyntaxOnly": true,
+    "noUncheckedIndexedAccess": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "exactOptionalPropertyTypes": true,
+    "noEmit": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "isolatedModules": true
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["**/*.test.ts"]
+}

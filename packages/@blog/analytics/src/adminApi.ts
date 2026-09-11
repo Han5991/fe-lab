@@ -15,12 +15,12 @@ import type {
   AdminAction,
   AdminActionParams,
   AdminActionRpc,
-} from './adminActions';
-import type { Database } from './database.types';
+} from './adminActions.ts';
+import type { Database } from './database.types.ts';
 
 // ── 타입 ───────────────────────────────────────────────────────────────────────
 
-export type { AdminAction, AdminActionParams } from './adminActions';
+export type { AdminAction, AdminActionParams } from './adminActions.ts';
 
 type DbFunctions = Database['public']['Functions'];
 
@@ -70,13 +70,16 @@ export interface FunctionsInvoker {
 
 /**
  * admin-analytics Edge Function 클라이언트. 호출할 클라이언트는 생성자로
- * 주입한다 — 프로덕션은 세션이 붙은 `lib/platform/client`, 테스트는
- * `FunctionsInvoker` 모양만 갖춘 가짜다(domain/auth의 AuthRepository와 같은 관례).
+ * 주입한다 — 프로덕션은 세션이 붙은 supabase 클라이언트(앱이 만든다), 테스트는
+ * `FunctionsInvoker` 모양만 갖춘 가짜다(`AuthRepository`와 같은 관례).
  *
- * **인스턴스는 소비자가 필요할 때 만든다.** `domain/analytics/adminRepository`가
- * 첫 호출에 지연 생성하는데, 그건 취향이 아니라 번들 때문이다 — 모듈 최상위에서
- * `new`를 부르면 번들러가 부수효과로 보고 공개 페이지 그래프에서 supabase-js를
- * 떨궈내지 못한다(그 파일 주석 참고). 여기서 싱글톤을 만들어 export하지 말 것.
+ * **여기서 싱글톤을 만들어 export하지 말 것.** 모듈 최상위 `new`는 번들러에
+ * 부수효과라, 이 파일이 그래프에 닿기만 해도 supabase-js가 통째로 남는다.
+ * 인스턴스를 만드는 것은 소비자의 일이고, 그 자리는 공개 페이지 그래프에서
+ * 갈라져 있어야 한다 — `apps/blog/web`에서는 admin 전용 배럴
+ * (`src/domain/analytics/admin.ts`)이 그 자리다(공개 배럴은 팩토리조차 최상위에서
+ * 부르지 않는다). 실제로 갈라졌는지는 `check-bundle`의 admin 규칙이 산출물에서
+ * 확인한다.
  *
  * 생성자 파라미터 프로퍼티를 안 쓴 이유는 `erasableSyntaxOnly`다 — 타입만
  * 지워서는 JS가 되지 않는 문법이라 tsconfig가 막는다.

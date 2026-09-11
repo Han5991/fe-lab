@@ -4,7 +4,7 @@ import {
   type AdminSession,
   type AuthClientLike,
   type AuthOAuthResult,
-} from './repository';
+} from './authRepository.ts';
 
 const SESSION: AdminSession = { user: { email: 'me@example.com' } };
 

@@ -15,10 +15,10 @@
  * KST 판정에 필요한 타임존은 앱 값 모듈이 소유하고 이 레이어는 설정을 모른다.
  */
 
-import { computeAnalyticsOverview } from './overview';
-import { computeDerivedStats } from './derivedStats';
-import type { AnalyticsOverview, AnalyticsRange } from './overview';
-import type { DerivedStats, PostStatDetail } from './types';
+import { computeAnalyticsOverview } from './overview.ts';
+import { computeDerivedStats } from './derivedStats.ts';
+import type { AnalyticsOverview, AnalyticsRange } from './overview.ts';
+import type { DerivedStats, PostStatDetail } from './types.ts';
 
 /**
  * Analytics 계산 계약. **소비자는 클래스가 아니라 이 인터페이스에 의존한다**

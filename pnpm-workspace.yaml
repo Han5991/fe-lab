@@ -57,6 +57,7 @@ catalog:
   '@types/node': ^24.13.3
 
   # 런타임 라이브러리
+  '@supabase/postgrest-js': ^2.115.0
   '@tanstack/react-query': ^5.102.8
   pretendard: ^1.3.9
   react-markdown: ^10.1.0

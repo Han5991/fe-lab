@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
-import { computeAnalyticsOverview } from './overview';
-import type { PostStatDetail } from './types';
+import { computeAnalyticsOverview } from './overview.ts';
+import type { PostStatDetail } from './types.ts';
 
 function makePostDetail(
   slug: string,

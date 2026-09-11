@@ -28,7 +28,7 @@ which still taught the Hero's Journey template the skill exists to forbid.
 ## 2. Project Structure
 
 - **apps/**
-  - `blog/web/` (`@blog/web`, Next.js 16, static export): Tech blog. Layers `src/shared → src/lib/platform → src/domain/{analytics,auth}` → app layer
+  - `blog/web/` (`@blog/web`, Next.js 16, static export): Tech blog. Layers `src/shared → src/lib/platform → src/domain/{analytics,auth}` → app layer (the analytics/auth domain logic itself lives in `@blog/analytics`; the app only wires clients into it)
     enforced by `eslint-plugin-boundaries`. Content loading/validation/artifact generation is **not** here — it lives in
     `packages/@blog/content`, whose scripts the app runs through the `blog-content` bin (`blog-content build`, `… validate`, `… check-seo`).
     Markdown is `gray-matter` + `react-markdown` — **not** MDX/velite/contentlayer.

@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
-import { computeDerivedStats } from './derivedStats';
-import type { PostStatDetail } from './types';
+import { computeDerivedStats } from './derivedStats.ts';
+import type { PostStatDetail } from './types.ts';
 
 // 기준일은 이제 필수 인자다 — 외부 시계 대신 고정 날짜로 결정성을 얻는다.
 // (타임존 설정을 아는 쪽은 호출부인 훅이고, 이 레이어는 날짜 문자열만 받는다.)

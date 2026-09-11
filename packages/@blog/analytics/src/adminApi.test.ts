@@ -5,7 +5,7 @@
  */
 
 import { expect, test } from 'vitest';
-import { AdminApiClient, type FunctionsInvoker } from './adminApi';
+import { AdminApiClient, type FunctionsInvoker } from './adminApi.ts';
 
 // ── mock 헬퍼 ─────────────────────────────────────────────────────────────────
 

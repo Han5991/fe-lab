@@ -7,7 +7,7 @@
  */
 
 import { expect, test, vi } from 'vitest';
-import { collectPagedRows } from './paging';
+import { collectPagedRows } from './paging.ts';
 
 /** `total`행을 가진 서버를 흉내 낸다. 호출된 구간을 전부 기록한다. */
 function makeSource(total: number, pageSize: number) {

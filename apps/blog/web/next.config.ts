@@ -25,8 +25,18 @@ const nextConfig: NextConfig = {
   // node:fs)까지 함께 연다. 클라이언트 컴포넌트가 배럴에서 순수 유틸을 named
   // import할 때 이 최적화가 실제 사용 모듈로 좁혀 주어, dev(트리셰이킹 없음)에서도
   // node:fs가 클라이언트 그래프에 들어가지 않는다. 패키지 sideEffects:false와 짝.
+  //
+  // @blog/analytics도 같은 이유다. 그 배럴은 공개 페이지가 쓰는 저장소 팩토리와
+  // admin 저장소·세션 클래스를 함께 열고, 공개 배럴(src/domain/analytics)이 그
+  // 문으로 들어간다. 프로덕션은 트리셰이킹이 갈라 주지만(check-bundle의 admin
+  // 규칙 다섯이 그걸 산출물에서 확인한다) dev에는 그 갈라짐이 없어, 조회수만
+  // 읽는 홈이 패키지 그래프를 통째로 받는다.
   experimental: {
-    optimizePackageImports: ['@blog/content', '@blog/site-values'],
+    optimizePackageImports: [
+      '@blog/content',
+      '@blog/site-values',
+      '@blog/analytics',
+    ],
     ...(isDev ? { turbopackRustReactCompiler: true } : {}),
   },
   // dev에서는 키를 생략한다. 예전의 `output: undefined`와 동등하다 — 이 객체의

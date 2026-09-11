@@ -4,9 +4,9 @@
  * 대시보드 개요(N개 글 × 기간)는 `overview.ts`다.
  */
 
-import { addDaysISO, diffDaysISO } from '@blog/content';
-import { percentDelta } from './delta';
-import type { DerivedStats, PostStatDetail, TrendPoint } from './types';
+import { addDaysISO, diffDaysISO } from '@blog/content/dates';
+import { percentDelta } from './delta.ts';
+import type { DerivedStats, PostStatDetail, TrendPoint } from './types.ts';
 
 const MILESTONE_TARGETS = [100, 500, 1000, 5000] as const;
 

@@ -12,7 +12,7 @@
  */
 
 import type { PostStatus } from '@blog/content';
-import type { Database, Tables } from '../../lib/platform/database.types';
+import type { Database, Tables } from './database.types.ts';
 
 type DbFunctions = Database['public']['Functions'];
 
