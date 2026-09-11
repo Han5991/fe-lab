@@ -12,7 +12,8 @@
 - 마크다운 렌더 — remark/rehype를 **빌드 타임에** 돌려 HTML 문자열까지 서버에서 만든다
 - 커스텀 태그 9종 — `callout`·`file-tree`·`figure`·`dialogue`/`msg`·
   `metrics`/`metric`·`timeline`/`step`. HAST를 다시 쓰는 방식이라 **클라이언트 JS 0**
-- Vitest(node) — 변환 계층 계약 테스트 21개
+- Vitest(node) — 변환 계층 계약 테스트 34개
+- **`check-bundle`도 `pnpm build` 안의 게이트다** — 규칙 2개
 - Panda CSS — React 판과 **같은 프리셋**(`@design-system/ui/blog-preset`), `strictTokens`
 - 사이트 값은 `@blog/site-values` (React 판과 공유)
 - ESLint — `--max-warnings=0`, 인라인 `eslint-disable` 금지, 타입 정보 룰
@@ -115,7 +116,9 @@ pnpm --filter @blog/web-svelte measure  # 첫 로드 전송량 측정
   `svelte`가 없고 `prettier-plugin-svelte`도 없다. ESLint(`eslint-plugin-svelte`)는
   보므로 규율이 통째로 빠진 것은 아니지만, 포매팅은 손으로 맞추는 상태다.
   루트 도구를 바꾸는 일이라 별도 변경으로 둔다
-- **`check-bundle`은 이 앱에 아직 걸 수 없다.** `collectChunkRefs`가
+- ~~**`check-bundle`은 이 앱에 아직 걸 수 없다.**~~ **해소됨** — 참조 수집과
+  청크 목록에서 경로 관례를 걷어내 두 산출물에 같은 게이트가 걸린다. 자세히는
+  아래 표 참고. 남은 것: ~~`check-bundle`의 `/_next/` 하드코딩~~ `collectChunkRefs`가
   `/_next/static/chunks/`를 정규식에 박아 두어 SvelteKit 산출물에서 청크를
   하나도 못 찾는다("누수 0건"이 아니라 검사 무력화). 일반화는 PR 4
 - **`@sveltejs/vite-plugin-svelte`가 Vite 8을 실험 지원으로 경고한다.**

@@ -9,6 +9,7 @@ import { join, resolve, sep } from 'node:path';
 import { gzipSync } from 'node:zlib';
 import type { ContentContext } from './context.ts';
 import { collectPages } from './check-seo.ts';
+import { collectAssetRefs } from './assetRefs.ts';
 
 /**
  * 빌드 산출물(`out/`)의 **첫 로드 전송량**을 잰다 — 같은 사이트를 다른
@@ -18,13 +19,12 @@ import { collectPages } from './check-seo.ts';
  * 아니다.** 통과/실패를 내지 않고 수치만 낸다. 임계값을 아직 모르기 때문이다 —
  * 기준선을 먼저 재고 목표는 그 숫자를 본 뒤에 정한다.
  *
- * ## 왜 `check-bundle`을 재사용하지 않는가
+ * ## 참조는 어떻게 모으는가
  *
- * `check-bundle`의 `collectChunkRefs`는 `/_next/static/chunks/`를 정규식에
- * 박아 두었다. Next.js 산출물 전용이라 다른 프레임워크의 `out/`에서는 청크를
- * **하나도 못 찾고**, 그러면 "누수 0건"이 아니라 검사가 무력화된 것이다.
- * 여기서는 경로 관례 대신 **태그에서 참조를 읽는다** — 어떤 번들러가 어떤
+ * 경로 관례 대신 **태그에서 읽는다**(`assetRefs.ts`) — 어떤 번들러가 어떤
  * 디렉터리에 쏟든 브라우저가 첫 로드에 받는 것은 결국 문서가 가리킨 파일이다.
+ * `check-bundle`도 같은 수집기를 쓴다: 둘이 각자 긁으면 "무엇이 첫 로드에
+ * 오는가"의 답이 갈리는데, 하나는 게이트고 하나는 자라서 어긋남이 조용하다.
  *
  * ## 무엇을 "첫 로드"로 세는가
  *
@@ -72,45 +72,6 @@ export interface MeasureReport {
   groups: GroupMeasurement[];
   /** `out/` 전체 — 확장자별 raw 합계와 파일 수 */
   artifacts: { totalBytes: number; files: number };
-}
-
-/**
- * 문서가 직접 참조하는 로컬 자산 경로 — 사이트 루트 기준 절대 경로로 정규화해
- * 돌려준다.
- *
- * **상대 경로를 반드시 함께 받아야 한다.** SvelteKit은 기본값으로
- * `./_app/immutable/…`처럼 페이지 기준 상대 경로를 낸다. 절대 경로만 세던 첫
- * 판은 그 산출물에서 참조를 하나도 못 찾아 **0 KB를 보고했다** — 측정기가
- * 조용히 "번들이 없다"고 말하는 것은 틀린 수치보다 나쁘다. 그래서 페이지
- * 경로를 함께 받아 URL 해석 규칙으로 푼다.
- *
- * 속성 순서를 가정하지 않는다(`<script defer src=…>`도 `<script src=… defer>`도
- * 같다). 외부 호스트(`https://…`)와 데이터 URI는 제외한다 — 자기 산출물이
- * 아니고 파일로 풀 수도 없다.
- */
-export function collectAssetRefs(html: string, pagePath = '/'): string[] {
-  const refs = new Set<string>();
-  // 페이지 경로를 base로 삼아 상대 참조를 푼다. 호스트는 버려지므로 아무 값이나
-  // 되지만, 파싱이 성립하려면 절대 URL이어야 한다.
-  const base = new URL(pagePath, 'https://measure.invalid');
-  for (const tag of html.matchAll(/<(script|link)\b[^>]*>/gi)) {
-    const raw = tag[0];
-    // script는 src, link는 href. 둘 다 있는 태그는 없다.
-    const attr = /\b(?:src|href)\s*=\s*["']([^"']+)["']/i.exec(raw);
-    const url = attr?.[1];
-    if (url === undefined) continue;
-    // 프로토콜이 붙은 참조(`https://`·`//cdn…`·`data:`)는 우리 산출물이 아니다.
-    if (/^[a-z][a-z0-9+.-]*:/i.test(url) || url.startsWith('//')) continue;
-    let path: string;
-    try {
-      // URL 해석이 쿼리·프래그먼트도 함께 떼어 준다.
-      path = new URL(url, base).pathname;
-    } catch {
-      continue;
-    }
-    if (path.endsWith('.js') || path.endsWith('.css')) refs.add(path);
-  }
-  return [...refs];
 }
 
 /** gzip 바이트 — 전송량이 관심사라 raw가 아니라 압축 후를 센다. */
