@@ -8,6 +8,13 @@
   import { RSS_PATH } from '@blog/content/client';
   import { AUTHOR_GITHUB, AUTHOR_LINKEDIN } from '@blog/site-values';
   import { ABOUT_PATH, HOME_PATH, PRIVACY_PATH } from '$lib/shared/routes';
+  // 화면 웹폰트. React 판 `layout.tsx`와 **같은 배포판·같은 서브셋 CSS**다.
+  //
+  // 이 줄이 없어서 사이트 전체가 시스템 폴백으로 렌더되고 있었다. 한글 폴백이
+  // 얼핏 비슷해 보여서 눈으로는 안 잡혔는데, 같은 문자열의 폭이 244px 대
+  // 281px(15% 넓음)로 갈려 차례 항목의 줄바꿈이 어긋나면서 드러났다.
+  // `content.config.mts`가 드는 정적 OTF는 OG 카드(satori)용이라 이것과 별개다.
+  import 'pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css';
   import '../styles/globals.css';
 
   const { children }: LayoutProps = $props();
