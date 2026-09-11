@@ -13,7 +13,7 @@ import {
   layoutDiagram,
   type DiagramEdgeSpec,
   type DiagramNodeSpec,
-} from './layout';
+} from './layout.ts';
 
 function node(
   id: string,

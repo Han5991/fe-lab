@@ -7,12 +7,13 @@
  * 근사가 몇 px 어긋나도 노드 안쪽 여백(24px×2)이 흡수한다.
  *
  * React와 분리해 둔 이유는 좌표가 이 다이어그램 시스템에서 가장 틀리기 쉬운
- * 부분이라서다 — 렌더 없이 숫자만 테스트할 수 있어야 한다.
+ * 부분이라서다 — 렌더 없이 숫자만 테스트할 수 있어야 한다. **그 분리가 이
+ * 모듈을 패키지로 옮길 수 있게 했다**: 원래 `apps/blog/web` 안에 있었는데,
+ * 의존이 타입 하나뿐이라 SvelteKit 판이 좌표를 다시 구현하지 않고 그대로
+ * 쓴다. 두 사이트의 그림이 픽셀 단위로 같은 이유다.
  */
 
-// tone·flow의 값 목록은 스타일 recipe(primitives.tsx)가 정의한다. 타입 전용
-// import라 런타임에는 지워진다 — 이 모듈은 여전히 React 없이 테스트할 수 있다.
-import type { DiagramFlow, DiagramTone } from './primitives';
+import type { DiagramFlow, DiagramTone } from './types.ts';
 
 export type { DiagramFlow, DiagramTone };
 export type DiagramShape = 'box' | 'pill';
@@ -63,6 +64,15 @@ export interface DiagramLayout {
   edges: PlacedEdge[];
   /** caption을 요청했을 때만 채워진다. `<text>` 의 baseline 좌표다. */
   caption?: { x: number; y: number } | undefined;
+  /**
+   * 해석되지 않아 버려진 엣지 — `"from → to"` 문자열.
+   *
+   * 예전에는 이 자리에서 `process.env.NODE_ENV`를 보고 직접 `console.warn`을
+   * 했다. 이 모듈이 패키지로 나오면서 그럴 수 없게 됐다 — 순수 계산기가
+   * 소비자의 환경 변수와 콘솔을 알면 "렌더 없이 숫자만 테스트한다"가 무너진다.
+   * **무엇이 버려졌는지만 알리고 경고할지는 앱이 정한다.**
+   */
+  droppedEdges: string[];
 }
 
 // ── 상수 ────────────────────────────────────────────────────────────────────
@@ -185,15 +195,18 @@ export function layoutDiagram(
     ? contentBottom + CAPTION_OFFSET + CAPTION_BOTTOM
     : contentBottom + MARGIN_Y;
 
+  const routed = routeEdges(placed, edges, direction);
+
   return {
     viewBox: `0 0 ${width} ${height}`,
     width,
     height,
     nodes: placed,
-    edges: routeEdges(placed, edges, direction),
+    edges: routed.edges,
     caption: hasCaption
       ? { x: Math.round(width / 2), y: contentBottom + CAPTION_OFFSET }
       : undefined,
+    droppedEdges: routed.dropped,
   };
 }
 
@@ -278,7 +291,7 @@ function routeEdges(
   nodes: PlacedNode[],
   edges: DiagramEdgeSpec[],
   direction: DiagramDirection,
-): PlacedEdge[] {
+): { edges: PlacedEdge[]; dropped: string[] } {
   // id가 겹치면 **먼저 선언한 노드가 이긴다.** declarative.tsx의 uniqueId()가
   // 같은 규칙으로 미리 걸러 주지만, 이 모듈은 React 없이 테스트하려고 따로
   // 공개한 순수 API라 스스로도 불변식을 지켜야 한다. `new Map(nodes.map(...))`
@@ -300,18 +313,11 @@ function routeEdges(
   const usable = edges.filter(resolvable);
   const specs = usable.length > 0 ? usable : autoEdges(nodes, direction);
 
-  if (process.env.NODE_ENV === 'development' && edges.length > usable.length) {
-    const dropped = edges
-      .filter(spec => !resolvable(spec))
-      .map(spec => `${spec.from} → ${spec.to}`)
-      .join(', ');
-    console.warn(
-      `[diagram] 연결할 수 없는 엣지를 무시했습니다: ${dropped}. ` +
-        `<diagram-node id="…"> 값과 <diagram-edge from/to> 값이 같은지 확인하세요.`,
-    );
-  }
+  const dropped = edges
+    .filter(spec => !resolvable(spec))
+    .map(spec => `${spec.from} → ${spec.to}`);
 
-  return specs.flatMap((spec, index) => {
+  const placed = specs.flatMap((spec, index) => {
     const from = byId.get(spec.from);
     const to = byId.get(spec.to);
     if (!from || !to || from === to) return [];
@@ -326,6 +332,8 @@ function routeEdges(
       },
     ];
   });
+
+  return { edges: placed, dropped };
 }
 
 function autoEdges(

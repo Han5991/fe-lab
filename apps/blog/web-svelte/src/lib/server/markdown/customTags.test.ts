@@ -18,10 +18,12 @@ import { renderMarkdown } from './index.ts';
 const render = (md: string) => renderMarkdown(md, 'series/post');
 
 test('아는 태그 목록이 곧 계약이다', () => {
-  // 태그를 더하거나 빼면 여기가 먼저 알려 준다. code-tabs·diagram 계열은
-  // 아직 이 계층에 없다(상호작용·배치 계산이 필요하다).
+  // 태그를 더하거나 빼면 여기가 먼저 알려 준다. diagram-node·diagram-edge가
+  // 없는 것은 <diagram>이 자식을 자기가 읽기 때문이고(좌표는 형제를 전부 알아야
+  // 정해진다), code-tabs는 상호작용이 필요해 아직 이 계층에 없다.
   expect([...HANDLED_TAGS].sort()).toStrictEqual([
     'callout',
+    'diagram',
     'dialogue',
     'figure',
     'file-tree',
@@ -145,10 +147,10 @@ test('timeline: 모르는 result는 fail로 떨어진다', () => {
 });
 
 test('아직 다루지 않는 태그는 지우지 않고 그대로 통과시킨다', () => {
-  // code-tabs·diagram 계열은 다음 단계다. 통과시키면 내용은 보이되 스타일이
-  // 없고, 지우면 글의 일부가 조용히 사라진다 — 후자가 훨씬 나쁘다.
+  // code-tabs는 다음 단계다. 통과시키면 내용은 보이되 스타일이 없고, 지우면
+  // 글의 일부가 조용히 사라진다 — 후자가 훨씬 나쁘다.
   const html = render(
-    '<diagram label="구조"><diagram-node title="a"></diagram-node></diagram>',
+    '<code-tabs>\n\n```bash tab="npm"\nnpm i\n```\n\n</code-tabs>',
   );
-  expect(html).toContain('a');
+  expect(html).toContain('npm i');
 });
