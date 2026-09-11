@@ -11,6 +11,11 @@
 - 공개 라우트 7개: `/` · `/posts/` · `/posts/[...slug]/` · `/series/` · `/about/` · `/privacy/` · `/404/`
 - Admin 라우트 4개: `/admin/` · `/admin/analytics/` · `/admin/analytics/[...slug]/` ·
   `/admin/login/` — 인증 가드, Google OAuth, 대시보드·글별 통계·글 상세
+- `/posts/` 아카이브 — 검색·정렬·뷰 전환·태그·시리즈·연도 필터, 카드/리스트 두 뷰,
+  활성 필터 칩, 인기 글 레일, 모바일 FAB + 바텀시트. URL 계약은 nuqs 대신 순수 함수
+  둘(`lib/client/archiveParams.ts`)이고 테스트가 잠근다. **필터는 마운트 후에 산다** —
+  SvelteKit이 프리렌더 중 `url.searchParams` 접근을 던지므로 산출물에는 필터 없는
+  목록이 구워진다(React 판도 같은 자리에서 프리렌더를 포기한다)
 - 마크다운 렌더 — remark/rehype를 **빌드 타임에** 돌려 HTML 문자열까지 서버에서 만든다
 - 커스텀 태그 13종 — HAST를 다시 쓰는 방식이라 **클라이언트 JS 0**
 - 코드 블록 — 빌드 타임 구문 강조(refractor), `title=` 메타, 코드 크롬
@@ -19,7 +24,7 @@
 - 차트 — Recharts 없이 SVG를 직접 그린다(영역·막대·스파크라인). 좌표 계산은
   `lib/admin/charts/geometry.ts`의 순수 함수고 테스트가 잠근다
 - 데이터 캐시 — React Query 없이 `lib/admin/store.svelte.ts`(약속을 모듈에 든다)
-- Vitest(node) — 계약 테스트 **88개** / 파일 12개
+- Vitest(node) — 계약 테스트 **95개** / 파일 13개
 - **`check-seo`·`check-bundle`이 `pnpm build` 안의 게이트다** — 번들 규칙 **11개**
   (admin 전용 다섯 · 글 전용 둘 · 검색 · 서버 전용 값 · 빌드 타임 강조 · 스캔 생존).
   **CI에서도 돈다** — `quality-checks` 액션의 `build-blog-svelte` 스텝이 그 자리다
