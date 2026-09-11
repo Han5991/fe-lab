@@ -25,6 +25,7 @@
   },
   "dependencies": {
     "@blog/content": "workspace:^",
+    "@blog/site-values": "workspace:^",
     "@design-system/ui": "workspace:^",
     "@design-system/ui-lib": "workspace:^",
     "@giscus/react": "^3.1.0",

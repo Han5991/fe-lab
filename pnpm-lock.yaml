@@ -245,6 +245,9 @@ importers:
       '@blog/content':
         specifier: workspace:^
         version: link:../../../packages/@blog/content
+      '@blog/site-values':
+        specifier: workspace:^
+        version: link:../../../packages/@blog/site-values
       '@design-system/ui':
         specifier: workspace:^
         version: link:../../../packages/@design-system/ui
@@ -405,6 +408,9 @@ importers:
       '@blog/content':
         specifier: workspace:^
         version: link:../../../packages/@blog/content
+      '@blog/site-values':
+        specifier: workspace:^
+        version: link:../../../packages/@blog/site-values
       '@design-system/ui':
         specifier: workspace:^
         version: link:../../../packages/@design-system/ui
@@ -703,6 +709,18 @@ importers:
       vitest:
         specifier: 'catalog:'
         version: 5.0.0(@types/node@24.13.3)(@vitest/coverage-v8@5.0.0)(jsdom@30.0.1(@noble/hashes@1.8.0))(msw@2.15.0(@types/node@24.13.3)(typescript@6.0.3))(vite@8.2.2(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0))
+
+  packages/@blog/site-values:
+    devDependencies:
+      '@blog/content':
+        specifier: workspace:^
+        version: link:../content
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.13.3
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
 
   packages/@design-system/ui:
     dependencies:

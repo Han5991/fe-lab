@@ -26,7 +26,7 @@ const nextConfig: NextConfig = {
   // import할 때 이 최적화가 실제 사용 모듈로 좁혀 주어, dev(트리셰이킹 없음)에서도
   // node:fs가 클라이언트 그래프에 들어가지 않는다. 패키지 sideEffects:false와 짝.
   experimental: {
-    optimizePackageImports: ['@blog/content'],
+    optimizePackageImports: ['@blog/content', '@blog/site-values'],
     ...(isDev ? { turbopackRustReactCompiler: true } : {}),
   },
   // dev에서는 키를 생략한다. 예전의 `output: undefined`와 동등하다 — 이 객체의
