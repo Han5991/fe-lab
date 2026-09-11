@@ -20,11 +20,13 @@
 - 커스텀 태그 13종 — HAST를 다시 쓰는 방식이라 **클라이언트 JS 0**
 - 코드 블록 — 빌드 타임 구문 강조(refractor), `title=` 메타, 코드 크롬
 - 런타임 기능 — 테마 토글 · Mermaid(지연 로드) · 이미지 줌 · ⌘K 검색 ·
-  최근 본 글 · Giscus 댓글 · 조회수
+  최근 본 글 · Giscus 댓글 · 조회수 · 읽기 진행바 · 맨 위로 · 모바일 차례 ·
+  공유하기 · 코드 복사. 진행바에는 JS가 없고(`animation-timeline: scroll()`),
+  복사 버튼은 마크업을 빌드 타임에 굽고 동작만 위임 리스너로 붙인다
 - 차트 — Recharts 없이 SVG를 직접 그린다(영역·막대·스파크라인). 좌표 계산은
   `lib/admin/charts/geometry.ts`의 순수 함수고 테스트가 잠근다
 - 데이터 캐시 — React Query 없이 `lib/admin/store.svelte.ts`(약속을 모듈에 든다)
-- Vitest(node) — 계약 테스트 **95개** / 파일 13개
+- Vitest(node) — 계약 테스트 **104개** / 파일 14개
 - **`check-seo`·`check-bundle`이 `pnpm build` 안의 게이트다** — 번들 규칙 **11개**
   (admin 전용 다섯 · 글 전용 둘 · 검색 · 서버 전용 값 · 빌드 타임 강조 · 스캔 생존).
   **CI에서도 돈다** — `quality-checks` 액션의 `build-blog-svelte` 스텝이 그 자리다
