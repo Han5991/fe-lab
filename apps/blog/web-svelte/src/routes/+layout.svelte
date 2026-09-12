@@ -42,94 +42,131 @@
     _hover: { color: 'ink.950' },
   });
 
+  /**
+   * 페이지 셸 — 본문이 짧아도 푸터가 화면 아래에 붙는다.
+   * `apps/blog/web/src/components/Layout.tsx`와 같은 값이다.
+   */
+  const shell = css({
+    minH: '[100vh]',
+    bg: 'paper.50',
+    color: 'ink.950',
+    display: 'flex',
+    flexDir: 'column',
+  });
+
+  /**
+   * sticky 헤더. 아래로 본문이 지나가므로 반투명하게 둬서 헤더가 지면 위에 떠
+   * 있다는 걸 드러낸다 — 불투명하면 스크롤 중에 본문이 헤더 경계에서 뚝 잘려
+   * 보인다.
+   *
+   * **Panda에서 흐림은 `backdropFilter: 'auto'` + `backdropBlur` 조합이다.**
+   * `backdropFilter: '[blur(12px)]'`처럼 임의값으로 주면 클래스만 생기고 규칙이
+   * 안 나간다 — React 판 주석에 같은 함정이 적혀 있다.
+   */
+  const header = css({
+    borderBottomWidth: 'hairline',
+    borderBottomStyle: 'solid',
+    borderColor: 'ink.border',
+    pos: 'sticky',
+    top: '0',
+    bg: 'paper.50/80',
+    backdropFilter: 'auto',
+    backdropBlur: '[12px]',
+    zIndex: '10',
+  });
+
   /** 저작권 연도는 빌드 시각이 아니라 렌더 시각이다 — React 판과 같다. */
   const year = new Date().getFullYear();
 </script>
 
-<header class={css({ borderBottomWidth: 'hairline', borderColor: 'ink.border' })}>
-  <Rail width="wide">
-    <div
-      class={css({
-        h: '[52px]',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: { base: '[10px]', md: '[16px]' },
-      })}
-    >
-      <!-- 로고 표기만 sangwook.dev. metadata·JSON-LD의 사이트명(Frontend Lab)은
-           검색 색인 보호를 위해 그대로 둔다 — 둘은 일부러 다르다. 예전에는
-           여기가 `data.site.name`이라 헤더에 "Frontend Lab"이 찍혔다. -->
-      <a
-        href={HOME_PATH}
-        class={css({
-          fontFamily: 'mono',
-          fontWeight: 'medium',
-          fontSize: '[15px]',
-          color: 'ink.950',
-          textDecoration: 'none',
-          transition: '[opacity 0.15s]',
-          _hover: { opacity: '0.7' },
-        })}>sangwook.dev</a
-      >
-
+<div class={shell}>
+  <header class={header}>
+    <Rail width="wide">
       <div
         class={css({
+          h: '[52px]',
           display: 'flex',
           alignItems: 'center',
+          justifyContent: 'space-between',
           gap: { base: '[10px]', md: '[16px]' },
         })}
       >
-        <NavLinks />
-        <div class={css({ display: 'flex', alignItems: 'center', gap: '[4px]' })}>
-          <SearchDialog />
-          <ThemeToggle />
+        <!-- 로고 표기만 sangwook.dev. metadata·JSON-LD의 사이트명(Frontend Lab)은
+             검색 색인 보호를 위해 그대로 둔다 — 둘은 일부러 다르다. 예전에는
+             여기가 `data.site.name`이라 헤더에 "Frontend Lab"이 찍혔다. -->
+        <a
+          href={HOME_PATH}
+          class={css({
+            fontFamily: 'mono',
+            fontWeight: 'medium',
+            fontSize: '[15px]',
+            color: 'ink.950',
+            textDecoration: 'none',
+            transition: '[opacity 0.15s]',
+            _hover: { opacity: '0.7' },
+          })}>sangwook.dev</a
+        >
+
+        <div
+          class={css({
+            display: 'flex',
+            alignItems: 'center',
+            gap: { base: '[10px]', md: '[16px]' },
+          })}
+        >
+          <NavLinks />
+          <div class={css({ display: 'flex', alignItems: 'center', gap: '[4px]' })}>
+            <SearchDialog />
+            <ThemeToggle />
+          </div>
         </div>
       </div>
-    </div>
-  </Rail>
-</header>
+    </Rail>
+  </header>
 
-{@render children()}
+  <main class={css({ flex: '1', w: 'full' })}>
+    {@render children()}
+  </main>
 
-<footer
-  class={css({
-    borderTopWidth: 'hairline',
-    borderTopStyle: 'solid',
-    borderColor: 'ink.border',
-    mt: '[64px]',
-    py: '[20px]',
-  })}
->
-  <Rail
-    width="wide"
+  <footer
     class={css({
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      flexWrap: 'wrap',
-      gap: '[12px]',
+      borderTopWidth: 'hairline',
+      borderTopStyle: 'solid',
+      borderColor: 'ink.border',
+      mt: '[64px]',
+      py: '[20px]',
     })}
   >
-    <span class={css({ fontFamily: 'mono', fontSize: '[12px]', color: 'ink.500' })}>
-      © {year} 한상욱
-    </span>
-    <div
+    <Rail
+      width="wide"
       class={css({
         display: 'flex',
-        gap: '[16px]',
-        flexWrap: 'wrap',
+        justifyContent: 'space-between',
         alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: '[12px]',
       })}
     >
-      {#each FOOTER_LINKS as link (link.label)}
-        <a
-          href={link.href}
-          target={link.href.startsWith('http') ? '_blank' : undefined}
-          rel={link.href.startsWith('http') ? 'noopener noreferrer' : undefined}
-          class={footerLink}>{link.label}</a
-        >
-      {/each}
-    </div>
-  </Rail>
-</footer>
+      <span class={css({ fontFamily: 'mono', fontSize: '[12px]', color: 'ink.500' })}>
+        © {year} 한상욱
+      </span>
+      <div
+        class={css({
+          display: 'flex',
+          gap: '[16px]',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+        })}
+      >
+        {#each FOOTER_LINKS as link (link.label)}
+          <a
+            href={link.href}
+            target={link.href.startsWith('http') ? '_blank' : undefined}
+            rel={link.href.startsWith('http') ? 'noopener noreferrer' : undefined}
+            class={footerLink}>{link.label}</a
+          >
+        {/each}
+      </div>
+    </Rail>
+  </footer>
+</div>

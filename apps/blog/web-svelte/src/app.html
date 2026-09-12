@@ -3,7 +3,15 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="icon" href="%sveltekit.assets%/favicon.ico" />
+    <!-- 아이콘 선언은 React 판 `layout.tsx`의 metadata.icons와 같은 다섯 줄이다.
+         한 줄만 두면 탭 아이콘은 떠도 홈 화면 추가·안드로이드 설치에서 기본
+         아이콘이 나간다 — `check-parity`의 head 축이 이 누락을 잡았다. -->
+    <link rel="shortcut icon" href="%sveltekit.assets%/favicon.ico" />
+    <link rel="icon" href="%sveltekit.assets%/favicon.ico" sizes="any" />
+    <link rel="icon" href="%sveltekit.assets%/favicon-16x16.png" type="image/png" sizes="16x16" />
+    <link rel="icon" href="%sveltekit.assets%/favicon-32x32.png" type="image/png" sizes="32x32" />
+    <link rel="apple-touch-icon" href="%sveltekit.assets%/apple-touch-icon.png" sizes="180x180" type="image/png" />
+    <link rel="manifest" href="%sveltekit.assets%/site.webmanifest" />
     <!--
       테마 초기화 — paint 전에 쿠키 → 없으면 시스템 설정 순으로 반영해 FOUC를
       막는다. hydration 전에 돌아야 해서 모듈을 import할 수 없고, 정규식은

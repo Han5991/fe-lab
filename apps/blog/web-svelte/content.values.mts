@@ -164,3 +164,48 @@ export const BUNDLE_GUARDS = [
     requiredIn: [{ kind: 'chunks' }],
   },
 ] as const satisfies BundleGuardsConfig;
+
+/**
+ * 파리티 대조 대상 페이지.
+ *
+ * 글 상세는 44개라 통째로 넣으면 같은 위반이 44번 반복된다. 라우트마다 대표
+ * 하나씩만 고른다 — 같은 템플릿에서 나오므로 하나가 통과하면 나머지도 통과한다.
+ */
+export const PARITY_PAGES = [
+  '/',
+  '/posts/',
+  '/series/',
+  '/about/',
+  '/privacy/',
+] as const;
+
+/**
+ * 차집합에서 뺄 클래스 — **한쪽 프레임워크의 어휘라 대응물이 없는 것만.**
+ *
+ * 여기 적는 순간 그 차이는 영영 안 보인다. "아직 안 고쳤다"를 담는 자리가
+ * 아니라 "고칠 것이 아니다"를 담는 자리다.
+ */
+export const PARITY_ALLOW_CLASSES = [
+  // lucide-react가 자기 SVG에 붙이는 클래스. 이 앱은 아이콘 패키지를 들이지
+  // 않고 쓰는 것만 인라인 SVG로 그리므로 대응물이 없다.
+  'lucide',
+  'lucide-moon',
+  'lucide-search',
+  'lucide-sun',
+  // next/font가 생성하는 폰트 변수 클래스. 이 앱은 같은 변수를
+  // `panda.config.ts`의 html 규칙에서 채운다(`--font-jetbrains`).
+  'jetbrains_mono_f2e6a828-module__-Ddwfq__variable',
+  // 같은 값을 가리키는 다른 토큰 이름이다. React 판이 임의값·Panda 기본 스케일을
+  // 쓰는 자리에서 이 앱은 시맨틱 토큰을 쓴다(`[1px]`↔`hairline`,
+  // `lg`/`md`↔`control`). 렌더 결과가 같아 맞출 대상이 아니고, React 판을
+  // 고치는 것은 이 실험의 범위 밖이다(「web은 한 줄도 바뀌지 않는다」).
+  'bd-w_[1px]',
+  'bdr_lg',
+  'bdr_md',
+  'bd-w_hairline',
+  'bdr_control',
+  // 인라인 SVG가 스스로 붙이는 기본값. lucide는 컴포넌트가 속성으로 준다.
+  'bd_none',
+  'size_[16px]',
+  'td_none',
+] as const;

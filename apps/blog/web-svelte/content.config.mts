@@ -17,6 +17,8 @@ import { themeColor } from '@design-system/ui/blog-preset';
 import {
   AUTHOR,
   BUNDLE_GUARDS,
+  PARITY_ALLOW_CLASSES,
+  PARITY_PAGES,
   DIAGRAM_NAMES,
   LLMS_DOCS,
   LLMS_FACTS,
@@ -52,6 +54,17 @@ export default defineContent({
   // 규칙 목록이 통째로 실린다 — 어느 코드가 어느 라우트의 것인가는 이 사이트의
   // 어휘라 패키지가 채워 줄 반쪽이 없다.
   bundleGuards: BUNDLE_GUARDS,
+  /**
+   * React 판과의 화면 대조. 상대 경로의 기준은 이 파일의 위치다.
+   *
+   * 이 앱에만 있는 축이다 — React 판은 대조 상대가 없다(자기 자신이 기준이다).
+   */
+  parity: {
+    baseline: '../web/out',
+    baselineLabel: 'React',
+    pages: PARITY_PAGES,
+    allowClasses: PARITY_ALLOW_CLASSES,
+  },
   llms: {
     indexIntro: LLMS_INTRO.index,
     fullIntro: LLMS_INTRO.full,
