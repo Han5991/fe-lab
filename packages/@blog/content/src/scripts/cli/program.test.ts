@@ -16,6 +16,7 @@ test('서브커맨드 목록 — 앱 스크립트와 build 파이프라인이 �
   expect([...names()].sort()).toStrictEqual([
     'build',
     'check-bundle',
+    'check-parity',
     'check-seo',
     'llms',
     'llms-full',
