@@ -142,6 +142,20 @@ export function buildProgram(): Command {
     );
 
   program
+    .command('check-parity')
+    .description(
+      '두 산출물을 대조 — 같은 사이트를 두 번 지었을 때의 화면 파리티',
+    )
+    .argument('[outDir]', '검사할 디렉터리 (기본: 설정의 out)')
+    .action(
+      async (outDir: string | undefined, _opts: unknown, command: Command) => {
+        const ctx = await loadContext(command);
+        const { main } = await import('../check-parity.ts');
+        main(ctx, outDir);
+      },
+    );
+
+  program
     .command('measure-bundle')
     .description('빌드 산출물(out/)의 첫 로드 전송량 측정 — 게이트가 아니다')
     .argument('[outDir]', '측정할 디렉터리 (기본: 설정의 out)')

@@ -39,11 +39,30 @@ test('js-extras·jsdoc이 typescript보다 먼저 등록된다', () => {
   );
 });
 
-test('평문 라벨은 강조하지 않고 상단 바도 달지 않는다', () => {
+test('평문 라벨은 강조하지 않지만 라벨 자체는 바에 나온다', () => {
   // `text`·`console`은 Prism 언어가 아니라 의도적으로 쓰는 라벨이다.
+  // 강조는 붙지 않지만 **라벨은 찍는다** — React 판이 fence 라벨을 그대로
+  // 내보내므로, 여기서만 감추면 같은 원고가 두 사이트에서 다르게 보인다.
   const html = fence('text', 'just words');
   expect(html).not.toContain('class="token');
   expect(html).toContain('just words');
+  expect(html).toContain('>text<');
+});
+
+test('라벨이 없어도 바는 선다 — 복사 버튼이 거기 있다', () => {
+  const html = fence('', 'bare');
+  expect(html).toContain('data-copy-code');
+  expect(html).toContain('aria-label="코드 복사"');
+});
+
+test('복사 버튼은 코드 본문을 속성으로 한 번 더 싣지 않는다', () => {
+  // 대상은 같은 figure 안의 `pre code`라 DOM에서 읽으면 된다. 속성에 넣으면
+  // 펜스 500개짜리 원고에서 HTML이 두 배가 된다.
+  const html = fence('ts', 'const secret = 1;');
+  expect(html).toContain('<figure');
+  const button = /<button[^>]*data-copy-code[^>]*>/.exec(html)?.[0] ?? '';
+  expect(button).not.toBe('');
+  expect(button).not.toContain('secret');
 });
 
 test('모르는 라벨은 throw하지 않고 평문으로 떨어진다', () => {

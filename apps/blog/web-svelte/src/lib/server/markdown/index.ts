@@ -6,9 +6,10 @@ import remarkParse from 'remark-parse';
 import remarkRehype from 'remark-rehype';
 import { unified } from 'unified';
 import { HEADING_TAG_MAP, resolvePostAssetUrl } from '@blog/content';
-import { codeBlocks } from './codeBlock.ts';
+import { codeBlocks, inlineCodeChips } from './codeBlock.ts';
 import { codeMeta } from './codeMeta.ts';
 import { customTags } from './customTags.ts';
+import { collectToc, type TocItem } from './toc.ts';
 import type { Element, Root } from 'hast';
 import { visit } from 'unist-util-visit';
 
@@ -75,6 +76,8 @@ const processor = () =>
     .use(demoteHeadings)
     .use(customTags)
     .use(codeBlocks)
+    // codeBlocks 다음 — 그때 블록 쪽 <code>는 <pre> 안으로 들어가 있다.
+    .use(inlineCodeChips)
     .use(rehypeSlug)
     .use(rehypeStringify, { allowDangerousHtml: true });
 
@@ -83,3 +86,26 @@ export function renderMarkdown(markdown: string, relativeDir: string): string {
     processor().use(resolveAssetUrls, relativeDir).processSync(markdown),
   );
 }
+
+/**
+ * 본문 HTML과 차례를 **한 번의 파싱으로** 함께 낸다.
+ *
+ * 차례를 위해 HTML을 다시 훑지 않는 이유는 그게 두 번째 파서가 되기 때문이다 —
+ * 정규식으로 헤딩을 긁으면 커스텀 태그 안의 헤딩이나 속성 순서에서 갈린다.
+ * 파이프라인이 이미 트리를 들고 있으니 거기서 가져온다.
+ */
+export function renderPost(
+  markdown: string,
+  relativeDir: string,
+): { html: string; toc: TocItem[] } {
+  const toc: TocItem[] = [];
+  const html = String(
+    processor()
+      .use(resolveAssetUrls, relativeDir)
+      .use(collectToc, toc)
+      .processSync(markdown),
+  );
+  return { html, toc };
+}
+
+export type { TocItem };

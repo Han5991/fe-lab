@@ -86,7 +86,7 @@
   const h2 = css({ fontSize: 'lg', fontWeight: 'bold', color: 'ink.950' });
 </script>
 
-<Rail>
+<Rail width="wide">
   <div class={css({ my: '10', display: 'flex', flexDirection: 'column', gap: '8' })}>
     <div class={css({ display: 'flex', flexDirection: 'column', gap: '2' })}>
       <a

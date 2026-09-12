@@ -1,4 +1,16 @@
 import { h } from 'hastscript';
+import {
+  ARROW_HEAD_PATH,
+  arrowHeadTransform,
+  captionText,
+  diagramBlock as block,
+  diagramFrame as frame,
+  edgeDashed,
+  edgeRoot,
+  nodeShape,
+  nodeSubtitle,
+  nodeTitle,
+} from '../../shared/diagramStyles';
 import type { Element, ElementContent } from 'hast';
 import {
   layoutDiagram,
@@ -32,73 +44,9 @@ import { css } from '../../../../styled-system/css';
 
 // ── 스타일 ───────────────────────────────────────────────────────────────────
 //
-// SVG 안 font-size는 user unit이라 viewBox 좌표와 같은 축이다. 타이포 스케일
-// 토큰(rem 기반)을 끌어오면 루트 폰트 크기에 따라 도형과 글자 비율이 어긋나므로
-// 레퍼런스 SVG의 px 값을 그대로 박는다(React 판 `primitives.tsx`와 같은 이유).
-
-const block = css({ my: '6' });
-
-const frame = css({
-  maxW: 'full',
-  height: 'auto',
-  display: 'block',
-  mx: 'auto',
-});
-
-const nodeShape = {
-  gray: css({
-    fill: 'paper.100',
-    stroke: 'ink.border',
-    strokeWidth: 'hairline',
-  }),
-  accent: css({
-    fill: 'accent.50',
-    stroke: 'accent.500',
-    strokeWidth: 'hairline',
-  }),
-} as const satisfies Record<DiagramTone, string>;
-
-const nodeTitle = css({
-  fontSize: '[12px]',
-  fontWeight: 'semibold',
-  fill: 'ink.950',
-  fontFamily: 'sans',
-});
-
-const nodeSubtitle = css({
-  fontSize: '[11px]',
-  fill: 'ink.600',
-  fontFamily: 'mono',
-});
-
-// 스트로크는 **그룹**에 건다 — 선과 화살촉이 색을 상속받는다(React 판의
-// sva `root` 슬롯과 같은 구조). 개별 요소에 걸면 둘이 갈라질 수 있다.
-const edgeRoot = {
-  plain: css({
-    fill: '[none]',
-    strokeWidth: 'hairline',
-    strokeLinecap: 'round',
-    strokeLinejoin: 'round',
-    stroke: 'ink.600',
-    opacity: '[0.55]',
-  }),
-  // 핵심 경로만 액센트. 스트로크는 비텍스트라 accent.500이다.
-  emphasis: css({
-    fill: '[none]',
-    strokeWidth: 'hairline',
-    strokeLinecap: 'round',
-    strokeLinejoin: 'round',
-    stroke: 'accent.500',
-  }),
-} as const;
-
-const edgeDashed = css({ strokeDasharray: '[3 3]' });
-
-const captionText = css({
-  fontSize: '[11px]',
-  fill: 'ink.500',
-  fontFamily: 'mono',
-});
+// 생김새는 `lib/shared/diagramStyles.ts`가 단일 출처다 — frontmatter `hero:`
+// 슬롯의 Svelte 컴포넌트가 같은 값을 쓴다. 이 모듈은 `lib/server/` 아래라
+// 화면에서 import할 수 없어서 스타일만 밖으로 뺐다.
 
 // ── 속성 읽기 ────────────────────────────────────────────────────────────────
 
@@ -206,10 +154,9 @@ const round = (n: number) => Math.round(n * 100) / 100;
  * 고정 path를 끝점으로 옮겨 돌리는 쪽이 짧기도 하다.
  */
 function arrowHead(x1: number, y1: number, x2: number, y2: number): Element {
-  const degrees = (Math.atan2(y2 - y1, x2 - x1) * 180) / Math.PI;
   return h('path', {
-    d: 'M -4 -2.6 L 0 0 L -4 2.6',
-    transform: `translate(${x2} ${y2}) rotate(${degrees})`,
+    d: ARROW_HEAD_PATH,
+    transform: arrowHeadTransform(x1, y1, x2, y2),
   });
 }
 

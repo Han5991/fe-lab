@@ -76,7 +76,7 @@
     });
 </script>
 
-<Rail>
+<Rail width="wide">
   <div class={css({ my: '10', display: 'flex', flexDirection: 'column', gap: '5' })}>
     <h1 class={css({ fontSize: '2xl', fontWeight: 'bold', color: 'ink.950' })}>
       글별 통계
