@@ -33,7 +33,7 @@ test('postPath: 인코딩 리터럴 고정 — 한글·공백 세그먼트', () 
   );
 });
 
-test('postUrl: siteUrl을 생략하면 SITE_URL, 주입하면 그 origin을 쓴다', () => {
+test('postUrl: origin은 주입받는다 — 기본값이 없다', () => {
   expect(postUrl('a', SITE_URL)).toBe(`${SITE_URL}/posts/a/`);
   expect(postUrl('a', 'https://example.dev')).toBe(
     'https://example.dev/posts/a/',
@@ -45,6 +45,14 @@ test('postUrl: 경로 규칙은 postPath와 정확히 같다 (따로 조립하�
   expect(postUrl(slug, 'https://example.dev')).toBe(
     `https://example.dev${postPath(slug)}`,
   );
+});
+
+test('postPath: 입력은 디코드된 slug다 — 이미 인코딩된 값은 이중 인코딩된다', () => {
+  // 계약을 문서가 아니라 여기서 고정한다. 라우트에서 오는 값을
+  // `decodeURIComponent`로 먼저 풀어야 하는 이유이고, 이 동작을 "버그"로 보고
+  // 고치면 정상 slug의 링크가 통째로 깨진다.
+  expect(postPath('글 제목')).toBe('/posts/%EA%B8%80%20%EC%A0%9C%EB%AA%A9/');
+  expect(postPath('%20')).toBe('/posts/%2520/');
 });
 
 // ── archivePath / archiveUrl ─────────────────────────────────────────────────

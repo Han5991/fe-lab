@@ -165,6 +165,35 @@ first run may build dependencies). Package names are `@blog/web`, `@blog/web-sve
 - **Boundaries**: Ensure UI components are wrapped in Error Boundaries where appropriate.
 - **Async**: Always handle Promise rejections (try/catch or `.catch`).
 
+### Comments — where "why" belongs
+
+Comment density in this repo runs 16–24% of non-blank lines. Most of the excess is one mistake repeated: a rule that
+a test already enforces, written out a second time in prose. The second copy is not enforced and drifts.
+
+Triage every comment you are about to write:
+
+| What it says                        | Where it goes                                                                                |
+| :---------------------------------- | :------------------------------------------------------------------------------------------- |
+| What this code does                 | Nowhere — say it with the name, the type, the structure                                      |
+| **Why not the obvious alternative** | **A comment. This is the one case code cannot express** — the alternative is not in the file |
+| What broke last time                | A test. Its name is that sentence                                                            |
+| Two copies of a value exist         | A test that diffs them (`contentValues.test.ts`, `workflowWorkerNames.test.ts`)              |
+| A decision spanning files           | `README.md` / root `CLAUDE.md` / the issue                                                   |
+
+The repo already does the right thing in places, and those are the model: `frontmatterSchema.test.ts` diffs the docs
+table against the descriptor table, `docPaths.test.ts` checks every path the docs name still exists, `check-parity`
+answers "do the two builds render the same screen" as a command rather than a paragraph.
+
+Two more rules of placement:
+
+- **Long rationale goes at the top of the module, once.** One line above a function is enough. Ten-line blocks above
+  every export are why the code stops being visible.
+- **When a module has a test file, say so and stop.** `urls.ts` had 70 comment lines restating rules that
+  `urls.test.ts` already locked; it now says "규칙은 전부 `urls.test.ts`가 잠근다" and keeps only the four
+  why-not-the-alternative notes.
+
+Deleting a comment is only safe when its content survives somewhere that fails. Move it first, delete second.
+
 ## 5. Testing Guidelines
 
 - **Tools**:
