@@ -97,9 +97,18 @@ jobs:
       # 이 줄의 앱이 읽는 경로가 바뀌었는지 본다(맨 위 설명). 목록은 체크아웃 없이
       # API로 받는다 — 건너뛸 줄이면 체크아웃조차 필요 없다.
       #
+      # **옮긴 파일은 옛 경로도 본다.** 새 경로만 보면 파일을 잃은 앱이 건너뛰어진다
+      # (`apps/blog/web/` 아래 파일을 `apps/blog/web-svelte/` 아래로 옮기면 web 줄이
+      # 빠진다). 그래서
+      # 목록 줄마다 종류(`file`·`was`)를 붙이고 상한은 `file` 줄로만 센다 — 옛 경로
+      # 줄까지 세면 상한 아래인 PR이 상한에 닿은 것처럼 보인다.
+      #
       # **확신이 없으면 돌린다.** API가 실패하거나 목록이 API 상한(3000개)에 닿아
       # 잘렸을 수 있으면 건너뛰지 않는다. 프리뷰를 한 번 더 빌드하는 비용이, 필요한
       # 프리뷰가 조용히 안 나오는 것보다 싸다.
+      #
+      # 분기마다의 동작은 `workflowPreviewGateScript.test.ts`가 이 블록을 그대로
+      # 꺼내 실행해 잠근다.
       - name: Detect changes for this app
         id: changes
         env:
@@ -114,26 +123,28 @@ jobs:
             'packages/@blog/'
             '.github/workflows/preview-blog.yml'
           )
-          if ! files=$(gh api --paginate "repos/${REPO}/pulls/${PR_NUMBER}/files" --jq '.[].filename'); then
+          if ! listing=$(gh api --paginate "repos/${REPO}/pulls/${PR_NUMBER}/files" \
+              --jq '.[] | "file\t\(.filename)", (.previous_filename // empty | "was\t\(.)")'); then
             echo "::warning::변경 파일 목록을 읽지 못했습니다 — ${APP} 프리뷰를 그대로 돌립니다"
             echo "run=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          count=$(printf '%s\n' "$files" | grep -c . || true)
+          count=$(printf '%s\n' "$listing" | grep -c $'^file\t' || true)
           if (( count >= 3000 )); then
             echo "::warning::변경 파일이 API 상한(3000개)에 닿아 목록이 잘렸을 수 있습니다 — ${APP} 프리뷰를 그대로 돌립니다"
             echo "run=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          while IFS= read -r file; do
+          while IFS=$'\t' read -r _kind path; do
+            [[ -n "$path" ]] || continue
             for prefix in "${prefixes[@]}"; do
-              if [[ "$file" == "$prefix"* ]]; then
+              if [[ "$path" == "$prefix"* ]]; then
                 echo "run=true" >> "$GITHUB_OUTPUT"
-                echo "${APP}: ${file} (${prefix}) 변경 — 프리뷰를 빌드한다"
+                echo "${APP}: ${path} (${prefix}) 변경 — 프리뷰를 빌드한다"
                 exit 0
               fi
             done
-          done <<< "$files"
+          done <<< "$listing"
           echo "run=false" >> "$GITHUB_OUTPUT"
           echo "::notice title=${APP} 프리뷰 건너뜀::이 PR은 apps/blog/${APP}/ 도, 두 앱이 함께 읽는 경로(원고·packages/@blog·이 워크플로)도 건드리지 않았습니다"
 
