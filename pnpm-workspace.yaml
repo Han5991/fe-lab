@@ -47,7 +47,7 @@ allowBuilds:
 # 숫자는 이 파일에만 존재한다 — 한 곳을 올리면 저장소 전체가 같이 움직인다.
 catalog:
   # 프레임워크 · 언어
-  '@pandacss/dev': 1.12.0
+  '@pandacss/dev': 1.12.1
   'next': 16.3.4
   typescript: 6.0.3
   react: 19.2.8
