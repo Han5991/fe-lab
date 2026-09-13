@@ -5,6 +5,9 @@
 
 전체 계획과 결정 원장은 [이슈 #392](https://github.com/Han5991/fe-lab/issues/392).
 
+처음 읽는다면 [`docs/reading-guide.html`](docs/reading-guide.html)을 브라우저로 연다 — 스택 PR 15개를
+만든 순서가 아니라 이미 아는 React 쪽 코드부터 읽는 순서로 묶고, 읽은 것을 체크하며 따라간다.
+
 ## 지금 있는 것
 
 - SvelteKit + `adapter-static` 정적 export (`build/`) — **99 페이지**(공개 50 + admin 49)

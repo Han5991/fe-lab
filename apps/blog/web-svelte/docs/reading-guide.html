@@ -1,0 +1,1574 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>스벨트 판 따라 읽기</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap"
+    />
+    <style>
+      /* 색은 packages/@design-system/ui/src/blog-preset.ts의 paper·ink·accent·moss·danger
+         토큰에서 옮겼다 — 이 파일은 Panda를 거치지 않는 독립 문서라 토큰을 읽을 수 없다. */
+      :root {
+        --ground: #f7f7f5;
+        --surface: #ffffff;
+        --sunken: #ededea;
+        --ink: #1a1a1a;
+        --ink-2: #4b5563;
+        --ink-3: #656c77;
+        --rule: rgba(0, 0, 0, 0.1);
+        --rule-strong: rgba(0, 0, 0, 0.22);
+        --accent: #0e7490;
+        --accent-soft: rgba(8, 145, 178, 0.1);
+        --add: #16a34a;
+        --del: #c81e1e;
+        --note-bg: #faeeda;
+        --note-ink: #854f0b;
+        --sans:
+          'Pretendard Variable', Pretendard, 'IBM Plex Sans KR', -apple-system,
+          BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+        --mono:
+          'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas,
+          monospace;
+        color-scheme: light;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme='light']) {
+          --ground: #0b0d10;
+          --surface: #14171c;
+          --sunken: #1b1f26;
+          --ink: #e6e8eb;
+          --ink-2: #a5acb5;
+          --ink-3: #8b919a;
+          --rule: rgba(255, 255, 255, 0.12);
+          --rule-strong: rgba(255, 255, 255, 0.26);
+          --accent: #67e8f9;
+          --accent-soft: rgba(103, 232, 249, 0.14);
+          --add: #97c459;
+          --del: #f09595;
+          --note-bg: #3a2a10;
+          --note-ink: #fac775;
+          color-scheme: dark;
+        }
+      }
+      :root[data-theme='dark'] {
+        --ground: #0b0d10;
+        --surface: #14171c;
+        --sunken: #1b1f26;
+        --ink: #e6e8eb;
+        --ink-2: #a5acb5;
+        --ink-3: #8b919a;
+        --rule: rgba(255, 255, 255, 0.12);
+        --rule-strong: rgba(255, 255, 255, 0.26);
+        --accent: #67e8f9;
+        --accent-soft: rgba(103, 232, 249, 0.14);
+        --add: #97c459;
+        --del: #f09595;
+        --note-bg: #3a2a10;
+        --note-ink: #fac775;
+        color-scheme: dark;
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+      html {
+        -webkit-text-size-adjust: 100%;
+      }
+      body {
+        margin: 0;
+        padding-inline: 20px;
+        padding-block: 48px 96px;
+        background: var(--ground);
+        color: var(--ink);
+        font-family: var(--sans);
+        font-size: 17px;
+        line-height: 1.7;
+        word-break: keep-all;
+        overflow-wrap: anywhere;
+      }
+      main {
+        max-width: 760px;
+        margin-inline: auto;
+        display: grid;
+        gap: 72px;
+      }
+      h1,
+      h2,
+      h3 {
+        margin: 0;
+        line-height: 1.3;
+        text-wrap: balance;
+        letter-spacing: -0.01em;
+      }
+      h1 {
+        font-size: 38px;
+        font-weight: 700;
+      }
+      h2 {
+        font-size: 28px;
+        font-weight: 700;
+      }
+      h3 {
+        font-size: 21px;
+        font-weight: 700;
+      }
+      p {
+        margin: 0;
+        max-width: 65ch;
+      }
+      a {
+        color: var(--accent);
+        text-underline-offset: 3px;
+      }
+      a:focus-visible,
+      button:focus-visible,
+      input:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+      }
+      code {
+        font-family: var(--mono);
+        font-size: 0.86em;
+        background: var(--sunken);
+        padding: 0.1em 0.35em;
+        border-radius: 4px;
+        word-break: break-all;
+      }
+      pre {
+        margin: 0;
+        padding: 14px 16px;
+        background: var(--sunken);
+        border-radius: 6px;
+        overflow-x: auto;
+        font-family: var(--mono);
+        font-size: 13.5px;
+        line-height: 1.6;
+      }
+      pre code {
+        background: none;
+        padding: 0;
+        font-size: inherit;
+        word-break: normal;
+      }
+      .eyebrow {
+        font-family: var(--mono);
+        font-size: 13px;
+        letter-spacing: 0.04em;
+        color: var(--ink-3);
+      }
+      .stack {
+        display: grid;
+        gap: 20px;
+      }
+      .stack-sm {
+        display: grid;
+        gap: 10px;
+      }
+      .muted {
+        color: var(--ink-2);
+      }
+      .small {
+        font-size: 15px;
+      }
+
+      /* 머리 */
+      .intro {
+        display: grid;
+        gap: 18px;
+      }
+      .lede {
+        font-size: 19px;
+        color: var(--ink-2);
+      }
+      .meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px 18px;
+        font-size: 14px;
+        color: var(--ink-3);
+      }
+      .progress {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px 14px;
+        padding-top: 18px;
+        border-top: 1px solid var(--rule);
+      }
+      .progress progress {
+        appearance: none;
+        flex: 1 1 220px;
+        height: 8px;
+        border: 0;
+        border-radius: 4px;
+        background: var(--sunken);
+        overflow: hidden;
+      }
+      .progress progress::-webkit-progress-bar {
+        background: var(--sunken);
+      }
+      .progress progress::-webkit-progress-value {
+        background: var(--accent);
+      }
+      .progress progress::-moz-progress-bar {
+        background: var(--accent);
+      }
+      .progress output {
+        font-family: var(--mono);
+        font-size: 14px;
+        font-variant-numeric: tabular-nums;
+        color: var(--ink-2);
+      }
+      .progress button {
+        font: inherit;
+        font-size: 14px;
+        color: var(--ink-2);
+        background: none;
+        border: 1px solid var(--rule-strong);
+        border-radius: 4px;
+        padding: 2px 10px;
+        cursor: pointer;
+      }
+
+      /* 집 두 채와 창고 */
+      .houses {
+        display: grid;
+        grid-template-columns: 1fr 1.25fr 1fr;
+        gap: 10px;
+        align-items: stretch;
+      }
+      .house,
+      .store {
+        border-radius: 6px;
+        padding: 16px;
+        display: grid;
+        align-content: start;
+        gap: 6px;
+      }
+      .house {
+        background: var(--surface);
+        border: 1px solid var(--rule-strong);
+      }
+      .store {
+        background: var(--sunken);
+      }
+      .house .tag,
+      .store .tag {
+        font-size: 13px;
+        color: var(--ink-3);
+      }
+      .house strong,
+      .store strong {
+        font-size: 18px;
+      }
+      .house code,
+      .store code {
+        background: none;
+        padding: 0;
+        font-size: 13px;
+        color: var(--ink-2);
+      }
+      .store ul {
+        list-style: none;
+        margin: 4px 0 0;
+        padding: 0;
+        display: grid;
+        gap: 4px;
+        font-size: 15px;
+      }
+      .store li {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 0 10px;
+      }
+      .flow {
+        font-size: 13px;
+        color: var(--ink-3);
+      }
+      .delta {
+        font-family: var(--mono);
+        font-size: 14px;
+        font-variant-numeric: tabular-nums;
+      }
+      .plus {
+        color: var(--add);
+      }
+      .minus {
+        color: var(--del);
+      }
+      @media (max-width: 640px) {
+        .houses {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      /* 표 */
+      .scroll {
+        overflow-x: auto;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 15px;
+        line-height: 1.55;
+      }
+      th,
+      td {
+        text-align: left;
+        vertical-align: top;
+        padding: 9px 12px 9px 0;
+        border-bottom: 1px solid var(--rule);
+      }
+      th {
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--ink-3);
+        letter-spacing: 0.03em;
+        border-bottom-color: var(--rule-strong);
+      }
+      td.num {
+        text-align: right;
+        font-family: var(--mono);
+        font-size: 14px;
+        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
+      }
+      td code {
+        white-space: nowrap;
+        word-break: normal;
+      }
+
+      /* 알아낸 것 */
+      .facts {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        gap: 14px;
+      }
+      .facts li {
+        display: grid;
+        gap: 2px;
+        padding-left: 14px;
+        border-left: 2px solid var(--rule-strong);
+      }
+      .facts b {
+        font-weight: 700;
+      }
+
+      /* 단계 */
+      .step {
+        display: grid;
+        gap: 18px;
+        padding-top: 28px;
+        border-top: 1px solid var(--rule);
+      }
+      .step-head {
+        display: grid;
+        gap: 6px;
+      }
+      .step-no {
+        font-family: var(--mono);
+        font-size: 14px;
+        color: var(--accent);
+      }
+      .checks {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+      }
+      .check {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        gap: 2px 14px;
+        padding-block: 14px;
+        border-bottom: 1px solid var(--rule);
+      }
+      .check:first-child {
+        border-top: 1px solid var(--rule);
+      }
+      .check input {
+        grid-row: span 2;
+        width: 18px;
+        height: 18px;
+        margin: 5px 0 0;
+        accent-color: var(--accent);
+        cursor: pointer;
+      }
+      .check label {
+        grid-row: span 2;
+        display: grid;
+        gap: 3px;
+        cursor: pointer;
+      }
+      .check:has(input:checked) .plain {
+        color: var(--ink-3);
+        text-decoration: line-through;
+        text-decoration-color: var(--rule-strong);
+      }
+      .plain {
+        font-weight: 500;
+      }
+      .real {
+        font-family: var(--mono);
+        font-size: 12.5px;
+        color: var(--ink-3);
+        line-height: 1.5;
+      }
+      .look {
+        font-size: 15px;
+        color: var(--ink-2);
+      }
+      .look::before {
+        content: '볼 것 · ';
+        color: var(--ink-3);
+      }
+      .result {
+        font-size: 15px;
+        color: var(--ink-2);
+      }
+      .result::before {
+        content: '기록된 결과 · ';
+        color: var(--ink-3);
+      }
+      .pr-num {
+        font-family: var(--mono);
+        font-size: 14px;
+        justify-self: end;
+      }
+      .pr-stat {
+        justify-self: end;
+        display: grid;
+        justify-items: end;
+        gap: 4px;
+      }
+      .blocks {
+        display: flex;
+        gap: 2px;
+      }
+      .sq {
+        width: 8px;
+        height: 8px;
+        border-radius: 1px;
+      }
+      .sq.add {
+        background: var(--add);
+      }
+      .sq.del {
+        background: var(--del);
+      }
+      @media (max-width: 480px) {
+        .check {
+          grid-template-columns: auto 1fr;
+        }
+        .check label {
+          grid-row: auto;
+        }
+        .pr-num,
+        .pr-stat {
+          grid-column: 2;
+          justify-self: start;
+          justify-items: start;
+        }
+        .check input {
+          grid-row: span 3;
+        }
+      }
+
+      .note {
+        background: var(--note-bg);
+        color: var(--note-ink);
+        border-radius: 6px;
+        padding: 12px 16px;
+        font-size: 15px;
+        max-width: none;
+      }
+      .note code {
+        background: transparent;
+        color: inherit;
+      }
+
+      footer {
+        padding-top: 28px;
+        border-top: 1px solid var(--rule);
+        font-size: 14px;
+        color: var(--ink-3);
+        display: grid;
+        gap: 6px;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          transition: none !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header class="intro">
+        <span class="eyebrow">apps/blog/web-svelte · 읽기 안내</span>
+        <h1>스벨트 판 따라 읽기</h1>
+        <p class="lede">
+          브랜치 14개를 만든 순서대로 따라갈 필요는 없습니다. 이미 아는 코드에서
+          시작하고, 모르는 코드는 한 줄기만 따라갑니다. 읽은 것은 체크해 두세요
+          — 이 브라우저에 저장됩니다.
+        </p>
+        <div class="meta">
+          <span
+            >기준 브랜치
+            <code>claude/react-svelte-solid-migration-dkj247</code></span
+          >
+          <span>2026-09-13</span>
+          <span
+            >결정 원장
+            <a href="https://github.com/Han5991/fe-lab/issues/392"
+              >#392</a
+            ></span
+          >
+        </div>
+        <div class="progress">
+          <progress id="progress-bar" value="0" max="1"></progress>
+          <output id="progress-count" for="progress-bar">0 / 0</output>
+          <button type="button" id="reset">체크 모두 지우기</button>
+        </div>
+      </header>
+
+      <section class="stack" aria-labelledby="story">
+        <h2 id="story">다섯 살 버전</h2>
+        <p>블로그를 집이라고 해 봅시다.</p>
+        <p>
+          지금 사람들이 사는 집이 있습니다. <b>React</b>라는 블록으로
+          지었습니다. 이 집은 이번 실험에서 기능을 한 줄도 바꾸지 않았습니다.
+        </p>
+        <p>
+          옆 땅에 똑같은 집을 <b>Svelte</b>라는 다른 블록으로 한 채 더
+          지었습니다. 문패에 주소는 달지 않았습니다. 구경만 할 수 있는
+          견본주택입니다.
+        </p>
+        <p>
+          책(글)과 몇 가지 도구는 두 집이 같이 씁니다. 같이 쓰려면 원래 집
+          벽장에 있던 도구 몇 개를 <b>공용 창고</b>로 옮겨야 했습니다.
+        </p>
+
+        <div class="houses" role="group" aria-label="두 집과 공용 창고">
+          <div class="house">
+            <span class="tag">원래 집</span>
+            <strong>Next.js + React</strong>
+            <code>apps/blog/web</code>
+            <span class="flow">blog.sangwook.dev</span>
+            <span class="delta"
+              ><span class="plus">+190</span>
+              <span class="minus">−3,183</span></span
+            >
+            <span class="flow">줄어든 코드 대부분은 창고로 이사 갔습니다</span>
+          </div>
+          <div class="store">
+            <span class="tag">공용 창고 · 두 집이 같이 읽는다</span>
+            <strong>packages/@blog</strong>
+            <ul>
+              <li>
+                <span>책 정리 기계 <code>content</code></span
+                ><span class="delta"
+                  ><span class="plus">+1,963</span>
+                  <span class="minus">−136</span></span
+                >
+              </li>
+              <li>
+                <span>조회수 계산기 <code>analytics</code></span
+                ><span class="delta plus">+2,547</span>
+              </li>
+              <li>
+                <span>그림 좌표 자 <code>diagram</code></span
+                ><span class="delta plus">+706</span>
+              </li>
+              <li>
+                <span>문패 <code>site-values</code></span
+                ><span class="delta plus">+387</span>
+              </li>
+            </ul>
+            <span class="flow">책은 <code>apps/blog/posts</code> 그대로</span>
+          </div>
+          <div class="house">
+            <span class="tag">옆집 · 견본주택</span>
+            <strong>SvelteKit + Svelte</strong>
+            <code>apps/blog/web-svelte</code>
+            <span class="flow">Worker blog-svelte · 프리뷰 URL만</span>
+            <span class="delta"><span class="plus">+12,539</span></span>
+            <span class="flow">새로 배울 코드는 거의 여기 있습니다</span>
+          </div>
+        </div>
+        <p class="small muted">
+          숫자는 main 대비 기준 브랜치의 줄 수 변화입니다(<code
+            >git diff --shortstat</code
+          >).
+        </p>
+
+        <div class="scroll">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">비유</th>
+                <th scope="col">실제 이름</th>
+                <th scope="col">하는 일</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>책</td>
+                <td><code>apps/blog/posts</code></td>
+                <td>원고. 두 집이 같은 파일을 읽습니다</td>
+              </tr>
+              <tr>
+                <td>책 정리 기계</td>
+                <td><code>@blog/content</code></td>
+                <td>원고를 읽어 목록·URL·sitemap·RSS를 만듭니다</td>
+              </tr>
+              <tr>
+                <td>문패</td>
+                <td><code>@blog/site-values</code></td>
+                <td>사이트 이름·주소 같은 값</td>
+              </tr>
+              <tr>
+                <td>조회수 계산기</td>
+                <td><code>@blog/analytics</code></td>
+                <td>
+                  조회수·대시보드 계산과 저장소. 원래부터 React를 몰랐습니다
+                </td>
+              </tr>
+              <tr>
+                <td>그림 좌표 자</td>
+                <td><code>@blog/diagram</code></td>
+                <td>
+                  다이어그램 좌표 계산. 숫자만 내고, 그리는 건 각 집이 합니다
+                </td>
+              </tr>
+              <tr>
+                <td>색표</td>
+                <td><code>blog-preset.ts</code></td>
+                <td>두 집이 같은 색 토큰을 씁니다</td>
+              </tr>
+              <tr>
+                <td>방 배치 규칙</td>
+                <td><code>eslint-plugin-boundaries</code></td>
+                <td>
+                  원래 집에서 "아래 칸 코드는 위 칸을 못 부른다"를 lint가
+                  막습니다. 옆집에는 없고, 대신 SvelteKit이 화면에서
+                  <code>$lib/server</code>를 못 부르게 막습니다
+                </td>
+              </tr>
+              <tr>
+                <td>검사관</td>
+                <td>
+                  <code>check-seo</code> · <code>check-bundle</code> ·
+                  <code>check-parity</code>
+                </td>
+                <td>빌드 끝에서 결과물을 셉니다. 눈으로 보지는 않습니다</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>짓는 동안 알게 된 것</h3>
+        <ul class="facts">
+          <li>
+            <b>검사관이 전부 통과라고 해도 방이 비어 있을 수 있습니다.</b>
+            <span class="muted"
+              >12개 PR 동안 홈·글
+              상세·<code>/posts</code>·<code>/series</code>·<code>/about</code>·<code>/privacy</code>가
+              자리만 잡힌 화면인 채로 모든 게이트를 통과했습니다.</span
+            >
+          </li>
+          <li>
+            <b>검사관 하나는 원래 집 복도 이름만 알고 있었습니다.</b>
+            <span class="muted"
+              ><code>check-bundle</code>에 <code>/_next/static/chunks/</code>가
+              박혀 있어 옆집에서는 JS 파일을 하나도 못 찾았습니다.</span
+            >
+          </li>
+          <li>
+            <b>방 수가 같아지니 CSS 크기도 같아졌습니다.</b>
+            <span class="muted"
+              >30.3 KB 대 29.5 KB. 처음에 10.3 KB였던 건 옆집 방이 덜
+              지어져서였습니다.</span
+            >
+          </li>
+          <li>
+            <b>옆집이 가볍습니다.</b>
+            <span class="muted"
+              ><code>/404/</code> 첫 로드 JS 212.7 KB → 49.6 KB. 차이 중 69.5
+              KB는 <code>react-dom</code>과 스케줄러입니다.</span
+            >
+          </li>
+        </ul>
+      </section>
+
+      <section class="stack" aria-labelledby="route">
+        <div class="stack-sm">
+          <h2 id="route">읽는 순서</h2>
+          <p class="muted">
+            앞 단계를 읽으면 뒤 단계가 쉬워지도록 순서를 짰습니다. 모르는 게
+            나오면 커밋 메시지와 PR 설명을 먼저 보세요. 이 스택은 이유를 거기에
+            적는 방식으로 쌓였습니다.
+          </p>
+        </div>
+
+        <div class="step">
+          <div class="step-head">
+            <span class="step-no">0단계</span>
+            <h3>지도 먼저 — 코드는 아직 열지 않습니다</h3>
+            <p class="muted">
+              <a href="https://github.com/Han5991/fe-lab/issues/392">#392</a>
+              본문에서 세 절만 읽습니다. 어디가 기계적인 옮기기이고 어디에
+              판단이 들어갔는지 먼저 압니다.
+            </p>
+          </div>
+          <ul class="checks">
+            <li class="check">
+              <input type="checkbox" id="map-table" data-track />
+              <label for="map-table">
+                <span class="plain">Next.js ↔ SvelteKit 대응표</span>
+                <span class="look"
+                  >같은 일을 두 프레임워크가 뭐라고 부르나</span
+                >
+              </label>
+            </li>
+            <li class="check">
+              <input type="checkbox" id="map-six" data-track />
+              <label for="map-six">
+                <span class="plain"
+                  >문법을 몰라도 볼 수 있는 것 — 체크리스트 여섯</span
+                >
+                <span class="look"
+                  >Svelte를 한 줄도 안 읽고 위험을 확인하는 법</span
+                >
+              </label>
+            </li>
+            <li class="check">
+              <input type="checkbox" id="map-seven" data-track />
+              <label for="map-seven">
+                <span class="plain">결정이 든 파일 일곱</span>
+                <span class="look"
+                  >나머지는 기계적인 이식이라는 선언. 이 페이지 맨 아래에도
+                  있습니다</span
+                >
+              </label>
+            </li>
+          </ul>
+        </div>
+
+        <div class="step">
+          <div class="step-head">
+            <span class="step-no">1단계</span>
+            <h3>아는 코드부터 — 원래 집에서 창고로 간 것</h3>
+            <p class="muted">
+              직접 운영하던 코드가 왜 앱에 있으면 안 됐는지 봅니다. Svelte를
+              몰라도 읽힙니다.
+            </p>
+          </div>
+          <pre><code># 파일 이동을 rename으로 보여 준다 — 새 코드가 얼마나 적은지 바로 보인다
+command git show -M --stat &lt;커밋&gt;
+command git diff -M origin/main...origin/claude/react-svelte-solid-migration-dkj247 -- apps/blog/web</code></pre>
+          <ul class="checks">
+            <li class="check">
+              <input type="checkbox" id="pr-394" data-track />
+              <label for="pr-394">
+                <span class="plain"
+                  >문패를 원래 집 서랍에서 꺼내 창고에 걸었다</span
+                >
+                <span class="real"
+                  >사이트 값을 @blog/site-values 패키지로 빼 단일 출처로
+                  만든다</span
+                >
+                <span class="look"
+                  ><code>apps/blog/web/content.values.mts</code>에서 무엇이 빠져
+                  <code>packages/@blog/site-values</code>로 갔나</span
+                >
+              </label>
+              <a
+                class="pr-num"
+                href="https://github.com/Han5991/fe-lab/pull/394"
+                >#394</a
+              >
+              <span class="pr-stat"
+                ><span class="delta"
+                  ><span class="plus">+417</span>
+                  <span class="minus">−368</span></span
+                ><span
+                  class="blocks"
+                  data-add="417"
+                  data-del="368"
+                  aria-hidden="true"
+                ></span
+              ></span>
+            </li>
+            <li class="check">
+              <input type="checkbox" id="pr-398" data-track />
+              <label for="pr-398">
+                <span class="plain"
+                  >그림 좌표 자를 창고로 옮겨, 두 집이 같은 그림을 그린다</span
+                >
+                <span class="real"
+                  >레이아웃 엔진을 패키지로 빼고 다이어그램을 픽셀 단위로
+                  맞춘다</span
+                >
+                <span class="look"
+                  ><code>packages/@blog/diagram</code>은 숫자만 냅니다. 그리는
+                  코드는 각 앱에 남았습니다</span
+                >
+              </label>
+              <a
+                class="pr-num"
+                href="https://github.com/Han5991/fe-lab/pull/398"
+                >#398</a
+              >
+              <span class="pr-stat"
+                ><span class="delta"
+                  ><span class="plus">+737</span>
+                  <span class="minus">−32</span></span
+                ><span
+                  class="blocks"
+                  data-add="737"
+                  data-del="32"
+                  aria-hidden="true"
+                ></span
+              ></span>
+            </li>
+            <li class="check">
+              <input type="checkbox" id="pr-399" data-track />
+              <label for="pr-399">
+                <span class="plain"
+                  >택배 검사관이 원래 집 복도 이름만 알고 있었다</span
+                >
+                <span class="real"
+                  >check-bundle에서 경로 관례를 걷어내 두 산출물에 같은 게이트를
+                  건다</span
+                >
+                <span class="look"
+                  ><code
+                    >packages/@blog/content/src/scripts/check-bundle.ts</code
+                  >에서 <code>/_next/static/chunks/</code>가 빠진 자리와, 커밋
+                  메시지의 marker-dead 설명</span
+                >
+              </label>
+              <a
+                class="pr-num"
+                href="https://github.com/Han5991/fe-lab/pull/399"
+                >#399</a
+              >
+              <span class="pr-stat"
+                ><span class="delta"
+                  ><span class="plus">+231</span>
+                  <span class="minus">−121</span></span
+                ><span
+                  class="blocks"
+                  data-add="231"
+                  data-del="121"
+                  aria-hidden="true"
+                ></span
+              ></span>
+            </li>
+            <li class="check">
+              <input type="checkbox" id="pr-403" data-track />
+              <label for="pr-403">
+                <span class="plain"
+                  >조회수 계산기는 원래 React를 몰랐다 — 통째로 창고로</span
+                >
+                <span class="real"
+                  >조회수·대시보드 도메인을 패키지로 떼어 낸다</span
+                >
+                <span class="look"
+                  >파일 이동 17개. 앱에 남은 건 클라이언트를 만들어 패키지에
+                  꽂는 배선뿐입니다</span
+                >
+              </label>
+              <a
+                class="pr-num"
+                href="https://github.com/Han5991/fe-lab/pull/403"
+                >#403</a
+              >
+              <span class="pr-stat"
+                ><span class="delta"
+                  ><span class="plus">+864</span>
+                  <span class="minus">−347</span></span
+                ><span
+                  class="blocks"
+                  data-add="864"
+                  data-del="347"
+                  aria-hidden="true"
+                ></span
+              ></span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="step">
+          <div class="step-head">
+            <span class="step-no">2단계</span>
+            <h3>모르는 코드는 한 줄기만 — 글 상세 한 페이지</h3>
+            <p class="muted">
+              1만 2천 줄을 PR 순서로 읽지 않습니다. 글 상세 페이지 하나를 두
+              집에서 나란히 열고, 데이터를 어디서 받아 와서 화면에 어떻게
+              그리는지만 따라갑니다. 그 줄기가 지나는 PR만 열면 됩니다.
+            </p>
+          </div>
+          <div class="scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">원래 집 (React)</th>
+                  <th scope="col">옆집 (Svelte)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    <code>apps/blog/web/src/app/posts/[...slug]/page.tsx</code>
+                  </td>
+                  <td>
+                    <code
+                      >apps/blog/web-svelte/src/routes/posts/[...slug]/+page.server.ts</code
+                    >
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <code
+                      >apps/blog/web/src/app/posts/[...slug]/PostBody.tsx</code
+                    >
+                  </td>
+                  <td>
+                    <code
+                      >apps/blog/web-svelte/src/routes/posts/[...slug]/+page.svelte</code
+                    >
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="scroll">
+            <table>
+              <caption
+                class="small muted"
+                style="text-align: left; padding-bottom: 6px"
+              >
+                같은 일, 다른 이름 (#392 대응표)
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">Next.js</th>
+                  <th scope="col">SvelteKit</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>app/posts/page.tsx</code></td>
+                  <td><code>routes/posts/+page.svelte</code></td>
+                </tr>
+                <tr>
+                  <td>서버 컴포넌트의 데이터 로드</td>
+                  <td>
+                    <code>routes/posts/+page.server.ts</code>의
+                    <code>load()</code>
+                  </td>
+                </tr>
+                <tr>
+                  <td><code>generateStaticParams</code></td>
+                  <td><code>+page.server.ts</code>의 <code>entries()</code></td>
+                </tr>
+                <tr>
+                  <td><code>app/layout.tsx</code></td>
+                  <td><code>routes/+layout.svelte</code></td>
+                </tr>
+                <tr>
+                  <td><code>'use client'</code></td>
+                  <td>
+                    없음. 대신 화면이 <code>src/lib/server/</code> 아래 모듈을
+                    import하면 빌드가 실패합니다
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <pre><code># 두 집을 나란히 띄운다 (저장소 루트에서)
+pnpm blog-write                        # 원래 집 — Supabase 없이 콘텐츠 빌드 + next dev
+pnpm dev --filter=@blog/web-svelte     # 옆집</code></pre>
+          <ul class="checks">
+            <li class="check">
+              <input type="checkbox" id="slice-side-by-side" data-track />
+              <label for="slice-side-by-side">
+                <span class="plain"
+                  >같은 글 하나를 두 dev 서버에서 열고, 위 파일 네 개를 나란히
+                  읽었다</span
+                >
+                <span class="look"
+                  >데이터를 받는 곳과 그리는 곳이 각각 어느 파일인가</span
+                >
+              </label>
+            </li>
+            <li class="check">
+              <input type="checkbox" id="pr-395" data-track />
+              <label for="pr-395">
+                <span class="plain"
+                  >방 다섯 개를 만들고 간판 검사관을 통과했다</span
+                >
+                <span class="real"
+                  >공개 라우트 5개를 세우고 check-seo 게이트를 통과시킨다</span
+                >
+                <span class="look"
+                  ><code>+page.server.ts</code>의 <code>load()</code>와
+                  <code>entries()</code></span
+                >
+              </label>
+              <a
+                class="pr-num"
+                href="https://github.com/Han5991/fe-lab/pull/395"
+                >#395</a
+              >
+              <span class="pr-stat"
+                ><span class="delta"
+                  ><span class="plus">+782</span>
+                  <span class="minus">−23</span></span
+                ><span
+                  class="blocks"
+                  data-add="782"
+                  data-del="23"
+                  aria-hidden="true"
+                ></span
+              ></span>
+            </li>
+            <li class="check">
+              <input type="checkbox" id="pr-396" data-track />
+              <label for="pr-396">
+                <span class="plain"
+                  >글 속 스티커(커스텀 태그)를 집 짓기 전에 미리 붙인다</span
+                >
+                <span class="real"
+                  >커스텀 태그 9종을 빌드 타임 HAST 변환으로 옮긴다</span
+                >
+                <span class="look"
+                  ><code>src/lib/server/markdown/</code> — React는 화면에서
+                  컴포넌트로 붙이고, 옆집은 빌드 때 HTML로 바꿉니다</span
+                >
+              </label>
+              <a
+                class="pr-num"
+                href="https://github.com/Han5991/fe-lab/pull/396"
+                >#396</a
+              >
+              <span class="pr-stat"
+                ><span class="delta"
+                  ><span class="plus">+945</span>
+                  <span class="minus">−8</span></span
+                ><span
+                  class="blocks"
+                  data-add="945"
+                  data-del="8"
+                  aria-hidden="true"
+                ></span
+              ></span>
+            </li>
+            <li class="check">
+              <input type="checkbox" id="pr-400" data-track />
+              <label for="pr-400">
+                <span class="plain">코드 블록 색칠도 빌드 때 끝낸다</span>
+                <span class="real">코드 블록을 빌드 타임에 강조한다</span>
+                <span class="look"
+                  >구문 강조 파서가 방문자 브라우저의 첫 로드에 가지 않는다는
+                  것</span
+                >
+              </label>
+              <a
+                class="pr-num"
+                href="https://github.com/Han5991/fe-lab/pull/400"
+                >#400</a
+              >
+              <span class="pr-stat"
+                ><span class="delta"
+                  ><span class="plus">+505</span>
+                  <span class="minus">−5</span></span
+                ><span
+                  class="blocks"
+                  data-add="505"
+                  data-del="5"
+                  aria-hidden="true"
+                ></span
+              ></span>
+            </li>
+            <li class="check">
+              <input type="checkbox" id="pr-401" data-track />
+              <label for="pr-401">
+                <span class="plain"
+                  >글을 읽는 동안 브라우저에서 도는 작은 조각들</span
+                >
+                <span class="real"
+                  >읽기 경로의 클라이언트 조각과 check-bundle의 initial
+                  스코프</span
+                >
+                <span class="look"
+                  >무엇이 브라우저에서 돌고 무엇이 빌드에서 끝나나</span
+                >
+              </label>
+              <a
+                class="pr-num"
+                href="https://github.com/Han5991/fe-lab/pull/401"
+                >#401</a
+              >
+              <span class="pr-stat"
+                ><span class="delta"
+                  ><span class="plus">+421</span>
+                  <span class="minus">−2</span></span
+                ><span
+                  class="blocks"
+                  data-add="421"
+                  data-del="2"
+                  aria-hidden="true"
+                ></span
+              ></span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="step">
+          <div class="step-head">
+            <span class="step-no">3단계</span>
+            <h3>훑기만 — PR 설명 위주로</h3>
+            <p class="muted">
+              2단계를 끝냈다면 구조는 이미 압니다. 코드를 다 읽지 말고, 설명과
+              바뀐 파일 목록만 봐도 됩니다.
+            </p>
+          </div>
+          <ul class="checks">
+            <li class="check">
+              <input type="checkbox" id="pr-406" data-track />
+              <label for="pr-406">
+                <span class="plain"
+                  >방마다 가구 배치를 원래 집과 픽셀 단위로 맞췄다</span
+                >
+                <span class="real">화면을 React 판과 픽셀 단위로 맞춘다</span>
+                <span class="look"
+                  >가장 큰 PR이지만 컴포넌트 2,540줄 대부분이 마크업과
+                  스타일입니다</span
+                >
+              </label>
+              <a
+                class="pr-num"
+                href="https://github.com/Han5991/fe-lab/pull/406"
+                >#406</a
+              >
+              <span class="pr-stat"
+                ><span class="delta"
+                  ><span class="plus">+6,675</span>
+                  <span class="minus">−519</span></span
+                ><span
+                  class="blocks"
+                  data-add="6675"
+                  data-del="519"
+                  aria-hidden="true"
+                ></span
+              ></span>
+            </li>
+            <li class="check">
+              <input type="checkbox" id="pr-404" data-track />
+              <label for="pr-404">
+                <span class="plain">관리자 방과 조회수</span>
+                <span class="real">Admin 대시보드와 조회수를 붙인다</span>
+                <span class="look"
+                  >데이터 쪽은 1단계 #403에서 봤습니다. 화면만 보면 됩니다</span
+                >
+              </label>
+              <a
+                class="pr-num"
+                href="https://github.com/Han5991/fe-lab/pull/404"
+                >#404</a
+              >
+              <span class="pr-stat"
+                ><span class="delta"
+                  ><span class="plus">+2,289</span>
+                  <span class="minus">−129</span></span
+                ><span
+                  class="blocks"
+                  data-add="2289"
+                  data-del="129"
+                  aria-hidden="true"
+                ></span
+              ></span>
+            </li>
+            <li class="check">
+              <input type="checkbox" id="pr-393" data-track />
+              <label for="pr-393">
+                <span class="plain"
+                  >빈 땅에 기둥을 세우고, 원래 집 크기를 재 뒀다</span
+                >
+                <span class="real"
+                  >기준선 측정과 SvelteKit 정적 export 뼈대를 세운다</span
+                >
+              </label>
+              <a
+                class="pr-num"
+                href="https://github.com/Han5991/fe-lab/pull/393"
+                >#393</a
+              >
+              <span class="pr-stat"
+                ><span class="delta"
+                  ><span class="plus">+1,445</span>
+                  <span class="minus">−0</span></span
+                ><span
+                  class="blocks"
+                  data-add="1445"
+                  data-del="0"
+                  aria-hidden="true"
+                ></span
+              ></span>
+            </li>
+            <li class="check">
+              <input type="checkbox" id="pr-402" data-track />
+              <label for="pr-402">
+                <span class="plain">⌘K 검색과 댓글</span>
+                <span class="real">⌘K 검색과 Giscus 댓글을 붙인다</span>
+              </label>
+              <a
+                class="pr-num"
+                href="https://github.com/Han5991/fe-lab/pull/402"
+                >#402</a
+              >
+              <span class="pr-stat"
+                ><span class="delta"
+                  ><span class="plus">+1,172</span>
+                  <span class="minus">−35</span></span
+                ><span
+                  class="blocks"
+                  data-add="1172"
+                  data-del="35"
+                  aria-hidden="true"
+                ></span
+              ></span>
+            </li>
+            <li class="check">
+              <input type="checkbox" id="pr-405" data-track />
+              <label for="pr-405">
+                <span class="plain"
+                  >옆집도 CI 검사와 프리뷰 배포에 연결했다</span
+                >
+                <span class="real"
+                  >SvelteKit 판을 CI 게이트와 프리뷰 배포에 잇는다</span
+                >
+              </label>
+              <a
+                class="pr-num"
+                href="https://github.com/Han5991/fe-lab/pull/405"
+                >#405</a
+              >
+              <span class="pr-stat"
+                ><span class="delta"
+                  ><span class="plus">+533</span>
+                  <span class="minus">−79</span></span
+                ><span
+                  class="blocks"
+                  data-add="533"
+                  data-del="79"
+                  aria-hidden="true"
+                ></span
+              ></span>
+            </li>
+            <li class="check">
+              <input type="checkbox" id="pr-408" data-track />
+              <label for="pr-408">
+                <span class="plain"
+                  >관리자 방 작은 그래프의 눈금을 맞추고 좌표를 잠갔다</span
+                >
+                <span class="real"
+                  >스파크라인 스케일을 맞추고 /admin 차트 기하를 잠근다</span
+                >
+              </label>
+              <a
+                class="pr-num"
+                href="https://github.com/Han5991/fe-lab/pull/408"
+                >#408</a
+              >
+              <span class="pr-stat"
+                ><span class="delta"
+                  ><span class="plus">+231</span>
+                  <span class="minus">−35</span></span
+                ><span
+                  class="blocks"
+                  data-add="231"
+                  data-del="35"
+                  aria-hidden="true"
+                ></span
+              ></span>
+            </li>
+            <li class="check">
+              <input type="checkbox" id="pr-409" data-track />
+              <label for="pr-409">
+                <span class="plain"
+                  >PR이 한쪽 집만 건드리면 그 집 프리뷰만 짓는다</span
+                >
+                <span class="real"
+                  >프리뷰 매트릭스의 각 줄을 자기 앱 경로가 바뀐 PR에서만
+                  빌드한다</span
+                >
+              </label>
+              <a
+                class="pr-num"
+                href="https://github.com/Han5991/fe-lab/pull/409"
+                >#409</a
+              >
+              <span class="pr-stat"
+                ><span class="delta"
+                  ><span class="plus">+444</span>
+                  <span class="minus">−22</span></span
+                ><span
+                  class="blocks"
+                  data-add="444"
+                  data-del="22"
+                  aria-hidden="true"
+                ></span
+              ></span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="step">
+          <div class="step-head">
+            <span class="step-no">4단계</span>
+            <h3>직접 망가뜨려 보기</h3>
+            <p class="muted">
+              규칙을 일부러 어기고 무엇이 막는지 봅니다. 막히는 이유를 설명할 수
+              있으면 그 부분은 이해한 것입니다. 아래 결과는 이미 기록된 것이라,
+              직접 해 보고 같은지 확인하면 됩니다.
+            </p>
+          </div>
+          <ul class="checks">
+            <li class="check">
+              <input type="checkbox" id="break-server" data-track />
+              <label for="break-server">
+                <span class="plain"
+                  >화면 컴포넌트에서 <code>$lib/server/</code> 모듈을 import하고
+                  빌드한다</span
+                >
+                <span class="real"
+                  >apps/blog/web-svelte/src/lib/components/ 아래 .svelte 파일 →
+                  pnpm build --filter=@blog/web-svelte</span
+                >
+                <span class="result"
+                  >빌드 실패. SvelteKit이 서버 전용 모듈을 화면에서 못 부르게
+                  막습니다(#392 대응표)</span
+                >
+              </label>
+            </li>
+            <li class="check">
+              <input type="checkbox" id="break-barrel" data-track />
+              <label for="break-barrel">
+                <span class="plain"
+                  >화면에서 <code>@blog/content</code> 배럴을 import한다</span
+                >
+                <span class="real"
+                  >from '@blog/content' — 화면은 원래 '@blog/content/client'만
+                  씁니다</span
+                >
+                <span class="result"
+                  >빌드는 성공하고 런타임에만 깨집니다. Vite가
+                  <code>node:fs</code>를 빈 스텁으로 바꾸기 때문입니다. 검사관이
+                  못 보는 자리라 #392 체크리스트 1번이 grep으로 확인합니다</span
+                >
+              </label>
+            </li>
+            <li class="check">
+              <input type="checkbox" id="break-marker" data-track />
+              <label for="break-marker">
+                <span class="plain"
+                  >번들 규칙의 마커 이름을 없는 문자열로 바꾸고 빌드한다</span
+                >
+                <span class="real"
+                  >apps/blog/web-svelte/content.values.mts — marker:
+                  'computeDerivedStats'</span
+                >
+                <span class="result"
+                  ><code>check-bundle</code> 실패. 규칙마다 "여기엔 반드시
+                  있어야 한다"(<code>requiredIn</code>)가 짝으로 붙어 있어서,
+                  마커가 죽으면 "누수 없음"이 아니라 실패가 됩니다(#328)</span
+                >
+              </label>
+            </li>
+            <li class="check">
+              <input type="checkbox" id="break-grep" data-track />
+              <label for="break-grep">
+                <span class="plain">체크리스트의 grep 두 개를 돌려 본다</span>
+                <span class="real"
+                  >grep -rn "#[0-9a-fA-F]\{6\}" apps/blog/web-svelte/src · grep
+                  -rn "eslint-disable" apps/blog/web-svelte/src</span
+                >
+                <span class="result"
+                  >둘 다 0건이어야 합니다. 색은 토큰으로만, 인라인 disable은
+                  금지입니다</span
+                >
+              </label>
+            </li>
+          </ul>
+          <p class="note">
+            실험이 끝나면 바꾼 파일을 되돌리세요 —
+            <code>git restore &lt;파일&gt;</code>
+          </p>
+        </div>
+      </section>
+
+      <section class="stack" aria-labelledby="seven">
+        <div class="stack-sm">
+          <h2 id="seven">결정이 든 파일 일곱</h2>
+          <p class="muted">
+            #392가 "나머지는 기계적인 이식, 논쟁할 값이 있는 것은 이 일곱"이라고
+            적은 목록입니다. 경로는
+            <code>apps/blog/web-svelte/</code> 기준입니다.
+          </p>
+        </div>
+        <div class="scroll">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">파일</th>
+                <th scope="col">무엇을 정하나</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>content.config.mts</code></td>
+                <td>
+                  경로 앵커와 배선. <code>__CONTENT_ROOT__</code>로 앵커를 덮는
+                  이유가 주석에 있습니다
+                </td>
+              </tr>
+              <tr>
+                <td><code>content.values.mts</code></td>
+                <td>이 앱의 번들 규칙. 마커를 왜 React 판과 다르게 골랐는지</td>
+              </tr>
+              <tr>
+                <td><code>panda.config.ts</code></td>
+                <td>
+                  구문 강조 토큰 매핑. React는 서드파티 테마의 hex를 바꿔
+                  끼우고, 여기는 Prism 클래스에 역할을 직접 잇습니다
+                </td>
+              </tr>
+              <tr>
+                <td><code>src/lib/server/markdown/index.ts</code></td>
+                <td>
+                  커스텀 태그를 빌드 타임 변환으로. React는 런타임 컴포넌트
+                  맵입니다
+                </td>
+              </tr>
+              <tr>
+                <td><code>src/lib/client/archiveParams.ts</code></td>
+                <td><code>/posts</code> URL 계약. nuqs 없이 순수 함수 둘로</td>
+              </tr>
+              <tr>
+                <td><code>src/lib/shared/tocRail.ts</code></td>
+                <td>
+                  차례 레일 좌표와 지금 읽는 구간 계산. 데스크톱·모바일이 같은
+                  함수를 씁니다
+                </td>
+              </tr>
+              <tr>
+                <td><code>src/lib/admin/charts/geometry.ts</code></td>
+                <td>
+                  차트 좌표. 영역 차트는 0→max, 스파크라인은 min→max로 스케일이
+                  다르고, 이유가 주석에 있습니다
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <footer>
+        <span
+          >출처 — 결정 원장
+          <a href="https://github.com/Han5991/fe-lab/issues/392">#392</a> 본문과
+          코멘트, 각 PR의 제목과 줄 수, 기준 브랜치의 설정 파일.</span
+        >
+        <span
+          >체크 상태는 이 브라우저의 localStorage에만 저장됩니다. 다른 기기와는
+          공유되지 않습니다.</span
+        >
+      </footer>
+    </main>
+
+    <script>
+      (function () {
+        var KEY = 'svelte-reading-guide:v1';
+        var saved = {};
+        try {
+          saved = JSON.parse(localStorage.getItem(KEY) || '{}') || {};
+        } catch (e) {
+          saved = {};
+        }
+        var boxes = Array.prototype.slice.call(
+          document.querySelectorAll('input[type="checkbox"][data-track]'),
+        );
+        var bar = document.getElementById('progress-bar');
+        var count = document.getElementById('progress-count');
+
+        function persist() {
+          try {
+            localStorage.setItem(KEY, JSON.stringify(saved));
+          } catch (e) {
+            /* 저장이 막힌 환경에서도 체크 자체는 동작한다 */
+          }
+        }
+        function update() {
+          var done = boxes.filter(function (b) {
+            return b.checked;
+          }).length;
+          bar.max = boxes.length;
+          bar.value = done;
+          count.textContent = done + ' / ' + boxes.length;
+        }
+
+        boxes.forEach(function (box) {
+          box.checked = saved[box.id] === true;
+          box.addEventListener('change', function () {
+            saved[box.id] = box.checked;
+            persist();
+            update();
+          });
+        });
+
+        document.getElementById('reset').addEventListener('click', function () {
+          saved = {};
+          boxes.forEach(function (b) {
+            b.checked = false;
+          });
+          try {
+            localStorage.removeItem(KEY);
+          } catch (e) {
+            /* 무시 */
+          }
+          update();
+        });
+
+        // GitHub 파일 목록의 +/− 네모 다섯 칸과 같은 표시
+        document.querySelectorAll('[data-add]').forEach(function (el) {
+          var add = Number(el.getAttribute('data-add'));
+          var del = Number(el.getAttribute('data-del'));
+          var total = add + del;
+          var green = total ? Math.round((add / total) * 5) : 0;
+          for (var i = 0; i < 5; i++) {
+            var sq = document.createElement('span');
+            sq.className = 'sq ' + (i < green ? 'add' : 'del');
+            el.appendChild(sq);
+          }
+        });
+
+        update();
+      })();
+    </script>
+  </body>
+</html>
