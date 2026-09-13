@@ -178,3 +178,5 @@ apps/blog/web/
 | 본문 커스텀 태그 문법                                     | `.claude/skills/blog-components/SKILL.md`                                                     |
 | 다이어그램 저작 · `hero:` 등록법                          | `.claude/skills/blog-diagrams/SKILL.md`                                                       |
 | 리뉴얼에서 무엇을 왜 그렇게 정했는지                      | [`design/redesign-decisions.md`](design/redesign-decisions.md)                                |
+
+<!-- preview-blog.yml 경로 판정의 건너뛰기 경로를 CI에서 확인하는 테스트용 줄 — 머지 금지 -->
