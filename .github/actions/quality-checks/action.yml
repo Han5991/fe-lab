@@ -18,7 +18,8 @@ inputs:
       돌릴지 여부. 이 앱은 **프로덕션에 배포되지 않으므로**(프리뷰 URL 전용) 배포
       워크플로는 'false'로 넘깁니다 — 매일 도는 cron 배포에 관계없는 빌드를 얹지
       않기 위해서입니다. PR CI에서는 켜 둡니다: `preview-blog.yml`도 같은 `build`를
-      부르지만 그쪽은 포크 PR에서 잡째 건너뛰므로, 항상 도는 게이트는 여기입니다.
+      부르지만 그쪽은 포크 PR과 자기 앱 경로를 안 건드린 PR에서 건너뛰므로, 항상
+      도는 게이트는 여기입니다.
     required: false
     default: 'true'
   build-blog:
@@ -65,7 +66,9 @@ runs:
     # `build` 스크립트 안에 있기 때문이다. 로컬에서만 도는 게이트는 게이트가 아니다.
     #
     # `preview-blog.yml`도 같은 `build`를 부르지만 그것에 기대지 않는다 — 그쪽은
-    # 포크 PR에서 잡 전체가 건너뛰어지고, 블로그 경로가 안 바뀐 PR에는 아예 안 돈다.
+    # 포크 PR에서 잡 전체가 건너뛰어지고, 블로그 경로가 안 바뀐 PR에는 아예 안 돌며,
+    # SvelteKit 판이 읽는 경로(`apps/blog/web-svelte/`·원고·`packages/@blog`)를 안
+    # 건드린 PR에서는 그 줄의 빌드를 건너뛴다.
     - name: Build blog (SvelteKit) + artifact checks
       if: inputs.build-blog-svelte == 'true'
       shell: bash
