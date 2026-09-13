@@ -77,6 +77,6 @@
     "typescript": "catalog:",
     "typescript-eslint": "catalog:lint",
     "vitest": "catalog:",
-    "wrangler": "^4.129.0"
+    "wrangler": "^4.131.0"
   }
 }
