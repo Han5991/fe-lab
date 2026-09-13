@@ -15,10 +15,32 @@ name: Preview Blog on Cloudflare Workers
 # 빌드 필터, 워커 이름, 부트스트랩 허용 여부, Next 전용 캐시, PR 코멘트의 머리말.
 # 나머지(alias 정규화, URL 파싱, 포크 가드)가 둘로 갈리면 한쪽만 고쳐지는 자리가
 # 된다.
+#
+# **줄마다 자기 앱이 읽는 경로가 PR에서 바뀌었을 때만 빌드한다.** 기준은 그 앱의
+# 디렉터리(`apps/blog/<app>/`)와 두 앱이 함께 읽는 경로(원고 `apps/blog/posts/`,
+# `packages/@blog/`, 이 파일)다. React 판만 고친 PR에 SvelteKit 프리뷰를 올릴
+# 이유가 없고 반대도 같다. 건너뛰어도 게이트는 비지 않는다 — `ci.yml`의
+# `quality-checks`가 두 판을 매 PR마다 빌드한다.
+#
+# 판정을 잡이 아니라 **첫 스텝**에서 하는 이유: 잡 단위 `if`에서는 `matrix`
+# 컨텍스트를 쓸 수 없어 매트릭스의 한 줄만 끌 방법이 없다. 변경 파일로 매트릭스를
+# 동적으로 짜는 길도 있지만, 그러면 줄의 설정이 YAML 밖(JSON 문자열)으로 나가고
+# 이 파일의 매트릭스 항목을 읽는 `workflowWorkerNames.test.ts`가 깨진다. 그래서
+# 뒤 스텝이 전부 `steps.changes.outputs.run`을 먼저 본다 — **스텝을 새로 더할 때도
+# 그 조건을 달 것.** 빠뜨리면 건너뛴 줄에서 빌드 산출물 없이 돌다 실패한다.
+#
+# 건너뛴 줄도 체크는 성공으로 남는다. 잡 요약에 남는 notice로 구분한다.
 
 on:
   pull_request:
-    paths: ['apps/blog/**', 'packages/@blog/**']
+    # 이 파일도 넣는다 — 없으면 워크플로만 고친 PR이 자기 변경을 한 번도 돌려 보지
+    # 않고 머지된다.
+    paths:
+      [
+        'apps/blog/**',
+        'packages/@blog/**',
+        '.github/workflows/preview-blog.yml',
+      ]
 
 concurrency:
   # 같은 PR에 push가 쌓이면 이전 프리뷰 빌드를 취소한다(마지막 것만 의미가 있다).
@@ -72,16 +94,73 @@ jobs:
     # 브랜치일 때만 돈다.
     if: github.event.pull_request.head.repo.full_name == github.repository
     steps:
+      # 이 줄의 앱이 읽는 경로가 바뀌었는지 본다(맨 위 설명). 목록은 체크아웃 없이
+      # API로 받는다 — 건너뛸 줄이면 체크아웃조차 필요 없다.
+      #
+      # **옮긴 파일은 옛 경로도 본다.** 새 경로만 보면 파일을 잃은 앱이 건너뛰어진다
+      # (`apps/blog/web/` 아래 파일을 `apps/blog/web-svelte/` 아래로 옮기면 web 줄이
+      # 빠진다). 그래서
+      # 목록 줄마다 종류(`file`·`was`)를 붙이고 상한은 `file` 줄로만 센다 — 옛 경로
+      # 줄까지 세면 상한 아래인 PR이 상한에 닿은 것처럼 보인다.
+      #
+      # **확신이 없으면 돌린다.** API가 실패하거나 목록이 API 상한(3000개)에 닿아
+      # 잘렸을 수 있으면 건너뛰지 않는다. 프리뷰를 한 번 더 빌드하는 비용이, 필요한
+      # 프리뷰가 조용히 안 나오는 것보다 싸다.
+      #
+      # 분기마다의 동작은 `workflowPreviewGateScript.test.ts`가 이 블록을 그대로
+      # 꺼내 실행해 잠근다.
+      - name: Detect changes for this app
+        id: changes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          APP: ${{ matrix.app }}
+        run: |
+          prefixes=(
+            "apps/blog/${APP}/"
+            'apps/blog/posts/'
+            'packages/@blog/'
+            '.github/workflows/preview-blog.yml'
+          )
+          if ! listing=$(gh api --paginate "repos/${REPO}/pulls/${PR_NUMBER}/files" \
+              --jq '.[] | "file\t\(.filename)", (.previous_filename // empty | "was\t\(.)")'); then
+            echo "::warning::변경 파일 목록을 읽지 못했습니다 — ${APP} 프리뷰를 그대로 돌립니다"
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          count=$(printf '%s\n' "$listing" | grep -c $'^file\t' || true)
+          if (( count >= 3000 )); then
+            echo "::warning::변경 파일이 API 상한(3000개)에 닿아 목록이 잘렸을 수 있습니다 — ${APP} 프리뷰를 그대로 돌립니다"
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          while IFS=$'\t' read -r _kind path; do
+            [[ -n "$path" ]] || continue
+            for prefix in "${prefixes[@]}"; do
+              if [[ "$path" == "$prefix"* ]]; then
+                echo "run=true" >> "$GITHUB_OUTPUT"
+                echo "${APP}: ${path} (${prefix}) 변경 — 프리뷰를 빌드한다"
+                exit 0
+              fi
+            done
+          done <<< "$listing"
+          echo "run=false" >> "$GITHUB_OUTPUT"
+          echo "::notice title=${APP} 프리뷰 건너뜀::이 PR은 apps/blog/${APP}/ 도, 두 앱이 함께 읽는 경로(원고·packages/@blog·이 워크플로)도 건드리지 않았습니다"
+
       - name: Checkout
+        if: steps.changes.outputs.run == 'true'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Setup pnpm
+        if: steps.changes.outputs.run == 'true'
         uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
         with:
           # 버전은 루트 package.json의 packageManager 필드를 단일 source of truth로 사용
           run_install: false
 
       - name: Setup Node.js
+        if: steps.changes.outputs.run == 'true'
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version-file: '.tool-versions'
@@ -89,14 +168,16 @@ jobs:
           cache-dependency-path: '**/pnpm-lock.yaml'
 
       - name: Caching for Turborepo
+        if: steps.changes.outputs.run == 'true'
         uses: rharkor/caching-for-turbo@2238fae6eb9a9936f92356f54cb3660200d105e7 # v2.5.1
 
       - name: Install dependencies
+        if: steps.changes.outputs.run == 'true'
         run: pnpm install --frozen-lockfile
 
       # Next 전용이다 — SvelteKit 쪽은 vite/rolldown이라 이 디렉터리가 없다.
       - name: Restore Next.js build cache
-        if: matrix.app == 'web'
+        if: steps.changes.outputs.run == 'true' && matrix.app == 'web'
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: apps/blog/web/.next/cache
@@ -111,6 +192,7 @@ jobs:
       #  같이 있어서, 환경을 열면 그것까지 모든 PR에서 읽혔다. 그 시크릿은
       #  아무도 안 쓰는 사본이라 지웠으므로 지금은 브랜치 정책만 남았다.)
       - name: Build blog
+        if: steps.changes.outputs.run == 'true'
         run: pnpm build --filter=${{ matrix.package }}
         env:
           NODE_ENV: production
@@ -126,6 +208,7 @@ jobs:
       # 넘쳐 **한 앱의 프리뷰만** 조용히 실패한다.
       - name: Compute preview alias
         id: alias
+        if: steps.changes.outputs.run == 'true'
         env:
           BRANCH: ${{ github.head_ref }}
           WORKER: ${{ matrix.worker }}
@@ -158,7 +241,7 @@ jobs:
       # 없앤다 — 오탐이 나도 최악이 "주소 없는 Worker에 deploy 한 번"이다.
       - name: Check whether the Worker exists
         id: worker
-        if: matrix.bootstrap
+        if: steps.changes.outputs.run == 'true' && matrix.bootstrap
         working-directory: apps/blog/${{ matrix.app }}
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -172,7 +255,7 @@ jobs:
           fi
 
       - name: Bootstrap the Worker (first run only)
-        if: matrix.bootstrap && steps.worker.outputs.exists == 'false'
+        if: steps.changes.outputs.run == 'true' && matrix.bootstrap && steps.worker.outputs.exists == 'false'
         uses: cloudflare/wrangler-action@ebbaa1584979971c8614a24965b4405ff95890e0 # v4.0.0
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -183,6 +266,7 @@ jobs:
       # 버전만 업로드한다(트래픽 이동 없음). 버전 URL과 alias URL이 stdout에 찍힌다.
       - name: Upload preview version
         id: upload
+        if: steps.changes.outputs.run == 'true'
         uses: cloudflare/wrangler-action@ebbaa1584979971c8614a24965b4405ff95890e0 # v4.0.0
         with:
           # accountId는 넘기지 않는다 — wrangler.jsonc의 account_id가 단일 출처다.
@@ -196,6 +280,7 @@ jobs:
       # 출력은 versions upload에서 비는 경우가 있어 stdout 파싱을 1차로 쓴다.
       - name: Resolve preview URLs
         id: url
+        if: steps.changes.outputs.run == 'true'
         env:
           ALIAS: ${{ steps.alias.outputs.alias }}
           ACTION_URL: ${{ steps.upload.outputs.deployment-url }}
@@ -226,7 +311,7 @@ jobs:
           echo "alias:   ${alias_url:-(none)}"
 
       - name: Comment preview URL on PR
-        if: steps.url.outputs.version_url != '' || steps.url.outputs.alias_url != ''
+        if: steps.changes.outputs.run == 'true' && (steps.url.outputs.version_url != '' || steps.url.outputs.alias_url != '')
         uses: marocchino/sticky-pull-request-comment@5770ad5eb8f42dd2c4f34da00c94c5381e49af88 # v3.0.5
         with:
           header: ${{ matrix.comment }}

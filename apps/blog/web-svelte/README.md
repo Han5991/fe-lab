@@ -123,7 +123,8 @@ pnpm --filter @blog/web-svelte measure  # 첫 로드 전송량 측정
   `check-bundle`. `deploy-blog.yml`은 `'false'`로 끈다: 매일 도는 cron 배포에 관계없는
   빌드를 얹지 않는다)과 `preview-blog.yml`의 매트릭스(체크 이름 `preview-svelte`).
   프리뷰 쪽도 같은 `build`를 부르므로 게이트가 두 번 도는데, 그쪽은 포크 PR에서 잡째
-  건너뛰어지므로 **항상 도는 것은 `quality-checks` 쪽 하나**다
+  건너뛰어지고 자기 앱 경로(`apps/blog/web-svelte/`·원고·`packages/@blog`)를 안 건드린
+  PR에서도 빌드를 건너뛰므로 **항상 도는 것은 `quality-checks` 쪽 하나**다
 - **Supabase는 로컬만 가리킨다.** 프리뷰에서 조회수·Admin이 동작하지 않는 것은
   버그가 아니라 결정 원장의 항목이다
 
