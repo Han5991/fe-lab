@@ -1,0 +1,180 @@
+# @blog/web-svelte
+
+`apps/blog/web`(Next.js + React)과 **같은 사이트를 SvelteKit으로 병행 재구현**하는
+워크스페이스. 운영 블로그를 대체하지 않는다 — 나란히 두고 재기 위한 것이다.
+
+전체 계획과 결정 원장은 [이슈 #392](https://github.com/Han5991/fe-lab/issues/392).
+
+## 지금 있는 것
+
+- SvelteKit + `adapter-static` 정적 export (`build/`) — **99 페이지**(공개 50 + admin 49)
+- 공개 라우트 7개: `/` · `/posts/` · `/posts/[...slug]/` · `/series/` · `/about/` · `/privacy/` · `/404/`
+- Admin 라우트 4개: `/admin/` · `/admin/analytics/` · `/admin/analytics/[...slug]/` ·
+  `/admin/login/` — 인증 가드, Google OAuth, 대시보드·글별 통계·글 상세
+- `/posts/` 아카이브 — 검색·정렬·뷰 전환·태그·시리즈·연도 필터, 카드/리스트 두 뷰,
+  활성 필터 칩, 인기 글 레일, 모바일 FAB + 바텀시트. URL 계약은 nuqs 대신 순수 함수
+  둘(`lib/client/archiveParams.ts`)이고 테스트가 잠근다. **필터는 마운트 후에 산다** —
+  SvelteKit이 프리렌더 중 `url.searchParams` 접근을 던지므로 산출물에는 필터 없는
+  목록이 구워진다(React 판도 같은 자리에서 프리렌더를 포기한다)
+- 마크다운 렌더 — remark/rehype를 **빌드 타임에** 돌려 HTML 문자열까지 서버에서 만든다
+- 커스텀 태그 13종 — HAST를 다시 쓰는 방식이라 **클라이언트 JS 0**
+- 코드 블록 — 빌드 타임 구문 강조(refractor), `title=` 메타, 코드 크롬
+- 런타임 기능 — 테마 토글 · Mermaid(지연 로드) · 이미지 줌 · ⌘K 검색 ·
+  최근 본 글 · Giscus 댓글 · 조회수 · 읽기 진행바 · 맨 위로 · 모바일 차례 ·
+  공유하기 · 코드 복사. 진행바에는 JS가 없고(`animation-timeline: scroll()`),
+  복사 버튼은 마크업을 빌드 타임에 굽고 동작만 위임 리스너로 붙인다
+- 차트 — Recharts 없이 SVG를 직접 그린다(영역·막대·스파크라인). 좌표 계산은
+  `lib/admin/charts/geometry.ts`의 순수 함수고 테스트가 잠근다
+- 데이터 캐시 — React Query 없이 `lib/admin/store.svelte.ts`(약속을 모듈에 든다)
+- Vitest(node) — 계약 테스트 **104개** / 파일 14개
+- **`check-seo`·`check-bundle`이 `pnpm build` 안의 게이트다** — 번들 규칙 **11개**
+  (admin 전용 다섯 · 글 전용 둘 · 검색 · 서버 전용 값 · 빌드 타임 강조 · 스캔 생존).
+  **CI에서도 돈다** — `quality-checks` 액션의 `build-blog-svelte` 스텝이 그 자리다
+- Panda CSS — React 판과 **같은 프리셋**(`@design-system/ui/blog-preset`), `strictTokens`
+- 사이트 값은 `@blog/site-values`, 조회수·대시보드 도메인은 `@blog/analytics`
+  (둘 다 React 판과 공유)
+- ESLint — `--max-warnings=0`, 인라인 `eslint-disable` 금지, 타입 정보 룰
+- 배포 — 전용 Worker(`blog-svelte`)에 PR마다 프리뷰 URL. 아래 「배포」 절
+
+아직 없는 것: `code-tabs`(상호작용) — 지우지 않고 통과시키므로 내용은 보이되
+스타일이 없다. 페이지 전환 애니메이션.
+
+**Supabase는 로컬 인스턴스만 가리킨다**(`.env`) — 결정 원장의 항목이다. 배포된
+프리뷰에서 조회수·Admin이 동작하지 않는 것은 버그가 아니라 그 결정의 결과다.
+
+### 커스텀 태그는 왜 Svelte 컴포넌트가 아닌가
+
+React 판은 `react-markdown`의 컴포넌트 맵(`callout: Callout`)으로 태그를
+컴포넌트에 잇는다. Svelte에서 같은 구조를 만들려면 HAST 트리를 `load` 데이터로
+화면에 넘겨야 하는데, **SvelteKit은 `load` 데이터를 하이드레이션용으로 HTML에
+직렬화한다** — 트리를 문서에 한 번 더 싣게 되고, 지금 재고 있는 HTML 크기가
+부풀어 오른다.
+
+이 9종은 전부 프레젠테이션이다(상태도 이벤트도 없다). 빌드 타임에 클래스가
+붙은 마크업으로 구우면 클라이언트 JS가 0이고 문서에는 결과만 남는다.
+상호작용이 필요한 `code-tabs`는 이 방식으로 안 되므로 따로 다룬다.
+
+### 원고가 실제로 쓰는 태그
+
+70편 전수 조사 결과다. 이식 우선순위와 **검증 가능성**이 여기서 갈린다.
+
+| 태그                                                                        |  사용 |
+| :-------------------------------------------------------------------------- | ----: |
+| `diagram-node`                                                              |    11 |
+| `diagram-edge`                                                              |     5 |
+| `diagram` · `file-tree`                                                     |     3 |
+| `figure`                                                                    |     2 |
+| `callout`·`code-tabs`·`dialogue`·`msg`·`metrics`·`metric`·`timeline`·`step` | **0** |
+
+8종은 한 번도 쓰인 적이 없어 **실제 글로는 검증할 수 없다.** 그래서 계약을
+픽스처 테스트로 잠갔다 — 누가 처음 쓰는 날 그때 처음 깨지는 것이 아니라,
+여기서 먼저 깨져야 한다.
+
+## 옮기며 드러난 프레임워크 차이
+
+읽어서는 안 보이고 지어 봐야 나온 것들이다. 전부 빌드가 실패로 잡아 줬다.
+
+| 무엇                     | React(Next)                                                     | SvelteKit                                                                                                                                                                                 |
+| :----------------------- | :-------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **경로 앵커**            | `content.config.mts`의 `import.meta.url`이 원래 파일을 가리킨다 | Vite가 설정을 서버 번들로 옮겨 `import.meta.url`이 **출력 파일**이 된다 → `../posts`가 `.svelte-kit/output/server/posts`로 풀려 ENOENT. 앱 그래프에서만 앵커를 덮는다(`__CONTENT_ROOT__`) |
+| **catch-all 파라미터**   | `['foo']` 세그먼트 배열                                         | `[...slug]`가 후행 슬래시를 삼켜 `'foo/'` → 전 글이 404. 정규화가 필요하다                                                                                                                |
+| **배럴 클라이언트 누수** | `optimizePackageImports: ['@blog/content']`가 막는다            | 그 최적화가 없어 화면이 `@blog/content`를 import하면 `node:fs`가 브라우저용으로 externalize된다. URL 계약을 **서버에서 풀어** 문자열로 내려보낸다                                         |
+| **본문 자산 경로**       | `MarkdownImage`가 런타임에 푼다                                 | 빌드 타임에 HAST를 훑어 `resolvePostAssetUrl`로 다시 쓴다(안 하면 프리렌더 크롤러가 404)                                                                                                  |
+
+## 실행
+
+```bash
+pnpm dev --filter=@blog/web-svelte      # 개발 서버
+pnpm build --filter=@blog/web-svelte    # 정적 export → build/
+pnpm lint --filter=@blog/web-svelte
+pnpm check-types --filter=@blog/web-svelte
+pnpm --filter @blog/web-svelte measure  # 첫 로드 전송량 측정
+```
+
+## 배포
+
+**프리뷰 URL뿐이다.** 전용 Worker `blog-svelte`(`wrangler.jsonc`)에 PR마다
+`wrangler versions upload`로 버전만 올린다 — 트래픽 이동도, 커스텀 도메인도 없다.
+운영 블로그(`blog.sangwook.dev`)는 React 판 Worker가 계속 서빙하고 이 앱은 그 근처에도
+가지 않는다. 최종 배포 대상을 고르는 것은 비교가 끝난 뒤의 별도 결정이다.
+
+- **`routes`가 없다** — React 판 `wrangler.jsonc`에는 `custom_domain: true`가 있지만
+  여기엔 없다. `workers_dev: false` + `preview_urls: true`라 열리는 주소는 프리뷰뿐이다
+  (`preview_urls`의 기본값이 `workers_dev`를 따라가므로 명시가 필요하다 — 빠뜨리면
+  워크플로가 조용히 URL 없이 끝난다)
+- **`static/_headers`가 전 경로에 `X-Robots-Tag: noindex`를 건다.** React 판은 프리뷰
+  호스트에만 거는데, 이 앱은 프로덕션 도메인 자체가 없으므로 색인될 이유가 어디에도
+  없다. 함께 `/_app/immutable/*`에 1년 `immutable` — SvelteKit이 콘텐츠 해시를 박는
+  디렉터리가 거기다. HTML에는 캐시를 걸지 않는다(새 글이 늦게 반영된다)
+- **첫 Worker는 CI가 한 번만 만든다.** `wrangler versions upload`는 **이미 존재하는**
+  Worker에만 버전을 얹는다 — 없으면 "You cannot upload a new version of a Worker that
+  does not yet exist"로 거절한다. 그런데 이 앱을 `deploy`하는 경로는 저장소 어디에도
+  없으므로(그게 결정 원장이다) 프리뷰 잡이 Worker 존재를 확인하고 없을 때만 `deploy`를
+  한 번 돌린다. **그 deploy가 프로덕션 표면을 만들지 않는다** — `routes`가 없고
+  `workers_dev`도 false라 활성 버전에 닿을 수 있는 주소가 하나도 없다. 부트스트랩은
+  `bootstrap: true`인 앱에만 걸리는데, 존재 확인이 네트워크·토큰 문제로 오탐하더라도
+  그것이 **프로덕션 Worker(`blog`)에는 절대 닿지 않게** 하기 위해서다
+- **404는 복사로 만든다.** `trailingSlash: always`라 404 라우트가 `build/404/index.html`로
+  나가는데 Workers의 `not_found_handling: 404-page`는 루트 `404.html`을 문다. 어댑터의
+  `fallback` 옵션을 주면 만들어 주지만, 그 순간 "모든 라우트가 프리렌더 가능한가"
+  검사가 통째로 꺼진다(어댑터 소스). 정적 export의 계약이 그 검사라 `emit-404` 복사를
+  택했다
+- **CI 자리 둘** — `quality-checks` 액션의 `build-blog-svelte` 스텝(빌드 + `check-seo` +
+  `check-bundle`. `deploy-blog.yml`은 `'false'`로 끈다: 매일 도는 cron 배포에 관계없는
+  빌드를 얹지 않는다)과 `preview-blog.yml`의 매트릭스(체크 이름 `preview-svelte`).
+  프리뷰 쪽도 같은 `build`를 부르므로 게이트가 두 번 도는데, 그쪽은 포크 PR에서 잡째
+  건너뛰어지므로 **항상 도는 것은 `quality-checks` 쪽 하나**다
+- **Supabase는 로컬만 가리킨다.** 프리뷰에서 조회수·Admin이 동작하지 않는 것은
+  버그가 아니라 결정 원장의 항목이다
+
+## 기준선 (2026-09-07)
+
+`blog-content measure-bundle`로 **같은 도구·같은 방식**으로 잰 gzip 첫 로드
+전송량(HTML + CSS + JS). Node `zlib.gzipSync` 기준.
+
+### React 판 (`apps/blog/web`) — 100 페이지
+
+| 그룹       | 페이지 |   중앙값 |     최대 | 대표 페이지                                           |
+| :--------- | -----: | -------: | -------: | :---------------------------------------------------- |
+| `/admin/`  |     49 | 447.4 KB | 494.3 KB | `/admin/analytics/design-system-start/`               |
+| `/posts/`  |     45 | 339.7 KB | 407.3 KB | `/posts/reduce-server-dependency-clean-architecture/` |
+| `/`        |      1 | 313.5 KB | 313.5 KB | `/`                                                   |
+| `/series/` |      1 | 255.1 KB | 255.1 KB | `/series/`                                            |
+
+대표 페이지 분해 (html / css / js):
+
+| 페이지                                                |    HTML |     CSS |       JS | JS 파일 |
+| :---------------------------------------------------- | ------: | ------: | -------: | ------: |
+| `/posts/reduce-server-dependency-clean-architecture/` | 35.6 KB | 30.9 KB | 273.2 KB |      13 |
+| `/`                                                   |  9.3 KB | 30.3 KB | 274.0 KB |      13 |
+| `/admin/analytics/design-system-start/`               |  5.5 KB | 30.3 KB | 411.5 KB |      16 |
+
+산출물 전체: 파일 921개, 96.5 MB(raw). 빌드 49초.
+
+### Svelte 판 — 뼈대 1 페이지
+
+| 페이지 |   HTML |    CSS |      JS | JS 파일 |        합계 |
+| :----- | -----: | -----: | ------: | ------: | ----------: |
+| `/`    | 0.9 KB | 6.0 KB | 32.3 KB |       7 | **39.2 KB** |
+
+> **이 39.2 KB를 313.5 KB와 나란히 놓고 읽으면 안 된다.** 지금 Svelte 쪽에는
+> 화면도, 마크다운 렌더도, 런타임 기능도 없다. 이 수치의 뜻은 하나다 —
+> **프레임워크 런타임 + 라우터 + Panda preflight의 바닥값이 39.2 KB**라는 것.
+> 비교는 같은 화면이 양쪽에 설 때(PR 3 이후) 성립한다.
+
+목표 수치는 아직 정하지 않았다. 같은 화면이 선 뒤에 정한다.
+
+## 알려진 것
+
+- **`.svelte` 파일은 `pnpm format:check`가 보지 않는다.** 루트 prettier 글롭에
+  `svelte`가 없고 `prettier-plugin-svelte`도 없다. ESLint(`eslint-plugin-svelte`)는
+  보므로 규율이 통째로 빠진 것은 아니지만, 포매팅은 손으로 맞추는 상태다.
+  루트 도구를 바꾸는 일이라 별도 변경으로 둔다
+- ~~**`check-bundle`은 이 앱에 아직 걸 수 없다.**~~ **해소됨** — 참조 수집과
+  청크 목록에서 경로 관례를 걷어내 두 산출물에 같은 게이트가 걸린다. 자세히는
+  아래 표 참고. 남은 것: ~~`check-bundle`의 `/_next/` 하드코딩~~ `collectChunkRefs`가
+  `/_next/static/chunks/`를 정규식에 박아 두어 SvelteKit 산출물에서 청크를
+  하나도 못 찾는다("누수 0건"이 아니라 검사 무력화). 일반화는 PR 4
+- **`@sveltejs/vite-plugin-svelte`가 Vite 8을 실험 지원으로 경고한다.**
+  저장소 catalog가 Vite 8 라인이라 맞췄다. 빌드·타입 검사는 통과하지만
+  경고는 매 실행 뜬다

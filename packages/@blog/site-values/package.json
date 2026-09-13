@@ -1,0 +1,18 @@
+{
+  "name": "@blog/site-values",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "check-types": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "@blog/content": "workspace:^",
+    "@types/node": "catalog:",
+    "typescript": "catalog:"
+  }
+}

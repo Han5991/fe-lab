@@ -117,7 +117,7 @@ viewBox 폭은 노드 텍스트 길이의 합이라 노드 개수가 그대로 �
 > 선언형만의 문제가 아니다 — **그림 하나에 담는 노드 수를 줄이는 것**이 지금으로선
 > 유일한 대응이다.
 
-폰트 크기의 단일 출처는 `apps/blog/web/src/components/diagram/layout.ts` 의
+폰트 크기의 단일 출처는 `packages/@blog/diagram/src/layout.ts` 의
 `TITLE_FONT_SIZE` / `DESC_FONT_SIZE` 다.
 
 ---

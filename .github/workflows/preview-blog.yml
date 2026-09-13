@@ -7,6 +7,14 @@ name: Preview Blog on Cloudflare Workers
 # 프리뷰 URL이 나오려면 wrangler.jsonc의 `preview_urls: true`가 필요하다. 이 값의
 # 기본값은 `workers_dev`를 따라가는데 우리는 그걸 false로 뒀으므로(중복 콘텐츠 차단)
 # 명시적으로 켜 두었다 — 거기를 끄면 이 워크플로가 조용히 URL 없이 끝난다.
+#
+# **앱 둘을 매트릭스로 돌린다** — Next.js 판(`apps/blog/web`)과 SvelteKit 판
+# (`apps/blog/web-svelte`). 각자 자기 Worker에 올라가므로 서로 트래픽을 건드리지
+# 않고, 같은 브랜치 alias를 써도 충돌하지 않는다(Worker가 다르다). 파일을 둘로
+# 나누지 않은 이유는 갈리는 것이 매트릭스 키 몇 개뿐이기 때문이다: 작업 디렉터리,
+# 빌드 필터, 워커 이름, 부트스트랩 허용 여부, Next 전용 캐시, PR 코멘트의 머리말.
+# 나머지(alias 정규화, URL 파싱, 포크 가드)가 둘로 갈리면 한쪽만 고쳐지는 자리가
+# 된다.
 
 on:
   pull_request:
@@ -23,8 +31,43 @@ permissions:
 
 jobs:
   preview:
+    # **체크 이름을 매트릭스에서 명시한다.** `name:`을 두지 않으면 GitHub이
+    # 매트릭스 값을 자동으로 덧붙여(`preview (web)`) 기존 체크 이름이 바뀌는데,
+    # 그 이름이 브랜치 보호의 required check라면 PR이 "Expected — waiting for
+    # status"에서 영영 멈춘다. 실패가 조용해서 알아채기 어렵다 —
+    # `.github/actions/quality-checks/action.yml`이 composite action인 이유가
+    # 정확히 같은 함정이다. Next.js 판은 예전 이름(`preview`)을 그대로 쓴다.
+    name: ${{ matrix.check }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    strategy:
+      # 한쪽이 실패해도 나머지 프리뷰는 나와야 한다 — 리뷰어가 볼 것이 하나라도
+      # 있는 편이 낫고, 두 앱은 서로 독립이다.
+      fail-fast: false
+      matrix:
+        include:
+          - app: web
+            package: '@blog/web'
+            label: 'Next.js'
+            check: preview
+            comment: cloudflare-preview
+            worker: blog
+            # **프로덕션 Worker다. 부트스트랩을 절대 걸지 않는다** — 아래 참조.
+            bootstrap: false
+            note: >-
+              프로덕션(`blog.sangwook.dev`)은 그대로입니다 — 이 단계는 버전만 올리고
+              트래픽을 옮기지 않습니다. Admin 로그인은 프리뷰에서 동작하지 않을 수 있습니다.
+          - app: web-svelte
+            package: '@blog/web-svelte'
+            label: 'SvelteKit'
+            check: preview-svelte
+            comment: cloudflare-preview-svelte
+            worker: blog-svelte
+            bootstrap: true
+            note: >-
+              이 앱은 **프리뷰 URL로만** 열립니다(프로덕션 도메인이 없습니다).
+              Supabase는 로컬 인스턴스만 가리키므로 조회수·Admin은 동작하지 않습니다 —
+              결정 원장의 항목이고 버그가 아닙니다.
     # 포크 PR에는 시크릿이 없어 빌드가 반쯤 깨진 프리뷰가 나온다. 같은 저장소의
     # 브랜치일 때만 돈다.
     if: github.event.pull_request.head.repo.full_name == github.repository
@@ -51,7 +94,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # Next 전용이다 — SvelteKit 쪽은 vite/rolldown이라 이 디렉터리가 없다.
       - name: Restore Next.js build cache
+        if: matrix.app == 'web'
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: apps/blog/web/.next/cache
@@ -66,27 +111,74 @@ jobs:
       #  같이 있어서, 환경을 열면 그것까지 모든 PR에서 읽혔다. 그 시크릿은
       #  아무도 안 쓰는 사본이라 지웠으므로 지금은 브랜치 정책만 남았다.)
       - name: Build blog
-        run: pnpm build --filter=@blog/web
+        run: pnpm build --filter=${{ matrix.package }}
         env:
           NODE_ENV: production
 
       # 브랜치 고정 alias. 커밋마다 바뀌는 버전 URL과 달리 리뷰 내내 같은 주소를
-      # 쓸 수 있다. alias는 영숫자와 하이픈만 받고 63자 제한이 있어 정규화가 필요하다
+      # 쓸 수 있다. alias는 영숫자와 하이픈만 받으므로 정규화가 필요하다
       # (`chore/cloudflare-domain-cleanup` → `chore-cloudflare-domain-cleanup`).
+      #
+      # **길이 한계는 alias가 아니라 호스트 레이블에 걸린다.** 프리뷰 주소는
+      # `<alias>-<워커 이름>.<서브도메인>.workers.dev`라 DNS 레이블 63자를 나눠 쓴다.
+      # 그래서 63에서 워커 이름과 하이픈을 빼고 자른다 — 워커가 `blog`면 58자,
+      # `blog-svelte`면 51자다. 63으로 통일해 자르면 이름이 긴 쪽에서만 레이블이
+      # 넘쳐 **한 앱의 프리뷰만** 조용히 실패한다.
       - name: Compute preview alias
         id: alias
         env:
           BRANCH: ${{ github.head_ref }}
+          WORKER: ${{ matrix.worker }}
         run: |
+          budget=$(( 63 - ${#WORKER} - 1 ))
           alias=$(printf '%s' "$BRANCH" \
             | tr '[:upper:]' '[:lower:]' \
             | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//' \
-            | cut -c1-63 \
+            | cut -c1-"$budget" \
             | sed -E 's/-+$//')
           # 숫자로 시작하는 호스트 레이블도 유효하지만, 빈 값만은 막는다.
           [[ -n "$alias" ]] || alias="pr-${{ github.event.pull_request.number }}"
           echo "alias=$alias" >> "$GITHUB_OUTPUT"
-          echo "alias: $alias"
+          echo "alias: $alias (워커 $WORKER, 예산 ${budget}자)"
+
+      # **`versions upload`는 이미 존재하는 Worker에만 버전을 얹는다.** 없으면
+      # wrangler가 통째로 거절한다 — "You cannot upload a new version of a Worker
+      # that does not yet exist. Please run the `deploy` command first." 그런데 이
+      # 저장소에서 SvelteKit 판을 `deploy`하는 경로는 어디에도 없다(결정 원장:
+      # 프리뷰 URL 전용). 그래서 첫 Worker는 여기서 한 번만 만든다.
+      #
+      # **여기서 `deploy`가 프로덕션 표면을 만들지 않는다.** 그 Worker의
+      # `wrangler.jsonc`에는 `routes`가 없고 `workers_dev`도 false라, 활성 버전이
+      # 생겨도 그것에 닿을 수 있는 주소가 하나도 없다. 열리는 것은 여전히
+      # `preview_urls`가 내는 주소뿐이다.
+      #
+      # **`bootstrap: true`인 앱에만 건다.** 존재 확인은 네트워크·토큰 문제로도
+      # 실패할 수 있는데, 그 오탐이 `blog`(프로덕션 Worker)에 닿으면 PR 브랜치의
+      # 빌드가 `blog.sangwook.dev`로 나간다. 매트릭스 플래그로 그 경로를 아예
+      # 없앤다 — 오탐이 나도 최악이 "주소 없는 Worker에 deploy 한 번"이다.
+      - name: Check whether the Worker exists
+        id: worker
+        if: matrix.bootstrap
+        working-directory: apps/blog/${{ matrix.app }}
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          if pnpm exec wrangler versions list >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "${{ matrix.worker }}: 이미 있음 — 부트스트랩 건너뜀"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "${{ matrix.worker }}: 없음 — deploy로 한 번 만든다"
+          fi
+
+      - name: Bootstrap the Worker (first run only)
+        if: matrix.bootstrap && steps.worker.outputs.exists == 'false'
+        uses: cloudflare/wrangler-action@ebbaa1584979971c8614a24965b4405ff95890e0 # v4.0.0
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          workingDirectory: apps/blog/${{ matrix.app }}
+          packageManager: pnpm
+          command: deploy
 
       # 버전만 업로드한다(트래픽 이동 없음). 버전 URL과 alias URL이 stdout에 찍힌다.
       - name: Upload preview version
@@ -95,7 +187,7 @@ jobs:
         with:
           # accountId는 넘기지 않는다 — wrangler.jsonc의 account_id가 단일 출처다.
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          workingDirectory: apps/blog/web
+          workingDirectory: apps/blog/${{ matrix.app }}
           packageManager: pnpm
           command: versions upload --preview-alias "${{ steps.alias.outputs.alias }}" --message "PR #${{ github.event.pull_request.number }} (${{ github.event.pull_request.head.sha }})"
 
@@ -137,9 +229,9 @@ jobs:
         if: steps.url.outputs.version_url != '' || steps.url.outputs.alias_url != ''
         uses: marocchino/sticky-pull-request-comment@5770ad5eb8f42dd2c4f34da00c94c5381e49af88 # v3.0.5
         with:
-          header: cloudflare-preview
+          header: ${{ matrix.comment }}
           message: |
-            ### 🔍 Cloudflare 프리뷰
+            ### 🔍 Cloudflare 프리뷰 — ${{ matrix.label }}
 
             | | |
             | :-- | :-- |
@@ -149,5 +241,4 @@ jobs:
 
             브랜치 프리뷰 주소는 커밋마다 바뀌지 않으니 리뷰 내내 그대로 쓰시면 됩니다.
 
-            프로덕션(`blog.sangwook.dev`)은 그대로입니다 — 이 단계는 버전만 올리고
-            트래픽을 옮기지 않습니다. Admin 로그인은 프리뷰에서 동작하지 않을 수 있습니다.
+            ${{ matrix.note }}

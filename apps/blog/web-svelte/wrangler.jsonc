@@ -1,0 +1,38 @@
+{
+  // 정적 전용 Worker — main이 없으므로 build/ 의 파일만 서빙한다.
+  //
+  // **이 워커는 프로덕션 주소를 갖지 않는다.** 결정 원장의 항목이다: 이 앱은
+  // `apps/blog/web`을 대체하지 않고 나란히 두고 재기 위한 것이라, PR 프리뷰
+  // URL로만 열린다. 그래서 `routes`(커스텀 도메인)가 없고 `workers_dev`도 꺼져
+  // 있다 — 열려 있는 표면은 `preview_urls`가 내는 버전·alias 주소뿐이다.
+  "name": "blog-svelte",
+  "compatibility_date": "2026-09-05",
+
+  // 배포 대상 계정. `apps/blog/web/wrangler.jsonc`와 같은 값이고, 같은 이유로
+  // 여기 적는다 — 비밀값이 아니고(권한은 전부 CLOUDFLARE_API_TOKEN에 있다),
+  // 저장소만 보고도 어느 계정으로 나가는지 알 수 있어야 한다.
+  "account_id": "3f689c14edadc1ca2db6410d669d7c0c",
+
+  // `blog-svelte.<subdomain>.workers.dev`를 열지 않는다. 이 앱은 블로그와 같은
+  // 글을 그대로 담고 있어서, 상시 주소가 생기면 그 순간 중복 콘텐츠가 된다.
+  "workers_dev": false,
+
+  // **workers_dev와 짝지어 반드시 명시한다.** preview_urls의 기본값은 workers_dev를
+  // 따라가므로, 위를 false로 두는 순간 프리뷰 URL까지 조용히 같이 꺼진다 —
+  // 그러면 이 워커에는 열리는 주소가 하나도 없다.
+  "preview_urls": true,
+
+  "assets": {
+    // SvelteKit adapter-static의 출력. Next.js 판의 `out/`에 대응한다.
+    "directory": "./build",
+
+    // `svelte.config.js`의 `trailingSlash: 'always'`와 짝을 맞춘다.
+    // 기본값(auto-trailing-slash)은 슬래시 유무 양쪽에 200을 주어 정규 URL이 둘로
+    // 갈라진다. React 판과 같은 판단이고, 나가는 코드도 같은 307이다.
+    "html_handling": "force-trailing-slash",
+
+    // `src/routes/404/+page.svelte` → 빌드의 `emit-404` 스텝이 `build/404.html`로
+    // 복사한다(어댑터 `fallback`을 쓰지 않은 이유는 그 스크립트 주석에).
+    "not_found_handling": "404-page",
+  },
+}

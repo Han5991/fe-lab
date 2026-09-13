@@ -68,6 +68,10 @@ jobs:
         uses: ./.github/actions/quality-checks
         with:
           build-blog: 'false'
+          # SvelteKit 판은 프로덕션에 배포되지 않는다(프리뷰 URL 전용). 그 앱의
+          # 산출물 검사는 PR CI에서 돌고, 여기서 또 빌드하면 매일 도는 cron 배포에
+          # 관계없는 1분이 붙는다.
+          build-blog-svelte: 'false'
 
       # about 페이지 'PR 승인' 통계 — Han5991/Han5991 프로필 레포가 매일 갱신하는
       # config/summary.json(외부 OSS 머지 PR 총수)을 읽어 빌드 타임에 주입한다.

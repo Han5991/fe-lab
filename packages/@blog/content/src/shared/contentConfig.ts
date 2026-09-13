@@ -238,7 +238,27 @@ export type PageSelector = { under: string } | { notUnder: string };
  * 소비자의 말이라 여기 없다 — 그 이름은 규칙의 `label`로 소비자가 붙인다.
  */
 export type MarkerScope =
+  /**
+   * 페이지가 **도달할 수 있는** 청크 — 직접 참조 + 지연 로드 폐포.
+   *
+   * **번들러에 따라 뜻이 크게 달라진다.** Next.js 산출물에서는 홈의 폐포가
+   * 116개 중 13개로 좁지만, SvelteKit에서는 클라이언트 라우터가 모든 라우트
+   * 청크 이름을 매니페스트로 싣기 때문에 **어느 페이지에서든 폐포가 앱
+   * 전체**가 된다(115/115). 즉 "이 코드가 저 페이지에 도달하는가"를 묻는
+   * 이 스코프는 SvelteKit에서 언제나 참이다.
+   *
+   * 지연 로드까지 포함해 "언젠가 받을 수 있는가"를 물어야 할 때만 쓸 것.
+   * "첫 로드에 오는가"를 묻고 싶다면 `initial`이다.
+   */
   | { kind: 'chunks'; of?: PageSelector }
+  /**
+   * 문서가 **직접 참조하는** JS — 지연 로드는 세지 않는다.
+   *
+   * 브라우저가 첫 로드에 받는 것이 정확히 이것이고, 그 정의는 번들러와
+   * 무관하다. `chunks`가 SvelteKit에서 앱 전체로 번지는 것을 보고 추가했다 —
+   * 누수 규칙이 실제로 묻고 싶은 것은 대개 이쪽이다.
+   */
+  | { kind: 'initial'; of?: PageSelector }
   | { kind: 'pages'; of?: PageSelector }
   | { kind: 'artifact'; path: string };
 
@@ -268,6 +288,48 @@ export interface BundleRule {
  * 검사를 끄려면 선언 자체를 지운다.
  */
 export type BundleGuardsConfig = readonly [BundleRule, ...BundleRule[]];
+
+/**
+ * 파리티 검사 — **같은 사이트를 두 번 지었을 때 두 산출물을 대조한다.**
+ *
+ * `check-seo`가 한 산출물의 SEO 계약을 보고 `check-bundle`이 청크의 누수를
+ * 본다면, 이쪽은 **두 산출물이 같은 화면인가**를 본다. 셋 다 HTML만 읽고
+ * 브라우저를 쓰지 않는다.
+ *
+ * ## 왜 클래스 어휘로 비교할 수 있나
+ *
+ * 두 앱이 **같은 디자인 토큰 프리셋**을 쓰면 생성되는 원자 클래스가 공통
+ * 어휘가 된다 — 프레임워크가 달라도 `ff_mono fs_xs ls_mono c_ink.600`은 글자
+ * 단위로 같다. 그래서 클래스 집합의 차집합이 곧 "한쪽에만 있는 시각 결정"이다.
+ * 토큰의 단일 출처가 없는 사이트에서는 이 축이 성립하지 않는다.
+ *
+ * ## 무엇을 못 잡나
+ *
+ * 렌더 결과가 아니라 **마크업**을 본다. 실제 글꼴(웹폰트를 안 실었는지),
+ * 계산된 좌표, 스크롤 후에만 보이는 것은 여기서 안 잡힌다. 그건 브라우저가
+ * 필요하고, 이 게이트를 CI에서 가볍게 돌리기 위해 일부러 뺐다.
+ */
+export interface ParityConfig {
+  /**
+   * 대조할 상대 산출물 디렉터리. `root`(설정 파일 위치) 기준 상대 경로다 —
+   * 대개 같은 저장소의 다른 앱(`../web/out`).
+   */
+  baseline: string;
+  /** 대조 상대를 부르는 이름. 리포트에만 쓴다(`react` 같은 것). */
+  baselineLabel: string;
+  /**
+   * 대조할 페이지 경로. 비우면 **양쪽에 다 있는 페이지 전부**다. 글 상세처럼
+   * 수십 개인 라우트를 통째로 넣으면 리포트가 같은 위반을 반복하므로, 대표
+   * 몇 개만 고르는 편이 낫다.
+   */
+  pages?: readonly string[];
+  /**
+   * 차집합에서 무시할 클래스. **한쪽 프레임워크의 어휘라 대응물이 없는 것**만
+   * 적는다(아이콘 라이브러리가 붙이는 클래스 같은 것). 여기 적는 순간 그
+   * 차이는 영영 안 보이므로, "아직 안 고쳤다"를 담는 자리가 아니다.
+   */
+  allowClasses?: readonly string[];
+}
 
 export interface ThumbnailsConfig {
   /** 표시 최대 폭(FeaturedPost가 컨테이너 전체 폭). 작은 원본은 확대하지 않음 */
@@ -387,6 +449,8 @@ export interface ContentConfig {
   thumbnails: ThumbnailsConfig;
   /** 선언한 사이트에만 있다 — 없으면 `check-bundle`이 검사를 건너뛴다 */
   bundleGuards?: BundleGuardsConfig;
+  /** 선언한 사이트에만 있다 — 없으면 `check-parity`가 검사를 건너뛴다 */
+  parity?: ParityConfig;
   llms: LlmsConfig;
 }
 
@@ -461,6 +525,11 @@ export interface ContentUserConfig extends Pick<
    * 패키지가 채워 줄 반쪽이 없다. 선언하면 규칙 1개 이상, 안 하면 검사 없음.
    */
   bundleGuards?: BundleGuardsConfig;
+  /**
+   * 대조 상대가 있는 사이트에만 있다. 같은 사이트를 두 번 지었을 때만 성립하는
+   * 축이라 패키지가 채워 줄 기본값이 없다.
+   */
+  parity?: ParityConfig;
 }
 
 // ── 기본값 ───────────────────────────────────────────────────────────────────
@@ -565,6 +634,7 @@ const DEFAULTS: Omit<
   | 'og'
   | 'llms'
   | 'bundleGuards'
+  | 'parity'
 > & {
   seo: Omit<SeoConfig, 'titleSuffix'>;
   registries: Omit<RegistriesConfig, 'diagramNames'>;
@@ -735,6 +805,7 @@ export function defineContent(user: ContentUserConfig): ContentConfig {
     // 병합할 기본값이 없다 — 준 사이트에만 있고, 통째로 실린다(조건 스프레드는
     // exactOptionalPropertyTypes 때문: undefined를 optional 필드에 대입할 수 없다).
     ...(user.bundleGuards ? { bundleGuards: user.bundleGuards } : {}),
+    ...(user.parity ? { parity: user.parity } : {}),
     llms: {
       ...DEFAULTS.llms,
       ...user.llms,

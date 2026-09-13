@@ -1,0 +1,111 @@
+import rehypeRaw from 'rehype-raw';
+import rehypeSlug from 'rehype-slug';
+import rehypeStringify from 'rehype-stringify';
+import remarkGfm from 'remark-gfm';
+import remarkParse from 'remark-parse';
+import remarkRehype from 'remark-rehype';
+import { unified } from 'unified';
+import { HEADING_TAG_MAP, resolvePostAssetUrl } from '@blog/content';
+import { codeBlocks, inlineCodeChips } from './codeBlock.ts';
+import { codeMeta } from './codeMeta.ts';
+import { customTags } from './customTags.ts';
+import { collectToc, type TocItem } from './toc.ts';
+import type { Element, Root } from 'hast';
+import { visit } from 'unist-util-visit';
+
+/**
+ * 마크다운 원문 → HTML. **빌드 타임에만 돈다**(prerender).
+ *
+ * React 판은 `react-markdown`이 런타임에 같은 remark/rehype 파이프라인을 돌린다.
+ * 여기서는 정적 export가 전제라 문자열 HTML까지 서버에서 만들고 화면은
+ * `{@html}`로 꽂는다 — 파서가 클라이언트 번들에 실리지 않는다. 이것이 이
+ * 실험에서 재려는 차이 중 하나다.
+ *
+ * 커스텀 태그는 `customTags`가 스타일 붙은 HAST로 다시 쓴다 — 왜 Svelte
+ * 컴포넌트로 매핑하지 않았는지는 그 파일의 주석에 있다. 아직 남은 것은
+ * 상호작용이 필요한 `<code-tabs>`와 배치 계산이 필요한 `<diagram>` 계열이다.
+ *
+ * h1 강등은 `@blog/content`의 `HEADING_TAG_MAP`을 읽는다 — 사이트 본문과 RSS
+ * `content:encoded`가 같은 매핑을 공유해야 하므로 여기서 리터럴을 적지 않는다.
+ * 페이지의 h1은 글 제목 하나뿐이어야 하고, 그건 `check-seo`가 검사한다.
+ */
+function demoteHeadings() {
+  return (tree: Root) => {
+    visit(tree, 'element', (node: Element) => {
+      const mapped = (HEADING_TAG_MAP as Record<string, string | undefined>)[
+        node.tagName
+      ];
+      if (mapped !== undefined) node.tagName = mapped;
+    });
+  };
+}
+
+/**
+ * 본문의 상대 자산 경로를 사이트 경로로 푼다 — `sync-posts`가 미디어를
+ * `static/posts/`로 복사하는 것과 짝이다.
+ *
+ * 해석 규칙은 `@blog/content`의 `resolvePostAssetUrl` 하나뿐이다. 사이트 본문과
+ * RSS 전문이 같은 함수를 공유하므로 여기서 정규식을 다시 쓰지 않는다.
+ *
+ * 안 하면 `<img src="foo.png">`가 페이지 URL 기준으로 풀려
+ * `/posts/<slug>/foo.png`를 가리키고, 프리렌더 크롤러가 그 주소를 따라가
+ * 404로 빌드를 세운다(실제로 그렇게 잡혔다).
+ */
+function resolveAssetUrls(relativeDir: string) {
+  return (tree: Root) => {
+    visit(tree, 'element', (node: Element) => {
+      const attr = node.tagName === 'img' ? 'src' : null;
+      if (attr === null) return;
+      const value = node.properties[attr];
+      if (typeof value !== 'string') return;
+      node.properties[attr] = resolvePostAssetUrl(value, relativeDir);
+    });
+  };
+}
+
+const processor = () =>
+  unified()
+    .use(remarkParse)
+    .use(remarkGfm)
+    // allowDangerousHtml + rehype-raw: 본문의 raw HTML(커스텀 태그·figure·callout)을
+    // 버리지 않고 HAST 노드로 살린다. 원고는 이 저장소가 쓰는 것이라 신뢰 경계 안이다.
+    .use(remarkRehype, { allowDangerousHtml: true })
+    // rehype-raw보다 **먼저** — 그 왕복에서 `data.meta`가 사라진다.
+    .use(codeMeta)
+    .use(rehypeRaw)
+    .use(demoteHeadings)
+    .use(customTags)
+    .use(codeBlocks)
+    // codeBlocks 다음 — 그때 블록 쪽 <code>는 <pre> 안으로 들어가 있다.
+    .use(inlineCodeChips)
+    .use(rehypeSlug)
+    .use(rehypeStringify, { allowDangerousHtml: true });
+
+export function renderMarkdown(markdown: string, relativeDir: string): string {
+  return String(
+    processor().use(resolveAssetUrls, relativeDir).processSync(markdown),
+  );
+}
+
+/**
+ * 본문 HTML과 차례를 **한 번의 파싱으로** 함께 낸다.
+ *
+ * 차례를 위해 HTML을 다시 훑지 않는 이유는 그게 두 번째 파서가 되기 때문이다 —
+ * 정규식으로 헤딩을 긁으면 커스텀 태그 안의 헤딩이나 속성 순서에서 갈린다.
+ * 파이프라인이 이미 트리를 들고 있으니 거기서 가져온다.
+ */
+export function renderPost(
+  markdown: string,
+  relativeDir: string,
+): { html: string; toc: TocItem[] } {
+  const toc: TocItem[] = [];
+  const html = String(
+    processor()
+      .use(resolveAssetUrls, relativeDir)
+      .use(collectToc, toc)
+      .processSync(markdown),
+  );
+  return { html, toc };
+}
+
+export type { TocItem };

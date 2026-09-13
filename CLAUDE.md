@@ -113,6 +113,41 @@ The blog (`apps/blog/web/`) is a **statically generated (SSG) Next.js applicatio
 흐름은 `apps/blog/web/README.md`가, 패키지 내부는 `packages/@blog/content/README.md`가 다룬다 —
 이 절은 **운영 규칙과 계약**만 적는다.
 
+#### 병행 재구현: SvelteKit 판 (`apps/blog/web-svelte`)
+
+**같은 사이트를 SvelteKit으로 한 번 더 짓는다.** 운영 블로그를 대체하지 않는다 —
+나란히 두고 번들·저작 DX·프레임워크를 재기 위한 것이고, 계획과 결정 원장은 이슈 #392다.
+앱 내부는 `apps/blog/web-svelte/README.md`가 다룬다. 여기에는 **두 앱을 함께 만질 때
+지켜야 하는 것**만 적는다.
+
+- **원고·콘텐츠 프레임워크·사이트 값·도메인 계산은 공유한다.** `apps/blog/posts`,
+  `@blog/content`, `@blog/site-values`(사이트 정체성 리터럴), `@blog/analytics`(조회수·대시보드),
+  `@blog/diagram`(다이어그램 좌표 계산)을 두 앱이 함께 읽는다. **사본을 만들지 말 것** —
+  한쪽만 고치면 두 산출물이 조용히 갈린다(sitemap·RSS·OG 카드는 그대로 생성되고 빌드도
+  성공한다. 이 저장소가 `published` 필드 이중화에서 이미 겪은 실패 모양이다)
+- **공유하지 않는 것은 번들 규칙(`BUNDLE_GUARDS`)이다.** 마커가 프레임워크의 어휘라서다.
+  겹치는 마커도 있지만(`GoTrueClient`·`mermaid`는 두 판이 같은 라이브러리를 쓴다)
+  `recharts`는 React 판에만 있고(Svelte 판은 차트 SVG를 직접 그린다), 무엇보다 **번들러가
+  다르면 살아남는 식별자가 다르다** — rolldown이 지운 함수 이름이 Turbopack에서는 남는다.
+  각 앱의 `content.values.mts`가 자기 규칙을 선언하고, 패키지는 규칙이 쓰는 경로 접두까지만
+  준다
+- **게이트는 같다** — `pnpm build`가 `check-seo`·`check-bundle`로 끝나고, lint는
+  `--max-warnings=0` + `noInlineConfig`다. 다만 **생성물이 커밋되지 않는다**:
+  `.svelte-kit/`(svelte-kit sync)와 `styled-system/`(panda codegen) 둘 다 gitignore라,
+  이것을 필요로 하는 태스크(`build`·`lint`·`check-types`·`test`)가 **각자 `pnpm sync`를
+  먼저 부른다**. 로컬에는 남아 있어 보이지 않던 것이 깨끗한 체크아웃에서만 터졌던
+  자리다 — 검증은 **생성물을 지운 상태**에서 할 것
+- **배포는 프리뷰 URL뿐이다** — 전용 Worker(`blog-svelte`)에 `wrangler versions upload`로
+  버전만 올린다. 커스텀 도메인도, 트래픽 이동도, 프로덕션 배포 경로도 없다.
+  단 **Worker 자체를 만드는 일은 한 번 필요하다**(`versions upload`는 존재하는 Worker에만
+  버전을 얹는다). 프리뷰 잡이 존재를 확인하고 없을 때만 `deploy`를 돌리는데, `routes`도
+  `workers_dev`도 없어 그 활성 버전에 닿을 주소가 없다 — 부트스트랩은 매트릭스의
+  `bootstrap: true`인 앱에만 걸려서, 존재 확인이 오탐해도 프로덕션 Worker에는 닿지 않는다.
+  `static/_headers`가 전 경로에 `X-Robots-Tag: noindex`를 건다(프로덕션 도메인이 없으니
+  색인될 이유도 없다). 최종 배포 대상을 고르는 것은 비교가 끝난 뒤의 별도 결정이다
+- **Supabase는 로컬 인스턴스만 가리킨다.** 결정 원장의 항목이라, 배포된 프리뷰에서
+  조회수·Admin이 동작하지 않는 것은 버그가 아니다
+
 #### 레이어 경계 (lint가 강제)
 
 세 층(원고 디렉터리 → 패키지 → 앱)이 한 방향으로만 의존한다. `eslint-plugin-boundaries`가
@@ -127,7 +162,13 @@ apps/blog/posts (원고)  →  packages/@blog/content  →  apps/blog/web
 
 - **`@blog/content` 내부**: `shared`(node 코어만) → `post`(+gray-matter) → `seo`(순수 계산) →
   `scripts`(빌드) → `scripts/render`(React·satori·sharp는 여기만) → `scripts/cli`(진입점,
-  단계를 동적 import로 든다). 밖으로 여는 문은 `@blog/content`·`@blog/content/seo` 둘뿐.
+  단계를 동적 import로 든다). 밖으로 여는 문은 셋이다 — `@blog/content`·`@blog/content/seo`에
+  더해 **클라이언트에서 안전한 것 전부**를 내놓는 `@blog/content/client`. 셋째 문이 있는
+  이유는 번들러다: 배럴은 `node:fs`를 함께 여는데 그것을 클라이언트 그래프에서 열어도
+  안전한지는 Next의 `optimizePackageImports`가 정해 주던 것이라, 대응물이 없는 Vite에서
+  `postPath` 하나를 배럴로 들이자 fs가 통째로 externalize됐다. 이 문의 내용은 목록이
+  아니라 **성질**로 정해진다(모듈 평가 시 I/O 없음) — `packages/@blog/content/src/clientDoor.test.ts`가
+  import 그래프를 따라가며 잠근다.
   빌드 스크립트는 API가 아니라 실행 파일이라 package.json `bin`의 **`blog-content`** 하나로
   나가고, 앱은 서브커맨드 이름만 안다(`blog-content build`). shebang은 `node`다 — 상대 import가
   전부 `.ts` 확장자를 달고(`allowImportingTsExtensions`, 앱 tsconfig에도 켜져 있어야 한다)
@@ -135,13 +176,20 @@ apps/blog/posts (원고)  →  packages/@blog/content  →  apps/blog/web
 - **앱 내부**: 레이어 전부가 `src/` 안의 형제 폴더다. `src/shared`(최하단 — 앱 소유 라우트
   경로 `routes.ts`·페이지 전환 네임스페이스 `transitions.ts`의 단일 출처. 모든 레이어가 import
   가능하고, 자신은 `@blog/content`만 연다) →
-  `src/lib/platform`(Supabase 어댑터, 외부 의존은 supabase-js·postgrest-js만) →
-  `src/domain/analytics`(순수 계산 + 저장소, 배럴 `index`·`admin` 둘)·`src/domain/auth`(세션·관리자
-  이메일 판정) → app 레이어(`src`의 나머지 — `app`·`components`·`hooks`·`styles`·`content.ts`.
+  `src/lib/platform`(Supabase 클라이언트 **생성** 둘 — env를 읽어 `client`·`publicDb`를 만든다.
+  외부 의존은 supabase-js·postgrest-js) →
+  `src/domain/analytics`(그 클라이언트를 `@blog/analytics`에 꽂는 **배선** 배럴 `index`·`admin`
+  둘)·`src/domain/auth`(세션 배럴 + 관리자 이메일 판정) → app 레이어(`src`의 나머지 — `app`·`components`·`hooks`·`styles`·`content.ts`.
   boundaries element는 첫 매치 우선이라 `src` 폴백으로 잡는다). app 레이어는 저장소를 직접
   찌르지 않고 배럴로 — **platform 자체를 import할 수 없다**(boundaries에서 app→platform 허용이
   없다. Supabase 접근은 전부 도메인 경유고, 예전 유일한 예외였던 auth 직접 호출은
   `src/domain/auth`가 흡수했다).
+  **계산·계약·저장소는 `@blog/analytics` 패키지에 있다** — 조회수·대시보드 도메인 2,560줄에
+  `react`·`next/` import가 0이라 프레임워크 중립이었고, 앱에 묶여 있던 것은 URL·키를
+  `process.env.NEXT_PUBLIC_*`에서 읽어 **클라이언트를 만드는 일** 하나였다. 그래서 저장소는
+  클라이언트를 주입받고(`createPublicAnalytics(db)`·`createAdminAnalytics(api)`), 앱 배럴 둘이
+  그 주입을 한다. app 레이어는 그 패키지를 직접 열 수 없다(platform과 같은 이유 — boundaries에
+  app→analytics-pkg 허용이 없다).
   **app 레이어는 node 코어를 못 만진다** — fs 접근은 전부 `@blog/content` 로더의 일(클라이언트
   번들 누수 예방). `@blog/content`는 앱에서 외부 패키지(`content-pkg`)로 보인다.
   라우트 경로 리터럴을 화면·설정에 직접 적지 말 것 — 앱 소유 경로(`/admin`·`/about`…)는
@@ -150,14 +198,16 @@ apps/blog/posts (원고)  →  packages/@blog/content  →  apps/blog/web
 - **tsconfig 분할**: `tsconfig.json`(프로덕션, 엄격 플래그 전부) / `tsconfig.test.json`(테스트 —
   `noUncheckedIndexedAccess`·`noPropertyAccessFromIndexSignature`·`exactOptionalPropertyTypes` 세
   개만 끔). `check-types`와 ESLint 타입 룰이 같은 분할을 따른다
-- **lint 임계값**: 블로그 앱·`@blog/content` 둘 다 `--max-warnings=0`. 앱에 남아 있던 jsx-a11y
-  경고 5건은 설계로 풀고 룰을 에러로 되돌렸다(#289). 함께 `noInlineConfig: true` +
+- **lint 임계값**: 블로그 스택 넷(`@blog/web`·`@blog/web-svelte`·`@blog/content`·`@blog/analytics`)이
+  모두 `--max-warnings=0`. 앱에 남아 있던 jsx-a11y 경고 5건은 설계로 풀고 룰을 에러로
+  되돌렸다(#289). 함께 `noInlineConfig: true` +
   `@eslint-community/eslint-comments/no-use`가 켜져 **인라인 `eslint-disable` 주석이 전면 금지**다 —
   예외가 필요하면 주석이 아니라 `eslint.config.mts`에 `files` 스코프로 적을 것.
-  **이 임계값은 블로그 스택 둘에만 건다.** 실험실은 세 단이다 — `apps/react`·`apps/next.js`는
+  **이 임계값은 블로그 스택에만 건다.** 실험실은 세 단이다 — `apps/react`·`apps/next.js`는
   `eslint .`(경고 허용, `noInlineConfig` 없음)이고, `apps/typescript`·`apps/socket-server`는
-  **린트하지 않는다**(lint 스크립트도 eslint 설정 파일도 없다 — `check-types`·`test`만 돈다).
-  저장소 전체 eslint 설정은 넷뿐이다. 규율을 자산에만 거는 건 의도된 배분이다(루트 README
+  **린트하지 않는다**(lint 스크립트도 eslint 설정 파일도 없다). `apps/typescript`는
+  `check-types`·`test`가, `apps/socket-server`는 `check-types`만 돈다.
+  저장소 전체 eslint 설정은 여섯뿐이다. 규율을 자산에만 거는 건 의도된 배분이다(루트 README
   "블로그는 실제로 쓰는 자산이라 신중하게"). 실험 앱 코드를 고칠 때 블로그 기준을 강제하지
   말 것 — `apps/typescript`에서 `pnpm lint`를 찾지도 말 것
 
@@ -182,7 +232,8 @@ apps/blog/posts (원고)  →  packages/@blog/content  →  apps/blog/web
   supabase-js 전체를 끌면 Auth·Realtime·Storage·Functions 45KB gzip이 공개 페이지에 딸려오고
   그중 realtime+phoenix+storage 18.5KB는 어디서도 안 쓰는 죽은 코드였다),
   Admin은 `src/lib/platform/client.ts`(`@supabase/supabase-js`, auth 세션 + `functions.invoke`).
-  둘 다 Anon Key. `src/domain/analytics`의 배럴을 `index`·`admin`으로 나눈 이유가 이 분리다
+  둘 다 Anon Key. `src/domain/analytics`의 배럴을 `index`·`admin`으로 나눈 이유가 이 분리다 —
+  두 배럴이 하는 일은 이 클라이언트를 `@blog/analytics`의 저장소 팩토리에 꽂는 것뿐이다
 - **로컬 개발**: `supabase start/stop`으로 로컬 Supabase 인스턴스 실행 (Docker 기반, `pnpm dev`가 먼저 띄운다)
 - **마이그레이션**: `supabase/migrations/` 디렉토리에 SQL 파일로 스키마 관리. Edge Function은 `supabase/functions/admin-analytics`
 - **프로덕션 URL**: `.env.production`에 Supabase Cloud 프로젝트 URL/Key 설정
@@ -328,7 +379,7 @@ apps/blog/posts (원고)  →  packages/@blog/content  →  apps/blog/web
 
 #### 클라이언트 사이드 기능 (런타임)
 
-- **조회수 카운팅**: `useViewCount` 훅 → `@blog/content`의 `viewCookie`(6시간 쿨다운, RPC 전에 쿠키를 먼저 심어 두 탭 레이스 방지) → `src/domain/analytics` → `publicClient` RPC
+- **조회수 카운팅**: `useViewCount` 훅 → `@blog/content`의 `viewCookie`(6시간 쿨다운, RPC 전에 쿠키를 먼저 심어 두 탭 레이스 방지) → `src/domain/analytics` 배럴 → `@blog/analytics`의 저장소 → `publicClient` RPC
 - **댓글**: Giscus (GitHub Discussions 기반). `NEXT_PUBLIC_GISCUS_*` 4개가 모두 있을 때만 렌더
 - **Analytics 대시보드**: `/admin` 경로, React Query(`useSuspenseQuery`) + Recharts 차트. `AdminGuard`가 세션을 보고, 데이터는 Edge Function `admin-analytics` 경유
 - **검색**: `SearchDialog`가 열릴 때 빌드 산출물 `/search-index.json`을 fetch — 서버 없는 클라이언트 검색
@@ -392,12 +443,17 @@ apps/blog/posts (원고)  →  packages/@blog/content  →  apps/blog/web
 | `env.d.ts`                                   | `NEXT_PUBLIC_*` 8개를 `NodeJS.ProcessEnv`에 선언 — `noPropertyAccessFromIndexSignature` 아래서도 점 접근을 쓰기 위해(Next는 멤버 표현식만 인라인)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | `supabase/config.toml`                       | 로컬 Supabase 설정 (Auth, DB, Storage 등). `supabase/functions/admin-analytics`가 Admin RPC 프록시                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | `apps/blog/web/wrangler.jsonc`               | 블로그 정적 자산 Worker — `main` 없이 `assets.directory: ./out`만. `routes`에 `blog.sangwook.dev`를 `custom_domain: true`로, `account_id`에 계정을 선언해 **어느 계정의 어느 주소로 나가는지**를 저장소가 소유한다(계정 ID는 비밀값이 아니다 — 권한은 전부 `CLOUDFLARE_API_TOKEN`에 있고, 시크릿으로 두면 마스킹 때문에 로그에서 배포 대상을 확인할 수 없다. 워크플로는 `accountId`를 넘기지 않는다). `workers_dev: false`로 `*.workers.dev` 사본을 닫아 중복 콘텐츠를 없앴다. `html_handling: force-trailing-slash`가 `next.config.ts`의 `trailingSlash: true`와 짝이고(다만 이때 나가는 코드는 **307**이다 — Pages는 301이었다), `not_found_handling: 404-page`가 `out/404.html`을 물린다                                                                                                              |
+| `apps/blog/web-svelte/wrangler.jsonc`        | SvelteKit 판 정적 자산 Worker(`blog-svelte`) — `assets.directory: ./build`. **`routes`가 없다**: 커스텀 도메인도 트래픽도 없이 `preview_urls: true`로 프리뷰 URL만 연다(`workers_dev: false`). `html_handling`·`not_found_handling`은 React 판과 같은 값이라 두 사이트가 같은 URL 계약 위에서 비교된다                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `apps/blog/web-svelte/static/_headers`       | 전 경로 `X-Robots-Tag: noindex`(프로덕션 도메인이 없으니 색인될 이유가 없다. React 판은 프리뷰 호스트에만 건다) + `/_app/immutable/*`에 1년 `immutable` — SvelteKit이 그 디렉터리에만 콘텐츠 해시를 박는다                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | `apps/blog/web/public/_headers`              | 자산 응답 헤더 규칙(Workers가 파싱, 파일 자체는 서빙되지 않는다). 콘텐츠 해시가 박힌 `/_next/static/*`에만 `immutable`을 건다 — 기본값 `max-age=0, must-revalidate`면 재방문자가 홈에서만 14개 자산을 조건부 요청으로 다시 확인하고, 그중 렌더 블로킹 CSS가 있어 첫 페인트가 왕복 한 번 늦어진다. **HTML은 일부러 기본값을 유지한다**(캐시를 걸면 새 글 발행이 늦게 반영된다). `/og/*.png`·`/favicon.ico`는 파일명이 고정이라(`{slug}.png`) `immutable` 대상이 아니다 — 다만 og 카드는 소셜 미리보기 전용이 아니라 `resolveThumbnailSrc`를 통해 **글 페이지 히어로로도 렌더된다**(33개 페이지). 재방문 이득이 실재하므로 짧은 `max-age`나 파일명 해시화가 후속 과제로 남아 있다. 두 번째 규칙은 프리뷰 URL(`*.*.workers.dev`)에 `X-Robots-Tag: noindex` — `preview_urls: true`가 여는 색인 표면을 닫는다 |
-| `.github/workflows/preview-blog.yml`         | PR 프리뷰 — `wrangler versions upload`로 버전만 올리고(트래픽 이동 없음) 프리뷰 URL을 PR에 sticky 코멘트. `environment:`를 쓰지 않는다                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `.github/workflows/preview-blog.yml`         | PR 프리뷰 — `wrangler versions upload`로 버전만 올리고(트래픽 이동 없음) 프리뷰 URL을 PR에 sticky 코멘트. `environment:`를 쓰지 않는다. **앱 둘을 매트릭스로 돌린다**(Next.js·SvelteKit) — 각자 자기 Worker·자기 sticky 코멘트다. 체크 이름을 `name: ${{ matrix.check }}`로 못 박아 Next 쪽이 예전 이름(`preview`)을 유지한다: 안 박으면 GitHub이 `preview (web)`으로 바꿔 required check가 영영 대기 상태가 된다                                                                                                                                                                                                                                                                                                                                                                                        |
 | `.github/workflows/deploy-blog.yml`          | CI/CD 배포 워크플로우 — `cloudflare/wrangler-action`으로 Workers에 올린다. PR CI(`ci.yml`)와 `.github/actions/quality-checks` composite action을 공유한다. `environment: github-pages`는 이름만 잔재다 — 지금 하는 일은 배포 브랜치 게이트뿐이고, 빌드가 읽는 `NEXT_PUBLIC_*`은 전부 커밋된 `.env.production`에서 온다                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | `.github/workflows/supabase-migrations.yml`  | 프로덕션 스키마 적용 — `apps/blog/web/supabase/migrations/**`(와 이 워크플로 자신)가 바뀐 `main` push와 수동 실행에서만 돈다. `supabase migration list`로 원장↔파일 차이를 로그에 남긴 뒤 `db push`한다. `deploy-blog.yml`과 분리한 이유는 그쪽이 매일 cron으로도 돌기 때문이다 — 스키마 변경이 없는 날에도 프로덕션 DB에 접속하게 되고, 콘텐츠 발행과 스키마 변경이 한 실패 지점에 묶인다. 적용 경로를 사람 손(대시보드 SQL 에디터)에서 여기 하나로 고정한 것이 존재 이유다                                                                                                                                                                                                                                                                                                                             |
 | `apps/blog/posts/{series}/_series.yml`       | 시리즈 선언 — 이 파일이 있어야 시리즈. 표시명·설명·order 메타도 여기                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| `packages/@blog/content`                     | 콘텐츠 프레임워크 패키지 — 스키마·로더·공개 판정·URL 계약·빌드 스크립트·2층 검증. 문 두 개(`@blog/content` + `@blog/content/seo`) + `bin`의 `blog-content`, 소스 익스포트(빌드 스텝 없음). 내부는 `packages/@blog/content/README.md`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `packages/@blog/analytics`                   | 조회수·대시보드 도메인 패키지 — 순수 계산(개요·파생 통계)·계약(`AdminApi`·`AuthApi`)·저장소 팩토리·`database.types.ts`(`gen:types` 산출물)·Edge Function과 공유하는 `adminActions.ts`. **클라이언트를 만들지 않는다**(주입받는다) — `@supabase/*`는 타입으로만 쓰고, 값으로 여는 것은 `@blog/content/client` 하나다. 앱은 `src/domain/{analytics,auth}` 배럴로만 연다. 내부는 `packages/@blog/analytics/README.md`                                                                                                                                                                                                                                                                                                                                                                                       |
+| `packages/@blog/content`                     | 콘텐츠 프레임워크 패키지 — 스키마·로더·공개 판정·URL 계약·빌드 스크립트·2층 검증. 문 셋(`@blog/content` + `@blog/content/seo` + 클라이언트용 `@blog/content/client`) + `bin`의 `blog-content`, 소스 익스포트(빌드 스텝 없음). 내부는 `packages/@blog/content/README.md`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| `packages/@blog/diagram`                     | 선언형 다이어그램의 **좌표 계산기** — 프레임워크를 모른다(숫자만 낸다). 그리는 일(SVG 요소·색·클래스)은 앱의 몫이다. React 판과 SvelteKit 판이 같은 좌표를 쓰므로 같은 원고가 두 사이트에서 픽셀 단위로 같은 그림이 된다                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `packages/@blog/site-values`                 | **이 사이트의 값** — 순수 리터럴(값 import 없음). 두 앱이 함께 읽는 단일 출처다. 사본을 두면 한쪽만 고쳤을 때 두 산출물이 **조용히** 갈린다. **번들 규칙(`BUNDLE_GUARDS`)은 여기 없다** — 마커가 프레임워크의 어휘라 앱마다 자기 것을 선언하고, 이 패키지는 규칙이 쓰는 경로 접두까지만 준다. 개별 상수가 1차, 그룹 객체는 설정 배선 전용(번들러는 객체 필드를 못 털어낸다)                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | `…content/src/scripts/build-content.ts`      | predev:web/prebuild 통합 진입점 (validate → sync/sitemap/rss/og-images/thumbnails/search/llms-full/llms 병렬) — 앱 package.json은 `blog-content build`로 부른다                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | `…content/src/scripts/cli/`                  | `bin`의 진입점. `index.ts`가 실행, `program.ts`가 commander로 서브커맨드·옵션을 정의하고 단계 모듈을 동적 import한다. 단계나 플래그를 더할 때 고칠 곳                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `…content/src/scripts/check-seo.ts`          | 빌드 산출물 SEO 검사 (CI 게이트). 산출물 레지스트리는 같은 폴더의 `artifacts.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
@@ -420,4 +476,6 @@ apps/blog/posts (원고)  →  packages/@blog/content  →  apps/blog/web
   버전이 서로 물려 돌아서 소비자가 하나뿐인 플러그인도 여기 둔다)만 적고 숫자는 쓰지
   않는다. 예외는 `peerDependencies` — 핀이 아니라 호환 범위 선언이라 넓게 둔다
 - 테스트 러너는 워크스페이스 전부 **Vitest** 하나다. 갈리는 것은 환경뿐이고, 환경이
-  둘인 `apps/blog/web`만 `test.projects`로 `node`(domain·lib) / `jsdom`(src)을 나눈다
+  둘인 `apps/blog/web`만 `test.projects`로 `node`(domain·lib) / `jsdom`(src)을 나눈다.
+  `apps/blog/web-svelte`도 node 하나다 — 화면을 렌더해 보는 대신 마크다운 변환·다이어그램과
+  차트의 좌표 계산·라우트 경로·검색처럼 **순수 함수로 떨어지는 계약**을 잠그기 때문이다
