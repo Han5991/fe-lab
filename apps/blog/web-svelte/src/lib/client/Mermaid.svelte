@@ -69,9 +69,12 @@
           const { svg } = await mermaid.render(`mermaid-${i}`, source);
           if (cancelled()) return;
           host.innerHTML = svg;
-          // 코드 블록 껍데기(<div><pre><code>)를 통째로 바꾼다.
-          const shell = block.closest('pre')?.parentElement ?? block;
-          shell.replaceWith(host);
+          // mermaid 펜스는 코드 블록 상자(<figure>)로 감싸지 않는다 —
+          // `server/markdown/codeBlock.ts`가 다른 렌더러의 몫이라며 건너뛴다.
+          // 그래서 바꿀 것은 `<pre>` 하나다. 부모를 바꾸면 그 부모가 본문
+          // (`#post-content`) 전체라, 다이어그램 하나가 글을 통째로 지운다.
+          const target = block.closest('pre') ?? block;
+          target.replaceWith(host);
         } catch {
           // 문법 오류난 다이어그램 하나가 나머지를 막지 않는다. 소스는
           // 코드 블록으로 그대로 남으므로 글쓴이가 무엇이 문제인지 볼 수 있다.
