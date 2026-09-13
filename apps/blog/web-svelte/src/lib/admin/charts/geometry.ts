@@ -70,13 +70,6 @@ export function project(points: Point[], box: PlotBox): Coord[] {
   });
 }
 
-/** 꺾은선 `d`. 점이 없으면 빈 문자열 — `<path d="">`는 아무것도 그리지 않는다. */
-export function linePath(points: Point[], box: PlotBox): string {
-  const coords = project(points, box);
-  if (coords.length === 0) return '';
-  return coords.map(([x, y], i) => `${i === 0 ? 'M' : 'L'}${x} ${y}`).join(' ');
-}
-
 /**
  * 부드러운 선·면 `d` — Recharts `<Area type="monotone">`과 **같은 곡선**이다.
  * 둘 다 d3-shape의 `curveMonotoneX`를 쓴다(Recharts는 victory-vendor로 벤더링한
@@ -84,7 +77,7 @@ export function linePath(points: Point[], box: PlotBox): string {
  * 갈리는 일은 없다 — 직접 구현하면 그 보장이 사라진다.
  *
  * 스파크라인은 이걸 쓰지 않는다 — React 판이 거기서는 `<polyline>`이라,
- * 곡선을 주면 오히려 갈린다. 그래서 직선 `linePath`가 따로 남아 있다.
+ * 곡선을 주면 오히려 갈린다. 그쪽 좌표는 `sparkCoords`가 따로 만든다.
  */
 export function monotoneLinePath(points: Point[], box: PlotBox): string {
   return (
@@ -104,6 +97,51 @@ export function monotoneAreaPath(points: Point[], box: PlotBox): string {
       .y1(c => c[1])
       .curve(curveMonotoneX)(project(points, box)) ?? ''
   );
+}
+
+/**
+ * 스파크라인 좌표 — **`project`와 스케일이 다르다.**
+ *
+ * 여기는 계열의 min→max를 높이에 꽉 채우고, `project`는 0→max다. React 판이
+ * 그렇게 나뉘어 있다(`Sparkline.tsx` 대 Recharts `<YAxis>`) — KPI 숫자 옆의
+ * 작은 선은 절대량이 아니라 **모양**을 보여주는 것이라, 0을 바닥에 붙이면
+ * 값이 큰 계열에서 변화가 납작해져 선이 거의 수평이 된다. 축이 없으니
+ * 바닥이 0이라고 읽힐 일도 없다.
+ *
+ * 여백도 없다 — w×h를 그대로 쓴다. 24px 높이에서 3px 패딩은 진폭의 25%다.
+ *
+ * `range`가 0인 계열(값이 전부 같다)은 1로 떨어뜨린다. 그냥 나누면 전부
+ * NaN이 되어 선이 사라지는데, 조회수가 며칠 연속 같은 것은 흔한 일이다.
+ */
+export function sparkCoords(values: number[], w: number, h: number): Coord[] {
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const range = max - min || 1;
+  const step = values.length > 1 ? w / (values.length - 1) : 0;
+  return values.map((value, i) => [
+    values.length > 1 ? i * step : w / 2,
+    h - ((value - min) / range) * h,
+  ]);
+}
+
+/**
+ * `<polyline points>` 문자열. React 판과 **소수점 자리까지 같다**(`toFixed(2)`) —
+ * 두 산출물을 문자열로 대조할 수 있어야 파리티를 눈이 아니라 테스트로 잠근다.
+ */
+export function sparkPoints(values: number[], w: number, h: number): string {
+  if (values.length === 0) return '';
+  return sparkCoords(values, w, h)
+    .map(([x, y]) => `${x.toFixed(2)},${y.toFixed(2)}`)
+    .join(' ');
+}
+
+/**
+ * 선 아래를 채우는 면. 점이 하나면 빈 문자열이다 — 폭이 0인 면은 그릴 것이
+ * 없는데 path는 남아 렌더러마다 다르게 처리된다(React 판도 같은 가드).
+ */
+export function sparkFillPath(values: number[], w: number, h: number): string {
+  if (values.length < 2) return '';
+  return `M0,${h} L${sparkPoints(values, w, h).replaceAll(' ', ' L')} L${w},${h} Z`;
 }
 
 /**

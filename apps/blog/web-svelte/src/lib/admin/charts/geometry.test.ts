@@ -1,10 +1,12 @@
 import { expect, test } from 'vitest';
 import {
   DEFAULT_BOX,
-  linePath,
   monotoneAreaPath,
   monotoneLinePath,
   project,
+  sparkCoords,
+  sparkFillPath,
+  sparkPoints,
   scaleMax,
   thinLabels,
   yTicks,
@@ -33,7 +35,6 @@ test('전부 0인 계열에서도 좌표가 NaN이 되지 않는다', () => {
 });
 
 test('빈 계열은 빈 path다 — 던지지 않는다', () => {
-  expect(linePath([], DEFAULT_BOX)).toBe('');
   expect(monotoneLinePath([], DEFAULT_BOX)).toBe('');
   expect(monotoneAreaPath([], DEFAULT_BOX)).toBe('');
   expect(project([], DEFAULT_BOX)).toStrictEqual([]);
@@ -69,8 +70,8 @@ test('추이 선은 곡선이고 스파크라인은 직선이다', () => {
   expect(curved).toContain('C');
 
   // 스파크라인은 React 판이 `<polyline>`이라 직선이어야 한다 — 여기에
-  // 곡선을 주면 두 사이트가 오히려 갈린다.
-  expect(linePath(points(1, 5, 2, 8), DEFAULT_BOX)).not.toContain('C');
+  // 곡선을 주면 두 사이트가 오히려 갈린다. 그쪽은 path가 아니라 points다.
+  expect(sparkPoints([1, 5, 2, 8], 96, 24)).not.toContain('C');
 });
 
 test('점이 하나여도 곡선 path가 NaN을 내지 않는다', () => {
@@ -106,4 +107,26 @@ test('x 라벨은 솎아 내되 처음과 끝은 남긴다', () => {
   expect(flags.filter(Boolean).length).toBeLessThanOrEqual(7);
   // 개수가 적으면 전부 남긴다.
   expect(thinLabels(points(1, 2, 3), 6)).toStrictEqual([true, true, true]);
+});
+
+test('스파크라인은 0이 아니라 계열의 min을 바닥에 둔다', () => {
+  // React 판(`Sparkline.tsx`)이 그렇다. 0을 바닥에 붙이면 값이 큰 계열에서
+  // 변화가 납작해져 선이 거의 수평이 된다 — 축이 없어 바닥을 0으로 읽을
+  // 일도 없다. `project`(영역 차트)는 반대로 0→max다.
+  const coords = sparkCoords([100, 110], 100, 20);
+  expect(coords[0]?.[1]).toBe(20); // min이 바닥
+  expect(coords[1]?.[1]).toBe(0); // max가 천장
+  // 같은 값을 0→max로 재면 둘 다 천장 근처에 붙어 구분되지 않는다.
+});
+
+test('값이 전부 같은 계열도 선이 사라지지 않는다', () => {
+  // range가 0이면 나눗셈이 NaN을 낳는다. 조회수가 며칠 연속 같은 것은 흔하다.
+  expect(sparkPoints([7, 7, 7], 96, 24)).not.toContain('NaN');
+});
+
+test('스파크라인은 점이 둘 미만이면 면을 그리지 않는다', () => {
+  // 폭이 0인 면은 그릴 것이 없는데 path는 남아 렌더러마다 다르게 처리된다.
+  expect(sparkFillPath([], 96, 24)).toBe('');
+  expect(sparkFillPath([5], 96, 24)).toBe('');
+  expect(sparkFillPath([1, 2], 96, 24)).not.toBe('');
 });

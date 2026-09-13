@@ -120,7 +120,8 @@
             })}
           >
             <span class={kpiNum}>{fmtNum(overview.total)}</span>
-            <Sparkline values={overview.totalSeries.map(p => p.value)} />
+            <!-- 80×32는 React 판 `KpiCard`가 넘기는 크기다. -->
+            <Sparkline values={overview.totalSeries.map(p => p.value)} w={80} h={32} />
           </div>
           {#if overview.totalDelta !== null}
             <span class={kpiLabel}>
