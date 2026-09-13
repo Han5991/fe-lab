@@ -99,6 +99,11 @@ test('mermaid 펜스는 코드 블록으로 굽지 않는다', () => {
   const html = fence('mermaid', 'graph TD; A-->B;');
   expect(html).not.toContain('language-mermaid"><span');
   expect(html).toContain('graph TD');
+  // 상자(<figure>)로도 감싸지 않는다. 클라이언트 `Mermaid.svelte`가 이 모양을
+  // 전제로 `<pre>` 하나만 그림으로 바꾼다 — 여기서 감싸기 시작하면 그림 옆에
+  // 빈 상자가 남으니 그쪽도 함께 고칠 것.
+  expect(html).not.toContain('<figure');
+  expect(html.trim()).toMatch(/^<pre><code class="language-mermaid">/);
 });
 
 test('강조된 코드가 원문을 한 글자도 잃지 않는다', () => {
