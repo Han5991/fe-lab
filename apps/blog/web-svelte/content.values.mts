@@ -100,6 +100,26 @@ export const BUNDLE_GUARDS = [
     requiredIn: [{ kind: 'initial', of: { under: '/admin/' } }],
   },
   {
+    // 차트 곡선 계산(d3-shape). Recharts의 `type="monotone"`이 이 곡선이라
+    // 추이 차트만 그것을 쓰는데, 그림이 admin 전용이므로 공개 페이지 첫 로드에
+    // 올 이유가 없다.
+    //
+    // **React 판의 `recharts` 규칙에 대응한다.** 오래도록 이 앱에는 대응 규칙이
+    // 없었다 — SVG를 직접 그려 라이브러리 마커가 없었기 때문이고, 그동안 차트
+    // 코드가 공개 청크로 새도 잡히지 않았다. 마커는 minify를 견디는 것으로
+    // 골랐다(실측: `curveMonotoneX`는 남는다. 내부 이름 `monotoneX`도 남지만
+    // 그건 우리 코드에서도 나올 수 있는 흔한 조각이다).
+    //
+    // **`chunks`가 아니라 `initial`을 막고, admin도 예외가 아니다.** 차트는
+    // `AdminGuard` 뒤라 어느 페이지에서도 첫 로드에 올 이유가 없다 — 실제로
+    // `initial` + `under: '/admin/'`을 양성 대조로 걸었더니 마커가 없어 실패했다.
+    // 늦게 온다는 뜻이고, 그게 맞는 동작이다. mermaid 규칙과 같은 모양이다.
+    label: 'admin 차트 곡선(d3-shape)',
+    marker: 'curveMonotoneX',
+    forbiddenIn: [{ kind: 'initial' }],
+    requiredIn: [{ kind: 'chunks' }],
+  },
+  {
     // 비공개 글까지 담긴 인덱스. 공개 화면이 이걸 받으면 draft 제목이 노출된다.
     label: 'admin 전용 산출물(비공개 글 인덱스)',
     marker: 'admin-posts-index',
