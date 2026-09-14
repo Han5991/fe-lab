@@ -24,6 +24,15 @@ overrides:
   # 때문에 lock file maintenance가 두 벌을 취약한 0.7.3 한 벌로 dedupe해 버린다.
   # 제거 조건: satori가 0.7.5+로 핀을 올리면 삭제.
   fflate: 0.8.3
+  # mermaid가 chevrotain을 `~11.1.2`로 고정하고, chevrotain(및 @chevrotain/gast·
+  # @chevrotain/cst-dts-gen)은 그 안에서 lodash-es를 4.17.23으로 exact 핀 고정해
+  # GHSA-r5fr-rjxr-66jc(high, `_.template` 코드 인젝션)·GHSA-f23m-r3pf-42rh(moderate,
+  # `_.unset`/`_.omit` prototype pollution)를 report한다. 패치는 4.18.1. chevrotain은
+  # 13.2.0에서 lodash-es 의존성 자체를 없앴지만 mermaid의 범위(~11.1.2)가 그 승급을
+  # 막아 in-range 승급이 불가능하다. 형제 의존자 dagre-d3-es(mermaid 경유)는 이미
+  # ^4.18.1이라 이 오버라이드가 두 벌을 패치된 4.18.1 한 벌로 dedupe한다.
+  # 제거 조건: mermaid가 chevrotain 12+(lodash-es 미의존)로 범위를 올리면 삭제.
+  lodash-es: 4.18.1
 
 allowBuilds:
   esbuild: true
