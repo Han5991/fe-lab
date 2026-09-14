@@ -21,7 +21,7 @@
     "measure": "blog-content measure-bundle"
   },
   "engines": {
-    "node": ">=24.20.0"
+    "node": ">=24.21.0"
   },
   "devDependencies": {
     "@blog/analytics": "workspace:^",
