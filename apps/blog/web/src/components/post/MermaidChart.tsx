@@ -115,6 +115,14 @@ export function MermaidChart({ chart }: { chart: string }) {
           startOnLoad: false,
           // 'base' 만이 themeVariables를 받는다 — 'default'/'dark'는 자기 팔레트를 고집한다.
           theme: 'base',
+          // mermaid 12가 기본값을 바꾼 두 축을 v11 값으로 못박는다. 렌더는 어느 쪽이든
+          // 성공하므로 기본값을 따라가면 발행한 도표가 아무 경고 없이 달라진다.
+          //   look — 기본 'neo'는 노드에 drop-shadow 필터를 건다(색도 테마와 무관한
+          //          고정 회색). 블로그는 플랫이 원칙이라 그림자 장식을 쓰지 않는다.
+          //   layout — 기본이 ELK로 바뀌어 flowchart가 재배치된다(곡선 부채꼴 →
+          //          직각 가지). 글을 쓸 때 보고 고른 dagre 배치를 유지한다.
+          look: 'classic',
+          layout: 'dagre',
           themeVariables: {
             ...themeVariables,
             fontFamily:
