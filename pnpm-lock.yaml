@@ -419,7 +419,7 @@ importers:
         version: 4.129.0(@cloudflare/workers-types@5.20260903.1)
 
   apps/blog/web-svelte:
-    dependencies:
+    devDependencies:
       '@blog/analytics':
         specifier: workspace:^
         version: link:../../../packages/@blog/analytics
@@ -435,18 +435,54 @@ importers:
       '@design-system/ui':
         specifier: workspace:^
         version: link:../../../packages/@design-system/ui
+      '@eslint-community/eslint-plugin-eslint-comments':
+        specifier: catalog:lint
+        version: 4.7.2(eslint@10.9.1(jiti@2.7.0)(supports-color@10.2.2))
+      '@eslint/js':
+        specifier: catalog:lint
+        version: 10.0.1(eslint@10.9.1(jiti@2.7.0)(supports-color@10.2.2))
       '@fontsource-variable/jetbrains-mono':
         specifier: ^5.3.0
         version: 5.3.0
+      '@pandacss/dev':
+        specifier: 'catalog:'
+        version: 1.12.0(jsdom@30.0.1(@noble/hashes@1.8.0))(typescript@6.0.3)
       '@supabase/postgrest-js':
         specifier: 'catalog:'
         version: 2.115.0
       '@supabase/supabase-js':
         specifier: 'catalog:'
         version: 2.115.0
+      '@sveltejs/adapter-static':
+        specifier: ^3.0.10
+        version: 3.0.10(@sveltejs/kit@2.70.3(@sveltejs/vite-plugin-svelte@6.2.4(svelte@5.57.0(@typescript-eslint/types@8.69.0))(vite@8.2.2(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0)))(svelte@5.57.0(@typescript-eslint/types@8.69.0))(typescript@6.0.3)(vite@8.2.2(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0)))
+      '@sveltejs/kit':
+        specifier: ^2.49.2
+        version: 2.70.3(@sveltejs/vite-plugin-svelte@6.2.4(svelte@5.57.0(@typescript-eslint/types@8.69.0))(vite@8.2.2(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0)))(svelte@5.57.0(@typescript-eslint/types@8.69.0))(typescript@6.0.3)(vite@8.2.2(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0))
+      '@sveltejs/vite-plugin-svelte':
+        specifier: ^6.2.1
+        version: 6.2.4(svelte@5.57.0(@typescript-eslint/types@8.69.0))(vite@8.2.2(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0))
+      '@types/d3-shape':
+        specifier: ^3.2.0
+        version: 3.2.0
+      '@types/hast':
+        specifier: ^3.0.5
+        version: 3.0.5
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.13.3
       d3-shape:
         specifier: ^3.2.0
         version: 3.2.0
+      eslint:
+        specifier: catalog:lint
+        version: 10.9.1(jiti@2.7.0)(supports-color@10.2.2)
+      eslint-plugin-svelte:
+        specifier: ^3.14.0
+        version: 3.23.0(eslint@10.9.1(jiti@2.7.0)(supports-color@10.2.2))(svelte@5.57.0(@typescript-eslint/types@8.69.0))
+      globals:
+        specifier: catalog:lint
+        version: 17.12.0
       hastscript:
         specifier: ^9.0.1
         version: 9.0.1
@@ -477,49 +513,6 @@ importers:
       remark-rehype:
         specifier: ^11.1.2
         version: 11.1.2
-      unified:
-        specifier: ^11.0.5
-        version: 11.0.5
-      unist-util-visit:
-        specifier: ^5.1.0
-        version: 5.1.0
-    devDependencies:
-      '@eslint-community/eslint-plugin-eslint-comments':
-        specifier: catalog:lint
-        version: 4.7.2(eslint@10.9.1(jiti@2.7.0)(supports-color@10.2.2))
-      '@eslint/js':
-        specifier: catalog:lint
-        version: 10.0.1(eslint@10.9.1(jiti@2.7.0)(supports-color@10.2.2))
-      '@pandacss/dev':
-        specifier: 'catalog:'
-        version: 1.12.0(jsdom@30.0.1(@noble/hashes@1.8.0))(typescript@6.0.3)
-      '@sveltejs/adapter-static':
-        specifier: ^3.0.10
-        version: 3.0.10(@sveltejs/kit@2.70.3(@sveltejs/vite-plugin-svelte@6.2.4(svelte@5.57.0(@typescript-eslint/types@8.69.0))(vite@8.2.2(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0)))(svelte@5.57.0(@typescript-eslint/types@8.69.0))(typescript@6.0.3)(vite@8.2.2(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0)))
-      '@sveltejs/kit':
-        specifier: ^2.49.2
-        version: 2.70.3(@sveltejs/vite-plugin-svelte@6.2.4(svelte@5.57.0(@typescript-eslint/types@8.69.0))(vite@8.2.2(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0)))(svelte@5.57.0(@typescript-eslint/types@8.69.0))(typescript@6.0.3)(vite@8.2.2(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0))
-      '@sveltejs/vite-plugin-svelte':
-        specifier: ^6.2.1
-        version: 6.2.4(svelte@5.57.0(@typescript-eslint/types@8.69.0))(vite@8.2.2(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0))
-      '@types/d3-shape':
-        specifier: ^3.2.0
-        version: 3.2.0
-      '@types/hast':
-        specifier: ^3.0.5
-        version: 3.0.5
-      '@types/node':
-        specifier: 'catalog:'
-        version: 24.13.3
-      eslint:
-        specifier: catalog:lint
-        version: 10.9.1(jiti@2.7.0)(supports-color@10.2.2)
-      eslint-plugin-svelte:
-        specifier: ^3.14.0
-        version: 3.23.0(eslint@10.9.1(jiti@2.7.0)(supports-color@10.2.2))(svelte@5.57.0(@typescript-eslint/types@8.69.0))
-      globals:
-        specifier: catalog:lint
-        version: 17.12.0
       svelte:
         specifier: ^5.44.2
         version: 5.57.0(@typescript-eslint/types@8.69.0)
@@ -532,6 +525,12 @@ importers:
       typescript-eslint:
         specifier: catalog:lint
         version: 8.69.0(eslint@10.9.1(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)(typescript@6.0.3)
+      unified:
+        specifier: ^11.0.5
+        version: 11.0.5
+      unist-util-visit:
+        specifier: ^5.1.0
+        version: 5.1.0
       vite:
         specifier: ^8.2.2
         version: 8.2.2(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0)
