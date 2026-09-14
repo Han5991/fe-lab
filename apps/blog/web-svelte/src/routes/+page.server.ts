@@ -8,6 +8,7 @@ import {
 import { OG_DEFAULT_IMAGE } from '@blog/site-values';
 import { getAllPostSummaries, getSeriesMeta } from '$lib/server/content';
 import { seriesBadgeLabel } from '$lib/shared/seriesBadge';
+import type { PageServerLoad } from './$types';
 
 /** 허브에 노출할 최근 글 수. 대표 글 1개는 제외한 나머지에서 센다. */
 const RECENT_COUNT = 12;
@@ -44,7 +45,7 @@ function ownThumbnailSrc(post: PostSummary): string | undefined {
 }
 
 /** 홈 — 대표 글 1개 + 최근 글 목록. 요약만 내려보낸다. */
-export const load = () => {
+export const load: PageServerLoad = () => {
   const allPosts = getAllPostSummaries();
   const [featured] = allPosts;
 

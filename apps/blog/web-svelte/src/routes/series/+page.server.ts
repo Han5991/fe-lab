@@ -5,6 +5,7 @@ import {
   getSeriesMeta,
 } from '$lib/server/content';
 import { archivePath } from '@blog/content';
+import type { PageServerLoad } from './$types';
 
 /**
  * 시리즈 목록 — 시리즈마다 **소속 글까지** 붙인다.
@@ -14,7 +15,7 @@ import { archivePath } from '@blog/content';
  * 여기서 따로 정렬하지 않는다 — 두 곳이 갈리면 "다음 편"이 목록의 다음 글과
  * 달라진다.
  */
-export const load = () => {
+export const load: PageServerLoad = () => {
   const posts = getAllPostSummaries();
 
   const bySeries = new Map<string, typeof posts>();

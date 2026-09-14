@@ -1,6 +1,7 @@
 import { archivePath, postPath } from '@blog/content';
 import { MERGED_PR_COUNT_FALLBACK } from '@blog/site-values';
 import { getAllPostSummaries, getAllSeries } from '$lib/server/content';
+import type { PageServerLoad } from './$types';
 
 /**
  * About 페이지에 숫자로 뜨는 값들 — 헤더 통계 3칸과 시리즈 카드의 편수.
@@ -43,7 +44,7 @@ const FEATURED_SERIES = [
   },
 ] as const;
 
-export const load = () => {
+export const load: PageServerLoad = () => {
   const counts = new Map(getAllSeries().map(s => [s.id, s.count]));
 
   return {

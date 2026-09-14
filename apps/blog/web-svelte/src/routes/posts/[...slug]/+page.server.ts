@@ -17,12 +17,14 @@ import {
   getSeriesMeta,
 } from '$lib/server/content';
 import { renderPost } from '$lib/server/markdown';
+import type { EntryGenerator, PageServerLoad } from './$types';
 
 /**
  * 프리렌더 대상 열거 — 정적 export라 SvelteKit이 어떤 slug가 있는지 알아야 한다.
  * React 판의 `generateStaticParams`에 대응한다.
  */
-export const entries = () => getAllPostSlugs().map(slug => ({ slug }));
+export const entries: EntryGenerator = () =>
+  getAllPostSlugs().map(slug => ({ slug }));
 
 /**
  * rest 파라미터는 **후행 슬래시를 삼킨다.**
@@ -38,7 +40,7 @@ const normalizeSlug = (raw: string): string => raw.replace(/\/+$/, '');
 /** 메타 줄에 인라인시킬 태그 — 최대 4개, 각자 아카이브 필터로 간다. */
 const MAX_TAGS = 4;
 
-export const load = ({ params }: { params: { slug: string } }) => {
+export const load: PageServerLoad = ({ params }) => {
   const slug = normalizeSlug(params.slug);
   const post = getPostBySlug(slug);
   if (!post) error(404, `글을 찾을 수 없습니다: ${slug}`);

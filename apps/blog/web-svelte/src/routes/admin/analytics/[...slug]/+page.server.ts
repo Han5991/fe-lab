@@ -1,4 +1,5 @@
 import { getAllPostsIncludingHidden } from '$lib/server/content';
+import type { EntryGenerator, PageServerLoad } from './$types';
 
 /**
  * 프리렌더 대상 열거 — **비공개 글까지 전부** 만든다.
@@ -12,10 +13,10 @@ import { getAllPostsIncludingHidden } from '$lib/server/content';
  * Next의 catch-all은 배열을 받지만 SvelteKit의 rest 파라미터는 문자열 하나다.
  * `시리즈/파일명` 꼴이 그대로 들어가 `admin/analytics/시리즈/파일명/`으로 나간다.
  */
-export const entries = () =>
+export const entries: EntryGenerator = () =>
   getAllPostsIncludingHidden().map(post => ({ slug: post.slug }));
 
 /** 화면이 쓰는 slug. rest 파라미터가 후행 슬래시를 삼키는 문제는 공개 글 상세와 같다. */
-export const load = ({ params }: { params: { slug: string } }) => ({
+export const load: PageServerLoad = ({ params }) => ({
   slug: params.slug.replace(/\/+$/, ''),
 });

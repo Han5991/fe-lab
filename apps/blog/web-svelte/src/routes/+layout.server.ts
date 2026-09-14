@@ -1,6 +1,7 @@
 import { POSTS_PATH } from '@blog/content';
 import { OG_DEFAULT_IMAGE, SITE_NAME, SITE_URL } from '@blog/site-values';
 import { ABOUT_PATH, SERIES_PATH } from '$lib/shared/routes';
+import type { LayoutServerLoad } from './$types';
 
 /**
  * 모든 페이지가 쓰는 사이트 값·경로 — **서버에서 읽어 내려보낸다.**
@@ -20,7 +21,7 @@ import { ABOUT_PATH, SERIES_PATH } from '$lib/shared/routes';
  * 그 자리를 위해 패키지가 클라이언트 문을 따로 냈다
  * (`@blog/content/client`). 계약을 베껴 적는 대신 문을 쓴다.
  */
-export const load = () => ({
+export const load: LayoutServerLoad = () => ({
   site: { name: SITE_NAME, url: SITE_URL, ogDefaultImage: OG_DEFAULT_IMAGE },
   paths: { posts: POSTS_PATH, series: SERIES_PATH, about: ABOUT_PATH },
 });

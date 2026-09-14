@@ -12,6 +12,7 @@ import {
   getAllYears,
 } from '$lib/server/content';
 import type { ArchivePost } from '$lib/components/archive/types';
+import type { PageServerLoad } from './$types';
 
 /**
  * 아카이브 — 글 전체와 필터 그룹 셋(태그·시리즈·연도).
@@ -34,7 +35,7 @@ const toArchivePost = (post: PostSummary): ArchivePost => ({
   thumb: resolveThumbnailSrc(post, OG_DEFAULT_IMAGE),
 });
 
-export const load = () => ({
+export const load: PageServerLoad = () => ({
   posts: getAllPostSummaries().map(toArchivePost),
   seriesItems: getAllSeries().map(entry => ({
     id: entry.id,
