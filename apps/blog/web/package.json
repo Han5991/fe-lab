@@ -50,7 +50,7 @@
     "remark-gfm": "catalog:"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "5.20260910.1",
+    "@cloudflare/workers-types": "5.20260917.1",
     "@eslint-community/eslint-plugin-eslint-comments": "catalog:lint",
     "@eslint/js": "catalog:lint",
     "@next/eslint-plugin-next": "catalog:lint",
