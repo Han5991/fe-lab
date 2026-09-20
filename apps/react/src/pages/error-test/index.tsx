@@ -1,5 +1,6 @@
 import { useSimpleQuery } from '@/hooks';
 import { Suspense, useState, useTransition } from 'react';
+import { ErrorBoundary } from '@/components';
 import AsyncErrorPage from './AsyncErrorPage';
 
 const addComment = (comment: string | null) => {
@@ -60,9 +61,14 @@ const ErrorTest = () => {
       >
         Add Comment
       </button>
-      <Suspense fallback={<div>Loading...</div>}>
-        <AsyncErrorPage />
-      </Suspense>
+      {/* 비동기 섹션 - 독립적 Suspense + ErrorBoundary.
+          Suspense는 에러를 잡지 않으므로, 경계가 없으면 AsyncErrorPage의 reject가
+          이 페이지를 넘어 상위 경계까지 올라가 버튼까지 통째로 사라진다. */}
+      <ErrorBoundary>
+        <Suspense fallback={<div>Loading...</div>}>
+          <AsyncErrorPage />
+        </Suspense>
+      </ErrorBoundary>
     </div>
   );
 };

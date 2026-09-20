@@ -1,5 +1,5 @@
 import { act, render, screen } from '@testing-library/react';
-import { vi, describe, test, expect, beforeEach } from 'vitest';
+import { vi, describe, test, expect, afterEach, beforeEach } from 'vitest';
 import ErrorTest from '.';
 import * as hooks from '@/hooks';
 import { ErrorBoundary } from '@/components';
@@ -13,6 +13,11 @@ vi.mock('@/hooks', () => ({
 // 모든 테스트 전에 실행되는 초기화 코드
 beforeEach(() => {
   vi.resetAllMocks();
+});
+
+// spyOn으로 바꿔 둔 전역(Math.random 등)을 테스트마다 원래대로 돌려놓는다.
+afterEach(() => {
+  vi.restoreAllMocks();
 });
 
 describe('ErrorTest 컴포넌트', () => {
@@ -121,6 +126,34 @@ describe('ErrorTest 컴포넌트', () => {
 
     // console.error가 호출되었는지 확인
     expect(console.error).toHaveBeenCalled();
+  });
+
+  // React 19.3.0부터 <Suspense> 안에서 발생한 reject가 상위 에러 경계까지 올라간다.
+  // 경계를 두지 않으면 AsyncErrorPage의 실패가 ErrorTest 트리를 통째로 교체해
+  // 버튼이 사라진다.
+  test('비동기 섹션이 실패해도 페이지 본문은 살아남는다', async () => {
+    vi.spyOn(hooks, 'useSimpleQuery').mockReturnValue({
+      data: { message: 'Success!' },
+      error: null,
+      isLoading: false,
+    });
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    // asyncError는 Math.random() < 0.5일 때 reject한다 — 실패 쪽으로 고정한다.
+    vi.spyOn(Math, 'random').mockReturnValue(0.1);
+
+    await act(async () => {
+      render(
+        <ErrorBoundary>
+          <ErrorTest />
+        </ErrorBoundary>,
+      );
+    });
+
+    // 실패는 비동기 섹션 안에서 막히고, 바깥 버튼들은 그대로 남는다.
+    expect(screen.getByText('asyncError')).toBeInTheDocument();
+    expect(screen.getByText('error button')).toBeInTheDocument();
+    expect(screen.getByText('not error button')).toBeInTheDocument();
+    expect(screen.getByText('Add Comment')).toBeInTheDocument();
   });
 
   test('버튼 클릭 시 에러 발생 (Add Comment)', async () => {
