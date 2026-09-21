@@ -165,6 +165,7 @@ const AsyncErrorPage = ({ promise }: AsyncErrorProps) => {
 ```
 
 쓰는 쪽에서는 promise를 한 번만 만들어 넘기고, Suspense와 ErrorBoundary로 감쌉니다.
+여기 쓰인 `ErrorBoundary`는 라이브러리가 아니라 아래 3절에서 직접 구현하는 그 컴포넌트입니다.
 
 ```tsx
 // 여러분의 API 호출로 바꾸세요.
@@ -204,7 +205,7 @@ const Page = () => {
 promise를 새로 만들기 때문에, 요청이 어쩌다 성공하면 루프를 빠져나가며 에러가 있었다는 사실 자체가
 묻혀 버립니다. 19.3.0부터는 재시도 없이 곧장 경계로 올라옵니다.
 
-19.3.0 릴리스 노트에는 이 변경을 적은 항목이 없습니다. 버전을 올린 뒤 멀쩡하던 화면이 갑자기
+[19.3.0 릴리스 노트](https://github.com/react/react/releases/tag/v19.3.0)에는 이 변경을 적은 항목이 없습니다. 버전을 올린 뒤 멀쩡하던 화면이 갑자기
 fallback으로 바뀐다면, 이 형태부터 의심해 보시면 됩니다.
 
 참고로 이 글이 맨 위에서 링크한 예제 코드는 `use(promise || asyncError())` 형태를 일부러 그대로
