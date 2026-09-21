@@ -162,13 +162,20 @@ const AsyncErrorPage = ({ promise }: AsyncErrorProps) => {
   const data = use(promise);
   return <div>{data.message}</div>;
 };
+```
+
+쓰는 쪽에서는 promise를 한 번만 만들어 넘기고, Suspense와 ErrorBoundary로 감쌉니다.
+
+```tsx
+// 여러분의 API 호출로 바꾸세요.
+const fetchData = async (): Promise<{ message: string }> =>
+  (await fetch('/api/data')).json();
 
 const Page = () => {
   // 렌더마다 새로 만들지 않도록 promise를 한 번만 만들어 둡니다.
   const [promise] = useState(() => fetchData());
 
   return (
-    // Suspense는 로딩, ErrorBoundary는 에러 — 둘은 한 짝입니다.
     <ErrorBoundary>
       <Suspense fallback={<div>Loading...</div>}>
         <AsyncErrorPage promise={promise} />
