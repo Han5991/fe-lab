@@ -211,7 +211,7 @@ promise를 새로 만들기 때문에, 요청이 어쩌다 성공하면 루프�
 [19.3.0 릴리스 노트](https://github.com/react/react/releases/tag/v19.3.0)에는 이 변경을 적은 항목이 없습니다. 버전을 올린 뒤 멀쩡하던 화면이 갑자기
 fallback으로 바뀐다면, 이 형태부터 의심해 보시면 됩니다.
 
-참고로 이 글이 맨 위에서 링크한 예제 코드는 `use(promise || asyncError())` 형태를 일부러 그대로
+참고로 이 글이 맨 위에서 링크한 `index.tsx`가 불러오는 `AsyncErrorPage.tsx`는 `use(promise || asyncError())` 형태를 일부러 그대로
 두었습니다. 무작위로 실패하는 그 호출이 에러 경계를 시연하는 장치이기 때문입니다 — 데모라서
 그런 것이고, 실제 데이터 페칭에는 위의 형태를 씁니다.
 
