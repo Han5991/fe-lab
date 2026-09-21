@@ -5,6 +5,7 @@ status: published
 slug: 'react-error'
 excerpt: 'ErrorBoundary는 렌더링 중에 난 에러만 잡습니다. 클릭 핸들러와 비동기 요청에서 난 에러를 경계까지 끌어올리는 방법, 그리고 의도한 에러와 의도치 않은 에러를 나누어 다루는 기준을 예제 코드와 함께 정리했습니다.'
 thumbnail: '/og/react-error.png'
+updatedAt: '2026-09-21'
 ---
 
 ## 0. 프롤로그
@@ -150,16 +151,69 @@ use는 React 19에서 도입된 기능으로, 페이지에서 직접 호출하�
 반드시 사용해야 하는 것이 특징입니다. 또한, 간결한 문법을 통해 비동기 에러 핸들링을 보다 쉽게 구현할 수
 있습니다. [참고 링크](https://ko.react.dev/reference/react/use#dealing-with-rejected-promises)
 
-```tsx
-<Suspense fallback={<div>Loading...</div>}>
-  <AsyncErrorPage />
-</Suspense>;
+여기서 한 가지 짚고 갈 것이 있습니다. **Suspense는 로딩만 담당하고, 에러를 잡는 것은 ErrorBoundary의 몫입니다.**
+그래서 둘은 한 짝으로 써야 합니다. 경계를 두지 않으면 reject된 promise가 조상 경계까지 거슬러 올라가,
+Suspense 바깥에 있던 형제 요소까지 함께 fallback으로 덮여 버립니다.
 
-const AsyncErrorPage = () => {
-  const data = use(fetchData());
-  return <div>{data}</div>;
+```tsx
+type AsyncErrorProps = { promise: Promise<{ message: string }> };
+
+const AsyncErrorPage = ({ promise }: AsyncErrorProps) => {
+  const data = use(promise);
+  return <div>{data.message}</div>;
 };
 ```
+
+쓰는 쪽에서는 promise를 한 번만 만들어 넘기고, Suspense와 ErrorBoundary로 감쌉니다.
+여기 쓰인 `ErrorBoundary`는 라이브러리가 아니라 아래 3절에서 직접 구현하는 그 컴포넌트입니다.
+
+```tsx
+// 실제 API 호출로 바꾸는 자리입니다.
+const fetchData = async (): Promise<{ message: string }> =>
+  (await fetch('/api/data')).json();
+
+const Page = () => {
+  // 렌더마다 새로 만들지 않도록 promise를 한 번만 만들어 둡니다.
+  const [promise] = useState(() => fetchData());
+
+  return (
+    <ErrorBoundary>
+      <Suspense fallback={<div>Loading...</div>}>
+        <AsyncErrorPage promise={promise} />
+      </Suspense>
+    </ErrorBoundary>
+  );
+};
+```
+
+여기서는 `useState`로 promise를 한 번만 만들었지만, 실무에서는 앞서 본 tanstack-query 같은
+라이브러리가 이 캐싱을 대신해 줍니다.
+
+<callout type="warning" title="promise를 렌더 안에서 만들면 안 됩니다">
+
+`use(fetchData())`처럼 **렌더 중에** promise를 만들면 리렌더마다 새 promise가 생깁니다. React가 DEV 경고로
+알려주는 패턴이기도 하지만, 그 promise가 reject됐을 때의 동작이 React 19.3.0에서 조용히 바뀌었습니다.
+
+</callout>
+
+| `use()`에 넘긴 rejected promise | React 19.2.8                   | React 19.3.0     |
+| :------------------------------ | :----------------------------- | :--------------- |
+| 렌더 **밖**에서 만든 것         | 에러 경계가 잡음               | 동일 (변화 없음) |
+| 렌더 **중**에 만든 것           | 재시도 루프에 빠져 끝나지 않음 | 에러 경계가 잡음 |
+
+이 표는 `use()`에 넘길 promise를 반드시 reject되게 해 두고, 만드는 위치만 렌더 밖·안으로 바꿔 가며
+같은 테스트를 두 버전에서 돌려 얻은 것입니다. 난수 같은 다른 변수는 넣지 않았습니다.
+
+즉 19.2.8에서는 에러가 경계까지 오지 못하고 React가 렌더를 계속 다시 시도했습니다. 이때 매 재시도마다
+promise를 새로 만들기 때문에, 요청이 어쩌다 성공하면 루프를 빠져나가며 에러가 있었다는 사실 자체가
+묻혀 버립니다. 19.3.0부터는 재시도 없이 곧장 경계로 올라옵니다.
+
+[19.3.0 릴리스 노트](https://github.com/react/react/releases/tag/v19.3.0)에는 이 변경을 적은 항목이 없습니다. 버전을 올린 뒤 멀쩡하던 화면이 갑자기
+fallback으로 바뀐다면, 이 형태부터 의심해 보시면 됩니다.
+
+참고로 이 글이 맨 위에서 링크한 `index.tsx`가 불러오는 `AsyncErrorPage.tsx`는 `use(promise || asyncError())` 형태를 일부러 그대로
+두었습니다. 무작위로 실패하는 그 호출이 에러 경계를 시연하는 장치이기 때문입니다 — 데모라서
+그런 것이고, 실제 데이터 페칭에는 위의 형태를 씁니다.
 
 ## 3. 의도하지 않은 에러
 
@@ -265,7 +319,7 @@ export const BusinessOperation = () => {
 };
 ```
 
-## 3. 결론
+## 5. 결론
 
 지금까지 리액트에서 에러 객체를 활용해 에러 바운더리까지 전달하는 방법에 대해 알아보았습니다.
 
