@@ -168,7 +168,7 @@ const AsyncErrorPage = ({ promise }: AsyncErrorProps) => {
 여기 쓰인 `ErrorBoundary`는 라이브러리가 아니라 아래 3절에서 직접 구현하는 그 컴포넌트입니다.
 
 ```tsx
-// 여러분의 API 호출로 바꾸세요.
+// 실제 API 호출로 바꾸는 자리입니다.
 const fetchData = async (): Promise<{ message: string }> =>
   (await fetch('/api/data')).json();
 
@@ -189,7 +189,7 @@ const Page = () => {
 여기서는 `useState`로 promise를 한 번만 만들었지만, 실무에서는 앞서 본 tanstack-query 같은
 라이브러리가 이 캐싱을 대신해 줍니다.
 
-<callout type="warning" title="promise를 렌더 안에서 만들지 마세요">
+<callout type="warning" title="promise를 렌더 안에서 만들면 안 됩니다">
 
 `use(fetchData())`처럼 **렌더 중에** promise를 만들면 리렌더마다 새 promise가 생깁니다. React가 DEV 경고로
 알려주는 패턴이기도 하지만, 그 promise가 reject됐을 때의 동작이 React 19.3.0에서 조용히 바뀌었습니다.
@@ -210,7 +210,7 @@ fallback으로 바뀐다면, 이 형태부터 의심해 보시면 됩니다.
 
 참고로 이 글이 맨 위에서 링크한 예제 코드는 `use(promise || asyncError())` 형태를 일부러 그대로
 두었습니다. 무작위로 실패하는 그 호출이 에러 경계를 시연하는 장치이기 때문입니다 — 데모라서
-그런 것이고, 실제 데이터 페칭에는 위의 형태를 쓰세요.
+그런 것이고, 실제 데이터 페칭에는 위의 형태를 씁니다.
 
 ## 3. 의도하지 않은 에러
 
