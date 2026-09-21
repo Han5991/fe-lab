@@ -156,19 +156,30 @@ use는 React 19에서 도입된 기능으로, 페이지에서 직접 호출하�
 Suspense 바깥에 있던 형제 요소까지 함께 fallback으로 덮여 버립니다.
 
 ```tsx
-// Suspense는 로딩, ErrorBoundary는 에러 — 둘은 한 짝입니다.
-<ErrorBoundary>
-  <Suspense fallback={<div>Loading...</div>}>
-    <AsyncErrorPage promise={promise} />
-  </Suspense>
-</ErrorBoundary>;
+type AsyncErrorProps = { promise: Promise<{ message: string }> };
 
-// promise는 렌더 밖에서 만들어 넘깁니다.
-const AsyncErrorPage = ({ promise }: { promise: Promise<Data> }) => {
+const AsyncErrorPage = ({ promise }: AsyncErrorProps) => {
   const data = use(promise);
   return <div>{data.message}</div>;
 };
+
+const Page = () => {
+  // 렌더마다 새로 만들지 않도록 promise를 한 번만 만들어 둡니다.
+  const [promise] = useState(() => fetchData());
+
+  return (
+    // Suspense는 로딩, ErrorBoundary는 에러 — 둘은 한 짝입니다.
+    <ErrorBoundary>
+      <Suspense fallback={<div>Loading...</div>}>
+        <AsyncErrorPage promise={promise} />
+      </Suspense>
+    </ErrorBoundary>
+  );
+};
 ```
+
+여기서는 `useState`로 promise를 한 번만 만들었지만, 실무에서는 앞서 본 tanstack-query 같은
+라이브러리가 이 캐싱을 대신해 줍니다.
 
 <callout type="warning" title="promise를 렌더 안에서 만들지 마세요">
 
