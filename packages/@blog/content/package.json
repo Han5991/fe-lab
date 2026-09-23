@@ -18,9 +18,6 @@
   "dependencies": {
     "commander": "catalog:",
     "gray-matter": "^4.0.3",
-    "react-markdown": "catalog:",
-    "rehype-raw": "catalog:",
-    "remark-gfm": "catalog:",
     "satori": "^0.33.4",
     "sharp": "^0.35.4"
   },
@@ -28,8 +25,6 @@
     "@eslint-community/eslint-plugin-eslint-comments": "catalog:lint",
     "@eslint/js": "catalog:lint",
     "@types/node": "catalog:",
-    "@types/react": "catalog:",
-    "@types/react-dom": "catalog:",
     "@vitest/coverage-v8": "catalog:",
     "eslint": "catalog:lint",
     "jiti": "catalog:lint",
@@ -37,15 +32,9 @@
     "eslint-plugin-boundaries": "catalog:lint",
     "globals": "catalog:lint",
     "pretendard": "catalog:",
-    "react": "catalog:",
-    "react-dom": "catalog:",
     "typescript": "catalog:",
     "typescript-eslint": "catalog:lint",
     "vitest": "catalog:"
-  },
-  "peerDependencies": {
-    "react": "catalog:",
-    "react-dom": "catalog:"
   },
   "bin": {
     "blog-content": "./src/scripts/cli/index.ts"

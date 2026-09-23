@@ -194,7 +194,7 @@ export default defineConfig([
               ],
             },
             {
-              // 렌더 생성기(rss·og·thumbnails)만 React 스택을 만질 수 있다.
+              // 렌더 생성기(og·thumbnails)만 네이티브 이미지 스택(satori·sharp)을 만질 수 있다.
               from: { element: { type: 'render-build' } },
               allow: [
                 {
@@ -209,15 +209,7 @@ export default defineConfig([
                   to: {
                     module: {
                       origin: 'external',
-                      source: [
-                        'react',
-                        'react-dom',
-                        'react-markdown',
-                        'remark-gfm',
-                        'rehype-raw',
-                        'satori',
-                        'sharp',
-                      ],
+                      source: ['satori', 'sharp'],
                     },
                   },
                 },

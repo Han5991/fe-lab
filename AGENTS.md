@@ -150,7 +150,7 @@ Worker (`apps/blog/web/wrangler.jsonc`), Supabase for the dynamic bits.
 원고(`apps/blog/posts`) → `packages/@blog/content` → `apps/blog/web`. 코드만 봐선 안 보이는 규칙:
 
 - `@blog/content` 밖으로 여는 문은 `@blog/content`·`@blog/content/seo` 둘과 bin **`blog-content`** 하나뿐이다.
-  React·satori·sharp는 `scripts/render`에만. 상대 import가 전부 `.ts` 확장자를 달고 `erasableSyntaxOnly`라,
+  satori·sharp는 `scripts/render`에만. React는 의존하지 않는다(satori 입력 모양은 `OgNode`가 직접 선언). 상대 import가 전부 `.ts` 확장자를 달고 `erasableSyntaxOnly`라,
   shebang `node`의 type stripping만으로 로더 없이 돈다(앱 tsconfig에도 `allowImportingTsExtensions`가 필요).
 - 앱의 **app 레이어는 platform을 import할 수 없다** — Supabase 접근은 전부 `src/domain/*` 배럴 경유. **node 코어도
   못 만진다** — fs는 `@blog/content` 로더의 일(클라이언트 번들 누수 예방).

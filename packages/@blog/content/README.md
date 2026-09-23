@@ -66,7 +66,7 @@ shared → content(post) → seo → build(scripts) → render-build(scripts/ren
 | `content`      | `src/post`           | `shared` + node 코어 + `gray-matter`                                                                                    |
 | `seo`          | `src/seo`            | `shared`·`content` — 순수 계산(node 코어·외부 의존 없음)                                                                |
 | `build`        | `src/scripts`        | `shared`·`content`·`seo` + node 코어 + `gray-matter`                                                                    |
-| `render-build` | `src/scripts/render` | 위 전부 + `react`·`react-dom`·`react-markdown`·`remark-gfm`·`rehype-raw`·`satori`·`sharp`                               |
+| `render-build` | `src/scripts/render` | 위 전부 + `satori`·`sharp`                                                                                              |
 | `cli`          | `src/scripts/cli`    | 위 전부 + node 코어 + `commander` — 단계 모듈은 전부 **동적** import(부르지 않은 단계의 satori·sharp는 로드되지 않는다) |
 
 ```mermaid
@@ -75,7 +75,7 @@ flowchart LR
   L2["content · post<br/>+ gray-matter"]
   L3["seo<br/>순수 계산"]
   L4["build · scripts<br/>+ gray-matter"]
-  L5["render-build<br/>react · satori · sharp"]
+  L5["render-build<br/>satori · sharp"]
   L6["cli · scripts/cli<br/>commander 진입점"]
   L1 --> L2 --> L3 --> L4 --> L5
   L4 --> L6
@@ -84,8 +84,9 @@ flowchart LR
   class L5 highlight;
 ```
 
-- React 스택과 satori·sharp는 `render-build`만 만질 수 있다. RSS는 본문 전문 없이
-  요약만 싣는 순수 문자열 빌더(`generate-rss.ts`)다.
+- 네이티브 이미지 스택(satori·sharp)은 `render-build`만 만질 수 있다. 이 패키지는
+  React를 의존하지 않는다 — satori에 넘기는 엘리먼트 모양은 `generate-og-images.ts`의
+  `OgNode`가 직접 선언한다.
 - boundaries 블록은 `src/{shared,post,seo,scripts}/**`에만 건다. 최상위 배럴
   `src/index.ts`만 그 스코프 밖이고(`src/seo/index.ts`는 `seo` element 안에서 검사된다),
   새 파일을 `src/` 바로 아래 두면 경계 검사를 아예 받지 않으니 네 폴더 중 한 곳에 둘 것.
