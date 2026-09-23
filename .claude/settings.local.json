@@ -19,5 +19,9 @@
   },
   "enabledMcpjsonServers": ["supabase"],
   "disabledMcpjsonServers": ["next-devtools"],
-  "enabledPlugins": {}
+  "enabledPlugins": {},
+  "skillOverrides": {
+    "deep-learning-mode": "off",
+    "write-marketing-copy": "off"
+  }
 }
