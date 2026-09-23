@@ -13,7 +13,7 @@ export type PostStatus = (typeof POST_STATUSES)[number];
 /**
  * frontmatter 원시 형태. 이제 손으로 적은 목록이 아니라 **서술자 테이블에서
  * 파생**됩니다(`frontmatterSchema.ts`) — 키 목록이 네 곳(RawFrontmatter ·
- * parsePost · validate-posts 허용 키 · CLAUDE.md 표)에 흩어져 서로 다른 순서로
+ * parsePost · validate-posts 허용 키 · AGENTS.md 표)에 흩어져 서로 다른 순서로
  * 낡던 문제를 없애기 위해서입니다. "전 필드 unknown" 성질과 그 이유도 그쪽에
  * 있습니다.
  *

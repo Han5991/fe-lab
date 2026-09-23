@@ -3,7 +3,7 @@
  *
  * 예전에는 키 하나를 더하려면 네 곳을 손으로 맞춰야 했습니다:
  * (1) `types.ts`의 `RawFrontmatter`, (2) `repository.ts`의 `parsePost` 좁히기,
- * (3) `src/scripts/validate-posts.ts`의 허용 키 집합, (4) 루트 `CLAUDE.md`의 표.
+ * (3) `src/scripts/validate-posts.ts`의 허용 키 집합, (4) 루트 `AGENTS.md`의 표.
  * 넷은 실제로 서로 **다른 순서**를 들고 있었고, 어긋나도 아무것도 깨지지 않았습니다.
  *
  * 지금은 (1)이 이 테이블에서 파생되고(`RawFrontmatter`), (3)이 이 테이블을 읽고,
@@ -11,7 +11,7 @@
  * (2)만은 여전히 손으로 쓴 코드입니다 — 그 이유는 아래 `narrow` 설명에 적어
  * 두었습니다.
  *
- * **새 키를 추가할 때는 여기 한 줄 + CLAUDE.md 표 한 줄 + parsePost 한 줄**이면
+ * **새 키를 추가할 때는 여기 한 줄 + AGENTS.md 표 한 줄 + parsePost 한 줄**이면
  * 됩니다. 셋 중 하나만 하면 컴파일이나 테스트가 막습니다.
  *
  * lint 전용 정보(`REJECTED_FRONTMATTER_KEYS`의 거부 사유)가 도메인에 있는 것이
@@ -110,7 +110,7 @@ export interface FrontmatterField {
    */
   narrow: (value: unknown) => unknown;
   /**
-   * 루트 `CLAUDE.md`의 frontmatter 표 설명 셀 **원문**.
+   * 루트 `AGENTS.md`의 frontmatter 표 설명 셀 **원문**.
    *
    * 표를 생성하지 않는 대신 `frontmatterSchema.test.ts`가 이 문자열과 표를
    * 글자 단위로 대조합니다. 오타 하나를 고칠 때도 두 파일을 함께 고쳐야 하는
@@ -121,7 +121,7 @@ export interface FrontmatterField {
 }
 
 /**
- * 키 순서는 **CLAUDE.md 표와 같습니다**(필수 먼저). 동기화 테스트가 순서까지
+ * 키 순서는 **AGENTS.md 표와 같습니다**(필수 먼저). 동기화 테스트가 순서까지
  * 비교하므로, 사람이 읽는 표 쪽을 정본으로 삼았습니다.
  */
 export const FRONTMATTER_FIELDS = {
@@ -208,7 +208,7 @@ function isFrontmatterKey(key: string): key is FrontmatterKey {
   return Object.hasOwn(FRONTMATTER_FIELDS, key);
 }
 
-/** 선언 순서(= CLAUDE.md 표 순서)를 유지한 키 목록. */
+/** 선언 순서(= AGENTS.md 표 순서)를 유지한 키 목록. */
 export const FRONTMATTER_KEYS =
   Object.keys(FRONTMATTER_FIELDS).filter(isFrontmatterKey);
 

@@ -23,7 +23,7 @@ test('RULES: 규칙은 정확히 29개', () => {
 });
 
 test('RULES: --strict 승격(SEO_PUBLISH) 센티널은 정확히 6개', () => {
-  // 루트 CLAUDE.md의 prebuild 설명("경고로 두는 SEO 규칙 6개를 빌드 직전에는
+  // 루트 AGENTS.md의 prebuild 설명("경고로 두는 SEO 규칙 6개를 빌드 직전에는
   // 에러로 올린다")과 같은 집합이어야 한다.
   const promoted = Object.entries(RULES)
     .filter(([, spec]) => spec.severity === SEO_PUBLISH)
