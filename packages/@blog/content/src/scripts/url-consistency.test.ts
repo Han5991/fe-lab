@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
 import { buildSitemapXml } from './generate-sitemap.ts';
-import { buildRssXml } from './render/generate-rss.ts';
+import { buildRssXml } from './generate-rss.ts';
 import { buildLlmsText } from './generate-llms.ts';
 import { buildLlmsFullText } from './generate-llms-full.ts';
 import { postPath, postUrl } from '../post/urls.ts';

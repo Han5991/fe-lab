@@ -13,7 +13,7 @@ import { expect, test } from 'vitest';
 import { isPostVisible } from '../post/visibility.ts';
 import { testConfig, testContent } from '../post/testing.ts';
 import { buildSitemapXml, getPostPriority } from './generate-sitemap.ts';
-import { buildRssXml } from './render/generate-rss.ts';
+import { buildRssXml } from './generate-rss.ts';
 import {
   buildAdminPostsIndex,
   buildPublicSearchIndex,

@@ -33,9 +33,7 @@ function DemotedH1({
 }
 
 /**
- * 사이트 본문의 헤딩 매핑. RSS `content:encoded`(feedRenderer.ts)와 **같은
- * 태그 매핑**(@blog/content의 HEADING_TAG_MAP)에서 파생한다 —
- * 한쪽만 적용하면 피드 리더에서만 h1이 살아남아 같은 문제가 남는다.
+ * 사이트 본문의 헤딩 매핑. 태그는 @blog/content의 HEADING_TAG_MAP에서 파생한다.
  */
 export const HEADING_COMPONENTS: Pick<Components, 'h1'> = {
   h1: DemotedH1,

@@ -2,8 +2,7 @@ import { encodePostSlug } from './utils.ts';
 
 /**
  * 마크다운 본문 속 상대 URL(이미지 등)을 사이트 경로로 해석합니다.
- * 사이트 렌더링(MarkdownImage)과 RSS 전문 렌더링(generate-rss)이 공유하는
- * 단일 소스 — 두 곳의 경로 해석이 드리프트하지 않도록 여기서만 수정합니다.
+ * 사이트 렌더링(MarkdownImage)이 쓰는 단일 소스 — 경로 해석은 여기서만 수정합니다.
  *
  * - 절대 URL(프로토콜·`//`), 앵커(`#`), 루트 경로(`/...`)는 그대로 반환
  * - 상대 경로는 sync-posts가 복사하는 public/posts/ 기준으로 변환

@@ -14,7 +14,7 @@ interface MarkdownImageProps {
 /**
  * Markdown 이미지 렌더러.
  * 상대 경로 이미지를 올바른 URL로 변환하고 Zoom 기능을 추가합니다.
- * 경로 해석은 RSS 전문 렌더링과 공유하는 resolvePostAssetUrl 단일 소스를 사용.
+ * 경로 해석은 @blog/content의 resolvePostAssetUrl 단일 소스를 사용.
  */
 export function MarkdownImage({ src, alt, relativeDir }: MarkdownImageProps) {
   const imageSrc = src ? resolvePostAssetUrl(src, relativeDir) : '';

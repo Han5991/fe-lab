@@ -87,8 +87,8 @@ export type ArtifactSpec =
 /**
  * 각 산출물에서 **글 목록에 해당하는 자리**의 URL만 뽑아 포스트 URL로 좁힙니다.
  *
- * 문서 전체에서 정규식으로 긁으면 RSS `content:encoded`의 본문 링크와 이미지
- * 경로(`/posts/feconf/img/…`)까지 딸려 와 "rss에만 있는 글"로 오탐합니다.
+ * 문서 전체에서 정규식으로 긁으면 본문 링크와 이미지 경로(`/posts/feconf/img/…`)까지
+ * 딸려 와 "rss에만 있는 글"로 오탐합니다(RSS가 전문을 싣던 동안 실제로 그랬다).
  * 그래서 형식마다 목록 위치를 지정해서 읽습니다 — sitemap은 `<loc>`, rss는
  * `<guid>`, llms.txt·llms-full.txt는 마크다운 링크의 URL.
  *

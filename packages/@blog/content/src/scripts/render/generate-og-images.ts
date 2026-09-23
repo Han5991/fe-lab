@@ -138,14 +138,19 @@ export function displayTitle(title: string, series?: string): string {
 }
 
 /**
- * satori에 넘기는 엘리먼트 노드. satori의 인자 타입은 `ReactNode`이고, React
- * 엘리먼트는 `type`·`props`·**`key`** 셋을 요구한다 — 그래서 `key`가 여기 있다.
+ * satori에 넘기는 엘리먼트 노드 — **satori 입력 모양의 선언은 이 인터페이스가 쥔다.**
+ *
+ * satori는 React 엘리먼트 모양(`type`·`props`·`key`)의 객체 트리를 받는다. 이 패키지는
+ * React도 `@types/react`도 의존하지 않으므로 모양을 여기서 직접 선언하고, 트리는
+ * `el()`로만 만든다. `key`는 satori가 읽어 노드 key로 흘리는 필드라 둔다(값은 React가
+ * 키 없는 엘리먼트에 넣는 것과 같은 null).
+ *
+ * satori의 선언 파일은 인자 타입을 'react'의 `ReactNode`에서 가져온다. 그 타입이
+ * 풀리든(다른 워크스페이스의 `@types/react`가 끌어올려져 있을 때) 안 풀리든 이
+ * 트리는 그대로 통과한다 — 계약을 지키는 쪽은 `ReactNode`가 아니라 `OgNode`다.
  *
  * 예전에는 key 없이 만들고 `as unknown as Parameters<typeof satori>[0]`로 넘겼다.
- * 이중 단언은 "두 타입에 겹치는 게 없다"는 선언이라, 필드 하나가 모자란 대가로
- * **트리 전체가 검사 밖으로** 나갔다(자식 배열 모양도, 스타일 객체도). 값은
- * React가 키 없는 엘리먼트에 넣는 것과 같은 null이고, satori는 이 필드를 읽어
- * 노드 key로 그대로 흘린다.
+ * 이중 단언은 트리 전체를 검사 밖으로 내보냈다(자식 배열 모양도, 스타일 객체도).
  */
 interface OgNode {
   type: string;

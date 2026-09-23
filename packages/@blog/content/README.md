@@ -66,7 +66,7 @@ shared → content(post) → seo → build(scripts) → render-build(scripts/ren
 | `content`      | `src/post`           | `shared` + node 코어 + `gray-matter`                                                                                    |
 | `seo`          | `src/seo`            | `shared`·`content` — 순수 계산(node 코어·외부 의존 없음)                                                                |
 | `build`        | `src/scripts`        | `shared`·`content`·`seo` + node 코어 + `gray-matter`                                                                    |
-| `render-build` | `src/scripts/render` | 위 전부 + `react`·`react-dom`·`react-markdown`·`remark-gfm`·`rehype-raw`·`satori`·`sharp`                               |
+| `render-build` | `src/scripts/render` | 위 전부 + `satori`·`sharp`                                                                                              |
 | `cli`          | `src/scripts/cli`    | 위 전부 + node 코어 + `commander` — 단계 모듈은 전부 **동적** import(부르지 않은 단계의 satori·sharp는 로드되지 않는다) |
 
 ```mermaid
@@ -75,7 +75,7 @@ flowchart LR
   L2["content · post<br/>+ gray-matter"]
   L3["seo<br/>순수 계산"]
   L4["build · scripts<br/>+ gray-matter"]
-  L5["render-build<br/>react · satori · sharp"]
+  L5["render-build<br/>satori · sharp"]
   L6["cli · scripts/cli<br/>commander 진입점"]
   L1 --> L2 --> L3 --> L4 --> L5
   L4 --> L6
@@ -84,9 +84,9 @@ flowchart LR
   class L5 highlight;
 ```
 
-- React 스택은 `render-build`만 만질 수 있다. RSS 전문 HTML도 `generate-rss.ts`(순수
-  문자열 빌더)가 `render/feedRenderer.ts`를 **주입받아** 쓴다 — 빌더를 import해도
-  React가 딸려오지 않는다.
+- 네이티브 이미지 스택(satori·sharp)은 `render-build`만 만질 수 있다. 이 패키지는
+  React를 의존하지 않는다 — satori에 넘기는 엘리먼트 모양은 `generate-og-images.ts`의
+  `OgNode`가 직접 선언한다.
 - boundaries 블록은 `src/{shared,post,seo,scripts}/**`에만 건다. 최상위 배럴
   `src/index.ts`만 그 스코프 밖이고(`src/seo/index.ts`는 `seo` element 안에서 검사된다),
   새 파일을 `src/` 바로 아래 두면 경계 검사를 아예 받지 않으니 네 폴더 중 한 곳에 둘 것.
@@ -105,18 +105,18 @@ src/
 ├─ shared/     contentConfig(defineContent + ContentValues 계약) · contentPaths(절대 경로)
 │              · testValues(테스트 픽스처 — 패키지 안의 유일한 "어떤 사이트")
 │              · dates · format · guards · jsonLd · url · postFiles · prismLanguages
-│              · markdownHeadings(h1→h2 매핑, 사이트·RSS 공유) · viewCookie
+│              · markdownHeadings(h1→h2 매핑, 사이트 본문용) · viewCookie
 ├─ post/       createContent(인스턴스 조립) · repository(gray-matter 로더 factory) · service(읽기 API factory)
 │              · visibility(공개 판정 한 곳) · series(_series.yml factory) · urls(postPath·archivePath — 후행 슬래시는 여기서만)
 │              · filtering · aggregate · thumbnail · assetUrl · frontmatterSchema(서술자 테이블)
 │              · types · utils · testing(테스트 픽스처 인스턴스)
 ├─ seo/        postSeo — createPostSeo(buildPostSeo·buildPostJsonLd·buildBreadcrumbJsonLd) + 순수 계산
 └─ scripts/    build-content(진입점) · validate-posts + validate/{rules,frontmatter,body,corpus,shared}
-               · check-seo · check-bundle(번들 누수 마커) · artifacts(산출물 레지스트리 7종) · generate-{sitemap,search-index,llms,llms-full}
+               · check-seo · check-bundle(번들 누수 마커) · artifacts(산출물 레지스트리 7종) · generate-{sitemap,rss,search-index,llms,llms-full}
                · sync-posts · new-post
                · context(ContentContext — 스텝이 받는 실행 컨텍스트)
                ├─ cli/     index(bin 진입점) · program(commander 서브커맨드·옵션 정의) · discoverConfig(설정 발견·로드)
-               └─ render/  generate-rss · feedRenderer · generate-og-images(satori+sharp) · generate-thumbnails(sharp)
+               └─ render/  generate-og-images(satori+sharp) · generate-thumbnails(sharp)
 ```
 
 ## `build-content.ts` — 2단계

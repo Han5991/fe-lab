@@ -102,7 +102,7 @@ test('sitemap 추출: 아카이브(/posts/)와 정적 URL은 글로 세지 않�
   );
 });
 
-test('rss 추출: guid만 읽고 본문(content:encoded)의 링크·이미지는 세지 않는다', () => {
+test('rss 추출: guid만 읽고 description 등 다른 자리의 링크·이미지는 세지 않는다', () => {
   const rss = `<item><guid isPermaLink="true">${SITE_URL}/posts/a/</guid></item><item><description><![CDATA[<a href="${SITE_URL}/posts/딴글/">링크</a><img src="${SITE_URL}/posts/시리즈/img/x.png"/>]]></description></item>`;
   expect(extractFile('rss.xml', rss)).toStrictEqual(
     new Set([`${SITE_URL}/posts/a/`]),

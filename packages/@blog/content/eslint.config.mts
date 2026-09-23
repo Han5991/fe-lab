@@ -11,7 +11,7 @@ import tseslint from 'typescript-eslint';
  * 이 패키지의 소스는 앱 program에 소스째 섞이므로(소스 익스포트), 린트 기준이
  * 앱과 어긋나면 같은 파일이 위치에 따라 다른 판정을 받는다. 앱 구성에서 React·
  * Next 계열(react-hooks·jsx-a11y·@next/eslint-plugin-next)만 뺀 부분집합이다 —
- * 여기엔 컴포넌트가 없다(feedRenderer의 createElement 호출은 스크립트 코드다).
+ * 여기엔 컴포넌트가 없다.
  *
  * 레이어 경계(boundaries)는 앱에 있던 콘텐츠 레이어 모델을 그대로 옮겨 왔다:
  * shared → content(post) → seo → build(scripts) → render-build(scripts/render).
@@ -194,7 +194,7 @@ export default defineConfig([
               ],
             },
             {
-              // 렌더 생성기(rss·og·thumbnails)만 React 스택을 만질 수 있다.
+              // 렌더 생성기(og·thumbnails)만 네이티브 이미지 스택(satori·sharp)을 만질 수 있다.
               from: { element: { type: 'render-build' } },
               allow: [
                 {
@@ -209,15 +209,7 @@ export default defineConfig([
                   to: {
                     module: {
                       origin: 'external',
-                      source: [
-                        'react',
-                        'react-dom',
-                        'react-markdown',
-                        'remark-gfm',
-                        'rehype-raw',
-                        'satori',
-                        'sharp',
-                      ],
+                      source: ['satori', 'sharp'],
                     },
                   },
                 },
