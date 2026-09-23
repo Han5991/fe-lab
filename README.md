@@ -73,7 +73,7 @@ apps/blog/posts/**/_series.yml ─┤
 - **검증은 두 층 + 번들 게이트.** `validate-posts`가 frontmatter 원문을, `check-seo`가 최종 HTML을,
   `check-bundle`이 공개 페이지 JS 청크의 admin·서버 전용 코드 누수를 본다. 셋 다
   `pnpm build`(prebuild → next build → check-seo → check-bundle) 안에 있어 로컬·PR·배포가 같은 검사를 지난다.
-- 자세한 구조·스크립트·데이터 흐름은 [`apps/blog/web/README.md`](apps/blog/web/README.md), 운영 규칙과 콘텐츠 계약은 [`CLAUDE.md`](CLAUDE.md)의 "Blog Architecture" 절.
+- 자세한 구조·스크립트·데이터 흐름은 [`apps/blog/web/README.md`](apps/blog/web/README.md), 운영 규칙과 콘텐츠 계약은 [`AGENTS.md`](AGENTS.md)의 "Blog —" 절(§7–9).
 
 ---
 

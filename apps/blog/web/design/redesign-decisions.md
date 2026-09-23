@@ -10,7 +10,7 @@
 | :------------------------ | :---------------------------------------------- |
 | 색·크기·라운드 등 토큰    | `packages/@design-system/ui/src/blog-preset.ts` |
 | 디자인 시스템 수치와 근거 | `.claude/skills/blog-design-system/SKILL.md`    |
-| 디자인 금지선             | `CLAUDE.md` 의 "디자인 시스템 · 저작 문법" 절   |
+| 디자인 금지선             | `AGENTS.md` 의 "Blog — design guardrails" 절    |
 | 마크다운 커스텀 태그      | `.claude/skills/blog-components/SKILL.md`       |
 | 다이어그램 저작법         | `.claude/skills/blog-diagrams/SKILL.md`         |
 
@@ -40,7 +40,7 @@ GA 추적 코드를 함께 걷어냈다.
    본문 히어로다.
 
 **하지 않기로 한 것**: 화려한 인터랙션 위젯(Josh Comeau식), 캐릭터·일러스트, 세리프
-에세이 톤. 이 셋은 지금도 금지선으로 `CLAUDE.md` 에 남아 있다.
+에세이 톤. 이 셋은 지금도 금지선으로 `AGENTS.md` 에 남아 있다.
 
 그 밖의 레퍼런스: ishadeed.com(인라인 데모).
 
@@ -139,7 +139,7 @@ About 페이지 안의 섹션으로 들어갔다.
 
 frontmatter 스키마도 다르다. 실제 필수 키는 `status` · `title` · `date` 이고(`status` 가
 없으면 아예 포스트로 취급하지 않는다), `series` 는 frontmatter가 아니라 **폴더 경로**로
-정해진다. 전체 목록은 `CLAUDE.md` 의 frontmatter 표와
+정해진다. 전체 목록은 `AGENTS.md` 의 frontmatter 표와
 `packages/@blog/content/src/post/frontmatterSchema.ts` 의 서술자 테이블에 있다.
 
 ## 9. 사라진 참고 자료

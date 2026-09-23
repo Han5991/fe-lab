@@ -6,7 +6,7 @@
 프레임워크의 소비자이며, 화면·런타임(Supabase·검색·테마·댓글)·배포 산출물만 담당한다.
 
 운영 규칙(발행 판정, frontmatter 계약, SEO 게이트, 디자인 금지선)은 루트
-[`CLAUDE.md`](../../../CLAUDE.md)의 "Blog Architecture" 절이 단일 출처다. 이 문서는
+[`AGENTS.md`](../../../AGENTS.md)의 "Blog —" 절(§7–9)이 단일 출처다. 이 문서는
 **코드가 어떻게 놓여 있고 어떻게 흐르는지**만 다룬다.
 
 ---
@@ -171,7 +171,7 @@ apps/blog/web/
 
 | 무엇                                                      | 어디                                                                                          |
 | :-------------------------------------------------------- | :-------------------------------------------------------------------------------------------- |
-| 발행 판정 · frontmatter 계약 · SEO 게이트 · 디자인 금지선 | 루트 [`CLAUDE.md`](../../../CLAUDE.md) "Blog Architecture"                                    |
+| 발행 판정 · frontmatter 계약 · SEO 게이트 · 디자인 금지선 | 루트 [`AGENTS.md`](../../../AGENTS.md) §7–9                                                   |
 | 콘텐츠 프레임워크 내부(레이어·`defineContent`·스크립트)   | [`packages/@blog/content/README.md`](../../../packages/@blog/content/README.md)               |
 | 색·글꼴·레일·코드 블록 테마                               | `.claude/skills/blog-design-system/SKILL.md`, `packages/@design-system/ui/src/blog-preset.ts` |
 | 본문 커스텀 태그 문법                                     | `.claude/skills/blog-components/SKILL.md`                                                     |

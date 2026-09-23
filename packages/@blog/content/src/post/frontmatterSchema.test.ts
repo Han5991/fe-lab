@@ -5,7 +5,7 @@
  * 1. `RawFrontmatter` 타입 파생 — 컴파일 타임(매핑 타입)이라 테스트 불필요.
  * 2. `parsePost`의 좁히기 — 테이블 루프가 아니라 손으로 쓴 코드라서(그 이유는
  *    테이블의 `narrow` 주석 참고) **왕복 프로브**로 일치를 잠급니다.
- * 3. 루트 `CLAUDE.md`의 표 — 생성하지 않는 대신 글자 단위로 대조합니다.
+ * 3. 루트 `AGENTS.md`의 표 — 생성하지 않는 대신 글자 단위로 대조합니다.
  */
 import { expect, test } from 'vitest';
 import { readFileSync } from 'node:fs';
@@ -136,7 +136,7 @@ test('일부러 뺀 키는 허용 키와 겹치지 않고, 사유가 비어 있�
   expect(rejectionReasonFor('toString')).toBe(undefined);
 });
 
-// ── 5. 루트 CLAUDE.md 표 동기화 ──────────────────────────────────────────────
+// ── 5. 루트 AGENTS.md 표 동기화 ──────────────────────────────────────────────
 
 interface DocTableRow {
   key: string;
@@ -145,22 +145,22 @@ interface DocTableRow {
 }
 
 /**
- * 루트 CLAUDE.md의 frontmatter 표를 파싱합니다.
+ * 루트 AGENTS.md의 frontmatter 표를 파싱합니다.
  *
  * "Frontmatter 전체 목록" 문단과 그 다음 산문(`series` 설명) 사이의 마크다운
  * 표에서, 첫 셀이 `` `키` `` 형태인 행만 데이터로 봅니다(헤더·구분선 제외).
  * 설명 셀의 `\|`는 표 문법상의 이스케이프이므로 `|`로 되돌려 비교합니다.
  */
-function readClaudeMdTable(): DocTableRow[] {
-  const claudeMdPath = fileURLToPath(
-    new URL('../../../../../CLAUDE.md', import.meta.url),
+function readAgentsMdTable(): DocTableRow[] {
+  const agentsMdPath = fileURLToPath(
+    new URL('../../../../../AGENTS.md', import.meta.url),
   );
-  const content = readFileSync(claudeMdPath, 'utf8');
+  const content = readFileSync(agentsMdPath, 'utf8');
 
   const start = content.indexOf('**Frontmatter 전체 목록**');
   expect(
     start >= 0,
-    'CLAUDE.md에서 frontmatter 표 섹션을 찾을 수 없다',
+    'AGENTS.md에서 frontmatter 표 섹션을 찾을 수 없다',
   ).toBeTruthy();
   const end = content.indexOf('`series`는 frontmatter가 아니라', start);
   expect(
@@ -186,16 +186,16 @@ function readClaudeMdTable(): DocTableRow[] {
   return rows;
 }
 
-test('CLAUDE.md 표: 키 목록과 순서가 서술자 테이블과 같다', () => {
-  const rows = readClaudeMdTable();
+test('AGENTS.md 표: 키 목록과 순서가 서술자 테이블과 같다', () => {
+  const rows = readAgentsMdTable();
   expect(
     rows.map(row => row.key),
-    '키 집합이나 순서가 다르다 — 테이블(frontmatterSchema.ts)과 CLAUDE.md 표를 함께 고칠 것',
+    '키 집합이나 순서가 다르다 — 테이블(frontmatterSchema.ts)과 AGENTS.md 표를 함께 고칠 것',
   ).toStrictEqual(FRONTMATTER_KEYS);
 });
 
-test('CLAUDE.md 표: 필수 표시(✅)가 required와 같다', () => {
-  for (const row of readClaudeMdTable()) {
+test('AGENTS.md 표: 필수 표시(✅)가 required와 같다', () => {
+  for (const row of readAgentsMdTable()) {
     expect(
       row.required,
       `\`${row.key}\`의 필수 여부가 표와 테이블에서 다르다`,
@@ -203,8 +203,8 @@ test('CLAUDE.md 표: 필수 표시(✅)가 required와 같다', () => {
   }
 });
 
-test('CLAUDE.md 표: 설명 셀이 테이블의 doc과 글자 단위로 같다', () => {
-  for (const row of readClaudeMdTable()) {
+test('AGENTS.md 표: 설명 셀이 테이블의 doc과 글자 단위로 같다', () => {
+  for (const row of readAgentsMdTable()) {
     expect(
       row.doc,
       `\`${row.key}\`의 설명이 표와 테이블에서 다르다 — 한쪽만 고쳤다`,
