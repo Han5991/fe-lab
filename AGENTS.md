@@ -1,12 +1,18 @@
 # AGENTS.md
 
 Context, commands, and rules for AI agents in this repository (`fe-lab`). This is the **only** instruction file —
-Claude Code, Codex and the CI reviewer all read it. There is deliberately no CLAUDE.md: Claude Code loads
-AGENTS.md only when **no project CLAUDE.md** exists in any directory from the repo root down to where you work
-(verified on 2.1.280 — a nested one hides the root AGENTS.md too; the user-level file under your home directory does
-not count), so adding one back, even a one-line import, silently drops this file for that directory.
-Keep `apps/blog/web/AGENTS.md` (the Next.js block `next dev` maintains): if it goes missing, `next dev` scaffolds
-a CLAUDE.md next to it (Next's generate-agent-files.js in node_modules), which hides this file whenever you work in the blog app.
+Claude Code, Codex and the CI reviewer all read it. Edit this file, never the root CLAUDE.md: that one is a
+**symlink to this file**, and the link is load-bearing.
+
+- Claude Code reads AGENTS.md only through its `agents-md` built-in plugin, which a server-side feature flag switches
+  on (off by default in the binary). Where the flag doesn't arrive — nonessential traffic disabled, a rollout change,
+  possibly CI — an AGENTS.md-only repo loads **no instructions at all** (verified on 2.1.280: the answer came back
+  empty). CLAUDE.md is loaded unconditionally, so the symlink keeps this file loaded everywhere.
+- Content loads **once**: with a CLAUDE.md present, the plugin doesn't add AGENTS.md on top.
+- The blog app keeps the same pair: `apps/blog/web/AGENTS.md` is the Next.js block that `next dev` maintains, and
+  `apps/blog/web/CLAUDE.md` (`@AGENTS.md`) is how Claude Code reads it. Working there loads both the root and the
+  nested file (verified with and without the flag).
+- Don't delete the symlink. Without a CLAUDE.md, loading falls back to the flag.
 
 This file keeps only what the code cannot tell you: contracts, gotchas, rationale, and prohibitions. Code layout
 and runtime data flow live in `apps/blog/web/README.md` and `packages/@blog/content/README.md`. Writing a post

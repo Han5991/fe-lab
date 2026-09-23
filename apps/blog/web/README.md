@@ -75,7 +75,7 @@ apps/blog/web/
 ├─ panda.config.ts      preset 셋(Panda 기본 · @design-system/ui preset · blog-preset) · strictTokens · 생성물 outdir은 packages/@design-system/ui-lib(직접 수정 금지). @blog/content 소스도 스캔한다
 ├─ wrangler.jsonc       정적 자산 Worker — 도메인(routes, custom_domain)·계정(account_id — 비밀값 아님)·html_handling·not_found_handling(404 페이지)·workers_dev 끔·preview_urls 켬
 ├─ tsconfig.json(프로덕션) · tsconfig.test.json(테스트) · eslint.config.mts · turbo.json · env.d.ts
-├─ AGENTS.md            `next dev`가 관리하는 Next.js 에이전트 블록 — 지우면 `next dev`가 옆에 CLAUDE.md를 만들어 루트 AGENTS.md를 가린다
+├─ AGENTS.md · CLAUDE.md   `next dev`가 관리하는 Next.js 에이전트 블록과, Claude Code가 그것을 읽는 한 줄 import(`@AGENTS.md`). 둘이 한 짝이다
 └─ .env.production      (커밋된 유일한 env — Supabase URL/anon key, Giscus, 관리자 이메일. 왜 시크릿이 아닌지는 §5)
 ```
 
