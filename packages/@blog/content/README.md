@@ -112,11 +112,11 @@ src/
 │              · types · utils · testing(테스트 픽스처 인스턴스)
 ├─ seo/        postSeo — createPostSeo(buildPostSeo·buildPostJsonLd·buildBreadcrumbJsonLd) + 순수 계산
 └─ scripts/    build-content(진입점) · validate-posts + validate/{rules,frontmatter,body,corpus,shared}
-               · check-seo · check-bundle(번들 누수 마커) · artifacts(산출물 레지스트리 7종) · generate-{sitemap,search-index,llms,llms-full}
+               · check-seo · check-bundle(번들 누수 마커) · artifacts(산출물 레지스트리 7종) · generate-{sitemap,rss,search-index,llms,llms-full}
                · sync-posts · new-post
                · context(ContentContext — 스텝이 받는 실행 컨텍스트)
                ├─ cli/     index(bin 진입점) · program(commander 서브커맨드·옵션 정의) · discoverConfig(설정 발견·로드)
-               └─ render/  generate-rss · generate-og-images(satori+sharp) · generate-thumbnails(sharp)
+               └─ render/  generate-og-images(satori+sharp) · generate-thumbnails(sharp)
 ```
 
 ## `build-content.ts` — 2단계

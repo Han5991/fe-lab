@@ -1,8 +1,8 @@
 import { expect, test } from 'vitest';
 import { buildRssXml, escapeXml } from './generate-rss.ts';
 import type { RssPost } from './generate-rss.ts';
-import { parseScheduledDateKST as parseScheduledDateKSTIn } from '../../shared/dates.ts';
-import { TEST_VALUES } from '../../shared/testValues.ts';
+import { parseScheduledDateKST as parseScheduledDateKSTIn } from '../shared/dates.ts';
+import { TEST_VALUES } from '../shared/testValues.ts';
 
 const NOW = new Date('2026-05-16T00:00:00Z');
 const SITE = 'https://example.dev';

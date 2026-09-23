@@ -1,10 +1,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import type { SiteConfig, TimezoneConfig } from '../../shared/contentConfig.ts';
-import { parseScheduledDateKST } from '../../shared/dates.ts';
-import { postUrl, RSS_PATH, type PostSummary } from '../../post/index.ts';
-import { resolvePostSet } from '../artifacts.ts';
-import type { ContentContext } from '../context.ts';
+import type { SiteConfig, TimezoneConfig } from '../shared/contentConfig.ts';
+import { parseScheduledDateKST } from '../shared/dates.ts';
+import { postUrl, RSS_PATH, type PostSummary } from '../post/index.ts';
+import { resolvePostSet } from './artifacts.ts';
+import type { ContentContext } from './context.ts';
 
 /**
  * RSS XML 빌더 — 글마다 제목·링크·날짜·요약(excerpt)만 싣는 순수 문자열 조립.

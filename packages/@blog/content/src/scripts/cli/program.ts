@@ -44,7 +44,7 @@ const PLAIN_STEPS = [
   {
     name: 'rss',
     describe: 'RSS 피드(rss.xml) 생성 — 제목·링크·요약',
-    load: async () => (await import('../render/generate-rss.ts')).main,
+    load: async () => (await import('../generate-rss.ts')).main,
   },
   {
     name: 'og-images',

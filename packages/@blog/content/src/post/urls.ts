@@ -43,7 +43,7 @@ export const POSTS_PATH = '/posts/';
 
 /**
  * RSS 피드 경로. **설정이 아니라 상수다** — 피드를 만드는 것도, `public/`의 어느
- * 파일이 되는지 정하는 것도 패키지라(`scripts/render/generate-rss.ts`) 소비자가
+ * 파일이 되는지 정하는 것도 패키지라(`scripts/generate-rss.ts`) 소비자가
  * 고를 수 있는 값이 아니다. `/llms-full.txt`와 같은 부류다.
  *
  * 예전에는 `site.rssPath` 설정 항목이었는데, 정작 생성기 셋(rss·llms·llms-full)이
