@@ -23,7 +23,9 @@ packages/@blog/content         ← 소스 익스포트 패키지. 문 두 개: `
 apps/blog/web  (이 앱)
   ├─ content.values.mts   ← 이 사이트의 값 (순수 리터럴). 패키지에는 이 축들의 기본값이
   │                          없다 — 값의 소유자는 앱이다. 정체성(SITE·AUTHOR·TIMEZONE)에
-  │                          더해 sitemap 우선순위/정적 페이지·llms 산문까지.
+  │                          더해 sitemap 우선순위/정적 페이지·llms 산문·다이어그램 이름
+  │                          (DIAGRAM_NAMES)·작업 노트 이름(META_FILENAMES)·번들 규칙
+  │                          (BUNDLE_GUARDS)까지.
   │                          (og 팔레트·폰트는 여기 없다 — 파생값이라 content.config.mts가
   │                           themeColor()·join() 경로 조립으로 뽑는다)
   │                          개별 상수(SITE_URL·SITE_NAME…)가 1차이고 그룹 객체(SITE·
@@ -34,7 +36,7 @@ apps/blog/web  (이 앱)
   │                          위 값 모듈을 defineContent에 넘긴다.
   │                          CLI는 cwd walk-up으로 발견, 앱은 src/content.ts가 정적 import)
   ├─ src/content.ts       ← createContent/createPostSeo 인스턴스 조립 — fs 로더·SEO 빌더의 유일한 출처(서버 전용)
-  ├─ prebuild  = build-content.ts --strict   (validate-posts 게이트 → 병렬 8개: sync·sitemap·rss·
+  ├─ prebuild  = blog-content build --strict (validate-posts 게이트 → 병렬 8개: sync·sitemap·rss·
   │                                            og-images·thumbnails·search-index·llms-full·llms)
   ├─ next build (output: 'export')            → out/
   ├─ check-seo                                (out/ HTML의 SEO 계약 검사)
@@ -44,8 +46,8 @@ apps/blog/web  (이 앱)
 Cloudflare Workers (deploy-blog.yml)  +  런타임: Supabase(조회수·Admin·Analytics) · Giscus · GA4/GTM
 ```
 
-- **정적 산출물**: `output: 'export'`(개발 모드에서는 해제), `trailingSlash: true` + `skipTrailingSlashRedirect: true` 짝, `images.unoptimized: true`. 내부 href는 스스로 후행 슬래시를 단다(`postPath`·`archivePath`).
-- **동적 기능**만 Supabase — 조회수 RPC, 조회 이력, Admin Google OAuth, Analytics RPC(Edge Function 경유).
+- **정적 산출물**: `output: 'export'`(개발 모드에서는 해제), `trailingSlash: true` + `skipTrailingSlashRedirect: true` 짝, `images.unoptimized: true`. 내부 href는 스스로 후행 슬래시를 단다(`postPath`·`archivePath`). 그 밖에 `next.config.ts`가 갖는 것은 둘이다 — `optimizePackageImports: ['@blog/content']`(배럴의 `export *`가 node:fs 로더까지 여는 것을 실제로 쓴 모듈로 좁혀, dev에서도 fs가 클라이언트 그래프에 들어가지 않게 한다)와 `reactCompiler`(Rust 포트는 dev에서만 켠다 — 미해결 코드젠 회귀가 프로덕션에 새지 않게).
+- **동적 기능**만 Supabase — 조회수 RPC, 조회 이력, Admin Google OAuth, Analytics RPC(Edge Function 경유). 테이블은 `post_views`(누계)·`post_view_logs`(건별 이력 — 시간대·요일 집계의 원천) 둘이고, 공개 RPC는 `increment_view_count` 하나다. admin RPC(`get_all_post_stats`·`get_all_posts_trends`·`get_post_hourly_distribution`·`get_post_dow_distribution`)는 `anon`에 잠겨 있어 Edge Function으로만 부른다. 타입은 `pnpm gen:types`가 로컬 스키마에서 `src/lib/platform/database.types.ts`로 다시 뽑는다.
 - **검증은 세 게이트** — `validate-posts`(frontmatter 원문, prebuild에서 `--strict`)·`check-seo`(최종 HTML)·`check-bundle`(JS 청크의 admin 코드 누수). 셋 다 `pnpm build` 안에 있어 로컬·PR CI·배포가 같은 검사를 지난다.
 
 ---
@@ -64,11 +66,16 @@ apps/blog/web/
 │  ├─ domain/auth/      auth 레이어 — 세션 저장소(repository, DI 팩토리) + 관리자 이메일 판정(adminAccess) + 배럴 1개
 │  ├─ lib/platform/     platform 레이어 — Supabase 어댑터(client · publicClient · adminApi · adminActions · database.types)
 │  └─ shared/           최하단 레이어 — 앱 소유 라우트 경로의 단일 출처(routes) + 페이지 전환 네임스페이스(transitions). 모든 레이어가 import 가능
-├─ supabase/            로컬 Supabase 프로젝트(CLI 소유 — 앱 소스 아님) — config.toml · migrations/ · functions/admin-analytics(Deno). seed.sql은 프로덕션 데이터 사본이라 .gitignore — `pnpm seed:pull`로 만든다(없어도 db reset은 지나간다)
-├─ public/              robots.txt · favicon · og-default.jpg … (+ 빌드가 생성하는 sitemap/rss/search-index/llms/og/thumbs/posts는 .gitignore)
+├─ supabase/            로컬 Supabase 프로젝트(CLI 소유 — 앱 소스 아님) — config.toml · migrations/ · functions/(admin-analytics(Deno) · _shared(CORS) · _typecheck(Edge Function 타입체크 전용 tsconfig — 앱 tsconfig·eslint가 이 폴더를 제외하므로 유일한 게이트)). seed.sql은 프로덕션 데이터 사본이라 .gitignore — `pnpm seed:pull`로 만든다(없어도 db reset은 지나간다)
+├─ scripts/             pull-prod-seed.sh — `pnpm seed:pull`의 본체
+├─ public/              robots.txt · favicon · site.webmanifest · og-default.jpg · _headers(자산 응답 헤더 — 해시 자산 immutable, 프리뷰 URL noindex) … (+ 빌드가 생성하는 sitemap/rss/search-index/llms/og/thumbs/posts는 .gitignore)
 ├─ design/              redesign-decisions.md — 리뉴얼 결정 기록(왜 그렇게 정했는지. 현행 수치의 출처는 아니다)
-├─ next.config.ts · panda.config.ts · postcss.config.cjs · vitest.config.mts · vitest.setup.ts
-├─ tsconfig.json(프로덕션) · tsconfig.test.json(테스트) · eslint.config.mts · turbo.json · wrangler.jsonc · env.d.ts
+├─ content.values.mts · content.config.mts   사이트 값 모듈 · 경로 앵커 겸 배선(§1)
+├─ next.config.ts · postcss.config.cjs · vitest.config.mts · vitest.setup.ts
+├─ panda.config.ts      preset 셋(Panda 기본 · @design-system/ui preset · blog-preset) · strictTokens · 생성물 outdir은 packages/@design-system/ui-lib(직접 수정 금지). @blog/content 소스도 스캔한다
+├─ wrangler.jsonc       정적 자산 Worker — 도메인(routes, custom_domain)·계정(account_id — 비밀값 아님)·html_handling·not_found_handling(404 페이지)·workers_dev 끔·preview_urls 켬
+├─ tsconfig.json(프로덕션) · tsconfig.test.json(테스트) · eslint.config.mts · turbo.json · env.d.ts
+├─ AGENTS.md            `next dev`가 관리하는 Next.js 에이전트 블록 — 지우면 `next dev`가 옆에 CLAUDE.md를 만들어 루트 AGENTS.md를 가린다
 └─ .env.production      (커밋된 유일한 env — Supabase URL/anon key, Giscus, 관리자 이메일. 왜 시크릿이 아닌지는 §5)
 ```
 
@@ -87,13 +94,13 @@ apps/blog/web/
 | `auth`              | `src/domain/auth`        | `shared`, `platform` — supabase 타입은 이 레이어에서 구조적 부분형으로 끝낸다                                                                                                                |
 | `app`               | `src` 나머지 전부        | `shared`, `analytics`, `auth`, `content-pkg`, 임의 외부 패키지. **platform·node 코어 금지** — Supabase 접근은 도메인 경유, fs는 `src/content.ts`가 조립한 `@blog/content` 로더 인스턴스의 일 |
 
-추가 규칙: 프로덕션 코드는 `*.test.*`를 import 못 함 / app 레이어는 `domain/*/…Repository`를 직접 찌르지 말고 배럴(`@/src/domain/analytics`, `@/src/domain/analytics/admin`)로 / app 레이어에서 `client.from()`·`.rpc()` 직접 호출 금지(`no-restricted-syntax`) / 역방향(analytics·auth→app, platform→domain·app, shared→상위 전부)은 boundaries가 막는다 — 해석 경로 기반이라 alias·상대경로 어느 쪽도 우회 불가. `shared`는 모든 레이어가 여는 유일한 폴더라 모듈 **모양**까지 잠근다 — 재수출(`export … from`)·모듈 최상위 문(부수효과, `'use client'` 포함)·`.tsx` 전면 금지. 입장 기준은 [`src/shared/README.md`](./src/shared/README.md).
+추가 규칙: 프로덕션 코드는 `*.test.*`를 import 못 함 / app 레이어는 `domain/*/…Repository`를 직접 찌르지 말고 배럴(`@/src/domain/analytics`, `@/src/domain/analytics/admin`)로 / app 레이어에서 `client.from()`·`.rpc()` 직접 호출 금지(`no-restricted-syntax`) / 역방향(analytics·auth→app, platform→domain·app, shared→상위 전부)은 boundaries가 막는다 — 해석 경로 기반이라 alias·상대경로 어느 쪽도 우회 불가. `shared`는 모든 레이어가 여는 유일한 폴더라 모듈 **모양**까지 잠근다 — 재수출(`export … from`)·모듈 최상위 문(부수효과, `'use client'` 포함)·`.tsx` 전면 금지. 입장 기준은 [`src/shared/README.md`](./src/shared/README.md). 공개 페이지가 여는 배럴(`src/domain/analytics/index.ts`)은 모듈 최상위의 `new`·함수 호출이 금지다 — 번들러가 부수효과로 보는 순간 매달린 모듈 전부가 공개 청크에 실린다(#326에서 `new AnalyticsService()` 하나가 그랬다). 원인은 이 룰이, 결과는 `check-bundle`이 본다. 새 공개 배럴을 만들면 이 룰의 `files`에 추가할 것. `src/lib`·`src/domain` 바로 아래에 떨어진 파일은 `layer-root` element로 격리돼 무엇을 import하거나 import되는 순간 에러다.
 
 `lint`는 `--max-warnings=0`이고, `noInlineConfig: true` + `@eslint-community/eslint-comments/no-use`로 **인라인 `eslint-disable` 주석이 전면 금지**다. 예외는 주석이 아니라 `eslint.config.mts`에 `files` 스코프로 적는다.
 
 ### tsconfig 분할
 
-`tsconfig.json`(프로덕션)은 `strict`에 더해 `noUncheckedIndexedAccess`·`noPropertyAccessFromIndexSignature`·`exactOptionalPropertyTypes`·`verbatimModuleSyntax`·`erasableSyntaxOnly` 등을 켠다. `tsconfig.test.json`은 이를 extends하되 include를 테스트 파일로 뒤집고 **앞의 세 플래그만 끈다**. `check-types`는 두 프로그램을 다 돈다. ESLint의 타입 정보 룰도 같은 분할을 따른다(프로덕션은 `projectService`, 테스트는 `project: tsconfig.test.json`).
+`tsconfig.json`(프로덕션)은 `strict`에 더해 `noUncheckedIndexedAccess`·`noPropertyAccessFromIndexSignature`·`exactOptionalPropertyTypes`·`verbatimModuleSyntax`·`erasableSyntaxOnly` 등을 켠다. `tsconfig.test.json`은 이를 extends하되 include를 테스트 파일로 뒤집고 **앞의 세 플래그만 끈다**. `check-types`는 `next typegen`(라우트 타입 생성) 뒤에 세 프로그램을 돈다 — 프로덕션·테스트, 그리고 Edge Function용 `supabase/functions/_typecheck/tsconfig.json`(Deno 코드는 앱 tsconfig·eslint가 제외하므로 이것이 유일한 타입 게이트다). ESLint의 타입 정보 룰도 같은 분할을 따른다(프로덕션은 `projectService`, 테스트는 `project: tsconfig.test.json`).
 
 ---
 
@@ -106,6 +113,7 @@ apps/blog/web/
 - **테마** — `layout.tsx`의 pre-paint 인라인 스크립트(쿠키 → `prefers-color-scheme` → dark)가 `html[data-theme]`를 세팅, `useTheme`가 `useSyncExternalStore`로 구독, `setTheme`은 View Transitions로 전환.
 - **페이지 전환** — `@ssgoi/react`(`PageTransition.tsx`): 썸네일 있는 글은 `/posts/{slug}` hero morph, 없으면 fade.
 - **댓글** — Giscus. `NEXT_PUBLIC_GISCUS_*` 4개가 모두 있을 때만 렌더.
+- **메타데이터** — 전역 기본값(`metadataBase`·OG/Twitter·Naver 사이트 인증·파비콘)은 `src/app/siteSeo.ts`, 목록 라우트별 값은 각 폴더의 `seo.ts`(`posts`·`series`·`about`), 글 상세는 `nextMetadata.ts`가 `buildPostSeo` DTO를 옮긴다. GA4·GTM은 `layout.tsx`가 production 빌드에서만 싣는다.
 
 ---
 
@@ -115,18 +123,21 @@ apps/blog/web/
 
 | 스크립트                   | 하는 일                                                                                                                                                                                                                                                                  |
 | :------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `pnpm dev`                 | `supabase start`(Docker) → `next dev`. `predev:web`이 먼저 `build-content.ts`(경고 수준)를 돌린다. Next만 띄우려면 `pnpm dev:web`                                                                                                                                        |
+| `pnpm dev`                 | `supabase start`(Docker) → `next dev`. `predev:web`이 먼저 `blog-content build`(경고 수준)를 돌린다. Next만 띄우려면 `pnpm dev:web`                                                                                                                                      |
 | `pnpm build`               | `prebuild`(`blog-content build --strict`) → `next build` → `check-seo` → `check-bundle`. **이 넷이 한 덩어리** — CI·배포도 이 스크립트 하나를 부른다                                                                                                                     |
 | `pnpm lint`                | `eslint . --max-warnings=0` (인라인 `eslint-disable` 금지)                                                                                                                                                                                                               |
-| `pnpm check-types`         | `tsc -p tsconfig.json` + `tsc -p tsconfig.test.json`                                                                                                                                                                                                                     |
+| `pnpm check-types`         | `next typegen` → `tsc` 세 번(`tsconfig.json`·`tsconfig.test.json`·`supabase/functions/_typecheck/tsconfig.json`)                                                                                                                                                         |
 | `pnpm test`                | `vitest run` — projects 둘(`node`: `src/{shared,domain,lib}/**`, `jsdom`: 나머지 `src/**`)을 한 번에. `test:watch`, `test:coverage`(v8)                                                                                                                                  |
 | `pnpm lint:posts`          | frontmatter·본문 검증(수동, 경고 수준). prebuild에서는 같은 규칙이 `--strict`로 승격                                                                                                                                                                                     |
 | `pnpm check-seo`           | `out/` HTML 검사 — h1 1개, description 중복·길이, `<title>` 60자, canonical, og, img alt, `link-trailing-slash`, 산출물↔발행 글 정합성(7종)                                                                                                                              |
 | `pnpm check-bundle`        | `out/` 번들 규칙 평가 — 규칙마다 마커가 forbiddenIn 스코프(페이지·도달 청크·산출물)에 없고 requiredIn 스코프에 있어야 한다(양성 대조 필수). 규칙 9개(admin 전용·글 전용 Mermaid/Giscus·서버 전용 값·빌드 타임 구문 강조)는 `content.values.mts`의 `BUNDLE_GUARDS`가 소유 |
 | `pnpm new-post "제목"`     | 스캐폴딩. `--series` `--tags` `--scheduled` `--slug` `--status`                                                                                                                                                                                                          |
 | `pnpm supabase-start/stop` | 로컬 Supabase 기동/정지                                                                                                                                                                                                                                                  |
+| `pnpm gen:types`           | 로컬 Supabase 스키마 → `src/lib/platform/database.types.ts` 재생성(prettier까지)                                                                                                                                                                                         |
+| `pnpm seed:pull`           | 프로덕션 public 데이터를 seed.sql로 당겨 로컬 DB에 적용한다(`--dump-only`면 파일만 갱신). 본체는 `scripts/pull-prod-seed.sh`, seed.sql은 .gitignore                                                                                                                      |
+| `pnpm deploy`              | 수동 `wrangler deploy` — 평소 배포는 `deploy-blog.yml`이 한다                                                                                                                                                                                                            |
 
-위 스크립트들은 전부 `@blog/content`가 `bin`으로 내놓는 **`blog-content`** 한 진입점을 부른다(`blog-content build`·`validate`·`check-seo`·`check-bundle`·`new-post`) — 앱은 서브커맨드 이름만 알고, 패키지 내부 파일 배치는 모른다.
+콘텐츠 스크립트(`predev:web`·`prebuild`·`lint:posts`·`check-seo`·`check-bundle`·`new-post`)는 전부 `@blog/content`가 `bin`으로 내놓는 **`blog-content`** 한 진입점을 부른다(`blog-content build`·`validate`·`check-seo`·`check-bundle`·`new-post`) — 앱은 서브커맨드 이름만 알고, 패키지 내부 파일 배치는 모른다.
 
 `blog-content build`는 **2단계** — 1단계 `validate-posts`(게이트), 2단계 `sync-posts`·`sitemap`·`rss`·`og-images`·`thumbnails`·`search-index`·`llms-full`·`llms` 8개 **병렬**. 경로 앵커는 앱 루트의 `content.config.mts`다 — CLI가 cwd에서 위로 올라가며 발견하고(전역 `--config`로 명시 가능), build는 자식 spawn에 그 절대 경로를 `--config`로 재전달하므로 cwd에 기대지 않는다.
 
@@ -163,7 +174,7 @@ apps/blog/web/
 - **PR / main push**: `.github/workflows/ci.yml` → 공용 `.github/actions/quality-checks`(turbo lint·check-types·test → `lint:posts` → `format:check` → `pnpm build --filter=@blog/web`).
 - **배포**: `.github/workflows/deploy-blog.yml` — `main` push(`apps/blog/**`·`packages/@blog/**`), 매일 KST 09:00 cron(예약 발행), 수동. quality-checks → `--no-cache` 빌드 → `/posts/` 프리렌더 링크 개수 검증(CSR bail-out 회귀 가드) → Cloudflare Workers(`wrangler.jsonc`). 빌드 스텝이 넣는 env는 `NEXT_PUBLIC_PR_COUNT`(GitHub에서 가져온 머지 PR 수)와 `NODE_ENV` 둘뿐이다 — 나머지 `NEXT_PUBLIC_*`은 커밋된 `.env.production`에서 온다.
 - **PR 프리뷰**: `.github/workflows/preview-blog.yml` — `wrangler versions upload`로 버전만 올리고(트래픽 이동 없음) 브랜치 고정 alias URL과 커밋별 URL을 PR에 코멘트한다. Vercel은 더 이상 쓰지 않는다.
-- **Supabase**: 스키마는 `supabase/migrations/`(조회수 테이블·이력·대시보드 RPC·KST 보정·권한 잠금 순), Admin RPC 프록시는 `supabase/functions/admin-analytics`. 프로덕션 적용은 `.github/workflows/supabase-migrations.yml`이 한다 — `supabase/migrations/**`(와 워크플로 자신)가 바뀐 `main` push와 수동 실행에서만 돌고, `migration list`로 원장과 파일의 차이를 로그에 남긴 뒤 `db push`한다(대시보드 SQL 에디터로 손대던 경로를 여기 하나로 고정).
+- **Supabase**: 스키마는 `supabase/migrations/`(조회수 테이블·이력·대시보드 RPC·KST 보정·권한 잠금·고아 RPC 정리 순), Admin RPC 프록시는 `supabase/functions/admin-analytics`. 프로덕션 적용은 `.github/workflows/supabase-migrations.yml`이 한다 — `supabase/migrations/**`(와 워크플로 자신)가 바뀐 `main` push와 수동 실행에서만 돌고, `migration list`로 원장과 파일의 차이를 로그에 남긴 뒤 `db push`한다(대시보드 SQL 에디터로 손대던 경로를 여기 하나로 고정).
 
 ---
 
