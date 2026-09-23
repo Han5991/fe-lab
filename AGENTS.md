@@ -214,8 +214,11 @@ Worker (`apps/blog/web/wrangler.jsonc`), Supabase for the dynamic bits.
 > `BUNDLE_GUARDS`가 소유하고, 규칙마다 양성 대조(requiredIn)가 필수다.
 
 > **본문 h1은 렌더 시 h2로 강등된다**(`src/components/post/markdownHeadings.tsx`) — 페이지 h1은 `PostHeader`
-> 하나여야 한다. 사이트 본문과 RSS `content:encoded`가 같은 매핑을 공유하니 한쪽만 바꾸지 말 것. 원문의 `# `은
-> `lint:posts`가 `body-h1` 경고로 알린다.
+> 하나여야 한다. 원문의 `# `은 `lint:posts`가 `body-h1` 경고로 알린다.
+
+> **RSS는 요약만 싣는다**(제목·링크·날짜·`excerpt`). 본문 전문(`content:encoded`)은 일부러 뺐다 — 리더에서 읽히면
+> 조회수·댓글이 보지 못하고, 사이트 전용 커스텀 태그를 피드용으로 따로 매핑해야 해서 새 태그마다 어긋났다
+> (`<diagram>`이 리더에서 사라졌다). 되살리기 전에 `generate-rss.ts` 머리 주석을 볼 것.
 
 ## 9. Blog — design guardrails
 

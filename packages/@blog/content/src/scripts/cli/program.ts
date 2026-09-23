@@ -5,8 +5,8 @@
  * package.json이 `npx tsx node_modules/@blog/content/src/scripts/…`처럼 파일
  * 경로를 직접 지목해서, 패키지 안에서 파일을 옮기면 앱이 조용히 깨졌다.
  *
- * 단계 모듈은 전부 **동적 import**로 든다. rss·og-images·thumbnails는 React·
- * satori·sharp를 끌기 때문에, 정적 import로 묶으면 `sitemap` 한 단계를 부를
+ * 단계 모듈은 전부 **동적 import**로 든다. og-images·thumbnails는 satori·sharp를
+ * 끌기 때문에, 정적 import로 묶으면 `sitemap` 한 단계를 부를
  * 때도 네이티브 모듈이 전부 로드된다. `main`이 실제로 있는지는 tsc가 본다 —
  * 동적 import여도 모듈 타입은 정적으로 해석되기 때문이다.
  *
@@ -43,7 +43,7 @@ const PLAIN_STEPS = [
   },
   {
     name: 'rss',
-    describe: 'RSS 피드(rss.xml) 생성 — 전문 HTML 포함',
+    describe: 'RSS 피드(rss.xml) 생성 — 제목·링크·요약',
     load: async () => (await import('../render/generate-rss.ts')).main,
   },
   {

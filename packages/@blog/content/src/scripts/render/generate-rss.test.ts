@@ -1,7 +1,6 @@
 import { expect, test } from 'vitest';
-import { buildRssXml, escapeXml, wrapCdata } from './generate-rss.ts';
+import { buildRssXml, escapeXml } from './generate-rss.ts';
 import type { RssPost } from './generate-rss.ts';
-import { renderContentHtml } from './feedRenderer.ts';
 import { parseScheduledDateKST as parseScheduledDateKSTIn } from '../../shared/dates.ts';
 import { TEST_VALUES } from '../../shared/testValues.ts';
 
@@ -24,12 +23,10 @@ function makePost(over: Partial<RssPost> = {}): RssPost {
   };
 }
 
-// 진입점과 같은 조합 — buildRssXml은 렌더러를 주입받는다(generate-rss.ts 참고).
 const OPTS = {
   site: { ...TEST_VALUES.site, url: SITE, name: NAME, description: DESC },
   timezone: TZ,
   now: NOW,
-  renderContent: renderContentHtml,
 };
 
 test('escapeXml: &, <, >, ", \' 모두 엔티티로 치환', () => {
@@ -189,198 +186,17 @@ test('rss: excerpt도 escape됨', () => {
   expect(xml.includes('<description>a &amp; b</description>')).toBeTruthy();
 });
 
-test('rss: content 네임스페이스 선언 포함', () => {
-  const xml = buildRssXml([], OPTS);
-  expect(
-    xml.includes('xmlns:content="http://purl.org/rss/1.0/modules/content/"'),
-  ).toBeTruthy();
-});
-
-test('rss: content가 있으면 content:encoded에 HTML 전문 포함', () => {
-  const xml = buildRssXml(
-    [makePost({ slug: 'a', content: '## 소제목\n\n본문 **강조** 텍스트' })],
-    OPTS,
-  );
-  expect(xml.includes('<content:encoded><![CDATA[')).toBeTruthy();
-  expect(xml.includes('<h2>소제목</h2>')).toBeTruthy();
-  expect(xml.includes('<strong>강조</strong>')).toBeTruthy();
-  expect(xml.includes(']]></content:encoded>')).toBeTruthy();
-});
-
-test('rss: content 없으면 content:encoded 생략', () => {
-  const xml = buildRssXml([makePost({ slug: 'a' })], OPTS);
-  expect(!xml.includes('<content:encoded>')).toBeTruthy();
-});
-
-test('rss: renderContent를 주입하지 않으면 content가 있어도 content:encoded 생략', () => {
-  // 빌더는 렌더러를 모른다 — 주입이 없으면 전문 없이 메타데이터만 담는다.
-  const { renderContent: _renderContent, ...noRenderer } = OPTS;
-  const xml = buildRssXml(
-    [makePost({ slug: 'a', content: '# 본문' })],
-    noRenderer,
-  );
-  expect(!xml.includes('<content:encoded>')).toBeTruthy();
-  expect((xml.match(/<item>/g) || []).length).toBe(1);
-});
-
-test('rss: 상대 경로 이미지는 절대 URL로 변환', () => {
-  const xml = buildRssXml(
-    [
-      makePost({
-        slug: 'a',
-        content: '![스크린샷](./pic.png)',
-        relativeDir: 'series-a',
-      }),
-    ],
-    OPTS,
-  );
-  expect(xml.includes(`src="${SITE}/posts/series-a/pic.png"`)).toBeTruthy();
-});
-
-test('rss: 절대 URL 이미지는 그대로 유지', () => {
-  const xml = buildRssXml(
-    [
-      makePost({
-        slug: 'a',
-        content: '![외부](https://example.com/x.png)',
-        relativeDir: 'series-a',
-      }),
-    ],
-    OPTS,
-  );
-  expect(xml.includes('src="https://example.com/x.png"')).toBeTruthy();
-});
-
-test('rss: 루트 레벨 포스트(relativeDir 없음) 이미지도 /posts/ 프리픽스 유지', () => {
-  // sync-posts는 posts/ 루트의 이미지를 public/posts/ 바로 아래로 복사한다.
-  // 예: 'pnpm 10 업그레이드' 글의 ./pnpm.img_1.png → /posts/pnpm.img_1.png
-  const xml = buildRssXml(
-    [makePost({ slug: 'a', content: '![img](./pnpm.img_1.png)' })],
-    OPTS,
-  );
-  expect(xml.includes(`src="${SITE}/posts/pnpm.img_1.png"`)).toBeTruthy();
-});
-
-test('rss: 한글/공백 relativeDir는 percent-encoding됨', () => {
-  const xml = buildRssXml(
-    [
-      makePost({
-        slug: 'a',
-        content: '![img](./pic.png)',
-        relativeDir: 'nextjs deploy',
-      }),
-    ],
-    OPTS,
-  );
-  expect(
-    xml.includes(`src="${SITE}/posts/nextjs%20deploy/pic.png"`),
-  ).toBeTruthy();
-});
-
-test('rss: 하위 디렉토리 이미지 경로의 슬래시는 %2F로 인코딩되지 않고 보존', () => {
-  const xml = buildRssXml(
-    [
-      makePost({
-        slug: 'a',
-        content: '![img](img/start.png)',
-        relativeDir: 'feconf',
-      }),
-    ],
-    OPTS,
-  );
-  expect(xml.includes(`src="${SITE}/posts/feconf/img/start.png"`)).toBeTruthy();
-});
-
-test('renderContentHtml: 한글 경로는 단일 인코딩 (이중 인코딩 %25 없음)', () => {
-  const html = renderContentHtml('![img](./한글.png)', SITE, '회고');
-  expect(
-    html.includes(`src="${SITE}/posts/%ED%9A%8C%EA%B3%A0/`),
-    `relativeDir가 인코딩되어야 함: ${html}`,
-  ).toBeTruthy();
-  expect(!html.includes('%25'), `이중 인코딩 감지: ${html}`).toBeTruthy();
-});
-
-test('renderContentHtml: 루트 상대 경로는 siteUrl만 prefix', () => {
-  const html = renderContentHtml('![img](/posts/x/pic.png)', SITE, 'ignored');
-  expect(html.includes(`src="${SITE}/posts/x/pic.png"`)).toBeTruthy();
-});
-
-test('renderContentHtml: <callout>은 blockquote + 라벨로 매핑', () => {
-  const html = renderContentHtml(
-    '<callout type="warning">조심하세요</callout>',
-    SITE,
-  );
-  expect(html.includes('<blockquote>'), html).toBeTruthy();
-  expect(html.includes('<strong>⚠️ Warning</strong>'), html).toBeTruthy();
-  expect(html.includes('조심하세요'), html).toBeTruthy();
-  expect(
-    !html.includes('<callout'),
-    'raw callout 태그가 남으면 안 됨',
-  ).toBeTruthy();
-});
-
-test('renderContentHtml: callout title 속성이 라벨을 대체', () => {
-  const html = renderContentHtml(
-    '<callout type="tip" title="꿀팁">내용</callout>',
-    SITE,
-  );
-  expect(html.includes('<strong>💡 꿀팁</strong>'), html).toBeTruthy();
-});
-
-test('renderContentHtml: 알 수 없는 callout type은 info로 폴백', () => {
-  const html = renderContentHtml('<callout>내용</callout>', SITE);
-  expect(html.includes('<strong>ℹ️ Info</strong>'), html).toBeTruthy();
-});
-
-test('renderContentHtml: <file-tree>는 pre로 매핑', () => {
-  const html = renderContentHtml(
-    '<file-tree>\nsrc/\n  index.ts\n</file-tree>',
-    SITE,
-  );
-  expect(html.includes('<pre>'), html).toBeTruthy();
-  expect(
-    !html.includes('<file-tree'),
-    'raw file-tree 태그가 남으면 안 됨',
-  ).toBeTruthy();
-});
-
-test('renderContentHtml: javascript: 등 위험 프로토콜은 기본 sanitizer로 차단', () => {
-  const html = renderContentHtml('[클릭](javascript:alert(1))', SITE);
-  expect(!html.includes('javascript:'), html).toBeTruthy();
-  // 허용 프로토콜(https)은 그대로 통과
-  const ok = renderContentHtml('[링크](https://example.com/)', SITE);
-  expect(ok.includes('href="https://example.com/"'), ok).toBeTruthy();
-});
-
-test('rss: fullContentLimit 이후 글은 content:encoded 생략 (피드 크기 제한)', () => {
-  const posts = [
-    makePost({ slug: 'newest', content: '# 최신 글' }),
-    makePost({ slug: 'older', content: '# 옛날 글' }),
-  ];
-  const xml = buildRssXml(posts, { ...OPTS, fullContentLimit: 1 });
-  expect((xml.match(/<content:encoded>/g) || []).length).toBe(1);
-  // 최신(앞쪽) 글만 전문 포함, 이후 글은 item 자체는 유지
-  expect(xml.includes('최신 글')).toBeTruthy();
-  expect(!xml.includes('옛날 글')).toBeTruthy();
-  expect((xml.match(/<item>/g) || []).length).toBe(2);
-});
-
-test('wrapCdata: ]]> 시퀀스는 CDATA 분할로 안전하게 처리', () => {
-  const wrapped = wrapCdata('a]]>b');
-  expect(wrapped).toBe('<![CDATA[a]]]]><![CDATA[>b]]>');
-});
-
-test('renderContentHtml: 본문 h1은 h2로 강등 (사이트 본문과 같은 매핑)', () => {
-  // 피드 리더에서만 h1이 살아남으면 사이트만 고친 의미가 없다.
-  const html = renderContentHtml('# 제목\n\n## 절\n', SITE);
-  expect(!html.includes('<h1'), `h1이 남아 있음: ${html}`).toBeTruthy();
-  expect(html.includes('<h2>제목</h2>')).toBeTruthy();
-  // h2 이하는 그대로 — 문서 전체를 한 칸씩 밀지 않는다.
-  expect(html.includes('<h2>절</h2>')).toBeTruthy();
-});
-
-test('renderContentHtml: raw HTML <h1>도 강등된다', () => {
-  const html = renderContentHtml('<h1>raw</h1>', SITE);
-  expect(!html.includes('<h1'), `h1이 남아 있음: ${html}`).toBeTruthy();
-  expect(html.includes('<h2>raw</h2>')).toBeTruthy();
+test('rss: 로더가 본문을 넘겨도 전문(content:encoded)은 싣지 않는다', () => {
+  // 진입점은 resolvePostSet의 PostData(본문 content·relativeDir 포함)를 그대로
+  // 넘긴다. 피드는 요약만 싣는다는 결정이 빌더에서 지켜지는지 잠근다.
+  const loaded = {
+    ...makePost({ slug: 'a', excerpt: '요약' }),
+    content: '# 본문 제목\n\n본문 **내용**',
+    relativeDir: 'series-a',
+  };
+  const xml = buildRssXml([loaded], OPTS);
+  expect(xml.includes('<content:encoded>')).toBe(false);
+  expect(xml.includes('xmlns:content')).toBe(false);
+  expect(xml.includes('본문')).toBe(false);
+  expect(xml.includes('<description>요약</description>')).toBe(true);
 });

@@ -84,9 +84,8 @@ flowchart LR
   class L5 highlight;
 ```
 
-- React 스택은 `render-build`만 만질 수 있다. RSS 전문 HTML도 `generate-rss.ts`(순수
-  문자열 빌더)가 `render/feedRenderer.ts`를 **주입받아** 쓴다 — 빌더를 import해도
-  React가 딸려오지 않는다.
+- React 스택과 satori·sharp는 `render-build`만 만질 수 있다. RSS는 본문 전문 없이
+  요약만 싣는 순수 문자열 빌더(`generate-rss.ts`)다.
 - boundaries 블록은 `src/{shared,post,seo,scripts}/**`에만 건다. 최상위 배럴
   `src/index.ts`만 그 스코프 밖이고(`src/seo/index.ts`는 `seo` element 안에서 검사된다),
   새 파일을 `src/` 바로 아래 두면 경계 검사를 아예 받지 않으니 네 폴더 중 한 곳에 둘 것.
@@ -105,7 +104,7 @@ src/
 ├─ shared/     contentConfig(defineContent + ContentValues 계약) · contentPaths(절대 경로)
 │              · testValues(테스트 픽스처 — 패키지 안의 유일한 "어떤 사이트")
 │              · dates · format · guards · jsonLd · url · postFiles · prismLanguages
-│              · markdownHeadings(h1→h2 매핑, 사이트·RSS 공유) · viewCookie
+│              · markdownHeadings(h1→h2 매핑, 사이트 본문용) · viewCookie
 ├─ post/       createContent(인스턴스 조립) · repository(gray-matter 로더 factory) · service(읽기 API factory)
 │              · visibility(공개 판정 한 곳) · series(_series.yml factory) · urls(postPath·archivePath — 후행 슬래시는 여기서만)
 │              · filtering · aggregate · thumbnail · assetUrl · frontmatterSchema(서술자 테이블)
@@ -116,7 +115,7 @@ src/
                · sync-posts · new-post
                · context(ContentContext — 스텝이 받는 실행 컨텍스트)
                ├─ cli/     index(bin 진입점) · program(commander 서브커맨드·옵션 정의) · discoverConfig(설정 발견·로드)
-               └─ render/  generate-rss · feedRenderer · generate-og-images(satori+sharp) · generate-thumbnails(sharp)
+               └─ render/  generate-rss · generate-og-images(satori+sharp) · generate-thumbnails(sharp)
 ```
 
 ## `build-content.ts` — 2단계
