@@ -17,7 +17,8 @@ import type { ContentContext } from './context.ts';
  *   때마다 어긋났다 — `<diagram>`이 변환 없이 나가 리더에서 통째로 사라졌다
  * - 이 패키지가 그 렌더링 하나 때문에 React 스택(react-dom/server·react-markdown)을
  *   의존했다
- * 요약은 prebuild `--strict`가 발행 글마다 강제하므로(`missing-excerpt`) 항상 있다.
+ * 요약은 항상 있다 — frontmatter에 excerpt가 없으면 로더가 본문 앞부분으로 채우고
+ * (`resolveExcerptFrom`), 발행 글은 prebuild `--strict`가 `missing-excerpt`로 직접 쓰게 한다.
  */
 
 /**
