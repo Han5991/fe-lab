@@ -17,7 +17,7 @@
     ],
     "deny": []
   },
-  "enabledMcpjsonServers": [],
-  "enabledPlugins": {},
-  "disabledMcpjsonServers": ["next-devtools"]
+  "enabledMcpjsonServers": ["supabase"],
+  "disabledMcpjsonServers": ["next-devtools"],
+  "enabledPlugins": {}
 }
