@@ -5,7 +5,7 @@
 2층 검증(`validate-posts`가 원문 / `check-seo`·`check-bundle`이 산출물).
 
 운영 규칙(발행 판정 축, frontmatter 키 표, `--strict` 승격 규칙, SEO 게이트)의
-단일 출처는 루트 `CLAUDE.md`의 "Blog Architecture" 절이다. 여기는 **패키지의
+단일 출처는 루트 `AGENTS.md`의 "Blog —" 절(§7–9)이다. 여기는 **패키지의
 모양**만 적는다.
 
 ## 문 두 개 (소스 익스포트 — 빌드 스텝 없음)
@@ -60,13 +60,14 @@ import가 전부 `.ts` 확장자를 달고 있고(`allowImportingTsExtensions`),
 shared → content(post) → seo → build(scripts) → render-build(scripts/render) → cli(scripts/cli)
 ```
 
-| element        | 폴더                 | 가져올 수 있는 것                                                                         |
-| :------------- | :------------------- | :---------------------------------------------------------------------------------------- |
-| `shared`       | `src/shared`         | node 코어만                                                                               |
-| `content`      | `src/post`           | `shared` + node 코어 + `gray-matter`                                                      |
-| `seo`          | `src/seo`            | `shared`·`content` — 순수 계산(node 코어·외부 의존 없음)                                  |
-| `build`        | `src/scripts`        | `shared`·`content`·`seo` + node 코어 + `gray-matter`                                      |
-| `render-build` | `src/scripts/render` | 위 전부 + `react`·`react-dom`·`react-markdown`·`remark-gfm`·`rehype-raw`·`satori`·`sharp` |
+| element        | 폴더                 | 가져올 수 있는 것                                                                                                       |
+| :------------- | :------------------- | :---------------------------------------------------------------------------------------------------------------------- |
+| `shared`       | `src/shared`         | node 코어만                                                                                                             |
+| `content`      | `src/post`           | `shared` + node 코어 + `gray-matter`                                                                                    |
+| `seo`          | `src/seo`            | `shared`·`content` — 순수 계산(node 코어·외부 의존 없음)                                                                |
+| `build`        | `src/scripts`        | `shared`·`content`·`seo` + node 코어 + `gray-matter`                                                                    |
+| `render-build` | `src/scripts/render` | 위 전부 + `react`·`react-dom`·`react-markdown`·`remark-gfm`·`rehype-raw`·`satori`·`sharp`                               |
+| `cli`          | `src/scripts/cli`    | 위 전부 + node 코어 + `commander` — 단계 모듈은 전부 **동적** import(부르지 않은 단계의 satori·sharp는 로드되지 않는다) |
 
 ```mermaid
 flowchart LR
@@ -103,11 +104,11 @@ src/
 ├─ index.ts · seo/index.ts        익스포트 문 둘 (내부 배럴 post/index.ts는 별개)
 ├─ shared/     contentConfig(defineContent + ContentValues 계약) · contentPaths(절대 경로)
 │              · testValues(테스트 픽스처 — 패키지 안의 유일한 "어떤 사이트")
-│              · dates · format · jsonLd · url · postFiles · prismLanguages
+│              · dates · format · guards · jsonLd · url · postFiles · prismLanguages
 │              · markdownHeadings(h1→h2 매핑, 사이트·RSS 공유) · viewCookie
 ├─ post/       createContent(인스턴스 조립) · repository(gray-matter 로더 factory) · service(읽기 API factory)
 │              · visibility(공개 판정 한 곳) · series(_series.yml factory) · urls(postPath·archivePath — 후행 슬래시는 여기서만)
-│              · filtering · sorting · aggregate · thumbnail · assetUrl · frontmatterSchema(서술자 테이블)
+│              · filtering · aggregate · thumbnail · assetUrl · frontmatterSchema(서술자 테이블)
 │              · types · utils · testing(테스트 픽스처 인스턴스)
 ├─ seo/        postSeo — createPostSeo(buildPostSeo·buildPostJsonLd·buildBreadcrumbJsonLd) + 순수 계산
 └─ scripts/    build-content(진입점) · validate-posts + validate/{rules,frontmatter,body,corpus,shared}
@@ -129,6 +130,18 @@ src/
 cwd·PATH 어디에도 기대지 않는다 — 부모가 발견한 설정 파일을 자식에 명시
 전달하므로(`stepArgv`) 부모와 자식이 다른 설정을 잡을 수 없다. 앱의
 `predev:web`과 `prebuild`는 같은 명령이고 `prebuild`만 `--strict`다(검증은 둘 다 돈다).
+
+2단계 스텝이 쓰는 곳(경로는 `dirs` 기본값, 앱 루트 기준):
+
+| 스텝                                     | 산출물                                                                           | 증분 기준 · 정리                                                           |
+| :--------------------------------------- | :------------------------------------------------------------------------------- | :------------------------------------------------------------------------- |
+| `sync-posts`                             | `public/posts/**` — 원고 폴더의 이미지·미디어 사본                               | 크기가 같고 사본이 더 새로우면 건너뜀, 원고에서 사라진 파일(orphan)은 삭제 |
+| `og-images`                              | `public/og/{slug}.png` — thumbnail이 없거나 `/og/*`를 가리키는 발행 글의 OG 카드 | 내용 해시 manifest(`.cache/og-images.json`), orphan 삭제                   |
+| `thumbnails`                             | `public/thumbs/**/*-thumb.webp` — 로컬 썸네일 최적화                             | manifest(`.cache/thumbnails.json`), orphan 삭제                            |
+| `search-index`                           | `search-index.json`(공개 글) · `admin-posts-index.json`(비공개 포함)             | 매번 다시 쓴다                                                             |
+| `sitemap` · `rss` · `llms` · `llms-full` | `sitemap.xml` · `rss.xml` · `llms.txt` · `llms-full.txt`                         | 매번 다시 쓴다                                                             |
+
+산출물은 전부 `.gitignore`다 — 신선한 체크아웃에는 없고, 낡은 `public/`은 무음 no-op 생성기를 가릴 수 있다.
 
 ```mermaid
 flowchart TD
@@ -170,31 +183,34 @@ flowchart TD
 털지 못한다).
 
 나머지 그룹은 기본값이 있고 그룹 단위 shallow-Partial로 병합된다
-(`og.palette`와 `llms.facts`만 한 단계 더 병합):
+(`llms.facts`·`llms.docs`만 한 단계 더 병합. `og.palette`·`og.fonts`는 필수라 병합할
+기본값이 없고 준 값이 그대로 실린다):
 
-| 그룹         | 키                                                                                                                                                                                                                                                                                                                                                                                |
-| :----------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `root`       | **필수.** 경로 앵커 — `file://` URL(관례: `import.meta.url`) 또는 절대 경로. 상대 경로는 거부(cwd 의존 금지)                                                                                                                                                                                                                                                                      |
-| `site`       | **필수(전체).** `url` · `name` · `description` · `descriptionExpanded` · `ogDefaultImage`                                                                                                                                                                                                                                                                                         |
-| `author`     | **필수(전체).** `name` · `alternateName` · `role` · `github` · `linkedin`                                                                                                                                                                                                                                                                                                         |
-| `seo`        | `titleSuffix` · `titleMaxLength`(60) · `descriptionMinLength`(120) · `descriptionMaxLength`(160, 자동 발췌 길이 겸용)                                                                                                                                                                                                                                                             |
-| `timezone`   | **필수(전체).** `iana` · `isoOffset` · `utcOffsetMs`                                                                                                                                                                                                                                                                                                                              |
-| `runtime`    | `isDevelopment()` — `NODE_ENV === 'development'` 정확 비교(빌드 스크립트를 dev로 오인하지 않게)                                                                                                                                                                                                                                                                                   |
-| `registries` | `diagramNames`가 **필수**(컴포넌트 매핑을 가진 앱만 쓸 수 있다). `supportedFenceLabels`만 기본값 있음                                                                                                                                                                                                                                                                             |
-| `dirs`       | **앱 루트 기준 상대 경로** — `content`(`../posts`) · `public` · `cache` · `out` · `media` · `thumbs` · `og`                                                                                                                                                                                                                                                                       |
-| `sitemap`    | `staticPages`(글이 아닌 페이지 — `/`·`/posts/`는 패키지 소유라 여기 없다) · `highPriorityFolders`(0.75) · `highPrioritySlugs`(0.8). 전부 **빈 배열**                                                                                                                                                                                                                              |
-| `og`         | `palette`가 **필수**(satori는 CSS 변수를 못 읽어 리터럴 색이 필요하다 — 소비자가 자기 디자인 토큰에서 해석해 넘긴다). `fonts`도 **필수**(사이트 타이포그래피 선택 — 소비자가 자기 폰트 배포판 파일의 절대 경로로 서술자 `{name, weight, path}` 배열을 만들어 넘긴다. 만드는 방법은 `OgFont` 주석 참고, 템플릿은 400·500·700 사용). `width` · `height`는 소셜 카드 표준이라 기본값 |
-| `thumbnails` | `maxWidth` · `webpQuality`                                                                                                                                                                                                                                                                                                                                                        |
-| `llms`       | `summaryMaxLength` · `docs.home`/`archive`/`full`(중립 기본값 — 경로는 패키지 소유) · `docs.extra`(사이트 고유 페이지, 경로까지 소비자가 준다. 기본 **빈 배열**) · `indexIntro`/`fullIntro`(← `site.description`) · `facts.*`(**전부 선택** — 준 항목만 줄로 나간다)                                                                                                              |
+| 그룹           | 키                                                                                                                                                                                                                                                                                                                                                                                |
+| :------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `root`         | **필수.** 경로 앵커 — `file://` URL(관례: `import.meta.url`) 또는 절대 경로. 상대 경로는 거부(cwd 의존 금지)                                                                                                                                                                                                                                                                      |
+| `site`         | **필수(전체).** `url` · `name` · `description` · `descriptionExpanded` · `ogDefaultImage`                                                                                                                                                                                                                                                                                         |
+| `author`       | **필수(전체).** `name` · `alternateName` · `role` · `github` · `linkedin`                                                                                                                                                                                                                                                                                                         |
+| `seo`          | `titleSuffix` · `titleMaxLength`(60) · `descriptionMinLength`(120) · `descriptionMaxLength`(160, 자동 발췌 길이 겸용)                                                                                                                                                                                                                                                             |
+| `timezone`     | **필수(전체).** `iana` · `isoOffset` · `utcOffsetMs`                                                                                                                                                                                                                                                                                                                              |
+| `runtime`      | `isDevelopment()` — `NODE_ENV === 'development'` 정확 비교(빌드 스크립트를 dev로 오인하지 않게)                                                                                                                                                                                                                                                                                   |
+| `registries`   | `diagramNames`가 **필수**(컴포넌트 매핑을 가진 앱만 쓸 수 있다). `supportedFenceLabels`는 기본값 있음. `metaFilenames`는 로더가 원고 디렉터리를 걸을 때 이름만 보고 건너뛸 작업 노트 파일 — 선택, 기본 빈 목록. 값 모듈은 순수 리터럴이라 배열로 받고, 판정용 집합은 `defineContent`가 만든다                                                                                     |
+| `bundleGuards` | **선택.** `check-bundle`의 규칙 목록(label·marker·forbiddenIn·requiredIn)이 통째로 실린다 — 병합할 기본값이 없고, 선언하지 않은 사이트는 `check-bundle`이 검사를 건너뛴다                                                                                                                                                                                                         |
+| `dirs`         | **앱 루트 기준 상대 경로** — `content`(`../posts`) · `public` · `cache` · `out` · `media` · `thumbs` · `og`                                                                                                                                                                                                                                                                       |
+| `sitemap`      | `staticPages`(글이 아닌 페이지 — `/`·`/posts/`는 패키지 소유라 여기 없다) · `highPriorityFolders`(0.75) · `highPrioritySlugs`(0.8). 전부 **빈 배열**                                                                                                                                                                                                                              |
+| `og`           | `palette`가 **필수**(satori는 CSS 변수를 못 읽어 리터럴 색이 필요하다 — 소비자가 자기 디자인 토큰에서 해석해 넘긴다). `fonts`도 **필수**(사이트 타이포그래피 선택 — 소비자가 자기 폰트 배포판 파일의 절대 경로로 서술자 `{name, weight, path}` 배열을 만들어 넘긴다. 만드는 방법은 `OgFont` 주석 참고, 템플릿은 400·500·700 사용). `width` · `height`는 소셜 카드 표준이라 기본값 |
+| `thumbnails`   | `maxWidth` · `webpQuality`                                                                                                                                                                                                                                                                                                                                                        |
+| `llms`         | `summaryMaxLength` · `docs.home`/`archive`/`full`(중립 기본값 — 경로는 패키지 소유) · `docs.extra`(사이트 고유 페이지, 경로까지 소비자가 준다. 기본 **빈 배열**) · `indexIntro`/`fullIntro`(← `site.description`) · `facts.*`(**전부 선택** — 준 항목만 줄로 나간다)                                                                                                              |
 
 ## 경로 앵커 — `content.config.mts`
 
 앵커는 **소비자 앱 루트의 `content.config.(m)ts`** 하나다:
 
 ```ts
-// apps/blog/web/content.config.mts
+// apps/blog/web/content.config.mts — 최소 형태(발췌). 실제 파일은 값 모듈의
+// site·author·timezone·registries와 og 팔레트·폰트까지 넘긴다(ContentValues 계약이 필수로 강제)
 import { defineContent } from '@blog/content';
-export default defineContent({ root: import.meta.url });
+export default defineContent({ root: import.meta.url, ...values });
 ```
 
 `root: import.meta.url`이 계약의 핵심 — **설정 파일의 위치 자체가 앵커**라서
@@ -236,7 +252,7 @@ flowchart TD
 ```sh
 pnpm --filter @blog/content check-types   # tsconfig.json + tsconfig.test.json
 pnpm --filter @blog/content lint          # --max-warnings=0
-pnpm --filter @blog/content test          # vitest run (node 환경, src/**/*.test.ts)
+pnpm --filter @blog/content test          # vitest run (node 환경, src/**/*.{test,spec}.{ts,tsx})
 pnpm --filter @blog/content test:coverage # 같은 스위트 + v8 커버리지
 ```
 
@@ -245,7 +261,12 @@ pnpm --filter @blog/content test:coverage # 같은 스위트 + v8 커버리지
 - `src/post/contract.test.ts` — 실제 `apps/blog/posts/`에 대한 불변식(slug 유일, `getAllPosts` ↔ `isPostVisible` 일치, `_series.yml` 폴더만 시리즈 …)
 - `src/scripts/contract.test.ts` — 산출물 불변식(sitemap·rss·search-index·admin-index·llms-full의 포함/제외 규칙)
 - `src/scripts/url-consistency.test.ts` — 비ASCII slug가 sitemap·rss·llms·llms-full·페이지 링크 다섯 곳에서 같은 인코딩인지
-- `src/post/frontmatterSchema.test.ts` — 루트 `CLAUDE.md`의 frontmatter 표를 **글자 단위**로 서술자 테이블과 대조한다. 표의 `**Frontmatter 전체 목록**` 마커와 뒤따르는 `` `series`는 frontmatter가 아니라 `` 문장 사이만 읽으므로 둘 다 살아 있어야 하고, 키 순서·필수 ✅·설명 문구를 고치면 `frontmatterSchema.ts`의 `doc`도 함께 고칠 것
+- `src/post/frontmatterSchema.test.ts` — 루트 `AGENTS.md`의 frontmatter 표를 **글자 단위**로 서술자 테이블과 대조한다. 표의 `**Frontmatter 전체 목록**` 마커와 뒤따르는 `` `series`는 frontmatter가 아니라 `` 문장 사이만 읽으므로 둘 다 살아 있어야 하고, 키 순서·필수 ✅·설명 문구를 고치면 `frontmatterSchema.ts`의 `doc`도 함께 고칠 것
+
+저장소 문서·워크플로 계약도 이 패키지에서 돈다(패키지 테스트가 이미 저장소 루트를 읽기 때문):
+
+- `src/scripts/docPaths.test.ts` — 문서(AGENTS.md·README들·스킬)와 `.github/` 스크립트가 인용한 파일 경로가 실제로 있는지. 새 README를 만들면 파일 안의 `DOCS` 목록에 추가할 것
+- `src/scripts/workflowPromptSize.test.ts` — `claude-code-review.yml` 프롬프트가 GitHub 한계(21,000B) 아래 예산(20,500B)을 지키는지. 넘으면 GitHub이 워크플로를 조용히 거부한다
 
 이 패키지의 테스트는 전부 node 환경이라 `vitest.config.mts`를 프로젝트로 나누지
 않는다(앱은 `src/`가 jsdom을 요구해 갈린다). `include` 글롭은 `tsconfig.test.json`·

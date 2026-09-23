@@ -73,21 +73,21 @@ apps/blog/posts/**/_series.yml ─┤
 - **검증은 두 층 + 번들 게이트.** `validate-posts`가 frontmatter 원문을, `check-seo`가 최종 HTML을,
   `check-bundle`이 공개 페이지 JS 청크의 admin·서버 전용 코드 누수를 본다. 셋 다
   `pnpm build`(prebuild → next build → check-seo → check-bundle) 안에 있어 로컬·PR·배포가 같은 검사를 지난다.
-- 자세한 구조·스크립트·데이터 흐름은 [`apps/blog/web/README.md`](apps/blog/web/README.md), 운영 규칙과 콘텐츠 계약은 [`CLAUDE.md`](CLAUDE.md)의 "Blog Architecture" 절.
+- 자세한 구조·스크립트·데이터 흐름은 [`apps/blog/web/README.md`](apps/blog/web/README.md), 운영 규칙과 콘텐츠 계약은 [`AGENTS.md`](AGENTS.md)의 "Blog —" 절(§7–9).
 
 ---
 
 ## 🛠️ 도구 체인
 
-| 도구                       | 용도                                                                                                                                                                                                                              |
-| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Turborepo**              | 빌드/테스트 파이프라인 오케스트레이션(`turbo.json`). `apps/blog/posts/**`를 입력에 추가하는 override가 둘 — 웹은 build·test, 콘텐츠 패키지는 test(빌드 스텝이 없다).                                                              |
-| **pnpm (catalog)**         | 패키지 관리 + 기본 `catalog:` 하나로 `typescript`·`next`·`react`·`@types/*`·`@pandacss/dev` 버전 통일. `overrides`(postcss 단일화)·`allowBuilds`(네이티브 postinstall 허용 목록)도 여기.                                          |
-| **Lefthook**               | Git hook — pre-commit에 staged 파일 prettier(`apps/blog/posts/**` 제외), pre-push에 lint/check-types/test 병렬. 우회는 `LEFTHOOK=0` 또는 `--no-verify`.                                                                           |
-| **Prettier 3 / ESLint 10** | 포매팅 + 린트. flat config는 워크스페이스마다 따로다. 블로그와 `@blog/content`는 `eslint-config-next` 없이 직접 조립하고(`apps/next.js`는 계속 사용) typescript-eslint strict + 타입 정보 룰 + `eslint-plugin-boundaries`를 켠다. |
-| **Panda CSS**              | 컴포넌트 레시피 기반 스타일링. 블로그는 `@design-system/ui/blog-preset` 토큰을 쓰고 `strictTokens: true`.                                                                                                                         |
-| **Renovate**               | 의존성 자동 업데이트(루트 `renovate.json`). automerge는 devDependencies minor/patch · 프로덕션 patch · catalog/overrides minor/patch까지 — 프로덕션 minor와 major는 사람이 본다.                                                  |
-| **GitHub Actions**         | 아래 "CI / 자동화" 참조.                                                                                                                                                                                                          |
+| 도구                       | 용도                                                                                                                                                                                                                                                                                                            |
+| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Turborepo**              | 빌드/테스트 파이프라인 오케스트레이션(`turbo.json`). `apps/blog/posts/**`를 입력에 추가하는 override가 둘 — 웹은 build·test, 콘텐츠 패키지는 test(빌드 스텝이 없다).                                                                                                                                            |
+| **pnpm (catalog)**         | 패키지 관리. 두 패키지 이상이 쓰는 의존성은 catalog가 단일 출처 — 기본 `catalog:`(`typescript`·`next`·`react`·`@types/*`·`@pandacss/dev` 등)와 eslint 툴체인을 한데 묶은 `catalog:lint`(코어·플러그인 버전이 서로 물려 돈다). `overrides`(postcss 단일화)·`allowBuilds`(네이티브 postinstall 허용 목록)도 여기. |
+| **Lefthook**               | Git hook — pre-commit에 staged 파일 prettier(`apps/blog/posts/**` 제외), pre-push에 lint/check-types/test 병렬. 우회는 `LEFTHOOK=0` 또는 `--no-verify`.                                                                                                                                                         |
+| **Prettier 3 / ESLint 10** | 포매팅 + 린트. flat config는 워크스페이스마다 따로다. 블로그와 `@blog/content`는 `eslint-config-next` 없이 직접 조립하고(`apps/next.js`는 계속 사용) typescript-eslint strict + 타입 정보 룰 + `eslint-plugin-boundaries`를 켠다.                                                                               |
+| **Panda CSS**              | 컴포넌트 레시피 기반 스타일링. 블로그는 `@design-system/ui/blog-preset` 토큰을 쓰고 `strictTokens: true`.                                                                                                                                                                                                       |
+| **Renovate**               | 의존성 자동 업데이트(루트 `renovate.json`). minor/patch는 CI만 보고 자동 머지(dependencies·devDependencies·catalog·overrides·`@types/*`·GitHub Actions 모두) — major만 `deps-major` 라벨을 달고 사람이 본다.                                                                                                    |
+| **GitHub Actions**         | 아래 "CI / 자동화" 참조.                                                                                                                                                                                                                                                                                        |
 
 ---
 
@@ -98,13 +98,13 @@ apps/blog/posts/**/_series.yml ─┤
 
   **러너는 모든 워크스페이스에서 Vitest 하나다.** 갈리는 것은 러너가 아니라 **환경**이고, 환경이 둘인 곳은 `test.projects`로 나눈다.
 
-  | 워크스페이스    | 환경                                                                                          |
-  | --------------- | --------------------------------------------------------------------------------------------- |
-  | `@blog/content` | node (`src/**/*.test.ts`)                                                                     |
-  | `@blog/web`     | projects 둘 — `node`(`domain/**`·`lib/**`) + `jsdom`(`src/**`, RTL). `pnpm test` 한 번에 실행 |
-  | `next.js`       | jsdom + RTL + next-router-mock (`test:watch` 있음)                                            |
-  | `react`         | jsdom + RTL + MSW                                                                             |
-  | `typescript`    | node                                                                                          |
+  | 워크스페이스    | 환경                                                                                                                |
+  | --------------- | ------------------------------------------------------------------------------------------------------------------- |
+  | `@blog/content` | node (`src/**/*.test.ts`)                                                                                           |
+  | `@blog/web`     | projects 둘 — `node`(`src/shared`·`src/domain`·`src/lib`) + `jsdom`(나머지 `src/**`, RTL). `pnpm test` 한 번에 실행 |
+  | `next.js`       | jsdom + RTL + next-router-mock (`test:watch` 있음)                                                                  |
+  | `react`         | jsdom + RTL + MSW                                                                                                   |
+  | `typescript`    | node                                                                                                                |
 
   예전에는 `@blog/content`와 `@blog/web`의 순수 로직이 `node --test`(+`node:assert/strict`)로 돌았다. 러너가 갈리면 단언 API·커버리지 도구·ESLint 인가가 두 벌이 되고, `node --test '<glob>'`은 **매치가 0개여도 exit 0**이라 테스트가 조용히 사라질 수 있었다. Vitest는 매치 0개면 실패한다.
 
@@ -175,11 +175,11 @@ pnpm check-seo                                      # 빌드 산출물(out/) SEO
 | `preview-blog.yml`          | `pull_request`(블로그 경로)                                                  | 빌드 → `wrangler versions upload` → 프리뷰 URL을 PR에 코멘트                                                                                                                                                   |
 | `supabase-migrations.yml`   | `push: main`(`apps/blog/web/supabase/migrations/**`·워크플로 자신), dispatch | `supabase migration list`로 원장↔파일 차이를 로그에 남긴 뒤 `supabase db push`(풀러 5432 세션 모드, `--db-url`). 대시보드 SQL 에디터로 손대던 경로를 여기 하나로 고정                                          |
 | `claude.yml`                | `@claude` 멘션 · 라벨                                                        | 온디맨드 Claude Code 에이전트                                                                                                                                                                                  |
-| `claude-code-review.yml`    | PR opened/synchronize                                                        | PR 자동 코드 리뷰                                                                                                                                                                                              |
+| `claude-code-review.yml`    | PR opened/synchronize (봇 PR은 `deps-major` 라벨일 때만)                     | PR 자동 코드 리뷰. 판정은 PR의 👍 리액션이다 — critical·high 지적이 0건일 때만 붙고, 판정을 못 내리면 뗀다(fail-closed)                                                                                        |
 | `claude-deps-audit.yml`     | 매주 월 cron                                                                 | 죽은 `pnpm overrides` 정리 + `pnpm audit` 후속 PR                                                                                                                                                              |
 | `claude-link-rot.yml`       | 매월 1일 cron                                                                | 발행 글 외부 링크 검사 → 교체 PR                                                                                                                                                                               |
-| `claude-post-inventory.yml` | `deploy-blog.yml` 완료 시(workflow_run), dispatch                            | draft/scheduled 글 현황 이슈 갱신                                                                                                                                                                              |
-| `claude-site-smoke.yml`     | 매일 cron                                                                    | 배포된 HTML/sitemap/rss 스모크 검사                                                                                                                                                                            |
+| `claude-post-inventory.yml` | `deploy-blog.yml` 완료 시(workflow_run), dispatch                            | draft/scheduled 글 현황 이슈 갱신. 세는 일은 `.github/scripts/post-inventory-collect.py`가 하고 Claude는 표로 옮겨 이슈만 갱신한다                                                                             |
+| `claude-site-smoke.yml`     | 매일 cron                                                                    | 배포된 HTML/sitemap/rss·apex 리다이렉트 스모크 검사. 실측은 `.github/scripts/site-smoke-collect.py`, 회귀 판정과 이슈 작성은 Claude                                                                            |
 
 ---
 
@@ -187,9 +187,24 @@ pnpm check-seo                                      # 빌드 산출물(out/) SEO
 
 버전의 단일 출처는 파일이다 — 여기 숫자를 복사해 두지 않는다(Renovate가 올릴 때마다 어긋난다).
 
-- **Node.js**: 루트 `package.json`의 `engines.node` / `.tool-versions` (2026-08 기준 Node 24 계열)
-- **pnpm**: 루트 `package.json`의 `packageManager` / `.tool-versions` (pnpm 11 계열)
+- **Node.js**: 루트 `package.json`의 `engines.node` / `.tool-versions`
+- **pnpm**: 루트 `package.json`의 `packageManager` / `.tool-versions`
 - **TypeScript**: `pnpm-workspace.yaml` catalog (TypeScript 6 계열 — TS5 의미론을 가정하지 말 것)
+
+---
+
+## 🤖 에이전트 지침 · 스킬
+
+AI 에이전트가 읽는 지침은 두 층이다. 늘 읽히는 **`AGENTS.md`** 하나와, 필요할 때만 열리는 스킬(`.claude/skills/<이름>/SKILL.md`).
+
+| 무엇                                              | 어디                                                                                                                                                                                                                                                                                   |
+| ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 저장소 규칙 — 계약·함정·결정 이유·금지선          | `AGENTS.md`. Claude Code·Codex·CI 리뷰어가 함께 읽는다. 루트 `CLAUDE.md`는 이 파일을 가리키는 **심볼릭 링크**다. Claude Code는 AGENTS.md를 서버 플래그로 켜지는 플러그인으로만 읽기 때문에, 링크가 없으면 플래그가 꺼진 환경에서 지침이 통째로 빠진다. 고칠 때는 `AGENTS.md`를 고칠 것 |
+| 블로그 디자인 수치와 근거(색·글꼴·레일·코드 테마) | `blog-design-system` 스킬                                                                                                                                                                                                                                                              |
+| 글 본문 커스텀 태그·코드 펜스 문법                | `blog-components` 스킬                                                                                                                                                                                                                                                                 |
+| 구조 그림 저작, `hero:` 슬롯, 새 다이어그램 등록  | `blog-diagrams` 스킬                                                                                                                                                                                                                                                                   |
+| 글의 구조·톤·어휘 (글쓰기 지침의 단일 출처)       | `tech-blog-writer` 스킬                                                                                                                                                                                                                                                                |
+| PR·이슈 — 리뷰 코멘트 처리, 빨간 PR 복구, 목록    | `pr-fix`·`repair-pr`·`list-good-prs` 스킬. `add-issue`·`write-prd`는 실제로 이슈를 만들므로 이름을 불렀을 때만 돈다                                                                                                                                                                    |
 
 ---
 

@@ -262,8 +262,8 @@ pnpm add typesense
 
 ## 디자인 규칙 (컴포넌트를 고칠 때)
 
-지금 유효한 규칙은 `blog-design-system` 스킬(수치·근거)과 `CLAUDE.md`의 "디자인 시스템 ·
-저작 문법" 절(금지선), 그리고 토큰 정의(`blog-preset.ts`)다.
+지금 유효한 규칙은 `blog-design-system` 스킬(수치·근거)과 `AGENTS.md`의 "Blog — design guardrails"
+절(금지선), 그리고 토큰 정의(`blog-preset.ts`)다.
 `apps/blog/web/design/redesign-decisions.md`에는 **왜 그렇게 정했는지**만 남아 있다 —
 만들면서 바뀐 값이 있으니 수치의 근거로 쓰지 말 것. (1:1 대조에 쓰던
 `design-reference.html`은 구현 완료 후 삭제됐다.)

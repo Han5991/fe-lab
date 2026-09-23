@@ -25,7 +25,7 @@ import type { Severity, ValidateContext } from './shared.ts';
  * 에러**로 승격됩니다. 어떤 규칙이 승격 대상인지는 아래 표에서 severity 열이
  * 이 센티널인 행만 세면 됩니다 — 정확히 6개(missing-excerpt · excerpt-length ·
  * long-title · missing-image-alt · truncated-excerpt · duplicate-description)이고,
- * 루트 CLAUDE.md의 prebuild 설명과 `rules.test.ts`가 이 집합을 잠급니다.
+ * 루트 AGENTS.md의 prebuild 설명과 `rules.test.ts`가 이 집합을 잠급니다.
  */
 export const SEO_PUBLISH = 'seo-publish' as const;
 

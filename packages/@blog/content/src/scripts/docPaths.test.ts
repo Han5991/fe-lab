@@ -2,7 +2,7 @@
  * 문서가 백틱으로 인용한 **파일 경로가 실제로 존재하는지** 검사합니다.
  *
  * 이 저장소의 문서 정확도는 성실성이 아니라 **잠금 여부**에 달려 있습니다.
- * `frontmatterSchema.test.ts`가 글자 단위로 잠그는 CLAUDE.md의 frontmatter 표는
+ * `frontmatterSchema.test.ts`가 글자 단위로 잠그는 AGENTS.md의 frontmatter 표는
  * 늘 정확한데, 잠기지 않은 산문은 리팩터 뒤 몇 라운드씩 뒤처집니다. 실제로
  * `eslint.config.mjs → .mts` 개명(81615ea) 사흘 뒤에도 문서 6곳이 옛 이름을
  * 붙들고 있었고, 그걸 발견한 것은 사람도 CI도 아니었습니다.
@@ -15,7 +15,7 @@
  * 앱(`apps/blog/web`)의 테스트 프로젝트는 `src/{shared,domain,lib}`만 node 환경으로
  * 돌리고, 문서 검사는 그 세 레이어 어디에도 속하지 않습니다. 반면 이 패키지의
  * 테스트는 이미 저장소 루트를 읽습니다 — `contract.test.ts`가 실제
- * `apps/blog/posts/`를, `frontmatterSchema.test.ts`가 루트 `CLAUDE.md`를 엽니다.
+ * `apps/blog/posts/`를, `frontmatterSchema.test.ts`가 루트 `AGENTS.md`를 엽니다.
  * 패키지 **소스**는 사이트를 모르지만 패키지 **테스트**는 이 저장소 위에서 돕니다.
  *
  * ## 무엇을 검사하지 않나
@@ -36,7 +36,6 @@ const REPO_ROOT = fileURLToPath(new URL('../../../../../', import.meta.url));
  * 새 README를 만들면 여기 추가하세요.
  */
 const DOCS = [
-  'CLAUDE.md',
   'AGENTS.md',
   'README.md',
   'apps/blog/web/README.md',
@@ -133,7 +132,6 @@ const NOT_CHECKED: Readonly<Record<string, string>> = {
     '리뷰 워크플로가 CI 워크스페이스에 만드는 런타임 파일(게시할 코멘트 본문). 저장소에는 없다',
   'apps/blog/web/src/components/diagram/MyDiagram.tsx':
     'blog-diagrams 스킬의 예제 — "이 파일을 만든다"는 지시문이지 실재 파일이 아니다',
-  'UserCard.tsx': 'AGENTS.md의 명명 규칙 예시',
   'next.js':
     '워크스페이스 이름(apps/next.js). 확장자처럼 보이지만 경로가 아니다',
 };
@@ -171,7 +169,7 @@ const pathsIn = (markdown: string): string[] => {
       looksLikePath(t) &&
       !t.includes(' ') &&
       // `…content/src/scripts/check-seo.ts`처럼 앞을 줄인 표기는 경로가 아니라
-      // 표를 좁히려고 쓴 축약이다(CLAUDE.md의 설정 파일 표).
+      // 표를 좁히려고 쓴 축약이다(문서의 파일 표).
       !t.startsWith('…') &&
       !(t in NOT_CHECKED) &&
       !isPattern(t) &&
@@ -221,7 +219,7 @@ const isTracked = (p: string) => TRACKED.has(p) || TRACKED_DIRS.has(p);
  * 해석 순서가 셋입니다. 문서마다 기준점이 다르기 때문입니다.
  *   1. **문서 자신의 폴더 기준** — 패키지 README는 `src/scripts/cli/program.ts`처럼
  *      자기 위치에서 적습니다.
- *   2. **저장소 루트 기준** — 루트 CLAUDE.md는 `apps/blog/web/...`처럼 적습니다.
+ *   2. **저장소 루트 기준** — 루트 AGENTS.md는 `apps/blog/web/...`처럼 적습니다.
  *   3. **경로 끝 일치, 단 블로그 스택 안에서만** — 위 둘로 안 잡히면 저장소의 어떤
  *      파일이 이 경로로 끝나는지 봅니다. `repository.ts`·`eslint.config.mts`처럼
  *      파일명만 인용한 자리가 여기서 걸립니다.
@@ -314,7 +312,7 @@ describe('문서가 인용한 파일 경로', () => {
   test('검사가 실제로 경로를 걷어낸다 (양성 대조)', async () => {
     // 필터가 과해져 아무것도 안 보는 상태로 조용히 죽는 것을 막습니다 —
     // 이 저장소가 무음 no-op을 최악으로 보는 것과 같은 이유입니다.
-    const markdown = await readFile(resolve(REPO_ROOT, 'CLAUDE.md'), 'utf8');
+    const markdown = await readFile(resolve(REPO_ROOT, 'AGENTS.md'), 'utf8');
     expect(pathsIn(markdown).length).toBeGreaterThan(20);
   });
 });

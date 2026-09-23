@@ -11,13 +11,17 @@ pre-commit:
   commands:
     prettier:
       # 루트 파일(`*`)과 하위 디렉터리 파일(`**/*`) 둘 다 매치. `**/*.md`만 쓰면
-      # `/`가 리터럴이라 루트의 CLAUDE.md·README.md 같은 파일이 빠져 CI의
+      # `/`가 리터럴이라 루트의 AGENTS.md·README.md 같은 파일이 빠져 CI의
       # format:check에서야 잡힌다(PR #262에서 실제로 그랬다).
       glob: '{*,**/*}.{ts,mts,tsx,js,jsx,json,md,mjs,cjs,yml,yaml}'
       # 포스트 콘텐츠는 .prettierignore 대상이고, 경로의 [시리즈명] 대괄호를
       # prettier가 glob으로 해석해 exit 2가 나므로 훅 단계에서 제외
+      # 루트 CLAUDE.md는 AGENTS.md를 가리키는 심볼릭 링크다. prettier는 링크를 파일로
+      # 직접 넘기면 에러를 내고(디렉터리 순회 때는 조용히 건너뛴다), 서식은 원본
+      # AGENTS.md 쪽에서 이미 잡히므로 제외한다
       exclude:
         - apps/blog/posts/**
+        - CLAUDE.md
       run: pnpm exec prettier --write {staged_files} --ignore-unknown
       stage_fixed: true
 
