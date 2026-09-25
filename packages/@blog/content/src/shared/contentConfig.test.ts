@@ -116,6 +116,46 @@ test('og.fonts: 준 서술자가 그대로 실린다 — 패키지에 기본 폰
   expect(config.og.fonts).toBe(TEST_VALUES.ogFonts);
 });
 
+// ── defineContent: timezone 검증 ─────────────────────────────────────────────
+
+test.each([['+9:00'], ['+0900'], ['Asia/Seoul'], ['']])(
+  "timezone.isoOffset('%s')처럼 형식이 틀리면 던진다 — 날짜만 쓴 예약 글이 조용히 영원히 비공개가 되지 않도록",
+  isoOffset => {
+    expect(() =>
+      defineTestContent({
+        root: FIXTURE_ROOT,
+        timezone: { ...TEST_VALUES.timezone, isoOffset },
+      }),
+    ).toThrow(/timezone\.isoOffset/);
+  },
+);
+
+test('timezone.utcOffsetMs가 isoOffset과 다르면 던진다', () => {
+  expect(() =>
+    defineTestContent({
+      root: FIXTURE_ROOT,
+      timezone: { ...TEST_VALUES.timezone, utcOffsetMs: 0 },
+    }),
+  ).toThrow(/utcOffsetMs/);
+});
+
+test('timezone.iana가 IANA 이름이 아니면 던진다', () => {
+  expect(() =>
+    defineTestContent({
+      root: FIXTURE_ROOT,
+      timezone: { ...TEST_VALUES.timezone, iana: 'KST+9' },
+    }),
+  ).toThrow(/timezone\.iana/);
+});
+
+test('timezone: 일관된 다른 타임존(UTC)도 받는다', () => {
+  const config = defineTestContent({
+    root: FIXTURE_ROOT,
+    timezone: { iana: 'UTC', isoOffset: 'Z', utcOffsetMs: 0 },
+  });
+  expect(config.timezone.isoOffset).toBe('Z');
+});
+
 // ── defineContent: 병합 규칙 ─────────────────────────────────────────────────
 
 test('기본값이 있는 그룹의 부분 오버라이드는 나머지를 기본값으로 유지한다', () => {

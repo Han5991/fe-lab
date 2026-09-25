@@ -22,6 +22,7 @@
  * 앱의 값 모듈에서 직접 가져갑니다. 경로를 절대경로로 푸는 쪽은 node 전용인
  * `contentPaths.ts`입니다.
  */
+import { parseIsoOffset } from './dates.ts';
 import { SUPPORTED_FENCE_LABELS } from './prismLanguages.ts';
 
 // ── 그룹별 타입 ──────────────────────────────────────────────────────────────
@@ -63,12 +64,18 @@ export interface SeoConfig {
 export interface TimezoneConfig {
   /** IANA 타임존 이름 — Intl.DateTimeFormat용 */
   iana: string;
-  /** 'YYYY-MM-DD'를 이 타임존 자정으로 볼 때 붙이는 ISO offset */
+  /**
+   * 'YYYY-MM-DD'를 이 타임존 자정으로 볼 때 붙이는 ISO offset.
+   * `'+09:00'`·`'-05:30'`·`'Z'` 형식만 받는다(defineContent가 검증).
+   */
   isoOffset: string;
   /**
    * UTC 대비 밀리초 오프셋. `msUntilKSTMidnight`가 산술에 쓴다 —
    * IANA 이름만으로는 이 계산을 못 하므로 별도 필드로 둔다.
-   * 셋은 같은 타임존을 가리켜야 한다(서로 파생 검증은 하지 않는다).
+   * 셋은 같은 타임존을 가리켜야 한다. `isoOffset`과 이 값의 일치, `iana`가
+   * 실재하는 이름인지는 defineContent가 검증한다. `iana`의 오프셋과 `isoOffset`의
+   * 일치는 보지 않는다 — 서머타임이 있는 지역은 날짜에 따라 답이 달라서, 검증이
+   * 실행 시각에 따라 통과했다 말았다 하게 된다(고정 오프셋 지역만 지원한다).
    */
   utcOffsetMs: number;
 }
@@ -654,6 +661,37 @@ function assertValidOgFonts(
   }
 }
 
+/**
+ * `timezone` 형태 검증 — 선언 시점에 막는다(fail fast).
+ *
+ * `isoOffset`은 날짜만 적은 예약 글의 공개 시각(`'YYYY-MM-DD' + 'T00:00:00' +
+ * isoOffset`)을 만든다. `'+9:00'`이나 `'Asia/Seoul'`을 주면 그 계산이 Invalid
+ * Date가 되어 **날짜만 적은 예약 글 전부가 에러 없이 영원히 비공개**가 된다.
+ * `utcOffsetMs`는 자정 타이머 산술에, `iana`는 달력 날짜 포맷에 쓰이므로 셋이
+ * 같은 타임존을 가리키는지도 여기서 본다(DST 한계는 TimezoneConfig 주석).
+ */
+function assertValidTimezone(timezone: TimezoneConfig): void {
+  const offsetMs = parseIsoOffset(timezone.isoOffset);
+  if (offsetMs === null) {
+    throw new Error(
+      `defineContent: timezone.isoOffset('${timezone.isoOffset}')은 '+09:00'·'-05:30'·'Z' 형식이어야 합니다 — ` +
+        '날짜만 적은 예약 글의 공개 시각이 이 값을 붙여 계산되므로, 형식이 틀리면 그런 글이 전부 비공개가 됩니다.',
+    );
+  }
+  if (timezone.utcOffsetMs !== offsetMs) {
+    throw new Error(
+      `defineContent: timezone.utcOffsetMs(${String(timezone.utcOffsetMs)})가 isoOffset('${timezone.isoOffset}' = ${String(offsetMs)}ms)과 다릅니다 — 셋은 같은 타임존을 가리켜야 합니다.`,
+    );
+  }
+  try {
+    new Intl.DateTimeFormat('en-US', { timeZone: timezone.iana });
+  } catch {
+    throw new Error(
+      `defineContent: timezone.iana('${timezone.iana}')는 IANA 타임존 이름(예: 'Asia/Seoul')이어야 합니다.`,
+    );
+  }
+}
+
 /** 상대 경로를 세그먼트 정규화한다 ('a/./b' → 'a/b', 'a/../b' → 'b') — 순수 문자열 연산 */
 function normalizeDir(p: string): string {
   const out: string[] = [];
@@ -710,6 +748,7 @@ function assertOutputDirsExclusive(dirs: DirsConfig): void {
 export function defineContent(user: ContentUserConfig): ContentConfig {
   assertValidRoot(user.root);
   assertValidOgFonts(user.og?.fonts);
+  assertValidTimezone(user.timezone);
   const config: ContentConfig = {
     root: user.root,
     site: user.site,
