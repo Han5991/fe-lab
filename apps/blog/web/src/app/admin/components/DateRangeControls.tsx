@@ -70,7 +70,7 @@ export function selectTrends(
 }
 
 /**
- * @param todayISO KST 오늘. 생략하면 지금 — 테스트는 경계를 결정적으로 보려고 주입한다.
+ * @param todayISO KST 오늘. 생략하면 지금 — 행이 많은 목록은 한 번 계산해 넘긴다.
  */
 export function useDateFilter(
   trends: TrendPoint[],

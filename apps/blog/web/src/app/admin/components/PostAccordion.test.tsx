@@ -36,10 +36,11 @@ const POST: PostStatDetail = {
   status: 'published',
   scheduledDate: null,
 };
+const TODAY = '2026-05-01';
 
 describe('PostAccordion', () => {
   test('링크는 펼침 버튼 밖에 있고 아이콘 링크마다 이름이 있다', () => {
-    render(<PostAccordion post={POST} />);
+    render(<PostAccordion post={POST} todayISO={TODAY} />);
 
     const toggle = screen.getByRole('button', { name: /내 글/ });
     expect(toggle.querySelector('a')).toBeNull();
@@ -52,7 +53,7 @@ describe('PostAccordion', () => {
   });
 
   test('펼침 버튼은 aria-expanded로 상태를, aria-controls로 패널을 알린다', () => {
-    render(<PostAccordion post={POST} />);
+    render(<PostAccordion post={POST} todayISO={TODAY} />);
     const toggle = screen.getByRole('button', { name: /내 글/ });
 
     expect(toggle).toHaveAttribute('aria-expanded', 'false');
@@ -69,7 +70,7 @@ describe('PostAccordion', () => {
 
   test('직전 주와 비교할 수 없는 증감률(null)은 하락이 아니라 비교 불가로 그린다', () => {
     derived.weekGrowthRate = null;
-    render(<PostAccordion post={POST} />);
+    render(<PostAccordion post={POST} todayISO={TODAY} />);
     fireEvent.click(screen.getByRole('button', { name: /내 글/ }));
 
     expect(screen.getByRole('img', { name: '비교 불가' })).toBeInTheDocument();
@@ -78,7 +79,7 @@ describe('PostAccordion', () => {
 
   test('음수 증감률만 감소로 그린다', () => {
     derived.weekGrowthRate = -20;
-    render(<PostAccordion post={POST} />);
+    render(<PostAccordion post={POST} todayISO={TODAY} />);
     fireEvent.click(screen.getByRole('button', { name: /내 글/ }));
 
     expect(screen.getByRole('img', { name: '감소' })).toBeInTheDocument();
@@ -86,7 +87,9 @@ describe('PostAccordion', () => {
   });
 
   test('비공개 글에는 404가 나는 공개 글 링크를 두지 않는다', () => {
-    render(<PostAccordion post={{ ...POST, status: 'draft' }} />);
+    render(
+      <PostAccordion post={{ ...POST, status: 'draft' }} todayISO={TODAY} />,
+    );
 
     expect(
       screen.queryByRole('link', { name: /새 탭에서 열기/ }),

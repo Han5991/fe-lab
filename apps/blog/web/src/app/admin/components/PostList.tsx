@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import { getKSTDateISO } from '@blog/content';
+import { TIMEZONE } from '@/content.values.mts';
 import { useAdminDashboardData } from '@/src/hooks/useAdminViews';
 import { css } from '@design-system/ui-lib/css';
 import { PostAccordion } from './PostAccordion';
@@ -15,6 +17,9 @@ export function PostList() {
     useAdminDashboardData();
   const [sortField, setSortField] = useState<'date' | 'views'>('date');
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
+
+  // 행마다 부르면 Intl.DateTimeFormat이 행 수 × 2만큼 만들어진다.
+  const todayISO = getKSTDateISO(TIMEZONE);
 
   const handleRefresh = () => {
     void refetch();
@@ -150,7 +155,7 @@ export function PostList() {
 
       <div className={css({ display: 'flex', flexDir: 'column' })}>
         {sortedData.map(post => (
-          <PostAccordion key={post.slug} post={post} />
+          <PostAccordion key={post.slug} post={post} todayISO={todayISO} />
         ))}
         {sortedData.length === 0 && (
           <div

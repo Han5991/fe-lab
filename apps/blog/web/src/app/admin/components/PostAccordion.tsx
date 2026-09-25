@@ -1,7 +1,6 @@
 'use client';
 
 import { TIMEZONE } from '@/content.values.mts';
-import { getKSTDateISO } from '@blog/content';
 import { useId, useState } from 'react';
 import type { PostStatDetail } from '@/src/hooks/useAdminViews';
 import { computeBriefStats } from '@/src/hooks/usePostDetailStats';
@@ -46,12 +45,14 @@ const STATUS_BADGE = {
 
 interface Props {
   post: PostStatDetail;
+  /** KST 오늘 — 목록이 한 번 계산해 모든 행에 내려 준다. */
+  todayISO: string;
 }
 
-export function PostAccordion({ post }: Props) {
+export function PostAccordion({ post, todayISO }: Props) {
   const [isOpen, setIsOpen] = useState(false);
   const panelId = useId();
-  const briefStats = computeBriefStats(post, getKSTDateISO(TIMEZONE));
+  const briefStats = computeBriefStats(post, todayISO);
 
   // frontmatter의 status(발행 의도)가 아니라 **지금 실제로 공개 중인지**로 배지를
   // 그립니다. 판정은 도메인 함수 하나에 위임합니다 — 예전에는 이 자리에서 규칙을
@@ -68,7 +69,7 @@ export function PostAccordion({ post }: Props) {
     endDate,
     setEndDate,
     filteredTrends,
-  } = useDateFilter(post.trends);
+  } = useDateFilter(post.trends, todayISO);
 
   const formattedData = filteredTrends.map(d => ({
     name: formatMonthDayISO(d.view_date),
