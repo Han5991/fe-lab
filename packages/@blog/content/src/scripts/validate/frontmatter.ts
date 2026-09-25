@@ -304,10 +304,10 @@ const excerptChain: Chain = ({ record: { data, relPath }, raw, options }) => {
 /**
  * YAML이 Date 객체로 준 값이 **날짜만** 적힌 것이었나.
  *
- * 따옴표 없는 `2026-06-01`은 UTC 자정 Date가 되고, `toDateString`이 되돌리면
- * 적은 날짜 그대로라 무해하다(실제 원고 두 편이 이렇게 쓴다). 따옴표 없는
- * **시각**은 그렇지 않다 — 원문을 보고 가른다. 원문 줄을 못 찾으면(흐름 매핑 등)
- * 값이 UTC 자정인지로 판정한다.
+ * 따옴표 없는 `2026-06-01`은 UTC 자정 Date가 되고, 로더가 되읽어도 적은 날짜와
+ * 같은 날이라 무해하다(실제 원고 두 편이 이렇게 쓴다). 따옴표 없는 **시각**은
+ * `date`에 시각을 둔 것이라 계약 밖이다 — 파싱 결과로는 둘을 못 가르므로 원문을
+ * 본다. 원문 줄을 못 찾으면(흐름 매핑 등) 값이 UTC 자정인지로 판정한다.
  */
 function isDateOnlyTimestamp(value: Date, written: string | null): boolean {
   if (written !== null) return /^\d{4}-\d{2}-\d{2}$/.test(written);
@@ -354,12 +354,14 @@ const dateChain: Chain = ({ record: { data, relPath }, raw, options }) => {
   if (value instanceof Date) {
     const written = frontmatterScalar(raw, 'date');
     if (!isDateOnlyTimestamp(value, written)) {
-      // 따옴표 없는 datetime은 YAML이 Date로 만들고, 로더는 그 **UTC 날짜**만
-      // 남긴다. `2026-10-01T08:00:00+09:00`은 `2026-09-30`이 되고, 예약 글이면
-      // 그날 KST 자정에 공개된다 — 의도보다 최대 하루 반 일찍.
+      // 따옴표 없는 datetime은 YAML이 Date로 만든다. 예전 로더는 그 **UTC 날짜**만
+      // 남겨 `2026-10-01T08:00:00+09:00`이 `2026-09-30`이 됐고, 예약 글은 그날
+      // KST 자정에 — 의도보다 최대 하루 반 일찍 — 공개됐다. 지금 로더는 시각을
+      // 되살리지만, `date`에 시각을 두는 것 자체가 계약 밖이다(아래 invalid-date와
+      // 같은 이유). 따옴표가 없다는 점까지 알려 줘야 고칠 곳이 보여서 규칙을 나눈다.
       push(
         'unquoted-date',
-        `\`date\`에 따옴표 없는 시각이 있습니다 — YAML이 Date로 파싱해 UTC 날짜만 남기므로 날짜가 하루 당겨질 수 있고, 예약 글은 그만큼 일찍 공개됩니다. \`date: 'YYYY-MM-DD'\`로 쓰고 시각은 \`scheduledDate: '2026-06-01T09:00:00+09:00'\`처럼 따로 적으세요: ${written ?? describeValue(value)}`,
+        `\`date\`에 따옴표 없는 시각이 있습니다 — \`date\`는 'YYYY-MM-DD' 날짜 하나만 받고(시각은 \`scheduledDate\`의 몫), 따옴표가 없으면 YAML이 Date 객체로 바꿔 적은 그대로 읽히지도 않습니다. \`date: 'YYYY-MM-DD'\`로 쓰고 시각은 \`scheduledDate: '2026-06-01T09:00:00+09:00'\`처럼 따로 적으세요: ${written ?? describeValue(value)}`,
       );
     } else if (written !== null && !isCalendarDate(written)) {
       // YAML은 `2026-02-30`을 오류 없이 3월 2일로 넘긴다.
@@ -416,15 +418,15 @@ const updatedAtChain: Chain = ({ record: { data, relPath }, raw, options }) => {
     });
 
   // `updatedAt`은 수정 시각이라 datetime도 받는다(Schema.org dateModified) — 단
-  // offset을 명시한 ISO여야 한다. 따옴표 없는 datetime은 date와 같은 이유로 UTC
-  // 날짜만 남는다.
+  // offset을 명시한 ISO 문자열이어야 한다. 따옴표 없는 datetime은 YAML이 Date로
+  // 바꿔 원문의 offset이 사라진다(예전 로더는 UTC 날짜만 남겨 하루가 어긋났다).
   const value = data['updatedAt'];
   if (value instanceof Date) {
     const written = frontmatterScalar(raw, 'updatedAt');
     if (!isDateOnlyTimestamp(value, written)) {
       push(
         'unquoted-updated-at',
-        `\`updatedAt\`에 따옴표 없는 시각이 있습니다 — YAML이 Date로 파싱해 UTC 날짜만 남기므로 dateModified·sitemap lastmod가 하루 어긋날 수 있습니다. 'YYYY-MM-DD'나 따옴표로 감싼 '2026-06-01T09:00:00+09:00'으로 쓰세요: ${written ?? describeValue(value)}`,
+        `\`updatedAt\`에 따옴표 없는 시각이 있습니다 — YAML이 Date 객체로 바꿔 적은 그대로 읽히지 않습니다(원문의 offset이 사라집니다). 'YYYY-MM-DD'나 따옴표로 감싼 '2026-06-01T09:00:00+09:00'으로 쓰세요: ${written ?? describeValue(value)}`,
       );
     } else if (written !== null && !isCalendarDate(written)) {
       push(
@@ -465,17 +467,18 @@ const scheduledDateChain: Chain = ({
 }) => {
   const issues: Issue[] = [];
 
-  // scheduledDate는 반드시 따옴표로 감싼 문자열이어야 합니다.
-  // 무따옴표 datetime(`scheduledDate: 2026-06-01T09:00:00+09:00`)은 YAML이 Date
-  // 객체로 파싱하고, repository.ts가 문자열이 아닌 값을 버립니다. 그러면 공개 시각이
-  // date로 폴백되는데 date는 KST 자정 기준이라 **의도보다 9시간 일찍 공개**됩니다.
+  // scheduledDate는 반드시 따옴표로 감싼 문자열이어야 합니다 — 원문이 곧 공개
+  // 시각이어야 해서입니다. 무따옴표 값은 YAML이 Date 객체로 바꿉니다. 로더는 그
+  // 시각을 사이트 오프셋의 ISO로 되살리지만(예전에는 값을 버리고 `date`로 폴백해
+  // 9시간 일찍 공개했다), **날짜만 적은** 무따옴표 값은 UTC 자정 = KST 오전 9시가
+  // 되어, 따옴표를 친 같은 값(KST 자정)과 공개 시각이 9시간 갈립니다.
   if ('scheduledDate' in data && typeof data['scheduledDate'] !== 'string') {
     issues.push({
       file: relPath,
       line: findFrontmatterLine(raw, 'scheduledDate'),
       severity: resolveSeverity('unquoted-scheduled-date', data, options),
       rule: 'unquoted-scheduled-date',
-      message: `\`scheduledDate\`는 따옴표로 감싼 문자열이어야 합니다. 무따옴표로 쓰면 YAML이 Date 객체로 파싱해 값이 버려지고, 공개 시각이 \`date\`(KST 자정)로 폴백되어 의도보다 9시간 일찍 공개됩니다. 예: \`scheduledDate: '2026-06-01T09:00:00+09:00'\``,
+      message: `\`scheduledDate\`는 따옴표로 감싼 문자열이어야 합니다. 따옴표가 없으면 YAML이 Date 객체로 바꿔 적은 그대로 읽히지 않고, 날짜만 적은 값은 UTC 자정(KST 오전 9시)이 되어 따옴표를 친 같은 값(KST 자정)과 공개 시각이 9시간 어긋납니다. 예: \`scheduledDate: '2026-06-01T09:00:00+09:00'\``,
     });
   }
 

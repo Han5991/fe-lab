@@ -114,6 +114,48 @@ test('resolveSeverity: 무따옴표 date(YAML Date 객체)도 공개 판정에 �
   ).toBe('error');
 });
 
+test('resolveSeverity: 읽을 수 없는 scheduledDate는 date로 폴백하지 않는다 (로더와 같은 판정)', () => {
+  // 로더는 있는데 못 읽는 예약 시각을 가진 글을 영영 공개하지 않는다 — date가
+  // 이미 지났어도. 여기서 date로 폴백하면 공개되지도 않는 글을 에러로 막는다.
+  const rule: RuleId = 'missing-excerpt';
+  for (const scheduledDate of ['bad', '2026-06-01 09:00:00+09:00', 123]) {
+    expect(
+      resolveSeverity(
+        rule,
+        { title: 'x', status: 'scheduled', date: '2020-01-01', scheduledDate },
+        STRICT_CTX,
+      ),
+      String(scheduledDate),
+    ).toBe('warning');
+  }
+  // 읽을 수 있는 예약 시각이 지났으면 공개 → 에러
+  expect(
+    resolveSeverity(
+      rule,
+      {
+        title: 'x',
+        status: 'scheduled',
+        date: '2020-01-01',
+        scheduledDate: '2020-01-01T09:00:00+09:00',
+      },
+      STRICT_CTX,
+    ),
+  ).toBe('error');
+  // published는 예약 시각과 무관하게 공개
+  expect(
+    resolveSeverity(
+      rule,
+      {
+        title: 'x',
+        status: 'published',
+        date: '2020-01-01',
+        scheduledDate: 'bad',
+      },
+      STRICT_CTX,
+    ),
+  ).toBe('error');
+});
+
 test('resolveSeverity: 고정 심각도 규칙은 strict와 무관하게 테이블 값 그대로', () => {
   expect(resolveSeverity('missing-title', PUBLISHED, CTX)).toBe('error');
   expect(resolveSeverity('missing-title', { title: 'x' }, STRICT_CTX)).toBe(
