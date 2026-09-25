@@ -149,9 +149,11 @@ Worker (`apps/blog/web/wrangler.jsonc`), Supabase for the dynamic bits.
 - **Supabase 클라이언트는 둘이다**: 공개 페이지는 `src/lib/platform/publicClient.ts`(`@supabase/postgrest-js`만 —
   supabase-js 전체는 45KB gzip이고 그중 18.5KB가 죽은 코드였다), admin은 `src/lib/platform/client.ts`.
   `src/domain/analytics` 배럴이 `index`·`admin` 둘로 나뉜 이유다. Analytics RPC는 `anon`에 잠겨 있다.
-- **GTM 컨테이너는 저장소 밖에 있다.** 코드엔 ID 한 줄뿐이고, 이 컨테이너가 **Microsoft Clarity**를 로드해
-  서드파티 쿠키 8개를 심는다(이슈 #165 — Best Practices 77점의 원인). 태그를 바꾸면 이 문단과 `/privacy`를 함께
-  갱신할 것. 감점을 없애려면 고지가 아니라 GTM 콘솔에서 Clarity를 내려야 한다.
+- **분석 태그는 코드에 둘이다.** `apps/blog/web/src/app/layout.tsx`가 프로덕션에서 GA4(`GoogleAnalytics`)와
+  GTM(`GoogleTagManager`)을 **둘 다 직접** 로드한다. GTM 컨테이너는 저장소 밖(웹 콘솔)이라 내용을 여기서 확인할 수
+  없다 — 컨테이너 안에 GA4 태그가 또 있으면 페이지뷰가 두 번 집계되니 GA는 한쪽에만 둘 것. 그 컨테이너가
+  **Microsoft Clarity**를 로드해 서드파티 쿠키 8개를 심는다(이슈 #165 — Best Practices 77점의 원인). 태그를 바꾸면
+  이 문단과 `/privacy`를 함께 갱신할 것. 감점을 없애려면 고지가 아니라 GTM 콘솔에서 Clarity를 내려야 한다.
 
 ## 8. Blog — layers and content contract
 
