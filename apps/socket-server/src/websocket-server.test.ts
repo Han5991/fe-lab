@@ -19,8 +19,7 @@ import {
   WebSocketServer,
 } from './websocket-server.ts';
 
-// 브라우저 대신 날 TCP 소켓으로 서버를 두드린다 — 청크 경계를 직접 정해야
-// "TCP는 스트림"이라는 조건을 재현할 수 있다.
+// 청크 경계를 직접 정하려고 브라우저 대신 날 TCP 소켓을 쓴다
 
 const WAIT_MS = 2000;
 
@@ -34,7 +33,6 @@ interface RawClient {
   /** 다음 서버 프레임(주식 시세 브로드캐스트는 건너뛴다) */
   nextFrame(timeoutMs?: number): Promise<ServerFrame>;
   nextText(): Promise<string>;
-  /** 서버가 TCP를 닫을 때 resolve */
   closed: Promise<void>;
   priceUpdates(): number;
 }
@@ -143,7 +141,6 @@ async function openClient(
       upgraded = true;
       resolveUpgrade();
     }
-    // 서버→클라이언트 프레임(마스킹 없음) 파싱
     for (;;) {
       if (pending.length < 2) return;
       let length = pending[1] & 0x7f;
@@ -164,12 +161,12 @@ async function openClient(
       };
       pending = pending.subarray(offset + length);
       if (frame.opcode === 0x9) {
-        // Ping — 브라우저처럼 같은 페이로드로 Pong을 돌려준다
+        // 브라우저처럼 Pong으로 답한다
         if (autoPong) socket.write(clientFrame(0xa, frame.payload));
         continue;
       }
       if (frame.opcode === 0x8 && !closeSent) {
-        // Close — 브라우저처럼 같은 상태 코드로 Close를 돌려준다
+        // 브라우저처럼 Close로 답한다
         closeSent = true;
         if (socket.writable) socket.write(clientFrame(0x8, frame.payload));
       }
@@ -214,7 +211,6 @@ async function openClient(
 }
 
 beforeAll(() => {
-  // 연결·메시지마다 찍히는 서버 로그를 끈다
   vi.spyOn(console, 'log').mockImplementation(() => {});
   vi.spyOn(console, 'error').mockImplementation(() => {});
 });
@@ -257,7 +253,6 @@ function useServer(
       sockets.push(client.socket);
       return client;
     },
-    /** 핸드셰이크 요청을 보내고 서버의 첫 응답을 돌려준다 */
     handshake(request: (port: number) => string) {
       const socket = net.connect(port, '127.0.0.1');
       sockets.push(socket);

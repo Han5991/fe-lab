@@ -7,20 +7,11 @@ import type { Duplex } from 'node:stream';
  * WebSocket 서버 옵션
  */
 interface WebSocketServerOptions {
-  /**
-   * 허용할 Origin. 목록이면 정확히 일치하는 것만, 함수면 true를 돌려준 것만 허용한다.
-   * null이면 모든 origin 허용. Origin 헤더가 없는 요청(브라우저가 아닌 클라이언트)은 늘 통과한다
-   */
+  /** null이면 모두 허용. Origin 헤더가 없는 요청(브라우저 밖 클라이언트)은 늘 통과한다 */
   allowedOrigins?: string[] | ((origin: string) => boolean) | null;
-  /** 세션 타임아웃 시간 (밀리초). 이 시간 동안 아무것도 받지 못한 연결을 닫는다. 기본값: 5분 */
+  /** 이 시간(ms) 동안 아무것도 받지 못한 연결을 닫는다. 기본값: 5분 */
   sessionTimeout?: number;
-  /**
-   * 서버가 Ping을 보내는 주기 (밀리초). 기본값: 30초
-   *
-   * 듣기만 하는 클라이언트(시세 화면)는 보낼 게 없다. 브라우저는 Ping에 Pong을 자동으로
-   * 답하므로, 그 Pong이 "살아 있음"을 알려 sessionTimeout에 걸리지 않게 한다.
-   * Pong도 오지 않는 연결은 죽은 것으로 보고 닫는다.
-   */
+  /** Ping 주기(ms). 기본값: 30초 — 브라우저의 자동 Pong이 듣기만 하는 연결을 sessionTimeout에서 살린다 */
   heartbeatInterval?: number;
   /** 비활성 세션을 검사하는 주기 (밀리초). 기본값: 1분 */
   cleanupInterval?: number;
@@ -28,10 +19,7 @@ interface WebSocketServerOptions {
   stockBroadcastInterval?: number;
 }
 
-/**
- * 클라이언트가 받을 메시지 묶음. 접속 URL의 `?topics=stocks,chat`으로 고르고,
- * 지정하지 않으면 채팅만 받는다 — 채팅 화면이 초마다 오는 시세에 묻히지 않게 한다.
- */
+/** `?topics=stocks,chat`으로 고른다. 기본은 채팅만 — 채팅 화면이 초마다 오는 시세에 묻히지 않게 */
 type Topic = 'chat' | 'stocks';
 
 const TOPICS: readonly Topic[] = ['chat', 'stocks'];
@@ -47,10 +35,7 @@ function parseTopics(value: string | null): Set<Topic> {
   );
 }
 
-/**
- * 로컬 개발 출처인가. 포트는 보지 않는다 — Vite는 5173이 차 있으면 5174로 옮겨 뜨는데,
- * 포트를 박아 두면 그때 핸드셰이크가 403으로 막힌다.
- */
+/** 포트는 보지 않는다 — Vite는 5173이 차 있으면 다른 포트로 뜬다 */
 export function isLocalOrigin(origin: string): boolean {
   try {
     const { hostname } = new URL(origin);
@@ -94,12 +79,7 @@ type ClientEventListener<E extends ClientEvent> =
     ? () => void
     : (data: ClientEventPayloadMap[E]) => void;
 
-/**
- * WebSocket Opcode
- *
- * enum 대신 const 객체다 — node의 type stripping(`dev`의 `node --watch src/index.ts`)은
- * 지울 수 있는 타입 문법만 받는다(tsconfig `erasableSyntaxOnly`).
- */
+/** WebSocket Opcode. enum이 아닌 건 node type stripping(`erasableSyntaxOnly`)이 enum을 못 지워서다 */
 const WebSocketOpcode = {
   Continuation: 0x0,
   Text: 0x1,
@@ -109,21 +89,19 @@ const WebSocketOpcode = {
   Pong: 0xa,
 } as const;
 
-/** 한 메시지 페이로드의 상한. 넘으면 1009로 닫는다 — 수신 버퍼가 무한히 자라지 않게 한다 */
+/** 한 메시지 페이로드 상한. 넘으면 1009 */
 const MAX_PAYLOAD = 1024 * 1024;
 
-/** 한 메시지의 조각(프레임) 수 상한. 넘으면 1009 — 빈 조각은 길이 상한에 걸리지 않는다 */
+/** 한 메시지의 조각 수 상한. 넘으면 1009 — 빈 조각은 길이 상한에 걸리지 않는다 */
 export const MAX_FRAGMENTS = 1024;
 
 /** 제어 프레임(Close·Ping·Pong) 페이로드 상한 (RFC 6455 §5.5) */
 const MAX_CONTROL_PAYLOAD = 125;
 
-/** Close를 보낸 뒤 상대의 Close를 기다리는 시간. 넘으면 TCP를 강제로 끊는다 */
+/** Close를 보낸 뒤 상대의 Close를 기다리는 시간(ms). 넘으면 TCP를 끊는다 */
 const CLOSE_TIMEOUT = 3000;
 
-/**
- * RFC 6455 §7.4 상태 코드 중 이 서버가 쓰는 것
- */
+/** RFC 6455 §7.4 상태 코드 중 이 서버가 쓰는 것 */
 const CloseCode = {
   Normal: 1000,
   GoingAway: 1001,
@@ -142,17 +120,9 @@ function isValidCloseCode(code: number): boolean {
   );
 }
 
-/**
- * 연결 상태. CONNECTING(핸드셰이크 전)은 WebSocketConnection이 만들어지기 전 단계다.
- * - OPEN: 메시지를 주고받는다
- * - CLOSING: 이쪽이 Close를 보냈고 상대의 Close를 기다린다 — 더 보내지 않는다
- * - CLOSED: Close를 주고받았거나 TCP가 끊겼다
- */
+/** CLOSING: 이쪽이 Close를 보냈고 상대의 Close를 기다린다 — 더 보내지 않는다 */
 type ReadyState = 'OPEN' | 'CLOSING' | 'CLOSED';
 
-/**
- * 수신 버퍼에서 완성된 프레임 하나를 떼어 낸 결과
- */
 interface ParsedFrame {
   isFinalFrame: boolean;
   opcode: number;
@@ -161,9 +131,7 @@ interface ParsedFrame {
   frameLength: number;
 }
 
-/**
- * 연결을 끊어야 하는 프로토콜 위반. `closeCode`는 RFC 6455 §7.4.1의 상태 코드다
- */
+/** 연결을 끊어야 하는 프로토콜 위반. `closeCode`는 RFC 6455 §7.4.1 상태 코드 */
 class WebSocketProtocolError extends Error {
   readonly closeCode: number;
 
@@ -195,7 +163,6 @@ export class WebSocketServer {
   private readonly allowedOrigins:
     string[] | ((origin: string) => boolean) | null;
   private readonly sessionTimeout: number;
-  /** 주기 작업 전부. shutdown이 한꺼번에 멈춘다 */
   private readonly timers: NodeJS.Timeout[];
   private readonly cleanupTimer: NodeJS.Timeout;
   private stockData: Map<string, StockData>;
@@ -260,19 +227,16 @@ export class WebSocketServer {
     // HTTP 서버의 upgrade 이벤트를 리스닝
     this.httpServer.on('upgrade', this.handleUpgrade.bind(this));
 
-    // 세션 정리 타이머 시작 (기본 1분마다 체크)
     this.cleanupTimer = this.every(options.cleanupInterval || 60 * 1000, () =>
       this.cleanupInactiveSessions(),
     );
 
-    // 하트비트 (기본 30초마다 Ping). 돌아오는 Pong은 수신 데이터라 lastActiveAt을 갱신한다
     this.every(options.heartbeatInterval || 30 * 1000, () => {
       for (const client of this.clients) {
         client.ping();
       }
     });
 
-    // 주식 데이터 브로드캐스트 시작 (기본 1초마다)
     this.every(options.stockBroadcastInterval || 1000, () =>
       this.updateStockPrices(),
     );
@@ -301,9 +265,7 @@ export class WebSocketServer {
       return;
     }
 
-    // 구독할 topic 추출 (쿼리 파라미터: ?topics=stocks)
-    // Host 헤더는 클라이언트 입력이다 — `Host: [` 같은 값에 URL 생성자가 던지면
-    // upgrade 리스너 밖으로 새어 프로세스가 죽는다
+    // Host는 클라이언트 입력이라 URL 생성자가 던질 수 있다 — 리스너 밖으로 새면 프로세스가 죽는다
     let url: URL;
     try {
       url = new URL(
@@ -316,8 +278,7 @@ export class WebSocketServer {
     }
     const topics = parseTopics(url.searchParams.get('topics'));
 
-    // 핸드셰이크 검증 (RFC 6455 §4.2.1): Upgrade: websocket, 버전 13,
-    // 키는 16바이트를 Base64로 인코딩한 값
+    // 핸드셰이크 검증 (RFC 6455 §4.2.1)
     if (req.headers.upgrade?.toLowerCase() !== 'websocket') {
       socket.end('HTTP/1.1 400 Bad Request\r\n\r\n');
       return;
@@ -372,7 +333,6 @@ export class WebSocketServer {
     // 클라이언트 이벤트 리스너
     client.on('message', (data: string) => {
       console.log(`[${sessionId}] Received text:`, data);
-      // 채팅을 구독한 클라이언트에게 브로드캐스트
       this.broadcast(data, 'chat');
     });
 
@@ -389,8 +349,7 @@ export class WebSocketServer {
       );
     });
 
-    // 핸드셰이크와 같은 패킷에 실려 온 프레임 처리 — 리스너를 단 **뒤에** 넣어야
-    // 그 프레임의 message 이벤트가 허공에 emit되지 않는다
+    // 핸드셰이크 패킷에 붙어 온 프레임 — 리스너를 단 뒤에 넣어야 이벤트를 잃지 않는다
     if (head.length > 0) {
       client.receive(head);
     }
@@ -407,9 +366,6 @@ export class WebSocketServer {
     return this.allowedOrigins.includes(origin);
   }
 
-  /**
-   * 연결된 클라이언트에게 메시지 브로드캐스트. topic을 주면 그 topic을 구독한 클라이언트에게만
-   */
   broadcast(message: string, topic?: Topic): void {
     for (const client of this.clients) {
       if (topic === undefined || client.isSubscribed(topic)) {
@@ -507,7 +463,6 @@ export class WebSocketServer {
    * 주식 가격 업데이트 및 브로드캐스트
    */
   private updateStockPrices(): void {
-    // 시세를 구독한 클라이언트가 없으면 브로드캐스트 안함
     const hasSubscribers = Array.from(this.clients).some(client =>
       client.isSubscribed('stocks'),
     );
@@ -547,7 +502,6 @@ export class WebSocketServer {
         },
       });
 
-      // 시세를 구독한 클라이언트에게 브로드캐스트
       this.broadcast(message, 'stocks');
     }
   }
@@ -575,7 +529,7 @@ export class WebSocketServer {
       clearInterval(timer);
     }
 
-    // 모든 연결 종료 (1001: 서버가 내려간다)
+    // 모든 연결 종료
     for (const client of this.clients) {
       client.close(CloseCode.GoingAway, 'Server shutting down');
     }
@@ -597,17 +551,12 @@ class WebSocketConnection {
   private fragmentedLength: number;
   private fragmentedOpcode: number | null;
   private readonly sessionInfo: SessionInfo;
-  /**
-   * 아직 프레임으로 떼어 내지 못한 수신 청크와 그 총길이.
-   * TCP는 스트림이라 'data' 청크 경계가 프레임 경계와 맞지 않는다 — 한 청크에 프레임이
-   * 여럿 오기도, 한 프레임(헤더까지)이 여러 청크로 쪼개져 오기도 한다.
-   */
+  /** 아직 프레임으로 떼어 내지 못한 청크 — TCP 청크 경계는 프레임 경계와 맞지 않는다 */
   private receivedChunks: Buffer[];
   private receivedLength: number;
-  /** 다음 프레임(헤더가 덜 왔으면 그 헤더)을 읽는 데 필요한 바이트 수. 모이기 전에는 합치지 않는다 */
+  /** 다음 프레임(덜 왔으면 그 헤더)을 읽는 데 필요한 바이트 수 */
   private bytesNeeded: number;
   private readyState: ReadyState;
-  /** Close를 보낸 뒤 상대가 답하지 않으면 TCP를 끊는 타이머 */
   private closeTimer: NodeJS.Timeout | null;
   private readonly topics: ReadonlySet<Topic>;
 
@@ -646,8 +595,7 @@ class WebSocketConnection {
       this.emit('close');
     });
 
-    // 상대가 Close 프레임 없이 TCP를 닫았다(FIN). HTTP 서버 소켓은 allowHalfOpen이라
-    // 이쪽도 end()해야 연결이 완전히 닫힌다
+    // Close 없이 온 FIN — HTTP 서버 소켓은 allowHalfOpen이라 이쪽도 end()해야 닫힌다
     this.socket.on('end', () => {
       this.readyState = 'CLOSED';
       this.socket.end();
@@ -658,10 +606,7 @@ class WebSocketConnection {
     });
   }
 
-  /**
-   * 수신 청크를 모아 두고, 완성된 프레임을 **전부** 처리한다.
-   * 덜 온 프레임(헤더 일부만 온 경우 포함)은 다음 청크까지 남긴다.
-   */
+  /** 완성된 프레임을 전부 처리하고, 덜 온 프레임은 다음 청크까지 남긴다 */
   receive(chunk: Buffer): void {
     if (this.readyState === 'CLOSED') return;
 
@@ -670,7 +615,7 @@ class WebSocketConnection {
 
     this.receivedChunks.push(chunk);
     this.receivedLength += chunk.length;
-    // 청크마다 합치면 덜 온 큰 프레임을 청크 수만큼 다시 복사한다 — 다 모였을 때 한 번만 합친다
+    // 다 모였을 때 한 번만 합친다 — 청크마다 합치면 큰 프레임을 거듭 복사한다
     if (this.receivedLength < this.bytesNeeded) return;
     let buffer =
       this.receivedChunks.length === 1
@@ -682,7 +627,6 @@ class WebSocketConnection {
       while (frame !== null) {
         buffer = buffer.subarray(frame.frameLength);
         this.handleFrame(frame);
-        // handleFrame이 Close를 처리했으면 남은 바이트는 해석하지 않는다
         if (this.isClosed()) return;
         frame = this.readFrame(buffer);
       }
@@ -725,7 +669,6 @@ class WebSocketConnection {
    * +---------------------------------------------------------------+
    */
   private readFrame(buffer: Buffer): ParsedFrame | null {
-    // 최소 헤더(2바이트)도 안 왔다
     if (buffer.length < 2) return this.waitFor(2);
 
     // 첫 번째 바이트: FIN, RSV, Opcode
@@ -746,7 +689,7 @@ class WebSocketConnection {
     const isMasked = Boolean(secondByte & 0x80);
     let payloadLength = secondByte & 0x7f;
 
-    // 클라이언트→서버 프레임은 반드시 마스킹된다 — 아니면 서버는 연결을 닫아야 한다 (§5.1)
+    // 클라이언트 프레임은 반드시 마스킹된다 (§5.1)
     if (!isMasked) {
       throw new WebSocketProtocolError(
         CloseCode.ProtocolError,
@@ -767,7 +710,7 @@ class WebSocketConnection {
 
     let offset = 2;
 
-    // Extended payload length — 확장 길이 필드가 다 오기 전에는 읽지 않는다
+    // Extended payload length
     if (payloadLength === 126) {
       if (buffer.length < offset + 2) return this.waitFor(offset + 2);
       payloadLength = buffer.readUInt16BE(offset);
@@ -790,7 +733,6 @@ class WebSocketConnection {
 
     // Masking key(4바이트) 다음이 페이로드
     const frameLength = offset + 4 + payloadLength;
-    // 페이로드가 다 오지 않았다 — 다음 청크를 기다린다
     if (buffer.length < frameLength) return this.waitFor(frameLength);
 
     const maskingKey = buffer.subarray(offset, offset + 4);
@@ -799,7 +741,7 @@ class WebSocketConnection {
     // Payload data
     const payloadData = buffer.subarray(offset, frameLength);
 
-    // 마스킹 해제 (unmask는 새 버퍼를 만든다 — 수신 버퍼를 계속 붙잡지 않는다)
+    // 마스킹 해제 — unmask가 새 버퍼를 만들어 수신 버퍼를 붙잡지 않는다
     const payload = this.unmask(payloadData, maskingKey);
 
     return { isFinalFrame, opcode, payload, frameLength };
@@ -810,9 +752,6 @@ class WebSocketConnection {
     return null;
   }
 
-  /**
-   * 완성된 프레임 하나를 opcode에 따라 처리한다
-   */
   private handleFrame({ isFinalFrame, opcode, payload }: ParsedFrame): void {
     // Close를 보낸 뒤(CLOSING)에는 상대의 Close만 기다린다
     if (this.readyState === 'CLOSING' && opcode !== WebSocketOpcode.Close) {
@@ -848,7 +787,7 @@ class WebSocketConnection {
       this.fragmentedMessage.push(payload);
       this.fragmentedLength += payload.length;
 
-      // 조각마다는 상한 안이어도 합치면 넘을 수 있다 — 조립 중에도 상한을 지킨다
+      // 조각마다 상한 안이어도 합치면 넘을 수 있다
       if (this.fragmentedLength > MAX_PAYLOAD) {
         throw new WebSocketProtocolError(
           CloseCode.MessageTooBig,
@@ -882,7 +821,7 @@ class WebSocketConnection {
     } else if (opcode === WebSocketOpcode.Ping) {
       this.sendPong(payload);
     } else if (opcode === WebSocketOpcode.Pong) {
-      // Pong 수신 — 하트비트 응답. 활동 시각은 receive()에서 이미 갱신했다
+      // 하트비트 응답 — 활동 시각은 receive()가 이미 갱신했다
     } else {
       throw new WebSocketProtocolError(
         CloseCode.ProtocolError,
@@ -891,11 +830,7 @@ class WebSocketConnection {
     }
   }
 
-  /**
-   * 상대가 보낸 Close 프레임 처리 (§5.5.1, §7.1)
-   * - OPEN: 상대가 먼저 닫는다 → 같은 상태 코드로 Close를 돌려주고 TCP를 닫는다
-   * - CLOSING: 이쪽 Close에 대한 응답이다 → 다시 보내지 않고 TCP만 닫는다
-   */
+  /** 상대의 Close (§7.1): OPEN이면 같은 코드로 답하고(CLOSING이면 응답이라 보내지 않는다) TCP를 닫는다 */
   private handleCloseFrame(payload: Buffer): void {
     if (payload.length === 1) {
       throw new WebSocketProtocolError(
@@ -924,9 +859,7 @@ class WebSocketConnection {
     this.finishClose();
   }
 
-  /**
-   * Close 교환이 끝났다: 서버가 먼저 TCP를 닫는다 (§7.1.1)
-   */
+  /** 서버가 먼저 TCP를 닫는다 (§7.1.1) */
   private finishClose(): void {
     this.readyState = 'CLOSED';
     this.receivedChunks = [];
@@ -936,9 +869,6 @@ class WebSocketConnection {
     this.startCloseTimer();
   }
 
-  /**
-   * CLOSE_TIMEOUT 뒤에도 소켓이 닫히지 않았으면 강제로 끊는다. 소켓 'close'에서 해제된다
-   */
   private startCloseTimer(): void {
     if (this.closeTimer) clearTimeout(this.closeTimer);
     this.closeTimer = setTimeout(() => {
@@ -947,10 +877,7 @@ class WebSocketConnection {
     }, CLOSE_TIMEOUT);
   }
 
-  /**
-   * Close를 보내되 상대의 Close를 기다리지 않고 바로 TCP를 닫는다 —
-   * 응답 없는 연결과 프로토콜 위반(§7.1.7)에 쓴다
-   */
+  /** 상대의 Close를 기다리지 않고 닫는다 — 응답 없는 연결과 프로토콜 위반(§7.1.7) */
   terminate(code: number = CloseCode.GoingAway): void {
     if (this.readyState === 'CLOSED') return;
     this.writeFrame(WebSocketOpcode.Close, this.closePayload(code));
@@ -981,7 +908,7 @@ class WebSocketConnection {
    */
   private handleCompleteMessage(opcode: number, data: Buffer): void {
     if (opcode === WebSocketOpcode.Text) {
-      // 텍스트 메시지는 UTF-8이어야 한다 (§5.6, §8.1) — 조각을 다 합친 뒤에 검사한다
+      // UTF-8 검사는 조각을 다 합친 뒤에 한다 (§5.6, §8.1)
       if (!isUtf8(data)) {
         throw new WebSocketProtocolError(
           CloseCode.InvalidPayload,
@@ -996,23 +923,20 @@ class WebSocketConnection {
   }
 
   /**
-   * 메시지 전송 (서버->클라이언트는 마스킹 안함). OPEN이 아니면 보내지 않는다
+   * 메시지 전송 (서버->클라이언트는 마스킹 안함)
    */
   send(message: string): void {
     this.writeFrame(WebSocketOpcode.Text, Buffer.from(message));
   }
 
-  /**
-   * 프레임 하나를 만들어 쓴다. Close를 보낸 뒤(CLOSING)나 끊긴 뒤에는 쓰지 않는다 —
-   * 이미 end()한 소켓에 쓰면 ERR_STREAM_WRITE_AFTER_END가 난다.
-   */
+  /** Close를 보낸 뒤에는 쓰지 않는다 — end()한 소켓에 쓰면 ERR_STREAM_WRITE_AFTER_END */
   private writeFrame(opcode: number, payload: Buffer): void {
     if (this.readyState !== 'OPEN' || !this.socket.writable) return;
     this.socket.write(this.createFrame(opcode, payload));
   }
 
   /**
-   * WebSocket Frame 생성 (FIN=1, 서버 프레임이라 마스킹 없음)
+   * WebSocket Frame 생성
    */
   private createFrame(opcode: number, payload: Buffer): Buffer {
     const payloadLength = payload.length;
@@ -1046,24 +970,17 @@ class WebSocketConnection {
     return frame;
   }
 
-  /**
-   * Ping 프레임 전송 (하트비트). 브라우저는 Pong으로 자동 응답한다
-   */
+  /** 하트비트 Ping. 브라우저는 Pong으로 자동 응답한다 */
   ping(): void {
     this.writeFrame(WebSocketOpcode.Ping, Buffer.alloc(0));
   }
 
-  /**
-   * Pong 프레임 전송. Ping 페이로드를 그대로 돌려준다(제어 프레임이라 125바이트 이하)
-   */
+  /** Ping 페이로드를 그대로 돌려준다 (§5.5.3) */
   private sendPong(data: Buffer): void {
     this.writeFrame(WebSocketOpcode.Pong, data);
   }
 
-  /**
-   * 연결 종료를 시작한다: Close를 보내고 CLOSING으로 가서 상대의 Close를 기다린다.
-   * 상대가 CLOSE_TIMEOUT 안에 답하지 않으면 TCP를 끊는다.
-   */
+  /** Close를 보내고 상대의 Close를 기다린다. CLOSE_TIMEOUT 안에 답이 없으면 TCP를 끊는다 */
   close(code: number = CloseCode.Normal, reason = ''): void {
     if (this.readyState !== 'OPEN') return;
     this.writeFrame(WebSocketOpcode.Close, this.closePayload(code, reason));
@@ -1103,9 +1020,6 @@ class WebSocketConnection {
     return this.readyState === 'CLOSED';
   }
 
-  /**
-   * 이 클라이언트가 topic을 구독했는지
-   */
   isSubscribed(topic: Topic): boolean {
     return this.topics.has(topic);
   }
