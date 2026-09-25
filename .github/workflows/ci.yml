@@ -11,6 +11,12 @@ on:
   # 않기 때문입니다. (head_ref와 ref를 한 그룹으로 묶을 방법이 없어 트리거를 분리)
   push:
     branches: [main]
+  # 봇 PR용. 예약 Claude 잡(deps-audit·link-rot)의 PR은 GITHUB_TOKEN으로 열리는데,
+  # 그 토큰이 일으킨 이벤트로는 pull_request 워크플로가 돌지 않는다(GitHub의 재귀 방지
+  # 규칙 — workflow_dispatch만 예외다). 그래서 .github/scripts/publish-bot-pr.sh가
+  # PR을 연 뒤 이 워크플로를 그 브랜치로 직접 부른다. 체크는 커밋에 붙으므로
+  # required check(`Lint / Types / Tests`)도 이 실행으로 채워진다.
+  workflow_dispatch:
 
 concurrency:
   # 같은 PR 브랜치에 짧은 간격으로 push가 쌓이면 이전 run을 취소(중복 낭비 방지).
