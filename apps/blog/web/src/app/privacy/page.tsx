@@ -1,4 +1,4 @@
-import { SITE_NAME, SITE_URL } from '@/content.values.mts';
+import { OG_DEFAULT_IMAGE, SITE_NAME, SITE_URL } from '@/content.values.mts';
 import { PRIVACY_PATH } from '@/src/shared/routes';
 import { PRIVACY_TRANSITION_ID } from '@/src/shared/transitions';
 import { css, cx } from '@design-system/ui-lib/css';
@@ -7,14 +7,43 @@ import type { Metadata } from 'next';
 import { PageBoundary } from '@/src/components/PageBoundary';
 import { railGutter, railColumn } from '@/src/components/Rail';
 
+const PAGE_TITLE = `개인정보처리방침 | ${SITE_NAME}`;
+const PAGE_DESCRIPTION = `${SITE_NAME} 블로그의 개인정보처리방침입니다.`;
+
+// og·twitter를 이 페이지 값으로 채운다. Next의 메타데이터 병합은 얕아서, 여기서
+// 비워 두면 루트(siteSeo.ts)의 openGraph가 통째로 상속돼 이 주소를 공유한 카드가
+// 홈 제목·홈 주소(og:url)를 달고 나갔다. 병합이 필드 단위가 아니므로 이미지도
+// 함께 적는다.
 export const metadata: Metadata = {
-  title: `개인정보처리방침 | ${SITE_NAME}`,
-  description: 'Frontend Lab 블로그의 개인정보처리방침입니다.',
+  title: PAGE_TITLE,
+  description: PAGE_DESCRIPTION,
   alternates: {
     canonical: PRIVACY_PATH,
   },
   robots: {
     index: false,
+  },
+  openGraph: {
+    title: PAGE_TITLE,
+    description: PAGE_DESCRIPTION,
+    url: `${SITE_URL}${PRIVACY_PATH}`,
+    siteName: SITE_NAME,
+    type: 'website',
+    locale: 'ko_KR',
+    images: [
+      {
+        url: OG_DEFAULT_IMAGE,
+        width: 1200,
+        height: 630,
+        alt: `${SITE_NAME} Blog`,
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: PAGE_TITLE,
+    description: PAGE_DESCRIPTION,
+    images: [OG_DEFAULT_IMAGE],
   },
 };
 
