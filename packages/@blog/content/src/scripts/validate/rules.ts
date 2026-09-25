@@ -66,6 +66,7 @@ export const RULES = {
   'meta-file-skipped': { severity: 'warning', scope: 'always' },
   'unknown-frontmatter-key': { severity: 'warning', scope: 'postLike' },
   'non-string-field': { severity: 'error', scope: 'postLike' },
+  'invalid-slug': { severity: 'error', scope: 'postLike' },
   'missing-title': { severity: 'error', scope: 'postLike' },
   'long-title': { severity: SEO_PUBLISH, scope: 'postLike' },
   'missing-excerpt': { severity: SEO_PUBLISH, scope: 'postLike' },

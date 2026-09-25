@@ -1469,3 +1469,46 @@ test('invalid-thumbnail-path: 파일 이름만이면 존재 여부(missing-thumb
     }),
   ).toStrictEqual(['missing-thumbnail']);
 });
+
+// ── invalid-slug: 손으로 적은 slug의 모양 ────────────────────────────────────
+
+test.each([
+  ['/foo', '앞의 `/` → /posts//foo/'],
+  ['foo/', '뒤의 `/` → /posts/foo//'],
+  ['a//b', '빈 세그먼트'],
+  ['../admin', '브라우저가 /admin/으로 푼다'],
+  ['a/./b', '`.` 세그먼트'],
+  ['my post', '공백'],
+  ['tab\there', '제어 문자'],
+  ['a\\b', '역슬래시'],
+])('invalid-slug: %s (%s)', slug => {
+  expect(
+    rules({
+      title: 'x',
+      status: 'published',
+      date: '2025-01-01',
+      slug,
+      excerpt: VALID_EXCERPT,
+    }),
+  ).toStrictEqual(['invalid-slug']);
+});
+
+test('invalid-slug: 정상 slug·중첩 slug·한글·괄호는 통과, 빈 문자열은 파일 경로 폴백이라 대상 밖', () => {
+  for (const slug of [
+    'turborepo-next.js-docker',
+    '회고/2024/글',
+    'pnpm-10-(feat.-호이스팅)',
+    '',
+  ]) {
+    expect(
+      rules({
+        title: 'x',
+        status: 'published',
+        date: '2025-01-01',
+        slug,
+        excerpt: VALID_EXCERPT,
+      }),
+      slug,
+    ).toStrictEqual([]);
+  }
+});

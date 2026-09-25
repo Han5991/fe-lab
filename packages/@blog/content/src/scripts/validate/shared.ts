@@ -139,6 +139,38 @@ export function isOffsetDateTime(value: string): boolean {
 }
 
 /**
+ * `/`로 나눈 세그먼트 중 비었거나 `.`·`..`인 것이 있는가.
+ *
+ * 그런 slug는 URL과 파일 경로를 조용히 바꾼다 — `/foo`는 `/posts//foo/`,
+ * `foo/`는 `/posts/foo//`, `../admin`은 브라우저가 `/admin/`으로 푼다. og 카드
+ * 생성기(`ogFileRelPath`)와 검증(`slugProblem`)이 같은 판정을 쓴다.
+ */
+export function hasUnsafeSlugSegment(slug: string): boolean {
+  return slug.split('/').some(s => s === '' || s === '.' || s === '..');
+}
+
+/**
+ * 명시 `slug`의 모양 문제를 사람이 읽을 문장으로. 문제가 없으면 null.
+ *
+ * 파일 경로에서 유도한 slug(`회고/2025/2025 KPT`)는 여기 대상이 아니다 — 공백이
+ * 흔하고 URL에서 인코딩돼 동작한다. **손으로 적은** slug에 공백·제어 문자가
+ * 있으면 거의 언제나 실수다.
+ */
+export function slugProblem(slug: string): string | null {
+  // eslint no-control-regex를 피하려고 제어 문자는 코드포인트로 본다.
+  const hasControl = [...slug].some(ch => {
+    const code = ch.codePointAt(0) ?? 0;
+    return code < 0x20 || code === 0x7f;
+  });
+  if (hasControl || /\s/.test(slug)) return '공백이나 제어 문자가 있습니다';
+  if (slug.includes('\\')) return '`\\`는 경로 구분자로 해석될 수 있습니다';
+  if (hasUnsafeSlugSegment(slug)) {
+    return '앞뒤의 `/`·`//`·`.`·`..` 세그먼트는 URL을 바꿉니다(`/posts//foo/`, `../admin` → `/admin/`)';
+  }
+  return null;
+}
+
+/**
  * 상대 `thumbnail`이 글 폴더의 **파일 이름 하나**인가(`cover.png`).
  *
  * 경로가 섞이면(`./a.png`·`img/a.png`·`../a.png`) 세 곳이 서로 다른 답을 낸다:

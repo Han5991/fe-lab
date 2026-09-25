@@ -28,6 +28,7 @@ import {
   isBareThumbnailName,
   isCalendarDate,
   isOffsetDateTime,
+  slugProblem,
 } from './shared.ts';
 import type { Issue, PostRecord, ValidateContext } from './shared.ts';
 import { resolveSeverity } from './rules.ts';
@@ -177,6 +178,28 @@ const stringFieldChain: Chain = ({
     }
   }
   return issues;
+};
+
+// ── slug 사슬: invalid-slug ─────────────────────────────────────────────────
+
+// 타입만 보던 시절에는 `slug: '/foo'`·`'foo/'`·`'../x'`가 통과했다. 썸네일이 없는
+// 글은 og 단계의 스택 트레이스로 처음 드러났고, 있는 글은 아무것도 실패하지 않은
+// 채 sitemap에 `/posts//foo/`가 나갔다. 빈 문자열은 로더가 "없음"으로 보고 파일
+// 경로 slug로 폴백하므로 여기서 다루지 않는다.
+const slugChain: Chain = ({ record: { data, relPath }, raw, options }) => {
+  const slug = data['slug'];
+  if (typeof slug !== 'string' || slug === '') return [];
+  const problem = slugProblem(slug);
+  if (problem === null) return [];
+  return [
+    {
+      file: relPath,
+      line: findFrontmatterLine(raw, 'slug'),
+      severity: resolveSeverity('invalid-slug', data, options),
+      rule: 'invalid-slug',
+      message: `\`slug\`를 URL로 쓸 수 없습니다 — ${problem}: ${JSON.stringify(slug)}`,
+    },
+  ];
 };
 
 // ── title 사슬: missing-title · long-title ──────────────────────────────────
@@ -621,6 +644,7 @@ const thumbnailChain: Chain = ({ record, raw, options }) => {
 const POST_LIKE_CHAINS: Chain[] = [
   unknownKeyChain,
   stringFieldChain,
+  slugChain,
   titleChain,
   excerptChain,
   dateChain,
