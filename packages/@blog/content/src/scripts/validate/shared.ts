@@ -201,18 +201,22 @@ export function frontmatterOffset(raw: string): number {
 /**
  * 이 파일이 빌드에서 갖게 될 slug — **로더(`parsePost`)와 같은 규칙**이다.
  *
- * 명시 `slug`가 문자열이고 비어 있지 않으면 그것, 아니면 파일 경로에서 확장자를
- * 뗀 값이다. 빈 문자열(`slug: ''`)도 로더처럼 "없음"으로 본다 — 좁히기 함수가
- * 같은 `toOptionalString`이라 두 판정이 갈라질 수 없다.
+ * 명시 `slug`가 문자열이고 비어 있지 않으며 URL을 벗어나지 않으면 그것, 아니면
+ * 파일 경로에서 확장자를 뗀 값이다. 빈 문자열(`slug: ''`)은 로더처럼 "없음"이고
+ * (같은 `toOptionalString`), 앞뒤 `/`·빈 세그먼트·`..`가 든 slug도 로더가 버리고
+ * 경로 slug를 쓴다(`hasUnsafeSlugSegment` — 그 slug 자체는 invalid-slug 에러다).
+ * 중복 slug·og 카드 경로 검사가 로더와 다른 slug로 판정하면, 실제로 충돌하는 두
+ * 글을 놓치거나 없는 충돌로 빌드를 막는다.
  */
 export function effectiveSlug(
   record: Pick<PostRecord, 'data' | 'relPath'>,
 ): string {
-  return (
-    toOptionalString(record.data['slug']) ??
-    record.relPath
-      .split(/[/\\]/)
-      .join('/')
-      .replace(/\.(md|mdx)$/, '')
-  );
+  const explicit = toOptionalString(record.data['slug']);
+  if (explicit !== undefined && !hasUnsafeSlugSegment(explicit)) {
+    return explicit;
+  }
+  return record.relPath
+    .split(/[/\\]/)
+    .join('/')
+    .replace(/\.(md|mdx)$/, '');
 }

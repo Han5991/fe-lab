@@ -430,10 +430,12 @@ test('validatePost: hero는 더 이상 unknown-frontmatter-key 경고를 내지 
 
 // ── detectDuplicateSlugs ─────────────────────────────────────────────────────
 
+const POST = { status: 'published' } as const;
+
 test('detectDuplicateSlugs: 명시 slug 충돌 → 양쪽 duplicate-slug', () => {
   const records = [
-    rec({ slug: 'dup' }, { relPath: 'a.md' }),
-    rec({ slug: 'dup' }, { relPath: 'b.md' }),
+    rec({ ...POST, slug: 'dup' }, { relPath: 'a.md' }),
+    rec({ ...POST, slug: 'dup' }, { relPath: 'b.md' }),
   ];
   const issues = detectDuplicateSlugs(records);
   expect(issues.length).toBe(2);
@@ -443,18 +445,61 @@ test('detectDuplicateSlugs: 명시 slug 충돌 → 양쪽 duplicate-slug', () =>
 test('detectDuplicateSlugs: 명시 slug ↔ 파일명 기반 slug 충돌도 검출', () => {
   // 'b.md'의 기본 slug 'b' == 'a.md'의 명시 slug 'b'
   const records = [
-    rec({ slug: 'b' }, { relPath: 'a.md' }),
-    rec({}, { relPath: 'b.md' }),
+    rec({ ...POST, slug: 'b' }, { relPath: 'a.md' }),
+    rec({ ...POST }, { relPath: 'b.md' }),
   ];
   expect(detectDuplicateSlugs(records).length).toBe(2);
 });
 
 test('detectDuplicateSlugs: 충돌 없으면 빈 배열', () => {
   const records = [
-    rec({ slug: 'a' }, { relPath: 'a.md' }),
-    rec({ slug: 'b' }, { relPath: 'b.md' }),
+    rec({ ...POST, slug: 'a' }, { relPath: 'a.md' }),
+    rec({ ...POST, slug: 'b' }, { relPath: 'b.md' }),
   ];
   expect(detectDuplicateSlugs(records)).toStrictEqual([]);
+});
+
+test('detectDuplicateSlugs: 메타 노트(status 없음)는 빌드에 없으므로 충돌 상대가 아니다', () => {
+  // 글을 내리려고 status를 지우고, 옆에 같은 slug로 고쳐 쓴 흔한 경우.
+  const records = [
+    rec({ title: '옛 글', slug: 'same' }, { relPath: 'old.md' }),
+    rec({ ...POST, slug: 'same' }, { relPath: 'new.md' }),
+  ];
+  expect(detectDuplicateSlugs(records)).toStrictEqual([]);
+});
+
+test("detectDuplicateSlugs: slug: ''는 로더처럼 파일 경로 slug로 보고 충돌을 잡는다", () => {
+  // 예전에는 slug `''`로 봐서 `foo.md`와 `slug: 'foo'`인 글의 실제 충돌을 놓쳤다.
+  const records = [
+    rec({ ...POST, slug: '' }, { relPath: 'foo.md' }),
+    rec({ ...POST, slug: 'foo' }, { relPath: 'other.md' }),
+  ];
+  expect(
+    detectDuplicateSlugs(records)
+      .map(i => i.file)
+      .sort(),
+  ).toStrictEqual(['foo.md', 'other.md']);
+  // 빈 slug 둘은 서로 다른 경로 slug라 충돌이 아니다.
+  expect(
+    detectDuplicateSlugs([
+      rec({ ...POST, slug: '' }, { relPath: 'a.md' }),
+      rec({ ...POST, slug: '' }, { relPath: 'b.md' }),
+    ]),
+  ).toStrictEqual([]);
+});
+
+test('detectDuplicateSlugs: 로더가 버리는 위험한 slug는 경로 slug로 대조한다', () => {
+  // `/b`는 로더가 무시하고 파일 경로 slug(`a`)를 쓴다 — 그 글은 `a`와 부딪힌다.
+  const records = [
+    rec({ ...POST, slug: '/b' }, { relPath: 'a.md' }),
+    rec({ ...POST, slug: 'a' }, { relPath: 'other.md' }),
+    rec({ ...POST, slug: 'b' }, { relPath: 'third.md' }),
+  ];
+  expect(
+    detectDuplicateSlugs(records)
+      .map(i => i.file)
+      .sort(),
+  ).toStrictEqual(['a.md', 'other.md']);
 });
 
 // 렌더 계층(frontmatterSchema의 toStringArray)이 중복을 걷어내므로 화면은 멀쩡하지만,
