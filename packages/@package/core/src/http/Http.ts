@@ -25,10 +25,7 @@ const NO_BODY_STATUSES = new Set<number>([
   HttpStatusCode.NotModified,
 ]);
 
-/**
- * 응답 본문을 읽는다. JSON은 Content-Type이 JSON이거나 비어 있을 때만 파싱하고,
- * 빈 본문은 `undefined`, 그 밖(프록시의 HTML 에러 페이지 등)은 문자열 그대로 돌려준다.
- */
+/** JSON은 Content-Type이 JSON이거나 없을 때만 파싱한다. 빈 본문은 `undefined`, 그 밖(HTML 에러 페이지 등)은 문자열 */
 async function readBody(response: Response): Promise<unknown> {
   if (NO_BODY_STATUSES.has(response.status)) return undefined;
 
@@ -54,7 +51,6 @@ async function readBody(response: Response): Promise<unknown> {
   }
 }
 
-/** `{ error, message }` 모양의 에러 본문에서 문자열 필드만 꺼낸다 */
 function readErrorFields(data: unknown): ErrorBodyFields {
   if (typeof data !== 'object' || data === null) return {};
   const { error, message } = data as { error?: unknown; message?: unknown };
@@ -87,8 +83,7 @@ export class Http {
       );
     }
 
-    // 0·false·'' 같은 falsy 본문도 보낸다. 본문이 없으면 Content-Type도 붙이지 않는다
-    // (GET에 붙이면 교차 출처 요청마다 CORS preflight가 생긴다)
+    // falsy 본문도 보낸다. 본문 없는 요청에 Content-Type을 붙이면 CORS preflight가 생긴다
     const hasBody = config.data !== undefined;
 
     const response = await fetch(fullUrl.toString(), {

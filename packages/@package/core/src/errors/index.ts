@@ -8,8 +8,7 @@ export class ApiError extends Error {
   ) {
     // ES2022를 쓰면: super(message, { cause: opts?.cause })
     super(message);
-    // 타입 밖 호출(JS나 any에서 문자열 코드를 넘기는 등)에도 생성자가 TypeError로 죽지 않게 한다 —
-    // 문자열에 `'cause' in`을 쓰면 그 자리에서 던진다
+    // 타입 밖 호출(JS에서 문자열 코드를 넘기는 등)에서 `'cause' in`이 TypeError를 던지지 않게 한다
     const options = typeof opts === 'object' && opts !== null ? opts : {};
     // cause 필드 직접 부여(ES2022 미사용 시)
     if ('cause' in options) (this as any).cause = options.cause;
