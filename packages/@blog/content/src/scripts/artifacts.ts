@@ -85,6 +85,14 @@ export type ArtifactSpec =
     });
 
 /**
+ * 글 상세 페이지의 경로인가(`/posts/<slug>/`) — `/posts/` 자체는 아카이브 목록이다.
+ * 산출물의 글 URL 추출과 check-seo의 페이지 대조가 같은 판정을 쓴다.
+ */
+export function isPostPagePath(path: string): boolean {
+  return path.startsWith(POSTS_PATH) && path !== POSTS_PATH;
+}
+
+/**
  * 각 산출물에서 **글 목록에 해당하는 자리**의 URL만 뽑아 포스트 URL로 좁힙니다.
  *
  * 문서 전체에서 정규식으로 긁으면 본문 링크와 이미지 경로(`/posts/feconf/img/…`)까지
@@ -100,13 +108,14 @@ function extractPostUrls(
   pattern: RegExp,
   siteUrl: string,
 ): Set<string> {
-  const postPrefix = `${siteUrl}${POSTS_PATH}`;
   return new Set(
     [...text.matchAll(pattern)]
       // URL은 1번 캡처 그룹에 있다. 대안이 둘인 패턴(LLMS_LINK)만 2번을 쓴다.
       .map(m => decodeUrlSafe((m[1] ?? m[2] ?? '').trim()))
-      // `/posts/` 자체는 아카이브 목록 페이지지 글이 아니다 — sitemap에만 있는 게 정상.
-      .filter(url => url.startsWith(postPrefix) && url !== postPrefix),
+      .filter(
+        url =>
+          url.startsWith(siteUrl) && isPostPagePath(url.slice(siteUrl.length)),
+      ),
   );
 }
 

@@ -9,6 +9,7 @@ import {
   checkArtifacts,
   checkSitemapPages,
   collectArtifacts,
+  parsePages,
   type CollectedArtifact,
 } from './check-seo.ts';
 import { TEST_VALUES, defineTestContent } from '../shared/testValues.ts';
@@ -44,8 +45,9 @@ function page(
     </head><body>${body}</body></html>`;
 }
 
-const rules = (pages: Map<string, string>) =>
-  checkPages(pages, CONFIG).map(v => v.rule);
+const check = (pages: Map<string, string>) =>
+  checkPages(pages, parsePages(pages), CONFIG);
+const rules = (pages: Map<string, string>) => check(pages).map(v => v.rule);
 
 // ── parsePageSeo ─────────────────────────────────────────────────────────────
 
@@ -213,11 +215,10 @@ const siteWithDottedPost = (archiveBody: string) =>
   ]);
 
 test('checkPages: 존재하는 페이지로 가는 내부 링크에 후행 슬래시가 없으면 link-trailing-slash (turborepo-next.js-docker 회귀)', () => {
-  const found = checkPages(
+  const found = check(
     siteWithDottedPost(
       '<h1>글</h1><a href="/posts/turborepo-next.js-docker">turborepo</a>',
     ),
-    CONFIG,
   );
   expect(found.map(v => [v.page, v.rule])).toStrictEqual([
     ['/posts/', 'link-trailing-slash'],
@@ -577,7 +578,7 @@ test('checkSitemapPages: sitemap의 URL마다 색인 가능한 페이지가 있�
   ]);
   expect(
     checkSitemapPages(
-      pages,
+      parsePages(pages),
       [loc('/'), loc('/posts/'), loc('/posts/a/')],
       SITE_URL,
     ),
@@ -590,17 +591,16 @@ test('checkSitemapPages: 글 레이아웃에 noindex가 새면 sitemap-noindex (
   // 페이지 검사는 noindex 페이지를 건너뛰므로 그쪽만으로는 조용하다.
   expect(rules(pages)).toStrictEqual([]);
   expect(
-    checkSitemapPages(pages, [loc('/posts/a/')], SITE_URL).map(v => [
-      v.page,
-      v.rule,
-    ]),
+    checkSitemapPages(parsePages(pages), [loc('/posts/a/')], SITE_URL).map(
+      v => [v.page, v.rule],
+    ),
   ).toStrictEqual([['/posts/a/', 'sitemap-noindex']]);
 });
 
 test('checkSitemapPages: sitemap에 있는데 페이지가 없으면 sitemap-page-missing', () => {
   expect(
     checkSitemapPages(
-      new Map([['/posts/a/', page()]]),
+      parsePages(new Map([['/posts/a/', page()]])),
       [loc('/posts/a/'), loc('/about/'), 'https://other.example/posts/a/'],
       SITE_URL,
     ).map(v => [v.page, v.rule]),
@@ -618,10 +618,9 @@ test('checkSitemapPages: sitemap에 없는 글 페이지는 page-missing-from-si
     ['/series/', page({ path: '/series/' })],
   ]);
   expect(
-    checkSitemapPages(pages, [loc('/posts/a/')], SITE_URL).map(v => [
-      v.page,
-      v.rule,
-    ]),
+    checkSitemapPages(parsePages(pages), [loc('/posts/a/')], SITE_URL).map(
+      v => [v.page, v.rule],
+    ),
   ).toStrictEqual([['/posts/b/', 'page-missing-from-sitemap']]);
 });
 
@@ -629,7 +628,7 @@ test('checkSitemapPages: 인코딩된 sitemap URL을 디스크 이름(디코드)
   const slug = '한글 (괄호)';
   expect(
     checkSitemapPages(
-      new Map([[`/posts/${slug}/`, page()]]),
+      parsePages(new Map([[`/posts/${slug}/`, page()]])),
       [loc(`/posts/${encodeURIComponent(slug)}/`)],
       SITE_URL,
     ),

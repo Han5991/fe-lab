@@ -9,6 +9,7 @@ import type { ContentContext } from './context.ts';
 import {
   ARTIFACTS,
   extractSitemapLocs,
+  isPostPagePath,
   type ArtifactRelation,
 } from './artifacts.ts';
 
@@ -152,6 +153,13 @@ export function parsePageSeo(html: string): PageSeo {
   };
 }
 
+/** 페이지마다 한 번만 파싱한다 — checkPages와 checkSitemapPages가 함께 쓴다. */
+export function parsePages(
+  pages: ReadonlyMap<string, string>,
+): Map<string, PageSeo> {
+  return new Map([...pages].map(([path, html]) => [path, parsePageSeo(html)]));
+}
+
 /** `out/` 안의 페이지 경로(`/posts/foo/`) → HTML */
 export function collectPages(outDir: string): Map<string, string> {
   const pages = new Map<string, string>();
@@ -171,7 +179,8 @@ export function collectPages(outDir: string): Map<string, string> {
 }
 
 export function checkPages(
-  pages: Map<string, string>,
+  pages: ReadonlyMap<string, string>,
+  parsed: ReadonlyMap<string, PageSeo>,
   config: SeoCheckConfig,
 ): SeoViolation[] {
   const {
@@ -186,7 +195,7 @@ export function checkPages(
   const descriptions = new Map<string, string[]>();
 
   for (const [page, html] of pages) {
-    const seo = parsePageSeo(html);
+    const seo = parsed.get(page) ?? parsePageSeo(html);
     const add = (rule: string, message: string) =>
       violations.push({ page, rule, message });
 
@@ -305,6 +314,13 @@ export function checkPages(
   return violations;
 }
 
+/** sitemap의 `<loc>` → 페이지 키(디스크 이름, 디코드). 사이트 밖 URL이면 null. */
+function sitemapPath(loc: string, siteUrl: string): string | null {
+  return loc.startsWith(siteUrl)
+    ? decodeUrlSafe(loc.slice(siteUrl.length))
+    : null;
+}
+
 /**
  * sitemap ↔ 실제 페이지 대조.
  *
@@ -322,25 +338,23 @@ export function checkPages(
  * 페이지 키는 디스크 이름(디코드), sitemap은 퍼센트 인코딩이라 풀어서 비교한다.
  */
 export function checkSitemapPages(
-  pages: ReadonlyMap<string, string>,
+  parsed: ReadonlyMap<string, PageSeo>,
   locs: readonly string[],
   siteUrl: string,
 ): SeoViolation[] {
   const violations: SeoViolation[] = [];
   const listed = new Set<string>();
   for (const loc of locs) {
-    const path = loc.startsWith(siteUrl)
-      ? decodeUrlSafe(loc.slice(siteUrl.length))
-      : null;
-    const html = path === null ? undefined : pages.get(path);
+    const path = sitemapPath(loc, siteUrl);
+    const seo = path === null ? undefined : parsed.get(path);
     if (path !== null) listed.add(path);
-    if (html === undefined) {
+    if (seo === undefined) {
       violations.push({
         page: path ?? loc,
         rule: 'sitemap-page-missing',
         message: `sitemap에 있는 URL의 페이지가 out/에 없습니다: ${loc}`,
       });
-    } else if (parsePageSeo(html).robotsNoindex) {
+    } else if (seo.robotsNoindex) {
       violations.push({
         page: path ?? loc,
         rule: 'sitemap-noindex',
@@ -349,9 +363,8 @@ export function checkSitemapPages(
       });
     }
   }
-  for (const path of pages.keys()) {
-    if (!path.startsWith(POSTS_PATH) || path === POSTS_PATH) continue;
-    if (listed.has(path)) continue;
+  for (const path of parsed.keys()) {
+    if (!isPostPagePath(path) || listed.has(path)) continue;
     violations.push({
       page: path,
       rule: 'page-missing-from-sitemap',
@@ -384,10 +397,9 @@ export function checkArchiveLinks(
 ): SeoViolation[] {
   const archive = pages.get(POSTS_PATH);
   if (archive === undefined) return [];
-  const postPrefix = `${siteUrl}${POSTS_PATH}`;
   const expected = locs
-    .filter(loc => loc.startsWith(postPrefix) && loc !== postPrefix)
-    .map(loc => decodeUrlSafe(loc.slice(siteUrl.length)));
+    .map(loc => sitemapPath(loc, siteUrl))
+    .filter((path): path is string => path !== null && isPostPagePath(path));
   const linked = new Set(
     collectInternalLinks(archive).map(href =>
       // split은 항상 1개 이상을 돌려준다.
@@ -411,6 +423,8 @@ export interface CollectedArtifact {
   relation: ArtifactRelation;
   reference?: boolean | undefined;
   urls: Set<string> | null;
+  /** file 산출물의 원문 — 기준(sitemap)을 페이지와 대조할 때 다시 읽지 않는다 */
+  text?: string | undefined;
 }
 
 /** dir 산출물용: 하위 파일들의 상대 경로('/' 구분, Windows sep 정규화) */
@@ -433,18 +447,21 @@ export function collectArtifacts(
   siteUrl: string,
 ): CollectedArtifact[] {
   return ARTIFACTS.map(spec => {
-    const target = join(outDir, spec.path);
-    const urls = !existsSync(target)
-      ? null
-      : spec.kind === 'file'
-        ? spec.extractUrls(readFileSync(target, 'utf8'), siteUrl)
-        : spec.extractUrls(listFilesRecursive(target), siteUrl);
-    return {
+    const base = {
       name: spec.name,
       relation: spec.relation,
       reference: spec.reference,
-      urls,
     };
+    const target = join(outDir, spec.path);
+    if (!existsSync(target)) return { ...base, urls: null };
+    if (spec.kind === 'dir') {
+      return {
+        ...base,
+        urls: spec.extractUrls(listFilesRecursive(target), siteUrl),
+      };
+    }
+    const text = readFileSync(target, 'utf8');
+    return { ...base, urls: spec.extractUrls(text, siteUrl), text };
   });
 }
 
@@ -505,10 +522,6 @@ export function checkArtifacts(collected: CollectedArtifact[]): SeoViolation[] {
   return violations;
 }
 
-/** 대조 기준 산출물(sitemap)의 out/ 경로 — 레지스트리의 reference 항목 */
-const SITEMAP_ARTIFACT_PATH =
-  ARTIFACTS.find(spec => spec.reference)?.path ?? 'sitemap.xml';
-
 export function main(ctx: ContentContext, target?: string) {
   // 인자를 주면 그 경로를(cwd 기준, resolve라 절대 경로 인자도 그대로 받는다),
   // 없으면 설정의 out 디렉터리를 검사한다.
@@ -533,16 +546,18 @@ export function main(ctx: ContentContext, target?: string) {
     process.exit(1);
   }
   const siteUrl = ctx.content.config.site.url;
-  const violations = checkPages(pages, ctx.content.config);
+  const parsed = parsePages(pages);
+  const violations = checkPages(pages, parsed, ctx.content.config);
   // 파생 산출물은 레지스트리 순회로 — 없으면 missing-artifact, 있으면 글 집합 대조.
-  violations.push(...checkArtifacts(collectArtifacts(outDir, siteUrl)));
+  const artifacts = collectArtifacts(outDir, siteUrl);
+  violations.push(...checkArtifacts(artifacts));
   // 기준 산출물(sitemap)과 실제 페이지의 대조. sitemap이 없으면 위에서
   // missing-artifact로 이미 실패했으므로 여기서는 건너뛴다.
-  const sitemapPath = join(outDir, SITEMAP_ARTIFACT_PATH);
-  if (existsSync(sitemapPath)) {
-    const locs = extractSitemapLocs(readFileSync(sitemapPath, 'utf8'));
+  const sitemap = artifacts.find(artifact => artifact.reference)?.text;
+  if (sitemap !== undefined) {
+    const locs = extractSitemapLocs(sitemap);
     violations.push(
-      ...checkSitemapPages(pages, locs, siteUrl),
+      ...checkSitemapPages(parsed, locs, siteUrl),
       ...checkArchiveLinks(pages, locs, siteUrl),
     );
   }
