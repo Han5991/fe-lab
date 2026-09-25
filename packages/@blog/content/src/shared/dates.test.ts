@@ -7,7 +7,9 @@ import {
   getKSTDateISO as getKSTDateISOIn,
   hasAmbiguousTimezone,
   msUntilKSTMidnight as msUntilKSTMidnightIn,
+  parseIsoOffset,
   parseScheduledDateKST as parseScheduledDateKSTIn,
+  toIsoStringInOffset,
 } from './dates.ts';
 import { TEST_VALUES } from './testValues.ts';
 
@@ -113,6 +115,40 @@ test('parseScheduledDateKST: 날짜 경계 — 연말/월말', () => {
   // 2026-12-31 KST 자정 = 2026-12-30 15:00 UTC
   const d = parseScheduledDateKST('2026-12-31');
   expect(d.toISOString()).toBe('2026-12-30T15:00:00.000Z');
+});
+
+// --- parseIsoOffset / toIsoStringInOffset ---
+
+test('parseIsoOffset: ±HH:MM과 Z만 받는다', () => {
+  expect(parseIsoOffset('+09:00')).toBe(9 * 60 * 60 * 1000);
+  expect(parseIsoOffset('-05:30')).toBe(-(5 * 60 + 30) * 60 * 1000);
+  expect(parseIsoOffset('Z')).toBe(0);
+  expect(parseIsoOffset('+00:00')).toBe(0);
+  for (const bad of ['+9:00', '+0900', 'Asia/Seoul', '', '+24:00', '+09:60']) {
+    expect(parseIsoOffset(bad), bad).toBe(null);
+  }
+});
+
+test('toIsoStringInOffset: 같은 시점을 그 타임존의 벽시계로 적는다', () => {
+  const d = new Date('2026-09-30T23:00:00Z');
+  expect(toIsoStringInOffset(d, '+09:00')).toBe('2026-10-01T08:00:00+09:00');
+  expect(toIsoStringInOffset(d, 'Z')).toBe('2026-09-30T23:00:00Z');
+  expect(toIsoStringInOffset(d, '-05:00')).toBe('2026-09-30T18:00:00-05:00');
+  // 되읽으면 같은 시점
+  expect(new Date(toIsoStringInOffset(d, '+09:00')).getTime()).toBe(
+    d.getTime(),
+  );
+});
+
+test('toIsoStringInOffset: 밀리초가 있으면 보존한다', () => {
+  const d = new Date('2026-09-30T23:00:00.120Z');
+  expect(toIsoStringInOffset(d, '+09:00')).toBe(
+    '2026-10-01T08:00:00.120+09:00',
+  );
+});
+
+test('toIsoStringInOffset: 잘못된 offset은 던진다', () => {
+  expect(() => toIsoStringInOffset(new Date(), '+9:00')).toThrow(/offset/);
 });
 
 // --- hasAmbiguousTimezone ---

@@ -1,11 +1,11 @@
 import { expect, test } from 'vitest';
 import { parsePost, extractPlainText, resolveExcerpt } from './repository.ts';
-import { isPostFile } from './visibility.ts';
+import { isPostFile, isPostVisible } from './visibility.ts';
 import { testConfig } from './testing.ts';
 
 // 발췌 길이는 설정에서 온다(기본값 없음) — 픽스처의 SEO 예산을 그대로 쓴다.
 const MAX = testConfig.seo.descriptionMaxLength;
-const PARSE_OPTS = { excerptMaxLength: MAX };
+const PARSE_OPTS = { excerptMaxLength: MAX, timezone: testConfig.timezone };
 
 // ── 메타 파일 제외 (어떤 글을 가져올지) ───────────────────────────────────────
 
@@ -219,11 +219,41 @@ test('parsePost: scheduledDate가 문자열이 아니면(YAML Date) undefined로
   expect(parsePost(raw, 'a.md', PARSE_OPTS)?.scheduledDate).toBe(undefined);
 });
 
-test('parsePost: 시간/offset 포함 date(Date 객체)는 toISOString UTC 기준으로 정규화(현재 동작 잠금)', () => {
-  // KST 오전(08:00+09:00)은 UTC로 전날 23:00 → toISOString().split('T')[0]가 하루 당겨짐.
-  // toDateString이 UTC 기준이라 생기는 알려진 엣지(실 frontmatter는 'YYYY-MM-DD'만 사용).
+test('parsePost: 따옴표 없는 datetime date는 사이트 타임존으로 시점을 보존한다 (UTC 날짜로 밀리지 않음)', () => {
+  // KST 오전(08:00+09:00)은 UTC로 전날 23:00이다. 예전에는 toISOString()의 앞
+  // 10자를 잘라 '2025-01-01'이 됐고, 예약 글이 KST 자정 기준으로 최대 33시간
+  // 일찍 공개됐다. 따옴표를 친 같은 값과 같은 문자열이어야 한다.
   const raw = `---\ntitle: 글\nstatus: published\ndate: 2025-01-02T08:00:00+09:00\n---\n본문`;
-  expect(parsePost(raw, 'a.md', PARSE_OPTS)?.date).toBe('2025-01-01');
+  expect(parsePost(raw, 'a.md', PARSE_OPTS)?.date).toBe(
+    '2025-01-02T08:00:00+09:00',
+  );
+});
+
+test('parsePost: 따옴표 없는 datetime 예약 글은 적힌 시각에 공개된다', () => {
+  const raw = `---\ntitle: 글\nstatus: scheduled\ndate: 2026-10-01T08:00:00+09:00\n---\n본문`;
+  const post = parsePost(raw, 'a.md', PARSE_OPTS);
+  expect(post?.date).toBe('2026-10-01T08:00:00+09:00');
+  const tz = testConfig.timezone;
+  // 2026-10-01 07:59 KST — 아직 비공개 (예전에는 이틀 전 자정부터 공개였다)
+  expect(
+    post && isPostVisible(post, tz, new Date('2026-09-30T22:59:00Z')),
+  ).toBe(false);
+  // 2026-09-30 00:00 KST — 예전 동작이 공개하던 시각
+  expect(
+    post && isPostVisible(post, tz, new Date('2026-09-29T15:00:00Z')),
+  ).toBe(false);
+  // 2026-10-01 08:00 KST — 공개
+  expect(
+    post && isPostVisible(post, tz, new Date('2026-09-30T23:00:00Z')),
+  ).toBe(true);
+});
+
+test('parsePost: 따옴표 없는 datetime의 날짜 부분은 사이트 타임존의 달력 날짜다', () => {
+  // UTC로는 전날(2025-12-31T15:30Z)이지만 KST로는 2026-01-01 00:30.
+  const raw = `---\ntitle: 글\nstatus: published\nupdatedAt: 2026-01-01T00:30:00+09:00\n---\n본문`;
+  const updatedAt = parsePost(raw, 'a.md', PARSE_OPTS)?.updatedAt;
+  expect(updatedAt).toBe('2026-01-01T00:30:00+09:00');
+  expect(updatedAt?.slice(0, 10)).toBe('2026-01-01');
 });
 
 test('parsePost: tags에 문자열 아닌 원소가 섞이면 통째로 undefined', () => {

@@ -24,6 +24,7 @@ import { testConfig } from './testing.ts';
 // 발췌 길이는 설정에서 온다(기본값 없음) — 픽스처의 SEO 예산을 그대로 쓴다.
 const PARSE_OPTS = {
   excerptMaxLength: testConfig.seo.descriptionMaxLength,
+  timezone: testConfig.timezone,
 };
 
 // ── 1. RawFrontmatter의 "전 필드 unknown" 성질 ───────────────────────────────

@@ -57,6 +57,39 @@ export function diffDaysISO(a: string, b: string): number {
 }
 
 /**
+ * ISO offset 문자열(`'+09:00'`·`'-05:30'`·`'Z'`)을 UTC 대비 밀리초로 바꿉니다.
+ * 형식이 아니면 null — `'+9:00'`·`'Asia/Seoul'`처럼 날짜 뒤에 붙였을 때
+ * Invalid Date가 되는 값을 걸러 내는 데 씁니다.
+ */
+export function parseIsoOffset(isoOffset: string): number | null {
+  if (isoOffset === 'Z') return 0;
+  const match = /^([+-])([01]\d|2[0-3]):([0-5]\d)$/.exec(isoOffset);
+  if (!match) return null;
+  const [, sign, hours, minutes] = match;
+  const ms = (Number(hours) * 60 + Number(minutes)) * 60_000;
+  return sign === '-' ? -ms : ms;
+}
+
+/**
+ * 시점(`d`)을 주어진 offset의 벽시계로 적은 ISO 8601 문자열로 만듭니다.
+ * 예: `2026-09-30T23:00:00Z`, `'+09:00'` → `'2026-10-01T08:00:00+09:00'`.
+ *
+ * `toISOString()`과 같은 시점을 가리키지만 앞 10자가 **그 타임존의 달력 날짜**라,
+ * 날짜만 잘라 쓰는 소비처(`fmtDate`)도 하루 밀린 날짜를 보지 않습니다.
+ * offset이 형식에 맞지 않으면 던집니다(설정 검증을 통과한 값만 들어온다는 전제).
+ */
+export function toIsoStringInOffset(d: Date, isoOffset: string): string {
+  const offsetMs = parseIsoOffset(isoOffset);
+  if (offsetMs === null) {
+    throw new Error(`toIsoStringInOffset: 잘못된 ISO offset '${isoOffset}'`);
+  }
+  const shifted = new Date(d.getTime() + offsetMs);
+  const ms = shifted.getUTCMilliseconds();
+  const fraction = ms === 0 ? '' : `.${String(ms).padStart(3, '0')}`;
+  return `${shifted.toISOString().slice(0, 19)}${fraction}${isoOffset}`;
+}
+
+/**
  * scheduledDate / post.date 문자열을 KST 기준 Date로 파싱합니다.
  *
  * ## 지원 입력 형식

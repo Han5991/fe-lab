@@ -40,6 +40,7 @@ export function createContent(config: ContentConfig): ContentApi {
     postsDir: paths.postsDir,
     isDevelopment,
     excerptMaxLength: config.seo.descriptionMaxLength,
+    timezone: config.timezone,
     isSeriesFolder: name => seriesReader.isSeriesFolder(name),
     metaFilenames: config.registries.metaFilenames,
   });

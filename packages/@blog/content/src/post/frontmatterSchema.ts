@@ -19,6 +19,8 @@
  * 스크립트와 런타임이 **같은 목록**을 봐야 하고, 목록을 스크립트 쪽에 두면
  * 도메인이 그걸 볼 수 없습니다(의존 방향이 뒤집힙니다).
  */
+import type { TimezoneConfig } from '../shared/contentConfig.ts';
+import { toIsoStringInOffset } from '../shared/dates.ts';
 import type { PostStatus } from './types.ts';
 import { isPostStatus } from './visibility.ts';
 
@@ -33,16 +35,44 @@ import { isPostStatus } from './visibility.ts';
 // parsePost와 이 테이블만 씁니다.
 
 /**
- * frontmatter의 date/updatedAt 값을 'YYYY-MM-DD' 문자열(또는 null)로 정규화합니다.
- * - YAML이 Date 객체로 파싱한 경우(`date: 2025-01-01`) → ISO 날짜 부분
+ * frontmatter의 date/updatedAt 값을 문자열(또는 null)로 정규화합니다.
  * - 문자열인 경우(`date: '2025-01-01'`) → 그대로
+ * - YAML이 Date 객체로 파싱한 경우 → 아래 규칙
  * - 그 외 → null
+ *
+ * 따옴표 없는 날짜는 YAML이 Date로 바꿔 줍니다. 두 모양이 들어옵니다:
+ * - `date: 2025-01-02` → UTC 자정 Date. 적힌 날짜 그대로 `'2025-01-02'`.
+ * - `date: 2026-10-01T08:00:00+09:00` → 시각이 있는 Date. 예전에는 여기서도
+ *   `toISOString()`의 앞 10자(= **UTC** 날짜)를 잘라 `'2026-09-30'`이 됐고,
+ *   예약 글이 KST 자정 기준으로 최대 33시간 일찍 공개됐습니다. 이제 설정
+ *   타임존의 offset으로 시점을 그대로 적습니다(`'2026-10-01T08:00:00+09:00'`) —
+ *   따옴표를 친 같은 값과 똑같은 문자열이라, 앞 10자는 사이트 타임존의 달력
+ *   날짜이고 공개 시각도 적힌 시각 그대로입니다.
+ *
+ * UTC 자정에 정확히 떨어지는 datetime(KST라면 `T09:00:00+09:00`)은 날짜만 쓴 값과
+ * 구분할 수 없어 날짜로 읽힙니다 — lint:posts가 따옴표 없는 datetime을 막는 이유.
+ *
+ * `timezone`을 주지 않으면 시점을 UTC(`Z`)로 적습니다(공개 판정만 필요한 곳용).
  */
-export function toDateString(value: unknown): string | null {
-  // toISOString()은 항상 'T'를 포함하므로 [0]은 실제로는 늘 존재한다.
-  if (value instanceof Date) return value.toISOString().split('T')[0] ?? null;
+export function toDateString(
+  value: unknown,
+  timezone?: Pick<TimezoneConfig, 'isoOffset'>,
+): string | null {
+  if (value instanceof Date) return fromYamlDate(value, timezone);
   if (typeof value === 'string') return value;
   return null;
+}
+
+/** YAML이 만든 Date → 문자열. 위 `toDateString`의 규칙 본체. */
+function fromYamlDate(
+  value: Date,
+  timezone: Pick<TimezoneConfig, 'isoOffset'> | undefined,
+): string | null {
+  if (Number.isNaN(value.getTime())) return null;
+  const iso = value.toISOString();
+  // 날짜만 쓴 값(`2025-01-02`)은 UTC 자정 Date가 된다 — 적힌 날짜 그대로.
+  if (iso.endsWith('T00:00:00.000Z')) return iso.slice(0, 10);
+  return toIsoStringInOffset(value, timezone?.isoOffset ?? 'Z');
 }
 
 /** 문자열이 아니면 undefined. 빈 문자열은 값이 없는 것으로 취급합니다. */

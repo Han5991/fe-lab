@@ -12,6 +12,7 @@ import {
   toOptionalString,
   toStringArray,
 } from './frontmatterSchema.ts';
+import type { TimezoneConfig } from '../shared/contentConfig.ts';
 import type { PostData, RawFrontmatter } from './types.ts';
 
 /**
@@ -68,6 +69,16 @@ export function resolveExcerptFrom(
     : plainText;
 }
 
+export interface ParsePostOptions {
+  /** excerpt 자동 발췌 길이 — 설정의 `seo.descriptionMaxLength` */
+  excerptMaxLength: number;
+  /**
+   * 따옴표 없는 datetime(YAML Date)을 문자열로 적을 타임존 — 설정의 `timezone`.
+   * UTC로 적으면 KST 오전 시각이 전날로 밀린다(`toDateString` 참고).
+   */
+  timezone: Pick<TimezoneConfig, 'isoOffset'>;
+}
+
 /**
  * 마크다운 파일 1개의 내용 + (postsDir 기준) 상대 경로를 PostData로 파싱합니다.
  *
@@ -82,7 +93,7 @@ export function resolveExcerptFrom(
 export function parsePost(
   fileContents: string,
   relPath: string,
-  opts: { excerptMaxLength: number },
+  opts: ParsePostOptions,
 ): PostData | null {
   // frontmatter delimiter 없는 메타 노트는 스킵 (validate-posts 와 동일 규칙)
   if (!hasFrontmatter(fileContents)) return null;
@@ -112,8 +123,8 @@ export function parsePost(
     relativeDir: currentPath,
     title: toOptionalString(data.title) ?? fileName,
     seoTitle: toOptionalString(data.seoTitle),
-    date: toDateString(data.date),
-    updatedAt: toDateString(data.updatedAt),
+    date: toDateString(data.date, opts.timezone),
+    updatedAt: toDateString(data.updatedAt, opts.timezone),
     content,
     readMin: estimateReadMin(cleanContent),
     excerpt: resolveExcerptFrom(
@@ -151,6 +162,7 @@ function collectPosts(
   deps: {
     isSeriesFolder: (seriesName: string) => boolean;
     excerptMaxLength: number;
+    timezone: Pick<TimezoneConfig, 'isoOffset'>;
     metaFilenames: ReadonlySet<string>;
   },
 ): PostData[] {
@@ -159,7 +171,10 @@ function collectPosts(
   // getSeriesMeta가 dev에서 캐시를 우회하는 것과 같습니다 — `_series.yml`을
   // 새로 만들거나 지우면 다음 요청에 바로 반영돼야 합니다.
   const declaredSeries = new Map<string, boolean>();
-  const parseOpts = { excerptMaxLength: deps.excerptMaxLength };
+  const parseOpts: ParsePostOptions = {
+    excerptMaxLength: deps.excerptMaxLength,
+    timezone: deps.timezone,
+  };
 
   for (const fullPath of collectMarkdownFiles(dirPath, deps.metaFilenames)) {
     const fileContents = readFileSync(fullPath, 'utf8');
@@ -244,6 +259,8 @@ export interface RepositoryDeps {
   isDevelopment: () => boolean;
   /** excerpt 자동 발췌 길이 — SEO description 예산(seo.descriptionMaxLength) 재사용 */
   excerptMaxLength: number;
+  /** 따옴표 없는 datetime을 적을 타임존 — 설정의 `timezone` */
+  timezone: Pick<TimezoneConfig, 'isoOffset'>;
   /** 시리즈 선언 판정 — 같은 postsDir에 앵커한 SeriesReader의 것을 넘길 것 */
   isSeriesFolder: (seriesName: string) => boolean;
   /** 이름만 보고 건너뛸 작업 노트 파일 — `registries.metaFilenames` */
@@ -260,10 +277,16 @@ export function createRepository(deps: RepositoryDeps): Repository {
     postsDir,
     isDevelopment,
     excerptMaxLength,
+    timezone,
     isSeriesFolder,
     metaFilenames,
   } = deps;
-  const collectDeps = { isSeriesFolder, excerptMaxLength, metaFilenames };
+  const collectDeps = {
+    isSeriesFolder,
+    excerptMaxLength,
+    timezone,
+    metaFilenames,
+  };
   let cache: PostData[] | null = null;
 
   function readAllPosts(): PostData[] {
