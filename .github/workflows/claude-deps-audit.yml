@@ -8,8 +8,9 @@ name: Claude Deps Audit
 #   - audit(Claude): 읽기 전용. WebFetch/WebSearch로 신뢰할 수 없는 외부 페이지를
 #     읽으므로 쓰기 자격 증명을 **하나도** 쥐지 않는다. 변경은 패치 파일로 내보낸다.
 #   - publish(LLM 없음): 패치가 허용된 파일(package.json·pnpm-workspace.yaml·
-#     pnpm-lock.yaml)의 수정만 담는지 검사한 뒤 커밋·푸시·PR을 한다
-#     (.github/scripts/publish-bot-pr.sh).
+#     pnpm-lock.yaml)의 수정만 담는지, 그 안에서도 버전 범위·overrides·catalog·
+#     auditConfig·레지스트리 해석만 바꾸는지(스크립트·빌드 설정·URL/git/file: 스펙 거부)
+#     검사한 뒤 커밋·푸시·PR을 한다(.github/scripts/publish-bot-pr.sh).
 # 예전에는 한 잡이 contents: write와 `Bash(pnpm:*)`·`Bash(cp:*)`·WebFetch를 함께
 # 가졌다. `pnpm:*`는 접두 매칭이라 `pnpm dlx <아무 패키지>`까지 열려 있었고, `cp`로
 # git hook을 심은 뒤 허용된 `git commit`을 부르는 경로도 있었다 — advisory 페이지
@@ -99,6 +100,10 @@ jobs:
             파일로 남기세요. 다음 잡이 변경을 검사해 PR로 올립니다. 그 잡은
             package.json·pnpm-workspace.yaml·pnpm-lock.yaml의 **수정만** 받아들이고,
             다른 파일을 건드렸거나 파일을 새로 만들었으면 변경 전체를 버립니다.
+            파일 안에서도 기존 의존성의 버전 범위, pnpm-workspace.yaml의 overrides·
+            catalog·auditConfig, 레지스트리에서 해석한 lockfile만 받습니다. 새 의존성
+            이름, URL·git·file:·link:·npm: 스펙, scripts·allowBuilds 같은 다른 설정을
+            건드리면 역시 전체를 버립니다.
             </권한>
 
             <중복 방지>
