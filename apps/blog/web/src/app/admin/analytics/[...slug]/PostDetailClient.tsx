@@ -174,6 +174,7 @@ function PostDetailBody({ post }: { post: PostStatDetail }) {
           <Link
             href={postPath(post.slug)}
             target="_blank"
+            rel="noopener noreferrer"
             onClick={e => e.stopPropagation()}
             className={css({
               color: 'ink.500',

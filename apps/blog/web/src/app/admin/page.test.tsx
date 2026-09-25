@@ -80,5 +80,6 @@ describe('AdminPage', () => {
     const [liveLink] = screen.getAllByRole('link', { name: /live-post 제목/ });
     expect(liveLink).toHaveAttribute('href', '/posts/live-post/');
     expect(liveLink).toHaveAttribute('target', '_blank');
+    expect(liveLink).toHaveAttribute('rel', 'noopener noreferrer');
   });
 });

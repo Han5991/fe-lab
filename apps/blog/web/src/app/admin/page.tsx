@@ -24,10 +24,10 @@ import { STATUS_BADGE, livePostHref } from './components/postState';
 function postLink(
   slug: string,
   state: PostStatus,
-): { href: string; target?: '_blank' } {
+): { href: string; target?: '_blank'; rel?: string } {
   const live = livePostHref(slug, state);
   return live
-    ? { href: live, target: '_blank' }
+    ? { href: live, target: '_blank', rel: 'noopener noreferrer' }
     : { href: adminAnalyticsPostPath(slug) };
 }
 

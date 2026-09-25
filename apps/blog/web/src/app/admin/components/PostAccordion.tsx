@@ -100,6 +100,7 @@ export function PostAccordion({ post, todayISO }: Props) {
           <Link
             href={liveHref}
             target="_blank"
+            rel="noopener noreferrer"
             aria-label={`${post.title} 글을 새 탭에서 열기`}
             className={css({
               color: 'ink.200',
