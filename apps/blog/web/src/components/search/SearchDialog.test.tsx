@@ -1,5 +1,5 @@
 /**
- * 검색 다이얼로그의 **선택 인덱스 계약.**
+ * 검색 다이얼로그의 **선택 인덱스 계약**과 **다이얼로그 접근성 계약.**
  *
  * 선택 인덱스는 "어느 검색어에 대한 선택인지"를 함께 들고 다닌다. 예전에는
  * query가 바뀔 때마다 effect가 0으로 되돌렸는데, 그러면 렌더 → effect → 리렌더가
@@ -9,7 +9,7 @@
  * 선택이 첫 결과로 돌아간다 — 을 여기서 고정한다.
  */
 import { beforeEach, describe, expect, test, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { postPath } from '@blog/content';
 
 const push = vi.hoisted(() => vi.fn());
@@ -48,14 +48,16 @@ const openDialog = async () => {
   fireEvent.click(screen.getByRole('button', { name: '검색' }));
   // 검색 인덱스는 열릴 때 fetch로 불러온다.
   await screen.findByText('터보 첫 글');
-  return screen.getByPlaceholderText('제목, 태그, 시리즈로 검색...');
+  return screen.getByRole('combobox', { name: '검색어' });
 };
 
 beforeEach(() => {
   push.mockClear();
   vi.stubGlobal(
     'fetch',
-    vi.fn(() => Promise.resolve({ json: () => Promise.resolve(POSTS) })),
+    vi.fn(() =>
+      Promise.resolve({ ok: true, json: () => Promise.resolve(POSTS) }),
+    ),
   );
   // jsdom에 없는 것 — 선택 항목을 목록 안으로 끌어오는 effect가 부른다.
   Element.prototype.scrollIntoView = vi.fn();
@@ -97,26 +99,108 @@ describe('SearchDialog - 선택 인덱스', () => {
 
     expect(push).toHaveBeenCalledWith(postPath('turbo-a'));
   });
+
+  // 한글 조합 중의 Enter는 조합을 끝내는 키다 — 결과를 열면 안 된다.
+  test('IME 조합 중의 Enter는 결과를 열지 않는다', async () => {
+    const input = await openDialog();
+
+    fireEvent.change(input, { target: { value: '터보' } });
+    fireEvent.keyDown(input, { key: 'Enter', isComposing: true });
+
+    expect(push).not.toHaveBeenCalled();
+  });
 });
 
 // 다이얼로그는 sticky 헤더 안에서 렌더되는데, 헤더의 backdrop-filter가 fixed
 // 자손의 containing block을 헤더로 바꿔 모바일 풀스크린 패널이 52px로 접혔다.
 // jsdom은 레이아웃을 하지 않으니 원인 쪽 — 오버레이가 헤더 밖(body)에 붙는지 — 을 잠근다.
 describe('SearchDialog - 오버레이 위치', () => {
-  test('헤더 안에서 열어도 입력창과 결과는 헤더 바깥(body)에 뜬다', async () => {
+  test('헤더 안에서 열어도 다이얼로그는 헤더 바깥(body)에 뜬다', async () => {
     const { container } = render(
       <header>
         <SearchDialog />
       </header>,
     );
     fireEvent.click(screen.getByRole('button', { name: '검색' }));
-    const result = await screen.findByText('터보 첫 글');
-    const input = screen.getByPlaceholderText('제목, 태그, 시리즈로 검색...');
+    await screen.findByText('터보 첫 글');
+    const dialog = screen.getByRole('dialog', { name: '글 검색' });
 
     const header = container.querySelector('header');
     expect(header).not.toBeNull();
-    expect(header?.contains(input)).toBe(false);
-    expect(header?.contains(result)).toBe(false);
-    expect(document.body.contains(input)).toBe(true);
+    expect(header?.contains(dialog)).toBe(false);
+    expect(document.body.contains(dialog)).toBe(true);
+  });
+});
+
+describe('SearchDialog - 다이얼로그 접근성', () => {
+  test('모달 다이얼로그로 열리고 입력창에 초점이 간다', async () => {
+    const input = await openDialog();
+
+    const dialog = screen.getByRole('dialog', { name: '글 검색' });
+    expect(dialog).toHaveAttribute('aria-modal', 'true');
+    await waitFor(() => expect(input).toHaveFocus());
+  });
+
+  test('닫기 버튼은 이름이 있고, 닫으면 초점이 트리거로 돌아간다', async () => {
+    await openDialog();
+    const trigger = screen.getByRole('button', { name: '검색' });
+    trigger.focus();
+
+    fireEvent.click(screen.getByRole('button', { name: '검색 닫기' }));
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(trigger).toHaveFocus();
+  });
+
+  test('Escape로 닫히고 초점이 트리거로 돌아간다', async () => {
+    render(<SearchDialog />);
+    const trigger = screen.getByRole('button', { name: '검색' });
+    trigger.focus();
+    fireEvent.click(trigger);
+    await screen.findByText('터보 첫 글');
+
+    fireEvent.keyDown(document.activeElement ?? document.body, {
+      key: 'Escape',
+    });
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(trigger).toHaveFocus();
+  });
+
+  test('Tab은 다이얼로그 안에서 돈다', async () => {
+    const input = await openDialog();
+    const close = screen.getByRole('button', { name: '검색 닫기' });
+
+    close.focus();
+    fireEvent.keyDown(close, { key: 'Tab' });
+    expect(input).toHaveFocus();
+
+    fireEvent.keyDown(input, { key: 'Tab', shiftKey: true });
+    expect(close).toHaveFocus();
+  });
+
+  test('화살표 선택이 콤보박스의 activedescendant로 전해진다', async () => {
+    const input = await openDialog();
+
+    fireEvent.change(input, { target: { value: '터보' } });
+    fireEvent.keyDown(input, { key: 'ArrowDown' });
+
+    const selected = screen.getByRole('option', { selected: true });
+    expect(selected).toHaveTextContent('터보 둘째 글');
+    expect(input).toHaveAttribute('aria-activedescendant', selected.id);
+    expect(screen.getByRole('listbox')).toHaveAttribute(
+      'id',
+      input.getAttribute('aria-controls'),
+    );
+  });
+
+  test('결과는 글 주소로 가는 링크다', async () => {
+    await openDialog();
+
+    const option = screen.getByRole('option', { name: /터보 첫 글/ });
+    expect(option.querySelector('a')).toHaveAttribute(
+      'href',
+      postPath('turbo-a'),
+    );
   });
 });
