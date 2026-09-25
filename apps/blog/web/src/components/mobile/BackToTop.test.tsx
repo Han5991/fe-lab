@@ -37,20 +37,15 @@ describe('BackToTop', () => {
     ).toBeInTheDocument();
   });
 
-  test('동작 줄이기를 켜면 부드러운 스크롤 없이 올라간다', () => {
+  test('맨 위로 올리되 움직임은 CSS에 맡긴다', () => {
+    // behavior를 적으면 움직임 줄이기 규칙(html의 scroll-behavior)을 덮어쓴다.
     setScrollY(800);
     const scrollTo = vi.fn();
     vi.stubGlobal('scrollTo', scrollTo);
-    vi.stubGlobal(
-      'matchMedia',
-      vi.fn((query: string) => ({
-        matches: query === '(prefers-reduced-motion: reduce)',
-      })),
-    );
     render(<BackToTop />);
 
     fireEvent.click(screen.getByRole('button', { name: '맨 위로 이동' }));
 
-    expect(scrollTo).toHaveBeenCalledWith({ top: 0, behavior: 'auto' });
+    expect(scrollTo).toHaveBeenCalledWith({ top: 0 });
   });
 });

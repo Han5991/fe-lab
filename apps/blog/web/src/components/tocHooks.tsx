@@ -14,17 +14,6 @@ import { HEADER_OFFSET } from './post/headerOffset';
 // 참고). 기존 import 경로를 깨지 않도록 여기서도 같은 이름으로 내보낸다.
 export { HEADER_OFFSET };
 
-/**
- * 사용자가 움직임 줄이기를 켰는지. `matchMedia`가 없는 환경(jsdom 등)에서는
- * 켜지 않은 것으로 본다 — 스크롤 자체가 던지면 앵커 이동이 통째로 죽는다.
- */
-function prefersReducedMotion(): boolean {
-  return (
-    typeof window.matchMedia === 'function' &&
-    window.matchMedia('(prefers-reduced-motion: reduce)').matches
-  );
-}
-
 export const scrollToId = ({
   id,
   headerOffset,
@@ -39,12 +28,9 @@ export const scrollToId = ({
     const elementPosition = el.getBoundingClientRect().top;
     const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
 
-    window.scrollTo({
-      top: offsetPosition,
-      // 움직임 줄이기를 켠 사용자에게는 미끄러지는 대신 바로 옮긴다. 명시한
-      // behavior는 CSS scroll-behavior보다 우선하므로 여기서 따로 봐야 한다.
-      behavior: prefersReducedMotion() ? 'auto' : 'smooth',
-    });
+    // behavior를 적지 않는다 — 명시하면 html의 scroll-behavior(움직임 줄이기면
+    // 꺼지는 규칙, panda.config.ts)를 덮어쓴다.
+    window.scrollTo({ top: offsetPosition });
     action?.();
   }
 };

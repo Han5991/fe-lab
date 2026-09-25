@@ -8,16 +8,9 @@ import { css } from '@design-system/ui-lib/css';
 /** 이만큼 내려가면 버튼이 뜬다(px). */
 const SHOW_AFTER = 300;
 
-const prefersReducedMotion = () =>
-  typeof window.matchMedia === 'function' &&
-  window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-// 동작 줄이기를 켠 사용자에게는 부드러운 스크롤(긴 애니메이션)을 주지 않는다.
+// behavior는 html의 scroll-behavior에 맡긴다(움직임 줄이기면 바로 옮긴다).
 const scrollToTop = () => {
-  window.scrollTo({
-    top: 0,
-    behavior: prefersReducedMotion() ? 'auto' : 'smooth',
-  });
+  window.scrollTo({ top: 0 });
 };
 
 // 스크롤 위치를 외부 저장소로 읽는다. 예전엔 scroll 이벤트에서만 상태를 갱신해,

@@ -210,11 +210,14 @@ export const TOC = () => {
     if (inView) return;
 
     // 마운트 직후(글을 중간부터 열었을 때)는 애니메이션 없이 제자리를 잡는다.
-    const instant =
-      isFirst || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    // 그 밖에는 페이지의 scroll-behavior 규칙(움직임 줄이기면 꺼진다)을 따른다 —
+    // 차례 상자에 같은 CSS를 주면 키보드 초점 이동까지 미끄러진다.
+    const smooth =
+      !isFirst &&
+      getComputedStyle(document.documentElement).scrollBehavior === 'smooth';
     box.scrollTo({
       top: top - (box.clientHeight - elRect.height) / 2,
-      behavior: instant ? 'auto' : 'smooth',
+      behavior: smooth ? 'smooth' : 'instant',
     });
   }, [activeId]);
 

@@ -125,7 +125,6 @@ describe('TOC 항목 클릭', () => {
         }
       },
     );
-    vi.stubGlobal('matchMedia', () => ({ matches: false }));
     scrollToMock = vi.fn();
     vi.stubGlobal('scrollTo', scrollToMock);
   });
