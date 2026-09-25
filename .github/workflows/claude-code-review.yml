@@ -2,7 +2,10 @@ name: Claude Code Review
 
 on:
   pull_request:
-    types: [ opened, synchronize ]
+    # labeled는 deps-major 전용이다(아래 if). Renovate는 PR을 먼저 만들고 라벨을 나중에
+    # 붙여서, opened 페이로드에는 라벨이 없을 수 있다 — 그러면 major PR이 opened에서
+    # 스킵되고 다음 push가 올 때까지 리뷰가 안 돈다(#389가 그랬다).
+    types: [ opened, synchronize, labeled ]
     # Optional: Only run on specific file changes
     # paths:
     #   - "src/**/*.ts"
@@ -22,9 +25,13 @@ jobs:
     # 그건 CI가 본다 — diff도 대부분 lockfile이라 리뷰할 코드가 없다.
     # 반면 major는 release note를 이 저장소 코드와 대조할 가치가 있으므로,
     # renovate.json이 붙이는 deps-major 라벨을 보고 리뷰를 돌린다.
+    #
+    # labeled 이벤트는 deps-major 라벨이 붙을 때만 받는다. 다른 라벨마다 리뷰가 다시
+    # 돌면 비용만 들고, 진행 중인 리뷰가 취소된다(cancel-in-progress).
     if: >-
-      github.event.pull_request.user.type != 'Bot' ||
-      contains(github.event.pull_request.labels.*.name, 'deps-major')
+      (github.event.action != 'labeled' || github.event.label.name == 'deps-major') &&
+      (github.event.pull_request.user.type != 'Bot' ||
+       contains(github.event.pull_request.labels.*.name, 'deps-major'))
 
     # Optional: Filter by PR author
     # if: |
