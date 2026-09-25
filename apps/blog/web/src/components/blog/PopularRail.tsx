@@ -18,31 +18,40 @@ interface RankedPost extends PostSummary {
 }
 
 export const PopularRail = ({ posts, limit = 5 }: PopularRailProps) => {
-  // useSuspenseQuery에서 useQuery로 전환. fetch가 실패하면 ErrorBoundary로
-  // 떠넘기지 않고 정적 fallback(최신글 limit개)으로 graceful degrade합니다.
+  // 순위는 이 빌드에 실린 글의 slug 안에서만 서버가 고른다(getTopPosts 주석).
+  // post_views는 anon RPC로 아무 slug나 부풀릴 수 있어서, 상위 N개를 먼저 받고
+  // 여기서 모르는 slug를 거르면 가짜 slug가 N칸을 전부 차지해 레일이 빈다.
+  //
   // select에 posts를 캡처하면 매 렌더마다 다른 클로저가 만들어져 React Query의
   // 메모이제이션이 의미가 없으므로, raw rows만 캐시하고 매핑은 렌더에서 합칩니다.
-  const { data: rows } = useQuery({
-    queryKey: ['popular-rail', limit],
-    queryFn: () => getTopPosts(limit),
+  const slugs = posts.map(p => p.slug);
+  const { data: rows, isPending } = useQuery({
+    queryKey: ['popular-rail', limit, slugs],
+    queryFn: () => getTopPosts(limit, slugs),
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
+    // 사이드바 장식이라 오래 붙잡지 않는다(기본 3회 재시도면 스켈레톤이 ~7초).
+    retry: 1,
   });
 
   const bySlug = new Map(posts.map(p => [p.slug, p]));
   const ranked: RankedPost[] = (rows ?? [])
     .map(r => {
       const post = bySlug.get(r.slug);
-      if (!post) return null;
+      // 서버가 이미 걸렀지만, 조회수 0인 행이나 목록 밖 행이 오면 순위에 넣지 않는다.
+      if (!post || r.view_count <= 0) return null;
       // getTopPosts(TopPostRow)의 view_count는 이미 non-null number로 정규화됨.
       return { ...post, viewCount: r.view_count } satisfies RankedPost;
     })
     .filter((p): p is RankedPost => p !== null);
 
-  const items: RankedPost[] =
-    ranked.length > 0
-      ? ranked
-      : posts.slice(0, limit).map(p => ({ ...p, viewCount: 0 }));
+  // 조회수가 오기 전엔 자리만 잡아 둔다. 예전엔 여기서 최신 글을 "인기" 제목 아래
+  // 그렸다가 데이터가 오면 순서를 갈아 끼웠고, 조회 실패·데이터 없음일 때는 그
+  // 최신 글 목록이 그대로 "인기 글"로 남았다.
+  if (isPending) return <PopularRailSkeleton rows={limit} />;
+  // 실패했거나 순위를 매길 조회수가 없으면 섹션째 뺀다 — 다른 목록으로 채워
+  // 인기 글이라고 부르지 않는다.
+  if (ranked.length === 0) return null;
 
   return (
     <aside className={css({ position: 'sticky', top: '20' })}>
@@ -69,7 +78,7 @@ export const PopularRail = ({ posts, limit = 5 }: PopularRailProps) => {
           flexDir: 'column',
         })}
       >
-        {items.map((post, i) => (
+        {ranked.map((post, i) => (
           <li
             key={post.slug}
             className={css({
@@ -138,3 +147,30 @@ export const PopularRail = ({ posts, limit = 5 }: PopularRailProps) => {
     </aside>
   );
 };
+
+/** 조회수를 받는 동안의 자리 — 줄 수만큼 빈 막대를 그려 레일 높이를 미리 잡는다. */
+const PopularRailSkeleton = ({ rows }: { rows: number }) => (
+  // 글자가 없는 장식이라 보조기기에는 숨긴다.
+  <div aria-hidden="true">
+    <div
+      className={css({
+        h: '[14px]',
+        w: '[88px]',
+        mb: '3',
+        rounded: 'sm',
+        bg: 'paper.100',
+      })}
+    />
+    {Array.from({ length: rows }, (_, i) => (
+      <div
+        key={i}
+        className={css({
+          h: '[18px]',
+          my: '[10px]',
+          rounded: 'sm',
+          bg: 'paper.100',
+        })}
+      />
+    ))}
+  </div>
+);
