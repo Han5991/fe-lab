@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { setupServer } from 'msw/node';
 import { http, HttpResponse } from 'msw';
@@ -25,6 +25,7 @@ const server = setupServer(
 );
 
 beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
+afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 
 beforeEach(() => {
@@ -35,7 +36,7 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-test('API의 500 응답은 해당 섹션 바운더리에서만 잡히고 나머지 섹션은 그대로 렌더링된다', async () => {
+const renderPage = () => {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
@@ -47,6 +48,10 @@ test('API의 500 응답은 해당 섹션 바운더리에서만 잡히고 나머�
       </QueryClientProvider>
     </ErrorBoundary>,
   );
+};
+
+test('API의 500 응답은 해당 섹션 바운더리에서만 잡히고 나머지 섹션은 그대로 렌더링된다', async () => {
+  renderPage();
 
   expect(await screen.findByText('❌ 통계 에러')).toBeInTheDocument();
   expect(
@@ -58,4 +63,35 @@ test('API의 500 응답은 해당 섹션 바운더리에서만 잡히고 나머�
   // 루트 바운더리가 페이지 전체를 갈아엎지 않았다
   expect(await screen.findByText('주간 트래픽')).toBeInTheDocument();
   expect(screen.getByText('대시보드 - 에러 핸들링 예제')).toBeInTheDocument();
+});
+
+test('다시 시도를 누르면 실패한 섹션의 쿼리를 다시 실행해 복구한다', async () => {
+  let requests = 0;
+  server.use(
+    http.get('*/api/dashboard/stats', () => {
+      requests += 1;
+      if (requests === 1) {
+        return HttpResponse.json(
+          { error: 'STATS_ERROR', message: '일시적 실패' },
+          { status: 500 },
+        );
+      }
+      return HttpResponse.json({
+        visitors: { total: 1000, change: 5 },
+        signups: { total: 100, change: 10 },
+        revenue: { total: 50000, change: -2 },
+        conversion: { rate: 10, change: 3 },
+      });
+    }),
+  );
+  renderPage();
+
+  expect(await screen.findByText('❌ 통계 에러')).toBeInTheDocument();
+
+  fireEvent.click(screen.getByText('다시 시도'));
+
+  expect(await screen.findByText('총 방문자')).toBeInTheDocument();
+  expect(screen.getByText('1,000')).toBeInTheDocument();
+  expect(screen.queryByText('❌ 통계 에러')).not.toBeInTheDocument();
+  expect(requests).toBe(2);
 });
