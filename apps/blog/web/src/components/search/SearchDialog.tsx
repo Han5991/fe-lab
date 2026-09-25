@@ -18,16 +18,10 @@ import { postPath } from '@blog/content';
 import { getRecentViews, type RecentView } from '@/src/hooks/useRecentViews';
 import { Portal } from '@/src/components/Portal';
 import { useModalDialog } from '@/src/components/useModalDialog';
+import { fetchSearchIndex, type SearchPost } from './searchIndex';
 
-interface SearchPost {
-  slug: string;
-  title: string;
-  date: string | null;
-  excerpt: string;
-  tags: string[];
-  series: string | null;
-  contentPreview?: string;
-}
+/** 색인 요청의 진행 상태 — 로딩과 실패를 "결과 없음"과 구분해 보여 준다. */
+type IndexStatus = 'idle' | 'loading' | 'ready' | 'error';
 
 function escapeRegex(str: string): string {
   return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -77,6 +71,11 @@ function pickContentSnippet(
 const isModifiedClick = (e: React.MouseEvent) =>
   e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0;
 
+interface SearchDialogProps {
+  /** 시리즈 id(폴더 경로) → 제목. 색인에는 id만 있다. */
+  seriesTitles: Record<string, string>;
+}
+
 /**
  * 사이트 검색 — 헤더의 트리거 버튼과 모달 다이얼로그.
  *
@@ -89,11 +88,6 @@ const isModifiedClick = (e: React.MouseEvent) =>
  * - 입력창은 콤보박스, 결과는 리스트박스다. 화살표 선택은 `aria-activedescendant`로
  *   보조기술에 전달된다 — 예전엔 배경색만 바뀌어 스크린리더에는 아무것도 없었다.
  */
-interface SearchDialogProps {
-  /** 시리즈 id(폴더 경로) → 제목. 색인에는 id만 있다. */
-  seriesTitles: Record<string, string>;
-}
-
 export const SearchDialog = ({ seriesTitles }: SearchDialogProps) => {
   const seriesTitle = (id: string | null) =>
     id === null ? null : (seriesTitles[id] ?? id);
@@ -101,6 +95,10 @@ export const SearchDialog = ({ seriesTitles }: SearchDialogProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [posts, setPosts] = useState<SearchPost[]>([]);
+  const [indexStatus, setIndexStatus] = useState<IndexStatus>('idle');
+  // 진행 중이거나 이미 받은 색인 요청. 열고 닫고 다시 여는 사이 응답이 안 왔어도
+  // 두 번 받지 않는다. 실패하면 비워서 다음 열기·다시 시도가 새로 요청한다.
+  const indexRequest = useRef<Promise<void> | null>(null);
   // 선택 인덱스는 **어느 검색어에 대한 선택인지**와 함께 들고 다닌다. 예전에는
   // query가 바뀔 때마다 effect가 0으로 되돌렸는데, 그러면 렌더 → effect →
   // 리렌더가 한 번 더 돌고(cascading render), 그 사이 한 프레임 동안 이전
@@ -138,6 +136,7 @@ export const SearchDialog = ({ seriesTitles }: SearchDialogProps) => {
             excerpt: '',
             tags: [],
             series: null,
+            contentPreview: '',
           }
         );
       });
@@ -168,18 +167,30 @@ export const SearchDialog = ({ seriesTitles }: SearchDialogProps) => {
   // 이 둘만 useCallback을 남긴다. 아래 Cmd+K 이펙트의 deps에 들어가는데,
   // react-hooks/exhaustive-deps는 React Compiler의 런타임 메모이제이션을 보지
   // 못해 "매 렌더 바뀐다"고 경고한다. 나머지 파생값·핸들러는 컴파일러에 맡긴다.
+  // 색인 요청은 이벤트 핸들러에서 건다. 예전엔 setState 업데이터 안에서
+  // fetch했는데, 업데이터는 순수해야 해서 StrictMode(dev)가 두 번 불러 요청이
+  // 두 번 나갔다.
+  const loadIndex = useCallback(() => {
+    if (indexRequest.current) return;
+    setIndexStatus('loading');
+    indexRequest.current = fetchSearchIndex().then(
+      data => {
+        setPosts(data);
+        setIndexStatus('ready');
+      },
+      (err: unknown) => {
+        console.error('Failed to load search index:', err);
+        indexRequest.current = null;
+        setIndexStatus('error');
+      },
+    );
+  }, []);
+
   const openDialog = useCallback(() => {
     setIsOpen(true);
     setRecentViews(getRecentViews());
-    setPosts(prev => {
-      if (prev.length > 0) return prev;
-      fetch('/search-index.json')
-        .then(res => res.json())
-        .then((data: SearchPost[]) => setPosts(data))
-        .catch(err => console.error('Failed to load search index:', err));
-      return prev;
-    });
-  }, []);
+    loadIndex();
+  }, [loadIndex]);
 
   const closeDialog = useCallback(() => {
     setIsOpen(false);
@@ -550,18 +561,50 @@ export const SearchDialog = ({ seriesTitles }: SearchDialogProps) => {
                   </ul>
                 )}
                 {filteredPosts.length === 0 && (
-                  <p
+                  <div
                     role="status"
                     className={css({
                       px: '4',
                       py: '8',
+                      display: 'flex',
+                      flexDir: 'column',
+                      alignItems: 'center',
+                      gap: '3',
                       textAlign: 'center',
                       color: 'ink.400',
                       fontSize: 'sm',
                     })}
                   >
-                    {query ? '검색 결과가 없습니다' : '포스트를 검색해보세요'}
-                  </p>
+                    {indexStatus === 'error' ? (
+                      <>
+                        <p>검색 색인을 불러오지 못했습니다.</p>
+                        <button
+                          type="button"
+                          onClick={loadIndex}
+                          className={css({
+                            px: '3',
+                            py: '1',
+                            rounded: 'md',
+                            borderWidth: 'hairline',
+                            borderColor: 'ink.border',
+                            color: 'ink.700',
+                            cursor: 'pointer',
+                            _hover: { borderColor: 'ink.borderStrong' },
+                          })}
+                        >
+                          다시 시도
+                        </button>
+                      </>
+                    ) : indexStatus === 'loading' || indexStatus === 'idle' ? (
+                      <p>검색 색인을 불러오는 중…</p>
+                    ) : (
+                      <p>
+                        {query.trim()
+                          ? '검색 결과가 없습니다'
+                          : '포스트를 검색해보세요'}
+                      </p>
+                    )}
+                  </div>
                 )}
               </div>
 

@@ -8,7 +8,7 @@
  * 드러나는 계약 — 화살표로 옮긴 자리에서 Enter가 그 결과를 열고, 검색어를 바꾸면
  * 선택이 첫 결과로 돌아간다 — 을 여기서 고정한다.
  */
-import { beforeEach, describe, expect, test, vi } from 'vitest';
+import { beforeEach, describe, expect, onTestFinished, test, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { postPath } from '@blog/content';
 
@@ -217,5 +217,56 @@ describe('SearchDialog - 시리즈 표기', () => {
     const option = screen.getByRole('option', { name: /전혀 다른 글/ });
     expect(option).toHaveTextContent('우아한 에러 처리');
     expect(option).not.toHaveTextContent('lab/error-handling');
+  });
+});
+
+describe('SearchDialog - 검색 색인 불러오기', () => {
+  const okResponse = () =>
+    Promise.resolve({ ok: true, json: () => Promise.resolve(POSTS) });
+
+  test('응답이 오기 전에 닫았다 다시 열어도 색인은 한 번만 요청한다', async () => {
+    let respond: (value: unknown) => void = () => undefined;
+    const fetchMock = vi.fn(
+      () =>
+        new Promise(resolve => {
+          respond = resolve;
+        }),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    render(<SearchDialog seriesTitles={SERIES_TITLES} />);
+    const trigger = screen.getByRole('button', { name: '검색' });
+
+    fireEvent.click(trigger);
+    expect(screen.getByRole('status')).toHaveTextContent('불러오는 중');
+    fireEvent.click(screen.getByRole('button', { name: '검색 닫기' }));
+    fireEvent.click(trigger);
+    respond({ ok: true, json: () => Promise.resolve(POSTS) });
+
+    await screen.findByText('터보 첫 글');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  // 예전엔 res.ok를 보지 않아 실패가 콘솔에만 남고, 다이얼로그는 "검색 결과가
+  // 없습니다"인 채로 영영 비어 있었다.
+  test('실패하면 알리고, 다시 시도로 새로 받는다', async () => {
+    const quiet = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => undefined);
+    onTestFinished(() => quiet.mockRestore());
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: false, status: 404 })
+      .mockImplementation(okResponse);
+    vi.stubGlobal('fetch', fetchMock);
+    render(<SearchDialog seriesTitles={SERIES_TITLES} />);
+    fireEvent.click(screen.getByRole('button', { name: '검색' }));
+
+    expect(await screen.findByRole('status')).toHaveTextContent(
+      '불러오지 못했습니다',
+    );
+    fireEvent.click(screen.getByRole('button', { name: '다시 시도' }));
+
+    expect(await screen.findByText('터보 첫 글')).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 });
