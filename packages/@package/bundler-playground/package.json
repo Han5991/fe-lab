@@ -9,6 +9,6 @@
     "react-dom": "catalog:"
   },
   "scripts": {
-    "test": "node src/index.js"
+    "test": "node src/index.js && node src/require.cjs"
   }
 }

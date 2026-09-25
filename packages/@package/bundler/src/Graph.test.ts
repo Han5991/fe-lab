@@ -1,6 +1,7 @@
 import { after, before, describe, mock, test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import { createRequire } from 'node:module';
 import os from 'node:os';
 import path from 'node:path';
 import vm from 'node:vm';
@@ -14,13 +15,20 @@ type Files = Record<string, string>;
 interface BundleOptions {
   entry?: string;
   externals?: string[];
+  globals?: Record<string, string>;
   /** 번들 런타임의 externalRequire로 넘길 외부 모듈 */
   externalModules?: Record<string, unknown>;
 }
 
+interface BundleResult {
+  code: string;
+  /** 픽스처를 쓴 임시 폴더. 결과물은 `dist/`에 있다 */
+  dir: string;
+}
+
 const tempDirs: string[] = [];
 
-function bundle(files: Files, options: BundleOptions = {}): string {
+function bundle(files: Files, options: BundleOptions = {}): BundleResult {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'minibundler-'));
   tempDirs.push(dir);
   for (const [name, content] of Object.entries(files)) {
@@ -36,9 +44,10 @@ function bundle(files: Files, options: BundleOptions = {}): string {
     const graph = new Graph(
       path.join(dir, options.entry ?? 'index.js'),
       options.externals ?? [],
+      options.globals ?? {},
     );
     graph.build();
-    return graph.generate();
+    return { code: graph.generate(), dir };
   } finally {
     process.chdir(cwd);
   }
@@ -68,7 +77,7 @@ function run(
 }
 
 const bundleAndRun = (files: Files, options: BundleOptions = {}) =>
-  run(bundle(files, options), options.externalModules);
+  run(bundle(files, options).code, options.externalModules);
 
 before(() => {
   // Graph의 진행 로그(📂 Processing …)를 끈다
@@ -120,5 +129,43 @@ describe('기본 가져오기(default import)', () => {
     );
 
     assert.equal(exports.hello, 'cjs');
+  });
+});
+
+describe('배포 형식', () => {
+  test('"type": "module" 패키지에서도 CJS 번들(dist/index.js)을 require()로 불러온다', () => {
+    const { dir } = bundle({
+      'package.json': JSON.stringify({ type: 'module' }),
+      'index.js': 'export const plus = (a, b) => a + b;',
+    });
+
+    const lib = createRequire(import.meta.url)(path.join(dir, 'dist/index.js'));
+
+    assert.equal(lib.plus(1, 2), 3);
+  });
+
+  test('require가 없는 브라우저 <script>에서는 globals가 가리키는 전역에서 external을 찾는다', () => {
+    const { code } = bundle(
+      {
+        'index.js': [
+          "import React from 'react';",
+          'export const version = React.version;',
+        ].join('\n'),
+      },
+      { externals: ['react'], globals: { react: 'React' } },
+    );
+
+    const page: Record<string, unknown> = { React: { version: '19-test' } };
+    page.window = page;
+    vm.runInNewContext(code, page);
+    const library = page.BundlerLibrary as Record<string, unknown>;
+    assert.equal(library.version, '19-test');
+
+    const bare: Record<string, unknown> = {};
+    bare.window = bare;
+    assert.throws(
+      () => vm.runInNewContext(code, bare),
+      /Cannot find module 'react' \(global React\)/,
+    );
   });
 });
