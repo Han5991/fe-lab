@@ -16,7 +16,7 @@
   "rangeStrategy": "bump",
   "labels": ["dependencies"],
   "lockFileMaintenance": {
-    "description": "자동 머지하지 않는다. Renovate의 minimumReleaseAge는 lockFileMaintenance에 적용되지 않는다(전이 의존성 해석을 패키지 매니저에 맡기므로 나이를 볼 릴리스가 없다). 이 PR은 모든 전이 의존성을 방금 나온 버전으로 다시 해석하므로, 나이 게이트 없이 자동 머지하면 공개된 지 몇 분 된 악성 버전도 그대로 들어온다. 게이트는 pnpm-workspace.yaml의 pnpm minimumReleaseAge 몫이다 — 그게 들어오면 automerge를 되살려도 된다",
+    "description": "자동 머지하지 않는다 — minimumReleaseAge가 lockFileMaintenance에 걸리지 않아 방금 나온 전이 의존성이 나이 게이트 없이 들어온다. pnpm minimumReleaseAge가 들어오면 되살려도 된다",
     "enabled": true,
     "schedule": ["* 0-9 1-3 * *"],
     "automerge": false
@@ -33,7 +33,7 @@
       "groupName": "panda"
     },
     {
-      "description": "GitHub Actions는 ci scope로 묶고(기본 scope는 deps), 공개된 지 3일이 지난 릴리스만 올린다. 프리셋 security:minimumReleaseAgeNpm은 npm 데이터소스에만 걸려 액션 업데이트(자동 머지 대상)에는 나이 게이트가 없었다 — 태그가 탈취되거나 악성 릴리스가 나오면 배포·리뷰 잡에서 곧바로 돌았다",
+      "description": "GitHub Actions는 ci scope로 묶고(기본 scope는 deps) 3일 나이 게이트를 건다 — 프리셋 security:minimumReleaseAgeNpm은 npm 데이터소스에만 걸린다",
       "matchManagers": ["github-actions"],
       "groupName": "ci",
       "semanticCommitScope": "ci",
@@ -68,7 +68,7 @@
       "platformAutomerge": true
     },
     {
-      "description": "anthropics/claude-code-action은 SHA로 고정하고 자동 머지하지 않는다. CLAUDE_CODE_OAUTH_TOKEN과 (github_token을 넘기지 않으면) 잡 권한과 무관하게 write로 발급되는 App 토큰을 받는 액션이고, 이 저장소는 액션 동작 변화(에이전트 모드에서 게시 누락 등)에 여러 번 데였다. 매 버전을 diff로 보고 사람이 머지한다. ci 그룹에서 떼어 따로 묶는다 — 그룹 브랜치는 안의 업데이트가 전부 automerge를 허용해야 자동 머지되므로, 자주 나오는 이 액션이 ci 그룹에 남으면 checkout·setup-node 같은 나머지 액션의 자동 머지까지 멈춘다",
+      "description": "anthropics/claude-code-action은 토큰을 쥐는 액션이라 SHA로 고정하고 사람이 diff를 보고 머지한다. ci 그룹에 두면 그룹 전체의 자동 머지가 멈춰 따로 묶는다",
       "matchPackageNames": ["anthropics/claude-code-action"],
       "groupName": "claude-code-action",
       "automerge": false
