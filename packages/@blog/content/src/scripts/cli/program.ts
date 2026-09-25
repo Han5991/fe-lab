@@ -28,15 +28,14 @@ import type { ContentContext } from '../context.ts';
  * fs를 만지지 않도록).
  */
 async function loadContext(command: Command): Promise<ContentContext> {
-  const globals = command.optsWithGlobals<{ config?: string; now?: string }>();
+  const globals = command.optsWithGlobals<{ config?: string }>();
   const { loadContentConfig } = await import('./discoverConfig.ts');
   const { createContext } = await import('../context.ts');
   let now: Date;
   try {
-    // 우선순위는 `--now` > 환경 변수 > 지금. 환경 변수는 CLI 밖의 단계
-    // (`next build`)와 같은 시각을 쓰기 위한 채널이다 — 앱의 `build` 스크립트가
-    // 내보내고, 앱의 `src/content.ts`도 같은 파서로 읽는다(shared/buildNow.ts).
-    now = resolveBuildNow(globals.now ?? process.env[BUILD_NOW_ENV]);
+    // 기준 시각의 채널은 환경 변수 하나다 — 앱의 `build` 스크립트와 build의
+    // 자식 단계(stepEnv), 앱의 `src/content.ts`가 같은 값을 같은 파서로 읽는다.
+    now = resolveBuildNow(process.env[BUILD_NOW_ENV]);
   } catch (e) {
     // 입력 형식 오류는 스택이 아니라 메시지로 — new-post 액션과 같은 처리.
     command.error(`✖ ${e instanceof Error ? e.message : String(e)}`);
@@ -95,12 +94,6 @@ export function buildProgram(): Command {
     .option(
       '--config <path>',
       'content.config.ts 경로 (기본: cwd에서 위로 탐색)',
-    )
-    // 예약 글 공개 판정·산출물 날짜의 기준 시각. build가 자식 단계 전부에 같은
-    // 값을 넘긴다(stepArgv) — 단계마다 제 시계를 보면 산출물끼리 글 집합이 갈린다.
-    .option(
-      '--now <iso>',
-      '기준 시각 — offset을 명시한 ISO (기본: 환경 변수 BLOG_CONTENT_NOW, 없으면 지금)',
     )
     // 오타 옵션을 조용히 무시하지 않는다. 예전 손파서도 알 수 없는 옵션을
     // 에러로 냈으므로 동작이 같다.

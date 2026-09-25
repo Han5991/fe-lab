@@ -15,7 +15,7 @@ test('비었으면 지금이다', () => {
 });
 
 test('build가 자식 단계에 넘기는 toISOString() 값을 그대로 되돌린다', () => {
-  // build-content.ts의 stepArgv가 `--now`로 넘기는 모양(밀리초 + Z).
+  // build-content.ts의 stepEnv가 자식에 넘기는 모양(밀리초 + Z).
   const pinned = new Date('2026-09-25T01:23:45.678Z');
   expect(resolveBuildNow(pinned.toISOString()).getTime()).toBe(
     pinned.getTime(),

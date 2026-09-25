@@ -1,5 +1,5 @@
 import { POSTS_PATH, postUrl, RSS_PATH, type PostData } from '../post/index.ts';
-import type { ContentContext } from './context.ts';
+import type { ContentApi } from '../post/createContent.ts';
 import { decodeUrlSafe } from '../shared/url.ts';
 
 /**
@@ -34,18 +34,14 @@ export const POST_SET_NAMES = ['visible', 'all'] as const;
 export type PostSetName = (typeof POST_SET_NAMES)[number];
 
 export function resolvePostSet(
-  ctx: Pick<ContentContext, 'content' | 'now'>,
+  content: ContentApi,
   name: PostSetName,
 ): PostData[] {
   return name === 'visible'
-    ? /**
-       * 공개 글 — isPostVisible 판정 통과. sitemap·rss·llms·검색 인덱스의 베이스.
-       * 판정 시각은 이 실행의 기준 시각이다 — 단계마다 제 시계를 보면 예약 글
-       * 경계에서 산출물끼리 글 집합이 갈린다.
-       */
-      ctx.content.getAllPosts(ctx.now)
+    ? /** 공개 글(인스턴스의 기준 시각으로 판정) — sitemap·rss·llms·검색 인덱스의 베이스 */
+      content.getAllPosts()
     : /** draft·scheduled 포함 전체 — admin 대시보드용 */
-      ctx.content.getAllPostsIncludingHidden();
+      content.getAllPostsIncludingHidden();
 }
 
 /**

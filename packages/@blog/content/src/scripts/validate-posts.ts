@@ -119,7 +119,7 @@ export function main(ctx: ContentContext, runOptions: ValidateOptions) {
   const options: ValidateContext = toValidateContext(ctx.content.config, {
     ...runOptions,
     // strict 승격 범위(지금 공개되는 글)도 생성 단계와 같은 기준 시각으로 판정한다.
-    now: ctx.now,
+    now: ctx.content.now,
   });
   const allFiles = collectMarkdownFiles(
     postsDir,

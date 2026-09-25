@@ -23,8 +23,8 @@ test('컨텍스트의 로더 인스턴스는 인자 없이 불러도 실행의 �
   const config = defineTestContent({ root });
   const configPath = join(root, 'content.config.mts');
 
-  // 기준 시각을 공개 시각 뒤로 고정하면, 로더 메서드도 그 시각으로 판정해야
-  // 한다 — 인스턴스가 제 생성 시각을 보면 resolvePostSet(ctx.now)과 글 집합이 갈린다.
+  // 기준 시각을 공개 시각 뒤로 고정하면, 인자 없이 부르는 로더 메서드도 그
+  // 시각으로 판정한다 — 산출물(resolvePostSet)과 페이지가 같은 글 집합을 본다.
   const after = createContext(
     config,
     configPath,

@@ -1,6 +1,7 @@
 import { spawn } from 'node:child_process';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { BUILD_NOW_ENV } from '../shared/buildNow.ts';
 import type { ContentContext } from './context.ts';
 
 /**
@@ -91,17 +92,17 @@ interface StepResult extends ProcessResult {
  * 다른 설정을 잡는 일이 구조적으로 불가능하다. `--config`는 루트 커맨드의 전역
  * 옵션이라 서브커맨드 이름 **앞**에 온다.
  */
-export function stepArgv(step: Step, configPath: string, now: Date): string[] {
-  return [
-    '--config',
-    configPath,
-    // 기준 시각도 부모가 정해 넘긴다 — 자식마다 제 시계를 보면 예약 글의 공개
-    // 시각이 빌드 도중에 지날 때 산출물끼리 글 집합이 갈린다(context.ts의 now).
-    '--now',
-    now.toISOString(),
-    step.command,
-    ...step.args,
-  ];
+export function stepArgv(step: Step, configPath: string): string[] {
+  return ['--config', configPath, step.command, ...step.args];
+}
+
+/**
+ * 자식 프로세스 환경 — 부모의 기준 시각을 `BLOG_CONTENT_NOW`로 싣는다. 자식마다
+ * 제 시계를 보면 예약 글의 공개 시각이 빌드 도중에 지날 때 산출물끼리 글 집합이
+ * 갈린다. `next build`도 같은 변수를 읽으므로(앱 `build` 스크립트) 채널은 이것 하나다.
+ */
+export function stepEnv(now: Date): NodeJS.ProcessEnv {
+  return { ...process.env, [BUILD_NOW_ENV]: now.toISOString() };
 }
 
 /**
@@ -117,6 +118,7 @@ export function stepArgv(step: Step, configPath: string, now: Date): string[] {
 export function runProcess(
   execPath: string,
   args: readonly string[],
+  env: NodeJS.ProcessEnv = process.env,
 ): Promise<ProcessResult> {
   return new Promise(resolveRun => {
     const start = Date.now();
@@ -143,6 +145,7 @@ export function runProcess(
     const child = spawn(execPath, args, {
       shell: false,
       stdio: ['ignore', 'pipe', 'pipe'],
+      env,
     });
     child.stdout.on('data', (c: Buffer) => chunks.push(c));
     child.stderr.on('data', (c: Buffer) => chunks.push(c));
@@ -169,10 +172,11 @@ async function runStep(
   configPath: string,
   now: Date,
 ): Promise<StepResult> {
-  const result = await runProcess(process.execPath, [
-    CLI_PATH,
-    ...stepArgv(step, configPath, now),
-  ]);
+  const result = await runProcess(
+    process.execPath,
+    [CLI_PATH, ...stepArgv(step, configPath)],
+    stepEnv(now),
+  );
   return { step, ...result };
 }
 
@@ -189,12 +193,12 @@ export async function main(ctx: ContentContext, flags: Flags) {
   const total = phases.reduce((n, phase) => n + phase.length, 0);
   const start = Date.now();
   console.log(
-    `▶ build-content: ${total}개 단계 (${phases.length} phase) 실행 — 기준 시각 ${ctx.now.toISOString()}`,
+    `▶ build-content: ${total}개 단계 (${phases.length} phase) 실행 — 기준 시각 ${ctx.content.now.toISOString()}`,
   );
 
   for (const phase of phases) {
     const results = await Promise.all(
-      phase.map(step => runStep(step, ctx.configPath, ctx.now)),
+      phase.map(step => runStep(step, ctx.configPath, ctx.content.now)),
     );
     let failed = false;
     for (const result of results) {

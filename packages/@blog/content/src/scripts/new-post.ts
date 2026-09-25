@@ -231,7 +231,7 @@ export function main(ctx: ContentContext, opts: NewPostOptions) {
       scheduledDate: opts.scheduledDate,
     },
     ctx.content.config.timezone.iana,
-    ctx.now,
+    ctx.content.now,
   );
 
   writeFileSync(targetPath, frontmatter, 'utf8');

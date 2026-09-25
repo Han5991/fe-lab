@@ -128,7 +128,7 @@ export async function main(ctx: ContentContext) {
   const thumbsConfig = ctx.content.config.thumbnails;
   // thumbs는 파일명에서 글을 되돌릴 수 없어 레지스트리 대조 대상이 아니지만,
   // 글 집합 선택만은 레지스트리의 셀렉터(resolvePostSet)를 같이 쓴다.
-  const posts = resolvePostSet(ctx, 'visible');
+  const posts = resolvePostSet(ctx.content, 'visible');
   const tasks = collectTasks(posts);
   mkdirSync(thumbsDir, { recursive: true });
 

@@ -4,8 +4,10 @@ import {
   describeExit,
   runProcess,
   stepArgv,
+  stepEnv,
 } from './build-content.ts';
 import { buildProgram } from './cli/program.ts';
+import { resolveBuildNow } from '../shared/buildNow.ts';
 
 // ── buildPhases ──────────────────────────────────────────────────────────────
 
@@ -77,50 +79,30 @@ test('stepArgv: 자식에 --config를 서브커맨드 앞에 명시 전달', () 
   // 자식이 cwd 탐색으로 다른 설정을 잡는 일이 없도록, 부모가 발견한 설정
   // 파일의 절대 경로를 전역 옵션으로 재전달한다. 전역 옵션은 서브커맨드
   // 이름 앞에 와야 commander가 루트 옵션으로 파싱한다.
-  const now = new Date('2026-06-01T00:04:00Z');
-  const argv = stepArgv(
-    { label: 'sitemap', command: 'sitemap', args: [] },
-    '/abs/content.config.ts',
-    now,
-  );
-  expect(argv).toStrictEqual([
+  expect(
+    stepArgv(
+      { label: 'validate-posts', command: 'validate', args: ['--strict'] },
+      '/abs/content.config.ts',
+    ),
+  ).toStrictEqual([
     '--config',
     '/abs/content.config.ts',
-    '--now',
-    '2026-06-01T00:04:00.000Z',
-    'sitemap',
-  ]);
-
-  const withFlags = stepArgv(
-    { label: 'validate-posts', command: 'validate', args: ['--strict'] },
-    '/abs/content.config.ts',
-    now,
-  );
-  expect(withFlags).toStrictEqual([
-    '--config',
-    '/abs/content.config.ts',
-    '--now',
-    '2026-06-01T00:04:00.000Z',
     'validate',
     '--strict',
   ]);
 });
 
-test('stepArgv: 모든 단계가 부모가 정한 **같은** 기준 시각을 받는다 (예약 글 경계 분열 방지)', () => {
+test('stepEnv: 자식은 부모의 기준 시각을 BLOG_CONTENT_NOW로 받는다 (예약 글 경계 분열 방지)', async () => {
   // 단계마다 제 시계를 보면 예약 시각이 빌드 도중에 지날 때 sitemap·og·llms가
-  // 서로 다른 글 집합을 담는다. 부모의 한 값이 자식 argv 전부에 실려야 한다.
+  // 서로 다른 글 집합을 담는다. 자식은 부모의 값을 CLI와 같은 파서로 읽는다.
   const now = new Date('2026-06-01T00:04:59.999Z');
-  const nowArgs = buildPhases({
-    skipValidate: false,
-    force: false,
-    strict: true,
-  })
-    .flat()
-    .map(step => {
-      const argv = stepArgv(step, '/abs/content.config.ts', now);
-      return argv[argv.indexOf('--now') + 1];
-    });
-  expect(new Set(nowArgs)).toStrictEqual(new Set([now.toISOString()]));
+  const result = await runProcess(
+    process.execPath,
+    ['-e', 'console.log(process.env.BLOG_CONTENT_NOW)'],
+    stepEnv(now),
+  );
+  expect(result.output.trim()).toBe(now.toISOString());
+  expect(resolveBuildNow(result.output.trim()).getTime()).toBe(now.getTime());
 });
 
 test('buildPhases: 단계 label은 중복 없음', () => {

@@ -271,7 +271,7 @@ export function main(
 
   // 다른 생성기(sitemap·og·thumbnails…)와 같은 셀렉터 — 공개 글 집합이 한 곳에서 정해진다.
   const published = selectPublishedMedia(
-    resolvePostSet(ctx, 'visible'),
+    resolvePostSet(ctx.content, 'visible'),
     listMediaFiles(sourceDir).map(f => toPosixRel(sourceDir, f.full)),
   );
   const include: MediaFilter = rel => published.has(rel);

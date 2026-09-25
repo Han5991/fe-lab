@@ -11,7 +11,7 @@ import type { ContentConfig } from '../shared/contentConfig.ts';
 import { createContent, type ContentApi } from '../post/createContent.ts';
 
 /**
- * **설정·경로의 사본을 두지 않는 것이 요점이다.**
+ * **필드가 둘뿐인 것이 요점이다.**
  *
  * 예전에는 `config`와 `paths`도 여기 있었다. 값은 `content`의 것과 같은 객체를
  * 넣어 뒀을 뿐이라(`paths: content.paths`), 위 문단의 "한 인스턴스에서 나온다"가
@@ -28,21 +28,9 @@ export interface ContentContext {
   configPath: string;
   /**
    * 설정에 앵커된 로더 인스턴스 — 글 집합 선택은 artifacts.resolvePostSet 경유.
-   * 설정과 경로도 여기서 읽는다(`content.config` · `content.paths`).
+   * 설정·경로·기준 시각도 여기서 읽는다(`content.config`·`paths`·`now`).
    */
   content: ContentApi;
-  /**
-   * 이 실행의 **기준 시각** — 예약 글 공개 판정(`resolvePostSet`)·sitemap의
-   * 오늘·RSS lastBuildDate·strict 승격 범위가 모두 이 값을 본다.
-   *
-   * 예전에는 단계마다 제 `new Date()`를 썼다. build는 단계를 프로세스 8개로
-   * 띄우므로, 예약 글의 공개 시각이 빌드 도중에 지나면 sitemap·rss·llms·og가
-   * 서로 다른 글 집합을 담았다(페이지는 있는데 sitemap·og 카드에는 없는 글).
-   * build가 한 번 정해 자식 전부에 `--now`로 넘긴다(`build-content.ts`의 stepArgv).
-   * `content` 인스턴스도 이 시각으로 만든다 — 인자 없이 부르는 로더 메서드
-   * (`getAllPostSlugs`·집계 …)까지 같은 시각을 본다.
-   */
-  now: Date;
 }
 
 export function createContext(
@@ -50,5 +38,5 @@ export function createContext(
   configPath: string,
   now: Date = new Date(),
 ): ContentContext {
-  return { configPath, content: createContent(config, { now }), now };
+  return { configPath, content: createContent(config, { now }) };
 }

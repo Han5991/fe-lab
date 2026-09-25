@@ -1,7 +1,6 @@
 import { expect, test } from 'vitest';
-import { ARTIFACTS, resolvePostSet, type ArtifactSpec } from './artifacts.ts';
+import { ARTIFACTS, type ArtifactSpec } from './artifacts.ts';
 import { TEST_VALUES } from '../shared/testValues.ts';
-import type { ContentApi } from '../post/createContent.ts';
 
 // 산출물 URL의 origin은 설정에서 온다 — 추출기도 그 값을 인자로 받는다.
 const SITE_URL = TEST_VALUES.site.url;
@@ -155,20 +154,4 @@ test('og 디렉터리 추출: png 경로 → 글 URL, 중첩 slug 보존, png �
   ).toStrictEqual(
     new Set([`${SITE_URL}/posts/a/`, `${SITE_URL}/posts/회고/2024/`]),
   );
-});
-
-test('resolvePostSet: visible은 실행의 기준 시각(ctx.now)으로 공개를 판정한다', () => {
-  // 단계마다 제 시계를 보면 예약 글 경계에서 산출물끼리 글 집합이 갈린다 —
-  // 셀렉터가 컨텍스트의 한 시각을 로더에 넘기는지 본다.
-  const seen: unknown[] = [];
-  const content = {
-    getAllPosts: (now?: Date) => {
-      seen.push(now);
-      return [];
-    },
-    getAllPostsIncludingHidden: () => [],
-  } as unknown as ContentApi;
-  const now = new Date('2026-06-01T00:04:00Z');
-  resolvePostSet({ content, now }, 'visible');
-  expect(seen).toStrictEqual([now]);
 });
