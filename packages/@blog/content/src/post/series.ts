@@ -1,6 +1,19 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { isRecord } from '../shared/guards.ts';
 import { compareByCodePoint, parseMatter } from './repository.ts';
+
+/** 시리즈 선언 파일 이름 — 리더와 lint:posts가 같은 파일을 본다. */
+export const SERIES_FILENAME = '_series.yml';
+
+/**
+ * `_series.yml` 원문을 읽는다 — frontmatter로 감싸 gray-matter에 넘긴다. 리더와
+ * lint:posts가 같은 함수로 읽어야 한쪽만 받아 주는 문법이 생기지 않는다.
+ * YAML이 깨지면 `where`를 붙여 던진다(원래 오류는 `cause`). 매핑이 아닐 수 있다.
+ */
+export function parseSeriesYaml(raw: string, where: string): unknown {
+  return parseMatter(`---\n${raw}\n---\n`, where).data;
+}
 
 export interface SeriesMeta {
   name: string;
@@ -55,7 +68,7 @@ export function createSeriesReader(deps: SeriesReaderDeps): SeriesReader {
     // 확장자는 `_series.yml` 하나만 본다. `.yaml`도 받아 주면 같은 뜻의 파일이 두
     // 이름으로 공존할 수 있고, 그때 어느 쪽이 이기는지는 후보 배열의 순서에만
     // 적혀 있다 — 혼자 쓰는 저장소에서 그 규칙을 기억할 이유가 없다.
-    const filePath = join(seriesDir, '_series.yml');
+    const filePath = join(seriesDir, SERIES_FILENAME);
 
     if (!existsSync(filePath)) {
       // 폴더는 있는데 `_series.yml`이 없다 — 정상적인 "시리즈 아님" 판정.
@@ -63,9 +76,8 @@ export function createSeriesReader(deps: SeriesReaderDeps): SeriesReader {
       return null;
     }
 
-    const raw = readFileSync(filePath, 'utf8');
-    // YAML이 깨지면 파일 경로를 붙여 던진다 — 이유는 parseMatter 주석.
-    const { data } = parseMatter(`---\n${raw}\n---\n`, filePath);
+    const parsed = parseSeriesYaml(readFileSync(filePath, 'utf8'), filePath);
+    const data = isRecord(parsed) ? parsed : {};
 
     const meta: SeriesMeta = {
       name: seriesName,

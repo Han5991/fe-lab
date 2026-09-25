@@ -85,6 +85,11 @@ export function toValidateContext(
   };
 }
 
+/** 최상위 `key:` 줄인가 — 키는 정규식이 아니라 문자열로 비교한다(`order(old)`도 안전). */
+export function isKeyLine(line: string, key: string): boolean {
+  return /^(\w+)\s*:/.exec(line)?.[1] === key;
+}
+
 /** frontmatter 블록 안에서 `key:` 줄의 1-based 줄 번호. 없으면 null. */
 export function findFrontmatterLine(raw: string, key: string): number | null {
   const lines = raw.split('\n');
@@ -92,10 +97,19 @@ export function findFrontmatterLine(raw: string, key: string): number | null {
   for (const [i, line] of lines.entries()) {
     if (i === 0) continue;
     if (line.trim() === '---') return null;
-    const m = line.match(/^(\w+)\s*:/);
-    if (m && m[1] === key) return i + 1;
+    if (isKeyLine(line, key)) return i + 1;
   }
   return null;
+}
+
+/**
+ * `parseMatter`가 던진 오류의 원래 오류(YAMLException — `mark`·메시지 첫 줄).
+ * 파일 경로는 lint가 이슈의 `file`로 따로 싣는다.
+ */
+export function yamlErrorCause(error: unknown): unknown {
+  return error instanceof Error && error.cause !== undefined
+    ? error.cause
+    : error;
 }
 
 /**

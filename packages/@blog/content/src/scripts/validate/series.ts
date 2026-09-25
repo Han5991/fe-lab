@@ -10,17 +10,25 @@
  */
 import { readdirSync, statSync } from 'node:fs';
 import { join, posix, relative, sep } from 'node:path';
-import matter from 'gray-matter';
-import { isPostFile, pathSlug, resolvePostSlug } from '../../post/index.ts';
+import {
+  isPostFile,
+  parseSeriesYaml,
+  pathSlug,
+  resolvePostSlug,
+  SERIES_FILENAME,
+  type SeriesMeta,
+} from '../../post/index.ts';
 import { isRecord } from '../../shared/guards.ts';
+import { isKeyLine, yamlErrorCause } from './shared.ts';
 import type { Issue, PostRecord } from './shared.ts';
 import { resolveSeverity } from './rules.ts';
 
-/** 시리즈 선언 파일 이름 — 로더(`series.ts`)가 읽는 것과 같은 하나뿐이다. */
-export const SERIES_FILENAME = '_series.yml';
-
 /** 로더가 읽는 키 — 나머지는 조용히 버려진다. */
-const SERIES_KEYS = ['title', 'description', 'order'] as const;
+const SERIES_KEYS = [
+  'title',
+  'description',
+  'order',
+] as const satisfies readonly (keyof SeriesMeta)[];
 
 /** 원고 폴더 아래의 `_series.yml` 전부(절대 경로). */
 export function findSeriesFiles(postsDir: string): string[] {
@@ -38,9 +46,7 @@ export function findSeriesFiles(postsDir: string): string[] {
 
 /** `key:`로 시작하는 줄의 1-based 번호 — 없으면 null. */
 function keyLine(raw: string, key: string): number | null {
-  const index = raw
-    .split('\n')
-    .findIndex(line => new RegExp(`^${key}\\s*:`).test(line));
+  const index = raw.split('\n').findIndex(line => isKeyLine(line, key));
   return index === -1 ? null : index + 1;
 }
 
@@ -69,16 +75,16 @@ export function validateSeriesFile(
     message,
   });
 
-  // 로더와 같은 방식으로 읽는다(frontmatter로 감싸 gray-matter에 넘긴다).
   let data: unknown;
   try {
-    data = matter(`---\n${raw}\n---\n`).data;
+    data = parseSeriesYaml(raw, relPath);
   } catch (e) {
+    const cause = yamlErrorCause(e);
     return [
       issue(
         'invalid-series-meta',
         null,
-        `YAML을 읽을 수 없습니다 — 빌드의 시리즈 리더가 이 파일에서 멈춥니다: ${e instanceof Error ? (e.message.split('\n')[0] ?? e.message) : String(e)}`,
+        `YAML을 읽을 수 없습니다 — 빌드의 시리즈 리더가 이 파일에서 멈춥니다: ${cause instanceof Error ? (cause.message.split('\n')[0] ?? cause.message) : String(cause)}`,
       ),
     ];
   }

@@ -51,6 +51,15 @@ test('_series.yml: 모르는 키(orders 오타)는 unknown-series-key 경고 —
   ]);
 });
 
+test.each(['order(', 'order['])(
+  '_series.yml: 정규식 메타 문자가 든 키(%s)도 검사를 멈추지 않는다',
+  key => {
+    expect(rules(`${key}:\n  - x\ntitle: t\n`)).toStrictEqual([
+      ['unknown-series-key', 'warning', null],
+    ]);
+  },
+);
+
 test('_series.yml: 어떤 글과도 맞지 않는 order 항목은 unmatched-series-order 에러', () => {
   const issues = validateSeriesFile(
     'bundler/_series.yml',
