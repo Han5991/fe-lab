@@ -26,11 +26,10 @@ pre-commit:
       stage_fixed: true
 
 pre-push:
-  parallel: true
   commands:
-    lint:
-      run: pnpm lint
-    types:
-      run: pnpm check-types
-    test:
-      run: pnpm test
+    # turbo 호출 하나로 묶는다 — .github/actions/quality-checks와 같은 이유다. 셋을
+    # 병렬 프로세스(pnpm lint·check-types·test)로 띄우면 turbo 셋이 각자 ^build를 돌려
+    # 같은 산출물(dist/·styled-system)을 동시에 쓰는 경합이 생긴다. 한 호출 안에서는
+    # turbo가 ^build를 한 번만 돌리고 세 태스크를 그래프대로 병렬로 돌린다.
+    checks:
+      run: pnpm turbo run lint check-types test
