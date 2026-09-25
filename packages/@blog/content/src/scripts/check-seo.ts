@@ -4,8 +4,13 @@ import { join, relative, resolve, sep } from 'node:path';
 // (frontmatter.ts)와 정확히 같은 범위를 보는 게이트라 같은 출처를 봐야 한다.
 import type { SeoConfig, SiteConfig } from '../shared/contentConfig.ts';
 import { decodeUrlSafe } from '../shared/url.ts';
+import { POSTS_PATH } from '../post/index.ts';
 import type { ContentContext } from './context.ts';
-import { ARTIFACTS, type ArtifactRelation } from './artifacts.ts';
+import {
+  ARTIFACTS,
+  extractSitemapLocs,
+  type ArtifactRelation,
+} from './artifacts.ts';
 
 /** 이 게이트가 설정에서 읽는 슬라이스 — main이 컨텍스트에서 채운다. */
 export interface SeoCheckConfig {
@@ -27,6 +32,8 @@ export interface SeoCheckConfig {
  * HTML 페이지 검사 외에, 파생 산출물(sitemap·rss·llms·검색 인덱스·og 이미지)의
  * 글 집합 정합성은 `scripts/artifacts.ts`의 레지스트리를 **순회**하며 검사합니다
  * — 산출물이 늘면 레지스트리에 항목을 더하는 것으로 검사가 자동으로 붙습니다.
+ * 그 기준(sitemap)은 다시 실제 페이지와 대조합니다(`checkSitemapPages` — 페이지
+ * 존재·색인 가능 여부·sitemap에 빠진 글 페이지).
  *
  * 사용: `pnpm build` 이후 `blog-content check-seo`
  *       (검사 대상 디렉토리를 인자로 줄 수 있습니다: `blog-content check-seo out`)
@@ -202,7 +209,10 @@ export function checkPages(
       );
     }
 
-    // noindex 페이지(admin, 개인정보처리방침)는 검색 대상이 아니다.
+    // noindex 페이지(admin, 개인정보처리방침)는 검색 대상이 아니다. **noindex여도
+    // 되는 페이지인가**는 여기가 아니라 checkSitemapPages가 본다 — sitemap에 실린
+    // 페이지가 noindex면 그쪽에서 실패한다(글 레이아웃에 noindex가 새는 회귀가
+    // 예전에는 "✓ 통과"로 배포됐다).
     if (seo.robotsNoindex) continue;
 
     if (seo.h1Count !== 1) {
@@ -291,6 +301,63 @@ export function checkPages(
     });
   }
 
+  return violations;
+}
+
+/**
+ * sitemap ↔ 실제 페이지 대조.
+ *
+ * 레지스트리(`checkArtifacts`)는 산출물끼리만 대조해서, 페이지 쪽과는 한 번도
+ * 만나지 않았다. 그 틈으로 지나가던 것 셋:
+ * - sitemap에 있는데 `out/`에 페이지가 없다(`sitemap-page-missing`) — 색인에
+ *   404를 제출한다
+ * - sitemap에 있는데 페이지가 noindex다(`sitemap-noindex`) — 레이아웃에 noindex가
+ *   새면 사이트 전체가 색인에서 빠지는데, 페이지 검사는 noindex 페이지를
+ *   건너뛰므로 "통과"였다. sitemap이 곧 "색인돼야 할 페이지" 목록이라 허용 목록을
+ *   따로 두지 않는다
+ * - 글 페이지(`/posts/<slug>/`)가 있는데 sitemap에 없다(`page-missing-from-sitemap`)
+ *   — 생성 단계와 `next build`가 서로 다른 시각에 예약 글 공개를 판정하면 생긴다
+ *
+ * 페이지 키는 디스크 이름(디코드), sitemap은 퍼센트 인코딩이라 풀어서 비교한다.
+ */
+export function checkSitemapPages(
+  pages: ReadonlyMap<string, string>,
+  locs: readonly string[],
+  siteUrl: string,
+): SeoViolation[] {
+  const violations: SeoViolation[] = [];
+  const listed = new Set<string>();
+  for (const loc of locs) {
+    const path = loc.startsWith(siteUrl)
+      ? decodeUrlSafe(loc.slice(siteUrl.length))
+      : null;
+    const html = path === null ? undefined : pages.get(path);
+    if (path !== null) listed.add(path);
+    if (html === undefined) {
+      violations.push({
+        page: path ?? loc,
+        rule: 'sitemap-page-missing',
+        message: `sitemap에 있는 URL의 페이지가 out/에 없습니다: ${loc}`,
+      });
+    } else if (parsePageSeo(html).robotsNoindex) {
+      violations.push({
+        page: path ?? loc,
+        rule: 'sitemap-noindex',
+        message:
+          'sitemap에 실린 페이지가 noindex입니다 — 제출한 URL이 색인에서 빠집니다. 레이아웃·metadata의 robots 설정을 확인하세요',
+      });
+    }
+  }
+  for (const path of pages.keys()) {
+    if (!path.startsWith(POSTS_PATH) || path === POSTS_PATH) continue;
+    if (listed.has(path)) continue;
+    violations.push({
+      page: path,
+      rule: 'page-missing-from-sitemap',
+      message:
+        '글 페이지가 sitemap에 없습니다 — 생성 단계(sitemap·rss·llms)와 페이지가 다른 글 집합을 봤습니다(예약 글의 공개 시각 경계 등)',
+    });
+  }
   return violations;
 }
 
@@ -394,6 +461,10 @@ export function checkArtifacts(collected: CollectedArtifact[]): SeoViolation[] {
   return violations;
 }
 
+/** 대조 기준 산출물(sitemap)의 out/ 경로 — 레지스트리의 reference 항목 */
+const SITEMAP_ARTIFACT_PATH =
+  ARTIFACTS.find(spec => spec.reference)?.path ?? 'sitemap.xml';
+
 export function main(ctx: ContentContext, target?: string) {
   // 인자를 주면 그 경로를(cwd 기준, resolve라 절대 경로 인자도 그대로 받는다),
   // 없으면 설정의 out 디렉터리를 검사한다.
@@ -417,11 +488,22 @@ export function main(ctx: ContentContext, target?: string) {
     );
     process.exit(1);
   }
+  const siteUrl = ctx.content.config.site.url;
   const violations = checkPages(pages, ctx.content.config);
   // 파생 산출물은 레지스트리 순회로 — 없으면 missing-artifact, 있으면 글 집합 대조.
-  violations.push(
-    ...checkArtifacts(collectArtifacts(outDir, ctx.content.config.site.url)),
-  );
+  violations.push(...checkArtifacts(collectArtifacts(outDir, siteUrl)));
+  // 기준 산출물(sitemap)과 실제 페이지의 대조. sitemap이 없으면 위에서
+  // missing-artifact로 이미 실패했으므로 여기서는 건너뛴다.
+  const sitemapPath = join(outDir, SITEMAP_ARTIFACT_PATH);
+  if (existsSync(sitemapPath)) {
+    violations.push(
+      ...checkSitemapPages(
+        pages,
+        extractSitemapLocs(readFileSync(sitemapPath, 'utf8')),
+        siteUrl,
+      ),
+    );
+  }
 
   if (violations.length === 0) {
     console.log(`✓ ${pages.size}개 페이지 SEO 검사 통과`);

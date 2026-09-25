@@ -111,6 +111,15 @@ function extractPostUrls(
 }
 
 const SITEMAP_LOC = /<loc>([^<]+)<\/loc>/g;
+
+/**
+ * sitemap의 `<loc>` **전부**(글·아카이브·정적 페이지) — 원문 그대로(인코딩 유지).
+ * 레지스트리 대조(`extractUrls`)는 글 URL만 보지만, 페이지와 대조하는
+ * check-seo(`checkSitemapPages`)는 sitemap이 색인에 내는 URL 모두를 본다.
+ */
+export function extractSitemapLocs(text: string): string[] {
+  return [...text.matchAll(SITEMAP_LOC)].map(m => (m[1] ?? '').trim());
+}
 const RSS_GUID = /<guid[^>]*>([^<]+)<\/guid>/g;
 // llms.txt(`- [제목](url): 요약`)와 llms-full.txt(`### [제목](url) (날짜)`)가
 // 같은 마크다운 링크 형식이라 추출 패턴 하나를 공유한다.

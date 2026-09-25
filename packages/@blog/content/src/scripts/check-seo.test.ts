@@ -6,6 +6,7 @@ import {
   parsePageSeo,
   checkPages,
   checkArtifacts,
+  checkSitemapPages,
   collectArtifacts,
   type CollectedArtifact,
 } from './check-seo.ts';
@@ -558,4 +559,78 @@ test('checkPages: 한 페이지만 달라도 잡는다 (다수결이 아니다)'
     ]),
   );
   expect(found.includes('unexpected-og-site-name')).toBeTruthy();
+});
+
+// ── checkSitemapPages: sitemap ↔ 실제 페이지 ────────────────────────────────
+
+const NOINDEX = '<meta name="robots" content="noindex, nofollow"/>';
+const loc = (path: string) => `${SITE_URL}${path}`;
+
+test('checkSitemapPages: sitemap의 URL마다 색인 가능한 페이지가 있으면 위반 없음', () => {
+  const pages = new Map([
+    ['/', page({ path: '/' })],
+    ['/posts/', page({ path: '/posts/' })],
+    ['/posts/a/', page()],
+    // sitemap 밖의 noindex 페이지는 이 검사가 보지 않는다
+    ['/privacy/', `<head>${NOINDEX}</head><body></body>`],
+  ]);
+  expect(
+    checkSitemapPages(
+      pages,
+      [loc('/'), loc('/posts/'), loc('/posts/a/')],
+      SITE_URL,
+    ),
+  ).toStrictEqual([]);
+});
+
+test('checkSitemapPages: 글 레이아웃에 noindex가 새면 sitemap-noindex (예전엔 "통과"였다)', () => {
+  const noindexPost = page().replace('</head>', `${NOINDEX}</head>`);
+  const pages = new Map([['/posts/a/', noindexPost]]);
+  // 페이지 검사는 noindex 페이지를 건너뛰므로 그쪽만으로는 조용하다.
+  expect(rules(pages)).toStrictEqual([]);
+  expect(
+    checkSitemapPages(pages, [loc('/posts/a/')], SITE_URL).map(v => [
+      v.page,
+      v.rule,
+    ]),
+  ).toStrictEqual([['/posts/a/', 'sitemap-noindex']]);
+});
+
+test('checkSitemapPages: sitemap에 있는데 페이지가 없으면 sitemap-page-missing', () => {
+  expect(
+    checkSitemapPages(
+      new Map([['/posts/a/', page()]]),
+      [loc('/posts/a/'), loc('/about/'), 'https://other.example/posts/a/'],
+      SITE_URL,
+    ).map(v => [v.page, v.rule]),
+  ).toStrictEqual([
+    ['/about/', 'sitemap-page-missing'],
+    ['https://other.example/posts/a/', 'sitemap-page-missing'],
+  ]);
+});
+
+test('checkSitemapPages: sitemap에 없는 글 페이지는 page-missing-from-sitemap (아카이브·비글 페이지 제외)', () => {
+  const pages = new Map([
+    ['/posts/', page({ path: '/posts/' })],
+    ['/posts/a/', page()],
+    ['/posts/b/', page()],
+    ['/series/', page({ path: '/series/' })],
+  ]);
+  expect(
+    checkSitemapPages(pages, [loc('/posts/a/')], SITE_URL).map(v => [
+      v.page,
+      v.rule,
+    ]),
+  ).toStrictEqual([['/posts/b/', 'page-missing-from-sitemap']]);
+});
+
+test('checkSitemapPages: 인코딩된 sitemap URL을 디스크 이름(디코드)과 대조한다', () => {
+  const slug = '한글 (괄호)';
+  expect(
+    checkSitemapPages(
+      new Map([[`/posts/${slug}/`, page()]]),
+      [loc(`/posts/${encodeURIComponent(slug)}/`)],
+      SITE_URL,
+    ),
+  ).toStrictEqual([]);
 });
