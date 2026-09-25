@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import Link from 'next/link';
 import { useQueryStates, parseAsString, parseAsStringLiteral } from 'nuqs';
 import { useQuery } from '@tanstack/react-query';
@@ -520,66 +520,77 @@ interface ArchiveSearchBarProps {
   onChange: (v: string) => void;
 }
 
-const ArchiveSearchBar = ({ q, onChange }: ArchiveSearchBarProps) => (
-  <div
-    className={css({
-      display: 'flex',
-      alignItems: 'center',
-      gap: '2',
-      px: '3',
-      py: '2.5',
-      borderWidth: '[1px]',
-      borderStyle: 'solid',
-      borderColor: 'ink.border',
-      rounded: 'control',
-      bg: 'paper.100',
-      _focusWithin: { borderColor: 'accent.500' },
-      transition: '[border-color 0.15s]',
-    })}
-  >
-    <span
-      aria-hidden="true"
+const ArchiveSearchBar = ({ q, onChange }: ArchiveSearchBarProps) => {
+  const inputRef = useRef<HTMLInputElement>(null);
+  return (
+    <div
       className={css({
-        fontFamily: 'mono',
-        fontSize: '[12px]',
-        color: 'ink.500',
-        flexShrink: 0,
+        display: 'flex',
+        alignItems: 'center',
+        gap: '2',
+        px: '3',
+        py: '2.5',
+        borderWidth: '[1px]',
+        borderStyle: 'solid',
+        borderColor: 'ink.border',
+        rounded: 'control',
+        bg: 'paper.100',
+        _focusWithin: { borderColor: 'accent.500' },
+        transition: '[border-color 0.15s]',
       })}
     >
-      ⌕
-    </span>
-    <input
-      type="search"
-      value={q}
-      onChange={e => onChange(e.target.value)}
-      placeholder="제목, 본문, 태그 검색…"
-      aria-label="글 검색"
-      className={css({
-        flex: '1',
-        bg: 'transparent',
-        border: '[none]',
-        outline: '[none]',
-        fontSize: '[13px]',
-        color: 'ink.950',
-        fontFamily: 'sans',
-        _placeholder: { color: 'ink.500' },
-      })}
-    />
-    {q && (
-      <button
-        type="button"
-        onClick={() => onChange('')}
+      <span
+        aria-hidden="true"
         className={css({
           fontFamily: 'mono',
           fontSize: '[12px]',
           color: 'ink.500',
           flexShrink: 0,
-          cursor: 'pointer',
-          _hover: { color: 'ink.950' },
         })}
       >
-        지우기
-      </button>
-    )}
-  </div>
-);
+        ⌕
+      </span>
+      <input
+        ref={inputRef}
+        type="search"
+        value={q}
+        onChange={e => onChange(e.target.value)}
+        // 검색 대상은 제목·요약(excerpt)·태그다(@blog/content의
+        // filterAndSortPostsByArchiveParams). 예전 문구는 "본문"을 약속했다.
+        placeholder="제목, 요약, 태그 검색…"
+        aria-label="글 검색"
+        className={css({
+          flex: '1',
+          bg: 'transparent',
+          border: '[none]',
+          outline: '[none]',
+          fontSize: '[13px]',
+          color: 'ink.950',
+          fontFamily: 'sans',
+          _placeholder: { color: 'ink.500' },
+        })}
+      />
+      {q && (
+        <button
+          type="button"
+          // 누르면 이 버튼은 q가 비면서 사라진다 — 초점이 <body>로 떨어지지
+          // 않게 입력창으로 되돌린다.
+          onClick={() => {
+            onChange('');
+            inputRef.current?.focus();
+          }}
+          className={css({
+            fontFamily: 'mono',
+            fontSize: '[12px]',
+            color: 'ink.500',
+            flexShrink: 0,
+            cursor: 'pointer',
+            _hover: { color: 'ink.950' },
+          })}
+        >
+          지우기
+        </button>
+      )}
+    </div>
+  );
+};

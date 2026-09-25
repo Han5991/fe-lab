@@ -8,7 +8,13 @@
  * 같은 헤딩·같은 링크·같은 이미지를 같은 순서로 그리는지를 여기서 잠근다.
  */
 import { describe, expect, test, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { NuqsTestingAdapter } from 'nuqs/adapters/testing';
 import type { ReactNode } from 'react';
@@ -106,5 +112,26 @@ describe('PostsArchive 폴백 ↔ 뷰', () => {
     render(withQuery(<PostsArchiveFallback {...props} />));
     expect(list.thumbnails).toBe(0);
     expect(fingerprint().thumbnails).toBe(POSTS.length);
+  });
+});
+
+describe('PostsArchive 검색창', () => {
+  // "지우기"는 검색어가 비는 순간 사라진다 — 초점이 <body>로 떨어지던 회귀.
+  test('지우기를 누르면 검색어가 비고 초점이 입력창으로 간다', async () => {
+    render(
+      withQuery(
+        <NuqsTestingAdapter searchParams="?q=b-post">
+          <PostsArchiveView {...props} />
+        </NuqsTestingAdapter>,
+      ),
+    );
+    // 데스크톱 사이드바·모바일 상단에 같은 검색창이 하나씩 있다(CSS로 배타 표시).
+    const [input] = screen.getAllByRole('searchbox', { name: '글 검색' });
+    const [clear] = screen.getAllByRole('button', { name: '지우기' });
+
+    fireEvent.click(clear);
+
+    expect(input).toHaveFocus();
+    await waitFor(() => expect(input).toHaveValue(''));
   });
 });
