@@ -13,6 +13,7 @@ import { rehypeCodeMeta } from '@/src/components/post/codeMeta';
 import { rehypeDropUnsafe } from '@/src/components/post/rehypeDropUnsafe';
 import { PostBody, POST_REHYPE_PLUGINS, buildPostComponents } from './PostBody';
 import { BLOCK_MARKDOWN_COMPONENTS } from './markdownBlocks';
+import { HEADER_OFFSET as TOC_HEADER_OFFSET } from '@/src/components/tocHooks';
 
 vi.mock('mermaid', () => ({ default: {} }));
 
@@ -122,6 +123,19 @@ describe('PostBody 렌더', () => {
     expect(root).not.toBeNull();
     expect(root?.querySelector('h1')).toBeNull();
     expect(root?.querySelector('h2')?.id).toBe('첫-단원');
+  });
+
+  test('헤딩 앵커 여백은 목차 스크롤과 같은 헤더 높이 상수를 쓴다', () => {
+    // 셋(헤딩 scroll-margin, 앵커 이동 offset, 활성 판정)이 갈리면 이동 직후의
+    // 헤딩이 "아직 가려진 곳"으로 판정된다. 예전에는 여기만 100px 리터럴이었다.
+    const { container } = render(
+      <PostBody content={'## 단원'} relativeDir="dir" />,
+    );
+    const root = container.querySelector<HTMLElement>('#post-content');
+
+    expect(root?.style.getPropertyValue('--post-heading-offset')).toBe(
+      `${TOC_HEADER_OFFSET}px`,
+    );
   });
 
   test('블록 컴포넌트가 <p>로 감싸이지 않는다', () => {

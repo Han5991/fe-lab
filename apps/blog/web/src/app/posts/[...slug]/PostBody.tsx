@@ -1,4 +1,4 @@
-import { Children } from 'react';
+import { Children, type CSSProperties } from 'react';
 import ReactMarkdown, { type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
@@ -21,6 +21,7 @@ import {
   DiagramNodeTag,
   DiagramEdgeTag,
 } from '@/src/components/diagram';
+import { HEADER_OFFSET } from '@/src/components/post/headerOffset';
 import { HEADING_COMPONENTS } from '@/src/components/post/markdownHeadings';
 import {
   fencedCode,
@@ -284,10 +285,21 @@ interface PostBodyProps {
   relativeDir: string;
 }
 
+/**
+ * 헤딩의 `scroll-margin-top`에 넘길 값. `css()`는 빌드 때 정적으로 추출되므로 JS
+ * 상수를 직접 못 읽는다 — 상수를 CSS 변수로 실어 보내고 헤딩 규칙이 그걸 읽는다.
+ * 목차의 앵커 이동·활성 판정과 같은 `HEADER_OFFSET`이어야 이동 직후의 위치가
+ * "보이는 곳"으로 판정된다.
+ */
+const headingOffsetStyle: CSSProperties & Record<`--${string}`, string> = {
+  '--post-heading-offset': `${HEADER_OFFSET}px`,
+};
+
 export function PostBody({ content, relativeDir }: PostBodyProps) {
   return (
     <div
       id="post-content"
+      style={headingOffsetStyle}
       className={css({
         // 리뉴얼로 세리프 정체성을 폐기했다. serif 토큰이 sans로
         // 매핑돼 있긴 하지만 의도를 코드에 남기려 명시적으로 sans.
@@ -318,7 +330,7 @@ export function PostBody({ content, relativeDir }: PostBodyProps) {
           mb: '4',
           color: 'accent.900',
           lineHeight: 'header',
-          scrollMarginTop: '[100px]',
+          scrollMarginTop: '[var(--post-heading-offset)]',
         },
         // h3는 본문(18px)과 크기가 같다. 굵기·색(ink.950)·위 여백으로
         // 구분되므로 크기까지 벌리면 위 단계와 붙어버린다.
@@ -329,7 +341,7 @@ export function PostBody({ content, relativeDir }: PostBodyProps) {
           mt: '10',
           mb: '3',
           color: 'ink.950',
-          scrollMarginTop: '[100px]',
+          scrollMarginTop: '[var(--post-heading-offset)]',
         },
         '& h4': {
           fontSize: '[16px]',
@@ -338,7 +350,7 @@ export function PostBody({ content, relativeDir }: PostBodyProps) {
           mt: '8',
           mb: '3',
           color: 'ink.950',
-          scrollMarginTop: '[100px]',
+          scrollMarginTop: '[var(--post-heading-offset)]',
         },
         '& p': { mb: '6' },
         '& ul': { listStyleType: 'disc', pl: '6', mb: '6' },

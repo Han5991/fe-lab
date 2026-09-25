@@ -8,15 +8,11 @@ import {
   useSyncExternalStore,
 } from 'react';
 
-/**
- * 화면 맨 위에서 **고정 헤더가 덮는 높이.**
- *
- * 헤더는 `position: sticky; top: 0`으로 지면 위에 떠 있어서, 뷰포트 좌표로
- * 0에 가까운 헤딩은 화면 안에 있어도 실제로는 가려져 안 보인다. 앵커로
- * 이동할 때 이만큼 더 올려 주는 값과, 활성 구간을 셀 때 "여기부터가
- * 진짜 보이는 곳"으로 삼는 값이 같아야 둘이 어긋나지 않는다.
- */
-export const HEADER_OFFSET = 100;
+import { HEADER_OFFSET } from './post/headerOffset';
+
+// 값의 출처는 서버 컴포넌트도 읽을 수 있는 `post/headerOffset.ts`다(그쪽 주석
+// 참고). 기존 import 경로를 깨지 않도록 여기서도 같은 이름으로 내보낸다.
+export { HEADER_OFFSET };
 
 /**
  * 사용자가 움직임 줄이기를 켰는지. `matchMedia`가 없는 환경(jsdom 등)에서는
