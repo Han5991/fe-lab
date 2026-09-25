@@ -43,7 +43,7 @@ enableMocking()
               <Route path="/toast" element={<ToastExamplePage />} />
               <Route path="/socket" element={<SocketDemo />} />
               <Route
-                path="/stok-ticker-query"
+                path="/stock-ticker-query"
                 element={<WebSocketQueryDemo />}
               />
             </Routes>
