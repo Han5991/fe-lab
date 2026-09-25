@@ -23,7 +23,10 @@ import {
 } from 'recharts';
 import Link from 'next/link';
 import { token } from '@design-system/ui-lib/tokens';
-import { usePostDetailStats } from '@/src/hooks/usePostDetailStats';
+import {
+  usePostDetailStats,
+  usePrefetchPostDetailStats,
+} from '@/src/hooks/usePostDetailStats';
 import { useAdminDashboardData } from '@/src/hooks/useAdminViews';
 import type { PostStatDetail } from '@/src/domain/analytics';
 import { ADMIN_ANALYTICS_PATH, slugFromRouteParam } from '@/src/shared/routes';
@@ -50,6 +53,7 @@ const DOW_LABELS = ['일', '월', '화', '수', '목', '금', '토'];
 function PostDetailContent() {
   const params = useParams();
   const slug = slugFromRouteParam(params['slug']);
+  usePrefetchPostDetailStats(slug);
   const { data: allPosts } = useAdminDashboardData();
   const post = allPosts.find(p => p.slug === slug);
 

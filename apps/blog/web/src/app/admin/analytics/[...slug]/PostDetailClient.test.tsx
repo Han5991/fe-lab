@@ -12,8 +12,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 vi.mock('next/navigation', () => ({
   useParams: () => ({ slug: ['series', 'missing-post'] }),
 }));
-vi.mock('@/src/domain/analytics/admin', () => ({
-  getAdminPostsIndex: () =>
+const { getAdminPostsIndex, getPostHourlyDistribution } = vi.hoisted(() => ({
+  getAdminPostsIndex: vi.fn(() =>
     Promise.resolve([
       {
         slug: 'another-post',
@@ -24,8 +24,16 @@ vi.mock('@/src/domain/analytics/admin', () => ({
         scheduledDate: null,
       },
     ]),
+  ),
+  getPostHourlyDistribution: vi.fn(() => Promise.resolve([])),
+}));
+
+vi.mock('@/src/domain/analytics/admin', () => ({
+  getAdminPostsIndex,
   getAllPostStats: () => Promise.resolve([]),
   getAllPostsTrends: () => Promise.resolve([]),
+  getPostHourlyDistribution,
+  getPostDowDistribution: () => Promise.resolve([]),
 }));
 
 import PostDetailClient from './PostDetailClient';
@@ -47,5 +55,20 @@ describe('PostDetailClient', () => {
     expect(
       screen.getByRole('link', { name: '조회수 분석 목록으로' }),
     ).toHaveAttribute('href', '/admin/analytics/');
+  });
+
+  // 분포는 slug만 있으면 된다 — 대시보드 데이터를 기다린 뒤에야 요청하면 상세
+  // 화면이 왕복 둘을 차례로 기다린다.
+  test('분포 요청은 대시보드 데이터를 기다리지 않고 함께 시작한다', () => {
+    getAdminPostsIndex.mockReturnValueOnce(new Promise(() => undefined));
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <PostDetailClient />
+      </QueryClientProvider>,
+    );
+
+    expect(getPostHourlyDistribution).toHaveBeenCalledWith(
+      'series/missing-post',
+    );
   });
 });

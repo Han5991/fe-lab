@@ -1,4 +1,4 @@
-import { useSuspenseQuery } from '@tanstack/react-query';
+import { queryOptions, useSuspenseQuery } from '@tanstack/react-query';
 import {
   getAdminPostsIndex,
   getAllPostStats,
@@ -8,13 +8,28 @@ import type { PostStatDetail, TrendPoint } from '@/src/domain/analytics';
 
 export type { PostStatDetail };
 
+/**
+ * admin 글 인덱스 — 빌드 산출물이라 배포 때만 바뀐다. 대시보드와 태그 분포가 이
+ * 캐시 하나를 나눠 쓰고, 마운트마다 다시 받지 않는다(조회수 읽기가 매번 이 왕복을
+ * 기다리지 않게).
+ *
+ * 재시도는 끈다 — 이것을 여는 쿼리가 `['admin']` 정책대로 다시 시도하므로, 여기서도
+ * 하면 실패가 두 겹으로 재시도된다.
+ */
+export const adminPostsIndexQuery = queryOptions({
+  queryKey: ['admin', 'posts-index'],
+  queryFn: getAdminPostsIndex,
+  staleTime: Infinity,
+  retry: false,
+});
+
 export function useAdminDashboardData() {
   return useSuspenseQuery({
     queryKey: ['admin', 'dashboard-data'],
-    queryFn: async (): Promise<PostStatDetail[]> => {
-      // 인덱스를 먼저 받는다 — 조회수 두 읽기는 이 slug들로 서버에서 거른다
-      // (anon이 만든 가짜 slug 행이 1000행 cap을 채워 실제 글을 밀어내지 않게).
-      const metadata = await getAdminPostsIndex();
+    queryFn: async ({ client }): Promise<PostStatDetail[]> => {
+      // 조회수 두 읽기는 인덱스의 slug로 서버에서 거른다(anon이 만든 가짜 slug
+      // 행이 1000행 cap을 채워 실제 글을 밀어내지 않게).
+      const metadata = await client.ensureQueryData(adminPostsIndexQuery);
       const slugs = metadata.map(post => post.slug);
       const [stats, trends] = await Promise.all([
         getAllPostStats(slugs),
