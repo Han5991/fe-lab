@@ -12,7 +12,7 @@
  */
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { act, render, renderHook } from '@testing-library/react';
-import { scrollToId, useTocHook } from './tocHooks';
+import { useTocHook } from './tocHooks';
 
 // 기준선은 window.innerHeight * 0.2이라 뷰포트를 1000으로 고정하면 200px이 된다.
 const VIEWPORT_HEIGHT = 1000;
@@ -359,23 +359,5 @@ describe('useTocHook - 활성 구간', () => {
 
     scrollToY(0);
     expect(result.current.activeRange).toEqual([0, 2]);
-  });
-});
-
-describe('scrollToId', () => {
-  // 헤더 여백은 헤딩의 scroll-margin-top이, 움직임은 CSS scroll-behavior가
-  // 정한다 — behavior를 적으면 움직임 줄이기 규칙을 덮어쓴다.
-  test('헤딩을 맨 위로 옮기고 여백·움직임은 CSS에 맡긴다', () => {
-    const target = document.createElement('h2');
-    target.id = 'target';
-    const scrollIntoView = vi.fn();
-    target.scrollIntoView = scrollIntoView;
-    document.body.appendChild(target);
-    const action = vi.fn();
-
-    scrollToId({ id: 'target', action });
-
-    expect(scrollIntoView).toHaveBeenCalledWith({ block: 'start' });
-    expect(action).toHaveBeenCalled();
   });
 });

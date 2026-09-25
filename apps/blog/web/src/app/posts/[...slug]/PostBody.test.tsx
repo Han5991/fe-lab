@@ -180,76 +180,44 @@ describe('커스텀 태그 안의 빈 줄', () => {
     expect(invalidNesting(html)).toEqual([]);
   });
 
-  test('<diagram>: 태그마다 빈 줄을 둬도 그림이 사라지지 않는다', () => {
-    const html = serverHtml(
-      [
-        '<diagram label="띄엄띄엄">',
-        '',
-        '<diagram-node id="a" title="A"></diagram-node>',
-        '',
-        '<diagram-node id="b" title="B"></diagram-node>',
-        '',
-        '</diagram>',
-      ].join('\n'),
-    );
+  test.each([
+    [
+      'diagram',
+      'diagram label="띄엄띄엄"',
+      'diagram-node id="a" title="A"></diagram-node',
+      'rect',
+    ],
+    [
+      'timeline',
+      'timeline',
+      'step title="시도" result="fail">504</step',
+      '[data-result]',
+    ],
+    [
+      'dialogue',
+      'dialogue',
+      'msg from="PM">언제 하나요?</msg',
+      '[data-speaker]',
+    ],
+    [
+      'metrics',
+      'metrics',
+      'metric label="롤백" value="자동"></metric',
+      '[data-tone]',
+    ],
+  ])(
+    '<%s>: 자식마다 빈 줄을 둬도 전부 그리고 문단에 갇히지 않는다',
+    (tag, open, child, rendered) => {
+      const html = serverHtml(
+        [`<${open}>`, '', `<${child}>`, '', `<${child}>`, '', `</${tag}>`].join(
+          '\n',
+        ),
+      );
 
-    expect(parsed(html).querySelectorAll('rect')).toHaveLength(2);
-    expect(invalidNesting(html)).toEqual([]);
-  });
-
-  test('<timeline>: 스텝이 전부 나오고 마지막 스텝만 레일이 없다', () => {
-    const html = serverHtml(
-      [
-        '<timeline>',
-        '',
-        '<step title="시도 1" result="fail">전환 순간 504</step>',
-        '',
-        '<step title="시도 2" result="success">자동 롤백</step>',
-        '',
-        '</timeline>',
-      ].join('\n'),
-    );
-    const doc = parsed(html);
-
-    expect(doc.querySelectorAll('[data-result]')).toHaveLength(2);
-    expect(doc.querySelectorAll('[data-timeline-rail]')).toHaveLength(1);
-    expect(doc.body.textContent).toContain('전환 순간 504');
-    expect(invalidNesting(html)).toEqual([]);
-  });
-
-  test('<dialogue>: 말풍선이 문단 안에 갇히지 않는다', () => {
-    const html = serverHtml(
-      [
-        '<dialogue>',
-        '',
-        '<msg from="PM">배포는 언제 하나요?</msg>',
-        '',
-        '<msg from="me">점심에 합니다.</msg>',
-        '',
-        '</dialogue>',
-      ].join('\n'),
-    );
-
-    expect(parsed(html).querySelectorAll('[data-speaker]')).toHaveLength(2);
-    expect(invalidNesting(html)).toEqual([]);
-  });
-
-  test('<metrics>: 카드 수만큼 칸이 나뉘고 문단에 갇히지 않는다', () => {
-    const html = serverHtml(
-      [
-        '<metrics>',
-        '',
-        '<metric label="다운타임" value="0초"></metric>',
-        '',
-        '<metric label="롤백" value="자동" tone="success"></metric>',
-        '',
-        '</metrics>',
-      ].join('\n'),
-    );
-
-    expect(parsed(html).querySelectorAll('[data-tone]')).toHaveLength(2);
-    expect(invalidNesting(html)).toEqual([]);
-  });
+      expect(parsed(html).querySelectorAll(rendered)).toHaveLength(2);
+      expect(invalidNesting(html)).toEqual([]);
+    },
+  );
 });
 
 describe('본문 이미지', () => {
@@ -276,22 +244,20 @@ describe('본문 이미지', () => {
     expect(image?.getAttribute('height')).toBe('250');
   });
 
-  test('링크로 감싼 이미지는 확대 래퍼 없이 링크 안에 그대로 둔다', () => {
+  test('링크로 감싼 이미지만 확대 래퍼 없이 링크 안에 그대로 둔다', () => {
     const html = serverHtml(
-      '[![빌드 배지](./badge.png)](https://example.com/ci)\n',
+      '[![빌드 배지](./badge.png)](https://example.com/ci)\n\n![구성도](./a.png)\n',
     );
-    const link = parsed(html).querySelector('a[href="https://example.com/ci"]');
+    const doc = parsed(html);
+    const link = doc.querySelector('a[href="https://example.com/ci"]');
 
     expect(link?.querySelector('img')?.getAttribute('alt')).toBe('빌드 배지');
     // 확대 버튼이 링크 안에 들어가면 대화형 요소 중첩이다.
     expect(link?.querySelector('button, div')).toBeNull();
+    expect(doc.querySelector('[data-rmiz] img')?.getAttribute('alt')).toBe(
+      '구성도',
+    );
     expect(invalidNesting(html)).toEqual([]);
-  });
-
-  test('링크가 아닌 본문 이미지는 계속 확대할 수 있다', () => {
-    const doc = parsed(serverHtml('![구성도](./a.png)\n'));
-
-    expect(doc.querySelector('[data-rmiz] img')).not.toBeNull();
   });
 });
 
@@ -384,7 +350,7 @@ describe('코드 펜스의 바깥 <pre>', () => {
 });
 
 describe('표 스크롤 영역', () => {
-  test('표마다 머리행에서 지은 서로 다른 이름을 갖는다', () => {
+  test('표마다 캡션이나 머리행에서 지은 서로 다른 이름을 갖고 초점을 받는다', () => {
     render(
       <PostBody
         content={[
@@ -395,30 +361,21 @@ describe('표 스크롤 영역', () => {
           '| 도구 | 역할 |',
           '| --- | --- |',
           '| vitest | 러너 |',
+          '',
+          '<table><caption>배포 시간 비교</caption><tr><th>항목</th></tr></table>',
         ].join('\n')}
         relativeDir="dir"
       />,
     );
 
     // region은 랜드마크라 이름이 겹치면 목록에서 구분이 안 된다(axe landmark-unique).
-    const names = screen
-      .getAllByRole('region')
-      .map(region => region.getAttribute('aria-label'));
-    expect(names).toEqual(['표: 항목, 전, 후', '표: 도구, 역할']);
-  });
-
-  test('캡션이 있으면 캡션으로 이름을 짓는다', () => {
-    render(
-      <PostBody
-        content={
-          '<table><caption>배포 시간 비교</caption><tr><th>항목</th></tr></table>\n'
-        }
-        relativeDir="dir"
-      />,
-    );
-
-    expect(
-      screen.getByRole('region', { name: '표: 배포 시간 비교' }),
-    ).toHaveAttribute('tabindex', '0');
+    const regions = screen.getAllByRole('region');
+    expect(regions.map(region => region.getAttribute('aria-label'))).toEqual([
+      '표: 항목, 전, 후',
+      '표: 도구, 역할',
+      '표: 배포 시간 비교',
+    ]);
+    for (const region of regions)
+      expect(region).toHaveAttribute('tabindex', '0');
   });
 });

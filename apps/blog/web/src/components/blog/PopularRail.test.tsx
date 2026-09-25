@@ -70,17 +70,6 @@ describe('PopularRail', () => {
     expect(getTopPosts).toHaveBeenCalledWith(5, ['newest', 'middle', 'oldest']);
   });
 
-  test('라벨은 순위의 실제 기간(누적 조회수)을 말한다', async () => {
-    getTopPosts.mockResolvedValue([{ slug: 'oldest', view_count: 120 }]);
-
-    renderRail(<PopularRail posts={POSTS} />);
-
-    expect(
-      await screen.findByRole('heading', { name: 'Popular · 누적' }),
-    ).toBeInTheDocument();
-    expect(screen.queryByText(/30일/)).not.toBeInTheDocument();
-  });
-
   test('조회수가 오기 전에는 최신 글을 인기 글처럼 그리지 않는다', () => {
     // 끝나지 않는 요청 — 응답 전 상태에 머문다.
     getTopPosts.mockReturnValue(new Promise(() => undefined));
@@ -91,24 +80,26 @@ describe('PopularRail', () => {
     expect(screen.queryByText('가장 최근 글')).not.toBeInTheDocument();
   });
 
-  test('조회에 실패하면 섹션을 통째로 뺀다 — 최신 글로 대신 채우지 않는다', async () => {
-    getTopPosts.mockRejectedValue(new Error('network'));
+  // 다른 목록(최신 글)으로 채워 인기 글이라고 부르지 않는다.
+  test.each([
+    [
+      '조회에 실패하면',
+      () => getTopPosts.mockRejectedValue(new Error('network')),
+    ],
+    [
+      '순위를 매길 조회수가 없으면',
+      () => getTopPosts.mockResolvedValue([{ slug: 'middle', view_count: 0 }]),
+    ],
+  ])('%s 섹션을 통째로 뺀다', async (_when, arrange) => {
+    arrange();
 
     const { container } = renderRail(<PopularRail posts={POSTS} />);
 
     await waitFor(() => expect(container).toBeEmptyDOMElement());
-    expect(screen.queryByText('가장 최근 글')).not.toBeInTheDocument();
   });
 
-  test('순위를 매길 조회수가 없으면 섹션을 뺀다', async () => {
-    getTopPosts.mockResolvedValue([{ slug: 'middle', view_count: 0 }]);
-
-    const { container } = renderRail(<PopularRail posts={POSTS} />);
-
-    await waitFor(() => expect(container).toBeEmptyDOMElement());
-  });
-
-  test('레일은 이름 붙은 섹션이고 헤딩은 h2 → 글 제목 h3이다', async () => {
+  // 라벨은 순위의 실제 기간(누적 조회수)을 말한다 — 쿼리에는 기간 창이 없다.
+  test('레일은 "누적" 이름이 붙은 섹션이고 헤딩은 h2 → 글 제목 h3이다', async () => {
     getTopPosts.mockResolvedValue([{ slug: 'oldest', view_count: 120 }]);
 
     renderRail(<PopularRail posts={POSTS} />);

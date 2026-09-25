@@ -29,21 +29,17 @@ const renderPanel = (activeTags: string[]) =>
   );
 
 describe('PostsFilterPanel 태그 목록', () => {
-  test('평소에는 상위 12개만 보인다', () => {
-    renderPanel([]);
+  // 다른 화면의 태그 링크로 들어온 ?tag=가 상위 밖이면 켜져 있는데 끌 버튼이 없다.
+  test.each([
+    ['평소에는 상위 12개만 보인다', [], null],
+    ['상위 밖의 태그라도 켜져 있으면 눌린 버튼으로 보인다', ['tag13'], 'true'],
+  ])('%s', (_name, activeTags, pressed) => {
+    renderPanel(activeTags);
 
     expect(
-      screen.queryByRole('button', { name: /#tag13/ }),
-    ).not.toBeInTheDocument();
-  });
-
-  // 다른 화면의 태그 링크로 들어온 ?tag=가 상위 밖이면, 켜져 있는데 끌 버튼이 없었다.
-  test('상위 밖의 태그라도 켜져 있으면 눌린 버튼으로 보인다', () => {
-    renderPanel(['tag13']);
-
-    expect(screen.getByRole('button', { name: /#tag13/ })).toHaveAttribute(
-      'aria-pressed',
-      'true',
-    );
+      screen
+        .queryByRole('button', { name: /#tag13/ })
+        ?.getAttribute('aria-pressed') ?? null,
+    ).toBe(pressed);
   });
 });

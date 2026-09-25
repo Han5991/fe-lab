@@ -26,17 +26,15 @@ describe('adminFailureKind', () => {
 });
 
 describe('isRetryableAdminError', () => {
-  test('4xx는 다시 보내도 같은 답이라 재시도하지 않는다', () => {
-    expect(isRetryableAdminError(failure(400))).toBe(false);
-    expect(isRetryableAdminError(failure(401))).toBe(false);
-    expect(isRetryableAdminError(failure(403))).toBe(false);
-  });
-
-  test('서버·네트워크 실패와 알 수 없는 실패는 재시도할 수 있다', () => {
-    expect(isRetryableAdminError(failure(500))).toBe(true);
-    expect(isRetryableAdminError(failure(null))).toBe(true);
-    expect(isRetryableAdminError(new Error('admin-posts-index.json'))).toBe(
-      true,
-    );
+  // 4xx는 다시 보내도 같은 답이다. 서버·네트워크·알 수 없는 실패만 다시 시도한다.
+  test.each([
+    ['400', failure(400), false],
+    ['401', failure(401), false],
+    ['403', failure(403), false],
+    ['500', failure(500), true],
+    ['네트워크(status 없음)', failure(null), true],
+    ['AdminApiError가 아닌 실패', new Error('admin-posts-index.json'), true],
+  ])('%s → 재시도 %s', (_kind, error, retryable) => {
+    expect(isRetryableAdminError(error)).toBe(retryable);
   });
 });

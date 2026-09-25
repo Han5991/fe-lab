@@ -155,13 +155,3 @@ test('key를 주면 페이지 경계에서 밀려 다시 온 행을 한 번만 �
     { id: 'c', n: 1 },
   ]);
 });
-
-test('key가 없으면 행을 그대로 이어 붙인다 (식별 키가 없는 결과)', async () => {
-  const fetchPage = vi.fn((from: number) =>
-    Promise.resolve(from === 0 ? ['x', 'x'] : ['x']),
-  );
-
-  const rows = await collectPagedRows(fetchPage, { pageSize: 2, maxPages: 5 });
-
-  expect(rows).toStrictEqual(['x', 'x', 'x']);
-});

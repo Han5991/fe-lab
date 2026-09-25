@@ -27,8 +27,10 @@ afterEach(() => {
 });
 
 describe('app/error (라우트 에러 경계)', () => {
-  test('안내 헤딩과 다시 시도·홈 링크를 보여 준다', () => {
-    render(<RouteError error={new Error('boom')} retry={vi.fn()} />);
+  test('안내 헤딩과 홈 링크를 보이고, 다시 시도가 경계의 retry를 부른다', () => {
+    const error = new Error('boom');
+    const retry = vi.fn();
+    render(<RouteError error={error} retry={retry} />);
 
     expect(
       screen.getByRole('heading', {
@@ -39,21 +41,8 @@ describe('app/error (라우트 에러 경계)', () => {
     expect(
       screen.getByRole('link', { name: '홈으로 돌아가기' }),
     ).toHaveAttribute('href', HOME_PATH);
-  });
-
-  test('다시 시도 버튼이 경계의 retry를 부른다', () => {
-    const retry = vi.fn();
-    render(<RouteError error={new Error('boom')} retry={retry} />);
-
     fireEvent.click(screen.getByRole('button', { name: '다시 시도' }));
-
     expect(retry).toHaveBeenCalledOnce();
-  });
-
-  test('받은 에러를 콘솔에 남긴다', () => {
-    const error = new Error('boom');
-    render(<RouteError error={error} retry={vi.fn()} />);
-
     expect(console.error).toHaveBeenCalledWith(error);
   });
 });
@@ -61,25 +50,20 @@ describe('app/error (라우트 에러 경계)', () => {
 describe('app/global-error (루트 에러 경계)', () => {
   // 루트 레이아웃을 대신하므로 문서 전체(<html lang>·<body>)를 스스로 그려야 한다.
   // RTL 컨테이너(div) 안에 <html>을 넣을 수는 없어 정적 마크업을 문서로 읽는다.
-  const renderDocument = () => {
-    const html = renderToStaticMarkup(
-      <GlobalError error={new Error('boom')} retry={vi.fn()} />,
+  test('lang이 달린 자기 문서에 라우트 경계와 같은 복구 화면을 담는다', () => {
+    const doc = new DOMParser().parseFromString(
+      renderToStaticMarkup(
+        <GlobalError error={new Error('boom')} retry={vi.fn()} />,
+      ),
+      'text/html',
     );
-    return new DOMParser().parseFromString(html, 'text/html');
-  };
-
-  test('lang이 달린 자기 문서를 그린다', () => {
-    const doc = renderDocument();
-
     expect(doc.documentElement.getAttribute('lang')).toBe('ko');
     expect(doc.documentElement.dataset['theme']).toBe('dark');
-  });
 
-  test('라우트 경계와 같은 복구 화면을 담는다', () => {
     // 파싱한 문서엔 창(defaultView)이 없어 접근성 이름 계산이 안 된다 —
     // 본문만 현재 문서로 옮겨 역할로 읽는다.
     const body = document.createElement('div');
-    body.innerHTML = renderDocument().body.innerHTML;
+    body.innerHTML = doc.body.innerHTML;
     document.body.append(body);
     onTestFinished(() => body.remove());
 

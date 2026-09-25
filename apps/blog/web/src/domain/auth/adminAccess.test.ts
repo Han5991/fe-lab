@@ -20,39 +20,27 @@ describe('isAdminEmail', () => {
 });
 
 describe('readOAuthRedirectError', () => {
-  test('쿼리·프래그먼트 어디에 실려 와도 사람이 읽을 사유를 꺼낸다', () => {
-    expect(
-      readOAuthRedirectError(
-        '?error=access_denied&error_description=Signups+not+allowed+for+this+instance',
-        '',
-      ),
-    ).toBe('Signups not allowed for this instance');
-    expect(
-      readOAuthRedirectError(
-        '',
-        '#error=server_error&error_description=Database%20error',
-      ),
-    ).toBe('Database error');
-  });
-
-  test('설명이 없으면 오류 코드라도 돌려준다', () => {
-    expect(readOAuthRedirectError('?error=access_denied', '')).toBe(
-      'access_denied',
-    );
-  });
-
-  test('실패가 아닌 복귀(토큰·빈 URL)는 null이다', () => {
-    expect(readOAuthRedirectError('', '#access_token=abc&type=bearer')).toBe(
-      null,
-    );
-    expect(readOAuthRedirectError('', '')).toBe(null);
-    expect(readOAuthRedirectError('?error=%20', '')).toBe(null);
-  });
-
-  test('URL에서 온 글자라 길이를 자른다', () => {
-    const long = 'x'.repeat(500);
-    expect(readOAuthRedirectError(`?error_description=${long}`, '')).toBe(
-      'x'.repeat(200),
-    );
+  test.each([
+    // 쿼리·프래그먼트 어디에 실려 와도 사람이 읽을 사유를 꺼낸다.
+    [
+      '?error=access_denied&error_description=Signups+not+allowed+for+this+instance',
+      '',
+      'Signups not allowed for this instance',
+    ],
+    [
+      '',
+      '#error=server_error&error_description=Database%20error',
+      'Database error',
+    ],
+    // 설명이 없으면 오류 코드라도.
+    ['?error=access_denied', '', 'access_denied'],
+    // 실패가 아닌 복귀(토큰·빈 URL)는 null.
+    ['', '#access_token=abc&type=bearer', null],
+    ['', '', null],
+    ['?error=%20', '', null],
+    // URL에서 온 글자라 길이를 자른다.
+    [`?error_description=${'x'.repeat(500)}`, '', 'x'.repeat(200)],
+  ])('search %j · hash %j → %j', (search, hash, reason) => {
+    expect(readOAuthRedirectError(search, hash)).toBe(reason);
   });
 });

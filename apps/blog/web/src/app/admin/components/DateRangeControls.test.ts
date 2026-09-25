@@ -21,28 +21,22 @@ const TRENDS: TrendPoint[] = Array.from({ length: 11 }, (_, i) => ({
 const dates = (rows: TrendPoint[]) => rows.map(r => r.view_date);
 
 describe('selectTrends', () => {
-  test('지난 7일은 오늘을 포함한 7일이다 — 8일째는 빠진다', () => {
-    const rows = selectTrends(TRENDS, '7days', '', '', TODAY);
-    expect(dates(rows)).toStrictEqual([
-      '2026-05-19',
-      '2026-05-20',
-      '2026-05-21',
-      '2026-05-22',
-      '2026-05-23',
-      '2026-05-24',
-      '2026-05-25',
-    ]);
-  });
-
-  test('지난 30일도 오늘 포함 30일이다 — 31일째는 빠진다', () => {
-    const edge: TrendPoint[] = [
-      { view_date: '2026-04-25', view_count: 1 }, // 31일째
-      { view_date: '2026-04-26', view_count: 1 }, // 30일째
-    ];
-    expect(dates(selectTrends(edge, '30days', '', '', TODAY))).toStrictEqual([
-      '2026-04-26',
-    ]);
-  });
+  test.each([
+    ['7days', '2026-05-19', '2026-05-18'],
+    ['30days', '2026-04-26', '2026-04-25'],
+  ] as const)(
+    '%s는 오늘을 포함한 N일이다 — N+1일째는 빠진다',
+    (filter, firstDay, dayBefore) => {
+      const rows: TrendPoint[] = [dayBefore, firstDay, TODAY].map(d => ({
+        view_date: d,
+        view_count: 1,
+      }));
+      expect(dates(selectTrends(rows, filter, '', '', TODAY))).toStrictEqual([
+        firstDay,
+        TODAY,
+      ]);
+    },
+  );
 
   test('같은 글의 지난 7일 합이 개요의 7d 합계와 같다', () => {
     const post: PostStatDetail = {
@@ -83,19 +77,14 @@ describe('selectTrends', () => {
 });
 
 describe('useDateFilter', () => {
-  test('최근 30일에 데이터가 없으면 전체로 물러난다', () => {
-    const old: TrendPoint[] = [{ view_date: '2026-01-01', view_count: 3 }];
-    const { result } = renderHook(() => useDateFilter(old, TODAY));
+  test.each([
+    ['최근 30일에 데이터가 없으면 전체로 물러난다', '2026-01-01', true],
+    ['30일째 날의 데이터는 최근 30일로 본다', '2026-04-26', false],
+  ])('%s', (_name, day, fellBack) => {
+    const rows: TrendPoint[] = [{ view_date: day, view_count: 3 }];
+    const { result } = renderHook(() => useDateFilter(rows, TODAY));
 
-    expect(result.current.autoFellBackToAll).toBe(true);
-    expect(dates(result.current.filteredTrends)).toStrictEqual(['2026-01-01']);
-  });
-
-  test('30일째 날의 데이터는 최근 30일로 본다', () => {
-    const edge: TrendPoint[] = [{ view_date: '2026-04-26', view_count: 3 }];
-    const { result } = renderHook(() => useDateFilter(edge, TODAY));
-
-    expect(result.current.autoFellBackToAll).toBe(false);
-    expect(dates(result.current.filteredTrends)).toStrictEqual(['2026-04-26']);
+    expect(result.current.autoFellBackToAll).toBe(fellBack);
+    expect(dates(result.current.filteredTrends)).toStrictEqual([day]);
   });
 });

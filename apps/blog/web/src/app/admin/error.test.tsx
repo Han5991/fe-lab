@@ -72,39 +72,39 @@ afterEach(() => {
 });
 
 describe('AdminError', () => {
-  test('실패 원인을 흰 화면 대신 안내로 보여 준다', async () => {
-    renderWithBoundary(() =>
-      Promise.reject(new Error('admin-analytics Edge Function 오류')),
-    );
-
-    const alert = await screen.findByRole('alert');
-    expect(alert).toHaveTextContent('관리자 데이터를 불러오지 못했습니다');
-    expect(alert).toHaveTextContent('admin-analytics Edge Function 오류');
-    expect(screen.getByRole('link', { name: '다시 로그인' })).toHaveAttribute(
-      'href',
-      '/admin/login/',
-    );
-  });
-
-  test('401은 서버 장애가 아니라 다시 로그인하라고 안내한다', async () => {
-    renderWithBoundary(() =>
-      Promise.reject(
-        new AdminApiError({
-          action: 'all_post_stats',
-          status: 401,
-          serverMessage: '인증에 실패했습니다.',
-          fallbackMessage: 'Edge Function returned a non-2xx status code',
-        }),
-      ),
-    );
-
-    expect(
-      await screen.findByRole('heading', {
-        name: '로그인이 만료됐습니다 — 다시 로그인해 주세요',
+  test.each([
+    [
+      '서버 실패',
+      new Error('admin-analytics Edge Function 오류'),
+      '관리자 데이터를 불러오지 못했습니다',
+      'admin-analytics Edge Function 오류',
+    ],
+    [
+      '401',
+      new AdminApiError({
+        action: 'all_post_stats',
+        status: 401,
+        serverMessage: '인증에 실패했습니다.',
+        fallbackMessage: 'Edge Function returned a non-2xx status code',
       }),
-    ).toBeInTheDocument();
-    expect(screen.getByRole('alert')).toHaveTextContent('인증에 실패했습니다.');
-  });
+      '로그인이 만료됐습니다 — 다시 로그인해 주세요',
+      '인증에 실패했습니다.',
+    ],
+  ])(
+    '%s는 흰 화면 대신 원인에 맞는 안내를 보인다',
+    async (_kind, error, title, detail) => {
+      renderWithBoundary(() => Promise.reject(error));
+
+      expect(
+        await screen.findByRole('heading', { name: title }),
+      ).toBeInTheDocument();
+      expect(screen.getByRole('alert')).toHaveTextContent(detail);
+      expect(screen.getByRole('link', { name: '다시 로그인' })).toHaveAttribute(
+        'href',
+        '/admin/login/',
+      );
+    },
+  );
 
   test('"다시 시도"는 실패한 쿼리를 실제로 다시 불러온다', async () => {
     const load = vi

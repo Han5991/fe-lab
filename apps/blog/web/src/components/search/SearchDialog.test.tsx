@@ -147,27 +147,26 @@ describe('SearchDialog - 다이얼로그 접근성', () => {
     await waitFor(() => expect(input).toHaveFocus());
   });
 
-  test('닫기 버튼은 이름이 있고, 닫으면 초점이 트리거로 돌아간다', async () => {
-    await openDialog();
-    const trigger = screen.getByRole('button', { name: '검색' });
-    trigger.focus();
-
-    fireEvent.click(screen.getByRole('button', { name: '검색 닫기' }));
-
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-    expect(trigger).toHaveFocus();
-  });
-
-  test('Escape로 닫히고 초점이 트리거로 돌아간다', async () => {
+  test.each([
+    [
+      '닫기 버튼',
+      () => fireEvent.click(screen.getByRole('button', { name: '검색 닫기' })),
+    ],
+    [
+      'Escape',
+      () =>
+        fireEvent.keyDown(document.activeElement ?? document.body, {
+          key: 'Escape',
+        }),
+    ],
+  ])('%s로 닫히고 초점이 트리거로 돌아간다', async (_how, close) => {
     render(<SearchDialog />);
     const trigger = screen.getByRole('button', { name: '검색' });
     trigger.focus();
     fireEvent.click(trigger);
     await screen.findByText('터보 첫 글');
 
-    fireEvent.keyDown(document.activeElement ?? document.body, {
-      key: 'Escape',
-    });
+    close();
 
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     expect(trigger).toHaveFocus();
@@ -185,7 +184,7 @@ describe('SearchDialog - 다이얼로그 접근성', () => {
     expect(close).toHaveFocus();
   });
 
-  test('화살표 선택이 콤보박스의 activedescendant로 전해진다', async () => {
+  test('화살표 선택이 콤보박스의 activedescendant로 전해지고, 결과는 글 링크다', async () => {
     const input = await openDialog();
 
     fireEvent.change(input, { target: { value: '터보' } });
@@ -198,15 +197,9 @@ describe('SearchDialog - 다이얼로그 접근성', () => {
       'id',
       input.getAttribute('aria-controls'),
     );
-  });
-
-  test('결과는 글 주소로 가는 링크다', async () => {
-    await openDialog();
-
-    const option = screen.getByRole('option', { name: /터보 첫 글/ });
-    expect(option.querySelector('a')).toHaveAttribute(
+    expect(selected.querySelector('a')).toHaveAttribute(
       'href',
-      postPath('turbo-a'),
+      postPath('turbo-b'),
     );
   });
 });

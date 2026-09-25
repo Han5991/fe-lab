@@ -79,37 +79,24 @@ afterEach(() => {
 });
 
 describe('MobileTOC 항목 클릭', () => {
-  test('평범한 클릭은 가로채서 직접 스크롤하고 드로어를 닫는다', () => {
+  // 고정 헤더만큼의 여백은 헤딩의 scroll-margin-top(PostBody)이 준다.
+  test('평범한 클릭은 가로채서 헤딩 맨 위로 스크롤하고 드로어를 닫는다', () => {
     const link = openDrawer();
     expect(drawerOpen()).toBe(true);
 
     const ev = dispatchClick(link);
 
     expect(ev.defaultPrevented).toBe(true);
-    expect(scrollIntoViewMock).toHaveBeenCalled();
+    expect(scrollIntoViewMock).toHaveBeenCalledWith({ block: 'start' });
     expect(drawerOpen()).toBe(false);
   });
 
-  // 고정 헤더만큼의 여백은 헤딩의 scroll-margin-top(PostBody)이 준다.
-  test('스크롤 목표는 헤딩의 맨 위다', () => {
+  // 여기서 기본 동작을 막으면 Cmd/Ctrl+클릭의 새 탭이 열리지 않는다. 수정자 키
+  // 종류별 판정(isModifiedClick)은 데스크탑 차례 테스트가 함께 본다.
+  test('수정자 키를 누른 클릭은 브라우저에 맡긴다', () => {
     const link = openDrawer();
 
-    dispatchClick(link);
-
-    expect(scrollIntoViewMock).toHaveBeenCalledWith({ block: 'start' });
-  });
-
-  // 여기서 기본 동작을 막으면 Cmd/Ctrl+클릭의 새 탭이 열리지 않는다 — 앵커로
-  // 바꾼 이유가 사라진다.
-  test.each([
-    ['meta', { metaKey: true }],
-    ['ctrl', { ctrlKey: true }],
-    ['shift', { shiftKey: true }],
-    ['alt', { altKey: true }],
-  ])('%s 키를 누른 클릭은 브라우저에 맡긴다', (_name, init) => {
-    const link = openDrawer();
-
-    const ev = dispatchClick(link, init);
+    const ev = dispatchClick(link, { ctrlKey: true });
 
     expect(ev.defaultPrevented).toBe(false);
     expect(scrollIntoViewMock).not.toHaveBeenCalled();

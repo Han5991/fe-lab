@@ -39,18 +39,27 @@ const POST: PostStatDetail = {
 const TODAY = '2026-05-01';
 
 describe('PostAccordion', () => {
-  test('링크는 펼침 버튼 밖에 있고 아이콘 링크마다 이름이 있다', () => {
-    render(<PostAccordion post={POST} todayISO={TODAY} />);
+  // 정적 export는 비공개 글의 페이지를 만들지 않는다 — 공개 글 링크는 404다.
+  test.each([
+    ['published', '/posts/my-post/'],
+    ['draft', null],
+  ] as const)(
+    '%s 글: 링크는 펼침 버튼 밖에 있고, 공개 글에만 실제 글 링크가 있다',
+    (status, liveHref) => {
+      render(<PostAccordion post={{ ...POST, status }} todayISO={TODAY} />);
 
-    const toggle = screen.getByRole('button', { name: /내 글/ });
-    expect(toggle.querySelector('a')).toBeNull();
-    expect(
-      screen.getByRole('link', { name: '내 글 상세 통계' }),
-    ).toHaveAttribute('href', '/admin/analytics/my-post/');
-    expect(
-      screen.getByRole('link', { name: '내 글 글을 새 탭에서 열기' }),
-    ).toHaveAttribute('href', '/posts/my-post/');
-  });
+      const toggle = screen.getByRole('button', { name: /내 글/ });
+      expect(toggle.querySelector('a')).toBeNull();
+      expect(
+        screen.getByRole('link', { name: '내 글 상세 통계' }),
+      ).toHaveAttribute('href', '/admin/analytics/my-post/');
+      expect(
+        screen
+          .queryByRole('link', { name: '내 글 글을 새 탭에서 열기' })
+          ?.getAttribute('href') ?? null,
+      ).toBe(liveHref);
+    },
+  );
 
   test('펼침 버튼은 aria-expanded로 상태를, aria-controls로 패널을 알린다', () => {
     render(<PostAccordion post={POST} todayISO={TODAY} />);
@@ -68,34 +77,16 @@ describe('PostAccordion', () => {
     );
   });
 
-  test('직전 주와 비교할 수 없는 증감률(null)은 하락이 아니라 비교 불가로 그린다', () => {
-    derived.weekGrowthRate = null;
+  // 직전 주와 비교할 수 없는 증감률(null)은 하락이 아니다.
+  test.each([
+    [null, '비교 불가', '감소'],
+    [-20, '감소', '비교 불가'],
+  ])('증감률 %s는 "%s"로 그린다', (rate, shown, hidden) => {
+    derived.weekGrowthRate = rate;
     render(<PostAccordion post={POST} todayISO={TODAY} />);
     fireEvent.click(screen.getByRole('button', { name: /내 글/ }));
 
-    expect(screen.getByRole('img', { name: '비교 불가' })).toBeInTheDocument();
-    expect(screen.queryByRole('img', { name: '감소' })).not.toBeInTheDocument();
-  });
-
-  test('음수 증감률만 감소로 그린다', () => {
-    derived.weekGrowthRate = -20;
-    render(<PostAccordion post={POST} todayISO={TODAY} />);
-    fireEvent.click(screen.getByRole('button', { name: /내 글/ }));
-
-    expect(screen.getByRole('img', { name: '감소' })).toBeInTheDocument();
-    expect(screen.getByText('-20%')).toBeInTheDocument();
-  });
-
-  test('비공개 글에는 404가 나는 공개 글 링크를 두지 않는다', () => {
-    render(
-      <PostAccordion post={{ ...POST, status: 'draft' }} todayISO={TODAY} />,
-    );
-
-    expect(
-      screen.queryByRole('link', { name: /새 탭에서 열기/ }),
-    ).not.toBeInTheDocument();
-    expect(
-      screen.getByRole('link', { name: '내 글 상세 통계' }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: shown })).toBeInTheDocument();
+    expect(screen.queryByRole('img', { name: hidden })).not.toBeInTheDocument();
   });
 });

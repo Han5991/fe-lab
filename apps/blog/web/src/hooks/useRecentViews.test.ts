@@ -121,15 +121,9 @@ describe('사이트 저장소가 차단된 브라우저', () => {
 
   afterEach(restore);
 
-  test('getRecentViews는 던지지 않고 빈 배열', () => {
+  test('읽기는 빈 배열, 쓰기는 조용히 넘어가고, 쓰는 화면도 마운트된다', () => {
     expect(getRecentViews()).toEqual([]);
-  });
-
-  test('recordRecentView는 던지지 않고 조용히 반환', () => {
     expect(() => recordRecentView('a', 'A')).not.toThrow();
-  });
-
-  test('useRecordRecentView를 쓰는 화면이 마운트된다', () => {
     expect(() => renderHook(() => useRecordRecentView('a', 'A'))).not.toThrow();
   });
 

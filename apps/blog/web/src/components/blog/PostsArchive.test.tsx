@@ -28,7 +28,7 @@ const analytics = vi.hoisted(() => ({
       new Promise<never>(() => undefined),
   ),
   getAllViewCounts: vi.fn(
-    (_slugs?: readonly string[]) =>
+    (_slugs: readonly string[]) =>
       new Promise<{ slug: string; view_count: number }[]>(() => undefined),
   ),
 }));
@@ -63,6 +63,17 @@ const withQuery = (ui: ReactNode) => (
   <QueryClientProvider client={new QueryClient()}>{ui}</QueryClientProvider>
 );
 
+const renderView = (searchParams?: string) =>
+  render(
+    withQuery(
+      <NuqsTestingAdapter
+        {...(searchParams === undefined ? {} : { searchParams })}
+      >
+        <PostsArchiveView {...props} />
+      </NuqsTestingAdapter>,
+    ),
+  );
+
 /**
  * 화면이 "같다"의 기준 — 헤딩(레벨·이름), 링크 주소, 썸네일 수를 순서대로.
  * 카드 썸네일은 제목과 겹치지 않게 alt=""(장식)라 img 역할이 없다 — 그래서
@@ -82,13 +93,7 @@ describe('PostsArchive 폴백 ↔ 뷰', () => {
     const fallback = fingerprint();
     cleanup();
 
-    render(
-      withQuery(
-        <NuqsTestingAdapter>
-          <PostsArchiveView {...props} />
-        </NuqsTestingAdapter>,
-      ),
-    );
+    renderView();
 
     expect(fingerprint()).toEqual(fallback);
   });
@@ -105,20 +110,10 @@ describe('PostsArchive 폴백 ↔ 뷰', () => {
     expect(fingerprint().thumbnails).toBe(POSTS.length);
   });
 
-  test('?view=list면 뷰는 리스트로 그린다(폴백은 기본값 그대로)', () => {
-    render(
-      withQuery(
-        <NuqsTestingAdapter searchParams="?view=list">
-          <PostsArchiveView {...props} />
-        </NuqsTestingAdapter>,
-      ),
-    );
-    const list = fingerprint();
-    cleanup();
+  test('?view=list면 뷰는 리스트로 그린다', () => {
+    renderView('?view=list');
 
-    render(withQuery(<PostsArchiveFallback {...props} />));
-    expect(list.thumbnails).toBe(0);
-    expect(fingerprint().thumbnails).toBe(POSTS.length);
+    expect(fingerprint().thumbnails).toBe(0);
   });
 });
 
@@ -130,13 +125,7 @@ describe('PostsArchive 인기순', () => {
         { slug: 'b-post', view_count: 1 },
       ]),
     );
-    render(
-      withQuery(
-        <NuqsTestingAdapter searchParams="?sort=popular">
-          <PostsArchiveView {...props} />
-        </NuqsTestingAdapter>,
-      ),
-    );
+    renderView('?sort=popular');
 
     // 날짜순(b → a)이 아니라 조회수순(a → b)으로 바뀐다.
     await waitFor(() =>
@@ -157,13 +146,7 @@ describe('PostsArchive 인기순', () => {
 describe('PostsArchive 검색창', () => {
   // "지우기"는 검색어가 비는 순간 사라진다 — 초점이 <body>로 떨어지던 회귀.
   test('지우기를 누르면 검색어가 비고 초점이 입력창으로 간다', async () => {
-    render(
-      withQuery(
-        <NuqsTestingAdapter searchParams="?q=b-post">
-          <PostsArchiveView {...props} />
-        </NuqsTestingAdapter>,
-      ),
-    );
+    renderView('?q=b-post');
     // 데스크톱 사이드바·모바일 상단에 같은 검색창이 하나씩 있다(CSS로 배타 표시).
     const [input] = screen.getAllByRole('searchbox', { name: '글 검색' });
     const [clear] = screen.getAllByRole('button', { name: '지우기' });

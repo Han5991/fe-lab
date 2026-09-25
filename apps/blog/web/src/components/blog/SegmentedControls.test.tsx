@@ -11,22 +11,16 @@ import { SortRadio } from './SortRadio';
 import { ViewToggle } from './ViewToggle';
 
 describe('SortRadio', () => {
-  test('"정렬" 이름의 라디오 그룹이고 목록 항목이 없다', () => {
-    render(<SortRadio value="recent" onChange={vi.fn()} />);
-
-    const group = screen.getByRole('radiogroup', { name: '정렬' });
-    expect(group).toBeInTheDocument();
-    expect(screen.queryAllByRole('listitem')).toHaveLength(0);
-    expect(screen.getByRole('radio', { name: '최신순' })).toBeChecked();
-  });
-
-  test('선택된 칸만 Tab 순서에 있다', () => {
+  test('"정렬" 이름의 라디오 그룹이고 목록 항목이 없으며, 선택된 칸만 Tab 순서에 있다', () => {
     render(<SortRadio value="popular" onChange={vi.fn()} />);
 
-    expect(screen.getByRole('radio', { name: '인기순' })).toHaveAttribute(
-      'tabindex',
-      '0',
-    );
+    expect(
+      screen.getByRole('radiogroup', { name: '정렬' }),
+    ).toBeInTheDocument();
+    expect(screen.queryAllByRole('listitem')).toHaveLength(0);
+    const popular = screen.getByRole('radio', { name: '인기순' });
+    expect(popular).toBeChecked();
+    expect(popular).toHaveAttribute('tabindex', '0');
     expect(screen.getByRole('radio', { name: '최신순' })).toHaveAttribute(
       'tabindex',
       '-1',
@@ -46,21 +40,16 @@ describe('SortRadio', () => {
 });
 
 describe('ViewToggle', () => {
-  test('"뷰" 이름의 라디오 그룹이고 탭 역할이 없다', () => {
-    render(<ViewToggle value="cards" onChange={vi.fn()} />);
-
-    expect(screen.getByRole('radiogroup', { name: '뷰' })).toBeInTheDocument();
-    expect(screen.queryAllByRole('tab')).toHaveLength(0);
-    expect(screen.getByRole('radio', { name: '카드' })).toBeChecked();
-  });
-
-  test('화살표로 다른 보기를 고른다', () => {
+  test('"뷰" 이름의 라디오 그룹이고 탭 역할이 없으며, 화살표로 다른 보기를 고른다', () => {
     const onChange = vi.fn();
     render(<ViewToggle value="cards" onChange={onChange} />);
 
-    fireEvent.keyDown(screen.getByRole('radio', { name: '카드' }), {
-      key: 'ArrowLeft',
-    });
+    expect(screen.getByRole('radiogroup', { name: '뷰' })).toBeInTheDocument();
+    expect(screen.queryAllByRole('tab')).toHaveLength(0);
+    const cards = screen.getByRole('radio', { name: '카드' });
+    expect(cards).toBeChecked();
+
+    fireEvent.keyDown(cards, { key: 'ArrowLeft' });
 
     expect(onChange).toHaveBeenCalledWith('list');
   });

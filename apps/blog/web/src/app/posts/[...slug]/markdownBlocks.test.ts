@@ -49,15 +49,12 @@ describe('isBlockMarkdownChild', () => {
   // 컨테이너 안에 빈 줄을 두면 자식 태그 한 줄이 문단(<p>)에 싸여 온다. 그
   // 문단이 컨테이너 밖에 남는 경우에도 <p><div>가 되지 않도록 자식 태그도 블록이다.
   describe('시그니처·다이어그램의 자식 태그도 블록', () => {
-    test('Msg / Metric / Step → block', () => {
-      expect(isBlockMarkdownChild(createElement(Msg))).toBe(true);
-      expect(isBlockMarkdownChild(createElement(Metric))).toBe(true);
-      expect(isBlockMarkdownChild(createElement(Step))).toBe(true);
-    });
-    test('DiagramNodeTag / DiagramEdgeTag → block', () => {
-      expect(isBlockMarkdownChild(createElement(DiagramNodeTag))).toBe(true);
-      expect(isBlockMarkdownChild(createElement(DiagramEdgeTag))).toBe(true);
-    });
+    test.each([Msg, Metric, Step, DiagramNodeTag, DiagramEdgeTag])(
+      '%o → block',
+      tag => {
+        expect(isBlockMarkdownChild(createElement(tag))).toBe(true);
+      },
+    );
   });
 
   // 이미지는 closure(relativeDir) 때문에 인라인 래퍼로 매핑돼 child.type이 래퍼
