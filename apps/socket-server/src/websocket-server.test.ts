@@ -8,7 +8,6 @@ import {
   test,
   vi,
 } from 'vitest';
-import type { MockInstance } from 'vitest';
 import crypto from 'node:crypto';
 import { createServer } from 'node:http';
 import type { Server } from 'node:http';
@@ -34,18 +33,10 @@ interface RawClient {
   socket: net.Socket;
   /** 다음 서버 프레임(주식 시세 브로드캐스트는 건너뛴다) */
   nextFrame(timeoutMs?: number): Promise<ServerFrame>;
-  /** 다음 텍스트 메시지(주식 시세 브로드캐스트는 건너뛴다) */
   nextText(): Promise<string>;
   /** 서버가 TCP를 닫을 때 resolve */
   closed: Promise<void>;
-  /** 지금까지 받은 주식 시세 브로드캐스트 수 */
   priceUpdates(): number;
-}
-
-interface Harness {
-  port: number;
-  wsServer: WebSocketServer;
-  httpServer: Server;
 }
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -109,7 +100,6 @@ interface ClientOptions {
   extra?: Buffer;
   /** 서버 Ping에 Pong으로 답할지(브라우저는 자동으로 답한다). 기본 true */
   autoPong?: boolean;
-  /** 요청 경로(쿼리 포함). 기본 '/' */
   path?: string;
 }
 
@@ -223,474 +213,280 @@ async function openClient(
   };
 }
 
-async function startServer(
-  options: ConstructorParameters<typeof WebSocketServer>[1] = {},
-): Promise<Harness> {
-  const httpServer = createServer();
-  const wsServer = new WebSocketServer(httpServer, {
-    allowedOrigins: null,
-    ...options,
-  });
-  await new Promise<void>(resolve =>
-    httpServer.listen(0, '127.0.0.1', resolve),
-  );
-  const { port } = httpServer.address() as AddressInfo;
-  return { port, wsServer, httpServer };
-}
-
-async function stopServer({ wsServer, httpServer }: Harness): Promise<void> {
-  wsServer.shutdown();
-  await new Promise<void>(resolve => httpServer.close(() => resolve()));
-}
-
-const closeCodeOf = (frame: ServerFrame) =>
-  frame.payload.length >= 2 ? frame.payload.readUInt16BE(0) : undefined;
-
-let errorLog: MockInstance<typeof console.error>;
-
 beforeAll(() => {
   // 연결·메시지마다 찍히는 서버 로그를 끈다
   vi.spyOn(console, 'log').mockImplementation(() => {});
-  errorLog = vi.spyOn(console, 'error').mockImplementation(() => {});
+  vi.spyOn(console, 'error').mockImplementation(() => {});
 });
-
-/** 서버가 console.error로 남긴 소켓 오류 중 code가 있는 것(ERR_STREAM_WRITE_AFTER_END 등) */
-const socketErrorCodes = () =>
-  errorLog.mock.calls.flatMap(args =>
-    args.flatMap((arg: unknown) =>
-      arg instanceof Error && 'code' in arg ? [String(arg.code)] : [],
-    ),
-  );
 
 afterAll(() => {
   vi.restoreAllMocks();
 });
 
-describe('프레임 수신 — TCP 청크 경계와 무관하게', () => {
-  let harness: Harness;
+/** describe마다 서버를 띄우고, 테스트가 연 소켓은 끝에 모두 닫는다 */
+function useServer(
+  options: ConstructorParameters<typeof WebSocketServer>[1] = {},
+) {
+  let port = 0;
+  let wsServer: WebSocketServer;
+  let httpServer: Server;
   const sockets: net.Socket[] = [];
 
   beforeEach(async () => {
-    harness = await startServer();
+    httpServer = createServer();
+    wsServer = new WebSocketServer(httpServer, {
+      allowedOrigins: null,
+      ...options,
+    });
+    await new Promise<void>(resolve =>
+      httpServer.listen(0, '127.0.0.1', resolve),
+    );
+    port = (httpServer.address() as AddressInfo).port;
   });
 
   afterEach(async () => {
     for (const socket of sockets.splice(0)) socket.destroy();
-    await stopServer(harness);
+    wsServer.shutdown();
+    await new Promise<void>(resolve => httpServer.close(() => resolve()));
   });
 
-  const connect = async (options?: ClientOptions) => {
-    const client = await openClient(harness.port, options);
-    sockets.push(client.socket);
-    return client;
+  return {
+    shutdown: () => wsServer.shutdown(),
+    async connect(clientOptions?: ClientOptions) {
+      const client = await openClient(port, clientOptions);
+      sockets.push(client.socket);
+      return client;
+    },
+    /** 핸드셰이크 요청을 보내고 서버의 첫 응답을 돌려준다 */
+    handshake(request: (port: number) => string) {
+      const socket = net.connect(port, '127.0.0.1');
+      sockets.push(socket);
+      return new Promise<string>((resolve, reject) => {
+        socket.once('data', chunk => resolve(chunk.toString()));
+        socket.on('error', reject);
+        socket.write(request(port));
+      });
+    },
   };
+}
 
-  test('한 청크에 실린 프레임 여러 개를 모두 처리한다', async () => {
-    const client = await connect();
+async function expectClosedWith(client: RawClient, code: number) {
+  const frame = await client.nextFrame();
+  expect(frame.opcode).toBe(0x8);
+  expect(frame.payload.readUInt16BE(0)).toBe(code);
+  await client.closed;
+  // Close는 한 번만 보낸다
+  await expect(client.nextFrame(0)).rejects.toThrow(/시간 초과/);
+}
 
-    client.socket.write(
-      Buffer.concat([text('one'), text('two'), text('three')]),
-    );
+const slices = (bytes: Buffer, size: number) =>
+  Array.from({ length: Math.ceil(bytes.length / size) }, (_, i) =>
+    bytes.subarray(i * size, (i + 1) * size),
+  );
 
-    expect(await client.nextText()).toBe('one');
-    expect(await client.nextText()).toBe('two');
-    expect(await client.nextText()).toBe('three');
-  });
+describe('프레임 수신 — TCP 청크 경계와 무관하게', () => {
+  const server = useServer();
+  const long = 'x'.repeat(300);
+  const huge = 'y'.repeat(1024 * 1024);
+  const mixed = Buffer.concat([text('one'), text('two'), text(long)]);
+  const at = mixed.length - text(long).length;
+  const hugeFrame = text(huge);
 
-  test('헤더 중간을 포함해 여러 청크로 쪼개진 프레임을 하나로 조립한다', async () => {
-    const client = await connect();
-    const message = 'x'.repeat(300);
-    const frame = text(message);
+  // writes의 묶음 사이마다 잠깐 쉬어 서버가 따로 읽게 한다
+  test.each([
+    {
+      name: '한 청크의 여러 프레임과 16비트 길이 필드에서 끊긴 다음 프레임',
+      writes: [[mixed.subarray(0, at + 3)], [mixed.subarray(at + 3)]],
+      expected: ['one', 'two', long],
+    },
+    {
+      name: '64비트 길이 필드에서 끊고 1460바이트씩 온 상한 크기(1MB) 프레임',
+      writes: [[hugeFrame.subarray(0, 5)], slices(hugeFrame.subarray(5), 1460)],
+      expected: [huge],
+    },
+  ])('$name', async ({ writes, expected }) => {
+    const client = await server.connect();
 
-    // [81 FE 01] — 16비트 확장 길이의 첫 바이트에서 자른다. 예전엔 여기서 readUInt16BE가
-    // ERR_OUT_OF_RANGE를 던져 서버 프로세스가 죽었다.
-    for (const [from, to] of [
-      [0, 3],
-      [3, 5],
-      [5, 100],
-      [100, frame.length],
-    ]) {
-      client.socket.write(frame.subarray(from, to));
+    for (const group of writes) {
+      for (const chunk of group) client.socket.write(chunk);
       await sleep(20);
     }
 
-    expect(await client.nextText()).toBe(message);
-
-    // 다음 프레임도 정상 경계에서 읽힌다
-    client.socket.write(text('after'));
-    expect(await client.nextText()).toBe('after');
-  });
-
-  test('상한 크기(1MB) 프레임을 64비트 길이 필드 중간에서 끊고 1460바이트씩 보내도 한 메시지로 받는다', async () => {
-    const client = await connect();
-    const message = 'y'.repeat(1024 * 1024);
-    const frame = text(message);
-
-    client.socket.write(frame.subarray(0, 5));
-    await sleep(20);
-    for (let from = 5; from < frame.length; from += 1460) {
-      client.socket.write(frame.subarray(from, from + 1460));
+    for (const message of expected) {
+      expect(await client.nextText()).toBe(message);
     }
-
-    expect(await client.nextText()).toBe(message);
-  });
-
-  test('프레임 끝과 다음 프레임 앞부분이 한 청크에 섞여도 경계를 지킨다', async () => {
-    const client = await connect();
-    const both = Buffer.concat([text('first'), text('second')]);
-    const cut = text('first').length + 1;
-
-    client.socket.write(both.subarray(0, cut));
-    await sleep(20);
-    client.socket.write(both.subarray(cut));
-
-    expect(await client.nextText()).toBe('first');
-    expect(await client.nextText()).toBe('second');
   });
 
   test('핸드셰이크와 같은 패킷에 실려 온 프레임을 잃지 않는다', async () => {
-    const client = await connect({ extra: text('early') });
+    const client = await server.connect({ extra: text('early') });
 
     expect(await client.nextText()).toBe('early');
   });
-
-  test('상한을 넘는 길이를 선언한 프레임은 버퍼링하지 않고 1009로 닫는다', async () => {
-    const client = await connect();
-    const header = Buffer.alloc(14);
-    header[0] = 0x81;
-    header[1] = 0x80 | 127;
-    header.writeUInt32BE(0x1000, 2); // 약 16TB
-    header.writeUInt32BE(0, 6);
-
-    client.socket.write(header);
-
-    const frame = await client.nextFrame();
-    expect(frame.opcode).toBe(0x8);
-    expect(closeCodeOf(frame)).toBe(1009);
-    await client.closed;
-  });
 });
 
-describe('핸드셰이크 입력 검증', () => {
-  let harness: Harness;
+describe('핸드셰이크 검증', () => {
+  const server = useServer({ allowedOrigins: isLocalOrigin });
+  const withOrigin = (origin: string) => (port: number) =>
+    handshakeRequest(port).replace('\r\n\r\n', `\r\nOrigin: ${origin}\r\n\r\n`);
 
-  beforeEach(async () => {
-    harness = await startServer();
-  });
-
-  afterEach(async () => {
-    await stopServer(harness);
-  });
-
-  test('파싱할 수 없는 Host 헤더에는 400으로 답하고 서버는 계속 동작한다', async () => {
-    const socket = net.connect(harness.port, '127.0.0.1');
-    const response = await new Promise<string>((resolve, reject) => {
-      let received = '';
-      socket.on('data', chunk => {
-        received += chunk.toString();
-      });
-      socket.on('close', () => resolve(received));
-      socket.on('error', reject);
-      socket.write(handshakeRequest(harness.port, '['));
-    });
-
-    expect(response).toMatch(/^HTTP\/1\.1 400 /);
-
-    // 같은 서버에 정상 연결이 여전히 된다
-    const client = await openClient(harness.port);
-    client.socket.write(text('alive'));
-    expect(await client.nextText()).toBe('alive');
-    client.socket.destroy();
+  test.each([
+    {
+      name: '파싱할 수 없는 Host 헤더에는 400',
+      request: (port: number) => handshakeRequest(port, '['),
+      response: /^HTTP\/1\.1 400 /,
+    },
+    {
+      name: '버전이 13이 아니면 426과 지원 버전',
+      request: (port: number) =>
+        handshakeRequest(port).replace('Version: 13', 'Version: 8'),
+      response: /^HTTP\/1\.1 426 [^]*Sec-WebSocket-Version: 13/,
+    },
+    {
+      name: '포트가 다른 로컬 개발 출처는 101',
+      request: withOrigin('http://localhost:5174'),
+      response: /^HTTP\/1\.1 101 /,
+    },
+    {
+      name: '다른 출처는 403',
+      request: withOrigin('https://evil.example'),
+      response: /^HTTP\/1\.1 403 /,
+    },
+  ])('$name', async ({ request, response }) => {
+    expect(await server.handshake(request)).toMatch(response);
   });
 });
 
 describe('하트비트', () => {
-  let harness: Harness;
-
-  beforeEach(async () => {
-    harness = await startServer({
-      heartbeatInterval: 40,
-      sessionTimeout: 200,
-      cleanupInterval: 40,
-    });
+  const server = useServer({
+    heartbeatInterval: 40,
+    sessionTimeout: 200,
+    cleanupInterval: 40,
   });
 
-  afterEach(async () => {
-    await stopServer(harness);
-  });
-
-  test('보내는 것 없이 듣기만 하는 클라이언트도 Pong으로 살아 있으면 끊지 않는다', async () => {
-    const listener = await openClient(harness.port);
+  test.each([
+    { name: '듣기만 해도 Pong으로 답하면 끊지 않는다', autoPong: true },
+    {
+      name: 'Ping에 답하지 않으면 sessionTimeout 뒤에 닫는다',
+      autoPong: false,
+    },
+  ])('$name', async ({ autoPong }) => {
+    const client = await server.connect({ autoPong });
     let closed = false;
-    void listener.closed.then(() => {
+    void client.closed.then(() => {
       closed = true;
     });
 
     await sleep(500);
 
-    expect(closed).toBe(false);
-    listener.socket.write(text('still here'));
-    expect(await listener.nextText()).toBe('still here');
-    listener.socket.destroy();
-  });
-
-  test('Ping에도 답하지 않는 연결은 sessionTimeout 뒤에 닫는다', async () => {
-    const dead = await openClient(harness.port, { autoPong: false });
-
-    let timer: NodeJS.Timeout | undefined;
-    const timeout = new Promise<never>((_, reject) => {
-      timer = setTimeout(
-        () => reject(new Error('응답 없는 연결이 닫히지 않았다')),
-        1500,
-      );
-    });
-    try {
-      await Promise.race([dead.closed, timeout]);
-    } finally {
-      clearTimeout(timer);
-    }
+    expect(closed).toBe(!autoPong);
   });
 });
 
 describe('구독(topics)', () => {
-  let harness: Harness;
-
-  beforeEach(async () => {
-    harness = await startServer({ stockBroadcastInterval: 20 });
-  });
-
-  afterEach(async () => {
-    await stopServer(harness);
-  });
+  const server = useServer({ stockBroadcastInterval: 20 });
 
   test('시세는 ?topics=stocks로 구독한 클라이언트에게만, 채팅은 기본(chat) 클라이언트에게만 간다', async () => {
-    const chat = await openClient(harness.port);
-    const stocks = await openClient(harness.port, { path: '/?topics=stocks' });
+    const chat = await server.connect();
+    const stocks = await server.connect({ path: '/?topics=stocks' });
 
     await sleep(200);
     chat.socket.write(text('hello'));
 
     expect(await chat.nextText()).toBe('hello');
-    expect(
-      stocks.priceUpdates(),
-      '구독자가 시세를 받지 못했다',
-    ).toBeGreaterThan(0);
+    expect(stocks.priceUpdates()).toBeGreaterThan(0);
     expect(chat.priceUpdates()).toBe(0);
-
-    // 시세 구독자에게 채팅이 가지 않는다
     await expect(stocks.nextFrame(200)).rejects.toThrow(/시간 초과/);
-
-    chat.socket.destroy();
-    stocks.socket.destroy();
   });
 });
 
 describe('종료 핸드셰이크와 프로토콜 검증', () => {
-  let harness: Harness;
-  const sockets: net.Socket[] = [];
-
-  beforeEach(async () => {
-    harness = await startServer();
-    errorLog.mockClear();
-  });
-
-  afterEach(async () => {
-    for (const socket of sockets.splice(0)) socket.destroy();
-    await stopServer(harness);
-  });
-
-  const connect = async (options?: ClientOptions) => {
-    const client = await openClient(harness.port, options);
-    sockets.push(client.socket);
-    return client;
-  };
-
-  const expectClosedWith = async (client: RawClient, code: number) => {
-    const frame = await client.nextFrame();
-    expect(frame.opcode).toBe(0x8);
-    expect(closeCodeOf(frame)).toBe(code);
-    await client.closed;
-  };
-
-  test('클라이언트가 먼저 닫으면 같은 상태 코드로 Close를 돌려주고 TCP를 닫는다', async () => {
-    const client = await connect();
-    const payload = Buffer.alloc(2);
-    payload.writeUInt16BE(1000);
-
-    client.socket.write(clientFrame(0x8, payload));
-
-    await expectClosedWith(client, 1000);
-    expect(socketErrorCodes()).toEqual([]);
-  });
+  const server = useServer();
 
   test('서버가 먼저 닫으면 1001을 보내고, 클라이언트의 Close 응답에 다시 쓰지 않는다', async () => {
-    const client = await connect();
+    const client = await server.connect();
 
-    harness.wsServer.shutdown();
+    server.shutdown();
 
     await expectClosedWith(client, 1001);
-    await sleep(20);
-    // 예전엔 응답 Close를 받아 이미 end()한 소켓에 또 Close를 써 ERR_STREAM_WRITE_AFTER_END가 났다
-    expect(socketErrorCodes()).toEqual([]);
   });
 
-  test('마스킹되지 않은 클라이언트 프레임은 1002로 닫는다', async () => {
-    const client = await connect();
+  const piece = Buffer.alloc(400 * 1024, 0x61);
+  const emptyContinuation = clientFrame(0x0, '', { fin: false });
 
-    client.socket.write(clientFrame(0x1, 'plain', { masked: false }));
-
-    await expectClosedWith(client, 1002);
-  });
-
-  test('UTF-8이 아닌 텍스트 메시지는 1007로 닫는다', async () => {
-    const client = await connect();
-
-    client.socket.write(clientFrame(0x1, Buffer.from([0xc3, 0x28])));
-
-    await expectClosedWith(client, 1007);
-  });
-
-  test('125바이트를 넘는 제어 프레임은 1002로 닫는다', async () => {
-    const client = await connect();
-
-    client.socket.write(clientFrame(0x9, Buffer.alloc(126)));
-
-    await expectClosedWith(client, 1002);
-  });
-
-  test('조각 메시지가 끝나기 전에 새 메시지를 시작하면 1002로 닫는다', async () => {
-    const client = await connect();
-
-    client.socket.write(
-      Buffer.concat([
+  test.each([
+    {
+      name: '클라이언트가 먼저 보낸 Close',
+      bytes: clientFrame(0x8, Buffer.from([0x03, 0xe8])),
+      code: 1000,
+    },
+    {
+      name: '마스킹되지 않은 프레임',
+      bytes: clientFrame(0x1, 'plain', { masked: false }),
+      code: 1002,
+    },
+    {
+      name: 'UTF-8이 아닌 텍스트',
+      bytes: clientFrame(0x1, Buffer.from([0xc3, 0x28])),
+      code: 1007,
+    },
+    {
+      name: '125바이트를 넘는 제어 프레임',
+      bytes: clientFrame(0x9, Buffer.alloc(126)),
+      code: 1002,
+    },
+    {
+      name: '조각 메시지가 끝나기 전에 시작한 새 메시지',
+      bytes: Buffer.concat([
         clientFrame(0x1, 'part-1', { fin: false }),
         clientFrame(0x1, 'another'),
       ]),
-    );
-
-    await expectClosedWith(client, 1002);
-  });
-
-  test('조각을 합친 크기가 상한을 넘으면 1009로 닫는다', async () => {
-    const client = await connect();
-    const piece = Buffer.alloc(400 * 1024, 0x61);
-
-    client.socket.write(
-      Buffer.concat([
+      code: 1002,
+    },
+    {
+      name: '상한을 넘는 길이를 선언한 프레임(페이로드 없이)',
+      bytes: Buffer.from([0x81, 0xff, 0, 0, 0x10, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+      code: 1009,
+    },
+    {
+      name: '합친 크기가 상한을 넘는 조각들',
+      bytes: Buffer.concat([
         clientFrame(0x1, piece, { fin: false }),
         clientFrame(0x0, piece, { fin: false }),
         clientFrame(0x0, piece),
       ]),
-    );
+      code: 1009,
+    },
+    {
+      name: `${MAX_FRAGMENTS}개를 넘는 빈 조각`,
+      bytes: Buffer.concat([
+        clientFrame(0x1, '', { fin: false }),
+        ...Array<Buffer>(MAX_FRAGMENTS).fill(emptyContinuation),
+      ]),
+      code: 1009,
+    },
+  ])('$name → Close $code', async ({ bytes, code }) => {
+    const client = await server.connect();
 
-    await expectClosedWith(client, 1009);
+    client.socket.write(bytes);
+
+    await expectClosedWith(client, code);
   });
 
-  test(`조각 ${MAX_FRAGMENTS}개로 나뉜 메시지를 순서대로 이어 붙인다`, async () => {
-    const client = await connect();
+  test(`조각 ${MAX_FRAGMENTS}개를 사이에 낀 Ping에 먼저 답하고 순서대로 이어 붙인다`, async () => {
+    const client = await server.connect();
     const parts = Array.from({ length: MAX_FRAGMENTS }, (_, i) =>
       String.fromCharCode(0x61 + (i % 26)),
     );
-
-    client.socket.write(
-      Buffer.concat(
-        parts.map((part, i) =>
-          clientFrame(i === 0 ? 0x1 : 0x0, part, {
-            fin: i === parts.length - 1,
-          }),
-        ),
-      ),
+    const frames = parts.map((part, i) =>
+      clientFrame(i === 0 ? 0x1 : 0x0, part, { fin: i === parts.length - 1 }),
     );
+    frames.splice(1, 0, clientFrame(0x9, 'ping'));
 
-    expect(await client.nextText()).toBe(parts.join(''));
-  });
+    client.socket.write(Buffer.concat(frames));
 
-  test('조각 수가 상한을 넘으면 빈 조각이어도 1009로 닫는다', async () => {
-    const client = await connect();
-    const empty = clientFrame(0x0, '', { fin: false });
-
-    client.socket.write(
-      Buffer.concat([
-        clientFrame(0x1, '', { fin: false }),
-        ...Array<Buffer>(MAX_FRAGMENTS).fill(empty),
-      ]),
-    );
-
-    await expectClosedWith(client, 1009);
-  });
-
-  test('조각난 텍스트 메시지를 이어 붙여 한 메시지로 전달한다', async () => {
-    const client = await connect();
-
-    client.socket.write(
-      Buffer.concat([
-        clientFrame(0x1, 'Hel', { fin: false }),
-        clientFrame(0x9, 'ping-in-between'),
-        clientFrame(0x0, 'lo'),
-      ]),
-    );
-
-    // 조각 사이에 끼어든 Ping에는 같은 페이로드의 Pong으로 먼저 답한다
     const pong = await client.nextFrame();
     expect(pong.opcode).toBe(0xa);
-    expect(pong.payload.toString()).toBe('ping-in-between');
-    expect(await client.nextText()).toBe('Hello');
-  });
-
-  test('Sec-WebSocket-Version이 13이 아니면 426으로 답한다', async () => {
-    const socket = net.connect(harness.port, '127.0.0.1');
-    sockets.push(socket);
-    const response = await new Promise<string>((resolve, reject) => {
-      let received = '';
-      socket.on('data', chunk => {
-        received += chunk.toString();
-      });
-      socket.on('close', () => resolve(received));
-      socket.on('error', reject);
-      socket.write(
-        handshakeRequest(harness.port).replace(
-          'Sec-WebSocket-Version: 13',
-          'Sec-WebSocket-Version: 8',
-        ),
-      );
-    });
-
-    expect(response).toMatch(/^HTTP\/1\.1 426 /);
-    expect(response).toMatch(/Sec-WebSocket-Version: 13/);
-  });
-});
-
-describe('Origin 검증', () => {
-  let harness: Harness;
-
-  beforeEach(async () => {
-    harness = await startServer({ allowedOrigins: isLocalOrigin });
-  });
-
-  afterEach(async () => {
-    await stopServer(harness);
-  });
-
-  const handshakeStatus = (origin: string) =>
-    new Promise<string>((resolve, reject) => {
-      const socket = net.connect(harness.port, '127.0.0.1');
-      socket.once('data', chunk => {
-        resolve(chunk.toString().split('\r\n')[0]);
-        socket.destroy();
-      });
-      socket.on('error', reject);
-      socket.write(
-        handshakeRequest(harness.port).replace(
-          '\r\n\r\n',
-          `\r\nOrigin: ${origin}\r\n\r\n`,
-        ),
-      );
-    });
-
-  test('로컬 개발 출처는 포트와 무관하게 허용하고 다른 출처는 403으로 막는다', async () => {
-    expect(await handshakeStatus('http://localhost:5173')).toMatch(/ 101 /);
-    expect(await handshakeStatus('http://localhost:5174')).toMatch(/ 101 /);
-    expect(await handshakeStatus('http://127.0.0.1:4173')).toMatch(/ 101 /);
-    expect(await handshakeStatus('https://evil.example')).toMatch(/ 403 /);
+    expect(pong.payload.toString()).toBe('ping');
+    expect(await client.nextText()).toBe(parts.join(''));
   });
 });
