@@ -4,15 +4,26 @@
 // 클라이언트 번들에 실린다. 서버 전용인 절대 URL 빌더만 슬라이스를 받는다.
 import type { SiteConfig } from '../shared/contentConfig.ts';
 import type { PostData } from './types.ts';
+import { isExternalUrl } from './assetUrl.ts';
 import { encodePostSlug } from './utils.ts';
+
+/** 그대로 쓰는 값인가 — 외부 URL이거나 사이트 루트 경로(`/og/…`). */
+function isAbsoluteThumbnail(thumbnail: string): boolean {
+  return isExternalUrl(thumbnail) || thumbnail.startsWith('/');
+}
+
+/** 앞의 `./`만 벗긴다 — 하위 폴더의 `/`는 구분자로 남긴다. */
+function toPostRelative(thumbnail: string): string {
+  return thumbnail.replace(/^(?:\.\/)+/, '');
+}
 
 /**
  * 포스트의 thumbnail URL을 해결합니다.
  *
  * - thumbnail이 없으면 빌드 시 생성되는 글별 OG 카드(/og/{slug}.png) 사용
  *   (scripts/render/generate-og-images.ts가 발행 글 전체에 대해 생성을 보장)
- * - http/https 또는 /로 시작하는 절대 경로는 그대로 사용
- * - 상대 경로면 포스트 디렉토리 기반으로 변환
+ * - 외부 URL(스킴·`//`) 또는 /로 시작하는 절대 경로는 그대로 사용
+ * - 상대 경로면 포스트 디렉토리 기반으로 세그먼트별 인코딩(`%2F`는 정적 호스트에서 404)
  */
 export function resolveThumbnailUrl(
   post: Pick<PostData, 'thumbnail' | 'relativeDir' | 'slug'>,
@@ -22,28 +33,30 @@ export function resolveThumbnailUrl(
   if (!thumbnail) {
     return slug ? `/og/${encodePostSlug(slug)}.png` : ogDefaultImage;
   }
-  if (thumbnail.startsWith('http') || thumbnail.startsWith('/')) {
-    return thumbnail;
-  }
+  if (isAbsoluteThumbnail(thumbnail)) return thumbnail;
   const dir = relativeDir ? `${encodePostSlug(relativeDir)}/` : '';
-  return `/posts/${dir}${encodeURIComponent(thumbnail)}`;
+  return `/posts/${dir}${encodePostSlug(toPostRelative(thumbnail))}`;
 }
 
 /** 빌드 시 WebP 최적화본을 만들 수 있는 원본 확장자 */
 const OPTIMIZABLE_EXT = /\.(?:png|jpe?g)$/i;
 
-/**
- * 최적화 대상 판정: posts/ 안의 실제 이미지 파일을 가리키는 thumbnail만.
- *
- * 외부 URL(http)과 절대 경로(`/og/*` 생성 카드 포함)는 제외합니다. 생성 OG
- * 카드는 satori가 이미 적정 크기로 만들고, 외부 URL은 우리가 변환할 수 없습니다.
- */
+/** 상대 `thumbnail`이 글 폴더의 파일 이름 하나인가 — 경로가 섞이면 최적화본 URL과 생성 위치가 갈린다. */
+export function isBareThumbnailName(thumbnail: string): boolean {
+  return (
+    thumbnail !== '' &&
+    thumbnail !== '.' &&
+    thumbnail !== '..' &&
+    !/[/\\]/.test(thumbnail)
+  );
+}
+
+/** 최적화 대상(글 폴더의 png/jpg 파일 이름)인가 — 나머지는 원본 URL로 폴백한다. */
 export function isOptimizableThumbnail(
   thumbnail?: string,
 ): thumbnail is string {
-  if (!thumbnail) return false;
-  if (thumbnail.startsWith('http') || thumbnail.startsWith('/')) return false;
-  return OPTIMIZABLE_EXT.test(thumbnail);
+  if (!thumbnail || isAbsoluteThumbnail(thumbnail)) return false;
+  return isBareThumbnailName(thumbnail) && OPTIMIZABLE_EXT.test(thumbnail);
 }
 
 /** 확장자 치환 규칙의 단일 출처 — 아래 두 함수가 공유합니다. */
@@ -81,10 +94,8 @@ export function resolveThumbnailSrc(
   if (!isOptimizableThumbnail(post.thumbnail)) {
     return resolveThumbnailUrl(post, ogDefaultImage);
   }
-  // 디렉터리는 세그먼트별(구분자 보존), 파일명은 통째로 인코딩 —
-  // resolveThumbnailUrl과 같은 규칙이라 경로 형태가 어긋나지 않습니다.
   const dir = post.relativeDir ? `${encodePostSlug(post.relativeDir)}/` : '';
-  return `/thumbs/${dir}${encodeURIComponent(toWebpName(post.thumbnail))}`;
+  return `/thumbs/${dir}${encodePostSlug(toWebpName(post.thumbnail))}`;
 }
 
 /**
@@ -95,6 +106,8 @@ export function resolveAbsoluteThumbnailUrl(
   site: Pick<SiteConfig, 'url' | 'ogDefaultImage'>,
 ): string {
   const url = resolveThumbnailUrl(post, site.ogDefaultImage);
-  if (url.startsWith('http')) return url;
+  // 프로토콜 상대 URL은 사이트의 스킴만 빌린다(origin을 붙이면 `https://blog//cdn…`).
+  if (url.startsWith('//')) return `${new URL(site.url).protocol}${url}`;
+  if (isExternalUrl(url)) return url;
   return `${site.url}${url}`;
 }

@@ -56,6 +56,60 @@ export function diffDaysISO(a: string, b: string): number {
   return Math.round(ms / 86400000);
 }
 
+/** ISO offset(`'+09:00'`·`'Z'`) → UTC 대비 밀리초. 날짜 뒤에 붙일 수 없는 값이면 null. */
+export function parseIsoOffset(isoOffset: string): number | null {
+  if (isoOffset === 'Z') return 0;
+  const match = /^([+-])([01]\d|2[0-3]):([0-5]\d)$/.exec(isoOffset);
+  if (!match) return null;
+  const [, sign, hours, minutes] = match;
+  const ms = (Number(hours) * 60 + Number(minutes)) * 60_000;
+  return sign === '-' ? -ms : ms;
+}
+
+/** 시점을 offset의 벽시계로 적은 ISO — 앞 10자가 그 타임존의 달력 날짜다. 틀린 offset은 던진다. */
+export function toIsoStringInOffset(d: Date, isoOffset: string): string {
+  const offsetMs = parseIsoOffset(isoOffset);
+  if (offsetMs === null) {
+    throw new Error(`toIsoStringInOffset: 잘못된 ISO offset '${isoOffset}'`);
+  }
+  const shifted = new Date(d.getTime() + offsetMs);
+  const ms = shifted.getUTCMilliseconds();
+  const fraction = ms === 0 ? '' : `.${String(ms).padStart(3, '0')}`;
+  return `${shifted.toISOString().slice(0, 19)}${fraction}${isoOffset}`;
+}
+
+// ── 날짜 문자열 형식 ──────────────────────────────────────────────────────────
+// frontmatter 날짜는 두 모양만 받는다 — 나머지는 Date.parse가 받아도 TZ마다 시점이 갈린다.
+
+const ISO_DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
+const ISO_DATETIME_WITH_OFFSET =
+  /^(\d{4}-\d{2}-\d{2})T(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d{1,3})?)?(?:Z|[+-](?:[01]\d|2[0-3]):[0-5]\d)$/;
+
+/** `'YYYY-MM-DD'`가 달력에 실제로 있는 날짜인가(`'2026-02-30'`은 아니다). */
+function isCalendarDate(ymd: string): boolean {
+  const d = new Date(`${ymd}T00:00:00Z`);
+  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === ymd;
+}
+
+export function isIsoDateOnly(value: string): boolean {
+  return ISO_DATE_ONLY.test(value) && isCalendarDate(value);
+}
+
+/** offset(`Z`·`±HH:MM`)까지 적은 ISO datetime인가 — offset이 없으면 로컬 시각이 된다. */
+export function isIsoDateTimeWithOffset(value: string): boolean {
+  const match = ISO_DATETIME_WITH_OFFSET.exec(value);
+  return (
+    match?.[1] !== undefined &&
+    isCalendarDate(match[1]) &&
+    !Number.isNaN(Date.parse(value))
+  );
+}
+
+/** frontmatter 날짜로 받는 형식인가 — 로더·lint:posts·new-post가 같은 판정을 쓴다. */
+export function isValidDateString(value: string): boolean {
+  return isIsoDateOnly(value) || isIsoDateTimeWithOffset(value);
+}
+
 /**
  * scheduledDate / post.date 문자열을 KST 기준 Date로 파싱합니다.
  *
@@ -66,11 +120,8 @@ export function diffDaysISO(a: string, b: string): number {
  * - ISO 8601 with timezone offset (예: `'2026-05-24T09:00:00+09:00'`,
  *   `'2026-05-24T00:00:00Z'`): 그대로 파싱합니다.
  *
- * ## 비지원 입력 (사용 시 결과 미정의)
- * - `'YYYY-MM-DDTHH:mm:ss'` (timezone offset 없는 datetime):
- *   ECMAScript 스펙상 *로컬 타임*으로 파싱되어 환경 의존이 됩니다
- *   (개발자 머신에선 KST지만 빌드 서버에선 UTC). 작성 규약에서 항상
- *   `+09:00` 또는 `Z`를 명시하거나 `'YYYY-MM-DD'` 짧은 형식을 사용하세요.
+ * 그 밖의 입력(`isValidDateString` 밖)은 Invalid Date — 환경마다 다른 시점이 되는
+ * 대신 `isPostVisible`이 비공개로 닫는다.
  *
  * @example
  * parseScheduledDateKST(TIMEZONE, '2026-05-24')
@@ -83,11 +134,11 @@ export function parseScheduledDateKST(
   timezone: Pick<TimezoneConfig, 'isoOffset'>,
   input: string,
 ): Date {
-  // 'YYYY-MM-DD' 형식 여부 확인 (시간 없음)
-  if (/^\d{4}-\d{2}-\d{2}$/.test(input)) {
+  if (isIsoDateOnly(input)) {
     return new Date(`${input}T00:00:00${timezone.isoOffset}`);
   }
-  return new Date(input);
+  if (isIsoDateTimeWithOffset(input)) return new Date(input);
+  return new Date(Number.NaN);
 }
 
 /**

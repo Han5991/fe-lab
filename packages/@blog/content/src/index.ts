@@ -21,6 +21,7 @@ export * from './post/assetUrl.ts';
 // 사이트 고유 값(SITE_URL·TIMEZONE·다이어그램 이름 …)은 여기서 나가지 않는다 —
 // 소비자의 값 모듈이 소유하고, 이 패키지는 그것을 설정으로 받는다
 // (contentConfig.ts의 `ContentValues`).
+export * from './shared/buildNow.ts';
 export * from './shared/contentConfig.ts';
 export * from './shared/contentPaths.ts';
 export * from './shared/dates.ts';

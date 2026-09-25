@@ -19,6 +19,8 @@
  * 스크립트와 런타임이 **같은 목록**을 봐야 하고, 목록을 스크립트 쪽에 두면
  * 도메인이 그걸 볼 수 없습니다(의존 방향이 뒤집힙니다).
  */
+import type { TimezoneConfig } from '../shared/contentConfig.ts';
+import { isValidDateString, toIsoStringInOffset } from '../shared/dates.ts';
 import type { PostStatus } from './types.ts';
 import { isPostStatus } from './visibility.ts';
 
@@ -28,21 +30,41 @@ import { isPostStatus } from './visibility.ts';
 // 함수**를 가리켜야 "테이블이 선언한 좁히기"와 "실제로 도는 좁히기"가 갈라지지
 // 않으므로 여기로 옮겼습니다.
 //
-// `src/post/index.ts` 배럴에는 `toDateString`만 올립니다 — 배럴은 "밖에서 쓸
-// 것"만 큐레이션하는 표면이고(index.ts의 주석 참고), 나머지는 도메인 안에서
-// parsePost와 이 테이블만 씁니다.
+// 배럴(`src/post/index.ts`)에는 올리지 않는다 — 밖에서는 테이블의 `narrow`로 쓴다.
 
-/**
- * frontmatter의 date/updatedAt 값을 'YYYY-MM-DD' 문자열(또는 null)로 정규화합니다.
- * - YAML이 Date 객체로 파싱한 경우(`date: 2025-01-01`) → ISO 날짜 부분
- * - 문자열인 경우(`date: '2025-01-01'`) → 그대로
- * - 그 외 → null
- */
-export function toDateString(value: unknown): string | null {
-  // toISOString()은 항상 'T'를 포함하므로 [0]은 실제로는 늘 존재한다.
-  if (value instanceof Date) return value.toISOString().split('T')[0] ?? null;
-  if (typeof value === 'string') return value;
+/** date·updatedAt을 받는 형식(`isValidDateString`)의 문자열로 좁힌다 — YAML Date는 설정 타임존으로 시점을 적고, 형식 밖이면 null. */
+export function toDateString(
+  value: unknown,
+  timezone?: Pick<TimezoneConfig, 'isoOffset'>,
+): string | null {
+  if (value instanceof Date) return fromYamlDate(value, timezone);
+  if (typeof value === 'string') return isValidDateString(value) ? value : null;
   return null;
+}
+
+function fromYamlDate(
+  value: Date,
+  timezone: Pick<TimezoneConfig, 'isoOffset'> | undefined,
+): string | null {
+  if (Number.isNaN(value.getTime())) return null;
+  const iso = value.toISOString();
+  // 날짜만 쓴 값(`2025-01-02`)은 UTC 자정 Date가 된다 — 적힌 날짜 그대로.
+  const result = iso.endsWith('T00:00:00.000Z')
+    ? iso.slice(0, 10)
+    : toIsoStringInOffset(value, timezone?.isoOffset ?? 'Z');
+  // 0000~9999년 밖(`+010000-…`)처럼 받는 형식을 벗어나면 없는 값으로 본다.
+  return isValidDateString(result) ? result : null;
+}
+
+/** scheduledDate를 좁힌다 — 틀린 문자열도 원문으로 남겨, date로 폴백해 일찍 공개하지 않고 비공개로 닫는다. */
+export function toScheduledDate(
+  value: unknown,
+  timezone?: Pick<TimezoneConfig, 'isoOffset'>,
+): string | undefined {
+  // 변환할 수 없는 Date는 원문 표기('Invalid Date')로 남겨 비공개로 닫는다.
+  if (value instanceof Date)
+    return fromYamlDate(value, timezone) ?? String(value);
+  return toOptionalString(value);
 }
 
 /** 문자열이 아니면 undefined. 빈 문자열은 값이 없는 것으로 취급합니다. */
@@ -188,7 +210,7 @@ export const FRONTMATTER_FIELDS = {
   scheduledDate: {
     required: false,
     kind: 'string',
-    narrow: toOptionalString,
+    narrow: toScheduledDate,
     doc: '**시각까지 지정할 때만.** 날짜만이면 `date`로 충분. 이걸 써도 `date`는 여전히 필수',
   },
 } as const satisfies Record<string, FrontmatterField>;

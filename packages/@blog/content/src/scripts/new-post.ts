@@ -1,6 +1,12 @@
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
+import {
+  getKSTDateISO,
+  isIsoDateOnly,
+  isValidDateString,
+} from '../shared/dates.ts';
 import type { ContentContext } from './context.ts';
+import { slugProblem } from './validate/shared.ts';
 
 /** 실제로 파일을 만들 때 필요한 값 — 원시 입력을 resolveOptions가 여기까지 좁힌다. */
 export interface NewPostOptions {
@@ -40,6 +46,7 @@ export function parseTagList(value: string): string[] {
  *   적지 않아도 되게 status를 올린다(둘을 같이 적어도 결과는 같다).
  * - 제목이 없으면 파일 이름을 만들 수 없다. 위치 인자든 `--title`이든 CLI가 하나로
  *   합쳐서 넘기므로, 여기서는 비었는지만 본다.
+ * - `--scheduled`·`--slug`는 lint:posts와 같은 판정으로 파일을 만들기 전에 거른다.
  */
 export function resolveOptions(raw: RawNewPostOptions): NewPostOptions {
   const title = raw.title?.trim();
@@ -52,6 +59,22 @@ export function resolveOptions(raw: RawNewPostOptions): NewPostOptions {
       'status: scheduled에는 --scheduled <ISO 날짜>가 필요합니다.',
     );
   }
+  if (
+    raw.scheduledDate !== undefined &&
+    !isValidDateString(raw.scheduledDate)
+  ) {
+    throw new Error(
+      `--scheduled는 'YYYY-MM-DD'이거나 offset을 명시한 ISO 시각이어야 합니다(예: 2026-06-01T09:00:00+09:00): ${raw.scheduledDate}`,
+    );
+  }
+  if (raw.slug !== undefined) {
+    const problem = slugProblem(raw.slug);
+    if (problem !== null) {
+      throw new Error(
+        `--slug를 URL로 쓸 수 없습니다 — ${problem}: ${raw.slug}`,
+      );
+    }
+  }
   return {
     title,
     series: raw.series,
@@ -60,14 +83,6 @@ export function resolveOptions(raw: RawNewPostOptions): NewPostOptions {
     slug: raw.slug,
     tags: raw.tags ?? [],
   };
-}
-
-/**
- * 스캐폴딩 frontmatter의 `date` — 설정 타임존 기준 오늘.
- * `timeZone`은 인자다(기본값을 두면 그 값이 곧 특정 사이트의 하드코딩).
- */
-export function todayKST(timeZone: string, now: Date = new Date()): string {
-  return new Intl.DateTimeFormat('en-CA', { timeZone }).format(now);
 }
 
 export function safeFilename(title: string): string {
@@ -116,6 +131,7 @@ function yamlQuote(value: string): string {
 /**
  * 예약 글의 `date`는 오늘이 아니라 **공개 예정일**이어야 합니다.
  * 오늘 날짜를 넣으면 목록에 뜨는 날짜와 실제 공개일이 어긋납니다.
+ * 사이트 타임존의 달력 날짜다 — 앞 10자를 자르면 KST 오전이 전날이 된다.
  */
 function resolveDate(
   status: NewPostOptions['status'],
@@ -123,9 +139,12 @@ function resolveDate(
   timeZone: string,
   now: Date,
 ): string {
-  if (status === 'scheduled' && scheduledDate)
-    return scheduledDate.slice(0, 10);
-  return todayKST(timeZone, now);
+  if (status === 'scheduled' && scheduledDate) {
+    return isIsoDateOnly(scheduledDate)
+      ? scheduledDate
+      : getKSTDateISO({ iana: timeZone }, new Date(scheduledDate));
+  }
+  return getKSTDateISO({ iana: timeZone }, now);
 }
 
 /**
@@ -146,8 +165,9 @@ export function buildFrontmatter(
 ): string {
   const lines = ['---'];
   lines.push(`title: ${yamlQuote(opts.title)}`);
+  // 따옴표로 감싸 YAML이 Date로 바꾸지 않게 한다(lint:posts의 unquoted-date).
   lines.push(
-    `date: ${resolveDate(opts.status, opts.scheduledDate, timeZone, now)}`,
+    `date: ${yamlQuote(resolveDate(opts.status, opts.scheduledDate, timeZone, now))}`,
   );
   lines.push(`status: ${opts.status}`);
   if (needsScheduledDate(opts.scheduledDate)) {
@@ -202,6 +222,7 @@ export function main(ctx: ContentContext, opts: NewPostOptions) {
       scheduledDate: opts.scheduledDate,
     },
     ctx.content.config.timezone.iana,
+    ctx.content.now,
   );
 
   writeFileSync(targetPath, frontmatter, 'utf8');

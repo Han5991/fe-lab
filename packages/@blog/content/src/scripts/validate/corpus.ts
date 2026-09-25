@@ -5,14 +5,13 @@
  * 파일 단위 사슬과 실행 시점이 다릅니다: 진입점(validate-posts.ts)이 모든 파일을
  * 훑은 **뒤에** 한 번 돕니다.
  */
-import { isPostFile, resolveExcerpt } from '../../post/index.ts';
+import {
+  isPostFile,
+  resolveExcerpt,
+  resolvePostSlug,
+} from '../../post/index.ts';
 import type { Issue, PostRecord, ValidateContext } from './shared.ts';
 import { resolveSeverity, isVisibleFrontmatter } from './rules.ts';
-
-// 명시 slug가 없으면 파일경로(확장자 제거)를 기본 slug로 사용 — repository.ts의 rawSlug 규칙과 동일
-function deriveDefaultSlug(relPath: string): string {
-  return relPath.replace(/\.(md|mdx)$/, '');
-}
 
 /**
  * 발행될 글들의 meta description이 서로 완전히 겹치는지 검사합니다.
@@ -38,7 +37,7 @@ export function detectDuplicateDescriptions(
   for (const record of records) {
     if (
       !isPostFile(record.data) ||
-      !isVisibleFrontmatter(record.data, options.timezone)
+      !isVisibleFrontmatter(record.data, options.timezone, options.now)
     )
       continue;
     const description = resolveExcerpt(
@@ -74,11 +73,12 @@ export function detectDuplicateDescriptions(
   return issues;
 }
 
+/** 빌드에서 같은 URL을 갖게 될 글들 — 로더와 같은 집합(`isPostFile`)·같은 slug(`resolvePostSlug`)로 본다. */
 export function detectDuplicateSlugs(records: PostRecord[]): Issue[] {
   const slugMap = new Map<string, string[]>();
   for (const r of records) {
-    const explicit = typeof r.data['slug'] === 'string' ? r.data['slug'] : null;
-    const effective = explicit ?? deriveDefaultSlug(r.relPath);
+    if (!isPostFile(r.data)) continue;
+    const effective = resolvePostSlug(r.data['slug'], r.relPath);
     const arr = slugMap.get(effective) ?? [];
     arr.push(r.relPath);
     slugMap.set(effective, arr);

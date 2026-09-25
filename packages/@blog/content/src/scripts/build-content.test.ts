@@ -1,6 +1,13 @@
 import { expect, test } from 'vitest';
-import { buildPhases, stepArgv } from './build-content.ts';
+import {
+  buildPhases,
+  describeExit,
+  runProcess,
+  stepArgv,
+  stepEnv,
+} from './build-content.ts';
 import { buildProgram } from './cli/program.ts';
+import { resolveBuildNow } from '../shared/buildNow.ts';
 
 // ── buildPhases ──────────────────────────────────────────────────────────────
 
@@ -72,22 +79,28 @@ test('stepArgv: 자식에 --config를 서브커맨드 앞에 명시 전달', () 
   // 자식이 cwd 탐색으로 다른 설정을 잡는 일이 없도록, 부모가 발견한 설정
   // 파일의 절대 경로를 전역 옵션으로 재전달한다. 전역 옵션은 서브커맨드
   // 이름 앞에 와야 commander가 루트 옵션으로 파싱한다.
-  const argv = stepArgv(
-    { label: 'sitemap', command: 'sitemap', args: [] },
-    '/abs/content.config.ts',
-  );
-  expect(argv).toStrictEqual(['--config', '/abs/content.config.ts', 'sitemap']);
-
-  const withFlags = stepArgv(
-    { label: 'validate-posts', command: 'validate', args: ['--strict'] },
-    '/abs/content.config.ts',
-  );
-  expect(withFlags).toStrictEqual([
+  expect(
+    stepArgv(
+      { label: 'validate-posts', command: 'validate', args: ['--strict'] },
+      '/abs/content.config.ts',
+    ),
+  ).toStrictEqual([
     '--config',
     '/abs/content.config.ts',
     'validate',
     '--strict',
   ]);
+});
+
+test('stepEnv: 자식은 부모의 기준 시각을 BLOG_CONTENT_NOW로 받는다 (예약 글 경계 분열 방지)', async () => {
+  const now = new Date('2026-06-01T00:04:59.999Z');
+  const result = await runProcess(
+    process.execPath,
+    ['-e', 'console.log(process.env.BLOG_CONTENT_NOW)'],
+    stepEnv(now),
+  );
+  expect(result.output.trim()).toBe(now.toISOString());
+  expect(resolveBuildNow(result.output.trim()).getTime()).toBe(now.getTime());
 });
 
 test('buildPhases: 단계 label은 중복 없음', () => {
@@ -120,4 +133,23 @@ test('buildPhases: --strict는 validate-posts에만 전달 (predev는 비엄격)
   });
   expect(loose[0][0].command).toBe('validate');
   expect(loose[0][0].args).toStrictEqual([]);
+});
+
+// ── 자식 프로세스 실패 처리 ─────────────────────────────────────────────────
+
+test('runProcess: 띄우기 실패(ENOENT)도 부모를 죽이지 않고 실패 결과로 돌려준다', async () => {
+  const result = await runProcess('/nonexistent/blog-content-node', []);
+  expect(result.code).toBe(1);
+  expect(result.signal).toBe(null);
+  expect(result.output).toContain('자식 프로세스를 띄우지 못했습니다');
+});
+
+test('runProcess: 신호로 죽은 자식은 신호를 싣는다 (exit null 대신)', async () => {
+  const result = await runProcess(process.execPath, [
+    '-e',
+    "process.kill(process.pid, 'SIGKILL')",
+  ]);
+  expect(result.code).toBe(null);
+  expect(result.signal).toBe('SIGKILL');
+  expect(describeExit(result)).toBe('signal SIGKILL');
 });

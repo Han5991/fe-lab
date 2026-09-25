@@ -53,6 +53,29 @@ export const POSTS_PATH = '/posts/';
  */
 export const RSS_PATH = '/rss.xml';
 
+/** frontmatter `slug`로 받아도 되는가 — `postPath`가 `/posts/` 아래 한 경로로만 푸는 모양(`..`·빈 세그먼트·`\` 거부). */
+export function isSafeSlug(slug: string): boolean {
+  if (slug === '' || slug.includes('\\')) return false;
+  return slug
+    .split('/')
+    .every(segment => segment !== '' && segment !== '.' && segment !== '..');
+}
+
+/** 원고 경로(postsDir 기준, `\\`도 구분자)에서 유도한 slug — 확장자를 뗀 경로. */
+export function pathSlug(relPath: string): string {
+  return relPath
+    .split(/[/\\]/)
+    .join('/')
+    .replace(/\.(md|mdx)$/, '');
+}
+
+/** 글이 빌드에서 갖는 slug — 안전한 명시 slug, 아니면 경로 slug. 로더와 lint:posts가 함께 쓴다. */
+export function resolvePostSlug(slug: unknown, relPath: string): string {
+  return typeof slug === 'string' && isSafeSlug(slug)
+    ? slug
+    : pathSlug(relPath);
+}
+
 /** 글 상세의 사이트 내부 경로. `<Link href>`·canonical에 쓴다. */
 export function postPath(slug: string): string {
   return `${POSTS_PATH}${encodePostSlug(slug)}/`;

@@ -1,5 +1,8 @@
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { expect, test } from 'vitest';
-import { sortPostsBySeriesOrder } from './series.ts';
+import { createSeriesReader, sortPostsBySeriesOrder } from './series.ts';
 import { testContent } from './testing.ts';
 
 // 실제 코퍼스(_series.yml)에 앵커한 테스트 인스턴스의 판정을 검증한다.
@@ -186,6 +189,31 @@ test('sortPostsBySeriesOrder: 날짜 문자열은 사전식(localeCompare) 비�
   expect(sorted.map(p => p.slug)).toStrictEqual(['morning', 'noon']);
 });
 
+test('sortPostsBySeriesOrder: 같은 날짜는 입력 순서와 무관하게 originalSlug 오름차순', () => {
+  const a = makePost({
+    slug: 'api',
+    originalSlug: 'S/api',
+    date: '2025-06-01',
+  });
+  const b = makePost({
+    slug: 'api-di',
+    originalSlug: 'S/api-di',
+    date: '2025-06-01',
+  });
+  for (const input of [
+    [a, b],
+    [b, a],
+  ]) {
+    expect(
+      sortPostsBySeriesOrder(input, undefined).map(p => p.slug),
+    ).toStrictEqual(['api', 'api-di']);
+    // order에 둘 다 없을 때(같은 rank)도 같은 규칙.
+    expect(
+      sortPostsBySeriesOrder(input, ['other']).map(p => p.slug),
+    ).toStrictEqual(['api', 'api-di']);
+  }
+});
+
 test('sortPostsBySeriesOrder: 입력 배열을 변형하지 않음(복사본 정렬)', () => {
   const posts = [
     makePost({ slug: 'a', date: '2026-03-01' }),
@@ -221,6 +249,27 @@ test('sortPostsBySeriesOrder: order 경로에서도 입력 불변', () => {
 // 아래 규칙이 홈 배지 / 글 상세 배지·네비게이션 / 시리즈 목록 / llms.txt의
 // 단일 기준이다.
 // ─────────────────────────────────────────────────────────────────────────────
+
+test('getSeriesMeta: _series.yml YAML이 깨지면 파일 경로를 붙여 던진다', () => {
+  const postsDir = mkdtempSync(join(tmpdir(), 'series-yaml-test-'));
+  try {
+    mkdirSync(join(postsDir, '연재'));
+    writeFileSync(
+      join(postsDir, '연재', '_series.yml'),
+      'title: a: b: c\n',
+      'utf8',
+    );
+    const reader = createSeriesReader({
+      postsDir,
+      isDevelopment: () => false,
+    });
+    expect(() => reader.getSeriesMeta('연재')).toThrow(
+      join(postsDir, '연재', '_series.yml'),
+    );
+  } finally {
+    rmSync(postsDir, { recursive: true, force: true });
+  }
+});
 
 test('isSeriesFolder: _series.yml이 없으면 시리즈가 아니다', () => {
   expect(isSeriesFolder('__없는-폴더__')).toBe(false);

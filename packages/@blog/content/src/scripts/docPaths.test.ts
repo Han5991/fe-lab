@@ -66,19 +66,23 @@ const CODE_EXT = /\.(py|ya?ml)$/;
 
 /** 경로로 볼 확장자. 이 목록에 없는 것은 경로로 취급하지 않습니다. */
 const PATH_EXT =
-  /\.(ts|tsx|mts|cts|mjs|cjs|js|jsx|json|md|ya?ml|toml|css|sql)$/;
+  /\.(ts|tsx|mts|cts|mjs|cjs|js|jsx|json|md|ya?ml|toml|css|sql|py|sh)$/;
 
 /**
  * 경로가 아니라 **패턴이거나 산출물**인 것들. 검사에서 뺍니다.
  *
  * - 글롭·플레이스홀더: `**`, `{slug}`, `[...slug]`, `<경로>`
  * - 빌드 산출물: 빌드 전에는 없습니다
- * - 상대 경로 표기: 문서가 자기 위치 기준으로 적은 것은 기준점이 모호합니다
+ * - 상대 경로 표기(`./`·`../`): 문서가 자기 위치 기준으로 적은 것은 기준점이 모호합니다
+ * - 확장자만 적은 표기(`.ts`·`.md`): 파일이 아니라 종류를 말한다
+ * (점으로 시작하는 저장소 경로 `.github/…`는 검사한다.)
  */
 const isPattern = (p: string) =>
   /[*{}<>]/.test(p) ||
   p.includes('[') ||
-  p.startsWith('.') ||
+  p.startsWith('./') ||
+  p.startsWith('../') ||
+  /^\.[A-Za-z0-9]+$/.test(p) ||
   p.startsWith('/') ||
   p.startsWith('@') ||
   p.startsWith('http');
@@ -307,6 +311,25 @@ describe('문서가 인용한 파일 경로', () => {
   test('검사 대상 코드 파일이 비어 있지 않다 (양성 대조)', () => {
     // CODE_PREFIXES가 오타로 아무것도 안 잡으면 검사가 조용히 죽는다.
     expect(CODE_FILES.length).toBeGreaterThan(3);
+  });
+
+  test('점으로 시작하는 저장소 경로도 검사 대상이다 — 상대 경로·확장자 표기만 뺀다', () => {
+    expect(
+      pathsIn(
+        [
+          '`.github/workflows/deploy-blog.yml`',
+          '`.github/scripts/site-smoke-collect.py`',
+          '`.claude/skills/blog-diagrams/SKILL.md`',
+          '`.ts`',
+          '`./blog-preset.ts`',
+          '`../posts/a.md`',
+        ].join(' '),
+      ),
+    ).toStrictEqual([
+      '.github/workflows/deploy-blog.yml',
+      '.github/scripts/site-smoke-collect.py',
+      '.claude/skills/blog-diagrams/SKILL.md',
+    ]);
   });
 
   test('검사가 실제로 경로를 걷어낸다 (양성 대조)', async () => {

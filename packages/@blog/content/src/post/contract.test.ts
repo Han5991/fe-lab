@@ -11,6 +11,7 @@
  */
 import { expect, test } from 'vitest';
 import { isPostVisible } from './visibility.ts';
+import { sortPostsBySeriesOrder } from './series.ts';
 import { testConfig, testContent } from './testing.ts';
 
 // 실제 코퍼스에 앵커한 테스트 인스턴스 — 배선은 testing.ts 참고.
@@ -167,6 +168,32 @@ test('contract: 선언되지 않은 폴더의 글은 시리즈 네비게이션�
     expect(nav.seriesName, `${p.slug}: seriesName`).toBe(null);
     expect(nav.prev, `${p.slug}: prev`).toBe(null);
     expect(nav.next, `${p.slug}: next`).toBe(null);
+  }
+});
+
+test('contract: 시리즈 "다음 글"을 따라가면 헤더 순서(1/n → n/n)대로 전부 지난다', () => {
+  const bySeries = new Map<string, string[]>();
+  for (const p of getAllPosts()) {
+    if (p.series)
+      bySeries.set(p.series, [...(bySeries.get(p.series) ?? []), p.slug]);
+  }
+  expect(bySeries.size > 0, '시리즈가 최소 1개는 있어야 함').toBeTruthy();
+
+  for (const [series] of bySeries) {
+    const header = sortPostsBySeriesOrder(
+      getAllPosts().filter(p => p.series === series),
+      getSeriesMeta(series)?.order,
+    ).map(p => p.slug);
+    const first = header[0];
+    if (first === undefined) continue;
+
+    const walked = [first];
+    let next = getSeriesAdjacentPosts(first).next;
+    while (next && walked.length <= header.length) {
+      walked.push(next.slug);
+      next = getSeriesAdjacentPosts(next.slug).next;
+    }
+    expect(walked, `${series}: 다음 글 순서`).toStrictEqual(header);
   }
 });
 

@@ -5,6 +5,8 @@ import { buildLlmsText } from './generate-llms.ts';
 import { buildLlmsFullText } from './generate-llms-full.ts';
 import { postPath, postUrl } from '../post/urls.ts';
 import type { PostData } from '../post/index.ts';
+import { decodeUrlSafe } from '../shared/url.ts';
+import { ARTIFACTS } from './artifacts.ts';
 import { defineTestContent } from '../shared/testValues.ts';
 import { sep } from 'node:path';
 
@@ -76,6 +78,7 @@ test('비ASCII slug: 다섯 산출 지점이 모두 같은 인코딩의 URL을 �
         site: SITE_VALUES,
         author: CONFIG.author,
         llms: CONFIG.llms,
+        resolveSeriesMeta: () => null,
       }),
     ],
   ];
@@ -91,3 +94,62 @@ test('비ASCII slug: 다섯 산출 지점이 모두 같은 인코딩의 URL을 �
     ).toBeTruthy();
   }
 });
+
+/** 괄호가 든 slug(`encodeURIComponent`가 남긴다) — 실제 레지스트리 추출로 산출물마다 같은 글 URL 하나가 나와야 한다. */
+test.each([
+  [
+    '짝이 맞는 괄호',
+    'pnpm 10 업그레이드 후 ESLint 설정이 사라졌어요?! (feat. 호이스팅)',
+  ],
+  ['짝이 안 맞는 괄호', '웃는 얼굴 :)'],
+])(
+  '괄호가 든 slug(%s): 산출물마다 추출한 글 URL이 sitemap과 같다',
+  (_, slug) => {
+    const post = makePost({ slug, originalSlug: slug, relativeDir: '' });
+    const texts = new Map<string, string>([
+      [
+        'sitemap.xml',
+        buildSitemapXml([post], '2026-01-02', SITE_VALUES, TZ, CONFIG.sitemap),
+      ],
+      [
+        'rss.xml',
+        buildRssXml([post], {
+          site: SITE_VALUES,
+          timezone: TZ,
+          now: new Date(0),
+        }),
+      ],
+      [
+        'llms.txt',
+        buildLlmsText([post], {
+          site: SITE_VALUES,
+          llms: CONFIG.llms,
+          author: CONFIG.author,
+          resolveSeriesMeta: () => null,
+        }),
+      ],
+      [
+        'llms-full.txt',
+        buildLlmsFullText([post], {
+          site: SITE_VALUES,
+          author: CONFIG.author,
+          llms: CONFIG.llms,
+          resolveSeriesMeta: () => null,
+        }),
+      ],
+    ]);
+    const expected = decodeUrlSafe(postUrl(slug, SITE));
+
+    for (const spec of ARTIFACTS) {
+      const text = texts.get(spec.name);
+      if (spec.kind !== 'file' || text === undefined) continue;
+      expect([...spec.extractUrls(text, SITE)], spec.name).toStrictEqual([
+        expected,
+      ]);
+      texts.delete(spec.name);
+    }
+    expect([...texts.keys()], '레지스트리가 읽지 않은 산출물').toStrictEqual(
+      [],
+    );
+  },
+);

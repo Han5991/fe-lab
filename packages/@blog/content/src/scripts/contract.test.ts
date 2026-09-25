@@ -9,8 +9,11 @@
  *
  * 콘텐츠 개수 자체는 잠그지 않습니다(글이 추가/숨김되는 정상 변경에 깨지면 안 됨).
  */
+import { existsSync } from 'node:fs';
+import { join, posix } from 'node:path';
 import { expect, test } from 'vitest';
 import { isPostVisible } from '../post/visibility.ts';
+import { decodeUrlSafe } from '../shared/url.ts';
 import { testConfig, testContent } from '../post/testing.ts';
 import { buildSitemapXml, getPostPriority } from './generate-sitemap.ts';
 import { buildRssXml } from './generate-rss.ts';
@@ -20,6 +23,7 @@ import {
   CONTENT_PREVIEW_CHARS,
 } from './generate-search-index.ts';
 import { buildLlmsFullText } from './generate-llms-full.ts';
+import { selectPublishedMedia } from './sync-posts.ts';
 
 // 실제 코퍼스에 앵커한 테스트 인스턴스 — 배선은 post/testing.ts 참고.
 const { getAllPosts, getAllPostsIncludingHidden, isSeriesFolder } = testContent;
@@ -104,12 +108,12 @@ test('rss: 모든 link/guid가 SITE_URL prefix', () => {
 
 test('search-index: 공개 글 개수와 일치', () => {
   const posts = getAllPosts();
-  const idx = buildPublicSearchIndex(posts);
+  const idx = buildPublicSearchIndex(posts, testContent.getSeriesMeta);
   expect(idx.length).toBe(posts.length);
 });
 
 test('search-index: 모든 entry는 필수 키 보유', () => {
-  const idx = buildPublicSearchIndex(getAllPosts());
+  const idx = buildPublicSearchIndex(getAllPosts(), testContent.getSeriesMeta);
   for (const e of idx) {
     expect(typeof e.slug === 'string' && e.slug.length > 0).toBeTruthy();
     expect(typeof e.title === 'string' && e.title.length > 0).toBeTruthy();
@@ -131,7 +135,12 @@ test('search-index(admin): draft/scheduled 포함하여 전체 글 인덱싱', (
 
 test('llms-full: 모든 공개 글 제목이 본문에 등장', () => {
   const posts = getAllPosts();
-  const text = buildLlmsFullText(posts, { site, author, llms });
+  const text = buildLlmsFullText(posts, {
+    site,
+    author,
+    llms,
+    resolveSeriesMeta: testContent.getSeriesMeta,
+  });
   for (const p of posts) {
     expect(
       text.includes(`### [${p.title}]`),
@@ -142,19 +151,30 @@ test('llms-full: 모든 공개 글 제목이 본문에 등장', () => {
 
 test('llms-full: Total posts 카운트가 실제 공개 글 수와 일치', () => {
   const posts = getAllPosts();
-  const text = buildLlmsFullText(posts, { site, author, llms });
+  const text = buildLlmsFullText(posts, {
+    site,
+    author,
+    llms,
+    resolveSeriesMeta: testContent.getSeriesMeta,
+  });
   expect(text.includes(`Total posts: ${posts.length}+ articles`)).toBeTruthy();
 });
 
 test('contract: 검색 인덱스의 series는 선언된 시리즈만', () => {
   // 예전엔 폴더에 글을 모아 두는 것만으로 검색 결과에 "📚 폴더명"이 붙었다.
-  for (const e of buildPublicSearchIndex(getAllPosts())) {
+  for (const e of buildPublicSearchIndex(
+    getAllPosts(),
+    testContent.getSeriesMeta,
+  )) {
     if (e.series) {
       expect(
         isSeriesFolder(e.series),
         `검색 인덱스에 비시리즈: ${e.series}`,
       ).toBeTruthy();
     }
+    expect(e.seriesTitle).toBe(
+      e.series ? (testContent.getSeriesMeta(e.series)?.title ?? null) : null,
+    );
   }
 });
 
@@ -166,4 +186,29 @@ test('contract: sitemap 우선순위는 시리즈가 아니라 폴더 기준이�
   expect(post.series, 'typescript 폴더는 시리즈가 아니어야 함').toBe(undefined);
   // 우선순위 목록은 설정에서 온다(픽스처의 highPriorityFolders에 이 폴더가 있다).
   expect(getPostPriority(post, testConfig.sitemap)).toBe('0.75');
+});
+
+test('sync-posts: 공개 글이 원고에서 가리키는 로컬 이미지는 전부 복사 대상이다', () => {
+  // 실제 원고의 이미지 참조를 독립된 추출로 모아, 전부 복사 대상으로 골라지는지 본다.
+  const posts = getAllPosts();
+  const postsDir = testContent.paths.postsDir;
+  const referenced = new Set<string>();
+  for (const p of posts) {
+    const refs = [
+      ...[...p.content.matchAll(/!\[[^\]]*\]\(([^)\s]+)/g)].map(m => m[1]),
+      ...[...p.content.matchAll(/<img\b[^>]*\ssrc="([^"]+)"/g)].map(m => m[1]),
+      p.thumbnail,
+    ];
+    for (const ref of refs) {
+      if (!ref || /^(?:[a-z]+:|\/)/i.test(ref)) continue;
+      const rel = posix.normalize(
+        posix.join(p.relativeDir, decodeUrlSafe(ref.split(/[?#]/)[0] ?? ref)),
+      );
+      if (existsSync(join(postsDir, rel))) referenced.add(rel);
+    }
+  }
+  // 양성 대조 — 추출이 조용히 0건이 되면 이 계약은 아무것도 지키지 않는다.
+  expect(referenced.size).toBeGreaterThan(10);
+  const selected = selectPublishedMedia(posts, [...referenced]);
+  expect([...referenced].filter(rel => !selected.has(rel))).toStrictEqual([]);
 });

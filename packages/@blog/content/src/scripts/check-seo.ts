@@ -1,11 +1,18 @@
-import { readFileSync, existsSync, readdirSync } from 'node:fs';
-import { join, relative, resolve, sep } from 'node:path';
+import { readFileSync, existsSync } from 'node:fs';
+import { join, posix, resolve } from 'node:path';
 // 사이트 정체성과 SEO 임계값은 **해석된 설정**에서 온다 — validate-posts
 // (frontmatter.ts)와 정확히 같은 범위를 보는 게이트라 같은 출처를 봐야 한다.
 import type { SeoConfig, SiteConfig } from '../shared/contentConfig.ts';
+import { listFilesRecursive } from '../shared/postFiles.ts';
 import { decodeUrlSafe } from '../shared/url.ts';
+import { POSTS_PATH } from '../post/index.ts';
 import type { ContentContext } from './context.ts';
-import { ARTIFACTS, type ArtifactRelation } from './artifacts.ts';
+import {
+  ARTIFACTS,
+  extractSitemapLocs,
+  isPostPagePath,
+  type ArtifactRelation,
+} from './artifacts.ts';
 
 /** 이 게이트가 설정에서 읽는 슬라이스 — main이 컨텍스트에서 채운다. */
 export interface SeoCheckConfig {
@@ -27,6 +34,7 @@ export interface SeoCheckConfig {
  * HTML 페이지 검사 외에, 파생 산출물(sitemap·rss·llms·검색 인덱스·og 이미지)의
  * 글 집합 정합성은 `scripts/artifacts.ts`의 레지스트리를 **순회**하며 검사합니다
  * — 산출물이 늘면 레지스트리에 항목을 더하는 것으로 검사가 자동으로 붙습니다.
+ * 그 기준(sitemap)은 다시 실제 페이지와 대조합니다(`checkSitemapPages`·`checkArchiveLinks`).
  *
  * 사용: `pnpm build` 이후 `blog-content check-seo`
  *       (검사 대상 디렉토리를 인자로 줄 수 있습니다: `blog-content check-seo out`)
@@ -144,26 +152,30 @@ export function parsePageSeo(html: string): PageSeo {
   };
 }
 
+/** 페이지마다 한 번만 파싱한다 — checkPages와 checkSitemapPages가 함께 쓴다 */
+export function parsePages(
+  pages: ReadonlyMap<string, string>,
+): Map<string, PageSeo> {
+  return new Map([...pages].map(([path, html]) => [path, parsePageSeo(html)]));
+}
+
 /** `out/` 안의 페이지 경로(`/posts/foo/`) → HTML */
 export function collectPages(outDir: string): Map<string, string> {
   const pages = new Map<string, string>();
-  const walk = (dir: string) => {
-    for (const entry of readdirSync(dir, { withFileTypes: true })) {
-      const full = join(dir, entry.name);
-      if (entry.isDirectory()) {
-        walk(full);
-      } else if (entry.name === 'index.html') {
-        const rel = relative(outDir, full).split(sep).slice(0, -1).join('/');
-        pages.set(rel ? `/${rel}/` : '/', readFileSync(full, 'utf8'));
-      }
-    }
-  };
-  walk(outDir);
+  for (const rel of listFilesRecursive(outDir)) {
+    if (posix.basename(rel) !== 'index.html') continue;
+    const dir = posix.dirname(rel);
+    pages.set(
+      dir === '.' ? '/' : `/${dir}/`,
+      readFileSync(join(outDir, rel), 'utf8'),
+    );
+  }
   return pages;
 }
 
 export function checkPages(
-  pages: Map<string, string>,
+  pages: ReadonlyMap<string, string>,
+  parsed: ReadonlyMap<string, PageSeo>,
   config: SeoCheckConfig,
 ): SeoViolation[] {
   const {
@@ -178,7 +190,7 @@ export function checkPages(
   const descriptions = new Map<string, string[]>();
 
   for (const [page, html] of pages) {
-    const seo = parsePageSeo(html);
+    const seo = parsed.get(page) ?? parsePageSeo(html);
     const add = (rule: string, message: string) =>
       violations.push({ page, rule, message });
 
@@ -202,7 +214,7 @@ export function checkPages(
       );
     }
 
-    // noindex 페이지(admin, 개인정보처리방침)는 검색 대상이 아니다.
+    // noindex여도 되는 페이지인가는 checkSitemapPages가 본다(sitemap에 실린 noindex는 실패).
     if (seo.robotsNoindex) continue;
 
     if (seo.h1Count !== 1) {
@@ -294,26 +306,88 @@ export function checkPages(
   return violations;
 }
 
+/** sitemap의 `<loc>` → 페이지 키(디스크 이름, 디코드). 사이트 밖 URL이면 null. */
+function sitemapPath(loc: string, siteUrl: string): string | null {
+  return loc.startsWith(siteUrl)
+    ? decodeUrlSafe(loc.slice(siteUrl.length))
+    : null;
+}
+
+/** sitemap ↔ 실제 페이지 — 404·noindex인 sitemap URL과, 기준 시각이 달라 sitemap에 빠진 글 페이지를 잡는다. */
+export function checkSitemapPages(
+  parsed: ReadonlyMap<string, PageSeo>,
+  locs: readonly string[],
+  siteUrl: string,
+): SeoViolation[] {
+  const violations: SeoViolation[] = [];
+  const listed = new Set<string>();
+  for (const loc of locs) {
+    const path = sitemapPath(loc, siteUrl);
+    const seo = path === null ? undefined : parsed.get(path);
+    if (path !== null) listed.add(path);
+    if (seo === undefined) {
+      violations.push({
+        page: path ?? loc,
+        rule: 'sitemap-page-missing',
+        message: `sitemap에 있는 URL의 페이지가 out/에 없습니다: ${loc}`,
+      });
+    } else if (seo.robotsNoindex) {
+      violations.push({
+        page: path ?? loc,
+        rule: 'sitemap-noindex',
+        message:
+          'sitemap에 실린 페이지가 noindex입니다 — 제출한 URL이 색인에서 빠집니다. 레이아웃·metadata의 robots 설정을 확인하세요',
+      });
+    }
+  }
+  for (const path of parsed.keys()) {
+    if (!isPostPagePath(path) || listed.has(path)) continue;
+    violations.push({
+      page: path,
+      rule: 'page-missing-from-sitemap',
+      message:
+        '글 페이지가 sitemap에 없습니다 — 생성 단계(sitemap·rss·llms)와 페이지가 다른 글 집합을 봤습니다(예약 글의 공개 시각 경계 등)',
+    });
+  }
+  return violations;
+}
+
+/** 아카이브가 sitemap의 글 전부로 가는 링크를 프리렌더했는가 — 폴백 목록이 스피너가 되면 크롤러의 링크 허브가 사라진다. */
+export function checkArchiveLinks(
+  pages: ReadonlyMap<string, string>,
+  locs: readonly string[],
+  siteUrl: string,
+): SeoViolation[] {
+  const archive = pages.get(POSTS_PATH);
+  if (archive === undefined) return [];
+  const expected = locs
+    .map(loc => sitemapPath(loc, siteUrl))
+    .filter((path): path is string => path !== null && isPostPagePath(path));
+  const linked = new Set(
+    collectInternalLinks(archive).map(href =>
+      // split은 항상 1개 이상을 돌려준다.
+      decodeUrlSafe(href.split(/[?#]/)[0] ?? href),
+    ),
+  );
+  const missing = expected.filter(path => !linked.has(path));
+  if (missing.length === 0) return [];
+  return [
+    {
+      page: POSTS_PATH,
+      rule: 'archive-links-missing',
+      message: `아카이브에 프리렌더된 글 링크가 ${expected.length - missing.length}/${expected.length}편뿐입니다 — 폴백 목록이 사라지면(CSR bail-out) 크롤러가 글로 가는 내부 링크를 잃습니다. 빠진 글: ${missing.slice(0, 3).join(', ')}${missing.length > 3 ? ' …' : ''}`,
+    },
+  ];
+}
+
 /** 레지스트리 항목 하나를 out/에서 읽어 온 결과. `urls: null` = 산출물이 없음 */
 export interface CollectedArtifact {
   name: string;
   relation: ArtifactRelation;
   reference?: boolean | undefined;
   urls: Set<string> | null;
-}
-
-/** dir 산출물용: 하위 파일들의 상대 경로('/' 구분, Windows sep 정규화) */
-function listFilesRecursive(dir: string): string[] {
-  const files: string[] = [];
-  const walk = (d: string) => {
-    for (const entry of readdirSync(d, { withFileTypes: true })) {
-      const full = join(d, entry.name);
-      if (entry.isDirectory()) walk(full);
-      else files.push(relative(dir, full).split(sep).join('/'));
-    }
-  };
-  walk(dir);
-  return files;
+  /** file 산출물의 원문 — sitemap을 페이지와 대조할 때 다시 읽지 않는다 */
+  text?: string | undefined;
 }
 
 /** ARTIFACTS 레지스트리를 순회하며 각 산출물의 글 URL 집합을 수집합니다. */
@@ -322,18 +396,21 @@ export function collectArtifacts(
   siteUrl: string,
 ): CollectedArtifact[] {
   return ARTIFACTS.map(spec => {
-    const target = join(outDir, spec.path);
-    const urls = !existsSync(target)
-      ? null
-      : spec.kind === 'file'
-        ? spec.extractUrls(readFileSync(target, 'utf8'), siteUrl)
-        : spec.extractUrls(listFilesRecursive(target), siteUrl);
-    return {
+    const base = {
       name: spec.name,
       relation: spec.relation,
       reference: spec.reference,
-      urls,
     };
+    const target = join(outDir, spec.path);
+    if (!existsSync(target)) return { ...base, urls: null };
+    if (spec.kind === 'dir') {
+      return {
+        ...base,
+        urls: spec.extractUrls(listFilesRecursive(target), siteUrl),
+      };
+    }
+    const text = readFileSync(target, 'utf8');
+    return { ...base, urls: spec.extractUrls(text, siteUrl), text };
   });
 }
 
@@ -417,11 +494,21 @@ export function main(ctx: ContentContext, target?: string) {
     );
     process.exit(1);
   }
-  const violations = checkPages(pages, ctx.content.config);
+  const siteUrl = ctx.content.config.site.url;
+  const parsed = parsePages(pages);
+  const violations = checkPages(pages, parsed, ctx.content.config);
   // 파생 산출물은 레지스트리 순회로 — 없으면 missing-artifact, 있으면 글 집합 대조.
-  violations.push(
-    ...checkArtifacts(collectArtifacts(outDir, ctx.content.config.site.url)),
-  );
+  const artifacts = collectArtifacts(outDir, siteUrl);
+  violations.push(...checkArtifacts(artifacts));
+  // sitemap이 없으면 위에서 missing-artifact로 이미 실패했다.
+  const sitemap = artifacts.find(artifact => artifact.reference)?.text;
+  if (sitemap !== undefined) {
+    const locs = extractSitemapLocs(sitemap);
+    violations.push(
+      ...checkSitemapPages(parsed, locs, siteUrl),
+      ...checkArchiveLinks(pages, locs, siteUrl),
+    );
+  }
 
   if (violations.length === 0) {
     console.log(`✓ ${pages.size}개 페이지 SEO 검사 통과`);

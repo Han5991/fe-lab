@@ -1,11 +1,11 @@
 import { expect, test } from 'vitest';
 import { parsePost, extractPlainText, resolveExcerpt } from './repository.ts';
-import { isPostFile } from './visibility.ts';
+import { isPostFile, isPostVisible } from './visibility.ts';
 import { testConfig } from './testing.ts';
 
 // 발췌 길이는 설정에서 온다(기본값 없음) — 픽스처의 SEO 예산을 그대로 쓴다.
 const MAX = testConfig.seo.descriptionMaxLength;
-const PARSE_OPTS = { excerptMaxLength: MAX };
+const PARSE_OPTS = { excerptMaxLength: MAX, timezone: testConfig.timezone };
 
 // ── 메타 파일 제외 (어떤 글을 가져올지) ───────────────────────────────────────
 
@@ -35,6 +35,16 @@ test('parsePost: 폐기된 published 필드만 있으면 null (status로만 판�
 test('parsePost: status 값이 enum 밖이면 null', () => {
   const raw = `---\ntitle: 글\nstatus: publish\n---\n본문`;
   expect(parsePost(raw, 'typo.md', PARSE_OPTS)).toBe(null);
+});
+
+test('parsePost: frontmatter YAML이 깨지면 어느 파일인지 붙여 던진다', () => {
+  expect(() =>
+    parsePost(
+      `---\nstatus: published\ntitle: a: b: c\n---\n본문`,
+      '번들러/깨진-글.md',
+      PARSE_OPTS,
+    ),
+  ).toThrow(/^번들러\/깨진-글\.md: [\s\S]*line 3/);
 });
 
 // ── isPostFile: repository와 validate-posts가 공유하는 단일 판정 규칙 ─────────
@@ -213,17 +223,47 @@ test('parsePost: updatedAt 없으면 null', () => {
   expect(parsePost(raw, 'a.md', PARSE_OPTS)?.updatedAt).toBe(null);
 });
 
-test('parsePost: scheduledDate가 문자열이 아니면(YAML Date) undefined로 거부', () => {
-  // 무따옴표 datetime은 YAML이 Date 객체로 파싱 → 문자열 아님 → undefined.
-  const raw = `---\ntitle: 글\nstatus: scheduled\nscheduledDate: 2026-03-01\n---\n본문`;
-  expect(parsePost(raw, 'a.md', PARSE_OPTS)?.scheduledDate).toBe(undefined);
+test.each([
+  ['date', '2025-01-02T08:00:00+09:00'],
+  ['updatedAt', '2026-01-01T00:30:00+09:00'],
+  ['scheduledDate', '2026-03-01T20:00:00+09:00'],
+  ['scheduledDate', '2026-03-01'],
+] as const)(
+  'parsePost: 따옴표 없는 %s(YAML Date)는 적힌 그대로 사이트 타임존으로 읽는다',
+  (key, written) => {
+    // UTC 날짜로 자르면 KST 오전 시각이 전날이 되고, 버리면 date로 폴백해 일찍 공개된다.
+    const raw = `---\ntitle: 글\nstatus: scheduled\n${key}: ${written}\n---\n본문`;
+    expect(parsePost(raw, 'a.md', PARSE_OPTS)?.[key]).toBe(written);
+  },
+);
+
+test('parsePost: 따옴표 없는 datetime 예약 글은 적힌 시각에 공개된다', () => {
+  const raw = `---\ntitle: 글\nstatus: scheduled\ndate: 2026-10-01T08:00:00+09:00\n---\n본문`;
+  const post = parsePost(raw, 'a.md', PARSE_OPTS);
+  const visibleAt = (now: string) =>
+    post !== null && isPostVisible(post, testConfig.timezone, new Date(now));
+  expect(visibleAt('2026-09-30T22:59:00Z')).toBe(false); // 10/1 07:59 KST
+  expect(visibleAt('2026-09-30T23:00:00Z')).toBe(true); // 10/1 08:00 KST
 });
 
-test('parsePost: 시간/offset 포함 date(Date 객체)는 toISOString UTC 기준으로 정규화(현재 동작 잠금)', () => {
-  // KST 오전(08:00+09:00)은 UTC로 전날 23:00 → toISOString().split('T')[0]가 하루 당겨짐.
-  // toDateString이 UTC 기준이라 생기는 알려진 엣지(실 frontmatter는 'YYYY-MM-DD'만 사용).
-  const raw = `---\ntitle: 글\nstatus: published\ndate: 2025-01-02T08:00:00+09:00\n---\n본문`;
-  expect(parsePost(raw, 'a.md', PARSE_OPTS)?.date).toBe('2025-01-01');
+// ── 날짜 형식: 받는 두 모양만 보존하고 나머지는 없는 값(null)이다 ──────────────
+
+test.each([
+  ['2026-05-04', true],
+  ['2026-05-04T09:00:00+09:00', true],
+  ['2026-05-04T00:00Z', true],
+  ['2026-05-04T09:00:00.500-05:00', true],
+  ['2026-5-4', false],
+  ['2026/05/04', false],
+  ['2026-03-16 09:00:00+09:00', false],
+  ['2026-06-01T09:00:00', false],
+  ['2026-02-30', false],
+  ['내일', false],
+])("parsePost: date·updatedAt '%s' → 보존 %s", (value, accepted) => {
+  const raw = `---\ntitle: 글\nstatus: scheduled\ndate: '${value}'\nupdatedAt: '${value}'\n---\n본문`;
+  const post = parsePost(raw, 'a.md', PARSE_OPTS);
+  expect(post?.date).toBe(accepted ? value : null);
+  expect(post?.updatedAt).toBe(accepted ? value : null);
 });
 
 test('parsePost: tags에 문자열 아닌 원소가 섞이면 통째로 undefined', () => {
@@ -251,6 +291,45 @@ test('extractPlainText: 이미지/링크/마크다운 기호 제거', () => {
 
 test('extractPlainText: 개행/연속공백 압축 + trim', () => {
   expect(extractPlainText('a\n\n\nb   c  ')).toBe('a b c');
+});
+
+test.each([
+  // 커스텀 태그·HTML은 속성째 지운다(`<callout type=…` 조각이 남지 않음)
+  [
+    '<callout type="info">\n조심할 점\n</callout>\n다음 문단',
+    '조심할 점 다음 문단',
+  ],
+  ['<diagram-node\n  id="a"\n  label="빌드"\n/>본문', '본문'],
+  // 단어 안의 _는 식별자라 남기고, 강조 _만 지운다
+  ['snake_case 변수와 _강조_ 표시', 'snake_case 변수와 강조 표시'],
+  // 인라인 코드와 펜스 코드는 원문 그대로
+  [
+    '`__init__`과 `arr[0] > 1`, `Array<string>`',
+    '__init__과 arr[0] > 1, Array<string>',
+  ],
+  [
+    '앞\n```ts title="a.ts"\nconst a_b = x > 1 ? <T>1 : 2;\n```\n뒤',
+    '앞 const a_b = x > 1 ? <T>1 : 2; 뒤',
+  ],
+  // >는 줄 머리의 인용 표시만 지운다
+  ['> 인용문\n값이 x > 1이면', '인용문 값이 x > 1이면'],
+  ['[`useState`](https://react.dev) 참고', 'useState 참고'],
+])('extractPlainText: %j → %j', (input, expected) => {
+  expect(extractPlainText(input)).toBe(expected);
+});
+
+test('resolveExcerpt: 서로게이트 쌍(이모지) 가운데서 자르지 않는다', () => {
+  // 외톨이 상위 서로게이트는 encodeURIComponent가 URIError를 던진다.
+  const cut = resolveExcerpt(
+    '가'.repeat(MAX - 1) + '🚀' + '나'.repeat(10),
+    undefined,
+    MAX,
+  );
+  expect(cut).toBe('가'.repeat(MAX - 1) + '...');
+  const fits = '가'.repeat(MAX - 2) + '🚀';
+  expect(resolveExcerpt(fits + '나'.repeat(10), undefined, MAX)).toBe(
+    `${fits}...`,
+  );
 });
 
 // 태그는 의미상 집합이다. 중복이 흘러가면 글 메타에 `#ci #ci`가 두 번 찍히고,

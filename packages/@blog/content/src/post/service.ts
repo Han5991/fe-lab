@@ -55,13 +55,18 @@ export interface PostServiceDeps {
   isDevelopment: () => boolean;
   /** 예약 발행 시각('YYYY-MM-DD')을 어느 타임존의 자정으로 볼지 */
   timezone: Pick<TimezoneConfig, 'isoOffset'>;
+  /** 이 인스턴스의 공개 판정 기준 시각 — 생략하면 인스턴스를 만든 시각 */
+  now?: Date;
 }
 
 /**
  * 포스트 조회 서비스 factory. slug 조회 캐시는 인스턴스(클로저) 안에 산다.
+ * 공개 판정의 기준 시각은 인스턴스마다 하나다 — 메서드마다 제 시계를 보면 오래 사는
+ * 프로세스에서 목록에는 있는데 상세는 notFound인 예약 글이 생긴다.
  */
 export function createPostService(deps: PostServiceDeps): PostService {
   const { readAllPosts, getSeriesMeta, isDevelopment, timezone } = deps;
+  const instanceNow = deps.now ?? new Date();
   let postsBySlugMap: Map<string, PostData> | null = null;
 
   /**
@@ -70,11 +75,10 @@ export function createPostService(deps: PostServiceDeps): PostService {
    * 단, dev 서버에서는 draft·scheduled도 함께 반환합니다.
    * 목록·상세 화면은 실제로 비공개인 글에 배지/배너를 붙여 구분합니다.
    */
-  function getAllPosts(now: Date = new Date()): PostData[] {
+  function getAllPosts(now: Date = instanceNow): PostData[] {
     const posts = readAllPosts();
     if (isDevelopment()) return posts;
     // 화살표로 감싸 Array.filter의 index가 isPostVisible의 now에 주입되는 것을 방지.
-    // now는 주입 가능(기본 빌드 시각) — 테스트가 고정 시각으로 경계를 검증할 수 있음.
     return posts.filter(post => isPostVisible(post, timezone, now));
   }
 
@@ -123,8 +127,8 @@ export function createPostService(deps: PostServiceDeps): PostService {
   /**
    * 같은 시리즈 내의 이전/다음 포스트를 반환합니다.
    *
-   * `_series.yml`의 `order` 필드가 있으면 그 순서대로 정렬하고,
-   * 시리즈 표시명도 메타의 `title`로 대체합니다.
+   * 순서는 시리즈 헤더(n/m)·`/series`·llms.txt와 같은 `sortPostsBySeriesOrder`이고,
+   * 시리즈 표시명은 메타의 `title`이 있으면 그것이다.
    *
    * 시리즈가 아닌 폴더(= `_series.yml`이 없다)의 글은 애초에 `series`가 비어
    * 있으므로(`repository.ts`) 아래 첫 분기에서 전부 null로 나갑니다.
@@ -143,30 +147,19 @@ export function createPostService(deps: PostServiceDeps): PostService {
     const meta = getSeriesMeta(currentPost.series);
     const displayName = meta?.title ?? currentPost.series;
 
-    if (meta?.order && meta.order.length > 0) {
-      const seriesPosts = getAllPosts().filter(
-        p => p.series === currentPost.series,
-      );
-      const ordered = sortPostsBySeriesOrder(seriesPosts, meta.order);
-      const idx = ordered.findIndex(p => p.slug === currentSlug);
-      if (idx === -1) {
-        return { prev: null, next: null, seriesName: displayName };
-      }
-      const prevPost = idx > 0 ? ordered[idx - 1] : null;
-      const nextPost = idx < ordered.length - 1 ? ordered[idx + 1] : null;
-      return {
-        prev: prevPost ? { slug: prevPost.slug, title: prevPost.title } : null,
-        next: nextPost ? { slug: nextPost.slug, title: nextPost.title } : null,
-        seriesName: displayName,
-      };
+    const seriesPosts = getAllPosts().filter(
+      p => p.series === currentPost.series,
+    );
+    const ordered = sortPostsBySeriesOrder(seriesPosts, meta?.order);
+    const idx = ordered.findIndex(p => p.slug === currentSlug);
+    if (idx === -1) {
+      return { prev: null, next: null, seriesName: displayName };
     }
-
-    const adjacent = getAdjacentPosts(currentSlug, {
-      filterSeries: currentPost.series,
-    });
-
+    const prevPost = idx > 0 ? ordered[idx - 1] : null;
+    const nextPost = idx < ordered.length - 1 ? ordered[idx + 1] : null;
     return {
-      ...adjacent,
+      prev: prevPost ? { slug: prevPost.slug, title: prevPost.title } : null,
+      next: nextPost ? { slug: nextPost.slug, title: nextPost.title } : null,
       seriesName: displayName,
     };
   }

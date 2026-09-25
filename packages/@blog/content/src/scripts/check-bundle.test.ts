@@ -100,6 +100,19 @@ test('chunkClosure: 청크 본문이 stem으로 여는 청크까지 전이로 �
   );
 });
 
+test('chunkClosure: 길이가 다른 stem·하위 폴더의 같은 이름 청크도 본문에 등장하면 전부 잇는다', () => {
+  const sources = new Map([
+    ['a.js', 'loads x1 and page-1'],
+    ['x/page-1.js', 'leaf'],
+    ['y/page-1.js', 'leaf'],
+    ['x1.js', 'leaf'],
+    ['page-10.js', 'unreachable'],
+  ]);
+  expect(chunkClosure(['a.js'], sources)).toStrictEqual(
+    new Set(['a.js', 'x/page-1.js', 'y/page-1.js', 'x1.js']),
+  );
+});
+
 test('chunkClosure: 존재하지 않는 청크 참조는 무시한다', () => {
   const sources = new Map([['aaa111.js', 'x']]);
   expect(chunkClosure(['aaa111.js', 'ghost.js'], sources)).toStrictEqual(
@@ -278,4 +291,30 @@ test('describeScope: 위반 메시지가 스코프를 사람 말로 서술한다
   expect(describeScope({ kind: 'artifact', path: 'llms.txt' })).toBe(
     '산출물 llms.txt',
   );
+});
+
+// ── 중첩 청크 경로 (webpack의 chunks/app/…) ─────────────────────────────────
+
+test('collectChunkRefs: 하위 폴더의 청크 경로도 뽑고, 인코딩된 폴더 이름은 디코드한다', () => {
+  const html = `<script src="/_next/static/chunks/app/posts/%5B...slug%5D/page-abc123.js"></script>
+    <script src="/_next/static/chunks/flat999.js"></script>`;
+  expect(collectChunkRefs(html).sort()).toStrictEqual([
+    'app/posts/[...slug]/page-abc123.js',
+    'flat999.js',
+  ]);
+});
+
+test('findMarkerIn(chunks): 중첩 청크에 실린 누수도 잡는다', () => {
+  const sources = new Map([
+    ['app/page-home111.js', 'import("./shared-222")'],
+    ['shared-222.js', 'GoTrueClient'],
+  ]);
+  const pages = new Map([['/', page('app/page-home111.js')]]);
+  expect(
+    findMarkerIn(
+      { kind: 'chunks' },
+      'GoTrueClient',
+      inputs({ pages, sources }),
+    ),
+  ).toStrictEqual(['shared-222.js']);
 });

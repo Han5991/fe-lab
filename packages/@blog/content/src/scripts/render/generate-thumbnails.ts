@@ -29,10 +29,7 @@ interface ThumbnailTask {
   outputRel: string;
 }
 
-/**
- * 발행 글 목록에서 변환 대상을 뽑습니다. thumbnail이 posts/ 안의 png/jpg를
- * 가리키는 글만 대상이고, /og/* 생성 카드와 외부 URL은 제외됩니다.
- */
+/** 발행 글에서 변환 대상(`isOptimizableThumbnail`을 통과한 thumbnail)을 뽑는다. */
 export function collectTasks(
   posts: Pick<PostData, 'thumbnail' | 'relativeDir'>[],
 ): ThumbnailTask[] {
@@ -128,7 +125,8 @@ export async function main(ctx: ContentContext) {
   const thumbsConfig = ctx.content.config.thumbnails;
   // thumbs는 파일명에서 글을 되돌릴 수 없어 레지스트리 대조 대상이 아니지만,
   // 글 집합 선택만은 레지스트리의 셀렉터(resolvePostSet)를 같이 쓴다.
-  const tasks = collectTasks(resolvePostSet(ctx.content, 'visible'));
+  const posts = resolvePostSet(ctx.content, 'visible');
+  const tasks = collectTasks(posts);
   mkdirSync(thumbsDir, { recursive: true });
 
   const expectedRel = new Set(tasks.map(t => t.outputRel));

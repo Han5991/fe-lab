@@ -2,6 +2,7 @@ import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   archiveUrl,
+  extractPlainText,
   postUrl,
   RSS_PATH,
   sortByDateDesc,
@@ -49,7 +50,7 @@ export interface LlmsBuildOptions {
 }
 
 /**
- * 링크 옆 한 줄 설명. excerpt가 있으면 그것을, 없으면 본문 앞부분을 줄여 씁니다.
+ * 링크 옆 한 줄 설명. excerpt가 있으면 그것을, 없으면 본문 평문을 줄여 씁니다.
  * 색인이므로 짧게(maxLength) — 전문은 llms-full.txt에 있습니다.
  */
 export function toSummary(
@@ -59,7 +60,7 @@ export function toSummary(
   const source = (
     post.excerpt && post.excerpt.trim() !== ''
       ? post.excerpt
-      : post.content.replace(/[#`*[\]]/g, '')
+      : extractPlainText(post.content)
   )
     .replace(/\s+/g, ' ')
     .trim();
@@ -91,6 +92,11 @@ export function keepPresent(lines: (string | null)[]): string[] {
   return lines.filter((line): line is string => line !== null);
 }
 
+/** 마크다운 링크 목적지 — 괄호가 든 URL(짝이 안 맞으면 링크가 끊긴다)은 URL을 바꾸지 않고 `<…>`로 감싼다. */
+export function markdownLinkTarget(url: string): string {
+  return /[()]/.test(url) ? `<${url}>` : url;
+}
+
 /**
  * `## Docs` 절의 한 줄을 조립합니다.
  *
@@ -105,7 +111,7 @@ export function keepPresent(lines: (string | null)[]): string[] {
  */
 function docLine(entry: LlmsDocEntry, url: string, count: number): string {
   const summary = entry.summary.replaceAll('{count}', String(count));
-  return `- [${entry.label}](${url}): ${summary}`;
+  return `- [${entry.label}](${markdownLinkTarget(url)}): ${summary}`;
 }
 
 /**
@@ -186,7 +192,7 @@ export function buildLlmsText(
     // 1편부터 읽을 수 있도록 — `_series.yml`의 order가 있으면 그 순서.
     for (const post of sortPostsBySeriesOrder(folderPosts, meta?.order)) {
       lines.push(
-        `- [${post.title}](${postUrl(post.slug, siteUrl)}): ${toSummary(post, llms.summaryMaxLength)}`,
+        `- [${post.title}](${markdownLinkTarget(postUrl(post.slug, siteUrl))}): ${toSummary(post, llms.summaryMaxLength)}`,
       );
     }
     lines.push(``);
@@ -200,7 +206,7 @@ export function buildLlmsText(
     const ordered = sortByDateDesc(standalone);
     for (const post of ordered) {
       lines.push(
-        `- [${post.title}](${postUrl(post.slug, siteUrl)}): ${toSummary(post, llms.summaryMaxLength)}`,
+        `- [${post.title}](${markdownLinkTarget(postUrl(post.slug, siteUrl))}): ${toSummary(post, llms.summaryMaxLength)}`,
       );
     }
     lines.push(``);

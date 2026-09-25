@@ -6,8 +6,13 @@ import {
   getKSTCutoffDate as getKSTCutoffDateIn,
   getKSTDateISO as getKSTDateISOIn,
   hasAmbiguousTimezone,
+  isIsoDateOnly,
+  isIsoDateTimeWithOffset,
+  isValidDateString,
   msUntilKSTMidnight as msUntilKSTMidnightIn,
+  parseIsoOffset,
   parseScheduledDateKST as parseScheduledDateKSTIn,
+  toIsoStringInOffset,
 } from './dates.ts';
 import { TEST_VALUES } from './testValues.ts';
 
@@ -113,6 +118,66 @@ test('parseScheduledDateKST: 날짜 경계 — 연말/월말', () => {
   // 2026-12-31 KST 자정 = 2026-12-30 15:00 UTC
   const d = parseScheduledDateKST('2026-12-31');
   expect(d.toISOString()).toBe('2026-12-30T15:00:00.000Z');
+});
+
+test.each([
+  ['2026-05-04', true],
+  ['2024-02-29', true],
+  ['2026-05-04T09:00+09:00', true],
+  ['2026-05-04T09:00:00+09:00', true],
+  ['2026-05-04T09:00:00.123Z', true],
+  ['2026-05-04T23:59:59-05:30', true],
+  // Date.parse는 받지만 TZ마다 시점이 갈리는 값들
+  ['2026-5-4', false],
+  ['2026/05/04', false],
+  ['2026-05-04T09:00:00', false],
+  ['2026-05-04 09:00:00+09:00', false],
+  // 달력에 없는 날·시각
+  ['2026-02-30', false],
+  ['2025-02-29', false],
+  ['2026-05-04T24:00:00Z', false],
+  ['2026-05-04T09:00:00+0900', false],
+  ['2026-05-04T09:00:00+9:00', false],
+  ['20260504', false],
+  ['', false],
+  ['not a date', false],
+])(
+  '날짜 %j: 받는 형식 %s — 아니면 parseScheduledDateKST도 Invalid Date',
+  (value, valid) => {
+    expect(isValidDateString(value)).toBe(valid);
+    expect(Number.isNaN(parseScheduledDateKST(value).getTime())).toBe(!valid);
+  },
+);
+
+test('isIsoDateOnly / isIsoDateTimeWithOffset: 두 모양을 따로 판정한다', () => {
+  expect(isIsoDateOnly('2026-05-04')).toBe(true);
+  expect(isIsoDateOnly('2026-05-04T00:00:00Z')).toBe(false);
+  expect(isIsoDateTimeWithOffset('2026-05-04T00:00:00Z')).toBe(true);
+  expect(isIsoDateTimeWithOffset('2026-05-04')).toBe(false);
+  expect(isIsoDateTimeWithOffset('2026-02-30T00:00:00Z')).toBe(false);
+});
+
+// --- parseIsoOffset / toIsoStringInOffset ---
+
+test('parseIsoOffset: ±HH:MM과 Z만 받는다', () => {
+  expect(parseIsoOffset('+09:00')).toBe(9 * 60 * 60 * 1000);
+  expect(parseIsoOffset('-05:30')).toBe(-(5 * 60 + 30) * 60 * 1000);
+  expect(parseIsoOffset('Z')).toBe(0);
+  for (const bad of ['+9:00', '+0900', 'Asia/Seoul', '', '+24:00', '+09:60']) {
+    expect(parseIsoOffset(bad), bad).toBe(null);
+  }
+});
+
+test('toIsoStringInOffset: 같은 시점을 그 타임존의 벽시계로 적는다(밀리초 보존)', () => {
+  const d = new Date('2026-09-30T23:00:00.120Z');
+  expect(toIsoStringInOffset(d, '+09:00')).toBe(
+    '2026-10-01T08:00:00.120+09:00',
+  );
+  expect(toIsoStringInOffset(d, '-05:00')).toBe(
+    '2026-09-30T18:00:00.120-05:00',
+  );
+  expect(new Date(toIsoStringInOffset(d, 'Z')).getTime()).toBe(d.getTime());
+  expect(() => toIsoStringInOffset(d, '+9:00')).toThrow(/offset/);
 });
 
 // --- hasAmbiguousTimezone ---

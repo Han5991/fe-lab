@@ -21,13 +21,29 @@ import type { ContentContext } from './context.ts';
  * (`resolveExcerptFrom`), 발행 글은 prebuild `--strict`가 `missing-excerpt`로 직접 쓰게 한다.
  */
 
+/** XML 1.0이 허용하는 문자인가 — 제어 문자 하나만 섞여도 리더가 피드 전체를 거부한다. */
+function isXmlChar(code: number): boolean {
+  return (
+    code === 0x9 ||
+    code === 0xa ||
+    code === 0xd ||
+    (code >= 0x20 && code <= 0xd7ff) ||
+    (code >= 0xe000 && code <= 0xfffd) ||
+    code >= 0x10000
+  );
+}
+
 /**
  * @internal RSS 본문에 들어가는 raw text 전용 XML 이스케이프.
  *           모듈 외부에서는 사용을 권장하지 않으며 (entity awareness 없음 — 이미
  *           escape된 문자열을 다시 이중 인코딩함), 테스트에서 동작 잠금 목적으로만 export.
+ *           XML에 쓸 수 없는 문자(제어 문자·짝 없는 서로게이트)는 버린다.
  */
 export function escapeXml(str: string): string {
-  return str
+  // for…of는 코드포인트 단위라 짝 없는 서로게이트가 따로 걸러진다.
+  return [...str]
+    .filter(ch => isXmlChar(ch.codePointAt(0) ?? 0))
+    .join('')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
@@ -71,12 +87,13 @@ export function buildRssXml(
     )
     .join('\n');
 
+  // 채널 문구도 설정에서 오는 텍스트라 이스케이프한다(`&` 하나로 피드 전체가 깨진다).
   return `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>${siteName} | ${siteDescription.split('。')[0]}</title>
+    <title>${escapeXml(`${siteName} | ${siteDescription.split('。')[0]}`)}</title>
     <link>${siteUrl}</link>
-    <description>${siteDescription}</description>
+    <description>${escapeXml(siteDescription)}</description>
     <language>ko</language>
     <lastBuildDate>${now.toUTCString()}</lastBuildDate>
     <atom:link href="${siteUrl}${RSS_PATH}" rel="self" type="application/rss+xml"/>
@@ -91,6 +108,7 @@ export function main(ctx: ContentContext) {
   const rss = buildRssXml(posts, {
     site: ctx.content.config.site,
     timezone: ctx.content.config.timezone,
+    now: ctx.content.now,
   });
   // 파일 위치도 링크와 **같은 상수**에서 온다 — 갈리면 atom self URL이 404를
   // 가리킨다. `path.join`이 앞의 `/`를 흡수한다.

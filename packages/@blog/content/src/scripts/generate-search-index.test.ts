@@ -3,7 +3,6 @@ import {
   buildAdminPostsIndex,
   buildPublicSearchIndex,
   CONTENT_PREVIEW_CHARS,
-  toPlainText,
 } from './generate-search-index.ts';
 import type { PostData } from '../post/index.ts';
 
@@ -25,52 +24,45 @@ function makePost(over: Partial<PostData> = {}): PostData {
   };
 }
 
-test('toPlainText: 코드 블록 제거', () => {
-  const raw = `before\n\`\`\`ts\nconst x = 1;\n\`\`\`\nafter`;
-  expect(toPlainText(raw)).toBe('before after');
+const noSeriesMeta = () => null;
+
+const preview = (content: string): string =>
+  buildPublicSearchIndex([makePost({ content })], noSeriesMeta)[0]
+    .contentPreview;
+
+test.each([
+  ['before\n```ts\nconst x = 1;\n```\nafter', 'before after'],
+  ['> 인용\n> ```ts\n> const x = 1;\n> ```\n다음', '인용 다음'],
+  ['text ![alt](url) more', 'text more'],
+  ['see [Next.js](https://nextjs.org)!', 'see Next.js!'],
+  ['## hello *world* `code` _emph_ ~strike~', 'hello world code emph strike'],
+  ['<div>hi</div><br/>there', 'hi there'],
+  ['<span>x</span>', 'x'],
+  ['a  \n\n  b', 'a b'],
+  // 식별자·비교식·제네릭을 뜯지 않는다.
+  [
+    'snake_case와 `arr[0] > 1`, Promise<void>',
+    'snake_case와 arr[0] > 1, Promise<void>',
+  ],
+])('contentPreview: %j → %j', (content, expected) => {
+  expect(preview(content)).toBe(expected);
 });
 
-test('toPlainText: 이미지 마크업 제거', () => {
-  expect(toPlainText('text ![alt](url) more')).toBe('text more');
-});
-
-test('toPlainText: 링크는 텍스트만 남김', () => {
-  expect(toPlainText('see [Next.js](https://nextjs.org)!')).toBe(
-    'see Next.js!',
+test('buildPublicSearchIndex: 필수 필드 모두 포함 — 시리즈 표시명은 _series.yml의 title', () => {
+  const idx = buildPublicSearchIndex(
+    [
+      makePost({
+        slug: 'a',
+        title: 'A',
+        date: '2026-01-01',
+        excerpt: 'ex',
+        tags: ['x', 'y'],
+        series: 's',
+        content: 'hello world',
+      }),
+    ],
+    id => ({ name: id, title: '시리즈 S' }),
   );
-});
-
-test('toPlainText: 마크다운 기호 제거', () => {
-  expect(toPlainText('## hello *world* `code` _emph_ ~strike~')).toBe(
-    'hello world code emph strike',
-  );
-});
-
-test('toPlainText: HTML 태그가 정상적으로 제거됨', () => {
-  // HTML 태그 제거 → 그 다음 마크다운 기호 제거 → 공백 정리 순서.
-  expect(toPlainText('<div>hi</div><br/>there')).toBe('hi there');
-});
-
-test('toPlainText: 닫는 태그도 정상 처리', () => {
-  expect(toPlainText('<span>x</span>')).toBe('x');
-});
-
-test('toPlainText: 연속 공백 압축', () => {
-  expect(toPlainText('a  \n\n  b')).toBe('a b');
-});
-
-test('buildPublicSearchIndex: 필수 필드 모두 포함', () => {
-  const idx = buildPublicSearchIndex([
-    makePost({
-      slug: 'a',
-      title: 'A',
-      date: '2026-01-01',
-      excerpt: 'ex',
-      tags: ['x', 'y'],
-      series: 's',
-      content: 'hello world',
-    }),
-  ]);
   expect(idx.length).toBe(1);
   expect(idx[0]).toStrictEqual({
     slug: 'a',
@@ -79,26 +71,41 @@ test('buildPublicSearchIndex: 필수 필드 모두 포함', () => {
     excerpt: 'ex',
     tags: ['x', 'y'],
     series: 's',
+    seriesTitle: '시리즈 S',
     contentPreview: 'hello world',
   });
 });
 
+test('buildPublicSearchIndex: 시리즈 메타에 title이 없으면 seriesTitle은 null', () => {
+  const idx = buildPublicSearchIndex([makePost({ series: 's' })], id => ({
+    name: id,
+  }));
+  expect(idx[0].seriesTitle).toBe(null);
+});
+
 test('buildPublicSearchIndex: 결측 필드는 기본값', () => {
-  const idx = buildPublicSearchIndex([
-    makePost({
-      excerpt: undefined,
-      tags: undefined,
-      series: undefined,
-    }),
-  ]);
+  const idx = buildPublicSearchIndex(
+    [
+      makePost({
+        excerpt: undefined,
+        tags: undefined,
+        series: undefined,
+      }),
+    ],
+    noSeriesMeta,
+  );
   expect(idx[0].excerpt).toBe('');
   expect(idx[0].tags).toStrictEqual([]);
   expect(idx[0].series).toBe(null);
+  expect(idx[0].seriesTitle).toBe(null);
 });
 
 test('buildPublicSearchIndex: contentPreview는 CONTENT_PREVIEW_CHARS로 제한', () => {
   const long = 'x'.repeat(CONTENT_PREVIEW_CHARS + 1000);
-  const idx = buildPublicSearchIndex([makePost({ content: long })]);
+  const idx = buildPublicSearchIndex(
+    [makePost({ content: long })],
+    noSeriesMeta,
+  );
   expect(idx[0].contentPreview.length).toBe(CONTENT_PREVIEW_CHARS);
 });
 
@@ -127,6 +134,21 @@ test('buildAdminPostsIndex: status를 그대로 전달 (published 폴백 없음)
 test('buildAdminPostsIndex: contentPreview 필드 없음 (보안/용량 분리)', () => {
   const idx = buildAdminPostsIndex([makePost({ content: 'should not leak' })]);
   expect(!('contentPreview' in idx[0])).toBeTruthy();
+});
+
+test('buildAdminPostsIndex: 대시보드가 읽는 필드만 싣는다 (공개 전 글의 요약·시리즈 비노출)', () => {
+  // 이 파일은 인증 없이 받는 정적 산출물이다 — draft의 excerpt가 새면 안 된다.
+  const idx = buildAdminPostsIndex([
+    makePost({ status: 'draft', excerpt: '아직 공개 전인 요약', series: 's' }),
+  ]);
+  expect(Object.keys(idx[0]).sort()).toStrictEqual([
+    'date',
+    'scheduledDate',
+    'slug',
+    'status',
+    'tags',
+    'title',
+  ]);
 });
 
 test('CONTENT_PREVIEW_CHARS 상수가 1500자', () => {

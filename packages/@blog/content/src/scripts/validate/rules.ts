@@ -1,5 +1,6 @@
 /**
- * 검증 규칙 **평면 테이블** — 규칙 id 전체(29개)와 각각의 심각도·범위.
+ * 검증 규칙 **평면 테이블** — 규칙 id 전체와 각각의 심각도·범위(개수는
+ * `rules.test.ts`가 잠근다).
  *
  * 예전에는 이 정보가 1000줄짜리 validate-posts.ts의 실행 코드 안에 흩어져 있어,
  * "규칙이 몇 개인지", "--strict가 무엇을 승격하는지", "어떤 규칙이 전체 집합을
@@ -11,10 +12,9 @@
  * 컴파일(RuleId)이 막고, `rules.test.ts`가 개수·센티널 집합을 잠급니다.
  */
 import {
+  FRONTMATTER_FIELDS,
   isPostFile,
-  isPostStatus,
   isPostVisible,
-  toDateString,
 } from '../../post/index.ts';
 import type { Severity, ValidateContext } from './shared.ts';
 
@@ -46,9 +46,10 @@ export type DeclaredSeverity = Severity | typeof SEO_PUBLISH;
  * - `corpusVisible` — 전체 집합 중 **지금 빌드에 실리는 글**만 비교. 공개 전
  *                     예약 글을 섞으면 산출물에 존재하지도 않는 충돌로 빌드가
  *                     막힙니다
+ * - `series`        — 글이 아니라 시리즈 선언(`_series.yml`)과 그 폴더의 글들
  */
 export type RuleScope =
-  'always' | 'postLike' | 'post' | 'corpus' | 'corpusVisible';
+  'always' | 'postLike' | 'post' | 'corpus' | 'corpusVisible' | 'series';
 
 export interface RuleSpec {
   severity: DeclaredSeverity;
@@ -57,12 +58,15 @@ export interface RuleSpec {
 
 // prettier-ignore 없이도 표로 읽히도록 한 줄 = 한 규칙을 유지합니다.
 export const RULES = {
+  // ── 파일 읽기 (validate-posts.ts의 parseRecord) ────────────────────────────
+  'invalid-frontmatter-yaml': { severity: 'error', scope: 'always' },
   // ── frontmatter 판정 사슬 (frontmatter.ts) ────────────────────────────────
   'legacy-published-field': { severity: 'error', scope: 'always' },
   'invalid-status': { severity: 'error', scope: 'always' },
   'meta-file-skipped': { severity: 'warning', scope: 'always' },
   'unknown-frontmatter-key': { severity: 'warning', scope: 'postLike' },
   'non-string-field': { severity: 'error', scope: 'postLike' },
+  'invalid-slug': { severity: 'error', scope: 'postLike' },
   'missing-title': { severity: 'error', scope: 'postLike' },
   'long-title': { severity: SEO_PUBLISH, scope: 'postLike' },
   'missing-excerpt': { severity: SEO_PUBLISH, scope: 'postLike' },
@@ -71,24 +75,33 @@ export const RULES = {
   'missing-date': { severity: 'error', scope: 'postLike' },
   'invalid-date': { severity: 'error', scope: 'postLike' },
   'ambiguous-date': { severity: 'error', scope: 'postLike' },
+  'unquoted-date': { severity: 'error', scope: 'postLike' },
   'invalid-updated-at': { severity: 'error', scope: 'postLike' },
   'ambiguous-updated-at': { severity: 'error', scope: 'postLike' },
+  'unquoted-updated-at': { severity: 'error', scope: 'postLike' },
   'unquoted-scheduled-date': { severity: 'error', scope: 'postLike' },
   'invalid-scheduled-date': { severity: 'error', scope: 'postLike' },
   'ambiguous-scheduled-date': { severity: 'error', scope: 'postLike' },
   'invalid-tags': { severity: 'error', scope: 'postLike' },
   'duplicate-tags': { severity: 'warning', scope: 'postLike' },
   'unknown-hero-diagram': { severity: 'error', scope: 'postLike' },
+  'invalid-thumbnail-path': { severity: 'error', scope: 'postLike' },
   'missing-thumbnail': { severity: 'error', scope: 'postLike' },
+  'og-thumbnail-mismatch': { severity: 'error', scope: 'postLike' },
   // ── 본문 판정 사슬 (body.ts) ──────────────────────────────────────────────
   'missing-image': { severity: 'error', scope: 'always' },
   'missing-image-alt': { severity: SEO_PUBLISH, scope: 'post' },
   'unclosed-fence': { severity: 'warning', scope: 'always' },
   'unregistered-code-language': { severity: 'warning', scope: 'always' },
   'body-h1': { severity: 'warning', scope: 'post' },
+  'unknown-diagram-name': { severity: 'error', scope: 'post' },
   // ── 코퍼스 판정 사슬 (corpus.ts) ──────────────────────────────────────────
   'duplicate-slug': { severity: 'error', scope: 'corpus' },
   'duplicate-description': { severity: SEO_PUBLISH, scope: 'corpusVisible' },
+  // ── 시리즈 선언 판정 사슬 (series.ts) ─────────────────────────────────────
+  'invalid-series-meta': { severity: 'error', scope: 'series' },
+  'unknown-series-key': { severity: 'warning', scope: 'series' },
+  'unmatched-series-order': { severity: 'error', scope: 'series' },
 } as const satisfies Record<string, RuleSpec>;
 
 export type RuleId = keyof typeof RULES;
@@ -124,37 +137,27 @@ export function resolveSeverity(
   // 고정 severity 규칙은 설정을 보지 않는다 — 호출부도 options를 생략한다.
   if (declared !== SEO_PUBLISH) return declared;
   if (!options?.strict || !isPostFile(data)) return 'warning';
-  return isVisibleFrontmatter(data, options.timezone) ? 'error' : 'warning';
+  return isVisibleFrontmatter(data, options.timezone, options.now)
+    ? 'error'
+    : 'warning';
 }
 
-/**
- * frontmatter 원문으로 "지금 공개되는 글인가"를 판정합니다.
- *
- * `isPostVisible`은 날짜가 **문자열**일 때만 공개 시각으로 인정합니다(도메인은
- * 정규화된 PostData를 받는 전제). 그런데 여기서 보는 건 gray-matter 원문이라,
- * 따옴표 없이 쓴 `date: 2026-08-10`은 YAML이 **Date 객체**로 파싱합니다 —
- * `new-post`가 정확히 그렇게 씁니다. 그대로 넘기면 이미 공개된 예약 글이
- * "비공개"로 판정되어 strict 에러가 조용히 경고로 떨어집니다.
- * repository가 PostData를 만들 때 쓰는 `toDateString`을 똑같이 거칩니다.
- *
- * status도 같은 이유로 한 번 걸러 넘깁니다. 원문의 status는 무엇이든 될 수 있고
- * (`status: 3`), enum 밖 값은 `isPostVisible`이 어차피 fail-closed로 비공개
- * 판정하므로 미지정으로 넘기는 것과 결론이 같습니다. 예전에는 이 객체 전체에
- * `as Parameters<typeof isPostVisible>[0]`가 붙어 있었는데, 그 단언은 값을 하나도
- * 확인하지 않으면서 **인자 계약이 늘어나도 조용히 통과**합니다(부분 객체를
- * 상위 타입으로 단언하는 방향이라 컴파일러가 막지 않습니다).
- */
+/** frontmatter 원문이 지금 공개되는 글인가 — 로더의 좁히기(`FRONTMATTER_FIELDS.*.narrow`)와 `isPostVisible`을 그대로 쓴다. */
 export function isVisibleFrontmatter(
   data: Record<string, unknown>,
   timezone: ValidateContext['timezone'],
+  now?: Date,
 ): boolean {
-  const status = data['status'];
   return isPostVisible(
     {
-      status: isPostStatus(status) ? status : undefined,
-      date: toDateString(data['date']),
-      scheduledDate: toDateString(data['scheduledDate']),
+      status: FRONTMATTER_FIELDS.status.narrow(data['status']),
+      date: FRONTMATTER_FIELDS.date.narrow(data['date'], timezone),
+      scheduledDate: FRONTMATTER_FIELDS.scheduledDate.narrow(
+        data['scheduledDate'],
+        timezone,
+      ),
     },
     timezone,
+    now,
   );
 }

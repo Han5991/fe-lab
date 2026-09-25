@@ -6,7 +6,7 @@
  * 본다). 단계 모듈이 실제로 `main`을 내놓는지는 반대로 tsc가 본다 — 동적
  * import여도 모듈 타입은 정적으로 해석되기 때문에 여기서 다시 확인하지 않는다.
  */
-import { expect, test } from 'vitest';
+import { afterEach, expect, test, vi } from 'vitest';
 import type { Command } from 'commander';
 import { buildProgram } from './program.ts';
 
@@ -39,6 +39,19 @@ test('전역 --config 옵션 — 경로 앵커를 명시 지정하는 유일한 
   // 루트 커맨드의 전역 옵션이라 서브커맨드 이름 앞에 적는다.
   const flags = buildProgram().options.map(o => o.long);
   expect(flags).toContain('--config');
+});
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
+
+test('BLOG_CONTENT_NOW: offset 없는 기준 시각은 스택이 아니라 메시지로 거절한다', async () => {
+  vi.stubEnv('BLOG_CONTENT_NOW', '2026-06-01T09:00:00');
+  const { program, stderr } = silencedProgram();
+  await expect(
+    program.parseAsync(['node', 'blog-content', 'sitemap']),
+  ).rejects.toThrow();
+  expect(stderr()).toContain('offset을 명시한 ISO 시각');
 });
 
 test('build는 파이프라인 플래그 3개를 받는다', () => {

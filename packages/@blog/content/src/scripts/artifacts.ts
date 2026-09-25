@@ -38,7 +38,7 @@ export function resolvePostSet(
   name: PostSetName,
 ): PostData[] {
   return name === 'visible'
-    ? /** 공개 글 — isPostVisible 판정 통과. sitemap·rss·llms·검색 인덱스의 베이스 */
+    ? /** 공개 글(인스턴스의 기준 시각으로 판정) — sitemap·rss·llms·검색 인덱스의 베이스 */
       content.getAllPosts()
     : /** draft·scheduled 포함 전체 — admin 대시보드용 */
       content.getAllPostsIncludingHidden();
@@ -84,6 +84,11 @@ export type ArtifactSpec =
       extractUrls: (relPaths: string[], siteUrl: string) => Set<string>;
     });
 
+/** 글 상세 페이지의 경로인가(`/posts/<slug>/`) — `/posts/` 자체는 아카이브 목록이다. */
+export function isPostPagePath(path: string): boolean {
+  return path.startsWith(POSTS_PATH) && path !== POSTS_PATH;
+}
+
 /**
  * 각 산출물에서 **글 목록에 해당하는 자리**의 URL만 뽑아 포스트 URL로 좁힙니다.
  *
@@ -100,21 +105,30 @@ function extractPostUrls(
   pattern: RegExp,
   siteUrl: string,
 ): Set<string> {
-  const postPrefix = `${siteUrl}${POSTS_PATH}`;
   return new Set(
     [...text.matchAll(pattern)]
-      // 이 파일의 패턴들은 전부 1번 캡처 그룹이 매치에 항상 참여한다.
-      .map(m => decodeUrlSafe((m[1] ?? '').trim()))
-      // `/posts/` 자체는 아카이브 목록 페이지지 글이 아니다 — sitemap에만 있는 게 정상.
-      .filter(url => url.startsWith(postPrefix) && url !== postPrefix),
+      // URL은 1번 캡처 그룹에 있다. 대안이 둘인 패턴(LLMS_LINK)만 2번을 쓴다.
+      .map(m => decodeUrlSafe((m[1] ?? m[2] ?? '').trim()))
+      .filter(
+        url =>
+          url.startsWith(siteUrl) && isPostPagePath(url.slice(siteUrl.length)),
+      ),
   );
 }
 
 const SITEMAP_LOC = /<loc>([^<]+)<\/loc>/g;
+
+/** sitemap의 `<loc>` 전부(글·아카이브·정적 페이지, 인코딩 유지) — check-seo가 페이지와 대조한다. */
+export function extractSitemapLocs(text: string): string[] {
+  return [...text.matchAll(SITEMAP_LOC)].map(m => (m[1] ?? '').trim());
+}
 const RSS_GUID = /<guid[^>]*>([^<]+)<\/guid>/g;
 // llms.txt(`- [제목](url): 요약`)와 llms-full.txt(`### [제목](url) (날짜)`)가
 // 같은 마크다운 링크 형식이라 추출 패턴 하나를 공유한다.
-const LLMS_LINK = /\]\((https?:\/\/[^)\s]+)\)/g;
+// URL에 괄호가 들 수 있어(`encodeURIComponent`가 남긴다) `<url>` 목적지를 먼저 읽고,
+// 감싸지 않은 목적지는 CommonMark처럼 짝이 맞는 괄호까지 읽는다.
+const LLMS_LINK =
+  /\]\((?:<(https?:\/\/[^<>\s]+)>|(https?:\/\/(?:[^()\s]|\([^()\s]*\))+))\)/g;
 
 /**
  * slug 배열을 담는 JSON 인덱스 → 글 URL 집합. URL 조립은 페이지 링크와 같은

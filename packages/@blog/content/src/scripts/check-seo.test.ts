@@ -5,8 +5,11 @@ import { expect, test } from 'vitest';
 import {
   parsePageSeo,
   checkPages,
+  checkArchiveLinks,
   checkArtifacts,
+  checkSitemapPages,
   collectArtifacts,
+  parsePages,
   type CollectedArtifact,
 } from './check-seo.ts';
 import { TEST_VALUES, defineTestContent } from '../shared/testValues.ts';
@@ -42,8 +45,9 @@ function page(
     </head><body>${body}</body></html>`;
 }
 
-const rules = (pages: Map<string, string>) =>
-  checkPages(pages, CONFIG).map(v => v.rule);
+const check = (pages: Map<string, string>) =>
+  checkPages(pages, parsePages(pages), CONFIG);
+const rules = (pages: Map<string, string>) => check(pages).map(v => v.rule);
 
 // ── parsePageSeo ─────────────────────────────────────────────────────────────
 
@@ -211,11 +215,10 @@ const siteWithDottedPost = (archiveBody: string) =>
   ]);
 
 test('checkPages: 존재하는 페이지로 가는 내부 링크에 후행 슬래시가 없으면 link-trailing-slash (turborepo-next.js-docker 회귀)', () => {
-  const found = checkPages(
+  const found = check(
     siteWithDottedPost(
       '<h1>글</h1><a href="/posts/turborepo-next.js-docker">turborepo</a>',
     ),
-    CONFIG,
   );
   expect(found.map(v => [v.page, v.rule])).toStrictEqual([
     ['/posts/', 'link-trailing-slash'],
@@ -558,4 +561,93 @@ test('checkPages: 한 페이지만 달라도 잡는다 (다수결이 아니다)'
     ]),
   );
   expect(found.includes('unexpected-og-site-name')).toBeTruthy();
+});
+
+// ── checkSitemapPages: sitemap ↔ 실제 페이지 ────────────────────────────────
+
+const NOINDEX = '<meta name="robots" content="noindex, nofollow"/>';
+const loc = (path: string) => `${SITE_URL}${path}`;
+const KOREAN = '한글 (괄호)';
+
+test('checkSitemapPages: sitemap URL마다 색인 가능한 페이지가, 글 페이지마다 sitemap URL이 있어야 한다', () => {
+  const pages = new Map([
+    ['/', page({ path: '/' })],
+    ['/posts/', page({ path: '/posts/' })],
+    ['/posts/a/', page()],
+    // 인코딩된 sitemap URL은 디스크 이름(디코드)과 대조한다
+    [`/posts/${KOREAN}/`, page()],
+    // 글 레이아웃에 noindex가 새면 페이지 검사는 건너뛰므로 여기서 잡는다
+    ['/posts/n/', page().replace('</head>', `${NOINDEX}</head>`)],
+    // 생성 단계와 페이지가 다른 글 집합을 본 경우
+    ['/posts/b/', page()],
+    // sitemap 밖의 noindex·비글 페이지는 보지 않는다
+    ['/privacy/', `<head>${NOINDEX}</head><body></body>`],
+    ['/series/', page({ path: '/series/' })],
+  ]);
+  const locs = [
+    loc('/'),
+    loc('/posts/'),
+    loc('/posts/a/'),
+    loc(`/posts/${encodeURIComponent(KOREAN)}/`),
+    loc('/posts/n/'),
+    loc('/about/'),
+    'https://other.example/posts/a/',
+  ];
+  expect(
+    checkSitemapPages(parsePages(pages), locs, SITE_URL).map(v => [
+      v.page,
+      v.rule,
+    ]),
+  ).toStrictEqual([
+    ['/posts/n/', 'sitemap-noindex'],
+    ['/about/', 'sitemap-page-missing'],
+    ['https://other.example/posts/a/', 'sitemap-page-missing'],
+    ['/posts/b/', 'page-missing-from-sitemap'],
+  ]);
+});
+
+// ── checkArchiveLinks: 아카이브가 글 링크를 프리렌더했는가 ─────────────────
+
+const archiveWith = (hrefs: string[]) =>
+  page(
+    { path: '/posts/', canonical: `${SITE_URL}/posts/` },
+    `<h1>모든 노트</h1><ol>${hrefs.map(h => `<li><a href="${h}">글</a></li>`).join('')}</ol>`,
+  );
+
+test.each([
+  [
+    'sitemap의 글 전부로 가는 링크가 있으면 통과',
+    ['/posts/a/', `/posts/${encodeURIComponent(KOREAN)}/`, '/posts/?tag=x'],
+    ['/', '/posts/', '/posts/a/', `/posts/${encodeURIComponent(KOREAN)}/`],
+    [],
+  ],
+  // 하이드레이션 전 HTML에 스피너만 남은 상태
+  [
+    '폴백 목록이 사라지면(CSR bail-out) 잡는다',
+    [],
+    ['/posts/', '/posts/a/', '/posts/b/'],
+    ['0/2편'],
+  ],
+  [
+    '글 하나만 빠져도 잡는다 (기준은 sitemap의 글 수)',
+    ['/posts/a/'],
+    ['/posts/a/', '/posts/b/'],
+    ['1/2편', '/posts/b/'],
+  ],
+])('checkArchiveLinks: %s', (_, hrefs, paths, mentions) => {
+  const found = checkArchiveLinks(
+    new Map([['/posts/', archiveWith(hrefs)]]),
+    paths.map(loc),
+    SITE_URL,
+  );
+  expect(found.map(v => v.rule)).toStrictEqual(
+    mentions.length > 0 ? ['archive-links-missing'] : [],
+  );
+  for (const text of mentions) expect(found[0]?.message).toContain(text);
+});
+
+test('checkArchiveLinks: 아카이브 페이지가 없으면 보고하지 않는다 (sitemap-page-missing의 몫)', () => {
+  expect(
+    checkArchiveLinks(new Map(), [loc('/posts/'), loc('/posts/a/')], SITE_URL),
+  ).toStrictEqual([]);
 });

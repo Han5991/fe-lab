@@ -1,5 +1,11 @@
 import { expect, test } from 'vitest';
-import { pickAdjacent } from './service.ts';
+import { sortByDateDesc } from './repository.ts';
+import { sortPostsBySeriesOrder } from './series.ts';
+import {
+  createPostService,
+  pickAdjacent,
+  type PostService,
+} from './service.ts';
 import type { PostData } from './types.ts';
 
 function makePost(over: Partial<PostData> = {}): PostData {
@@ -84,3 +90,58 @@ test("pickAdjacent: sortOrder='oldest'는 역순이라 prev/next 방향이 뒤�
   expect(prev?.slug).toBe('c');
   expect(next?.slug).toBe('a');
 });
+
+// ── getSeriesAdjacentPosts: 시리즈 헤더(sortPostsBySeriesOrder)와 같은 순서 ──
+
+function seriesService(
+  seriesPosts: PostData[],
+  meta: { order?: string[] } = {},
+): PostService {
+  return createPostService({
+    // 로더와 같은 모양(날짜 내림차순 + 경로 오름차순)으로 넘긴다.
+    readAllPosts: () => sortByDateDesc(seriesPosts),
+    getSeriesMeta: name => ({ name, ...meta }),
+    isDevelopment: () => false,
+    timezone: { isoOffset: '+09:00' },
+  });
+}
+
+/** 1편에서 "다음 글"만 따라가며 방문한 순서 */
+function walkNext(service: PostService, first: string): string[] {
+  const visited = [first];
+  let next = service.getSeriesAdjacentPosts(first).next;
+  while (next && visited.length < 20) {
+    visited.push(next.slug);
+    next = service.getSeriesAdjacentPosts(next.slug).next;
+  }
+  return visited;
+}
+
+const sameDateSeries = [
+  makePost({ slug: 's1', date: '2025-05-05', series: 'S' }),
+  makePost({ slug: 's2-api', date: '2025-06-01', series: 'S' }),
+  makePost({ slug: 's3-api-di', date: '2025-06-01', series: 'S' }),
+  makePost({ slug: 's4-service', date: '2025-06-08', series: 'S' }),
+  makePost({ slug: 's5-service-di', date: '2025-06-08', series: 'S' }),
+  makePost({ slug: 's6', date: '2025-06-15', series: 'S' }),
+];
+
+test.each([
+  [
+    undefined,
+    ['s1', 's2-api', 's3-api-di', 's4-service', 's5-service-di', 's6'],
+  ],
+  [
+    ['s6', 's1', 's3-api-di', 's2-api', 's5-service-di', 's4-service'],
+    ['s6', 's1', 's3-api-di', 's2-api', 's5-service-di', 's4-service'],
+  ],
+])(
+  'getSeriesAdjacentPosts: order %j — "다음 글"은 시리즈 헤더와 같은 순서로 이어진다',
+  (order, expected) => {
+    const service = seriesService(sameDateSeries, { order });
+    expect(
+      sortPostsBySeriesOrder(service.getAllPosts(), order).map(p => p.slug),
+    ).toStrictEqual(expected);
+    expect(walkNext(service, expected[0] ?? '')).toStrictEqual(expected);
+  },
+);

@@ -22,6 +22,7 @@
  * 앱의 값 모듈에서 직접 가져갑니다. 경로를 절대경로로 푸는 쪽은 node 전용인
  * `contentPaths.ts`입니다.
  */
+import { parseIsoOffset } from './dates.ts';
 import { SUPPORTED_FENCE_LABELS } from './prismLanguages.ts';
 
 // ── 그룹별 타입 ──────────────────────────────────────────────────────────────
@@ -63,25 +64,20 @@ export interface SeoConfig {
 export interface TimezoneConfig {
   /** IANA 타임존 이름 — Intl.DateTimeFormat용 */
   iana: string;
-  /** 'YYYY-MM-DD'를 이 타임존 자정으로 볼 때 붙이는 ISO offset */
+  /** 'YYYY-MM-DD'를 이 타임존 자정으로 볼 때 붙이는 ISO offset(`'+09:00'`·`'Z'`) */
   isoOffset: string;
   /**
    * UTC 대비 밀리초 오프셋. `msUntilKSTMidnight`가 산술에 쓴다 —
    * IANA 이름만으로는 이 계산을 못 하므로 별도 필드로 둔다.
-   * 셋은 같은 타임존을 가리켜야 한다(서로 파생 검증은 하지 않는다).
+   * 셋의 일치는 defineContent가 본다 — `iana`와는 서머타임 때문에 비교하지 않는다(고정 오프셋만 지원).
    */
   utcOffsetMs: number;
 }
 
 export interface RuntimeConfig {
   /**
-   * dev 서버(next dev) 판정.
-   *
-   * `=== 'development'`로 정확히 비교한다(`!== 'production'`이 아니라):
-   * 정적 산출물을 만드는 스크립트들(prebuild/predev:web의 sitemap·rss·
-   * search-index·llms-full·og-images)은 tsx로 직접 실행되어 NODE_ENV가
-   * **undefined**다. 느슨하게 비교하면 그 스크립트들이 dev로 오인되어
-   * draft가 sitemap과 RSS에 실려 나간다. next dev만 'development'를 설정한다.
+   * dev 서버(next dev) 판정 — `=== 'development'`로 정확히 비교한다. CLI로 도는 prebuild
+   * 단계는 NODE_ENV가 undefined라, 느슨하게 비교하면 draft가 sitemap·RSS에 실린다.
    */
   isDevelopment: () => boolean;
 }
@@ -654,6 +650,29 @@ function assertValidOgFonts(
   }
 }
 
+/** timezone 형태 검증 — 틀린 isoOffset은 날짜만 적은 예약 글 전부를 에러 없이 영원히 비공개로 만든다. */
+function assertValidTimezone(timezone: TimezoneConfig): void {
+  const offsetMs = parseIsoOffset(timezone.isoOffset);
+  if (offsetMs === null) {
+    throw new Error(
+      `defineContent: timezone.isoOffset('${timezone.isoOffset}')은 '+09:00'·'-05:30'·'Z' 형식이어야 합니다 — ` +
+        '날짜만 적은 예약 글의 공개 시각이 이 값을 붙여 계산되므로, 형식이 틀리면 그런 글이 전부 비공개가 됩니다.',
+    );
+  }
+  if (timezone.utcOffsetMs !== offsetMs) {
+    throw new Error(
+      `defineContent: timezone.utcOffsetMs(${String(timezone.utcOffsetMs)})가 isoOffset('${timezone.isoOffset}' = ${String(offsetMs)}ms)과 다릅니다 — 셋은 같은 타임존을 가리켜야 합니다.`,
+    );
+  }
+  try {
+    new Intl.DateTimeFormat('en-US', { timeZone: timezone.iana });
+  } catch {
+    throw new Error(
+      `defineContent: timezone.iana('${timezone.iana}')는 IANA 타임존 이름(예: 'Asia/Seoul')이어야 합니다.`,
+    );
+  }
+}
+
 /** 상대 경로를 세그먼트 정규화한다 ('a/./b' → 'a/b', 'a/../b' → 'b') — 순수 문자열 연산 */
 function normalizeDir(p: string): string {
   const out: string[] = [];
@@ -710,6 +729,7 @@ function assertOutputDirsExclusive(dirs: DirsConfig): void {
 export function defineContent(user: ContentUserConfig): ContentConfig {
   assertValidRoot(user.root);
   assertValidOgFonts(user.og?.fonts);
+  assertValidTimezone(user.timezone);
   const config: ContentConfig = {
     root: user.root,
     site: user.site,

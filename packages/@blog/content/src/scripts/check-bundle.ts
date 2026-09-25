@@ -1,5 +1,7 @@
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
+import { listFilesRecursive } from '../shared/postFiles.ts';
+import { decodeUrlSafe } from '../shared/url.ts';
 import type {
   BundleGuardsConfig,
   MarkerScope,
@@ -44,56 +46,99 @@ export interface BundleViolation {
 export interface ScopeInputs {
   /** URL 경로 → 페이지 HTML (check-seo의 collectPages 형태) */
   pages: ReadonlyMap<string, string>;
-  /** 청크 basename → 본문 */
+  /** 청크의 `_next/static/chunks/` 기준 상대 경로(`/` 구분) → 본문 */
   sources: ReadonlyMap<string, string>;
   /** 산출물 상대 경로 → 본문 (없는 파일은 null) */
   artifacts: ReadonlyMap<string, string | null>;
 }
 
-/**
- * HTML이 직접 참조하는 청크 파일명(basename) 목록.
- *
- * script src·preload href 등 태그 종류를 가리지 않고 경로 패턴으로 뽑는다 —
- * 어떤 태그로 실렸든 브라우저가 로드하는 것은 같다.
- */
+/** `_next/static/chunks/` 아래 청크 경로(하위 폴더 포함) — 폴더 이름은 퍼센트 인코딩돼 나와 디코드한다. */
+const CHUNK_REF =
+  /\/_next\/static\/chunks\/((?:[\w.~%@+\-[\]]+\/)*[\w.~%@+\-[\]]+\.js)/g;
+
+/** HTML이 참조하는 청크 경로(`chunks/` 기준) — 태그 종류를 가리지 않는다. */
 export function collectChunkRefs(html: string): string[] {
   const refs = new Set<string>();
-  for (const m of html.matchAll(
-    /\/_next\/static\/chunks\/([A-Za-z0-9._-]+\.js)/g,
-  )) {
+  for (const m of html.matchAll(CHUNK_REF)) {
     // 패턴의 1번 캡처 그룹은 매치에 항상 참여한다.
-    const name = m[1];
-    if (name !== undefined) refs.add(name);
+    const path = m[1];
+    if (path !== undefined) refs.add(decodeUrlSafe(path));
   }
   return [...refs];
 }
 
-/**
- * 시작 집합에서 도달 가능한 청크의 폐포.
- *
- * 간선은 "포함된 청크의 본문에 다른 청크의 stem(확장자 뺀 파일명)이 문자열로
- * 등장한다"이다. stem은 콘텐츠 해시라 우연한 부분 일치가 사실상 없고, 지연
- * 로드(dynamic import)가 정확히 이 형태로 파일명을 든다.
- */
+/** 청크 경로의 stem — 마지막 세그먼트에서 `.js`를 뗀 것(해시가 든 파일명). */
+function chunkStem(path: string): string {
+  return (path.split('/').pop() ?? path).replace(/\.js$/, '');
+}
+
+/** 청크 → 그 본문이 여는 청크들(청크마다 한 번만 계산) */
+type ChunkEdges = (name: string) => readonly string[];
+
+/** 청크 참조 그래프 — 간선은 "본문에 다른 청크의 stem(콘텐츠 해시 파일명)이 등장한다"(지연 로드가 이 형태다). */
+function createChunkEdges(sources: ReadonlyMap<string, string>): ChunkEdges {
+  // stem → 그 stem의 청크들(하위 폴더끼리 파일 이름이 같을 수 있다).
+  const owners = new Map<string, string[]>();
+  for (const name of sources.keys()) {
+    const stem = chunkStem(name);
+    owners.set(stem, [...(owners.get(stem) ?? []), name]);
+  }
+  // 같은 길이의 서로 다른 stem은 한 위치에서 둘이 맞을 수 없어, 전방 탐색 교대 한 번이 stem별 includes와 같다.
+  const byLength = new Map<number, string[]>();
+  for (const stem of owners.keys()) {
+    if (stem !== '')
+      byLength.set(stem.length, [...(byLength.get(stem.length) ?? []), stem]);
+  }
+  const patterns = [...byLength.values()].map(
+    group =>
+      new RegExp(
+        `(?=(${group.map(stem => stem.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')}))`,
+        'g',
+      ),
+  );
+  const edges = new Map<string, string[]>();
+  return name => {
+    let targets = edges.get(name);
+    if (targets === undefined) {
+      const body = sources.get(name) ?? '';
+      // 빈 stem(`.js`)은 어느 본문에나 "등장한다"(`includes('')`).
+      const found = new Set(owners.get('') ?? []);
+      for (const pattern of patterns) {
+        for (const match of body.matchAll(pattern)) {
+          for (const owner of owners.get(match[1] ?? '') ?? [])
+            found.add(owner);
+        }
+      }
+      found.delete(name);
+      targets = [...found];
+      edges.set(name, targets);
+    }
+    return targets;
+  };
+}
+
+function closureOver(
+  start: Iterable<string>,
+  sources: ReadonlyMap<string, string>,
+  edgesOf: ChunkEdges,
+): Set<string> {
+  const included = new Set<string>();
+  const queue = [...start].filter(name => sources.has(name));
+  for (let name = queue.pop(); name !== undefined; name = queue.pop()) {
+    if (included.has(name)) continue;
+    included.add(name);
+    for (const next of edgesOf(name)) {
+      if (!included.has(next)) queue.push(next);
+    }
+  }
+  return included;
+}
+
 export function chunkClosure(
   start: Iterable<string>,
   sources: ReadonlyMap<string, string>,
 ): Set<string> {
-  const included = new Set<string>();
-  const queue = [...start].filter(name => sources.has(name));
-  while (queue.length > 0) {
-    const name = queue.pop();
-    if (name === undefined || included.has(name)) continue;
-    included.add(name);
-    const body = sources.get(name);
-    if (body === undefined) continue;
-    for (const [candidate] of sources) {
-      if (included.has(candidate)) continue;
-      const stem = candidate.replace(/\.js$/, '');
-      if (body.includes(stem)) queue.push(candidate);
-    }
-  }
-  return included;
+  return closureOver(start, sources, createChunkEdges(sources));
 }
 
 /** 셀렉터로 페이지를 고른다 — 없으면 전부. */
@@ -135,20 +180,54 @@ export function describeScope(scope: MarkerScope): string {
   }
 }
 
+/** 한 입력을 여러 스코프로 평가할 때 재사용하는 계산 — 청크 그래프·페이지별 참조·셀렉터별 폐포. */
+export interface ScopeCache {
+  edgesOf: ChunkEdges;
+  pageRefs: Map<string, string[]>;
+  closures: Map<string, Set<string>>;
+}
+
+export function createScopeCache(inputs: ScopeInputs): ScopeCache {
+  return {
+    edgesOf: createChunkEdges(inputs.sources),
+    pageRefs: new Map(),
+    closures: new Map(),
+  };
+}
+
+function reachableChunks(
+  selector: PageSelector | undefined,
+  inputs: ScopeInputs,
+  cache: ScopeCache,
+): Set<string> {
+  const key = JSON.stringify(selector ?? null);
+  const cached = cache.closures.get(key);
+  if (cached) return cached;
+  const refs = new Set<string>();
+  for (const [path, html] of selectPages(inputs.pages, selector)) {
+    let pageRefs = cache.pageRefs.get(path);
+    if (pageRefs === undefined) {
+      pageRefs = collectChunkRefs(html);
+      cache.pageRefs.set(path, pageRefs);
+    }
+    for (const ref of pageRefs) refs.add(ref);
+  }
+  const closure = closureOver(refs, inputs.sources, cache.edgesOf);
+  cache.closures.set(key, closure);
+  return closure;
+}
+
 /** 스코프 안에서 마커가 발견된 위치 목록 — 비어 있으면 "없다". */
 export function findMarkerIn(
   scope: MarkerScope,
   marker: string,
   inputs: ScopeInputs,
+  cache: ScopeCache = createScopeCache(inputs),
 ): string[] {
   switch (scope.kind) {
     case 'chunks': {
-      const refs = new Set<string>();
-      for (const [, html] of selectPages(inputs.pages, scope.of)) {
-        for (const ref of collectChunkRefs(html)) refs.add(ref);
-      }
       const locations: string[] = [];
-      for (const name of chunkClosure(refs, inputs.sources)) {
+      for (const name of reachableChunks(scope.of, inputs, cache)) {
         if (inputs.sources.get(name)?.includes(marker)) locations.push(name);
       }
       return locations.sort();
@@ -173,9 +252,10 @@ export function checkRules(
   inputs: ScopeInputs,
 ): BundleViolation[] {
   const violations: BundleViolation[] = [];
+  const cache = createScopeCache(inputs);
   for (const rule of rules) {
     for (const scope of rule.forbiddenIn) {
-      for (const location of findMarkerIn(scope, rule.marker, inputs)) {
+      for (const location of findMarkerIn(scope, rule.marker, inputs, cache)) {
         violations.push({
           label: rule.label,
           marker: rule.marker,
@@ -185,7 +265,7 @@ export function checkRules(
       }
     }
     for (const scope of rule.requiredIn) {
-      if (findMarkerIn(scope, rule.marker, inputs).length === 0) {
+      if (findMarkerIn(scope, rule.marker, inputs, cache).length === 0) {
         violations.push({
           label: rule.label,
           marker: rule.marker,
@@ -198,21 +278,15 @@ export function checkRules(
   return violations;
 }
 
-/** `_next/static/chunks/` 아래의 모든 .js — basename → 본문. */
+/** `_next/static/chunks/` 아래 모든 .js — `chunks/` 기준 상대 경로 → 본문. */
 function readChunkSources(outDir: string): Map<string, string> {
   const chunksDir = join(outDir, '_next', 'static', 'chunks');
-  const sources = new Map<string, string>();
-  if (!existsSync(chunksDir)) return sources;
-  const walk = (dir: string) => {
-    for (const entry of readdirSync(dir, { withFileTypes: true })) {
-      const full = join(dir, entry.name);
-      if (entry.isDirectory()) walk(full);
-      else if (entry.name.endsWith('.js'))
-        sources.set(entry.name, readFileSync(full, 'utf8'));
-    }
-  };
-  walk(chunksDir);
-  return sources;
+  if (!existsSync(chunksDir)) return new Map();
+  return new Map(
+    listFilesRecursive(chunksDir)
+      .filter(rel => rel.endsWith('.js'))
+      .map(rel => [rel, readFileSync(join(chunksDir, rel), 'utf8')]),
+  );
 }
 
 export function main(ctx: ContentContext, target?: string) {

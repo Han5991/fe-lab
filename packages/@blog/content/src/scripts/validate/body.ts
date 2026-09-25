@@ -4,8 +4,9 @@
  * - 이미지 사슬: missing-image-alt · missing-image
  * - 펜스 사슬:   unclosed-fence · unregistered-code-language
  * - 헤딩 사슬:   body-h1
+ * - 다이어그램 사슬: unknown-diagram-name
  *
- * 세 사슬 모두 코드 펜스 추적(`scanBodyLines`) 위에 서 있습니다 — 펜스 규칙을
+ * 모든 사슬이 코드 펜스 추적(`scanBodyLines`) 위에 서 있습니다 — 펜스 규칙을
  * 검사마다 각자 구현하면 한쪽만 고쳐질 수 있어 하나로 모았습니다.
  * 심각도는 `rules.ts`의 평면 테이블에서 읽습니다.
  */
@@ -20,6 +21,24 @@ import { SUPPORTED_FENCE_LABELS } from '../../shared/prismLanguages.ts';
 import { frontmatterOffset } from './shared.ts';
 import type { Issue, PostRecord, ValidateContext } from './shared.ts';
 import { resolveSeverity } from './rules.ts';
+
+/** 레코드 하나의 본문을 검사기들이 함께 쓰도록 한 번만 계산한 것. */
+export interface BodyView {
+  /** frontmatter가 차지한 줄 수 — 본문 줄 번호 → 파일 줄 번호 */
+  offset: number;
+  scan: ScanResult;
+  /** 코드 펜스 안을 길이를 유지한 채 공백으로 덮은 본문(`maskNonProse`) */
+  prose: string;
+}
+
+export function viewBody(content: string, raw: string): BodyView {
+  const scan = scanBodyLines(content);
+  return {
+    offset: frontmatterOffset(raw),
+    scan,
+    prose: maskScanned(scan.lines),
+  };
+}
 
 /** 마크다운 `![alt](src)` — alt는 비어 있을 수 있다. */
 const MARKDOWN_IMAGE = /!\[([^\]]*)]\(([^)\s]+)(?:\s+"[^"]*")?\)/g;
@@ -46,20 +65,22 @@ function blank(text: string): string {
  * 길이(와 줄 수)를 유지하는 건 match.index로 줄 번호를 그대로 계산하기 위해서입니다.
  */
 export function maskNonProse(content: string): string {
-  return scanBodyLines(content)
-    .lines.map(({ text, inFence }) => (inFence ? blank(text) : text))
+  return maskScanned(scanBodyLines(content).lines);
+}
+
+function maskScanned(lines: readonly ScannedLine[]): string {
+  return lines
+    .map(({ text, inFence }) => (inFence ? blank(text) : text))
     .join('\n');
 }
 
 export function validateImageReferences(
   record: PostRecord,
-  raw: string,
+  { offset, prose }: BodyView,
   options: ValidateContext,
 ): Issue[] {
   const { absPath, relPath } = record;
   const issues: Issue[] = [];
-  const offset = frontmatterOffset(raw);
-  const prose = maskNonProse(record.content);
   const lineOf = (index: number) =>
     offset + prose.slice(0, index).split('\n').length;
 
@@ -243,13 +264,11 @@ export function scanBodyLines(content: string): ScanResult {
  */
 export function validateCodeFenceLanguages(
   record: PostRecord,
-  raw: string,
+  { offset, scan }: BodyView,
   supportedFenceLabels: ReadonlySet<string> = SUPPORTED_FENCE_LABELS,
 ): Issue[] {
   const issues: Issue[] = [];
-  const offset = frontmatterOffset(raw);
-
-  const { lines: scanned, unclosedFenceAt } = scanBodyLines(record.content);
+  const { lines: scanned, unclosedFenceAt } = scan;
   if (unclosedFenceAt !== null) {
     issues.push({
       file: record.relPath,
@@ -375,15 +394,17 @@ export function markParagraphLines(lines: string[]): boolean[] {
  * 빌드에서 제외되는 메타 노트(유효한 `status` 없음)는 렌더될 일이 없으므로
  * 검사하지 않습니다 — 기획 문서의 `# 제목`까지 잡으면 경고만 늘고 고칠 것이 없습니다.
  */
-export function validateBodyHeadings(record: PostRecord, raw: string): Issue[] {
+export function validateBodyHeadings(
+  record: PostRecord,
+  { offset, prose }: BodyView,
+): Issue[] {
   if (!isPostFile(record.data)) return [];
 
   const issues: Issue[] = [];
-  const offset = frontmatterOffset(raw);
 
   // 마스킹된 본문은 줄 수와 각 줄의 길이가 원본과 같으므로 줄 번호가 그대로다.
   // 펜스 안은 이미 공백으로 덮여 있어 따로 inFence를 볼 필요가 없다.
-  const lines = maskNonProse(record.content).split('\n');
+  const lines = prose.split('\n');
   // 메시지에 인용할 줄은 **원문**이다. 마스킹된 줄을 그대로 보여주면
   // ``# `useEffect` `` 가 `: #` 로만 찍혀 어디를 고칠지 알 수 없다.
   // (마스킹은 길이와 줄 수를 유지하므로 인덱스가 그대로 맞는다)
@@ -415,5 +436,48 @@ export function validateBodyHeadings(record: PostRecord, raw: string): Issue[] {
     });
   }
 
+  return issues;
+}
+
+/** `<diagram …>` 여는 태그 — `<diagram-node>`·`<diagram-edge>`는 아니다. 속성 값 안의 `>`에서 끊기지 않는다. */
+const DIAGRAM_OPEN_TAG = /<diagram(?=[\s/>])(?:[^>"']|"[^"]*"|'[^']*')*>/gi;
+/** 태그의 속성 하나 — 이름과 값(따옴표 셋 다, 값 없는 불리언 속성 포함). */
+const TAG_ATTR =
+  /\s+([^\s=/>"']+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+)))?/g;
+
+/** 여는 태그의 `name` 속성 — 속성을 차례로 읽어 `label="a name=b"` 같은 값 안을 오인하지 않는다. */
+function nameAttr(tag: string): string | undefined {
+  for (const m of tag.slice('<diagram'.length).matchAll(TAG_ATTR)) {
+    if (m[1]?.toLowerCase() === 'name') return m[2] ?? m[3] ?? m[4] ?? '';
+  }
+  return undefined;
+}
+
+/** 같은 줄에서 `index` 앞의 백틱이 홀수 개면 인라인 코드 안이다. */
+function insideInlineCode(text: string, index: number): boolean {
+  const lineStart = text.lastIndexOf('\n', index - 1) + 1;
+  return (text.slice(lineStart, index).match(/`/g) ?? []).length % 2 === 1;
+}
+
+/** 본문 `<diagram name>`이 등록된 이름인가 — 미등록은 프로덕션에서 조용히 비워진다(펜스·같은 줄 인라인 코드 안은 예시라 보지 않는다). */
+export function validateDiagramNames(
+  record: PostRecord,
+  { offset, prose }: BodyView,
+  options: ValidateContext,
+): Issue[] {
+  if (!isPostFile(record.data)) return [];
+  const issues: Issue[] = [];
+  for (const match of prose.matchAll(DIAGRAM_OPEN_TAG)) {
+    if (insideInlineCode(prose, match.index)) continue;
+    const name = nameAttr(match[0]);
+    if (name === undefined || options.diagramNames.includes(name)) continue;
+    issues.push({
+      file: record.relPath,
+      line: offset + prose.slice(0, match.index).split('\n').length,
+      severity: resolveSeverity('unknown-diagram-name', record.data, options),
+      rule: 'unknown-diagram-name',
+      message: `\`<diagram name>\`이 등록된 다이어그램 이름이 아닙니다 — 프로덕션에서는 그림이 조용히 사라집니다(등록: ${options.diagramNames.join(', ')}). 새 다이어그램이라면 앱의 content.values.mts(DIAGRAM_NAMES)와 src/components/diagram/registry.ts에 먼저 등록하세요: ${JSON.stringify(name)}`,
+    });
+  }
   return issues;
 }

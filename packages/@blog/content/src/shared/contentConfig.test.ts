@@ -116,6 +116,33 @@ test('og.fonts: 준 서술자가 그대로 실린다 — 패키지에 기본 폰
   expect(config.og.fonts).toBe(TEST_VALUES.ogFonts);
 });
 
+// ── defineContent: timezone 검증 ─────────────────────────────────────────────
+
+// 틀린 타임존은 날짜만 쓴 예약 글을 조용히 영원히 비공개로 만든다 — 설정에서 던진다.
+test.each([
+  [{ isoOffset: '+9:00' }, /timezone\.isoOffset/],
+  [{ isoOffset: '+0900' }, /timezone\.isoOffset/],
+  [{ isoOffset: 'Asia/Seoul' }, /timezone\.isoOffset/],
+  [{ isoOffset: '' }, /timezone\.isoOffset/],
+  [{ utcOffsetMs: 0 }, /utcOffsetMs/],
+  [{ iana: 'KST+9' }, /timezone\.iana/],
+])('timezone %j는 던진다', (over, error) => {
+  expect(() =>
+    defineTestContent({
+      root: FIXTURE_ROOT,
+      timezone: { ...TEST_VALUES.timezone, ...over },
+    }),
+  ).toThrow(error);
+});
+
+test('timezone: 일관된 다른 타임존(UTC)도 받는다', () => {
+  const config = defineTestContent({
+    root: FIXTURE_ROOT,
+    timezone: { iana: 'UTC', isoOffset: 'Z', utcOffsetMs: 0 },
+  });
+  expect(config.timezone.isoOffset).toBe('Z');
+});
+
 // ── defineContent: 병합 규칙 ─────────────────────────────────────────────────
 
 test('기본값이 있는 그룹의 부분 오버라이드는 나머지를 기본값으로 유지한다', () => {

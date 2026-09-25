@@ -1,15 +1,18 @@
 import { expect, test } from 'vitest';
 import { buildLlmsFullText } from './generate-llms-full.ts';
-import type { PostData } from '../post/index.ts';
+import { buildLlmsText } from './generate-llms.ts';
+import type { PostData, SeriesMeta } from '../post/index.ts';
 import { defineTestContent } from '../shared/testValues.ts';
 import { sep } from 'node:path';
 
 // 사이트 정체성·저자·산문은 전부 설정에서 온다(기본값 없음).
 const CONFIG = defineTestContent({ root: `${sep}tmp${sep}app` });
+// 기본은 "선언됐지만 title·order가 없는 시리즈" — 폴더명이 그대로 표시명이다.
 const OPTS = {
   site: CONFIG.site,
   author: CONFIG.author,
   llms: CONFIG.llms,
+  resolveSeriesMeta: (name: string): SeriesMeta | null => ({ name }),
 };
 
 function makePost(over: Partial<PostData> = {}): PostData {
@@ -114,17 +117,12 @@ test('llms-full: excerpt가 200자 초과면 잘림', () => {
   expect(!text.includes('A'.repeat(201))).toBeTruthy();
 });
 
-test('llms-full: excerpt 없으면 content에서 추출 (마크다운 # 만 제거, 개행 유지)', () => {
+test('llms-full: excerpt 없으면 본문 평문(extractPlainText)에서 추출', () => {
   const text = buildLlmsFullText(
     [makePost({ slug: 'a', excerpt: undefined, content: '# h1\n본문입니다' })],
     OPTS,
   );
-  // generate-llms-full의 content 추출은 `[#`*\[\]]` 만 제거하고 개행은 보존.
-  // `# h1\n본문입니다` → `h1\n본문입니다` (trim 후 slice(0, 200))
-  expect(
-    text.includes('h1\n본문입니다...'),
-    `expected 'h1\\n본문입니다...' in output, got: ${text.slice(0, 500)}`,
-  ).toBeTruthy();
+  expect(text).toContain('\nh1 본문입니다...');
 });
 
 test('llms-full: 같은 시리즈 내 포스트는 date 오름차순', () => {
@@ -154,4 +152,52 @@ test('llms-full: 단독 포스트는 date 내림차순', () => {
   const idxNew = text.indexOf('### [New]');
   const idxOld = text.indexOf('### [Old]');
   expect(idxNew > 0 && idxNew < idxOld).toBeTruthy();
+});
+
+// ── llms.txt와 같은 시리즈 이름·순서 ────────────────────────────────────────
+
+const BUNDLER_META: SeriesMeta = {
+  name: 'bundler',
+  title: '누가 시키지도 않았는데 번들러 만들기',
+  order: ['second', 'first'],
+};
+
+const seriesPosts = [
+  makePost({
+    slug: 'first',
+    title: 'First',
+    date: '2026-01-01',
+    series: 'bundler',
+  }),
+  makePost({
+    slug: 'second',
+    title: 'Second',
+    date: '2026-02-01',
+    series: 'bundler',
+  }),
+];
+
+test('llms-full: 시리즈 표시명은 _series.yml의 title, 순서는 order (llms.txt와 같은 규칙)', () => {
+  const opts = { ...OPTS, resolveSeriesMeta: () => BUNDLER_META };
+  const text = buildLlmsFullText(seriesPosts, opts);
+  expect(text).toContain('## 시리즈: 누가 시키지도 않았는데 번들러 만들기');
+  expect(text).not.toContain('## 시리즈: bundler');
+  // order가 날짜순을 이긴다 — Second가 먼저
+  expect(text.indexOf('### [Second]')).toBeLessThan(
+    text.indexOf('### [First]'),
+  );
+
+  // 색인(llms.txt)과 같은 이름·같은 순서를 말한다.
+  const index = buildLlmsText(seriesPosts, opts);
+  expect(index).toContain('## 시리즈: 누가 시키지도 않았는데 번들러 만들기');
+  expect(index.indexOf('[Second]')).toBeLessThan(index.indexOf('[First]'));
+});
+
+test('llms-full: _series.yml이 없는 폴더(meta null)의 글은 단독 절로 내린다', () => {
+  const text = buildLlmsFullText(seriesPosts, {
+    ...OPTS,
+    resolveSeriesMeta: () => null,
+  });
+  expect(text).not.toContain('## 시리즈:');
+  expect(text).toContain('## 단독 포스트');
 });

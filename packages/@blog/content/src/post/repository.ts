@@ -3,28 +3,64 @@ import { relative } from 'node:path';
 import matter from 'gray-matter';
 import { estimateReadMin } from '../shared/format.ts';
 import { collectMarkdownFiles, hasFrontmatter } from '../shared/postFiles.ts';
+import { pathSlug, resolvePostSlug } from './urls.ts';
 import { isPostFile } from './visibility.ts';
-// 좁히기 함수(toDateString·toOptionalString·toStringArray)는 서술자 테이블과
-// 같은 파일에 있습니다 — 테이블의 `narrow`와 parsePost가 **같은 함수**를 가리켜야
-// 선언과 실제 동작이 갈라지지 않습니다(frontmatterSchema.ts 참고).
 import {
   toDateString,
   toOptionalString,
+  toScheduledDate,
   toStringArray,
 } from './frontmatterSchema.ts';
+import type { TimezoneConfig } from '../shared/contentConfig.ts';
 import type { PostData, RawFrontmatter } from './types.ts';
 
-/**
- * 마크다운 내용에서 순수 텍스트 추출 (excerpt/readMin 계산용)
- */
-export function extractPlainText(content: string): string {
-  return content
+/** 펜스 코드 블록 — 캡처가 둘이라 split 결과가 [본문, 펜스 기호, 코드] 세 칸 주기다. */
+const FENCED_CODE = /^[ \t]*(`{3,}|~{3,})[^\n]*\n([\s\S]*?)^[ \t]*\1[ \t]*$/gm;
+
+/** 인라인 코드 — 캡처 그룹이라 split 결과의 홀수 칸이 된다 */
+const INLINE_CODE = /(`[^`\n]+`)/;
+
+/** HTML/JSX 태그(속성째). 식별자 바로 뒤의 여는 태그는 제네릭(`Promise<void>`)이라 둔다. */
+const MARKUP_TAG =
+  /<\/[A-Za-z][\w.:-]*\s*>|(?<![\w$])<[A-Za-z][\w.:-]*(?:\s[^<>]*)?\/?>/g;
+
+/** 강조의 `_` — 글자 사이의 `_`(`snake_case`)는 식별자라 남긴다. */
+const EMPHASIS_UNDERSCORE = /(?<![\p{L}\p{N}])_+|_+(?![\p{L}\p{N}])/gu;
+
+/** 본문 평문 — excerpt·readMin·검색 미리보기·wordCount·llms 요약이 함께 쓴다(`dropCode`면 펜스 코드를 뺀다). */
+export function extractPlainText(
+  content: string,
+  { dropCode = false }: { dropCode?: boolean } = {},
+): string {
+  // 인용 안의 펜스(`> ```ts`)도 코드로 빼도록 줄 머리의 인용 표시를 먼저 걷는다.
+  return (dropCode ? content.replace(/^[ \t]*>+[ \t]?/gm, '') : content)
+    .split(FENCED_CODE)
+    .map((part, i) => {
+      if (i % 3 === 1) return ''; // 펜스 기호(캡처 1)
+      if (i % 3 === 2) return dropCode ? ' ' : ` ${part} `; // 펜스 안 코드(캡처 2)
+      return extractProse(part);
+    })
+    .join('')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function extractProse(text: string): string {
+  return text
     .replace(/!\[.*?]\(.*?\)/g, '') // 이미지 제거
     .replace(/\[([^\]]+)]\([^)]+\)/g, '$1') // 링크 텍스트만 남기기
-    .replace(/[#*`_>~]/g, '') // 마크다운 기호 제거
-    .replace(/\n+/g, ' ') // 개행을 공백으로 변환
-    .replace(/\s+/g, ' ') // 연속된 공백 제거
-    .trim();
+    .replace(/^[ \t]*>+/gm, '') // 인용 표시(줄 머리의 >)
+    .split(INLINE_CODE)
+    .map((part, i) =>
+      // 홀수 칸 = 인라인 코드: 백틱만 벗기고 내용은 그대로
+      i % 2 === 1
+        ? part.slice(1, -1)
+        : part
+            .replace(MARKUP_TAG, ' ')
+            .replace(/[#*`~]/g, '')
+            .replace(EMPHASIS_UNDERSCORE, ''),
+    )
+    .join('');
 }
 
 /**
@@ -63,9 +99,39 @@ export function resolveExcerptFrom(
 ): string {
   const given = toOptionalString(explicit);
   if (given) return given;
-  return plainText.length > maxLength
-    ? plainText.slice(0, maxLength) + '...'
-    : plainText;
+  if (plainText.length <= maxLength) return plainText;
+  // 서로게이트 쌍 가운데서 자르지 않는다 — 외톨이는 encodeURIComponent가 URIError를 던진다.
+  const cut = plainText.slice(0, maxLength);
+  return `${/[\uD800-\uDBFF]$/.test(cut) ? cut.slice(0, -1) : cut}...`;
+}
+
+/** gray-matter로 읽되 YAML 오류에 파일 경로를 붙여 던진다(원래 오류는 `cause`) — 건너뛰면 발행 글이 조용히 빠진다. */
+export function parseMatter(
+  source: string,
+  where: string,
+): { data: Record<string, unknown>; content: string } {
+  try {
+    const {
+      data,
+      content,
+    }: { data: Record<string, unknown>; content: string } = matter(source);
+    return { data, content };
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    throw new Error(
+      `${where}: frontmatter YAML을 해석할 수 없습니다 — ${reason}`,
+      {
+        cause: error,
+      },
+    );
+  }
+}
+
+export interface ParsePostOptions {
+  /** excerpt 자동 발췌 길이 — 설정의 `seo.descriptionMaxLength` */
+  excerptMaxLength: number;
+  /** 따옴표 없는 datetime(YAML Date)을 적을 타임존 — UTC로 적으면 KST 오전이 전날이 된다 */
+  timezone: Pick<TimezoneConfig, 'isoOffset'>;
 }
 
 /**
@@ -82,38 +148,36 @@ export function resolveExcerptFrom(
 export function parsePost(
   fileContents: string,
   relPath: string,
-  opts: { excerptMaxLength: number },
+  opts: ParsePostOptions,
 ): PostData | null {
   // frontmatter delimiter 없는 메타 노트는 스킵 (validate-posts 와 동일 규칙)
   if (!hasFrontmatter(fileContents)) return null;
 
-  // gray-matter의 data는 `{ [key: string]: any }`라 그대로 두면 타입 검사가
-  // 무력화됩니다. RawFrontmatter(전 필드 unknown)로 받아 아래에서 전부 좁힙니다.
   const { data, content }: { data: RawFrontmatter; content: string } =
-    matter(fileContents);
+    parseMatter(fileContents, relPath);
 
   // 유효한 status가 없으면 포스트가 아니다 (validate-posts와 같은 isPostFile 규칙).
   // 타입 가드라서 이 아래에서 data.status는 PostStatus로 좁혀집니다.
   if (!isPostFile(data)) return null;
 
-  // 상대 경로에서 series / rawSlug 계산. '/'와 '\\' 모두 분할해 OS 무관 처리.
+  // 상대 경로에서 series 계산. '/'와 '\\' 모두 분할해 OS 무관 처리.
   const parts = relPath.split(/[/\\]/);
   // split은 빈 배열을 만들지 않으므로 마지막 원소는 항상 존재한다.
   const fileName = (parts.at(-1) ?? '').replace(/\.(md|mdx)$/, '');
   const currentPath = parts.slice(0, -1).join('/');
-  const rawSlug = currentPath ? `${currentPath}/${fileName}` : fileName;
 
   const cleanContent = extractPlainText(content);
   const series: string | undefined = currentPath || undefined;
 
   return {
-    slug: toOptionalString(data.slug) ?? rawSlug,
-    originalSlug: rawSlug,
+    // `../admin`·`/foo` 같은 명시 slug는 쓰지 않고 파일 경로로 폴백한다(lint:posts가 에러).
+    slug: resolvePostSlug(data.slug, relPath),
+    originalSlug: pathSlug(relPath),
     relativeDir: currentPath,
     title: toOptionalString(data.title) ?? fileName,
     seoTitle: toOptionalString(data.seoTitle),
-    date: toDateString(data.date),
-    updatedAt: toDateString(data.updatedAt),
+    date: toDateString(data.date, opts.timezone),
+    updatedAt: toDateString(data.updatedAt, opts.timezone),
     content,
     readMin: estimateReadMin(cleanContent),
     excerpt: resolveExcerptFrom(
@@ -128,7 +192,7 @@ export function parsePost(
     tags: toStringArray(data.tags),
     series,
     status: data.status,
-    scheduledDate: toOptionalString(data.scheduledDate),
+    scheduledDate: toScheduledDate(data.scheduledDate, opts.timezone),
   };
 }
 
@@ -151,6 +215,7 @@ function collectPosts(
   deps: {
     isSeriesFolder: (seriesName: string) => boolean;
     excerptMaxLength: number;
+    timezone: Pick<TimezoneConfig, 'isoOffset'>;
     metaFilenames: ReadonlySet<string>;
   },
 ): PostData[] {
@@ -159,7 +224,10 @@ function collectPosts(
   // getSeriesMeta가 dev에서 캐시를 우회하는 것과 같습니다 — `_series.yml`을
   // 새로 만들거나 지우면 다음 요청에 바로 반영돼야 합니다.
   const declaredSeries = new Map<string, boolean>();
-  const parseOpts = { excerptMaxLength: deps.excerptMaxLength };
+  const parseOpts: ParsePostOptions = {
+    excerptMaxLength: deps.excerptMaxLength,
+    timezone: deps.timezone,
+  };
 
   for (const fullPath of collectMarkdownFiles(dirPath, deps.metaFilenames)) {
     const fileContents = readFileSync(fullPath, 'utf8');
@@ -197,7 +265,7 @@ function collectPosts(
  * 있습니다. 코드포인트 비교는 환경과 무관하게 결정적이며 서로 다른 문자열에
  * 절대 0을 반환하지 않습니다.
  */
-function compareByCodePoint(a: string, b: string): number {
+export function compareByCodePoint(a: string, b: string): number {
   return a < b ? -1 : a > b ? 1 : 0;
 }
 
@@ -244,6 +312,8 @@ export interface RepositoryDeps {
   isDevelopment: () => boolean;
   /** excerpt 자동 발췌 길이 — SEO description 예산(seo.descriptionMaxLength) 재사용 */
   excerptMaxLength: number;
+  /** 따옴표 없는 datetime을 적을 타임존 — 설정의 `timezone` */
+  timezone: Pick<TimezoneConfig, 'isoOffset'>;
   /** 시리즈 선언 판정 — 같은 postsDir에 앵커한 SeriesReader의 것을 넘길 것 */
   isSeriesFolder: (seriesName: string) => boolean;
   /** 이름만 보고 건너뛸 작업 노트 파일 — `registries.metaFilenames` */
@@ -260,10 +330,16 @@ export function createRepository(deps: RepositoryDeps): Repository {
     postsDir,
     isDevelopment,
     excerptMaxLength,
+    timezone,
     isSeriesFolder,
     metaFilenames,
   } = deps;
-  const collectDeps = { isSeriesFolder, excerptMaxLength, metaFilenames };
+  const collectDeps = {
+    isSeriesFolder,
+    excerptMaxLength,
+    timezone,
+    metaFilenames,
+  };
   let cache: PostData[] | null = null;
 
   function readAllPosts(): PostData[] {

@@ -1,5 +1,10 @@
 import { encodePostSlug } from './utils.ts';
 
+/** 외부 URL(스킴·`//`)인가 — 본문 이미지·썸네일·미디어 동기화가 함께 쓴다(`http2-flow.png`는 아니다). */
+export function isExternalUrl(url: string): boolean {
+  return /^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(url);
+}
+
 /**
  * 마크다운 본문 속 상대 URL(이미지 등)을 사이트 경로로 해석합니다.
  * 사이트 렌더링(MarkdownImage)이 쓰는 단일 소스 — 경로 해석은 여기서만 수정합니다.
@@ -11,7 +16,7 @@ import { encodePostSlug } from './utils.ts';
  *   파일명 부분은 markdown 파서(micromark)가 이미 인코딩하므로 그대로 둔다.
  */
 export function resolvePostAssetUrl(url: string, relativeDir?: string): string {
-  if (/^(?:[a-z][a-z0-9+.-]*:|\/\/|#|\/)/i.test(url)) return url;
+  if (isExternalUrl(url) || /^[#/]/.test(url)) return url;
   const cleaned = url.replace(/^\.\//, '');
   const prefix = relativeDir ? `${encodePostSlug(relativeDir)}/` : '';
   return `/posts/${prefix}${cleaned}`;

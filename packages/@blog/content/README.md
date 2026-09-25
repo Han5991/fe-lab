@@ -105,13 +105,14 @@ src/
 ├─ shared/     contentConfig(defineContent + ContentValues 계약) · contentPaths(절대 경로)
 │              · testValues(테스트 픽스처 — 패키지 안의 유일한 "어떤 사이트")
 │              · dates · format · guards · jsonLd · url · postFiles · prismLanguages
+│              · buildNow(빌드 기준 시각 BLOG_CONTENT_NOW의 이름·파서 — CLI와 앱이 공유)
 │              · markdownHeadings(h1→h2 매핑, 사이트 본문용) · viewCookie
 ├─ post/       createContent(인스턴스 조립) · repository(gray-matter 로더 factory) · service(읽기 API factory)
 │              · visibility(공개 판정 한 곳) · series(_series.yml factory) · urls(postPath·archivePath — 후행 슬래시는 여기서만)
 │              · filtering · aggregate · thumbnail · assetUrl · frontmatterSchema(서술자 테이블)
 │              · types · utils · testing(테스트 픽스처 인스턴스)
 ├─ seo/        postSeo — createPostSeo(buildPostSeo·buildPostJsonLd·buildBreadcrumbJsonLd) + 순수 계산
-└─ scripts/    build-content(진입점) · validate-posts + validate/{rules,frontmatter,body,corpus,shared}
+└─ scripts/    build-content(진입점) · validate-posts + validate/{rules,frontmatter,body,corpus,series,shared}
                · check-seo · check-bundle(번들 누수 마커) · artifacts(산출물 레지스트리 7종) · generate-{sitemap,rss,search-index,llms,llms-full}
                · sync-posts · new-post
                · context(ContentContext — 스텝이 받는 실행 컨텍스트)
@@ -126,20 +127,34 @@ src/
 | 1 (게이트, 단독) | `validate-posts`                                                                                      | `--strict`를 그대로 넘긴다. `--skip-validate`로만 건너뛴다(앱 스크립트는 안 넘김)      |
 | 2 (병렬 8개)     | `sync-posts` · `sitemap` · `rss` · `og-images` · `thumbnails` · `search-index` · `llms-full` · `llms` | 서로 다른 파일만 쓴다. `media`·`thumbs`·`og` 디렉터리는 겹치면 안 됨(각자 orphan 삭제) |
 
-각 스텝은 `node <cli/index.ts> --config <절대경로> <서브커맨드>`로 spawn되고
-cwd·PATH 어디에도 기대지 않는다 — 부모가 발견한 설정 파일을 자식에 명시
-전달하므로(`stepArgv`) 부모와 자식이 다른 설정을 잡을 수 없다. 앱의
+각 스텝은 `node <cli/index.ts> --config <절대경로> <서브커맨드>`로
+spawn되고 cwd·PATH 어디에도 기대지 않는다 — 부모가 발견한 설정 파일을 자식에
+명시 전달하므로(`stepArgv`) 부모와 자식이 다른 설정을 잡을 수 없다. 앱의
 `predev:web`과 `prebuild`는 같은 명령이고 `prebuild`만 `--strict`다(검증은 둘 다 돈다).
+글 집합(`visible`)의 dev 판정은 로더의 `isDevelopment`(`NODE_ENV === 'development'`)
+한 곳뿐이라, dev 서버가 draft의 og 카드·썸네일·원고 미디어까지 받으려면 이 명령도
+`NODE_ENV=development`로 돌아야 한다 — 없으면 발행 글 몫만 만든다. 그래서 앱의
+`predev:web`은 `NODE_ENV=development`를 붙여 돌고, `prebuild`는 붙이지 않는다
+(dev가 남긴 draft 산출물은 다음 `prebuild`의 orphan 정리가 걷어 낸다).
+
+**기준 시각은 환경 변수 `BLOG_CONTENT_NOW` 하나로 나른다.** 예약 글의 공개 판정·
+sitemap의 오늘·RSS lastBuildDate·strict 승격 범위가 전부 이 값을 본다 — 단계마다
+제 시계를 보면 공개 시각이 빌드 도중에 지날 때 산출물끼리 글 집합이 갈린다. 없으면
+지금이다(offset을 명시한 ISO만 받는다). CLI가 이 값으로 로더 인스턴스를 만들고
+(`ctx.content.now`), build는 자식 전부에 같은 값을 spawn 환경으로 넘긴다(`stepEnv`).
+앱의 `build` 스크립트가 시각 하나를 내보낸 뒤 `prebuild`·`next build`·`check-seo`·
+`check-bundle`을 돌리고, 앱의 `src/content.ts`가 같은 파서(`resolveBuildNow`)로 읽어
+인스턴스를 만든다. 그래도 어긋나면 `check-seo`의 sitemap ↔ 페이지 대조가 잡는다.
 
 2단계 스텝이 쓰는 곳(경로는 `dirs` 기본값, 앱 루트 기준):
 
-| 스텝                                     | 산출물                                                                           | 증분 기준 · 정리                                                           |
-| :--------------------------------------- | :------------------------------------------------------------------------------- | :------------------------------------------------------------------------- |
-| `sync-posts`                             | `public/posts/**` — 원고 폴더의 이미지·미디어 사본                               | 크기가 같고 사본이 더 새로우면 건너뜀, 원고에서 사라진 파일(orphan)은 삭제 |
-| `og-images`                              | `public/og/{slug}.png` — thumbnail이 없거나 `/og/*`를 가리키는 발행 글의 OG 카드 | 내용 해시 manifest(`.cache/og-images.json`), orphan 삭제                   |
-| `thumbnails`                             | `public/thumbs/**/*-thumb.webp` — 로컬 썸네일 최적화                             | manifest(`.cache/thumbnails.json`), orphan 삭제                            |
-| `search-index`                           | `search-index.json`(공개 글) · `admin-posts-index.json`(비공개 포함)             | 매번 다시 쓴다                                                             |
-| `sitemap` · `rss` · `llms` · `llms-full` | `sitemap.xml` · `rss.xml` · `llms.txt` · `llms-full.txt`                         | 매번 다시 쓴다                                                             |
+| 스텝                                     | 산출물                                                                                                                  | 증분 기준 · 정리                                                         |
+| :--------------------------------------- | :---------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------- |
+| `sync-posts`                             | `public/posts/**` — **공개 글이 원고에서 가리키는** 이미지·미디어 사본(draft·예약 글·메타 노트 전용 파일은 싣지 않는다) | 크기가 같고 사본이 더 새로우면 건너뜀, 대상에서 빠진 파일(orphan)은 삭제 |
+| `og-images`                              | `public/og/{slug}.png` — thumbnail이 없거나 `/og/*`를 가리키는 발행 글의 OG 카드                                        | 내용 해시 manifest(`.cache/og-images.json`), orphan 삭제                 |
+| `thumbnails`                             | `public/thumbs/**/*-thumb.webp` — 로컬 썸네일 최적화                                                                    | manifest(`.cache/thumbnails.json`), orphan 삭제                          |
+| `search-index`                           | `search-index.json`(공개 글) · `admin-posts-index.json`(비공개 포함, 대시보드가 읽는 필드만 — 요약·시리즈 없음)         | 매번 다시 쓴다                                                           |
+| `sitemap` · `rss` · `llms` · `llms-full` | `sitemap.xml` · `rss.xml` · `llms.txt` · `llms-full.txt`                                                                | 매번 다시 쓴다                                                           |
 
 산출물은 전부 `.gitignore`다 — 신선한 체크아웃에는 없고, 낡은 `public/`은 무음 no-op 생성기를 가릴 수 있다.
 

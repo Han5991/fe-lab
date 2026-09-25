@@ -145,7 +145,7 @@ export function main(ctx: ContentContext) {
   const posts = resolvePostSet(ctx.content, 'visible');
   // KST 기준 오늘 날짜. `new Date().toISOString()`은 UTC라 KST 00:00~09:00 빌드 시
   // 하루 밀린 lastmod를 만들 수 있어 getKSTDateISO()를 사용한다.
-  const today = getKSTDateISO(ctx.content.config.timezone);
+  const today = getKSTDateISO(ctx.content.config.timezone, ctx.content.now);
   const sitemap = buildSitemapXml(
     posts,
     today,

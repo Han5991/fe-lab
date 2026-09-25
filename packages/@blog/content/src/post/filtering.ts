@@ -44,7 +44,8 @@ export function filterAndSortPostsByArchiveParams<
     r = r.filter(p => p.series === series);
   }
   if (year) {
-    r = r.filter(p => p.date?.startsWith(year));
+    // 연도는 정확히 비교한다 — 접두사면 `?year=20`이 20xx 글 전부를 고른다.
+    r = r.filter(p => p.date?.slice(0, 4) === year);
   }
 
   const sorted: T[] = [...r];

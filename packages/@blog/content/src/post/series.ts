@@ -1,6 +1,15 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import matter from 'gray-matter';
+import { isRecord } from '../shared/guards.ts';
+import { compareByCodePoint, parseMatter } from './repository.ts';
+
+/** 시리즈 선언 파일 이름 — 리더와 lint:posts가 같은 파일을 본다. */
+export const SERIES_FILENAME = '_series.yml';
+
+/** `_series.yml` 원문 → 데이터(매핑이 아닐 수 있다) — 리더와 lint:posts가 같은 파서로 읽는다. */
+export function parseSeriesYaml(raw: string, where: string): unknown {
+  return parseMatter(`---\n${raw}\n---\n`, where).data;
+}
 
 export interface SeriesMeta {
   name: string;
@@ -55,7 +64,7 @@ export function createSeriesReader(deps: SeriesReaderDeps): SeriesReader {
     // 확장자는 `_series.yml` 하나만 본다. `.yaml`도 받아 주면 같은 뜻의 파일이 두
     // 이름으로 공존할 수 있고, 그때 어느 쪽이 이기는지는 후보 배열의 순서에만
     // 적혀 있다 — 혼자 쓰는 저장소에서 그 규칙을 기억할 이유가 없다.
-    const filePath = join(seriesDir, '_series.yml');
+    const filePath = join(seriesDir, SERIES_FILENAME);
 
     if (!existsSync(filePath)) {
       // 폴더는 있는데 `_series.yml`이 없다 — 정상적인 "시리즈 아님" 판정.
@@ -63,8 +72,8 @@ export function createSeriesReader(deps: SeriesReaderDeps): SeriesReader {
       return null;
     }
 
-    const raw = readFileSync(filePath, 'utf8');
-    const { data } = matter(`---\n${raw}\n---\n`);
+    const parsed = parseSeriesYaml(readFileSync(filePath, 'utf8'), filePath);
+    const data = isRecord(parsed) ? parsed : {};
 
     const meta: SeriesMeta = {
       name: seriesName,
@@ -111,9 +120,11 @@ export function createSeriesReader(deps: SeriesReaderDeps): SeriesReader {
 }
 
 /**
- * 시리즈 내 포스트 정렬.
+ * 시리즈 내 포스트 정렬 — 시리즈 헤더("n/m")·네비게이션·`/series`·llms.txt의
+ * **단일 순서**.
  * `_series.yml`에 `order` 배열이 있으면 그 순서를 우선시하고, 없으면 date 오름차순.
  * (서로 다른 호출부에서 같은 로직을 반복하던 것을 한 곳으로 모음.)
+ * 같은 날짜는 `originalSlug` 오름차순 — 입력 순서에 기대면 화면마다 순서가 갈린다.
  */
 export function sortPostsBySeriesOrder<
   T extends {
@@ -122,6 +133,10 @@ export function sortPostsBySeriesOrder<
     date?: string | null;
   },
 >(posts: T[], order: string[] | undefined): T[] {
+  const byDateThenPath = (a: T, b: T): number =>
+    (a.date ?? '').localeCompare(b.date ?? '') ||
+    compareByCodePoint(a.originalSlug, b.originalSlug);
+
   if (order && order.length > 0) {
     const orderMap = new Map(order.map((s, i) => [s, i]));
     return [...posts].sort((a, b) => {
@@ -133,11 +148,9 @@ export function sortPostsBySeriesOrder<
         orderMap.get(b.slug) ??
         orderMap.get(b.originalSlug) ??
         Number.POSITIVE_INFINITY;
-      if (aRank === bRank) {
-        return (a.date ?? '').localeCompare(b.date ?? '');
-      }
+      if (aRank === bRank) return byDateThenPath(a, b);
       return aRank - bRank;
     });
   }
-  return [...posts].sort((a, b) => (a.date ?? '').localeCompare(b.date ?? ''));
+  return [...posts].sort(byDateThenPath);
 }

@@ -28,7 +28,7 @@ export interface ContentContext {
   configPath: string;
   /**
    * 설정에 앵커된 로더 인스턴스 — 글 집합 선택은 artifacts.resolvePostSet 경유.
-   * 설정과 경로도 여기서 읽는다(`content.config` · `content.paths`).
+   * 설정·경로·기준 시각도 여기서 읽는다(`content.config`·`paths`·`now`).
    */
   content: ContentApi;
 }
@@ -36,6 +36,7 @@ export interface ContentContext {
 export function createContext(
   config: ContentConfig,
   configPath: string,
+  now: Date = new Date(),
 ): ContentContext {
-  return { configPath, content: createContent(config) };
+  return { configPath, content: createContent(config, { now }) };
 }

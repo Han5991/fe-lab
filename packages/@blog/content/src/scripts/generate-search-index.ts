@@ -1,25 +1,14 @@
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import type { PostData } from '../post/index.ts';
+import {
+  extractPlainText,
+  type PostData,
+  type SeriesMeta,
+} from '../post/index.ts';
 import { resolvePostSet } from './artifacts.ts';
 import type { ContentContext } from './context.ts';
 
 export const CONTENT_PREVIEW_CHARS = 1500;
-
-export function toPlainText(content: string): string {
-  return (
-    content
-      .replace(/```[\s\S]*?```/g, '')
-      .replace(/!\[.*?\]\(.*?\)/g, '')
-      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
-      // HTML 태그를 마크다운 기호 제거(`>` 포함)보다 먼저 처리해야 `<div>...</div>` 같은
-      // 태그가 정상적으로 공백으로 치환됩니다.
-      .replace(/<[^>]+>/g, ' ')
-      .replace(/[#*`_>~]/g, '')
-      .replace(/\s+/g, ' ')
-      .trim()
-  );
-}
 
 export interface PublicSearchIndexEntry {
   slug: string;
@@ -28,16 +17,17 @@ export interface PublicSearchIndexEntry {
   excerpt: string;
   tags: string[];
   series: string | null;
+  /** 시리즈 표시명(`_series.yml`의 `title`) — 없으면 null(화면은 `series`로 폴백) */
+  seriesTitle: string | null;
   contentPreview: string;
 }
 
+/** admin 대시보드가 읽는 필드만 — 인증 없이 받는 정적 파일이라 공개 전 글의 요약·시리즈는 싣지 않는다. */
 export interface AdminPostsIndexEntry {
   slug: string;
   title: string;
   date: string | null;
-  excerpt: string;
   tags: string[];
-  series: string | null;
   status: string;
   scheduledDate: string | null;
 }
@@ -51,6 +41,7 @@ export interface AdminPostsIndexEntry {
  */
 export function buildPublicSearchIndex(
   posts: PostData[],
+  resolveSeriesMeta: (seriesId: string) => SeriesMeta | null,
 ): PublicSearchIndexEntry[] {
   return posts.map(p => ({
     slug: p.slug,
@@ -59,7 +50,11 @@ export function buildPublicSearchIndex(
     excerpt: p.excerpt || '',
     tags: p.tags || [],
     series: p.series || null,
-    contentPreview: toPlainText(p.content).slice(0, CONTENT_PREVIEW_CHARS),
+    seriesTitle: p.series ? (resolveSeriesMeta(p.series)?.title ?? null) : null,
+    contentPreview: extractPlainText(p.content, { dropCode: true }).slice(
+      0,
+      CONTENT_PREVIEW_CHARS,
+    ),
   }));
 }
 
@@ -71,9 +66,7 @@ export function buildAdminPostsIndex(
     slug: p.slug,
     title: p.title,
     date: p.date,
-    excerpt: p.excerpt || '',
     tags: p.tags || [],
-    series: p.series || null,
     status: p.status,
     scheduledDate: p.scheduledDate || null,
   }));
@@ -91,6 +84,7 @@ export function main(ctx: ContentContext) {
   // 같은 셀렉터를 쓴다.
   const publicPosts = buildPublicSearchIndex(
     resolvePostSet(ctx.content, 'visible'),
+    ctx.content.getSeriesMeta,
   );
   writeFileSync(outputPath, JSON.stringify(publicPosts, null, 2), 'utf8');
   console.log(`Search index generated: ${publicPosts.length} posts`);

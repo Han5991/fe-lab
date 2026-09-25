@@ -1,11 +1,17 @@
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { postUrl, RSS_PATH } from '../post/index.ts';
+import {
+  extractPlainText,
+  postUrl,
+  RSS_PATH,
+  sortByDateDesc,
+} from '../post/index.ts';
 import type { PostData } from '../post/index.ts';
+import { sortPostsBySeriesOrder, type SeriesMeta } from '../post/series.ts';
 import { resolvePostSet } from './artifacts.ts';
 // Key Facts 조립은 색인(llms.txt)과 같은 규칙을 쓴다 — 한쪽만 빈 항목을 남기면
 // 두 산출물이 저자에 대해 서로 다른 말을 하게 된다.
-import { factLine, keepPresent } from './generate-llms.ts';
+import { factLine, keepPresent, markdownLinkTarget } from './generate-llms.ts';
 import {
   type AuthorConfig,
   type LlmsConfig,
@@ -19,12 +25,32 @@ export interface LlmsFullBuildOptions {
   /** 전문 산문·저자 소개 — 진입점이 컨텍스트의 설정을 넘긴다 */
   llms: LlmsConfig;
   author: AuthorConfig;
+  /** 시리즈 폴더명 → 메타(`_series.yml`) — llms.txt와 같은 계약 */
+  resolveSeriesMeta: (seriesId: string) => SeriesMeta | null;
+}
+
+/** 글 한 편의 항목 — `### [제목](url) (날짜)` + 요약 한 단락. */
+function postEntry(post: PostData, siteUrl: string): string[] {
+  const url = postUrl(post.slug, siteUrl);
+  // 빈 excerpt('')도 본문 평문으로 폴백해 빈 항목을 막는다.
+  const excerpt = (post.excerpt || extractPlainText(post.content)).slice(
+    0,
+    200,
+  );
+  const tags = post.tags?.length ? ` Tags: ${post.tags.join(', ')}.` : '';
+  const date = post.date ? ` (${post.date})` : '';
+  return [
+    `### [${post.title}](${markdownLinkTarget(url)})${date}`,
+    ``,
+    `${excerpt.trim()}...${tags}`,
+    ``,
+  ];
 }
 
 /**
  * llms-full.txt 본문을 생성합니다.
- * 시리즈는 입력 순서(= getAllPosts 정렬 결과)에 따른 등장 순서대로 출력됩니다.
  * sitemap/rss와 동일한 패턴으로 siteUrl을 주입받아 결정성을 확보합니다.
+ * 시리즈 판정·이름·순서는 llms.txt(그리고 사이트)와 같은 규칙이다.
  */
 export function buildLlmsFullText(
   posts: PostData[],
@@ -70,63 +96,23 @@ export function buildLlmsFullText(
     }
   }
 
-  for (const [seriesName, seriesPosts] of seriesMap) {
-    lines.push(`## 시리즈: ${seriesName}`);
-    lines.push(``);
-
-    const sorted = [...seriesPosts].sort((a, b) => {
-      if (!a.date || !b.date) return 0;
-      return a.date.localeCompare(b.date);
-    });
-
-    for (const post of sorted) {
-      // 예전엔 `${SITE_URL}/posts/${post.slug}/`로 조립해 **인코딩이 빠져 있었다**
-      // — sitemap·rss·llms.txt와 이 파일만 형태가 달랐다. 지역 상수명이
-      // SITE_URL(옵션에서 해석한 값)이라 명시적으로 넘긴다 — 인자를 빼면
-      // lib의 기본값으로 떨어져 주입한 siteUrl이 무시된다.
-      const url = postUrl(post.slug, SITE_URL);
-      // `truthy 체크` 의도적: 빈 문자열 excerpt('')도 content fallback으로 처리해
-      // 빈 entry를 방지. excerpt 필드를 frontmatter에서 명시적으로 생략하면 동일 효과.
-      const excerpt = post.excerpt
-        ? post.excerpt.slice(0, 200)
-        : post.content
-            .replace(/[#`*[\]]/g, '')
-            .trim()
-            .slice(0, 200);
-      const tags = post.tags?.length ? ` Tags: ${post.tags.join(', ')}.` : '';
-      const date = post.date ? ` (${post.date})` : '';
-
-      lines.push(`### [${post.title}](${url})${date}`);
-      lines.push(``);
-      lines.push(`${excerpt.trim()}...${tags}`);
-      lines.push(``);
+  for (const [seriesId, seriesPosts] of seriesMap) {
+    const meta = options.resolveSeriesMeta(seriesId);
+    if (meta === null) {
+      standalone.push(...seriesPosts);
+      continue;
+    }
+    lines.push(`## 시리즈: ${meta.title ?? seriesId}`, ``);
+    if (meta.description) lines.push(meta.description, ``);
+    for (const post of sortPostsBySeriesOrder(seriesPosts, meta.order)) {
+      lines.push(...postEntry(post, SITE_URL));
     }
   }
 
-  const sortedStandalone = [...standalone].sort((a, b) => {
-    if (!a.date || !b.date) return 0;
-    return b.date.localeCompare(a.date);
-  });
-
-  if (sortedStandalone.length > 0) {
-    lines.push(`## 단독 포스트`);
-    lines.push(``);
-
-    for (const post of sortedStandalone) {
-      const url = postUrl(post.slug, SITE_URL);
-      const excerpt = post.excerpt
-        ? post.excerpt.slice(0, 200)
-        : post.content
-            .replace(/[#`*[\]]/g, '')
-            .trim()
-            .slice(0, 200);
-      const tags = post.tags?.length ? ` Tags: ${post.tags.join(', ')}.` : '';
-      const date = post.date ? ` (${post.date})` : '';
-
-      lines.push(`### [${post.title}](${url})${date}`);
-      lines.push(``);
-      lines.push(`${excerpt.trim()}...${tags}`);
-      lines.push(``);
+  if (standalone.length > 0) {
+    lines.push(`## 단독 포스트`, ``);
+    for (const post of sortByDateDesc(standalone)) {
+      lines.push(...postEntry(post, SITE_URL));
     }
   }
 
@@ -154,6 +140,7 @@ export function main(ctx: ContentContext) {
     site: ctx.content.config.site,
     llms: ctx.content.config.llms,
     author: ctx.content.config.author,
+    resolveSeriesMeta: ctx.content.getSeriesMeta,
   });
   writeFileSync(outputPath, text, 'utf8');
 

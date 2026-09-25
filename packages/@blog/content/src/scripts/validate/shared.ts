@@ -11,6 +11,7 @@ import type {
   SeoConfig,
   TimezoneConfig,
 } from '../../shared/contentConfig.ts';
+import { isSafeSlug } from '../../post/urls.ts';
 
 export type Severity = 'error' | 'warning';
 
@@ -59,6 +60,8 @@ export interface ValidateOptions {
    * dev 서버가 안 뜨면 도구가 방해물이 됩니다.
    */
   strict?: boolean;
+  /** "지금 공개되는 글"을 판정할 기준 시각 — 진입점이 콘텐츠 인스턴스의 `now`를 넘긴다 */
+  now?: Date;
 }
 
 /**
@@ -79,6 +82,11 @@ export function toValidateContext(
   };
 }
 
+/** 최상위 `key:` 줄인가 — 키는 정규식이 아니라 문자열로 비교한다(`order(old)`도 안전). */
+export function isKeyLine(line: string, key: string): boolean {
+  return /^(\w+)\s*:/.exec(line)?.[1] === key;
+}
+
 /** frontmatter 블록 안에서 `key:` 줄의 1-based 줄 번호. 없으면 null. */
 export function findFrontmatterLine(raw: string, key: string): number | null {
   const lines = raw.split('\n');
@@ -86,8 +94,40 @@ export function findFrontmatterLine(raw: string, key: string): number | null {
   for (const [i, line] of lines.entries()) {
     if (i === 0) continue;
     if (line.trim() === '---') return null;
-    const m = line.match(/^(\w+)\s*:/);
-    if (m && m[1] === key) return i + 1;
+    if (isKeyLine(line, key)) return i + 1;
+  }
+  return null;
+}
+
+/** `parseMatter`가 던진 오류의 원래 오류(YAMLException의 `mark`·메시지) */
+export function yamlErrorCause(error: unknown): unknown {
+  return error instanceof Error && error.cause !== undefined
+    ? error.cause
+    : error;
+}
+
+/** frontmatter `key:` 줄의 원문 값 — YAML은 따옴표 없는 날짜와 시각을 똑같이 Date로 줘서 원문을 본다. */
+export function frontmatterScalar(raw: string, key: string): string | null {
+  const line = findFrontmatterLine(raw, key);
+  if (line === null) return null;
+  const text = raw.split('\n')[line - 1] ?? '';
+  return text
+    .slice(text.indexOf(':') + 1)
+    .replace(/\s+#.*$/, '')
+    .trim();
+}
+
+/** 손으로 적은 `slug`의 모양 문제(사람이 읽을 문장) — 경로에서 유도한 slug는 대상이 아니다. */
+export function slugProblem(slug: string): string | null {
+  // eslint no-control-regex를 피하려고 제어 문자는 코드포인트로 본다.
+  const hasControl = [...slug].some(ch => {
+    const code = ch.codePointAt(0) ?? 0;
+    return code < 0x20 || code === 0x7f;
+  });
+  if (hasControl || /\s/.test(slug)) return '공백이나 제어 문자가 있습니다';
+  if (slug.includes('\\')) return '`\\`는 경로 구분자로 해석될 수 있습니다';
+  if (!isSafeSlug(slug)) {
+    return '앞뒤의 `/`·`//`·`.`·`..` 세그먼트는 URL을 바꿉니다(`/posts//foo/`, `../admin` → `/admin/`)';
   }
   return null;
 }

@@ -1,6 +1,7 @@
 import { spawn } from 'node:child_process';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { BUILD_NOW_ENV } from '../shared/buildNow.ts';
 import type { ContentContext } from './context.ts';
 
 /**
@@ -71,11 +72,18 @@ export function buildPhases(flags: Flags): Step[][] {
   return [validate, generate].filter(phase => phase.length > 0);
 }
 
-interface StepResult {
-  step: Step;
+/** 자식 프로세스 하나의 결과 — 종료 코드나 신호, 그리고 모아 둔 출력. */
+export interface ProcessResult {
+  /** 종료 코드. 신호로 죽었으면 null */
   code: number | null;
+  /** 죽인 신호(`SIGKILL` 등). 스스로 끝났으면 null */
+  signal: NodeJS.Signals | null;
   elapsedMs: number;
   output: string;
+}
+
+interface StepResult extends ProcessResult {
+  step: Step;
 }
 
 /**
@@ -88,32 +96,74 @@ export function stepArgv(step: Step, configPath: string): string[] {
   return ['--config', configPath, step.command, ...step.args];
 }
 
-/** 병렬 실행 시 로그가 섞이지 않도록 출력을 모았다가 단계별로 묶어서 보여줍니다. */
-function runStep(step: Step, configPath: string): Promise<StepResult> {
-  return new Promise(resolveStep => {
+/** 자식 환경에 부모의 기준 시각을 싣는다 — 자식마다 제 시계를 보면 예약 글 경계에서 산출물끼리 글 집합이 갈린다. */
+export function stepEnv(now: Date): NodeJS.ProcessEnv {
+  return { ...process.env, [BUILD_NOW_ENV]: now.toISOString() };
+}
+
+/** 자식을 띄워 출력을 모아 돌려준다 — 띄우기 실패·신호 종료도 결과로 돌려줘 부모가 죽지 않는다. */
+export function runProcess(
+  execPath: string,
+  args: readonly string[],
+  env: NodeJS.ProcessEnv = process.env,
+): Promise<ProcessResult> {
+  return new Promise(resolveRun => {
     const start = Date.now();
-    // cwd는 호출자 것을 그대로 쓴다 — 단계 스크립트들은 경로를 --config로 받은
-    // 설정(절대 경로 앵커)에서 풀므로 cwd에 의존하지 않는다.
-    const child = spawn(
-      process.execPath,
-      [CLI_PATH, ...stepArgv(step, configPath)],
-      {
-        shell: false,
-        stdio: ['ignore', 'pipe', 'pipe'],
-      },
-    );
     const chunks: Buffer[] = [];
-    child.stdout.on('data', (c: Buffer) => chunks.push(c));
-    child.stderr.on('data', (c: Buffer) => chunks.push(c));
-    child.on('close', code => {
-      resolveStep({
-        step,
+    let settled = false;
+    const finish = (
+      code: number | null,
+      signal: NodeJS.Signals | null,
+      note?: string,
+    ) => {
+      // error 뒤에 close가 이어서 올 수 있다 — 먼저 온 쪽 하나만 쓴다.
+      if (settled) return;
+      settled = true;
+      if (note !== undefined) chunks.push(Buffer.from(note));
+      resolveRun({
         code,
+        signal,
         elapsedMs: Date.now() - start,
         output: Buffer.concat(chunks).toString('utf8'),
       });
+    };
+    // cwd에 기대지 않는다 — 단계는 경로를 --config의 설정에서 푼다.
+    const child = spawn(execPath, args, {
+      shell: false,
+      stdio: ['ignore', 'pipe', 'pipe'],
+      env,
+    });
+    child.stdout.on('data', (c: Buffer) => chunks.push(c));
+    child.stderr.on('data', (c: Buffer) => chunks.push(c));
+    child.on('error', err => {
+      finish(1, null, `\n자식 프로세스를 띄우지 못했습니다: ${err.message}\n`);
+    });
+    child.on('close', (code, signal) => {
+      finish(code, signal);
     });
   });
+}
+
+/** 실패 요약의 종료 원인 — 신호로 죽었으면 신호 이름, 아니면 종료 코드. */
+export function describeExit(
+  result: Pick<ProcessResult, 'code' | 'signal'>,
+): string {
+  return result.signal !== null
+    ? `signal ${result.signal}`
+    : `exit ${result.code ?? '?'}`;
+}
+
+async function runStep(
+  step: Step,
+  configPath: string,
+  now: Date,
+): Promise<StepResult> {
+  const result = await runProcess(
+    process.execPath,
+    [CLI_PATH, ...stepArgv(step, configPath)],
+    stepEnv(now),
+  );
+  return { step, ...result };
 }
 
 function indent(text: string): string {
@@ -128,11 +178,13 @@ export async function main(ctx: ContentContext, flags: Flags) {
   const phases = buildPhases(flags);
   const total = phases.reduce((n, phase) => n + phase.length, 0);
   const start = Date.now();
-  console.log(`▶ build-content: ${total}개 단계 (${phases.length} phase) 실행`);
+  console.log(
+    `▶ build-content: ${total}개 단계 (${phases.length} phase) 실행 — 기준 시각 ${ctx.content.now.toISOString()}`,
+  );
 
   for (const phase of phases) {
     const results = await Promise.all(
-      phase.map(step => runStep(step, ctx.configPath)),
+      phase.map(step => runStep(step, ctx.configPath, ctx.content.now)),
     );
     let failed = false;
     for (const result of results) {
@@ -142,7 +194,7 @@ export async function main(ctx: ContentContext, flags: Flags) {
       } else {
         failed = true;
         console.error(
-          `\n✖ [${result.step.label}] 실패 (${elapsed}s, exit ${result.code})`,
+          `\n✖ [${result.step.label}] 실패 (${elapsed}s, ${describeExit(result)})`,
         );
       }
       if (result.output.trim()) {

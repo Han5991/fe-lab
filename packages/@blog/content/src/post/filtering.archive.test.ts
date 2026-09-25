@@ -107,7 +107,7 @@ test('archive: series 필터', () => {
   expect(out.map(x => x.slug)).toStrictEqual(['a']);
 });
 
-test('archive: year 필터는 date의 prefix로 매칭', () => {
+test('archive: year 필터는 date의 연도가 같은 글만 고른다', () => {
   const posts = [
     p({ slug: 'a', date: '2025-12-31' }),
     p({ slug: 'b', date: '2026-01-15' }),
@@ -119,6 +119,18 @@ test('archive: year 필터는 date의 prefix로 매칭', () => {
   );
   expect(out.map(x => x.slug).sort()).toStrictEqual(['b', 'c']);
 });
+
+test.each(['20', '202', '2026-0', '2026-05-09'])(
+  'archive: 연도가 아닌 year=%j는 접두사가 맞아도 아무 글도 고르지 않는다',
+  year => {
+    const posts = [
+      p({ slug: 'a', date: '2025-12-31' }),
+      p({ slug: 'b', date: '2026-05-09' }),
+    ];
+    const out = filterAndSortPostsByArchiveParams(posts, baseParams({ year }));
+    expect(out).toStrictEqual([]);
+  },
+);
 
 test('archive: sort=recent는 date 내림차순', () => {
   const posts = [

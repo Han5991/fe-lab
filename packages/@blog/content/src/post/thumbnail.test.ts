@@ -119,11 +119,24 @@ test('resolveThumbnailUrl: thumbnail 파일명의 공백/특수문자 인코딩'
   );
 });
 
-test('resolveThumbnailUrl: thumbnail 파일명의 슬래시는 %2F로 인코딩 (구분자 보존 아님)', () => {
-  // thumbnail은 encodeURIComponent 통째 적용 → 내부 '/'는 %2F
+test('resolveThumbnailUrl: thumbnail 하위 경로의 슬래시는 구분자로 보존 (세그먼트별 인코딩)', () => {
+  // `%2F`는 정적 호스트에서 경로 구분자가 아니라 404다.
   expect(
     resolveThumbnailUrl(p({ thumbnail: 'sub/cover.png', relativeDir: 'dir' })),
-  ).toBe('/posts/dir/sub%2Fcover.png');
+  ).toBe('/posts/dir/sub/cover.png');
+  expect(
+    resolveThumbnailUrl(
+      p({ thumbnail: '그림/내 표지.png', relativeDir: 'dir' }),
+    ),
+  ).toBe('/posts/dir/%EA%B7%B8%EB%A6%BC/%EB%82%B4%20%ED%91%9C%EC%A7%80.png');
+});
+
+test('resolveThumbnailUrl: 앞의 ./는 벗긴다 (resolvePostAssetUrl과 같은 규칙)', () => {
+  expect(
+    resolveThumbnailUrl(
+      p({ thumbnail: './cover.png', relativeDir: 'network' }),
+    ),
+  ).toBe('/posts/network/cover.png');
 });
 
 test('resolveThumbnailUrl: relativeDir 한글 단일 세그먼트', () => {
@@ -132,13 +145,40 @@ test('resolveThumbnailUrl: relativeDir 한글 단일 세그먼트', () => {
   ).toBe(`/posts/${ENC_BUNDLER}/cover.png`);
 });
 
-test('resolveThumbnailUrl: startsWith("http") quirk — http로 시작하는 비URL도 절대로 간주', () => {
-  // 절대 판정이 startsWith('http')라 'httpsfoo'·'http-guide.png' 같은 상대
-  // 파일명도 외부 URL로 오분류되어 미해결 반환된다. 현재 동작 회귀 고정이며,
-  // 'http://'·'https://' 프리픽스로 좁히는 게 옳은지는 별도 검토 대상이다.
+test('resolveThumbnailUrl: http로 시작하는 상대 파일명은 외부 URL이 아니다', () => {
+  // 스킴(`xxx:`)이 있어야 외부 URL이다.
+  expect(
+    resolveThumbnailUrl(
+      p({ thumbnail: 'http2-flow.png', relativeDir: 'network' }),
+    ),
+  ).toBe('/posts/network/http2-flow.png');
   expect(
     resolveThumbnailUrl(p({ thumbnail: 'httpsfoo', relativeDir: 'dir' })),
-  ).toBe('httpsfoo');
+  ).toBe('/posts/dir/httpsfoo');
+  expect(
+    resolveAbsoluteThumbnailUrl(
+      p({ thumbnail: 'http2-flow.png', relativeDir: 'network' }),
+    ),
+  ).toBe(`${SITE_URL}/posts/network/http2-flow.png`);
+  expect(isOptimizableThumbnail('http2-flow.png')).toBe(true);
+});
+
+test('resolveThumbnailUrl: 스킴이 있는 값과 프로토콜 상대 URL은 그대로', () => {
+  for (const url of [
+    'https://cdn.example.com/a.png',
+    'data:image/png;base64,AAAA',
+    '//cdn.example.com/a.png',
+  ]) {
+    expect(resolveThumbnailUrl(p({ thumbnail: url, relativeDir: 'dir' }))).toBe(
+      url,
+    );
+  }
+});
+
+test('resolveAbsoluteThumbnailUrl: 프로토콜 상대 URL에는 사이트 스킴만 붙인다', () => {
+  expect(
+    resolveAbsoluteThumbnailUrl(p({ thumbnail: '//cdn.example.com/a.png' })),
+  ).toBe(`${new URL(SITE_URL).protocol}//cdn.example.com/a.png`);
 });
 
 test('resolveAbsoluteThumbnailUrl: 생성된 OG 카드에 SITE_URL prefix', () => {
@@ -252,6 +292,16 @@ test('resolveThumbnailSrc: 대상이 아니면 resolveThumbnailUrl과 같은 결
     '/og/other.png',
   );
 });
+
+test.each(['img/cover.png', './cover.png'])(
+  'resolveThumbnailSrc·thumbnailWebpRelPath: 파일 이름이 아닌 %s는 최적화하지 않고 원본 URL을 쓴다',
+  thumbnail => {
+    // 생성기가 만들지 않는 /thumbs 경로를 가리키면 404가 된다.
+    const post = p({ thumbnail, relativeDir: 'network' });
+    expect(thumbnailWebpRelPath(post)).toBe(null);
+    expect(resolveThumbnailSrc(post)).toBe(resolveThumbnailUrl(post));
+  },
+);
 
 test('resolveThumbnailSrc: 파일명의 공백은 인코딩', () => {
   expect(

@@ -43,6 +43,29 @@ test('escapeXml: & 는 entity awareness 없이 항상 &amp; 로 인코딩 (동�
   expect(escapeXml('A & B')).toBe('A &amp; B');
 });
 
+test('escapeXml: XML에 쓸 수 없는 제어 문자·짝 없는 서로게이트는 버린다 (탭·개행은 유지)', () => {
+  expect(escapeXml('a\u000Bb\u0000c\uD800d\uFFFEe\tf\ng')).toBe('abcde\tf\ng');
+  // 짝이 맞는 서로게이트(이모지)는 그대로
+  expect(escapeXml('🥉 동메달')).toBe('🥉 동메달');
+});
+
+test('rss: channel의 사이트 이름·설명도 이스케이프한다 (`&` 하나로 피드 전체가 깨지지 않게)', () => {
+  const xml = buildRssXml([], {
+    ...OPTS,
+    site: {
+      ...OPTS.site,
+      name: 'React & TypeScript <블로그>',
+      description: 'A & B\u000B 설명',
+    },
+  });
+  expect(xml).toContain(
+    '<title>React &amp; TypeScript &lt;블로그&gt; | A &amp; B 설명</title>',
+  );
+  expect(xml).toContain('<description>A &amp; B 설명</description>');
+  // 엔티티가 아닌 맨 `&`가 남지 않는다
+  expect(/&(?!amp;|lt;|gt;|quot;|apos;)/.test(xml)).toBe(false);
+});
+
 test('rss: 헤더와 channel 구조 포함', () => {
   const xml = buildRssXml([], OPTS);
   expect(xml.startsWith('<?xml version="1.0" encoding="UTF-8"?>')).toBeTruthy();

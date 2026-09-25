@@ -15,14 +15,26 @@ import { resolve, dirname } from 'node:path';
 import {
   POST_STATUSES,
   FRONTMATTER_KEYS,
+  isBareThumbnailName,
   isPostStatus,
   isPostFile,
   rejectionReasonFor,
+  resolvePostSlug,
 } from '../../post/index.ts';
-import { hasAmbiguousTimezone } from '../../shared/dates.ts';
-import { findFrontmatterLine } from './shared.ts';
+import { isExternalUrl } from '../../post/assetUrl.ts';
+import {
+  hasAmbiguousTimezone,
+  isIsoDateOnly,
+  isValidDateString,
+} from '../../shared/dates.ts';
+import { decodeUrlSafe } from '../../shared/url.ts';
+import {
+  findFrontmatterLine,
+  frontmatterScalar,
+  slugProblem,
+} from './shared.ts';
 import type { Issue, PostRecord, ValidateContext } from './shared.ts';
-import { resolveSeverity } from './rules.ts';
+import { resolveSeverity, type RuleId } from './rules.ts';
 
 /**
  * 허용 키의 단일 출처는 **서술자 테이블**(src/post/frontmatterSchema.ts)입니다.
@@ -171,6 +183,25 @@ const stringFieldChain: Chain = ({
   return issues;
 };
 
+// ── slug 사슬: invalid-slug ─────────────────────────────────────────────────
+
+// 빈 문자열은 로더가 "없음"으로 보고 파일 경로 slug로 폴백하므로 대상 밖이다.
+const slugChain: Chain = ({ record: { data, relPath }, raw, options }) => {
+  const slug = data['slug'];
+  if (typeof slug !== 'string' || slug === '') return [];
+  const problem = slugProblem(slug);
+  if (problem === null) return [];
+  return [
+    {
+      file: relPath,
+      line: findFrontmatterLine(raw, 'slug'),
+      severity: resolveSeverity('invalid-slug', data, options),
+      rule: 'invalid-slug',
+      message: `\`slug\`를 URL로 쓸 수 없습니다 — ${problem}: ${JSON.stringify(slug)}`,
+    },
+  ];
+};
+
 // ── title 사슬: missing-title · long-title ──────────────────────────────────
 
 const titleChain: Chain = ({ record: { data, relPath }, raw, options }) => {
@@ -268,146 +299,169 @@ const excerptChain: Chain = ({ record: { data, relPath }, raw, options }) => {
   return issues;
 };
 
-// ── date 사슬: missing-date · invalid-date · ambiguous-date ─────────────────
+// ── 날짜 사슬: date · updatedAt · scheduledDate ─────────────────────────────
 
-const dateChain: Chain = ({ record: { data, relPath }, raw, options }) => {
-  const issues: Issue[] = [];
+/** YAML Date가 날짜만 적힌 값이었나 — 파싱 결과로는 날짜와 시각을 못 가르므로 원문을 본다. */
+function isDateOnlyTimestamp(value: Date, written: string | null): boolean {
+  if (written !== null) return /^\d{4}-\d{2}-\d{2}$/.test(written);
+  return value.getTime() % 86_400_000 === 0;
+}
 
-  // `date`는 선택 필드가 아닙니다. 목록 정렬(filtering.ts), 아카이브 연도 필터,
-  // sitemap lastmod, RSS pubDate가 모두 이 값을 읽고, `status: scheduled`는 이 값을
-  // 공개 시각으로 씁니다(visibility.ts). 없으면 목록에서 날짜가 비고 예약 글은
-  // 영원히 비공개가 되는데, 지금까지는 아무 경고 없이 통과했습니다.
-  if (data['date'] == null) {
-    issues.push({
-      file: relPath,
-      line: findFrontmatterLine(raw, 'date'),
-      severity: resolveSeverity('missing-date', data, options),
-      rule: 'missing-date',
-      message:
-        data['status'] === 'scheduled'
-          ? '`date` 필드가 필요합니다. `status: scheduled`는 `date`를 공개 시각으로 쓰므로, 없으면 영원히 비공개 처리됩니다.'
-          : '`date` 필드가 필요합니다. 목록 정렬·아카이브·sitemap·RSS가 모두 이 값을 사용합니다.',
-    });
-    return issues;
-  }
+/** 날짜 필드 하나의 규칙 id와 문구 — 판정 흐름은 세 필드가 같다. */
+interface DateField {
+  key: 'date' | 'updatedAt' | 'scheduledDate';
+  accepts: (value: string) => boolean;
+  unquoted: RuleId;
+  invalid: RuleId;
+  ambiguous: RuleId;
+  /** 조사까지 붙은 주어(`` `date`가 ``) */
+  subject: string;
+  messages: Record<'unquoted' | 'invalid' | 'ambiguous', string>;
+}
 
-  const dateValid =
-    data['date'] instanceof Date ||
-    (typeof data['date'] === 'string' &&
-      !Number.isNaN(Date.parse(data['date'])));
-  if (!dateValid) {
-    issues.push({
-      file: relPath,
-      line: findFrontmatterLine(raw, 'date'),
-      severity: resolveSeverity('invalid-date', data, options),
-      rule: 'invalid-date',
-      message: `\`date\`가 유효한 날짜가 아닙니다: ${describeValue(data['date'])}`,
-    });
-  } else if (
-    typeof data['date'] === 'string' &&
-    hasAmbiguousTimezone(data['date'])
-  ) {
-    // date도 sitemap lastmod / rss pubDate에서 parseScheduledDateKST를 거치므로
-    // offset 없는 datetime이면 scheduledDate와 동일하게 환경 의존 회귀가 생긴다.
-    issues.push({
-      file: relPath,
-      line: findFrontmatterLine(raw, 'date'),
-      severity: resolveSeverity('ambiguous-date', data, options),
-      rule: 'ambiguous-date',
-      message: `\`date\`에 timezone offset이 없어 빌드 환경(UTC)과 로컬(KST)에서 날짜가 어긋날 수 있습니다. \`+09:00\`/\`Z\`를 명시하거나 'YYYY-MM-DD' 형식을 쓰세요: ${data['date']}`,
-    });
-  }
-
-  return issues;
+const DATE_FIELD: DateField = {
+  key: 'date',
+  // 날짜와 datetime이 섞이면 사전순·UTC 자정·KST 자정 정렬이 서로 다른 순서를 낸다.
+  accepts: isIsoDateOnly,
+  unquoted: 'unquoted-date',
+  invalid: 'invalid-date',
+  ambiguous: 'ambiguous-date',
+  subject: '`date`가',
+  messages: {
+    unquoted:
+      "`date`에 따옴표 없는 시각이 있습니다 — `date`는 'YYYY-MM-DD' 날짜 하나만 받고(시각은 `scheduledDate`의 몫), 따옴표가 없으면 YAML이 Date 객체로 바꿔 적은 그대로 읽히지도 않습니다. `date: 'YYYY-MM-DD'`로 쓰고 시각은 `scheduledDate: '2026-06-01T09:00:00+09:00'`처럼 따로 적으세요",
+    ambiguous:
+      "`date`에 timezone offset 없는 시각이 있어 빌드 환경(UTC)과 로컬(KST)에서 날짜가 어긋날 수 있습니다. `date`는 'YYYY-MM-DD'로 쓰고, 시각은 offset을 붙여 `scheduledDate`에 적으세요",
+    invalid:
+      "`date`는 'YYYY-MM-DD' 형식의 실제 날짜여야 합니다(시각까지 정하려면 `scheduledDate`에 offset과 함께 적으세요)",
+  },
 };
 
-// ── updatedAt 사슬: invalid-updated-at · ambiguous-updated-at ───────────────
-
-const updatedAtChain: Chain = ({ record: { data, relPath }, raw, options }) => {
-  const issues: Issue[] = [];
-  if (data['updatedAt'] == null) return issues;
-
-  const updatedAtValid =
-    data['updatedAt'] instanceof Date ||
-    (typeof data['updatedAt'] === 'string' &&
-      !Number.isNaN(Date.parse(data['updatedAt'])));
-  if (!updatedAtValid) {
-    issues.push({
-      file: relPath,
-      line: findFrontmatterLine(raw, 'updatedAt'),
-      severity: resolveSeverity('invalid-updated-at', data, options),
-      rule: 'invalid-updated-at',
-      message: `\`updatedAt\`이 유효한 날짜가 아닙니다: ${describeValue(data['updatedAt'])}`,
-    });
-  } else if (
-    typeof data['updatedAt'] === 'string' &&
-    hasAmbiguousTimezone(data['updatedAt'])
-  ) {
-    issues.push({
-      file: relPath,
-      line: findFrontmatterLine(raw, 'updatedAt'),
-      severity: resolveSeverity('ambiguous-updated-at', data, options),
-      rule: 'ambiguous-updated-at',
-      message: `\`updatedAt\`에 timezone offset이 없어 빌드 환경(UTC)과 로컬(KST)에서 날짜가 어긋날 수 있습니다. \`+09:00\`/\`Z\`를 명시하거나 'YYYY-MM-DD' 형식을 쓰세요: ${data['updatedAt']}`,
-    });
-  }
-  return issues;
+const UPDATED_AT_FIELD: DateField = {
+  key: 'updatedAt',
+  accepts: isValidDateString,
+  unquoted: 'unquoted-updated-at',
+  invalid: 'invalid-updated-at',
+  ambiguous: 'ambiguous-updated-at',
+  subject: '`updatedAt`이',
+  messages: {
+    unquoted:
+      "`updatedAt`에 따옴표 없는 시각이 있습니다 — YAML이 Date 객체로 바꿔 적은 그대로 읽히지 않습니다(원문의 offset이 사라집니다). 'YYYY-MM-DD'나 따옴표로 감싼 '2026-06-01T09:00:00+09:00'으로 쓰세요",
+    ambiguous:
+      "`updatedAt`에 timezone offset이 없어 빌드 환경(UTC)과 로컬(KST)에서 날짜가 어긋날 수 있습니다. `+09:00`/`Z`를 명시하거나 'YYYY-MM-DD' 형식을 쓰세요",
+    invalid:
+      "`updatedAt`은 'YYYY-MM-DD'나 offset을 명시한 ISO datetime('2026-06-01T09:00:00+09:00')이어야 합니다",
+  },
 };
 
-// ── scheduledDate 사슬: unquoted- · invalid- · ambiguous-scheduled-date ─────
+const SCHEDULED_DATE_FIELD: DateField = {
+  key: 'scheduledDate',
+  accepts: isValidDateString,
+  unquoted: 'unquoted-scheduled-date',
+  invalid: 'invalid-scheduled-date',
+  ambiguous: 'ambiguous-scheduled-date',
+  subject: '`scheduledDate`가',
+  messages: {
+    unquoted:
+      "`scheduledDate`는 따옴표로 감싼 문자열이어야 합니다. 따옴표가 없으면 YAML이 Date 객체로 바꿔 적은 그대로 읽히지 않고, 날짜만 적은 값은 UTC 자정(KST 오전 9시)이 되어 따옴표를 친 같은 값(KST 자정)과 공개 시각이 9시간 어긋납니다. 예: `scheduledDate: '2026-06-01T09:00:00+09:00'`",
+    ambiguous:
+      "`scheduledDate`에 timezone offset이 없어 빌드 환경(UTC)과 로컬(KST)에서 발행 시각이 ~9시간 어긋날 수 있습니다. `+09:00` 또는 `Z`를 명시하거나 'YYYY-MM-DD' 형식을 쓰세요",
+    invalid:
+      "`scheduledDate`는 offset을 명시한 ISO datetime('2026-06-01T09:00:00+09:00')이어야 합니다",
+  },
+};
 
-const scheduledDateChain: Chain = ({
-  record: { data, relPath },
-  raw,
-  options,
-}) => {
-  const issues: Issue[] = [];
-
-  // scheduledDate는 반드시 따옴표로 감싼 문자열이어야 합니다.
-  // 무따옴표 datetime(`scheduledDate: 2026-06-01T09:00:00+09:00`)은 YAML이 Date
-  // 객체로 파싱하고, repository.ts가 문자열이 아닌 값을 버립니다. 그러면 공개 시각이
-  // date로 폴백되는데 date는 KST 자정 기준이라 **의도보다 9시간 일찍 공개**됩니다.
-  if ('scheduledDate' in data && typeof data['scheduledDate'] !== 'string') {
-    issues.push({
+/** 날짜 값 하나의 판정. YAML은 `2026-02-30`을 오류 없이 3월 2일로 넘기므로 원문도 본다. */
+function checkDateValue(
+  field: DateField,
+  value: unknown,
+  { record: { data, relPath }, raw, options }: FileContext,
+): Issue[] {
+  const issue = (rule: RuleId, message: string): Issue[] => [
+    {
       file: relPath,
-      line: findFrontmatterLine(raw, 'scheduledDate'),
-      severity: resolveSeverity('unquoted-scheduled-date', data, options),
-      rule: 'unquoted-scheduled-date',
-      message: `\`scheduledDate\`는 따옴표로 감싼 문자열이어야 합니다. 무따옴표로 쓰면 YAML이 Date 객체로 파싱해 값이 버려지고, 공개 시각이 \`date\`(KST 자정)로 폴백되어 의도보다 9시간 일찍 공개됩니다. 예: \`scheduledDate: '2026-06-01T09:00:00+09:00'\``,
-    });
-  }
-
-  if (data['status'] === 'scheduled') {
-    // 공개 시각이 아예 없는 경우는 date 사슬의 missing-date가 잡습니다. 예전에는
-    // 여기서 scheduled-without-date로 따로 검사했지만, date가 필수가 되면서 그 조건
-    // (`scheduledDate도 date도 없음`)은 missing-date에 완전히 포섭돼 같은 파일에
-    // 에러 두 개가 뜰 뿐이었습니다.
-    if (
-      typeof data['scheduledDate'] === 'string' &&
-      Number.isNaN(Date.parse(data['scheduledDate']))
-    ) {
-      issues.push({
-        file: relPath,
-        line: findFrontmatterLine(raw, 'scheduledDate'),
-        severity: resolveSeverity('invalid-scheduled-date', data, options),
-        rule: 'invalid-scheduled-date',
-        message: `\`scheduledDate\`가 유효한 날짜가 아닙니다: ${data['scheduledDate']}`,
-      });
-    } else if (
-      typeof data['scheduledDate'] === 'string' &&
-      hasAmbiguousTimezone(data['scheduledDate'])
-    ) {
-      issues.push({
-        file: relPath,
-        line: findFrontmatterLine(raw, 'scheduledDate'),
-        severity: resolveSeverity('ambiguous-scheduled-date', data, options),
-        rule: 'ambiguous-scheduled-date',
-        message: `\`scheduledDate\`에 timezone offset이 없어 빌드 환경(UTC)과 로컬(KST)에서 발행 시각이 ~9시간 어긋날 수 있습니다. \`+09:00\` 또는 \`Z\`를 명시하거나 'YYYY-MM-DD' 형식을 쓰세요: ${data['scheduledDate']}`,
-      });
+      line: findFrontmatterLine(raw, field.key),
+      severity: resolveSeverity(rule, data, options),
+      rule,
+      message,
+    },
+  ];
+  if (value instanceof Date) {
+    const written = frontmatterScalar(raw, field.key);
+    if (!isDateOnlyTimestamp(value, written)) {
+      return issue(
+        field.unquoted,
+        `${field.messages.unquoted}: ${written ?? describeValue(value)}`,
+      );
     }
+    if (written !== null && !isIsoDateOnly(written)) {
+      return issue(
+        field.invalid,
+        `${field.subject} 달력에 없는 날짜입니다(YAML이 다음 달로 넘깁니다): ${written}`,
+      );
+    }
+    return [];
   }
+  if (typeof value !== 'string') {
+    return issue(
+      field.invalid,
+      `${field.subject} 유효한 날짜가 아닙니다: ${describeValue(value)}`,
+    );
+  }
+  if (field.accepts(value)) return [];
+  // offset 없는 시각은 CI(UTC)와 로컬(KST)이 다르게 읽어 규칙을 따로 둔다.
+  return hasAmbiguousTimezone(value)
+    ? issue(field.ambiguous, `${field.messages.ambiguous}: ${value}`)
+    : issue(field.invalid, `${field.messages.invalid}: ${value}`);
+}
 
-  return issues;
+const dateChain: Chain = ctx => {
+  const { data, relPath } = ctx.record;
+  if (data['date'] == null) {
+    return [
+      {
+        file: relPath,
+        line: findFrontmatterLine(ctx.raw, 'date'),
+        severity: resolveSeverity('missing-date', data, ctx.options),
+        rule: 'missing-date',
+        message:
+          data['status'] === 'scheduled'
+            ? '`date` 필드가 필요합니다. `status: scheduled`는 `date`를 공개 시각으로 쓰므로, 없으면 영원히 비공개 처리됩니다.'
+            : '`date` 필드가 필요합니다. 목록 정렬·아카이브·sitemap·RSS가 모두 이 값을 사용합니다.',
+      },
+    ];
+  }
+  return checkDateValue(DATE_FIELD, data['date'], ctx);
+};
+
+const updatedAtChain: Chain = ctx => {
+  const value = ctx.record.data['updatedAt'];
+  return value == null ? [] : checkDateValue(UPDATED_AT_FIELD, value, ctx);
+};
+
+/** `scheduledDate`는 원문이 곧 공개 시각이라 따옴표로 감싼 문자열만 받는다. */
+const scheduledDateChain: Chain = ctx => {
+  const { data, relPath } = ctx.record;
+  if (!('scheduledDate' in data)) return [];
+  const value = data['scheduledDate'];
+  if (typeof value !== 'string') {
+    return [
+      {
+        file: relPath,
+        line: findFrontmatterLine(ctx.raw, 'scheduledDate'),
+        severity: resolveSeverity(
+          SCHEDULED_DATE_FIELD.unquoted,
+          data,
+          ctx.options,
+        ),
+        rule: SCHEDULED_DATE_FIELD.unquoted,
+        message: SCHEDULED_DATE_FIELD.messages.unquoted,
+      },
+    ];
+  }
+  return data['status'] === 'scheduled'
+    ? checkDateValue(SCHEDULED_DATE_FIELD, value, ctx)
+    : [];
 };
 
 // ── tags 사슬: invalid-tags · duplicate-tags ────────────────────────────────
@@ -478,14 +532,42 @@ const heroChain: Chain = ({ record: { data, relPath }, raw, options }) => {
   ];
 };
 
-// ── thumbnail 사슬: missing-thumbnail ───────────────────────────────────────
+// ── thumbnail 사슬: og-thumbnail-mismatch · invalid-thumbnail-path · missing-thumbnail
+
+const OG_THUMBNAIL_PREFIX = '/og/';
 
 const thumbnailChain: Chain = ({ record, raw, options }) => {
   const { data, relPath, absPath } = record;
   if (!('thumbnail' in data) || typeof data['thumbnail'] !== 'string')
     return [];
   const thumb = data['thumbnail'];
-  if (/^https?:\/\//.test(thumb) || thumb.startsWith('/')) return [];
+  // 생성기는 `/og/{slug}.png`만 만들고 나머지는 orphan으로 지운다 — slug만 고치면 404.
+  if (thumb.startsWith(OG_THUMBNAIL_PREFIX)) {
+    const slug = resolvePostSlug(data['slug'], relPath);
+    const expected = `${OG_THUMBNAIL_PREFIX}${slug}.png`;
+    if (decodeUrlSafe(thumb) === expected) return [];
+    return [
+      {
+        file: relPath,
+        line: findFrontmatterLine(raw, 'thumbnail'),
+        severity: resolveSeverity('og-thumbnail-mismatch', data, options),
+        rule: 'og-thumbnail-mismatch',
+        message: `\`thumbnail\`이 생성 OG 카드를 가리키지만 이 글의 카드 경로(\`${expected}\`)와 다릅니다 — 생성기는 slug 기준 카드만 만들고 나머지는 지우므로 이미지가 404가 됩니다. \`thumbnail: '${expected}'\`로 고치거나 줄을 지우세요(없어도 같은 카드를 씁니다): ${thumb}`,
+      },
+    ];
+  }
+  if (isExternalUrl(thumb) || thumb.startsWith('/')) return [];
+  if (!isBareThumbnailName(thumb)) {
+    return [
+      {
+        file: relPath,
+        line: findFrontmatterLine(raw, 'thumbnail'),
+        severity: resolveSeverity('invalid-thumbnail-path', data, options),
+        rule: 'invalid-thumbnail-path',
+        message: `\`thumbnail\`에는 글과 같은 폴더의 **파일 이름**만 적습니다(\`cover.png\`) — \`./\`·\`img/\`·\`../\` 같은 경로가 붙으면 최적화본(\`/thumbs/…\`) URL이 생성 위치와 어긋나 404가 됩니다. 이미지를 글 폴더로 옮기세요: ${thumb}`,
+      },
+    ];
+  }
   const resolved = resolve(dirname(absPath), thumb);
   if (existsSync(resolved)) return [];
   return [
@@ -506,6 +588,7 @@ const thumbnailChain: Chain = ({ record, raw, options }) => {
 const POST_LIKE_CHAINS: Chain[] = [
   unknownKeyChain,
   stringFieldChain,
+  slugChain,
   titleChain,
   excerptChain,
   dateChain,

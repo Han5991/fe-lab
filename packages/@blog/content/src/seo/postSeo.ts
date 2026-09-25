@@ -11,6 +11,7 @@
  */
 import {
   archiveUrl,
+  extractPlainText,
   postPath,
   postUrl,
   resolveExcerpt,
@@ -18,6 +19,11 @@ import {
 } from '../post/index.ts';
 import { resolveAbsoluteThumbnailUrl } from '../post/thumbnail.ts';
 import type { ContentConfig } from '../shared/contentConfig.ts';
+import {
+  isIsoDateOnly,
+  isIsoDateTimeWithOffset,
+  parseIsoOffset,
+} from '../shared/dates.ts';
 
 /**
  * 아래 빌더들이 받는 `slug`는 **디코드된** 값입니다 — page.tsx가
@@ -82,23 +88,24 @@ export function buildDescription(
  * 이미 완전한 형식이므로 그대로 반환한다 (suffix를 덧붙이면 invalid ISO가 됨).
  * offset은 인자다 — 예전엔 `+09:00`이 여기 박혀 있어, 설정으로 타임존을 덮어도
  * JSON-LD·OG의 발행 시각만 KST로 남았다.
+ * 두 형식 밖의 값이나 틀린 offset이면 깨진 ISO 대신 undefined(필드 생략)다.
  */
 export function toKstIsoDate(
   date: string | null | undefined,
   isoOffset: string,
 ): string | undefined {
   if (!date) return undefined;
-  return date.includes('T') ? date : `${date}T00:00:00${isoOffset}`;
+  if (isIsoDateOnly(date)) {
+    return parseIsoOffset(isoOffset) === null
+      ? undefined
+      : `${date}T00:00:00${isoOffset}`;
+  }
+  return isIsoDateTimeWithOffset(date) ? date : undefined;
 }
 
-/** 마크다운 본문의 대략적 단어 수(JSON-LD wordCount용). 기호 제거 후 공백 분할. */
+/** 마크다운 본문의 대략적 단어 수(JSON-LD wordCount용) — 평문을 공백으로 나눈다. */
 export function countWords(content: string): number {
-  return content
-    .replace(/[#*`_>~[\]()!]/g, '')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .split(' ')
-    .filter(Boolean).length;
+  return extractPlainText(content).split(' ').filter(Boolean).length;
 }
 
 /** OG 이미지 한 장의 프레임워크 중립 서술 */
@@ -221,10 +228,8 @@ export function createPostSeo(
       '@type': 'BlogPosting',
       headline: post.title,
       datePublished: toIsoDate(post.date),
-      // updatedAt이 있으면 그것을, 없으면 date를 dateModified로.
-      dateModified: post.updatedAt
-        ? toIsoDate(post.updatedAt)
-        : toIsoDate(post.date),
+      // updatedAt이 (유효하게) 있으면 그것을, 없으면 date를 dateModified로.
+      dateModified: toIsoDate(post.updatedAt) ?? toIsoDate(post.date),
       description: describe(post),
       image: {
         '@type': 'ImageObject',

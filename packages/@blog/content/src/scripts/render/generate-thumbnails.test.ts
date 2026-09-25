@@ -95,3 +95,16 @@ test('findOrphanWebps: 전부 기대 목록에 있으면 빈 배열', () => {
   const orphans = findOrphanWebps(['a.webp'], new Set(['a.webp']));
   expect(orphans).toStrictEqual([]);
 });
+
+test('collectTasks: 파일 이름이 아닌 thumbnail은 만들지 않는다 (thumbs/ 밖 쓰기·orphan 반복 방지)', () => {
+  // `./a.png`는 URL이 `/thumbs/.%2Fa.webp`인데 join이 `a.webp`에 써서 매 빌드 지우고
+  // 다시 인코딩했고, 루트 글의 `../a.png`는 public/a.webp — thumbs/ 밖에 썼다.
+  expect(
+    collectTasks([
+      { thumbnail: './a.png', relativeDir: '' },
+      { thumbnail: 'img/a.png', relativeDir: 'dir' },
+      { thumbnail: '../a.png', relativeDir: '' },
+      { thumbnail: '..\\a.png', relativeDir: 'dir' },
+    ]),
+  ).toStrictEqual([]);
+});

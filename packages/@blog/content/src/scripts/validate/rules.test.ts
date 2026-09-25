@@ -9,6 +9,8 @@ import { expect, test } from 'vitest';
 import { RULES, SEO_PUBLISH, resolveSeverity, type RuleId } from './rules.ts';
 import { toValidateContext } from './shared.ts';
 import { defineTestContent } from '../../shared/testValues.ts';
+import { isPostVisible } from '../../post/index.ts';
+import { parseMatter, parsePost } from '../../post/repository.ts';
 import { sep } from 'node:path';
 
 // 승격 판정은 설정의 타임존(예약 글이 지금 공개인가)을 본다 — 진입점과 같은 변환.
@@ -16,10 +18,10 @@ const CONFIG = defineTestContent({ root: `${sep}tmp${sep}app` });
 const CTX = toValidateContext(CONFIG);
 const STRICT_CTX = toValidateContext(CONFIG, { strict: true });
 
-test('RULES: 규칙은 정확히 29개', () => {
+test('RULES: 규칙은 정확히 39개', () => {
   // `non-string-field`가 세다 보면 흔히 빠진다 — 개수를 고정해 추가·삭제가
   // 테이블을 지나치지 못하게 한다.
-  expect(Object.keys(RULES).length).toBe(29);
+  expect(Object.keys(RULES).length).toBe(39);
 });
 
 test('RULES: --strict 승격(SEO_PUBLISH) 센티널은 정확히 6개', () => {
@@ -57,12 +59,16 @@ test('RULES: 전체 집합을 봐야 하는 규칙은 corpus 계열 scope 둘뿐
 });
 
 test('RULES: isPostFile 게이트(scope=post)가 걸린 규칙', () => {
-  // 메타 노트는 렌더될 일이 없어 검사하지 않는 규칙들 — body.ts의 두 검사.
+  // 메타 노트는 렌더될 일이 없어 검사하지 않는 규칙들 — body.ts의 검사들.
   const postScoped = Object.entries(RULES)
     .filter(([, spec]) => spec.scope === 'post')
     .map(([id]) => id)
     .sort();
-  expect(postScoped).toStrictEqual(['body-h1', 'missing-image-alt']);
+  expect(postScoped).toStrictEqual([
+    'body-h1',
+    'missing-image-alt',
+    'unknown-diagram-name',
+  ]);
 });
 
 // ── resolveSeverity: 승격 조건은 check-seo가 보는 범위와 같다 ────────────────
@@ -114,6 +120,31 @@ test('resolveSeverity: 무따옴표 date(YAML Date 객체)도 공개 판정에 �
   ).toBe('error');
 });
 
+test.each([
+  // 있는데 못 읽는 예약 시각 — 로더는 date로 폴백하지 않고 비공개로 닫는다.
+  ['scheduled', 'bad', 'warning'],
+  ['scheduled', '2026-06-01 09:00:00+09:00', 'warning'],
+  // 문자열이 아닌 값·빈 문자열은 로더가 "없음"으로 보고 date(지난 날)로 폴백한다.
+  ['scheduled', 123, 'error'],
+  ['scheduled', '', 'error'],
+  ['scheduled', '2020-01-01T09:00:00+09:00', 'error'],
+  // published는 예약 시각과 무관하게 공개
+  ['published', 'bad', 'error'],
+])(
+  'resolveSeverity: %s · scheduledDate %j의 공개 판정은 로더와 같다 (%s)',
+  (status, scheduledDate, expected) => {
+    const raw = `---\ntitle: x\nstatus: ${status}\ndate: '2020-01-01'\nscheduledDate: ${JSON.stringify(scheduledDate)}\n---\n`;
+    const { data } = parseMatter(raw, 'a.md');
+    const post = parsePost(raw, 'a.md', {
+      excerptMaxLength: 160,
+      timezone: CONFIG.timezone,
+    });
+    const loaderVisible = post !== null && isPostVisible(post, CONFIG.timezone);
+    expect(loaderVisible ? 'error' : 'warning').toBe(expected);
+    expect(resolveSeverity('missing-excerpt', data, STRICT_CTX)).toBe(expected);
+  },
+);
+
 test('resolveSeverity: 고정 심각도 규칙은 strict와 무관하게 테이블 값 그대로', () => {
   expect(resolveSeverity('missing-title', PUBLISHED, CTX)).toBe('error');
   expect(resolveSeverity('missing-title', { title: 'x' }, STRICT_CTX)).toBe(
@@ -123,4 +154,18 @@ test('resolveSeverity: 고정 심각도 규칙은 strict와 무관하게 테이�
   expect(resolveSeverity('duplicate-tags', PUBLISHED, STRICT_CTX)).toBe(
     'warning',
   );
+});
+
+test('resolveSeverity: 공개 판정은 주입된 기준 시각(now)을 쓴다 — 생성 단계와 같은 시각', () => {
+  const rule: RuleId = 'missing-excerpt';
+  const data = { title: 'x', status: 'scheduled', date: '2026-06-01' };
+  const at = (iso: string) =>
+    resolveSeverity(
+      rule,
+      data,
+      toValidateContext(CONFIG, { strict: true, now: new Date(iso) }),
+    );
+  // 픽스처 타임존의 2026-06-01 자정 직전/직후
+  expect(at('2026-05-01T00:00:00Z')).toBe('warning');
+  expect(at('2026-07-01T00:00:00Z')).toBe('error');
 });

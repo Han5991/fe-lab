@@ -6,7 +6,6 @@ import { sep } from 'node:path';
 import {
   resolveOptions,
   parseTagList,
-  todayKST,
   safeFilename,
   buildPostFilePath,
   buildFrontmatter,
@@ -14,6 +13,7 @@ import {
 import {
   validatePost,
   validateBodyHeadings,
+  viewBody,
   type PostRecord,
 } from './validate-posts.ts';
 
@@ -49,6 +49,24 @@ test('resolveOptions: --scheduled를 주면 status를 scheduled로 올린다', (
   expect(opts.scheduledDate).toBe('2026-05-01T09:00:00+09:00');
 });
 
+// lint:posts와 같은 판정으로 파일을 만들기 전에 거른다.
+test.each([
+  [{ scheduledDate: 'tomorrow' }, /--scheduled는 'YYYY-MM-DD'이거나 offset/],
+  [{ scheduledDate: '2026-5-1' }, /--scheduled는/],
+  [{ scheduledDate: '2026-06-01T09:00:00' }, /--scheduled는/],
+  [{ scheduledDate: '2026-02-30' }, /--scheduled는/],
+  [{ slug: '/foo' }, /--slug를 URL로 쓸 수 없습니다/],
+  [{ slug: 'foo/' }, /--slug를/],
+  [{ slug: '../admin' }, /--slug를/],
+  [{ slug: 'my post' }, /--slug를/],
+  [{ slug: '' }, /--slug를/],
+  [{ scheduledDate: '2026-06-01', slug: 'nested/ok-slug' }, null],
+])('resolveOptions: %j → %s', (over, error) => {
+  const resolve = () => resolveOptions({ title: '제목', ...over });
+  if (error) expect(resolve).toThrow(error);
+  else expect(resolve()).toMatchObject(over);
+});
+
 test('resolveOptions: status만 scheduled고 날짜가 없으면 에러', () => {
   // 공개 시각 없는 예약 글은 영영 안 뜬다 — 파일을 만들기 전에 막는다.
   expect(() => resolveOptions({ title: '제목', status: 'scheduled' })).toThrow(
@@ -62,17 +80,31 @@ test('resolveOptions: status 값은 그대로 전달', () => {
   );
 });
 
-// ── todayKST ─────────────────────────────────────────────────────────────────
+// ── 스캐폴딩 date: 설정 타임존의 달력 날짜 ──────────────────────────────────
 
-test('todayKST: UTC 기준 전날 밤이어도 KST 날짜로 계산', () => {
+test.each([
   // UTC 1/31 16:00 == KST 2/1 01:00
-  expect(todayKST(TZ, new Date('2026-01-31T16:00:00Z'))).toBe('2026-02-01');
-});
-
-test('todayKST: KST 자정 직전이면 같은 날 유지', () => {
+  [undefined, '2026-01-31T16:00:00Z', '2026-02-01'],
   // UTC 1/31 14:00 == KST 1/31 23:00
-  expect(todayKST(TZ, new Date('2026-01-31T14:00:00Z'))).toBe('2026-01-31');
-});
+  [undefined, '2026-01-31T14:00:00Z', '2026-01-31'],
+  // 예약 글은 공개 예정일 — 2026-05-31T20:00Z = KST 6/1 05:00(앞 10자가 아니라)
+  ['2026-05-31T20:00:00Z', '2026-06-09T03:00:00Z', '2026-06-01'],
+])(
+  'buildFrontmatter: 예약 %s · 지금 %s → date %s',
+  (scheduledDate, now, date) => {
+    const raw = buildFrontmatter(
+      {
+        title: '글',
+        status: scheduledDate ? 'scheduled' : 'draft',
+        tags: [],
+        scheduledDate,
+      },
+      TZ,
+      new Date(now),
+    );
+    expect(raw).toContain(`date: '${date}'`);
+  },
+);
 
 // ── safeFilename ─────────────────────────────────────────────────────────────
 
@@ -163,7 +195,7 @@ test('buildFrontmatter: 기본 골격 — 본문은 `## `로 시작한다 (h1을
     [
       '---',
       "title: '제목'",
-      'date: 2026-06-09',
+      "date: '2026-06-09'",
       'status: draft',
       "excerpt: ''",
       "tags: ['a', 'b']",
@@ -192,7 +224,7 @@ test('buildFrontmatter: 시각까지 지정한 예약글은 scheduledDate를 추
   expect(raw).toMatch(/scheduledDate: '2026-05-01T09:00:00\+09:00'/);
   expect(raw).toMatch(/slug: 'release-note'/);
   // date는 스캐폴딩한 날(2026-06-09)이 아니라 공개 예정일이어야 한다.
-  expect(raw).toMatch(/date: 2026-05-01/);
+  expect(raw).toMatch(/date: '2026-05-01'/);
 });
 
 test('buildFrontmatter: 날짜만 지정한 예약글은 scheduledDate 없이 date만', () => {
@@ -207,7 +239,7 @@ test('buildFrontmatter: 날짜만 지정한 예약글은 scheduledDate 없이 da
     TZ,
     NOW,
   );
-  expect(raw).toMatch(/date: 2026-05-01/);
+  expect(raw).toMatch(/date: '2026-05-01'/);
   expect(!raw.includes('scheduledDate')).toBeTruthy();
 });
 
@@ -331,7 +363,7 @@ test('계약: 스캐폴드 본문에는 h1이 없다 (body-h1 경고가 나지 �
   expect(
     validateBodyHeadings(
       { absPath: '/posts/a.md', relPath: 'a.md', data, content },
-      raw,
+      viewBody(content, raw),
     ),
   ).toStrictEqual([]);
 });

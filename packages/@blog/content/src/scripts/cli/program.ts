@@ -18,6 +18,7 @@
  * 돌지 않아야 커맨드 목록과 옵션을 검사할 수 있다.
  */
 import { Command, Option } from 'commander';
+import { BUILD_NOW_ENV, resolveBuildNow } from '../../shared/buildNow.ts';
 import type { NewPostOptions } from '../new-post.ts';
 import type { ContentContext } from '../context.ts';
 
@@ -30,8 +31,16 @@ async function loadContext(command: Command): Promise<ContentContext> {
   const globals = command.optsWithGlobals<{ config?: string }>();
   const { loadContentConfig } = await import('./discoverConfig.ts');
   const { createContext } = await import('../context.ts');
+  let now: Date;
+  try {
+    // 기준 시각의 채널은 환경 변수 하나다(앱 build 스크립트·stepEnv·앱 content.ts).
+    now = resolveBuildNow(process.env[BUILD_NOW_ENV]);
+  } catch (e) {
+    // 입력 형식 오류는 스택이 아니라 메시지로 — new-post 액션과 같은 처리.
+    command.error(`✖ ${e instanceof Error ? e.message : String(e)}`);
+  }
   const { config, configPath } = await loadContentConfig(globals.config);
-  return createContext(config, configPath);
+  return createContext(config, configPath, now);
 }
 
 /** 인자 없이 도는 생성 단계 — build가 병렬로 돌리는 것들 대부분이 여기다. */

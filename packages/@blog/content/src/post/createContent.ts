@@ -26,11 +26,22 @@ export interface ContentApi
   config: ContentConfig;
   /** `config.root` 기준으로 푼 절대 경로 집합 */
   paths: ContentPaths;
+  /** 공개 판정의 기준 시각 — 로더 메서드와 산출물 날짜(sitemap·RSS)가 함께 본다 */
+  now: Date;
 }
 
-export function createContent(config: ContentConfig): ContentApi {
+export interface CreateContentOptions {
+  /** 공개 판정 기준 시각 — 생략하면 인스턴스를 만든 시각 */
+  now?: Date;
+}
+
+export function createContent(
+  config: ContentConfig,
+  options: CreateContentOptions = {},
+): ContentApi {
   const paths = resolveContentPaths(config);
   const isDevelopment = () => config.runtime.isDevelopment();
+  const now = options.now ?? new Date();
 
   const seriesReader = createSeriesReader({
     postsDir: paths.postsDir,
@@ -40,6 +51,7 @@ export function createContent(config: ContentConfig): ContentApi {
     postsDir: paths.postsDir,
     isDevelopment,
     excerptMaxLength: config.seo.descriptionMaxLength,
+    timezone: config.timezone,
     isSeriesFolder: name => seriesReader.isSeriesFolder(name),
     metaFilenames: config.registries.metaFilenames,
   });
@@ -48,6 +60,7 @@ export function createContent(config: ContentConfig): ContentApi {
     getSeriesMeta: seriesReader.getSeriesMeta,
     isDevelopment,
     timezone: config.timezone,
+    now,
   });
   const aggregate = createAggregate({
     getAllPosts: () => service.getAllPosts(),
@@ -57,6 +70,7 @@ export function createContent(config: ContentConfig): ContentApi {
   return {
     config,
     paths,
+    now,
     ...seriesReader,
     ...repository,
     ...service,
