@@ -23,25 +23,8 @@ import { WeekGrowthIcon } from './WeekGrowthIcon';
 import { adminAnalyticsPostPath } from '@/src/shared/routes';
 // 클라이언트 컴포넌트의 @blog/content 배럴 import — node:fs 모듈(series 등)은
 // next.config.ts의 optimizePackageImports + sideEffects:false가 번들에서 걸러 준다.
-import { postPath } from '@blog/content';
-import { resolvePostState, type PostStatus } from '@blog/content';
-
-/**
- * 상태 배지의 색과 라벨. 배지는 **상태만** 말합니다 — 공개 예정일은 옆 날짜
- * 칼럼에 이미 있고, 예약 글의 정확한 시각은 title 툴팁이 답합니다.
- *
- * 삼항 체인이 아니라 레코드인 건 망라 때문입니다. 체인의 마지막 가지는 남은
- * 상태를 전부 받아서, `PostStatus`가 늘면 새 상태가 조용히 '예약'으로 그려집니다.
- * `satisfies`가 그 자리를 컴파일 에러로 만듭니다.
- *
- * 배경·테두리는 세 상태가 같은 값이라 여기 두지 않습니다 — 상태에 따라 달라지는
- * 축만 남겨야 배지가 무엇으로 갈리는지가 읽힙니다.
- */
-const STATUS_BADGE = {
-  published: { color: 'moss.600', label: '공개' },
-  draft: { color: 'ink.500', label: '비공개' },
-  scheduled: { color: 'spot.600', label: '예약' },
-} as const satisfies Record<PostStatus, { color: string; label: string }>;
+import { resolvePostState } from '@blog/content';
+import { STATUS_BADGE, livePostHref } from './postState';
 
 interface Props {
   post: PostStatDetail;
@@ -76,7 +59,9 @@ export function PostAccordion({ post, todayISO }: Props) {
     views: d.view_count,
   }));
 
+  // 배지는 상태만 말한다 — 공개 예정일은 옆 날짜 칼럼에, 예약 시각은 툴팁에 있다.
   const badge = STATUS_BADGE[state];
+  const liveHref = livePostHref(post.slug, state);
 
   return (
     <div
@@ -113,11 +98,9 @@ export function PostAccordion({ post, todayISO }: Props) {
         >
           <BarChart3 size={14} aria-hidden />
         </Link>
-        {/* 공개 중인 글만 실제 글로 연다 — 정적 export는 비공개 글의 페이지를
-            만들지 않아 draft·공개 전 예약 글은 새 탭 404였다. */}
-        {state === 'published' && (
+        {liveHref && (
           <Link
-            href={postPath(post.slug)}
+            href={liveHref}
             target="_blank"
             aria-label={`${post.title} 글을 새 탭에서 열기`}
             className={css({

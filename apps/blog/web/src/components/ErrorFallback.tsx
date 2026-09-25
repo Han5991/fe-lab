@@ -1,26 +1,13 @@
 import Link from 'next/link';
 import { css } from '@design-system/ui-lib/css';
 import { HOME_PATH } from '@/src/shared/routes';
+import { actionButton } from './actionButton';
 import { Rail } from './Rail';
 
 interface ErrorFallbackProps {
   /** 에러 경계를 다시 그려 본다 — Next의 `retry`가 그대로 들어온다. */
   onRetry: () => void;
 }
-
-const buttonBase = css.raw({
-  px: '[16px]',
-  py: '[8px]',
-  borderWidth: '[1px]',
-  borderStyle: 'solid',
-  rounded: '[6px]',
-  fontSize: 'sm',
-  fontWeight: 'semibold',
-  textAlign: 'center',
-  cursor: 'pointer',
-  transition: '[background 0.2s]',
-  textDecorationLine: 'none',
-});
 
 /**
  * 라우트 에러 경계(`app/error.tsx`)와 루트 에러 경계(`app/global-error.tsx`)가
@@ -63,27 +50,11 @@ export const ErrorFallback = ({ onRetry }: ErrorFallbackProps) => (
       <button
         type="button"
         onClick={onRetry}
-        className={css(buttonBase, {
-          bg: 'btn.primary',
-          color: 'white',
-          borderColor: 'btn.primaryBorder',
-          _hover: { bg: 'btn.primaryHover' },
-          _active: { bg: 'btn.primary' },
-        })}
+        className={actionButton({ tone: 'primary' })}
       >
         다시 시도
       </button>
-      <Link
-        href={HOME_PATH}
-        className={css(buttonBase, {
-          bg: 'paper.200',
-          color: 'ink.800',
-          borderColor: 'ink.border',
-          fontWeight: 'medium',
-          _hover: { bg: 'paper.300', borderColor: 'ink.borderStrong' },
-          _active: { bg: 'paper.300' },
-        })}
-      >
+      <Link href={HOME_PATH} className={actionButton({ tone: 'secondary' })}>
         홈으로 돌아가기
       </Link>
     </div>

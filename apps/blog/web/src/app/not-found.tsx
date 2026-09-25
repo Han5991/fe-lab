@@ -6,6 +6,7 @@ import { css, cx } from '@design-system/ui-lib/css';
 import { POSTS_PATH } from '@blog/content';
 import { HOME_PATH } from '@/src/shared/routes';
 import { railGutter } from '@/src/components/Rail';
+import { actionButton } from '@/src/components/actionButton';
 
 export default function NotFound() {
   return (
@@ -62,48 +63,10 @@ export default function NotFound() {
           w: { base: 'full', sm: 'auto' },
         })}
       >
-        <Link
-          href={HOME_PATH}
-          className={css({
-            px: '[16px]',
-            py: '[8px]',
-            bg: 'btn.primary',
-            color: 'white',
-            borderWidth: '[1px]',
-            borderStyle: 'solid',
-            borderColor: 'btn.primaryBorder',
-            rounded: '[6px]',
-            fontSize: 'sm',
-            fontWeight: 'semibold',
-            textAlign: 'center',
-            _hover: { bg: 'btn.primaryHover' },
-            _active: { bg: 'btn.primary' },
-            transition: '[background 0.2s]',
-            textDecorationLine: 'none',
-          })}
-        >
+        <Link href={HOME_PATH} className={actionButton({ tone: 'primary' })}>
           홈으로 돌아가기
         </Link>
-        <Link
-          href={POSTS_PATH}
-          className={css({
-            px: '[16px]',
-            py: '[8px]',
-            bg: 'paper.200',
-            borderWidth: '[1px]',
-            borderStyle: 'solid',
-            borderColor: 'ink.border',
-            color: 'ink.800',
-            rounded: '[6px]',
-            fontSize: 'sm',
-            fontWeight: 'medium',
-            textAlign: 'center',
-            _hover: { bg: 'paper.300', borderColor: 'ink.borderStrong' },
-            _active: { bg: 'paper.300' },
-            transition: '[all 0.2s]',
-            textDecorationLine: 'none',
-          })}
-        >
+        <Link href={POSTS_PATH} className={actionButton({ tone: 'secondary' })}>
           글 목록 보기
         </Link>
       </div>

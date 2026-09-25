@@ -13,33 +13,28 @@ import Link from 'next/link';
 // 클라이언트 컴포넌트의 @blog/content 배럴 import — `export * from './series'`가
 // 모듈 평가 시점에 node:fs를 당겨 오는 문제는 next.config.ts의
 // optimizePackageImports + 패키지 sideEffects:false가 번들에서 걸러 준다.
-import { postPath, resolvePostState, type PostStatus } from '@blog/content';
+import { resolvePostState, type PostStatus } from '@blog/content';
 import {
   ADMIN_ANALYTICS_PATH,
   adminAnalyticsPostPath,
 } from '@/src/shared/routes';
+import { STATUS_BADGE, livePostHref } from './components/postState';
 
 /**
  * 목록 한 줄이 여는 곳 — 공개 중인 글은 실제 글(새 탭), 아직 비공개인 글은 그
- * 글의 admin 통계. 정적 export는 비공개 글의 페이지를 만들지 않아서, 예전엔
- * draft·공개 전 예약 글 줄이 새 탭 404로 열렸다(날짜 내림차순이라 미래 날짜의
- * 예약 글이 "최근 게시글" 맨 위에 온다).
+ * 글의 admin 통계.
  */
 function postLink(
   slug: string,
   state: PostStatus,
 ): { href: string; target?: '_blank' } {
-  return state === 'published'
-    ? { href: postPath(slug), target: '_blank' }
+  const live = livePostHref(slug, state);
+  return live
+    ? { href: live, target: '_blank' }
     : { href: adminAnalyticsPostPath(slug) };
 }
 
 /** 비공개 글 줄에 붙는 상태 — 공개 글에는 붙이지 않는다. */
-const HIDDEN_LABEL = {
-  draft: '비공개',
-  scheduled: '예약',
-} as const satisfies Record<Exclude<PostStatus, 'published'>, string>;
-
 function HiddenBadge({ state }: { state: PostStatus }) {
   if (state === 'published') return null;
   return (
@@ -55,7 +50,7 @@ function HiddenBadge({ state }: { state: PostStatus }) {
         flexShrink: 0,
       })}
     >
-      {HIDDEN_LABEL[state]}
+      {STATUS_BADGE[state].label}
     </span>
   );
 }
