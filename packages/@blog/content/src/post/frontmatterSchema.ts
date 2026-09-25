@@ -30,9 +30,7 @@ import { isPostStatus } from './visibility.ts';
 // 함수**를 가리켜야 "테이블이 선언한 좁히기"와 "실제로 도는 좁히기"가 갈라지지
 // 않으므로 여기로 옮겼습니다.
 //
-// `src/post/index.ts` 배럴에는 날짜 좁히기(`toDateString`·`toScheduledDate`)만
-// 올립니다 — 배럴은 "밖에서 쓸 것"만 큐레이션하는 표면이고(index.ts의 주석 참고),
-// 나머지는 도메인 안에서 parsePost와 이 테이블만 씁니다.
+// 배럴(`src/post/index.ts`)에는 올리지 않는다 — 밖에서는 테이블의 `narrow`로 쓴다.
 
 /**
  * frontmatter의 date/updatedAt 값을 문자열(또는 null)로 정규화합니다.
@@ -92,9 +90,7 @@ function fromYamlDate(
  * (fail-open). 원문 그대로 두면 `isPostVisible`이 형식을 인정하지 않아 비공개로
  * 닫히고(fail-closed), dev 배너에도 저자가 쓴 값이 그대로 보입니다.
  *
- * 따옴표 없는 datetime(YAML Date)은 `date`와 같은 규칙으로 시점을 보존해
- * 적습니다 — lint:posts의 공개 판정(`isVisibleFrontmatter`)이 이미 그렇게 읽고
- * 있어서, 예전처럼 로더만 값을 버리면 두 판정이 갈렸습니다.
+ * 따옴표 없는 datetime(YAML Date)은 `date`와 같은 규칙으로 시점을 보존해 적습니다.
  */
 export function toScheduledDate(
   value: unknown,

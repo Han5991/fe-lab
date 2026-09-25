@@ -241,9 +241,7 @@ test('parsePost: updatedAt 없으면 null', () => {
 });
 
 test('parsePost: 따옴표 없는 scheduledDate(YAML Date)도 버리지 않고 date와 같은 규칙으로 읽는다', () => {
-  // 예전에는 문자열이 아니라고 버려서 공개 시각이 date(그날 자정)로 폴백했다 —
-  // 적힌 시각보다 일찍 공개되는 fail-open. lint:posts의 공개 판정은 이미
-  // 이렇게 읽고 있었다(isVisibleFrontmatter → toDateString).
+  // 버리면 공개 시각이 date(그날 자정)로 폴백해 적힌 시각보다 일찍 공개된다.
   const dateOnly = `---\ntitle: 글\nstatus: scheduled\ndate: 2026-02-28\nscheduledDate: 2026-03-01\n---\n본문`;
   expect(parsePost(dateOnly, 'a.md', PARSE_OPTS)?.scheduledDate).toBe(
     '2026-03-01',

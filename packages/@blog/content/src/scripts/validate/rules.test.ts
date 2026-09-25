@@ -9,6 +9,8 @@ import { expect, test } from 'vitest';
 import { RULES, SEO_PUBLISH, resolveSeverity, type RuleId } from './rules.ts';
 import { toValidateContext } from './shared.ts';
 import { defineTestContent } from '../../shared/testValues.ts';
+import { isPostVisible } from '../../post/index.ts';
+import { parseMatter, parsePost } from '../../post/repository.ts';
 import { sep } from 'node:path';
 
 // 승격 판정은 설정의 타임존(예약 글이 지금 공개인가)을 본다 — 진입점과 같은 변환.
@@ -118,37 +120,33 @@ test('resolveSeverity: 무따옴표 date(YAML Date 객체)도 공개 판정에 �
   ).toBe('error');
 });
 
-test('resolveSeverity: 읽을 수 없는 scheduledDate는 date로 폴백하지 않는다 (로더와 같은 판정)', () => {
-  // 로더는 있는데 못 읽는 예약 시각을 가진 글을 영영 공개하지 않는다 — date가
-  // 이미 지났어도. 여기서 date로 폴백하면 공개되지도 않는 글을 에러로 막는다.
-  const rule: RuleId = 'missing-excerpt';
-  for (const scheduledDate of ['bad', '2026-06-01 09:00:00+09:00', 123]) {
-    expect(
-      resolveSeverity(
-        rule,
-        { title: 'x', status: 'scheduled', date: '2020-01-01', scheduledDate },
-        STRICT_CTX,
-      ),
-      String(scheduledDate),
-    ).toBe('warning');
-  }
-  // 읽을 수 있는 예약 시각이 지났으면 공개 → 에러
+test.each([
+  // 있는데 못 읽는 예약 시각 — 로더는 date로 폴백하지 않고 비공개로 닫는다.
+  ['bad', 'warning'],
+  ['2026-06-01 09:00:00+09:00', 'warning'],
+  // 문자열이 아닌 값·빈 문자열은 로더가 "없음"으로 보고 date(지난 날)로 폴백한다.
+  [123, 'error'],
+  ['', 'error'],
+  ['2020-01-01T09:00:00+09:00', 'error'],
+])(
+  'resolveSeverity: scheduledDate %j의 공개 판정은 로더와 같다 (%s)',
+  (scheduledDate, expected) => {
+    const raw = `---\ntitle: x\nstatus: scheduled\ndate: '2020-01-01'\nscheduledDate: ${JSON.stringify(scheduledDate)}\n---\n`;
+    const { data } = parseMatter(raw, 'a.md');
+    const post = parsePost(raw, 'a.md', {
+      excerptMaxLength: 160,
+      timezone: CONFIG.timezone,
+    });
+    const loaderVisible = post !== null && isPostVisible(post, CONFIG.timezone);
+    expect(loaderVisible ? 'error' : 'warning').toBe(expected);
+    expect(resolveSeverity('missing-excerpt', data, STRICT_CTX)).toBe(expected);
+  },
+);
+
+test('resolveSeverity: published는 예약 시각과 무관하게 공개', () => {
   expect(
     resolveSeverity(
-      rule,
-      {
-        title: 'x',
-        status: 'scheduled',
-        date: '2020-01-01',
-        scheduledDate: '2020-01-01T09:00:00+09:00',
-      },
-      STRICT_CTX,
-    ),
-  ).toBe('error');
-  // published는 예약 시각과 무관하게 공개
-  expect(
-    resolveSeverity(
-      rule,
+      'missing-excerpt',
       {
         title: 'x',
         status: 'published',

@@ -12,10 +12,9 @@
  * 컴파일(RuleId)이 막고, `rules.test.ts`가 개수·센티널 집합을 잠급니다.
  */
 import {
+  FRONTMATTER_FIELDS,
   isPostFile,
-  isPostStatus,
   isPostVisible,
-  toDateString,
 } from '../../post/index.ts';
 import type { Severity, ValidateContext } from './shared.ts';
 
@@ -144,45 +143,23 @@ export function resolveSeverity(
 }
 
 /**
- * frontmatter 원문으로 "지금 공개되는 글인가"를 판정합니다.
- *
- * `isPostVisible`은 날짜가 **문자열**일 때만 공개 시각으로 인정합니다(도메인은
- * 정규화된 PostData를 받는 전제). 그런데 여기서 보는 건 gray-matter 원문이라,
- * 따옴표 없이 쓴 `date: 2026-08-10`은 YAML이 **Date 객체**로 파싱합니다 —
- * 예전 `new-post`가 그렇게 썼고, 실제 원고에도 아직 그런 글이 있습니다. 그대로 넘기면 이미 공개된 예약 글이
- * "비공개"로 판정되어 strict 에러가 조용히 경고로 떨어집니다.
- * repository가 PostData를 만들 때 쓰는 `toDateString`을 똑같이 거칩니다.
- *
- * **읽을 수 없는 `scheduledDate`는 `date`로 폴백하지 않습니다.** 로더가 그렇게
- * 판정하기 때문입니다 — 있는데 못 읽는 예약 시각(`'bad'`, 공백 구분 시각, 숫자)은
- * 그 글을 영영 공개하지 않습니다. 여기서만 `date`로 폴백하면 로더는 비공개로 두는
- * 글을 "공개 중"으로 보고 strict 에러를 낸다(반대 방향이면 조용히 경고로 떨어진다).
- *
- * status도 같은 이유로 한 번 걸러 넘깁니다. 원문의 status는 무엇이든 될 수 있고
- * (`status: 3`), enum 밖 값은 `isPostVisible`이 어차피 fail-closed로 비공개
- * 판정하므로 미지정으로 넘기는 것과 결론이 같습니다. 예전에는 이 객체 전체에
- * `as Parameters<typeof isPostVisible>[0]`가 붙어 있었는데, 그 단언은 값을 하나도
- * 확인하지 않으면서 **인자 계약이 늘어나도 조용히 통과**합니다(부분 객체를
- * 상위 타입으로 단언하는 방향이라 컴파일러가 막지 않습니다).
+ * frontmatter 원문으로 "지금 공개되는 글인가"를 판정합니다 — 로더가 PostData를
+ * 만들 때 쓰는 좁히기(`FRONTMATTER_FIELDS.*.narrow`)를 거쳐 `isPostVisible`에
+ * 넘기므로, 공개 판정은 로더와 한 벌이다(AGENTS.md §8).
  */
 export function isVisibleFrontmatter(
   data: Record<string, unknown>,
   timezone: ValidateContext['timezone'],
   now?: Date,
 ): boolean {
-  const status = data['status'];
-  const rawScheduled = data['scheduledDate'];
-  const scheduledDate =
-    rawScheduled == null ? null : toDateString(rawScheduled);
-  if (rawScheduled != null && scheduledDate === null) {
-    // 예약 시각을 읽을 수 없는 글은 공개되지 않는다 — 발행(published)만 예외.
-    return status === 'published';
-  }
   return isPostVisible(
     {
-      status: isPostStatus(status) ? status : undefined,
-      date: toDateString(data['date']),
-      scheduledDate,
+      status: FRONTMATTER_FIELDS.status.narrow(data['status']),
+      date: FRONTMATTER_FIELDS.date.narrow(data['date'], timezone),
+      scheduledDate: FRONTMATTER_FIELDS.scheduledDate.narrow(
+        data['scheduledDate'],
+        timezone,
+      ),
     },
     timezone,
     now,
