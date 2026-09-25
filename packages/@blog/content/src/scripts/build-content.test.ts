@@ -1,5 +1,10 @@
 import { expect, test } from 'vitest';
-import { buildPhases, stepArgv } from './build-content.ts';
+import {
+  buildPhases,
+  describeExit,
+  runProcess,
+  stepArgv,
+} from './build-content.ts';
 import { buildProgram } from './cli/program.ts';
 
 // ── buildPhases ──────────────────────────────────────────────────────────────
@@ -148,4 +153,35 @@ test('buildPhases: --strict는 validate-posts에만 전달 (predev는 비엄격)
   });
   expect(loose[0][0].command).toBe('validate');
   expect(loose[0][0].args).toStrictEqual([]);
+});
+
+// ── 자식 프로세스 실패 처리 ─────────────────────────────────────────────────
+
+test('runProcess: 띄우기 실패(ENOENT)도 부모를 죽이지 않고 실패 결과로 돌려준다', async () => {
+  // error 리스너가 없던 때는 처리되지 않은 error 이벤트로 부모가 통째로 죽어
+  // 다른 단계의 결과 요약까지 사라졌다.
+  const result = await runProcess('/nonexistent/blog-content-node', []);
+  expect(result.code).toBe(1);
+  expect(result.signal).toBe(null);
+  expect(result.output).toContain('자식 프로세스를 띄우지 못했습니다');
+});
+
+test('runProcess: 신호로 죽은 자식은 신호를 싣는다 (exit null 대신)', async () => {
+  const result = await runProcess(process.execPath, [
+    '-e',
+    "process.kill(process.pid, 'SIGKILL')",
+  ]);
+  expect(result.code).toBe(null);
+  expect(result.signal).toBe('SIGKILL');
+  expect(describeExit(result)).toBe('signal SIGKILL');
+});
+
+test('runProcess: 정상 종료는 코드와 출력을 그대로 돌려준다', async () => {
+  const result = await runProcess(process.execPath, [
+    '-e',
+    "console.log('hi'); process.exitCode = 3",
+  ]);
+  expect(result.code).toBe(3);
+  expect(result.output).toBe('hi\n');
+  expect(describeExit(result)).toBe('exit 3');
 });
