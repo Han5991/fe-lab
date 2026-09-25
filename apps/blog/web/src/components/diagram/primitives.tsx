@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { css, cva, sva } from '@design-system/ui-lib/css';
 import type { RecipeVariant } from '@design-system/ui-lib/css';
+import { token } from '@design-system/ui-lib/tokens';
 
 /**
  * 다이어그램 프리미티브 — 핸드오프 §4 "다이어그램 문법"을 코드로 강제한다.
@@ -44,6 +45,32 @@ const frame = cva({
   defaultVariants: { sizing: 'fill' },
 });
 
+/**
+ * 자동 레이아웃 그림이 줄어들 수 있는 하한 — 노드 제목(12px)이 11px 밑으로
+ * 내려가지 않는 배율.
+ *
+ * 자동 레이아웃은 줄을 바꾸지 않고 노드를 한 줄로 늘어놓아서, 발행한 그림의 폭이
+ * 530~750이다. 칼럼만 상한으로 두면 폰(칼럼 ~335px)에서 제목이 5~8px로 쪼그라든다.
+ * 그래서 이 배율 밑으로는 줄이지 않고, 넘치는 만큼은 가로 스크롤로 보게 한다
+ * (본문 표와 같은 방식).
+ *
+ * 하한은 **본문 칼럼 폭(`railText`)을 넘지 않는다.** 데스크톱 칼럼에서는 지금처럼
+ * 칼럼에 맞춰 줄어들 뿐 스크롤이 생기지 않아 화면이 그대로다 — 스크롤은 칼럼이
+ * 그보다 좁은 화면에서만 생긴다.
+ */
+const MIN_TEXT_SCALE = 11 / 12;
+
+const scroller = css({
+  overflowX: 'auto',
+  overscrollBehaviorX: 'contain',
+  // 스크롤 컨테이너의 초점 링이 그림 끝에 붙지 않게(본문 표 래퍼와 같다).
+  borderRadius: 'control',
+});
+
+function intrinsicMinWidth(width: number): string {
+  return `min(${Math.ceil(width * MIN_TEXT_SCALE)}px, ${token('sizes.railText')})`;
+}
+
 interface DiagramFrameProps {
   /** 예: `'0 0 640 122'` */
   viewBox: string;
@@ -68,7 +95,7 @@ export function DiagramFrame({
   label,
   children,
 }: DiagramFrameProps) {
-  return (
+  const svg = (
     <svg
       viewBox={viewBox}
       width={width}
@@ -79,9 +106,28 @@ export function DiagramFrame({
       // 장식 SVG가 탭 순서에 끼어드는 IE/Edge 잔재 방지 + 시맨틱 명시
       focusable="false"
       className={frame({ sizing: width === undefined ? 'fill' : 'intrinsic' })}
+      style={
+        width === undefined ? undefined : { minWidth: intrinsicMinWidth(width) }
+      }
     >
       {children}
     </svg>
+  );
+
+  // 손으로 그린 그림(히어로 포함)은 놓일 자리에 맞춰 좌표를 잡았으므로 그대로
+  // 칼럼을 채운다. 하한과 스크롤은 폭이 글마다 달라지는 자동 레이아웃에만 건다.
+  if (width === undefined) return svg;
+
+  // 하한 때문에 칼럼보다 넓어질 수 있으니 반드시 스크롤 컨테이너 안에 둔다 —
+  // 없으면 페이지 전체가 가로로 밀린다. 의미 있는 그림이면 키보드로도 스크롤할
+  // 수 있게 초점을 받는다(axe scrollable-region-focusable). 이름은 그림의 label이라
+  // 한 글에 그림이 여럿이어도 랜드마크 이름이 겹치지 않는다.
+  return label ? (
+    <div role="region" aria-label={label} tabIndex={0} className={scroller}>
+      {svg}
+    </div>
+  ) : (
+    <div className={scroller}>{svg}</div>
   );
 }
 

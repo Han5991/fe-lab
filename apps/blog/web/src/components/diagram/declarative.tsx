@@ -150,7 +150,8 @@ export function Diagram({
   return (
     <div className={block}>
       {/* 자동 레이아웃은 viewBox 폭이 노드 텍스트에 따라 달라진다. 고유 크기를 넘겨
-          칼럼을 채우는 대신 실제 크기로 그린다 — 그래야 글자가 항상 12px이다. */}
+          칼럼을 채우는 대신 실제 크기로 그린다 — 그래야 글자가 12px이다. 칼럼보다
+          넓으면 줄어들되 하한(글자 11px)이 있고, 그 밑은 가로 스크롤이다(primitives). */}
       <DiagramFrame
         viewBox={layout.viewBox}
         width={layout.width}

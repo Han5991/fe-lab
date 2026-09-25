@@ -6,6 +6,7 @@
  */
 import { describe, expect, test } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { renderToStaticMarkup } from 'react-dom/server';
 
 import {
   DeployPipeline,
@@ -37,6 +38,59 @@ describe('DiagramFrame', () => {
     const svg = container.querySelector('svg');
     expect(svg).toHaveAttribute('aria-hidden', 'true');
     expect(svg).not.toHaveAttribute('role');
+  });
+
+  test('손으로 그린 그림(폭 생략)은 스크롤 래퍼 없이 칼럼을 채운다', () => {
+    const { container } = render(
+      <DiagramFrame viewBox="0 0 640 122" label="히어로">
+        <g />
+      </DiagramFrame>,
+    );
+    expect(container.firstElementChild?.tagName.toLowerCase()).toBe('svg');
+    expect(screen.queryByRole('region')).not.toBeInTheDocument();
+  });
+
+  // 자동 레이아웃 그림은 폭이 530~750이라 폰 칼럼(~335px)에 맞추면 12px 제목이
+  // 5~8px가 된다. 11px 밑으로는 줄이지 않고 넘치는 만큼 가로 스크롤한다.
+  test('자동 레이아웃 그림은 글자 하한을 지키고 넘치면 가로로 스크롤한다', () => {
+    render(
+      <DiagramFrame
+        viewBox="0 0 750 160"
+        width={750}
+        height={160}
+        label="캐시 폐기 흐름"
+      >
+        <g />
+      </DiagramFrame>,
+    );
+    const region = screen.getByRole('region', { name: '캐시 폐기 흐름' });
+    // 키보드만으로도 스크롤할 수 있어야 한다(axe scrollable-region-focusable).
+    expect(region).toHaveAttribute('tabindex', '0');
+
+    const svg = screen.getByRole('img', { name: '캐시 폐기 흐름' });
+    expect(region).toContainElement(svg);
+  });
+
+  test('글자 하한은 11/12 배율이되 본문 칼럼 폭을 넘지 않는다', () => {
+    // jsdom은 min()을 계산해 버리므로 서버 HTML의 선언 그대로 본다. 칼럼 폭
+    // 상한 덕에 데스크톱(칼럼 680px)에서는 하한이 걸리지 않아 화면이 그대로다.
+    const html = renderToStaticMarkup(
+      <DiagramFrame viewBox="0 0 750 160" width={750} height={160} label="a">
+        <g />
+      </DiagramFrame>,
+    );
+    expect(html).toContain('min-width:min(688px, 680px)');
+  });
+
+  test('장식 그림은 스크롤은 하되 초점 순서에 끼지 않는다', () => {
+    const { container } = render(
+      <DiagramFrame viewBox="0 0 300 80" width={300} height={80}>
+        <g />
+      </DiagramFrame>,
+    );
+    expect(screen.queryByRole('region')).not.toBeInTheDocument();
+    expect(container.querySelector('[tabindex]')).toBeNull();
+    expect(container.querySelector('svg')?.parentElement).not.toBe(container);
   });
 });
 
