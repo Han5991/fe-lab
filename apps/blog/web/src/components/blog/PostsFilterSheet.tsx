@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useRef, type ReactNode } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X } from 'lucide-react';
 import { css } from '@design-system/ui-lib/css';
 import { Portal } from '@/src/components/Portal';
+import { useModalDialog } from '@/src/components/useModalDialog';
 
 interface PostsFilterSheetProps {
   open: boolean;
@@ -27,59 +28,13 @@ export const PostsFilterSheet = ({
   children,
 }: PostsFilterSheetProps) => {
   const sheetRef = useRef<HTMLDivElement | null>(null);
-  const previouslyFocusedRef = useRef<HTMLElement | null>(null);
 
-  useEffect(() => {
-    if (!open) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-
-    // Escape로 닫기 + Tab을 시트 내부로 묶어 포커스 트랩.
-    const focusableSelector =
-      'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])';
-    // activeElement는 Element라 focus()가 없는 것(SVG 등)도 올 수 있다. 시트를 닫을 때
-    // 되돌릴 대상이므로, 실제로 되돌릴 수 있는 것만 기억하고 아니면 비워 둔다.
-    const active = document.activeElement;
-    previouslyFocusedRef.current =
-      active instanceof HTMLElement ? active : null;
-    // 다음 frame에 시트가 마운트된 후 첫 focusable로 포커스를 옮깁니다.
-    const focusFirst = requestAnimationFrame(() => {
-      const first =
-        sheetRef.current?.querySelector<HTMLElement>(focusableSelector);
-      first?.focus();
-    });
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        e.stopPropagation();
-        onClose();
-        return;
-      }
-      if (e.key !== 'Tab') return;
-      const root = sheetRef.current;
-      if (!root) return;
-      const focusables = Array.from(
-        root.querySelectorAll<HTMLElement>(focusableSelector),
-      ).filter(el => !el.hasAttribute('disabled'));
-      const first = focusables.at(0);
-      const last = focusables.at(-1);
-      if (first === undefined || last === undefined) return;
-      const active = document.activeElement;
-      if (e.shiftKey && active === first) {
-        e.preventDefault();
-        last.focus();
-      } else if (!e.shiftKey && active === last) {
-        e.preventDefault();
-        first.focus();
-      }
-    };
-    document.addEventListener('keydown', onKey);
-    return () => {
-      cancelAnimationFrame(focusFirst);
-      document.removeEventListener('keydown', onKey);
-      document.body.style.overflow = prev;
-      previouslyFocusedRef.current?.focus();
-    };
-  }, [open, onClose]);
+  // 스크롤 잠금·초점 이동/가두기/되돌리기·Escape — 검색 다이얼로그·모바일 차례와
+  // 같은 훅이다. 예전엔 이 시트만 따로 구현했고, effect deps에 `onClose`가 있어
+  // 호출부가 인라인 화살표를 넘기면(React Compiler가 메모이즈를 포기한 렌더)
+  // 필터를 누를 때마다 effect가 다시 돌아 초점이 FAB로 갔다가 첫 요소로 튀고
+  // 스크롤 잠금이 깜빡였다. 훅은 onClose를 effect 이벤트로 읽는다.
+  useModalDialog({ open, onClose, containerRef: sheetRef });
 
   return (
     <Portal>
