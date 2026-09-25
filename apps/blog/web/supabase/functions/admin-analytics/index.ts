@@ -134,8 +134,7 @@ Deno.serve(async (req: Request) => {
     let data: unknown;
     let rpcError: unknown;
 
-    // 목록형 action 의 slug 필터(선택). JSON 에서 온 값이라 모양을 확인하고,
-    // 어긋나면 거르지 않은 채 진행하지 말고 400 으로 끊는다.
+    // 모양이 어긋난 slug 필터는 거르지 않은 채 진행하지 않고 400 으로 끊는다.
     const slugFilter =
       request.action === 'all_post_stats' ||
       request.action === 'all_posts_trends'
@@ -153,24 +152,11 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // PostgREST 는 한 응답에 max_rows(1000) 까지만 준다. 목록형 두 action 은 그
-    // 페이징을 여기서 돌아 한 응답으로 합친다 — 브라우저가 range 를 바꿔가며
-    // 직렬로 부르면 페이지마다 인터넷 왕복과 JWT 검증(auth.getUser())이 통째로
-    // 반복된다. 여기 루프는 같은 리전 안이고 인증은 이미 위에서 한 번 끝났다.
-    //
-    // 페이지는 반드시 **정렬된** 결과를 잘라야 한다. 정렬이 없으면 range 마다
-    // 행 순서가 달라질 수 있어 페이지 사이에서 행이 빠지거나 겹친다. 두 표 모두
-    // anon RPC 로 아무 slug 나 생기는 표라 1000행은 누구나 넘길 수 있다 — 그래서
-    // 클라이언트가 넘긴 slug 로 먼저 거른다(adminActions.ts 의 AdminSlugFilter).
-    //
-    // 루프 자체는 collectPagedRows 에 있다. 이 파일에는 테스트 하네스가 없어서,
-    // 종료 조건과 상한을 CI 가 보려면 앱 쪽 순수 모듈이어야 한다(paging.test.ts).
-    // pageSize 는 서버의 max_rows 와 같아야 한다 — 더 작으면 매 페이지가 짧은
-    // 페이지로 보여 첫 장에서 멈춘다.
+    // PostgREST 는 한 응답에 max_rows(1000)까지만 줘서 여기서 페이징해 합친다(브라우저가 돌면
+    // 페이지마다 왕복·JWT 검증이 반복된다). 루프는 테스트가 있는 collectPagedRows 에 있다.
+    // 정렬된 결과를 잘라야 행이 빠지거나 겹치지 않고, pageSize 는 서버 max_rows 와 같아야 한다.
     const paging = { pageSize: 1000, maxPages: 50 };
-    // 정렬해도 페이지는 각각 다른 시점이다 — 조회가 들어와 앞쪽에 (slug, 날짜)
-    // 행이 새로 생기면 뒤 행이 밀려 이전 페이지 마지막 행이 다시 온다. 행의
-    // 식별 키로 한 번만 싣는다(나중 값이 최신).
+    // 페이지마다 시점이 달라 새 행이 끼면 앞 행이 다시 온다 — 식별 키로 한 번만 싣는다.
 
     switch (request.action) {
       case 'all_post_stats': {
