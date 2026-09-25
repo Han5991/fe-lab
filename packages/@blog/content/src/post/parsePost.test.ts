@@ -363,6 +363,58 @@ test('extractPlainText: 개행/연속공백 압축 + trim', () => {
   expect(extractPlainText('a\n\n\nb   c  ')).toBe('a b c');
 });
 
+test('extractPlainText: 커스텀 태그·HTML은 속성째 지운다 (`<callout type=…` 조각이 남지 않음)', () => {
+  expect(
+    extractPlainText('<callout type="info">\n조심할 점\n</callout>\n다음 문단'),
+  ).toBe('조심할 점 다음 문단');
+  expect(
+    extractPlainText('<diagram-node\n  id="a"\n  label="빌드"\n/>본문'),
+  ).toBe('본문');
+});
+
+test('extractPlainText: 단어 안의 _는 식별자라 남기고, 강조 _만 지운다', () => {
+  expect(extractPlainText('snake_case 변수와 _강조_ 표시')).toBe(
+    'snake_case 변수와 강조 표시',
+  );
+});
+
+test('extractPlainText: 인라인 코드와 펜스 코드는 원문 그대로', () => {
+  expect(extractPlainText('`__init__`과 `arr[0] > 1`, `Array<string>`')).toBe(
+    '__init__과 arr[0] > 1, Array<string>',
+  );
+  expect(
+    extractPlainText(
+      '앞\n```ts title="a.ts"\nconst a_b = x > 1 ? <T>1 : 2;\n```\n뒤',
+    ),
+  ).toBe('앞 const a_b = x > 1 ? <T>1 : 2; 뒤');
+});
+
+test('extractPlainText: >는 줄 머리의 인용 표시만 지운다', () => {
+  expect(extractPlainText('> 인용문\n값이 x > 1이면')).toBe(
+    '인용문 값이 x > 1이면',
+  );
+});
+
+test('extractPlainText: 링크 텍스트가 인라인 코드여도 텍스트만 남긴다', () => {
+  expect(extractPlainText('[`useState`](https://react.dev) 참고')).toBe(
+    'useState 참고',
+  );
+});
+
+test('resolveExcerpt: 서로게이트 쌍(이모지) 가운데서 자르지 않는다', () => {
+  // 예전에는 159자 + 🚀에서 잘라 외톨이 상위 서로게이트(\\ud83d)가 남았고,
+  // encodeURIComponent가 URIError를 던졌다.
+  const body = '가'.repeat(MAX - 1) + '🚀' + '나'.repeat(10);
+  const excerpt = resolveExcerpt(body, undefined, MAX);
+  expect(excerpt).toBe('가'.repeat(MAX - 1) + '...');
+  expect(() => encodeURIComponent(excerpt)).not.toThrow();
+  // 쌍이 예산 안에 온전히 들어가면 그대로 둔다
+  const fits = '가'.repeat(MAX - 2) + '🚀' + '나'.repeat(10);
+  expect(resolveExcerpt(fits, undefined, MAX)).toBe(
+    '가'.repeat(MAX - 2) + '🚀...',
+  );
+});
+
 // 태그는 의미상 집합이다. 중복이 흘러가면 글 메타에 `#ci #ci`가 두 번 찍히고,
 // getAllTags() 개수가 부풀고, 목록 렌더에서 React key가 충돌한다.
 test('parsePost: 중복 태그는 하나로 합친다', () => {

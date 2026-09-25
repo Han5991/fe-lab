@@ -17,16 +17,66 @@ import type { TimezoneConfig } from '../shared/contentConfig.ts';
 import type { PostData, RawFrontmatter } from './types.ts';
 
 /**
+ * 펜스 코드 블록(```` ``` ````·`~~~`, 3개 이상). 캡처 그룹이 둘이라 split 결과가
+ * [본문, 펜스 기호, 코드, 본문, …]의 세 칸 주기가 된다. 닫히지 않은 펜스는 본문 취급.
+ */
+const FENCED_CODE = /^[ \t]*(`{3,}|~{3,})[^\n]*\n([\s\S]*?)^[ \t]*\1[ \t]*$/gm;
+
+/** 한 줄 안의 인라인 코드(`` `x` ``) — 캡처 그룹이라 split 결과의 홀수 칸이 된다 */
+const INLINE_CODE = /(`[^`\n]+`)/;
+
+/**
+ * HTML/JSX 태그(여는·닫는·자기 닫는, 속성 포함 — 여러 줄에 걸쳐도).
+ * 바로 앞이 식별자 문자면 태그가 아니라 제네릭(`Promise<void>`)이라 건드리지 않는다.
+ */
+const MARKUP_TAG = /(?<![\w$])<\/?[A-Za-z][\w.:-]*(?:\s[^<>]*)?\/?>/g;
+
+/**
+ * 강조 표시의 `_`/`__` — 글자·숫자 사이에 낀 `_`(`snake_case`)는 식별자라 남긴다.
+ */
+const EMPHASIS_UNDERSCORE = /(?<![\p{L}\p{N}])_+|_+(?![\p{L}\p{N}])/gu;
+
+/**
  * 마크다운 내용에서 순수 텍스트 추출 (excerpt/readMin 계산용)
+ *
+ * 예전 규칙은 `[#*`_>~]`를 전부 지우는 한 줄이라 여러 가지가 샜습니다:
+ * - `<callout type="info">`에서 `>`만 빠져 `<callout type="info"`가 발췌에 남았고,
+ *   다이어그램 태그의 속성 문자열이 readMin까지 부풀렸다 → 태그는 속성째 지운다.
+ * - `snake_case` → `snakecase` → 단어 안의 `_`는 남긴다.
+ * - `arr[0] > 1` → `arr[0] 1` → `>`는 줄 머리의 인용 표시만 지운다.
+ * - 코드도 기호가 뜯겨 나갔다 → 펜스 코드와 인라인 코드는 원문 그대로 둔다
+ *   (펜스 기호 줄 ```` ```ts title="a.ts" ````만 뺀다).
  */
 export function extractPlainText(content: string): string {
   return content
+    .split(FENCED_CODE)
+    .map((part, i) => {
+      if (i % 3 === 1) return ''; // 펜스 기호(캡처 1)
+      if (i % 3 === 2) return ` ${part} `; // 펜스 안 코드(캡처 2) — 원문 그대로
+      return extractProse(part);
+    })
+    .join('')
+    .replace(/\s+/g, ' ') // 개행·연속 공백을 공백 하나로
+    .trim();
+}
+
+/** 펜스 밖 본문: 이미지·링크·인용·태그·강조 기호를 벗긴다(인라인 코드는 보존). */
+function extractProse(text: string): string {
+  return text
     .replace(/!\[.*?]\(.*?\)/g, '') // 이미지 제거
     .replace(/\[([^\]]+)]\([^)]+\)/g, '$1') // 링크 텍스트만 남기기
-    .replace(/[#*`_>~]/g, '') // 마크다운 기호 제거
-    .replace(/\n+/g, ' ') // 개행을 공백으로 변환
-    .replace(/\s+/g, ' ') // 연속된 공백 제거
-    .trim();
+    .replace(/^[ \t]*>+/gm, '') // 인용 표시(줄 머리의 >)
+    .split(INLINE_CODE)
+    .map((part, i) =>
+      // 홀수 칸 = 인라인 코드: 백틱만 벗기고 내용은 그대로
+      i % 2 === 1
+        ? part.slice(1, -1)
+        : part
+            .replace(MARKUP_TAG, ' ') // 커스텀 태그·HTML 통째로
+            .replace(/[#*`~]/g, '') // 제목·강조·남은 백틱 기호
+            .replace(EMPHASIS_UNDERSCORE, ''),
+    )
+    .join('');
 }
 
 /**
@@ -65,9 +115,13 @@ export function resolveExcerptFrom(
 ): string {
   const given = toOptionalString(explicit);
   if (given) return given;
-  return plainText.length > maxLength
-    ? plainText.slice(0, maxLength) + '...'
-    : plainText;
+  if (plainText.length <= maxLength) return plainText;
+  // 길이 예산은 UTF-16 단위 그대로(lint:posts·check-seo가 재는 `.length`와 같은
+  // 기준)지만, 이모지 같은 서로게이트 쌍의 **가운데**에서 자르지는 않는다 —
+  // 외톨이 상위 서로게이트는 HTML에서 U+FFFD가 되고 encodeURIComponent가
+  // URIError를 던진다.
+  const cut = plainText.slice(0, maxLength);
+  return `${/[\uD800-\uDBFF]$/.test(cut) ? cut.slice(0, -1) : cut}...`;
 }
 
 /**
