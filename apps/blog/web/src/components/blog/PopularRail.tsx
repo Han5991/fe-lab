@@ -1,5 +1,6 @@
 'use client';
 
+import { useId } from 'react';
 import Link from 'next/link';
 import { css } from '@design-system/ui-lib/css';
 import { useQuery } from '@tanstack/react-query';
@@ -18,6 +19,8 @@ interface RankedPost extends PostSummary {
 }
 
 export const PopularRail = ({ posts, limit = 5 }: PopularRailProps) => {
+  // 데스크톱·모바일에 한 번씩 두 벌이 마운트되므로 헤딩 id는 인스턴스마다 만든다.
+  const headingId = useId();
   // 순위는 이 빌드에 실린 글의 slug 안에서만 서버가 고른다(getTopPosts 주석).
   // post_views는 anon RPC로 아무 slug나 부풀릴 수 있어서, 상위 N개를 먼저 받고
   // 여기서 모르는 slug를 거르면 가짜 slug가 N칸을 전부 차지해 레일이 빈다.
@@ -54,10 +57,14 @@ export const PopularRail = ({ posts, limit = 5 }: PopularRailProps) => {
   if (ranked.length === 0) return null;
 
   return (
-    <aside className={css({ position: 'sticky', top: '20' })}>
-      {/* 섹션 라벨은 h3. 아래 포스트 제목이 h4라 span으로 두면 헤딩 레벨이
-          건너뛰어져 axe heading-order가 깨진다(홈 기준 h2 → h3 → h4). */}
-      <h3
+    // <aside>가 아니라 이름 붙은 <section>이다. 이 레일은 글 목록(PostsArchive)의
+    // 사이드바 <aside> 안에 들어가 aside가 중첩됐다(axe
+    // landmark-complementary-is-top-level). 헤딩은 h2 → 글 제목 h3 — 페이지 h1
+    // 바로 다음이라 h3으로 시작하면 한 단계를 건너뛴다(axe heading-order). 예전의
+    // sticky는 같은 크기의 래퍼 안이라 아무 효과가 없었다.
+    <section aria-labelledby={headingId}>
+      <h2
+        id={headingId}
         className={css({
           display: 'block',
           mb: '3',
@@ -70,7 +77,7 @@ export const PopularRail = ({ posts, limit = 5 }: PopularRailProps) => {
         {/* 순위는 post_views의 누적 조회수다(getTopPosts) — 기간 창이 없다.
             예전 라벨 "30일"은 이 쿼리가 한 번도 한 적 없는 약속이었다. */}
         Popular · 누적
-      </h3>
+      </h2>
       <ol
         className={css({
           listStyleType: 'none',
@@ -98,7 +105,7 @@ export const PopularRail = ({ posts, limit = 5 }: PopularRailProps) => {
                 py: '[10px]',
                 transition: '[all 0.15s]',
                 _hover: {
-                  '& h4': { color: 'accent.700', textDecoration: 'underline' },
+                  '& h3': { color: 'accent.700', textDecoration: 'underline' },
                 },
               })}
             >
@@ -116,7 +123,7 @@ export const PopularRail = ({ posts, limit = 5 }: PopularRailProps) => {
                 {String(i + 1).padStart(2, '0')}
               </span>
               <div className={css({ flex: '1', minW: '0' })}>
-                <h4
+                <h3
                   className={css({
                     fontFamily: 'sans',
                     fontSize: 'sm',
@@ -127,7 +134,7 @@ export const PopularRail = ({ posts, limit = 5 }: PopularRailProps) => {
                   })}
                 >
                   {post.title}
-                </h4>
+                </h3>
                 {post.viewCount > 0 && (
                   <span
                     className={css({
@@ -146,7 +153,7 @@ export const PopularRail = ({ posts, limit = 5 }: PopularRailProps) => {
           </li>
         ))}
       </ol>
-    </aside>
+    </section>
   );
 };
 

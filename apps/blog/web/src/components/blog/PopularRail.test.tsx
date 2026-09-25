@@ -107,4 +107,22 @@ describe('PopularRail', () => {
 
     await waitFor(() => expect(container).toBeEmptyDOMElement());
   });
+
+  test('레일은 이름 붙은 섹션이고 헤딩은 h2 → 글 제목 h3이다', async () => {
+    getTopPosts.mockResolvedValue([{ slug: 'oldest', view_count: 120 }]);
+
+    renderRail(<PopularRail posts={POSTS} />);
+
+    // aside가 아니다 — 글 목록의 사이드바 aside 안에 들어간다.
+    expect(
+      await screen.findByRole('region', { name: 'Popular · 누적' }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('complementary')).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { level: 2, name: 'Popular · 누적' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { level: 3, name: '가장 오래된 글' }),
+    ).toBeInTheDocument();
+  });
 });
