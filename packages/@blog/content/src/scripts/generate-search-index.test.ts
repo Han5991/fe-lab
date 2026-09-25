@@ -24,9 +24,13 @@ function makePost(over: Partial<PostData> = {}): PostData {
   };
 }
 
+/** 시리즈 메타가 없는 리졸버 — 시리즈 표시명을 보지 않는 테스트용 */
+const noSeriesMeta = () => null;
+
 /** 검색 미리보기(contentPreview) — 본문 평문에서 펜스 코드를 뺀 것 */
 const preview = (content: string): string =>
-  buildPublicSearchIndex([makePost({ content })])[0].contentPreview;
+  buildPublicSearchIndex([makePost({ content })], noSeriesMeta)[0]
+    .contentPreview;
 
 test.each([
   ['before\n```ts\nconst x = 1;\n```\nafter', 'before after'],
@@ -46,18 +50,21 @@ test.each([
   expect(preview(content)).toBe(expected);
 });
 
-test('buildPublicSearchIndex: 필수 필드 모두 포함', () => {
-  const idx = buildPublicSearchIndex([
-    makePost({
-      slug: 'a',
-      title: 'A',
-      date: '2026-01-01',
-      excerpt: 'ex',
-      tags: ['x', 'y'],
-      series: 's',
-      content: 'hello world',
-    }),
-  ]);
+test('buildPublicSearchIndex: 필수 필드 모두 포함 — 시리즈 표시명은 _series.yml의 title', () => {
+  const idx = buildPublicSearchIndex(
+    [
+      makePost({
+        slug: 'a',
+        title: 'A',
+        date: '2026-01-01',
+        excerpt: 'ex',
+        tags: ['x', 'y'],
+        series: 's',
+        content: 'hello world',
+      }),
+    ],
+    id => ({ name: id, title: '시리즈 S' }),
+  );
   expect(idx.length).toBe(1);
   expect(idx[0]).toStrictEqual({
     slug: 'a',
@@ -66,26 +73,41 @@ test('buildPublicSearchIndex: 필수 필드 모두 포함', () => {
     excerpt: 'ex',
     tags: ['x', 'y'],
     series: 's',
+    seriesTitle: '시리즈 S',
     contentPreview: 'hello world',
   });
 });
 
+test('buildPublicSearchIndex: 시리즈 메타에 title이 없으면 seriesTitle은 null', () => {
+  const idx = buildPublicSearchIndex([makePost({ series: 's' })], id => ({
+    name: id,
+  }));
+  expect(idx[0].seriesTitle).toBe(null);
+});
+
 test('buildPublicSearchIndex: 결측 필드는 기본값', () => {
-  const idx = buildPublicSearchIndex([
-    makePost({
-      excerpt: undefined,
-      tags: undefined,
-      series: undefined,
-    }),
-  ]);
+  const idx = buildPublicSearchIndex(
+    [
+      makePost({
+        excerpt: undefined,
+        tags: undefined,
+        series: undefined,
+      }),
+    ],
+    noSeriesMeta,
+  );
   expect(idx[0].excerpt).toBe('');
   expect(idx[0].tags).toStrictEqual([]);
   expect(idx[0].series).toBe(null);
+  expect(idx[0].seriesTitle).toBe(null);
 });
 
 test('buildPublicSearchIndex: contentPreview는 CONTENT_PREVIEW_CHARS로 제한', () => {
   const long = 'x'.repeat(CONTENT_PREVIEW_CHARS + 1000);
-  const idx = buildPublicSearchIndex([makePost({ content: long })]);
+  const idx = buildPublicSearchIndex(
+    [makePost({ content: long })],
+    noSeriesMeta,
+  );
   expect(idx[0].contentPreview.length).toBe(CONTENT_PREVIEW_CHARS);
 });
 

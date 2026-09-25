@@ -108,12 +108,12 @@ test('rss: 모든 link/guid가 SITE_URL prefix', () => {
 
 test('search-index: 공개 글 개수와 일치', () => {
   const posts = getAllPosts();
-  const idx = buildPublicSearchIndex(posts);
+  const idx = buildPublicSearchIndex(posts, testContent.getSeriesMeta);
   expect(idx.length).toBe(posts.length);
 });
 
 test('search-index: 모든 entry는 필수 키 보유', () => {
-  const idx = buildPublicSearchIndex(getAllPosts());
+  const idx = buildPublicSearchIndex(getAllPosts(), testContent.getSeriesMeta);
   for (const e of idx) {
     expect(typeof e.slug === 'string' && e.slug.length > 0).toBeTruthy();
     expect(typeof e.title === 'string' && e.title.length > 0).toBeTruthy();
@@ -162,13 +162,20 @@ test('llms-full: Total posts 카운트가 실제 공개 글 수와 일치', () =
 
 test('contract: 검색 인덱스의 series는 선언된 시리즈만', () => {
   // 예전엔 폴더에 글을 모아 두는 것만으로 검색 결과에 "📚 폴더명"이 붙었다.
-  for (const e of buildPublicSearchIndex(getAllPosts())) {
+  for (const e of buildPublicSearchIndex(
+    getAllPosts(),
+    testContent.getSeriesMeta,
+  )) {
     if (e.series) {
       expect(
         isSeriesFolder(e.series),
         `검색 인덱스에 비시리즈: ${e.series}`,
       ).toBeTruthy();
     }
+    // 시리즈 표시명은 인덱스가 싣는다 — 화면이 페이지마다 시리즈 목록을 읽지 않도록.
+    expect(e.seriesTitle).toBe(
+      e.series ? (testContent.getSeriesMeta(e.series)?.title ?? null) : null,
+    );
   }
 });
 

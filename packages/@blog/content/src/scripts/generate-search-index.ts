@@ -1,6 +1,10 @@
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { extractPlainText, type PostData } from '../post/index.ts';
+import {
+  extractPlainText,
+  type PostData,
+  type SeriesMeta,
+} from '../post/index.ts';
 import { resolvePostSet } from './artifacts.ts';
 import type { ContentContext } from './context.ts';
 
@@ -13,6 +17,8 @@ export interface PublicSearchIndexEntry {
   excerpt: string;
   tags: string[];
   series: string | null;
+  /** 시리즈 표시명(`_series.yml`의 `title`) — 없으면 null이고 화면은 `series`로 폴백한다 */
+  seriesTitle: string | null;
   contentPreview: string;
 }
 
@@ -44,6 +50,7 @@ export interface AdminPostsIndexEntry {
  */
 export function buildPublicSearchIndex(
   posts: PostData[],
+  resolveSeriesMeta: (seriesId: string) => SeriesMeta | null,
 ): PublicSearchIndexEntry[] {
   return posts.map(p => ({
     slug: p.slug,
@@ -52,6 +59,7 @@ export function buildPublicSearchIndex(
     excerpt: p.excerpt || '',
     tags: p.tags || [],
     series: p.series || null,
+    seriesTitle: p.series ? (resolveSeriesMeta(p.series)?.title ?? null) : null,
     contentPreview: extractPlainText(p.content, { dropCode: true }).slice(
       0,
       CONTENT_PREVIEW_CHARS,
@@ -85,6 +93,7 @@ export function main(ctx: ContentContext) {
   // 같은 셀렉터를 쓴다.
   const publicPosts = buildPublicSearchIndex(
     resolvePostSet(ctx.content, 'visible'),
+    ctx.content.getSeriesMeta,
   );
   writeFileSync(outputPath, JSON.stringify(publicPosts, null, 2), 'utf8');
   console.log(`Search index generated: ${publicPosts.length} posts`);
