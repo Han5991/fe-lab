@@ -32,6 +32,12 @@ import { slugFromParams } from './slugFromParams';
 // next.config.ts의 optimizePackageImports + sideEffects:false가 번들에서 걸러 준다.
 import { postPath } from '@blog/content';
 import { formatMonthDayISO } from '@blog/content';
+import { LoadingPlaceholder } from '@/src/components/shared/LoadingPlaceholder';
+import {
+  DateRangeControls,
+  useDateFilter,
+} from '../../components/DateRangeControls';
+import { WeekGrowthIcon } from '../../components/WeekGrowthIcon';
 
 // 차트 색상 — GitHub accent(파랑)로 통일. 데이터 강조는 accent 하나로.
 const CHART_LINE = token('colors.accent.600');
@@ -39,25 +45,6 @@ const CHART_ACCENT = token('colors.accent.600');
 const CHART_AXIS = token('colors.ink.border');
 const CHART_TICK = token('colors.ink.400');
 const CHART_GUIDE = token('colors.ink.300');
-import {
-  DateRangeControls,
-  useDateFilter,
-} from '../../components/DateRangeControls';
-import { WeekGrowthIcon } from '../../components/WeekGrowthIcon';
-
-function LoadingPlaceholder({ height }: { height?: string }) {
-  return (
-    <div
-      style={{ height: height ?? '100%' }}
-      className={css({
-        w: 'full',
-        bg: 'paper.100',
-        animation: '[pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite]',
-        rounded: 'lg',
-      })}
-    />
-  );
-}
 
 const DOW_LABELS = ['일', '월', '화', '수', '목', '금', '토'];
 
