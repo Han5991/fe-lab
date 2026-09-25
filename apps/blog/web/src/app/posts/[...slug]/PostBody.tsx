@@ -7,6 +7,7 @@ import { css } from '@design-system/ui-lib/css';
 
 import { CodeBlock } from '@/src/components/post/CodeBlock';
 import { rehypeCodeMeta } from '@/src/components/post/codeMeta';
+import { rehypeDropUnsafe } from '@/src/components/post/rehypeDropUnsafe';
 import { CodeTabs } from '@/src/components/post/markdown/CodeTabs';
 import { MarkdownImage } from '@/src/components/post/MarkdownImage';
 import { Callout } from '@/src/components/post/markdown/Callout';
@@ -40,7 +41,14 @@ export const POST_REMARK_PLUGINS = [remarkGfm];
 // rehypeCodeMeta는 **rehypeRaw보다 앞**이어야 한다. 펜스 메타(```ts title="…")는
 // hast의 `data`에 실려 오는데, rehypeRaw가 트리를 직렬화·재파싱하면서 `data`를
 // 버리기 때문이다. 먼저 속성으로 옮겨두면 그 왕복을 지나 살아남는다.
-export const POST_REHYPE_PLUGINS = [rehypeCodeMeta, rehypeRaw, rehypeSlug];
+// rehypeDropUnsafe는 반대로 **rehypeRaw 뒤**여야 한다 — raw HTML이 요소가 된
+// 뒤에야 `<script>` 같은 태그를 이름으로 가릴 수 있다.
+export const POST_REHYPE_PLUGINS = [
+  rehypeCodeMeta,
+  rehypeRaw,
+  rehypeDropUnsafe,
+  rehypeSlug,
+];
 
 /**
  * react-markdown의 `Components`에 **커스텀 태그를 더한 것**.

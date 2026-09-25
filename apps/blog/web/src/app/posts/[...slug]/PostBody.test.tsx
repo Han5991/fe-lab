@@ -10,6 +10,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import rehypeRaw from 'rehype-raw';
 import rehypeSlug from 'rehype-slug';
 import { rehypeCodeMeta } from '@/src/components/post/codeMeta';
+import { rehypeDropUnsafe } from '@/src/components/post/rehypeDropUnsafe';
 import { PostBody, POST_REHYPE_PLUGINS, buildPostComponents } from './PostBody';
 import { BLOCK_MARKDOWN_COMPONENTS } from './markdownBlocks';
 
@@ -72,11 +73,13 @@ function invalidNesting(html: string): string[] {
 }
 
 describe('파이프라인 배선', () => {
-  test('rehype 순서는 codeMeta → raw → slug다', () => {
+  test('rehype 순서는 codeMeta → raw → dropUnsafe → slug다', () => {
     // 순서가 뒤집히면 펜스 메타가 조용히 사라진다(codeMeta.test.tsx의 대조군).
+    // dropUnsafe가 raw보다 앞이면 raw HTML이 아직 문자열이라 아무것도 못 지운다.
     expect(POST_REHYPE_PLUGINS).toEqual([
       rehypeCodeMeta,
       rehypeRaw,
+      rehypeDropUnsafe,
       rehypeSlug,
     ]);
   });
@@ -275,5 +278,44 @@ describe('본문 이미지', () => {
     const doc = parsed(serverHtml('![구성도](./a.png)\n'));
 
     expect(doc.querySelector('[data-rmiz] img')).not.toBeNull();
+  });
+});
+
+describe('본문 raw HTML의 실행 요소', () => {
+  test('실행되거나 페이지를 가로채는 태그는 서버 HTML에 싣지 않는다', () => {
+    const html = serverHtml(
+      [
+        '앞 문단',
+        '',
+        '<script>alert(1)</script>',
+        '<iframe src="https://evil.example"></iframe>',
+        '<object data="x.swf"></object><embed src="x.swf">',
+        '<base href="https://evil.example/">',
+        '<meta http-equiv="refresh" content="0;url=https://evil.example">',
+        '<link rel="stylesheet" href="https://evil.example/a.css">',
+        '<style>body{display:none}</style>',
+        '<form action="https://evil.example"><input name="pw"></form>',
+        '',
+        '<svg><script>alert(2)</script></svg>',
+        '',
+        '뒤 문단',
+      ].join('\n'),
+    );
+
+    expect(html).not.toMatch(
+      /<(script|iframe|object|embed|base|meta|link|style|form)\b/i,
+    );
+    expect(html).not.toContain('alert(');
+    // 주변 본문은 그대로 남는다.
+    expect(html).toContain('앞 문단');
+    expect(html).toContain('뒤 문단');
+  });
+
+  test('코드 펜스 안의 태그 예시는 텍스트라 지우지 않는다', () => {
+    const doc = parsed(
+      serverHtml('```html\n<script src="main.js"></script>\n```\n'),
+    );
+
+    expect(doc.body.textContent).toContain('<script src="main.js"></script>');
   });
 });
