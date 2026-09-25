@@ -17,9 +17,14 @@ import {
 
 // admin UI를 로컬(pnpm dev)에서 로그인 없이 개발/확인하기 위한 우회.
 // NODE_ENV로 자동 게이팅된다 → 프로덕션 빌드에선 false로 인라인되어 아래 우회
-// 분기가 전부 DCE로 제거되므로 배포 전 수동 원복이 필요 없다. (Edge Function
-// admin-analytics도 SUPABASE_URL 기반 isLocalDev로 자동 분기 — 로컬만 우회하고
-// *.supabase.co 프로덕션은 인증을 강제한다.)
+// 분기가 전부 DCE로 제거되므로 배포 전 수동 원복이 필요 없다.
+//
+// 이 값은 화면만 연다 — 데이터는 Edge Function admin-analytics가 따로 지킨다.
+// 그쪽 인증 우회는 URL 추정이 아니라 명시 플래그 ADMIN_ANALYTICS_ALLOW_UNAUTH
+// 하나로만 켜지고(로컬 `supabase start`의 config.toml [edge_runtime.secrets]가
+// 켠다), 플래그가 없는 배포 환경은 인증을 강제한다. 예전의 SUPABASE_URL 기반
+// isLocalDev 자동 우회는 셀프호스트 게이트웨이 호스트명(kong)에서도 인증을 꺼
+// 버리는 문제로 제거됐다(supabase/functions/admin-analytics/index.ts).
 const DEV_BYPASS = process.env.NODE_ENV === 'development';
 
 export function AdminGuard({ children }: { children: ReactNode }) {
