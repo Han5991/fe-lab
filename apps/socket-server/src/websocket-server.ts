@@ -157,6 +157,8 @@ interface ParsedFrame {
   isFinalFrame: boolean;
   opcode: number;
   payload: Buffer;
+  /** 헤더를 포함한 프레임 전체 바이트 수 */
+  frameLength: number;
 }
 
 /**
@@ -646,11 +648,14 @@ class WebSocketConnection {
   private fragmentedOpcode: number | null;
   private readonly sessionInfo: SessionInfo;
   /**
-   * 아직 프레임으로 떼어 내지 못한 수신 바이트.
+   * 아직 프레임으로 떼어 내지 못한 수신 청크와 그 총길이.
    * TCP는 스트림이라 'data' 청크 경계가 프레임 경계와 맞지 않는다 — 한 청크에 프레임이
    * 여럿 오기도, 한 프레임(헤더까지)이 여러 청크로 쪼개져 오기도 한다.
    */
-  private receiveBuffer: Buffer;
+  private receivedChunks: Buffer[];
+  private receivedLength: number;
+  /** 다음 프레임(헤더가 덜 왔으면 그 헤더)을 읽는 데 필요한 바이트 수. 모이기 전에는 합치지 않는다 */
+  private bytesNeeded: number;
   private readonly maxPayload: number;
   private readyState: ReadyState;
   /** Close를 보낸 뒤 상대가 답하지 않으면 TCP를 끊는 타이머 */
@@ -673,7 +678,9 @@ class WebSocketConnection {
     this.fragmentedMessage = [];
     this.fragmentedLength = 0;
     this.fragmentedOpcode = null;
-    this.receiveBuffer = Buffer.alloc(0);
+    this.receivedChunks = [];
+    this.receivedLength = 0;
+    this.bytesNeeded = 0;
     this.maxPayload = maxPayload;
     this.readyState = 'OPEN';
     this.closeTimer = null;
@@ -713,8 +720,8 @@ class WebSocketConnection {
   }
 
   /**
-   * 수신 청크를 버퍼에 붙이고, 완성된 프레임을 **전부** 처리한다.
-   * 덜 온 프레임(헤더 일부만 온 경우 포함)은 다음 청크까지 버퍼에 남긴다.
+   * 수신 청크를 모아 두고, 완성된 프레임을 **전부** 처리한다.
+   * 덜 온 프레임(헤더 일부만 온 경우 포함)은 다음 청크까지 남긴다.
    */
   receive(chunk: Buffer): void {
     if (this.readyState === 'CLOSED') return;
@@ -722,18 +729,23 @@ class WebSocketConnection {
     // 마지막 활동 시간 업데이트
     this.updateLastActive();
 
-    this.receiveBuffer =
-      this.receiveBuffer.length === 0
+    this.receivedChunks.push(chunk);
+    this.receivedLength += chunk.length;
+    // 청크마다 합치면 덜 온 큰 프레임을 청크 수만큼 다시 복사한다 — 다 모였을 때 한 번만 합친다
+    if (this.receivedLength < this.bytesNeeded) return;
+    let buffer =
+      this.receivedChunks.length === 1
         ? chunk
-        : Buffer.concat([this.receiveBuffer, chunk]);
+        : Buffer.concat(this.receivedChunks, this.receivedLength);
 
     try {
-      let frame = this.readFrame();
+      let frame = this.readFrame(buffer);
       while (frame !== null) {
+        buffer = buffer.subarray(frame.frameLength);
         this.handleFrame(frame);
         // handleFrame이 Close를 처리했으면 남은 바이트는 해석하지 않는다
         if (this.isClosed()) return;
-        frame = this.readFrame();
+        frame = this.readFrame(buffer);
       }
     } catch (error) {
       // 'data' 리스너에서 던지면 잡을 곳이 없어 프로세스가 죽는다 — 이 연결만 끊는다
@@ -743,11 +755,15 @@ class WebSocketConnection {
           : CloseCode.InternalError;
       console.error('Closing connection:', error);
       this.fail(closeCode);
+      return;
     }
+
+    this.receivedChunks = buffer.length === 0 ? [] : [buffer];
+    this.receivedLength = buffer.length;
   }
 
   /**
-   * 수신 버퍼 앞에서 완성된 프레임 하나를 떼어 낸다. 아직 덜 왔으면 null
+   * buffer 앞에서 완성된 프레임 하나를 읽는다. 덜 왔으면 필요한 바이트 수를 적어 두고 null
    *
    * WebSocket Frame 구조:
    * 0                   1                   2                   3
@@ -769,10 +785,9 @@ class WebSocketConnection {
    * |                     Payload Data continued ...                |
    * +---------------------------------------------------------------+
    */
-  private readFrame(): ParsedFrame | null {
-    const buffer = this.receiveBuffer;
+  private readFrame(buffer: Buffer): ParsedFrame | null {
     // 최소 헤더(2바이트)도 안 왔다
-    if (buffer.length < 2) return null;
+    if (buffer.length < 2) return this.waitFor(2);
 
     // 첫 번째 바이트: FIN, RSV, Opcode
     const firstByte = buffer[0];
@@ -815,11 +830,11 @@ class WebSocketConnection {
 
     // Extended payload length — 확장 길이 필드가 다 오기 전에는 읽지 않는다
     if (payloadLength === 126) {
-      if (buffer.length < offset + 2) return null;
+      if (buffer.length < offset + 2) return this.waitFor(offset + 2);
       payloadLength = buffer.readUInt16BE(offset);
       offset += 2;
     } else if (payloadLength === 127) {
-      if (buffer.length < offset + 8) return null;
+      if (buffer.length < offset + 8) return this.waitFor(offset + 8);
       // 64-bit length (Node.js에서는 Number로 처리)
       const high = buffer.readUInt32BE(offset);
       const low = buffer.readUInt32BE(offset + 4);
@@ -837,7 +852,7 @@ class WebSocketConnection {
     // Masking key(4바이트) 다음이 페이로드
     const frameLength = offset + 4 + payloadLength;
     // 페이로드가 다 오지 않았다 — 다음 청크를 기다린다
-    if (buffer.length < frameLength) return null;
+    if (buffer.length < frameLength) return this.waitFor(frameLength);
 
     const maskingKey = buffer.subarray(offset, offset + 4);
     offset += 4;
@@ -845,13 +860,15 @@ class WebSocketConnection {
     // Payload data
     const payloadData = buffer.subarray(offset, frameLength);
 
-    // 이 프레임 뒤의 바이트는 다음 프레임의 시작이다
-    this.receiveBuffer = buffer.subarray(frameLength);
-
     // 마스킹 해제 (unmask는 새 버퍼를 만든다 — 수신 버퍼를 계속 붙잡지 않는다)
     const payload = this.unmask(payloadData, maskingKey);
 
-    return { isFinalFrame, opcode, payload };
+    return { isFinalFrame, opcode, payload, frameLength };
+  }
+
+  private waitFor(bytes: number): null {
+    this.bytesNeeded = bytes;
+    return null;
   }
 
   /**
@@ -975,7 +992,8 @@ class WebSocketConnection {
    */
   private finishClose(): void {
     this.readyState = 'CLOSED';
-    this.receiveBuffer = Buffer.alloc(0);
+    this.receivedChunks = [];
+    this.receivedLength = 0;
     this.socket.end();
     // 상대가 FIN으로 답하지 않으면 소켓을 끝까지 붙잡지 않는다
     this.startCloseTimer();

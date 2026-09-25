@@ -321,6 +321,20 @@ describe('프레임 수신 — TCP 청크 경계와 무관하게', () => {
     expect(await client.nextText()).toBe('after');
   });
 
+  test('상한 크기(1MB) 프레임을 64비트 길이 필드 중간에서 끊고 1460바이트씩 보내도 한 메시지로 받는다', async () => {
+    const client = await connect();
+    const message = 'y'.repeat(1024 * 1024);
+    const frame = text(message);
+
+    client.socket.write(frame.subarray(0, 5));
+    await sleep(20);
+    for (let from = 5; from < frame.length; from += 1460) {
+      client.socket.write(frame.subarray(from, from + 1460));
+    }
+
+    expect(await client.nextText()).toBe(message);
+  });
+
   test('프레임 끝과 다음 프레임 앞부분이 한 청크에 섞여도 경계를 지킨다', async () => {
     const client = await connect();
     const both = Buffer.concat([text('first'), text('second')]);

@@ -21,21 +21,29 @@ WebSocket은 모든 데이터를 **프레임(Frame)** 단위로 전송합니다.
 ### TCP 청크 ≠ 프레임
 
 소켓의 `'data'` 이벤트 한 번이 프레임 하나라는 보장은 없습니다. TCP는 스트림이라 한 청크에 프레임이 여러 개
-붙어 오기도, 한 프레임(헤더까지)이 여러 청크로 쪼개져 오기도 합니다. 그래서 연결마다 수신 버퍼를 두고,
+붙어 오기도, 한 프레임(헤더까지)이 여러 청크로 쪼개져 오기도 합니다. 그래서 연결마다 받은 청크를 모아 두고,
 완성된 프레임을 **모두** 떼어 낸 뒤 덜 온 바이트는 다음 청크까지 남깁니다.
 
 ```typescript
 receive(chunk: Buffer): void {
-  this.receiveBuffer = Buffer.concat([this.receiveBuffer, chunk]);
-  let frame = this.readFrame(); // 덜 왔으면 null
+  this.receivedChunks.push(chunk);
+  this.receivedLength += chunk.length;
+  if (this.receivedLength < this.bytesNeeded) return; // 다음 프레임이 다 올 때까지 합치지 않는다
+  let buffer = Buffer.concat(this.receivedChunks, this.receivedLength);
+  let frame = this.readFrame(buffer); // 덜 왔으면 필요한 바이트 수를 bytesNeeded에 적고 null
   while (frame !== null) {
+    buffer = buffer.subarray(frame.frameLength); // 뒤의 바이트는 다음 프레임의 시작
     this.handleFrame(frame);
-    frame = this.readFrame();
+    frame = this.readFrame(buffer);
   }
+  this.receivedChunks = [buffer];
+  this.receivedLength = buffer.length;
 }
 ```
 
 `readFrame()`은 확장 길이 필드·마스킹 키·페이로드가 다 오기 전에는 아무것도 읽지 않고 `null`을 돌려줍니다.
+청크가 올 때마다 합치면 1MB 프레임이 1460바이트씩 올 때 앞부분을 700번 넘게 다시 복사하므로, 필요한 바이트가
+모였을 때 한 번만 합칩니다.
 
 **코드 위치**: `WebSocketConnection.receive`, `WebSocketConnection.readFrame`
 
@@ -117,7 +125,7 @@ let payloadLength = secondByte & 0x7f; // 페이로드 길이 (하위 7비트)
 
 ```typescript
 if (payloadLength === 126) {
-  if (buffer.length < offset + 2) return null; // 확장 길이가 아직 덜 왔다
+  if (buffer.length < offset + 2) return this.waitFor(offset + 2); // 확장 길이가 아직 덜 왔다
   payloadLength = buffer.readUInt16BE(offset); // 2바이트 읽기
   offset += 2;
 }
@@ -131,7 +139,7 @@ if (payloadLength === 126) {
 
 ```typescript
 else if (payloadLength === 127) {
-  if (buffer.length < offset + 8) return null;
+  if (buffer.length < offset + 8) return this.waitFor(offset + 8);
   const high = buffer.readUInt32BE(offset);     // 상위 32비트
   const low = buffer.readUInt32BE(offset + 4);  // 하위 32비트
   payloadLength = high * 0x100000000 + low;     // 합치기
@@ -159,7 +167,7 @@ offset += 4;
 
 ```typescript
 const payloadData = buffer.subarray(offset, frameLength);
-this.receiveBuffer = buffer.subarray(frameLength); // 뒤의 바이트는 다음 프레임의 시작
+// 이 프레임의 끝(frameLength)부터는 receive()가 다음 프레임으로 읽는다
 ```
 
 **코드 위치**: `WebSocketConnection.readFrame`
@@ -457,7 +465,7 @@ buffer = [0x03, 0xE8, 0x47, 0x6F, 0x6F, 0x64, 0x62, 0x79, 0x65]
 1. **바이트 레벨 프로토콜**: HTTP처럼 텍스트 기반이 아니라 비트 단위로 데이터를 분해하고 조합
 2. **마스킹 비대칭**: 클라이언트→서버는 필수, 서버→클라이언트는 금지
 3. **프레임 단위 처리**: 모든 메시지는 프레임으로 캡슐화되어 전송
-4. **상태 관리**: 수신 버퍼(receiveBuffer), 단편화 조립(fragmentedMessage, fragmentedLength, fragmentedOpcode), 연결 상태(OPEN·CLOSING·CLOSED)를 유지
+4. **상태 관리**: 수신 청크(receivedChunks, receivedLength, bytesNeeded), 단편화 조립(fragmentedMessage, fragmentedLength, fragmentedOpcode), 연결 상태(OPEN·CLOSING·CLOSED)를 유지
 5. **제어 프레임**: Ping/Pong으로 연결 유지, Close로 정상 종료
 
 ---
