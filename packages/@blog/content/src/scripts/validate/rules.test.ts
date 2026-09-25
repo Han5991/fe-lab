@@ -18,10 +18,10 @@ const CONFIG = defineTestContent({ root: `${sep}tmp${sep}app` });
 const CTX = toValidateContext(CONFIG);
 const STRICT_CTX = toValidateContext(CONFIG, { strict: true });
 
-test('RULES: 규칙은 정확히 39개', () => {
+test('RULES: 규칙은 정확히 40개', () => {
   // `non-string-field`가 세다 보면 흔히 빠진다 — 개수를 고정해 추가·삭제가
   // 테이블을 지나치지 못하게 한다.
-  expect(Object.keys(RULES).length).toBe(39);
+  expect(Object.keys(RULES).length).toBe(40);
 });
 
 test('RULES: --strict 승격(SEO_PUBLISH) 센티널은 정확히 6개', () => {
@@ -68,6 +68,7 @@ test('RULES: isPostFile 게이트(scope=post)가 걸린 규칙', () => {
     'body-h1',
     'missing-image-alt',
     'unknown-diagram-name',
+    'unpinned-line-link',
   ]);
 });
 

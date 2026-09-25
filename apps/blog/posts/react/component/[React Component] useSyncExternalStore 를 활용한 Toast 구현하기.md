@@ -417,7 +417,7 @@ const toastRecipe = sva({
 ## 실제 구현 코드
 
 **완전한 구현 코드를 확인하고 싶으시다면:**  
-📁 [전체 구현 코드 보기](https://github.com/Han5991/fe-lab/tree/main/apps/react/src/pages/toast-example/)
+📁 [전체 구현 코드 보기](https://github.com/Han5991/fe-lab/tree/1707765c3eb6249234463033335d08927ca25a13/apps/react/src/pages/toast-example/)
 
 주요 파일들:
 
