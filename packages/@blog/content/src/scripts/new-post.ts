@@ -1,6 +1,11 @@
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import type { ContentContext } from './context.ts';
+import {
+  isCalendarDate,
+  isOffsetDateTime,
+  slugProblem,
+} from './validate/shared.ts';
 
 /** 실제로 파일을 만들 때 필요한 값 — 원시 입력을 resolveOptions가 여기까지 좁힌다. */
 export interface NewPostOptions {
@@ -40,6 +45,9 @@ export function parseTagList(value: string): string[] {
  *   적지 않아도 되게 status를 올린다(둘을 같이 적어도 결과는 같다).
  * - 제목이 없으면 파일 이름을 만들 수 없다. 위치 인자든 `--title`이든 CLI가 하나로
  *   합쳐서 넘기므로, 여기서는 비었는지만 본다.
+ * - `--scheduled`·`--slug`는 lint:posts와 **같은 판정**으로 여기서 거른다. 예전에는
+ *   `--scheduled tomorrow`가 `date: tomorrow`로, `--slug /foo`가 그대로 파일에
+ *   적혀, 틀린 글을 만든 뒤에야 검증이 알려 줬다.
  */
 export function resolveOptions(raw: RawNewPostOptions): NewPostOptions {
   const title = raw.title?.trim();
@@ -51,6 +59,23 @@ export function resolveOptions(raw: RawNewPostOptions): NewPostOptions {
     throw new Error(
       'status: scheduled에는 --scheduled <ISO 날짜>가 필요합니다.',
     );
+  }
+  if (
+    raw.scheduledDate !== undefined &&
+    !isCalendarDate(raw.scheduledDate) &&
+    !isOffsetDateTime(raw.scheduledDate)
+  ) {
+    throw new Error(
+      `--scheduled는 'YYYY-MM-DD'이거나 offset을 명시한 ISO 시각이어야 합니다(예: 2026-06-01T09:00:00+09:00): ${raw.scheduledDate}`,
+    );
+  }
+  if (raw.slug !== undefined) {
+    const problem = slugProblem(raw.slug);
+    if (problem !== null) {
+      throw new Error(
+        `--slug를 URL로 쓸 수 없습니다 — ${problem}: ${raw.slug}`,
+      );
+    }
   }
   return {
     title,
@@ -116,6 +141,9 @@ function yamlQuote(value: string): string {
 /**
  * 예약 글의 `date`는 오늘이 아니라 **공개 예정일**이어야 합니다.
  * 오늘 날짜를 넣으면 목록에 뜨는 날짜와 실제 공개일이 어긋납니다.
+ *
+ * 공개 예정일은 **사이트 타임존의 달력 날짜**입니다. 문자열 앞 10자를 자르면
+ * `2026-05-31T20:00:00Z`(= KST 6월 1일 05:00)가 5월 31일이 됩니다.
  */
 function resolveDate(
   status: NewPostOptions['status'],
@@ -123,8 +151,11 @@ function resolveDate(
   timeZone: string,
   now: Date,
 ): string {
-  if (status === 'scheduled' && scheduledDate)
-    return scheduledDate.slice(0, 10);
+  if (status === 'scheduled' && scheduledDate) {
+    return isCalendarDate(scheduledDate)
+      ? scheduledDate
+      : todayKST(timeZone, new Date(scheduledDate));
+  }
   return todayKST(timeZone, now);
 }
 
@@ -146,8 +177,10 @@ export function buildFrontmatter(
 ): string {
   const lines = ['---'];
   lines.push(`title: ${yamlQuote(opts.title)}`);
+  // 따옴표로 감싼다 — YAML이 Date 객체로 바꾸지 않고 적은 문자열 그대로 읽히게
+  // (lint:posts의 unquoted-date·date 모양 규칙과 같은 계약).
   lines.push(
-    `date: ${resolveDate(opts.status, opts.scheduledDate, timeZone, now)}`,
+    `date: ${yamlQuote(resolveDate(opts.status, opts.scheduledDate, timeZone, now))}`,
   );
   lines.push(`status: ${opts.status}`);
   if (needsScheduledDate(opts.scheduledDate)) {

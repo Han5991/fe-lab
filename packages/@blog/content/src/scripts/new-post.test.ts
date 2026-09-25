@@ -49,6 +49,61 @@ test('resolveOptions: --scheduled를 주면 status를 scheduled로 올린다', (
   expect(opts.scheduledDate).toBe('2026-05-01T09:00:00+09:00');
 });
 
+test.each(['tomorrow', '2026-5-1', '2026-06-01T09:00:00', '2026-02-30'])(
+  'resolveOptions: --scheduled %s는 파일을 만들기 전에 거절한다',
+  scheduledDate => {
+    expect(() => resolveOptions({ title: '제목', scheduledDate })).toThrow(
+      /--scheduled는 'YYYY-MM-DD'이거나 offset을 명시한 ISO 시각/,
+    );
+  },
+);
+
+test.each(['/foo', 'foo/', '../admin', 'my post', ''])(
+  'resolveOptions: --slug %j는 파일을 만들기 전에 거절한다',
+  slug => {
+    expect(() => resolveOptions({ title: '제목', slug })).toThrow(
+      /--slug를 URL로 쓸 수 없습니다/,
+    );
+  },
+);
+
+test('resolveOptions: 정상 --scheduled·--slug는 그대로 통과한다', () => {
+  const opts = resolveOptions({
+    title: '제목',
+    scheduledDate: '2026-06-01',
+    slug: 'nested/ok-slug',
+  });
+  expect([opts.scheduledDate, opts.slug]).toStrictEqual([
+    '2026-06-01',
+    'nested/ok-slug',
+  ]);
+});
+
+test('buildFrontmatter: 예약 시각의 date는 사이트 타임존의 달력 날짜다 (UTC 앞 10자가 아니라)', () => {
+  // 2026-05-31T20:00Z = KST 6월 1일 05:00 — 앞 10자를 자르면 5월 31일이 된다.
+  const raw = buildFrontmatter(
+    {
+      title: '예약글',
+      status: 'scheduled',
+      tags: [],
+      scheduledDate: '2026-05-31T20:00:00Z',
+    },
+    TZ,
+    NOW,
+  );
+  // 픽스처 타임존은 Asia/Seoul이다(testValues.ts).
+  expect(matter(raw).data.date).toBe('2026-06-01');
+});
+
+test('buildFrontmatter: date는 따옴표로 감싼 문자열이다 (YAML Date로 바뀌지 않게)', () => {
+  const raw = buildFrontmatter(
+    { title: '제목', status: 'draft', tags: [] },
+    TZ,
+    NOW,
+  );
+  expect(typeof matter(raw).data.date).toBe('string');
+});
+
 test('resolveOptions: status만 scheduled고 날짜가 없으면 에러', () => {
   // 공개 시각 없는 예약 글은 영영 안 뜬다 — 파일을 만들기 전에 막는다.
   expect(() => resolveOptions({ title: '제목', status: 'scheduled' })).toThrow(
@@ -163,7 +218,7 @@ test('buildFrontmatter: 기본 골격 — 본문은 `## `로 시작한다 (h1을
     [
       '---',
       "title: '제목'",
-      'date: 2026-06-09',
+      "date: '2026-06-09'",
       'status: draft',
       "excerpt: ''",
       "tags: ['a', 'b']",
@@ -192,7 +247,7 @@ test('buildFrontmatter: 시각까지 지정한 예약글은 scheduledDate를 추
   expect(raw).toMatch(/scheduledDate: '2026-05-01T09:00:00\+09:00'/);
   expect(raw).toMatch(/slug: 'release-note'/);
   // date는 스캐폴딩한 날(2026-06-09)이 아니라 공개 예정일이어야 한다.
-  expect(raw).toMatch(/date: 2026-05-01/);
+  expect(raw).toMatch(/date: '2026-05-01'/);
 });
 
 test('buildFrontmatter: 날짜만 지정한 예약글은 scheduledDate 없이 date만', () => {
@@ -207,7 +262,7 @@ test('buildFrontmatter: 날짜만 지정한 예약글은 scheduledDate 없이 da
     TZ,
     NOW,
   );
-  expect(raw).toMatch(/date: 2026-05-01/);
+  expect(raw).toMatch(/date: '2026-05-01'/);
   expect(!raw.includes('scheduledDate')).toBeTruthy();
 });
 

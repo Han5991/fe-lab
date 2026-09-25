@@ -144,7 +144,7 @@ export function resolveSeverity(
  * `isPostVisible`은 날짜가 **문자열**일 때만 공개 시각으로 인정합니다(도메인은
  * 정규화된 PostData를 받는 전제). 그런데 여기서 보는 건 gray-matter 원문이라,
  * 따옴표 없이 쓴 `date: 2026-08-10`은 YAML이 **Date 객체**로 파싱합니다 —
- * `new-post`가 정확히 그렇게 씁니다. 그대로 넘기면 이미 공개된 예약 글이
+ * 예전 `new-post`가 그렇게 썼고, 실제 원고에도 아직 그런 글이 있습니다. 그대로 넘기면 이미 공개된 예약 글이
  * "비공개"로 판정되어 strict 에러가 조용히 경고로 떨어집니다.
  * repository가 PostData를 만들 때 쓰는 `toDateString`을 똑같이 거칩니다.
  *
