@@ -110,7 +110,7 @@ const WebSocketOpcode = {
 } as const;
 
 /** 한 메시지 페이로드의 상한. 넘으면 1009로 닫는다 — 수신 버퍼가 무한히 자라지 않게 한다 */
-const DEFAULT_MAX_PAYLOAD = 1024 * 1024;
+const MAX_PAYLOAD = 1024 * 1024;
 
 /** 한 메시지의 조각(프레임) 수 상한. 넘으면 1009 — 빈 조각은 길이 상한에 걸리지 않는다 */
 export const MAX_FRAGMENTS = 1024;
@@ -195,12 +195,9 @@ export class WebSocketServer {
   private readonly allowedOrigins:
     string[] | ((origin: string) => boolean) | null;
   private readonly sessionTimeout: number;
-  private readonly heartbeatInterval: number;
-  private readonly cleanupInterval: number;
-  private readonly stockBroadcastInterval: number;
-  private cleanupIntervalId: NodeJS.Timeout | null;
-  private heartbeatIntervalId: NodeJS.Timeout | null;
-  private stockBroadcastIntervalId: NodeJS.Timeout | null;
+  /** 주기 작업 전부. shutdown이 한꺼번에 멈춘다 */
+  private readonly timers: NodeJS.Timeout[];
+  private readonly cleanupTimer: NodeJS.Timeout;
   private stockData: Map<string, StockData>;
 
   constructor(httpServer: HTTPServer, options: WebSocketServerOptions = {}) {
@@ -209,12 +206,7 @@ export class WebSocketServer {
     this.sessions = new Map();
     this.allowedOrigins = options.allowedOrigins || null; // null이면 모든 origin 허용
     this.sessionTimeout = options.sessionTimeout || 5 * 60 * 1000; // 기본 5분
-    this.heartbeatInterval = options.heartbeatInterval || 30 * 1000; // 기본 30초
-    this.cleanupInterval = options.cleanupInterval || 60 * 1000; // 기본 1분
-    this.stockBroadcastInterval = options.stockBroadcastInterval || 1000; // 기본 1초
-    this.cleanupIntervalId = null;
-    this.heartbeatIntervalId = null;
-    this.stockBroadcastIntervalId = null;
+    this.timers = [];
 
     // 주식 데이터 초기화
     this.stockData = new Map([
@@ -269,13 +261,28 @@ export class WebSocketServer {
     this.httpServer.on('upgrade', this.handleUpgrade.bind(this));
 
     // 세션 정리 타이머 시작 (기본 1분마다 체크)
-    this.startCleanupTimer();
+    this.cleanupTimer = this.every(options.cleanupInterval || 60 * 1000, () =>
+      this.cleanupInactiveSessions(),
+    );
 
-    // 하트비트 시작 (기본 30초마다 Ping)
-    this.startHeartbeat();
+    // 하트비트 (기본 30초마다 Ping). 돌아오는 Pong은 수신 데이터라 lastActiveAt을 갱신한다
+    this.every(options.heartbeatInterval || 30 * 1000, () => {
+      for (const client of this.clients) {
+        client.ping();
+      }
+    });
 
-    // 주식 데이터 브로드캐스트 시작 (1초마다)
-    this.startStockBroadcast();
+    // 주식 데이터 브로드캐스트 시작 (기본 1초마다)
+    this.every(options.stockBroadcastInterval || 1000, () =>
+      this.updateStockPrices(),
+    );
+    console.log('Stock price broadcast started (1s interval)');
+  }
+
+  private every(ms: number, task: () => void): NodeJS.Timeout {
+    const timer = setInterval(task, ms);
+    this.timers.push(timer);
+    return timer;
   }
 
   /**
@@ -352,7 +359,7 @@ export class WebSocketServer {
     socket.write(responseHeaders);
 
     // WebSocket 연결 생성
-    const client = new WebSocketConnection(socket, { topics });
+    const client = new WebSocketConnection(socket, topics);
     const sessionId = client.getSessionId();
 
     this.clients.add(client);
@@ -459,45 +466,10 @@ export class WebSocketServer {
   }
 
   /**
-   * 세션 정리 타이머 시작
-   */
-  private startCleanupTimer(): void {
-    // 주기마다 비활성 세션 체크
-    this.cleanupIntervalId = setInterval(() => {
-      this.cleanupInactiveSessions();
-    }, this.cleanupInterval);
-  }
-
-  /**
-   * 하트비트 시작: 모든 클라이언트에 주기적으로 Ping을 보낸다.
-   * 돌아오는 Pong은 수신 데이터라 lastActiveAt을 갱신한다.
-   */
-  private startHeartbeat(): void {
-    this.heartbeatIntervalId = setInterval(() => {
-      for (const client of this.clients) {
-        client.ping();
-      }
-    }, this.heartbeatInterval);
-  }
-
-  /**
-   * 하트비트 중지
-   */
-  private stopHeartbeat(): void {
-    if (this.heartbeatIntervalId) {
-      clearInterval(this.heartbeatIntervalId);
-      this.heartbeatIntervalId = null;
-    }
-  }
-
-  /**
    * 세션 정리 타이머 중지
    */
   stopCleanupTimer(): void {
-    if (this.cleanupIntervalId) {
-      clearInterval(this.cleanupIntervalId);
-      this.cleanupIntervalId = null;
-    }
+    clearInterval(this.cleanupTimer);
   }
 
   /**
@@ -528,28 +500,6 @@ export class WebSocketServer {
       console.log(
         `Cleaned up ${inactiveSessions.length} inactive session(s). Active sessions: ${this.sessions.size}`,
       );
-    }
-  }
-
-  /**
-   * 주식 데이터 브로드캐스트 시작
-   */
-  private startStockBroadcast(): void {
-    // 1초마다 랜덤하게 주식 가격 업데이트
-    this.stockBroadcastIntervalId = setInterval(() => {
-      this.updateStockPrices();
-    }, this.stockBroadcastInterval);
-
-    console.log('Stock price broadcast started (1s interval)');
-  }
-
-  /**
-   * 주식 데이터 브로드캐스트 중지
-   */
-  private stopStockBroadcast(): void {
-    if (this.stockBroadcastIntervalId) {
-      clearInterval(this.stockBroadcastIntervalId);
-      this.stockBroadcastIntervalId = null;
     }
   }
 
@@ -621,9 +571,9 @@ export class WebSocketServer {
     console.log('Shutting down WebSocket server...');
 
     // 타이머 중지
-    this.stopCleanupTimer();
-    this.stopHeartbeat();
-    this.stopStockBroadcast();
+    for (const timer of this.timers) {
+      clearInterval(timer);
+    }
 
     // 모든 연결 종료 (1001: 서버가 내려간다)
     for (const client of this.clients) {
@@ -656,22 +606,12 @@ class WebSocketConnection {
   private receivedLength: number;
   /** 다음 프레임(헤더가 덜 왔으면 그 헤더)을 읽는 데 필요한 바이트 수. 모이기 전에는 합치지 않는다 */
   private bytesNeeded: number;
-  private readonly maxPayload: number;
   private readyState: ReadyState;
   /** Close를 보낸 뒤 상대가 답하지 않으면 TCP를 끊는 타이머 */
   private closeTimer: NodeJS.Timeout | null;
   private readonly topics: ReadonlySet<Topic>;
 
-  constructor(
-    socket: Duplex,
-    {
-      maxPayload = DEFAULT_MAX_PAYLOAD,
-      topics = new Set(DEFAULT_TOPICS),
-    }: {
-      maxPayload?: number;
-      topics?: ReadonlySet<Topic>;
-    } = {},
-  ) {
+  constructor(socket: Duplex, topics: ReadonlySet<Topic>) {
     this.socket = socket;
     this.topics = topics;
     this.listeners = {};
@@ -681,7 +621,6 @@ class WebSocketConnection {
     this.receivedChunks = [];
     this.receivedLength = 0;
     this.bytesNeeded = 0;
-    this.maxPayload = maxPayload;
     this.readyState = 'OPEN';
     this.closeTimer = null;
 
@@ -754,7 +693,7 @@ class WebSocketConnection {
           ? error.closeCode
           : CloseCode.InternalError;
       console.error('Closing connection:', error);
-      this.fail(closeCode);
+      this.terminate(closeCode);
       return;
     }
 
@@ -842,7 +781,7 @@ class WebSocketConnection {
       offset += 8;
     }
 
-    if (payloadLength > this.maxPayload) {
+    if (payloadLength > MAX_PAYLOAD) {
       throw new WebSocketProtocolError(
         CloseCode.MessageTooBig,
         `Frame payload too large: ${payloadLength} bytes`,
@@ -910,7 +849,7 @@ class WebSocketConnection {
       this.fragmentedLength += payload.length;
 
       // 조각마다는 상한 안이어도 합치면 넘을 수 있다 — 조립 중에도 상한을 지킨다
-      if (this.fragmentedLength > this.maxPayload) {
+      if (this.fragmentedLength > MAX_PAYLOAD) {
         throw new WebSocketProtocolError(
           CloseCode.MessageTooBig,
           `Message too large: ${this.fragmentedLength} bytes`,
@@ -978,12 +917,10 @@ class WebSocketConnection {
       );
     }
 
-    if (this.readyState === 'OPEN') {
-      this.writeFrame(
-        WebSocketOpcode.Close,
-        code === null ? Buffer.alloc(0) : this.closePayload(code, ''),
-      );
-    }
+    this.writeFrame(
+      WebSocketOpcode.Close,
+      code === null ? Buffer.alloc(0) : this.closePayload(code),
+    );
     this.finishClose();
   }
 
@@ -1011,25 +948,16 @@ class WebSocketConnection {
   }
 
   /**
-   * 응답 없는 연결을 끝낸다: Close를 보내되 상대의 Close를 기다리지 않고 바로 TCP를 닫는다
+   * Close를 보내되 상대의 Close를 기다리지 않고 바로 TCP를 닫는다 —
+   * 응답 없는 연결과 프로토콜 위반(§7.1.7)에 쓴다
    */
   terminate(code: number = CloseCode.GoingAway): void {
     if (this.readyState === 'CLOSED') return;
-    this.writeFrame(WebSocketOpcode.Close, this.closePayload(code, ''));
+    this.writeFrame(WebSocketOpcode.Close, this.closePayload(code));
     this.finishClose();
   }
 
-  /**
-   * 프로토콜 위반: 상태 코드를 실은 Close 프레임을 보내고 연결을 끊는다 (§7.1.7)
-   */
-  private fail(closeCode: number): void {
-    if (this.readyState === 'OPEN') {
-      this.writeFrame(WebSocketOpcode.Close, this.closePayload(closeCode, ''));
-    }
-    this.finishClose();
-  }
-
-  private closePayload(code: number, reason: string): Buffer {
+  private closePayload(code: number, reason = ''): Buffer {
     const reasonBytes = Buffer.from(reason, 'utf-8');
     const payload = Buffer.alloc(2 + reasonBytes.length);
     payload.writeUInt16BE(code, 0);

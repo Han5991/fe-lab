@@ -147,7 +147,7 @@ else if (payloadLength === 127) {
 }
 ```
 
-선언된 길이가 상한(기본 1MB)을 넘으면 버퍼링하지 않고 1009(Message Too Big)로 닫습니다.
+선언된 길이가 상한(1MB, `MAX_PAYLOAD`)을 넘으면 버퍼링하지 않고 1009(Message Too Big)로 닫습니다.
 
 **코드 위치**: `WebSocketConnection.readFrame`
 
@@ -344,7 +344,7 @@ private sendPong(data: Buffer): void {
 응답하고, 그 Pong이 수신 데이터라 마지막 활동 시각이 갱신됩니다. 그래서 보낼 것이 없는(듣기만 하는)
 클라이언트도 `sessionTimeout`(기본 5분)에 걸리지 않고, Pong조차 없는 죽은 연결만 1001로 끊깁니다.
 
-**코드 위치**: `WebSocketServer.startHeartbeat`, `WebSocketServer.cleanupInactiveSessions`
+**코드 위치**: `WebSocketServer` 생성자, `WebSocketServer.cleanupInactiveSessions`
 
 #### Ping/Pong 용도
 
@@ -367,11 +367,9 @@ private sendPong(data: Buffer): void {
 ```typescript
 private handleCloseFrame(payload: Buffer): void {
   // 상태 코드 검증 (1바이트 페이로드·잘못된 코드 → 1002, 이유가 UTF-8이 아니면 → 1007)
-  if (this.readyState === 'OPEN') {
-    // 상대가 먼저 닫았다 → 같은 상태 코드로 Close를 돌려준다
-    this.writeFrame(WebSocketOpcode.Close, ...);
-  }
-  // CLOSING이었다면 이쪽 Close에 대한 응답이다 → 다시 보내지 않는다
+  // OPEN: 상대가 먼저 닫았다 → 같은 상태 코드로 Close를 돌려준다
+  // CLOSING: 이쪽 Close에 대한 응답이다 → writeFrame이 OPEN에서만 쓰므로 다시 보내지 않는다
+  this.writeFrame(WebSocketOpcode.Close, ...);
   this.finishClose(); // 서버가 먼저 TCP를 닫는다
 }
 ```
