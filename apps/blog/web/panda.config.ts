@@ -1,17 +1,17 @@
 import { defineConfig } from '@pandacss/dev';
 
 export default defineConfig({
-  presets: [
-    '@pandacss/dev/presets',
-    '@design-system/ui/preset',
-    '@design-system/ui/blog-preset',
-  ],
+  // `@design-system/ui`에서는 블로그 프리셋만 가져온다. 같은 패키지의 기본
+  // 프리셋(`/preset` — button 레시피)과 컴포넌트 소스(Button·toast)는 실험 앱용이라
+  // 블로그가 쓰지 않는데, 예전에는 둘 다 걸려 있어 블로그 CSS에 lab 스타일
+  // (`.button--visual_funky`, toast 클래스, 블로그 토큰에 없는 `z-index:toast`라
+  // 무효인 `.z_toast`)이 실려 나갔다. 블로그 코드는 ui-lib의 css·tokens만 쓴다.
+  presets: ['@pandacss/dev/presets', '@design-system/ui/blog-preset'],
   preflight: true,
   lightningcss: true,
 
   include: [
     './src/**/*.{js,jsx,ts,tsx}',
-    './node_modules/@design-system/ui/src/**/*.{js,jsx,ts,tsx}',
     // @blog/content는 지금 css()를 쓰지 않지만, 소스 익스포트 패키지라 스타일
     // 사용이 생기는 즉시 스캔 대상이어야 한다 — 선제 등록(누락 시 조용히
     // 스타일이 빠진 채 빌드가 성공한다).
