@@ -85,10 +85,11 @@ export interface RuntimeConfig {
    * dev 서버(next dev) 판정.
    *
    * `=== 'development'`로 정확히 비교한다(`!== 'production'`이 아니라):
-   * 정적 산출물을 만드는 스크립트들(prebuild/predev:web의 sitemap·rss·
-   * search-index·llms-full·og-images)은 tsx로 직접 실행되어 NODE_ENV가
-   * **undefined**다. 느슨하게 비교하면 그 스크립트들이 dev로 오인되어
-   * draft가 sitemap과 RSS에 실려 나간다. next dev만 'development'를 설정한다.
+   * 정적 산출물을 만드는 스크립트들(prebuild의 sitemap·rss·search-index·
+   * llms-full·og-images)은 `blog-content` CLI로 직접 실행되어 NODE_ENV가
+   * **undefined**일 수 있다. 느슨하게 비교하면 그 스크립트들이 dev로 오인되어
+   * draft가 sitemap과 RSS에 실려 나간다. 'development'는 next dev와, dev 서버
+   * 직전에 같은 산출물을 draft 몫까지 만드는 앱의 `predev:web`만 명시한다.
    */
   isDevelopment: () => boolean;
 }

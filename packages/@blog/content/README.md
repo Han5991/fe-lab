@@ -132,7 +132,9 @@ spawn되고 cwd·PATH 어디에도 기대지 않는다 — 부모가 발견한 �
 `predev:web`과 `prebuild`는 같은 명령이고 `prebuild`만 `--strict`다(검증은 둘 다 돈다).
 글 집합(`visible`)의 dev 판정은 로더의 `isDevelopment`(`NODE_ENV === 'development'`)
 한 곳뿐이라, dev 서버가 draft의 og 카드·썸네일·원고 미디어까지 받으려면 이 명령도
-`NODE_ENV=development`로 돌아야 한다 — 없으면 발행 글 몫만 만든다.
+`NODE_ENV=development`로 돌아야 한다 — 없으면 발행 글 몫만 만든다. 그래서 앱의
+`predev:web`은 `NODE_ENV=development`를 붙여 돌고, `prebuild`는 붙이지 않는다
+(dev가 남긴 draft 산출물은 다음 `prebuild`의 orphan 정리가 걷어 낸다).
 
 **기준 시각도 부모가 한 번 정해 넘긴다**(`--now`). 예약 글의 공개 판정·sitemap의
 오늘·RSS lastBuildDate·strict 승격 범위가 전부 이 값을 본다 — 단계마다 제 시계를
