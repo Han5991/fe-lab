@@ -9,6 +9,7 @@
  */
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { act, fireEvent, render, screen } from '@testing-library/react';
+import { HEADER_OFFSET } from '@/src/components/tocHooks';
 import { MobileTOC } from './MobileTOC';
 
 const HEADING = { id: 'intro', text: '들어가며' };
@@ -84,6 +85,18 @@ describe('MobileTOC 항목 클릭', () => {
     expect(ev.defaultPrevented).toBe(true);
     expect(scrollToMock).toHaveBeenCalled();
     expect(drawerOpen()).toBe(false);
+  });
+
+  // 활성 구간 판정(useTocHook)과 같은 헤더 높이만큼 보정해야, 이동한 헤딩이
+  // 곧바로 활성으로 잡힌다. 예전엔 여기만 80을 적어 데스크탑 차례(100)와 갈렸다.
+  test('스크롤 목표는 공용 헤더 오프셋만큼 올린 자리다', () => {
+    const link = openDrawer();
+
+    dispatchClick(link);
+
+    expect(scrollToMock).toHaveBeenCalledWith(
+      expect.objectContaining({ top: 400 - HEADER_OFFSET }),
+    );
   });
 
   // 여기서 기본 동작을 막으면 Cmd/Ctrl+클릭의 새 탭이 열리지 않는다 — 앵커로
