@@ -91,6 +91,7 @@ export const Layout = ({ children }: LayoutProps) => {
             className={cx(
               railInner,
               css({
+                // 이 높이(+ 하단 hairline)에 PreviewBanner의 sticky top이 맞물린다.
                 h: '[52px]',
                 display: 'flex',
                 alignItems: 'center',
