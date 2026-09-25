@@ -35,7 +35,10 @@ export class MockWebSocket {
 
   close(code = 1000) {
     this.closeCalls.push(code);
-    this.simulateClose(code);
+    // 브라우저는 연결 전에 닫힌 소켓에 1006(비정상 종료)을 준다
+    this.simulateClose(
+      this.readyState === MockWebSocket.CONNECTING ? 1006 : code,
+    );
   }
 
   simulateOpen() {

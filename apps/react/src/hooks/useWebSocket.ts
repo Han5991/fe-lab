@@ -16,6 +16,8 @@ interface UseWebSocketOptions {
    * 메시지마다 처리할 일은 state가 아니라 이 콜백에서 해야 빠지지 않는다.
    */
   onMessage?: (data: string) => void;
+  /** messages에 남길 최대 개수. 넘으면 오래된 것부터 버린다 (기본: 200) */
+  maxMessages?: number;
 }
 
 interface UseWebSocketReturn {
@@ -49,6 +51,7 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
     reconnectInterval = 1000,
     reconnectBackoffMultiplier = 1.5,
     onMessage,
+    maxMessages = 200,
   } = options;
 
   const [messages, setMessages] = useState<string[]>([]);
@@ -75,15 +78,53 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
     onMessageRef.current = onMessage;
   });
 
-  const addSystemMessage = useCallback((message: string) => {
-    setMessages(prev => [...prev, `[시스템] ${message}`]);
+  // 시세처럼 초마다 오는 메시지가 쌓여도 목록이 끝없이 자라지 않게 최근 것만 남긴다
+  const appendMessage = useCallback(
+    (message: string) => {
+      setMessages(prev => [...prev, message].slice(-maxMessages));
+    },
+    [maxMessages],
+  );
+
+  const addSystemMessage = useCallback(
+    (message: string) => {
+      appendMessage(`[시스템] ${message}`);
+    },
+    [appendMessage],
+  );
+
+  const clearReconnectTimeout = useCallback(() => {
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = null;
+    }
+  }, []);
+
+  /**
+   * 현재 소켓을 잊고 닫는다. 연결 중(CONNECTING)인 소켓도 닫아야 한다 — 그대로 두면
+   * 나중에 열려 두 번째 연결이 된다. wsRef를 먼저 비우므로 이 소켓이 뒤늦게 내는
+   * open·message·close 이벤트는 핸들러의 `wsRef.current !== ws` 가드에 걸려 무시된다
+   * (그렇지 않으면 옛 소켓의 close가 새 연결을 끊긴 것으로 덮고 재연결까지 예약한다).
+   */
+  const closeCurrentSocket = useCallback((code: number, reason: string) => {
+    const ws = wsRef.current;
+    wsRef.current = null;
+    if (
+      ws &&
+      (ws.readyState === WebSocket.CONNECTING ||
+        ws.readyState === WebSocket.OPEN)
+    ) {
+      ws.close(code, reason);
+    }
   }, []);
 
   const connect = useCallback(() => {
+    closeCurrentSocket(1000, 'Replaced by a new connection');
     try {
       const ws = new WebSocket(url);
 
       ws.onopen = () => {
+        if (wsRef.current !== ws) return;
         console.log('WebSocket connected');
         setIsConnected(true);
         setIsReconnecting(false);
@@ -93,18 +134,21 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
       };
 
       ws.onmessage = event => {
+        if (wsRef.current !== ws) return;
         console.log('Received message:', event.data);
         const data = String(event.data);
-        setMessages(prev => [...prev, `수신: ${data}`]);
+        appendMessage(`수신: ${data}`);
         onMessageRef.current?.(data);
       };
 
       ws.onerror = error => {
+        if (wsRef.current !== ws) return;
         console.error('WebSocket error:', error);
         addSystemMessage('연결 오류가 발생했습니다.');
       };
 
       ws.onclose = event => {
+        if (wsRef.current !== ws) return;
         console.log('WebSocket disconnected', event);
         setIsConnected(false);
         wsRef.current = null;
@@ -151,6 +195,8 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
     reconnectInterval,
     reconnectBackoffMultiplier,
     addSystemMessage,
+    appendMessage,
+    closeCurrentSocket,
   ]);
 
   useEffect(() => {
@@ -159,15 +205,16 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
 
   const disconnect = useCallback(() => {
     shouldReconnectRef.current = false;
-    if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current);
-      reconnectTimeoutRef.current = null;
-    }
-    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-      wsRef.current.close(1000, 'User disconnected');
-    }
+    clearReconnectTimeout();
+    const hadSocket = wsRef.current !== null;
+    // 닫는 소켓의 close 이벤트는 가드에 걸려 무시되므로 상태는 여기서 정리한다
+    closeCurrentSocket(1000, 'User disconnected');
+    setIsConnected(false);
     setIsReconnecting(false);
-  }, []);
+    if (hadSocket) {
+      addSystemMessage('서버와의 연결이 종료되었습니다.');
+    }
+  }, [clearReconnectTimeout, closeCurrentSocket, addSystemMessage]);
 
   const reconnect = useCallback(() => {
     disconnect();
@@ -176,8 +223,12 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
     setReconnectAttempt(0);
     setIsReconnecting(true);
     addSystemMessage('수동으로 재연결을 시도합니다...');
-    setTimeout(() => connect(), 100);
-  }, [disconnect, connect, addSystemMessage]);
+    // 언마운트·disconnect가 취소할 수 있게 같은 ref로 예약한다
+    reconnectTimeoutRef.current = setTimeout(() => {
+      reconnectTimeoutRef.current = null;
+      connectRef.current?.();
+    }, 100);
+  }, [disconnect, addSystemMessage]);
 
   const sendMessage = useCallback(
     (message: string) => {
@@ -187,9 +238,9 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
       }
 
       wsRef.current.send(message);
-      setMessages(prev => [...prev, `전송: ${message}`]);
+      appendMessage(`전송: ${message}`);
     },
-    [addSystemMessage],
+    [addSystemMessage, appendMessage],
   );
 
   useEffect(() => {
@@ -201,14 +252,10 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
 
     return () => {
       shouldReconnectRef.current = false;
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current);
-      }
-      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-        wsRef.current.close(1000, 'Component unmounted');
-      }
+      clearReconnectTimeout();
+      closeCurrentSocket(1000, 'Component unmounted');
     };
-  }, [connect]);
+  }, [connect, clearReconnectTimeout, closeCurrentSocket]);
 
   return {
     messages,
