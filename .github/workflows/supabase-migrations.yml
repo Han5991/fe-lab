@@ -32,7 +32,6 @@ concurrency:
 jobs:
   push:
     runs-on: ubuntu-latest
-    # 프로덕션 DB에 붙는 잡이 멈춘 채 기본값 360분을 버티지 않게 한다.
     timeout-minutes: 10
     defaults:
       run:
@@ -41,10 +40,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      # CLI 버전은 로컬과 같은 것 — apps/blog/web의 supabase devDependency가 lockfile에서
-      # 풀린 값이다. `latest`는 프로덕션 DB에 붙는 잡에 리뷰도 나이 게이트도 없는 새
-      # 릴리스를 그날 바로 들였다. 이렇게 두면 Renovate가 npm 쪽을 올릴 때(공개 3일 뒤,
-      # PR로) 함께 움직이고, 숫자를 이 파일에 옮겨 적지 않아도 된다.
+      # `latest` 대신 lockfile의 supabase devDependency 버전 — 프로덕션 DB 잡에는
+      # Renovate 나이 게이트를 거친 CLI만 쓴다.
       - name: Resolve Supabase CLI version
         id: supabase-cli
         working-directory: .

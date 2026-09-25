@@ -37,11 +37,7 @@ jobs:
   inventory:
     # workflow_run은 deploy-blog가 실패해도 완료되면 일단 트리거된다.
     # 배포 실패 시 sitemap이 갱신되지 않으므로 다시 볼 이유가 없어 건너뛴다.
-    #
-    # 봇(Renovate 자동 머지 등)이 일으킨 배포도 건너뛴다. 이 잡의 actor는 그 배포의
-    # actor를 물려받는데, claude-code-action은 사람이 아닌 actor를 거부해 잡이 빨갛게
-    # 끝난다(2026-09-20·21 run 106·107·109가 renovate[bot]으로 실패). 의존성 배포는
-    # 초안·예약 글 현황을 바꾸지 않으므로 다음 사람·cron 배포가 갱신하면 된다.
+    # 봇 actor(Renovate 자동 머지 배포)는 claude-code-action이 거부하므로 건너뛴다.
     if: >-
       github.event_name == 'workflow_dispatch' ||
       (github.event.workflow_run.conclusion == 'success' && !endsWith(github.actor, '[bot]'))

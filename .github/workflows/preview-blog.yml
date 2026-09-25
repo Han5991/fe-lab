@@ -10,10 +10,7 @@ name: Preview Blog on Cloudflare Workers
 
 on:
   pull_request:
-    # 블로그 빌드의 실제 입력 전부 — deploy-blog.yml의 push 경로와 같은 이유다.
-    # 디자인 토큰·catalog·lockfile만 바꾼 PR도 머지 전에 빌드로 런타임 회귀를 본다.
-    # 봇이 연 PR(Renovate)은 build까지만 돌고 토큰을 쥐는 preview는 건너뛴다(그 잡의
-    # if 참고). quality-checks는 이 워크플로가 부르지 않으므로 목록에 없다.
+    # 블로그 빌드의 실제 입력 전부(deploy-blog.yml의 push 경로와 같다 — quality-checks만 뺀다).
     paths:
       - 'apps/blog/**'
       - 'packages/@blog/**'
@@ -34,10 +31,7 @@ permissions:
   contents: read
 
 jobs:
-  # 잡이 둘인 이유(토큰 격리)는 deploy-blog.yml과 같다. 여기서는 더 중요하다 —
-  # 프리뷰는 **머지 전** Renovate PR에서도 돈다. 오염된 의존성의 install 스크립트나
-  # next build 코드가 같은 잡에서 CLOUDFLARE_API_TOKEN(프로덕션 deploy 권한과 같은
-  # 토큰)을 읽을 수 있었다. build는 시크릿도 PR 쓰기 권한도 없이 out/만 넘긴다.
+  # 토큰 격리(deploy-blog.yml과 같다): build는 시크릿·PR 쓰기 권한 없이 out/만 넘긴다.
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -99,15 +93,8 @@ jobs:
 
   preview:
     needs: build
-    # 봇이 연 PR(Renovate)에서는 돌지 않는다. 이 잡은 프로덕션 배포와 같은
-    # CLOUDFLARE_API_TOKEN을 쥐고, PR의 lockfile로 깐 wrangler와 그 전이 의존성
-    # (miniflare·undici·esbuild…)을 실행한다. lock-file-maintenance PR은 전이 의존성
-    # 전부를 나이 게이트 없이 방금 나온 버전으로 다시 해석하므로(renovate.json), 여기까지
-    # 오면 공개된 지 몇 분 된 버전이 토큰 옆에서 돈다. 봇 PR의 프리뷰는 보는 사람도
-    # 없다 — 빌드 검증은 위 build 잡과 ci.yml이 한다. needs가 있는 잡의 if에는
-    # success()가 암묵으로 붙으므로 포크 PR(build 스킵)에서도 그대로 스킵된다.
-    # 잡 단위 if라 체크는 "skipped"로 끝나고, required check(`Lint / Types / Tests`)가
-    # 아니므로 머지를 막지 않는다.
+    # 봇 PR 제외: lock-file-maintenance는 나이 게이트 없이 전이 의존성을 새로 풀어 방금 나온
+    # wrangler 의존성이 프로덕션과 같은 토큰 옆에서 돈다. 포크 PR은 build 스킵으로 함께 스킵된다.
     if: github.event.pull_request.user.type != 'Bot'
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -131,8 +118,7 @@ jobs:
         with:
           node-version-file: '.tool-versions'
 
-      # 블로그 워크스페이스만, install 스크립트 없이 — 이 잡에서 도는 의존성 코드는
-      # wrangler 하나뿐이어야 한다. 버전은 lockfile이 정한다.
+      # --ignore-scripts: 토큰을 쥔 이 잡에서 도는 의존성 코드는 wrangler 하나뿐이어야 한다.
       - name: Install wrangler (lockfile, no scripts)
         run: pnpm install --frozen-lockfile --ignore-scripts --filter @blog/web
 

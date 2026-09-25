@@ -78,7 +78,6 @@ CONTENT_ATTR_RE = re.compile(r"""content=["']([^"']*)["']""", re.IGNORECASE)
 STATIC_ASSET_RE = re.compile(r"""["'](/_next/static/[^"']+)["']""")
 
 
-# 요청 하나의 상한(초). 수집 마감이 가까우면 남은 시간으로 줄어든다.
 REQUEST_TIMEOUT = 30.0
 DEADLINE_ERROR = "DeadlineExceeded: 수집 마감이 지나 요청을 보내지 않았다"
 
@@ -110,10 +109,8 @@ def fetch(
     `deadline`은 **전체 수집**의 마감 시각(time.monotonic 기준)이다. 사이트가
     완전히 죽으면 경로 수(고정 5개 + 글 상세 1개, 홈이 살아 있으면 자산 표본
     3개까지) × 재시도 × 타임아웃이 곱해져 잡 타임아웃을 넘기고, 그러면 이슈도
-    못 만든 채 잡만 빨갛게 죽는다. 마감을 넘기면 재시도를 접고, 아직 안 보낸
-    요청은 보내지 않은 채(`DeadlineExceeded`) 지금까지의 사실을 그대로 넘긴다.
-    요청 하나의 타임아웃도 남은 시간으로 줄인다 — 마감 직전에 30초짜리 요청을
-    새로 시작하면 그만큼 마감을 넘긴다.
+    못 만든 채 잡만 빨갛게 죽는다. 마감을 넘기면 새 요청 없이(`DeadlineExceeded`)
+    지금까지의 사실을 그대로 넘기고, 요청 타임아웃도 남은 시간으로 줄인다.
     """
     url = base_url.rstrip("/") + path
     attempt = 0
@@ -223,11 +220,7 @@ class _NoRedirect(urllib.request.HTTPRedirectHandler):
 
 
 def fetch_redirect(url: str, deadline: float | None = None) -> dict:
-    """리다이렉트를 따라가지 않고 (status, location) 을 본다. 실패해도 안 던진다.
-
-    apex probe도 수집 마감 안에 든다. 예전에는 마감 밖이라 러너 네트워크가 죽으면
-    probe 7개가 30초씩 더 써서 수집만으로 잡 시간을 다 먹을 수 있었다.
-    """
+    """리다이렉트를 따라가지 않고 (status, location) 을 본다. 실패해도 안 던진다."""
     timeout = request_timeout(deadline)
     if timeout is None:
         return {"url": url, "status": None, "location": None, "error": DEADLINE_ERROR}
@@ -438,7 +431,7 @@ def parse_sitemap(text: str, today_utc: str, today_kst: str) -> dict:
     facts["lastmod_counts"] = dict(sorted(counts.items()))
     facts["distinct_lastmod_count"] = len(counts)
     # "모든 lastmod가 검사 당일" = 매 빌드마다 lastmod가 전진하는 회귀 신호.
-    # 검사는 배포 직후에 돌지만 lastmod가 UTC/KST 어느 날짜로 찍혀도 잡히게 둘 다 본다.
+    # lastmod가 UTC/KST 어느 날짜로 찍혀도 잡히게 둘 다 본다.
     facts["all_lastmod_is_check_date"] = bool(lastmod_dates) and set(
         lastmod_dates
     ) <= {today_utc, today_kst}

@@ -4,21 +4,9 @@ name: Claude Deps Audit
 # 죽은 pnpm overrides 정리 + pnpm audit 신규 취약점 해소 + 추적 중 예외 재평가.
 # 변경이 있으면 PR을 만들어 두고, 없으면 아무것도 만들지 않습니다.
 #
-# 잡이 둘인 이유(권한 분리):
-#   - audit(Claude): 읽기 전용. WebFetch/WebSearch로 신뢰할 수 없는 외부 페이지를
-#     읽으므로 쓰기 자격 증명을 **하나도** 쥐지 않는다. 변경은 패치 파일로 내보낸다.
-#   - publish(LLM 없음): 패치가 허용된 파일(package.json·pnpm-workspace.yaml·
-#     pnpm-lock.yaml)의 수정만 담는지, 그 안에서도 버전 범위·overrides·catalog·
-#     auditConfig·레지스트리 해석만 바꾸는지(스크립트·빌드 설정·URL/git/file: 스펙 거부)
-#     검사한 뒤 커밋·푸시·PR을 한다(.github/scripts/publish-bot-pr.sh).
-# 예전에는 한 잡이 contents: write와 `Bash(pnpm:*)`·`Bash(cp:*)`·WebFetch를 함께
-# 가졌다. `pnpm:*`는 접두 매칭이라 `pnpm dlx <아무 패키지>`까지 열려 있었고, `cp`로
-# git hook을 심은 뒤 허용된 `git commit`을 부르는 경로도 있었다 — advisory 페이지
-# 하나에 심긴 지시문이 쓰기 토큰을 쥔 셸이 될 수 있었다.
-#
-# PR은 publish 잡의 GITHUB_TOKEN으로 열린다(github-actions[bot]). 그 토큰으로 연 PR에는
-# pull_request 워크플로가 돌지 않으므로 스크립트가 ci.yml을 workflow_dispatch로
-# 직접 부른다. claude-code-review.yml은 Bot PR을 스킵하므로 셀프 리뷰 루프는 없다.
+# 잡 분리: audit(Claude)는 외부 페이지를 읽으므로 쓰기 자격 증명 없이 패치만 내보내고,
+# publish(LLM 없음)가 그 패치를 검사해 PR을 연다(.github/scripts/publish-bot-pr.sh).
+# claude-code-review.yml은 Bot PR을 스킵하므로 셀프 리뷰 루프는 없다.
 
 on:
   schedule:
@@ -37,8 +25,7 @@ jobs:
   audit:
     runs-on: ubuntu-latest
     timeout-minutes: 45
-    # Claude가 쥐는 GitHub 자격 증명은 이 잡의 GITHUB_TOKEN 하나다(아래
-    # github_token 입력). 그래서 여기 권한이 곧 Claude의 권한이다 — 읽기만.
+    # 여기 권한이 곧 Claude의 권한이다(아래 github_token 입력) — 읽기만.
     permissions:
       contents: read
       pull-requests: read
@@ -55,22 +42,18 @@ jobs:
           # 버전은 루트 package.json의 packageManager 필드를 단일 source of truth로 사용
           run_install: false
 
-      # pnpm 스토어 캐시와 turbo 캐시를 쓰지 않는다. 이 잡은 외부 콘텐츠를 읽는 모델이
-      # `pnpm install --lockfile-only`까지 돌리므로, 캐시를 저장하게 두면 main 스코프의
-      # 캐시(다른 잡과 PR이 복원한다)를 오염시킬 통로가 된다. 주 1회라 속도는 상관없다.
+      # 캐시 없음: 모델이 install을 돌리는 잡이 main 스코프 캐시를 저장하면 오염 통로가 된다.
       - name: Setup Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version-file: '.tool-versions'
 
-      # Claude가 곧바로 audit/why를 볼 수 있게 미리 설치해 둔다(모델이 돌기 전의 결정적 단계)
+      # Claude가 곧바로 audit/why를 볼 수 있게 미리 설치해 둔다
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # 아래 Export 스텝이 대조할 .git/config 지문. 스텝 출력은 뒤 스텝이 고쳐 쓸 수
-      # 없어서 파일이 아니라 출력에 남긴다. claude-code-action이 같은 스텝 안에서
-      # user.name·user.email·remote.origin.url(·credential.helper)을 다시 쓰므로 그
-      # 넷은 뺀다 — 모두 `git diff`가 쓰지 않는 키다. 식은 Export 스텝과 같아야 한다.
+      # Export 스텝이 대조할 .git/config 지문(스텝 출력이라 뒤 스텝이 못 고친다). 뺀 넷은
+      # claude-code-action이 다시 쓰는, `git diff`가 안 쓰는 키다. 식은 Export 스텝과 같아야 한다.
       - name: Fingerprint git config
         id: git_config
         run: |
@@ -84,8 +67,7 @@ jobs:
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
 
-          # Claude App 토큰(OIDC 교환) 대신 이 잡의 읽기 전용 토큰을 쓴다. App 토큰은
-          # 잡의 permissions와 무관하게 contents·pull-requests·issues write로 발급된다.
+          # App 토큰은 잡 permissions와 무관하게 write로 발급되므로 이 잡의 읽기 전용 토큰을 쓴다.
           github_token: ${{ github.token }}
 
           # 예약 실행 잡은 "아무것도 만들지 않음"이 정상 종료라 성공 로그만
@@ -167,28 +149,12 @@ jobs:
             5. 변경할 것이 전혀 없으면(죽은 override 없음 + 신규 advisory 0건 +
                예외 조건 미충족) 아무것도 만들지 말고 요약만 남기고 종료하세요.
 
-          # Bash는 **코드를 실행하지 않는** 서브커맨드만 정확히 나열한다. 접두 매칭이라
-          # `pnpm:*`는 `pnpm dlx`·`pnpm exec`까지 연다. 테스트 실행도 뺐다 — 의존성
-          # 코드를 돌리는 일이고 PR CI가 어차피 전부 다시 돈다. `cp`도 뺐다(git hook
-          # 경로). WebSearch/WebFetch는 advisory·백포트 출시 확인용으로 남긴다 — 이
-          # 잡에는 쓰기 자격 증명이 없어서, 인젝션이 닿아도 결과는 publish 잡이 검사하는
-          # 패치 하나뿐이다.
-          #
-          # 남는 위험: `pnpm install --lockfile-only`는 pnpm-workspace.yaml이 가리키는
-          # pnpmfile·configDependencies를 실행할 수 있다. 그래서 이 잡은 읽기 전용이고
-          # 캐시를 저장하지 않는다.
+          # Bash는 코드를 실행하지 않는 서브커맨드만 정확히 나열한다(접두 매칭이라 `pnpm:*`는 `pnpm dlx`까지 연다).
+          # `pnpm install --lockfile-only`는 pnpmfile을 실행할 수 있어 이 잡은 읽기 전용·캐시 없음이다.
           claude_args: '--allowed-tools "Read,Edit,Write,Grep,Glob,WebFetch,WebSearch,Bash(pnpm audit:*),Bash(pnpm why:*),Bash(pnpm view:*),Bash(pnpm install --lockfile-only:*),Bash(git status:*),Bash(git diff:*),Bash(git log:*),Bash(git restore:*),Bash(gh pr list:*),Bash(gh pr view:*),Bash(date:*),Bash(diff:*),Bash(shasum:*)"'
 
-      # Claude가 고친 **추적 파일의 수정분**만 패치로 뜬다. 새로 만든 파일은
-      # git diff에 나오지 않으므로 여기서 이미 빠진다. 검사는 publish 잡이 한다 —
-      # 이 스텝은 모델이 명령을 실행한 뒤라 믿지 않는다.
-      #
-      # git 자체도 믿지 않는 작업 트리에서 돈다. .git/config에 core.fsmonitor·
-      # diff.external·filter 드라이버·include를 심으면 `git diff`가 임의 코드를
-      # 실행한다 — main 스코프 러너라 런타임 토큰을 긁어 배포 빌드가 복원하는 캐시를
-      # 오염시키는 길이다. 그래서 (1) 설정 목록이 Claude 스텝 전 지문과 다르면 멈추고,
-      # (2) 전역·시스템 설정(~/.gitconfig는 이 잡의 사용자가 쓸 수 있다)을 읽지 않고
-      # fsmonitor·hook·외부 diff·textconv를 끈 git만 쓴다.
+      # 추적 파일의 수정분만 패치로 뜬다(검사는 publish 잡). 작업 트리를 믿지 않는다 — .git/config·
+      # ~/.gitconfig에 심은 fsmonitor·diff.external·filter는 `git diff`로 임의 코드를 돌린다.
       - name: Export changes
         env:
           GIT_CONFIG_FINGERPRINT: ${{ steps.git_config.outputs.sha256 }}
@@ -224,8 +190,7 @@ jobs:
     needs: audit
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    # 쓰기 권한은 LLM이 없는 이 잡에만 있다. actions: write는 GITHUB_TOKEN으로 연 PR에
-    # CI를 붙이는 workflow_dispatch용이다(스크립트 머리 주석 참고).
+    # 쓰기 권한은 LLM 없는 이 잡에만. actions: write는 봇 PR에 CI를 붙이는 workflow_dispatch용.
     permissions:
       contents: write
       pull-requests: write
@@ -248,7 +213,6 @@ jobs:
           OUT_DIR: ${{ runner.temp }}/bot-output
           NAME: deps-audit
           BRANCH_PREFIX: claude/deps-audit-
-          # 루트·워크스페이스의 package.json, pnpm-workspace.yaml, pnpm-lock.yaml만.
           ALLOWED_PATHS: '^(package\.json|pnpm-workspace\.yaml|pnpm-lock\.yaml|(apps|packages)/[^/]+(/[^/]+)*/package\.json)$'
           DEFAULT_TITLE: 'chore(deps): 의존성 위생 점검 결과를 반영한다'
           CI_WORKFLOW: ci.yml
