@@ -11,9 +11,9 @@ name: Preview Blog on Cloudflare Workers
 on:
   pull_request:
     # 블로그 빌드의 실제 입력 전부 — deploy-blog.yml의 push 경로와 같은 이유다.
-    # 디자인 토큰·catalog·lockfile만 바꾼 PR(Renovate 대부분)도 프리뷰로 확인할 수
-    # 있어야 머지 전에 런타임 회귀를 본다. quality-checks는 이 워크플로가 부르지 않으므로
-    # 목록에 없다.
+    # 디자인 토큰·catalog·lockfile만 바꾼 PR도 머지 전에 빌드로 런타임 회귀를 본다.
+    # 봇이 연 PR(Renovate)은 build까지만 돌고 토큰을 쥐는 preview는 건너뛴다(그 잡의
+    # if 참고). quality-checks는 이 워크플로가 부르지 않으므로 목록에 없다.
     paths:
       - 'apps/blog/**'
       - 'packages/@blog/**'
@@ -99,6 +99,16 @@ jobs:
 
   preview:
     needs: build
+    # 봇이 연 PR(Renovate)에서는 돌지 않는다. 이 잡은 프로덕션 배포와 같은
+    # CLOUDFLARE_API_TOKEN을 쥐고, PR의 lockfile로 깐 wrangler와 그 전이 의존성
+    # (miniflare·undici·esbuild…)을 실행한다. lock-file-maintenance PR은 전이 의존성
+    # 전부를 나이 게이트 없이 방금 나온 버전으로 다시 해석하므로(renovate.json), 여기까지
+    # 오면 공개된 지 몇 분 된 버전이 토큰 옆에서 돈다. 봇 PR의 프리뷰는 보는 사람도
+    # 없다 — 빌드 검증은 위 build 잡과 ci.yml이 한다. needs가 있는 잡의 if에는
+    # success()가 암묵으로 붙으므로 포크 PR(build 스킵)에서도 그대로 스킵된다.
+    # 잡 단위 if라 체크는 "skipped"로 끝나고, required check(`Lint / Types / Tests`)가
+    # 아니므로 머지를 막지 않는다.
+    if: github.event.pull_request.user.type != 'Bot'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
