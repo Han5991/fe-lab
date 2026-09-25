@@ -104,7 +104,13 @@ it('비동기 에러 처리', async () => {
 });
 
 it('비동기 인대 try catch 잡고 던지지 않음', async () => {
-  await expect(asyncNotThrowError()).resolves.not.toThrow();
+  const logError = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+  await expect(asyncNotThrowError()).resolves.toBeUndefined();
+  expect(logError).toHaveBeenCalledWith(
+    '비동기 에러를 잡았습니다:',
+    '비동기 에러 발생',
+  );
 });
 
 it('비동기 에러 처리', async () => {
@@ -146,9 +152,12 @@ async function exampleUsage() {
 
 ```typescript
 it('래퍼로 비동기 오류를 포착해야합니다', async () => {
+  const logError = vi.spyOn(console, 'error').mockImplementation(() => {});
+
   await expect(
     asyncErrorWrapper(new Promise((_, reject) => reject(new Error('error')))),
-  ).resolves.not.toThrow();
+  ).resolves.toBeUndefined();
+  expect(logError).toHaveBeenCalledWith('래퍼에서 에러를 처리했습니다:', 'error');
 });
 ```
 
@@ -164,7 +173,7 @@ it('래퍼로 비동기 오류를 포착해야합니다', async () => {
 async function handleMultipleAsyncErrors() {
   try {
     // 여러 비동기 작업을 동시에 실행. 하나라도 에러가 발생하면 catch 구문으로 진입
-    await Promise.all([asyncError(), asyncNotThrowError2()]);
+    await Promise.all([asyncError(), asyncError(), asyncError()]);
   } catch (e) {
     console.error('여러 비동기 작업 중 하나에서 에러 발생:', e.message);
     return;
@@ -176,7 +185,13 @@ async function handleMultipleAsyncErrors() {
 
 ```typescript
 it('비동기 여러개 에러 처리 안 함', async () => {
-  await expect(handleMultipleAsyncErrors()).resolves.not.toThrow();
+  const logError = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+  await expect(handleMultipleAsyncErrors()).resolves.toBeUndefined();
+  expect(logError).toHaveBeenCalledWith(
+    '여러 비동기 작업 중 하나에서 에러 발생:',
+    '비동기 에러 발생',
+  );
 });
 ```
 
@@ -250,7 +265,7 @@ export const executeTest = () => {
 
 ```typescript
 it('에러가 던져지면 콘솔로그가 실행되지 않음', () => {
-  const consoleSpy = jest.spyOn(console, 'log');
+  const consoleSpy = vi.spyOn(console, 'log');
   expect(executeTest).toThrow();
   expect(consoleSpy).not.toHaveBeenCalled();
   consoleSpy.mockRestore();
