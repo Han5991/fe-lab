@@ -95,11 +95,11 @@ here or anywhere else (this repo once carried four diverging copies of that prom
 - **PR skills**: `/pr-fix` (breadth — every review comment) and `/repair-pr` (one mechanical pass to green) don't
   overlap; if both apply, `/pr-fix` first. `/add-issue` and `/write-prd` run **only when the user names them** —
   both create real issues.
-- **Review verdict = 👍 on the PR.** `claude-code-review.yml` derives it from the posted comment (PASS only with no
-  critical/high finding) and is fail-closed. Gotchas: its prompt has a **21,000-byte limit** — over it, GitHub
-  rejects the workflow silently and it vanishes from the PR checks (`workflowPromptSize.test.ts` holds a 20,500B
-  budget); a PR that edits that workflow **skips its own review**. Missing 👍 ≠ findings — the `/list-good-prs`
-  skill has the table for telling the cases apart.
+- **Review verdict = 👍 on the PR.** `claude-code-review.yml` removes the old 👍 when a run starts and derives the new
+  one from the comment that run actually posted (PASS only with no critical/high finding) — fail-closed. Gotchas:
+  its prompt has a **21,000-byte limit** — over it, GitHub rejects the workflow silently and it vanishes from the PR
+  checks (`workflowPromptSize.test.ts` holds a 20,500B budget); a PR that edits that workflow **skips its own
+  review**. Missing 👍 ≠ findings — the `/list-good-prs` skill has the table for telling the cases apart.
 - Large outputs (logs, comment lists, diffs): write to a file, report the key findings.
 
 ## 6. Troubleshooting
