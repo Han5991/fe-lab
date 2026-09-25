@@ -38,6 +38,10 @@ function toTopPostRows(
  * 클라이언트에서 모르는 slug를 버리면, 가짜 slug N개가 조회수를 부풀리는 것만으로
  * N칸을 전부 차지해 결과가 통째로 빈다. 동률은 slug 순으로 끊어 순위가 요청마다
  * 흔들리지 않게 합니다.
+ *
+ * 필터는 쿼리스트링에 실리므로 URL이 글 수에 비례해 길어집니다(45편 ≈ 1.6KB).
+ * 게이트웨이의 URL 한도에 가까워질 만큼 글이 늘면 slug 목록을 본문으로 받는 RPC로
+ * 옮겨야 합니다 — 그 전까지 넘치면 요청이 실패로 드러납니다(레일은 섹션을 뺀다).
  */
 export async function getTopPosts(
   limit: number,

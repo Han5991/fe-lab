@@ -45,7 +45,14 @@ export interface AdminSlugFilter {
   slugs?: readonly string[];
 }
 
-/** `slugs` 한 요청의 최대 개수 — 글 수보다 넉넉하고, 쿼리스트링이 터지지 않을 만큼. */
+/**
+ * `slugs` 한 요청의 최대 개수 — JSON 입력 검증용 상한이다.
+ *
+ * 실제 한계는 이 숫자가 아니라 **쿼리스트링 길이**다. 필터는 PostgREST에
+ * `slug=in.(…)`로 실리므로 URL이 글 수에 비례해 길어진다(45편 ≈ 1.6KB). 게이트웨이의
+ * URL 한도(수 KB대)에 가까워질 만큼 글이 늘면, slug 목록을 POST 본문으로 받는
+ * RPC로 옮겨야 한다 — 그 전까지는 실패가 414/500으로 드러난다(조용히 잘리지 않는다).
+ */
 export const MAX_FILTER_SLUGS = 1000;
 
 /** slug 한 개의 최대 길이 — `increment_view_count`가 기록을 거부하는 길이와 같다. */
