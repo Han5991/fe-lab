@@ -45,7 +45,6 @@ export class ValidationError extends CustomError {
   }
 }
 
-// run: 에러를 던질 작업. 기본값은 일반 Error를 던지는 testError — 테스트는 다른 에러를 넣어 분기를 확인한다
 export const handleSpecificErrors = (run: () => void = testError) => {
   try {
     run();
