@@ -78,6 +78,21 @@ CONTENT_ATTR_RE = re.compile(r"""content=["']([^"']*)["']""", re.IGNORECASE)
 STATIC_ASSET_RE = re.compile(r"""["'](/_next/static/[^"']+)["']""")
 
 
+# 요청 하나의 상한(초). 수집 마감이 가까우면 남은 시간으로 줄어든다.
+REQUEST_TIMEOUT = 30.0
+DEADLINE_ERROR = "DeadlineExceeded: 수집 마감이 지나 요청을 보내지 않았다"
+
+
+def request_timeout(deadline: float | None) -> float | None:
+    """이번 요청에 쓸 타임아웃. 마감이 이미 지났으면 None(요청하지 않는다)."""
+    if deadline is None:
+        return REQUEST_TIMEOUT
+    remaining = deadline - time.monotonic()
+    if remaining <= 0:
+        return None
+    return max(1.0, min(REQUEST_TIMEOUT, remaining))
+
+
 def local_name(tag: str) -> str:
     """`{ns}url` → `url`. sitemap/rss 네임스페이스 유무에 무관하게 읽기 위한 것."""
     return tag.rsplit("}", 1)[-1]
@@ -95,8 +110,10 @@ def fetch(
     `deadline`은 **전체 수집**의 마감 시각(time.monotonic 기준)이다. 사이트가
     완전히 죽으면 경로 수(고정 5개 + 글 상세 1개, 홈이 살아 있으면 자산 표본
     3개까지) × 재시도 × 타임아웃이 곱해져 잡 타임아웃을 넘기고, 그러면 이슈도
-    못 만든 채 잡만 빨갛게 죽는다. 마감을 넘기면 재시도를 접고 지금까지의
-    사실을 그대로 넘긴다.
+    못 만든 채 잡만 빨갛게 죽는다. 마감을 넘기면 재시도를 접고, 아직 안 보낸
+    요청은 보내지 않은 채(`DeadlineExceeded`) 지금까지의 사실을 그대로 넘긴다.
+    요청 하나의 타임아웃도 남은 시간으로 줄인다 — 마감 직전에 30초짜리 요청을
+    새로 시작하면 그만큼 마감을 넘긴다.
     """
     url = base_url.rstrip("/") + path
     attempt = 0
@@ -109,12 +126,23 @@ def fetch(
         return True
 
     while True:
+        timeout = request_timeout(deadline)
+        if timeout is None:
+            return {
+                "url": url,
+                "status": None,
+                "content_type": None,
+                "cache_control": None,
+                "bytes": 0,
+                "attempts": attempt,
+                "error": DEADLINE_ERROR,
+            }, ""
         attempt += 1
         try:
             request = urllib.request.Request(
                 url, headers={"User-Agent": USER_AGENT, "Accept": "*/*"}
             )
-            with urllib.request.urlopen(request, timeout=30) as response:
+            with urllib.request.urlopen(request, timeout=timeout) as response:
                 body = response.read()
                 meta = {
                     "url": url,
@@ -194,14 +222,21 @@ class _NoRedirect(urllib.request.HTTPRedirectHandler):
         return None
 
 
-def fetch_redirect(url: str) -> dict:
-    """리다이렉트를 따라가지 않고 (status, location) 을 본다. 실패해도 안 던진다."""
+def fetch_redirect(url: str, deadline: float | None = None) -> dict:
+    """리다이렉트를 따라가지 않고 (status, location) 을 본다. 실패해도 안 던진다.
+
+    apex probe도 수집 마감 안에 든다. 예전에는 마감 밖이라 러너 네트워크가 죽으면
+    probe 7개가 30초씩 더 써서 수집만으로 잡 시간을 다 먹을 수 있었다.
+    """
+    timeout = request_timeout(deadline)
+    if timeout is None:
+        return {"url": url, "status": None, "location": None, "error": DEADLINE_ERROR}
     opener = urllib.request.build_opener(_NoRedirect)
     request = urllib.request.Request(
         url, headers={"User-Agent": USER_AGENT, "Accept": "*/*"}
     )
     try:
-        with opener.open(request, timeout=30) as response:
+        with opener.open(request, timeout=timeout) as response:
             return {"url": url, "status": response.status, "location": response.headers.get("Location"), "error": None}
     except urllib.error.HTTPError as error:
         return {"url": url, "status": error.code, "location": error.headers.get("Location") if error.headers else None, "error": None}
@@ -209,11 +244,11 @@ def fetch_redirect(url: str) -> dict:
         return {"url": url, "status": None, "location": None, "error": f"{type(error).__name__}: {error}"}
 
 
-def collect_apex() -> dict:
+def collect_apex(deadline: float | None = None) -> dict:
     """apex·www 리다이렉트 실측. 각 항목에 기대값과 일치 여부를 함께 남긴다."""
     results = []
     for probe in APEX_PROBES:
-        got = fetch_redirect(probe["origin"] + probe["path"])
+        got = fetch_redirect(probe["origin"] + probe["path"], deadline)
         got["why"] = probe["why"]
         got["expected_location"] = probe["expect"]
         got["expected_status"] = 308
@@ -588,7 +623,7 @@ def main() -> int:
     robots_meta, robots_text = get("/robots.txt")
 
     # 블로그 자신이 아니라 apex 도메인을 본다(base_url과 무관하게 고정).
-    apex = collect_apex()
+    apex = collect_apex(deadline)
 
     cache = collect_cache(
         get, home_text, [("/", home_meta), ("/posts/", index_meta)]
