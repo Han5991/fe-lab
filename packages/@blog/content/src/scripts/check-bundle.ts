@@ -81,31 +81,79 @@ function chunkStem(path: string): string {
   return (path.split('/').pop() ?? path).replace(/\.js$/, '');
 }
 
+/** 청크 → 그 본문이 여는 청크들. 청크마다 처음 물을 때 한 번만 계산한다. */
+type ChunkEdges = (name: string) => readonly string[];
+
 /**
- * 시작 집합에서 도달 가능한 청크의 폐포.
- *
- * 간선은 "포함된 청크의 본문에 다른 청크의 stem(확장자 뺀 파일명)이 문자열로
- * 등장한다"이다. stem은 콘텐츠 해시라 우연한 부분 일치가 사실상 없고, 지연
- * 로드(dynamic import)가 정확히 이 형태로 파일명을 든다.
+ * 청크 참조 그래프. 간선은 "청크 본문에 다른 청크의 stem(확장자 뺀 파일명)이
+ * 문자열로 등장한다"이다. stem은 콘텐츠 해시라 우연한 부분 일치가 사실상 없고,
+ * 지연 로드(dynamic import)가 정확히 이 형태로 파일명을 든다.
  */
+function createChunkEdges(sources: ReadonlyMap<string, string>): ChunkEdges {
+  // stem → 그 stem의 청크들(하위 폴더끼리 파일 이름이 같을 수 있다).
+  const owners = new Map<string, string[]>();
+  for (const name of sources.keys()) {
+    const stem = chunkStem(name);
+    owners.set(stem, [...(owners.get(stem) ?? []), name]);
+  }
+  // 길이가 같은 서로 다른 stem은 한 위치에서 둘이 맞을 수 없다 — 전방 탐색 교대
+  // (`(?=(a|b|…))`) 한 번의 훑기가 stem마다 `includes`를 부른 것과 같은 답을 낸다.
+  const byLength = new Map<number, string[]>();
+  for (const stem of owners.keys()) {
+    if (stem !== '')
+      byLength.set(stem.length, [...(byLength.get(stem.length) ?? []), stem]);
+  }
+  const patterns = [...byLength.values()].map(
+    group =>
+      new RegExp(
+        `(?=(${group.map(stem => stem.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')}))`,
+        'g',
+      ),
+  );
+  const edges = new Map<string, string[]>();
+  return name => {
+    let targets = edges.get(name);
+    if (targets === undefined) {
+      const body = sources.get(name) ?? '';
+      // 빈 stem(`.js`)은 어느 본문에나 "등장한다"(`includes('')`).
+      const found = new Set(owners.get('') ?? []);
+      for (const pattern of patterns) {
+        for (const match of body.matchAll(pattern)) {
+          for (const owner of owners.get(match[1] ?? '') ?? [])
+            found.add(owner);
+        }
+      }
+      found.delete(name);
+      targets = [...found];
+      edges.set(name, targets);
+    }
+    return targets;
+  };
+}
+
+function closureOver(
+  start: Iterable<string>,
+  sources: ReadonlyMap<string, string>,
+  edgesOf: ChunkEdges,
+): Set<string> {
+  const included = new Set<string>();
+  const queue = [...start].filter(name => sources.has(name));
+  for (let name = queue.pop(); name !== undefined; name = queue.pop()) {
+    if (included.has(name)) continue;
+    included.add(name);
+    for (const next of edgesOf(name)) {
+      if (!included.has(next)) queue.push(next);
+    }
+  }
+  return included;
+}
+
+/** 시작 집합에서 도달 가능한 청크의 폐포. */
 export function chunkClosure(
   start: Iterable<string>,
   sources: ReadonlyMap<string, string>,
 ): Set<string> {
-  const included = new Set<string>();
-  const queue = [...start].filter(name => sources.has(name));
-  while (queue.length > 0) {
-    const name = queue.pop();
-    if (name === undefined || included.has(name)) continue;
-    included.add(name);
-    const body = sources.get(name);
-    if (body === undefined) continue;
-    for (const [candidate] of sources) {
-      if (included.has(candidate)) continue;
-      if (body.includes(chunkStem(candidate))) queue.push(candidate);
-    }
-  }
-  return included;
+  return closureOver(start, sources, createChunkEdges(sources));
 }
 
 /** 셀렉터로 페이지를 고른다 — 없으면 전부. */
@@ -148,36 +196,53 @@ export function describeScope(scope: MarkerScope): string {
 }
 
 /**
- * 셀렉터 페이지들이 도달하는 청크 폐포. `cache`를 주면 같은 셀렉터의 폐포를
- * 한 번만 계산한다 — 규칙 9개가 청크 스코프 16개를 쓰지만 서로 다른 셀렉터는
- * 5개뿐이라, 캐시 없이는 같은 O(청크² × 본문) 계산을 세 배 넘게 되풀이했다.
+ * 한 입력(`ScopeInputs`)을 여러 스코프로 평가할 때 재사용하는 계산 — 청크 그래프,
+ * 페이지별 청크 참조, 셀렉터별 폐포. 규칙 9개가 청크 스코프 16개를 쓰지만 서로
+ * 다른 셀렉터는 5개뿐이고, 셀렉터끼리도 청크 대부분을 공유한다.
  */
+export interface ScopeCache {
+  edgesOf: ChunkEdges;
+  pageRefs: Map<string, string[]>;
+  closures: Map<string, Set<string>>;
+}
+
+export function createScopeCache(inputs: ScopeInputs): ScopeCache {
+  return {
+    edgesOf: createChunkEdges(inputs.sources),
+    pageRefs: new Map(),
+    closures: new Map(),
+  };
+}
+
+/** 셀렉터 페이지들이 도달하는 청크 폐포. */
 function reachableChunks(
   selector: PageSelector | undefined,
   inputs: ScopeInputs,
-  cache?: Map<string, Set<string>>,
+  cache: ScopeCache,
 ): Set<string> {
   const key = JSON.stringify(selector ?? null);
-  const cached = cache?.get(key);
+  const cached = cache.closures.get(key);
   if (cached) return cached;
   const refs = new Set<string>();
-  for (const [, html] of selectPages(inputs.pages, selector)) {
-    for (const ref of collectChunkRefs(html)) refs.add(ref);
+  for (const [path, html] of selectPages(inputs.pages, selector)) {
+    let pageRefs = cache.pageRefs.get(path);
+    if (pageRefs === undefined) {
+      pageRefs = collectChunkRefs(html);
+      cache.pageRefs.set(path, pageRefs);
+    }
+    for (const ref of pageRefs) refs.add(ref);
   }
-  const closure = chunkClosure(refs, inputs.sources);
-  cache?.set(key, closure);
+  const closure = closureOver(refs, inputs.sources, cache.edgesOf);
+  cache.closures.set(key, closure);
   return closure;
 }
 
-/**
- * 스코프 안에서 마커가 발견된 위치 목록 — 비어 있으면 "없다".
- * `cache`는 같은 입력으로 여러 번 부를 때(checkRules) 폐포를 재사용한다.
- */
+/** 스코프 안에서 마커가 발견된 위치 목록 — 비어 있으면 "없다". */
 export function findMarkerIn(
   scope: MarkerScope,
   marker: string,
   inputs: ScopeInputs,
-  cache?: Map<string, Set<string>>,
+  cache: ScopeCache = createScopeCache(inputs),
 ): string[] {
   switch (scope.kind) {
     case 'chunks': {
@@ -207,16 +272,10 @@ export function checkRules(
   inputs: ScopeInputs,
 ): BundleViolation[] {
   const violations: BundleViolation[] = [];
-  // 입력이 고정인 한 호출 동안만 사는 폐포 캐시(셀렉터 → 도달 청크).
-  const closures = new Map<string, Set<string>>();
+  const cache = createScopeCache(inputs);
   for (const rule of rules) {
     for (const scope of rule.forbiddenIn) {
-      for (const location of findMarkerIn(
-        scope,
-        rule.marker,
-        inputs,
-        closures,
-      )) {
+      for (const location of findMarkerIn(scope, rule.marker, inputs, cache)) {
         violations.push({
           label: rule.label,
           marker: rule.marker,
@@ -226,7 +285,7 @@ export function checkRules(
       }
     }
     for (const scope of rule.requiredIn) {
-      if (findMarkerIn(scope, rule.marker, inputs, closures).length === 0) {
+      if (findMarkerIn(scope, rule.marker, inputs, cache).length === 0) {
         violations.push({
           label: rule.label,
           marker: rule.marker,

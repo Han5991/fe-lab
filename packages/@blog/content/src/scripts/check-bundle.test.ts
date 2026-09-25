@@ -3,6 +3,7 @@ import {
   chunkClosure,
   checkRules,
   collectChunkRefs,
+  createScopeCache,
   describeScope,
   findMarkerIn,
   main,
@@ -97,6 +98,19 @@ test('chunkClosure: 청크 본문이 stem으로 여는 청크까지 전이로 �
   ]);
   expect(chunkClosure(['aaa111.js'], sources)).toStrictEqual(
     new Set(['aaa111.js', 'bbb222.js']),
+  );
+});
+
+test('chunkClosure: 길이가 다른 stem·하위 폴더의 같은 이름 청크도 본문에 등장하면 전부 잇는다', () => {
+  const sources = new Map([
+    ['a.js', 'loads x1 and page-1'],
+    ['x/page-1.js', 'leaf'],
+    ['y/page-1.js', 'leaf'],
+    ['x1.js', 'leaf'],
+    ['page-10.js', 'unreachable'],
+  ]);
+  expect(chunkClosure(['a.js'], sources)).toStrictEqual(
+    new Set(['a.js', 'x/page-1.js', 'y/page-1.js', 'x1.js']),
   );
 });
 
@@ -315,7 +329,7 @@ test('checkRules: 같은 셀렉터의 폐포는 한 번만 계산해도 결과�
     ['/admin/', page('admin111.js')],
     ['/', page('public222.js')],
   ]);
-  const cache = new Map<string, Set<string>>();
+  const cache = createScopeCache(inputs({ pages, sources }));
   const scope = { kind: 'chunks', of: { under: '/admin/' } } as const;
   const first = findMarkerIn(
     scope,
@@ -332,5 +346,5 @@ test('checkRules: 같은 셀렉터의 폐포는 한 번만 계산해도 결과�
   );
   expect(first).toStrictEqual(['admin111.js']);
   expect(second).toStrictEqual(['admin111.js']);
-  expect(cache.size).toBe(1);
+  expect(cache.closures.size).toBe(1);
 });
