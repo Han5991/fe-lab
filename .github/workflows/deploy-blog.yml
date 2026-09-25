@@ -154,25 +154,14 @@ jobs:
         if: always()
         run: du -sh apps/blog/web/.next/cache 2>/dev/null || echo '(no .next/cache)'
 
-      # /posts/ 아카이브는 사이트의 유일한 전체 목록 허브다. PostsArchiveView가
-      # useSearchParams를 쓰는 탓에 프리렌더에서 빠지므로, Suspense fallback이
-      # 스피너로 되돌아가면 이 페이지의 내부 링크가 조용히 0개가 된다.
-      # (실제로 c206b99에서 고친 것이 15ed918 리디자인에서 유실된 적 있음)
-      - name: Verify archive links are prerendered
-        run: |
-          html='apps/blog/web/out/posts/index.html'
-          [[ -f "$html" ]] || { echo "::error::$html 이 없습니다"; exit 1; }
-          count=$(grep -o 'href="/posts/[^"]*"' "$html" | sort -u | wc -l | tr -d ' ')
-          echo "prerendered post links: $count"
-          if (( count < 10 )); then
-            echo "::error::/posts/ 에 프리렌더된 글 링크가 ${count}개뿐입니다 — CSR bail-out 회귀로 아카이브 내부 링크가 사라졌습니다"
-            exit 1
-          fi
-
       # 최종 산출물 검사(check-seo·check-bundle)는 위 "Build blog" 스텝 안에서 이미 돈다 —
       # `build` 스크립트가 prebuild → next build → check-seo → check-bundle로 정의돼 있다.
       # 여기에 같은 스텝을 또 두면 위반이 있을 때 "Build blog"에서 이미 잡이 실패해
       # **절대 도달하지 못하는 죽은 게이트**가 된다. 검사가 도는 곳은 build 하나다.
+      #
+      # 같은 이유로 여기 있던 배포 전용 "Verify archive links are prerendered" grep
+      # 스텝(/posts/ CSR bail-out 회귀 가드)도 check-seo로 옮겼다. 배포에만 있으면 PR
+      # CI는 그 회귀를 초록으로 머지시키고, 다음 배포(무인 cron 포함)가 그제서야 막힌다.
 
       # wrangler.jsonc가 main 없이 assets만 선언한 정적 Worker라, 이 스텝은 out/을
       # 그대로 업로드한다. wranglerVersion을 주지 않는 이유는 워킹 디렉터리에 이미
