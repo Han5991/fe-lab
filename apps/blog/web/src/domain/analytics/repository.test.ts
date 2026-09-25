@@ -85,16 +85,11 @@ test('getTopPosts: 서버 실패를 빈 결과로 삼키지 않고 throw한다',
   });
 });
 
-test('getAllViewCounts: 1000행 cap에서도 같은 행이 오도록 결정적으로 정렬한다', async () => {
-  await repo.getAllViewCounts();
-  const params = requests[0].searchParams;
-  expect(params.get('order')).toBe('view_count.desc,slug.asc');
-  expect(params.has('slug')).toBe(false);
-});
-
-test('getAllViewCounts: slug를 주면 그 글들만 서버에서 거른다', async () => {
+test('getAllViewCounts: 그 글들만 서버에서 거르고 1000행 cap에서도 같은 행이 오게 정렬한다', async () => {
   await repo.getAllViewCounts(['x', 'y']);
-  expect(requests[0].searchParams.get('slug')).toBe('in.(x,y)');
+  const params = requests[0].searchParams;
+  expect(params.get('slug')).toBe('in.(x,y)');
+  expect(params.get('order')).toBe('view_count.desc,slug.asc');
 
   requests = [];
   await expect(repo.getAllViewCounts([])).resolves.toStrictEqual([]);

@@ -62,19 +62,18 @@ export async function getTopPosts(
 /**
  * 글별 조회수 — PostsArchive의 '인기순' 정렬처럼 slug→view_count 맵이 필요할 때.
  *
- * `slugs`를 주면 그 글들만 서버에서 거릅니다(권장 — 위 getTopPosts와 같은 이유).
- * PostgREST는 한 응답을 `max_rows`(1000행)에서 자르므로, 필터 없이 부르면 가짜
- * slug가 1000행을 넘기는 순간 실제 글이 잘려 나갈 수 있습니다. 그래서 조회수
- * 내림차순(동률은 slug)으로 정렬해 둡니다 — 잘리더라도 조회수가 가장 적은 행부터
- * 빠지고, 매 요청 같은 행이 옵니다.
+ * `slugs`로 서버에서 거르는 이유는 위 getTopPosts와 같다. PostgREST는 한 응답을
+ * `max_rows`(1000행)에서 자르므로 조회수 내림차순(동률은 slug)으로 정렬해 둔다 —
+ * 잘리더라도 조회수가 가장 적은 행부터 빠지고, 매 요청 같은 행이 온다.
  */
 export async function getAllViewCounts(
-  slugs?: readonly string[],
+  slugs: readonly string[],
 ): Promise<TopPostRow[]> {
-  if (slugs?.length === 0) return [];
-  const base = publicDb.from('post_views').select('slug, view_count');
-  const filtered = slugs ? base.in('slug', slugs) : base;
-  const { data, error } = await filtered
+  if (slugs.length === 0) return [];
+  const { data, error } = await publicDb
+    .from('post_views')
+    .select('slug, view_count')
+    .in('slug', slugs)
     .order('view_count', { ascending: false })
     .order('slug', { ascending: true });
   if (error) throw error;

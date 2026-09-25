@@ -149,6 +149,7 @@ const SCENARIOS: {
       c
         .from('post_views')
         .select('slug, view_count')
+        .in('slug', ['hello-world', 'series/second-post'])
         .order('view_count', { ascending: false })
         .order('slug', { ascending: true }),
   },

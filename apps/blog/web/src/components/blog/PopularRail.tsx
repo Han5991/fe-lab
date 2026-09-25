@@ -135,19 +135,17 @@ export const PopularRail = ({ posts, limit = 5 }: PopularRailProps) => {
                 >
                   {post.title}
                 </h3>
-                {post.viewCount > 0 && (
-                  <span
-                    className={css({
-                      fontFamily: 'sans',
-                      fontSize: '[12px]',
-                      color: 'ink.500',
-                      mt: '1',
-                      display: 'inline-block',
-                    })}
-                  >
-                    {fmtNum(post.viewCount)} reads
-                  </span>
-                )}
+                <span
+                  className={css({
+                    fontFamily: 'sans',
+                    fontSize: '[12px]',
+                    color: 'ink.500',
+                    mt: '1',
+                    display: 'inline-block',
+                  })}
+                >
+                  {fmtNum(post.viewCount)} reads
+                </span>
               </div>
             </Link>
           </li>
