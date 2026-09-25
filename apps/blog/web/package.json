@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "predev:web": "blog-content build",
+    "predev:web": "NODE_ENV=development blog-content build",
     "dev": "pnpm supabase-start && pnpm dev:web",
     "dev:web": "next dev",
     "prebuild": "blog-content build --strict",
