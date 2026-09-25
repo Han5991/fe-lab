@@ -3,6 +3,7 @@ import { TEST_VALUES } from '../shared/testValues.ts';
 import {
   archivePath,
   archiveUrl,
+  isSafeSlug,
   POSTS_PATH,
   postPath,
   postUrl,
@@ -76,4 +77,45 @@ test('archivePath: 복수 필터는 &로 잇는다', () => {
 test('archiveUrl: siteUrl 주입 + POSTS_PATH 규칙 공유', () => {
   expect(archiveUrl(SITE_URL)).toBe(`${SITE_URL}${POSTS_PATH}`);
   expect(archiveUrl('https://example.dev')).toBe('https://example.dev/posts/');
+});
+
+// ── isSafeSlug ───────────────────────────────────────────────────────────────
+
+test('isSafeSlug: 평범한 slug와 폴더형 slug는 받는다', () => {
+  for (const slug of [
+    'typescript-project-design',
+    'turborepo-next.js-docker',
+    '번들러/3편',
+    'a/b/c',
+    '[React Component] Toast',
+  ]) {
+    expect(isSafeSlug(slug), slug).toBe(true);
+  }
+});
+
+test('isSafeSlug: /posts/ 밖으로 나가거나 빈 세그먼트를 만드는 모양은 거부한다', () => {
+  // 예전에는 그대로 postPath에 들어가 `/posts/../admin/`(→ /admin/),
+  // `/posts//foo/`, `/posts/foo//`가 됐다.
+  for (const slug of [
+    '',
+    '../admin',
+    'a/../../admin',
+    './foo',
+    '..',
+    '.',
+    '/foo',
+    'foo/',
+    'a//b',
+    'a\\b',
+  ]) {
+    expect(isSafeSlug(slug), JSON.stringify(slug)).toBe(false);
+  }
+});
+
+test('isSafeSlug: 받은 slug의 postPath는 언제나 /posts/ 아래 한 경로다', () => {
+  for (const slug of ['a', 'a/b', '번들러/3편', 'v1.2.3']) {
+    const url = new URL(postPath(slug), SITE_URL);
+    expect(url.pathname.startsWith('/posts/'), slug).toBe(true);
+    expect(url.pathname.includes('//'), slug).toBe(false);
+  }
 });

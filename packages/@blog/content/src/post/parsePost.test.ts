@@ -105,6 +105,16 @@ test('parsePost: frontmatter slug가 rawSlug보다 우선(originalSlug는 경로
   expect(post?.originalSlug).toBe('번들러/3편'); // 파일 경로는 보존
 });
 
+test('parsePost: 모양이 위험한 명시 slug는 쓰지 않고 파일 경로로 폴백한다 (fail-closed)', () => {
+  // `../admin`이 그대로 slug가 되면 postPath가 `/posts/../admin/`(→ /admin/)을,
+  // `/foo`는 `/posts//foo/`를 만든다. 비문자열 slug와 같은 취급이다.
+  for (const slug of ['../admin', '/foo', 'foo/', 'a//b', './x']) {
+    const raw = `---\ntitle: 글\nslug: '${slug}'\nstatus: published\n---\n본문`;
+    const post = parsePost(raw, '번들러/3편.md', PARSE_OPTS);
+    expect(post?.slug, slug).toBe('번들러/3편');
+  }
+});
+
 // ── title fallback ──────────────────────────────────────────────────────────
 
 test('parsePost: title 미지정 시 파일명으로 fallback', () => {

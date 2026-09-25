@@ -3,6 +3,7 @@ import { relative } from 'node:path';
 import matter from 'gray-matter';
 import { estimateReadMin } from '../shared/format.ts';
 import { collectMarkdownFiles, hasFrontmatter } from '../shared/postFiles.ts';
+import { isSafeSlug } from './urls.ts';
 import { isPostFile } from './visibility.ts';
 // 좁히기 함수(toDateString·toOptionalString·toScheduledDate·toStringArray)는
 // 서술자 테이블과 같은 파일에 있습니다 — 테이블의 `narrow`와 parsePost가 **같은
@@ -209,8 +210,16 @@ export function parsePost(
   const cleanContent = extractPlainText(content);
   const series: string | undefined = currentPath || undefined;
 
+  // 명시 slug는 모양이 안전할 때만 쓴다(`isSafeSlug`). `../admin`·`/foo`를 그대로
+  // 두면 postPath가 `/posts/` 밖이나 빈 세그먼트 URL을 만든다. 거부된 slug는
+  // 문자열이 아닌 slug와 같은 취급 — 파일 경로로 폴백하고 lint:posts가 에러로 막는다.
+  const explicitSlug = toOptionalString(data.slug);
+
   return {
-    slug: toOptionalString(data.slug) ?? rawSlug,
+    slug:
+      explicitSlug !== undefined && isSafeSlug(explicitSlug)
+        ? explicitSlug
+        : rawSlug,
     originalSlug: rawSlug,
     relativeDir: currentPath,
     title: toOptionalString(data.title) ?? fileName,

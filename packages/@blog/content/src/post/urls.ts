@@ -53,6 +53,24 @@ export const POSTS_PATH = '/posts/';
  */
 export const RSS_PATH = '/rss.xml';
 
+/**
+ * frontmatter `slug`로 받아도 되는 모양인가 — `postPath`에 넣어도 `/posts/` 아래의
+ * 한 경로로만 풀리는가.
+ *
+ * `encodePostSlug`는 `/`를 구분자로 남기고 `.`은 인코딩하지 않아서, 예전에는
+ * `slug: ../admin`이 `/posts/../admin/`(브라우저가 `/admin/`으로 정규화),
+ * `/foo`가 `/posts//foo/`, `foo/`가 `/posts/foo//`가 됐다. 그래서 다음을 거부한다:
+ * 빈 값, 앞·뒤 `/`, 빈 세그먼트(`a//b`), `.`·`..` 세그먼트, `\`(parsePost가 경로
+ * 구분자로 읽는 문자). 로더는 이런 slug를 쓰지 않고 파일 경로로 폴백하고,
+ * lint:posts가 같은 함수로 에러를 낸다.
+ */
+export function isSafeSlug(slug: string): boolean {
+  if (slug === '' || slug.includes('\\')) return false;
+  return slug
+    .split('/')
+    .every(segment => segment !== '' && segment !== '.' && segment !== '..');
+}
+
 /** 글 상세의 사이트 내부 경로. `<Link href>`·canonical에 쓴다. */
 export function postPath(slug: string): string {
   return `${POSTS_PATH}${encodePostSlug(slug)}/`;
