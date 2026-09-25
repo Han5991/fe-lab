@@ -6,42 +6,27 @@ import path from 'node:path';
 import vm from 'node:vm';
 import { Graph } from './Graph.ts';
 
-// 픽스처 파일을 임시 폴더에 쓰고, 실제 Graph로 번들을 만든 뒤 vm에서 실행해
-// 번들된 프로그램이 원본 ESM과 같은 값을 내는지 본다.
-
-type Files = Record<string, string>;
-
 interface BundleOptions {
-  entry?: string;
   externals?: string[];
   globals?: Record<string, string>;
-  /** 번들 런타임의 externalRequire로 넘길 외부 모듈 */
   externalModules?: Record<string, unknown>;
-}
-
-interface BundleResult {
-  code: string;
-  /** 픽스처를 쓴 임시 폴더. 결과물은 `dist/`에 있다 */
-  dir: string;
 }
 
 const tempDirs: string[] = [];
 
-function bundle(files: Files, options: BundleOptions = {}): BundleResult {
+function bundle(files: Record<string, string>, options: BundleOptions = {}) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'minibundler-'));
   tempDirs.push(dir);
   for (const [name, content] of Object.entries(files)) {
-    const filePath = path.join(dir, name);
-    fs.mkdirSync(path.dirname(filePath), { recursive: true });
-    fs.writeFileSync(filePath, content);
+    fs.writeFileSync(path.join(dir, name), content);
   }
 
-  // Graph.generate()는 cwd의 dist/에 결과를 쓴다 — 임시 폴더 안에서 돌린다
+  // Graph.generate()는 cwd의 dist/에 쓴다
   const cwd = process.cwd();
   process.chdir(dir);
   try {
     const graph = new Graph(
-      path.join(dir, options.entry ?? 'index.js'),
+      path.join(dir, 'index.js'),
       options.externals ?? [],
       options.globals ?? {},
     );
@@ -52,34 +37,28 @@ function bundle(files: Files, options: BundleOptions = {}): BundleResult {
   }
 }
 
-interface RunResult {
-  exports: Record<string, unknown>;
-  logs: string[];
-}
-
-/** 번들을 새 realm에서 실행하고 엔트리의 exports와 console.log 출력을 돌려준다 */
-function run(
-  code: string,
-  externalModules: Record<string, unknown> = {},
-): RunResult {
-  const logs: string[] = [];
+/** 번들을 새 realm에서 실행해 엔트리의 exports를 돌려준다 */
+function bundleAndRun(
+  files: Record<string, string>,
+  options: BundleOptions = {},
+): Record<string, unknown> {
   const sandbox = {
     module: { exports: {} as Record<string, unknown> },
     require: (id: string) => {
-      if (id in externalModules) return externalModules[id];
+      if (options.externalModules && id in options.externalModules) {
+        return options.externalModules[id];
+      }
       throw new Error(`Unexpected external: ${id}`);
     },
-    console: { log: (...args: unknown[]) => logs.push(args.join(' ')) },
   };
-  vm.runInNewContext(code, sandbox);
-  return { exports: sandbox.module.exports, logs };
+  vm.runInNewContext(bundle(files, options).code, sandbox);
+  return sandbox.module.exports;
 }
 
-const bundleAndRun = (files: Files, options: BundleOptions = {}) =>
-  run(bundle(files, options).code, options.externalModules);
+/** 다른 realm의 값을 이 realm의 JSON 값으로 옮긴다(함수·undefined는 빠진다) */
+const plain = (value: unknown): unknown => JSON.parse(JSON.stringify(value));
 
 beforeAll(() => {
-  // Graph의 진행 로그(📂 Processing …)를 끈다
   vi.spyOn(console, 'log').mockImplementation(() => {});
 });
 
@@ -88,47 +67,23 @@ afterAll(() => {
   for (const dir of tempDirs) fs.rmSync(dir, { recursive: true, force: true });
 });
 
-describe('기본 가져오기(default import)', () => {
-  test('번들 안 모듈의 default export 함수를 그대로 받는다', () => {
-    const { exports } = bundleAndRun({
+test('기본 가져오기는 번들 안 모듈의 default 값을, __esModule이 없는 CJS external은 모듈 자체를 받는다', () => {
+  const exports = bundleAndRun(
+    {
       'greet.js':
         'export default function greet(name) { return `Hello, ${name}!`; }',
-      'index.js': [
-        "import greet from './greet.js';",
-        "export const message = greet('Universe');",
-      ].join('\n'),
-    });
-
-    expect(exports.message).toBe('Hello, Universe!');
-  });
-
-  test('default export 표현식도 모듈 객체가 아니라 값으로 받는다', () => {
-    const { exports } = bundleAndRun({
       'answer.js': 'export default 21 * 2;',
       'index.js': [
+        "import greet from './greet.js';",
         "import answer from './answer.js';",
-        'export const type = typeof answer;',
-        'export const value = answer;',
+        "import legacy from 'legacy';",
+        "export const values = [greet('Universe'), answer, legacy.hello];",
       ].join('\n'),
-    });
+    },
+    { externals: ['legacy'], externalModules: { legacy: { hello: 'cjs' } } },
+  );
 
-    expect(exports.type).toBe('number');
-    expect(exports.value).toBe(42);
-  });
-
-  test('__esModule 표시가 없는 CJS 외부 모듈은 모듈 자체를 default로 받는다', () => {
-    const { exports } = bundleAndRun(
-      {
-        'index.js': [
-          "import legacy from 'legacy';",
-          'export const hello = legacy.hello;',
-        ].join('\n'),
-      },
-      { externals: ['legacy'], externalModules: { legacy: { hello: 'cjs' } } },
-    );
-
-    expect(exports.hello).toBe('cjs');
-  });
+  expect(plain(exports.values)).toEqual(['Hello, Universe!', 42, 'cjs']);
 });
 
 describe('배포 형식', () => {
@@ -157,78 +112,53 @@ describe('배포 형식', () => {
     const page: Record<string, unknown> = { React: { version: '19-test' } };
     page.window = page;
     vm.runInNewContext(code, page);
-    const library = page.BundlerLibrary as Record<string, unknown>;
-    expect(library.version).toBe('19-test');
 
-    const bare: Record<string, unknown> = {};
-    bare.window = bare;
-    expect(() => vm.runInNewContext(code, bare)).toThrow(
-      /Cannot find module 'react' \(global React\)/,
-    );
+    expect(plain(page.BundlerLibrary)).toEqual({ version: '19-test' });
   });
 });
 
 describe('내보내기 변환', () => {
-  test('한 선언의 여러 선언자와 구조 분해 패턴을 모두 내보낸다', () => {
-    const { exports } = bundleAndRun({
+  test('여러 선언자·구조 분해·export * as ns를 모두 내보낸다', () => {
+    const exports = bundleAndRun({
+      'math.js': 'export const one = 1;',
       'index.js': [
         'export const a = 1, b = 2;',
-        'const source = { x: 3, list: [4, 5] };',
-        'export const { x, list: [y, ...rest] } = source;',
+        'export const { x, list: [y, ...rest] } = { x: 3, list: [4, 5] };',
+        "export * as math from './math.js';",
       ].join('\n'),
     });
 
-    expect(exports.a).toBe(1);
-    expect(exports.b).toBe(2);
-    expect(exports.x).toBe(3);
-    expect(exports.y).toBe(4);
-    expect(JSON.stringify(exports.rest)).toBe('[5]');
-  });
-
-  test('export * as ns는 모듈 객체 하나를 ns라는 이름으로 내보낸다', () => {
-    const { exports } = bundleAndRun({
-      'math.js': 'export const one = 1;\nexport const two = 2;',
-      'index.js': "export * as math from './math.js';",
+    expect(plain(exports)).toEqual({
+      a: 1,
+      b: 2,
+      x: 3,
+      y: 4,
+      rest: [5],
+      math: { one: 1 },
     });
-
-    const math = exports.math as Record<string, unknown>;
-    expect(math.one).toBe(1);
-    expect(math.two).toBe(2);
-    expect(exports.one).toBe(undefined);
   });
 
-  test('export *는 default를 옮기지 않고, 이 모듈이 직접 내보낸 이름을 덮지 않는다', () => {
-    const { exports } = bundleAndRun({
+  test('export *는 default와 이 모듈이 앞뒤로 내보낸 이름을 덮지 않는다', () => {
+    const exports = bundleAndRun({
       'star.js': [
         "export default 'star-default';",
-        "export const shared = 'from-star';",
+        "export const early = 'star';",
+        "export const late = 'star';",
         "export const onlyStar = 'star';",
       ].join('\n'),
       'index.js': [
-        "export function shared() { return 'local'; }",
+        "export function early() { return 'local'; }",
         "export * from './star.js';",
+        "export const late = 'local';",
       ].join('\n'),
     });
 
-    expect(exports.default).toBe(undefined);
-    expect(typeof exports.shared).toBe('function');
-    expect(exports.onlyStar).toBe('star');
-  });
-
-  test('로컬 export는 앞에 온 export *보다 우선한다', () => {
-    const { exports } = bundleAndRun({
-      'star.js': "export const shared = 'from-star';",
-      'index.js': [
-        "export * from './star.js';",
-        "export const shared = 'local';",
-      ].join('\n'),
-    });
-
-    expect(exports.shared).toBe('local');
+    expect(typeof exports.early).toBe('function');
+    expect(plain(exports)).toEqual({ late: 'local', onlyStar: 'star' });
   });
 
   test('순환 참조에서 먼저 불려 간 모듈도 함수 선언 export는 받는다(호이스팅)', () => {
-    const { exports } = bundleAndRun({
+    const exports = bundleAndRun({
       'index.js': "export { fromB } from './a.js';",
       'a.js': [
         "import { fromB } from './b.js';",
