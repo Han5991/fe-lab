@@ -11,25 +11,30 @@
  * `AdminApiClient`)의 생성자 주입은 supabase 클라이언트를 갈아 끼우기 위한
  * 것이지만, 여기 계산은 인자만 받는 순수 함수다. 클래스는 저장소와 **모양을
  * 맞추기 위한 파사드**이고, 테스트 가능성은 원래부터 인자 주입
- * (`todayISO`)이 담당한다. 시계를 생성자로 올리지 않은 것도 그래서다 —
+ * (`todayISO`·`visibility`)이 담당한다. 시계를 생성자로 올리지 않은 것도 그래서다 —
  * KST 판정에 필요한 타임존은 앱 값 모듈이 소유하고 이 레이어는 설정을 모른다.
  */
 
 import { computeAnalyticsOverview } from './overview';
 import { computeDerivedStats } from './derivedStats';
 import type { AnalyticsOverview, AnalyticsRange } from './overview';
-import type { DerivedStats, PostStatDetail } from './types';
+import type {
+  DerivedStats,
+  PostStatDetail,
+  PostVisibilityContext,
+} from './types';
 
 /**
  * Analytics 계산 계약. **소비자는 클래스가 아니라 이 인터페이스에 의존한다**
  * (`AuthApi`·`AdminApi`와 같은 관례).
  */
 export interface AnalyticsCalculator {
-  /** 대시보드 개요 — 기간 합계·증감·상위 글. */
+  /** 대시보드 개요 — 기간 합계·증감·상위 글·공개 글 수. */
   computeOverview(
     data: PostStatDetail[],
     range: AnalyticsRange,
     todayISO: string,
+    visibility: PostVisibilityContext,
   ): AnalyticsOverview;
 
   /** 글 하나의 파생 통계 — 주간 성장률·피크·일 평균·마일스톤. */
@@ -41,8 +46,9 @@ export class AnalyticsService implements AnalyticsCalculator {
     data: PostStatDetail[],
     range: AnalyticsRange,
     todayISO: string,
+    visibility: PostVisibilityContext,
   ): AnalyticsOverview {
-    return computeAnalyticsOverview(data, range, todayISO);
+    return computeAnalyticsOverview(data, range, todayISO, visibility);
   }
 
   computeDerivedStats(post: PostStatDetail, todayISO: string): DerivedStats {

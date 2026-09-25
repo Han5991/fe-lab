@@ -4,7 +4,9 @@ import { Suspense } from 'react';
 import { LogOut, BarChart3, FileText } from 'lucide-react';
 import { css, cx } from '@design-system/ui-lib/css';
 import { railGutter, railColumn } from '@/src/components/Rail';
+import { TIMEZONE } from '@/content.values.mts';
 import { useAdminDashboardData } from '@/src/hooks/useAdminViews';
+import { countLivePosts } from '@/src/domain/analytics/admin';
 import { useAdminLogout } from '@/src/hooks/useAdminLogout';
 import { LoadingPlaceholder } from '@/src/components/shared/LoadingPlaceholder';
 import Link from 'next/link';
@@ -19,7 +21,10 @@ function AdminOverviewContent() {
 
   const totalViews = data.reduce((acc, curr) => acc + curr.totalViews, 0);
   const totalTodayViews = data.reduce((acc, curr) => acc + curr.todayViews, 0);
-  const totalPosts = data.length;
+  // /admin/analytics의 POSTS PUBLISHED와 같은 규칙(지금 공개 중인 글)으로 센다.
+  // 예전엔 data.length라 draft·공개 전 예약 글까지 세어, 두 화면의 글 수가 달랐다.
+  const livePosts = countLivePosts(data, { timezone: TIMEZONE });
+  const hiddenPosts = data.length - livePosts;
 
   const topPosts = [...data]
     .sort((a, b) => b.totalViews - a.totalViews)
@@ -130,7 +135,7 @@ function AdminOverviewContent() {
                 fontWeight: 'medium',
               })}
             >
-              총 게시글 수
+              공개 게시글 수
             </span>
           </div>
           <div
@@ -148,11 +153,16 @@ function AdminOverviewContent() {
                 letterSpacing: 'tight',
               })}
             >
-              {totalPosts}
+              {livePosts}
             </span>
             <span className={css({ fontSize: 'xs', color: 'ink.500' })}>
               개
             </span>
+            {hiddenPosts > 0 && (
+              <span className={css({ fontSize: 'xs', color: 'ink.500' })}>
+                · 비공개·예약 {hiddenPosts}개
+              </span>
+            )}
           </div>
         </div>
 

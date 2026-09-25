@@ -45,5 +45,9 @@ export function useAnalyticsOverview(range: AnalyticsRange) {
     };
   }, []);
 
-  return analyticsService.computeOverview(data, range, todayISO);
+  // 공개 글 판정 시각은 렌더 시각(생략)이다 — 예약 글이 공개 시각을 넘기면
+  // 다음 렌더부터 POSTS PUBLISHED에 들어간다.
+  return analyticsService.computeOverview(data, range, todayISO, {
+    timezone: TIMEZONE,
+  });
 }

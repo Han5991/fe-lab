@@ -5,9 +5,9 @@
  * (여기는 N개 글 × 기간, 저기는 글 하나 × 전 기간).
  */
 
-import { addDaysISO, formatMonthDayISO } from '@blog/content';
+import { addDaysISO, formatMonthDayISO, isPostVisible } from '@blog/content';
 import { percentDelta } from './delta';
-import type { PostStatDetail } from './types';
+import type { PostStatDetail, PostVisibilityContext } from './types';
 
 export type AnalyticsRange = '7d' | '30d' | '90d';
 
@@ -116,16 +116,37 @@ function summarizePost(
 }
 
 /**
+ * 지금 공개 중인 글의 수 — "POSTS PUBLISHED"와 admin 대시보드의 글 수가 같은
+ * 규칙을 보게 하는 단일 출처.
+ *
+ * frontmatter의 `status === 'published'`(발행 의도)를 세면 안 된다. 예약 시각이
+ * 지난 `scheduled` 글은 원본이 그대로여도 이미 공개돼 조회수가 쌓이는데, 예전
+ * 집계는 그 글들을 빼서 글 수는 적게, 글당 평균(AVG / POST)은 부풀려 보였다.
+ * 판정은 `isPostVisible` 하나에 위임한다(admin 상태 배지의 `resolvePostState`와
+ * 같은 규칙).
+ */
+export function countLivePosts(
+  data: readonly PostStatDetail[],
+  visibility: PostVisibilityContext,
+): number {
+  return data.filter(post =>
+    isPostVisible(post, visibility.timezone, visibility.now),
+  ).length;
+}
+
+/**
  * 순수 함수: Supabase admin dashboard 데이터 + 기준일을 받아
  * Analytics 페이지용 AnalyticsOverview를 계산합니다.
  *
  * todayISO를 파라미터로 받아 외부 시계 의존을 제거했습니다.
- * 자정 경계 테스트 및 hook의 타이머 트리거가 가능합니다.
+ * 자정 경계 테스트 및 hook의 타이머 트리거가 가능합니다. 공개 글 판정의
+ * 타임존·시각도 같은 이유로 `visibility`로 주입받습니다.
  */
 export function computeAnalyticsOverview(
   data: PostStatDetail[],
   range: AnalyticsRange,
   todayISO: string,
+  visibility: PostVisibilityContext,
 ): AnalyticsOverview {
   const rangeDays = RANGE_DAYS[range];
   const windows = buildWindows(todayISO, rangeDays);
@@ -157,7 +178,7 @@ export function computeAnalyticsOverview(
   const uniques = Math.round(total * UNIQUES_ESTIMATE_RATIO);
   const previousUniques = Math.round(previousTotal * UNIQUES_ESTIMATE_RATIO);
 
-  const postsPublished = data.filter(p => p.status === 'published').length;
+  const postsPublished = countLivePosts(data, visibility);
   const avgPerPost =
     postsPublished > 0 ? Math.round(total / postsPublished) : 0;
 

@@ -11,7 +11,7 @@
  * repository의 `Number()`가 맡는다.
  */
 
-import type { PostStatus } from '@blog/content';
+import type { PostStatus, TimezoneConfig } from '@blog/content';
 import type { Database, Tables } from '../../lib/platform/database.types';
 
 type DbFunctions = Database['public']['Functions'];
@@ -58,6 +58,17 @@ export interface PostStatDetail {
   trends: TrendPoint[];
   status: PostStatus;
   scheduledDate: string | null;
+}
+
+/**
+ * "지금 공개 중인가"를 판정할 때 쓰는 기준 — `isPostVisible`에 넘기는 두 인자.
+ *
+ * 타임존은 앱 값 모듈(`TIMEZONE`)이 소유하므로 이 레이어는 주입받는다. 시각은
+ * 생략하면 호출 시각이고, 테스트는 경계를 결정적으로 보려고 주입한다.
+ */
+export interface PostVisibilityContext {
+  timezone: Pick<TimezoneConfig, 'isoOffset'>;
+  now?: Date;
 }
 
 export interface DerivedStats {
