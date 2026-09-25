@@ -12,7 +12,7 @@
  */
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { act, render, renderHook } from '@testing-library/react';
-import { useTocHook } from './tocHooks';
+import { scrollToId, useTocHook } from './tocHooks';
 
 // 기준선은 window.innerHeight * 0.2이라 뷰포트를 1000으로 고정하면 200px이 된다.
 const VIEWPORT_HEIGHT = 1000;
@@ -359,5 +359,39 @@ describe('useTocHook - 활성 구간', () => {
 
     scrollToY(0);
     expect(result.current.activeRange).toEqual([0, 2]);
+  });
+});
+
+describe('scrollToId - 움직임 줄이기', () => {
+  function stubMotion(reduce: boolean) {
+    vi.stubGlobal('matchMedia', (query: string) => ({
+      matches: reduce && query.includes('prefers-reduced-motion: reduce'),
+    }));
+    const scrollTo = vi.fn();
+    vi.stubGlobal('scrollTo', scrollTo);
+    const target = document.createElement('h2');
+    target.id = 'target';
+    document.body.appendChild(target);
+    return scrollTo;
+  }
+
+  test('기본은 부드럽게 미끄러진다', () => {
+    const scrollTo = stubMotion(false);
+    scrollToId({ id: 'target', headerOffset: 100 });
+
+    expect(scrollTo).toHaveBeenCalledWith(
+      expect.objectContaining({ behavior: 'smooth' }),
+    );
+  });
+
+  test('움직임 줄이기를 켜면 애니메이션 없이 바로 옮긴다', () => {
+    // 명시한 behavior는 CSS scroll-behavior보다 우선해서, 전역 CSS의
+    // reduced-motion 분기만으로는 이 이동이 멈추지 않는다.
+    const scrollTo = stubMotion(true);
+    scrollToId({ id: 'target', headerOffset: 100 });
+
+    expect(scrollTo).toHaveBeenCalledWith(
+      expect.objectContaining({ behavior: 'auto' }),
+    );
   });
 });

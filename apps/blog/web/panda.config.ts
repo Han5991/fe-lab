@@ -52,7 +52,11 @@ export default defineConfig({
       html: {
         bg: 'paper.50',
         color: 'ink.950',
-        scrollBehavior: 'smooth',
+        // 앵커 이동을 부드럽게 — 단, 움직임 줄이기를 켠 사용자는 제외한다
+        // (전정기관 장애가 있으면 긴 스크롤 애니메이션이 어지럼을 일으킨다).
+        '@media (prefers-reduced-motion: no-preference)': {
+          scrollBehavior: 'smooth',
+        },
         // Firefox는 ::-webkit-scrollbar 의사요소를 받지 않는다. 아래 webkit
         // 규칙과 같은 결과를 표준 속성으로 한 번 더 준다.
         scrollbarWidth: 'thin',
