@@ -39,7 +39,7 @@ thumbnail: '/og/feconf-2025-lightning-speaker.png'
 
 ### 초안 작성
 
-[관련링크](https://github.com/Han5991/fe-lab/tree/main/apps/blog/posts/feconf)
+[관련링크](https://github.com/Han5991/fe-lab/tree/1707765c3eb6249234463033335d08927ca25a13/apps/blog/posts/feconf)
 
 내용에 대한 고민은 많이 하지 않았다. 이미 전달하고 싶은 이야기는 정했기 때문이다. 가장 큰 걱정은 생각보다 양이 많다는 것이었다.
 
