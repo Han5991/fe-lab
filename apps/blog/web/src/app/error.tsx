@@ -5,6 +5,7 @@ import { ErrorFallback } from '@/src/components/ErrorFallback';
 
 interface RouteErrorProps {
   error: Error & { digest?: string };
+  /** Next 16이 넘기는 복구 함수(세그먼트를 다시 받아 그린다) — 옛 이름 `reset`도 함께 온다. */
   retry: () => void;
 }
 

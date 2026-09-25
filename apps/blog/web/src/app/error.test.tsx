@@ -27,7 +27,10 @@ describe('app/error (라우트 에러 경계)', () => {
   test('안내 헤딩과 홈 링크를 보이고, 다시 시도가 경계의 retry를 부른다', () => {
     const error = new Error('boom');
     const retry = vi.fn();
-    render(<RouteError error={error} retry={retry} />);
+    const reset = vi.fn();
+    // Next 16의 에러 경계는 ErrorInfo({ error, reset, retry })를 통째로 넘긴다.
+    const nextProps = { error, reset, retry };
+    render(<RouteError {...nextProps} />);
 
     expect(
       screen.getByRole('heading', {
@@ -40,6 +43,7 @@ describe('app/error (라우트 에러 경계)', () => {
     ).toHaveAttribute('href', HOME_PATH);
     fireEvent.click(screen.getByRole('button', { name: '다시 시도' }));
     expect(retry).toHaveBeenCalledOnce();
+    expect(reset).not.toHaveBeenCalled();
     expect(console.error).toHaveBeenCalledWith(error);
   });
 });
