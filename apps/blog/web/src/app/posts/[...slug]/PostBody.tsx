@@ -23,11 +23,8 @@ import {
 } from '@/src/components/diagram';
 import { HEADER_OFFSET } from '@/src/components/post/headerOffset';
 import { HEADING_COMPONENTS } from '@/src/components/post/markdownHeadings';
-import {
-  fencedCode,
-  isBlockMarkdownChild,
-  isMarkdownImageElement,
-} from './markdownBlocks';
+import { isMarkdownTag } from '@/src/components/post/markdownTag';
+import { fencedCode, isBlockMarkdownChild } from './markdownBlocks';
 
 /**
  * 글 본문 렌더 파이프라인의 단일 출처 — 마크다운 원문이 DOM이 되는 유일한 곳.
@@ -87,11 +84,30 @@ type PostComponents = Components & {
   'diagram-edge': typeof DiagramEdgeTag;
 };
 
+/** 본문 이미지 요소(`img` 매퍼의 입력·출력)에서 읽는 prop. */
+interface ImageProps {
+  src?: unknown;
+  alt?: string | undefined;
+  width?: number | string | undefined;
+  height?: number | string | undefined;
+}
+
 /**
  * 본문 components 매핑. `img` 매퍼가 글의 `relativeDir`을 닫아 잡으므로
  * 상수가 아니라 팩토리다.
  */
 export function buildPostComponents(relativeDir: string): PostComponents {
+  const image = ({ src, alt, width, height }: ImageProps, zoomable = true) => (
+    <MarkdownImage
+      src={typeof src === 'string' ? src : undefined}
+      alt={alt}
+      width={width}
+      height={height}
+      relativeDir={relativeDir}
+      zoomable={zoomable}
+    />
+  );
+
   return {
     // 본문 h1 → h2 강등. 페이지의 h1은 PostHeader의 글 제목
     // 하나뿐이어야 한다(markdownHeadings.tsx 참고).
@@ -117,16 +133,8 @@ export function buildPostComponents(relativeDir: string): PostComponents {
     code(props) {
       return <CodeBlock {...props} />;
     },
-    img({ src, alt, width, height }) {
-      return (
-        <MarkdownImage
-          src={typeof src === 'string' ? src : undefined}
-          alt={alt}
-          width={width}
-          height={height}
-          relativeDir={relativeDir}
-        />
-      );
+    img(props) {
+      return image(props);
     },
     // 링크로 감싼 이미지(`[![배지](b.png)](url)`)는 확대를 끈 맨 `<img>`로 그린다.
     // 확대 래퍼는 `<div>`·`<button>`이라 `<a>` 안에 두면 무효 중첩(문단 안이면
@@ -136,22 +144,10 @@ export function buildPostComponents(relativeDir: string): PostComponents {
       return (
         <a {...props}>
           {Children.map(children, child =>
-            isMarkdownImageElement(child) ? (
-              <MarkdownImage
-                src={
-                  typeof child.props.src === 'string'
-                    ? child.props.src
-                    : undefined
-                }
-                alt={child.props.alt}
-                width={child.props.width}
-                height={child.props.height}
-                relativeDir={relativeDir}
-                zoomable={false}
-              />
-            ) : (
-              child
-            ),
+            // `src`만 보면 `<video src>` 같은 raw HTML까지 이미지로 오인한다.
+            isMarkdownTag<ImageProps>(child, 'img')
+              ? image(child.props, false)
+              : child,
           )}
         </a>
       );

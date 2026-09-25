@@ -5,8 +5,8 @@ import {
   type ReactElement,
   type ReactNode,
 } from 'react';
-import { isRecord } from '@blog/content';
 import { codeText } from '@/src/components/post/markdownCode';
+import { isMarkdownTag } from '@/src/components/post/markdownTag';
 import { CodeTabsPanels, type CodeTabMeta } from './CodeTabsPanels';
 
 /**
@@ -71,23 +71,6 @@ interface CodeElementProps {
   children?: ReactNode;
   /** 자식 코드 블록이 자기 크롬(언어 라벨·보더)을 끄게 하는 표식. */
   'data-bare'?: boolean;
-  /** react-markdown이 매핑된 컴포넌트에 넘기는 원본 hast 노드. */
-  node?: unknown;
-}
-
-/**
- * 코드 펜스의 바깥 `<pre>` 요소인지.
- *
- * 요소 타입이 아니라 **원본 hast 노드**로 가린다. 본문 파이프라인(PostBody)은
- * `pre`를 함수로 매핑하므로 실제 글에서 이 요소의 `type`은 `'pre'`가 아니다 —
- * 타입만 보면 탭이 조용히 하나도 안 만들어진다. 매핑 없이 쓰는 경로(JSX)를 위해
- * 문자열 `'pre'`도 받는다.
- */
-function isPreElement(node: ReactNode): node is ReactElement<CodeElementProps> {
-  if (!isValidElement<CodeElementProps>(node)) return false;
-  if (node.type === 'pre') return true;
-  const source = node.props.node;
-  return isRecord(source) && source['tagName'] === 'pre';
 }
 
 /**
@@ -127,7 +110,10 @@ function collectTabs(children: ReactNode): Collected {
   Children.toArray(children).forEach(child => {
     // 코드 펜스는 언제나 `<pre>`로 온다. raw HTML로 직접 쓴 <pre>도 같은
     // 취급이지만, 그건 어차피 코드를 담는 상자라 탭에 들어가도 무방하다.
-    const code = isPreElement(child) ? unwrapPre(child) : null;
+    // 본문 파이프라인은 `pre`를 함수로 매핑하므로 요소 타입이 아니라 원본 태그로 가린다.
+    const code = isMarkdownTag<CodeElementProps>(child, 'pre')
+      ? unwrapPre(child)
+      : null;
     if (!code) {
       // 마크다운이 블록 사이에 끼워 넣는 공백 텍스트까지 남기면 탭 아래에
       // 빈 줄이 생긴다. 그것만 걸러내고 나머지는 전부 보존한다.

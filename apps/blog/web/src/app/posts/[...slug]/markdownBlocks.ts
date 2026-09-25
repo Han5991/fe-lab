@@ -18,7 +18,7 @@ import { FileTree } from '@/src/components/post/markdown/FileTree';
 import { Metric, Metrics } from '@/src/components/post/markdown/Metrics';
 import { Step, Timeline } from '@/src/components/post/markdown/Timeline';
 import { isBlockCode } from '@/src/components/post/markdownCode';
-import { isRecord } from '@blog/content';
+import { isMarkdownTag } from '@/src/components/post/markdownTag';
 
 // 직접 매핑돼(`callout: Callout`) child.type으로 식별 가능한 블록 컴포넌트.
 //
@@ -78,35 +78,10 @@ export function isBlockMarkdownChild(child: unknown): boolean {
   return isBlockCode(children, className);
 }
 
-/** 본문 `img` 매퍼를 거친 이미지 요소에서 읽는 prop. */
-interface MarkdownImageElementProps {
-  src?: unknown;
-  alt?: string | undefined;
-  width?: number | string | undefined;
-  height?: number | string | undefined;
-  /** react-markdown이 매핑된 컴포넌트에 넘기는 원본 hast 노드. */
-  node?: unknown;
-}
-
-/**
- * 본문의 이미지 요소인지 — 원본 hast 노드의 `tagName`으로 가린다.
- *
- * `src`만 보면 `<video src>`·`<source src>` 같은 raw HTML까지 이미지로 오인한다.
- * 이미지는 `img` 매퍼(함수)를 거치므로 요소 타입으로도 못 잡는다.
- */
-export function isMarkdownImageElement(
-  child: unknown,
-): child is ReactElement<MarkdownImageElementProps> {
-  if (!isValidElement<MarkdownImageElementProps>(child)) return false;
-  const source = child.props.node;
-  return isRecord(source) && source['tagName'] === 'img';
-}
-
 /** `pre` 안의 `code` 요소에서 읽는 prop. */
 interface CodeElementProps {
   className?: string | undefined;
   children?: ReactNode;
-  node?: unknown;
 }
 
 /**
@@ -124,13 +99,9 @@ export function fencedCode(
     child => !(typeof child === 'string' && child.trim() === ''),
   );
   const [only] = nodes;
-  if (nodes.length !== 1 || !isValidElement<CodeElementProps>(only)) {
-    return null;
-  }
-  const source = only.props.node;
-  const isCode =
-    only.type === 'code' || (isRecord(source) && source['tagName'] === 'code');
-  return isCode && isBlockCode(only.props.children, only.props.className)
+  return nodes.length === 1 &&
+    isMarkdownTag<CodeElementProps>(only, 'code') &&
+    isBlockCode(only.props.children, only.props.className)
     ? only
     : null;
 }
