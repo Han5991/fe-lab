@@ -16,10 +16,10 @@ const CONFIG = defineTestContent({ root: `${sep}tmp${sep}app` });
 const CTX = toValidateContext(CONFIG);
 const STRICT_CTX = toValidateContext(CONFIG, { strict: true });
 
-test('RULES: 규칙은 정확히 38개', () => {
+test('RULES: 규칙은 정확히 39개', () => {
   // `non-string-field`가 세다 보면 흔히 빠진다 — 개수를 고정해 추가·삭제가
   // 테이블을 지나치지 못하게 한다.
-  expect(Object.keys(RULES).length).toBe(38);
+  expect(Object.keys(RULES).length).toBe(39);
 });
 
 test('RULES: --strict 승격(SEO_PUBLISH) 센티널은 정확히 6개', () => {
@@ -57,12 +57,16 @@ test('RULES: 전체 집합을 봐야 하는 규칙은 corpus 계열 scope 둘뿐
 });
 
 test('RULES: isPostFile 게이트(scope=post)가 걸린 규칙', () => {
-  // 메타 노트는 렌더될 일이 없어 검사하지 않는 규칙들 — body.ts의 두 검사.
+  // 메타 노트는 렌더될 일이 없어 검사하지 않는 규칙들 — body.ts의 검사들.
   const postScoped = Object.entries(RULES)
     .filter(([, spec]) => spec.scope === 'post')
     .map(([id]) => id)
     .sort();
-  expect(postScoped).toStrictEqual(['body-h1', 'missing-image-alt']);
+  expect(postScoped).toStrictEqual([
+    'body-h1',
+    'missing-image-alt',
+    'unknown-diagram-name',
+  ]);
 });
 
 // ── resolveSeverity: 승격 조건은 check-seo가 보는 범위와 같다 ────────────────

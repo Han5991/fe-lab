@@ -9,6 +9,7 @@ import {
   detectDuplicateSlugs,
   detectDuplicateDescriptions as detectDuplicateDescriptionsIn,
   parseRecord,
+  validateDiagramNames,
   type PostRecord,
 } from './validate-posts.ts';
 import { defineTestContent } from '../shared/testValues.ts';
@@ -1556,4 +1557,59 @@ test('invalid-slug: 정상 slug·중첩 slug·한글·괄호는 통과, 빈 문�
       slug,
     ).toStrictEqual([]);
   }
+});
+
+// ── unknown-diagram-name: 본문의 <diagram name>도 레지스트리에 있어야 한다 ──
+
+const diagramRules = (content: string, data = { status: 'published' }) =>
+  validateDiagramNames(
+    rec(data, { content }),
+    `---\nstatus: published\n---\n${content}`,
+    CTX,
+  ).map(i => [i.rule, i.severity, i.line]);
+
+test('unknown-diagram-name: 미등록 이름은 에러 (프로덕션에서 그림이 조용히 사라진다)', () => {
+  expect(
+    diagramRules(
+      '문단\n\n<diagram name="deploy-pipline" label="오타"></diagram>',
+    ),
+  ).toStrictEqual([['unknown-diagram-name', 'error', 6]]);
+});
+
+test('unknown-diagram-name: 등록된 이름·name 없는 선언형 다이어그램·자식 태그는 통과', () => {
+  const registered = DIAGRAM_NAMES[0];
+  expect(
+    diagramRules(
+      [
+        `<diagram name="${registered}"></diagram>`,
+        `<diagram name='${registered}'/>`,
+        '<diagram label="선언형" caption="name 없음">',
+        '  <diagram-node id="a" title="A" name="not-a-diagram-name"></diagram-node>',
+        '</diagram>',
+      ].join('\n'),
+    ),
+  ).toStrictEqual([]);
+});
+
+test('unknown-diagram-name: 코드 펜스·같은 줄 인라인 코드 안의 예시는 보지 않는다', () => {
+  expect(
+    diagramRules(
+      [
+        '```html',
+        '<diagram name="example"></diagram>',
+        '```',
+        '문법은 `<diagram name="my-diagram">`처럼 쓴다.',
+      ].join('\n'),
+    ),
+  ).toStrictEqual([]);
+});
+
+test('unknown-diagram-name: 메타 노트(status 없음)는 렌더되지 않으므로 보지 않는다', () => {
+  expect(
+    validateDiagramNames(
+      rec({ title: '메타' }, { content: '<diagram name="nope"></diagram>' }),
+      '---\ntitle: 메타\n---\n',
+      CTX,
+    ),
+  ).toStrictEqual([]);
 });

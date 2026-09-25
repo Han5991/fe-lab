@@ -31,6 +31,7 @@ import {
   validateImageReferences,
   validateCodeFenceLanguages,
   validateBodyHeadings,
+  validateDiagramNames,
 } from './validate/body.ts';
 import {
   detectDuplicateSlugs,
@@ -61,6 +62,7 @@ export {
   validateImageReferences,
   validateCodeFenceLanguages,
   validateBodyHeadings,
+  validateDiagramNames,
   type ScannedLine,
   type ScanResult,
 } from './validate/body.ts';
@@ -147,6 +149,7 @@ export function main(ctx: ContentContext, runOptions: ValidateOptions) {
       ),
     );
     allIssues.push(...validateBodyHeadings(record, raw));
+    allIssues.push(...validateDiagramNames(record, raw, options));
   }
 
   allIssues.push(...detectDuplicateSlugs(records));

@@ -4,8 +4,9 @@
  * - 이미지 사슬: missing-image-alt · missing-image
  * - 펜스 사슬:   unclosed-fence · unregistered-code-language
  * - 헤딩 사슬:   body-h1
+ * - 다이어그램 사슬: unknown-diagram-name
  *
- * 세 사슬 모두 코드 펜스 추적(`scanBodyLines`) 위에 서 있습니다 — 펜스 규칙을
+ * 모든 사슬이 코드 펜스 추적(`scanBodyLines`) 위에 서 있습니다 — 펜스 규칙을
  * 검사마다 각자 구현하면 한쪽만 고쳐질 수 있어 하나로 모았습니다.
  * 심각도는 `rules.ts`의 평면 테이블에서 읽습니다.
  */
@@ -415,5 +416,55 @@ export function validateBodyHeadings(record: PostRecord, raw: string): Issue[] {
     });
   }
 
+  return issues;
+}
+
+/** `<diagram …>` 여는 태그 — `<diagram-node>`·`<diagram-edge>`는 아니다. 속성 값 안의 `>`에서 끊기지 않는다. */
+const DIAGRAM_OPEN_TAG = /<diagram(?=[\s/>])(?:[^>"']|"[^"]*"|'[^']*')*>/gi;
+/** 태그 안의 `name` 속성 값(따옴표 셋 다). */
+const NAME_ATTR = /\sname\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+))/i;
+
+/** 같은 줄에서 `index` 앞의 백틱이 홀수 개면 인라인 코드 안이다. */
+function insideInlineCode(text: string, index: number): boolean {
+  const lineStart = text.lastIndexOf('\n', index - 1) + 1;
+  return (text.slice(lineStart, index).match(/`/g) ?? []).length % 2 === 1;
+}
+
+/**
+ * 본문의 `<diagram name="…">`이 등록된 이름인지 검사합니다.
+ *
+ * 등록되지 않은 이름은 렌더 계층(`NamedDiagram`)이 **프로덕션에서 조용히 비웁니다**
+ * — 글이 죽지 않게 일부러 그렇게 만들었지만, 그 대가로 오타 하나에 그림이 통째로
+ * 사라진 채 배포됩니다. frontmatter `hero`는 `unknown-hero-diagram`이 막아 왔는데
+ * 본문의 같은 이름은 검사가 없었습니다. 레지스트리는 `hero`와 같은 설정
+ * (`registries.diagramNames`)입니다.
+ *
+ * 코드 펜스 안(`maskNonProse`)과 **같은 줄의** 인라인 코드 안은 문법 예시라 보지
+ * 않습니다. 인라인 코드를 문서 전체에서 짝지으면 짝 하나가 어긋날 때 멀쩡한 산문을
+ * 통째로 덮으므로(`maskNonProse` 주석) 줄 안에서만 셉니다.
+ */
+export function validateDiagramNames(
+  record: PostRecord,
+  raw: string,
+  options: ValidateContext,
+): Issue[] {
+  if (!isPostFile(record.data)) return [];
+  const issues: Issue[] = [];
+  const offset = frontmatterOffset(raw);
+  const prose = maskNonProse(record.content);
+  for (const match of prose.matchAll(DIAGRAM_OPEN_TAG)) {
+    if (insideInlineCode(prose, match.index)) continue;
+    const attr = match[0].match(NAME_ATTR);
+    if (!attr) continue;
+    const name = attr[1] ?? attr[2] ?? attr[3] ?? '';
+    if (options.diagramNames.includes(name)) continue;
+    issues.push({
+      file: record.relPath,
+      line: offset + prose.slice(0, match.index).split('\n').length,
+      severity: resolveSeverity('unknown-diagram-name', record.data, options),
+      rule: 'unknown-diagram-name',
+      message: `\`<diagram name>\`이 등록된 다이어그램 이름이 아닙니다 — 프로덕션에서는 그림이 조용히 사라집니다(등록: ${options.diagramNames.join(', ')}). 새 다이어그램이라면 앱의 content.values.mts(DIAGRAM_NAMES)와 src/components/diagram/registry.ts에 먼저 등록하세요: ${JSON.stringify(name)}`,
+    });
+  }
   return issues;
 }

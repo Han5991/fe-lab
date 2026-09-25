@@ -96,6 +96,7 @@ export const RULES = {
   'unclosed-fence': { severity: 'warning', scope: 'always' },
   'unregistered-code-language': { severity: 'warning', scope: 'always' },
   'body-h1': { severity: 'warning', scope: 'post' },
+  'unknown-diagram-name': { severity: 'error', scope: 'post' },
   // ── 코퍼스 판정 사슬 (corpus.ts) ──────────────────────────────────────────
   'duplicate-slug': { severity: 'error', scope: 'corpus' },
   'duplicate-description': { severity: SEO_PUBLISH, scope: 'corpusVisible' },
