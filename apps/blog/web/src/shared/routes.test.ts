@@ -9,6 +9,7 @@ import {
   ADMIN_LOGIN_UNAUTHORIZED_PATH,
   ADMIN_PATH,
   adminAnalyticsPostPath,
+  adminLoginErrorPath,
   adminLoginRedirectUrl,
   HOME_PATH,
   isAdminLoginPath,
@@ -74,6 +75,17 @@ describe('admin 경로 상수', () => {
   test('unauthorized 경로는 로그인 경로에서 파생된다', () => {
     expect(ADMIN_LOGIN_UNAUTHORIZED_PATH).toBe(
       `${ADMIN_LOGIN_PATH}?error=unauthorized`,
+    );
+  });
+
+  test('OAuth 실패 경로는 로그인 화면에 사유를 인코딩해 싣는다', () => {
+    const path = adminLoginErrorPath('Signups not allowed & more');
+    const url = new URL(path, 'https://blog.sangwook.dev');
+
+    expect(isAdminLoginPath(url.pathname)).toBe(true);
+    expect(url.searchParams.get('error')).toBe('oauth');
+    expect(url.searchParams.get('error_description')).toBe(
+      'Signups not allowed & more',
     );
   });
 

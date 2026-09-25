@@ -52,6 +52,18 @@ export const ADMIN_LOGIN_PATH = `${ADMIN_LOGIN_PATH_NO_SLASH}/`;
 export const ADMIN_LOGIN_UNAUTHORIZED_PATH = `${ADMIN_LOGIN_PATH}?error=unauthorized`;
 
 /**
+ * OAuth 로그인이 실패해 돌아왔을 때 보내는 로그인 경로 — 실패 사유를 싣는다.
+ *
+ * Supabase는 OAuth 실패(예: `enable_signup = false`의 "Signups not allowed")를
+ * 복귀 주소(`ADMIN_LOGIN_REDIRECT_PATH`)에 `error`·`error_description`으로 붙여
+ * 보낸다. 그 주소는 가드가 지키는 곳이라 세션이 없으면 로그인 화면으로 다시
+ * 보내는데, 예전엔 그때 사유가 떨어져 아무 안내 없이 로그인 화면으로 돌아왔다.
+ */
+export function adminLoginErrorPath(description: string): string {
+  return `${ADMIN_LOGIN_PATH}?error=oauth&error_description=${encodeURIComponent(description)}`;
+}
+
+/**
  * OAuth를 마친 브라우저가 돌아올 경로.
  *
  * **무슬래시인 것이 의도다.** `trailingSlash: true` 계약과는 어긋나서 로그인

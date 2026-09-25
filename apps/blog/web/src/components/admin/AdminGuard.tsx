@@ -3,10 +3,15 @@
 import { type ReactNode, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { authRepository, isAdminEmail } from '@/src/domain/auth';
+import {
+  authRepository,
+  isAdminEmail,
+  readOAuthRedirectError,
+} from '@/src/domain/auth';
 import {
   ADMIN_LOGIN_PATH,
   ADMIN_LOGIN_UNAUTHORIZED_PATH,
+  adminLoginErrorPath,
   isAdminLoginPath,
 } from '@/src/shared/routes';
 
@@ -35,7 +40,16 @@ export function AdminGuard({ children }: { children: ReactNode }) {
     }
 
     if (!session) {
-      router.replace(ADMIN_LOGIN_PATH);
+      // OAuth가 실패해 돌아온 경우 Supabase가 복귀 URL에 사유를 붙여 둔다.
+      // 그냥 로그인 화면으로 보내면 사유가 떨어져, 거절된 계정이 아무 안내 없이
+      // 로그인 화면으로 되돌아온다 — 사유를 실어 보낸다.
+      const oauthError = readOAuthRedirectError(
+        window.location.search,
+        window.location.hash,
+      );
+      router.replace(
+        oauthError ? adminLoginErrorPath(oauthError) : ADMIN_LOGIN_PATH,
+      );
       return;
     }
 
