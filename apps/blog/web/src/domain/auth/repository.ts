@@ -5,7 +5,7 @@
  * `lib/platform/client`를 직접 import해 `.auth.*`를 불렀다 — 레이어 규칙
  * ("src는 저장소를 직접 찌르지 않는다")의 유일한 예외였고, lint 가드는
  * `.from()`/`.rpc()`만 봐서 잡지 못했다. 이 모듈이 생기면서 app 레이어의
- * platform 접근 허용 자체가 boundaries에서 빠졌다(eslint.config.mjs) —
+ * platform 접근 허용 자체가 boundaries에서 빠졌다(eslint.config.mts) —
  * 이름 우회가 아니라 import 경로 단위로 막힌다.
  *
  * supabase-js의 타입은 여기서 끝낸다: 소비자에게는 판정에 필요한 최소
