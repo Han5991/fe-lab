@@ -28,6 +28,28 @@ interface LayoutProps {
 const railOuter = railGutter;
 const railInner = railColumn({ width: 'wide' });
 
+/** 건너뛰기 링크가 가리키는 본문 영역 id. */
+const MAIN_ID = 'main-content';
+
+// 키보드 사용자가 매 페이지 헤더의 여러 탭 정지점을 지나지 않고 본문으로 가는 길.
+// 평소엔 화면 밖에 있다가 초점을 받으면 좌상단에 나타난다.
+const skipLink = css({
+  pos: 'absolute',
+  top: '2',
+  left: '4',
+  zIndex: '60',
+  px: '3',
+  py: '2',
+  bg: 'paper.50',
+  color: 'ink.950',
+  fontSize: 'sm',
+  borderWidth: 'hairline',
+  borderColor: 'ink.borderStrong',
+  rounded: 'md',
+  transform: 'translateY(-200%)',
+  _focus: { transform: 'none' },
+});
+
 const footerLink = css({
   fontFamily: 'mono',
   fontSize: '[12px]',
@@ -61,6 +83,9 @@ export const Layout = ({ children }: LayoutProps) => {
       })}
     >
       {/* sticky 헤더 — 위계는 hairline 보더와 반투명·흐림 배경으로만 세운다. */}
+      <a href={`#${MAIN_ID}`} className={skipLink}>
+        본문으로 건너뛰기
+      </a>
       <header
         className={css({
           borderBottomWidth: 'hairline',
@@ -139,7 +164,12 @@ export const Layout = ({ children }: LayoutProps) => {
         </div>
       </header>
 
-      <main className={css({ flex: '1', w: 'full' })}>
+      {/* tabIndex -1: 건너뛰기 링크가 초점을 여기로 옮길 수 있게(탭 순서에는 없다). */}
+      <main
+        id={MAIN_ID}
+        tabIndex={-1}
+        className={css({ flex: '1', w: 'full', outline: 'none' })}
+      >
         <PageTransition>{children}</PageTransition>
       </main>
 
