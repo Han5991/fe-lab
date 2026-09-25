@@ -18,7 +18,8 @@
   "scripts": {
     "prepare": "pnpm build",
     "build": "tsdown",
-    "dev": "tsdown --watch"
+    "dev": "tsdown --watch",
+    "test": "node --test 'src/**/*.test.ts'"
   },
   "bin": {
     "minibundler": "./dist/cli.mjs"

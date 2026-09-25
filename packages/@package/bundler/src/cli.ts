@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import path from 'node:path';
-import { Graph } from './Graph.js';
-import type { MinibundlerConfig } from './types.js';
+import { Graph } from './Graph.ts';
+import type { MinibundlerConfig } from './types.ts';
 
 console.log('📦 Minibundler started...');
 

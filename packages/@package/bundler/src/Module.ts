@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import * as acorn from 'acorn';
-import * as ESTree from 'estree';
+import type * as ESTree from 'estree';
 import MagicString from 'magic-string';
 
 // 1. 기초 블록: ESTree 노드에 Acorn의 위치 정보를 합침
@@ -144,6 +144,13 @@ export class Module {
         execute(node);
       }
     });
+
+    // 이 exports는 ESM에서 번역됐다는 표시 — 기본 가져오기 interop(transformImportDeclaration)이
+    // 이 플래그를 보고 모듈 객체 대신 `.default`를 꺼낸다. 없으면 `import greet from`이
+    // `{ default: fn }`을 받는다. (CJS 외부 모듈은 플래그가 없으니 모듈 자체를 쓴다)
+    this.magicString.prepend(
+      `Object.defineProperty(exports, '__esModule', { value: true });\n`,
+    );
   }
 
   private transformImportDeclaration(

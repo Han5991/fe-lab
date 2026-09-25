@@ -1,7 +1,7 @@
 import path from 'node:path';
 import fs from 'node:fs';
 import MagicString, { Bundle } from 'magic-string';
-import { Module } from './Module.js';
+import { Module } from './Module.ts';
 
 /**
  * 전체 모듈 그래프를 관리하는 클래스
