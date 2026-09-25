@@ -9,10 +9,13 @@ import { describe, expect, test, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import type { PostStatDetail } from '@/src/domain/analytics';
 
+const { derived } = vi.hoisted(() => ({
+  derived: { weekGrowthRate: null as number | null },
+}));
 vi.mock('@/src/domain/analytics/admin', () => ({
   analyticsService: {
     computeDerivedStats: () => ({
-      weekGrowthRate: null,
+      weekGrowthRate: derived.weekGrowthRate,
       peakDay: null,
       dailyAverage: 0,
       milestones: [],
@@ -62,5 +65,23 @@ describe('PostAccordion', () => {
     expect(document.getElementById(panelId ?? '')).toHaveTextContent(
       '해당 기간에 데이터가 없습니다.',
     );
+  });
+
+  test('직전 주와 비교할 수 없는 증감률(null)은 하락이 아니라 비교 불가로 그린다', () => {
+    derived.weekGrowthRate = null;
+    render(<PostAccordion post={POST} />);
+    fireEvent.click(screen.getByRole('button', { name: /내 글/ }));
+
+    expect(screen.getByRole('img', { name: '비교 불가' })).toBeInTheDocument();
+    expect(screen.queryByRole('img', { name: '감소' })).not.toBeInTheDocument();
+  });
+
+  test('음수 증감률만 감소로 그린다', () => {
+    derived.weekGrowthRate = -20;
+    render(<PostAccordion post={POST} />);
+    fireEvent.click(screen.getByRole('button', { name: /내 글/ }));
+
+    expect(screen.getByRole('img', { name: '감소' })).toBeInTheDocument();
+    expect(screen.getByText('-20%')).toBeInTheDocument();
   });
 });

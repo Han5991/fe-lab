@@ -6,8 +6,6 @@ import { css } from '@design-system/ui-lib/css';
 import {
   ArrowLeft,
   ExternalLink,
-  TrendingUp,
-  TrendingDown,
   Calendar,
   BarChart3,
   Trophy,
@@ -45,6 +43,7 @@ import {
   DateRangeControls,
   useDateFilter,
 } from '../../components/DateRangeControls';
+import { WeekGrowthIcon } from '../../components/WeekGrowthIcon';
 
 function LoadingPlaceholder({ height }: { height?: string }) {
   return (
@@ -287,11 +286,7 @@ function PostDetailBody({ post }: { post: PostStatDetail }) {
               mb: '3',
             })}
           >
-            {derived.weekGrowthRate !== null && derived.weekGrowthRate >= 0 ? (
-              <TrendingUp size={18} className={css({ color: 'moss.600' })} />
-            ) : (
-              <TrendingDown size={18} className={css({ color: 'spot.600' })} />
-            )}
+            <WeekGrowthIcon rate={derived.weekGrowthRate} size={18} />
             <span
               className={css({
                 fontSize: '[0.8rem]',
