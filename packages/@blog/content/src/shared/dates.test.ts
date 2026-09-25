@@ -3,7 +3,6 @@ import {
   addDaysISO,
   diffDaysISO,
   formatMonthDayISO,
-  getKSTCutoffDate as getKSTCutoffDateIn,
   getKSTDateISO as getKSTDateISOIn,
   hasAmbiguousTimezone,
   isIsoDateOnly,
@@ -22,10 +21,6 @@ const TZ = TEST_VALUES.timezone;
 const getKSTDateISO = (d?: Date): string => getKSTDateISOIn(TZ, d);
 const parseScheduledDateKST = (input: string): Date =>
   parseScheduledDateKSTIn(TZ, input);
-const getKSTCutoffDate = (
-  filterType: '7days' | '30days',
-  todayKST?: string,
-): string => getKSTCutoffDateIn(TZ, filterType, todayKST);
 const msUntilKSTMidnight = (now?: Date): number =>
   msUntilKSTMidnightIn(TZ, now);
 
@@ -211,29 +206,6 @@ test('hasAmbiguousTimezone: 공백 구분 datetime도 offset 없으면 모호', 
 test('hasAmbiguousTimezone: 비표준 소문자 z도 offset으로 인정(false-positive 방지)', () => {
   // 소문자 z는 ISO 표준은 아니나 Date.parse가 UTC로 받아들이므로 모호하지 않다.
   expect(hasAmbiguousTimezone('2026-06-01T09:00:00z')).toBe(false);
-});
-
-test('getKSTCutoffDate: 7days', () => {
-  expect(getKSTCutoffDate('7days', '2026-05-25')).toBe('2026-05-18');
-});
-
-test('getKSTCutoffDate: 30days', () => {
-  expect(getKSTCutoffDate('30days', '2026-05-25')).toBe('2026-04-25');
-});
-
-test('getKSTCutoffDate: 월 경계 — 30days가 전월로 넘어감', () => {
-  expect(getKSTCutoffDate('30days', '2026-01-15')).toBe('2025-12-16');
-});
-
-test('getKSTCutoffDate: 연 경계 — 7days가 전년 마지막 주로 넘어감', () => {
-  expect(getKSTCutoffDate('7days', '2027-01-03')).toBe('2026-12-27');
-});
-
-test('getKSTCutoffDate: todayKST 미제공 시 현재 KST 기준', () => {
-  // 시각 의존이라 정확한 값 비교 대신 cutoff + 7 == today 만 검증
-  const cutoff = getKSTCutoffDate('7days');
-  const today = getKSTDateISO();
-  expect(addDaysISO(cutoff, 7)).toBe(today);
 });
 
 // --- msUntilKSTMidnight ---

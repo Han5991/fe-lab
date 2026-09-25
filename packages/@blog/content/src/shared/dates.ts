@@ -183,28 +183,6 @@ export function formatMonthDayISO(iso: string): string {
 }
 
 /**
- * filterType에 대응하는 KST 기준 cutoff 날짜 문자열(`YYYY-MM-DD`)을 반환합니다.
- * Supabase RPC가 KST 기준 view_date를 반환하므로 비교 기준도 KST여야 합니다.
- *
- * @param filterType - '7days' | '30days'
- * @param todayKST   - 오늘 KST 날짜 (`YYYY-MM-DD`). 미제공 시 현재 시각 기준.
- * @returns cutoff 날짜 (이 날짜 이후 데이터가 필터링 대상).
- *
- * @example
- * getKSTCutoffDate(TIMEZONE, '7days', '2026-05-25')  // → '2026-05-18'
- * getKSTCutoffDate(TIMEZONE, '30days', '2026-05-25') // → '2026-04-25'
- */
-export function getKSTCutoffDate(
-  timezone: Pick<TimezoneConfig, 'iana'>,
-  filterType: '7days' | '30days',
-  todayKST?: string,
-): string {
-  const today = todayKST ?? getKSTDateISO(timezone);
-  if (filterType === '7days') return addDaysISO(today, -7);
-  return addDaysISO(today, -30);
-}
-
-/**
  * 주어진 시점에서 다음 KST 자정까지 남은 밀리초(+60초 여유).
  *
  * 자정 정각에 OS 타이머가 약간 일찍 발화하는 경우를 대비해 60초를 더합니다.
