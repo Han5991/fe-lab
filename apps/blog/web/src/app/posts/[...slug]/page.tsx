@@ -35,6 +35,7 @@ import { PostHeader } from '@/src/components/post/PostHeader';
 import { PostHero } from '@/src/components/post/PostHero';
 import { PostBody } from './PostBody';
 import { PostRuntime } from './PostRuntime';
+import { slugFromSegments } from './slugFromSegments';
 
 interface Props {
   params: Promise<{
@@ -53,7 +54,7 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const resolvedParams = await params;
-  const slug = decodeURIComponent(resolvedParams.slug.join('/'));
+  const slug = slugFromSegments(resolvedParams.slug);
   const post = getPostBySlug(slug);
 
   if (!post) {
@@ -69,7 +70,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function PostPage({ params }: Props) {
   const resolvedParams = await params;
-  const slug = decodeURIComponent(resolvedParams.slug.join('/'));
+  const slug = slugFromSegments(resolvedParams.slug);
   const post = getPostBySlug(slug);
 
   if (!post) {
