@@ -14,7 +14,6 @@ function parseDate(value: string, field: string): Date {
   return date;
 }
 
-/** 응답 DTO(날짜 = 문자열)를 도메인 User(날짜 = Date)로 바꾼다 */
 export function toUser(dto: UserDto): UserRes {
   return {
     ...dto,
@@ -27,8 +26,7 @@ class UserServerImpl implements UserServer {
   constructor(private api: Http) {}
 
   async createUser(user: UserReq): Promise<UserRes> {
-    // response.json()은 Date를 되살리지 않는다 — 제네릭에 User를 넣으면 타입만 Date이고
-    // 실제로는 문자열이라 date.getTime()에서 터진다. DTO로 받고 경계에서 변환한다.
+    // response.json()은 Date를 되살리지 않으므로 DTO로 받아 경계에서 변환한다
     const response = await this.api.post<UserDto, UserReq>('/api/user', user);
     return toUser(response.data);
   }

@@ -10,11 +10,7 @@ interface UseWebSocketOptions {
   reconnectInterval?: number;
   /** 재연결 지연 시간 증가 배수 (기본: 1.5) */
   reconnectBackoffMultiplier?: number;
-  /**
-   * 서버 메시지마다 한 번씩, 도착한 순서대로 불린다.
-   * `messages` state는 렌더 단위로 묶이므로(연달아 온 프레임은 한 렌더에 합쳐진다)
-   * 메시지마다 처리할 일은 state가 아니라 이 콜백에서 해야 빠지지 않는다.
-   */
+  /** 서버 메시지마다 도착 순서대로 불린다. `messages` state는 렌더마다 합쳐지므로 메시지별 처리는 여기서 한다 */
   onMessage?: (data: string) => void;
   /** messages에 남길 최대 개수. 넘으면 오래된 것부터 버린다 (기본: 200) */
   maxMessages?: number;
@@ -71,14 +67,12 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
   // 열린다. 판정·백오프는 ref로 읽고 state(reconnectAttempt)는 UI 표시용으로만
   // 쓴다.
   const reconnectAttemptRef = useRef(0);
-  // onMessage는 보통 인라인 함수라 매 렌더 바뀐다. connect deps에 넣으면 렌더마다
-  // 소켓을 다시 연다 — 최신 콜백을 ref로 읽는다.
+  // 인라인 onMessage가 바뀔 때마다 소켓을 다시 열지 않게 ref로 읽는다
   const onMessageRef = useRef(onMessage);
   useEffect(() => {
     onMessageRef.current = onMessage;
   });
 
-  // 시세처럼 초마다 오는 메시지가 쌓여도 목록이 끝없이 자라지 않게 최근 것만 남긴다
   const appendMessage = useCallback(
     (message: string) => {
       setMessages(prev => [...prev, message].slice(-maxMessages));
@@ -100,12 +94,8 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
     }
   }, []);
 
-  /**
-   * 현재 소켓을 잊고 닫는다. 연결 중(CONNECTING)인 소켓도 닫아야 한다 — 그대로 두면
-   * 나중에 열려 두 번째 연결이 된다. wsRef를 먼저 비우므로 이 소켓이 뒤늦게 내는
-   * open·message·close 이벤트는 핸들러의 `wsRef.current !== ws` 가드에 걸려 무시된다
-   * (그렇지 않으면 옛 소켓의 close가 새 연결을 끊긴 것으로 덮고 재연결까지 예약한다).
-   */
+  // CONNECTING도 닫아야 나중에 열려 두 번째 연결이 되지 않는다. wsRef를 먼저 비워
+  // 옛 소켓의 늦은 이벤트는 핸들러의 `wsRef.current !== ws` 가드에 걸린다.
   const closeCurrentSocket = useCallback((code: number, reason: string) => {
     const ws = wsRef.current;
     wsRef.current = null;

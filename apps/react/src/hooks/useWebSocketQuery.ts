@@ -52,9 +52,7 @@ export function useWebSocketQuery(options: UseWebSocketQueryOptions) {
 
   const queryClient = useQueryClient();
 
-  // 메시지는 소켓 이벤트에서 바로 처리한다. `messages` state의 마지막 원소를 effect로
-  // 읽으면, 렌더 전에 연달아 온 프레임(한 틱에 시세 2개 등)은 한 렌더로 합쳐져 앞의 것을
-  // 잃고, 같은 내용이 연속으로 오면 중복으로 오인하며, 내가 보낸 메시지까지 처리한다.
+  // `messages` state를 effect로 읽으면 한 렌더에 합쳐진 프레임을 잃어 소켓 이벤트에서 바로 처리한다
   const webSocket = useWebSocket({
     url,
     autoReconnect,

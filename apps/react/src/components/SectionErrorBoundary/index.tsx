@@ -40,9 +40,7 @@ export class SectionErrorBoundary<T extends Error = Error> extends Component<
   }
 
   resetError = () => {
-    // 외부 리셋(React Query의 QueryErrorResetBoundary reset 등)을 **먼저** 부른다.
-    // 에러 상태를 먼저 지우면 자식이 다시 마운트되는 시점에 쿼리는 아직 "리셋 전"이라
-    // useSuspenseQuery가 캐시된 에러를 그대로 다시 던진다.
+    // 쿼리 리셋이 먼저다 — 에러부터 지우면 다시 마운트된 자식이 캐시된 에러를 또 던진다.
     this.props.onReset?.();
     this.setState({ error: null });
   };

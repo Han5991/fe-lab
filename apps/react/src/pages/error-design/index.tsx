@@ -161,9 +161,7 @@ const ErrorDesignPage = () => (
       </Box>
     </Box>
 
-    {/* 통계 카드 4개 - 독립적 Suspense + ErrorBoundary.
-        QueryErrorResetBoundary의 reset을 onReset으로 넘겨야 "다시 시도"가 쿼리를 다시 실행한다 —
-        없으면 useSuspenseQuery는 캐시된 에러를 그대로 다시 던진다 */}
+    {/* 통계 카드 4개 - 독립적 Suspense + ErrorBoundary. reset을 넘겨야 "다시 시도"가 쿼리를 다시 실행한다 */}
     <QueryErrorResetBoundary>
       {({ reset }) => (
         <StatsErrorBoundary onReset={reset}>
