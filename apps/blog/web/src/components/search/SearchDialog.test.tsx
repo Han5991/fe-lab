@@ -98,3 +98,25 @@ describe('SearchDialog - 선택 인덱스', () => {
     expect(push).toHaveBeenCalledWith(postPath('turbo-a'));
   });
 });
+
+// 다이얼로그는 sticky 헤더 안에서 렌더되는데, 헤더의 backdrop-filter가 fixed
+// 자손의 containing block을 헤더로 바꿔 모바일 풀스크린 패널이 52px로 접혔다.
+// jsdom은 레이아웃을 하지 않으니 원인 쪽 — 오버레이가 헤더 밖(body)에 붙는지 — 을 잠근다.
+describe('SearchDialog - 오버레이 위치', () => {
+  test('헤더 안에서 열어도 입력창과 결과는 헤더 바깥(body)에 뜬다', async () => {
+    const { container } = render(
+      <header>
+        <SearchDialog />
+      </header>,
+    );
+    fireEvent.click(screen.getByRole('button', { name: '검색' }));
+    const result = await screen.findByText('터보 첫 글');
+    const input = screen.getByPlaceholderText('제목, 태그, 시리즈로 검색...');
+
+    const header = container.querySelector('header');
+    expect(header).not.toBeNull();
+    expect(header?.contains(input)).toBe(false);
+    expect(header?.contains(result)).toBe(false);
+    expect(document.body.contains(input)).toBe(true);
+  });
+});

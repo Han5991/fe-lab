@@ -14,6 +14,7 @@ import { Search, X, Clock } from 'lucide-react';
 // next.config.ts의 optimizePackageImports + sideEffects:false가 번들에서 걸러 준다.
 import { postPath } from '@blog/content';
 import { getRecentViews, type RecentView } from '@/src/hooks/useRecentViews';
+import { Portal } from '@/src/components/Portal';
 
 interface SearchPost {
   slug: string;
@@ -262,8 +263,13 @@ export const SearchDialog = () => {
     );
   }
 
+  // body로 portal한다. 이 컴포넌트는 sticky 헤더 안에 렌더되는데, 헤더의
+  // backdrop-filter(흐림)는 fixed 자손의 containing block을 뷰포트가 아니라
+  // **헤더 자신**으로 바꾼다(Filter Effects 2). 그 안에 inline으로 두면 모바일
+  // 풀스크린 패널(inset 0)이 헤더 높이 52px로 접혀 결과 목록이 0px이 됐고,
+  // 헤더의 z-index:10 stacking context에도 갇혔다.
   return (
-    <>
+    <Portal>
       {/* 백드롭 — 뒤를 덮는 dim 레이어다. 보조기술에 읽힐 내용이 없으므로
           role="presentation"으로 트리에서 뺀다. 클릭으로 닫히는 건 포인터
           편의일 뿐이고, 키보드로 닫는 길은 이 요소가 아니라 위 useEffect의
@@ -276,8 +282,6 @@ export const SearchDialog = () => {
           inset: '0',
           bg: '[rgba(0,0,0,0.5)]',
           zIndex: '50',
-          w: '[100vw]',
-          h: '[100vh]',
         })}
         onClick={closeDialog}
       />
@@ -305,6 +309,10 @@ export const SearchDialog = () => {
             borderWidth: { base: '[0]', md: 'hairline' },
             borderColor: 'ink.border',
             h: { base: 'full', md: 'auto' },
+            // 데스크탑 센터 모달은 높이가 내용을 따라가는데, 결과 10개면 뷰포트를
+            // 넘는다. body 스크롤은 잠겨 있으니 넘친 결과·하단 힌트에 닿을 길이
+            // 없었다 — 모달 높이를 묶고 결과 목록만 스크롤시킨다.
+            maxH: { md: '[70vh]' },
             display: 'flex',
             flexDirection: 'column',
           })}
@@ -364,6 +372,7 @@ export const SearchDialog = () => {
           <div
             className={css({
               flex: '1',
+              minH: '0',
               overflowY: 'auto',
               py: '2',
               WebkitOverflowScrolling: 'touch',
@@ -504,6 +513,6 @@ export const SearchDialog = () => {
           </div>
         </div>
       </div>
-    </>
+    </Portal>
   );
 };

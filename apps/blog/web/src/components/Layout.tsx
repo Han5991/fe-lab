@@ -54,7 +54,7 @@ export const Layout = ({ children }: LayoutProps) => {
         flexDir: 'column',
       })}
     >
-      {/* sticky는 유지하되 blur/알파 배경은 걷어냈다 — 위계는 hairline 보더로만. */}
+      {/* sticky 헤더 — 위계는 hairline 보더와 반투명·흐림 배경으로만 세운다. */}
       <header
         className={css({
           borderBottomWidth: 'hairline',
@@ -71,8 +71,10 @@ export const Layout = ({ children }: LayoutProps) => {
           // `backdropFilter: '[blur(12px)]'` 처럼 임의값으로 주면 클래스만 생기고
           // 규칙이 안 나간다(리뉴얼 전 코드가 그 형태였다).
           //
-          // lightningcss가 이 선언을 `-webkit-backdrop-filter` 한 줄로만 내보낸다.
-          // 실제 브라우저(Chrome/Safari)는 이 접두사를 지원하므로 흐림이 걸린다.
+          // lightningcss는 이 선언을 `-webkit-backdrop-filter`와 `backdrop-filter`
+          // 두 줄로 내보낸다. none이 아닌 backdrop-filter는 헤더를 fixed 자손의
+          // containing block으로 만든다 — 헤더 안에서 뷰포트를 덮어야 하는
+          // 오버레이(검색 다이얼로그 등)는 반드시 <Portal>로 body에 띄울 것.
           backdropFilter: 'auto',
           backdropBlur: '[12px]',
           zIndex: '10',
