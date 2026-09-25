@@ -130,6 +130,9 @@ src/
 spawn되고 cwd·PATH 어디에도 기대지 않는다 — 부모가 발견한 설정 파일을 자식에
 명시 전달하므로(`stepArgv`) 부모와 자식이 다른 설정을 잡을 수 없다. 앱의
 `predev:web`과 `prebuild`는 같은 명령이고 `prebuild`만 `--strict`다(검증은 둘 다 돈다).
+글 집합(`visible`)의 dev 판정은 로더의 `isDevelopment`(`NODE_ENV === 'development'`)
+한 곳뿐이라, dev 서버가 draft의 og 카드·썸네일·원고 미디어까지 받으려면 이 명령도
+`NODE_ENV=development`로 돌아야 한다 — 없으면 발행 글 몫만 만든다.
 
 **기준 시각도 부모가 한 번 정해 넘긴다**(`--now`). 예약 글의 공개 판정·sitemap의
 오늘·RSS lastBuildDate·strict 승격 범위가 전부 이 값을 본다 — 단계마다 제 시계를
