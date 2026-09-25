@@ -73,13 +73,6 @@
       "automerge": false
     },
     {
-      "description": "brace-expansion·js-yaml overrides는 소비자가 요구하는 major 라인에 묶여 있다. minimatch@3(eslint 경유)은 brace-expansion v1의 CJS 콜러블 export를, gray-matter는 js-yaml v3의 safeLoad를 각각 요구한다. major를 올리면 lint와 프론트매터 파싱이 즉시 죽으므로 제안 자체를 막는다. advisory는 두 라인 모두 백포트가 있어 major 없이 닫힌다",
-      "matchDepTypes": ["pnpm-workspace.overrides"],
-      "matchPackageNames": ["brace-expansion", "js-yaml"],
-      "matchUpdateTypes": ["major"],
-      "enabled": false
-    },
-    {
       "description": "@ssgoi/react는 업데이트 제안을 막는다. v7이 PageTransition의 API(paths·preserveScroll, AnyTransitionConfig 형태 등)와 비호환이라 마이그레이션 없이는 빌드가 깨진다(#246). 마이그레이션을 마치면 이 규칙을 지울 것",
       "matchPackageNames": ["@ssgoi/react"],
       "enabled": false

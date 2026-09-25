@@ -129,8 +129,7 @@ jobs:
                같은 lockfile이면 같은 결과가 정답입니다.
 
             <추적 중 예외 — 매회 재평가>
-            - ignoreGhsas의 GHSA-mh99-v99m-4gvg: brace-expansion 1.x 백포트(1.1.17+)
-              출시 여부를 확인. 나왔으면 ignore를 지우고 lockfile 재해석으로 반영하세요.
+            - 각 영구 override 옆 주석의 "제거 조건"이 충족됐는지 확인하세요.
             - `postcss` override: next/@pandacss exact 핀 dedupe용 — 상시 유지.
 
             <작업 절차>
