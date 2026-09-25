@@ -81,8 +81,9 @@ jobs:
           alias=$(printf '%s' "$BRANCH" \
             | tr '[:upper:]' '[:lower:]' \
             | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//' \
-            | cut -c1-63 \
+            | cut -c1-58 \
             | sed -E 's/-+$//')
+          # Cloudflare는 alias와 워커 이름(blog)을 합쳐 63자 미만만 받는다(code 10021).
           # 숫자로 시작하는 호스트 레이블도 유효하지만, 빈 값만은 막는다.
           [[ -n "$alias" ]] || alias="pr-${{ github.event.pull_request.number }}"
           echo "alias=$alias" >> "$GITHUB_OUTPUT"
