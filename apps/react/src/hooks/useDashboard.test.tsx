@@ -1,6 +1,8 @@
-import { renderHook, waitFor } from '@testing-library/react';
+import { Suspense } from 'react';
+import { renderHook, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { vi } from 'vitest';
+import { ErrorBoundary } from '@/components';
 import { useDashboardStats, useChartData, useActivities } from './useDashboard';
 import * as dashboardApi from '@/api/dashboard';
 
@@ -17,6 +19,29 @@ const createWrapper = () => {
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
 };
+
+/**
+ * useSuspenseQuery는 실패를 렌더 중에 throw한다 — 에러 바운더리로 감싸 그 에러가
+ * 실제로 바운더리까지 올라왔는지(메시지가 화면에 그려졌는지) 확인한다
+ */
+const renderWithBoundary = (useHook: () => unknown) => {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  return renderHook(useHook, {
+    wrapper: ({ children }: { children: React.ReactNode }) => (
+      <QueryClientProvider client={queryClient}>
+        <ErrorBoundary>
+          <Suspense fallback={<p>로딩</p>}>{children}</Suspense>
+        </ErrorBoundary>
+      </QueryClientProvider>
+    ),
+  });
+};
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 describe('useDashboardStats', () => {
   beforeEach(() => {
@@ -48,13 +73,13 @@ describe('useDashboardStats', () => {
     const mockError = new Error('통계 데이터 로드 실패');
     vi.spyOn(dashboardApi, 'getDashboardStats').mockRejectedValue(mockError);
 
-    // useSuspenseQuery는 에러가 발생하면 throw하므로 ErrorBoundary로 캐치해야 함
-    // 여기서는 renderHook이 에러를 던지는지만 확인
-    expect(() => {
-      renderHook(() => useDashboardStats(), {
-        wrapper: createWrapper(),
-      });
-    }).toBeDefined();
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    renderWithBoundary(() => useDashboardStats());
+
+    expect(
+      await screen.findByRole('heading', { name: '통계 데이터 로드 실패' }),
+    ).toBeInTheDocument();
   });
 });
 
@@ -86,12 +111,13 @@ describe('useChartData', () => {
     const mockError = new Error('차트 데이터 로드 실패');
     vi.spyOn(dashboardApi, 'getChartData').mockRejectedValue(mockError);
 
-    // useSuspenseQuery는 에러가 발생하면 throw하므로 ErrorBoundary로 캐치해야 함
-    expect(() => {
-      renderHook(() => useChartData(), {
-        wrapper: createWrapper(),
-      });
-    }).toBeDefined();
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    renderWithBoundary(() => useChartData());
+
+    expect(
+      await screen.findByRole('heading', { name: '차트 데이터 로드 실패' }),
+    ).toBeInTheDocument();
   });
 });
 
@@ -133,11 +159,12 @@ describe('useActivities', () => {
     const mockError = new Error('활동 데이터 로드 실패');
     vi.spyOn(dashboardApi, 'getActivities').mockRejectedValue(mockError);
 
-    // useSuspenseQuery는 에러가 발생하면 throw하므로 ErrorBoundary로 캐치해야 함
-    expect(() => {
-      renderHook(() => useActivities(), {
-        wrapper: createWrapper(),
-      });
-    }).toBeDefined();
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    renderWithBoundary(() => useActivities());
+
+    expect(
+      await screen.findByRole('heading', { name: '활동 데이터 로드 실패' }),
+    ).toBeInTheDocument();
   });
 });

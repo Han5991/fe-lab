@@ -14,6 +14,7 @@ import {
   ActivityErrorBoundary,
 } from './index';
 import { StatsError, ChartError, ActivityError } from '@/shared';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 const ThrowError = ({ error }: { error: Error }) => {
   throw error;
@@ -119,6 +120,21 @@ describe('SectionErrorBoundary', () => {
 
     expect(await screen.findByText('복구됨')).toBeInTheDocument();
     expect(calls).toBe(2);
+  });
+
+  test('담당이 아닌 에러는 처리하지 않고 상위 바운더리로 전파한다', () => {
+    render(
+      <ErrorBoundary>
+        <SectionErrorBoundary sectionName="통계" errorType={StatsError}>
+          <ThrowError error={new ChartError('차트 쪽 에러')} />
+        </SectionErrorBoundary>
+      </ErrorBoundary>,
+    );
+
+    expect(
+      screen.getByRole('heading', { name: '차트 쪽 에러' }),
+    ).toBeInTheDocument();
+    expect(screen.queryByText('❌ 통계 에러')).not.toBeInTheDocument();
   });
 
   test('에러 코드가 없으면 에러 코드를 표시하지 않는다', () => {
