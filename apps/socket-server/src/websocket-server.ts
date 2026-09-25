@@ -97,7 +97,7 @@ type ClientEventListener<E extends ClientEvent> =
 /**
  * WebSocket Opcode
  *
- * enum 대신 const 객체다 — node의 type stripping(`node src/index.ts`, `node --test`)은
+ * enum 대신 const 객체다 — node의 type stripping(`dev`의 `node --watch src/index.ts`)은
  * 지울 수 있는 타입 문법만 받는다(tsconfig `erasableSyntaxOnly`).
  */
 const WebSocketOpcode = {

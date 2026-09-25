@@ -164,7 +164,7 @@ broadcast(message) {
 
 ## 🧪 테스트 시나리오
 
-자동 테스트는 `pnpm --filter socket-server test`(node:test)로 돌립니다. 날 TCP 소켓으로 청크 경계·조각
+자동 테스트는 `pnpm --filter socket-server test`(Vitest)로 돌립니다. 날 TCP 소켓으로 청크 경계·조각
 메시지·종료 핸드셰이크·프로토콜 위반·하트비트·구독을 확인합니다.
 
 1. **단일 클라이언트 연결**: 메시지 송수신 확인

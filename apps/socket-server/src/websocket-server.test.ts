@@ -1,13 +1,14 @@
 import {
-  after,
+  afterAll,
   afterEach,
-  before,
+  beforeAll,
   beforeEach,
   describe,
-  mock,
+  expect,
   test,
-} from 'node:test';
-import assert from 'node:assert/strict';
+  vi,
+} from 'vitest';
+import type { MockInstance } from 'vitest';
 import crypto from 'node:crypto';
 import { createServer } from 'node:http';
 import type { Server } from 'node:http';
@@ -143,7 +144,7 @@ async function openClient(
     if (!upgraded) {
       const end = pending.indexOf('\r\n\r\n');
       if (end === -1) return;
-      assert.match(pending.subarray(0, end).toString(), /^HTTP\/1\.1 101 /);
+      expect(pending.subarray(0, end).toString()).toMatch(/^HTTP\/1\.1 101 /);
       pending = pending.subarray(end + 4);
       upgraded = true;
       resolveUpgrade();
@@ -205,7 +206,7 @@ async function openClient(
 
   const nextText = async () => {
     const frame = await nextFrame();
-    assert.equal(frame.opcode, 0x1, `텍스트가 아닌 프레임: ${frame.opcode}`);
+    expect(frame.opcode, `텍스트가 아닌 프레임: ${frame.opcode}`).toBe(0x1);
     return frame.payload.toString('utf-8');
   };
 
@@ -241,24 +242,24 @@ async function stopServer({ wsServer, httpServer }: Harness): Promise<void> {
 const closeCodeOf = (frame: ServerFrame) =>
   frame.payload.length >= 2 ? frame.payload.readUInt16BE(0) : undefined;
 
-let errorLog: ReturnType<typeof mock.method>;
+let errorLog: MockInstance<typeof console.error>;
 
-before(() => {
+beforeAll(() => {
   // 연결·메시지마다 찍히는 서버 로그를 끈다
-  mock.method(console, 'log', () => {});
-  errorLog = mock.method(console, 'error', () => {});
+  vi.spyOn(console, 'log').mockImplementation(() => {});
+  errorLog = vi.spyOn(console, 'error').mockImplementation(() => {});
 });
 
 /** 서버가 console.error로 남긴 소켓 오류 중 code가 있는 것(ERR_STREAM_WRITE_AFTER_END 등) */
 const socketErrorCodes = () =>
-  errorLog.mock.calls.flatMap(call =>
-    call.arguments.flatMap(arg =>
+  errorLog.mock.calls.flatMap(args =>
+    args.flatMap((arg: unknown) =>
       arg instanceof Error && 'code' in arg ? [String(arg.code)] : [],
     ),
   );
 
-after(() => {
-  mock.restoreAll();
+afterAll(() => {
+  vi.restoreAllMocks();
 });
 
 describe('프레임 수신 — TCP 청크 경계와 무관하게', () => {
@@ -287,9 +288,9 @@ describe('프레임 수신 — TCP 청크 경계와 무관하게', () => {
       Buffer.concat([text('one'), text('two'), text('three')]),
     );
 
-    assert.equal(await client.nextText(), 'one');
-    assert.equal(await client.nextText(), 'two');
-    assert.equal(await client.nextText(), 'three');
+    expect(await client.nextText()).toBe('one');
+    expect(await client.nextText()).toBe('two');
+    expect(await client.nextText()).toBe('three');
   });
 
   test('헤더 중간을 포함해 여러 청크로 쪼개진 프레임을 하나로 조립한다', async () => {
@@ -309,11 +310,11 @@ describe('프레임 수신 — TCP 청크 경계와 무관하게', () => {
       await sleep(20);
     }
 
-    assert.equal(await client.nextText(), message);
+    expect(await client.nextText()).toBe(message);
 
     // 다음 프레임도 정상 경계에서 읽힌다
     client.socket.write(text('after'));
-    assert.equal(await client.nextText(), 'after');
+    expect(await client.nextText()).toBe('after');
   });
 
   test('프레임 끝과 다음 프레임 앞부분이 한 청크에 섞여도 경계를 지킨다', async () => {
@@ -325,14 +326,14 @@ describe('프레임 수신 — TCP 청크 경계와 무관하게', () => {
     await sleep(20);
     client.socket.write(both.subarray(cut));
 
-    assert.equal(await client.nextText(), 'first');
-    assert.equal(await client.nextText(), 'second');
+    expect(await client.nextText()).toBe('first');
+    expect(await client.nextText()).toBe('second');
   });
 
   test('핸드셰이크와 같은 패킷에 실려 온 프레임을 잃지 않는다', async () => {
     const client = await connect({ extra: text('early') });
 
-    assert.equal(await client.nextText(), 'early');
+    expect(await client.nextText()).toBe('early');
   });
 
   test('상한을 넘는 길이를 선언한 프레임은 버퍼링하지 않고 1009로 닫는다', async () => {
@@ -346,8 +347,8 @@ describe('프레임 수신 — TCP 청크 경계와 무관하게', () => {
     client.socket.write(header);
 
     const frame = await client.nextFrame();
-    assert.equal(frame.opcode, 0x8);
-    assert.equal(closeCodeOf(frame), 1009);
+    expect(frame.opcode).toBe(0x8);
+    expect(closeCodeOf(frame)).toBe(1009);
     await client.closed;
   });
 });
@@ -375,12 +376,12 @@ describe('핸드셰이크 입력 검증', () => {
       socket.write(handshakeRequest(harness.port, '['));
     });
 
-    assert.match(response, /^HTTP\/1\.1 400 /);
+    expect(response).toMatch(/^HTTP\/1\.1 400 /);
 
     // 같은 서버에 정상 연결이 여전히 된다
     const client = await openClient(harness.port);
     client.socket.write(text('alive'));
-    assert.equal(await client.nextText(), 'alive');
+    expect(await client.nextText()).toBe('alive');
     client.socket.destroy();
   });
 });
@@ -409,9 +410,9 @@ describe('하트비트', () => {
 
     await sleep(500);
 
-    assert.equal(closed, false);
+    expect(closed).toBe(false);
     listener.socket.write(text('still here'));
-    assert.equal(await listener.nextText(), 'still here');
+    expect(await listener.nextText()).toBe('still here');
     listener.socket.destroy();
   });
 
@@ -451,12 +452,15 @@ describe('구독(topics)', () => {
     await sleep(200);
     chat.socket.write(text('hello'));
 
-    assert.equal(await chat.nextText(), 'hello');
-    assert.ok(stocks.priceUpdates() > 0, '구독자가 시세를 받지 못했다');
-    assert.equal(chat.priceUpdates(), 0);
+    expect(await chat.nextText()).toBe('hello');
+    expect(
+      stocks.priceUpdates(),
+      '구독자가 시세를 받지 못했다',
+    ).toBeGreaterThan(0);
+    expect(chat.priceUpdates()).toBe(0);
 
     // 시세 구독자에게 채팅이 가지 않는다
-    await assert.rejects(stocks.nextFrame(200), /시간 초과/);
+    await expect(stocks.nextFrame(200)).rejects.toThrow(/시간 초과/);
 
     chat.socket.destroy();
     stocks.socket.destroy();
@@ -469,7 +473,7 @@ describe('종료 핸드셰이크와 프로토콜 검증', () => {
 
   beforeEach(async () => {
     harness = await startServer();
-    errorLog.mock.resetCalls();
+    errorLog.mockClear();
   });
 
   afterEach(async () => {
@@ -485,8 +489,8 @@ describe('종료 핸드셰이크와 프로토콜 검증', () => {
 
   const expectClosedWith = async (client: RawClient, code: number) => {
     const frame = await client.nextFrame();
-    assert.equal(frame.opcode, 0x8);
-    assert.equal(closeCodeOf(frame), code);
+    expect(frame.opcode).toBe(0x8);
+    expect(closeCodeOf(frame)).toBe(code);
     await client.closed;
   };
 
@@ -498,7 +502,7 @@ describe('종료 핸드셰이크와 프로토콜 검증', () => {
     client.socket.write(clientFrame(0x8, payload));
 
     await expectClosedWith(client, 1000);
-    assert.deepEqual(socketErrorCodes(), []);
+    expect(socketErrorCodes()).toEqual([]);
   });
 
   test('서버가 먼저 닫으면 1001을 보내고, 클라이언트의 Close 응답에 다시 쓰지 않는다', async () => {
@@ -509,7 +513,7 @@ describe('종료 핸드셰이크와 프로토콜 검증', () => {
     await expectClosedWith(client, 1001);
     await sleep(20);
     // 예전엔 응답 Close를 받아 이미 end()한 소켓에 또 Close를 써 ERR_STREAM_WRITE_AFTER_END가 났다
-    assert.deepEqual(socketErrorCodes(), []);
+    expect(socketErrorCodes()).toEqual([]);
   });
 
   test('마스킹되지 않은 클라이언트 프레임은 1002로 닫는다', async () => {
@@ -577,9 +581,9 @@ describe('종료 핸드셰이크와 프로토콜 검증', () => {
 
     // 조각 사이에 끼어든 Ping에는 같은 페이로드의 Pong으로 먼저 답한다
     const pong = await client.nextFrame();
-    assert.equal(pong.opcode, 0xa);
-    assert.equal(pong.payload.toString(), 'ping-in-between');
-    assert.equal(await client.nextText(), 'Hello');
+    expect(pong.opcode).toBe(0xa);
+    expect(pong.payload.toString()).toBe('ping-in-between');
+    expect(await client.nextText()).toBe('Hello');
   });
 
   test('Sec-WebSocket-Version이 13이 아니면 426으로 답한다', async () => {
@@ -600,8 +604,8 @@ describe('종료 핸드셰이크와 프로토콜 검증', () => {
       );
     });
 
-    assert.match(response, /^HTTP\/1\.1 426 /);
-    assert.match(response, /Sec-WebSocket-Version: 13/);
+    expect(response).toMatch(/^HTTP\/1\.1 426 /);
+    expect(response).toMatch(/Sec-WebSocket-Version: 13/);
   });
 });
 
@@ -633,9 +637,9 @@ describe('Origin 검증', () => {
     });
 
   test('로컬 개발 출처는 포트와 무관하게 허용하고 다른 출처는 403으로 막는다', async () => {
-    assert.match(await handshakeStatus('http://localhost:5173'), / 101 /);
-    assert.match(await handshakeStatus('http://localhost:5174'), / 101 /);
-    assert.match(await handshakeStatus('http://127.0.0.1:4173'), / 101 /);
-    assert.match(await handshakeStatus('https://evil.example'), / 403 /);
+    expect(await handshakeStatus('http://localhost:5173')).toMatch(/ 101 /);
+    expect(await handshakeStatus('http://localhost:5174')).toMatch(/ 101 /);
+    expect(await handshakeStatus('http://127.0.0.1:4173')).toMatch(/ 101 /);
+    expect(await handshakeStatus('https://evil.example')).toMatch(/ 403 /);
   });
 });

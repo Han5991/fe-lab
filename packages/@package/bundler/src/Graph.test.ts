@@ -1,5 +1,4 @@
-import { after, before, describe, mock, test } from 'node:test';
-import assert from 'node:assert/strict';
+import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
 import fs from 'node:fs';
 import { createRequire } from 'node:module';
 import os from 'node:os';
@@ -79,13 +78,13 @@ function run(
 const bundleAndRun = (files: Files, options: BundleOptions = {}) =>
   run(bundle(files, options).code, options.externalModules);
 
-before(() => {
+beforeAll(() => {
   // Graph의 진행 로그(📂 Processing …)를 끈다
-  mock.method(console, 'log', () => {});
+  vi.spyOn(console, 'log').mockImplementation(() => {});
 });
 
-after(() => {
-  mock.restoreAll();
+afterAll(() => {
+  vi.restoreAllMocks();
   for (const dir of tempDirs) fs.rmSync(dir, { recursive: true, force: true });
 });
 
@@ -100,7 +99,7 @@ describe('기본 가져오기(default import)', () => {
       ].join('\n'),
     });
 
-    assert.equal(exports.message, 'Hello, Universe!');
+    expect(exports.message).toBe('Hello, Universe!');
   });
 
   test('default export 표현식도 모듈 객체가 아니라 값으로 받는다', () => {
@@ -113,8 +112,8 @@ describe('기본 가져오기(default import)', () => {
       ].join('\n'),
     });
 
-    assert.equal(exports.type, 'number');
-    assert.equal(exports.value, 42);
+    expect(exports.type).toBe('number');
+    expect(exports.value).toBe(42);
   });
 
   test('__esModule 표시가 없는 CJS 외부 모듈은 모듈 자체를 default로 받는다', () => {
@@ -128,7 +127,7 @@ describe('기본 가져오기(default import)', () => {
       { externals: ['legacy'], externalModules: { legacy: { hello: 'cjs' } } },
     );
 
-    assert.equal(exports.hello, 'cjs');
+    expect(exports.hello).toBe('cjs');
   });
 });
 
@@ -141,7 +140,7 @@ describe('배포 형식', () => {
 
     const lib = createRequire(import.meta.url)(path.join(dir, 'dist/index.js'));
 
-    assert.equal(lib.plus(1, 2), 3);
+    expect(lib.plus(1, 2)).toBe(3);
   });
 
   test('require가 없는 브라우저 <script>에서는 globals가 가리키는 전역에서 external을 찾는다', () => {
@@ -159,12 +158,11 @@ describe('배포 형식', () => {
     page.window = page;
     vm.runInNewContext(code, page);
     const library = page.BundlerLibrary as Record<string, unknown>;
-    assert.equal(library.version, '19-test');
+    expect(library.version).toBe('19-test');
 
     const bare: Record<string, unknown> = {};
     bare.window = bare;
-    assert.throws(
-      () => vm.runInNewContext(code, bare),
+    expect(() => vm.runInNewContext(code, bare)).toThrow(
       /Cannot find module 'react' \(global React\)/,
     );
   });
@@ -180,11 +178,11 @@ describe('내보내기 변환', () => {
       ].join('\n'),
     });
 
-    assert.equal(exports.a, 1);
-    assert.equal(exports.b, 2);
-    assert.equal(exports.x, 3);
-    assert.equal(exports.y, 4);
-    assert.equal(JSON.stringify(exports.rest), '[5]');
+    expect(exports.a).toBe(1);
+    expect(exports.b).toBe(2);
+    expect(exports.x).toBe(3);
+    expect(exports.y).toBe(4);
+    expect(JSON.stringify(exports.rest)).toBe('[5]');
   });
 
   test('export * as ns는 모듈 객체 하나를 ns라는 이름으로 내보낸다', () => {
@@ -194,9 +192,9 @@ describe('내보내기 변환', () => {
     });
 
     const math = exports.math as Record<string, unknown>;
-    assert.equal(math.one, 1);
-    assert.equal(math.two, 2);
-    assert.equal(exports.one, undefined);
+    expect(math.one).toBe(1);
+    expect(math.two).toBe(2);
+    expect(exports.one).toBe(undefined);
   });
 
   test('export *는 default를 옮기지 않고, 이 모듈이 직접 내보낸 이름을 덮지 않는다', () => {
@@ -212,9 +210,9 @@ describe('내보내기 변환', () => {
       ].join('\n'),
     });
 
-    assert.equal(exports.default, undefined);
-    assert.equal(typeof exports.shared, 'function');
-    assert.equal(exports.onlyStar, 'star');
+    expect(exports.default).toBe(undefined);
+    expect(typeof exports.shared).toBe('function');
+    expect(exports.onlyStar).toBe('star');
   });
 
   test('로컬 export는 앞에 온 export *보다 우선한다', () => {
@@ -226,7 +224,7 @@ describe('내보내기 변환', () => {
       ].join('\n'),
     });
 
-    assert.equal(exports.shared, 'local');
+    expect(exports.shared).toBe('local');
   });
 
   test('순환 참조에서 먼저 불려 간 모듈도 함수 선언 export는 받는다(호이스팅)', () => {
@@ -243,6 +241,6 @@ describe('내보내기 변환', () => {
       ].join('\n'),
     });
 
-    assert.equal(exports.fromB, 'helper');
+    expect(exports.fromB).toBe('helper');
   });
 });
