@@ -39,6 +39,17 @@ jobs:
           fetch-depth: 1
           persist-credentials: false
 
+      # 아래 Export 스텝이 대조할 .git/config 지문(claude-deps-audit.yml과 같은 이유).
+      # claude-code-action이 같은 스텝 안에서 다시 쓰는 user.name·user.email·
+      # remote.origin.url(·credential.helper)은 뺀다. 식은 Export 스텝과 같아야 한다.
+      - name: Fingerprint git config
+        id: git_config
+        run: |
+          sha="$(git config --file .git/config --no-includes --list \
+            | awk '!/^(user\.name|user\.email|remote\.origin\.url|credential\.helper)=/' \
+            | sha256sum | cut -d' ' -f1)"
+          echo "sha256=$sha" >> "$GITHUB_OUTPUT"
+
       - name: Run Claude link rot check
         uses: anthropics/claude-code-action@9171db3e57d6a3140a37ddc2ba92788584e0ead6 # v1.0.234
         with:
@@ -121,19 +132,46 @@ jobs:
 
           # 쓰기 자격 증명이 없는 잡이라 curl이 열려 있어도 푸시·PR 경로는 없다.
           # 결과는 publish 잡이 검사하는 패치 하나뿐이다.
+          #
+          # curl을 `curl -I`·`curl -sS -o /dev/null` 꼴로 좁히지 않았다. Bash 권한 규칙은
+          # 명령 문자열의 접두·와일드카드 매칭이라 뒤에 붙는 옵션을 막지 못한다 —
+          # `Bash(curl -sS -o /dev/null:*)`도 `curl -sS -o /dev/null URL -o .git/config URL2`
+          # 를, `Bash(curl -I:*)`도 `-o <파일>`·`-K <설정 파일>`을 통과시킨다(Claude Code
+          # 문서도 인자를 좁히는 규칙은 보안 경계가 아니라고 적는다). 좁히면 정상 점검만
+          # 깨질 수 있어서, 대신 curl이 쓴 파일을 뒤 스텝이 믿지 않는다(Export 스텝).
+          # 남는 구멍: curl은 $GITHUB_ENV·$GITHUB_PATH에도 쓸 수 있고 그 값은 뒤 스텝의
+          # 환경이 된다. 완전히 닫으려면 링크 상태 수집을 모델 밖 스크립트로 옮겨야 한다.
           claude_args: '--model claude-sonnet-5 --allowed-tools "Read,Edit,Write,Grep,Glob,WebFetch,WebSearch,Bash(curl:*),Bash(git status:*),Bash(git diff:*),Bash(gh pr list:*),Bash(gh pr view:*),Bash(date:*),Bash(sleep:*)"'
 
       # Claude가 고친 **추적 파일의 수정분**만 패치로 뜬다(새 파일은 git diff에
       # 나오지 않는다). 검사는 publish 잡이 한다.
+      #
+      # 이 잡의 curl은 `curl -o .git/config <URL>`로 저장소 설정을 통째로 바꿀 수 있다.
+      # 그 설정의 core.fsmonitor·diff.external·filter 드라이버·include는 `git diff`를
+      # 임의 코드 실행으로 바꾼다(main 스코프 러너 — 캐시 오염 경로). 그래서 설정
+      # 목록이 Claude 스텝 전 지문과 다르면 멈추고, 전역·시스템 설정을 읽지 않고
+      # fsmonitor·hook·외부 diff·textconv를 끈 git만 쓴다(claude-deps-audit.yml과 같다).
       - name: Export changes
+        env:
+          GIT_CONFIG_FINGERPRINT: ${{ steps.git_config.outputs.sha256 }}
         run: |
+          export GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1
+          now="$(git config --file .git/config --no-includes --list \
+            | awk '!/^(user\.name|user\.email|remote\.origin\.url|credential\.helper)=/' \
+            | sha256sum | cut -d' ' -f1)"
+          if [[ -z "$GIT_CONFIG_FINGERPRINT" || "$now" != "$GIT_CONFIG_FINGERPRINT" ]]; then
+            echo "::error::Claude 스텝 동안 .git/config 설정이 바뀌었다 — 그 설정으로 git을 부르지 않고 멈춘다"
+            exit 1
+          fi
+          safe_git() { git -c core.fsmonitor=false -c core.hooksPath=/dev/null "$@"; }
+
           out="$RUNNER_TEMP/bot-output"
           mkdir -p "$out"
-          git diff --binary HEAD > "$out/link-rot.patch"
+          safe_git diff --no-ext-diff --no-textconv --binary HEAD > "$out/link-rot.patch"
           for f in link-rot-title.txt link-rot-body.md link-rot-comment.md; do
             if [[ -f "$f" ]]; then cp -- "$f" "$out/"; fi
           done
-          git diff --stat HEAD
+          safe_git diff --no-ext-diff --no-textconv --stat HEAD
           ls -la "$out"
 
       - name: Upload changes

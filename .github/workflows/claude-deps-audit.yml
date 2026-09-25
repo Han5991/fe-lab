@@ -67,6 +67,18 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # 아래 Export 스텝이 대조할 .git/config 지문. 스텝 출력은 뒤 스텝이 고쳐 쓸 수
+      # 없어서 파일이 아니라 출력에 남긴다. claude-code-action이 같은 스텝 안에서
+      # user.name·user.email·remote.origin.url(·credential.helper)을 다시 쓰므로 그
+      # 넷은 뺀다 — 모두 `git diff`가 쓰지 않는 키다. 식은 Export 스텝과 같아야 한다.
+      - name: Fingerprint git config
+        id: git_config
+        run: |
+          sha="$(git config --file .git/config --no-includes --list \
+            | awk '!/^(user\.name|user\.email|remote\.origin\.url|credential\.helper)=/' \
+            | sha256sum | cut -d' ' -f1)"
+          echo "sha256=$sha" >> "$GITHUB_OUTPUT"
+
       - name: Run Claude deps audit
         uses: anthropics/claude-code-action@9171db3e57d6a3140a37ddc2ba92788584e0ead6 # v1.0.234
         with:
@@ -170,15 +182,34 @@ jobs:
       # Claude가 고친 **추적 파일의 수정분**만 패치로 뜬다. 새로 만든 파일은
       # git diff에 나오지 않으므로 여기서 이미 빠진다. 검사는 publish 잡이 한다 —
       # 이 스텝은 모델이 명령을 실행한 뒤라 믿지 않는다.
+      #
+      # git 자체도 믿지 않는 작업 트리에서 돈다. .git/config에 core.fsmonitor·
+      # diff.external·filter 드라이버·include를 심으면 `git diff`가 임의 코드를
+      # 실행한다 — main 스코프 러너라 런타임 토큰을 긁어 배포 빌드가 복원하는 캐시를
+      # 오염시키는 길이다. 그래서 (1) 설정 목록이 Claude 스텝 전 지문과 다르면 멈추고,
+      # (2) 전역·시스템 설정(~/.gitconfig는 이 잡의 사용자가 쓸 수 있다)을 읽지 않고
+      # fsmonitor·hook·외부 diff·textconv를 끈 git만 쓴다.
       - name: Export changes
+        env:
+          GIT_CONFIG_FINGERPRINT: ${{ steps.git_config.outputs.sha256 }}
         run: |
+          export GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1
+          now="$(git config --file .git/config --no-includes --list \
+            | awk '!/^(user\.name|user\.email|remote\.origin\.url|credential\.helper)=/' \
+            | sha256sum | cut -d' ' -f1)"
+          if [[ -z "$GIT_CONFIG_FINGERPRINT" || "$now" != "$GIT_CONFIG_FINGERPRINT" ]]; then
+            echo "::error::Claude 스텝 동안 .git/config 설정이 바뀌었다 — 그 설정으로 git을 부르지 않고 멈춘다"
+            exit 1
+          fi
+          safe_git() { git -c core.fsmonitor=false -c core.hooksPath=/dev/null "$@"; }
+
           out="$RUNNER_TEMP/bot-output"
           mkdir -p "$out"
-          git diff --binary HEAD > "$out/deps-audit.patch"
+          safe_git diff --no-ext-diff --no-textconv --binary HEAD > "$out/deps-audit.patch"
           for f in deps-audit-title.txt deps-audit-body.md deps-audit-comment.md; do
             if [[ -f "$f" ]]; then cp -- "$f" "$out/"; fi
           done
-          git diff --stat HEAD
+          safe_git diff --no-ext-diff --no-textconv --stat HEAD
           ls -la "$out"
 
       - name: Upload changes
