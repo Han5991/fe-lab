@@ -101,7 +101,10 @@ export const AUTHOR_LINKEDIN = 'https://www.linkedin.com/in/sangwook-han/';
 // ── 타임존 ───────────────────────────────────────────────────────────────────
 
 /**
- * 셋은 같은 타임존을 가리켜야 한다(서로 파생 검증은 하지 않는다).
+ * 셋은 같은 타임존을 가리켜야 한다. `isoOffset` 형식, `isoOffset`↔`utcOffsetMs`
+ * 일치, `iana`가 실재하는 이름인지는 `defineContent`가 검증해 어긋나면 던진다.
+ * `iana`의 오프셋과 `isoOffset`의 일치는 보지 않는다(서머타임 지역은 날짜마다 답이
+ * 달라서 — 고정 오프셋 지역만 지원한다).
  * 날짜 헬퍼들이 이 슬라이스를 통째로 받으므로 여기서는 묶어서 내보낸다.
  */
 export const TIMEZONE = {

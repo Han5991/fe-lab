@@ -196,8 +196,9 @@ export function Diagram({
 
 /**
  * 등록되지 않은 이름은 **글을 죽이지 않는다**. 프로덕션에서는 조용히 비우고,
- * 개발 중에만 눈에 띄는 블록으로 알린다 — 오타를 배포 전에 잡는 건
- * `lint:posts`(`unknown-hero-diagram`)의 몫이고, 여기는 마지막 안전망이다.
+ * 개발 중에만 눈에 띄는 블록으로 알린다 — 본문 `<diagram name>`의 오타를 배포
+ * 전에 잡는 건 `lint:posts`(`unknown-diagram-name`, frontmatter `hero:`는
+ * `unknown-hero-diagram`)의 몫이고, 여기는 마지막 안전망이다.
  */
 function NamedDiagram({
   name,
