@@ -16,10 +16,10 @@ const CONFIG = defineTestContent({ root: `${sep}tmp${sep}app` });
 const CTX = toValidateContext(CONFIG);
 const STRICT_CTX = toValidateContext(CONFIG, { strict: true });
 
-test('RULES: 규칙은 정확히 30개', () => {
+test('RULES: 규칙은 정확히 32개', () => {
   // `non-string-field`가 세다 보면 흔히 빠진다 — 개수를 고정해 추가·삭제가
   // 테이블을 지나치지 못하게 한다.
-  expect(Object.keys(RULES).length).toBe(30);
+  expect(Object.keys(RULES).length).toBe(32);
 });
 
 test('RULES: --strict 승격(SEO_PUBLISH) 센티널은 정확히 6개', () => {

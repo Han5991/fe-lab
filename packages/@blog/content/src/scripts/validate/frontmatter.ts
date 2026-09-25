@@ -21,7 +21,13 @@ import {
 } from '../../post/index.ts';
 import { hasAmbiguousTimezone } from '../../shared/dates.ts';
 import { decodeUrlSafe } from '../../shared/url.ts';
-import { effectiveSlug, findFrontmatterLine } from './shared.ts';
+import {
+  effectiveSlug,
+  findFrontmatterLine,
+  frontmatterScalar,
+  isCalendarDate,
+  isOffsetDateTime,
+} from './shared.ts';
 import type { Issue, PostRecord, ValidateContext } from './shared.ts';
 import { resolveSeverity } from './rules.ts';
 
@@ -269,10 +275,35 @@ const excerptChain: Chain = ({ record: { data, relPath }, raw, options }) => {
   return issues;
 };
 
-// ── date 사슬: missing-date · invalid-date · ambiguous-date ─────────────────
+// ── date 사슬: missing-date · unquoted-date · invalid-date · ambiguous-date ──
+
+/**
+ * YAML이 Date 객체로 준 값이 **날짜만** 적힌 것이었나.
+ *
+ * 따옴표 없는 `2026-06-01`은 UTC 자정 Date가 되고, `toDateString`이 되돌리면
+ * 적은 날짜 그대로라 무해하다(실제 원고 두 편이 이렇게 쓴다). 따옴표 없는
+ * **시각**은 그렇지 않다 — 원문을 보고 가른다. 원문 줄을 못 찾으면(흐름 매핑 등)
+ * 값이 UTC 자정인지로 판정한다.
+ */
+function isDateOnlyTimestamp(value: Date, written: string | null): boolean {
+  if (written !== null) return /^\d{4}-\d{2}-\d{2}$/.test(written);
+  return value.getTime() % 86_400_000 === 0;
+}
 
 const dateChain: Chain = ({ record: { data, relPath }, raw, options }) => {
   const issues: Issue[] = [];
+  const line = findFrontmatterLine(raw, 'date');
+  const push = (
+    rule: 'invalid-date' | 'ambiguous-date' | 'unquoted-date',
+    message: string,
+  ) =>
+    issues.push({
+      file: relPath,
+      line,
+      severity: resolveSeverity(rule, data, options),
+      rule,
+      message,
+    });
 
   // `date`는 선택 필드가 아닙니다. 목록 정렬(filtering.ts), 아카이브 연도 필터,
   // sitemap lastmod, RSS pubDate가 모두 이 값을 읽고, `status: scheduled`는 이 값을
@@ -281,7 +312,7 @@ const dateChain: Chain = ({ record: { data, relPath }, raw, options }) => {
   if (data['date'] == null) {
     issues.push({
       file: relPath,
-      line: findFrontmatterLine(raw, 'date'),
+      line,
       severity: resolveSeverity('missing-date', data, options),
       rule: 'missing-date',
       message:
@@ -292,65 +323,111 @@ const dateChain: Chain = ({ record: { data, relPath }, raw, options }) => {
     return issues;
   }
 
-  const dateValid =
-    data['date'] instanceof Date ||
-    (typeof data['date'] === 'string' &&
-      !Number.isNaN(Date.parse(data['date'])));
-  if (!dateValid) {
-    issues.push({
-      file: relPath,
-      line: findFrontmatterLine(raw, 'date'),
-      severity: resolveSeverity('invalid-date', data, options),
-      rule: 'invalid-date',
-      message: `\`date\`가 유효한 날짜가 아닙니다: ${describeValue(data['date'])}`,
-    });
-  } else if (
-    typeof data['date'] === 'string' &&
-    hasAmbiguousTimezone(data['date'])
-  ) {
+  // 계약은 `'YYYY-MM-DD'` 하나다(AGENTS.md 표). 시각은 `scheduledDate`의 몫이다 —
+  // 같은 필드에 날짜와 datetime이 섞이면 사전순(시리즈·아카이브)·UTC 자정(목록)·
+  // KST 자정(공개 판정) 세 정렬이 서로 다른 순서를 낸다.
+  const value = data['date'];
+  if (value instanceof Date) {
+    const written = frontmatterScalar(raw, 'date');
+    if (!isDateOnlyTimestamp(value, written)) {
+      // 따옴표 없는 datetime은 YAML이 Date로 만들고, 로더는 그 **UTC 날짜**만
+      // 남긴다. `2026-10-01T08:00:00+09:00`은 `2026-09-30`이 되고, 예약 글이면
+      // 그날 KST 자정에 공개된다 — 의도보다 최대 하루 반 일찍.
+      push(
+        'unquoted-date',
+        `\`date\`에 따옴표 없는 시각이 있습니다 — YAML이 Date로 파싱해 UTC 날짜만 남기므로 날짜가 하루 당겨질 수 있고, 예약 글은 그만큼 일찍 공개됩니다. \`date: 'YYYY-MM-DD'\`로 쓰고 시각은 \`scheduledDate: '2026-06-01T09:00:00+09:00'\`처럼 따로 적으세요: ${written ?? describeValue(value)}`,
+      );
+    } else if (written !== null && !isCalendarDate(written)) {
+      // YAML은 `2026-02-30`을 오류 없이 3월 2일로 넘긴다.
+      push(
+        'invalid-date',
+        `\`date\`가 달력에 없는 날짜입니다(YAML이 다음 달로 넘깁니다): ${written}`,
+      );
+    }
+    return issues;
+  }
+
+  if (typeof value !== 'string') {
+    push(
+      'invalid-date',
+      `\`date\`가 유효한 날짜가 아닙니다: ${describeValue(value)}`,
+    );
+  } else if (isCalendarDate(value)) {
+    // 정상 — 'YYYY-MM-DD'
+  } else if (hasAmbiguousTimezone(value)) {
     // date도 sitemap lastmod / rss pubDate에서 parseScheduledDateKST를 거치므로
     // offset 없는 datetime이면 scheduledDate와 동일하게 환경 의존 회귀가 생긴다.
-    issues.push({
-      file: relPath,
-      line: findFrontmatterLine(raw, 'date'),
-      severity: resolveSeverity('ambiguous-date', data, options),
-      rule: 'ambiguous-date',
-      message: `\`date\`에 timezone offset이 없어 빌드 환경(UTC)과 로컬(KST)에서 날짜가 어긋날 수 있습니다. \`+09:00\`/\`Z\`를 명시하거나 'YYYY-MM-DD' 형식을 쓰세요: ${data['date']}`,
-    });
+    push(
+      'ambiguous-date',
+      `\`date\`에 timezone offset 없는 시각이 있어 빌드 환경(UTC)과 로컬(KST)에서 날짜가 어긋날 수 있습니다. \`date\`는 'YYYY-MM-DD'로 쓰고, 시각은 offset을 붙여 \`scheduledDate\`에 적으세요: ${value}`,
+    );
+  } else {
+    // '2026-5-4'·'2026/05/04'·'2026-02-30'·공백 구분 datetime·offset 붙은 datetime.
+    // 관대한 Date.parse는 앞의 것들을 **로컬 시각**으로 받아 CI(UTC)와 로컬(KST)의
+    // 공개 시각이 9시간 갈리고, JSON-LD에는 잘못된 ISO가 나간다.
+    push(
+      'invalid-date',
+      `\`date\`는 'YYYY-MM-DD' 형식의 실제 날짜여야 합니다(시각까지 정하려면 \`scheduledDate\`에 offset과 함께 적으세요): ${value}`,
+    );
   }
 
   return issues;
 };
 
-// ── updatedAt 사슬: invalid-updated-at · ambiguous-updated-at ───────────────
+// ── updatedAt 사슬: unquoted- · invalid- · ambiguous-updated-at ─────────────
 
 const updatedAtChain: Chain = ({ record: { data, relPath }, raw, options }) => {
   const issues: Issue[] = [];
   if (data['updatedAt'] == null) return issues;
+  const push = (
+    rule: 'invalid-updated-at' | 'ambiguous-updated-at' | 'unquoted-updated-at',
+    message: string,
+  ) =>
+    issues.push({
+      file: relPath,
+      line: findFrontmatterLine(raw, 'updatedAt'),
+      severity: resolveSeverity(rule, data, options),
+      rule,
+      message,
+    });
 
-  const updatedAtValid =
-    data['updatedAt'] instanceof Date ||
-    (typeof data['updatedAt'] === 'string' &&
-      !Number.isNaN(Date.parse(data['updatedAt'])));
-  if (!updatedAtValid) {
-    issues.push({
-      file: relPath,
-      line: findFrontmatterLine(raw, 'updatedAt'),
-      severity: resolveSeverity('invalid-updated-at', data, options),
-      rule: 'invalid-updated-at',
-      message: `\`updatedAt\`이 유효한 날짜가 아닙니다: ${describeValue(data['updatedAt'])}`,
-    });
-  } else if (
-    typeof data['updatedAt'] === 'string' &&
-    hasAmbiguousTimezone(data['updatedAt'])
-  ) {
-    issues.push({
-      file: relPath,
-      line: findFrontmatterLine(raw, 'updatedAt'),
-      severity: resolveSeverity('ambiguous-updated-at', data, options),
-      rule: 'ambiguous-updated-at',
-      message: `\`updatedAt\`에 timezone offset이 없어 빌드 환경(UTC)과 로컬(KST)에서 날짜가 어긋날 수 있습니다. \`+09:00\`/\`Z\`를 명시하거나 'YYYY-MM-DD' 형식을 쓰세요: ${data['updatedAt']}`,
-    });
+  // `updatedAt`은 수정 시각이라 datetime도 받는다(Schema.org dateModified) — 단
+  // offset을 명시한 ISO여야 한다. 따옴표 없는 datetime은 date와 같은 이유로 UTC
+  // 날짜만 남는다.
+  const value = data['updatedAt'];
+  if (value instanceof Date) {
+    const written = frontmatterScalar(raw, 'updatedAt');
+    if (!isDateOnlyTimestamp(value, written)) {
+      push(
+        'unquoted-updated-at',
+        `\`updatedAt\`에 따옴표 없는 시각이 있습니다 — YAML이 Date로 파싱해 UTC 날짜만 남기므로 dateModified·sitemap lastmod가 하루 어긋날 수 있습니다. 'YYYY-MM-DD'나 따옴표로 감싼 '2026-06-01T09:00:00+09:00'으로 쓰세요: ${written ?? describeValue(value)}`,
+      );
+    } else if (written !== null && !isCalendarDate(written)) {
+      push(
+        'invalid-updated-at',
+        `\`updatedAt\`이 달력에 없는 날짜입니다(YAML이 다음 달로 넘깁니다): ${written}`,
+      );
+    }
+    return issues;
+  }
+
+  if (typeof value !== 'string') {
+    push(
+      'invalid-updated-at',
+      `\`updatedAt\`이 유효한 날짜가 아닙니다: ${describeValue(value)}`,
+    );
+  } else if (isCalendarDate(value) || isOffsetDateTime(value)) {
+    // 정상
+  } else if (hasAmbiguousTimezone(value)) {
+    push(
+      'ambiguous-updated-at',
+      `\`updatedAt\`에 timezone offset이 없어 빌드 환경(UTC)과 로컬(KST)에서 날짜가 어긋날 수 있습니다. \`+09:00\`/\`Z\`를 명시하거나 'YYYY-MM-DD' 형식을 쓰세요: ${value}`,
+    );
+  } else {
+    push(
+      'invalid-updated-at',
+      `\`updatedAt\`은 'YYYY-MM-DD'나 offset을 명시한 ISO datetime('2026-06-01T09:00:00+09:00')이어야 합니다: ${value}`,
+    );
   }
   return issues;
 };
@@ -383,27 +460,31 @@ const scheduledDateChain: Chain = ({
     // 여기서 scheduled-without-date로 따로 검사했지만, date가 필수가 되면서 그 조건
     // (`scheduledDate도 date도 없음`)은 missing-date에 완전히 포섭돼 같은 파일에
     // 에러 두 개가 뜰 뿐이었습니다.
+    const scheduledDate = data['scheduledDate'];
     if (
-      typeof data['scheduledDate'] === 'string' &&
-      Number.isNaN(Date.parse(data['scheduledDate']))
+      typeof scheduledDate !== 'string' ||
+      isCalendarDate(scheduledDate) ||
+      isOffsetDateTime(scheduledDate)
     ) {
-      issues.push({
-        file: relPath,
-        line: findFrontmatterLine(raw, 'scheduledDate'),
-        severity: resolveSeverity('invalid-scheduled-date', data, options),
-        rule: 'invalid-scheduled-date',
-        message: `\`scheduledDate\`가 유효한 날짜가 아닙니다: ${data['scheduledDate']}`,
-      });
-    } else if (
-      typeof data['scheduledDate'] === 'string' &&
-      hasAmbiguousTimezone(data['scheduledDate'])
-    ) {
+      // 문자열이 아닌 값은 위의 unquoted-scheduled-date가 잡았다. 날짜만 적은
+      // 값은 `date`와 같은 뜻이라 중복일 뿐 틀리지는 않다.
+    } else if (hasAmbiguousTimezone(scheduledDate)) {
       issues.push({
         file: relPath,
         line: findFrontmatterLine(raw, 'scheduledDate'),
         severity: resolveSeverity('ambiguous-scheduled-date', data, options),
         rule: 'ambiguous-scheduled-date',
-        message: `\`scheduledDate\`에 timezone offset이 없어 빌드 환경(UTC)과 로컬(KST)에서 발행 시각이 ~9시간 어긋날 수 있습니다. \`+09:00\` 또는 \`Z\`를 명시하거나 'YYYY-MM-DD' 형식을 쓰세요: ${data['scheduledDate']}`,
+        message: `\`scheduledDate\`에 timezone offset이 없어 빌드 환경(UTC)과 로컬(KST)에서 발행 시각이 ~9시간 어긋날 수 있습니다. \`+09:00\` 또는 \`Z\`를 명시하거나 'YYYY-MM-DD' 형식을 쓰세요: ${scheduledDate}`,
+      });
+    } else {
+      // 'bad'·공백 구분(`2026-06-01 09:00+09:00`)·달력에 없는 날짜. V8의 관대한
+      // Date.parse는 일부를 받아 주지만 런타임마다 해석이 갈린다.
+      issues.push({
+        file: relPath,
+        line: findFrontmatterLine(raw, 'scheduledDate'),
+        severity: resolveSeverity('invalid-scheduled-date', data, options),
+        rule: 'invalid-scheduled-date',
+        message: `\`scheduledDate\`는 offset을 명시한 ISO datetime('2026-06-01T09:00:00+09:00')이어야 합니다: ${scheduledDate}`,
       });
     }
   }

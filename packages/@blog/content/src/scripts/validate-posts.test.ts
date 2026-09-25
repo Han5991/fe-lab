@@ -1311,3 +1311,100 @@ test('og-thumbnail-mismatch: 명시 slug·파일 경로 slug·인코딩된 표�
     'og-thumbnail-mismatch',
   ]);
 });
+
+// ── 날짜 모양: date는 'YYYY-MM-DD', 시각은 offset과 함께 ────────────────────
+
+/** 원문 줄까지 함께 준 frontmatter로 검사 — YAML Date는 원문을 봐야 판정된다. */
+function dateRules(
+  data: Record<string, unknown>,
+  frontmatter: string,
+): string[] {
+  return validatePost(
+    rec({ title: 'x', status: 'published', excerpt: VALID_EXCERPT, ...data }),
+    `---\ntitle: x\n${frontmatter}\n---\n`,
+  ).map(i => i.rule);
+}
+
+test('unquoted-date: 따옴표 없는 datetime은 UTC 날짜로 당겨지므로 에러', () => {
+  // `date: 2026-10-01T08:00:00+09:00` → YAML Date(2026-09-30T23:00Z) → 로더는
+  // '2026-09-30'만 남긴다. 예약 글이면 9/30 KST 자정에 공개된다(32시간 일찍).
+  expect(
+    dateRules(
+      { date: new Date('2026-10-01T08:00:00+09:00') },
+      'date: 2026-10-01T08:00:00+09:00',
+    ),
+  ).toStrictEqual(['unquoted-date']);
+  // UTC 자정에 떨어지는 시각도 시각이다 — 값이 아니라 원문으로 가른다.
+  expect(
+    dateRules(
+      { date: new Date('2026-10-01T09:00:00+09:00') },
+      'date: 2026-10-01T09:00:00+09:00 # 오전 9시',
+    ),
+  ).toStrictEqual(['unquoted-date']);
+});
+
+test('date: 따옴표 없는 날짜만(`date: 2026-03-16`)은 무해하므로 통과', () => {
+  // 실제 원고 두 편이 이렇게 쓴다 — UTC 자정 Date가 되고 같은 날짜로 되돌아온다.
+  expect(
+    dateRules({ date: new Date('2026-03-16') }, 'date: 2026-03-16'),
+  ).toStrictEqual([]);
+});
+
+test('invalid-date: 달력에 없는 날짜는 따옴표 여부와 무관하게 잡는다', () => {
+  // YAML은 `2026-02-30`을 오류 없이 3월 2일로 넘긴다.
+  expect(
+    dateRules({ date: new Date(Date.UTC(2026, 1, 30)) }, 'date: 2026-02-30'),
+  ).toStrictEqual(['invalid-date']);
+  expect(dateRules({ date: '2026-02-30' }, "date: '2026-02-30'")).toStrictEqual(
+    ['invalid-date'],
+  );
+});
+
+test.each([
+  '2026-5-4',
+  '2026/05/04',
+  '2026-03-16 09:00:00+09:00',
+  // 시각은 scheduledDate의 몫 — date는 날짜 하나만 받는다.
+  '2026-03-16T09:00:00+09:00',
+])('invalid-date: 관대한 Date.parse가 받던 모양 %s를 잡는다', date => {
+  expect(dateRules({ date }, `date: '${date}'`)).toStrictEqual([
+    'invalid-date',
+  ]);
+});
+
+test('updatedAt: offset 붙은 ISO datetime은 통과, 따옴표 없는 시각·다른 모양은 잡는다', () => {
+  const base = { date: '2026-01-01' };
+  expect(
+    dateRules(
+      { ...base, updatedAt: '2026-06-01T09:00:00+09:00' },
+      "updatedAt: '2026-06-01T09:00:00+09:00'",
+    ),
+  ).toStrictEqual([]);
+  expect(
+    dateRules(
+      { ...base, updatedAt: new Date('2026-06-01T08:00:00+09:00') },
+      'updatedAt: 2026-06-01T08:00:00+09:00',
+    ),
+  ).toStrictEqual(['unquoted-updated-at']);
+  expect(
+    dateRules({ ...base, updatedAt: '2026/06/01' }, "updatedAt: '2026/06/01'"),
+  ).toStrictEqual(['invalid-updated-at']);
+});
+
+test('scheduledDate: offset 명시 ISO만 받고, 공백 구분·달력 밖 날짜는 invalid-scheduled-date', () => {
+  const scheduled = (scheduledDate: string) =>
+    rules({
+      title: 'x',
+      status: 'scheduled',
+      date: '2026-06-01',
+      scheduledDate,
+      excerpt: VALID_EXCERPT,
+    });
+  expect(scheduled('2026-06-01T09:00:00Z')).toStrictEqual([]);
+  expect(scheduled('2026-06-01 09:00:00+09:00')).toStrictEqual([
+    'invalid-scheduled-date',
+  ]);
+  expect(scheduled('2026-02-30T09:00:00+09:00')).toStrictEqual([
+    'invalid-scheduled-date',
+  ]);
+});
