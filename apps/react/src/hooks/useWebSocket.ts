@@ -10,6 +10,12 @@ interface UseWebSocketOptions {
   reconnectInterval?: number;
   /** 재연결 지연 시간 증가 배수 (기본: 1.5) */
   reconnectBackoffMultiplier?: number;
+  /**
+   * 서버 메시지마다 한 번씩, 도착한 순서대로 불린다.
+   * `messages` state는 렌더 단위로 묶이므로(연달아 온 프레임은 한 렌더에 합쳐진다)
+   * 메시지마다 처리할 일은 state가 아니라 이 콜백에서 해야 빠지지 않는다.
+   */
+  onMessage?: (data: string) => void;
 }
 
 interface UseWebSocketReturn {
@@ -42,6 +48,7 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
     maxReconnectAttempts = 5,
     reconnectInterval = 1000,
     reconnectBackoffMultiplier = 1.5,
+    onMessage,
   } = options;
 
   const [messages, setMessages] = useState<string[]>([]);
@@ -61,6 +68,12 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
   // 열린다. 판정·백오프는 ref로 읽고 state(reconnectAttempt)는 UI 표시용으로만
   // 쓴다.
   const reconnectAttemptRef = useRef(0);
+  // onMessage는 보통 인라인 함수라 매 렌더 바뀐다. connect deps에 넣으면 렌더마다
+  // 소켓을 다시 연다 — 최신 콜백을 ref로 읽는다.
+  const onMessageRef = useRef(onMessage);
+  useEffect(() => {
+    onMessageRef.current = onMessage;
+  });
 
   const addSystemMessage = useCallback((message: string) => {
     setMessages(prev => [...prev, `[시스템] ${message}`]);
@@ -81,7 +94,9 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
 
       ws.onmessage = event => {
         console.log('Received message:', event.data);
-        setMessages(prev => [...prev, `수신: ${event.data}`]);
+        const data = String(event.data);
+        setMessages(prev => [...prev, `수신: ${data}`]);
+        onMessageRef.current?.(data);
       };
 
       ws.onerror = error => {

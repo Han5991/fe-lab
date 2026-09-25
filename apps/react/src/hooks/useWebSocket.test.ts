@@ -1,48 +1,8 @@
 import { renderHook, act } from '@testing-library/react';
+import { MockWebSocket } from '@/test/MockWebSocket';
 import { useWebSocket } from './useWebSocket';
 
-class MockWebSocket {
-  static CONNECTING = 0;
-  static OPEN = 1;
-  static CLOSING = 2;
-  static CLOSED = 3;
-  static instances: MockWebSocket[] = [];
-
-  url: string;
-  readyState = MockWebSocket.CONNECTING;
-  onopen: ((ev: Event) => void) | null = null;
-  onmessage: ((ev: MessageEvent) => void) | null = null;
-  onerror: ((ev: Event) => void) | null = null;
-  onclose: ((ev: CloseEvent) => void) | null = null;
-  sent: string[] = [];
-
-  constructor(url: string) {
-    this.url = url;
-    MockWebSocket.instances.push(this);
-  }
-
-  send(data: string) {
-    this.sent.push(data);
-  }
-
-  close(code = 1000) {
-    this.simulateClose(code);
-  }
-
-  // 테스트 헬퍼 — 서버 쪽 이벤트를 흉내낸다
-  simulateOpen() {
-    this.readyState = MockWebSocket.OPEN;
-    this.onopen?.(new Event('open'));
-  }
-
-  simulateClose(code: number) {
-    this.readyState = MockWebSocket.CLOSED;
-    this.onclose?.({ code } as CloseEvent);
-  }
-}
-
-const lastSocket = () =>
-  MockWebSocket.instances[MockWebSocket.instances.length - 1];
+const lastSocket = () => MockWebSocket.last();
 
 describe('useWebSocket', () => {
   beforeEach(() => {
