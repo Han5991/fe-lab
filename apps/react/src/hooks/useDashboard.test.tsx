@@ -20,28 +20,38 @@ const createWrapper = () => {
   );
 };
 
-/**
- * useSuspenseQuery는 실패를 렌더 중에 throw한다 — 에러 바운더리로 감싸 그 에러가
- * 실제로 바운더리까지 올라왔는지(메시지가 화면에 그려졌는지) 확인한다
- */
-const renderWithBoundary = (useHook: () => unknown) => {
-  const queryClient = new QueryClient({
-    defaultOptions: { queries: { retry: false } },
-  });
-  return renderHook(useHook, {
-    wrapper: ({ children }: { children: React.ReactNode }) => (
-      <QueryClientProvider client={queryClient}>
-        <ErrorBoundary>
-          <Suspense fallback={<p>로딩</p>}>{children}</Suspense>
-        </ErrorBoundary>
-      </QueryClientProvider>
-    ),
-  });
-};
-
 afterEach(() => {
   vi.restoreAllMocks();
 });
+
+test.each([
+  ['getDashboardStats', useDashboardStats],
+  ['getChartData', useChartData],
+  ['getActivities', useActivities],
+] as const)(
+  '%s가 실패하면 에러가 에러 바운더리까지 올라간다',
+  async (api, useHook) => {
+    vi.spyOn(dashboardApi, api).mockRejectedValue(new Error(`${api} 실패`));
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+
+    renderHook(() => useHook(), {
+      wrapper: ({ children }: { children: React.ReactNode }) => (
+        <QueryClientProvider client={queryClient}>
+          <ErrorBoundary>
+            <Suspense fallback={<p>로딩</p>}>{children}</Suspense>
+          </ErrorBoundary>
+        </QueryClientProvider>
+      ),
+    });
+
+    expect(
+      await screen.findByRole('heading', { name: `${api} 실패` }),
+    ).toBeInTheDocument();
+  },
+);
 
 describe('useDashboardStats', () => {
   beforeEach(() => {
@@ -68,19 +78,6 @@ describe('useDashboardStats', () => {
 
     expect(dashboardApi.getDashboardStats).toHaveBeenCalledTimes(1);
   });
-
-  test('통계 데이터 로드 중 에러가 발생하면 에러가 throw된다', async () => {
-    const mockError = new Error('통계 데이터 로드 실패');
-    vi.spyOn(dashboardApi, 'getDashboardStats').mockRejectedValue(mockError);
-
-    vi.spyOn(console, 'error').mockImplementation(() => {});
-
-    renderWithBoundary(() => useDashboardStats());
-
-    expect(
-      await screen.findByRole('heading', { name: '통계 데이터 로드 실패' }),
-    ).toBeInTheDocument();
-  });
 });
 
 describe('useChartData', () => {
@@ -105,19 +102,6 @@ describe('useChartData', () => {
     });
 
     expect(dashboardApi.getChartData).toHaveBeenCalledTimes(1);
-  });
-
-  test('차트 데이터 로드 중 에러가 발생하면 에러가 throw된다', async () => {
-    const mockError = new Error('차트 데이터 로드 실패');
-    vi.spyOn(dashboardApi, 'getChartData').mockRejectedValue(mockError);
-
-    vi.spyOn(console, 'error').mockImplementation(() => {});
-
-    renderWithBoundary(() => useChartData());
-
-    expect(
-      await screen.findByRole('heading', { name: '차트 데이터 로드 실패' }),
-    ).toBeInTheDocument();
   });
 });
 
@@ -153,18 +137,5 @@ describe('useActivities', () => {
     });
 
     expect(dashboardApi.getActivities).toHaveBeenCalledTimes(1);
-  });
-
-  test('활동 데이터 로드 중 에러가 발생하면 에러가 throw된다', async () => {
-    const mockError = new Error('활동 데이터 로드 실패');
-    vi.spyOn(dashboardApi, 'getActivities').mockRejectedValue(mockError);
-
-    vi.spyOn(console, 'error').mockImplementation(() => {});
-
-    renderWithBoundary(() => useActivities());
-
-    expect(
-      await screen.findByRole('heading', { name: '활동 데이터 로드 실패' }),
-    ).toBeInTheDocument();
   });
 });

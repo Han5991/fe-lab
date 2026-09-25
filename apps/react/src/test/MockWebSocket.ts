@@ -1,7 +1,4 @@
-/**
- * 테스트용 WebSocket 대역. `vi.stubGlobal('WebSocket', MockWebSocket)`으로 끼운다.
- * 서버 쪽 이벤트(open·message·close)는 simulate* 헬퍼로 흉내 낸다.
- */
+/** `vi.stubGlobal('WebSocket', MockWebSocket)`으로 끼우고 서버 이벤트는 simulate*로 흉내 낸다 */
 export class MockWebSocket {
   static CONNECTING = 0;
   static OPEN = 1;

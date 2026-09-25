@@ -4,15 +4,25 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MockWebSocket } from '@/test/MockWebSocket';
 import { useWebSocketQuery } from './useWebSocketQuery';
 
-const createWrapper = (queryClient: QueryClient) =>
-  function Wrapper({ children }: { children: ReactNode }) {
-    return (
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    );
-  };
-
 describe('useWebSocketQuery', () => {
   let queryClient: QueryClient;
+
+  const renderQuery = (
+    options: Omit<Parameters<typeof useWebSocketQuery>[0], 'url'>,
+  ) => {
+    const hook = renderHook(
+      () => useWebSocketQuery({ url: 'ws://test', ...options }),
+      {
+        wrapper: ({ children }: { children: ReactNode }) => (
+          <QueryClientProvider client={queryClient}>
+            {children}
+          </QueryClientProvider>
+        ),
+      },
+    );
+    act(() => MockWebSocket.last().simulateOpen());
+    return hook;
+  };
 
   beforeEach(() => {
     MockWebSocket.instances = [];
@@ -26,73 +36,24 @@ describe('useWebSocketQuery', () => {
     vi.restoreAllMocks();
   });
 
-  test('렌더 전에 연달아 도착한 메시지도 빠짐없이 순서대로 onMessage에 넘긴다', () => {
+  test('서버 메시지를 도착 순서대로 하나씩 넘기고 내가 보낸 메시지는 넘기지 않는다', () => {
     const received: string[] = [];
-    renderHook(
-      () =>
-        useWebSocketQuery({
-          url: 'ws://test',
-          onMessage: data => received.push(data),
-        }),
-      { wrapper: createWrapper(queryClient) },
-    );
-    act(() => MockWebSocket.last().simulateOpen());
+    const { result } = renderQuery({ onMessage: data => received.push(data) });
 
-    // 한 틱에 시세 두 개 — React는 두 setState를 한 렌더로 합친다
+    // 한 틱에 온 두 프레임(한 렌더로 합쳐진다)과 다음 렌더의 같은 내용
     act(() => {
-      MockWebSocket.last().simulateMessage('{"symbol":"AAPL"}');
-      MockWebSocket.last().simulateMessage('{"symbol":"MSFT"}');
+      MockWebSocket.last().simulateMessage('AAPL');
+      MockWebSocket.last().simulateMessage('MSFT');
     });
-
-    expect(received).toEqual(['{"symbol":"AAPL"}', '{"symbol":"MSFT"}']);
-  });
-
-  test('같은 내용이 연속으로 와도 각각 처리한다', () => {
-    const received: string[] = [];
-    renderHook(
-      () =>
-        useWebSocketQuery({
-          url: 'ws://test',
-          onMessage: data => received.push(data),
-        }),
-      { wrapper: createWrapper(queryClient) },
-    );
-    act(() => MockWebSocket.last().simulateOpen());
-
-    act(() => MockWebSocket.last().simulateMessage('tick'));
-    act(() => MockWebSocket.last().simulateMessage('tick'));
-
-    expect(received).toEqual(['tick', 'tick']);
-  });
-
-  test('내가 보낸 메시지는 수신 처리하지 않는다', () => {
-    const received: string[] = [];
-    const { result } = renderHook(
-      () =>
-        useWebSocketQuery({
-          url: 'ws://test',
-          onMessage: data => received.push(data),
-        }),
-      { wrapper: createWrapper(queryClient) },
-    );
-    act(() => MockWebSocket.last().simulateOpen());
-
+    act(() => MockWebSocket.last().simulateMessage('MSFT'));
     act(() => result.current.sendMessage('hello'));
 
-    expect(received).toEqual([]);
+    expect(received).toEqual(['AAPL', 'MSFT', 'MSFT']);
   });
 
   test('메시지마다 지정한 쿼리를 무효화한다', () => {
     const invalidate = vi.spyOn(queryClient, 'invalidateQueries');
-    renderHook(
-      () =>
-        useWebSocketQuery({
-          url: 'ws://test',
-          invalidateQueries: [['stocks']],
-        }),
-      { wrapper: createWrapper(queryClient) },
-    );
-    act(() => MockWebSocket.last().simulateOpen());
+    renderQuery({ invalidateQueries: [['stocks']] });
 
     act(() => {
       MockWebSocket.last().simulateMessage('a');

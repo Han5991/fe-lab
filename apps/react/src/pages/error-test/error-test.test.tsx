@@ -82,37 +82,35 @@ describe('ErrorTest 컴포넌트', () => {
     expect(screen.getByText('Conditional Success!')).toBeInTheDocument();
   });
 
-  // 에러 메시지가 버튼 라벨과 같아서 getByText만으로는 경계가 떴는지 구분되지 않는다 —
-  // 경계가 그리는 제목(heading)과 버튼이 사라졌는지를 함께 본다
-  test('버튼 클릭 시 에러 발생', async () => {
-    vi.spyOn(hooks, 'useSimpleQuery').mockReturnValue({
-      data: { message: 'Success!' },
-      error: null,
-      isLoading: false,
-    });
-    vi.spyOn(console, 'error').mockImplementation(() => {});
-    // 비동기 섹션은 성공 쪽으로 고정한다
-    vi.spyOn(Math, 'random').mockReturnValue(0.9);
+  // 트랜지션 안에서 던진 에러(Add Comment)도 포함. 에러 메시지가 버튼 라벨과 같아
+  // 경계가 그린 제목과 버튼이 사라졌는지로 구분한다
+  test.each(['error button', 'Add Comment'])(
+    '%s 클릭으로 던진 에러는 에러 경계가 잡는다',
+    async name => {
+      vi.spyOn(hooks, 'useSimpleQuery').mockReturnValue({
+        data: { message: 'Success!' },
+        error: null,
+        isLoading: false,
+      });
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      vi.spyOn(Math, 'random').mockReturnValue(0.9);
 
-    await act(async () => {
-      render(
-        <ErrorBoundary>
-          <ErrorTest />
-        </ErrorBoundary>,
-      );
-    });
+      await act(async () => {
+        render(
+          <ErrorBoundary>
+            <ErrorTest />
+          </ErrorBoundary>,
+        );
+      });
 
-    await act(async () => {
-      screen.getByRole('button', { name: 'error button' }).click();
-    });
+      await act(async () => {
+        screen.getByRole('button', { name }).click();
+      });
 
-    expect(
-      screen.getByRole('heading', { name: 'error button' }),
-    ).toBeInTheDocument();
-    expect(
-      screen.queryByRole('button', { name: 'error button' }),
-    ).not.toBeInTheDocument();
-  });
+      expect(screen.getByRole('heading', { name })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name })).not.toBeInTheDocument();
+    },
+  );
 
   test('에러 객체를 만들기만 하고 던지지 않는 버튼은 페이지를 깨뜨리지 않는다', async () => {
     vi.spyOn(hooks, 'useSimpleQuery').mockReturnValue({
@@ -166,35 +164,6 @@ describe('ErrorTest 컴포넌트', () => {
     expect(screen.getByText('error button')).toBeInTheDocument();
     expect(screen.getByText('not error button')).toBeInTheDocument();
     expect(screen.getByText('Add Comment')).toBeInTheDocument();
-  });
-
-  test('트랜지션 안에서 던진 에러도 에러 경계가 잡는다 (Add Comment)', async () => {
-    vi.spyOn(hooks, 'useSimpleQuery').mockReturnValue({
-      data: { message: 'Success!' },
-      error: null,
-      isLoading: false,
-    });
-    vi.spyOn(console, 'error').mockImplementation(() => {});
-    vi.spyOn(Math, 'random').mockReturnValue(0.9);
-
-    await act(async () => {
-      render(
-        <ErrorBoundary>
-          <ErrorTest />
-        </ErrorBoundary>,
-      );
-    });
-
-    await act(async () => {
-      screen.getByRole('button', { name: 'Add Comment' }).click();
-    });
-
-    expect(
-      screen.getByRole('heading', { name: 'Add Comment' }),
-    ).toBeInTheDocument();
-    expect(
-      screen.queryByRole('button', { name: 'Add Comment' }),
-    ).not.toBeInTheDocument();
   });
 });
 

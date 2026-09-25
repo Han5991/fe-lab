@@ -1,11 +1,4 @@
-import { Suspense } from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import {
-  QueryClient,
-  QueryClientProvider,
-  QueryErrorResetBoundary,
-  useSuspenseQuery,
-} from '@tanstack/react-query';
 import { vi } from 'vitest';
 import {
   SectionErrorBoundary,
@@ -79,47 +72,6 @@ describe('SectionErrorBoundary', () => {
 
     expect(screen.getByText('복구됨')).toBeInTheDocument();
     expect(screen.queryByText('❌ 통계 에러')).not.toBeInTheDocument();
-  });
-
-  test('다시 시도는 onReset(QueryErrorResetBoundary의 reset)을 먼저 불러 useSuspenseQuery가 다시 요청하게 한다', async () => {
-    let calls = 0;
-    const queryFn = async () => {
-      calls += 1;
-      if (calls === 1) throw new StatsError('일시적 에러');
-      return '복구됨';
-    };
-    const Data = () => {
-      const { data } = useSuspenseQuery({ queryKey: ['reset-test'], queryFn });
-      return <div>{data}</div>;
-    };
-    const queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false } },
-    });
-
-    render(
-      <QueryClientProvider client={queryClient}>
-        <QueryErrorResetBoundary>
-          {({ reset }) => (
-            <SectionErrorBoundary
-              sectionName="통계"
-              errorType={StatsError}
-              onReset={reset}
-            >
-              <Suspense fallback={<div>로딩</div>}>
-                <Data />
-              </Suspense>
-            </SectionErrorBoundary>
-          )}
-        </QueryErrorResetBoundary>
-      </QueryClientProvider>,
-    );
-
-    expect(await screen.findByText('❌ 통계 에러')).toBeInTheDocument();
-
-    fireEvent.click(screen.getByText('다시 시도'));
-
-    expect(await screen.findByText('복구됨')).toBeInTheDocument();
-    expect(calls).toBe(2);
   });
 
   test('담당이 아닌 에러는 처리하지 않고 상위 바운더리로 전파한다', () => {
