@@ -20,6 +20,7 @@ import {
   rejectionReasonFor,
   resolvePostSlug,
 } from '../../post/index.ts';
+import { isExternalUrl } from '../../post/assetUrl.ts';
 import {
   hasAmbiguousTimezone,
   isIsoDateOnly,
@@ -588,7 +589,7 @@ const thumbnailChain: Chain = ({ record, raw, options }) => {
       },
     ];
   }
-  if (/^https?:\/\//.test(thumb) || thumb.startsWith('/')) return [];
+  if (isExternalUrl(thumb) || thumb.startsWith('/')) return [];
   if (!isBareThumbnailName(thumb)) {
     return [
       {

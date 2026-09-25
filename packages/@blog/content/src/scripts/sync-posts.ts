@@ -8,6 +8,7 @@ import {
 } from 'node:fs';
 import { dirname, extname, join, posix, relative, sep } from 'node:path';
 import { POSTS_PATH, type PostData } from '../post/index.ts';
+import { isExternalUrl } from '../post/assetUrl.ts';
 import { decodeUrlSafe } from '../shared/url.ts';
 import { resolvePostSet } from './artifacts.ts';
 // 경로는 컨텍스트(ContentContext.paths — content.config.ts에 앵커)에서 온다.
@@ -102,7 +103,7 @@ function thumbnailMediaPath(
   post: Pick<PostData, 'thumbnail' | 'relativeDir'>,
 ): string | null {
   const thumbnail = post.thumbnail;
-  if (!thumbnail || /^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(thumbnail)) {
+  if (!thumbnail || isExternalUrl(thumbnail)) {
     return null;
   }
   if (thumbnail.startsWith('/')) {

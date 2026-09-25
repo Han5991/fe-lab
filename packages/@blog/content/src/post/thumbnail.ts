@@ -4,20 +4,12 @@
 // 클라이언트 번들에 실린다. 서버 전용인 절대 URL 빌더만 슬라이스를 받는다.
 import type { SiteConfig } from '../shared/contentConfig.ts';
 import type { PostData } from './types.ts';
+import { isExternalUrl } from './assetUrl.ts';
 import { encodePostSlug } from './utils.ts';
-
-/**
- * 외부 URL(`https:`·`data:` 같은 스킴, `//` 프로토콜 상대)인가.
- *
- * 본문 이미지의 `resolvePostAssetUrl`(assetUrl.ts)과 **같은 판정**이다. 예전에는
- * `startsWith('http')`라서 `http2-flow.png` 같은 상대 파일명이 외부 URL로 분류돼
- * 카드·og:image가 맨 파일명을 가리켰다.
- */
-const EXTERNAL_URL = /^(?:[a-z][a-z0-9+.-]*:|\/\/)/i;
 
 /** 그대로 쓰는 값인가 — 외부 URL이거나 사이트 루트 경로(`/og/…`). */
 function isAbsoluteThumbnail(thumbnail: string): boolean {
-  return EXTERNAL_URL.test(thumbnail) || thumbnail.startsWith('/');
+  return isExternalUrl(thumbnail) || thumbnail.startsWith('/');
 }
 
 /**
@@ -123,6 +115,6 @@ export function resolveAbsoluteThumbnailUrl(
   // 프로토콜 상대(`//cdn…`)는 origin을 앞에 붙이면 `https://blog//cdn…`이 된다 —
   // 사이트의 스킴만 빌려 절대 URL로 만든다.
   if (url.startsWith('//')) return `${new URL(site.url).protocol}${url}`;
-  if (EXTERNAL_URL.test(url)) return url;
+  if (isExternalUrl(url)) return url;
   return `${site.url}${url}`;
 }

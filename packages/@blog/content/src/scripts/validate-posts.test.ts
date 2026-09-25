@@ -15,7 +15,11 @@ import {
 import { defineTestContent } from '../shared/testValues.ts';
 import { toValidateContext } from './validate/shared.ts';
 import { sep } from 'node:path';
-import { FRONTMATTER_KEYS, isPostVisible } from '../post/index.ts';
+import {
+  FRONTMATTER_KEYS,
+  isPostVisible,
+  resolveThumbnailUrl,
+} from '../post/index.ts';
 import { parsePost } from '../post/repository.ts';
 import { resolveOptions } from './new-post.ts';
 
@@ -1513,6 +1517,27 @@ test.each(['./cover.png', 'img/cover.png', '../cover.png', 'img\\cover.png'])(
         excerpt: VALID_EXCERPT,
       }),
     ).toStrictEqual(['invalid-thumbnail-path']);
+  },
+);
+
+test.each(['data:image/png;base64,iVBOR/w0KGgo=', '//cdn.example/x.png'])(
+  'thumbnail %s: 로더가 그대로 쓰는 외부 URL은 경로 검사를 하지 않는다',
+  thumbnail => {
+    expect(
+      resolveThumbnailUrl(
+        { thumbnail, relativeDir: 'a', slug: 'a' },
+        '/og.png',
+      ),
+    ).toBe(thumbnail);
+    expect(
+      rules({
+        title: 'x',
+        status: 'published',
+        date: '2025-01-01',
+        thumbnail,
+        excerpt: VALID_EXCERPT,
+      }),
+    ).toStrictEqual([]);
   },
 );
 
