@@ -8,8 +8,18 @@ import type { Duplex } from 'node:stream';
 interface WebSocketServerOptions {
   /** 허용할 Origin 목록. null이면 모든 origin 허용 */
   allowedOrigins?: string[] | null;
-  /** 세션 타임아웃 시간 (밀리초). 기본값: 5분 */
+  /** 세션 타임아웃 시간 (밀리초). 이 시간 동안 아무것도 받지 못한 연결을 닫는다. 기본값: 5분 */
   sessionTimeout?: number;
+  /**
+   * 서버가 Ping을 보내는 주기 (밀리초). 기본값: 30초
+   *
+   * 듣기만 하는 클라이언트(시세 화면)는 보낼 게 없다. 브라우저는 Ping에 Pong을 자동으로
+   * 답하므로, 그 Pong이 "살아 있음"을 알려 sessionTimeout에 걸리지 않게 한다.
+   * Pong도 오지 않는 연결은 죽은 것으로 보고 닫는다.
+   */
+  heartbeatInterval?: number;
+  /** 비활성 세션을 검사하는 주기 (밀리초). 기본값: 1분 */
+  cleanupInterval?: number;
 }
 
 /**
@@ -106,7 +116,10 @@ export class WebSocketServer {
   private readonly sessions: Map<string, WebSocketConnection>;
   private readonly allowedOrigins: string[] | null;
   private readonly sessionTimeout: number;
+  private readonly heartbeatInterval: number;
+  private readonly cleanupInterval: number;
   private cleanupIntervalId: NodeJS.Timeout | null;
+  private heartbeatIntervalId: NodeJS.Timeout | null;
   private stockBroadcastIntervalId: NodeJS.Timeout | null;
   private stockData: Map<string, StockData>;
 
@@ -116,7 +129,10 @@ export class WebSocketServer {
     this.sessions = new Map();
     this.allowedOrigins = options.allowedOrigins || null; // null이면 모든 origin 허용
     this.sessionTimeout = options.sessionTimeout || 5 * 60 * 1000; // 기본 5분
+    this.heartbeatInterval = options.heartbeatInterval || 30 * 1000; // 기본 30초
+    this.cleanupInterval = options.cleanupInterval || 60 * 1000; // 기본 1분
     this.cleanupIntervalId = null;
+    this.heartbeatIntervalId = null;
     this.stockBroadcastIntervalId = null;
 
     // 주식 데이터 초기화
@@ -171,8 +187,11 @@ export class WebSocketServer {
     // HTTP 서버의 upgrade 이벤트를 리스닝
     this.httpServer.on('upgrade', this.handleUpgrade.bind(this));
 
-    // 세션 정리 타이머 시작 (1분마다 체크)
+    // 세션 정리 타이머 시작 (기본 1분마다 체크)
     this.startCleanupTimer();
+
+    // 하트비트 시작 (기본 30초마다 Ping)
+    this.startHeartbeat();
 
     // 주식 데이터 브로드캐스트 시작 (1초마다)
     this.startStockBroadcast();
@@ -344,10 +363,32 @@ export class WebSocketServer {
    * 세션 정리 타이머 시작
    */
   private startCleanupTimer(): void {
-    // 1분마다 비활성 세션 체크
+    // 주기마다 비활성 세션 체크
     this.cleanupIntervalId = setInterval(() => {
       this.cleanupInactiveSessions();
-    }, 60 * 1000);
+    }, this.cleanupInterval);
+  }
+
+  /**
+   * 하트비트 시작: 모든 클라이언트에 주기적으로 Ping을 보낸다.
+   * 돌아오는 Pong은 수신 데이터라 lastActiveAt을 갱신한다.
+   */
+  private startHeartbeat(): void {
+    this.heartbeatIntervalId = setInterval(() => {
+      for (const client of this.clients) {
+        client.ping();
+      }
+    }, this.heartbeatInterval);
+  }
+
+  /**
+   * 하트비트 중지
+   */
+  private stopHeartbeat(): void {
+    if (this.heartbeatIntervalId) {
+      clearInterval(this.heartbeatIntervalId);
+      this.heartbeatIntervalId = null;
+    }
   }
 
   /**
@@ -479,6 +520,7 @@ export class WebSocketServer {
 
     // 타이머 중지
     this.stopCleanupTimer();
+    this.stopHeartbeat();
     this.stopStockBroadcast();
 
     // 모든 연결 종료
@@ -698,7 +740,7 @@ class WebSocketConnection {
     } else if (opcode === WebSocketOpcode.Ping) {
       this.sendPong(payload);
     } else if (opcode === WebSocketOpcode.Pong) {
-      // Pong 수신 (필요시 처리)
+      // Pong 수신 — 하트비트 응답. 활동 시각은 receive()에서 이미 갱신했다
     } else {
       console.log(`Unsupported opcode: ${opcode}`);
     }
@@ -783,6 +825,14 @@ class WebSocketConnection {
     payload.copy(frame, offset);
 
     return frame;
+  }
+
+  /**
+   * Ping 프레임 전송 (하트비트). 브라우저는 Pong으로 자동 응답한다
+   */
+  ping(): void {
+    if (this.failed || !this.socket.writable) return;
+    this.socket.write(Buffer.from([0x89, 0x00])); // FIN=1, Opcode=0x9 (Ping), 빈 페이로드
   }
 
   /**

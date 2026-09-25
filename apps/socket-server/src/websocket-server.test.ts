@@ -93,9 +93,16 @@ const isPriceUpdate = (frame: ServerFrame) =>
   frame.opcode === 0x1 &&
   frame.payload.toString('utf-8').startsWith('{"type":"PRICE_UPDATE"');
 
+interface ClientOptions {
+  /** 핸드셰이크와 같은 write에 실어 보낼 바이트 */
+  extra?: Buffer;
+  /** 서버 Ping에 Pong으로 답할지(브라우저는 자동으로 답한다). 기본 true */
+  autoPong?: boolean;
+}
+
 async function openClient(
   port: number,
-  { extra }: { extra?: Buffer } = {},
+  { extra, autoPong = true }: ClientOptions = {},
 ): Promise<RawClient> {
   const socket = net.connect(port, '127.0.0.1');
   socket.setNoDelay(true);
@@ -149,6 +156,11 @@ async function openClient(
         payload: Buffer.from(pending.subarray(offset, offset + length)),
       };
       pending = pending.subarray(offset + length);
+      if (frame.opcode === 0x9) {
+        // Ping — 브라우저처럼 같은 페이로드로 Pong을 돌려준다
+        if (autoPong) socket.write(clientFrame(0xa, frame.payload));
+        continue;
+      }
       if (!isPriceUpdate(frame)) deliver(frame);
     }
   });
@@ -185,9 +197,14 @@ async function openClient(
   return { socket, nextFrame, nextText, closed };
 }
 
-async function startServer(): Promise<Harness> {
+async function startServer(
+  options: ConstructorParameters<typeof WebSocketServer>[1] = {},
+): Promise<Harness> {
   const httpServer = createServer();
-  const wsServer = new WebSocketServer(httpServer, { allowedOrigins: null });
+  const wsServer = new WebSocketServer(httpServer, {
+    allowedOrigins: null,
+    ...options,
+  });
   await new Promise<void>(resolve =>
     httpServer.listen(0, '127.0.0.1', resolve),
   );
@@ -226,7 +243,7 @@ describe('프레임 수신 — TCP 청크 경계와 무관하게', () => {
     await stopServer(harness);
   });
 
-  const connect = async (options?: { extra?: Buffer }) => {
+  const connect = async (options?: ClientOptions) => {
     const client = await openClient(harness.port, options);
     sockets.push(client.socket);
     return client;
@@ -334,5 +351,53 @@ describe('핸드셰이크 입력 검증', () => {
     client.socket.write(text('alive'));
     assert.equal(await client.nextText(), 'alive');
     client.socket.destroy();
+  });
+});
+
+describe('하트비트', () => {
+  let harness: Harness;
+
+  beforeEach(async () => {
+    harness = await startServer({
+      heartbeatInterval: 40,
+      sessionTimeout: 200,
+      cleanupInterval: 40,
+    });
+  });
+
+  afterEach(async () => {
+    await stopServer(harness);
+  });
+
+  test('보내는 것 없이 듣기만 하는 클라이언트도 Pong으로 살아 있으면 끊지 않는다', async () => {
+    const listener = await openClient(harness.port);
+    let closed = false;
+    void listener.closed.then(() => {
+      closed = true;
+    });
+
+    await sleep(500);
+
+    assert.equal(closed, false);
+    listener.socket.write(text('still here'));
+    assert.equal(await listener.nextText(), 'still here');
+    listener.socket.destroy();
+  });
+
+  test('Ping에도 답하지 않는 연결은 sessionTimeout 뒤에 닫는다', async () => {
+    const dead = await openClient(harness.port, { autoPong: false });
+
+    let timer: NodeJS.Timeout | undefined;
+    const timeout = new Promise<never>((_, reject) => {
+      timer = setTimeout(
+        () => reject(new Error('응답 없는 연결이 닫히지 않았다')),
+        1500,
+      );
+    });
+    try {
+      await Promise.race([dead.closed, timeout]);
+    } finally {
+      clearTimeout(timer);
+    }
   });
 });
