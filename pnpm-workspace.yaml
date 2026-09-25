@@ -1,6 +1,10 @@
 packages:
   - 'apps/**/*'
   - 'packages/**/*'
+  # 빌드 산출물은 워크스페이스가 아니다. minibundler가 CJS 번들 옆에
+  # dist/package.json({"type":"commonjs"})을 쓰므로, 이 제외가 없으면 빌드 뒤
+  # `pnpm install --frozen-lockfile`이 dist를 lockfile에 없는 importer로 보고 실패한다.
+  - '!**/dist/**'
 
 overrides:
   # next(8.4.31 고정)와 @pandacss/*(8.5.14 고정)가 각자 exact 핀을 걸어서, 오버라이드를
