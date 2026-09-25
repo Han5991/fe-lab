@@ -114,6 +114,14 @@
 /site.webmanifest
   Cache-Control: public, max-age=86400, must-revalidate
 
+# admin 화면이 읽는 글 목록(generate-search-index가 만든다)은 draft·예약 글의
+# 제목·요약·예약일까지 담는다. 정적 파일이라 누구나 받을 수 있는 건 그대로지만
+# (막으려면 Edge Function으로 옮겨야 한다 — 별건), 적어도 검색 결과에 비공개 글
+# 목록이 뜨지는 않게 색인에서 뺀다. robots.txt Disallow는 색인을 막지 못해서
+# (링크만 있으면 URL이 색인된다) 헤더로 건다.
+/admin-posts-index.json
+  X-Robots-Tag: noindex
+
 # 프리뷰 URL을 색인에서 뺀다. wrangler.jsonc의 `workers_dev: false`가 프로덕션 사본은
 # 닫았지만, PR 프리뷰를 살리려고 켠 `preview_urls: true`가 색인 가능한 표면을 도로 연다
 # — PR마다 블로그 전체 사본이 크롤 가능한 주소로 뜬다. 색인 이력이 아픈 사이트라 막는다.
