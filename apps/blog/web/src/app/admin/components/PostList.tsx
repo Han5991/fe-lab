@@ -5,20 +5,19 @@ import { useAdminDashboardData } from '@/src/hooks/useAdminViews';
 import { css } from '@design-system/ui-lib/css';
 import { PostAccordion } from './PostAccordion';
 import { RefreshCw } from 'lucide-react';
-import { useQueryClient } from '@tanstack/react-query';
 
 export function PostList() {
-  const { data } = useAdminDashboardData();
-  const queryClient = useQueryClient();
+  // "업데이트" 시각은 데이터가 실제로 도착한 시각(dataUpdatedAt)이다. 예전엔
+  // 새로고침 버튼이 끝나면 무조건 지금 시각을 적었는데, invalidateQueries는
+  // 다시 받기가 실패해도 정상 종료하고 suspense 쿼리는 이전 데이터를 그대로
+  // 들고 있어서, 실패한 새로고침이 "방금 갱신됨"으로 보였다.
+  const { data, dataUpdatedAt, isFetching, isRefetchError, refetch } =
+    useAdminDashboardData();
   const [sortField, setSortField] = useState<'date' | 'views'>('date');
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
-  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
 
-  const handleRefresh = async () => {
-    await queryClient.invalidateQueries({
-      queryKey: ['admin', 'dashboard-data'],
-    });
-    setLastUpdated(new Date());
+  const handleRefresh = () => {
+    void refetch();
   };
 
   const sortedData = [...data].sort((a, b) => {
@@ -73,7 +72,9 @@ export function PostList() {
           className={css({ display: 'flex', alignItems: 'center', gap: '3' })}
         >
           <button
-            onClick={() => void handleRefresh()}
+            type="button"
+            onClick={handleRefresh}
+            disabled={isFetching}
             className={css({
               display: 'flex',
               alignItems: 'center',
@@ -91,10 +92,11 @@ export function PostList() {
               cursor: 'pointer',
               transition: '[all 0.15s]',
               _hover: { bg: 'paper.300', borderColor: 'ink.borderStrong' },
+              _disabled: { cursor: 'wait', opacity: 0.6 },
             })}
           >
-            <RefreshCw size={12} />
-            새로고침
+            <RefreshCw size={12} aria-hidden />
+            {isFetching ? '새로고침 중…' : '새로고침'}
           </button>
           <span
             className={css({
@@ -103,8 +105,16 @@ export function PostList() {
               display: { base: 'none', md: 'inline' },
             })}
           >
-            업데이트: {lastUpdated.toLocaleString('ko-KR')}
+            업데이트: {new Date(dataUpdatedAt).toLocaleString('ko-KR')}
           </span>
+          {isRefetchError && (
+            <span
+              role="status"
+              className={css({ fontSize: 'xs', color: 'danger.text' })}
+            >
+              새로고침 실패 — 이전 데이터를 보여 주는 중
+            </span>
+          )}
         </div>
 
         <div
