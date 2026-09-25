@@ -14,7 +14,11 @@ import { createServer } from 'node:http';
 import type { Server } from 'node:http';
 import net from 'node:net';
 import type { AddressInfo } from 'node:net';
-import { isLocalOrigin, WebSocketServer } from './websocket-server.ts';
+import {
+  isLocalOrigin,
+  MAX_FRAGMENTS,
+  WebSocketServer,
+} from './websocket-server.ts';
 
 // 브라우저 대신 날 TCP 소켓으로 서버를 두드린다 — 청크 경계를 직접 정해야
 // "TCP는 스트림"이라는 조건을 재현할 수 있다.
@@ -562,6 +566,39 @@ describe('종료 핸드셰이크와 프로토콜 검증', () => {
         clientFrame(0x1, piece, { fin: false }),
         clientFrame(0x0, piece, { fin: false }),
         clientFrame(0x0, piece),
+      ]),
+    );
+
+    await expectClosedWith(client, 1009);
+  });
+
+  test(`조각 ${MAX_FRAGMENTS}개로 나뉜 메시지를 순서대로 이어 붙인다`, async () => {
+    const client = await connect();
+    const parts = Array.from({ length: MAX_FRAGMENTS }, (_, i) =>
+      String.fromCharCode(0x61 + (i % 26)),
+    );
+
+    client.socket.write(
+      Buffer.concat(
+        parts.map((part, i) =>
+          clientFrame(i === 0 ? 0x1 : 0x0, part, {
+            fin: i === parts.length - 1,
+          }),
+        ),
+      ),
+    );
+
+    expect(await client.nextText()).toBe(parts.join(''));
+  });
+
+  test('조각 수가 상한을 넘으면 빈 조각이어도 1009로 닫는다', async () => {
+    const client = await connect();
+    const empty = clientFrame(0x0, '', { fin: false });
+
+    client.socket.write(
+      Buffer.concat([
+        clientFrame(0x1, '', { fin: false }),
+        ...Array<Buffer>(MAX_FRAGMENTS).fill(empty),
       ]),
     );
 

@@ -271,11 +271,15 @@ if (opcode === WebSocketOpcode.Text || opcode === WebSocketOpcode.Binary) {
   }
 } else if (opcode === WebSocketOpcode.Continuation) {
   // 첫 프레임 없는 후속 프레임 → 1002
-  this.fragmentedMessage.push(payload); // 데이터 추가 (합친 크기가 상한을 넘으면 1009)
+  this.fragmentedMessage.push(payload); // 데이터 추가
+  this.fragmentedLength += payload.length; // 합친 크기가 상한을 넘거나 조각이 MAX_FRAGMENTS개를 넘으면 1009
 
   if (isFinalFrame) {
     // 마지막 프레임 → 모두 합치기
-    const completeMessage = Buffer.concat(this.fragmentedMessage);
+    const completeMessage = Buffer.concat(
+      this.fragmentedMessage,
+      this.fragmentedLength,
+    );
     // 상태 초기화 후 처리 (텍스트면 여기서 UTF-8 검사 → 아니면 1007)
     this.handleCompleteMessage(messageOpcode, completeMessage);
   }
@@ -296,6 +300,8 @@ if (opcode === WebSocketOpcode.Text || opcode === WebSocketOpcode.Binary) {
 - 중간 프레임들: FIN=0, Opcode=Continuation
 - 마지막 프레임: FIN=1, Opcode=Continuation
 - 제어 프레임(Ping, Pong, Close)은 단편화 불가(페이로드도 125바이트 이하) — 단, 조각 **사이에** 끼어들 수는 있다
+- 이 서버는 한 메시지를 조각 1024개(`MAX_FRAGMENTS`)까지만 받고, 넘으면 1009로 닫는다. RFC에는 없는 제한이다 —
+  빈 조각은 크기 상한(1MB)에 걸리지 않아서, 없으면 조각 목록이 끝없이 자란다
 
 ---
 
@@ -451,7 +457,7 @@ buffer = [0x03, 0xE8, 0x47, 0x6F, 0x6F, 0x64, 0x62, 0x79, 0x65]
 1. **바이트 레벨 프로토콜**: HTTP처럼 텍스트 기반이 아니라 비트 단위로 데이터를 분해하고 조합
 2. **마스킹 비대칭**: 클라이언트→서버는 필수, 서버→클라이언트는 금지
 3. **프레임 단위 처리**: 모든 메시지는 프레임으로 캡슐화되어 전송
-4. **상태 관리**: 수신 버퍼(receiveBuffer), 단편화 조립(fragmentedMessage, fragmentedOpcode), 연결 상태(OPEN·CLOSING·CLOSED)를 유지
+4. **상태 관리**: 수신 버퍼(receiveBuffer), 단편화 조립(fragmentedMessage, fragmentedLength, fragmentedOpcode), 연결 상태(OPEN·CLOSING·CLOSED)를 유지
 5. **제어 프레임**: Ping/Pong으로 연결 유지, Close로 정상 종료
 
 ---

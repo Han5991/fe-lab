@@ -112,6 +112,9 @@ const WebSocketOpcode = {
 /** 한 메시지 페이로드의 상한. 넘으면 1009로 닫는다 — 수신 버퍼가 무한히 자라지 않게 한다 */
 const DEFAULT_MAX_PAYLOAD = 1024 * 1024;
 
+/** 한 메시지의 조각(프레임) 수 상한. 넘으면 1009 — 빈 조각은 길이 상한에 걸리지 않는다 */
+export const MAX_FRAGMENTS = 1024;
+
 /** 제어 프레임(Close·Ping·Pong) 페이로드 상한 (RFC 6455 §5.5) */
 const MAX_CONTROL_PAYLOAD = 125;
 
@@ -639,6 +642,7 @@ class WebSocketConnection {
   private socket: Duplex;
   private readonly listeners: { [E in ClientEvent]?: ClientEventListener<E>[] };
   private fragmentedMessage: Buffer[];
+  private fragmentedLength: number;
   private fragmentedOpcode: number | null;
   private readonly sessionInfo: SessionInfo;
   /**
@@ -667,6 +671,7 @@ class WebSocketConnection {
     this.topics = topics;
     this.listeners = {};
     this.fragmentedMessage = [];
+    this.fragmentedLength = 0;
     this.fragmentedOpcode = null;
     this.receiveBuffer = Buffer.alloc(0);
     this.maxPayload = maxPayload;
@@ -874,6 +879,7 @@ class WebSocketConnection {
         // 단편화된 메시지의 시작
         this.fragmentedOpcode = opcode;
         this.fragmentedMessage = [payload];
+        this.fragmentedLength = payload.length;
       }
     } else if (opcode === WebSocketOpcode.Continuation) {
       if (this.fragmentedOpcode === null) {
@@ -884,26 +890,33 @@ class WebSocketConnection {
       }
 
       this.fragmentedMessage.push(payload);
+      this.fragmentedLength += payload.length;
 
       // 조각마다는 상한 안이어도 합치면 넘을 수 있다 — 조립 중에도 상한을 지킨다
-      const assembledLength = this.fragmentedMessage.reduce(
-        (sum, part) => sum + part.length,
-        0,
-      );
-      if (assembledLength > this.maxPayload) {
+      if (this.fragmentedLength > this.maxPayload) {
         throw new WebSocketProtocolError(
           CloseCode.MessageTooBig,
-          `Message too large: ${assembledLength} bytes`,
+          `Message too large: ${this.fragmentedLength} bytes`,
+        );
+      }
+      if (this.fragmentedMessage.length > MAX_FRAGMENTS) {
+        throw new WebSocketProtocolError(
+          CloseCode.MessageTooBig,
+          `Too many fragments: ${this.fragmentedMessage.length}`,
         );
       }
 
       if (isFinalFrame) {
         // 모든 프레임 조립
-        const completeMessage = Buffer.concat(this.fragmentedMessage);
+        const completeMessage = Buffer.concat(
+          this.fragmentedMessage,
+          this.fragmentedLength,
+        );
         const messageOpcode = this.fragmentedOpcode;
 
         // 상태 초기화
         this.fragmentedMessage = [];
+        this.fragmentedLength = 0;
         this.fragmentedOpcode = null;
 
         this.handleCompleteMessage(messageOpcode, completeMessage);
