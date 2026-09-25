@@ -11,7 +11,8 @@ set search_path = public
 as $$
 begin
   if slug_input is null
-     or btrim(slug_input) = ''
+     -- 유니코드 공백(NBSP·전각 공백·제로폭 공백)만으로 된 값도 빈 slug로 본다.
+     or slug_input ~ '^[[:space:]\u00A0\u1680\u2000-\u200B\u2028\u2029\u202F\u205F\u3000\uFEFF]*$'
      or char_length(slug_input) > 200
      or slug_input ~ '[[:cntrl:]]'
   then
