@@ -30,21 +30,43 @@ export type AdminActionRpc<A extends AdminAction = AdminAction> =
   (typeof ADMIN_ACTION_RPC)[A];
 
 /**
+ * 목록형 action(`all_post_stats`·`all_posts_trends`)의 선택 params — 이 글들만
+ * 서버에서 거른다.
+ *
+ * 두 RPC가 읽는 post_views·post_view_logs는 anon이 `increment_view_count`로
+ * 아무 slug나 만들 수 있는 표다. 거르지 않으면 가짜 slug 행이 PostgREST의
+ * 1000행 cap을 채워 실제 글이 잘리거나(정렬이 없으면 무작위로), 페이지 상한을
+ * 넘겨 대시보드가 통째로 500이 된다. 클라이언트는 admin 글 인덱스의 slug를 넘긴다.
+ *
+ * 생략하면 거르지 않는다 — 이 필드를 모르는 옛 Edge Function과 옛 클라이언트가
+ * 어느 쪽이 먼저 배포되든 그대로 맞물린다.
+ */
+export interface AdminSlugFilter {
+  slugs?: readonly string[];
+}
+
+/** `slugs` 한 요청의 최대 개수 — 글 수보다 넉넉하고, 쿼리스트링이 터지지 않을 만큼. */
+export const MAX_FILTER_SLUGS = 1000;
+
+/** slug 한 개의 최대 길이 — `increment_view_count`가 기록을 거부하는 길이와 같다. */
+export const MAX_SLUG_LENGTH = 200;
+
+/**
  * action별 요청 params. params가 없는 action은 `undefined`.
  * 클라이언트 `call()`의 두 번째 인자와 Edge Function이 읽는 `body.params`가
  * 여기서 같은 형태를 본다.
  */
 export interface AdminActionParams {
-  all_post_stats: undefined;
+  all_post_stats: AdminSlugFilter | undefined;
   /**
-   * params 없음 — PostgREST의 1000행 cap(`config.toml`의 `max_rows`)은 Edge
-   * Function이 안에서 range를 돌려 모아 넘긴다.
+   * PostgREST의 1000행 cap(`config.toml`의 `max_rows`)은 Edge Function이 안에서
+   * range를 돌려 모아 넘긴다(`all_post_stats`도 같다).
    *
    * 예전엔 브라우저가 `range`를 바꿔가며 직렬로 여러 번 불렀다. 그러면 페이지
    * 수만큼 인터넷 왕복이 늘 뿐 아니라 요청마다 JWT 검증(`auth.getUser()`)까지
    * 다시 돌아, 데이터가 늘수록 비용이 곱으로 붙었다.
    */
-  all_posts_trends: undefined;
+  all_posts_trends: AdminSlugFilter | undefined;
   post_hourly_distribution: { slug: string };
   post_dow_distribution: { slug: string };
 }
@@ -60,4 +82,19 @@ export type AdminRequest = {
 /** 런타임 가드 — 요청 body의 `action`이 등록된 것인지. 프로토타입 키(`toString` 등)는 거른다. */
 export function isAdminAction(value: unknown): value is AdminAction {
   return typeof value === 'string' && Object.hasOwn(ADMIN_ACTION_RPC, value);
+}
+
+/**
+ * 런타임 가드 — 요청 body의 `slugs`가 거를 slug 목록으로 쓸 수 있는 모양인지.
+ * JSON에서 온 값이라 Edge Function이 RPC 필터에 싣기 전에 한 번 확인한다.
+ */
+export function isSlugList(value: unknown): value is readonly string[] {
+  return (
+    Array.isArray(value) &&
+    value.length <= MAX_FILTER_SLUGS &&
+    value.every(
+      (s): s is string =>
+        typeof s === 'string' && s.length > 0 && s.length <= MAX_SLUG_LENGTH,
+    )
+  );
 }

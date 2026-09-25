@@ -119,6 +119,24 @@ test('AdminApiClient: all_posts_trends — params 없이 한 번만 호출한다
   expect(result).toStrictEqual(mockData);
 });
 
+test('AdminApiClient: 목록형 action은 거를 slug 목록을 params로 싣는다', async () => {
+  // post_views는 anon RPC로 아무 slug나 생기는 표라, 목록 읽기는 실제 글
+  // slug로 서버에서 거른다(adminActions.ts의 AdminSlugFilter).
+  const { client, calls } = makeMockClient({ data: { data: [] }, error: null });
+  const api = new AdminApiClient(client);
+
+  await api.call('all_post_stats', { slugs: ['post-a', 'series/post-b'] });
+  await api.call('all_posts_trends', { slugs: ['post-a'] });
+
+  expect(calls.map(c => c.options?.body)).toStrictEqual([
+    {
+      action: 'all_post_stats',
+      params: { slugs: ['post-a', 'series/post-b'] },
+    },
+    { action: 'all_posts_trends', params: { slugs: ['post-a'] } },
+  ]);
+});
+
 test('AdminApiClient: error 응답 시 Error throw', async () => {
   const { client } = makeMockClient({
     data: null,
@@ -199,7 +217,7 @@ test('AdminApiClient: params 계약 — 필수 slug 누락·미등록 action은 
   void api.call('post_dow_distribution', {});
   // @ts-expect-error — 등록되지 않은 action
   void api.call('nope');
-  // @ts-expect-error — all_post_stats는 params가 없다
+  // @ts-expect-error — all_post_stats의 params는 거를 slug 목록(slugs)뿐이다
   void api.call('all_post_stats', { slug: 'x' });
 
   // params가 전부 선택인 action은 생략 가능

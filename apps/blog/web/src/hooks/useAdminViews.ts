@@ -19,10 +19,13 @@ export function useAdminDashboardData() {
     staleTime: 0,
     refetchOnMount: 'always',
     queryFn: async (): Promise<PostStatDetail[]> => {
-      const [metadata, stats, trends] = await Promise.all([
-        getAdminPostsIndex(),
-        getAllPostStats(),
-        getAllPostsTrends(),
+      // 인덱스를 먼저 받는다 — 조회수 두 읽기는 이 slug들로 서버에서 거른다
+      // (anon이 만든 가짜 slug 행이 1000행 cap을 채워 실제 글을 밀어내지 않게).
+      const metadata = await getAdminPostsIndex();
+      const slugs = metadata.map(post => post.slug);
+      const [stats, trends] = await Promise.all([
+        getAllPostStats(slugs),
+        getAllPostsTrends(slugs),
       ]);
 
       const trendsMap = new Map<string, TrendPoint[]>();
