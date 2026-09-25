@@ -136,7 +136,8 @@ Worker (`apps/blog/web/wrangler.jsonc`), Supabase for the dynamic bits.
   하나, 시크릿은 0개. 개명은 새 환경을 만들어야 한다. `preview-blog.yml`은 `environment:`를 쓰지 않는다.
   두 워크플로 모두 **빌드와 업로드가 잡이 나뉜다** — 의존성 코드를 실행하는 빌드 잡은 시크릿 없이 `out/`만
   넘기고, `CLOUDFLARE_API_TOKEN`을 쥔 잡은 `--ignore-scripts`로 깐 wrangler만 돌린다. 토큰 잡에 빌드·테스트나
-  스크립트가 도는 install을 다시 넣지 말 것(프리뷰는 머지 전 Renovate PR에서도 돈다).
+  스크립트가 도는 install을 다시 넣지 말 것(토큰 잡은 사람이 연 PR의 lockfile로 wrangler를 깐다 — 봇 PR은 빌드까지만
+  돌고 토큰 잡은 건너뛴다).
   배포는 `main` push(블로그의 실제 입력 — `apps/blog/**`·`packages/@blog/**`·`packages/@design-system/**`·catalog·
   lockfile·툴체인·배포 워크플로 자신), **매일 cron `13 0 * * *`(KST 09:13)**(예약 글 공개), 수동
   실행. 정각을 피한 건 `0 0` 슬롯이 붐벼 실제로 KST 11:36~12:00에 돌았기 때문이다. GitHub cron은 정시를
