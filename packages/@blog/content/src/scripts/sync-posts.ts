@@ -38,9 +38,9 @@ function pickMedia(media: readonly string[], include: MediaFilter) {
 
 // ── 공개 글이 가리키는 미디어 ──────────────────────────────────────────────
 
-/** 경로 토큰의 앞뒤 경계 — 링크·속성·목록 구분자, 닫는 괄호·따옴표·쿼리·해시. */
-const REF_BEFORE = /[\s("'<=[,]/;
-const REF_AFTER = /[\s)"'>?#,]/;
+/** 경로 토큰의 앞뒤 경계 — 경로·파일명을 이어 쓸 수 없는 문자면 무엇이든. 모르는 문장부호는 경계로 쳐서 덜 싣는 쪽으로 틀리지 않는다. */
+const REF_BEFORE = /[^\p{L}\p{N}\p{M}_\-./~%]/u;
+const REF_AFTER = /[^\p{L}\p{N}\p{M}_-]/u;
 
 /** `needle`이 경로 토큰 하나로 등장하는가 — `includes`면 `img/start.png`가 `start.png`까지 끈다. */
 function mentionsPath(text: string, needle: string): boolean {

@@ -194,6 +194,28 @@ test('selectPublishedMedia: 참조되지 않은 파일·다른 파일의 꼬리�
   expect([...selected]).toStrictEqual(['feconf/img/start.png']);
 });
 
+test.each([
+  ['문장 끝 마침표', '원본은 img/a.png.'],
+  ['닫는 대괄호', '[img/a.png]'],
+  ['괄호 설명', 'img/a.png(원본)'],
+  ['콜론·세미콜론·느낌표', 'img/a.png: 설명; img/a.png!'],
+  ['표 셀', '| img/a.png |'],
+])('selectPublishedMedia: 경로 뒤에 %s가 와도 참조로 본다', (_, text) => {
+  const selected = selectPublishedMedia(
+    [post('feconf', text)],
+    ['feconf/img/a.png'],
+  );
+  expect([...selected]).toStrictEqual(['feconf/img/a.png']);
+});
+
+test('selectPublishedMedia: 경로가 더 긴 이름의 일부면 참조가 아니다', () => {
+  const selected = selectPublishedMedia(
+    [post('feconf', 'img/a.png2 old-img/a.png img/a.png_bak')],
+    ['feconf/img/a.png'],
+  );
+  expect([...selected]).toStrictEqual([]);
+});
+
 test('selectPublishedMedia: frontmatter thumbnail도 참조다 (OG·JSON-LD가 원본을 쓴다)', () => {
   const selected = selectPublishedMedia(
     [post('ci', '본문에는 없음', 'cover-thumb.png'), post('', '', '/og/x.png')],
