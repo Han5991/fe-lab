@@ -24,7 +24,6 @@ export type {
   AnalyticsOverview,
   TopPostSummary,
 } from './overview';
-export { UNIQUES_ESTIMATE_RATIO } from './overview';
 export type { AnalyticsCalculator } from './service';
 
 // 데이터 접근(PostgREST). 의도적으로 공개하는 함수만 노출.
