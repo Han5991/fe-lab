@@ -89,21 +89,70 @@ export function toIsoStringInOffset(d: Date, isoOffset: string): string {
   return `${shifted.toISOString().slice(0, 19)}${fraction}${isoOffset}`;
 }
 
+// ── 날짜 문자열 형식 ──────────────────────────────────────────────────────────
+//
+// frontmatter의 날짜는 **두 모양만** 받습니다. 나머지(`'2026-5-4'`, `'2026/05/04'`,
+// 공백 구분 datetime, offset 없는 datetime …)는 `Date.parse`가 받아 주더라도
+// 엔진·실행 환경의 TZ에 따라 다른 시점이 되고, 뒤에 `T00:00:00+09:00`를 붙이는
+// 소비처(JSON-LD)에서 깨진 ISO가 됩니다. 로더와 lint:posts가 같은 판정을 쓰도록
+// 여기 한 곳에 둡니다.
+
+const ISO_DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
+const ISO_DATETIME_WITH_OFFSET =
+  /^(\d{4}-\d{2}-\d{2})T(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d{1,3})?)?(?:Z|[+-](?:[01]\d|2[0-3]):[0-5]\d)$/;
+
+/** `'YYYY-MM-DD'`가 달력에 실제로 있는 날짜인가(`'2026-02-30'`은 아니다). */
+function isCalendarDate(ymd: string): boolean {
+  const d = new Date(`${ymd}T00:00:00Z`);
+  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === ymd;
+}
+
+/** 날짜만 적은 `'YYYY-MM-DD'`이고 실제 달력 날짜인가. */
+export function isIsoDateOnly(value: string): boolean {
+  return ISO_DATE_ONLY.test(value) && isCalendarDate(value);
+}
+
+/**
+ * offset(`Z` 또는 `±HH:MM`)까지 적은 ISO 8601 datetime인가
+ * (`'2026-05-24T09:00:00+09:00'`, `'2026-05-24T00:00Z'`, 밀리초 선택).
+ * offset 없는 datetime은 실행 환경의 로컬 타임으로 해석되므로 받지 않습니다.
+ */
+export function isIsoDateTimeWithOffset(value: string): boolean {
+  const match = ISO_DATETIME_WITH_OFFSET.exec(value);
+  return (
+    match?.[1] !== undefined &&
+    isCalendarDate(match[1]) &&
+    !Number.isNaN(Date.parse(value))
+  );
+}
+
+/**
+ * frontmatter 날짜(`date`·`updatedAt`·`scheduledDate`)로 받는 형식인가 —
+ * `'YYYY-MM-DD'` 또는 offset을 명시한 ISO datetime. 로더는 이 밖의 값을 공개
+ * 시각으로 인정하지 않고(fail-closed), lint:posts도 같은 함수로 판정합니다.
+ */
+export function isValidDateString(value: string): boolean {
+  return isIsoDateOnly(value) || isIsoDateTimeWithOffset(value);
+}
+
 /**
  * scheduledDate / post.date 문자열을 KST 기준 Date로 파싱합니다.
  *
- * ## 지원 입력 형식
+ * ## 지원 입력 형식 (`isValidDateString`)
  * - `'YYYY-MM-DD'` (시간 없음): JS Date는 UTC 자정으로 해석하지만,
  *   블로그 규칙상 이 형식은 KST 날짜이므로 `T00:00:00+09:00`를 붙여
  *   KST 자정(= UTC 전날 15:00)으로 변환합니다.
  * - ISO 8601 with timezone offset (예: `'2026-05-24T09:00:00+09:00'`,
  *   `'2026-05-24T00:00:00Z'`): 그대로 파싱합니다.
  *
- * ## 비지원 입력 (사용 시 결과 미정의)
- * - `'YYYY-MM-DDTHH:mm:ss'` (timezone offset 없는 datetime):
- *   ECMAScript 스펙상 *로컬 타임*으로 파싱되어 환경 의존이 됩니다
- *   (개발자 머신에선 KST지만 빌드 서버에선 UTC). 작성 규약에서 항상
- *   `+09:00` 또는 `Z`를 명시하거나 `'YYYY-MM-DD'` 짧은 형식을 사용하세요.
+ * ## 그 밖의 입력 → Invalid Date
+ * - `'YYYY-MM-DDTHH:mm:ss'`(offset 없는 datetime)는 ECMAScript 스펙상 *로컬
+ *   타임*이라 개발자 머신(KST)과 빌드 서버(UTC)에서 다른 시점이 됩니다.
+ * - `'2026-5-4'`·`'2026/05/04'` 같은 비표준 모양은 `Date.parse`가 받아 주더라도
+ *   엔진 재량이고, 역시 로컬 타임으로 읽혀 TZ에 따라 9시간씩 갈립니다.
+ * 예전에는 이런 값도 `new Date(input)`로 넘겨 **환경마다 다른 공개 시각**이
+ * 됐습니다. 지금은 Invalid Date라 `isPostVisible`이 비공개로 닫습니다(NaN과의
+ * 비교는 언제나 false). 호출부가 결과를 출력한다면 `getTime()`의 NaN을 확인할 것.
  *
  * @example
  * parseScheduledDateKST(TIMEZONE, '2026-05-24')
@@ -116,11 +165,11 @@ export function parseScheduledDateKST(
   timezone: Pick<TimezoneConfig, 'isoOffset'>,
   input: string,
 ): Date {
-  // 'YYYY-MM-DD' 형식 여부 확인 (시간 없음)
-  if (/^\d{4}-\d{2}-\d{2}$/.test(input)) {
+  if (isIsoDateOnly(input)) {
     return new Date(`${input}T00:00:00${timezone.isoOffset}`);
   }
-  return new Date(input);
+  if (isIsoDateTimeWithOffset(input)) return new Date(input);
+  return new Date(Number.NaN);
 }
 
 /**

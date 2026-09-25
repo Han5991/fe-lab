@@ -4,12 +4,13 @@ import matter from 'gray-matter';
 import { estimateReadMin } from '../shared/format.ts';
 import { collectMarkdownFiles, hasFrontmatter } from '../shared/postFiles.ts';
 import { isPostFile } from './visibility.ts';
-// 좁히기 함수(toDateString·toOptionalString·toStringArray)는 서술자 테이블과
-// 같은 파일에 있습니다 — 테이블의 `narrow`와 parsePost가 **같은 함수**를 가리켜야
-// 선언과 실제 동작이 갈라지지 않습니다(frontmatterSchema.ts 참고).
+// 좁히기 함수(toDateString·toOptionalString·toScheduledDate·toStringArray)는
+// 서술자 테이블과 같은 파일에 있습니다 — 테이블의 `narrow`와 parsePost가 **같은
+// 함수**를 가리켜야 선언과 실제 동작이 갈라지지 않습니다(frontmatterSchema.ts 참고).
 import {
   toDateString,
   toOptionalString,
+  toScheduledDate,
   toStringArray,
 } from './frontmatterSchema.ts';
 import type { TimezoneConfig } from '../shared/contentConfig.ts';
@@ -139,7 +140,7 @@ export function parsePost(
     tags: toStringArray(data.tags),
     series,
     status: data.status,
-    scheduledDate: toOptionalString(data.scheduledDate),
+    scheduledDate: toScheduledDate(data.scheduledDate, opts.timezone),
   };
 }
 

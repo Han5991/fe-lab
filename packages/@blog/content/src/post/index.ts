@@ -22,14 +22,16 @@ export { resolveExcerpt, sortByDateDesc } from './repository.ts';
 // 검증 스크립트(lint:posts)가 실제로 쓰는 것만 큐레이션합니다.
 // - FRONTMATTER_KEYS / rejectionReasonFor: unknown-frontmatter-key 규칙이 허용
 //   키 목록과 거부 사유를 여기서 읽습니다.
-// - toDateString: YAML이 Date 객체로 준 날짜를 'YYYY-MM-DD'로 정규화. 원문을 읽는
-//   쪽(lint:posts)이 isPostVisible에 넘기기 전에 같은 정규화를 거쳐야 한다.
+// - toDateString / toScheduledDate: YAML이 Date 객체로 준 날짜와 형식이 틀린 날짜를
+//   로더와 같은 규칙으로 정규화. 원문을 읽는 쪽(lint:posts)이 isPostVisible에
+//   넘기기 전에 같은 정규화를 거쳐야 두 공개 판정이 갈리지 않는다.
 export {
   FRONTMATTER_FIELDS,
   FRONTMATTER_KEYS,
   REJECTED_FRONTMATTER_KEYS,
   rejectionReasonFor,
   toDateString,
+  toScheduledDate,
 } from './frontmatterSchema.ts';
 export type {
   FrontmatterField,

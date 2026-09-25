@@ -20,7 +20,7 @@
  * 도메인이 그걸 볼 수 없습니다(의존 방향이 뒤집힙니다).
  */
 import type { TimezoneConfig } from '../shared/contentConfig.ts';
-import { toIsoStringInOffset } from '../shared/dates.ts';
+import { isValidDateString, toIsoStringInOffset } from '../shared/dates.ts';
 import type { PostStatus } from './types.ts';
 import { isPostStatus } from './visibility.ts';
 
@@ -30,13 +30,19 @@ import { isPostStatus } from './visibility.ts';
 // 함수**를 가리켜야 "테이블이 선언한 좁히기"와 "실제로 도는 좁히기"가 갈라지지
 // 않으므로 여기로 옮겼습니다.
 //
-// `src/post/index.ts` 배럴에는 `toDateString`만 올립니다 — 배럴은 "밖에서 쓸
-// 것"만 큐레이션하는 표면이고(index.ts의 주석 참고), 나머지는 도메인 안에서
-// parsePost와 이 테이블만 씁니다.
+// `src/post/index.ts` 배럴에는 날짜 좁히기(`toDateString`·`toScheduledDate`)만
+// 올립니다 — 배럴은 "밖에서 쓸 것"만 큐레이션하는 표면이고(index.ts의 주석 참고),
+// 나머지는 도메인 안에서 parsePost와 이 테이블만 씁니다.
 
 /**
  * frontmatter의 date/updatedAt 값을 문자열(또는 null)로 정규화합니다.
- * - 문자열인 경우(`date: '2025-01-01'`) → 그대로
+ * - 문자열이고 받는 형식(`isValidDateString`: `'YYYY-MM-DD'` 또는 offset을 적은
+ *   ISO datetime)이면 → 그대로
+ * - 그 밖의 문자열(`'2026-5-4'`, `'2026/05/04'`, offset 없는 datetime …) → null.
+ *   예전에는 그대로 흘러가서 실행 환경의 TZ에 따라 공개 시각이 9시간 갈렸고,
+ *   JSON-LD에는 `2026-5-4T00:00:00+09:00` 같은 깨진 ISO가 나갔습니다. null이면
+ *   예약 글은 공개 시각이 없어 비공개(fail-closed)이고, 날짜를 쓰는 소비처는
+ *   전부 "날짜 없음"을 이미 처리합니다. 원문은 lint:posts가 에러로 알립니다.
  * - YAML이 Date 객체로 파싱한 경우 → 아래 규칙
  * - 그 외 → null
  *
@@ -59,7 +65,7 @@ export function toDateString(
   timezone?: Pick<TimezoneConfig, 'isoOffset'>,
 ): string | null {
   if (value instanceof Date) return fromYamlDate(value, timezone);
-  if (typeof value === 'string') return value;
+  if (typeof value === 'string') return isValidDateString(value) ? value : null;
   return null;
 }
 
@@ -71,8 +77,33 @@ function fromYamlDate(
   if (Number.isNaN(value.getTime())) return null;
   const iso = value.toISOString();
   // 날짜만 쓴 값(`2025-01-02`)은 UTC 자정 Date가 된다 — 적힌 날짜 그대로.
-  if (iso.endsWith('T00:00:00.000Z')) return iso.slice(0, 10);
-  return toIsoStringInOffset(value, timezone?.isoOffset ?? 'Z');
+  const result = iso.endsWith('T00:00:00.000Z')
+    ? iso.slice(0, 10)
+    : toIsoStringInOffset(value, timezone?.isoOffset ?? 'Z');
+  // 0000~9999년 밖(`+010000-…`)처럼 받는 형식을 벗어나면 없는 값으로 본다.
+  return isValidDateString(result) ? result : null;
+}
+
+/**
+ * `scheduledDate`를 좁힙니다. `date`와 달리 **형식이 틀린 문자열도 버리지 않습니다.**
+ *
+ * 공개 시각은 `scheduledDate ?? date`라서, 틀린 값을 없는 값으로 떨어뜨리면
+ * 공개 시각이 `date`(보통 그날 자정)로 폴백해 **의도보다 일찍** 공개됩니다
+ * (fail-open). 원문 그대로 두면 `isPostVisible`이 형식을 인정하지 않아 비공개로
+ * 닫히고(fail-closed), dev 배너에도 저자가 쓴 값이 그대로 보입니다.
+ *
+ * 따옴표 없는 datetime(YAML Date)은 `date`와 같은 규칙으로 시점을 보존해
+ * 적습니다 — lint:posts의 공개 판정(`isVisibleFrontmatter`)이 이미 그렇게 읽고
+ * 있어서, 예전처럼 로더만 값을 버리면 두 판정이 갈렸습니다.
+ */
+export function toScheduledDate(
+  value: unknown,
+  timezone?: Pick<TimezoneConfig, 'isoOffset'>,
+): string | undefined {
+  // 변환할 수 없는 Date는 원문 표기('Invalid Date')로 남겨 비공개로 닫는다.
+  if (value instanceof Date)
+    return fromYamlDate(value, timezone) ?? String(value);
+  return toOptionalString(value);
 }
 
 /** 문자열이 아니면 undefined. 빈 문자열은 값이 없는 것으로 취급합니다. */
@@ -218,7 +249,7 @@ export const FRONTMATTER_FIELDS = {
   scheduledDate: {
     required: false,
     kind: 'string',
-    narrow: toOptionalString,
+    narrow: toScheduledDate,
     doc: '**시각까지 지정할 때만.** 날짜만이면 `date`로 충분. 이걸 써도 `date`는 여전히 필수',
   },
 } as const satisfies Record<string, FrontmatterField>;

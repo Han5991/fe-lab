@@ -213,10 +213,73 @@ test('parsePost: updatedAt 없으면 null', () => {
   expect(parsePost(raw, 'a.md', PARSE_OPTS)?.updatedAt).toBe(null);
 });
 
-test('parsePost: scheduledDate가 문자열이 아니면(YAML Date) undefined로 거부', () => {
-  // 무따옴표 datetime은 YAML이 Date 객체로 파싱 → 문자열 아님 → undefined.
-  const raw = `---\ntitle: 글\nstatus: scheduled\nscheduledDate: 2026-03-01\n---\n본문`;
-  expect(parsePost(raw, 'a.md', PARSE_OPTS)?.scheduledDate).toBe(undefined);
+test('parsePost: 따옴표 없는 scheduledDate(YAML Date)도 버리지 않고 date와 같은 규칙으로 읽는다', () => {
+  // 예전에는 문자열이 아니라고 버려서 공개 시각이 date(그날 자정)로 폴백했다 —
+  // 적힌 시각보다 일찍 공개되는 fail-open. lint:posts의 공개 판정은 이미
+  // 이렇게 읽고 있었다(isVisibleFrontmatter → toDateString).
+  const dateOnly = `---\ntitle: 글\nstatus: scheduled\ndate: 2026-02-28\nscheduledDate: 2026-03-01\n---\n본문`;
+  expect(parsePost(dateOnly, 'a.md', PARSE_OPTS)?.scheduledDate).toBe(
+    '2026-03-01',
+  );
+  const datetime = `---\ntitle: 글\nstatus: scheduled\ndate: 2026-03-01\nscheduledDate: 2026-03-01T20:00:00+09:00\n---\n본문`;
+  expect(parsePost(datetime, 'a.md', PARSE_OPTS)?.scheduledDate).toBe(
+    '2026-03-01T20:00:00+09:00',
+  );
+});
+
+// ── 날짜 형식: 받는 두 모양 밖이면 공개 시각으로 인정하지 않는다 ───────────────
+
+test.each([
+  ['2026-5-4'],
+  ['2026/05/04'],
+  ['2026-03-16 09:00:00+09:00'],
+  ['2026-06-01T09:00:00'],
+  ['2026-02-30'],
+  ['내일'],
+])(
+  "parsePost: 형식이 틀린 date('%s')는 null — TZ에 따라 갈리는 값을 흘리지 않는다",
+  value => {
+    const raw = `---\ntitle: 글\nstatus: scheduled\ndate: '${value}'\nupdatedAt: '${value}'\n---\n본문`;
+    const post = parsePost(raw, 'a.md', PARSE_OPTS);
+    expect(post?.date).toBe(null);
+    expect(post?.updatedAt).toBe(null);
+    // 공개 시각이 없는 예약 글 = 비공개 (먼 미래 기준으로도)
+    expect(
+      post &&
+        isPostVisible(
+          post,
+          testConfig.timezone,
+          new Date('2999-01-01T00:00:00Z'),
+        ),
+    ).toBe(false);
+  },
+);
+
+test('parsePost: 받는 두 모양(YYYY-MM-DD / offset 포함 ISO)은 그대로 보존', () => {
+  for (const value of [
+    '2026-05-04',
+    '2026-05-04T09:00:00+09:00',
+    '2026-05-04T00:00Z',
+    '2026-05-04T09:00:00.500-05:00',
+  ]) {
+    const raw = `---\ntitle: 글\nstatus: published\ndate: '${value}'\n---\n본문`;
+    expect(parsePost(raw, 'a.md', PARSE_OPTS)?.date, value).toBe(value);
+  }
+});
+
+test('parsePost: 형식이 틀린 scheduledDate는 원문을 보존하고 공개하지 않는다 (date로 폴백하지 않음)', () => {
+  // 버리면 공개 시각이 `date`로 폴백해 예정보다 일찍 공개된다(fail-open).
+  const raw = `---\ntitle: 글\nstatus: scheduled\ndate: '2020-01-01'\nscheduledDate: '2026-5-4 9:00'\n---\n본문`;
+  const post = parsePost(raw, 'a.md', PARSE_OPTS);
+  expect(post?.scheduledDate).toBe('2026-5-4 9:00');
+  expect(
+    post &&
+      isPostVisible(
+        post,
+        testConfig.timezone,
+        new Date('2999-01-01T00:00:00Z'),
+      ),
+  ).toBe(false);
 });
 
 test('parsePost: 따옴표 없는 datetime date는 사이트 타임존으로 시점을 보존한다 (UTC 날짜로 밀리지 않음)', () => {

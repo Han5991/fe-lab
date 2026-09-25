@@ -6,6 +6,9 @@ import {
   getKSTCutoffDate as getKSTCutoffDateIn,
   getKSTDateISO as getKSTDateISOIn,
   hasAmbiguousTimezone,
+  isIsoDateOnly,
+  isIsoDateTimeWithOffset,
+  isValidDateString,
   msUntilKSTMidnight as msUntilKSTMidnightIn,
   parseIsoOffset,
   parseScheduledDateKST as parseScheduledDateKSTIn,
@@ -115,6 +118,61 @@ test('parseScheduledDateKST: 날짜 경계 — 연말/월말', () => {
   // 2026-12-31 KST 자정 = 2026-12-30 15:00 UTC
   const d = parseScheduledDateKST('2026-12-31');
   expect(d.toISOString()).toBe('2026-12-30T15:00:00.000Z');
+});
+
+test.each([
+  // Date.parse가 받아 주지만 로컬 타임으로 읽혀 TZ(KST/UTC)마다 9시간 갈리던 값들
+  ['2026-5-4'],
+  ['2026/05/04'],
+  ['2026-06-01T09:00:00'],
+  ['2026-03-16 09:00:00+09:00'],
+  // 달력에 없는 날(예전엔 3월 2일로 굴러갔다)
+  ['2026-02-30'],
+  [''],
+  ['not a date'],
+])(
+  "parseScheduledDateKST: 형식 밖의 값('%s')은 환경과 무관하게 Invalid Date",
+  input => {
+    expect(Number.isNaN(parseScheduledDateKST(input).getTime())).toBe(true);
+  },
+);
+
+// --- isValidDateString ---
+
+test('isValidDateString: YYYY-MM-DD와 offset을 적은 ISO datetime만 받는다', () => {
+  for (const ok of [
+    '2026-05-04',
+    '2024-02-29',
+    '2026-05-04T09:00+09:00',
+    '2026-05-04T09:00:00+09:00',
+    '2026-05-04T09:00:00.123Z',
+    '2026-05-04T23:59:59-05:30',
+  ]) {
+    expect(isValidDateString(ok), ok).toBe(true);
+  }
+  for (const bad of [
+    '2026-5-4',
+    '2026/05/04',
+    '2026-02-30',
+    '2025-02-29',
+    '2026-05-04T09:00:00',
+    '2026-05-04 09:00:00+09:00',
+    '2026-05-04T24:00:00Z',
+    '2026-05-04T09:00:00+0900',
+    '2026-05-04T09:00:00+9:00',
+    '20260504',
+    '',
+  ]) {
+    expect(isValidDateString(bad), bad).toBe(false);
+  }
+});
+
+test('isIsoDateOnly / isIsoDateTimeWithOffset: 두 모양을 따로 판정한다', () => {
+  expect(isIsoDateOnly('2026-05-04')).toBe(true);
+  expect(isIsoDateOnly('2026-05-04T00:00:00Z')).toBe(false);
+  expect(isIsoDateTimeWithOffset('2026-05-04T00:00:00Z')).toBe(true);
+  expect(isIsoDateTimeWithOffset('2026-05-04')).toBe(false);
+  expect(isIsoDateTimeWithOffset('2026-02-30T00:00:00Z')).toBe(false);
 });
 
 // --- parseIsoOffset / toIsoStringInOffset ---
