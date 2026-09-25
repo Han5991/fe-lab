@@ -47,12 +47,38 @@ const SORT_KEYS = [
 const VIEW_KEYS = ['list', 'cards'] as const satisfies readonly ViewMode[];
 
 /**
- * 아카이브 목록(리스트 뷰) 한 행.
- *
- * `/posts/`는 nuqs 때문에 빌드 타임 프리렌더에서 빠지므로, 정적 HTML에 남는
- * 폴백 목록(page.tsx)과 하이드레이션 후의 목록이 같은 컴포넌트를 써야
- * 화면이 바뀌지 않습니다. 그래서 여기서 export합니다.
+ * URL에 값이 없을 때의 정렬·뷰. 파서의 `withDefault`와 정적 폴백
+ * (`PostsArchiveFallback`)이 **같은 상수**를 읽는다 — 예전엔 폴백이 리스트를,
+ * 클라이언트 기본값이 카드를 그려 매 첫 방문마다 하이드레이션 직후 목록이
+ * 카드 그리드로 뒤바뀌었다.
  */
+const DEFAULT_SORT = 'recent' satisfies SortKey;
+const DEFAULT_VIEW = 'cards' satisfies ViewMode;
+
+/** 아카이브 화면이 그리는 필터 상태 — URL에서 읽거나(뷰) 기본값으로 둔다(폴백). */
+interface ArchiveState {
+  q: string;
+  activeTags: string[];
+  series: string | null;
+  year: string | null;
+  sort: SortKey;
+  view: ViewMode;
+}
+
+/** 필터 컨트롤이 부르는 동작. 폴백에서는 전부 아무것도 하지 않는다. */
+interface ArchiveActions {
+  setQuery: (q: string) => void;
+  toggleTag: (tag: string) => void;
+  toggleSeries: (id: string) => void;
+  toggleYear: (id: string) => void;
+  clearSeries: () => void;
+  clearYear: () => void;
+  clearAll: () => void;
+  setSort: (v: SortKey) => void;
+  setView: (v: ViewMode) => void;
+}
+
+/** 아카이브 목록(리스트 뷰) 한 행. */
 export const ArchiveRow = ({ post }: { post: PostSummary }) => (
   <li className={postRowItem}>
     <Link href={postPath(post.slug)} className={postRowLink}>
@@ -91,11 +117,10 @@ export const PostsArchiveView = ({
     tag: parseAsString.withDefault(''),
     series: parseAsString.withDefault(''),
     year: parseAsString.withDefault(''),
-    sort: parseAsStringLiteral(SORT_KEYS).withDefault('recent'),
-    view: parseAsStringLiteral(VIEW_KEYS).withDefault('cards'),
+    sort: parseAsStringLiteral(SORT_KEYS).withDefault(DEFAULT_SORT),
+    view: parseAsStringLiteral(VIEW_KEYS).withDefault(DEFAULT_VIEW),
   } satisfies Record<keyof Required<ArchiveFilters>, unknown> &
     Record<string, unknown>);
-  const [sheetOpen, setSheetOpen] = useState(false);
 
   // 인기순 정렬은 Supabase post_views 테이블 기반. 'popular'를 누르기 전까지는
   // 요청을 보내지 않습니다 (lazy). 5분 staleTime으로 재방문 시 캐시 사용.
@@ -118,26 +143,127 @@ export const PostsArchiveView = ({
 
   // 핸들러들은 전부 JSX prop(`() => void` 자리)으로만 쓰인다. setParams의
   // promise는 아무도 기다리지 않으므로 void로 명시해 버린다(no-misused-promises).
-  const toggleTag = (tag: string) => {
-    const next = activeTags.includes(tag)
-      ? activeTags.filter(t => t !== tag)
-      : [...activeTags, tag];
-    void setParams({ tag: next.length ? next.join(',') : null });
+  const actions: ArchiveActions = {
+    setQuery: v => void setParams({ q: v || null }),
+    toggleTag: tag => {
+      const next = activeTags.includes(tag)
+        ? activeTags.filter(t => t !== tag)
+        : [...activeTags, tag];
+      void setParams({ tag: next.length ? next.join(',') : null });
+    },
+    toggleSeries: id =>
+      void setParams({ series: seriesParam === id ? null : id }),
+    toggleYear: id => void setParams({ year: yearParam === id ? null : id }),
+    clearSeries: () => void setParams({ series: null }),
+    clearYear: () => void setParams({ year: null }),
+    // 네 개를 한 번에 지운다. 개별 setter를 연달아 부르는 것과 URL 쓰기 횟수는
+    // 같지만(nuqs가 전역 큐로 합친다), 무엇을 지우는지가 한 객체로 드러난다.
+    clearAll: () =>
+      void setParams({ q: null, tag: null, series: null, year: null }),
+    setSort: v => void setParams({ sort: v }),
+    setView: v => void setParams({ view: v }),
   };
 
-  const toggleSeries = (id: string) => {
-    void setParams({ series: seriesParam === id ? null : id });
-  };
+  return (
+    <PostsArchiveLayout
+      posts={posts}
+      series={series}
+      tags={tags}
+      years={years}
+      viewCounts={viewCounts}
+      state={{
+        q,
+        activeTags,
+        series: seriesParam || null,
+        year: yearParam || null,
+        sort,
+        view,
+      }}
+      actions={actions}
+    />
+  );
+};
 
-  const toggleYear = (id: string) => {
-    void setParams({ year: yearParam === id ? null : id });
-  };
+const noop = () => undefined;
+const FALLBACK_ACTIONS: ArchiveActions = {
+  setQuery: noop,
+  toggleTag: noop,
+  toggleSeries: noop,
+  toggleYear: noop,
+  clearSeries: noop,
+  clearYear: noop,
+  clearAll: noop,
+  setSort: noop,
+  setView: noop,
+};
+const FALLBACK_STATE: ArchiveState = {
+  q: '',
+  activeTags: [],
+  series: null,
+  year: null,
+  sort: DEFAULT_SORT,
+  view: DEFAULT_VIEW,
+};
+
+/**
+ * `/posts/`의 정적 HTML.
+ *
+ * `PostsArchiveView`는 nuqs(useSearchParams)라 `output: 'export'`의 빌드 타임
+ * 프리렌더에서 빠지고(BAILOUT_TO_CLIENT_SIDE_RENDERING), 정적 HTML에는 Suspense
+ * 폴백만 구워진다. 그 폴백이 **URL 파라미터가 없을 때의 뷰와 같은 화면**이어야
+ * 하이드레이션 때 목록이 바뀌지 않는다 — 그래서 별도 마크업이 아니라 같은
+ * 레이아웃을 기본 상태로 그린다. 컨트롤은 하이드레이션 전까지 동작하지 않는다.
+ */
+export const PostsArchiveFallback = (props: PostsArchiveViewProps) => (
+  <PostsArchiveLayout
+    {...props}
+    viewCounts={undefined}
+    state={FALLBACK_STATE}
+    actions={FALLBACK_ACTIONS}
+  />
+);
+
+interface PostsArchiveLayoutProps extends PostsArchiveViewProps {
+  viewCounts: Map<string, number> | undefined;
+  state: ArchiveState;
+  actions: ArchiveActions;
+}
+
+const PostsArchiveLayout = ({
+  posts,
+  series,
+  tags,
+  years,
+  viewCounts,
+  state,
+  actions,
+}: PostsArchiveLayoutProps) => {
+  const {
+    q,
+    activeTags,
+    series: seriesParam,
+    year: yearParam,
+    sort,
+    view,
+  } = state;
+  const {
+    setQuery,
+    toggleTag,
+    toggleSeries,
+    toggleYear,
+    clearSeries,
+    clearYear,
+    clearAll,
+    setSort,
+    setView,
+  } = actions;
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   const filtered = filterAndSortPostsByArchiveParams(posts, {
     q,
     tags: activeTags,
-    series: seriesParam || null,
-    year: yearParam || null,
+    series: seriesParam,
+    year: yearParam,
     sort,
     viewCounts,
   });
@@ -158,19 +284,13 @@ export const PostsArchiveView = ({
     count: y.count,
   }));
 
-  // 네 개를 한 번에 지운다. 개별 setter를 연달아 부르는 것과 URL 쓰기 횟수는
-  // 같지만(nuqs가 전역 큐로 합친다), 무엇을 지우는지가 한 객체로 드러난다.
-  const clearAll = () => {
-    void setParams({ q: null, tag: null, series: null, year: null });
-  };
-
   // 활성 필터 합산 (FAB·시트 헤더의 N 뱃지 + 정렬도 기본값이 아니면 카운트)
   const activeCount =
     activeTags.length +
     (seriesParam ? 1 : 0) +
     (yearParam ? 1 : 0) +
-    (sort !== 'recent' ? 1 : 0) +
-    (view !== 'cards' ? 1 : 0);
+    (sort !== DEFAULT_SORT ? 1 : 0) +
+    (view !== DEFAULT_VIEW ? 1 : 0);
 
   return (
     // FAB·시트는 grid 자식으로 두면 fixed 포지션이라도 DOM상 grid item이 되어
@@ -196,23 +316,20 @@ export const PostsArchiveView = ({
             gap: '7',
           })}
         >
-          <ArchiveSearchBar
-            q={q}
-            onChange={v => void setParams({ q: v || null })}
-          />
+          <ArchiveSearchBar q={q} onChange={setQuery} />
           <PostsFilterPanel
             sort={sort}
-            onSortChange={v => void setParams({ sort: v })}
+            onSortChange={setSort}
             view={view}
-            onViewChange={v => void setParams({ view: v })}
+            onViewChange={setView}
             tagItems={tagItems}
             activeTags={activeTags}
             onToggleTag={toggleTag}
             seriesItems={seriesItems}
-            activeSeries={seriesParam || null}
+            activeSeries={seriesParam}
             onToggleSeries={toggleSeries}
             yearItems={yearItems}
-            activeYear={yearParam || null}
+            activeYear={yearParam}
             onToggleYear={toggleYear}
           />
           {/*
@@ -241,19 +358,16 @@ export const PostsArchiveView = ({
               mb: '4',
             })}
           >
-            <ArchiveSearchBar
-              q={q}
-              onChange={v => void setParams({ q: v || null })}
-            />
+            <ArchiveSearchBar q={q} onChange={setQuery} />
           </div>
 
           <ActiveFilters
             tags={activeTags}
-            series={seriesParam || null}
-            year={yearParam || null}
+            series={seriesParam}
+            year={yearParam}
             onRemoveTag={toggleTag}
-            onClearSeries={() => void setParams({ series: null })}
-            onClearYear={() => void setParams({ year: null })}
+            onClearSeries={clearSeries}
+            onClearYear={clearYear}
             onClearAll={clearAll}
           />
 
@@ -379,17 +493,17 @@ export const PostsArchiveView = ({
       >
         <PostsFilterPanel
           sort={sort}
-          onSortChange={v => void setParams({ sort: v })}
+          onSortChange={setSort}
           view={view}
-          onViewChange={v => void setParams({ view: v })}
+          onViewChange={setView}
           tagItems={tagItems}
           activeTags={activeTags}
           onToggleTag={toggleTag}
           seriesItems={seriesItems}
-          activeSeries={seriesParam || null}
+          activeSeries={seriesParam}
           onToggleSeries={toggleSeries}
           yearItems={yearItems}
-          activeYear={yearParam || null}
+          activeYear={yearParam}
           onToggleYear={toggleYear}
         />
       </PostsFilterSheet>

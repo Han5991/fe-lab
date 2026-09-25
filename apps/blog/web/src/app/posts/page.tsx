@@ -14,10 +14,10 @@ import {
   buildCollectionPageJsonLd,
   buildPostsMetadata,
 } from './seo';
-// 폴백 목록과 하이드레이션 후 목록이 같은 행 컴포넌트를 쓰도록 배럴(index.ts)이
+// 폴백과 하이드레이션 후 화면이 같은 레이아웃을 쓰도록 배럴(index.ts)이
 // 아니라 모듈에서 직접 가져온다.
 import {
-  ArchiveRow,
+  PostsArchiveFallback,
   PostsArchiveView,
 } from '@/src/components/blog/PostsArchive';
 import { PageBoundary } from '@/src/components/PageBoundary';
@@ -100,16 +100,19 @@ export default function PostsPage() {
             빌드 타임 프리렌더 대상에서 빠진다 (BAILOUT_TO_CLIENT_SIDE_RENDERING).
             즉 out/posts/index.html에 구워지는 건 아래 fallback이 전부다.
             스피너를 두면 아카이브 허브의 내부 링크가 0개가 되므로, 글 목록을 여기서
-            프리렌더해 링크를 남긴다. (브라우저에서 하이드레이션되면 인터랙티브 뷰로 교체)
+            프리렌더해 링크를 남긴다. 폴백은 **URL 파라미터가 없을 때의 뷰와 같은
+            레이아웃**(카드 그리드·사이드바·편수 h2)이다 — 예전 폴백은 리스트만
+            그려, 하이드레이션 직후 카드 그리드로 뒤바뀌고 헤딩이 h1 → h3로 건너뛰었다.
             회귀 이력: c206b99에서 도입 → 15ed918(리디자인)에서 유실 → 재도입.
           */}
           <Suspense
             fallback={
-              <ol className={css({ listStyleType: 'none', p: '0', m: '0' })}>
-                {posts.map(post => (
-                  <ArchiveRow key={post.slug} post={post} />
-                ))}
-              </ol>
+              <PostsArchiveFallback
+                posts={posts}
+                series={series}
+                tags={tags}
+                years={years}
+              />
             }
           >
             <PostsArchiveView
