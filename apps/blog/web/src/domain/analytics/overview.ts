@@ -7,6 +7,7 @@
 
 import { addDaysISO, formatMonthDayISO, isPostVisible } from '@blog/content';
 import { percentDelta } from './delta';
+import { trailingWindowDays } from './windows';
 import type { PostStatDetail, PostVisibilityContext } from './types';
 
 export type AnalyticsRange = '7d' | '30d' | '90d';
@@ -64,14 +65,13 @@ interface RangeWindows {
 }
 
 function buildWindows(todayISO: string, rangeDays: number): RangeWindows {
-  const days: string[] = [];
-  for (let i = rangeDays - 1; i >= 0; i--) {
-    days.push(addDaysISO(todayISO, -i));
-  }
-  const previousDays: string[] = [];
-  for (let i = rangeDays * 2 - 1; i >= rangeDays; i--) {
-    previousDays.push(addDaysISO(todayISO, -i));
-  }
+  // "최근 N일"의 정의는 windows.ts 하나다 — 글별 추이 필터와 같은 창이어야
+  // 같은 글의 같은 기간 합이 화면마다 달라지지 않는다.
+  const days = trailingWindowDays(todayISO, rangeDays);
+  const previousDays = trailingWindowDays(
+    addDaysISO(todayISO, -rangeDays),
+    rangeDays,
+  );
   return { days, current: new Set(days), previous: new Set(previousDays) };
 }
 

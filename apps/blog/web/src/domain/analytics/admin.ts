@@ -22,6 +22,9 @@ export {
 } from './adminErrors';
 export type { AdminFailureKind } from './adminErrors';
 
+// "최근 N일" 창 — 개요와 글별 추이 필터가 같은 정의를 쓴다(windows.ts).
+export { trailingWindowDays, trailingWindowStartISO } from './windows';
+
 // 공개 글 수 — 대시보드 두 화면(/admin, /admin/analytics)이 같은 규칙으로 센다.
 // 계산 모듈(overview)이라 공개 배럴이 아니라 여기서 낸다(index.ts 주석).
 export { countLivePosts } from './overview';
