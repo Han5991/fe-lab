@@ -1,30 +1,47 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useSyncExternalStore } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowUp } from 'lucide-react';
 import { css } from '@design-system/ui-lib/css';
 
+/** 이만큼 내려가면 버튼이 뜬다(px). */
+const SHOW_AFTER = 300;
+
+const prefersReducedMotion = () =>
+  typeof window.matchMedia === 'function' &&
+  window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// 동작 줄이기를 켠 사용자에게는 부드러운 스크롤(긴 애니메이션)을 주지 않는다.
 const scrollToTop = () => {
   window.scrollTo({
     top: 0,
-    behavior: 'smooth',
+    behavior: prefersReducedMotion() ? 'auto' : 'smooth',
   });
 };
 
-export const BackToTop = () => {
-  const [isVisible, setIsVisible] = useState(false);
+// 스크롤 위치를 외부 저장소로 읽는다. 예전엔 scroll 이벤트에서만 상태를 갱신해,
+// 뒤로/앞으로 가기의 스크롤 복원으로 이미 내려와 있는 채 마운트되면 다음 스크롤
+// 전까지 버튼이 숨어 있었다. 스냅샷은 마운트 때도 읽히고, 리스너는 passive다.
+const subscribeScroll = (onChange: () => void) => {
+  window.addEventListener('scroll', onChange, { passive: true });
+  return () => window.removeEventListener('scroll', onChange);
+};
+const isScrolledDown = () => window.scrollY > SHOW_AFTER;
+const serverSnapshot = () => false;
 
-  useEffect(() => {
-    const toggleVisibility = () => setIsVisible(window.scrollY > 300);
-    window.addEventListener('scroll', toggleVisibility);
-    return () => window.removeEventListener('scroll', toggleVisibility);
-  }, []);
+export const BackToTop = () => {
+  const isVisible = useSyncExternalStore(
+    subscribeScroll,
+    isScrolledDown,
+    serverSnapshot,
+  );
 
   return (
     <AnimatePresence>
       {isVisible && (
         <motion.button
+          type="button"
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.8 }}
