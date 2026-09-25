@@ -26,6 +26,7 @@ import type {
   ValidateOptions,
 } from './validate/shared.ts';
 import { validatePost } from './validate/frontmatter.ts';
+import { resolveSeverity } from './validate/rules.ts';
 import {
   validateImageReferences,
   validateCodeFenceLanguages,
@@ -67,6 +68,41 @@ export {
   detectDuplicateDescriptions,
 } from './validate/corpus.ts';
 
+/**
+ * 파일 하나를 검사용 레코드로 읽는다. frontmatter YAML이 깨졌으면 레코드 대신
+ * **그 파일을 가리키는 이슈**를 돌려준다.
+ *
+ * gray-matter는 문법 오류에 `YAMLException`을 던지고, 메시지에는 줄·열만 있고
+ * 파일 이름이 없다. 예전에는 그게 그대로 CLI를 멈춰서, 글쓴이가 70개 가까운
+ * `.md`(`---`로 시작하는 작업 노트 포함)를 손으로 이분 탐색해야 했다. 여기서
+ * 잡아 이슈로 바꾸면 나머지 파일도 끝까지 검사된다.
+ */
+export function parseRecord(
+  raw: string,
+  absPath: string,
+  relPath: string,
+): { record: PostRecord } | { issue: Issue } {
+  try {
+    const { data, content } = matter(raw);
+    return { record: { absPath, relPath, data, content } };
+  } catch (e) {
+    const mark = (e as { mark?: { line?: unknown } } | null)?.mark;
+    // js-yaml의 mark.line은 0-based이고, gray-matter가 넘기는 YAML은 여는 `---`
+    // 줄의 끝(개행)부터 시작한다 — 그래서 +1이 곧 파일의 줄 번호다.
+    const line = typeof mark?.line === 'number' ? mark.line + 1 : 1;
+    const reason = e instanceof Error ? e.message.split('\n')[0] : String(e);
+    return {
+      issue: {
+        file: relPath,
+        line,
+        severity: resolveSeverity('invalid-frontmatter-yaml', {}),
+        rule: 'invalid-frontmatter-yaml',
+        message: `frontmatter YAML을 읽을 수 없습니다 — 빌드의 로더가 이 파일에서 멈춥니다. 콜론이 든 값은 따옴표로 감싸세요: ${reason}`,
+      },
+    };
+  }
+}
+
 function format(issue: Issue): string {
   const tag = issue.severity === 'error' ? '✖' : '⚠';
   const loc = issue.line ? `${issue.file}:${issue.line}` : issue.file;
@@ -91,9 +127,13 @@ export function main(ctx: ContentContext, runOptions: ValidateOptions) {
   for (const absPath of allFiles) {
     const raw = readFileSync(absPath, 'utf8');
     if (!hasFrontmatter(raw)) continue;
-    const { data, content } = matter(raw);
     const relPath = posix.normalize(relative(postsDir, absPath));
-    const record: PostRecord = { absPath, relPath, data, content };
+    const parsed = parseRecord(raw, absPath, relPath);
+    if ('issue' in parsed) {
+      allIssues.push(parsed.issue);
+      continue;
+    }
+    const { record } = parsed;
     records.push(record);
     allIssues.push(...validatePost(record, raw, options));
     allIssues.push(...validateImageReferences(record, raw, options));

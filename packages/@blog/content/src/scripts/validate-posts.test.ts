@@ -8,6 +8,7 @@ import {
   maskNonProse,
   detectDuplicateSlugs,
   detectDuplicateDescriptions as detectDuplicateDescriptionsIn,
+  parseRecord,
   type PostRecord,
 } from './validate-posts.ts';
 import { defineTestContent } from '../shared/testValues.ts';
@@ -1407,4 +1408,35 @@ test('scheduledDate: offset 명시 ISO만 받고, 공백 구분·달력 밖 날�
   expect(scheduled('2026-02-30T09:00:00+09:00')).toStrictEqual([
     'invalid-scheduled-date',
   ]);
+});
+
+// ── invalid-frontmatter-yaml: 깨진 YAML은 파일을 짚는 이슈가 된다 ────────────
+
+test('parseRecord: 깨진 frontmatter YAML은 던지지 않고 파일·줄을 짚는 에러 이슈가 된다', () => {
+  // 예전에는 YAMLException이 CLI를 통째로 멈췄고 메시지에 파일 이름이 없었다.
+  const parsed = parseRecord(
+    '---\nstatus: published\ntitle: a: b: c\n---\n본문',
+    '/posts/broken.md',
+    'broken.md',
+  );
+  expect('issue' in parsed).toBeTruthy();
+  if (!('issue' in parsed)) return;
+  expect(parsed.issue).toMatchObject({
+    file: 'broken.md',
+    line: 3,
+    severity: 'error',
+    rule: 'invalid-frontmatter-yaml',
+  });
+});
+
+test('parseRecord: 정상 YAML은 레코드를 돌려준다', () => {
+  const parsed = parseRecord(
+    '---\nstatus: draft\ntitle: 제목\n---\n본문',
+    '/posts/ok.md',
+    'ok.md',
+  );
+  expect('record' in parsed && parsed.record.data).toStrictEqual({
+    status: 'draft',
+    title: '제목',
+  });
 });

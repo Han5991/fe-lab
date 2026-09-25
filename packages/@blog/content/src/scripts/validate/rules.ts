@@ -58,6 +58,8 @@ export interface RuleSpec {
 
 // prettier-ignore 없이도 표로 읽히도록 한 줄 = 한 규칙을 유지합니다.
 export const RULES = {
+  // ── 파일 읽기 (validate-posts.ts의 parseRecord) ────────────────────────────
+  'invalid-frontmatter-yaml': { severity: 'error', scope: 'always' },
   // ── frontmatter 판정 사슬 (frontmatter.ts) ────────────────────────────────
   'legacy-published-field': { severity: 'error', scope: 'always' },
   'invalid-status': { severity: 'error', scope: 'always' },
