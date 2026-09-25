@@ -1,5 +1,6 @@
 /**
- * 검증 규칙 **평면 테이블** — 규칙 id 전체(29개)와 각각의 심각도·범위.
+ * 검증 규칙 **평면 테이블** — 규칙 id 전체와 각각의 심각도·범위(개수는
+ * `rules.test.ts`가 잠근다).
  *
  * 예전에는 이 정보가 1000줄짜리 validate-posts.ts의 실행 코드 안에 흩어져 있어,
  * "규칙이 몇 개인지", "--strict가 무엇을 승격하는지", "어떤 규칙이 전체 집합을
@@ -80,6 +81,7 @@ export const RULES = {
   'duplicate-tags': { severity: 'warning', scope: 'postLike' },
   'unknown-hero-diagram': { severity: 'error', scope: 'postLike' },
   'missing-thumbnail': { severity: 'error', scope: 'postLike' },
+  'og-thumbnail-mismatch': { severity: 'error', scope: 'postLike' },
   // ── 본문 판정 사슬 (body.ts) ──────────────────────────────────────────────
   'missing-image': { severity: 'error', scope: 'always' },
   'missing-image-alt': { severity: SEO_PUBLISH, scope: 'post' },

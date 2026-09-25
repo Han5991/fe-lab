@@ -11,6 +11,7 @@ import type {
   SeoConfig,
   TimezoneConfig,
 } from '../../shared/contentConfig.ts';
+import { toOptionalString } from '../../post/frontmatterSchema.ts';
 
 export type Severity = 'error' | 'warning';
 
@@ -100,4 +101,23 @@ export function frontmatterOffset(raw: string): number {
     if (i !== 0 && line.trim() === '---') return i + 1;
   }
   return 0;
+}
+
+/**
+ * 이 파일이 빌드에서 갖게 될 slug — **로더(`parsePost`)와 같은 규칙**이다.
+ *
+ * 명시 `slug`가 문자열이고 비어 있지 않으면 그것, 아니면 파일 경로에서 확장자를
+ * 뗀 값이다. 빈 문자열(`slug: ''`)도 로더처럼 "없음"으로 본다 — 좁히기 함수가
+ * 같은 `toOptionalString`이라 두 판정이 갈라질 수 없다.
+ */
+export function effectiveSlug(
+  record: Pick<PostRecord, 'data' | 'relPath'>,
+): string {
+  return (
+    toOptionalString(record.data['slug']) ??
+    record.relPath
+      .split(/[/\\]/)
+      .join('/')
+      .replace(/\.(md|mdx)$/, '')
+  );
 }

@@ -20,7 +20,8 @@ import {
   rejectionReasonFor,
 } from '../../post/index.ts';
 import { hasAmbiguousTimezone } from '../../shared/dates.ts';
-import { findFrontmatterLine } from './shared.ts';
+import { decodeUrlSafe } from '../../shared/url.ts';
+import { effectiveSlug, findFrontmatterLine } from './shared.ts';
 import type { Issue, PostRecord, ValidateContext } from './shared.ts';
 import { resolveSeverity } from './rules.ts';
 
@@ -478,13 +479,34 @@ const heroChain: Chain = ({ record: { data, relPath }, raw, options }) => {
   ];
 };
 
-// ── thumbnail 사슬: missing-thumbnail ───────────────────────────────────────
+// ── thumbnail 사슬: og-thumbnail-mismatch · missing-thumbnail ───────────────
+
+/** 생성 OG 카드 경로의 접두사 — 생성기(`render/generate-og-images.ts`)가 쓰는 곳 */
+const OG_THUMBNAIL_PREFIX = '/og/';
 
 const thumbnailChain: Chain = ({ record, raw, options }) => {
   const { data, relPath, absPath } = record;
   if (!('thumbnail' in data) || typeof data['thumbnail'] !== 'string')
     return [];
   const thumb = data['thumbnail'];
+  // `/og/…`는 "생성 카드를 써라"는 뜻이다. 그런데 생성기는 언제나 `/og/{slug}.png`만
+  // 만들고 **나머지 png를 orphan으로 지운다**. 페이지는 frontmatter 경로를 그대로
+  // 쓰므로, slug만 고치고(`react-error-deign` → `…-design`) 이 줄을 두면 히어로·목록
+  // 카드·og:image가 전부 404인데 다른 검사는 모두 통과한다.
+  if (thumb.startsWith(OG_THUMBNAIL_PREFIX)) {
+    const slug = effectiveSlug(record);
+    const expected = `${OG_THUMBNAIL_PREFIX}${slug}.png`;
+    if (decodeUrlSafe(thumb) === expected) return [];
+    return [
+      {
+        file: relPath,
+        line: findFrontmatterLine(raw, 'thumbnail'),
+        severity: resolveSeverity('og-thumbnail-mismatch', data, options),
+        rule: 'og-thumbnail-mismatch',
+        message: `\`thumbnail\`이 생성 OG 카드를 가리키지만 이 글의 카드 경로(\`${expected}\`)와 다릅니다 — 생성기는 slug 기준 카드만 만들고 나머지는 지우므로 이미지가 404가 됩니다. \`thumbnail: '${expected}'\`로 고치거나 줄을 지우세요(없어도 같은 카드를 씁니다): ${thumb}`,
+      },
+    ];
+  }
   if (/^https?:\/\//.test(thumb) || thumb.startsWith('/')) return [];
   const resolved = resolve(dirname(absPath), thumb);
   if (existsSync(resolved)) return [];

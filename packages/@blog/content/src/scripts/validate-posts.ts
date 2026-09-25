@@ -3,7 +3,7 @@
  *
  * 실제 검증 로직은 두 겹으로 나뉘어 `scripts/validate/`에 있습니다:
  *
- * - `rules.ts`       — 규칙 29개의 평면 테이블(id → 심각도·범위). "--strict가
+ * - `rules.ts`       — 규칙 전체의 평면 테이블(id → 심각도·범위). "--strict가
  *                      무엇을 승격하는지"와 "무엇이 전체 집합을 보는지"는 여기서
  *                      열 하나로 읽힙니다
  * - `frontmatter.ts` / `body.ts` / `corpus.ts` — 실행 체크. 규칙 id 단위가

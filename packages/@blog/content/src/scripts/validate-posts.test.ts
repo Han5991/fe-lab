@@ -1259,3 +1259,55 @@ test('body-h1: setext 헤딩은 문단을 소비한다 (경고 1건)', () => {
 test('body-h1: 들여쓴 코드 블록 뒤의 `===`는 헤딩이 아니다', () => {
   expect(bodyH1Rules('\n    코드 한 줄\n===')).toStrictEqual([]);
 });
+
+// ── og-thumbnail-mismatch: `/og/` 썸네일은 이 글의 생성 카드여야 한다 ─────────
+
+test('og-thumbnail-mismatch: slug와 다른 `/og/` 썸네일은 에러 (slug를 고치고 줄을 남긴 경우)', () => {
+  const issues = validatePost(
+    rec({
+      title: 'x',
+      status: 'published',
+      date: '2025-01-01',
+      slug: 'react-error-design',
+      thumbnail: '/og/react-error-deign.png',
+      excerpt: VALID_EXCERPT,
+    }),
+    '---\ntitle: x\nthumbnail: /og/react-error-deign.png\n---\n',
+  );
+  expect(issues.map(i => [i.rule, i.severity, i.line])).toStrictEqual([
+    ['og-thumbnail-mismatch', 'error', 3],
+  ]);
+  expect(issues[0]?.message).toContain('/og/react-error-design.png');
+});
+
+test('og-thumbnail-mismatch: 명시 slug·파일 경로 slug·인코딩된 표기가 맞으면 통과', () => {
+  const base = {
+    title: 'x',
+    status: 'published',
+    date: '2025-01-01',
+    excerpt: VALID_EXCERPT,
+  };
+  const found = (data: Record<string, unknown>, relPath = 'a.md') =>
+    validatePost(rec(data, { relPath }), '---\n---\n').map(i => i.rule);
+
+  expect(
+    found({ ...base, slug: 'a-b', thumbnail: '/og/a-b.png' }),
+  ).toStrictEqual([]);
+  // slug가 없으면 파일 경로(확장자 제거)가 slug다 — 로더와 같은 규칙.
+  expect(
+    found({ ...base, thumbnail: '/og/회고/글.png' }, '회고/글.md'),
+  ).toStrictEqual([]);
+  expect(
+    found(
+      { ...base, thumbnail: `/og/${encodeURIComponent('글')}.png` },
+      '글.md',
+    ),
+  ).toStrictEqual([]);
+  // 빈 slug는 로더처럼 "없음"이다 — 파일 경로 slug(`a`)와 비교한다.
+  expect(found({ ...base, slug: '', thumbnail: '/og/a.png' })).toStrictEqual(
+    [],
+  );
+  expect(found({ ...base, slug: '', thumbnail: '/og/.png' })).toStrictEqual([
+    'og-thumbnail-mismatch',
+  ]);
+});
