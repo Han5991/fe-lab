@@ -16,10 +16,10 @@
   "rangeStrategy": "bump",
   "labels": ["dependencies"],
   "lockFileMaintenance": {
+    "description": "자동 머지하지 않는다. Renovate의 minimumReleaseAge는 lockFileMaintenance에 적용되지 않는다(전이 의존성 해석을 패키지 매니저에 맡기므로 나이를 볼 릴리스가 없다). 이 PR은 모든 전이 의존성을 방금 나온 버전으로 다시 해석하므로, 나이 게이트 없이 자동 머지하면 공개된 지 몇 분 된 악성 버전도 그대로 들어온다. 게이트는 pnpm-workspace.yaml의 pnpm minimumReleaseAge 몫이다 — 그게 들어오면 automerge를 되살려도 된다",
     "enabled": true,
     "schedule": ["* 0-9 1-3 * *"],
-    "automerge": true,
-    "platformAutomerge": true
+    "automerge": false
   },
   "packageRules": [
     {
@@ -33,10 +33,11 @@
       "groupName": "panda"
     },
     {
-      "description": "GitHub Actions는 ci scope로 묶는다 (기본 scope는 deps)",
+      "description": "GitHub Actions는 ci scope로 묶고(기본 scope는 deps), 공개된 지 3일이 지난 릴리스만 올린다. 프리셋 security:minimumReleaseAgeNpm은 npm 데이터소스에만 걸려 액션 업데이트(자동 머지 대상)에는 나이 게이트가 없었다 — 태그가 탈취되거나 악성 릴리스가 나오면 배포·리뷰 잡에서 곧바로 돌았다",
       "matchManagers": ["github-actions"],
       "groupName": "ci",
-      "semanticCommitScope": "ci"
+      "semanticCommitScope": "ci",
+      "minimumReleaseAge": "3 days"
     },
     {
       "description": "dependencies·devDependencies 모두 minor/patch까지 자동 머지. 예전에는 프로덕션 dependencies만 patch로 좁혀 뒀는데, 그 결과 프로덕션 minor가 어느 규칙에도 안 걸려 automerge도 deps-major 라벨도 없이 열린 채 쌓였다(lucide-react·mermaid·motion·nuqs·@supabase/postgrest-js·magic-string). 블로그는 build 안에 check-seo·check-bundle까지 게이트가 있어 회귀는 머지 전에 잡힌다. 런타임 자체(.tool-versions의 node·pnpm, engines, packageManager)는 여전히 어느 규칙에도 안 걸려 수동이다 — 자동으로 올리면 asdf에 안 깔린 버전을 가리켜 로컬이 죽는다",
@@ -65,6 +66,11 @@
       "matchUpdateTypes": ["minor", "patch"],
       "automerge": true,
       "platformAutomerge": true
+    },
+    {
+      "description": "anthropics/claude-code-action은 SHA로 고정하고 자동 머지하지 않는다. CLAUDE_CODE_OAUTH_TOKEN과 (github_token을 넘기지 않으면) 잡 권한과 무관하게 write로 발급되는 App 토큰을 받는 액션이고, 이 저장소는 액션 동작 변화(에이전트 모드에서 게시 누락 등)에 여러 번 데였다. 매 버전을 diff로 보고 사람이 머지한다",
+      "matchPackageNames": ["anthropics/claude-code-action"],
+      "automerge": false
     },
     {
       "description": "brace-expansion·js-yaml overrides는 소비자가 요구하는 major 라인에 묶여 있다. minimatch@3(eslint 경유)은 brace-expansion v1의 CJS 콜러블 export를, gray-matter는 js-yaml v3의 safeLoad를 각각 요구한다. major를 올리면 lint와 프론트매터 파싱이 즉시 죽으므로 제안 자체를 막는다. advisory는 두 라인 모두 백포트가 있어 major 없이 닫힌다",
