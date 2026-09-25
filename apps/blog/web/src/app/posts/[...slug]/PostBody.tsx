@@ -155,17 +155,19 @@ export function buildPostComponents(relativeDir: string): PostComponents {
         </a>
       );
     },
-    table({ children, node: _node, ...props }) {
+    table({ children, node, ...props }) {
       return (
         // 열이 많은 표는 본문 폭(모바일 ~310px)을 넘는다. 감싸지
         // 않으면 마지막 열이 잘린 채 스크롤도 안 된다.
         //
         // tabIndex+role로 키보드 초점을 받게 한다 — 마우스 없이
         // 스크롤할 방법이 사라지면 안 된다(axe
-        // scrollable-region-focusable).
+        // scrollable-region-focusable). region은 랜드마크라 이름이 표마다
+        // 달라야 한다 — 전부 "표"면 스크린리더의 랜드마크 목록이 같은
+        // 항목으로 채워진다(axe landmark-unique). 캡션이나 머리행에서 짓는다.
         <div
           role="region"
-          aria-label="표"
+          aria-label={tableLabel(node)}
           tabIndex={0}
           className={css({
             overflowX: 'auto',
@@ -233,6 +235,46 @@ export function buildPostComponents(relativeDir: string): PostComponents {
     'diagram-node': DiagramNodeTag,
     'diagram-edge': DiagramEdgeTag,
   };
+}
+
+/** 표 이름을 짓는 데 읽는 hast 노드의 모양(react-markdown이 `node`로 넘긴다). */
+interface HastLike {
+  type?: string;
+  tagName?: string;
+  value?: string;
+  children?: HastLike[];
+}
+
+function hastText(node: HastLike): string {
+  if (node.type === 'text') return node.value ?? '';
+  return (node.children ?? []).map(hastText).join('');
+}
+
+function findElement(node: HastLike, tagName: string): HastLike | undefined {
+  for (const child of node.children ?? []) {
+    if (child.tagName === tagName) return child;
+    const found = findElement(child, tagName);
+    if (found) return found;
+  }
+  return undefined;
+}
+
+/**
+ * 표 스크롤 영역의 접근 가능한 이름. `<caption>`이 있으면 그것, 없으면
+ * 머리행의 칸 제목을 이어 붙인다(GFM 표는 언제나 머리행이 있다).
+ */
+function tableLabel(node: HastLike | undefined): string {
+  if (!node) return '표';
+  const caption = findElement(node, 'caption');
+  const captionText = caption ? hastText(caption).trim() : '';
+  if (captionText) return `표: ${captionText}`;
+
+  const headerRow = findElement(node, 'tr');
+  const headers = (headerRow?.children ?? [])
+    .filter(cell => cell.tagName === 'th' || cell.tagName === 'td')
+    .map(cell => hastText(cell).trim())
+    .filter(Boolean);
+  return headers.length > 0 ? `표: ${headers.join(', ')}` : '표';
 }
 
 interface PostBodyProps {

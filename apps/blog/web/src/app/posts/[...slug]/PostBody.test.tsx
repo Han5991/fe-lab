@@ -5,7 +5,7 @@
  * identity 판정이 어긋나 `<p><div>` 무효 중첩(hydration mismatch)으로 나타난다.
  */
 import { describe, expect, test, vi } from 'vitest';
-import { render } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import rehypeRaw from 'rehype-raw';
 import rehypeSlug from 'rehype-slug';
@@ -366,5 +366,45 @@ describe('코드 펜스의 바깥 <pre>', () => {
     const doc = parsed(serverHtml('<pre>  들여쓴\n    텍스트</pre>\n'));
 
     expect(doc.querySelector('pre')?.textContent).toBe('  들여쓴\n    텍스트');
+  });
+});
+
+describe('표 스크롤 영역', () => {
+  test('표마다 머리행에서 지은 서로 다른 이름을 갖는다', () => {
+    render(
+      <PostBody
+        content={[
+          '| 항목 | 전 | 후 |',
+          '| --- | --- | --- |',
+          '| 빌드 | 22분 | 8분 |',
+          '',
+          '| 도구 | 역할 |',
+          '| --- | --- |',
+          '| vitest | 러너 |',
+        ].join('\n')}
+        relativeDir="dir"
+      />,
+    );
+
+    // region은 랜드마크라 이름이 겹치면 목록에서 구분이 안 된다(axe landmark-unique).
+    const names = screen
+      .getAllByRole('region')
+      .map(region => region.getAttribute('aria-label'));
+    expect(names).toEqual(['표: 항목, 전, 후', '표: 도구, 역할']);
+  });
+
+  test('캡션이 있으면 캡션으로 이름을 짓는다', () => {
+    render(
+      <PostBody
+        content={
+          '<table><caption>배포 시간 비교</caption><tr><th>항목</th></tr></table>\n'
+        }
+        relativeDir="dir"
+      />,
+    );
+
+    expect(
+      screen.getByRole('region', { name: '표: 배포 시간 비교' }),
+    ).toHaveAttribute('tabindex', '0');
   });
 });
