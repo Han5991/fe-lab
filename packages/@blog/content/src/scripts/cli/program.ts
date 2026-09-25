@@ -18,6 +18,7 @@
  * 돌지 않아야 커맨드 목록과 옵션을 검사할 수 있다.
  */
 import { Command, Option } from 'commander';
+import { BUILD_NOW_ENV, resolveBuildNow } from '../../shared/buildNow.ts';
 import type { NewPostOptions } from '../new-post.ts';
 import type { ContentContext } from '../context.ts';
 
@@ -29,10 +30,12 @@ import type { ContentContext } from '../context.ts';
 async function loadContext(command: Command): Promise<ContentContext> {
   const globals = command.optsWithGlobals<{ config?: string; now?: string }>();
   const { loadContentConfig } = await import('./discoverConfig.ts');
-  const { createContext, resolveBuildNow, BUILD_NOW_ENV } =
-    await import('../context.ts');
+  const { createContext } = await import('../context.ts');
   let now: Date;
   try {
+    // 우선순위는 `--now` > 환경 변수 > 지금. 환경 변수는 CLI 밖의 단계
+    // (`next build`)와 같은 시각을 쓰기 위한 채널이다 — 앱의 `build` 스크립트가
+    // 내보내고, 앱의 `src/content.ts`도 같은 파서로 읽는다(shared/buildNow.ts).
     now = resolveBuildNow(globals.now ?? process.env[BUILD_NOW_ENV]);
   } catch (e) {
     // 입력 형식 오류는 스택이 아니라 메시지로 — new-post 액션과 같은 처리.

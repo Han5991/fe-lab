@@ -105,6 +105,7 @@ src/
 ├─ shared/     contentConfig(defineContent + ContentValues 계약) · contentPaths(절대 경로)
 │              · testValues(테스트 픽스처 — 패키지 안의 유일한 "어떤 사이트")
 │              · dates · format · guards · jsonLd · url · postFiles · prismLanguages
+│              · buildNow(빌드 기준 시각 BLOG_CONTENT_NOW의 이름·파서 — CLI와 앱이 공유)
 │              · markdownHeadings(h1→h2 매핑, 사이트 본문용) · viewCookie
 ├─ post/       createContent(인스턴스 조립) · repository(gray-matter 로더 factory) · service(읽기 API factory)
 │              · visibility(공개 판정 한 곳) · series(_series.yml factory) · urls(postPath·archivePath — 후행 슬래시는 여기서만)
@@ -140,8 +141,11 @@ spawn되고 cwd·PATH 어디에도 기대지 않는다 — 부모가 발견한 �
 오늘·RSS lastBuildDate·strict 승격 범위가 전부 이 값을 본다 — 단계마다 제 시계를
 보던 때는 공개 시각이 빌드 도중에 지나면 산출물끼리 글 집합이 갈렸다. 전역
 `--now`를 생략하면 환경 변수 `BLOG_CONTENT_NOW`, 그것도 없으면 지금이다(offset을
-명시한 ISO만 받는다). `next build`는 아직 로더의 자기 시각으로 판정하므로, 페이지와
-산출물의 어긋남은 `check-seo`의 sitemap ↔ 페이지 대조가 잡는다.
+명시한 ISO만 받는다). 컨텍스트의 로더 인스턴스(`ctx.content`)도 이 시각으로 만든다.
+`next build`까지 같은 시각을 보게 하는 채널이 이 변수다 — 앱의 `build` 스크립트가
+시각 하나를 내보낸 뒤 `prebuild`·`next build`·`check-seo`·`check-bundle`을 돌리고,
+앱의 `src/content.ts`가 같은 파서(`resolveBuildNow`, 이 패키지의 문으로 나간다)로 읽어
+인스턴스를 만든다. 그래도 어긋나면 `check-seo`의 sitemap ↔ 페이지 대조가 잡는다.
 
 2단계 스텝이 쓰는 곳(경로는 `dirs` 기본값, 앱 루트 기준):
 

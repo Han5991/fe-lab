@@ -9,7 +9,6 @@
  */
 import type { ContentConfig } from '../shared/contentConfig.ts';
 import { createContent, type ContentApi } from '../post/createContent.ts';
-import { isOffsetDateTime } from './validate/shared.ts';
 
 /**
  * **설정·경로의 사본을 두지 않는 것이 요점이다.**
@@ -40,30 +39,10 @@ export interface ContentContext {
    * 띄우므로, 예약 글의 공개 시각이 빌드 도중에 지나면 sitemap·rss·llms·og가
    * 서로 다른 글 집합을 담았다(페이지는 있는데 sitemap·og 카드에는 없는 글).
    * build가 한 번 정해 자식 전부에 `--now`로 넘긴다(`build-content.ts`의 stepArgv).
+   * `content` 인스턴스도 이 시각으로 만든다 — 인자 없이 부르는 로더 메서드
+   * (`getAllPostSlugs`·집계 …)까지 같은 시각을 본다.
    */
   now: Date;
-}
-
-/**
- * 기준 시각을 환경 변수로도 줄 수 있다 — `next build`처럼 이 CLI 밖의 단계와
- * 같은 시각을 쓰려면 빌드 전체에 한 값을 걸어야 해서다(그쪽이 이 변수를 읽는
- * 것은 로더의 후속 일이다). 우선순위는 `--now` > 이 변수 > 지금.
- */
-export const BUILD_NOW_ENV = 'BLOG_CONTENT_NOW';
-
-/**
- * `--now`/`BLOG_CONTENT_NOW` 값을 Date로. offset을 명시한 ISO만 받는다 —
- * offset 없는 시각은 실행 환경의 로컬 시각으로 풀려 CI(UTC)와 로컬(KST)이
- * 9시간 갈린다(frontmatter의 scheduledDate와 같은 규칙).
- */
-export function resolveBuildNow(given: string | undefined): Date {
-  if (given === undefined || given === '') return new Date();
-  if (!isOffsetDateTime(given)) {
-    throw new Error(
-      `기준 시각(--now · ${BUILD_NOW_ENV})은 offset을 명시한 ISO 시각이어야 합니다(예: 2026-06-01T09:00:00+09:00): ${given}`,
-    );
-  }
-  return new Date(given);
 }
 
 export function createContext(
@@ -71,5 +50,5 @@ export function createContext(
   configPath: string,
   now: Date = new Date(),
 ): ContentContext {
-  return { configPath, content: createContent(config), now };
+  return { configPath, content: createContent(config, { now }), now };
 }
