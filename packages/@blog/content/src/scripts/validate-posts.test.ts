@@ -16,11 +16,7 @@ import {
 import { defineTestContent } from '../shared/testValues.ts';
 import { toValidateContext } from './validate/shared.ts';
 import { sep } from 'node:path';
-import {
-  FRONTMATTER_KEYS,
-  isPostVisible,
-  resolveThumbnailUrl,
-} from '../post/index.ts';
+import { FRONTMATTER_KEYS, isPostVisible } from '../post/index.ts';
 import { parsePost } from '../post/repository.ts';
 import { resolveOptions } from './new-post.ts';
 
@@ -483,28 +479,8 @@ test('detectDuplicateSlugs: 메타 노트(status 없음)는 빌드에 없으므�
   expect(detectDuplicateSlugs(records)).toStrictEqual([]);
 });
 
-test("detectDuplicateSlugs: slug: ''는 로더처럼 파일 경로 slug로 보고 충돌을 잡는다", () => {
-  // 예전에는 slug `''`로 봐서 `foo.md`와 `slug: 'foo'`인 글의 실제 충돌을 놓쳤다.
-  const records = [
-    rec({ ...POST, slug: '' }, { relPath: 'foo.md' }),
-    rec({ ...POST, slug: 'foo' }, { relPath: 'other.md' }),
-  ];
-  expect(
-    detectDuplicateSlugs(records)
-      .map(i => i.file)
-      .sort(),
-  ).toStrictEqual(['foo.md', 'other.md']);
-  // 빈 slug 둘은 서로 다른 경로 slug라 충돌이 아니다.
-  expect(
-    detectDuplicateSlugs([
-      rec({ ...POST, slug: '' }, { relPath: 'a.md' }),
-      rec({ ...POST, slug: '' }, { relPath: 'b.md' }),
-    ]),
-  ).toStrictEqual([]);
-});
-
-test.each([['/b'], ['a\\b']])(
-  'detectDuplicateSlugs: 로더가 버리는 slug(%s)는 로더처럼 경로 slug로 대조한다',
+test.each([[''], ['/b'], ['a\\b']])(
+  'detectDuplicateSlugs: 로더가 버리는 slug %j는 로더처럼 경로 slug로 대조한다',
   slug => {
     // 로더는 이 slug를 쓰지 않고 파일 경로 slug(`a`)를 쓴다 — 그 글은 `a`와 부딪힌다.
     const raw = `---\nstatus: published\ntitle: x\nslug: '${slug}'\n---\n`;
@@ -1331,7 +1307,26 @@ test('body-h1: 들여쓴 코드 블록 뒤의 `===`는 헤딩이 아니다', () 
   expect(bodyH1Rules('\n    코드 한 줄\n===')).toStrictEqual([]);
 });
 
-// ── og-thumbnail-mismatch: `/og/` 썸네일은 이 글의 생성 카드여야 한다 ─────────
+// ── 발행 글 하나의 frontmatter 규칙 ─────────────────────────────────────────
+
+/** 다른 규칙이 조용한 발행 글에 `over`만 얹어 규칙 id를 본다 */
+const publishedRules = (
+  over: Record<string, unknown>,
+  { relPath = 'a.md', raw = '---\ntitle: x\n---\n' } = {},
+): string[] =>
+  validatePost(
+    rec(
+      {
+        title: 'x',
+        status: 'published',
+        date: '2025-01-01',
+        excerpt: VALID_EXCERPT,
+        ...over,
+      },
+      { relPath },
+    ),
+    raw,
+  ).map(i => i.rule);
 
 test('og-thumbnail-mismatch: slug와 다른 `/og/` 썸네일은 에러 (slug를 고치고 줄을 남긴 경우)', () => {
   const issues = validatePost(
@@ -1351,315 +1346,90 @@ test('og-thumbnail-mismatch: slug와 다른 `/og/` 썸네일은 에러 (slug를 
   expect(issues[0]?.message).toContain('/og/react-error-design.png');
 });
 
-test('og-thumbnail-mismatch: 명시 slug·파일 경로 slug·인코딩된 표기가 맞으면 통과', () => {
-  const base = {
-    title: 'x',
-    status: 'published',
-    date: '2025-01-01',
-    excerpt: VALID_EXCERPT,
-  };
-  const found = (data: Record<string, unknown>, relPath = 'a.md') =>
-    validatePost(rec(data, { relPath }), '---\n---\n').map(i => i.rule);
+test.each([
+  [{ slug: 'a-b', thumbnail: '/og/a-b.png' }, 'a.md', []],
+  // slug가 없거나 비었으면 로더처럼 파일 경로 slug와 비교한다.
+  [{ thumbnail: '/og/회고/글.png' }, '회고/글.md', []],
+  [{ thumbnail: `/og/${encodeURIComponent('글')}.png` }, '글.md', []],
+  [{ slug: '', thumbnail: '/og/a.png' }, 'a.md', []],
+  [{ slug: '', thumbnail: '/og/.png' }, 'a.md', ['og-thumbnail-mismatch']],
+])('og-thumbnail-mismatch: %j (%s) → %j', (over, relPath, expected) => {
+  expect(publishedRules(over, { relPath })).toStrictEqual(expected);
+});
 
-  expect(
-    found({ ...base, slug: 'a-b', thumbnail: '/og/a-b.png' }),
-  ).toStrictEqual([]);
-  // slug가 없으면 파일 경로(확장자 제거)가 slug다 — 로더와 같은 규칙.
-  expect(
-    found({ ...base, thumbnail: '/og/회고/글.png' }, '회고/글.md'),
-  ).toStrictEqual([]);
-  expect(
-    found(
-      { ...base, thumbnail: `/og/${encodeURIComponent('글')}.png` },
-      '글.md',
-    ),
-  ).toStrictEqual([]);
-  // 빈 slug는 로더처럼 "없음"이다 — 파일 경로 slug(`a`)와 비교한다.
-  expect(found({ ...base, slug: '', thumbnail: '/og/a.png' })).toStrictEqual(
-    [],
-  );
-  expect(found({ ...base, slug: '', thumbnail: '/og/.png' })).toStrictEqual([
-    'og-thumbnail-mismatch',
-  ]);
+test.each([
+  ['./cover.png', ['invalid-thumbnail-path']],
+  ['img/cover.png', ['invalid-thumbnail-path']],
+  ['../cover.png', ['invalid-thumbnail-path']],
+  ['img\\cover.png', ['invalid-thumbnail-path']],
+  // 파일 이름만이면 존재 여부를 본다
+  ['no-such-cover.png', ['missing-thumbnail']],
+  // 로더가 그대로 쓰는 외부 URL은 경로 검사를 하지 않는다
+  ['data:image/png;base64,iVBOR/w0KGgo=', []],
+  ['//cdn.example/x.png', []],
+])('thumbnail %s → %j', (thumbnail, expected) => {
+  expect(publishedRules({ thumbnail })).toStrictEqual(expected);
+});
+
+test.each([
+  ['/foo', ['invalid-slug']],
+  ['foo/', ['invalid-slug']],
+  ['a//b', ['invalid-slug']],
+  ['../admin', ['invalid-slug']],
+  ['a/./b', ['invalid-slug']],
+  ['my post', ['invalid-slug']],
+  ['tab\there', ['invalid-slug']],
+  ['a\\b', ['invalid-slug']],
+  ['turborepo-next.js-docker', []],
+  ['회고/2024/글', []],
+  ['pnpm-10-(feat.-호이스팅)', []],
+  // 빈 문자열은 로더가 파일 경로 slug로 폴백하므로 대상 밖
+  ['', []],
+])('invalid-slug: %j → %j', (slug, expected) => {
+  expect(publishedRules({ slug })).toStrictEqual(expected);
 });
 
 // ── 날짜 모양: date는 'YYYY-MM-DD', 시각은 offset과 함께 ────────────────────
 
-/** 원문 줄까지 함께 준 frontmatter로 검사 — YAML Date는 원문을 봐야 판정된다. */
-function dateRules(
-  data: Record<string, unknown>,
-  frontmatter: string,
-): string[] {
-  return validatePost(
-    rec({ title: 'x', status: 'published', excerpt: VALID_EXCERPT, ...data }),
-    `---\ntitle: x\n${frontmatter}\n---\n`,
-  ).map(i => i.rule);
-}
-
-test('unquoted-date: 따옴표 없는 datetime은 UTC 날짜로 당겨지므로 에러', () => {
-  // `date: 2026-10-01T08:00:00+09:00` → YAML Date(2026-09-30T23:00Z) → 로더는
-  // '2026-09-30'만 남긴다. 예약 글이면 9/30 KST 자정에 공개된다(32시간 일찍).
-  expect(
-    dateRules(
-      { date: new Date('2026-10-01T08:00:00+09:00') },
-      'date: 2026-10-01T08:00:00+09:00',
-    ),
-  ).toStrictEqual(['unquoted-date']);
-  // UTC 자정에 떨어지는 시각도 시각이다 — 값이 아니라 원문으로 가른다.
-  expect(
-    dateRules(
-      { date: new Date('2026-10-01T09:00:00+09:00') },
-      'date: 2026-10-01T09:00:00+09:00 # 오전 9시',
-    ),
-  ).toStrictEqual(['unquoted-date']);
-});
-
-test('date: 따옴표 없는 날짜만(`date: 2026-03-16`)은 무해하므로 통과', () => {
-  // 실제 원고 두 편이 이렇게 쓴다 — UTC 자정 Date가 되고 같은 날짜로 되돌아온다.
-  expect(
-    dateRules({ date: new Date('2026-03-16') }, 'date: 2026-03-16'),
-  ).toStrictEqual([]);
-});
-
-test('invalid-date: 달력에 없는 날짜는 따옴표 여부와 무관하게 잡는다', () => {
-  // YAML은 `2026-02-30`을 오류 없이 3월 2일로 넘긴다.
-  expect(
-    dateRules({ date: new Date(Date.UTC(2026, 1, 30)) }, 'date: 2026-02-30'),
-  ).toStrictEqual(['invalid-date']);
-  expect(dateRules({ date: '2026-02-30' }, "date: '2026-02-30'")).toStrictEqual(
-    ['invalid-date'],
-  );
-});
-
 test.each([
-  '2026-5-4',
-  '2026/05/04',
-  '2026-03-16 09:00:00+09:00',
+  ['date', '2026-02-30', ['invalid-date']],
+  ['date', '2026-5-4', ['invalid-date']],
+  ['date', '2026/05/04', ['invalid-date']],
+  ['date', '2026-03-16 09:00:00+09:00', ['invalid-date']],
   // 시각은 scheduledDate의 몫 — date는 날짜 하나만 받는다.
-  '2026-03-16T09:00:00+09:00',
-])('invalid-date: 관대한 Date.parse가 받던 모양 %s를 잡는다', date => {
-  expect(dateRules({ date }, `date: '${date}'`)).toStrictEqual([
-    'invalid-date',
-  ]);
-});
-
-test('updatedAt: offset 붙은 ISO datetime은 통과, 따옴표 없는 시각·다른 모양은 잡는다', () => {
-  const base = { date: '2026-01-01' };
+  ['date', '2026-03-16T09:00:00+09:00', ['invalid-date']],
+  ['updatedAt', '2026-06-01T09:00:00+09:00', []],
+  ['updatedAt', '2026/06/01', ['invalid-updated-at']],
+  ['scheduledDate', '2026-06-01T09:00:00Z', []],
+  ['scheduledDate', '2026-06-01 09:00:00+09:00', ['invalid-scheduled-date']],
+  ['scheduledDate', '2026-02-30T09:00:00+09:00', ['invalid-scheduled-date']],
+])('%s: %s → %j', (key, value, expected) => {
   expect(
-    dateRules(
-      { ...base, updatedAt: '2026-06-01T09:00:00+09:00' },
-      "updatedAt: '2026-06-01T09:00:00+09:00'",
-    ),
-  ).toStrictEqual([]);
-  expect(
-    dateRules(
-      { ...base, updatedAt: new Date('2026-06-01T08:00:00+09:00') },
-      'updatedAt: 2026-06-01T08:00:00+09:00',
-    ),
-  ).toStrictEqual(['unquoted-updated-at']);
-  expect(
-    dateRules({ ...base, updatedAt: '2026/06/01' }, "updatedAt: '2026/06/01'"),
-  ).toStrictEqual(['invalid-updated-at']);
-});
-
-test('scheduledDate: offset 명시 ISO만 받고, 공백 구분·달력 밖 날짜는 invalid-scheduled-date', () => {
-  const scheduled = (scheduledDate: string) =>
-    rules({
-      title: 'x',
-      status: 'scheduled',
-      date: '2026-06-01',
-      scheduledDate,
-      excerpt: VALID_EXCERPT,
-    });
-  expect(scheduled('2026-06-01T09:00:00Z')).toStrictEqual([]);
-  expect(scheduled('2026-06-01 09:00:00+09:00')).toStrictEqual([
-    'invalid-scheduled-date',
-  ]);
-  expect(scheduled('2026-02-30T09:00:00+09:00')).toStrictEqual([
-    'invalid-scheduled-date',
-  ]);
-});
-
-// ── invalid-frontmatter-yaml: 깨진 YAML은 파일을 짚는 이슈가 된다 ────────────
-
-test('parseRecord: 깨진 frontmatter YAML은 던지지 않고 파일·줄을 짚는 에러 이슈가 된다', () => {
-  // 예전에는 YAMLException이 CLI를 통째로 멈췄고 메시지에 파일 이름이 없었다.
-  const parsed = parseRecord(
-    '---\nstatus: published\ntitle: a: b: c\n---\n본문',
-    '/posts/broken.md',
-    'broken.md',
-  );
-  expect('issue' in parsed).toBeTruthy();
-  if (!('issue' in parsed)) return;
-  expect(parsed.issue).toMatchObject({
-    file: 'broken.md',
-    line: 3,
-    severity: 'error',
-    rule: 'invalid-frontmatter-yaml',
-  });
-});
-
-test('parseRecord: 정상 YAML은 레코드를 돌려준다', () => {
-  const parsed = parseRecord(
-    '---\nstatus: draft\ntitle: 제목\n---\n본문',
-    '/posts/ok.md',
-    'ok.md',
-  );
-  expect('record' in parsed && parsed.record.data).toStrictEqual({
-    status: 'draft',
-    title: '제목',
-  });
-});
-
-// ── invalid-thumbnail-path: 상대 thumbnail은 파일 이름만 ─────────────────────
-
-test.each(['./cover.png', 'img/cover.png', '../cover.png', 'img\\cover.png'])(
-  'invalid-thumbnail-path: 경로가 섞인 thumbnail %s는 에러',
-  thumbnail => {
-    expect(
-      rules({
-        title: 'x',
-        status: 'published',
-        date: '2025-01-01',
-        thumbnail,
-        excerpt: VALID_EXCERPT,
-      }),
-    ).toStrictEqual(['invalid-thumbnail-path']);
-  },
-);
-
-test.each(['data:image/png;base64,iVBOR/w0KGgo=', '//cdn.example/x.png'])(
-  'thumbnail %s: 로더가 그대로 쓰는 외부 URL은 경로 검사를 하지 않는다',
-  thumbnail => {
-    expect(
-      resolveThumbnailUrl(
-        { thumbnail, relativeDir: 'a', slug: 'a' },
-        '/og.png',
-      ),
-    ).toBe(thumbnail);
-    expect(
-      rules({
-        title: 'x',
-        status: 'published',
-        date: '2025-01-01',
-        thumbnail,
-        excerpt: VALID_EXCERPT,
-      }),
-    ).toStrictEqual([]);
-  },
-);
-
-test('invalid-thumbnail-path: 파일 이름만이면 존재 여부(missing-thumbnail)를 본다', () => {
-  expect(
-    rules({
-      title: 'x',
-      status: 'published',
-      date: '2025-01-01',
-      thumbnail: 'no-such-cover.png',
-      excerpt: VALID_EXCERPT,
+    publishedRules({
+      ...(key === 'scheduledDate' ? { status: 'scheduled' } : {}),
+      [key]: value,
     }),
-  ).toStrictEqual(['missing-thumbnail']);
+  ).toStrictEqual(expected);
 });
 
-// ── invalid-slug: 손으로 적은 slug의 모양 ────────────────────────────────────
-
+// YAML이 Date로 바꾼 값은 원문 줄로 판정한다 — 값만으로는 날짜와 시각을 못 가른다.
 test.each([
-  ['/foo', '앞의 `/` → /posts//foo/'],
-  ['foo/', '뒤의 `/` → /posts/foo//'],
-  ['a//b', '빈 세그먼트'],
-  ['../admin', '브라우저가 /admin/으로 푼다'],
-  ['a/./b', '`.` 세그먼트'],
-  ['my post', '공백'],
-  ['tab\there', '제어 문자'],
-  ['a\\b', '역슬래시'],
-])('invalid-slug: %s (%s)', slug => {
-  expect(
-    rules({
-      title: 'x',
-      status: 'published',
-      date: '2025-01-01',
-      slug,
-      excerpt: VALID_EXCERPT,
-    }),
-  ).toStrictEqual(['invalid-slug']);
+  ['date: 2026-10-01T08:00:00+09:00', ['unquoted-date']],
+  // UTC 자정에 떨어지는 시각도 시각이다
+  ['date: 2026-10-01T09:00:00+09:00 # 오전 9시', ['unquoted-date']],
+  // 날짜만 적은 값은 같은 날짜로 되돌아와 무해하다
+  ['date: 2026-03-16', []],
+  // YAML은 `2026-02-30`을 오류 없이 3월 2일로 넘긴다
+  ['date: 2026-02-30', ['invalid-date']],
+  ['updatedAt: 2026-06-01T08:00:00+09:00', ['unquoted-updated-at']],
+])('YAML Date `%s` → %j', (line, expected) => {
+  const raw = `---\ntitle: x\n${line}\n---\n`;
+  const parsed = parseRecord(raw, '/posts/a.md', 'a.md');
+  if (!('record' in parsed)) throw new Error('픽스처 YAML이 깨졌다');
+  const { data } = parsed.record;
+  const date = data['date'] ?? '2026-01-01';
+  expect(publishedRules({ ...data, date }, { raw })).toStrictEqual(expected);
 });
-
-test('invalid-slug: 정상 slug·중첩 slug·한글·괄호는 통과, 빈 문자열은 파일 경로 폴백이라 대상 밖', () => {
-  for (const slug of [
-    'turborepo-next.js-docker',
-    '회고/2024/글',
-    'pnpm-10-(feat.-호이스팅)',
-    '',
-  ]) {
-    expect(
-      rules({
-        title: 'x',
-        status: 'published',
-        date: '2025-01-01',
-        slug,
-        excerpt: VALID_EXCERPT,
-      }),
-      slug,
-    ).toStrictEqual([]);
-  }
-});
-
-// ── unknown-diagram-name: 본문의 <diagram name>도 레지스트리에 있어야 한다 ──
-
-const diagramRules = (content: string, data = { status: 'published' }) =>
-  validateDiagramNames(
-    rec(data, { content }),
-    `---\nstatus: published\n---\n${content}`,
-    CTX,
-  ).map(i => [i.rule, i.severity, i.line]);
-
-test('unknown-diagram-name: 미등록 이름은 에러 (프로덕션에서 그림이 조용히 사라진다)', () => {
-  expect(
-    diagramRules(
-      '문단\n\n<diagram name="deploy-pipline" label="오타"></diagram>',
-    ),
-  ).toStrictEqual([['unknown-diagram-name', 'error', 6]]);
-});
-
-test('unknown-diagram-name: 등록된 이름·name 없는 선언형 다이어그램·자식 태그는 통과', () => {
-  const registered = DIAGRAM_NAMES[0];
-  expect(
-    diagramRules(
-      [
-        `<diagram name="${registered}"></diagram>`,
-        `<diagram name='${registered}'/>`,
-        '<diagram label="선언형 — label 안의 name=x는 속성이 아니다" caption="name 없음">',
-        '  <diagram-node id="a" title="A" name="not-a-diagram-name"></diagram-node>',
-        '</diagram>',
-      ].join('\n'),
-    ),
-  ).toStrictEqual([]);
-});
-
-test('unknown-diagram-name: 코드 펜스·같은 줄 인라인 코드 안의 예시는 보지 않는다', () => {
-  expect(
-    diagramRules(
-      [
-        '```html',
-        '<diagram name="example"></diagram>',
-        '```',
-        '문법은 `<diagram name="my-diagram">`처럼 쓴다.',
-      ].join('\n'),
-    ),
-  ).toStrictEqual([]);
-});
-
-test('unknown-diagram-name: 메타 노트(status 없음)는 렌더되지 않으므로 보지 않는다', () => {
-  expect(
-    validateDiagramNames(
-      rec({ title: '메타' }, { content: '<diagram name="nope"></diagram>' }),
-      '---\ntitle: 메타\n---\n',
-      CTX,
-    ),
-  ).toStrictEqual([]);
-});
-
-// ── lint·로더·new-post가 같은 날짜 판정을 쓴다 ───────────────────────────────
 
 test.each([
   ['2026-06-01T09:00:00+0900'],
@@ -1690,3 +1460,61 @@ test.each([
     );
   },
 );
+
+// ── invalid-frontmatter-yaml ────────────────────────────────────────────────
+
+test('parseRecord: 깨진 frontmatter YAML은 던지지 않고 파일·줄을 짚는 에러 이슈가 된다', () => {
+  const parsed = parseRecord(
+    '---\nstatus: published\ntitle: a: b: c\n---\n본문',
+    '/posts/broken.md',
+    'broken.md',
+  );
+  expect('issue' in parsed && parsed.issue).toMatchObject({
+    file: 'broken.md',
+    line: 3,
+    severity: 'error',
+    rule: 'invalid-frontmatter-yaml',
+  });
+});
+
+// ── unknown-diagram-name: 본문의 <diagram name>도 레지스트리에 있어야 한다 ──
+
+const diagramRules = (
+  content: string,
+  data: Record<string, unknown> = { status: 'published' },
+) =>
+  validateDiagramNames(
+    rec(data, { content }),
+    `---\nstatus: published\n---\n${content}`,
+    CTX,
+  ).map(i => [i.rule, i.severity, i.line]);
+
+test('unknown-diagram-name: 미등록 이름은 에러 (프로덕션에서 그림이 조용히 사라진다)', () => {
+  expect(
+    diagramRules(
+      '문단\n\n<diagram name="deploy-pipline" label="오타"></diagram>',
+    ),
+  ).toStrictEqual([['unknown-diagram-name', 'error', 6]]);
+});
+
+test.each([
+  [
+    '등록된 이름·name 없는 선언형·자식 태그',
+    [
+      `<diagram name="${DIAGRAM_NAMES[0]}"></diagram>`,
+      `<diagram name='${DIAGRAM_NAMES[0]}'/>`,
+      '<diagram label="label 안의 name=x는 속성이 아니다">',
+      '  <diagram-node id="a" name="not-a-diagram-name"></diagram-node>',
+      '</diagram>',
+    ].join('\n'),
+    { status: 'published' },
+  ],
+  [
+    '코드 펜스·같은 줄 인라인 코드 안의 예시',
+    '```html\n<diagram name="example"></diagram>\n```\n문법은 `<diagram name="x">`처럼 쓴다.',
+    { status: 'published' },
+  ],
+  ['메타 노트(status 없음)', '<diagram name="nope"></diagram>', {}],
+])('unknown-diagram-name: %s는 보지 않는다', (_, content, data) => {
+  expect(diagramRules(content, data)).toStrictEqual([]);
+});

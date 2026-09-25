@@ -49,59 +49,22 @@ test('resolveOptions: --scheduled를 주면 status를 scheduled로 올린다', (
   expect(opts.scheduledDate).toBe('2026-05-01T09:00:00+09:00');
 });
 
-test.each(['tomorrow', '2026-5-1', '2026-06-01T09:00:00', '2026-02-30'])(
-  'resolveOptions: --scheduled %s는 파일을 만들기 전에 거절한다',
-  scheduledDate => {
-    expect(() => resolveOptions({ title: '제목', scheduledDate })).toThrow(
-      /--scheduled는 'YYYY-MM-DD'이거나 offset을 명시한 ISO 시각/,
-    );
-  },
-);
-
-test.each(['/foo', 'foo/', '../admin', 'my post', ''])(
-  'resolveOptions: --slug %j는 파일을 만들기 전에 거절한다',
-  slug => {
-    expect(() => resolveOptions({ title: '제목', slug })).toThrow(
-      /--slug를 URL로 쓸 수 없습니다/,
-    );
-  },
-);
-
-test('resolveOptions: 정상 --scheduled·--slug는 그대로 통과한다', () => {
-  const opts = resolveOptions({
-    title: '제목',
-    scheduledDate: '2026-06-01',
-    slug: 'nested/ok-slug',
-  });
-  expect([opts.scheduledDate, opts.slug]).toStrictEqual([
-    '2026-06-01',
-    'nested/ok-slug',
-  ]);
-});
-
-test('buildFrontmatter: 예약 시각의 date는 사이트 타임존의 달력 날짜다 (UTC 앞 10자가 아니라)', () => {
-  // 2026-05-31T20:00Z = KST 6월 1일 05:00 — 앞 10자를 자르면 5월 31일이 된다.
-  const raw = buildFrontmatter(
-    {
-      title: '예약글',
-      status: 'scheduled',
-      tags: [],
-      scheduledDate: '2026-05-31T20:00:00Z',
-    },
-    TZ,
-    NOW,
-  );
-  // 픽스처 타임존은 Asia/Seoul이다(testValues.ts).
-  expect(matter(raw).data.date).toBe('2026-06-01');
-});
-
-test('buildFrontmatter: date는 따옴표로 감싼 문자열이다 (YAML Date로 바뀌지 않게)', () => {
-  const raw = buildFrontmatter(
-    { title: '제목', status: 'draft', tags: [] },
-    TZ,
-    NOW,
-  );
-  expect(typeof matter(raw).data.date).toBe('string');
+// lint:posts와 같은 판정으로 파일을 만들기 전에 거른다.
+test.each([
+  [{ scheduledDate: 'tomorrow' }, /--scheduled는 'YYYY-MM-DD'이거나 offset/],
+  [{ scheduledDate: '2026-5-1' }, /--scheduled는/],
+  [{ scheduledDate: '2026-06-01T09:00:00' }, /--scheduled는/],
+  [{ scheduledDate: '2026-02-30' }, /--scheduled는/],
+  [{ slug: '/foo' }, /--slug를 URL로 쓸 수 없습니다/],
+  [{ slug: 'foo/' }, /--slug를/],
+  [{ slug: '../admin' }, /--slug를/],
+  [{ slug: 'my post' }, /--slug를/],
+  [{ slug: '' }, /--slug를/],
+  [{ scheduledDate: '2026-06-01', slug: 'nested/ok-slug' }, null],
+])('resolveOptions: %j → %s', (over, error) => {
+  const resolve = () => resolveOptions({ title: '제목', ...over });
+  if (error) expect(resolve).toThrow(error);
+  else expect(resolve()).toMatchObject(over);
 });
 
 test('resolveOptions: status만 scheduled고 날짜가 없으면 에러', () => {
@@ -117,22 +80,31 @@ test('resolveOptions: status 값은 그대로 전달', () => {
   );
 });
 
-// ── 스캐폴딩 date: 설정 타임존의 오늘 ────────────────────────────────────────
+// ── 스캐폴딩 date: 설정 타임존의 달력 날짜 ──────────────────────────────────
 
 test.each([
   // UTC 1/31 16:00 == KST 2/1 01:00
-  ['2026-01-31T16:00:00Z', '2026-02-01'],
+  [undefined, '2026-01-31T16:00:00Z', '2026-02-01'],
   // UTC 1/31 14:00 == KST 1/31 23:00
-  ['2026-01-31T14:00:00Z', '2026-01-31'],
-])('buildFrontmatter: %s의 date는 KST 달력 날짜 %s', (now, expected) => {
-  expect(
-    buildFrontmatter(
-      { title: '글', status: 'draft', tags: [] },
+  [undefined, '2026-01-31T14:00:00Z', '2026-01-31'],
+  // 예약 글은 공개 예정일 — 2026-05-31T20:00Z = KST 6/1 05:00(앞 10자가 아니라)
+  ['2026-05-31T20:00:00Z', '2026-06-09T03:00:00Z', '2026-06-01'],
+])(
+  'buildFrontmatter: 예약 %s · 지금 %s → date %s',
+  (scheduledDate, now, date) => {
+    const raw = buildFrontmatter(
+      {
+        title: '글',
+        status: scheduledDate ? 'scheduled' : 'draft',
+        tags: [],
+        scheduledDate,
+      },
       TZ,
       new Date(now),
-    ),
-  ).toContain(`date: '${expected}'`);
-});
+    );
+    expect(raw).toContain(`date: '${date}'`);
+  },
+);
 
 // ── safeFilename ─────────────────────────────────────────────────────────────
 

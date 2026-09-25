@@ -131,43 +131,22 @@ const sameDateSeries = [
   makePost({ slug: 's6', date: '2025-06-15', series: 'S' }),
 ];
 
-test('getSeriesAdjacentPosts: order 없는 시리즈에서 같은 날짜 글도 헤더 순서대로 이어진다', () => {
-  const service = seriesService(sameDateSeries);
-  const headerOrder = sortPostsBySeriesOrder(
-    service.getAllPosts().filter(p => p.series === 'S'),
+test.each([
+  [
     undefined,
-  ).map(p => p.slug);
-
-  expect(headerOrder).toStrictEqual([
-    's1',
-    's2-api',
-    's3-api-di',
-    's4-service',
-    's5-service-di',
-    's6',
-  ]);
-  expect(walkNext(service, 's1')).toStrictEqual(headerOrder);
-});
-
-test('getSeriesAdjacentPosts: 같은 날짜 쌍의 prev/next가 서로를 가리킨다', () => {
-  const service = seriesService(sameDateSeries);
-  const second = service.getSeriesAdjacentPosts('s2-api');
-  expect(second.prev?.slug).toBe('s1');
-  expect(second.next?.slug).toBe('s3-api-di');
-  const third = service.getSeriesAdjacentPosts('s3-api-di');
-  expect(third.prev?.slug).toBe('s2-api');
-  expect(third.next?.slug).toBe('s4-service');
-});
-
-test('getSeriesAdjacentPosts: order가 있으면 order를 따른다 (기존 동작 유지)', () => {
-  const order = [
-    's6',
-    's1',
-    's3-api-di',
-    's2-api',
-    's5-service-di',
-    's4-service',
-  ];
-  const service = seriesService(sameDateSeries, { order });
-  expect(walkNext(service, 's6')).toStrictEqual(order);
-});
+    ['s1', 's2-api', 's3-api-di', 's4-service', 's5-service-di', 's6'],
+  ],
+  [
+    ['s6', 's1', 's3-api-di', 's2-api', 's5-service-di', 's4-service'],
+    ['s6', 's1', 's3-api-di', 's2-api', 's5-service-di', 's4-service'],
+  ],
+])(
+  'getSeriesAdjacentPosts: order %j — "다음 글"은 시리즈 헤더와 같은 순서로 이어진다',
+  (order, expected) => {
+    const service = seriesService(sameDateSeries, { order });
+    expect(
+      sortPostsBySeriesOrder(service.getAllPosts(), order).map(p => p.slug),
+    ).toStrictEqual(expected);
+    expect(walkNext(service, expected[0] ?? '')).toStrictEqual(expected);
+  },
+);

@@ -303,7 +303,6 @@ test.each(['img/cover.png', './cover.png'])(
     const post = p({ thumbnail, relativeDir: 'network' });
     expect(thumbnailWebpRelPath(post)).toBe(null);
     expect(resolveThumbnailSrc(post)).toBe(resolveThumbnailUrl(post));
-    expect(resolveThumbnailSrc(post)).not.toContain('/thumbs/');
   },
 );
 

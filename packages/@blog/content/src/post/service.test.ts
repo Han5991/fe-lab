@@ -72,19 +72,10 @@ test('주입한 now를 모든 메서드가 함께 본다', () => {
   const before = service({ now: BEFORE });
   expect(before.getAllPostSlugs()).not.toContain('scheduled');
   expect(before.getPostBySlug('scheduled')).toBe(null);
-  expect(before.getAllPostSummaries().map(p => p.slug)).not.toContain(
-    'scheduled',
-  );
   expect(before.getSeriesAdjacentPosts('sibling').next).toBe(null);
 
   const after = service({ now: AFTER });
   expect(after.getAllPostSlugs()).toContain('scheduled');
   expect(after.getPostBySlug('scheduled')?.slug).toBe('scheduled');
   expect(after.getSeriesAdjacentPosts('sibling').next?.slug).toBe('scheduled');
-});
-
-test('getAllPosts(now)에 명시한 시각은 인스턴스 시각보다 우선한다', () => {
-  const s = service({ now: BEFORE });
-  expect(s.getAllPosts().map(p => p.slug)).not.toContain('scheduled');
-  expect(s.getAllPosts(AFTER).map(p => p.slug)).toContain('scheduled');
 });

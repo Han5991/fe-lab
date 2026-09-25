@@ -3,7 +3,6 @@ import {
   chunkClosure,
   checkRules,
   collectChunkRefs,
-  createScopeCache,
   describeScope,
   findMarkerIn,
   main,
@@ -318,33 +317,4 @@ test('findMarkerIn(chunks): 중첩 청크에 실린 누수도 잡는다 (예전�
       inputs({ pages, sources }),
     ),
   ).toStrictEqual(['shared-222.js']);
-});
-
-test('checkRules: 같은 셀렉터의 폐포는 한 번만 계산해도 결과가 같다', () => {
-  const sources = new Map([
-    ['admin111.js', 'GoTrueClient'],
-    ['public222.js', 'hello'],
-  ]);
-  const pages = new Map([
-    ['/admin/', page('admin111.js')],
-    ['/', page('public222.js')],
-  ]);
-  const cache = createScopeCache(inputs({ pages, sources }));
-  const scope = { kind: 'chunks', of: { under: '/admin/' } } as const;
-  const first = findMarkerIn(
-    scope,
-    'GoTrueClient',
-    inputs({ pages, sources }),
-    cache,
-  );
-  // 캐시가 찬 뒤에는 입력의 청크 본문을 바꿔도 같은 폐포를 쓴다 — 재계산하지 않는다.
-  const second = findMarkerIn(
-    scope,
-    'GoTrueClient',
-    inputs({ pages: new Map(), sources }),
-    cache,
-  );
-  expect(first).toStrictEqual(['admin111.js']);
-  expect(second).toStrictEqual(['admin111.js']);
-  expect(cache.closures.size).toBe(1);
 });

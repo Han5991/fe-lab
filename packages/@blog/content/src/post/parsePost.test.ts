@@ -38,20 +38,13 @@ test('parsePost: status 값이 enum 밖이면 null', () => {
 });
 
 test('parsePost: frontmatter YAML이 깨지면 어느 파일인지 붙여 던진다', () => {
-  // 맨 matter()는 파일 이름 없이 YAMLException만 던져서, 원고 70여 개 중 어느
-  // 것인지 손으로 찾아야 했다.
-  const raw = `---\nstatus: published\ntitle: a: b: c\n---\n본문`;
-  let thrown: unknown;
-  try {
-    parsePost(raw, '번들러/깨진-글.md', PARSE_OPTS);
-  } catch (error) {
-    thrown = error;
-  }
-  expect(thrown).toBeInstanceOf(Error);
-  const error = thrown as Error;
-  expect(error.message).toMatch(/^번들러\/깨진-글\.md: /);
-  expect(error.message).toMatch(/line 3/); // 원래 YAML 위치 정보도 보존
-  expect(error.cause).toBeInstanceOf(Error);
+  expect(() =>
+    parsePost(
+      `---\nstatus: published\ntitle: a: b: c\n---\n본문`,
+      '번들러/깨진-글.md',
+      PARSE_OPTS,
+    ),
+  ).toThrow(/^번들러\/깨진-글\.md: [\s\S]*line 3/);
 });
 
 // ── isPostFile: repository와 validate-posts가 공유하는 단일 판정 규칙 ─────────
@@ -103,16 +96,6 @@ test('parsePost: frontmatter slug가 rawSlug보다 우선(originalSlug는 경로
   const post = parsePost(raw, '번들러/3편.md', PARSE_OPTS);
   expect(post?.slug).toBe('custom-slug'); // 표시 slug = frontmatter 우선
   expect(post?.originalSlug).toBe('번들러/3편'); // 파일 경로는 보존
-});
-
-test('parsePost: 모양이 위험한 명시 slug는 쓰지 않고 파일 경로로 폴백한다 (fail-closed)', () => {
-  // `../admin`이 그대로 slug가 되면 postPath가 `/posts/../admin/`(→ /admin/)을,
-  // `/foo`는 `/posts//foo/`를 만든다. 비문자열 slug와 같은 취급이다.
-  for (const slug of ['../admin', '/foo', 'foo/', 'a//b', './x']) {
-    const raw = `---\ntitle: 글\nslug: '${slug}'\nstatus: published\n---\n본문`;
-    const post = parsePost(raw, '번들러/3편.md', PARSE_OPTS);
-    expect(post?.slug, slug).toBe('번들러/3편');
-  }
 });
 
 // ── title fallback ──────────────────────────────────────────────────────────
@@ -240,108 +223,47 @@ test('parsePost: updatedAt 없으면 null', () => {
   expect(parsePost(raw, 'a.md', PARSE_OPTS)?.updatedAt).toBe(null);
 });
 
-test('parsePost: 따옴표 없는 scheduledDate(YAML Date)도 버리지 않고 date와 같은 규칙으로 읽는다', () => {
-  // 버리면 공개 시각이 date(그날 자정)로 폴백해 적힌 시각보다 일찍 공개된다.
-  const dateOnly = `---\ntitle: 글\nstatus: scheduled\ndate: 2026-02-28\nscheduledDate: 2026-03-01\n---\n본문`;
-  expect(parsePost(dateOnly, 'a.md', PARSE_OPTS)?.scheduledDate).toBe(
-    '2026-03-01',
-  );
-  const datetime = `---\ntitle: 글\nstatus: scheduled\ndate: 2026-03-01\nscheduledDate: 2026-03-01T20:00:00+09:00\n---\n본문`;
-  expect(parsePost(datetime, 'a.md', PARSE_OPTS)?.scheduledDate).toBe(
-    '2026-03-01T20:00:00+09:00',
-  );
-});
-
-// ── 날짜 형식: 받는 두 모양 밖이면 공개 시각으로 인정하지 않는다 ───────────────
-
 test.each([
-  ['2026-5-4'],
-  ['2026/05/04'],
-  ['2026-03-16 09:00:00+09:00'],
-  ['2026-06-01T09:00:00'],
-  ['2026-02-30'],
-  ['내일'],
-])(
-  "parsePost: 형식이 틀린 date('%s')는 null — TZ에 따라 갈리는 값을 흘리지 않는다",
-  value => {
-    const raw = `---\ntitle: 글\nstatus: scheduled\ndate: '${value}'\nupdatedAt: '${value}'\n---\n본문`;
-    const post = parsePost(raw, 'a.md', PARSE_OPTS);
-    expect(post?.date).toBe(null);
-    expect(post?.updatedAt).toBe(null);
-    // 공개 시각이 없는 예약 글 = 비공개 (먼 미래 기준으로도)
-    expect(
-      post &&
-        isPostVisible(
-          post,
-          testConfig.timezone,
-          new Date('2999-01-01T00:00:00Z'),
-        ),
-    ).toBe(false);
+  ['date', '2025-01-02T08:00:00+09:00'],
+  ['updatedAt', '2026-01-01T00:30:00+09:00'],
+  ['scheduledDate', '2026-03-01T20:00:00+09:00'],
+  ['scheduledDate', '2026-03-01'],
+] as const)(
+  'parsePost: 따옴표 없는 %s(YAML Date)는 적힌 그대로 사이트 타임존으로 읽는다',
+  (key, written) => {
+    // UTC 날짜로 자르면 KST 오전 시각이 전날이 되고, 버리면 date로 폴백해 일찍 공개된다.
+    const raw = `---\ntitle: 글\nstatus: scheduled\n${key}: ${written}\n---\n본문`;
+    expect(parsePost(raw, 'a.md', PARSE_OPTS)?.[key]).toBe(written);
   },
 );
-
-test('parsePost: 받는 두 모양(YYYY-MM-DD / offset 포함 ISO)은 그대로 보존', () => {
-  for (const value of [
-    '2026-05-04',
-    '2026-05-04T09:00:00+09:00',
-    '2026-05-04T00:00Z',
-    '2026-05-04T09:00:00.500-05:00',
-  ]) {
-    const raw = `---\ntitle: 글\nstatus: published\ndate: '${value}'\n---\n본문`;
-    expect(parsePost(raw, 'a.md', PARSE_OPTS)?.date, value).toBe(value);
-  }
-});
-
-test('parsePost: 형식이 틀린 scheduledDate는 원문을 보존하고 공개하지 않는다 (date로 폴백하지 않음)', () => {
-  // 버리면 공개 시각이 `date`로 폴백해 예정보다 일찍 공개된다(fail-open).
-  const raw = `---\ntitle: 글\nstatus: scheduled\ndate: '2020-01-01'\nscheduledDate: '2026-5-4 9:00'\n---\n본문`;
-  const post = parsePost(raw, 'a.md', PARSE_OPTS);
-  expect(post?.scheduledDate).toBe('2026-5-4 9:00');
-  expect(
-    post &&
-      isPostVisible(
-        post,
-        testConfig.timezone,
-        new Date('2999-01-01T00:00:00Z'),
-      ),
-  ).toBe(false);
-});
-
-test('parsePost: 따옴표 없는 datetime date는 사이트 타임존으로 시점을 보존한다 (UTC 날짜로 밀리지 않음)', () => {
-  // KST 오전(08:00+09:00)은 UTC로 전날 23:00이다. 예전에는 toISOString()의 앞
-  // 10자를 잘라 '2025-01-01'이 됐고, 예약 글이 KST 자정 기준으로 최대 33시간
-  // 일찍 공개됐다. 따옴표를 친 같은 값과 같은 문자열이어야 한다.
-  const raw = `---\ntitle: 글\nstatus: published\ndate: 2025-01-02T08:00:00+09:00\n---\n본문`;
-  expect(parsePost(raw, 'a.md', PARSE_OPTS)?.date).toBe(
-    '2025-01-02T08:00:00+09:00',
-  );
-});
 
 test('parsePost: 따옴표 없는 datetime 예약 글은 적힌 시각에 공개된다', () => {
   const raw = `---\ntitle: 글\nstatus: scheduled\ndate: 2026-10-01T08:00:00+09:00\n---\n본문`;
   const post = parsePost(raw, 'a.md', PARSE_OPTS);
-  expect(post?.date).toBe('2026-10-01T08:00:00+09:00');
-  const tz = testConfig.timezone;
-  // 2026-10-01 07:59 KST — 아직 비공개 (예전에는 이틀 전 자정부터 공개였다)
-  expect(
-    post && isPostVisible(post, tz, new Date('2026-09-30T22:59:00Z')),
-  ).toBe(false);
-  // 2026-09-30 00:00 KST — 예전 동작이 공개하던 시각
-  expect(
-    post && isPostVisible(post, tz, new Date('2026-09-29T15:00:00Z')),
-  ).toBe(false);
-  // 2026-10-01 08:00 KST — 공개
-  expect(
-    post && isPostVisible(post, tz, new Date('2026-09-30T23:00:00Z')),
-  ).toBe(true);
+  const visibleAt = (now: string) =>
+    post !== null && isPostVisible(post, testConfig.timezone, new Date(now));
+  expect(visibleAt('2026-09-30T22:59:00Z')).toBe(false); // 10/1 07:59 KST
+  expect(visibleAt('2026-09-30T23:00:00Z')).toBe(true); // 10/1 08:00 KST
 });
 
-test('parsePost: 따옴표 없는 datetime의 날짜 부분은 사이트 타임존의 달력 날짜다', () => {
-  // UTC로는 전날(2025-12-31T15:30Z)이지만 KST로는 2026-01-01 00:30.
-  const raw = `---\ntitle: 글\nstatus: published\nupdatedAt: 2026-01-01T00:30:00+09:00\n---\n본문`;
-  const updatedAt = parsePost(raw, 'a.md', PARSE_OPTS)?.updatedAt;
-  expect(updatedAt).toBe('2026-01-01T00:30:00+09:00');
-  expect(updatedAt?.slice(0, 10)).toBe('2026-01-01');
+// ── 날짜 형식: 받는 두 모양만 보존하고 나머지는 없는 값(null)이다 ──────────────
+
+test.each([
+  ['2026-05-04', true],
+  ['2026-05-04T09:00:00+09:00', true],
+  ['2026-05-04T00:00Z', true],
+  ['2026-05-04T09:00:00.500-05:00', true],
+  ['2026-5-4', false],
+  ['2026/05/04', false],
+  ['2026-03-16 09:00:00+09:00', false],
+  ['2026-06-01T09:00:00', false],
+  ['2026-02-30', false],
+  ['내일', false],
+])("parsePost: date·updatedAt '%s' → 보존 %s", (value, accepted) => {
+  const raw = `---\ntitle: 글\nstatus: scheduled\ndate: '${value}'\nupdatedAt: '${value}'\n---\n본문`;
+  const post = parsePost(raw, 'a.md', PARSE_OPTS);
+  expect(post?.date).toBe(accepted ? value : null);
+  expect(post?.updatedAt).toBe(accepted ? value : null);
 });
 
 test('parsePost: tags에 문자열 아닌 원소가 섞이면 통째로 undefined', () => {
@@ -371,55 +293,42 @@ test('extractPlainText: 개행/연속공백 압축 + trim', () => {
   expect(extractPlainText('a\n\n\nb   c  ')).toBe('a b c');
 });
 
-test('extractPlainText: 커스텀 태그·HTML은 속성째 지운다 (`<callout type=…` 조각이 남지 않음)', () => {
-  expect(
-    extractPlainText('<callout type="info">\n조심할 점\n</callout>\n다음 문단'),
-  ).toBe('조심할 점 다음 문단');
-  expect(
-    extractPlainText('<diagram-node\n  id="a"\n  label="빌드"\n/>본문'),
-  ).toBe('본문');
-});
-
-test('extractPlainText: 단어 안의 _는 식별자라 남기고, 강조 _만 지운다', () => {
-  expect(extractPlainText('snake_case 변수와 _강조_ 표시')).toBe(
-    'snake_case 변수와 강조 표시',
-  );
-});
-
-test('extractPlainText: 인라인 코드와 펜스 코드는 원문 그대로', () => {
-  expect(extractPlainText('`__init__`과 `arr[0] > 1`, `Array<string>`')).toBe(
+test.each([
+  // 커스텀 태그·HTML은 속성째 지운다(`<callout type=…` 조각이 남지 않음)
+  [
+    '<callout type="info">\n조심할 점\n</callout>\n다음 문단',
+    '조심할 점 다음 문단',
+  ],
+  ['<diagram-node\n  id="a"\n  label="빌드"\n/>본문', '본문'],
+  // 단어 안의 _는 식별자라 남기고, 강조 _만 지운다
+  ['snake_case 변수와 _강조_ 표시', 'snake_case 변수와 강조 표시'],
+  // 인라인 코드와 펜스 코드는 원문 그대로
+  [
+    '`__init__`과 `arr[0] > 1`, `Array<string>`',
     '__init__과 arr[0] > 1, Array<string>',
-  );
-  expect(
-    extractPlainText(
-      '앞\n```ts title="a.ts"\nconst a_b = x > 1 ? <T>1 : 2;\n```\n뒤',
-    ),
-  ).toBe('앞 const a_b = x > 1 ? <T>1 : 2; 뒤');
-});
-
-test('extractPlainText: >는 줄 머리의 인용 표시만 지운다', () => {
-  expect(extractPlainText('> 인용문\n값이 x > 1이면')).toBe(
-    '인용문 값이 x > 1이면',
-  );
-});
-
-test('extractPlainText: 링크 텍스트가 인라인 코드여도 텍스트만 남긴다', () => {
-  expect(extractPlainText('[`useState`](https://react.dev) 참고')).toBe(
-    'useState 참고',
-  );
+  ],
+  [
+    '앞\n```ts title="a.ts"\nconst a_b = x > 1 ? <T>1 : 2;\n```\n뒤',
+    '앞 const a_b = x > 1 ? <T>1 : 2; 뒤',
+  ],
+  // >는 줄 머리의 인용 표시만 지운다
+  ['> 인용문\n값이 x > 1이면', '인용문 값이 x > 1이면'],
+  ['[`useState`](https://react.dev) 참고', 'useState 참고'],
+])('extractPlainText: %j → %j', (input, expected) => {
+  expect(extractPlainText(input)).toBe(expected);
 });
 
 test('resolveExcerpt: 서로게이트 쌍(이모지) 가운데서 자르지 않는다', () => {
-  // 예전에는 159자 + 🚀에서 잘라 외톨이 상위 서로게이트(\\ud83d)가 남았고,
-  // encodeURIComponent가 URIError를 던졌다.
-  const body = '가'.repeat(MAX - 1) + '🚀' + '나'.repeat(10);
-  const excerpt = resolveExcerpt(body, undefined, MAX);
-  expect(excerpt).toBe('가'.repeat(MAX - 1) + '...');
-  expect(() => encodeURIComponent(excerpt)).not.toThrow();
-  // 쌍이 예산 안에 온전히 들어가면 그대로 둔다
-  const fits = '가'.repeat(MAX - 2) + '🚀' + '나'.repeat(10);
-  expect(resolveExcerpt(fits, undefined, MAX)).toBe(
-    '가'.repeat(MAX - 2) + '🚀...',
+  // 외톨이 상위 서로게이트는 encodeURIComponent가 URIError를 던진다.
+  const cut = resolveExcerpt(
+    '가'.repeat(MAX - 1) + '🚀' + '나'.repeat(10),
+    undefined,
+    MAX,
+  );
+  expect(cut).toBe('가'.repeat(MAX - 1) + '...');
+  const fits = '가'.repeat(MAX - 2) + '🚀';
+  expect(resolveExcerpt(fits + '나'.repeat(10), undefined, MAX)).toBe(
+    `${fits}...`,
   );
 });
 

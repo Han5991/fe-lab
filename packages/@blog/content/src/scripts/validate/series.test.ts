@@ -45,20 +45,14 @@ test('_series.yml: 주석뿐인 선언·정상 선언은 이슈 없음', () => {
   ).toStrictEqual([]);
 });
 
-test('_series.yml: 모르는 키(orders 오타)는 unknown-series-key 경고 — 리더가 조용히 버린다', () => {
-  expect(rules('title: t\norders:\n  - bundler-00-prologue\n')).toStrictEqual([
-    ['unknown-series-key', 'warning', 2],
-  ]);
+// 리더가 조용히 버리는 키 — 정규식 메타 문자가 든 키에서도 검사가 멈추지 않는다.
+test.each([
+  ['title: t\norders:\n  - bundler-00-prologue\n', 2],
+  ['order(:\n  - x\ntitle: t\n', null],
+  ['order[:\n  - x\ntitle: t\n', null],
+])('_series.yml: 모르는 키 %j → unknown-series-key 경고', (raw, line) => {
+  expect(rules(raw)).toStrictEqual([['unknown-series-key', 'warning', line]]);
 });
-
-test.each(['order(', 'order['])(
-  '_series.yml: 정규식 메타 문자가 든 키(%s)도 검사를 멈추지 않는다',
-  key => {
-    expect(rules(`${key}:\n  - x\ntitle: t\n`)).toStrictEqual([
-      ['unknown-series-key', 'warning', null],
-    ]);
-  },
-);
 
 test('_series.yml: 어떤 글과도 맞지 않는 order 항목은 unmatched-series-order 에러', () => {
   const issues = validateSeriesFile(

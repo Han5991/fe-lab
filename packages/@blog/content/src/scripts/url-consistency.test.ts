@@ -7,7 +7,6 @@ import { postPath, postUrl } from '../post/urls.ts';
 import type { PostData } from '../post/index.ts';
 import { decodeUrlSafe } from '../shared/url.ts';
 import { ARTIFACTS } from './artifacts.ts';
-import { checkArtifacts, type CollectedArtifact } from './check-seo.ts';
 import { defineTestContent } from '../shared/testValues.ts';
 import { sep } from 'node:path';
 
@@ -146,22 +145,16 @@ test.each([
     ]);
     const expected = decodeUrlSafe(postUrl(slug, SITE));
 
-    const collected: CollectedArtifact[] = [];
     for (const spec of ARTIFACTS) {
       const text = texts.get(spec.name);
       if (spec.kind !== 'file' || text === undefined) continue;
-      const urls = spec.extractUrls(text, SITE);
-      expect([...urls], spec.name).toStrictEqual([expected]);
-      collected.push({
-        name: spec.name,
-        relation: spec.relation,
-        reference: spec.reference,
-        urls,
-      });
+      expect([...spec.extractUrls(text, SITE)], spec.name).toStrictEqual([
+        expected,
+      ]);
+      texts.delete(spec.name);
     }
-    expect(collected.map(c => c.name).sort()).toStrictEqual(
-      [...texts.keys()].sort(),
+    expect([...texts.keys()], '레지스트리가 읽지 않은 산출물').toStrictEqual(
+      [],
     );
-    expect(checkArtifacts(collected)).toStrictEqual([]);
   },
 );

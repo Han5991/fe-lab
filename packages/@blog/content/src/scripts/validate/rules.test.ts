@@ -122,16 +122,18 @@ test('resolveSeverity: 무따옴표 date(YAML Date 객체)도 공개 판정에 �
 
 test.each([
   // 있는데 못 읽는 예약 시각 — 로더는 date로 폴백하지 않고 비공개로 닫는다.
-  ['bad', 'warning'],
-  ['2026-06-01 09:00:00+09:00', 'warning'],
+  ['scheduled', 'bad', 'warning'],
+  ['scheduled', '2026-06-01 09:00:00+09:00', 'warning'],
   // 문자열이 아닌 값·빈 문자열은 로더가 "없음"으로 보고 date(지난 날)로 폴백한다.
-  [123, 'error'],
-  ['', 'error'],
-  ['2020-01-01T09:00:00+09:00', 'error'],
+  ['scheduled', 123, 'error'],
+  ['scheduled', '', 'error'],
+  ['scheduled', '2020-01-01T09:00:00+09:00', 'error'],
+  // published는 예약 시각과 무관하게 공개
+  ['published', 'bad', 'error'],
 ])(
-  'resolveSeverity: scheduledDate %j의 공개 판정은 로더와 같다 (%s)',
-  (scheduledDate, expected) => {
-    const raw = `---\ntitle: x\nstatus: scheduled\ndate: '2020-01-01'\nscheduledDate: ${JSON.stringify(scheduledDate)}\n---\n`;
+  'resolveSeverity: %s · scheduledDate %j의 공개 판정은 로더와 같다 (%s)',
+  (status, scheduledDate, expected) => {
+    const raw = `---\ntitle: x\nstatus: ${status}\ndate: '2020-01-01'\nscheduledDate: ${JSON.stringify(scheduledDate)}\n---\n`;
     const { data } = parseMatter(raw, 'a.md');
     const post = parsePost(raw, 'a.md', {
       excerptMaxLength: 160,
@@ -142,21 +144,6 @@ test.each([
     expect(resolveSeverity('missing-excerpt', data, STRICT_CTX)).toBe(expected);
   },
 );
-
-test('resolveSeverity: published는 예약 시각과 무관하게 공개', () => {
-  expect(
-    resolveSeverity(
-      'missing-excerpt',
-      {
-        title: 'x',
-        status: 'published',
-        date: '2020-01-01',
-        scheduledDate: 'bad',
-      },
-      STRICT_CTX,
-    ),
-  ).toBe('error');
-});
 
 test('resolveSeverity: 고정 심각도 규칙은 strict와 무관하게 테이블 값 그대로', () => {
   expect(resolveSeverity('missing-title', PUBLISHED, CTX)).toBe('error');

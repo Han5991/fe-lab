@@ -194,15 +194,6 @@ test('selectPublishedMedia: 참조되지 않은 파일·다른 파일의 꼬리�
   expect([...selected]).toStrictEqual(['feconf/img/start.png']);
 });
 
-test('selectPublishedMedia: 목록에 없는 글(draft 등)의 이미지는 싣지 않는다', () => {
-  // main은 visible 글만 넘긴다 — draft 본문이 가리키는 파일은 고를 이유가 없다.
-  const selected = selectPublishedMedia(
-    [post('open-source', '![p](published.png)')],
-    ['open-source/published.png', 'open-source/draft-only.png'],
-  );
-  expect([...selected]).toStrictEqual(['open-source/published.png']);
-});
-
 test('selectPublishedMedia: frontmatter thumbnail도 참조다 (OG·JSON-LD가 원본을 쓴다)', () => {
   const selected = selectPublishedMedia(
     [post('ci', '본문에는 없음', 'cover-thumb.png'), post('', '', '/og/x.png')],

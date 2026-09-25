@@ -6,7 +6,6 @@
  * publishedTime은 유효한 ISO 8601이거나 생략)만 본다.
  */
 import { expect, test } from 'vitest';
-import { isIsoDateTimeWithOffset } from '../shared/dates.ts';
 import { testConfig } from '../post/testing.ts';
 import { createPostSeo, toKstIsoDate, type SeoPost } from './postSeo.ts';
 
@@ -25,52 +24,34 @@ function makePost(over: Partial<SeoPost> = {}): SeoPost {
   };
 }
 
-test('toKstIsoDate: 날짜만 → 설정 타임존 자정, offset 포함 ISO → 그대로', () => {
-  expect(toKstIsoDate('2026-05-04', OFFSET)).toBe(
-    `2026-05-04T00:00:00${OFFSET}`,
-  );
-  expect(toKstIsoDate('2026-05-04T09:00:00+09:00', OFFSET)).toBe(
-    '2026-05-04T09:00:00+09:00',
-  );
-});
-
 test.each([
-  ['2026-5-4'],
-  ['2026/05/04'],
-  ['2026-03-16 09:00:00+09:00'],
-  ['2026-06-01T09:00:00'],
-  ['2026-02-30'],
-])(
-  "toKstIsoDate: 형식 밖의 값('%s')은 undefined — 깨진 ISO를 만들지 않는다",
-  value => {
-    expect(toKstIsoDate(value, OFFSET)).toBe(undefined);
-  },
-);
-
-test('toKstIsoDate: offset 형식이 틀리면 날짜만 값도 undefined', () => {
-  expect(toKstIsoDate('2026-05-04', '+9:00')).toBe(undefined);
+  ['2026-05-04', OFFSET, `2026-05-04T00:00:00${OFFSET}`],
+  ['2026-05-04T09:00:00+09:00', OFFSET, '2026-05-04T09:00:00+09:00'],
+  // 형식 밖의 값·틀린 offset은 깨진 ISO를 만들지 않고 생략한다
+  ['2026-5-4', OFFSET, undefined],
+  ['2026/05/04', OFFSET, undefined],
+  ['2026-03-16 09:00:00+09:00', OFFSET, undefined],
+  ['2026-06-01T09:00:00', OFFSET, undefined],
+  ['2026-02-30', OFFSET, undefined],
+  ['2026-05-04', '+9:00', undefined],
+])('toKstIsoDate(%j, %j) → %j', (value, offset, expected) => {
+  expect(toKstIsoDate(value, offset)).toBe(expected);
 });
 
-test('buildPostJsonLd: 날짜 필드는 유효한 ISO이거나 생략된다', () => {
-  const ld = buildPostJsonLd(
+test('buildPostJsonLd·buildPostSeo: 날짜 필드는 유효한 ISO이거나 생략, updatedAt이 틀리면 date로 폴백', () => {
+  const broken = buildPostJsonLd(
     makePost({ date: '2026-5-4', updatedAt: '2026/05/05' }),
     'a',
   );
-  expect(ld['datePublished']).toBe(undefined);
-  expect(ld['dateModified']).toBe(undefined);
+  expect(broken['datePublished']).toBe(undefined);
+  expect(broken['dateModified']).toBe(undefined);
+  expect(
+    buildPostSeo(makePost({ date: '2026-5-4' }), 'a').openGraph.publishedTime,
+  ).toBe(undefined);
 
-  const og = buildPostSeo(makePost({ date: '2026-5-4' }), 'a').openGraph;
-  expect(og.publishedTime).toBe(undefined);
-});
-
-test('buildPostJsonLd: updatedAt이 틀리면 date로 폴백한다', () => {
-  const ld = buildPostJsonLd(
+  const fallback = buildPostJsonLd(
     makePost({ date: '2026-05-04', updatedAt: '2026-5-5' }),
     'a',
   );
-  const modified = ld['dateModified'];
-  expect(
-    typeof modified === 'string' && isIsoDateTimeWithOffset(modified),
-  ).toBe(true);
-  expect(modified).toBe(`2026-05-04T00:00:00${OFFSET}`);
+  expect(fallback['dateModified']).toBe(`2026-05-04T00:00:00${OFFSET}`);
 });

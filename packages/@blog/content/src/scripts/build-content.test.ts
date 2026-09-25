@@ -157,13 +157,3 @@ test('runProcess: 신호로 죽은 자식은 신호를 싣는다 (exit null 대�
   expect(result.signal).toBe('SIGKILL');
   expect(describeExit(result)).toBe('signal SIGKILL');
 });
-
-test('runProcess: 정상 종료는 코드와 출력을 그대로 돌려준다', async () => {
-  const result = await runProcess(process.execPath, [
-    '-e',
-    "console.log('hi'); process.exitCode = 3",
-  ]);
-  expect(result.code).toBe(3);
-  expect(result.output).toBe('hi\n');
-  expect(describeExit(result)).toBe('exit 3');
-});

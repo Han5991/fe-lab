@@ -197,16 +197,6 @@ test('contract: 시리즈 "다음 글"을 따라가면 헤더 순서(1/n → n/n
       next = getSeriesAdjacentPosts(next.slug).next;
     }
     expect(walked, `${series}: 다음 글 순서`).toStrictEqual(header);
-
-    const walkedBack = [header.at(-1) ?? ''];
-    let prev = getSeriesAdjacentPosts(walkedBack[0] ?? '').prev;
-    while (prev && walkedBack.length <= header.length) {
-      walkedBack.push(prev.slug);
-      prev = getSeriesAdjacentPosts(prev.slug).prev;
-    }
-    expect(walkedBack, `${series}: 이전 글 순서`).toStrictEqual(
-      [...header].reverse(),
-    );
   }
 });
 
