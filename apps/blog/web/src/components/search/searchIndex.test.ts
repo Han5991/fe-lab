@@ -11,6 +11,7 @@ describe('toSearchPost', () => {
         excerpt: 'e',
         tags: ['x'],
         series: 'lab/s',
+        seriesTitle: 'S',
         contentPreview: 'c',
       }),
     ).toEqual({
@@ -20,6 +21,7 @@ describe('toSearchPost', () => {
       excerpt: 'e',
       tags: ['x'],
       series: 'lab/s',
+      seriesTitle: 'S',
       contentPreview: 'c',
     });
   });
@@ -39,6 +41,7 @@ describe('toSearchPost', () => {
       excerpt: '',
       tags: ['x'],
       series: null,
+      seriesTitle: null,
       contentPreview: '',
     });
   });

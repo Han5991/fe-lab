@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { css } from '@design-system/ui-lib/css';
 import { useTocHook, scrollToId } from '@/src/components/tocHooks';
+import { isModifiedClick } from '@/src/components/events';
 
 /**
  * 글 차례 — 항목들을 잇는 **레일 한 줄**을 그리고, 지금 읽고 있는 구간만
@@ -392,8 +393,7 @@ export const TOC = () => {
                     // 수정자 키가 눌린 클릭은 **가로채지 않는다.** 여기서
                     // 기본 동작을 막으면 Cmd/Ctrl+클릭으로 새 탭을 여는
                     // 동작까지 함께 막혀, 앵커로 바꾼 이유가 사라진다.
-                    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey)
-                      return;
+                    if (isModifiedClick(e)) return;
                     e.preventDefault();
                     scrollToId({
                       id: item.id,

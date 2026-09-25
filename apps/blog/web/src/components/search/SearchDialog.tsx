@@ -11,6 +11,7 @@ import { fmtDate, postPath } from '@blog/content';
 import { getRecentViews, type RecentView } from '@/src/hooks/useRecentViews';
 import { Portal } from '@/src/components/Portal';
 import { useModalDialog } from '@/src/components/useModalDialog';
+import { isModifiedClick } from '@/src/components/events';
 import { fetchSearchIndex, type SearchPost } from './searchIndex';
 import {
   matchesAllTokens,
@@ -19,8 +20,11 @@ import {
   splitByTokens,
 } from './searchText';
 
-/** 색인 요청의 진행 상태 — 로딩과 실패를 "결과 없음"과 구분해 보여 준다. */
-type IndexStatus = 'idle' | 'loading' | 'ready' | 'error';
+/**
+ * 색인 요청의 진행 상태 — 로딩과 실패를 "결과 없음"과 구분해 보여 준다. 목록은
+ * 열린 뒤에만 그려지고 여는 순간 요청이 걸리므로, 요청 전도 'loading'으로 본다.
+ */
+type IndexStatus = 'loading' | 'ready' | 'error';
 
 const markClass = css({
   bg: 'marker.300',
@@ -42,14 +46,8 @@ const Highlight = ({ text, tokens }: { text: string; tokens: string[] }) =>
     ),
   );
 
-/** 수정자 키를 동반한 클릭 — 새 탭·새 창으로 여는 것이라 다이얼로그를 닫지 않는다. */
-const isModifiedClick = (e: React.MouseEvent) =>
-  e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0;
-
-interface SearchDialogProps {
-  /** 시리즈 id(폴더 경로) → 제목. 색인에는 id만 있다. */
-  seriesTitles: Record<string, string>;
-}
+/** 결과에 보일 시리즈 이름 — 색인에 제목이 없으면(예전 색인) id로 대신한다. */
+const seriesLabel = (post: SearchPost) => post.seriesTitle ?? post.series;
 
 /**
  * 사이트 검색 — 헤더의 트리거 버튼과 모달 다이얼로그.
@@ -63,14 +61,11 @@ interface SearchDialogProps {
  * - 입력창은 콤보박스, 결과는 리스트박스다. 화살표 선택은 `aria-activedescendant`로
  *   보조기술에 전달된다 — 예전엔 배경색만 바뀌어 스크린리더에는 아무것도 없었다.
  */
-export const SearchDialog = ({ seriesTitles }: SearchDialogProps) => {
-  const seriesTitle = (id: string | null) =>
-    id === null ? null : (seriesTitles[id] ?? id);
-
+export const SearchDialog = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [posts, setPosts] = useState<SearchPost[]>([]);
-  const [indexStatus, setIndexStatus] = useState<IndexStatus>('idle');
+  const [indexStatus, setIndexStatus] = useState<IndexStatus>('loading');
   // 진행 중이거나 이미 받은 색인 요청. 열고 닫고 다시 여는 사이 응답이 안 왔어도
   // 두 번 받지 않는다. 실패하면 비워서 다음 열기·다시 시도가 새로 요청한다.
   const indexRequest = useRef<Promise<void> | null>(null);
@@ -132,7 +127,7 @@ export const SearchDialog = ({ seriesTitles }: SearchDialogProps) => {
               post.excerpt,
               ...post.tags,
               post.series ?? '',
-              seriesTitle(post.series) ?? '',
+              post.seriesTitle ?? '',
               post.contentPreview,
             ],
             tokens,
@@ -509,7 +504,7 @@ export const SearchDialog = ({ seriesTitles }: SearchDialogProps) => {
                                 <span>{fmtDate(post.date)} · </span>
                               )}
                               {post.series && (
-                                <span>📚 {seriesTitle(post.series)} · </span>
+                                <span>📚 {seriesLabel(post)} · </span>
                               )}
                               <Highlight text={snippet} tokens={tokens} />
                             </p>
@@ -580,7 +575,7 @@ export const SearchDialog = ({ seriesTitles }: SearchDialogProps) => {
                           다시 시도
                         </button>
                       </>
-                    ) : indexStatus === 'loading' || indexStatus === 'idle' ? (
+                    ) : indexStatus === 'loading' ? (
                       <p>검색 색인을 불러오는 중…</p>
                     ) : (
                       <p>

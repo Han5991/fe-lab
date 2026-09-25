@@ -26,28 +26,31 @@ vi.mock('@/src/hooks/useRecentViews', () => ({
 
 import { SearchDialog } from './SearchDialog';
 
-const post = (slug: string, title: string, series: string | null = null) => ({
+const post = (
+  slug: string,
+  title: string,
+  series: string | null = null,
+  seriesTitle: string | null = null,
+) => ({
   slug,
   title,
   date: '2026-01-01',
   excerpt: '',
   tags: [],
   series,
+  seriesTitle,
 });
-
-// 색인에는 시리즈 id(폴더 경로)만 있다 — 화면은 이 표로 제목을 찾는다.
-const SERIES_TITLES = { 'lab/error-handling': '우아한 에러 처리' };
 
 // '터보'로 거르면 앞의 둘만 남는다 — 화살표가 움직일 자리가 있어야 한다.
 const POSTS = [
   post('turbo-a', '터보 첫 글'),
   post('turbo-b', '터보 둘째 글'),
-  post('other', '전혀 다른 글', 'lab/error-handling'),
+  post('other', '전혀 다른 글', 'lab/error-handling', '우아한 에러 처리'),
 ];
 
 /** 다이얼로그를 열고 검색 인덱스가 도착할 때까지 기다린 뒤 입력창을 준다. */
 const openDialog = async () => {
-  render(<SearchDialog seriesTitles={SERIES_TITLES} />);
+  render(<SearchDialog />);
   fireEvent.click(screen.getByRole('button', { name: '검색' }));
   // 검색 인덱스는 열릴 때 fetch로 불러온다.
   await screen.findByText('터보 첫 글');
@@ -121,7 +124,7 @@ describe('SearchDialog - 오버레이 위치', () => {
   test('헤더 안에서 열어도 다이얼로그는 헤더 바깥(body)에 뜬다', async () => {
     const { container } = render(
       <header>
-        <SearchDialog seriesTitles={SERIES_TITLES} />
+        <SearchDialog />
       </header>,
     );
     fireEvent.click(screen.getByRole('button', { name: '검색' }));
@@ -156,7 +159,7 @@ describe('SearchDialog - 다이얼로그 접근성', () => {
   });
 
   test('Escape로 닫히고 초점이 트리거로 돌아간다', async () => {
-    render(<SearchDialog seriesTitles={SERIES_TITLES} />);
+    render(<SearchDialog />);
     const trigger = screen.getByRole('button', { name: '검색' });
     trigger.focus();
     fireEvent.click(trigger);
@@ -218,6 +221,26 @@ describe('SearchDialog - 시리즈 표기', () => {
     expect(option).toHaveTextContent('우아한 에러 처리');
     expect(option).not.toHaveTextContent('lab/error-handling');
   });
+
+  test('색인에 시리즈 제목이 없으면 id로 대신한다', async () => {
+    const { seriesTitle: _omit, ...legacy } = post(
+      'other',
+      '전혀 다른 글',
+      'lab/error-handling',
+    );
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() =>
+        Promise.resolve({ ok: true, json: () => Promise.resolve([legacy]) }),
+      ),
+    );
+    render(<SearchDialog />);
+    fireEvent.click(screen.getByRole('button', { name: '검색' }));
+
+    expect(
+      await screen.findByRole('option', { name: /전혀 다른 글/ }),
+    ).toHaveTextContent('lab/error-handling');
+  });
 });
 
 describe('SearchDialog - 검색 색인 불러오기', () => {
@@ -233,7 +256,7 @@ describe('SearchDialog - 검색 색인 불러오기', () => {
         }),
     );
     vi.stubGlobal('fetch', fetchMock);
-    render(<SearchDialog seriesTitles={SERIES_TITLES} />);
+    render(<SearchDialog />);
     const trigger = screen.getByRole('button', { name: '검색' });
 
     fireEvent.click(trigger);
@@ -258,7 +281,7 @@ describe('SearchDialog - 검색 색인 불러오기', () => {
       .mockResolvedValueOnce({ ok: false, status: 404 })
       .mockImplementation(okResponse);
     vi.stubGlobal('fetch', fetchMock);
-    render(<SearchDialog seriesTitles={SERIES_TITLES} />);
+    render(<SearchDialog />);
     fireEvent.click(screen.getByRole('button', { name: '검색' }));
 
     expect(await screen.findByRole('status')).toHaveTextContent(

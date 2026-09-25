@@ -7,8 +7,10 @@ export interface SearchPost {
   date: string | null;
   excerpt: string;
   tags: string[];
-  /** 시리즈 id(폴더 경로). 화면은 제목 표로 바꿔 보인다. */
+  /** 시리즈 id(폴더 경로). */
   series: string | null;
+  /** 시리즈 제목. 이 필드가 없는 색인이면 화면은 id로 대신한다. */
+  seriesTitle?: string | null;
   contentPreview: string;
 }
 
@@ -22,7 +24,16 @@ const SEARCH_INDEX_URL = '/search-index.json';
  */
 export function toSearchPost(item: unknown): SearchPost | null {
   if (!isRecord(item)) return null;
-  const { slug, title, date, excerpt, tags, series, contentPreview } = item;
+  const {
+    slug,
+    title,
+    date,
+    excerpt,
+    tags,
+    series,
+    seriesTitle,
+    contentPreview,
+  } = item;
   if (typeof slug !== 'string' || typeof title !== 'string') return null;
   return {
     slug,
@@ -33,6 +44,8 @@ export function toSearchPost(item: unknown): SearchPost | null {
       ? tags.filter((t): t is string => typeof t === 'string')
       : [],
     series: typeof series === 'string' && series ? series : null,
+    seriesTitle:
+      typeof seriesTitle === 'string' && seriesTitle ? seriesTitle : null,
     contentPreview: typeof contentPreview === 'string' ? contentPreview : '',
   };
 }

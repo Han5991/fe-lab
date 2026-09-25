@@ -6,6 +6,7 @@ import { List, X } from 'lucide-react';
 import { css, cva } from '@design-system/ui-lib/css';
 import type { RecipeVariant } from '@design-system/ui-lib/css';
 import { useTocHook, scrollToId } from '@/src/components/tocHooks';
+import { isModifiedClick } from '@/src/components/events';
 import { Portal } from '@/src/components/Portal';
 import { useModalDialog } from '@/src/components/useModalDialog';
 
@@ -192,13 +193,7 @@ export const MobileTOC = () => {
                             // 수정자 키가 눌린 클릭은 가로채지 않는다 — 여기서
                             // 기본 동작을 막으면 Cmd/Ctrl+클릭의 새 탭까지 막혀
                             // 앵커로 바꾼 이유가 사라진다.
-                            if (
-                              e.metaKey ||
-                              e.ctrlKey ||
-                              e.shiftKey ||
-                              e.altKey
-                            )
-                              return;
+                            if (isModifiedClick(e)) return;
                             e.preventDefault();
                             scrollToId({
                               id: item.id,
