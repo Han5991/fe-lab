@@ -61,6 +61,24 @@ test.each([
   },
 );
 
+test('JSON이라고 선언한 성공 응답이 깨졌으면 INVALID_JSON ApiError가 된다', async () => {
+  server.use(
+    http.get(
+      `${BASE}/x`,
+      () =>
+        new HttpResponse('{broken', {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+    ),
+  );
+
+  const error = await client.get('/x').catch((e: unknown) => e);
+
+  expect(error).toBeInstanceOf(ApiError);
+  expect(error).toMatchObject({ code: 'INVALID_JSON', status: 200 });
+});
+
 test.each([
   ['204는 undefined', () => new HttpResponse(null, { status: 204 }), undefined],
   ['JSON이 아닌 본문은 문자열', () => HttpResponse.text('ok'), 'ok'],
