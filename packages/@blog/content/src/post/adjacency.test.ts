@@ -1,5 +1,11 @@
 import { expect, test } from 'vitest';
-import { pickAdjacent } from './service.ts';
+import { sortByDateDesc } from './repository.ts';
+import { sortPostsBySeriesOrder } from './series.ts';
+import {
+  createPostService,
+  pickAdjacent,
+  type PostService,
+} from './service.ts';
 import type { PostData } from './types.ts';
 
 function makePost(over: Partial<PostData> = {}): PostData {
@@ -83,4 +89,85 @@ test("pickAdjacent: sortOrder='oldest'는 역순이라 prev/next 방향이 뒤�
   const { prev, next } = pickAdjacent(posts, 'b', { sortOrder: 'oldest' });
   expect(prev?.slug).toBe('c');
   expect(next?.slug).toBe('a');
+});
+
+// ── getSeriesAdjacentPosts: 시리즈 헤더와 같은 순서 ──────────────────────────
+//
+// 헤더의 "n/m"·`/series`·llms.txt는 전부 sortPostsBySeriesOrder로 순서를 정한다.
+// 예전에는 `_series.yml`에 order가 없으면 네비게이션만 날짜 **내림차순** 목록을
+// 거꾸로 걸어서, 같은 날짜의 글끼리는 헤더와 반대 순서가 됐다
+// (실제 `[Typescript로 설계하는 프로젝트]`: "다음 글"이 1 → 3 → 2 → 5 → 4).
+
+function seriesService(
+  seriesPosts: PostData[],
+  meta: { order?: string[] } = {},
+): PostService {
+  return createPostService({
+    // 로더와 같은 모양(날짜 내림차순 + 경로 오름차순)으로 넘긴다.
+    readAllPosts: () => sortByDateDesc(seriesPosts),
+    getSeriesMeta: name => ({ name, ...meta }),
+    isDevelopment: () => false,
+    timezone: { isoOffset: '+09:00' },
+  });
+}
+
+/** 1편에서 "다음 글"만 따라가며 방문한 순서 */
+function walkNext(service: PostService, first: string): string[] {
+  const visited = [first];
+  let next = service.getSeriesAdjacentPosts(first).next;
+  while (next && visited.length < 20) {
+    visited.push(next.slug);
+    next = service.getSeriesAdjacentPosts(next.slug).next;
+  }
+  return visited;
+}
+
+const sameDateSeries = [
+  makePost({ slug: 's1', date: '2025-05-05', series: 'S' }),
+  makePost({ slug: 's2-api', date: '2025-06-01', series: 'S' }),
+  makePost({ slug: 's3-api-di', date: '2025-06-01', series: 'S' }),
+  makePost({ slug: 's4-service', date: '2025-06-08', series: 'S' }),
+  makePost({ slug: 's5-service-di', date: '2025-06-08', series: 'S' }),
+  makePost({ slug: 's6', date: '2025-06-15', series: 'S' }),
+];
+
+test('getSeriesAdjacentPosts: order 없는 시리즈에서 같은 날짜 글도 헤더 순서대로 이어진다', () => {
+  const service = seriesService(sameDateSeries);
+  const headerOrder = sortPostsBySeriesOrder(
+    service.getAllPosts().filter(p => p.series === 'S'),
+    undefined,
+  ).map(p => p.slug);
+
+  expect(headerOrder).toStrictEqual([
+    's1',
+    's2-api',
+    's3-api-di',
+    's4-service',
+    's5-service-di',
+    's6',
+  ]);
+  expect(walkNext(service, 's1')).toStrictEqual(headerOrder);
+});
+
+test('getSeriesAdjacentPosts: 같은 날짜 쌍의 prev/next가 서로를 가리킨다', () => {
+  const service = seriesService(sameDateSeries);
+  const second = service.getSeriesAdjacentPosts('s2-api');
+  expect(second.prev?.slug).toBe('s1');
+  expect(second.next?.slug).toBe('s3-api-di');
+  const third = service.getSeriesAdjacentPosts('s3-api-di');
+  expect(third.prev?.slug).toBe('s2-api');
+  expect(third.next?.slug).toBe('s4-service');
+});
+
+test('getSeriesAdjacentPosts: order가 있으면 order를 따른다 (기존 동작 유지)', () => {
+  const order = [
+    's6',
+    's1',
+    's3-api-di',
+    's2-api',
+    's5-service-di',
+    's4-service',
+  ];
+  const service = seriesService(sameDateSeries, { order });
+  expect(walkNext(service, 's6')).toStrictEqual(order);
 });

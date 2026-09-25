@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import matter from 'gray-matter';
+import { compareByCodePoint } from './repository.ts';
 
 export interface SeriesMeta {
   name: string;
@@ -111,9 +112,15 @@ export function createSeriesReader(deps: SeriesReaderDeps): SeriesReader {
 }
 
 /**
- * 시리즈 내 포스트 정렬.
+ * 시리즈 내 포스트 정렬 — 시리즈 헤더("n/m")·네비게이션·`/series`·llms.txt의
+ * **단일 순서**.
  * `_series.yml`에 `order` 배열이 있으면 그 순서를 우선시하고, 없으면 date 오름차순.
  * (서로 다른 호출부에서 같은 로직을 반복하던 것을 한 곳으로 모음.)
+ *
+ * 같은 날짜끼리는 `originalSlug`(파일 경로) 오름차순으로 명시해 끊는다. 예전에는
+ * 안정 정렬이 입력 순서를 물려받는 데 기대고 있었는데, 입력 순서는 호출부마다
+ * 다를 수 있어서 같은 시리즈가 화면마다 다른 순서를 말할 수 있었다. 지금 값은
+ * 기존 호출부(날짜 내림차순 + 경로 오름차순 목록을 넘긴다)가 보던 순서와 같다.
  */
 export function sortPostsBySeriesOrder<
   T extends {
@@ -122,6 +129,10 @@ export function sortPostsBySeriesOrder<
     date?: string | null;
   },
 >(posts: T[], order: string[] | undefined): T[] {
+  const byDateThenPath = (a: T, b: T): number =>
+    (a.date ?? '').localeCompare(b.date ?? '') ||
+    compareByCodePoint(a.originalSlug, b.originalSlug);
+
   if (order && order.length > 0) {
     const orderMap = new Map(order.map((s, i) => [s, i]));
     return [...posts].sort((a, b) => {
@@ -133,11 +144,9 @@ export function sortPostsBySeriesOrder<
         orderMap.get(b.slug) ??
         orderMap.get(b.originalSlug) ??
         Number.POSITIVE_INFINITY;
-      if (aRank === bRank) {
-        return (a.date ?? '').localeCompare(b.date ?? '');
-      }
+      if (aRank === bRank) return byDateThenPath(a, b);
       return aRank - bRank;
     });
   }
-  return [...posts].sort((a, b) => (a.date ?? '').localeCompare(b.date ?? ''));
+  return [...posts].sort(byDateThenPath);
 }

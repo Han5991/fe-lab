@@ -197,7 +197,7 @@ function collectPosts(
  * 있습니다. 코드포인트 비교는 환경과 무관하게 결정적이며 서로 다른 문자열에
  * 절대 0을 반환하지 않습니다.
  */
-function compareByCodePoint(a: string, b: string): number {
+export function compareByCodePoint(a: string, b: string): number {
   return a < b ? -1 : a > b ? 1 : 0;
 }
 

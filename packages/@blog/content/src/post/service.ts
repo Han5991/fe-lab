@@ -123,8 +123,14 @@ export function createPostService(deps: PostServiceDeps): PostService {
   /**
    * 같은 시리즈 내의 이전/다음 포스트를 반환합니다.
    *
-   * `_series.yml`의 `order` 필드가 있으면 그 순서대로 정렬하고,
-   * 시리즈 표시명도 메타의 `title`로 대체합니다.
+   * 순서는 **언제나 `sortPostsBySeriesOrder`** 가 정합니다(`order`가 있으면 그
+   * 순서, 없으면 날짜 오름차순 + 파일 경로). 시리즈 헤더의 "n/m"·`/series`·
+   * llms.txt가 같은 함수를 쓰므로, 네비게이션도 여기서 벗어나면 안 됩니다.
+   * 예전에는 `order`가 없을 때 날짜 **내림차순** 목록(`getAdjacentPosts`)을
+   * 거꾸로 걸어서, 같은 날짜의 글끼리는 헤더와 반대 순서가 됐습니다 —
+   * 헤더가 1/8, 2/8, 3/8을 말하는 동안 "다음 글"은 1 → 3 → 2 → 5 → 4로 갔습니다.
+   *
+   * 시리즈 표시명은 메타의 `title`이 있으면 그것으로 대체합니다.
    *
    * 시리즈가 아닌 폴더(= `_series.yml`이 없다)의 글은 애초에 `series`가 비어
    * 있으므로(`repository.ts`) 아래 첫 분기에서 전부 null로 나갑니다.
@@ -143,30 +149,19 @@ export function createPostService(deps: PostServiceDeps): PostService {
     const meta = getSeriesMeta(currentPost.series);
     const displayName = meta?.title ?? currentPost.series;
 
-    if (meta?.order && meta.order.length > 0) {
-      const seriesPosts = getAllPosts().filter(
-        p => p.series === currentPost.series,
-      );
-      const ordered = sortPostsBySeriesOrder(seriesPosts, meta.order);
-      const idx = ordered.findIndex(p => p.slug === currentSlug);
-      if (idx === -1) {
-        return { prev: null, next: null, seriesName: displayName };
-      }
-      const prevPost = idx > 0 ? ordered[idx - 1] : null;
-      const nextPost = idx < ordered.length - 1 ? ordered[idx + 1] : null;
-      return {
-        prev: prevPost ? { slug: prevPost.slug, title: prevPost.title } : null,
-        next: nextPost ? { slug: nextPost.slug, title: nextPost.title } : null,
-        seriesName: displayName,
-      };
+    const seriesPosts = getAllPosts().filter(
+      p => p.series === currentPost.series,
+    );
+    const ordered = sortPostsBySeriesOrder(seriesPosts, meta?.order);
+    const idx = ordered.findIndex(p => p.slug === currentSlug);
+    if (idx === -1) {
+      return { prev: null, next: null, seriesName: displayName };
     }
-
-    const adjacent = getAdjacentPosts(currentSlug, {
-      filterSeries: currentPost.series,
-    });
-
+    const prevPost = idx > 0 ? ordered[idx - 1] : null;
+    const nextPost = idx < ordered.length - 1 ? ordered[idx + 1] : null;
     return {
-      ...adjacent,
+      prev: prevPost ? { slug: prevPost.slug, title: prevPost.title } : null,
+      next: nextPost ? { slug: nextPost.slug, title: nextPost.title } : null,
       seriesName: displayName,
     };
   }

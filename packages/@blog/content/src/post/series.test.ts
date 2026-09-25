@@ -186,6 +186,33 @@ test('sortPostsBySeriesOrder: 날짜 문자열은 사전식(localeCompare) 비�
   expect(sorted.map(p => p.slug)).toStrictEqual(['morning', 'noon']);
 });
 
+test('sortPostsBySeriesOrder: 같은 날짜는 입력 순서와 무관하게 originalSlug 오름차순', () => {
+  // 헤더·네비게이션·/series·llms.txt가 각자 다른 순서의 배열을 넘겨도 같은
+  // 시리즈 순서를 말해야 한다 — 안정 정렬이 입력 순서를 물려받으면 안 된다.
+  const a = makePost({
+    slug: 'api',
+    originalSlug: 'S/api',
+    date: '2025-06-01',
+  });
+  const b = makePost({
+    slug: 'api-di',
+    originalSlug: 'S/api-di',
+    date: '2025-06-01',
+  });
+  for (const input of [
+    [a, b],
+    [b, a],
+  ]) {
+    expect(
+      sortPostsBySeriesOrder(input, undefined).map(p => p.slug),
+    ).toStrictEqual(['api', 'api-di']);
+    // order에 둘 다 없을 때(같은 rank)도 같은 규칙.
+    expect(
+      sortPostsBySeriesOrder(input, ['other']).map(p => p.slug),
+    ).toStrictEqual(['api', 'api-di']);
+  }
+});
+
 test('sortPostsBySeriesOrder: 입력 배열을 변형하지 않음(복사본 정렬)', () => {
   const posts = [
     makePost({ slug: 'a', date: '2026-03-01' }),
