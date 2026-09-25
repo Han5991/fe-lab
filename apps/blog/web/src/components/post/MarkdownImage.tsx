@@ -24,11 +24,15 @@ interface MarkdownImageProps {
   zoomable?: boolean;
 }
 
+// 본문 이미지 모양의 단일 출처. 예전에는 PostBody의 `& img`(명시도 0,1,1)가
+// 같은 속성을 따로 들고 있어 여기 적은 `my:14`·`rounded:card`는 한 번도 적용된
+// 적이 없었다(화면에 나간 건 저쪽의 4·control). 실제로 나가던 값을 여기로 모으고
+// 저쪽은 지웠다. figure 안에서만 달라지는 여백은 Figure의 `& img`가 덮는다.
 const imageStyle = css({
   display: 'block',
-  my: '14',
+  my: '4',
   // 리뉴얼 규칙: 위계는 그림자가 아니라 hairline 보더로만 표현한다.
-  rounded: 'card',
+  rounded: 'control',
   h: 'auto',
   borderWidth: 'hairline',
   borderColor: 'ink.border',

@@ -445,17 +445,9 @@ export function PostBody({ content, relativeDir }: PostBodyProps) {
             bg: 'accent.50',
           },
         },
-        '& img': {
-          rounded: 'control',
-          maxW: 'full',
-          h: 'auto',
-          borderWidth: 'hairline',
-          borderColor: 'ink.border',
-          my: '4',
-        },
-        // 폭을 채우는 건 저자가 크기를 안 준 이미지뿐이다. `<img width=250>`까지
-        // 채우면 250px 그림이 본문 폭으로 늘어난다.
-        '& img:not([width])': { w: 'full' },
+        // 본문 이미지(`img` 매퍼 → MarkdownImage)의 모양은 MarkdownImage가
+        // 단일 출처다. 여기 `& img`를 다시 두면 명시도(0,1,1)가 이겨 그쪽 값이
+        // 죽은 코드가 된다.
         '& hr': {
           my: '10',
           h: '[1px]',
