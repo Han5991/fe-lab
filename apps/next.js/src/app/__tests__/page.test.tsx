@@ -1,34 +1,30 @@
-import { render, screen, mockRouter, act } from '@test/util';
+import { fireEvent, mockRouter, render, screen } from '@test/util';
+import Page from '../page';
 
-// Import the mock Page component instead of the real one
-import Page from '../__mocks__/page';
-
+// 손으로 베낀 사본이 아니라 실제 app/page.tsx를 렌더한다.
+// next/link·디자인 시스템·Panda css는 vitest.config.mts의 alias가 test/__mocks__로 바꾼다.
 describe('Page', () => {
-  it('renders a heading', () => {
-    render(<Page />);
-
-    const heading = screen.getByRole('heading', { level: 1 });
-
-    expect(heading).toBeInTheDocument();
+  beforeEach(() => {
+    mockRouter.setCurrentUrl('/');
   });
 
-  it('렌더링 하고 link 클릭시 페이지 이동 해야 한다.', () => {
-    // Reset the router before the test
-    mockRouter.setCurrentUrl('/');
+  it('제목과 버튼을 그린다', () => {
+    render(<Page />);
 
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'Home' }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'count' })).toBeInTheDocument();
+  });
+
+  it('링크를 누르면 /about으로 이동한다', () => {
     render(<Page />);
 
     const link = screen.getByRole('link', { name: 'link' });
-    expect(link).toBeInTheDocument();
     expect(link).toHaveAttribute('href', '/about');
-    expect(link).toHaveTextContent('link');
 
-    // Manually update the router since our mock doesn't handle the click event properly
-    // Wrap in act() to avoid React warning
-    act(() => {
-      mockRouter.push('/about');
-    });
+    fireEvent.click(link);
 
-    expect(mockRouter.asPath).toEqual('/about');
+    expect(mockRouter.asPath).toBe('/about');
   });
 });

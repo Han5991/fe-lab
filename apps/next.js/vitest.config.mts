@@ -10,15 +10,15 @@ export default defineConfig({
       '@test': path.resolve(import.meta.dirname, './test'),
       '@design-system/ui': path.resolve(
         import.meta.dirname,
-        './test/__mocks__/designSystemMock.js',
+        './test/__mocks__/designSystemMock.tsx',
       ),
       '@design-system/ui-lib/css': path.resolve(
         import.meta.dirname,
-        './test/__mocks__/cssMock.js',
+        './test/__mocks__/cssMock.ts',
       ),
       'next/link': path.resolve(
         import.meta.dirname,
-        './test/__mocks__/nextLinkMock.js',
+        './test/__mocks__/nextLinkMock.tsx',
       ),
     },
   },
