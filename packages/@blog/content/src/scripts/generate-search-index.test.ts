@@ -129,6 +129,21 @@ test('buildAdminPostsIndex: contentPreview 필드 없음 (보안/용량 분리)'
   expect(!('contentPreview' in idx[0])).toBeTruthy();
 });
 
+test('buildAdminPostsIndex: 대시보드가 읽는 필드만 싣는다 (공개 전 글의 요약·시리즈 비노출)', () => {
+  // 이 파일은 인증 없이 받는 정적 산출물이다 — draft의 excerpt가 새면 안 된다.
+  const idx = buildAdminPostsIndex([
+    makePost({ status: 'draft', excerpt: '아직 공개 전인 요약', series: 's' }),
+  ]);
+  expect(Object.keys(idx[0]).sort()).toStrictEqual([
+    'date',
+    'scheduledDate',
+    'slug',
+    'status',
+    'tags',
+    'title',
+  ]);
+});
+
 test('CONTENT_PREVIEW_CHARS 상수가 1500자', () => {
   // 검색 인덱스 크기를 통제하는 핵심 상수. 회귀 잠금.
   expect(CONTENT_PREVIEW_CHARS).toBe(1500);
