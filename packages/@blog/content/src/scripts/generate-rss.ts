@@ -22,12 +22,32 @@ import type { ContentContext } from './context.ts';
  */
 
 /**
+ * XML 1.0이 허용하는 문자인가 — 탭·개행·CR과 U+0020 이상(서로게이트 영역·
+ * U+FFFE/FFFF 제외). 제목에 붙여 넣은 U+000B 같은 제어 문자는 엔티티로도 쓸 수
+ * 없어서, 하나만 섞여도 리더가 **피드 전체**를 거부한다.
+ */
+function isXmlChar(code: number): boolean {
+  return (
+    code === 0x9 ||
+    code === 0xa ||
+    code === 0xd ||
+    (code >= 0x20 && code <= 0xd7ff) ||
+    (code >= 0xe000 && code <= 0xfffd) ||
+    code >= 0x10000
+  );
+}
+
+/**
  * @internal RSS 본문에 들어가는 raw text 전용 XML 이스케이프.
  *           모듈 외부에서는 사용을 권장하지 않으며 (entity awareness 없음 — 이미
  *           escape된 문자열을 다시 이중 인코딩함), 테스트에서 동작 잠금 목적으로만 export.
+ *           XML에 쓸 수 없는 문자(제어 문자·짝 없는 서로게이트)는 버린다.
  */
 export function escapeXml(str: string): string {
-  return str
+  // for…of는 코드포인트 단위라 짝 없는 서로게이트가 따로 걸러진다.
+  return [...str]
+    .filter(ch => isXmlChar(ch.codePointAt(0) ?? 0))
+    .join('')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
@@ -71,12 +91,14 @@ export function buildRssXml(
     )
     .join('\n');
 
+  // 채널 문구도 설정에서 오는 **텍스트**다 — 항목(title·excerpt)만 이스케이프하던
+  // 때는 사이트 이름에 `&` 하나만 있어도 XML이 깨져 리더가 피드 전체를 거부했다.
   return `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>${siteName} | ${siteDescription.split('。')[0]}</title>
+    <title>${escapeXml(`${siteName} | ${siteDescription.split('。')[0]}`)}</title>
     <link>${siteUrl}</link>
-    <description>${siteDescription}</description>
+    <description>${escapeXml(siteDescription)}</description>
     <language>ko</language>
     <lastBuildDate>${now.toUTCString()}</lastBuildDate>
     <atom:link href="${siteUrl}${RSS_PATH}" rel="self" type="application/rss+xml"/>
