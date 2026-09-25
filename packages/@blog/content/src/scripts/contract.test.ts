@@ -135,7 +135,12 @@ test('search-index(admin): draft/scheduled 포함하여 전체 글 인덱싱', (
 
 test('llms-full: 모든 공개 글 제목이 본문에 등장', () => {
   const posts = getAllPosts();
-  const text = buildLlmsFullText(posts, { site, author, llms });
+  const text = buildLlmsFullText(posts, {
+    site,
+    author,
+    llms,
+    resolveSeriesMeta: testContent.getSeriesMeta,
+  });
   for (const p of posts) {
     expect(
       text.includes(`### [${p.title}]`),
@@ -146,7 +151,12 @@ test('llms-full: 모든 공개 글 제목이 본문에 등장', () => {
 
 test('llms-full: Total posts 카운트가 실제 공개 글 수와 일치', () => {
   const posts = getAllPosts();
-  const text = buildLlmsFullText(posts, { site, author, llms });
+  const text = buildLlmsFullText(posts, {
+    site,
+    author,
+    llms,
+    resolveSeriesMeta: testContent.getSeriesMeta,
+  });
   expect(text.includes(`Total posts: ${posts.length}+ articles`)).toBeTruthy();
 });
 

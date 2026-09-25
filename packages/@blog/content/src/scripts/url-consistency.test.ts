@@ -79,6 +79,7 @@ test('비ASCII slug: 다섯 산출 지점이 모두 같은 인코딩의 URL을 �
         site: SITE_VALUES,
         author: CONFIG.author,
         llms: CONFIG.llms,
+        resolveSeriesMeta: () => null,
       }),
     ],
   ];
@@ -139,6 +140,7 @@ test.each([
           site: SITE_VALUES,
           author: CONFIG.author,
           llms: CONFIG.llms,
+          resolveSeriesMeta: () => null,
         }),
       ],
     ]);
