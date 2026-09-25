@@ -10,7 +10,20 @@ name: Preview Blog on Cloudflare Workers
 
 on:
   pull_request:
-    paths: ['apps/blog/**', 'packages/@blog/**']
+    # 블로그 빌드의 실제 입력 전부 — deploy-blog.yml의 push 경로와 같은 이유다.
+    # 디자인 토큰·catalog·lockfile만 바꾼 PR(Renovate 대부분)도 프리뷰로 확인할 수
+    # 있어야 머지 전에 런타임 회귀를 본다. quality-checks는 이 워크플로가 부르지 않으므로
+    # 목록에 없다.
+    paths:
+      - 'apps/blog/**'
+      - 'packages/@blog/**'
+      - 'packages/@design-system/**'
+      - 'pnpm-workspace.yaml'
+      - 'pnpm-lock.yaml'
+      - 'package.json'
+      - '.tool-versions'
+      - 'turbo.json'
+      - '.github/workflows/preview-blog.yml'
 
 concurrency:
   # 같은 PR에 push가 쌓이면 이전 프리뷰 빌드를 취소한다(마지막 것만 의미가 있다).

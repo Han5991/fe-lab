@@ -134,7 +134,8 @@ Worker (`apps/blog/web/wrangler.jsonc`), Supabase for the dynamic bits.
   대조하며 한다. 워크플로가 주입하는 건 `NEXT_PUBLIC_PR_COUNT` 하나뿐.
 - `deploy-blog.yml`의 `environment: github-pages`는 **이름만 잔재**다 — 하는 일은 배포 브랜치 게이트(`main`만)
   하나, 시크릿은 0개. 개명은 새 환경을 만들어야 한다. `preview-blog.yml`은 `environment:`를 쓰지 않는다.
-  배포는 `main` push(`apps/blog/**`·`packages/@blog/**`), **매일 cron `13 0 * * *`(KST 09:13)**(예약 글 공개), 수동
+  배포는 `main` push(블로그의 실제 입력 — `apps/blog/**`·`packages/@blog/**`·`packages/@design-system/**`·catalog·
+  lockfile·툴체인·배포 워크플로 자신), **매일 cron `13 0 * * *`(KST 09:13)**(예약 글 공개), 수동
   실행. 정각을 피한 건 `0 0` 슬롯이 붐벼 실제로 KST 11:36~12:00에 돌았기 때문이다. GitHub cron은 정시를
   보장하지 않고 하루 한 번이라, `scheduledDate`에 적은 시각은 "그 뒤 첫 배포"(push 배포나 다음 날 cron)에서
   나간다. 배포 결과물 스모크(`claude-site-smoke.yml`)는 이 cron 배포가 끝나면 `workflow_run`으로 이어 돈다.

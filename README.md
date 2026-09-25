@@ -157,14 +157,14 @@ pnpm check-seo                                      # 빌드 산출물(out/) SEO
 
 ## 🌐 외부 서비스 & 배포
 
-| 서비스                        | 역할                                                                                                                                                                                                                            |
-| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Cloudflare Workers**        | 블로그 정적 호스팅(`apps/blog/web/wrangler.jsonc`) — `main` push(`apps/blog/**`·`packages/@blog/**` 변경 시) + 매일 KST 09:13 cron(예약 발행, 정시 보장 없음) + 수동 실행(`workflow_dispatch`). PR에는 버전 프리뷰 URL이 붙는다 |
-| **Cloudflare Redirect Rules** | apex·www → blog 리다이렉트. **저장소가 아니라 대시보드에 있다**(zone `sangwook.dev`, `http_request_dynamic_redirect`)                                                                                                           |
-| **Supabase Cloud**            | 블로그 조회수·Admin 인증(Google OAuth)·Analytics RPC. 로컬은 `supabase start`(Docker)                                                                                                                                           |
-| **Google Analytics / GTM**    | GA4(`G-ZS9ENFSSQ0`) + GTM(`GTM-5SMPQ23P`), 둘 다 `@next/third-parties`로 로드. GTM 컨테이너 내용은 저장소 밖(웹 콘솔)                                                                                                           |
-| **Giscus**                    | 댓글 (GitHub Discussions 기반)                                                                                                                                                                                                  |
-| **Vercel**                    | 더 이상 쓰지 않는다. PR 프리뷰는 Cloudflare(`preview-blog.yml`)가 낸다. 도메인 등록만 아직 Vercel(Name.com)에 남아 있다                                                                                                         |
+| 서비스                        | 역할                                                                                                                                                                                                                                                                                        |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Cloudflare Workers**        | 블로그 정적 호스팅(`apps/blog/web/wrangler.jsonc`) — `main` push(블로그 입력 — `apps/blog/**`·`packages/@blog/**`·`packages/@design-system/**`·catalog·lockfile 변경 시) + 매일 KST 09:13 cron(예약 발행, 정시 보장 없음) + 수동 실행(`workflow_dispatch`). PR에는 버전 프리뷰 URL이 붙는다 |
+| **Cloudflare Redirect Rules** | apex·www → blog 리다이렉트. **저장소가 아니라 대시보드에 있다**(zone `sangwook.dev`, `http_request_dynamic_redirect`)                                                                                                                                                                       |
+| **Supabase Cloud**            | 블로그 조회수·Admin 인증(Google OAuth)·Analytics RPC. 로컬은 `supabase start`(Docker)                                                                                                                                                                                                       |
+| **Google Analytics / GTM**    | GA4(`G-ZS9ENFSSQ0`) + GTM(`GTM-5SMPQ23P`), 둘 다 `@next/third-parties`로 로드. GTM 컨테이너 내용은 저장소 밖(웹 콘솔)                                                                                                                                                                       |
+| **Giscus**                    | 댓글 (GitHub Discussions 기반)                                                                                                                                                                                                                                                              |
+| **Vercel**                    | 더 이상 쓰지 않는다. PR 프리뷰는 Cloudflare(`preview-blog.yml`)가 낸다. 도메인 등록만 아직 Vercel(Name.com)에 남아 있다                                                                                                                                                                     |
 
 ### CI / 자동화 (`.github/workflows/`)
 

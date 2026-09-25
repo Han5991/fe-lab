@@ -3,7 +3,22 @@ name: Deploy Blog to Cloudflare Workers
 on:
   push:
     branches: [main]
-    paths: ['apps/blog/**', 'packages/@blog/**']
+    # 블로그 빌드의 **실제 입력** 전부. 예전에는 앞의 둘뿐이라, 블로그가 쓰는
+    # @design-system/*(blog-preset 토큰)·catalog·overrides·lockfile만 바꾼 머지는 배포를
+    # 일으키지 않았다 — #444(@tanstack/react-query)·#445(browserslist override)가
+    # 자동 머지된 뒤 아무도 안 보는 다음 날 cron에 섞여 나갔다. 입력이 안 바뀐 배포는
+    # 같은 산출물을 다시 올릴 뿐이라(wrangler는 바뀐 자산만 올린다) 넓게 잡는 쪽이 싸다.
+    paths:
+      - 'apps/blog/**'
+      - 'packages/@blog/**'
+      - 'packages/@design-system/**'
+      - 'pnpm-workspace.yaml'
+      - 'pnpm-lock.yaml'
+      - 'package.json'
+      - '.tool-versions'
+      - 'turbo.json'
+      - '.github/workflows/deploy-blog.yml'
+      - '.github/actions/quality-checks/**'
 
   # 매일 KST 09:13 (UTC 00:13) 자동 빌드 — 예약 발행(scheduled) 글 공개용.
   #
