@@ -12,10 +12,7 @@ function isAbsoluteThumbnail(thumbnail: string): boolean {
   return isExternalUrl(thumbnail) || thumbnail.startsWith('/');
 }
 
-/**
- * 포스트 디렉터리 기준 상대 경로를 정리한다 — 앞의 `./`만 벗긴다(assetUrl.ts와
- * 같은 규칙). 하위 폴더(`img/cover.png`)의 `/`는 경로 구분자로 남긴다.
- */
+/** 앞의 `./`만 벗긴다 — 하위 폴더의 `/`는 구분자로 남긴다. */
 function toPostRelative(thumbnail: string): string {
   return thumbnail.replace(/^(?:\.\/)+/, '');
 }
@@ -26,9 +23,7 @@ function toPostRelative(thumbnail: string): string {
  * - thumbnail이 없으면 빌드 시 생성되는 글별 OG 카드(/og/{slug}.png) 사용
  *   (scripts/render/generate-og-images.ts가 발행 글 전체에 대해 생성을 보장)
  * - 외부 URL(스킴·`//`) 또는 /로 시작하는 절대 경로는 그대로 사용
- * - 상대 경로면 포스트 디렉토리 기반으로 변환. 디렉터리와 파일 경로 모두
- *   **세그먼트별** 인코딩이라 `img/cover.png`의 `/`가 `%2F`가 되지 않는다
- *   (`%2F`는 대부분의 정적 호스트에서 경로 구분자가 아니라 404가 된다).
+ * - 상대 경로면 포스트 디렉토리 기반으로 세그먼트별 인코딩(`%2F`는 정적 호스트에서 404)
  */
 export function resolveThumbnailUrl(
   post: Pick<PostData, 'thumbnail' | 'relativeDir' | 'slug'>,
@@ -46,13 +41,7 @@ export function resolveThumbnailUrl(
 /** 빌드 시 WebP 최적화본을 만들 수 있는 원본 확장자 */
 const OPTIMIZABLE_EXT = /\.(?:png|jpe?g)$/i;
 
-/**
- * 상대 `thumbnail`이 글 폴더의 **파일 이름 하나**인가(`cover.png`).
- *
- * 경로가 섞이면(`./a.png`·`img/a.png`·`../a.png`) 최적화본의 URL과 생성 위치가
- * 갈리고 `../`는 `thumbs/` 밖에 쓴다 — 최적화 대상 판정과 lint:posts의
- * `invalid-thumbnail-path`가 이 함수 하나를 본다.
- */
+/** 상대 `thumbnail`이 글 폴더의 파일 이름 하나인가 — 경로가 섞이면 최적화본 URL과 생성 위치가 갈린다. */
 export function isBareThumbnailName(thumbnail: string): boolean {
   return (
     thumbnail !== '' &&
@@ -62,13 +51,7 @@ export function isBareThumbnailName(thumbnail: string): boolean {
   );
 }
 
-/**
- * 최적화 대상 판정: 글 폴더의 png/jpg **파일 이름**인 thumbnail만.
- *
- * 외부 URL과 절대 경로(`/og/*` 생성 카드 포함)는 제외합니다. 생성 OG 카드는
- * satori가 이미 적정 크기로 만들고, 외부 URL은 우리가 변환할 수 없습니다.
- * 파일 이름이 아닌 상대 경로는 원본 URL(`resolveThumbnailUrl`)로 폴백합니다.
- */
+/** 최적화 대상(글 폴더의 png/jpg 파일 이름)인가 — 나머지는 원본 URL로 폴백한다. */
 export function isOptimizableThumbnail(
   thumbnail?: string,
 ): thumbnail is string {
@@ -123,8 +106,7 @@ export function resolveAbsoluteThumbnailUrl(
   site: Pick<SiteConfig, 'url' | 'ogDefaultImage'>,
 ): string {
   const url = resolveThumbnailUrl(post, site.ogDefaultImage);
-  // 프로토콜 상대(`//cdn…`)는 origin을 앞에 붙이면 `https://blog//cdn…`이 된다 —
-  // 사이트의 스킴만 빌려 절대 URL로 만든다.
+  // 프로토콜 상대 URL은 사이트의 스킴만 빌린다(origin을 붙이면 `https://blog//cdn…`).
   if (url.startsWith('//')) return `${new URL(site.url).protocol}${url}`;
   if (isExternalUrl(url)) return url;
   return `${site.url}${url}`;

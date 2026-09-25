@@ -15,11 +15,7 @@
 import { readdirSync, statSync } from 'node:fs';
 import { basename, join } from 'node:path';
 
-/**
- * `dir` 아래 모든 파일의 상대 경로(`/` 구분, readdir 순서의 깊이 우선) — 원고·
- * 미디어·산출물(out/)을 훑는 곳이 전부 이 순회 하나를 쓴다. 디렉터리를 가리키는
- * 심볼릭 링크는 따라 들어가고, `dir`이 없으면 던진다.
- */
+/** `dir` 아래 모든 파일의 `/` 구분 상대 경로(깊이 우선) — 원고·미디어·out/의 순회는 전부 이것이다. */
 export function listFilesRecursive(dir: string): string[] {
   const files: string[] = [];
   const walk = (rel: string) => {

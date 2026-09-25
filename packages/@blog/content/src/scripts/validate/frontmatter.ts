@@ -185,10 +185,7 @@ const stringFieldChain: Chain = ({
 
 // ── slug 사슬: invalid-slug ─────────────────────────────────────────────────
 
-// 타입만 보던 시절에는 `slug: '/foo'`·`'foo/'`·`'../x'`가 통과했다. 썸네일이 없는
-// 글은 og 단계의 스택 트레이스로 처음 드러났고, 있는 글은 아무것도 실패하지 않은
-// 채 sitemap에 `/posts//foo/`가 나갔다. 빈 문자열은 로더가 "없음"으로 보고 파일
-// 경로 slug로 폴백하므로 여기서 다루지 않는다.
+// 빈 문자열은 로더가 "없음"으로 보고 파일 경로 slug로 폴백하므로 대상 밖이다.
 const slugChain: Chain = ({ record: { data, relPath }, raw, options }) => {
   const slug = data['slug'];
   if (typeof slug !== 'string' || slug === '') return [];
@@ -304,38 +301,27 @@ const excerptChain: Chain = ({ record: { data, relPath }, raw, options }) => {
 
 // ── 날짜 사슬: date · updatedAt · scheduledDate ─────────────────────────────
 
-/**
- * YAML이 Date 객체로 준 값이 **날짜만** 적힌 것이었나.
- *
- * 따옴표 없는 `2026-06-01`은 UTC 자정 Date가 되고, 로더가 되읽어도 적은 날짜와
- * 같은 날이라 무해하다(실제 원고 두 편이 이렇게 쓴다). 따옴표 없는 **시각**은
- * `date`에 시각을 둔 것이라 계약 밖이다 — 파싱 결과로는 둘을 못 가르므로 원문을
- * 본다. 원문 줄을 못 찾으면(흐름 매핑 등) 값이 UTC 자정인지로 판정한다.
- */
+/** YAML Date가 날짜만 적힌 값이었나 — 파싱 결과로는 날짜와 시각을 못 가르므로 원문을 본다. */
 function isDateOnlyTimestamp(value: Date, written: string | null): boolean {
   if (written !== null) return /^\d{4}-\d{2}-\d{2}$/.test(written);
   return value.getTime() % 86_400_000 === 0;
 }
 
-/** 날짜 필드 하나의 규칙 id와 문구 — 판정 흐름(`checkDateValue`)은 세 필드가 같다. */
+/** 날짜 필드 하나의 규칙 id와 문구 — 판정 흐름은 세 필드가 같다. */
 interface DateField {
   key: 'date' | 'updatedAt' | 'scheduledDate';
-  /** 받는 문자열 형식 — 로더와 같은 `shared/dates.ts`의 판정 */
   accepts: (value: string) => boolean;
   unquoted: RuleId;
   invalid: RuleId;
   ambiguous: RuleId;
-  /** 조사까지 붙은 주어(`` `date`가 ``) — Date·비문자열 문구에 쓴다 */
+  /** 조사까지 붙은 주어(`` `date`가 ``) */
   subject: string;
-  /** 규칙별 문구. 뒤에 `: 값`이 붙는다 */
   messages: Record<'unquoted' | 'invalid' | 'ambiguous', string>;
 }
 
 const DATE_FIELD: DateField = {
   key: 'date',
-  // 계약은 `'YYYY-MM-DD'` 하나다(AGENTS.md 표). 시각은 `scheduledDate`의 몫이다 —
-  // 같은 필드에 날짜와 datetime이 섞이면 사전순(시리즈·아카이브)·UTC 자정(목록)·
-  // KST 자정(공개 판정) 세 정렬이 서로 다른 순서를 낸다.
+  // 날짜와 datetime이 섞이면 사전순·UTC 자정·KST 자정 정렬이 서로 다른 순서를 낸다.
   accepts: isIsoDateOnly,
   unquoted: 'unquoted-date',
   invalid: 'invalid-date',
@@ -353,7 +339,6 @@ const DATE_FIELD: DateField = {
 
 const UPDATED_AT_FIELD: DateField = {
   key: 'updatedAt',
-  // 수정 시각이라 offset을 명시한 datetime도 받는다(Schema.org dateModified).
   accepts: isValidDateString,
   unquoted: 'unquoted-updated-at',
   invalid: 'invalid-updated-at',
@@ -371,30 +356,22 @@ const UPDATED_AT_FIELD: DateField = {
 
 const SCHEDULED_DATE_FIELD: DateField = {
   key: 'scheduledDate',
-  // 날짜만 적은 값은 `date`와 같은 뜻이라 중복일 뿐 틀리지는 않다.
   accepts: isValidDateString,
   unquoted: 'unquoted-scheduled-date',
   invalid: 'invalid-scheduled-date',
   ambiguous: 'ambiguous-scheduled-date',
   subject: '`scheduledDate`가',
   messages: {
-    // 무따옴표 값은 YAML이 Date 객체로 바꾼다. 날짜만 적은 무따옴표 값은 UTC 자정
-    // = KST 오전 9시가 되어, 따옴표를 친 같은 값(KST 자정)과 공개 시각이 갈린다.
     unquoted:
       "`scheduledDate`는 따옴표로 감싼 문자열이어야 합니다. 따옴표가 없으면 YAML이 Date 객체로 바꿔 적은 그대로 읽히지 않고, 날짜만 적은 값은 UTC 자정(KST 오전 9시)이 되어 따옴표를 친 같은 값(KST 자정)과 공개 시각이 9시간 어긋납니다. 예: `scheduledDate: '2026-06-01T09:00:00+09:00'`",
     ambiguous:
       "`scheduledDate`에 timezone offset이 없어 빌드 환경(UTC)과 로컬(KST)에서 발행 시각이 ~9시간 어긋날 수 있습니다. `+09:00` 또는 `Z`를 명시하거나 'YYYY-MM-DD' 형식을 쓰세요",
-    // 'bad'·공백 구분(`2026-06-01 09:00+09:00`)·달력에 없는 날짜·`+0900`·소문자 `z`.
     invalid:
       "`scheduledDate`는 offset을 명시한 ISO datetime('2026-06-01T09:00:00+09:00')이어야 합니다",
   },
 };
 
-/**
- * 날짜 값 하나의 판정 — 받는 형식이면 통과, offset 없는 시각이면 ambiguous, 그 밖은
- * invalid. YAML Date는 원문을 되짚어 따옴표 없는 시각(unquoted)과 달력 밖 날짜
- * (YAML은 `2026-02-30`을 오류 없이 3월 2일로 넘긴다)를 가른다.
- */
+/** 날짜 값 하나의 판정. YAML은 `2026-02-30`을 오류 없이 3월 2일로 넘기므로 원문도 본다. */
 function checkDateValue(
   field: DateField,
   value: unknown,
@@ -432,8 +409,7 @@ function checkDateValue(
     );
   }
   if (field.accepts(value)) return [];
-  // offset 없는 datetime은 parseScheduledDateKST가 실행 환경의 로컬 시각으로
-  // 읽는 값이라 CI(UTC)와 로컬(KST)이 갈린다 — 따로 알려 고칠 방향을 준다.
+  // offset 없는 시각은 CI(UTC)와 로컬(KST)이 다르게 읽어 규칙을 따로 둔다.
   return hasAmbiguousTimezone(value)
     ? issue(field.ambiguous, `${field.messages.ambiguous}: ${value}`)
     : issue(field.invalid, `${field.messages.invalid}: ${value}`);
@@ -441,8 +417,6 @@ function checkDateValue(
 
 const dateChain: Chain = ctx => {
   const { data, relPath } = ctx.record;
-  // `date`는 선택 필드가 아닙니다. 목록 정렬·아카이브·sitemap·RSS가 모두 읽고,
-  // `status: scheduled`는 이 값을 공개 시각으로 씁니다(visibility.ts).
   if (data['date'] == null) {
     return [
       {
@@ -465,10 +439,7 @@ const updatedAtChain: Chain = ctx => {
   return value == null ? [] : checkDateValue(UPDATED_AT_FIELD, value, ctx);
 };
 
-/**
- * `scheduledDate`는 원문이 곧 공개 시각이라 **따옴표로 감싼 문자열**만 받는다
- * (문자열이 아니면 날짜 모양이어도 unquoted). 형식 검사는 예약 글에서만 한다.
- */
+/** `scheduledDate`는 원문이 곧 공개 시각이라 따옴표로 감싼 문자열만 받는다. */
 const scheduledDateChain: Chain = ctx => {
   const { data, relPath } = ctx.record;
   if (!('scheduledDate' in data)) return [];
@@ -563,7 +534,6 @@ const heroChain: Chain = ({ record: { data, relPath }, raw, options }) => {
 
 // ── thumbnail 사슬: og-thumbnail-mismatch · invalid-thumbnail-path · missing-thumbnail
 
-/** 생성 OG 카드 경로의 접두사 — 생성기(`render/generate-og-images.ts`)가 쓰는 곳 */
 const OG_THUMBNAIL_PREFIX = '/og/';
 
 const thumbnailChain: Chain = ({ record, raw, options }) => {
@@ -571,10 +541,7 @@ const thumbnailChain: Chain = ({ record, raw, options }) => {
   if (!('thumbnail' in data) || typeof data['thumbnail'] !== 'string')
     return [];
   const thumb = data['thumbnail'];
-  // `/og/…`는 "생성 카드를 써라"는 뜻이다. 그런데 생성기는 언제나 `/og/{slug}.png`만
-  // 만들고 **나머지 png를 orphan으로 지운다**. 페이지는 frontmatter 경로를 그대로
-  // 쓰므로, slug만 고치고(`react-error-deign` → `…-design`) 이 줄을 두면 히어로·목록
-  // 카드·og:image가 전부 404인데 다른 검사는 모두 통과한다.
+  // 생성기는 `/og/{slug}.png`만 만들고 나머지는 orphan으로 지운다 — slug만 고치면 404.
   if (thumb.startsWith(OG_THUMBNAIL_PREFIX)) {
     const slug = resolvePostSlug(data['slug'], relPath);
     const expected = `${OG_THUMBNAIL_PREFIX}${slug}.png`;

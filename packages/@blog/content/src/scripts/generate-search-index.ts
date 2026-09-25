@@ -17,21 +17,12 @@ export interface PublicSearchIndexEntry {
   excerpt: string;
   tags: string[];
   series: string | null;
-  /** 시리즈 표시명(`_series.yml`의 `title`) — 없으면 null이고 화면은 `series`로 폴백한다 */
+  /** 시리즈 표시명(`_series.yml`의 `title`) — 없으면 null(화면은 `series`로 폴백) */
   seriesTitle: string | null;
   contentPreview: string;
 }
 
-/**
- * admin 대시보드가 **실제로 읽는 필드만** 싣는다(`adminRepository.ts`의
- * `AdminPostIndex`와 같은 모양).
- *
- * 이 파일은 정적 산출물이라 인증 없이 `/admin-posts-index.json`으로 누구나
- * 받는다 — admin 인증(Edge Function의 JWT 대조)은 이 파일을 덮지 않는다.
- * 그래서 draft·예약 글의 요약(`excerpt`)과 시리즈는 뺐다: 대시보드가 쓰지 않는
- * 값이 공개 전 글의 내용을 흘릴 이유가 없다. 남은 제목·날짜·상태까지 감추려면
- * 이 목록을 Edge Function 뒤로 옮겨야 한다(이 패키지 밖의 일).
- */
+/** admin 대시보드가 읽는 필드만 — 인증 없이 받는 정적 파일이라 공개 전 글의 요약·시리즈는 싣지 않는다. */
 export interface AdminPostsIndexEntry {
   slug: string;
   title: string;

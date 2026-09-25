@@ -304,7 +304,7 @@ test('collectChunkRefs: 하위 폴더의 청크 경로도 뽑고, 인코딩된 �
   ]);
 });
 
-test('findMarkerIn(chunks): 중첩 청크에 실린 누수도 잡는다 (예전엔 조용히 빠졌다)', () => {
+test('findMarkerIn(chunks): 중첩 청크에 실린 누수도 잡는다', () => {
   const sources = new Map([
     ['app/page-home111.js', 'import("./shared-222")'],
     ['shared-222.js', 'GoTrueClient'],

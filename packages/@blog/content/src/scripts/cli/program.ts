@@ -33,8 +33,7 @@ async function loadContext(command: Command): Promise<ContentContext> {
   const { createContext } = await import('../context.ts');
   let now: Date;
   try {
-    // 기준 시각의 채널은 환경 변수 하나다 — 앱의 `build` 스크립트와 build의
-    // 자식 단계(stepEnv), 앱의 `src/content.ts`가 같은 값을 같은 파서로 읽는다.
+    // 기준 시각의 채널은 환경 변수 하나다(앱 build 스크립트·stepEnv·앱 content.ts).
     now = resolveBuildNow(process.env[BUILD_NOW_ENV]);
   } catch (e) {
     // 입력 형식 오류는 스택이 아니라 메시지로 — new-post 액션과 같은 처리.

@@ -32,32 +32,7 @@ import { isPostStatus } from './visibility.ts';
 //
 // 배럴(`src/post/index.ts`)에는 올리지 않는다 — 밖에서는 테이블의 `narrow`로 쓴다.
 
-/**
- * frontmatter의 date/updatedAt 값을 문자열(또는 null)로 정규화합니다.
- * - 문자열이고 받는 형식(`isValidDateString`: `'YYYY-MM-DD'` 또는 offset을 적은
- *   ISO datetime)이면 → 그대로
- * - 그 밖의 문자열(`'2026-5-4'`, `'2026/05/04'`, offset 없는 datetime …) → null.
- *   예전에는 그대로 흘러가서 실행 환경의 TZ에 따라 공개 시각이 9시간 갈렸고,
- *   JSON-LD에는 `2026-5-4T00:00:00+09:00` 같은 깨진 ISO가 나갔습니다. null이면
- *   예약 글은 공개 시각이 없어 비공개(fail-closed)이고, 날짜를 쓰는 소비처는
- *   전부 "날짜 없음"을 이미 처리합니다. 원문은 lint:posts가 에러로 알립니다.
- * - YAML이 Date 객체로 파싱한 경우 → 아래 규칙
- * - 그 외 → null
- *
- * 따옴표 없는 날짜는 YAML이 Date로 바꿔 줍니다. 두 모양이 들어옵니다:
- * - `date: 2025-01-02` → UTC 자정 Date. 적힌 날짜 그대로 `'2025-01-02'`.
- * - `date: 2026-10-01T08:00:00+09:00` → 시각이 있는 Date. 예전에는 여기서도
- *   `toISOString()`의 앞 10자(= **UTC** 날짜)를 잘라 `'2026-09-30'`이 됐고,
- *   예약 글이 KST 자정 기준으로 최대 33시간 일찍 공개됐습니다. 이제 설정
- *   타임존의 offset으로 시점을 그대로 적습니다(`'2026-10-01T08:00:00+09:00'`) —
- *   따옴표를 친 같은 값과 똑같은 문자열이라, 앞 10자는 사이트 타임존의 달력
- *   날짜이고 공개 시각도 적힌 시각 그대로입니다.
- *
- * UTC 자정에 정확히 떨어지는 datetime(KST라면 `T09:00:00+09:00`)은 날짜만 쓴 값과
- * 구분할 수 없어 날짜로 읽힙니다 — lint:posts가 따옴표 없는 datetime을 막는 이유.
- *
- * `timezone`을 주지 않으면 시점을 UTC(`Z`)로 적습니다(공개 판정만 필요한 곳용).
- */
+/** date·updatedAt을 받는 형식(`isValidDateString`)의 문자열로 좁힌다 — YAML Date는 설정 타임존으로 시점을 적고, 형식 밖이면 null. */
 export function toDateString(
   value: unknown,
   timezone?: Pick<TimezoneConfig, 'isoOffset'>,
@@ -67,7 +42,6 @@ export function toDateString(
   return null;
 }
 
-/** YAML이 만든 Date → 문자열. 위 `toDateString`의 규칙 본체. */
 function fromYamlDate(
   value: Date,
   timezone: Pick<TimezoneConfig, 'isoOffset'> | undefined,
@@ -82,16 +56,7 @@ function fromYamlDate(
   return isValidDateString(result) ? result : null;
 }
 
-/**
- * `scheduledDate`를 좁힙니다. `date`와 달리 **형식이 틀린 문자열도 버리지 않습니다.**
- *
- * 공개 시각은 `scheduledDate ?? date`라서, 틀린 값을 없는 값으로 떨어뜨리면
- * 공개 시각이 `date`(보통 그날 자정)로 폴백해 **의도보다 일찍** 공개됩니다
- * (fail-open). 원문 그대로 두면 `isPostVisible`이 형식을 인정하지 않아 비공개로
- * 닫히고(fail-closed), dev 배너에도 저자가 쓴 값이 그대로 보입니다.
- *
- * 따옴표 없는 datetime(YAML Date)은 `date`와 같은 규칙으로 시점을 보존해 적습니다.
- */
+/** scheduledDate를 좁힌다 — 틀린 문자열도 원문으로 남겨, date로 폴백해 일찍 공개하지 않고 비공개로 닫는다. */
 export function toScheduledDate(
   value: unknown,
   timezone?: Pick<TimezoneConfig, 'isoOffset'>,

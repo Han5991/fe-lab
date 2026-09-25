@@ -96,25 +96,12 @@ export function stepArgv(step: Step, configPath: string): string[] {
   return ['--config', configPath, step.command, ...step.args];
 }
 
-/**
- * 자식 프로세스 환경 — 부모의 기준 시각을 `BLOG_CONTENT_NOW`로 싣는다. 자식마다
- * 제 시계를 보면 예약 글의 공개 시각이 빌드 도중에 지날 때 산출물끼리 글 집합이
- * 갈린다. `next build`도 같은 변수를 읽으므로(앱 `build` 스크립트) 채널은 이것 하나다.
- */
+/** 자식 환경에 부모의 기준 시각을 싣는다 — 자식마다 제 시계를 보면 예약 글 경계에서 산출물끼리 글 집합이 갈린다. */
 export function stepEnv(now: Date): NodeJS.ProcessEnv {
   return { ...process.env, [BUILD_NOW_ENV]: now.toISOString() };
 }
 
-/**
- * 자식 프로세스를 띄우고 출력을 모았다가 끝나면 한 번에 돌려준다 — 병렬 실행 시
- * 로그가 섞이지 않도록 단계별로 묶어서 보여 주기 위해서다.
- *
- * **띄우기 실패도 결과로 돌려준다**(`code: 1`). spawn이 실패하면(EAGAIN·ENOMEM 등)
- * 자식은 `close` 없이 `error`만 낼 수 있는데, 그 이벤트에 리스너가 없으면
- * 처리되지 않은 에러로 **부모가 통째로 죽어** 다른 단계의 결과 요약까지 사라진다.
- * 신호로 죽은 단계(OOM으로 죽은 sharp 단계 등)는 종료 코드가 null이라 신호를
- * 따로 싣는다 — 예전에는 `exit null`만 찍혀 원인을 알 수 없었다.
- */
+/** 자식을 띄워 출력을 모아 돌려준다 — 띄우기 실패·신호 종료도 결과로 돌려줘 부모가 죽지 않는다. */
 export function runProcess(
   execPath: string,
   args: readonly string[],
@@ -140,8 +127,7 @@ export function runProcess(
         output: Buffer.concat(chunks).toString('utf8'),
       });
     };
-    // cwd는 호출자 것을 그대로 쓴다 — 단계 스크립트들은 경로를 --config로 받은
-    // 설정(절대 경로 앵커)에서 풀므로 cwd에 의존하지 않는다.
+    // cwd에 기대지 않는다 — 단계는 경로를 --config의 설정에서 푼다.
     const child = spawn(execPath, args, {
       shell: false,
       stdio: ['ignore', 'pipe', 'pipe'],

@@ -1,12 +1,6 @@
 /**
- * 시리즈 선언(`_series.yml`) **판정 사슬** — 파일 하나가 아니라 선언과 그 폴더의
- * 글들을 함께 봐야 하는 규칙들(rules.ts에서 scope가 `series`인 행).
- *
- * 로더(`src/post/series.ts`)는 이 파일을 **관대하게** 읽는다: 모르는 키(`orders:`
- * 오타)·배열이 아닌 `order`·문자열 아닌 항목은 조용히 버리고, 어떤 글과도 맞지
- * 않는 `order` 항목도 그냥 지나친다. 그러면 저자가 정한 읽는 순서가 사라지거나
- * (그 글은 시리즈 끝으로 밀린다) 이전/다음 내비게이션이 어긋나는데, 빌드는
- * 성공한다. 그 침묵을 여기서 깬다.
+ * 시리즈 선언(`_series.yml`) 판정 사슬 — 리더는 모르는 키·틀린 `order`를 조용히 버려,
+ * 읽는 순서가 사라져도 빌드가 성공한다. 그 침묵을 여기서 깬다.
  */
 import { join, posix } from 'node:path';
 import {
@@ -43,13 +37,7 @@ function keyLine(raw: string, key: string): number | null {
   return index === -1 ? null : index + 1;
 }
 
-/**
- * 선언 하나를 검사한다.
- *
- * @param relPath 원고 폴더 기준 경로(`bundler/_series.yml`, `/` 구분)
- * @param raw     파일 내용
- * @param records 원고 전체의 레코드 — `order` 항목을 이 폴더의 글과 맞춰 본다
- */
+/** 선언 하나를 검사한다 — `records`(원고 전체)로 `order` 항목을 이 폴더의 글과 맞춰 본다. */
 export function validateSeriesFile(
   relPath: string,
   raw: string,
@@ -128,8 +116,7 @@ export function validateSeriesFile(
     return issues;
   }
 
-  // 이 폴더에 **바로** 든 글만 이 시리즈다(하위 폴더는 자기 시리즈). 정렬은
-  // 글의 slug와 파일 경로 slug 둘 다로 맞추므로(sortPostsBySeriesOrder) 여기도 둘 다 본다.
+  // 이 폴더에 바로 든 글만 이 시리즈다. 정렬처럼 slug와 경로 slug 둘 다로 맞춘다.
   const folder = posix.dirname(relPath);
   const known = new Set<string>();
   for (const record of records) {

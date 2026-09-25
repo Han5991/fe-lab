@@ -1,9 +1,6 @@
 import { encodePostSlug } from './utils.ts';
 
-/**
- * 외부 URL(`https:`·`data:` 같은 스킴, `//` 프로토콜 상대)인가 — 본문 이미지·
- * 썸네일·미디어 동기화가 함께 쓰는 판정. `http2-flow.png` 같은 파일명은 아니다.
- */
+/** 외부 URL(스킴·`//`)인가 — 본문 이미지·썸네일·미디어 동기화가 함께 쓴다(`http2-flow.png`는 아니다). */
 export function isExternalUrl(url: string): boolean {
   return /^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(url);
 }

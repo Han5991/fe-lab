@@ -120,7 +120,6 @@ test('parseScheduledDateKST: 날짜 경계 — 연말/월말', () => {
   expect(d.toISOString()).toBe('2026-12-30T15:00:00.000Z');
 });
 
-// frontmatter 날짜로 받는 두 모양 — 로더(parseScheduledDateKST)와 lint가 같은 판정을 쓴다.
 test.each([
   ['2026-05-04', true],
   ['2024-02-29', true],
@@ -128,7 +127,7 @@ test.each([
   ['2026-05-04T09:00:00+09:00', true],
   ['2026-05-04T09:00:00.123Z', true],
   ['2026-05-04T23:59:59-05:30', true],
-  // Date.parse가 받아 주지만 로컬 타임으로 읽혀 TZ(KST/UTC)마다 9시간 갈리던 값들
+  // Date.parse는 받지만 TZ마다 시점이 갈리는 값들
   ['2026-5-4', false],
   ['2026/05/04', false],
   ['2026-05-04T09:00:00', false],

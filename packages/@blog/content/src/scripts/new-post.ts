@@ -46,9 +46,7 @@ export function parseTagList(value: string): string[] {
  *   적지 않아도 되게 status를 올린다(둘을 같이 적어도 결과는 같다).
  * - 제목이 없으면 파일 이름을 만들 수 없다. 위치 인자든 `--title`이든 CLI가 하나로
  *   합쳐서 넘기므로, 여기서는 비었는지만 본다.
- * - `--scheduled`·`--slug`는 lint:posts와 **같은 판정**으로 여기서 거른다. 예전에는
- *   `--scheduled tomorrow`가 `date: tomorrow`로, `--slug /foo`가 그대로 파일에
- *   적혀, 틀린 글을 만든 뒤에야 검증이 알려 줬다.
+ * - `--scheduled`·`--slug`는 lint:posts와 같은 판정으로 파일을 만들기 전에 거른다.
  */
 export function resolveOptions(raw: RawNewPostOptions): NewPostOptions {
   const title = raw.title?.trim();
@@ -133,9 +131,7 @@ function yamlQuote(value: string): string {
 /**
  * 예약 글의 `date`는 오늘이 아니라 **공개 예정일**이어야 합니다.
  * 오늘 날짜를 넣으면 목록에 뜨는 날짜와 실제 공개일이 어긋납니다.
- *
- * 공개 예정일은 **사이트 타임존의 달력 날짜**입니다. 문자열 앞 10자를 자르면
- * `2026-05-31T20:00:00Z`(= KST 6월 1일 05:00)가 5월 31일이 됩니다.
+ * 사이트 타임존의 달력 날짜다 — 앞 10자를 자르면 KST 오전이 전날이 된다.
  */
 function resolveDate(
   status: NewPostOptions['status'],
@@ -169,8 +165,7 @@ export function buildFrontmatter(
 ): string {
   const lines = ['---'];
   lines.push(`title: ${yamlQuote(opts.title)}`);
-  // 따옴표로 감싼다 — YAML이 Date 객체로 바꾸지 않고 적은 문자열 그대로 읽히게
-  // (lint:posts의 unquoted-date·date 모양 규칙과 같은 계약).
+  // 따옴표로 감싸 YAML이 Date로 바꾸지 않게 한다(lint:posts의 unquoted-date).
   lines.push(
     `date: ${yamlQuote(resolveDate(opts.status, opts.scheduledDate, timeZone, now))}`,
   );

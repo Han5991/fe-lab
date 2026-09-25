@@ -84,10 +84,7 @@ export type ArtifactSpec =
       extractUrls: (relPaths: string[], siteUrl: string) => Set<string>;
     });
 
-/**
- * 글 상세 페이지의 경로인가(`/posts/<slug>/`) — `/posts/` 자체는 아카이브 목록이다.
- * 산출물의 글 URL 추출과 check-seo의 페이지 대조가 같은 판정을 쓴다.
- */
+/** 글 상세 페이지의 경로인가(`/posts/<slug>/`) — `/posts/` 자체는 아카이브 목록이다. */
 export function isPostPagePath(path: string): boolean {
   return path.startsWith(POSTS_PATH) && path !== POSTS_PATH;
 }
@@ -121,24 +118,15 @@ function extractPostUrls(
 
 const SITEMAP_LOC = /<loc>([^<]+)<\/loc>/g;
 
-/**
- * sitemap의 `<loc>` **전부**(글·아카이브·정적 페이지) — 원문 그대로(인코딩 유지).
- * 레지스트리 대조(`extractUrls`)는 글 URL만 보지만, 페이지와 대조하는
- * check-seo(`checkSitemapPages`)는 sitemap이 색인에 내는 URL 모두를 본다.
- */
+/** sitemap의 `<loc>` 전부(글·아카이브·정적 페이지, 인코딩 유지) — check-seo가 페이지와 대조한다. */
 export function extractSitemapLocs(text: string): string[] {
   return [...text.matchAll(SITEMAP_LOC)].map(m => (m[1] ?? '').trim());
 }
 const RSS_GUID = /<guid[^>]*>([^<]+)<\/guid>/g;
 // llms.txt(`- [제목](url): 요약`)와 llms-full.txt(`### [제목](url) (날짜)`)가
 // 같은 마크다운 링크 형식이라 추출 패턴 하나를 공유한다.
-//
-// URL에 괄호가 들 수 있다 — `encodeURIComponent`는 `( ) ! ' * ~`를 그대로 두고,
-// 제목이 곧 slug가 되는 글(`… (feat. 호이스팅)`)은 흔하다. 예전 패턴
-// (`[^)\s]+`)은 첫 `)`에서 끊어서, 멀쩡한 글이 "llms에만 있는 글/없는 글"로
-// 동시에 보고됐다(원인과 무관한 메시지로 배포가 막혔다). 생성기는 괄호가 든
-// URL을 `<url>`로 감싸 쓰므로(generate-llms.ts의 `markdownLinkTarget`) 그 형태를
-// 먼저 읽고, 감싸지 않은 목적지는 CommonMark처럼 **짝이 맞는 괄호**까지 읽는다.
+// URL에 괄호가 들 수 있어(`encodeURIComponent`가 남긴다) `<url>` 목적지를 먼저 읽고,
+// 감싸지 않은 목적지는 CommonMark처럼 짝이 맞는 괄호까지 읽는다.
 const LLMS_LINK =
   /\]\((?:<(https?:\/\/[^<>\s]+)>|(https?:\/\/(?:[^()\s]|\([^()\s]*\))+))\)/g;
 

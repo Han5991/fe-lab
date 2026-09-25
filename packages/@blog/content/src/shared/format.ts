@@ -16,12 +16,7 @@ export function estimateReadMin(content: string): number {
  */
 export function fmtDate(iso: string | null | undefined): string {
   if (!iso) return '';
-  // frontmatter `date`의 계약은 `'YYYY-MM-DD'` 하나다 — 시각은 `scheduledDate`의
-  // 몫이고, `date`에 적은 datetime은 `lint:posts`가 `invalid-date`·`unquoted-date`로
-  // 막는다. 그래도 로더는 offset 붙은 datetime을 읽어 들이므로(검증 전의 dev 서버
-  // draft 등) 날짜 부분만 잘라 낸다. 이 책임을 여기서 지지 않으면 소비처마다
-  // `.slice(0, 10)`이 흩어지고, 빠뜨린 곳은 목록에 ISO 문자열이 통째로 찍힌다.
-  // 표기 규칙은 이 함수 하나만 안다.
+  // 로더는 offset 붙은 datetime도 읽으므로(검증 전 dev 서버 draft 등) 날짜만 잘라 낸다.
   return iso.slice(0, 10);
 }
 

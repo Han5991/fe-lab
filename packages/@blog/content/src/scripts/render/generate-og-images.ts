@@ -102,7 +102,7 @@ export function ogContentHash(
  * 보존하고, `..` 등 og/ 밖으로 나갈 수 있는 slug는 거부합니다.
  */
 export function ogFileRelPath(slug: string): string {
-  // 로더가 쓰는 slug 규칙과 같은 함수 — 로더를 지난 slug는 여기서 던지지 않는다.
+  // 로더와 같은 slug 규칙 — 로더를 지난 slug는 여기서 던지지 않는다.
   if (!isSafeSlug(slug)) {
     throw new Error(`og 이미지 경로로 쓸 수 없는 slug입니다: ${slug}`);
   }

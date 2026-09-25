@@ -1,10 +1,4 @@
-/**
- * 포스트 서비스의 공개 판정 기준 시각은 인스턴스마다 하나다.
- *
- * 예전에는 slug 조회 캐시(`getPostBySlug`)가 첫 호출 시각으로 굳고 목록은 호출마다
- * 새 시각을 써서, 오래 사는 빌드 프로세스가 예약 글의 공개 시각을 넘기면 목록에는
- * 있는데 상세는 notFound인 글이 생겼다.
- */
+/** 공개 판정 기준 시각은 인스턴스마다 하나다 — 목록과 상세가 갈리면 목록의 링크가 404가 된다. */
 import { afterEach, expect, test, vi } from 'vitest';
 import { createPostService, type PostServiceDeps } from './service.ts';
 import type { PostData } from './types.ts';
@@ -54,8 +48,7 @@ afterEach(() => {
 });
 
 test('예약 글의 공개 시각을 넘겨도 목록과 상세가 같은 판정을 유지한다', () => {
-  // 공개 시각이 흐르는 상황 자체를 재현해야 해서 시계를 돌린다(주입할 seam은
-  // 아래 테스트가 따로 본다).
+  // 공개 시각이 흐르는 상황 자체를 재현해야 해서 시계를 돌린다.
   vi.useFakeTimers({ toFake: ['Date'] });
   vi.setSystemTime(BEFORE);
   const s = service();

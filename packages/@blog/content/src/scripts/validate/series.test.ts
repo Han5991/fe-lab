@@ -45,7 +45,7 @@ test('_series.yml: 주석뿐인 선언·정상 선언은 이슈 없음', () => {
   ).toStrictEqual([]);
 });
 
-// 리더가 조용히 버리는 키 — 정규식 메타 문자가 든 키에서도 검사가 멈추지 않는다.
+// 정규식 메타 문자가 든 키에서도 검사가 멈추지 않는다.
 test.each([
   ['title: t\norders:\n  - bundler-00-prologue\n', 2],
   ['order(:\n  - x\ntitle: t\n', null],

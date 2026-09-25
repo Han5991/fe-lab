@@ -92,15 +92,7 @@ export function keepPresent(lines: (string | null)[]): string[] {
   return lines.filter((line): line is string => line !== null);
 }
 
-/**
- * 마크다운 링크의 목적지. 괄호가 든 URL은 `<…>`로 감쌉니다.
- *
- * 글 URL은 `encodeURIComponent`를 거쳐도 `( )`가 그대로 남습니다(제목이 곧
- * slug가 되는 `… (feat. 호이스팅)` 같은 글). 짝이 맞으면 CommonMark가 그대로
- * 읽지만, 짝이 안 맞는 slug(`…:)`)는 링크가 중간에서 끊깁니다. 꺾쇠 목적지는
- * `<`·`>`·개행만 못 담는데 인코딩된 URL에는 셋 다 없습니다. **URL 자체는
- * 바꾸지 않습니다** — `%28`로 바꾸면 페이지 링크·sitemap과 다른 URL이 됩니다.
- */
+/** 마크다운 링크 목적지 — 괄호가 든 URL(짝이 안 맞으면 링크가 끊긴다)은 URL을 바꾸지 않고 `<…>`로 감싼다. */
 export function markdownLinkTarget(url: string): string {
   return /[()]/.test(url) ? `<${url}>` : url;
 }

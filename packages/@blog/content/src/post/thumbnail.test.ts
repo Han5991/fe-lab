@@ -120,9 +120,7 @@ test('resolveThumbnailUrl: thumbnail 파일명의 공백/특수문자 인코딩'
 });
 
 test('resolveThumbnailUrl: thumbnail 하위 경로의 슬래시는 구분자로 보존 (세그먼트별 인코딩)', () => {
-  // 예전에는 파일명을 통째로 encodeURIComponent해 '/posts/dir/sub%2Fcover.png'가
-  // 됐다 — `%2F`는 정적 호스트에서 경로 구분자가 아니라 404. 본문 이미지
-  // (resolvePostAssetUrl)와 같은 규칙으로 맞춘다.
+  // `%2F`는 정적 호스트에서 경로 구분자가 아니라 404다.
   expect(
     resolveThumbnailUrl(p({ thumbnail: 'sub/cover.png', relativeDir: 'dir' })),
   ).toBe('/posts/dir/sub/cover.png');
@@ -148,8 +146,7 @@ test('resolveThumbnailUrl: relativeDir 한글 단일 세그먼트', () => {
 });
 
 test('resolveThumbnailUrl: http로 시작하는 상대 파일명은 외부 URL이 아니다', () => {
-  // 예전 판정은 startsWith('http')라 `http2-flow.png`가 외부 URL로 분류돼
-  // 카드·og:image가 맨 파일명을 가리켰다. 스킴(`xxx:`)이 있어야 외부 URL이다.
+  // 스킴(`xxx:`)이 있어야 외부 URL이다.
   expect(
     resolveThumbnailUrl(
       p({ thumbnail: 'http2-flow.png', relativeDir: 'network' }),

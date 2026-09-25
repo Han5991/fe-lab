@@ -73,10 +73,7 @@ export function detectDuplicateDescriptions(
   return issues;
 }
 
-/**
- * 빌드에서 같은 URL을 갖게 될 글들을 잡습니다 — 로더와 같은 집합(`isPostFile`)과
- * 같은 slug(`resolvePostSlug`)로 판정합니다.
- */
+/** 빌드에서 같은 URL을 갖게 될 글들 — 로더와 같은 집합(`isPostFile`)·같은 slug(`resolvePostSlug`)로 본다. */
 export function detectDuplicateSlugs(records: PostRecord[]): Issue[] {
   const slugMap = new Map<string, string[]>();
   for (const r of records) {

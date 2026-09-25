@@ -6,11 +6,7 @@ import { compareByCodePoint, parseMatter } from './repository.ts';
 /** 시리즈 선언 파일 이름 — 리더와 lint:posts가 같은 파일을 본다. */
 export const SERIES_FILENAME = '_series.yml';
 
-/**
- * `_series.yml` 원문을 읽는다 — frontmatter로 감싸 gray-matter에 넘긴다. 리더와
- * lint:posts가 같은 함수로 읽어야 한쪽만 받아 주는 문법이 생기지 않는다.
- * YAML이 깨지면 `where`를 붙여 던진다(원래 오류는 `cause`). 매핑이 아닐 수 있다.
- */
+/** `_series.yml` 원문 → 데이터(매핑이 아닐 수 있다) — 리더와 lint:posts가 같은 파서로 읽는다. */
 export function parseSeriesYaml(raw: string, where: string): unknown {
   return parseMatter(`---\n${raw}\n---\n`, where).data;
 }
@@ -128,11 +124,7 @@ export function createSeriesReader(deps: SeriesReaderDeps): SeriesReader {
  * **단일 순서**.
  * `_series.yml`에 `order` 배열이 있으면 그 순서를 우선시하고, 없으면 date 오름차순.
  * (서로 다른 호출부에서 같은 로직을 반복하던 것을 한 곳으로 모음.)
- *
- * 같은 날짜끼리는 `originalSlug`(파일 경로) 오름차순으로 명시해 끊는다. 예전에는
- * 안정 정렬이 입력 순서를 물려받는 데 기대고 있었는데, 입력 순서는 호출부마다
- * 다를 수 있어서 같은 시리즈가 화면마다 다른 순서를 말할 수 있었다. 지금 값은
- * 기존 호출부(날짜 내림차순 + 경로 오름차순 목록을 넘긴다)가 보던 순서와 같다.
+ * 같은 날짜는 `originalSlug` 오름차순 — 입력 순서에 기대면 화면마다 순서가 갈린다.
  */
 export function sortPostsBySeriesOrder<
   T extends {

@@ -64,32 +64,20 @@ export interface SeoConfig {
 export interface TimezoneConfig {
   /** IANA 타임존 이름 — Intl.DateTimeFormat용 */
   iana: string;
-  /**
-   * 'YYYY-MM-DD'를 이 타임존 자정으로 볼 때 붙이는 ISO offset.
-   * `'+09:00'`·`'-05:30'`·`'Z'` 형식만 받는다(defineContent가 검증).
-   */
+  /** 'YYYY-MM-DD'를 이 타임존 자정으로 볼 때 붙이는 ISO offset(`'+09:00'`·`'Z'`) */
   isoOffset: string;
   /**
    * UTC 대비 밀리초 오프셋. `msUntilKSTMidnight`가 산술에 쓴다 —
    * IANA 이름만으로는 이 계산을 못 하므로 별도 필드로 둔다.
-   * 셋은 같은 타임존을 가리켜야 한다. `isoOffset`과 이 값의 일치, `iana`가
-   * 실재하는 이름인지는 defineContent가 검증한다. `iana`의 오프셋과 `isoOffset`의
-   * 일치는 보지 않는다 — 서머타임이 있는 지역은 날짜에 따라 답이 달라서, 검증이
-   * 실행 시각에 따라 통과했다 말았다 하게 된다(고정 오프셋 지역만 지원한다).
+   * 셋의 일치는 defineContent가 본다 — `iana`와는 서머타임 때문에 비교하지 않는다(고정 오프셋만 지원).
    */
   utcOffsetMs: number;
 }
 
 export interface RuntimeConfig {
   /**
-   * dev 서버(next dev) 판정.
-   *
-   * `=== 'development'`로 정확히 비교한다(`!== 'production'`이 아니라):
-   * 정적 산출물을 만드는 스크립트들(prebuild의 sitemap·rss·search-index·
-   * llms-full·og-images)은 `blog-content` CLI로 직접 실행되어 NODE_ENV가
-   * **undefined**일 수 있다. 느슨하게 비교하면 그 스크립트들이 dev로 오인되어
-   * draft가 sitemap과 RSS에 실려 나간다. 'development'는 next dev와, dev 서버
-   * 직전에 같은 산출물을 draft 몫까지 만드는 앱의 `predev:web`만 명시한다.
+   * dev 서버(next dev) 판정 — `=== 'development'`로 정확히 비교한다. CLI로 도는 prebuild
+   * 단계는 NODE_ENV가 undefined라, 느슨하게 비교하면 draft가 sitemap·RSS에 실린다.
    */
   isDevelopment: () => boolean;
 }
@@ -662,15 +650,7 @@ function assertValidOgFonts(
   }
 }
 
-/**
- * `timezone` 형태 검증 — 선언 시점에 막는다(fail fast).
- *
- * `isoOffset`은 날짜만 적은 예약 글의 공개 시각(`'YYYY-MM-DD' + 'T00:00:00' +
- * isoOffset`)을 만든다. `'+9:00'`이나 `'Asia/Seoul'`을 주면 그 계산이 Invalid
- * Date가 되어 **날짜만 적은 예약 글 전부가 에러 없이 영원히 비공개**가 된다.
- * `utcOffsetMs`는 자정 타이머 산술에, `iana`는 달력 날짜 포맷에 쓰이므로 셋이
- * 같은 타임존을 가리키는지도 여기서 본다(DST 한계는 TimezoneConfig 주석).
- */
+/** timezone 형태 검증 — 틀린 isoOffset은 날짜만 적은 예약 글 전부를 에러 없이 영원히 비공개로 만든다. */
 function assertValidTimezone(timezone: TimezoneConfig): void {
   const offsetMs = parseIsoOffset(timezone.isoOffset);
   if (offsetMs === null) {

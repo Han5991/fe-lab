@@ -29,10 +29,7 @@ interface ThumbnailTask {
   outputRel: string;
 }
 
-/**
- * 발행 글 목록에서 변환 대상을 뽑습니다 — 최적화 대상 판정(`isOptimizableThumbnail`:
- * 글 폴더의 png/jpg 파일 이름)을 통과한 thumbnail만.
- */
+/** 발행 글에서 변환 대상(`isOptimizableThumbnail`을 통과한 thumbnail)을 뽑는다. */
 export function collectTasks(
   posts: Pick<PostData, 'thumbnail' | 'relativeDir'>[],
 ): ThumbnailTask[] {

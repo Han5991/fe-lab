@@ -88,11 +88,7 @@ export function buildDescription(
  * 이미 완전한 형식이므로 그대로 반환한다 (suffix를 덧붙이면 invalid ISO가 됨).
  * offset은 인자다 — 예전엔 `+09:00`이 여기 박혀 있어, 설정으로 타임존을 덮어도
  * JSON-LD·OG의 발행 시각만 KST로 남았다.
- *
- * **깨진 ISO는 내보내지 않는다** — 두 형식(`isValidDateString`) 밖의 값이나
- * 형식이 틀린 offset이면 undefined(= 필드 생략)다. 예전에는 `'T'` 포함 여부만
- * 봐서 `'2026-5-4'` → `2026-5-4T00:00:00+09:00`, 공백 구분 datetime →
- * `…+09:00T00:00:00+09:00` 같은 값이 datePublished로 나갔다.
+ * 두 형식 밖의 값이나 틀린 offset이면 깨진 ISO 대신 undefined(필드 생략)다.
  */
 export function toKstIsoDate(
   date: string | null | undefined,

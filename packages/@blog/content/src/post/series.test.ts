@@ -190,8 +190,6 @@ test('sortPostsBySeriesOrder: 날짜 문자열은 사전식(localeCompare) 비�
 });
 
 test('sortPostsBySeriesOrder: 같은 날짜는 입력 순서와 무관하게 originalSlug 오름차순', () => {
-  // 헤더·네비게이션·/series·llms.txt가 각자 다른 순서의 배열을 넘겨도 같은
-  // 시리즈 순서를 말해야 한다 — 안정 정렬이 입력 순서를 물려받으면 안 된다.
   const a = makePost({
     slug: 'api',
     originalSlug: 'S/api',

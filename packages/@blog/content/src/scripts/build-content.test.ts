@@ -93,8 +93,6 @@ test('stepArgv: 자식에 --config를 서브커맨드 앞에 명시 전달', () 
 });
 
 test('stepEnv: 자식은 부모의 기준 시각을 BLOG_CONTENT_NOW로 받는다 (예약 글 경계 분열 방지)', async () => {
-  // 단계마다 제 시계를 보면 예약 시각이 빌드 도중에 지날 때 sitemap·og·llms가
-  // 서로 다른 글 집합을 담는다. 자식은 부모의 값을 CLI와 같은 파서로 읽는다.
   const now = new Date('2026-06-01T00:04:59.999Z');
   const result = await runProcess(
     process.execPath,
@@ -140,8 +138,6 @@ test('buildPhases: --strict는 validate-posts에만 전달 (predev는 비엄격)
 // ── 자식 프로세스 실패 처리 ─────────────────────────────────────────────────
 
 test('runProcess: 띄우기 실패(ENOENT)도 부모를 죽이지 않고 실패 결과로 돌려준다', async () => {
-  // error 리스너가 없던 때는 처리되지 않은 error 이벤트로 부모가 통째로 죽어
-  // 다른 단계의 결과 요약까지 사라졌다.
   const result = await runProcess('/nonexistent/blog-content-node', []);
   expect(result.code).toBe(1);
   expect(result.signal).toBe(null);

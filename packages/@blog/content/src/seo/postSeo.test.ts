@@ -1,10 +1,4 @@
-/**
- * SEO 빌더의 날짜 계약 — 깨진 ISO를 내보내지 않는다.
- *
- * 빌더 전체의 출력 계약은 앱 쪽 `postSeo.test.ts`가 잠근다. 여기는 패키지가
- * 스스로 지켜야 하는 불변식(어떤 입력이 와도 datePublished·dateModified·
- * publishedTime은 유효한 ISO 8601이거나 생략)만 본다.
- */
+/** SEO 빌더의 날짜 계약 — 어떤 입력이 와도 날짜 필드는 유효한 ISO이거나 생략된다. */
 import { expect, test } from 'vitest';
 import { testConfig } from '../post/testing.ts';
 import { createPostSeo, toKstIsoDate, type SeoPost } from './postSeo.ts';

@@ -44,8 +44,7 @@ export function filterAndSortPostsByArchiveParams<
     r = r.filter(p => p.series === series);
   }
   if (year) {
-    // 연도는 정확히 비교한다 — 접두사로 보면 `?year=20`이 20xx 글 전부를,
-    // `?year=2026-0`이 1~9월 글을 골랐다. 연도 목록(`getAllYears`)과 같은 추출이다.
+    // 연도는 정확히 비교한다 — 접두사면 `?year=20`이 20xx 글 전부를 고른다.
     r = r.filter(p => p.date?.slice(0, 4) === year);
   }
 

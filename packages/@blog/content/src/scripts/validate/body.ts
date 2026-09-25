@@ -22,10 +22,7 @@ import { frontmatterOffset } from './shared.ts';
 import type { Issue, PostRecord, ValidateContext } from './shared.ts';
 import { resolveSeverity } from './rules.ts';
 
-/**
- * 레코드 하나의 본문을 검사기 넷이 함께 쓰도록 **한 번만** 계산한 것 —
- * 펜스 추적(`scan`), 펜스를 덮은 본문(`prose`), frontmatter 줄 수(`offset`).
- */
+/** 레코드 하나의 본문을 검사기들이 함께 쓰도록 한 번만 계산한 것. */
 export interface BodyView {
   /** frontmatter가 차지한 줄 수 — 본문 줄 번호 → 파일 줄 번호 */
   offset: number;
@@ -448,10 +445,7 @@ const DIAGRAM_OPEN_TAG = /<diagram(?=[\s/>])(?:[^>"']|"[^"]*"|'[^']*')*>/gi;
 const TAG_ATTR =
   /\s+([^\s=/>"']+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+)))?/g;
 
-/**
- * 여는 태그에서 `name` 속성 값. 속성을 앞에서부터 차례로 읽는다 — 태그 전체에서
- * ` name=`을 찾으면 `label="a name=b"` 같은 **다른 속성 값 안**을 오인한다.
- */
+/** 여는 태그의 `name` 속성 — 속성을 차례로 읽어 `label="a name=b"` 같은 값 안을 오인하지 않는다. */
 function nameAttr(tag: string): string | undefined {
   for (const m of tag.slice('<diagram'.length).matchAll(TAG_ATTR)) {
     if (m[1]?.toLowerCase() === 'name') return m[2] ?? m[3] ?? m[4] ?? '';
@@ -465,19 +459,7 @@ function insideInlineCode(text: string, index: number): boolean {
   return (text.slice(lineStart, index).match(/`/g) ?? []).length % 2 === 1;
 }
 
-/**
- * 본문의 `<diagram name="…">`이 등록된 이름인지 검사합니다.
- *
- * 등록되지 않은 이름은 렌더 계층(`NamedDiagram`)이 **프로덕션에서 조용히 비웁니다**
- * — 글이 죽지 않게 일부러 그렇게 만들었지만, 그 대가로 오타 하나에 그림이 통째로
- * 사라진 채 배포됩니다. frontmatter `hero`는 `unknown-hero-diagram`이 막아 왔는데
- * 본문의 같은 이름은 검사가 없었습니다. 레지스트리는 `hero`와 같은 설정
- * (`registries.diagramNames`)입니다.
- *
- * 코드 펜스 안(`maskNonProse`)과 **같은 줄의** 인라인 코드 안은 문법 예시라 보지
- * 않습니다. 인라인 코드를 문서 전체에서 짝지으면 짝 하나가 어긋날 때 멀쩡한 산문을
- * 통째로 덮으므로(`maskNonProse` 주석) 줄 안에서만 셉니다.
- */
+/** 본문 `<diagram name>`이 등록된 이름인가 — 미등록은 프로덕션에서 조용히 비워진다(펜스·같은 줄 인라인 코드 안은 예시라 보지 않는다). */
 export function validateDiagramNames(
   record: PostRecord,
   { offset, prose }: BodyView,

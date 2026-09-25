@@ -172,7 +172,6 @@ test('contract: 검색 인덱스의 series는 선언된 시리즈만', () => {
         `검색 인덱스에 비시리즈: ${e.series}`,
       ).toBeTruthy();
     }
-    // 시리즈 표시명은 인덱스가 싣는다 — 화면이 페이지마다 시리즈 목록을 읽지 않도록.
     expect(e.seriesTitle).toBe(
       e.series ? (testContent.getSeriesMeta(e.series)?.title ?? null) : null,
     );
@@ -190,9 +189,7 @@ test('contract: sitemap 우선순위는 시리즈가 아니라 폴더 기준이�
 });
 
 test('sync-posts: 공개 글이 원고에서 가리키는 로컬 이미지는 전부 복사 대상이다', () => {
-  // sync-posts는 공개 글이 참조하는 미디어만 public/posts/에 싣는다. 참조를
-  // 놓치면 발행 글의 이미지가 404가 되므로, 실제 원고의 이미지 참조(마크다운
-  // `![](…)`·`<img src>`·thumbnail)를 **독립된 추출**로 모아 전부 골라지는지 본다.
+  // 실제 원고의 이미지 참조를 독립된 추출로 모아, 전부 복사 대상으로 골라지는지 본다.
   const posts = getAllPosts();
   const postsDir = testContent.paths.postsDir;
   const referenced = new Set<string>();

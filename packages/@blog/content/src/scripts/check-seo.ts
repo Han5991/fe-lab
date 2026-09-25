@@ -34,9 +34,7 @@ export interface SeoCheckConfig {
  * HTML 페이지 검사 외에, 파생 산출물(sitemap·rss·llms·검색 인덱스·og 이미지)의
  * 글 집합 정합성은 `scripts/artifacts.ts`의 레지스트리를 **순회**하며 검사합니다
  * — 산출물이 늘면 레지스트리에 항목을 더하는 것으로 검사가 자동으로 붙습니다.
- * 그 기준(sitemap)은 다시 실제 페이지와 대조합니다(`checkSitemapPages` — 페이지
- * 존재·색인 가능 여부·sitemap에 빠진 글 페이지, `checkArchiveLinks` — 아카이브가
- * 발행 글 전부로 가는 링크를 프리렌더했는가).
+ * 그 기준(sitemap)은 다시 실제 페이지와 대조합니다(`checkSitemapPages`·`checkArchiveLinks`).
  *
  * 사용: `pnpm build` 이후 `blog-content check-seo`
  *       (검사 대상 디렉토리를 인자로 줄 수 있습니다: `blog-content check-seo out`)
@@ -154,7 +152,7 @@ export function parsePageSeo(html: string): PageSeo {
   };
 }
 
-/** 페이지마다 한 번만 파싱한다 — checkPages와 checkSitemapPages가 함께 쓴다. */
+/** 페이지마다 한 번만 파싱한다 — checkPages와 checkSitemapPages가 함께 쓴다 */
 export function parsePages(
   pages: ReadonlyMap<string, string>,
 ): Map<string, PageSeo> {
@@ -216,10 +214,7 @@ export function checkPages(
       );
     }
 
-    // noindex 페이지(admin, 개인정보처리방침)는 검색 대상이 아니다. **noindex여도
-    // 되는 페이지인가**는 여기가 아니라 checkSitemapPages가 본다 — sitemap에 실린
-    // 페이지가 noindex면 그쪽에서 실패한다(글 레이아웃에 noindex가 새는 회귀가
-    // 예전에는 "✓ 통과"로 배포됐다).
+    // noindex여도 되는 페이지인가는 checkSitemapPages가 본다(sitemap에 실린 noindex는 실패).
     if (seo.robotsNoindex) continue;
 
     if (seo.h1Count !== 1) {
@@ -318,22 +313,7 @@ function sitemapPath(loc: string, siteUrl: string): string | null {
     : null;
 }
 
-/**
- * sitemap ↔ 실제 페이지 대조.
- *
- * 레지스트리(`checkArtifacts`)는 산출물끼리만 대조해서, 페이지 쪽과는 한 번도
- * 만나지 않았다. 그 틈으로 지나가던 것 셋:
- * - sitemap에 있는데 `out/`에 페이지가 없다(`sitemap-page-missing`) — 색인에
- *   404를 제출한다
- * - sitemap에 있는데 페이지가 noindex다(`sitemap-noindex`) — 레이아웃에 noindex가
- *   새면 사이트 전체가 색인에서 빠지는데, 페이지 검사는 noindex 페이지를
- *   건너뛰므로 "통과"였다. sitemap이 곧 "색인돼야 할 페이지" 목록이라 허용 목록을
- *   따로 두지 않는다
- * - 글 페이지(`/posts/<slug>/`)가 있는데 sitemap에 없다(`page-missing-from-sitemap`)
- *   — 생성 단계와 `next build`가 서로 다른 시각에 예약 글 공개를 판정하면 생긴다
- *
- * 페이지 키는 디스크 이름(디코드), sitemap은 퍼센트 인코딩이라 풀어서 비교한다.
- */
+/** sitemap ↔ 실제 페이지 — 404·noindex인 sitemap URL과, 기준 시각이 달라 sitemap에 빠진 글 페이지를 잡는다. */
 export function checkSitemapPages(
   parsed: ReadonlyMap<string, PageSeo>,
   locs: readonly string[],
@@ -372,21 +352,7 @@ export function checkSitemapPages(
   return violations;
 }
 
-/**
- * 아카이브(`/posts/`)가 발행 글 **전부로 가는 링크를 프리렌더**했는가.
- *
- * 아카이브 뷰는 `useSearchParams`를 써서 정적 export의 프리렌더에서 빠지고,
- * `out/posts/index.html`에 구워지는 건 Suspense 폴백의 글 목록뿐이다. 그 폴백이
- * 스피너로 바뀌면 크롤러가 보는 글 링크 허브가 통째로 사라지는데, 화면은
- * 하이드레이션 뒤 멀쩡해 보인다(c206b99 도입 → 15ed918 리디자인에서 유실된 이력).
- *
- * 예전에는 배포 워크플로에만 "링크 10개 이상" 검사가 있어서 PR CI는 이 회귀를
- * 통과시켰고, 기준 10은 글 수와 무관한 숫자였다. 여기서는 `pnpm build`
- * 안에서(PR·배포 공통) **sitemap의 글 전부**를 기준으로 본다.
- *
- * 아카이브 페이지 자체가 없으면 보고하지 않는다 — sitemap에 실린 URL이라
- * `checkSitemapPages`가 이미 `sitemap-page-missing`으로 잡는다.
- */
+/** 아카이브가 sitemap의 글 전부로 가는 링크를 프리렌더했는가 — 폴백 목록이 스피너가 되면 크롤러의 링크 허브가 사라진다. */
 export function checkArchiveLinks(
   pages: ReadonlyMap<string, string>,
   locs: readonly string[],
@@ -420,7 +386,7 @@ export interface CollectedArtifact {
   relation: ArtifactRelation;
   reference?: boolean | undefined;
   urls: Set<string> | null;
-  /** file 산출물의 원문 — 기준(sitemap)을 페이지와 대조할 때 다시 읽지 않는다 */
+  /** file 산출물의 원문 — sitemap을 페이지와 대조할 때 다시 읽지 않는다 */
   text?: string | undefined;
 }
 
@@ -534,8 +500,7 @@ export function main(ctx: ContentContext, target?: string) {
   // 파생 산출물은 레지스트리 순회로 — 없으면 missing-artifact, 있으면 글 집합 대조.
   const artifacts = collectArtifacts(outDir, siteUrl);
   violations.push(...checkArtifacts(artifacts));
-  // 기준 산출물(sitemap)과 실제 페이지의 대조. sitemap이 없으면 위에서
-  // missing-artifact로 이미 실패했으므로 여기서는 건너뛴다.
+  // sitemap이 없으면 위에서 missing-artifact로 이미 실패했다.
   const sitemap = artifacts.find(artifact => artifact.reference)?.text;
   if (sitemap !== undefined) {
     const locs = extractSitemapLocs(sitemap);

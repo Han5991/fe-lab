@@ -142,11 +142,7 @@ export function resolveSeverity(
     : 'warning';
 }
 
-/**
- * frontmatter 원문으로 "지금 공개되는 글인가"를 판정합니다 — 로더가 PostData를
- * 만들 때 쓰는 좁히기(`FRONTMATTER_FIELDS.*.narrow`)를 거쳐 `isPostVisible`에
- * 넘기므로, 공개 판정은 로더와 한 벌이다(AGENTS.md §8).
- */
+/** frontmatter 원문이 지금 공개되는 글인가 — 로더의 좁히기(`FRONTMATTER_FIELDS.*.narrow`)와 `isPostVisible`을 그대로 쓴다. */
 export function isVisibleFrontmatter(
   data: Record<string, unknown>,
   timezone: ValidateContext['timezone'],

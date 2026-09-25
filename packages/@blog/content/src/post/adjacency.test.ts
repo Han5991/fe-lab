@@ -91,12 +91,7 @@ test("pickAdjacent: sortOrder='oldest'는 역순이라 prev/next 방향이 뒤�
   expect(next?.slug).toBe('a');
 });
 
-// ── getSeriesAdjacentPosts: 시리즈 헤더와 같은 순서 ──────────────────────────
-//
-// 헤더의 "n/m"·`/series`·llms.txt는 전부 sortPostsBySeriesOrder로 순서를 정한다.
-// 예전에는 `_series.yml`에 order가 없으면 네비게이션만 날짜 **내림차순** 목록을
-// 거꾸로 걸어서, 같은 날짜의 글끼리는 헤더와 반대 순서가 됐다
-// (실제 `[Typescript로 설계하는 프로젝트]`: "다음 글"이 1 → 3 → 2 → 5 → 4).
+// ── getSeriesAdjacentPosts: 시리즈 헤더(sortPostsBySeriesOrder)와 같은 순서 ──
 
 function seriesService(
   seriesPosts: PostData[],

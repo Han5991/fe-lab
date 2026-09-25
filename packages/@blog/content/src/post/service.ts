@@ -55,22 +55,14 @@ export interface PostServiceDeps {
   isDevelopment: () => boolean;
   /** 예약 발행 시각('YYYY-MM-DD')을 어느 타임존의 자정으로 볼지 */
   timezone: Pick<TimezoneConfig, 'isoOffset'>;
-  /**
-   * 이 인스턴스의 공개 판정 기준 시각. 생략하면 **인스턴스를 만든 시각 하나**로
-   * 고정한다(아래 `createPostService` 주석).
-   */
+  /** 이 인스턴스의 공개 판정 기준 시각 — 생략하면 인스턴스를 만든 시각 */
   now?: Date;
 }
 
 /**
  * 포스트 조회 서비스 factory. slug 조회 캐시는 인스턴스(클로저) 안에 산다.
- *
- * 공개 판정의 기준 시각(`now`)은 인스턴스마다 **하나**다. 예전에는 slug 조회
- * 캐시(`getPostBySlug`)가 첫 호출 시각으로 굳고 목록(`getAllPostSlugs` 등)은
- * 호출마다 새 시각을 써서, 오래 사는 빌드 프로세스가 예약 글의 공개 시각을
- * 넘기면 목록에는 있는데 상세는 `notFound`인 글이 생겼다. 모든 메서드가 같은
- * 시각을 보면 한 프로세스 안에서는 이 어긋남이 없다(명시한 `getAllPosts(now)`만
- * 예외 — 경계를 검증하는 테스트용 주입이다).
+ * 공개 판정의 기준 시각은 인스턴스마다 하나다 — 메서드마다 제 시계를 보면 오래 사는
+ * 프로세스에서 목록에는 있는데 상세는 notFound인 예약 글이 생긴다.
  */
 export function createPostService(deps: PostServiceDeps): PostService {
   const { readAllPosts, getSeriesMeta, isDevelopment, timezone } = deps;
@@ -87,7 +79,6 @@ export function createPostService(deps: PostServiceDeps): PostService {
     const posts = readAllPosts();
     if (isDevelopment()) return posts;
     // 화살표로 감싸 Array.filter의 index가 isPostVisible의 now에 주입되는 것을 방지.
-    // 기본값은 인스턴스 기준 시각 — 테스트는 고정 시각을 주입해 경계를 검증한다.
     return posts.filter(post => isPostVisible(post, timezone, now));
   }
 
@@ -136,14 +127,8 @@ export function createPostService(deps: PostServiceDeps): PostService {
   /**
    * 같은 시리즈 내의 이전/다음 포스트를 반환합니다.
    *
-   * 순서는 **언제나 `sortPostsBySeriesOrder`** 가 정합니다(`order`가 있으면 그
-   * 순서, 없으면 날짜 오름차순 + 파일 경로). 시리즈 헤더의 "n/m"·`/series`·
-   * llms.txt가 같은 함수를 쓰므로, 네비게이션도 여기서 벗어나면 안 됩니다.
-   * 예전에는 `order`가 없을 때 날짜 **내림차순** 목록(`getAdjacentPosts`)을
-   * 거꾸로 걸어서, 같은 날짜의 글끼리는 헤더와 반대 순서가 됐습니다 —
-   * 헤더가 1/8, 2/8, 3/8을 말하는 동안 "다음 글"은 1 → 3 → 2 → 5 → 4로 갔습니다.
-   *
-   * 시리즈 표시명은 메타의 `title`이 있으면 그것으로 대체합니다.
+   * 순서는 시리즈 헤더(n/m)·`/series`·llms.txt와 같은 `sortPostsBySeriesOrder`이고,
+   * 시리즈 표시명은 메타의 `title`이 있으면 그것이다.
    *
    * 시리즈가 아닌 폴더(= `_series.yml`이 없다)의 글은 애초에 `series`가 비어
    * 있으므로(`repository.ts`) 아래 첫 분기에서 전부 null로 나갑니다.

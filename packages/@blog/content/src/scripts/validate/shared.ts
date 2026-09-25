@@ -60,10 +60,7 @@ export interface ValidateOptions {
    * dev 서버가 안 뜨면 도구가 방해물이 됩니다.
    */
   strict?: boolean;
-  /**
-   * "지금 공개되는 글"을 판정할 기준 시각. 진입점이 실행의 기준 시각
-   * (`ContentContext.now`)을 넘긴다 — 없으면 판정 시점의 현재 시각.
-   */
+  /** "지금 공개되는 글"을 판정할 기준 시각 — 진입점이 콘텐츠 인스턴스의 `now`를 넘긴다 */
   now?: Date;
 }
 
@@ -102,23 +99,14 @@ export function findFrontmatterLine(raw: string, key: string): number | null {
   return null;
 }
 
-/**
- * `parseMatter`가 던진 오류의 원래 오류(YAMLException — `mark`·메시지 첫 줄).
- * 파일 경로는 lint가 이슈의 `file`로 따로 싣는다.
- */
+/** `parseMatter`가 던진 오류의 원래 오류(YAMLException의 `mark`·메시지) */
 export function yamlErrorCause(error: unknown): unknown {
   return error instanceof Error && error.cause !== undefined
     ? error.cause
     : error;
 }
 
-/**
- * frontmatter `key:` 줄의 **원문 값**(따옴표 포함, 줄 끝 주석 제외). 없으면 null.
- *
- * YAML은 따옴표 없는 `2026-06-01`과 `2026-06-01T08:00:00+09:00`을 똑같이 Date
- * 객체로 준다 — 파싱 결과만으로는 저자가 날짜를 적었는지 시각을 적었는지 알 수
- * 없어서, 원문을 다시 본다.
- */
+/** frontmatter `key:` 줄의 원문 값 — YAML은 따옴표 없는 날짜와 시각을 똑같이 Date로 줘서 원문을 본다. */
 export function frontmatterScalar(raw: string, key: string): string | null {
   const line = findFrontmatterLine(raw, key);
   if (line === null) return null;
@@ -129,13 +117,7 @@ export function frontmatterScalar(raw: string, key: string): string | null {
     .trim();
 }
 
-/**
- * 명시 `slug`의 모양 문제를 사람이 읽을 문장으로. 문제가 없으면 null.
- *
- * 파일 경로에서 유도한 slug(`회고/2025/2025 KPT`)는 여기 대상이 아니다 — 공백이
- * 흔하고 URL에서 인코딩돼 동작한다. **손으로 적은** slug에 공백·제어 문자가
- * 있으면 거의 언제나 실수다.
- */
+/** 손으로 적은 `slug`의 모양 문제(사람이 읽을 문장) — 경로에서 유도한 slug는 대상이 아니다. */
 export function slugProblem(slug: string): string | null {
   // eslint no-control-regex를 피하려고 제어 문자는 코드포인트로 본다.
   const hasControl = [...slug].some(ch => {

@@ -172,9 +172,6 @@ test('contract: 선언되지 않은 폴더의 글은 시리즈 네비게이션�
 });
 
 test('contract: 시리즈 "다음 글"을 따라가면 헤더 순서(1/n → n/n)대로 전부 지난다', () => {
-  // 헤더의 "n/m"(page.tsx)·/series·llms.txt는 sortPostsBySeriesOrder를 쓴다.
-  // 네비게이션이 다른 정렬을 쓰면 같은 날짜의 글끼리 순서가 뒤집힌다 —
-  // `[Typescript로 설계하는 프로젝트]`가 실제로 1 → 3 → 2 → 5 → 4였다.
   const bySeries = new Map<string, string[]>();
   for (const p of getAllPosts()) {
     if (p.series)

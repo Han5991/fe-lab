@@ -24,10 +24,8 @@ function makePost(over: Partial<PostData> = {}): PostData {
   };
 }
 
-/** 시리즈 메타가 없는 리졸버 — 시리즈 표시명을 보지 않는 테스트용 */
 const noSeriesMeta = () => null;
 
-/** 검색 미리보기(contentPreview) — 본문 평문에서 펜스 코드를 뺀 것 */
 const preview = (content: string): string =>
   buildPublicSearchIndex([makePost({ content })], noSeriesMeta)[0]
     .contentPreview;
@@ -41,7 +39,7 @@ test.each([
   ['<div>hi</div><br/>there', 'hi there'],
   ['<span>x</span>', 'x'],
   ['a  \n\n  b', 'a b'],
-  // 사이트 본문(extractPlainText)과 같은 규칙 — 식별자·비교식·제네릭을 뜯지 않는다.
+  // 식별자·비교식·제네릭을 뜯지 않는다.
   [
     'snake_case와 `arr[0] > 1`, Promise<void>',
     'snake_case와 arr[0] > 1, Promise<void>',

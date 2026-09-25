@@ -40,7 +40,6 @@ const validateImageReferences = (
   options = CTX,
 ): ReturnType<typeof validateImageReferencesIn> =>
   validateImageReferencesIn(record, viewBody(record.content, raw), options);
-// 본문 검사기는 main이 레코드마다 한 번 계산한 본문(viewBody)을 받는다.
 const validateBodyHeadings = (record: PostRecord, raw: string) =>
   validateBodyHeadingsIn(record, viewBody(record.content, raw));
 const validateCodeFenceLanguages = (record: PostRecord, raw: string) =>
@@ -471,7 +470,6 @@ test('detectDuplicateSlugs: 충돌 없으면 빈 배열', () => {
 });
 
 test('detectDuplicateSlugs: 메타 노트(status 없음)는 빌드에 없으므로 충돌 상대가 아니다', () => {
-  // 글을 내리려고 status를 지우고, 옆에 같은 slug로 고쳐 쓴 흔한 경우.
   const records = [
     rec({ title: '옛 글', slug: 'same' }, { relPath: 'old.md' }),
     rec({ ...POST, slug: 'same' }, { relPath: 'new.md' }),
@@ -482,7 +480,6 @@ test('detectDuplicateSlugs: 메타 노트(status 없음)는 빌드에 없으므�
 test.each([[''], ['/b'], ['a\\b']])(
   'detectDuplicateSlugs: 로더가 버리는 slug %j는 로더처럼 경로 slug로 대조한다',
   slug => {
-    // 로더는 이 slug를 쓰지 않고 파일 경로 slug(`a`)를 쓴다 — 그 글은 `a`와 부딪힌다.
     const raw = `---\nstatus: published\ntitle: x\nslug: '${slug}'\n---\n`;
     expect(
       parsePost(raw, 'a.md', {
@@ -1362,7 +1359,6 @@ test.each([
   ['img/cover.png', ['invalid-thumbnail-path']],
   ['../cover.png', ['invalid-thumbnail-path']],
   ['img\\cover.png', ['invalid-thumbnail-path']],
-  // 파일 이름만이면 존재 여부를 본다
   ['no-such-cover.png', ['missing-thumbnail']],
   // 로더가 그대로 쓰는 외부 URL은 경로 검사를 하지 않는다
   ['data:image/png;base64,iVBOR/w0KGgo=', []],
@@ -1383,7 +1379,6 @@ test.each([
   ['turborepo-next.js-docker', []],
   ['회고/2024/글', []],
   ['pnpm-10-(feat.-호이스팅)', []],
-  // 빈 문자열은 로더가 파일 경로 slug로 폴백하므로 대상 밖
   ['', []],
 ])('invalid-slug: %j → %j', (slug, expected) => {
   expect(publishedRules({ slug })).toStrictEqual(expected);
@@ -1396,7 +1391,6 @@ test.each([
   ['date', '2026-5-4', ['invalid-date']],
   ['date', '2026/05/04', ['invalid-date']],
   ['date', '2026-03-16 09:00:00+09:00', ['invalid-date']],
-  // 시각은 scheduledDate의 몫 — date는 날짜 하나만 받는다.
   ['date', '2026-03-16T09:00:00+09:00', ['invalid-date']],
   ['updatedAt', '2026-06-01T09:00:00+09:00', []],
   ['updatedAt', '2026/06/01', ['invalid-updated-at']],
@@ -1415,9 +1409,7 @@ test.each([
 // YAML이 Date로 바꾼 값은 원문 줄로 판정한다 — 값만으로는 날짜와 시각을 못 가른다.
 test.each([
   ['date: 2026-10-01T08:00:00+09:00', ['unquoted-date']],
-  // UTC 자정에 떨어지는 시각도 시각이다
   ['date: 2026-10-01T09:00:00+09:00 # 오전 9시', ['unquoted-date']],
-  // 날짜만 적은 값은 같은 날짜로 되돌아와 무해하다
   ['date: 2026-03-16', []],
   // YAML은 `2026-02-30`을 오류 없이 3월 2일로 넘긴다
   ['date: 2026-02-30', ['invalid-date']],

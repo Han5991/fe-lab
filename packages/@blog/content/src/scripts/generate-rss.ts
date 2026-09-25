@@ -21,11 +21,7 @@ import type { ContentContext } from './context.ts';
  * (`resolveExcerptFrom`), 발행 글은 prebuild `--strict`가 `missing-excerpt`로 직접 쓰게 한다.
  */
 
-/**
- * XML 1.0이 허용하는 문자인가 — 탭·개행·CR과 U+0020 이상(서로게이트 영역·
- * U+FFFE/FFFF 제외). 제목에 붙여 넣은 U+000B 같은 제어 문자는 엔티티로도 쓸 수
- * 없어서, 하나만 섞여도 리더가 **피드 전체**를 거부한다.
- */
+/** XML 1.0이 허용하는 문자인가 — 제어 문자 하나만 섞여도 리더가 피드 전체를 거부한다. */
 function isXmlChar(code: number): boolean {
   return (
     code === 0x9 ||
@@ -91,8 +87,7 @@ export function buildRssXml(
     )
     .join('\n');
 
-  // 채널 문구도 설정에서 오는 **텍스트**다 — 항목(title·excerpt)만 이스케이프하던
-  // 때는 사이트 이름에 `&` 하나만 있어도 XML이 깨져 리더가 피드 전체를 거부했다.
+  // 채널 문구도 설정에서 오는 텍스트라 이스케이프한다(`&` 하나로 피드 전체가 깨진다).
   return `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>

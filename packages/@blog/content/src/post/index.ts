@@ -13,15 +13,13 @@ export * from './series.ts';
 export * from './utils.ts';
 export * from './urls.ts';
 export * from './aggregate.ts';
-// repository는 인프라(파일시스템)라 통째로 열지 않고 순수 계산만 공개합니다 —
-// 평문 추출·excerpt 폴백·목록 정렬은 렌더·검증·생성기가 같은 값을 내야 한다.
+// repository는 인프라(파일시스템)라 순수 계산만 공개한다 — 렌더·검증·생성기가 같은 값을 내야 한다.
 export {
   extractPlainText,
   resolveExcerpt,
   sortByDateDesc,
 } from './repository.ts';
-// frontmatter 계약의 단일 출처(서술자 테이블). lint:posts는 허용 키·거부 사유와
-// 로더의 좁히기(`FRONTMATTER_FIELDS.*.narrow`)를 여기서 읽는다.
+// frontmatter 계약의 단일 출처 — lint:posts가 허용 키·거부 사유와 로더의 좁히기를 읽는다.
 export {
   FRONTMATTER_FIELDS,
   FRONTMATTER_KEYS,

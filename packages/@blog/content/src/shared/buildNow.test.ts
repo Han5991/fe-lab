@@ -25,8 +25,7 @@ test.each([
   expect(resolveBuildNow(given).toISOString()).toBe(iso);
 });
 
-// offset 없는 시각은 CI(UTC)와 로컬(KST)이 갈리고, 날짜만은 어느 시각대의 자정인지
-// 모른다 — 조용히 "지금"으로 넘어가면 고정했다고 믿은 시각이 풀린다.
+// 조용히 "지금"으로 넘어가면 고정했다고 믿은 시각이 풀린다.
 test.each([['2026-06-01T09:00:00'], ['2026-06-01'], ['now']])(
   '형식이 틀린 값 %j는 던진다',
   given => {

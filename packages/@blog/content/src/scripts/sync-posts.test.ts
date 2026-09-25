@@ -206,7 +206,6 @@ test('sync: include가 거른 파일은 복사하지 않고, 이전 사본은 or
   withTmpDirs((src, dst) => {
     writeFile(src, 'a/public.png', 'PUB');
     writeFile(src, 'a/draft.png', 'DRAFT');
-    // 예전 빌드가 전부 복사해 둔 사본
     writeFile(dst, 'a/draft.png', 'DRAFT');
 
     const stdout = captureLog(() =>

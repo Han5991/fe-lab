@@ -52,21 +52,11 @@ export interface ScopeInputs {
   artifacts: ReadonlyMap<string, string | null>;
 }
 
-/**
- * `_next/static/chunks/` 아래 청크 경로. 하위 폴더(webpack의 `app/…/page-*.js`)도
- * 잡는다 — 예전 패턴은 `/`를 받지 않아 중첩 청크 참조를 **조용히** 버렸고,
- * 그러면 그 청크의 누수는 음성 검사에 영영 안 걸렸다. `[…slug]` 같은 폴더는
- * HTML에 퍼센트 인코딩돼 나오므로 디코드해 디스크 이름과 맞춘다.
- */
+/** `_next/static/chunks/` 아래 청크 경로(하위 폴더 포함) — 폴더 이름은 퍼센트 인코딩돼 나와 디코드한다. */
 const CHUNK_REF =
   /\/_next\/static\/chunks\/((?:[\w.~%@+\-[\]]+\/)*[\w.~%@+\-[\]]+\.js)/g;
 
-/**
- * HTML이 직접 참조하는 청크 경로 목록(`chunks/` 기준).
- *
- * script src·preload href 등 태그 종류를 가리지 않고 경로 패턴으로 뽑는다 —
- * 어떤 태그로 실렸든 브라우저가 로드하는 것은 같다.
- */
+/** HTML이 참조하는 청크 경로(`chunks/` 기준) — 태그 종류를 가리지 않는다. */
 export function collectChunkRefs(html: string): string[] {
   const refs = new Set<string>();
   for (const m of html.matchAll(CHUNK_REF)) {
@@ -82,14 +72,10 @@ function chunkStem(path: string): string {
   return (path.split('/').pop() ?? path).replace(/\.js$/, '');
 }
 
-/** 청크 → 그 본문이 여는 청크들. 청크마다 처음 물을 때 한 번만 계산한다. */
+/** 청크 → 그 본문이 여는 청크들(청크마다 한 번만 계산) */
 type ChunkEdges = (name: string) => readonly string[];
 
-/**
- * 청크 참조 그래프. 간선은 "청크 본문에 다른 청크의 stem(확장자 뺀 파일명)이
- * 문자열로 등장한다"이다. stem은 콘텐츠 해시라 우연한 부분 일치가 사실상 없고,
- * 지연 로드(dynamic import)가 정확히 이 형태로 파일명을 든다.
- */
+/** 청크 참조 그래프 — 간선은 "본문에 다른 청크의 stem(콘텐츠 해시 파일명)이 등장한다"(지연 로드가 이 형태다). */
 function createChunkEdges(sources: ReadonlyMap<string, string>): ChunkEdges {
   // stem → 그 stem의 청크들(하위 폴더끼리 파일 이름이 같을 수 있다).
   const owners = new Map<string, string[]>();
@@ -97,8 +83,7 @@ function createChunkEdges(sources: ReadonlyMap<string, string>): ChunkEdges {
     const stem = chunkStem(name);
     owners.set(stem, [...(owners.get(stem) ?? []), name]);
   }
-  // 길이가 같은 서로 다른 stem은 한 위치에서 둘이 맞을 수 없다 — 전방 탐색 교대
-  // (`(?=(a|b|…))`) 한 번의 훑기가 stem마다 `includes`를 부른 것과 같은 답을 낸다.
+  // 같은 길이의 서로 다른 stem은 한 위치에서 둘이 맞을 수 없어, 전방 탐색 교대 한 번이 stem별 includes와 같다.
   const byLength = new Map<number, string[]>();
   for (const stem of owners.keys()) {
     if (stem !== '')
@@ -149,7 +134,6 @@ function closureOver(
   return included;
 }
 
-/** 시작 집합에서 도달 가능한 청크의 폐포. */
 export function chunkClosure(
   start: Iterable<string>,
   sources: ReadonlyMap<string, string>,
@@ -196,11 +180,7 @@ export function describeScope(scope: MarkerScope): string {
   }
 }
 
-/**
- * 한 입력(`ScopeInputs`)을 여러 스코프로 평가할 때 재사용하는 계산 — 청크 그래프,
- * 페이지별 청크 참조, 셀렉터별 폐포. 규칙 9개가 청크 스코프 16개를 쓰지만 서로
- * 다른 셀렉터는 5개뿐이고, 셀렉터끼리도 청크 대부분을 공유한다.
- */
+/** 한 입력을 여러 스코프로 평가할 때 재사용하는 계산 — 청크 그래프·페이지별 참조·셀렉터별 폐포. */
 export interface ScopeCache {
   edgesOf: ChunkEdges;
   pageRefs: Map<string, string[]>;
@@ -215,7 +195,6 @@ export function createScopeCache(inputs: ScopeInputs): ScopeCache {
   };
 }
 
-/** 셀렉터 페이지들이 도달하는 청크 폐포. */
 function reachableChunks(
   selector: PageSelector | undefined,
   inputs: ScopeInputs,
@@ -299,10 +278,7 @@ export function checkRules(
   return violations;
 }
 
-/**
- * `_next/static/chunks/` 아래의 모든 .js — `chunks/` 기준 상대 경로 → 본문.
- * basename으로 묶던 때는 하위 폴더의 같은 이름 청크가 서로를 덮어썼다.
- */
+/** `_next/static/chunks/` 아래 모든 .js — `chunks/` 기준 상대 경로 → 본문. */
 function readChunkSources(outDir: string): Map<string, string> {
   const chunksDir = join(outDir, '_next', 'static', 'chunks');
   if (!existsSync(chunksDir)) return new Map();

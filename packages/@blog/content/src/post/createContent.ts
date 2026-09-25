@@ -26,15 +26,12 @@ export interface ContentApi
   config: ContentConfig;
   /** `config.root` 기준으로 푼 절대 경로 집합 */
   paths: ContentPaths;
-  /** 공개 판정의 기준 시각 — 로더 메서드와 산출물의 날짜(sitemap·RSS)가 함께 본다 */
+  /** 공개 판정의 기준 시각 — 로더 메서드와 산출물 날짜(sitemap·RSS)가 함께 본다 */
   now: Date;
 }
 
 export interface CreateContentOptions {
-  /**
-   * 공개 판정 기준 시각. 생략하면 인스턴스를 만든 시각 하나로 고정되고, 목록·
-   * 상세·집계가 모두 그 시각을 본다(`createPostService` 참고).
-   */
+  /** 공개 판정 기준 시각 — 생략하면 인스턴스를 만든 시각 */
   now?: Date;
 }
 

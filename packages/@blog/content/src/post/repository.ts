@@ -5,9 +5,6 @@ import { estimateReadMin } from '../shared/format.ts';
 import { collectMarkdownFiles, hasFrontmatter } from '../shared/postFiles.ts';
 import { pathSlug, resolvePostSlug } from './urls.ts';
 import { isPostFile } from './visibility.ts';
-// 좁히기 함수(toDateString·toOptionalString·toScheduledDate·toStringArray)는
-// 서술자 테이블과 같은 파일에 있습니다 — 테이블의 `narrow`와 parsePost가 **같은
-// 함수**를 가리켜야 선언과 실제 동작이 갈라지지 않습니다(frontmatterSchema.ts 참고).
 import {
   toDateString,
   toOptionalString,
@@ -17,42 +14,25 @@ import {
 import type { TimezoneConfig } from '../shared/contentConfig.ts';
 import type { PostData, RawFrontmatter } from './types.ts';
 
-/**
- * 펜스 코드 블록(```` ``` ````·`~~~`, 3개 이상). 캡처 그룹이 둘이라 split 결과가
- * [본문, 펜스 기호, 코드, 본문, …]의 세 칸 주기가 된다. 닫히지 않은 펜스는 본문 취급.
- */
+/** 펜스 코드 블록 — 캡처가 둘이라 split 결과가 [본문, 펜스 기호, 코드] 세 칸 주기다. */
 const FENCED_CODE = /^[ \t]*(`{3,}|~{3,})[^\n]*\n([\s\S]*?)^[ \t]*\1[ \t]*$/gm;
 
-/** 한 줄 안의 인라인 코드(`` `x` ``) — 캡처 그룹이라 split 결과의 홀수 칸이 된다 */
+/** 인라인 코드 — 캡처 그룹이라 split 결과의 홀수 칸이 된다 */
 const INLINE_CODE = /(`[^`\n]+`)/;
 
-/**
- * HTML/JSX 태그(여는·닫는·자기 닫는, 속성 포함 — 여러 줄에 걸쳐도).
- * 여는 태그는 바로 앞이 식별자 문자면 제네릭(`Promise<void>`)이라 건드리지 않는다
- * — 닫는 태그(`hi</b>`)는 제네릭일 수 없어 언제나 지운다.
- */
+/** HTML/JSX 태그(속성째). 식별자 바로 뒤의 여는 태그는 제네릭(`Promise<void>`)이라 둔다. */
 const MARKUP_TAG =
   /<\/[A-Za-z][\w.:-]*\s*>|(?<![\w$])<[A-Za-z][\w.:-]*(?:\s[^<>]*)?\/?>/g;
 
-/**
- * 강조 표시의 `_`/`__` — 글자·숫자 사이에 낀 `_`(`snake_case`)는 식별자라 남긴다.
- */
+/** 강조의 `_` — 글자 사이의 `_`(`snake_case`)는 식별자라 남긴다. */
 const EMPHASIS_UNDERSCORE = /(?<![\p{L}\p{N}])_+|_+(?![\p{L}\p{N}])/gu;
 
-/**
- * 마크다운 본문의 평문 — excerpt·readMin·검색 미리보기·JSON-LD wordCount·llms
- * 요약이 함께 쓰는 **하나의** 추출기.
- *
- * 태그는 속성째 지우고, 단어 안의 `_`(`snake_case`)와 줄 머리가 아닌 `>`
- * (`arr[0] > 1`)는 남긴다. 펜스 코드와 인라인 코드는 원문 그대로 두되(펜스 기호
- * 줄만 뺀다), `dropCode`면 펜스 코드를 통째로 뺀다(검색 미리보기).
- */
+/** 본문 평문 — excerpt·readMin·검색 미리보기·wordCount·llms 요약이 함께 쓴다(`dropCode`면 펜스 코드를 뺀다). */
 export function extractPlainText(
   content: string,
   { dropCode = false }: { dropCode?: boolean } = {},
 ): string {
-  // 코드를 뺄 때는 인용 안의 펜스(`> ```ts`)도 펜스로 보이도록 줄 머리의 인용
-  // 표시를 먼저 걷는다(산문에서는 어차피 지우는 표시다).
+  // 인용 안의 펜스(`> ```ts`)도 코드로 빼도록 줄 머리의 인용 표시를 먼저 걷는다.
   return (dropCode ? content.replace(/^[ \t]*>+[ \t]?/gm, '') : content)
     .split(FENCED_CODE)
     .map((part, i) => {
@@ -61,11 +41,10 @@ export function extractPlainText(
       return extractProse(part);
     })
     .join('')
-    .replace(/\s+/g, ' ') // 개행·연속 공백을 공백 하나로
+    .replace(/\s+/g, ' ')
     .trim();
 }
 
-/** 펜스 밖 본문: 이미지·링크·인용·태그·강조 기호를 벗긴다(인라인 코드는 보존). */
 function extractProse(text: string): string {
   return text
     .replace(/!\[.*?]\(.*?\)/g, '') // 이미지 제거
@@ -77,8 +56,8 @@ function extractProse(text: string): string {
       i % 2 === 1
         ? part.slice(1, -1)
         : part
-            .replace(MARKUP_TAG, ' ') // 커스텀 태그·HTML 통째로
-            .replace(/[#*`~]/g, '') // 제목·강조·남은 백틱 기호
+            .replace(MARKUP_TAG, ' ')
+            .replace(/[#*`~]/g, '')
             .replace(EMPHASIS_UNDERSCORE, ''),
     )
     .join('');
@@ -121,31 +100,12 @@ export function resolveExcerptFrom(
   const given = toOptionalString(explicit);
   if (given) return given;
   if (plainText.length <= maxLength) return plainText;
-  // 길이 예산은 UTF-16 단위 그대로(lint:posts·check-seo가 재는 `.length`와 같은
-  // 기준)지만, 이모지 같은 서로게이트 쌍의 **가운데**에서 자르지는 않는다 —
-  // 외톨이 상위 서로게이트는 HTML에서 U+FFFD가 되고 encodeURIComponent가
-  // URIError를 던진다.
+  // 서로게이트 쌍 가운데서 자르지 않는다 — 외톨이는 encodeURIComponent가 URIError를 던진다.
   const cut = plainText.slice(0, maxLength);
   return `${/[\uD800-\uDBFF]$/.test(cut) ? cut.slice(0, -1) : cut}...`;
 }
 
-/**
- * gray-matter로 frontmatter를 읽되, YAML 오류에 **어느 파일인지**를 붙여 다시
- * 던집니다(`where`는 postsDir 기준 상대 경로나 파일 경로).
- *
- * 맨 `matter()`는 `YAMLException: incomplete explicit mapping pair … at line 3`
- * 처럼 파일 이름 없이 던져서, 70여 개 원고(`---`로 시작하는 작업 노트 포함) 중
- * 하나가 깨지면 dev는 모든 요청이 500이고 빌드는 첫 단계에서 죽는데 저자가 손으로
- * 이분 탐색해야 했습니다.
- *
- * 건너뛰지 않고 던지는(fail-loud) 이유: 깨진 블록 안에 `status: published`가
- * 있었다면 그 글은 조용히 사이트·sitemap에서 사라집니다. 빌드는 그런 상태로
- * 배포되면 안 되고, dev에서도 오류 화면에 경로가 바로 보이는 편이 경고 한 줄보다
- * 빨리 고쳐집니다.
- *
- * gray-matter의 data는 `{ [key: string]: any }`라 `unknown` 값의 레코드로 좁혀
- * 돌려줍니다 — 호출부가 타입 검사를 우회하지 못하도록.
- */
+/** gray-matter로 읽되 YAML 오류에 파일 경로를 붙여 던진다(원래 오류는 `cause`) — 건너뛰면 발행 글이 조용히 빠진다. */
 export function parseMatter(
   source: string,
   where: string,
@@ -170,10 +130,7 @@ export function parseMatter(
 export interface ParsePostOptions {
   /** excerpt 자동 발췌 길이 — 설정의 `seo.descriptionMaxLength` */
   excerptMaxLength: number;
-  /**
-   * 따옴표 없는 datetime(YAML Date)을 문자열로 적을 타임존 — 설정의 `timezone`.
-   * UTC로 적으면 KST 오전 시각이 전날로 밀린다(`toDateString` 참고).
-   */
+  /** 따옴표 없는 datetime(YAML Date)을 적을 타임존 — UTC로 적으면 KST 오전이 전날이 된다 */
   timezone: Pick<TimezoneConfig, 'isoOffset'>;
 }
 
@@ -196,7 +153,6 @@ export function parsePost(
   // frontmatter delimiter 없는 메타 노트는 스킵 (validate-posts 와 동일 규칙)
   if (!hasFrontmatter(fileContents)) return null;
 
-  // RawFrontmatter(전 필드 unknown)로 받아 아래에서 전부 좁힙니다.
   const { data, content }: { data: RawFrontmatter; content: string } =
     parseMatter(fileContents, relPath);
 
