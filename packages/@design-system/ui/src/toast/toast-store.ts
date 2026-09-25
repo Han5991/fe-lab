@@ -38,10 +38,7 @@ function getDistributedToasts(
   return { toasts, queue };
 }
 
-/**
- * 보이는 토스트와 대기열을 합친 전체 목록에 update를 적용한 뒤 다시 나눈다.
- * 대기열을 버리면 limit을 넘은 토스트가 조용히 사라지고, 앞의 것이 닫혀도 올라오지 않는다.
- */
+// 대기열까지 합쳐 update하고 다시 나눈다 — 대기열을 버리면 limit 밖 토스트가 사라진다
 function updateToastsState(
   store: ToastStore,
   update: (toasts: ToastData[]) => ToastData[],

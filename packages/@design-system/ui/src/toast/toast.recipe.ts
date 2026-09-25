@@ -3,8 +3,7 @@ import { sva } from '@design-system/ui-lib/css';
 export const toastRecipe = sva({
   slots: ['container', 'content', 'icon'],
   base: {
-    // 화면 위치(fixed·오프셋)는 ToastContainer의 위치별 스택이 맡는다. 토스트마다 fixed를 주면
-    // 같은 위치의 토스트가 전부 한 점에 겹친다.
+    // fixed·오프셋은 ToastContainer의 위치별 스택이 맡는다(토스트마다 주면 한 점에 겹친다)
     container: {
       display: 'flex',
       alignItems: 'center',

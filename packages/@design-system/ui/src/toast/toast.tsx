@@ -11,9 +11,7 @@ import { ToastData, ToastPosition } from './types';
 const EDGE_OFFSET = '1.5rem';
 const STACK_GAP = '0.75rem';
 
-/**
- * 위치 하나의 토스트 스택. 이 래퍼만 fixed이고 토스트는 그 안에 세로로 쌓인다.
- */
+/** 위치 하나의 토스트 스택. 이 래퍼만 fixed이고 토스트는 그 안에 쌓인다 */
 function stackStyle(position: ToastPosition): CSSProperties {
   const [vertical, horizontal] = position.split('-') as [
     'top' | 'bottom',
