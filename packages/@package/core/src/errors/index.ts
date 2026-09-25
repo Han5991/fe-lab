@@ -8,12 +8,16 @@ export class ApiError extends Error {
   ) {
     // ES2022를 쓰면: super(message, { cause: opts?.cause })
     super(message);
+    // 타입 밖 호출(JS나 any에서 문자열 코드를 넘기는 등)에도 생성자가 TypeError로 죽지 않게 한다 —
+    // 문자열에 `'cause' in`을 쓰면 그 자리에서 던진다
+    const options = typeof opts === 'object' && opts !== null ? opts : {};
     // cause 필드 직접 부여(ES2022 미사용 시)
-    if (opts && 'cause' in opts) (this as any).cause = opts.cause;
+    if ('cause' in options) (this as any).cause = options.cause;
 
     this.name = new.target.name;
-    this.code = opts?.code;
-    this.status = opts?.status;
+    this.code = typeof options.code === 'string' ? options.code : undefined;
+    this.status =
+      typeof options.status === 'number' ? options.status : undefined;
 
     // V8/Node 전용 API는 가드 후 사용
     const ErrorCtor = Error as unknown as {
