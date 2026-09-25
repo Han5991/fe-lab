@@ -18,6 +18,7 @@ import {
   isPostStatus,
   isPostFile,
   rejectionReasonFor,
+  resolvePostSlug,
 } from '../../post/index.ts';
 import {
   hasAmbiguousTimezone,
@@ -26,7 +27,6 @@ import {
 } from '../../shared/dates.ts';
 import { decodeUrlSafe } from '../../shared/url.ts';
 import {
-  effectiveSlug,
   findFrontmatterLine,
   frontmatterScalar,
   isBareThumbnailName,
@@ -575,7 +575,7 @@ const thumbnailChain: Chain = ({ record, raw, options }) => {
   // 쓰므로, slug만 고치고(`react-error-deign` → `…-design`) 이 줄을 두면 히어로·목록
   // 카드·og:image가 전부 404인데 다른 검사는 모두 통과한다.
   if (thumb.startsWith(OG_THUMBNAIL_PREFIX)) {
-    const slug = effectiveSlug(record);
+    const slug = resolvePostSlug(data['slug'], relPath);
     const expected = `${OG_THUMBNAIL_PREFIX}${slug}.png`;
     if (decodeUrlSafe(thumb) === expected) return [];
     return [

@@ -19,7 +19,7 @@ import type {
 } from '../../shared/contentConfig.ts';
 import { isRecord } from '../../shared/guards.ts';
 import type { ContentContext } from '../context.ts';
-import { hasUnsafeSlugSegment } from '../validate/shared.ts';
+import { isSafeSlug } from '../../post/urls.ts';
 /*
  * 폰트는 **설정에서 온다**(`og.fonts` — OgFont 서술자 배열). 예전에는
  * pretendard가 이 패키지의 dependency였고 파일 위치를 여기서 resolve했는데,
@@ -102,9 +102,8 @@ export function ogContentHash(
  * 보존하고, `..` 등 og/ 밖으로 나갈 수 있는 slug는 거부합니다.
  */
 export function ogFileRelPath(slug: string): string {
-  // 판정은 validate의 invalid-slug와 같은 함수 — 검증을 지난 slug가 여기서
-  // 스택 트레이스로 처음 드러나는 일이 없게 한다.
-  if (hasUnsafeSlugSegment(slug)) {
+  // 로더가 쓰는 slug 규칙과 같은 함수 — 로더를 지난 slug는 여기서 던지지 않는다.
+  if (!isSafeSlug(slug)) {
     throw new Error(`og 이미지 경로로 쓸 수 없는 slug입니다: ${slug}`);
   }
   return `${slug}.png`;

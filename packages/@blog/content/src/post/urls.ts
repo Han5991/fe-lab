@@ -71,6 +71,24 @@ export function isSafeSlug(slug: string): boolean {
     .every(segment => segment !== '' && segment !== '.' && segment !== '..');
 }
 
+/** 원고 경로(postsDir 기준, `\\`도 구분자)에서 유도한 slug — 확장자를 뗀 경로. */
+export function pathSlug(relPath: string): string {
+  return relPath
+    .split(/[/\\]/)
+    .join('/')
+    .replace(/\.(md|mdx)$/, '');
+}
+
+/**
+ * 글이 빌드에서 갖는 slug — 명시 `slug`가 안전한 문자열이면 그것, 아니면 경로 slug.
+ * 로더(`parsePost`)와 lint:posts(중복 slug·og 카드·시리즈 order)가 함께 쓴다.
+ */
+export function resolvePostSlug(slug: unknown, relPath: string): string {
+  return typeof slug === 'string' && isSafeSlug(slug)
+    ? slug
+    : pathSlug(relPath);
+}
+
 /** 글 상세의 사이트 내부 경로. `<Link href>`·canonical에 쓴다. */
 export function postPath(slug: string): string {
   return `${POSTS_PATH}${encodePostSlug(slug)}/`;

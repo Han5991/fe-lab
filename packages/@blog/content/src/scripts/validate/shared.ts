@@ -11,7 +11,7 @@ import type {
   SeoConfig,
   TimezoneConfig,
 } from '../../shared/contentConfig.ts';
-import { toOptionalString } from '../../post/frontmatterSchema.ts';
+import { isSafeSlug } from '../../post/urls.ts';
 
 export type Severity = 'error' | 'warning';
 
@@ -116,17 +116,6 @@ export function frontmatterScalar(raw: string, key: string): string | null {
 }
 
 /**
- * `/`로 나눈 세그먼트 중 비었거나 `.`·`..`인 것이 있는가.
- *
- * 그런 slug는 URL과 파일 경로를 조용히 바꾼다 — `/foo`는 `/posts//foo/`,
- * `foo/`는 `/posts/foo//`, `../admin`은 브라우저가 `/admin/`으로 푼다. og 카드
- * 생성기(`ogFileRelPath`)와 검증(`slugProblem`)이 같은 판정을 쓴다.
- */
-export function hasUnsafeSlugSegment(slug: string): boolean {
-  return slug.split('/').some(s => s === '' || s === '.' || s === '..');
-}
-
-/**
  * 명시 `slug`의 모양 문제를 사람이 읽을 문장으로. 문제가 없으면 null.
  *
  * 파일 경로에서 유도한 slug(`회고/2025/2025 KPT`)는 여기 대상이 아니다 — 공백이
@@ -141,7 +130,7 @@ export function slugProblem(slug: string): string | null {
   });
   if (hasControl || /\s/.test(slug)) return '공백이나 제어 문자가 있습니다';
   if (slug.includes('\\')) return '`\\`는 경로 구분자로 해석될 수 있습니다';
-  if (hasUnsafeSlugSegment(slug)) {
+  if (!isSafeSlug(slug)) {
     return '앞뒤의 `/`·`//`·`.`·`..` 세그먼트는 URL을 바꿉니다(`/posts//foo/`, `../admin` → `/admin/`)';
   }
   return null;
@@ -173,27 +162,4 @@ export function frontmatterOffset(raw: string): number {
     if (i !== 0 && line.trim() === '---') return i + 1;
   }
   return 0;
-}
-
-/**
- * 이 파일이 빌드에서 갖게 될 slug — **로더(`parsePost`)와 같은 규칙**이다.
- *
- * 명시 `slug`가 문자열이고 비어 있지 않으며 URL을 벗어나지 않으면 그것, 아니면
- * 파일 경로에서 확장자를 뗀 값이다. 빈 문자열(`slug: ''`)은 로더처럼 "없음"이고
- * (같은 `toOptionalString`), 앞뒤 `/`·빈 세그먼트·`..`가 든 slug도 로더가 버리고
- * 경로 slug를 쓴다(`hasUnsafeSlugSegment` — 그 slug 자체는 invalid-slug 에러다).
- * 중복 slug·og 카드 경로 검사가 로더와 다른 slug로 판정하면, 실제로 충돌하는 두
- * 글을 놓치거나 없는 충돌로 빌드를 막는다.
- */
-export function effectiveSlug(
-  record: Pick<PostRecord, 'data' | 'relPath'>,
-): string {
-  const explicit = toOptionalString(record.data['slug']);
-  if (explicit !== undefined && !hasUnsafeSlugSegment(explicit)) {
-    return explicit;
-  }
-  return record.relPath
-    .split(/[/\\]/)
-    .join('/')
-    .replace(/\.(md|mdx)$/, '');
 }

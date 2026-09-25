@@ -11,9 +11,8 @@
 import { readdirSync, statSync } from 'node:fs';
 import { join, posix, relative, sep } from 'node:path';
 import matter from 'gray-matter';
-import { isPostFile } from '../../post/index.ts';
+import { isPostFile, pathSlug, resolvePostSlug } from '../../post/index.ts';
 import { isRecord } from '../../shared/guards.ts';
-import { effectiveSlug } from './shared.ts';
 import type { Issue, PostRecord } from './shared.ts';
 import { resolveSeverity } from './rules.ts';
 
@@ -136,10 +135,10 @@ export function validateSeriesFile(
   const known = new Set<string>();
   for (const record of records) {
     if (!isPostFile(record.data)) continue;
-    const recordPath = record.relPath.split(/[/\\]/).join('/');
-    if (posix.dirname(recordPath) !== folder) continue;
-    known.add(effectiveSlug(record));
-    known.add(recordPath.replace(/\.(md|mdx)$/, ''));
+    const recordSlug = pathSlug(record.relPath);
+    if (posix.dirname(recordSlug) !== folder) continue;
+    known.add(resolvePostSlug(record.data['slug'], record.relPath));
+    known.add(recordSlug);
   }
   const unmatched = (order as string[]).filter(entry => !known.has(entry));
   if (unmatched.length > 0) {

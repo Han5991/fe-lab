@@ -491,19 +491,29 @@ test("detectDuplicateSlugs: slug: ''는 로더처럼 파일 경로 slug로 보�
   ).toStrictEqual([]);
 });
 
-test('detectDuplicateSlugs: 로더가 버리는 위험한 slug는 경로 slug로 대조한다', () => {
-  // `/b`는 로더가 무시하고 파일 경로 slug(`a`)를 쓴다 — 그 글은 `a`와 부딪힌다.
-  const records = [
-    rec({ ...POST, slug: '/b' }, { relPath: 'a.md' }),
-    rec({ ...POST, slug: 'a' }, { relPath: 'other.md' }),
-    rec({ ...POST, slug: 'b' }, { relPath: 'third.md' }),
-  ];
-  expect(
-    detectDuplicateSlugs(records)
-      .map(i => i.file)
-      .sort(),
-  ).toStrictEqual(['a.md', 'other.md']);
-});
+test.each([['/b'], ['a\\b']])(
+  'detectDuplicateSlugs: 로더가 버리는 slug(%s)는 로더처럼 경로 slug로 대조한다',
+  slug => {
+    // 로더는 이 slug를 쓰지 않고 파일 경로 slug(`a`)를 쓴다 — 그 글은 `a`와 부딪힌다.
+    const raw = `---\nstatus: published\ntitle: x\nslug: '${slug}'\n---\n`;
+    expect(
+      parsePost(raw, 'a.md', {
+        excerptMaxLength: 160,
+        timezone: VALIDATE_CONFIG.timezone,
+      })?.slug,
+    ).toBe('a');
+    const records = [
+      rec({ ...POST, slug }, { relPath: 'a.md' }),
+      rec({ ...POST, slug: 'a' }, { relPath: 'other.md' }),
+      rec({ ...POST, slug: 'b' }, { relPath: 'third.md' }),
+    ];
+    expect(
+      detectDuplicateSlugs(records)
+        .map(i => i.file)
+        .sort(),
+    ).toStrictEqual(['a.md', 'other.md']);
+  },
+);
 
 // 렌더 계층(frontmatterSchema의 toStringArray)이 중복을 걷어내므로 화면은 멀쩡하지만,
 // frontmatter에 남아 있으면 저자가 눈치채지 못한다. 에러가 아니라 경고인 이유다.

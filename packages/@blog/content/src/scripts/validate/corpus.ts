@@ -5,8 +5,11 @@
  * 파일 단위 사슬과 실행 시점이 다릅니다: 진입점(validate-posts.ts)이 모든 파일을
  * 훑은 **뒤에** 한 번 돕니다.
  */
-import { isPostFile, resolveExcerpt } from '../../post/index.ts';
-import { effectiveSlug } from './shared.ts';
+import {
+  isPostFile,
+  resolveExcerpt,
+  resolvePostSlug,
+} from '../../post/index.ts';
 import type { Issue, PostRecord, ValidateContext } from './shared.ts';
 import { resolveSeverity, isVisibleFrontmatter } from './rules.ts';
 
@@ -71,20 +74,14 @@ export function detectDuplicateDescriptions(
 }
 
 /**
- * 빌드에서 같은 URL을 갖게 될 글들을 잡습니다.
- *
- * **로더가 보는 것과 같은 집합·같은 slug로 판정합니다.** 예전에는 메타 노트
- * (status 없음 — 빌드에서 통째로 빠진다)까지 넣어서, 글을 "내리려고" status를
- * 지우고 옆에 고쳐 쓴 글을 둔 흔한 경우가 있지도 않은 충돌로 빌드를 막았습니다.
- * 반대로 `slug: ''`를 그대로 slug `''`로 봐서, 로더가 파일 경로 slug로 폴백한
- * 글과 실제로 충돌하는 다른 글을 놓쳤습니다. 둘 다 `effectiveSlug`(로더 규칙)와
- * `isPostFile`(로더의 포스트 판정)로 맞춥니다.
+ * 빌드에서 같은 URL을 갖게 될 글들을 잡습니다 — 로더와 같은 집합(`isPostFile`)과
+ * 같은 slug(`resolvePostSlug`)로 판정합니다.
  */
 export function detectDuplicateSlugs(records: PostRecord[]): Issue[] {
   const slugMap = new Map<string, string[]>();
   for (const r of records) {
     if (!isPostFile(r.data)) continue;
-    const effective = effectiveSlug(r);
+    const effective = resolvePostSlug(r.data['slug'], r.relPath);
     const arr = slugMap.get(effective) ?? [];
     arr.push(r.relPath);
     slugMap.set(effective, arr);
