@@ -18,7 +18,8 @@ export GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1
 export GIT_AUTHOR_NAME=test GIT_AUTHOR_EMAIL=test@example.com
 export GIT_COMMITTER_NAME=test GIT_COMMITTER_EMAIL=test@example.com
 
-# 가짜 gh. 호출을 기록하고, `pr list`는 FAKE_PRS(JSON 배열)에 --jq 식을 적용해 돌려준다.
+# 가짜 gh. 호출을 기록하고, `pr list`는 FAKE_PRS(JSON 배열)를 GitHub처럼 --author로
+# 거른 뒤(`.author.login`) --jq 식을 적용해 돌려준다.
 mkdir -p "$root/bin" "$root/runner"
 cat >"$root/bin/gh" <<'EOF'
 #!/usr/bin/env bash
@@ -27,17 +28,22 @@ printf '%s\n' "$*" >>"$GH_LOG"
 case "$1 $2" in
   "pr list")
     expr='.'
+    author=''
     while (($#)); do
-      if [[ "$1" == --jq ]]; then expr="$2"; fi
+      case "$1" in
+        --jq) expr="$2" ;;
+        --author) author="$2" ;;
+      esac
       shift
     done
-    jq -r "$expr" <<<"${FAKE_PRS:-[]}"
+    jq --arg author "$author" '[.[] | select($author == "" or .author.login == $author)]' \
+      <<<"${FAKE_PRS:-[]}" | jq -r "$expr"
     ;;
   "pr create") echo "https://github.com/owner/repo/pull/1" ;;
 esac
 EOF
 chmod +x "$root/bin/gh"
-export PATH="$root/bin:$PATH" GH_LOG="$root/gh.log" RUNNER_TEMP="$root/runner"
+export PATH="$root/bin:$PATH" RUNNER_TEMP="$root/runner"
 
 # 픽스처 저장소. 실제 파일의 모양(catalog:·overrides·allowBuilds·lockfile v9)을 줄여 담는다.
 seed="$root/seed"
@@ -146,11 +152,15 @@ POSTS='^apps/blog/posts/.+\.mdx?$'
 pass=0
 fail=0
 run=0
-# $1 이름, $2 기대(accept|reject), $3 허용 경로 정규식, $4 작업 트리를 바꾸는 함수
+# $1 이름, $2 기대, $3 허용 경로 정규식, $4 작업 트리를 바꾸는 함수, $5… 스크립트에 줄 환경.
+# 기대: accept(새 PR, 코멘트 없음) · reject(실패, 아무것도 안 바뀜) · comment(봇 PR #7에
+# 코멘트만, 푸시 없음)
 scenario() {
   local name="$1" expect="$2" allowed="$3" mutate="$4"
   local work="$root/work-$name" out="$root/out-$name" log="$root/$name.log"
   local rc=0 refs_before refs_after pushed=no dirty ok=no
+  export GH_LOG="$root/gh-$name.log"
+  : >"$GH_LOG"
   run=$((run + 1))
   git clone -q "$root/remote.git" "$work"
   mkdir -p "$out"
@@ -163,6 +173,7 @@ scenario() {
   )
   printf 'chore(deps): 테스트 %s\n' "$name" >"$out/bot-title.txt"
   printf '본문\n' >"$out/bot-body.md"
+  printf '이번 점검 요약\n' >"$out/bot-comment.md"
 
   refs_before="$(git --git-dir="$root/remote.git" for-each-ref --format='%(refname)')"
   (
@@ -176,8 +187,9 @@ scenario() {
   dirty="$(git -C "$work" status --porcelain)"
 
   case "$expect" in
-    accept) [[ $rc -eq 0 && $pushed == yes ]] && ok=yes ;;
+    accept) [[ $rc -eq 0 && $pushed == yes ]] && ! grep -q '^pr comment' "$GH_LOG" && ok=yes ;;
     reject) [[ $rc -ne 0 && $pushed == no && -z "$dirty" ]] && grep -q '::error::' "$log" && ok=yes ;;
+    comment) [[ $rc -eq 0 && $pushed == no ]] && grep -q '^pr comment 7 ' "$GH_LOG" && ok=yes ;;
   esac
   if [[ $ok == yes ]]; then
     pass=$((pass + 1))
@@ -215,6 +227,18 @@ scenario legit-deps accept "$DEPS" legit_deps
 # 링크 점검: 글의 URL 교체(마크다운에는 내용 검사를 걸지 않는다).
 legit_post() { edit apps/blog/posts/a.md 'https://old.example.com/a' 'https://web.archive.org/web/https://old.example.com/a'; }
 scenario legit-post accept "$POSTS" legit_post
+
+# --- 열린 PR이 있을 때 --------------------------------------------------------
+
+# 봇이 이 저장소 브랜치로 연 PR이 있으면 새 PR 대신 그 PR(#7)에 코멘트만 남긴다.
+scenario existing-bot-pr comment "$POSTS" legit_post \
+  FAKE_PRS='[{"number":7,"headRefName":"claude/bot-20260901-3","isCrossRepository":false,"author":{"login":"app/github-actions"}}]'
+
+# 같은 접두어라도 포크 PR이나 사람이 연 PR은 봇 PR을 막지 못하고 코멘트도 받지 않는다.
+scenario fork-pr-same-prefix accept "$POSTS" legit_post \
+  FAKE_PRS='[{"number":8,"headRefName":"claude/bot-evil","isCrossRepository":true,"author":{"login":"mallory"}}]'
+scenario human-pr-same-prefix accept "$POSTS" legit_post \
+  FAKE_PRS='[{"number":9,"headRefName":"claude/bot-manual","isCrossRepository":false,"author":{"login":"someone"}}]'
 
 # --- 거부해야 하는 변경 -------------------------------------------------------
 

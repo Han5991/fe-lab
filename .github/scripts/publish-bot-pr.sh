@@ -23,8 +23,8 @@
 #   OUT_DIR        Claude 잡이 올린 아티팩트를 내려받은 디렉터리(저장소 밖)
 #   NAME           파일 접두어. `$NAME.patch`, `$NAME-title.txt`, `$NAME-body.md`,
 #                  `$NAME-comment.md`를 읽는다
-#   BRANCH_PREFIX  브랜치 접두어(예: claude/deps-audit-). 같은 접두어의 열린 PR이
-#                  있으면 새 PR 대신 그 PR에 코멘트만 남긴다
+#   BRANCH_PREFIX  브랜치 접두어(예: claude/deps-audit-). 이 봇이 연 같은 접두어의
+#                  열린 PR이 있으면 새 PR 대신 그 PR에 코멘트만 남긴다
 #   ALLOWED_PATHS  변경을 허용할 경로의 확장 정규식(bash `=~`)
 #   DEFAULT_TITLE  제목 파일이 비었을 때 쓸 PR 제목
 #   BASE_BRANCH    PR 기준 브랜치(기본 main)
@@ -68,9 +68,13 @@ summary() {
 }
 
 # 1) 같은 접두어의 열린 PR이 있으면 새 PR을 만들지 않고 이번 결과를 코멘트로 남긴다.
+#    이 봇(github-actions)이 이 저장소 브랜치로 연 PR만 센다. 브랜치 이름은 누구나 고를
+#    수 있어서, 접두어만 보면 같은 이름의 포크 PR 하나가 봇 PR을 무기한 막고 점검
+#    결과까지 코멘트로 받아 갔다.
 existing="$(
-  gh pr list --state open --limit 100 --json number,headRefName \
-    --jq '[.[] | select(.headRefName | startswith(env.BRANCH_PREFIX))][0].number // empty'
+  gh pr list --state open --limit 100 --author app/github-actions \
+    --json number,headRefName,isCrossRepository \
+    --jq '[.[] | select((.isCrossRepository | not) and (.headRefName | startswith(env.BRANCH_PREFIX)))][0].number // empty'
 )"
 if [[ -n "$existing" ]]; then
   note="$comment_file"
