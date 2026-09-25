@@ -5,6 +5,7 @@ import { expect, test } from 'vitest';
 import {
   parsePageSeo,
   checkPages,
+  checkArchiveLinks,
   checkArtifacts,
   checkSitemapPages,
   collectArtifacts,
@@ -632,5 +633,70 @@ test('checkSitemapPages: 인코딩된 sitemap URL을 디스크 이름(디코드)
       [loc(`/posts/${encodeURIComponent(slug)}/`)],
       SITE_URL,
     ),
+  ).toStrictEqual([]);
+});
+
+// ── checkArchiveLinks: 아카이브가 글 링크를 프리렌더했는가 ─────────────────
+
+const archiveWith = (hrefs: string[]) =>
+  page(
+    { path: '/posts/', canonical: `${SITE_URL}/posts/` },
+    `<h1>모든 노트</h1><ol>${hrefs.map(h => `<li><a href="${h}">글</a></li>`).join('')}</ol>`,
+  );
+
+test('checkArchiveLinks: sitemap의 글 전부로 가는 링크가 있으면 위반 없음', () => {
+  const slug = '한글 (괄호)';
+  const pages = new Map([
+    [
+      '/posts/',
+      archiveWith([
+        '/posts/a/',
+        `/posts/${encodeURIComponent(slug)}/`,
+        '/posts/?tag=x',
+      ]),
+    ],
+  ]);
+  expect(
+    checkArchiveLinks(
+      pages,
+      [
+        loc('/'),
+        loc('/posts/'),
+        loc('/posts/a/'),
+        loc(`/posts/${encodeURIComponent(slug)}/`),
+      ],
+      SITE_URL,
+    ),
+  ).toStrictEqual([]);
+});
+
+test('checkArchiveLinks: 폴백 목록이 사라지면(CSR bail-out) archive-links-missing', () => {
+  // 하이드레이션 전 HTML에 스피너만 남은 상태 — 배포 워크플로의 grep 검사가 잡던 회귀.
+  const pages = new Map([['/posts/', archiveWith([])]]);
+  const found = checkArchiveLinks(
+    pages,
+    [loc('/posts/'), loc('/posts/a/'), loc('/posts/b/')],
+    SITE_URL,
+  );
+  expect(found.map(v => [v.page, v.rule])).toStrictEqual([
+    ['/posts/', 'archive-links-missing'],
+  ]);
+  expect(found[0]?.message).toContain('0/2편');
+});
+
+test('checkArchiveLinks: 글 하나만 빠져도 잡는다 (기준은 고정 개수가 아니라 sitemap의 글 수)', () => {
+  const pages = new Map([['/posts/', archiveWith(['/posts/a/'])]]);
+  expect(
+    checkArchiveLinks(
+      pages,
+      [loc('/posts/a/'), loc('/posts/b/')],
+      SITE_URL,
+    ).map(v => v.message.includes('/posts/b/')),
+  ).toStrictEqual([true]);
+});
+
+test('checkArchiveLinks: 아카이브 페이지가 없으면 보고하지 않는다 (sitemap-page-missing의 몫)', () => {
+  expect(
+    checkArchiveLinks(new Map(), [loc('/posts/'), loc('/posts/a/')], SITE_URL),
   ).toStrictEqual([]);
 });

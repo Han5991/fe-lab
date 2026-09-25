@@ -33,7 +33,8 @@ export interface SeoCheckConfig {
  * 글 집합 정합성은 `scripts/artifacts.ts`의 레지스트리를 **순회**하며 검사합니다
  * — 산출물이 늘면 레지스트리에 항목을 더하는 것으로 검사가 자동으로 붙습니다.
  * 그 기준(sitemap)은 다시 실제 페이지와 대조합니다(`checkSitemapPages` — 페이지
- * 존재·색인 가능 여부·sitemap에 빠진 글 페이지).
+ * 존재·색인 가능 여부·sitemap에 빠진 글 페이지, `checkArchiveLinks` — 아카이브가
+ * 발행 글 전부로 가는 링크를 프리렌더했는가).
  *
  * 사용: `pnpm build` 이후 `blog-content check-seo`
  *       (검사 대상 디렉토리를 인자로 줄 수 있습니다: `blog-content check-seo out`)
@@ -361,6 +362,49 @@ export function checkSitemapPages(
   return violations;
 }
 
+/**
+ * 아카이브(`/posts/`)가 발행 글 **전부로 가는 링크를 프리렌더**했는가.
+ *
+ * 아카이브 뷰는 `useSearchParams`를 써서 정적 export의 프리렌더에서 빠지고,
+ * `out/posts/index.html`에 구워지는 건 Suspense 폴백의 글 목록뿐이다. 그 폴백이
+ * 스피너로 바뀌면 크롤러가 보는 글 링크 허브가 통째로 사라지는데, 화면은
+ * 하이드레이션 뒤 멀쩡해 보인다(c206b99 도입 → 15ed918 리디자인에서 유실된 이력).
+ *
+ * 예전에는 배포 워크플로에만 "링크 10개 이상" 검사가 있어서 PR CI는 이 회귀를
+ * 통과시켰고, 기준 10은 글 수와 무관한 숫자였다. 여기서는 `pnpm build`
+ * 안에서(PR·배포 공통) **sitemap의 글 전부**를 기준으로 본다.
+ *
+ * 아카이브 페이지 자체가 없으면 보고하지 않는다 — sitemap에 실린 URL이라
+ * `checkSitemapPages`가 이미 `sitemap-page-missing`으로 잡는다.
+ */
+export function checkArchiveLinks(
+  pages: ReadonlyMap<string, string>,
+  locs: readonly string[],
+  siteUrl: string,
+): SeoViolation[] {
+  const archive = pages.get(POSTS_PATH);
+  if (archive === undefined) return [];
+  const postPrefix = `${siteUrl}${POSTS_PATH}`;
+  const expected = locs
+    .filter(loc => loc.startsWith(postPrefix) && loc !== postPrefix)
+    .map(loc => decodeUrlSafe(loc.slice(siteUrl.length)));
+  const linked = new Set(
+    collectInternalLinks(archive).map(href =>
+      // split은 항상 1개 이상을 돌려준다.
+      decodeUrlSafe(href.split(/[?#]/)[0] ?? href),
+    ),
+  );
+  const missing = expected.filter(path => !linked.has(path));
+  if (missing.length === 0) return [];
+  return [
+    {
+      page: POSTS_PATH,
+      rule: 'archive-links-missing',
+      message: `아카이브에 프리렌더된 글 링크가 ${expected.length - missing.length}/${expected.length}편뿐입니다 — 폴백 목록이 사라지면(CSR bail-out) 크롤러가 글로 가는 내부 링크를 잃습니다. 빠진 글: ${missing.slice(0, 3).join(', ')}${missing.length > 3 ? ' …' : ''}`,
+    },
+  ];
+}
+
 /** 레지스트리 항목 하나를 out/에서 읽어 온 결과. `urls: null` = 산출물이 없음 */
 export interface CollectedArtifact {
   name: string;
@@ -496,12 +540,10 @@ export function main(ctx: ContentContext, target?: string) {
   // missing-artifact로 이미 실패했으므로 여기서는 건너뛴다.
   const sitemapPath = join(outDir, SITEMAP_ARTIFACT_PATH);
   if (existsSync(sitemapPath)) {
+    const locs = extractSitemapLocs(readFileSync(sitemapPath, 'utf8'));
     violations.push(
-      ...checkSitemapPages(
-        pages,
-        extractSitemapLocs(readFileSync(sitemapPath, 'utf8')),
-        siteUrl,
-      ),
+      ...checkSitemapPages(pages, locs, siteUrl),
+      ...checkArchiveLinks(pages, locs, siteUrl),
     );
   }
 
