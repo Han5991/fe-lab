@@ -5,7 +5,8 @@ import { tagPillStyle } from './tagPillStyle';
 
 interface ActiveFiltersProps {
   tags: string[];
-  series: string | null;
+  /** 활성 시리즈의 제목 — URL에는 id(폴더 경로)가 실린다. */
+  seriesLabel: string | null;
   year: string | null;
   onRemoveTag: (tag: string) => void;
   onClearSeries: () => void;
@@ -28,16 +29,19 @@ const removeIconClass = css({
   lineHeight: 'flat',
 });
 
+/** 칩은 누르면 그 필터를 푸는 버튼이다 — 이름에 "해제"를 담는다. */
+const removeLabel = (label: string) => `${label} 필터 해제`;
+
 export const ActiveFilters = ({
   tags,
-  series,
+  seriesLabel,
   year,
   onRemoveTag,
   onClearSeries,
   onClearYear,
   onClearAll,
 }: ActiveFiltersProps) => {
-  const total = tags.length + (series ? 1 : 0) + (year ? 1 : 0);
+  const total = tags.length + (seriesLabel ? 1 : 0) + (year ? 1 : 0);
   if (total === 0) return null;
 
   return (
@@ -63,16 +67,30 @@ export const ActiveFilters = ({
       >
         필터
       </span>
-      {series && (
-        <button type="button" onClick={onClearSeries} className={chipClass}>
-          {series}
-          <span className={removeIconClass}>✕</span>
+      {seriesLabel && (
+        <button
+          type="button"
+          onClick={onClearSeries}
+          aria-label={removeLabel(seriesLabel)}
+          className={chipClass}
+        >
+          {seriesLabel}
+          <span aria-hidden="true" className={removeIconClass}>
+            ✕
+          </span>
         </button>
       )}
       {year && (
-        <button type="button" onClick={onClearYear} className={chipClass}>
+        <button
+          type="button"
+          onClick={onClearYear}
+          aria-label={removeLabel(year)}
+          className={chipClass}
+        >
           {year}
-          <span className={removeIconClass}>✕</span>
+          <span aria-hidden="true" className={removeIconClass}>
+            ✕
+          </span>
         </button>
       )}
       {tags.map(t => (
@@ -80,10 +98,13 @@ export const ActiveFilters = ({
           key={t}
           type="button"
           onClick={() => onRemoveTag(t)}
+          aria-label={removeLabel(`#${t}`)}
           className={chipClass}
         >
           #{t}
-          <span className={removeIconClass}>✕</span>
+          <span aria-hidden="true" className={removeIconClass}>
+            ✕
+          </span>
         </button>
       ))}
       <button

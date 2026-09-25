@@ -1,18 +1,11 @@
 'use client';
 
 import { TIMEZONE } from '@/content.values.mts';
-import { getKSTDateISO } from '@blog/content';
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import type { PostStatDetail } from '@/src/hooks/useAdminViews';
 import { computeBriefStats } from '@/src/hooks/usePostDetailStats';
 import { css } from '@design-system/ui-lib/css';
-import {
-  ChevronDown,
-  ExternalLink,
-  BarChart3,
-  TrendingUp,
-  TrendingDown,
-} from 'lucide-react';
+import { ChevronDown, ExternalLink, BarChart3 } from 'lucide-react';
 import {
   LineChart,
   Line,
@@ -26,36 +19,23 @@ import { token } from '@design-system/ui-lib/tokens';
 import { motion, AnimatePresence } from 'motion/react';
 import { formatMonthDayISO, parseScheduledDateKST } from '@blog/content';
 import { DateRangeControls, useDateFilter } from './DateRangeControls';
+import { WeekGrowthIcon } from './WeekGrowthIcon';
 import { adminAnalyticsPostPath } from '@/src/shared/routes';
 // 클라이언트 컴포넌트의 @blog/content 배럴 import — node:fs 모듈(series 등)은
 // next.config.ts의 optimizePackageImports + sideEffects:false가 번들에서 걸러 준다.
-import { postPath } from '@blog/content';
-import { resolvePostState, type PostStatus } from '@blog/content';
-
-/**
- * 상태 배지의 색과 라벨. 배지는 **상태만** 말합니다 — 공개 예정일은 옆 날짜
- * 칼럼에 이미 있고, 예약 글의 정확한 시각은 title 툴팁이 답합니다.
- *
- * 삼항 체인이 아니라 레코드인 건 망라 때문입니다. 체인의 마지막 가지는 남은
- * 상태를 전부 받아서, `PostStatus`가 늘면 새 상태가 조용히 '예약'으로 그려집니다.
- * `satisfies`가 그 자리를 컴파일 에러로 만듭니다.
- *
- * 배경·테두리는 세 상태가 같은 값이라 여기 두지 않습니다 — 상태에 따라 달라지는
- * 축만 남겨야 배지가 무엇으로 갈리는지가 읽힙니다.
- */
-const STATUS_BADGE = {
-  published: { color: 'moss.600', label: '공개' },
-  draft: { color: 'ink.500', label: '비공개' },
-  scheduled: { color: 'spot.600', label: '예약' },
-} as const satisfies Record<PostStatus, { color: string; label: string }>;
+import { resolvePostState } from '@blog/content';
+import { STATUS_BADGE, livePostHref } from './postState';
 
 interface Props {
   post: PostStatDetail;
+  /** KST 오늘 — 목록이 한 번 계산해 모든 행에 내려 준다. */
+  todayISO: string;
 }
 
-export function PostAccordion({ post }: Props) {
+export function PostAccordion({ post, todayISO }: Props) {
   const [isOpen, setIsOpen] = useState(false);
-  const briefStats = computeBriefStats(post, getKSTDateISO(TIMEZONE));
+  const panelId = useId();
+  const briefStats = computeBriefStats(post, todayISO);
 
   // frontmatter의 status(발행 의도)가 아니라 **지금 실제로 공개 중인지**로 배지를
   // 그립니다. 판정은 도메인 함수 하나에 위임합니다 — 예전에는 이 자리에서 규칙을
@@ -72,14 +52,16 @@ export function PostAccordion({ post }: Props) {
     endDate,
     setEndDate,
     filteredTrends,
-  } = useDateFilter(post.trends);
+  } = useDateFilter(post.trends, todayISO);
 
   const formattedData = filteredTrends.map(d => ({
     name: formatMonthDayISO(d.view_date),
     views: d.view_count,
   }));
 
+  // 배지는 상태만 말한다 — 공개 예정일은 옆 날짜 칼럼에, 예약 시각은 툴팁에 있다.
   const badge = STATUS_BADGE[state];
+  const liveHref = livePostHref(post.slug, state);
 
   return (
     <div
@@ -89,47 +71,37 @@ export function PostAccordion({ post }: Props) {
         _last: { borderBottomWidth: '[0]' },
       })}
     >
-      <button
-        onClick={() => setIsOpen(!isOpen)}
+      {/* 링크와 펼침 버튼은 형제다 — 버튼 안에는 대화형 요소가 올 수 없다. */}
+      <div
         className={css({
-          w: 'full',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between',
-          px: '5',
-          py: '3',
+          gap: '3',
+          pl: '5',
           bg: isOpen ? 'ink.50' : 'transparent',
           transition: '[background 0.15s]',
           _hover: { bg: 'ink.50' },
-          cursor: 'pointer',
         })}
       >
-        <div
+        <Link
+          href={adminAnalyticsPostPath(post.slug)}
+          aria-label={`${post.title} 상세 통계`}
           className={css({
+            color: 'ink.500',
+            _hover: { color: 'spot.600' },
             display: 'flex',
             alignItems: 'center',
-            gap: '3',
-            flex: '1',
-            overflow: 'hidden',
+            flexShrink: 0,
           })}
         >
+          <BarChart3 size={14} aria-hidden />
+        </Link>
+        {liveHref && (
           <Link
-            href={adminAnalyticsPostPath(post.slug)}
-            onClick={e => e.stopPropagation()}
-            className={css({
-              color: 'ink.500',
-              _hover: { color: 'spot.600' },
-              display: 'flex',
-              alignItems: 'center',
-              flexShrink: 0,
-            })}
-          >
-            <BarChart3 size={14} />
-          </Link>
-          <Link
-            href={postPath(post.slug)}
+            href={liveHref}
             target="_blank"
-            onClick={e => e.stopPropagation()}
+            rel="noopener noreferrer"
+            aria-label={`${post.title} 글을 새 탭에서 열기`}
             className={css({
               color: 'ink.200',
               _hover: { color: 'spot.600' },
@@ -138,115 +110,144 @@ export function PostAccordion({ post }: Props) {
               flexShrink: 0,
             })}
           >
-            <ExternalLink size={12} />
+            <ExternalLink size={12} aria-hidden />
           </Link>
-          <span
-            className={css({
-              fontSize: 'xs',
-              fontWeight: 'semibold',
-              px: '2',
-              py: '0.5',
-              rounded: 'full',
-              flexShrink: 0,
-              bg: 'paper.100',
-              color: badge.color,
-              borderWidth: '[1px]',
-              borderColor: 'ink.border',
-            })}
-            title={
-              state === 'scheduled' && publishAt
-                ? // 'YYYY-MM-DD'를 native Date에 넣으면 UTC 자정으로 파싱돼
-                  // KST 09:00으로 잘못 표시됩니다.
-                  `예약: ${parseScheduledDateKST(TIMEZONE, publishAt).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })}`
-                : undefined
-            }
-          >
-            {badge.label}
-          </span>
-          <span
-            className={css({
-              fontWeight: 'semibold',
-              color: 'ink.950',
-              fontSize: 'sm',
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              textAlign: 'left',
-            })}
-          >
-            {post.title}
-          </span>
-          <span
-            className={css({
-              color: 'ink.500',
-              fontSize: 'xs',
-              flexShrink: 0,
-              display: { base: 'none', md: 'inline' },
-              fontVariantNumeric: 'tabular-nums',
-            })}
-          >
-            {post.date}
-          </span>
-        </div>
-
-        <div
+        )}
+        <button
+          type="button"
+          onClick={() => setIsOpen(!isOpen)}
+          aria-expanded={isOpen}
+          aria-controls={isOpen ? panelId : undefined}
           className={css({
+            flex: '1',
+            minW: '0',
             display: 'flex',
             alignItems: 'center',
-            gap: '3',
-            ml: '4',
-            flexShrink: 0,
+            justifyContent: 'space-between',
+            pr: '5',
+            py: '3',
+            cursor: 'pointer',
           })}
         >
-          <div
+          <span
             className={css({
               display: 'flex',
-              alignItems: 'baseline',
-              gap: '1',
-              minW: '[80px]',
-              justifyContent: 'flex-end',
+              alignItems: 'center',
+              gap: '3',
+              flex: '1',
+              overflow: 'hidden',
             })}
           >
             <span
               className={css({
-                fontWeight: 'bold',
+                fontSize: 'xs',
+                fontWeight: 'semibold',
+                px: '2',
+                py: '0.5',
+                rounded: 'full',
+                flexShrink: 0,
+                bg: 'paper.100',
+                color: badge.color,
+                borderWidth: '[1px]',
+                borderColor: 'ink.border',
+              })}
+              title={
+                state === 'scheduled' && publishAt
+                  ? // 'YYYY-MM-DD'를 native Date에 넣으면 UTC 자정으로 파싱돼
+                    // KST 09:00으로 잘못 표시됩니다.
+                    `예약: ${parseScheduledDateKST(TIMEZONE, publishAt).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })}`
+                  : undefined
+              }
+            >
+              {badge.label}
+            </span>
+            <span
+              className={css({
+                fontWeight: 'semibold',
                 color: 'ink.950',
                 fontSize: 'sm',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                textAlign: 'left',
+              })}
+            >
+              {post.title}
+            </span>
+            <span
+              className={css({
+                color: 'ink.500',
+                fontSize: 'xs',
+                flexShrink: 0,
+                display: { base: 'none', md: 'inline' },
                 fontVariantNumeric: 'tabular-nums',
               })}
             >
-              {post.totalViews.toLocaleString()}
+              {post.date}
             </span>
-            {post.todayViews > 0 && (
-              <span
-                className={css({
-                  color: 'spot.600',
-                  fontSize: 'xs',
-                  fontWeight: 'medium',
-                })}
-              >
-                +{post.todayViews}
-              </span>
-            )}
-          </div>
+          </span>
 
-          <motion.div
-            animate={{ rotate: isOpen ? 180 : 0 }}
-            transition={{ duration: 0.2 }}
+          <span
             className={css({
-              color: 'ink.500',
               display: 'flex',
               alignItems: 'center',
+              gap: '3',
+              ml: '4',
+              flexShrink: 0,
             })}
           >
-            <ChevronDown size={16} />
-          </motion.div>
-        </div>
-      </button>
+            <span
+              className={css({
+                display: 'flex',
+                alignItems: 'baseline',
+                gap: '1',
+                minW: '[80px]',
+                justifyContent: 'flex-end',
+              })}
+            >
+              <span
+                className={css({
+                  fontWeight: 'bold',
+                  color: 'ink.950',
+                  fontSize: 'sm',
+                  fontVariantNumeric: 'tabular-nums',
+                })}
+              >
+                {post.totalViews.toLocaleString()}
+              </span>
+              {post.todayViews > 0 && (
+                <span
+                  className={css({
+                    color: 'spot.600',
+                    fontSize: 'xs',
+                    fontWeight: 'medium',
+                  })}
+                >
+                  +{post.todayViews}
+                </span>
+              )}
+            </span>
+
+            <motion.span
+              animate={{ rotate: isOpen ? 180 : 0 }}
+              transition={{ duration: 0.2 }}
+              aria-hidden
+              className={css({
+                color: 'ink.500',
+                display: 'flex',
+                alignItems: 'center',
+              })}
+            >
+              <ChevronDown size={16} />
+            </motion.span>
+          </span>
+        </button>
+      </div>
 
       <AnimatePresence initial={false}>
         {isOpen && (
           <motion.div
+            id={panelId}
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
@@ -283,18 +284,7 @@ export function PostAccordion({ post }: Props) {
                     gap: '2',
                   })}
                 >
-                  {briefStats.weekGrowthRate !== null &&
-                  briefStats.weekGrowthRate >= 0 ? (
-                    <TrendingUp
-                      size={13}
-                      className={css({ color: 'moss.600' })}
-                    />
-                  ) : (
-                    <TrendingDown
-                      size={13}
-                      className={css({ color: 'spot.600' })}
-                    />
-                  )}
+                  <WeekGrowthIcon rate={briefStats.weekGrowthRate} size={13} />
                   <span className={css({ fontSize: 'xs', color: 'ink.500' })}>
                     7일 증감
                   </span>

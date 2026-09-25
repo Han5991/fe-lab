@@ -1,4 +1,4 @@
-import { useSuspenseQuery } from '@tanstack/react-query';
+import { queryOptions, useSuspenseQuery } from '@tanstack/react-query';
 import {
   getAdminPostsIndex,
   getAllPostStats,
@@ -8,29 +8,42 @@ import type { PostStatDetail, TrendPoint } from '@/src/domain/analytics';
 
 export type { PostStatDetail };
 
+/**
+ * admin 글 인덱스 — 배포 때만 바뀌어 마운트마다 다시 받지 않는다. 재시도는 이것을 여는
+ * 쿼리가 하므로 여기서는 끈다(두 겹으로 재시도하지 않게).
+ */
+export const adminPostsIndexQuery = queryOptions({
+  queryKey: ['admin', 'posts-index'],
+  queryFn: getAdminPostsIndex,
+  staleTime: Infinity,
+  retry: false,
+});
+
 export function useAdminDashboardData() {
   return useSuspenseQuery({
     queryKey: ['admin', 'dashboard-data'],
-    // SSG prerender 단계에서 getAdminPostsIndex가 typeof window 가드로 빈 배열을
-    // 반환하기 때문에 SSR HTML은 placeholder 상태입니다. 글로벌 default
-    // (staleTime 5분 + refetchOnMount false) 그대로면 그 빈 캐시가 클라이언트에
-    // 그대로 hydrate된 후 5분간 refetch되지 않아 차트가 영원히 비어 보입니다.
-    // 0 + 'always'로 hydration 직후 1회 refetch를 강제합니다.
-    staleTime: 0,
-    refetchOnMount: 'always',
-    queryFn: async (): Promise<PostStatDetail[]> => {
-      const [metadata, stats, trends] = await Promise.all([
-        getAdminPostsIndex(),
-        getAllPostStats(),
-        getAllPostsTrends(),
+    queryFn: async ({ client }): Promise<PostStatDetail[]> => {
+      // 조회수 두 읽기는 인덱스의 slug로 서버에서 거른다(가짜 slug가 1000행 cap을 채우지 않게).
+      const metadata = await client.ensureQueryData(adminPostsIndexQuery);
+      const slugs = metadata.map(post => post.slug);
+      const [stats, trends] = await Promise.all([
+        getAllPostStats(slugs),
+        getAllPostsTrends(slugs),
       ]);
 
-      const trendsMap = new Map<string, TrendPoint[]>();
+      // 같은 (slug, 날짜)는 나중 값 하나만 남긴다 — 페이지 경계 행이 두 번 와도 두 번
+      // 합산하지 않게(서버도 거르지만 함수 배포는 수동이다).
+      const trendsMap = new Map<string, Map<string, number>>();
       for (const t of trends) {
-        const arr = trendsMap.get(t.slug) ?? [];
-        arr.push({ view_date: t.view_date, view_count: t.view_count });
-        trendsMap.set(t.slug, arr);
+        const byDate = trendsMap.get(t.slug) ?? new Map<string, number>();
+        byDate.set(t.view_date, t.view_count);
+        trendsMap.set(t.slug, byDate);
       }
+      const trendsOf = (slug: string): TrendPoint[] =>
+        Array.from(trendsMap.get(slug) ?? [], ([view_date, view_count]) => ({
+          view_date,
+          view_count,
+        }));
 
       const statsMap = new Map(stats.map(s => [s.slug, s]));
 
@@ -42,7 +55,7 @@ export function useAdminDashboardData() {
           date: post.date,
           totalViews: postStats?.total_views ?? 0,
           todayViews: postStats?.today_views ?? 0,
-          trends: trendsMap.get(post.slug) ?? [],
+          trends: trendsOf(post.slug),
           // 폴백은 fail-closed('draft')여야 한다. 'published'로 두면 인덱스가
           // 깨졌을 때 draft·scheduled 글이 admin 대시보드에서 공개 글로 보인다.
           status: post.status || 'draft',

@@ -7,7 +7,15 @@
  * 때 곡선이 반토막 나 허공에 뜬 조각처럼 남는다), 그 불변식은 눈으로
  * 확인하기 어렵다. 여기서 좌표로 고정한다.
  */
-import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  test,
+  vi,
+  type Mock,
+} from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { TOC, buildPath, measureLengths, type Row } from './TOC';
 
@@ -90,9 +98,8 @@ describe('measureLengths', () => {
  * 화면으로는 "그냥 스크롤됐네"로만 보여서 알아채기 어려운 회귀라 여기서 막는다.
  */
 describe('TOC 항목 클릭', () => {
-  // window.scrollTo를 직접 단언하면 unbound-method에 걸린다(mock이더라도
-  // 타입은 여전히 메서드다). stub한 mock 함수를 변수로 들고 단언한다.
-  let scrollToMock: ReturnType<typeof vi.fn>;
+  // 메서드를 직접 단언하면 unbound-method에 걸려 헤딩에 심은 mock을 변수로 든다.
+  let scrollIntoViewMock: Mock<Element['scrollIntoView']>;
 
   const dispatchClick = (el: Element, init: MouseEventInit = {}) => {
     const ev = new MouseEvent('click', {
@@ -110,6 +117,8 @@ describe('TOC 항목 클릭', () => {
     const h = document.createElement('h2');
     h.id = 'intro';
     h.textContent = '들어가며';
+    scrollIntoViewMock = vi.fn<Element['scrollIntoView']>();
+    h.scrollIntoView = scrollIntoViewMock;
     content.appendChild(h);
     document.body.appendChild(content);
 
@@ -125,9 +134,6 @@ describe('TOC 항목 클릭', () => {
         }
       },
     );
-    vi.stubGlobal('matchMedia', () => ({ matches: false }));
-    scrollToMock = vi.fn();
-    vi.stubGlobal('scrollTo', scrollToMock);
   });
 
   afterEach(() => {
@@ -136,13 +142,13 @@ describe('TOC 항목 클릭', () => {
   });
 
   test('평범한 클릭은 가로채서 우리가 직접 스크롤한다', () => {
-    // 고정 헤더 높이만큼 offset을 줘야 해서 기본 앵커 이동에 맡길 수 없다.
+    // 해시는 기록을 쌓지 않고 바꾼다(replaceState) — 기본 앵커 이동은 쌓는다.
     render(<TOC />);
 
     const ev = dispatchClick(screen.getByRole('link', { name: '들어가며' }));
 
     expect(ev.defaultPrevented).toBe(true);
-    expect(scrollToMock).toHaveBeenCalled();
+    expect(scrollIntoViewMock).toHaveBeenCalled();
   });
 
   test.each([
@@ -159,6 +165,6 @@ describe('TOC 항목 클릭', () => {
     );
 
     expect(ev.defaultPrevented).toBe(false);
-    expect(scrollToMock).not.toHaveBeenCalled();
+    expect(scrollIntoViewMock).not.toHaveBeenCalled();
   });
 });

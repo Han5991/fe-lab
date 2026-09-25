@@ -6,8 +6,6 @@ import { css } from '@design-system/ui-lib/css';
 import {
   ArrowLeft,
   ExternalLink,
-  TrendingUp,
-  TrendingDown,
   Calendar,
   BarChart3,
   Trophy,
@@ -25,13 +23,23 @@ import {
 } from 'recharts';
 import Link from 'next/link';
 import { token } from '@design-system/ui-lib/tokens';
-import { usePostDetailStats } from '@/src/hooks/usePostDetailStats';
-import { ADMIN_ANALYTICS_PATH } from '@/src/shared/routes';
-import { slugFromParams } from './slugFromParams';
+import {
+  usePostDetailStats,
+  usePrefetchPostDetailStats,
+} from '@/src/hooks/usePostDetailStats';
+import { useAdminDashboardData } from '@/src/hooks/useAdminViews';
+import type { PostStatDetail } from '@/src/domain/analytics';
+import { ADMIN_ANALYTICS_PATH, slugFromRouteParam } from '@/src/shared/routes';
 // 클라이언트 컴포넌트의 @blog/content 배럴 import — node:fs 모듈(series 등)은
 // next.config.ts의 optimizePackageImports + sideEffects:false가 번들에서 걸러 준다.
 import { postPath } from '@blog/content';
 import { formatMonthDayISO } from '@blog/content';
+import { LoadingPlaceholder } from '@/src/components/shared/LoadingPlaceholder';
+import {
+  DateRangeControls,
+  useDateFilter,
+} from '../../components/DateRangeControls';
+import { WeekGrowthIcon } from '../../components/WeekGrowthIcon';
 
 // 차트 색상 — GitHub accent(파랑)로 통일. 데이터 강조는 accent 하나로.
 const CHART_LINE = token('colors.accent.600');
@@ -39,32 +47,64 @@ const CHART_ACCENT = token('colors.accent.600');
 const CHART_AXIS = token('colors.ink.border');
 const CHART_TICK = token('colors.ink.400');
 const CHART_GUIDE = token('colors.ink.300');
-import {
-  DateRangeControls,
-  useDateFilter,
-} from '../../components/DateRangeControls';
-
-function LoadingPlaceholder({ height }: { height?: string }) {
-  return (
-    <div
-      style={{ height: height ?? '100%' }}
-      className={css({
-        w: 'full',
-        bg: 'paper.100',
-        animation: '[pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite]',
-        rounded: 'lg',
-      })}
-    />
-  );
-}
 
 const DOW_LABELS = ['일', '월', '화', '수', '목', '금', '토'];
 
 function PostDetailContent() {
   const params = useParams();
-  const slug = slugFromParams(params['slug']);
+  const slug = slugFromRouteParam(params['slug']);
+  usePrefetchPostDetailStats(slug);
+  const { data: allPosts } = useAdminDashboardData();
+  const post = allPosts.find(p => p.slug === slug);
 
-  const { post, hourly, dow, derived } = usePostDetailStats(slug);
+  // 인덱스에서 빠진 글·손으로 친 URL — 없는 글은 에러가 아니라 안내다.
+  if (!post) return <PostNotFound slug={slug} />;
+  return <PostDetailBody post={post} />;
+}
+
+function PostNotFound({ slug }: { slug: string }) {
+  return (
+    <div
+      role="status"
+      className={css({
+        bg: 'paper.100',
+        p: '8',
+        rounded: '[8px]',
+        display: 'flex',
+        flexDir: 'column',
+        alignItems: 'flex-start',
+        gap: '3',
+      })}
+    >
+      <h2
+        className={css({
+          fontSize: 'lg',
+          fontWeight: 'bold',
+          color: 'ink.950',
+        })}
+      >
+        이 글의 통계를 찾을 수 없습니다
+      </h2>
+      <p className={css({ fontSize: 'sm', color: 'ink.600' })}>
+        대시보드 글 목록에 <code>{slug || '(빈 slug)'}</code> 글이 없습니다.
+        주소를 확인하거나 목록에서 다시 골라 주세요.
+      </p>
+      <Link
+        href={ADMIN_ANALYTICS_PATH}
+        className={css({
+          fontSize: 'sm',
+          color: 'accent.600',
+          _hover: { textDecoration: 'underline' },
+        })}
+      >
+        조회수 분석 목록으로
+      </Link>
+    </div>
+  );
+}
+
+function PostDetailBody({ post }: { post: PostStatDetail }) {
+  const { hourly, dow, derived } = usePostDetailStats(post);
 
   const {
     filterType,
@@ -134,6 +174,7 @@ function PostDetailContent() {
           <Link
             href={postPath(post.slug)}
             target="_blank"
+            rel="noopener noreferrer"
             onClick={e => e.stopPropagation()}
             className={css({
               color: 'ink.500',
@@ -234,11 +275,7 @@ function PostDetailContent() {
               mb: '3',
             })}
           >
-            {derived.weekGrowthRate !== null && derived.weekGrowthRate >= 0 ? (
-              <TrendingUp size={18} className={css({ color: 'moss.600' })} />
-            ) : (
-              <TrendingDown size={18} className={css({ color: 'spot.600' })} />
-            )}
+            <WeekGrowthIcon rate={derived.weekGrowthRate} size={18} />
             <span
               className={css({
                 fontSize: '[0.8rem]',

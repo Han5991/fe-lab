@@ -30,21 +30,32 @@ export type AdminActionRpc<A extends AdminAction = AdminAction> =
   (typeof ADMIN_ACTION_RPC)[A];
 
 /**
+ * 목록형 action의 선택 params — 이 글들만 서버에서 거른다(anon이 만든 가짜 slug 행이
+ * 1000행 cap·페이지 상한을 채우지 않게). 생략하면 거르지 않아 함수·클라이언트 중 어느
+ * 쪽이 먼저 배포돼도 맞물린다.
+ */
+export interface AdminSlugFilter {
+  slugs?: readonly string[];
+}
+
+/**
+ * `slugs` 한 요청의 최대 개수(입력 검증용). 실제 한계는 필터가 실리는 쿼리스트링
+ * 길이다 — 한도에 가까워지면 slug 목록을 POST 본문으로 받는 RPC로 옮긴다.
+ */
+export const MAX_FILTER_SLUGS = 1000;
+
+/** slug 한 개의 최대 길이 — `increment_view_count`가 기록을 거부하는 길이와 같다. */
+export const MAX_SLUG_LENGTH = 200;
+
+/**
  * action별 요청 params. params가 없는 action은 `undefined`.
  * 클라이언트 `call()`의 두 번째 인자와 Edge Function이 읽는 `body.params`가
  * 여기서 같은 형태를 본다.
  */
 export interface AdminActionParams {
-  all_post_stats: undefined;
-  /**
-   * params 없음 — PostgREST의 1000행 cap(`config.toml`의 `max_rows`)은 Edge
-   * Function이 안에서 range를 돌려 모아 넘긴다.
-   *
-   * 예전엔 브라우저가 `range`를 바꿔가며 직렬로 여러 번 불렀다. 그러면 페이지
-   * 수만큼 인터넷 왕복이 늘 뿐 아니라 요청마다 JWT 검증(`auth.getUser()`)까지
-   * 다시 돌아, 데이터가 늘수록 비용이 곱으로 붙었다.
-   */
-  all_posts_trends: undefined;
+  all_post_stats: AdminSlugFilter | undefined;
+  /** 1000행 cap(`max_rows`) 페이징은 Edge Function 안에서 돈다 — 왕복·JWT 검증은 한 번. */
+  all_posts_trends: AdminSlugFilter | undefined;
   post_hourly_distribution: { slug: string };
   post_dow_distribution: { slug: string };
 }
@@ -60,4 +71,16 @@ export type AdminRequest = {
 /** 런타임 가드 — 요청 body의 `action`이 등록된 것인지. 프로토타입 키(`toString` 등)는 거른다. */
 export function isAdminAction(value: unknown): value is AdminAction {
   return typeof value === 'string' && Object.hasOwn(ADMIN_ACTION_RPC, value);
+}
+
+/** 요청 body의 `slugs`가 거를 slug 목록으로 쓸 수 있는 모양인지(JSON에서 온 값이다). */
+export function isSlugList(value: unknown): value is readonly string[] {
+  return (
+    Array.isArray(value) &&
+    value.length <= MAX_FILTER_SLUGS &&
+    value.every(
+      (s): s is string =>
+        typeof s === 'string' && s.length > 0 && s.length <= MAX_SLUG_LENGTH,
+    )
+  );
 }

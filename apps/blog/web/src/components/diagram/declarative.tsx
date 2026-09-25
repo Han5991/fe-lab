@@ -149,8 +149,8 @@ export function Diagram({
 
   return (
     <div className={block}>
-      {/* 자동 레이아웃은 viewBox 폭이 노드 텍스트에 따라 달라진다. 고유 크기를 넘겨
-          칼럼을 채우는 대신 실제 크기로 그린다 — 그래야 글자가 항상 12px이다. */}
+      {/* 실제 크기로 그려 글자를 12px로 둔다 — 칼럼보다 넓으면 하한까지 줄고, 그 밑은
+          가로 스크롤이다(primitives). */}
       <DiagramFrame
         viewBox={layout.viewBox}
         width={layout.width}
@@ -194,9 +194,8 @@ export function Diagram({
 }
 
 /**
- * 등록되지 않은 이름은 **글을 죽이지 않는다**. 프로덕션에서는 조용히 비우고,
- * 개발 중에만 눈에 띄는 블록으로 알린다 — 오타를 배포 전에 잡는 건
- * `lint:posts`(`unknown-hero-diagram`)의 몫이고, 여기는 마지막 안전망이다.
+ * 등록되지 않은 이름은 글을 죽이지 않는다 — 개발 중에만 눈에 띄게 알리고, 오타는
+ * 배포 전에 `lint:posts`가 잡는다.
  */
 function NamedDiagram({
   name,

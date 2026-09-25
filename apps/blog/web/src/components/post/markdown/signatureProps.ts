@@ -1,5 +1,6 @@
 import { Children, cloneElement, isValidElement } from 'react';
-import type { ReactElement, ReactNode } from 'react';
+import type { ReactNode } from 'react';
+import { isMarkdownTag } from '@/src/components/post/markdownTag';
 
 /**
  * 시그니처 컴포넌트(Dialogue / Metrics / Timeline)가 공유하는 방어적 prop 파싱.
@@ -96,7 +97,8 @@ function collectChildren(
       return;
     }
 
-    if (isParagraphWrapper(child)) {
+    // 빈 줄 뒤의 커스텀 태그는 문단에 싸여 온다 — 벗겨야 `<p><div>`가 되지 않는다.
+    if (isMarkdownTag<{ children?: ReactNode }>(child, 'p')) {
       collectChildren(child.props.children, `${key}-`, out);
       return;
     }
@@ -108,10 +110,4 @@ function collectChildren(
 
     out.push(child);
   });
-}
-
-function isParagraphWrapper(
-  node: ReactNode,
-): node is ReactElement<{ children?: ReactNode }> {
-  return isValidElement<{ children?: ReactNode }>(node) && node.type === 'p';
 }

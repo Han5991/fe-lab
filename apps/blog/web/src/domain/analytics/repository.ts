@@ -1,44 +1,59 @@
 /**
- * Analytics 도메인 중 **공개 페이지**가 쓰는 데이터 접근 layer.
+ * Analytics 도메인 중 공개 페이지가 쓰는 데이터 접근 layer — anon PostgREST만 쓴다
+ * (admin RPC는 supabase-js 전체가 필요해 `adminRepository.ts`에 따로 있다).
  *
- * 컴포넌트와 React 훅은 Supabase client를 직접 호출하지 않고
- * 이 모듈의 함수만 사용합니다.
- *
- * 여기 있는 3건은 모두 익명(anon) 권한의 순수 PostgREST 호출이라
- * `lib/platform/publicClient.ts`(PostgREST만)로 충분합니다. 인증 세션이 필요한
- * admin RPC는 `adminRepository.ts`에 따로 있습니다 — 같은 파일에 두면
- * 조회수만 읽는 페이지까지 supabase-js 전체를 받게 됩니다.
+ * post_views의 slug는 anon RPC로 아무나 만들 수 있는 입력이라, 순위를 매기는 읽기는
+ * 실제 글 slug로 서버에서 거른다. 읽기 실패는 던진다 — "조회수 없음"과 구분되게.
  */
 
 import { publicDb } from '../../lib/platform/publicClient';
 import type { TopPostRow } from './types';
 
-export async function getTopPosts(limit: number): Promise<TopPostRow[]> {
-  const { data } = await publicDb
-    .from('post_views')
-    .select('slug, view_count')
-    .order('view_count', { ascending: false })
-    .limit(limit);
-  return (data ?? []).map(d => ({
+function toTopPostRows(
+  rows: readonly { slug: string; view_count: number | null }[] | null,
+): TopPostRow[] {
+  return (rows ?? []).map(d => ({
     slug: d.slug,
     view_count: d.view_count ?? 0,
   }));
 }
 
 /**
- * 모든 글의 조회수를 반환합니다(정렬/limit 없음).
- * PostsArchive의 '인기순' 정렬처럼 전체 slug→view_count 맵이 필요할 때 사용합니다.
- *
- * post_views는 글당 1행이므로 PostgREST의 1000-row cap에 닿으려면 글이 1000편을
- * 넘어야 합니다(getAllPostsTrends와 달리 post×day가 아님). 그 전까지는 페이지네이션
- * 불필요. 1000편을 넘기면 range 페이지네이션을 추가해야 합니다.
+ * 조회수 상위 `limit`개 — 이 빌드의 slug 안에서 서버가 고른다(받은 뒤 거르면 가짜 slug가
+ * 칸을 차지한다). 필터가 URL에 실려 글 수에 비례해 길어지므로(45편 ≈ 1.6KB), 한도에
+ * 가까워지면 slug 목록을 본문으로 받는 RPC로 옮긴다.
  */
-export async function getAllViewCounts(): Promise<TopPostRow[]> {
-  const { data } = await publicDb.from('post_views').select('slug, view_count');
-  return (data ?? []).map(d => ({
-    slug: d.slug,
-    view_count: d.view_count ?? 0,
-  }));
+export async function getTopPosts(
+  limit: number,
+  slugs: readonly string[],
+): Promise<TopPostRow[]> {
+  if (limit <= 0 || slugs.length === 0) return [];
+  const { data, error } = await publicDb
+    .from('post_views')
+    .select('slug, view_count')
+    .in('slug', slugs)
+    .order('view_count', { ascending: false })
+    .order('slug', { ascending: true })
+    .limit(limit);
+  if (error) throw error;
+  return toTopPostRows(data);
+}
+
+/**
+ * 글별 조회수(인기순 정렬용) — 1000행에서 잘려도 매번 같은 행이 오게 조회수순으로 정렬한다.
+ */
+export async function getAllViewCounts(
+  slugs: readonly string[],
+): Promise<TopPostRow[]> {
+  if (slugs.length === 0) return [];
+  const { data, error } = await publicDb
+    .from('post_views')
+    .select('slug, view_count')
+    .in('slug', slugs)
+    .order('view_count', { ascending: false })
+    .order('slug', { ascending: true });
+  if (error) throw error;
+  return toTopPostRows(data);
 }
 
 export async function incrementViewCount(slug: string): Promise<void> {

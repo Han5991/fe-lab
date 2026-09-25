@@ -11,11 +11,11 @@ export function useAdminLogout() {
 
   const handleLogout = async () => {
     await authRepository.signOutAdmin({ scope: 'local' });
-    // 로그아웃 후 이전 세션의 admin 집계 데이터가 캐시(gcTime 10분)에 남아
-    // 다른 계정 로그인/뒤로가기 시 노출되지 않도록 ['admin', *] prefix의 집계
-    // 쿼리를 비운다(partial 매칭). 인증 세션 쿼리(['admin-auth-session'])는
-    // prefix가 달라 제외되며, 세션 자체는 위 signOut이 정리한다.
+    // 이전 세션의 admin 집계 캐시가 다른 계정·뒤로 가기에 노출되지 않게 비운다.
     queryClient.removeQueries({ queryKey: ['admin'] });
+    // 가드의 세션 캐시(prefix가 달라 위에서 안 걸린다)는 null로 덮는다 — 남기면 뒤로
+    // 가기로 옛 세션 화면이 그려지고, 지우면 마운트된 가드가 다시 물어 화면이 번쩍인다.
+    queryClient.setQueryData(['admin-auth-session'], null);
     router.push(ADMIN_LOGIN_PATH);
   };
 

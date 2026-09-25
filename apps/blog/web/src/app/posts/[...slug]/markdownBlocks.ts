@@ -1,34 +1,42 @@
-import { isValidElement, type ReactElement, type ReactNode } from 'react';
+import {
+  Children,
+  isValidElement,
+  type ReactElement,
+  type ReactNode,
+} from 'react';
 
-import { Diagram } from '@/src/components/diagram';
+import {
+  Diagram,
+  DiagramEdgeTag,
+  DiagramNodeTag,
+} from '@/src/components/diagram';
 import { Callout } from '@/src/components/post/markdown/Callout';
 import { CodeTabs } from '@/src/components/post/markdown/CodeTabs';
-import { Dialogue } from '@/src/components/post/markdown/Dialogue';
+import { Dialogue, Msg } from '@/src/components/post/markdown/Dialogue';
 import { Figure } from '@/src/components/post/markdown/Figure';
 import { FileTree } from '@/src/components/post/markdown/FileTree';
-import { Metrics } from '@/src/components/post/markdown/Metrics';
-import { Timeline } from '@/src/components/post/markdown/Timeline';
+import { Metric, Metrics } from '@/src/components/post/markdown/Metrics';
+import { Step, Timeline } from '@/src/components/post/markdown/Timeline';
 import { isBlockCode } from '@/src/components/post/markdownCode';
+import { isMarkdownTag } from '@/src/components/post/markdownTag';
 
-// 직접 매핑돼(`callout: Callout`) child.type으로 식별 가능한 블록 컴포넌트.
-// 시그니처 3종(Dialogue/Metrics/Timeline)은 최상위 컨테이너만 등록한다 —
-// Msg/Metric/Step은 컨테이너 안에서만 쓰이므로 <p> 직계 자식으로 올 일이 없다.
-// Diagram도 같은 이유로 컨테이너만 등록한다(DiagramNodeTag/DiagramEdgeTag는
-// <diagram> 안에서 좌표 계산용 메타로만 소비되어 DOM에 직접 나오지 않는다).
-//
-// 원소 타입이 `ElementType`이 아니라 **`ReactElement['type']`**인 건 조회하는
-// 값에 맞춘 것이다. 둘은 문자열 쪽이 다르다 — `ElementType`은
-// `keyof JSX.IntrinsicElements`(태그명 리터럴 유니온)라 임의의 `string`을 받지
-// 않고, `ReactElement['type']`은 `string | JSXElementConstructor<any>`다. 전자로
-// 두면 `has(child.type)`마다 인자를 캐스트해야 한다.
+// 직접 매핑돼 child.type으로 가리는 블록 컴포넌트 — 매핑된 커스텀 태그 전부다.
+// 자식 태그(Msg·Step·DiagramNodeTag…)도 넣는다: 빈 줄 뒤 자식 태그는 문단에 싸여
+// 와서, 컨테이너 밖에 흘리면 `<p><div>`가 된다. 원소 타입이 `ReactElement['type']`인
+// 건 `has(child.type)`에 캐스트가 필요 없어서다.
 export const BLOCK_MARKDOWN_COMPONENTS = new Set<ReactElement['type']>([
   Callout,
   CodeTabs,
   Diagram,
+  DiagramEdgeTag,
+  DiagramNodeTag,
   Dialogue,
   Figure,
   FileTree,
+  Metric,
   Metrics,
+  Msg,
+  Step,
   Timeline,
 ]);
 
@@ -55,4 +63,27 @@ export function isBlockMarkdownChild(child: unknown): boolean {
   // 아닌 raw HTML <code> children 처리) 한쪽은 <p> 유지·다른 쪽은 <div> 렌더가 되어
   // <p> 안에 <div>가 들어가는 hydration mismatch가 난다.
   return isBlockCode(children, className);
+}
+
+interface CodeElementProps {
+  className?: string | undefined;
+  children?: ReactNode;
+}
+
+/**
+ * `pre`의 자식이 CodeBlock이 블록으로 그릴 코드 하나뿐이면 그 요소. 판정은 CodeBlock과
+ * 같은 `isBlockCode`다 — 갈리면 벗긴 자리에 인라인 code가 남거나 `<pre>` 안에 figure가 든다.
+ */
+export function fencedCode(
+  children: ReactNode,
+): ReactElement<CodeElementProps> | null {
+  const nodes = Children.toArray(children).filter(
+    child => !(typeof child === 'string' && child.trim() === ''),
+  );
+  const [only] = nodes;
+  return nodes.length === 1 &&
+    isMarkdownTag<CodeElementProps>(only, 'code') &&
+    isBlockCode(only.props.children, only.props.className)
+    ? only
+    : null;
 }

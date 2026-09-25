@@ -28,7 +28,9 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 import { corsHeaders } from '../_shared/cors.ts';
 import {
   ADMIN_ACTION_RPC,
+  MAX_FILTER_SLUGS,
   isAdminAction,
+  isSlugList,
   type AdminRequest,
 } from '../../../src/lib/platform/adminActions.ts';
 import { collectPagedRows } from '../../../src/lib/platform/paging.ts';
@@ -132,36 +134,65 @@ Deno.serve(async (req: Request) => {
     let data: unknown;
     let rpcError: unknown;
 
+    // 모양이 어긋난 slug 필터는 거르지 않은 채 진행하지 않고 400 으로 끊는다.
+    const slugFilter =
+      request.action === 'all_post_stats' ||
+      request.action === 'all_posts_trends'
+        ? request.params?.slugs
+        : undefined;
+    if (slugFilter !== undefined && !isSlugList(slugFilter)) {
+      return new Response(
+        JSON.stringify({
+          error: `slugs 파라미터는 문자열 배열(최대 ${MAX_FILTER_SLUGS}개)이어야 합니다.`,
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        },
+      );
+    }
+
+    // PostgREST 는 한 응답에 max_rows(1000)까지만 줘서 여기서 페이징해 합친다(브라우저가 돌면
+    // 페이지마다 왕복·JWT 검증이 반복된다). 루프는 테스트가 있는 collectPagedRows 에 있다.
+    // 정렬된 결과를 잘라야 행이 빠지거나 겹치지 않고, pageSize 는 서버 max_rows 와 같아야 한다.
+    const paging = { pageSize: 1000, maxPages: 50 };
+    // 페이지마다 시점이 달라 새 행이 끼면 앞 행이 다시 온다 — 식별 키로 한 번만 싣는다.
+
     switch (request.action) {
       case 'all_post_stats': {
-        const result = await serviceClient.rpc(
-          ADMIN_ACTION_RPC[request.action],
-        );
-        data = result.data;
-        rpcError = result.error;
-        break;
-      }
-
-      case 'all_posts_trends': {
-        // PostgREST 는 한 응답에 max_rows(1000) 까지만 준다. 그 페이징을 여기서
-        // 돌아 한 응답으로 합친다 — 브라우저가 range 를 바꿔가며 직렬로 부르면
-        // 페이지마다 인터넷 왕복과 JWT 검증(auth.getUser())이 통째로 반복된다.
-        // 여기 루프는 같은 리전 안이고 인증은 이미 위에서 한 번 끝났다.
-        //
-        // 루프 자체는 collectPagedRows 에 있다. 이 파일에는 테스트 하네스가 없어서,
-        // 종료 조건과 상한을 CI 가 보려면 앱 쪽 순수 모듈이어야 한다(paging.test.ts).
         try {
           data = await collectPagedRows(
             async (from, to) => {
-              const result = await serviceClient
-                .rpc(ADMIN_ACTION_RPC[request.action])
+              const base = serviceClient.rpc(ADMIN_ACTION_RPC[request.action]);
+              const filtered = slugFilter ? base.in('slug', slugFilter) : base;
+              const result = await filtered
+                .order('slug', { ascending: true })
                 .range(from, to);
               if (result.error) throw result.error;
               return result.data ?? [];
             },
-            // pageSize 는 서버의 max_rows 와 같아야 한다 — 더 작으면 매 페이지가
-            // 짧은 페이지로 보여 첫 장에서 멈춘다.
-            { pageSize: 1000, maxPages: 50 },
+            { ...paging, key: row => row.slug },
+          );
+        } catch (err) {
+          rpcError = err;
+        }
+        break;
+      }
+
+      case 'all_posts_trends': {
+        try {
+          data = await collectPagedRows(
+            async (from, to) => {
+              const base = serviceClient.rpc(ADMIN_ACTION_RPC[request.action]);
+              const filtered = slugFilter ? base.in('slug', slugFilter) : base;
+              const result = await filtered
+                .order('slug', { ascending: true })
+                .order('view_date', { ascending: true })
+                .range(from, to);
+              if (result.error) throw result.error;
+              return result.data ?? [];
+            },
+            { ...paging, key: row => `${row.slug}\u0000${row.view_date}` },
           );
         } catch (err) {
           rpcError = err;

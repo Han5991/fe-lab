@@ -101,8 +101,8 @@ export const AUTHOR_LINKEDIN = 'https://www.linkedin.com/in/sangwook-han/';
 // ── 타임존 ───────────────────────────────────────────────────────────────────
 
 /**
- * 셋은 같은 타임존을 가리켜야 한다(서로 파생 검증은 하지 않는다).
- * 날짜 헬퍼들이 이 슬라이스를 통째로 받으므로 여기서는 묶어서 내보낸다.
+ * 셋은 같은 타임존이어야 한다(`defineContent`가 형식·일치를 검증한다). 서머타임
+ * 지역은 날짜마다 오프셋이 달라 지원하지 않는다.
  */
 export const TIMEZONE = {
   /** IANA 타임존 이름 — Intl.DateTimeFormat용 */

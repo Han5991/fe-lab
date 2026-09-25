@@ -5,39 +5,95 @@
  * identity 판정이 어긋나 `<p><div>` 무효 중첩(hydration mismatch)으로 나타난다.
  */
 import { describe, expect, test, vi } from 'vitest';
-import { render } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import rehypeRaw from 'rehype-raw';
 import rehypeSlug from 'rehype-slug';
 import { rehypeCodeMeta } from '@/src/components/post/codeMeta';
+import { rehypeDropUnsafe } from '@/src/components/post/rehypeDropUnsafe';
 import { PostBody, POST_REHYPE_PLUGINS, buildPostComponents } from './PostBody';
 import { BLOCK_MARKDOWN_COMPONENTS } from './markdownBlocks';
+import { HEADER_OFFSET } from '@/src/components/post/headerOffset';
 
 vi.mock('mermaid', () => ({ default: {} }));
 
+/** 서버 HTML 원문 — DOM으로 보면 파서가 무효 중첩을 이미 고쳐 놓아 보이지 않는다. */
+const serverHtml = (content: string) =>
+  renderToStaticMarkup(<PostBody content={content} relativeDir="dir" />);
+
+const parsed = (html: string) =>
+  new DOMParser().parseFromString(html, 'text/html');
+
+// `<p>` 안에 열리면 브라우저가 `<p>`를 먼저 닫아 서버 트리와 DOM이 갈리는 태그.
+const FLOW_ONLY = new Set([
+  'div',
+  'figure',
+  'figcaption',
+  'pre',
+  'p',
+  'ul',
+  'ol',
+  'table',
+  'blockquote',
+  'section',
+  'details',
+  'h1',
+  'h2',
+  'h3',
+  'h4',
+  'h5',
+  'h6',
+]);
+const VOID = new Set(['img', 'br', 'hr', 'input', 'wbr', 'source', 'col']);
+
+/** 원문에서 `<p>`·`<pre>` 안에 flow 요소가 열리는 자리 — 파서를 거치면 사라져 문자열로 훑는다. */
+function invalidNesting(html: string): string[] {
+  const stack: string[] = [];
+  const found: string[] = [];
+  for (const [tag, closing, name, selfClosing] of html.matchAll(
+    /<(\/?)([a-z][a-z0-9-]*)[^>]*?(\/?)>/g,
+  )) {
+    if (closing) {
+      const at = stack.lastIndexOf(name);
+      if (at !== -1) stack.length = at;
+      continue;
+    }
+    const inside = stack.findLast(open => open === 'p' || open === 'pre');
+    if (inside && FLOW_ONLY.has(name)) found.push(`<${inside}> ⊃ ${tag}`);
+    if (!VOID.has(name) && !selfClosing) stack.push(name);
+  }
+  return found;
+}
+
 describe('파이프라인 배선', () => {
-  test('rehype 순서는 codeMeta → raw → slug다', () => {
-    // 순서가 뒤집히면 펜스 메타가 조용히 사라진다(codeMeta.test.tsx의 대조군).
+  test('rehype 순서는 codeMeta → raw → dropUnsafe → slug다', () => {
+    // codeMeta가 raw보다 늦으면 펜스 메타가 사라지고, dropUnsafe가 raw보다 빠르면
+    // raw HTML이 아직 문자열이라 아무것도 못 지운다.
     expect(POST_REHYPE_PLUGINS).toEqual([
       rehypeCodeMeta,
       rehypeRaw,
+      rehypeDropUnsafe,
       rehypeSlug,
     ]);
   });
 
   test('블록 판정 Set ↔ 매핑의 블록 컨테이너 태그가 정확히 일치한다', () => {
     const components = buildPostComponents('dir') ?? {};
-    // 최상위 블록 컨테이너 태그의 단일 목록. 새 블록 태그를 매핑에 더할 때는
-    // markdownBlocks.ts의 Set과 이 목록을 **함께** 늘린다 — 매핑에만 더하면
-    // p 매퍼가 <p>를 유지해 <p><div> 무효 중첩(hydration mismatch)으로 새고,
-    // Set에만 더하면 아래 완전 일치가 깨져 여기서 잡힌다.
+    // 새 블록 태그는 매핑·markdownBlocks.ts의 Set·이 목록에 함께 더한다 — 매핑에만
+    // 더하면 p 매퍼가 <p>를 남겨 <p><div>가 된다.
     const blockTags = [
       'callout',
       'code-tabs',
       'diagram',
+      'diagram-edge',
+      'diagram-node',
       'dialogue',
       'figure',
       'file-tree',
+      'metric',
       'metrics',
+      'msg',
+      'step',
       'timeline',
     ] as const;
     const mappedBlocks = new Set(
@@ -59,6 +115,18 @@ describe('PostBody 렌더', () => {
     expect(root?.querySelector('h2')?.id).toBe('첫-단원');
   });
 
+  test('헤딩 앵커 여백은 목차 활성 판정과 같은 헤더 높이 상수를 쓴다', () => {
+    // 둘이 갈리면 이동 직후의 헤딩이 "아직 가려진 곳"으로 판정된다.
+    const { container } = render(
+      <PostBody content={'## 단원'} relativeDir="dir" />,
+    );
+    const root = container.querySelector<HTMLElement>('#post-content');
+
+    expect(root?.style.getPropertyValue('--post-heading-offset')).toBe(
+      `${HEADER_OFFSET}px`,
+    );
+  });
+
   test('블록 컴포넌트가 <p>로 감싸이지 않는다', () => {
     const { container } = render(
       <PostBody
@@ -68,5 +136,232 @@ describe('PostBody 렌더', () => {
     );
 
     expect(container.querySelector('p')).toBeNull();
+  });
+});
+
+// 컨테이너 안 빈 줄 뒤의 자식 태그는 HTML 블록이 아니라 인라인 HTML을 품은 문단이
+// 된다(CommonMark HTML 블록 7) — 자식이 p 한 겹에 싸여 온다.
+describe('커스텀 태그 안의 빈 줄', () => {
+  test('<diagram>: 빈 줄 뒤의 노드·엣지도 전부 그린다', () => {
+    const html = serverHtml(
+      [
+        '<diagram label="파이프라인">',
+        '<diagram-node id="a" title="A"></diagram-node>',
+        '',
+        '<diagram-node id="b" title="B"></diagram-node>',
+        '<diagram-node id="c" title="C"></diagram-node>',
+        '',
+        '<diagram-edge from="a" to="c" emphasis="true" flow="async"></diagram-edge>',
+        '</diagram>',
+      ].join('\n'),
+    );
+    const doc = parsed(html);
+
+    expect(doc.querySelectorAll('rect')).toHaveLength(3);
+    // 명시 엣지가 있으면 자동 체인은 눌린다 — 선은 명시한 하나뿐이다.
+    const edges = Array.from(doc.querySelectorAll('[data-flow]'), edge => [
+      edge.getAttribute('data-flow'),
+      edge.getAttribute('data-emphasis'),
+    ]);
+    expect(edges).toEqual([['async', 'true']]);
+    expect(invalidNesting(html)).toEqual([]);
+  });
+
+  test.each([
+    [
+      'diagram',
+      'diagram label="띄엄띄엄"',
+      'diagram-node id="a" title="A"></diagram-node',
+      'rect',
+    ],
+    [
+      'timeline',
+      'timeline',
+      'step title="시도" result="fail">504</step',
+      '[data-result]',
+    ],
+    [
+      'dialogue',
+      'dialogue',
+      'msg from="PM">언제 하나요?</msg',
+      '[data-speaker]',
+    ],
+    [
+      'metrics',
+      'metrics',
+      'metric label="롤백" value="자동"></metric',
+      '[data-tone]',
+    ],
+  ])(
+    '<%s>: 자식마다 빈 줄을 둬도 전부 그리고 문단에 갇히지 않는다',
+    (tag, open, child, rendered) => {
+      const html = serverHtml(
+        [`<${open}>`, '', `<${child}>`, '', `<${child}>`, '', `</${tag}>`].join(
+          '\n',
+        ),
+      );
+
+      expect(parsed(html).querySelectorAll(rendered)).toHaveLength(2);
+      expect(invalidNesting(html)).toEqual([]);
+    },
+  );
+});
+
+describe('본문 이미지', () => {
+  test('지연 로드하고, 이미지마다 preload를 심지 않는다', () => {
+    const html = serverHtml('![구성도](./a.png)\n\n![흐름](./b.png)\n');
+    const images = Array.from(parsed(html).querySelectorAll('img'));
+
+    expect(images).toHaveLength(2);
+    for (const image of images) {
+      expect(image.getAttribute('loading')).toBe('lazy');
+      expect(image.getAttribute('decoding')).toBe('async');
+    }
+    // React 19는 loading 없는 <img>마다 <link rel="preload" as="image">를 낸다.
+    expect(html).not.toContain('rel="preload"');
+  });
+
+  test('raw HTML로 준 width·height를 버리지 않는다', () => {
+    const html = serverHtml(
+      '<img height=250 width=250 src="https://example.com/z.png" alt="제페토">\n',
+    );
+    const image = parsed(html).querySelector('img');
+
+    expect(image?.getAttribute('width')).toBe('250');
+    expect(image?.getAttribute('height')).toBe('250');
+  });
+
+  test('링크로 감싼 이미지만 확대 래퍼 없이 링크 안에 그대로 둔다', () => {
+    const html = serverHtml(
+      '[![빌드 배지](./badge.png)](https://example.com/ci)\n\n![구성도](./a.png)\n',
+    );
+    const doc = parsed(html);
+    const link = doc.querySelector('a[href="https://example.com/ci"]');
+
+    expect(link?.querySelector('img')?.getAttribute('alt')).toBe('빌드 배지');
+    // 확대 버튼이 링크 안에 들어가면 대화형 요소 중첩이다.
+    expect(link?.querySelector('button, div')).toBeNull();
+    expect(doc.querySelector('[data-rmiz] img')?.getAttribute('alt')).toBe(
+      '구성도',
+    );
+    expect(invalidNesting(html)).toEqual([]);
+  });
+});
+
+describe('본문 raw HTML의 실행 요소', () => {
+  test('실행되거나 페이지를 가로채는 태그는 서버 HTML에 싣지 않는다', () => {
+    const html = serverHtml(
+      [
+        '앞 문단',
+        '',
+        '<script>alert(1)</script>',
+        '<iframe src="https://evil.example"></iframe>',
+        '<object data="x.swf"></object><embed src="x.swf">',
+        '<base href="https://evil.example/">',
+        '<meta http-equiv="refresh" content="0;url=https://evil.example">',
+        '<link rel="stylesheet" href="https://evil.example/a.css">',
+        '<style>body{display:none}</style>',
+        '<form action="https://evil.example"><input name="pw"></form>',
+        '',
+        '<svg><script>alert(2)</script></svg>',
+        '',
+        '뒤 문단',
+      ].join('\n'),
+    );
+
+    expect(html).not.toMatch(
+      /<(script|iframe|object|embed|base|meta|link|style|form)\b/i,
+    );
+    expect(html).not.toContain('alert(');
+    expect(html).toContain('앞 문단');
+    expect(html).toContain('뒤 문단');
+  });
+
+  test('코드 펜스 안의 태그 예시는 텍스트라 지우지 않는다', () => {
+    const doc = parsed(
+      serverHtml('```html\n<script src="main.js"></script>\n```\n'),
+    );
+
+    expect(doc.body.textContent).toContain('<script src="main.js"></script>');
+  });
+});
+
+describe('코드 펜스의 바깥 <pre>', () => {
+  test('펜스는 <pre> 안에 <figure>를 넣지 않는다', () => {
+    const html = serverHtml(
+      [
+        '```ts title="a.ts"',
+        'const a = 1;',
+        '```',
+        '',
+        '```',
+        'plain',
+        '```',
+      ].join('\n'),
+    );
+    const doc = parsed(html);
+
+    expect(doc.querySelectorAll('figure')).toHaveLength(2);
+    expect(doc.querySelector('pre figure, pre pre')).toBeNull();
+    expect(invalidNesting(html)).toEqual([]);
+  });
+
+  test('<code-tabs>는 pre 매핑을 지나도 탭을 만든다', () => {
+    const html = serverHtml(
+      [
+        '<code-tabs>',
+        '',
+        '```bash tab="npm"',
+        'npm i typesense',
+        '```',
+        '',
+        '```bash tab="pnpm"',
+        'pnpm add typesense',
+        '```',
+        '',
+        '</code-tabs>',
+      ].join('\n'),
+    );
+
+    const tabs = Array.from(parsed(html).querySelectorAll('[role="tab"]'));
+    expect(tabs.map(tab => tab.textContent)).toEqual(['npm', 'pnpm']);
+    expect(invalidNesting(html)).toEqual([]);
+  });
+
+  test('코드 블록이 아닌 raw <pre>는 공백을 지키도록 그대로 둔다', () => {
+    const doc = parsed(serverHtml('<pre>  들여쓴\n    텍스트</pre>\n'));
+
+    expect(doc.querySelector('pre')?.textContent).toBe('  들여쓴\n    텍스트');
+  });
+});
+
+describe('표 스크롤 영역', () => {
+  test('표마다 캡션이나 머리행에서 지은 서로 다른 이름을 갖고 초점을 받는다', () => {
+    render(
+      <PostBody
+        content={[
+          '| 항목 | 전 | 후 |',
+          '| --- | --- | --- |',
+          '| 빌드 | 22분 | 8분 |',
+          '',
+          '| 도구 | 역할 |',
+          '| --- | --- |',
+          '| vitest | 러너 |',
+          '',
+          '<table><caption>배포 시간 비교</caption><tr><th>항목</th></tr></table>',
+        ].join('\n')}
+        relativeDir="dir"
+      />,
+    );
+
+    // region은 랜드마크라 이름이 겹치면 목록에서 구분이 안 된다(axe landmark-unique).
+    const regions = screen.getAllByRole('region');
+    expect(regions.map(region => region.getAttribute('aria-label'))).toEqual([
+      '표: 항목, 전, 후',
+      '표: 도구, 역할',
+      '표: 배포 시간 비교',
+    ]);
+    for (const region of regions)
+      expect(region).toHaveAttribute('tabindex', '0');
   });
 });

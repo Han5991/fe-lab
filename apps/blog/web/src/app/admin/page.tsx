@@ -4,22 +4,61 @@ import { Suspense } from 'react';
 import { LogOut, BarChart3, FileText } from 'lucide-react';
 import { css, cx } from '@design-system/ui-lib/css';
 import { railGutter, railColumn } from '@/src/components/Rail';
+import { TIMEZONE } from '@/content.values.mts';
 import { useAdminDashboardData } from '@/src/hooks/useAdminViews';
+import { countLivePosts } from '@/src/domain/analytics/admin';
 import { useAdminLogout } from '@/src/hooks/useAdminLogout';
 import { LoadingPlaceholder } from '@/src/components/shared/LoadingPlaceholder';
 import Link from 'next/link';
 // 클라이언트 컴포넌트의 @blog/content 배럴 import — `export * from './series'`가
 // 모듈 평가 시점에 node:fs를 당겨 오는 문제는 next.config.ts의
 // optimizePackageImports + 패키지 sideEffects:false가 번들에서 걸러 준다.
-import { postPath } from '@blog/content';
-import { ADMIN_ANALYTICS_PATH } from '@/src/shared/routes';
+import { resolvePostState, type PostStatus } from '@blog/content';
+import {
+  ADMIN_ANALYTICS_PATH,
+  adminAnalyticsPostPath,
+} from '@/src/shared/routes';
+import { STATUS_BADGE, livePostHref } from './components/postState';
+
+/** 목록 한 줄이 여는 곳 — 공개 글은 실제 글(새 탭), 비공개 글은 그 글의 admin 통계. */
+function postLink(
+  slug: string,
+  state: PostStatus,
+): { href: string; target?: '_blank'; rel?: string } {
+  const live = livePostHref(slug, state);
+  return live
+    ? { href: live, target: '_blank', rel: 'noopener noreferrer' }
+    : { href: adminAnalyticsPostPath(slug) };
+}
+
+function HiddenBadge({ state }: { state: PostStatus }) {
+  if (state === 'published') return null;
+  return (
+    <span
+      className={css({
+        fontSize: 'xs',
+        fontWeight: 'semibold',
+        color: 'ink.500',
+        px: '1.5',
+        rounded: 'sm',
+        borderWidth: '[1px]',
+        borderColor: 'ink.border',
+        flexShrink: 0,
+      })}
+    >
+      {STATUS_BADGE[state].label}
+    </span>
+  );
+}
 
 function AdminOverviewContent() {
   const { data } = useAdminDashboardData();
 
   const totalViews = data.reduce((acc, curr) => acc + curr.totalViews, 0);
   const totalTodayViews = data.reduce((acc, curr) => acc + curr.todayViews, 0);
-  const totalPosts = data.length;
+  // /admin/analytics의 POSTS PUBLISHED와 같은 규칙(지금 공개 중인 글)으로 센다.
+  const livePosts = countLivePosts(data, { timezone: TIMEZONE });
+  const hiddenPosts = data.length - livePosts;
 
   const topPosts = [...data]
     .sort((a, b) => b.totalViews - a.totalViews)
@@ -130,7 +169,7 @@ function AdminOverviewContent() {
                 fontWeight: 'medium',
               })}
             >
-              총 게시글 수
+              공개 게시글 수
             </span>
           </div>
           <div
@@ -148,11 +187,16 @@ function AdminOverviewContent() {
                 letterSpacing: 'tight',
               })}
             >
-              {totalPosts}
+              {livePosts}
             </span>
             <span className={css({ fontSize: 'xs', color: 'ink.500' })}>
               개
             </span>
+            {hiddenPosts > 0 && (
+              <span className={css({ fontSize: 'xs', color: 'ink.500' })}>
+                · 비공개·예약 {hiddenPosts}개
+              </span>
+            )}
           </div>
         </div>
 
@@ -238,61 +282,65 @@ function AdminOverviewContent() {
             </h2>
           </div>
           <div>
-            {topPosts.map((post, i) => (
-              <Link
-                key={post.slug}
-                href={postPath(post.slug)}
-                target="_blank"
-                className={css({
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4',
-                  px: '5',
-                  py: '3',
-                  borderBottomWidth: i < topPosts.length - 1 ? '[1px]' : '[0]',
-                  borderColor: 'ink.border',
-                  transition: '[background 0.15s]',
-                  _hover: { bg: 'ink.50' },
-                })}
-              >
-                <span
+            {topPosts.map((post, i) => {
+              const state = resolvePostState(post, TIMEZONE);
+              return (
+                <Link
+                  key={post.slug}
+                  {...postLink(post.slug, state)}
                   className={css({
-                    fontWeight: 'bold',
-                    color: 'spot.600',
-                    fontSize: 'sm',
-                    w: '5',
-                    textAlign: 'center',
-                    fontVariantNumeric: 'tabular-nums',
-                    flexShrink: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4',
+                    px: '5',
+                    py: '3',
+                    borderBottomWidth:
+                      i < topPosts.length - 1 ? '[1px]' : '[0]',
+                    borderColor: 'ink.border',
+                    transition: '[background 0.15s]',
+                    _hover: { bg: 'ink.50' },
                   })}
                 >
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <span
-                  className={css({
-                    flex: '1',
-                    color: 'ink.950',
-                    fontSize: 'sm',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                  })}
-                >
-                  {post.title}
-                </span>
-                <span
-                  className={css({
-                    fontWeight: 'semibold',
-                    color: 'ink.700',
-                    fontSize: 'sm',
-                    flexShrink: 0,
-                    fontVariantNumeric: 'tabular-nums',
-                  })}
-                >
-                  {post.totalViews.toLocaleString()}
-                </span>
-              </Link>
-            ))}
+                  <span
+                    className={css({
+                      fontWeight: 'bold',
+                      color: 'spot.600',
+                      fontSize: 'sm',
+                      w: '5',
+                      textAlign: 'center',
+                      fontVariantNumeric: 'tabular-nums',
+                      flexShrink: 0,
+                    })}
+                  >
+                    {String(i + 1).padStart(2, '0')}
+                  </span>
+                  <span
+                    className={css({
+                      flex: '1',
+                      color: 'ink.950',
+                      fontSize: 'sm',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    })}
+                  >
+                    {post.title}
+                  </span>
+                  <HiddenBadge state={state} />
+                  <span
+                    className={css({
+                      fontWeight: 'semibold',
+                      color: 'ink.700',
+                      fontSize: 'sm',
+                      flexShrink: 0,
+                      fontVariantNumeric: 'tabular-nums',
+                    })}
+                  >
+                    {post.totalViews.toLocaleString()}
+                  </span>
+                </Link>
+              );
+            })}
           </div>
         </div>
 
@@ -339,48 +387,51 @@ function AdminOverviewContent() {
             </h2>
           </div>
           <div>
-            {recentPosts.map((post, i) => (
-              <Link
-                key={post.slug}
-                href={postPath(post.slug)}
-                target="_blank"
-                className={css({
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4',
-                  px: '5',
-                  py: '3',
-                  borderBottomWidth:
-                    i < recentPosts.length - 1 ? '[1px]' : '[0]',
-                  borderColor: 'ink.border',
-                  transition: '[background 0.15s]',
-                  _hover: { bg: 'ink.50' },
-                })}
-              >
-                <span
+            {recentPosts.map((post, i) => {
+              const state = resolvePostState(post, TIMEZONE);
+              return (
+                <Link
+                  key={post.slug}
+                  {...postLink(post.slug, state)}
                   className={css({
-                    flex: '1',
-                    color: 'ink.950',
-                    fontSize: 'sm',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4',
+                    px: '5',
+                    py: '3',
+                    borderBottomWidth:
+                      i < recentPosts.length - 1 ? '[1px]' : '[0]',
+                    borderColor: 'ink.border',
+                    transition: '[background 0.15s]',
+                    _hover: { bg: 'ink.50' },
                   })}
                 >
-                  {post.title}
-                </span>
-                <span
-                  className={css({
-                    color: 'ink.500',
-                    fontSize: 'xs',
-                    flexShrink: 0,
-                    fontVariantNumeric: 'tabular-nums',
-                  })}
-                >
-                  {post.date}
-                </span>
-              </Link>
-            ))}
+                  <span
+                    className={css({
+                      flex: '1',
+                      color: 'ink.950',
+                      fontSize: 'sm',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    })}
+                  >
+                    {post.title}
+                  </span>
+                  <HiddenBadge state={state} />
+                  <span
+                    className={css({
+                      color: 'ink.500',
+                      fontSize: 'xs',
+                      flexShrink: 0,
+                      fontVariantNumeric: 'tabular-nums',
+                    })}
+                  >
+                    {post.date}
+                  </span>
+                </Link>
+              );
+            })}
           </div>
         </div>
       </div>

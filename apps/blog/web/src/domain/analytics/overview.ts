@@ -5,9 +5,10 @@
  * (여기는 N개 글 × 기간, 저기는 글 하나 × 전 기간).
  */
 
-import { addDaysISO, formatMonthDayISO } from '@blog/content';
+import { addDaysISO, formatMonthDayISO, isPostVisible } from '@blog/content';
 import { percentDelta } from './delta';
-import type { PostStatDetail } from './types';
+import { trailingWindowDays } from './windows';
+import type { PostStatDetail, PostVisibilityContext } from './types';
 
 export type AnalyticsRange = '7d' | '30d' | '90d';
 
@@ -64,14 +65,12 @@ interface RangeWindows {
 }
 
 function buildWindows(todayISO: string, rangeDays: number): RangeWindows {
-  const days: string[] = [];
-  for (let i = rangeDays - 1; i >= 0; i--) {
-    days.push(addDaysISO(todayISO, -i));
-  }
-  const previousDays: string[] = [];
-  for (let i = rangeDays * 2 - 1; i >= rangeDays; i--) {
-    previousDays.push(addDaysISO(todayISO, -i));
-  }
+  // "최근 N일"은 windows.ts 하나가 정한다 — 글별 추이 필터와 합이 갈리지 않게.
+  const days = trailingWindowDays(todayISO, rangeDays);
+  const previousDays = trailingWindowDays(
+    addDaysISO(todayISO, -rangeDays),
+    rangeDays,
+  );
   return { days, current: new Set(days), previous: new Set(previousDays) };
 }
 
@@ -116,16 +115,27 @@ function summarizePost(
 }
 
 /**
- * 순수 함수: Supabase admin dashboard 데이터 + 기준일을 받아
- * Analytics 페이지용 AnalyticsOverview를 계산합니다.
- *
- * todayISO를 파라미터로 받아 외부 시계 의존을 제거했습니다.
- * 자정 경계 테스트 및 hook의 타이머 트리거가 가능합니다.
+ * 지금 공개 중인 글의 수 — admin 두 화면의 단일 출처. `status === 'published'`가 아니라
+ * `isPostVisible`로 센다(시각이 지난 예약 글도 이미 공개돼 조회수가 쌓인다).
+ */
+export function countLivePosts(
+  data: readonly PostStatDetail[],
+  visibility: PostVisibilityContext,
+): number {
+  return data.filter(post =>
+    isPostVisible(post, visibility.timezone, visibility.now),
+  ).length;
+}
+
+/**
+ * admin 대시보드 데이터 + 기준일 → AnalyticsOverview. 기준일·공개 판정의 타임존·시각을
+ * 인자로 받아 시계에 기대지 않는다(자정 경계 테스트·훅의 타이머).
  */
 export function computeAnalyticsOverview(
   data: PostStatDetail[],
   range: AnalyticsRange,
   todayISO: string,
+  visibility: PostVisibilityContext,
 ): AnalyticsOverview {
   const rangeDays = RANGE_DAYS[range];
   const windows = buildWindows(todayISO, rangeDays);
@@ -157,7 +167,7 @@ export function computeAnalyticsOverview(
   const uniques = Math.round(total * UNIQUES_ESTIMATE_RATIO);
   const previousUniques = Math.round(previousTotal * UNIQUES_ESTIMATE_RATIO);
 
-  const postsPublished = data.filter(p => p.status === 'published').length;
+  const postsPublished = countLivePosts(data, visibility);
   const avgPerPost =
     postsPublished > 0 ? Math.round(total / postsPublished) : 0;
 

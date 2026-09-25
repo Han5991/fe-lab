@@ -1,30 +1,38 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useSyncExternalStore } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowUp } from 'lucide-react';
 import { css } from '@design-system/ui-lib/css';
 
+/** 이만큼 내려가면 버튼이 뜬다(px). */
+const SHOW_AFTER = 300;
+
+// behavior는 html의 scroll-behavior에 맡긴다(움직임 줄이기면 바로 옮긴다).
 const scrollToTop = () => {
-  window.scrollTo({
-    top: 0,
-    behavior: 'smooth',
-  });
+  window.scrollTo({ top: 0 });
 };
 
-export const BackToTop = () => {
-  const [isVisible, setIsVisible] = useState(false);
+// 외부 저장소로 읽어, 스크롤 복원으로 이미 내려온 채 마운트돼도 바로 보인다.
+const subscribeScroll = (onChange: () => void) => {
+  window.addEventListener('scroll', onChange, { passive: true });
+  return () => window.removeEventListener('scroll', onChange);
+};
+const isScrolledDown = () => window.scrollY > SHOW_AFTER;
+const serverSnapshot = () => false;
 
-  useEffect(() => {
-    const toggleVisibility = () => setIsVisible(window.scrollY > 300);
-    window.addEventListener('scroll', toggleVisibility);
-    return () => window.removeEventListener('scroll', toggleVisibility);
-  }, []);
+export const BackToTop = () => {
+  const isVisible = useSyncExternalStore(
+    subscribeScroll,
+    isScrolledDown,
+    serverSnapshot,
+  );
 
   return (
     <AnimatePresence>
       {isVisible && (
         <motion.button
+          type="button"
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.8 }}

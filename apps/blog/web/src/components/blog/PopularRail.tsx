@@ -1,5 +1,6 @@
 'use client';
 
+import { useId } from 'react';
 import Link from 'next/link';
 import { css } from '@design-system/ui-lib/css';
 import { useQuery } from '@tanstack/react-query';
@@ -18,37 +19,41 @@ interface RankedPost extends PostSummary {
 }
 
 export const PopularRail = ({ posts, limit = 5 }: PopularRailProps) => {
-  // useSuspenseQuery에서 useQuery로 전환. fetch가 실패하면 ErrorBoundary로
-  // 떠넘기지 않고 정적 fallback(최신글 limit개)으로 graceful degrade합니다.
-  // select에 posts를 캡처하면 매 렌더마다 다른 클로저가 만들어져 React Query의
-  // 메모이제이션이 의미가 없으므로, raw rows만 캐시하고 매핑은 렌더에서 합칩니다.
-  const { data: rows } = useQuery({
-    queryKey: ['popular-rail', limit],
-    queryFn: () => getTopPosts(limit),
+  // 데스크톱·모바일에 한 번씩 두 벌이 마운트되므로 헤딩 id는 인스턴스마다 만든다.
+  const headingId = useId();
+  // 순위는 이 빌드의 slug 안에서 서버가 고른다 — 받은 뒤 거르면 가짜 slug가 칸을 차지한다.
+  // select에 posts를 캡처하면 매 렌더 새 클로저라, raw rows만 캐시하고 매핑은 렌더에서 한다.
+  const slugs = posts.map(p => p.slug);
+  const { data: rows, isPending } = useQuery({
+    queryKey: ['popular-rail', limit, slugs],
+    queryFn: () => getTopPosts(limit, slugs),
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
+    // 사이드바 장식이라 오래 붙잡지 않는다(기본 3회 재시도면 스켈레톤이 ~7초).
+    retry: 1,
   });
 
   const bySlug = new Map(posts.map(p => [p.slug, p]));
   const ranked: RankedPost[] = (rows ?? [])
     .map(r => {
       const post = bySlug.get(r.slug);
-      if (!post) return null;
+      // 서버가 이미 걸렀지만, 조회수 0인 행이나 목록 밖 행이 오면 순위에 넣지 않는다.
+      if (!post || r.view_count <= 0) return null;
       // getTopPosts(TopPostRow)의 view_count는 이미 non-null number로 정규화됨.
       return { ...post, viewCount: r.view_count } satisfies RankedPost;
     })
     .filter((p): p is RankedPost => p !== null);
 
-  const items: RankedPost[] =
-    ranked.length > 0
-      ? ranked
-      : posts.slice(0, limit).map(p => ({ ...p, viewCount: 0 }));
+  // 조회수가 오기 전엔 자리만 잡는다 — 최신 글을 "인기"로 그리지 않는다.
+  if (isPending) return <PopularRailSkeleton rows={limit} />;
+  // 실패했거나 순위를 매길 조회수가 없으면 섹션째 뺀다.
+  if (ranked.length === 0) return null;
 
   return (
-    <aside className={css({ position: 'sticky', top: '20' })}>
-      {/* 섹션 라벨은 h3. 아래 포스트 제목이 h4라 span으로 두면 헤딩 레벨이
-          건너뛰어져 axe heading-order가 깨진다(홈 기준 h2 → h3 → h4). */}
-      <h3
+    // 사이드바 <aside> 안에 들어가므로 <section>이다(aside 중첩 금지). 헤딩은 h1 다음 h2.
+    <section aria-labelledby={headingId}>
+      <h2
+        id={headingId}
         className={css({
           display: 'block',
           mb: '3',
@@ -58,8 +63,9 @@ export const PopularRail = ({ posts, limit = 5 }: PopularRailProps) => {
           color: 'ink.500',
         })}
       >
-        Popular · 30일
-      </h3>
+        {/* 순위는 누적 조회수다 — 쿼리에 기간 창이 없다. */}
+        Popular · 누적
+      </h2>
       <ol
         className={css({
           listStyleType: 'none',
@@ -69,7 +75,7 @@ export const PopularRail = ({ posts, limit = 5 }: PopularRailProps) => {
           flexDir: 'column',
         })}
       >
-        {items.map((post, i) => (
+        {ranked.map((post, i) => (
           <li
             key={post.slug}
             className={css({
@@ -87,7 +93,7 @@ export const PopularRail = ({ posts, limit = 5 }: PopularRailProps) => {
                 py: '[10px]',
                 transition: '[all 0.15s]',
                 _hover: {
-                  '& h4': { color: 'accent.700', textDecoration: 'underline' },
+                  '& h3': { color: 'accent.700', textDecoration: 'underline' },
                 },
               })}
             >
@@ -105,7 +111,7 @@ export const PopularRail = ({ posts, limit = 5 }: PopularRailProps) => {
                 {String(i + 1).padStart(2, '0')}
               </span>
               <div className={css({ flex: '1', minW: '0' })}>
-                <h4
+                <h3
                   className={css({
                     fontFamily: 'sans',
                     fontSize: 'sm',
@@ -116,25 +122,50 @@ export const PopularRail = ({ posts, limit = 5 }: PopularRailProps) => {
                   })}
                 >
                   {post.title}
-                </h4>
-                {post.viewCount > 0 && (
-                  <span
-                    className={css({
-                      fontFamily: 'sans',
-                      fontSize: '[12px]',
-                      color: 'ink.500',
-                      mt: '1',
-                      display: 'inline-block',
-                    })}
-                  >
-                    {fmtNum(post.viewCount)} reads
-                  </span>
-                )}
+                </h3>
+                <span
+                  className={css({
+                    fontFamily: 'sans',
+                    fontSize: '[12px]',
+                    color: 'ink.500',
+                    mt: '1',
+                    display: 'inline-block',
+                  })}
+                >
+                  {fmtNum(post.viewCount)} reads
+                </span>
               </div>
             </Link>
           </li>
         ))}
       </ol>
-    </aside>
+    </section>
   );
 };
+
+/** 조회수를 받는 동안의 자리 — 줄 수만큼 빈 막대를 그려 레일 높이를 미리 잡는다. */
+const PopularRailSkeleton = ({ rows }: { rows: number }) => (
+  // 글자가 없는 장식이라 보조기기에는 숨긴다.
+  <div aria-hidden="true">
+    <div
+      className={css({
+        h: '[14px]',
+        w: '[88px]',
+        mb: '3',
+        rounded: 'sm',
+        bg: 'paper.100',
+      })}
+    />
+    {Array.from({ length: rows }, (_, i) => (
+      <div
+        key={i}
+        className={css({
+          h: '[18px]',
+          my: '[10px]',
+          rounded: 'sm',
+          bg: 'paper.100',
+        })}
+      />
+    ))}
+  </div>
+);

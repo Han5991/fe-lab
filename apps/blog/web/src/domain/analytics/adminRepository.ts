@@ -60,24 +60,28 @@ function adminApi(): AdminApi {
 // 이 bigint 라 생성 타입은 non-null number 다. 나머지는 SQL 이 coalesce(...,0) 이나
 // count(*)/extract()::int 로 이미 not-null 을 보장한다.
 
-export async function getAllPostStats(): Promise<PostStatsRow[]> {
+// 목록형 두 읽기는 글 인덱스의 slug로 서버에서 거른다 — anon이 만든 가짜 slug 행이
+// 1000행 cap·페이지 상한을 채우지 않게(adminActions.ts의 AdminSlugFilter).
+
+export async function getAllPostStats(
+  slugs: readonly string[],
+): Promise<PostStatsRow[]> {
   // admin RPC — service_role 한정. Edge Function 경유.
-  const data = await adminApi().call('all_post_stats');
+  // PostgREST의 1000행 cap 페이징은 Edge Function 안에서 돈다(왕복 1회).
+  const data = await adminApi().call('all_post_stats', { slugs });
   // null 이 오면 Number(null) === 0 으로 굳어 소비처의 산술이 NaN 으로 번지지 않는다.
   return data.map(s => ({ ...s, total_views: Number(s.total_views) }));
 }
 
-export async function getAllPostsTrends(): Promise<PostTrendRow[]> {
+export async function getAllPostsTrends(
+  slugs: readonly string[],
+): Promise<PostTrendRow[]> {
   // admin RPC — service_role 한정. Edge Function 경유.
   // PostgREST의 1000행 cap 페이징은 Edge Function 안에서 돈다(왕복 1회).
-  return adminApi().call('all_posts_trends');
+  return adminApi().call('all_posts_trends', { slugs });
 }
 
-/**
- * 응답 행이 AdminPostIndex 모양인지 — 산출물 검증은 이 저장소의 일이다.
- * 소비자(useSuspenseQuery 훅들)는 throw가 곧 페이지 전체 ErrorBoundary라,
- * 손으로 고쳐진 파일이나 형식이 어긋난 배포에 화면째 깨지면 안 된다.
- */
+/** 응답 행이 AdminPostIndex 모양인지 — 어긋난 행 하나로 admin 화면이 통째로 깨지지 않게 거른다. */
 function isAdminPostIndexRow(row: unknown): row is AdminPostIndex {
   if (!isRecord(row)) return false;
   return (

@@ -27,3 +27,24 @@ export function isAdminEmail(
 ): boolean {
   return Boolean(email) && email === adminEmail;
 }
+
+/** 화면에 옮겨 적는 OAuth 실패 사유의 최대 길이 — URL에서 온 글자라 짧게 자른다. */
+const OAUTH_ERROR_MAX_LENGTH = 200;
+
+/**
+ * OAuth 복귀 URL에 붙은 실패 사유(없으면 null) — Supabase는 흐름에 따라 쿼리나
+ * 프래그먼트에 싣는다. `error_description`을 먼저, 없으면 `error` 코드를 쓴다.
+ */
+export function readOAuthRedirectError(
+  search: string,
+  hash: string,
+): string | null {
+  for (const raw of [search, hash]) {
+    const params = new URLSearchParams(raw.replace(/^[?#]/, ''));
+    const reason = (
+      params.get('error_description') ?? params.get('error')
+    )?.trim();
+    if (reason) return reason.slice(0, OAUTH_ERROR_MAX_LENGTH);
+  }
+  return null;
+}

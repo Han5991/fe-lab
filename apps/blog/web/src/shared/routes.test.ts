@@ -9,11 +9,13 @@ import {
   ADMIN_LOGIN_UNAUTHORIZED_PATH,
   ADMIN_PATH,
   adminAnalyticsPostPath,
+  adminLoginErrorPath,
   adminLoginRedirectUrl,
   HOME_PATH,
   isAdminLoginPath,
   PRIVACY_PATH,
   SERIES_PATH,
+  slugFromRouteParam,
 } from './routes';
 import {
   ABOUT_TRANSITION_ID,
@@ -77,6 +79,17 @@ describe('admin 경로 상수', () => {
     );
   });
 
+  test('OAuth 실패 경로는 로그인 화면에 사유를 인코딩해 싣는다', () => {
+    const path = adminLoginErrorPath('Signups not allowed & more');
+    const url = new URL(path, 'https://blog.sangwook.dev');
+
+    expect(isAdminLoginPath(url.pathname)).toBe(true);
+    expect(url.searchParams.get('error')).toBe('oauth');
+    expect(url.searchParams.get('error_description')).toBe(
+      'Signups not allowed & more',
+    );
+  });
+
   test('OAuth 복귀 경로는 무슬래시다 — Supabase 허용 목록과 짝이라 고정', () => {
     // 사이트 계약은 슬래시형이지만 여기만 예외다. 목록이 정확 일치로
     // 걸려 있어서, 이 값이 슬래시형으로 바뀌면 프로덕션 로그인이 깨진다.
@@ -126,6 +139,53 @@ describe('adminAnalyticsPostPath', () => {
     expect(
       adminAnalyticsPostPath(slug).slice(ADMIN_ANALYTICS_PATH.length),
     ).toBe(postPath(slug).slice(POSTS_PATH.length));
+  });
+});
+
+describe('slugFromRouteParam', () => {
+  test('ASCII slug는 그대로 통과한다', () => {
+    expect(slugFromRouteParam('cache-hit-cold-build')).toBe(
+      'cache-hit-cold-build',
+    );
+  });
+
+  test('인코딩된 한글 slug를 디코드한다 — post.slug(디코드 원문)와의 lookup 계약', () => {
+    expect(slugFromRouteParam(encodeURIComponent('한글-슬러그'))).toBe(
+      '한글-슬러그',
+    );
+  });
+
+  test('배열 세그먼트는 /로 잇고 디코드한다', () => {
+    expect(slugFromRouteParam([encodeURIComponent('회고'), '2024'])).toBe(
+      '회고/2024',
+    );
+  });
+
+  test('세그먼트가 없으면 빈 문자열', () => {
+    expect(slugFromRouteParam(undefined)).toBe('');
+  });
+
+  test('잘못된 percent-encoding은 던지지 않고 원문을 돌려준다 (lookup만 빗나가게)', () => {
+    expect(() => slugFromRouteParam('100%-done')).not.toThrow();
+    expect(slugFromRouteParam('100%-done')).toBe('100%-done');
+    expect(slugFromRouteParam(['a%', 'b'])).toBe('a%/b');
+  });
+
+  test('링크 → 라우트 왕복: adminAnalyticsPostPath가 만든 경로의 세그먼트를 넣으면 원래 slug가 나온다', () => {
+    // 링크 쪽 인코딩과 라우트 쪽 디코드는 서로의 역함수여야 한다.
+    const segmentsOf = (path: string) =>
+      path.slice(ADMIN_ANALYTICS_PATH.length).replace(/\/$/, '').split('/');
+    for (const slug of [
+      'cache-hit-cold-build',
+      'turborepo-next.js-docker',
+      '한글-슬러그',
+      '회고/2025 상반기',
+      'react/component/toast',
+    ]) {
+      expect(slugFromRouteParam(segmentsOf(adminAnalyticsPostPath(slug)))).toBe(
+        slug,
+      );
+    }
   });
 });
 

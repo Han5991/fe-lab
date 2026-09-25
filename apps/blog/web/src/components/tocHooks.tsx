@@ -8,34 +8,19 @@ import {
   useSyncExternalStore,
 } from 'react';
 
-/**
- * 화면 맨 위에서 **고정 헤더가 덮는 높이.**
- *
- * 헤더는 `position: sticky; top: 0`으로 지면 위에 떠 있어서, 뷰포트 좌표로
- * 0에 가까운 헤딩은 화면 안에 있어도 실제로는 가려져 안 보인다. 앵커로
- * 이동할 때 이만큼 더 올려 주는 값과, 활성 구간을 셀 때 "여기부터가
- * 진짜 보이는 곳"으로 삼는 값이 같아야 둘이 어긋나지 않는다.
- */
-export const HEADER_OFFSET = 100;
+import { HEADER_OFFSET } from './post/headerOffset';
 
+/** 헤딩으로 옮긴다 — 헤더 여백은 헤딩의 `scroll-margin-top`이, 움직임은 CSS가 정한다. */
 export const scrollToId = ({
   id,
-  headerOffset,
   action,
 }: {
   id: string;
-  headerOffset: number;
   action?: () => void;
 }) => {
   const el = document.getElementById(id);
   if (el) {
-    const elementPosition = el.getBoundingClientRect().top;
-    const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
-
-    window.scrollTo({
-      top: offsetPosition,
-      behavior: 'smooth',
-    });
+    el.scrollIntoView({ block: 'start' });
     action?.();
   }
 };

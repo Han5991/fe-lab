@@ -1,16 +1,17 @@
 import { expect, test } from 'vitest';
-import { computeAnalyticsOverview } from './overview';
-import type { PostStatDetail } from './types';
+import { computeAnalyticsOverview, countLivePosts } from './overview';
+import type { PostStatDetail, PostVisibilityContext } from './types';
 
 function makePostDetail(
   slug: string,
   trends: { view_date: string; view_count: number }[],
   status: 'published' | 'draft' | 'scheduled' = 'published',
+  date = '2025-01-01',
 ): PostStatDetail {
   return {
     slug,
     title: slug,
-    date: '2025-01-01',
+    date,
     totalViews: trends.reduce((acc, t) => acc + t.view_count, 0),
     todayViews: 0,
     trends,
@@ -19,8 +20,14 @@ function makePostDetail(
   };
 }
 
+/** 타임존은 일부러 사이트 값(+09:00)과 다르게 둔다 — 주입을 무시하는 구현이면 경계가 갈린다. */
+const VISIBILITY: PostVisibilityContext = {
+  timezone: { isoOffset: '+00:00' },
+  now: new Date('2026-05-24T12:00:00Z'),
+};
+
 test('computeAnalyticsOverview: 데이터 없으면 total=0, delta=null', () => {
-  const result = computeAnalyticsOverview([], '7d', '2026-05-24');
+  const result = computeAnalyticsOverview([], '7d', '2026-05-24', VISIBILITY);
   expect(result.total).toBe(0);
   expect(result.totalDelta).toBe(null);
   expect(result.uniques).toBe(0);
@@ -28,19 +35,19 @@ test('computeAnalyticsOverview: 데이터 없으면 total=0, delta=null', () => 
 });
 
 test('computeAnalyticsOverview: range=7d → rangeDays=7, totalSeries.length=7', () => {
-  const result = computeAnalyticsOverview([], '7d', '2026-05-24');
+  const result = computeAnalyticsOverview([], '7d', '2026-05-24', VISIBILITY);
   expect(result.rangeDays).toBe(7);
   expect(result.totalSeries.length).toBe(7);
 });
 
 test('computeAnalyticsOverview: range=30d → rangeDays=30, totalSeries.length=30', () => {
-  const result = computeAnalyticsOverview([], '30d', '2026-05-24');
+  const result = computeAnalyticsOverview([], '30d', '2026-05-24', VISIBILITY);
   expect(result.rangeDays).toBe(30);
   expect(result.totalSeries.length).toBe(30);
 });
 
 test('computeAnalyticsOverview: range=90d → rangeDays=90, totalSeries.length=90', () => {
-  const result = computeAnalyticsOverview([], '90d', '2026-05-24');
+  const result = computeAnalyticsOverview([], '90d', '2026-05-24', VISIBILITY);
   expect(result.rangeDays).toBe(90);
   expect(result.totalSeries.length).toBe(90);
 });
@@ -55,7 +62,12 @@ test('computeAnalyticsOverview: 90d는 현재/직전 90일 윈도우를 분리 �
       { view_date: '2025-06-01', view_count: 999 }, // 직전보다 과거 → 제외
     ]),
   ];
-  const result = computeAnalyticsOverview(data, '90d', '2026-05-24');
+  const result = computeAnalyticsOverview(
+    data,
+    '90d',
+    '2026-05-24',
+    VISIBILITY,
+  );
   expect(result.total).toBe(50);
   // 직전 20 → (50-20)/20 = 1.5
   expect(result.totalDelta).toBe(1.5);
@@ -69,7 +81,7 @@ test('computeAnalyticsOverview: 현재 기간 조회수만 total에 포함', () 
       { view_date: '2026-05-10', view_count: 99 }, // 직전 기간 바깥 → 집계 제외
     ]),
   ];
-  const result = computeAnalyticsOverview(data, '7d', '2026-05-24');
+  const result = computeAnalyticsOverview(data, '7d', '2026-05-24', VISIBILITY);
   expect(result.total).toBe(10);
 });
 
@@ -82,9 +94,9 @@ test('computeAnalyticsOverview: 자정 경계에서 todayISO 변경 시 윈도�
     ]),
   ];
   // 05-24 기준: 윈도우 05-18~05-24 → 20
-  const r1 = computeAnalyticsOverview(data, '7d', '2026-05-24');
+  const r1 = computeAnalyticsOverview(data, '7d', '2026-05-24', VISIBILITY);
   // 05-17 기준: 윈도우 05-11~05-17 → 5
-  const r2 = computeAnalyticsOverview(data, '7d', '2026-05-17');
+  const r2 = computeAnalyticsOverview(data, '7d', '2026-05-17', VISIBILITY);
   expect(r1.total).toBe(20);
   expect(r2.total).toBe(5);
 });
@@ -99,7 +111,7 @@ test('computeAnalyticsOverview: totalDelta — 직전 기간 대비 증감율', 
       { view_date: '2026-05-10', view_count: 30 }, // 현재
     ]),
   ];
-  const result = computeAnalyticsOverview(data, '7d', '2026-05-14');
+  const result = computeAnalyticsOverview(data, '7d', '2026-05-14', VISIBILITY);
   // (30-10)/10 = 2.0
   expect(result.totalDelta).toBe(2.0);
 });
@@ -108,7 +120,7 @@ test('computeAnalyticsOverview: uniques는 총 조회수의 추정 비율(0.55)'
   const data = [
     makePostDetail('a', [{ view_date: '2026-05-20', view_count: 100 }]),
   ];
-  const result = computeAnalyticsOverview(data, '7d', '2026-05-24');
+  const result = computeAnalyticsOverview(data, '7d', '2026-05-24', VISIBILITY);
   // 리터럴로 고정 — UNIQUES_ESTIMATE_RATIO(0.55)가 바뀌면 의도적으로 함께 갱신.
   // round(100 * 0.55) = 55.
   expect(result.uniques).toBe(55);
@@ -124,7 +136,7 @@ test('computeAnalyticsOverview: uniquesDelta — 직전 고유추정 대비 증�
       { view_date: '2026-05-03', view_count: 100 }, // 직전
     ]),
   ];
-  const result = computeAnalyticsOverview(data, '7d', '2026-05-14');
+  const result = computeAnalyticsOverview(data, '7d', '2026-05-14', VISIBILITY);
   expect(result.uniques).toBe(110);
   expect(result.uniquesDelta).toBe(1.0);
 
@@ -132,18 +144,57 @@ test('computeAnalyticsOverview: uniquesDelta — 직전 고유추정 대비 증�
   const onlyCurrent = [
     makePostDetail('b', [{ view_date: '2026-05-10', view_count: 200 }]),
   ];
-  const r2 = computeAnalyticsOverview(onlyCurrent, '7d', '2026-05-14');
+  const r2 = computeAnalyticsOverview(
+    onlyCurrent,
+    '7d',
+    '2026-05-14',
+    VISIBILITY,
+  );
   expect(r2.uniquesDelta).toBe(null);
 });
 
-test('computeAnalyticsOverview: postsPublished는 published 상태 글만 카운트', () => {
+test('computeAnalyticsOverview: postsPublished는 지금 공개 중인 글만 센다', () => {
+  // 발행 의도(status)가 아니라 공개 여부로 센다 — 시각이 지난 예약 글은 이미 공개다.
   const data = [
     makePostDetail('pub1', [], 'published'),
     makePostDetail('pub2', [], 'published'),
     makePostDetail('draft1', [], 'draft'),
+    makePostDetail('scheduled-past', [], 'scheduled', '2026-05-20'),
+    makePostDetail('scheduled-future', [], 'scheduled', '2026-06-01'),
   ];
-  const result = computeAnalyticsOverview(data, '7d', '2026-05-24');
-  expect(result.postsPublished).toBe(2);
+  const result = computeAnalyticsOverview(data, '7d', '2026-05-24', VISIBILITY);
+  expect(result.postsPublished).toBe(3);
+});
+
+test('computeAnalyticsOverview: 공개된 예약 글의 조회수도 AVG / POST의 분모에 든다', () => {
+  const data = [
+    makePostDetail('pub', [{ view_date: '2026-05-22', view_count: 60 }]),
+    makePostDetail(
+      'scheduled-past',
+      [{ view_date: '2026-05-22', view_count: 40 }],
+      'scheduled',
+      '2026-05-20',
+    ),
+  ];
+  const result = computeAnalyticsOverview(data, '7d', '2026-05-24', VISIBILITY);
+  expect(result.avgPerPost).toBe(50);
+});
+
+test('countLivePosts: 공개 판정은 주입한 타임존·시각으로 한다', () => {
+  // +00:00이면 05-24T00:00Z에 공개된다(사이트 값 +09:00이면 05-23T15:00Z라 갈린다).
+  const scheduled = makePostDetail('s', [], 'scheduled', '2026-05-24');
+  expect(
+    countLivePosts([scheduled], {
+      ...VISIBILITY,
+      now: new Date('2026-05-23T20:00:00Z'),
+    }),
+  ).toBe(0);
+  expect(
+    countLivePosts([scheduled], {
+      ...VISIBILITY,
+      now: new Date('2026-05-24T00:00:00Z'),
+    }),
+  ).toBe(1);
 });
 
 test('computeAnalyticsOverview: topPosts는 내림차순 상위 5개', () => {
@@ -152,7 +203,7 @@ test('computeAnalyticsOverview: topPosts는 내림차순 상위 5개', () => {
       { view_date: '2026-05-20', view_count: i * 10 },
     ]),
   );
-  const result = computeAnalyticsOverview(data, '7d', '2026-05-24');
+  const result = computeAnalyticsOverview(data, '7d', '2026-05-24', VISIBILITY);
   expect(result.topPosts.length).toBe(5);
   // 첫 번째가 최다 조회
   expect(result.topPosts[0].views >= result.topPosts[1].views).toBeTruthy();
@@ -171,7 +222,7 @@ test('computeAnalyticsOverview: postsPublished=0 이면 avgPerPost=0 (0 나눗�
       'draft',
     ),
   ];
-  const result = computeAnalyticsOverview(data, '7d', '2026-05-24');
+  const result = computeAnalyticsOverview(data, '7d', '2026-05-24', VISIBILITY);
   expect(result.postsPublished).toBe(0);
   expect(result.avgPerPost).toBe(0);
 });
@@ -183,6 +234,6 @@ test('computeAnalyticsOverview: topPosts delta — 직전 기간 0이면 null (t
       { view_date: '2026-05-22', view_count: 50 },
     ]),
   ];
-  const result = computeAnalyticsOverview(data, '7d', '2026-05-24');
+  const result = computeAnalyticsOverview(data, '7d', '2026-05-24', VISIBILITY);
   expect(result.topPosts[0].delta).toBe(null);
 });

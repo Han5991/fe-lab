@@ -11,7 +11,7 @@
  * repository의 `Number()`가 맡는다.
  */
 
-import type { PostStatus } from '@blog/content';
+import type { PostStatus, TimezoneConfig } from '@blog/content';
 import type { Database, Tables } from '../../lib/platform/database.types';
 
 type DbFunctions = Database['public']['Functions'];
@@ -58,6 +58,12 @@ export interface PostStatDetail {
   trends: TrendPoint[];
   status: PostStatus;
   scheduledDate: string | null;
+}
+
+/** `isPostVisible`에 넘기는 기준 — 타임존은 앱 값 모듈이 소유해 주입받고, 시각은 생략하면 지금. */
+export interface PostVisibilityContext {
+  timezone: Pick<TimezoneConfig, 'isoOffset'>;
+  now?: Date;
 }
 
 export interface DerivedStats {

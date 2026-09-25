@@ -47,7 +47,8 @@ export const PostGridCard = ({ post, priority = false }: PostGridCardProps) => {
     >
       <img
         src={thumb}
-        alt={post.title}
+        // 장식 이미지다 — 같은 링크 안의 h3가 이미 제목을 말한다.
+        alt=""
         width={THUMB_WIDTH}
         height={THUMB_HEIGHT}
         loading={priority ? 'eager' : 'lazy'}

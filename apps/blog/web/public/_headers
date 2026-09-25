@@ -16,6 +16,14 @@
 #    렌더러 밖에서 받아 DevTools 목록에 안 띄우는 것인지 가르지 못한다 — 줄일
 #    왕복이 있는지부터 확인이 안 돼서 손대지 않았다.
 
+# ── 모든 응답: 보안 헤더 ─────────────────────────────────────────────────────
+# 같은 이름의 헤더는 규칙끼리 값이 이어 붙으므로 Cache-Control과 겹치지 않는 것만 둔다.
+# 전체 CSP는 걸지 않는다 — GTM 컨테이너가 저장소 밖에서 바뀌어 허용 목록을 따라잡을 수 없다.
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Content-Security-Policy: frame-ancestors 'self'
+
 # Next.js 자산은 파일명에 콘텐츠 해시가 박혀 있다(`2-m-ljjp3f95y.css`). 내용이 바뀌면
 # 이름이 바뀌므로 낡은 파일이 나갈 경로가 구조적으로 없고, 그래서 immutable이 안전하다.
 # 기본값 그대로 두면 재방문자가 홈에서만 14개 자산을 조건부 요청으로 다시 확인하는데
@@ -92,6 +100,11 @@
 # splat이 없으니 이 파일 하나만 걸린다.
 /site.webmanifest
   Cache-Control: public, max-age=86400, must-revalidate
+
+# admin 글 목록은 비공개 글 제목까지 담는다 — 받는 건 못 막아도 색인에서는 뺀다
+# (robots.txt Disallow는 색인을 막지 못한다).
+/admin-posts-index.json
+  X-Robots-Tag: noindex
 
 # 프리뷰 URL을 색인에서 뺀다. wrangler.jsonc의 `workers_dev: false`가 프로덕션 사본은
 # 닫았지만, PR 프리뷰를 살리려고 켠 `preview_urls: true`가 색인 가능한 표면을 도로 연다

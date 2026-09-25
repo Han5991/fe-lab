@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import Link from 'next/link';
 import { useQueryStates, parseAsString, parseAsStringLiteral } from 'nuqs';
 import { useQuery } from '@tanstack/react-query';
@@ -46,13 +46,33 @@ const SORT_KEYS = [
 ] as const satisfies readonly SortKey[];
 const VIEW_KEYS = ['list', 'cards'] as const satisfies readonly ViewMode[];
 
-/**
- * 아카이브 목록(리스트 뷰) 한 행.
- *
- * `/posts/`는 nuqs 때문에 빌드 타임 프리렌더에서 빠지므로, 정적 HTML에 남는
- * 폴백 목록(page.tsx)과 하이드레이션 후의 목록이 같은 컴포넌트를 써야
- * 화면이 바뀌지 않습니다. 그래서 여기서 export합니다.
- */
+/** URL에 값이 없을 때의 정렬·뷰 — 파서의 기본값과 정적 폴백이 같은 상수를 읽는다. */
+const DEFAULT_SORT = 'recent' satisfies SortKey;
+const DEFAULT_VIEW = 'cards' satisfies ViewMode;
+
+/** 아카이브 화면이 그리는 필터 상태 — URL에서 읽거나(뷰) 기본값으로 둔다(폴백). */
+interface ArchiveState {
+  q: string;
+  activeTags: string[];
+  series: string | null;
+  year: string | null;
+  sort: SortKey;
+  view: ViewMode;
+}
+
+/** 필터 컨트롤이 부르는 동작. 폴백에서는 전부 아무것도 하지 않는다. */
+interface ArchiveActions {
+  setQuery: (q: string) => void;
+  toggleTag: (tag: string) => void;
+  toggleSeries: (id: string) => void;
+  toggleYear: (id: string) => void;
+  clearSeries: () => void;
+  clearYear: () => void;
+  clearAll: () => void;
+  setSort: (v: SortKey) => void;
+  setView: (v: ViewMode) => void;
+}
+
 export const ArchiveRow = ({ post }: { post: PostSummary }) => (
   <li className={postRowItem}>
     <Link href={postPath(post.slug)} className={postRowLink}>
@@ -91,18 +111,18 @@ export const PostsArchiveView = ({
     tag: parseAsString.withDefault(''),
     series: parseAsString.withDefault(''),
     year: parseAsString.withDefault(''),
-    sort: parseAsStringLiteral(SORT_KEYS).withDefault('recent'),
-    view: parseAsStringLiteral(VIEW_KEYS).withDefault('cards'),
+    sort: parseAsStringLiteral(SORT_KEYS).withDefault(DEFAULT_SORT),
+    view: parseAsStringLiteral(VIEW_KEYS).withDefault(DEFAULT_VIEW),
   } satisfies Record<keyof Required<ArchiveFilters>, unknown> &
     Record<string, unknown>);
-  const [sheetOpen, setSheetOpen] = useState(false);
 
-  // 인기순 정렬은 Supabase post_views 테이블 기반. 'popular'를 누르기 전까지는
-  // 요청을 보내지 않습니다 (lazy). 5분 staleTime으로 재방문 시 캐시 사용.
+  // 인기순을 고르기 전에는 요청하지 않는다. 조회수는 이 빌드의 slug로 서버에서 걸러
+  // 받으므로(가짜 slug가 1000행 상한을 채우지 않게) slug 목록이 캐시 키다.
+  const slugs = posts.map(p => p.slug);
   const { data: viewCounts } = useQuery({
-    queryKey: ['posts-view-counts'],
+    queryKey: ['posts-view-counts', slugs],
     queryFn: async () => {
-      const rows = await getAllViewCounts();
+      const rows = await getAllViewCounts(slugs);
       const map = new Map<string, number>();
       for (const row of rows) {
         map.set(row.slug, row.view_count);
@@ -118,26 +138,122 @@ export const PostsArchiveView = ({
 
   // 핸들러들은 전부 JSX prop(`() => void` 자리)으로만 쓰인다. setParams의
   // promise는 아무도 기다리지 않으므로 void로 명시해 버린다(no-misused-promises).
-  const toggleTag = (tag: string) => {
-    const next = activeTags.includes(tag)
-      ? activeTags.filter(t => t !== tag)
-      : [...activeTags, tag];
-    void setParams({ tag: next.length ? next.join(',') : null });
+  const actions: ArchiveActions = {
+    setQuery: v => void setParams({ q: v || null }),
+    toggleTag: tag => {
+      const next = activeTags.includes(tag)
+        ? activeTags.filter(t => t !== tag)
+        : [...activeTags, tag];
+      void setParams({ tag: next.length ? next.join(',') : null });
+    },
+    toggleSeries: id =>
+      void setParams({ series: seriesParam === id ? null : id }),
+    toggleYear: id => void setParams({ year: yearParam === id ? null : id }),
+    clearSeries: () => void setParams({ series: null }),
+    clearYear: () => void setParams({ year: null }),
+    // 네 개를 한 번에 지운다. 개별 setter를 연달아 부르는 것과 URL 쓰기 횟수는
+    // 같지만(nuqs가 전역 큐로 합친다), 무엇을 지우는지가 한 객체로 드러난다.
+    clearAll: () =>
+      void setParams({ q: null, tag: null, series: null, year: null }),
+    setSort: v => void setParams({ sort: v }),
+    setView: v => void setParams({ view: v }),
   };
 
-  const toggleSeries = (id: string) => {
-    void setParams({ series: seriesParam === id ? null : id });
-  };
+  return (
+    <PostsArchiveLayout
+      posts={posts}
+      series={series}
+      tags={tags}
+      years={years}
+      viewCounts={viewCounts}
+      state={{
+        q,
+        activeTags,
+        series: seriesParam || null,
+        year: yearParam || null,
+        sort,
+        view,
+      }}
+      actions={actions}
+    />
+  );
+};
 
-  const toggleYear = (id: string) => {
-    void setParams({ year: yearParam === id ? null : id });
-  };
+const noop = () => undefined;
+const FALLBACK_ACTIONS: ArchiveActions = {
+  setQuery: noop,
+  toggleTag: noop,
+  toggleSeries: noop,
+  toggleYear: noop,
+  clearSeries: noop,
+  clearYear: noop,
+  clearAll: noop,
+  setSort: noop,
+  setView: noop,
+};
+const FALLBACK_STATE: ArchiveState = {
+  q: '',
+  activeTags: [],
+  series: null,
+  year: null,
+  sort: DEFAULT_SORT,
+  view: DEFAULT_VIEW,
+};
+
+/**
+ * `/posts/`의 정적 HTML — 뷰는 nuqs 때문에 프리렌더에서 빠진다. 같은 레이아웃을 기본
+ * 상태로 그려 하이드레이션 때 목록이 바뀌지 않게 한다(컨트롤은 그 전까지 동작하지 않는다).
+ */
+export const PostsArchiveFallback = (props: PostsArchiveViewProps) => (
+  <PostsArchiveLayout
+    {...props}
+    viewCounts={undefined}
+    state={FALLBACK_STATE}
+    actions={FALLBACK_ACTIONS}
+  />
+);
+
+interface PostsArchiveLayoutProps extends PostsArchiveViewProps {
+  viewCounts: Map<string, number> | undefined;
+  state: ArchiveState;
+  actions: ArchiveActions;
+}
+
+const PostsArchiveLayout = ({
+  posts,
+  series,
+  tags,
+  years,
+  viewCounts,
+  state,
+  actions,
+}: PostsArchiveLayoutProps) => {
+  const {
+    q,
+    activeTags,
+    series: seriesParam,
+    year: yearParam,
+    sort,
+    view,
+  } = state;
+  const {
+    setQuery,
+    toggleTag,
+    toggleSeries,
+    toggleYear,
+    clearSeries,
+    clearYear,
+    clearAll,
+    setSort,
+    setView,
+  } = actions;
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   const filtered = filterAndSortPostsByArchiveParams(posts, {
     q,
     tags: activeTags,
-    series: seriesParam || null,
-    year: yearParam || null,
+    series: seriesParam,
+    year: yearParam,
     sort,
     viewCounts,
   });
@@ -158,19 +274,13 @@ export const PostsArchiveView = ({
     count: y.count,
   }));
 
-  // 네 개를 한 번에 지운다. 개별 setter를 연달아 부르는 것과 URL 쓰기 횟수는
-  // 같지만(nuqs가 전역 큐로 합친다), 무엇을 지우는지가 한 객체로 드러난다.
-  const clearAll = () => {
-    void setParams({ q: null, tag: null, series: null, year: null });
-  };
-
   // 활성 필터 합산 (FAB·시트 헤더의 N 뱃지 + 정렬도 기본값이 아니면 카운트)
   const activeCount =
     activeTags.length +
     (seriesParam ? 1 : 0) +
     (yearParam ? 1 : 0) +
-    (sort !== 'recent' ? 1 : 0) +
-    (view !== 'cards' ? 1 : 0);
+    (sort !== DEFAULT_SORT ? 1 : 0) +
+    (view !== DEFAULT_VIEW ? 1 : 0);
 
   return (
     // FAB·시트는 grid 자식으로 두면 fixed 포지션이라도 DOM상 grid item이 되어
@@ -196,23 +306,20 @@ export const PostsArchiveView = ({
             gap: '7',
           })}
         >
-          <ArchiveSearchBar
-            q={q}
-            onChange={v => void setParams({ q: v || null })}
-          />
+          <ArchiveSearchBar q={q} onChange={setQuery} />
           <PostsFilterPanel
             sort={sort}
-            onSortChange={v => void setParams({ sort: v })}
+            onSortChange={setSort}
             view={view}
-            onViewChange={v => void setParams({ view: v })}
+            onViewChange={setView}
             tagItems={tagItems}
             activeTags={activeTags}
             onToggleTag={toggleTag}
             seriesItems={seriesItems}
-            activeSeries={seriesParam || null}
+            activeSeries={seriesParam}
             onToggleSeries={toggleSeries}
             yearItems={yearItems}
-            activeYear={yearParam || null}
+            activeYear={yearParam}
             onToggleYear={toggleYear}
           />
           {/*
@@ -227,6 +334,8 @@ export const PostsArchiveView = ({
               borderTopWidth: '[1px]',
               borderTopStyle: 'solid',
               borderColor: 'ink.border',
+              // 레일이 비면 구분선·여백만 남은 빈 띠가 되지 않게 래퍼째 접는다.
+              _empty: { display: 'none' },
             })}
           >
             <PopularRail posts={posts} />
@@ -241,19 +350,20 @@ export const PostsArchiveView = ({
               mb: '4',
             })}
           >
-            <ArchiveSearchBar
-              q={q}
-              onChange={v => void setParams({ q: v || null })}
-            />
+            <ArchiveSearchBar q={q} onChange={setQuery} />
           </div>
 
           <ActiveFilters
             tags={activeTags}
-            series={seriesParam || null}
-            year={yearParam || null}
+            seriesLabel={
+              seriesParam === null
+                ? null
+                : (series.find(s => s.id === seriesParam)?.title ?? seriesParam)
+            }
+            year={yearParam}
             onRemoveTag={toggleTag}
-            onClearSeries={() => void setParams({ series: null })}
-            onClearYear={() => void setParams({ year: null })}
+            onClearSeries={clearSeries}
+            onClearYear={clearYear}
             onClearAll={clearAll}
           />
 
@@ -360,6 +470,8 @@ export const PostsArchiveView = ({
               borderTopWidth: '[1px]',
               borderTopStyle: 'solid',
               borderColor: 'ink.border',
+              // 데스크톱 래퍼와 같은 이유 — 레일이 비면 빈 띠를 남기지 않는다.
+              _empty: { display: 'none' },
             })}
           >
             <PopularRail posts={posts} />
@@ -379,17 +491,17 @@ export const PostsArchiveView = ({
       >
         <PostsFilterPanel
           sort={sort}
-          onSortChange={v => void setParams({ sort: v })}
+          onSortChange={setSort}
           view={view}
-          onViewChange={v => void setParams({ view: v })}
+          onViewChange={setView}
           tagItems={tagItems}
           activeTags={activeTags}
           onToggleTag={toggleTag}
           seriesItems={seriesItems}
-          activeSeries={seriesParam || null}
+          activeSeries={seriesParam}
           onToggleSeries={toggleSeries}
           yearItems={yearItems}
-          activeYear={yearParam || null}
+          activeYear={yearParam}
           onToggleYear={toggleYear}
         />
       </PostsFilterSheet>
@@ -402,66 +514,75 @@ interface ArchiveSearchBarProps {
   onChange: (v: string) => void;
 }
 
-const ArchiveSearchBar = ({ q, onChange }: ArchiveSearchBarProps) => (
-  <div
-    className={css({
-      display: 'flex',
-      alignItems: 'center',
-      gap: '2',
-      px: '3',
-      py: '2.5',
-      borderWidth: '[1px]',
-      borderStyle: 'solid',
-      borderColor: 'ink.border',
-      rounded: 'control',
-      bg: 'paper.100',
-      _focusWithin: { borderColor: 'accent.500' },
-      transition: '[border-color 0.15s]',
-    })}
-  >
-    <span
-      aria-hidden="true"
+const ArchiveSearchBar = ({ q, onChange }: ArchiveSearchBarProps) => {
+  const inputRef = useRef<HTMLInputElement>(null);
+  return (
+    <div
       className={css({
-        fontFamily: 'mono',
-        fontSize: '[12px]',
-        color: 'ink.500',
-        flexShrink: 0,
+        display: 'flex',
+        alignItems: 'center',
+        gap: '2',
+        px: '3',
+        py: '2.5',
+        borderWidth: '[1px]',
+        borderStyle: 'solid',
+        borderColor: 'ink.border',
+        rounded: 'control',
+        bg: 'paper.100',
+        _focusWithin: { borderColor: 'accent.500' },
+        transition: '[border-color 0.15s]',
       })}
     >
-      ⌕
-    </span>
-    <input
-      type="search"
-      value={q}
-      onChange={e => onChange(e.target.value)}
-      placeholder="제목, 본문, 태그 검색…"
-      aria-label="글 검색"
-      className={css({
-        flex: '1',
-        bg: 'transparent',
-        border: '[none]',
-        outline: '[none]',
-        fontSize: '[13px]',
-        color: 'ink.950',
-        fontFamily: 'sans',
-        _placeholder: { color: 'ink.500' },
-      })}
-    />
-    {q && (
-      <button
-        type="button"
-        onClick={() => onChange('')}
+      <span
+        aria-hidden="true"
         className={css({
           fontFamily: 'mono',
           fontSize: '[12px]',
           color: 'ink.500',
           flexShrink: 0,
-          cursor: 'pointer',
-          _hover: { color: 'ink.950' },
         })}
       >
-        지우기
-      </button>
-    )}
-  </div>
-);
+        ⌕
+      </span>
+      <input
+        ref={inputRef}
+        type="search"
+        value={q}
+        onChange={e => onChange(e.target.value)}
+        // 검색 대상은 제목·요약·태그다(filterAndSortPostsByArchiveParams) — 본문은 아니다.
+        placeholder="제목, 요약, 태그 검색…"
+        aria-label="글 검색"
+        className={css({
+          flex: '1',
+          bg: 'transparent',
+          border: '[none]',
+          outline: '[none]',
+          fontSize: '[13px]',
+          color: 'ink.950',
+          fontFamily: 'sans',
+          _placeholder: { color: 'ink.500' },
+        })}
+      />
+      {q && (
+        <button
+          type="button"
+          // 누르면 이 버튼이 사라지므로 초점을 입력창으로 되돌린다.
+          onClick={() => {
+            onChange('');
+            inputRef.current?.focus();
+          }}
+          className={css({
+            fontFamily: 'mono',
+            fontSize: '[12px]',
+            color: 'ink.500',
+            flexShrink: 0,
+            cursor: 'pointer',
+            _hover: { color: 'ink.950' },
+          })}
+        >
+          지우기
+        </button>
+      )}
+    </div>
+  );
+};

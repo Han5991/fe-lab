@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { css, cva, sva } from '@design-system/ui-lib/css';
 import type { RecipeVariant } from '@design-system/ui-lib/css';
+import { token } from '@design-system/ui-lib/tokens';
 
 /**
  * 다이어그램 프리미티브 — 핸드오프 §4 "다이어그램 문법"을 코드로 강제한다.
@@ -44,6 +45,23 @@ const frame = cva({
   defaultVariants: { sizing: 'fill' },
 });
 
+/**
+ * 자동 레이아웃 그림이 줄어드는 하한 — 제목(12px)이 11px 밑으로 가지 않는 배율이고,
+ * 넘치면 가로로 스크롤한다. 하한은 본문 칼럼 폭을 넘지 않아 데스크톱에는 스크롤이 없다.
+ */
+const MIN_TEXT_SCALE = 11 / 12;
+
+const scroller = css({
+  overflowX: 'auto',
+  overscrollBehaviorX: 'contain',
+  // 스크롤 컨테이너의 초점 링이 그림 끝에 붙지 않게(본문 표 래퍼와 같다).
+  borderRadius: 'control',
+});
+
+function intrinsicMinWidth(width: number): string {
+  return `min(${Math.ceil(width * MIN_TEXT_SCALE)}px, ${token('sizes.railText')})`;
+}
+
 interface DiagramFrameProps {
   /** 예: `'0 0 640 122'` */
   viewBox: string;
@@ -68,7 +86,7 @@ export function DiagramFrame({
   label,
   children,
 }: DiagramFrameProps) {
-  return (
+  const svg = (
     <svg
       viewBox={viewBox}
       width={width}
@@ -79,9 +97,25 @@ export function DiagramFrame({
       // 장식 SVG가 탭 순서에 끼어드는 IE/Edge 잔재 방지 + 시맨틱 명시
       focusable="false"
       className={frame({ sizing: width === undefined ? 'fill' : 'intrinsic' })}
+      style={
+        width === undefined ? undefined : { minWidth: intrinsicMinWidth(width) }
+      }
     >
       {children}
     </svg>
+  );
+
+  // 손으로 그린 그림은 자리에 맞춰 그렸으므로 칼럼을 채운다 — 하한·스크롤은 자동 레이아웃에만.
+  if (width === undefined) return svg;
+
+  // 하한 때문에 칼럼보다 넓어질 수 있어 스크롤 컨테이너에 둔다(없으면 페이지가 밀린다).
+  // 의미 있는 그림이면 키보드로도 스크롤하게 초점을 받는다.
+  return label ? (
+    <div role="region" aria-label={label} tabIndex={0} className={scroller}>
+      {svg}
+    </div>
+  ) : (
+    <div className={scroller}>{svg}</div>
   );
 }
 

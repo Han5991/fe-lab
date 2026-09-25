@@ -12,21 +12,27 @@ import { useMutation } from '@tanstack/react-query';
 function LoginForm() {
   const searchParams = useSearchParams();
 
-  // mutateAsync가 아니라 mutate다 — 반환값을 쓸 데가 없고(성공하면 브라우저가
-  // Google로 떠난다) 실패는 onError가 받는다. mutate는 void를 반환하므로
-  // 호출부에 no-floating-promises를 달래는 `void` 연산자가 필요 없다.
-  const { mutate: handleGoogleLogin, isPending: isLoading } = useMutation({
+  // 성공하면 브라우저가 Google로 떠나므로 반환값은 쓸 데가 없다 — 실패는 error 상태로 그린다.
+  const {
+    mutate: handleGoogleLogin,
+    isPending: isLoading,
+    error: signInError,
+  } = useMutation({
     // 돌아올 주소의 계약(경로 모양, Supabase 대시보드 목록과의 짝)은
     // src/domain/auth가 갖는다. 화면이 보태는 건 origin 하나뿐이다 — 그걸
     // 아는 건 브라우저뿐이라 여기서만 읽을 수 있다.
-    mutationFn: () =>
-      authRepository.signInAdminWithGoogle(
+    mutationFn: async () => {
+      // 시작 실패는 throw가 아니라 { error }로 온다.
+      const { error } = await authRepository.signInAdminWithGoogle(
         adminLoginRedirectUrl(window.location.origin),
-      ),
-    onError: () => alert('로그인 중 오류가 발생했습니다.'),
+      );
+      if (error) throw new Error(error.message);
+    },
   });
 
   const error = searchParams?.get('error');
+  // AdminGuard가 실어 보낸 OAuth 실패 사유 — URL에서 온 글자라 고정 문구 아래 참고로만 보인다.
+  const oauthErrorDescription = searchParams?.get('error_description');
 
   return (
     <div
@@ -93,6 +99,34 @@ function LoginForm() {
             })}
           >
             등록되지 않은 이메일입니다. 지정된 관리자 계정으로 로그인해주세요.
+          </div>
+        )}
+
+        {(error === 'oauth' || signInError) && (
+          <div
+            role="alert"
+            className={css({
+              color: 'danger.text',
+              fontSize: 'sm',
+              mb: '4',
+              p: '3',
+              bg: 'danger.bg',
+              rounded: 'lg',
+              borderWidth: '[1px]',
+              borderColor: 'danger.border',
+              display: 'flex',
+              flexDir: 'column',
+              gap: '1',
+            })}
+          >
+            <span>Google 로그인에 실패했습니다.</span>
+            {(signInError?.message ?? oauthErrorDescription) && (
+              <span
+                className={css({ fontSize: 'xs', wordBreak: 'break-word' })}
+              >
+                {signInError?.message ?? oauthErrorDescription}
+              </span>
+            )}
           </div>
         )}
 

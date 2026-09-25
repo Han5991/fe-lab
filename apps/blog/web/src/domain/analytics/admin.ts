@@ -13,6 +13,9 @@
 
 import { AnalyticsService, type AnalyticsCalculator } from './service';
 
+// 계산 모듈(overview)이라 공개 배럴이 아니라 여기서 낸다.
+export { countLivePosts, UNIQUES_ESTIMATE_RATIO } from './overview';
+
 export {
   getAllPostStats,
   getAllPostsTrends,

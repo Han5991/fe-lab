@@ -27,6 +27,27 @@ interface LayoutProps {
 const railOuter = railGutter;
 const railInner = railColumn({ width: 'wide' });
 
+/** 건너뛰기 링크가 가리키는 본문 영역 id. */
+const MAIN_ID = 'main-content';
+
+// 헤더의 탭 정지점을 건너뛰는 링크 — 초점을 받을 때만 나타난다.
+const skipLink = css({
+  pos: 'absolute',
+  top: '2',
+  left: '4',
+  zIndex: '60',
+  px: '3',
+  py: '2',
+  bg: 'paper.50',
+  color: 'ink.950',
+  fontSize: 'sm',
+  borderWidth: 'hairline',
+  borderColor: 'ink.borderStrong',
+  rounded: 'md',
+  transform: 'translateY(-200%)',
+  _focus: { transform: 'none' },
+});
+
 const footerLink = css({
   fontFamily: 'mono',
   fontSize: '[12px]',
@@ -54,7 +75,10 @@ export const Layout = ({ children }: LayoutProps) => {
         flexDir: 'column',
       })}
     >
-      {/* sticky는 유지하되 blur/알파 배경은 걷어냈다 — 위계는 hairline 보더로만. */}
+      {/* sticky 헤더 — 위계는 hairline 보더와 반투명·흐림 배경으로만 세운다. */}
+      <a href={`#${MAIN_ID}`} className={skipLink}>
+        본문으로 건너뛰기
+      </a>
       <header
         className={css({
           borderBottomWidth: 'hairline',
@@ -67,12 +91,9 @@ export const Layout = ({ children }: LayoutProps) => {
           // 경계에서 뚝 잘려 보인다.
           //
           bg: 'paper.50/80',
-          // Panda에서 흐림은 `backdropFilter: 'auto'` + `backdropBlur` 조합이다.
-          // `backdropFilter: '[blur(12px)]'` 처럼 임의값으로 주면 클래스만 생기고
-          // 규칙이 안 나간다(리뉴얼 전 코드가 그 형태였다).
-          //
-          // lightningcss가 이 선언을 `-webkit-backdrop-filter` 한 줄로만 내보낸다.
-          // 실제 브라우저(Chrome/Safari)는 이 접두사를 지원하므로 흐림이 걸린다.
+          // Panda의 흐림은 `backdropFilter: 'auto'` + `backdropBlur`다(임의값이면 규칙이 안 나간다).
+          // backdrop-filter는 헤더를 fixed 자손의 containing block으로 만든다 —
+          // 뷰포트를 덮는 오버레이는 <Portal>로 body에 띄울 것.
           backdropFilter: 'auto',
           backdropBlur: '[12px]',
           zIndex: '10',
@@ -83,6 +104,7 @@ export const Layout = ({ children }: LayoutProps) => {
             className={cx(
               railInner,
               css({
+                // 이 높이(+ 하단 hairline)에 PreviewBanner의 sticky top이 맞물린다.
                 h: '[52px]',
                 display: 'flex',
                 alignItems: 'center',
@@ -130,7 +152,12 @@ export const Layout = ({ children }: LayoutProps) => {
         </div>
       </header>
 
-      <main className={css({ flex: '1', w: 'full' })}>
+      {/* tabIndex -1: 건너뛰기 링크가 초점을 여기로 옮길 수 있게(탭 순서에는 없다). */}
+      <main
+        id={MAIN_ID}
+        tabIndex={-1}
+        className={css({ flex: '1', w: 'full', outline: 'none' })}
+      >
         <PageTransition>{children}</PageTransition>
       </main>
 

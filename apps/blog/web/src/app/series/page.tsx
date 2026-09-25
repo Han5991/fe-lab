@@ -184,9 +184,12 @@ export default function SeriesPage() {
                             {post.title}
                             <HiddenPostBadge post={post} />
                           </h3>
-                          <span className={postRowMeta}>
-                            {fmtDate(post.date)}
-                          </span>
+                          {/* 날짜가 없으면 빈 span을 남기지 않는다(ArchiveRow와 같은 규칙). */}
+                          {post.date && (
+                            <span className={postRowMeta}>
+                              {fmtDate(post.date)}
+                            </span>
+                          )}
                         </Link>
                       </li>
                     ))}

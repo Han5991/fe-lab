@@ -6,6 +6,7 @@ import {
   type ReactNode,
 } from 'react';
 import { codeText } from '@/src/components/post/markdownCode';
+import { isMarkdownTag } from '@/src/components/post/markdownTag';
 import { CodeTabsPanels, type CodeTabMeta } from './CodeTabsPanels';
 
 /**
@@ -82,7 +83,6 @@ interface CodeElementProps {
 function unwrapPre(
   node: ReactElement<CodeElementProps>,
 ): ReactElement<CodeElementProps> | null {
-  if (node.type !== 'pre') return node;
   const inner = Children.toArray(node.props.children).find(
     isValidElement<CodeElementProps>,
   );
@@ -110,10 +110,9 @@ function collectTabs(children: ReactNode): Collected {
   Children.toArray(children).forEach(child => {
     // 코드 펜스는 언제나 `<pre>`로 온다. raw HTML로 직접 쓴 <pre>도 같은
     // 취급이지만, 그건 어차피 코드를 담는 상자라 탭에 들어가도 무방하다.
-    const code =
-      isValidElement<CodeElementProps>(child) && child.type === 'pre'
-        ? unwrapPre(child)
-        : null;
+    const code = isMarkdownTag<CodeElementProps>(child, 'pre')
+      ? unwrapPre(child)
+      : null;
     if (!code) {
       // 마크다운이 블록 사이에 끼워 넣는 공백 텍스트까지 남기면 탭 아래에
       // 빈 줄이 생긴다. 그것만 걸러내고 나머지는 전부 보존한다.

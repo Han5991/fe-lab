@@ -95,15 +95,14 @@ afterAll(() => server.close());
  * 서술한 duck-type으로 둘을 묶는다(any로 흘리면 typed-lint가 전부 unsafe로
  * 본다). 메서드가 늘면 이 인터페이스에도 추가할 것.
  */
+interface WireQuery extends PromiseLike<unknown> {
+  in(column: string, values: readonly string[]): WireQuery;
+  order(column: string, opts: { ascending: boolean }): WireQuery;
+  limit(n: number): WireQuery;
+}
+
 interface WireClient {
-  from(table: string): {
-    select(columns: string): PromiseLike<unknown> & {
-      order(
-        column: string,
-        opts: { ascending: boolean },
-      ): { limit(n: number): PromiseLike<unknown> };
-    };
-  };
+  from(table: string): { select(columns: string): WireQuery };
   rpc(fn: string, args: Record<string, unknown>): PromiseLike<unknown>;
 }
 
@@ -131,18 +130,27 @@ const SCENARIOS: {
   name: string;
   run: (c: WireClient) => PromiseLike<unknown>;
 }[] = [
+  // 체인은 domain/analytics/repository.ts와 같은 모양이다 — 저쪽을 고치면 함께 고친다.
   {
     name: 'getTopPosts',
     run: c =>
       c
         .from('post_views')
         .select('slug, view_count')
+        .in('slug', ['hello-world', 'series/second-post'])
         .order('view_count', { ascending: false })
+        .order('slug', { ascending: true })
         .limit(5),
   },
   {
     name: 'getAllViewCounts',
-    run: c => c.from('post_views').select('slug, view_count'),
+    run: c =>
+      c
+        .from('post_views')
+        .select('slug, view_count')
+        .in('slug', ['hello-world', 'series/second-post'])
+        .order('view_count', { ascending: false })
+        .order('slug', { ascending: true }),
   },
   {
     name: 'incrementViewCount',

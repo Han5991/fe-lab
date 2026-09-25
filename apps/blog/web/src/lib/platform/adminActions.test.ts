@@ -4,7 +4,13 @@
 
 import { readFileSync } from 'node:fs';
 import { expect, test } from 'vitest';
-import { ADMIN_ACTION_RPC, isAdminAction } from './adminActions';
+import {
+  ADMIN_ACTION_RPC,
+  MAX_FILTER_SLUGS,
+  MAX_SLUG_LENGTH,
+  isAdminAction,
+  isSlugList,
+} from './adminActions';
 
 test('isAdminAction: 등록된 action만 통과한다', () => {
   for (const action of Object.keys(ADMIN_ACTION_RPC)) {
@@ -56,4 +62,21 @@ test('ADMIN_ACTION_RPC: 모든 action이 서로 다른 get_* RPC에 대응한다
   for (const rpc of rpcs) {
     expect(rpc, `${rpc}: admin 대리 호출은 읽기 전용 RPC만`).toMatch(/^get_/);
   }
+});
+
+test('isSlugList: 거를 slug 목록으로 쓸 수 있는 문자열 배열만 통과한다', () => {
+  expect(isSlugList([])).toBe(true);
+  expect(isSlugList(['a', 'series/b', '공백 있는 글'])).toBe(true);
+  expect(isSlugList(['x'.repeat(MAX_SLUG_LENGTH)])).toBe(true);
+
+  // JSON에서 온 값이다 — 모양이 어긋나면 필터 없이 진행하지 말고 거절해야 한다.
+  expect(isSlugList(undefined)).toBe(false);
+  expect(isSlugList('a')).toBe(false);
+  expect(isSlugList({ 0: 'a', length: 1 })).toBe(false);
+  expect(isSlugList(['a', 1])).toBe(false);
+  expect(isSlugList([''])).toBe(false);
+  expect(isSlugList(['x'.repeat(MAX_SLUG_LENGTH + 1)])).toBe(false);
+  expect(
+    isSlugList(Array.from({ length: MAX_FILTER_SLUGS + 1 }, (_, i) => `p${i}`)),
+  ).toBe(false);
 });

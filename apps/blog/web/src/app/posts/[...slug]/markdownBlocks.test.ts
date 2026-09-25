@@ -8,7 +8,11 @@ import { Figure } from '@/src/components/post/markdown/Figure';
 import { FileTree } from '@/src/components/post/markdown/FileTree';
 import { Metric, Metrics } from '@/src/components/post/markdown/Metrics';
 import { Step, Timeline } from '@/src/components/post/markdown/Timeline';
-import { Diagram } from '@/src/components/diagram';
+import {
+  Diagram,
+  DiagramEdgeTag,
+  DiagramNodeTag,
+} from '@/src/components/diagram';
 
 // react-markdown이 <p>로 감싼 자식을 isBlockMarkdownChild가 어떻게 분류하는지 검증.
 // true면 PostBody의 p 매퍼가 <p>를 <div>로 교체해 무효 중첩(<p><div></div></p>) → hydration
@@ -42,14 +46,14 @@ describe('isBlockMarkdownChild', () => {
     });
   });
 
-  // Msg/Metric/Step은 컨테이너 내부에서만 쓰여 <p> 직계 자식으로 오지 않으므로
-  // 일부러 Set에 넣지 않았다. 나중에 누가 "빠뜨렸다"고 오해해 추가하지 않도록 못박는다.
-  describe('시그니처 컴포넌트의 내부 요소는 등록 대상이 아님', () => {
-    test('Msg / Metric / Step → 블록 아님', () => {
-      expect(isBlockMarkdownChild(createElement(Msg))).toBe(false);
-      expect(isBlockMarkdownChild(createElement(Metric))).toBe(false);
-      expect(isBlockMarkdownChild(createElement(Step))).toBe(false);
-    });
+  // 빈 줄 뒤 자식 태그는 문단에 싸여 온다 — 컨테이너 밖에 흘러도 <p><div>가 되지 않게.
+  describe('시그니처·다이어그램의 자식 태그도 블록', () => {
+    test.each([Msg, Metric, Step, DiagramNodeTag, DiagramEdgeTag])(
+      '%o → block',
+      tag => {
+        expect(isBlockMarkdownChild(createElement(tag))).toBe(true);
+      },
+    );
   });
 
   // 이미지는 closure(relativeDir) 때문에 인라인 래퍼로 매핑돼 child.type이 래퍼

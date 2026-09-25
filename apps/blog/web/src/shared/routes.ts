@@ -13,7 +13,7 @@
  * import 금지 계약이라 이 모듈을 가져가지 못한다 — 거기 남은 사본
  * (sitemap·llms·번들 규칙용)은 `contentValues.test.ts`가 이 모듈과 잠근다.
  */
-import { encodePostSlug } from '@blog/content';
+import { decodeUrlSafe, encodePostSlug } from '@blog/content';
 
 // ── 홈 · 정적 페이지 ─────────────────────────────────────────────────────────
 // `trailingSlash: true`(next.config.ts)라 후행 슬래시를 포함한다.
@@ -50,6 +50,11 @@ export const ADMIN_LOGIN_PATH = `${ADMIN_LOGIN_PATH_NO_SLASH}/`;
 
 /** 허용되지 않은 계정으로 로그인했을 때 보내는 경로. */
 export const ADMIN_LOGIN_UNAUTHORIZED_PATH = `${ADMIN_LOGIN_PATH}?error=unauthorized`;
+
+/** OAuth가 실패해 돌아왔을 때의 로그인 경로 — 가드가 복귀 URL의 실패 사유를 실어 보낸다. */
+export function adminLoginErrorPath(description: string): string {
+  return `${ADMIN_LOGIN_PATH}?error=oauth&error_description=${encodeURIComponent(description)}`;
+}
 
 /**
  * OAuth를 마친 브라우저가 돌아올 경로.
@@ -99,16 +104,25 @@ export function isAdminLoginPath(pathname: string | null | undefined): boolean {
 export const ADMIN_ANALYTICS_PATH = `${ADMIN_BASE_PATH}/analytics/`;
 
 /**
- * 글 하나의 admin 통계 상세 경로.
- *
- * 라우트(`[...slug]`)가 공개 글 상세(`posts/[...slug]`)와 같은 catch-all이므로
- * 인코딩 규칙도 `postPath`와 같다 — `encodePostSlug`가 세그먼트별로
- * encodeURIComponent하고 `/`는 남긴다. 예전엔 `post.slug`를 날것으로 넣어서,
- * frontmatter `slug:` 없이 폴더 경로로 폴백된 `시리즈/파일명` 글은 단일 `[slug]`
- * 라우트와 맞지 않아 404였고 한글 slug는 인코딩 없이 나갔다. 라우트 쪽 디코드는
- * `src/app/admin/analytics/[...slug]/slugFromParams.ts` — 둘의 왕복은
- * routes.test.ts가 잠근다.
+ * 글 하나의 admin 통계 상세 경로 — 공개 글 상세와 같은 catch-all이라 인코딩도 `postPath`와
+ * 같다(라우트 쪽 디코드는 아래 `slugFromRouteParam`).
  */
 export function adminAnalyticsPostPath(slug: string): string {
   return `${ADMIN_ANALYTICS_PATH}${encodePostSlug(slug)}/`;
+}
+
+/**
+ * catch-all 라우트 파라미터를 글 slug로 되돌린다 — 세그먼트를 잇고 디코드한다. 잘못된 `%`
+ * 인코딩에도 던지지 않아(`decodeUrlSafe`) 조회만 빗나가 404로 끝난다.
+ */
+export function slugFromRouteParam(
+  param: string | string[] | undefined,
+): string {
+  const raw =
+    typeof param === 'string'
+      ? param
+      : Array.isArray(param)
+        ? param.join('/')
+        : '';
+  return decodeUrlSafe(raw);
 }

@@ -9,11 +9,17 @@
  * import하면 안 된다. 순수 유틸·타입·상수(postPath·isPostVisible·SITE_URL 등)는
  * 계속 `@blog/content`에서 직접 import한다.
  */
-import { createContent } from '@blog/content';
+import { BUILD_NOW_ENV, createContent, resolveBuildNow } from '@blog/content';
 import { createPostSeo } from '@blog/content/seo';
 import contentConfig from '@/content.config.mts';
 
-export const content = createContent(contentConfig);
+/**
+ * 공개 판정의 기준 시각은 빌드 전체가 하나다 — `pnpm build`가 내보낸 `BLOG_CONTENT_NOW`를
+ * prebuild와 같은 파서로 읽는다(없으면 지금). 갈리면 예약 글이 페이지에만 있고 sitemap엔 없다.
+ */
+export const content = createContent(contentConfig, {
+  now: resolveBuildNow(process.env[BUILD_NOW_ENV]),
+});
 
 export const {
   getAllPosts,

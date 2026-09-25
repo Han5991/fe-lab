@@ -5,7 +5,12 @@
  */
 
 import { expect, test } from 'vitest';
-import { AdminApiClient, type FunctionsInvoker } from './adminApi';
+import {
+  AdminApiClient,
+  AdminApiError,
+  type FunctionsFailure,
+  type FunctionsInvoker,
+} from './adminApi';
 
 // ── mock 헬퍼 ─────────────────────────────────────────────────────────────────
 
@@ -15,7 +20,7 @@ interface CapturedCall {
 }
 
 type InvokeResponse =
-  { data: unknown; error: null } | { data: null; error: { message: string } };
+  { data: unknown; error: null } | { data: null; error: FunctionsFailure };
 
 function makeMockClient(response: InvokeResponse): {
   client: FunctionsInvoker;
@@ -30,7 +35,7 @@ function makeMockClient(response: InvokeResponse): {
         // mock은 T와 무관하게 고정 응답을 돌려준다 — 런타임 동작만 검증하므로
         // 제네릭 반환 타입으로의 cast는 의도된 우회다.
         return Promise.resolve(
-          response as { data: T | null; error: { message: string } | null },
+          response as { data: T | null; error: FunctionsFailure | null },
         );
       },
     },
@@ -119,19 +124,70 @@ test('AdminApiClient: all_posts_trends — params 없이 한 번만 호출한다
   expect(result).toStrictEqual(mockData);
 });
 
-test('AdminApiClient: error 응답 시 Error throw', async () => {
-  const { client } = makeMockClient({
-    data: null,
-    error: { message: '인증에 실패했습니다.' },
-  });
-
+test('AdminApiClient: 목록형 action은 거를 slug 목록을 params로 싣는다', async () => {
+  const { client, calls } = makeMockClient({ data: { data: [] }, error: null });
   const api = new AdminApiClient(client);
 
-  const rejected = api.call('all_post_stats');
+  await api.call('all_post_stats', { slugs: ['post-a', 'series/post-b'] });
+  await api.call('all_posts_trends', { slugs: ['post-a'] });
 
-  await expect(rejected).rejects.toBeInstanceOf(Error);
-  await expect(rejected).rejects.toThrow('인증에 실패했습니다.');
+  expect(calls.map(c => c.options?.body)).toStrictEqual([
+    {
+      action: 'all_post_stats',
+      params: { slugs: ['post-a', 'series/post-b'] },
+    },
+    { action: 'all_posts_trends', params: { slugs: ['post-a'] } },
+  ]);
 });
+
+/** supabase-js의 non-2xx 실패 모양 그대로 — message는 고정 문구, 상태·본문은 context에 있다. */
+function httpFailure(status: number, body: string): FunctionsFailure {
+  return {
+    message: 'Edge Function returned a non-2xx status code',
+    context: new Response(body, {
+      status,
+      headers: { 'Content-Type': 'application/json' },
+    }),
+  };
+}
+
+test.each([
+  [
+    'HTTP 실패',
+    httpFailure(401, JSON.stringify({ error: '인증에 실패했습니다.' })),
+    { status: 401, serverMessage: '인증에 실패했습니다.' },
+    '(401): 인증에 실패했습니다.',
+  ],
+  [
+    'JSON이 아닌 본문',
+    httpFailure(502, '<html>Bad Gateway</html>'),
+    { status: 502, serverMessage: null },
+    '(502): Edge Function returned a non-2xx status code',
+  ],
+  [
+    '응답까지 못 간 네트워크 실패',
+    {
+      message: 'Failed to send a request to the Edge Function',
+      context: new TypeError('fetch failed'),
+    },
+    { status: null, serverMessage: null },
+    'Failed to send a request to the Edge Function',
+  ],
+])(
+  'AdminApiClient: %s는 상태·서버 문구를 담은 AdminApiError다',
+  async (_kind, error, fields, message) => {
+    const { client } = makeMockClient({ data: null, error });
+
+    const rejected = new AdminApiClient(client).call('all_post_stats');
+
+    await expect(rejected).rejects.toBeInstanceOf(AdminApiError);
+    await expect(rejected).rejects.toMatchObject({
+      action: 'all_post_stats',
+      ...fields,
+    });
+    await expect(rejected).rejects.toThrow(message);
+  },
+);
 
 test('AdminApiClient: data가 null이면 Error throw (빈 응답)', async () => {
   // error도 없고 data도 없는 비정상 응답
@@ -199,7 +255,7 @@ test('AdminApiClient: params 계약 — 필수 slug 누락·미등록 action은 
   void api.call('post_dow_distribution', {});
   // @ts-expect-error — 등록되지 않은 action
   void api.call('nope');
-  // @ts-expect-error — all_post_stats는 params가 없다
+  // @ts-expect-error — all_post_stats의 params는 거를 slug 목록(slugs)뿐이다
   void api.call('all_post_stats', { slug: 'x' });
 
   // params가 전부 선택인 action은 생략 가능

@@ -3,11 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "predev:web": "blog-content build",
+    "predev:web": "NODE_ENV=development blog-content build",
     "dev": "pnpm supabase-start && pnpm dev:web",
     "dev:web": "next dev",
     "prebuild": "blog-content build --strict",
-    "build": "pnpm prebuild && next build && pnpm check-seo && pnpm check-bundle",
+    "build": "export BLOG_CONTENT_NOW=\"${BLOG_CONTENT_NOW:-$(date -u +%Y-%m-%dT%H:%M:%SZ)}\" && pnpm prebuild && next build && pnpm check-seo && pnpm check-bundle",
     "lint": "eslint . --max-warnings=0",
     "lint:posts": "blog-content validate",
     "check-seo": "blog-content check-seo",

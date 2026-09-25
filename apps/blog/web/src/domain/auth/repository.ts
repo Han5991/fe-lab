@@ -1,21 +1,8 @@
 /**
- * Auth 저장소 — supabase 세션 API(client.auth)를 만지는 유일한 곳.
- *
- * 예전에는 `src`의 세 파일(AdminGuard·useAdminLogout·로그인 페이지)이
- * `lib/platform/client`를 직접 import해 `.auth.*`를 불렀다 — 레이어 규칙
- * ("src는 저장소를 직접 찌르지 않는다")의 유일한 예외였고, lint 가드는
- * `.from()`/`.rpc()`만 봐서 잡지 못했다. 이 모듈이 생기면서 app 레이어의
- * platform 접근 허용 자체가 boundaries에서 빠졌다(eslint.config.mjs) —
- * 이름 우회가 아니라 import 경로 단위로 막힌다.
- *
- * supabase-js의 타입은 여기서 끝낸다: 소비자에게는 판정에 필요한 최소
- * 모양(AdminSession)만 노출하고, 클라이언트는 구조적 부분형(AuthClientLike)
- * 으로 받아 테스트가 가짜 클라이언트를 주입할 수 있게 한다
- * (lib/platform/adminApi.ts의 FunctionsInvoker와 같은 관례).
- *
- * 이 파일은 **런타임 import가 없다** — `lib/platform/client`는 import 시점에
- * env 부재로 throw하므로(모듈 최상위 createClient), 여기서 끌면 node 테스트가
- * 팩토리를 열어 보지도 못한다. 실제 클라이언트 바인딩은 배럴(index.ts)이 한다.
+ * Auth 저장소 — supabase 세션 API(client.auth)를 만지는 유일한 곳. 소비자에게는 최소
+ * 모양(AdminSession)만 내고, 클라이언트는 구조적 부분형으로 받아 테스트가 주입한다.
+ * 런타임 import가 없다 — `lib/platform/client`는 import 시점에 env가 없으면 던지므로
+ * 실제 바인딩은 배럴(index.ts)이 한다.
  */
 
 /** 세션에서 판정에 쓰는 최소 모양 — supabase Session의 구조적 부분형. */

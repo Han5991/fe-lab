@@ -33,8 +33,10 @@ export function PreviewBanner({ post }: Props) {
     <div
       role="status"
       className={css({
+        // 헤더(Layout.tsx: 52px + hairline) 아래에 붙는다 — 이 배너는 헤더보다 낮은
+        // stacking context 안이라 top 0이면 헤더에 덮인다. 헤더 높이를 바꾸면 함께.
         position: 'sticky',
-        top: '0',
+        top: '[53px]',
         zIndex: 100,
         bg: 'marker.600',
         color: 'paper.50',

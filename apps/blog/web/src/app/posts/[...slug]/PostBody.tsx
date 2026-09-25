@@ -1,4 +1,4 @@
-import { Children } from 'react';
+import { Children, type CSSProperties } from 'react';
 import ReactMarkdown, { type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
@@ -7,6 +7,7 @@ import { css } from '@design-system/ui-lib/css';
 
 import { CodeBlock } from '@/src/components/post/CodeBlock';
 import { rehypeCodeMeta } from '@/src/components/post/codeMeta';
+import { rehypeDropUnsafe } from '@/src/components/post/rehypeDropUnsafe';
 import { CodeTabs } from '@/src/components/post/markdown/CodeTabs';
 import { MarkdownImage } from '@/src/components/post/MarkdownImage';
 import { Callout } from '@/src/components/post/markdown/Callout';
@@ -20,8 +21,10 @@ import {
   DiagramNodeTag,
   DiagramEdgeTag,
 } from '@/src/components/diagram';
+import { HEADER_OFFSET } from '@/src/components/post/headerOffset';
 import { HEADING_COMPONENTS } from '@/src/components/post/markdownHeadings';
-import { isBlockMarkdownChild } from './markdownBlocks';
+import { isMarkdownTag } from '@/src/components/post/markdownTag';
+import { fencedCode, isBlockMarkdownChild } from './markdownBlocks';
 
 /**
  * 글 본문 렌더 파이프라인의 단일 출처 — 마크다운 원문이 DOM이 되는 유일한 곳.
@@ -37,10 +40,14 @@ import { isBlockMarkdownChild } from './markdownBlocks';
 
 export const POST_REMARK_PLUGINS = [remarkGfm];
 
-// rehypeCodeMeta는 **rehypeRaw보다 앞**이어야 한다. 펜스 메타(```ts title="…")는
-// hast의 `data`에 실려 오는데, rehypeRaw가 트리를 직렬화·재파싱하면서 `data`를
-// 버리기 때문이다. 먼저 속성으로 옮겨두면 그 왕복을 지나 살아남는다.
-export const POST_REHYPE_PLUGINS = [rehypeCodeMeta, rehypeRaw, rehypeSlug];
+// codeMeta는 rehypeRaw 앞 — raw의 재파싱이 펜스 메타(hast `data`)를 버린다.
+// dropUnsafe는 rehypeRaw 뒤 — raw HTML이 요소가 된 뒤에야 태그 이름으로 가린다.
+export const POST_REHYPE_PLUGINS = [
+  rehypeCodeMeta,
+  rehypeRaw,
+  rehypeDropUnsafe,
+  rehypeSlug,
+];
 
 /**
  * react-markdown의 `Components`에 **커스텀 태그를 더한 것**.
@@ -74,11 +81,29 @@ type PostComponents = Components & {
   'diagram-edge': typeof DiagramEdgeTag;
 };
 
+interface ImageProps {
+  src?: unknown;
+  alt?: string | undefined;
+  width?: number | string | undefined;
+  height?: number | string | undefined;
+}
+
 /**
  * 본문 components 매핑. `img` 매퍼가 글의 `relativeDir`을 닫아 잡으므로
  * 상수가 아니라 팩토리다.
  */
 export function buildPostComponents(relativeDir: string): PostComponents {
+  const image = ({ src, alt, width, height }: ImageProps, zoomable = true) => (
+    <MarkdownImage
+      src={typeof src === 'string' ? src : undefined}
+      alt={alt}
+      width={width}
+      height={height}
+      relativeDir={relativeDir}
+      zoomable={zoomable}
+    />
+  );
+
   return {
     // 본문 h1 → h2 강등. 페이지의 h1은 PostHeader의 글 제목
     // 하나뿐이어야 한다(markdownHeadings.tsx 참고).
@@ -92,29 +117,39 @@ export function buildPostComponents(relativeDir: string): PostComponents {
       }
       return <p {...props}>{children}</p>;
     },
+    // 펜스의 바깥 `<pre>`는 벗긴다 — CodeBlock이 `<figure>`로 그려 `<pre>` 안에
+    // 두면 무효 중첩이다. 블록으로 그리지 않는 raw `<pre>`는 그대로 둔다.
+    pre({ node: _node, children, ...props }) {
+      const fence = fencedCode(children);
+      return fence ?? <pre {...props}>{children}</pre>;
+    },
     code(props) {
       return <CodeBlock {...props} />;
     },
-    img({ src, alt }) {
+    img(props) {
+      return image(props);
+    },
+    // 링크로 감싼 이미지는 확대 없이 그린다 — 확대 래퍼(div·button)가 `<a>` 안이면
+    // 무효 중첩에 대화형 요소 중첩이다.
+    a({ node: _node, children, ...props }) {
       return (
-        <MarkdownImage
-          src={typeof src === 'string' ? src : undefined}
-          alt={alt}
-          relativeDir={relativeDir}
-        />
+        <a {...props}>
+          {Children.map(children, child =>
+            // `src`만 보면 `<video src>` 같은 raw HTML까지 이미지로 오인한다.
+            isMarkdownTag<ImageProps>(child, 'img')
+              ? image(child.props, false)
+              : child,
+          )}
+        </a>
       );
     },
-    table({ children, node: _node, ...props }) {
+    table({ children, node, ...props }) {
       return (
-        // 열이 많은 표는 본문 폭(모바일 ~310px)을 넘는다. 감싸지
-        // 않으면 마지막 열이 잘린 채 스크롤도 안 된다.
-        //
-        // tabIndex+role로 키보드 초점을 받게 한다 — 마우스 없이
-        // 스크롤할 방법이 사라지면 안 된다(axe
-        // scrollable-region-focusable).
+        // 넓은 표는 가로로 스크롤하고 키보드로도 스크롤하게 초점을 받는다(axe
+        // scrollable-region-focusable). 랜드마크라 이름은 표마다 달라야 한다.
         <div
           role="region"
-          aria-label="표"
+          aria-label={tableLabel(node)}
           tabIndex={0}
           className={css({
             overflowX: 'auto',
@@ -184,6 +219,46 @@ export function buildPostComponents(relativeDir: string): PostComponents {
   };
 }
 
+/** 표 이름을 짓는 데 읽는 hast 노드의 모양(react-markdown이 `node`로 넘긴다). */
+interface HastLike {
+  type?: string;
+  tagName?: string;
+  value?: string;
+  children?: HastLike[];
+}
+
+function hastText(node: HastLike): string {
+  if (node.type === 'text') return node.value ?? '';
+  return (node.children ?? []).map(hastText).join('');
+}
+
+function findElement(node: HastLike, tagName: string): HastLike | undefined {
+  for (const child of node.children ?? []) {
+    if (child.tagName === tagName) return child;
+    const found = findElement(child, tagName);
+    if (found) return found;
+  }
+  return undefined;
+}
+
+/**
+ * 표 스크롤 영역의 접근 가능한 이름. `<caption>`이 있으면 그것, 없으면
+ * 머리행의 칸 제목을 이어 붙인다(GFM 표는 언제나 머리행이 있다).
+ */
+function tableLabel(node: HastLike | undefined): string {
+  if (!node) return '표';
+  const caption = findElement(node, 'caption');
+  const captionText = caption ? hastText(caption).trim() : '';
+  if (captionText) return `표: ${captionText}`;
+
+  const headerRow = findElement(node, 'tr');
+  const headers = (headerRow?.children ?? [])
+    .filter(cell => cell.tagName === 'th' || cell.tagName === 'td')
+    .map(cell => hastText(cell).trim())
+    .filter(Boolean);
+  return headers.length > 0 ? `표: ${headers.join(', ')}` : '표';
+}
+
 interface PostBodyProps {
   /** 마크다운 원문 (`post.content`). */
   content: string;
@@ -191,10 +266,19 @@ interface PostBodyProps {
   relativeDir: string;
 }
 
+/**
+ * 헤딩의 `scroll-margin-top` — `css()`는 정적 추출이라 JS 상수를 CSS 변수로 실어 보낸다.
+ * 목차 활성 판정과 같은 `HEADER_OFFSET`이어야 이동 직후의 헤딩이 "보이는 곳"이 된다.
+ */
+const headingOffsetStyle: CSSProperties & Record<`--${string}`, string> = {
+  '--post-heading-offset': `${HEADER_OFFSET}px`,
+};
+
 export function PostBody({ content, relativeDir }: PostBodyProps) {
   return (
     <div
       id="post-content"
+      style={headingOffsetStyle}
       className={css({
         // 리뉴얼로 세리프 정체성을 폐기했다. serif 토큰이 sans로
         // 매핑돼 있긴 하지만 의도를 코드에 남기려 명시적으로 sans.
@@ -225,7 +309,7 @@ export function PostBody({ content, relativeDir }: PostBodyProps) {
           mb: '4',
           color: 'accent.900',
           lineHeight: 'header',
-          scrollMarginTop: '[100px]',
+          scrollMarginTop: '[var(--post-heading-offset)]',
         },
         // h3는 본문(18px)과 크기가 같다. 굵기·색(ink.950)·위 여백으로
         // 구분되므로 크기까지 벌리면 위 단계와 붙어버린다.
@@ -236,7 +320,7 @@ export function PostBody({ content, relativeDir }: PostBodyProps) {
           mt: '10',
           mb: '3',
           color: 'ink.950',
-          scrollMarginTop: '[100px]',
+          scrollMarginTop: '[var(--post-heading-offset)]',
         },
         '& h4': {
           fontSize: '[16px]',
@@ -245,7 +329,7 @@ export function PostBody({ content, relativeDir }: PostBodyProps) {
           mt: '8',
           mb: '3',
           color: 'ink.950',
-          scrollMarginTop: '[100px]',
+          scrollMarginTop: '[var(--post-heading-offset)]',
         },
         '& p': { mb: '6' },
         '& ul': { listStyleType: 'disc', pl: '6', mb: '6' },
@@ -341,22 +425,15 @@ export function PostBody({ content, relativeDir }: PostBodyProps) {
           borderBottomColor: 'accent.200',
           transition: '[all 0.15s]',
           fontWeight: 'medium',
-          wordBreak: 'break-all',
-          overflowWrap: 'break-word',
+          // 넘칠 때만 끊는다 — break-all은 평범한 단어 중간도 잘랐다.
+          overflowWrap: 'anywhere',
           _hover: {
             // 보더는 비텍스트라 원색(accent.500)을 그대로 쓴다.
             borderBottomColor: 'accent.500',
             bg: 'accent.50',
           },
         },
-        '& img': {
-          rounded: 'control',
-          w: 'full',
-          h: 'auto',
-          borderWidth: 'hairline',
-          borderColor: 'ink.border',
-          my: '4',
-        },
+        // 본문 이미지 모양은 MarkdownImage가 단일 출처다 — 여기 `& img`를 두면 명시도로 이긴다.
         '& hr': {
           my: '10',
           h: '[1px]',

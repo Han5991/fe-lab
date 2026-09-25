@@ -96,8 +96,29 @@ export const mermaidContainerStyle = css({
   },
 });
 
+/** 문법 오류로 못 그렸을 때 빈 상자 대신 원문을 보여 주는 자리. */
+const mermaidErrorStyle = css({
+  my: '10',
+  p: '6',
+  bg: 'paper.100',
+  rounded: 'card',
+  borderWidth: 'hairline',
+  borderColor: 'danger.border',
+  fontSize: 'sm',
+  color: 'ink.600',
+  '& pre': {
+    mt: '3',
+    fontFamily: 'mono',
+    fontSize: 'xs',
+    color: 'ink.900',
+    whiteSpace: 'pre-wrap',
+    overflowWrap: 'anywhere',
+  },
+});
+
 export function MermaidChart({ chart }: { chart: string }) {
   const [svg, setSvg] = useState<string>('');
+  const [failed, setFailed] = useState(false);
   const id = useId();
   const theme = useTheme();
 
@@ -132,6 +153,9 @@ export function MermaidChart({ chart }: { chart: string }) {
           // 'strict' = HTML 허용, JS·이벤트 핸들러 차단. Mermaid가 내부적으로
           // DOMPurify를 돌리고, 입력도 작성자 신뢰 마크다운만이라 추가 sanitize 불필요.
           securityLevel: 'strict',
+          // 기본값이면 문법 오류 때 오류 SVG를 body에 남긴 채 throw한다 — 끄면 아래
+          // catch가 제자리에서 보여 준다.
+          suppressErrorRendering: true,
         });
         // useId 값(:r0: 등)에서 셀렉터 부적합 문자를 제거하고, 매 렌더마다
         // 고유하도록 카운터를 덧붙인다.
@@ -140,8 +164,10 @@ export function MermaidChart({ chart }: { chart: string }) {
         const rendered = await mermaid.render(renderId, chart);
         if (cancelled) return;
         setSvg(rendered.svg);
+        setFailed(false);
       } catch (error) {
         console.error('Mermaid render failed:', error);
+        if (!cancelled) setFailed(true);
       }
     };
     void renderChart();
@@ -149,6 +175,17 @@ export function MermaidChart({ chart }: { chart: string }) {
       cancelled = true;
     };
   }, [chart, id, theme]);
+
+  if (failed) {
+    return (
+      <div role="note" className={mermaidErrorStyle}>
+        다이어그램을 그리지 못해 원문을 그대로 보여 줍니다.
+        <pre>
+          <code>{chart}</code>
+        </pre>
+      </div>
+    );
+  }
 
   return (
     <div

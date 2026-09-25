@@ -1,17 +1,13 @@
 import { defineConfig } from '@pandacss/dev';
 
 export default defineConfig({
-  presets: [
-    '@pandacss/dev/presets',
-    '@design-system/ui/preset',
-    '@design-system/ui/blog-preset',
-  ],
+  // 블로그 프리셋만 — 기본 프리셋·컴포넌트 소스는 실험 앱용이라 걸면 lab 스타일이 실린다.
+  presets: ['@pandacss/dev/presets', '@design-system/ui/blog-preset'],
   preflight: true,
   lightningcss: true,
 
   include: [
     './src/**/*.{js,jsx,ts,tsx}',
-    './node_modules/@design-system/ui/src/**/*.{js,jsx,ts,tsx}',
     // @blog/content는 지금 css()를 쓰지 않지만, 소스 익스포트 패키지라 스타일
     // 사용이 생기는 즉시 스캔 대상이어야 한다 — 선제 등록(누락 시 조용히
     // 스타일이 빠진 채 빌드가 성공한다).
@@ -52,7 +48,10 @@ export default defineConfig({
       html: {
         bg: 'paper.50',
         color: 'ink.950',
-        scrollBehavior: 'smooth',
+        // 움직임 줄이기를 켠 사용자에게는 스크롤을 미끄러뜨리지 않는다.
+        '@media (prefers-reduced-motion: no-preference)': {
+          scrollBehavior: 'smooth',
+        },
         // Firefox는 ::-webkit-scrollbar 의사요소를 받지 않는다. 아래 webkit
         // 규칙과 같은 결과를 표준 속성으로 한 번 더 준다.
         scrollbarWidth: 'thin',

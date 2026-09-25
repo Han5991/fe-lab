@@ -1,8 +1,7 @@
 'use client';
 
 import { css } from '@design-system/ui-lib/css';
-import { Label } from './Label';
-import { segmentedItem } from './segmented';
+import { SegmentedRadioGroup } from './SegmentedRadioGroup';
 
 export type ViewMode = 'list' | 'cards';
 
@@ -16,36 +15,22 @@ const OPTIONS: { id: ViewMode; label: string }[] = [
   { id: 'cards', label: '카드' },
 ];
 
-export const ViewToggle = ({ value, onChange }: ViewToggleProps) => {
-  return (
-    <div className={css({ display: 'flex', flexDir: 'column', gap: '2' })}>
-      <Label tone="meta">뷰</Label>
-      <div
-        role="tablist"
-        className={css({
-          display: 'flex',
-          borderWidth: '[1px]',
-          borderColor: 'ink.border',
-          rounded: '[6px]',
-          overflow: 'hidden',
-        })}
-      >
-        {OPTIONS.map(opt => {
-          const isActive = value === opt.id;
-          return (
-            <button
-              key={opt.id}
-              role="tab"
-              aria-selected={isActive}
-              type="button"
-              onClick={() => onChange(opt.id)}
-              className={segmentedItem({ kind: 'tab', active: isActive })}
-            >
-              {opt.label}
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-};
+const group = css({
+  display: 'flex',
+  borderWidth: '[1px]',
+  borderColor: 'ink.border',
+  rounded: '[6px]',
+  overflow: 'hidden',
+});
+
+/** 목록 표시 방식 — 짝이 되는 tabpanel이 없어 tablist가 아니라 라디오 그룹이다. */
+export const ViewToggle = ({ value, onChange }: ViewToggleProps) => (
+  <SegmentedRadioGroup
+    label="뷰"
+    options={OPTIONS}
+    value={value}
+    onChange={onChange}
+    kind="tab"
+    className={group}
+  />
+);

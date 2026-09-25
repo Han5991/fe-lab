@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import {
   getRecentViews,
@@ -94,5 +94,46 @@ describe('useRecordRecentView', () => {
   test('마운트 시 slug를 기록', () => {
     renderHook(() => useRecordRecentView('hello', 'Hello'));
     expect(getRecentViews().map(r => r.slug)).toEqual(['hello']);
+  });
+});
+
+// 사이트 데이터를 차단하면 `window.localStorage` getter 자체가 SecurityError를 던진다.
+describe('사이트 저장소가 차단된 브라우저', () => {
+  let original: PropertyDescriptor | undefined;
+
+  beforeEach(() => {
+    original = Object.getOwnPropertyDescriptor(window, 'localStorage');
+    Object.defineProperty(window, 'localStorage', {
+      configurable: true,
+      get() {
+        throw new DOMException('The operation is insecure.', 'SecurityError');
+      },
+    });
+  });
+
+  // jsdom이 localStorage를 인스턴스에 두든 프로토타입에 두든 원래대로 되돌린다.
+  const restore = () => {
+    if (original) Object.defineProperty(window, 'localStorage', original);
+    else Reflect.deleteProperty(window, 'localStorage');
+  };
+
+  afterEach(restore);
+
+  test('읽기는 빈 배열, 쓰기는 조용히 넘어가고, 쓰는 화면도 마운트된다', () => {
+    expect(getRecentViews()).toEqual([]);
+    expect(() => recordRecentView('a', 'A')).not.toThrow();
+    expect(() => renderHook(() => useRecordRecentView('a', 'A'))).not.toThrow();
+  });
+
+  test('getItem만 던져도 빈 배열', () => {
+    restore();
+    const spy = vi
+      .spyOn(window.localStorage, 'getItem')
+      .mockImplementation(() => {
+        throw new DOMException('denied', 'SecurityError');
+      });
+    expect(getRecentViews()).toEqual([]);
+    expect(() => recordRecentView('a', 'A')).not.toThrow();
+    spy.mockRestore();
   });
 });

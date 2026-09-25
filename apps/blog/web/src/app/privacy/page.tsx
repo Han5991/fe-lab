@@ -1,4 +1,4 @@
-import { SITE_NAME, SITE_URL } from '@/content.values.mts';
+import { OG_DEFAULT_IMAGE, SITE_NAME, SITE_URL } from '@/content.values.mts';
 import { PRIVACY_PATH } from '@/src/shared/routes';
 import { PRIVACY_TRANSITION_ID } from '@/src/shared/transitions';
 import { css, cx } from '@design-system/ui-lib/css';
@@ -7,18 +7,45 @@ import type { Metadata } from 'next';
 import { PageBoundary } from '@/src/components/PageBoundary';
 import { railGutter, railColumn } from '@/src/components/Rail';
 
+const PAGE_TITLE = `개인정보처리방침 | ${SITE_NAME}`;
+const PAGE_DESCRIPTION = `${SITE_NAME} 블로그의 개인정보처리방침입니다.`;
+
+// Next의 메타데이터 병합은 얕다 — 비워 두면 루트(홈)의 openGraph가 통째로 상속되므로
+// 이미지까지 이 페이지 값으로 적는다.
 export const metadata: Metadata = {
-  title: `개인정보처리방침 | ${SITE_NAME}`,
-  description: 'Frontend Lab 블로그의 개인정보처리방침입니다.',
+  title: PAGE_TITLE,
+  description: PAGE_DESCRIPTION,
   alternates: {
     canonical: PRIVACY_PATH,
   },
   robots: {
     index: false,
   },
+  openGraph: {
+    title: PAGE_TITLE,
+    description: PAGE_DESCRIPTION,
+    url: `${SITE_URL}${PRIVACY_PATH}`,
+    siteName: SITE_NAME,
+    type: 'website',
+    locale: 'ko_KR',
+    images: [
+      {
+        url: OG_DEFAULT_IMAGE,
+        width: 1200,
+        height: 630,
+        alt: `${SITE_NAME} Blog`,
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: PAGE_TITLE,
+    description: PAGE_DESCRIPTION,
+    images: [OG_DEFAULT_IMAGE],
+  },
 };
 
-const LAST_UPDATED = '2026년 8월 21일';
+const LAST_UPDATED = '2026년 9월 25일';
 
 export default function PrivacyPage() {
   return (
@@ -199,6 +226,11 @@ export default function PrivacyPage() {
                 <li>조회수 중복 집계 방지 (6시간 쿨다운)</li>
                 <li>Google Analytics 방문자 식별 (익명)</li>
                 <li>Microsoft Clarity 사용 행태 분석 (서드파티 쿠키)</li>
+                <li>화면 테마(라이트/다크) 선택 기억 (쿠키, 1년)</li>
+                <li>
+                  최근 본 글 목록 (검색 창에 표시, 최대 5편 — 이 브라우저의 로컬
+                  스토리지에만 저장되며 서버로 전송되지 않음)
+                </li>
               </ul>
               <p className={css({ mt: '3' })}>
                 브라우저 설정에서 쿠키를 비활성화할 수 있으나, 일부 기능이 정상

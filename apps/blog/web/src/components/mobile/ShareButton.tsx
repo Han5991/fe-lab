@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useRef, useState } from 'react';
 import { Share2 } from 'lucide-react';
 import { css } from '@design-system/ui-lib/css';
 
@@ -7,51 +8,79 @@ interface ShareButtonProps {
   title: string;
 }
 
-export const ShareButton = ({ title }: ShareButtonProps) => {
-  const handleShare = async () => {
-    const shareData = {
-      title,
-      text: title,
-      url: window.location.href,
-    };
+/** 사용자가 공유 시트를 닫은 것 — 실패가 아니다. */
+const isAbort = (err: unknown) =>
+  err instanceof DOMException && err.name === 'AbortError';
 
-    if (navigator.share) {
-      try {
-        await navigator.share(shareData);
-      } catch (err) {
-        console.log('Share canceled', err);
-      }
-    } else {
-      try {
-        await navigator.clipboard.writeText(shareData.url);
-        alert('링크가 클립보드에 복사되었습니다.');
-      } catch (err) {
-        console.error('Failed to copy', err);
-      }
+const NOTICE_MS = 2500;
+
+/**
+ * 공유하기 — Web Share가 없거나 실패하면(사용자가 닫은 AbortError 말고) 링크를 복사하고
+ * 상태 문구로 알린다.
+ */
+export const ShareButton = ({ title }: ShareButtonProps) => {
+  const [notice, setNotice] = useState<string | null>(null);
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  useEffect(() => () => clearTimeout(timer.current), []);
+
+  const announce = (message: string) => {
+    setNotice(message);
+    clearTimeout(timer.current);
+    timer.current = setTimeout(() => setNotice(null), NOTICE_MS);
+  };
+
+  const copyLink = async (url: string) => {
+    try {
+      await navigator.clipboard.writeText(url);
+      announce('링크를 복사했습니다');
+    } catch (err) {
+      console.error('Failed to copy', err);
+      announce('링크를 복사하지 못했습니다');
     }
   };
 
+  const handleShare = async () => {
+    const url = window.location.href;
+    if (typeof navigator.share === 'function') {
+      try {
+        await navigator.share({ title, text: title, url });
+        return;
+      } catch (err) {
+        if (isAbort(err)) return;
+        console.warn('Share failed, falling back to clipboard', err);
+      }
+    }
+    await copyLink(url);
+  };
+
   return (
-    <button
-      onClick={() => void handleShare()}
-      className={css({
-        display: 'flex',
-        alignItems: 'center',
-        gap: '2',
-        px: '4',
-        py: '2',
-        bg: 'paper.200',
-        rounded: 'full',
-        color: 'ink.800',
-        fontSize: 'sm',
-        fontWeight: 'medium',
-        cursor: 'pointer',
-        transition: '[all 0.2s]',
-        _hover: { bg: 'paper.300' },
-      })}
-    >
-      <Share2 size={16} />
-      <span>공유하기</span>
-    </button>
+    <div className={css({ display: 'flex', alignItems: 'center', gap: '3' })}>
+      <span role="status" className={css({ fontSize: 'sm', color: 'ink.600' })}>
+        {notice}
+      </span>
+      <button
+        type="button"
+        onClick={() => void handleShare()}
+        className={css({
+          display: 'flex',
+          alignItems: 'center',
+          gap: '2',
+          px: '4',
+          py: '2',
+          bg: 'paper.200',
+          rounded: 'full',
+          color: 'ink.800',
+          fontSize: 'sm',
+          fontWeight: 'medium',
+          cursor: 'pointer',
+          transition: '[all 0.2s]',
+          _hover: { bg: 'paper.300' },
+        })}
+      >
+        <Share2 size={16} />
+        <span>공유하기</span>
+      </button>
+    </div>
   );
 };

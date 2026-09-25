@@ -9,7 +9,7 @@
  *      한쪽만 바뀌면 청크가 도착하는 순간 본문이 밀린다.
  */
 import { describe, expect, test, vi } from 'vitest';
-import { registerOnce } from './CodeBlock';
+import { CODE_THEME, registerOnce } from './CodeBlock';
 import { mermaidBoxStyle } from './MermaidLazy';
 import { mermaidContainerStyle } from './MermaidChart';
 
@@ -132,5 +132,17 @@ describe('mermaid placeholder 박스', () => {
     // 유일하게 의도된 차이. 도표가 없는 동안 높이가 0이면 자리를 못 잡는다.
     expect(mermaidBoxStyle).toContain('min-h_');
     expect(mermaidContainerStyle).not.toContain('min-h_');
+  });
+});
+
+describe('코드 블록 글꼴', () => {
+  test('테마의 Menlo 스택 대신 디자인 시스템의 mono 토큰을 쓴다', () => {
+    // 인라인 코드·파일트리·탭은 mono라 펜스만 Menlo면 고정폭 글꼴이 두 벌 섞인다.
+    const fonts = Object.values(CODE_THEME)
+      .map(rules => rules.fontFamily)
+      .filter(font => font !== undefined);
+
+    expect(fonts.length).toBeGreaterThan(0);
+    expect(new Set(fonts)).toEqual(new Set(['var(--fonts-mono)']));
   });
 });
