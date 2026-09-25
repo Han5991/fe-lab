@@ -48,14 +48,42 @@ type ClientEventListener<E extends ClientEvent> =
 
 /**
  * WebSocket Opcode
+ *
+ * enum 대신 const 객체다 — node의 type stripping(`node src/index.ts`, `node --test`)은
+ * 지울 수 있는 타입 문법만 받는다(tsconfig `erasableSyntaxOnly`).
  */
-enum WebSocketOpcode {
-  Continuation = 0x0,
-  Text = 0x1,
-  Binary = 0x2,
-  Close = 0x8,
-  Ping = 0x9,
-  Pong = 0xa,
+const WebSocketOpcode = {
+  Continuation: 0x0,
+  Text: 0x1,
+  Binary: 0x2,
+  Close: 0x8,
+  Ping: 0x9,
+  Pong: 0xa,
+} as const;
+
+/** 한 프레임 페이로드의 상한. 넘으면 1009로 닫는다 — 수신 버퍼가 무한히 자라지 않게 한다 */
+const DEFAULT_MAX_PAYLOAD = 1024 * 1024;
+
+/**
+ * 수신 버퍼에서 완성된 프레임 하나를 떼어 낸 결과
+ */
+interface ParsedFrame {
+  isFinalFrame: boolean;
+  opcode: number;
+  payload: Buffer;
+}
+
+/**
+ * 연결을 끊어야 하는 프로토콜 위반. `closeCode`는 RFC 6455 §7.4.1의 상태 코드다
+ */
+class WebSocketProtocolError extends Error {
+  readonly closeCode: number;
+
+  constructor(closeCode: number, message: string) {
+    super(message);
+    this.name = 'WebSocketProtocolError';
+    this.closeCode = closeCode;
+  }
 }
 
 /**
@@ -167,7 +195,18 @@ export class WebSocketServer {
     }
 
     // URL에서 세션 ID 추출 (쿼리 파라미터: ?sessionId=xxx)
-    const url = new URL(req.url || '/', `http://${req.headers.host}`);
+    // Host 헤더는 클라이언트 입력이다 — `Host: [` 같은 값에 URL 생성자가 던지면
+    // upgrade 리스너 밖으로 새어 프로세스가 죽는다
+    let url: URL;
+    try {
+      url = new URL(
+        req.url || '/',
+        `http://${req.headers.host ?? 'localhost'}`,
+      );
+    } catch {
+      socket.end('HTTP/1.1 400 Bad Request\r\n\r\n');
+      return;
+    }
     const requestedSessionId = url.searchParams.get('sessionId');
 
     // WebSocket 핸드셰이크 키 추출
@@ -210,11 +249,6 @@ export class WebSocketServer {
       `New client connected. Session ID: ${sessionId}, Total clients: ${this.clients.size}`,
     );
 
-    // 핸드셰이크 중 이미 수신된 WebSocket 데이터 처리
-    if (head.length > 0) {
-      socket.emit('data', head);
-    }
-
     // 클라이언트 이벤트 리스너
     client.on('message', (data: string) => {
       console.log(`[${sessionId}] Received text:`, data);
@@ -234,6 +268,12 @@ export class WebSocketServer {
         `Client disconnected. Session ID: ${sessionId}, Total clients: ${this.clients.size}`,
       );
     });
+
+    // 핸드셰이크와 같은 패킷에 실려 온 프레임 처리 — 리스너를 단 **뒤에** 넣어야
+    // 그 프레임의 message 이벤트가 허공에 emit되지 않는다
+    if (head.length > 0) {
+      client.receive(head);
+    }
   }
 
   /**
@@ -462,12 +502,28 @@ class WebSocketConnection {
   private fragmentedMessage: Buffer[];
   private fragmentedOpcode: number | null;
   private readonly sessionInfo: SessionInfo;
+  /**
+   * 아직 프레임으로 떼어 내지 못한 수신 바이트.
+   * TCP는 스트림이라 'data' 청크 경계가 프레임 경계와 맞지 않는다 — 한 청크에 프레임이
+   * 여럿 오기도, 한 프레임(헤더까지)이 여러 청크로 쪼개져 오기도 한다.
+   */
+  private receiveBuffer: Buffer;
+  private readonly maxPayload: number;
+  /** 프로토콜 위반으로 끊은 뒤에는 남은 바이트를 해석하지 않는다 */
+  private failed: boolean;
 
-  constructor(socket: Duplex, sessionId?: string) {
+  constructor(
+    socket: Duplex,
+    sessionId?: string,
+    maxPayload: number = DEFAULT_MAX_PAYLOAD,
+  ) {
     this.socket = socket;
     this.listeners = {};
     this.fragmentedMessage = [];
     this.fragmentedOpcode = null;
+    this.receiveBuffer = Buffer.alloc(0);
+    this.maxPayload = maxPayload;
+    this.failed = false;
 
     // 세션 정보 초기화
     const now = new Date();
@@ -478,8 +534,8 @@ class WebSocketConnection {
       metadata: {},
     };
 
-    this.socket.on('data', (buffer: Buffer) => {
-      this.handleData(buffer);
+    this.socket.on('data', (chunk: Buffer) => {
+      this.receive(chunk);
     });
 
     this.socket.on('close', () => {
@@ -492,7 +548,38 @@ class WebSocketConnection {
   }
 
   /**
-   * WebSocket 프레임 파싱
+   * 수신 청크를 버퍼에 붙이고, 완성된 프레임을 **전부** 처리한다.
+   * 덜 온 프레임(헤더 일부만 온 경우 포함)은 다음 청크까지 버퍼에 남긴다.
+   */
+  receive(chunk: Buffer): void {
+    if (this.failed) return;
+
+    // 마지막 활동 시간 업데이트
+    this.updateLastActive();
+
+    this.receiveBuffer =
+      this.receiveBuffer.length === 0
+        ? chunk
+        : Buffer.concat([this.receiveBuffer, chunk]);
+
+    try {
+      let frame = this.readFrame();
+      while (frame !== null) {
+        this.handleFrame(frame);
+        if (this.failed) return;
+        frame = this.readFrame();
+      }
+    } catch (error) {
+      // 'data' 리스너에서 던지면 잡을 곳이 없어 프로세스가 죽는다 — 이 연결만 끊는다
+      const closeCode =
+        error instanceof WebSocketProtocolError ? error.closeCode : 1011;
+      console.error('Closing connection:', error);
+      this.fail(closeCode);
+    }
+  }
+
+  /**
+   * 수신 버퍼 앞에서 완성된 프레임 하나를 떼어 낸다. 아직 덜 왔으면 null
    *
    * WebSocket Frame 구조:
    * 0                   1                   2                   3
@@ -514,9 +601,10 @@ class WebSocketConnection {
    * |                     Payload Data continued ...                |
    * +---------------------------------------------------------------+
    */
-  private handleData(buffer: Buffer): void {
-    // 마지막 활동 시간 업데이트
-    this.updateLastActive();
+  private readFrame(): ParsedFrame | null {
+    const buffer = this.receiveBuffer;
+    // 최소 헤더(2바이트)도 안 왔다
+    if (buffer.length < 2) return null;
 
     // 첫 번째 바이트: FIN, RSV, Opcode
     const firstByte = buffer[0];
@@ -530,11 +618,13 @@ class WebSocketConnection {
 
     let offset = 2;
 
-    // Extended payload length
+    // Extended payload length — 확장 길이 필드가 다 오기 전에는 읽지 않는다
     if (payloadLength === 126) {
+      if (buffer.length < offset + 2) return null;
       payloadLength = buffer.readUInt16BE(offset);
       offset += 2;
     } else if (payloadLength === 127) {
+      if (buffer.length < offset + 8) return null;
       // 64-bit length (Node.js에서는 Number로 처리)
       const high = buffer.readUInt32BE(offset);
       const low = buffer.readUInt32BE(offset + 4);
@@ -542,31 +632,49 @@ class WebSocketConnection {
       offset += 8;
     }
 
-    // Masking key (클라이언트->서버 메시지는 항상 마스킹됨)
-    let maskingKey: Buffer | null = null;
-    if (isMasked) {
-      maskingKey = buffer.slice(offset, offset + 4);
-      offset += 4;
+    if (payloadLength > this.maxPayload) {
+      throw new WebSocketProtocolError(
+        1009,
+        `Frame payload too large: ${payloadLength} bytes`,
+      );
     }
 
+    // Masking key (클라이언트->서버 메시지는 항상 마스킹됨)
+    const maskLength = isMasked ? 4 : 0;
+    const frameLength = offset + maskLength + payloadLength;
+    // 페이로드가 다 오지 않았다 — 다음 청크를 기다린다
+    if (buffer.length < frameLength) return null;
+
+    const maskingKey = isMasked ? buffer.subarray(offset, offset + 4) : null;
+    offset += maskLength;
+
     // Payload data
-    const payloadData = buffer.slice(offset, offset + payloadLength);
+    const payloadData = buffer.subarray(offset, frameLength);
 
-    // 마스킹 해제
-    const unmaskedData =
-      isMasked && maskingKey
-        ? this.unmask(payloadData, maskingKey)
-        : payloadData;
+    // 이 프레임 뒤의 바이트는 다음 프레임의 시작이다
+    this.receiveBuffer = buffer.subarray(frameLength);
 
+    // 마스킹 해제 (unmask는 새 버퍼를 만든다 — 수신 버퍼를 계속 붙잡지 않는다)
+    const payload = maskingKey
+      ? this.unmask(payloadData, maskingKey)
+      : Buffer.from(payloadData);
+
+    return { isFinalFrame, opcode, payload };
+  }
+
+  /**
+   * 완성된 프레임 하나를 opcode에 따라 처리한다
+   */
+  private handleFrame({ isFinalFrame, opcode, payload }: ParsedFrame): void {
     // Opcode 및 단편화 처리
     if (opcode === WebSocketOpcode.Text || opcode === WebSocketOpcode.Binary) {
       if (isFinalFrame) {
         // 단일 프레임 메시지
-        this.handleCompleteMessage(opcode, unmaskedData);
+        this.handleCompleteMessage(opcode, payload);
       } else {
         // 단편화된 메시지의 시작
         this.fragmentedOpcode = opcode;
-        this.fragmentedMessage = [unmaskedData];
+        this.fragmentedMessage = [payload];
       }
     } else if (opcode === WebSocketOpcode.Continuation) {
       if (this.fragmentedOpcode === null) {
@@ -574,7 +682,7 @@ class WebSocketConnection {
         return;
       }
 
-      this.fragmentedMessage.push(unmaskedData);
+      this.fragmentedMessage.push(payload);
 
       if (isFinalFrame) {
         // 모든 프레임 조립
@@ -588,12 +696,26 @@ class WebSocketConnection {
     } else if (opcode === WebSocketOpcode.Close) {
       this.close();
     } else if (opcode === WebSocketOpcode.Ping) {
-      this.sendPong(unmaskedData);
+      this.sendPong(payload);
     } else if (opcode === WebSocketOpcode.Pong) {
       // Pong 수신 (필요시 처리)
     } else {
       console.log(`Unsupported opcode: ${opcode}`);
     }
+  }
+
+  /**
+   * 프로토콜 위반: 상태 코드를 실은 Close 프레임을 보내고 연결을 끊는다
+   */
+  private fail(closeCode: number): void {
+    this.failed = true;
+    this.receiveBuffer = Buffer.alloc(0);
+    const frame = Buffer.alloc(4);
+    frame[0] = 0x88; // FIN=1, Opcode=8 (Close)
+    frame[1] = 2;
+    frame.writeUInt16BE(closeCode, 2);
+    if (this.socket.writable) this.socket.write(frame);
+    this.socket.end();
   }
 
   /**

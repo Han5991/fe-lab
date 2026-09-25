@@ -1,0 +1,338 @@
+import {
+  after,
+  afterEach,
+  before,
+  beforeEach,
+  describe,
+  mock,
+  test,
+} from 'node:test';
+import assert from 'node:assert/strict';
+import crypto from 'node:crypto';
+import { createServer } from 'node:http';
+import type { Server } from 'node:http';
+import net from 'node:net';
+import type { AddressInfo } from 'node:net';
+import { WebSocketServer } from './websocket-server.ts';
+
+// 브라우저 대신 날 TCP 소켓으로 서버를 두드린다 — 청크 경계를 직접 정해야
+// "TCP는 스트림"이라는 조건을 재현할 수 있다.
+
+const WAIT_MS = 2000;
+
+interface ServerFrame {
+  opcode: number;
+  payload: Buffer;
+}
+
+interface RawClient {
+  socket: net.Socket;
+  /** 다음 서버 프레임(주식 시세 브로드캐스트는 건너뛴다) */
+  nextFrame(): Promise<ServerFrame>;
+  /** 다음 텍스트 메시지(주식 시세 브로드캐스트는 건너뛴다) */
+  nextText(): Promise<string>;
+  /** 서버가 TCP를 닫을 때 resolve */
+  closed: Promise<void>;
+}
+
+interface Harness {
+  port: number;
+  wsServer: WebSocketServer;
+  httpServer: Server;
+}
+
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+/** 클라이언트→서버 프레임은 반드시 마스킹된다(RFC 6455 §5.3) */
+function clientFrame(
+  opcode: number,
+  payload: Buffer | string,
+  { fin = true, masked = true }: { fin?: boolean; masked?: boolean } = {},
+): Buffer {
+  const data = typeof payload === 'string' ? Buffer.from(payload) : payload;
+  const length = data.length;
+  let header: Buffer;
+  if (length < 126) {
+    header = Buffer.from([0, length]);
+  } else if (length < 65536) {
+    header = Buffer.alloc(4);
+    header[1] = 126;
+    header.writeUInt16BE(length, 2);
+  } else {
+    header = Buffer.alloc(10);
+    header[1] = 127;
+    header.writeUInt32BE(0, 2);
+    header.writeUInt32BE(length, 6);
+  }
+  header[0] = (fin ? 0x80 : 0) | opcode;
+  if (!masked) return Buffer.concat([header, data]);
+
+  header[1] |= 0x80;
+  const mask = crypto.randomBytes(4);
+  const body = Buffer.alloc(length);
+  for (let i = 0; i < length; i++) body[i] = data[i] ^ mask[i % 4];
+  return Buffer.concat([header, mask, body]);
+}
+
+const text = (message: string) => clientFrame(0x1, message);
+
+function handshakeRequest(port: number, host = `localhost:${port}`): string {
+  return [
+    'GET / HTTP/1.1',
+    `Host: ${host}`,
+    'Upgrade: websocket',
+    'Connection: Upgrade',
+    `Sec-WebSocket-Key: ${crypto.randomBytes(16).toString('base64')}`,
+    'Sec-WebSocket-Version: 13',
+    '',
+    '',
+  ].join('\r\n');
+}
+
+const isPriceUpdate = (frame: ServerFrame) =>
+  frame.opcode === 0x1 &&
+  frame.payload.toString('utf-8').startsWith('{"type":"PRICE_UPDATE"');
+
+async function openClient(
+  port: number,
+  { extra }: { extra?: Buffer } = {},
+): Promise<RawClient> {
+  const socket = net.connect(port, '127.0.0.1');
+  socket.setNoDelay(true);
+  await new Promise<void>((resolve, reject) => {
+    socket.once('connect', resolve);
+    socket.once('error', reject);
+  });
+
+  const frames: ServerFrame[] = [];
+  const waiters: Array<(frame: ServerFrame) => void> = [];
+  let pending = Buffer.alloc(0);
+  let upgraded = false;
+  let resolveUpgrade: () => void = () => {};
+  const upgradedPromise = new Promise<void>(resolve => {
+    resolveUpgrade = resolve;
+  });
+
+  const deliver = (frame: ServerFrame) => {
+    const waiter = waiters.shift();
+    if (waiter) waiter(frame);
+    else frames.push(frame);
+  };
+
+  socket.on('data', chunk => {
+    pending = Buffer.concat([pending, chunk]);
+    if (!upgraded) {
+      const end = pending.indexOf('\r\n\r\n');
+      if (end === -1) return;
+      assert.match(pending.subarray(0, end).toString(), /^HTTP\/1\.1 101 /);
+      pending = pending.subarray(end + 4);
+      upgraded = true;
+      resolveUpgrade();
+    }
+    // 서버→클라이언트 프레임(마스킹 없음) 파싱
+    for (;;) {
+      if (pending.length < 2) return;
+      let length = pending[1] & 0x7f;
+      let offset = 2;
+      if (length === 126) {
+        if (pending.length < 4) return;
+        length = pending.readUInt16BE(2);
+        offset = 4;
+      } else if (length === 127) {
+        if (pending.length < 10) return;
+        length = pending.readUInt32BE(6);
+        offset = 10;
+      }
+      if (pending.length < offset + length) return;
+      const frame = {
+        opcode: pending[0] & 0x0f,
+        payload: Buffer.from(pending.subarray(offset, offset + length)),
+      };
+      pending = pending.subarray(offset + length);
+      if (!isPriceUpdate(frame)) deliver(frame);
+    }
+  });
+
+  const closed = new Promise<void>(resolve => socket.once('close', resolve));
+
+  socket.write(
+    extra
+      ? Buffer.concat([Buffer.from(handshakeRequest(port)), extra])
+      : handshakeRequest(port),
+  );
+  await upgradedPromise;
+
+  const nextFrame = () =>
+    new Promise<ServerFrame>((resolve, reject) => {
+      const queued = frames.shift();
+      if (queued) return resolve(queued);
+      const timer = setTimeout(
+        () => reject(new Error('서버 프레임을 기다리다 시간 초과')),
+        WAIT_MS,
+      );
+      waiters.push(frame => {
+        clearTimeout(timer);
+        resolve(frame);
+      });
+    });
+
+  const nextText = async () => {
+    const frame = await nextFrame();
+    assert.equal(frame.opcode, 0x1, `텍스트가 아닌 프레임: ${frame.opcode}`);
+    return frame.payload.toString('utf-8');
+  };
+
+  return { socket, nextFrame, nextText, closed };
+}
+
+async function startServer(): Promise<Harness> {
+  const httpServer = createServer();
+  const wsServer = new WebSocketServer(httpServer, { allowedOrigins: null });
+  await new Promise<void>(resolve =>
+    httpServer.listen(0, '127.0.0.1', resolve),
+  );
+  const { port } = httpServer.address() as AddressInfo;
+  return { port, wsServer, httpServer };
+}
+
+async function stopServer({ wsServer, httpServer }: Harness): Promise<void> {
+  wsServer.shutdown();
+  await new Promise<void>(resolve => httpServer.close(() => resolve()));
+}
+
+const closeCodeOf = (frame: ServerFrame) =>
+  frame.payload.length >= 2 ? frame.payload.readUInt16BE(0) : undefined;
+
+before(() => {
+  // 연결·메시지마다 찍히는 서버 로그를 끈다
+  mock.method(console, 'log', () => {});
+  mock.method(console, 'error', () => {});
+});
+
+after(() => {
+  mock.restoreAll();
+});
+
+describe('프레임 수신 — TCP 청크 경계와 무관하게', () => {
+  let harness: Harness;
+  const sockets: net.Socket[] = [];
+
+  beforeEach(async () => {
+    harness = await startServer();
+  });
+
+  afterEach(async () => {
+    for (const socket of sockets.splice(0)) socket.destroy();
+    await stopServer(harness);
+  });
+
+  const connect = async (options?: { extra?: Buffer }) => {
+    const client = await openClient(harness.port, options);
+    sockets.push(client.socket);
+    return client;
+  };
+
+  test('한 청크에 실린 프레임 여러 개를 모두 처리한다', async () => {
+    const client = await connect();
+
+    client.socket.write(
+      Buffer.concat([text('one'), text('two'), text('three')]),
+    );
+
+    assert.equal(await client.nextText(), 'one');
+    assert.equal(await client.nextText(), 'two');
+    assert.equal(await client.nextText(), 'three');
+  });
+
+  test('헤더 중간을 포함해 여러 청크로 쪼개진 프레임을 하나로 조립한다', async () => {
+    const client = await connect();
+    const message = 'x'.repeat(300);
+    const frame = text(message);
+
+    // [81 FE 01] — 16비트 확장 길이의 첫 바이트에서 자른다. 예전엔 여기서 readUInt16BE가
+    // ERR_OUT_OF_RANGE를 던져 서버 프로세스가 죽었다.
+    for (const [from, to] of [
+      [0, 3],
+      [3, 5],
+      [5, 100],
+      [100, frame.length],
+    ]) {
+      client.socket.write(frame.subarray(from, to));
+      await sleep(20);
+    }
+
+    assert.equal(await client.nextText(), message);
+
+    // 다음 프레임도 정상 경계에서 읽힌다
+    client.socket.write(text('after'));
+    assert.equal(await client.nextText(), 'after');
+  });
+
+  test('프레임 끝과 다음 프레임 앞부분이 한 청크에 섞여도 경계를 지킨다', async () => {
+    const client = await connect();
+    const both = Buffer.concat([text('first'), text('second')]);
+    const cut = text('first').length + 1;
+
+    client.socket.write(both.subarray(0, cut));
+    await sleep(20);
+    client.socket.write(both.subarray(cut));
+
+    assert.equal(await client.nextText(), 'first');
+    assert.equal(await client.nextText(), 'second');
+  });
+
+  test('핸드셰이크와 같은 패킷에 실려 온 프레임을 잃지 않는다', async () => {
+    const client = await connect({ extra: text('early') });
+
+    assert.equal(await client.nextText(), 'early');
+  });
+
+  test('상한을 넘는 길이를 선언한 프레임은 버퍼링하지 않고 1009로 닫는다', async () => {
+    const client = await connect();
+    const header = Buffer.alloc(14);
+    header[0] = 0x81;
+    header[1] = 0x80 | 127;
+    header.writeUInt32BE(0x1000, 2); // 약 16TB
+    header.writeUInt32BE(0, 6);
+
+    client.socket.write(header);
+
+    const frame = await client.nextFrame();
+    assert.equal(frame.opcode, 0x8);
+    assert.equal(closeCodeOf(frame), 1009);
+    await client.closed;
+  });
+});
+
+describe('핸드셰이크 입력 검증', () => {
+  let harness: Harness;
+
+  beforeEach(async () => {
+    harness = await startServer();
+  });
+
+  afterEach(async () => {
+    await stopServer(harness);
+  });
+
+  test('파싱할 수 없는 Host 헤더에는 400으로 답하고 서버는 계속 동작한다', async () => {
+    const socket = net.connect(harness.port, '127.0.0.1');
+    const response = await new Promise<string>((resolve, reject) => {
+      let received = '';
+      socket.on('data', chunk => {
+        received += chunk.toString();
+      });
+      socket.on('close', () => resolve(received));
+      socket.on('error', reject);
+      socket.write(handshakeRequest(harness.port, '['));
+    });
+
+    assert.match(response, /^HTTP\/1\.1 400 /);
+
+    // 같은 서버에 정상 연결이 여전히 된다
+    const client = await openClient(harness.port);
+    client.socket.write(text('alive'));
+    assert.equal(await client.nextText(), 'alive');
+    client.socket.destroy();
+  });
+});

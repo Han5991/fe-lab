@@ -1,5 +1,5 @@
 import { createServer } from 'http';
-import { WebSocketServer } from './websocket-server.js';
+import { WebSocketServer } from './websocket-server.ts';
 
 const PORT = 3001;
 
