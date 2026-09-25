@@ -26,6 +26,8 @@ import {
 import Link from 'next/link';
 import { token } from '@design-system/ui-lib/tokens';
 import { usePostDetailStats } from '@/src/hooks/usePostDetailStats';
+import { useAdminDashboardData } from '@/src/hooks/useAdminViews';
+import type { PostStatDetail } from '@/src/domain/analytics';
 import { ADMIN_ANALYTICS_PATH } from '@/src/shared/routes';
 import { slugFromParams } from './slugFromParams';
 // 클라이언트 컴포넌트의 @blog/content 배럴 import — node:fs 모듈(series 등)은
@@ -63,8 +65,59 @@ const DOW_LABELS = ['일', '월', '화', '수', '목', '금', '토'];
 function PostDetailContent() {
   const params = useParams();
   const slug = slugFromParams(params['slug']);
+  const { data: allPosts } = useAdminDashboardData();
+  const post = allPosts.find(p => p.slug === slug);
 
-  const { post, hourly, dow, derived } = usePostDetailStats(slug);
+  // 정적 라우트는 빌드 시점의 글 전부로 만들지만, 인덱스에서 빠진 글(형식이
+  // 어긋난 행)이나 손으로 친 URL은 여기로 온다. 예전엔 렌더 중 throw로 흰
+  // 화면이었다 — 없는 글은 에러가 아니라 안내다.
+  if (!post) return <PostNotFound slug={slug} />;
+  return <PostDetailBody post={post} />;
+}
+
+function PostNotFound({ slug }: { slug: string }) {
+  return (
+    <div
+      role="status"
+      className={css({
+        bg: 'paper.100',
+        p: '8',
+        rounded: '[8px]',
+        display: 'flex',
+        flexDir: 'column',
+        alignItems: 'flex-start',
+        gap: '3',
+      })}
+    >
+      <h2
+        className={css({
+          fontSize: 'lg',
+          fontWeight: 'bold',
+          color: 'ink.950',
+        })}
+      >
+        이 글의 통계를 찾을 수 없습니다
+      </h2>
+      <p className={css({ fontSize: 'sm', color: 'ink.600' })}>
+        대시보드 글 목록에 <code>{slug || '(빈 slug)'}</code> 글이 없습니다.
+        주소를 확인하거나 목록에서 다시 골라 주세요.
+      </p>
+      <Link
+        href={ADMIN_ANALYTICS_PATH}
+        className={css({
+          fontSize: 'sm',
+          color: 'accent.600',
+          _hover: { textDecoration: 'underline' },
+        })}
+      >
+        조회수 분석 목록으로
+      </Link>
+    </div>
+  );
+}
+
+function PostDetailBody({ post }: { post: PostStatDetail }) {
+  const { hourly, dow, derived } = usePostDetailStats(post);
 
   const {
     filterType,

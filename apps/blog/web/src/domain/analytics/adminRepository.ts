@@ -85,8 +85,9 @@ export async function getAllPostsTrends(
 
 /**
  * 응답 행이 AdminPostIndex 모양인지 — 산출물 검증은 이 저장소의 일이다.
- * 소비자(useSuspenseQuery 훅들)는 throw가 곧 페이지 전체 ErrorBoundary라,
- * 손으로 고쳐진 파일이나 형식이 어긋난 배포에 화면째 깨지면 안 된다.
+ * 소비자(useSuspenseQuery 훅들)는 throw가 곧 admin 화면 전체를 갈아 끼우는
+ * 에러 경계(`src/app/admin/error.tsx`)라, 손으로 고쳐진 파일이나 형식이 어긋난
+ * 배포에 화면째 깨지면 안 된다.
  */
 function isAdminPostIndexRow(row: unknown): row is AdminPostIndex {
   if (!isRecord(row)) return false;

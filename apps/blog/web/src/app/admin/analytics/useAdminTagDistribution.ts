@@ -2,6 +2,7 @@
 
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { getAdminPostsIndex } from '@/src/domain/analytics/admin';
+import { retryAdminQuery } from '@/src/hooks/useAdminViews';
 
 /**
  * admin 포스트 인덱스에서 태그별 빈도수를 계산한다.
@@ -32,6 +33,7 @@ export function useAdminTagDistribution() {
     // 마운트마다 다시 받아온다.
     staleTime: 0,
     refetchOnMount: 'always',
+    retry: retryAdminQuery,
   });
   return data;
 }

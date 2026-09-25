@@ -8,9 +8,22 @@ import type { PostStatDetail, TrendPoint } from '@/src/domain/analytics';
 
 export type { PostStatDetail };
 
+/**
+ * admin 쿼리의 재시도 정책 — 한 번만 다시 시도한다.
+ *
+ * 전역 기본값(3회, 1s·2s·4s 백오프)이면 Edge Function이 실패했을 때 스켈레톤이
+ * ~7초 돌고 나서야 `src/app/admin/error.tsx`가 안내를 띄운다. admin 읽기는 같은
+ * 리전의 한 왕복이라 일시 장애는 한 번이면 가려지고, 설정 오류(ADMIN_EMAIL 미설정
+ * 등)는 몇 번을 다시 해도 같다.
+ */
+export function retryAdminQuery(failureCount: number): boolean {
+  return failureCount < 1;
+}
+
 export function useAdminDashboardData() {
   return useSuspenseQuery({
     queryKey: ['admin', 'dashboard-data'],
+    retry: retryAdminQuery,
     // SSG prerender 단계에서 getAdminPostsIndex가 typeof window 가드로 빈 배열을
     // 반환하기 때문에 SSR HTML은 placeholder 상태입니다. 글로벌 default
     // (staleTime 5분 + refetchOnMount false) 그대로면 그 빈 캐시가 클라이언트에
