@@ -144,6 +144,8 @@ Worker (`apps/blog/web/wrangler.jsonc`), Supabase for the dynamic bits.
   나간다. 배포 결과물 스모크(`claude-site-smoke.yml`)는 이 cron 배포가 끝나면 `workflow_run`으로 이어 돈다.
 - 스키마는 `supabase-migrations.yml`로만 적용한다(대시보드 SQL 에디터 금지). 배포와 분리한 이유는 배포가 매일
   cron으로 돌아 스키마 변경 없는 날에도 프로덕션 DB에 붙고, 발행과 스키마가 한 실패 지점에 묶이기 때문이다.
+  커밋된 Supabase MCP(`.mcp.json`)가 `read_only=true`·`project_ref`로 묶여 있는 것도 같은 규칙이다 — 에이전트가
+  `execute_sql`·`apply_migration`으로 프로덕션을 "잠깐" 고치면 원장이 다시 어긋난다. 쓰기 기능을 되살리지 말 것.
 - **Supabase 클라이언트는 둘이다**: 공개 페이지는 `src/lib/platform/publicClient.ts`(`@supabase/postgrest-js`만 —
   supabase-js 전체는 45KB gzip이고 그중 18.5KB가 죽은 코드였다), admin은 `src/lib/platform/client.ts`.
   `src/domain/analytics` 배럴이 `index`·`admin` 둘로 나뉜 이유다. Analytics RPC는 `anon`에 잠겨 있다.
