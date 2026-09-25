@@ -32,6 +32,8 @@ concurrency:
 jobs:
   push:
     runs-on: ubuntu-latest
+    # 프로덕션 DB에 붙는 잡이 멈춘 채 기본값 360분을 버티지 않게 한다.
+    timeout-minutes: 10
     defaults:
       run:
         working-directory: apps/blog/web

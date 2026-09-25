@@ -40,6 +40,8 @@ jobs:
     #   github.event.pull_request.author_association == 'FIRST_TIME_CONTRIBUTOR'
 
     runs-on: ubuntu-latest
+    # 기본값 360분이면 멈춘 리뷰 턴 하나가 러너 6시간을 태운다. 리뷰는 보통 2~5분이다.
+    timeout-minutes: 30
 
     # 같은 PR에서는 리뷰를 한 번에 하나만 돌린다.
     #
