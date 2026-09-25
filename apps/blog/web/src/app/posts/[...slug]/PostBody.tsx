@@ -434,8 +434,11 @@ export function PostBody({ content, relativeDir }: PostBodyProps) {
           borderBottomColor: 'accent.200',
           transition: '[all 0.15s]',
           fontWeight: 'medium',
-          wordBreak: 'break-all',
-          overflowWrap: 'break-word',
+          // 긴 URL만 칼럼 끝에서 끊는다. `word-break: break-all`은 공백이 있는
+          // 평범한 링크 글자까지 줄 끝에서 단어 중간을 잘랐다("Comp-iler").
+          // anywhere는 넘칠 때만 끊고, 최소 폭 계산에도 들어가 표 칸 안의
+          // 긴 URL이 칸을 밀어내지 않는다.
+          overflowWrap: 'anywhere',
           _hover: {
             // 보더는 비텍스트라 원색(accent.500)을 그대로 쓴다.
             borderBottomColor: 'accent.500',
