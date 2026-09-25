@@ -10,7 +10,6 @@ export class Graph {
   entryPath: string;
   modules: Map<string, Module>;
   externals: string[];
-  /** 브라우저(require가 없는 곳)에서 external을 찾을 전역 이름. 예: { react: 'React' } */
   globals: Record<string, string>;
   private nextId = 0;
 
@@ -195,9 +194,7 @@ export class Graph {
 
     // [CJS] index.js 생성 (bundle.cjs -> index.js)
     fs.writeFileSync(path.join(distDir, 'index.js'), code);
-    // `.js`의 모듈 형식은 가장 가까운 package.json의 type이 정한다. 라이브러리가
-    // "type": "module"이면 이 CJS 번들이 ESM으로 로드돼 require()가 깨진다 —
-    // dist/를 commonjs 범위로 못 박는다(.mjs는 확장자로 늘 ESM이라 영향 없음)
+    // `.js` 형식은 가장 가까운 package.json의 type이 정하므로 "type": "module" 라이브러리에서도 CJS로 못 박는다
     fs.writeFileSync(
       path.join(distDir, 'package.json'),
       `${JSON.stringify({ type: 'commonjs' }, null, 2)}\n`,

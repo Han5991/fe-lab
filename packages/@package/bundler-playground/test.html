@@ -7,9 +7,7 @@
   <body>
     console.log 로 확인 해주세요
     <script type="module">
-      // react는 external이라 번들 안에 없다. 브라우저 <script>에는 require도 없으니
-      // 번들 런타임은 minibundler.config.js의 globals가 가리키는 전역(react → React)에서 찾는다.
-      // React 19는 UMD 빌드가 없어 ESM으로 받아 전역에 올려 둔 뒤 번들을 싣는다.
+      // 번들은 external react를 globals의 전역(React)에서 찾는다. React 19는 UMD가 없어 ESM으로 올린다.
       import React from 'https://esm.sh/react@19';
 
       window.React = React;

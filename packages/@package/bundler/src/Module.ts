@@ -31,10 +31,7 @@ function isAcornSpecificNode<T extends object>(
   );
 }
 
-/**
- * 선언 패턴이 만드는 바인딩 이름을 모두 모은다.
- * `const a = 1, b = 2`는 둘, `const { x, y: [z], ...rest } = o`는 x·z·rest다.
- */
+/** 선언 패턴의 바인딩 이름을 모두 모은다: `const { x, y: [z], ...rest } = o` → x·z·rest */
 function collectBoundNames(pattern: ESTree.Pattern, names: string[] = []) {
   switch (pattern.type) {
     case 'Identifier':
@@ -166,8 +163,7 @@ export class Module {
   transform() {
     type Action = (node: AcornProgram['body'][number]) => void;
 
-    // 최상위 함수 선언은 호이스팅된다 — ESM에서는 모듈 본문이 돌기 전부터 바인딩이 살아 있어
-    // 순환 참조로 먼저 불려 간 모듈도 이 함수를 받는다. 그 export 대입은 모듈 맨 위로 올린다.
+    // 최상위 함수 선언은 호이스팅되므로 순환 참조에서도 받도록 그 export 대입을 모듈 맨 위로 올린다
     this.hoistedFunctions = new Set(
       this.ast.body.flatMap(node => {
         const declaration =
@@ -204,19 +200,14 @@ export class Module {
       }
     });
 
-    // 이 exports는 ESM에서 번역됐다는 표시 — 기본 가져오기 interop(transformImportDeclaration)이
-    // 이 플래그를 보고 모듈 객체 대신 `.default`를 꺼낸다. 없으면 `import greet from`이
-    // `{ default: fn }`을 받는다. (CJS 외부 모듈은 플래그가 없으니 모듈 자체를 쓴다)
+    // 기본 가져오기 interop이 이 플래그를 보고 `.default`를 꺼낸다(CJS external은 플래그가 없어 모듈 자체)
     this.magicString.prepend(
       `Object.defineProperty(exports, '__esModule', { value: true });\n` +
         this.hoistedExports.map(line => `${line}\n`).join(''),
     );
   }
 
-  /**
-   * `exports.name = local;`을 만든다. local이 최상위 함수 선언이면 모듈 맨 위로 올리고
-   * 빈 문자열을, 아니면 그 자리에 둘 대입문을 돌려준다.
-   */
+  /** 최상위 함수 선언이면 대입을 맨 위로 올리고 '', 아니면 그 자리에 둘 대입문을 돌려준다 */
   private exportAssignment(exportedName: string, localName: string): string {
     const line = `exports.${exportedName} = ${localName};`;
     if (this.hoistedFunctions.has(localName)) {
@@ -359,8 +350,7 @@ export class Module {
       return;
     }
 
-    // export * from './a' — ESM처럼 default는 빼고, 이 모듈이 직접 내보낸 이름은
-    // 덮어쓰지 않는다(뒤에 오는 로컬 export 대입은 어차피 이 값을 덮는다)
+    // export * from './a' — ESM처럼 default와 이 모듈이 이미 내보낸 이름은 건너뛴다
     const source = `_star_${node.start}`;
     this.magicString.overwrite(
       node.start,
