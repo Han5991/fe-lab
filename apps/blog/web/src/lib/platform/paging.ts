@@ -26,19 +26,40 @@
  *   매 페이지가 짧은 페이지로 보여 첫 장에서 멈춘다.
  * @param options.maxPages 폭주 방지 상한. 넘으면 **자르지 않고 throw** 한다 — 잘린
  *   결과는 소비처에서 "데이터가 줄어든 것"과 구분되지 않는다.
+ * @param options.key 행의 식별 키. 주면 같은 키가 다시 나올 때 **나중 행으로 덮고**
+ *   한 번만 싣는다. 페이지는 각각 다른 시점의 스냅샷이라, 살아 있는 표를 offset으로
+ *   자르면 앞쪽에 행이 끼어드는 순간 뒤 행이 한 칸씩 밀려 이전 페이지의 마지막 행이
+ *   다음 페이지 첫 행으로 또 온다 — 그대로 이어 붙이면 그 행이 두 번 집계된다.
+ *   나중 행이 더 최신 값이다.
  */
 export async function collectPagedRows<T>(
   fetchPage: (from: number, to: number) => Promise<T[]>,
-  options: { pageSize: number; maxPages: number },
+  options: {
+    pageSize: number;
+    maxPages: number;
+    key?: (row: T) => string;
+  },
 ): Promise<T[]> {
-  const { pageSize, maxPages } = options;
+  const { pageSize, maxPages, key } = options;
   const rows: T[] = [];
+  const indexByKey = new Map<string, number>();
 
   for (let page = 0; page < maxPages; page += 1) {
     const from = page * pageSize;
     const chunk = await fetchPage(from, from + pageSize - 1);
     // push(...chunk) 를 쓰지 않는 건 스프레드가 행 수만큼 인자를 쌓기 때문이다.
-    for (const row of chunk) rows.push(row);
+    for (const row of chunk) {
+      if (key) {
+        const k = key(row);
+        const at = indexByKey.get(k);
+        if (at !== undefined) {
+          rows[at] = row;
+          continue;
+        }
+        indexByKey.set(k, rows.length);
+      }
+      rows.push(row);
+    }
     if (chunk.length < pageSize) return rows;
   }
 

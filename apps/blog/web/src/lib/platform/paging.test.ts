@@ -124,3 +124,44 @@ test('중간 페이지에서 실패하면 즉시 멈춘다', async () => {
 
   expect(fetchPage).toHaveBeenCalledTimes(2);
 });
+
+test('key를 주면 페이지 경계에서 밀려 다시 온 행을 한 번만 싣는다', async () => {
+  // 첫 페이지를 받은 뒤 앞쪽에 행이 하나 끼어든 상황 — 첫 페이지의 마지막 행
+  // (b)이 두 번째 페이지 첫 행으로 또 온다. 그 사이 조회가 늘어 값도 바뀌었다.
+  const pages: { id: string; n: number }[][] = [
+    [
+      { id: 'a', n: 1 },
+      { id: 'b', n: 1 },
+    ],
+    [
+      { id: 'b', n: 2 },
+      { id: 'c', n: 1 },
+    ],
+    [],
+  ];
+  const fetchPage = vi.fn((from: number) =>
+    Promise.resolve(pages[from / 2] ?? []),
+  );
+
+  const rows = await collectPagedRows(fetchPage, {
+    pageSize: 2,
+    maxPages: 5,
+    key: row => row.id,
+  });
+
+  expect(rows).toStrictEqual([
+    { id: 'a', n: 1 },
+    { id: 'b', n: 2 },
+    { id: 'c', n: 1 },
+  ]);
+});
+
+test('key가 없으면 행을 그대로 이어 붙인다 (식별 키가 없는 결과)', async () => {
+  const fetchPage = vi.fn((from: number) =>
+    Promise.resolve(from === 0 ? ['x', 'x'] : ['x']),
+  );
+
+  const rows = await collectPagedRows(fetchPage, { pageSize: 2, maxPages: 5 });
+
+  expect(rows).toStrictEqual(['x', 'x', 'x']);
+});

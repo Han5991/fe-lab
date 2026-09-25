@@ -168,19 +168,25 @@ Deno.serve(async (req: Request) => {
     // pageSize 는 서버의 max_rows 와 같아야 한다 — 더 작으면 매 페이지가 짧은
     // 페이지로 보여 첫 장에서 멈춘다.
     const paging = { pageSize: 1000, maxPages: 50 };
+    // 정렬해도 페이지는 각각 다른 시점이다 — 조회가 들어와 앞쪽에 (slug, 날짜)
+    // 행이 새로 생기면 뒤 행이 밀려 이전 페이지 마지막 행이 다시 온다. 행의
+    // 식별 키로 한 번만 싣는다(나중 값이 최신).
 
     switch (request.action) {
       case 'all_post_stats': {
         try {
-          data = await collectPagedRows(async (from, to) => {
-            const base = serviceClient.rpc(ADMIN_ACTION_RPC[request.action]);
-            const filtered = slugFilter ? base.in('slug', slugFilter) : base;
-            const result = await filtered
-              .order('slug', { ascending: true })
-              .range(from, to);
-            if (result.error) throw result.error;
-            return result.data ?? [];
-          }, paging);
+          data = await collectPagedRows(
+            async (from, to) => {
+              const base = serviceClient.rpc(ADMIN_ACTION_RPC[request.action]);
+              const filtered = slugFilter ? base.in('slug', slugFilter) : base;
+              const result = await filtered
+                .order('slug', { ascending: true })
+                .range(from, to);
+              if (result.error) throw result.error;
+              return result.data ?? [];
+            },
+            { ...paging, key: row => row.slug },
+          );
         } catch (err) {
           rpcError = err;
         }
@@ -189,16 +195,19 @@ Deno.serve(async (req: Request) => {
 
       case 'all_posts_trends': {
         try {
-          data = await collectPagedRows(async (from, to) => {
-            const base = serviceClient.rpc(ADMIN_ACTION_RPC[request.action]);
-            const filtered = slugFilter ? base.in('slug', slugFilter) : base;
-            const result = await filtered
-              .order('slug', { ascending: true })
-              .order('view_date', { ascending: true })
-              .range(from, to);
-            if (result.error) throw result.error;
-            return result.data ?? [];
-          }, paging);
+          data = await collectPagedRows(
+            async (from, to) => {
+              const base = serviceClient.rpc(ADMIN_ACTION_RPC[request.action]);
+              const filtered = slugFilter ? base.in('slug', slugFilter) : base;
+              const result = await filtered
+                .order('slug', { ascending: true })
+                .order('view_date', { ascending: true })
+                .range(from, to);
+              if (result.error) throw result.error;
+              return result.data ?? [];
+            },
+            { ...paging, key: row => `${row.slug}\u0000${row.view_date}` },
+          );
         } catch (err) {
           rpcError = err;
         }
