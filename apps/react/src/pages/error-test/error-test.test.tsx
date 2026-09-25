@@ -82,12 +82,43 @@ describe('ErrorTest 컴포넌트', () => {
     expect(screen.getByText('Conditional Success!')).toBeInTheDocument();
   });
 
-  test('버튼 클릭 시 에러 발생', async () => {
+  // 트랜지션 안에서 던진 에러(Add Comment)도 포함. 에러 메시지가 버튼 라벨과 같아
+  // 경계가 그린 제목과 버튼이 사라졌는지로 구분한다
+  test.each(['error button', 'Add Comment'])(
+    '%s 클릭으로 던진 에러는 에러 경계가 잡는다',
+    async name => {
+      vi.spyOn(hooks, 'useSimpleQuery').mockReturnValue({
+        data: { message: 'Success!' },
+        error: null,
+        isLoading: false,
+      });
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      vi.spyOn(Math, 'random').mockReturnValue(0.9);
+
+      await act(async () => {
+        render(
+          <ErrorBoundary>
+            <ErrorTest />
+          </ErrorBoundary>,
+        );
+      });
+
+      await act(async () => {
+        screen.getByRole('button', { name }).click();
+      });
+
+      expect(screen.getByRole('heading', { name })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name })).not.toBeInTheDocument();
+    },
+  );
+
+  test('에러 객체를 만들기만 하고 던지지 않는 버튼은 페이지를 깨뜨리지 않는다', async () => {
     vi.spyOn(hooks, 'useSimpleQuery').mockReturnValue({
       data: { message: 'Success!' },
       error: null,
       isLoading: false,
     });
+    vi.spyOn(Math, 'random').mockReturnValue(0.9);
 
     await act(async () => {
       render(
@@ -98,34 +129,13 @@ describe('ErrorTest 컴포넌트', () => {
     });
 
     await act(async () => {
-      screen.getByText('error button').click();
+      screen.getByRole('button', { name: 'not error button' }).click();
     });
 
-    expect(screen.getByText('error button')).toBeInTheDocument();
-  });
-
-  test('버튼 클릭 시 에러 발생 (not error button)', async () => {
-    vi.spyOn(hooks, 'useSimpleQuery').mockReturnValue({
-      data: { message: 'Success!' },
-      error: null,
-      isLoading: false,
-    });
-    vi.spyOn(console, 'error').mockImplementation(() => {});
-
-    await act(async () => {
-      render(
-        <ErrorBoundary>
-          <ErrorTest />
-        </ErrorBoundary>,
-      );
-    });
-
-    await act(async () => {
-      screen.getByText('not error button').click();
-    });
-
-    // console.error가 호출되었는지 확인
-    expect(console.error).toHaveBeenCalled();
+    expect(screen.queryByRole('heading')).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'not error button' }),
+    ).toBeInTheDocument();
   });
 
   // React 19.3.0부터 <Suspense> 안에서 발생한 reject가 상위 에러 경계까지 올라간다.
@@ -153,28 +163,6 @@ describe('ErrorTest 컴포넌트', () => {
     expect(screen.getByText('asyncError')).toBeInTheDocument();
     expect(screen.getByText('error button')).toBeInTheDocument();
     expect(screen.getByText('not error button')).toBeInTheDocument();
-    expect(screen.getByText('Add Comment')).toBeInTheDocument();
-  });
-
-  test('버튼 클릭 시 에러 발생 (Add Comment)', async () => {
-    vi.spyOn(hooks, 'useSimpleQuery').mockReturnValue({
-      data: { message: 'Success!' },
-      error: null,
-      isLoading: false,
-    });
-
-    await act(async () => {
-      render(
-        <ErrorBoundary>
-          <ErrorTest />
-        </ErrorBoundary>,
-      );
-    });
-
-    await act(async () => {
-      screen.getByText('Add Comment').click();
-    });
-
     expect(screen.getByText('Add Comment')).toBeInTheDocument();
   });
 });

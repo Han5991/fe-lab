@@ -18,7 +18,8 @@
   "scripts": {
     "prepare": "pnpm build",
     "build": "tsdown",
-    "dev": "tsdown --watch"
+    "dev": "tsdown --watch",
+    "test": "vitest run"
   },
   "bin": {
     "minibundler": "./dist/cli.mjs"
@@ -27,7 +28,8 @@
     "@types/estree": "^1.0.9",
     "@types/node": "catalog:",
     "tsdown": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   },
   "dependencies": {
     "acorn": "^8.18.0",

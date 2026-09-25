@@ -156,7 +156,7 @@ function QueryInvalidationExample() {
 
   // WebSocket 연결 및 메시지 처리
   const { isConnected, messages } = useWebSocketQuery({
-    url: 'ws://localhost:3001',
+    url: 'ws://localhost:3001/?topics=stocks',
     onMessage: data => {
       try {
         const message = JSON.parse(data as string);
@@ -308,7 +308,7 @@ function PartialUpdatesExample() {
 
   // WebSocket 연결 (호가 데이터 직접 업데이트)
   const { isConnected, messages } = useWebSocketQuery({
-    url: 'ws://localhost:3001',
+    url: 'ws://localhost:3001/?topics=stocks',
     onMessage: data => {
       try {
         const message = JSON.parse(data as string);

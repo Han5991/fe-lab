@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import * as acorn from 'acorn';
-import * as ESTree from 'estree';
+import type * as ESTree from 'estree';
 import MagicString from 'magic-string';
 
 // 1. 기초 블록: ESTree 노드에 Acorn의 위치 정보를 합침
@@ -31,6 +31,38 @@ function isAcornSpecificNode<T extends object>(
   );
 }
 
+/** 선언 패턴의 바인딩 이름을 모두 모은다: `const { x, y: [z], ...rest } = o` → x·z·rest */
+function collectBoundNames(pattern: ESTree.Pattern, names: string[] = []) {
+  switch (pattern.type) {
+    case 'Identifier':
+      names.push(pattern.name);
+      break;
+    case 'ObjectPattern':
+      pattern.properties.forEach(property =>
+        collectBoundNames(
+          property.type === 'RestElement' ? property.argument : property.value,
+          names,
+        ),
+      );
+      break;
+    case 'ArrayPattern':
+      pattern.elements.forEach(element => {
+        if (element) collectBoundNames(element, names);
+      });
+      break;
+    case 'RestElement':
+      collectBoundNames(pattern.argument, names);
+      break;
+    case 'AssignmentPattern':
+      collectBoundNames(pattern.left, names);
+      break;
+    default:
+      // MemberExpression은 선언 패턴에 올 수 없다
+      break;
+  }
+  return names;
+}
+
 /**
  * 파일 하나를 담당하는 클래스
  */
@@ -44,6 +76,9 @@ export class Module {
   mapping: Map<string, number | string> = new Map();
   exportsList: string[] = [];
   exportAllSources: string[] = [];
+  /** transform() 동안: 최상위 함수 선언 이름과, 모듈 맨 위로 올릴 export 대입문 */
+  private hoistedFunctions = new Set<string>();
+  private hoistedExports: string[] = [];
 
   constructor(id: number, filePath: string) {
     this.id = id;
@@ -80,7 +115,7 @@ export class Module {
         if (node.declaration) {
           if (node.declaration.type === 'VariableDeclaration') {
             node.declaration.declarations.forEach(d => {
-              if (d.id.type === 'Identifier') this.exportsList.push(d.id.name);
+              this.exportsList.push(...collectBoundNames(d.id));
             });
           } else if (
             (node.declaration.type === 'FunctionDeclaration' ||
@@ -107,11 +142,16 @@ export class Module {
         this.exportsList.push('default');
       }
 
-      // 4. Export All 분석 (export * from './b')
+      // 4. Export All 분석 (export * from './b', export * as ns from './b')
       else if (node.type === 'ExportAllDeclaration') {
         if (node.source && typeof node.source.value === 'string') {
           this.dependencies.push(node.source.value);
-          this.exportAllSources.push(node.source.value);
+          if (node.exported) {
+            // export * as ns — 이름 하나(ns)를 내보낼 뿐, 대상의 이름을 펼치지 않는다
+            this.exportsList.push(this.getSpecifierName(node.exported));
+          } else {
+            this.exportAllSources.push(node.source.value);
+          }
         }
       }
     });
@@ -122,6 +162,21 @@ export class Module {
    */
   transform() {
     type Action = (node: AcornProgram['body'][number]) => void;
+
+    // 최상위 함수 선언은 호이스팅되므로 순환 참조에서도 받도록 그 export 대입을 모듈 맨 위로 올린다
+    this.hoistedFunctions = new Set(
+      this.ast.body.flatMap(node => {
+        const declaration =
+          node.type === 'ExportNamedDeclaration' ||
+          node.type === 'ExportDefaultDeclaration'
+            ? node.declaration
+            : node;
+        return declaration?.type === 'FunctionDeclaration' && declaration.id
+          ? [declaration.id.name]
+          : [];
+      }),
+    );
+    this.hoistedExports = [];
 
     const strategies: Record<string, Action> = {
       ImportDeclaration: node =>
@@ -144,6 +199,22 @@ export class Module {
         execute(node);
       }
     });
+
+    // 기본 가져오기 interop이 이 플래그를 보고 `.default`를 꺼낸다(CJS external은 플래그가 없어 모듈 자체)
+    this.magicString.prepend(
+      `Object.defineProperty(exports, '__esModule', { value: true });\n` +
+        this.hoistedExports.map(line => `${line}\n`).join(''),
+    );
+  }
+
+  /** 최상위 함수 선언이면 대입을 맨 위로 올리고 '', 아니면 그 자리에 둘 대입문을 돌려준다 */
+  private exportAssignment(exportedName: string, localName: string): string {
+    const line = `exports.${exportedName} = ${localName};`;
+    if (this.hoistedFunctions.has(localName)) {
+      this.hoistedExports.push(line);
+      return '';
+    }
+    return line;
   }
 
   private transformImportDeclaration(
@@ -222,11 +293,13 @@ export class Module {
     } else {
       // export { a, b };
       const specifierStr = node.specifiers
-        .map(s => {
-          const localName = this.getSpecifierName(s.local);
-          const exportedName = this.getSpecifierName(s.exported);
-          return `exports.${exportedName} = ${localName};`;
-        })
+        .map(s =>
+          this.exportAssignment(
+            this.getSpecifierName(s.exported),
+            this.getSpecifierName(s.local),
+          ),
+        )
+        .filter(line => line !== '')
         .join('\n');
       this.magicString.overwrite(node.start, node.end, specifierStr);
     }
@@ -236,27 +309,26 @@ export class Module {
     node: AcornNode<ESTree.ExportNamedDeclaration>,
     declaration: ESTree.Declaration,
   ) {
-    // export const a = 1;
-    // export function a() {}
-    if (declaration.type === 'VariableDeclaration') {
-      const firstDeclaration = declaration.declarations[0];
-      if (
-        firstDeclaration.id.type === 'Identifier' &&
-        isAcornSpecificNode(declaration)
-      ) {
-        const name = firstDeclaration.id.name;
-        this.magicString.remove(node.start, declaration.start);
-        this.magicString.appendLeft(node.end, `\nexports.${name} = ${name};`);
-      }
-    } else if (
-      declaration.type === 'FunctionDeclaration' ||
-      declaration.type === 'ClassDeclaration'
-    ) {
-      if (declaration.id && isAcornSpecificNode(declaration)) {
-        const name = declaration.id.name;
-        this.magicString.remove(node.start, declaration.start);
-        this.magicString.appendLeft(node.end, `\nexports.${name} = ${name};`);
-      }
+    if (!isAcornSpecificNode(declaration)) return;
+
+    // export const a = 1, b = 2;  export const { x, y } = obj;
+    // export function a() {}      export class A {}
+    const names =
+      declaration.type === 'VariableDeclaration'
+        ? declaration.declarations.flatMap(d => collectBoundNames(d.id))
+        : (declaration.type === 'FunctionDeclaration' ||
+              declaration.type === 'ClassDeclaration') &&
+            declaration.id
+          ? [declaration.id.name]
+          : [];
+
+    // `export ` 키워드만 떼고 선언은 그대로 둔다
+    this.magicString.remove(node.start, declaration.start);
+    const assignments = names
+      .map(name => this.exportAssignment(name, name))
+      .filter(line => line !== '');
+    if (assignments.length > 0) {
+      this.magicString.appendLeft(node.end, `\n${assignments.join('\n')}`);
     }
   }
 
@@ -268,10 +340,29 @@ export class Module {
     const requireCall =
       typeof depId === 'number' ? `require(${depId})` : `require('${depId}')`;
 
+    if (node.exported) {
+      // export * as ns from './a' → 모듈 객체 하나를 ns라는 이름으로
+      this.magicString.overwrite(
+        node.start,
+        node.end,
+        `exports.${this.getSpecifierName(node.exported)} = ${requireCall};`,
+      );
+      return;
+    }
+
+    // export * from './a' — ESM처럼 default와 이 모듈이 이미 내보낸 이름은 건너뛴다
+    const source = `_star_${node.start}`;
     this.magicString.overwrite(
       node.start,
       node.end,
-      `Object.assign(exports, ${requireCall});`,
+      [
+        `const ${source} = ${requireCall};`,
+        `for (const key in ${source}) {`,
+        `  if (key !== 'default' && !Object.prototype.hasOwnProperty.call(exports, key)) {`,
+        `    exports[key] = ${source}[key];`,
+        `  }`,
+        `}`,
+      ].join('\n'),
     );
   }
 
@@ -289,10 +380,13 @@ export class Module {
       // export default function greet() {}
       if (isAcornSpecificNode(declaration)) {
         this.magicString.remove(start, declaration.start);
-        this.magicString.appendLeft(
-          node.end,
-          `\nexports.default = ${declaration.id.name};`,
+        const assignment = this.exportAssignment(
+          'default',
+          declaration.id.name,
         );
+        if (assignment !== '') {
+          this.magicString.appendLeft(node.end, `\n${assignment}`);
+        }
       }
     } else {
       // export default function() {} OR export default expression;

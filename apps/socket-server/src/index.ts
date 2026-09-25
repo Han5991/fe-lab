@@ -1,5 +1,5 @@
 import { createServer } from 'http';
-import { WebSocketServer } from './websocket-server.js';
+import { isLocalOrigin, WebSocketServer } from './websocket-server.ts';
 
 const PORT = 3001;
 
@@ -13,11 +13,16 @@ const httpServer = createServer((req, res) => {
   }
 });
 
-// Origin 검증 옵션
-// allowedOrigins를 설정하면 해당 출처만 허용
-// null이면 모든 출처 허용 (개발 환경)
+// Origin 검증: ALLOWED_ORIGINS(쉼표 구분)가 있으면 그 목록만, 없으면 로컬 개발 출처만 허용
+const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',')
+  .map(origin => origin.trim())
+  .filter(origin => origin !== '');
+
 const wsServer = new WebSocketServer(httpServer, {
-  allowedOrigins: ['http://localhost:5173'],
+  allowedOrigins:
+    allowedOrigins && allowedOrigins.length > 0
+      ? allowedOrigins
+      : isLocalOrigin,
   sessionTimeout: 5 * 60 * 1000, // 5분 (기본값)
 });
 

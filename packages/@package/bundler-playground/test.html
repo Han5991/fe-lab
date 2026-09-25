@@ -1,14 +1,23 @@
 <!doctype html>
-<html lang="en">
+<html lang="ko">
   <head>
     <meta charset="UTF-8" />
-    <title>Title</title>
-    <script src="./node_modules/@package/sample-lib/dist/index.js"></script>
-    <script>
-      console.log(BundlerLibrary.plus(1, 2));
-    </script>
+    <title>minibundler 브라우저 데모</title>
   </head>
   <body>
     console.log 로 확인 해주세요
+    <script type="module">
+      // 번들은 external react를 globals의 전역(React)에서 찾는다. React 19는 UMD가 없어 ESM으로 올린다.
+      import React from 'https://esm.sh/react@19';
+
+      window.React = React;
+
+      const script = document.createElement('script');
+      script.src = './node_modules/@package/sample-lib/dist/index.js';
+      script.onload = () => {
+        console.log(BundlerLibrary.plus(1, 2));
+      };
+      document.head.append(script);
+    </script>
   </body>
 </html>

@@ -29,7 +29,8 @@ export interface Activity {
   id: string;
   type: 'signup' | 'payment' | 'inquiry';
   message: string;
-  timestamp: Date;
+  /** ISO 8601 문자열 — JSON 응답에는 Date가 없다 */
+  timestamp: string;
 }
 
 export const getDashboardStats = async (): Promise<DashboardStats> => {

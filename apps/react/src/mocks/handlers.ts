@@ -19,19 +19,19 @@ const mockActivities: Activity[] = [
     id: '1',
     type: 'signup',
     message: '새 사용자 가입',
-    timestamp: new Date(Date.now() - 1000 * 60 * 5),
+    timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString(),
   },
   {
     id: '2',
     type: 'payment',
     message: '결제 완료',
-    timestamp: new Date(Date.now() - 1000 * 60 * 15),
+    timestamp: new Date(Date.now() - 1000 * 60 * 15).toISOString(),
   },
   {
     id: '3',
     type: 'inquiry',
     message: '문의 접수',
-    timestamp: new Date(Date.now() - 1000 * 60 * 30),
+    timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
   },
 ];
 

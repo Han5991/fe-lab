@@ -1,7 +1,7 @@
 import path from 'node:path';
 import fs from 'node:fs';
 import MagicString, { Bundle } from 'magic-string';
-import { Module } from './Module.js';
+import { Module } from './Module.ts';
 
 /**
  * 전체 모듈 그래프를 관리하는 클래스
@@ -10,12 +10,18 @@ export class Graph {
   entryPath: string;
   modules: Map<string, Module>;
   externals: string[];
+  globals: Record<string, string>;
   private nextId = 0;
 
-  constructor(entryPath: string, externals: string[] = []) {
+  constructor(
+    entryPath: string,
+    externals: string[] = [],
+    globals: Record<string, string> = {},
+  ) {
     this.entryPath = entryPath;
     this.modules = new Map();
     this.externals = externals;
+    this.globals = globals;
   }
 
   build() {
@@ -102,7 +108,7 @@ export class Graph {
 
     // 번들 래퍼 시작 부분
     const wrapperStart = `
-(function(modules, externalRequire) {
+(function(modules, externalRequire, externalGlobals) {
   const cache = {};
 
   function require(id) {
@@ -113,7 +119,12 @@ export class Graph {
        if (externalRequire) {
          return externalRequire(id);
        }
-       throw new Error('Cannot find module \\'' + id + '\\'');
+       // 브라우저 <script>에는 require가 없다 — 페이지가 먼저 올려 둔 전역에서 찾는다
+       const globalName = externalGlobals[id];
+       if (globalName && typeof globalThis !== 'undefined' && globalThis[globalName] !== undefined) {
+         return globalThis[globalName];
+       }
+       throw new Error('Cannot find module \\'' + id + '\\'' + (globalName ? ' (global ' + globalName + ')' : ''));
     }
 
     const module = { exports: {} };
@@ -164,7 +175,7 @@ export class Graph {
 
     // 번들 래퍼 끝 부분
     const wrapperEnd = `
-}, typeof require !== 'undefined' ? require : null);
+}, typeof require !== 'undefined' ? require : null, ${JSON.stringify(this.globals)});
 `;
     bundle.addSource({
       content: new MagicString(wrapperEnd),
@@ -183,6 +194,11 @@ export class Graph {
 
     // [CJS] index.js 생성 (bundle.cjs -> index.js)
     fs.writeFileSync(path.join(distDir, 'index.js'), code);
+    // `.js` 형식은 가장 가까운 package.json의 type이 정하므로 "type": "module" 라이브러리에서도 CJS로 못 박는다
+    fs.writeFileSync(
+      path.join(distDir, 'package.json'),
+      `${JSON.stringify({ type: 'commonjs' }, null, 2)}\n`,
+    );
     fs.writeFileSync(path.join(distDir, 'index.js.map'), map.toString());
 
     // 소스맵 주석 추가

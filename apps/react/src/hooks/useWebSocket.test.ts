@@ -1,48 +1,8 @@
 import { renderHook, act } from '@testing-library/react';
+import { MockWebSocket } from '@/test/MockWebSocket';
 import { useWebSocket } from './useWebSocket';
 
-class MockWebSocket {
-  static CONNECTING = 0;
-  static OPEN = 1;
-  static CLOSING = 2;
-  static CLOSED = 3;
-  static instances: MockWebSocket[] = [];
-
-  url: string;
-  readyState = MockWebSocket.CONNECTING;
-  onopen: ((ev: Event) => void) | null = null;
-  onmessage: ((ev: MessageEvent) => void) | null = null;
-  onerror: ((ev: Event) => void) | null = null;
-  onclose: ((ev: CloseEvent) => void) | null = null;
-  sent: string[] = [];
-
-  constructor(url: string) {
-    this.url = url;
-    MockWebSocket.instances.push(this);
-  }
-
-  send(data: string) {
-    this.sent.push(data);
-  }
-
-  close(code = 1000) {
-    this.simulateClose(code);
-  }
-
-  // 테스트 헬퍼 — 서버 쪽 이벤트를 흉내낸다
-  simulateOpen() {
-    this.readyState = MockWebSocket.OPEN;
-    this.onopen?.(new Event('open'));
-  }
-
-  simulateClose(code: number) {
-    this.readyState = MockWebSocket.CLOSED;
-    this.onclose?.({ code } as CloseEvent);
-  }
-}
-
-const lastSocket = () =>
-  MockWebSocket.instances[MockWebSocket.instances.length - 1];
+const lastSocket = () => MockWebSocket.last();
 
 describe('useWebSocket', () => {
   beforeEach(() => {
@@ -186,6 +146,68 @@ describe('useWebSocket', () => {
     expect(
       MockWebSocket.instances.slice(count).every(s => s.url === 'ws://b'),
     ).toBe(true);
+  });
+
+  test('연결 중(CONNECTING)인 소켓도 언마운트하면 닫는다', () => {
+    const { unmount } = renderHook(() => useWebSocket({ url: 'ws://test' }));
+    const socket = lastSocket();
+
+    unmount();
+
+    expect(socket.closeCalls).toHaveLength(1);
+  });
+
+  test('연결 중에 수동 재연결해도 소켓은 하나로 교체되고 옛 소켓의 늦은 close는 새 연결을 덮지 않는다', () => {
+    const { result } = renderHook(() => useWebSocket({ url: 'ws://test' }));
+    const first = lastSocket();
+
+    act(() => result.current.reconnect());
+    act(() => {
+      vi.advanceTimersByTime(100);
+    });
+    expect(first.closeCalls).toHaveLength(1);
+
+    act(() => lastSocket().simulateOpen());
+    act(() => first.simulateClose(1006));
+    act(() => {
+      vi.advanceTimersByTime(60_000);
+    });
+
+    expect(MockWebSocket.instances).toHaveLength(2);
+    expect(result.current.isConnected).toBe(true);
+    expect(result.current.isReconnecting).toBe(false);
+  });
+
+  test('언마운트하면 예약된 수동 재연결도 취소한다', () => {
+    const { result, unmount } = renderHook(() =>
+      useWebSocket({ url: 'ws://test' }),
+    );
+    act(() => lastSocket().simulateOpen());
+
+    act(() => result.current.reconnect());
+    unmount();
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+
+    expect(MockWebSocket.instances).toHaveLength(1);
+  });
+
+  test('메시지는 maxMessages개까지만 남기고 오래된 것부터 버린다', () => {
+    const { result } = renderHook(() =>
+      useWebSocket({ url: 'ws://test', maxMessages: 3 }),
+    );
+    act(() => lastSocket().simulateOpen());
+
+    act(() => {
+      for (let i = 1; i <= 5; i += 1) lastSocket().simulateMessage(`m${i}`);
+    });
+
+    expect(result.current.messages).toEqual([
+      '수신: m3',
+      '수신: m4',
+      '수신: m5',
+    ]);
   });
 
   test('sendMessage는 연결된 소켓으로 보낸다', () => {

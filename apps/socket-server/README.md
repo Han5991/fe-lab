@@ -32,7 +32,11 @@ pnpm install
 pnpm dev
 ```
 
-서버가 `http://localhost:3001`에서 실행됩니다.
+서버가 `http://localhost:3001`에서 실행됩니다. `pnpm dev`는 `src/`를 Node의 타입 스트리핑으로 바로 실행하고
+소스가 바뀌면 다시 띄웁니다(`node --watch src/index.ts`). 빌드 결과물로 띄우려면 `pnpm build && pnpm start`.
+
+기본값은 로컬 개발 출처(`localhost`·`127.0.0.1`, 포트 무관)만 허용합니다. 다른 출처를 허용하려면
+`ALLOWED_ORIGINS=https://example.com,https://other.example pnpm dev`처럼 쉼표로 지정합니다.
 
 ### 2. React 클라이언트 실행
 
@@ -48,6 +52,16 @@ React 앱이 실행되면 `http://localhost:5173/socket`으로 접속합니다.
 ### 3. 다중 클라이언트 테스트
 
 여러 브라우저 탭을 열어 `/socket` 페이지를 동시에 접속하면 브로드캐스팅을 테스트할 수 있습니다.
+
+### 4. 구독(topics)
+
+접속 URL의 `?topics=`로 받을 메시지를 고릅니다. 지정하지 않으면 채팅(`chat`)만 받습니다.
+
+| URL                                       | 받는 메시지                        |
+| ----------------------------------------- | ---------------------------------- |
+| `ws://localhost:3001`                     | 채팅 브로드캐스트                  |
+| `ws://localhost:3001/?topics=stocks`      | 주식 시세(`PRICE_UPDATE`, 1초마다) |
+| `ws://localhost:3001/?topics=chat,stocks` | 둘 다                              |
 
 ## 🔍 구현 상세
 
@@ -150,6 +164,9 @@ broadcast(message) {
 
 ## 🧪 테스트 시나리오
 
+자동 테스트는 `pnpm --filter socket-server test`(Vitest)로 돌립니다. 날 TCP 소켓으로 청크 경계·조각
+메시지·종료 핸드셰이크·프로토콜 위반·하트비트·구독을 확인합니다.
+
 1. **단일 클라이언트 연결**: 메시지 송수신 확인
 2. **다중 클라이언트**: 브로드캐스팅 동작 확인
 3. **연결 종료**: Graceful shutdown 확인
@@ -165,14 +182,14 @@ broadcast(message) {
 
 현재 구현에 추가할 수 있는 기능들:
 
-1. **재연결 로직**: 클라이언트 자동 재연결
-2. **Heartbeat**: Ping/Pong을 이용한 연결 유지
-3. **방(Room) 시스템**: 특정 그룹에만 메시지 전송
-4. **이벤트 시스템**: Socket.io처럼 이벤트 기반 통신
-5. **바이너리 데이터**: ArrayBuffer/Blob 지원
-6. **압축**: permessage-deflate 확장 구현
-7. **인증/권한**: 연결 시 토큰 검증
-8. **메시지 큐**: 연결 끊김 시 메시지 버퍼링
+1. **방(Room) 시스템**: 고정된 topic(`chat`·`stocks`) 대신 동적으로 만드는 방
+2. **이벤트 시스템**: Socket.io처럼 이벤트 기반 통신
+3. **바이너리 송신**: 받은 Binary 프레임은 `binary` 이벤트로 올라오지만, 보내는 쪽은 텍스트뿐
+4. **압축**: permessage-deflate 확장 구현
+5. **인증/권한**: 연결 시 토큰 검증
+6. **메시지 큐**: 연결 끊김 시 메시지 버퍼링 (세션 재개)
+
+클라이언트 자동 재연결은 `apps/react`의 `useWebSocket`에, Ping/Pong 하트비트는 서버에 이미 있습니다.
 
 ## 💡 학습 포인트
 
@@ -186,7 +203,7 @@ broadcast(message) {
 
 - 핸드셰이크 메커니즘
 - 프레임 구조 설계
-- 상태 관리 (CONNECTING, OPEN, CLOSING, CLOSED)
+- 상태 관리 (CONNECTING, OPEN, CLOSING, CLOSED) — 서버 연결은 OPEN·CLOSING·CLOSED를 가진다
 
 ### 실시간 통신 패턴
 
@@ -198,10 +215,10 @@ broadcast(message) {
 
 이 구현은 학습 목적이므로 다음 제한사항이 있습니다:
 
-1. **단일 프레임만 지원**: 프래그멘테이션 미구현
-2. **텍스트만 지원**: 바이너리 프레임 미구현
-3. **에러 처리 간소화**: 프로덕션 수준의 에러 핸들링 부족
-4. **보안**: 실제 서비스에는 추가 보안 검증 필요
+1. **송신은 단일 텍스트 프레임**: 받을 때는 조각 메시지와 Binary를 조립하지만, 보낼 때는 한 프레임짜리 텍스트만 보낸다
+2. **확장 미지원**: permessage-deflate 등 확장을 협상하지 않는다 (RSV 비트가 켜진 프레임은 1002로 닫는다)
+3. **백프레셔 없음**: `socket.write()`의 반환값을 보지 않아, 느린 클라이언트에게 보낼 데이터가 메모리에 쌓일 수 있다
+4. **보안**: 실제 서비스에는 인증·속도 제한 등 추가 검증 필요
 5. **성능 최적화**: 대용량 트래픽 처리 미고려
 
 프로덕션 환경에서는 [ws](https://github.com/websockets/ws) 또는 [Socket.io](https://socket.io/)를 사용하세요.

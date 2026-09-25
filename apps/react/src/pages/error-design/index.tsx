@@ -1,4 +1,5 @@
 import { Suspense } from 'react';
+import { QueryErrorResetBoundary } from '@tanstack/react-query';
 import { Box, Grid } from '@design-system/ui-lib/jsx';
 import {
   useDashboardStats,
@@ -160,38 +161,50 @@ const ErrorDesignPage = () => (
       </Box>
     </Box>
 
-    {/* 통계 카드 4개 - 독립적 Suspense + ErrorBoundary */}
-    <StatsErrorBoundary>
-      <Suspense
-        fallback={
-          <>
-            <LoadingFallback message="통계 로딩..." />
-            <LoadingFallback message="통계 로딩..." />
-            <LoadingFallback message="통계 로딩..." />
-            <LoadingFallback message="통계 로딩..." />
-          </>
-        }
-      >
-        <StatsSection />
-      </Suspense>
-    </StatsErrorBoundary>
+    {/* 통계 카드 4개 - 독립적 Suspense + ErrorBoundary. reset을 넘겨야 "다시 시도"가 쿼리를 다시 실행한다 */}
+    <QueryErrorResetBoundary>
+      {({ reset }) => (
+        <StatsErrorBoundary onReset={reset}>
+          <Suspense
+            fallback={
+              <>
+                <LoadingFallback message="통계 로딩..." />
+                <LoadingFallback message="통계 로딩..." />
+                <LoadingFallback message="통계 로딩..." />
+                <LoadingFallback message="통계 로딩..." />
+              </>
+            }
+          >
+            <StatsSection />
+          </Suspense>
+        </StatsErrorBoundary>
+      )}
+    </QueryErrorResetBoundary>
 
     {/* 큰 차트 (2x2) - 독립적 Suspense + ErrorBoundary */}
     <Box gridColumn="span 2" gridRow="span 2">
-      <ChartErrorBoundary>
-        <Suspense fallback={<LoadingFallback message="차트 로딩..." />}>
-          <ChartWidget />
-        </Suspense>
-      </ChartErrorBoundary>
+      <QueryErrorResetBoundary>
+        {({ reset }) => (
+          <ChartErrorBoundary onReset={reset}>
+            <Suspense fallback={<LoadingFallback message="차트 로딩..." />}>
+              <ChartWidget />
+            </Suspense>
+          </ChartErrorBoundary>
+        )}
+      </QueryErrorResetBoundary>
     </Box>
 
     {/* 활동 피드 (2x2) - 독립적 Suspense + ErrorBoundary */}
     <Box gridColumn="span 2" gridRow="span 2">
-      <ActivityErrorBoundary>
-        <Suspense fallback={<LoadingFallback message="활동 로딩..." />}>
-          <ActivityFeed />
-        </Suspense>
-      </ActivityErrorBoundary>
+      <QueryErrorResetBoundary>
+        {({ reset }) => (
+          <ActivityErrorBoundary onReset={reset}>
+            <Suspense fallback={<LoadingFallback message="활동 로딩..." />}>
+              <ActivityFeed />
+            </Suspense>
+          </ActivityErrorBoundary>
+        )}
+      </QueryErrorResetBoundary>
     </Box>
   </Grid>
 );

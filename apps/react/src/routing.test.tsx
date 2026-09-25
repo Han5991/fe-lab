@@ -21,7 +21,7 @@ const ROUTE_PATHS = [
   '/error-design',
   '/toast',
   '/socket',
-  '/stok-ticker-query',
+  '/stock-ticker-query',
 ] as const;
 
 function TestApp() {

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import path from 'node:path';
-import { Graph } from './Graph.js';
-import type { MinibundlerConfig } from './types.js';
+import { Graph } from './Graph.ts';
+import type { MinibundlerConfig } from './types.ts';
 
 console.log('📦 Minibundler started...');
 
@@ -23,13 +23,19 @@ async function run() {
     const entryPath = path.resolve(process.cwd(), config.entry);
     console.log(`🔍 Entry: ${entryPath}`);
 
-    const graph = new Graph(entryPath, config.externals || []);
+    const graph = new Graph(
+      entryPath,
+      config.externals || [],
+      config.globals || {},
+    );
     graph.build();
 
     console.log('🛠️ Generating bundle...');
     const bundle = graph.generate();
 
-    console.log('✅ Bundle built successfully! (dist/bundle.js)');
+    console.log(
+      '✅ Bundle built successfully! (dist/index.js, dist/index.mjs)',
+    );
     console.log(`📏 Bundle Size: ${bundle.length} bytes`);
   } catch (err) {
     console.error('❌ Build failed:', err);

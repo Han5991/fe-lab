@@ -27,7 +27,7 @@ export function createStore<Value extends Record<string, any>>(
   };
 }
 
-export function useStore<TStore extends Store<any>>(store: TStore) {
+export function useStore<Value>(store: Store<Value>): Value {
   return useSyncExternalStore(
     store.subscribe,
     () => store.getState(),

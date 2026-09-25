@@ -1,6 +1,8 @@
-import { renderHook, waitFor } from '@testing-library/react';
+import { Suspense } from 'react';
+import { renderHook, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { vi } from 'vitest';
+import { ErrorBoundary } from '@/components';
 import { useDashboardStats, useChartData, useActivities } from './useDashboard';
 import * as dashboardApi from '@/api/dashboard';
 
@@ -17,6 +19,39 @@ const createWrapper = () => {
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
 };
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
+test.each([
+  ['getDashboardStats', useDashboardStats],
+  ['getChartData', useChartData],
+  ['getActivities', useActivities],
+] as const)(
+  '%s가 실패하면 에러가 에러 바운더리까지 올라간다',
+  async (api, useHook) => {
+    vi.spyOn(dashboardApi, api).mockRejectedValue(new Error(`${api} 실패`));
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+
+    renderHook(() => useHook(), {
+      wrapper: ({ children }: { children: React.ReactNode }) => (
+        <QueryClientProvider client={queryClient}>
+          <ErrorBoundary>
+            <Suspense fallback={<p>로딩</p>}>{children}</Suspense>
+          </ErrorBoundary>
+        </QueryClientProvider>
+      ),
+    });
+
+    expect(
+      await screen.findByRole('heading', { name: `${api} 실패` }),
+    ).toBeInTheDocument();
+  },
+);
 
 describe('useDashboardStats', () => {
   beforeEach(() => {
@@ -43,19 +78,6 @@ describe('useDashboardStats', () => {
 
     expect(dashboardApi.getDashboardStats).toHaveBeenCalledTimes(1);
   });
-
-  test('통계 데이터 로드 중 에러가 발생하면 에러가 throw된다', async () => {
-    const mockError = new Error('통계 데이터 로드 실패');
-    vi.spyOn(dashboardApi, 'getDashboardStats').mockRejectedValue(mockError);
-
-    // useSuspenseQuery는 에러가 발생하면 throw하므로 ErrorBoundary로 캐치해야 함
-    // 여기서는 renderHook이 에러를 던지는지만 확인
-    expect(() => {
-      renderHook(() => useDashboardStats(), {
-        wrapper: createWrapper(),
-      });
-    }).toBeDefined();
-  });
 });
 
 describe('useChartData', () => {
@@ -81,18 +103,6 @@ describe('useChartData', () => {
 
     expect(dashboardApi.getChartData).toHaveBeenCalledTimes(1);
   });
-
-  test('차트 데이터 로드 중 에러가 발생하면 에러가 throw된다', async () => {
-    const mockError = new Error('차트 데이터 로드 실패');
-    vi.spyOn(dashboardApi, 'getChartData').mockRejectedValue(mockError);
-
-    // useSuspenseQuery는 에러가 발생하면 throw하므로 ErrorBoundary로 캐치해야 함
-    expect(() => {
-      renderHook(() => useChartData(), {
-        wrapper: createWrapper(),
-      });
-    }).toBeDefined();
-  });
 });
 
 describe('useActivities', () => {
@@ -106,13 +116,13 @@ describe('useActivities', () => {
         id: '1',
         type: 'signup' as const,
         message: '새 사용자가 가입했습니다',
-        timestamp: new Date('2024-01-01'),
+        timestamp: '2024-01-01T00:00:00.000Z',
       },
       {
         id: '2',
         type: 'payment' as const,
         message: '결제가 완료되었습니다',
-        timestamp: new Date('2024-01-02'),
+        timestamp: '2024-01-02T00:00:00.000Z',
       },
     ];
 
@@ -127,17 +137,5 @@ describe('useActivities', () => {
     });
 
     expect(dashboardApi.getActivities).toHaveBeenCalledTimes(1);
-  });
-
-  test('활동 데이터 로드 중 에러가 발생하면 에러가 throw된다', async () => {
-    const mockError = new Error('활동 데이터 로드 실패');
-    vi.spyOn(dashboardApi, 'getActivities').mockRejectedValue(mockError);
-
-    // useSuspenseQuery는 에러가 발생하면 throw하므로 ErrorBoundary로 캐치해야 함
-    expect(() => {
-      renderHook(() => useActivities(), {
-        wrapper: createWrapper(),
-      });
-    }).toBeDefined();
   });
 });

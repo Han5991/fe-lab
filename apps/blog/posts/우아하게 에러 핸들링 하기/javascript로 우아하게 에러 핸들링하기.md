@@ -11,7 +11,7 @@ thumbnail: '/og/javascript-error.png'
 
 > 이번 글은 JavaScript에서 동기 및 비동기 상황 모두에 대해 에러를 어떻게 처리할 수 있는지에 대해 다룹니다. 에러 처리는 코드의 안정성과 유지보수성에 큰 영향을 미치므로, 명확하고 일관된 패턴을 적용하는 것이 중요합니다. 이 글에서는 기본적인 try-catch 패턴부터, async/await 환경에서의 에러 처리, 그리고 여러 비동기 작업이나 에러 래핑(Error Wrapper) 패턴, 그리고 커스텀 에러 클래스까지 다양한 예제를 통해 살펴보겠습니다. ![JavaScript 에러 핸들링 시리즈 표지 이미지](https://velog.velcdn.com/images/rewq5991/post/64802bfb-a008-44ab-a0ee-3ab7450ca59b/image.png)
 
-[예제 코드 및 테스트 코드 확인](https://github.com/Han5991/fe-lab/tree/main/apps/typescript)
+[예제 코드 및 테스트 코드 확인](https://github.com/Han5991/fe-lab/tree/main/apps/typescript) — 저장소 코드는 이 글의 예제와 로그 문구·반환값이 다릅니다. 예를 들어 저장소의 `asyncErrorWrapper`는 에러를 로그로 남기지 않고 `[값, 에러]` 튜플로 돌려줍니다.
 
 ---
 
@@ -104,7 +104,13 @@ it('비동기 에러 처리', async () => {
 });
 
 it('비동기 인대 try catch 잡고 던지지 않음', async () => {
-  await expect(asyncNotThrowError()).resolves.not.toThrow();
+  const logError = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+  await expect(asyncNotThrowError()).resolves.toBeUndefined();
+  expect(logError).toHaveBeenCalledWith(
+    '비동기 에러를 잡았습니다:',
+    '비동기 에러 발생',
+  );
 });
 
 it('비동기 에러 처리', async () => {
@@ -146,9 +152,12 @@ async function exampleUsage() {
 
 ```typescript
 it('래퍼로 비동기 오류를 포착해야합니다', async () => {
+  const logError = vi.spyOn(console, 'error').mockImplementation(() => {});
+
   await expect(
     asyncErrorWrapper(new Promise((_, reject) => reject(new Error('error')))),
-  ).resolves.not.toThrow();
+  ).resolves.toBeUndefined();
+  expect(logError).toHaveBeenCalledWith('래퍼에서 에러를 처리했습니다:', 'error');
 });
 ```
 
@@ -164,7 +173,7 @@ it('래퍼로 비동기 오류를 포착해야합니다', async () => {
 async function handleMultipleAsyncErrors() {
   try {
     // 여러 비동기 작업을 동시에 실행. 하나라도 에러가 발생하면 catch 구문으로 진입
-    await Promise.all([asyncError(), asyncNotThrowError2()]);
+    await Promise.all([asyncError(), asyncError(), asyncError()]);
   } catch (e) {
     console.error('여러 비동기 작업 중 하나에서 에러 발생:', e.message);
     return;
@@ -176,7 +185,13 @@ async function handleMultipleAsyncErrors() {
 
 ```typescript
 it('비동기 여러개 에러 처리 안 함', async () => {
-  await expect(handleMultipleAsyncErrors()).resolves.not.toThrow();
+  const logError = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+  await expect(handleMultipleAsyncErrors()).resolves.toBeUndefined();
+  expect(logError).toHaveBeenCalledWith(
+    '여러 비동기 작업 중 하나에서 에러 발생:',
+    '비동기 에러 발생',
+  );
 });
 ```
 
@@ -250,7 +265,7 @@ export const executeTest = () => {
 
 ```typescript
 it('에러가 던져지면 콘솔로그가 실행되지 않음', () => {
-  const consoleSpy = jest.spyOn(console, 'log');
+  const consoleSpy = vi.spyOn(console, 'log');
   expect(executeTest).toThrow();
   expect(consoleSpy).not.toHaveBeenCalled();
   consoleSpy.mockRestore();

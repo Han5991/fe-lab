@@ -16,6 +16,37 @@ WebSocket 핸드셰이크 이후의 복잡한 프로토콜 처리 방법을 설�
 
 WebSocket은 모든 데이터를 **프레임(Frame)** 단위로 전송합니다. 각 프레임은 바이너리 구조를 가집니다.
 
+> 코드 위치는 줄 번호 대신 `src/websocket-server.ts`의 이름으로 적습니다 — 줄 번호는 코드가 바뀌면 바로 틀립니다.
+
+### TCP 청크 ≠ 프레임
+
+소켓의 `'data'` 이벤트 한 번이 프레임 하나라는 보장은 없습니다. TCP는 스트림이라 한 청크에 프레임이 여러 개
+붙어 오기도, 한 프레임(헤더까지)이 여러 청크로 쪼개져 오기도 합니다. 그래서 연결마다 받은 청크를 모아 두고,
+완성된 프레임을 **모두** 떼어 낸 뒤 덜 온 바이트는 다음 청크까지 남깁니다.
+
+```typescript
+receive(chunk: Buffer): void {
+  this.receivedChunks.push(chunk);
+  this.receivedLength += chunk.length;
+  if (this.receivedLength < this.bytesNeeded) return; // 다음 프레임이 다 올 때까지 합치지 않는다
+  let buffer = Buffer.concat(this.receivedChunks, this.receivedLength);
+  let frame = this.readFrame(buffer); // 덜 왔으면 필요한 바이트 수를 bytesNeeded에 적고 null
+  while (frame !== null) {
+    buffer = buffer.subarray(frame.frameLength); // 뒤의 바이트는 다음 프레임의 시작
+    this.handleFrame(frame);
+    frame = this.readFrame(buffer);
+  }
+  this.receivedChunks = [buffer];
+  this.receivedLength = buffer.length;
+}
+```
+
+`readFrame()`은 확장 길이 필드·마스킹 키·페이로드가 다 오기 전에는 아무것도 읽지 않고 `null`을 돌려줍니다.
+청크가 올 때마다 합치면 1MB 프레임이 1460바이트씩 올 때 앞부분을 700번 넘게 다시 복사하므로, 필요한 바이트가
+모였을 때 한 번만 합칩니다.
+
+**코드 위치**: `WebSocketConnection.receive`, `WebSocketConnection.readFrame`
+
 ### WebSocket Frame 구조
 
 ```
@@ -61,7 +92,9 @@ const opcode = firstByte & 0x0f; // Opcode (하위 4비트)
 | Ping         | 0x9 | Ping (연결 확인)              |
 | Pong         | 0xA | Pong (Ping 응답)              |
 
-**코드 위치**: `websocket-server.ts:44-51`
+**코드 위치**: `WebSocketOpcode`
+
+그 밖의 opcode(0x3~0x7, 0xB~0xF)와 RSV 비트(확장을 협상하지 않았으니 0이어야 함)는 1002로 연결을 닫습니다.
 
 ### 두 번째 바이트 (8 bits)
 
@@ -92,12 +125,13 @@ let payloadLength = secondByte & 0x7f; // 페이로드 길이 (하위 7비트)
 
 ```typescript
 if (payloadLength === 126) {
+  if (buffer.length < offset + 2) return this.waitFor(offset + 2); // 확장 길이가 아직 덜 왔다
   payloadLength = buffer.readUInt16BE(offset); // 2바이트 읽기
   offset += 2;
 }
 ```
 
-**코드 위치**: `websocket-server.ts:380-382`
+**코드 위치**: `WebSocketConnection.readFrame`
 
 #### 3. 길이 = 127
 
@@ -105,6 +139,7 @@ if (payloadLength === 126) {
 
 ```typescript
 else if (payloadLength === 127) {
+  if (buffer.length < offset + 8) return this.waitFor(offset + 8);
   const high = buffer.readUInt32BE(offset);     // 상위 32비트
   const low = buffer.readUInt32BE(offset + 4);  // 하위 32비트
   payloadLength = high * 0x100000000 + low;     // 합치기
@@ -112,29 +147,30 @@ else if (payloadLength === 127) {
 }
 ```
 
-**코드 위치**: `websocket-server.ts:383-389`
+선언된 길이가 상한(1MB, `MAX_PAYLOAD`)을 넘으면 버퍼링하지 않고 1009(Message Too Big)로 닫습니다.
+
+**코드 위치**: `WebSocketConnection.readFrame`
 
 ### Masking Key 추출
 
-클라이언트가 서버로 보내는 데이터는 **항상 마스킹**되어야 합니다.
+클라이언트가 서버로 보내는 데이터는 **항상 마스킹**되어야 합니다. MASK 비트가 0인 프레임을 받으면 서버는
+연결을 닫아야 하므로(RFC 6455 §5.1) 1002로 닫습니다.
 
 ```typescript
-let maskingKey: Buffer | null = null;
-if (isMasked) {
-  maskingKey = buffer.slice(offset, offset + 4); // 4바이트 키
-  offset += 4;
-}
+const maskingKey = buffer.subarray(offset, offset + 4); // 4바이트 키
+offset += 4;
 ```
 
-**코드 위치**: `websocket-server.ts:392-396`
+**코드 위치**: `WebSocketConnection.readFrame`
 
 ### Payload 추출
 
 ```typescript
-const payloadData = buffer.slice(offset, offset + payloadLength);
+const payloadData = buffer.subarray(offset, frameLength);
+// 이 프레임의 끝(frameLength)부터는 receive()가 다음 프레임으로 읽는다
 ```
 
-**코드 위치**: `websocket-server.ts:399`
+**코드 위치**: `WebSocketConnection.readFrame`
 
 ---
 
@@ -165,7 +201,7 @@ private unmask(payload: Buffer, maskingKey: Buffer): Buffer {
 }
 ```
 
-**코드 위치**: `websocket-server.ts:448-454`
+**코드 위치**: `WebSocketConnection.unmask`
 
 ### 마스킹 예시
 
@@ -198,9 +234,9 @@ Masking Key:    [37, 250, 13, 82]
 ### 서버→클라이언트는 마스킹 안 함
 
 ```typescript
-private createFrame(payload: Buffer): Buffer {
+private createFrame(opcode: number, payload: Buffer): Buffer {
   // ... 프레임 생성
-  frame[0] = 0x81; // FIN=1, Opcode=1 (text)
+  frame[0] = 0x80 | opcode; // FIN=1 + Opcode
   frame[1] = payloadLength; // MASK bit = 0 (마스킹 안 함)
   // 마스킹키 추가하지 않음
   payload.copy(frame, offset);
@@ -208,7 +244,7 @@ private createFrame(payload: Buffer): Buffer {
 }
 ```
 
-**코드 위치**: `websocket-server.ts:480-510`
+**코드 위치**: `WebSocketConnection.createFrame`, `WebSocketConnection.writeFrame`
 
 ---
 
@@ -230,36 +266,35 @@ private createFrame(payload: Buffer): Buffer {
 
 ```typescript
 if (opcode === WebSocketOpcode.Text || opcode === WebSocketOpcode.Binary) {
+  if (this.fragmentedOpcode !== null) {
+    // 조각 메시지가 끝나기 전에 새 메시지를 시작할 수 없다 → 1002
+  }
   if (isFinalFrame) {
     // 단일 프레임 메시지 → 바로 처리
-    this.handleCompleteMessage(opcode, unmaskedData);
+    this.handleCompleteMessage(opcode, payload);
   } else {
     // 단편화 시작 → opcode와 데이터 저장
     this.fragmentedOpcode = opcode;
-    this.fragmentedMessage = [unmaskedData];
+    this.fragmentedMessage = [payload];
   }
 } else if (opcode === WebSocketOpcode.Continuation) {
-  // 후속 프레임
-  if (this.fragmentedOpcode === null) {
-    console.error('Received continuation frame without initial frame');
-    return;
-  }
-
-  this.fragmentedMessage.push(unmaskedData); // 데이터 추가
+  // 첫 프레임 없는 후속 프레임 → 1002
+  this.fragmentedMessage.push(payload); // 데이터 추가
+  this.fragmentedLength += payload.length; // 합친 크기가 상한을 넘거나 조각이 MAX_FRAGMENTS개를 넘으면 1009
 
   if (isFinalFrame) {
     // 마지막 프레임 → 모두 합치기
-    const completeMessage = Buffer.concat(this.fragmentedMessage);
-    this.handleCompleteMessage(this.fragmentedOpcode, completeMessage);
-
-    // 상태 초기화
-    this.fragmentedMessage = [];
-    this.fragmentedOpcode = null;
+    const completeMessage = Buffer.concat(
+      this.fragmentedMessage,
+      this.fragmentedLength,
+    );
+    // 상태 초기화 후 처리 (텍스트면 여기서 UTF-8 검사 → 아니면 1007)
+    this.handleCompleteMessage(messageOpcode, completeMessage);
   }
 }
 ```
 
-**코드 위치**: `websocket-server.ts:408-433`
+**코드 위치**: `WebSocketConnection.handleFrame`, `WebSocketConnection.handleCompleteMessage`
 
 ### 단편화를 사용하는 이유
 
@@ -272,7 +307,9 @@ if (opcode === WebSocketOpcode.Text || opcode === WebSocketOpcode.Binary) {
 - 첫 프레임: FIN=0, Opcode=Text/Binary
 - 중간 프레임들: FIN=0, Opcode=Continuation
 - 마지막 프레임: FIN=1, Opcode=Continuation
-- 제어 프레임(Ping, Pong, Close)은 단편화 불가
+- 제어 프레임(Ping, Pong, Close)은 단편화 불가(페이로드도 125바이트 이하) — 단, 조각 **사이에** 끼어들 수는 있다
+- 이 서버는 한 메시지를 조각 1024개(`MAX_FRAGMENTS`)까지만 받고, 넘으면 1009로 닫는다. RFC에는 없는 제한이다 —
+  빈 조각은 크기 상한(1MB)에 걸리지 않아서, 없으면 조각 목록이 끝없이 자란다
 
 ---
 
@@ -284,25 +321,30 @@ if (opcode === WebSocketOpcode.Text || opcode === WebSocketOpcode.Binary) {
 
 ```typescript
 else if (opcode === WebSocketOpcode.Ping) {
-  this.sendPong(unmaskedData); // Ping 받으면 즉시 Pong 응답
+  this.sendPong(payload); // Ping 받으면 즉시 Pong 응답
 }
 ```
 
-**코드 위치**: `websocket-server.ts:436-437`
+**코드 위치**: `WebSocketConnection.handleFrame`
 
 #### Pong 프레임 전송
 
 ```typescript
 private sendPong(data: Buffer): void {
-  const frame = Buffer.alloc(2 + data.length);
-  frame[0] = 0x8a; // FIN=1, Opcode=0xA (Pong)
-  frame[1] = data.length; // 서버는 마스킹 안 함
-  data.copy(frame, 2);
-  this.socket.write(frame);
+  // Ping 페이로드를 그대로 돌려준다 — 제어 프레임이라 125바이트 이하
+  this.writeFrame(WebSocketOpcode.Pong, data);
 }
 ```
 
-**코드 위치**: `websocket-server.ts:515-521`
+**코드 위치**: `WebSocketConnection.sendPong`
+
+#### 서버 하트비트
+
+서버도 `heartbeatInterval`(기본 30초)마다 모든 클라이언트에 Ping을 보냅니다. 브라우저는 Pong으로 자동
+응답하고, 그 Pong이 수신 데이터라 마지막 활동 시각이 갱신됩니다. 그래서 보낼 것이 없는(듣기만 하는)
+클라이언트도 `sessionTimeout`(기본 5분)에 걸리지 않고, Pong조차 없는 죽은 연결만 1001로 끊깁니다.
+
+**코드 위치**: `WebSocketServer` 생성자, `WebSocketServer.cleanupInactiveSessions`
 
 #### Ping/Pong 용도
 
@@ -312,29 +354,43 @@ private sendPong(data: Buffer): void {
 
 ### Close 프레임
 
+종료는 양쪽이 Close를 **한 번씩** 주고받는 핸드셰이크입니다. 그래서 연결은 상태를 가집니다.
+
+| 상태    | 뜻                                                         |
+| ------- | ---------------------------------------------------------- |
+| OPEN    | 메시지를 주고받는다                                        |
+| CLOSING | 이쪽이 Close를 보냈고 상대의 Close를 기다린다 (더 안 보냄) |
+| CLOSED  | Close를 주고받았거나 TCP가 끊겼다                          |
+
 #### Close 수신 처리
 
 ```typescript
-else if (opcode === WebSocketOpcode.Close) {
-  this.close(); // 연결 종료
+private handleCloseFrame(payload: Buffer): void {
+  // 상태 코드 검증 (1바이트 페이로드·잘못된 코드 → 1002, 이유가 UTF-8이 아니면 → 1007)
+  // OPEN: 상대가 먼저 닫았다 → 같은 상태 코드로 Close를 돌려준다
+  // CLOSING: 이쪽 Close에 대한 응답이다 → writeFrame이 OPEN에서만 쓰므로 다시 보내지 않는다
+  this.writeFrame(WebSocketOpcode.Close, ...);
+  this.finishClose(); // 서버가 먼저 TCP를 닫는다
 }
 ```
 
-**코드 위치**: `websocket-server.ts:434-435`
+**코드 위치**: `WebSocketConnection.handleCloseFrame`
 
 #### Close 프레임 전송
 
 ```typescript
-close(): void {
-  const closeFrame = Buffer.from([0x88, 0x00]);
-  // 0x88 = FIN=1, Opcode=8 (Close)
-  // 0x00 = Payload length = 0
-  this.socket.write(closeFrame);
-  this.socket.end();
+close(code = CloseCode.Normal, reason = ''): void {
+  if (this.readyState !== 'OPEN') return;
+  this.writeFrame(WebSocketOpcode.Close, this.closePayload(code, reason));
+  this.readyState = 'CLOSING'; // 이제부터는 쓰지 않는다
+  this.startCloseTimer(); // 상대가 답하지 않으면 3초 뒤 TCP를 끊는다
 }
 ```
 
-**코드 위치**: `websocket-server.ts:526-530`
+상태가 없으면, 서버가 먼저 닫은 뒤 브라우저가 돌려준 Close에 또 Close를 쓰게 됩니다 — 이미 `end()`한
+소켓이라 `ERR_STREAM_WRITE_AFTER_END`가 납니다. 서버 종료는 1001(Going Away)을 보냅니다.
+
+**코드 위치**: `WebSocketConnection.close`, `WebSocketServer.shutdown`
 
 #### Close Status Codes
 
@@ -373,7 +429,7 @@ buffer = [0x03, 0xE8, 0x47, 0x6F, 0x6F, 0x64, 0x62, 0x79, 0x65]
 [네트워크] 바이너리 데이터 전송
      [0x81, 0x85, mask[0], mask[1], mask[2], mask[3], masked_data...]
      ↓
-[서버 - handleData] 프레임 파싱
+[서버 - receive/readFrame] 프레임 파싱 (덜 온 바이트는 다음 청크까지 버퍼에)
   1. FIN bit 확인 (단일 프레임인가?)
   2. Opcode 확인 (Text? Binary? Close? Ping?)
   3. Payload length 추출 (1/2/8 바이트)
@@ -382,11 +438,11 @@ buffer = [0x03, 0xE8, 0x47, 0x6F, 0x6F, 0x64, 0x62, 0x79, 0x65]
   6. XOR 언마스킹
      ↓
 [서버 - handleCompleteMessage] 메시지 처리
-  - Text: UTF-8 디코딩
+  - Text: UTF-8 검증 후 디코딩
   - Binary: 바이너리 데이터 그대로
      ↓
-[서버] "Echo: Hello" 응답 전송
-  1. Buffer.from("Echo: Hello")
+[서버] 받은 "Hello"를 채팅(chat) 구독자 모두에게 브로드캐스트 (보낸 클라이언트 포함)
+  1. Buffer.from("Hello")
   2. 프레임 생성 (마스킹 없음)
      - frame[0] = 0x81 (FIN=1, Opcode=Text)
      - frame[1] = length
@@ -407,7 +463,7 @@ buffer = [0x03, 0xE8, 0x47, 0x6F, 0x6F, 0x64, 0x62, 0x79, 0x65]
 1. **바이트 레벨 프로토콜**: HTTP처럼 텍스트 기반이 아니라 비트 단위로 데이터를 분해하고 조합
 2. **마스킹 비대칭**: 클라이언트→서버는 필수, 서버→클라이언트는 금지
 3. **프레임 단위 처리**: 모든 메시지는 프레임으로 캡슐화되어 전송
-4. **상태 관리**: 단편화된 메시지를 조립하기 위해 상태(fragmentedMessage, fragmentedOpcode) 유지
+4. **상태 관리**: 수신 청크(receivedChunks, receivedLength, bytesNeeded), 단편화 조립(fragmentedMessage, fragmentedLength, fragmentedOpcode), 연결 상태(OPEN·CLOSING·CLOSED)를 유지
 5. **제어 프레임**: Ping/Pong으로 연결 유지, Close로 정상 종료
 
 ---

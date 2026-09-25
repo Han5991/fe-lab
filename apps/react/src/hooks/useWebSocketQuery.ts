@@ -1,4 +1,3 @@
-import { useEffect, useRef } from 'react';
 import { useQueryClient, type QueryKey } from '@tanstack/react-query';
 import { useWebSocket } from './useWebSocket';
 
@@ -11,8 +10,8 @@ interface UseWebSocketQueryOptions {
   maxReconnectAttempts?: number;
   /** 메시지 수신 시 무효화할 쿼리 키들 */
   invalidateQueries?: QueryKey[];
-  /** 메시지 파싱 및 쿼리 데이터 업데이트 콜백 */
-  onMessage?: (data: unknown) => void;
+  /** 메시지 파싱 및 쿼리 데이터 업데이트 콜백. 서버 메시지마다 도착 순서대로 한 번씩 불린다 */
+  onMessage?: (data: string) => void;
 }
 
 /**
@@ -52,50 +51,26 @@ export function useWebSocketQuery(options: UseWebSocketQueryOptions) {
   } = options;
 
   const queryClient = useQueryClient();
-  const lastMessageRef = useRef<string | null>(null);
 
+  // `messages` state를 effect로 읽으면 한 렌더에 합쳐진 프레임을 잃어 소켓 이벤트에서 바로 처리한다
   const webSocket = useWebSocket({
     url,
     autoReconnect,
     maxReconnectAttempts,
-  });
+    onMessage: data => {
+      try {
+        // 1. onMessage 콜백이 있으면 실행 (Partial Updates 패턴)
+        onMessage?.(data);
 
-  // WebSocket 메시지 처리
-  useEffect(() => {
-    const messages = webSocket.messages;
-    if (messages.length === 0) return;
-
-    const latestMessage = messages[messages.length - 1];
-
-    // 시스템 메시지나 중복 메시지는 무시
-    if (
-      latestMessage.startsWith('[시스템]') ||
-      latestMessage === lastMessageRef.current
-    ) {
-      return;
-    }
-
-    lastMessageRef.current = latestMessage;
-
-    // "수신: " 접두사 제거
-    const messageData = latestMessage.replace(/^수신:\s*/, '');
-
-    try {
-      // 1. onMessage 콜백이 있으면 실행 (Partial Updates 패턴)
-      if (onMessage) {
-        onMessage(messageData);
-      }
-
-      // 2. invalidateQueries가 설정되어 있으면 쿼리 무효화 (Query Invalidation 패턴)
-      if (invalidateQueries.length > 0) {
+        // 2. invalidateQueries가 설정되어 있으면 쿼리 무효화 (Query Invalidation 패턴)
         invalidateQueries.forEach(queryKey => {
           queryClient.invalidateQueries({ queryKey });
         });
+      } catch (error) {
+        console.error('Failed to process WebSocket message:', error);
       }
-    } catch (error) {
-      console.error('Failed to process WebSocket message:', error);
-    }
-  }, [webSocket.messages, invalidateQueries, onMessage, queryClient]);
+    },
+  });
 
   return {
     ...webSocket,

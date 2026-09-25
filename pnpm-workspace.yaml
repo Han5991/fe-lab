@@ -1,6 +1,8 @@
 packages:
   - 'apps/**/*'
   - 'packages/**/*'
+  # minibundler가 쓰는 dist/package.json을 importer로 잡으면 frozen install이 실패한다
+  - '!**/dist/**'
 
 overrides:
   # next(8.4.31 고정)와 @pandacss/*(8.5.14 고정)가 각자 exact 핀을 걸어서, 오버라이드를

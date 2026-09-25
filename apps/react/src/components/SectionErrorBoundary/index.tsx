@@ -40,9 +40,9 @@ export class SectionErrorBoundary<T extends Error = Error> extends Component<
   }
 
   resetError = () => {
-    this.setState({ error: null }, () => {
-      this.props.onReset?.(); // React Query 재시도 등 외부 트리거
-    });
+    // 쿼리 리셋이 먼저다 — 에러부터 지우면 다시 마운트된 자식이 캐시된 에러를 또 던진다.
+    this.props.onReset?.();
+    this.setState({ error: null });
   };
 
   render() {
