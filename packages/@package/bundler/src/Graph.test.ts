@@ -169,3 +169,80 @@ describe('배포 형식', () => {
     );
   });
 });
+
+describe('내보내기 변환', () => {
+  test('한 선언의 여러 선언자와 구조 분해 패턴을 모두 내보낸다', () => {
+    const { exports } = bundleAndRun({
+      'index.js': [
+        'export const a = 1, b = 2;',
+        'const source = { x: 3, list: [4, 5] };',
+        'export const { x, list: [y, ...rest] } = source;',
+      ].join('\n'),
+    });
+
+    assert.equal(exports.a, 1);
+    assert.equal(exports.b, 2);
+    assert.equal(exports.x, 3);
+    assert.equal(exports.y, 4);
+    assert.equal(JSON.stringify(exports.rest), '[5]');
+  });
+
+  test('export * as ns는 모듈 객체 하나를 ns라는 이름으로 내보낸다', () => {
+    const { exports } = bundleAndRun({
+      'math.js': 'export const one = 1;\nexport const two = 2;',
+      'index.js': "export * as math from './math.js';",
+    });
+
+    const math = exports.math as Record<string, unknown>;
+    assert.equal(math.one, 1);
+    assert.equal(math.two, 2);
+    assert.equal(exports.one, undefined);
+  });
+
+  test('export *는 default를 옮기지 않고, 이 모듈이 직접 내보낸 이름을 덮지 않는다', () => {
+    const { exports } = bundleAndRun({
+      'star.js': [
+        "export default 'star-default';",
+        "export const shared = 'from-star';",
+        "export const onlyStar = 'star';",
+      ].join('\n'),
+      'index.js': [
+        "export function shared() { return 'local'; }",
+        "export * from './star.js';",
+      ].join('\n'),
+    });
+
+    assert.equal(exports.default, undefined);
+    assert.equal(typeof exports.shared, 'function');
+    assert.equal(exports.onlyStar, 'star');
+  });
+
+  test('로컬 export는 앞에 온 export *보다 우선한다', () => {
+    const { exports } = bundleAndRun({
+      'star.js': "export const shared = 'from-star';",
+      'index.js': [
+        "export * from './star.js';",
+        "export const shared = 'local';",
+      ].join('\n'),
+    });
+
+    assert.equal(exports.shared, 'local');
+  });
+
+  test('순환 참조에서 먼저 불려 간 모듈도 함수 선언 export는 받는다(호이스팅)', () => {
+    const { exports } = bundleAndRun({
+      'index.js': "export { fromB } from './a.js';",
+      'a.js': [
+        "import { fromB } from './b.js';",
+        'export { fromB };',
+        "export function helper() { return 'helper'; }",
+      ].join('\n'),
+      'b.js': [
+        "import { helper } from './a.js';",
+        'export const fromB = helper();',
+      ].join('\n'),
+    });
+
+    assert.equal(exports.fromB, 'helper');
+  });
+});
