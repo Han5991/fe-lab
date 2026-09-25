@@ -1,53 +1,6 @@
--- =============================================================================
--- Migration: 새 함수가 PUBLIC(→ anon) EXECUTE 를 기본으로 갖지 않게 한다
--- =============================================================================
---
--- 배경 — 20260524120000_lockdown_admin_rpcs.sql 4절의 설명은 틀렸다:
---   그 절은
---     ALTER DEFAULT PRIVILEGES IN SCHEMA public
---       REVOKE EXECUTE ON FUNCTIONS FROM anon, authenticated;
---   를 적용하고 "적용 후에 만드는 모든 public 함수는 service_role 외에는 호출
---   불가"라고 적었다. 그렇지 않다. Postgres 는 새 함수의 EXECUTE 를 PUBLIC 에게
---   **기본으로** 준다(pg_default_acl 에 행이 없어도 적용되는 내장 기본값). anon·
---   authenticated 는 PUBLIC 의 구성원이라 그 권한을 그대로 물려받는다. 스키마
---   단위 ALTER DEFAULT PRIVILEGES 는 스키마 단위로 준 grant 만 걷을 수 있다 —
---   Postgres 문서(ALTER DEFAULT PRIVILEGES)가 이렇게 못 박는다:
---     "you cannot revoke privileges per-schema if they are granted globally
---      (either by default or according to a previous ALTER DEFAULT PRIVILEGES
---      command that did not specify a schema)."
---   그래서 lockdown 이후에 만든 함수라도 마이그레이션이 `REVOKE ... FROM PUBLIC`
---   을 직접 적지 않으면 anon 이 PostgREST(/rest/v1/rpc/…)로 부를 수 있다. 그 함수가
---   SECURITY DEFINER 인 admin 함수라면 lockdown 이 막으려던 결함이 그대로 재발한다.
---   (적용된 마이그레이션의 주석은 고칠 수 없어서, 정정은 이 머리 주석이 대신한다.)
---
--- 이 파일이 하는 일:
---   IN SCHEMA 없는 **전역** 형태로 PUBLIC 의 기본 EXECUTE 를 걷는다. 내장 기본값을
---   대체하는 방법은 이것뿐이다. 적용 뒤 postgres 가 만드는 함수의 기본 ACL 은
---   소유자(postgres) + 스키마 단위 기본값이 더하는 것(public 스키마는 service_role)
---   이고, anon·authenticated·PUBLIC 은 명시적 GRANT 없이는 부르지 못한다 —
---   20260524120000 이 의도했던 상태다.
---
--- 영향 범위:
---   - `FOR ROLE postgres` 는 postgres 가 **만드는** 함수에만 적용된다. 이 저장소의
---     마이그레이션은 supabase-migrations.yml 이 postgres 롤(postgres.<ref>)로 접속해
---     적용하므로 전부 해당된다. Supabase 가 관리하는 스키마(auth·storage·realtime …)
---     의 함수는 다른 롤이 만들고 소유하므로 영향이 없다.
---   - **이미 있는 함수의 ACL 은 바뀌지 않는다.** 기본 권한은 앞으로 만드는 객체에만
---     붙는다. anon 이 부르는 유일한 함수 increment_view_count 는 명시적 GRANT 를
---     이미 갖고 있고(20260524120000 2절, 20260925000000), CREATE OR REPLACE 는 ACL 을
---     유지한다.
---   - 앞으로 anon/authenticated 가 불러야 하는 함수를 새로 만들거나 DROP 후 다시
---     만들면(시그니처 변경 등) `GRANT EXECUTE ... TO anon` 을 반드시 함께 적어야 한다.
---     이 저장소의 마이그레이션은 이미 함수마다 revoke/grant 를 적는다. postgres 로
---     켜는 확장이 만드는 함수도 같은 규칙을 따를 수 있으니, anon 경로에서 확장
---     함수를 부르게 되면 grant 를 확인할 것.
---   - 테이블·시퀀스는 PUBLIC 에 내장 기본 권한이 없어 대상이 아니다(20260524120000
---     4절의 스키마 단위 revoke 로 충분하다).
---
--- 재실행 안전: 같은 REVOKE 를 다시 걸어도 결과가 같다.
--- 되돌리기:   ALTER DEFAULT PRIVILEGES FOR ROLE postgres
---               GRANT EXECUTE ON FUNCTIONS TO PUBLIC;
--- =============================================================================
+-- postgres 가 새로 만드는 함수가 PUBLIC(→ anon) EXECUTE 를 기본으로 갖지 않게 한다. 20260524120000 4절의
+-- 스키마 단위 revoke 는 Postgres 내장 기본값(PUBLIC 에 EXECUTE)을 걷지 못해 그 뒤 함수도 anon 이 부를 수 있었다.
+-- 전역 형태만 내장 기본값을 대체한다. 기존 함수 ACL 은 그대로이고, anon 이 부를 새 함수는 GRANT 를 직접 적을 것.
 
 alter default privileges for role postgres
   revoke execute on functions from public;
