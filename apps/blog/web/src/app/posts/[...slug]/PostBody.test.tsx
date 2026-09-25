@@ -234,3 +234,46 @@ describe('커스텀 태그 안의 빈 줄', () => {
     expect(invalidNesting(html)).toEqual([]);
   });
 });
+
+describe('본문 이미지', () => {
+  test('지연 로드하고, 이미지마다 preload를 심지 않는다', () => {
+    const html = serverHtml('![구성도](./a.png)\n\n![흐름](./b.png)\n');
+    const images = Array.from(parsed(html).querySelectorAll('img'));
+
+    expect(images).toHaveLength(2);
+    for (const image of images) {
+      expect(image.getAttribute('loading')).toBe('lazy');
+      expect(image.getAttribute('decoding')).toBe('async');
+    }
+    // React 19는 loading 없는 <img>마다 <link rel="preload" as="image">를 낸다.
+    expect(html).not.toContain('rel="preload"');
+  });
+
+  test('raw HTML로 준 width·height를 버리지 않는다', () => {
+    const html = serverHtml(
+      '<img height=250 width=250 src="https://example.com/z.png" alt="제페토">\n',
+    );
+    const image = parsed(html).querySelector('img');
+
+    expect(image?.getAttribute('width')).toBe('250');
+    expect(image?.getAttribute('height')).toBe('250');
+  });
+
+  test('링크로 감싼 이미지는 확대 래퍼 없이 링크 안에 그대로 둔다', () => {
+    const html = serverHtml(
+      '[![빌드 배지](./badge.png)](https://example.com/ci)\n',
+    );
+    const link = parsed(html).querySelector('a[href="https://example.com/ci"]');
+
+    expect(link?.querySelector('img')?.getAttribute('alt')).toBe('빌드 배지');
+    // 확대 버튼이 링크 안에 들어가면 대화형 요소 중첩이다.
+    expect(link?.querySelector('button, div')).toBeNull();
+    expect(invalidNesting(html)).toEqual([]);
+  });
+
+  test('링크가 아닌 본문 이미지는 계속 확대할 수 있다', () => {
+    const doc = parsed(serverHtml('![구성도](./a.png)\n'));
+
+    expect(doc.querySelector('[data-rmiz] img')).not.toBeNull();
+  });
+});

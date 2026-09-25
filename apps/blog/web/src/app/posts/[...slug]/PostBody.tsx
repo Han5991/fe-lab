@@ -21,7 +21,7 @@ import {
   DiagramEdgeTag,
 } from '@/src/components/diagram';
 import { HEADING_COMPONENTS } from '@/src/components/post/markdownHeadings';
-import { isBlockMarkdownChild } from './markdownBlocks';
+import { isBlockMarkdownChild, isMarkdownImageElement } from './markdownBlocks';
 
 /**
  * 글 본문 렌더 파이프라인의 단일 출처 — 마크다운 원문이 DOM이 되는 유일한 곳.
@@ -95,13 +95,43 @@ export function buildPostComponents(relativeDir: string): PostComponents {
     code(props) {
       return <CodeBlock {...props} />;
     },
-    img({ src, alt }) {
+    img({ src, alt, width, height }) {
       return (
         <MarkdownImage
           src={typeof src === 'string' ? src : undefined}
           alt={alt}
+          width={width}
+          height={height}
           relativeDir={relativeDir}
         />
+      );
+    },
+    // 링크로 감싼 이미지(`[![배지](b.png)](url)`)는 확대를 끈 맨 `<img>`로 그린다.
+    // 확대 래퍼는 `<div>`·`<button>`이라 `<a>` 안에 두면 무효 중첩(문단 안이면
+    // `<p><a><div>` hydration mismatch)에 대화형 요소 중첩이 되고, 클릭도 링크와
+    // 확대가 서로 뺏는다. 맨 `<img>`는 phrasing이라 문단 안 링크에 그대로 둔다.
+    a({ node: _node, children, ...props }) {
+      return (
+        <a {...props}>
+          {Children.map(children, child =>
+            isMarkdownImageElement(child) ? (
+              <MarkdownImage
+                src={
+                  typeof child.props.src === 'string'
+                    ? child.props.src
+                    : undefined
+                }
+                alt={child.props.alt}
+                width={child.props.width}
+                height={child.props.height}
+                relativeDir={relativeDir}
+                zoomable={false}
+              />
+            ) : (
+              child
+            ),
+          )}
+        </a>
       );
     },
     table({ children, node: _node, ...props }) {
@@ -351,12 +381,15 @@ export function PostBody({ content, relativeDir }: PostBodyProps) {
         },
         '& img': {
           rounded: 'control',
-          w: 'full',
+          maxW: 'full',
           h: 'auto',
           borderWidth: 'hairline',
           borderColor: 'ink.border',
           my: '4',
         },
+        // 폭을 채우는 건 저자가 크기를 안 준 이미지뿐이다. `<img width=250>`까지
+        // 채우면 250px 그림이 본문 폭으로 늘어난다.
+        '& img:not([width])': { w: 'full' },
         '& hr': {
           my: '10',
           h: '[1px]',
