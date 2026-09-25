@@ -6,7 +6,7 @@
  * - `rules.ts`       — 규칙 전체의 평면 테이블(id → 심각도·범위). "--strict가
  *                      무엇을 승격하는지"와 "무엇이 전체 집합을 보는지"는 여기서
  *                      열 하나로 읽힙니다
- * - `frontmatter.ts` / `body.ts` / `corpus.ts` — 실행 체크. 규칙 id 단위가
+ * - `frontmatter.ts` / `body.ts` / `corpus.ts` / `series.ts` — 실행 체크. 규칙 id 단위가
  *                      아니라 **판정 사슬** 단위(excerpt·date·scheduledDate·…)로
  *                      묶여 있고, 한 사슬이 여러 규칙 id를 낼 수 있습니다
  *
@@ -36,6 +36,7 @@ import {
   detectDuplicateSlugs,
   detectDuplicateDescriptions,
 } from './validate/corpus.ts';
+import { validateSeriesDeclarations } from './validate/series.ts';
 
 // ── 재수출: 기존 import 경로('./validate-posts') 유지 ────────────────────────
 export type {
@@ -150,6 +151,11 @@ export function main(ctx: ContentContext, runOptions: ValidateOptions) {
 
   allIssues.push(...detectDuplicateSlugs(records));
   allIssues.push(...detectDuplicateDescriptions(records, options));
+  allIssues.push(
+    ...validateSeriesDeclarations(postsDir, records, path =>
+      readFileSync(path, 'utf8'),
+    ),
+  );
 
   if (allIssues.length === 0) {
     console.log(`✓ ${records.length}개 포스트 검증 통과`);

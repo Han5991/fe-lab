@@ -48,9 +48,10 @@ export type DeclaredSeverity = Severity | typeof SEO_PUBLISH;
  * - `corpusVisible` — 전체 집합 중 **지금 빌드에 실리는 글**만 비교. 공개 전
  *                     예약 글을 섞으면 산출물에 존재하지도 않는 충돌로 빌드가
  *                     막힙니다
+ * - `series`        — 글이 아니라 시리즈 선언(`_series.yml`)과 그 폴더의 글들
  */
 export type RuleScope =
-  'always' | 'postLike' | 'post' | 'corpus' | 'corpusVisible';
+  'always' | 'postLike' | 'post' | 'corpus' | 'corpusVisible' | 'series';
 
 export interface RuleSpec {
   severity: DeclaredSeverity;
@@ -98,6 +99,10 @@ export const RULES = {
   // ── 코퍼스 판정 사슬 (corpus.ts) ──────────────────────────────────────────
   'duplicate-slug': { severity: 'error', scope: 'corpus' },
   'duplicate-description': { severity: SEO_PUBLISH, scope: 'corpusVisible' },
+  // ── 시리즈 선언 판정 사슬 (series.ts) ─────────────────────────────────────
+  'invalid-series-meta': { severity: 'error', scope: 'series' },
+  'unknown-series-key': { severity: 'warning', scope: 'series' },
+  'unmatched-series-order': { severity: 'error', scope: 'series' },
 } as const satisfies Record<string, RuleSpec>;
 
 export type RuleId = keyof typeof RULES;

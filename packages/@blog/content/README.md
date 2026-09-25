@@ -111,7 +111,7 @@ src/
 │              · filtering · aggregate · thumbnail · assetUrl · frontmatterSchema(서술자 테이블)
 │              · types · utils · testing(테스트 픽스처 인스턴스)
 ├─ seo/        postSeo — createPostSeo(buildPostSeo·buildPostJsonLd·buildBreadcrumbJsonLd) + 순수 계산
-└─ scripts/    build-content(진입점) · validate-posts + validate/{rules,frontmatter,body,corpus,shared}
+└─ scripts/    build-content(진입점) · validate-posts + validate/{rules,frontmatter,body,corpus,series,shared}
                · check-seo · check-bundle(번들 누수 마커) · artifacts(산출물 레지스트리 7종) · generate-{sitemap,rss,search-index,llms,llms-full}
                · sync-posts · new-post
                · context(ContentContext — 스텝이 받는 실행 컨텍스트)
