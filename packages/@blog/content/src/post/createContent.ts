@@ -28,7 +28,18 @@ export interface ContentApi
   paths: ContentPaths;
 }
 
-export function createContent(config: ContentConfig): ContentApi {
+export interface CreateContentOptions {
+  /**
+   * 공개 판정 기준 시각. 생략하면 인스턴스를 만든 시각 하나로 고정되고, 목록·
+   * 상세·집계가 모두 그 시각을 본다(`createPostService` 참고).
+   */
+  now?: Date;
+}
+
+export function createContent(
+  config: ContentConfig,
+  options: CreateContentOptions = {},
+): ContentApi {
   const paths = resolveContentPaths(config);
   const isDevelopment = () => config.runtime.isDevelopment();
 
@@ -49,6 +60,7 @@ export function createContent(config: ContentConfig): ContentApi {
     getSeriesMeta: seriesReader.getSeriesMeta,
     isDevelopment,
     timezone: config.timezone,
+    ...(options.now ? { now: options.now } : {}),
   });
   const aggregate = createAggregate({
     getAllPosts: () => service.getAllPosts(),
