@@ -60,7 +60,7 @@ jobs:
       # 예약 발행 글을 공개하는 이 워크플로는 push가 아니라서 ci.yml이 아예 돌지
       # 않는다. 아무도 안 보고 있는 시각에 검사 없이 배포되던 경로였다.
       #
-      # build-blog: 'false' — 아래 "Build blog" 스텝이 --no-cache로 다시 빌드하고
+      # build-blog: 'false' — 아래 "Build blog" 스텝이 --force로 다시 빌드하고
       # 거기서 check-seo·check-bundle까지 돈다. 여기서 또 빌드하면 같은 일을 두 번
       # 한다. (그 스텝이 주입하는 건 NEXT_PUBLIC_PR_COUNT뿐이다 — 나머지
       # NEXT_PUBLIC_*은 커밋된 .env.production에서 온다. 위 주석 참고.)
@@ -106,8 +106,16 @@ jobs:
           restore-keys: |
             blog-next-cache-v1-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
 
+      # --force다. --no-cache가 아니다 — turbo의 --no-cache는 "결과를 저장하지 않는다"
+      # (--cache=local:r,remote:r)일 뿐 캐시를 **읽는다**. 이 빌드는 시계에 달려 있는데
+      # (isPostVisible이 빌드 시각으로 예약 글 공개를 정한다) turbo 해시에는 시각이
+      # 없다. ci.yml이 main push마다 같은 커밋의 @blog/web#build를 공유 캐시에 쓰므로,
+      # 읽기를 허용하면 cron이 머지 날의 out/을 그대로 재생해 예약 글이 영영 안 나가고
+      # check-seo·check-bundle도 로그만 재생된다. 지금까지는 아래 NEXT_PUBLIC_PR_COUNT가
+      # 해시를 우연히 바꿔 준 덕에 캐시를 놓쳤을 뿐이다. --force(=--cache=local:w,remote:w)는
+      # 읽기를 끄고 항상 실행한다.
       - name: Build blog
-        run: pnpm build --filter=@blog/web --no-cache
+        run: pnpm build --filter=@blog/web --force
         env:
           # NEXT_PUBLIC_* 값은 전부 커밋된 .env.production이 준다. 예전에는 셋을
           # 여기서 environment 시크릿으로 덮었는데, 빌드 타임에 클라이언트 번들로
