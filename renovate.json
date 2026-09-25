@@ -68,8 +68,9 @@
       "platformAutomerge": true
     },
     {
-      "description": "anthropics/claude-code-action은 SHA로 고정하고 자동 머지하지 않는다. CLAUDE_CODE_OAUTH_TOKEN과 (github_token을 넘기지 않으면) 잡 권한과 무관하게 write로 발급되는 App 토큰을 받는 액션이고, 이 저장소는 액션 동작 변화(에이전트 모드에서 게시 누락 등)에 여러 번 데였다. 매 버전을 diff로 보고 사람이 머지한다",
+      "description": "anthropics/claude-code-action은 SHA로 고정하고 자동 머지하지 않는다. CLAUDE_CODE_OAUTH_TOKEN과 (github_token을 넘기지 않으면) 잡 권한과 무관하게 write로 발급되는 App 토큰을 받는 액션이고, 이 저장소는 액션 동작 변화(에이전트 모드에서 게시 누락 등)에 여러 번 데였다. 매 버전을 diff로 보고 사람이 머지한다. ci 그룹에서 떼어 따로 묶는다 — 그룹 브랜치는 안의 업데이트가 전부 automerge를 허용해야 자동 머지되므로, 자주 나오는 이 액션이 ci 그룹에 남으면 checkout·setup-node 같은 나머지 액션의 자동 머지까지 멈춘다",
       "matchPackageNames": ["anthropics/claude-code-action"],
+      "groupName": "claude-code-action",
       "automerge": false
     },
     {
