@@ -51,6 +51,7 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "5.20260917.1",
+    "@electric-sql/pglite": "^0.5.8",
     "@eslint-community/eslint-plugin-eslint-comments": "catalog:lint",
     "@eslint/js": "catalog:lint",
     "@next/eslint-plugin-next": "catalog:lint",

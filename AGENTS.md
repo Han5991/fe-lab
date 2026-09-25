@@ -77,6 +77,10 @@ here or anywhere else (this repo once carried four diverging copies of that prom
   character against the descriptor table (edit both together), and `docPaths.test.ts` checks that every
   backticked path in the docs exists. `contract.test.ts` (post and scripts) read the real `apps/blog/posts/` and
   are the safety net for content/pipeline refactors.
+- **Every migration must also apply in PGlite.** `apps/blog/web/src/lib/platform/incrementViewCount.test.ts`
+  replays all of `apps/blog/web/supabase/migrations/` into PGlite (WASM Postgres, stubbing Supabase's roles and
+  default privileges) and calls the view-count RPC as `anon` — a migration that needs an extension PGlite doesn't
+  ship breaks it.
 
 ## 5. Git & PR Workflow
 
