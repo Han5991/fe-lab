@@ -134,7 +134,10 @@ Worker (`apps/blog/web/wrangler.jsonc`), Supabase for the dynamic bits.
   대조하며 한다. 워크플로가 주입하는 건 `NEXT_PUBLIC_PR_COUNT` 하나뿐.
 - `deploy-blog.yml`의 `environment: github-pages`는 **이름만 잔재**다 — 하는 일은 배포 브랜치 게이트(`main`만)
   하나, 시크릿은 0개. 개명은 새 환경을 만들어야 한다. `preview-blog.yml`은 `environment:`를 쓰지 않는다.
-  배포는 `main` push(`apps/blog/**`·`packages/@blog/**`), **매일 KST 09:00 cron**(예약 글 공개), 수동 실행.
+  배포는 `main` push(`apps/blog/**`·`packages/@blog/**`), **매일 cron `13 0 * * *`(KST 09:13)**(예약 글 공개), 수동
+  실행. 정각을 피한 건 `0 0` 슬롯이 붐벼 실제로 KST 11:36~12:00에 돌았기 때문이다. GitHub cron은 정시를
+  보장하지 않고 하루 한 번이라, `scheduledDate`에 적은 시각은 "그 뒤 첫 배포"(push 배포나 다음 날 cron)에서
+  나간다. 배포 결과물 스모크(`claude-site-smoke.yml`)는 이 cron 배포가 끝나면 `workflow_run`으로 이어 돈다.
 - 스키마는 `supabase-migrations.yml`로만 적용한다(대시보드 SQL 에디터 금지). 배포와 분리한 이유는 배포가 매일
   cron으로 돌아 스키마 변경 없는 날에도 프로덕션 DB에 붙고, 발행과 스키마가 한 실패 지점에 묶이기 때문이다.
 - **Supabase 클라이언트는 둘이다**: 공개 페이지는 `src/lib/platform/publicClient.ts`(`@supabase/postgrest-js`만 —

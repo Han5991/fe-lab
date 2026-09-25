@@ -1,7 +1,7 @@
 name: Push Supabase Migrations
 
 # 왜 deploy-blog.yml 이 아니라 별도 워크플로인가:
-#   deploy-blog.yml 은 매일 00:00 UTC cron 으로도 돈다(예약 발행 글 공개용).
+#   deploy-blog.yml 은 매일 아침 cron 으로도 돈다(예약 발행 글 공개용).
 #   거기에 db push 를 얹으면 스키마 변경이 없는 날에도 매일 프로덕션 DB에
 #   접속하게 되고, 콘텐츠 발행과 스키마 변경이 한 실패 지점에 묶인다.
 #   마이그레이션 파일이 바뀐 push 에서만 도는 게 맞다.

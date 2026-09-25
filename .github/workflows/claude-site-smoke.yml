@@ -15,10 +15,18 @@ name: Claude Site Smoke
 # 직접 가져오지 않으므로 프롬프트 인젝션 표면도 사실표 하나로 줄었다.
 
 on:
-  schedule:
-    # 매일 10:00 KST (01:00 UTC) — deploy-blog cron(00:00 UTC) 완료 + 지연 버퍼 후
-    # (GitHub 예약 큐 지연으로 실제로는 03:00~04:30 UTC에 도는 경우가 많다)
-    - cron: '0 1 * * *'
+  # 매일 아침 cron 배포가 **끝난 직후** 배포 결과물을 본다.
+  #
+  # 예전에는 독립 cron(01:00 UTC)으로 deploy cron(00:00 UTC) 뒤에 "지연 버퍼"를
+  # 두었는데, 두 cron이 예약 큐에서 각각 몇 시간씩 밀려(실측: 배포 02:36~03:00,
+  # 스모크 05:19~05:42 UTC) 간격이 보장되지 않았다. workflow_run으로 묶으면 순서가
+  # 보장되고 오늘 배포분을 바로 본다. claude-post-inventory.yml과 같은 방식이다.
+  #
+  # workflow_run은 파일 경로가 아니라 워크플로의 name으로 매칭한다 — deploy-blog.yml의
+  # name을 고치면 여기도 함께 고쳐야 한다(어긋나면 실패가 아니라 아예 안 돈다).
+  workflow_run:
+    workflows: ['Deploy Blog to Cloudflare Workers']
+    types: [completed]
   workflow_dispatch:
 
 concurrency:
@@ -32,6 +40,13 @@ permissions:
 
 jobs:
   smoke:
+    # 하루 한 번 — cron이 일으킨 배포 뒤에만 돈다(push 배포마다 돌면 Claude 실행이
+    # 머지 수만큼 는다). 배포가 실패해도 돈다: 그날 사이트는 전날 산출물 그대로
+    # 떠 있고, 그걸 보는 게 이 잡의 일이다. 봇 actor는 claude-code-action이 거부하므로
+    # 건너뛴다(claude-post-inventory.yml과 같은 이유).
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.event == 'schedule' && !endsWith(github.actor, '[bot]'))
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -39,6 +54,9 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 1
+          # 저장소의 발행 글과 대조하므로 방금 배포된 커밋을 본다. workflow_run의 기본
+          # checkout은 그 커밋이 아니다. 수동 실행에는 head_sha가 없어 일반 checkout.
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       # 러너에 기본 설치된 python3(표준 라이브러리만 사용)으로 돈다. 설치 스텝 불필요.
       # 사이트가 죽어도 exit 0이다 — 그건 Claude가 보고할 사실이지 수집 실패가 아니다.

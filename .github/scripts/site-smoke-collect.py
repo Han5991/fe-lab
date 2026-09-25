@@ -403,7 +403,7 @@ def parse_sitemap(text: str, today_utc: str, today_kst: str) -> dict:
     facts["lastmod_counts"] = dict(sorted(counts.items()))
     facts["distinct_lastmod_count"] = len(counts)
     # "모든 lastmod가 검사 당일" = 매 빌드마다 lastmod가 전진하는 회귀 신호.
-    # 빌드는 UTC 자정, 검사는 그 직후라 UTC/KST 어느 쪽으로 찍혀도 잡히게 둘 다 본다.
+    # 검사는 배포 직후에 돌지만 lastmod가 UTC/KST 어느 날짜로 찍혀도 잡히게 둘 다 본다.
     facts["all_lastmod_is_check_date"] = bool(lastmod_dates) and set(
         lastmod_dates
     ) <= {today_utc, today_kst}
