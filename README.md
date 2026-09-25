@@ -31,7 +31,7 @@
 | `next.js`       | `next.js`           | 🧪 실험          | Next.js 16 (App Router, Turbopack), Vitest + RTL + next-router-mock               | 서버 컴포넌트·에러 바운더리·테스팅 전략.                                                                            |
 | `react`         | `react`             | 🧪 실험          | React 19 SPA + Vite 8 + React Router 8 + TanStack Query, Vitest + RTL + MSW       | 라우팅·커스텀 훅·API 모킹·타입 설계 실험(`apps/react/src/pages/typescript-project-design`).                         |
 | `typescript`    | `typescript`        | 🧪 실험          | Pure TypeScript + Vitest                                                          | 에러 모델링 등 순수 타입/로직 실험.                                                                                 |
-| `socket-server` | `socket-server`     | 🧪 실험          | Node.js + 의존성 0의 순수 TypeScript WebSocket 서버                               | `react` 앱과 짝지어 실시간 통신 실험(`pnpm dev --filter=socket-server --filter=react`). lint/test 스크립트 없음.    |
+| `socket-server` | `socket-server`     | 🧪 실험          | Node.js + 의존성 0의 순수 TypeScript WebSocket 서버                               | `react` 앱과 짝지어 실시간 통신 실험(`pnpm dev --filter=socket-server --filter=react`). lint 스크립트 없음.         |
 
 ### packages/
 
@@ -98,13 +98,15 @@ apps/blog/posts/**/_series.yml ─┤
 
   **러너는 모든 워크스페이스에서 Vitest 하나다.** 갈리는 것은 러너가 아니라 **환경**이고, 환경이 둘인 곳은 `test.projects`로 나눈다.
 
-  | 워크스페이스    | 환경                                                                                                                |
-  | --------------- | ------------------------------------------------------------------------------------------------------------------- |
-  | `@blog/content` | node (`src/**/*.test.ts`)                                                                                           |
-  | `@blog/web`     | projects 둘 — `node`(`src/shared`·`src/domain`·`src/lib`) + `jsdom`(나머지 `src/**`, RTL). `pnpm test` 한 번에 실행 |
-  | `next.js`       | jsdom + RTL + next-router-mock (`test:watch` 있음)                                                                  |
-  | `react`         | jsdom + RTL + MSW                                                                                                   |
-  | `typescript`    | node                                                                                                                |
+  | 워크스페이스       | 환경                                                                                                                |
+  | ------------------ | ------------------------------------------------------------------------------------------------------------------- |
+  | `@blog/content`    | node (`src/**/*.test.ts`)                                                                                           |
+  | `@blog/web`        | projects 둘 — `node`(`src/shared`·`src/domain`·`src/lib`) + `jsdom`(나머지 `src/**`, RTL). `pnpm test` 한 번에 실행 |
+  | `next.js`          | jsdom + RTL + next-router-mock (`test:watch` 있음)                                                                  |
+  | `react`            | jsdom + RTL + MSW                                                                                                   |
+  | `typescript`       | node                                                                                                                |
+  | `socket-server`    | node (`src/**/*.test.ts`)                                                                                           |
+  | `@package/bundler` | node (`src/**/*.test.ts`)                                                                                           |
 
   예전에는 `@blog/content`와 `@blog/web`의 순수 로직이 `node --test`(+`node:assert/strict`)로 돌았다. 러너가 갈리면 단언 API·커버리지 도구·ESLint 인가가 두 벌이 되고, `node --test '<glob>'`은 **매치가 0개여도 exit 0**이라 테스트가 조용히 사라질 수 있었다. Vitest는 매치 0개면 실패한다.
 
