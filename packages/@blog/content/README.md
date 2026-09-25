@@ -133,13 +133,13 @@ cwd·PATH 어디에도 기대지 않는다 — 부모가 발견한 설정 파일
 
 2단계 스텝이 쓰는 곳(경로는 `dirs` 기본값, 앱 루트 기준):
 
-| 스텝                                     | 산출물                                                                           | 증분 기준 · 정리                                                           |
-| :--------------------------------------- | :------------------------------------------------------------------------------- | :------------------------------------------------------------------------- |
-| `sync-posts`                             | `public/posts/**` — 원고 폴더의 이미지·미디어 사본                               | 크기가 같고 사본이 더 새로우면 건너뜀, 원고에서 사라진 파일(orphan)은 삭제 |
-| `og-images`                              | `public/og/{slug}.png` — thumbnail이 없거나 `/og/*`를 가리키는 발행 글의 OG 카드 | 내용 해시 manifest(`.cache/og-images.json`), orphan 삭제                   |
-| `thumbnails`                             | `public/thumbs/**/*-thumb.webp` — 로컬 썸네일 최적화                             | manifest(`.cache/thumbnails.json`), orphan 삭제                            |
-| `search-index`                           | `search-index.json`(공개 글) · `admin-posts-index.json`(비공개 포함)             | 매번 다시 쓴다                                                             |
-| `sitemap` · `rss` · `llms` · `llms-full` | `sitemap.xml` · `rss.xml` · `llms.txt` · `llms-full.txt`                         | 매번 다시 쓴다                                                             |
+| 스텝                                     | 산출물                                                                                                                  | 증분 기준 · 정리                                                         |
+| :--------------------------------------- | :---------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------- |
+| `sync-posts`                             | `public/posts/**` — **공개 글이 원고에서 가리키는** 이미지·미디어 사본(draft·예약 글·메타 노트 전용 파일은 싣지 않는다) | 크기가 같고 사본이 더 새로우면 건너뜀, 대상에서 빠진 파일(orphan)은 삭제 |
+| `og-images`                              | `public/og/{slug}.png` — thumbnail이 없거나 `/og/*`를 가리키는 발행 글의 OG 카드                                        | 내용 해시 manifest(`.cache/og-images.json`), orphan 삭제                 |
+| `thumbnails`                             | `public/thumbs/**/*-thumb.webp` — 로컬 썸네일 최적화                                                                    | manifest(`.cache/thumbnails.json`), orphan 삭제                          |
+| `search-index`                           | `search-index.json`(공개 글) · `admin-posts-index.json`(비공개 포함)                                                    | 매번 다시 쓴다                                                           |
+| `sitemap` · `rss` · `llms` · `llms-full` | `sitemap.xml` · `rss.xml` · `llms.txt` · `llms-full.txt`                                                                | 매번 다시 쓴다                                                           |
 
 산출물은 전부 `.gitignore`다 — 신선한 체크아웃에는 없고, 낡은 `public/`은 무음 no-op 생성기를 가릴 수 있다.
 

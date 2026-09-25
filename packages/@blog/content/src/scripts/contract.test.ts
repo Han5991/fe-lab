@@ -9,8 +9,11 @@
  *
  * 콘텐츠 개수 자체는 잠그지 않습니다(글이 추가/숨김되는 정상 변경에 깨지면 안 됨).
  */
+import { existsSync } from 'node:fs';
+import { join, posix } from 'node:path';
 import { expect, test } from 'vitest';
 import { isPostVisible } from '../post/visibility.ts';
+import { decodeUrlSafe } from '../shared/url.ts';
 import { testConfig, testContent } from '../post/testing.ts';
 import { buildSitemapXml, getPostPriority } from './generate-sitemap.ts';
 import { buildRssXml } from './generate-rss.ts';
@@ -20,6 +23,7 @@ import {
   CONTENT_PREVIEW_CHARS,
 } from './generate-search-index.ts';
 import { buildLlmsFullText } from './generate-llms-full.ts';
+import { selectPublishedMedia } from './sync-posts.ts';
 
 // 실제 코퍼스에 앵커한 테스트 인스턴스 — 배선은 post/testing.ts 참고.
 const { getAllPosts, getAllPostsIncludingHidden, isSeriesFolder } = testContent;
@@ -166,4 +170,31 @@ test('contract: sitemap 우선순위는 시리즈가 아니라 폴더 기준이�
   expect(post.series, 'typescript 폴더는 시리즈가 아니어야 함').toBe(undefined);
   // 우선순위 목록은 설정에서 온다(픽스처의 highPriorityFolders에 이 폴더가 있다).
   expect(getPostPriority(post, testConfig.sitemap)).toBe('0.75');
+});
+
+test('sync-posts: 공개 글이 원고에서 가리키는 로컬 이미지는 전부 복사 대상이다', () => {
+  // sync-posts는 공개 글이 참조하는 미디어만 public/posts/에 싣는다. 참조를
+  // 놓치면 발행 글의 이미지가 404가 되므로, 실제 원고의 이미지 참조(마크다운
+  // `![](…)`·`<img src>`·thumbnail)를 **독립된 추출**로 모아 전부 골라지는지 본다.
+  const posts = getAllPosts();
+  const postsDir = testContent.paths.postsDir;
+  const referenced = new Set<string>();
+  for (const p of posts) {
+    const refs = [
+      ...[...p.content.matchAll(/!\[[^\]]*\]\(([^)\s]+)/g)].map(m => m[1]),
+      ...[...p.content.matchAll(/<img\b[^>]*\ssrc="([^"]+)"/g)].map(m => m[1]),
+      p.thumbnail,
+    ];
+    for (const ref of refs) {
+      if (!ref || /^(?:[a-z]+:|\/)/i.test(ref)) continue;
+      const rel = posix.normalize(
+        posix.join(p.relativeDir, decodeUrlSafe(ref.split(/[?#]/)[0] ?? ref)),
+      );
+      if (existsSync(join(postsDir, rel))) referenced.add(rel);
+    }
+  }
+  // 양성 대조 — 추출이 조용히 0건이 되면 이 계약은 아무것도 지키지 않는다.
+  expect(referenced.size).toBeGreaterThan(10);
+  const selected = selectPublishedMedia(posts, [...referenced]);
+  expect([...referenced].filter(rel => !selected.has(rel))).toStrictEqual([]);
 });

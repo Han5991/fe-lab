@@ -19,7 +19,11 @@ import {
 } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
-import { syncFull, syncIncremental } from './sync-posts.ts';
+import {
+  selectPublishedMedia,
+  syncFull,
+  syncIncremental,
+} from './sync-posts.ts';
 
 // ── helpers ─────────────────────────────────────────────────────────────────
 
@@ -144,5 +148,95 @@ test('incremental: 크기·mtime이 같으면 복사를 건너뜀', () => {
 
     const second = captureLog(() => syncIncremental(src, dst, false));
     expect(second.includes('0 copied, 1 unchanged'), second).toBeTruthy();
+  });
+});
+
+// ── 공개 글이 가리키는 미디어만 싣는다 ─────────────────────────────────────
+
+function post(relativeDir: string, content: string, thumbnail?: string) {
+  return { relativeDir, content, thumbnail };
+}
+
+test('selectPublishedMedia: 글 폴더 기준 상대 경로의 여러 표기를 모두 참조로 본다', () => {
+  const media = [
+    'feconf/img/a b.png',
+    'feconf/img/start.png',
+    'feconf/dot.png',
+    'feconf/html.jpeg',
+    'root.png',
+    'feconf/abs.gif',
+  ];
+  const selected = selectPublishedMedia(
+    [
+      post(
+        'feconf',
+        [
+          '![a](img/a%20b.png)',
+          '![s](./img/start.png "제목")',
+          '<img src="dot.png" alt="d" />',
+          "<figure><img src='html.jpeg' alt='h'></figure>",
+          '![r](../root.png)',
+          '![abs](/posts/feconf/abs.gif)',
+        ].join('\n'),
+      ),
+    ],
+    media,
+  );
+  expect([...selected].sort()).toStrictEqual([...media].sort());
+});
+
+test('selectPublishedMedia: 참조되지 않은 파일·다른 파일의 꼬리는 싣지 않는다', () => {
+  const selected = selectPublishedMedia(
+    [post('feconf', '![s](img/start.png)')],
+    ['feconf/img/start.png', 'feconf/start.png', 'feconf/unused.png'],
+  );
+  // `img/start.png` 안의 `start.png`는 같은 폴더의 다른 파일을 가리키지 않는다.
+  expect([...selected]).toStrictEqual(['feconf/img/start.png']);
+});
+
+test('selectPublishedMedia: 목록에 없는 글(draft 등)의 이미지는 싣지 않는다', () => {
+  // main은 visible 글만 넘긴다 — draft 본문이 가리키는 파일은 고를 이유가 없다.
+  const selected = selectPublishedMedia(
+    [post('open-source', '![p](published.png)')],
+    ['open-source/published.png', 'open-source/draft-only.png'],
+  );
+  expect([...selected]).toStrictEqual(['open-source/published.png']);
+});
+
+test('selectPublishedMedia: frontmatter thumbnail도 참조다 (OG·JSON-LD가 원본을 쓴다)', () => {
+  const selected = selectPublishedMedia(
+    [post('ci', '본문에는 없음', 'cover-thumb.png'), post('', '', '/og/x.png')],
+    ['ci/cover-thumb.png', 'og/x.png'],
+  );
+  expect([...selected]).toStrictEqual(['ci/cover-thumb.png']);
+});
+
+test('sync: include가 거른 파일은 복사하지 않고, 이전 사본은 orphan으로 지운다', () => {
+  withTmpDirs((src, dst) => {
+    writeFile(src, 'a/public.png', 'PUB');
+    writeFile(src, 'a/draft.png', 'DRAFT');
+    // 예전 빌드가 전부 복사해 둔 사본
+    writeFile(dst, 'a/draft.png', 'DRAFT');
+
+    const stdout = captureLog(() =>
+      syncIncremental(src, dst, false, rel => rel === 'a/public.png'),
+    );
+    expect(existsSync(join(dst, 'a/public.png'))).toBeTruthy();
+    expect(
+      !existsSync(join(dst, 'a/draft.png')),
+      '비공개 글의 이미지 사본은 지워져야 함',
+    ).toBeTruthy();
+    expect(stdout.includes('1 removed, 1 not published'), stdout).toBeTruthy();
+  });
+});
+
+test('syncFull: include가 거른 파일은 복사하지 않는다', () => {
+  withTmpDirs((src, dst) => {
+    writeFile(src, 'public.png', 'PUB');
+    writeFile(src, 'draft.png', 'DRAFT');
+
+    captureLog(() => syncFull(src, dst, rel => rel === 'public.png'));
+    expect(existsSync(join(dst, 'public.png'))).toBeTruthy();
+    expect(!existsSync(join(dst, 'draft.png'))).toBeTruthy();
   });
 });
