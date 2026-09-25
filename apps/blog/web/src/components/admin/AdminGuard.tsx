@@ -2,7 +2,7 @@
 
 import { type ReactNode, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { useSuspenseQuery } from '@tanstack/react-query';
+import { useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
 import {
   authRepository,
   isAdminEmail,
@@ -14,6 +14,7 @@ import {
   adminLoginErrorPath,
   isAdminLoginPath,
 } from '@/src/shared/routes';
+import { setAdminQueryDefaults } from '@/src/hooks/adminQueryDefaults';
 
 // admin UI를 로컬(pnpm dev)에서 로그인 없이 개발/확인하기 위한 우회.
 // NODE_ENV로 자동 게이팅된다 → 프로덕션 빌드에선 false로 인라인되어 아래 우회
@@ -30,6 +31,9 @@ const DEV_BYPASS = process.env.NODE_ENV === 'development';
 export function AdminGuard({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
+  // 자식의 admin 쿼리가 만들어지기 전에 걸려야 해서 렌더 중에 건다 — 같은 값을
+  // 다시 거는 것이라 몇 번 불려도 결과가 같다.
+  setAdminQueryDefaults(useQueryClient());
 
   const { data: session } = useSuspenseQuery({
     queryKey: ['admin-auth-session'],

@@ -42,7 +42,6 @@ vi.mock('@/src/domain/analytics/admin', async () => {
         slugs.map(slug => ({ slug, total_views: 5, today_views: 0 })),
       ),
     getAllPostsTrends: () => Promise.resolve([]),
-    isRetryableAdminError: () => false,
   };
 });
 

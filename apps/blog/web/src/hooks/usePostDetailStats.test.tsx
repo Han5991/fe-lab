@@ -23,7 +23,6 @@ vi.mock('@/src/domain/analytics/admin', () => ({
   getPostHourlyDistribution: () =>
     Promise.reject(new Error('admin-analytics Edge Function 오류 (500)')),
   getPostDowDistribution: () => Promise.resolve([]),
-  isRetryableAdminError: () => false,
 }));
 
 import { usePostDetailStats } from './usePostDetailStats';
@@ -74,7 +73,12 @@ afterEach(() => {
 describe('usePostDetailStats', () => {
   test('분포 조회 실패를 빈 분포로 삼키지 않고 에러 경계로 올린다', async () => {
     render(
-      <QueryClientProvider client={new QueryClient()}>
+      <QueryClientProvider
+        // 재시도가 끼면 실패가 늦게 드러난다 — 재시도 정책은 이 테스트의 몫이 아니다.
+        client={
+          new QueryClient({ defaultOptions: { queries: { retry: false } } })
+        }
+      >
         <Boundary>
           <Suspense fallback={<p>불러오는 중</p>}>
             <HourlyTotal />

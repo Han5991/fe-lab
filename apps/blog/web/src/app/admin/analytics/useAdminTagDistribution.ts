@@ -2,7 +2,6 @@
 
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { getAdminPostsIndex } from '@/src/domain/analytics/admin';
-import { retryAdminQuery } from '@/src/hooks/useAdminViews';
 
 /**
  * admin 포스트 인덱스에서 태그별 빈도수를 계산한다.
@@ -27,13 +26,6 @@ export function useAdminTagDistribution() {
         .map(([id, count]) => ({ id, count }))
         .sort((a, b) => b.count - a.count || a.id.localeCompare(b.id));
     },
-    // getAdminPostsIndex는 SSG prerender에서 빈 배열을 돌려준다(위 저장소의
-    // window 가드). 그 빈 결과가 hydration 캐시에 씨앗으로 남으면 전역
-    // staleTime(5분) 동안 빈 차트로 고정되므로, useAdminViews와 같은 이유로
-    // 마운트마다 다시 받아온다.
-    staleTime: 0,
-    refetchOnMount: 'always',
-    retry: retryAdminQuery,
   });
   return data;
 }

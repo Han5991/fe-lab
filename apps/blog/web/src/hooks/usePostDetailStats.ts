@@ -6,7 +6,6 @@ import {
   getPostDowDistribution,
   getPostHourlyDistribution,
 } from '@/src/domain/analytics/admin';
-import { retryAdminQuery } from './useAdminViews';
 import type {
   PostDetailStats,
   PostStatDetail,
@@ -31,11 +30,6 @@ export function usePostDetailStats(post: PostStatDetail): PostDetailStats {
 
   const { data: distributions } = useSuspenseQuery({
     queryKey: ['admin', 'post-detail', slug],
-    // 같은 사유 (useAdminDashboardData 주석 참조): SSR placeholder를 hydration
-    // 직후 무조건 갱신해 prod 화면이 빈 차트로 굳지 않게 합니다.
-    staleTime: 0,
-    refetchOnMount: 'always',
-    retry: retryAdminQuery,
     // 실패는 삼키지 않는다 — 예전엔 catch에서 빈 분포를 돌려줘, Edge Function의
     // 401·500이 "이 글은 조회가 없었다"는 빈 차트와 구분되지 않았다(그리고 그 빈
     // 값이 캐시에 성공으로 남았다). throw는 admin 에러 경계가 안내한다.

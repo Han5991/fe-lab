@@ -39,7 +39,6 @@ vi.mock('@/src/domain/analytics/admin', () => ({
     ]),
   getAllPostStats,
   getAllPostsTrends,
-  isRetryableAdminError: () => false,
 }));
 
 import { useAdminDashboardData } from './useAdminViews';

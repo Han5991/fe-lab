@@ -32,7 +32,6 @@ vi.mock('@/src/domain/analytics/admin', () => ({
     ]),
   getAllPostStats,
   getAllPostsTrends: () => Promise.resolve([]),
-  isRetryableAdminError: () => false,
   analyticsService: {
     computeDerivedStats: () => ({
       weekGrowthRate: null,
@@ -55,7 +54,12 @@ describe('PostList', () => {
       { slug: 'a', total_views: 7, today_views: 0 },
     ]);
     render(
-      <QueryClientProvider client={new QueryClient()}>
+      <QueryClientProvider
+        // 재시도가 끼면 실패가 늦게 드러난다 — 재시도 정책은 이 테스트의 몫이 아니다.
+        client={
+          new QueryClient({ defaultOptions: { queries: { retry: false } } })
+        }
+      >
         <Suspense fallback={null}>
           <PostList />
         </Suspense>
