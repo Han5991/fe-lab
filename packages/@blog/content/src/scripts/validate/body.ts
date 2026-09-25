@@ -22,6 +22,27 @@ import { frontmatterOffset } from './shared.ts';
 import type { Issue, PostRecord, ValidateContext } from './shared.ts';
 import { resolveSeverity } from './rules.ts';
 
+/**
+ * 레코드 하나의 본문을 검사기 넷이 함께 쓰도록 **한 번만** 계산한 것 —
+ * 펜스 추적(`scan`), 펜스를 덮은 본문(`prose`), frontmatter 줄 수(`offset`).
+ */
+export interface BodyView {
+  /** frontmatter가 차지한 줄 수 — 본문 줄 번호 → 파일 줄 번호 */
+  offset: number;
+  scan: ScanResult;
+  /** 코드 펜스 안을 길이를 유지한 채 공백으로 덮은 본문(`maskNonProse`) */
+  prose: string;
+}
+
+export function viewBody(content: string, raw: string): BodyView {
+  const scan = scanBodyLines(content);
+  return {
+    offset: frontmatterOffset(raw),
+    scan,
+    prose: maskScanned(scan.lines),
+  };
+}
+
 /** 마크다운 `![alt](src)` — alt는 비어 있을 수 있다. */
 const MARKDOWN_IMAGE = /!\[([^\]]*)]\(([^)\s]+)(?:\s+"[^"]*")?\)/g;
 
@@ -47,20 +68,22 @@ function blank(text: string): string {
  * 길이(와 줄 수)를 유지하는 건 match.index로 줄 번호를 그대로 계산하기 위해서입니다.
  */
 export function maskNonProse(content: string): string {
-  return scanBodyLines(content)
-    .lines.map(({ text, inFence }) => (inFence ? blank(text) : text))
+  return maskScanned(scanBodyLines(content).lines);
+}
+
+function maskScanned(lines: readonly ScannedLine[]): string {
+  return lines
+    .map(({ text, inFence }) => (inFence ? blank(text) : text))
     .join('\n');
 }
 
 export function validateImageReferences(
   record: PostRecord,
-  raw: string,
+  { offset, prose }: BodyView,
   options: ValidateContext,
 ): Issue[] {
   const { absPath, relPath } = record;
   const issues: Issue[] = [];
-  const offset = frontmatterOffset(raw);
-  const prose = maskNonProse(record.content);
   const lineOf = (index: number) =>
     offset + prose.slice(0, index).split('\n').length;
 
@@ -244,13 +267,11 @@ export function scanBodyLines(content: string): ScanResult {
  */
 export function validateCodeFenceLanguages(
   record: PostRecord,
-  raw: string,
+  { offset, scan }: BodyView,
   supportedFenceLabels: ReadonlySet<string> = SUPPORTED_FENCE_LABELS,
 ): Issue[] {
   const issues: Issue[] = [];
-  const offset = frontmatterOffset(raw);
-
-  const { lines: scanned, unclosedFenceAt } = scanBodyLines(record.content);
+  const { lines: scanned, unclosedFenceAt } = scan;
   if (unclosedFenceAt !== null) {
     issues.push({
       file: record.relPath,
@@ -376,15 +397,17 @@ export function markParagraphLines(lines: string[]): boolean[] {
  * 빌드에서 제외되는 메타 노트(유효한 `status` 없음)는 렌더될 일이 없으므로
  * 검사하지 않습니다 — 기획 문서의 `# 제목`까지 잡으면 경고만 늘고 고칠 것이 없습니다.
  */
-export function validateBodyHeadings(record: PostRecord, raw: string): Issue[] {
+export function validateBodyHeadings(
+  record: PostRecord,
+  { offset, prose }: BodyView,
+): Issue[] {
   if (!isPostFile(record.data)) return [];
 
   const issues: Issue[] = [];
-  const offset = frontmatterOffset(raw);
 
   // 마스킹된 본문은 줄 수와 각 줄의 길이가 원본과 같으므로 줄 번호가 그대로다.
   // 펜스 안은 이미 공백으로 덮여 있어 따로 inFence를 볼 필요가 없다.
-  const lines = maskNonProse(record.content).split('\n');
+  const lines = prose.split('\n');
   // 메시지에 인용할 줄은 **원문**이다. 마스킹된 줄을 그대로 보여주면
   // ``# `useEffect` `` 가 `: #` 로만 찍혀 어디를 고칠지 알 수 없다.
   // (마스킹은 길이와 줄 수를 유지하므로 인덱스가 그대로 맞는다)
@@ -457,13 +480,11 @@ function insideInlineCode(text: string, index: number): boolean {
  */
 export function validateDiagramNames(
   record: PostRecord,
-  raw: string,
+  { offset, prose }: BodyView,
   options: ValidateContext,
 ): Issue[] {
   if (!isPostFile(record.data)) return [];
   const issues: Issue[] = [];
-  const offset = frontmatterOffset(raw);
-  const prose = maskNonProse(record.content);
   for (const match of prose.matchAll(DIAGRAM_OPEN_TAG)) {
     if (insideInlineCode(prose, match.index)) continue;
     const name = nameAttr(match[0]);

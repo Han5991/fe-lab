@@ -15,10 +15,10 @@
  */
 import { readFileSync } from 'node:fs';
 import { relative, posix } from 'node:path';
-import matter from 'gray-matter';
+import { parseMatter } from '../post/repository.ts';
 import { collectMarkdownFiles, hasFrontmatter } from '../shared/postFiles.ts';
 import type { ContentContext } from './context.ts';
-import { toValidateContext } from './validate/shared.ts';
+import { toValidateContext, yamlErrorCause } from './validate/shared.ts';
 import type {
   Issue,
   PostRecord,
@@ -28,6 +28,7 @@ import type {
 import { validatePost } from './validate/frontmatter.ts';
 import { resolveSeverity } from './validate/rules.ts';
 import {
+  viewBody,
   validateImageReferences,
   validateCodeFenceLanguages,
   validateBodyHeadings,
@@ -63,6 +64,8 @@ export {
   validateCodeFenceLanguages,
   validateBodyHeadings,
   validateDiagramNames,
+  viewBody,
+  type BodyView,
   type ScannedLine,
   type ScanResult,
 } from './validate/body.ts';
@@ -86,14 +89,16 @@ export function parseRecord(
   relPath: string,
 ): { record: PostRecord } | { issue: Issue } {
   try {
-    const { data, content } = matter(raw);
+    const { data, content } = parseMatter(raw, relPath);
     return { record: { absPath, relPath, data, content } };
   } catch (e) {
-    const mark = (e as { mark?: { line?: unknown } } | null)?.mark;
+    const cause = yamlErrorCause(e);
+    const mark = (cause as { mark?: { line?: unknown } } | null)?.mark;
     // js-yaml의 mark.line은 0-based이고, gray-matter가 넘기는 YAML은 여는 `---`
     // 줄의 끝(개행)부터 시작한다 — 그래서 +1이 곧 파일의 줄 번호다.
     const line = typeof mark?.line === 'number' ? mark.line + 1 : 1;
-    const reason = e instanceof Error ? e.message.split('\n')[0] : String(e);
+    const reason =
+      cause instanceof Error ? cause.message.split('\n')[0] : String(cause);
     return {
       issue: {
         file: relPath,
@@ -140,16 +145,17 @@ export function main(ctx: ContentContext, runOptions: ValidateOptions) {
     const { record } = parsed;
     records.push(record);
     allIssues.push(...validatePost(record, raw, options));
-    allIssues.push(...validateImageReferences(record, raw, options));
+    const body = viewBody(record.content, raw);
+    allIssues.push(...validateImageReferences(record, body, options));
     allIssues.push(
       ...validateCodeFenceLanguages(
         record,
-        raw,
+        body,
         ctx.content.config.registries.supportedFenceLabels,
       ),
     );
-    allIssues.push(...validateBodyHeadings(record, raw));
-    allIssues.push(...validateDiagramNames(record, raw, options));
+    allIssues.push(...validateBodyHeadings(record, body));
+    allIssues.push(...validateDiagramNames(record, body, options));
   }
 
   allIssues.push(...detectDuplicateSlugs(records));

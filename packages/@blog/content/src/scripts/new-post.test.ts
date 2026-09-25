@@ -6,7 +6,6 @@ import { sep } from 'node:path';
 import {
   resolveOptions,
   parseTagList,
-  todayKST,
   safeFilename,
   buildPostFilePath,
   buildFrontmatter,
@@ -14,6 +13,7 @@ import {
 import {
   validatePost,
   validateBodyHeadings,
+  viewBody,
   type PostRecord,
 } from './validate-posts.ts';
 
@@ -117,16 +117,21 @@ test('resolveOptions: status 값은 그대로 전달', () => {
   );
 });
 
-// ── todayKST ─────────────────────────────────────────────────────────────────
+// ── 스캐폴딩 date: 설정 타임존의 오늘 ────────────────────────────────────────
 
-test('todayKST: UTC 기준 전날 밤이어도 KST 날짜로 계산', () => {
+test.each([
   // UTC 1/31 16:00 == KST 2/1 01:00
-  expect(todayKST(TZ, new Date('2026-01-31T16:00:00Z'))).toBe('2026-02-01');
-});
-
-test('todayKST: KST 자정 직전이면 같은 날 유지', () => {
+  ['2026-01-31T16:00:00Z', '2026-02-01'],
   // UTC 1/31 14:00 == KST 1/31 23:00
-  expect(todayKST(TZ, new Date('2026-01-31T14:00:00Z'))).toBe('2026-01-31');
+  ['2026-01-31T14:00:00Z', '2026-01-31'],
+])('buildFrontmatter: %s의 date는 KST 달력 날짜 %s', (now, expected) => {
+  expect(
+    buildFrontmatter(
+      { title: '글', status: 'draft', tags: [] },
+      TZ,
+      new Date(now),
+    ),
+  ).toContain(`date: '${expected}'`);
 });
 
 // ── safeFilename ─────────────────────────────────────────────────────────────
@@ -386,7 +391,7 @@ test('계약: 스캐폴드 본문에는 h1이 없다 (body-h1 경고가 나지 �
   expect(
     validateBodyHeadings(
       { absPath: '/posts/a.md', relPath: 'a.md', data, content },
-      raw,
+      viewBody(content, raw),
     ),
   ).toStrictEqual([]);
 });

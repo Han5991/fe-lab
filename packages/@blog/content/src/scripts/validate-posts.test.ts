@@ -1,15 +1,16 @@
 import { expect, test } from 'vitest';
 import {
   validatePost as validatePostIn,
-  validateBodyHeadings,
+  validateBodyHeadings as validateBodyHeadingsIn,
   validateImageReferences as validateImageReferencesIn,
-  validateCodeFenceLanguages,
+  validateCodeFenceLanguages as validateCodeFenceLanguagesIn,
   scanBodyLines,
   maskNonProse,
   detectDuplicateSlugs,
   detectDuplicateDescriptions as detectDuplicateDescriptionsIn,
   parseRecord,
-  validateDiagramNames,
+  validateDiagramNames as validateDiagramNamesIn,
+  viewBody,
   type PostRecord,
 } from './validate-posts.ts';
 import { defineTestContent } from '../shared/testValues.ts';
@@ -42,7 +43,14 @@ const validateImageReferences = (
   raw: string,
   options = CTX,
 ): ReturnType<typeof validateImageReferencesIn> =>
-  validateImageReferencesIn(record, raw, options);
+  validateImageReferencesIn(record, viewBody(record.content, raw), options);
+// 본문 검사기는 main이 레코드마다 한 번 계산한 본문(viewBody)을 받는다.
+const validateBodyHeadings = (record: PostRecord, raw: string) =>
+  validateBodyHeadingsIn(record, viewBody(record.content, raw));
+const validateCodeFenceLanguages = (record: PostRecord, raw: string) =>
+  validateCodeFenceLanguagesIn(record, viewBody(record.content, raw));
+const validateDiagramNames = (record: PostRecord, raw: string, options = CTX) =>
+  validateDiagramNamesIn(record, viewBody(record.content, raw), options);
 const detectDuplicateDescriptions = (
   records: PostRecord[],
   options = CTX,

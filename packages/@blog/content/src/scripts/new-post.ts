@@ -1,6 +1,10 @@
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
-import { isIsoDateOnly, isValidDateString } from '../shared/dates.ts';
+import {
+  getKSTDateISO,
+  isIsoDateOnly,
+  isValidDateString,
+} from '../shared/dates.ts';
 import type { ContentContext } from './context.ts';
 import { slugProblem } from './validate/shared.ts';
 
@@ -83,14 +87,6 @@ export function resolveOptions(raw: RawNewPostOptions): NewPostOptions {
   };
 }
 
-/**
- * 스캐폴딩 frontmatter의 `date` — 설정 타임존 기준 오늘.
- * `timeZone`은 인자다(기본값을 두면 그 값이 곧 특정 사이트의 하드코딩).
- */
-export function todayKST(timeZone: string, now: Date = new Date()): string {
-  return new Intl.DateTimeFormat('en-CA', { timeZone }).format(now);
-}
-
 export function safeFilename(title: string): string {
   return title.replace(/[/\\\0]/g, '-').trim();
 }
@@ -150,9 +146,9 @@ function resolveDate(
   if (status === 'scheduled' && scheduledDate) {
     return isIsoDateOnly(scheduledDate)
       ? scheduledDate
-      : todayKST(timeZone, new Date(scheduledDate));
+      : getKSTDateISO({ iana: timeZone }, new Date(scheduledDate));
   }
-  return todayKST(timeZone, now);
+  return getKSTDateISO({ iana: timeZone }, now);
 }
 
 /**
