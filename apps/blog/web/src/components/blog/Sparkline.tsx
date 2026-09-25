@@ -39,6 +39,8 @@ export const Sparkline = ({
       : null;
   return (
     <svg
+      // 옆의 수치를 보조하는 장식 추세선이다 — 보조기술에는 숫자가 이미 있다.
+      aria-hidden="true"
       width={w}
       height={h}
       viewBox={`0 0 ${w} ${h}`}
