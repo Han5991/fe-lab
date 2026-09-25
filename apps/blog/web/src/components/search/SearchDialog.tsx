@@ -89,7 +89,15 @@ const isModifiedClick = (e: React.MouseEvent) =>
  * - 입력창은 콤보박스, 결과는 리스트박스다. 화살표 선택은 `aria-activedescendant`로
  *   보조기술에 전달된다 — 예전엔 배경색만 바뀌어 스크린리더에는 아무것도 없었다.
  */
-export const SearchDialog = () => {
+interface SearchDialogProps {
+  /** 시리즈 id(폴더 경로) → 제목. 색인에는 id만 있다. */
+  seriesTitles: Record<string, string>;
+}
+
+export const SearchDialog = ({ seriesTitles }: SearchDialogProps) => {
+  const seriesTitle = (id: string | null) =>
+    id === null ? null : (seriesTitles[id] ?? id);
+
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [posts, setPosts] = useState<SearchPost[]>([]);
@@ -146,7 +154,11 @@ export const SearchDialog = () => {
             post.title.toLowerCase().includes(lowerQuery) ||
             post.excerpt.toLowerCase().includes(lowerQuery) ||
             post.tags.some(tag => tag.toLowerCase().includes(lowerQuery)) ||
-            (post.series && post.series.toLowerCase().includes(lowerQuery)) ||
+            (post.series &&
+              (post.series.toLowerCase().includes(lowerQuery) ||
+                (seriesTitle(post.series) ?? '')
+                  .toLowerCase()
+                  .includes(lowerQuery))) ||
             (post.contentPreview &&
               post.contentPreview.toLowerCase().includes(lowerQuery))
           );
@@ -500,7 +512,9 @@ export const SearchDialog = () => {
                               })}
                             >
                               {post.date && <span>{post.date} · </span>}
-                              {post.series && <span>📚 {post.series} · </span>}
+                              {post.series && (
+                                <span>📚 {seriesTitle(post.series)} · </span>
+                              )}
                               {highlight(snippet, query)}
                             </p>
                             {post.tags.length > 0 && (

@@ -363,7 +363,11 @@ const PostsArchiveLayout = ({
 
           <ActiveFilters
             tags={activeTags}
-            series={seriesParam}
+            seriesLabel={
+              seriesParam === null
+                ? null
+                : (series.find(s => s.id === seriesParam)?.title ?? seriesParam)
+            }
             year={yearParam}
             onRemoveTag={toggleTag}
             onClearSeries={clearSeries}

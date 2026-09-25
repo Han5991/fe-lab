@@ -1,6 +1,7 @@
 import { RSS_PATH } from '@blog/content';
 import { AUTHOR_GITHUB, AUTHOR_LINKEDIN } from '@/content.values.mts';
 import { ABOUT_PATH, HOME_PATH, PRIVACY_PATH } from '@/src/shared/routes';
+import { getAllSeries } from '@/src/content';
 import Link from 'next/link';
 import { css, cx } from '@design-system/ui-lib/css';
 import type { ReactNode } from 'react';
@@ -44,6 +45,11 @@ const FOOTER_LINKS = [
 ] as const;
 
 export const Layout = ({ children }: LayoutProps) => {
+  // 검색 색인은 글마다 시리즈 id(폴더 경로)만 싣는다. 결과에 id 대신 제목을
+  // 보이고 제목으로도 찾히도록 id → 제목 표를 서버에서 넘긴다(시리즈 수만큼).
+  const seriesTitles = Object.fromEntries(
+    getAllSeries().map(s => [s.id, s.title]),
+  );
   return (
     <div
       className={css({
@@ -124,7 +130,7 @@ export const Layout = ({ children }: LayoutProps) => {
                   gap: '[4px]',
                 })}
               >
-                <SearchDialog />
+                <SearchDialog seriesTitles={seriesTitles} />
                 <ThemeToggle />
               </div>
             </div>
