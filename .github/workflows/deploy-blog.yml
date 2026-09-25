@@ -64,9 +64,14 @@ jobs:
       # 거기서 check-seo·check-bundle까지 돈다. 여기서 또 빌드하면 같은 일을 두 번
       # 한다. (그 스텝이 주입하는 건 NEXT_PUBLIC_PR_COUNT뿐이다 — 나머지
       # NEXT_PUBLIC_*은 커밋된 .env.production에서 온다. 위 주석 참고.)
+      #
+      # scope: 'blog' — lint·types·test를 블로그와 그 의존성 폐포(@blog/web...)로
+      # 좁힌다. 실험 앱은 PR CI(ci.yml, scope 'all')가 보고, 여기서는 실험 앱 테스트
+      # 하나가 흔들려 예약 글 공개가 멈추는 일을 막는다.
       - name: Quality checks
         uses: ./.github/actions/quality-checks
         with:
+          scope: blog
           build-blog: 'false'
 
       # about 페이지 'PR 승인' 통계 — Han5991/Han5991 프로필 레포가 매일 갱신하는

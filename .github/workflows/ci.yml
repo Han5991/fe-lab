@@ -90,6 +90,8 @@ jobs:
       # 검사 정의는 composite action 하나에 모여 있고, 배포 워크플로도 **같은 것**을
       # 부른다(.github/actions/quality-checks). 여기에만 검사를 추가하면 배포는
       # 그 검사를 안 지나는, 이번에 실제로 있었던 종류의 구멍이 생긴다.
+      # 여기는 scope 기본값('all')으로 모노레포 전체를 보고, 배포는 'blog'로
+      # 블로그와 그 의존성만 본다(실험 앱이 예약 글 공개를 막지 않도록).
       - name: Quality checks
         uses: ./.github/actions/quality-checks
 

@@ -108,7 +108,7 @@ apps/blog/posts/**/_series.yml ─┤
 
   예전에는 `@blog/content`와 `@blog/web`의 순수 로직이 `node --test`(+`node:assert/strict`)로 돌았다. 러너가 갈리면 단언 API·커버리지 도구·ESLint 인가가 두 벌이 되고, `node --test '<glob>'`은 **매치가 0개여도 exit 0**이라 테스트가 조용히 사라질 수 있었다. Vitest는 매치 0개면 실패한다.
 
-- **CI**(`.github/actions/quality-checks` 공용 composite action): ① `pnpm turbo run lint check-types test` ② `pnpm --filter @blog/web lint:posts` ③ `pnpm format:check` ④ `pnpm build --filter=@blog/web`(prebuild → next build → check-seo → check-bundle). PR CI와 배포 워크플로가 같은 액션을 부른다.
+- **CI**(`.github/actions/quality-checks` 공용 composite action): ① `pnpm turbo run lint check-types test` ② `pnpm --filter @blog/web lint:posts` ③ `pnpm format:check` ④ `pnpm build --filter=@blog/web`(prebuild → next build → check-seo → check-bundle). PR CI와 배포 워크플로가 같은 액션을 부른다. 배포는 `scope: blog`를 넘겨 ①을 `--filter=@blog/web...`(블로그와 그 의존성)로 좁힌다 — 실험 앱 테스트 하나가 흔들려 무인 cron의 예약 글 공개가 멈추지 않게 하려는 것이고, 실험 앱은 PR CI가 본다.
 - **pre-push hook**: 푸시 전 워크스페이스 전체 lint·types·test (turbo 캐시로 보통 < 5초).
 
 ---

@@ -12,6 +12,15 @@ description: >-
 # 호출 전제: 저장소가 checkout되어 있고 pnpm/Node 설치와 `pnpm install`이 끝나 있어야 합니다.
 
 inputs:
+  scope:
+    description: >-
+      lint·check-types·test를 어디까지 돌릴지. 'all'(기본)은 모노레포 전체, 'blog'는
+      블로그와 그 의존성 폐포(@blog/web... — @blog/content·@design-system/ui·ui-lib)만.
+      배포 워크플로는 'blog'를 넘긴다. 매일 예약 글을 공개하는 무인 cron이 실험 앱
+      (apps/react 등)의 flaky 테스트에 막히면 안 되기 때문이다 — d388db3(#446)에 매
+      실행 절반쯤 깨지던 apps/react 테스트 기록이 있다. PR CI(ci.yml)는 'all'로 전부 본다.
+    required: false
+    default: 'all'
   build-blog:
     description: >-
       블로그를 빌드해 산출물 검사(check-seo·check-bundle)까지 돌릴지 여부.
@@ -26,9 +35,21 @@ runs:
     # lint/check-types/test는 모두 turbo 태스크. 한 번의 turbo 호출로 묶으면
     # 공유 의존성(^build)을 한 번만 빌드하고 세 태스크를 의존성 그래프에 맞춰
     # 병렬 실행 + 캐싱합니다. (태스크별로 따로 호출하면 ^build가 중복됩니다)
+    #
+    # 입력값은 env로 받아 셸에 직접 끼워 넣지 않는다.
     - name: Lint / Type check / Test
       shell: bash
-      run: pnpm turbo run lint check-types test
+      env:
+        SCOPE: ${{ inputs.scope }}
+      run: |
+        case "$SCOPE" in
+          all) pnpm turbo run lint check-types test ;;
+          blog) pnpm turbo run lint check-types test --filter=@blog/web... ;;
+          *)
+            echo "::error::quality-checks의 scope는 all 또는 blog여야 합니다: $SCOPE"
+            exit 1
+            ;;
+        esac
 
     # turbo 태스크가 아닌 검사들 (가볍게 끝나므로 순차 실행)
     - name: Lint blog posts (frontmatter)
