@@ -38,7 +38,7 @@ export function detectDuplicateDescriptions(
   for (const record of records) {
     if (
       !isPostFile(record.data) ||
-      !isVisibleFrontmatter(record.data, options.timezone)
+      !isVisibleFrontmatter(record.data, options.timezone, options.now)
     )
       continue;
     const description = resolveExcerpt(

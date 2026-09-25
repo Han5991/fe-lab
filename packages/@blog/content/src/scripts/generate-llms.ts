@@ -249,7 +249,7 @@ export function buildLlmsText(
 
 export function main(ctx: ContentContext) {
   // 레지스트리 선언(postSet: 'visible', exact)과 같은 셀렉터.
-  const posts = resolvePostSet(ctx.content, 'visible');
+  const posts = resolvePostSet(ctx, 'visible');
   const outputPath = join(ctx.content.paths.publicDir, 'llms.txt');
   const text = buildLlmsText(posts, {
     site: ctx.content.config.site,

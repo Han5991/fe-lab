@@ -95,13 +95,11 @@ export function main(ctx: ContentContext) {
   // 산출 파일이 두 개고 글 집합도 각각 다르다 — 레지스트리(artifacts.ts)의
   // 선언(search-index: visible/exact, admin-posts-index: all/superset)과
   // 같은 셀렉터를 쓴다.
-  const publicPosts = buildPublicSearchIndex(
-    resolvePostSet(ctx.content, 'visible'),
-  );
+  const publicPosts = buildPublicSearchIndex(resolvePostSet(ctx, 'visible'));
   writeFileSync(outputPath, JSON.stringify(publicPosts, null, 2), 'utf8');
   console.log(`Search index generated: ${publicPosts.length} posts`);
 
-  const allPosts = buildAdminPostsIndex(resolvePostSet(ctx.content, 'all'));
+  const allPosts = buildAdminPostsIndex(resolvePostSet(ctx, 'all'));
   writeFileSync(adminOutputPath, JSON.stringify(allPosts, null, 2), 'utf8');
   console.log(
     `Admin posts index generated: ${allPosts.length} posts (including hidden)`,

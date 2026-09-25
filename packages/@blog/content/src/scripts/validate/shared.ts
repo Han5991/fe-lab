@@ -60,6 +60,11 @@ export interface ValidateOptions {
    * dev 서버가 안 뜨면 도구가 방해물이 됩니다.
    */
   strict?: boolean;
+  /**
+   * "지금 공개되는 글"을 판정할 기준 시각. 진입점이 실행의 기준 시각
+   * (`ContentContext.now`)을 넘긴다 — 없으면 판정 시점의 현재 시각.
+   */
+  now?: Date;
 }
 
 /**

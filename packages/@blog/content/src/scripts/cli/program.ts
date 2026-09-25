@@ -27,11 +27,19 @@ import type { ContentContext } from '../context.ts';
  * fs를 만지지 않도록).
  */
 async function loadContext(command: Command): Promise<ContentContext> {
-  const globals = command.optsWithGlobals<{ config?: string }>();
+  const globals = command.optsWithGlobals<{ config?: string; now?: string }>();
   const { loadContentConfig } = await import('./discoverConfig.ts');
-  const { createContext } = await import('../context.ts');
+  const { createContext, resolveBuildNow, BUILD_NOW_ENV } =
+    await import('../context.ts');
+  let now: Date;
+  try {
+    now = resolveBuildNow(globals.now ?? process.env[BUILD_NOW_ENV]);
+  } catch (e) {
+    // 입력 형식 오류는 스택이 아니라 메시지로 — new-post 액션과 같은 처리.
+    command.error(`✖ ${e instanceof Error ? e.message : String(e)}`);
+  }
   const { config, configPath } = await loadContentConfig(globals.config);
-  return createContext(config, configPath);
+  return createContext(config, configPath, now);
 }
 
 /** 인자 없이 도는 생성 단계 — build가 병렬로 돌리는 것들 대부분이 여기다. */
@@ -84,6 +92,12 @@ export function buildProgram(): Command {
     .option(
       '--config <path>',
       'content.config.ts 경로 (기본: cwd에서 위로 탐색)',
+    )
+    // 예약 글 공개 판정·산출물 날짜의 기준 시각. build가 자식 단계 전부에 같은
+    // 값을 넘긴다(stepArgv) — 단계마다 제 시계를 보면 산출물끼리 글 집합이 갈린다.
+    .option(
+      '--now <iso>',
+      '기준 시각 — offset을 명시한 ISO (기본: 환경 변수 BLOG_CONTENT_NOW, 없으면 지금)',
     )
     // 오타 옵션을 조용히 무시하지 않는다. 예전 손파서도 알 수 없는 옵션을
     // 에러로 냈으므로 동작이 같다.

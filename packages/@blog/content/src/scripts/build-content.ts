@@ -84,19 +84,32 @@ interface StepResult {
  * 다른 설정을 잡는 일이 구조적으로 불가능하다. `--config`는 루트 커맨드의 전역
  * 옵션이라 서브커맨드 이름 **앞**에 온다.
  */
-export function stepArgv(step: Step, configPath: string): string[] {
-  return ['--config', configPath, step.command, ...step.args];
+export function stepArgv(step: Step, configPath: string, now: Date): string[] {
+  return [
+    '--config',
+    configPath,
+    // 기준 시각도 부모가 정해 넘긴다 — 자식마다 제 시계를 보면 예약 글의 공개
+    // 시각이 빌드 도중에 지날 때 산출물끼리 글 집합이 갈린다(context.ts의 now).
+    '--now',
+    now.toISOString(),
+    step.command,
+    ...step.args,
+  ];
 }
 
 /** 병렬 실행 시 로그가 섞이지 않도록 출력을 모았다가 단계별로 묶어서 보여줍니다. */
-function runStep(step: Step, configPath: string): Promise<StepResult> {
+function runStep(
+  step: Step,
+  configPath: string,
+  now: Date,
+): Promise<StepResult> {
   return new Promise(resolveStep => {
     const start = Date.now();
     // cwd는 호출자 것을 그대로 쓴다 — 단계 스크립트들은 경로를 --config로 받은
     // 설정(절대 경로 앵커)에서 풀므로 cwd에 의존하지 않는다.
     const child = spawn(
       process.execPath,
-      [CLI_PATH, ...stepArgv(step, configPath)],
+      [CLI_PATH, ...stepArgv(step, configPath, now)],
       {
         shell: false,
         stdio: ['ignore', 'pipe', 'pipe'],
@@ -128,11 +141,13 @@ export async function main(ctx: ContentContext, flags: Flags) {
   const phases = buildPhases(flags);
   const total = phases.reduce((n, phase) => n + phase.length, 0);
   const start = Date.now();
-  console.log(`▶ build-content: ${total}개 단계 (${phases.length} phase) 실행`);
+  console.log(
+    `▶ build-content: ${total}개 단계 (${phases.length} phase) 실행 — 기준 시각 ${ctx.now.toISOString()}`,
+  );
 
   for (const phase of phases) {
     const results = await Promise.all(
-      phase.map(step => runStep(step, ctx.configPath)),
+      phase.map(step => runStep(step, ctx.configPath, ctx.now)),
     );
     let failed = false;
     for (const result of results) {

@@ -130,7 +130,9 @@ export function resolveSeverity(
   // 고정 severity 규칙은 설정을 보지 않는다 — 호출부도 options를 생략한다.
   if (declared !== SEO_PUBLISH) return declared;
   if (!options?.strict || !isPostFile(data)) return 'warning';
-  return isVisibleFrontmatter(data, options.timezone) ? 'error' : 'warning';
+  return isVisibleFrontmatter(data, options.timezone, options.now)
+    ? 'error'
+    : 'warning';
 }
 
 /**
@@ -153,6 +155,7 @@ export function resolveSeverity(
 export function isVisibleFrontmatter(
   data: Record<string, unknown>,
   timezone: ValidateContext['timezone'],
+  now?: Date,
 ): boolean {
   const status = data['status'];
   return isPostVisible(
@@ -162,5 +165,6 @@ export function isVisibleFrontmatter(
       scheduledDate: toDateString(data['scheduledDate']),
     },
     timezone,
+    now,
   );
 }

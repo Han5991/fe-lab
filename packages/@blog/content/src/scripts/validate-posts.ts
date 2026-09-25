@@ -113,10 +113,11 @@ export function main(ctx: ContentContext, runOptions: ValidateOptions) {
   const postsDir = ctx.content.paths.postsDir;
   // 규칙이 참조하는 설정 슬라이스를 여기서 한 번 채운다 — 규칙 파일이 상수를
   // 직접 읽던 시절엔 defineContent로 덮어도 이 게이트만 옛 값을 봤다.
-  const options: ValidateContext = toValidateContext(
-    ctx.content.config,
-    runOptions,
-  );
+  const options: ValidateContext = toValidateContext(ctx.content.config, {
+    ...runOptions,
+    // strict 승격 범위(지금 공개되는 글)도 생성 단계와 같은 기준 시각으로 판정한다.
+    now: ctx.now,
+  });
   const allFiles = collectMarkdownFiles(
     postsDir,
     ctx.content.config.registries.metaFilenames,

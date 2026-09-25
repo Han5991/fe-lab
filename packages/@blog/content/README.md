@@ -126,10 +126,17 @@ src/
 | 1 (게이트, 단독) | `validate-posts`                                                                                      | `--strict`를 그대로 넘긴다. `--skip-validate`로만 건너뛴다(앱 스크립트는 안 넘김)      |
 | 2 (병렬 8개)     | `sync-posts` · `sitemap` · `rss` · `og-images` · `thumbnails` · `search-index` · `llms-full` · `llms` | 서로 다른 파일만 쓴다. `media`·`thumbs`·`og` 디렉터리는 겹치면 안 됨(각자 orphan 삭제) |
 
-각 스텝은 `node <cli/index.ts> --config <절대경로> <서브커맨드>`로 spawn되고
-cwd·PATH 어디에도 기대지 않는다 — 부모가 발견한 설정 파일을 자식에 명시
-전달하므로(`stepArgv`) 부모와 자식이 다른 설정을 잡을 수 없다. 앱의
+각 스텝은 `node <cli/index.ts> --config <절대경로> --now <ISO> <서브커맨드>`로
+spawn되고 cwd·PATH 어디에도 기대지 않는다 — 부모가 발견한 설정 파일을 자식에
+명시 전달하므로(`stepArgv`) 부모와 자식이 다른 설정을 잡을 수 없다. 앱의
 `predev:web`과 `prebuild`는 같은 명령이고 `prebuild`만 `--strict`다(검증은 둘 다 돈다).
+
+**기준 시각도 부모가 한 번 정해 넘긴다**(`--now`). 예약 글의 공개 판정·sitemap의
+오늘·RSS lastBuildDate·strict 승격 범위가 전부 이 값을 본다 — 단계마다 제 시계를
+보던 때는 공개 시각이 빌드 도중에 지나면 산출물끼리 글 집합이 갈렸다. 전역
+`--now`를 생략하면 환경 변수 `BLOG_CONTENT_NOW`, 그것도 없으면 지금이다(offset을
+명시한 ISO만 받는다). `next build`는 아직 로더의 자기 시각으로 판정하므로, 페이지와
+산출물의 어긋남은 `check-seo`의 sitemap ↔ 페이지 대조가 잡는다.
 
 2단계 스텝이 쓰는 곳(경로는 `dirs` 기본값, 앱 루트 기준):
 

@@ -41,6 +41,25 @@ test('전역 --config 옵션 — 경로 앵커를 명시 지정하는 유일한 
   expect(flags).toContain('--config');
 });
 
+test('전역 --now 옵션 — build가 자식 단계에 기준 시각을 넘기는 채널', () => {
+  const flags = buildProgram().options.map(o => o.long);
+  expect(flags).toContain('--now');
+});
+
+test('--now: offset 없는 시각은 스택이 아니라 메시지로 거절한다', async () => {
+  const { program, stderr } = silencedProgram();
+  await expect(
+    program.parseAsync([
+      'node',
+      'blog-content',
+      '--now',
+      '2026-06-01T09:00:00',
+      'sitemap',
+    ]),
+  ).rejects.toThrow();
+  expect(stderr()).toContain('offset을 명시한 ISO 시각');
+});
+
 test('build는 파이프라인 플래그 3개를 받는다', () => {
   const build = buildProgram().commands.find(c => c.name() === 'build');
   const flags = build?.options.map(o => o.long) ?? [];

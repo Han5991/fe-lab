@@ -124,3 +124,17 @@ test('resolveSeverity: 고정 심각도 규칙은 strict와 무관하게 테이�
     'warning',
   );
 });
+
+test('resolveSeverity: 공개 판정은 주입된 기준 시각(now)을 쓴다 — 생성 단계와 같은 시각', () => {
+  const rule: RuleId = 'missing-excerpt';
+  const data = { title: 'x', status: 'scheduled', date: '2026-06-01' };
+  const at = (iso: string) =>
+    resolveSeverity(
+      rule,
+      data,
+      toValidateContext(CONFIG, { strict: true, now: new Date(iso) }),
+    );
+  // 픽스처 타임존의 2026-06-01 자정 직전/직후
+  expect(at('2026-05-01T00:00:00Z')).toBe('warning');
+  expect(at('2026-07-01T00:00:00Z')).toBe('error');
+});
