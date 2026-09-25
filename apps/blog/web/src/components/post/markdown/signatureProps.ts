@@ -1,5 +1,6 @@
 import { Children, cloneElement, isValidElement } from 'react';
 import type { ReactElement, ReactNode } from 'react';
+import { isRecord } from '@blog/content';
 
 /**
  * 시그니처 컴포넌트(Dialogue / Metrics / Timeline)가 공유하는 방어적 prop 파싱.
@@ -110,8 +111,27 @@ function collectChildren(
   });
 }
 
+interface ParagraphLikeProps {
+  children?: ReactNode;
+  /** react-markdown이 매핑된 컴포넌트에 넘기는 원본 hast 노드. */
+  node?: unknown;
+}
+
+/**
+ * 문단 래퍼인지는 **요소 타입이 아니라 원본 hast 노드**로 가린다.
+ *
+ * 본문 파이프라인(PostBody)은 `p`를 함수로 매핑한다(블록 자식이면 `<div>`로
+ * 바꾸는 매퍼). 그래서 실제 글에서 문단 요소의 `type`은 `'p'`가 아니라 그 매퍼
+ * 함수이고, `type === 'p'`만 보던 예전 판정은 프로덕션에서 한 번도 참이 된 적이
+ * 없었다 — 빈 줄 뒤의 `<diagram-node>`·`<step>`이 문단에 싸인 채 남아 노드가
+ * 통째로 사라지거나 `<p><div>` 무효 중첩이 났다. 매핑 여부와 무관하게
+ * react-markdown이 붙여 주는 `node.tagName`을 본다(JSX로 쓴 `<p>`도 계속 받는다).
+ */
 function isParagraphWrapper(
   node: ReactNode,
-): node is ReactElement<{ children?: ReactNode }> {
-  return isValidElement<{ children?: ReactNode }>(node) && node.type === 'p';
+): node is ReactElement<ParagraphLikeProps> {
+  if (!isValidElement<ParagraphLikeProps>(node)) return false;
+  if (node.type === 'p') return true;
+  const source = node.props.node;
+  return isRecord(source) && source['tagName'] === 'p';
 }

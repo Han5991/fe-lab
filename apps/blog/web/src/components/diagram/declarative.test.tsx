@@ -5,14 +5,10 @@
  * 좌표 계산 자체는 `layout.test.ts`가 숫자로 검증하므로, 여기서는 파싱과 렌더의
  * 접합부(잘못된 값 폴백, 공백 노드, 미등록 이름, 실제 마크다운 왕복)만 확인한다.
  */
-import type { ComponentProps } from 'react';
 import { describe, expect, test, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import rehypeRaw from 'rehype-raw';
-import rehypeSlug from 'rehype-slug';
 
+import { PostBody } from '@/src/app/posts/[...slug]/PostBody';
 import { Diagram, DiagramEdgeTag, DiagramNodeTag } from './declarative';
 
 const rects = (container: HTMLElement) =>
@@ -338,23 +334,13 @@ describe('Diagram — 이름 레지스트리', () => {
 });
 
 describe('마크다운 왕복', () => {
-  /** PostBody의 플러그인·컴포넌트 구성을 그대로 흉내 낸다. */
+  /**
+   * 실제 본문 파이프라인(PostBody) 그대로. 매핑을 여기서 따로 조립하면 `p` 매퍼
+   * 같은 실물의 차이가 빠져, 프로덕션에서만 나는 문제(빈 줄 뒤 노드 유실)를
+   * 테스트가 못 본다.
+   */
   function renderMarkdown(markdown: string) {
-    return render(
-      <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
-        rehypePlugins={[rehypeRaw, rehypeSlug]}
-        components={
-          {
-            diagram: Diagram,
-            'diagram-node': DiagramNodeTag,
-            'diagram-edge': DiagramEdgeTag,
-          } as ComponentProps<typeof ReactMarkdown>['components']
-        }
-      >
-        {markdown}
-      </ReactMarkdown>,
-    );
+    return render(<PostBody content={markdown} relativeDir="dir" />);
   }
 
   test('본문에 쓴 <diagram> 태그가 SVG로 나온다', () => {

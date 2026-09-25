@@ -1,20 +1,30 @@
 import { isValidElement, type ReactElement, type ReactNode } from 'react';
 
-import { Diagram } from '@/src/components/diagram';
+import {
+  Diagram,
+  DiagramEdgeTag,
+  DiagramNodeTag,
+} from '@/src/components/diagram';
 import { Callout } from '@/src/components/post/markdown/Callout';
 import { CodeTabs } from '@/src/components/post/markdown/CodeTabs';
-import { Dialogue } from '@/src/components/post/markdown/Dialogue';
+import { Dialogue, Msg } from '@/src/components/post/markdown/Dialogue';
 import { Figure } from '@/src/components/post/markdown/Figure';
 import { FileTree } from '@/src/components/post/markdown/FileTree';
-import { Metrics } from '@/src/components/post/markdown/Metrics';
-import { Timeline } from '@/src/components/post/markdown/Timeline';
+import { Metric, Metrics } from '@/src/components/post/markdown/Metrics';
+import { Step, Timeline } from '@/src/components/post/markdown/Timeline';
 import { isBlockCode } from '@/src/components/post/markdownCode';
 
 // 직접 매핑돼(`callout: Callout`) child.type으로 식별 가능한 블록 컴포넌트.
-// 시그니처 3종(Dialogue/Metrics/Timeline)은 최상위 컨테이너만 등록한다 —
-// Msg/Metric/Step은 컨테이너 안에서만 쓰이므로 <p> 직계 자식으로 올 일이 없다.
-// Diagram도 같은 이유로 컨테이너만 등록한다(DiagramNodeTag/DiagramEdgeTag는
-// <diagram> 안에서 좌표 계산용 메타로만 소비되어 DOM에 직접 나오지 않는다).
+//
+// 컨테이너 안에서만 쓰는 자식 태그(Msg/Metric/Step, DiagramNodeTag/
+// DiagramEdgeTag)도 **함께 등록한다.** "컨테이너 안이라 <p> 직계 자식으로 올 일이
+// 없다"는 예전 가정은 틀렸다 — 컨테이너 안에 빈 줄을 두면
+// `<step title="…">…</step>` 한 줄은 HTML 블록이 아니라 인라인 HTML을 품은
+// **문단**이 된다(여는 태그 뒤에 내용이 이어져 CommonMark HTML 블록 7의 조건을
+// 못 채운다). 컨테이너는 그 문단 래퍼를 `markdownChildren`으로 벗겨 내지만,
+// 컨테이너 밖에 흘린 자식 태그는 여기서 블록으로 잡아야 `<p><div>`가 안 난다.
+// (다이어그램 선언 태그는 아무것도 그리지 않지만, 판정을 "매핑된 커스텀 태그
+// 전부"로 두면 새 태그를 더할 때 고를 필요가 없다.)
 //
 // 원소 타입이 `ElementType`이 아니라 **`ReactElement['type']`**인 건 조회하는
 // 값에 맞춘 것이다. 둘은 문자열 쪽이 다르다 — `ElementType`은
@@ -25,10 +35,15 @@ export const BLOCK_MARKDOWN_COMPONENTS = new Set<ReactElement['type']>([
   Callout,
   CodeTabs,
   Diagram,
+  DiagramEdgeTag,
+  DiagramNodeTag,
   Dialogue,
   Figure,
   FileTree,
+  Metric,
   Metrics,
+  Msg,
+  Step,
   Timeline,
 ]);
 
