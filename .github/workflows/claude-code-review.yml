@@ -53,8 +53,13 @@ jobs:
     #
     # cancel-in-progress: true다 — 옛 head에 대한 리뷰는 새 push가 오는 순간
     # 쓸모가 없다. 취소된 실행은 아래 리액션 스텝을 타지 않는다(`!cancelled()`).
+    #
+    # deps-major가 아닌 labeled 이벤트는 위 if로 스킵되지만, 스킵될 잡이 그룹에 먼저
+    # 들어가 진행 중인 리뷰를 취소하지 않는다는 보장은 없다. 그러면 Renovate가
+    # deps-major와 함께 dependencies를 붙이는 순간 👍를 이미 뗀 리뷰가 취소되고 아무도
+    # 다시 붙이지 않는다(#389를 되돌리는 길). 그래서 그런 이벤트는 실행마다 다른 그룹을 쓴다.
     concurrency:
-      group: claude-review-${{ github.event.pull_request.number }}
+      group: claude-review-${{ github.event.pull_request.number }}${{ (github.event.action == 'labeled' && github.event.label.name != 'deps-major') && format('-skip-{0}', github.run_id) || '' }}
       cancel-in-progress: true
 
     permissions:
