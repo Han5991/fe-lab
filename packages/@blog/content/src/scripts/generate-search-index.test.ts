@@ -3,7 +3,6 @@ import {
   buildAdminPostsIndex,
   buildPublicSearchIndex,
   CONTENT_PREVIEW_CHARS,
-  toPlainText,
 } from './generate-search-index.ts';
 import type { PostData } from '../post/index.ts';
 
@@ -25,38 +24,26 @@ function makePost(over: Partial<PostData> = {}): PostData {
   };
 }
 
-test('toPlainText: 코드 블록 제거', () => {
-  const raw = `before\n\`\`\`ts\nconst x = 1;\n\`\`\`\nafter`;
-  expect(toPlainText(raw)).toBe('before after');
-});
+/** 검색 미리보기(contentPreview) — 본문 평문에서 펜스 코드를 뺀 것 */
+const preview = (content: string): string =>
+  buildPublicSearchIndex([makePost({ content })])[0].contentPreview;
 
-test('toPlainText: 이미지 마크업 제거', () => {
-  expect(toPlainText('text ![alt](url) more')).toBe('text more');
-});
-
-test('toPlainText: 링크는 텍스트만 남김', () => {
-  expect(toPlainText('see [Next.js](https://nextjs.org)!')).toBe(
-    'see Next.js!',
-  );
-});
-
-test('toPlainText: 마크다운 기호 제거', () => {
-  expect(toPlainText('## hello *world* `code` _emph_ ~strike~')).toBe(
-    'hello world code emph strike',
-  );
-});
-
-test('toPlainText: HTML 태그가 정상적으로 제거됨', () => {
-  // HTML 태그 제거 → 그 다음 마크다운 기호 제거 → 공백 정리 순서.
-  expect(toPlainText('<div>hi</div><br/>there')).toBe('hi there');
-});
-
-test('toPlainText: 닫는 태그도 정상 처리', () => {
-  expect(toPlainText('<span>x</span>')).toBe('x');
-});
-
-test('toPlainText: 연속 공백 압축', () => {
-  expect(toPlainText('a  \n\n  b')).toBe('a b');
+test.each([
+  ['before\n```ts\nconst x = 1;\n```\nafter', 'before after'],
+  ['> 인용\n> ```ts\n> const x = 1;\n> ```\n다음', '인용 다음'],
+  ['text ![alt](url) more', 'text more'],
+  ['see [Next.js](https://nextjs.org)!', 'see Next.js!'],
+  ['## hello *world* `code` _emph_ ~strike~', 'hello world code emph strike'],
+  ['<div>hi</div><br/>there', 'hi there'],
+  ['<span>x</span>', 'x'],
+  ['a  \n\n  b', 'a b'],
+  // 사이트 본문(extractPlainText)과 같은 규칙 — 식별자·비교식·제네릭을 뜯지 않는다.
+  [
+    'snake_case와 `arr[0] > 1`, Promise<void>',
+    'snake_case와 arr[0] > 1, Promise<void>',
+  ],
+])('contentPreview: %j → %j', (content, expected) => {
+  expect(preview(content)).toBe(expected);
 });
 
 test('buildPublicSearchIndex: 필수 필드 모두 포함', () => {

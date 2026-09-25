@@ -11,6 +11,7 @@
  */
 import {
   archiveUrl,
+  extractPlainText,
   postPath,
   postUrl,
   resolveExcerpt,
@@ -106,14 +107,9 @@ export function toKstIsoDate(
   return isIsoDateTimeWithOffset(date) ? date : undefined;
 }
 
-/** 마크다운 본문의 대략적 단어 수(JSON-LD wordCount용). 기호 제거 후 공백 분할. */
+/** 마크다운 본문의 대략적 단어 수(JSON-LD wordCount용) — 평문을 공백으로 나눈다. */
 export function countWords(content: string): number {
-  return content
-    .replace(/[#*`_>~[\]()!]/g, '')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .split(' ')
-    .filter(Boolean).length;
+  return extractPlainText(content).split(' ').filter(Boolean).length;
 }
 
 /** OG 이미지 한 장의 프레임워크 중립 서술 */

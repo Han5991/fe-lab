@@ -117,17 +117,12 @@ test('llms-full: excerpt가 200자 초과면 잘림', () => {
   expect(!text.includes('A'.repeat(201))).toBeTruthy();
 });
 
-test('llms-full: excerpt 없으면 content에서 추출 (마크다운 # 만 제거, 개행 유지)', () => {
+test('llms-full: excerpt 없으면 본문 평문(extractPlainText)에서 추출', () => {
   const text = buildLlmsFullText(
     [makePost({ slug: 'a', excerpt: undefined, content: '# h1\n본문입니다' })],
     OPTS,
   );
-  // generate-llms-full의 content 추출은 `[#`*\[\]]` 만 제거하고 개행은 보존.
-  // `# h1\n본문입니다` → `h1\n본문입니다` (trim 후 slice(0, 200))
-  expect(
-    text.includes('h1\n본문입니다...'),
-    `expected 'h1\\n본문입니다...' in output, got: ${text.slice(0, 500)}`,
-  ).toBeTruthy();
+  expect(text).toContain('\nh1 본문입니다...');
 });
 
 test('llms-full: 같은 시리즈 내 포스트는 date 오름차순', () => {

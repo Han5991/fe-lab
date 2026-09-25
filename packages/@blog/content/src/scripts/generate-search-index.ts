@@ -1,25 +1,10 @@
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import type { PostData } from '../post/index.ts';
+import { extractPlainText, type PostData } from '../post/index.ts';
 import { resolvePostSet } from './artifacts.ts';
 import type { ContentContext } from './context.ts';
 
 export const CONTENT_PREVIEW_CHARS = 1500;
-
-export function toPlainText(content: string): string {
-  return (
-    content
-      .replace(/```[\s\S]*?```/g, '')
-      .replace(/!\[.*?\]\(.*?\)/g, '')
-      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
-      // HTML 태그를 마크다운 기호 제거(`>` 포함)보다 먼저 처리해야 `<div>...</div>` 같은
-      // 태그가 정상적으로 공백으로 치환됩니다.
-      .replace(/<[^>]+>/g, ' ')
-      .replace(/[#*`_>~]/g, '')
-      .replace(/\s+/g, ' ')
-      .trim()
-  );
-}
 
 export interface PublicSearchIndexEntry {
   slug: string;
@@ -67,7 +52,10 @@ export function buildPublicSearchIndex(
     excerpt: p.excerpt || '',
     tags: p.tags || [],
     series: p.series || null,
-    contentPreview: toPlainText(p.content).slice(0, CONTENT_PREVIEW_CHARS),
+    contentPreview: extractPlainText(p.content, { dropCode: true }).slice(
+      0,
+      CONTENT_PREVIEW_CHARS,
+    ),
   }));
 }
 

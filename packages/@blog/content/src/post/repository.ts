@@ -28,9 +28,11 @@ const INLINE_CODE = /(`[^`\n]+`)/;
 
 /**
  * HTML/JSX 태그(여는·닫는·자기 닫는, 속성 포함 — 여러 줄에 걸쳐도).
- * 바로 앞이 식별자 문자면 태그가 아니라 제네릭(`Promise<void>`)이라 건드리지 않는다.
+ * 여는 태그는 바로 앞이 식별자 문자면 제네릭(`Promise<void>`)이라 건드리지 않는다
+ * — 닫는 태그(`hi</b>`)는 제네릭일 수 없어 언제나 지운다.
  */
-const MARKUP_TAG = /(?<![\w$])<\/?[A-Za-z][\w.:-]*(?:\s[^<>]*)?\/?>/g;
+const MARKUP_TAG =
+  /<\/[A-Za-z][\w.:-]*\s*>|(?<![\w$])<[A-Za-z][\w.:-]*(?:\s[^<>]*)?\/?>/g;
 
 /**
  * 강조 표시의 `_`/`__` — 글자·숫자 사이에 낀 `_`(`snake_case`)는 식별자라 남긴다.
@@ -38,22 +40,24 @@ const MARKUP_TAG = /(?<![\w$])<\/?[A-Za-z][\w.:-]*(?:\s[^<>]*)?\/?>/g;
 const EMPHASIS_UNDERSCORE = /(?<![\p{L}\p{N}])_+|_+(?![\p{L}\p{N}])/gu;
 
 /**
- * 마크다운 내용에서 순수 텍스트 추출 (excerpt/readMin 계산용)
+ * 마크다운 본문의 평문 — excerpt·readMin·검색 미리보기·JSON-LD wordCount·llms
+ * 요약이 함께 쓰는 **하나의** 추출기.
  *
- * 예전 규칙은 `[#*`_>~]`를 전부 지우는 한 줄이라 여러 가지가 샜습니다:
- * - `<callout type="info">`에서 `>`만 빠져 `<callout type="info"`가 발췌에 남았고,
- *   다이어그램 태그의 속성 문자열이 readMin까지 부풀렸다 → 태그는 속성째 지운다.
- * - `snake_case` → `snakecase` → 단어 안의 `_`는 남긴다.
- * - `arr[0] > 1` → `arr[0] 1` → `>`는 줄 머리의 인용 표시만 지운다.
- * - 코드도 기호가 뜯겨 나갔다 → 펜스 코드와 인라인 코드는 원문 그대로 둔다
- *   (펜스 기호 줄 ```` ```ts title="a.ts" ````만 뺀다).
+ * 태그는 속성째 지우고, 단어 안의 `_`(`snake_case`)와 줄 머리가 아닌 `>`
+ * (`arr[0] > 1`)는 남긴다. 펜스 코드와 인라인 코드는 원문 그대로 두되(펜스 기호
+ * 줄만 뺀다), `dropCode`면 펜스 코드를 통째로 뺀다(검색 미리보기).
  */
-export function extractPlainText(content: string): string {
-  return content
+export function extractPlainText(
+  content: string,
+  { dropCode = false }: { dropCode?: boolean } = {},
+): string {
+  // 코드를 뺄 때는 인용 안의 펜스(`> ```ts`)도 펜스로 보이도록 줄 머리의 인용
+  // 표시를 먼저 걷는다(산문에서는 어차피 지우는 표시다).
+  return (dropCode ? content.replace(/^[ \t]*>+[ \t]?/gm, '') : content)
     .split(FENCED_CODE)
     .map((part, i) => {
       if (i % 3 === 1) return ''; // 펜스 기호(캡처 1)
-      if (i % 3 === 2) return ` ${part} `; // 펜스 안 코드(캡처 2) — 원문 그대로
+      if (i % 3 === 2) return dropCode ? ' ' : ` ${part} `; // 펜스 안 코드(캡처 2)
       return extractProse(part);
     })
     .join('')

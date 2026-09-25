@@ -1,6 +1,11 @@
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { postUrl, RSS_PATH, sortByDateDesc } from '../post/index.ts';
+import {
+  extractPlainText,
+  postUrl,
+  RSS_PATH,
+  sortByDateDesc,
+} from '../post/index.ts';
 import type { PostData } from '../post/index.ts';
 import { sortPostsBySeriesOrder, type SeriesMeta } from '../post/series.ts';
 import { resolvePostSet } from './artifacts.ts';
@@ -37,14 +42,11 @@ function postEntry(post: PostData, siteUrl: string): string[] {
   // 예전엔 `${SITE_URL}/posts/${post.slug}/`로 조립해 **인코딩이 빠져 있었다**
   // — sitemap·rss·llms.txt와 이 파일만 형태가 달랐다.
   const url = postUrl(post.slug, siteUrl);
-  // `truthy 체크` 의도적: 빈 문자열 excerpt('')도 content fallback으로 처리해
-  // 빈 entry를 방지. excerpt 필드를 frontmatter에서 명시적으로 생략하면 동일 효과.
-  const excerpt = post.excerpt
-    ? post.excerpt.slice(0, 200)
-    : post.content
-        .replace(/[#`*[\]]/g, '')
-        .trim()
-        .slice(0, 200);
+  // 빈 excerpt('')도 본문 평문으로 폴백해 빈 항목을 막는다.
+  const excerpt = (post.excerpt || extractPlainText(post.content)).slice(
+    0,
+    200,
+  );
   const tags = post.tags?.length ? ` Tags: ${post.tags.join(', ')}.` : '';
   const date = post.date ? ` (${post.date})` : '';
   return [

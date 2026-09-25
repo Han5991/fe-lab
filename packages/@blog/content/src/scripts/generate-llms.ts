@@ -2,6 +2,7 @@ import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   archiveUrl,
+  extractPlainText,
   postUrl,
   RSS_PATH,
   sortByDateDesc,
@@ -49,7 +50,7 @@ export interface LlmsBuildOptions {
 }
 
 /**
- * 링크 옆 한 줄 설명. excerpt가 있으면 그것을, 없으면 본문 앞부분을 줄여 씁니다.
+ * 링크 옆 한 줄 설명. excerpt가 있으면 그것을, 없으면 본문 평문을 줄여 씁니다.
  * 색인이므로 짧게(maxLength) — 전문은 llms-full.txt에 있습니다.
  */
 export function toSummary(
@@ -59,7 +60,7 @@ export function toSummary(
   const source = (
     post.excerpt && post.excerpt.trim() !== ''
       ? post.excerpt
-      : post.content.replace(/[#`*[\]]/g, '')
+      : extractPlainText(post.content)
   )
     .replace(/\s+/g, ' ')
     .trim();
