@@ -421,8 +421,20 @@ export function validateBodyHeadings(record: PostRecord, raw: string): Issue[] {
 
 /** `<diagram …>` 여는 태그 — `<diagram-node>`·`<diagram-edge>`는 아니다. 속성 값 안의 `>`에서 끊기지 않는다. */
 const DIAGRAM_OPEN_TAG = /<diagram(?=[\s/>])(?:[^>"']|"[^"]*"|'[^']*')*>/gi;
-/** 태그 안의 `name` 속성 값(따옴표 셋 다). */
-const NAME_ATTR = /\sname\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+))/i;
+/** 태그의 속성 하나 — 이름과 값(따옴표 셋 다, 값 없는 불리언 속성 포함). */
+const TAG_ATTR =
+  /\s+([^\s=/>"']+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+)))?/g;
+
+/**
+ * 여는 태그에서 `name` 속성 값. 속성을 앞에서부터 차례로 읽는다 — 태그 전체에서
+ * ` name=`을 찾으면 `label="a name=b"` 같은 **다른 속성 값 안**을 오인한다.
+ */
+function nameAttr(tag: string): string | undefined {
+  for (const m of tag.slice('<diagram'.length).matchAll(TAG_ATTR)) {
+    if (m[1]?.toLowerCase() === 'name') return m[2] ?? m[3] ?? m[4] ?? '';
+  }
+  return undefined;
+}
 
 /** 같은 줄에서 `index` 앞의 백틱이 홀수 개면 인라인 코드 안이다. */
 function insideInlineCode(text: string, index: number): boolean {
@@ -454,10 +466,8 @@ export function validateDiagramNames(
   const prose = maskNonProse(record.content);
   for (const match of prose.matchAll(DIAGRAM_OPEN_TAG)) {
     if (insideInlineCode(prose, match.index)) continue;
-    const attr = match[0].match(NAME_ATTR);
-    if (!attr) continue;
-    const name = attr[1] ?? attr[2] ?? attr[3] ?? '';
-    if (options.diagramNames.includes(name)) continue;
+    const name = nameAttr(match[0]);
+    if (name === undefined || options.diagramNames.includes(name)) continue;
     issues.push({
       file: record.relPath,
       line: offset + prose.slice(0, match.index).split('\n').length,

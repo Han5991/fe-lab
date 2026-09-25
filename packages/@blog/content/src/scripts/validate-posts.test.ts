@@ -1583,7 +1583,7 @@ test('unknown-diagram-name: 등록된 이름·name 없는 선언형 다이어그
       [
         `<diagram name="${registered}"></diagram>`,
         `<diagram name='${registered}'/>`,
-        '<diagram label="선언형" caption="name 없음">',
+        '<diagram label="선언형 — label 안의 name=x는 속성이 아니다" caption="name 없음">',
         '  <diagram-node id="a" title="A" name="not-a-diagram-name"></diagram-node>',
         '</diagram>',
       ].join('\n'),
