@@ -2,11 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { css } from '@design-system/ui-lib/css';
-import {
-  useTocHook,
-  scrollToId,
-  HEADER_OFFSET,
-} from '@/src/components/tocHooks';
+import { useTocHook, scrollToId } from '@/src/components/tocHooks';
 
 /**
  * 글 차례 — 항목들을 잇는 **레일 한 줄**을 그리고, 지금 읽고 있는 구간만
@@ -387,7 +383,7 @@ export const TOC = () => {
                 }}
               >
                 {/* 버튼이 아니라 **앵커**다. 스크롤 자체는 아래 onClick이
-                    가로채지만(고정 헤더 높이만큼 offset이 필요하다), href가
+                    가로채지만(해시를 기록 없이 바꾼다), href가
                     있어야 새 탭으로 열기·링크 주소 복사·상태 표시줄 미리보기가
                     전부 살아난다. 차례 항목은 의미상으로도 문서 안 링크다. */}
                 <a
@@ -401,10 +397,6 @@ export const TOC = () => {
                     e.preventDefault();
                     scrollToId({
                       id: item.id,
-                      // 활성 구간 판정이 쓰는 값과 같은 상수다. 둘이 갈리면
-                      // 앵커로 이동한 직후의 위치가 "아직 안 보이는 곳"으로
-                      // 판정돼 그 항목이 켜지지 않는다.
-                      headerOffset: HEADER_OFFSET,
                       // 주소창 해시는 이동한 뒤에 맞춘다. pushState가 아니라
                       // replaceState라, 차례를 몇 번 눌러도 뒤로 가기는 글
                       // 목록으로 한 번에 돌아간다.

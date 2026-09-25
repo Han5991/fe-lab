@@ -363,17 +363,19 @@ describe('useTocHook - 활성 구간', () => {
 });
 
 describe('scrollToId', () => {
-  // 명시한 behavior는 CSS scroll-behavior를 덮어써, 움직임 줄이기 규칙
-  // (panda.config.ts)이 이 이동을 멈추지 못한다.
-  test('움직임은 CSS에 맡기고 behavior를 적지 않는다', () => {
-    const scrollTo = vi.fn();
-    vi.stubGlobal('scrollTo', scrollTo);
+  // 헤더 여백은 헤딩의 scroll-margin-top이, 움직임은 CSS scroll-behavior가
+  // 정한다 — behavior를 적으면 움직임 줄이기 규칙을 덮어쓴다.
+  test('헤딩을 맨 위로 옮기고 여백·움직임은 CSS에 맡긴다', () => {
     const target = document.createElement('h2');
     target.id = 'target';
+    const scrollIntoView = vi.fn();
+    target.scrollIntoView = scrollIntoView;
     document.body.appendChild(target);
+    const action = vi.fn();
 
-    scrollToId({ id: 'target', headerOffset: 100 });
+    scrollToId({ id: 'target', action });
 
-    expect(scrollTo).toHaveBeenCalledWith({ top: -100 });
+    expect(scrollIntoView).toHaveBeenCalledWith({ block: 'start' });
+    expect(action).toHaveBeenCalled();
   });
 });

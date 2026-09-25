@@ -10,27 +10,20 @@ import {
 
 import { HEADER_OFFSET } from './post/headerOffset';
 
-// 값의 출처는 서버 컴포넌트도 읽을 수 있는 `post/headerOffset.ts`다(그쪽 주석
-// 참고). 기존 import 경로를 깨지 않도록 여기서도 같은 이름으로 내보낸다.
-export { HEADER_OFFSET };
-
+/**
+ * 헤딩으로 옮긴다. 고정 헤더만큼의 여백은 헤딩의 `scroll-margin-top`(PostBody)이,
+ * 움직임은 html의 scroll-behavior(움직임 줄이기면 꺼진다)가 정한다.
+ */
 export const scrollToId = ({
   id,
-  headerOffset,
   action,
 }: {
   id: string;
-  headerOffset: number;
   action?: () => void;
 }) => {
   const el = document.getElementById(id);
   if (el) {
-    const elementPosition = el.getBoundingClientRect().top;
-    const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
-
-    // behavior를 적지 않는다 — 명시하면 html의 scroll-behavior(움직임 줄이기면
-    // 꺼지는 규칙, panda.config.ts)를 덮어쓴다.
-    window.scrollTo({ top: offsetPosition });
+    el.scrollIntoView({ block: 'start' });
     action?.();
   }
 };
