@@ -5,10 +5,7 @@ import { tagPillStyle } from './tagPillStyle';
 
 interface ActiveFiltersProps {
   tags: string[];
-  /**
-   * 활성 시리즈의 **제목**(화면에 보일 이름). URL에는 시리즈 id(폴더 경로)가
-   * 실리는데, 예전엔 그 id가 칩에 그대로 찍혔다(`[Typescript로 설계하는 …]`).
-   */
+  /** 활성 시리즈의 제목 — URL에는 id(폴더 경로)가 실린다. */
   seriesLabel: string | null;
   year: string | null;
   onRemoveTag: (tag: string) => void;

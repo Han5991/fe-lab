@@ -1,9 +1,4 @@
-/**
- * 인기 글 레일 — 조회수 순위만 "인기"라고 부른다.
- *
- * 조회수는 네트워크 너머(post_views)라 도메인 배럴의 getTopPosts를 가짜로
- * 바꾼다(useViewCount.test.ts와 같은 이음매).
- */
+/** 인기 글 레일 — 조회수 순위만 "인기"라고 부른다(조회수는 네트워크 너머라 가짜로 바꾼다). */
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 import type { ReactNode } from 'react';
 import { render, screen, waitFor } from '@testing-library/react';

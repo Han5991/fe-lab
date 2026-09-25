@@ -17,19 +17,14 @@ import { HEADER_OFFSET } from '@/src/components/post/headerOffset';
 
 vi.mock('mermaid', () => ({ default: {} }));
 
-/**
- * 서버가 실제로 내보내는 HTML 문자열. DOM(`render`)으로 보면 파서가 무효 중첩을
- * 이미 고쳐 놓은 뒤라(`<p>` 조기 종료) 하이드레이션을 깨는 원문을 볼 수 없다.
- */
+/** 서버 HTML 원문 — DOM으로 보면 파서가 무효 중첩을 이미 고쳐 놓아 보이지 않는다. */
 const serverHtml = (content: string) =>
   renderToStaticMarkup(<PostBody content={content} relativeDir="dir" />);
 
-/** 서버 HTML을 파싱한 문서 — 개수·속성은 여기서 센다. */
 const parsed = (html: string) =>
   new DOMParser().parseFromString(html, 'text/html');
 
-// 내용 모델이 flow인 태그. `<p>` 안에 열리면 브라우저가 `<p>`를 먼저 닫아
-// 서버 트리와 DOM이 갈린다(hydration mismatch).
+// `<p>` 안에 열리면 브라우저가 `<p>`를 먼저 닫아 서버 트리와 DOM이 갈리는 태그.
 const FLOW_ONLY = new Set([
   'div',
   'figure',
@@ -51,10 +46,7 @@ const FLOW_ONLY = new Set([
 ]);
 const VOID = new Set(['img', 'br', 'hr', 'input', 'wbr', 'source', 'col']);
 
-/**
- * 원문 HTML에서 `<p>`(또는 `<pre>`) 안에 flow 요소가 열리는 자리를 찾는다.
- * 파서를 거치면 사라지는 문제라 태그 문자열을 직접 훑는다.
- */
+/** 원문에서 `<p>`·`<pre>` 안에 flow 요소가 열리는 자리 — 파서를 거치면 사라져 문자열로 훑는다. */
 function invalidNesting(html: string): string[] {
   const stack: string[] = [];
   const found: string[] = [];
@@ -75,8 +67,8 @@ function invalidNesting(html: string): string[] {
 
 describe('파이프라인 배선', () => {
   test('rehype 순서는 codeMeta → raw → dropUnsafe → slug다', () => {
-    // 순서가 뒤집히면 펜스 메타가 조용히 사라진다(codeMeta.test.tsx의 대조군).
-    // dropUnsafe가 raw보다 앞이면 raw HTML이 아직 문자열이라 아무것도 못 지운다.
+    // codeMeta가 raw보다 늦으면 펜스 메타가 사라지고, dropUnsafe가 raw보다 빠르면
+    // raw HTML이 아직 문자열이라 아무것도 못 지운다.
     expect(POST_REHYPE_PLUGINS).toEqual([
       rehypeCodeMeta,
       rehypeRaw,
@@ -87,10 +79,8 @@ describe('파이프라인 배선', () => {
 
   test('블록 판정 Set ↔ 매핑의 블록 컨테이너 태그가 정확히 일치한다', () => {
     const components = buildPostComponents('dir') ?? {};
-    // 블록 커스텀 태그(컨테이너와 그 자식 태그)의 단일 목록. 새 블록 태그를 매핑에 더할 때는
-    // markdownBlocks.ts의 Set과 이 목록을 **함께** 늘린다 — 매핑에만 더하면
-    // p 매퍼가 <p>를 유지해 <p><div> 무효 중첩(hydration mismatch)으로 새고,
-    // Set에만 더하면 아래 완전 일치가 깨져 여기서 잡힌다.
+    // 새 블록 태그는 매핑·markdownBlocks.ts의 Set·이 목록에 함께 더한다 — 매핑에만
+    // 더하면 p 매퍼가 <p>를 남겨 <p><div>가 된다.
     const blockTags = [
       'callout',
       'code-tabs',
@@ -126,8 +116,7 @@ describe('PostBody 렌더', () => {
   });
 
   test('헤딩 앵커 여백은 목차 활성 판정과 같은 헤더 높이 상수를 쓴다', () => {
-    // 둘(헤딩 scroll-margin, 활성 판정)이 갈리면 이동 직후의 헤딩이 "아직
-    // 가려진 곳"으로 판정된다.
+    // 둘이 갈리면 이동 직후의 헤딩이 "아직 가려진 곳"으로 판정된다.
     const { container } = render(
       <PostBody content={'## 단원'} relativeDir="dir" />,
     );
@@ -150,10 +139,8 @@ describe('PostBody 렌더', () => {
   });
 });
 
-// 커스텀 태그 안에 빈 줄을 두면, 빈 줄 뒤의 `<step …>…</step>`·
-// `<diagram-node …></diagram-node>`는 HTML 블록이 아니라 **인라인 HTML을 품은
-// 문단**이 된다(여는 태그 뒤에 다른 내용이 이어지므로 CommonMark HTML 블록 7의
-// 조건을 못 채운다). 그래서 자식이 매핑된 p 요소 한 겹에 싸여 온다.
+// 컨테이너 안 빈 줄 뒤의 자식 태그는 HTML 블록이 아니라 인라인 HTML을 품은 문단이
+// 된다(CommonMark HTML 블록 7) — 자식이 p 한 겹에 싸여 온다.
 describe('커스텀 태그 안의 빈 줄', () => {
   test('<diagram>: 빈 줄 뒤의 노드·엣지도 전부 그린다', () => {
     const html = serverHtml(
@@ -286,7 +273,6 @@ describe('본문 raw HTML의 실행 요소', () => {
       /<(script|iframe|object|embed|base|meta|link|style|form)\b/i,
     );
     expect(html).not.toContain('alert(');
-    // 주변 본문은 그대로 남는다.
     expect(html).toContain('앞 문단');
     expect(html).toContain('뒤 문단');
   });

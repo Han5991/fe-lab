@@ -12,11 +12,7 @@ import { PostBody } from '@/src/app/posts/[...slug]/PostBody';
 
 vi.mock('mermaid', () => ({ default: {} }));
 
-/**
- * 실제 본문 파이프라인(PostBody) 그대로 렌더한다. 매핑을 여기서 따로 조립하면
- * `pre` 매퍼 같은 실물의 차이가 빠져, 프로덕션에서만 탭이 안 생기는 회귀를
- * 테스트가 못 본다.
- */
+/** 실제 본문 파이프라인 그대로 — 매핑을 따로 조립하면 `pre` 매퍼 같은 실물의 차이가 빠진다. */
 const renderMarkdown = (md: string) =>
   render(<PostBody content={md} relativeDir="dir" />);
 

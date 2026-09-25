@@ -2,12 +2,8 @@ import { isValidElement, type ReactElement } from 'react';
 import { isRecord } from '@blog/content';
 
 /**
- * 요소가 마크다운의 `tag` 태그에서 왔는가.
- *
- * 본문 파이프라인(PostBody)은 `p`·`pre`·`img` 같은 태그를 함수로 매핑하므로 실제
- * 글에서 그 요소의 `type`은 태그 문자열이 아니라 매퍼다. react-markdown이 매핑된
- * 컴포넌트에 넘기는 원본 hast 노드(`props.node`)의 `tagName`을 함께 본다 —
- * 매핑 없이 JSX로 쓴 요소(`type === tag`)도 받는다.
+ * 요소가 마크다운의 `tag` 태그에서 왔는가. 매핑된 태그는 `type`이 매퍼 함수라,
+ * react-markdown이 넘기는 원본 hast 노드의 `tagName`을 함께 본다.
  */
 export function isMarkdownTag<P extends object>(
   node: unknown,

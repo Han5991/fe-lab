@@ -21,13 +21,7 @@ const TONES = {
 
 const wrapper = css({ display: 'inline-flex' });
 
-/**
- * 7일 증감률의 방향 아이콘 — 증가·감소·비교 불가 세 갈래.
- *
- * null은 하락이 아니다(`domain/analytics/delta.ts`: "비교 불가"). 예전엔 두 화면
- * (글 목록 아코디언·글 상세)이 삼항의 else 가지로 null까지 빨간 하락 화살표를
- * 그려, 값 칸의 "—"와 아이콘이 서로 다른 말을 했다.
- */
+/** 7일 증감률의 방향 아이콘 — null은 하락이 아니라 비교 불가다(`domain/analytics/delta.ts`). */
 export function WeekGrowthIcon({ rate, size }: WeekGrowthIconProps) {
   const tone = rate === null ? TONES.none : rate >= 0 ? TONES.up : TONES.down;
   const { Icon } = tone;

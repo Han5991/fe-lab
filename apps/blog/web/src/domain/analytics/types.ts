@@ -60,12 +60,7 @@ export interface PostStatDetail {
   scheduledDate: string | null;
 }
 
-/**
- * "지금 공개 중인가"를 판정할 때 쓰는 기준 — `isPostVisible`에 넘기는 두 인자.
- *
- * 타임존은 앱 값 모듈(`TIMEZONE`)이 소유하므로 이 레이어는 주입받는다. 시각은
- * 생략하면 호출 시각이고, 테스트는 경계를 결정적으로 보려고 주입한다.
- */
+/** `isPostVisible`에 넘기는 기준 — 타임존은 앱 값 모듈이 소유해 주입받고, 시각은 생략하면 지금. */
 export interface PostVisibilityContext {
   timezone: Pick<TimezoneConfig, 'isoOffset'>;
   now?: Date;

@@ -10,10 +10,7 @@ import {
 
 import { HEADER_OFFSET } from './post/headerOffset';
 
-/**
- * 헤딩으로 옮긴다. 고정 헤더만큼의 여백은 헤딩의 `scroll-margin-top`(PostBody)이,
- * 움직임은 html의 scroll-behavior(움직임 줄이기면 꺼진다)가 정한다.
- */
+/** 헤딩으로 옮긴다 — 헤더 여백은 헤딩의 `scroll-margin-top`이, 움직임은 CSS가 정한다. */
 export const scrollToId = ({
   id,
   action,

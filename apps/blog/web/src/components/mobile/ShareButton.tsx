@@ -15,10 +15,8 @@ const isAbort = (err: unknown) =>
 const NOTICE_MS = 2500;
 
 /**
- * 공유하기. Web Share가 있으면 시트를 열고, 없거나 **실패하면**(NotAllowedError
- * 등 — 사용자가 닫은 AbortError 말고) 링크를 클립보드에 복사한다. 예전엔
- * 실패가 콘솔에만 남아 버튼이 아무 일도 하지 않았고, 복사 안내는 화면을 멈추는
- * `alert()`였다 — 지금은 버튼 옆 상태 문구(role="status")로 알린다.
+ * 공유하기 — Web Share가 없거나 실패하면(사용자가 닫은 AbortError 말고) 링크를 복사하고
+ * 상태 문구로 알린다.
  */
 export const ShareButton = ({ title }: ShareButtonProps) => {
   const [notice, setNotice] = useState<string | null>(null);

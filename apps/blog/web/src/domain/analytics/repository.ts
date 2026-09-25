@@ -1,22 +1,9 @@
 /**
- * Analytics 도메인 중 **공개 페이지**가 쓰는 데이터 접근 layer.
+ * Analytics 도메인 중 공개 페이지가 쓰는 데이터 접근 layer — anon PostgREST만 쓴다
+ * (admin RPC는 supabase-js 전체가 필요해 `adminRepository.ts`에 따로 있다).
  *
- * 컴포넌트와 React 훅은 Supabase client를 직접 호출하지 않고
- * 이 모듈의 함수만 사용합니다.
- *
- * 여기 있는 3건은 모두 익명(anon) 권한의 순수 PostgREST 호출이라
- * `lib/platform/publicClient.ts`(PostgREST만)로 충분합니다. 인증 세션이 필요한
- * admin RPC는 `adminRepository.ts`에 따로 있습니다 — 같은 파일에 두면
- * 조회수만 읽는 페이지까지 supabase-js 전체를 받게 됩니다.
- *
- * **post_views의 slug는 믿을 수 없는 입력입니다.** 행을 만드는 쪽이 anon이
- * 부를 수 있는 `increment_view_count` RPC라, 공개 키만 있으면 아무 slug나 원하는
- * 만큼 올릴 수 있습니다(DB 함수는 형식 밖 slug만 거릅니다). 그래서 순위를 매기는
- * 읽기는 **실제 글 slug로 서버에서 거른 뒤** 자릅니다.
- *
- * 에러 정책: 읽기 둘 다 실패를 **throw** 합니다. 예전에는 `error`를 버리고 빈
- * 배열을 돌려줘서, 호출자가 "조회수가 아직 없다"와 "조회에 실패했다"를 구분하지
- * 못했습니다(인기 글 레일이 실패를 최신 글로 덮어 "인기"라고 보여 준 원인).
+ * post_views의 slug는 anon RPC로 아무나 만들 수 있는 입력이라, 순위를 매기는 읽기는
+ * 실제 글 slug로 서버에서 거른다. 읽기 실패는 던진다 — "조회수 없음"과 구분되게.
  */
 
 import { publicDb } from '../../lib/platform/publicClient';
@@ -32,16 +19,9 @@ function toTopPostRows(
 }
 
 /**
- * 조회수 상위 `limit`개 — `slugs`(이 빌드의 실제 글) 안에서만 고릅니다.
- *
- * 필터가 서버(`slug=in.(…)`)에 있어야 하는 이유: 상위 N개를 먼저 받고
- * 클라이언트에서 모르는 slug를 버리면, 가짜 slug N개가 조회수를 부풀리는 것만으로
- * N칸을 전부 차지해 결과가 통째로 빈다. 동률은 slug 순으로 끊어 순위가 요청마다
- * 흔들리지 않게 합니다.
- *
- * 필터는 쿼리스트링에 실리므로 URL이 글 수에 비례해 길어집니다(45편 ≈ 1.6KB).
- * 게이트웨이의 URL 한도에 가까워질 만큼 글이 늘면 slug 목록을 본문으로 받는 RPC로
- * 옮겨야 합니다 — 그 전까지 넘치면 요청이 실패로 드러납니다(레일은 섹션을 뺀다).
+ * 조회수 상위 `limit`개 — 이 빌드의 slug 안에서 서버가 고른다(받은 뒤 거르면 가짜 slug가
+ * 칸을 차지한다). 필터가 URL에 실려 글 수에 비례해 길어지므로(45편 ≈ 1.6KB), 한도에
+ * 가까워지면 slug 목록을 본문으로 받는 RPC로 옮긴다.
  */
 export async function getTopPosts(
   limit: number,
@@ -60,11 +40,7 @@ export async function getTopPosts(
 }
 
 /**
- * 글별 조회수 — PostsArchive의 '인기순' 정렬처럼 slug→view_count 맵이 필요할 때.
- *
- * `slugs`로 서버에서 거르는 이유는 위 getTopPosts와 같다. PostgREST는 한 응답을
- * `max_rows`(1000행)에서 자르므로 조회수 내림차순(동률은 slug)으로 정렬해 둔다 —
- * 잘리더라도 조회수가 가장 적은 행부터 빠지고, 매 요청 같은 행이 온다.
+ * 글별 조회수(인기순 정렬용) — 1000행에서 잘려도 매번 같은 행이 오게 조회수순으로 정렬한다.
  */
 export async function getAllViewCounts(
   slugs: readonly string[],

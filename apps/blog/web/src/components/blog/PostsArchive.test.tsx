@@ -1,11 +1,6 @@
 /**
- * `/posts/`의 **정적 폴백 ↔ 하이드레이션 후 화면 일치 계약.**
- *
- * `PostsArchiveView`는 nuqs 때문에 빌드 타임 프리렌더에서 빠지고, 정적 HTML에는
- * Suspense 폴백(`PostsArchiveFallback`)만 남는다. 예전 폴백은 리스트를, 클라이언트
- * 기본값은 카드 그리드를 그려서 매 첫 방문마다 하이드레이션 직후 목록이 통째로
- * 바뀌었고, 정적 HTML의 헤딩은 h1 → h3로 건너뛰었다. URL 파라미터가 없을 때 둘이
- * 같은 헤딩·같은 링크·같은 이미지를 같은 순서로 그리는지를 여기서 잠근다.
+ * `/posts/` — 정적 HTML에는 폴백만 남으므로, URL 파라미터가 없을 때 폴백과 뷰가 같은
+ * 헤딩·링크·이미지를 같은 순서로 그려야 하이드레이션 뒤 목록이 바뀌지 않는다.
  */
 import { describe, expect, test, vi } from 'vitest';
 import {
@@ -20,8 +15,7 @@ import { NuqsTestingAdapter } from 'nuqs/adapters/testing';
 import type { ReactNode } from 'react';
 import type { PostSummary, SeriesSummary, TagSummary } from '@blog/content';
 
-// 인기글 레일·인기순 정렬이 Supabase 조회수를 부른다(주입 지점이 없는 모듈 싱글톤).
-// 기본은 응답 없이 대기시켜 두 화면 모두 "조회수 도착 전" 상태로 비교한다.
+// 조회수는 주입 지점 없는 모듈 싱글톤이다 — 기본은 응답 없이 대기시켜 도착 전 상태로 비교한다.
 const analytics = vi.hoisted(() => ({
   getTopPosts: vi.fn(
     (_limit: number, _slugs: readonly string[]) =>
@@ -74,11 +68,7 @@ const renderView = (searchParams?: string) =>
     ),
   );
 
-/**
- * 화면이 "같다"의 기준 — 헤딩(레벨·이름), 링크 주소, 썸네일 수를 순서대로.
- * 카드 썸네일은 제목과 겹치지 않게 alt=""(장식)라 img 역할이 없다 — 그래서
- * 썸네일만은 요소로 센다(카드 뷰에만 있고 리스트 뷰에는 없다).
- */
+/** 화면이 "같다"의 기준. 썸네일은 장식(alt="")이라 역할이 없어 요소로 센다. */
 const fingerprint = () => ({
   headings: screen
     .getAllByRole('heading')
@@ -127,7 +117,6 @@ describe('PostsArchive 인기순', () => {
     );
     renderView('?sort=popular');
 
-    // 날짜순(b → a)이 아니라 조회수순(a → b)으로 바뀐다.
     await waitFor(() =>
       expect(
         screen
@@ -144,7 +133,7 @@ describe('PostsArchive 인기순', () => {
 });
 
 describe('PostsArchive 검색창', () => {
-  // "지우기"는 검색어가 비는 순간 사라진다 — 초점이 <body>로 떨어지던 회귀.
+  // "지우기"는 검색어가 비는 순간 사라진다 — 초점이 <body>로 떨어지면 안 된다.
   test('지우기를 누르면 검색어가 비고 초점이 입력창으로 간다', async () => {
     renderView('?q=b-post');
     // 데스크톱 사이드바·모바일 상단에 같은 검색창이 하나씩 있다(CSS로 배타 표시).

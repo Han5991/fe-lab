@@ -10,12 +10,8 @@ interface ErrorFallbackProps {
 }
 
 /**
- * 라우트 에러 경계(`app/error.tsx`)와 루트 에러 경계(`app/global-error.tsx`)가
- * 함께 쓰는 화면. 잎 컴포넌트 하나가 던진 예외가 사이트 전체를 Next 기본 화면
- * ("This page couldn't load")으로 날리지 않도록, 두 경계가 같은 모양으로 받는다.
- *
- * 에러 메시지는 보여 주지 않는다 — 프로덕션에서는 서버 컴포넌트 에러가 digest로
- * 가려져 오고, 클라이언트 에러 문구는 읽는 사람에게 쓸모가 없다.
+ * 라우트·루트 에러 경계가 함께 쓰는 복구 화면. 에러 문구는 보이지 않는다 — 프로덕션은
+ * digest로 가려져 오고 읽는 사람에게 쓸모가 없다.
  */
 export const ErrorFallback = ({ onRetry }: ErrorFallbackProps) => (
   <Rail

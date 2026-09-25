@@ -5,8 +5,7 @@ import { useState } from 'react';
 import { css } from '@design-system/ui-lib/css';
 import { getKSTDateISO } from '@blog/content';
 import type { TrendPoint } from '@/src/domain/analytics';
-// 날짜 창 계산만 필요하므로 admin 배럴(모듈 최상위에서 supabase 클라이언트를
-// 바인딩) 대신 순수 leaf를 연다 — windows.ts 머리 주석.
+// admin 배럴은 supabase 클라이언트를 바인딩하므로 순수 leaf를 연다.
 import { trailingWindowStartISO } from '@/src/domain/analytics/windows';
 
 export type FilterType = 'all' | '7days' | '30days' | 'custom';
@@ -33,11 +32,8 @@ function isFilterType(value: string): value is FilterType {
 }
 
 /**
- * 정렬 + 기간 필터. 훅 밖의 순수 함수라 렌더와 무관하게 읽히고,
- * 메모이제이션은 React Compiler가 호출 단위로 처리합니다.
- *
- * `todayISO`는 KST 오늘이다 — RPC의 view_date가 KST 날짜라 창도 KST로 잡아야
- * 한다(브라우저 로컬 TZ로 new Date()를 쓰면 비-KST 환경에서 하루 밀린다).
+ * 정렬 + 기간 필터. `todayISO`는 KST 오늘이다 — view_date가 KST 날짜라 브라우저
+ * 로컬 TZ로 잡으면 비-KST 환경에서 하루 밀린다.
  */
 export function selectTrends(
   trends: TrendPoint[],
@@ -69,9 +65,7 @@ export function selectTrends(
   return sorted.filter(t => t.view_date >= start);
 }
 
-/**
- * @param todayISO KST 오늘. 생략하면 지금 — 행이 많은 목록은 한 번 계산해 넘긴다.
- */
+/** @param todayISO KST 오늘(생략하면 지금) — 행이 많은 목록은 한 번 계산해 넘긴다. */
 export function useDateFilter(
   trends: TrendPoint[],
   todayISO: string = getKSTDateISO(TIMEZONE),
@@ -80,12 +74,8 @@ export function useDateFilter(
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
 
-  // 사용자가 선택한 30일에 데이터가 없으면 결과를 'all'로 자동 fallback.
-  // filterType state는 그대로 두고 effective 값만 derived로 계산해 setState-in-effect 회피.
-  //
-  // 창의 첫날은 한 번만 계산한다. 예전엔 `.some()` 콜백 안에서 행마다 cutoff를
-  // 다시 구해 Intl.DateTimeFormat을 행 수만큼 만들었고(오래된 순이라 거의 전부를
-  // 훑는다), 아코디언마다 이 훅을 불러 첫 렌더가 수백 ms 막혔다.
+  // 30일에 데이터가 없으면 'all'로 물러난다 — 상태는 두고 유효값만 파생한다.
+  // 창의 첫날은 한 번만 구한다(행마다 구하면 Intl.DateTimeFormat이 행 수만큼 생긴다).
   const canFallBack = filterType === '30days' && trends.length > 0;
   const last30Start = trailingWindowStartISO(todayISO, TRAILING_DAYS['30days']);
   const autoFellBackToAll =

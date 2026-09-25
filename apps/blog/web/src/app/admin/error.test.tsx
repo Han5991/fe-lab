@@ -1,10 +1,6 @@
 /**
- * admin 에러 경계 — 실패한 suspense 쿼리를 안내하고, "다시 시도"로 실제로
- * 다시 불러온다.
- *
- * 두 번째가 이 테스트의 핵심이다. 에러로 굳은 suspense 쿼리는 React Query의
- * 에러 리셋 없이 다시 마운트되면 재요청하지 않고 같은 에러를 다시 던진다 —
- * 경계만 비우는 버튼은 눌러도 같은 화면으로 돌아온다.
+ * admin 에러 경계 — 에러로 굳은 suspense 쿼리는 React Query의 에러 리셋 없이는
+ * 다시 요청하지 않는다. "다시 시도"가 실제로 다시 불러오는지 본다.
  */
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { Component, Suspense, type ReactNode } from 'react';

@@ -7,7 +7,6 @@ export interface SearchPost {
   date: string | null;
   excerpt: string;
   tags: string[];
-  /** 시리즈 id(폴더 경로). */
   series: string | null;
   /** 시리즈 제목. 이 필드가 없는 색인이면 화면은 id로 대신한다. */
   seriesTitle?: string | null;
@@ -18,10 +17,7 @@ export interface SearchPost {
 // (`packages/@blog/content/src/scripts/generate-search-index.ts`).
 const SEARCH_INDEX_URL = '/search-index.json';
 
-/**
- * 색인 항목을 확인된 필드로 **다시 만든다.** 색인은 네트워크로 오는 외부 입력이라
- * 모양을 단정하지 않는다 — 필수(slug·title)가 없으면 버리고 나머지는 빈 값으로 둔다.
- */
+/** 네트워크로 온 색인 항목을 확인된 필드로 다시 만든다 — slug·title이 없으면 버린다. */
 export function toSearchPost(item: unknown): SearchPost | null {
   if (!isRecord(item)) return null;
   const {
@@ -50,11 +46,7 @@ export function toSearchPost(item: unknown): SearchPost | null {
   };
 }
 
-/**
- * 색인을 받아 온다. 응답이 실패(4xx/5xx)면 던진다 — 예전엔 `res.ok`를 보지 않아
- * 404 HTML을 JSON으로 읽다 실패한 것이 콘솔에만 남고, 다이얼로그는 "검색 결과가
- * 없습니다"인 채로 영영 비어 있었다.
- */
+/** 색인을 받아 온다 — 실패 응답은 던져 "결과 없음"과 구분되게 한다. */
 export async function fetchSearchIndex(): Promise<SearchPost[]> {
   const res = await fetch(SEARCH_INDEX_URL);
   if (!res.ok) throw new Error(`search index: HTTP ${res.status}`);

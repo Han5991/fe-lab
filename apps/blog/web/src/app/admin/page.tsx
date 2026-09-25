@@ -20,10 +20,7 @@ import {
 } from '@/src/shared/routes';
 import { STATUS_BADGE, livePostHref } from './components/postState';
 
-/**
- * 목록 한 줄이 여는 곳 — 공개 중인 글은 실제 글(새 탭), 아직 비공개인 글은 그
- * 글의 admin 통계.
- */
+/** 목록 한 줄이 여는 곳 — 공개 글은 실제 글(새 탭), 비공개 글은 그 글의 admin 통계. */
 function postLink(
   slug: string,
   state: PostStatus,
@@ -34,7 +31,6 @@ function postLink(
     : { href: adminAnalyticsPostPath(slug) };
 }
 
-/** 비공개 글 줄에 붙는 상태 — 공개 글에는 붙이지 않는다. */
 function HiddenBadge({ state }: { state: PostStatus }) {
   if (state === 'published') return null;
   return (
@@ -61,7 +57,6 @@ function AdminOverviewContent() {
   const totalViews = data.reduce((acc, curr) => acc + curr.totalViews, 0);
   const totalTodayViews = data.reduce((acc, curr) => acc + curr.todayViews, 0);
   // /admin/analytics의 POSTS PUBLISHED와 같은 규칙(지금 공개 중인 글)으로 센다.
-  // 예전엔 data.length라 draft·공개 전 예약 글까지 세어, 두 화면의 글 수가 달랐다.
   const livePosts = countLivePosts(data, { timezone: TIMEZONE });
   const hiddenPosts = data.length - livePosts;
 

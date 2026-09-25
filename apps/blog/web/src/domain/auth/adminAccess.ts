@@ -32,14 +32,8 @@ export function isAdminEmail(
 const OAUTH_ERROR_MAX_LENGTH = 200;
 
 /**
- * OAuth 복귀 URL에 붙은 실패 사유. 없으면 null.
- *
- * Supabase(GoTrue)는 실패를 쿼리(`?error=…`)나 프래그먼트(`#error=…`)에
- * `error`·`error_description`으로 싣는다(흐름에 따라 자리가 다르다). 사람이 읽을
- * 문장인 `error_description`을 먼저 쓰고, 없으면 코드(`error`)를 쓴다.
- *
- * URL에서 온 값이라 누구든 링크로 만들 수 있다 — 화면은 고정 문구 아래 참고로만
- * 보여 주고(React가 텍스트로 이스케이프한다), 여기서 길이를 자른다.
+ * OAuth 복귀 URL에 붙은 실패 사유(없으면 null) — Supabase는 흐름에 따라 쿼리나
+ * 프래그먼트에 싣는다. `error_description`을 먼저, 없으면 `error` 코드를 쓴다.
  */
 export function readOAuthRedirectError(
   search: string,

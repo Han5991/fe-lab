@@ -130,8 +130,7 @@ const SCENARIOS: {
   name: string;
   run: (c: WireClient) => PromiseLike<unknown>;
 }[] = [
-  // 체인은 domain/analytics/repository.ts와 같은 모양이다 — 저쪽을 고치면
-  // 여기도 함께(요청 내용 자체는 repository.test.ts가 따로 잠근다).
+  // 체인은 domain/analytics/repository.ts와 같은 모양이다 — 저쪽을 고치면 함께 고친다.
   {
     name: 'getTopPosts',
     run: c =>

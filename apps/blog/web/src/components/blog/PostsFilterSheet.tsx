@@ -29,11 +29,7 @@ export const PostsFilterSheet = ({
 }: PostsFilterSheetProps) => {
   const sheetRef = useRef<HTMLDivElement | null>(null);
 
-  // 스크롤 잠금·초점 이동/가두기/되돌리기·Escape — 검색 다이얼로그·모바일 차례와
-  // 같은 훅이다. 예전엔 이 시트만 따로 구현했고, effect deps에 `onClose`가 있어
-  // 호출부가 인라인 화살표를 넘기면(React Compiler가 메모이즈를 포기한 렌더)
-  // 필터를 누를 때마다 effect가 다시 돌아 초점이 FAB로 갔다가 첫 요소로 튀고
-  // 스크롤 잠금이 깜빡였다. 훅은 onClose를 effect 이벤트로 읽는다.
+  // 스크롤 잠금·초점·Escape는 다른 오버레이와 같은 훅이 맡는다.
   useModalDialog({ open, onClose, containerRef: sheetRef });
 
   return (

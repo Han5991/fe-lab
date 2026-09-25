@@ -1,9 +1,6 @@
 /**
  * 글 상세 분포 조회의 실패는 빈 차트가 아니라 에러다.
- *
- * 예전 훅은 catch에서 `{ hourly: [], dow: [] }`를 돌려줘, Edge Function의 401·500이
- * "이 글은 조회가 없었다"와 똑같이 그려졌다. 분포는 Edge Function 너머라 admin
- * 배럴을 가짜로 바꾼다(저장소가 import 시점에 supabase 클라이언트를 만든다).
+ * admin 배럴은 import 시점에 supabase 클라이언트를 만들어 가짜로 바꾼다.
  */
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { Component, Suspense, type ReactNode } from 'react';
@@ -74,7 +71,7 @@ describe('usePostDetailStats', () => {
   test('분포 조회 실패를 빈 분포로 삼키지 않고 에러 경계로 올린다', async () => {
     render(
       <QueryClientProvider
-        // 재시도가 끼면 실패가 늦게 드러난다 — 재시도 정책은 이 테스트의 몫이 아니다.
+        // 재시도가 끼면 실패가 늦게 드러난다.
         client={
           new QueryClient({ defaultOptions: { queries: { retry: false } } })
         }

@@ -42,13 +42,8 @@ function safeParse(raw: string | null): RecentView[] {
 }
 
 /**
- * 쓸 수 있는 localStorage, 아니면 null.
- *
- * `setItem`만 감싸서는 부족하다 — 쿠키·사이트 데이터를 차단하면(Chrome "모든
- * 쿠키 차단", 사이트별 차단, 일부 임베디드 웹뷰) **`window.localStorage` getter
- * 자체가** SecurityError를 던진다. 예전엔 그 접근이 try 밖에 있어, 글 페이지의
- * effect에서 던져진 예외가 페이지 전체를 Next 기본 에러 화면으로 날렸다.
- * 최근 본 글은 편의 기능이라, 저장소를 못 쓰면 기능만 조용히 빠진다.
+ * 쓸 수 있는 localStorage, 아니면 null — 사이트 데이터를 차단하면 getter 자체가 던진다.
+ * 최근 본 글은 편의 기능이라 저장소를 못 쓰면 조용히 빠진다.
  */
 function storage(): Storage | null {
   if (typeof window === 'undefined') return null;

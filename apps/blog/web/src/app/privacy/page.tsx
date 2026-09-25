@@ -10,10 +10,8 @@ import { railGutter, railColumn } from '@/src/components/Rail';
 const PAGE_TITLE = `개인정보처리방침 | ${SITE_NAME}`;
 const PAGE_DESCRIPTION = `${SITE_NAME} 블로그의 개인정보처리방침입니다.`;
 
-// og·twitter를 이 페이지 값으로 채운다. Next의 메타데이터 병합은 얕아서, 여기서
-// 비워 두면 루트(siteSeo.ts)의 openGraph가 통째로 상속돼 이 주소를 공유한 카드가
-// 홈 제목·홈 주소(og:url)를 달고 나갔다. 병합이 필드 단위가 아니므로 이미지도
-// 함께 적는다.
+// Next의 메타데이터 병합은 얕다 — 비워 두면 루트(홈)의 openGraph가 통째로 상속되므로
+// 이미지까지 이 페이지 값으로 적는다.
 export const metadata: Metadata = {
   title: PAGE_TITLE,
   description: PAGE_DESCRIPTION,

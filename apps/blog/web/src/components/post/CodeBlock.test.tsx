@@ -137,8 +137,7 @@ describe('mermaid placeholder 박스', () => {
 
 describe('코드 블록 글꼴', () => {
   test('테마의 Menlo 스택 대신 디자인 시스템의 mono 토큰을 쓴다', () => {
-    // 인라인 코드·파일트리·탭은 mono(JetBrains Mono)라 펜스만 Menlo면
-    // 한 글에 고정폭 글꼴이 두 벌 섞인다.
+    // 인라인 코드·파일트리·탭은 mono라 펜스만 Menlo면 고정폭 글꼴이 두 벌 섞인다.
     const fonts = Object.values(CODE_THEME)
       .map(rules => rules.fontFamily)
       .filter(font => font !== undefined);

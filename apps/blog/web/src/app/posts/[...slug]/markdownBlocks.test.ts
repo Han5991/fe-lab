@@ -46,8 +46,7 @@ describe('isBlockMarkdownChild', () => {
     });
   });
 
-  // 컨테이너 안에 빈 줄을 두면 자식 태그 한 줄이 문단(<p>)에 싸여 온다. 그
-  // 문단이 컨테이너 밖에 남는 경우에도 <p><div>가 되지 않도록 자식 태그도 블록이다.
+  // 빈 줄 뒤 자식 태그는 문단에 싸여 온다 — 컨테이너 밖에 흘러도 <p><div>가 되지 않게.
   describe('시그니처·다이어그램의 자식 태그도 블록', () => {
     test.each([Msg, Metric, Step, DiagramNodeTag, DiagramEdgeTag])(
       '%o → block',

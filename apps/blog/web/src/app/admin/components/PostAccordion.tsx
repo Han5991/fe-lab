@@ -71,9 +71,7 @@ export function PostAccordion({ post, todayISO }: Props) {
         _last: { borderBottomWidth: '[0]' },
       })}
     >
-      {/* 행 = 링크 두 개 + 펼침 버튼(형제). 예전엔 링크가 <button> 안에 있었는데,
-          버튼의 내용에는 대화형 요소가 올 수 없다 — 스크린리더·키보드 포커스가
-          제멋대로였고 stopPropagation으로 클릭만 겨우 떼어 두고 있었다. */}
+      {/* 링크와 펼침 버튼은 형제다 — 버튼 안에는 대화형 요소가 올 수 없다. */}
       <div
         className={css({
           display: 'flex',

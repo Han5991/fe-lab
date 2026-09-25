@@ -1,13 +1,4 @@
-/**
- * 검색 다이얼로그의 **선택 인덱스 계약**과 **다이얼로그 접근성 계약.**
- *
- * 선택 인덱스는 "어느 검색어에 대한 선택인지"를 함께 들고 다닌다. 예전에는
- * query가 바뀔 때마다 effect가 0으로 되돌렸는데, 그러면 렌더 → effect → 리렌더가
- * 한 번 더 돌고 그 사이 한 프레임 동안 이전 검색어의 인덱스가 새 결과 위에
- * 얹힌다. 되돌리는 주체가 effect에서 렌더 중 판정으로 바뀌었으므로, 겉으로
- * 드러나는 계약 — 화살표로 옮긴 자리에서 Enter가 그 결과를 열고, 검색어를 바꾸면
- * 선택이 첫 결과로 돌아간다 — 을 여기서 고정한다.
- */
+/** 검색 다이얼로그의 선택 인덱스·접근성·색인 불러오기 계약. */
 import { beforeEach, describe, expect, onTestFinished, test, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { postPath } from '@blog/content';
@@ -117,9 +108,8 @@ describe('SearchDialog - 선택 인덱스', () => {
   });
 });
 
-// 다이얼로그는 sticky 헤더 안에서 렌더되는데, 헤더의 backdrop-filter가 fixed
-// 자손의 containing block을 헤더로 바꿔 모바일 풀스크린 패널이 52px로 접혔다.
-// jsdom은 레이아웃을 하지 않으니 원인 쪽 — 오버레이가 헤더 밖(body)에 붙는지 — 을 잠근다.
+// 헤더의 backdrop-filter가 fixed 자손을 헤더에 가둔다 — jsdom은 레이아웃을 하지 않아
+// 오버레이가 헤더 밖(body)에 붙는지를 본다.
 describe('SearchDialog - 오버레이 위치', () => {
   test('헤더 안에서 열어도 다이얼로그는 헤더 바깥(body)에 뜬다', async () => {
     const { container } = render(
@@ -262,8 +252,7 @@ describe('SearchDialog - 검색 색인 불러오기', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
-  // 예전엔 res.ok를 보지 않아 실패가 콘솔에만 남고, 다이얼로그는 "검색 결과가
-  // 없습니다"인 채로 영영 비어 있었다.
+  // 실패가 "검색 결과가 없습니다"로 보이면 안 된다.
   test('실패하면 알리고, 다시 시도로 새로 받는다', async () => {
     const quiet = vi
       .spyOn(console, 'error')

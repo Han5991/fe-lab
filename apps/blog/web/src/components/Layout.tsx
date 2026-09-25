@@ -30,8 +30,7 @@ const railInner = railColumn({ width: 'wide' });
 /** 건너뛰기 링크가 가리키는 본문 영역 id. */
 const MAIN_ID = 'main-content';
 
-// 키보드 사용자가 매 페이지 헤더의 여러 탭 정지점을 지나지 않고 본문으로 가는 길.
-// 평소엔 화면 밖에 있다가 초점을 받으면 좌상단에 나타난다.
+// 헤더의 탭 정지점을 건너뛰는 링크 — 초점을 받을 때만 나타난다.
 const skipLink = css({
   pos: 'absolute',
   top: '2',
@@ -92,14 +91,9 @@ export const Layout = ({ children }: LayoutProps) => {
           // 경계에서 뚝 잘려 보인다.
           //
           bg: 'paper.50/80',
-          // Panda에서 흐림은 `backdropFilter: 'auto'` + `backdropBlur` 조합이다.
-          // `backdropFilter: '[blur(12px)]'` 처럼 임의값으로 주면 클래스만 생기고
-          // 규칙이 안 나간다(리뉴얼 전 코드가 그 형태였다).
-          //
-          // lightningcss는 이 선언을 `-webkit-backdrop-filter`와 `backdrop-filter`
-          // 두 줄로 내보낸다. none이 아닌 backdrop-filter는 헤더를 fixed 자손의
-          // containing block으로 만든다 — 헤더 안에서 뷰포트를 덮어야 하는
-          // 오버레이(검색 다이얼로그 등)는 반드시 <Portal>로 body에 띄울 것.
+          // Panda의 흐림은 `backdropFilter: 'auto'` + `backdropBlur`다(임의값이면 규칙이 안 나간다).
+          // backdrop-filter는 헤더를 fixed 자손의 containing block으로 만든다 —
+          // 뷰포트를 덮는 오버레이는 <Portal>로 body에 띄울 것.
           backdropFilter: 'auto',
           backdropBlur: '[12px]',
           zIndex: '10',

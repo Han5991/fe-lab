@@ -172,8 +172,7 @@ describe('slugFromRouteParam', () => {
   });
 
   test('링크 → 라우트 왕복: adminAnalyticsPostPath가 만든 경로의 세그먼트를 넣으면 원래 slug가 나온다', () => {
-    // 링크 쪽 인코딩과 라우트 쪽 디코드가 서로의 역함수임을 잠근다 — 한쪽만
-    // 바뀌면 한글·폴더 slug 글의 통계 화면이 "찾을 수 없음"으로 떨어진다.
+    // 링크 쪽 인코딩과 라우트 쪽 디코드는 서로의 역함수여야 한다.
     const segmentsOf = (path: string) =>
       path.slice(ADMIN_ANALYTICS_PATH.length).replace(/\/$/, '').split('/');
     for (const slug of [

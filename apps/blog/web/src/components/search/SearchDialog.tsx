@@ -20,10 +20,7 @@ import {
   splitByTokens,
 } from './searchText';
 
-/**
- * 색인 요청의 진행 상태 — 로딩과 실패를 "결과 없음"과 구분해 보여 준다. 목록은
- * 열린 뒤에만 그려지고 여는 순간 요청이 걸리므로, 요청 전도 'loading'으로 본다.
- */
+/** 색인 요청의 진행 상태 — 여는 순간 요청이 걸리므로 요청 전도 'loading'이다. */
 type IndexStatus = 'loading' | 'ready' | 'error';
 
 const markClass = css({
@@ -34,7 +31,6 @@ const markClass = css({
   rounded: 'sm',
 });
 
-/** 검색 낱말이 걸린 조각만 `<mark>`로 감싼다. */
 const Highlight = ({ text, tokens }: { text: string; tokens: string[] }) =>
   splitByTokens(text, tokens).map((part, i) =>
     part.match ? (
@@ -46,28 +42,19 @@ const Highlight = ({ text, tokens }: { text: string; tokens: string[] }) =>
     ),
   );
 
-/** 결과에 보일 시리즈 이름 — 색인에 제목이 없으면(예전 색인) id로 대신한다. */
+/** 결과에 보일 시리즈 이름 — 색인에 제목이 없으면 id로 대신한다. */
 const seriesLabel = (post: SearchPost) => post.seriesTitle ?? post.series;
 
 /**
- * 사이트 검색 — 헤더의 트리거 버튼과 모달 다이얼로그.
- *
- * 접근성 계약:
- * - 트리거는 열려 있는 동안에도 **마운트된 채** 남는다. 예전엔 열리면 트리거가
- *   사라졌다가 닫힐 때 새 버튼이 마운트돼, 초점이 되돌아갈 곳 없이 `<body>`로
- *   떨어졌다.
- * - 다이얼로그는 `role="dialog"` + `aria-modal`이고, Tab은 안에 갇히며 Escape·닫기
- *   버튼으로 닫힌다(`useModalDialog`).
- * - 입력창은 콤보박스, 결과는 리스트박스다. 화살표 선택은 `aria-activedescendant`로
- *   보조기술에 전달된다 — 예전엔 배경색만 바뀌어 스크린리더에는 아무것도 없었다.
+ * 사이트 검색 — 헤더의 트리거 버튼과 모달 다이얼로그. 트리거는 열린 동안에도 마운트된
+ * 채 남아야 닫힐 때 초점이 돌아갈 곳이 있다. 입력창은 콤보박스, 결과는 리스트박스다.
  */
 export const SearchDialog = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [posts, setPosts] = useState<SearchPost[]>([]);
   const [indexStatus, setIndexStatus] = useState<IndexStatus>('loading');
-  // 진행 중이거나 이미 받은 색인 요청. 열고 닫고 다시 여는 사이 응답이 안 왔어도
-  // 두 번 받지 않는다. 실패하면 비워서 다음 열기·다시 시도가 새로 요청한다.
+  // 진행 중이거나 받은 색인 요청 — 다시 열어도 두 번 받지 않고, 실패하면 비운다.
   const indexRequest = useRef<Promise<void> | null>(null);
   // 선택 인덱스는 **어느 검색어에 대한 선택인지**와 함께 들고 다닌다. 예전에는
   // query가 바뀔 때마다 effect가 0으로 되돌렸는데, 그러면 렌더 → effect →
@@ -135,14 +122,8 @@ export const SearchDialog = () => {
         )
         .slice(0, 10);
 
-  // 아래 셋만 useCallback을 남긴다. openDialog·closeDialog는 Cmd+K 이펙트의
-  // deps에, loadIndex는 openDialog의 deps에 들어가는데, react-hooks/exhaustive-deps는
-  // React Compiler의 런타임 메모이제이션을 보지 못해 "매 렌더 바뀐다"고 경고한다.
-  // 나머지 파생값·핸들러는 컴파일러에 맡긴다.
-  //
-  // 색인 요청은 이벤트 핸들러에서 건다. 예전엔 setState 업데이터 안에서
-  // fetch했는데, 업데이터는 순수해야 해서 StrictMode(dev)가 두 번 불러 요청이
-  // 두 번 나갔다.
+  // effect deps에 들어가는 셋만 useCallback이다 — exhaustive-deps는 컴파일러의 메모이즈를 못 본다.
+  // 색인 요청은 이벤트 핸들러에서 건다(업데이터 안이면 StrictMode가 두 번 부른다).
   const loadIndex = useCallback(() => {
     if (indexRequest.current) return;
     setIndexStatus('loading');
@@ -171,7 +152,6 @@ export const SearchDialog = () => {
     setSelection({ query: '', index: 0 });
   }, []);
 
-  // 스크롤 잠금·초점 이동/가두기/되돌리기·Escape는 세 오버레이가 공유한다.
   useModalDialog({
     open: isOpen,
     onClose: closeDialog,
@@ -202,8 +182,7 @@ export const SearchDialog = () => {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    // 한글 조합 중의 Enter·화살표는 조합을 끝내는 키다 — 결과 선택으로 읽으면
-    // 입력 중인 글자가 끝나기도 전에 첫 결과로 이동해 버린다.
+    // 한글 조합 중의 Enter·화살표는 조합을 끝내는 키다 — 결과 선택으로 읽지 않는다.
     if (e.nativeEvent.isComposing) return;
     switch (e.key) {
       case 'ArrowDown':
@@ -282,17 +261,11 @@ export const SearchDialog = () => {
         </kbd>
       </button>
 
-      {/* body로 portal한다. 이 컴포넌트는 sticky 헤더 안에 렌더되는데, 헤더의
-          backdrop-filter(흐림)는 fixed 자손의 containing block을 뷰포트가 아니라
-          **헤더 자신**으로 바꾼다(Filter Effects 2). 그 안에 inline으로 두면
-          모바일 풀스크린 패널(inset 0)이 헤더 높이 52px로 접혀 결과 목록이
-          0px이 됐고, 헤더의 z-index:10 stacking context에도 갇혔다. */}
+      {/* body로 portal한다 — 헤더의 backdrop-filter가 fixed 자손의 containing
+          block을 헤더로 바꿔, 안에 두면 풀스크린 패널이 헤더 높이로 접힌다. */}
       {isOpen && (
         <Portal>
-          {/* 백드롭 — 뒤를 덮는 dim 레이어다. 보조기술에 읽힐 내용이 없으므로
-              role="presentation"으로 트리에서 뺀다. 클릭으로 닫히는 건 포인터
-              편의일 뿐이고, 키보드로 닫는 길은 Escape(useModalDialog)와 닫기
-              버튼이다 — 여기에 키 핸들러를 더 달아도 초점이 오지 않는다. */}
+          {/* 백드롭 클릭은 포인터 편의다 — 키보드는 Escape·닫기 버튼으로 닫는다. */}
           <div
             role="presentation"
             className={css({
@@ -331,9 +304,7 @@ export const SearchDialog = () => {
                 borderWidth: { base: '[0]', md: 'hairline' },
                 borderColor: 'ink.border',
                 h: { base: 'full', md: 'auto' },
-                // 데스크탑 센터 모달은 높이가 내용을 따라가는데, 결과 10개면
-                // 뷰포트를 넘는다. body 스크롤은 잠겨 있으니 넘친 결과·하단 힌트에
-                // 닿을 길이 없었다 — 모달 높이를 묶고 결과 목록만 스크롤시킨다.
+                // body 스크롤이 잠겨 있으니 모달 높이를 묶고 결과 목록만 스크롤한다.
                 maxH: { md: '[70vh]' },
                 display: 'flex',
                 flexDirection: 'column',
@@ -383,8 +354,7 @@ export const SearchDialog = () => {
                 <button
                   type="button"
                   onClick={closeDialog}
-                  // lucide 아이콘은 aria-hidden된 svg라 이름을 주지 못한다(axe
-                  // button-name, critical). 열렸을 때만 존재해 스캔에서 빠졌었다.
+                  // 아이콘은 aria-hidden svg라 이름을 주지 못한다(axe button-name).
                   aria-label="검색 닫기"
                   className={css({
                     p: '2',
@@ -430,9 +400,7 @@ export const SearchDialog = () => {
                     <Clock size={12} /> 최근 본 글
                   </div>
                 )}
-                {/* 결과가 없을 때는 리스트박스를 내리지 않는다 — option 없는
-                    listbox는 axe aria-required-children 위반이고, 콤보박스는
-                    aria-expanded=false라 aria-controls가 비어도 된다. */}
+                {/* option 없는 listbox는 axe aria-required-children 위반이라 결과가 없으면 내리지 않는다. */}
                 {filteredPosts.length > 0 && (
                   <ul
                     ref={listRef}
@@ -453,17 +421,13 @@ export const SearchDialog = () => {
                           id={optionId(index)}
                           role="option"
                           aria-selected={selected}
-                          // 포인터가 올라간 행이 곧 선택 행이다 — 예전엔 hover와
-                          // 키보드 선택이 서로 다른 두 행을 칠했다.
+                          // 포인터가 올라간 행이 곧 선택 행이다.
                           onMouseEnter={() => setSelection({ query, index })}
                         >
-                          {/* 결과는 진짜 링크다 — 새 탭으로 열기·주소 복사가
-                            살아 있다. 키보드 선택은 콤보박스(화살표+Enter)가
-                            맡으므로 Tab 순서에서는 뺀다. */}
+                          {/* 진짜 링크다(새 탭으로 열기) — 키보드 선택은 콤보박스가 맡아 Tab 순서에서 뺀다. */}
                           <Link
                             href={postPath(post.slug)}
-                            // 결과 목록은 글자마다 갈린다 — 보이는 링크마다 미리
-                            // 받으면 입력 한 번에 RSC 요청이 열 개씩 나간다.
+                            // 결과가 글자마다 갈려 미리 받으면 입력마다 RSC 요청이 열 개씩 나간다.
                             prefetch={false}
                             tabIndex={-1}
                             onClick={e => {

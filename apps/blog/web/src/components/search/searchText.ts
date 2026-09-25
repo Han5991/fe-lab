@@ -1,13 +1,5 @@
-/**
- * 검색어 해석·매칭·하이라이트 — 화면 없이 도는 순수 함수들.
- *
- * 검색어는 **공백으로 나눈 낱말들의 AND**다. 예전엔 검색어 전체를 한 덩어리의
- * 부분 문자열로 찾아서 "hooks react"처럼 두 낱말이 다른 자리에 있는 글을 못
- * 찾았고, 빈칸 판정은 trim한 값으로 하면서 매칭은 trim하지 않은 값으로 해
- * "react "(뒤 공백)가 결과를 조용히 좁히거나 0으로 만들었다.
- */
+/** 검색어 해석·매칭·하이라이트. 검색어는 공백으로 나눈 낱말들의 AND다. */
 
-/** 검색어를 소문자 낱말 목록으로. 빈 검색어면 빈 배열. */
 export function searchTokens(query: string): string[] {
   const words = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
   return [...new Set(words)];
@@ -27,11 +19,7 @@ export interface TextPart {
   match: boolean;
 }
 
-/**
- * 텍스트를 낱말이 걸린 조각과 아닌 조각으로 나눈다(대소문자 무시, 겹치면 합침).
- * 예전엔 `/g` 정규식의 `test()`로 조각을 판정했는데, `/g`는 `lastIndex`를 들고
- * 다녀서 split 구분자가 우연히 되돌려 줄 때만 맞았다.
- */
+/** 텍스트를 낱말이 걸린 조각과 아닌 조각으로 나눈다(대소문자 무시, 겹치면 합침). */
 export function splitByTokens(
   text: string,
   tokens: readonly string[],

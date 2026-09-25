@@ -1,9 +1,6 @@
 /**
- * 글 상세 통계 — 대시보드 목록에 없는 글은 흰 화면이 아니라 안내다.
- *
- * 예전 훅은 글을 못 찾으면 렌더 중에 `throw new Error('Post not found')`를
- * 던졌다. 대시보드 데이터는 Edge Function 너머라 admin 배럴을 가짜로 바꾼다
- * (네트워크 이음매 — 저장소가 import 시점에 supabase 클라이언트를 만든다).
+ * 글 상세 통계 — 목록에 없는 글은 흰 화면이 아니라 안내다.
+ * admin 배럴은 import 시점에 supabase 클라이언트를 만들어 가짜로 바꾼다.
  */
 import { describe, expect, test, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
@@ -57,8 +54,7 @@ describe('PostDetailClient', () => {
     ).toHaveAttribute('href', '/admin/analytics/');
   });
 
-  // 분포는 slug만 있으면 된다 — 대시보드 데이터를 기다린 뒤에야 요청하면 상세
-  // 화면이 왕복 둘을 차례로 기다린다.
+  // 대시보드를 기다린 뒤에 요청하면 상세 화면이 왕복 둘을 차례로 기다린다.
   test('분포 요청은 대시보드 데이터를 기다리지 않고 함께 시작한다', () => {
     getAdminPostsIndex.mockReturnValueOnce(new Promise(() => undefined));
     render(

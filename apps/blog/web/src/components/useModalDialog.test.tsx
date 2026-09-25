@@ -16,8 +16,7 @@ afterEach(() => {
 });
 
 describe('useModalDialog - 스크롤 잠금', () => {
-  // 필터 시트 위에 검색을 여는 식으로 겹칠 수 있다. 먼저 닫힌 쪽이 잠금을 풀면
-  // 남은 모달 뒤로 페이지가 스크롤된다.
+  // 먼저 닫힌 쪽이 잠금을 풀면 남은 모달 뒤로 페이지가 스크롤된다.
   test('겹친 모달은 마지막이 닫힐 때만 원래 값으로 되돌린다', () => {
     document.body.style.overflow = 'scroll';
     const first = openModal();

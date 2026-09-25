@@ -11,18 +11,10 @@ const FOCUSABLE = [
   '[tabindex]:not([tabindex="-1"])',
 ].join(', ');
 
-/**
- * 열린 다이얼로그 스택. 필터 시트 위에 ⌘K로 검색을 여는 식으로 겹칠 수 있는데,
- * 키 처리는 맨 위 하나만 한다 — 아니면 Escape 한 번에 둘 다 닫히고 Tab 가두기가
- * 서로 초점을 빼앗는다.
- */
+/** 열린 다이얼로그 스택 — 겹쳐 열려도 키 처리는 맨 위 하나만 한다. */
 const openStack: symbol[] = [];
 
-/**
- * 첫 모달이 열릴 때의 body overflow. 스크롤 잠금은 스택이 비었다 찰 때 걸고,
- * 다시 빌 때 이 값으로 되돌린다 — 겹친 모달 하나가 닫혀도 남은 쪽의 잠금이 풀리지
- * 않는다.
- */
+/** 첫 모달이 열릴 때의 body overflow — 스택이 다시 빌 때만 되돌린다. */
 let savedOverflow = '';
 
 interface ModalDialogOptions {
@@ -35,16 +27,9 @@ interface ModalDialogOptions {
 }
 
 /**
- * 모달 오버레이(검색 다이얼로그·모바일 차례·필터 시트)가 공유하는 동작:
- * body 스크롤 잠금, 열릴 때 초점 이동, Tab 가두기, Escape로 닫기, 닫힐 때
- * 연 자리로 초점 되돌리기.
- *
- * 세 오버레이가 제각각 구현하던 시절엔 하나만 이걸 다 갖췄고(필터 시트), 나머지는
- * Tab이 dim 뒤 페이지로 빠져나가고 닫으면 초점이 `<body>`로 떨어졌다.
- *
- * `onClose`는 effect 이벤트로 읽는다 — 호출부가 인라인 화살표를 넘겨도 effect가
- * 다시 돌지 않는다. 다시 돌면 초점이 연 자리로 돌아갔다가 첫 요소로 튀고,
- * 스크롤 잠금이 풀렸다 걸리며 깜빡인다.
+ * 모달 오버레이가 공유하는 동작 — 스크롤 잠금, 초점 이동·가두기·되돌리기, Escape.
+ * `onClose`는 effect 이벤트로 읽는다: 인라인 화살표로 effect가 다시 돌면 초점이 튀고
+ * 잠금이 깜빡인다.
  */
 export function useModalDialog({
   open,
@@ -63,13 +48,11 @@ export function useModalDialog({
     const token = Symbol('modal');
     openStack.push(token);
 
-    // activeElement는 Element라 focus()가 없는 것(SVG 등)도 올 수 있다. 닫을 때
-    // 되돌릴 대상이므로, 실제로 되돌릴 수 있는 것만 기억한다.
+    // focus()가 없는 Element(SVG 등)는 되돌릴 수 없어 기억하지 않는다.
     const active = document.activeElement;
     const returnTo = active instanceof HTMLElement ? active : null;
 
-    // tabindex="-1"은 초점을 받을 수는 있어도 Tab 순서 밖이다(콤보박스의
-    // 결과 링크 등) — 가두기의 처음·끝 계산에서 뺀다.
+    // tabindex="-1"은 Tab 순서 밖이라 가두기의 처음·끝 계산에서 뺀다.
     const focusables = () =>
       Array.from(
         containerRef.current?.querySelectorAll<HTMLElement>(FOCUSABLE) ?? [],
@@ -113,9 +96,7 @@ export function useModalDialog({
       document.removeEventListener('keydown', onKey);
       openStack.splice(openStack.indexOf(token), 1);
       if (openStack.length === 0) document.body.style.overflow = savedOverflow;
-      // 연 자리가 아직 문서에 있을 때만 — 사라진 요소에 focus()는 아무 일도
-      // 하지 않고 초점은 body로 떨어진다. preventScroll: 닫으면서 스크롤을
-      // 옮기지 않는다(차례 항목이 막 시작한 부드러운 스크롤을 끊지 않게).
+      // preventScroll: 차례 항목이 막 시작한 스크롤을 끊지 않는다.
       if (returnTo?.isConnected) returnTo.focus({ preventScroll: true });
     };
   }, [open, containerRef, initialFocusRef]);

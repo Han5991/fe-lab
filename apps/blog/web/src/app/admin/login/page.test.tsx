@@ -1,8 +1,6 @@
 /**
  * admin 로그인 화면 — OAuth 실패를 조용히 삼키지 않는다.
- *
- * 세션 API는 auth 배럴이 import 시점에 supabase 클라이언트를 바인딩하므로 그
- * 배럴을, 쿼리스트링은 라우터 훅을 가짜로 바꾼다.
+ * auth 배럴은 import 시점에 supabase 클라이언트를 만들어 가짜로 바꾼다.
  */
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';

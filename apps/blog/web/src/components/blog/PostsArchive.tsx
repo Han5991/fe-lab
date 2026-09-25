@@ -46,12 +46,7 @@ const SORT_KEYS = [
 ] as const satisfies readonly SortKey[];
 const VIEW_KEYS = ['list', 'cards'] as const satisfies readonly ViewMode[];
 
-/**
- * URL에 값이 없을 때의 정렬·뷰. 파서의 `withDefault`와 정적 폴백
- * (`PostsArchiveFallback`)이 **같은 상수**를 읽는다 — 예전엔 폴백이 리스트를,
- * 클라이언트 기본값이 카드를 그려 매 첫 방문마다 하이드레이션 직후 목록이
- * 카드 그리드로 뒤바뀌었다.
- */
+/** URL에 값이 없을 때의 정렬·뷰 — 파서의 기본값과 정적 폴백이 같은 상수를 읽는다. */
 const DEFAULT_SORT = 'recent' satisfies SortKey;
 const DEFAULT_VIEW = 'cards' satisfies ViewMode;
 
@@ -78,7 +73,6 @@ interface ArchiveActions {
   setView: (v: ViewMode) => void;
 }
 
-/** 아카이브 목록(리스트 뷰) 한 행. */
 export const ArchiveRow = ({ post }: { post: PostSummary }) => (
   <li className={postRowItem}>
     <Link href={postPath(post.slug)} className={postRowLink}>
@@ -122,13 +116,8 @@ export const PostsArchiveView = ({
   } satisfies Record<keyof Required<ArchiveFilters>, unknown> &
     Record<string, unknown>);
 
-  // 인기순 정렬은 Supabase post_views 테이블 기반. 'popular'를 누르기 전까지는
-  // 요청을 보내지 않습니다 (lazy). 5분 staleTime으로 재방문 시 캐시 사용.
-  //
-  // 조회수는 이 빌드에 실린 글의 slug로 **서버에서** 거른다(getAllViewCounts
-  // 주석). post_views는 anon RPC로 아무 slug나 늘릴 수 있어서, 거르지 않으면
-  // 가짜 slug가 응답 상한(1000행)을 채워 실제 글의 조회수가 잘려 나간다.
-  // 거른 집합이 곧 응답이므로 slug 목록을 캐시 키에 싣는다.
+  // 인기순을 고르기 전에는 요청하지 않는다. 조회수는 이 빌드의 slug로 서버에서 걸러
+  // 받으므로(가짜 slug가 1000행 상한을 채우지 않게) slug 목록이 캐시 키다.
   const slugs = posts.map(p => p.slug);
   const { data: viewCounts } = useQuery({
     queryKey: ['posts-view-counts', slugs],
@@ -212,13 +201,8 @@ const FALLBACK_STATE: ArchiveState = {
 };
 
 /**
- * `/posts/`의 정적 HTML.
- *
- * `PostsArchiveView`는 nuqs(useSearchParams)라 `output: 'export'`의 빌드 타임
- * 프리렌더에서 빠지고(BAILOUT_TO_CLIENT_SIDE_RENDERING), 정적 HTML에는 Suspense
- * 폴백만 구워진다. 그 폴백이 **URL 파라미터가 없을 때의 뷰와 같은 화면**이어야
- * 하이드레이션 때 목록이 바뀌지 않는다 — 그래서 별도 마크업이 아니라 같은
- * 레이아웃을 기본 상태로 그린다. 컨트롤은 하이드레이션 전까지 동작하지 않는다.
+ * `/posts/`의 정적 HTML — 뷰는 nuqs 때문에 프리렌더에서 빠진다. 같은 레이아웃을 기본
+ * 상태로 그려 하이드레이션 때 목록이 바뀌지 않게 한다(컨트롤은 그 전까지 동작하지 않는다).
  */
 export const PostsArchiveFallback = (props: PostsArchiveViewProps) => (
   <PostsArchiveLayout
@@ -350,8 +334,7 @@ const PostsArchiveLayout = ({
               borderTopWidth: '[1px]',
               borderTopStyle: 'solid',
               borderColor: 'ink.border',
-              // 레일은 조회 실패·순위 없음이면 아무것도 그리지 않는다 — 그때
-              // 구분선과 여백만 남은 빈 띠가 되지 않게 래퍼째 접는다.
+              // 레일이 비면 구분선·여백만 남은 빈 띠가 되지 않게 래퍼째 접는다.
               _empty: { display: 'none' },
             })}
           >
@@ -566,8 +549,7 @@ const ArchiveSearchBar = ({ q, onChange }: ArchiveSearchBarProps) => {
         type="search"
         value={q}
         onChange={e => onChange(e.target.value)}
-        // 검색 대상은 제목·요약(excerpt)·태그다(@blog/content의
-        // filterAndSortPostsByArchiveParams). 예전 문구는 "본문"을 약속했다.
+        // 검색 대상은 제목·요약·태그다(filterAndSortPostsByArchiveParams) — 본문은 아니다.
         placeholder="제목, 요약, 태그 검색…"
         aria-label="글 검색"
         className={css({
@@ -584,8 +566,7 @@ const ArchiveSearchBar = ({ q, onChange }: ArchiveSearchBarProps) => {
       {q && (
         <button
           type="button"
-          // 누르면 이 버튼은 q가 비면서 사라진다 — 초점이 <body>로 떨어지지
-          // 않게 입력창으로 되돌린다.
+          // 누르면 이 버튼이 사라지므로 초점을 입력창으로 되돌린다.
           onClick={() => {
             onChange('');
             inputRef.current?.focus();

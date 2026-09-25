@@ -1,9 +1,6 @@
 /**
- * admin 글 목록의 한 행 — 링크 두 개와 펼침 버튼이 형제다.
- *
- * 예전엔 링크 두 개가 <button> 안에 있었다(버튼 내용에는 대화형 요소 금지).
- * 간이 통계 계산은 admin 배럴을 거치므로(저장소가 import 시점에 supabase
- * 클라이언트를 만든다) 그 배럴만 가짜로 바꾼다.
+ * admin 글 목록의 한 행 — 링크와 펼침 버튼은 형제다(버튼 안에 대화형 요소 금지).
+ * admin 배럴은 import 시점에 supabase 클라이언트를 만들어 가짜로 바꾼다.
  */
 import { describe, expect, test, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';

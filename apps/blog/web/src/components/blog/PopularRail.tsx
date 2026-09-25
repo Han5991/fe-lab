@@ -21,12 +21,8 @@ interface RankedPost extends PostSummary {
 export const PopularRail = ({ posts, limit = 5 }: PopularRailProps) => {
   // 데스크톱·모바일에 한 번씩 두 벌이 마운트되므로 헤딩 id는 인스턴스마다 만든다.
   const headingId = useId();
-  // 순위는 이 빌드에 실린 글의 slug 안에서만 서버가 고른다(getTopPosts 주석).
-  // post_views는 anon RPC로 아무 slug나 부풀릴 수 있어서, 상위 N개를 먼저 받고
-  // 여기서 모르는 slug를 거르면 가짜 slug가 N칸을 전부 차지해 레일이 빈다.
-  //
-  // select에 posts를 캡처하면 매 렌더마다 다른 클로저가 만들어져 React Query의
-  // 메모이제이션이 의미가 없으므로, raw rows만 캐시하고 매핑은 렌더에서 합칩니다.
+  // 순위는 이 빌드의 slug 안에서 서버가 고른다 — 받은 뒤 거르면 가짜 slug가 칸을 차지한다.
+  // select에 posts를 캡처하면 매 렌더 새 클로저라, raw rows만 캐시하고 매핑은 렌더에서 한다.
   const slugs = posts.map(p => p.slug);
   const { data: rows, isPending } = useQuery({
     queryKey: ['popular-rail', limit, slugs],
@@ -48,20 +44,13 @@ export const PopularRail = ({ posts, limit = 5 }: PopularRailProps) => {
     })
     .filter((p): p is RankedPost => p !== null);
 
-  // 조회수가 오기 전엔 자리만 잡아 둔다. 예전엔 여기서 최신 글을 "인기" 제목 아래
-  // 그렸다가 데이터가 오면 순서를 갈아 끼웠고, 조회 실패·데이터 없음일 때는 그
-  // 최신 글 목록이 그대로 "인기 글"로 남았다.
+  // 조회수가 오기 전엔 자리만 잡는다 — 최신 글을 "인기"로 그리지 않는다.
   if (isPending) return <PopularRailSkeleton rows={limit} />;
-  // 실패했거나 순위를 매길 조회수가 없으면 섹션째 뺀다 — 다른 목록으로 채워
-  // 인기 글이라고 부르지 않는다.
+  // 실패했거나 순위를 매길 조회수가 없으면 섹션째 뺀다.
   if (ranked.length === 0) return null;
 
   return (
-    // <aside>가 아니라 이름 붙은 <section>이다. 이 레일은 글 목록(PostsArchive)의
-    // 사이드바 <aside> 안에 들어가 aside가 중첩됐다(axe
-    // landmark-complementary-is-top-level). 헤딩은 h2 → 글 제목 h3 — 페이지 h1
-    // 바로 다음이라 h3으로 시작하면 한 단계를 건너뛴다(axe heading-order). 예전의
-    // sticky는 같은 크기의 래퍼 안이라 아무 효과가 없었다.
+    // 사이드바 <aside> 안에 들어가므로 <section>이다(aside 중첩 금지). 헤딩은 h1 다음 h2.
     <section aria-labelledby={headingId}>
       <h2
         id={headingId}
@@ -74,8 +63,7 @@ export const PopularRail = ({ posts, limit = 5 }: PopularRailProps) => {
           color: 'ink.500',
         })}
       >
-        {/* 순위는 post_views의 누적 조회수다(getTopPosts) — 기간 창이 없다.
-            예전 라벨 "30일"은 이 쿼리가 한 번도 한 적 없는 약속이었다. */}
+        {/* 순위는 누적 조회수다 — 쿼리에 기간 창이 없다. */}
         Popular · 누적
       </h2>
       <ol

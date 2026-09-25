@@ -60,10 +60,8 @@ function adminApi(): AdminApi {
 // 이 bigint 라 생성 타입은 non-null number 다. 나머지는 SQL 이 coalesce(...,0) 이나
 // count(*)/extract()::int 로 이미 not-null 을 보장한다.
 
-// 목록형 두 읽기는 `slugs`(admin 글 인덱스의 slug)를 넘겨 서버에서 거른다.
-// post_views·post_view_logs는 anon RPC로 아무 slug나 생기는 표라, 거르지 않으면
-// 가짜 slug 행이 1000행 cap·페이지 상한을 채워 실제 글이 잘리거나 대시보드가
-// 통째로 실패한다(adminActions.ts의 AdminSlugFilter).
+// 목록형 두 읽기는 글 인덱스의 slug로 서버에서 거른다 — anon이 만든 가짜 slug 행이
+// 1000행 cap·페이지 상한을 채우지 않게(adminActions.ts의 AdminSlugFilter).
 
 export async function getAllPostStats(
   slugs: readonly string[],
@@ -83,12 +81,7 @@ export async function getAllPostsTrends(
   return adminApi().call('all_posts_trends', { slugs });
 }
 
-/**
- * 응답 행이 AdminPostIndex 모양인지 — 산출물 검증은 이 저장소의 일이다.
- * 소비자(useSuspenseQuery 훅들)는 throw가 곧 admin 화면 전체를 갈아 끼우는
- * 에러 경계(`src/app/admin/error.tsx`)라, 손으로 고쳐진 파일이나 형식이 어긋난
- * 배포에 화면째 깨지면 안 된다.
- */
+/** 응답 행이 AdminPostIndex 모양인지 — 어긋난 행 하나로 admin 화면이 통째로 깨지지 않게 거른다. */
 function isAdminPostIndexRow(row: unknown): row is AdminPostIndex {
   if (!isRecord(row)) return false;
   return (

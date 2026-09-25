@@ -11,9 +11,7 @@ export function Figure({ children }: FigureProps) {
       className={css({
         my: '8',
         textAlign: 'center',
-        // MarkdownImage가 자기 클래스(명시도 0,1,0)로 상하 여백을 걸어둔다.
-        // 여기서는 자손 셀렉터(0,1,1)라 그걸 덮어, figure 안에서는 여백 없이
-        // 가운데 정렬되고 캡션과 붙는다.
+        // 자손 셀렉터(0,1,1)라 MarkdownImage의 여백(0,1,0)을 덮어 캡션과 붙는다.
         '& img': {
           mx: 'auto',
           mt: '0',

@@ -1,18 +1,6 @@
 /**
- * Analytics 계산의 공개 표면 — 개요와 글별 파생 통계를 한 문으로 낸다.
- *
- * 계산 자체는 `overview.ts`·`derivedStats.ts`가 하고 여기는 위임만 한다.
- * 두 파일을 나눈 이유는 입력도 소비자도 다르기 때문이고(N개 글 × 기간 ↔
- * 글 하나 × 전 기간), 그래도 한 문으로 내는 이유는 admin 화면 입장에서 둘 다
- * "이 대시보드의 계산"이기 때문이다. 실제로 둘 다 `src/app/admin/**`에서만
- * 쓰여 같은 청크에 실린다 — 나눠 내도 번들이 갈리지 않는다.
- *
- * **주의: 이 클래스에는 주입할 의존이 없다.** 저장소(`AuthRepository`·
- * `AdminApiClient`)의 생성자 주입은 supabase 클라이언트를 갈아 끼우기 위한
- * 것이지만, 여기 계산은 인자만 받는 순수 함수다. 클래스는 저장소와 **모양을
- * 맞추기 위한 파사드**이고, 테스트 가능성은 원래부터 인자 주입
- * (`todayISO`·`visibility`)이 담당한다. 시계를 생성자로 올리지 않은 것도 그래서다 —
- * KST 판정에 필요한 타임존은 앱 값 모듈이 소유하고 이 레이어는 설정을 모른다.
+ * Analytics 계산의 공개 표면 — 개요(`overview.ts`)와 글별 파생 통계(`derivedStats.ts`)에
+ * 위임만 하는 파사드다. 주입할 의존이 없다: 계산은 인자(`todayISO`·`visibility`)만 받는다.
  */
 
 import { computeAnalyticsOverview } from './overview';

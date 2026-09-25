@@ -51,14 +51,7 @@ export const ADMIN_LOGIN_PATH = `${ADMIN_LOGIN_PATH_NO_SLASH}/`;
 /** 허용되지 않은 계정으로 로그인했을 때 보내는 경로. */
 export const ADMIN_LOGIN_UNAUTHORIZED_PATH = `${ADMIN_LOGIN_PATH}?error=unauthorized`;
 
-/**
- * OAuth 로그인이 실패해 돌아왔을 때 보내는 로그인 경로 — 실패 사유를 싣는다.
- *
- * Supabase는 OAuth 실패(예: `enable_signup = false`의 "Signups not allowed")를
- * 복귀 주소(`ADMIN_LOGIN_REDIRECT_PATH`)에 `error`·`error_description`으로 붙여
- * 보낸다. 그 주소는 가드가 지키는 곳이라 세션이 없으면 로그인 화면으로 다시
- * 보내는데, 예전엔 그때 사유가 떨어져 아무 안내 없이 로그인 화면으로 돌아왔다.
- */
+/** OAuth가 실패해 돌아왔을 때의 로그인 경로 — 가드가 복귀 URL의 실패 사유를 실어 보낸다. */
 export function adminLoginErrorPath(description: string): string {
   return `${ADMIN_LOGIN_PATH}?error=oauth&error_description=${encodeURIComponent(description)}`;
 }
@@ -111,24 +104,16 @@ export function isAdminLoginPath(pathname: string | null | undefined): boolean {
 export const ADMIN_ANALYTICS_PATH = `${ADMIN_BASE_PATH}/analytics/`;
 
 /**
- * 글 하나의 admin 통계 상세 경로.
- *
- * 라우트(`[...slug]`)가 공개 글 상세(`posts/[...slug]`)와 같은 catch-all이므로
- * 인코딩 규칙도 `postPath`와 같다 — `encodePostSlug`가 세그먼트별로
- * encodeURIComponent하고 `/`는 남긴다. 라우트 쪽 디코드는 아래
- * `slugFromRouteParam` — 둘의 왕복은 routes.test.ts가 잠근다.
+ * 글 하나의 admin 통계 상세 경로 — 공개 글 상세와 같은 catch-all이라 인코딩도 `postPath`와
+ * 같다(라우트 쪽 디코드는 아래 `slugFromRouteParam`).
  */
 export function adminAnalyticsPostPath(slug: string): string {
   return `${ADMIN_ANALYTICS_PATH}${encodePostSlug(slug)}/`;
 }
 
 /**
- * catch-all(`[...slug]`) 라우트 파라미터를 글 slug(디코드된 원문)로 되돌린다 —
- * 공개 글 상세와 admin 통계 상세가 같은 규칙을 쓴다.
- *
- * 세그먼트는 인코딩된 채 오고, 폴더 경로가 든 slug(`시리즈/파일명`)는 여럿으로
- * 온다. `decodeUrlSafe`는 잘못된 `%` 인코딩에 던지지 않고 원문을 돌려줘, 조회만
- * 빗나가 404·"찾을 수 없음"으로 끝나게 한다.
+ * catch-all 라우트 파라미터를 글 slug로 되돌린다 — 세그먼트를 잇고 디코드한다. 잘못된 `%`
+ * 인코딩에도 던지지 않아(`decodeUrlSafe`) 조회만 빗나가 404로 끝난다.
  */
 export function slugFromRouteParam(
   param: string | string[] | undefined,

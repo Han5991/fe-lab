@@ -14,8 +14,7 @@ const post: PostSummary = {
 };
 
 describe('PostGridCard', () => {
-  // 썸네일 alt에 제목을 넣으면 카드 링크의 이름에 제목이 두 번 들어가
-  // 스크린리더가 카드마다 제목을 두 번 읽었다.
+  // 썸네일 alt에 제목을 넣으면 스크린리더가 카드마다 제목을 두 번 읽는다.
   test('썸네일은 장식이고 링크 이름에 제목이 한 번만 들어간다', () => {
     render(<PostGridCard post={post} />);
 

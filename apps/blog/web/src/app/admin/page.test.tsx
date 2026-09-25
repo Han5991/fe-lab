@@ -1,10 +1,6 @@
 /**
- * admin 대시보드 개요 — 글 수는 지금 공개 중인 글로 세고, 아직 비공개인 글은
- * 404가 나는 공개 URL 대신 그 글의 admin 통계로 보낸다.
- *
- * 대시보드 데이터·세션은 네트워크 너머라 admin 배럴·auth 배럴·라우터만 가짜로
- * 바꾼다(두 배럴은 import 시점에 supabase 클라이언트를 만든다). 공개 판정
- * (countLivePosts)은 진짜를 쓴다.
+ * admin 대시보드 — 글 수는 지금 공개 중인 글로 세고, 비공개 글은 admin 통계로 연다.
+ * admin·auth 배럴은 import 시점에 supabase 클라이언트를 만들어 가짜로 바꾼다.
  */
 import { describe, expect, test, vi } from 'vitest';
 import { Suspense } from 'react';

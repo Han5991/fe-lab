@@ -8,26 +8,15 @@ import { resolvePostAssetUrl } from '@blog/content';
 interface MarkdownImageProps {
   src?: string | undefined;
   alt?: string | undefined;
-  /**
-   * 원고가 raw HTML로 준 고유 크기(`<img width=250 height=250>`). 그대로 싣는다 —
-   * 버리면 250px짜리 그림이 본문 폭(680px)으로 늘어나고, 도착 전까지 자리를 못
-   * 잡아 레이아웃이 밀린다. 값 해석(숫자·`100%`)은 브라우저의 속성 규칙에 맡긴다.
-   */
+  /** 원고가 raw HTML로 준 고유 크기 — 버리면 작은 그림이 본문 폭으로 늘고 자리를 못 잡는다. */
   width?: number | string | undefined;
   height?: number | string | undefined;
   relativeDir?: string;
-  /**
-   * 클릭 확대. 링크로 감싼 이미지(`[![..](..)](..)`)는 끈다 — 클릭은 링크의
-   * 몫이고, 확대 래퍼의 `<div>`·`<button>`이 `<a>` 안에 들어가면 무효 중첩
-   * (hydration mismatch)에 대화형 요소 중첩까지 된다.
-   */
+  /** 클릭 확대 — 링크로 감싼 이미지는 끈다(확대 래퍼가 `<a>` 안이면 무효 중첩이다). */
   zoomable?: boolean;
 }
 
-// 본문 이미지 모양의 단일 출처. 예전에는 PostBody의 `& img`(명시도 0,1,1)가
-// 같은 속성을 따로 들고 있어 여기 적은 `my:14`·`rounded:card`는 한 번도 적용된
-// 적이 없었다(화면에 나간 건 저쪽의 4·control). 실제로 나가던 값을 여기로 모으고
-// 저쪽은 지웠다. figure 안에서만 달라지는 여백은 Figure의 `& img`가 덮는다.
+// 본문 이미지 모양의 단일 출처 — figure 안의 여백은 Figure의 `& img`가 덮는다.
 const imageStyle = css({
   display: 'block',
   my: '4',
@@ -44,15 +33,9 @@ const fillColumn = css({ w: 'full' });
 const keepIntrinsicWidth = css({ maxW: 'full' });
 
 /**
- * Markdown 이미지 렌더러.
- * 상대 경로 이미지를 올바른 URL로 변환하고 Zoom 기능을 추가합니다.
- * 경로 해석은 @blog/content의 resolvePostAssetUrl 단일 소스를 사용.
- *
- * 본문 이미지는 전부 **지연 로드**한다. `loading`이 없는 `<img>`마다 React 19가
- * 서버 HTML에 `<link rel="preload" as="image">`를 심어서, 본문 이미지가 스크롤과
- * 무관하게 페이지 로드 시점에 한꺼번에 받아지며 히어로·폰트와 대역폭을 다퉜다.
- * 첫 화면을 차지하는 히어로는 PostHero가 따로 그리므로 여기서 eager로 둘 이미지는
- * 없다.
+ * Markdown 이미지 렌더러 — 상대 경로를 resolvePostAssetUrl로 풀고 확대를 단다.
+ * 전부 지연 로드한다: `loading` 없는 `<img>`마다 React 19가 preload를 심어 히어로와
+ * 대역폭을 다툰다(첫 화면 히어로는 PostHero가 따로 그린다).
  */
 export function MarkdownImage({
   src,

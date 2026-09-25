@@ -1,8 +1,6 @@
 /**
  * admin 로그아웃 — 집계 캐시와 가드의 세션 캐시를 함께 비운다.
- *
- * 세션 API는 auth 배럴이 import 시점에 supabase 클라이언트를 바인딩하므로 그
- * 배럴을, 이동은 라우터 훅을 가짜로 바꾼다.
+ * auth 배럴은 import 시점에 supabase 클라이언트를 만들어 가짜로 바꾼다.
  */
 import { describe, expect, test, vi } from 'vitest';
 import type { ReactNode } from 'react';

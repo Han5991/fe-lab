@@ -1,9 +1,6 @@
 /**
- * admin 가드 — 세션 없이 들어오면 로그인 화면으로 보내되, OAuth가 실패해 돌아온
- * 경우엔 Supabase가 붙여 둔 사유를 함께 실어 보낸다.
- *
- * 세션 API는 auth 배럴이 import 시점에 supabase 클라이언트를 바인딩하므로 그
- * 배럴의 저장소만 가짜로 바꾸고, 순수 판정(adminAccess)은 진짜를 쓴다.
+ * admin 가드 — 세션이 없으면 로그인 화면으로, OAuth 실패 사유는 함께 실어 보낸다.
+ * auth 배럴은 import 시점에 supabase 클라이언트를 만들어 저장소만 가짜로 바꾼다.
  */
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import { Suspense } from 'react';

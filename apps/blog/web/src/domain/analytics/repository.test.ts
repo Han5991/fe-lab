@@ -1,11 +1,4 @@
-/**
- * 공개 조회수 읽기의 와이어 계약.
- *
- * post_views의 slug는 anon이 RPC로 아무렇게나 만들 수 있어서, 순위 읽기는
- * **실제 글 slug로 서버에서 거른 뒤** 잘라야 한다(repository.ts 머리 주석).
- * 그 필터가 요청에 실제로 실리는지를 로컬 서버에 붙여 쿼리스트링으로 확인한다 —
- * 클라이언트에서 거르는 구현으로 되돌아가면 요청에서 `slug=in.(…)`이 사라진다.
- */
+/** 공개 조회수 읽기의 와이어 계약 — 실제 글 slug 필터가 요청에 실리는지 로컬 서버로 본다. */
 
 import { afterAll, beforeAll, beforeEach, expect, test, vi } from 'vitest';
 import { createServer, type Server } from 'node:http';

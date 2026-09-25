@@ -98,8 +98,7 @@ describe('measureLengths', () => {
  * 화면으로는 "그냥 스크롤됐네"로만 보여서 알아채기 어려운 회귀라 여기서 막는다.
  */
 describe('TOC 항목 클릭', () => {
-  // 메서드를 직접 단언하면 unbound-method에 걸린다(mock이더라도 타입은 여전히
-  // 메서드다). 헤딩에 심은 mock 함수를 변수로 들고 단언한다.
+  // 메서드를 직접 단언하면 unbound-method에 걸려 헤딩에 심은 mock을 변수로 든다.
   let scrollIntoViewMock: Mock<Element['scrollIntoView']>;
 
   const dispatchClick = (el: Element, init: MouseEventInit = {}) => {

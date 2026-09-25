@@ -1,11 +1,7 @@
 import { defineConfig } from '@pandacss/dev';
 
 export default defineConfig({
-  // `@design-system/ui`에서는 블로그 프리셋만 가져온다. 같은 패키지의 기본
-  // 프리셋(`/preset` — button 레시피)과 컴포넌트 소스(Button·toast)는 실험 앱용이라
-  // 블로그가 쓰지 않는데, 예전에는 둘 다 걸려 있어 블로그 CSS에 lab 스타일
-  // (`.button--visual_funky`, toast 클래스, 블로그 토큰에 없는 `z-index:toast`라
-  // 무효인 `.z_toast`)이 실려 나갔다. 블로그 코드는 ui-lib의 css·tokens만 쓴다.
+  // 블로그 프리셋만 — 기본 프리셋·컴포넌트 소스는 실험 앱용이라 걸면 lab 스타일이 실린다.
   presets: ['@pandacss/dev/presets', '@design-system/ui/blog-preset'],
   preflight: true,
   lightningcss: true,
@@ -52,8 +48,7 @@ export default defineConfig({
       html: {
         bg: 'paper.50',
         color: 'ink.950',
-        // 앵커 이동을 부드럽게 — 단, 움직임 줄이기를 켠 사용자는 제외한다
-        // (전정기관 장애가 있으면 긴 스크롤 애니메이션이 어지럼을 일으킨다).
+        // 움직임 줄이기를 켠 사용자에게는 스크롤을 미끄러뜨리지 않는다.
         '@media (prefers-reduced-motion: no-preference)': {
           scrollBehavior: 'smooth',
         },

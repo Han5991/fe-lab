@@ -110,7 +110,6 @@ function collectTabs(children: ReactNode): Collected {
   Children.toArray(children).forEach(child => {
     // 코드 펜스는 언제나 `<pre>`로 온다. raw HTML로 직접 쓴 <pre>도 같은
     // 취급이지만, 그건 어차피 코드를 담는 상자라 탭에 들어가도 무방하다.
-    // 본문 파이프라인은 `pre`를 함수로 매핑하므로 요소 타입이 아니라 원본 태그로 가린다.
     const code = isMarkdownTag<CodeElementProps>(child, 'pre')
       ? unwrapPre(child)
       : null;

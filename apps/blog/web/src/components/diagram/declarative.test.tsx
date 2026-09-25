@@ -334,11 +334,7 @@ describe('Diagram — 이름 레지스트리', () => {
 });
 
 describe('마크다운 왕복', () => {
-  /**
-   * 실제 본문 파이프라인(PostBody) 그대로. 매핑을 여기서 따로 조립하면 `p` 매퍼
-   * 같은 실물의 차이가 빠져, 프로덕션에서만 나는 문제(빈 줄 뒤 노드 유실)를
-   * 테스트가 못 본다.
-   */
+  /** 실제 본문 파이프라인 그대로 — 매핑을 따로 조립하면 `p` 매퍼 같은 실물의 차이가 빠진다. */
   function renderMarkdown(markdown: string) {
     return render(<PostBody content={markdown} relativeDir="dir" />);
   }

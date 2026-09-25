@@ -206,8 +206,7 @@ export const TOC = () => {
       bottom <= box.scrollTop + box.clientHeight - FADE;
     if (inView) return;
 
-    // 마운트 직후(글을 중간부터 열었을 때)는 애니메이션 없이 제자리를 잡는다.
-    // 그 밖에는 페이지의 scroll-behavior 규칙(움직임 줄이기면 꺼진다)을 따른다 —
+    // 마운트 직후는 제자리만 잡고, 그 밖에는 페이지의 scroll-behavior를 따른다 —
     // 차례 상자에 같은 CSS를 주면 키보드 초점 이동까지 미끄러진다.
     const smooth =
       !isFirst &&
@@ -383,10 +382,8 @@ export const TOC = () => {
                   else itemRefs.current.delete(item.id);
                 }}
               >
-                {/* 버튼이 아니라 **앵커**다. 스크롤 자체는 아래 onClick이
-                    가로채지만(해시를 기록 없이 바꾼다), href가
-                    있어야 새 탭으로 열기·링크 주소 복사·상태 표시줄 미리보기가
-                    전부 살아난다. 차례 항목은 의미상으로도 문서 안 링크다. */}
+                {/* 앵커다 — 스크롤은 onClick이 가로채도 href가 있어야 새 탭으로 열기·주소
+                    복사가 산다. */}
                 <a
                   href={`#${item.id}`}
                   onClick={e => {

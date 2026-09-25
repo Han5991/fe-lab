@@ -125,8 +125,6 @@ test('AdminApiClient: all_posts_trends — params 없이 한 번만 호출한다
 });
 
 test('AdminApiClient: 목록형 action은 거를 slug 목록을 params로 싣는다', async () => {
-  // post_views는 anon RPC로 아무 slug나 생기는 표라, 목록 읽기는 실제 글
-  // slug로 서버에서 거른다(adminActions.ts의 AdminSlugFilter).
   const { client, calls } = makeMockClient({ data: { data: [] }, error: null });
   const api = new AdminApiClient(client);
 
@@ -142,12 +140,7 @@ test('AdminApiClient: 목록형 action은 거를 slug 목록을 params로 싣는
   ]);
 });
 
-/**
- * supabase-js가 non-2xx 응답에 돌려주는 실패의 모양 그대로(FunctionsHttpError).
- * message는 상태와 무관한 **고정 문구**이고, 상태·본문은 소비되지 않은
- * Response(context)에 있다 — 예전 테스트는 message에 서버 문구가 담긴다고
- * 가정했는데, 실제 클라이언트는 그런 값을 만들지 않는다.
- */
+/** supabase-js의 non-2xx 실패 모양 그대로 — message는 고정 문구, 상태·본문은 context에 있다. */
 function httpFailure(status: number, body: string): FunctionsFailure {
   return {
     message: 'Edge Function returned a non-2xx status code',

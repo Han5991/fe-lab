@@ -37,11 +37,7 @@ interface PostsFilterPanelProps {
 /** 사이드바에 늘 보이는 태그 수(글 수 상위). */
 const TAG_LIMIT = 12;
 
-/**
- * 상위 태그 + 그 밖에서 **이미 켜진** 태그. 예전엔 상위 12개만 잘라서, 다른
- * 화면의 태그 링크로 들어온 `?tag=x`가 켜져 있는데도 패널에 눌린 버튼이 없어
- * 끌 수도 다시 고를 수도 없었다.
- */
+/** 상위 태그 + 그 밖에서 이미 켜진 태그 — 켜진 필터는 언제나 끌 수 있어야 한다. */
 const visibleTags = (items: FilterItem[], active: string[]) => [
   ...items.slice(0, TAG_LIMIT),
   ...items.slice(TAG_LIMIT).filter(item => active.includes(item.id)),

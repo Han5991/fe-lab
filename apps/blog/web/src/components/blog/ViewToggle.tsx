@@ -23,10 +23,7 @@ const group = css({
   overflow: 'hidden',
 });
 
-/**
- * 목록 표시 방식 — 둘 중 하나를 고르는 라디오 그룹이다. 짝이 되는 tabpanel이
- * 없어 tablist가 아니라 정렬과 같은 단일 선택 패턴을 쓴다.
- */
+/** 목록 표시 방식 — 짝이 되는 tabpanel이 없어 tablist가 아니라 라디오 그룹이다. */
 export const ViewToggle = ({ value, onChange }: ViewToggleProps) => (
   <SegmentedRadioGroup
     label="뷰"

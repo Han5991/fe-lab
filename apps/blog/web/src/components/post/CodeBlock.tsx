@@ -118,12 +118,8 @@ SyntaxHighlighter.alias(
   ),
 );
 
-// 구문 강조 한 벌을 라이트/다크 두 벌로. 다크 값은 vscDarkPlus 그대로라
-// 다크 화면은 바뀌지 않는다(codeTheme.ts 주석 참고).
-//
-// 글꼴은 테마가 박아 둔 Menlo 스택 대신 디자인 시스템의 `mono` 토큰으로 바꾼다.
-// 인라인 코드·파일트리·코드 라벨·탭은 전부 mono(JetBrains Mono)인데 펜스 본문만
-// Menlo라, 한 글 안에 고정폭 글꼴이 두 벌 섞였다. 크기(13px)는 테마 값을 둔다.
+// 구문 강조 한 벌을 라이트/다크 두 벌로(다크는 vscDarkPlus 그대로 — codeTheme.ts).
+// 글꼴은 mono 토큰으로 바꾼다 — 인라인 코드·탭이 mono라 Menlo면 두 벌이 섞인다.
 const MONO_FONT = token.var('fonts.mono');
 const THEMED = toDualTheme(vscDarkPlus);
 export const CODE_THEME: typeof THEMED = Object.fromEntries(

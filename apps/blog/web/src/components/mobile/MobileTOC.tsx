@@ -51,9 +51,7 @@ export const MobileTOC = () => {
   const drawerRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
 
-  // 스크롤 잠금·초점 이동/가두기/되돌리기·Escape는 검색 다이얼로그·필터 시트와
-  // 같은 훅이다. 예전엔 여기만 역할·Escape·초점 처리가 없었고, 닫힐 때마다
-  // body overflow를 'unset'으로 되돌려 다른 오버레이의 잠금까지 풀었다.
+  // 스크롤 잠금·초점·Escape는 다른 오버레이와 같은 훅이 맡는다.
   useModalDialog({
     // 차례가 비면 드로어도 그리지 않으므로 잠금도 걸지 않는다.
     open: isOpen && toc.length > 0,
@@ -61,7 +59,7 @@ export const MobileTOC = () => {
     containerRef: drawerRef,
   });
 
-  // h2~h4가 하나도 없는 글이면 버튼도 없다 — 예전엔 빈 드로어를 여는 버튼이 떴다.
+  // h2~h4가 없는 글이면 빈 드로어를 여는 버튼도 두지 않는다.
   if (toc.length === 0) return null;
 
   return (

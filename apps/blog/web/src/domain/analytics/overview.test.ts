@@ -20,10 +20,7 @@ function makePostDetail(
   };
 }
 
-/**
- * 공개 판정 기준. 타임존은 **일부러 실제 사이트 값(+09:00)과 다르게** 둔다 —
- * 주입을 무시하고 앱 상수를 직접 읽는 구현이면 아래 경계 테스트가 갈린다.
- */
+/** 타임존은 일부러 사이트 값(+09:00)과 다르게 둔다 — 주입을 무시하는 구현이면 경계가 갈린다. */
 const VISIBILITY: PostVisibilityContext = {
   timezone: { isoOffset: '+00:00' },
   now: new Date('2026-05-24T12:00:00Z'),
@@ -157,8 +154,7 @@ test('computeAnalyticsOverview: uniquesDelta — 직전 고유추정 대비 증�
 });
 
 test('computeAnalyticsOverview: postsPublished는 지금 공개 중인 글만 센다', () => {
-  // status(발행 의도)가 아니라 공개 여부다 — 공개 시각이 지난 예약 글은 이미
-  // 공개돼 조회수가 쌓이므로 센다. 공개 전 예약 글과 draft는 뺀다.
+  // 발행 의도(status)가 아니라 공개 여부로 센다 — 시각이 지난 예약 글은 이미 공개다.
   const data = [
     makePostDetail('pub1', [], 'published'),
     makePostDetail('pub2', [], 'published'),
@@ -171,8 +167,6 @@ test('computeAnalyticsOverview: postsPublished는 지금 공개 중인 글만 �
 });
 
 test('computeAnalyticsOverview: 공개된 예약 글의 조회수도 AVG / POST의 분모에 든다', () => {
-  // 예전엔 조회수 합계에는 예약 글이 들어가는데 분모(글 수)에서는 빠져 평균이
-  // 부풀었다.
   const data = [
     makePostDetail('pub', [{ view_date: '2026-05-22', view_count: 60 }]),
     makePostDetail(
@@ -187,8 +181,7 @@ test('computeAnalyticsOverview: 공개된 예약 글의 조회수도 AVG / POST�
 });
 
 test('countLivePosts: 공개 판정은 주입한 타임존·시각으로 한다', () => {
-  // '2026-05-24'는 +00:00이면 05-24T00:00Z에 공개된다. 기준 시각이 그 직전이면
-  // 아직 비공개다(실제 사이트 값 +09:00으로 판정하면 05-23T15:00Z라 공개로 갈린다).
+  // +00:00이면 05-24T00:00Z에 공개된다(사이트 값 +09:00이면 05-23T15:00Z라 갈린다).
   const scheduled = makePostDetail('s', [], 'scheduled', '2026-05-24');
   expect(
     countLivePosts([scheduled], {

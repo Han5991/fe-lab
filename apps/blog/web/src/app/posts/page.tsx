@@ -14,8 +14,7 @@ import {
   buildCollectionPageJsonLd,
   buildPostsMetadata,
 } from './seo';
-// 폴백과 하이드레이션 후 화면이 같은 레이아웃을 쓰도록 배럴(index.ts)이
-// 아니라 모듈에서 직접 가져온다.
+// 폴백과 뷰가 같은 레이아웃 모듈을 쓰도록 배럴이 아니라 모듈에서 가져온다.
 import {
   PostsArchiveFallback,
   PostsArchiveView,
@@ -95,16 +94,8 @@ export default function PostsPage() {
             </span>
           </header>
 
-          {/*
-            PostsArchiveView는 nuqs(useSearchParams)를 쓰므로 output: 'export'의
-            빌드 타임 프리렌더 대상에서 빠진다 (BAILOUT_TO_CLIENT_SIDE_RENDERING).
-            즉 out/posts/index.html에 구워지는 건 아래 fallback이 전부다.
-            스피너를 두면 아카이브 허브의 내부 링크가 0개가 되므로, 글 목록을 여기서
-            프리렌더해 링크를 남긴다. 폴백은 **URL 파라미터가 없을 때의 뷰와 같은
-            레이아웃**(카드 그리드·사이드바·편수 h2)이다 — 예전 폴백은 리스트만
-            그려, 하이드레이션 직후 카드 그리드로 뒤바뀌고 헤딩이 h1 → h3로 건너뛰었다.
-            회귀 이력: c206b99에서 도입 → 15ed918(리디자인)에서 유실 → 재도입.
-          */}
+          {/* 뷰는 nuqs 때문에 프리렌더에서 빠져 정적 HTML에는 이 폴백만 남는다 — 링크를
+              남기려고 목록을 그리고, 파라미터 없는 뷰와 같은 레이아웃이라 하이드레이션 뒤 바뀌지 않는다. */}
           <Suspense
             fallback={
               <PostsArchiveFallback

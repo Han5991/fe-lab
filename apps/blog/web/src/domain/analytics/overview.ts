@@ -65,8 +65,7 @@ interface RangeWindows {
 }
 
 function buildWindows(todayISO: string, rangeDays: number): RangeWindows {
-  // "최근 N일"의 정의는 windows.ts 하나다 — 글별 추이 필터와 같은 창이어야
-  // 같은 글의 같은 기간 합이 화면마다 달라지지 않는다.
+  // "최근 N일"은 windows.ts 하나가 정한다 — 글별 추이 필터와 합이 갈리지 않게.
   const days = trailingWindowDays(todayISO, rangeDays);
   const previousDays = trailingWindowDays(
     addDaysISO(todayISO, -rangeDays),
@@ -116,14 +115,8 @@ function summarizePost(
 }
 
 /**
- * 지금 공개 중인 글의 수 — "POSTS PUBLISHED"와 admin 대시보드의 글 수가 같은
- * 규칙을 보게 하는 단일 출처.
- *
- * frontmatter의 `status === 'published'`(발행 의도)를 세면 안 된다. 예약 시각이
- * 지난 `scheduled` 글은 원본이 그대로여도 이미 공개돼 조회수가 쌓이는데, 예전
- * 집계는 그 글들을 빼서 글 수는 적게, 글당 평균(AVG / POST)은 부풀려 보였다.
- * 판정은 `isPostVisible` 하나에 위임한다(admin 상태 배지의 `resolvePostState`와
- * 같은 규칙).
+ * 지금 공개 중인 글의 수 — admin 두 화면의 단일 출처. `status === 'published'`가 아니라
+ * `isPostVisible`로 센다(시각이 지난 예약 글도 이미 공개돼 조회수가 쌓인다).
  */
 export function countLivePosts(
   data: readonly PostStatDetail[],
@@ -135,12 +128,8 @@ export function countLivePosts(
 }
 
 /**
- * 순수 함수: Supabase admin dashboard 데이터 + 기준일을 받아
- * Analytics 페이지용 AnalyticsOverview를 계산합니다.
- *
- * todayISO를 파라미터로 받아 외부 시계 의존을 제거했습니다.
- * 자정 경계 테스트 및 hook의 타이머 트리거가 가능합니다. 공개 글 판정의
- * 타임존·시각도 같은 이유로 `visibility`로 주입받습니다.
+ * admin 대시보드 데이터 + 기준일 → AnalyticsOverview. 기준일·공개 판정의 타임존·시각을
+ * 인자로 받아 시계에 기대지 않는다(자정 경계 테스트·훅의 타이머).
  */
 export function computeAnalyticsOverview(
   data: PostStatDetail[],

@@ -33,10 +33,8 @@ export function PreviewBanner({ post }: Props) {
     <div
       role="status"
       className={css({
-        // 헤더(Layout.tsx: 높이 52px + hairline 1px) **아래**에 붙는다. top 0이면
-        // 이 배너는 PageTransition 래퍼(zIndex 0)의 stacking context 안이라
-        // zIndex가 아무리 커도 루트의 sticky 헤더(z 10)에 덮여, 스크롤하는 순간
-        // 사라졌다. 헤더 높이를 바꾸면 여기도 함께.
+        // 헤더(Layout.tsx: 52px + hairline) 아래에 붙는다 — 이 배너는 헤더보다 낮은
+        // stacking context 안이라 top 0이면 헤더에 덮인다. 헤더 높이를 바꾸면 함께.
         position: 'sticky',
         top: '[53px]',
         zIndex: 100,

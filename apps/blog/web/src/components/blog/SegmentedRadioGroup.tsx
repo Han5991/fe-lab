@@ -12,18 +12,14 @@ interface SegmentedRadioGroupProps<T extends string> {
   value: T;
   onChange: (value: T) => void;
   kind: 'tab' | 'radio';
-  /** 칸들을 감싸는 상자. */
   className: string;
   /** 둘째 칸부터 붙는 구분선. */
   dividerClassName?: string;
 }
 
 /**
- * 세그먼티드 라디오 그룹(정렬·뷰) — WAI-ARIA radio 패턴.
- *
- * 선택된 칸 하나만 Tab 순서에 있고(roving tabindex), 화살표가 선택과 초점을 함께
- * 옮긴다(끝에서 돈다). 그룹이 데스크톱·모바일 시트 두 곳에 렌더되므로 라벨 id는
- * useId로 만든다.
+ * 세그먼티드 라디오 그룹 — WAI-ARIA radio 패턴(roving tabindex, 화살표가 선택과 초점을
+ * 함께 옮긴다). 데스크톱·모바일 시트 두 곳에 렌더되므로 라벨 id는 useId다.
  */
 export function SegmentedRadioGroup<T extends string>({
   label,

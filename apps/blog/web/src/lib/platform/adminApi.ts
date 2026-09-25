@@ -54,12 +54,8 @@ export interface AdminApi {
 }
 
 /**
- * functions.invoke()가 돌려주는 실패의 구조적 부분형.
- *
- * supabase-js의 실패(`FunctionsHttpError`·`FunctionsRelayError`·
- * `FunctionsFetchError`)는 `message`가 **고정 문구**다 — 401이든 500이든
- * "Edge Function returned a non-2xx status code"다. 상태 코드와 서버가 보낸 본문은
- * `context`(HTTP 실패면 소비되지 않은 `Response`, 네트워크 실패면 원인 값)에 있다.
+ * functions.invoke() 실패의 구조적 부분형 — `message`는 상태와 무관한 고정 문구라,
+ * 상태·서버 본문은 `context`(HTTP면 `Response`, 네트워크면 원인 값)에서 읽는다.
  */
 export interface FunctionsFailure {
   message: string;
@@ -80,13 +76,8 @@ export interface FunctionsInvoker {
 }
 
 /**
- * admin-analytics 호출 실패.
- *
- * `status`는 Edge Function이 응답을 돌려준 경우의 HTTP 상태이고(401 세션 없음·만료,
- * 403 관리자 아님, 400 요청 형식, 500 서버 설정·RPC 실패), 응답까지 못 간 네트워크
- * 실패면 null이다. `serverMessage`는 Edge Function이 본문에 담은 `{ error }` 문구다.
- * 화면은 이 둘로 "다시 로그인"과 "서버 장애"를 가른다 — 예전엔 supabase-js의 고정
- * 문구만 옮겨 적어 모든 실패가 같은 한 줄이었다.
+ * admin-analytics 호출 실패 — `status`(응답이 없으면 null)와 본문의 `{ error }` 문구로
+ * 화면이 "다시 로그인"과 "서버 장애"를 가른다.
  */
 export class AdminApiError extends Error {
   override readonly name = 'AdminApiError';

@@ -17,21 +17,8 @@
 #    왕복이 있는지부터 확인이 안 돼서 손대지 않았다.
 
 # ── 모든 응답: 보안 헤더 ─────────────────────────────────────────────────────
-#
-# 규칙이 여럿 걸리면 헤더가 합쳐지므로(같은 이름이면 값이 이어 붙는다) 아래
-# Cache-Control 규칙들과 겹치지 않는 헤더만 여기 둔다 — HTML의 캐시 기본값은 그대로다.
-#
-#  - nosniff: 선언한 Content-Type대로만 해석하게 한다. 본문 이미지·원고 첨부처럼
-#    저자가 올린 파일이 스크립트로 해석되는 길을 막는다.
-#  - Referrer-Policy: 다른 출처로는 경로를 빼고 출처만 보낸다(브라우저 기본값과
-#    같지만 명시해 둔다 — 글 주소에 슬러그가 그대로 들어 있다).
-#  - frame-ancestors 'self': 다른 사이트가 이 블로그(특히 /admin)를 iframe으로
-#    덮어씌워 클릭을 가로채지 못하게 한다. 우리가 **넣는** iframe(Giscus)과는
-#    무관하다 — 그건 상대 쪽 헤더가 정한다.
-#
-# script-src 같은 전체 CSP는 일부러 걸지 않는다. GTM·GA·Giscus·Supabase가 각자
-# 출처와 인라인 스크립트를 쓰고, GTM 컨테이너(Clarity 등)는 저장소 밖에서 바뀌어서
-# 허용 목록을 여기서 따라잡을 수 없다 — 어긋나는 순간 분석·댓글이 조용히 죽는다.
+# 같은 이름의 헤더는 규칙끼리 값이 이어 붙으므로 Cache-Control과 겹치지 않는 것만 둔다.
+# 전체 CSP는 걸지 않는다 — GTM 컨테이너가 저장소 밖에서 바뀌어 허용 목록을 따라잡을 수 없다.
 /*
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
@@ -114,11 +101,8 @@
 /site.webmanifest
   Cache-Control: public, max-age=86400, must-revalidate
 
-# admin 화면이 읽는 글 목록(generate-search-index가 만든다)은 draft·예약 글의
-# 제목·요약·예약일까지 담는다. 정적 파일이라 누구나 받을 수 있는 건 그대로지만
-# (막으려면 Edge Function으로 옮겨야 한다 — 별건), 적어도 검색 결과에 비공개 글
-# 목록이 뜨지는 않게 색인에서 뺀다. robots.txt Disallow는 색인을 막지 못해서
-# (링크만 있으면 URL이 색인된다) 헤더로 건다.
+# admin 글 목록은 비공개 글 제목까지 담는다 — 받는 건 못 막아도 색인에서는 뺀다
+# (robots.txt Disallow는 색인을 막지 못한다).
 /admin-posts-index.json
   X-Robots-Tag: noindex
 

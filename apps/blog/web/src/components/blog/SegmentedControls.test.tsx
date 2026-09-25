@@ -1,10 +1,4 @@
-/**
- * 아카이브 필터의 정렬·뷰 컨트롤은 **이름 있는 라디오 그룹**이다.
- *
- * 예전엔 정렬이 `<ul role="radiogroup">`이라 `<li>`가 부모 없는 목록 항목으로
- * 남았고(axe listitem), 뷰는 tabpanel 없는 tablist였다. 둘 다 그룹 이름이 없었고
- * 화살표 키가 먹지 않았다.
- */
+/** 아카이브 필터의 정렬·뷰 컨트롤은 화살표 키가 먹는 이름 있는 라디오 그룹이다. */
 import { describe, expect, test, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { SortRadio } from './SortRadio';

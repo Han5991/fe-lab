@@ -12,9 +12,7 @@ import { useMutation } from '@tanstack/react-query';
 function LoginForm() {
   const searchParams = useSearchParams();
 
-  // mutateAsync가 아니라 mutate다 — 반환값을 쓸 데가 없고(성공하면 브라우저가
-  // Google로 떠난다) 실패는 mutation의 error 상태로 받아 아래에 그린다. mutate는
-  // void를 반환하므로 호출부에 no-floating-promises를 달래는 `void`가 필요 없다.
+  // 성공하면 브라우저가 Google로 떠나므로 반환값은 쓸 데가 없다 — 실패는 error 상태로 그린다.
   const {
     mutate: handleGoogleLogin,
     isPending: isLoading,
@@ -24,8 +22,7 @@ function LoginForm() {
     // src/domain/auth가 갖는다. 화면이 보태는 건 origin 하나뿐이다 — 그걸
     // 아는 건 브라우저뿐이라 여기서만 읽을 수 있다.
     mutationFn: async () => {
-      // 시작 실패는 throw가 아니라 { error }로 온다 — 예전엔 이걸 보지 않아
-      // 실패해도 아무 일도 없던 것처럼 보였다.
+      // 시작 실패는 throw가 아니라 { error }로 온다.
       const { error } = await authRepository.signInAdminWithGoogle(
         adminLoginRedirectUrl(window.location.origin),
       );
@@ -34,8 +31,7 @@ function LoginForm() {
   });
 
   const error = searchParams?.get('error');
-  // OAuth가 실패해 돌아온 사유(AdminGuard가 실어 보낸다). URL에서 온 글자라
-  // 고정 문구 아래 참고로만 보여 준다(React가 텍스트로 이스케이프한다).
+  // AdminGuard가 실어 보낸 OAuth 실패 사유 — URL에서 온 글자라 고정 문구 아래 참고로만 보인다.
   const oauthErrorDescription = searchParams?.get('error_description');
 
   return (

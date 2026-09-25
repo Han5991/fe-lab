@@ -49,8 +49,7 @@ describe('DiagramFrame', () => {
     expect(screen.queryByRole('region')).not.toBeInTheDocument();
   });
 
-  // 자동 레이아웃 그림은 폭이 530~750이라 폰 칼럼(~335px)에 맞추면 12px 제목이
-  // 5~8px가 된다. 11px 밑으로는 줄이지 않고 넘치는 만큼 가로 스크롤한다.
+  // 폰 칼럼에 맞추면 12px 제목이 5~8px가 된다 — 11px 밑으로는 줄이지 않고 스크롤한다.
   test('자동 레이아웃 그림은 글자 하한을 지키고 넘치면 가로로 스크롤한다', () => {
     render(
       <DiagramFrame

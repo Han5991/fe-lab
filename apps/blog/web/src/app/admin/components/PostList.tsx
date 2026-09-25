@@ -9,10 +9,8 @@ import { PostAccordion } from './PostAccordion';
 import { RefreshCw } from 'lucide-react';
 
 export function PostList() {
-  // "업데이트" 시각은 데이터가 실제로 도착한 시각(dataUpdatedAt)이다. 예전엔
-  // 새로고침 버튼이 끝나면 무조건 지금 시각을 적었는데, invalidateQueries는
-  // 다시 받기가 실패해도 정상 종료하고 suspense 쿼리는 이전 데이터를 그대로
-  // 들고 있어서, 실패한 새로고침이 "방금 갱신됨"으로 보였다.
+  // 업데이트 시각은 데이터가 도착한 시각이다 — 실패한 새로고침도 정상 종료하므로
+  // "지금"을 적으면 갱신된 것처럼 보인다.
   const { data, dataUpdatedAt, isFetching, isRefetchError, refetch } =
     useAdminDashboardData();
   const [sortField, setSortField] = useState<'date' | 'views'>('date');

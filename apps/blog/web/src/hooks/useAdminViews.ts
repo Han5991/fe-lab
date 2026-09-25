@@ -9,12 +9,8 @@ import type { PostStatDetail, TrendPoint } from '@/src/domain/analytics';
 export type { PostStatDetail };
 
 /**
- * admin 글 인덱스 — 빌드 산출물이라 배포 때만 바뀐다. 대시보드와 태그 분포가 이
- * 캐시 하나를 나눠 쓰고, 마운트마다 다시 받지 않는다(조회수 읽기가 매번 이 왕복을
- * 기다리지 않게).
- *
- * 재시도는 끈다 — 이것을 여는 쿼리가 `['admin']` 정책대로 다시 시도하므로, 여기서도
- * 하면 실패가 두 겹으로 재시도된다.
+ * admin 글 인덱스 — 배포 때만 바뀌어 마운트마다 다시 받지 않는다. 재시도는 이것을 여는
+ * 쿼리가 하므로 여기서는 끈다(두 겹으로 재시도하지 않게).
  */
 export const adminPostsIndexQuery = queryOptions({
   queryKey: ['admin', 'posts-index'],
@@ -27,8 +23,7 @@ export function useAdminDashboardData() {
   return useSuspenseQuery({
     queryKey: ['admin', 'dashboard-data'],
     queryFn: async ({ client }): Promise<PostStatDetail[]> => {
-      // 조회수 두 읽기는 인덱스의 slug로 서버에서 거른다(anon이 만든 가짜 slug
-      // 행이 1000행 cap을 채워 실제 글을 밀어내지 않게).
+      // 조회수 두 읽기는 인덱스의 slug로 서버에서 거른다(가짜 slug가 1000행 cap을 채우지 않게).
       const metadata = await client.ensureQueryData(adminPostsIndexQuery);
       const slugs = metadata.map(post => post.slug);
       const [stats, trends] = await Promise.all([
@@ -36,10 +31,8 @@ export function useAdminDashboardData() {
         getAllPostsTrends(slugs),
       ]);
 
-      // 글 → (날짜 → 조회수). 같은 (slug, 날짜)가 두 번 오면 나중 값 하나만 남긴다
-      // — Edge Function이 살아 있는 표를 페이지로 자르다 경계 행을 한 번 더 싣는
-      // 경우(paging.ts의 key 주석)에 그 날이 두 번 합산되지 않게 한다. 서버도
-      // 같은 키로 거르지만, 함수 배포는 수동이라 화면 쪽도 스스로 지킨다.
+      // 같은 (slug, 날짜)는 나중 값 하나만 남긴다 — 페이지 경계 행이 두 번 와도 두 번
+      // 합산하지 않게(서버도 거르지만 함수 배포는 수동이다).
       const trendsMap = new Map<string, Map<string, number>>();
       for (const t of trends) {
         const byDate = trendsMap.get(t.slug) ?? new Map<string, number>();

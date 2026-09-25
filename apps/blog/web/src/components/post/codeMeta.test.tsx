@@ -24,10 +24,7 @@ import {
 // 펜스를 쓰지 않으므로 빈 것으로 대신한다.
 vi.mock('mermaid', () => ({ default: {} }));
 
-/**
- * 기본값은 본문이 실제로 쓰는 배열(PostBody의 실물) — 순서 회귀를 그대로 잡는다.
- * 매핑도 실물(`buildPostComponents`)이다. 플러그인만 갈아 끼워 대조군을 만든다.
- */
+/** 기본값은 본문의 실물 플러그인 배열·매핑이다 — 플러그인만 갈아 끼워 대조군을 만든다. */
 const renderMarkdown = (
   md: string,
   plugins: ComponentProps<

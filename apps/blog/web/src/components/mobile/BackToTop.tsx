@@ -13,9 +13,7 @@ const scrollToTop = () => {
   window.scrollTo({ top: 0 });
 };
 
-// 스크롤 위치를 외부 저장소로 읽는다. 예전엔 scroll 이벤트에서만 상태를 갱신해,
-// 뒤로/앞으로 가기의 스크롤 복원으로 이미 내려와 있는 채 마운트되면 다음 스크롤
-// 전까지 버튼이 숨어 있었다. 스냅샷은 마운트 때도 읽히고, 리스너는 passive다.
+// 외부 저장소로 읽어, 스크롤 복원으로 이미 내려온 채 마운트돼도 바로 보인다.
 const subscribeScroll = (onChange: () => void) => {
   window.addEventListener('scroll', onChange, { passive: true });
   return () => window.removeEventListener('scroll', onChange);

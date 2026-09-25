@@ -1,8 +1,4 @@
-/**
- * 모바일 필터 시트의 **모달 계약.** 검색 다이얼로그·모바일 차례와 같은 훅
- * (useModalDialog)을 쓰고, 호출부가 매 렌더 새 `onClose`를 넘겨도 초점이 튀지
- * 않는다.
- */
+/** 모바일 필터 시트 — 호출부가 매 렌더 새 `onClose`를 넘겨도 초점·스크롤 잠금이 튀지 않는다. */
 import { afterEach, describe, expect, test } from 'vitest';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { useState } from 'react';

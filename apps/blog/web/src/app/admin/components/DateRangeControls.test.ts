@@ -1,9 +1,4 @@
-/**
- * 글별 추이의 "지난 N일" 필터 — 개요(overview)의 N일과 같은 창이어야 한다.
- *
- * 예전 필터는 `오늘-7` 이상이라 오늘 포함 8일("30일"은 31일)을 그려, 같은 글의
- * "지난 7일" 합이 개요 KPI와 하루치 달랐다.
- */
+/** 글별 추이의 "지난 N일" 필터는 개요(overview)의 N일과 같은 창(오늘 포함 N일)이다. */
 import { describe, expect, test } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { computeAnalyticsOverview } from '@/src/domain/analytics/overview';

@@ -14,12 +14,8 @@ import { createPostSeo } from '@blog/content/seo';
 import contentConfig from '@/content.config.mts';
 
 /**
- * 공개 판정의 기준 시각은 **빌드 전체가 하나**다. `pnpm build`가 시각 하나를
- * `BLOG_CONTENT_NOW`로 내보내고, prebuild(`blog-content`)와 여기(`next build`와
- * 그 워커들)가 같은 파서로 읽는다. 없으면 인스턴스를 만든 시각이라, 예약 글의
- * 공개 시각이 prebuild와 next build 사이에 지나면 페이지는 있는데 sitemap·og
- * 카드에는 없는 글이 생겼다. 형식이 틀린 값은 던진다(prebuild도 같은 값으로
- * 먼저 실패한다).
+ * 공개 판정의 기준 시각은 빌드 전체가 하나다 — `pnpm build`가 내보낸 `BLOG_CONTENT_NOW`를
+ * prebuild와 같은 파서로 읽는다(없으면 지금). 갈리면 예약 글이 페이지에만 있고 sitemap엔 없다.
  */
 export const content = createContent(contentConfig, {
   now: resolveBuildNow(process.env[BUILD_NOW_ENV]),

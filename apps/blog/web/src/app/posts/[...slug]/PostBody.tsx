@@ -40,11 +40,8 @@ import { fencedCode, isBlockMarkdownChild } from './markdownBlocks';
 
 export const POST_REMARK_PLUGINS = [remarkGfm];
 
-// rehypeCodeMeta는 **rehypeRaw보다 앞**이어야 한다. 펜스 메타(```ts title="…")는
-// hast의 `data`에 실려 오는데, rehypeRaw가 트리를 직렬화·재파싱하면서 `data`를
-// 버리기 때문이다. 먼저 속성으로 옮겨두면 그 왕복을 지나 살아남는다.
-// rehypeDropUnsafe는 반대로 **rehypeRaw 뒤**여야 한다 — raw HTML이 요소가 된
-// 뒤에야 `<script>` 같은 태그를 이름으로 가릴 수 있다.
+// codeMeta는 rehypeRaw 앞 — raw의 재파싱이 펜스 메타(hast `data`)를 버린다.
+// dropUnsafe는 rehypeRaw 뒤 — raw HTML이 요소가 된 뒤에야 태그 이름으로 가린다.
 export const POST_REHYPE_PLUGINS = [
   rehypeCodeMeta,
   rehypeRaw,
@@ -84,7 +81,6 @@ type PostComponents = Components & {
   'diagram-edge': typeof DiagramEdgeTag;
 };
 
-/** 본문 이미지 요소(`img` 매퍼의 입력·출력)에서 읽는 prop. */
 interface ImageProps {
   src?: unknown;
   alt?: string | undefined;
@@ -121,11 +117,8 @@ export function buildPostComponents(relativeDir: string): PostComponents {
       }
       return <p {...props}>{children}</p>;
     },
-    // 코드 펜스의 바깥 `<pre>`는 벗긴다. CodeBlock이 상자를 `<figure>`(안에
-    // 구문 강조기의 `<pre>`)로 직접 그리므로, 남겨 두면 phrasing만 받는 `<pre>`
-    // 안에 `<figure>`·`<pre>`가 들어가는 무효 중첩이 되고 mermaid 도표까지
-    // `<pre>`의 white-space·글꼴을 물려받는다. CodeBlock이 블록으로 그리지 않는
-    // 것(raw `<pre>`, 한 줄짜리 raw `<pre><code>`)은 `<pre>`를 그대로 둔다.
+    // 펜스의 바깥 `<pre>`는 벗긴다 — CodeBlock이 `<figure>`로 그려 `<pre>` 안에
+    // 두면 무효 중첩이다. 블록으로 그리지 않는 raw `<pre>`는 그대로 둔다.
     pre({ node: _node, children, ...props }) {
       const fence = fencedCode(children);
       return fence ?? <pre {...props}>{children}</pre>;
@@ -136,10 +129,8 @@ export function buildPostComponents(relativeDir: string): PostComponents {
     img(props) {
       return image(props);
     },
-    // 링크로 감싼 이미지(`[![배지](b.png)](url)`)는 확대를 끈 맨 `<img>`로 그린다.
-    // 확대 래퍼는 `<div>`·`<button>`이라 `<a>` 안에 두면 무효 중첩(문단 안이면
-    // `<p><a><div>` hydration mismatch)에 대화형 요소 중첩이 되고, 클릭도 링크와
-    // 확대가 서로 뺏는다. 맨 `<img>`는 phrasing이라 문단 안 링크에 그대로 둔다.
+    // 링크로 감싼 이미지는 확대 없이 그린다 — 확대 래퍼(div·button)가 `<a>` 안이면
+    // 무효 중첩에 대화형 요소 중첩이다.
     a({ node: _node, children, ...props }) {
       return (
         <a {...props}>
@@ -154,14 +145,8 @@ export function buildPostComponents(relativeDir: string): PostComponents {
     },
     table({ children, node, ...props }) {
       return (
-        // 열이 많은 표는 본문 폭(모바일 ~310px)을 넘는다. 감싸지
-        // 않으면 마지막 열이 잘린 채 스크롤도 안 된다.
-        //
-        // tabIndex+role로 키보드 초점을 받게 한다 — 마우스 없이
-        // 스크롤할 방법이 사라지면 안 된다(axe
-        // scrollable-region-focusable). region은 랜드마크라 이름이 표마다
-        // 달라야 한다 — 전부 "표"면 스크린리더의 랜드마크 목록이 같은
-        // 항목으로 채워진다(axe landmark-unique). 캡션이나 머리행에서 짓는다.
+        // 넓은 표는 가로로 스크롤하고 키보드로도 스크롤하게 초점을 받는다(axe
+        // scrollable-region-focusable). 랜드마크라 이름은 표마다 달라야 한다.
         <div
           role="region"
           aria-label={tableLabel(node)}
@@ -282,10 +267,8 @@ interface PostBodyProps {
 }
 
 /**
- * 헤딩의 `scroll-margin-top`에 넘길 값. `css()`는 빌드 때 정적으로 추출되므로 JS
- * 상수를 직접 못 읽는다 — 상수를 CSS 변수로 실어 보내고 헤딩 규칙이 그걸 읽는다.
- * 목차의 앵커 이동·활성 판정과 같은 `HEADER_OFFSET`이어야 이동 직후의 위치가
- * "보이는 곳"으로 판정된다.
+ * 헤딩의 `scroll-margin-top` — `css()`는 정적 추출이라 JS 상수를 CSS 변수로 실어 보낸다.
+ * 목차 활성 판정과 같은 `HEADER_OFFSET`이어야 이동 직후의 헤딩이 "보이는 곳"이 된다.
  */
 const headingOffsetStyle: CSSProperties & Record<`--${string}`, string> = {
   '--post-heading-offset': `${HEADER_OFFSET}px`,
@@ -442,10 +425,7 @@ export function PostBody({ content, relativeDir }: PostBodyProps) {
           borderBottomColor: 'accent.200',
           transition: '[all 0.15s]',
           fontWeight: 'medium',
-          // 긴 URL만 칼럼 끝에서 끊는다. `word-break: break-all`은 공백이 있는
-          // 평범한 링크 글자까지 줄 끝에서 단어 중간을 잘랐다("Comp-iler").
-          // anywhere는 넘칠 때만 끊고, 최소 폭 계산에도 들어가 표 칸 안의
-          // 긴 URL이 칸을 밀어내지 않는다.
+          // 넘칠 때만 끊는다 — break-all은 평범한 단어 중간도 잘랐다.
           overflowWrap: 'anywhere',
           _hover: {
             // 보더는 비텍스트라 원색(accent.500)을 그대로 쓴다.
@@ -453,9 +433,7 @@ export function PostBody({ content, relativeDir }: PostBodyProps) {
             bg: 'accent.50',
           },
         },
-        // 본문 이미지(`img` 매퍼 → MarkdownImage)의 모양은 MarkdownImage가
-        // 단일 출처다. 여기 `& img`를 다시 두면 명시도(0,1,1)가 이겨 그쪽 값이
-        // 죽은 코드가 된다.
+        // 본문 이미지 모양은 MarkdownImage가 단일 출처다 — 여기 `& img`를 두면 명시도로 이긴다.
         '& hr': {
           my: '10',
           h: '[1px]',

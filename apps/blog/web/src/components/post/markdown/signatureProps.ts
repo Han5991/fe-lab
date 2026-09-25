@@ -97,8 +97,7 @@ function collectChildren(
       return;
     }
 
-    // 빈 줄 뒤의 커스텀 태그는 문단(`p`)에 싸여 온다 — 벗겨야 노드가 사라지거나
-    // `<p><div>` 무효 중첩이 나지 않는다.
+    // 빈 줄 뒤의 커스텀 태그는 문단에 싸여 온다 — 벗겨야 `<p><div>`가 되지 않는다.
     if (isMarkdownTag<{ children?: ReactNode }>(child, 'p')) {
       collectChildren(child.props.children, `${key}-`, out);
       return;

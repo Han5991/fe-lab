@@ -57,9 +57,7 @@ function PostDetailContent() {
   const { data: allPosts } = useAdminDashboardData();
   const post = allPosts.find(p => p.slug === slug);
 
-  // 정적 라우트는 빌드 시점의 글 전부로 만들지만, 인덱스에서 빠진 글(형식이
-  // 어긋난 행)이나 손으로 친 URL은 여기로 온다. 예전엔 렌더 중 throw로 흰
-  // 화면이었다 — 없는 글은 에러가 아니라 안내다.
+  // 인덱스에서 빠진 글·손으로 친 URL — 없는 글은 에러가 아니라 안내다.
   if (!post) return <PostNotFound slug={slug} />;
   return <PostDetailBody post={post} />;
 }

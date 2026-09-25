@@ -97,9 +97,7 @@ describe('useRecordRecentView', () => {
   });
 });
 
-// 쿠키·사이트 데이터를 차단하면 getItem/setItem이 아니라 `window.localStorage`
-// getter 자체가 SecurityError를 던진다. 예전엔 그 접근이 try 밖이라 글 페이지가
-// 통째로 에러 화면이 됐다.
+// 사이트 데이터를 차단하면 `window.localStorage` getter 자체가 SecurityError를 던진다.
 describe('사이트 저장소가 차단된 브라우저', () => {
   let original: PropertyDescriptor | undefined;
 
