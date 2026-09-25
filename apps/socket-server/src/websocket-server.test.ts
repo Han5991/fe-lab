@@ -13,7 +13,7 @@ import { createServer } from 'node:http';
 import type { Server } from 'node:http';
 import net from 'node:net';
 import type { AddressInfo } from 'node:net';
-import { WebSocketServer } from './websocket-server.ts';
+import { isLocalOrigin, WebSocketServer } from './websocket-server.ts';
 
 // 브라우저 대신 날 TCP 소켓으로 서버를 두드린다 — 청크 경계를 직접 정해야
 // "TCP는 스트림"이라는 조건을 재현할 수 있다.
@@ -602,5 +602,40 @@ describe('종료 핸드셰이크와 프로토콜 검증', () => {
 
     assert.match(response, /^HTTP\/1\.1 426 /);
     assert.match(response, /Sec-WebSocket-Version: 13/);
+  });
+});
+
+describe('Origin 검증', () => {
+  let harness: Harness;
+
+  beforeEach(async () => {
+    harness = await startServer({ allowedOrigins: isLocalOrigin });
+  });
+
+  afterEach(async () => {
+    await stopServer(harness);
+  });
+
+  const handshakeStatus = (origin: string) =>
+    new Promise<string>((resolve, reject) => {
+      const socket = net.connect(harness.port, '127.0.0.1');
+      socket.once('data', chunk => {
+        resolve(chunk.toString().split('\r\n')[0]);
+        socket.destroy();
+      });
+      socket.on('error', reject);
+      socket.write(
+        handshakeRequest(harness.port).replace(
+          '\r\n\r\n',
+          `\r\nOrigin: ${origin}\r\n\r\n`,
+        ),
+      );
+    });
+
+  test('로컬 개발 출처는 포트와 무관하게 허용하고 다른 출처는 403으로 막는다', async () => {
+    assert.match(await handshakeStatus('http://localhost:5173'), / 101 /);
+    assert.match(await handshakeStatus('http://localhost:5174'), / 101 /);
+    assert.match(await handshakeStatus('http://127.0.0.1:4173'), / 101 /);
+    assert.match(await handshakeStatus('https://evil.example'), / 403 /);
   });
 });

@@ -7,8 +7,11 @@ import type { Duplex } from 'node:stream';
  * WebSocket 서버 옵션
  */
 interface WebSocketServerOptions {
-  /** 허용할 Origin 목록. null이면 모든 origin 허용 */
-  allowedOrigins?: string[] | null;
+  /**
+   * 허용할 Origin. 목록이면 정확히 일치하는 것만, 함수면 true를 돌려준 것만 허용한다.
+   * null이면 모든 origin 허용. Origin 헤더가 없는 요청(브라우저가 아닌 클라이언트)은 늘 통과한다
+   */
+  allowedOrigins?: string[] | ((origin: string) => boolean) | null;
   /** 세션 타임아웃 시간 (밀리초). 이 시간 동안 아무것도 받지 못한 연결을 닫는다. 기본값: 5분 */
   sessionTimeout?: number;
   /**
@@ -42,6 +45,19 @@ function parseTopics(value: string | null): Set<Topic> {
       .map(topic => topic.trim())
       .filter((topic): topic is Topic => TOPICS.includes(topic as Topic)),
   );
+}
+
+/**
+ * 로컬 개발 출처인가. 포트는 보지 않는다 — Vite는 5173이 차 있으면 5174로 옮겨 뜨는데,
+ * 포트를 박아 두면 그때 핸드셰이크가 403으로 막힌다.
+ */
+export function isLocalOrigin(origin: string): boolean {
+  try {
+    const { hostname } = new URL(origin);
+    return hostname === 'localhost' || hostname === '127.0.0.1';
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -171,7 +187,8 @@ export class WebSocketServer {
   private httpServer: HTTPServer;
   private readonly clients: Set<WebSocketConnection>;
   private readonly sessions: Map<string, WebSocketConnection>;
-  private readonly allowedOrigins: string[] | null;
+  private readonly allowedOrigins:
+    string[] | ((origin: string) => boolean) | null;
   private readonly sessionTimeout: number;
   private readonly heartbeatInterval: number;
   private readonly cleanupInterval: number;
@@ -372,6 +389,9 @@ export class WebSocketServer {
    */
   private isOriginAllowed(origin?: string): boolean {
     if (!this.allowedOrigins || !origin) return true;
+    if (typeof this.allowedOrigins === 'function') {
+      return this.allowedOrigins(origin);
+    }
     return this.allowedOrigins.includes(origin);
   }
 

@@ -9,22 +9,20 @@ import { DateUtils } from '@/shared/lib';
 const CREATED_AT = '2020-01-01T00:00:00.000Z';
 
 const server = setupServer(
-  http.post<never, UserReq>(
-    'http://localhost:5173/api/user',
-    async ({ request }) => {
-      const user = await request.json();
-      // JSON 응답이라 날짜는 ISO 문자열로 간다
-      return HttpResponse.json<UserDto>({
-        id: user.id,
-        name: 'New User',
-        email: 'test@test.com',
-        createdAt: CREATED_AT,
-        isPremium: true,
-        lastLoginDate: new Date().toISOString(),
-        subscriptionStatus: 'inactive',
-      });
-    },
-  ),
+  // instance는 페이지 출처(window.location.origin)로 요청한다 — 상대 경로로 맞춘다
+  http.post<never, UserReq>('/api/user', async ({ request }) => {
+    const user = await request.json();
+    // JSON 응답이라 날짜는 ISO 문자열로 간다
+    return HttpResponse.json<UserDto>({
+      id: user.id,
+      name: 'New User',
+      email: 'test@test.com',
+      createdAt: CREATED_AT,
+      isPremium: true,
+      lastLoginDate: new Date().toISOString(),
+      subscriptionStatus: 'inactive',
+    });
+  }),
 );
 
 beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
