@@ -1,14 +1,8 @@
-import {
-  copyFileSync,
-  existsSync,
-  mkdirSync,
-  readdirSync,
-  rmSync,
-  statSync,
-} from 'node:fs';
-import { dirname, extname, join, posix, relative, sep } from 'node:path';
+import { copyFileSync, existsSync, mkdirSync, rmSync, statSync } from 'node:fs';
+import { dirname, join, posix } from 'node:path';
 import { POSTS_PATH, type PostData } from '../post/index.ts';
 import { isExternalUrl } from '../post/assetUrl.ts';
+import { listFilesRecursive } from '../shared/postFiles.ts';
 import { decodeUrlSafe } from '../shared/url.ts';
 import { resolvePostSet } from './artifacts.ts';
 // 경로는 컨텍스트(ContentContext.paths — content.config.ts에 앵커)에서 온다.
@@ -24,40 +18,27 @@ const ALLOWED_EXTENSIONS = [
   '.mp4',
 ];
 
-interface MediaFile {
-  full: string;
-  mtimeMs: number;
-  size: number;
-}
-
-function listMediaFiles(dir: string, results: MediaFile[] = []): MediaFile[] {
-  if (!existsSync(dir)) return results;
-  for (const item of readdirSync(dir)) {
-    const full = join(dir, item);
-    const stat = statSync(full);
-    if (stat.isDirectory()) {
-      listMediaFiles(full, results);
-      continue;
-    }
-    if (ALLOWED_EXTENSIONS.includes(extname(item).toLowerCase())) {
-      results.push({ full, mtimeMs: stat.mtimeMs, size: stat.size });
-    }
-  }
-  return results;
-}
-
-/** 복사 대상 판정의 키 — OS 구분자와 무관하게 `/`로 맞춘 상대 경로. */
-function toPosixRel(root: string, full: string): string {
-  return relative(root, full).split(sep).join('/');
+/** `dir` 아래 미디어 파일(`/` 구분 상대 경로). 디렉터리가 없으면 빈 목록. */
+function listMediaFiles(dir: string): string[] {
+  if (!existsSync(dir)) return [];
+  return listFilesRecursive(dir).filter(rel =>
+    ALLOWED_EXTENSIONS.includes(posix.extname(rel).toLowerCase()),
+  );
 }
 
 /**
- * 복사할 미디어 판정. 인자는 `toPosixRel`로 만든 상대 경로다. 없으면 전부
- * 복사한다(단위 테스트·`main` 밖 호출용 — `main`은 항상 공개 글 기준으로 넘긴다).
+ * 복사할 미디어 판정. 인자는 `/` 구분 상대 경로다. 없으면 전부 복사한다(단위
+ * 테스트·`main` 밖 호출용 — `main`은 항상 공개 글 기준으로 넘긴다).
  */
 export type MediaFilter = (relPath: string) => boolean;
 
 const includeAll: MediaFilter = () => true;
+
+/** 복사할 미디어와 걸러진 개수 — 두 동기화 방식이 같은 규칙으로 고른다. */
+function pickMedia(media: readonly string[], include: MediaFilter) {
+  const files = media.filter(include);
+  return { files, excluded: media.length - files.length };
+}
 
 // ── 공개 글이 가리키는 미디어 ──────────────────────────────────────────────
 
@@ -171,61 +152,53 @@ export function selectPublishedMedia(
 /**
  * @param dryOrphan orphan을 지우지 않고 목록만 출력한다
  * @param include   복사할 파일 판정 — 걸러진 파일은 사본이 있으면 orphan으로 지운다
+ * @param media     원고 미디어 목록 — `main`이 이미 훑은 것을 넘긴다
  */
 export function syncIncremental(
   sourceDir: string,
   targetDir: string,
   dryOrphan: boolean,
   include: MediaFilter = includeAll,
+  media: readonly string[] = listMediaFiles(sourceDir),
 ): void {
-  const allSourceFiles = listMediaFiles(sourceDir);
-  const sourceFiles = allSourceFiles.filter(f =>
-    include(toPosixRel(sourceDir, f.full)),
-  );
-  const excluded = allSourceFiles.length - sourceFiles.length;
-  const sourceRelSet = new Set(
-    sourceFiles.map(f => relative(sourceDir, f.full)),
-  );
+  const { files, excluded } = pickMedia(media, include);
+  const sourceRelSet = new Set(files);
 
   let copied = 0;
   let skipped = 0;
   let removed = 0;
 
-  for (const src of sourceFiles) {
-    const rel = relative(sourceDir, src.full);
+  for (const rel of files) {
+    const src = join(sourceDir, rel);
     const dst = join(targetDir, rel);
 
     let needsCopy = true;
     if (existsSync(dst)) {
+      const srcStat = statSync(src);
       const dstStat = statSync(dst);
-      if (dstStat.size === src.size && dstStat.mtimeMs >= src.mtimeMs) {
+      if (dstStat.size === srcStat.size && dstStat.mtimeMs >= srcStat.mtimeMs) {
         needsCopy = false;
       }
     }
 
     if (needsCopy) {
       mkdirSync(dirname(dst), { recursive: true });
-      copyFileSync(src.full, dst);
+      copyFileSync(src, dst);
       copied++;
     } else {
       skipped++;
     }
   }
 
-  if (existsSync(targetDir)) {
-    const targetFiles = listMediaFiles(targetDir);
-    for (const t of targetFiles) {
-      const rel = relative(targetDir, t.full);
-      if (!sourceRelSet.has(rel)) {
-        if (dryOrphan) {
-          console.log(`  [dry-orphan] would remove: ${rel}`);
-        } else {
-          console.log(`  [orphan] removing: ${rel}`);
-          rmSync(t.full);
-        }
-        removed++;
-      }
+  for (const rel of listMediaFiles(targetDir)) {
+    if (sourceRelSet.has(rel)) continue;
+    if (dryOrphan) {
+      console.log(`  [dry-orphan] would remove: ${rel}`);
+    } else {
+      console.log(`  [orphan] removing: ${rel}`);
+      rmSync(join(targetDir, rel));
     }
+    removed++;
   }
 
   const dryNote =
@@ -239,23 +212,20 @@ export function syncFull(
   sourceDir: string,
   targetDir: string,
   include: MediaFilter = includeAll,
+  media: readonly string[] = listMediaFiles(sourceDir),
 ): void {
   if (existsSync(targetDir)) {
     rmSync(targetDir, { recursive: true, force: true });
   }
   mkdirSync(targetDir, { recursive: true });
-  const allSourceFiles = listMediaFiles(sourceDir);
-  const sourceFiles = allSourceFiles.filter(f =>
-    include(toPosixRel(sourceDir, f.full)),
-  );
-  for (const src of sourceFiles) {
-    const rel = relative(sourceDir, src.full);
+  const { files, excluded } = pickMedia(media, include);
+  for (const rel of files) {
     const dst = join(targetDir, rel);
     mkdirSync(dirname(dst), { recursive: true });
-    copyFileSync(src.full, dst);
+    copyFileSync(join(sourceDir, rel), dst);
   }
   console.log(
-    `Full sync: ${sourceFiles.length} files copied, ${allSourceFiles.length - sourceFiles.length} not published`,
+    `Full sync: ${files.length} files copied, ${excluded} not published`,
   );
 }
 
@@ -270,15 +240,16 @@ export function main(
   console.log(`Syncing images from ${sourceDir} to ${targetDir}...`);
 
   // 다른 생성기(sitemap·og·thumbnails…)와 같은 셀렉터 — 공개 글 집합이 한 곳에서 정해진다.
+  const media = listMediaFiles(sourceDir);
   const published = selectPublishedMedia(
     resolvePostSet(ctx.content, 'visible'),
-    listMediaFiles(sourceDir).map(f => toPosixRel(sourceDir, f.full)),
+    media,
   );
   const include: MediaFilter = rel => published.has(rel);
 
   if (force || !existsSync(targetDir)) {
-    syncFull(sourceDir, targetDir, include);
+    syncFull(sourceDir, targetDir, include, media);
   } else {
-    syncIncremental(sourceDir, targetDir, dryOrphan, include);
+    syncIncremental(sourceDir, targetDir, dryOrphan, include, media);
   }
 }

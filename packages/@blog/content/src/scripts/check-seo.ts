@@ -1,8 +1,9 @@
-import { readFileSync, existsSync, readdirSync } from 'node:fs';
-import { join, relative, resolve, sep } from 'node:path';
+import { readFileSync, existsSync } from 'node:fs';
+import { join, posix, resolve } from 'node:path';
 // 사이트 정체성과 SEO 임계값은 **해석된 설정**에서 온다 — validate-posts
 // (frontmatter.ts)와 정확히 같은 범위를 보는 게이트라 같은 출처를 봐야 한다.
 import type { SeoConfig, SiteConfig } from '../shared/contentConfig.ts';
+import { listFilesRecursive } from '../shared/postFiles.ts';
 import { decodeUrlSafe } from '../shared/url.ts';
 import { POSTS_PATH } from '../post/index.ts';
 import type { ContentContext } from './context.ts';
@@ -163,18 +164,14 @@ export function parsePages(
 /** `out/` 안의 페이지 경로(`/posts/foo/`) → HTML */
 export function collectPages(outDir: string): Map<string, string> {
   const pages = new Map<string, string>();
-  const walk = (dir: string) => {
-    for (const entry of readdirSync(dir, { withFileTypes: true })) {
-      const full = join(dir, entry.name);
-      if (entry.isDirectory()) {
-        walk(full);
-      } else if (entry.name === 'index.html') {
-        const rel = relative(outDir, full).split(sep).slice(0, -1).join('/');
-        pages.set(rel ? `/${rel}/` : '/', readFileSync(full, 'utf8'));
-      }
-    }
-  };
-  walk(outDir);
+  for (const rel of listFilesRecursive(outDir)) {
+    if (posix.basename(rel) !== 'index.html') continue;
+    const dir = posix.dirname(rel);
+    pages.set(
+      dir === '.' ? '/' : `/${dir}/`,
+      readFileSync(join(outDir, rel), 'utf8'),
+    );
+  }
   return pages;
 }
 
@@ -425,20 +422,6 @@ export interface CollectedArtifact {
   urls: Set<string> | null;
   /** file 산출물의 원문 — 기준(sitemap)을 페이지와 대조할 때 다시 읽지 않는다 */
   text?: string | undefined;
-}
-
-/** dir 산출물용: 하위 파일들의 상대 경로('/' 구분, Windows sep 정규화) */
-function listFilesRecursive(dir: string): string[] {
-  const files: string[] = [];
-  const walk = (d: string) => {
-    for (const entry of readdirSync(d, { withFileTypes: true })) {
-      const full = join(d, entry.name);
-      if (entry.isDirectory()) walk(full);
-      else files.push(relative(dir, full).split(sep).join('/'));
-    }
-  };
-  walk(dir);
-  return files;
 }
 
 /** ARTIFACTS 레지스트리를 순회하며 각 산출물의 글 URL 집합을 수집합니다. */

@@ -16,6 +16,27 @@ import { readdirSync, statSync } from 'node:fs';
 import { basename, join } from 'node:path';
 
 /**
+ * `dir` 아래 모든 파일의 상대 경로(`/` 구분, readdir 순서의 깊이 우선) — 원고·
+ * 미디어·산출물(out/)을 훑는 곳이 전부 이 순회 하나를 쓴다. 디렉터리를 가리키는
+ * 심볼릭 링크는 따라 들어가고, `dir`이 없으면 던진다.
+ */
+export function listFilesRecursive(dir: string): string[] {
+  const files: string[] = [];
+  const walk = (rel: string) => {
+    for (const entry of readdirSync(join(dir, rel), { withFileTypes: true })) {
+      const child = rel ? `${rel}/${entry.name}` : entry.name;
+      const isDirectory =
+        entry.isDirectory() ||
+        (entry.isSymbolicLink() && statSync(join(dir, child)).isDirectory());
+      if (isDirectory) walk(child);
+      else files.push(child);
+    }
+  };
+  walk('');
+  return files;
+}
+
+/**
  * 파일 이름만으로 빌드 대상에서 제외할 메타 파일인지 판단합니다.
  *
  * @param absPath 절대 경로 또는 파일 이름
@@ -34,38 +55,18 @@ export function isMetaFile(
  * 디렉토리를 재귀 순회하여 `.md` / `.mdx` 파일의 절대 경로를 모두 반환합니다.
  *
  * 메타 파일(`metaFilenames`에 이름이 있는 파일)은 자동으로 제외됩니다.
- *
- * 내부 누적 배열은 외부 노출하지 않고 private helper로 격리합니다.
- * (이전 시그니처는 acc를 public API에 두어 호출자가 실수로 외부 배열을 넘기면
- * 의도치 않게 오염되는 위험이 있었음)
  */
 export function collectMarkdownFiles(
   dir: string,
   metaFilenames: ReadonlySet<string>,
 ): string[] {
-  const acc: string[] = [];
-  walk(dir, metaFilenames, acc);
-  return acc;
-}
-
-function walk(
-  dir: string,
-  metaFilenames: ReadonlySet<string>,
-  acc: string[],
-): void {
-  for (const item of readdirSync(dir)) {
-    const full = join(dir, item);
-    const stat = statSync(full);
-    if (stat.isDirectory()) {
-      walk(full, metaFilenames, acc);
-      continue;
-    }
-    if (item.endsWith('.md') || item.endsWith('.mdx')) {
-      if (!isMetaFile(full, metaFilenames)) {
-        acc.push(full);
-      }
-    }
-  }
+  return listFilesRecursive(dir)
+    .filter(
+      rel =>
+        (rel.endsWith('.md') || rel.endsWith('.mdx')) &&
+        !isMetaFile(rel, metaFilenames),
+    )
+    .map(rel => join(dir, rel));
 }
 
 /**

@@ -1,5 +1,6 @@
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
-import { join, relative, resolve, sep } from 'node:path';
+import { existsSync, readFileSync } from 'node:fs';
+import { join, resolve } from 'node:path';
+import { listFilesRecursive } from '../shared/postFiles.ts';
 import { decodeUrlSafe } from '../shared/url.ts';
 import type {
   BundleGuardsConfig,
@@ -304,21 +305,12 @@ export function checkRules(
  */
 function readChunkSources(outDir: string): Map<string, string> {
   const chunksDir = join(outDir, '_next', 'static', 'chunks');
-  const sources = new Map<string, string>();
-  if (!existsSync(chunksDir)) return sources;
-  const walk = (dir: string) => {
-    for (const entry of readdirSync(dir, { withFileTypes: true })) {
-      const full = join(dir, entry.name);
-      if (entry.isDirectory()) walk(full);
-      else if (entry.name.endsWith('.js'))
-        sources.set(
-          relative(chunksDir, full).split(sep).join('/'),
-          readFileSync(full, 'utf8'),
-        );
-    }
-  };
-  walk(chunksDir);
-  return sources;
+  if (!existsSync(chunksDir)) return new Map();
+  return new Map(
+    listFilesRecursive(chunksDir)
+      .filter(rel => rel.endsWith('.js'))
+      .map(rel => [rel, readFileSync(join(chunksDir, rel), 'utf8')]),
+  );
 }
 
 export function main(ctx: ContentContext, target?: string) {

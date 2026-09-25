@@ -8,8 +8,7 @@
  * (그 글은 시리즈 끝으로 밀린다) 이전/다음 내비게이션이 어긋나는데, 빌드는
  * 성공한다. 그 침묵을 여기서 깬다.
  */
-import { readdirSync, statSync } from 'node:fs';
-import { join, posix, relative, sep } from 'node:path';
+import { join, posix } from 'node:path';
 import {
   isPostFile,
   parseSeriesYaml,
@@ -19,6 +18,7 @@ import {
   type SeriesMeta,
 } from '../../post/index.ts';
 import { isRecord } from '../../shared/guards.ts';
+import { listFilesRecursive } from '../../shared/postFiles.ts';
 import { isKeyLine, yamlErrorCause } from './shared.ts';
 import type { Issue, PostRecord } from './shared.ts';
 import { resolveSeverity } from './rules.ts';
@@ -30,18 +30,11 @@ const SERIES_KEYS = [
   'order',
 ] as const satisfies readonly (keyof SeriesMeta)[];
 
-/** 원고 폴더 아래의 `_series.yml` 전부(절대 경로). */
+/** 원고 폴더 아래의 `_series.yml` 전부(원고 폴더 기준 `/` 구분 경로, 정렬). */
 export function findSeriesFiles(postsDir: string): string[] {
-  const found: string[] = [];
-  const walk = (dir: string) => {
-    for (const name of readdirSync(dir)) {
-      const full = join(dir, name);
-      if (statSync(full).isDirectory()) walk(full);
-      else if (name === SERIES_FILENAME) found.push(full);
-    }
-  };
-  walk(postsDir);
-  return found.sort();
+  return listFilesRecursive(postsDir)
+    .filter(rel => posix.basename(rel) === SERIES_FILENAME)
+    .sort();
 }
 
 /** `key:`로 시작하는 줄의 1-based 번호 — 없으면 null. */
@@ -165,11 +158,7 @@ export function validateSeriesDeclarations(
   records: readonly PostRecord[],
   readFile: (absPath: string) => string,
 ): Issue[] {
-  return findSeriesFiles(postsDir).flatMap(absPath =>
-    validateSeriesFile(
-      relative(postsDir, absPath).split(sep).join('/'),
-      readFile(absPath),
-      records,
-    ),
+  return findSeriesFiles(postsDir).flatMap(relPath =>
+    validateSeriesFile(relPath, readFile(join(postsDir, relPath)), records),
   );
 }

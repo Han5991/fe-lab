@@ -91,8 +91,8 @@ test('findSeriesFiles: 원고 폴더 아래의 _series.yml을 하위 폴더까�
     writeFileSync(join(dir, 'a', 'b', '_series.yml'), '');
     writeFileSync(join(dir, 'a', '_series.yaml'), '');
     expect(findSeriesFiles(dir)).toStrictEqual([
-      join(dir, 'a', '_series.yml'),
-      join(dir, 'a', 'b', '_series.yml'),
+      'a/_series.yml',
+      'a/b/_series.yml',
     ]);
   } finally {
     rmSync(dir, { recursive: true, force: true });
