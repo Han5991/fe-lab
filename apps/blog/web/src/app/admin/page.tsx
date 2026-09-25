@@ -13,8 +13,52 @@ import Link from 'next/link';
 // 클라이언트 컴포넌트의 @blog/content 배럴 import — `export * from './series'`가
 // 모듈 평가 시점에 node:fs를 당겨 오는 문제는 next.config.ts의
 // optimizePackageImports + 패키지 sideEffects:false가 번들에서 걸러 준다.
-import { postPath } from '@blog/content';
-import { ADMIN_ANALYTICS_PATH } from '@/src/shared/routes';
+import { postPath, resolvePostState, type PostStatus } from '@blog/content';
+import {
+  ADMIN_ANALYTICS_PATH,
+  adminAnalyticsPostPath,
+} from '@/src/shared/routes';
+
+/**
+ * 목록 한 줄이 여는 곳 — 공개 중인 글은 실제 글(새 탭), 아직 비공개인 글은 그
+ * 글의 admin 통계. 정적 export는 비공개 글의 페이지를 만들지 않아서, 예전엔
+ * draft·공개 전 예약 글 줄이 새 탭 404로 열렸다(날짜 내림차순이라 미래 날짜의
+ * 예약 글이 "최근 게시글" 맨 위에 온다).
+ */
+function postLink(
+  slug: string,
+  state: PostStatus,
+): { href: string; target?: '_blank' } {
+  return state === 'published'
+    ? { href: postPath(slug), target: '_blank' }
+    : { href: adminAnalyticsPostPath(slug) };
+}
+
+/** 비공개 글 줄에 붙는 상태 — 공개 글에는 붙이지 않는다. */
+const HIDDEN_LABEL = {
+  draft: '비공개',
+  scheduled: '예약',
+} as const satisfies Record<Exclude<PostStatus, 'published'>, string>;
+
+function HiddenBadge({ state }: { state: PostStatus }) {
+  if (state === 'published') return null;
+  return (
+    <span
+      className={css({
+        fontSize: 'xs',
+        fontWeight: 'semibold',
+        color: 'ink.500',
+        px: '1.5',
+        rounded: 'sm',
+        borderWidth: '[1px]',
+        borderColor: 'ink.border',
+        flexShrink: 0,
+      })}
+    >
+      {HIDDEN_LABEL[state]}
+    </span>
+  );
+}
 
 function AdminOverviewContent() {
   const { data } = useAdminDashboardData();
@@ -248,61 +292,65 @@ function AdminOverviewContent() {
             </h2>
           </div>
           <div>
-            {topPosts.map((post, i) => (
-              <Link
-                key={post.slug}
-                href={postPath(post.slug)}
-                target="_blank"
-                className={css({
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4',
-                  px: '5',
-                  py: '3',
-                  borderBottomWidth: i < topPosts.length - 1 ? '[1px]' : '[0]',
-                  borderColor: 'ink.border',
-                  transition: '[background 0.15s]',
-                  _hover: { bg: 'ink.50' },
-                })}
-              >
-                <span
+            {topPosts.map((post, i) => {
+              const state = resolvePostState(post, TIMEZONE);
+              return (
+                <Link
+                  key={post.slug}
+                  {...postLink(post.slug, state)}
                   className={css({
-                    fontWeight: 'bold',
-                    color: 'spot.600',
-                    fontSize: 'sm',
-                    w: '5',
-                    textAlign: 'center',
-                    fontVariantNumeric: 'tabular-nums',
-                    flexShrink: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4',
+                    px: '5',
+                    py: '3',
+                    borderBottomWidth:
+                      i < topPosts.length - 1 ? '[1px]' : '[0]',
+                    borderColor: 'ink.border',
+                    transition: '[background 0.15s]',
+                    _hover: { bg: 'ink.50' },
                   })}
                 >
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <span
-                  className={css({
-                    flex: '1',
-                    color: 'ink.950',
-                    fontSize: 'sm',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                  })}
-                >
-                  {post.title}
-                </span>
-                <span
-                  className={css({
-                    fontWeight: 'semibold',
-                    color: 'ink.700',
-                    fontSize: 'sm',
-                    flexShrink: 0,
-                    fontVariantNumeric: 'tabular-nums',
-                  })}
-                >
-                  {post.totalViews.toLocaleString()}
-                </span>
-              </Link>
-            ))}
+                  <span
+                    className={css({
+                      fontWeight: 'bold',
+                      color: 'spot.600',
+                      fontSize: 'sm',
+                      w: '5',
+                      textAlign: 'center',
+                      fontVariantNumeric: 'tabular-nums',
+                      flexShrink: 0,
+                    })}
+                  >
+                    {String(i + 1).padStart(2, '0')}
+                  </span>
+                  <span
+                    className={css({
+                      flex: '1',
+                      color: 'ink.950',
+                      fontSize: 'sm',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    })}
+                  >
+                    {post.title}
+                  </span>
+                  <HiddenBadge state={state} />
+                  <span
+                    className={css({
+                      fontWeight: 'semibold',
+                      color: 'ink.700',
+                      fontSize: 'sm',
+                      flexShrink: 0,
+                      fontVariantNumeric: 'tabular-nums',
+                    })}
+                  >
+                    {post.totalViews.toLocaleString()}
+                  </span>
+                </Link>
+              );
+            })}
           </div>
         </div>
 
@@ -349,48 +397,51 @@ function AdminOverviewContent() {
             </h2>
           </div>
           <div>
-            {recentPosts.map((post, i) => (
-              <Link
-                key={post.slug}
-                href={postPath(post.slug)}
-                target="_blank"
-                className={css({
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4',
-                  px: '5',
-                  py: '3',
-                  borderBottomWidth:
-                    i < recentPosts.length - 1 ? '[1px]' : '[0]',
-                  borderColor: 'ink.border',
-                  transition: '[background 0.15s]',
-                  _hover: { bg: 'ink.50' },
-                })}
-              >
-                <span
+            {recentPosts.map((post, i) => {
+              const state = resolvePostState(post, TIMEZONE);
+              return (
+                <Link
+                  key={post.slug}
+                  {...postLink(post.slug, state)}
                   className={css({
-                    flex: '1',
-                    color: 'ink.950',
-                    fontSize: 'sm',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4',
+                    px: '5',
+                    py: '3',
+                    borderBottomWidth:
+                      i < recentPosts.length - 1 ? '[1px]' : '[0]',
+                    borderColor: 'ink.border',
+                    transition: '[background 0.15s]',
+                    _hover: { bg: 'ink.50' },
                   })}
                 >
-                  {post.title}
-                </span>
-                <span
-                  className={css({
-                    color: 'ink.500',
-                    fontSize: 'xs',
-                    flexShrink: 0,
-                    fontVariantNumeric: 'tabular-nums',
-                  })}
-                >
-                  {post.date}
-                </span>
-              </Link>
-            ))}
+                  <span
+                    className={css({
+                      flex: '1',
+                      color: 'ink.950',
+                      fontSize: 'sm',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    })}
+                  >
+                    {post.title}
+                  </span>
+                  <HiddenBadge state={state} />
+                  <span
+                    className={css({
+                      color: 'ink.500',
+                      fontSize: 'xs',
+                      flexShrink: 0,
+                      fontVariantNumeric: 'tabular-nums',
+                    })}
+                  >
+                    {post.date}
+                  </span>
+                </Link>
+              );
+            })}
           </div>
         </div>
       </div>

@@ -84,4 +84,15 @@ describe('PostAccordion', () => {
     expect(screen.getByRole('img', { name: '감소' })).toBeInTheDocument();
     expect(screen.getByText('-20%')).toBeInTheDocument();
   });
+
+  test('비공개 글에는 404가 나는 공개 글 링크를 두지 않는다', () => {
+    render(<PostAccordion post={{ ...POST, status: 'draft' }} />);
+
+    expect(
+      screen.queryByRole('link', { name: /새 탭에서 열기/ }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: '내 글 상세 통계' }),
+    ).toBeInTheDocument();
+  });
 });

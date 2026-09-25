@@ -112,20 +112,24 @@ export function PostAccordion({ post }: Props) {
         >
           <BarChart3 size={14} aria-hidden />
         </Link>
-        <Link
-          href={postPath(post.slug)}
-          target="_blank"
-          aria-label={`${post.title} 글을 새 탭에서 열기`}
-          className={css({
-            color: 'ink.200',
-            _hover: { color: 'spot.600' },
-            display: 'flex',
-            alignItems: 'center',
-            flexShrink: 0,
-          })}
-        >
-          <ExternalLink size={12} aria-hidden />
-        </Link>
+        {/* 공개 중인 글만 실제 글로 연다 — 정적 export는 비공개 글의 페이지를
+            만들지 않아 draft·공개 전 예약 글은 새 탭 404였다. */}
+        {state === 'published' && (
+          <Link
+            href={postPath(post.slug)}
+            target="_blank"
+            aria-label={`${post.title} 글을 새 탭에서 열기`}
+            className={css({
+              color: 'ink.200',
+              _hover: { color: 'spot.600' },
+              display: 'flex',
+              alignItems: 'center',
+              flexShrink: 0,
+            })}
+          >
+            <ExternalLink size={12} aria-hidden />
+          </Link>
+        )}
         <button
           type="button"
           onClick={() => setIsOpen(!isOpen)}
