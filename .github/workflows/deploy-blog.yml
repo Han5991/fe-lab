@@ -3,11 +3,23 @@ name: Deploy Blog to Cloudflare Workers
 on:
   push:
     branches: [main]
-    paths: ['apps/blog/**', 'packages/@blog/**']
+    # 블로그 빌드의 실제 입력 전부(디자인 토큰·lockfile 포함) — 넓게 잡아도 wrangler는 바뀐 자산만 올린다.
+    paths:
+      - 'apps/blog/**'
+      - 'packages/@blog/**'
+      - 'packages/@design-system/**'
+      - 'pnpm-workspace.yaml'
+      - 'pnpm-lock.yaml'
+      - 'package.json'
+      - '.tool-versions'
+      - 'turbo.json'
+      - '.github/workflows/deploy-blog.yml'
+      - '.github/actions/quality-checks/**'
 
-  # 매일 KST 09:00 (UTC 00:00) 자동 빌드 — 예약 발행(scheduled) 글 공개용
+  # 매일 KST 09:13 자동 빌드 — 예약 발행 글 공개용. 정각 슬롯은 GitHub 예약 큐가 붐벼 몇 시간씩 밀린다.
+  # scheduledDate가 이 시각 뒤인 글은 그 뒤 첫 배포(push 또는 다음 날 cron)에서 나간다.
   schedule:
-    - cron: '0 0 * * *'
+    - cron: '13 0 * * *'
   workflow_dispatch:
 
 permissions:
@@ -18,20 +30,16 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  deploy:
+  # 토큰 격리: build는 의존성 코드를 실행하므로 시크릿 없이 out/만 넘기고,
+  # deploy는 스크립트 없이 깐 wrangler로만 CLOUDFLARE_API_TOKEN을 쓴다.
+  build:
     runs-on: ubuntu-latest
-    # 이름이 `github-pages`인 건 GitHub Pages 시절의 잔재다. 지금 이 환경이 하는
-    # 일은 **배포 브랜치 게이트 하나**뿐 — 허용 브랜치 정책이 main 하나라,
-    # workflow_dispatch로 엉뚱한 브랜치를 프로덕션에 올리는 걸 막는다.
-    # 이 환경에는 시크릿이 **하나도 없다**. 빌드가 읽는 NEXT_PUBLIC_*은 전부
-    # 커밋된 .env.production에서 오고, 아무도 안 읽던 GOOGLE_OAUTH_* 둘도 지웠다
-    # (정본은 Supabase 대시보드와 로컬 .env.local이다).
-    # 개명하려면 새 환경을 만들어야 한다 — GitHub은 환경 개명을 지원하지 않는다.
-    environment:
-      name: github-pages
+    timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Setup pnpm
         uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
@@ -56,17 +64,20 @@ jobs:
       # 한곳에만 있다. 여기서 실패하면 아래 빌드·배포 스텝은 실행되지 않는다.
       #
       # push 경로는 ci.yml이 병렬로 같은 검사를 돌지만(turbo 캐시를 공유해 대부분
-      # 히트), 그것과 **별개로** 여기에 두는 이유는 cron이다 — 매일 00:00 UTC에
+      # 히트), 그것과 **별개로** 여기에 두는 이유는 cron이다 — 매일 아침
       # 예약 발행 글을 공개하는 이 워크플로는 push가 아니라서 ci.yml이 아예 돌지
       # 않는다. 아무도 안 보고 있는 시각에 검사 없이 배포되던 경로였다.
       #
-      # build-blog: 'false' — 아래 "Build blog" 스텝이 --no-cache로 다시 빌드하고
+      # build-blog: 'false' — 아래 "Build blog" 스텝이 --force로 다시 빌드하고
       # 거기서 check-seo·check-bundle까지 돈다. 여기서 또 빌드하면 같은 일을 두 번
       # 한다. (그 스텝이 주입하는 건 NEXT_PUBLIC_PR_COUNT뿐이다 — 나머지
       # NEXT_PUBLIC_*은 커밋된 .env.production에서 온다. 위 주석 참고.)
+      #
+      # scope: 'blog' — 실험 앱 테스트가 예약 글 공개를 막지 않게 한다(실험 앱은 ci.yml이 본다).
       - name: Quality checks
         uses: ./.github/actions/quality-checks
         with:
+          scope: blog
           build-blog: 'false'
 
       # about 페이지 'PR 승인' 통계 — Han5991/Han5991 프로필 레포가 매일 갱신하는
@@ -101,8 +112,10 @@ jobs:
           restore-keys: |
             blog-next-cache-v1-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
 
+      # --force(--no-cache는 캐시를 읽는다). 예약 글 공개는 빌드 시각에 달렸는데 turbo 해시엔
+      # 시각이 없어, 캐시를 읽으면 ci.yml이 저장한 머지 날의 out/이 재생된다.
       - name: Build blog
-        run: pnpm build --filter=@blog/web --no-cache
+        run: pnpm build --filter=@blog/web --force
         env:
           # NEXT_PUBLIC_* 값은 전부 커밋된 .env.production이 준다. 예전에는 셋을
           # 여기서 environment 시크릿으로 덮었는데, 빌드 타임에 클라이언트 번들로
@@ -120,30 +133,64 @@ jobs:
         if: always()
         run: du -sh apps/blog/web/.next/cache 2>/dev/null || echo '(no .next/cache)'
 
-      # /posts/ 아카이브는 사이트의 유일한 전체 목록 허브다. PostsArchiveView가
-      # useSearchParams를 쓰는 탓에 프리렌더에서 빠지므로, Suspense fallback이
-      # 스피너로 되돌아가면 이 페이지의 내부 링크가 조용히 0개가 된다.
-      # (실제로 c206b99에서 고친 것이 15ed918 리디자인에서 유실된 적 있음)
-      - name: Verify archive links are prerendered
-        run: |
-          html='apps/blog/web/out/posts/index.html'
-          [[ -f "$html" ]] || { echo "::error::$html 이 없습니다"; exit 1; }
-          count=$(grep -o 'href="/posts/[^"]*"' "$html" | sort -u | wc -l | tr -d ' ')
-          echo "prerendered post links: $count"
-          if (( count < 10 )); then
-            echo "::error::/posts/ 에 프리렌더된 글 링크가 ${count}개뿐입니다 — CSR bail-out 회귀로 아카이브 내부 링크가 사라졌습니다"
-            exit 1
-          fi
-
       # 최종 산출물 검사(check-seo·check-bundle)는 위 "Build blog" 스텝 안에서 이미 돈다 —
       # `build` 스크립트가 prebuild → next build → check-seo → check-bundle로 정의돼 있다.
       # 여기에 같은 스텝을 또 두면 위반이 있을 때 "Build blog"에서 이미 잡이 실패해
       # **절대 도달하지 못하는 죽은 게이트**가 된다. 검사가 도는 곳은 build 하나다.
 
+      # include-hidden-files: `.well-known/` 같은 점 파일이 생겨도 조용히 빠지지 않게.
+      - name: Upload site
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: blog-out
+          path: apps/blog/web/out/
+          if-no-files-found: error
+          include-hidden-files: true
+          retention-days: 3
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # 이름이 `github-pages`인 건 GitHub Pages 시절의 잔재다. 지금 이 환경이 하는
+    # 일은 **배포 브랜치 게이트 하나**뿐 — 허용 브랜치 정책이 main 하나라,
+    # workflow_dispatch로 엉뚱한 브랜치를 프로덕션에 올리는 걸 막는다(빌드 잡은
+    # 돌아도 이 잡에서 멈춘다). 이 환경에는 시크릿이 **하나도 없다**. 빌드가 읽는
+    # NEXT_PUBLIC_*은 전부 커밋된 .env.production에서 오고, 아무도 안 읽던
+    # GOOGLE_OAUTH_* 둘도 지웠다(정본은 Supabase 대시보드와 로컬 .env.local이다).
+    # 개명하려면 새 환경을 만들어야 한다 — GitHub은 환경 개명을 지원하지 않는다.
+    environment:
+      name: github-pages
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        with:
+          run_install: false
+
+      # 토큰을 쥔 잡이라 pnpm 스토어 캐시(의존성 코드를 돌리는 잡들이 저장한다)를 복원하지 않는다.
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: '.tool-versions'
+
+      # --ignore-scripts: 토큰을 쥔 이 잡에서 도는 의존성 코드는 wrangler 하나뿐이어야 한다.
+      - name: Install wrangler (lockfile, no scripts)
+        run: pnpm install --frozen-lockfile --ignore-scripts --filter @blog/web
+
+      - name: Download site
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: blog-out
+          path: apps/blog/web/out
+
       # wrangler.jsonc가 main 없이 assets만 선언한 정적 Worker라, 이 스텝은 out/을
       # 그대로 업로드한다. wranglerVersion을 주지 않는 이유는 워킹 디렉터리에 이미
-      # wrangler가 설치돼 있어 액션이 그것을 재사용하기 때문이다 — 버전의 단일
-      # 출처는 apps/blog/web/package.json이다(소비자가 이 앱 하나뿐이라 catalog에서 뺐다).
+      # wrangler가 설치돼 있어 액션이 그것을 재사용하기 때문이다(위 스텝).
       # packageManager를 명시하는 이유는 액션의 자동 감지가 **워킹 디렉터리에 있는
       # 락파일만** 보기 때문 — 모노레포 루트의 pnpm-lock.yaml은 못 보고 npm으로
       # 폴백하는데, npm은 package.json의 `workspace:^`를 읽지 못한다.

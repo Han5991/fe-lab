@@ -1,7 +1,7 @@
 name: Push Supabase Migrations
 
 # 왜 deploy-blog.yml 이 아니라 별도 워크플로인가:
-#   deploy-blog.yml 은 매일 00:00 UTC cron 으로도 돈다(예약 발행 글 공개용).
+#   deploy-blog.yml 은 매일 아침 cron 으로도 돈다(예약 발행 글 공개용).
 #   거기에 db push 를 얹으면 스키마 변경이 없는 날에도 매일 프로덕션 DB에
 #   접속하게 되고, 콘텐츠 발행과 스키마 변경이 한 실패 지점에 묶인다.
 #   마이그레이션 파일이 바뀐 push 에서만 도는 게 맞다.
@@ -23,7 +23,7 @@ on:
 permissions:
   contents: read
 
-# 같은 DB에 두 push 가 동시에 붙지 않게 한다. 배포 워크플로의 'pages' 그룹과는
+# 같은 DB에 두 push 가 동시에 붙지 않게 한다. 배포 워크플로의 'deploy-blog' 그룹과는
 # 별개 그룹이라 서로 막지 않는다.
 concurrency:
   group: supabase-migrations
@@ -32,6 +32,7 @@ concurrency:
 jobs:
   push:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     defaults:
       run:
         working-directory: apps/blog/web
@@ -39,10 +40,24 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
+      # `latest` 대신 lockfile의 supabase devDependency 버전 — 프로덕션 DB 잡에는
+      # Renovate 나이 게이트를 거친 CLI만 쓴다.
+      - name: Resolve Supabase CLI version
+        id: supabase-cli
+        working-directory: .
+        run: |
+          version="$(sed -nE 's/^  supabase@([0-9]+[.][0-9]+[.][0-9]+):$/\1/p' pnpm-lock.yaml | head -n 1)"
+          if [[ -z "$version" ]]; then
+            echo "::error::pnpm-lock.yaml에서 supabase 패키지 버전을 찾지 못했습니다"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Supabase CLI $version"
+
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@46f7f98c7f948ad727d22c1e67fab04c223a0520 # v3.0.0
         with:
-          version: latest
+          version: ${{ steps.supabase-cli.outputs.version }}
 
       # 필요한 secret 은 SUPABASE_DB_PASSWORD 하나뿐이다.
       #

@@ -10,7 +10,17 @@ name: Preview Blog on Cloudflare Workers
 
 on:
   pull_request:
-    paths: ['apps/blog/**', 'packages/@blog/**']
+    # 블로그 빌드의 실제 입력 전부(deploy-blog.yml의 push 경로와 같다 — quality-checks만 뺀다).
+    paths:
+      - 'apps/blog/**'
+      - 'packages/@blog/**'
+      - 'packages/@design-system/**'
+      - 'pnpm-workspace.yaml'
+      - 'pnpm-lock.yaml'
+      - 'package.json'
+      - '.tool-versions'
+      - 'turbo.json'
+      - '.github/workflows/preview-blog.yml'
 
 concurrency:
   # 같은 PR에 push가 쌓이면 이전 프리뷰 빌드를 취소한다(마지막 것만 의미가 있다).
@@ -19,10 +29,10 @@ concurrency:
 
 permissions:
   contents: read
-  pull-requests: write # 프리뷰 URL 코멘트
 
 jobs:
-  preview:
+  # 토큰 격리(deploy-blog.yml과 같다): build는 시크릿·PR 쓰기 권한 없이 out/만 넘긴다.
+  build:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     # 포크 PR에는 시크릿이 없어 빌드가 반쯤 깨진 프리뷰가 나온다. 같은 저장소의
@@ -31,6 +41,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Setup pnpm
         uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
@@ -69,6 +81,52 @@ jobs:
         run: pnpm build --filter=@blog/web
         env:
           NODE_ENV: production
+
+      - name: Upload site
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: blog-out
+          path: apps/blog/web/out/
+          if-no-files-found: error
+          include-hidden-files: true
+          retention-days: 1
+
+  preview:
+    needs: build
+    # 봇 PR 제외: lock-file-maintenance는 나이 게이트 없이 전이 의존성을 새로 풀어 방금 나온
+    # wrangler 의존성이 프로덕션과 같은 토큰 옆에서 돈다. 포크 PR은 build 스킵으로 함께 스킵된다.
+    if: github.event.pull_request.user.type != 'Bot'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pull-requests: write # 프리뷰 URL 코멘트
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        with:
+          run_install: false
+
+      # 토큰을 쥐는 잡이라 pnpm 스토어 캐시를 복원하지 않는다(deploy-blog.yml과 같은 이유).
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: '.tool-versions'
+
+      # --ignore-scripts: 토큰을 쥔 이 잡에서 도는 의존성 코드는 wrangler 하나뿐이어야 한다.
+      - name: Install wrangler (lockfile, no scripts)
+        run: pnpm install --frozen-lockfile --ignore-scripts --filter @blog/web
+
+      - name: Download site
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: blog-out
+          path: apps/blog/web/out
 
       # 브랜치 고정 alias. 커밋마다 바뀌는 버전 URL과 달리 리뷰 내내 같은 주소를
       # 쓸 수 있다. alias는 영숫자와 하이픈만 받고 63자 제한이 있어 정규화가 필요하다

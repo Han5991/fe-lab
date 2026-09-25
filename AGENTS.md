@@ -95,11 +95,11 @@ here or anywhere else (this repo once carried four diverging copies of that prom
 - **PR skills**: `/pr-fix` (breadth — every review comment) and `/repair-pr` (one mechanical pass to green) don't
   overlap; if both apply, `/pr-fix` first. `/add-issue` and `/write-prd` run **only when the user names them** —
   both create real issues.
-- **Review verdict = 👍 on the PR.** `claude-code-review.yml` derives it from the posted comment (PASS only with no
-  critical/high finding) and is fail-closed. Gotchas: its prompt has a **21,000-byte limit** — over it, GitHub
-  rejects the workflow silently and it vanishes from the PR checks (`workflowPromptSize.test.ts` holds a 20,500B
-  budget); a PR that edits that workflow **skips its own review**. Missing 👍 ≠ findings — the `/list-good-prs`
-  skill has the table for telling the cases apart.
+- **Review verdict = 👍 on the PR.** `claude-code-review.yml` removes the old 👍 when a run starts and derives the new
+  one from the comment that run actually posted (PASS only with no critical/high finding) — fail-closed. Gotchas:
+  its prompt has a **21,000-byte limit** — over it, GitHub rejects the workflow silently and it vanishes from the PR
+  checks (`workflowPromptSize.test.ts` holds a 20,500B budget); a PR that edits that workflow **skips its own
+  review**. Missing 👍 ≠ findings — the `/list-good-prs` skill has the table for telling the cases apart.
 - Large outputs (logs, comment lists, diffs): write to a file, report the key findings.
 
 ## 6. Troubleshooting
@@ -134,15 +134,27 @@ Worker (`apps/blog/web/wrangler.jsonc`), Supabase for the dynamic bits.
   대조하며 한다. 워크플로가 주입하는 건 `NEXT_PUBLIC_PR_COUNT` 하나뿐.
 - `deploy-blog.yml`의 `environment: github-pages`는 **이름만 잔재**다 — 하는 일은 배포 브랜치 게이트(`main`만)
   하나, 시크릿은 0개. 개명은 새 환경을 만들어야 한다. `preview-blog.yml`은 `environment:`를 쓰지 않는다.
-  배포는 `main` push(`apps/blog/**`·`packages/@blog/**`), **매일 KST 09:00 cron**(예약 글 공개), 수동 실행.
+  두 워크플로 모두 **빌드와 업로드가 잡이 나뉜다** — 의존성 코드를 실행하는 빌드 잡은 시크릿 없이 `out/`만
+  넘기고, `CLOUDFLARE_API_TOKEN`을 쥔 잡은 `--ignore-scripts`로 깐 wrangler만 돌린다. 토큰 잡에 빌드·테스트나
+  스크립트가 도는 install을 다시 넣지 말 것(토큰 잡은 사람이 연 PR의 lockfile로 wrangler를 깐다 — 봇 PR은 빌드까지만
+  돌고 토큰 잡은 건너뛴다).
+  배포는 `main` push(블로그의 실제 입력 — `apps/blog/**`·`packages/@blog/**`·`packages/@design-system/**`·catalog·
+  lockfile·툴체인·배포 워크플로 자신), **매일 cron `13 0 * * *`(KST 09:13)**(예약 글 공개), 수동
+  실행. 정각을 피한 건 `0 0` 슬롯이 붐벼 실제로 KST 11:36~12:00에 돌았기 때문이다. GitHub cron은 정시를
+  보장하지 않고 하루 한 번이라, `scheduledDate`에 적은 시각은 "그 뒤 첫 배포"(push 배포나 다음 날 cron)에서
+  나간다. 배포 결과물 스모크(`claude-site-smoke.yml`)는 이 cron 배포가 끝나면 `workflow_run`으로 이어 돈다.
 - 스키마는 `supabase-migrations.yml`로만 적용한다(대시보드 SQL 에디터 금지). 배포와 분리한 이유는 배포가 매일
   cron으로 돌아 스키마 변경 없는 날에도 프로덕션 DB에 붙고, 발행과 스키마가 한 실패 지점에 묶이기 때문이다.
+  커밋된 Supabase MCP(`.mcp.json`)가 `read_only=true`·`project_ref`로 묶여 있는 것도 같은 규칙이다 — 에이전트가
+  `execute_sql`·`apply_migration`으로 프로덕션을 "잠깐" 고치면 원장이 다시 어긋난다. 쓰기 기능을 되살리지 말 것.
 - **Supabase 클라이언트는 둘이다**: 공개 페이지는 `src/lib/platform/publicClient.ts`(`@supabase/postgrest-js`만 —
   supabase-js 전체는 45KB gzip이고 그중 18.5KB가 죽은 코드였다), admin은 `src/lib/platform/client.ts`.
   `src/domain/analytics` 배럴이 `index`·`admin` 둘로 나뉜 이유다. Analytics RPC는 `anon`에 잠겨 있다.
-- **GTM 컨테이너는 저장소 밖에 있다.** 코드엔 ID 한 줄뿐이고, 이 컨테이너가 **Microsoft Clarity**를 로드해
-  서드파티 쿠키 8개를 심는다(이슈 #165 — Best Practices 77점의 원인). 태그를 바꾸면 이 문단과 `/privacy`를 함께
-  갱신할 것. 감점을 없애려면 고지가 아니라 GTM 콘솔에서 Clarity를 내려야 한다.
+- **분석 태그는 코드에 둘이다.** `apps/blog/web/src/app/layout.tsx`가 프로덕션에서 GA4(`GoogleAnalytics`)와
+  GTM(`GoogleTagManager`)을 **둘 다 직접** 로드한다. GTM 컨테이너는 저장소 밖(웹 콘솔)이라 내용을 여기서 확인할 수
+  없다 — 컨테이너 안에 GA4 태그가 또 있으면 페이지뷰가 두 번 집계되니 GA는 한쪽에만 둘 것. 그 컨테이너가
+  **Microsoft Clarity**를 로드해 서드파티 쿠키 8개를 심는다(이슈 #165 — Best Practices 77점의 원인). 태그를 바꾸면
+  이 문단과 `/privacy`를 함께 갱신할 것. 감점을 없애려면 고지가 아니라 GTM 콘솔에서 Clarity를 내려야 한다.
 
 ## 8. Blog — layers and content contract
 

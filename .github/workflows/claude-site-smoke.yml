@@ -15,10 +15,11 @@ name: Claude Site Smoke
 # 직접 가져오지 않으므로 프롬프트 인젝션 표면도 사실표 하나로 줄었다.
 
 on:
-  schedule:
-    # 매일 10:00 KST (01:00 UTC) — deploy-blog cron(00:00 UTC) 완료 + 지연 버퍼 후
-    # (GitHub 예약 큐 지연으로 실제로는 03:00~04:30 UTC에 도는 경우가 많다)
-    - cron: '0 1 * * *'
+  # 독립 cron은 예약 큐 지연으로 배포 뒤라는 순서가 보장되지 않아 배포 완료에 묶는다.
+  # name으로 매칭한다 — deploy-blog.yml의 name을 바꾸면 여기도(어긋나면 조용히 안 돈다).
+  workflow_run:
+    workflows: ['Deploy Blog to Cloudflare Workers']
+    types: [completed]
   workflow_dispatch:
 
 concurrency:
@@ -32,6 +33,11 @@ permissions:
 
 jobs:
   smoke:
+    # cron 배포 뒤에만(하루 한 번), 배포가 실패해도 돈다 — 떠 있는 사이트를 보는 잡이다.
+    # 봇 actor는 claude-code-action이 거부한다.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.event == 'schedule' && !endsWith(github.actor, '[bot]'))
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -39,6 +45,8 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 1
+          # workflow_run의 기본 checkout은 방금 배포된 커밋이 아니다.
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       # 러너에 기본 설치된 python3(표준 라이브러리만 사용)으로 돈다. 설치 스텝 불필요.
       # 사이트가 죽어도 exit 0이다 — 그건 Claude가 보고할 사실이지 수집 실패가 아니다.
@@ -48,7 +56,7 @@ jobs:
             --out "${GITHUB_WORKSPACE}/site-smoke-facts.json"
 
       - name: Run Claude site smoke
-        uses: anthropics/claude-code-action@v1
+        uses: anthropics/claude-code-action@9171db3e57d6a3140a37ddc2ba92788584e0ead6 # v1.0.234
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
 

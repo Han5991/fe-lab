@@ -8,19 +8,28 @@ on:
   issues:
     # labeled: 본문을 고쳐 @claude를 끼워 넣지 않고 라벨 하나로 부르기 위한 것.
     # 이미 열려 있는 이슈(특히 남이 연 이슈)를 넘길 때 쓴다.
-    types: [ opened, assigned, labeled ]
+    # assigned는 넣지 않는다 — 담당자를 바꿀 때마다 같은 본문으로 다시 불려 중복 답변한다.
+    types: [ opened, labeled ]
   pull_request_review:
     types: [ submitted ]
 
 jobs:
   claude:
+    # 멘션은 쓰기 권한자 것만 — 액션 자체 검사는 러너를 띄운 뒤라 누구나 러너를 태울 수 있다.
+    # 라벨은 붙이는 데 triage 권한이 필요해 거르지 않는다.
     if: |
-      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
-      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
-      (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude')) ||
+      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude') &&
+        contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association)) ||
+      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude') &&
+        contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association)) ||
+      (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude') &&
+        contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.review.author_association)) ||
       (github.event_name == 'issues' && github.event.action == 'labeled' && github.event.label.name == 'claude') ||
-      (github.event_name == 'issues' && github.event.action != 'labeled' && (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude')))
+      (github.event_name == 'issues' && github.event.action == 'opened' &&
+        (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude')) &&
+        contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.issue.author_association))
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     # 한 스레드(PR·이슈)에서는 멘션 잡을 **한 번에 하나만** 돌린다.
     #
@@ -53,7 +62,7 @@ jobs:
 
       # 게시 여부를 나중에 판정하기 위한 기준 시각. 트리거 이벤트가 다섯이라
       # (issue_comment · pull_request_review_comment · pull_request_review ·
-      #  issues opened/assigned/labeled) 이벤트 페이로드에서 공통으로 뽑을 수 있는
+      #  issues opened/labeled) 이벤트 페이로드에서 공통으로 뽑을 수 있는
       # 시각이 없어 여기서 직접 찍는다.
       - name: Record start time
         id: start
@@ -61,7 +70,7 @@ jobs:
 
       - name: Run Claude Code
         id: claude
-        uses: anthropics/claude-code-action@v1
+        uses: anthropics/claude-code-action@9171db3e57d6a3140a37ddc2ba92788584e0ead6 # v1.0.234
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
 

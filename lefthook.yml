@@ -26,11 +26,7 @@ pre-commit:
       stage_fixed: true
 
 pre-push:
-  parallel: true
   commands:
-    lint:
-      run: pnpm lint
-    types:
-      run: pnpm check-types
-    test:
-      run: pnpm test
+    # turbo 호출 하나로 — 셋을 따로 띄우면 각자 ^build를 돌려 같은 산출물을 동시에 쓴다
+    checks:
+      run: pnpm turbo run lint check-types test

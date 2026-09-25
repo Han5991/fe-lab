@@ -15,14 +15,23 @@ Reactions on reviews, review comments, and issue comments do not qualify.
 
 ## Where the reaction comes from
 
-`.github/workflows/claude-code-review.yml` posts it. After the `claude[bot]`
-review is published, a follow-up step reads the severities out of the posted comment
-body and adds the `+1` when it contains no `[critical]` or `[high]` finding. It removes
-the reaction when one is present, when the review step failed, or when the review never
-reached the posting stage.
+`.github/workflows/claude-code-review.yml` posts it, in two steps of one run:
 
-The workflow runs on `opened` and `synchronize`, so the reaction tracks the current
-head: a new push re-evaluates and can take the 👍 away.
+1. **When a run starts**, its first step removes any existing `+1` from
+   `github-actions[bot]`. The reaction sits on the PR, not on a head SHA, so an old
+   PASS would otherwise stay on an unreviewed head while the new review runs — or for
+   good, if the run dies.
+2. **After the review**, the last step reads the `## 리뷰 요약` comment that
+   `claude[bot]` created or edited during this run and adds the `+1` only when it
+   contains no `[critical]` or `[high]` finding. If the review step failed or no such
+   comment was posted, it adds nothing (fail-closed). A run cancelled by a newer run
+   on the same PR skips this step; the newer run decides.
+
+The workflow runs on `opened`, `synchronize`, and `labeled` — `labeled` only when the
+added label is `deps-major` (Renovate may label a PR after opening it, so the `opened`
+payload can lack it). Any other label neither re-runs the review nor touches the 👍.
+So the reaction tracks the current head: a new push takes the 👍 away as soon as its
+run starts, and it comes back only if that run passes.
 
 Two things this reaction is **not**:
 
@@ -35,15 +44,17 @@ Two things this reaction is **not**:
 
 ### Absence of the reaction is not a verdict
 
-**A missing 👍 does not mean the review found something.** It collapses four different
-states, and only the first is a real verdict:
+**A missing 👍 does not mean the review found something.** It collapses several
+different states, and only the first is a real verdict:
 
-| Why there is no reaction                                                                                                                                    | How to tell                                                                                                     |
-| :---------------------------------------------------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------- |
-| Review ran and found `critical`/`high`                                                                                                                      | A `claude[bot]` summary comment exists with those severities                                                    |
-| **PR touches `.github/workflows/claude-code-review.yml`** — `claude-code-action` refuses to run when that file differs from the default branch, and exits 0 | Run finishes in ~10s; Actions annotation `Skipping action due to workflow validation`; no `claude[bot]` comment |
-| **Fork PR** — `secrets.CLAUDE_CODE_OAUTH_TOKEN` is unavailable, so the review step fails                                                                    | The `claude-review` check is red                                                                                |
-| Bot-authored PR — the workflow skips non-human actors except Renovate `deps-major`                                                                          | The job is skipped entirely                                                                                     |
+| Why there is no reaction                                                                                                                                    | How to tell                                                                                                                                                |
+| :---------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Review ran and found `critical`/`high`                                                                                                                      | A `claude[bot]` summary comment exists with those severities                                                                                               |
+| **Review in progress** — the run already removed the old 👍 and has not finished (or was cancelled by a newer run, which is still going)                    | The `claude-review` check is pending                                                                                                                       |
+| **Review posted no summary** — the step succeeded but no `## 리뷰 요약` comment appeared during the run (fail-closed)                                       | Green check with the warning annotation `리뷰 스텝은 성공했는데 게시된 리뷰 코멘트가 없습니다`, and no `Skipping action` annotation (that is the next row) |
+| **PR touches `.github/workflows/claude-code-review.yml`** — `claude-code-action` refuses to run when that file differs from the default branch, and exits 0 | Run finishes in ~10s; Actions annotation `Skipping action due to workflow validation`; no `claude[bot]` comment                                            |
+| **Fork PR** — `secrets.CLAUDE_CODE_OAUTH_TOKEN` is unavailable, so the review step fails                                                                    | The `claude-review` check is red                                                                                                                           |
+| Bot-authored PR — the workflow skips non-human actors except Renovate `deps-major`                                                                          | The job is skipped entirely                                                                                                                                |
 
 When a PR you expected is missing from the list, check which of these it is before
 reporting it as "review found problems". The first is the only one that means that.
@@ -145,8 +156,8 @@ reporting it as "review found problems". The first is the only one that means th
 7. If the result is empty, explicitly say that the repository has no open PRs
    that are `CLEAN` or `UNSTABLE` and carry a `+1` reaction from
    `github-actions[bot]`. Do **not** phrase this as "the reviews found problems" —
-   see "Absence of the reaction is not a verdict" above for the four states an
-   empty list can mean.
+   see "Absence of the reaction is not a verdict" above for the states an empty
+   list can mean.
 
 ## Failures
 

@@ -45,6 +45,8 @@ USER_AGENT = "fe-lab-post-inventory/1 (+https://github.com/Han5991/fe-lab)"
 FRONTMATTER_RE = re.compile(r"\A---\r?\n(.*?)\r?\n---", re.DOTALL)
 # 수집에 필요한 건 전부 스칼라 키다. 배열(tags)이나 중첩은 읽지 않는다.
 SCALAR_LINE_RE = re.compile(r"^([A-Za-z_][A-Za-z0-9_]*)\s*:\s*(.*)$")
+# YAML 주석은 `#` 앞에 공백이 있어야 한다(`a#b`는 값의 일부다).
+INLINE_COMMENT_RE = re.compile(r"(^|\s+)#.*$")
 
 
 def parse_frontmatter(text: str) -> dict | None:
@@ -63,8 +65,15 @@ def parse_frontmatter(text: str) -> dict | None:
         if not key_value:
             continue
         key, value = key_value.group(1), key_value.group(2).strip()
-        if value[:1] in ("'", '"') and value[-1:] == value[:1] and len(value) >= 2:
-            value = value[1:-1]
+        if value[:1] in ("'", '"'):
+            # 따옴표 값은 닫는 따옴표까지만 — 그 뒤의 `# 주석`은 YAML이 버린다.
+            end = value.find(value[0], 1)
+            if end != -1:
+                value = value[1:end]
+        else:
+            # 따옴표 없는 값의 ` # 주석`도 YAML은 떼어 낸다. 떼지 않으면
+            # `status: published # 메모`가 enum 밖이 되어 포스트가 통째로 빠진다.
+            value = INLINE_COMMENT_RE.sub("", value).strip()
         data[key] = value
     return data
 
@@ -117,7 +126,12 @@ def is_shallow_clone(repo_root: Path) -> bool:
 
 
 def fetch_sitemap_slugs(base_url: str) -> dict:
-    """배포된 sitemap의 마지막 경로 세그먼트 집합. 실패해도 예외를 던지지 않는다."""
+    """배포된 sitemap에 실린 글의 slug 집합. 실패해도 예외를 던지지 않는다.
+
+    글 URL은 `/posts/<slug>/`(postPath)라 `/posts/` 뒤 전체를 디코드해 slug로 본다.
+    예전에는 마지막 경로 세그먼트만 비교해서, 다른 시리즈에 같은 파일 이름의 글이
+    있으면 한쪽이 배포되지 않았어도 in_sitemap이 true로 나왔다.
+    """
     url = base_url.rstrip("/") + "/sitemap.xml"
     try:
         request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
@@ -125,13 +139,13 @@ def fetch_sitemap_slugs(base_url: str) -> dict:
             body = response.read()
             status = response.status
     except urllib.error.HTTPError as error:
-        return {"status": error.code, "error": None, "locs": [], "tail_segments": []}
+        return {"status": error.code, "error": None, "locs": [], "post_slugs": []}
     except Exception as error:
         return {
             "status": None,
             "error": f"{type(error).__name__}: {error}",
             "locs": [],
-            "tail_segments": [],
+            "post_slugs": [],
         }
 
     try:
@@ -141,7 +155,7 @@ def fetch_sitemap_slugs(base_url: str) -> dict:
             "status": status,
             "error": f"XML 파싱 실패: {error}",
             "locs": [],
-            "tail_segments": [],
+            "post_slugs": [],
         }
 
     locs: list[str] = []
@@ -149,12 +163,12 @@ def fetch_sitemap_slugs(base_url: str) -> dict:
         if element.tag.rsplit("}", 1)[-1] == "loc" and element.text:
             locs.append(element.text.strip())
 
-    tails = []
+    slugs = []
     for loc in locs:
-        path = urllib.parse.urlparse(loc).path.rstrip("/")
-        if path:
-            tails.append(urllib.parse.unquote(path.rsplit("/", 1)[-1]))
-    return {"status": status, "error": None, "locs": locs, "tail_segments": tails}
+        path = urllib.parse.urlparse(loc).path.strip("/")
+        if path.startswith("posts/") and len(path) > len("posts/"):
+            slugs.append(urllib.parse.unquote(path[len("posts/"):]))
+    return {"status": status, "error": None, "locs": locs, "post_slugs": slugs}
 
 
 def write_step_summary(facts: dict) -> None:
@@ -204,7 +218,7 @@ def main() -> int:
         return 1
 
     sitemap = fetch_sitemap_slugs(args.base_url)
-    sitemap_tails = set(sitemap["tail_segments"])
+    sitemap_slugs = set(sitemap["post_slugs"])
 
     scanned = 0
     posts = []
@@ -237,8 +251,8 @@ def main() -> int:
             "scheduledDate": data.get("scheduledDate"),
             # 공개 시각은 scheduledDate가 있으면 그것, 없으면 date (visibility.ts).
             "publish_at": data.get("scheduledDate") or data.get("date"),
-            # sitemap의 마지막 경로 세그먼트와 대조 — 실제로 배포됐는지의 근거.
-            "in_sitemap": slug.rsplit("/", 1)[-1] in sitemap_tails,
+            # sitemap의 글 URL과 slug 전체로 대조 — 실제로 배포됐는지의 근거.
+            "in_sitemap": slug.strip("/") in sitemap_slugs,
             **git_dates(repo_root, path),
         }
         posts.append(entry)
