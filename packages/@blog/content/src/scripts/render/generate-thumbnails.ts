@@ -10,11 +10,7 @@ import {
 import { dirname, join, sep } from 'node:path';
 import sharp from 'sharp';
 import { resolvePostSet } from '../artifacts.ts';
-import { isBareThumbnailName } from '../validate/shared.ts';
-import {
-  isOptimizableThumbnail,
-  thumbnailWebpRelPath,
-} from '../../post/thumbnail.ts';
+import { thumbnailWebpRelPath } from '../../post/thumbnail.ts';
 import type { PostData } from '../../post/types.ts';
 import {
   DEFAULT_THUMBNAILS,
@@ -34,12 +30,8 @@ interface ThumbnailTask {
 }
 
 /**
- * 발행 글 목록에서 변환 대상을 뽑습니다. thumbnail이 posts/ 안의 png/jpg를
- * 가리키는 글만 대상이고, /og/* 생성 카드와 외부 URL은 제외됩니다.
- *
- * **파일 이름이 아닌 thumbnail(`./a.png`·`img/a.png`·`../a.png`)도 제외합니다.**
- * 화면의 최적화본 URL과 여기서 쓰는 위치가 갈리고(`../`는 `thumbs/` 밖에 쓴다),
- * validate가 `invalid-thumbnail-path` 에러로 막는 입력이라 만들 이유가 없습니다.
+ * 발행 글 목록에서 변환 대상을 뽑습니다 — 최적화 대상 판정(`isOptimizableThumbnail`:
+ * 글 폴더의 png/jpg 파일 이름)을 통과한 thumbnail만.
  */
 export function collectTasks(
   posts: Pick<PostData, 'thumbnail' | 'relativeDir'>[],
@@ -47,7 +39,7 @@ export function collectTasks(
   const tasks = new Map<string, ThumbnailTask>();
   for (const post of posts) {
     const outputRel = thumbnailWebpRelPath(post);
-    if (!outputRel || !isBareThumbnailName(String(post.thumbnail))) continue;
+    if (!outputRel) continue;
     const sourceRel = post.relativeDir
       ? `${post.relativeDir}/${post.thumbnail}`
       : String(post.thumbnail);
@@ -138,11 +130,6 @@ export async function main(ctx: ContentContext) {
   // 글 집합 선택만은 레지스트리의 셀렉터(resolvePostSet)를 같이 쓴다.
   const posts = resolvePostSet(ctx, 'visible');
   const tasks = collectTasks(posts);
-  const rejected = posts
-    .map(p => p.thumbnail)
-    .filter(
-      (t): t is string => isOptimizableThumbnail(t) && !isBareThumbnailName(t),
-    );
   mkdirSync(thumbsDir, { recursive: true });
 
   const expectedRel = new Set(tasks.map(t => t.outputRel));
@@ -194,11 +181,6 @@ export async function main(ctx: ContentContext) {
   if (missing.length > 0) {
     console.warn(
       `  ⚠ 원본이 없어 건너뛴 썸네일 ${missing.length}개: ${missing.join(', ')}`,
-    );
-  }
-  if (rejected.length > 0) {
-    console.warn(
-      `  ⚠ 파일 이름이 아니라 건너뛴 썸네일 ${rejected.length}개(validate의 invalid-thumbnail-path): ${rejected.join(', ')}`,
     );
   }
 }

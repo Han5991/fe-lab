@@ -47,17 +47,33 @@ export function resolveThumbnailUrl(
 const OPTIMIZABLE_EXT = /\.(?:png|jpe?g)$/i;
 
 /**
- * 최적화 대상 판정: posts/ 안의 실제 이미지 파일을 가리키는 thumbnail만.
+ * 상대 `thumbnail`이 글 폴더의 **파일 이름 하나**인가(`cover.png`).
  *
- * 외부 URL(http)과 절대 경로(`/og/*` 생성 카드 포함)는 제외합니다. 생성 OG
- * 카드는 satori가 이미 적정 크기로 만들고, 외부 URL은 우리가 변환할 수 없습니다.
+ * 경로가 섞이면(`./a.png`·`img/a.png`·`../a.png`) 최적화본의 URL과 생성 위치가
+ * 갈리고 `../`는 `thumbs/` 밖에 쓴다 — 최적화 대상 판정과 lint:posts의
+ * `invalid-thumbnail-path`가 이 함수 하나를 본다.
+ */
+export function isBareThumbnailName(thumbnail: string): boolean {
+  return (
+    thumbnail !== '' &&
+    thumbnail !== '.' &&
+    thumbnail !== '..' &&
+    !/[/\\]/.test(thumbnail)
+  );
+}
+
+/**
+ * 최적화 대상 판정: 글 폴더의 png/jpg **파일 이름**인 thumbnail만.
+ *
+ * 외부 URL과 절대 경로(`/og/*` 생성 카드 포함)는 제외합니다. 생성 OG 카드는
+ * satori가 이미 적정 크기로 만들고, 외부 URL은 우리가 변환할 수 없습니다.
+ * 파일 이름이 아닌 상대 경로는 원본 URL(`resolveThumbnailUrl`)로 폴백합니다.
  */
 export function isOptimizableThumbnail(
   thumbnail?: string,
 ): thumbnail is string {
-  if (!thumbnail) return false;
-  if (isAbsoluteThumbnail(thumbnail)) return false;
-  return OPTIMIZABLE_EXT.test(thumbnail);
+  if (!thumbnail || isAbsoluteThumbnail(thumbnail)) return false;
+  return isBareThumbnailName(thumbnail) && OPTIMIZABLE_EXT.test(thumbnail);
 }
 
 /** 확장자 치환 규칙의 단일 출처 — 아래 두 함수가 공유합니다. */
@@ -74,9 +90,7 @@ export function thumbnailWebpRelPath(
 ): string | null {
   const { thumbnail, relativeDir } = post;
   if (!isOptimizableThumbnail(thumbnail)) return null;
-  // `./`를 벗겨야 resolveThumbnailSrc가 가리키는 경로와, 산출 디렉터리를 훑는
-  // orphan 정리가 보는 경로(`dir/cover.webp`)가 같은 문자열이 된다.
-  const name = toWebpName(toPostRelative(thumbnail));
+  const name = toWebpName(thumbnail);
   return relativeDir ? `${relativeDir}/${name}` : name;
 }
 
@@ -97,11 +111,8 @@ export function resolveThumbnailSrc(
   if (!isOptimizableThumbnail(post.thumbnail)) {
     return resolveThumbnailUrl(post, ogDefaultImage);
   }
-  // 디렉터리·파일 경로 모두 세그먼트별 인코딩(구분자 보존) —
-  // resolveThumbnailUrl과 같은 규칙이라 경로 형태가 어긋나지 않습니다.
   const dir = post.relativeDir ? `${encodePostSlug(post.relativeDir)}/` : '';
-  const name = toWebpName(toPostRelative(post.thumbnail));
-  return `/thumbs/${dir}${encodePostSlug(name)}`;
+  return `/thumbs/${dir}${encodePostSlug(toWebpName(post.thumbnail))}`;
 }
 
 /**

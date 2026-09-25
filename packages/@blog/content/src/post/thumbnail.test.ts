@@ -296,17 +296,16 @@ test('resolveThumbnailSrc: 대상이 아니면 resolveThumbnailUrl과 같은 결
   );
 });
 
-test('resolveThumbnailSrc·thumbnailWebpRelPath: 하위 경로와 ./도 같은 경로를 가리킨다', () => {
-  // 화면이 여는 /thumbs 경로와 생성기가 쓰는 파일 경로가 같은 모양이어야 한다
-  // (예전에는 'img%2Fcover.webp'를 열고 'network/img/cover.webp'를 썼다).
-  const sub = p({ thumbnail: 'img/cover.png', relativeDir: 'network' });
-  expect(resolveThumbnailSrc(sub)).toBe('/thumbs/network/img/cover.webp');
-  expect(thumbnailWebpRelPath(sub)).toBe('network/img/cover.webp');
-
-  const dotted = p({ thumbnail: './cover.png', relativeDir: 'network' });
-  expect(resolveThumbnailSrc(dotted)).toBe('/thumbs/network/cover.webp');
-  expect(thumbnailWebpRelPath(dotted)).toBe('network/cover.webp');
-});
+test.each(['img/cover.png', './cover.png'])(
+  'resolveThumbnailSrc·thumbnailWebpRelPath: 파일 이름이 아닌 %s는 최적화하지 않고 원본 URL을 쓴다',
+  thumbnail => {
+    // 생성기가 만들지 않는 /thumbs 경로를 가리키면 404가 된다.
+    const post = p({ thumbnail, relativeDir: 'network' });
+    expect(thumbnailWebpRelPath(post)).toBe(null);
+    expect(resolveThumbnailSrc(post)).toBe(resolveThumbnailUrl(post));
+    expect(resolveThumbnailSrc(post)).not.toContain('/thumbs/');
+  },
+);
 
 test('resolveThumbnailSrc: 파일명의 공백은 인코딩', () => {
   expect(

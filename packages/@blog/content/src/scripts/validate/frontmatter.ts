@@ -15,6 +15,7 @@ import { resolve, dirname } from 'node:path';
 import {
   POST_STATUSES,
   FRONTMATTER_KEYS,
+  isBareThumbnailName,
   isPostStatus,
   isPostFile,
   rejectionReasonFor,
@@ -30,7 +31,6 @@ import { decodeUrlSafe } from '../../shared/url.ts';
 import {
   findFrontmatterLine,
   frontmatterScalar,
-  isBareThumbnailName,
   slugProblem,
 } from './shared.ts';
 import type { Issue, PostRecord, ValidateContext } from './shared.ts';
