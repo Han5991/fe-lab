@@ -39,20 +39,19 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  deploy:
+  # 잡이 둘인 이유(토큰 격리): 빌드는 의존성 코드(install 스크립트·next build·
+  # 테스트)를 실행하고, 배포는 프로덕션을 바꿀 수 있는 CLOUDFLARE_API_TOKEN을 쓴다.
+  # 한 잡에 두면 의존성 하나만 오염돼도 그 코드가 같은 러너에서 토큰을 읽거나
+  # node_modules/wrangler를 바꿔치기할 수 있었다. build는 시크릿 없이 out/을
+  # 아티팩트로 넘기고, deploy는 lockfile로 **스크립트 없이** 설치한 wrangler로 그것을
+  # 올리기만 한다.
+  build:
     runs-on: ubuntu-latest
-    # 이름이 `github-pages`인 건 GitHub Pages 시절의 잔재다. 지금 이 환경이 하는
-    # 일은 **배포 브랜치 게이트 하나**뿐 — 허용 브랜치 정책이 main 하나라,
-    # workflow_dispatch로 엉뚱한 브랜치를 프로덕션에 올리는 걸 막는다.
-    # 이 환경에는 시크릿이 **하나도 없다**. 빌드가 읽는 NEXT_PUBLIC_*은 전부
-    # 커밋된 .env.production에서 오고, 아무도 안 읽던 GOOGLE_OAUTH_* 둘도 지웠다
-    # (정본은 Supabase 대시보드와 로컬 .env.local이다).
-    # 개명하려면 새 환경을 만들어야 한다 — GitHub은 환경 개명을 지원하지 않는다.
-    environment:
-      name: github-pages
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Setup pnpm
         uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
@@ -163,10 +162,63 @@ jobs:
       # 스텝(/posts/ CSR bail-out 회귀 가드)도 check-seo로 옮겼다. 배포에만 있으면 PR
       # CI는 그 회귀를 초록으로 머지시키고, 다음 배포(무인 cron 포함)가 그제서야 막힌다.
 
+      # 검사를 통과한 산출물만 deploy 잡으로 넘어간다. include-hidden-files는 지금은
+      # 없는 `.well-known/` 같은 점 파일이 생겨도 조용히 빠지지 않게 하려는 것이다.
+      - name: Upload site
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: blog-out
+          path: apps/blog/web/out/
+          if-no-files-found: error
+          include-hidden-files: true
+          retention-days: 3
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    # 이름이 `github-pages`인 건 GitHub Pages 시절의 잔재다. 지금 이 환경이 하는
+    # 일은 **배포 브랜치 게이트 하나**뿐 — 허용 브랜치 정책이 main 하나라,
+    # workflow_dispatch로 엉뚱한 브랜치를 프로덕션에 올리는 걸 막는다(빌드 잡은
+    # 돌아도 이 잡에서 멈춘다). 이 환경에는 시크릿이 **하나도 없다**. 빌드가 읽는
+    # NEXT_PUBLIC_*은 전부 커밋된 .env.production에서 오고, 아무도 안 읽던
+    # GOOGLE_OAUTH_* 둘도 지웠다(정본은 Supabase 대시보드와 로컬 .env.local이다).
+    # 개명하려면 새 환경을 만들어야 한다 — GitHub은 환경 개명을 지원하지 않는다.
+    environment:
+      name: github-pages
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        with:
+          # 버전은 루트 package.json의 packageManager 필드를 단일 source of truth로 사용
+          run_install: false
+
+      # pnpm 스토어 캐시를 쓰지 않는다. 그 캐시는 의존성 코드를 돌리는 잡들도 저장하는
+      # 자리라, 토큰을 쥔 잡이 복원하면 격리가 캐시로 새어 나간다.
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: '.tool-versions'
+
+      # wrangler 버전의 단일 출처는 apps/blog/web/package.json과 lockfile이다(소비자가
+      # 이 앱 하나뿐이라 catalog에서 뺐다). 블로그 워크스페이스만, **install 스크립트
+      # 없이** 깐다 — 이 잡에서 실행되는 의존성 코드는 wrangler 하나뿐이어야 한다.
+      - name: Install wrangler (lockfile, no scripts)
+        run: pnpm install --frozen-lockfile --ignore-scripts --filter @blog/web
+
+      - name: Download site
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: blog-out
+          path: apps/blog/web/out
+
       # wrangler.jsonc가 main 없이 assets만 선언한 정적 Worker라, 이 스텝은 out/을
       # 그대로 업로드한다. wranglerVersion을 주지 않는 이유는 워킹 디렉터리에 이미
-      # wrangler가 설치돼 있어 액션이 그것을 재사용하기 때문이다 — 버전의 단일
-      # 출처는 apps/blog/web/package.json이다(소비자가 이 앱 하나뿐이라 catalog에서 뺐다).
+      # wrangler가 설치돼 있어 액션이 그것을 재사용하기 때문이다(위 스텝).
       # packageManager를 명시하는 이유는 액션의 자동 감지가 **워킹 디렉터리에 있는
       # 락파일만** 보기 때문 — 모노레포 루트의 pnpm-lock.yaml은 못 보고 npm으로
       # 폴백하는데, npm은 package.json의 `workspace:^`를 읽지 못한다.
