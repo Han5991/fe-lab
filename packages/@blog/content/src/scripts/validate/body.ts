@@ -5,6 +5,7 @@
  * - 펜스 사슬:   unclosed-fence · unregistered-code-language
  * - 헤딩 사슬:   body-h1
  * - 다이어그램 사슬: unknown-diagram-name
+ * - 링크 사슬:   unpinned-line-link
  *
  * 모든 사슬이 코드 펜스 추적(`scanBodyLines`) 위에 서 있습니다 — 펜스 규칙을
  * 검사마다 각자 구현하면 한쪽만 고쳐질 수 있어 하나로 모았습니다.
@@ -477,6 +478,33 @@ export function validateDiagramNames(
       severity: resolveSeverity('unknown-diagram-name', record.data, options),
       rule: 'unknown-diagram-name',
       message: `\`<diagram name>\`이 등록된 다이어그램 이름이 아닙니다 — 프로덕션에서는 그림이 조용히 사라집니다(등록: ${options.diagramNames.join(', ')}). 새 다이어그램이라면 앱의 content.values.mts(DIAGRAM_NAMES)와 src/components/diagram/registry.ts에 먼저 등록하세요: ${JSON.stringify(name)}`,
+    });
+  }
+  return issues;
+}
+
+/** GitHub 줄 링크 `…/blob/<ref>/<path>#L12` — ref는 첫 `/` 전까지. */
+const GITHUB_LINE_LINK =
+  /https?:\/\/github\.com\/[^/\s]+\/[^/\s]+\/blob\/([^/\s#?]+)\/[^\s)"'<>#]*#L\d+/g;
+/** 움직이지 않는 ref — 커밋 SHA나 버전 태그(`v15.2.1-canary.5`). */
+const PINNED_REF = /^(?:[0-9a-f]{7,40}|v?\d+(?:\.\d+)+(?:[-+][\w.-]+)?)$/i;
+
+/** 브랜치를 가리키는 GitHub 줄 링크 — 코드가 바뀌면 조용히 다른 줄을 가리킨다(펜스·같은 줄 인라인 코드 안은 예시라 보지 않는다). */
+export function validateLineLinks(
+  record: PostRecord,
+  { offset, prose }: BodyView,
+): Issue[] {
+  if (!isPostFile(record.data)) return [];
+  const issues: Issue[] = [];
+  for (const match of prose.matchAll(GITHUB_LINE_LINK)) {
+    const ref = match[1] ?? '';
+    if (PINNED_REF.test(ref) || insideInlineCode(prose, match.index)) continue;
+    issues.push({
+      file: record.relPath,
+      line: offset + prose.slice(0, match.index).split('\n').length,
+      severity: resolveSeverity('unpinned-line-link', record.data),
+      rule: 'unpinned-line-link',
+      message: `GitHub 줄 링크가 브랜치(${ref})를 가리킵니다 — 코드가 바뀌면 조용히 다른 줄을 가리킵니다. 커밋 SHA나 버전 태그로 고정하세요(GitHub 파일 화면에서 \`y\`를 누르면 커밋 고정 주소가 됩니다): ${match[0]}`,
     });
   }
   return issues;
