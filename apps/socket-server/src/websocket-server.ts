@@ -20,6 +20,27 @@ interface WebSocketServerOptions {
   heartbeatInterval?: number;
   /** 비활성 세션을 검사하는 주기 (밀리초). 기본값: 1분 */
   cleanupInterval?: number;
+  /** 주식 시세를 브로드캐스트하는 주기 (밀리초). 기본값: 1초 */
+  stockBroadcastInterval?: number;
+}
+
+/**
+ * 클라이언트가 받을 메시지 묶음. 접속 URL의 `?topics=stocks,chat`으로 고르고,
+ * 지정하지 않으면 채팅만 받는다 — 채팅 화면이 초마다 오는 시세에 묻히지 않게 한다.
+ */
+type Topic = 'chat' | 'stocks';
+
+const TOPICS: readonly Topic[] = ['chat', 'stocks'];
+const DEFAULT_TOPICS: readonly Topic[] = ['chat'];
+
+function parseTopics(value: string | null): Set<Topic> {
+  if (value === null) return new Set(DEFAULT_TOPICS);
+  return new Set(
+    value
+      .split(',')
+      .map(topic => topic.trim())
+      .filter((topic): topic is Topic => TOPICS.includes(topic as Topic)),
+  );
 }
 
 /**
@@ -118,6 +139,7 @@ export class WebSocketServer {
   private readonly sessionTimeout: number;
   private readonly heartbeatInterval: number;
   private readonly cleanupInterval: number;
+  private readonly stockBroadcastInterval: number;
   private cleanupIntervalId: NodeJS.Timeout | null;
   private heartbeatIntervalId: NodeJS.Timeout | null;
   private stockBroadcastIntervalId: NodeJS.Timeout | null;
@@ -131,6 +153,7 @@ export class WebSocketServer {
     this.sessionTimeout = options.sessionTimeout || 5 * 60 * 1000; // 기본 5분
     this.heartbeatInterval = options.heartbeatInterval || 30 * 1000; // 기본 30초
     this.cleanupInterval = options.cleanupInterval || 60 * 1000; // 기본 1분
+    this.stockBroadcastInterval = options.stockBroadcastInterval || 1000; // 기본 1초
     this.cleanupIntervalId = null;
     this.heartbeatIntervalId = null;
     this.stockBroadcastIntervalId = null;
@@ -227,6 +250,7 @@ export class WebSocketServer {
       return;
     }
     const requestedSessionId = url.searchParams.get('sessionId');
+    const topics = parseTopics(url.searchParams.get('topics'));
 
     // WebSocket 핸드셰이크 키 추출
     const key = req.headers['sec-websocket-key'];
@@ -258,7 +282,7 @@ export class WebSocketServer {
     socket.write(responseHeaders);
 
     // WebSocket 연결 생성
-    const client = new WebSocketConnection(socket);
+    const client = new WebSocketConnection(socket, { topics });
     const sessionId = client.getSessionId();
 
     this.clients.add(client);
@@ -271,8 +295,8 @@ export class WebSocketServer {
     // 클라이언트 이벤트 리스너
     client.on('message', (data: string) => {
       console.log(`[${sessionId}] Received text:`, data);
-      // 모든 클라이언트에게 브로드캐스트
-      this.broadcast(data);
+      // 채팅을 구독한 클라이언트에게 브로드캐스트
+      this.broadcast(data, 'chat');
     });
 
     client.on('binary', (data: Buffer) => {
@@ -304,11 +328,13 @@ export class WebSocketServer {
   }
 
   /**
-   * 모든 연결된 클라이언트에게 메시지 브로드캐스트
+   * 연결된 클라이언트에게 메시지 브로드캐스트. topic을 주면 그 topic을 구독한 클라이언트에게만
    */
-  broadcast(message: string): void {
+  broadcast(message: string, topic?: Topic): void {
     for (const client of this.clients) {
-      client.send(message);
+      if (topic === undefined || client.isSubscribed(topic)) {
+        client.send(message);
+      }
     }
   }
 
@@ -439,7 +465,7 @@ export class WebSocketServer {
     // 1초마다 랜덤하게 주식 가격 업데이트
     this.stockBroadcastIntervalId = setInterval(() => {
       this.updateStockPrices();
-    }, 1000);
+    }, this.stockBroadcastInterval);
 
     console.log('Stock price broadcast started (1s interval)');
   }
@@ -458,8 +484,11 @@ export class WebSocketServer {
    * 주식 가격 업데이트 및 브로드캐스트
    */
   private updateStockPrices(): void {
-    // 클라이언트가 없으면 브로드캐스트 안함
-    if (this.clients.size === 0) return;
+    // 시세를 구독한 클라이언트가 없으면 브로드캐스트 안함
+    const hasSubscribers = Array.from(this.clients).some(client =>
+      client.isSubscribed('stocks'),
+    );
+    if (!hasSubscribers) return;
 
     // 랜덤하게 1-2개 종목 선택
     const symbols = Array.from(this.stockData.keys());
@@ -495,8 +524,8 @@ export class WebSocketServer {
         },
       });
 
-      // 모든 클라이언트에게 브로드캐스트
-      this.broadcast(message);
+      // 시세를 구독한 클라이언트에게 브로드캐스트
+      this.broadcast(message, 'stocks');
     }
   }
 
@@ -553,13 +582,22 @@ class WebSocketConnection {
   private readonly maxPayload: number;
   /** 프로토콜 위반으로 끊은 뒤에는 남은 바이트를 해석하지 않는다 */
   private failed: boolean;
+  private readonly topics: ReadonlySet<Topic>;
 
   constructor(
     socket: Duplex,
-    sessionId?: string,
-    maxPayload: number = DEFAULT_MAX_PAYLOAD,
+    {
+      sessionId,
+      maxPayload = DEFAULT_MAX_PAYLOAD,
+      topics = new Set(DEFAULT_TOPICS),
+    }: {
+      sessionId?: string;
+      maxPayload?: number;
+      topics?: ReadonlySet<Topic>;
+    } = {},
   ) {
     this.socket = socket;
+    this.topics = topics;
     this.listeners = {};
     this.fragmentedMessage = [];
     this.fragmentedOpcode = null;
@@ -881,6 +919,13 @@ class WebSocketConnection {
    */
   private generateSessionId(): string {
     return crypto.randomUUID();
+  }
+
+  /**
+   * 이 클라이언트가 topic을 구독했는지
+   */
+  isSubscribed(topic: Topic): boolean {
+    return this.topics.has(topic);
   }
 
   /**

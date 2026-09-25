@@ -28,11 +28,13 @@ interface ServerFrame {
 interface RawClient {
   socket: net.Socket;
   /** 다음 서버 프레임(주식 시세 브로드캐스트는 건너뛴다) */
-  nextFrame(): Promise<ServerFrame>;
+  nextFrame(timeoutMs?: number): Promise<ServerFrame>;
   /** 다음 텍스트 메시지(주식 시세 브로드캐스트는 건너뛴다) */
   nextText(): Promise<string>;
   /** 서버가 TCP를 닫을 때 resolve */
   closed: Promise<void>;
+  /** 지금까지 받은 주식 시세 브로드캐스트 수 */
+  priceUpdates(): number;
 }
 
 interface Harness {
@@ -76,9 +78,13 @@ function clientFrame(
 
 const text = (message: string) => clientFrame(0x1, message);
 
-function handshakeRequest(port: number, host = `localhost:${port}`): string {
+function handshakeRequest(
+  port: number,
+  host = `localhost:${port}`,
+  path = '/',
+): string {
   return [
-    'GET / HTTP/1.1',
+    `GET ${path} HTTP/1.1`,
     `Host: ${host}`,
     'Upgrade: websocket',
     'Connection: Upgrade',
@@ -98,11 +104,13 @@ interface ClientOptions {
   extra?: Buffer;
   /** 서버 Ping에 Pong으로 답할지(브라우저는 자동으로 답한다). 기본 true */
   autoPong?: boolean;
+  /** 요청 경로(쿼리 포함). 기본 '/' */
+  path?: string;
 }
 
 async function openClient(
   port: number,
-  { extra, autoPong = true }: ClientOptions = {},
+  { extra, autoPong = true, path = '/' }: ClientOptions = {},
 ): Promise<RawClient> {
   const socket = net.connect(port, '127.0.0.1');
   socket.setNoDelay(true);
@@ -115,6 +123,7 @@ async function openClient(
   const waiters: Array<(frame: ServerFrame) => void> = [];
   let pending = Buffer.alloc(0);
   let upgraded = false;
+  let priceUpdates = 0;
   let resolveUpgrade: () => void = () => {};
   const upgradedPromise = new Promise<void>(resolve => {
     resolveUpgrade = resolve;
@@ -161,26 +170,24 @@ async function openClient(
         if (autoPong) socket.write(clientFrame(0xa, frame.payload));
         continue;
       }
-      if (!isPriceUpdate(frame)) deliver(frame);
+      if (isPriceUpdate(frame)) priceUpdates += 1;
+      else deliver(frame);
     }
   });
 
   const closed = new Promise<void>(resolve => socket.once('close', resolve));
 
-  socket.write(
-    extra
-      ? Buffer.concat([Buffer.from(handshakeRequest(port)), extra])
-      : handshakeRequest(port),
-  );
+  const request = handshakeRequest(port, undefined, path);
+  socket.write(extra ? Buffer.concat([Buffer.from(request), extra]) : request);
   await upgradedPromise;
 
-  const nextFrame = () =>
+  const nextFrame = (timeoutMs = WAIT_MS) =>
     new Promise<ServerFrame>((resolve, reject) => {
       const queued = frames.shift();
       if (queued) return resolve(queued);
       const timer = setTimeout(
         () => reject(new Error('서버 프레임을 기다리다 시간 초과')),
-        WAIT_MS,
+        timeoutMs,
       );
       waiters.push(frame => {
         clearTimeout(timer);
@@ -194,7 +201,13 @@ async function openClient(
     return frame.payload.toString('utf-8');
   };
 
-  return { socket, nextFrame, nextText, closed };
+  return {
+    socket,
+    nextFrame,
+    nextText,
+    closed,
+    priceUpdates: () => priceUpdates,
+  };
 }
 
 async function startServer(
@@ -399,5 +412,35 @@ describe('하트비트', () => {
     } finally {
       clearTimeout(timer);
     }
+  });
+});
+
+describe('구독(topics)', () => {
+  let harness: Harness;
+
+  beforeEach(async () => {
+    harness = await startServer({ stockBroadcastInterval: 20 });
+  });
+
+  afterEach(async () => {
+    await stopServer(harness);
+  });
+
+  test('시세는 ?topics=stocks로 구독한 클라이언트에게만, 채팅은 기본(chat) 클라이언트에게만 간다', async () => {
+    const chat = await openClient(harness.port);
+    const stocks = await openClient(harness.port, { path: '/?topics=stocks' });
+
+    await sleep(200);
+    chat.socket.write(text('hello'));
+
+    assert.equal(await chat.nextText(), 'hello');
+    assert.ok(stocks.priceUpdates() > 0, '구독자가 시세를 받지 못했다');
+    assert.equal(chat.priceUpdates(), 0);
+
+    // 시세 구독자에게 채팅이 가지 않는다
+    await assert.rejects(stocks.nextFrame(200), /시간 초과/);
+
+    chat.socket.destroy();
+    stocks.socket.destroy();
   });
 });
