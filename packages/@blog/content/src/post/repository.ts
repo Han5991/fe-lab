@@ -70,6 +70,44 @@ export function resolveExcerptFrom(
     : plainText;
 }
 
+/**
+ * gray-matter로 frontmatter를 읽되, YAML 오류에 **어느 파일인지**를 붙여 다시
+ * 던집니다(`where`는 postsDir 기준 상대 경로나 파일 경로).
+ *
+ * 맨 `matter()`는 `YAMLException: incomplete explicit mapping pair … at line 3`
+ * 처럼 파일 이름 없이 던져서, 70여 개 원고(`---`로 시작하는 작업 노트 포함) 중
+ * 하나가 깨지면 dev는 모든 요청이 500이고 빌드는 첫 단계에서 죽는데 저자가 손으로
+ * 이분 탐색해야 했습니다.
+ *
+ * 건너뛰지 않고 던지는(fail-loud) 이유: 깨진 블록 안에 `status: published`가
+ * 있었다면 그 글은 조용히 사이트·sitemap에서 사라집니다. 빌드는 그런 상태로
+ * 배포되면 안 되고, dev에서도 오류 화면에 경로가 바로 보이는 편이 경고 한 줄보다
+ * 빨리 고쳐집니다.
+ *
+ * gray-matter의 data는 `{ [key: string]: any }`라 `unknown` 값의 레코드로 좁혀
+ * 돌려줍니다 — 호출부가 타입 검사를 우회하지 못하도록.
+ */
+export function parseMatter(
+  source: string,
+  where: string,
+): { data: Record<string, unknown>; content: string } {
+  try {
+    const {
+      data,
+      content,
+    }: { data: Record<string, unknown>; content: string } = matter(source);
+    return { data, content };
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    throw new Error(
+      `${where}: frontmatter YAML을 해석할 수 없습니다 — ${reason}`,
+      {
+        cause: error,
+      },
+    );
+  }
+}
+
 export interface ParsePostOptions {
   /** excerpt 자동 발췌 길이 — 설정의 `seo.descriptionMaxLength` */
   excerptMaxLength: number;
@@ -99,10 +137,9 @@ export function parsePost(
   // frontmatter delimiter 없는 메타 노트는 스킵 (validate-posts 와 동일 규칙)
   if (!hasFrontmatter(fileContents)) return null;
 
-  // gray-matter의 data는 `{ [key: string]: any }`라 그대로 두면 타입 검사가
-  // 무력화됩니다. RawFrontmatter(전 필드 unknown)로 받아 아래에서 전부 좁힙니다.
+  // RawFrontmatter(전 필드 unknown)로 받아 아래에서 전부 좁힙니다.
   const { data, content }: { data: RawFrontmatter; content: string } =
-    matter(fileContents);
+    parseMatter(fileContents, relPath);
 
   // 유효한 status가 없으면 포스트가 아니다 (validate-posts와 같은 isPostFile 규칙).
   // 타입 가드라서 이 아래에서 data.status는 PostStatus로 좁혀집니다.

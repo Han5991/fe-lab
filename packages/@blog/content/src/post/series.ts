@@ -1,7 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import matter from 'gray-matter';
-import { compareByCodePoint } from './repository.ts';
+import { compareByCodePoint, parseMatter } from './repository.ts';
 
 export interface SeriesMeta {
   name: string;
@@ -65,7 +64,8 @@ export function createSeriesReader(deps: SeriesReaderDeps): SeriesReader {
     }
 
     const raw = readFileSync(filePath, 'utf8');
-    const { data } = matter(`---\n${raw}\n---\n`);
+    // YAML이 깨지면 파일 경로를 붙여 던진다 — 이유는 parseMatter 주석.
+    const { data } = parseMatter(`---\n${raw}\n---\n`, filePath);
 
     const meta: SeriesMeta = {
       name: seriesName,

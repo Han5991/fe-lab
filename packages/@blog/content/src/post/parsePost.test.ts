@@ -37,6 +37,23 @@ test('parsePost: status 값이 enum 밖이면 null', () => {
   expect(parsePost(raw, 'typo.md', PARSE_OPTS)).toBe(null);
 });
 
+test('parsePost: frontmatter YAML이 깨지면 어느 파일인지 붙여 던진다', () => {
+  // 맨 matter()는 파일 이름 없이 YAMLException만 던져서, 원고 70여 개 중 어느
+  // 것인지 손으로 찾아야 했다.
+  const raw = `---\nstatus: published\ntitle: a: b: c\n---\n본문`;
+  let thrown: unknown;
+  try {
+    parsePost(raw, '번들러/깨진-글.md', PARSE_OPTS);
+  } catch (error) {
+    thrown = error;
+  }
+  expect(thrown).toBeInstanceOf(Error);
+  const error = thrown as Error;
+  expect(error.message).toMatch(/^번들러\/깨진-글\.md: /);
+  expect(error.message).toMatch(/line 3/); // 원래 YAML 위치 정보도 보존
+  expect(error.cause).toBeInstanceOf(Error);
+});
+
 // ── isPostFile: repository와 validate-posts가 공유하는 단일 판정 규칙 ─────────
 
 test('isPostFile: 유효한 status가 있을 때만 true', () => {
