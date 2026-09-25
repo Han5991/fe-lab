@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useEffectEvent, type RefObject } from 'react';
-import { lockBodyScroll } from './bodyScrollLock';
 
 const FOCUSABLE = [
   'a[href]',
@@ -18,6 +17,13 @@ const FOCUSABLE = [
  * 서로 초점을 빼앗는다.
  */
 const openStack: symbol[] = [];
+
+/**
+ * 첫 모달이 열릴 때의 body overflow. 스크롤 잠금은 스택이 비었다 찰 때 걸고,
+ * 다시 빌 때 이 값으로 되돌린다 — 겹친 모달 하나가 닫혀도 남은 쪽의 잠금이 풀리지
+ * 않는다.
+ */
+let savedOverflow = '';
 
 interface ModalDialogOptions {
   open: boolean;
@@ -50,7 +56,10 @@ export function useModalDialog({
 
   useEffect(() => {
     if (!open) return;
-    const unlock = lockBodyScroll();
+    if (openStack.length === 0) {
+      savedOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+    }
     const token = Symbol('modal');
     openStack.push(token);
 
@@ -103,7 +112,7 @@ export function useModalDialog({
       cancelAnimationFrame(focusFirst);
       document.removeEventListener('keydown', onKey);
       openStack.splice(openStack.indexOf(token), 1);
-      unlock();
+      if (openStack.length === 0) document.body.style.overflow = savedOverflow;
       // 연 자리가 아직 문서에 있을 때만 — 사라진 요소에 focus()는 아무 일도
       // 하지 않고 초점은 body로 떨어진다. preventScroll: 닫으면서 스크롤을
       // 옮기지 않는다(차례 항목이 막 시작한 부드러운 스크롤을 끊지 않게).
