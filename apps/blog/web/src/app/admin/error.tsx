@@ -6,6 +6,12 @@ import { useQueryErrorResetBoundary } from '@tanstack/react-query';
 import { css, cx } from '@design-system/ui-lib/css';
 import { railColumn, railGutter } from '@/src/components/Rail';
 import { ADMIN_LOGIN_PATH } from '@/src/shared/routes';
+// 판정만 필요하므로 admin 배럴(모듈 최상위에서 supabase 클라이언트를 바인딩)이
+// 아니라 순수 leaf 모듈을 연다 — adminErrors.ts 머리 주석.
+import {
+  adminFailureKind,
+  type AdminFailureKind,
+} from '@/src/domain/analytics/adminErrors';
 
 interface AdminErrorProps {
   /** 던져진 값 — Error가 아닐 수도 있다(Next의 ErrorInfo가 unknown으로 준다). */
@@ -13,6 +19,13 @@ interface AdminErrorProps {
   /** 경계를 비우고 자식을 다시 그린다. */
   reset: () => void;
 }
+
+/** 실패 종류별 제목 — 401·403은 재시도가 아니라 로그인·계정이 답이다. */
+const TITLES = {
+  unauthenticated: '로그인이 만료됐습니다 — 다시 로그인해 주세요',
+  forbidden: '관리자 권한이 없는 계정입니다',
+  other: '관리자 데이터를 불러오지 못했습니다',
+} as const satisfies Record<AdminFailureKind, string>;
 
 /**
  * admin 영역의 에러 경계.
@@ -37,6 +50,7 @@ export default function AdminError({ error, reset }: AdminErrorProps) {
     console.error(error);
   }, [error]);
 
+  const kind = adminFailureKind(error);
   const message = error instanceof Error ? error.message : String(error);
 
   return (
@@ -69,7 +83,7 @@ export default function AdminError({ error, reset }: AdminErrorProps) {
             color: 'danger.text',
           })}
         >
-          관리자 데이터를 불러오지 못했습니다
+          {TITLES[kind]}
         </h1>
         <p
           className={css({

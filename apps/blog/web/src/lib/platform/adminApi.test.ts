@@ -5,7 +5,12 @@
  */
 
 import { expect, test } from 'vitest';
-import { AdminApiClient, type FunctionsInvoker } from './adminApi';
+import {
+  AdminApiClient,
+  AdminApiError,
+  type FunctionsFailure,
+  type FunctionsInvoker,
+} from './adminApi';
 
 // ── mock 헬퍼 ─────────────────────────────────────────────────────────────────
 
@@ -15,7 +20,7 @@ interface CapturedCall {
 }
 
 type InvokeResponse =
-  { data: unknown; error: null } | { data: null; error: { message: string } };
+  { data: unknown; error: null } | { data: null; error: FunctionsFailure };
 
 function makeMockClient(response: InvokeResponse): {
   client: FunctionsInvoker;
@@ -30,7 +35,7 @@ function makeMockClient(response: InvokeResponse): {
         // mock은 T와 무관하게 고정 응답을 돌려준다 — 런타임 동작만 검증하므로
         // 제네릭 반환 타입으로의 cast는 의도된 우회다.
         return Promise.resolve(
-          response as { data: T | null; error: { message: string } | null },
+          response as { data: T | null; error: FunctionsFailure | null },
         );
       },
     },
@@ -137,18 +142,96 @@ test('AdminApiClient: 목록형 action은 거를 slug 목록을 params로 싣는
   ]);
 });
 
-test('AdminApiClient: error 응답 시 Error throw', async () => {
+/**
+ * supabase-js가 non-2xx 응답에 돌려주는 실패의 모양 그대로(FunctionsHttpError).
+ * message는 상태와 무관한 **고정 문구**이고, 상태·본문은 소비되지 않은
+ * Response(context)에 있다 — 예전 테스트는 message에 서버 문구가 담긴다고
+ * 가정했는데, 실제 클라이언트는 그런 값을 만들지 않는다.
+ */
+function httpFailure(status: number, body: string): FunctionsFailure {
+  return {
+    message: 'Edge Function returned a non-2xx status code',
+    context: new Response(body, {
+      status,
+      headers: { 'Content-Type': 'application/json' },
+    }),
+  };
+}
+
+test('AdminApiClient: HTTP 실패는 상태와 서버 문구를 담은 AdminApiError다', async () => {
   const { client } = makeMockClient({
     data: null,
-    error: { message: '인증에 실패했습니다.' },
+    error: httpFailure(401, JSON.stringify({ error: '인증에 실패했습니다.' })),
   });
 
-  const api = new AdminApiClient(client);
+  const rejected = new AdminApiClient(client).call('all_post_stats');
 
-  const rejected = api.call('all_post_stats');
+  await expect(rejected).rejects.toBeInstanceOf(AdminApiError);
+  await expect(rejected).rejects.toMatchObject({
+    action: 'all_post_stats',
+    status: 401,
+    serverMessage: '인증에 실패했습니다.',
+  });
+  await expect(rejected).rejects.toThrow('(401): 인증에 실패했습니다.');
+});
 
-  await expect(rejected).rejects.toBeInstanceOf(Error);
-  await expect(rejected).rejects.toThrow('인증에 실패했습니다.');
+test('AdminApiClient: 401·403·500을 서로 구분할 수 있다', async () => {
+  const statusOf = async (status: number) => {
+    const { client } = makeMockClient({
+      data: null,
+      error: httpFailure(status, JSON.stringify({ error: `e${status}` })),
+    });
+    try {
+      await new AdminApiClient(client).call('all_posts_trends');
+    } catch (error) {
+      return error instanceof AdminApiError
+        ? error.status
+        : 'not AdminApiError';
+    }
+    return 'resolved';
+  };
+
+  expect(await statusOf(401)).toBe(401);
+  expect(await statusOf(403)).toBe(403);
+  expect(await statusOf(500)).toBe(500);
+});
+
+test('AdminApiClient: 본문이 JSON이 아니면 서버 문구 없이 고정 문구로 남긴다', async () => {
+  const { client } = makeMockClient({
+    data: null,
+    error: httpFailure(502, '<html>Bad Gateway</html>'),
+  });
+
+  const rejected = new AdminApiClient(client).call('all_post_stats');
+
+  await expect(rejected).rejects.toMatchObject({
+    status: 502,
+    serverMessage: null,
+  });
+  await expect(rejected).rejects.toThrow(
+    '(502): Edge Function returned a non-2xx status code',
+  );
+});
+
+test('AdminApiClient: 응답까지 못 간 네트워크 실패는 status가 null이다', async () => {
+  const cause = new TypeError('fetch failed');
+  const { client } = makeMockClient({
+    data: null,
+    error: {
+      message: 'Failed to send a request to the Edge Function',
+      context: cause,
+    },
+  });
+
+  const rejected = new AdminApiClient(client).call('all_post_stats');
+
+  await expect(rejected).rejects.toMatchObject({
+    status: null,
+    serverMessage: null,
+  });
+  await expect(rejected).rejects.toThrow(
+    'Failed to send a request to the Edge Function',
+  );
 });
 
 test('AdminApiClient: data가 null이면 Error throw (빈 응답)', async () => {

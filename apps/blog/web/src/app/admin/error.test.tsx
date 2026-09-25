@@ -14,6 +14,7 @@ import {
   QueryClientProvider,
   useSuspenseQuery,
 } from '@tanstack/react-query';
+import { AdminApiError } from '@/src/domain/analytics/adminErrors';
 import AdminError from './error';
 
 /** Next의 error.js 래퍼를 흉내 낸 최소 경계 — 잡은 값을 AdminError에 넘긴다. */
@@ -83,6 +84,26 @@ describe('AdminError', () => {
       'href',
       '/admin/login/',
     );
+  });
+
+  test('401은 서버 장애가 아니라 다시 로그인하라고 안내한다', async () => {
+    renderWithBoundary(() =>
+      Promise.reject(
+        new AdminApiError({
+          action: 'all_post_stats',
+          status: 401,
+          serverMessage: '인증에 실패했습니다.',
+          fallbackMessage: 'Edge Function returned a non-2xx status code',
+        }),
+      ),
+    );
+
+    expect(
+      await screen.findByRole('heading', {
+        name: '로그인이 만료됐습니다 — 다시 로그인해 주세요',
+      }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent('인증에 실패했습니다.');
   });
 
   test('"다시 시도"는 실패한 쿼리를 실제로 다시 불러온다', async () => {

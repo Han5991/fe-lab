@@ -54,6 +54,19 @@ export interface AdminApi {
 }
 
 /**
+ * functions.invoke()가 돌려주는 실패의 구조적 부분형.
+ *
+ * supabase-js의 실패(`FunctionsHttpError`·`FunctionsRelayError`·
+ * `FunctionsFetchError`)는 `message`가 **고정 문구**다 — 401이든 500이든
+ * "Edge Function returned a non-2xx status code"다. 상태 코드와 서버가 보낸 본문은
+ * `context`(HTTP 실패면 소비되지 않은 `Response`, 네트워크 실패면 원인 값)에 있다.
+ */
+export interface FunctionsFailure {
+  message: string;
+  context?: unknown;
+}
+
+/**
  * functions.invoke() 시그니처만 추출한 duck-type 인터페이스.
  * 테스트에서 최소한의 mock 객체를 넘길 수 있도록 구조적 타이핑을 사용합니다.
  */
@@ -62,8 +75,89 @@ export interface FunctionsInvoker {
     invoke<T>(
       functionName: string,
       options?: { body?: unknown },
-    ): Promise<{ data: T | null; error: { message: string } | null }>;
+    ): Promise<{ data: T | null; error: FunctionsFailure | null }>;
   };
+}
+
+/**
+ * admin-analytics 호출 실패.
+ *
+ * `status`는 Edge Function이 응답을 돌려준 경우의 HTTP 상태이고(401 세션 없음·만료,
+ * 403 관리자 아님, 400 요청 형식, 500 서버 설정·RPC 실패), 응답까지 못 간 네트워크
+ * 실패면 null이다. `serverMessage`는 Edge Function이 본문에 담은 `{ error }` 문구다.
+ * 화면은 이 둘로 "다시 로그인"과 "서버 장애"를 가른다 — 예전엔 supabase-js의 고정
+ * 문구만 옮겨 적어 모든 실패가 같은 한 줄이었다.
+ */
+export class AdminApiError extends Error {
+  override readonly name = 'AdminApiError';
+  readonly action: AdminAction;
+  readonly status: number | null;
+  readonly serverMessage: string | null;
+
+  constructor(init: {
+    action: AdminAction;
+    status: number | null;
+    serverMessage: string | null;
+    /** 사람이 읽을 원인 — 서버 문구가 없을 때(네트워크 실패 등) 메시지에 싣는다. */
+    fallbackMessage: string;
+    cause?: unknown;
+  }) {
+    const where = init.status === null ? '' : ` (${init.status})`;
+    super(
+      `admin-analytics Edge Function 오류 [${init.action}]${where}: ${
+        init.serverMessage ?? init.fallbackMessage
+      }`,
+      { cause: init.cause },
+    );
+    this.action = init.action;
+    this.status = init.status;
+    this.serverMessage = init.serverMessage;
+  }
+}
+
+/** `context`가 HTTP 응답(Response의 구조적 부분형)인지. */
+function isHttpResponse(
+  value: unknown,
+): value is { status: number; json(): Promise<unknown> } {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'status' in value &&
+    typeof value.status === 'number' &&
+    'json' in value &&
+    typeof value.json === 'function'
+  );
+}
+
+/** 실패 응답 본문의 `{ error }` 문구. JSON이 아니거나 모양이 다르면 null. */
+async function readServerMessage(response: {
+  json(): Promise<unknown>;
+}): Promise<string | null> {
+  try {
+    const body = await response.json();
+    return typeof body === 'object' &&
+      body !== null &&
+      'error' in body &&
+      typeof body.error === 'string'
+      ? body.error
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+async function toAdminApiError(
+  action: AdminAction,
+  failure: FunctionsFailure,
+): Promise<AdminApiError> {
+  const response = isHttpResponse(failure.context) ? failure.context : null;
+  return new AdminApiError({
+    action,
+    status: response?.status ?? null,
+    serverMessage: response ? await readServerMessage(response) : null,
+    fallbackMessage: failure.message,
+    cause: failure,
+  });
 }
 
 // ── 클라이언트 ─────────────────────────────────────────────────────────────────
@@ -100,9 +194,7 @@ export class AdminApiClient implements AdminApi {
     });
 
     if (error) {
-      throw new Error(
-        `admin-analytics Edge Function 오류 [${action}]: ${error.message}`,
-      );
+      throw await toAdminApiError(action, error);
     }
 
     // Edge Function은 { data: Returns } 형태로 반환합니다. RPC가 0행이어도
