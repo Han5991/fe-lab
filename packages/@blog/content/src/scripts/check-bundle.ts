@@ -1,5 +1,6 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { join, relative, resolve, sep } from 'node:path';
+import { decodeUrlSafe } from '../shared/url.ts';
 import type {
   BundleGuardsConfig,
   MarkerScope,
@@ -44,28 +45,40 @@ export interface BundleViolation {
 export interface ScopeInputs {
   /** URL 경로 → 페이지 HTML (check-seo의 collectPages 형태) */
   pages: ReadonlyMap<string, string>;
-  /** 청크 basename → 본문 */
+  /** 청크의 `_next/static/chunks/` 기준 상대 경로(`/` 구분) → 본문 */
   sources: ReadonlyMap<string, string>;
   /** 산출물 상대 경로 → 본문 (없는 파일은 null) */
   artifacts: ReadonlyMap<string, string | null>;
 }
 
 /**
- * HTML이 직접 참조하는 청크 파일명(basename) 목록.
+ * `_next/static/chunks/` 아래 청크 경로. 하위 폴더(webpack의 `app/…/page-*.js`)도
+ * 잡는다 — 예전 패턴은 `/`를 받지 않아 중첩 청크 참조를 **조용히** 버렸고,
+ * 그러면 그 청크의 누수는 음성 검사에 영영 안 걸렸다. `[…slug]` 같은 폴더는
+ * HTML에 퍼센트 인코딩돼 나오므로 디코드해 디스크 이름과 맞춘다.
+ */
+const CHUNK_REF =
+  /\/_next\/static\/chunks\/((?:[\w.~%@+\-[\]]+\/)*[\w.~%@+\-[\]]+\.js)/g;
+
+/**
+ * HTML이 직접 참조하는 청크 경로 목록(`chunks/` 기준).
  *
  * script src·preload href 등 태그 종류를 가리지 않고 경로 패턴으로 뽑는다 —
  * 어떤 태그로 실렸든 브라우저가 로드하는 것은 같다.
  */
 export function collectChunkRefs(html: string): string[] {
   const refs = new Set<string>();
-  for (const m of html.matchAll(
-    /\/_next\/static\/chunks\/([A-Za-z0-9._-]+\.js)/g,
-  )) {
+  for (const m of html.matchAll(CHUNK_REF)) {
     // 패턴의 1번 캡처 그룹은 매치에 항상 참여한다.
-    const name = m[1];
-    if (name !== undefined) refs.add(name);
+    const path = m[1];
+    if (path !== undefined) refs.add(decodeUrlSafe(path));
   }
   return [...refs];
+}
+
+/** 청크 경로의 stem — 마지막 세그먼트에서 `.js`를 뗀 것(해시가 든 파일명). */
+function chunkStem(path: string): string {
+  return (path.split('/').pop() ?? path).replace(/\.js$/, '');
 }
 
 /**
@@ -89,8 +102,7 @@ export function chunkClosure(
     if (body === undefined) continue;
     for (const [candidate] of sources) {
       if (included.has(candidate)) continue;
-      const stem = candidate.replace(/\.js$/, '');
-      if (body.includes(stem)) queue.push(candidate);
+      if (body.includes(chunkStem(candidate))) queue.push(candidate);
     }
   }
   return included;
@@ -135,20 +147,42 @@ export function describeScope(scope: MarkerScope): string {
   }
 }
 
-/** 스코프 안에서 마커가 발견된 위치 목록 — 비어 있으면 "없다". */
+/**
+ * 셀렉터 페이지들이 도달하는 청크 폐포. `cache`를 주면 같은 셀렉터의 폐포를
+ * 한 번만 계산한다 — 규칙 9개가 청크 스코프 16개를 쓰지만 서로 다른 셀렉터는
+ * 5개뿐이라, 캐시 없이는 같은 O(청크² × 본문) 계산을 세 배 넘게 되풀이했다.
+ */
+function reachableChunks(
+  selector: PageSelector | undefined,
+  inputs: ScopeInputs,
+  cache?: Map<string, Set<string>>,
+): Set<string> {
+  const key = JSON.stringify(selector ?? null);
+  const cached = cache?.get(key);
+  if (cached) return cached;
+  const refs = new Set<string>();
+  for (const [, html] of selectPages(inputs.pages, selector)) {
+    for (const ref of collectChunkRefs(html)) refs.add(ref);
+  }
+  const closure = chunkClosure(refs, inputs.sources);
+  cache?.set(key, closure);
+  return closure;
+}
+
+/**
+ * 스코프 안에서 마커가 발견된 위치 목록 — 비어 있으면 "없다".
+ * `cache`는 같은 입력으로 여러 번 부를 때(checkRules) 폐포를 재사용한다.
+ */
 export function findMarkerIn(
   scope: MarkerScope,
   marker: string,
   inputs: ScopeInputs,
+  cache?: Map<string, Set<string>>,
 ): string[] {
   switch (scope.kind) {
     case 'chunks': {
-      const refs = new Set<string>();
-      for (const [, html] of selectPages(inputs.pages, scope.of)) {
-        for (const ref of collectChunkRefs(html)) refs.add(ref);
-      }
       const locations: string[] = [];
-      for (const name of chunkClosure(refs, inputs.sources)) {
+      for (const name of reachableChunks(scope.of, inputs, cache)) {
         if (inputs.sources.get(name)?.includes(marker)) locations.push(name);
       }
       return locations.sort();
@@ -173,9 +207,16 @@ export function checkRules(
   inputs: ScopeInputs,
 ): BundleViolation[] {
   const violations: BundleViolation[] = [];
+  // 입력이 고정인 한 호출 동안만 사는 폐포 캐시(셀렉터 → 도달 청크).
+  const closures = new Map<string, Set<string>>();
   for (const rule of rules) {
     for (const scope of rule.forbiddenIn) {
-      for (const location of findMarkerIn(scope, rule.marker, inputs)) {
+      for (const location of findMarkerIn(
+        scope,
+        rule.marker,
+        inputs,
+        closures,
+      )) {
         violations.push({
           label: rule.label,
           marker: rule.marker,
@@ -185,7 +226,7 @@ export function checkRules(
       }
     }
     for (const scope of rule.requiredIn) {
-      if (findMarkerIn(scope, rule.marker, inputs).length === 0) {
+      if (findMarkerIn(scope, rule.marker, inputs, closures).length === 0) {
         violations.push({
           label: rule.label,
           marker: rule.marker,
@@ -198,7 +239,10 @@ export function checkRules(
   return violations;
 }
 
-/** `_next/static/chunks/` 아래의 모든 .js — basename → 본문. */
+/**
+ * `_next/static/chunks/` 아래의 모든 .js — `chunks/` 기준 상대 경로 → 본문.
+ * basename으로 묶던 때는 하위 폴더의 같은 이름 청크가 서로를 덮어썼다.
+ */
 function readChunkSources(outDir: string): Map<string, string> {
   const chunksDir = join(outDir, '_next', 'static', 'chunks');
   const sources = new Map<string, string>();
@@ -208,7 +252,10 @@ function readChunkSources(outDir: string): Map<string, string> {
       const full = join(dir, entry.name);
       if (entry.isDirectory()) walk(full);
       else if (entry.name.endsWith('.js'))
-        sources.set(entry.name, readFileSync(full, 'utf8'));
+        sources.set(
+          relative(chunksDir, full).split(sep).join('/'),
+          readFileSync(full, 'utf8'),
+        );
     }
   };
   walk(chunksDir);

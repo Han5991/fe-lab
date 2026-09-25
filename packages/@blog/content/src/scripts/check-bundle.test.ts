@@ -279,3 +279,58 @@ test('describeScope: 위반 메시지가 스코프를 사람 말로 서술한다
     '산출물 llms.txt',
   );
 });
+
+// ── 중첩 청크 경로 (webpack의 chunks/app/…) ─────────────────────────────────
+
+test('collectChunkRefs: 하위 폴더의 청크 경로도 뽑고, 인코딩된 폴더 이름은 디코드한다', () => {
+  const html = `<script src="/_next/static/chunks/app/posts/%5B...slug%5D/page-abc123.js"></script>
+    <script src="/_next/static/chunks/flat999.js"></script>`;
+  expect(collectChunkRefs(html).sort()).toStrictEqual([
+    'app/posts/[...slug]/page-abc123.js',
+    'flat999.js',
+  ]);
+});
+
+test('findMarkerIn(chunks): 중첩 청크에 실린 누수도 잡는다 (예전엔 조용히 빠졌다)', () => {
+  const sources = new Map([
+    ['app/page-home111.js', 'import("./shared-222")'],
+    ['shared-222.js', 'GoTrueClient'],
+  ]);
+  const pages = new Map([['/', page('app/page-home111.js')]]);
+  expect(
+    findMarkerIn(
+      { kind: 'chunks' },
+      'GoTrueClient',
+      inputs({ pages, sources }),
+    ),
+  ).toStrictEqual(['shared-222.js']);
+});
+
+test('checkRules: 같은 셀렉터의 폐포는 한 번만 계산해도 결과가 같다', () => {
+  const sources = new Map([
+    ['admin111.js', 'GoTrueClient'],
+    ['public222.js', 'hello'],
+  ]);
+  const pages = new Map([
+    ['/admin/', page('admin111.js')],
+    ['/', page('public222.js')],
+  ]);
+  const cache = new Map<string, Set<string>>();
+  const scope = { kind: 'chunks', of: { under: '/admin/' } } as const;
+  const first = findMarkerIn(
+    scope,
+    'GoTrueClient',
+    inputs({ pages, sources }),
+    cache,
+  );
+  // 캐시가 찬 뒤에는 입력의 청크 본문을 바꿔도 같은 폐포를 쓴다 — 재계산하지 않는다.
+  const second = findMarkerIn(
+    scope,
+    'GoTrueClient',
+    inputs({ pages: new Map(), sources }),
+    cache,
+  );
+  expect(first).toStrictEqual(['admin111.js']);
+  expect(second).toStrictEqual(['admin111.js']);
+  expect(cache.size).toBe(1);
+});
