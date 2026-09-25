@@ -7,12 +7,36 @@ import type { PostData } from './types.ts';
 import { encodePostSlug } from './utils.ts';
 
 /**
+ * 외부 URL(`https:`·`data:` 같은 스킴, `//` 프로토콜 상대)인가.
+ *
+ * 본문 이미지의 `resolvePostAssetUrl`(assetUrl.ts)과 **같은 판정**이다. 예전에는
+ * `startsWith('http')`라서 `http2-flow.png` 같은 상대 파일명이 외부 URL로 분류돼
+ * 카드·og:image가 맨 파일명을 가리켰다.
+ */
+const EXTERNAL_URL = /^(?:[a-z][a-z0-9+.-]*:|\/\/)/i;
+
+/** 그대로 쓰는 값인가 — 외부 URL이거나 사이트 루트 경로(`/og/…`). */
+function isAbsoluteThumbnail(thumbnail: string): boolean {
+  return EXTERNAL_URL.test(thumbnail) || thumbnail.startsWith('/');
+}
+
+/**
+ * 포스트 디렉터리 기준 상대 경로를 정리한다 — 앞의 `./`만 벗긴다(assetUrl.ts와
+ * 같은 규칙). 하위 폴더(`img/cover.png`)의 `/`는 경로 구분자로 남긴다.
+ */
+function toPostRelative(thumbnail: string): string {
+  return thumbnail.replace(/^(?:\.\/)+/, '');
+}
+
+/**
  * 포스트의 thumbnail URL을 해결합니다.
  *
  * - thumbnail이 없으면 빌드 시 생성되는 글별 OG 카드(/og/{slug}.png) 사용
  *   (scripts/render/generate-og-images.ts가 발행 글 전체에 대해 생성을 보장)
- * - http/https 또는 /로 시작하는 절대 경로는 그대로 사용
- * - 상대 경로면 포스트 디렉토리 기반으로 변환
+ * - 외부 URL(스킴·`//`) 또는 /로 시작하는 절대 경로는 그대로 사용
+ * - 상대 경로면 포스트 디렉토리 기반으로 변환. 디렉터리와 파일 경로 모두
+ *   **세그먼트별** 인코딩이라 `img/cover.png`의 `/`가 `%2F`가 되지 않는다
+ *   (`%2F`는 대부분의 정적 호스트에서 경로 구분자가 아니라 404가 된다).
  */
 export function resolveThumbnailUrl(
   post: Pick<PostData, 'thumbnail' | 'relativeDir' | 'slug'>,
@@ -22,11 +46,9 @@ export function resolveThumbnailUrl(
   if (!thumbnail) {
     return slug ? `/og/${encodePostSlug(slug)}.png` : ogDefaultImage;
   }
-  if (thumbnail.startsWith('http') || thumbnail.startsWith('/')) {
-    return thumbnail;
-  }
+  if (isAbsoluteThumbnail(thumbnail)) return thumbnail;
   const dir = relativeDir ? `${encodePostSlug(relativeDir)}/` : '';
-  return `/posts/${dir}${encodeURIComponent(thumbnail)}`;
+  return `/posts/${dir}${encodePostSlug(toPostRelative(thumbnail))}`;
 }
 
 /** 빌드 시 WebP 최적화본을 만들 수 있는 원본 확장자 */
@@ -42,7 +64,7 @@ export function isOptimizableThumbnail(
   thumbnail?: string,
 ): thumbnail is string {
   if (!thumbnail) return false;
-  if (thumbnail.startsWith('http') || thumbnail.startsWith('/')) return false;
+  if (isAbsoluteThumbnail(thumbnail)) return false;
   return OPTIMIZABLE_EXT.test(thumbnail);
 }
 
@@ -60,7 +82,9 @@ export function thumbnailWebpRelPath(
 ): string | null {
   const { thumbnail, relativeDir } = post;
   if (!isOptimizableThumbnail(thumbnail)) return null;
-  const name = toWebpName(thumbnail);
+  // `./`를 벗겨야 resolveThumbnailSrc가 가리키는 경로와, 산출 디렉터리를 훑는
+  // orphan 정리가 보는 경로(`dir/cover.webp`)가 같은 문자열이 된다.
+  const name = toWebpName(toPostRelative(thumbnail));
   return relativeDir ? `${relativeDir}/${name}` : name;
 }
 
@@ -81,10 +105,11 @@ export function resolveThumbnailSrc(
   if (!isOptimizableThumbnail(post.thumbnail)) {
     return resolveThumbnailUrl(post, ogDefaultImage);
   }
-  // 디렉터리는 세그먼트별(구분자 보존), 파일명은 통째로 인코딩 —
+  // 디렉터리·파일 경로 모두 세그먼트별 인코딩(구분자 보존) —
   // resolveThumbnailUrl과 같은 규칙이라 경로 형태가 어긋나지 않습니다.
   const dir = post.relativeDir ? `${encodePostSlug(post.relativeDir)}/` : '';
-  return `/thumbs/${dir}${encodeURIComponent(toWebpName(post.thumbnail))}`;
+  const name = toWebpName(toPostRelative(post.thumbnail));
+  return `/thumbs/${dir}${encodePostSlug(name)}`;
 }
 
 /**
@@ -95,6 +120,9 @@ export function resolveAbsoluteThumbnailUrl(
   site: Pick<SiteConfig, 'url' | 'ogDefaultImage'>,
 ): string {
   const url = resolveThumbnailUrl(post, site.ogDefaultImage);
-  if (url.startsWith('http')) return url;
+  // 프로토콜 상대(`//cdn…`)는 origin을 앞에 붙이면 `https://blog//cdn…`이 된다 —
+  // 사이트의 스킴만 빌려 절대 URL로 만든다.
+  if (url.startsWith('//')) return `${new URL(site.url).protocol}${url}`;
+  if (EXTERNAL_URL.test(url)) return url;
   return `${site.url}${url}`;
 }
