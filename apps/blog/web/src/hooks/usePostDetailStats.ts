@@ -36,20 +36,18 @@ export function usePostDetailStats(post: PostStatDetail): PostDetailStats {
     staleTime: 0,
     refetchOnMount: 'always',
     retry: retryAdminQuery,
+    // 실패는 삼키지 않는다 — 예전엔 catch에서 빈 분포를 돌려줘, Edge Function의
+    // 401·500이 "이 글은 조회가 없었다"는 빈 차트와 구분되지 않았다(그리고 그 빈
+    // 값이 캐시에 성공으로 남았다). throw는 admin 에러 경계가 안내한다.
     queryFn: async (): Promise<{
       hourly: HourlyDistribution[];
       dow: DowDistribution[];
     }> => {
-      try {
-        const [hourly, dow] = await Promise.all([
-          getPostHourlyDistribution(slug),
-          getPostDowDistribution(slug),
-        ]);
-        return { hourly, dow };
-      } catch (error) {
-        console.error(`Failed to fetch post detail stats for ${slug}:`, error);
-        return { hourly: [], dow: [] };
-      }
+      const [hourly, dow] = await Promise.all([
+        getPostHourlyDistribution(slug),
+        getPostDowDistribution(slug),
+      ]);
+      return { hourly, dow };
     },
   });
 
