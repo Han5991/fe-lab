@@ -47,7 +47,7 @@ export const metadata: Metadata = {
   },
 };
 
-const LAST_UPDATED = '2026년 8월 21일';
+const LAST_UPDATED = '2026년 9월 25일';
 
 export default function PrivacyPage() {
   return (
@@ -228,6 +228,11 @@ export default function PrivacyPage() {
                 <li>조회수 중복 집계 방지 (6시간 쿨다운)</li>
                 <li>Google Analytics 방문자 식별 (익명)</li>
                 <li>Microsoft Clarity 사용 행태 분석 (서드파티 쿠키)</li>
+                <li>화면 테마(라이트/다크) 선택 기억 (쿠키, 1년)</li>
+                <li>
+                  최근 본 글 목록 (검색 창에 표시, 최대 5편 — 이 브라우저의 로컬
+                  스토리지에만 저장되며 서버로 전송되지 않음)
+                </li>
               </ul>
               <p className={css({ mt: '3' })}>
                 브라우저 설정에서 쿠키를 비활성화할 수 있으나, 일부 기능이 정상
