@@ -5,7 +5,7 @@ import type { PostData } from '../post/index.ts';
 import { resolvePostSet } from './artifacts.ts';
 // Key Facts 조립은 색인(llms.txt)과 같은 규칙을 쓴다 — 한쪽만 빈 항목을 남기면
 // 두 산출물이 저자에 대해 서로 다른 말을 하게 된다.
-import { factLine, keepPresent } from './generate-llms.ts';
+import { factLine, keepPresent, markdownLinkTarget } from './generate-llms.ts';
 import {
   type AuthorConfig,
   type LlmsConfig,
@@ -96,7 +96,7 @@ export function buildLlmsFullText(
       const tags = post.tags?.length ? ` Tags: ${post.tags.join(', ')}.` : '';
       const date = post.date ? ` (${post.date})` : '';
 
-      lines.push(`### [${post.title}](${url})${date}`);
+      lines.push(`### [${post.title}](${markdownLinkTarget(url)})${date}`);
       lines.push(``);
       lines.push(`${excerpt.trim()}...${tags}`);
       lines.push(``);
@@ -123,7 +123,7 @@ export function buildLlmsFullText(
       const tags = post.tags?.length ? ` Tags: ${post.tags.join(', ')}.` : '';
       const date = post.date ? ` (${post.date})` : '';
 
-      lines.push(`### [${post.title}](${url})${date}`);
+      lines.push(`### [${post.title}](${markdownLinkTarget(url)})${date}`);
       lines.push(``);
       lines.push(`${excerpt.trim()}...${tags}`);
       lines.push(``);

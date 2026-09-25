@@ -103,8 +103,8 @@ function extractPostUrls(
   const postPrefix = `${siteUrl}${POSTS_PATH}`;
   return new Set(
     [...text.matchAll(pattern)]
-      // 이 파일의 패턴들은 전부 1번 캡처 그룹이 매치에 항상 참여한다.
-      .map(m => decodeUrlSafe((m[1] ?? '').trim()))
+      // URL은 1번 캡처 그룹에 있다. 대안이 둘인 패턴(LLMS_LINK)만 2번을 쓴다.
+      .map(m => decodeUrlSafe((m[1] ?? m[2] ?? '').trim()))
       // `/posts/` 자체는 아카이브 목록 페이지지 글이 아니다 — sitemap에만 있는 게 정상.
       .filter(url => url.startsWith(postPrefix) && url !== postPrefix),
   );
@@ -114,7 +114,15 @@ const SITEMAP_LOC = /<loc>([^<]+)<\/loc>/g;
 const RSS_GUID = /<guid[^>]*>([^<]+)<\/guid>/g;
 // llms.txt(`- [제목](url): 요약`)와 llms-full.txt(`### [제목](url) (날짜)`)가
 // 같은 마크다운 링크 형식이라 추출 패턴 하나를 공유한다.
-const LLMS_LINK = /\]\((https?:\/\/[^)\s]+)\)/g;
+//
+// URL에 괄호가 들 수 있다 — `encodeURIComponent`는 `( ) ! ' * ~`를 그대로 두고,
+// 제목이 곧 slug가 되는 글(`… (feat. 호이스팅)`)은 흔하다. 예전 패턴
+// (`[^)\s]+`)은 첫 `)`에서 끊어서, 멀쩡한 글이 "llms에만 있는 글/없는 글"로
+// 동시에 보고됐다(원인과 무관한 메시지로 배포가 막혔다). 생성기는 괄호가 든
+// URL을 `<url>`로 감싸 쓰므로(generate-llms.ts의 `markdownLinkTarget`) 그 형태를
+// 먼저 읽고, 감싸지 않은 목적지는 CommonMark처럼 **짝이 맞는 괄호**까지 읽는다.
+const LLMS_LINK =
+  /\]\((?:<(https?:\/\/[^<>\s]+)>|(https?:\/\/(?:[^()\s]|\([^()\s]*\))+))\)/g;
 
 /**
  * slug 배열을 담는 JSON 인덱스 → 글 URL 집합. URL 조립은 페이지 링크와 같은

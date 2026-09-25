@@ -5,6 +5,9 @@ import { buildLlmsText } from './generate-llms.ts';
 import { buildLlmsFullText } from './generate-llms-full.ts';
 import { postPath, postUrl } from '../post/urls.ts';
 import type { PostData } from '../post/index.ts';
+import { decodeUrlSafe } from '../shared/url.ts';
+import { ARTIFACTS } from './artifacts.ts';
+import { checkArtifacts, type CollectedArtifact } from './check-seo.ts';
 import { defineTestContent } from '../shared/testValues.ts';
 import { sep } from 'node:path';
 
@@ -91,3 +94,72 @@ test('비ASCII slug: 다섯 산출 지점이 모두 같은 인코딩의 URL을 �
     ).toBeTruthy();
   }
 });
+
+/**
+ * 괄호가 든 slug — `encodeURIComponent`는 `( )`를 인코딩하지 않는다. 산출물의
+ * 링크 추출(artifacts.ts)이 첫 `)`에서 끊던 때는 멀쩡한 글이 llms 두 파일에서
+ * "없는 글"이자 "있는 글"로 동시에 보고돼 배포가 막혔다. 추출까지 실제
+ * 레지스트리로 돌려, 산출물마다 **같은 글 URL 하나**가 나오는지 본다.
+ */
+test.each([
+  [
+    '짝이 맞는 괄호',
+    'pnpm 10 업그레이드 후 ESLint 설정이 사라졌어요?! (feat. 호이스팅)',
+  ],
+  ['짝이 안 맞는 괄호', '웃는 얼굴 :)'],
+])(
+  '괄호가 든 slug(%s): 산출물마다 추출한 글 URL이 sitemap과 같다',
+  (_, slug) => {
+    const post = makePost({ slug, originalSlug: slug, relativeDir: '' });
+    const texts = new Map<string, string>([
+      [
+        'sitemap.xml',
+        buildSitemapXml([post], '2026-01-02', SITE_VALUES, TZ, CONFIG.sitemap),
+      ],
+      [
+        'rss.xml',
+        buildRssXml([post], {
+          site: SITE_VALUES,
+          timezone: TZ,
+          now: new Date(0),
+        }),
+      ],
+      [
+        'llms.txt',
+        buildLlmsText([post], {
+          site: SITE_VALUES,
+          llms: CONFIG.llms,
+          author: CONFIG.author,
+          resolveSeriesMeta: () => null,
+        }),
+      ],
+      [
+        'llms-full.txt',
+        buildLlmsFullText([post], {
+          site: SITE_VALUES,
+          author: CONFIG.author,
+          llms: CONFIG.llms,
+        }),
+      ],
+    ]);
+    const expected = decodeUrlSafe(postUrl(slug, SITE));
+
+    const collected: CollectedArtifact[] = [];
+    for (const spec of ARTIFACTS) {
+      const text = texts.get(spec.name);
+      if (spec.kind !== 'file' || text === undefined) continue;
+      const urls = spec.extractUrls(text, SITE);
+      expect([...urls], spec.name).toStrictEqual([expected]);
+      collected.push({
+        name: spec.name,
+        relation: spec.relation,
+        reference: spec.reference,
+        urls,
+      });
+    }
+    expect(collected.map(c => c.name).sort()).toStrictEqual(
+      [...texts.keys()].sort(),
+    );
+    expect(checkArtifacts(collected)).toStrictEqual([]);
+  },
+);
