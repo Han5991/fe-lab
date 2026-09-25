@@ -39,7 +39,7 @@ describe('ErrorDesignPage', () => {
         id: '1',
         type: 'signup',
         message: '새 사용자가 가입했습니다',
-        timestamp: new Date(),
+        timestamp: '2024-01-01T00:00:00.000Z',
       },
     ]);
 
@@ -85,7 +85,7 @@ describe('ErrorDesignPage', () => {
         id: '1',
         type: 'signup',
         message: '새 사용자가 가입했습니다',
-        timestamp: new Date(),
+        timestamp: '2024-01-01T00:00:00.000Z',
       },
     ]);
 
@@ -132,7 +132,7 @@ describe('ErrorDesignPage', () => {
         id: '1',
         type: 'signup',
         message: '새 사용자가 가입했습니다',
-        timestamp: new Date(),
+        timestamp: '2024-01-01T00:00:00.000Z',
       },
     ]);
 
@@ -162,13 +162,13 @@ describe('ErrorDesignPage', () => {
         id: '1',
         type: 'signup',
         message: '새 사용자가 가입했습니다',
-        timestamp: new Date(),
+        timestamp: '2024-01-01T00:00:00.000Z',
       },
       {
         id: '2',
         type: 'payment',
         message: '결제가 완료되었습니다',
-        timestamp: new Date(),
+        timestamp: '2024-01-01T00:00:00.000Z',
       },
     ]);
 
