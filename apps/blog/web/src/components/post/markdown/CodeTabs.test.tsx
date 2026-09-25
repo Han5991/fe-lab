@@ -8,31 +8,17 @@
  */
 import { describe, expect, test, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
-import ReactMarkdown from 'react-markdown';
-import rehypeRaw from 'rehype-raw';
-import type { ComponentProps } from 'react';
-import { CodeBlock } from '@/src/components/post/CodeBlock';
-import { rehypeCodeMeta } from '@/src/components/post/codeMeta';
-import { CodeTabs } from './CodeTabs';
+import { PostBody } from '@/src/app/posts/[...slug]/PostBody';
 
 vi.mock('mermaid', () => ({ default: {} }));
 
+/**
+ * 실제 본문 파이프라인(PostBody) 그대로 렌더한다. 매핑을 여기서 따로 조립하면
+ * `pre` 매퍼 같은 실물의 차이가 빠져, 프로덕션에서만 탭이 안 생기는 회귀를
+ * 테스트가 못 본다.
+ */
 const renderMarkdown = (md: string) =>
-  render(
-    <ReactMarkdown
-      rehypePlugins={[rehypeCodeMeta, rehypeRaw]}
-      components={
-        {
-          code(props) {
-            return <CodeBlock {...props} />;
-          },
-          'code-tabs': CodeTabs,
-        } as ComponentProps<typeof ReactMarkdown>['components']
-      }
-    >
-      {md}
-    </ReactMarkdown>,
-  );
+  render(<PostBody content={md} relativeDir="dir" />);
 
 /**
  * 보이는 코드 전문.

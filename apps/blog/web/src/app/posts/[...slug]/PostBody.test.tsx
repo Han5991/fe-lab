@@ -319,3 +319,52 @@ describe('본문 raw HTML의 실행 요소', () => {
     expect(doc.body.textContent).toContain('<script src="main.js"></script>');
   });
 });
+
+describe('코드 펜스의 바깥 <pre>', () => {
+  test('펜스는 <pre> 안에 <figure>를 넣지 않는다', () => {
+    const html = serverHtml(
+      [
+        '```ts title="a.ts"',
+        'const a = 1;',
+        '```',
+        '',
+        '```',
+        'plain',
+        '```',
+      ].join('\n'),
+    );
+    const doc = parsed(html);
+
+    expect(doc.querySelectorAll('figure')).toHaveLength(2);
+    expect(doc.querySelector('pre figure, pre pre')).toBeNull();
+    expect(invalidNesting(html)).toEqual([]);
+  });
+
+  test('<code-tabs>는 pre 매핑을 지나도 탭을 만든다', () => {
+    const html = serverHtml(
+      [
+        '<code-tabs>',
+        '',
+        '```bash tab="npm"',
+        'npm i typesense',
+        '```',
+        '',
+        '```bash tab="pnpm"',
+        'pnpm add typesense',
+        '```',
+        '',
+        '</code-tabs>',
+      ].join('\n'),
+    );
+
+    const tabs = Array.from(parsed(html).querySelectorAll('[role="tab"]'));
+    expect(tabs.map(tab => tab.textContent)).toEqual(['npm', 'pnpm']);
+    expect(invalidNesting(html)).toEqual([]);
+  });
+
+  test('코드 블록이 아닌 raw <pre>는 공백을 지키도록 그대로 둔다', () => {
+    const doc = parsed(serverHtml('<pre>  들여쓴\n    텍스트</pre>\n'));
+
+    expect(doc.querySelector('pre')?.textContent).toBe('  들여쓴\n    텍스트');
+  });
+});

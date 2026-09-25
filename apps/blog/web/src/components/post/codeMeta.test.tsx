@@ -14,16 +14,20 @@ import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 import type { ComponentProps } from 'react';
 import { rehypeCodeMeta, parseCodeMeta } from './codeMeta';
-import { CodeBlock } from './CodeBlock';
-import { CodeTabs } from './markdown/CodeTabs';
-import { POST_REHYPE_PLUGINS } from '@/src/app/posts/[...slug]/PostBody';
+import {
+  POST_REHYPE_PLUGINS,
+  buildPostComponents,
+} from '@/src/app/posts/[...slug]/PostBody';
 
 // CodeBlock은 mermaid를 동적 import하지만, 모듈 그래프 상단에서 참조가
 // 잡히면 raw 1.1MB짜리 실제 패키지를 끌어온다. 여기 테스트는 mermaid
 // 펜스를 쓰지 않으므로 빈 것으로 대신한다.
 vi.mock('mermaid', () => ({ default: {} }));
 
-/** 기본값은 본문이 실제로 쓰는 배열(PostBody의 실물) — 순서 회귀를 그대로 잡는다. */
+/**
+ * 기본값은 본문이 실제로 쓰는 배열(PostBody의 실물) — 순서 회귀를 그대로 잡는다.
+ * 매핑도 실물(`buildPostComponents`)이다. 플러그인만 갈아 끼워 대조군을 만든다.
+ */
 const renderMarkdown = (
   md: string,
   plugins: ComponentProps<
@@ -33,14 +37,7 @@ const renderMarkdown = (
   render(
     <ReactMarkdown
       rehypePlugins={plugins}
-      components={
-        {
-          code(props) {
-            return <CodeBlock {...props} />;
-          },
-          'code-tabs': CodeTabs,
-        } as ComponentProps<typeof ReactMarkdown>['components']
-      }
+      components={buildPostComponents('dir')}
     >
       {md}
     </ReactMarkdown>,

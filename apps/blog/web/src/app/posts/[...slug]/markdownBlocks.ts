@@ -1,4 +1,9 @@
-import { isValidElement, type ReactElement, type ReactNode } from 'react';
+import {
+  Children,
+  isValidElement,
+  type ReactElement,
+  type ReactNode,
+} from 'react';
 
 import {
   Diagram,
@@ -95,4 +100,37 @@ export function isMarkdownImageElement(
   if (!isValidElement<MarkdownImageElementProps>(child)) return false;
   const source = child.props.node;
   return isRecord(source) && source['tagName'] === 'img';
+}
+
+/** `pre` 안의 `code` 요소에서 읽는 prop. */
+interface CodeElementProps {
+  className?: string | undefined;
+  children?: ReactNode;
+  node?: unknown;
+}
+
+/**
+ * `pre`의 자식이 **CodeBlock이 블록으로 그릴 코드 하나뿐**이면 그 요소를 돌려준다.
+ *
+ * 코드 펜스는 언제나 `pre > code` 한 겹이다. 블록 판정은 CodeBlock과 같은
+ * `isBlockCode`에 맡긴다 — 한쪽만 블록으로 보면 `<pre>`를 벗긴 자리에 인라인
+ * `<code>`가 남거나(공백·줄바꿈 유실), 벗기지 않은 `<pre>` 안에 `<figure>`가
+ * 들어간다. 자식 사이의 공백 텍스트(raw HTML의 줄바꿈)는 무시한다.
+ */
+export function fencedCode(
+  children: ReactNode,
+): ReactElement<CodeElementProps> | null {
+  const nodes = Children.toArray(children).filter(
+    child => !(typeof child === 'string' && child.trim() === ''),
+  );
+  const [only] = nodes;
+  if (nodes.length !== 1 || !isValidElement<CodeElementProps>(only)) {
+    return null;
+  }
+  const source = only.props.node;
+  const isCode =
+    only.type === 'code' || (isRecord(source) && source['tagName'] === 'code');
+  return isCode && isBlockCode(only.props.children, only.props.className)
+    ? only
+    : null;
 }

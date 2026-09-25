@@ -22,7 +22,11 @@ import {
   DiagramEdgeTag,
 } from '@/src/components/diagram';
 import { HEADING_COMPONENTS } from '@/src/components/post/markdownHeadings';
-import { isBlockMarkdownChild, isMarkdownImageElement } from './markdownBlocks';
+import {
+  fencedCode,
+  isBlockMarkdownChild,
+  isMarkdownImageElement,
+} from './markdownBlocks';
 
 /**
  * 글 본문 렌더 파이프라인의 단일 출처 — 마크다운 원문이 DOM이 되는 유일한 곳.
@@ -99,6 +103,15 @@ export function buildPostComponents(relativeDir: string): PostComponents {
         return <div {...props}>{children}</div>;
       }
       return <p {...props}>{children}</p>;
+    },
+    // 코드 펜스의 바깥 `<pre>`는 벗긴다. CodeBlock이 상자를 `<figure>`(안에
+    // 구문 강조기의 `<pre>`)로 직접 그리므로, 남겨 두면 phrasing만 받는 `<pre>`
+    // 안에 `<figure>`·`<pre>`가 들어가는 무효 중첩이 되고 mermaid 도표까지
+    // `<pre>`의 white-space·글꼴을 물려받는다. CodeBlock이 블록으로 그리지 않는
+    // 것(raw `<pre>`, 한 줄짜리 raw `<pre><code>`)은 `<pre>`를 그대로 둔다.
+    pre({ node: _node, children, ...props }) {
+      const fence = fencedCode(children);
+      return fence ?? <pre {...props}>{children}</pre>;
     },
     code(props) {
       return <CodeBlock {...props} />;
