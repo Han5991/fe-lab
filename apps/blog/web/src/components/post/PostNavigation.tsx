@@ -1,5 +1,3 @@
-'use client';
-
 import Link from 'next/link';
 import { css, sva } from '@design-system/ui-lib/css';
 import type { RecipeVariant } from '@design-system/ui-lib/css';
