@@ -24,6 +24,7 @@ import type { Metadata } from 'next';
 import { Rail, railGutter, railColumn } from '@/src/components/Rail';
 import { safeJsonLd } from '@blog/content';
 import { postTransitionId } from '@/src/shared/transitions';
+import { slugFromRouteParam } from '@/src/shared/routes';
 import GiscusComments from '@/src/components/GiscusComments';
 import { PageBoundary } from '@/src/components/PageBoundary';
 import { BackToTop } from '@/src/components/mobile/BackToTop';
@@ -35,7 +36,6 @@ import { PostHeader } from '@/src/components/post/PostHeader';
 import { PostHero } from '@/src/components/post/PostHero';
 import { PostBody } from './PostBody';
 import { PostRuntime } from './PostRuntime';
-import { slugFromSegments } from './slugFromSegments';
 
 interface Props {
   params: Promise<{
@@ -54,7 +54,7 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const resolvedParams = await params;
-  const slug = slugFromSegments(resolvedParams.slug);
+  const slug = slugFromRouteParam(resolvedParams.slug);
   const post = getPostBySlug(slug);
 
   if (!post) {
@@ -70,7 +70,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function PostPage({ params }: Props) {
   const resolvedParams = await params;
-  const slug = slugFromSegments(resolvedParams.slug);
+  const slug = slugFromRouteParam(resolvedParams.slug);
   const post = getPostBySlug(slug);
 
   if (!post) {
