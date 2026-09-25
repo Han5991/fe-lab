@@ -104,3 +104,39 @@ describe('MobileTOC 항목 클릭', () => {
     expect(drawerOpen()).toBe(true);
   });
 });
+
+describe('MobileTOC 드로어 접근성', () => {
+  test('드로어는 이름 있는 모달 다이얼로그다', () => {
+    openDrawer();
+
+    const dialog = screen.getByRole('dialog', { name: '목차' });
+    expect(dialog).toHaveAttribute('aria-modal', 'true');
+  });
+
+  test('Escape로 닫히고 초점이 여는 버튼으로 돌아간다', () => {
+    render(<MobileTOC />);
+    const fab = screen.getByRole('button', { name: '목차 열기' });
+    fab.focus();
+    fireEvent.click(fab);
+    expect(drawerOpen()).toBe(true);
+
+    act(() => {
+      fireEvent.keyDown(document.activeElement ?? document.body, {
+        key: 'Escape',
+      });
+    });
+
+    expect(drawerOpen()).toBe(false);
+    expect(fab).toHaveFocus();
+  });
+
+  // h2~h4가 없는 글에서는 빈 드로어를 여는 버튼이 떴다.
+  test('헤딩이 없는 글에는 목차 버튼이 없다', () => {
+    content.replaceChildren();
+    render(<MobileTOC />);
+
+    expect(
+      screen.queryByRole('button', { name: '목차 열기' }),
+    ).not.toBeInTheDocument();
+  });
+});

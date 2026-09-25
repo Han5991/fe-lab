@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useId, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { List, X } from 'lucide-react';
 import { css, cva } from '@design-system/ui-lib/css';
 import type { RecipeVariant } from '@design-system/ui-lib/css';
 import { useTocHook, scrollToId } from '@/src/components/tocHooks';
 import { Portal } from '@/src/components/Portal';
+import { useModalDialog } from '@/src/components/useModalDialog';
 
 /** 목차 항목 한 줄 — level은 헤딩 깊이만큼 들여쓰고, active는 현재 절을 비춘다. */
 const tocItem = cva({
@@ -46,27 +47,33 @@ const isTocLevel = (level: number): level is TocLevel =>
 export const MobileTOC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const { toc, activeId } = useTocHook();
+  const drawerRef = useRef<HTMLDivElement>(null);
+  const titleId = useId();
 
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
+  // 스크롤 잠금·초점 이동/가두기/되돌리기·Escape는 검색 다이얼로그·필터 시트와
+  // 같은 훅이다. 예전엔 여기만 역할·Escape·초점 처리가 없었고, 닫힐 때마다
+  // body overflow를 'unset'으로 되돌려 다른 오버레이의 잠금까지 풀었다.
+  useModalDialog({
+    // 차례가 비면 드로어도 그리지 않으므로 잠금도 걸지 않는다.
+    open: isOpen && toc.length > 0,
+    onClose: () => setIsOpen(false),
+    containerRef: drawerRef,
+  });
 
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, [isOpen]);
+  // h2~h4가 하나도 없는 글이면 버튼도 없다 — 예전엔 빈 드로어를 여는 버튼이 떴다.
+  if (toc.length === 0) return null;
 
   return (
     <>
       {/* Floating Button */}
       <motion.button
+        type="button"
         onClick={() => setIsOpen(true)}
         // 아이콘만 있는 버튼이라 접근 가능한 이름이 없었다(axe button-name,
         // impact critical). lucide 아이콘은 aria-hidden된 svg라 이름을 못 준다.
         aria-label="목차 열기"
+        aria-haspopup="dialog"
+        aria-expanded={isOpen}
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
         whileTap={{ scale: 0.9 }}
@@ -111,6 +118,10 @@ export const MobileTOC = () => {
                 })}
               />
               <motion.div
+                ref={drawerRef}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby={titleId}
                 initial={{ y: '100%' }}
                 animate={{ y: 0 }}
                 exit={{ y: '100%' }}
@@ -143,10 +154,14 @@ export const MobileTOC = () => {
                     alignItems: 'center',
                   })}
                 >
-                  <h2 className={css({ fontSize: 'lg', fontWeight: 'bold' })}>
+                  <h2
+                    id={titleId}
+                    className={css({ fontSize: 'lg', fontWeight: 'bold' })}
+                  >
                     목차
                   </h2>
                   <button
+                    type="button"
                     onClick={() => setIsOpen(false)}
                     // 열기 버튼과 같은 axe button-name 위반. 드로어가 열렸을 때만
                     // 존재해 스캔에서 늦게 잡혔을 뿐, 같은 이유로 이름이 필요하다.
