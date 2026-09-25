@@ -100,19 +100,18 @@ export class Http {
     if (!response.ok) {
       const data = await readBody(response).catch(() => undefined);
       const { code, message } = readErrorFields(data);
-      const apiError = new ApiError(
+      throw new ApiError(
         message ?? `HTTP Error: ${response.status} ${response.statusText}`,
-        { code, status: response.status },
+        {
+          code,
+          status: response.status,
+          response: {
+            data,
+            status: response.status,
+            headers: response.headers,
+          },
+        },
       );
-
-      // 원본 응답 정보 보존 (API 레이어에서 활용 가능)
-      (apiError as any).response = {
-        data,
-        status: response.status,
-        headers: response.headers,
-      };
-
-      throw apiError;
     }
 
     const data = (await readBody(response)) as T;

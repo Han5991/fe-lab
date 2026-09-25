@@ -56,6 +56,8 @@ test.each([
 
     expect(error).toBeInstanceOf(ApiError);
     expect(error).toMatchObject(expected);
+    // 원본 응답은 타입에 선언된 필드로 남는다 — 캐스트 없이 읽힌다.
+    expect((error as ApiError).response?.status).toBe(expected.status);
   },
 );
 

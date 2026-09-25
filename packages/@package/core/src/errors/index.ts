@@ -1,10 +1,23 @@
+/** HTTP 에러 응답의 원본 — API 레이어가 본문·헤더를 다시 읽을 때 쓴다. */
+export interface ApiErrorResponse {
+  data?: unknown;
+  status: number;
+  headers?: Headers;
+}
+
 export class ApiError extends Error {
   code?: string;
   status?: number;
+  response?: ApiErrorResponse;
 
   constructor(
     message: string,
-    opts?: { code?: string; status?: number; cause?: unknown },
+    opts?: {
+      code?: string;
+      status?: number;
+      cause?: unknown;
+      response?: ApiErrorResponse;
+    },
   ) {
     // ES2022를 쓰면: super(message, { cause: opts?.cause })
     super(message);
@@ -17,6 +30,9 @@ export class ApiError extends Error {
     this.code = typeof options.code === 'string' ? options.code : undefined;
     this.status =
       typeof options.status === 'number' ? options.status : undefined;
+    if (typeof options.response === 'object' && options.response !== null) {
+      this.response = options.response;
+    }
 
     // V8/Node 전용 API는 가드 후 사용
     const ErrorCtor = Error as unknown as {
