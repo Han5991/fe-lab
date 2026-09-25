@@ -67,7 +67,9 @@ export const PopularRail = ({ posts, limit = 5 }: PopularRailProps) => {
           color: 'ink.500',
         })}
       >
-        Popular · 30일
+        {/* 순위는 post_views의 누적 조회수다(getTopPosts) — 기간 창이 없다.
+            예전 라벨 "30일"은 이 쿼리가 한 번도 한 적 없는 약속이었다. */}
+        Popular · 누적
       </h3>
       <ol
         className={css({

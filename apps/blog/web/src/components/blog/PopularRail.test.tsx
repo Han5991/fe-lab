@@ -70,6 +70,17 @@ describe('PopularRail', () => {
     expect(getTopPosts).toHaveBeenCalledWith(5, ['newest', 'middle', 'oldest']);
   });
 
+  test('라벨은 순위의 실제 기간(누적 조회수)을 말한다', async () => {
+    getTopPosts.mockResolvedValue([{ slug: 'oldest', view_count: 120 }]);
+
+    renderRail(<PopularRail posts={POSTS} />);
+
+    expect(
+      await screen.findByRole('heading', { name: 'Popular · 누적' }),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/30일/)).not.toBeInTheDocument();
+  });
+
   test('조회수가 오기 전에는 최신 글을 인기 글처럼 그리지 않는다', () => {
     // 끝나지 않는 요청 — 응답 전 상태에 머문다.
     getTopPosts.mockReturnValue(new Promise(() => undefined));
