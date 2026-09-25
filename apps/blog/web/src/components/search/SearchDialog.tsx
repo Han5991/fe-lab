@@ -465,6 +465,9 @@ export const SearchDialog = ({ seriesTitles }: SearchDialogProps) => {
                             맡으므로 Tab 순서에서는 뺀다. */}
                           <Link
                             href={postPath(post.slug)}
+                            // 결과 목록은 글자마다 갈린다 — 보이는 링크마다 미리
+                            // 받으면 입력 한 번에 RSC 요청이 열 개씩 나간다.
+                            prefetch={false}
                             tabIndex={-1}
                             onClick={e => {
                               if (!isModifiedClick(e)) closeDialog();
