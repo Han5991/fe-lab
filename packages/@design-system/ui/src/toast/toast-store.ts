@@ -7,6 +7,7 @@ export type ToastStore = ReturnType<typeof createToastStore>;
 const createToastStore = () =>
   createStore<ToastsState>({
     toasts: [],
+    queue: [],
     defaultPosition: 'top-center',
     limit: 3,
   });
@@ -37,12 +38,16 @@ function getDistributedToasts(
   return { toasts, queue };
 }
 
+/**
+ * 보이는 토스트와 대기열을 합친 전체 목록에 update를 적용한 뒤 다시 나눈다.
+ * 대기열을 버리면 limit을 넘은 토스트가 조용히 사라지고, 앞의 것이 닫혀도 올라오지 않는다.
+ */
 function updateToastsState(
   store: ToastStore,
   update: (toasts: ToastData[]) => ToastData[],
 ) {
   const state = store.getState();
-  const toasts = update([...state.toasts]);
+  const toasts = update([...state.toasts, ...state.queue]);
   const updated = getDistributedToasts(
     toasts,
     state.defaultPosition,
@@ -50,9 +55,9 @@ function updateToastsState(
   );
 
   store.setState({
+    ...state,
     toasts: updated.toasts,
-    limit: state.limit,
-    defaultPosition: state.defaultPosition,
+    queue: updated.queue,
   });
 }
 
@@ -91,7 +96,8 @@ function cleanToasts(store: ToastStore = toastsStore) {
 }
 
 function cleanToastsQueue(store: ToastStore = toastsStore) {
-  updateToastsState(store, toasts => toasts.slice(0, store.getState().limit));
+  // 떠 있는 토스트는 두고 대기열만 비운다
+  updateToastsState(store, () => [...store.getState().toasts]);
 }
 
 export const toasts = {
@@ -105,12 +111,6 @@ export const toasts = {
 export const useToasts = (store: ToastStore = toastsStore) => useStore(store);
 
 export function useDistributedToasts(store: ToastStore = toastsStore) {
-  const state = useToasts(store);
-  const { toasts, queue } = getDistributedToasts(
-    state.toasts,
-    state.defaultPosition,
-    state.limit,
-  );
-
-  return { toasts, queue, ...state };
+  // 스토어가 이미 보이는 것(toasts)과 대기열(queue)로 나눠 들고 있다
+  return useToasts(store);
 }
