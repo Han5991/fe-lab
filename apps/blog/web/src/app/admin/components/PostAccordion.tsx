@@ -2,7 +2,7 @@
 
 import { TIMEZONE } from '@/content.values.mts';
 import { getKSTDateISO } from '@blog/content';
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import type { PostStatDetail } from '@/src/hooks/useAdminViews';
 import { computeBriefStats } from '@/src/hooks/usePostDetailStats';
 import { css } from '@design-system/ui-lib/css';
@@ -55,6 +55,7 @@ interface Props {
 
 export function PostAccordion({ post }: Props) {
   const [isOpen, setIsOpen] = useState(false);
+  const panelId = useId();
   const briefStats = computeBriefStats(post, getKSTDateISO(TIMEZONE));
 
   // frontmatter의 status(발행 의도)가 아니라 **지금 실제로 공개 중인지**로 배지를
@@ -89,164 +90,182 @@ export function PostAccordion({ post }: Props) {
         _last: { borderBottomWidth: '[0]' },
       })}
     >
-      <button
-        onClick={() => setIsOpen(!isOpen)}
+      {/* 행 = 링크 두 개 + 펼침 버튼(형제). 예전엔 링크가 <button> 안에 있었는데,
+          버튼의 내용에는 대화형 요소가 올 수 없다 — 스크린리더·키보드 포커스가
+          제멋대로였고 stopPropagation으로 클릭만 겨우 떼어 두고 있었다. */}
+      <div
         className={css({
-          w: 'full',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between',
-          px: '5',
-          py: '3',
+          gap: '3',
+          pl: '5',
           bg: isOpen ? 'ink.50' : 'transparent',
           transition: '[background 0.15s]',
           _hover: { bg: 'ink.50' },
-          cursor: 'pointer',
         })}
       >
-        <div
+        <Link
+          href={adminAnalyticsPostPath(post.slug)}
+          aria-label={`${post.title} 상세 통계`}
           className={css({
+            color: 'ink.500',
+            _hover: { color: 'spot.600' },
             display: 'flex',
             alignItems: 'center',
-            gap: '3',
-            flex: '1',
-            overflow: 'hidden',
-          })}
-        >
-          <Link
-            href={adminAnalyticsPostPath(post.slug)}
-            onClick={e => e.stopPropagation()}
-            className={css({
-              color: 'ink.500',
-              _hover: { color: 'spot.600' },
-              display: 'flex',
-              alignItems: 'center',
-              flexShrink: 0,
-            })}
-          >
-            <BarChart3 size={14} />
-          </Link>
-          <Link
-            href={postPath(post.slug)}
-            target="_blank"
-            onClick={e => e.stopPropagation()}
-            className={css({
-              color: 'ink.200',
-              _hover: { color: 'spot.600' },
-              display: 'flex',
-              alignItems: 'center',
-              flexShrink: 0,
-            })}
-          >
-            <ExternalLink size={12} />
-          </Link>
-          <span
-            className={css({
-              fontSize: 'xs',
-              fontWeight: 'semibold',
-              px: '2',
-              py: '0.5',
-              rounded: 'full',
-              flexShrink: 0,
-              bg: 'paper.100',
-              color: badge.color,
-              borderWidth: '[1px]',
-              borderColor: 'ink.border',
-            })}
-            title={
-              state === 'scheduled' && publishAt
-                ? // 'YYYY-MM-DD'를 native Date에 넣으면 UTC 자정으로 파싱돼
-                  // KST 09:00으로 잘못 표시됩니다.
-                  `예약: ${parseScheduledDateKST(TIMEZONE, publishAt).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })}`
-                : undefined
-            }
-          >
-            {badge.label}
-          </span>
-          <span
-            className={css({
-              fontWeight: 'semibold',
-              color: 'ink.950',
-              fontSize: 'sm',
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              textAlign: 'left',
-            })}
-          >
-            {post.title}
-          </span>
-          <span
-            className={css({
-              color: 'ink.500',
-              fontSize: 'xs',
-              flexShrink: 0,
-              display: { base: 'none', md: 'inline' },
-              fontVariantNumeric: 'tabular-nums',
-            })}
-          >
-            {post.date}
-          </span>
-        </div>
-
-        <div
-          className={css({
-            display: 'flex',
-            alignItems: 'center',
-            gap: '3',
-            ml: '4',
             flexShrink: 0,
           })}
         >
-          <div
+          <BarChart3 size={14} aria-hidden />
+        </Link>
+        <Link
+          href={postPath(post.slug)}
+          target="_blank"
+          aria-label={`${post.title} 글을 새 탭에서 열기`}
+          className={css({
+            color: 'ink.200',
+            _hover: { color: 'spot.600' },
+            display: 'flex',
+            alignItems: 'center',
+            flexShrink: 0,
+          })}
+        >
+          <ExternalLink size={12} aria-hidden />
+        </Link>
+        <button
+          type="button"
+          onClick={() => setIsOpen(!isOpen)}
+          aria-expanded={isOpen}
+          aria-controls={isOpen ? panelId : undefined}
+          className={css({
+            flex: '1',
+            minW: '0',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            pr: '5',
+            py: '3',
+            cursor: 'pointer',
+          })}
+        >
+          <span
             className={css({
               display: 'flex',
-              alignItems: 'baseline',
-              gap: '1',
-              minW: '[80px]',
-              justifyContent: 'flex-end',
+              alignItems: 'center',
+              gap: '3',
+              flex: '1',
+              overflow: 'hidden',
             })}
           >
             <span
               className={css({
-                fontWeight: 'bold',
+                fontSize: 'xs',
+                fontWeight: 'semibold',
+                px: '2',
+                py: '0.5',
+                rounded: 'full',
+                flexShrink: 0,
+                bg: 'paper.100',
+                color: badge.color,
+                borderWidth: '[1px]',
+                borderColor: 'ink.border',
+              })}
+              title={
+                state === 'scheduled' && publishAt
+                  ? // 'YYYY-MM-DD'를 native Date에 넣으면 UTC 자정으로 파싱돼
+                    // KST 09:00으로 잘못 표시됩니다.
+                    `예약: ${parseScheduledDateKST(TIMEZONE, publishAt).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })}`
+                  : undefined
+              }
+            >
+              {badge.label}
+            </span>
+            <span
+              className={css({
+                fontWeight: 'semibold',
                 color: 'ink.950',
                 fontSize: 'sm',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                textAlign: 'left',
+              })}
+            >
+              {post.title}
+            </span>
+            <span
+              className={css({
+                color: 'ink.500',
+                fontSize: 'xs',
+                flexShrink: 0,
+                display: { base: 'none', md: 'inline' },
                 fontVariantNumeric: 'tabular-nums',
               })}
             >
-              {post.totalViews.toLocaleString()}
+              {post.date}
             </span>
-            {post.todayViews > 0 && (
-              <span
-                className={css({
-                  color: 'spot.600',
-                  fontSize: 'xs',
-                  fontWeight: 'medium',
-                })}
-              >
-                +{post.todayViews}
-              </span>
-            )}
-          </div>
+          </span>
 
-          <motion.div
-            animate={{ rotate: isOpen ? 180 : 0 }}
-            transition={{ duration: 0.2 }}
+          <span
             className={css({
-              color: 'ink.500',
               display: 'flex',
               alignItems: 'center',
+              gap: '3',
+              ml: '4',
+              flexShrink: 0,
             })}
           >
-            <ChevronDown size={16} />
-          </motion.div>
-        </div>
-      </button>
+            <span
+              className={css({
+                display: 'flex',
+                alignItems: 'baseline',
+                gap: '1',
+                minW: '[80px]',
+                justifyContent: 'flex-end',
+              })}
+            >
+              <span
+                className={css({
+                  fontWeight: 'bold',
+                  color: 'ink.950',
+                  fontSize: 'sm',
+                  fontVariantNumeric: 'tabular-nums',
+                })}
+              >
+                {post.totalViews.toLocaleString()}
+              </span>
+              {post.todayViews > 0 && (
+                <span
+                  className={css({
+                    color: 'spot.600',
+                    fontSize: 'xs',
+                    fontWeight: 'medium',
+                  })}
+                >
+                  +{post.todayViews}
+                </span>
+              )}
+            </span>
+
+            <motion.span
+              animate={{ rotate: isOpen ? 180 : 0 }}
+              transition={{ duration: 0.2 }}
+              aria-hidden
+              className={css({
+                color: 'ink.500',
+                display: 'flex',
+                alignItems: 'center',
+              })}
+            >
+              <ChevronDown size={16} />
+            </motion.span>
+          </span>
+        </button>
+      </div>
 
       <AnimatePresence initial={false}>
         {isOpen && (
           <motion.div
+            id={panelId}
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
