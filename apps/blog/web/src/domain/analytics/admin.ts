@@ -13,17 +13,9 @@
 
 import { AnalyticsService, type AnalyticsCalculator } from './service';
 
-// 조회 실패 분류 — 재시도 정책과 에러 경계가 쓴다. 판정만 필요한 소비자는
-// 이 배럴 대신 './adminErrors'를 직접 연다(그 파일 머리 주석).
-export {
-  AdminApiError,
-  adminFailureKind,
-  isRetryableAdminError,
-} from './adminErrors';
-export type { AdminFailureKind } from './adminErrors';
-
-// "최근 N일" 창 — 개요와 글별 추이 필터가 같은 정의를 쓴다(windows.ts).
-export { trailingWindowDays, trailingWindowStartISO } from './windows';
+// 쿼리 재시도 정책이 쓴다. 판정만 필요한 소비자(에러 경계)는 이 배럴 대신
+// './adminErrors'를 직접 연다(그 파일 머리 주석).
+export { isRetryableAdminError } from './adminErrors';
 
 // 공개 글 수 — 대시보드 두 화면(/admin, /admin/analytics)이 같은 규칙으로 센다.
 // 계산 모듈(overview)이라 공개 배럴이 아니라 여기서 낸다(index.ts 주석).
