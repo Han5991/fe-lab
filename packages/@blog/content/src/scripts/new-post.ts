@@ -1,11 +1,8 @@
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
+import { isIsoDateOnly, isValidDateString } from '../shared/dates.ts';
 import type { ContentContext } from './context.ts';
-import {
-  isCalendarDate,
-  isOffsetDateTime,
-  slugProblem,
-} from './validate/shared.ts';
+import { slugProblem } from './validate/shared.ts';
 
 /** 실제로 파일을 만들 때 필요한 값 — 원시 입력을 resolveOptions가 여기까지 좁힌다. */
 export interface NewPostOptions {
@@ -62,8 +59,7 @@ export function resolveOptions(raw: RawNewPostOptions): NewPostOptions {
   }
   if (
     raw.scheduledDate !== undefined &&
-    !isCalendarDate(raw.scheduledDate) &&
-    !isOffsetDateTime(raw.scheduledDate)
+    !isValidDateString(raw.scheduledDate)
   ) {
     throw new Error(
       `--scheduled는 'YYYY-MM-DD'이거나 offset을 명시한 ISO 시각이어야 합니다(예: 2026-06-01T09:00:00+09:00): ${raw.scheduledDate}`,
@@ -152,7 +148,7 @@ function resolveDate(
   now: Date,
 ): string {
   if (status === 'scheduled' && scheduledDate) {
-    return isCalendarDate(scheduledDate)
+    return isIsoDateOnly(scheduledDate)
       ? scheduledDate
       : todayKST(timeZone, new Date(scheduledDate));
   }

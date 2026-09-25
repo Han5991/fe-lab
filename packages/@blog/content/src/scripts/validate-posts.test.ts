@@ -15,7 +15,9 @@ import {
 import { defineTestContent } from '../shared/testValues.ts';
 import { toValidateContext } from './validate/shared.ts';
 import { sep } from 'node:path';
-import { FRONTMATTER_KEYS } from '../post/index.ts';
+import { FRONTMATTER_KEYS, isPostVisible } from '../post/index.ts';
+import { parsePost } from '../post/repository.ts';
+import { resolveOptions } from './new-post.ts';
 
 // 규칙이 읽는 슬라이스(SEO 예산·타임존·다이어그램 이름)는 설정에서 온다 —
 // 진입점과 같은 변환(toValidateContext)을 써서 게이트가 보는 것과 어긋나지 않게.
@@ -1613,3 +1615,35 @@ test('unknown-diagram-name: 메타 노트(status 없음)는 렌더되지 않으�
     ),
   ).toStrictEqual([]);
 });
+
+// ── lint·로더·new-post가 같은 날짜 판정을 쓴다 ───────────────────────────────
+
+test.each([
+  ['2026-06-01T09:00:00+0900'],
+  ['2026-06-01T09:00:00z'],
+  ['2026-06-01T09:00:00.1234Z'],
+])(
+  '날짜 %s: 로더가 공개 시각으로 안 읽는 값은 lint도 에러, new-post도 거절한다',
+  value => {
+    const raw = `---\ntitle: 글\nstatus: scheduled\ndate: '2020-01-01'\nscheduledDate: '${value}'\nupdatedAt: '${value}'\n---\n본문`;
+    const parsed = parseRecord(raw, '/posts/a.md', 'a.md');
+    if (!('record' in parsed)) throw new Error('픽스처 YAML이 깨졌다');
+    const found = validatePost(parsed.record, raw).map(i => i.rule);
+    expect(found).toContain('invalid-scheduled-date');
+    expect(found).toContain('invalid-updated-at');
+
+    const tz = VALIDATE_CONFIG.timezone;
+    const post = parsePost(raw, 'a.md', {
+      excerptMaxLength: 160,
+      timezone: tz,
+    });
+    expect(post?.updatedAt).toBe(null);
+    expect(
+      post && isPostVisible(post, tz, new Date('2999-01-01T00:00:00Z')),
+    ).toBe(false);
+
+    expect(() => resolveOptions({ title: '글', scheduledDate: value })).toThrow(
+      '--scheduled',
+    );
+  },
+);

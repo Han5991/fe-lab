@@ -17,7 +17,6 @@ import {
   isPostVisible,
   toDateString,
 } from '../../post/index.ts';
-import { isCalendarDate, isOffsetDateTime } from './shared.ts';
 import type { Severity, ValidateContext } from './shared.ts';
 
 /**
@@ -175,11 +174,7 @@ export function isVisibleFrontmatter(
   const rawScheduled = data['scheduledDate'];
   const scheduledDate =
     rawScheduled == null ? null : toDateString(rawScheduled);
-  if (
-    rawScheduled != null &&
-    (scheduledDate === null ||
-      !(isCalendarDate(scheduledDate) || isOffsetDateTime(scheduledDate)))
-  ) {
+  if (rawScheduled != null && scheduledDate === null) {
     // 예약 시각을 읽을 수 없는 글은 공개되지 않는다 — 발행(published)만 예외.
     return status === 'published';
   }

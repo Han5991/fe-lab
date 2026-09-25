@@ -115,29 +115,6 @@ export function frontmatterScalar(raw: string, key: string): string | null {
     .trim();
 }
 
-/** 'YYYY-MM-DD'이고 **실제 달력에 있는** 날짜인가(`2026-02-30` 거부). */
-export function isCalendarDate(value: string): boolean {
-  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
-  if (!m) return false;
-  const date = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])));
-  // Date.UTC는 범위 밖 값을 다음 달로 넘긴다 — 되돌렸을 때 같아야 실제 날짜다.
-  return date.toISOString().slice(0, 10) === value;
-}
-
-/**
- * offset(`Z`·`±HH:MM`)을 **명시한** ISO 8601 datetime인가
- * (`2026-06-01T09:00:00+09:00`). 공백 구분(`2026-06-01 09:00+09:00`)·offset 없는
- * 시각은 거부한다 — V8의 관대한 `Date.parse`는 받아 주지만 JSON-LD와 런타임
- * 파서마다 해석이 갈린다.
- */
-export function isOffsetDateTime(value: string): boolean {
-  const m =
-    /^(\d{4}-\d{2}-\d{2})T(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d{1,9})?)?(?:Z|[+-](?:[01]\d|2[0-3]):?[0-5]\d)$/i.exec(
-      value,
-    );
-  return m !== null && isCalendarDate(m[1] ?? '');
-}
-
 /**
  * `/`로 나눈 세그먼트 중 비었거나 `.`·`..`인 것이 있는가.
  *
