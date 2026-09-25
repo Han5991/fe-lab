@@ -14,9 +14,6 @@ import {
   ValidationError,
 } from './error';
 
-// `.resolves.not.toThrow()`는 프라미스가 resolve하기만 하면 값과 상관없이 통과한다 —
-// 무엇을 돌려주는지(또는 무엇을 기록하는지)를 직접 확인한다
-
 describe('error test', () => {
   afterEach(() => {
     vi.restoreAllMocks();
@@ -49,28 +46,20 @@ describe('error test', () => {
     await expect(asyncNotThrowError2).rejects.toThrow();
   });
 
-  it('래퍼로 비동기 오류를 포착해야합니다', async () => {
-    const [data, error] = await asyncErrorWrapper(
-      new Promise((_, reject) => reject(new Error('error'))),
-    );
-
-    expect(data).toBeNull();
-    expect(error).toBeInstanceOf(Error);
-    expect(error?.message).toBe('error');
-  });
-
-  it('래퍼는 성공하면 [값, null]을 돌려준다', async () => {
-    await expect(asyncErrorWrapper(Promise.resolve(42))).resolves.toEqual([
-      42,
-      null,
-    ]);
-  });
-
-  it('래퍼는 Error가 아닌 거절 값도 Error로 감싼다', async () => {
-    const [, error] = await asyncErrorWrapper(Promise.reject('문자열 거절'));
-
-    expect(error).toBeInstanceOf(Error);
-    expect(error?.message).toBe('문자열 거절');
+  it.each([
+    [
+      'Error 거절',
+      () => Promise.reject(new Error('error')),
+      [null, new Error('error')],
+    ],
+    ['성공', () => Promise.resolve(42), [42, null]],
+    [
+      'Error가 아닌 거절',
+      () => Promise.reject('거절'),
+      [null, new Error('거절')],
+    ],
+  ])('래퍼는 %s을 [값, 에러]로 돌려준다', async (_, promise, expected) => {
+    await expect(asyncErrorWrapper(promise())).resolves.toEqual(expected);
   });
 
   it('비동기 여러개 에러 처리 안 함', async () => {
@@ -84,32 +73,22 @@ describe('error test', () => {
   });
 
   it.each([
-    ['유효성 검증', new ValidationError('bad'), 'Validation error:'],
-    ['커스텀', new CustomError('custom'), 'Custom error:'],
-    ['일반', new Error('generic'), 'Generic error:'],
+    [new ValidationError('bad'), 'Validation error:', 'bad'],
+    [new CustomError('custom'), 'Custom error:', 'custom'],
+    [new Error('generic'), 'Generic error:', 'generic'],
+    ['문자열', 'Unknown error:', '문자열'],
   ])(
-    '커스텀 에러 처리 — %s 에러는 자기 분기에서 처리한다',
-    (_, error, label) => {
+    '커스텀 에러 처리 — %s는 %s 분기에서 처리한다',
+    (thrown, label, logged) => {
       const logError = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-      expect(() =>
-        handleSpecificErrors(() => {
-          throw error;
-        }),
-      ).not.toThrow();
-      expect(logError).toHaveBeenCalledWith(label, error.message);
+      handleSpecificErrors(() => {
+        throw thrown;
+      });
+
+      expect(logError).toHaveBeenCalledWith(label, logged);
     },
   );
-
-  it('커스텀 에러 처리 — Error가 아닌 값은 알 수 없는 에러로 처리한다', () => {
-    const logError = vi.spyOn(console, 'error').mockImplementation(() => {});
-
-    handleSpecificErrors(() => {
-      throw '문자열';
-    });
-
-    expect(logError).toHaveBeenCalledWith('Unknown error:', '문자열');
-  });
 
   it('비동기 에러 처리2', async () => {
     await expect(chainedErrorHandler).rejects.toThrow();
