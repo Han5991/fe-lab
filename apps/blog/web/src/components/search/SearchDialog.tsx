@@ -140,9 +140,11 @@ export const SearchDialog = ({ seriesTitles }: SearchDialogProps) => {
         )
         .slice(0, 10);
 
-  // 이 둘만 useCallback을 남긴다. 아래 Cmd+K 이펙트의 deps에 들어가는데,
-  // react-hooks/exhaustive-deps는 React Compiler의 런타임 메모이제이션을 보지
-  // 못해 "매 렌더 바뀐다"고 경고한다. 나머지 파생값·핸들러는 컴파일러에 맡긴다.
+  // 아래 셋만 useCallback을 남긴다. openDialog·closeDialog는 Cmd+K 이펙트의
+  // deps에, loadIndex는 openDialog의 deps에 들어가는데, react-hooks/exhaustive-deps는
+  // React Compiler의 런타임 메모이제이션을 보지 못해 "매 렌더 바뀐다"고 경고한다.
+  // 나머지 파생값·핸들러는 컴파일러에 맡긴다.
+  //
   // 색인 요청은 이벤트 핸들러에서 건다. 예전엔 setState 업데이터 안에서
   // fetch했는데, 업데이터는 순수해야 해서 StrictMode(dev)가 두 번 불러 요청이
   // 두 번 나갔다.
