@@ -1,8 +1,9 @@
 'use client';
 
-import { css } from '@design-system/ui-lib/css';
+import { useId } from 'react';
+import { css, cx } from '@design-system/ui-lib/css';
 import { Label } from './Label';
-import { segmentedItem } from './segmented';
+import { moveRadioByArrow, segmentedItem } from './segmented';
 
 export type SortKey = 'recent' | 'popular' | 'shortest';
 
@@ -16,17 +17,31 @@ const OPTIONS: { id: SortKey; label: string }[] = [
   { id: 'popular', label: '인기순' },
   { id: 'shortest', label: '짧은 글부터' },
 ];
+const IDS = OPTIONS.map(o => o.id);
 
+const divider = css({
+  borderLeftWidth: '[1px]',
+  borderLeftStyle: 'solid',
+  borderLeftColor: 'ink.border',
+});
+
+/**
+ * 정렬 라디오 그룹. 그룹은 `div`다 — 예전엔 `<ul role="radiogroup">`이라
+ * 역할이 바뀐 목록 아래 `<li>`가 부모 없는 목록 항목으로 남았다(axe listitem,
+ * aria-required-children). 그룹 이름은 "정렬" 라벨이 준다(패널이 데스크톱·모바일
+ * 시트 두 곳에 렌더되므로 id는 useId).
+ */
 export const SortRadio = ({ value, onChange }: SortRadioProps) => {
+  const labelId = useId();
   return (
     <div className={css({ display: 'flex', flexDir: 'column', gap: '2' })}>
-      <Label tone="meta">정렬</Label>
-      <ul
+      <Label tone="meta" id={labelId}>
+        정렬
+      </Label>
+      <div
         role="radiogroup"
+        aria-labelledby={labelId}
         className={css({
-          listStyleType: 'none',
-          p: '0',
-          m: '0',
           display: 'inline-flex',
           alignItems: 'stretch',
           bg: 'paper.100',
@@ -40,28 +55,24 @@ export const SortRadio = ({ value, onChange }: SortRadioProps) => {
         {OPTIONS.map((opt, i) => {
           const isActive = value === opt.id;
           return (
-            <li
+            <button
               key={opt.id}
-              className={css({
-                display: 'flex',
-                borderLeftWidth: i === 0 ? '[0]' : '[1px]',
-                borderLeftStyle: 'solid',
-                borderLeftColor: 'ink.border',
-              })}
+              role="radio"
+              aria-checked={isActive}
+              tabIndex={isActive ? 0 : -1}
+              type="button"
+              onClick={() => onChange(opt.id)}
+              onKeyDown={e => moveRadioByArrow(e, IDS, onChange)}
+              className={cx(
+                segmentedItem({ kind: 'radio', active: isActive }),
+                i > 0 && divider,
+              )}
             >
-              <button
-                role="radio"
-                aria-checked={isActive}
-                type="button"
-                onClick={() => onChange(opt.id)}
-                className={segmentedItem({ kind: 'radio', active: isActive })}
-              >
-                {opt.label}
-              </button>
-            </li>
+              {opt.label}
+            </button>
           );
         })}
-      </ul>
+      </div>
     </div>
   );
 };
