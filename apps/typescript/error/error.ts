@@ -31,23 +31,24 @@ export const asyncNotThrowError2 = async () => {
 };
 
 // 커스텀 에러 클래스들
-class CustomError extends Error {
+export class CustomError extends Error {
   constructor(message: string) {
     super(message);
     this.name = 'CustomError';
   }
 }
 
-class ValidationError extends CustomError {
+export class ValidationError extends CustomError {
   constructor(message: string) {
     super(message);
     this.name = 'ValidationError';
   }
 }
 
-export const handleSpecificErrors = () => {
+// run: 에러를 던질 작업. 기본값은 일반 Error를 던지는 testError — 테스트는 다른 에러를 넣어 분기를 확인한다
+export const handleSpecificErrors = (run: () => void = testError) => {
   try {
-    testError();
+    run();
   } catch (e) {
     if (e instanceof ValidationError) {
       // 유효성 검증 에러 처리
