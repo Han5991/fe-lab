@@ -5,13 +5,14 @@ interface LinkProps extends ComponentProps<'a'> {
   href: string;
 }
 
-const Link = ({ href, ...props }: LinkProps) => (
+const Link = ({ href, onClick, ...props }: LinkProps) => (
   <a
     href={href}
     {...props}
     onClick={event => {
       event.preventDefault();
       mockRouter.push(href);
+      onClick?.(event);
     }}
   />
 );
