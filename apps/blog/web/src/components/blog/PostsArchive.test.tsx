@@ -21,11 +21,18 @@ import type { ReactNode } from 'react';
 import type { PostSummary, SeriesSummary, TagSummary } from '@blog/content';
 
 // 인기글 레일·인기순 정렬이 Supabase 조회수를 부른다(주입 지점이 없는 모듈 싱글톤).
-// 응답 없이 대기시켜 두 화면 모두 "조회수 도착 전" 상태로 비교한다.
-vi.mock('@/src/domain/analytics', () => ({
-  getTopPosts: () => new Promise(() => undefined),
-  getAllViewCounts: () => new Promise(() => undefined),
+// 기본은 응답 없이 대기시켜 두 화면 모두 "조회수 도착 전" 상태로 비교한다.
+const analytics = vi.hoisted(() => ({
+  getTopPosts: vi.fn(
+    (_limit: number, _slugs: readonly string[]) =>
+      new Promise<never>(() => undefined),
+  ),
+  getAllViewCounts: vi.fn(
+    (_slugs?: readonly string[]) =>
+      new Promise<{ slug: string; view_count: number }[]>(() => undefined),
+  ),
 }));
+vi.mock('@/src/domain/analytics', () => analytics);
 
 import { PostsArchiveFallback, PostsArchiveView } from './PostsArchive';
 
@@ -112,6 +119,38 @@ describe('PostsArchive 폴백 ↔ 뷰', () => {
     render(withQuery(<PostsArchiveFallback {...props} />));
     expect(list.thumbnails).toBe(0);
     expect(fingerprint().thumbnails).toBe(POSTS.length);
+  });
+});
+
+describe('PostsArchive 인기순', () => {
+  test('이 목록의 slug만 서버에 물어 받은 조회수 순으로 그린다', async () => {
+    analytics.getAllViewCounts.mockImplementationOnce(() =>
+      Promise.resolve([
+        { slug: 'a-post', view_count: 10 },
+        { slug: 'b-post', view_count: 1 },
+      ]),
+    );
+    render(
+      withQuery(
+        <NuqsTestingAdapter searchParams="?sort=popular">
+          <PostsArchiveView {...props} />
+        </NuqsTestingAdapter>,
+      ),
+    );
+
+    // 날짜순(b → a)이 아니라 조회수순(a → b)으로 바뀐다.
+    await waitFor(() =>
+      expect(
+        screen
+          .getAllByRole('heading', { level: 3 })
+          .map(h => h.textContent)
+          .slice(0, 2),
+      ).toStrictEqual(['a-post 제목', 'b-post 제목']),
+    );
+    // 가짜 slug가 응답 상한을 채우지 못하게 서버 쪽에서 거른다.
+    expect(analytics.getAllViewCounts).toHaveBeenCalledWith(
+      POSTS.map(p => p.slug),
+    );
   });
 });
 

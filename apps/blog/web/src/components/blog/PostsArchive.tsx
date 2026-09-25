@@ -124,10 +124,16 @@ export const PostsArchiveView = ({
 
   // 인기순 정렬은 Supabase post_views 테이블 기반. 'popular'를 누르기 전까지는
   // 요청을 보내지 않습니다 (lazy). 5분 staleTime으로 재방문 시 캐시 사용.
+  //
+  // 조회수는 이 빌드에 실린 글의 slug로 **서버에서** 거른다(getAllViewCounts
+  // 주석). post_views는 anon RPC로 아무 slug나 늘릴 수 있어서, 거르지 않으면
+  // 가짜 slug가 응답 상한(1000행)을 채워 실제 글의 조회수가 잘려 나간다.
+  // 거른 집합이 곧 응답이므로 slug 목록을 캐시 키에 싣는다.
+  const slugs = posts.map(p => p.slug);
   const { data: viewCounts } = useQuery({
-    queryKey: ['posts-view-counts'],
+    queryKey: ['posts-view-counts', slugs],
     queryFn: async () => {
-      const rows = await getAllViewCounts();
+      const rows = await getAllViewCounts(slugs);
       const map = new Map<string, number>();
       for (const row of rows) {
         map.set(row.slug, row.view_count);
@@ -344,6 +350,9 @@ const PostsArchiveLayout = ({
               borderTopWidth: '[1px]',
               borderTopStyle: 'solid',
               borderColor: 'ink.border',
+              // 레일은 조회 실패·순위 없음이면 아무것도 그리지 않는다 — 그때
+              // 구분선과 여백만 남은 빈 띠가 되지 않게 래퍼째 접는다.
+              _empty: { display: 'none' },
             })}
           >
             <PopularRail posts={posts} />
@@ -478,6 +487,8 @@ const PostsArchiveLayout = ({
               borderTopWidth: '[1px]',
               borderTopStyle: 'solid',
               borderColor: 'ink.border',
+              // 데스크톱 래퍼와 같은 이유 — 레일이 비면 빈 띠를 남기지 않는다.
+              _empty: { display: 'none' },
             })}
           >
             <PopularRail posts={posts} />
