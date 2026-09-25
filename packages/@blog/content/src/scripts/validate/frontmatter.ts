@@ -25,6 +25,7 @@ import {
   effectiveSlug,
   findFrontmatterLine,
   frontmatterScalar,
+  isBareThumbnailName,
   isCalendarDate,
   isOffsetDateTime,
 } from './shared.ts';
@@ -560,7 +561,7 @@ const heroChain: Chain = ({ record: { data, relPath }, raw, options }) => {
   ];
 };
 
-// ── thumbnail 사슬: og-thumbnail-mismatch · missing-thumbnail ───────────────
+// ── thumbnail 사슬: og-thumbnail-mismatch · invalid-thumbnail-path · missing-thumbnail
 
 /** 생성 OG 카드 경로의 접두사 — 생성기(`render/generate-og-images.ts`)가 쓰는 곳 */
 const OG_THUMBNAIL_PREFIX = '/og/';
@@ -589,6 +590,17 @@ const thumbnailChain: Chain = ({ record, raw, options }) => {
     ];
   }
   if (/^https?:\/\//.test(thumb) || thumb.startsWith('/')) return [];
+  if (!isBareThumbnailName(thumb)) {
+    return [
+      {
+        file: relPath,
+        line: findFrontmatterLine(raw, 'thumbnail'),
+        severity: resolveSeverity('invalid-thumbnail-path', data, options),
+        rule: 'invalid-thumbnail-path',
+        message: `\`thumbnail\`에는 글과 같은 폴더의 **파일 이름**만 적습니다(\`cover.png\`) — \`./\`·\`img/\`·\`../\` 같은 경로가 붙으면 최적화본(\`/thumbs/…\`) URL이 생성 위치와 어긋나 404가 됩니다. 이미지를 글 폴더로 옮기세요: ${thumb}`,
+      },
+    ];
+  }
   const resolved = resolve(dirname(absPath), thumb);
   if (existsSync(resolved)) return [];
   return [

@@ -1440,3 +1440,32 @@ test('parseRecord: 정상 YAML은 레코드를 돌려준다', () => {
     title: '제목',
   });
 });
+
+// ── invalid-thumbnail-path: 상대 thumbnail은 파일 이름만 ─────────────────────
+
+test.each(['./cover.png', 'img/cover.png', '../cover.png', 'img\\cover.png'])(
+  'invalid-thumbnail-path: 경로가 섞인 thumbnail %s는 에러',
+  thumbnail => {
+    expect(
+      rules({
+        title: 'x',
+        status: 'published',
+        date: '2025-01-01',
+        thumbnail,
+        excerpt: VALID_EXCERPT,
+      }),
+    ).toStrictEqual(['invalid-thumbnail-path']);
+  },
+);
+
+test('invalid-thumbnail-path: 파일 이름만이면 존재 여부(missing-thumbnail)를 본다', () => {
+  expect(
+    rules({
+      title: 'x',
+      status: 'published',
+      date: '2025-01-01',
+      thumbnail: 'no-such-cover.png',
+      excerpt: VALID_EXCERPT,
+    }),
+  ).toStrictEqual(['missing-thumbnail']);
+});

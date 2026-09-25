@@ -138,6 +138,24 @@ export function isOffsetDateTime(value: string): boolean {
   return m !== null && isCalendarDate(m[1] ?? '');
 }
 
+/**
+ * 상대 `thumbnail`이 글 폴더의 **파일 이름 하나**인가(`cover.png`).
+ *
+ * 경로가 섞이면(`./a.png`·`img/a.png`·`../a.png`) 세 곳이 서로 다른 답을 낸다:
+ * 화면의 최적화본 URL은 이름을 통째로 인코딩해 `/thumbs/.%2Fa.webp`가 되고,
+ * 생성기는 `join`이 정규화한 `thumbs/a.webp`에 쓰고(다음 빌드에 orphan으로 지우고
+ * 다시 인코딩), `../`는 `thumbs/` **밖**에 파일을 쓴다. 파일 이름만 받으면 셋이
+ * 한 경로가 된다.
+ */
+export function isBareThumbnailName(thumbnail: string): boolean {
+  return (
+    thumbnail !== '' &&
+    thumbnail !== '.' &&
+    thumbnail !== '..' &&
+    !/[/\\]/.test(thumbnail)
+  );
+}
+
 /** frontmatter가 차지한 줄 수(본문 줄 번호 → 파일 줄 번호 변환용). */
 export function frontmatterOffset(raw: string): number {
   const lines = raw.split('\n');

@@ -84,6 +84,7 @@ export const RULES = {
   'invalid-tags': { severity: 'error', scope: 'postLike' },
   'duplicate-tags': { severity: 'warning', scope: 'postLike' },
   'unknown-hero-diagram': { severity: 'error', scope: 'postLike' },
+  'invalid-thumbnail-path': { severity: 'error', scope: 'postLike' },
   'missing-thumbnail': { severity: 'error', scope: 'postLike' },
   'og-thumbnail-mismatch': { severity: 'error', scope: 'postLike' },
   // ── 본문 판정 사슬 (body.ts) ──────────────────────────────────────────────
