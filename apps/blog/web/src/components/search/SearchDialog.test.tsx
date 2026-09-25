@@ -270,3 +270,17 @@ describe('SearchDialog - 검색 색인 불러오기', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 });
+
+describe('SearchDialog - 검색어 해석', () => {
+  test('뒤 공백은 결과를 바꾸지 않고, 떨어진 낱말도 AND로 찾는다', async () => {
+    const input = await openDialog();
+
+    fireEvent.change(input, { target: { value: '터보 ' } });
+    expect(screen.getAllByRole('option')).toHaveLength(2);
+
+    fireEvent.change(input, { target: { value: '둘째 터보' } });
+    const options = screen.getAllByRole('option');
+    expect(options).toHaveLength(1);
+    expect(options[0]).toHaveTextContent('터보 둘째 글');
+  });
+});

@@ -1,71 +1,46 @@
 'use client';
 
-import {
-  useState,
-  useEffect,
-  useId,
-  useRef,
-  useCallback,
-  type ReactNode,
-} from 'react';
+import { useState, useEffect, useId, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { css } from '@design-system/ui-lib/css';
 import { Search, X, Clock } from 'lucide-react';
 // 클라이언트 컴포넌트의 @blog/content 배럴 import — node:fs 모듈(series 등)은
 // next.config.ts의 optimizePackageImports + sideEffects:false가 번들에서 걸러 준다.
-import { postPath } from '@blog/content';
+import { fmtDate, postPath } from '@blog/content';
 import { getRecentViews, type RecentView } from '@/src/hooks/useRecentViews';
 import { Portal } from '@/src/components/Portal';
 import { useModalDialog } from '@/src/components/useModalDialog';
 import { fetchSearchIndex, type SearchPost } from './searchIndex';
+import {
+  matchesAllTokens,
+  pickContentSnippet,
+  searchTokens,
+  splitByTokens,
+} from './searchText';
 
 /** 색인 요청의 진행 상태 — 로딩과 실패를 "결과 없음"과 구분해 보여 준다. */
 type IndexStatus = 'idle' | 'loading' | 'ready' | 'error';
 
-function escapeRegex(str: string): string {
-  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
+const markClass = css({
+  bg: 'marker.300',
+  color: 'ink.950',
+  fontWeight: 'medium',
+  px: '0.5',
+  rounded: 'sm',
+});
 
-function highlight(text: string, query: string): ReactNode {
-  if (!query.trim() || !text) return text;
-  const regex = new RegExp(`(${escapeRegex(query)})`, 'gi');
-  const parts = text.split(regex);
-  return parts.map((part, i) =>
-    regex.test(part) ? (
-      <mark
-        key={i}
-        className={css({
-          bg: 'marker.300',
-          color: 'ink.950',
-          fontWeight: 'medium',
-          px: '0.5',
-          rounded: 'sm',
-        })}
-      >
-        {part}
+/** 검색 낱말이 걸린 조각만 `<mark>`로 감싼다. */
+const Highlight = ({ text, tokens }: { text: string; tokens: string[] }) =>
+  splitByTokens(text, tokens).map((part, i) =>
+    part.match ? (
+      <mark key={i} className={markClass}>
+        {part.text}
       </mark>
     ) : (
-      <span key={i}>{part}</span>
+      part.text
     ),
   );
-}
-
-function pickContentSnippet(
-  content: string,
-  query: string,
-  radius = 60,
-): string {
-  if (!content) return '';
-  if (!query.trim()) return content.slice(0, 140);
-  const idx = content.toLowerCase().indexOf(query.toLowerCase());
-  if (idx === -1) return content.slice(0, 140);
-  const start = Math.max(0, idx - radius);
-  const end = Math.min(content.length, idx + query.length + radius);
-  const prefix = start > 0 ? '…' : '';
-  const suffix = end < content.length ? '…' : '';
-  return `${prefix}${content.slice(start, end)}${suffix}`;
-}
 
 /** 수정자 키를 동반한 클릭 — 새 탭·새 창으로 여는 것이라 다이얼로그를 닫지 않는다. */
 const isModifiedClick = (e: React.MouseEvent) =>
@@ -123,7 +98,10 @@ export const SearchDialog = ({ seriesTitles }: SearchDialogProps) => {
     }));
   };
 
-  const showRecentViews = !query.trim() && recentViews.length > 0;
+  // 검색어는 낱말들의 AND다(searchText.ts). 빈칸 판정과 매칭이 같은 값을 본다.
+  const tokens = searchTokens(query);
+  const hasQuery = tokens.length > 0;
+  const showRecentViews = !hasQuery && recentViews.length > 0;
   const recentAsPosts: SearchPost[] = !showRecentViews
     ? []
     : recentViews.map(rv => {
@@ -142,26 +120,24 @@ export const SearchDialog = ({ seriesTitles }: SearchDialogProps) => {
       });
 
   // 검색 필터링 — query/posts/recentAsPosts에서 derived
-  const filteredPosts: SearchPost[] = !query.trim()
+  const filteredPosts: SearchPost[] = !hasQuery
     ? recentAsPosts.length > 0
       ? recentAsPosts
       : posts.slice(0, 10)
     : posts
-        .filter(post => {
-          const lowerQuery = query.toLowerCase();
-          return (
-            post.title.toLowerCase().includes(lowerQuery) ||
-            post.excerpt.toLowerCase().includes(lowerQuery) ||
-            post.tags.some(tag => tag.toLowerCase().includes(lowerQuery)) ||
-            (post.series &&
-              (post.series.toLowerCase().includes(lowerQuery) ||
-                (seriesTitle(post.series) ?? '')
-                  .toLowerCase()
-                  .includes(lowerQuery))) ||
-            (post.contentPreview &&
-              post.contentPreview.toLowerCase().includes(lowerQuery))
-          );
-        })
+        .filter(post =>
+          matchesAllTokens(
+            [
+              post.title,
+              post.excerpt,
+              ...post.tags,
+              post.series ?? '',
+              seriesTitle(post.series) ?? '',
+              post.contentPreview,
+            ],
+            tokens,
+          ),
+        )
         .slice(0, 10);
 
   // 이 둘만 useCallback을 남긴다. 아래 Cmd+K 이펙트의 deps에 들어가는데,
@@ -470,8 +446,8 @@ export const SearchDialog = ({ seriesTitles }: SearchDialogProps) => {
                   >
                     {filteredPosts.map((post, index) => {
                       const snippet =
-                        query.trim() && post.contentPreview
-                          ? pickContentSnippet(post.contentPreview, query)
+                        hasQuery && post.contentPreview
+                          ? pickContentSnippet(post.contentPreview, tokens)
                           : post.excerpt;
                       const selected = index === selectedIndex;
                       return (
@@ -512,7 +488,7 @@ export const SearchDialog = ({ seriesTitles }: SearchDialogProps) => {
                                 lineClamp: 1,
                               })}
                             >
-                              {highlight(post.title, query)}
+                              <Highlight text={post.title} tokens={tokens} />
                             </p>
                             <p
                               className={css({
@@ -522,11 +498,15 @@ export const SearchDialog = ({ seriesTitles }: SearchDialogProps) => {
                                 lineClamp: 2,
                               })}
                             >
-                              {post.date && <span>{post.date} · </span>}
+                              {/* 예약 글의 date는 ISO 일시일 수 있다 — 목록들과 같은
+                                fmtDate로 날짜만 보인다. */}
+                              {post.date && (
+                                <span>{fmtDate(post.date)} · </span>
+                              )}
                               {post.series && (
                                 <span>📚 {seriesTitle(post.series)} · </span>
                               )}
-                              {highlight(snippet, query)}
+                              <Highlight text={snippet} tokens={tokens} />
                             </p>
                             {post.tags.length > 0 && (
                               <div
@@ -599,7 +579,7 @@ export const SearchDialog = ({ seriesTitles }: SearchDialogProps) => {
                       <p>검색 색인을 불러오는 중…</p>
                     ) : (
                       <p>
-                        {query.trim()
+                        {hasQuery
                           ? '검색 결과가 없습니다'
                           : '포스트를 검색해보세요'}
                       </p>
