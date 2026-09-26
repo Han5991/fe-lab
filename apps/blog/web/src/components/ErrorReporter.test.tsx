@@ -20,13 +20,14 @@ test('설명은 "이름: 메시지"를 GA4 한도(100자)로 자르고, Error가
   });
 });
 
-test('같은 설명은 한 번만, 한 번 로드에 5건까지만 보낸다', () => {
+test('같은 설명은 한 번만, 비치명 오류는 5건까지만 보내고 치명 오류는 그 뒤에도 보낸다', () => {
   const send = vi.fn<(event: ExceptionEvent) => void>();
   const report = createErrorReporter(send);
 
   for (const message of ['a', 'a', 'b', 'c', 'd', 'e', 'f']) {
     report(new Error(message), false);
   }
+  report(new Error('crash'), true);
 
   expect(send.mock.calls.map(([event]) => event.description)).toStrictEqual([
     'Error: a',
@@ -34,6 +35,7 @@ test('같은 설명은 한 번만, 한 번 로드에 5건까지만 보낸다', (
     'Error: c',
     'Error: d',
     'Error: e',
+    'Error: crash',
   ]);
 });
 

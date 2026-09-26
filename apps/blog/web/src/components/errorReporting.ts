@@ -2,7 +2,7 @@ import { sendGAEvent } from '@next/third-parties/google';
 
 /** GA4 이벤트 매개변수 값은 100자까지만 담긴다. */
 const MAX_DESCRIPTION = 100;
-/** 한 번 로드한 탭에서 보낼 최대 건수 — 루프 속 에러가 수집을 뒤덮지 않게. */
+/** 탭을 새로고침하기 전까지 보낼 비치명 오류 최대 건수 — 루프 속 에러가 수집을 뒤덮지 않게(클라이언트 이동으로는 초기화되지 않는다). */
 const MAX_PER_LOAD = 5;
 
 export interface ExceptionEvent {
@@ -24,14 +24,15 @@ export function toExceptionEvent(
   return { description: text.slice(0, MAX_DESCRIPTION), fatal };
 }
 
-/** 같은 설명은 한 번만, 전체는 `MAX_PER_LOAD`건까지만 `send`로 넘긴다. */
+/** 같은 설명은 한 번만 넘긴다. 비치명 오류는 `MAX_PER_LOAD`건까지 — 에러 경계의 치명 오류는 그 잡음 뒤에 와도 버리지 않는다. */
 export function createErrorReporter(
   send: (event: ExceptionEvent) => void,
 ): ReportError {
   const seen = new Set<string>();
   return (thrown, fatal) => {
     const event = toExceptionEvent(thrown, fatal);
-    if (seen.has(event.description) || seen.size >= MAX_PER_LOAD) return;
+    if (seen.has(event.description)) return;
+    if (!fatal && seen.size >= MAX_PER_LOAD) return;
     seen.add(event.description);
     send(event);
   };
