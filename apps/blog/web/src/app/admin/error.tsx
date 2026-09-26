@@ -33,13 +33,13 @@ const TITLES = {
  */
 export default function AdminError({ error, reset }: AdminErrorProps) {
   const { reset: resetQueryErrors } = useQueryErrorResetBoundary();
+  const kind = adminFailureKind(error);
 
   useEffect(() => {
     console.error(error);
-    reportError(error, true);
-  }, [error]);
-
-  const kind = adminFailureKind(error);
+    // 401·403은 로그인 만료·권한 없음이라는 정상 흐름 — 수집은 실제 실패만.
+    if (kind === 'other') reportError(error, true);
+  }, [error, kind]);
   const message = error instanceof Error ? error.message : String(error);
 
   return (

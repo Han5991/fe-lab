@@ -11,7 +11,10 @@ import {
   useSuspenseQuery,
 } from '@tanstack/react-query';
 import { AdminApiError } from '@/src/domain/analytics/adminErrors';
+import { reportError } from '@/src/components/errorReporting';
 import AdminError from './error';
+
+vi.mock('@/src/components/errorReporting', () => ({ reportError: vi.fn() }));
 
 /** Next의 error.js 래퍼를 흉내 낸 최소 경계 — 잡은 값을 AdminError에 넘긴다. */
 class Boundary extends Component<
@@ -61,6 +64,7 @@ function renderWithBoundary(load: () => Promise<string>) {
 beforeEach(() => {
   // React가 잡힌 에러를 console.error로 한 번 더 찍는다 — 테스트 출력만 조용히.
   vi.spyOn(console, 'error').mockImplementation(() => undefined);
+  vi.mocked(reportError).mockClear();
 });
 
 afterEach(() => {
@@ -74,6 +78,7 @@ describe('AdminError', () => {
       new Error('admin-analytics Edge Function 오류'),
       '관리자 데이터를 불러오지 못했습니다',
       'admin-analytics Edge Function 오류',
+      true,
     ],
     [
       '401',
@@ -85,10 +90,11 @@ describe('AdminError', () => {
       }),
       '로그인이 만료됐습니다 — 다시 로그인해 주세요',
       '인증에 실패했습니다.',
+      false,
     ],
   ])(
-    '%s는 흰 화면 대신 원인에 맞는 안내를 보인다',
-    async (_kind, error, title, detail) => {
+    '%s는 흰 화면 대신 원인에 맞는 안내를 보이고, 실제 실패만 오류로 수집한다',
+    async (_kind, error, title, detail, reported) => {
       renderWithBoundary(() => Promise.reject(error));
 
       expect(
@@ -98,6 +104,9 @@ describe('AdminError', () => {
       expect(screen.getByRole('link', { name: '다시 로그인' })).toHaveAttribute(
         'href',
         '/admin/login/',
+      );
+      expect(vi.mocked(reportError).mock.calls).toStrictEqual(
+        reported ? [[error, true]] : [],
       );
     },
   );
