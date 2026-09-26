@@ -55,6 +55,12 @@ test('이 사이트 스크립트의 에러와 Error로 거절된 promise만 보�
       filename: 'chrome-extension://abc/content.js',
     }),
   );
+  window.dispatchEvent(
+    new ErrorEvent('error', {
+      error: new Error('lookalike'),
+      filename: `${window.location.origin}.attacker.example/mal.js`,
+    }),
+  );
   window.dispatchEvent(new ErrorEvent('error', { message: 'Script error.' }));
   window.dispatchEvent(rejection(new Error('async')));
   window.dispatchEvent(rejection('not an error'));
