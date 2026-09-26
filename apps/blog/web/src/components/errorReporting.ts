@@ -29,10 +29,14 @@ export function createErrorReporter(
   send: (event: ExceptionEvent) => void,
 ): ReportError {
   const seen = new Set<string>();
+  let nonFatalSent = 0;
   return (thrown, fatal) => {
     const event = toExceptionEvent(thrown, fatal);
     if (seen.has(event.description)) return;
-    if (!fatal && seen.size >= MAX_PER_LOAD) return;
+    if (!fatal) {
+      if (nonFatalSent >= MAX_PER_LOAD) return;
+      nonFatalSent += 1;
+    }
     seen.add(event.description);
     send(event);
   };
