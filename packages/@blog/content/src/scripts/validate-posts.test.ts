@@ -10,6 +10,7 @@ import {
   detectDuplicateDescriptions as detectDuplicateDescriptionsIn,
   parseRecord,
   validateDiagramNames as validateDiagramNamesIn,
+  validateLineLinks as validateLineLinksIn,
   viewBody,
   type PostRecord,
 } from './validate-posts.ts';
@@ -46,6 +47,8 @@ const validateCodeFenceLanguages = (record: PostRecord, raw: string) =>
   validateCodeFenceLanguagesIn(record, viewBody(record.content, raw));
 const validateDiagramNames = (record: PostRecord, raw: string, options = CTX) =>
   validateDiagramNamesIn(record, viewBody(record.content, raw), options);
+const validateLineLinks = (record: PostRecord, raw: string) =>
+  validateLineLinksIn(record, viewBody(record.content, raw));
 const detectDuplicateDescriptions = (
   records: PostRecord[],
   options = CTX,
@@ -1509,4 +1512,54 @@ test.each([
   ['메타 노트(status 없음)', '<diagram name="nope"></diagram>', {}],
 ])('unknown-diagram-name: %s는 보지 않는다', (_, content, data) => {
   expect(diagramRules(content, data)).toStrictEqual([]);
+});
+
+// ── unpinned-line-link: GitHub 줄 링크는 커밋·버전 태그에 고정한다 ──────────
+
+const lineLinkRules = (
+  content: string,
+  data: Record<string, unknown> = { status: 'published' },
+) =>
+  validateLineLinks(
+    rec(data, { content }),
+    `---\nstatus: published\n---\n${content}`,
+  ).map(i => [i.rule, i.severity, i.line]);
+
+test.each([
+  ['main', 'https://github.com/o/r/blob/main/src/a.ts#L12'],
+  ['canary(범위)', 'https://github.com/o/r/blob/canary/a.tsx#L690C1-L714C2'],
+])('unpinned-line-link: 브랜치 %s를 가리키는 줄 링크는 경고', (_, url) => {
+  expect(lineLinkRules(`문단\n\n[코드](${url})`)).toStrictEqual([
+    ['unpinned-line-link', 'warning', 6],
+  ]);
+});
+
+test.each([
+  [
+    '커밋 SHA',
+    '[a](https://github.com/o/r/blob/1707765/src/a.ts#L12)',
+    undefined,
+  ],
+  [
+    '버전 태그',
+    '[a](https://github.com/o/r/blob/v15.2.1-canary.5/a.tsx#L66)',
+    undefined,
+  ],
+  [
+    '줄 번호 없는 파일·폴더 링크',
+    '[a](https://github.com/o/r/blob/main/a.ts) [b](https://github.com/o/r/tree/main/src)',
+    undefined,
+  ],
+  [
+    '코드 펜스·같은 줄 인라인 코드 안의 예시',
+    '```md\n[a](https://github.com/o/r/blob/main/a.ts#L1)\n```\n`https://github.com/o/r/blob/main/a.ts#L1`',
+    undefined,
+  ],
+  [
+    '메타 노트(status 없음)',
+    '[a](https://github.com/o/r/blob/main/a.ts#L1)',
+    {},
+  ],
+])('unpinned-line-link: %s는 보지 않는다', (_, content, data) => {
+  expect(lineLinkRules(content, data)).toStrictEqual([]);
 });

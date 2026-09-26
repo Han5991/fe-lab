@@ -14,7 +14,7 @@ updatedAt: '2026-09-21'
 > 이 글에서는 **ErrorBoundary**와 같은 에러 관리 기법을 바탕으로, 비동기 코드에서 발생하는 에러를 어떻게 처리하고, 의도적인 에러와 의도하지 않은 에러를 구분하여
 > 다루는지 살펴봅니다.
 > 에러를 명확히 구분하고, 이를 안전하게 캐치하는 전략은 더욱 견고한 애플리케이션 구축의 첫걸음이 될 것입니다.
-> [예제 코드](https://github.com/Han5991/fe-lab/blob/main/apps/react/src/pages/error-test/index.tsx)
+> [예제 코드](https://github.com/Han5991/fe-lab/blob/1707765c3eb6249234463033335d08927ca25a13/apps/react/src/pages/error-test/index.tsx)
 
 ## 1. ErrorBoundary 란? [공식홈피](https://ko.react.dev/reference/react/Component#catching-rendering-errors-with-an-error-boundary)
 
@@ -108,7 +108,7 @@ const useSimpleQuery = <T>({
 ```
 
 패칭 후 에러가 발생하면 Error를 state에 담아주고, throwOnError가 true일 경우 에러를 던져줍니다. 이 방법은 tanstack-query와
-비슷합니다. [tanstack-query](https://github.com/TanStack/query/blob/main/packages/react-query/src/useBaseQuery.ts#L128-L145)
+비슷합니다. [tanstack-query](https://github.com/TanStack/query/blob/v5.66.11/packages/react-query/src/useBaseQuery.ts#L128-L145)
 
 #### 2-2-2. useTransition 사용하기
 
@@ -334,4 +334,4 @@ useTransition은 사용자와의 인터랙션 과정에서 발생하는 비동�
 이처럼 다양한 에러 처리 기법을 상황에 맞게 적절히 적용하여, 보다 견고하고 안정적인 애플리케이션을 구축해 보시길 바랍니다.
 
 다음은 next.js 에서 에러 바운더리를 어떻게 활용하는 방법에 대해 다루어 보겠습니다.
-[예제 코드 및 테스트 코드 확인](https://github.com/Han5991/fe-lab/blob/main/apps/react/src/pages/error-test/index.tsx)
+[예제 코드 및 테스트 코드 확인](https://github.com/Han5991/fe-lab/blob/1707765c3eb6249234463033335d08927ca25a13/apps/react/src/pages/error-test/index.tsx)

@@ -11,12 +11,16 @@ import {
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { HOME_PATH } from '@/src/shared/routes';
+import { reportError } from '@/src/components/errorReporting';
 import RouteError from './error';
 import GlobalError from './global-error';
+
+vi.mock('@/src/components/errorReporting', () => ({ reportError: vi.fn() }));
 
 beforeEach(() => {
   // 경계는 받은 에러를 콘솔에 남긴다 — 테스트 출력만 조용히 한다.
   vi.spyOn(console, 'error').mockImplementation(() => undefined);
+  vi.mocked(reportError).mockClear();
 });
 
 afterEach(() => {
@@ -45,6 +49,7 @@ describe('app/error (라우트 에러 경계)', () => {
     expect(retry).toHaveBeenCalledOnce();
     expect(reset).not.toHaveBeenCalled();
     expect(console.error).toHaveBeenCalledWith(error);
+    expect(reportError).toHaveBeenCalledWith(error, true);
   });
 });
 
@@ -75,5 +80,12 @@ describe('app/global-error (루트 에러 경계)', () => {
     expect(
       within(body).getByRole('button', { name: '다시 시도' }),
     ).toBeInTheDocument();
+  });
+
+  test('받은 에러를 치명 오류로 수집한다', () => {
+    const error = new Error('boom');
+    render(<GlobalError error={error} retry={vi.fn()} />);
+
+    expect(reportError).toHaveBeenCalledWith(error, true);
   });
 });

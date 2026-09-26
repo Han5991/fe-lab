@@ -11,7 +11,7 @@ thumbnail: '/og/javascript-error.png'
 
 > 이번 글은 JavaScript에서 동기 및 비동기 상황 모두에 대해 에러를 어떻게 처리할 수 있는지에 대해 다룹니다. 에러 처리는 코드의 안정성과 유지보수성에 큰 영향을 미치므로, 명확하고 일관된 패턴을 적용하는 것이 중요합니다. 이 글에서는 기본적인 try-catch 패턴부터, async/await 환경에서의 에러 처리, 그리고 여러 비동기 작업이나 에러 래핑(Error Wrapper) 패턴, 그리고 커스텀 에러 클래스까지 다양한 예제를 통해 살펴보겠습니다. ![JavaScript 에러 핸들링 시리즈 표지 이미지](https://velog.velcdn.com/images/rewq5991/post/64802bfb-a008-44ab-a0ee-3ab7450ca59b/image.png)
 
-[예제 코드 및 테스트 코드 확인](https://github.com/Han5991/fe-lab/tree/main/apps/typescript) — 저장소 코드는 이 글의 예제와 로그 문구·반환값이 다릅니다. 예를 들어 저장소의 `asyncErrorWrapper`는 에러를 로그로 남기지 않고 `[값, 에러]` 튜플로 돌려줍니다.
+[예제 코드 및 테스트 코드 확인](https://github.com/Han5991/fe-lab/tree/1707765c3eb6249234463033335d08927ca25a13/apps/typescript) — 저장소 코드는 이 글의 예제와 로그 문구·반환값이 다릅니다. 예를 들어 저장소의 `asyncErrorWrapper`는 에러를 로그로 남기지 않고 `[값, 에러]` 튜플로 돌려줍니다.
 
 ---
 

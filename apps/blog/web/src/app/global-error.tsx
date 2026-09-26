@@ -5,6 +5,7 @@ import '@/src/styles/globals.css';
 import { useEffect, useSyncExternalStore } from 'react';
 import { SITE_NAME } from '@/content.values.mts';
 import { ErrorFallback } from '@/src/components/ErrorFallback';
+import { reportError } from '@/src/components/errorReporting';
 import { readCookie, systemTheme, type Theme } from '@/src/hooks/useTheme';
 
 interface GlobalErrorProps {
@@ -28,6 +29,7 @@ export default function GlobalError({ error, retry }: GlobalErrorProps) {
 
   useEffect(() => {
     console.error(error);
+    reportError(error, true);
   }, [error]);
 
   return (

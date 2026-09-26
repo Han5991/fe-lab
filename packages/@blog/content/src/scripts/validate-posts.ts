@@ -33,6 +33,7 @@ import {
   validateCodeFenceLanguages,
   validateBodyHeadings,
   validateDiagramNames,
+  validateLineLinks,
 } from './validate/body.ts';
 import {
   detectDuplicateSlugs,
@@ -64,6 +65,7 @@ export {
   validateCodeFenceLanguages,
   validateBodyHeadings,
   validateDiagramNames,
+  validateLineLinks,
   viewBody,
   type BodyView,
   type ScannedLine,
@@ -147,6 +149,7 @@ export function main(ctx: ContentContext, runOptions: ValidateOptions) {
     );
     allIssues.push(...validateBodyHeadings(record, body));
     allIssues.push(...validateDiagramNames(record, body, options));
+    allIssues.push(...validateLineLinks(record, body));
   }
 
   allIssues.push(...detectDuplicateSlugs(records));
