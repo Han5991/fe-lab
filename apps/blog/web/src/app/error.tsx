@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { ErrorFallback } from '@/src/components/ErrorFallback';
+import { reportError } from '@/src/components/errorReporting';
 
 interface RouteErrorProps {
   error: Error & { digest?: string };
@@ -13,6 +14,7 @@ interface RouteErrorProps {
 export default function RouteError({ error, retry }: RouteErrorProps) {
   useEffect(() => {
     console.error(error);
+    reportError(error, true);
   }, [error]);
 
   return <ErrorFallback onRetry={retry} />;

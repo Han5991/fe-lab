@@ -6,6 +6,7 @@ import { useQueryErrorResetBoundary } from '@tanstack/react-query';
 import { css, cx } from '@design-system/ui-lib/css';
 import { railColumn, railGutter } from '@/src/components/Rail';
 import { ADMIN_LOGIN_PATH } from '@/src/shared/routes';
+import { reportError } from '@/src/components/errorReporting';
 // admin 배럴은 supabase 클라이언트를 바인딩하므로 순수 leaf를 연다.
 import {
   adminFailureKind,
@@ -35,6 +36,7 @@ export default function AdminError({ error, reset }: AdminErrorProps) {
 
   useEffect(() => {
     console.error(error);
+    reportError(error, true);
   }, [error]);
 
   const kind = adminFailureKind(error);
