@@ -6,6 +6,7 @@ import { useQueryErrorResetBoundary } from '@tanstack/react-query';
 import { css, cx } from '@design-system/ui-lib/css';
 import { railColumn, railGutter } from '@/src/components/Rail';
 import { ADMIN_LOGIN_PATH } from '@/src/shared/routes';
+import { reportError } from '@/src/components/errorReporting';
 // admin 배럴은 supabase 클라이언트를 바인딩하므로 순수 leaf를 연다.
 import {
   adminFailureKind,
@@ -32,12 +33,13 @@ const TITLES = {
  */
 export default function AdminError({ error, reset }: AdminErrorProps) {
   const { reset: resetQueryErrors } = useQueryErrorResetBoundary();
+  const kind = adminFailureKind(error);
 
   useEffect(() => {
     console.error(error);
-  }, [error]);
-
-  const kind = adminFailureKind(error);
+    // 401·403은 로그인 만료·권한 없음이라는 정상 흐름 — 수집은 실제 실패만.
+    if (kind === 'other') reportError(error, true);
+  }, [error, kind]);
   const message = error instanceof Error ? error.message : String(error);
 
   return (

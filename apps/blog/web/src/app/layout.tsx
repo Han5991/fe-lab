@@ -10,6 +10,7 @@ import '@/src/styles/globals.css';
 import { Providers } from './providers';
 import { Layout } from '@/src/components/Layout';
 import { GoogleAnalytics, GoogleTagManager } from '@next/third-parties/google';
+import { ErrorReporter } from '@/src/components/ErrorReporter';
 import type { ReactNode } from 'react';
 import { jetbrainsMono } from './fonts';
 import { THEME_COOKIE_MATCH } from '@/src/hooks/theme-cookie';
@@ -69,6 +70,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <>
             <GoogleAnalytics gaId="G-ZS9ENFSSQ0" />
             <GoogleTagManager gtmId="GTM-5SMPQ23P" />
+            <ErrorReporter />
           </>
         )}
       </body>

@@ -159,6 +159,10 @@ Worker (`apps/blog/web/wrangler.jsonc`), Supabase for the dynamic bits.
   없다 — 컨테이너 안에 GA4 태그가 또 있으면 페이지뷰가 두 번 집계되니 GA는 한쪽에만 둘 것. 그 컨테이너가
   **Microsoft Clarity**를 로드해 서드파티 쿠키 8개를 심는다(이슈 #165 — Best Practices 77점의 원인). 태그를 바꾸면
   이 문단과 `/privacy`를 함께 갱신할 것. 감점을 없애려면 고지가 아니라 GTM 콘솔에서 Clarity를 내려야 한다.
+  **런타임 예외도 같은 GA4로 간다** — `apps/blog/web/src/components/errorReporting.ts`가 에러 경계 셋과 전역
+  `error`·`unhandledrejection`에서 `exception` 이벤트(설명 100자, 스택 없음, 비치명은 탭 새로고침 전까지 5건)를 보내고, 다른 출처
+  스크립트의 에러와 `Error`가 아닌 거절은 거른다. GA4 화면에서 설명을 보려면 `description`을 맞춤 측정기준으로
+  등록해야 한다.
 
 ## 8. Blog — layers and content contract
 

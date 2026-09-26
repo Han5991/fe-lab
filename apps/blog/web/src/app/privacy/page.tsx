@@ -45,7 +45,7 @@ export const metadata: Metadata = {
   },
 };
 
-const LAST_UPDATED = '2026년 9월 25일';
+const LAST_UPDATED = '2026년 9월 26일';
 
 export default function PrivacyPage() {
   return (
@@ -109,6 +109,7 @@ export default function PrivacyPage() {
                 <li>브라우저 종류, 운영체제, 화면 해상도</li>
                 <li>대략적인 접속 지역 (국가/도시 수준)</li>
                 <li>페이지 조회수 (글별 조회수 집계용)</li>
+                <li>페이지에서 난 오류의 종류와 메시지 (오류 수정용)</li>
               </ul>
               <p className={css({ mt: '3' })}>
                 이름, 이메일 주소 등 개인 식별 정보는 수집하지 않습니다.
