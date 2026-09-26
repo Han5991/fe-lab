@@ -92,6 +92,18 @@ describe('AdminError', () => {
       '인증에 실패했습니다.',
       false,
     ],
+    [
+      '403',
+      new AdminApiError({
+        action: 'all_post_stats',
+        status: 403,
+        serverMessage: '관리자 권한이 없습니다.',
+        fallbackMessage: 'Edge Function returned a non-2xx status code',
+      }),
+      '관리자 권한이 없는 계정입니다',
+      '관리자 권한이 없습니다.',
+      false,
+    ],
   ])(
     '%s는 흰 화면 대신 원인에 맞는 안내를 보이고, 실제 실패만 오류로 수집한다',
     async (_kind, error, title, detail, reported) => {
