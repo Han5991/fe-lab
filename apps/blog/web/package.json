@@ -33,7 +33,7 @@
     "@supabase/postgrest-js": "^2.117.1",
     "@supabase/supabase-js": "^2.117.1",
     "@tanstack/react-query": "catalog:",
-    "lucide-react": "^1.47.0",
+    "lucide-react": "^1.48.0",
     "mermaid": "^12.0.0",
     "motion": "^13.4.3",
     "next": "catalog:",
