@@ -319,8 +319,8 @@ importers:
         specifier: 6.6.10
         version: 6.6.10(supports-color@10.2.2)
       '@supabase/postgrest-js':
-        specifier: ^2.116.0
-        version: 2.116.0
+        specifier: ^2.117.1
+        version: 2.117.2
       '@supabase/supabase-js':
         specifier: ^2.116.0
         version: 2.116.0
@@ -805,10 +805,6 @@ packages:
   '@asamuzakjp/dom-selector@8.3.2':
     resolution: {integrity: sha512-93Z1N+BQNXysodoicpOIyNh2drHfz/CTf9nnT0FEx72GJcIiwgydD7tGAr78j41LsYn3hlRn+LdGPuBLn1Bl8Q==}
     engines: {node: ^22.13.0 || >=24.0.0}
-
-  '@asamuzakjp/dom-selector@9.2.0':
-    resolution: {integrity: sha512-qKvLetaSd/OTWif9JT0eu1SHBg3H7Nvp9SoMwMxqT5tmYyrxea/P1A5pIfGbnIJlOtm3yVeqw+ORxDOkjN1aEw==}
-    engines: {node: ^22.22.2 || ^24.15.0 || >=26.0.0}
 
   '@asamuzakjp/dom-selector@9.2.1':
     resolution: {integrity: sha512-NT4s3yZLjovPpliRpTvdsdzyPjqRqiCZj9MxnarBihbaY5MbAG7DWAJcrLlhmC7xKTNCXsTELcqB8YsqpLnUFQ==}
@@ -2090,6 +2086,10 @@ packages:
 
   '@supabase/postgrest-js@2.116.0':
     resolution: {integrity: sha512-kGpVZTDHxFTJS3tu+rU0iTAZ+4U0bcLVjxwCk8f3gRhjw3qdCZjTBlgYvc4kGH2XccmAzbkKwXL/mrNHMGSc+A==}
+    engines: {node: '>=22.0.0'}
+
+  '@supabase/postgrest-js@2.117.2':
+    resolution: {integrity: sha512-V1Qhn+M8xzJqCasOxHZ2KG19Fj39PxU7weEAmOK65/KTsWCRXboB4hcQwFvxRvM7ZikeP9IZWNvQkfjvSxzYFw==}
     engines: {node: '>=22.0.0'}
 
   '@supabase/realtime-js@2.116.0':
@@ -6005,7 +6005,7 @@ snapshots:
       '@csstools/css-color-parser': 4.2.2(@csstools/css-parser-algorithms@4.0.0(@csstools/css-tokenizer@4.0.0))(@csstools/css-tokenizer@4.0.0)
       '@csstools/css-parser-algorithms': 4.0.0(@csstools/css-tokenizer@4.0.0)
       '@csstools/css-tokenizer': 4.0.0
-      lru-cache: 11.5.2
+      lru-cache: 11.5.3
     optional: true
 
   '@asamuzakjp/css-color@7.0.0':
@@ -6021,15 +6021,7 @@ snapshots:
       bidi-js: 1.1.0
       css-tree: 3.2.1
       is-potential-custom-element-name: 1.0.1
-      lru-cache: 11.5.2
-    optional: true
-
-  '@asamuzakjp/dom-selector@9.2.0':
-    dependencies:
-      bidi-js: 1.1.0
-      css-tree: 3.2.1
-      is-potential-custom-element-name: 1.0.1
-      lru-cache: 11.5.2
+      lru-cache: 11.5.3
     optional: true
 
   '@asamuzakjp/dom-selector@9.2.1':
@@ -7217,6 +7209,10 @@ snapshots:
   '@supabase/phoenix@0.4.5': {}
 
   '@supabase/postgrest-js@2.116.0':
+    dependencies:
+      tslib: 2.8.1
+
+  '@supabase/postgrest-js@2.117.2':
     dependencies:
       tslib: 2.8.1
 
@@ -9631,7 +9627,7 @@ snapshots:
       decimal.js: 10.6.0
       html-encoding-sniffer: 6.0.0(@noble/hashes@1.8.0)
       is-potential-custom-element-name: 1.0.1
-      lru-cache: 11.5.2
+      lru-cache: 11.5.3
       parse5: 8.0.1
       saxes: 6.0.0
       symbol-tree: 3.2.4
@@ -9649,7 +9645,7 @@ snapshots:
   jsdom@30.1.0(@noble/hashes@1.8.0):
     dependencies:
       '@asamuzakjp/css-color': 7.0.0
-      '@asamuzakjp/dom-selector': 9.2.0
+      '@asamuzakjp/dom-selector': 9.2.1
       '@bramus/specificity': 2.4.2
       '@csstools/css-syntax-patches-for-csstree': 1.1.14(css-tree@3.2.1)
       '@exodus/bytes': 1.15.1(@noble/hashes@1.8.0)
@@ -9658,7 +9654,7 @@ snapshots:
       decimal.js: 10.6.0
       html-encoding-sniffer: 6.0.0(@noble/hashes@1.8.0)
       is-potential-custom-element-name: 1.0.1
-      lru-cache: 11.5.2
+      lru-cache: 11.5.3
       parse5: 8.0.1
       saxes: 6.0.0
       tough-cookie: 6.0.2
