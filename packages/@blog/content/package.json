@@ -18,7 +18,7 @@
   "dependencies": {
     "commander": "catalog:",
     "gray-matter": "^4.0.3",
-    "satori": "^0.33.4",
+    "satori": "^0.33.5",
     "sharp": "^0.35.4"
   },
   "devDependencies": {
