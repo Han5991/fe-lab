@@ -195,7 +195,7 @@ jobs:
       # 락파일만** 보기 때문 — 모노레포 루트의 pnpm-lock.yaml은 못 보고 npm으로
       # 폴백하는데, npm은 package.json의 `workspace:^`를 읽지 못한다.
       - name: Deploy to Cloudflare Workers
-        uses: cloudflare/wrangler-action@ebbaa1584979971c8614a24965b4405ff95890e0 # v4.0.0
+        uses: cloudflare/wrangler-action@25853364521e0d392ece9b0c1e97a4b37b638087 # v4.1.2
         with:
           # accountId는 넘기지 않는다 — wrangler.jsonc의 account_id가 단일 출처다.
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
