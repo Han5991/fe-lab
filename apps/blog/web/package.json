@@ -50,7 +50,7 @@
     "remark-gfm": "catalog:"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "5.20260917.1",
+    "@cloudflare/workers-types": "5.20260924.1",
     "@electric-sql/pglite": "^0.5.8",
     "@eslint-community/eslint-plugin-eslint-comments": "catalog:lint",
     "@eslint/js": "catalog:lint",
