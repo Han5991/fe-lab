@@ -41,7 +41,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       # `latest` 대신 lockfile의 supabase devDependency 버전 — 프로덕션 DB 잡에는
-      # Renovate 나이 게이트를 거친 CLI만 쓴다.
+      # 저장소에 고정해 CI를 거친 CLI만 쓴다.
       - name: Resolve Supabase CLI version
         id: supabase-cli
         working-directory: .
