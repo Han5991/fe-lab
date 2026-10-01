@@ -198,6 +198,19 @@ export default function PrivacyPage() {
                     개인정보처리방침이 적용됩니다.
                   </p>
                 </div>
+                <div>
+                  <h3 className={css({ fontWeight: 'semibold', mb: '1' })}>
+                    AI와 토론 (실험)
+                  </h3>
+                  <p className={css({ fontSize: 'sm' })}>
+                    글 상세의 AI 토론은 브라우저에 내장된 언어 모델(Chrome의
+                    Gemini Nano 등)을 사용해 방문자의 기기 안에서만 동작합니다.
+                    질문과 답, 글 본문은 이 사이트나 다른 서버로 전송되지
+                    않습니다. 기능을 쓸 수 있는 브라우저인지, 패널을 열었는지,
+                    질문을 보냈는지 같은 사용 횟수만 Google Analytics로 집계되며
+                    내용은 포함되지 않습니다.
+                  </p>
+                </div>
               </div>
             </section>
 
