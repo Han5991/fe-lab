@@ -34,6 +34,7 @@ import { TOC } from '@/src/components/post/TOC';
 import { ReadingProgress } from '@/src/components/post/ReadingProgress';
 import { PostHeader } from '@/src/components/post/PostHeader';
 import { PostHero } from '@/src/components/post/PostHero';
+import { PostDiscussion } from '@/src/components/post/discussion/PostDiscussion';
 import { PostBody } from './PostBody';
 import { PostRuntime } from './PostRuntime';
 
@@ -138,6 +139,11 @@ export default async function PostPage({ params }: Props) {
 
       <ReadingProgress />
       <BackToTop />
+      {/* 브라우저 내장 모델이 있을 때만 런처가 뜬다(실험). 페이지 전환 레이어
+          밖에 둬야 fixed 위치가 전환 중 transform에 끌려가지 않는다. key는 글이
+          바뀌면 열린 패널과 세션을 버리게 한다(같은 헤딩 id를 가진 다른 글에
+          이전 글의 본문을 품은 세션이 이어지지 않게). */}
+      <PostDiscussion key={post.slug} postTitle={post.title} />
 
       <div className={css({ display: 'block', lg: { display: 'none' } })}>
         <MobileTOC />

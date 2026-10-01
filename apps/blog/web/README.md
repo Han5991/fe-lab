@@ -113,6 +113,7 @@ apps/blog/web/
 - **테마** — `layout.tsx`의 pre-paint 인라인 스크립트(쿠키 → `prefers-color-scheme` → dark)가 `html[data-theme]`를 세팅, `useTheme`가 `useSyncExternalStore`로 구독, `setTheme`은 View Transitions로 전환.
 - **페이지 전환** — `@ssgoi/react`(`PageTransition.tsx`): 썸네일 있는 글은 `/posts/{slug}` hero morph, 없으면 fade.
 - **댓글** — Giscus. `NEXT_PUBLIC_GISCUS_*` 4개가 모두 있을 때만 렌더.
+- **AI와 토론(실험)** — `src/components/post/discussion/`. 브라우저 내장 언어 모델(Prompt API — 데스크톱 Chrome·Edge)이 있을 때만 `PostDiscussion` 런처가 뜨고, 패널은 열 때 지연 로드된다. 섹션 본문은 `#post-content` DOM에서 읽는다 — 원문을 props로 내리면 RSC 페이로드로 글이 HTML에 한 벌 더 실린다. 서버·키 없음, 질문과 본문은 기기 밖으로 나가지 않고 사용 횟수만 GA4 이벤트(`discussion_*`)로 센다.
 - **메타데이터** — 전역 기본값(`metadataBase`·OG/Twitter·Naver 사이트 인증·파비콘)은 `src/app/siteSeo.ts`, 목록 라우트별 값은 각 폴더의 `seo.ts`(`posts`·`series`·`about`), 글 상세는 `nextMetadata.ts`가 `buildPostSeo` DTO를 옮긴다. GA4·GTM은 `layout.tsx`가 production 빌드에서만 싣는다.
 
 ---
