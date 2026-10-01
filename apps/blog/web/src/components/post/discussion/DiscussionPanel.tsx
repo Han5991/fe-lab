@@ -84,6 +84,7 @@ export function DiscussionPanel({
   const inputId = useId();
   const panelRef = useRef<HTMLElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const logRef = useRef<HTMLDivElement>(null);
   const { toc, activeId } = useTocHook();
   /** 고정한 섹션. null이면 읽는 위치를 따라간다. */
   const [pinnedId, setPinnedId] = useState<string | null>(null);
@@ -105,6 +106,13 @@ export function DiscussionPanel({
     });
   const busy = phase !== 'idle';
   const canAsk = section !== null && !busy;
+
+  // 새 질문과 흘러드는 답을 따라 대화 칸을 맨 아래로 내린다 — 그러지 않으면
+  // 대화가 칸을 넘친 뒤로는 답이 보이지 않는 아래에서 쌓인다.
+  useEffect(() => {
+    const log = logRef.current;
+    if (log) log.scrollTop = log.scrollHeight;
+  }, [messages]);
 
   // 열리면 질문 칸으로 초점을 옮긴다(키보드로 연 사람이 바로 쓸 수 있게).
   useEffect(() => {
@@ -340,6 +348,7 @@ export function DiscussionPanel({
         </p>
       )}
       <div
+        ref={logRef}
         role="log"
         aria-label="대화"
         aria-busy={phase !== 'idle'}

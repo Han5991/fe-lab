@@ -260,6 +260,19 @@ describe('PostDiscussion 대화', () => {
     await screen.findByText('빌드가 빨라졌다는 주장이다.');
   });
 
+  test('답이 쌓이면 대화 칸을 맨 아래로 내려 새 답이 보이게 한다', async () => {
+    renderWith(fakeModel());
+    await openPanel();
+    const log = screen.getByRole('log', { name: '대화' });
+    // jsdom은 레이아웃이 없다 — 대화가 칸을 넘친 상태만 흉내 낸다.
+    Object.defineProperty(log, 'scrollHeight', { value: 900 });
+
+    ask('질문');
+    await screen.findByText('빌드가 빨라졌다는 주장이다.');
+
+    expect(log.scrollTop).toBe(900);
+  });
+
   test('세션은 첫 질문에만 열고 이어지는 질문은 같은 세션에 보낸다', async () => {
     const fake = fakeModel();
     renderWith(fake);
