@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useId, useMemo, useRef, useState } from 'react';
-import { X } from 'lucide-react';
+import { Fragment, useEffect, useId, useMemo, useRef, useState } from 'react';
+import { Pin, X } from 'lucide-react';
 import { css, cx } from '@design-system/ui-lib/css';
 import { useTocHook } from '@/src/components/tocHooks';
 import { actionButton } from '@/src/components/actionButton';
@@ -69,9 +69,9 @@ interface DiscussionPanelProps {
 /**
  * AI 토론 패널 — 지연 로드된다(`PostDiscussion`이 열릴 때 받는다).
  *
- * 섹션은 **읽는 위치를 따라가다가** 첫 질문을 보내는 순간 고정된다. 그 뒤로
- * 스크롤해도 대화는 그 섹션에 묶여 있고, 바꾸려면 고르기 상자를 쓴다(대화가
- * 새로 시작된다).
+ * 섹션은 **읽는 위치를 따라간다** — 대화 중에도 스크롤하면 바뀌고, 다음 질문은
+ * 새 섹션을 근거로 앞선 대화를 이어 간다(useSectionChat). 한 섹션에 머물고
+ * 싶으면 고정 버튼을 누른다.
  */
 export function DiscussionPanel({
   id,
@@ -81,17 +81,16 @@ export function DiscussionPanel({
   onClose,
 }: DiscussionPanelProps) {
   const titleId = useId();
-  const selectId = useId();
   const inputId = useId();
   const panelRef = useRef<HTMLElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const { toc, activeId } = useTocHook();
-  const [pickedId, setPickedId] = useState<string | null>(null);
+  /** 고정한 섹션. null이면 읽는 위치를 따라간다. */
+  const [pinnedId, setPinnedId] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
 
   const topLevel = toc.length > 0 ? Math.min(...toc.map(i => i.level)) : 0;
-  const sections = toc.filter(item => item.level === topLevel);
-  const sectionId = pickedId ?? readingSectionId(toc, activeId, topLevel);
+  const sectionId = pinnedId ?? readingSectionId(toc, activeId, topLevel);
   const section = useMemo(
     () => readFromDocument(sectionId, postTitle),
     [sectionId, postTitle],
@@ -126,10 +125,12 @@ export function DiscussionPanel({
     return () => document.removeEventListener('keydown', onKeyDown);
   }, [onClose]);
 
+  const togglePin = () => {
+    setPinnedId(pinned => (pinned === null ? sectionId : null));
+  };
+
   const ask = (text: string, kind: 'preset' | 'free') => {
     if (!section) return;
-    // 첫 질문에서 섹션을 고정한다 — 그 뒤로 스크롤해도 대화가 날아가지 않는다.
-    setPickedId(prev => prev ?? section.id);
     // send는 create() 전에 아무것도 기다리지 않는다 — 클릭·엔터의 사용자
     // 동작이 살아 있는 동안 모델 내려받기를 시작해야 한다.
     void send(text, kind);
@@ -249,57 +250,82 @@ export function DiscussionPanel({
         </button>
       </header>
 
-      {sections.length > 0 && (
-        <div
+      <div
+        className={css({
+          display: 'flex',
+          alignItems: 'center',
+          gap: '2',
+          px: '4',
+          py: '2',
+          borderBottomWidth: 'hairline',
+          borderColor: 'ink.border',
+        })}
+      >
+        <span
           className={css({
-            display: 'flex',
-            alignItems: 'center',
-            gap: '2',
-            px: '4',
-            py: '2',
-            borderBottomWidth: 'hairline',
-            borderColor: 'ink.border',
+            flexShrink: '0',
+            fontFamily: 'mono',
+            fontSize: 'xs',
+            letterSpacing: 'mono',
+            color: 'ink.500',
           })}
         >
-          <label
-            htmlFor={selectId}
+          섹션
+        </span>
+        <span
+          title={section?.title}
+          className={css({
+            flex: '1',
+            minW: '0',
+            fontSize: 'sm',
+            color: 'ink.900',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          })}
+        >
+          {section?.title ?? '—'}
+        </span>
+        {/* 헤딩이 없는 글은 본문 전체가 한 섹션이라 고정할 것이 없다. */}
+        {toc.length > 0 && (
+          <button
+            type="button"
+            aria-label="이 섹션에 고정"
+            aria-pressed={pinnedId !== null}
+            title={
+              pinnedId === null
+                ? '스크롤해도 이 섹션에 머문다'
+                : '다시 읽는 위치를 따라간다'
+            }
+            disabled={section === null}
+            onClick={togglePin}
             className={css({
               flexShrink: '0',
-              fontFamily: 'mono',
-              fontSize: 'xs',
-              letterSpacing: 'mono',
-              color: 'ink.500',
-            })}
-          >
-            섹션
-          </label>
-          <select
-            id={selectId}
-            value={sectionId ?? ''}
-            onChange={e => setPickedId(e.target.value)}
-            className={css({
-              flex: '1',
-              minW: '0',
-              py: '1',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '1',
               px: '2',
-              // 16px 미만이면 iOS Safari가 초점을 받을 때 화면을 확대한다.
-              fontSize: { base: 'md', md: 'sm' },
-              bg: 'paper.50',
-              color: 'ink.900',
+              py: { base: '1.5', md: '1' },
+              fontSize: 'xs',
+              color: 'ink.600',
               borderWidth: 'hairline',
               borderColor: 'ink.border',
               rounded: 'control',
-              textOverflow: 'ellipsis',
+              cursor: 'pointer',
+              _hover: { borderColor: 'ink.borderStrong' },
+              _pressed: {
+                color: 'accent.600',
+                bg: 'accent.50',
+                borderColor: 'accent.200',
+              },
+              _disabled: { opacity: '0.5', cursor: 'default' },
             })}
           >
-            {sections.map(item => (
-              <option key={item.id} value={item.id}>
-                {item.text}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
+            <Pin size={12} aria-hidden />
+            고정
+          </button>
+        )}
+      </div>
 
       {section === null && (
         <p
@@ -310,7 +336,7 @@ export function DiscussionPanel({
             color: 'ink.600',
           })}
         >
-          이 위치의 섹션을 읽지 못했어요. 위에서 다른 섹션을 골라 주세요.
+          이 위치의 섹션을 읽지 못했어요. 다른 섹션으로 스크롤해 주세요.
         </p>
       )}
       <div
@@ -338,43 +364,64 @@ export function DiscussionPanel({
           </p>
         )}
         {section && messages.length === 0 && (
-          <p className={css({ color: 'ink.600' })}>
-            「{section.title}」에 대해 묻거나 반박해 보세요.
-          </p>
-        )}
-        {messages.map(message => (
-          <div
-            key={message.id}
-            className={cx(
-              css({ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }),
-              message.role === 'user'
-                ? css({
-                    alignSelf: 'flex-end',
-                    maxW: '[85%]',
-                    px: '3',
-                    py: '2',
-                    bg: 'paper.100',
-                    rounded: 'control',
-                  })
-                : css({ color: 'ink.900' }),
-            )}
-          >
-            <span
-              className={css({
-                display: 'block',
-                fontFamily: 'mono',
-                fontSize: 'xs',
-                letterSpacing: 'mono',
-                color: 'ink.500',
-              })}
-            >
-              {message.role === 'user' ? '나' : 'AI'}
-            </span>
-            {message.text}
-            {message.stopped && (
-              <span className={css({ color: 'ink.500' })}> (멈춤)</span>
-            )}
+          <div className={css({ color: 'ink.600' })}>
+            <p>「{section.title}」에 대해 묻거나 반박해 보세요.</p>
+            <p className={css({ mt: '1', fontSize: 'xs', color: 'ink.500' })}>
+              스크롤하면 읽고 있는 섹션을 따라가요. 대화는 이어지고, 머물고
+              싶으면 고정을 누르세요.
+            </p>
           </div>
+        )}
+        {messages.map((message, i) => (
+          <Fragment key={message.id}>
+            {/* 대화가 섹션을 넘어가는 자리에 경계를 긋는다 — 어느 답이 어느
+                섹션을 근거로 했는지가 보여야 한다. */}
+            {message.role === 'user' &&
+              messages[i - 1]?.sectionId !== message.sectionId && (
+                <p
+                  className={css({
+                    fontFamily: 'mono',
+                    fontSize: 'xs',
+                    letterSpacing: 'mono',
+                    color: 'ink.500',
+                    textAlign: 'center',
+                  })}
+                >
+                  섹션 · {message.sectionTitle}
+                </p>
+              )}
+            <div
+              className={cx(
+                css({ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }),
+                message.role === 'user'
+                  ? css({
+                      alignSelf: 'flex-end',
+                      maxW: '[85%]',
+                      px: '3',
+                      py: '2',
+                      bg: 'paper.100',
+                      rounded: 'control',
+                    })
+                  : css({ color: 'ink.900' }),
+              )}
+            >
+              <span
+                className={css({
+                  display: 'block',
+                  fontFamily: 'mono',
+                  fontSize: 'xs',
+                  letterSpacing: 'mono',
+                  color: 'ink.500',
+                })}
+              >
+                {message.role === 'user' ? '나' : 'AI'}
+              </span>
+              {message.text}
+              {message.stopped && (
+                <span className={css({ color: 'ink.500' })}> (멈춤)</span>
+              )}
+            </div>
+          </Fragment>
         ))}
         {error && (
           <p role="alert" className={css({ color: 'danger.text' })}>

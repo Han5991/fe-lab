@@ -18,6 +18,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from '@testing-library/react';
 import { PostDiscussion } from './PostDiscussion';
 import type {
@@ -114,18 +115,59 @@ function fakeModel({
   };
 }
 
+/**
+ * 헤딩의 문서 좌표. 첫 화면(스크롤 0)에서는 「왜 바꿨나」를 읽고 있고, 1400px
+ * 내려가면 「결과」를 읽는다. 읽는 위치는 TOC 훅이 정한다(tocHooks.test.tsx와
+ * 같은 흉내 — jsdom은 레이아웃이 없어 getBoundingClientRect가 전부 0이다).
+ */
+const HEADING_TOP: Record<string, number> = { why: 100, result: 1500 };
+const READ_RESULT = 1400;
+
 let content: HTMLElement;
+let scrollY = 0;
+let frames: FrameRequestCallback[] = [];
 
 beforeEach(() => {
+  scrollY = 0;
+  frames = [];
+  vi.stubGlobal('innerHeight', 800);
+  // rAF를 수동 플러시로 바꿔 "스크롤 → 다음 프레임 재계산"을 결정적으로 만든다.
+  vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) =>
+    frames.push(cb),
+  );
+  vi.stubGlobal('cancelAnimationFrame', () => undefined);
+
   content = document.createElement('div');
   content.id = 'post-content';
   content.innerHTML = ARTICLE;
+  content.querySelectorAll('h2').forEach(heading => {
+    const top = HEADING_TOP[heading.id] ?? 0;
+    heading.getBoundingClientRect = () =>
+      ({ top: top - scrollY, bottom: top - scrollY + 30 }) as DOMRect;
+  });
   document.body.append(content);
 });
 
 afterEach(() => {
   content.remove();
+  vi.unstubAllGlobals();
 });
+
+/** 예약된 읽는 위치 재계산을 돌린다. */
+const flushFrames = () => {
+  const queued = frames;
+  frames = [];
+  act(() => {
+    queued.forEach(cb => cb(0));
+  });
+};
+
+/** 스크롤해 읽는 위치를 옮긴다. */
+const scrollToY = (y: number) => {
+  scrollY = y;
+  window.dispatchEvent(new Event('scroll'));
+  flushFrames();
+};
 
 const renderWith = (fake: Fake | undefined) => {
   // 렌더마다 새 함수를 넘기면 감지 effect가 매번 다시 돈다 — 호출부처럼 고정한다.
@@ -135,8 +177,14 @@ const renderWith = (fake: Fake | undefined) => {
 
 const openPanel = async () => {
   fireEvent.click(await screen.findByRole('button', { name: 'AI와 토론' }));
-  return screen.findByRole('dialog', { name: /AI와 토론/ });
+  const dialog = await screen.findByRole('dialog', { name: /AI와 토론/ });
+  flushFrames();
+  return dialog;
 };
+
+/** 패널 위쪽에 보이는 지금 섹션 이름. */
+const shownSection = (dialog: HTMLElement, title: string) =>
+  within(dialog).getByText(title, { selector: 'span' });
 
 const ask = (text: string) => {
   const input = screen.getByRole('textbox', { name: '질문' });
@@ -174,14 +222,12 @@ describe('PostDiscussion 감지', () => {
 });
 
 describe('PostDiscussion 대화', () => {
-  test('고른 섹션만 시스템 프롬프트에 싣고, 답을 흘려 보여 준다', async () => {
+  test('읽고 있는 섹션만 시스템 프롬프트에 싣고, 답을 흘려 보여 준다', async () => {
     const fake = fakeModel();
     renderWith(fake);
-    await openPanel();
+    const dialog = await openPanel();
 
-    fireEvent.change(screen.getByRole('combobox', { name: '섹션' }), {
-      target: { value: 'why' },
-    });
+    expect(shownSection(dialog, '왜 바꿨나')).toBeVisible();
     ask('이 주장 맞아?');
 
     expect(
@@ -258,23 +304,92 @@ describe('PostDiscussion 대화', () => {
     expect(screen.getByRole('button', { name: '보내기' })).toBeInTheDocument();
   });
 
-  test('섹션을 바꾸면 대화를 비우고 세션을 돌려준다', async () => {
+  test('대화 중에 스크롤하면 섹션이 따라가고, 다음 질문은 새 섹션과 앞선 대화를 실은 새 세션으로 간다', async () => {
+    const fake = fakeModel();
+    renderWith(fake);
+    const dialog = await openPanel();
+
+    ask('첫 질문');
+    await screen.findByText('빌드가 빨라졌다는 주장이다.');
+    scrollToY(READ_RESULT);
+
+    // 섹션 이름은 따라가고, 앞선 대화는 화면에 그대로 남는다.
+    expect(shownSection(dialog, '결과')).toBeVisible();
+    expect(screen.getByText('빌드가 빨라졌다는 주장이다.')).toBeVisible();
+
+    ask('둘째 질문');
+    await waitFor(() => expect(fake.prompts).toEqual(['첫 질문', '둘째 질문']));
+
+    // 이전 섹션을 품은 세션은 돌려주고 새로 연다.
+    expect(fake.create).toHaveBeenCalledTimes(2);
+    expect(fake.destroyed()).toBe(1);
+    const [system, ...history] = fake.created[1]?.initialPrompts ?? [];
+    expect(system?.content).toContain('「결과」');
+    expect(system?.content).toContain('40초가 됐다.');
+    expect(system?.content).not.toContain('빌드가 4분 걸렸다.');
+    expect(system?.content).toContain('앞선 대화는 다른 섹션을 두고');
+    expect(history).toEqual([
+      { role: 'user', content: '첫 질문' },
+      { role: 'assistant', content: '빌드가 빨라졌다는 주장이다.' },
+    ]);
+    // 어느 답이 어느 섹션을 근거로 했는지 경계가 보인다.
+    expect(screen.getByText('섹션 · 왜 바꿨나')).toBeVisible();
+    expect(screen.getByText('섹션 · 결과')).toBeVisible();
+  });
+
+  test('고정하면 스크롤해도 섹션이 머물고, 풀면 다시 따라간다', async () => {
+    renderWith(fakeModel());
+    const dialog = await openPanel();
+    const pin = screen.getByRole('button', { name: '이 섹션에 고정' });
+
+    fireEvent.click(pin);
+    scrollToY(READ_RESULT);
+
+    expect(pin).toHaveAttribute('aria-pressed', 'true');
+    expect(shownSection(dialog, '왜 바꿨나')).toBeVisible();
+
+    fireEvent.click(pin);
+
+    expect(pin).toHaveAttribute('aria-pressed', 'false');
+    expect(shownSection(dialog, '결과')).toBeVisible();
+  });
+
+  test('답이 흘러나오는 동안 스크롤해도 답을 끊지 않는다', async () => {
+    const fake = fakeModel({ hold: true });
+    renderWith(fake);
+    await openPanel();
+
+    ask('길게 말해 줘');
+    await waitFor(() => expect(fake.prompts).toHaveLength(1));
+    act(() => fake.push('앞부분, '));
+    scrollToY(READ_RESULT);
+    act(() => {
+      fake.push('뒷부분');
+      fake.finish();
+    });
+
+    expect(await screen.findByText('앞부분, 뒷부분')).toBeVisible();
+    expect(screen.queryByText('(멈춤)')).toBeNull();
+    expect(fake.destroyed()).toBe(0);
+  });
+
+  test('앞선 대화까지 실어 한도를 넘으면 대화 없이 다시 연다', async () => {
     const fake = fakeModel();
     renderWith(fake);
     await openPanel();
-    const select = screen.getByRole('combobox', { name: '섹션' });
-
-    fireEvent.change(select, { target: { value: 'why' } });
     ask('첫 질문');
     await screen.findByText('빌드가 빨라졌다는 주장이다.');
+    scrollToY(READ_RESULT);
+    fake.create.mockRejectedValueOnce(
+      new DOMException('too long', 'QuotaExceededError'),
+    );
 
-    fireEvent.change(select, { target: { value: 'result' } });
+    ask('둘째 질문');
+    await waitFor(() => expect(fake.prompts).toHaveLength(2));
 
-    expect(screen.queryByText('빌드가 빨라졌다는 주장이다.')).toBeNull();
-    expect(
-      screen.getByText('「결과」에 대해 묻거나 반박해 보세요.'),
-    ).toBeVisible();
-    expect(fake.destroyed()).toBe(1);
+    expect(fake.create).toHaveBeenCalledTimes(3);
+    expect(fake.created.at(-1)?.initialPrompts).toHaveLength(1);
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 
   test('세션을 열다 실패하면 이유를 알린다', async () => {
