@@ -34,10 +34,13 @@ permissions:
 jobs:
   smoke:
     # cron 배포 뒤에만(하루 한 번), 배포가 실패해도 돈다 — 떠 있는 사이트를 보는 잡이다.
-    # 봇 actor는 claude-code-action이 거부한다.
+    # 봇 actor는 claude-code-action이 거부한다. head_branch 조건은 아래 checkout의 전제를
+    # 명시한 것 — deploy-blog는 main에서만 돌지만, 그 트리거가 바뀌어도 이 잡은 main만 본다.
     if: >-
       github.event_name == 'workflow_dispatch' ||
-      (github.event.workflow_run.event == 'schedule' && !endsWith(github.actor, '[bot]'))
+      (github.event.workflow_run.event == 'schedule' &&
+       github.event.workflow_run.head_branch == 'main' &&
+       !endsWith(github.actor, '[bot]'))
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -45,8 +48,13 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 1
-          # workflow_run의 기본 checkout은 방금 배포된 커밋이 아니다.
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          # ref를 지정하지 않는다. workflow_run에서 기본 checkout은 main 최신 커밋인데,
+          # deploy-blog는 main에서만 돌므로 방금 배포된 커밋과 같거나(드물게, 배포와 이
+          # 잡 사이에 push가 끼면) 몇 커밋 앞선다. 예전엔 정확한 배포 커밋을 보려고
+          # `workflow_run.head_sha`를 체크아웃했는데, 이벤트 페이로드에서 온 ref를 받아
+          # 그 체크아웃의 스크립트를 실행하는 모양이라 CodeQL이 "특권 컨텍스트의 신뢰할
+          # 수 없는 코드 체크아웃"(critical)으로 잡았다. 배포 커밋과 어긋날 수 있는 단
+          # 하나의 판정(sitemap 누락)은 다음 날 실행에서 스스로 바로잡힌다.
 
       # 러너에 기본 설치된 python3(표준 라이브러리만 사용)으로 돈다. 설치 스텝 불필요.
       # 사이트가 죽어도 exit 0이다 — 그건 Claude가 보고할 사실이지 수집 실패가 아니다.
