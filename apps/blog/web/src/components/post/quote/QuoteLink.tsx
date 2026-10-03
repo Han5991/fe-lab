@@ -360,7 +360,9 @@ export function QuoteLink({
           style={{ top: anchor.top, left: anchor.left }}
           className={css({
             pos: 'fixed',
-            zIndex: '40',
+            // 떠 있는 버튼(맨 위로·필터, 40) 위. 페이지에서 그것들보다 DOM이
+            // 앞이라 같은 값이면 겹친 자리에서 가려진다.
+            zIndex: '41',
             transform: '[translateX(-50%)]',
             display: 'flex',
             alignItems: 'center',
