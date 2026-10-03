@@ -34,6 +34,7 @@ import { TOC } from '@/src/components/post/TOC';
 import { ReadingProgress } from '@/src/components/post/ReadingProgress';
 import { PostHeader } from '@/src/components/post/PostHeader';
 import { PostHero } from '@/src/components/post/PostHero';
+import { QuoteLink } from '@/src/components/post/quote/QuoteLink';
 import { PostBody } from './PostBody';
 import { PostRuntime } from './PostRuntime';
 
@@ -138,6 +139,9 @@ export default async function PostPage({ params }: Props) {
 
       <ReadingProgress />
       <BackToTop />
+      {/* 문장을 선택하면 그 문장으로 열리는 링크를 복사하는 버튼. 페이지 전환
+          레이어 밖에 둬야 fixed 위치가 전환 중 transform에 끌려가지 않는다. */}
+      <QuoteLink />
 
       <div className={css({ display: 'block', lg: { display: 'none' } })}>
         <MobileTOC />

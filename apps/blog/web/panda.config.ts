@@ -103,6 +103,12 @@ export default defineConfig({
       '::selection': {
         bg: 'selection.bg',
       },
+      // 문장 공유 링크(`#:~:text=`)로 들어온 독자에게 그 문장을 짚어 준다.
+      // "여기"를 가리킨다는 점에서 선택과 같은 뜻이라 같은 토큰을 쓴다(대비는
+      // 위 selection.bg 주석). 브라우저 기본값은 노랑이라 팔레트 밖이다.
+      '::target-text': {
+        bg: 'selection.bg',
+      },
       ':focus-visible': {
         outline: '2px solid token(colors.accent.600)',
         outlineOffset: '3px',

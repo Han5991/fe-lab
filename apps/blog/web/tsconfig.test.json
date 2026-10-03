@@ -12,6 +12,9 @@
   },
   "include": [
     "next-env.d.ts",
+    // 타입 없는 패키지의 모듈 선언 — 그 패키지를 지연 로드하는 모듈이 컴포넌트를
+    // 거쳐 테스트에 끌려 들어온다(프로덕션 tsconfig는 **/*.ts 글롭으로 이미 포함).
+    "text-fragments-polyfill.d.ts",
     "**/*.test.ts",
     "**/*.test.tsx",
     // vitest 두 프로젝트의 include 글롭(node: src/{shared,domain,lib}, jsdom: 나머지 src)을 합친 것과
