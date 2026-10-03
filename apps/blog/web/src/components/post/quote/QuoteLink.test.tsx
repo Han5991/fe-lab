@@ -343,3 +343,59 @@ describe('QuoteLink 포커스', () => {
     origin.remove();
   });
 });
+
+describe('QuoteLink 생성기 받기', () => {
+  test('생성기를 받기 전에 누르면 받은 뒤 그 문장 링크를 복사한다', async () => {
+    let resolveLoad: (generate: FragmentGenerator) => void = () => undefined;
+    const loadGenerator = vi.fn(
+      () =>
+        new Promise<FragmentGenerator>(resolve => {
+          resolveLoad = resolve;
+        }),
+    );
+    const writeClipboard = vi.fn(() => Promise.resolve());
+    render(
+      <QuoteLink
+        loadGenerator={loadGenerator}
+        writeClipboard={writeClipboard}
+      />,
+    );
+    select(textOf('second'));
+
+    fireEvent.click(await findButton());
+    expect(writeClipboard).not.toHaveBeenCalled();
+    await act(async () => {
+      resolveLoad(() => ({ textStart: '25초씩' }));
+      await Promise.resolve();
+    });
+
+    expect(
+      await screen.findByRole('button', { name: '링크를 복사했어요' }),
+    ).toBeVisible();
+    expect(writeClipboard).toHaveBeenCalledWith(
+      `${window.location.origin}${window.location.pathname}#:~:text=${encodeURIComponent('25초씩')}`,
+    );
+    // 선택할 때 시작한 받기를 그대로 기다린다 — 두 번 받지 않는다.
+    expect(loadGenerator).toHaveBeenCalledTimes(1);
+  });
+
+  test('생성기를 받지 못하면 섹션 링크로 물러난다', async () => {
+    const writeClipboard = vi.fn(() => Promise.resolve());
+    render(
+      <QuoteLink
+        loadGenerator={() => Promise.reject(new Error('chunk load failed'))}
+        writeClipboard={writeClipboard}
+      />,
+    );
+    select(textOf('second'));
+
+    fireEvent.click(await findButton());
+
+    expect(
+      await screen.findByRole('button', { name: '섹션 링크를 복사했어요' }),
+    ).toBeVisible();
+    expect(writeClipboard).toHaveBeenCalledWith(
+      `${window.location.origin}${window.location.pathname}#result`,
+    );
+  });
+});
