@@ -104,6 +104,12 @@ here or anywhere else (this repo once carried four diverging copies of that prom
   its prompt has a **21,000-byte limit** — over it, GitHub rejects the workflow silently and it vanishes from the PR
   checks (`workflowPromptSize.test.ts` holds a 20,500B budget); a PR that edits that workflow **skips its own
   review**. Missing 👍 ≠ findings — the `/list-good-prs` skill has the table for telling the cases apart.
+- **Claude 워크플로 6종의 인증은 secret `CLAUDE_CODE_OAUTH_TOKEN` 하나다** — `claude setup-token`이 만드는 **1년
+  토큰**이라 발급일 +1년에 전부 같은 날 죽는다. 발급 2025-10-03(`/install-github-app`) → 2026-10-03 만료로 Site
+  Smoke·Post Inventory가 동시에 빨간불이 됐고, 코드·액션·Claude Code 버전은 전날 성공과 같았다. 모양: Claude
+  스텝이 2초·1턴·$0으로 `is_error: true`, 로그엔 사유가 없고(액션이 메시지를 가린다) Step Summary의 Final
+  Result에만 남는다 — 실패 시 `.github/scripts/claude-result-error.py`가 그 본문을 로그에 찍는다. 갱신은
+  `claude setup-token` → secret 교체이고, 끝나면 **이 문단의 발급일을 고칠 것**(다음 만료 = 그 +1년).
 - Large outputs (logs, comment lists, diffs): write to a file, report the key findings.
 
 ## 6. Troubleshooting
