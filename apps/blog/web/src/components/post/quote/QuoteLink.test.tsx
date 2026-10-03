@@ -266,6 +266,26 @@ describe('QuoteLink 복사', () => {
       await screen.findByRole('button', { name: '링크를 복사했어요' }),
     ).toBeVisible();
     expect(writeClipboard).toHaveBeenCalledTimes(1);
+    // 누른 뒤 유예가 지나도 결과 표시는 그대로다(거두는 건 결과 표시가 끝난 뒤).
+    await act(() => new Promise(resolve => setTimeout(resolve, 1000)));
+    expect(
+      screen.getByRole('button', { name: '링크를 복사했어요' }),
+    ).toBeVisible();
+  });
+
+  test('터치가 취소돼 누르지 못했으면(click 없음) 유예 뒤 버튼을 거둔다', async () => {
+    const { writeClipboard } = renderQuote();
+    select(textOf('second'));
+    const button = await findButton();
+
+    fireEvent.pointerDown(button, { pointerType: 'touch' });
+    clearSelection();
+    // 손가락이 버튼 밖으로 밀려나 click이 오지 않는다(pointercancel).
+
+    await waitFor(() => expect(screen.queryByRole('button')).toBeNull(), {
+      timeout: 1500,
+    });
+    expect(writeClipboard).not.toHaveBeenCalled();
   });
 
   test('결과를 잠깐 보여 준 뒤 버튼을 거둔다', async () => {

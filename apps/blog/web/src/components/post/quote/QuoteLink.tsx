@@ -129,6 +129,8 @@ export function QuoteLink({
   const rangeRef = useRef<Range | null>(null);
   const generatorRef = useRef<FragmentGenerator | null>(null);
   const loadingRef = useRef<Promise<FragmentGenerator> | null>(null);
+  /** 마지막으로 복사를 시작한 시각 — 누른 뒤 click이 왔는지 가린다. */
+  const copyStartedAtRef = useRef(-Infinity);
   const buttonRef = useRef<HTMLButtonElement>(null);
   /** 키보드로 버튼에 오기 전에 포커스를 쥐고 있던 곳 — 버튼이 사라지면 돌려준다. */
   const returnFocusRef = useRef<HTMLElement | null>(null);
@@ -165,6 +167,7 @@ export function QuoteLink({
     let frame = 0;
     let mouseDown = false;
     let pressedAt = -Infinity;
+    let pressTimer = 0;
 
     const hide = () => {
       restoreFocus();
@@ -216,7 +219,17 @@ export function QuoteLink({
 
     const onPointerDown = (e: PointerEvent) => {
       if (isOwnTarget(e.target)) {
-        pressedAt = performance.now();
+        const at = performance.now();
+        pressedAt = at;
+        // 누르다 취소하면(손가락이 밀려나 click이 안 오면) 유예 동안 무시한
+        // 선택 해제를 다시 봐 줄 이벤트가 없다 — 유예가 끝나면 한 번 본다.
+        window.clearTimeout(pressTimer);
+        pressTimer = window.setTimeout(() => {
+          if (copyStartedAtRef.current >= at) return;
+          if (readSelection()) return;
+          if (document.activeElement === buttonRef.current) return;
+          hide();
+        }, PRESS_GRACE_MS);
         return;
       }
       if (e.pointerType === 'mouse') mouseDown = true;
@@ -249,6 +262,7 @@ export function QuoteLink({
     window.addEventListener('resize', onViewportChange);
     return () => {
       window.clearTimeout(timer);
+      window.clearTimeout(pressTimer);
       if (frame) cancelAnimationFrame(frame);
       document.removeEventListener('selectionchange', onSelectionChange);
       document.removeEventListener('pointerdown', onPointerDown);
@@ -275,6 +289,7 @@ export function QuoteLink({
     const range = rangeRef.current;
     const content = document.getElementById(CONTENT_ID);
     if (!range || !content) return;
+    copyStartedAtRef.current = performance.now();
 
     const run = (generate: FragmentGenerator | null) => {
       const fragment = generate?.(range) ?? null;
