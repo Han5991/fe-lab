@@ -52,7 +52,9 @@ export function sectionUrl(
   return headingId ? `${base}#${encodeURIComponent(headingId)}` : base;
 }
 
-const HEADING_TAG = /^H[2-4]$/;
+// 본문 h1은 렌더 때 h2로 강등돼(markdownHeadings) 없다. id는 rehype-slug가
+// 모든 단계에 달아서 h5·h6 절도 그 헤딩으로 링크한다.
+const HEADING_TAG = /^H[2-6]$/;
 
 /**
  * 선택이 시작된 자리 바로 위의 헤딩 id. 본문 헤딩은 `#post-content` 바로 아래

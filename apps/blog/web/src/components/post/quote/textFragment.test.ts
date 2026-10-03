@@ -83,6 +83,22 @@ describe('headingBefore', () => {
     expect(node && headingBefore(content, node)).toBe('measure');
   });
 
+  test('h5·h6도 섹션이다(id는 rehype-slug가 모든 단계에 단다)', () => {
+    const content = mount(`
+      <h4 id="api">API</h4>
+      <h5 id="open-sync">fs.openSync</h5>
+      <p id="sync">동기 방식</p>
+      <h6 id="handle">FileHandle</h6>
+      <p id="detail">자세히</p>
+    `);
+    const at = (id: string) => content.querySelector(`#${id}`)?.firstChild;
+    const sync = at('sync');
+    const detail = at('detail');
+
+    expect(sync && headingBefore(content, sync)).toBe('open-sync');
+    expect(detail && headingBefore(content, detail)).toBe('handle');
+  });
+
   test('헤딩보다 앞에 있으면 null', () => {
     const content = mount(`<p id="intro">도입</p><h2 id="why">왜</h2>`);
     const node = content.querySelector('#intro')?.firstChild;
