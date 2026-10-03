@@ -63,6 +63,7 @@ jobs:
           echo "sha256=$sha" >> "$GITHUB_OUTPUT"
 
       - name: Run Claude deps audit
+        id: claude
         uses: anthropics/claude-code-action@9171db3e57d6a3140a37ddc2ba92788584e0ead6 # v1.0.234
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
@@ -152,6 +153,14 @@ jobs:
           # Bash는 코드를 실행하지 않는 서브커맨드만 정확히 나열한다(접두 매칭이라 `pnpm:*`는 `pnpm dlx`까지 연다).
           # `pnpm install --lockfile-only`는 pnpmfile을 실행할 수 있어 이 잡은 읽기 전용·캐시 없음이다.
           claude_args: '--allowed-tools "Read,Edit,Write,Grep,Glob,WebFetch,WebSearch,Bash(pnpm audit:*),Bash(pnpm why:*),Bash(pnpm view:*),Bash(pnpm install --lockfile-only:*),Bash(git status:*),Bash(git diff:*),Bash(git log:*),Bash(git restore:*),Bash(gh pr list:*),Bash(gh pr view:*),Bash(date:*),Bash(diff:*),Bash(shasum:*)"'
+
+      # 액션은 Claude 메시지를 로그에서 가리므로 첫 요청에서 죽으면 "is_error:true·1턴·$0"만
+      # 남는다(2026-10-03 OAuth 토큰 만료가 그랬다). 실패 시 결과의 오류 본문만 로그에 찍는다.
+      - name: Show Claude error
+        if: always() && steps.claude.outcome == 'failure' && steps.claude.outputs.execution_file != ''
+        env:
+          EXECUTION_FILE: ${{ steps.claude.outputs.execution_file }}
+        run: python3 .github/scripts/claude-result-error.py "$EXECUTION_FILE"
 
       # 추적 파일의 수정분만 패치로 뜬다(검사는 publish 잡). 작업 트리를 믿지 않는다 — .git/config·
       # ~/.gitconfig에 심은 fsmonitor·diff.external·filter는 `git diff`로 임의 코드를 돌린다.

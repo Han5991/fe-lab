@@ -45,6 +45,7 @@ jobs:
           echo "sha256=$sha" >> "$GITHUB_OUTPUT"
 
       - name: Run Claude link rot check
+        id: claude
         uses: anthropics/claude-code-action@9171db3e57d6a3140a37ddc2ba92788584e0ead6 # v1.0.234
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
@@ -126,6 +127,14 @@ jobs:
           # curl 인자를 좁혀도 뒤에 붙는 -o·-K는 못 막아(접두 매칭) 보안 경계가 아니다 — 대신 쓰기 자격
           # 증명을 두지 않고 curl이 쓴 파일을 뒤 스텝이 믿지 않는다. 남는 구멍: $GITHUB_ENV·$GITHUB_PATH 쓰기.
           claude_args: '--model claude-sonnet-5 --allowed-tools "Read,Edit,Write,Grep,Glob,WebFetch,WebSearch,Bash(curl:*),Bash(git status:*),Bash(git diff:*),Bash(gh pr list:*),Bash(gh pr view:*),Bash(date:*),Bash(sleep:*)"'
+
+      # 액션은 Claude 메시지를 로그에서 가리므로 첫 요청에서 죽으면 "is_error:true·1턴·$0"만
+      # 남는다(2026-10-03 OAuth 토큰 만료가 그랬다). 실패 시 결과의 오류 본문만 로그에 찍는다.
+      - name: Show Claude error
+        if: always() && steps.claude.outcome == 'failure' && steps.claude.outputs.execution_file != ''
+        env:
+          EXECUTION_FILE: ${{ steps.claude.outputs.execution_file }}
+        run: python3 .github/scripts/claude-result-error.py "$EXECUTION_FILE"
 
       # 추적 파일의 수정분만 패치로 뜬다(검사는 publish 잡). curl이 .git/config를 덮어쓸 수 있어
       # 지문을 대조하고 fsmonitor·hook·외부 diff를 끈 git만 쓴다(claude-deps-audit.yml과 같다).
