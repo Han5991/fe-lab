@@ -18,8 +18,8 @@ const HEIGHT = { fine: 36, coarse: 44 } as const;
 const GAP = 8;
 /** 이보다 위로는 버튼을 올리지 않는다 — 사이트 헤더(56px) 아래에서 8px. */
 const TOP_LIMIT = 64;
-/** 버튼 중심이 화면 가장자리에 붙지 않게 하는 여백(버튼 폭의 절반 남짓). */
-const EDGE = 88;
+/** 버튼과 화면 좌우 끝 사이의 최소 여백 */
+const MARGIN = 8;
 /**
  * 버튼을 누른 직후 선택이 풀려도 버튼을 거두지 않는 시간(ms). 터치 화면은 탭이
  * 선택을 먼저 풀고 click이 뒤따르는데, 그 사이에 버튼이 사라지면 탭이 허공을 친다.
@@ -43,7 +43,10 @@ const LABEL: Record<Copied | 'idle', string> = {
 
 interface Anchor {
   top: number;
+  /** 버튼 가운데가 오려는 x — 선택의 가로 중앙 */
   left: number;
+  /** fixed 위치의 기준 폭(스크롤바 제외) */
+  viewport: number;
 }
 
 function sameRange(a: Range, b: Range): boolean {
@@ -88,13 +91,20 @@ function placeFor(range: Range, coarse: boolean): Anchor | null {
       ? above
       : below;
 
-  const center = rect.left + rect.width / 2;
-  const left = Math.min(
-    Math.max(center, EDGE),
-    Math.max(EDGE, window.innerWidth - EDGE),
-  );
-  return { top, left };
+  return {
+    top,
+    left: rect.left + rect.width / 2,
+    viewport: document.documentElement.clientWidth,
+  };
 }
+
+/**
+ * 버튼을 `left`에 가운데 맞추되(-50%) 양 끝이 화면 여백 안에 들게 민다. 버튼
+ * 폭은 라벨마다(복사하면 길어진다), 글꼴 크기 설정마다 달라서 픽셀 상수로는
+ * 못 막는다 — translate의 %는 버튼 자신의 폭이라 브라우저가 실제 폭으로 계산한다.
+ */
+const centerWithin = ({ left, viewport }: Anchor) =>
+  `translateX(clamp(${MARGIN - left}px, -50%, calc(${viewport - MARGIN - left}px - 100%)))`;
 
 /**
  * 지금 주 입력이 터치인가. 마운트 때 한 번만 보지 않고 쓸 때마다 다시 본다 —
@@ -357,12 +367,17 @@ export function QuoteLink({
             rangeRef.current = null;
             setAnchor(null);
           }}
-          style={{ top: anchor.top, left: anchor.left }}
+          style={{
+            top: anchor.top,
+            left: anchor.left,
+            transform: centerWithin(anchor),
+          }}
           className={css({
             pos: 'fixed',
             // 떠 있는 버튼(맨 위로·필터, 40) 위. 페이지에서 그것들보다 DOM이
             // 앞이라 같은 값이면 겹친 자리에서 가려진다.
             zIndex: '41',
+            // 위 인라인 clamp를 못 읽는 브라우저의 폴백(가운데 맞춤만)
             transform: '[translateX(-50%)]',
             display: 'flex',
             alignItems: 'center',

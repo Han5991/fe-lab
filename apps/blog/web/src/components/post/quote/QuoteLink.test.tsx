@@ -43,6 +43,7 @@ afterEach(() => {
   document.getSelection()?.removeAllRanges();
   content.remove();
   vi.unstubAllGlobals();
+  Reflect.deleteProperty(document.documentElement, 'clientWidth');
 });
 
 /** 요소의 글자를 선택하고 selectionchange를 알린다. */
@@ -104,6 +105,26 @@ describe('QuoteLink 버튼', () => {
 
     // 선택 위 8px, 버튼 높이 36px — 선택의 가로 중앙.
     expect(button).toHaveStyle({ top: `${300 - 8 - 36}px`, left: '200px' });
+  });
+
+  test('화면 가장자리의 선택에서도 버튼은 화면 안에 든다', async () => {
+    // 휴대폰에서 줄 맨 앞 두 글자 — 가운데가 왼쪽 끝에서 10px.
+    rect = { ...rect, left: 0, width: 20 };
+    Object.defineProperty(document.documentElement, 'clientWidth', {
+      configurable: true,
+      value: 390,
+    });
+    renderQuote();
+
+    select(textOf('second'));
+    const button = await findButton();
+
+    // 가운데 맞춤(-50%)을 양 끝 여백 8px 안으로 민다. 버튼 폭은 라벨마다
+    // 달라서(복사하면 길어진다) %로 둔다 — translate의 %는 버튼 자신의 폭이다.
+    expect(button).toHaveStyle({
+      left: '10px',
+      transform: 'translateX(clamp(-2px, -50%, calc(372px - 100%)))',
+    });
   });
 
   test('위에 자리가 없으면 선택 아래에 뜬다', async () => {
