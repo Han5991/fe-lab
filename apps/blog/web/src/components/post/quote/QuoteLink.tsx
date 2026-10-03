@@ -94,6 +94,10 @@ function placeFor(range: Range, coarse: boolean): Anchor | null {
   return { top, left };
 }
 
+/**
+ * 지금 주 입력이 터치인가. 마운트 때 한 번만 보지 않고 쓸 때마다 다시 본다 —
+ * 터치·마우스 겸용 기기(터치스크린 노트북)는 입력이 바뀐다(matchMedia 한 번이라 싸다).
+ */
 const isCoarsePointer = () =>
   typeof window.matchMedia === 'function' &&
   window.matchMedia('(pointer: coarse)').matches;
@@ -147,7 +151,6 @@ export function QuoteLink({
     let frame = 0;
     let mouseDown = false;
     let pressedAt = -Infinity;
-    const coarse = isCoarsePointer();
 
     const hide = () => {
       rangeRef.current = null;
@@ -166,7 +169,7 @@ export function QuoteLink({
       // 누르기 전에 받아 둔다 — 클립보드 쓰기는 클릭 안에서 동기로 해야
       // Safari가 허락한다(받는 걸 기다리면 사용자 동작이 끊긴다).
       ensureGenerator().catch(() => undefined);
-      setAnchor(placeFor(range, coarse));
+      setAnchor(placeFor(range, isCoarsePointer()));
     };
 
     const schedule = (delay: number) => {
@@ -186,7 +189,7 @@ export function QuoteLink({
       // 마우스로 끄는 중에는 띄우지 않는다 — 놓을 때(pointerup) 한 번 본다.
       // 터치는 선택 손잡이를 끄는 동안 문서에 포인터 이벤트가 오지 않아
       // 변화가 멎은 뒤에 본다.
-      if (!mouseDown) schedule(coarse ? 400 : 150);
+      if (!mouseDown) schedule(isCoarsePointer() ? 400 : 150);
     };
 
     const isOwnTarget = (target: EventTarget | null) =>
@@ -211,7 +214,7 @@ export function QuoteLink({
       frame = requestAnimationFrame(() => {
         frame = 0;
         const range = rangeRef.current;
-        if (range) setAnchor(placeFor(range, coarse));
+        if (range) setAnchor(placeFor(range, isCoarsePointer()));
       });
     };
 

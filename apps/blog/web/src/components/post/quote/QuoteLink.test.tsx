@@ -115,6 +115,18 @@ describe('QuoteLink 버튼', () => {
     expect(await findButton()).toHaveStyle({ top: `${90 + 8}px` });
   });
 
+  test('터치로 바뀐 뒤의 선택은 OS 메뉴를 피해 선택 아래에 뜬다', async () => {
+    renderQuote();
+    // 마운트 뒤에 입력이 터치로 바뀐다(터치스크린 노트북 같은 겸용 기기).
+    vi.stubGlobal('matchMedia', (query: string) => ({
+      matches: query === '(pointer: coarse)',
+    }));
+
+    select(textOf('second'));
+
+    expect(await findButton()).toHaveStyle({ top: `${320 + 8}px` });
+  });
+
   test('본문 밖의 선택에는 뜨지 않는다', async () => {
     const outside = document.createElement('p');
     outside.textContent = '사이드바 글자';
