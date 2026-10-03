@@ -544,6 +544,14 @@ jobs:
             --disallowed-tools
             "Task,ScheduleWakeup,TaskOutput,TaskStop"
 
+      # 액션은 Claude 메시지를 로그에서 가리므로 첫 요청에서 죽으면 "is_error:true·1턴·$0"만
+      # 남는다(2026-10-03 OAuth 토큰 만료가 그랬다). 실패 시 결과의 오류 본문만 로그에 찍는다.
+      - name: Show Claude error
+        if: always() && steps.claude-review.outcome == 'failure' && steps.claude-review.outputs.execution_file != ''
+        env:
+          EXECUTION_FILE: ${{ steps.claude-review.outputs.execution_file }}
+        run: python3 .github/scripts/claude-result-error.py "$EXECUTION_FILE"
+
       # 리뷰 결과를 PR의 👍 리액션 하나로 요약한다. `/list-good-prs` 스킬이
       # "머지 가능 + 리뷰 통과" PR을 이걸로 고른다 — 요약 코멘트 본문을 파싱하는
       # 것보다 출력 형식 변경에 강하고, 리뷰가 죽었는지도 구분된다.
