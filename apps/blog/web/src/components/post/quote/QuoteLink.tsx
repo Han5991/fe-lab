@@ -130,6 +130,20 @@ export function QuoteLink({
   const generatorRef = useRef<FragmentGenerator | null>(null);
   const loadingRef = useRef<Promise<FragmentGenerator> | null>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
+  /** 키보드로 버튼에 오기 전에 포커스를 쥐고 있던 곳 — 버튼이 사라지면 돌려준다. */
+  const returnFocusRef = useRef<HTMLElement | null>(null);
+
+  /**
+   * 버튼이 포커스를 쥔 채 사라지면 포커스가 body로 떨어져 키보드·보조기기
+   * 사용자가 자리를 잃는다. 버튼으로 오기 전 자리로 돌려준다(마우스·터치로 누르면
+   * mousedown을 막아 버튼이 포커스를 받지 않으니 해당 없다).
+   */
+  const restoreFocus = useCallback(() => {
+    const target = returnFocusRef.current;
+    returnFocusRef.current = null;
+    if (document.activeElement !== buttonRef.current) return;
+    if (target?.isConnected) target.focus({ preventScroll: true });
+  }, []);
 
   /** 생성기를 한 번만 받는다. 실패하면 다음 선택 때 다시 시도한다. */
   const ensureGenerator = useCallback(() => {
@@ -153,6 +167,7 @@ export function QuoteLink({
     let pressedAt = -Infinity;
 
     const hide = () => {
+      restoreFocus();
       rangeRef.current = null;
       setAnchor(null);
     };
@@ -180,8 +195,12 @@ export function QuoteLink({
     const onSelectionChange = () => {
       const selection = document.getSelection();
       if (!selection || selection.isCollapsed) {
-        // 버튼을 누르느라 풀린 선택이면 거두지 않는다 — 범위는 복제해 뒀다.
+        // 버튼을 누르느라(터치) 또는 버튼으로 포커스를 옮기느라(키보드) 풀린
+        // 선택이면 거두지 않는다 — 범위는 복제해 뒀다.
         if (performance.now() - pressedAt < PRESS_GRACE_MS) return;
+        if (buttonRef.current && document.activeElement === buttonRef.current) {
+          return;
+        }
         window.clearTimeout(timer);
         hide();
         return;
@@ -238,18 +257,19 @@ export function QuoteLink({
       window.removeEventListener('scroll', onViewportChange);
       window.removeEventListener('resize', onViewportChange);
     };
-  }, [ensureGenerator]);
+  }, [ensureGenerator, restoreFocus]);
 
   // 결과를 잠깐 보여 준 뒤 버튼을 거둔다(선택은 그대로 둔다).
   useEffect(() => {
     if (!copied) return;
     const timer = window.setTimeout(() => {
+      restoreFocus();
       rangeRef.current = null;
       setAnchor(null);
       setCopied(null);
     }, SETTLE_MS);
     return () => window.clearTimeout(timer);
-  }, [copied]);
+  }, [copied, restoreFocus]);
 
   const copy = () => {
     const range = rangeRef.current;
@@ -308,6 +328,18 @@ export function QuoteLink({
           // 누르는 순간 선택이 풀리지 않게 한다(풀려도 범위는 복제해 둬서
           // 링크는 만들 수 있지만, 선택이 남아 있어야 무엇을 공유했는지 보인다).
           onMouseDown={e => e.preventDefault()}
+          onFocus={e => {
+            returnFocusRef.current =
+              e.relatedTarget instanceof HTMLElement ? e.relatedTarget : null;
+          }}
+          // 포커스가 있는 동안은 선택이 풀려도 남겨 뒀다(위 selectionchange).
+          // 복사하지 않고 떠나면 그때 거둔다 — 복사했으면 결과 표시 뒤에 거둔다.
+          onBlur={() => {
+            if (copied || readSelection()) return;
+            returnFocusRef.current = null;
+            rangeRef.current = null;
+            setAnchor(null);
+          }}
           style={{ top: anchor.top, left: anchor.left }}
           className={css({
             pos: 'fixed',

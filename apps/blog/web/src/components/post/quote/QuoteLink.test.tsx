@@ -279,3 +279,67 @@ describe('QuoteLink 복사', () => {
     });
   });
 });
+
+describe('QuoteLink 포커스', () => {
+  /**
+   * 키보드 사용자의 흐름 — 어딘가에 포커스를 둔 채 문장을 고르고, Tab으로
+   * 버튼에 온다. 포커스를 옮기면 선택이 풀리는 브라우저(jsdom 포함)가 있다.
+   */
+  const tabToButton = async () => {
+    const origin = document.createElement('a');
+    origin.href = '#why';
+    origin.textContent = '차례: 왜 바꿨나';
+    document.body.append(origin);
+    act(() => origin.focus());
+    select(textOf('second'));
+    const button = await findButton();
+    act(() => button.focus());
+    return { origin, button };
+  };
+
+  test('버튼으로 포커스를 옮기느라 선택이 풀려도 버튼은 남는다', async () => {
+    renderQuote();
+    const { origin, button } = await tabToButton();
+
+    await act(() => new Promise(resolve => setTimeout(resolve, 200)));
+
+    expect(button).toBeInTheDocument();
+    expect(button).toHaveFocus();
+    origin.remove();
+  });
+
+  test('복사하지 않고 버튼을 떠나면(선택도 풀렸으면) 버튼을 거둔다', async () => {
+    renderQuote();
+    const { origin } = await tabToButton();
+
+    act(() => origin.focus());
+
+    expect(screen.queryByRole('button')).toBeNull();
+    origin.remove();
+  });
+
+  test('Tab으로 온 버튼이 복사 뒤 사라지면 포커스를 원래 자리로 돌려준다', async () => {
+    renderQuote();
+    const { origin, button } = await tabToButton();
+
+    fireEvent.click(button);
+    await screen.findByRole('button', { name: '링크를 복사했어요' });
+    await waitFor(() => expect(screen.queryByRole('button')).toBeNull(), {
+      timeout: 2500,
+    });
+
+    expect(origin).toHaveFocus();
+    origin.remove();
+  });
+
+  test('Esc로 거둘 때도 포커스를 원래 자리로 돌려준다', async () => {
+    renderQuote();
+    const { origin, button } = await tabToButton();
+
+    fireEvent.keyDown(button, { key: 'Escape' });
+
+    expect(screen.queryByRole('button')).toBeNull();
+    expect(origin).toHaveFocus();
+    origin.remove();
+  });
+});
