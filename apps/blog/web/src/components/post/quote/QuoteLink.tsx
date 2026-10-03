@@ -30,6 +30,8 @@ const SETTLE_MS = 1600;
 
 /** text: 그 문장 · section: 선택이 속한 섹션의 헤딩 · article: 헤딩보다 앞이라 글 주소 */
 type Copied = 'text' | 'section' | 'article' | 'failed';
+/** 실제로 복사한 링크의 종류(실패 전) — GA4 `quote_link_copy`의 kind이기도 하다. */
+type CopiedLink = Exclude<Copied, 'failed'>;
 
 const LABEL: Record<Copied | 'idle', string> = {
   idle: '링크 복사',
@@ -298,7 +300,7 @@ export function QuoteLink({
       const headingId = fragment
         ? null
         : headingBefore(content, range.startContainer);
-      const kind: Copied = fragment
+      const kind: CopiedLink = fragment
         ? 'text'
         : headingId
           ? 'section'
