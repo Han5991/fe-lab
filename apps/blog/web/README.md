@@ -111,8 +111,9 @@ apps/blog/web/
 - **Admin** — `AdminLayoutClient` → `AdminGuard`(세션 `useSuspenseQuery`, dev에서만 bypass) → React Query 훅 → `@/src/domain/analytics/admin` 배럴 → `adminRepository` → `src/lib/platform/adminApi` → Supabase Edge Function `admin-analytics`(호출자 JWT를 `ADMIN_EMAIL`과 대조 후 `service_role`로 RPC). 세션·로그인·로그아웃과 관리자 이메일 판정은 전부 `@/src/domain/auth` 배럴 경유 — 가드·로그인 페이지가 `client.auth`를 직접 만지지 않는다. 로그인 **경로** 계약(`ADMIN_LOGIN_PATH`·`isAdminLoginPath`…)은 `@/src/shared/routes`가 단일 출처다. 글 목록은 빌드가 만든 `/admin-posts-index.json`(`getAdminPostsIndex` 한 곳이 읽는다). `src/domain/analytics/index.ts`와 `admin.ts`를 **일부러 두 배럴**로 나눠 공개 페이지가 auth 세션 supabase-js를 끌고 오지 않게 한다.
 - **검색** — `SearchDialog`가 열릴 때 `/search-index.json`(빌드 산출물)을 fetch + localStorage 최근 본 글.
 - **테마** — `layout.tsx`의 pre-paint 인라인 스크립트(쿠키 → `prefers-color-scheme` → dark)가 `html[data-theme]`를 세팅, `useTheme`가 `useSyncExternalStore`로 구독, `setTheme`은 View Transitions로 전환.
-- **페이지 전환** — `@ssgoi/react`(`PageTransition.tsx`): 썸네일 있는 글은 `/posts/{slug}` hero morph, 없으면 fade.
+- **페이지 전환** — `@ssgoi/react`(`PageTransition.tsx`): 썸네일 있는 글은 `/posts/{slug}` hero morph, 없으면 fade. 글 상세는 이동하면 맨 위에서 시작하는데, SSGOI는 이 규칙을 첫 로드에도 적용해 `#헤딩`·문장 링크로 연 글을 맨 위로 되돌렸다 — 조각을 달고 연 첫 로드는 첫 사용자 동작 전까지 예외다(`src/components/landingScroll.ts`).
 - **댓글** — Giscus. `NEXT_PUBLIC_GISCUS_*` 4개가 모두 있을 때만 렌더.
+- **문장 공유 링크** — `src/components/post/quote/`. 본문(`#post-content`)에서 문장을 선택하면 버튼이 뜨고, 누르면 그 문장으로 열리는 텍스트 조각 링크(`#:~:text=`)를 복사한다. 조각 생성기(GoogleChromeLabs `text-fragments-polyfill`, 타입 선언은 `text-fragments-polyfill.d.ts`)는 처음 선택할 때 지연 로드한다. 받는 쪽은 브라우저가 스크롤하고 `::target-text`(panda.config.ts globalCss, `selection.bg`)로 칠한다 — 서버·저장 없음.
 - **메타데이터** — 전역 기본값(`metadataBase`·OG/Twitter·Naver 사이트 인증·파비콘)은 `src/app/siteSeo.ts`, 목록 라우트별 값은 각 폴더의 `seo.ts`(`posts`·`series`·`about`), 글 상세는 `nextMetadata.ts`가 `buildPostSeo` DTO를 옮긴다. GA4·GTM은 `layout.tsx`가 production 빌드에서만 싣는다.
 
 ---

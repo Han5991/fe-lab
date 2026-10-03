@@ -47,7 +47,8 @@
     "recharts": "^3.10.1",
     "rehype-raw": "catalog:",
     "rehype-slug": "^6.0.0",
-    "remark-gfm": "catalog:"
+    "remark-gfm": "catalog:",
+    "text-fragments-polyfill": "^6.7.0"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "5.20260924.1",

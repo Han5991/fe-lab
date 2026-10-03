@@ -1,6 +1,6 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Ssgoi, type SsgoiConfig } from '@ssgoi/react';
 import { hero, fade } from '@ssgoi/react/view-transitions';
 import { css } from '@design-system/ui-lib/css';
@@ -9,6 +9,7 @@ import {
   POST_PLAIN_TRANSITION_GLOB,
   POSTS_TRANSITION_ID,
 } from '@/src/shared/transitions';
+import { createLandingScroll, landedWithFragment } from './landingScroll';
 
 // ssgoi v6 path-factory API. (v6에는 defaultTransition이 없고, 모든 전환을
 // path 기반 팩토리로 매칭한다. 매처는 first-hit이라 더 구체적인 규칙을 먼저 둔다.)
@@ -31,37 +32,73 @@ const heroBidirectional = [
   ...heroEntries.map(e => ({ ...e, from: e.to, to: e.from })),
 ];
 
-const config: SsgoiConfig = {
-  transitions: [
-    // 글 목록 ↔ 썸네일 있는 글 상세(id=/posts/*): hero 모핑(양방향)
-    ...heroBidirectional,
-    // 그 외 전부(홈↔목록·홈↔글·글↔글·about, 썸네일 없는 글 상세=/posts-plain/* 등): fade.
-    // paths:['*','*'] = {from:'*', to:'*'} 와일드카드 catch-all.
-    ...fade({ paths: ['*', '*'] }),
-  ],
-  // 데스크탑/모바일 동작 통일. 긴 글 상세(/posts/*, /posts-plain/*)는 항상 맨 위에서
-  // 시작, 글 목록(/posts)은 back 시 스크롤 위치 복원.
-  preserveScroll: {
-    exclude: [POST_HERO_TRANSITION_GLOB, POST_PLAIN_TRANSITION_GLOB],
-  },
+// 데스크탑/모바일 동작 통일. 긴 글 상세(/posts/*, /posts-plain/*)는 항상 맨 위에서
+// 시작, 글 목록(/posts)은 back 시 스크롤 위치 복원. 단 조각(#헤딩·문장 링크)을
+// 달고 연 첫 로드는 예외다(landingScroll.ts).
+const POSTS_START_AT_TOP = {
+  exclude: [POST_HERO_TRANSITION_GLOB, POST_PLAIN_TRANSITION_GLOB],
 };
 
-export const PageTransition = ({ children }: { children: ReactNode }) => (
-  <Ssgoi config={config}>
-    {/* 전환 래퍼:
+const transitions: SsgoiConfig['transitions'] = [
+  // 글 목록 ↔ 썸네일 있는 글 상세(id=/posts/*): hero 모핑(양방향)
+  ...heroBidirectional,
+  // 그 외 전부(홈↔목록·홈↔글·글↔글·about, 썸네일 없는 글 상세=/posts-plain/* 등): fade.
+  // paths:['*','*'] = {from:'*', to:'*'} 와일드카드 catch-all.
+  ...fade({ paths: ['*', '*'] }),
+];
+
+export const PageTransition = ({ children }: { children: ReactNode }) => {
+  // 첫 로드가 조각을 달고 왔는지는 window를 봐야 안다. 하이드레이션 때 클라이언트가
+  // 한 번 계산한다(서버 렌더에는 조각이 없다 — 해시는 서버로 오지 않는다).
+  const [{ config, landing }] = useState(() => {
+    const landing = createLandingScroll(
+      POSTS_START_AT_TOP,
+      typeof window !== 'undefined' && landedWithFragment(window),
+    );
+    const config: SsgoiConfig = {
+      transitions,
+      preserveScroll: landing.preserveScroll,
+    };
+    return { config, landing };
+  });
+
+  // 이동은 언제나 사용자 동작(클릭·키) 뒤에 온다. 첫 동작에서 첫 로드 예외를
+  // 거두면 다음 이동부터는 원래 규칙 그대로다. 거둘 때 scroll 이벤트를 한 번
+  // 쏴서 SSGOI가 지금 위치를 원래 규칙의 키로 기록하게 한다 — 안 그러면
+  // 스크롤하지 않고 바로 떠날 때 나가는 페이지가 맨 위 기준으로 그려진다.
+  useEffect(() => {
+    if (!landing.isLanding()) return;
+    const end = () => {
+      landing.end();
+      window.dispatchEvent(new Event('scroll'));
+      detach();
+    };
+    const detach = () => {
+      window.removeEventListener('pointerdown', end, true);
+      window.removeEventListener('keydown', end, true);
+    };
+    window.addEventListener('pointerdown', end, true);
+    window.addEventListener('keydown', end, true);
+    return detach;
+  }, [landing]);
+
+  return (
+    <Ssgoi config={config}>
+      {/* 전환 래퍼:
         - pos:relative → SSGOI가 hero 클론/OUT 페이지를 position:absolute로 띄울 때의 기준
         - zIndex:0 → stacking context. 이 안에서 inline 렌더된 fixed 풀스크린 오버레이
           (MobileTOC·PostsFilterSheet)는 갇히므로 그것들은 <Portal>로 body에 렌더한다.
         - overflowX:clip → 전환 중 가로 스크롤바 누출 방지 (overflowY는 visible 유지되어 sticky 정상) */}
-    <div
-      className={css({
-        pos: 'relative',
-        w: 'full',
-        zIndex: '0',
-        overflowX: 'clip',
-      })}
-    >
-      {children}
-    </div>
-  </Ssgoi>
-);
+      <div
+        className={css({
+          pos: 'relative',
+          w: 'full',
+          zIndex: '0',
+          overflowX: 'clip',
+        })}
+      >
+        {children}
+      </div>
+    </Ssgoi>
+  );
+};

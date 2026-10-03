@@ -34,6 +34,7 @@ import { TOC } from '@/src/components/post/TOC';
 import { ReadingProgress } from '@/src/components/post/ReadingProgress';
 import { PostHeader } from '@/src/components/post/PostHeader';
 import { PostHero } from '@/src/components/post/PostHero';
+import { QuoteLink } from '@/src/components/post/quote/QuoteLink';
 import { PostBody } from './PostBody';
 import { PostRuntime } from './PostRuntime';
 
@@ -136,6 +137,14 @@ export default async function PostPage({ params }: Props) {
       {/* 조회수·최근 본 글 부수효과 — 화면 없는 클라이언트 잎. */}
       <PostRuntime slug={post.slug} title={post.title} />
 
+      {/* 문장을 선택하면 그 문장으로 열리는 링크를 복사하는 버튼.
+          - 페이지 전환 레이어(PageBoundary) 밖: fixed 위치가 전환 중 transform에
+            끌려가지 않는다.
+          - 페이지의 첫 포커스 가능 요소: 본문을 마우스로 고르면 초점이
+            <main>(tabIndex -1, 건너뛰기 링크의 대상)으로 가서 Tab은 언제나 main
+            맨 앞부터 다시 센다. 그래서 선택 지점 근처가 아니라 여기 둬야 첫
+            Tab에 닿는다(본문 바로 뒤에 두면 본문 링크를 다 지난 뒤에야 닿았다). */}
+      <QuoteLink />
       <ReadingProgress />
       <BackToTop />
 
