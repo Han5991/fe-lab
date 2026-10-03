@@ -28,12 +28,14 @@ const PRESS_GRACE_MS = 800;
 /** 복사 결과를 보여 준 뒤 버튼을 거두기까지(ms) */
 const SETTLE_MS = 1600;
 
-type Copied = 'text' | 'section' | 'failed';
+/** text: 그 문장 · section: 선택이 속한 섹션의 헤딩 · article: 헤딩보다 앞이라 글 주소 */
+type Copied = 'text' | 'section' | 'article' | 'failed';
 
 const LABEL: Record<Copied | 'idle', string> = {
   idle: '링크 복사',
   text: '링크를 복사했어요',
   section: '섹션 링크를 복사했어요',
+  article: '글 링크를 복사했어요',
   failed: '복사하지 못했어요',
 };
 
@@ -253,13 +255,19 @@ export function QuoteLink({
 
     const run = (generate: FragmentGenerator | null) => {
       const fragment = generate?.(range) ?? null;
-      const kind: Copied = fragment ? 'text' : 'section';
+      // 조각을 못 만들면 섹션 헤딩으로 물러나고, 헤딩보다 앞(도입부)이면 글
+      // 주소로 물러난다 — 버튼 문구가 실제로 복사한 것과 맞아야 한다.
+      const headingId = fragment
+        ? null
+        : headingBefore(content, range.startContainer);
+      const kind: Copied = fragment
+        ? 'text'
+        : headingId
+          ? 'section'
+          : 'article';
       const url = fragment
         ? quoteUrl(window.location, fragment)
-        : sectionUrl(
-            window.location,
-            headingBefore(content, range.startContainer),
-          );
+        : sectionUrl(window.location, headingId);
       writeClipboard(url).then(
         () => {
           setCopied(kind);

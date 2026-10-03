@@ -15,6 +15,7 @@ import { QuoteLink } from './QuoteLink';
 import type { FragmentGenerator } from './fragmentGenerator';
 
 const ARTICLE = `
+  <p id="intro">첫 헤딩보다 앞에 있는 도입 문단이다.</p>
   <h2 id="why">왜 바꿨나</h2>
   <p id="first">빌드가 4분 걸렸다. 그래서 나눴다.</p>
   <h2 id="result">결과</h2>
@@ -202,6 +203,20 @@ describe('QuoteLink 복사', () => {
     ).toBeVisible();
     expect(writeClipboard).toHaveBeenCalledWith(
       `${window.location.origin}${window.location.pathname}#result`,
+    );
+  });
+
+  test('헤딩보다 앞(도입부)이면 섹션이 아니라 글 링크라고 알린다', async () => {
+    const { writeClipboard } = renderQuote({ generate: () => null });
+    select(textOf('intro'));
+
+    fireEvent.click(await findButton());
+
+    expect(
+      await screen.findByRole('button', { name: '글 링크를 복사했어요' }),
+    ).toBeVisible();
+    expect(writeClipboard).toHaveBeenCalledWith(
+      `${window.location.origin}${window.location.pathname}`,
     );
   });
 
