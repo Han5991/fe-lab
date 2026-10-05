@@ -35,4 +35,7 @@ declare module 'text-fragments-polyfill/dist/fragment-generation-utils.js' {
   ): GenerateFragmentResult;
 
   export function isValidRangeForFragmentGeneration(range: Range): boolean;
+
+  /** 생성 시간 상한(ms, 기본 500). null이면 상한 없음 — 테스트만 쓴다. */
+  export function setTimeout(timeoutMs: number | null): void;
 }
