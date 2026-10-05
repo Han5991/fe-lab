@@ -23,6 +23,8 @@ here or anywhere else (this repo once carried four diverging copies of that prom
 
 - **Versions**: Node / pnpm come from root `engines` · `.tool-versions` · `packageManager`; TypeScript from the
   `pnpm-workspace.yaml` catalog. Never copy version numbers into docs — Renovate bumps them.
+- **Claude Code cloud sessions** run `.claude/hooks/session-start.sh` (SessionStart): it puts the `.tool-versions`
+  Node·pnpm first on PATH (the container defaults to Node 22) and runs `pnpm install --frozen-lockfile`.
 - **TypeScript 6 semantics, not TS 5.x.** Before explaining or relying on compiler behavior (default `types`,
   `rootDir`, `peerDependencies` promotion vs restore, …) verify it against the actual tsconfig/source. Be precise
   about "add" vs "move" vs "promote" when describing dependency/catalog changes.
