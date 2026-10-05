@@ -18,6 +18,8 @@ import react from '@vitejs/plugin-react';
  * 러너 안의 프로젝트 경계라 그 비용 없이 환경만 분리된다.
  *
  * include는 tsconfig.test.json·eslint의 테스트 블록과 대칭이다 — 한쪽을 고치면 셋을 함께.
+ * 예외는 `e2e/` 하나다: 타입·린트는 그 둘이 덮지만 러너는 Playwright(`pnpm test:e2e`)라
+ * 여기 글롭(src/**)에는 일부러 없다.
  */
 
 // tsconfig의 `@/* → ./*` 매핑을 vitest에도 동일 적용하는 프리픽스 alias.

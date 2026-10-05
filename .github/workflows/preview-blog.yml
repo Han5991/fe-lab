@@ -10,7 +10,7 @@ name: Preview Blog on Cloudflare Workers
 
 on:
   pull_request:
-    # 블로그 빌드의 실제 입력 전부(deploy-blog.yml의 push 경로와 같다 — quality-checks만 뺀다).
+    # 블로그 빌드의 실제 입력 전부(deploy-blog.yml의 push 경로와 같다 — 검사 액션 둘(quality-checks·blog-e2e)만 뺀다).
     paths:
       - 'apps/blog/**'
       - 'packages/@blog/**'

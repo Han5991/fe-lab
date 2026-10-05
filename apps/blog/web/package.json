@@ -17,6 +17,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test -c e2e/playwright.config.ts",
     "new-post": "blog-content new-post",
     "gen:types": "mkdir -p .cache && supabase gen types --lang typescript --local --schema public > .cache/database.types.ts && mv .cache/database.types.ts src/lib/platform/database.types.ts && prettier --write src/lib/platform/database.types.ts",
     "seed:pull": "./scripts/pull-prod-seed.sh",
@@ -51,12 +52,14 @@
     "text-fragments-polyfill": "^6.7.0"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
     "@cloudflare/workers-types": "5.20260924.1",
     "@electric-sql/pglite": "^0.5.8",
     "@eslint-community/eslint-plugin-eslint-comments": "catalog:lint",
     "@eslint/js": "catalog:lint",
     "@next/eslint-plugin-next": "catalog:lint",
     "@pandacss/dev": "catalog:",
+    "@playwright/test": "^1.63.0",
     "@testing-library/dom": "catalog:",
     "@testing-library/jest-dom": "catalog:",
     "@testing-library/react": "catalog:",

@@ -1,6 +1,7 @@
 name: Quality checks
 description: >-
-  lint · type check · test · 포스트 frontmatter · 포맷 · (선택) 블로그 빌드 + 산출물 SEO 검사.
+  lint · type check · test · 포스트 frontmatter · 포맷 · (선택) 블로그 빌드 + 산출물 SEO 검사
+  + 런타임 e2e.
   PR CI와 배포 워크플로가 **같은 정의**를 쓰도록 한곳에 모읍니다.
 
 # 재사용 워크플로(workflow_call)가 아니라 composite action인 이유:
@@ -23,9 +24,10 @@ inputs:
     default: 'all'
   build-blog:
     description: >-
-      블로그를 빌드해 산출물 검사(check-seo·check-bundle)까지 돌릴지 여부.
+      블로그를 빌드해 산출물 검사(check-seo·check-bundle)와 런타임 e2e까지 돌릴지 여부.
       배포 워크플로는 뒤에 자체 빌드 스텝(--force + NEXT_PUBLIC_PR_COUNT 주입)이
-      있으므로 'false'로 넘겨 중복 빌드를 피합니다.
+      있으므로 'false'로 넘겨 중복 빌드를 피합니다 — 런타임 e2e는 그 빌드 뒤에서
+      같은 액션(.github/actions/blog-e2e)을 직접 부릅니다.
     required: false
     default: 'true'
 
@@ -69,3 +71,10 @@ runs:
       if: inputs.build-blog == 'true'
       shell: bash
       run: pnpm build --filter=@blog/web
+
+    # JS가 실행된 뒤의 블로그(hydration 뒤 본문·콘솔 에러·axe·/admin) — 위 스텝들은 전부
+    # JS 실행 전의 산출물만 본다(#392: 클라이언트 컴포넌트가 본문을 지웠는데 모든 게이트 통과).
+    # 정의는 blog-e2e 액션 하나에 있고, 배포 워크플로도 자기 빌드 뒤에서 같은 것을 부른다.
+    - name: Runtime e2e
+      if: inputs.build-blog == 'true'
+      uses: ./.github/actions/blog-e2e

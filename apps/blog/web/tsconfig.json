@@ -59,6 +59,7 @@
   "exclude": [
     "node_modules",
     "supabase/functions",
+    "e2e",
     "**/*.test.ts",
     "**/*.test.tsx",
     "**/*.spec.ts",
