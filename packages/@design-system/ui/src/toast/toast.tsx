@@ -99,8 +99,9 @@ export const ToastContainer = () => {
 
   return (
     <Portal>
-      {/* 토스트가 없을 때도 마운트해 둔다 — 라이브 영역은 이미 있던 영역에 더해진 내용만 읽는다 */}
-      <div role="status">
+      {/* 토스트가 없을 때도 마운트해 둔다 — 라이브 영역은 이미 있던 영역에 더해진 내용만 읽는다.
+          status의 기본 aria-atomic은 true라 새 토스트마다 떠 있던 것까지 다시 읽으므로 끈다. */}
+      <div role="status" aria-atomic="false">
         {Object.entries(toastsByPosition).map(([position, positionToasts]) => (
           <div key={position} style={stackStyle(position as ToastPosition)}>
             {(positionToasts as ToastData[]).map((toast: ToastData) => (

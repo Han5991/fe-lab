@@ -11,6 +11,7 @@ describe('토스트', () => {
     render(<ToastContainer />);
     const region = screen.getByRole('status');
     expect(region).toBeEmptyDOMElement();
+    expect(region).toHaveAttribute('aria-atomic', 'false');
 
     act(() =>
       toasts.show({ message: '저장 실패', type: 'error', autoClose: false }),
