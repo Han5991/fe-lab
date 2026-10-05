@@ -33,6 +33,7 @@ export const STRUCTURE_TAGS = [
   'table',
   'blockquote',
   'img',
+  'a',
 ] as const;
 
 export type StructureCounts = Record<(typeof STRUCTURE_TAGS)[number], number>;
