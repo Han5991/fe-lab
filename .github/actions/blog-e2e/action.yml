@@ -36,14 +36,16 @@ runs:
   using: composite
   steps:
     # e2e가 읽는 것 전부: 산출물, 스위트, 원고(공개 글 하한), 서버 설정, 도구 버전(lockfile·Node),
-    # 이 액션. 경로까지 해시하므로 이름만 바뀌어도 다시 돈다.
+    # 이 액션과 이 액션을 reuse-pass로 부르는 쪽(입력·env를 정한다). 경로까지 해시하므로 이름만
+    # 바뀌어도 다시 돈다.
     - name: Hash e2e inputs
       id: e2e-inputs
       if: inputs.reuse-pass == 'true'
       shell: bash
       run: |
         hash=$(find apps/blog/web/out apps/blog/web/e2e apps/blog/posts apps/blog/web/wrangler.jsonc \
-            apps/blog/web/package.json pnpm-lock.yaml .tool-versions .github/actions/blog-e2e -type f -print0 \
+            apps/blog/web/package.json pnpm-lock.yaml .tool-versions .github/actions/blog-e2e \
+            .github/actions/quality-checks .github/workflows/ci.yml -type f -print0 \
           | LC_ALL=C sort -z | xargs -0 sha256sum | sha256sum | cut -d' ' -f1)
         echo "hash=$hash" >> "$GITHUB_OUTPUT"
 
