@@ -77,6 +77,7 @@ allowBuilds:
   esbuild: true
   msw: false
 
+# 카탈로그 머리말 — 0열 주석은 다음 최상위 키의 것이다
 catalog:
   react: 19.3.0
   vitest: ^5.0.1
@@ -211,6 +212,14 @@ legit_deps() {
 }
 scenario legit-deps accept "$DEPS" legit_deps
 
+# 허용 블록을 다른 허용 블록의 0열 머리말 주석 바로 앞에 끼워도 받는다 — 머리말은 뒤따르는 키의 것이라
+# 새 블록이 삼키지 않는다(2026-10-05 deps-audit 12회차가 auditConfig를 allowBuilds 뒤에 넣어 거부됐다).
+legit_audit_config_mid() {
+  edit pnpm-workspace.yaml $'  msw: false\n\n# 카탈로그 머리말' \
+    $'  msw: false\n\nauditConfig:\n  ignoreGhsas:\n    # 제거 조건: 패치가 나오면 삭제\n    - GHSA-aaaa-bbbb-cccc\n\n# 카탈로그 머리말'
+}
+scenario legit-audit-config-mid accept "$DEPS" legit_audit_config_mid
+
 legit_post() { edit apps/blog/posts/a.md 'https://old.example.com/a' 'https://web.archive.org/web/https://old.example.com/a'; }
 scenario legit-post accept "$POSTS" legit_post
 
@@ -242,6 +251,8 @@ reject_edit lock-tarball pnpm-lock.yaml '{integrity: sha512-AAAA}' '{tarball: ht
 reject_edit lock-git pnpm-lock.yaml '{integrity: sha512-AAAA}' '{commit: 0123abc, repo: git@github.com:evil/m.git, type: git}'
 reject_edit ws-pnpmfile-in-overrides pnpm-workspace.yaml '  postcss: 8.5.28' $'  postcss: 8.5.28\npnpmfile: .pnpmfile.cjs'
 reject_edit ws-registry pnpm-workspace.yaml '  vitest: ^5.0.1' $'  vitest: ^5.0.1\nregistry: https://evil.example/'
+reject_edit ws-key-before-header pnpm-workspace.yaml '# 카탈로그 머리말' $'pnpmfile: .pnpmfile.cjs\n# 카탈로그 머리말'
+reject_edit ws-allow-builds-comment pnpm-workspace.yaml '  msw: false' $'  msw: false\n  # 허용 사유를 고쳤다'
 reject_edit ws-allow-builds pnpm-workspace.yaml 'msw: false' 'msw: true'
 reject_edit ws-override-file pnpm-workspace.yaml '  postcss: 8.5.28' '  postcss: file:../evil'
 reject_edit ws-yaml-escape pnpm-workspace.yaml '  postcss: 8.5.28' '  postcss: "\x66ile:../evil"'

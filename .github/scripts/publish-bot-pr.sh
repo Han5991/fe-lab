@@ -161,10 +161,21 @@ PKG_JSON_CHECK='
   end'
 
 # pnpm-workspace.yaml의 허용 블록 밖을 뽑는다. 0열 비주석 줄이 새 블록이라 사이에 끼운 최상위 키도 잡힌다.
+# 0열 주석·빈 줄은 뒤따르는 최상위 키의 머리말로 보고 그 키의 블록에 붙인다 — 앞 블록에 붙이면 `catalog:`
+# 머리말 바로 앞에 `auditConfig:`를 끼운 패치가 머리말을 삼켜 거부된다(2026-10-05 deps-audit 12회차).
+# 0열 `#`은 YAML에서 늘 주석이고(블록 스칼라도 들여쓰기가 필요하다) 설정이 아니다.
 workspace_rest() {
-  awk 'BEGIN { keep = 1 }
-    /^[^[:space:]#]/ { keep = ($0 !~ /^(overrides|catalog|catalogs|auditConfig):[[:space:]]*(#.*)?$/) }
-    keep'
+  awk 'function flush(k, i) { for (i = 1; i <= n; i++) if (k) print buf[i]; n = 0 }
+    BEGIN { keep = 1; n = 0 }
+    /^#/ || /^[[:space:]]*$/ { buf[++n] = $0; next }
+    /^[^[:space:]#]/ {
+      keep = ($0 !~ /^(overrides|catalog|catalogs|auditConfig):[[:space:]]*(#.*)?$/)
+      flush(keep)
+      if (keep) print
+      next
+    }
+    { flush(keep); if (keep) print }
+    END { flush(keep) }'
 }
 
 for path in "${paths[@]}"; do
