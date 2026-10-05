@@ -113,9 +113,10 @@ export default defineConfig([
   },
 
   // ── 레이어 경계 (eslint-plugin-boundaries) ─────────────────────────────────
-  // element는 전부 폴더 단위(배럴 src/index.ts·src/seo/index.ts만 예외로
-  // 스코프 밖). 새 파일이 element 폴더 밖(src/ 바로 아래)에 떨어지면
-  // no-unknown-files가 잡는다.
+  // element는 전부 폴더 단위다. 이 블록은 네 폴더에만 걸리므로 src/ 바로 아래 파일
+  // (최상위 배럴 src/index.ts·src/client.ts와 clientDoor.test.ts)은 경계 검사를 아예
+  // 받지 않는다 — 새 파일은 네 폴더 중 한 곳에 둘 것. (src/seo/index.ts는 seo
+  // element 안에서 검사된다.)
   //
   // 레이어 순서(아래→위): shared → content(post) → seo → build(scripts) →
   // render-build(scripts/render) → cli(scripts/cli). 각 레이어는 자기보다 아래

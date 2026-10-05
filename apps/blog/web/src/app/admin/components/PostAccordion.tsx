@@ -17,13 +17,11 @@ import {
 import Link from 'next/link';
 import { token } from '@design-system/ui-lib/tokens';
 import { motion, AnimatePresence } from 'motion/react';
-import { formatMonthDayISO, parseScheduledDateKST } from '@blog/content';
+import { formatMonthDayISO, parseScheduledDateKST } from '@blog/content/client';
 import { DateRangeControls, useDateFilter } from './DateRangeControls';
 import { WeekGrowthIcon } from './WeekGrowthIcon';
 import { adminAnalyticsPostPath } from '@/src/shared/routes';
-// 클라이언트 컴포넌트의 @blog/content 배럴 import — node:fs 모듈(series 등)은
-// next.config.ts의 optimizePackageImports + sideEffects:false가 번들에서 걸러 준다.
-import { resolvePostState } from '@blog/content';
+import { resolvePostState } from '@blog/content/client';
 import { STATUS_BADGE, livePostHref } from './postState';
 
 interface Props {

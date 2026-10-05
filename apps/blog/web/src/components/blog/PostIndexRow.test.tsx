@@ -6,7 +6,7 @@
  */
 import { describe, expect, test } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { postPath, type PostSummary } from '@blog/content';
+import { postPath, type PostSummary } from '@blog/content/client';
 import { PostIndexRow } from './PostIndexRow';
 
 /**

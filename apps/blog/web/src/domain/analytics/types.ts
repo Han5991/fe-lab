@@ -11,7 +11,8 @@
  * repository의 `Number()`가 맡는다.
  */
 
-import type { PostStatus, TimezoneConfig } from '@blog/content';
+import type { PostStatus } from '@blog/content/client';
+import type { TimezoneConfig } from '@blog/content';
 import type { Database, Tables } from '../../lib/platform/database.types';
 
 type DbFunctions = Database['public']['Functions'];

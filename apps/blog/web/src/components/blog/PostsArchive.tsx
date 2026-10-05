@@ -6,15 +6,15 @@ import { useQueryStates, parseAsString, parseAsStringLiteral } from 'nuqs';
 import { useQuery } from '@tanstack/react-query';
 import { css } from '@design-system/ui-lib/css';
 
-import type { ArchiveFilters, PostSummary } from '@blog/content';
+import type { ArchiveFilters, PostSummary } from '@blog/content/client';
 import type { SeriesSummary, TagSummary } from '@blog/content';
 import {
   filterAndSortPostsByArchiveParams,
   parseTagParam,
-} from '@blog/content';
+} from '@blog/content/client';
 import { getAllViewCounts } from '@/src/domain/analytics';
-import { postPath } from '@blog/content';
-import { fmtDate } from '@blog/content';
+import { postPath } from '@blog/content/client';
+import { fmtDate } from '@blog/content/client';
 
 import { Label } from './Label';
 import type { SortKey } from './SortRadio';

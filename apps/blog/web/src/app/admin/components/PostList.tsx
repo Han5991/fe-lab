@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { getKSTDateISO } from '@blog/content';
+import { getKSTDateISO } from '@blog/content/client';
 import { TIMEZONE } from '@/content.values.mts';
 import { useAdminDashboardData } from '@/src/hooks/useAdminViews';
 import { css } from '@design-system/ui-lib/css';

@@ -1,6 +1,6 @@
 import { cloneElement, isValidElement } from 'react';
 import type { ReactElement, ReactNode } from 'react';
-import { isRecord } from '@blog/content';
+import { isRecord } from '@blog/content/client';
 import { css, cva } from '@design-system/ui-lib/css';
 
 import {

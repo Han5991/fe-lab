@@ -3,7 +3,7 @@
 import { TIMEZONE } from '@/content.values.mts';
 import { useState } from 'react';
 import { css } from '@design-system/ui-lib/css';
-import { getKSTDateISO } from '@blog/content';
+import { getKSTDateISO } from '@blog/content/client';
 import type { TrendPoint } from '@/src/domain/analytics';
 // admin 배럴은 supabase 클라이언트를 바인딩하므로 순수 leaf를 연다.
 import { trailingWindowStartISO } from '@/src/domain/analytics/windows';

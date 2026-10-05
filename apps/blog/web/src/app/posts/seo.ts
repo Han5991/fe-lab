@@ -12,7 +12,7 @@ import {
   postUrl,
   POSTS_PATH,
   type PostSummary,
-} from '@blog/content';
+} from '@blog/content/client';
 
 // 사이트 정체성·저자·SEO 예산은 해석된 설정에서 온다 — 값의 출처는
 // `content.values.mts`이고, 여기서 리터럴을 다시 읽지 않는다(서버 전용 모듈).

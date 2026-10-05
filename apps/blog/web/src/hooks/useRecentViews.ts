@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { isRecord } from '@blog/content';
+import { isRecord } from '@blog/content/client';
 
 const KEY = 'blog_recent_views';
 const MAX = 5;

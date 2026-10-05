@@ -1,5 +1,4 @@
-// 배럴의 node:fs 모듈은 next.config.ts의 optimizePackageImports가 번들에서 걸러 준다.
-import { postPath, type PostStatus } from '@blog/content';
+import { postPath, type PostStatus } from '@blog/content/client';
 
 /** 상태 배지의 색과 라벨 — `satisfies`라 `PostStatus`가 늘면 여기서 컴파일이 막힌다. */
 export const STATUS_BADGE = {

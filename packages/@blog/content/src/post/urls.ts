@@ -27,11 +27,10 @@ import { encodePostSlug } from './utils.ts';
  *    JSON-LD는 절대(`postUrl`)입니다. 절대 쪽은 siteUrl을 **반드시** 주입받습니다
  *    — 설정의 origin과 갈라질 기본값을 두지 않기 위해서입니다.
  *
- * **클라이언트 컴포넌트에서는 이 모듈이 fs를 끌지 않는다는 점에 기대세요** —
- * `@blog/content` 배럴은 `export * from './series.ts'`로 모듈 평가 시점에 `node:fs`를
- * 당겨 오지만, 앱의 next.config가 `optimizePackageImports: ['@blog/content']`로
- * 배럴 import를 leaf로 좁혀 클라이언트 번들에 fs가 새지 않게 합니다. 서버 코드는
- * 배럴로 가져와도 됩니다.
+ * **클라이언트 코드는 `@blog/content/client`로 가져오세요** — 이 모듈은 fs를
+ * 끌지 않지만, `@blog/content` 배럴은 `export * from './series.ts'`로 `node:fs`를
+ * 함께 엽니다. 클라이언트 문은 node 빌트인이 없다는 성질이 `clientDoor.test.ts`로
+ * 잠겨 있습니다. 서버 코드는 배럴로 가져와도 됩니다.
  */
 
 /**

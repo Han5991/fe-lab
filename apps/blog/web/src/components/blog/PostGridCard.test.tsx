@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import type { PostSummary } from '@blog/content';
+import type { PostSummary } from '@blog/content/client';
 import { PostGridCard } from './PostGridCard';
 
 const post: PostSummary = {

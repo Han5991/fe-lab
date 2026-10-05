@@ -2,11 +2,11 @@ import { AUTHOR_GITHUB, AUTHOR_LINKEDIN } from '@/content.values.mts';
 import Link from 'next/link';
 import { css, cx } from '@design-system/ui-lib/css';
 
-import { safeJsonLd } from '@blog/content';
+import { safeJsonLd } from '@blog/content/client';
 import { Label } from '@/src/components/blog';
 import { PageBoundary } from '@/src/components/PageBoundary';
 import { railGutter, railColumn } from '@/src/components/Rail';
-import { archivePath, postPath } from '@blog/content';
+import { archivePath, postPath } from '@blog/content/client';
 import { ABOUT_TRANSITION_ID } from '@/src/shared/transitions';
 
 import { getAboutStats, getSeriesPostCounts } from './counts';

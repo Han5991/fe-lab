@@ -3,7 +3,7 @@
 import { TIMEZONE } from '@/content.values.mts';
 import { useState, useEffect } from 'react';
 import { useAdminDashboardData } from './useAdminViews';
-import { getKSTDateISO, msUntilKSTMidnight } from '@blog/content';
+import { getKSTDateISO, msUntilKSTMidnight } from '@blog/content/client';
 import {
   analyticsService,
   UNIQUES_ESTIMATE_RATIO,

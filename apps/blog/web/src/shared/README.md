@@ -8,11 +8,12 @@
 1. **순수 계약만** — 리터럴 상수와 순수 함수. IO(fs·fetch·Supabase)·상태·React·훅 금지.
 2. **두 레이어 이상이 소비** — 한 레이어만 쓰면 그 레이어에 둔다. shared는 편한
    잡동사니 통(utils)이 아니다.
-3. **의존은 `@blog/content`뿐** — 상위 레이어(platform·domain·app)·외부 패키지·node
-   코어 전부 금지.
+3. **의존은 `@blog/content` 패키지뿐** — 값은 `@blog/content/client`로(큰 배럴에서는 타입만).
+   상위 레이어(platform·domain·app)·다른 외부 패키지·node 코어 전부 금지.
 4. **재수출 금지** — `export … from`으로 다른 모듈의 2차 문을 만들지 않는다.
-   자기 선언만 내보낸다. 특히 `@blog/content` 재수출은 배럴 좁히기
-   (optimizePackageImports)를 우회해 node:fs 클라이언트 누수 경로를 다시 연다.
+   자기 선언만 내보낸다. 특히 `@blog/content` 재수출은 큰 배럴과 클라이언트 문
+   (`@blog/content/client`)의 구분을 한 겹 건너 흐려, 배럴 값 import 금지 lint를
+   우회하는 길이 된다.
 5. **부수효과 없음** — 모듈 최상위에 문(statement)을 두지 않는다(`'use client'`
    포함). `.tsx`(컴포넌트) 금지 — 공유 컴포넌트는 `src/components/shared/`다.
 

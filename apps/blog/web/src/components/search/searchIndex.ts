@@ -1,4 +1,4 @@
-import { isRecord } from '@blog/content';
+import { isRecord } from '@blog/content/client';
 
 /** 검색 색인(`public/search-index.json`)의 글 한 편. */
 export interface SearchPost {

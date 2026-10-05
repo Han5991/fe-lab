@@ -15,7 +15,7 @@
 
 import { client } from '../../lib/platform/client';
 import { AdminApiClient, type AdminApi } from '../../lib/platform/adminApi';
-import { isRecord, type PostStatus } from '@blog/content';
+import { isRecord, type PostStatus } from '@blog/content/client';
 import type {
   PostStatsRow,
   PostTrendRow,

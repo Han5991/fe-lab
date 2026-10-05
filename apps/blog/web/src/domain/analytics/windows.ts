@@ -4,7 +4,7 @@
  * 저장소를 열지 않는 순수 모듈이라 admin 배럴 없이 직접 열어도 된다.
  */
 
-import { addDaysISO } from '@blog/content';
+import { addDaysISO } from '@blog/content/client';
 
 /** 오늘을 포함한 최근 `days`일 창의 첫날(`YYYY-MM-DD`). */
 export function trailingWindowStartISO(todayISO: string, days: number): string {

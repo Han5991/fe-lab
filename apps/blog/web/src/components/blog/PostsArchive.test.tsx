@@ -13,7 +13,8 @@ import {
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { NuqsTestingAdapter } from 'nuqs/adapters/testing';
 import type { ReactNode } from 'react';
-import type { PostSummary, SeriesSummary, TagSummary } from '@blog/content';
+import type { PostSummary } from '@blog/content/client';
+import type { SeriesSummary, TagSummary } from '@blog/content';
 
 // 조회수는 주입 지점 없는 모듈 싱글톤이다 — 기본은 응답 없이 대기시켜 도착 전 상태로 비교한다.
 const analytics = vi.hoisted(() => ({

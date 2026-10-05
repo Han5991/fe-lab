@@ -1,4 +1,4 @@
-import { RSS_PATH } from '@blog/content';
+import { RSS_PATH } from '@blog/content/client';
 import { AUTHOR_GITHUB } from '@/content.values.mts';
 import { css } from '@design-system/ui-lib/css';
 

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { postPath, POSTS_PATH } from '@blog/content';
+import { postPath, POSTS_PATH } from '@blog/content/client';
 import {
   ABOUT_PATH,
   ADMIN_ANALYTICS_PATH,

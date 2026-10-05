@@ -11,7 +11,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { token } from '@design-system/ui-lib/tokens';
-import { fmtNum } from '@blog/content';
+import { fmtNum } from '@blog/content/client';
 
 interface TimeSeriesChartProps {
   data: { date: string; value: number }[];

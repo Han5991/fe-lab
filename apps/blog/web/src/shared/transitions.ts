@@ -13,7 +13,7 @@
  *   (`/posts/*`)이고, 없는 글은 가상 네임스페이스 `/posts-plain/*`로 보내
  *   fade로 폴백한다. URL은 어느 쪽이든 그대로 `/posts/{slug}`다.
  */
-import { POSTS_PATH } from '@blog/content';
+import { POSTS_PATH } from '@blog/content/client';
 import { ABOUT_PATH, HOME_PATH, PRIVACY_PATH, SERIES_PATH } from './routes';
 
 /** 전환 ID는 무슬래시형을 쓴다 — 라우트 상수(슬래시형)에서 여기서만 벗긴다. */
