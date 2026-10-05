@@ -20,7 +20,38 @@ test('설명은 "이름: 메시지"를 GA4 한도(100자)로 자르고, Error가
   });
 });
 
-test('같은 설명은 한 번만, 비치명 오류는 치명 오류와 따로 세어 5건까지만 보낸다', () => {
+test('자기 출처의 첫 스택 프레임만 frame으로 싣는다', () => {
+  const origin = 'https://blog.sangwook.dev';
+  const thrown = new TypeError('x');
+  thrown.stack = [
+    'TypeError: x',
+    '    at chrome-extension://abc/content.js:1:2',
+    `    at f (${origin}.evil.example/_next/static/chunks/a.js:3:4)`,
+    `    at g (${origin}/_next/static/chunks/0abc.js?dpl=1:12:345)`,
+  ].join('\n');
+  expect(toExceptionEvent(thrown, false, origin).frame).toBe(
+    'chunks/0abc.js:12:345',
+  );
+  // Firefox·Safari 꼴
+  thrown.stack = `g@${origin}/_next/static/chunks/0abc.js:1:2`;
+  expect(toExceptionEvent(thrown, false, origin).frame).toBe(
+    'chunks/0abc.js:1:2',
+  );
+  expect(toExceptionEvent(thrown, false)).not.toHaveProperty('frame');
+  // 자기 출처 프레임이 하나도 없으면 frame을 싣지 않는다
+  thrown.stack = `f@${origin}.evil.example/a.js:1:2\nchrome-extension://abc/content.js:3:4`;
+  expect(toExceptionEvent(thrown, false, origin)).not.toHaveProperty('frame');
+  // 메시지에 든 URL은 프레임이 아니다(길고 여러 줄인 메시지도 머리째 뗀다)
+  const fetchFailed = new Error(
+    `${'x'.repeat(100)}\n${origin}/_next/static/chunks/x.js:9:9`,
+  );
+  fetchFailed.stack = `Error: ${fetchFailed.message}\n    at g (${origin}/_next/static/chunks/0abc.js:1:2)`;
+  expect(toExceptionEvent(fetchFailed, false, origin).frame).toBe(
+    'chunks/0abc.js:1:2',
+  );
+});
+
+test('같은 오류는 한 번만, 비치명 오류는 치명 오류와 따로 세어 5건까지만 보낸다', () => {
   const send = vi.fn<(event: ExceptionEvent) => void>();
   const report = createErrorReporter(send);
 
@@ -38,6 +69,29 @@ test('같은 설명은 한 번만, 비치명 오류는 치명 오류와 따로 �
     'Error: d',
     'Error: e',
     'Error: crash',
+  ]);
+});
+
+test('설명이 같아도 위치나 치명 여부가 다르면 따로 보낸다', () => {
+  const send = vi.fn<(event: ExceptionEvent) => void>();
+  const report = createErrorReporter(send);
+  const thrownAt = (file: string) => {
+    const error = new TypeError('x');
+    error.stack = `TypeError: x\n    at f (${window.location.origin}/_next/static/chunks/${file}:1:2)`;
+    return error;
+  };
+
+  report(thrownAt('a.js'), false);
+  report(thrownAt('a.js'), false);
+  report(thrownAt('b.js'), false);
+  report(thrownAt('a.js'), true);
+
+  expect(
+    send.mock.calls.map(([event]) => [event.frame, event.fatal]),
+  ).toStrictEqual([
+    ['chunks/a.js:1:2', false],
+    ['chunks/b.js:1:2', false],
+    ['chunks/a.js:1:2', true],
   ]);
 });
 
