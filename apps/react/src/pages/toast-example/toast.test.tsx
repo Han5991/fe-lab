@@ -7,7 +7,7 @@ describe('토스트', () => {
     vi.useRealTimers();
   });
 
-  test('토스트가 없어도 status 영역이 떠 있고, 오류 토스트는 alert로 읽힌다', () => {
+  test('토스트가 없어도 status 영역이 떠 있고, 오류·경고 토스트는 alert로 읽힌다', () => {
     render(<ToastContainer />);
     const region = screen.getByRole('status');
     expect(region).toBeEmptyDOMElement();
@@ -18,6 +18,12 @@ describe('토스트', () => {
     );
     expect(region).toContainElement(screen.getByRole('alert'));
     expect(screen.getByRole('alert')).toHaveTextContent('저장 실패');
+
+    act(() => toasts.clean());
+    act(() =>
+      toasts.show({ message: '용량 부족', type: 'warning', autoClose: false }),
+    );
+    expect(screen.getByRole('alert')).toHaveTextContent('용량 부족');
   });
 
   test('위치당 limit(3)을 넘는 토스트는 대기열에 두었다가 앞의 것이 닫히면 올리고, cleanQueue는 대기열만 비운다', () => {
