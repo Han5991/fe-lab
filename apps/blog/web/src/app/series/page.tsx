@@ -1,15 +1,15 @@
 import Link from 'next/link';
 import { css, cx } from '@design-system/ui-lib/css';
 
-import { archivePath, POSTS_PATH, postPath } from '@blog/content';
+import { archivePath, POSTS_PATH, postPath } from '@blog/content/client';
 import { SERIES_TRANSITION_ID } from '@/src/shared/transitions';
 import {
   getAllPostSummaries,
   getAllSeries,
   getSeriesMeta,
 } from '@/src/content';
-import { fmtDate } from '@blog/content';
-import { safeJsonLd } from '@blog/content';
+import { fmtDate } from '@blog/content/client';
+import { safeJsonLd } from '@blog/content/client';
 import { HiddenPostBadge } from '@/src/components/blog/HiddenPostBadge';
 import {
   postRowItem,

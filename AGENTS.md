@@ -192,7 +192,11 @@ Worker (`apps/blog/web/wrangler.jsonc`), Supabase for the dynamic bits.
 **레이어는 lint가 강제한다**(`eslint-plugin-boundaries`, 폴더 단위 element — `pnpm lint`에서 잡힌다). 방향은
 원고(`apps/blog/posts`) → `packages/@blog/content` → `apps/blog/web`. 코드만 봐선 안 보이는 규칙:
 
-- `@blog/content` 밖으로 여는 문은 `@blog/content`·`@blog/content/seo` 둘과 bin **`blog-content`** 하나뿐이다.
+- `@blog/content` 밖으로 여는 문은 `@blog/content`·`@blog/content/seo`·`@blog/content/client` 셋과 bin
+  **`blog-content`** 하나뿐이다. 큰 배럴은 로더·series로, `/seo`는 post 배럴을 거쳐 `node:fs`를 연다. 클라이언트
+  그래프에서의 안전을 앱별 Next 설정(`optimizePackageImports`)이 아니라 패키지 계약으로 두려고 `/client`가 따로
+  있다 — node 빌트인·외부 패키지가 없다는 성질은 `clientDoor.test.ts`가 import 그래프로 잠그고, 앱에서는 큰
+  배럴·`/seo`의 **값** import(동적 import 포함)를 서버 전용 파일 밖에서 lint가 막는다.
   satori·sharp는 `scripts/render`에만. React는 의존하지 않는다(satori 입력 모양은 `OgNode`가 직접 선언). 상대 import가 전부 `.ts` 확장자를 달고 `erasableSyntaxOnly`라,
   shebang `node`의 type stripping만으로 로더 없이 돈다(앱 tsconfig에도 `allowImportingTsExtensions`가 필요).
 - 앱의 **app 레이어는 platform을 import할 수 없다** — Supabase 접근은 전부 `src/domain/*` 배럴 경유. **node 코어도

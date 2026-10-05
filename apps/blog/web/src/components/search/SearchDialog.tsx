@@ -5,9 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { css } from '@design-system/ui-lib/css';
 import { Search, X, Clock } from 'lucide-react';
-// 클라이언트 컴포넌트의 @blog/content 배럴 import — node:fs 모듈(series 등)은
-// next.config.ts의 optimizePackageImports + sideEffects:false가 번들에서 걸러 준다.
-import { fmtDate, postPath } from '@blog/content';
+import { fmtDate, postPath } from '@blog/content/client';
 import { getRecentViews, type RecentView } from '@/src/hooks/useRecentViews';
 import { Portal } from '@/src/components/Portal';
 import { useModalDialog } from '@/src/components/useModalDialog';

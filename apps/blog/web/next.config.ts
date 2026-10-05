@@ -21,10 +21,11 @@ const nextConfig: NextConfig = {
   //
   // babel-plugin-react-compiler는 지우면 안 된다 — prod 빌드가 여전히 이 경로를 쓴다.
   //
-  // optimizePackageImports: @blog/content의 배럴(export *)은 로더(series·service,
-  // node:fs)까지 함께 연다. 클라이언트 컴포넌트가 배럴에서 순수 유틸을 named
-  // import할 때 이 최적화가 실제 사용 모듈로 좁혀 주어, dev(트리셰이킹 없음)에서도
-  // node:fs가 클라이언트 그래프에 들어가지 않는다. 패키지 sideEffects:false와 짝.
+  // optimizePackageImports: **두 번째 안전망**이다. 클라이언트 코드는 node 빌트인이
+  // 없는 문(`@blog/content/client`)으로 들어오고, 큰 배럴(export *로 로더·series의
+  // node:fs까지 연다)의 값 import는 eslint.config.mts가 서버 전용 파일로 가둔다.
+  // 그래도 배럴 import가 클라이언트 그래프에 들어오면 이 최적화가 실제 사용
+  // 모듈로 좁힌다 — dev에는 트리 셰이킹이 없어서 이것 없이는 fs가 그대로 들어간다.
   experimental: {
     optimizePackageImports: ['@blog/content'],
     ...(isDev ? { turbopackRustReactCompiler: true } : {}),

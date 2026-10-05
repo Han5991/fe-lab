@@ -1,4 +1,4 @@
-import { RSS_PATH } from '@blog/content';
+import { RSS_PATH } from '@blog/content/client';
 import { AUTHOR_GITHUB, AUTHOR_LINKEDIN } from '@/content.values.mts';
 import { ABOUT_PATH, HOME_PATH, PRIVACY_PATH } from '@/src/shared/routes';
 import Link from 'next/link';

@@ -8,12 +8,19 @@
 단일 출처는 루트 `AGENTS.md`의 "Blog —" 절(§7–9)이다. 여기는 **패키지의
 모양**만 적는다.
 
-## 문 두 개 (소스 익스포트 — 빌드 스텝 없음)
+## 문 세 개 (소스 익스포트 — 빌드 스텝 없음)
 
-| 문                  | 내용                                                                                    |
-| :------------------ | :-------------------------------------------------------------------------------------- |
-| `@blog/content`     | 프레임워크 전체 — `createContent`(로더 인스턴스 factory)·타입·visibility·urls·순수 유틸 |
-| `@blog/content/seo` | SEO 빌더 factory(`createPostSeo`) + 순수 계산 — 프레임워크 중립 DTO(`PostSeoData`) 반환 |
+| 문                     | 내용                                                                                                                                               |
+| :--------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@blog/content`        | 프레임워크 전체 — `createContent`(로더 인스턴스 factory)·타입·visibility·urls·순수 유틸. **서버·빌드 코드용**                                      |
+| `@blog/content/seo`    | SEO 빌더 factory(`createPostSeo`) + 순수 계산 — 프레임워크 중립 DTO(`PostSeoData`) 반환. **서버·빌드 코드용**(post 배럴을 거쳐 `node:fs`에 닿는다) |
+| `@blog/content/client` | 클라이언트에서 안전한 것 전부 — urls·visibility·dates·format·guards·thumbnail … (로더·시리즈·경로 해석 제외)                                       |
+
+큰 배럴은 `series.ts`·로더로 `node:fs`를 함께 연다. 그걸 클라이언트 그래프에서
+걸러 주는 것이 앱별 번들러 설정(`optimizePackageImports`)이 아니라 패키지 계약이
+되도록 클라이언트 문을 따로 둔다 — "도달하는 모듈에 node 빌트인도 외부 패키지도
+없다"는 성질을 `src/clientDoor.test.ts`가 import 그래프를 따라가며 잠근다(큰
+배럴이 같은 검사에 **실패하는** 것이 양성 대조).
 
 fs를 읽는 API는 전부 **인스턴스**다 — 소비자가 `content.config.mts`로 만든
 설정을 `createContent(config)`에 넘겨 로더 묶음(getAllPosts·getPostBySlug·
@@ -28,9 +35,10 @@ flowchart LR
   posts -->|"gray-matter 로더"| pkg
   pkg -->|"@blog/content<br/>createContent()"| app
   pkg -.->|"@blog/content/seo<br/>createPostSeo()"| app
+  pkg -.->|"@blog/content/client<br/>postPath() · isPostVisible()"| app
 ```
 
-실선은 로더 인스턴스가 나가는 문, 점선은 SEO 빌더가 나가는 문이다.
+실선은 로더 인스턴스가 나가는 문, 점선은 SEO 빌더와 클라이언트 코드가 나가는 문이다.
 
 빌드 스크립트(`src/scripts/`)는 API가 아니라 실행 파일이고, package.json의
 `bin`에 걸린 **`blog-content` 하나**로만 나간다. 앱은 서브커맨드 이름만 안다
@@ -60,14 +68,14 @@ import가 전부 `.ts` 확장자를 달고 있고(`allowImportingTsExtensions`),
 shared → content(post) → seo → build(scripts) → render-build(scripts/render) → cli(scripts/cli)
 ```
 
-| element        | 폴더                 | 가져올 수 있는 것                                                                                                       |
-| :------------- | :------------------- | :---------------------------------------------------------------------------------------------------------------------- |
-| `shared`       | `src/shared`         | node 코어만                                                                                                             |
-| `content`      | `src/post`           | `shared` + node 코어 + `gray-matter`                                                                                    |
-| `seo`          | `src/seo`            | `shared`·`content` — 순수 계산(node 코어·외부 의존 없음)                                                                |
-| `build`        | `src/scripts`        | `shared`·`content`·`seo` + node 코어 + `gray-matter`                                                                    |
-| `render-build` | `src/scripts/render` | 위 전부 + `satori`·`sharp`                                                                                              |
-| `cli`          | `src/scripts/cli`    | 위 전부 + node 코어 + `commander` — 단계 모듈은 전부 **동적** import(부르지 않은 단계의 satori·sharp는 로드되지 않는다) |
+| element        | 폴더                 | 가져올 수 있는 것                                                                                                                  |
+| :------------- | :------------------- | :--------------------------------------------------------------------------------------------------------------------------------- |
+| `shared`       | `src/shared`         | node 코어만                                                                                                                        |
+| `content`      | `src/post`           | `shared` + node 코어 + `gray-matter`                                                                                               |
+| `seo`          | `src/seo`            | `shared`·`content` — 순수 계산(자기 파일은 node 코어·외부 의존 없음. `content`를 거쳐 `node:fs`에 닿으니 클라이언트용 문은 아니다) |
+| `build`        | `src/scripts`        | `shared`·`content`·`seo` + node 코어 + `gray-matter`                                                                               |
+| `render-build` | `src/scripts/render` | 위 전부 + `satori`·`sharp`                                                                                                         |
+| `cli`          | `src/scripts/cli`    | 위 전부 + node 코어 + `commander` — 단계 모듈은 전부 **동적** import(부르지 않은 단계의 satori·sharp는 로드되지 않는다)            |
 
 ```mermaid
 flowchart LR
@@ -88,7 +96,7 @@ flowchart LR
   React를 의존하지 않는다 — satori에 넘기는 엘리먼트 모양은 `generate-og-images.ts`의
   `OgNode`가 직접 선언한다.
 - boundaries 블록은 `src/{shared,post,seo,scripts}/**`에만 건다. 최상위 배럴
-  `src/index.ts`만 그 스코프 밖이고(`src/seo/index.ts`는 `seo` element 안에서 검사된다),
+  `src/index.ts`·`src/client.ts`와 그 문을 잠그는 `src/clientDoor.test.ts`만 그 스코프 밖이고(`src/seo/index.ts`는 `seo` element 안에서 검사된다),
   새 파일을 `src/` 바로 아래 두면 경계 검사를 아예 받지 않으니 네 폴더 중 한 곳에 둘 것.
   프로덕션은 테스트를 import 못 한다.
 - 앱(`apps/blog/web`)의 eslint 설정과 **같은 엄격 수준**을 유지해야 한다 — 소스
@@ -101,7 +109,8 @@ flowchart LR
 
 ```
 src/
-├─ index.ts · seo/index.ts        익스포트 문 둘 (내부 배럴 post/index.ts는 별개)
+├─ index.ts · seo/index.ts · client.ts   익스포트 문 셋 (내부 배럴 post/index.ts는 별개)
+├─ clientDoor.test.ts             클라이언트 문의 성질(node 빌트인·외부 패키지 없음)을 import 그래프로 잠금
 ├─ shared/     contentConfig(defineContent + ContentValues 계약) · contentPaths(절대 경로)
 │              · testValues(테스트 픽스처 — 패키지 안의 유일한 "어떤 사이트")
 │              · dates · format · guards · jsonLd · url · postFiles · prismLanguages

@@ -1,7 +1,7 @@
 import { TIMEZONE } from '@/content.values.mts';
 import { css } from '@design-system/ui-lib/css';
-import { isPostVisible } from '@blog/content';
-import type { PostSummary } from '@blog/content';
+import { isPostVisible } from '@blog/content/client';
+import type { PostSummary } from '@blog/content/client';
 
 interface Props {
   post: Pick<PostSummary, 'status' | 'scheduledDate' | 'date'>;

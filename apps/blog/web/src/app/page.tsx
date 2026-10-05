@@ -1,13 +1,9 @@
 import Link from 'next/link';
 import { css, cx } from '@design-system/ui-lib/css';
 
-import {
-  POSTS_PATH,
-  sortPostsBySeriesOrder,
-  type PostSummary,
-} from '@blog/content';
+import { sortPostsBySeriesOrder } from '@blog/content';
+import { POSTS_PATH, safeJsonLd, type PostSummary } from '@blog/content/client';
 import { getAllPostSummaries, getSeriesMeta } from '@/src/content';
-import { safeJsonLd } from '@blog/content';
 import { HOME_TRANSITION_ID } from '@/src/shared/transitions';
 import { buildHomeJsonLd, buildHomeMetadata } from './homeSeo';
 

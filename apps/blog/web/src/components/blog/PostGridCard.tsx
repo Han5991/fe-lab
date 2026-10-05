@@ -1,10 +1,10 @@
 import { OG_DEFAULT_IMAGE } from '@/content.values.mts';
 import Link from 'next/link';
 import { css } from '@design-system/ui-lib/css';
-import type { PostSummary } from '@blog/content';
-import { postPath } from '@blog/content';
-import { resolveThumbnailSrc } from '@blog/content';
-import { fmtDate } from '@blog/content';
+import type { PostSummary } from '@blog/content/client';
+import { postPath } from '@blog/content/client';
+import { resolveThumbnailSrc } from '@blog/content/client';
+import { fmtDate } from '@blog/content/client';
 import { postHeroKey } from '@/src/shared/transitions';
 import { Label } from './Label';
 import { tagPillStyle } from './tagPillStyle';

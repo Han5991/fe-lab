@@ -6,7 +6,7 @@
  */
 import { describe, expect, test } from 'vitest';
 import { attachSeriesPosts } from './seriesIndex';
-import type { PostSummary } from '@blog/content';
+import type { PostSummary } from '@blog/content/client';
 import type { SeriesSummary } from '@blog/content';
 
 const post = (

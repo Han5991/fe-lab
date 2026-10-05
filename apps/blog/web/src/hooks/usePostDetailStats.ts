@@ -3,7 +3,7 @@ import {
   usePrefetchQuery,
   useSuspenseQuery,
 } from '@tanstack/react-query';
-import { getKSTDateISO } from '@blog/content';
+import { getKSTDateISO } from '@blog/content/client';
 import { TIMEZONE } from '@/content.values.mts';
 import {
   analyticsService,

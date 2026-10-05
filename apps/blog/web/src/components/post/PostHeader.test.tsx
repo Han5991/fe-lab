@@ -8,7 +8,7 @@
 import { describe, expect, test } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { PostHeader } from './PostHeader';
-import type { PostData } from '@blog/content';
+import type { PostData } from '@blog/content/client';
 
 const basePost: PostData = {
   slug: 'next-js-ecs-deploy',

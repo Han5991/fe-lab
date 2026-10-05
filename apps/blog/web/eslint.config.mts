@@ -34,6 +34,63 @@ const NO_ESCAPED_HEX = {
 } as const;
 
 /**
+ * 큰 배럴(`@blog/content`)과 SEO 문(`@blog/content/seo`)의 **값** import를 서버 전용
+ * 파일로 가둔다.
+ *
+ * 배럴은 `series.ts`·로더로 `node:fs`를 열고, SEO 문도 `post/index.ts`를 거쳐 같은
+ * 그래프를 연다. 클라이언트 그래프에서 그걸 걸러 주는
+ * 것은 next.config의 `optimizePackageImports`(Next 전용·앱별, 트리 셰이킹 없는 dev에서
+ * 유일한 방어선)뿐이라, 클라이언트에서 안전한 것은 패키지 계약인
+ * `@blog/content/client`로 연다 — 그 문에 node 빌트인이 없다는 성질은 패키지의
+ * `clientDoor.test.ts`가 잠근다. 타입은 번들에 남지 않으므로 배럴에서 가져와도 된다
+ * (`SeriesSummary`처럼 배럴에만 있는 타입).
+ *
+ * 예외는 배럴에만 있는 값(로더 인스턴스·`sortPostsBySeriesOrder` …)이 필요한 서버
+ * 파일뿐이다. 새 서버 파일이 배럴 값이 필요하면 `SERVER_ONLY_BARREL_FILES`에 더한다.
+ * 그 파일 안에서도 문에 있는 값은 문으로 연다 — 배럴 import 줄이 곧 "배럴에만 있는 것"의
+ * 목록이 되게.
+ *
+ * `paths`는 정적 import·재수출만 본다. 동적 `import()`는 app 블록의
+ * `no-restricted-syntax`(`CONTENT_DYNAMIC_IMPORT`)가 맡는다.
+ */
+const CONTENT_BARREL_VALUES = {
+  name: '@blog/content',
+  allowTypeImports: true,
+  message:
+    '클라이언트에서 안전한 값은 @blog/content/client로 가져오세요 — 큰 배럴은 node:fs(series·로더)를 엽니다. 배럴에만 있는 값이 필요한 서버 파일이면 eslint.config.mts의 SERVER_ONLY_BARREL_FILES에 추가하세요.',
+} as const;
+
+const CONTENT_SEO_VALUES = {
+  name: '@blog/content/seo',
+  allowTypeImports: true,
+  message:
+    'SEO 빌더는 post/index.ts를 거쳐 node:fs를 엽니다 — 인스턴스는 서버 전용인 @/src/content에서 쓰세요. 타입만 필요하면 import type으로.',
+} as const;
+
+const CONTENT_DYNAMIC_IMPORT = {
+  selector:
+    "ImportExpression:matches([source.value='@blog/content'], [source.value='@blog/content/seo'])",
+  message:
+    '큰 배럴·SEO 문은 동적 import로도 열지 마세요 — node:fs가 클라이언트 그래프로 들어옵니다. @blog/content/client를 쓰세요.',
+} as const;
+
+/** 배럴 값 import가 허용되는 서버 전용 파일 — 글롭이라 `[...slug]`의 괄호는 이스케이프한다. */
+const SERVER_ONLY_BARREL_FILES = [
+  'src/content.ts',
+  'src/app/page.tsx',
+  'src/app/posts/\\[...slug\\]/page.tsx',
+  'src/app/series/seriesIndex.ts',
+];
+
+/** app 레이어의 repository 직접 import 금지 — 아래 두 블록이 같은 값을 펼친다. */
+const REPOSITORY_IMPORT_PATTERN = {
+  // adminRepository처럼 접두사가 붙은 것도 함께 막습니다.
+  group: ['**/domain/*/*[rR]epository', '**/domain/*/*[rR]epository.*'],
+  message:
+    'repository는 인프라 레이어입니다. domain/<x> 공개 API(배럴, 예: @/src/domain/analytics, @/src/domain/analytics/admin)를 통해 접근하세요.',
+};
+
+/**
  * ESLint 10 구성 — `eslint-config-next`를 걷어내고 플러그인을 직접 조립한다.
  *
  * 프리셋이 끌고 오는 eslint-plugin-react@7.x가 ESLint 10에서 제거된
@@ -241,20 +298,13 @@ export default defineConfig([
     ignores: ['src/{shared,domain,lib}/**', '**/*.test.{ts,tsx}'],
     rules: {
       // `**/` 접두로 alias(@/src/domain/...)와 상대경로(../../domain/...) 양쪽을 차단.
+      // `paths`는 큰 배럴·SEO 문 값 import 금지 — flat config는 뒤 블록이 룰 옵션을
+      // 통째로 덮으므로 한 룰 설정에 함께 둔다.
       'no-restricted-imports': [
         'error',
         {
-          patterns: [
-            {
-              // adminRepository처럼 접두사가 붙은 것도 함께 막습니다.
-              group: [
-                '**/domain/*/*[rR]epository',
-                '**/domain/*/*[rR]epository.*',
-              ],
-              message:
-                'repository는 인프라 레이어입니다. domain/<x> 공개 API(배럴, 예: @/src/domain/analytics, @/src/domain/analytics/admin)를 통해 접근하세요.',
-            },
-          ],
+          paths: [CONTENT_BARREL_VALUES, CONTENT_SEO_VALUES],
+          patterns: [REPOSITORY_IMPORT_PATTERN],
         },
       ],
       // 주의: 아래 selector는 식별자 이름(client/supabase/publicDb)에 매칭하므로,
@@ -265,6 +315,7 @@ export default defineConfig([
       'no-restricted-syntax': [
         'error',
         NO_ESCAPED_HEX,
+        CONTENT_DYNAMIC_IMPORT,
         {
           selector:
             "CallExpression[callee.property.name='from'][callee.object.name=/^(client|supabase|publicDb)$/]",
@@ -277,6 +328,38 @@ export default defineConfig([
           message:
             'Supabase RPC는 src에서 직접 호출하지 말고 domain repository를 통하세요.',
         },
+      ],
+    },
+  },
+  {
+    // 위 app 블록이 덮지 않는 파일에도 같은 금지를 건다 — 레이어 폴더와, src 밖이지만
+    // 클라이언트 컴포넌트가 여는 content.values.mts. repository 패턴은 app 레이어의
+    // 규칙이라 여기엔 없다.
+    files: ['src/{shared,domain,lib}/**/*.{ts,tsx}', 'content.values.mts'],
+    ignores: ['**/*.test.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        { paths: [CONTENT_BARREL_VALUES, CONTENT_SEO_VALUES] },
+      ],
+    },
+  },
+  {
+    // 테스트는 node에서만 돈다 — SEO 빌더를 직접 검사하므로 SEO 문은 연다. 배럴 값은
+    // 프로덕션과 같은 문으로 연다.
+    files: ['src/**/*.test.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': ['error', { paths: [CONTENT_BARREL_VALUES] }],
+    },
+  },
+  {
+    // 배럴에만 있는 값이 필요한 서버 전용 파일 — 배럴·SEO 문 금지만 풀고 repository
+    // 금지는 그대로 둔다(뒤 블록이 옵션을 통째로 덮으므로 패턴을 다시 적는다).
+    files: SERVER_ONLY_BARREL_FILES,
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        { patterns: [REPOSITORY_IMPORT_PATTERN] },
       ],
     },
   },
@@ -338,10 +421,10 @@ export default defineConfig([
     // 공유하기 때문이다:
     //
     // (1) 재수출 금지 — `export … from` / `export * from`은 shared를 다른 모듈의
-    //     2차 문으로 만드는 세탁 통로다. 특히 @blog/content 재수출은 배럴 좁히기
-    //     (next.config의 optimizePackageImports가 '@blog/content' import 문만
-    //     좁힌다)를 우회해 node:fs가 클라이언트 번들로 새는 길을 다시 연다.
-    //     shared는 자기 선언만 내보낸다 — 패키지가 필요하면 소비자가 직접 연다.
+    //     2차 문으로 만드는 세탁 통로다. 특히 @blog/content 재수출은 배럴 값
+    //     import 금지(CONTENT_BARREL_VALUES — 지정자 문자열로 판정한다)와
+    //     클라이언트 문 구분을 한 겹 건너 우회하는 길이 된다. shared는 자기
+    //     선언만 내보낸다 — 패키지가 필요하면 소비자가 직접 연다.
     // (2) 모듈 최상위 문(statement) 금지 — 어디서나 import되는 모듈이라 부수효과가
     //     생기면 모든 청크에 함께 실린다(공개 배럴 규칙과 같은 이유). 'use client'
     //     지시문도 여기 걸린다 — shared는 클라이언트 경계가 아니다. 파생 상수의

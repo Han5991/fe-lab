@@ -10,10 +10,7 @@ import { countLivePosts } from '@/src/domain/analytics/admin';
 import { useAdminLogout } from '@/src/hooks/useAdminLogout';
 import { LoadingPlaceholder } from '@/src/components/shared/LoadingPlaceholder';
 import Link from 'next/link';
-// 클라이언트 컴포넌트의 @blog/content 배럴 import — `export * from './series'`가
-// 모듈 평가 시점에 node:fs를 당겨 오는 문제는 next.config.ts의
-// optimizePackageImports + 패키지 sideEffects:false가 번들에서 걸러 준다.
-import { resolvePostState, type PostStatus } from '@blog/content';
+import { resolvePostState, type PostStatus } from '@blog/content/client';
 import {
   ADMIN_ANALYTICS_PATH,
   adminAnalyticsPostPath,

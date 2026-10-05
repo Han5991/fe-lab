@@ -17,7 +17,7 @@
 apps/blog/posts/**            ← Markdown 원고 + _series.yml (워크스페이스 아님)
         │  읽기(gray-matter) · 공개 판정 · 시리즈 · URL 계약 · SEO DTO
         ▼
-packages/@blog/content         ← 소스 익스포트 패키지. 문 두 개: `@blog/content` · `@blog/content/seo`
+packages/@blog/content         ← 소스 익스포트 패키지. 문 세 개: `@blog/content` · `@blog/content/seo` · `@blog/content/client`
         │                          + 빌드 스크립트(src/scripts/*, API가 아니라 실행 파일)
         ▼
 apps/blog/web  (이 앱)
@@ -97,7 +97,7 @@ apps/blog/web/
 | `auth`              | `src/domain/auth`        | `shared`, `platform` — supabase 타입은 이 레이어에서 구조적 부분형으로 끝낸다                                                                                                                |
 | `app`               | `src` 나머지 전부        | `shared`, `analytics`, `auth`, `content-pkg`, 임의 외부 패키지. **platform·node 코어 금지** — Supabase 접근은 도메인 경유, fs는 `src/content.ts`가 조립한 `@blog/content` 로더 인스턴스의 일 |
 
-추가 규칙: 프로덕션 코드는 `*.test.*`를 import 못 함 / app 레이어는 `domain/*/…Repository`를 직접 찌르지 말고 배럴(`@/src/domain/analytics`, `@/src/domain/analytics/admin`)로 / app 레이어에서 `client.from()`·`.rpc()` 직접 호출 금지(`no-restricted-syntax`) / 역방향(analytics·auth→app, platform→domain·app, shared→상위 전부)은 boundaries가 막는다 — 해석 경로 기반이라 alias·상대경로 어느 쪽도 우회 불가. `shared`는 모든 레이어가 여는 유일한 폴더라 모듈 **모양**까지 잠근다 — 재수출(`export … from`)·모듈 최상위 문(부수효과, `'use client'` 포함)·`.tsx` 전면 금지. 입장 기준은 [`src/shared/README.md`](./src/shared/README.md). 공개 페이지가 여는 배럴(`src/domain/analytics/index.ts`)은 모듈 최상위의 `new`·함수 호출이 금지다 — 번들러가 부수효과로 보는 순간 매달린 모듈 전부가 공개 청크에 실린다(#326에서 `new AnalyticsService()` 하나가 그랬다). 원인은 이 룰이, 결과는 `check-bundle`이 본다. 새 공개 배럴을 만들면 이 룰의 `files`에 추가할 것. `src/lib`·`src/domain` 바로 아래에 떨어진 파일은 `layer-root` element로 격리돼 무엇을 import하거나 import되는 순간 에러다.
+추가 규칙: 프로덕션 코드는 `*.test.*`를 import 못 함 / app 레이어는 `domain/*/…Repository`를 직접 찌르지 말고 배럴(`@/src/domain/analytics`, `@/src/domain/analytics/admin`)로 / app 레이어에서 `client.from()`·`.rpc()` 직접 호출 금지(`no-restricted-syntax`) / `src/`에서 큰 배럴 `@blog/content`의 **값** import 금지(`no-restricted-imports`, 타입은 허용) — 클라이언트 문 `@blog/content/client`로 들어오고, 배럴에만 있는 값(로더 인스턴스·`sortPostsBySeriesOrder` …)이 필요한 서버 파일만 `eslint.config.mts`의 `SERVER_ONLY_BARREL_FILES`에 둔다 / 역방향(analytics·auth→app, platform→domain·app, shared→상위 전부)은 boundaries가 막는다 — 해석 경로 기반이라 alias·상대경로 어느 쪽도 우회 불가. `shared`는 모든 레이어가 여는 유일한 폴더라 모듈 **모양**까지 잠근다 — 재수출(`export … from`)·모듈 최상위 문(부수효과, `'use client'` 포함)·`.tsx` 전면 금지. 입장 기준은 [`src/shared/README.md`](./src/shared/README.md). 공개 페이지가 여는 배럴(`src/domain/analytics/index.ts`)은 모듈 최상위의 `new`·함수 호출이 금지다 — 번들러가 부수효과로 보는 순간 매달린 모듈 전부가 공개 청크에 실린다(#326에서 `new AnalyticsService()` 하나가 그랬다). 원인은 이 룰이, 결과는 `check-bundle`이 본다. 새 공개 배럴을 만들면 이 룰의 `files`에 추가할 것. `src/lib`·`src/domain` 바로 아래에 떨어진 파일은 `layer-root` element로 격리돼 무엇을 import하거나 import되는 순간 에러다.
 
 `lint`는 `--max-warnings=0`이고, `noInlineConfig: true` + `@eslint-community/eslint-comments/no-use`로 **인라인 `eslint-disable` 주석이 전면 금지**다. 예외는 주석이 아니라 `eslint.config.mts`에 `files` 스코프로 적는다.
 

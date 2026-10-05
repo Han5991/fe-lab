@@ -12,7 +12,7 @@
 import { describe, expect, test } from 'vitest';
 
 import { getAllPostSummaries, getAllSeries } from '@/src/content';
-import { filterAndSortPostsByArchiveParams } from '@blog/content';
+import { filterAndSortPostsByArchiveParams } from '@blog/content/client';
 
 import { FEATURED_SERIES } from './featuredSeries';
 

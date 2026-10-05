@@ -5,7 +5,11 @@
  * (여기는 N개 글 × 기간, 저기는 글 하나 × 전 기간).
  */
 
-import { addDaysISO, formatMonthDayISO, isPostVisible } from '@blog/content';
+import {
+  addDaysISO,
+  formatMonthDayISO,
+  isPostVisible,
+} from '@blog/content/client';
 import { percentDelta } from './delta';
 import { trailingWindowDays } from './windows';
 import type { PostStatDetail, PostVisibilityContext } from './types';

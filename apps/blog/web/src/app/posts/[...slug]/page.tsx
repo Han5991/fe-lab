@@ -8,8 +8,7 @@ import {
   getSeriesMeta,
 } from '@/src/content';
 import { sortPostsBySeriesOrder } from '@blog/content';
-import { resolveThumbnailUrl } from '@blog/content';
-import { isPostVisible } from '@blog/content';
+import { isPostVisible, resolveThumbnailUrl } from '@blog/content/client';
 import { notFound } from 'next/navigation';
 import { css, cx } from '@design-system/ui-lib/css';
 import { PreviewBanner } from '@/src/components/preview/PreviewBanner';
@@ -22,7 +21,7 @@ import {
 import { toNextMetadata } from './nextMetadata';
 import type { Metadata } from 'next';
 import { Rail, railGutter, railColumn } from '@/src/components/Rail';
-import { safeJsonLd } from '@blog/content';
+import { safeJsonLd } from '@blog/content/client';
 import { postTransitionId } from '@/src/shared/transitions';
 import { slugFromRouteParam } from '@/src/shared/routes';
 import GiscusComments from '@/src/components/GiscusComments';

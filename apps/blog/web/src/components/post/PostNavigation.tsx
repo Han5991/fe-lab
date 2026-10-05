@@ -1,8 +1,8 @@
 import Link from 'next/link';
 import { css, sva } from '@design-system/ui-lib/css';
 import type { RecipeVariant } from '@design-system/ui-lib/css';
-import type { PostNavItem } from '@blog/content';
-import { postPath } from '@blog/content';
+import type { PostNavItem } from '@blog/content/client';
+import { postPath } from '@blog/content/client';
 import { SERIES_PATH } from '@/src/shared/routes';
 
 interface PostNavigationProps {

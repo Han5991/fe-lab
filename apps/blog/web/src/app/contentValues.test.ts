@@ -20,7 +20,7 @@ import {
   SITEMAP_STATIC_PAGES,
 } from '@/content.values.mts';
 import { ABOUT_PATH, ADMIN_BASE_PATH, SERIES_PATH } from '@/src/shared/routes';
-import { POSTS_PATH } from '@blog/content';
+import { POSTS_PATH } from '@blog/content/client';
 import { getAllPosts } from '@/src/content';
 
 const posts = getAllPosts();

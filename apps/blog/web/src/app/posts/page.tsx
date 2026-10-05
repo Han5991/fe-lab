@@ -7,7 +7,7 @@ import {
   getAllTags,
   getAllYears,
 } from '@/src/content';
-import { safeJsonLd } from '@blog/content';
+import { safeJsonLd } from '@blog/content/client';
 import { POSTS_TRANSITION_ID } from '@/src/shared/transitions';
 import {
   buildBlogJsonLd,

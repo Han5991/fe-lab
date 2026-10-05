@@ -2,10 +2,8 @@
 
 import { css } from '@design-system/ui-lib/css';
 import Link from 'next/link';
-// 클라이언트 컴포넌트의 @blog/content 배럴 import — node:fs 모듈(series 등)은
-// next.config.ts의 optimizePackageImports + sideEffects:false가 번들에서 걸러 준다.
-import { postPath } from '@blog/content';
-import { fmtNum } from '@blog/content';
+import { postPath } from '@blog/content/client';
+import { fmtNum } from '@blog/content/client';
 import { Sparkline } from '@/src/components/blog/Sparkline';
 import { token } from '@design-system/ui-lib/tokens';
 import type { TopPostSummary } from '@/src/domain/analytics';

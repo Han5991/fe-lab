@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, test, vi } from 'vitest';
 import type { ReactNode } from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import type { PostSummary } from '@blog/content';
+import type { PostSummary } from '@blog/content/client';
 
 const { getTopPosts } = vi.hoisted(() => ({
   getTopPosts:

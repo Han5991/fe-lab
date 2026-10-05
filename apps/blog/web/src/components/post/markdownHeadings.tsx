@@ -1,6 +1,6 @@
 import { createElement, type ComponentProps } from 'react';
 import type { Components } from 'react-markdown';
-import { HEADING_TAG_MAP } from '@blog/content';
+import { HEADING_TAG_MAP } from '@blog/content/client';
 
 /**
  * 본문 마크다운의 최상위 `#`(h1)을 h2로 강등한다.

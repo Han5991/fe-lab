@@ -1,5 +1,5 @@
 import { isValidElement, type ReactElement } from 'react';
-import { isRecord } from '@blog/content';
+import { isRecord } from '@blog/content/client';
 
 /**
  * 요소가 마크다운의 `tag` 태그에서 왔는가. 매핑된 태그는 `type`이 매퍼 함수라,

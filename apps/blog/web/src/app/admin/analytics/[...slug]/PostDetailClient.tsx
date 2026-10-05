@@ -30,10 +30,8 @@ import {
 import { useAdminDashboardData } from '@/src/hooks/useAdminViews';
 import type { PostStatDetail } from '@/src/domain/analytics';
 import { ADMIN_ANALYTICS_PATH, slugFromRouteParam } from '@/src/shared/routes';
-// 클라이언트 컴포넌트의 @blog/content 배럴 import — node:fs 모듈(series 등)은
-// next.config.ts의 optimizePackageImports + sideEffects:false가 번들에서 걸러 준다.
-import { postPath } from '@blog/content';
-import { formatMonthDayISO } from '@blog/content';
+import { postPath } from '@blog/content/client';
+import { formatMonthDayISO } from '@blog/content/client';
 import { LoadingPlaceholder } from '@/src/components/shared/LoadingPlaceholder';
 import {
   DateRangeControls,

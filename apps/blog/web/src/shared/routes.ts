@@ -13,7 +13,7 @@
  * import 금지 계약이라 이 모듈을 가져가지 못한다 — 거기 남은 사본
  * (sitemap·llms·번들 규칙용)은 `contentValues.test.ts`가 이 모듈과 잠근다.
  */
-import { decodeUrlSafe, encodePostSlug } from '@blog/content';
+import { decodeUrlSafe, encodePostSlug } from '@blog/content/client';
 
 // ── 홈 · 정적 페이지 ─────────────────────────────────────────────────────────
 // `trailingSlash: true`(next.config.ts)라 후행 슬래시를 포함한다.

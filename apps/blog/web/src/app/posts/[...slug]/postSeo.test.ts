@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { postPath, postUrl } from '@blog/content';
+import { postPath, postUrl } from '@blog/content/client';
 import {
   buildDescription,
   resolveSeoTitle,

@@ -1,7 +1,7 @@
 /** 검색 다이얼로그의 선택 인덱스·접근성·색인 불러오기 계약. */
 import { beforeEach, describe, expect, onTestFinished, test, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { postPath } from '@blog/content';
+import { postPath } from '@blog/content/client';
 
 const push = vi.hoisted(() => vi.fn());
 
