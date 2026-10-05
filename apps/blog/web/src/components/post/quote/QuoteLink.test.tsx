@@ -4,13 +4,7 @@
  * 주입한다(실제 생성기는 fragmentGenerator.test.ts가 따로 본다).
  */
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
-import {
-  act,
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-} from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { QuoteLink } from './QuoteLink';
 import type { FragmentGenerator } from './fragmentGenerator';
 
@@ -27,6 +21,8 @@ let rect = { top: 300, bottom: 320, left: 100, width: 200, height: 20 };
 let content: HTMLElement;
 
 beforeEach(() => {
+  // 누름 유예·결과 표시(수백 ms~1.6초)를 실제로 기다리지 않는다. findBy가 돌도록 시계는 흐르게 둔다.
+  vi.useFakeTimers({ shouldAdvanceTime: true });
   rect = { top: 300, bottom: 320, left: 100, width: 200, height: 20 };
   vi.stubGlobal('innerWidth', 1200);
   vi.stubGlobal('innerHeight', 800);
@@ -43,6 +39,7 @@ afterEach(() => {
   document.getSelection()?.removeAllRanges();
   content.remove();
   vi.unstubAllGlobals();
+  vi.useRealTimers();
   Reflect.deleteProperty(document.documentElement, 'clientWidth');
 });
 
@@ -88,7 +85,14 @@ const renderQuote = ({
   return { loadGenerator, writeClipboard };
 };
 
-const findButton = () => screen.findByRole('button', { name: '링크 복사' });
+/** 컴포넌트 타이머를 ms만큼 즉시 흘린다. */
+const elapse = (ms: number) => act(() => vi.advanceTimersByTimeAsync(ms));
+
+/** 선택 평가 디바운스(마우스 150ms·터치 400ms)를 흘린 뒤 버튼을 찾는다. */
+const findButton = async () => {
+  await elapse(400);
+  return screen.findByRole('button', { name: '링크 복사' });
+};
 
 describe('QuoteLink 버튼', () => {
   test('선택이 없으면 버튼이 없다', () => {
@@ -155,7 +159,7 @@ describe('QuoteLink 버튼', () => {
     renderQuote();
 
     select(outside);
-    await act(() => new Promise(resolve => setTimeout(resolve, 200)));
+    await elapse(200);
 
     expect(screen.queryByRole('button')).toBeNull();
     outside.remove();
@@ -176,7 +180,7 @@ describe('QuoteLink 버튼', () => {
 
     fireEvent.pointerDown(document, { pointerType: 'mouse' });
     select(textOf('second'));
-    await act(() => new Promise(resolve => setTimeout(resolve, 200)));
+    await elapse(200);
     expect(screen.queryByRole('button')).toBeNull();
 
     fireEvent.pointerUp(document, { pointerType: 'mouse' });
@@ -288,7 +292,7 @@ describe('QuoteLink 복사', () => {
     ).toBeVisible();
     expect(writeClipboard).toHaveBeenCalledTimes(1);
     // 누른 뒤 유예가 지나도 결과 표시는 그대로다(거두는 건 결과 표시가 끝난 뒤).
-    await act(() => new Promise(resolve => setTimeout(resolve, 1000)));
+    await elapse(1000);
     expect(
       screen.getByRole('button', { name: '링크를 복사했어요' }),
     ).toBeVisible();
@@ -303,9 +307,8 @@ describe('QuoteLink 복사', () => {
     clearSelection();
     // 손가락이 버튼 밖으로 밀려나 click이 오지 않는다(pointercancel).
 
-    await waitFor(() => expect(screen.queryByRole('button')).toBeNull(), {
-      timeout: 1500,
-    });
+    await elapse(1500);
+    expect(screen.queryByRole('button')).toBeNull();
     expect(writeClipboard).not.toHaveBeenCalled();
   });
 
@@ -315,9 +318,8 @@ describe('QuoteLink 복사', () => {
     fireEvent.click(await findButton());
     await screen.findByRole('button', { name: '링크를 복사했어요' });
 
-    await waitFor(() => expect(screen.queryByRole('button')).toBeNull(), {
-      timeout: 2500,
-    });
+    await elapse(2500);
+    expect(screen.queryByRole('button')).toBeNull();
   });
 });
 
@@ -342,7 +344,7 @@ describe('QuoteLink 포커스', () => {
     renderQuote();
     const { origin, button } = await tabToButton();
 
-    await act(() => new Promise(resolve => setTimeout(resolve, 200)));
+    await elapse(200);
 
     expect(button).toBeInTheDocument();
     expect(button).toHaveFocus();
@@ -365,9 +367,8 @@ describe('QuoteLink 포커스', () => {
 
     fireEvent.click(button);
     await screen.findByRole('button', { name: '링크를 복사했어요' });
-    await waitFor(() => expect(screen.queryByRole('button')).toBeNull(), {
-      timeout: 2500,
-    });
+    await elapse(2500);
+    expect(screen.queryByRole('button')).toBeNull();
 
     expect(origin).toHaveFocus();
     origin.remove();
