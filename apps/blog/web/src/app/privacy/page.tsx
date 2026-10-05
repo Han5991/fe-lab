@@ -45,7 +45,7 @@ export const metadata: Metadata = {
   },
 };
 
-const LAST_UPDATED = '2026년 9월 26일';
+const LAST_UPDATED = '2026년 10월 5일';
 
 // 문장 속 링크는 색만으로 구분하지 않는다 — 본문(ink.700)과 accent.600의 명도 차가
 // 3:1에 못 미쳐(axe link-in-text-block) 색약·흑백 화면에서 링크가 안 보인다. 밑줄을 단다.
@@ -119,6 +119,10 @@ export default function PrivacyPage() {
                 <li>대략적인 접속 지역 (국가/도시 수준)</li>
                 <li>페이지 조회수 (글별 조회수 집계용)</li>
                 <li>페이지에서 난 오류의 종류와 메시지 (오류 수정용)</li>
+                <li>
+                  페이지 로딩·반응 속도 지표(Web Vitals — LCP, INP, CLS 등, 성능
+                  개선용)
+                </li>
               </ul>
               <p className={css({ mt: '3' })}>
                 이름, 이메일 주소 등 개인 식별 정보는 수집하지 않습니다.
@@ -150,7 +154,8 @@ export default function PrivacyPage() {
                   <p className={css({ fontSize: 'sm' })}>
                     방문자 통계 분석을 위해 Google Analytics를 사용합니다. GA4는
                     쿠키 및 유사 기술을 사용하여 익명화된 방문 데이터를
-                    수집합니다. 자세한 내용은{' '}
+                    수집합니다. 위의 오류 정보와 성능 지표도 GA4로 전송됩니다.
+                    자세한 내용은{' '}
                     <a
                       href="https://policies.google.com/privacy"
                       target="_blank"
