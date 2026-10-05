@@ -53,6 +53,15 @@ allowBuilds:
   # 쓰지 않는다(로컬 `wrangler dev`만 쓴다). 같은 원칙으로 거부.
   workerd: false
 
+# micromatch가 braces를 ^3.0.3으로 범위 고정하는데, braces 자체가 GHSA-vfj7-8cjw-p6xm
+# (깊게 중첩된 패턴에서 stack-exhaustion DoS, high)의 패치 버전을 아직 내지 않았다
+# (npm 최신 3.0.3, 2026-10-05 확인) — override를 걸어도 고정할 상위 버전이 없어
+# 구조적으로 해소 불가능하다. 제거 조건: braces가 패치 버전을 내면(또는 micromatch가
+# 다른 glob 구현으로 교체하면) 삭제.
+auditConfig:
+  ignoreGhsas:
+    - GHSA-vfj7-8cjw-p6xm
+
 # 두 개 이상의 워크스페이스 패키지가 쓰는 버전은 전부 여기로 올린다. 패키지의
 # package.json에는 'catalog:'(기본) 또는 'catalog:lint'(아래 named catalog)만 적고,
 # 숫자는 이 파일에만 존재한다 — 한 곳을 올리면 저장소 전체가 같이 움직인다.
