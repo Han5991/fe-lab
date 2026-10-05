@@ -10,6 +10,10 @@ description: >-
 # 빌드 시각(BLOG_CONTENT_NOW)과 주입 env에 달려 있어, dependsOn으로 엮으면 다시 빌드하거나
 # 다른 시점의 캐시를 재생한다.
 #
+# 같은 내용이 이미 통과했으면 건너뛸 수 있다(reuse-pass) — 다시 돌려도 같은 out/을 같은 스위트로
+# 보는 것뿐이다. Next의 buildId가 빌드마다 달라 out/이 같으려면 turbo가 빌드를 재생했어야 하므로,
+# 실제로 건너뛰는 건 블로그 빌드 입력을 건드리지 않은 PR이다.
+#
 # 시크릿이 없는 잡에서만 부른다. 브라우저 설치는 스크립트를 돌리는 install이라
 # CLOUDFLARE_API_TOKEN을 쥔 잡(deploy·preview)에는 절대 넣지 않는다.
 
@@ -21,13 +25,43 @@ inputs:
       통과한 테스트는 리포트에 flaky로 남는다).
     required: false
     default: '0'
+  reuse-pass:
+    description: >-
+      'true'면 같은 입력(out/ + 아래 해시 목록)이 전에 통과한 기록이 있을 때 건너뛴다. PR CI만
+      켠다 — 배포는 --force 빌드라 어차피 맞을 일이 없고, 공개 직전에는 매번 브라우저로 연다.
+    required: false
+    default: 'false'
 
 runs:
   using: composite
   steps:
+    # e2e가 읽는 것 전부: 산출물, 스위트, 원고(공개 글 하한), 서버 설정, 도구 버전(lockfile·Node),
+    # 이 액션과 이 액션을 reuse-pass로 부르는 쪽(입력·env를 정한다). 경로까지 해시하므로 이름만
+    # 바뀌어도 다시 돈다.
+    - name: Hash e2e inputs
+      id: e2e-inputs
+      if: inputs.reuse-pass == 'true'
+      shell: bash
+      run: |
+        hash=$(find apps/blog/web/out apps/blog/web/e2e apps/blog/posts apps/blog/web/wrangler.jsonc \
+            apps/blog/web/package.json pnpm-lock.yaml .tool-versions .github/actions/blog-e2e \
+            .github/actions/quality-checks .github/workflows/ci.yml -type f -print0 \
+          | LC_ALL=C sort -z | xargs -0 sha256sum | sha256sum | cut -d' ' -f1)
+        echo "hash=$hash" >> "$GITHUB_OUTPUT"
+
+    - name: Look up a previous pass
+      id: pass
+      if: inputs.reuse-pass == 'true'
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ runner.temp }}/blog-e2e-pass
+        key: blog-e2e-pass-${{ steps.e2e-inputs.outputs.hash }}
+        lookup-only: true
+
     # 브라우저 리비전은 Playwright 버전에 묶인다 — 캐시 키를 lockfile이 고정한 버전으로 잡는다.
     - name: Resolve Playwright version
       id: pw
+      if: steps.pass.outputs.cache-hit != 'true'
       shell: bash
       working-directory: apps/blog/web
       run: echo "version=$(pnpm exec playwright --version | awk '{print $2}')" >> "$GITHUB_OUTPUT"
@@ -36,6 +70,7 @@ runs:
     # 날 e2e가 실패하면(다시 돌리는 바로 그때) 받은 브라우저를 버리고 또 받는다.
     - name: Restore Playwright browsers
       id: pw-cache
+      if: steps.pass.outputs.cache-hit != 'true'
       uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ~/.cache/ms-playwright
@@ -44,13 +79,13 @@ runs:
     # 헤드리스는 chromium-headless-shell만 쓴다(--only-shell) — 전체 Chromium보다 작다.
     # 캐시가 맞아도 OS 의존 패키지(apt)는 러너마다 새로 깔아야 한다.
     - name: Install Chromium
-      if: steps.pw-cache.outputs.cache-hit != 'true'
+      if: steps.pass.outputs.cache-hit != 'true' && steps.pw-cache.outputs.cache-hit != 'true'
       shell: bash
       working-directory: apps/blog/web
       run: pnpm exec playwright install --with-deps --only-shell chromium
 
     - name: Save Playwright browsers
-      if: steps.pw-cache.outputs.cache-hit != 'true'
+      if: steps.pass.outputs.cache-hit != 'true' && steps.pw-cache.outputs.cache-hit != 'true'
       uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ~/.cache/ms-playwright
@@ -63,10 +98,21 @@ runs:
       run: pnpm exec playwright install-deps chromium
 
     - name: Runtime e2e
+      if: steps.pass.outputs.cache-hit != 'true'
       shell: bash
       env:
         E2E_RETRIES: ${{ inputs.retries }}
-      run: pnpm --filter @blog/web test:e2e
+      run: |
+        pnpm --filter @blog/web test:e2e
+        touch "$RUNNER_TEMP/blog-e2e-pass"
+
+    # 내용은 빈 파일이고 키가 기록이다.
+    - name: Record the pass
+      if: inputs.reuse-pass == 'true' && steps.pass.outputs.cache-hit != 'true'
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ runner.temp }}/blog-e2e-pass
+        key: ${{ steps.pass.outputs.cache-primary-key }}
 
     # 실패했을 때만 — HTML 리포트에 트레이스·스크린샷·axe 위반 목록이 들어 있다.
     - name: Upload e2e report

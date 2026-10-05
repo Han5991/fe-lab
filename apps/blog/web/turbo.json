@@ -4,9 +4,16 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
+      // 테스트 파일은 빌드에 닿지 않는다(tsconfig.json exclude, panda.config.ts exclude) — 입력에서 빼야
+      // 테스트만 고친 PR이 빌드를 재생하고, 같은 out/이라 런타임 e2e도 건너뛴다.
       "inputs": [
         "$TURBO_DEFAULT$",
         "!e2e/**",
+        "!**/*.test.ts",
+        "!**/*.test.tsx",
+        "!vitest.config.mts",
+        "!vitest.setup.ts",
+        "!tsconfig.test.json",
         ".env*",
         "$TURBO_ROOT$/apps/blog/posts/**"
       ]

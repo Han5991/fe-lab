@@ -14,6 +14,10 @@ export default defineConfig({
     // 스타일이 빠진 채 빌드가 성공한다).
     './node_modules/@blog/content/src/**/*.{js,jsx,ts,tsx}',
   ],
+  // 테스트는 스캔하지 않는다 — 픽스처의 `content: '# 첫 단원 본문'`·`width={750}` 같은 값이 스타일
+  // prop으로 읽혀 프로덕션 CSS에 쓰레기 규칙(~1.2KB)으로 실렸다. turbo.json이 테스트를 빌드 입력에서
+  // 빼는 전제이기도 하다.
+  exclude: ['**/*.test.{ts,tsx}'],
   // 디자인 토큰 강제: 임의 색/값 대신 토큰만 허용. 임의값이 꼭 필요하면
   // 대괄호 이스케이프(`'[6px]'`)로 명시적으로 표기한다.
   strictTokens: true,

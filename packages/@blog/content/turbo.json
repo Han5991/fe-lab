@@ -2,6 +2,15 @@
   "$schema": "https://turbo.build/schema.json",
   "extends": ["//"],
   "tasks": {
+    // 빌드 스크립트는 없지만 앱 build의 ^build 해시에 이 입력이 섞인다 — 테스트만 고쳐도 앱 빌드 캐시가 깨지지 않게 뺀다.
+    "build": {
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "!**/*.test.ts",
+        "!vitest.config.mts",
+        "!tsconfig.test.json"
+      ]
+    },
     // 이 패키지의 테스트는 워크스페이스 밖 파일을 읽는다.
     //   - apps/blog/posts/**       : contract·url-consistency가 실제 원고를 잠근다
     //   - 루트 문서 7 + .github/   : docPaths가 거기 인용된 경로의 존재를 검사한다
