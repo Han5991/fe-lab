@@ -41,7 +41,10 @@ export function firstOwnFrame(
   return undefined;
 }
 
-/** V8 스택은 `이름: 메시지`로 시작한다 — 메시지 속 URL을 프레임으로 읽지 않게 떼어 낸다(Firefox·Safari 스택엔 없다). */
+/**
+ * V8 스택은 `이름: 메시지`로 시작한다 — 메시지 속 URL을 프레임으로 읽지 않게 떼어 낸다(Firefox·Safari 스택엔 없다).
+ * 만든 뒤 메시지나 이름을 바꾼 오류는 머리가 지금 값과 달라 떼지 못한다 — 드물어 그대로 둔다.
+ */
 function withoutHeader(stack: string, header: string): string {
   return stack.startsWith(header) ? stack.slice(header.length) : stack;
 }

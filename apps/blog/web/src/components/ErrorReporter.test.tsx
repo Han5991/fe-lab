@@ -41,15 +41,17 @@ test('자기 출처의 첫 스택 프레임만 frame으로 싣는다', () => {
   // 자기 출처 프레임이 하나도 없으면 frame을 싣지 않는다
   thrown.stack = `f@${origin}.evil.example/a.js:1:2\nchrome-extension://abc/content.js:3:4`;
   expect(toExceptionEvent(thrown, false, origin)).not.toHaveProperty('frame');
-  // 메시지에 든 URL은 프레임이 아니다
-  const fetchFailed = new Error(`${origin}/_next/static/chunks/x.js:9:9`);
+  // 메시지에 든 URL은 프레임이 아니다(길고 여러 줄인 메시지도 머리째 뗀다)
+  const fetchFailed = new Error(
+    `${'x'.repeat(100)}\n${origin}/_next/static/chunks/x.js:9:9`,
+  );
   fetchFailed.stack = `Error: ${fetchFailed.message}\n    at g (${origin}/_next/static/chunks/0abc.js:1:2)`;
   expect(toExceptionEvent(fetchFailed, false, origin).frame).toBe(
     'chunks/0abc.js:1:2',
   );
 });
 
-test('같은 설명은 한 번만, 비치명 오류는 치명 오류와 따로 세어 5건까지만 보낸다', () => {
+test('같은 오류는 한 번만, 비치명 오류는 치명 오류와 따로 세어 5건까지만 보낸다', () => {
   const send = vi.fn<(event: ExceptionEvent) => void>();
   const report = createErrorReporter(send);
 
