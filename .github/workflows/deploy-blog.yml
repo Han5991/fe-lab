@@ -15,6 +15,7 @@ on:
       - 'turbo.json'
       - '.github/workflows/deploy-blog.yml'
       - '.github/actions/quality-checks/**'
+      - '.github/actions/blog-e2e/**'
 
   # 매일 KST 09:13 자동 빌드 — 예약 발행 글 공개용. 정각 슬롯은 GitHub 예약 큐가 붐벼 몇 시간씩 밀린다.
   # scheduledDate가 이 시각 뒤인 글은 그 뒤 첫 배포(push 또는 다음 날 cron)에서 나간다.
@@ -132,6 +133,16 @@ jobs:
       - name: Report Next.js build cache size
         if: always()
         run: du -sh apps/blog/web/.next/cache 2>/dev/null || echo '(no .next/cache)'
+
+      # 방금 구운 out/을 JS까지 실행해 본다(ci.yml과 같은 정의). cron이 공개한 예약 글도
+      # 여기서 처음 브라우저에 열린다 — 실패하면 업로드·배포로 가지 않는다. 이 잡에는
+      # 시크릿이 없으므로 브라우저 설치(스크립트 실행)가 허용된다.
+      # 재시도 1 — 무인 배포(특히 cron)에서 한 번의 흔들림이 그날 공개를 막지 않게.
+      # 같은 스위트가 PR CI에선 재시도 0으로 돌아 흔들림은 거기서 드러난다.
+      - name: Runtime e2e
+        uses: ./.github/actions/blog-e2e
+        with:
+          retries: '1'
 
       # 최종 산출물 검사(check-seo·check-bundle)는 위 "Build blog" 스텝 안에서 이미 돈다 —
       # `build` 스크립트가 prebuild → next build → check-seo → check-bundle로 정의돼 있다.

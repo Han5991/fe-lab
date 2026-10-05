@@ -57,6 +57,10 @@ export default defineConfig([
       '.cache/**',
       // vitest --coverage의 HTML 리포터가 뱉는 번들된 벤더 JS. 소스가 아니다.
       'coverage/**',
+      // Playwright HTML 리포트·트레이스(test:e2e 산출물)와 그 서버(wrangler dev)의
+      // 로컬 상태·임시 번들. 소스가 아니다.
+      '.playwright/**',
+      '.wrangler/**',
       'next-env.d.ts',
     ],
   },
@@ -109,6 +113,7 @@ export default defineConfig([
       '**/*.spec.{ts,tsx}',
       'vitest.config.mts',
       'vitest.setup.ts',
+      'e2e/**/*.ts',
     ],
     languageOptions: {
       parserOptions: {

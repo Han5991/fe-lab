@@ -4,6 +4,10 @@ build
 out
 .next
 coverage
+# Playwright 리포트·트레이스(apps/blog/web/e2e 실행 산출물)
+.playwright
+# `wrangler dev`(test:e2e의 서버)가 남기는 miniflare 로컬 상태·임시 번들 — git은 .gitignore로 무시한다
+.wrangler
 .tsbuildinfo
 *.tsbuildinfo
 

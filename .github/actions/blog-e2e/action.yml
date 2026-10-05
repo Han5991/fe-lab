@@ -1,0 +1,80 @@
+name: Blog runtime e2e
+description: >-
+  빌드된 블로그(apps/blog/web/out)를 프로덕션과 같은 정적 Worker(wrangler dev)로 띄우고
+  Playwright로 JS가 실행된 뒤를 검사합니다 — hydration 뒤 본문 보존, 콘솔 에러·예외 0,
+  axe(WCAG A·AA), 모바일 넘침, 웹 폰트, JS 전용 상호작용, /admin.
+
+# 호출 전제: `pnpm install`이 끝났고 같은 잡에서 블로그 빌드가 out/을 만들어 두었어야 한다.
+# 이 액션은 빌드하지 않는다 — PR CI(quality-checks)와 배포(deploy-blog.yml의 빌드 잡)가
+# 각자 빌드한 바로 그 out/을 본다. turbo 태스크로 두지 않은 것도 같은 이유다: build가
+# 빌드 시각(BLOG_CONTENT_NOW)과 주입 env에 달려 있어, dependsOn으로 엮으면 다시 빌드하거나
+# 다른 시점의 캐시를 재생한다.
+#
+# 시크릿이 없는 잡에서만 부른다. 브라우저 설치는 스크립트를 돌리는 install이라
+# CLOUDFLARE_API_TOKEN을 쥔 잡(deploy·preview)에는 절대 넣지 않는다.
+
+inputs:
+  retries:
+    description: >-
+      실패한 테스트의 재시도 횟수(E2E_RETRIES). PR CI는 0 — 흔들림이 드러나야 한다. 무인
+      배포만 1을 넘겨, 한 번의 흔들림이 그날 예약 글 공개를 막지 않게 한다(재시도로
+      통과한 테스트는 리포트에 flaky로 남는다).
+    required: false
+    default: '0'
+
+runs:
+  using: composite
+  steps:
+    # 브라우저 리비전은 Playwright 버전에 묶인다 — 캐시 키를 lockfile이 고정한 버전으로 잡는다.
+    - name: Resolve Playwright version
+      id: pw
+      shell: bash
+      working-directory: apps/blog/web
+      run: echo "version=$(pnpm exec playwright --version | awk '{print $2}')" >> "$GITHUB_OUTPUT"
+
+    # 복원과 저장을 나눈다 — 통짜 actions/cache는 잡이 성공해야 저장하므로, 캐시가 빈
+    # 날 e2e가 실패하면(다시 돌리는 바로 그때) 받은 브라우저를 버리고 또 받는다.
+    - name: Restore Playwright browsers
+      id: pw-cache
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ~/.cache/ms-playwright
+        key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}-chromium-shell
+
+    # 헤드리스는 chromium-headless-shell만 쓴다(--only-shell) — 전체 Chromium보다 작다.
+    # 캐시가 맞아도 OS 의존 패키지(apt)는 러너마다 새로 깔아야 한다.
+    - name: Install Chromium
+      if: steps.pw-cache.outputs.cache-hit != 'true'
+      shell: bash
+      working-directory: apps/blog/web
+      run: pnpm exec playwright install --with-deps --only-shell chromium
+
+    - name: Save Playwright browsers
+      if: steps.pw-cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ~/.cache/ms-playwright
+        key: ${{ steps.pw-cache.outputs.cache-primary-key }}
+
+    - name: Install Chromium OS dependencies
+      if: steps.pw-cache.outputs.cache-hit == 'true'
+      shell: bash
+      working-directory: apps/blog/web
+      run: pnpm exec playwright install-deps chromium
+
+    - name: Runtime e2e
+      shell: bash
+      env:
+        E2E_RETRIES: ${{ inputs.retries }}
+      run: pnpm --filter @blog/web test:e2e
+
+    # 실패했을 때만 — HTML 리포트에 트레이스·스크린샷·axe 위반 목록이 들어 있다.
+    - name: Upload e2e report
+      if: failure()
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      with:
+        name: blog-e2e-report
+        path: apps/blog/web/.playwright/
+        if-no-files-found: ignore
+        include-hidden-files: true
+        retention-days: 7

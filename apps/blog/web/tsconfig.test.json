@@ -23,7 +23,10 @@
     "**/*.spec.ts",
     "**/*.spec.tsx",
     "vitest.config.mts",
-    "vitest.setup.ts"
+    "vitest.setup.ts",
+    // Playwright 런타임 게이트(e2e/) — 러너는 vitest가 아니지만 테스트 코드라 같은
+    // 프로그램·같은 완화 플래그로 검사한다. vitest 글롭(src/**)은 이 폴더를 보지 않는다.
+    "e2e/**/*.ts"
   ],
   "exclude": ["node_modules", "supabase/functions"]
 }

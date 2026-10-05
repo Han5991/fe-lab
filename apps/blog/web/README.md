@@ -42,13 +42,15 @@ apps/blog/web  (이 앱)
   ├─ check-seo                                (out/ HTML의 SEO 계약 검사)
   └─ check-bundle                             (out/ JS 청크의 admin 코드 누수 검사 — 빌드의 마지막 게이트)
         │
+  test:e2e (빌드와 별개)                       (out/을 wrangler dev로 띄워 JS 실행 뒤를 Playwright로 검사)
+        │
         ▼
 Cloudflare Workers (deploy-blog.yml)  +  런타임: Supabase(조회수·Admin·Analytics) · Giscus · GA4/GTM
 ```
 
 - **정적 산출물**: `output: 'export'`(개발 모드에서는 해제), `trailingSlash: true` + `skipTrailingSlashRedirect: true` 짝, `images.unoptimized: true`. 내부 href는 스스로 후행 슬래시를 단다(`postPath`·`archivePath`). 그 밖에 `next.config.ts`가 갖는 것은 둘이다 — `optimizePackageImports: ['@blog/content']`(배럴의 `export *`가 node:fs 로더까지 여는 것을 실제로 쓴 모듈로 좁혀, dev에서도 fs가 클라이언트 그래프에 들어가지 않게 한다)와 `reactCompiler`(Rust 포트는 dev에서만 켠다 — 미해결 코드젠 회귀가 프로덕션에 새지 않게).
 - **동적 기능**만 Supabase — 조회수 RPC, 조회 이력, Admin Google OAuth, Analytics RPC(Edge Function 경유). 테이블은 `post_views`(누계)·`post_view_logs`(건별 이력 — 시간대·요일 집계의 원천) 둘이고, 공개 RPC는 `increment_view_count` 하나다. admin RPC(`get_all_post_stats`·`get_all_posts_trends`·`get_post_hourly_distribution`·`get_post_dow_distribution`)는 `anon`에 잠겨 있어 Edge Function으로만 부른다. 타입은 `pnpm gen:types`가 로컬 스키마에서 `src/lib/platform/database.types.ts`로 다시 뽑는다.
-- **검증은 세 게이트** — `validate-posts`(frontmatter 원문, prebuild에서 `--strict`)·`check-seo`(최종 HTML)·`check-bundle`(JS 청크의 admin 코드 누수). 셋 다 `pnpm build` 안에 있어 로컬·PR CI·배포가 같은 검사를 지난다.
+- **검증은 세 게이트 + 런타임 게이트** — `validate-posts`(frontmatter 원문, prebuild에서 `--strict`)·`check-seo`(최종 HTML)·`check-bundle`(JS 청크의 admin 코드 누수). 셋 다 `pnpm build` 안에 있어 로컬·PR CI·배포가 같은 검사를 지난다. 셋 다 JS 실행 **전**을 보므로, 실행 **뒤**(hydration 뒤 본문·콘솔 에러·axe·`/admin`)는 빌드된 `out/`을 여는 `test:e2e`(§6)가 맡는다.
 
 ---
 
@@ -67,6 +69,7 @@ apps/blog/web/
 │  ├─ lib/platform/     platform 레이어 — Supabase 어댑터(client · publicClient · adminApi · adminActions · database.types)
 │  └─ shared/           최하단 레이어 — 앱 소유 라우트 경로의 단일 출처(routes) + 페이지 전환 네임스페이스(transitions). 모든 레이어가 import 가능
 ├─ supabase/            로컬 Supabase 프로젝트(CLI 소유 — 앱 소스 아님) — config.toml · migrations/ · functions/(admin-analytics(Deno) · _shared(CORS) · _typecheck(Edge Function 타입체크 전용 tsconfig — 앱 tsconfig·eslint가 이 폴더를 제외하므로 유일한 게이트)). seed.sql은 프로덕션 데이터 사본이라 .gitignore — `pnpm seed:pull`로 만든다(없어도 db reset은 지나간다)
+├─ e2e/                 Playwright 런타임 게이트 — `playwright.config.ts`(서버는 `wrangler dev`) · spec 넷(pages·representative·runtime·admin) · `support/`(페이지 집합 유도·네트워크 봉인과 Supabase 응답·hydration 비교·axe). 산출물은 `.playwright/`(.gitignore)
 ├─ scripts/             pull-prod-seed.sh — `pnpm seed:pull`의 본체
 ├─ public/              robots.txt · favicon · site.webmanifest · og-default.jpg · _headers(자산 응답 헤더 — 해시 자산 immutable, 프리뷰 URL noindex) … (+ 빌드가 생성하는 sitemap/rss/search-index/llms/og/thumbs/posts는 .gitignore)
 ├─ design/              redesign-decisions.md — 리뉴얼 결정 기록(왜 그렇게 정했는지. 현행 수치의 출처는 아니다)
@@ -129,6 +132,7 @@ apps/blog/web/
 | `pnpm lint`                | `eslint . --max-warnings=0` (인라인 `eslint-disable` 금지)                                                                                                                                                                                                               |
 | `pnpm check-types`         | `next typegen` → `tsc` 세 번(`tsconfig.json`·`tsconfig.test.json`·`supabase/functions/_typecheck/tsconfig.json`)                                                                                                                                                         |
 | `pnpm test`                | `vitest run` — projects 둘(`node`: `src/{shared,domain,lib}/**`, `jsdom`: 나머지 `src/**`)을 한 번에. `test:watch`, `test:coverage`(v8)                                                                                                                                  |
+| `pnpm test:e2e`            | 빌드된 `out/`을 `wrangler dev`(프로덕션과 같은 정적 Worker)로 띄워 Playwright로 연다 — 빌드하지 않고, `out/`이 없으면 바로 실패한다. 리포트는 `.playwright/report`. 브라우저를 설치할 수 없는 환경은 `PLAYWRIGHT_CHROMIUM_EXECUTABLE`로 바이너리를 지정한다              |
 | `pnpm lint:posts`          | frontmatter·본문 검증(수동, 경고 수준). prebuild에서는 같은 규칙이 `--strict`로 승격                                                                                                                                                                                     |
 | `pnpm check-seo`           | `out/` HTML 검사 — h1 1개, description 중복·길이, `<title>` 60자, canonical, og, img alt, `link-trailing-slash`, 산출물↔발행 글 정합성(7종)                                                                                                                              |
 | `pnpm check-bundle`        | `out/` 번들 규칙 평가 — 규칙마다 마커가 forbiddenIn 스코프(페이지·도달 청크·산출물)에 없고 requiredIn 스코프에 있어야 한다(양성 대조 필수). 규칙 9개(admin 전용·글 전용 Mermaid/Giscus·서버 전용 값·빌드 타임 구문 강조)는 `content.values.mts`의 `BUNDLE_GUARDS`가 소유 |
@@ -167,13 +171,14 @@ apps/blog/web/
 - **`jsdom` 프로젝트** (레이어 세 폴더를 제외한 `src/**/*.{test,spec}.{ts,tsx}`): 컴포넌트·훅·라우트 헬퍼. RTL·jest-dom 매처와 `vitest.setup.ts`가 여기에만 붙는다 — 그 셋업이 `next.config`를 읽어 `<Link>`가 실제 빌드와 같은 후행 슬래시 href를 내게 맞춘다.
 - 콘텐츠 계약(실제 `apps/blog/posts` 대상 불변식, 산출물 정합성, URL 인코딩 일관성)은 **`packages/@blog/content`** 의 테스트가 잠근다 — `pnpm --filter @blog/content test`.
 - `include` 글롭은 `tsconfig.test.json`·`eslint.config.mts`의 테스트 블록과 **대칭**이다. 한쪽을 고치면 셋을 함께 고칠 것.
+- **런타임 게이트** (`e2e/`, Playwright — `pnpm test:e2e`): vitest가 아니라 실제 Chromium이 빌드된 `out/`을 연다. 검사할 페이지는 `out/`의 HTML 전부에서 유도하고(글 페이지·검색 인덱스·sitemap이 같은 집합이어야 하고, 공개 글 수가 원고의 `status: published` 파일 수보다 적으면 실행 전에 던진다), 페이지마다 관찰 창(내비게이션부터 5초)이 지난 뒤 hydration 뒤 본문(글은 `#post-content`의 구조가 서버 HTML과 같고, 글자 수가 줄지 않고, 가려진 요소가 없어야 한다)·예외/콘솔 에러 0·axe WCAG A·AA 0을 본다. 대표 페이지에서는 다크 테마 axe와 375px 넘침(문서 폭이 아니라 요소마다 — 본문은 `PageTransition`의 clip 안이다), 그 밖에 웹 폰트 적재(글에 필요한 face 전부)·테마 토글·⌘K 검색(연 채로 axe)·mermaid 렌더, 404 상태·슬래시 리다이렉트, `/admin`의 가드와 가짜 세션 렌더를 본다. 네트워크는 `e2e/support/network.ts`가 봉인한다 — Supabase는 `database.types.ts`·`adminActions.ts` 모양의 JSON으로 채우고, 목록 밖 외부 요청은 테스트를 실패시킨다. vitest 글롭(`src/**`)은 이 폴더를 보지 않고, 타입·린트는 `tsconfig.test.json`·ESLint 테스트 블록이 `e2e/**`까지 덮는다.
 
 ---
 
 ## 7. 배포 · CI
 
-- **PR / main push**: `.github/workflows/ci.yml` → 공용 `.github/actions/quality-checks`(turbo lint·check-types·test → `lint:posts` → `format:check` → `pnpm build --filter=@blog/web`).
-- **배포**: `.github/workflows/deploy-blog.yml` — 트리거는 셋이다. `main` push는 블로그 빌드의 실제 입력 전부(`apps/blog/**`·`packages/@blog/**`·`packages/@design-system/**`, catalog·lockfile인 `pnpm-workspace.yaml`·`pnpm-lock.yaml`, 툴체인인 루트 `package.json`·`.tool-versions`·`turbo.json`, 워크플로 자신과 `.github/actions/quality-checks`), 예약 발행용 cron `13 0 * * *`(UTC 00:13 = KST 09:13 — 붐비는 정각을 피했을 뿐 GitHub cron은 정시를 보장하지 않고 하루 한 번이다), 수동 실행. 잡은 둘로 나뉜다(토큰 격리). `build` 잡은 시크릿 없이 quality-checks(scope `blog`, 빌드 제외) → `pnpm build --filter=@blog/web --force`(`--force`라 turbo 캐시를 읽지 않는다 — 빌드가 시각에 달려 있어서다; `check-seo`·`check-bundle`, 그리고 `/posts/` 프리렌더 링크 검사(CSR bail-out 회귀 가드, 지금은 `check-seo`의 규칙)가 이 빌드 안에서 돈다) → `out/`을 아티팩트로 올린다. `deploy` 잡(`environment: github-pages` — `main`만 허용하는 게이트)은 lockfile로 스크립트 없이 설치한 wrangler로 그 아티팩트를 Cloudflare Workers(`wrangler.jsonc`)에 올리기만 한다. 빌드 스텝이 넣는 env는 `NEXT_PUBLIC_PR_COUNT`(GitHub에서 가져온 머지 PR 수)와 `NODE_ENV` 둘뿐이다 — 나머지 `NEXT_PUBLIC_*`은 커밋된 `.env.production`에서 온다.
+- **PR / main push**: `.github/workflows/ci.yml` → 공용 `.github/actions/quality-checks`(turbo lint·check-types·test → `lint:posts` → `format:check` → `pnpm build --filter=@blog/web` → 런타임 e2e `.github/actions/blog-e2e` — Chromium을 Playwright 버전 키로 캐시하고, 실패하면 `.playwright/`를 아티팩트로 올린다).
+- **배포**: `.github/workflows/deploy-blog.yml` — 트리거는 셋이다. `main` push는 블로그 빌드의 실제 입력 전부(`apps/blog/**`·`packages/@blog/**`·`packages/@design-system/**`, catalog·lockfile인 `pnpm-workspace.yaml`·`pnpm-lock.yaml`, 툴체인인 루트 `package.json`·`.tool-versions`·`turbo.json`, 워크플로 자신과 검사 액션 둘(`.github/actions/quality-checks`·`.github/actions/blog-e2e`)), 예약 발행용 cron `13 0 * * *`(UTC 00:13 = KST 09:13 — 붐비는 정각을 피했을 뿐 GitHub cron은 정시를 보장하지 않고 하루 한 번이다), 수동 실행. 잡은 둘로 나뉜다(토큰 격리). `build` 잡은 시크릿 없이 quality-checks(scope `blog`, 빌드 제외) → `pnpm build --filter=@blog/web --force`(`--force`라 turbo 캐시를 읽지 않는다 — 빌드가 시각에 달려 있어서다; `check-seo`·`check-bundle`, 그리고 `/posts/` 프리렌더 링크 검사(CSR bail-out 회귀 가드, 지금은 `check-seo`의 규칙)가 이 빌드 안에서 돈다) → 같은 `out/`으로 런타임 e2e(`.github/actions/blog-e2e`) → `out/`을 아티팩트로 올린다. `deploy` 잡(`environment: github-pages` — `main`만 허용하는 게이트)은 lockfile로 스크립트 없이 설치한 wrangler로 그 아티팩트를 Cloudflare Workers(`wrangler.jsonc`)에 올리기만 한다. 빌드 스텝이 넣는 env는 `NEXT_PUBLIC_PR_COUNT`(GitHub에서 가져온 머지 PR 수)와 `NODE_ENV` 둘뿐이다 — 나머지 `NEXT_PUBLIC_*`은 커밋된 `.env.production`에서 온다.
 - **PR 프리뷰**: `.github/workflows/preview-blog.yml` — `wrangler versions upload`로 버전만 올리고(트래픽 이동 없음) 브랜치 고정 alias URL과 커밋별 URL을 PR에 코멘트한다. Vercel은 더 이상 쓰지 않는다.
 - **Supabase**: 스키마는 `supabase/migrations/`(조회수 테이블·이력·대시보드 RPC·KST 보정·권한 잠금·고아 RPC 정리 순), Admin RPC 프록시는 `supabase/functions/admin-analytics`. 프로덕션 적용은 `.github/workflows/supabase-migrations.yml`이 한다 — `supabase/migrations/**`(와 워크플로 자신)가 바뀐 `main` push와 수동 실행에서만 돌고, `migration list`로 원장과 파일의 차이를 로그에 남긴 뒤 `db push`한다(대시보드 SQL 에디터로 손대던 경로를 여기 하나로 고정).
 

@@ -12,6 +12,8 @@
 
 # testing
 /coverage
+# Playwright 런타임 게이트(e2e/)의 HTML 리포트·트레이스·실패 스크린샷
+/.playwright/
 
 # next.js
 /.next/

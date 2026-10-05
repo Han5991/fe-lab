@@ -30,7 +30,8 @@ here or anywhere else (this repo once carried four diverging copies of that prom
   (default) or `catalog:lint` (the eslint toolchain — core and plugins move together, so single-consumer plugins
   live there too), never a number. Exception: `peerDependencies`, which declare a compatibility range.
 - **Vitest everywhere.** Only the environment varies; `apps/blog/web` splits `test.projects` into `node`
-  (`src/shared`·`src/domain`·`src/lib`) and `jsdom` (rest of `src`).
+  (`src/shared`·`src/domain`·`src/lib`) and `jsdom` (rest of `src`). The one non-Vitest suite is the blog's
+  runtime gate, Playwright in `apps/blog/web/e2e` (§4).
 
 ## 2. Commands
 
@@ -43,6 +44,10 @@ here or anywhere else (this repo once carried four diverging copies of that prom
     `^build`, so the first run may build dependencies. For one file, skip turbo:
     `pnpm --filter @blog/web exec vitest run src/components/Rail.test.tsx` (add `--project=node` for one project).
 - `pnpm format:check` is a **CI gate**, next to `lint` / `check-types` / `test`.
+- `pnpm --filter @blog/web test:e2e` runs the runtime gate against an **existing** `out/` — it never builds, and
+  fails fast without one (build first). Not a turbo task on purpose: the build depends on build time and
+  injected env, so a `dependsOn: build` would rebuild or replay another moment's cache. No `playwright install`
+  possible (preinstalled browsers)? Point `PLAYWRIGHT_CHROMIUM_EXECUTABLE` at a Chromium binary.
 - Blog content commands run inside `apps/blog/web`: `pnpm lint:posts` (source validation, warnings),
   `pnpm check-seo` / `pnpm check-bundle` (already the last two steps of `pnpm build` — see §8).
 - **Lint tiers are intentional.** The blog stack (`apps/blog/web`, `packages/@blog/content`) runs
@@ -56,7 +61,8 @@ here or anywhere else (this repo once carried four diverging copies of that prom
 - `strict: true` everywhere. The blog stack's production tsconfig adds `noUncheckedIndexedAccess`,
   `noPropertyAccessFromIndexSignature`, `exactOptionalPropertyTypes`; `tsconfig.test.json` turns exactly those
   three off. `check-types` and the ESLint type rules follow the same split. Test includes are symmetric across
-  tsconfig, vitest globs and the ESLint test block — change all three together.
+  tsconfig, vitest globs and the ESLint test block — change all three together. One exception: `apps/blog/web/e2e`
+  is in tsconfig.test and the ESLint test block but not in the vitest globs (Playwright runs it).
 - Prefer `interface` over `type` for objects (lint-enforced in the blog stack), named exports over default
   (except Next.js pages/layouts), `import type`. No `any`.
 - **`@/` differs per app**: `apps/next.js`·`apps/react` map it to `src/*`; `apps/blog/web` maps it to the
@@ -77,6 +83,16 @@ here or anywhere else (this repo once carried four diverging copies of that prom
   character against the descriptor table (edit both together), and `docPaths.test.ts` checks that every
   backticked path in the docs exists. `contract.test.ts` (post and scripts) read the real `apps/blog/posts/` and
   are the safety net for content/pipeline refactors.
+- **Runtime gate (`apps/blog/web/e2e`)** opens the built `out/` in Chromium, served by `wrangler dev` — the same
+  static-assets Worker as production (`html_handling`, `404-page`), not a look-alike server. The page set is derived
+  from `out/`, never hand-picked: collection throws before any test runs unless post pages = search index = sitemap
+  posts, and the index holds at least as many posts as the sources have `status: published` files (a floor counted
+  outside the build, so a build that drops posts everywhere at once still fails). Checks run after an observation
+  window (`OBSERVE_MS`, 5s from navigation), so a delayed client effect counts. **Hermetic**: every request off the
+  local server is fulfilled or stubbed in `e2e/support/network.ts` — Supabase with real response shapes (an aborted
+  call makes the app log an error), analytics/Giscus/external images with empty bodies; an unknown host fails the
+  test. A console filter or axe exclusion must be scoped by selector/pattern with the reason next to it, never
+  rule-wide. Retries are 0 except in the deploy job (1, so one flake doesn't block the cron publish).
 - **Every migration must also apply in PGlite.** `apps/blog/web/src/lib/platform/incrementViewCount.test.ts`
   replays all of `apps/blog/web/supabase/migrations/` into PGlite (WASM Postgres, stubbing Supabase's roles and
   default privileges) and calls the view-count RPC as `anon` — a migration that needs an extension PGlite doesn't
@@ -234,6 +250,11 @@ Worker (`apps/blog/web/wrangler.jsonc`), Supabase for the dynamic bits.
 > **`lint:posts`와 `check-seo`는 보는 곳이 다르다** — 전자는 frontmatter 원문, 후자는 최종 HTML. h1 2개,
 > 시리즈 글끼리 description 완전 중복, og 태그 누락 같은 2026-08 감사 결과는 전부 원문만으로는 안 보였다. 둘 중
 > 하나만 돌리면 그 계열의 회귀가 조용히 지나간다.
+
+> **위의 게이트는 전부 JS 실행 전을 본다**(원문·HTML·청크, jsdom 단위 테스트 포함). #392에서 클라이언트
+> 컴포넌트가 mermaid 글의 본문을 통째로 지웠는데 PR 12개가 전부 통과했다 — hydration 뒤·콘솔·접근성은
+> 런타임 게이트(`test:e2e`, §4)만 본다. PR CI는 quality-checks의 빌드 뒤, 배포는 빌드 잡의 `--force` 빌드 뒤에서
+> 같은 `.github/actions/blog-e2e`를 부르므로, cron이 공개하는 예약 글도 배포 전에 브라우저로 한 번 열린다.
 
 > **`check-seo`·`check-bundle`은 `pnpm build`의 마지막 두 단계가 유일한 실행 지점이다**
 > (`prebuild → next build → check-seo → check-bundle`). PR CI와 배포가 같은 `build`를 부르므로, 워크플로에 별도

@@ -59,7 +59,8 @@ apps/blog/posts/**/_series.yml ─┤
             │                                 ─▶   → src/domain/{analytics,auth} → app 레이어)
             ├─ SEO 빌더 (@blog/content/seo)    ─▶     ├─ next build (output: 'export')  ─▶  out/  ─▶  Cloudflare Workers
             └─ 빌드 스크립트 (build-content)   ─▶     │     ├─ check-seo    (산출 HTML 게이트)
-                 validate-posts 게이트 → 병렬 8개     │     └─ check-bundle (JS 청크 누수 게이트)
+                 validate-posts 게이트 → 병렬 8개     │     ├─ check-bundle (JS 청크 누수 게이트)
+                                                      │     └─ test:e2e     (JS 실행 뒤 런타임 게이트, Playwright)
                  (sync·sitemap·rss·og-images·          └─ 런타임: Supabase (조회수·Admin·Analytics), Giscus, GA4/GTM
                   thumbnails·search-index·llms-full·llms)
 ```
@@ -73,6 +74,8 @@ apps/blog/posts/**/_series.yml ─┤
 - **검증은 두 층 + 번들 게이트.** `validate-posts`가 frontmatter 원문을, `check-seo`가 최종 HTML을,
   `check-bundle`이 공개 페이지 JS 청크의 admin·서버 전용 코드 누수를 본다. 셋 다
   `pnpm build`(prebuild → next build → check-seo → check-bundle) 안에 있어 로컬·PR·배포가 같은 검사를 지난다.
+  이 셋은 전부 **JS 실행 전**의 산출물을 본다 — 그 뒤(hydration 뒤 본문, 콘솔 에러, axe, `/admin`)는 빌드된
+  `out/`을 Playwright로 여는 `test:e2e`가 본다(#392에서 클라이언트 컴포넌트가 본문을 지웠는데 앞의 게이트를 전부 통과했다).
 - 자세한 구조·스크립트·데이터 흐름은 [`apps/blog/web/README.md`](apps/blog/web/README.md), 운영 규칙과 콘텐츠 계약은 [`AGENTS.md`](AGENTS.md)의 "Blog —" 절(§7–9).
 
 ---
@@ -96,7 +99,8 @@ apps/blog/posts/**/_series.yml ─┤
 - **블로그 회귀 가드** — `packages/@blog/content`의 `src/post/contract.test.ts`·`src/scripts/contract.test.ts`·`src/scripts/url-consistency.test.ts`·`src/scripts/generate-*.test.ts`가 실제 `apps/blog/posts/` 디렉토리와 빌드 산출물(sitemap·RSS·search-index·llms·llms-full·OG)의 불변식을 잠금. 리팩토링/리디자인 시 안전망.
 - **테스트 러너**:
 
-  **러너는 모든 워크스페이스에서 Vitest 하나다.** 갈리는 것은 러너가 아니라 **환경**이고, 환경이 둘인 곳은 `test.projects`로 나눈다.
+  **단위·컴포넌트 러너는 모든 워크스페이스에서 Vitest 하나다.** 갈리는 것은 러너가 아니라 **환경**이고, 환경이 둘인 곳은 `test.projects`로 나눈다.
+  예외는 블로그의 런타임 게이트 하나 — 빌드된 `out/`을 실제 브라우저로 여는 Playwright(`apps/blog/web/e2e`, `test:e2e`)다.
 
   | 워크스페이스       | 환경                                                                                                                |
   | ------------------ | ------------------------------------------------------------------------------------------------------------------- |
@@ -110,7 +114,7 @@ apps/blog/posts/**/_series.yml ─┤
 
   예전에는 `@blog/content`와 `@blog/web`의 순수 로직이 `node --test`(+`node:assert/strict`)로 돌았다. 러너가 갈리면 단언 API·커버리지 도구·ESLint 인가가 두 벌이 되고, `node --test '<glob>'`은 **매치가 0개여도 exit 0**이라 테스트가 조용히 사라질 수 있었다. Vitest는 매치 0개면 실패한다.
 
-- **CI**(`.github/actions/quality-checks` 공용 composite action): ① `pnpm turbo run lint check-types test` ② `pnpm --filter @blog/web lint:posts` ③ `pnpm format:check` ④ `pnpm build --filter=@blog/web`(prebuild → next build → check-seo → check-bundle). PR CI와 배포 워크플로가 같은 액션을 부른다. 배포는 `scope: blog`를 넘겨 ①을 `--filter=@blog/web...`(블로그와 그 의존성)로 좁힌다 — 실험 앱 테스트 하나가 흔들려 무인 cron의 예약 글 공개가 멈추지 않게 하려는 것이고, 실험 앱은 PR CI가 본다.
+- **CI**(`.github/actions/quality-checks` 공용 composite action): ① `pnpm turbo run lint check-types test` ② `pnpm --filter @blog/web lint:posts` ③ `pnpm format:check` ④ `pnpm build --filter=@blog/web`(prebuild → next build → check-seo → check-bundle) ⑤ 런타임 e2e(`.github/actions/blog-e2e` — Chromium 설치·캐시 → `test:e2e`, 실패 시 리포트·트레이스 아티팩트). PR CI와 배포 워크플로가 같은 액션을 부른다(배포는 자기 `--force` 빌드 뒤에서 ⑤를 직접 부른다). 배포는 `scope: blog`를 넘겨 ①을 `--filter=@blog/web...`(블로그와 그 의존성)로 좁힌다 — 실험 앱 테스트 하나가 흔들려 무인 cron의 예약 글 공개가 멈추지 않게 하려는 것이고, 실험 앱은 PR CI가 본다.
 - **pre-push hook**: 푸시 전 워크스페이스 전체 lint·types·test (turbo 캐시로 보통 < 5초).
 
 ---
@@ -139,6 +143,7 @@ pnpm format:check     # Prettier check (pnpm format = write)
 # 빌드
 pnpm build                        # 전체
 pnpm build --filter=@blog/web     # 블로그만 (prebuild → next build → check-seo → check-bundle) — CI와 같은 형태
+pnpm --filter @blog/web test:e2e  # 빌드된 out/을 브라우저로 여는 런타임 게이트 (빌드는 하지 않는다)
 
 # 정리
 pnpm clean            # dist/.next/out/.turbo + node_modules 제거 (clean:dist / clean:modules 따로도 가능)
@@ -170,18 +175,18 @@ pnpm check-seo                                      # 빌드 산출물(out/) SEO
 
 ### CI / 자동화 (`.github/workflows/`)
 
-| 워크플로                    | 트리거                                                                       | 하는 일                                                                                                                                                                                                                                                                                                                                                                         |
-| --------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ci.yml`                    | `pull_request`, `push: main`, dispatch(봇 PR용)                              | quality-checks 4단계 + Next 빌드 캐시 복원                                                                                                                                                                                                                                                                                                                                      |
-| `deploy-blog.yml`           | `push: main`(블로그 경로), cron `13 0 * * *`, dispatch                       | quality-checks → `--force` 빌드(turbo 캐시를 읽지 않는다 — 빌드 결과가 빌드 시각에 달려 있다) → Workers 배포. 빌드와 배포는 잡이 나뉜다 — `CLOUDFLARE_API_TOKEN`을 쥔 배포 잡은 빌드 잡이 넘긴 `out/` 아티팩트와 스크립트 없이 깐 wrangler만 쓴다. 빌드 스텝이 넣는 env는 `NEXT_PUBLIC_PR_COUNT`·`NODE_ENV` 둘뿐이고 나머지 `NEXT_PUBLIC_*`은 커밋된 `.env.production`에서 온다 |
-| `preview-blog.yml`          | `pull_request`(블로그 경로)                                                  | 빌드(시크릿 없는 잡) → `wrangler versions upload`(토큰을 쥔 잡, 아티팩트만 받는다) → 프리뷰 URL을 PR에 코멘트. 봇 PR은 빌드까지만                                                                                                                                                                                                                                               |
-| `supabase-migrations.yml`   | `push: main`(`apps/blog/web/supabase/migrations/**`·워크플로 자신), dispatch | `supabase migration list`로 원장↔파일 차이를 로그에 남긴 뒤 `supabase db push`(풀러 5432 세션 모드, `--db-url`). 대시보드 SQL 에디터로 손대던 경로를 여기 하나로 고정                                                                                                                                                                                                           |
-| `claude.yml`                | `@claude` 멘션(쓰기 권한자) · 라벨                                           | 온디맨드 Claude Code 에이전트                                                                                                                                                                                                                                                                                                                                                   |
-| `claude-code-review.yml`    | PR opened/synchronize·`deps-major` 라벨 부착 (봇 PR은 이 라벨일 때만)        | PR 자동 코드 리뷰. 판정은 PR의 👍 리액션이다 — 새 실행이 시작되면 이전 👍를 떼고, 그 실행이 실제로 게시한 요약 코멘트에 critical·high 지적이 0건일 때만 다시 붙인다(fail-closed)                                                                                                                                                                                                |
-| `claude-deps-audit.yml`     | 매주 월 cron                                                                 | 죽은 `pnpm overrides` 정리 + `pnpm audit` 후속 PR. Claude는 읽기 전용 잡에서 패치만 만들고, LLM 없는 잡이 허용 파일(package.json·`pnpm-workspace.yaml`·`pnpm-lock.yaml`) 수정인지 검사한 뒤 PR을 연다(`.github/scripts/publish-bot-pr.sh`)                                                                                                                                      |
-| `claude-link-rot.yml`       | 매월 1일 cron                                                                | 발행 글 외부 링크 검사 → 교체 PR. deps-audit과 같은 구조 — Claude는 읽기 전용, PR은 `apps/blog/posts` 마크다운 수정만 받는 LLM 없는 잡이 연다                                                                                                                                                                                                                                   |
-| `claude-post-inventory.yml` | `deploy-blog.yml` 완료 시(workflow_run), dispatch                            | draft/scheduled 글 현황 이슈 갱신. 세는 일은 `.github/scripts/post-inventory-collect.py`가 하고 Claude는 표로 옮겨 이슈만 갱신한다                                                                                                                                                                                                                                              |
-| `claude-site-smoke.yml`     | cron 배포 완료 시(workflow_run), dispatch                                    | 배포된 HTML/sitemap/rss·apex 리다이렉트 스모크 검사. 실측은 `.github/scripts/site-smoke-collect.py`, 회귀 판정과 이슈 작성은 Claude                                                                                                                                                                                                                                             |
+| 워크플로                    | 트리거                                                                       | 하는 일                                                                                                                                                                                                                                                                                                                                                                                      |
+| --------------------------- | ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ci.yml`                    | `pull_request`, `push: main`, dispatch(봇 PR용)                              | quality-checks 5단계 + Next 빌드 캐시 복원                                                                                                                                                                                                                                                                                                                                                   |
+| `deploy-blog.yml`           | `push: main`(블로그 경로), cron `13 0 * * *`, dispatch                       | quality-checks → `--force` 빌드(turbo 캐시를 읽지 않는다 — 빌드 결과가 빌드 시각에 달려 있다) → 런타임 e2e → Workers 배포. 빌드와 배포는 잡이 나뉜다 — `CLOUDFLARE_API_TOKEN`을 쥔 배포 잡은 빌드 잡이 넘긴 `out/` 아티팩트와 스크립트 없이 깐 wrangler만 쓴다. 빌드 스텝이 넣는 env는 `NEXT_PUBLIC_PR_COUNT`·`NODE_ENV` 둘뿐이고 나머지 `NEXT_PUBLIC_*`은 커밋된 `.env.production`에서 온다 |
+| `preview-blog.yml`          | `pull_request`(블로그 경로)                                                  | 빌드(시크릿 없는 잡) → `wrangler versions upload`(토큰을 쥔 잡, 아티팩트만 받는다) → 프리뷰 URL을 PR에 코멘트. 봇 PR은 빌드까지만                                                                                                                                                                                                                                                            |
+| `supabase-migrations.yml`   | `push: main`(`apps/blog/web/supabase/migrations/**`·워크플로 자신), dispatch | `supabase migration list`로 원장↔파일 차이를 로그에 남긴 뒤 `supabase db push`(풀러 5432 세션 모드, `--db-url`). 대시보드 SQL 에디터로 손대던 경로를 여기 하나로 고정                                                                                                                                                                                                                        |
+| `claude.yml`                | `@claude` 멘션(쓰기 권한자) · 라벨                                           | 온디맨드 Claude Code 에이전트                                                                                                                                                                                                                                                                                                                                                                |
+| `claude-code-review.yml`    | PR opened/synchronize·`deps-major` 라벨 부착 (봇 PR은 이 라벨일 때만)        | PR 자동 코드 리뷰. 판정은 PR의 👍 리액션이다 — 새 실행이 시작되면 이전 👍를 떼고, 그 실행이 실제로 게시한 요약 코멘트에 critical·high 지적이 0건일 때만 다시 붙인다(fail-closed)                                                                                                                                                                                                             |
+| `claude-deps-audit.yml`     | 매주 월 cron                                                                 | 죽은 `pnpm overrides` 정리 + `pnpm audit` 후속 PR. Claude는 읽기 전용 잡에서 패치만 만들고, LLM 없는 잡이 허용 파일(package.json·`pnpm-workspace.yaml`·`pnpm-lock.yaml`) 수정인지 검사한 뒤 PR을 연다(`.github/scripts/publish-bot-pr.sh`)                                                                                                                                                   |
+| `claude-link-rot.yml`       | 매월 1일 cron                                                                | 발행 글 외부 링크 검사 → 교체 PR. deps-audit과 같은 구조 — Claude는 읽기 전용, PR은 `apps/blog/posts` 마크다운 수정만 받는 LLM 없는 잡이 연다                                                                                                                                                                                                                                                |
+| `claude-post-inventory.yml` | `deploy-blog.yml` 완료 시(workflow_run), dispatch                            | draft/scheduled 글 현황 이슈 갱신. 세는 일은 `.github/scripts/post-inventory-collect.py`가 하고 Claude는 표로 옮겨 이슈만 갱신한다                                                                                                                                                                                                                                                           |
+| `claude-site-smoke.yml`     | cron 배포 완료 시(workflow_run), dispatch                                    | 배포된 HTML/sitemap/rss·apex 리다이렉트 스모크 검사. 실측은 `.github/scripts/site-smoke-collect.py`, 회귀 판정과 이슈 작성은 Claude                                                                                                                                                                                                                                                          |
 
 ---
 
