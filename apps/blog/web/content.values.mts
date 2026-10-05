@@ -27,6 +27,7 @@
  */
 import type {
   AuthorConfig,
+  BundleBudgetsConfig,
   BundleGuardsConfig,
   ContentValues,
   LlmsDocsConfig,
@@ -289,6 +290,41 @@ export const BUNDLE_GUARDS = [
     requiredIn: [{ kind: 'pages', of: { under: POSTS_PATH_PREFIX } }],
   },
 ] as const satisfies BundleGuardsConfig;
+
+/**
+ * 첫 로드 전송량 예산 — 라우트 그룹(첫 경로 세그먼트)마다 문서가 직접 부르는
+ * JS·CSS의 gzip 상한(KB = 1024바이트). `check-bundle`이 `pnpm build`의 마지막
+ * 단계에서 그룹의 **모든** 페이지를 대 본다(최대 기준). HTML은 예산이 없다 —
+ * 글 본문과 하이드레이션 페이로드가 실려 원고와 함께 자란다.
+ *
+ * 숫자는 2026-10-05 새 빌드의 그룹 최대 측정값에 ~5% 여유를 얹어 올림한 것이다
+ * (측정값은 각 줄 주석). 그룹이 새로 생기면(새 라우트) 예산이 없어서, 라우트가
+ * 사라지면 예산이 죽어서, 측정 최대가 상한의 80% 아래로 내려가면 예산이 느슨해서
+ * (`budget-slack`) 빌드가 실패한다.
+ *
+ * **예산을 올릴 때**: 무게를 더하는 바로 그 PR에서 숫자를 고치고, 주석의 측정값·
+ * 날짜와 함께 무엇이 얼마나 늘었는지 적는다. `pnpm measure-bundle`이 그룹별
+ * 수치를, 실패 메시지가 가장 큰 파일들을 보여 준다. 무게를 덜어 `budget-slack`에
+ * 걸리면 같은 방식으로 내린다 — 여유가 크게 남으면 회귀가 그 안에 숨는다.
+ */
+export const BUNDLE_BUDGETS = [
+  // 247.8 KB / 30.8 KB
+  { group: '/', jsGzipKB: 261, cssGzipKB: 33 },
+  // 247.8 KB / 31.4 KB — 목록과 글 상세 46쪽의 최대(mermaid·Giscus는 지연 로드라 밖)
+  { group: '/posts/', jsGzipKB: 261, cssGzipKB: 33 },
+  // 247.8 KB / 30.8 KB
+  { group: '/about/', jsGzipKB: 261, cssGzipKB: 33 },
+  // 184.3 KB / 30.8 KB
+  { group: '/series/', jsGzipKB: 194, cssGzipKB: 33 },
+  // 184.3 KB / 30.8 KB
+  { group: '/privacy/', jsGzipKB: 194, cssGzipKB: 33 },
+  // 184.3 KB / 30.8 KB — 정적 404(`404-page` 처리)
+  { group: '/404/', jsGzipKB: 194, cssGzipKB: 33 },
+  // 184.3 KB / 30.8 KB — Next가 함께 내보내는 not-found 라우트
+  { group: '/_not-found/', jsGzipKB: 194, cssGzipKB: 33 },
+  // 435.1 KB / 30.8 KB — admin 48쪽의 최대(`/admin/analytics/`)
+  { group: '/admin/', jsGzipKB: 457, cssGzipKB: 33 },
+] as const satisfies BundleBudgetsConfig;
 
 /**
  * sitemap의 `<priority>` 튜닝 — **어떤 글이 대표작인가**라는 편집 판단이라

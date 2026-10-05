@@ -12,6 +12,7 @@
     "lint:posts": "blog-content validate",
     "check-seo": "blog-content check-seo",
     "check-bundle": "blog-content check-bundle",
+    "measure-bundle": "blog-content measure-bundle",
     "deploy": "wrangler deploy",
     "check-types": "next typegen && tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json --noEmit && tsc -p supabase/functions/_typecheck/tsconfig.json --noEmit",
     "test": "vitest run",

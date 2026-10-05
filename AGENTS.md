@@ -50,6 +50,8 @@ here or anywhere else (this repo once carried four diverging copies of that prom
   possible (preinstalled browsers)? Point `PLAYWRIGHT_CHROMIUM_EXECUTABLE` at a Chromium binary.
 - Blog content commands run inside `apps/blog/web`: `pnpm lint:posts` (source validation, warnings),
   `pnpm check-seo` / `pnpm check-bundle` (already the last two steps of `pnpm build` — see §8).
+  `pnpm measure-bundle` prints first-load gzip transfer (HTML + CSS + JS) per route group of an existing `out/` —
+  the ruler you read before setting or raising a budget; the gate is `check-bundle`'s budgets (§8).
 - **Lint tiers are intentional.** The blog stack (`apps/blog/web`, `packages/@blog/content`) runs
   `--max-warnings=0` with `noInlineConfig` + `@eslint-community/eslint-comments/no-use` — inline `eslint-disable`
   is banned; scope exceptions by `files` in `eslint.config.mts`. `apps/react`·`apps/next.js` run plain `eslint .`.
@@ -263,7 +265,11 @@ Worker (`apps/blog/web/wrangler.jsonc`), Supabase for the dynamic bits.
 > **`check-seo`·`check-bundle`은 `pnpm build`의 마지막 두 단계가 유일한 실행 지점이다**
 > (`prebuild → next build → check-seo → check-bundle`). PR CI와 배포가 같은 `build`를 부르므로, 워크플로에 별도
 > 스텝을 두면 도달하지 못하는 죽은 게이트가 된다. `check-bundle`의 규칙은 `content.values.mts`의
-> `BUNDLE_GUARDS`가 소유하고, 규칙마다 양성 대조(requiredIn)가 필수다.
+> `BUNDLE_GUARDS`가 소유하고, 규칙마다 양성 대조(requiredIn)가 필수다. 같은 단계가 **번들 예산**
+> (`BUNDLE_BUDGETS` — 첫 경로 세그먼트 그룹마다 첫 로드 JS·CSS gzip 상한, 그룹의 최대 페이지 기준, HTML은
+> 예산 없음)도 본다. 예산 없는 그룹(새 라우트), 페이지 0개인 예산, 측정 최대가 상한의 80% 아래인 느슨한
+> 예산도 실패다 — 마지막은 태그를 못 찾게 된 수집기도 잡는다. 예산은 무게를 바꾸는 PR에서 숫자와 이유를
+> 함께 고친다.
 
 > **본문 h1은 렌더 시 h2로 강등된다**(`src/components/post/markdownHeadings.tsx`) — 페이지 h1은 `PostHeader`
 > 하나여야 한다. 원문의 `# `은 `lint:posts`가 `body-h1` 경고로 알린다.

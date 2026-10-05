@@ -59,7 +59,7 @@ apps/blog/posts/**/_series.yml ─┤
             │                                 ─▶   → src/domain/{analytics,auth} → app 레이어)
             ├─ SEO 빌더 (@blog/content/seo)    ─▶     ├─ next build (output: 'export')  ─▶  out/  ─▶  Cloudflare Workers
             └─ 빌드 스크립트 (build-content)   ─▶     │     ├─ check-seo    (산출 HTML 게이트)
-                 validate-posts 게이트 → 병렬 8개     │     ├─ check-bundle (JS 청크 누수 게이트)
+                 validate-posts 게이트 → 병렬 8개     │     ├─ check-bundle (JS 청크 누수·예산 게이트)
                                                       │     └─ test:e2e     (JS 실행 뒤 런타임 게이트, Playwright)
                  (sync·sitemap·rss·og-images·          └─ 런타임: Supabase (조회수·Admin·Analytics), Giscus, GA4/GTM
                   thumbnails·search-index·llms-full·llms)
@@ -72,7 +72,7 @@ apps/blog/posts/**/_series.yml ─┤
   콘텐츠 원본(`apps/blog/posts`)은 패키지로 옮기지 않았다 — 위치는 앱 루트 `content.config.mts`(경로 앵커,
   `defineContent({ root: import.meta.url })`)의 설정 한 줄이다.
 - **검증은 두 층 + 번들 게이트.** `validate-posts`가 frontmatter 원문을, `check-seo`가 최종 HTML을,
-  `check-bundle`이 공개 페이지 JS 청크의 admin·서버 전용 코드 누수를 본다. 셋 다
+  `check-bundle`이 공개 페이지 JS 청크의 admin·서버 전용 코드 누수와 라우트 그룹별 첫 로드 예산을 본다. 셋 다
   `pnpm build`(prebuild → next build → check-seo → check-bundle) 안에 있어 로컬·PR·배포가 같은 검사를 지난다.
   이 셋은 전부 **JS 실행 전**의 산출물을 본다 — 그 뒤(hydration 뒤 본문, 콘솔 에러, axe, `/admin`)는 빌드된
   `out/`을 Playwright로 여는 `test:e2e`가 본다(#392에서 클라이언트 컴포넌트가 본문을 지웠는데 앞의 게이트를 전부 통과했다).
