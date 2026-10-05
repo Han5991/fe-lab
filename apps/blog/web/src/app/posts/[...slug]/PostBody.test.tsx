@@ -365,3 +365,51 @@ describe('표 스크롤 영역', () => {
       expect(region).toHaveAttribute('tabindex', '0');
   });
 });
+
+describe('본문 접근성 보정', () => {
+  test('GFM 체크박스는 항목 글을 참조(aria-labelledby)로 이름 삼는다', () => {
+    render(
+      <PostBody
+        content={'- [x] 빌드 **캐시** 확인 `pnpm`\n- [ ] 배포'}
+        relativeDir="dir"
+      />,
+    );
+    const done = screen.getByRole('checkbox', {
+      name: '빌드 캐시 확인 pnpm',
+    });
+    expect(done).toBeChecked();
+    expect(done).not.toHaveAttribute('aria-label');
+    expect(screen.getByRole('checkbox', { name: '배포' })).not.toBeChecked();
+  });
+
+  test('느슨한 목록(체크박스가 문단 안)도 이름을 갖고, id는 항목마다 다르다', () => {
+    render(
+      <PostBody
+        content={'- [x] 첫 항목\n\n- [ ] 둘째 항목'}
+        relativeDir="dir"
+      />,
+    );
+    const boxes = screen.getAllByRole('checkbox');
+    expect(boxes.map(b => b.getAttribute('aria-labelledby'))).toEqual([
+      expect.stringMatching(/^task-label-\d+$/),
+      expect.stringMatching(/^task-label-\d+$/),
+    ]);
+    expect(
+      new Set(boxes.map(b => b.getAttribute('aria-labelledby'))).size,
+    ).toBe(2);
+    expect(screen.getByRole('checkbox', { name: '첫 항목' })).toBeChecked();
+    expect(
+      screen.getByRole('checkbox', { name: '둘째 항목' }),
+    ).not.toBeChecked();
+  });
+
+  test('원고의 인라인 빨강은 토큰 클래스로 바뀌고 다른 인라인 스타일은 남는다', () => {
+    const html = serverHtml(
+      '<span style="color:red; font-weight: 600">강조</span> <span style="color: #123456">그대로</span>',
+    );
+    const [red, other] = parsed(html).querySelectorAll('#post-content span');
+    expect(red?.getAttribute('style')).toBe('font-weight:600');
+    expect(red?.className).toContain('danger.text');
+    expect(other?.getAttribute('style')).toBe('color:#123456');
+  });
+});

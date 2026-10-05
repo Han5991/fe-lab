@@ -141,6 +141,7 @@ export function PostList() {
             오름차순
           </label>
           <select
+            aria-label="정렬 기준"
             value={sortField}
             onChange={e => setSortField(e.target.value as 'date' | 'views')}
             className={inputClass}

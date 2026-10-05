@@ -57,7 +57,7 @@ const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
           className={css({
             fontFamily: 'mono',
             fontSize: '2xs',
-            color: 'ink.300',
+            color: 'ink.500',
           })}
         >
           views

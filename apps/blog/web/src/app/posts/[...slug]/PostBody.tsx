@@ -1,9 +1,17 @@
-import { Children, type CSSProperties } from 'react';
+import {
+  Children,
+  cloneElement,
+  isValidElement,
+  type CSSProperties,
+  type InputHTMLAttributes,
+  type ReactElement,
+  type ReactNode,
+} from 'react';
 import ReactMarkdown, { type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import rehypeSlug from 'rehype-slug';
-import { css } from '@design-system/ui-lib/css';
+import { css, cx } from '@design-system/ui-lib/css';
 
 import { CodeBlock } from '@/src/components/post/CodeBlock';
 import { rehypeCodeMeta } from '@/src/components/post/codeMeta';
@@ -87,6 +95,64 @@ interface ImageProps {
   width?: number | string | undefined;
   height?: number | string | undefined;
 }
+
+type CheckboxElement = ReactElement<InputHTMLAttributes<HTMLInputElement>>;
+
+function isCheckbox(node: ReactNode): node is CheckboxElement {
+  return (
+    isValidElement<InputHTMLAttributes<HTMLInputElement>>(node) &&
+    node.props.type === 'checkbox'
+  );
+}
+
+/**
+ * GFM 체크박스(`- [x]`)에는 라벨이 없다(axe label). 항목 글을 **참조로** 이름 삼는다
+ * (`aria-labelledby`) — 글을 문자열로 베끼면 이미지 alt·커스텀 태그가 빠진다.
+ * id는 원문 위치(hast offset)에서 짓는다: 서버 컴포넌트라 훅 없이 결정적이어야 한다.
+ */
+/** hast 노드에서 쓰는 축은 원문 위치뿐이다. */
+interface PositionedNode {
+  position?: { start: { offset?: number | undefined } } | undefined;
+}
+
+function taskLabelId(node: PositionedNode | undefined): string | undefined {
+  const offset = node?.position?.start.offset;
+  return offset === undefined ? undefined : `task-label-${offset}`;
+}
+
+/**
+ * 느슨한 목록(항목 사이 빈 줄)은 remark가 체크박스를 첫 `<p>` 안에 넣는다 — 그
+ * 문단의 나머지 글을 라벨로 감싼다. 모양이 다르면 손대지 않는다.
+ */
+function labelLooseTask(first: ReactNode, labelId: string): ReactNode {
+  if (!isValidElement<{ children?: ReactNode }>(first)) return first;
+  const [box, ...rest] = Children.toArray(first.props.children);
+  if (!isCheckbox(box)) return first;
+  return cloneElement(
+    first,
+    {},
+    cloneElement(box, { 'aria-labelledby': labelId }),
+    <span id={labelId}>{rest}</span>,
+  );
+}
+
+/**
+ * 원고가 raw HTML로 박은 글자색(`<span style="color:red">`) → 토큰.
+ *
+ * 원색 `red`는 흰 지면 위 4.0:1로 AA에 못 미치고, `#e11d48`은 다크 지면 위 4.1:1이다 —
+ * 리터럴이라 테마 전환을 타지 않는다. 원고의 강조 의도(빨강)는 살리되 값은
+ * `danger.text`(라이트/다크 두 벌)로 바꾼다. 키의 hex는 색을 쓰는 게 아니라 원고에
+ * 적힌 문자열을 찾는 열쇠다(§9의 hex 금지와 무관).
+ *
+ * 지금 공개 글이 쓰는 값만 적는다. 목록에 없는 색은 원고대로 나가고, 그런 글은
+ * 런타임 게이트가 라이트·다크 **양쪽** axe를 돌린다(e2e `representatives()`의
+ * `inlineColorPosts`) — 대비가 모자라면 거기서 잡히고, 그때 여기 더한다.
+ */
+const authorDanger = css({ color: 'danger.text' });
+const AUTHOR_COLOR_CLASS: Readonly<Record<string, string>> = {
+  red: authorDanger,
+  '#e11d48': authorDanger,
+};
 
 /**
  * 본문 components 매핑. `img` 매퍼가 글의 `relativeDir`을 닫아 잡으므로
@@ -175,17 +241,29 @@ export function buildPostComponents(relativeDir: string): PostComponents {
         </div>
       );
     },
-    li({ className, children, node: _node, ...props }) {
+    li({ className, children, node, ...props }) {
       const isTaskList = className?.includes('task-list-item');
-      if (isTaskList) {
-        const childrenArray = Children.toArray(children);
-        const checkbox = childrenArray[0];
-        const content = childrenArray.slice(1);
-
+      const labelId = taskLabelId(node);
+      if (isTaskList && labelId) {
+        const items = Children.toArray(children);
+        const [first, ...content] = items;
+        if (!isCheckbox(first)) {
+          // 느슨한 목록은 첫 자식이 줄바꿈 텍스트이고 체크박스는 첫 `<p>` 안에 있다.
+          const at = items.findIndex(child => isValidElement(child));
+          return (
+            <li className={className} {...props}>
+              {items.map((child, i) =>
+                i === at ? labelLooseTask(child, labelId) : child,
+              )}
+            </li>
+          );
+        }
         return (
           <li className={className} {...props}>
-            {checkbox}
-            <div className={css({ flex: '1', minW: '0' })}>{content}</div>
+            {cloneElement(first, { 'aria-labelledby': labelId })}
+            <div id={labelId} className={css({ flex: '1', minW: '0' })}>
+              {content}
+            </div>
           </li>
         );
       }
@@ -193,6 +271,20 @@ export function buildPostComponents(relativeDir: string): PostComponents {
         <li className={className} {...props}>
           {children}
         </li>
+      );
+    },
+    span({ node: _node, style, className, ...props }) {
+      const color =
+        typeof style?.color === 'string'
+          ? style.color.trim().toLowerCase()
+          : '';
+      const tokenClass = AUTHOR_COLOR_CLASS[color];
+      if (!style || !tokenClass) {
+        return <span style={style} className={className} {...props} />;
+      }
+      const { color: _authored, ...rest } = style;
+      return (
+        <span style={rest} className={cx(className, tokenClass)} {...props} />
       );
     },
     callout: Callout,

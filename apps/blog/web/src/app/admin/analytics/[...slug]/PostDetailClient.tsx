@@ -176,13 +176,14 @@ function PostDetailBody({ post }: { post: PostStatDetail }) {
             target="_blank"
             rel="noopener noreferrer"
             onClick={e => e.stopPropagation()}
+            aria-label="글을 새 탭에서 열기"
             className={css({
               color: 'ink.500',
               _hover: { color: 'accent.600' },
               flexShrink: 0,
             })}
           >
-            <ExternalLink size={18} />
+            <ExternalLink size={18} aria-hidden />
           </Link>
         </div>
 
@@ -293,9 +294,9 @@ function PostDetailBody({ post }: { post: PostStatDetail }) {
               color:
                 derived.weekGrowthRate !== null
                   ? derived.weekGrowthRate >= 0
-                    ? 'moss.600'
+                    ? 'moss.700'
                     : 'spot.600'
-                  : 'ink.300',
+                  : 'ink.500',
             })}
           >
             {derived.weekGrowthRate !== null
@@ -355,7 +356,7 @@ function PostDetailBody({ post }: { post: PostStatDetail }) {
               <div
                 className={css({
                   fontSize: '[0.8rem]',
-                  color: 'ink.300',
+                  color: 'ink.500',
                   mt: '1',
                 })}
               >
@@ -367,7 +368,7 @@ function PostDetailBody({ post }: { post: PostStatDetail }) {
               className={css({
                 fontSize: '2xl',
                 fontWeight: 'bold',
-                color: 'ink.300',
+                color: 'ink.500',
               })}
             >
               —
@@ -471,7 +472,7 @@ function PostDetailBody({ post }: { post: PostStatDetail }) {
                 <span>{m.reached ? '●' : '○'}</span>
                 <span
                   className={css({
-                    color: m.reached ? 'ink.950' : 'ink.300',
+                    color: m.reached ? 'ink.950' : 'ink.500',
                     fontWeight: m.reached ? 'semibold' : 'normal',
                   })}
                 >
@@ -479,7 +480,7 @@ function PostDetailBody({ post }: { post: PostStatDetail }) {
                 </span>
                 {m.reached && m.date && (
                   <span
-                    className={css({ color: 'ink.300', fontSize: '[0.75rem]' })}
+                    className={css({ color: 'ink.500', fontSize: '[0.75rem]' })}
                   >
                     ({m.date})
                   </span>
@@ -531,7 +532,7 @@ function PostDetailBody({ post }: { post: PostStatDetail }) {
               <span
                 className={css({
                   fontSize: '[0.75rem]',
-                  color: 'ink.300',
+                  color: 'ink.500',
                 })}
               >
                 최근 30일 데이터가 없어 전체 기간으로 표시 중
@@ -603,7 +604,7 @@ function PostDetailBody({ post }: { post: PostStatDetail }) {
                 h: 'full',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: 'ink.300',
+                color: 'ink.500',
               })}
             >
               <p>해당 기간에 데이터가 없습니다.</p>

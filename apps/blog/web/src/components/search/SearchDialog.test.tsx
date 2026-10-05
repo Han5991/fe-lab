@@ -164,14 +164,15 @@ describe('SearchDialog - 다이얼로그 접근성', () => {
 
   test('Tab은 다이얼로그 안에서 돈다', async () => {
     const input = await openDialog();
-    const close = screen.getByRole('button', { name: '검색 닫기' });
+    // 마지막 초점 자리는 결과 스크롤 영역이다(옵션이 Tab 순서 밖이라 상자가 초점을 받는다).
+    const results = screen.getByRole('region', { name: '검색 결과 영역' });
 
-    close.focus();
-    fireEvent.keyDown(close, { key: 'Tab' });
+    results.focus();
+    fireEvent.keyDown(results, { key: 'Tab' });
     expect(input).toHaveFocus();
 
     fireEvent.keyDown(input, { key: 'Tab', shiftKey: true });
-    expect(close).toHaveFocus();
+    expect(results).toHaveFocus();
   });
 
   test('화살표 선택이 콤보박스의 activedescendant로 전해지고, 결과는 글 링크다', async () => {
@@ -187,10 +188,9 @@ describe('SearchDialog - 다이얼로그 접근성', () => {
       'id',
       input.getAttribute('aria-controls'),
     );
-    expect(selected.querySelector('a')).toHaveAttribute(
-      'href',
-      postPath('turbo-b'),
-    );
+    // 옵션 자신이 링크다 — 옵션 안에 링크를 두면 axe nested-interactive다.
+    expect(selected.tagName).toBe('A');
+    expect(selected).toHaveAttribute('href', postPath('turbo-b'));
   });
 });
 

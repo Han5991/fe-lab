@@ -38,7 +38,7 @@ export const TopPostsTable = ({ rows }: TopPostsTableProps) => {
               fontStyle: 'italic',
               fontSize: 'lg',
               fontWeight: 'medium',
-              color: 'ink.300',
+              color: 'ink.500',
               textAlign: 'center',
             })}
           >
@@ -86,9 +86,9 @@ export const TopPostsTable = ({ rows }: TopPostsTableProps) => {
               fontSize: 'xs',
               color:
                 p.delta === null
-                  ? 'ink.400'
+                  ? 'ink.500'
                   : p.delta >= 0
-                    ? 'moss.600'
+                    ? 'moss.700'
                     : 'spot.600',
               textAlign: 'right',
               fontVariantNumeric: 'tabular-nums',

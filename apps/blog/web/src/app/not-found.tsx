@@ -27,7 +27,9 @@ export default function NotFound() {
         className={css({
           fontSize: { base: '6xl', md: '8xl' },
           fontWeight: 'bold',
-          color: 'ink.200',
+          // paper.50 위 보조 글자 톤(--fg-sub). ink.200은 1.4:1로 장식처럼 보여도
+          // 숫자는 읽히는 글자라 대비 기준을 진다(axe color-contrast).
+          color: 'ink.600',
           lineHeight: 'flat',
         })}
       >

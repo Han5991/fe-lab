@@ -14,7 +14,9 @@ export const CODE_CHROME = 'code.chrome';
 // 보더·메타 텍스트는 코드 전용 토큰을 따로 두지 않는다. 라이트/다크가 함께
 // 도는 지금은 본문에서 쓰는 hairline·서브 텍스트와 같은 값이 맞다.
 export const CODE_BORDER = 'ink.border';
-export const CODE_META = 'ink.600';
+// 메타 텍스트(언어 라벨·파일명)는 code.chrome 위 12px라 ink.600(4.1:1)으로는 AA에
+// 못 미친다 — 서브 서피스 메타용 ink.500(라이트 4.5:1 · 다크 5.7:1)을 쓴다.
+export const CODE_META = 'ink.500';
 export const CODE_ACCENT = 'accent.600';
 // 드래그 선택 배경만 전용 토큰을 유지한다. 전역 ::selection(panda.config)의
 // selection.bg는 라이트에서 옅은 하늘색이라, 코드 표면 위 파란 계열 토큰
