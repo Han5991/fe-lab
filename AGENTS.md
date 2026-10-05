@@ -34,7 +34,10 @@ here or anywhere else (this repo once carried four diverging copies of that prom
   (default) or `catalog:lint` (the eslint toolchain — core and plugins move together, so single-consumer plugins
   live there too), never a number. Exception: `peerDependencies`, which declare a compatibility range.
 - **Vitest everywhere.** Only the environment varies; `apps/blog/web` splits `test.projects` into `node`
-  (`src/shared`·`src/domain`·`src/lib`) and `jsdom` (rest of `src`). The one non-Vitest suite is the blog's
+  (`src/shared`·`src/domain`·`src/lib`) and `jsdom` (rest of `src`). The `jsdom` project runs **without isolation**
+  (one jsdom per worker); files that call `vi.mock`/`vi.stubGlobal`/`vi.stubEnv`/`vi.doMock` are picked by content
+  into `jsdom-isolated`. Anything else a test changes globally (timers, DOM outside the render) must be undone in
+  `afterEach`, or it leaks into the next file. The one non-Vitest suite is the blog's
   runtime gate, Playwright in `apps/blog/web/e2e` (§4).
 
 ## 2. Commands

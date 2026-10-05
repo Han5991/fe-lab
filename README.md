@@ -103,15 +103,15 @@ apps/blog/posts/**/_series.yml ─┤
   **단위·컴포넌트 러너는 모든 워크스페이스에서 Vitest 하나다.** 갈리는 것은 러너가 아니라 **환경**이고, 환경이 둘인 곳은 `test.projects`로 나눈다.
   예외는 블로그의 런타임 게이트 하나 — 빌드된 `out/`을 실제 브라우저로 여는 Playwright(`apps/blog/web/e2e`, `test:e2e`)다.
 
-  | 워크스페이스       | 환경                                                                                                                |
-  | ------------------ | ------------------------------------------------------------------------------------------------------------------- |
-  | `@blog/content`    | node (`src/**/*.test.ts`)                                                                                           |
-  | `@blog/web`        | projects 둘 — `node`(`src/shared`·`src/domain`·`src/lib`) + `jsdom`(나머지 `src/**`, RTL). `pnpm test` 한 번에 실행 |
-  | `next.js`          | jsdom + RTL + next-router-mock (`test:watch` 있음)                                                                  |
-  | `react`            | jsdom + RTL + MSW                                                                                                   |
-  | `typescript`       | node                                                                                                                |
-  | `socket-server`    | node (`src/**/*.test.ts`)                                                                                           |
-  | `@package/bundler` | node (`src/**/*.test.ts`)                                                                                           |
+  | 워크스페이스       | 환경                                                                                                                                                                       |
+  | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+  | `@blog/content`    | node (`src/**/*.test.ts`)                                                                                                                                                  |
+  | `@blog/web`        | projects 셋 — `node`(`src/shared`·`src/domain`·`src/lib`) + `jsdom`(나머지 `src/**`, RTL, 격리 끔) + `jsdom-isolated`(모듈·전역을 mock하는 파일). `pnpm test` 한 번에 실행 |
+  | `next.js`          | jsdom + RTL + next-router-mock (`test:watch` 있음)                                                                                                                         |
+  | `react`            | jsdom + RTL + MSW                                                                                                                                                          |
+  | `typescript`       | node                                                                                                                                                                       |
+  | `socket-server`    | node (`src/**/*.test.ts`)                                                                                                                                                  |
+  | `@package/bundler` | node (`src/**/*.test.ts`)                                                                                                                                                  |
 
   예전에는 `@blog/content`와 `@blog/web`의 순수 로직이 `node --test`(+`node:assert/strict`)로 돌았다. 러너가 갈리면 단언 API·커버리지 도구·ESLint 인가가 두 벌이 되고, `node --test '<glob>'`은 **매치가 0개여도 exit 0**이라 테스트가 조용히 사라질 수 있었다. Vitest는 매치 0개면 실패한다.
 
