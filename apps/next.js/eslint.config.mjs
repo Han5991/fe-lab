@@ -8,7 +8,6 @@ import nextTypescript from 'eslint-config-next/typescript';
 // 제거된 `context.getFilename()`을 폴백 없이 호출해 린트가 통째로 죽습니다.
 // 버전을 문자열로 주면 'detect' 분기 자체를 타지 않아 크래시를 피합니다.
 // eslint-plugin-react가 ESLint 10을 지원하면 이 블록은 제거 가능.
-// (apps/blog/web/eslint.config.mjs와 같은 워크어라운드)
 const reactVersion = createRequire(import.meta.url)(
   'react/package.json',
 ).version;
