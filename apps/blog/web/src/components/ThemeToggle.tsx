@@ -1,7 +1,7 @@
 'use client';
 
 import { Sun, Moon } from 'lucide-react';
-import { css } from '@design-system/ui-lib/css';
+import { css } from '@blog/styled-system/css';
 import { setTheme } from '@/src/hooks/useTheme';
 
 // 아이콘은 JS 상태가 아니라 CSS(html[data-theme])로 토글한다.

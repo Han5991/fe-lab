@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
-import { css, cva, sva } from '@design-system/ui-lib/css';
-import type { RecipeVariant } from '@design-system/ui-lib/css';
-import { token } from '@design-system/ui-lib/tokens';
+import { css, cva, sva } from '@blog/styled-system/css';
+import type { RecipeVariant } from '@blog/styled-system/css';
+import { token } from '@blog/styled-system/tokens';
 
 /**
  * 다이어그램 프리미티브 — 핸드오프 §4 "다이어그램 문법"을 코드로 강제한다.

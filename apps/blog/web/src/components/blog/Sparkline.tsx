@@ -1,4 +1,4 @@
-import { token } from '@design-system/ui-lib/tokens';
+import { token } from '@blog/styled-system/tokens';
 
 interface SparklineProps {
   data: number[];

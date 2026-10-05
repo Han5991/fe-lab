@@ -4,7 +4,7 @@ import { useRef, useState } from 'react';
 import Link from 'next/link';
 import { useQueryStates, parseAsString, parseAsStringLiteral } from 'nuqs';
 import { useQuery } from '@tanstack/react-query';
-import { css } from '@design-system/ui-lib/css';
+import { css } from '@blog/styled-system/css';
 
 import type { ArchiveFilters, PostSummary } from '@blog/content/client';
 import type { SeriesSummary, TagSummary } from '@blog/content';

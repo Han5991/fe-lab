@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
-import { css, sva } from '@design-system/ui-lib/css';
-import type { RecipeVariant } from '@design-system/ui-lib/css';
+import { css, sva } from '@blog/styled-system/css';
+import type { RecipeVariant } from '@blog/styled-system/css';
 
 const callout = sva({
   slots: ['surface', 'badge'],

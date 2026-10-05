@@ -1,7 +1,7 @@
 import { OG_DEFAULT_IMAGE, SITE_NAME, SITE_URL } from '@/content.values.mts';
 import { PRIVACY_PATH } from '@/src/shared/routes';
 import { PRIVACY_TRANSITION_ID } from '@/src/shared/transitions';
-import { css, cx } from '@design-system/ui-lib/css';
+import { css, cx } from '@blog/styled-system/css';
 import type { Metadata } from 'next';
 
 import { PageBoundary } from '@/src/components/PageBoundary';

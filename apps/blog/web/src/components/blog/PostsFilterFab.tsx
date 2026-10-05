@@ -2,7 +2,7 @@
 
 import { motion } from 'motion/react';
 import { SlidersHorizontal } from 'lucide-react';
-import { css } from '@design-system/ui-lib/css';
+import { css } from '@blog/styled-system/css';
 
 interface PostsFilterFabProps {
   onClick: () => void;

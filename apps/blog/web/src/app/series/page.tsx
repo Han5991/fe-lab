@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { css, cx } from '@design-system/ui-lib/css';
+import { css, cx } from '@blog/styled-system/css';
 
 import { archivePath, POSTS_PATH, postPath } from '@blog/content/client';
 import { SERIES_TRANSITION_ID } from '@/src/shared/transitions';

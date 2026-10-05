@@ -50,7 +50,3 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-
-## Panda
-../../../packages/@design-system/ui-lib
-../../../packages/@design-system/ui-lib-studio

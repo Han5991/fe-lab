@@ -1,5 +1,5 @@
-import { css, cva, cx } from '@design-system/ui-lib/css';
-import type { RecipeVariant } from '@design-system/ui-lib/css';
+import { css, cva, cx } from '@blog/styled-system/css';
+import type { RecipeVariant } from '@blog/styled-system/css';
 import type { ReactNode } from 'react';
 
 /**

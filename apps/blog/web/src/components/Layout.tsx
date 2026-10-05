@@ -2,7 +2,7 @@ import { RSS_PATH } from '@blog/content/client';
 import { AUTHOR_GITHUB, AUTHOR_LINKEDIN } from '@/content.values.mts';
 import { ABOUT_PATH, HOME_PATH, PRIVACY_PATH } from '@/src/shared/routes';
 import Link from 'next/link';
-import { css, cx } from '@design-system/ui-lib/css';
+import { css, cx } from '@blog/styled-system/css';
 import type { ReactNode } from 'react';
 
 import { PageTransition } from './PageTransition';

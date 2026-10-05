@@ -1,6 +1,6 @@
 'use client';
 
-import { css } from '@design-system/ui-lib/css';
+import { css } from '@blog/styled-system/css';
 
 interface TagDistributionProps {
   tags: { id: string; count: number }[];

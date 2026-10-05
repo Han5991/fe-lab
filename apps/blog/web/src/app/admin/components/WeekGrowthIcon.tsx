@@ -1,5 +1,5 @@
 import { Minus, TrendingDown, TrendingUp } from 'lucide-react';
-import { css, cx } from '@design-system/ui-lib/css';
+import { css, cx } from '@blog/styled-system/css';
 
 interface WeekGrowthIconProps {
   /** 7일 증감률(정수 %). null은 직전 주 조회가 0이라 비교할 수 없다는 뜻이다. */

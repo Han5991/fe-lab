@@ -1,6 +1,6 @@
 'use client';
 
-import { css, cx } from '@design-system/ui-lib/css';
+import { css, cx } from '@blog/styled-system/css';
 import Zoom from 'react-medium-image-zoom';
 import 'react-medium-image-zoom/dist/styles.css';
 import { resolvePostAssetUrl } from '@blog/content/client';

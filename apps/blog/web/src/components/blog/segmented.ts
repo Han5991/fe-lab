@@ -1,4 +1,4 @@
-import { cva } from '@design-system/ui-lib/css';
+import { cva } from '@blog/styled-system/css';
 
 /**
  * 필터 패널 세그먼티드 컨트롤의 버튼 한 칸 — ViewToggle(tab) · SortRadio(radio) 공용.

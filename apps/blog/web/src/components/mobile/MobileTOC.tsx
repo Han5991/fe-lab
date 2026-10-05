@@ -3,8 +3,8 @@
 import { useId, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { List, X } from 'lucide-react';
-import { css, cva } from '@design-system/ui-lib/css';
-import type { RecipeVariant } from '@design-system/ui-lib/css';
+import { css, cva } from '@blog/styled-system/css';
+import type { RecipeVariant } from '@blog/styled-system/css';
 import { useTocHook, scrollToId } from '@/src/components/tocHooks';
 import { isModifiedClick } from '@/src/components/events';
 import { Portal } from '@/src/components/Portal';

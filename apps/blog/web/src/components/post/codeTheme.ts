@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react';
-import { token } from '@design-system/ui-lib/tokens';
+import { token } from '@blog/styled-system/tokens';
 
 /** `token.var()`가 받는 토큰 경로. 오타가 나면 여기서 컴파일이 막힌다. */
 type TokenPath = Parameters<typeof token.var>[0];

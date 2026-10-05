@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Check, Link2 } from 'lucide-react';
 import { sendGAEvent } from '@next/third-parties/google';
-import { css } from '@design-system/ui-lib/css';
+import { css } from '@blog/styled-system/css';
 import {
   loadFragmentGenerator,
   type FragmentGenerator,

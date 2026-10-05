@@ -1,7 +1,7 @@
 'use client';
 
 import { useId, useRef, type KeyboardEvent } from 'react';
-import { css, cx } from '@design-system/ui-lib/css';
+import { css, cx } from '@blog/styled-system/css';
 import { Label } from './Label';
 import { segmentedItem } from './segmented';
 

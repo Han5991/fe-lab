@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { css } from '@design-system/ui-lib/css';
+import { css } from '@blog/styled-system/css';
 import type { PostData } from '@blog/content/client';
 import { archivePath } from '@blog/content/client';
 import { fmtDate } from '@blog/content/client';

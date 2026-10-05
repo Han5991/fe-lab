@@ -3,7 +3,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Ssgoi, type SsgoiConfig } from '@ssgoi/react';
 import { hero, fade } from '@ssgoi/react/view-transitions';
-import { css } from '@design-system/ui-lib/css';
+import { css } from '@blog/styled-system/css';
 import {
   POST_HERO_TRANSITION_GLOB,
   POST_PLAIN_TRANSITION_GLOB,

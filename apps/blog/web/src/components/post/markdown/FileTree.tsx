@@ -1,6 +1,6 @@
 import { Children } from 'react';
 import type { ReactNode } from 'react';
-import { css } from '@design-system/ui-lib/css';
+import { css } from '@blog/styled-system/css';
 
 import { codeText } from '../markdownCode';
 

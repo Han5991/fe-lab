@@ -1,6 +1,6 @@
 'use client';
 
-import { css } from '@design-system/ui-lib/css';
+import { css } from '@blog/styled-system/css';
 import { SegmentedRadioGroup } from './SegmentedRadioGroup';
 
 export type ViewMode = 'list' | 'cards';

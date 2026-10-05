@@ -2,7 +2,7 @@
 
 import { useId } from 'react';
 import Link from 'next/link';
-import { css } from '@design-system/ui-lib/css';
+import { css } from '@blog/styled-system/css';
 import { useQuery } from '@tanstack/react-query';
 import { getTopPosts } from '@/src/domain/analytics';
 import type { PostSummary } from '@blog/content/client';

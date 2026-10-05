@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useId } from 'react';
 import mermaid from 'mermaid';
-import { css } from '@design-system/ui-lib/css';
+import { css } from '@blog/styled-system/css';
 import { useTheme } from '@/src/hooks/useTheme';
 
 let renderSeq = 0;

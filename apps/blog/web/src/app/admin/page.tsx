@@ -2,7 +2,7 @@
 
 import { Suspense } from 'react';
 import { LogOut, BarChart3, FileText } from 'lucide-react';
-import { css, cx } from '@design-system/ui-lib/css';
+import { css, cx } from '@blog/styled-system/css';
 import { railGutter, railColumn } from '@/src/components/Rail';
 import { TIMEZONE } from '@/content.values.mts';
 import { useAdminDashboardData } from '@/src/hooks/useAdminViews';

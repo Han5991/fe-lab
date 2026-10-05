@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { css, cx } from '@design-system/ui-lib/css';
+import { css, cx } from '@blog/styled-system/css';
 
 import {
   getAllPostSummaries,

@@ -3,7 +3,7 @@
 import dynamic from 'next/dynamic';
 import { usePathname } from 'next/navigation';
 import { type ReactNode, Suspense } from 'react';
-import { css } from '@design-system/ui-lib/css';
+import { css } from '@blog/styled-system/css';
 // 로그인 경로 판정은 라우트 계약(@/src/shared/routes — 순수 상수·함수 모듈)에서
 // 온다. auth 배럴(@/src/domain/auth)은 모듈 스코프에서 supabase 클라이언트를
 // 바인딩하므로 여기서 열지 않는다 — 판정 하나 때문에 인증 세션 스택이

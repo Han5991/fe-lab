@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { css } from '@design-system/ui-lib/css';
+import { css } from '@blog/styled-system/css';
 import { useTocHook, scrollToId } from '@/src/components/tocHooks';
 import { isModifiedClick } from '@/src/components/events';
 

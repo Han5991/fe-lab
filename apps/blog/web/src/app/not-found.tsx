@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { css, cx } from '@design-system/ui-lib/css';
+import { css, cx } from '@blog/styled-system/css';
 import { POSTS_PATH } from '@blog/content/client';
 import { HOME_PATH } from '@/src/shared/routes';
 import { railGutter } from '@/src/components/Rail';

@@ -3,7 +3,7 @@
 import { Suspense } from 'react';
 import { LogOut, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
-import { css, cx } from '@design-system/ui-lib/css';
+import { css, cx } from '@blog/styled-system/css';
 
 import { railGutter, railColumn } from '@/src/components/Rail';
 import { useAdminLogout } from '@/src/hooks/useAdminLogout';

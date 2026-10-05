@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { css } from '@design-system/ui-lib/css';
+import { css } from '@blog/styled-system/css';
 import { POSTS_PATH } from '@blog/content/client';
 import { ABOUT_PATH, SERIES_PATH } from '@/src/shared/routes';
 

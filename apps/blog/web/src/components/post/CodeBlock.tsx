@@ -15,8 +15,8 @@ import docker from 'react-syntax-highlighter/dist/cjs/languages/prism/docker';
 import jsExtras from 'react-syntax-highlighter/dist/cjs/languages/prism/js-extras';
 import jsdoc from 'react-syntax-highlighter/dist/cjs/languages/prism/jsdoc';
 import { FileCode } from 'lucide-react';
-import { css, cx } from '@design-system/ui-lib/css';
-import { token } from '@design-system/ui-lib/tokens';
+import { css, cx } from '@blog/styled-system/css';
+import { token } from '@blog/styled-system/tokens';
 import { codeText, isBlockCode } from './markdownCode';
 import { toDualTheme } from './codeTheme';
 import {

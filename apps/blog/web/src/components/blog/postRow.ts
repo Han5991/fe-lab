@@ -1,4 +1,4 @@
-import { css } from '@design-system/ui-lib/css';
+import { css } from '@blog/styled-system/css';
 
 // 목록 행 스타일의 단일 출처 — hairline 보더로만 구분하고 제목 좌 / 날짜
 // 우(모노)에 놓는 문법. 홈(PostIndexRow)·아카이브(ArchiveRow)·/series 글

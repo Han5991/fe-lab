@@ -1,7 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { css } from '@design-system/ui-lib/css';
+import { css } from '@blog/styled-system/css';
 
 // MermaidChart 내부 컨테이너와 같은 박스 — placeholder와 실제 도표의 자리가
 // 어긋나지 않게 여기서도 동일한 여백/테두리를 쓴다. 값을 한쪽만 고치면 청크가

@@ -3,7 +3,7 @@
 import { useSyncExternalStore } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowUp } from 'lucide-react';
-import { css } from '@design-system/ui-lib/css';
+import { css } from '@blog/styled-system/css';
 
 /** 이만큼 내려가면 버튼이 뜬다(px). */
 const SHOW_AFTER = 300;

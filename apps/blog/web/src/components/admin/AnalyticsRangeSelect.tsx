@@ -1,6 +1,6 @@
 'use client';
 
-import { css, cva } from '@design-system/ui-lib/css';
+import { css, cva } from '@blog/styled-system/css';
 import type { AnalyticsRange } from '@/src/domain/analytics';
 
 interface AnalyticsRangeSelectProps {
