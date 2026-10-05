@@ -1,7 +1,8 @@
 /**
  * JS 없이는 존재하지 않는 동작만 확인한다 — 웹 폰트 적재, 테마 전환, ⌘K 검색,
- * mermaid 렌더. 화면 문구·배치는 다른 게이트(jsdom·check-seo)의 몫이다.
+ * mermaid 렌더, Web Vitals 전송. 화면 문구·배치는 다른 게이트(jsdom·check-seo)의 몫이다.
  */
+import type { Page } from '@playwright/test';
 import { axeViolations } from './support/a11y';
 import { waitForHydration } from './support/dom';
 import { expect, test } from './support/fixtures';
@@ -147,4 +148,69 @@ test('mermaid 펜스가 SVG로 그려진다', async ({ page }) => {
   await expect(svgs).toHaveCount(charts);
   // 실패하면 MermaidChart가 원문을 role="note" 상자로 대신 보여 준다.
   await expect(page.locator('#post-content [role="note"]')).toHaveCount(0);
+});
+
+/** GA `dataLayer`에 쌓인 Web Vitals 이벤트 — `gtag()`가 넣는 항목은 `arguments` 객체라 배열로 편다. */
+function webVitalsEvents(page: Page) {
+  return page.evaluate(() => {
+    const layer =
+      (window as unknown as { dataLayer?: ArrayLike<unknown>[] }).dataLayer ??
+      [];
+    return layer
+      .map(entry => Array.from(entry))
+      .filter(
+        (args): args is ['event', string, Record<string, unknown>] =>
+          args[0] === 'event' &&
+          ['CLS', 'FCP', 'LCP', 'TTFB', 'INP'].includes(String(args[1])),
+      )
+      .map(([, name, params]) => ({ name, params }));
+  });
+}
+
+// 리포터가 빠지거나 GA보다 먼저 돌아 dataLayer가 없으면 지표는 소리 없이 사라진다
+// (sendGAEvent는 경고만 남긴다) — 실제로 한 건이 실리는지 보는 양성 대조.
+// 홈에서 글로 **소프트 내비게이션**한 뒤 숨긴다. LCP·CLS는 그때 보고되지만 재는 대상은
+// 하드 로드한 홈이라, 이벤트가 그 순간의 주소(글)가 아니라 홈으로 찍혀야 한다.
+test('Web Vitals가 하드 로드한 페이지 이름으로 GA dataLayer에 실린다', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await waitForHydration(page, 'main');
+  const landing = page.url();
+  await page
+    .locator('main a[href^="/posts/"]:not([href="/posts/"])')
+    .first()
+    .click();
+  await page.waitForURL(/\/posts\/.+\//, { waitUntil: 'commit' });
+  await waitForHydration(page, '#post-content');
+  // 하드 내비게이션이었다면 아래 page_location 단언은 의미가 없다 — 문서가 그대로인지 본다.
+  expect(
+    await page.evaluate(
+      () => performance.getEntriesByType('navigation')[0]?.name,
+    ),
+  ).toBe(landing);
+  // LCP·CLS는 페이지가 숨겨질 때 확정된다 — 탭 전환을 흉내 낸다.
+  await page.evaluate(() => {
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'hidden',
+    });
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+
+  await expect
+    .poll(async () => (await webVitalsEvents(page)).map(e => e.name).sort())
+    .toEqual(expect.arrayContaining(['CLS', 'FCP', 'LCP', 'TTFB']));
+  for (const { name, params } of await webVitalsEvents(page)) {
+    expect(params, name).toMatchObject({
+      value: expect.any(Number),
+      metric_id: expect.any(String),
+      metric_value: expect.any(Number),
+      metric_delta: expect.any(Number),
+      metric_rating: expect.stringMatching(/^(good|needs-improvement|poor)$/),
+      non_interaction: true,
+      page_location: landing,
+    });
+    expect(Number.isInteger(params['value']), `${name} value 정수`).toBe(true);
+  }
 });

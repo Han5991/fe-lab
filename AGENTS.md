@@ -187,7 +187,13 @@ Worker (`apps/blog/web/wrangler.jsonc`), Supabase for the dynamic bits.
   **런타임 예외도 같은 GA4로 간다** — `apps/blog/web/src/components/errorReporting.ts`가 에러 경계 셋과 전역
   `error`·`unhandledrejection`에서 `exception` 이벤트(설명 100자, 스택 없음, 비치명은 탭 새로고침 전까지 5건)를 보내고, 다른 출처
   스크립트의 에러와 `Error`가 아닌 거절은 거른다. GA4 화면에서 설명을 보려면 `description`을 맞춤 측정기준으로
-  등록해야 한다.
+  등록해야 한다. **실사용자 Web Vitals도 같은 GA4로 간다** — 레이아웃이 `GoogleAnalytics` 뒤에 둔 리포터가
+  `apps/blog/web/src/components/webVitals.ts`의 매개변수로 지표마다 이벤트를 보낸다. 단위는 **하드 로드 한 번**이다:
+  `page_location`은 처음 연 페이지로 덮이고, 소프트 내비게이션으로 간 페이지는 자기 LCP·FCP·TTFB가 없으며
+  CLS·INP는 그 뒤 세션 전체를 담는다. 등급별로 보려면 `metric_rating`을 맞춤 측정기준으로, 값을 모으려면
+  `metric_value`를 맞춤 측정항목으로 등록한다 — `value`·`metric_value`는 지표마다 단위가 달라(ms, CLS는 단위
+  없음) 이벤트 이름으로 거른 보고서에서만 뜻이 있다. GTM 컨테이너에 Web Vitals 태그·템플릿이 있으면 같은
+  이름의 이벤트가 두 번 집계되니 거기서 내릴 것. 배선은 `test:e2e`가 지킨다.
 
 ## 8. Blog — layers and content contract
 
