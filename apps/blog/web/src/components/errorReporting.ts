@@ -17,7 +17,10 @@ export type ReportError = (thrown: unknown, fatal: boolean) => void;
 /** 스택 한 줄의 `URL:줄:열` — V8(`at f (url:1:2)`)과 Firefox·Safari(`f@url:1:2`) 공통. */
 const FRAME = /(https?:\/\/[^\s()]+):(\d+):(\d+)/;
 
-/** 스택에서 `origin`이 낸 첫 프레임. 확장 프로그램·GTM 프레임과 닮은 주소는 origin 비교로 건너뛴다. */
+/**
+ * 스택에서 `origin`이 낸 첫 프레임. 확장 프로그램 프레임(`chrome-extension://`)은 FRAME이 http(s)만
+ * 잡아 빠지고, GTM 프레임과 닮은 주소는 origin 비교로 건너뛴다.
+ */
 export function firstOwnFrame(
   stack: string,
   origin: string,

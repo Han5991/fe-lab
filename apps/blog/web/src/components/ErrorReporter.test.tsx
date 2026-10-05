@@ -38,6 +38,9 @@ test('자기 출처의 첫 스택 프레임만 frame으로 싣는다', () => {
     'chunks/0abc.js:1:2',
   );
   expect(toExceptionEvent(thrown, false)).not.toHaveProperty('frame');
+  // 자기 출처 프레임이 하나도 없으면 frame을 싣지 않는다
+  thrown.stack = `f@${origin}.evil.example/a.js:1:2\nchrome-extension://abc/content.js:3:4`;
+  expect(toExceptionEvent(thrown, false, origin)).not.toHaveProperty('frame');
 });
 
 test('같은 설명은 한 번만, 비치명 오류는 치명 오류와 따로 세어 5건까지만 보낸다', () => {
