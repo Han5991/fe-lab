@@ -31,7 +31,8 @@
     "codegen": "panda codegen",
     "build": "tsdown",
     "build-fast": "tsdown --no-dts",
-    "dev": "pnpm build-fast --watch"
+    "dev": "pnpm build-fast --watch",
+    "check-types": "tsc --noEmit"
   },
   "files": [
     "dist"
