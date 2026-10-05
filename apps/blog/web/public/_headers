@@ -23,6 +23,7 @@
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
   Content-Security-Policy: frame-ancestors 'self'
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=(), display-capture=()
 
 # Next.js 자산은 파일명에 콘텐츠 해시가 박혀 있다(`2-m-ljjp3f95y.css`). 내용이 바뀌면
 # 이름이 바뀌므로 낡은 파일이 나갈 경로가 구조적으로 없고, 그래서 immutable이 안전하다.
