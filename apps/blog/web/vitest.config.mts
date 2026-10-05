@@ -16,6 +16,8 @@ import react from '@vitejs/plugin-react';
  * - `jsdom-isolated`: 그중 `vi.mock`·`vi.stubGlobal` 등으로 모듈·전역을 갈아 끼우는
  *   파일. 그 교체는 격리 없이는 다른 파일로 새므로 따로 격리해 돌린다. 목록이 아니라
  *   파일 내용으로 고르니(MOCKING) 새 테스트가 mock을 쓰면 저절로 이쪽으로 온다.
+ *   정규식이 못 보는 전역 변경(`vi.spyOn(window, …)`·직접 대입)은 afterEach에서
+ *   되돌리거나 `vi.stubGlobal`로 바꿔 이쪽으로 보낸다.
  *
  * 예전에는 이 경계가 러너 경계(node --test vs vitest)였다. 러너가 갈리면
  * 단언 API·커버리지 도구·lint 인가가 두 벌이 되고, `node --test`는 글롭이
@@ -38,7 +40,9 @@ const JSDOM_EXCLUDE = [...configDefaults.exclude, 'src/{shared,domain,lib}/**'];
 /** jsdom 테스트 중 모듈·전역을 갈아 끼우는 파일 — 목록이 아니라 내용으로 고른다. */
 const MOCKING = globSync(JSDOM_INCLUDE, { exclude: JSDOM_EXCLUDE }).filter(
   file =>
-    /\bvi\.(mock|doMock|stubGlobal|stubEnv)\(/.test(readFileSync(file, 'utf8')),
+    /\bvi\.(mock|doMock|stubGlobal|stubEnv|useFakeTimers)\(/.test(
+      readFileSync(file, 'utf8'),
+    ),
 );
 
 export default defineConfig({
