@@ -41,6 +41,11 @@ export function firstOwnFrame(
   return undefined;
 }
 
+/** V8 스택은 `이름: 메시지`로 시작한다 — 메시지 속 URL을 프레임으로 읽지 않게 떼어 낸다(Firefox·Safari 스택엔 없다). */
+function withoutHeader(stack: string, header: string): string {
+  return stack.startsWith(header) ? stack.slice(header.length) : stack;
+}
+
 /** 던져진 값을 GA4 `exception` 매개변수로 — 스택 전체 대신 자기 출처의 첫 프레임 하나만 싣는다. */
 export function toExceptionEvent(
   thrown: unknown,
@@ -57,13 +62,13 @@ export function toExceptionEvent(
   };
   const frame =
     origin !== undefined && thrown instanceof Error && thrown.stack
-      ? firstOwnFrame(thrown.stack, origin)
+      ? firstOwnFrame(withoutHeader(thrown.stack, text), origin)
       : undefined;
   if (frame !== undefined) event.frame = frame;
   return event;
 }
 
-/** 같은 설명은 한 번만 넘긴다. 비치명 오류는 `MAX_PER_LOAD`건까지 — 에러 경계의 치명 오류는 그 잡음 뒤에 와도 버리지 않는다. */
+/** 같은 오류(설명·위치·치명 여부가 모두 같은 것)는 한 번만 넘긴다. 비치명 오류는 `MAX_PER_LOAD`건까지 — 에러 경계의 치명 오류는 그 잡음 뒤에 와도 버리지 않는다. */
 export function createErrorReporter(
   send: (event: ExceptionEvent) => void,
 ): ReportError {
@@ -74,12 +79,13 @@ export function createErrorReporter(
     const origin =
       typeof window === 'undefined' ? undefined : window.location.origin;
     const event = toExceptionEvent(thrown, fatal, origin);
-    if (seen.has(event.description)) return;
+    const key = `${String(fatal)}|${event.description}|${event.frame ?? ''}`;
+    if (seen.has(key)) return;
     if (!fatal) {
       if (nonFatalSent >= MAX_PER_LOAD) return;
       nonFatalSent += 1;
     }
-    seen.add(event.description);
+    seen.add(key);
     send(event);
   };
 }
