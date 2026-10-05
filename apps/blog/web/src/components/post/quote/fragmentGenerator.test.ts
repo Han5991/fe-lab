@@ -4,8 +4,13 @@
  * 쓰는 이유라 대표 사례 하나를 잠근다(브라우저가 실제로 그 문장으로 가는지는
  * 빌드 산출물을 Chromium으로 열어 확인했다).
  */
-import { afterEach, describe, expect, test } from 'vitest';
+import { setTimeout as setGenerationTimeout } from 'text-fragments-polyfill/dist/fragment-generation-utils.js';
+import { afterEach, beforeAll, describe, expect, test } from 'vitest';
 import { loadFragmentGenerator } from './fragmentGenerator';
+
+// 라이브러리는 생성에 500ms 상한을 두고 넘으면 TIMEOUT을 낸다 — 바쁜 러너에서 이 테스트가
+// 조각 대신 null을 받아 흔들렸다. 판정 규칙을 보는 테스트라 시간 상한은 끈다.
+beforeAll(() => setGenerationTimeout(null));
 
 afterEach(() => {
   document.body.innerHTML = '';
