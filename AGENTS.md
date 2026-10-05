@@ -56,6 +56,10 @@ here or anywhere else (this repo once carried four diverging copies of that prom
   fails fast without one (build first). Not a turbo task on purpose: the build depends on build time and
   injected env, so a `dependsOn: build` would rebuild or replay another moment's cache. No `playwright install`
   possible (preinstalled browsers)? Point `PLAYWRIGHT_CHROMIUM_EXECUTABLE` at a Chromium binary.
+  PR CI skips it when the same `out/` and e2e inputs already passed (content hash in
+  `.github/actions/blog-e2e/action.yml`); deploy always runs it. Next's buildId changes per build, so that hit
+  needs a replayed build — which is why test files stay out of the blog build inputs (`apps/blog/web/turbo.json`,
+  `packages/@blog/content/turbo.json`, panda `exclude`).
 - Blog content commands run inside `apps/blog/web`: `pnpm lint:posts` (source validation, warnings),
   `pnpm check-seo` / `pnpm check-bundle` (already the last two steps of `pnpm build` — see §8).
   `pnpm measure-bundle` prints first-load gzip transfer (HTML + CSS + JS) per route group of an existing `out/` —
