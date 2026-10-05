@@ -4,6 +4,9 @@ const isDev = process.env.NODE_ENV === 'development';
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  // 브라우저 소스맵을 함께 배포한다 — GA4 exception의 `frame`(chunks/<해시>.js:줄:열)을
+  // 원래 위치로 되돌리는 데 쓴다. 저장소가 공개라 숨길 것이 없다.
+  productionBrowserSourceMaps: true,
   reactCompiler: true,
   // React Compiler의 Rust 포트를 Turbopack 안에서 네이티브로 돌린다(next 16.3 실험 플래그).
   // Babel을 거치지 않아 dev 시작이 콜드 34% / 웜 46% 빨라진다.

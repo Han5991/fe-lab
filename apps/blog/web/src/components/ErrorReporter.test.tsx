@@ -20,6 +20,26 @@ test('설명은 "이름: 메시지"를 GA4 한도(100자)로 자르고, Error가
   });
 });
 
+test('자기 출처의 첫 스택 프레임만 frame으로 싣는다', () => {
+  const origin = 'https://blog.sangwook.dev';
+  const thrown = new TypeError('x');
+  thrown.stack = [
+    'TypeError: x',
+    '    at chrome-extension://abc/content.js:1:2',
+    `    at f (${origin}.evil.example/_next/static/chunks/a.js:3:4)`,
+    `    at g (${origin}/_next/static/chunks/0abc.js?dpl=1:12:345)`,
+  ].join('\n');
+  expect(toExceptionEvent(thrown, false, origin).frame).toBe(
+    'chunks/0abc.js:12:345',
+  );
+  // Firefox·Safari 꼴
+  thrown.stack = `g@${origin}/_next/static/chunks/0abc.js:1:2`;
+  expect(toExceptionEvent(thrown, false, origin).frame).toBe(
+    'chunks/0abc.js:1:2',
+  );
+  expect(toExceptionEvent(thrown, false)).not.toHaveProperty('frame');
+});
+
 test('같은 설명은 한 번만, 비치명 오류는 치명 오류와 따로 세어 5건까지만 보낸다', () => {
   const send = vi.fn<(event: ExceptionEvent) => void>();
   const report = createErrorReporter(send);
