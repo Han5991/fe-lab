@@ -62,6 +62,58 @@ test('bundleGuards는 준 규칙 목록이 통째로 실린다 — 패키지가 
   expect(config.bundleGuards).toBe(guards);
 });
 
+// ── bundleBudgets: 선언한 사이트에만 있는 축, 모양은 defineContent가 막는다 ──
+
+test('bundleBudgets를 안 주면 키 자체가 없고, 주면 통째로 실린다', () => {
+  expect('bundleBudgets' in defineTestContent({ root: FIXTURE_ROOT })).toBe(
+    false,
+  );
+  const budgets = [
+    { group: '/', jsGzipKB: 7, cssGzipKB: 2 },
+    { group: '/notes/', jsGzipKB: 9, cssGzipKB: 2 },
+  ] as const;
+  expect(
+    defineTestContent({ root: FIXTURE_ROOT, bundleBudgets: budgets })
+      .bundleBudgets,
+  ).toBe(budgets);
+});
+
+test.each([
+  ['/posts', /형식/],
+  ['/posts/a/', /형식/],
+  ['posts/', /형식/],
+])(
+  'bundleBudgets의 group %s는 첫 세그먼트 모양이 아니라 거부한다',
+  (group, error) => {
+    expect(() =>
+      defineTestContent({
+        root: FIXTURE_ROOT,
+        bundleBudgets: [{ group, jsGzipKB: 1, cssGzipKB: 1 }],
+      }),
+    ).toThrow(error);
+  },
+);
+
+test('bundleBudgets의 중복 그룹과 0 이하·NaN 상한은 거부한다', () => {
+  expect(() =>
+    defineTestContent({
+      root: FIXTURE_ROOT,
+      bundleBudgets: [
+        { group: '/', jsGzipKB: 1, cssGzipKB: 1 },
+        { group: '/', jsGzipKB: 2, cssGzipKB: 1 },
+      ],
+    }),
+  ).toThrow(/두 번/);
+  for (const bad of [0, -1, Number.NaN]) {
+    expect(() =>
+      defineTestContent({
+        root: FIXTURE_ROOT,
+        bundleBudgets: [{ group: '/', jsGzipKB: 1, cssGzipKB: bad }],
+      }),
+    ).toThrow(/cssGzipKB/);
+  }
+});
+
 // ── defineContent: root 검증 ─────────────────────────────────────────────────
 
 test('root 없이 호출하면 defineContent가 던진다 (하드코딩 폴백 없음)', () => {

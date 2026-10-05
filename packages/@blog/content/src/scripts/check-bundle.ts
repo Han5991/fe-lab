@@ -9,6 +9,12 @@ import type {
 } from '../shared/contentConfig.ts';
 import type { ContentContext } from './context.ts';
 import { collectPages } from './check-seo.ts';
+import { measurePages } from './measure-bundle.ts';
+import {
+  checkBudgets,
+  formatBudgetTable,
+  type BudgetViolation,
+} from './bundleBudgets.ts';
 
 /**
  * 빌드 산출물(`out/`)에서 **있어선 안 되는 곳에 실린 코드·값**을 검사합니다.
@@ -30,6 +36,11 @@ import { collectPages } from './check-seo.ts';
  * 도달 청크는 HTML의 script 참조에서 출발해 **폐포**로 구합니다 — 청크가 다른
  * 청크를 파일명 문자열로 여는 지연 로드가 실재해서(HTML만 보면 놓친다),
  * 포함된 청크 본문에 이름이 등장하는 청크를 반복해서 더합니다.
+ *
+ * 같은 자리에서 **번들 예산**(`bundleBudgets`)도 평가합니다 — 페이지 그룹별 첫
+ * 로드 JS·CSS gzip 상한. 측정은 `measure-bundle`과 한 벌이고 판정은
+ * `bundleBudgets.ts`가 합니다. 둘 다 `pnpm build`의 마지막 단계라는 같은 실행
+ * 지점을 쓰려고 별도 명령으로 나누지 않았습니다.
  *
  * 사용: `pnpm build`의 마지막 단계 — `blog-content check-bundle`
  */
@@ -290,11 +301,13 @@ function readChunkSources(outDir: string): Map<string, string> {
 }
 
 export function main(ctx: ContentContext, target?: string) {
-  // 선언 자체가 없는 사이트는 검사 대상이 아니다. 규칙 0개짜리 선언은 타입이
-  // 막으므로(BundleGuardsConfig — 비어 있을 수 없는 튜플) 여기 올 수 없다.
-  const rules = ctx.content.config.bundleGuards;
-  if (!rules) {
-    console.log('✓ check-bundle: bundleGuards 미선언 — 검사 스킵');
+  // 선언 자체가 없는 사이트는 검사 대상이 아니다. 규칙·예산 0개짜리 선언은
+  // 타입이 막으므로(비어 있을 수 없는 튜플) 여기 올 수 없다.
+  const { bundleGuards: rules, bundleBudgets: budgets } = ctx.content.config;
+  if (!rules && !budgets) {
+    console.log(
+      '✓ check-bundle: bundleGuards·bundleBudgets 미선언 — 검사 스킵',
+    );
     return;
   }
 
@@ -319,28 +332,46 @@ export function main(ctx: ContentContext, target?: string) {
     process.exit(1);
   }
 
-  // 규칙이 참조하는 산출물만 읽는다 — 없는 파일은 null로 넘겨 평가가
-  // marker-dead로 보고한다(여기서 미리 실패시키면 위반 목록이 갈라진다).
-  const artifacts = new Map<string, string | null>();
-  for (const rule of rules) {
-    for (const scope of [...rule.forbiddenIn, ...rule.requiredIn]) {
-      if (scope.kind !== 'artifact' || artifacts.has(scope.path)) continue;
-      const anchorPath = join(outDir, scope.path);
-      artifacts.set(
-        scope.path,
-        existsSync(anchorPath) ? readFileSync(anchorPath, 'utf8') : null,
+  const failures: (BundleViolation | BudgetViolation)[] = [];
+
+  if (rules) {
+    // 규칙이 참조하는 산출물만 읽는다 — 없는 파일은 null로 넘겨 평가가
+    // marker-dead로 보고한다(여기서 미리 실패시키면 위반 목록이 갈라진다).
+    const artifacts = new Map<string, string | null>();
+    for (const rule of rules) {
+      for (const scope of [...rule.forbiddenIn, ...rule.requiredIn]) {
+        if (scope.kind !== 'artifact' || artifacts.has(scope.path)) continue;
+        const anchorPath = join(outDir, scope.path);
+        artifacts.set(
+          scope.path,
+          existsSync(anchorPath) ? readFileSync(anchorPath, 'utf8') : null,
+        );
+      }
+    }
+    const violations = checkRules(rules, { pages, sources, artifacts });
+    if (violations.length === 0) {
+      console.log(
+        `✓ 번들 규칙 ${rules.length}개 통과 (청크 ${sources.size}개)`,
       );
     }
+    failures.push(...violations);
   }
 
-  const violations = checkRules(rules, { pages, sources, artifacts });
-  if (violations.length === 0) {
-    console.log(`✓ 번들 규칙 ${rules.length}개 통과 (청크 ${sources.size}개)`);
-    return;
+  if (budgets) {
+    const report = checkBudgets(budgets, measurePages(pages, outDir));
+    console.log('\n첫 로드 전송량 (gzip, 그룹 최대) — 예산은 JS·CSS만\n');
+    for (const line of formatBudgetTable(report.rows)) console.log(line);
+    if (report.violations.length === 0) {
+      console.log(
+        `\n✓ 번들 예산 ${budgets.length}개 그룹 통과 (페이지 ${pages.size}개)`,
+      );
+    }
+    failures.push(...report.violations);
   }
 
-  console.error(`\n번들 누수 검사 실패: 위반 ${violations.length}건\n`);
-  for (const v of violations) {
+  if (failures.length === 0) return;
+  console.error(`\n번들 검사 실패: 위반 ${failures.length}건\n`);
+  for (const v of failures) {
     console.error(`✖ [${v.rule}] ${v.message}`);
   }
   process.exit(1);

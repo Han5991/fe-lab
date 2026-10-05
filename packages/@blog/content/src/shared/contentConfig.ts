@@ -265,6 +265,35 @@ export interface BundleRule {
  */
 export type BundleGuardsConfig = readonly [BundleRule, ...BundleRule[]];
 
+/**
+ * 페이지 그룹 하나의 첫 로드 전송량 예산 — gzip KB(1024바이트) 상한.
+ *
+ * 그룹은 URL 경로의 **첫 세그먼트**다(`/`, `/posts/`, `/admin/` …) — 패키지가
+ * 계산하는 어휘는 경로뿐이고, 그룹이 무엇인지는 소비자가 안다. 첫 로드는
+ * 문서가 직접 가리키는 JS·CSS다(`measure-bundle`과 같은 수집기). 그룹의
+ * **모든** 페이지가 상한 아래여야 한다(중앙값이 아니라 최대).
+ *
+ * HTML은 예산이 없다 — 글 본문과 하이드레이션 페이로드가 HTML에 실려 원고가
+ * 길어지면 함께 자란다. 보고에는 찍힌다.
+ */
+export interface BundleBudget {
+  /** `/` 또는 `/{첫 세그먼트}/` */
+  group: string;
+  /** 첫 로드 JS gzip 상한(KB) */
+  jsGzipKB: number;
+  /** 첫 로드 CSS gzip 상한(KB) */
+  cssGzipKB: number;
+}
+
+/**
+ * 번들 예산 — `check-bundle`이 규칙(`bundleGuards`)과 함께 평가한다. 패키지에
+ * 기본 예산이 없다(숫자는 그 사이트의 측정값에서 온다). `bundleGuards`의
+ * `requiredIn`처럼 양방향이다: 페이지가 0개인 그룹의 예산은 죽은 예산이고,
+ * 예산 없는 그룹이 산출물에 있으면 실패한다 — 새 라우트가 재지 않은 채 들어오지
+ * 못한다. 비어 있을 수 없다 — 끄려면 선언 자체를 지운다.
+ */
+export type BundleBudgetsConfig = readonly [BundleBudget, ...BundleBudget[]];
+
 export interface ThumbnailsConfig {
   /** 표시 최대 폭(FeaturedPost가 컨테이너 전체 폭). 작은 원본은 확대하지 않음 */
   maxWidth: number;
@@ -381,8 +410,10 @@ export interface ContentConfig {
   sitemap: SitemapConfig;
   og: OgConfig;
   thumbnails: ThumbnailsConfig;
-  /** 선언한 사이트에만 있다 — 없으면 `check-bundle`이 검사를 건너뛴다 */
+  /** 선언한 사이트에만 있다 — 없으면 `check-bundle`이 누수 규칙을 건너뛴다(예산도 없으면 실행째 건너뛴다) */
   bundleGuards?: BundleGuardsConfig;
+  /** 선언한 사이트에만 있다 — 없으면 `check-bundle`이 예산을 재지 않는다 */
+  bundleBudgets?: BundleBudgetsConfig;
   llms: LlmsConfig;
 }
 
@@ -454,9 +485,11 @@ export interface ContentUserConfig extends Pick<
   thumbnails?: Partial<ThumbnailsConfig>;
   /**
    * 규칙 목록이 통째로 실린다 — 접두·마커·산출물 이름 전부 그 사이트의 값이라
-   * 패키지가 채워 줄 반쪽이 없다. 선언하면 규칙 1개 이상, 안 하면 검사 없음.
+   * 패키지가 채워 줄 반쪽이 없다. 선언하면 규칙 1개 이상, 안 하면 누수 규칙 없음.
    */
   bundleGuards?: BundleGuardsConfig;
+  /** 그룹별 예산이 통째로 실린다 — `bundleGuards`와 같은 이유로 기본값이 없다. */
+  bundleBudgets?: BundleBudgetsConfig;
 }
 
 // ── 기본값 ───────────────────────────────────────────────────────────────────
@@ -561,6 +594,7 @@ const DEFAULTS: Omit<
   | 'og'
   | 'llms'
   | 'bundleGuards'
+  | 'bundleBudgets'
 > & {
   seo: Omit<SeoConfig, 'titleSuffix'>;
   registries: Omit<RegistriesConfig, 'diagramNames'>;
@@ -650,6 +684,38 @@ function assertValidOgFonts(
   }
 }
 
+/** 예산 그룹 형태 검증 — 그룹 판정(첫 세그먼트)과 모양이 다른 이름은 영원히 매칭되지 않는다. */
+function assertValidBundleBudgets(
+  budgets: BundleBudgetsConfig | undefined,
+): void {
+  if (budgets === undefined) return;
+  const seen = new Set<string>();
+  for (const budget of budgets) {
+    if (!/^\/(?:[^/]+\/)?$/.test(budget.group)) {
+      throw new Error(
+        `defineContent: bundleBudgets의 group('${budget.group}')은 '/' 또는 '/{첫 세그먼트}/' 형식이어야 합니다 — ` +
+          '예산은 URL 경로의 첫 세그먼트로 묶은 페이지 그룹에 붙습니다.',
+      );
+    }
+    if (seen.has(budget.group)) {
+      throw new Error(
+        `defineContent: bundleBudgets에 group '${budget.group}'이 두 번 있습니다 — 어느 쪽이 적용되는지 모호합니다.`,
+      );
+    }
+    seen.add(budget.group);
+    for (const [key, value] of [
+      ['jsGzipKB', budget.jsGzipKB],
+      ['cssGzipKB', budget.cssGzipKB],
+    ] as const) {
+      if (!Number.isFinite(value) || value <= 0) {
+        throw new Error(
+          `defineContent: bundleBudgets '${budget.group}'의 ${key}(${String(value)})는 양수여야 합니다.`,
+        );
+      }
+    }
+  }
+}
+
 /** timezone 형태 검증 — 틀린 isoOffset은 날짜만 적은 예약 글 전부를 에러 없이 영원히 비공개로 만든다. */
 function assertValidTimezone(timezone: TimezoneConfig): void {
   const offsetMs = parseIsoOffset(timezone.isoOffset);
@@ -730,6 +796,7 @@ export function defineContent(user: ContentUserConfig): ContentConfig {
   assertValidRoot(user.root);
   assertValidOgFonts(user.og?.fonts);
   assertValidTimezone(user.timezone);
+  assertValidBundleBudgets(user.bundleBudgets);
   const config: ContentConfig = {
     root: user.root,
     site: user.site,
@@ -755,6 +822,7 @@ export function defineContent(user: ContentUserConfig): ContentConfig {
     // 병합할 기본값이 없다 — 준 사이트에만 있고, 통째로 실린다(조건 스프레드는
     // exactOptionalPropertyTypes 때문: undefined를 optional 필드에 대입할 수 없다).
     ...(user.bundleGuards ? { bundleGuards: user.bundleGuards } : {}),
+    ...(user.bundleBudgets ? { bundleBudgets: user.bundleBudgets } : {}),
     llms: {
       ...DEFAULTS.llms,
       ...user.llms,
