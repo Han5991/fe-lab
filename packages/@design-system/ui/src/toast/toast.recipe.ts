@@ -57,7 +57,8 @@ export const toastRecipe = sva({
           backgroundColor: 'yellow.50',
         },
         icon: {
-          color: 'yellow.600',
+          // 600은 yellow.50 위에서 2.84:1 — 아이콘(비텍스트) 기준 3:1에 못 미친다
+          color: 'yellow.700',
         },
       },
       info: {
