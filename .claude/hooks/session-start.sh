@@ -6,13 +6,16 @@
 set -euo pipefail
 [ "${CLAUDE_CODE_REMOTE:-}" = "true" ] || exit 0
 cd "$CLAUDE_PROJECT_DIR"
+die() { echo "session-start: $*" >&2; exit 1; }
 
 node_version=$(awk '$1 == "nodejs" { print $2 }' .tool-versions)
 pnpm_version=$(awk '$1 == "pnpm" { print $2 }' .tool-versions)
-export NVM_DIR=/opt/nvm
+[ -n "$node_version" ] && [ -n "$pnpm_version" ] || die ".tool-versions에 nodejs·pnpm 줄이 없다"
+export NVM_DIR=/opt/nvm # 클라우드 컨테이너 이미지의 nvm 위치
 node_bin="$NVM_DIR/versions/node/v$node_version/bin"
 
 if [ ! -x "$node_bin/node" ]; then
+  [ -f "$NVM_DIR/nvm.sh" ] || die "$NVM_DIR/nvm.sh가 없다 — 이미지가 바뀌었으면 NVM_DIR을 고친다"
   set +u # nvm.sh는 set -u 아래에서 깨진다
   . "$NVM_DIR/nvm.sh" --no-use
   nvm install "$node_version" >&2
@@ -20,7 +23,8 @@ if [ ! -x "$node_bin/node" ]; then
 fi
 export PATH="$node_bin:$PATH"
 if [ "$("$node_bin/pnpm" --version 2>/dev/null || true)" != "$pnpm_version" ]; then
-  npm install --global --no-fund --no-audit "pnpm@$pnpm_version" >&2
+  npm install --global --no-fund --no-audit "pnpm@$pnpm_version" >&2 ||
+    die "pnpm@$pnpm_version 전역 설치에 실패했다"
 fi
 
 if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
