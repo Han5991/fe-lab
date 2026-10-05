@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 # 클라우드 세션 전용 — 로컬에서는 아무것도 하지 않는다.
-# 컨테이너 기본 PATH는 Node 22와 그 옆 pnpm을 잡는데, 이 저장소는 engines가 Node >=24이고
-# 그 pnpm을 turbo가 띄우면 "Exec format error"로 죽는다. .tool-versions의 Node·pnpm을
-# 맞춰 PATH 앞에 두고(세션의 Bash에도 물려준다) 의존성을 설치한다. 여러 번 불려도 안전하다.
+# 컨테이너 이미지의 pnpm은 Node 22 쪽 도구 폴더에 깔린 옛 버전이라, packageManager에 고정한
+# 버전으로 스스로 바꿔 실행한다. 그렇게 pnpm을 거쳐 띄운 turbo는 작업을 띄우지 못하고
+# "Exec format error"로 죽는다(pnpm lint·check-types·test와 pre-push 전부). .tool-versions의
+# pnpm(이미지에 없으면 Node도)을 맞춰 PATH 앞에 두고(세션의 Bash에도 물려준다) 의존성을
+# 설치한다. 여러 번 불려도 안전하다.
 set -euo pipefail
 [ "${CLAUDE_CODE_REMOTE:-}" = "true" ] || exit 0
 cd "$CLAUDE_PROJECT_DIR"
