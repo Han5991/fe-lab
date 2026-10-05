@@ -41,6 +41,7 @@ Panda가 주는 `defineSemanticTokens.colors()`로 감싸 시맨틱 토큰 계�
 | `--accent` (**비텍스트** — 선·아이콘) | `accent.500`                     | `#0891B2` / `#67E8F9`                           |
 | `--accent` (**텍스트·링크**)          | `accent.600`                     | `#0E7490` / `#67E8F9`                           |
 | `--accent` (**제목**)                 | `accent.900`                     | `#083344` / `#67E8F9`                           |
+| `--accent` (paper.100 위 배지)        | `accent.700`                     | `#155E75` / `#A5F3FC`                           |
 | `--accent-bg`                         | `accent.50`                      | `rgba(8,145,178,.10)` / `rgba(103,232,249,.14)` |
 | `--border`                            | `ink.border`                     | `rgba(0,0,0,.10)` / `rgba(255,255,255,.12)`     |
 | `--danger`                            | `danger.text` / `danger.border`  | `#C81E1E`·`#DC2626` / `#F09595`                 |

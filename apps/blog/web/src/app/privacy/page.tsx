@@ -47,6 +47,15 @@ export const metadata: Metadata = {
 
 const LAST_UPDATED = '2026년 9월 26일';
 
+// 문장 속 링크는 색만으로 구분하지 않는다 — 본문(ink.700)과 accent.600의 명도 차가
+// 3:1에 못 미쳐(axe link-in-text-block) 색약·흑백 화면에서 링크가 안 보인다. 밑줄을 단다.
+const inlineLink = css({
+  color: 'accent.600',
+  textDecoration: 'underline',
+  textUnderlineOffset: '[2px]',
+  _hover: { color: 'accent.700' },
+});
+
 export default function PrivacyPage() {
   return (
     <PageBoundary transitionId={PRIVACY_TRANSITION_ID}>
@@ -68,7 +77,7 @@ export default function PrivacyPage() {
           >
             개인정보처리방침
           </h1>
-          <p className={css({ fontSize: 'sm', color: 'ink.400', mb: '10' })}>
+          <p className={css({ fontSize: 'sm', color: 'ink.600', mb: '10' })}>
             최종 수정일: {LAST_UPDATED}
           </p>
 
@@ -146,10 +155,7 @@ export default function PrivacyPage() {
                       href="https://policies.google.com/privacy"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className={css({
-                        color: 'accent.600',
-                        _hover: { color: 'accent.700' },
-                      })}
+                      className={inlineLink}
                     >
                       Google 개인정보처리방침
                     </a>
@@ -169,10 +175,7 @@ export default function PrivacyPage() {
                       href="https://privacy.microsoft.com/privacystatement"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className={css({
-                        color: 'accent.600',
-                        _hover: { color: 'accent.700' },
-                      })}
+                      className={inlineLink}
                     >
                       Microsoft 개인정보처리방침
                     </a>
@@ -274,10 +277,7 @@ export default function PrivacyPage() {
                   href="https://github.com/Han5991"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={css({
-                    color: 'accent.600',
-                    _hover: { color: 'accent.700' },
-                  })}
+                  className={inlineLink}
                 >
                   GitHub
                 </a>{' '}
@@ -286,10 +286,7 @@ export default function PrivacyPage() {
                   href="https://www.linkedin.com/in/sangwook-han/"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={css({
-                    color: 'accent.600',
-                    _hover: { color: 'accent.700' },
-                  })}
+                  className={inlineLink}
                 >
                   LinkedIn
                 </a>

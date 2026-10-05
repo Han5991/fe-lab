@@ -65,7 +65,7 @@ export const SearchDialog = () => {
   const [recentViews, setRecentViews] = useState<RecentView[]>([]);
   const dialogRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const listRef = useRef<HTMLUListElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const listboxId = useId();
   const optionId = (index: number) => `${listboxId}-option-${index}`;
@@ -254,7 +254,8 @@ export const SearchDialog = () => {
             rounded: 'md',
             bg: 'paper.100',
             fontSize: 'xs',
-            color: 'ink.400',
+            // paper.100 위 12px 글자라 ink.500(서브 서피스 메타 톤)이 AA 하한이다.
+            color: 'ink.500',
           })}
         >
           ⌘K
@@ -371,8 +372,13 @@ export const SearchDialog = () => {
                 </button>
               </div>
 
-              {/* 검색 결과 */}
+              {/* 검색 결과 — 결과가 넘치면 이 상자만 스크롤된다. 옵션은 Tab 순서 밖이라
+                  (선택은 콤보박스의 화살표가 맡는다) 상자 자신이 초점을 받아야 키보드로도
+                  스크롤할 수 있다(axe scrollable-region-focusable). */}
               <div
+                role="region"
+                aria-label="검색 결과 영역"
+                tabIndex={0}
                 className={css({
                   flex: '1',
                   minH: '0',
@@ -402,12 +408,11 @@ export const SearchDialog = () => {
                 )}
                 {/* option 없는 listbox는 axe aria-required-children 위반이라 결과가 없으면 내리지 않는다. */}
                 {filteredPosts.length > 0 && (
-                  <ul
+                  <div
                     ref={listRef}
                     id={listboxId}
                     role="listbox"
                     aria-label={showRecentViews ? '최근 본 글' : '검색 결과'}
-                    className={css({ listStyleType: 'none', p: '0', m: '0' })}
                   >
                     {filteredPosts.map((post, index) => {
                       const snippet =
@@ -416,93 +421,91 @@ export const SearchDialog = () => {
                           : post.excerpt;
                       const selected = index === selectedIndex;
                       return (
-                        <li
+                        // 옵션이 곧 링크다(새 탭으로 열기). 옵션 안에 링크를 두면 옵션의
+                        // 자식은 표현용이라 초점 가능한 자식이 겹친다(axe nested-interactive).
+                        // 키보드 선택은 콤보박스가 맡아 Tab 순서에서 뺀다.
+                        <Link
                           key={post.slug}
                           id={optionId(index)}
                           role="option"
                           aria-selected={selected}
                           // 포인터가 올라간 행이 곧 선택 행이다.
                           onMouseEnter={() => setSelection({ query, index })}
+                          href={postPath(post.slug)}
+                          // 결과가 글자마다 갈려 미리 받으면 입력마다 RSC 요청이 열 개씩 나간다.
+                          prefetch={false}
+                          tabIndex={-1}
+                          onClick={e => {
+                            if (!isModifiedClick(e)) closeDialog();
+                          }}
+                          className={css({
+                            display: 'block',
+                            px: '4',
+                            py: { base: '4', md: '3' },
+                            bg: selected ? 'accent.50' : 'transparent',
+                            _active: { bg: 'accent.50' },
+                            transition: '[background 0.1s]',
+                            borderBottomWidth: { base: '[1px]', md: '[0]' },
+                            borderColor: 'paper.200',
+                          })}
                         >
-                          {/* 진짜 링크다(새 탭으로 열기) — 키보드 선택은 콤보박스가 맡아 Tab 순서에서 뺀다. */}
-                          <Link
-                            href={postPath(post.slug)}
-                            // 결과가 글자마다 갈려 미리 받으면 입력마다 RSC 요청이 열 개씩 나간다.
-                            prefetch={false}
-                            tabIndex={-1}
-                            onClick={e => {
-                              if (!isModifiedClick(e)) closeDialog();
-                            }}
+                          <p
                             className={css({
-                              display: 'block',
-                              px: '4',
-                              py: { base: '4', md: '3' },
-                              bg: selected ? 'accent.50' : 'transparent',
-                              _active: { bg: 'accent.50' },
-                              transition: '[background 0.1s]',
-                              borderBottomWidth: { base: '[1px]', md: '[0]' },
-                              borderColor: 'paper.200',
+                              fontSize: 'sm',
+                              fontWeight: 'medium',
+                              color: 'ink.950',
+                              lineClamp: 1,
                             })}
                           >
-                            <p
-                              className={css({
-                                fontSize: 'sm',
-                                fontWeight: 'medium',
-                                color: 'ink.950',
-                                lineClamp: 1,
-                              })}
-                            >
-                              <Highlight text={post.title} tokens={tokens} />
-                            </p>
-                            <p
-                              className={css({
-                                fontSize: 'xs',
-                                color: 'ink.500',
-                                mt: '1',
-                                lineClamp: 2,
-                              })}
-                            >
-                              {/* 예약 글의 date는 ISO 일시일 수 있다 — 목록들과 같은
+                            <Highlight text={post.title} tokens={tokens} />
+                          </p>
+                          <p
+                            className={css({
+                              fontSize: 'xs',
+                              color: 'ink.500',
+                              mt: '1',
+                              lineClamp: 2,
+                            })}
+                          >
+                            {/* 예약 글의 date는 ISO 일시일 수 있다 — 목록들과 같은
                                 fmtDate로 날짜만 보인다. */}
-                              {post.date && (
-                                <span>{fmtDate(post.date)} · </span>
-                              )}
-                              {post.series && (
-                                <span>📚 {seriesLabel(post)} · </span>
-                              )}
-                              <Highlight text={snippet} tokens={tokens} />
-                            </p>
-                            {post.tags.length > 0 && (
-                              <div
-                                className={css({
-                                  display: 'flex',
-                                  gap: '1',
-                                  mt: '1.5',
-                                  flexWrap: 'wrap',
-                                })}
-                              >
-                                {post.tags.slice(0, 3).map(tag => (
-                                  <span
-                                    key={tag}
-                                    className={css({
-                                      fontSize: '2xs',
-                                      px: '1.5',
-                                      py: '0.5',
-                                      bg: 'paper.200',
-                                      color: 'ink.600',
-                                      rounded: 'md',
-                                    })}
-                                  >
-                                    {tag}
-                                  </span>
-                                ))}
-                              </div>
+                            {post.date && <span>{fmtDate(post.date)} · </span>}
+                            {post.series && (
+                              <span>📚 {seriesLabel(post)} · </span>
                             )}
-                          </Link>
-                        </li>
+                            <Highlight text={snippet} tokens={tokens} />
+                          </p>
+                          {post.tags.length > 0 && (
+                            <div
+                              className={css({
+                                display: 'flex',
+                                gap: '1',
+                                mt: '1.5',
+                                flexWrap: 'wrap',
+                              })}
+                            >
+                              {post.tags.slice(0, 3).map(tag => (
+                                <span
+                                  key={tag}
+                                  className={css({
+                                    fontSize: '2xs',
+                                    px: '1.5',
+                                    py: '0.5',
+                                    bg: 'paper.200',
+                                    // paper.200 위 작은 글자 — 서브 서피스 메타 톤(ink.500)이 AA 하한이다.
+                                    color: 'ink.500',
+                                    rounded: 'md',
+                                  })}
+                                >
+                                  {tag}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </Link>
                       );
                     })}
-                  </ul>
+                  </div>
                 )}
                 {filteredPosts.length === 0 && (
                   <div
@@ -515,7 +518,8 @@ export const SearchDialog = () => {
                       alignItems: 'center',
                       gap: '3',
                       textAlign: 'center',
-                      color: 'ink.400',
+                      // paper.50 위 보조 문구 — --fg-sub(ink.600). ink.400은 2.97:1이다.
+                      color: 'ink.600',
                       fontSize: 'sm',
                     })}
                   >
@@ -564,7 +568,8 @@ export const SearchDialog = () => {
                   borderTopWidth: '[1px]',
                   borderColor: 'ink.100',
                   fontSize: 'xs',
-                  color: 'ink.400',
+                  // aria-hidden이어도 보이는 글자다 — 대비는 지킨다(--fg-sub).
+                  color: 'ink.600',
                   flexShrink: 0,
                 })}
               >

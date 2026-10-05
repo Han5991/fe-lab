@@ -144,6 +144,7 @@ export function DateRangeControls({
       })}
     >
       <select
+        aria-label="기간"
         value={filterType}
         onChange={e => {
           const next = e.target.value;
@@ -164,6 +165,8 @@ export function DateRangeControls({
         >
           <input
             type="date"
+            // 보이는 라벨이 없다 — 기간 select와 같이 이름을 단다(axe label).
+            aria-label="시작일"
             value={startDate}
             onChange={e => setStartDate(e.target.value)}
             className={inputClass}
@@ -171,6 +174,7 @@ export function DateRangeControls({
           <span className={css({ color: 'ink.500', fontSize: 'xs' })}>—</span>
           <input
             type="date"
+            aria-label="종료일"
             value={endDate}
             onChange={e => setEndDate(e.target.value)}
             className={inputClass}

@@ -103,7 +103,9 @@ export function PostAccordion({ post, todayISO }: Props) {
             rel="noopener noreferrer"
             aria-label={`${post.title} 글을 새 탭에서 열기`}
             className={css({
-              color: 'ink.200',
+              // 아이콘만 있는 링크라 아이콘이 곧 단서다 — 비텍스트 대비 3:1(WCAG 1.4.11).
+              // ink.200은 1.43:1이었다.
+              color: 'ink.500',
               _hover: { color: 'spot.600' },
               display: 'flex',
               alignItems: 'center',
@@ -296,7 +298,7 @@ export function PostAccordion({ post, todayISO }: Props) {
                       color:
                         briefStats.weekGrowthRate !== null
                           ? briefStats.weekGrowthRate >= 0
-                            ? 'moss.600'
+                            ? 'moss.700'
                             : 'spot.600'
                           : 'ink.500',
                     })}
