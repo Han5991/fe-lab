@@ -1,4 +1,4 @@
-import { css } from '@design-system/ui-lib/css';
+import { css } from '@blog/styled-system/css';
 import type { ReactNode, HTMLAttributes } from 'react';
 
 interface LabelProps extends HTMLAttributes<HTMLElement> {

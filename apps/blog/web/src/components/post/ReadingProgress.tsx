@@ -1,4 +1,4 @@
-import { css } from '@design-system/ui-lib/css';
+import { css } from '@blog/styled-system/css';
 
 /**
  * 페이지 최상단 sticky 진행률 바.
@@ -35,10 +35,15 @@ export const ReadingProgress = () => (
         bg: 'accent.600',
         transformOrigin: '[0% 50%]',
         transform: '[scaleX(0)]',
-        // animation-timeline은 animation 단축 속성 뒤에 와야 한다 — 단축
-        // 속성이 먼저 오면 animation-timeline을 auto로 리셋해버린다.
-        animation: '[reading-progress-fill linear]',
+        // 단축 속성 `animation`을 쓰지 않고 longhand만 준다. 단축 속성은
+        // animation-timeline까지 auto로 리셋하므로, 같이 쓰면 선언 순서(단축이
+        // 먼저)에 기대야 했다 — longhand끼리는 서로를 건드리지 않아 순서와 무관하다.
+        // 키프레임 이름은 panda.config.ts의 keyframes에서 오므로 타입이 검사한다.
+        animationName: 'reading-progress-fill',
+        animationTimingFunction: 'linear',
         animationTimeline: 'scroll(root block)',
+        // 여기만 단축 속성 — 미디어 규칙이 기본 규칙보다 뒤에 나와 애니메이션을
+        // 통째로 끈다(타임라인 리셋도 애니메이션이 없으니 무해).
         '@media (prefers-reduced-motion: reduce)': {
           animation: '[none]',
         },

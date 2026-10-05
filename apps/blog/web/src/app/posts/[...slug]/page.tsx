@@ -10,7 +10,7 @@ import {
 import { sortPostsBySeriesOrder } from '@blog/content';
 import { isPostVisible, resolveThumbnailUrl } from '@blog/content/client';
 import { notFound } from 'next/navigation';
-import { css, cx } from '@design-system/ui-lib/css';
+import { css, cx } from '@blog/styled-system/css';
 import { PreviewBanner } from '@/src/components/preview/PreviewBanner';
 import { PostNavigation } from '@/src/components/post/PostNavigation';
 import {

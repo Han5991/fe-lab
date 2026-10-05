@@ -1,0 +1,24 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    // 생성기는 apps/blog/web/panda.config.ts다(이 패키지는 출력 자리일 뿐).
+    // 그 설정과 설정이 가져오는 프리셋이 입력이고, Panda 버전은 이 패키지의
+    // devDependencies(@pandacss/dev)가 해시에 싣는다.
+    "build": {
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/apps/blog/web/panda.config.ts",
+        "$TURBO_ROOT$/packages/@design-system/ui/src/blog-preset.ts"
+      ],
+      "outputs": [
+        "css/**",
+        "jsx/**",
+        "patterns/**",
+        "tokens/**",
+        "types/**",
+        "helpers.mjs"
+      ]
+    }
+  }
+}

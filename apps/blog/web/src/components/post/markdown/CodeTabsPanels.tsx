@@ -1,7 +1,7 @@
 'use client';
 
 import { useId, useRef, useState, type ReactNode } from 'react';
-import { css } from '@design-system/ui-lib/css';
+import { css } from '@blog/styled-system/css';
 import { CopyButton } from '@/src/components/post/CopyButton';
 
 /** 탭 메타 — 파서(CodeTabs)가 자식 훑기를 마치고 넘겨주는 직렬화 가능한 값. */

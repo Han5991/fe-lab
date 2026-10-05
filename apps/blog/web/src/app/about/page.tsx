@@ -1,6 +1,6 @@
 import { AUTHOR_GITHUB, AUTHOR_LINKEDIN } from '@/content.values.mts';
 import Link from 'next/link';
-import { css, cx } from '@design-system/ui-lib/css';
+import { css, cx } from '@blog/styled-system/css';
 
 import { safeJsonLd } from '@blog/content/client';
 import { Label } from '@/src/components/blog';

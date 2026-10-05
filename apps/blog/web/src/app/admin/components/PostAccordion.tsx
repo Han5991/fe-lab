@@ -4,7 +4,7 @@ import { TIMEZONE } from '@/content.values.mts';
 import { useId, useState } from 'react';
 import type { PostStatDetail } from '@/src/hooks/useAdminViews';
 import { computeBriefStats } from '@/src/hooks/usePostDetailStats';
-import { css } from '@design-system/ui-lib/css';
+import { css } from '@blog/styled-system/css';
 import { ChevronDown, ExternalLink, BarChart3 } from 'lucide-react';
 import {
   LineChart,
@@ -15,7 +15,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import Link from 'next/link';
-import { token } from '@design-system/ui-lib/tokens';
+import { token } from '@blog/styled-system/tokens';
 import { motion, AnimatePresence } from 'motion/react';
 import { formatMonthDayISO, parseScheduledDateKST } from '@blog/content/client';
 import { DateRangeControls, useDateFilter } from './DateRangeControls';

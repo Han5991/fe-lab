@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { css } from '@design-system/ui-lib/css';
+import { css } from '@blog/styled-system/css';
 
 import { Label } from '@/src/components/blog/Label';
 import { fmtNum } from '@blog/content/client';

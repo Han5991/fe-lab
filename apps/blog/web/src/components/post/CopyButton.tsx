@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Check, Clipboard } from 'lucide-react';
-import { css } from '@design-system/ui-lib/css';
+import { css } from '@blog/styled-system/css';
 import { CODE_ACCENT, CODE_META } from './codeChrome';
 
 // CodeBlock과 CodeTabs가 같은 버튼을 쓴다 — 탭 안에서는 상단 바를 탭이

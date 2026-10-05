@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { css } from '@design-system/ui-lib/css';
+import { css } from '@blog/styled-system/css';
 
 interface FigureProps {
   children?: ReactNode;

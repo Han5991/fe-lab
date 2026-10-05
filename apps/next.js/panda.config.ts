@@ -14,6 +14,9 @@ export default defineConfig({
 
   jsxFramework: 'react',
 
+  // ui-lib를 함께 쓰는 packages/@design-system/ui 설정과 같게 둔다 — 생성 타입만
+  // 바뀌는 옵션이라, 어긋나면 마지막에 codegen한 쪽의 타입이 나머지에게 새어 든다.
+  strictTokens: true,
   strictPropertyValues: true,
   outdir: '../../packages/@design-system/ui-lib',
   importMap: {

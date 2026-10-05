@@ -75,7 +75,7 @@ apps/blog/web/
 ├─ design/              redesign-decisions.md — 리뉴얼 결정 기록(왜 그렇게 정했는지. 현행 수치의 출처는 아니다)
 ├─ content.values.mts · content.config.mts   사이트 값 모듈 · 경로 앵커 겸 배선(§1)
 ├─ next.config.ts · postcss.config.cjs · vitest.config.mts · vitest.setup.ts
-├─ panda.config.ts      preset 셋(Panda 기본 · @design-system/ui preset · blog-preset) · strictTokens · 생성물 outdir은 packages/@design-system/ui-lib(직접 수정 금지). @blog/content 소스도 스캔한다
+├─ panda.config.ts      preset 둘(Panda 기본 · blog-preset) · strictTokens · 생성물 outdir은 이 설정 전용 패키지 packages/@blog/styled-system(@blog/styled-system/css·/tokens로 import, 직접 수정 금지 — pnpm install의 prepare와 turbo build가 만든다). @blog/content 소스도 스캔한다
 ├─ wrangler.jsonc       정적 자산 Worker — 도메인(routes, custom_domain)·계정(account_id — 비밀값 아님)·html_handling·not_found_handling(404 페이지)·workers_dev 끔·preview_urls 켬
 ├─ tsconfig.json(프로덕션) · tsconfig.test.json(테스트) · eslint.config.mts · turbo.json · env.d.ts
 ├─ AGENTS.md · CLAUDE.md   `next dev`가 관리하는 Next.js 에이전트 블록과, Claude Code가 그것을 읽는 한 줄 import(`@AGENTS.md`). 둘이 한 짝이다

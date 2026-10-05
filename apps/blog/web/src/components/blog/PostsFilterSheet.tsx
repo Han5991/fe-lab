@@ -3,7 +3,7 @@
 import { useRef, type ReactNode } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X } from 'lucide-react';
-import { css } from '@design-system/ui-lib/css';
+import { css } from '@blog/styled-system/css';
 import { Portal } from '@/src/components/Portal';
 import { useModalDialog } from '@/src/components/useModalDialog';
 

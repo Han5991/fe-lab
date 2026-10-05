@@ -1,4 +1,4 @@
-import { css } from '@design-system/ui-lib/css';
+import { css } from '@blog/styled-system/css';
 import { postHeroKey } from '@/src/shared/transitions';
 import { DIAGRAMS, isDiagramName } from '@/src/components/diagram/registry';
 

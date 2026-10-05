@@ -1,7 +1,8 @@
 import { defineConfig } from '@pandacss/dev';
 
 export default defineConfig({
-  // 블로그 프리셋만 — 기본 프리셋·컴포넌트 소스는 실험 앱용이라 걸면 lab 스타일이 실린다.
+  // Panda 기본 프리셋 + 블로그 프리셋 — lab 프리셋(@design-system/ui/preset)·컴포넌트 소스는
+  // 걸지 않는다(lab 토큰·레시피가 실린다).
   presets: ['@pandacss/dev/presets', '@design-system/ui/blog-preset'],
   preflight: true,
   lightningcss: true,
@@ -29,7 +30,10 @@ export default defineConfig({
       dark: '[data-theme=dark] &',
     },
   },
-  outdir: '../../../packages/@design-system/ui-lib',
+  // 생성물은 이 설정만 쓰는 전용 패키지로 간다 — 출력 자리 하나에 작성자 하나.
+  // 예전엔 lab 설정 셋과 같은 ui-lib에 썼고, 마지막 codegen이 이긴 타입을 블로그가
+  // 읽었다. 이 경로를 바꾸면 packages/@blog/styled-system의 build 스크립트도 함께.
+  outdir: '../../../packages/@blog/styled-system',
   theme: {
     extend: {
       keyframes: {
@@ -138,5 +142,5 @@ export default defineConfig({
       },
     },
   },
-  importMap: '@design-system/ui-lib',
+  importMap: '@blog/styled-system',
 });

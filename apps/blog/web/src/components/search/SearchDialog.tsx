@@ -3,7 +3,7 @@
 import { useState, useEffect, useId, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { css } from '@design-system/ui-lib/css';
+import { css } from '@blog/styled-system/css';
 import { Search, X, Clock } from 'lucide-react';
 import { fmtDate, postPath } from '@blog/content/client';
 import { getRecentViews, type RecentView } from '@/src/hooks/useRecentViews';

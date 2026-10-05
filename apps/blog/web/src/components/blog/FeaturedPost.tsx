@@ -1,6 +1,6 @@
 import { OG_DEFAULT_IMAGE } from '@/content.values.mts';
 import Link from 'next/link';
-import { css } from '@design-system/ui-lib/css';
+import { css } from '@blog/styled-system/css';
 import type { PostSummary } from '@blog/content/client';
 import { postPath } from '@blog/content/client';
 import { resolveThumbnailSrc } from '@blog/content/client';

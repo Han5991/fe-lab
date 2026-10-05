@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { css, cx } from '@design-system/ui-lib/css';
+import { css, cx } from '@blog/styled-system/css';
 
 import { sortPostsBySeriesOrder } from '@blog/content';
 import { POSTS_PATH, safeJsonLd, type PostSummary } from '@blog/content/client';

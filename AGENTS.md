@@ -69,7 +69,11 @@ here or anywhere else (this repo once carried four diverging copies of that prom
   (except Next.js pages/layouts), `import type`. No `any`.
 - **`@/` differs per app**: `apps/next.js`·`apps/react` map it to `src/*`; `apps/blog/web` maps it to the
   **app root** (`@/src/...`).
-- **Never edit generated code**: `styled-system/`, `packages/@design-system/ui-lib`.
+- **Never edit generated code**: `styled-system/`, `packages/@design-system/ui-lib` (lab only — written by the ui
+  package and `apps/react`·`apps/next.js` configs, so keep their presets and `strictTokens` identical),
+  `packages/@blog/styled-system` (written only by `apps/blog/web/panda.config.ts`). A dev server re-emits codegen
+  into its config's outdir, so configs that share an outdir leak their types into each other — never point
+  another config at the blog's.
 - Panda runs `strictTokens: true` — off-token values are escaped on purpose as `'[12px]'`.
 
 ## 4. Testing

@@ -1,4 +1,4 @@
-import { css } from '@design-system/ui-lib/css';
+import { css } from '@blog/styled-system/css';
 
 // 포스트 목록 계열 컴포넌트(PostIndexRow / PostListRow / MiniPostCard /
 // PostGridCard)가 공통으로 쓰는 태그(토픽) 칩 스타일. 각자 손으로 복붙하던

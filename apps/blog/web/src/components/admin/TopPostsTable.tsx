@@ -1,11 +1,11 @@
 'use client';
 
-import { css } from '@design-system/ui-lib/css';
+import { css } from '@blog/styled-system/css';
 import Link from 'next/link';
 import { postPath } from '@blog/content/client';
 import { fmtNum } from '@blog/content/client';
 import { Sparkline } from '@/src/components/blog/Sparkline';
-import { token } from '@design-system/ui-lib/tokens';
+import { token } from '@blog/styled-system/tokens';
 import type { TopPostSummary } from '@/src/domain/analytics';
 
 interface TopPostsTableProps {

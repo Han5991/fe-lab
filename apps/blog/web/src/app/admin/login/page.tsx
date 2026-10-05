@@ -3,7 +3,7 @@
 import { Suspense } from 'react';
 import { authRepository } from '@/src/domain/auth';
 import { adminLoginRedirectUrl } from '@/src/shared/routes';
-import { css, cx } from '@design-system/ui-lib/css';
+import { css, cx } from '@blog/styled-system/css';
 import { railGutter } from '@/src/components/Rail';
 import { LogIn } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';

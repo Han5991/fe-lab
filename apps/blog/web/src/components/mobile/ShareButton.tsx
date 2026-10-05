@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Share2 } from 'lucide-react';
-import { css } from '@design-system/ui-lib/css';
+import { css } from '@blog/styled-system/css';
 
 interface ShareButtonProps {
   title: string;

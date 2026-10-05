@@ -2,7 +2,7 @@
 
 import { Suspense } from 'react';
 import { useParams } from 'next/navigation';
-import { css } from '@design-system/ui-lib/css';
+import { css } from '@blog/styled-system/css';
 import {
   ArrowLeft,
   ExternalLink,
@@ -22,7 +22,7 @@ import {
   Cell,
 } from 'recharts';
 import Link from 'next/link';
-import { token } from '@design-system/ui-lib/tokens';
+import { token } from '@blog/styled-system/tokens';
 import {
   usePostDetailStats,
   usePrefetchPostDetailStats,

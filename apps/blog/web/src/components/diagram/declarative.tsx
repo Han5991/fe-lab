@@ -1,6 +1,6 @@
 import { isValidElement } from 'react';
 import type { ReactElement, ReactNode } from 'react';
-import { css } from '@design-system/ui-lib/css';
+import { css } from '@blog/styled-system/css';
 
 import {
   markdownChildren,

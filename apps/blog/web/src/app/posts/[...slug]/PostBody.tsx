@@ -11,7 +11,7 @@ import ReactMarkdown, { type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import rehypeSlug from 'rehype-slug';
-import { css, cx } from '@design-system/ui-lib/css';
+import { css, cx } from '@blog/styled-system/css';
 
 import { CodeBlock } from '@/src/components/post/CodeBlock';
 import { rehypeCodeMeta } from '@/src/components/post/codeMeta';

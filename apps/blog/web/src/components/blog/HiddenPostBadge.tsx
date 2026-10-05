@@ -1,5 +1,5 @@
 import { TIMEZONE } from '@/content.values.mts';
-import { css } from '@design-system/ui-lib/css';
+import { css } from '@blog/styled-system/css';
 import { isPostVisible } from '@blog/content/client';
 import type { PostSummary } from '@blog/content/client';
 

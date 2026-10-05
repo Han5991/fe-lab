@@ -1,6 +1,6 @@
 'use client';
 
-import { css } from '@design-system/ui-lib/css';
+import { css } from '@blog/styled-system/css';
 import { SortRadio, type SortKey } from './SortRadio';
 import { ViewToggle, type ViewMode } from './ViewToggle';
 import { FilterGroup, type FilterItem } from './FilterGroup';

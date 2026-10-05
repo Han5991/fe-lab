@@ -1,4 +1,4 @@
-import { cva } from '@design-system/ui-lib/css';
+import { cva } from '@blog/styled-system/css';
 
 /** 페이지 단위 행동 버튼(주·보조) — 에러 화면과 404가 같은 모양을 쓴다. */
 export const actionButton = cva({

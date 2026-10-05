@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { isRecord } from '@blog/content/client';
-import { css, cva } from '@design-system/ui-lib/css';
-import type { RecipeVariant } from '@design-system/ui-lib/css';
+import { css, cva } from '@blog/styled-system/css';
+import type { RecipeVariant } from '@blog/styled-system/css';
 
 import {
   isOptionalString,

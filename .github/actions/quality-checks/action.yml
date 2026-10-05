@@ -16,7 +16,7 @@ inputs:
   scope:
     description: >-
       lint·check-types·test를 어디까지 돌릴지. 'all'(기본)은 모노레포 전체, 'blog'는
-      블로그와 그 의존성 폐포(@blog/web... — @blog/content·@design-system/ui·ui-lib)만.
+      블로그와 그 의존성 폐포(@blog/web... — @blog/content·@blog/styled-system·@design-system/ui·ui-lib)만.
       배포 워크플로는 'blog'를 넘긴다. 매일 예약 글을 공개하는 무인 cron이 실험 앱
       (apps/react 등)의 flaky 테스트에 막히면 안 되기 때문이다 — d388db3(#446)에 매
       실행 절반쯤 깨지던 apps/react 테스트 기록이 있다. PR CI(ci.yml)는 'all'로 전부 본다.

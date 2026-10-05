@@ -1,0 +1,41 @@
+{
+  "name": "@blog/styled-system",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "panda codegen --cwd ../../../apps/blog/web --config panda.config.ts",
+    "prepare": "pnpm build"
+  },
+  "peerDependencies": {
+    "react": "catalog:"
+  },
+  "devDependencies": {
+    "@pandacss/dev": "catalog:"
+  },
+  "exports": {
+    "./css": {
+      "types": "./css/index.d.ts",
+      "require": "./css/index.mjs",
+      "import": "./css/index.mjs"
+    },
+    "./jsx": {
+      "types": "./jsx/index.d.ts",
+      "require": "./jsx/index.mjs",
+      "import": "./jsx/index.mjs"
+    },
+    "./patterns": {
+      "types": "./patterns/index.d.ts",
+      "require": "./patterns/index.mjs",
+      "import": "./patterns/index.mjs"
+    },
+    "./tokens": {
+      "types": "./tokens/index.d.ts",
+      "require": "./tokens/index.mjs",
+      "import": "./tokens/index.mjs"
+    },
+    "./types": {
+      "types": "./types/index.d.ts"
+    }
+  }
+}

@@ -1,6 +1,6 @@
 import { MERGED_PR_COUNT_FALLBACK } from '@/content.values.mts';
 import Link from 'next/link';
-import { css, cva } from '@design-system/ui-lib/css';
+import { css, cva } from '@blog/styled-system/css';
 // leaf import — 홈에서만 쓰는 프레젠테이션 컴포넌트라 배럴을 물릴 이유가 없다.
 import { postPath } from '@blog/content/client';
 

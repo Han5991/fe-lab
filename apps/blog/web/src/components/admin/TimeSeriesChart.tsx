@@ -1,6 +1,6 @@
 'use client';
 
-import { css } from '@design-system/ui-lib/css';
+import { css } from '@blog/styled-system/css';
 import {
   AreaChart,
   Area,
@@ -10,7 +10,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
-import { token } from '@design-system/ui-lib/tokens';
+import { token } from '@blog/styled-system/tokens';
 import { fmtNum } from '@blog/content/client';
 
 interface TimeSeriesChartProps {

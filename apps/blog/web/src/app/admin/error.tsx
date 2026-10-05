@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import Link from 'next/link';
 import { useQueryErrorResetBoundary } from '@tanstack/react-query';
-import { css, cx } from '@design-system/ui-lib/css';
+import { css, cx } from '@blog/styled-system/css';
 import { railColumn, railGutter } from '@/src/components/Rail';
 import { ADMIN_LOGIN_PATH } from '@/src/shared/routes';
 import { reportError } from '@/src/components/errorReporting';

@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { css } from '@design-system/ui-lib/css';
+import { css } from '@blog/styled-system/css';
 import { HOME_PATH } from '@/src/shared/routes';
 import { actionButton } from './actionButton';
 import { Rail } from './Rail';
