@@ -138,7 +138,7 @@ here or anywhere else (this repo once carried four diverging copies of that prom
   its prompt has a **21,000-byte limit** — over it, GitHub rejects the workflow silently and it vanishes from the PR
   checks (`workflowPromptSize.test.ts` holds a 20,500B budget); a PR that edits that workflow **skips its own
   review**. Missing 👍 ≠ findings — the `/list-good-prs` skill has the table for telling the cases apart.
-- **Claude 워크플로 6종의 인증은 secret `CLAUDE_CODE_OAUTH_TOKEN` 하나다** — `claude setup-token`이 만드는 **1년
+- **Claude 워크플로 4종의 인증은 secret `CLAUDE_CODE_OAUTH_TOKEN` 하나다** — `claude setup-token`이 만드는 **1년
   토큰**이라 발급일 +1년에 전부 같은 날 죽는다. 2025-10-03(`/install-github-app`) 발급분이 2026-10-03 만료돼 Site
   Smoke·Post Inventory가 동시에 빨간불이 됐고, 코드·액션·Claude Code 버전은 전날 성공과 같았다. 모양: Claude
   스텝이 2초·1턴·$0으로 `is_error: true`, 로그엔 사유가 없고(액션이 메시지를 가린다) Step Summary의 Final
@@ -187,7 +187,7 @@ Worker (`apps/blog/web/wrangler.jsonc`), Supabase for the dynamic bits.
   lockfile·툴체인·배포 워크플로 자신), **매일 cron `13 0 * * *`(KST 09:13)**(예약 글 공개), 수동
   실행. 정각을 피한 건 `0 0` 슬롯이 붐벼 실제로 KST 11:36~12:00에 돌았기 때문이다. GitHub cron은 정시를
   보장하지 않고 하루 한 번이라, `scheduledDate`에 적은 시각은 "그 뒤 첫 배포"(push 배포나 다음 날 cron)에서
-  나간다. 배포 결과물 스모크(`claude-site-smoke.yml`)는 이 cron 배포가 끝나면 `workflow_run`으로 이어 돈다.
+  나간다. 배포 결과물 스모크(`site-smoke.yml`)는 이 cron 배포가 끝나면 `workflow_run`으로 이어 돈다.
 - 스키마는 `supabase-migrations.yml`로만 적용한다(대시보드 SQL 에디터 금지). 배포와 분리한 이유는 배포가 매일
   cron으로 돌아 스키마 변경 없는 날에도 프로덕션 DB에 붙고, 발행과 스키마가 한 실패 지점에 묶이기 때문이다.
   커밋된 Supabase MCP(`.mcp.json`)가 `read_only=true`·`project_ref`로 묶여 있는 것도 같은 규칙이다 — 에이전트가

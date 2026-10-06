@@ -1,0 +1,49 @@
+name: Site Smoke
+
+# 매일 "배포 결과물"을 검사합니다. 빌드 성공 여부가 아니라 실제 서빙되는
+# HTML/sitemap/rss/robots와, 저장소 밖에 있는 Cloudflare Redirect Rules(apex probe)·
+# 캐시 헤더를 봅니다. 수집과 판정은 전부 `.github/scripts/site-smoke-collect.py`가 하고,
+# 어긋나면 잡이 실패합니다 — 알림은 이 빨간불입니다(예전엔 Claude가 이슈를 만들었다).
+
+on:
+  # 독립 cron은 예약 큐 지연으로 배포 뒤라는 순서가 보장되지 않아 배포 완료에 묶는다.
+  # name으로 매칭한다 — deploy-blog.yml의 name을 바꾸면 여기도(어긋나면 조용히 안 돈다).
+  workflow_run:
+    workflows: ['Deploy Blog to Cloudflare Workers']
+    types: [completed]
+  workflow_dispatch:
+
+concurrency:
+  group: site-smoke
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    # cron 배포 뒤에만(하루 한 번), 배포가 실패해도 돈다 — 떠 있는 사이트를 보는 잡이다.
+    # head_branch 조건은 아래 checkout의 전제를 명시한 것 — deploy-blog는 main에서만
+    # 돌지만, 그 트리거가 바뀌어도 이 잡은 main만 본다.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.event == 'schedule' &&
+       github.event.workflow_run.head_branch == 'main')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          # ref를 지정하지 않는다. workflow_run에서 기본 checkout은 main 최신 커밋이다.
+          # `workflow_run.head_sha`를 체크아웃하면 이벤트 페이로드에서 온 ref의 스크립트를
+          # 실행하는 모양이라 CodeQL이 "특권 컨텍스트의 신뢰할 수 없는 코드 체크아웃"
+          # (critical)으로 잡는다.
+
+      # 러너에 기본 설치된 python3(표준 라이브러리만 사용)으로 돈다. 설치 스텝 불필요.
+      # 판정 결과는 Step Summary에, 어긋난 항목은 `::error::`로 남는다.
+      - name: Collect and judge site facts
+        run: |
+          python3 .github/scripts/site-smoke-collect.py \
+            --out "${GITHUB_WORKSPACE}/site-smoke-facts.json"
