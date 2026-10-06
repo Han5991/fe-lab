@@ -26,12 +26,17 @@ Reactions on reviews, review comments, and issue comments do not qualify.
    contains no `[critical]` or `[high]` finding. If the review step failed or no such
    comment was posted, it adds nothing (fail-closed). A run cancelled by a newer run
    on the same PR skips this step; the newer run decides.
+3. **Same diff, no review.** On `synchronize`, if the PR diff (sha256 of `gh pr diff`)
+   equals the most recently judged one, the review step is skipped and the last step
+   re-applies that recorded verdict — a rebase or restack keeps its 👍 without a new
+   review. Re-run the job to force one.
 
 The workflow runs on `opened`, `synchronize`, and `labeled` — `labeled` only when the
 added label is `deps-major` (Renovate may label a PR after opening it, so the `opened`
 payload can lack it). Any other label neither re-runs the review nor touches the 👍.
 So the reaction tracks the current head: a new push takes the 👍 away as soon as its
-run starts, and it comes back only if that run passes.
+run starts, and it comes back only if that run passes (or re-applies a PASS recorded for
+the same diff).
 
 Two things this reaction is **not**:
 

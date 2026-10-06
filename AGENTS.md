@@ -141,7 +141,9 @@ here or anywhere else (this repo once carried four diverging copies of that prom
   one from the comment that run actually posted (PASS only with no critical/high finding) — fail-closed. Gotchas:
   its prompt has a **21,000-byte limit** — over it, GitHub rejects the workflow silently and it vanishes from the PR
   checks (`workflowPromptSize.test.ts` holds a 20,500B budget); a PR that edits that workflow **skips its own
-  review**. Missing 👍 ≠ findings — the `/list-good-prs` skill has the table for telling the cases apart.
+  review**. Missing 👍 ≠ findings — the `/list-good-prs` skill has the table for telling the cases apart. A push that
+  leaves the PR diff unchanged (rebase, restack — same `gh pr diff` bytes as the last judged diff) is not re-reviewed and
+  keeps its verdict; Re-run the job to force a review.
 - **Claude 워크플로 4종의 인증은 secret `CLAUDE_CODE_OAUTH_TOKEN` 하나다** — `claude setup-token`이 만드는 **1년
   토큰**이라 발급일 +1년에 전부 같은 날 죽는다. 2025-10-03(`/install-github-app`) 발급분이 2026-10-03 만료돼 Site
   Smoke·Post Inventory가 동시에 빨간불이 됐고, 코드·액션·Claude Code 버전은 전날 성공과 같았다. 모양: Claude

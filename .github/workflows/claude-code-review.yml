@@ -106,8 +106,44 @@ jobs:
               echo "이전 👍(${id})를 뗐다 — 이번 리뷰 결과로 다시 판정한다"
             done
 
+      # 같은 diff는 다시 리뷰하지 않는다 — 리베이스·main 머지·스택 재정렬은 head만 바꾸고 PR diff는
+      # 그대로다. 판정까지 끝낸 실행은 `gh pr diff` 원문의 sha256(hunk 위치·index 줄까지 그대로 — 줄을
+      # 다른 자리로 옮기기만 해도, 들여쓰기만 바꿔도 다른 diff다)과 판정(PASS·BLOCK)을 캐시 키 끝에
+      # 남긴다. synchronize에서 지금 diff가 **가장 최근** 기록 하나와 같으면 리뷰는 건너뛰고, 위에서
+      # 뗀 👍는 Mark가 그 기록의 판정대로 다시 건다 — 그 사이 취소·실패한 실행이 👍를 바꿔 놓았어도
+      # 바로잡힌다. 다시 받고 싶으면 Re-run(run_attempt > 1은 조회하지 않는다). 조회나 diff를 못 구하면
+      # 리뷰한다.
+      - name: Look up the last judged diff
+        id: last
+        if: github.event.action == 'synchronize' && github.run_attempt == 1
+        continue-on-error: true
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/claude-review-judged
+          key: claude-review-${{ github.event.pull_request.number }}-${{ github.run_id }}
+          restore-keys: claude-review-${{ github.event.pull_request.number }}-
+          lookup-only: true
+
+      - name: Compare the PR diff
+        id: patch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          LAST: ${{ steps.last.outputs.cache-matched-key }}
+        run: |
+          diff="$(gh pr diff "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --color=never)" || diff=''
+          id=''
+          [[ -z "$diff" ]] || id="$(printf '%s' "$diff" | sha256sum | cut -d' ' -f1)"
+          echo "id=$id" >> "$GITHUB_OUTPUT"
+          stored="${LAST##*-}"
+          if [[ -n "$id" && "$LAST" == *"-$id-$stored" && ( "$stored" == PASS || "$stored" == BLOCK ) ]]; then
+            echo "verdict=$stored" >> "$GITHUB_OUTPUT"
+            echo "이 diff($id)는 이미 판정했다($LAST) — 리뷰 없이 그 판정을 다시 건다"
+          fi
+
       - name: Run Claude Code Review
         id: claude-review
+        if: steps.patch.outputs.verdict == ''
         uses: anthropics/claude-code-action@9171db3e57d6a3140a37ddc2ba92788584e0ead6 # v1.0.234
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
@@ -567,9 +603,12 @@ jobs:
       # 앱이라 이 엔드포인트를 쓰지 않으므로, 소비하는 쪽도 이 로그인을 봐야 한다.
       - name: Mark review verdict with a reaction
         # always()가 아니라 !cancelled() — 취소된 실행의 판정은 새 실행이 한다(cancel-in-progress와 한 짝).
+        id: mark
         if: ${{ !cancelled() }}
         env:
           GH_TOKEN: ${{ github.token }}
+          STORED: ${{ steps.patch.outputs.verdict }}
+          DIFF_ID: ${{ steps.patch.outputs.id }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           REVIEW_OUTCOME: ${{ steps.claude-review.outcome }}
           SINCE: ${{ steps.start.outputs.at }}
@@ -597,7 +636,10 @@ jobs:
           # 판정 불가와 BLOCK은 결과가 같아도 원인이 다르다. 둘을 같은 줄로 찍으면
           # "리뷰가 게시 단계에 닿지도 못한 무음 실패"가 "매번 지적이 나오는 정상
           # 동작"과 구분되지 않는다 — 이 저장소가 가장 크게 데인 실패 형태다.
-          if [[ "$REVIEW_OUTCOME" != "success" ]]; then
+          if [[ -n "$STORED" ]]; then
+            verdict="$STORED"
+            echo "판정: $STORED (같은 diff의 지난 판정)"
+          elif [[ "$REVIEW_OUTCOME" != "success" ]]; then
             verdict="BLOCK"
             echo "판정 불가: 리뷰 스텝이 $REVIEW_OUTCOME 로 끝났다"
           elif [[ -z "$posted" ]]; then
@@ -610,6 +652,16 @@ jobs:
           else
             verdict="PASS"
             echo "판정: PASS (게시된 요약에 critical/high 지적 없음)"
+          fi
+
+          # 이번 리뷰가 게시된 요약으로 판정까지 끝났을 때만 이 diff의 판정을 남긴다(아래 캐시 저장).
+          # 리뷰하는 동안 diff가 바뀌었으면(실행을 취소하지 않는 base 변경 등) 남기지 않는다.
+          diff="$(gh pr diff "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --color=never)" || diff=''
+          now="$(printf '%s' "$diff" | sha256sum | cut -d' ' -f1)"
+          if [[ -z "$STORED" && "$REVIEW_OUTCOME" == "success" && -n "$posted" && "$now" == "$DIFF_ID" ]]; then
+            touch "$RUNNER_TEMP/claude-review-judged"
+            echo "judged=true" >> "$GITHUB_OUTPUT"
+            echo "verdict=$verdict" >> "$GITHUB_OUTPUT"
           fi
 
           if [[ "$verdict" != "PASS" ]]; then
@@ -636,3 +688,10 @@ jobs:
           else
             echo "👍 이미 있다 — 그대로 둔다"
           fi
+
+      - name: Remember the judged diff
+        if: steps.mark.outputs.judged == 'true' && steps.patch.outputs.id != ''
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/claude-review-judged
+          key: claude-review-${{ github.event.pull_request.number }}-${{ github.run_id }}-${{ steps.patch.outputs.id }}-${{ steps.mark.outputs.verdict }}
