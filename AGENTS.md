@@ -129,6 +129,10 @@ here or anywhere else (this repo once carried four diverging copies of that prom
   broken snapshots/fixtures, not a sanity pass; (2) run the full relevant suite + lint + typecheck and verify
   **every** sibling/fixture file you touched (past "fixes" broke tests — ENOENT, snapshot drift, suite-end vs
   suite-start timestamps — that only adversarial review caught); (3) clean, separated commits.
+- **A new gate carries a re-evaluation date** — in the commit that adds it and in a comment where it is configured
+  (CI step, checker rule, contract test, monitor). If it has caught nothing by then, shrink it or take it down. An
+  incident's fix is not by default a new gate plus a positive control plus an AGENTS.md paragraph plus a test guarding
+  the gate: gates add docs and upkeep whether or not they ever catch anything.
 - **PR skills**: `/pr-fix` (breadth — every review comment) and `/repair-pr` (one mechanical pass to green) don't
   overlap; if both apply, `/pr-fix` first. `/add-issue` and `/write-prd` run **only when the user names them** —
   both create real issues.
