@@ -75,11 +75,13 @@ jobs:
       # NEXT_PUBLIC_*은 커밋된 .env.production에서 온다. 위 주석 참고.)
       #
       # scope: 'blog' — 실험 앱 테스트가 예약 글 공개를 막지 않게 한다(실험 앱은 ci.yml이 본다).
+      # format: 'false' — 포맷만 어긋난 파일이 공개를 막지 않게 한다(포맷은 PR CI와 pre-commit이 본다).
       - name: Quality checks
         uses: ./.github/actions/quality-checks
         with:
           scope: blog
           build-blog: 'false'
+          format: 'false'
 
       # about 페이지 'PR 승인' 통계 — Han5991/Han5991 프로필 레포가 매일 갱신하는
       # config/summary.json(외부 OSS 머지 PR 총수)을 읽어 빌드 타임에 주입한다.
