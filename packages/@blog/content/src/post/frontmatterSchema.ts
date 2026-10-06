@@ -7,12 +7,11 @@
  * 넷은 실제로 서로 **다른 순서**를 들고 있었고, 어긋나도 아무것도 깨지지 않았습니다.
  *
  * 지금은 (1)이 이 테이블에서 파생되고(`RawFrontmatter`), (3)이 이 테이블을 읽고,
- * (4)는 `frontmatterSchema.test.ts`가 이 테이블의 `doc`과 글자 단위로 대조합니다.
- * (2)만은 여전히 손으로 쓴 코드입니다 — 그 이유는 아래 `narrow` 설명에 적어
- * 두었습니다.
+ * (4)는 없앴습니다 — AGENTS.md가 이 파일을 가리킵니다. (2)만은 여전히 손으로 쓴
+ * 코드입니다 — 그 이유는 아래 `narrow` 설명에 적어 두었습니다.
  *
- * **새 키를 추가할 때는 여기 한 줄 + AGENTS.md 표 한 줄 + parsePost 한 줄**이면
- * 됩니다. 셋 중 하나만 하면 컴파일이나 테스트가 막습니다.
+ * **새 키를 추가할 때는 여기 한 줄 + parsePost 한 줄**이면 됩니다. 하나만 하면
+ * 컴파일이나 테스트가 막습니다.
  *
  * lint 전용 정보(`REJECTED_FRONTMATTER_KEYS`의 거부 사유)가 도메인에 있는 것이
  * 어색해 보일 수 있는데, 다이어그램 이름 목록과 같은 계열의 판단입니다 — 검증
@@ -131,21 +130,11 @@ export interface FrontmatterField {
    *   왕복 프로브(키를 하나씩 빼서 parsePost 결과가 달라지는지)가 실패
    */
   narrow: (value: unknown) => unknown;
-  /**
-   * 루트 `AGENTS.md`의 frontmatter 표 설명 셀 **원문**.
-   *
-   * 표를 생성하지 않는 대신 `frontmatterSchema.test.ts`가 이 문자열과 표를
-   * 글자 단위로 대조합니다. 오타 하나를 고칠 때도 두 파일을 함께 고쳐야 하는
-   * 결합이 생기지만, 표가 조용히 낡는 것보다 낫다는 판단입니다.
-   * (표에서 `\|`로 이스케이프된 파이프는 여기서는 그냥 `|`입니다.)
-   */
+  /** 키 설명. AGENTS.md는 표를 따로 두지 않고 이 테이블을 가리킨다. */
   doc: string;
 }
 
-/**
- * 키 순서는 **AGENTS.md 표와 같습니다**(필수 먼저). 동기화 테스트가 순서까지
- * 비교하므로, 사람이 읽는 표 쪽을 정본으로 삼았습니다.
- */
+/** 키 순서는 필수 먼저입니다(`FRONTMATTER_KEYS`가 이 순서를 지킵니다). */
 export const FRONTMATTER_FIELDS = {
   status: {
     required: true,
@@ -230,7 +219,7 @@ function isFrontmatterKey(key: string): key is FrontmatterKey {
   return Object.hasOwn(FRONTMATTER_FIELDS, key);
 }
 
-/** 선언 순서(= AGENTS.md 표 순서)를 유지한 키 목록. */
+/** 선언 순서를 유지한 키 목록. */
 export const FRONTMATTER_KEYS =
   Object.keys(FRONTMATTER_FIELDS).filter(isFrontmatterKey);
 
