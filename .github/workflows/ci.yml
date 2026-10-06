@@ -87,7 +87,7 @@ jobs:
       # 검사 정의는 composite action 하나에 모여 있고, 배포 워크플로도 **같은 것**을
       # 부른다(.github/actions/quality-checks). 여기에만 검사를 추가하면 배포는
       # 그 검사를 안 지나는, 이번에 실제로 있었던 종류의 구멍이 생긴다.
-      # 배포는 scope 'blog'로 부른다 — 실험 앱은 여기(scope 'all')서만 본다.
+      # 배포는 scope 'blog'·format 'false'로 부른다 — 실험 앱과 포맷은 여기서만 본다.
       - name: Quality checks
         uses: ./.github/actions/quality-checks
 

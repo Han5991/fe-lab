@@ -1,6 +1,6 @@
 name: Quality checks
 description: >-
-  lint · type check · test · 포스트 frontmatter · 포맷 · (선택) 블로그 빌드 + 산출물 SEO 검사
+  lint · type check · test · 포스트 frontmatter · (선택) 포맷 · (선택) 블로그 빌드 + 산출물 SEO 검사
   + 런타임 e2e.
   PR CI와 배포 워크플로가 **같은 정의**를 쓰도록 한곳에 모읍니다.
 
@@ -28,6 +28,12 @@ inputs:
       배포 워크플로는 뒤에 자체 빌드 스텝(--force + NEXT_PUBLIC_PR_COUNT 주입)이
       있으므로 'false'로 넘겨 중복 빌드를 피합니다 — 런타임 e2e는 그 빌드 뒤에서
       같은 액션(.github/actions/blog-e2e)을 직접 부릅니다.
+    required: false
+    default: 'true'
+  format:
+    description: >-
+      포맷 검사(prettier)를 돌릴지 여부. 배포는 'false'를 넘긴다 — 공백만 어긋난 파일이
+      예약 글 공개를 막을 이유가 없고, 포맷은 PR CI와 pre-commit이 이미 본다.
     required: false
     default: 'true'
 
@@ -59,6 +65,7 @@ runs:
       run: pnpm --filter @blog/web lint:posts
 
     - name: Format check
+      if: inputs.format == 'true'
       shell: bash
       run: pnpm format:check
 
