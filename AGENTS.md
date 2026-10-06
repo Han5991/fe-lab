@@ -97,10 +97,9 @@ here or anywhere else (this repo once carried four diverging copies of that prom
   deliberately different from the real site values (`src/shared/testValues.ts`), so a consumer that ignores the
   injection and reads a constant directly fails — a failure a mock cannot catch. `vi.mock` only where no seam can
   be injected; MSW exists in `apps/react` only.
-- **Tests that read this file**: `frontmatterSchema.test.ts` diffs the frontmatter table in §8 character-for-
-  character against the descriptor table (edit both together), and `docPaths.test.ts` checks that every
-  backticked path in the docs exists. `contract.test.ts` (post and scripts) read the real `apps/blog/posts/` and
-  are the safety net for content/pipeline refactors.
+- **Tests that read this file**: `docPaths.test.ts` checks that every backticked path in the docs exists.
+  `contract.test.ts` (post and scripts) read the real `apps/blog/posts/` and are the safety net for content/pipeline
+  refactors.
 - **Runtime gate (`apps/blog/web/e2e`)** opens the built `out/` in Chromium, served by `wrangler dev` — the same
   static-assets Worker as production (`html_handling`, `404-page`), not a look-alike server. The page set is derived
   from `out/`, never hand-picked: collection throws before any test runs unless post pages = search index = sitemap
@@ -238,23 +237,9 @@ Worker (`apps/blog/web/wrangler.jsonc`), Supabase for the dynamic bits.
   `resolveThumbnailSrc`는 `ogDefaultImage` 스칼라를 받는다.
 - 로더·SEO 빌더는 `apps/blog/web/src/content.ts`의 인스턴스에서 가져온다(zero-arg 전역 로더 없음).
 
-**Frontmatter 전체 목록** — 여기 없는 키는 `lint:posts`가 `unknown-frontmatter-key`로 경고한다.
-`packages/@blog/content/src/post/frontmatterSchema.ts`의 서술자 테이블이 단일 출처이고, 이 표는
-`frontmatterSchema.test.ts`가 글자 단위로 대조한다 — 표를 고치면 테이블의 `doc`도 함께 고칠 것.
-
-| 키              | 필수 | 설명                                                                                                                                                                                                        |
-| :-------------- | :--: | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `status`        |  ✅  | `published` \| `draft` \| `scheduled`. **이 키가 없으면 포스트가 아니라 메타 노트로 간주되어 빌드에서 통째로 제외됩니다.**                                                                                  |
-| `title`         |  ✅  | 없으면 파일명으로 폴백하지만 `lint:posts`가 에러                                                                                                                                                            |
-| `seoTitle`      |      | **`<title>` 전용**의 짧은 제목. 화면 제목·OG 카드·JSON-LD headline은 계속 `title`을 쓴다. `{seoTitle ?? title} \| {site.name}`이 seo.titleMaxLength(기본 60자)를 넘으면 `lint:posts`가 `long-title` 경고    |
-| `date`          |  ✅  | `'YYYY-MM-DD'`. 목록 정렬·아카이브·sitemap·RSS가 모두 사용하고, `scheduled`일 때는 공개 시각이기도 함. 없으면 `missing-date` 에러                                                                           |
-| `slug`          |      | URL. 없으면 파일 경로에서 유도                                                                                                                                                                              |
-| `excerpt`       |      | meta description. **사실상 필수** — 없으면 본문 앞 160자 자동 발췌가 나가는데, 도입부가 비슷한 글끼리 description이 글자 단위로 겹친다(`missing-excerpt` 경고). 권장 120~160자(`excerpt-length` 경고)       |
-| `thumbnail`     |      | 없으면 빌드 시 OG 카드(`/og/{slug}.png`) 자동 생성                                                                                                                                                          |
-| `hero`          |      | 히어로 슬롯에 꽂을 **등록된 다이어그램 이름**(현재 `deploy-pipeline`). 있으면 썸네일 대신 이 SVG가 그려진다. 렌더는 fail-soft(미등록 → 썸네일 폴백)지만 `lint:posts`가 `unknown-hero-diagram` 에러로 막는다 |
-| `tags`          |      | 문자열 배열. 문자열 아닌 원소가 섞이면 태그 전체가 무시됨                                                                                                                                                   |
-| `updatedAt`     |      | Schema.org `dateModified`, sitemap `lastmod`에 사용                                                                                                                                                         |
-| `scheduledDate` |      | **시각까지 지정할 때만.** 날짜만이면 `date`로 충분. 이걸 써도 `date`는 여전히 필수                                                                                                                          |
+**Frontmatter 키**는 `packages/@blog/content/src/post/frontmatterSchema.ts`의 서술자 테이블이 단일 출처다 — 키마다
+필수 여부와 설명(`doc`)이 있다. 테이블에 없는 키는 `lint:posts`가 `unknown-frontmatter-key`로 경고한다. `status`가
+없는 파일은 포스트가 아니라 메타 노트로 간주되어 빌드에서 통째로 빠진다.
 
 `series`는 frontmatter가 아니라 **폴더 경로**로 결정되고, 그 폴더에 **`_series.yml`이 있어야** 시리즈다
 (`src/post/series.ts`의 `isSeriesFolder`, 편수는 보지 않는다). 예전엔 2편 이상이면 선언 없이 시리즈가 돼서,

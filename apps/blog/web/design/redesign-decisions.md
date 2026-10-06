@@ -139,8 +139,8 @@ About 페이지 안의 섹션으로 들어갔다.
 
 frontmatter 스키마도 다르다. 실제 필수 키는 `status` · `title` · `date` 이고(`status` 가
 없으면 아예 포스트로 취급하지 않는다), `series` 는 frontmatter가 아니라 **폴더 경로**로
-정해진다. 전체 목록은 `AGENTS.md` 의 frontmatter 표와
-`packages/@blog/content/src/post/frontmatterSchema.ts` 의 서술자 테이블에 있다.
+정해진다. 전체 목록은 `packages/@blog/content/src/post/frontmatterSchema.ts` 의 서술자
+테이블에 있다.
 
 ## 9. 사라진 참고 자료
 
