@@ -1,29 +1,25 @@
 #!/usr/bin/env python3
-"""배포된 블로그의 "실측값"을 수집해 JSON 사실표 하나로 떨어뜨린다.
+"""배포된 블로그의 "실측값"을 수집해 JSON 사실표로 떨어뜨리고, 기대와 어긋나면 잡을 실패시킨다.
 
-claude-site-smoke 워크플로우의 수집 담당이다. 예전에는 이 일을 Claude가
-직접 curl로 했는데, allowed-tools가 `Bash(curl:*)` 접두 매칭이라
-`curl ... | grep -c` 같은 조합이 전부 거부됐다. 우회하느라 턴 수와 비용이
-계속 늘었고(31턴/11건 → 52턴/21건), 무엇보다 **어떤 항목이 실제로 측정됐는지
-로그에 남지 않아** "성공 = 정상"을 신뢰할 수 없었다.
+site-smoke 워크플로우의 전부다. 빌드 게이트(check-seo·e2e)는 `out/`을 보고, 이
+스크립트는 그 `out/`이 실제로 어떻게 서빙되는지를 본다 — 특히 저장소 밖에 있는
+Cloudflare Redirect Rules(apex probe)와 캐시 헤더는 다른 어디서도 검사되지 않는다.
 
-그래서 역할을 나눴다.
-  - 이 스크립트: 측정. HTTP 상태·응답 헤더·앵커 개수·lastmod 분포처럼 세면 끝나는 것들
-  - Claude:      판정. 저장소 발행 글과의 대조, 회귀 여부, 이슈 작성
-
-기대값을 아는 항목(apex 리다이렉트, 캐시 헤더)은 실측값 옆에 `expected_*`와
-`matches`를 나란히 적어 둔다. 그래도 **판정은 아니다** — 어긋나도 exit 0이고,
-이슈를 낼지 말지는 Claude가 정한다.
+예전에는 Claude가 이 사실표를 읽고 판정·이슈 작성을 했다(그 전엔 curl까지 직접 했다).
+판정 항목이 전부 기계적인 비교라 `judge()`로 옮겼고, 알림은 이슈 대신 잡 실패다.
+저장소의 발행 글(공개 시각이 지난 예약 글 포함)이 서빙 중인 sitemap에 다 있는지 보던
+항목은 뺐다. 대신 배포 전 e2e가 `out/` 안의 일관성(글 페이지 = 검색 인덱스 = sitemap)과
+원고의 `status: published` 수 하한을 보고, 예약 글 공개 판정 자체는 visibility.ts 단위
+테스트가 본다. 예약 글이 공개 시각이 지났는데도 판정 규칙 회귀로 빠지는 경우는 이제
+배포 뒤에 아무도 대조하지 않는다.
 
 파이썬인 이유는 XML 때문이다. 검사 항목이 sitemap/rss의 **유효성**을 요구하는데
 Node에는 XML 파서가 내장돼 있지 않고, 정규식으로 흉내 내면 깨진 XML을 통과시킨다.
 파이썬은 표준 라이브러리(ElementTree)로 진짜 파싱을 하므로 러너에 설치할 것이
-없다. 저장소의 파이썬은 `.github/scripts/`의 수집기 둘(이 파일과
-`post-inventory-collect.py`)뿐이고, 용도는 CI 글루로 한정한다.
+없다. 용도는 CI 글루로 한정한다.
 
-사이트가 죽었어도 이 스크립트는 exit 0으로 끝난다 — 그건 Claude가 이슈로
-보고할 "사실"이지 수집 실패가 아니다. 반대로 예상 못 한 예외는 그대로 터뜨려
-잡을 실패시킨다(조용히 빈 사실표를 넘기면 "정상"으로 오판된다).
+사이트가 죽은 것은 판정 실패(exit 1)이고, 예상 못 한 예외도 그대로 터뜨려 잡을
+실패시킨다(조용히 빈 사실표로 끝나면 "정상"으로 오판된다).
 
 사용법:
     python3 .github/scripts/site-smoke-collect.py --out site-smoke-facts.json
@@ -108,9 +104,9 @@ def fetch(
 
     `deadline`은 **전체 수집**의 마감 시각(time.monotonic 기준)이다. 사이트가
     완전히 죽으면 경로 수(고정 5개 + 글 상세 1개, 홈이 살아 있으면 자산 표본
-    3개까지) × 재시도 × 타임아웃이 곱해져 잡 타임아웃을 넘기고, 그러면 이슈도
-    못 만든 채 잡만 빨갛게 죽는다. 마감을 넘기면 새 요청 없이(`DeadlineExceeded`)
-    지금까지의 사실을 그대로 넘기고, 요청 타임아웃도 남은 시간으로 줄인다.
+    3개까지) × 재시도 × 타임아웃이 곱해져 잡 타임아웃을 넘기고, 그러면 무엇이
+    측정되지 못했는지도 남기지 못한 채 잡이 죽는다. 마감을 넘기면 새 요청 없이
+    (`DeadlineExceeded`) 지금까지의 사실로 판정하고, 요청 타임아웃도 남은 시간으로 줄인다.
     """
     url = base_url.rstrip("/") + path
     attempt = 0
@@ -504,8 +500,8 @@ def parse_article(meta: dict, text: str) -> dict:
     }
 
 
-def write_step_summary(facts: dict) -> None:
-    """수집 결과를 Step Summary에 표로 남긴다. Claude 리포트를 열기 전에 보이는 층."""
+def write_step_summary(facts: dict, problems: list[str]) -> None:
+    """판정과 수집 결과를 Step Summary에 남긴다."""
     summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
     if not summary_path:
         return
@@ -525,6 +521,10 @@ def write_step_summary(facts: dict) -> None:
     home_title = repr(home["title"]).replace("|", "\\|")
 
     lines = [
+        "## 판정",
+        "",
+        *([f"- ⚠️ {problem}" for problem in problems] or ["정상"]),
+        "",
         "## 수집된 실측값",
         "",
         f"대상: `{facts['base_url']}` / 수집 시각: `{facts['checked_at_utc']}` (UTC)",
@@ -571,6 +571,53 @@ def write_step_summary(facts: dict) -> None:
 
     with open(summary_path, "a", encoding="utf-8") as handle:
         handle.write("\n".join(lines) + "\n")
+
+
+def got(meta: dict) -> str:
+    """응답 요약 — 응답이 없으면 원인(연결 실패·마감 초과)을 그대로 보인다."""
+    return f"HTTP {meta['status']}" if meta["status"] is not None else f"응답 없음({meta.get('error')})"
+
+
+def judge(facts: dict) -> list[str]:
+    """사실표에서 어긋난 항목을 고른다. 빈 목록이면 정상이다."""
+    problems: list[str] = []
+    for path, page in facts["pages"].items():
+        # 1KB는 어떤 실제 페이지보다도 훨씬 작다 — 200으로 빈 껍데기를 주는 경우를 거른다.
+        if page["status"] != 200 or not page["has_html_tag"] or page["bytes"] < 1024:
+            problems.append(
+                f"`{path}` {got(page)} · html 태그={page['has_html_tag']} · {page['bytes']} bytes"
+            )
+    if facts["posts_index"]["post_anchor_count"] < 1:
+        problems.append("`/posts/` 정적 앵커 0개 — CSR bail-out 회귀(#133)")
+    sitemap = facts["sitemap"]
+    if sitemap["status"] != 200 or not sitemap["xml_valid"] or sitemap["url_count"] < 1:
+        problems.append(
+            f"`/sitemap.xml` {got(sitemap)} · XML 유효={sitemap['xml_valid']} · url {sitemap['url_count']}개"
+        )
+    if sitemap["all_lastmod_is_check_date"]:
+        problems.append("sitemap lastmod가 전부 검사 당일 — 빌드마다 lastmod가 전진하는 회귀")
+    rss = facts["rss"]
+    if rss["status"] != 200 or not rss["xml_valid"] or rss["item_count"] < 1:
+        problems.append(
+            f"`/rss.xml` {got(rss)} · XML 유효={rss['xml_valid']} · item {rss['item_count']}개"
+        )
+    robots = facts["robots"]
+    if robots["status"] != 200 or not robots["references_sitemap"]:
+        problems.append(
+            f"`/robots.txt` {got(robots)} · sitemap 참조={robots['references_sitemap']}"
+        )
+    article = facts["article"]
+    if article["status"] != 200 or not article["has_canonical"] or not article["has_og_title"]:
+        problems.append(
+            f"글 상세 `{article.get('url')}` {got(article)} · "
+            f"canonical={article['has_canonical']} · og:title={article['has_og_title']}"
+        )
+    # 아래 둘은 저장소 코드가 아니라 Cloudflare(Redirect Rules)와 `public/_headers`의 서빙 결과다.
+    if not facts["apex"]["all_match"]:
+        problems.append("apex 리다이렉트 불일치 — 코드가 아니라 Cloudflare Redirect Rules를 볼 것(AGENTS.md §7)")
+    if not facts["cache"]["all_match"]:
+        problems.append("캐시 헤더 불일치(자산 표본 0개도 실패) — `apps/blog/web/public/_headers`")
+    return problems
 
 
 def main() -> int:
@@ -690,7 +737,8 @@ def main() -> int:
         json.dump(facts, handle, ensure_ascii=False, indent=2)
         handle.write("\n")
 
-    write_step_summary(facts)
+    problems = judge(facts)
+    write_step_summary(facts, problems)
 
     print(f"실측값을 {args.out} 에 기록했습니다.")
     print(
@@ -706,7 +754,9 @@ def main() -> int:
         f"캐시={sum(1 for p in facts['cache']['probes'] if p['matches'])}"
         f"/{len(facts['cache']['probes'])}"
     )
-    return 0
+    for problem in problems:
+        print(f"::error::{problem}")
+    return 1 if problems else 0
 
 
 if __name__ == "__main__":
