@@ -110,7 +110,8 @@ here or anywhere else (this repo once carried four diverging copies of that prom
   local server is fulfilled or stubbed in `e2e/support/network.ts` — Supabase with real response shapes (an aborted
   call makes the app log an error), analytics/Giscus/external images with empty bodies; an unknown host fails the
   test. A console filter or axe exclusion must be scoped by selector/pattern with the reason next to it, never
-  rule-wide. Retries are 0 except in the deploy job (1, so one flake doesn't block the cron publish).
+  rule-wide. Retries are 0 except in the deploy job (1, so one flake doesn't block the cron publish). PR CI opens a
+  sample (blog-e2e `sample-pages`: every non-post page, the representative posts, the newest post); deploy opens all.
 - **Every migration must also apply in PGlite.** `apps/blog/web/src/lib/platform/incrementViewCount.test.ts`
   replays all of `apps/blog/web/supabase/migrations/` into PGlite (WASM Postgres, stubbing Supabase's roles and
   default privileges) and calls the view-count RPC as `anon` — a migration that needs an extension PGlite doesn't

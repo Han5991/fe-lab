@@ -1,5 +1,9 @@
 /**
  * 산출물의 공개 페이지 전부(admin 제외 — `admin.spec.ts`)를 데스크톱·라이트 테마로 연다.
+ * PR CI는 표본만 연다(`E2E_SAMPLE` — blog-e2e의 `sample-pages`): 글이 아닌 페이지 전부(새 라우트도
+ * 저절로 들어온다), 대표 글(`representatives()`), 가장 최근 글(대개 그 PR이 더한 글). 나머지 글은
+ * 배포가 공개 직전에 연다. 페이지 집합의 대조(`sitePages()`)는 표본이어도 그대로 돈다.
+ * 재평가: 2026-11-30 — 그때까지 이 스위트가 PR에서 잡은 것이 없으면 표본·게이트를 다시 본다.
  *
  * 페이지마다:
  * 1. 본문이 hydration을 살아남는다 — 서버 HTML과 hydration 뒤 DOM의 본문 비교(구조·
@@ -21,9 +25,26 @@ import {
   waitForHydration,
 } from './support/dom';
 import { expect, test } from './support/fixtures';
-import { type PageKind, sitePages } from './support/site';
+import {
+  type PageKind,
+  publishedPosts,
+  representatives,
+  sitePages,
+} from './support/site';
 
-const PAGES = sitePages().filter(p => p.kind !== 'admin');
+const ALL = sitePages().filter(p => p.kind !== 'admin');
+// 검색 인덱스는 최신순이다.
+const newest = publishedPosts()[0];
+const sample = process.env['E2E_SAMPLE']
+  ? new Set(
+      [
+        ...ALL.filter(p => p.kind === 'page').map(p => p.route),
+        ...representatives().routes,
+        ...(newest ? [`/posts/${newest.slug}/`] : []),
+      ].map(route => decodeURI(route)),
+    )
+  : undefined;
+const PAGES = ALL.filter(p => sample?.has(decodeURI(p.route)) ?? true);
 
 /** hydration 뒤 본문이 서버 HTML을 지켰는지. `when`은 실패 메시지에 실린다. */
 async function expectBodySurvived(

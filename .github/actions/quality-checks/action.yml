@@ -80,3 +80,4 @@ runs:
       uses: ./.github/actions/blog-e2e
       with:
         reuse-pass: 'true'
+        sample-pages: 'true'

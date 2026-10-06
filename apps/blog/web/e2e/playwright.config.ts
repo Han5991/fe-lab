@@ -27,7 +27,8 @@ export default defineConfig({
   outputDir: '../.playwright/results',
   fullyParallel: true,
   forbidOnly: CI,
-  // 기본은 재시도 0 — 봉인된(hermetic) 스위트라 흔들리면 그 자체가 결함이다(PR에서 드러나야 한다).
+  // 기본은 재시도 0 — 봉인된(hermetic) 스위트라 흔들리면 그 자체가 결함이다(PR에서 드러나야 한다 —
+  // PR은 페이지 표본만 연다).
   // 무인 cron 배포만 `E2E_RETRIES=1`을 준다(blog-e2e 액션의 `retries`): 한 번의 흔들림이
   // 그날 예약 글 공개를 막지 않게 하되, 재시도로 통과한 테스트는 리포트에 flaky로 남는다.
   retries: Number(process.env['E2E_RETRIES'] ?? 0),

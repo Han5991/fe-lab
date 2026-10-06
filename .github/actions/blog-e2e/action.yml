@@ -20,7 +20,7 @@ description: >-
 inputs:
   retries:
     description: >-
-      실패한 테스트의 재시도 횟수(E2E_RETRIES). PR CI는 0 — 흔들림이 드러나야 한다. 무인
+      실패한 테스트의 재시도 횟수(E2E_RETRIES). PR CI는 0 — 흔들림이 드러나야 한다(페이지는 표본만). 무인
       배포만 1을 넘겨, 한 번의 흔들림이 그날 예약 글 공개를 막지 않게 한다(재시도로
       통과한 테스트는 리포트에 flaky로 남는다).
     required: false
@@ -29,6 +29,12 @@ inputs:
     description: >-
       'true'면 같은 입력(out/ + 아래 해시 목록)이 전에 통과한 기록이 있을 때 건너뛴다. PR CI만
       켠다 — 배포는 --force 빌드라 어차피 맞을 일이 없고, 공개 직전에는 매번 브라우저로 연다.
+    required: false
+    default: 'false'
+  sample-pages:
+    description: >-
+      'true'면 페이지 검사(pages.spec)를 대표 페이지만 돈다(E2E_SAMPLE). PR CI만 켠다 — 전
+      페이지는 배포가 공개 직전에 본다. 대표 페이지는 산출물에서 고른다(e2e/support/site.ts).
     required: false
     default: 'false'
 
@@ -102,6 +108,7 @@ runs:
       shell: bash
       env:
         E2E_RETRIES: ${{ inputs.retries }}
+        E2E_SAMPLE: ${{ inputs.sample-pages == 'true' && '1' || '' }}
       run: |
         pnpm --filter @blog/web test:e2e
         touch "$RUNNER_TEMP/blog-e2e-pass"
