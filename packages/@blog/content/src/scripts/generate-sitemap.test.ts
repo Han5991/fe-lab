@@ -125,7 +125,7 @@ test('sitemap: date도 updatedAt도 없으면 lastmod = today', () => {
 function staticBlock(xml: string, loc: string) {
   return xml.match(
     new RegExp(
-      `<url>\\s*<loc>${loc.replace(/[/.]/g, '\\$&')}</loc>([\\s\\S]*?)</url>`,
+      `<url>\\s*<loc>${loc.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}</loc>([\\s\\S]*?)</url>`,
     ),
   );
 }
