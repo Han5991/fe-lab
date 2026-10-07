@@ -18,7 +18,7 @@ function toTheme(value: string | undefined): Theme | null {
 }
 
 // readCookie/writeCookie/systemTheme/getSnapshot은 순수 헬퍼로 단위 테스트에서
-// 직접 검증하려고 export한다(sibling useRecentViews와 동일한 컨벤션).
+// 직접 검증하려고 export한다(sibling recentViews와 동일한 컨벤션).
 export function readCookie(): Theme | null {
   // 쿠키 정규식은 theme-cookie.ts의 THEME_COOKIE_MATCH 단일 소스를 쓴다
   // (layout.tsx의 FOUC 스크립트도 같은 소스를 주입 → 두 곳이 어긋날 수 없음).

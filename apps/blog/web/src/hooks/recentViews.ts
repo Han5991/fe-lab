@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { isRecord } from '@blog/content/client';
 
 const KEY = 'blog_recent_views';
@@ -78,10 +77,4 @@ export function recordRecentView(slug: string, title: string): void {
   } catch {
     // localStorage 한도/사적 모드 등 — 조용히 무시
   }
-}
-
-export function useRecordRecentView(slug: string, title: string): void {
-  useEffect(() => {
-    recordRecentView(slug, title);
-  }, [slug, title]);
 }

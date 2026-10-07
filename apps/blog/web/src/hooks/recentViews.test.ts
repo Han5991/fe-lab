@@ -1,10 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
-import { renderHook } from '@testing-library/react';
-import {
-  getRecentViews,
-  recordRecentView,
-  useRecordRecentView,
-} from './useRecentViews';
+import { getRecentViews, recordRecentView } from './recentViews';
 
 const KEY = 'blog_recent_views';
 
@@ -90,13 +85,6 @@ describe('recordRecentView', () => {
   });
 });
 
-describe('useRecordRecentView', () => {
-  test('마운트 시 slug를 기록', () => {
-    renderHook(() => useRecordRecentView('hello', 'Hello'));
-    expect(getRecentViews().map(r => r.slug)).toEqual(['hello']);
-  });
-});
-
 // 사이트 데이터를 차단하면 `window.localStorage` getter 자체가 SecurityError를 던진다.
 describe('사이트 저장소가 차단된 브라우저', () => {
   let original: PropertyDescriptor | undefined;
@@ -119,10 +107,9 @@ describe('사이트 저장소가 차단된 브라우저', () => {
 
   afterEach(restore);
 
-  test('읽기는 빈 배열, 쓰기는 조용히 넘어가고, 쓰는 화면도 마운트된다', () => {
+  test('읽기는 빈 배열, 쓰기는 조용히 넘어간다', () => {
     expect(getRecentViews()).toEqual([]);
     expect(() => recordRecentView('a', 'A')).not.toThrow();
-    expect(() => renderHook(() => useRecordRecentView('a', 'A'))).not.toThrow();
   });
 
   test('getItem만 던져도 빈 배열', () => {
