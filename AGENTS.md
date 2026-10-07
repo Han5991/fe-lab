@@ -209,7 +209,8 @@ Worker (`apps/blog/web/wrangler.jsonc`), Supabase for the dynamic bits.
   **런타임 예외도 같은 GA4로 간다** — `apps/blog/web/src/components/errorReporting.ts`가 에러 경계 셋과 전역
   `error`·`unhandledrejection`에서 `exception` 이벤트(설명 100자, 자기 출처의 첫 스택 프레임 `frame`, 비치명은 탭 새로고침 전까지 5건)를 보내고, 다른 출처
   스크립트의 에러와 `Error`가 아닌 거절은 거른다. GA4 화면에서 보려면 `description`·`frame`을 맞춤 측정기준으로
-  등록해야 한다. `frame`의 원래 위치는 함께 배포되는 소스맵(`productionBrowserSourceMaps`)으로 찾는다. **실사용자 Web Vitals도 같은 GA4로 간다** — 레이아웃이 `GoogleAnalytics` 뒤에 둔 리포터가
+  등록해야 한다. `frame`의 원래 위치는 함께 배포되는 소스맵(`productionBrowserSourceMaps`)으로 찾는다. **실사용자 Web Vitals도 같은 GA4로 간다** — `apps/blog/web/src/instrumentation-client.ts`가 GA(`gtag`)가
+  초기화된 뒤 web-vitals를 등록하고(곧바로 등록하면 그 전에 보고된 FCP·TTFB를 `sendGAEvent`가 버린다)
   `apps/blog/web/src/components/webVitals.ts`의 매개변수로 지표마다 이벤트를 보낸다. 단위는 **하드 로드 한 번**이다:
   `page_location`은 처음 연 페이지로 덮이고, 소프트 내비게이션으로 간 페이지는 자기 LCP·FCP·TTFB가 없으며
   CLS·INP는 그 뒤 세션 전체를 담는다. 등급별로 보려면 `metric_rating`을 맞춤 측정기준으로, 값을 모으려면

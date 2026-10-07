@@ -11,7 +11,6 @@ import { Providers } from './providers';
 import { Layout } from '@/src/components/Layout';
 import { GoogleAnalytics, GoogleTagManager } from '@next/third-parties/google';
 import { ErrorReporter } from '@/src/components/ErrorReporter';
-import { WebVitalsReporter } from '@/src/components/WebVitalsReporter';
 import type { ReactNode } from 'react';
 import { jetbrainsMono } from './fonts';
 import { THEME_COOKIE_MATCH } from '@/src/hooks/theme-cookie';
@@ -72,8 +71,6 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             <GoogleAnalytics gaId="G-ZS9ENFSSQ0" />
             <GoogleTagManager gtmId="GTM-5SMPQ23P" />
             <ErrorReporter />
-            {/* GoogleAnalytics 뒤 — GA 초기화가 dataLayer를 만든 뒤에 지표를 등록한다. */}
-            <WebVitalsReporter />
           </>
         )}
       </body>

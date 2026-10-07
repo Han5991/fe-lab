@@ -167,8 +167,8 @@ function webVitalsEvents(page: Page) {
   });
 }
 
-// 리포터가 빠지거나 GA보다 먼저 돌아 dataLayer가 없으면 지표는 소리 없이 사라진다
-// (sendGAEvent는 경고만 남긴다) — 실제로 한 건이 실리는지 보는 양성 대조.
+// 등록이 빠지거나 GA 초기화보다 먼저 보고된 지표는 소리 없이 사라진다(sendGAEvent는 경고만
+// 남긴다 — instrumentation-client가 곧바로 등록하면 FCP·TTFB가 빠졌다) — 실제로 실리는지 보는 양성 대조.
 // 홈에서 글로 **소프트 내비게이션**한 뒤 숨긴다. LCP·CLS는 그때 보고되지만 재는 대상은
 // 하드 로드한 홈이라, 이벤트가 그 순간의 주소(글)가 아니라 홈으로 찍혀야 한다.
 test('Web Vitals가 하드 로드한 페이지 이름으로 GA dataLayer에 실린다', async ({
