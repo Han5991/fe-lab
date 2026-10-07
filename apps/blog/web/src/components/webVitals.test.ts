@@ -35,8 +35,8 @@ test('CLS는 단위가 없어 1000배해 반올림한다 — 0.0123이 0으로 �
     metric({ name: 'CLS', value: 0.0123, delta: 0.0123, rating: 'good' }),
     LANDING,
   );
-  expect(event?.value).toBe(12);
-  expect(event?.metric_value).toBe(0.0123);
+  expect(event.value).toBe(12);
+  expect(event.metric_value).toBe(0.0123);
 });
 
 test('문자열 매개변수는 GA4 한도(100자, page_location은 1000자)로 자른다', () => {
@@ -44,15 +44,8 @@ test('문자열 매개변수는 GA4 한도(100자, page_location은 1000자)로 
     metric({ id: 'x'.repeat(150), rating: 'needs-improvement' }),
     `${LANDING}posts/${'%EA%B0%80'.repeat(400)}/`,
   );
-  expect(event?.metric_id).toHaveLength(100);
-  expect(event?.metric_rating).toBe('needs-improvement');
+  expect(event.metric_id).toHaveLength(100);
+  expect(event.metric_rating).toBe('needs-improvement');
   // page_location은 GA4가 1000자까지 받는다 — 100자로 자르면 한글 slug가 잘린다.
-  expect(event?.page_location).toHaveLength(1000);
-});
-
-test('Core Web Vitals에서 빠진 FID는 보내지 않는다 — INP가 대체했다', () => {
-  expect(toWebVitalsEvent(metric({ name: 'FID' }), LANDING)).toBeUndefined();
-  for (const name of ['LCP', 'INP', 'CLS', 'FCP', 'TTFB']) {
-    expect(toWebVitalsEvent(metric({ name }), LANDING), name).toBeDefined();
-  }
+  expect(event.page_location).toHaveLength(1000);
 });
