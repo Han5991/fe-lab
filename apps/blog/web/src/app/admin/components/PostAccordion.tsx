@@ -3,7 +3,7 @@
 import { TIMEZONE } from '@/content.values.mts';
 import { useId, useState } from 'react';
 import type { PostStatDetail } from '@/src/hooks/useAdminViews';
-import { computeBriefStats } from '@/src/hooks/usePostDetailStats';
+import { analyticsService } from '@/src/domain/analytics/admin';
 import { css } from '@blog/styled-system/css';
 import { ChevronDown, ExternalLink, BarChart3 } from 'lucide-react';
 import {
@@ -33,7 +33,7 @@ interface Props {
 export function PostAccordion({ post, todayISO }: Props) {
   const [isOpen, setIsOpen] = useState(false);
   const panelId = useId();
-  const briefStats = computeBriefStats(post, todayISO);
+  const briefStats = analyticsService.computeDerivedStats(post, todayISO);
 
   // frontmatter의 status(발행 의도)가 아니라 **지금 실제로 공개 중인지**로 배지를
   // 그립니다. 판정은 도메인 함수 하나에 위임합니다 — 예전에는 이 자리에서 규칙을

@@ -1,7 +1,8 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useViewCount } from '@/src/hooks/useViewCount';
-import { useRecordRecentView } from '@/src/hooks/useRecentViews';
+import { recordRecentView } from '@/src/hooks/recentViews';
 
 /**
  * 화면을 그리지 않는 클라이언트 잎 — 글 페이지의 런타임 부수효과(조회수 RPC,
@@ -11,6 +12,9 @@ import { useRecordRecentView } from '@/src/hooks/useRecentViews';
  */
 export function PostRuntime({ slug, title }: { slug: string; title: string }) {
   useViewCount(slug);
-  useRecordRecentView(slug, title);
+  // 기록은 커밋 뒤에 — 렌더는 빌드 시 서버에서도, StrictMode에선 두 번도 돈다.
+  useEffect(() => {
+    recordRecentView(slug, title);
+  }, [slug, title]);
   return null;
 }

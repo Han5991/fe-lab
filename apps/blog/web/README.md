@@ -61,7 +61,7 @@ apps/blog/web/
 ├─ src/                 앱 소스 전체 — 레이어는 src 안의 형제 폴더다 (경계는 lint가 강제)
 │  ├─ app/              app 레이어: 라우트 — /, /posts/, /posts/[...slug]/, /series/, /about/, /privacy/, /admin/**
 │  ├─ components/       app 레이어: blog(목록·아카이브) · post(상세·markdown 커스텀 태그) · diagram · home · admin · mobile · search · preview · shared · Rail · Layout …
-│  ├─ hooks/            app 레이어: useTheme · useViewCount · useRecentViews · useAdminViews · useAnalyticsOverview · usePostDetailStats · useAdminLogout
+│  ├─ hooks/            app 레이어: useTheme · useViewCount · recentViews · useAdminViews · useAnalyticsOverview · usePostDetailStats · useAdminLogout
 │  ├─ styles/globals.css
 │  ├─ content.ts        app 레이어: 콘텐츠 인스턴스 조립 — fs 로더·SEO 빌더의 유일한 문(서버 전용)
 │  ├─ domain/analytics/ analytics 레이어 — 순수 계산(service) + 저장소(repository·adminRepository) + 배럴 2개(index · admin)

@@ -17,10 +17,6 @@ import type {
   DowDistribution,
 } from '@/src/domain/analytics';
 
-/** admin 목록의 간이 통계 — 상세 훅과 같은 계산을 화면 이름으로 다시 낸다. */
-export const computeBriefStats = (post: PostStatDetail, todayISO: string) =>
-  analyticsService.computeDerivedStats(post, todayISO);
-
 /** 글 하나의 시간대·요일 분포(Edge Function) — slug만 있으면 받을 수 있다. */
 const distributionsQuery = (slug: string) =>
   queryOptions({
@@ -50,7 +46,6 @@ export function usePostDetailStats(post: PostStatDetail): PostDetailStats {
   );
 
   return {
-    post,
     hourly: distributions.hourly,
     dow: distributions.dow,
     derived: analyticsService.computeDerivedStats(

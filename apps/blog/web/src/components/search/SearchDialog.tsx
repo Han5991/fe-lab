@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { css } from '@blog/styled-system/css';
 import { Search, X, Clock } from 'lucide-react';
 import { fmtDate, postPath } from '@blog/content/client';
-import { getRecentViews, type RecentView } from '@/src/hooks/useRecentViews';
+import { getRecentViews, type RecentView } from '@/src/hooks/recentViews';
 import { Portal } from '@/src/components/Portal';
 import { useModalDialog } from '@/src/components/useModalDialog';
 import { isModifiedClick } from '@/src/components/events';

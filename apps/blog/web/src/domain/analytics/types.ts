@@ -75,7 +75,6 @@ export interface DerivedStats {
 }
 
 export interface PostDetailStats {
-  post: PostStatDetail;
   hourly: HourlyDistribution[];
   dow: DowDistribution[];
   derived: DerivedStats;

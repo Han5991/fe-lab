@@ -11,7 +11,7 @@ vi.mock('next/navigation', () => ({
 
 // 최근 본 글이 있으면 빈 검색어일 때 그 목록이 대신 뜬다. 선택 인덱스 계약과는
 // 무관한 축이라 비워 두고, 목록은 아래 POSTS 하나로 고정한다.
-vi.mock('@/src/hooks/useRecentViews', () => ({
+vi.mock('@/src/hooks/recentViews', () => ({
   getRecentViews: () => [],
 }));
 
