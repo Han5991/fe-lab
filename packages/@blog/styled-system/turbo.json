@@ -4,7 +4,10 @@
   "tasks": {
     // 생성기는 apps/blog/web/panda.config.ts다(이 패키지는 출력 자리일 뿐).
     // 그 설정과 설정이 가져오는 프리셋이 입력이고, Panda 버전은 이 패키지의
-    // devDependencies(@pandacss/dev)가 해시에 싣는다.
+    // devDependencies(@pandacss/dev·preset-base·preset-panda)가 해시에 싣는다 — 프리셋만
+    // 올라가도 캐시가 옛 토큰을 되살리지 않게 셋 다 둔다.
+    // 이 outdir에 `panda codegen --clean`을 쓰지 말 것: 출력 자리가 패키지 전체라 커밋된
+    // package.json·turbo.json까지 지운다. 낡은 생성물은 `git clean -fdX`로 지운다.
     "build": {
       "inputs": [
         "$TURBO_DEFAULT$",
@@ -15,9 +18,11 @@
         "css/**",
         "jsx/**",
         "patterns/**",
+        "recipes/**",
         "tokens/**",
         "types/**",
-        "helpers.mjs"
+        "helpers.js",
+        "helpers.d.ts"
       ]
     }
   }

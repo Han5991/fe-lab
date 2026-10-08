@@ -1,6 +1,13 @@
 import { sva } from '@design-system/ui-lib/css';
+import type { SlotRecipeRuntimeFn } from '@design-system/ui-lib/types';
+import type { ToastType } from './types';
 
-export const toastRecipe = sva({
+// 인라인 sva는 변형 키만 적은 타입을 단다(Panda v2 isolated declarations 패턴) — 추론 타입은 d.ts가
+// 이름을 못 붙이고(TS2883), 붙여도 CSS 값이 통째로 타입에 실린다.
+export const toastRecipe: SlotRecipeRuntimeFn<
+  'container' | 'content' | 'icon',
+  { type?: ToastType }
+> = sva({
   slots: ['container', 'content', 'icon'],
   base: {
     // fixed·오프셋은 ToastContainer의 위치별 스택이 맡는다(토스트마다 주면 한 점에 겹친다)

@@ -3,9 +3,11 @@ import { defineConfig } from '@pandacss/dev';
 export default defineConfig({
   // Panda 기본 프리셋 + 블로그 프리셋(@blog/preset — 블로그 소유, 컴포넌트 없는 설정 전용 패키지).
   // lab 디자인 시스템(@design-system/ui)은 걸지 않는다(lab 토큰·레시피가 실린다).
-  presets: ['@pandacss/dev/presets', '@blog/preset'],
+  // v2는 프리셋을 자동으로 넣지 않는다(get-started/upgrading-to-v2 "Presets aren't added for
+  // you") — v1이 몰래 넣던 preset-base(유틸리티·조건)와 v1의 '@pandacss/dev/presets'(=
+  // preset-panda, v2에서 export가 없어졌다)를 명시한다.
+  presets: ['@pandacss/preset-base', '@pandacss/preset-panda', '@blog/preset'],
   preflight: true,
-  lightningcss: true,
 
   include: [
     './src/**/*.{js,jsx,ts,tsx}',

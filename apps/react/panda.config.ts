@@ -1,10 +1,13 @@
 import { defineConfig } from '@pandacss/dev';
 
 export default defineConfig({
-  presets: ['@pandacss/dev/presets', '@design-system/ui/preset'],
+  presets: [
+    '@pandacss/preset-base',
+    '@pandacss/preset-panda',
+    '@design-system/ui/preset',
+  ],
   // Whether to use css reset
   preflight: true,
-  lightningcss: true,
 
   // Where to look for your css declarations
   include: [
