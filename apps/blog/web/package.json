@@ -61,6 +61,8 @@
     "@eslint/js": "catalog:lint",
     "@next/eslint-plugin-next": "catalog:lint",
     "@pandacss/dev": "catalog:",
+    "@pandacss/preset-base": "catalog:",
+    "@pandacss/preset-panda": "catalog:",
     "@playwright/test": "^1.63.0",
     "@testing-library/dom": "catalog:",
     "@testing-library/jest-dom": "catalog:",

@@ -6,13 +6,12 @@ export default defineConfig({
   // packages/@blog/styled-system으로 따로 간다. ui-lib의 작성자는 이 설정과
   // lab 앱 둘(apps/react·apps/next.js)이고, 셋 다 같은 프리셋·같은 strictTokens라
   // 누가 마지막에 codegen해도 같은 ui-lib가 나온다.
-  presets: ['@pandacss/dev/presets', preset],
+  // v2는 프리셋을 자동으로 넣지 않는다 — v1이 몰래 넣던 preset-base(유틸리티·조건)와
+  // v1의 '@pandacss/dev/presets'(= preset-panda 토큰)를 명시한다.
+  presets: ['@pandacss/preset-base', '@pandacss/preset-panda', preset],
   // Whether to use css reset
   preflight: true,
-  lightningcss: true,
 
-  // The extension for the emitted JavaScript files
-  outExtension: 'mjs',
   // Where to look for your css declarations
   include: ['./src/**/*.{js,jsx,ts,tsx}'],
 
@@ -30,6 +29,4 @@ export default defineConfig({
 
   strictTokens: true,
   strictPropertyValues: true,
-  // The CSS Syntax to use to use
-  syntax: 'object-literal',
 });

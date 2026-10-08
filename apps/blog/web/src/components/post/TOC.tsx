@@ -402,6 +402,9 @@ export const TOC = () => {
                     });
                   }}
                   aria-current={item.id === activeId ? 'true' : undefined}
+                  // 밝힘은 data 속성으로 건다 — 색을 `isLit ? … : …`로 고르면 Panda가 그 값을
+                  // 빌드 때 따라가지 못하고(useTocHook의 런타임 값) 한쪽 색만 추출한다.
+                  data-lit={isLit || undefined}
                   className={css({
                     display: 'block',
                     w: 'full',
@@ -412,7 +415,8 @@ export const TOC = () => {
                     cursor: 'pointer',
                     fontSize: '[13px]',
                     lineHeight: 'relaxed',
-                    color: isLit ? 'ink.950' : 'ink.600',
+                    color: 'ink.600',
+                    '&[data-lit]': { color: 'ink.950' },
                     // 활성 표시는 **색만** 바꾼다. 굵기를 400 → 500으로 올리면
                     // 글자 폭이 늘어 항목이 한 줄에서 두 줄로 접히고, 그 아래
                     // 항목이 전부 20px씩 밀린다(실측: 목록 높이 917 → 937px).

@@ -15,7 +15,8 @@
         "recipes/**",
         "tokens/**",
         "types/**",
-        "helpers.mjs",
+        "helpers.js",
+        "helpers.d.ts",
         "styles.css"
       ]
     }

@@ -11,28 +11,26 @@
     "react": "catalog:"
   },
   "devDependencies": {
-    "@pandacss/dev": "catalog:"
+    "@pandacss/dev": "catalog:",
+    "@pandacss/preset-base": "catalog:",
+    "@pandacss/preset-panda": "catalog:"
   },
   "exports": {
     "./css": {
       "types": "./css/index.d.ts",
-      "require": "./css/index.mjs",
-      "import": "./css/index.mjs"
+      "default": "./css/index.js"
     },
     "./jsx": {
       "types": "./jsx/index.d.ts",
-      "require": "./jsx/index.mjs",
-      "import": "./jsx/index.mjs"
+      "default": "./jsx/index.js"
     },
     "./patterns": {
       "types": "./patterns/index.d.ts",
-      "require": "./patterns/index.mjs",
-      "import": "./patterns/index.mjs"
+      "default": "./patterns/index.js"
     },
     "./tokens": {
       "types": "./tokens/index.d.ts",
-      "require": "./tokens/index.mjs",
-      "import": "./tokens/index.mjs"
+      "default": "./tokens/index.js"
     },
     "./types": {
       "types": "./types/index.d.ts"

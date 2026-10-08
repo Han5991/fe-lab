@@ -1,4 +1,4 @@
-import { definePreset, defineRecipe } from '@pandacss/dev';
+import { definePreset, defineRecipe, type Preset } from '@pandacss/dev';
 
 const buttonRecipe = defineRecipe({
   className: 'button',
@@ -28,7 +28,9 @@ const buttonRecipe = defineRecipe({
   },
 });
 
-export const preset = definePreset({
+// v2의 definePreset은 입력 타입을 그대로 돌려줘서(`<const T extends Preset>`) 추론 타입이
+// 직접 의존하지 않는 @pandacss/types의 RecipeConfig를 가리킨다 — d.ts가 이름을 못 붙인다(TS2883).
+export const preset: Preset = definePreset({
   name: '@design-system',
   theme: {
     extend: {

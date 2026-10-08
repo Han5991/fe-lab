@@ -130,7 +130,7 @@ jobs:
 
             <추적 중 예외 — 매회 재평가>
             - 각 영구 override 옆 주석의 "제거 조건"이 충족됐는지 확인하세요.
-            - `postcss` override: next/@pandacss exact 핀 dedupe용 — 상시 유지.
+            - `postcss` override: next exact 핀 dedupe용 — 상시 유지.
 
             <작업 절차>
             1. `pnpm audit` 실행, pnpm-workspace.yaml의 overrides/auditConfig 현황 파악

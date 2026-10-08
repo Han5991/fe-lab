@@ -51,14 +51,15 @@ yarn-error.log*
 /packages/@design-system/ui-lib/patterns/
 /packages/@design-system/ui-lib/tokens/
 /packages/@design-system/ui-lib/types/
-/packages/@design-system/ui-lib/helpers.mjs
+/packages/@design-system/ui-lib/helpers.*
 /packages/@design-system/ui-lib/recipes/
 /packages/@blog/styled-system/css/
 /packages/@blog/styled-system/jsx/
 /packages/@blog/styled-system/patterns/
 /packages/@blog/styled-system/tokens/
 /packages/@blog/styled-system/types/
-/packages/@blog/styled-system/helpers.mjs
+/packages/@blog/styled-system/recipes/
+/packages/@blog/styled-system/helpers.*
 /.idea/
 /apps/blog/web/public/posts/
 /apps/blog/web/public/og/
