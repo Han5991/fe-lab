@@ -316,6 +316,12 @@ export const blogPreset = definePreset({
         radii: {
           // 핸드오프 §3 "기타": 카드 12px / 작은 요소 8px / 배지 pill.
           // 의미 기반 이름으로 고정해 컴포넌트가 숫자를 직접 쓰지 않게 한다.
+          // **라운드는 이 다섯이 전부다** — 블로그 설정이 preset-panda의 radii를 빼므로
+          // (apps/blog/web/panda.config.ts) 여기 없는 값은 strictTokens에 걸린다. sm·md는
+          // 핸드오프 밖의 작은 칩·컨트롤 값으로, 예전엔 preset-panda(rem)와 `'[6px]'`
+          // 이스케이프로 갈려 있던 것을 px로 모았다.
+          sm: { value: '4px' },
+          md: { value: '6px' },
           card: { value: '12px' },
           control: { value: '8px' },
           pill: { value: '999px' },

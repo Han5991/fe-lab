@@ -92,9 +92,10 @@ Panda가 주는 `defineSemanticTokens.colors()`로 감싸 시맨틱 토큰 계�
 
 ## 형태
 
-- 라운드: `radii.card`(12px, 카드) · `radii.control`(8px, 작은 요소) ·
-  `radii.pill`(원형 아바타·아이콘·히어로 pill). **시리즈 배지는 `[6px]`** —
-  레퍼런스 `.badge`가 6px이라 pill이 아니다
+- 라운드(radii): `card`(12px, 카드) · `control`(8px, 작은 요소) · `md`(6px) · `sm`(4px) ·
+  `pill`(원형 아바타·아이콘·히어로 pill). **이 다섯이 전부다** — 블로그 설정이 preset-panda의
+  radii를 빼므로 다른 이름은 strictTokens에 걸린다. **시리즈 배지는 `md`(6px)** — 레퍼런스
+  `.badge`가 6px이라 pill이 아니다
 - 보더: `borderWidths.hairline`(1px) 단일 소스. **위계는 그림자가 아니라 보더로 표현한다**
 - **그라데이션 · 글로우 · box-shadow 장식 금지.** 플랫 유지
 - Panda는 `strictTokens: true`다. 토큰 밖 값은 `fontSize: '[12px]'`, `shadow: '[none]'`처럼

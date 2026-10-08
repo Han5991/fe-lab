@@ -225,7 +225,7 @@ export const SearchDialog = () => {
           gap: '2',
           px: { base: '2', md: '3' },
           py: '1.5',
-          rounded: 'lg',
+          rounded: 'control',
           borderWidth: '[1px]',
           borderColor: 'ink.border',
           color: 'ink.500',

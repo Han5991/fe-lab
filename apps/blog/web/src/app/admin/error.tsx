@@ -58,7 +58,7 @@ export default function AdminError({ error, reset }: AdminErrorProps) {
             flexDir: 'column',
             gap: '4',
             p: '6',
-            rounded: 'lg',
+            rounded: 'control',
             borderWidth: '[1px]',
             borderColor: 'danger.border',
             bg: 'danger.bg',

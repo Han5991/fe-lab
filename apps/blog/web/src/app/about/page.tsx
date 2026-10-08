@@ -138,7 +138,7 @@ export default function AboutPage() {
                       borderWidth: '[1px]',
                       borderStyle: 'solid',
                       borderColor: 'ink.border',
-                      rounded: '[6px]',
+                      rounded: 'md',
                       fontSize: 'sm',
                       fontWeight: 'medium',
                       _hover: {
@@ -165,7 +165,7 @@ export default function AboutPage() {
                       borderWidth: '[1px]',
                       borderStyle: 'solid',
                       borderColor: 'ink.border',
-                      rounded: '[6px]',
+                      rounded: 'md',
                       fontSize: 'sm',
                       fontWeight: 'medium',
                       _hover: {

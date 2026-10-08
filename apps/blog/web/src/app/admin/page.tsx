@@ -83,7 +83,7 @@ function AdminOverviewContent() {
             bg: 'ink.25',
             borderWidth: '[1px]',
             borderColor: 'ink.border',
-            rounded: 'lg',
+            rounded: 'control',
             p: '6',
           })}
         >
@@ -146,7 +146,7 @@ function AdminOverviewContent() {
             bg: 'ink.25',
             borderWidth: '[1px]',
             borderColor: 'ink.border',
-            rounded: 'lg',
+            rounded: 'control',
             p: '6',
           })}
         >
@@ -204,7 +204,7 @@ function AdminOverviewContent() {
             bg: 'paper.200',
             borderWidth: '[1px]',
             borderColor: 'ink.border',
-            rounded: 'lg',
+            rounded: 'control',
             p: '6',
             display: 'flex',
             flexDir: 'column',
@@ -242,7 +242,7 @@ function AdminOverviewContent() {
             bg: 'ink.25',
             borderWidth: '[1px]',
             borderColor: 'ink.border',
-            rounded: 'lg',
+            rounded: 'control',
             overflow: 'hidden',
           })}
         >
@@ -347,7 +347,7 @@ function AdminOverviewContent() {
             bg: 'ink.25',
             borderWidth: '[1px]',
             borderColor: 'ink.border',
-            rounded: 'lg',
+            rounded: 'control',
             overflow: 'hidden',
           })}
         >
