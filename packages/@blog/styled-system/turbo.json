@@ -16,7 +16,6 @@
       ],
       "outputs": [
         "css/**",
-        "jsx/**",
         "patterns/**",
         "recipes/**",
         "tokens/**",

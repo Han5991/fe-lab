@@ -7,9 +7,6 @@
     "build": "panda codegen --cwd ../../../apps/blog/web --config panda.config.ts",
     "prepare": "pnpm build"
   },
-  "peerDependencies": {
-    "react": "catalog:"
-  },
   "devDependencies": {
     "@pandacss/dev": "catalog:",
     "@pandacss/preset-base": "catalog:",
@@ -19,10 +16,6 @@
     "./css": {
       "types": "./css/index.d.ts",
       "default": "./css/index.js"
-    },
-    "./jsx": {
-      "types": "./jsx/index.d.ts",
-      "default": "./jsx/index.js"
     },
     "./patterns": {
       "types": "./patterns/index.d.ts",

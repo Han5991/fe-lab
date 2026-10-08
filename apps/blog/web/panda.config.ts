@@ -44,9 +44,13 @@ export default defineConfig({
   // 대괄호 이스케이프(`'[6px]'`)로 명시적으로 표기한다.
   strictTokens: true,
 
-  minify: true,
+  // 공식 권장대로 프로덕션에서만 줄인다 — dev에서 생성 CSS를 읽을 수 있게. 최종 out/의 CSS는
+  // Next가 한 번 더 줄이므로 배포물 크기는 이 값과 무관하다.
+  minify: process.env.NODE_ENV === 'production',
 
-  jsxFramework: 'react',
+  // jsxFramework는 두지 않는다 — 블로그는 Panda JSX(styled·<Box>)를 쓰지 않고, 켜 두면
+  // 대문자 컴포넌트의 prop 전부를 스타일 prop으로 읽어(Recharts의 margin·cursor·strokeDasharray)
+  // 적용될 일 없는 규칙을 CSS에 싣는다. 끄면 jsx/ 생성물도 없다.
 
   strictPropertyValues: true,
   // 테마 토글: html[data-theme] 로 라이트/다크 전환. semanticTokens의 _dark
