@@ -69,7 +69,7 @@ export const ShareButton = ({ title }: ShareButtonProps) => {
           px: '4',
           py: '2',
           bg: 'paper.200',
-          rounded: 'full',
+          rounded: 'pill',
           color: 'ink.800',
           fontSize: 'sm',
           fontWeight: 'medium',

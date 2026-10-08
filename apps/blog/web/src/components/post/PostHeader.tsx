@@ -37,7 +37,7 @@ export const PostHeader = ({ post, seriesIndex }: PostHeaderProps) => {
             // 배경과 붙어 답답해진다. 링크와 같은 accent.600을 유지한다.
             color: 'accent.600',
             bg: 'accent.50',
-            rounded: '[6px]',
+            rounded: 'md',
             px: '[9px]',
             py: '[2px]',
           })}

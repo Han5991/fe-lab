@@ -270,7 +270,7 @@ pnpm add typesense
 
 - 색은 Panda semanticTokens만. `strictTokens: true` 라 임의 값은 `'[14px]'` 로 이스케이프
 - **글자엔 `accent.600`, 선·아이콘엔 `accent.500`** (라이트 모드 WCAG AA 때문에 나뉜다)
-- 라운드: 카드 `card`(12px) / 작은 요소 `control`(8px) / 배지·pill `pill`
+- 라운드: 카드 `card`(12px) / 작은 요소 `control`(8px) / 작은 칩 `md`(6px)·`sm`(4px) / 배지·pill `pill` — 이 다섯뿐
 - 보더는 `hairline`. **그림자·그라데이션·글로우 금지** — 위계는 보더로만
 - 메타 정보(날짜·읽기시간·조회수·태그·코드·로고)는 `fontFamily: 'mono'`.
   단 시리즈 배지는 안에 숫자가 있어도 sans다 — 레퍼런스 `.badge`가 sans고

@@ -24,7 +24,7 @@ const callout = sva({
       justifyContent: 'center',
       boxSize: '5',
       mt: '[1px]',
-      rounded: 'full',
+      rounded: 'pill',
       borderWidth: 'hairline',
       fontFamily: 'mono',
       fontSize: 'xs',

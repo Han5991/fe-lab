@@ -83,7 +83,7 @@ export const MobileTOC = () => {
           w: '12',
           h: '12',
           bg: 'paper.50',
-          rounded: 'full',
+          rounded: 'pill',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',

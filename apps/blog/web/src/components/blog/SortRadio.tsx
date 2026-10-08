@@ -23,7 +23,7 @@ const group = css({
   borderWidth: '[1px]',
   borderStyle: 'solid',
   borderColor: 'ink.border',
-  rounded: '[6px]',
+  rounded: 'md',
   overflow: 'hidden',
 });
 

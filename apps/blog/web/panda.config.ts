@@ -1,20 +1,23 @@
 import { defineConfig, definePlugin } from '@pandacss/dev';
 
-// 색은 전부 @blog/preset에서 온다(AGENTS.md §9). preset-panda는 spacing·sizes·radii 같은 스케일만
-// 빌리고 색 팔레트는 버린다 — v2의 팔레트(oklch 26색 × 11단)는 v1의 두 배 무게로 토큰 레이어에
-// 통째로 실렸고(쓰는 곳 0), strictTokens가 `orange.500` 같은 팔레트 밖 색을 통과시켰다.
+// 색·라운드는 전부 @blog/preset에서 온다(AGENTS.md §9). preset-panda는 spacing·sizes·fontSizes 같은
+// 스케일만 빌리고 색 팔레트와 radii는 버린다 — v2의 팔레트(oklch 26색 × 11단)는 v1의 두 배 무게로
+// 토큰 레이어에 통째로 실렸고(쓰는 곳 0), strictTokens가 `orange.500` 같은 팔레트 밖 색을 통과시켰다.
+// radii는 블로그 토큰과 같은 값을 다른 이름으로 들고 있어(lg=8px=control, xl=12px=card, full≈pill)
+// 같은 라운드가 이름 셋(`'lg'`·`'control'`·`'[8px]'`)으로 갈렸다.
 // 서드파티 프리셋을 고치지 않고 일부만 빼는 v2 방식이 preset:resolved 훅이다(theming/plugins
 // "Trim a preset", theming/presets "extend only adds, so removing takes a plugin"). @blog/preset에
 // extend 없는 colors를 두는 길도 v2에서 동작하지만, 그러면 블로그 프리셋이 목록 순서에 묶인다.
 // 뺀 토큰을 쓰면 Panda는 진단 없이 raw 값(`color: orange.500`)을 내보낸다 — 막는 건 check-types다.
-const dropPresetPandaColors = definePlugin({
-  name: 'blog:drop-preset-panda-colors',
+const trimPresetPanda = definePlugin({
+  name: 'blog:trim-preset-panda',
   hooks: {
     'preset:resolved': ({ preset, name, utils }) =>
       name === '@pandacss/preset-panda'
         ? utils.omit(preset, [
             'theme.tokens.colors',
             'theme.semanticTokens.colors',
+            'theme.tokens.radii',
           ])
         : undefined,
   },
@@ -173,5 +176,5 @@ export default defineConfig({
     },
   },
   importMap: '@blog/styled-system',
-  plugins: [dropPresetPandaColors],
+  plugins: [trimPresetPanda],
 });

@@ -144,7 +144,7 @@ export function PostAccordion({ post, todayISO }: Props) {
                 fontWeight: 'semibold',
                 px: '2',
                 py: '0.5',
-                rounded: 'full',
+                rounded: 'pill',
                 flexShrink: 0,
                 bg: 'paper.100',
                 color: badge.color,
@@ -276,7 +276,7 @@ export function PostAccordion({ post, todayISO }: Props) {
                   className={css({
                     bg: 'ink.25',
                     p: '3',
-                    rounded: 'lg',
+                    rounded: 'control',
                     borderWidth: '[1px]',
                     borderColor: 'ink.border',
                     display: 'flex',
@@ -311,7 +311,7 @@ export function PostAccordion({ post, todayISO }: Props) {
                   className={css({
                     bg: 'ink.25',
                     p: '3',
-                    rounded: 'lg',
+                    rounded: 'control',
                     borderWidth: '[1px]',
                     borderColor: 'ink.border',
                     display: 'flex',
@@ -347,7 +347,7 @@ export function PostAccordion({ post, todayISO }: Props) {
                   className={css({
                     bg: 'ink.25',
                     p: '3',
-                    rounded: 'lg',
+                    rounded: 'control',
                     borderWidth: '[1px]',
                     borderColor: 'ink.border',
                     display: 'flex',
@@ -415,7 +415,7 @@ export function PostAccordion({ post, todayISO }: Props) {
                           strokeDasharray: '4 4',
                         }}
                         contentStyle={{
-                          borderRadius: token('radii.lg'),
+                          borderRadius: token('radii.control'),
                           border: `1px solid ${token('colors.ink.border')}`,
                           background: token('colors.ink.25'),
                           color: token('colors.ink.900'),
