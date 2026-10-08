@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { css } from '@design-system/ui-lib/css';
+import { css } from '@design-system/ui/css';
 import { Button } from '@design-system/ui';
 
 const Page = () => (

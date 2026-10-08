@@ -19,6 +19,8 @@ const inheritedReactSettings = [...nextCoreWebVitals, ...nextTypescript].reduce(
 );
 
 const eslintConfig = [
+  // Panda 번들러 플러그인이 쓰는 로컬 생성물
+  { ignores: ['styled-system/**'] },
   ...nextCoreWebVitals,
   ...nextTypescript,
   // 위 두 설정이 넣은 `react.version: 'detect'`를 덮어씁니다. 순서 의존적이라

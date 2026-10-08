@@ -66,6 +66,7 @@ catalog:
   '@pandacss/dev': 2.1.2
   '@pandacss/preset-base': 2.1.2
   '@pandacss/preset-panda': 2.1.2
+  '@pandacss/vite': 2.1.2
   'next': 16.3.6
   typescript: 6.0.3
   react: 19.3.0

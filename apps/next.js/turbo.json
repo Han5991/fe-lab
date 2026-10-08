@@ -1,0 +1,11 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    // designSystem은 @design-system/ui의 dist/panda/(panda lib)를 읽는다. buildinfo가 낡아도
+    // Panda는 경고 없이 새 스타일을 빠뜨리므로 dev도 디자인 시스템 build 뒤에 띄운다.
+    "dev": {
+      "dependsOn": ["^build"]
+    }
+  }
+}
