@@ -29,7 +29,7 @@ export function ThemeToggle() {
         alignItems: 'center',
         justifyContent: 'center',
         boxSize: '9',
-        rounded: '[6px]',
+        rounded: 'md',
         color: 'ink.600',
         cursor: 'pointer',
         transition: '[all 0.15s]',

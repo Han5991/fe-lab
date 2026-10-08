@@ -384,7 +384,7 @@ export function QuoteLink({
             gap: '1.5',
             h: '9',
             px: '3',
-            rounded: 'full',
+            rounded: 'pill',
             // 본문 위에 뜨는 작은 도구 — 그림자 대신 지면과 반대 톤으로 띄운다.
             bg: 'ink.950',
             color: 'paper.50',

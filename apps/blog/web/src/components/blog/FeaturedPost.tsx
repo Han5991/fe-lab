@@ -61,7 +61,7 @@ export const FeaturedPost = ({ post, seriesLabel }: FeaturedPostProps) => {
               fontSize: '[12px]',
               color: 'accent.600',
               bg: 'accent.50',
-              rounded: '[6px]',
+              rounded: 'md',
               px: '[9px]',
               py: '[2px]',
             })}

@@ -1,20 +1,23 @@
 import { defineConfig, definePlugin } from '@pandacss/dev';
 
-// 색은 전부 @blog/preset에서 온다(AGENTS.md §9). preset-panda는 spacing·sizes·radii 같은 스케일만
-// 빌리고 색 팔레트는 버린다 — v2의 팔레트(oklch 26색 × 11단)는 v1의 두 배 무게로 토큰 레이어에
-// 통째로 실렸고(쓰는 곳 0), strictTokens가 `orange.500` 같은 팔레트 밖 색을 통과시켰다.
+// 색·라운드는 전부 @blog/preset에서 온다(AGENTS.md §9). preset-panda는 spacing·sizes·fontSizes 같은
+// 스케일만 빌리고 색 팔레트와 radii는 버린다 — v2의 팔레트(oklch 26색 × 11단)는 v1의 두 배 무게로
+// 토큰 레이어에 통째로 실렸고(쓰는 곳 0), strictTokens가 `orange.500` 같은 팔레트 밖 색을 통과시켰다.
+// radii는 블로그 토큰과 같은 값을 다른 이름으로 들고 있어(lg=8px=control, xl=12px=card, full≈pill)
+// 같은 라운드가 이름 셋(`'lg'`·`'control'`·`'[8px]'`)으로 갈렸다.
 // 서드파티 프리셋을 고치지 않고 일부만 빼는 v2 방식이 preset:resolved 훅이다(theming/plugins
 // "Trim a preset", theming/presets "extend only adds, so removing takes a plugin"). @blog/preset에
 // extend 없는 colors를 두는 길도 v2에서 동작하지만, 그러면 블로그 프리셋이 목록 순서에 묶인다.
 // 뺀 토큰을 쓰면 Panda는 진단 없이 raw 값(`color: orange.500`)을 내보낸다 — 막는 건 check-types다.
-const dropPresetPandaColors = definePlugin({
-  name: 'blog:drop-preset-panda-colors',
+const trimPresetPanda = definePlugin({
+  name: 'blog:trim-preset-panda',
   hooks: {
     'preset:resolved': ({ preset, name, utils }) =>
       name === '@pandacss/preset-panda'
         ? utils.omit(preset, [
             'theme.tokens.colors',
             'theme.semanticTokens.colors',
+            'theme.tokens.radii',
           ])
         : undefined,
   },
@@ -36,17 +39,28 @@ export default defineConfig({
     // 스타일이 빠진 채 빌드가 성공한다).
     './node_modules/@blog/content/src/**/*.{js,jsx,ts,tsx}',
   ],
-  // 테스트는 스캔하지 않는다 — 픽스처의 `content: '# 첫 단원 본문'`·`width={750}` 같은 값이 스타일
-  // prop으로 읽혀 프로덕션 CSS에 쓰레기 규칙(~1.2KB)으로 실렸다. turbo.json이 테스트를 빌드 입력에서
-  // 빼는 전제이기도 하다.
+  // 테스트는 스캔하지 않는다 — turbo.json이 테스트를 빌드 입력에서 빼는 전제다(테스트만 바꾼
+  // 커밋이 빌드·e2e 캐시를 깨지 않게). 예전엔 픽스처의 JSX prop(`width={750}`)이 스타일로 읽혀
+  // 프로덕션 CSS에 쓰레기 규칙도 실었다 — 그 경로는 jsxFramework를 끄며 닫혔다.
   exclude: ['**/*.test.{ts,tsx}'],
   // 디자인 토큰 강제: 임의 색/값 대신 토큰만 허용. 임의값이 꼭 필요하면
   // 대괄호 이스케이프(`'[6px]'`)로 명시적으로 표기한다.
   strictTokens: true,
 
-  minify: true,
+  // 공식 권장대로 프로덕션에서만 줄인다 — dev에서 생성 CSS를 읽을 수 있게. 최종 out/의 CSS는
+  // Next가 한 번 더 줄이므로 배포물 크기는 이 값과 무관하다.
+  minify: process.env.NODE_ENV === 'production',
+  // optimize는 비워 둔다(styling/optimization). removeUnusedTokens는 codeTheme.ts가 런타임에 고르는
+  // token.var(role)을 못 봐 code.* 변수를 지우고, removeUnusedKeyframes는 2.1.2에서 animations
+  // 토큰(`animation: 'pulse'`)으로 참조한 keyframes까지 지운다(실측 — 문서와 다르다).
+  // propertyFallback도 지금은 필요 없다: @property로 등록되는 변수는 backdrop-*뿐이고 빈
+  // fallback(`var(--backdrop-blur, )`)이라 @property 미지원 브라우저(Firefox 128 미만)에서도 값이
+  // 선다. transform·filter·mask 유틸리티를 쓰기 시작해 out/ CSS에 backdrop 밖의 `@property --`가
+  // 생기면 켠다.
 
-  jsxFramework: 'react',
+  // jsxFramework는 두지 않는다 — 블로그는 Panda JSX(styled·<Box>)를 쓰지 않고, 켜 두면
+  // 대문자 컴포넌트의 prop 전부를 스타일 prop으로 읽어(Recharts의 margin·cursor·strokeDasharray)
+  // 적용될 일 없는 규칙을 CSS에 싣는다. 끄면 jsx/ 생성물도 없다.
 
   strictPropertyValues: true,
   // 테마 토글: html[data-theme] 로 라이트/다크 전환. semanticTokens의 _dark
@@ -76,6 +90,16 @@ export default defineConfig({
   globalCss: {
     extend: {
       html: {
+        // v2 리셋이 읽는 전역 변수(styling/global-styles "Exposed global CSS variables") — 리셋
+        // 규칙을 따로 덮어쓰지 않고 값만 넘긴다. 리셋은 html에 `font-family:
+        // var(--global-font-body, …)`, `::selection`에 `var(--global-color-selection, …)`를 건다.
+        '--global-font-body': 'fonts.sans',
+        // 드래그 선택은 배경만 바꾸고 **글자색은 건드리지 않는다.** 예전엔 `bg: ink.border` +
+        // `color: ink.900`이었는데 ink.border(알파 10% 검정)는 흰 지면에서 1.25:1로 묽어 선택한
+        // 티가 안 났고, 코드 블록(어두운 표면)에서는 글자만 ink.900으로 강제돼 대비 1.29:1 —
+        // 드래그하면 코드가 사라졌다. 색을 강제하지 않으면 링크·제목·구문 강조가 선택 중에도
+        // 제 색을 유지한다. 테마와 무관하게 어두운 표면은 CodeBlock.tsx가 자기 ::selection을 덮는다.
+        '--global-color-selection': 'colors.selection.bg',
         bg: 'paper.50',
         color: 'ink.950',
         // 움직임 줄이기를 켠 사용자에게는 스크롤을 미끄러뜨리지 않는다.
@@ -101,12 +125,6 @@ export default defineConfig({
           colorScheme: 'dark',
         },
       },
-      body: {
-        fontFamily: 'sans',
-        wordBreak: 'keep-all',
-        WebkitFontSmoothing: 'antialiased',
-        MozOsxFontSmoothing: 'grayscale',
-      },
       // 테마 전환 애니메이션 — View Transitions API(useTheme)로 전체
       // 페이지를 한 번의 컴포지터 크로스페이드로 전환한다. 예전엔
       // html.theme-transition * 로 모든 요소에 color/fill transition을
@@ -119,23 +137,9 @@ export default defineConfig({
         animationDuration: '[0.26s]',
         animationTimingFunction: '[ease]',
       },
-      // 드래그 선택. 배경만 지정하고 **글자색은 건드리지 않는다.**
-      //
-      // 예전엔 `bg: ink.border` + `color: ink.900`이었는데 둘 다 문제였다.
-      // ink.border는 알파 10% 검정이라 흰 지면 위에서 1.25:1로 묽어져 선택한
-      // 티가 안 났고, 코드 블록(항상 다크 표면)에서는 배경이 사실상 그대로인
-      // 채로 글자만 ink.900(라이트=거의 검정)으로 강제돼 대비 1.29:1 —
-      // 드래그하면 코드가 사라졌다. 색을 강제하지 않으면 링크·제목·구문
-      // 강조가 선택 중에도 제 색을 유지한다.
-      //
-      // 코드 블록처럼 테마와 무관하게 어두운 표면은 이 규칙을 그대로 쓸 수
-      // 없어 CodeBlock.tsx가 자기 안쪽 ::selection을 따로 덮는다.
-      '::selection': {
-        bg: 'selection.bg',
-      },
       // 문장 공유 링크(`#:~:text=`)로 들어온 독자에게 그 문장을 짚어 준다.
       // "여기"를 가리킨다는 점에서 선택과 같은 뜻이라 같은 토큰을 쓴다(대비는
-      // 위 selection.bg 주석). 브라우저 기본값은 노랑이라 팔레트 밖이다.
+      // html의 --global-color-selection 주석). 브라우저 기본값은 노랑이라 팔레트 밖이다.
       '::target-text': {
         bg: 'selection.bg',
       },
@@ -169,5 +173,5 @@ export default defineConfig({
     },
   },
   importMap: '@blog/styled-system',
-  plugins: [dropPresetPandaColors],
+  plugins: [trimPresetPanda],
 });

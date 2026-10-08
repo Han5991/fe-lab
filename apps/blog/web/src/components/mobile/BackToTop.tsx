@@ -48,7 +48,7 @@ export const BackToTop = () => {
             w: '12',
             h: '12',
             bg: 'paper.100',
-            rounded: 'full',
+            rounded: 'pill',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',

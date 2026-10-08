@@ -733,10 +733,6 @@ importers:
         version: 6.0.3
 
   packages/@blog/styled-system:
-    dependencies:
-      react:
-        specifier: 'catalog:'
-        version: 19.3.0
     devDependencies:
       '@pandacss/dev':
         specifier: 'catalog:'

@@ -53,7 +53,7 @@ function LoginForm() {
       <div
         className={css({
           p: '8',
-          rounded: 'xl',
+          rounded: 'card',
           borderWidth: '[1px]',
           borderColor: 'ink.border',
           bg: 'ink.25',
@@ -93,7 +93,7 @@ function LoginForm() {
               mb: '4',
               p: '3',
               bg: 'danger.bg',
-              rounded: 'lg',
+              rounded: 'control',
               borderWidth: '[1px]',
               borderColor: 'danger.border',
             })}
@@ -111,7 +111,7 @@ function LoginForm() {
               mb: '4',
               p: '3',
               bg: 'danger.bg',
-              rounded: 'lg',
+              rounded: 'control',
               borderWidth: '[1px]',
               borderColor: 'danger.border',
               display: 'flex',
@@ -143,7 +143,7 @@ function LoginForm() {
             px: '4',
             bg: 'btn.accent',
             color: 'white',
-            rounded: 'lg',
+            rounded: 'control',
             cursor: isLoading ? 'not-allowed' : 'pointer',
             opacity: isLoading ? 0.7 : 1,
             fontWeight: 'semibold',

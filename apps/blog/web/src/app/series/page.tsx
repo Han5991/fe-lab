@@ -39,7 +39,7 @@ const seriesBadge = css({
   lineHeight: 'snug',
   color: 'accent.600',
   bg: 'accent.50',
-  rounded: '[6px]',
+  rounded: 'md',
   px: '[9px]',
   py: '[2px]',
 });

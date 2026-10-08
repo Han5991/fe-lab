@@ -345,7 +345,7 @@ export const TOC = () => {
                   left: '0',
                   top: '0',
                   boxSize: '[5px]',
-                  rounded: 'full',
+                  rounded: 'pill',
                   bg: 'ink.950',
                   transition: '[offset-distance 0.2s ease]',
                   '@media (prefers-reduced-motion: reduce)': {
