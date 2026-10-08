@@ -5,21 +5,10 @@ packages:
   - '!**/dist/**'
 
 overrides:
-  # next(8.4.31 고정)와 @pandacss/*(8.5.14 고정)가 각자 exact 핀을 걸어서, 오버라이드를
-  # 빼면 postcss가 8.4.31/8.5.14/8.5.18 세 벌로 갈라진다. 한 벌로 dedupe하기 위해 유지.
+  # next가 postcss를 8.4.31로 exact 핀 고정해서, 오버라이드를 빼면 postcss가 next용 한 벌과
+  # 나머지(Panda v2의 @pandacss/postcss는 peer `>=8`) 한 벌로 갈라진다. 한 벌로 dedupe하기 위해 유지.
+  # (예전엔 @pandacss/core 1.x의 8.5.14 exact 핀도 이유였다 — v2에서 @pandacss/core가 없어졌다.)
   postcss: 8.5.28
-  # @pandacss/core(및 형제 패키지) 1.12.0/1.12.1이 browserslist를 4.28.1로 exact 핀
-  # 고정해 pnpm audit이 GHSA-c83g-rgw3-j3cx·GHSA-73wf-gq98-2v4g(무제한 메모리 증가 ·
-  # prototype write 크래시, 둘 다 high)를 report한다. 패치 버전(4.28.7+)이 나와도
-  # 핀이 그대로라 in-range 승급이 불가능해 permanent override로 고정. 이미 다른
-  # 의존자(babel-helper-compilation-targets 등)가 4.28.8을 쓰고 있어 dedupe도 겸한다.
-  # 제거 조건: @pandacss/core가 4.28.7+로 핀을 올리면 삭제.
-  browserslist: 4.29.1
-  # 같은 @pandacss/core가 postcss-selector-parser도 7.1.1로 exact 핀 고정해
-  # GHSA-w9m9-85wc-3x92(uncontrolled AST recursion DoS, low)를 report한다. 패치는
-  # 7.1.3+. 같은 이유로 in-range 승급 불가 → permanent override.
-  # 제거 조건: @pandacss/core가 7.1.3+로 핀을 올리면 삭제.
-  postcss-selector-parser: 7.1.6
   # satori 0.33.4가 fflate를 0.7.3으로 exact 핀 고정해 GHSA(medium, unzipSync가
   # 손상된 ZIP64 아카이브에서 무한 루프)를 report한다. 패치는 0.7.5+.
   # 형제 의존자 @shuding/opentype.js는 ^0.7.3이라 승급 가능하지만, satori의 exact 핀
