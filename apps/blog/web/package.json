@@ -60,6 +60,7 @@
     "@eslint-community/eslint-plugin-eslint-comments": "catalog:lint",
     "@eslint/js": "catalog:lint",
     "@next/eslint-plugin-next": "catalog:lint",
+    "@pandacss/eslint-plugin": "catalog:lint",
     "@pandacss/dev": "catalog:",
     "@pandacss/preset-base": "catalog:",
     "@pandacss/preset-panda": "catalog:",

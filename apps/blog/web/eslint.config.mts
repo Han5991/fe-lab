@@ -2,6 +2,8 @@ import { resolve } from 'node:path';
 import eslintComments from '@eslint-community/eslint-plugin-eslint-comments';
 import js from '@eslint/js';
 import nextPlugin from '@next/eslint-plugin-next';
+import panda from '@pandacss/eslint-plugin';
+import type { Linter } from 'eslint';
 import { defineConfig } from 'eslint/config';
 import boundaries from 'eslint-plugin-boundaries';
 import jsxA11y from 'eslint-plugin-jsx-a11y';
@@ -32,6 +34,39 @@ const NO_ESCAPED_HEX = {
   message:
     '색은 blog-preset.ts의 토큰에서 옵니다. `[#hex]` 대괄호 이스케이프로 색을 직접 박지 마세요 — 라이트/다크 한쪽에서만 맞는 값이 됩니다.',
 } as const;
+
+/**
+ * Panda 공식 lint(`@pandacss/eslint-plugin`, Panda v2 get-started/linting) — 빌드와 같은 v2
+ * 추출 결과로 스타일을 검사한다. recommended(토큰 경로·잘못된 중첩·include 밖 파일·추출
+ * 진단 …) 위에 `prefer-token`을 색·라운드·보더 굵기로 넓혀 error로 건다: 그 카테고리에
+ * 토큰이 있는데 원시 값이나 대괄호 이스케이프를 쓰면 막힌다(AGENTS.md §9).
+ *
+ * NO_ESCAPED_HEX는 남긴다 — 플러그인은 Panda가 정적으로 추출한 스타일만 보므로, 빌드 때
+ * 값을 따라가지 못하는 자리와 Panda include 밖(`content.values.mts`)의 `'[#hex]'`는 그
+ * 셀렉터만 본다.
+ *
+ * 2.1.2의 recommended()는 자기 타입(PandaFlatConfig)을 돌려주는데 ESLint 10의
+ * defineConfig 타입과 맞지 않는다(규칙 fix() 반환형이 unknown) — 런타임 모양은 flat
+ * config 그대로라 Linter.Config로 단언한다.
+ *
+ * 재평가: 2027-04-08 — 그때까지 이 블록이 잡은 위반이 없으면 categories를 recommended
+ * 기본(colors)으로 줄인다(AGENTS.md §5).
+ */
+const pandaRecommended = (await panda.configs.recommended({
+  configPath: './panda.config.ts',
+  cwd: import.meta.dirname,
+  files: ['src/**/*.{ts,tsx}'],
+})) as unknown as Linter.Config;
+
+/**
+ * prefer-token 옵션. flat config는 뒤 블록이 룰 옵션을 통째로 덮으므로 파일 단위 예외도
+ * 이 객체를 펼쳐 쓴다. `allow`는 원시 문자열과 비교한다 — `'[0]'`(보더·라운드 없음)은
+ * 토큰이 없고 v2 타입이 맨 `'0'`을 받지 않는다.
+ */
+const PREFER_TOKEN = {
+  categories: ['colors', 'radii', 'borderWidths'],
+  allow: ['[0]'],
+};
 
 /**
  * 큰 배럴(`@blog/content`)과 SEO 문(`@blog/content/seo`)의 **값** import를 서버 전용
@@ -279,6 +314,39 @@ export default defineConfig([
     files: ['src/**/*.{ts,tsx}'],
     rules: {
       '@next/next/no-img-element': 'off',
+    },
+  },
+
+  // ── Panda 공식 lint (위 pandaRecommended 주석) ─────
+  { ...pandaRecommended, ignores: ['**/*.test.{ts,tsx}'] },
+  {
+    files: ['src/**/*.{ts,tsx}'],
+    ignores: ['**/*.test.{ts,tsx}'],
+    rules: { '@pandacss/prefer-token': ['error', PREFER_TOKEN] },
+  },
+  {
+    // `paper.50/80`(불투명도 수식어)은 color-mix로 풀려 플러그인이 토큰으로 알아보지
+    // 못한다(2.1.2 오탐) — 토큰 그대로다.
+    files: ['src/components/Layout.tsx'],
+    rules: {
+      '@pandacss/prefer-token': [
+        'error',
+        { ...PREFER_TOKEN, allow: [...PREFER_TOKEN.allow, 'paper.50/80'] },
+      ],
+    },
+  },
+  {
+    // 인용·대화의 좌측 강조 바는 의도된 2px다(hairline의 두 배). 글롭이라
+    // `[...slug]`의 괄호는 이스케이프한다.
+    files: [
+      'src/app/posts/\\[...slug\\]/PostBody.tsx',
+      'src/components/post/markdown/Dialogue.tsx',
+    ],
+    rules: {
+      '@pandacss/prefer-token': [
+        'error',
+        { ...PREFER_TOKEN, allow: [...PREFER_TOKEN.allow, '[2px]'] },
+      ],
     },
   },
 
