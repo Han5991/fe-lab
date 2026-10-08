@@ -90,9 +90,10 @@ here or anywhere else (this repo once carried four diverging copies of that prom
   `strictTokens`, …) — they inherit them; one that differs regenerates its own runtime. A dev server re-emits
   codegen into its config's outdir — never point another config at the blog's.
 - Panda runs `strictTokens: true` — off-token values are escaped on purpose as `'[12px]'`. A token the config
-  drops (the blog trims preset-panda's palette) or never had is caught only by types: Panda emits
-  `color: 'orange.500'` as raw CSS with no diagnostic, so `check-types` is the gate. Raw `token(colors.x)` strings
-  inside values are not type-checked.
+  drops (the blog trims preset-panda's palette and radii) or never had is emitted by Panda as raw CSS
+  (`color: 'orange.500'`) with no diagnostic. `check-types` catches it, and in the blog so does the official Panda lint
+  (`@pandacss/prefer-token` for colors·radii·borderWidths, `apps/blog/web/eslint.config.mts`). Raw `token(colors.x)`
+  strings inside values are checked by neither.
 - Never run `panda codegen --clean` (or `panda build --clean`) on an outdir that is a whole package
   (`packages/@blog/styled-system`): v2's clean wipes the committed `package.json`/`turbo.json`. v2 also never deletes
   files it no longer writes — clear stale output with `git clean -fdX <dir>`.

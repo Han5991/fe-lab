@@ -34,7 +34,7 @@ export const PostGridCard = ({ post, priority = false }: PostGridCardProps) => {
         display: 'flex',
         flexDir: 'column',
         bg: 'paper.100',
-        borderWidth: '[1px]',
+        borderWidth: 'hairline',
         borderColor: 'ink.border',
         rounded: 'card',
         overflow: 'hidden',
@@ -63,7 +63,7 @@ export const PostGridCard = ({ post, priority = false }: PostGridCardProps) => {
           w: 'full',
           h: '[160px]',
           objectFit: 'cover',
-          borderBottomWidth: '[1px]',
+          borderBottomWidth: 'hairline',
           borderColor: 'ink.border',
         })}
       />

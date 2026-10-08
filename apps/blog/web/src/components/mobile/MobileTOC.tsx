@@ -146,7 +146,7 @@ export const MobileTOC = () => {
                 <div
                   className={css({
                     p: '5',
-                    borderBottomWidth: '[1px]',
+                    borderBottomWidth: 'hairline',
                     borderColor: 'ink.border',
                     display: 'flex',
                     justifyContent: 'space-between',

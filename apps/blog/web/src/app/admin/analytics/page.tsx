@@ -38,7 +38,7 @@ export default function AdminAnalyticsPage() {
           railGutter,
           css({
             bg: 'paper.100',
-            borderBottomWidth: '[1px]',
+            borderBottomWidth: 'hairline',
             borderBottomStyle: 'solid',
             borderColor: 'ink.border',
           }),
@@ -127,7 +127,7 @@ export default function AdminAnalyticsPage() {
             railColumn({ width: 'wide' }),
             css({
               py: { base: '8', md: '10' },
-              borderBottomWidth: '[1px]',
+              borderBottomWidth: 'hairline',
               borderColor: 'ink.border',
             }),
           )}
@@ -169,7 +169,7 @@ export default function AdminAnalyticsPage() {
           <section
             className={css({
               pt: '10',
-              borderTopWidth: '[1px]',
+              borderTopWidth: 'hairline',
               borderColor: 'ink.border',
               display: 'flex',
               flexDir: 'column',

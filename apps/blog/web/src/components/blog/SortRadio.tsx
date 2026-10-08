@@ -20,7 +20,7 @@ const group = css({
   display: 'inline-flex',
   alignItems: 'stretch',
   bg: 'paper.100',
-  borderWidth: '[1px]',
+  borderWidth: 'hairline',
   borderStyle: 'solid',
   borderColor: 'ink.border',
   rounded: 'md',
@@ -28,7 +28,7 @@ const group = css({
 });
 
 const divider = css({
-  borderLeftWidth: '[1px]',
+  borderLeftWidth: 'hairline',
   borderLeftStyle: 'solid',
   borderLeftColor: 'ink.border',
 });

@@ -151,13 +151,13 @@ const nodeTitle = css({
   fontSize: '[12px]',
   fontWeight: 'semibold',
   fill: 'ink.950',
-  stroke: '[none]',
+  stroke: 'none',
 });
 
 const nodeSubtitle = css({
   fontSize: 'xs',
   fill: 'ink.600',
-  stroke: '[none]',
+  stroke: 'none',
 });
 
 interface DiagramNodeProps {
@@ -228,7 +228,7 @@ const edge = sva({
   slots: ['root', 'line'],
   base: {
     root: {
-      fill: '[none]',
+      fill: 'none',
       strokeWidth: 'hairline',
       strokeLinecap: 'round',
       strokeLinejoin: 'round',
@@ -322,7 +322,7 @@ function ArrowHead({ x1, y1, x2, y2 }: Segment) {
 const labelSub = css({
   fontSize: 'xs',
   fill: 'ink.600',
-  stroke: '[none]',
+  stroke: 'none',
 });
 
 interface DiagramLabelProps {

@@ -35,7 +35,7 @@ export const PostsFilterFab = ({
       pr: '[14px]',
       h: '[40px]',
       bg: 'paper.200',
-      borderWidth: '[1px]',
+      borderWidth: 'hairline',
       borderStyle: 'solid',
       borderColor: 'ink.border',
       color: 'ink.800',

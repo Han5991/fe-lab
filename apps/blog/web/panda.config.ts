@@ -8,7 +8,8 @@ import { defineConfig, definePlugin } from '@pandacss/dev';
 // 서드파티 프리셋을 고치지 않고 일부만 빼는 v2 방식이 preset:resolved 훅이다(theming/plugins
 // "Trim a preset", theming/presets "extend only adds, so removing takes a plugin"). @blog/preset에
 // extend 없는 colors를 두는 길도 v2에서 동작하지만, 그러면 블로그 프리셋이 목록 순서에 묶인다.
-// 뺀 토큰을 쓰면 Panda는 진단 없이 raw 값(`color: orange.500`)을 내보낸다 — 막는 건 check-types다.
+// 뺀 토큰을 쓰면 Panda는 진단 없이 raw 값(`color: orange.500`)을 내보낸다 — check-types와 Panda 공식
+// lint(prefer-token, eslint.config.mts)가 막는다.
 const trimPresetPanda = definePlugin({
   name: 'blog:trim-preset-panda',
   hooks: {

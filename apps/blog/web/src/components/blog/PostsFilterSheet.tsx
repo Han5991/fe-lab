@@ -45,7 +45,7 @@ export const PostsFilterSheet = ({
               className={css({
                 pos: 'fixed',
                 inset: '0',
-                bg: '[rgba(1,4,9,0.8)]',
+                bg: 'scrim.sheet',
                 zIndex: '50',
               })}
             />
@@ -64,9 +64,9 @@ export const PostsFilterSheet = ({
                 left: '0',
                 right: '0',
                 bg: 'paper.100',
-                borderTopWidth: '[1px]',
-                borderRightWidth: '[1px]',
-                borderLeftWidth: '[1px]',
+                borderTopWidth: 'hairline',
+                borderRightWidth: 'hairline',
+                borderLeftWidth: 'hairline',
                 borderStyle: 'solid',
                 borderColor: 'ink.border',
                 zIndex: '51',
@@ -98,7 +98,7 @@ export const PostsFilterSheet = ({
                 className={css({
                   px: '[16px]',
                   py: '[12px]',
-                  borderBottomWidth: '[1px]',
+                  borderBottomWidth: 'hairline',
                   borderBottomStyle: 'solid',
                   borderColor: 'ink.border',
                   display: 'flex',
@@ -131,7 +131,7 @@ export const PostsFilterSheet = ({
                       }}
                       className={css({
                         bg: 'paper.200',
-                        borderWidth: '[1px]',
+                        borderWidth: 'hairline',
                         borderStyle: 'solid',
                         borderColor: 'ink.border',
                         rounded: 'md',

@@ -37,7 +37,7 @@ export default function AboutPage() {
             className={cx(
               css({
                 bg: 'paper.100',
-                borderBottomWidth: '[1px]',
+                borderBottomWidth: 'hairline',
                 borderColor: 'ink.border',
               }),
               railGutter,
@@ -135,7 +135,7 @@ export default function AboutPage() {
                       py: '[6px]',
                       bg: 'paper.200',
                       color: 'ink.800',
-                      borderWidth: '[1px]',
+                      borderWidth: 'hairline',
                       borderStyle: 'solid',
                       borderColor: 'ink.border',
                       rounded: 'md',
@@ -162,7 +162,7 @@ export default function AboutPage() {
                       py: '[6px]',
                       bg: 'paper.200',
                       color: 'ink.800',
-                      borderWidth: '[1px]',
+                      borderWidth: 'hairline',
                       borderStyle: 'solid',
                       borderColor: 'ink.border',
                       rounded: 'md',
@@ -186,7 +186,7 @@ export default function AboutPage() {
                     gridTemplateColumns: 'repeat(3, 1fr)',
                     gap: '6',
                     pt: '6',
-                    borderTopWidth: '[1px]',
+                    borderTopWidth: 'hairline',
                     borderColor: 'ink.border',
                   })}
                 >
@@ -262,7 +262,7 @@ export default function AboutPage() {
                     gap: '3',
                     mb: '6',
                     pb: '4',
-                    borderBottomWidth: '[1px]',
+                    borderBottomWidth: 'hairline',
                     borderColor: 'ink.border',
                   })}
                 >
@@ -313,7 +313,7 @@ export default function AboutPage() {
                       className={css({
                         display: 'block',
                         py: '5',
-                        borderBottomWidth: '[1px]',
+                        borderBottomWidth: 'hairline',
                         borderColor: 'ink.border',
                         transition:
                           '[background 0.15s, box-shadow 0.15s, padding 0.15s]',
@@ -379,7 +379,7 @@ export default function AboutPage() {
                       gap: '3',
                       mb: '6',
                       pb: '4',
-                      borderBottomWidth: '[1px]',
+                      borderBottomWidth: 'hairline',
                       borderColor: 'ink.border',
                     })}
                   >
@@ -417,7 +417,7 @@ export default function AboutPage() {
                           alignItems: 'center',
                           gap: '4',
                           py: '4',
-                          borderBottomWidth: '[1px]',
+                          borderBottomWidth: 'hairline',
                           borderColor: 'ink.border',
                           transition:
                             '[background 0.15s, box-shadow 0.15s, padding 0.15s]',
@@ -474,7 +474,7 @@ export default function AboutPage() {
                       gap: '3',
                       mb: '6',
                       pb: '4',
-                      borderBottomWidth: '[1px]',
+                      borderBottomWidth: 'hairline',
                       borderColor: 'ink.border',
                     })}
                   >
@@ -502,7 +502,7 @@ export default function AboutPage() {
                           alignItems: 'start',
                           gap: '4',
                           py: '4',
-                          borderBottomWidth: '[1px]',
+                          borderBottomWidth: 'hairline',
                           borderColor: 'ink.border',
                           transition:
                             '[background 0.15s, box-shadow 0.15s, padding 0.15s]',

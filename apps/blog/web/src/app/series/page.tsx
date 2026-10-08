@@ -108,7 +108,7 @@ export default function SeriesPage() {
               <p
                 className={css({
                   py: '[24px]',
-                  borderTopWidth: '[1px]',
+                  borderTopWidth: 'hairline',
                   borderTopStyle: 'solid',
                   borderColor: 'ink.border',
                   fontSize: '[14px]',

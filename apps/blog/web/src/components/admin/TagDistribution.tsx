@@ -46,7 +46,7 @@ export const TagDistribution = ({
                 position: 'relative',
                 h: '[14px]',
                 bg: 'paper.100',
-                borderWidth: '[1px]',
+                borderWidth: 'hairline',
                 borderColor: 'ink.border',
               })}
             >

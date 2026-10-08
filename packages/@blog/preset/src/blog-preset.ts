@@ -192,6 +192,15 @@ const blogColors = defineSemanticTokens.colors({
       _dark: 'rgba(230,232,235,0.12)',
     },
   },
+  // scrim — 모달 뒤를 덮는 백드롭. 지면을 가리고 위 패널을 띄우는 역할이라 테마와
+  // 무관하게 어둡다. 두 값은 예전 대괄호 이스케이프 그대로다 — 하나로 합치면 한쪽
+  // 백드롭이 눈에 띄게 바뀐다.
+  'scrim.sheet': {
+    value: { base: 'rgba(1,4,9,0.8)', _dark: 'rgba(1,4,9,0.8)' },
+  },
+  'scrim.dialog': {
+    value: { base: 'rgba(0,0,0,0.5)', _dark: 'rgba(0,0,0,0.5)' },
+  },
   // callout — 마크다운 콜아웃 타입별 색 (danger는 danger.* 재사용).
   // info는 무채색(구조), tip은 포인트 cyan, warning은 warn.* 를 쓴다.
   'callout.info.bg': {

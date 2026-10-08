@@ -53,8 +53,8 @@ export const ActiveFilters = ({
         flexWrap: 'wrap',
         py: '3',
         mb: '4',
-        borderTopWidth: '[1px]',
-        borderBottomWidth: '[1px]',
+        borderTopWidth: 'hairline',
+        borderBottomWidth: 'hairline',
         borderColor: 'ink.border',
       })}
     >

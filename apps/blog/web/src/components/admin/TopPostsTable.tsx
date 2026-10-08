@@ -24,7 +24,7 @@ export const TopPostsTable = ({ rows }: TopPostsTableProps) => {
             alignItems: 'center',
             gap: '3',
             py: '3',
-            borderBottomWidth: '[1px]',
+            borderBottomWidth: 'hairline',
             borderColor: 'ink.border',
             transition: '[background 0.15s]',
             _hover: { bg: 'paper.100' },

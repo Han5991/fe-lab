@@ -331,7 +331,7 @@ const PostsArchiveLayout = ({
           <div
             className={css({
               pt: '6',
-              borderTopWidth: '[1px]',
+              borderTopWidth: 'hairline',
               borderTopStyle: 'solid',
               borderColor: 'ink.border',
               // 레일이 비면 구분선·여백만 남은 빈 띠가 되지 않게 래퍼째 접는다.
@@ -419,7 +419,7 @@ const PostsArchiveLayout = ({
                   color: 'accent.600',
                   px: '[11px]',
                   py: '[5px]',
-                  borderWidth: '[1px]',
+                  borderWidth: 'hairline',
                   borderStyle: 'solid',
                   borderColor: 'ink.border',
                   rounded: 'control',
@@ -467,7 +467,7 @@ const PostsArchiveLayout = ({
               display: { base: 'block', md: 'none' },
               mt: '10',
               pt: '6',
-              borderTopWidth: '[1px]',
+              borderTopWidth: 'hairline',
               borderTopStyle: 'solid',
               borderColor: 'ink.border',
               // 데스크톱 래퍼와 같은 이유 — 레일이 비면 빈 띠를 남기지 않는다.
@@ -524,7 +524,7 @@ const ArchiveSearchBar = ({ q, onChange }: ArchiveSearchBarProps) => {
         gap: '2',
         px: '3',
         py: '2.5',
-        borderWidth: '[1px]',
+        borderWidth: 'hairline',
         borderStyle: 'solid',
         borderColor: 'ink.border',
         rounded: 'control',

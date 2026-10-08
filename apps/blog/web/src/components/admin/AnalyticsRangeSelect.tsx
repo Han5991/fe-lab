@@ -47,7 +47,7 @@ export const AnalyticsRangeSelect = ({
       role="tablist"
       className={css({
         display: 'flex',
-        borderWidth: '[1px]',
+        borderWidth: 'hairline',
         borderColor: 'ink.border',
         rounded: 'md',
         bg: 'paper.100',

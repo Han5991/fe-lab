@@ -17,7 +17,7 @@ const OPTIONS: { id: ViewMode; label: string }[] = [
 
 const group = css({
   display: 'flex',
-  borderWidth: '[1px]',
+  borderWidth: 'hairline',
   borderColor: 'ink.border',
   rounded: 'md',
   overflow: 'hidden',

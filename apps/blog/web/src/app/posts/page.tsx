@@ -62,7 +62,7 @@ export default function PostsPage() {
             className={css({
               mb: '[30px]',
               pb: '[16px]',
-              borderBottomWidth: '[1px]',
+              borderBottomWidth: 'hairline',
               borderBottomStyle: 'solid',
               borderColor: 'ink.border',
               display: 'flex',

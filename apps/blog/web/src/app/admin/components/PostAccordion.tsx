@@ -64,7 +64,7 @@ export function PostAccordion({ post, todayISO }: Props) {
   return (
     <div
       className={css({
-        borderBottomWidth: '[1px]',
+        borderBottomWidth: 'hairline',
         borderColor: 'ink.border',
         _last: { borderBottomWidth: '[0]' },
       })}
@@ -148,7 +148,7 @@ export function PostAccordion({ post, todayISO }: Props) {
                   rounded: 'pill',
                   flexShrink: 0,
                   bg: 'paper.100',
-                  borderWidth: '[1px]',
+                  borderWidth: 'hairline',
                   borderColor: 'ink.border',
                 }),
                 statusTone({ state }),
@@ -260,7 +260,7 @@ export function PostAccordion({ post, todayISO }: Props) {
               className={css({
                 p: '5',
                 bg: 'ink.50',
-                borderTopWidth: '[1px]',
+                borderTopWidth: 'hairline',
                 borderColor: 'ink.border',
               })}
             >
@@ -279,7 +279,7 @@ export function PostAccordion({ post, todayISO }: Props) {
                     bg: 'ink.25',
                     p: '3',
                     rounded: 'control',
-                    borderWidth: '[1px]',
+                    borderWidth: 'hairline',
                     borderColor: 'ink.border',
                     display: 'flex',
                     alignItems: 'center',
@@ -314,7 +314,7 @@ export function PostAccordion({ post, todayISO }: Props) {
                     bg: 'ink.25',
                     p: '3',
                     rounded: 'control',
-                    borderWidth: '[1px]',
+                    borderWidth: 'hairline',
                     borderColor: 'ink.border',
                     display: 'flex',
                     alignItems: 'center',
@@ -348,7 +348,7 @@ export function PostAccordion({ post, todayISO }: Props) {
                     bg: 'ink.25',
                     p: '3',
                     rounded: 'control',
-                    borderWidth: '[1px]',
+                    borderWidth: 'hairline',
                     borderColor: 'ink.border',
                     display: 'flex',
                     alignItems: 'center',
