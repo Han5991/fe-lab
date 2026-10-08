@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  // 자립형 tsconfig — 플래그는 @blog/content와 같은 엄격 수준이다. 이 파일은 앱 program에도
+  // (panda.config·content.config의 import로) 들어가므로 두 검사가 어긋나면 안 된다.
+  // erasableSyntaxOnly: content.config.mts가 node의 type stripping으로 themeColor를 실행한다.
+  "compilerOptions": {
+    "target": "ESNext",
+    "lib": ["esnext"],
+    "skipLibCheck": true,
+    "strict": true,
+    "noImplicitReturns": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": true,
+    "verbatimModuleSyntax": true,
+    "erasableSyntaxOnly": true,
+    "noUncheckedSideEffectImports": true,
+    "noUncheckedIndexedAccess": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "exactOptionalPropertyTypes": true,
+    "allowUnusedLabels": false,
+    "allowUnreachableCode": false,
+    "noEmit": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "isolatedModules": true
+  },
+  "include": ["src/**/*.ts"]
+}

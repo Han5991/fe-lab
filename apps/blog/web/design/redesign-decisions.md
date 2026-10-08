@@ -6,13 +6,13 @@
 **지금 유효한 규칙과 수치는 여기 없다.** 이 문서의 값을 근거로 코드를 고치지 말 것 —
 반대 방향이 맞다. 현행 단일 출처는 다음과 같다:
 
-| 무엇                      | 어디                                            |
-| :------------------------ | :---------------------------------------------- |
-| 색·크기·라운드 등 토큰    | `packages/@design-system/ui/src/blog-preset.ts` |
-| 디자인 시스템 수치와 근거 | `.claude/skills/blog-design-system/SKILL.md`    |
-| 디자인 금지선             | `AGENTS.md` 의 "Blog — design guardrails" 절    |
-| 마크다운 커스텀 태그      | `.claude/skills/blog-components/SKILL.md`       |
-| 다이어그램 저작법         | `.claude/skills/blog-diagrams/SKILL.md`         |
+| 무엇                      | 어디                                         |
+| :------------------------ | :------------------------------------------- |
+| 색·크기·라운드 등 토큰    | `packages/@blog/preset/src/blog-preset.ts`   |
+| 디자인 시스템 수치와 근거 | `.claude/skills/blog-design-system/SKILL.md` |
+| 디자인 금지선             | `AGENTS.md` 의 "Blog — design guardrails" 절 |
+| 마크다운 커스텀 태그      | `.claude/skills/blog-components/SKILL.md`    |
+| 다이어그램 저작법         | `.claude/skills/blog-diagrams/SKILL.md`      |
 
 출처는 claude.ai 디자인 세션의 착수 초안이다. 초안을 그대로 두면 읽는 사람이 폐기된
 수치를 먼저 읽게 되므로, **결정과 정착 결과를 한 문단에 합쳐** 다시 적었다.

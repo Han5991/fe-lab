@@ -9,7 +9,7 @@
       "inputs": [
         "$TURBO_DEFAULT$",
         "$TURBO_ROOT$/apps/blog/web/panda.config.ts",
-        "$TURBO_ROOT$/packages/@design-system/ui/src/blog-preset.ts"
+        "$TURBO_ROOT$/packages/@blog/preset/src/blog-preset.ts"
       ],
       "outputs": [
         "css/**",

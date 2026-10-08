@@ -7,8 +7,7 @@
   "main": "./dist/index.mjs",
   "exports": {
     ".": "./src/index.ts",
-    "./preset": "./src/preset.ts",
-    "./blog-preset": "./src/blog-preset.ts"
+    "./preset": "./src/preset.ts"
   },
   "publishConfig": {
     "exports": {
@@ -19,10 +18,6 @@
       "./preset": {
         "types": "./dist/preset.d.mts",
         "import": "./dist/preset.mjs"
-      },
-      "./blog-preset": {
-        "types": "./dist/blog-preset.d.mts",
-        "import": "./dist/blog-preset.mjs"
       }
     }
   },

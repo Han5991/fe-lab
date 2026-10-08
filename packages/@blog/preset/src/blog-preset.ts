@@ -304,7 +304,7 @@ export function themeColor(theme: BlogTheme, name: BlogColorName): string {
 }
 
 export const blogPreset = definePreset({
-  name: '@design-system/blog',
+  name: '@blog/preset',
   theme: {
     extend: {
       tokens: {

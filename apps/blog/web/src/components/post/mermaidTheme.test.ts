@@ -22,11 +22,7 @@
  * 막겠다고 선언한 바로 그 조용한 실패다.
  */
 import { describe, expect, test, vi } from 'vitest';
-import {
-  themeColor,
-  type BlogColorName,
-  type BlogTheme,
-} from '@design-system/ui/blog-preset';
+import { themeColor, type BlogColorName, type BlogTheme } from '@blog/preset';
 import { MERMAID_VARS } from './MermaidChart';
 
 // MermaidChart는 mermaid(raw 1.1MB)를 정적 import한다. 여기서 필요한 건 색 상수

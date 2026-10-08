@@ -28,7 +28,7 @@
   "dependencies": {
     "@blog/content": "workspace:^",
     "@blog/styled-system": "workspace:^",
-    "@design-system/ui": "workspace:^",
+    "@blog/preset": "workspace:^",
     "@giscus/react": "^3.1.0",
     "@next/third-parties": "^16.3.6",
     "@ssgoi/react": "6.6.10",

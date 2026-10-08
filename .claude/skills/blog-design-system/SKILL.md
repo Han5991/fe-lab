@@ -1,6 +1,6 @@
 ---
 name: blog-design-system
-description: 블로그(apps/blog/web)와 blog-preset.ts의 시각 시스템 단일 출처 — 컬러 semanticToken(라이트/다크, 대비비, accent 3단계), 타이포그래피(mono/sans를 어디에 쓰는지), 라운드·보더, 레일 그리드(railWide/railText/railForm와 거터), 코드 블록 테마(code.* 토큰, rehypeCodeMeta 순서). 블로그 UI 컴포넌트나 packages/@design-system/ui/src/blog-preset.ts를 고칠 때, 색·간격·폭·글꼴을 정하거나 "이 값 어디서 왔지" 싶을 때 사용한다. 글 본문에 넣는 커스텀 태그(diagram·dialogue·metrics·callout 등)는 이 스킬이 아니라 blog-components 스킬을 볼 것.
+description: 블로그(apps/blog/web)와 blog-preset.ts의 시각 시스템 단일 출처 — 컬러 semanticToken(라이트/다크, 대비비, accent 3단계), 타이포그래피(mono/sans를 어디에 쓰는지), 라운드·보더, 레일 그리드(railWide/railText/railForm와 거터), 코드 블록 테마(code.* 토큰, rehypeCodeMeta 순서). 블로그 UI 컴포넌트나 packages/@blog/preset/src/blog-preset.ts를 고칠 때, 색·간격·폭·글꼴을 정하거나 "이 값 어디서 왔지" 싶을 때 사용한다. 글 본문에 넣는 커스텀 태그(diagram·dialogue·metrics·callout 등)는 이 스킬이 아니라 blog-components 스킬을 볼 것.
 ---
 
 # 블로그 디자인 시스템
@@ -15,7 +15,7 @@ description: 블로그(apps/blog/web)와 blog-preset.ts의 시각 시스템 단�
 
 ## 컬러 토큰
 
-색은 전부 `packages/@design-system/ui/src/blog-preset.ts`의 semanticTokens로 정의돼
+색은 전부 `packages/@blog/preset/src/blog-preset.ts`의 semanticTokens로 정의돼
 라이트/다크가 자동 전환된다. **컴포넌트에서 hex를 직접 쓰지 않는다.**
 
 값 자체는 같은 파일의 `blogColors` 상수에 있고 프리셋이 그것을 쓴다. 이 상수는
