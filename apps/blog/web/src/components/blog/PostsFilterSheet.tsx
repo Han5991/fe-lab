@@ -45,7 +45,7 @@ export const PostsFilterSheet = ({
               className={css({
                 pos: 'fixed',
                 inset: '0',
-                bg: '[rgba(1,4,9,0.8)]',
+                bg: 'scrim.sheet',
                 zIndex: '50',
               })}
             />

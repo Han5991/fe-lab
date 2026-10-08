@@ -270,7 +270,7 @@ export const SearchDialog = () => {
             className={css({
               pos: 'fixed',
               inset: '0',
-              bg: '[rgba(0,0,0,0.5)]',
+              bg: 'scrim.dialog',
               zIndex: '50',
             })}
             onClick={closeDialog}
