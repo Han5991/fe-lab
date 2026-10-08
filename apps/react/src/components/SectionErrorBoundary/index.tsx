@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
 import { Component } from 'react';
 import type { ErrorInfo } from 'react';
-import { Box } from '@design-system/ui-lib/jsx';
+import { css } from '@design-system/ui/css';
+import { Box } from '@design-system/ui/jsx';
 import { ApiError } from '@package/core';
 import { ActivityError, ChartError, StatsError } from '@/shared';
 
@@ -57,41 +58,43 @@ export class SectionErrorBoundary<T extends Error = Error> extends Component<
 
         return (
           <Box
-            border="2px solid #ef4444"
-            borderRadius="8px"
-            p={6}
+            border="[2px solid #ef4444]"
+            borderRadius="[8px]"
+            p="6"
             bg="red.400"
-            height="100%"
+            height="[100%]"
           >
-            <Box fontSize="lg" fontWeight="bold" color="#dc2626" mb={2}>
+            <Box fontSize="lg" fontWeight="bold" color="[#dc2626]" mb="2">
               ❌ {sectionName} 에러
             </Box>
-            <Box fontSize="sm" color="#991b1b" mb={2}>
+            <Box fontSize="sm" color="[#991b1b]" mb="2">
               {message}
             </Box>
             {code && (
-              <Box fontSize="xs" color="#7f1d1d" mb={3}>
+              <Box fontSize="xs" color="[#7f1d1d]" mb="3">
                 에러 코드: {code}
               </Box>
             )}
-            <Box fontSize="xs" color="#6b7280" mb={3}>
+            <Box fontSize="xs" color="[#6b7280]" mb="3">
               에러 타입: {error.constructor?.name ?? 'Error'}
             </Box>
-            <Box
-              as="button"
+            {/* Box의 as="button"은 div 기준 props라 type을 받지 못한다 — 진짜 button에 css()를 건다. */}
+            <button
               type="button"
               onClick={this.resetError}
-              bg="#dc2626"
-              color="white"
-              px={4}
-              py={2}
-              borderRadius="4px"
-              fontSize="sm"
-              cursor="pointer"
-              border="none"
+              className={css({
+                bg: '[#dc2626]',
+                color: 'white',
+                px: '4',
+                py: '2',
+                borderRadius: '[4px]',
+                fontSize: 'sm',
+                cursor: 'pointer',
+                border: 'none',
+              })}
             >
               다시 시도
-            </Box>
+            </button>
           </Box>
         );
       }
