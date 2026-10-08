@@ -321,7 +321,7 @@ export function PostAccordion({ post, todayISO }: Props) {
                 >
                   <BarChart3
                     size={13}
-                    className={css({ color: 'orange.500' })}
+                    className={css({ color: 'warn.text' })}
                   />
                   <span className={css({ fontSize: 'xs', color: 'ink.500' })}>
                     피크

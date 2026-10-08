@@ -340,6 +340,12 @@ export const blogPreset = definePreset({
         },
         // 색 팔레트는 semanticTokens.colors 로 이동(테마-가변 base/_dark).
         // paper/ink/accent/marker/moss 이름은 유지 — 컴포넌트가 그대로 소비.
+        // 테마와 무관한 색은 하나 — btn.* 배경 위 글자. btn 명도는 흰 글씨 대비
+        // (4.5:1)를 전제로 잡았다. 블로그는 preset-panda의 팔레트를 빼고 쓰므로
+        // (apps/blog/web/panda.config.ts) 이 값이 없으면 `white`가 strictTokens에 걸린다.
+        colors: {
+          white: { value: '#ffffff' },
+        },
         fontSizes: {
           '2xs': { value: '10px' },
           xs: { value: '11px' },
