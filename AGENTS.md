@@ -66,7 +66,8 @@ here or anywhere else (this repo once carried four diverging copies of that prom
   the ruler you read before setting or raising a budget; the gate is `check-bundle`'s budgets (§8).
 - **Lint tiers are intentional.** The blog stack (`apps/blog/web`, `packages/@blog/content`) runs
   `--max-warnings=0` with `noInlineConfig` + `@eslint-community/eslint-comments/no-use` — inline `eslint-disable`
-  is banned; scope exceptions by `files` in `eslint.config.mts`. `apps/react`·`apps/next.js` run plain `eslint .`.
+  is banned; scope exceptions by `files` in `eslint.config.mts`. `packages/@blog/preset` (one file of token literals)
+  is type-checked only. `apps/react`·`apps/next.js` run plain `eslint .`.
   `apps/typescript`·`apps/socket-server` are **not linted at all** (no script, no config) — don't look for
   `pnpm lint` there, and don't impose blog rules on experiment apps (the blog is the asset; experiments are a lab).
 
@@ -189,7 +190,7 @@ Worker (`apps/blog/web/wrangler.jsonc`), Supabase for the dynamic bits.
   넘기고, `CLOUDFLARE_API_TOKEN`을 쥔 잡은 `--ignore-scripts`로 깐 wrangler만 돌린다. 토큰 잡에 빌드·테스트나
   스크립트가 도는 install을 다시 넣지 말 것(토큰 잡은 사람이 연 PR의 lockfile로 wrangler를 깐다 — 봇 PR은 빌드까지만
   돌고 토큰 잡은 건너뛴다).
-  배포는 `main` push(블로그의 실제 입력 — `apps/blog/**`·`packages/@blog/**`·`packages/@design-system/**`·catalog·
+  배포는 `main` push(블로그의 실제 입력 — `apps/blog/**`·`packages/@blog/**`·catalog·
   lockfile·툴체인·배포 워크플로 자신), **매일 cron `13 0 * * *`(KST 09:13)**(예약 글 공개), 수동
   실행. 정각을 피한 건 `0 0` 슬롯이 붐벼 실제로 KST 11:36~12:00에 돌았기 때문이다. GitHub cron은 정시를
   보장하지 않고 하루 한 번이라, `scheduledDate`에 적은 시각은 "그 뒤 첫 배포"(push 배포나 다음 날 cron)에서
@@ -298,7 +299,7 @@ Worker (`apps/blog/web/wrangler.jsonc`), Supabase for the dynamic bits.
 시각 기준은 구현된 화면(홈과 글 상세를 dev 서버로 대조)이고, 수치와 근거는 `blog-design-system` 스킬이
 단일 출처다. 금지선:
 
-- 색은 전부 `packages/@design-system/ui/src/blog-preset.ts`에서 온다. **컴포넌트에서 hex를 쓰지 않는다** —
+- 색은 전부 `packages/@blog/preset/src/blog-preset.ts`에서 온다. **컴포넌트에서 hex를 쓰지 않는다** —
   다이어그램 SVG도 `currentColor`나 Panda `css()`로 토큰에 잇는다. CSS 변수를 못 읽는 satori/sharp는
   `themeColor('dark', 'paper.50')`으로 뽑는다. hex를 옮겨 적지 않는다.
 - 레일·거터의 단일 출처는 `src/components/Rail.tsx`다. **페이지에서 `maxW`·`px`를 직접 쓰지 않는다.** 거터는

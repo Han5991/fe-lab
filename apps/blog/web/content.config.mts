@@ -21,7 +21,7 @@
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { defineContent } from '@blog/content';
-import { themeColor } from '@design-system/ui/blog-preset';
+import { themeColor } from '@blog/preset';
 import {
   AUTHOR,
   BUNDLE_BUDGETS,

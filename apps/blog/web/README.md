@@ -75,7 +75,7 @@ apps/blog/web/
 ├─ design/              redesign-decisions.md — 리뉴얼 결정 기록(왜 그렇게 정했는지. 현행 수치의 출처는 아니다)
 ├─ content.values.mts · content.config.mts   사이트 값 모듈 · 경로 앵커 겸 배선(§1)
 ├─ next.config.ts · postcss.config.cjs · vitest.config.mts · vitest.setup.ts
-├─ panda.config.ts      preset 둘(Panda 기본 · blog-preset) · strictTokens · 생성물 outdir은 이 설정 전용 패키지 packages/@blog/styled-system(@blog/styled-system/css·/tokens로 import, 직접 수정 금지 — pnpm install의 prepare와 turbo build가 만든다). @blog/content 소스도 스캔한다
+├─ panda.config.ts      preset 둘(Panda 기본 · @blog/preset) · strictTokens · 생성물 outdir은 이 설정 전용 패키지 packages/@blog/styled-system(@blog/styled-system/css·/tokens로 import, 직접 수정 금지 — pnpm install의 prepare와 turbo build가 만든다). @blog/content 소스도 스캔한다
 ├─ wrangler.jsonc       정적 자산 Worker — 도메인(routes, custom_domain)·계정(account_id — 비밀값 아님)·html_handling·not_found_handling(404 페이지)·workers_dev 끔·preview_urls 켬
 ├─ tsconfig.json(프로덕션) · tsconfig.test.json(테스트) · eslint.config.mts · turbo.json · env.d.ts
 ├─ AGENTS.md · CLAUDE.md   `next dev`가 관리하는 Next.js 에이전트 블록과, Claude Code가 그것을 읽는 한 줄 import(`@AGENTS.md`). 둘이 한 짝이다
@@ -179,7 +179,7 @@ apps/blog/web/
 ## 7. 배포 · CI
 
 - **PR / main push**: `.github/workflows/ci.yml` → 공용 `.github/actions/quality-checks`(turbo lint·check-types·test → `lint:posts` → `format:check` → `pnpm build --filter=@blog/web` → 런타임 e2e `.github/actions/blog-e2e` — Chromium을 Playwright 버전 키로 캐시하고, 실패하면 `.playwright/`를 아티팩트로 올린다).
-- **배포**: `.github/workflows/deploy-blog.yml` — 트리거는 셋이다. `main` push는 블로그 빌드의 실제 입력 전부(`apps/blog/**`·`packages/@blog/**`·`packages/@design-system/**`, catalog·lockfile인 `pnpm-workspace.yaml`·`pnpm-lock.yaml`, 툴체인인 루트 `package.json`·`.tool-versions`·`turbo.json`, 워크플로 자신과 검사 액션 둘(`.github/actions/quality-checks`·`.github/actions/blog-e2e`)), 예약 발행용 cron `13 0 * * *`(UTC 00:13 = KST 09:13 — 붐비는 정각을 피했을 뿐 GitHub cron은 정시를 보장하지 않고 하루 한 번이다), 수동 실행. 잡은 둘로 나뉜다(토큰 격리). `build` 잡은 시크릿 없이 quality-checks(scope `blog`, 빌드·포맷 제외) → `pnpm build --filter=@blog/web --force`(`--force`라 turbo 캐시를 읽지 않는다 — 빌드가 시각에 달려 있어서다; `check-seo`·`check-bundle`, 그리고 `/posts/` 프리렌더 링크 검사(CSR bail-out 회귀 가드, 지금은 `check-seo`의 규칙)가 이 빌드 안에서 돈다) → 같은 `out/`으로 런타임 e2e(`.github/actions/blog-e2e`) → `out/`을 아티팩트로 올린다. `deploy` 잡(`environment: github-pages` — `main`만 허용하는 게이트)은 lockfile로 스크립트 없이 설치한 wrangler로 그 아티팩트를 Cloudflare Workers(`wrangler.jsonc`)에 올리기만 한다. 빌드 스텝이 넣는 env는 `NEXT_PUBLIC_PR_COUNT`(GitHub에서 가져온 머지 PR 수)와 `NODE_ENV` 둘뿐이다 — 나머지 `NEXT_PUBLIC_*`은 커밋된 `.env.production`에서 온다.
+- **배포**: `.github/workflows/deploy-blog.yml` — 트리거는 셋이다. `main` push는 블로그 빌드의 실제 입력 전부(`apps/blog/**`·`packages/@blog/**`, catalog·lockfile인 `pnpm-workspace.yaml`·`pnpm-lock.yaml`, 툴체인인 루트 `package.json`·`.tool-versions`·`turbo.json`, 워크플로 자신과 검사 액션 둘(`.github/actions/quality-checks`·`.github/actions/blog-e2e`)), 예약 발행용 cron `13 0 * * *`(UTC 00:13 = KST 09:13 — 붐비는 정각을 피했을 뿐 GitHub cron은 정시를 보장하지 않고 하루 한 번이다), 수동 실행. 잡은 둘로 나뉜다(토큰 격리). `build` 잡은 시크릿 없이 quality-checks(scope `blog`, 빌드·포맷 제외) → `pnpm build --filter=@blog/web --force`(`--force`라 turbo 캐시를 읽지 않는다 — 빌드가 시각에 달려 있어서다; `check-seo`·`check-bundle`, 그리고 `/posts/` 프리렌더 링크 검사(CSR bail-out 회귀 가드, 지금은 `check-seo`의 규칙)가 이 빌드 안에서 돈다) → 같은 `out/`으로 런타임 e2e(`.github/actions/blog-e2e`) → `out/`을 아티팩트로 올린다. `deploy` 잡(`environment: github-pages` — `main`만 허용하는 게이트)은 lockfile로 스크립트 없이 설치한 wrangler로 그 아티팩트를 Cloudflare Workers(`wrangler.jsonc`)에 올리기만 한다. 빌드 스텝이 넣는 env는 `NEXT_PUBLIC_PR_COUNT`(GitHub에서 가져온 머지 PR 수)와 `NODE_ENV` 둘뿐이다 — 나머지 `NEXT_PUBLIC_*`은 커밋된 `.env.production`에서 온다.
 - **PR 프리뷰**: `.github/workflows/preview-blog.yml` — `wrangler versions upload`로 버전만 올리고(트래픽 이동 없음) 브랜치 고정 alias URL과 커밋별 URL을 PR에 코멘트한다. Vercel은 더 이상 쓰지 않는다.
 - **Supabase**: 스키마는 `supabase/migrations/`(조회수 테이블·이력·대시보드 RPC·KST 보정·권한 잠금·고아 RPC 정리 순), Admin RPC 프록시는 `supabase/functions/admin-analytics`. 프로덕션 적용은 `.github/workflows/supabase-migrations.yml`이 한다 — `supabase/migrations/**`(와 워크플로 자신)가 바뀐 `main` push와 수동 실행에서만 돌고, `migration list`로 원장과 파일의 차이를 로그에 남긴 뒤 `db push`한다(대시보드 SQL 에디터로 손대던 경로를 여기 하나로 고정).
 
@@ -187,11 +187,11 @@ apps/blog/web/
 
 ## 8. 더 읽을 것
 
-| 무엇                                                      | 어디                                                                                          |
-| :-------------------------------------------------------- | :-------------------------------------------------------------------------------------------- |
-| 발행 판정 · frontmatter 계약 · SEO 게이트 · 디자인 금지선 | 루트 [`AGENTS.md`](../../../AGENTS.md) §7–9                                                   |
-| 콘텐츠 프레임워크 내부(레이어·`defineContent`·스크립트)   | [`packages/@blog/content/README.md`](../../../packages/@blog/content/README.md)               |
-| 색·글꼴·레일·코드 블록 테마                               | `.claude/skills/blog-design-system/SKILL.md`, `packages/@design-system/ui/src/blog-preset.ts` |
-| 본문 커스텀 태그 문법                                     | `.claude/skills/blog-components/SKILL.md`                                                     |
-| 다이어그램 저작 · `hero:` 등록법                          | `.claude/skills/blog-diagrams/SKILL.md`                                                       |
-| 리뉴얼에서 무엇을 왜 그렇게 정했는지                      | [`design/redesign-decisions.md`](design/redesign-decisions.md)                                |
+| 무엇                                                      | 어디                                                                                     |
+| :-------------------------------------------------------- | :--------------------------------------------------------------------------------------- |
+| 발행 판정 · frontmatter 계약 · SEO 게이트 · 디자인 금지선 | 루트 [`AGENTS.md`](../../../AGENTS.md) §7–9                                              |
+| 콘텐츠 프레임워크 내부(레이어·`defineContent`·스크립트)   | [`packages/@blog/content/README.md`](../../../packages/@blog/content/README.md)          |
+| 색·글꼴·레일·코드 블록 테마                               | `.claude/skills/blog-design-system/SKILL.md`, `packages/@blog/preset/src/blog-preset.ts` |
+| 본문 커스텀 태그 문법                                     | `.claude/skills/blog-components/SKILL.md`                                                |
+| 다이어그램 저작 · `hero:` 등록법                          | `.claude/skills/blog-diagrams/SKILL.md`                                                  |
+| 리뉴얼에서 무엇을 왜 그렇게 정했는지                      | [`design/redesign-decisions.md`](design/redesign-decisions.md)                           |
