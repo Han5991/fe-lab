@@ -16,7 +16,6 @@
   },
   "dependencies": {
     "@design-system/ui": "workspace:^",
-    "@design-system/ui-lib": "workspace:^",
     "@package/core": "workspace:*",
     "@tanstack/react-query": "catalog:",
     "react": "catalog:",
@@ -28,6 +27,7 @@
     "@pandacss/dev": "catalog:",
     "@pandacss/preset-base": "catalog:",
     "@pandacss/preset-panda": "catalog:",
+    "@pandacss/vite": "catalog:",
     "@testing-library/jest-dom": "catalog:",
     "@testing-library/react": "catalog:",
     "@testing-library/user-event": "catalog:",

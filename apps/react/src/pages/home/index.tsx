@@ -1,10 +1,10 @@
 import { Link } from 'react-router';
 import { Button } from '@design-system/ui';
-import { Center } from '@design-system/ui-lib/jsx';
+import { Center } from '@design-system/ui/jsx';
 
 export function HomePage() {
   return (
-    <Center h="100vh" flexDir="column" gap={8}>
+    <Center h="[100vh]" flexDir="column" gap="8">
       <Link to="/toast">
         <Button>Toast 예제 보기</Button>
       </Link>

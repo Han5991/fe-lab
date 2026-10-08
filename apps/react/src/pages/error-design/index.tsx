@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import { QueryErrorResetBoundary } from '@tanstack/react-query';
-import { Box, Grid } from '@design-system/ui-lib/jsx';
+import { Box, Grid } from '@design-system/ui/jsx';
 import {
   useDashboardStats,
   useChartData,
@@ -22,14 +22,17 @@ const StatCard = ({
   value: string;
   change: string;
 }) => (
-  <Box border="1px solid #e5e7eb" borderRadius="8px" p={6} bg="white">
-    <Box fontSize="sm" color="#6b7280" mb={2}>
+  <Box border="[1px solid #e5e7eb]" borderRadius="[8px]" p="6" bg="white">
+    <Box fontSize="sm" color="[#6b7280]" mb="2">
       {title}
     </Box>
-    <Box fontSize="2xl" fontWeight="bold" mb={1}>
+    <Box fontSize="2xl" fontWeight="bold" mb="1">
       {value}
     </Box>
-    <Box fontSize="sm" color={change.startsWith('+') ? '#10b981' : '#ef4444'}>
+    <Box
+      fontSize="sm"
+      color={change.startsWith('+') ? '[#10b981]' : '[#ef4444]'}
+    >
       {change}
     </Box>
   </Box>
@@ -70,21 +73,21 @@ const ChartWidget = () => {
   const { data } = useChartData();
 
   return (
-    <Box border="1px solid #e5e7eb" borderRadius="8px" p={6} bg="white">
-      <Box fontSize="lg" fontWeight="semibold" mb={4}>
+    <Box border="[1px solid #e5e7eb]" borderRadius="[8px]" p="6" bg="white">
+      <Box fontSize="lg" fontWeight="semibold" mb="4">
         주간 트래픽
       </Box>
       <Box
-        height="200px"
-        bg="#f3f4f6"
-        borderRadius="4px"
+        height="[200px]"
+        bg="[#f3f4f6]"
+        borderRadius="[4px]"
         display="flex"
         flexDirection="column"
         justifyContent="center"
-        p={4}
+        p="4"
       >
         {data.labels.map((label, i) => (
-          <Box key={label} fontSize="sm" mb={1}>
+          <Box key={label} fontSize="sm" mb="1">
             {label}: {data.data[i]}
           </Box>
         ))}
@@ -98,17 +101,17 @@ const ActivityFeed = () => {
   const { data } = useActivities();
 
   return (
-    <Box border="1px solid #e5e7eb" borderRadius="8px" p={6} bg="white">
-      <Box fontSize="lg" fontWeight="semibold" mb={4}>
+    <Box border="[1px solid #e5e7eb]" borderRadius="[8px]" p="6" bg="white">
+      <Box fontSize="lg" fontWeight="semibold" mb="4">
         최근 활동
       </Box>
-      <Box display="flex" flexDirection="column" gap={3}>
+      <Box display="flex" flexDirection="column" gap="3">
         {data.map(activity => (
           <Box
             key={activity.id}
-            p={3}
-            bg="#f9fafb"
-            borderRadius="4px"
+            p="3"
+            bg="[#f9fafb]"
+            borderRadius="[4px]"
             fontSize="sm"
           >
             • {activity.message}
@@ -122,11 +125,11 @@ const ActivityFeed = () => {
 // 로딩 폴백 컴포넌트
 const LoadingFallback = ({ message }: { message: string }) => (
   <Box
-    border="1px solid #e5e7eb"
-    borderRadius="8px"
-    p={6}
+    border="[1px solid #e5e7eb]"
+    borderRadius="[8px]"
+    p="6"
     bg="white"
-    height="100%"
+    height="[100%]"
     display="flex"
     alignItems="center"
     justifyContent="center"
@@ -139,24 +142,24 @@ const ErrorDesignPage = () => (
   <Grid
     gridTemplateColumns="repeat(4, minmax(0, 1fr))"
     gridTemplateRows="auto repeat(3, 1fr)"
-    gap={4}
-    height="100vh"
-    width="100vw"
-    p={4}
-    bg="#f9fafb"
+    gap="4"
+    height="[100vh]"
+    width="[100vw]"
+    p="4"
+    bg="[#f9fafb]"
   >
     {/* 헤더 */}
     <Box
       gridColumn="span 4"
-      p={4}
+      p="4"
       bg="white"
-      borderRadius="8px"
-      border="1px solid #e5e7eb"
+      borderRadius="[8px]"
+      border="[1px solid #e5e7eb]"
     >
       <Box fontSize="2xl" fontWeight="bold">
         대시보드 - 에러 핸들링 예제
       </Box>
-      <Box fontSize="sm" color="#6b7280" mt={2}>
+      <Box fontSize="sm" color="[#6b7280]" mt="2">
         각 섹션은 독립적으로 로딩되고 에러를 처리합니다
       </Box>
     </Box>

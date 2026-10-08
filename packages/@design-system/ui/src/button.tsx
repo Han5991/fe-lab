@@ -1,6 +1,6 @@
 import type { ComponentPropsWithoutRef } from 'react';
-import { button, type ButtonVariantProps } from '@design-system/ui-lib/recipes';
-import { cx } from '@design-system/ui-lib/css';
+import { button, type ButtonVariantProps } from '../styled-system/recipes';
+import { cx } from '../styled-system/css';
 
 export interface ButtonProps
   extends ButtonVariantProps, ComponentPropsWithoutRef<'button'> {}

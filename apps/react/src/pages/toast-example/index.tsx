@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ToastContainer, toasts } from '@design-system/ui';
 import { Button } from '@design-system/ui';
-import { css } from '@design-system/ui-lib/css';
+import { css } from '@design-system/ui/css';
 
 export const ToastExamplePage = () => {
   const [isLoading, setIsLoading] = useState(false);

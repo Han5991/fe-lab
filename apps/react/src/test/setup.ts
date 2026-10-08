@@ -9,7 +9,7 @@ const stub =
   ({ children, ...props }: DivProps) =>
     React.createElement('div', props, children);
 
-vi.mock('@design-system/ui-lib/jsx', () => ({
+vi.mock('@design-system/ui/jsx', () => ({
   Box: stub(),
   Grid: stub(),
   Flex: stub(),

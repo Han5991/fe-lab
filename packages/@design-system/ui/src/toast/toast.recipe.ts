@@ -1,9 +1,9 @@
-import { sva } from '@design-system/ui-lib/css';
-import type { SlotRecipeRuntimeFn } from '@design-system/ui-lib/types';
+import { sva } from '../../styled-system/css';
+import type { SlotRecipeRuntimeFn } from '../../styled-system/types';
 import type { ToastType } from './types';
 
-// 인라인 sva는 변형 키만 적은 타입을 단다(Panda v2 isolated declarations 패턴) — 추론 타입은 d.ts가
-// 이름을 못 붙이고(TS2883), 붙여도 CSS 값이 통째로 타입에 실린다.
+// 인라인 sva는 변형 키만 적은 타입을 단다(Panda v2 isolated declarations 패턴) — 추론 타입은 이름을
+// 붙일 수 없고(TS2883), 붙여도 CSS 값이 통째로 타입에 실린다.
 export const toastRecipe: SlotRecipeRuntimeFn<
   'container' | 'content' | 'icon',
   { type?: ToastType }
