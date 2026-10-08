@@ -10,7 +10,7 @@ const groupBlock = css({
   flexDir: 'column',
   gap: '[12px]',
   pt: '[12px]',
-  borderTopWidth: '[1px]',
+  borderTopWidth: 'hairline',
   borderTopStyle: 'solid',
   borderTopColor: 'ink.border',
 });

@@ -38,7 +38,7 @@ export function PostList() {
   const inputClass = css({
     py: '1.5',
     px: '2',
-    borderWidth: '[1px]',
+    borderWidth: 'hairline',
     borderColor: 'ink.border',
     rounded: 'md',
     fontSize: 'xs',
@@ -52,7 +52,7 @@ export function PostList() {
     <div
       className={css({
         bg: 'ink.25',
-        borderWidth: '[1px]',
+        borderWidth: 'hairline',
         borderColor: 'ink.border',
         rounded: 'control',
         overflow: 'hidden',
@@ -65,7 +65,7 @@ export function PostList() {
           alignItems: 'center',
           px: '5',
           py: '3',
-          borderBottomWidth: '[1px]',
+          borderBottomWidth: 'hairline',
           borderColor: 'ink.border',
           flexWrap: 'wrap',
           gap: '2',
@@ -84,7 +84,7 @@ export function PostList() {
               gap: '1.5',
               bg: 'paper.200',
               color: 'ink.800',
-              borderWidth: '[1px]',
+              borderWidth: 'hairline',
               borderStyle: 'solid',
               borderColor: 'ink.border',
               px: '3',

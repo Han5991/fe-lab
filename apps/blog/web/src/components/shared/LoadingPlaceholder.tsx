@@ -17,7 +17,9 @@ export function LoadingPlaceholder({ height }: LoadingPlaceholderProps) {
       className={css({
         w: 'full',
         bg: 'paper.100',
-        animation: '[pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite]',
+        // preset-panda animations.pulse와 같은 값이다. keyframes는 그 토큰이 싣는다 — 그래서
+        // 블로그 설정은 optimize.removeUnusedKeyframes를 켜지 않는다(panda.config.ts 주석).
+        animation: 'pulse',
         rounded: 'control',
       })}
     />

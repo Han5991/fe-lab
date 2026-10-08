@@ -226,7 +226,7 @@ export const SearchDialog = () => {
           px: { base: '2', md: '3' },
           py: '1.5',
           rounded: 'control',
-          borderWidth: '[1px]',
+          borderWidth: 'hairline',
           borderColor: 'ink.border',
           color: 'ink.500',
           fontSize: 'sm',
@@ -315,7 +315,7 @@ export const SearchDialog = () => {
                   display: 'flex',
                   alignItems: 'center',
                   px: '4',
-                  borderBottomWidth: '[1px]',
+                  borderBottomWidth: 'hairline',
                   borderColor: 'ink.100',
                   flexShrink: 0,
                 })}
@@ -443,7 +443,7 @@ export const SearchDialog = () => {
                             bg: selected ? 'accent.50' : 'transparent',
                             _active: { bg: 'accent.50' },
                             transition: '[background 0.1s]',
-                            borderBottomWidth: { base: '[1px]', md: '[0]' },
+                            borderBottomWidth: { base: 'hairline', md: '[0]' },
                             borderColor: 'paper.200',
                           })}
                         >
@@ -563,7 +563,7 @@ export const SearchDialog = () => {
                   gap: '4',
                   px: '4',
                   py: '2',
-                  borderTopWidth: '[1px]',
+                  borderTopWidth: 'hairline',
                   borderColor: 'ink.100',
                   fontSize: 'xs',
                   // aria-hidden이어도 보이는 글자다 — 대비는 지킨다(--fg-sub).

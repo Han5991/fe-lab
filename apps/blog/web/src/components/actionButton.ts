@@ -5,7 +5,7 @@ export const actionButton = cva({
   base: {
     px: '[16px]',
     py: '[8px]',
-    borderWidth: '[1px]',
+    borderWidth: 'hairline',
     borderStyle: 'solid',
     rounded: 'md',
     fontSize: 'sm',

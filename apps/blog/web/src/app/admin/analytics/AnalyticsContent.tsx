@@ -61,7 +61,7 @@ export const AnalyticsContent = ({ tags }: AnalyticsContentProps) => {
           },
           gap: { base: '6', md: '8' },
           pb: '8',
-          borderBottomWidth: '[1px]',
+          borderBottomWidth: 'hairline',
           borderColor: 'ink.border',
         })}
       >
@@ -93,7 +93,7 @@ export const AnalyticsContent = ({ tags }: AnalyticsContentProps) => {
             justifyContent: 'space-between',
             mb: '4',
             pb: '3',
-            borderBottomWidth: '[1px]',
+            borderBottomWidth: 'hairline',
             borderColor: 'ink.border',
           })}
         >
@@ -127,7 +127,7 @@ export const AnalyticsContent = ({ tags }: AnalyticsContentProps) => {
               justifyContent: 'space-between',
               mb: '4',
               pb: '3',
-              borderBottomWidth: '[1px]',
+              borderBottomWidth: 'hairline',
               borderColor: 'ink.border',
             })}
           >
@@ -168,7 +168,7 @@ export const AnalyticsContent = ({ tags }: AnalyticsContentProps) => {
               justifyContent: 'space-between',
               mb: '4',
               pb: '3',
-              borderBottomWidth: '[1px]',
+              borderBottomWidth: 'hairline',
               borderColor: 'ink.border',
             })}
           >

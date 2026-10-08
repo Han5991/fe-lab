@@ -38,7 +38,7 @@ function HiddenBadge({ state }: { state: PostStatus }) {
         color: 'ink.500',
         px: '1.5',
         rounded: 'sm',
-        borderWidth: '[1px]',
+        borderWidth: 'hairline',
         borderColor: 'ink.border',
         flexShrink: 0,
       })}
@@ -81,7 +81,7 @@ function AdminOverviewContent() {
         <div
           className={css({
             bg: 'ink.25',
-            borderWidth: '[1px]',
+            borderWidth: 'hairline',
             borderColor: 'ink.border',
             rounded: 'control',
             p: '6',
@@ -144,7 +144,7 @@ function AdminOverviewContent() {
         <div
           className={css({
             bg: 'ink.25',
-            borderWidth: '[1px]',
+            borderWidth: 'hairline',
             borderColor: 'ink.border',
             rounded: 'control',
             p: '6',
@@ -202,7 +202,7 @@ function AdminOverviewContent() {
           href={ADMIN_ANALYTICS_PATH}
           className={css({
             bg: 'paper.200',
-            borderWidth: '[1px]',
+            borderWidth: 'hairline',
             borderColor: 'ink.border',
             rounded: 'control',
             p: '6',
@@ -240,7 +240,7 @@ function AdminOverviewContent() {
         <div
           className={css({
             bg: 'ink.25',
-            borderWidth: '[1px]',
+            borderWidth: 'hairline',
             borderColor: 'ink.border',
             rounded: 'control',
             overflow: 'hidden',
@@ -250,7 +250,7 @@ function AdminOverviewContent() {
             className={css({
               px: '5',
               py: '4',
-              borderBottomWidth: '[1px]',
+              borderBottomWidth: 'hairline',
               borderColor: 'ink.border',
               display: 'flex',
               alignItems: 'baseline',
@@ -292,7 +292,7 @@ function AdminOverviewContent() {
                     px: '5',
                     py: '3',
                     borderBottomWidth:
-                      i < topPosts.length - 1 ? '[1px]' : '[0]',
+                      i < topPosts.length - 1 ? 'hairline' : '[0]',
                     borderColor: 'ink.border',
                     transition: '[background 0.15s]',
                     _hover: { bg: 'ink.50' },
@@ -345,7 +345,7 @@ function AdminOverviewContent() {
         <div
           className={css({
             bg: 'ink.25',
-            borderWidth: '[1px]',
+            borderWidth: 'hairline',
             borderColor: 'ink.border',
             rounded: 'control',
             overflow: 'hidden',
@@ -355,7 +355,7 @@ function AdminOverviewContent() {
             className={css({
               px: '5',
               py: '4',
-              borderBottomWidth: '[1px]',
+              borderBottomWidth: 'hairline',
               borderColor: 'ink.border',
               display: 'flex',
               alignItems: 'baseline',
@@ -397,7 +397,7 @@ function AdminOverviewContent() {
                     px: '5',
                     py: '3',
                     borderBottomWidth:
-                      i < recentPosts.length - 1 ? '[1px]' : '[0]',
+                      i < recentPosts.length - 1 ? 'hairline' : '[0]',
                     borderColor: 'ink.border',
                     transition: '[background 0.15s]',
                     _hover: { bg: 'ink.50' },
@@ -460,7 +460,7 @@ export default function AdminPage() {
             justifyContent: 'space-between',
             mb: '6',
             pb: '5',
-            borderBottomWidth: '[1px]',
+            borderBottomWidth: 'hairline',
             borderColor: 'ink.border',
             flexWrap: 'wrap',
             gap: '3',

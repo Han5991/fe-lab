@@ -54,7 +54,7 @@ function LoginForm() {
         className={css({
           p: '8',
           rounded: 'card',
-          borderWidth: '[1px]',
+          borderWidth: 'hairline',
           borderColor: 'ink.border',
           bg: 'ink.25',
           textAlign: 'center',
@@ -94,7 +94,7 @@ function LoginForm() {
               p: '3',
               bg: 'danger.bg',
               rounded: 'control',
-              borderWidth: '[1px]',
+              borderWidth: 'hairline',
               borderColor: 'danger.border',
             })}
           >
@@ -112,7 +112,7 @@ function LoginForm() {
               p: '3',
               bg: 'danger.bg',
               rounded: 'control',
-              borderWidth: '[1px]',
+              borderWidth: 'hairline',
               borderColor: 'danger.border',
               display: 'flex',
               flexDir: 'column',

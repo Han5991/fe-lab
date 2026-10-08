@@ -281,7 +281,7 @@ export const TOC = () => {
         // 대신 "여기서 잘렸다"는 신호가 없어지므로, fumadocs처럼 위아래
         // 16px을 투명으로 흐린다. 아래 py도 같은 이유다(첫·마지막 항목이
         // 페이드 구간에 앉아 흐릿하게 시작하지 않도록 여백을 준다).
-        scrollbarWidth: '[none]',
+        scrollbarWidth: 'none',
         '&::-webkit-scrollbar': { display: 'none' },
         maskImage: `[linear-gradient(to bottom, transparent, black ${FADE}px, black calc(100% - ${FADE}px), transparent)]`,
         // 페이드 구간과 정확히 같은 16px. 더 좁으면 첫·마지막 항목의 글자가
