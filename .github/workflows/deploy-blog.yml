@@ -7,7 +7,6 @@ on:
     paths:
       - 'apps/blog/**'
       - 'packages/@blog/**'
-      - 'packages/@design-system/**'
       - 'pnpm-workspace.yaml'
       - 'pnpm-lock.yaml'
       - 'package.json'
