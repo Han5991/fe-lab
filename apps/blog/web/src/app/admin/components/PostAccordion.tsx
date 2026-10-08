@@ -319,10 +319,8 @@ export function PostAccordion({ post, todayISO }: Props) {
                     gap: '2',
                   })}
                 >
-                  <BarChart3
-                    size={13}
-                    className={css({ color: 'warn.text' })}
-                  />
+                  {/* 피크는 정보 표시다 — 경고색(warn.*) 대신 admin 보조 강조색을 쓴다. */}
+                  <BarChart3 size={13} className={css({ color: 'spot.600' })} />
                   <span className={css({ fontSize: 'xs', color: 'ink.500' })}>
                     피크
                   </span>
