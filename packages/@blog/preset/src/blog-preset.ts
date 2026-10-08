@@ -1,4 +1,6 @@
-import { definePreset, defineSemanticTokens } from '@pandacss/dev';
+// 런타임에 실행되는 파일(content.config.mts가 themeColor를 부른다)이라 가벼운 define 진입점을
+// 쓴다(Panda v2 design-systems/publishing).
+import { definePreset, defineSemanticTokens } from '@pandacss/dev/define';
 
 /**
  * 테마-가변 색 팔레트 — 아래 `blogPreset`의 `semanticTokens.colors`가 그대로 쓴다.
