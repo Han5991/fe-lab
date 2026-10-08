@@ -14,7 +14,6 @@ coverage
 # Panda CSS 생성물 (절대 직접 수정 금지)
 styled-system
 **/styled-system/**
-packages/@design-system/ui-lib/**
 packages/@blog/styled-system/**
 
 # 저자 컨벤션 존중 — 블로그 포스트 콘텐츠

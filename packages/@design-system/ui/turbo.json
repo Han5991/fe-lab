@@ -1,0 +1,16 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    // panda codegen(styled-system/) + panda lib(dist/panda/ — manifest·preset·buildinfo).
+    // 앱은 designSystem으로 dist/panda/를 읽으므로 build가 앱보다 먼저다(앱 build·test·dev는 ^build).
+    "build": {
+      "outputs": ["dist/panda/**", "styled-system/**"]
+    },
+    // panda lib --watch는 codegen을 다시 돌리지 않으므로 build를 먼저 한 번 끝낸다 — 앱 dev가
+    // ^build로 이 패키지의 build를 부를 때 watch와 같은 파일을 동시에 쓰지 않게도 한다.
+    "dev": {
+      "dependsOn": ["build"]
+    }
+  }
+}

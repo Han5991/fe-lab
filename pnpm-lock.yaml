@@ -173,6 +173,9 @@ catalogs:
     '@pandacss/preset-panda':
       specifier: 2.1.2
       version: 2.1.2
+    '@pandacss/vite':
+      specifier: 2.1.2
+      version: 2.1.2
     '@tanstack/react-query':
       specifier: ^5.103.2
       version: 5.104.0
@@ -494,9 +497,6 @@ importers:
       '@design-system/ui':
         specifier: workspace:^
         version: link:../../packages/@design-system/ui
-      '@design-system/ui-lib':
-        specifier: workspace:^
-        version: link:../../packages/@design-system/ui-lib
       next:
         specifier: 'catalog:'
         version: 16.3.8(@babel/core@7.29.7(supports-color@10.2.2))(@playwright/test@1.63.0)(@types/node@24.13.6)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
@@ -561,9 +561,6 @@ importers:
       '@design-system/ui':
         specifier: workspace:^
         version: link:../../packages/@design-system/ui
-      '@design-system/ui-lib':
-        specifier: workspace:^
-        version: link:../../packages/@design-system/ui-lib
       '@package/core':
         specifier: workspace:*
         version: link:../../packages/@package/core
@@ -592,6 +589,9 @@ importers:
       '@pandacss/preset-panda':
         specifier: 'catalog:'
         version: 2.1.2
+      '@pandacss/vite':
+        specifier: 'catalog:'
+        version: 2.1.2(@emnapi/core@1.10.0)(@emnapi/runtime@1.11.3)(vite@8.3.1(@types/node@24.13.6)(esbuild@0.28.1)(jiti@2.7.0))
       '@testing-library/jest-dom':
         specifier: 'catalog:'
         version: 7.0.1(@testing-library/dom@10.4.2)(vitest@5.0.1)
@@ -751,10 +751,6 @@ importers:
         version: 2.1.2
 
   packages/@design-system/ui:
-    dependencies:
-      '@design-system/ui-lib':
-        specifier: workspace:^
-        version: link:../ui-lib
     devDependencies:
       '@pandacss/dev':
         specifier: 'catalog:'
@@ -777,18 +773,9 @@ importers:
       react-dom:
         specifier: 'catalog:'
         version: 19.3.0(react@19.3.0)
-      tsdown:
-        specifier: 'catalog:'
-        version: 0.23.0(typescript@6.0.3)
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
-
-  packages/@design-system/ui-lib:
-    dependencies:
-      react:
-        specifier: 'catalog:'
-        version: 19.3.0
 
   packages/@package/bundler:
     dependencies:
@@ -1965,9 +1952,30 @@ packages:
     resolution: {integrity: sha512-LqgrySTQGNCx0/XxKCagoWIEZ51VbcMIRnO/2XDVdVE/V7Tf78c+p5nBcIC2zh93RHW6uUefF2spl7Happ3Sxw==}
     engines: {node: '>=22'}
 
+  '@pandacss/transformer@2.1.2':
+    resolution: {integrity: sha512-ozvKWKGo42nZh/r7vwE9Q+k0lqBnQ0ekEhA0xdtYBtQnr9YnBZrEnru0GGYV9i4746hnBlQ4fLSEPc/0R/8ogA==}
+    engines: {node: '>=22'}
+    peerDependencies:
+      rollup: '>=3.0.0'
+      vite: '>=6.0.0'
+      webpack: '>=5.0.0'
+    peerDependenciesMeta:
+      rollup:
+        optional: true
+      vite:
+        optional: true
+      webpack:
+        optional: true
+
   '@pandacss/types@2.1.2':
     resolution: {integrity: sha512-Vbu+E+PFjrkkJnyofMdxr7q0pzOlM6cUm8mLahUcWtpE8wzK7S/VnGhpFc4YfImvRC52yMt9ViKufYENbYKI2w==}
     engines: {node: '>=22'}
+
+  '@pandacss/vite@2.1.2':
+    resolution: {integrity: sha512-NQeg1JDh8zU9OczFmGMPROzGsxpIqMmmPgm5gauoecE+OtmOGhGeyK4FVz0ZNSoF4BhNh8CCIPheykVk3HwFHg==}
+    engines: {node: '>=22'}
+    peerDependencies:
+      vite: '>=6.0.0'
 
   '@parcel/watcher-android-arm64@2.5.6':
     resolution: {integrity: sha512-YQxSS34tPF/6ZG7r/Ih9xy+kP/WwediEUsqmtf0cuCV5TPPKw/PQHRhueUo6JdeFJaqV3pyjm0GdYjZotbRt/A==}
@@ -7053,7 +7061,30 @@ snapshots:
     dependencies:
       '@pandacss/types': 2.1.2
 
+  '@pandacss/transformer@2.1.2(@emnapi/core@1.10.0)(@emnapi/runtime@1.11.3)(vite@8.3.1(@types/node@24.13.6)(esbuild@0.28.1)(jiti@2.7.0))':
+    dependencies:
+      '@pandacss/compiler': 2.1.2(@emnapi/core@1.10.0)(@emnapi/runtime@1.11.3)
+      '@pandacss/compiler-shared': 2.1.2
+      unplugin: 2.3.11
+    optionalDependencies:
+      vite: 8.3.1(@types/node@24.13.6)(esbuild@0.28.1)(jiti@2.7.0)
+    transitivePeerDependencies:
+      - '@emnapi/core'
+      - '@emnapi/runtime'
+
   '@pandacss/types@2.1.2': {}
+
+  '@pandacss/vite@2.1.2(@emnapi/core@1.10.0)(@emnapi/runtime@1.11.3)(vite@8.3.1(@types/node@24.13.6)(esbuild@0.28.1)(jiti@2.7.0))':
+    dependencies:
+      '@pandacss/compiler': 2.1.2(@emnapi/core@1.10.0)(@emnapi/runtime@1.11.3)
+      '@pandacss/compiler-shared': 2.1.2
+      '@pandacss/transformer': 2.1.2(@emnapi/core@1.10.0)(@emnapi/runtime@1.11.3)(vite@8.3.1(@types/node@24.13.6)(esbuild@0.28.1)(jiti@2.7.0))
+      vite: 8.3.1(@types/node@24.13.6)(esbuild@0.28.1)(jiti@2.7.0)
+    transitivePeerDependencies:
+      - '@emnapi/core'
+      - '@emnapi/runtime'
+      - rollup
+      - webpack
 
   '@parcel/watcher-android-arm64@2.5.6':
     optional: true

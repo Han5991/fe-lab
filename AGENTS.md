@@ -82,11 +82,13 @@ here or anywhere else (this repo once carried four diverging copies of that prom
   (except Next.js pages/layouts), `import type`. No `any`.
 - **`@/` differs per app**: `apps/next.js`·`apps/react` map it to `src/*`; `apps/blog/web` maps it to the
   **app root** (`@/src/...`).
-- **Never edit generated code**: `styled-system/`, `packages/@design-system/ui-lib` (lab only — written by the ui
-  package and `apps/react`·`apps/next.js` configs, so keep their presets and `strictTokens` identical),
-  `packages/@blog/styled-system` (written only by `apps/blog/web/panda.config.ts`). A dev server re-emits codegen
-  into its config's outdir, so configs that share an outdir leak their types into each other — never point
-  another config at the blog's.
+- **Never edit generated code**: any `styled-system/` folder, the lab design system's `dist/panda/` and every
+  `exports` key of `packages/@design-system/ui/package.json` except `.` (`panda codegen && panda lib` writes them;
+  `panda lib` never deletes a key, so remove a dropped category by hand), and `packages/@blog/styled-system`
+  (written only by `apps/blog/web/panda.config.ts`). The lab apps consume the design system through
+  `designSystem: '@design-system/ui'` and set no presets, `importMap` or runtime options (`jsxFramework`,
+  `strictTokens`, …) — they inherit them; one that differs regenerates its own runtime. A dev server re-emits
+  codegen into its config's outdir — never point another config at the blog's.
 - Panda runs `strictTokens: true` — off-token values are escaped on purpose as `'[12px]'`. A token the config
   drops (the blog trims preset-panda's palette and radii) or never had is emitted by Panda as raw CSS
   (`color: 'orange.500'`) with no diagnostic. `check-types` catches it, and in the blog so does the official Panda lint

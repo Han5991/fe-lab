@@ -3,37 +3,58 @@
   "version": "0.0.1",
   "private": true,
   "type": "module",
-  "types": "./dist/index.d.mts",
-  "main": "./dist/index.mjs",
   "exports": {
     ".": "./src/index.ts",
-    "./preset": "./src/preset.ts"
-  },
-  "publishConfig": {
-    "exports": {
-      ".": {
-        "types": "./dist/index.d.mts",
-        "import": "./dist/index.mjs"
-      },
-      "./preset": {
-        "types": "./dist/preset.d.mts",
-        "import": "./dist/preset.mjs"
-      }
+    "./panda/*": "./dist/panda/*",
+    "./css": {
+      "types": "./styled-system/css/index.d.ts",
+      "default": "./styled-system/css/index.js"
+    },
+    "./css/*": {
+      "types": "./styled-system/css/*.d.ts",
+      "default": "./styled-system/css/*.js"
+    },
+    "./recipes": {
+      "types": "./styled-system/recipes/index.d.ts",
+      "default": "./styled-system/recipes/index.js"
+    },
+    "./recipes/*": {
+      "types": "./styled-system/recipes/*.d.ts",
+      "default": "./styled-system/recipes/*.js"
+    },
+    "./patterns": {
+      "types": "./styled-system/patterns/index.d.ts",
+      "default": "./styled-system/patterns/index.js"
+    },
+    "./patterns/*": {
+      "types": "./styled-system/patterns/*.d.ts",
+      "default": "./styled-system/patterns/*.js"
+    },
+    "./jsx": {
+      "types": "./styled-system/jsx/index.d.ts",
+      "default": "./styled-system/jsx/index.js"
+    },
+    "./jsx/*": {
+      "types": "./styled-system/jsx/*.d.ts",
+      "default": "./styled-system/jsx/*.js"
+    },
+    "./tokens": {
+      "types": "./styled-system/tokens/index.d.ts",
+      "default": "./styled-system/tokens/index.js"
+    },
+    "./helpers": {
+      "types": "./styled-system/helpers.d.ts",
+      "default": "./styled-system/helpers.js"
+    },
+    "./types": {
+      "types": "./styled-system/types/index.d.ts"
     }
   },
   "scripts": {
-    "prepare": "pnpm panda codegen && pnpm build",
-    "codegen": "panda codegen",
-    "build": "tsdown",
-    "build-fast": "tsdown --no-dts",
-    "dev": "pnpm build-fast --watch",
+    "prepare": "pnpm build",
+    "build": "panda codegen && panda lib",
+    "dev": "panda codegen && panda lib --watch",
     "check-types": "tsc --noEmit"
-  },
-  "files": [
-    "dist"
-  ],
-  "dependencies": {
-    "@design-system/ui-lib": "workspace:^"
   },
   "devDependencies": {
     "@pandacss/dev": "catalog:",
@@ -43,11 +64,10 @@
     "@types/react-dom": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
-    "tsdown": "catalog:",
     "typescript": "catalog:"
   },
   "peerDependencies": {
-    "@pandacss/dev": "catalog:",
+    "@pandacss/dev": "^2.0.0",
     "react": "catalog:",
     "react-dom": "catalog:"
   }
