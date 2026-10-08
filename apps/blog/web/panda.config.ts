@@ -83,6 +83,16 @@ export default defineConfig({
   globalCss: {
     extend: {
       html: {
+        // v2 리셋이 읽는 전역 변수(styling/global-styles "Exposed global CSS variables") — 리셋
+        // 규칙을 따로 덮어쓰지 않고 값만 넘긴다. 리셋은 html에 `font-family:
+        // var(--global-font-body, …)`, `::selection`에 `var(--global-color-selection, …)`를 건다.
+        '--global-font-body': 'fonts.sans',
+        // 드래그 선택은 배경만 바꾸고 **글자색은 건드리지 않는다.** 예전엔 `bg: ink.border` +
+        // `color: ink.900`이었는데 ink.border(알파 10% 검정)는 흰 지면에서 1.25:1로 묽어 선택한
+        // 티가 안 났고, 코드 블록(어두운 표면)에서는 글자만 ink.900으로 강제돼 대비 1.29:1 —
+        // 드래그하면 코드가 사라졌다. 색을 강제하지 않으면 링크·제목·구문 강조가 선택 중에도
+        // 제 색을 유지한다. 테마와 무관하게 어두운 표면은 CodeBlock.tsx가 자기 ::selection을 덮는다.
+        '--global-color-selection': 'colors.selection.bg',
         bg: 'paper.50',
         color: 'ink.950',
         // 움직임 줄이기를 켠 사용자에게는 스크롤을 미끄러뜨리지 않는다.
@@ -108,12 +118,6 @@ export default defineConfig({
           colorScheme: 'dark',
         },
       },
-      body: {
-        fontFamily: 'sans',
-        wordBreak: 'keep-all',
-        WebkitFontSmoothing: 'antialiased',
-        MozOsxFontSmoothing: 'grayscale',
-      },
       // 테마 전환 애니메이션 — View Transitions API(useTheme)로 전체
       // 페이지를 한 번의 컴포지터 크로스페이드로 전환한다. 예전엔
       // html.theme-transition * 로 모든 요소에 color/fill transition을
@@ -126,23 +130,9 @@ export default defineConfig({
         animationDuration: '[0.26s]',
         animationTimingFunction: '[ease]',
       },
-      // 드래그 선택. 배경만 지정하고 **글자색은 건드리지 않는다.**
-      //
-      // 예전엔 `bg: ink.border` + `color: ink.900`이었는데 둘 다 문제였다.
-      // ink.border는 알파 10% 검정이라 흰 지면 위에서 1.25:1로 묽어져 선택한
-      // 티가 안 났고, 코드 블록(항상 다크 표면)에서는 배경이 사실상 그대로인
-      // 채로 글자만 ink.900(라이트=거의 검정)으로 강제돼 대비 1.29:1 —
-      // 드래그하면 코드가 사라졌다. 색을 강제하지 않으면 링크·제목·구문
-      // 강조가 선택 중에도 제 색을 유지한다.
-      //
-      // 코드 블록처럼 테마와 무관하게 어두운 표면은 이 규칙을 그대로 쓸 수
-      // 없어 CodeBlock.tsx가 자기 안쪽 ::selection을 따로 덮는다.
-      '::selection': {
-        bg: 'selection.bg',
-      },
       // 문장 공유 링크(`#:~:text=`)로 들어온 독자에게 그 문장을 짚어 준다.
       // "여기"를 가리킨다는 점에서 선택과 같은 뜻이라 같은 토큰을 쓴다(대비는
-      // 위 selection.bg 주석). 브라우저 기본값은 노랑이라 팔레트 밖이다.
+      // html의 --global-color-selection 주석). 브라우저 기본값은 노랑이라 팔레트 밖이다.
       '::target-text': {
         bg: 'selection.bg',
       },
