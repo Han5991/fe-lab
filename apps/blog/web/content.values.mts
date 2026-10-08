@@ -298,7 +298,8 @@ export const BUNDLE_GUARDS = [
  * 글 본문과 하이드레이션 페이로드가 실려 원고와 함께 자란다.
  *
  * 숫자는 2026-10-05 새 빌드의 그룹 최대 측정값에 ~5% 여유를 얹어 올림한 것이다
- * (측정값은 각 줄 주석). 그룹이 새로 생기면(새 라우트) 예산이 없어서, 라우트가
+ * (측정값은 각 줄 주석 — 2026-10-08 Panda v2 빌드로 갱신: JS는 v2 런타임(helpers)으로
+ * 페이지마다 +2.7KB, CSS는 preset-panda 팔레트를 빼 −3.0KB. 둘 다 예산 안이라 숫자는 그대로). 그룹이 새로 생기면(새 라우트) 예산이 없어서, 라우트가
  * 사라지면 예산이 죽어서, 측정 최대가 상한의 80% 아래로 내려가면 예산이 느슨해서
  * (`budget-slack`) 빌드가 실패한다.
  *
@@ -308,21 +309,21 @@ export const BUNDLE_GUARDS = [
  * 걸리면 같은 방식으로 내린다 — 여유가 크게 남으면 회귀가 그 안에 숨는다.
  */
 export const BUNDLE_BUDGETS = [
-  // 247.8 KB / 30.8 KB
+  // 250.7 KB / 27.8 KB
   { group: '/', jsGzipKB: 261, cssGzipKB: 33 },
-  // 247.8 KB / 31.4 KB — 목록과 글 상세 46쪽의 최대(mermaid·Giscus는 지연 로드라 밖)
+  // 250.7 KB / 28.5 KB — 목록과 글 상세 46쪽의 최대(mermaid·Giscus는 지연 로드라 밖)
   { group: '/posts/', jsGzipKB: 261, cssGzipKB: 33 },
-  // 247.8 KB / 30.8 KB
+  // 250.7 KB / 27.8 KB
   { group: '/about/', jsGzipKB: 261, cssGzipKB: 33 },
-  // 184.3 KB / 30.8 KB
+  // 187.1 KB / 27.8 KB
   { group: '/series/', jsGzipKB: 194, cssGzipKB: 33 },
-  // 184.3 KB / 30.8 KB
+  // 187.1 KB / 27.8 KB
   { group: '/privacy/', jsGzipKB: 194, cssGzipKB: 33 },
-  // 184.3 KB / 30.8 KB — 정적 404(`404-page` 처리)
+  // 187.1 KB / 27.8 KB — 정적 404(`404-page` 처리)
   { group: '/404/', jsGzipKB: 194, cssGzipKB: 33 },
-  // 184.3 KB / 30.8 KB — Next가 함께 내보내는 not-found 라우트
+  // 187.1 KB / 27.8 KB — Next가 함께 내보내는 not-found 라우트
   { group: '/_not-found/', jsGzipKB: 194, cssGzipKB: 33 },
-  // 435.1 KB / 30.8 KB — admin 48쪽의 최대(`/admin/analytics/`)
+  // 434.1 KB / 27.8 KB — admin 48쪽의 최대(`/admin/analytics/`)
   { group: '/admin/', jsGzipKB: 457, cssGzipKB: 33 },
 ] as const satisfies BundleBudgetsConfig;
 
