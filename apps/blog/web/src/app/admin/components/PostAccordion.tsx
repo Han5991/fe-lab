@@ -4,7 +4,7 @@ import { TIMEZONE } from '@/content.values.mts';
 import { useId, useState } from 'react';
 import type { PostStatDetail } from '@/src/hooks/useAdminViews';
 import { analyticsService } from '@/src/domain/analytics/admin';
-import { css } from '@blog/styled-system/css';
+import { css, cx } from '@blog/styled-system/css';
 import { ChevronDown, ExternalLink, BarChart3 } from 'lucide-react';
 import {
   LineChart,
@@ -22,7 +22,7 @@ import { DateRangeControls, useDateFilter } from './DateRangeControls';
 import { WeekGrowthIcon } from './WeekGrowthIcon';
 import { adminAnalyticsPostPath } from '@/src/shared/routes';
 import { resolvePostState } from '@blog/content/client';
-import { STATUS_BADGE, livePostHref } from './postState';
+import { STATUS_BADGE, livePostHref, statusTone } from './postState';
 
 interface Props {
   post: PostStatDetail;
@@ -139,18 +139,20 @@ export function PostAccordion({ post, todayISO }: Props) {
             })}
           >
             <span
-              className={css({
-                fontSize: 'xs',
-                fontWeight: 'semibold',
-                px: '2',
-                py: '0.5',
-                rounded: 'full',
-                flexShrink: 0,
-                bg: 'paper.100',
-                color: badge.color,
-                borderWidth: '[1px]',
-                borderColor: 'ink.border',
-              })}
+              className={cx(
+                css({
+                  fontSize: 'xs',
+                  fontWeight: 'semibold',
+                  px: '2',
+                  py: '0.5',
+                  rounded: 'full',
+                  flexShrink: 0,
+                  bg: 'paper.100',
+                  borderWidth: '[1px]',
+                  borderColor: 'ink.border',
+                }),
+                statusTone({ state }),
+              )}
               title={
                 state === 'scheduled' && publishAt
                   ? // 'YYYY-MM-DD'를 native Date에 넣으면 UTC 자정으로 파싱돼
