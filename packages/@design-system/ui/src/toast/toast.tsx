@@ -1,5 +1,5 @@
 import { useEffect, type CSSProperties } from 'react';
-import { cx } from '@design-system/ui-lib/css';
+import { cx } from '../../styled-system/css';
 import { Portal } from './portal';
 import { ToastIcon } from './toast-icon';
 import { toastRecipe } from './toast.recipe';
