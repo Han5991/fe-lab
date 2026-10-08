@@ -1,4 +1,4 @@
-import { css } from '@blog/styled-system/css';
+import { css, cva } from '@blog/styled-system/css';
 import type { ReactNode, HTMLAttributes } from 'react';
 
 interface LabelProps extends HTMLAttributes<HTMLElement> {
@@ -12,9 +12,15 @@ interface LabelProps extends HTMLAttributes<HTMLElement> {
   as?: 'span' | 'h2';
 }
 
-const toneColor = {
-  meta: 'ink.500',
-} as const;
+// 톤은 prop(런타임 값)이라 `toneColor[tone]` 같은 조회는 빌드 때 CSS가 되지 않는다 —
+// 변형(cva)으로 적어야 모든 톤이 추출된다(styling/dynamic-styling).
+const labelTone = cva({
+  variants: {
+    tone: {
+      meta: { color: 'ink.500' },
+    },
+  },
+});
 
 export const Label = ({
   children,
@@ -33,8 +39,8 @@ export const Label = ({
           fontWeight: 'medium',
           letterSpacing: 'mono',
           textTransform: 'uppercase',
-          color: toneColor[tone],
         }),
+        labelTone({ tone }),
         className,
       ]
         .filter(Boolean)
