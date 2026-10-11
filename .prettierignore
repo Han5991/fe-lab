@@ -19,6 +19,9 @@ packages/@blog/styled-system/**
 # 저자 컨벤션 존중 — 블로그 포스트 콘텐츠
 apps/blog/posts/**
 
+# 장애 대응 훈련 기록 — 원문을 그대로 두고, 주간 루틴이 고치는 log.md 표를 prettier가 다시 정렬하지 않게 한다
+incident-drills/**
+
 # 빌드 스크립트가 생성하는 정적 인덱스
 apps/blog/web/public/admin-posts-index.json
 apps/blog/web/public/search-index.json
