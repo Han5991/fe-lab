@@ -4,6 +4,11 @@ on:
   pull_request:
     # labeled: Renovate는 deps-major 라벨을 PR을 연 뒤에 붙여 opened 페이로드엔 없을 수 있다.
     types: [ opened, synchronize, labeled ]
+    # 장애 대응 훈련 기록(incident-drills/)만 바꾼 PR은 리뷰하지 않는다 — 주간 훈련 루틴이 매주 log.md 한 줄로
+    # PR을 올린다. 이 워크플로는 required check가 아니라 워크플로 단위로 걸러도 머지를 막지 않는다
+    # (required인 ci.yml의 `Lint / Types / Tests`는 잡 단위로 건너뛴다).
+    paths-ignore:
+      - 'incident-drills/**'
     # Optional: Only run on specific file changes
     # paths:
     #   - "src/**/*.ts"
