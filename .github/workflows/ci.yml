@@ -25,8 +25,53 @@ permissions:
   contents: read
 
 jobs:
+  # 장애 대응 훈련 기록(incident-drills/)만 바꾼 PR·push는 아래 검사를 건너뛴다. 주간 훈련 루틴이 매주
+  # log.md 한 줄로 PR을 올리는데, 그때마다 블로그 빌드까지 돌 이유가 없다.
+  # 워크플로 단위 paths-ignore는 쓸 수 없다 — `Lint / Types / Tests`가 required check라 워크플로가 아예
+  # 안 돌면 체크가 "Expected — waiting for status"에 멈춰 머지가 막힌다. 잡을 if로 건너뛰면 GitHub이
+  # Success로 보고해 required check가 채워진다.
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      quality: ${{ steps.filter.outputs.quality }}
+    steps:
+      - name: Skip checks when only incident-drills/ changed
+        id: filter
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          EVENT: ${{ github.event_name }}
+          PR: ${{ github.event.pull_request.number }}
+          BEFORE: ${{ github.event.before }}
+          SHA: ${{ github.sha }}
+        run: |
+          case "$EVENT" in
+            pull_request) files=$(gh api --paginate "repos/$REPO/pulls/$PR/files" --jq '.[].filename') || files='' ;;
+            # compare는 파일을 300개까지만 준다 — 300개면 잘렸을 수 있으니 목록을 버린다
+            push) files=$(gh api "repos/$REPO/compare/$BEFORE...$SHA" --jq 'if (.files | length) < 300 then .files[].filename else empty end') || files='' ;;
+            *) files='' ;;
+          esac
+          # 목록을 못 얻었거나(API 오류·dispatch) incident-drills/ 밖 파일이 하나라도 있으면 검사를 돌린다.
+          # 파이프 + grep -q는 쓰지 않는다 — grep이 일찍 끝나면 printf가 SIGPIPE를 받고, pipefail 아래서
+          # 그 실패를 !가 뒤집어 큰 PR의 검사를 건너뛴다. 개수를 세면 grep 오류 때 outside가 비어 검사가 돈다
+          outside=$(grep -cv '^incident-drills/' <<< "$files" || true)
+          if [ -n "$files" ] && [ "$outside" = 0 ]; then
+            echo 'incident-drills/만 바뀌어 검사를 건너뛴다'
+            echo 'quality=false' >> "$GITHUB_OUTPUT"
+          else
+            echo 'quality=true' >> "$GITHUB_OUTPUT"
+          fi
+
   quality:
     name: Lint / Types / Tests
+    needs: changes
+    # changes 잡이 실패하면 출력이 비어 검사가 돈다(fail-closed). 취소된 런은 !cancelled()로 그대로 멈춘다
+    if: ${{ !cancelled() && needs.changes.outputs.quality != 'false' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
