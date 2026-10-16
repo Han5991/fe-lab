@@ -15,6 +15,7 @@
  * 404 화면을, 슬래시 없는 경로는 슬래시 붙은 정규 URL로 보낸다.
  */
 import type { Page } from '@playwright/test';
+import { RSS_PATH } from '@blog/content/client';
 import { axeViolations } from './support/a11y';
 import {
   contentSelector,
@@ -136,5 +137,44 @@ test.describe('서빙 규칙', () => {
     const response = await page.goto('/posts');
     expect(response?.status(), '최종 응답 코드').toBe(200);
     await expect(page).toHaveURL(/\/posts\/$/);
+  });
+
+  // 피드는 HTML처럼 매번 재검증돼야 새 글이 바로 리더에 닿는다(`_headers`는 일부러 캐시를
+  // 걸지 않는다). 항목의 계약(링크·날짜·순서·최신 글)은 check-seo가 문자열로 보고, 진짜
+  // XML 파서로 읽히는지와 서빙 헤더는 여기서만 본다.
+  // 재평가: 2027-04-16 — 그때까지 잡은 것이 없으면 내린다.
+  test('RSS 피드는 파싱되는 XML로, 매번 재검증되게 나간다', async ({
+    page,
+  }) => {
+    const response = await page.request.get(RSS_PATH);
+    expect(response.status(), '응답 코드').toBe(200);
+    const headers = response.headers();
+    expect(headers['content-type'], 'Content-Type').toMatch(
+      /^(?:application\/(?:rss\+)?xml|text\/xml)\b/,
+    );
+    const cacheControl = headers['cache-control'] ?? '';
+    expect(cacheControl, 'Cache-Control').toContain('max-age=0');
+    expect(cacheControl, 'Cache-Control').toContain('must-revalidate');
+    expect(cacheControl, 'Cache-Control').not.toContain('immutable');
+
+    const feed = await page.evaluate(
+      xml => {
+        const doc = new DOMParser().parseFromString(xml, 'application/xml');
+        return {
+          error: doc.querySelector('parsererror')?.textContent ?? null,
+          links: [...doc.querySelectorAll('rss > channel > item > link')].map(
+            link => link.textContent,
+          ),
+        };
+      },
+      await response.text(),
+    );
+    expect(feed.error, 'XML 파싱 오류').toBeNull();
+    // 파서가 항목을 놓치면 "오류 없음"으로 통과하므로, 빌드가 공개로 판정한 글(검색
+    // 인덱스, 최신순)과 순서까지 같아야 한다.
+    expect(
+      feed.links.map(link => decodeURIComponent(new URL(link ?? '').pathname)),
+      '피드 글 = 검색 인덱스(최신순)',
+    ).toEqual(publishedPosts().map(p => `/posts/${p.slug}/`));
   });
 });
