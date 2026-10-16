@@ -37,6 +37,7 @@ import urllib.error
 import urllib.request
 from collections import Counter
 from datetime import datetime, timedelta, timezone
+from urllib.parse import unquote, urlsplit
 from xml.etree import ElementTree
 
 KST = timezone(timedelta(hours=9))
@@ -435,8 +436,15 @@ def parse_sitemap(text: str, today_utc: str, today_kst: str) -> dict:
 
 
 def parse_rss(text: str) -> dict:
-    """rss.xml 유효성과 item 개수."""
-    facts: dict = {"xml_valid": False, "xml_error": None, "item_count": 0, "first_items": []}
+    """rss.xml 유효성, item 개수, 서빙 중인 피드가 언제 구워졌는지와 글 경로(등장 순서)."""
+    facts: dict = {
+        "xml_valid": False,
+        "xml_error": None,
+        "item_count": 0,
+        "last_build_date": None,
+        "first_items": [],
+        "item_paths": [],
+    }
     if not text.strip():
         facts["xml_error"] = "빈 응답"
         return facts
@@ -448,9 +456,13 @@ def parse_rss(text: str) -> dict:
         return facts
 
     facts["xml_valid"] = True
+    for element in root.iter():
+        if local_name(element.tag) == "lastBuildDate":
+            facts["last_build_date"] = (element.text or "").strip()
+            break
     items = [el for el in root.iter() if local_name(el.tag) == "item"]
     facts["item_count"] = len(items)
-    for item in items[:5]:
+    for index, item in enumerate(items):
         title = None
         link = None
         for child in item:
@@ -459,8 +471,33 @@ def parse_rss(text: str) -> dict:
                 title = (child.text or "").strip()
             elif name == "link":
                 link = (child.text or "").strip()
-        facts["first_items"].append({"title": title, "link": link})
+        # 피드 링크는 절대 URL이라 경로만 떼어 목록 앵커와 같은 모양으로 맞춘다 —
+        # --base-url로 프리뷰·로컬을 볼 때도 피드는 프로덕션 origin을 적기 때문이다.
+        facts["item_paths"].append(unquote(urlsplit(link or "").path))
+        if index < 5:
+            facts["first_items"].append({"title": title, "link": link})
     return facts
+
+
+def compare_feed_to_index(rss: dict, posts_index: dict) -> dict:
+    """서빙 중인 피드 ↔ 서빙 중인 `/posts/` 목록 — 최신 글과 글 집합이 같은가.
+
+    빌드 쪽은 check-seo가 `out/`의 rss.xml 글 집합을 sitemap·페이지와 대조하므로, 여기서
+    어긋나면 원인은 생성이 아니라 그 뒤(업로드·호스팅·캐시)다. 둘 다 최신순이고(목록의
+    'recent'는 로더의 날짜 내림차순 위에 거는 안정 정렬) 같은 날짜끼리도 순서가 같다.
+    """
+    feed = rss["item_paths"]
+    anchors = [unquote(anchor) for anchor in posts_index["post_anchors"]]
+    newest_anchor = posts_index["newest_anchor"]
+    newest_anchor = unquote(newest_anchor) if newest_anchor else None
+    newest_item = feed[0] if feed else None
+    return {
+        "newest_item": newest_item,
+        "newest_anchor": newest_anchor,
+        "newest_matches": newest_item is not None and newest_item == newest_anchor,
+        "missing_from_feed": sorted(set(anchors) - set(feed)),
+        "extra_in_feed": sorted(set(feed) - set(anchors)),
+    }
 
 
 def parse_robots(text: str) -> dict:
@@ -510,6 +547,7 @@ def write_step_summary(facts: dict, problems: list[str]) -> None:
     index = facts["pages"]["/posts/"]
     sitemap = facts["sitemap"]
     rss = facts["rss"]
+    feed = facts["feed_vs_index"]
     robots = facts["robots"]
     article = facts["article"]
     apex = facts["apex"]
@@ -541,7 +579,10 @@ def write_step_summary(facts: dict, problems: list[str]) -> None:
         f"· 자산 표본 {cache['asset_count']}개 |",
         f"| `/sitemap.xml` | HTTP {sitemap['status']} · XML {'유효' if sitemap['xml_valid'] else '무효'} · url {sitemap['url_count']}개 |",
         f"| lastmod 분포 | 서로 다른 날짜 {sitemap['distinct_lastmod_count']}종 · 전부 검사당일={sitemap['all_lastmod_is_check_date']} |",
-        f"| `/rss.xml` | HTTP {rss['status']} · XML {'유효' if rss['xml_valid'] else '무효'} · item {rss['item_count']}개 |",
+        f"| `/rss.xml` | HTTP {rss['status']} · XML {'유효' if rss['xml_valid'] else '무효'} · item {rss['item_count']}개 · lastBuildDate `{rss['last_build_date']}` |",
+        f"| 피드 ↔ `/posts/` | 최신 {'일치' if feed['newest_matches'] else '⚠️ 불일치'} "
+        f"(`{feed['newest_item']}`) · 피드에 없는 글 {len(feed['missing_from_feed'])}편 · "
+        f"피드에만 있는 글 {len(feed['extra_in_feed'])}편 |",
         f"| `/robots.txt` | HTTP {robots['status']} · sitemap 참조={robots['references_sitemap']} |",
         f"| 글 상세 | HTTP {article['status']} · canonical={article['has_canonical']} · og:title={article['has_og_title']} |",
         "",
@@ -601,6 +642,22 @@ def judge(facts: dict) -> list[str]:
         problems.append(
             f"`/rss.xml` {got(rss)} · XML 유효={rss['xml_valid']} · item {rss['item_count']}개"
         )
+    # 피드가 200·유효 XML인 채로 낡는 경우 — 위 검사는 통과한다(2026-10, lastBuildDate가
+    # 8월에 멈춘 피드를 본 보고). 목록이나 피드가 아예 깨졌으면 위에서 이미 실패했으니 건너뛴다.
+    # 재평가: 2027-04-16 — 그때까지 이 대조가 잡은 것이 없으면 내린다.
+    feed = facts["feed_vs_index"]
+    if rss["item_count"] >= 1 and facts["posts_index"]["post_anchor_count"] >= 1:
+        if not feed["newest_matches"]:
+            problems.append(
+                f"`/rss.xml` 최신 항목 `{feed['newest_item']}` ≠ `/posts/` 최신 글 "
+                f"`{feed['newest_anchor']}` (lastBuildDate {rss['last_build_date']}) — "
+                "피드가 페이지와 다른 배포를 서빙한다(캐시·호스팅)"
+            )
+        if feed["missing_from_feed"] or feed["extra_in_feed"]:
+            problems.append(
+                f"`/rss.xml` ↔ `/posts/` 글 집합 불일치 — 피드에 없는 글 "
+                f"{feed['missing_from_feed'][:3]} · 피드에만 있는 글 {feed['extra_in_feed'][:3]}"
+            )
     robots = facts["robots"]
     if robots["status"] != 200 or not robots["references_sitemap"]:
         problems.append(
@@ -702,6 +759,7 @@ def main() -> int:
         "apex": apex,
         "cache": cache,
     }
+    facts["feed_vs_index"] = compare_feed_to_index(facts["rss"], facts["posts_index"])
 
     # 글 상세 1개: 목록의 최신 글을 우선하고, 목록이 비었으면 sitemap에서 고른다.
     article_path = facts["posts_index"]["newest_anchor"]
@@ -746,7 +804,8 @@ def main() -> int:
         f"목록={facts['pages']['/posts/']['status']} "
         f"앵커={facts['posts_index']['post_anchor_count']}개 "
         f"sitemap={facts['sitemap']['status']}/url {facts['sitemap']['url_count']}개 "
-        f"rss={facts['rss']['status']}/item {facts['rss']['item_count']}개 "
+        f"rss={facts['rss']['status']}/item {facts['rss']['item_count']}개"
+        f"/최신 {'일치' if facts['feed_vs_index']['newest_matches'] else '불일치'} "
         f"robots={facts['robots']['status']} "
         f"글상세={facts['article']['status']} "
         f"apex={sum(1 for p in facts['apex']['probes'] if p['matches'])}"

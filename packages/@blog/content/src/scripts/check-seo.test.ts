@@ -7,11 +7,13 @@ import {
   checkPages,
   checkArchiveLinks,
   checkArtifacts,
+  checkRssFeed,
   checkSitemapPages,
   collectArtifacts,
   parsePages,
   type CollectedArtifact,
 } from './check-seo.ts';
+import { buildRssXml, type RssPost } from './generate-rss.ts';
 import { TEST_VALUES, defineTestContent } from '../shared/testValues.ts';
 import { sep } from 'node:path';
 
@@ -42,6 +44,7 @@ function page(
     <meta property="og:site_name" content="${o.siteName}"/>
     <meta property="og:locale" content="${o.locale}"/>
     <meta property="og:type" content="${o.type}"/>
+    <link rel="alternate" type="application/rss+xml" title="피드" href="/rss.xml"/>
     </head><body>${body}</body></html>`;
 }
 
@@ -650,4 +653,135 @@ test('checkArchiveLinks: 아카이브 페이지가 없으면 보고하지 않는
   expect(
     checkArchiveLinks(new Map(), [loc('/posts/'), loc('/posts/a/')], SITE_URL),
   ).toStrictEqual([]);
+});
+
+// ── RSS 자동 탐지 링크 ───────────────────────────────────────────────────────
+
+test('parsePageSeo: RSS 자동 탐지 링크의 href를 속성 순서와 무관하게 읽는다', () => {
+  expect(page().includes('application/rss+xml')).toBe(true);
+  expect(parsePageSeo(page()).rssAlternateHref).toBe('/rss.xml');
+  expect(
+    parsePageSeo(
+      '<head><link href="/rss.xml" type="application/rss+xml" rel="alternate"/></head>',
+    ).rssAlternateHref,
+  ).toBe('/rss.xml');
+  // 다른 alternate(hreflang 등)는 피드가 아니다
+  expect(
+    parsePageSeo(
+      '<head><link rel="alternate" hreflang="en" href="/en/"/></head>',
+    ).rssAlternateHref,
+  ).toBeNull();
+});
+
+test.each([
+  ['링크가 없으면', '', ['missing-rss-alternate']],
+  [
+    '피드가 아닌 곳을 가리키면',
+    '<link rel="alternate" type="application/rss+xml" href="/feed.xml"/>',
+    ['missing-rss-alternate'],
+  ],
+  [
+    '절대 URL이라도 사이트의 피드면 통과',
+    `<link rel="alternate" type="application/rss+xml" href="${SITE_URL}/rss.xml"/>`,
+    [],
+  ],
+])('checkPages: RSS 자동 탐지 — %s', (_, link, expected) => {
+  const html = page().replace(
+    /<link rel="alternate" type="application\/rss\+xml"[^>]*>/,
+    link,
+  );
+  expect(rules(new Map([['/posts/a/', html]]))).toStrictEqual(expected);
+});
+
+// ── checkRssFeed: 피드 항목의 계약 ───────────────────────────────────────────
+
+const RSS_OPTIONS = {
+  site: TEST_VALUES.site,
+  timezone: TEST_VALUES.timezone,
+  now: new Date('2026-10-16T00:00:00Z'),
+};
+const FEED_POSTS: RssPost[] = [
+  { slug: 'newest', title: '최신', date: '2026-09-18', excerpt: '요약' },
+  { slug: KOREAN, title: '한글', date: '2026-08-16', excerpt: '요약' },
+  { slug: 'older', title: '이전', date: '2026-07-31', excerpt: '요약' },
+];
+/** 목록(최신순) — 필터 링크가 글 링크보다 앞에 있어도 첫 **글** 링크를 최신 글로 본다. */
+const ARCHIVE = archiveWith([
+  '/posts/?tag=x',
+  '/posts/newest/',
+  `/posts/${encodeURIComponent(KOREAN)}/`,
+  '/posts/older/',
+]);
+const feedRules = (rss: string, archive: string | undefined = ARCHIVE) =>
+  checkRssFeed(rss, archive, SITE_URL).map(v => v.rule);
+
+test('checkRssFeed: 생성기(buildRssXml)가 만든 피드는 통과한다 — 양성 대조', () => {
+  expect(feedRules(buildRssXml(FEED_POSTS, RSS_OPTIONS))).toStrictEqual([]);
+});
+
+test('checkRssFeed: 최신 글이 빠진 낡은 피드는 rss-newest-mismatch (lastBuildDate가 멈춘 피드 보고)', () => {
+  const stale = buildRssXml(FEED_POSTS.slice(2), RSS_OPTIONS);
+  const found = checkRssFeed(stale, ARCHIVE, SITE_URL);
+  expect(found.map(v => v.rule)).toStrictEqual(['rss-newest-mismatch']);
+  expect(found[0]?.message).toContain('/posts/older/');
+  expect(found[0]?.message).toContain('/posts/newest/');
+});
+
+test('checkRssFeed: 최신순이 아니면 rss-order', () => {
+  const shuffled = buildRssXml(
+    [FEED_POSTS[2], FEED_POSTS[0], FEED_POSTS[1]].filter(
+      (p): p is RssPost => p !== undefined,
+    ),
+    RSS_OPTIONS,
+  );
+  expect(feedRules(shuffled)).toStrictEqual([
+    'rss-order',
+    'rss-newest-mismatch',
+  ]);
+});
+
+test.each([
+  [
+    'link와 guid가 다르면',
+    (xml: string) =>
+      xml.replace(
+        `<link>${SITE_URL}/posts/older/</link>`,
+        `<link>${SITE_URL}/posts/other/</link>`,
+      ),
+  ],
+  [
+    'link·guid가 상대 경로면',
+    (xml: string) =>
+      xml.replaceAll(`${SITE_URL}/posts/older/`, '/posts/older/'),
+  ],
+  [
+    '후행 슬래시가 없으면',
+    (xml: string) =>
+      xml.replaceAll(`${SITE_URL}/posts/older/`, `${SITE_URL}/posts/older`),
+  ],
+  [
+    'guid가 permalink가 아니면',
+    (xml: string) =>
+      xml.replace(
+        `<guid isPermaLink="true">${SITE_URL}/posts/older/`,
+        `<guid isPermaLink="false">${SITE_URL}/posts/older/`,
+      ),
+  ],
+])('checkRssFeed: %s rss-item-link', (_, broken) => {
+  expect(feedRules(broken(buildRssXml(FEED_POSTS, RSS_OPTIONS)))).toStrictEqual(
+    ['rss-item-link'],
+  );
+});
+
+test('checkRssFeed: pubDate가 RFC 822가 아니면 rss-pubdate-format', () => {
+  const xml = buildRssXml(FEED_POSTS, RSS_OPTIONS).replace(
+    /<pubDate>[^<]*<\/pubDate>/,
+    '<pubDate>2026-09-18T00:00:00+09:00</pubDate>',
+  );
+  expect(feedRules(xml)).toStrictEqual(['rss-pubdate-format']);
+});
+
+test('checkRssFeed: 아카이브가 없으면 최신 글 대조는 하지 않는다 (sitemap-page-missing의 몫)', () => {
+  const stale = buildRssXml(FEED_POSTS.slice(2), RSS_OPTIONS);
+  expect(checkRssFeed(stale, undefined, SITE_URL)).toStrictEqual([]);
 });
