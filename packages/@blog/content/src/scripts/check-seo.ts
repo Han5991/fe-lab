@@ -5,7 +5,7 @@ import { join, posix, resolve } from 'node:path';
 import type { SeoConfig, SiteConfig } from '../shared/contentConfig.ts';
 import { listFilesRecursive } from '../shared/postFiles.ts';
 import { decodeUrlSafe } from '../shared/url.ts';
-import { POSTS_PATH } from '../post/index.ts';
+import { POSTS_PATH, RSS_PATH } from '../post/index.ts';
 import type { ContentContext } from './context.ts';
 import {
   ARTIFACTS,
@@ -35,6 +35,7 @@ export interface SeoCheckConfig {
  * 글 집합 정합성은 `scripts/artifacts.ts`의 레지스트리를 **순회**하며 검사합니다
  * — 산출물이 늘면 레지스트리에 항목을 더하는 것으로 검사가 자동으로 붙습니다.
  * 그 기준(sitemap)은 다시 실제 페이지와 대조합니다(`checkSitemapPages`·`checkArchiveLinks`).
+ * rss.xml은 글 집합 말고도 항목의 계약(링크·날짜·순서·최신 글)을 따로 봅니다(`checkRssFeed`).
  *
  * 사용: `pnpm build` 이후 `blog-content check-seo`
  *       (검사 대상 디렉토리를 인자로 줄 수 있습니다: `blog-content check-seo out`)
@@ -57,6 +58,8 @@ export interface PageSeo {
   h1Count: number;
   imagesMissingAlt: number;
   robotsNoindex: boolean;
+  /** 피드 자동 탐지 `<link rel="alternate" type="application/rss+xml">`의 href. 없으면 null */
+  rssAlternateHref: string | null;
 }
 
 const decodeEntities = (s: string): string =>
@@ -130,6 +133,20 @@ export function collectInternalLinks(html: string): string[] {
   return links;
 }
 
+/** `<link …>` — 속성 순서와 무관하게 읽으려고 태그째 뽑는다(HTML_ANCHOR와 같은 이유). */
+const HTML_LINK = /<link\b(?:[^>"']|"[^"]*"|'[^']*')*>/gi;
+
+/** 피드 자동 탐지 링크의 href — 리더·수집기는 페이지 주소만 받고 이 링크로 피드를 찾는다. */
+function rssAlternateHref(html: string): string | null {
+  for (const tag of html.match(HTML_LINK) ?? []) {
+    if (!/\srel="alternate"/i.test(tag)) continue;
+    if (!/\stype="application\/rss\+xml"/i.test(tag)) continue;
+    const href = tag.match(/\shref="([^"]*)"/i)?.[1];
+    if (href !== undefined) return decodeEntities(href);
+  }
+  return null;
+}
+
 export function parsePageSeo(html: string): PageSeo {
   const titleMatch = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
   const canonicalMatch =
@@ -149,6 +166,7 @@ export function parsePageSeo(html: string): PageSeo {
     h1Count: countH1(html),
     imagesMissingAlt: countImagesMissingAlt(html),
     robotsNoindex: Boolean(robots && /noindex/i.test(robots)),
+    rssAlternateHref: rssAlternateHref(html),
   };
 }
 
@@ -284,6 +302,21 @@ export function checkPages(
 
     if (!seo.ogLocale) add('missing-og-locale', 'og:locale이 없습니다');
     if (!seo.ogType) add('missing-og-type', 'og:type이 없습니다');
+
+    // 피드 주소를 따로 받지 않는 리더·수집기는 이 링크로 피드를 찾는다. 루트 레이아웃이
+    // 직접 단다(metadata.alternates.types로는 출력되지 않아서 — siteSeo.ts).
+    // 재평가: 2027-04-16 — 그때까지 잡은 것이 없으면 내린다.
+    if (
+      seo.rssAlternateHref !== RSS_PATH &&
+      seo.rssAlternateHref !== `${siteUrl}${RSS_PATH}`
+    ) {
+      add(
+        'missing-rss-alternate',
+        seo.rssAlternateHref === null
+          ? `RSS 자동 탐지 링크(<link rel="alternate" type="application/rss+xml">)가 없습니다`
+          : `RSS 자동 탐지 링크가 피드(${RSS_PATH})가 아닌 곳을 가리킵니다: ${seo.rssAlternateHref}`,
+      );
+    }
 
     if (seo.imagesMissingAlt > 0) {
       add(
@@ -471,6 +504,106 @@ export function checkArtifacts(collected: CollectedArtifact[]): SeoViolation[] {
   return violations;
 }
 
+/** 생성기가 `toUTCString()`으로 쓰는 RFC 822 날짜 — `Thu, 17 Sep 2026 15:00:00 GMT`. */
+const RFC822_DATE =
+  /^(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun), \d{2} (?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) \d{4} \d{2}:\d{2}:\d{2} GMT$/;
+const RSS_ITEM = /<item>([\s\S]*?)<\/item>/g;
+
+/** `<item>` 안의 한 필드 텍스트. 생성기가 쓰는 모양(속성은 guid만)이라 정규식으로 충분하다 — XML로 파싱되는지는 e2e가 본다. */
+function rssField(item: string, tag: string): string | null {
+  const text = item.match(
+    new RegExp(`<${tag}(?:\\s[^>]*)?>([^<]*)</${tag}>`),
+  )?.[1];
+  return text === undefined ? null : decodeEntities(text).trim();
+}
+
+/** 사이트 안의 글 절대 URL → 페이지 키(디코드한 경로). 사이트 밖이면 null. */
+function feedPath(url: string | null, siteUrl: string): string | null {
+  return url?.startsWith(siteUrl)
+    ? decodeUrlSafe(url.slice(siteUrl.length))
+    : null;
+}
+
+/**
+ * rss.xml 항목의 계약. 글 **집합**은 레지스트리 대조(checkArtifacts)가 이미 본다 —
+ * 여기는 그 대조가 못 보는 것들이다.
+ *
+ * - `rss-item-link`: link와 guid(isPermaLink)가 같은 값이고, 사이트의 글 절대 URL(후행 슬래시)이다
+ * - `rss-pubdate-format`: pubDate가 RFC 822다(아니면 리더가 날짜를 버리거나 지금으로 친다)
+ * - `rss-order`: pubDate 내림차순 — 리더·수집기는 피드 앞쪽을 새 글로 읽는다
+ * - `rss-newest-mismatch`: 첫 항목이 `/posts/` 목록의 첫 글(최신 글)과 같다 — 목록의
+ *   기본 정렬('recent')은 로더의 날짜 내림차순 위에 거는 안정 정렬이라 같은 날짜끼리도 순서가 같다
+ *
+ * 재평가: 2027-04-16 — 그때까지 잡은 것이 없으면 내린다.
+ */
+export function checkRssFeed(
+  rss: string,
+  archive: string | undefined,
+  siteUrl: string,
+): SeoViolation[] {
+  const violations: SeoViolation[] = [];
+  const add = (rule: string, message: string) =>
+    violations.push({ page: 'rss.xml', rule, message });
+  const items = [...rss.matchAll(RSS_ITEM)].map(m => m[1] ?? '');
+
+  let previous = Number.POSITIVE_INFINITY;
+  items.forEach((item, index) => {
+    const at = `#${index + 1}`;
+    const link = rssField(item, 'link');
+    const guid = rssField(item, 'guid');
+    const path = feedPath(link, siteUrl);
+    if (
+      link === null ||
+      link !== guid ||
+      !/<guid\s[^>]*isPermaLink="true"/.test(item) ||
+      path === null ||
+      !isPostPagePath(path) ||
+      !path.endsWith('/')
+    ) {
+      add(
+        'rss-item-link',
+        `${at} link·guid(isPermaLink)가 같은 글 절대 URL이 아닙니다: link=${link} guid=${guid}`,
+      );
+    }
+
+    const pubDate = rssField(item, 'pubDate');
+    if (pubDate === null || !RFC822_DATE.test(pubDate)) {
+      add(
+        'rss-pubdate-format',
+        `${at} ${link}의 pubDate가 RFC 822 형식이 아닙니다: ${pubDate}`,
+      );
+      return;
+    }
+    const time = Date.parse(pubDate);
+    if (time > previous) {
+      add(
+        'rss-order',
+        `${at} ${link}의 pubDate(${pubDate})가 앞 항목보다 늦습니다 — 피드는 최신순이어야 합니다`,
+      );
+    }
+    previous = time;
+  });
+
+  // 아카이브가 없으면 sitemap-page-missing이 이미 실패시킨다.
+  if (archive !== undefined) {
+    const newest = collectInternalLinks(archive)
+      // split은 항상 1개 이상을 돌려준다.
+      .map(href => decodeUrlSafe(href.split(/[?#]/)[0] ?? href))
+      .find(isPostPagePath);
+    const first =
+      items[0] === undefined
+        ? null
+        : feedPath(rssField(items[0], 'link'), siteUrl);
+    if (newest !== undefined && first !== newest) {
+      add(
+        'rss-newest-mismatch',
+        `피드의 첫 항목(${first ?? '없음'})이 ${POSTS_PATH} 목록의 최신 글(${newest})과 다릅니다`,
+      );
+    }
+  }
+  return violations;
+}
+
 export function main(ctx: ContentContext, target?: string) {
   // 인자를 주면 그 경로를(cwd 기준, resolve라 절대 경로 인자도 그대로 받는다),
   // 없으면 설정의 out 디렉터리를 검사한다.
@@ -507,6 +640,17 @@ export function main(ctx: ContentContext, target?: string) {
     violations.push(
       ...checkSitemapPages(parsed, locs, siteUrl),
       ...checkArchiveLinks(pages, locs, siteUrl),
+    );
+  }
+  // rss.xml이 없으면 위에서 missing-artifact로 이미 실패했다.
+  const rssFile = join(outDir, RSS_PATH);
+  if (existsSync(rssFile)) {
+    violations.push(
+      ...checkRssFeed(
+        readFileSync(rssFile, 'utf8'),
+        pages.get(POSTS_PATH),
+        siteUrl,
+      ),
     );
   }
 
