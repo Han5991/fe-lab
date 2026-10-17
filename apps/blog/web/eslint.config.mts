@@ -117,6 +117,18 @@ const SERVER_ONLY_BARREL_FILES = [
   'src/app/series/seriesIndex.ts',
 ];
 
+/**
+ * 테스트 프로그램(tsconfig.test.json)에 속한 파일. 타입 정보 블록과 단언 규칙의 테스트
+ * 예외가 이 값을 함께 쓴다 — 목록은 tsconfig.test.json의 include와 대칭이다.
+ */
+const TEST_FILES = [
+  '**/*.test.{ts,tsx}',
+  '**/*.spec.{ts,tsx}',
+  'vitest.config.mts',
+  'vitest.setup.ts',
+  'e2e/**/*.ts',
+];
+
 /** app 레이어의 repository 직접 import 금지 — 아래 두 블록이 같은 값을 펼친다. */
 const REPOSITORY_IMPORT_PATTERN = {
   // adminRepository처럼 접두사가 붙은 것도 함께 막습니다.
@@ -199,13 +211,7 @@ export default defineConfig([
     // 대신 이 블록에서 tsconfig.test.json 프로그램을 명시해 check-types와
     // 정확히 같은 타입 환경으로 린트한다. 파일 목록은 tsconfig.test.json의
     // include와 대칭 — 저쪽을 고치면 여기도 함께 고칠 것.
-    files: [
-      '**/*.test.{ts,tsx}',
-      '**/*.spec.{ts,tsx}',
-      'vitest.config.mts',
-      'vitest.setup.ts',
-      'e2e/**/*.ts',
-    ],
+    files: TEST_FILES,
     languageOptions: {
       parserOptions: {
         projectService: false,
@@ -526,6 +532,29 @@ export default defineConfig([
         { prefer: 'type-imports' },
       ],
     },
+  },
+
+  // ── 단언으로 좁히지 않는다 ──────────────────────────────────────────────────
+  // `as T`가 값을 더 좁은 타입으로 주장하면(any에서 나오는 단언 포함) 확인하지 않은
+  // 계약이 붙는다 — env·JSON·any로 선언된 라이브러리를 받는 자리에서 조용히 샌다.
+  // 좁히기는 런타임 확인(@blog/content의 isRecord·isStringArray 같은 가드, typeof)으로
+  // 한다. 넓히는 단언과 `as const`는 막지 않는다.
+  // 재평가: 2027-04-17 — 그때까지 이 규칙이 잡은 위반이 없으면 내린다(AGENTS.md §5).
+  {
+    files: ['**/*.{ts,tsx,mts,cts}'],
+    rules: { '@typescript-eslint/no-unsafe-type-assertion': 'error' },
+  },
+  {
+    // 테스트는 연다 — fixture·mock을 만드는 단언이 대부분이고 프로덕션으로 새지 않는다.
+    // 테스트 tsconfig가 엄격 플래그를 푸는 것과 같은 선이다.
+    files: TEST_FILES,
+    rules: { '@typescript-eslint/no-unsafe-type-assertion': 'off' },
+  },
+  {
+    // @pandacss/eslint-plugin의 recommended() 반환 타입이 ESLint 10 defineConfig와 맞지
+    // 않는다(위 pandaRecommended 주석) — 라이브러리 타입 문제라 이 파일만 연다.
+    files: ['eslint.config.mts'],
+    rules: { '@typescript-eslint/no-unsafe-type-assertion': 'off' },
   },
 
   // ── 레이어 경계 (eslint-plugin-boundaries) ─────────────────────────────────

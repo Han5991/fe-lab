@@ -81,7 +81,9 @@ here or anywhere else (this repo once carried four diverging copies of that prom
   tsconfig, vitest globs and the ESLint test block — change all three together. One exception: `apps/blog/web/e2e`
   is in tsconfig.test and the ESLint test block but not in the vitest globs (Playwright runs it).
 - Prefer `interface` over `type` for objects (lint-enforced in the blog stack), named exports over default
-  (except Next.js pages/layouts), `import type`. No `any`.
+  (except Next.js pages/layouts), `import type`. No `any`, and no `as` that narrows a type — the blog stack
+  lints it (`no-unsafe-type-assertion`, tests excepted); narrow with the shared guards in `@blog/content`
+  (`isRecord`, `isStringArray`).
 - **타입·lint·게이트를 만들거나 lint·타입 에러를 고칠 때는 `strict-design` 스킬.** 같은 개념의 타입·상수는
   한 출처에서 파생하고, 단언·disable·설정 예외로 빨간 줄을 넘기지 않는다 — 그 길밖에 없어 보이면 멈추고
   묻는다.

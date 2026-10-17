@@ -16,6 +16,16 @@ import tseslint from 'typescript-eslint';
  * 레이어 경계(boundaries)는 앱에 있던 콘텐츠 레이어 모델을 그대로 옮겨 왔다:
  * shared → content(post) → seo → build(scripts) → render-build(scripts/render).
  */
+/**
+ * 테스트 프로그램(tsconfig.test.json)에 속한 파일. 타입 정보 블록과 단언 규칙의 테스트
+ * 예외가 이 값을 함께 쓴다.
+ */
+const TEST_FILES = [
+  '**/*.test.{ts,tsx}',
+  '**/*.spec.{ts,tsx}',
+  'vitest.config.mts',
+];
+
 export default defineConfig([
   {
     // coverage/**: vitest --coverage의 HTML 리포터가 뱉는 번들된 벤더 JS. 소스가 아니다.
@@ -50,7 +60,7 @@ export default defineConfig([
   {
     // 테스트 파일은 tsconfig.json이 exclude하고 tsconfig.test.json이 include한다
     // — 앱과 같은 분할. check-types가 보는 프로그램과 정확히 같은 타입 환경.
-    files: ['**/*.test.{ts,tsx}', '**/*.spec.{ts,tsx}', 'vitest.config.mts'],
+    files: TEST_FILES,
     languageOptions: {
       parserOptions: {
         projectService: false,
@@ -96,6 +106,18 @@ export default defineConfig([
         { prefer: 'type-imports' },
       ],
     },
+  },
+
+  // ── 단언으로 좁히지 않는다 (앱과 같은 기준 — 앱 설정의 같은 블록 주석) ─────
+  // 재평가: 2027-04-17 — 그때까지 이 규칙이 잡은 위반이 없으면 내린다(AGENTS.md §5).
+  {
+    files: ['**/*.{ts,mts,cts}'],
+    rules: { '@typescript-eslint/no-unsafe-type-assertion': 'error' },
+  },
+  {
+    // 테스트는 연다 — fixture·mock을 만드는 단언이 대부분이고 프로덕션으로 새지 않는다.
+    files: TEST_FILES,
+    rules: { '@typescript-eslint/no-unsafe-type-assertion': 'off' },
   },
 
   {
