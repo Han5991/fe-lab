@@ -8,6 +8,7 @@
  */
 import { afterEach, expect, test, vi } from 'vitest';
 import type { Command } from 'commander';
+import { POST_STATUSES } from '../../post/types.ts';
 import { buildProgram } from './program.ts';
 
 const names = () => buildProgram().commands.map(c => c.name());
@@ -63,10 +64,10 @@ test('build는 파이프라인 플래그 3개를 받는다', () => {
   expect(flags).toContain('--force');
 });
 
-test('new-post의 --status는 세 값만 받는다', () => {
+test('new-post의 --status는 상태 목록(POST_STATUSES)을 그대로 받는다', () => {
   const cmd = buildProgram().commands.find(c => c.name() === 'new-post');
   const status = cmd?.options.find(o => o.long === '--status');
-  expect(status?.argChoices).toStrictEqual(['draft', 'published', 'scheduled']);
+  expect(status?.argChoices).toStrictEqual([...POST_STATUSES]);
 });
 
 /**

@@ -10,7 +10,7 @@
  * 콘텐츠 개수 자체는 잠그지 않습니다(글이 추가/숨김되는 정상 변경에 깨지면 안 됨).
  */
 import { expect, test } from 'vitest';
-import { isPostVisible, publishAtOf } from './visibility.ts';
+import { isPostStatus, isPostVisible, publishAtOf } from './visibility.ts';
 import { sortPostsBySeriesOrder } from './series.ts';
 import { testConfig, testContent } from './testing.ts';
 
@@ -93,9 +93,8 @@ test('contract: getAllPosts는 date 내림차순', () => {
 });
 
 test('contract: status 값이 유효 enum 범위', () => {
-  const valid = new Set(['published', 'draft', 'scheduled']);
   const posts = getAllPostsIncludingHidden();
-  const invalid = posts.filter(p => p.status && !valid.has(p.status));
+  const invalid = posts.filter(p => p.status && !isPostStatus(p.status));
   expect(invalid.length).toBe(0);
 });
 

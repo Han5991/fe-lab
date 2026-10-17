@@ -2,6 +2,7 @@ import { expect, test } from 'vitest';
 import { parsePost, extractPlainText, resolveExcerpt } from './repository.ts';
 import { isPostFile, isPostVisible } from './visibility.ts';
 import { testConfig } from './testing.ts';
+import { POST_STATUSES } from './types.ts';
 
 // 발췌 길이는 설정에서 온다(기본값 없음) — 픽스처의 SEO 예산을 그대로 쓴다.
 const MAX = testConfig.seo.descriptionMaxLength;
@@ -110,7 +111,7 @@ test('parsePost: title 미지정 시 파일명으로 fallback', () => {
 // ── publish 설정(status) ─────────────────────────────────────────────────────
 
 test('parsePost: status 필드를 그대로 반영', () => {
-  for (const s of ['published', 'draft', 'scheduled'] as const) {
+  for (const s of POST_STATUSES) {
     const raw = `---\ntitle: 글\nstatus: ${s}\n---\n본문`;
     expect(parsePost(raw, 'a.md', PARSE_OPTS)?.status).toBe(s);
   }

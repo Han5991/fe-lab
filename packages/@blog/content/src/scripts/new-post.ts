@@ -5,6 +5,7 @@ import {
   isIsoDateOnly,
   isValidDateString,
 } from '../shared/dates.ts';
+import type { PostStatus } from '../post/types.ts';
 import type { ContentContext } from './context.ts';
 import { slugProblem } from './validate/shared.ts';
 
@@ -12,7 +13,7 @@ import { slugProblem } from './validate/shared.ts';
 export interface NewPostOptions {
   title: string;
   series?: string | undefined;
-  status: 'draft' | 'published' | 'scheduled';
+  status: PostStatus;
   // slug/scheduledDate는 buildFrontmatter 호출부가 `opts.slug` 그대로(값이
   // undefined일 수 있는 채로) 넘기므로 명시적 undefined를 허용해야 한다.
   scheduledDate?: string | undefined;
