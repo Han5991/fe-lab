@@ -10,7 +10,7 @@
  * 콘텐츠 개수 자체는 잠그지 않습니다(글이 추가/숨김되는 정상 변경에 깨지면 안 됨).
  */
 import { expect, test } from 'vitest';
-import { isPostVisible } from './visibility.ts';
+import { isPostVisible, publishAtOf } from './visibility.ts';
 import { sortPostsBySeriesOrder } from './series.ts';
 import { testConfig, testContent } from './testing.ts';
 
@@ -99,12 +99,13 @@ test('contract: status 값이 유효 enum 범위', () => {
   expect(invalid.length).toBe(0);
 });
 
-test('contract: scheduled 글은 공개 시각(scheduledDate ?? date)이 파싱 가능', () => {
+test('contract: scheduled 글은 공개 시각(publishAtOf)이 파싱 가능', () => {
   const posts = getAllPostsIncludingHidden();
   for (const p of posts) {
     if (p.status !== 'scheduled') continue;
-    // scheduledDate는 시각까지 지정할 때만 쓰는 선택 필드. 없으면 date가 공개 시각.
-    const publishAt = p.scheduledDate ?? p.date;
+    // 판정(isPostVisible)과 같은 함수로 공개 시각을 고른다 — 규칙을 여기서 다시 적으면
+    // 규칙이 바뀌어도 이 계약은 옛 기준으로 통과한다.
+    const publishAt = publishAtOf(p);
     expect(
       publishAt,
       `${p.slug}: scheduled인데 scheduledDate도 date도 없음 (영원히 비공개)`,
