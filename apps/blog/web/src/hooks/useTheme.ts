@@ -35,8 +35,9 @@ export function writeCookie(t: Theme) {
 }
 
 export function systemTheme(): Theme {
+  // DOM 타입은 matchMedia가 늘 함수라고 말하지만 jsdom 등에서는 비어 있다 — 값으로 확인한다.
   return typeof window !== 'undefined' &&
-    window.matchMedia &&
+    typeof window.matchMedia === 'function' &&
     window.matchMedia('(prefers-color-scheme: dark)').matches
     ? 'dark'
     : 'light';
@@ -66,7 +67,7 @@ export function useTheme(): Theme {
 function prefersReducedMotion(): boolean {
   return (
     typeof window !== 'undefined' &&
-    !!window.matchMedia &&
+    typeof window.matchMedia === 'function' &&
     window.matchMedia('(prefers-reduced-motion: reduce)').matches
   );
 }
@@ -99,7 +100,7 @@ export function setTheme(next: Theme) {
 }
 
 // 시스템 설정 변화 추적: 사용자가 아직 명시적 선택(쿠키)을 안 했다면 시스템을 따른다.
-if (typeof window !== 'undefined' && window.matchMedia) {
+if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
   window
     .matchMedia('(prefers-color-scheme: dark)')
     .addEventListener('change', () => {

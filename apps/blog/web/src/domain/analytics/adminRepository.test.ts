@@ -58,6 +58,14 @@ describe('getAdminPostsIndex', () => {
     await expect(getAdminPostsIndex()).resolves.toEqual([VALID_ROW]);
   });
 
+  test('모르는 발행 상태는 행을 남기고 draft로 좁힌다 — 공개 글로 보이지 않게(fail-closed)', async () => {
+    stubFetch([{ ...VALID_ROW, status: 'retired' }]);
+
+    await expect(getAdminPostsIndex()).resolves.toEqual([
+      { ...VALID_ROW, status: 'draft' },
+    ]);
+  });
+
   test('비배열 응답이면 빈 배열 — 손으로 고쳐진 파일에도 화면은 산다', async () => {
     stubFetch({ broken: true });
 

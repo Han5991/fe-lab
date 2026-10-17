@@ -15,7 +15,7 @@
 
 import { client } from '../../lib/platform/client';
 import { AdminApiClient, type AdminApi } from '../../lib/platform/adminApi';
-import { isRecord, type PostStatus } from '@blog/content/client';
+import { isPostStatus, isRecord, type PostStatus } from '@blog/content/client';
 import type {
   PostStatsRow,
   PostTrendRow,
@@ -81,15 +81,18 @@ export async function getAllPostsTrends(
   return adminApi().call('all_posts_trends', { slugs });
 }
 
-/** 응답 행이 AdminPostIndex 모양인지 — 어긋난 행 하나로 admin 화면이 통째로 깨지지 않게 거른다. */
-function isAdminPostIndexRow(row: unknown): row is AdminPostIndex {
+/** 산출물 행의 모양 — status는 아직 문자열이다(값은 {@link toAdminPostIndex}가 좁힌다). */
+interface AdminPostIndexRow extends Omit<AdminPostIndex, 'status'> {
+  status: string;
+}
+
+/** 응답 행이 AdminPostIndexRow 모양인지 — 어긋난 행 하나로 admin 화면이 통째로 깨지지 않게 거른다. */
+function isAdminPostIndexRow(row: unknown): row is AdminPostIndexRow {
   if (!isRecord(row)) return false;
   return (
     typeof row['slug'] === 'string' &&
     typeof row['title'] === 'string' &&
-    // date는 소비처(useAdminViews)가 폴백 없이 화면에 그대로 쓰므로 모양을
-    // 확인한다. status는 문자열이면 충분 — enum 값 검사까지 하면 발행 상태가
-    // 늘어날 때 여기가 조용한 필터가 된다(소비처는 문자열 비교·폴백만 함).
+    // date는 소비처(useAdminViews)가 폴백 없이 화면에 그대로 쓰므로 모양을 확인한다.
     (typeof row['date'] === 'string' || row['date'] === null) &&
     typeof row['status'] === 'string' &&
     (typeof row['scheduledDate'] === 'string' ||
@@ -113,7 +116,19 @@ export async function getAdminPostsIndex(): Promise<AdminPostIndex[]> {
   // 있어야 소비자마다 방어 코드가 다시 자라지 않는다(예전 태그 분포 훅이
   // 자기 가드를 따로 들고 있었다).
   const json: unknown = await res.json();
-  return Array.isArray(json) ? json.filter(isAdminPostIndexRow) : [];
+  return Array.isArray(json)
+    ? json.filter(isAdminPostIndexRow).map(toAdminPostIndex)
+    : [];
+}
+
+/**
+ * 발행 상태를 값까지 좁힌다. 모르는 값은 fail-closed로 `'draft'` — `'published'`로
+ * 두면 인덱스가 깨졌을 때 비공개 글이 admin 대시보드에서 공개 글로 보인다.
+ * 행을 거르지 않고 바꾸는 이유: 거르면 발행 상태가 늘어날 때(사이트와 admin 배포가
+ * 어긋난 사이) 그 글이 목록에서 조용히 사라진다.
+ */
+function toAdminPostIndex(row: AdminPostIndexRow): AdminPostIndex {
+  return { ...row, status: isPostStatus(row.status) ? row.status : 'draft' };
 }
 
 export async function getPostHourlyDistribution(
