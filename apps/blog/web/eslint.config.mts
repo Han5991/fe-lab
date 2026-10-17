@@ -534,21 +534,30 @@ export default defineConfig([
     },
   },
 
-  // ── 단언으로 좁히지 않는다 ──────────────────────────────────────────────────
-  // `as T`가 값을 더 좁은 타입으로 주장하면(any에서 나오는 단언 포함) 확인하지 않은
-  // 계약이 붙는다 — env·JSON·any로 선언된 라이브러리를 받는 자리에서 조용히 샌다.
-  // 좁히기는 런타임 확인(@blog/content의 isRecord·isStringArray 같은 가드, typeof)으로
-  // 한다. 넓히는 단언과 `as const`는 막지 않는다.
-  // 재평가: 2027-04-17 — 그때까지 이 규칙이 잡은 위반이 없으면 내린다(AGENTS.md §5).
+  // ── 타입이 말하는 만큼만 믿는다 ────────────────────────────────────────────
+  // no-unsafe-type-assertion: `as T`가 값을 더 좁은 타입으로 주장하면(any에서 나오는
+  // 단언 포함) 확인하지 않은 계약이 붙는다 — env·JSON·any로 선언된 라이브러리를 받는
+  // 자리에서 조용히 샌다. 좁히기는 런타임 확인(@blog/content의 isRecord·isStringArray
+  // 같은 가드, typeof)으로 한다. 넓히는 단언과 `as const`는 막지 않는다.
+  // no-unnecessary-condition: 타입상 일어날 수 없는 분기(죽은 폴백·`?.`)를 막는다. 걸리면
+  // 둘 중 하나다 — 정말 죽은 검사라 지우거나, 런타임이 타입보다 넓은데 타입이 거짓말을
+  // 하는 것이라 경계에서 값을 좁히거나 타입을 넓힌다(검사를 지우는 쪽이 아니다).
+  // 재평가: 2027-04-17 — 그때까지 잡은 위반이 없는 규칙은 내린다(AGENTS.md §5).
   {
     files: ['**/*.{ts,tsx,mts,cts}'],
-    rules: { '@typescript-eslint/no-unsafe-type-assertion': 'error' },
+    rules: {
+      '@typescript-eslint/no-unsafe-type-assertion': 'error',
+      '@typescript-eslint/no-unnecessary-condition': 'error',
+    },
   },
   {
-    // 테스트는 연다 — fixture·mock을 만드는 단언이 대부분이고 프로덕션으로 새지 않는다.
-    // 테스트 tsconfig가 엄격 플래그를 푸는 것과 같은 선이다.
+    // 테스트는 연다 — fixture·mock을 만드는 단언과 방어 검사가 대부분이고 프로덕션으로
+    // 새지 않는다. 테스트 tsconfig가 엄격 플래그를 푸는 것과 같은 선이다.
     files: TEST_FILES,
-    rules: { '@typescript-eslint/no-unsafe-type-assertion': 'off' },
+    rules: {
+      '@typescript-eslint/no-unsafe-type-assertion': 'off',
+      '@typescript-eslint/no-unnecessary-condition': 'off',
+    },
   },
   {
     // @pandacss/eslint-plugin의 recommended() 반환 타입이 ESLint 10 defineConfig와 맞지
