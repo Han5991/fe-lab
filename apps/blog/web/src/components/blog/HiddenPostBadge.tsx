@@ -1,6 +1,6 @@
 import { TIMEZONE } from '@/content.values.mts';
 import { css } from '@blog/styled-system/css';
-import { isPostVisible } from '@blog/content/client';
+import { isPostVisible, publishAtOf } from '@blog/content/client';
 import type { PostSummary } from '@blog/content/client';
 
 interface Props {
@@ -26,7 +26,7 @@ export function HiddenPostBadge({ post }: Props) {
 
   const label =
     post.status === 'scheduled'
-      ? `예약 ${post.scheduledDate ?? post.date ?? ''}`.trim()
+      ? `예약 ${publishAtOf(post) ?? ''}`.trim()
       : 'DRAFT';
 
   return (

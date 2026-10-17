@@ -12,6 +12,7 @@ import type {
   TimezoneConfig,
 } from '../../shared/contentConfig.ts';
 import { isSafeSlug } from '../../post/urls.ts';
+import type { RuleId } from './rules.ts';
 
 export type Severity = 'error' | 'warning';
 
@@ -19,7 +20,8 @@ export interface Issue {
   file: string;
   line: number | null;
   severity: Severity;
-  rule: string;
+  /** `RULES` 테이블의 키 — 테이블에 없는 규칙 이름은 만들 수도, 비교할 수도 없다. */
+  rule: RuleId;
   message: string;
 }
 

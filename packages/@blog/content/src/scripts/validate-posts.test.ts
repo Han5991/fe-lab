@@ -208,6 +208,8 @@ test('validatePost: date 누락 → missing-date', () => {
 test('validatePost: scheduled인데 date가 없으면 missing-date (영원히 비공개)', () => {
   // 예전 scheduled-without-date 규칙을 대체한다. date가 필수가 되면서
   // "scheduledDate도 date도 없음" 조건이 missing-date에 완전히 포섭됐다.
+  // 옛 규칙이 다시 나오지 않는지는 테스트가 아니라 타입이 본다 — Issue.rule은
+  // RULES의 키(RuleId)라 테이블에 없는 이름은 만들 수 없다.
   const issues = validatePost(
     rec({ title: 'x', status: 'scheduled' }),
     '---\ntitle: x\n---\n',
@@ -216,7 +218,6 @@ test('validatePost: scheduled인데 date가 없으면 missing-date (영원히 �
   const found = issues.filter(i => i.rule === 'missing-date');
   expect(found.length, 'missing-date가 정확히 하나여야 함(중복 없음)').toBe(1);
   expect(found[0].message).toMatch(/영원히 비공개/);
-  expect(!issues.some(i => i.rule === 'scheduled-without-date')).toBeTruthy();
 });
 
 test('validatePost: scheduledDate만 있고 date가 없으면 missing-date', () => {

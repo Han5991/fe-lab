@@ -21,7 +21,7 @@ import { formatMonthDayISO, parseScheduledDateKST } from '@blog/content/client';
 import { DateRangeControls, useDateFilter } from './DateRangeControls';
 import { WeekGrowthIcon } from './WeekGrowthIcon';
 import { adminAnalyticsPostPath } from '@/src/shared/routes';
-import { resolvePostState } from '@blog/content/client';
+import { publishAtOf, resolvePostState } from '@blog/content/client';
 import { STATUS_BADGE, livePostHref, statusTone } from './postState';
 
 interface Props {
@@ -39,8 +39,7 @@ export function PostAccordion({ post, todayISO }: Props) {
   // 그립니다. 판정은 도메인 함수 하나에 위임합니다 — 예전에는 이 자리에서 규칙을
   // 다시 구현하다 `date` 폴백과 KST 파싱을 둘 다 놓쳤습니다.
   const state = resolvePostState(post, TIMEZONE);
-  // scheduledDate는 시각까지 지정할 때만 쓰는 선택 필드라 보통은 date가 공개 시각입니다.
-  const publishAt = post.scheduledDate ?? post.date;
+  const publishAt = publishAtOf(post);
 
   const {
     filterType,

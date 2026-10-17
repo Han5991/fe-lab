@@ -1,6 +1,7 @@
 import { expect, test } from 'vitest';
 import {
   isPostVisible as isPostVisibleIn,
+  publishAtOf,
   resolvePostState as resolvePostStateIn,
 } from './visibility.ts';
 import { TEST_VALUES } from '../shared/testValues.ts';
@@ -47,6 +48,23 @@ test('scheduled: scheduledDate가 없으면 date를 공개 시각으로 사용',
   expect(
     isPostVisible({ status: 'scheduled', date: '2026-05-24' }, before),
   ).toBe(false);
+});
+
+test('publishAtOf: scheduledDate가 있으면 그 값, 없으면 date, 둘 다 없으면 undefined', () => {
+  // 화면(배지·배너·admin 툴팁)이 판정과 같은 공개 시각을 보여 주는지가 이 함수에 달렸다.
+  expect(
+    publishAtOf({
+      scheduledDate: '2099-01-01T09:00:00+09:00',
+      date: '2099-01-01',
+    }),
+  ).toBe('2099-01-01T09:00:00+09:00');
+  expect(publishAtOf({ date: '2026-05-24' })).toBe('2026-05-24');
+  // admin 데이터는 빈 값을 null로 들고 온다.
+  expect(publishAtOf({ scheduledDate: null, date: '2026-05-24' })).toBe(
+    '2026-05-24',
+  );
+  expect(publishAtOf({ scheduledDate: null, date: null })).toBeUndefined();
+  expect(publishAtOf({})).toBeUndefined();
 });
 
 test('scheduled: scheduledDate가 있으면 date보다 우선', () => {
