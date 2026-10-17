@@ -42,7 +42,7 @@ export function selectTrends(
   endDate: string,
   todayISO: string,
 ): TrendPoint[] {
-  if (!trends || trends.length === 0) return [];
+  if (trends.length === 0) return [];
 
   const sorted = [...trends].sort((a, b) =>
     a.view_date.localeCompare(b.view_date),

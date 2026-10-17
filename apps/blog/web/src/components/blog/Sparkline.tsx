@@ -19,7 +19,7 @@ export const Sparkline = ({
   color = DEFAULT_COLOR,
   fill,
 }: SparklineProps) => {
-  if (!data || data.length === 0) return null;
+  if (data.length === 0) return null;
   const min = Math.min(...data);
   const max = Math.max(...data);
   const range = max - min || 1;

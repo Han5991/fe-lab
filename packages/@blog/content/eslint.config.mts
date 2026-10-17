@@ -108,16 +108,23 @@ export default defineConfig([
     },
   },
 
-  // ── 단언으로 좁히지 않는다 (앱과 같은 기준 — 앱 설정의 같은 블록 주석) ─────
-  // 재평가: 2027-04-17 — 그때까지 이 규칙이 잡은 위반이 없으면 내린다(AGENTS.md §5).
+  // ── 타입이 말하는 만큼만 믿는다 (앱과 같은 기준 — 앱 설정의 같은 섹션 주석) ──
+  // 재평가: 2027-04-17 — 그때까지 잡은 위반이 없는 규칙은 내린다(AGENTS.md §5).
   {
     files: ['**/*.{ts,mts,cts}'],
-    rules: { '@typescript-eslint/no-unsafe-type-assertion': 'error' },
+    rules: {
+      '@typescript-eslint/no-unsafe-type-assertion': 'error',
+      '@typescript-eslint/no-unnecessary-condition': 'error',
+    },
   },
   {
-    // 테스트는 연다 — fixture·mock을 만드는 단언이 대부분이고 프로덕션으로 새지 않는다.
+    // 테스트는 연다 — fixture·mock을 만드는 단언과 방어 검사가 대부분이고 프로덕션으로
+    // 새지 않는다.
     files: TEST_FILES,
-    rules: { '@typescript-eslint/no-unsafe-type-assertion': 'off' },
+    rules: {
+      '@typescript-eslint/no-unsafe-type-assertion': 'off',
+      '@typescript-eslint/no-unnecessary-condition': 'off',
+    },
   },
 
   {

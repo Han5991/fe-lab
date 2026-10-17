@@ -168,7 +168,7 @@ Deno.serve(async (req: Request) => {
                 .order('slug', { ascending: true })
                 .range(from, to);
               if (result.error) throw result.error;
-              return result.data ?? [];
+              return result.data;
             },
             { ...paging, key: row => row.slug },
           );
@@ -189,7 +189,7 @@ Deno.serve(async (req: Request) => {
                 .order('view_date', { ascending: true })
                 .range(from, to);
               if (result.error) throw result.error;
-              return result.data ?? [];
+              return result.data;
             },
             { ...paging, key: row => `${row.slug}\u0000${row.view_date}` },
           );

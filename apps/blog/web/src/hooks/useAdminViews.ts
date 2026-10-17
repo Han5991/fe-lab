@@ -56,9 +56,8 @@ export function useAdminDashboardData() {
           totalViews: postStats?.total_views ?? 0,
           todayViews: postStats?.today_views ?? 0,
           trends: trendsOf(post.slug),
-          // 폴백은 fail-closed('draft')여야 한다. 'published'로 두면 인덱스가
-          // 깨졌을 때 draft·scheduled 글이 admin 대시보드에서 공개 글로 보인다.
-          status: post.status || 'draft',
+          // 모르는 값의 fail-closed 폴백은 경계(getAdminPostsIndex)가 이미 했다.
+          status: post.status,
           scheduledDate: post.scheduledDate || null,
         };
       });

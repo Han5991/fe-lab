@@ -30,9 +30,9 @@ function LoginForm() {
     },
   });
 
-  const error = searchParams?.get('error');
+  const error = searchParams.get('error');
   // AdminGuard가 실어 보낸 OAuth 실패 사유 — URL에서 온 글자라 고정 문구 아래 참고로만 보인다.
-  const oauthErrorDescription = searchParams?.get('error_description');
+  const oauthErrorDescription = searchParams.get('error_description');
 
   return (
     <div
