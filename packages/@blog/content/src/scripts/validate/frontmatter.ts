@@ -55,11 +55,16 @@ const KNOWN_FRONTMATTER_KEYS = new Set<string>(FRONTMATTER_KEYS);
  * 되어, 정작 알려 주려던 것 — 무엇이 들어왔나 — 을 못 알려 준다. 객체·배열은
  * JSON으로 펼치고, 순환 참조처럼 JSON이 실패하는 값만 태그로 떨어뜨린다.
  */
+/** `JSON.stringify` — lib 타입은 string이지만 toJSON이 undefined를 돌려주는 값에선 undefined다. */
+function stringifyJson(value: unknown): string | undefined {
+  return JSON.stringify(value);
+}
+
 function describeValue(value: unknown): string {
   if (value instanceof Date) return value.toISOString();
   if (typeof value === 'object' && value !== null) {
     try {
-      return JSON.stringify(value) ?? Object.prototype.toString.call(value);
+      return stringifyJson(value) ?? Object.prototype.toString.call(value);
     } catch {
       return Object.prototype.toString.call(value);
     }

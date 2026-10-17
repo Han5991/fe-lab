@@ -794,7 +794,7 @@ function assertOutputDirsExclusive(dirs: DirsConfig): void {
  */
 export function defineContent(user: ContentUserConfig): ContentConfig {
   assertValidRoot(user.root);
-  assertValidOgFonts(user.og?.fonts);
+  assertValidOgFonts(user.og.fonts);
   assertValidTimezone(user.timezone);
   assertValidBundleBudgets(user.bundleBudgets);
   const config: ContentConfig = {

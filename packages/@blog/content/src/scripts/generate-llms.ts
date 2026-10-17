@@ -187,10 +187,10 @@ export function buildLlmsText(
     // `_series.yml`이 없는 폴더는 사이트에서도 `회고/2025`처럼 경로가 그대로
     // 나오므로, 여기서만 다듬으면 색인과 화면의 시리즈명이 갈린다.
     // 이름을 고치고 싶으면 그 폴더에 `_series.yml`의 `title`을 넣으면 양쪽이 함께 바뀐다.
-    lines.push(`## 시리즈: ${meta?.title ?? seriesId}`, ``);
-    if (meta?.description) lines.push(meta.description, ``);
+    lines.push(`## 시리즈: ${meta.title ?? seriesId}`, ``);
+    if (meta.description) lines.push(meta.description, ``);
     // 1편부터 읽을 수 있도록 — `_series.yml`의 order가 있으면 그 순서.
-    for (const post of sortPostsBySeriesOrder(folderPosts, meta?.order)) {
+    for (const post of sortPostsBySeriesOrder(folderPosts, meta.order)) {
       lines.push(
         `- [${post.title}](${markdownLinkTarget(postUrl(post.slug, siteUrl))}): ${toSummary(post, llms.summaryMaxLength)}`,
       );
