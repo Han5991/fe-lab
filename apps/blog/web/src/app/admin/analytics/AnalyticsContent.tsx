@@ -9,7 +9,10 @@ import {
   useAnalyticsOverview,
   UNIQUES_ESTIMATE_RATIO,
 } from '@/src/hooks/useAnalyticsOverview';
-import { AnalyticsRangeSelect } from '@/src/components/admin/AnalyticsRangeSelect';
+import {
+  AnalyticsRangeSelect,
+  rangeLabel,
+} from '@/src/components/admin/AnalyticsRangeSelect';
 import type { AnalyticsRange } from '@/src/domain/analytics';
 import { KpiCard } from '@/src/components/admin/KpiCard';
 import { TimeSeriesChart } from '@/src/components/admin/TimeSeriesChart';
@@ -39,14 +42,7 @@ export const AnalyticsContent = ({ tags }: AnalyticsContentProps) => {
           flexWrap: 'wrap',
         })}
       >
-        <Label tone="meta">
-          ANALYTICS · 최근{' '}
-          {overview.range === '7d'
-            ? '7일'
-            : overview.range === '90d'
-              ? '90일'
-              : '30일'}
-        </Label>
+        <Label tone="meta">ANALYTICS · 최근 {rangeLabel(overview.range)}</Label>
         <AnalyticsRangeSelect value={range} onChange={setRange} />
       </div>
 

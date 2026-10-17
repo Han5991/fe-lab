@@ -21,8 +21,9 @@
  * 화면과 OG 카드만 따라 움직이고 mermaid 도표가 옛 색으로 남는다 — 이 파일이
  * 막겠다고 선언한 바로 그 조용한 실패다.
  */
-import { describe, expect, test, vi } from 'vitest';
+import { describe, expect, expectTypeOf, test, vi } from 'vitest';
 import { themeColor, type BlogColorName, type BlogTheme } from '@blog/preset';
+import type { Theme } from '@/src/hooks/useTheme';
 import { MERMAID_VARS } from './MermaidChart';
 
 // MermaidChart는 mermaid(raw 1.1MB)를 정적 import한다. 여기서 필요한 건 색 상수
@@ -31,6 +32,12 @@ vi.mock('mermaid', () => ({ default: {} }));
 
 // 테마 분기는 프리셋의 `themeColor` 안에만 있다 — 여기서 다시 만들지 않는다.
 const THEMES: readonly BlogTheme[] = ['light', 'dark'];
+
+test('앱의 테마(data-theme 값)와 팔레트의 테마는 같은 집합이다', () => {
+  // 앱 src는 경계상 preset을 열지 않아 `Theme`을 따로 적는다(eslint.config.mts의
+  // boundaries). 그 사본을 여기서 타입으로 잠근다 — 한쪽에만 테마가 늘면 check-types가 막는다.
+  expectTypeOf<Theme>().toEqualTypeOf<BlogTheme>();
+});
 
 /** ① 토큰 값을 그대로 쓰는 자리 — mermaid 키 → 토큰 이름. */
 const FROM_TOKEN = {

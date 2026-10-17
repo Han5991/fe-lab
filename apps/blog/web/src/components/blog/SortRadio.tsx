@@ -1,20 +1,22 @@
 'use client';
 
 import { css } from '@blog/styled-system/css';
+import { ARCHIVE_SORT_KEYS, type ArchiveSortKey } from '@blog/content/client';
 import { SegmentedRadioGroup } from './SegmentedRadioGroup';
 
-export type SortKey = 'recent' | 'popular' | 'shortest';
-
 interface SortRadioProps {
-  value: SortKey;
-  onChange: (v: SortKey) => void;
+  value: ArchiveSortKey;
+  onChange: (v: ArchiveSortKey) => void;
 }
 
-const OPTIONS: { id: SortKey; label: string }[] = [
-  { id: 'recent', label: '최신순' },
-  { id: 'popular', label: '인기순' },
-  { id: 'shortest', label: '짧은 글부터' },
-];
+/** 정렬 키별 라벨 — `satisfies`라 패키지에 키가 늘면 여기서 컴파일이 막힌다. */
+const SORT_LABEL = {
+  recent: '최신순',
+  popular: '인기순',
+  shortest: '짧은 글부터',
+} as const satisfies Record<ArchiveSortKey, string>;
+
+const OPTIONS = ARCHIVE_SORT_KEYS.map(id => ({ id, label: SORT_LABEL[id] }));
 
 const group = css({
   display: 'inline-flex',

@@ -3,7 +3,7 @@
 import { useState, useEffect, useId } from 'react';
 import mermaid from 'mermaid';
 import { css } from '@blog/styled-system/css';
-import { useTheme } from '@/src/hooks/useTheme';
+import { useTheme, type Theme } from '@/src/hooks/useTheme';
 
 let renderSeq = 0;
 
@@ -70,7 +70,7 @@ export const MERMAID_VARS = {
     titleColor: '#e6e8eb',
     edgeLabelBackground: '#0b0d10',
   },
-} as const;
+} as const satisfies Record<Theme, Record<string, string>>;
 
 /**
  * 도표를 감싸는 박스. MermaidLazy의 로딩 placeholder(`mermaidBoxStyle`)가 같은
@@ -124,8 +124,7 @@ export function MermaidChart({ chart }: { chart: string }) {
 
   useEffect(() => {
     let cancelled = false;
-    const themeVariables =
-      theme === 'dark' ? MERMAID_VARS.dark : MERMAID_VARS.light;
+    const themeVariables = MERMAID_VARS[theme];
 
     const renderChart = async () => {
       try {

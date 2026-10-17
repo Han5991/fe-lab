@@ -3,6 +3,8 @@
 import { useSyncExternalStore } from 'react';
 import { THEME_COOKIE, THEME_COOKIE_MATCH } from './theme-cookie';
 
+// 팔레트(@blog/preset의 BlogTheme)와 같은 집합이다. src는 경계상 preset을 열지 않아
+// 따로 적고, mermaidTheme.test.ts가 타입으로 같음을 잠근다.
 export type Theme = 'light' | 'dark';
 
 // html[data-theme]를 단일 진실원으로 삼는다. 초기값은 layout.tsx의 <head>

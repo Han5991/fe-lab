@@ -12,15 +12,8 @@ import {
 } from '@blog/content/client';
 import { percentDelta } from './delta';
 import { trailingWindowDays } from './windows';
+import { RANGE_DAYS, type AnalyticsRange } from './ranges';
 import type { PostStatDetail, PostVisibilityContext } from './types';
-
-export type AnalyticsRange = '7d' | '30d' | '90d';
-
-const RANGE_DAYS: Record<AnalyticsRange, number> = {
-  '7d': 7,
-  '30d': 30,
-  '90d': 90,
-};
 
 /** 상위 글 목록에 싣는 개수. */
 const TOP_POSTS_LIMIT = 5;

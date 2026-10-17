@@ -5,7 +5,8 @@
 
 import { computeAnalyticsOverview } from './overview';
 import { computeDerivedStats } from './derivedStats';
-import type { AnalyticsOverview, AnalyticsRange } from './overview';
+import type { AnalyticsOverview } from './overview';
+import type { AnalyticsRange } from './ranges';
 import type {
   DerivedStats,
   PostStatDetail,
