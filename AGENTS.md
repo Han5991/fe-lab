@@ -87,7 +87,8 @@ here or anywhere else (this repo once carried four diverging copies of that prom
   if the runtime really is wider than the type, fix the type at the boundary instead of deleting the check.
 - **타입·lint·게이트를 만들거나 lint·타입 에러를 고칠 때는 `strict-design` 스킬.** 같은 개념의 타입·상수는
   한 출처에서 파생하고, 단언·disable·설정 예외로 빨간 줄을 넘기지 않는다 — 그 길밖에 없어 보이면 멈추고
-  묻는다.
+  묻는다. 같은 문자열 리터럴 집합을 프로덕션 파일 둘이 적으면 `packages/@blog/content/src/scripts/literalCopies.test.ts`가
+  막는다. 경계 때문에 import할 수 없는 사본만 다른 테스트로 잠근 뒤 그 파일의 `LOCKED_ELSEWHERE`에 올린다.
 - **`@/` differs per app**: `apps/next.js`·`apps/react` map it to `src/*`; `apps/blog/web` maps it to the
   **app root** (`@/src/...`).
 - **Never edit generated code**: any `styled-system/` folder, the lab design system's `dist/panda/` and every
