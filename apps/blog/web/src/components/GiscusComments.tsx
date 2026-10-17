@@ -3,6 +3,11 @@
 import Giscus from '@giscus/react';
 import { useTheme } from '@/src/hooks/useTheme';
 
+/** Giscus `repo` prop의 모양(`owner/name`). env 값은 그냥 string이라 여기서 확인해 좁힌다. */
+function isRepoSlug(value: string): value is `${string}/${string}` {
+  return /^[^/]+\/[^/]+$/.test(value);
+}
+
 export default function GiscusComments() {
   const theme = useTheme();
   const repo = process.env.NEXT_PUBLIC_GISCUS_REPO;
@@ -10,14 +15,14 @@ export default function GiscusComments() {
   const category = process.env.NEXT_PUBLIC_GISCUS_CATEGORY;
   const categoryId = process.env.NEXT_PUBLIC_GISCUS_CATEGORY_ID;
 
-  if (!repo || !repoId || !category || !categoryId) {
+  if (!repo || !isRepoSlug(repo) || !repoId || !category || !categoryId) {
     return null;
   }
 
   return (
     <Giscus
       id="comments"
-      repo={repo as `${string}/${string}`}
+      repo={repo}
       repoId={repoId}
       category={category}
       categoryId={categoryId}

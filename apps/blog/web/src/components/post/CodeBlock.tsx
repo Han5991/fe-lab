@@ -90,10 +90,13 @@ type Grammar = ((refractor: Refractor) => void) & { displayName: string };
  *  토큰 중첩을 관찰할 수 없어 함수 단위로 못박는 편이 싸다.)
  */
 export function registerOnce(mod: unknown, name: string): Grammar {
-  const patch = mod as Grammar;
+  // 언어 모듈은 @types가 any로 선언한다 — 실제로 함수인지는 여기서 확인한다.
+  if (typeof mod !== 'function') {
+    throw new TypeError(`문법 모듈 ${name}이(가) 함수가 아니다`);
+  }
   return Object.assign(
     (refractor: Refractor) => {
-      patch(refractor);
+      Reflect.apply(mod, undefined, [refractor]);
       refractor.languages[name] ??= {};
     },
     { displayName: name },

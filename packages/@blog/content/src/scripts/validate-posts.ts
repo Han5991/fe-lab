@@ -16,6 +16,7 @@
 import { readFileSync } from 'node:fs';
 import { relative, posix } from 'node:path';
 import { parseMatter } from '../post/repository.ts';
+import { isRecord } from '../shared/guards.ts';
 import { collectMarkdownFiles, hasFrontmatter } from '../shared/postFiles.ts';
 import type { ContentContext } from './context.ts';
 import { toValidateContext, yamlErrorCause } from './validate/shared.ts';
@@ -87,10 +88,11 @@ export function parseRecord(
     return { record: { absPath, relPath, data, content } };
   } catch (e) {
     const cause = yamlErrorCause(e);
-    const mark = (cause as { mark?: { line?: unknown } } | null)?.mark;
+    const mark = isRecord(cause) ? cause['mark'] : undefined;
+    const markLine = isRecord(mark) ? mark['line'] : undefined;
     // js-yaml의 mark.line은 0-based이고, gray-matter가 넘기는 YAML은 여는 `---`
     // 줄의 끝(개행)부터 시작한다 — 그래서 +1이 곧 파일의 줄 번호다.
-    const line = typeof mark?.line === 'number' ? mark.line + 1 : 1;
+    const line = typeof markLine === 'number' ? markLine + 1 : 1;
     const reason =
       cause instanceof Error ? cause.message.split('\n')[0] : String(cause);
     return {

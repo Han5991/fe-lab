@@ -8,12 +8,21 @@ import { css } from '@blog/styled-system/css';
 import { PostAccordion } from './PostAccordion';
 import { RefreshCw } from 'lucide-react';
 
+/** 정렬 기준 — 값과 라벨의 단일 출처. 타입·가드·`<option>`이 여기서 나온다. */
+const SORT_FIELD_LABEL = {
+  date: '작성일순',
+  views: '조회수순',
+} as const satisfies Record<string, string>;
+type SortField = keyof typeof SORT_FIELD_LABEL;
+const isSortField = (value: string): value is SortField =>
+  Object.hasOwn(SORT_FIELD_LABEL, value);
+
 export function PostList() {
   // 업데이트 시각은 데이터가 도착한 시각이다 — 실패한 새로고침도 정상 종료하므로
   // "지금"을 적으면 갱신된 것처럼 보인다.
   const { data, dataUpdatedAt, isFetching, isRefetchError, refetch } =
     useAdminDashboardData();
-  const [sortField, setSortField] = useState<'date' | 'views'>('date');
+  const [sortField, setSortField] = useState<SortField>('date');
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
 
   // 행마다 부르면 Intl.DateTimeFormat이 행 수 × 2만큼 만들어진다.
@@ -143,11 +152,17 @@ export function PostList() {
           <select
             aria-label="정렬 기준"
             value={sortField}
-            onChange={e => setSortField(e.target.value as 'date' | 'views')}
+            onChange={e => {
+              const { value } = e.target;
+              if (isSortField(value)) setSortField(value);
+            }}
             className={inputClass}
           >
-            <option value="date">작성일순</option>
-            <option value="views">조회수순</option>
+            {Object.entries(SORT_FIELD_LABEL).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
           </select>
         </div>
       </div>

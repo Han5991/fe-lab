@@ -106,8 +106,8 @@ export interface ArchiveFilters {
  * 후자 형태입니다.
  */
 export function archivePath(filters: ArchiveFilters = {}): string {
-  const query = (Object.entries(filters) as [string, string | undefined][])
-    .filter((entry): entry is [string, string] => entry[1] !== undefined)
+  const query = Object.entries(filters)
+    .filter((entry): entry is [string, string] => typeof entry[1] === 'string')
     .map(([key, value]) => `${key}=${encodeURIComponent(value)}`)
     .join('&');
   return query ? `${POSTS_PATH}?${query}` : POSTS_PATH;
