@@ -18,6 +18,7 @@
  * 돌지 않아야 커맨드 목록과 옵션을 검사할 수 있다.
  */
 import { Command, Option } from 'commander';
+import { POST_STATUSES, type PostStatus } from '../../post/types.ts';
 import { BUILD_NOW_ENV, resolveBuildNow } from '../../shared/buildNow.ts';
 import type { NewPostOptions } from '../new-post.ts';
 import type { ContentContext } from '../context.ts';
@@ -174,11 +175,9 @@ export function buildProgram(): Command {
     .option('-t, --title <title>', '글 제목 (위치 인자보다 우선)')
     .option('-s, --series <name>', '시리즈 폴더 (예: bundler)')
     .addOption(
-      new Option('--status <status>', '발행 의도 (기본 draft)').choices([
-        'draft',
-        'published',
-        'scheduled',
-      ]),
+      new Option('--status <status>', '발행 의도 (기본 draft)').choices(
+        POST_STATUSES,
+      ),
     )
     .option(
       '--scheduled <date>',
@@ -260,7 +259,7 @@ export function buildProgram(): Command {
 interface NewPostRawFlags {
   title?: string | undefined;
   series?: string | undefined;
-  status?: 'draft' | 'published' | 'scheduled' | undefined;
+  status?: PostStatus | undefined;
   scheduled?: string | undefined;
   scheduledDate?: string | undefined;
   slug?: string | undefined;

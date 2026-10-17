@@ -12,7 +12,7 @@
 import { existsSync } from 'node:fs';
 import { join, posix } from 'node:path';
 import { expect, test } from 'vitest';
-import { isPostVisible } from '../post/visibility.ts';
+import { isPostStatus, isPostVisible } from '../post/visibility.ts';
 import { decodeUrlSafe } from '../shared/url.ts';
 import { testConfig, testContent } from '../post/testing.ts';
 import { buildSitemapXml, getPostPriority } from './generate-sitemap.ts';
@@ -129,7 +129,7 @@ test('search-index(admin): draft/scheduled 포함하여 전체 글 인덱싱', (
   expect(idx.length).toBe(all.length);
   // 적어도 1개의 status 값이 admin index에 존재
   for (const e of idx) {
-    expect(['published', 'draft', 'scheduled'].includes(e.status)).toBeTruthy();
+    expect(isPostStatus(e.status)).toBeTruthy();
   }
 });
 

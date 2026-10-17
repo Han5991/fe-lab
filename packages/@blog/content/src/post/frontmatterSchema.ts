@@ -140,7 +140,7 @@ export const FRONTMATTER_FIELDS = {
     required: true,
     kind: 'enum',
     narrow: toPostStatus,
-    doc: '`published` | `draft` | `scheduled`. **이 키가 없으면 포스트가 아니라 메타 노트로 간주되어 빌드에서 통째로 제외됩니다.**',
+    doc: '`POST_STATUSES`(types.ts) 중 하나. **이 키가 없으면 포스트가 아니라 메타 노트로 간주되어 빌드에서 통째로 제외됩니다.**',
   },
   title: {
     required: true,

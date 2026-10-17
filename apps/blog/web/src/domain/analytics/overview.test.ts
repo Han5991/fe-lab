@@ -5,7 +5,7 @@ import type { PostStatDetail, PostVisibilityContext } from './types';
 function makePostDetail(
   slug: string,
   trends: { view_date: string; view_count: number }[],
-  status: 'published' | 'draft' | 'scheduled' = 'published',
+  status: PostStatDetail['status'] = 'published',
   date = '2025-01-01',
 ): PostStatDetail {
   return {
