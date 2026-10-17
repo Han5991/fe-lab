@@ -1,6 +1,6 @@
 ---
 name: strict-design
-description: TypeScript 코드에서 타입·상수·enum/상태 값·옵션·설정 필드를 추가하거나 바꾸는 작업, 리팩토링, 바깥 입력(JSON·API 응답·storage) 처리, 타입 에러나 lint 에러·경고 수정, tsconfig·eslint·CI 설정 변경이면 — 사용자가 이 스킬을 말하지 않아도, 작은 변경이어도 — 코드를 고치기 전에 먼저 연다. 같은 값이 여러 파일에 흩어진 사본을 찾아 한 출처에서 파생시키고, as·!·any·eslint-disable·설정 예외·조용한 폴백 같은 회피 없이 고치고, 고친 것이 실제로 막히는지 증명하는 절차다. Use before adding or changing a type, union/enum value, option, constant, config flag or lint rule, before refactoring, and before fixing a TypeScript or ESLint error or warning — even when the user does not mention this skill.
+description: TypeScript 코드에서 타입·상수·enum/상태 값·옵션·설정 필드를 추가하거나 바꾸는 작업, 리팩토링, 바깥 입력(JSON·API 응답·storage) 처리, 타입 에러나 lint 에러·경고 수정, tsconfig·eslint·CI 설정 변경이면 — 사용자가 이 스킬을 말하지 않아도, 작은 변경이어도 — 코드를 고치기 전에 먼저 연다. 같은 값이 여러 파일에 흩어진 사본을 찾아 한 출처에서 파생시키고, as·!·any·eslint-disable·설정 예외·조용한 폴백 같은 회피 없이 고치고, 고친 것이 실제로 막히는지 증명하는 절차다.
 ---
 
 # strict-design
