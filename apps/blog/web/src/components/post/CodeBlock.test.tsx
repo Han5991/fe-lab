@@ -96,6 +96,12 @@ describe('registerOnce', () => {
     expect(patch).toHaveBeenCalledTimes(1);
   });
 
+  test('모듈이 함수가 아니면 감쌀 때 바로 던진다', () => {
+    // 언어 모듈의 @types는 any라 모양을 타입이 보증하지 않는다 — 등록 시점에 터져야
+    // 엉뚱한 값이 refractor 안까지 들어가지 않는다.
+    expect(() => registerOnce({}, 'js-extras')).toThrow(TypeError);
+  });
+
   test('(대조) 감싸지 않으면 같은 패치가 두 번 적용된다', () => {
     // registerOnce가 왜 필요한지를 고정하는 대조군. 이쪽이 1이 되면
     // refractor가 동작을 바꾼 것이니 registerOnce도 다시 볼 때다.
