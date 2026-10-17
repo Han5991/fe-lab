@@ -7,8 +7,8 @@
   // `database.types.ts` 대조가 에디터에서만 살아 있고, 깨진 채로 배포까지 간다.
   // lint는 앱 eslint가 이 폴더도 돈다(타입 정보는 옆의 포인터 tsconfig.json으로).
   //
-  // 엄격 플래그는 앱 프로덕션 tsconfig와 같은 벌을 둔다 — admin 인증을 하는 코드가
-  // 앱보다 느슨하게 검사될 이유가 없다. 앱 쪽 플래그를 바꾸면 여기도 함께 바꾼다.
+  // 엄격 플래그는 앱과 같은 베이스(@blog/tsconfig/strict.json)에서 온다 — admin 인증을
+  // 하는 코드가 앱보다 느슨하게 검사될 이유가 없다. 여기는 Deno 환경만 적는다.
   //
   // tsc는 Deno가 아니므로 두 가지를 흉내 낸다:
   //   - `npm:@supabase/supabase-js@2` → 앱 node_modules의 타입 (paths)
@@ -17,8 +17,8 @@
   //
   // `_` 로 시작하는 폴더는 배포 대상이 아니다 — CLI의 함수 슬러그 패턴이
   // `^[A-Za-z][A-Za-z0-9_-]*$`이고, index.ts가 있는 폴더만 함수로 본다(_shared와 같다).
+  "extends": "@blog/tsconfig/strict.json",
   "compilerOptions": {
-    "noEmit": true,
     "target": "esnext",
     "module": "esnext",
     "moduleResolution": "bundler",
@@ -28,22 +28,6 @@
     // @types/* 자동 포함 금지. Node 전역이 딸려 들어오면 Deno에 없는 API를
     // 써도 통과한다(이 검사의 존재 이유가 사라진다).
     "types": [],
-    "skipLibCheck": true,
-    "strict": true,
-    "noImplicitReturns": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true,
-    "noImplicitOverride": true,
-    "verbatimModuleSyntax": true,
-    "erasableSyntaxOnly": true,
-    "noUncheckedSideEffectImports": true,
-    "isolatedModules": true,
-    "noUncheckedIndexedAccess": true,
-    "noPropertyAccessFromIndexSignature": true,
-    "exactOptionalPropertyTypes": true,
-    "allowUnusedLabels": false,
-    "allowUnreachableCode": false,
     "paths": {
       "npm:@supabase/supabase-js@2": [
         "../../../node_modules/@supabase/supabase-js/dist/index.d.mts"

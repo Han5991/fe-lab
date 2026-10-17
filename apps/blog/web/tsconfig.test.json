@@ -2,14 +2,8 @@
   "$schema": "https://json.schemastore.org/tsconfig",
   // 테스트 파일 전용 tsconfig. 프로덕션(tsconfig.json)을 extends하되 include를
   // 테스트 파일로 뒤집는다 — 프로덕션 소스는 import를 통해 함께 검사된다.
-  // 프로덕션에만 켜는 엄격 플래그는 여기서 명시적으로 끈다(후속 PR).
-  "extends": "./tsconfig.json",
-  "compilerOptions": {
-    // 프로덕션 전용 엄격 플래그 — 테스트 코드(및 테스트가 끌어오는 검사)에는 끈다.
-    "noUncheckedIndexedAccess": false,
-    "noPropertyAccessFromIndexSignature": false,
-    "exactOptionalPropertyTypes": false
-  },
+  // 프로덕션 전용 엄격 플래그는 @blog/tsconfig/test.json이 끈다(뒤가 이긴다).
+  "extends": ["./tsconfig.json", "@blog/tsconfig/test.json"],
   "include": [
     "next-env.d.ts",
     // 타입 없는 패키지의 모듈 선언 — 그 패키지를 지연 로드하는 모듈이 컴포넌트를

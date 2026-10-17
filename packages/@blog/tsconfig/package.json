@@ -1,0 +1,9 @@
+{
+  "name": "@blog/tsconfig",
+  "version": "1.0.0",
+  "private": true,
+  "exports": {
+    "./strict.json": "./strict.json",
+    "./test.json": "./test.json"
+  }
+}
