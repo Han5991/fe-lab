@@ -17,5 +17,8 @@ export function setAdminQueryDefaults(client: QueryClient): void {
     // SSG prerender의 빈 결과가 캐시에 남지 않게 마운트마다 다시 받는다.
     staleTime: 0,
     refetchOnMount: 'always',
+    // admin 데이터 훅은 전부 suspense라 실패가 admin 에러 경계로 던져지고, 경계가
+    // 401·403을 거른 뒤 보고한다 — 캐시가 같은 실패를 또 보고하지 않게 한다.
+    meta: { errorsReportedByBoundary: true },
   });
 }

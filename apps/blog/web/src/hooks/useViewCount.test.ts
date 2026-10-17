@@ -57,17 +57,22 @@ describe('useViewCount', () => {
     const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {
       // 호출 여부만 검사하고 콘솔 출력은 삼킨다
     });
-    incrementViewCount.mockRejectedValueOnce(new Error('rpc fail'));
+    const report = vi.fn();
+    const failure = new Error('rpc fail');
+    incrementViewCount.mockRejectedValueOnce(failure);
 
-    renderHook(() => useViewCount('fail-post'));
+    renderHook(() => useViewCount('fail-post', report));
     expect(incrementViewCount).toHaveBeenCalledTimes(1);
 
     // 쿠키는 RPC 호출 *전*에 set되므로, reject돼도 재마운트는 차단된다.
-    renderHook(() => useViewCount('fail-post'));
+    renderHook(() => useViewCount('fail-post', report));
     expect(incrementViewCount).toHaveBeenCalledTimes(1);
 
-    // .catch(console.error)가 reject를 삼킨다(에러 전파 없음).
-    await vi.waitFor(() => expect(errSpy).toHaveBeenCalled());
+    // reject는 삼키되(에러 전파 없음) 비치명 오류로 한 번 보고한다 — 화면에는 아무것도
+    // 바뀌지 않아서, 보고가 없으면 조회수가 멈춰도 모른다.
+    await vi.waitFor(() => expect(report).toHaveBeenCalledWith(failure, false));
+    expect(report).toHaveBeenCalledTimes(1);
+    expect(errSpy).toHaveBeenCalled();
     errSpy.mockRestore();
   });
 });

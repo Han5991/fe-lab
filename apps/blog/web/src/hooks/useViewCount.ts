@@ -6,8 +6,12 @@ import {
   hasViewCookie,
   slugToViewKey,
 } from '@blog/content/client';
+import { reportError, type ReportError } from '@/src/components/errorReporting';
 
-export const useViewCount = (slug: string) => {
+export const useViewCount = (
+  slug: string,
+  report: ReportError = reportError,
+) => {
   useEffect(() => {
     const viewedKey = slugToViewKey(slug);
 
@@ -20,8 +24,10 @@ export const useViewCount = (slug: string) => {
     // 생기지만, 중복 카운트(+N)가 무한 반복되는 것보다 안전합니다.
     document.cookie = buildViewCookieStr(viewedKey, getViewCookieExpiry());
 
-    incrementViewCount(slug).catch(err => {
+    // 실패는 화면에 아무것도 바꾸지 않는다 — 보고하지 않으면 조회수가 멈춰도 모른다.
+    incrementViewCount(slug).catch((err: unknown) => {
       console.error('Failed to increment view count:', err);
+      report(err, false);
     });
-  }, [slug]);
+  }, [slug, report]);
 };
