@@ -81,8 +81,8 @@ here or anywhere else (this repo once carried four diverging copies of that prom
 - Prefer `interface` over `type` for objects (lint-enforced in the blog stack), named exports over default
   (except Next.js pages/layouts), `import type`. No `any`.
 - **타입·lint·게이트를 만들거나 lint·타입 에러를 고칠 때는 `strict-design` 스킬.** 같은 개념의 타입·상수는
-  한 출처에서 파생하고, 단언·disable·설정 예외·`--no-verify`로 빨간 줄을 넘기지 않는다 — 그 길밖에 없어
-  보이면 멈추고 묻는다.
+  한 출처에서 파생하고, 단언·disable·설정 예외로 빨간 줄을 넘기지 않는다 — 그 길밖에 없어 보이면 멈추고
+  묻는다.
 - **`@/` differs per app**: `apps/next.js`·`apps/react` map it to `src/*`; `apps/blog/web` maps it to the
   **app root** (`@/src/...`).
 - **Never edit generated code**: any `styled-system/` folder, the lab design system's `dist/panda/` and every
