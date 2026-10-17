@@ -19,11 +19,9 @@ export * from './types';
 // 글 상세) 청크에 파사드와 계산 모듈이 통째로 실렸다(실측 +4KB). 소비자가
 // admin 훅뿐이므로 생성은 admin.ts가 한다. 여기서 다시 내보내지도 말 것 —
 // re-export만으로 모듈 그래프가 도로 이어진다.
-export type {
-  AnalyticsRange,
-  AnalyticsOverview,
-  TopPostSummary,
-} from './overview';
+export type { AnalyticsOverview, TopPostSummary } from './overview';
+// 기간 목록은 의존 없는 leaf라 값으로 내보내도 계산 모듈이 따라오지 않는다.
+export { ANALYTICS_RANGES, RANGE_DAYS, type AnalyticsRange } from './ranges';
 export type { AnalyticsCalculator } from './service';
 
 // 데이터 접근(PostgREST). 의도적으로 공개하는 함수만 노출.

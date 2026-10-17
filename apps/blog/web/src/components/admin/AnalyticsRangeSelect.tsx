@@ -1,18 +1,19 @@
 'use client';
 
 import { css, cva } from '@blog/styled-system/css';
-import type { AnalyticsRange } from '@/src/domain/analytics';
+import {
+  ANALYTICS_RANGES,
+  RANGE_DAYS,
+  type AnalyticsRange,
+} from '@/src/domain/analytics';
 
 interface AnalyticsRangeSelectProps {
   value: AnalyticsRange;
   onChange: (v: AnalyticsRange) => void;
 }
 
-const OPTIONS: { id: AnalyticsRange; label: string }[] = [
-  { id: '7d', label: '7일' },
-  { id: '30d', label: '30일' },
-  { id: '90d', label: '90일' },
-];
+/** 기간의 화면 이름(`7일`) — 일수에서 만든다. 탭과 대시보드 머리글이 함께 쓴다. */
+export const rangeLabel = (range: AnalyticsRange) => `${RANGE_DAYS[range]}일`;
 
 const rangeTab = cva({
   base: {
@@ -54,18 +55,18 @@ export const AnalyticsRangeSelect = ({
         p: '0.5',
       })}
     >
-      {OPTIONS.map(opt => {
-        const active = value === opt.id;
+      {ANALYTICS_RANGES.map(range => {
+        const active = value === range;
         return (
           <button
-            key={opt.id}
+            key={range}
             role="tab"
             aria-selected={active}
             type="button"
-            onClick={() => onChange(opt.id)}
+            onClick={() => onChange(range)}
             className={rangeTab({ active })}
           >
-            {opt.label}
+            {rangeLabel(range)}
           </button>
         );
       })}

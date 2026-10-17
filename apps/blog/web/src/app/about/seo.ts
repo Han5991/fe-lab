@@ -11,10 +11,11 @@ import contentConfig from '@/content.config.mts';
 import { ABOUT_PAGE_MODIFIED } from '@/content.values.mts';
 import { ABOUT_PATH } from '@/src/shared/routes';
 import type { Metadata } from 'next';
+import { buildAuthorPersonJsonLd } from '../authorPerson';
 
-// 사이트 정체성·저자·SEO 예산은 해석된 설정에서 온다 — 값의 출처는
+// 사이트 정체성·SEO 예산은 해석된 설정에서 온다 — 값의 출처는
 // `content.values.mts`이고, 여기서 리터럴을 다시 읽지 않는다(서버 전용 모듈).
-const { site: SITE, author: AUTHOR, seo: SEO } = contentConfig;
+const { site: SITE, seo: SEO } = contentConfig;
 
 // 절대 URL은 상대 경로에서 한 번만 파생한다(`@blog/content`의 postPath→postUrl과
 // 같은 관례). og url·JSON-LD `@id`·url이 이 하나를 공유한다.
@@ -77,30 +78,6 @@ export function buildAboutJsonLd() {
     // 해석된 설정이 아니라 값 모듈에서 직접 읽는 이유: about 페이지의 존재 자체가
     // 이 사이트의 사정이라 패키지 `SiteConfig`에 이 축이 없다.
     dateModified: ABOUT_PAGE_MODIFIED,
-    mainEntity: {
-      '@type': 'Person',
-      '@id': `${SITE.url}/#author`,
-      name: 'Sangwook Han',
-      alternateName: '한상욱',
-      url: SITE.url,
-      image: {
-        '@type': 'ImageObject',
-        url: 'https://github.com/Han5991.png?size=400',
-        width: 400,
-        height: 400,
-      },
-      jobTitle: 'Frontend Engineer',
-      description:
-        '번들러 내부 구조, TypeScript 설계 패턴, 오픈소스 기여를 탐구하는 프론트엔드 엔지니어. Mantine, Node.js, gemini-cli, Next.js 오픈소스 기여자.',
-      knowsAbout: [
-        'React',
-        'TypeScript',
-        'JavaScript',
-        'Module Bundlers',
-        'Frontend Architecture',
-        'Open Source',
-      ],
-      sameAs: [AUTHOR.github, AUTHOR.linkedin],
-    },
+    mainEntity: buildAuthorPersonJsonLd(),
   };
 }

@@ -1,7 +1,8 @@
 'use client';
 
 import { css } from '@blog/styled-system/css';
-import { SortRadio, type SortKey } from './SortRadio';
+import type { ArchiveSortKey } from '@blog/content/client';
+import { SortRadio } from './SortRadio';
 import { ViewToggle, type ViewMode } from './ViewToggle';
 import { FilterGroup, type FilterItem } from './FilterGroup';
 
@@ -16,8 +17,8 @@ const groupBlock = css({
 });
 
 interface PostsFilterPanelProps {
-  sort: SortKey;
-  onSortChange: (v: SortKey) => void;
+  sort: ArchiveSortKey;
+  onSortChange: (v: ArchiveSortKey) => void;
   view: ViewMode;
   onViewChange: (v: ViewMode) => void;
 

@@ -9,15 +9,16 @@ import { css } from '@blog/styled-system/css';
 import type { ArchiveFilters, PostSummary } from '@blog/content/client';
 import type { SeriesSummary, TagSummary } from '@blog/content';
 import {
+  ARCHIVE_SORT_KEYS,
   filterAndSortPostsByArchiveParams,
   parseTagParam,
+  type ArchiveSortKey,
 } from '@blog/content/client';
 import { getAllViewCounts } from '@/src/domain/analytics';
 import { postPath } from '@blog/content/client';
 import { fmtDate } from '@blog/content/client';
 
 import { Label } from './Label';
-import type { SortKey } from './SortRadio';
 import type { ViewMode } from './ViewToggle';
 import { ActiveFilters } from './ActiveFilters';
 import { HiddenPostBadge } from './HiddenPostBadge';
@@ -35,19 +36,14 @@ interface PostsArchiveViewProps {
   years: { year: string; count: number }[];
 }
 
-// `satisfies`로 각 컴포넌트의 타입에 묶어 둔다. 예전에는 useQueryState<SortKey>의
-// 명시 제네릭이 이 역할을 했는데, useQueryStates는 파서에서 타입을 추론하므로
-// 여기서 잡지 않으면 오타가 그대로 통과한다. 반대 방향(키 누락)은 아래
-// onSortChange/onViewChange가 SortKey를 좁은 리터럴 유니온에 넣으면서 걸린다.
-const SORT_KEYS = [
-  'recent',
-  'popular',
-  'shortest',
-] as const satisfies readonly SortKey[];
+// 정렬 키는 패키지 목록(ARCHIVE_SORT_KEYS)을 그대로 파서에 넘긴다. 뷰 키는
+// `satisfies`로 ViewToggle의 타입에 묶어 둔다 — useQueryStates는 파서에서 타입을
+// 추론하므로 여기서 잡지 않으면 오타가 그대로 통과한다. 반대 방향(키 누락)은 아래
+// onViewChange가 ViewMode를 좁은 리터럴 유니온에 넣으면서 걸린다.
 const VIEW_KEYS = ['list', 'cards'] as const satisfies readonly ViewMode[];
 
 /** URL에 값이 없을 때의 정렬·뷰 — 파서의 기본값과 정적 폴백이 같은 상수를 읽는다. */
-const DEFAULT_SORT = 'recent' satisfies SortKey;
+const DEFAULT_SORT = 'recent' satisfies ArchiveSortKey;
 const DEFAULT_VIEW = 'cards' satisfies ViewMode;
 
 /** 아카이브 화면이 그리는 필터 상태 — URL에서 읽거나(뷰) 기본값으로 둔다(폴백). */
@@ -56,7 +52,7 @@ interface ArchiveState {
   activeTags: string[];
   series: string | null;
   year: string | null;
-  sort: SortKey;
+  sort: ArchiveSortKey;
   view: ViewMode;
 }
 
@@ -69,7 +65,7 @@ interface ArchiveActions {
   clearSeries: () => void;
   clearYear: () => void;
   clearAll: () => void;
-  setSort: (v: SortKey) => void;
+  setSort: (v: ArchiveSortKey) => void;
   setView: (v: ViewMode) => void;
 }
 
@@ -111,7 +107,7 @@ export const PostsArchiveView = ({
     tag: parseAsString.withDefault(''),
     series: parseAsString.withDefault(''),
     year: parseAsString.withDefault(''),
-    sort: parseAsStringLiteral(SORT_KEYS).withDefault(DEFAULT_SORT),
+    sort: parseAsStringLiteral(ARCHIVE_SORT_KEYS).withDefault(DEFAULT_SORT),
     view: parseAsStringLiteral(VIEW_KEYS).withDefault(DEFAULT_VIEW),
   } satisfies Record<keyof Required<ArchiveFilters>, unknown> &
     Record<string, unknown>);

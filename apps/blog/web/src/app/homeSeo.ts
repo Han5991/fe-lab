@@ -8,6 +8,7 @@
 import contentConfig from '@/content.config.mts';
 import type { Metadata } from 'next';
 import { archiveUrl } from '@blog/content/client';
+import { buildAuthorPersonJsonLd } from './authorPerson';
 
 // 사이트 정체성·저자·SEO 예산은 해석된 설정에서 온다 — 값의 출처는
 // `content.values.mts`이고, 여기서 리터럴을 다시 읽지 않는다(서버 전용 모듈).
@@ -88,31 +89,7 @@ export function buildHomeJsonLd() {
         founder: { '@id': `${SITE.url}/#author` },
         sameAs: [AUTHOR.github, AUTHOR.linkedin],
       },
-      {
-        '@type': 'Person',
-        '@id': `${SITE.url}/#author`,
-        name: 'Sangwook Han',
-        alternateName: '한상욱',
-        url: SITE.url,
-        image: {
-          '@type': 'ImageObject',
-          url: 'https://github.com/Han5991.png?size=400',
-          width: 400,
-          height: 400,
-        },
-        jobTitle: 'Frontend Engineer',
-        description:
-          '번들러 내부 구조, TypeScript 설계 패턴, 오픈소스 기여를 탐구하는 프론트엔드 엔지니어. Mantine, Node.js, gemini-cli, Next.js 오픈소스 기여자.',
-        knowsAbout: [
-          'React',
-          'TypeScript',
-          'JavaScript',
-          'Module Bundlers',
-          'Frontend Architecture',
-          'Open Source',
-        ],
-        sameAs: [AUTHOR.github, AUTHOR.linkedin],
-      },
+      buildAuthorPersonJsonLd(),
     ],
   };
 }
