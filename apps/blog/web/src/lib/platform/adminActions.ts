@@ -62,11 +62,18 @@ export interface AdminActionParams {
 
 /**
  * Edge Function 요청 body. `action`으로 판별되는 유니온이라 `switch (body.action)`
- * 안에서 `body.params`가 그 action의 형태로 함께 좁혀진다.
+ * 안에서 `body.params`가 그 action의 형태로 함께 좁혀진다. params가 필수인
+ * action(slug)은 여기서도 필수다 — 클라이언트 `call()`의 인자 규칙과 같은 파생이다.
  */
 export type AdminRequest = {
-  [A in AdminAction]: { action: A; params?: AdminActionParams[A] };
+  [A in AdminAction]: undefined extends AdminActionParams[A]
+    ? { action: A; params?: AdminActionParams[A] }
+    : { action: A; params: AdminActionParams[A] };
 }[AdminAction];
+
+/** `parseAdminRequest`의 결과 — 실패면 400으로 돌려줄 사유를 싣는다. */
+export type ParsedAdminRequest =
+  { ok: true; request: AdminRequest } | { ok: false; error: string };
 
 /** 런타임 가드 — 요청 body의 `action`이 등록된 것인지. 프로토타입 키(`toString` 등)는 거른다. */
 export function isAdminAction(value: unknown): value is AdminAction {
@@ -83,4 +90,50 @@ export function isSlugList(value: unknown): value is readonly string[] {
         typeof s === 'string' && s.length > 0 && s.length <= MAX_SLUG_LENGTH,
     )
   );
+}
+
+/**
+ * Edge Function 요청 body(JSON에서 온 값)를 `AdminRequest`로 좁힌다.
+ *
+ * action마다 params 모양까지 여기서 확인한다. 그래서 통과한 요청은 단언 없이
+ * `AdminRequest` 그대로 믿어도 되고, Edge Function의 case는 params를 다시 확인하지
+ * 않는다. Deno 파일이라 vitest가 못 여는 Edge Function 대신 이 함수가 테스트된다.
+ *
+ * action을 추가하면 아래 switch가 모든 경로에서 값을 돌려주지 않아 컴파일이 깨진다.
+ */
+export function parseAdminRequest(body: unknown): ParsedAdminRequest {
+  const record: object = typeof body === 'object' && body !== null ? body : {};
+  const action = 'action' in record ? record.action : undefined;
+  if (!isAdminAction(action)) {
+    return { ok: false, error: `알 수 없는 action: ${String(action)}` };
+  }
+  const params: object =
+    'params' in record &&
+    typeof record.params === 'object' &&
+    record.params !== null
+      ? record.params
+      : {};
+
+  switch (action) {
+    case 'all_post_stats':
+    case 'all_posts_trends': {
+      const slugs = 'slugs' in params ? params.slugs : undefined;
+      if (slugs === undefined) return { ok: true, request: { action } };
+      if (!isSlugList(slugs)) {
+        return {
+          ok: false,
+          error: `slugs 파라미터는 문자열 배열(최대 ${MAX_FILTER_SLUGS}개)이어야 합니다.`,
+        };
+      }
+      return { ok: true, request: { action, params: { slugs } } };
+    }
+    case 'post_hourly_distribution':
+    case 'post_dow_distribution': {
+      const slug = 'slug' in params ? params.slug : undefined;
+      if (typeof slug !== 'string' || slug.length === 0) {
+        return { ok: false, error: 'slug 파라미터가 필요합니다.' };
+      }
+      return { ok: true, request: { action, params: { slug } } };
+    }
+  }
 }
