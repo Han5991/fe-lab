@@ -31,9 +31,22 @@ export function isPostFile<T extends { status?: unknown }>(
 export interface VisibilityData {
   status?: string | undefined;
   // analytics의 PostStatDetail은 빈 값을 null로 정규화해 들고 옵니다.
-  // `scheduledDate ?? date` 폴백이 null도 그대로 처리하므로 타입만 넓혀 받습니다.
+  // `publishAtOf`의 폴백이 null도 그대로 처리하므로 타입만 넓혀 받습니다.
   scheduledDate?: string | null | undefined;
   date?: string | null | undefined;
+}
+
+/**
+ * 글의 **공개 시각** 원문 — `scheduledDate`가 있으면 그 값, 없으면 `date`.
+ *
+ * `scheduledDate`는 시각까지 지정할 때만 쓰는 선택 필드라 대부분의 예약 글에는
+ * 없습니다. 공개 판정(`isPostVisible`)과 화면 표시(배지·배너·툴팁)가 이 함수 하나를
+ * 씁니다 — 폴백을 자리마다 다시 적으면 `date`를 빠뜨린 자리가 생깁니다.
+ */
+export function publishAtOf(
+  data: Pick<VisibilityData, 'scheduledDate' | 'date'>,
+): string | undefined {
+  return data.scheduledDate ?? data.date ?? undefined;
 }
 
 /**
@@ -66,8 +79,8 @@ export function isPostVisible(
     case 'published':
       return true;
     case 'scheduled': {
-      const publishAt = data.scheduledDate ?? data.date;
-      if (typeof publishAt !== 'string') return false;
+      const publishAt = publishAtOf(data);
+      if (publishAt === undefined) return false;
       return parseScheduledDateKST(timezone, publishAt) <= now;
     }
     default:

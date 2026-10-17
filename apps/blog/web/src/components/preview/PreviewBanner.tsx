@@ -1,5 +1,5 @@
 import { css } from '@blog/styled-system/css';
-import type { PostSummary } from '@blog/content/client';
+import { publishAtOf, type PostSummary } from '@blog/content/client';
 
 /**
  * 공개 시각 판정에 필요한 필드를 **한 덩어리로** 받습니다.
@@ -19,9 +19,7 @@ interface Props {
  */
 export function PreviewBanner({ post }: Props) {
   const { status } = post;
-  // scheduledDate는 시각까지 지정할 때만 쓰는 선택 필드라 대부분의 예약 글에는
-  // 없습니다. 폴백 없이 scheduledDate만 보면 그 글들이 전부 "날짜 없음"이 됩니다.
-  const publishAt = post.scheduledDate ?? post.date;
+  const publishAt = publishAtOf(post);
   const label =
     status === 'draft'
       ? 'Draft Preview — 비공개 (status: draft)'
