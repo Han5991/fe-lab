@@ -358,10 +358,10 @@ export default defineConfig([
   // 방향을 이중으로 막았지만, 레이어가 전부 src/ 안으로 들어오면서 상대경로에
   // `src` 세그먼트가 사라져 그 방식으로는 방향을 표현할 수 없다.)
   // 이 블록들은 boundaries가 못 보는 결을 맡는다 — 배럴 강제(같은 element 안의
-  // 파일 단위)와 Supabase 호출 문법, 모듈 모양.
+  // 파일 단위)와 모듈 모양. Supabase SDK를 누가 여는지는 경로 문제라 boundaries가 본다.
   {
     // app 레이어(src에서 레이어 폴더 제외)는 domain/<x>의 공개 API(배럴)만 쓰고,
-    // repository(인프라)를 직접 찌르거나 Supabase client를 직접 호출하지 않습니다.
+    // repository(인프라)를 직접 찌르지 않습니다.
     files: ['src/**/*.{ts,tsx}'],
     ignores: ['src/{shared,domain,lib}/**', '**/*.test.{ts,tsx}'],
     rules: {
@@ -375,28 +375,7 @@ export default defineConfig([
           patterns: [REPOSITORY_IMPORT_PATTERN],
         },
       ],
-      // 주의: 아래 selector는 식별자 이름(client/supabase/publicDb)에 매칭하므로,
-      // Supabase 클라이언트를 임의 이름으로 alias하면(예: `client as db`) 우회될
-      // 수 있습니다. 클라이언트 import 자체를 src/lib/platform/client·publicClient로
-      // 한정하는 컨벤션과 함께 봐야 합니다. 새 클라이언트를 만들면 이 정규식에도
-      // 이름을 추가하세요 — 안 그러면 가드에 구멍이 생깁니다.
-      'no-restricted-syntax': [
-        'error',
-        NO_ESCAPED_HEX,
-        CONTENT_DYNAMIC_IMPORT,
-        {
-          selector:
-            "CallExpression[callee.property.name='from'][callee.object.name=/^(client|supabase|publicDb)$/]",
-          message:
-            'Supabase 데이터 접근은 src에서 직접 하지 말고 domain repository/service(배럴)를 통하세요.',
-        },
-        {
-          selector:
-            "CallExpression[callee.property.name='rpc'][callee.object.name=/^(client|supabase|publicDb)$/]",
-          message:
-            'Supabase RPC는 src에서 직접 호출하지 말고 domain repository를 통하세요.',
-        },
-      ],
+      'no-restricted-syntax': ['error', NO_ESCAPED_HEX, CONTENT_DYNAMIC_IMPORT],
     },
   },
   {
@@ -706,6 +685,16 @@ export default defineConfig([
                 },
                 { to: { module: { origin: 'external' } } },
               ],
+            },
+            {
+              // Supabase SDK는 platform만 연다. app은 외부 패키지를 목록 없이 열 수
+              // 있으므로, 여기서 끊지 않으면 컴포넌트가 SDK로 클라이언트를 직접 만들어
+              // 도메인 레이어를 건너뛴다. 다른 레이어는 외부 허용 목록에 SDK가 없어
+              // 이미 막혀 있다. 마지막 매치가 이기므로 app 정책보다 뒤에 둔다.
+              from: { element: { type: 'app' } },
+              disallow: {
+                to: { module: { origin: 'external', source: '@supabase/**' } },
+              },
             },
             // 프로덕션 코드는 테스트 파일을 import할 수 없다.
             { disallow: { to: { file: { categories: 'test' } } } },
