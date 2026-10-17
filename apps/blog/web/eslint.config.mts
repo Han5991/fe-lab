@@ -145,7 +145,6 @@ export default defineConfig([
       'out/**',
       'build/**',
       'public/**',
-      'supabase/**',
       '.cache/**',
       // vitest --coverage의 HTML 리포터가 뱉는 번들된 벤더 JS. 소스가 아니다.
       'coverage/**',

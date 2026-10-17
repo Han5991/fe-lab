@@ -2,10 +2,13 @@
   "$schema": "https://json.schemastore.org/tsconfig",
   // Edge Function(Deno) 타입 검사 — `pnpm check-types`의 세 번째 프로그램.
   //
-  // 앱의 tsconfig.json은 supabase/functions를 exclude하고 eslint도 supabase/**를
-  // ignore한다. 그래서 이 파일이 없으면 Edge Function은 어떤 CI 게이트도 지나지
-  // 않는다 — `src/lib/platform/adminActions.ts` 계약(action↔RPC 대응, switch 망라)과
+  // 앱의 tsconfig.json은 supabase/functions를 exclude한다. 그래서 이 파일이 없으면
+  // `src/lib/platform/adminActions.ts` 계약(action↔RPC 대응, switch 망라)과
   // `database.types.ts` 대조가 에디터에서만 살아 있고, 깨진 채로 배포까지 간다.
+  // lint는 앱 eslint가 이 폴더도 돈다(타입 정보는 옆의 포인터 tsconfig.json으로).
+  //
+  // 엄격 플래그는 앱 프로덕션 tsconfig와 같은 벌을 둔다 — admin 인증을 하는 코드가
+  // 앱보다 느슨하게 검사될 이유가 없다. 앱 쪽 플래그를 바꾸면 여기도 함께 바꾼다.
   //
   // tsc는 Deno가 아니므로 두 가지를 흉내 낸다:
   //   - `npm:@supabase/supabase-js@2` → 앱 node_modules의 타입 (paths)
@@ -27,10 +30,20 @@
     "types": [],
     "skipLibCheck": true,
     "strict": true,
+    "noImplicitReturns": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": true,
+    "verbatimModuleSyntax": true,
+    "erasableSyntaxOnly": true,
+    "noUncheckedSideEffectImports": true,
+    "isolatedModules": true,
     "noUncheckedIndexedAccess": true,
     "noPropertyAccessFromIndexSignature": true,
     "exactOptionalPropertyTypes": true,
+    "allowUnusedLabels": false,
+    "allowUnreachableCode": false,
     "paths": {
       "npm:@supabase/supabase-js@2": [
         "../../../node_modules/@supabase/supabase-js/dist/index.d.mts"
