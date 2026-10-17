@@ -2,8 +2,10 @@ import type { PostSummary } from './types.ts';
 
 /**
  * /posts 아카이브의 정렬 키. URL `sort=` 파라미터 값과 동일.
+ * 정렬 규칙(아래 `filterAndSortPostsByArchiveParams`)이 여기 있으니 목록도 여기 둔다.
  */
-type ArchiveSortKey = 'recent' | 'popular' | 'shortest';
+export const ARCHIVE_SORT_KEYS = ['recent', 'popular', 'shortest'] as const;
+export type ArchiveSortKey = (typeof ARCHIVE_SORT_KEYS)[number];
 
 export interface ArchiveFilterParams {
   q: string;
