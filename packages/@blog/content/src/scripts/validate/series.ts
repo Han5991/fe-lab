@@ -11,7 +11,7 @@ import {
   SERIES_FILENAME,
   type SeriesMeta,
 } from '../../post/index.ts';
-import { isRecord } from '../../shared/guards.ts';
+import { isRecord, isStringArray } from '../../shared/guards.ts';
 import { listFilesRecursive } from '../../shared/postFiles.ts';
 import { isKeyLine, yamlErrorCause } from './shared.ts';
 import type { Issue, PostRecord } from './shared.ts';
@@ -105,7 +105,7 @@ export function validateSeriesFile(
 
   if (!('order' in data)) return issues;
   const order = data['order'];
-  if (!Array.isArray(order) || order.some(entry => typeof entry !== 'string')) {
+  if (!isStringArray(order)) {
     issues.push(
       issue(
         'invalid-series-meta',
@@ -126,7 +126,7 @@ export function validateSeriesFile(
     known.add(resolvePostSlug(record.data['slug'], record.relPath));
     known.add(recordSlug);
   }
-  const unmatched = (order as string[]).filter(entry => !known.has(entry));
+  const unmatched = order.filter(entry => !known.has(entry));
   if (unmatched.length > 0) {
     issues.push(
       issue(

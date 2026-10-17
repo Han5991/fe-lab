@@ -27,6 +27,7 @@ import {
   isIsoDateOnly,
   isValidDateString,
 } from '../../shared/dates.ts';
+import { isStringArray } from '../../shared/guards.ts';
 import { decodeUrlSafe } from '../../shared/url.ts';
 import {
   findFrontmatterLine,
@@ -469,10 +470,11 @@ const scheduledDateChain: Chain = ctx => {
 const tagsChain: Chain = ({ record: { data, relPath }, raw, options }) => {
   const issues: Issue[] = [];
   if (!('tags' in data)) return issues;
+  const tags = data['tags'];
 
   // 배열이 아니거나 문자열 아닌 원소가 섞이면 repository.ts가 tags를 통째로
   // undefined로 떨어뜨립니다(조용한 유실). 그래서 원소 타입까지 검사합니다.
-  if (!Array.isArray(data['tags'])) {
+  if (!Array.isArray(tags)) {
     issues.push({
       file: relPath,
       line: findFrontmatterLine(raw, 'tags'),
@@ -480,20 +482,20 @@ const tagsChain: Chain = ({ record: { data, relPath }, raw, options }) => {
       rule: 'invalid-tags',
       message: '`tags`는 배열이어야 합니다. 예: `tags: [bundler, build]`',
     });
-  } else if (data['tags'].some(tag => typeof tag !== 'string')) {
+  } else if (!isStringArray(tags)) {
     issues.push({
       file: relPath,
       line: findFrontmatterLine(raw, 'tags'),
       severity: resolveSeverity('invalid-tags', data, options),
       rule: 'invalid-tags',
-      message: `\`tags\`의 모든 원소는 문자열이어야 합니다. 문자열이 아닌 값이 하나라도 있으면 태그 전체가 무시됩니다: ${JSON.stringify(data['tags'])}`,
+      message: `\`tags\`의 모든 원소는 문자열이어야 합니다. 문자열이 아닌 값이 하나라도 있으면 태그 전체가 무시됩니다: ${JSON.stringify(tags)}`,
     });
   } else {
     // 렌더 계층(frontmatterSchema의 toStringArray)이 중복을 걷어내므로 화면은 멀쩡하다.
     // 다만 frontmatter에 남아 있으면 저자가 눈치채지 못하므로 경고로 알린다.
     const seen = new Set<string>();
     const dupes = new Set<string>();
-    for (const tag of data['tags'] as string[]) {
+    for (const tag of tags) {
       if (seen.has(tag)) dupes.add(tag);
       seen.add(tag);
     }

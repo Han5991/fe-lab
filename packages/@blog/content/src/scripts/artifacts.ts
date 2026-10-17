@@ -1,5 +1,6 @@
 import { POSTS_PATH, postUrl, RSS_PATH, type PostData } from '../post/index.ts';
 import type { ContentApi } from '../post/createContent.ts';
+import { isRecord } from '../shared/guards.ts';
 import { decodeUrlSafe } from '../shared/url.ts';
 
 /**
@@ -150,7 +151,7 @@ function extractJsonIndexUrls(text: string, siteUrl: string): Set<string> {
     parsed
       .filter(
         (entry): entry is { slug: string } =>
-          typeof (entry as { slug?: unknown } | null)?.slug === 'string',
+          isRecord(entry) && typeof entry['slug'] === 'string',
       )
       .map(entry => decodeUrlSafe(postUrl(entry.slug, siteUrl))),
   );
