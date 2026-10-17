@@ -9,5 +9,6 @@
   // admin-analytics/index.ts 가 어느 프로젝트에도 속하지 않은 채(inferred project)
   // 기본 옵션으로 열려 `Deno` 전역·`npm:` import·`.ts` 확장자가 전부 에러로 보였다 —
   // `pnpm check-types` 는 멀쩡히 통과하는데 에디터에만 빨간 줄이 서는 상태였다.
+  // 앱 eslint의 projectService 도 같은 탐색으로 이 파일을 찾아 타입 정보를 얻는다.
   "extends": "./_typecheck/tsconfig.json"
 }

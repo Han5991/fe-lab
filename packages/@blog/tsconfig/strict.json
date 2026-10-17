@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  // 블로그 스택(@blog/web·@blog/content·@blog/preset·admin Edge Function)의 엄격 플래그
+  // 단일 출처. 각 tsconfig는 이 파일을 extends하고 자기 환경(target·lib·module·jsx·
+  // paths …)만 적는다. 이 파일을 바꾸면 블로그 스택 전체의 검사가 함께 바뀐다.
+  //
+  // 실험 앱은 @package/config를 쓴다 — 블로그의 규칙을 실험 앱에 강제하지 않는다.
+  "compilerOptions": {
+    "strict": true,
+    "noImplicitReturns": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": true,
+    "verbatimModuleSyntax": true,
+    "erasableSyntaxOnly": true,
+    "noUncheckedSideEffectImports": true,
+    "isolatedModules": true,
+    // 프로덕션 전용 — 테스트 프로그램은 test.json으로 끈다.
+    "noUncheckedIndexedAccess": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "exactOptionalPropertyTypes": true,
+    "allowUnusedLabels": false,
+    "allowUnreachableCode": false,
+    // .ts에서 import한 js는 include에 없어도 program에 딸려 들어오고, checkJs 없이
+    // 무검사로 지나간다. 막아 두면 그런 import가 조용히 통과하는 대신 컴파일 에러가 된다.
+    "allowJs": false,
+    // 검사 전용 프로그램이다 — 출력은 번들러·node type stripping이 맡는다.
+    "noEmit": true,
+    "skipLibCheck": true
+  }
+}

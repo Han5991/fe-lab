@@ -10,6 +10,7 @@ import {
   MAX_SLUG_LENGTH,
   isAdminAction,
   isSlugList,
+  parseAdminRequest,
 } from './adminActions';
 
 test('isAdminAction: 등록된 action만 통과한다', () => {
@@ -79,4 +80,66 @@ test('isSlugList: 거를 slug 목록으로 쓸 수 있는 문자열 배열만 �
   expect(
     isSlugList(Array.from({ length: MAX_FILTER_SLUGS + 1 }, (_, i) => `p${i}`)),
   ).toBe(false);
+});
+
+test('parseAdminRequest: 등록되지 않은 action·객체가 아닌 body는 거절한다', () => {
+  for (const body of [
+    null,
+    'all_post_stats',
+    {},
+    { action: 'get_all_post_stats' },
+    { action: 'toString' },
+  ]) {
+    const parsed = parseAdminRequest(body);
+    expect(parsed.ok, JSON.stringify(body)).toBe(false);
+    if (!parsed.ok) expect(parsed.error).toMatch(/^알 수 없는 action/);
+  }
+});
+
+test('parseAdminRequest: 목록 action은 slugs가 없으면 필터 없이, 있으면 검증해 싣는다', () => {
+  expect(parseAdminRequest({ action: 'all_post_stats' })).toEqual({
+    ok: true,
+    request: { action: 'all_post_stats' },
+  });
+  // params가 객체가 아니면 slugs가 없는 것과 같다.
+  expect(
+    parseAdminRequest({ action: 'all_posts_trends', params: null }),
+  ).toEqual({ ok: true, request: { action: 'all_posts_trends' } });
+  expect(
+    parseAdminRequest({
+      action: 'all_posts_trends',
+      params: { slugs: ['a', 'b'] },
+    }),
+  ).toEqual({
+    ok: true,
+    request: { action: 'all_posts_trends', params: { slugs: ['a', 'b'] } },
+  });
+
+  // 모양이 어긋난 필터로 거르지 않은 채 진행하지 않는다.
+  const bad = parseAdminRequest({
+    action: 'all_post_stats',
+    params: { slugs: 'a' },
+  });
+  expect(bad.ok).toBe(false);
+  if (!bad.ok) expect(bad.error).toMatch(/slugs 파라미터/);
+});
+
+test('parseAdminRequest: slug action은 비어 있지 않은 문자열 slug가 있어야 한다', () => {
+  expect(
+    parseAdminRequest({
+      action: 'post_hourly_distribution',
+      params: { slug: 'a' },
+    }),
+  ).toEqual({
+    ok: true,
+    request: { action: 'post_hourly_distribution', params: { slug: 'a' } },
+  });
+  for (const params of [undefined, {}, { slug: '' }, { slug: 1 }]) {
+    const parsed = parseAdminRequest({
+      action: 'post_dow_distribution',
+      params,
+    });
+    expect(parsed.ok, JSON.stringify(params)).toBe(false);
+    if (!parsed.ok) expect(parsed.error).toBe('slug 파라미터가 필요합니다.');
+  }
 });

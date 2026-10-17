@@ -28,13 +28,19 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 import { corsHeaders } from '../_shared/cors.ts';
 import {
   ADMIN_ACTION_RPC,
-  MAX_FILTER_SLUGS,
-  isAdminAction,
-  isSlugList,
-  type AdminRequest,
+  parseAdminRequest,
 } from '../../../src/lib/platform/adminActions.ts';
 import { collectPagedRows } from '../../../src/lib/platform/paging.ts';
 import type { Database } from '../../../src/lib/platform/database.types.ts';
+
+/** 필요한 환경변수가 없을 때 — 이름은 로그에만 남기고 호출자에겐 설정 오류로만 알린다. */
+function missingEnv(name: string): Response {
+  console.error(`${name} 환경변수가 설정되지 않았습니다.`);
+  return new Response(JSON.stringify({ error: '서버 설정 오류입니다.' }), {
+    status: 500,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+}
 
 Deno.serve(async (req: Request) => {
   // OPTIONS preflight 처리
@@ -43,8 +49,10 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    if (!supabaseUrl) return missingEnv('SUPABASE_URL');
+    const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    if (!supabaseServiceRoleKey) return missingEnv('SUPABASE_SERVICE_ROLE_KEY');
 
     // ── 인증 ───────────────────────────────────────────────────────
     // 인증 우회는 명시적 opt-in 플래그로만 허용한다(기본 = 인증 강제).
@@ -69,18 +77,10 @@ Deno.serve(async (req: Request) => {
         );
       }
 
-      const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+      const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
+      if (!supabaseAnonKey) return missingEnv('SUPABASE_ANON_KEY');
       const adminEmail = Deno.env.get('ADMIN_EMAIL');
-      if (!adminEmail) {
-        console.error('ADMIN_EMAIL 환경변수가 설정되지 않았습니다.');
-        return new Response(
-          JSON.stringify({ error: '서버 설정 오류입니다.' }),
-          {
-            status: 500,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          },
-        );
-      }
+      if (!adminEmail) return missingEnv('ADMIN_EMAIL');
 
       // 2. 사용자 JWT로 user 검증
       const userClient = createClient(supabaseUrl, supabaseAnonKey, {
@@ -110,19 +110,29 @@ Deno.serve(async (req: Request) => {
     }
 
     // ── 요청 body 파싱 ──────────────────────────────────────────────
-    const raw = (await req.json()) as { action?: unknown } | null;
-    if (!isAdminAction(raw?.action)) {
+    // JSON이 아닌 body는 서버 오류(500)가 아니라 요청 오류(400)다.
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
       return new Response(
-        JSON.stringify({ error: `알 수 없는 action: ${String(raw?.action)}` }),
+        JSON.stringify({ error: '요청 본문이 JSON이 아닙니다.' }),
         {
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         },
       );
     }
-    // action이 등록된 것이면 body를 그 action의 요청 형태로 본다. params는
-    // JSON에서 온 값이라 필수 필드(slug)는 아래 case에서 런타임으로 한 번 더 확인.
-    const request = raw as AdminRequest;
+    // action과 action별 params 모양을 adminActions.ts가 확인한다 — 통과한 요청은
+    // 단언 없이 AdminRequest다.
+    const parsed = parseAdminRequest(body);
+    if (!parsed.ok) {
+      return new Response(JSON.stringify({ error: parsed.error }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    const { request } = parsed;
 
     // ── service_role client로 RPC 호출 ─────────────────────────────
     // Database 제네릭을 주면 아래 rpc() 이름·인자가 database.types.ts와 대조된다.
@@ -134,23 +144,12 @@ Deno.serve(async (req: Request) => {
     let data: unknown;
     let rpcError: unknown;
 
-    // 모양이 어긋난 slug 필터는 거르지 않은 채 진행하지 않고 400 으로 끊는다.
+    // 모양이 어긋난 slug 필터는 parseAdminRequest가 이미 400으로 끊었다.
     const slugFilter =
       request.action === 'all_post_stats' ||
       request.action === 'all_posts_trends'
         ? request.params?.slugs
         : undefined;
-    if (slugFilter !== undefined && !isSlugList(slugFilter)) {
-      return new Response(
-        JSON.stringify({
-          error: `slugs 파라미터는 문자열 배열(최대 ${MAX_FILTER_SLUGS}개)이어야 합니다.`,
-        }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        },
-      );
-    }
 
     // PostgREST 는 한 응답에 max_rows(1000)까지만 줘서 여기서 페이징해 합친다(브라우저가 돌면
     // 페이지마다 왕복·JWT 검증이 반복된다). 루프는 테스트가 있는 collectPagedRows 에 있다.
@@ -202,16 +201,7 @@ Deno.serve(async (req: Request) => {
 
       case 'post_hourly_distribution':
       case 'post_dow_distribution': {
-        const slug = request.params?.slug;
-        if (typeof slug !== 'string' || slug.length === 0) {
-          return new Response(
-            JSON.stringify({ error: 'slug 파라미터가 필요합니다.' }),
-            {
-              status: 400,
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            },
-          );
-        }
+        const { slug } = request.params;
         const result = await serviceClient.rpc(
           ADMIN_ACTION_RPC[request.action],
           { slug_input: slug },

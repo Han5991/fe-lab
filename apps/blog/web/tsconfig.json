@@ -1,32 +1,13 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
+  // 엄격 플래그는 @blog/tsconfig/strict.json이 정한다 — 여기는 Next 앱의 환경만 적는다.
+  // extends가 있으면 next(dev·build·typegen)는 이 파일을 다시 쓰지 않는다
+  // (`writeConfigurationDefaults`가 extends를 보면 손을 뗀다). Next가 요구하는 값
+  // (isolatedModules·jsx·module·moduleResolution …)은 여기와 베이스에 이미 있다.
+  "extends": "@blog/tsconfig/strict.json",
   "compilerOptions": {
     "target": "ESNext",
     "lib": ["dom", "dom.iterable", "esnext"],
-    // **키를 지우면 안 된다.** next(dev·build·typegen)가 시작할 때
-    // `writeConfigurationDefaults`로 tsconfig를 다시 쓰는데, allowJs는 거기서
-    // 'suggested'라 **키가 없을 때만** true를 넣는다. 끄려면 지우지 말고 false로
-    // 남겨 둘 것 — 값이 있으면 그대로 둔다.
-    // false인 이유: include에 js 글롭이 없어도 .ts에서 import하면 program에
-    // 딸려 들어오고, 그 파일은 checkJs 없이 무검사로 지나간다. 막아 두면 그런
-    // import가 조용히 통과하는 대신 컴파일 에러가 된다.
-    "allowJs": false,
-    "skipLibCheck": true,
-    "strict": true,
-    "noImplicitReturns": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true,
-    "noImplicitOverride": true,
-    "verbatimModuleSyntax": true,
-    "erasableSyntaxOnly": true,
-    "noUncheckedSideEffectImports": true,
-    "noUncheckedIndexedAccess": true,
-    "noPropertyAccessFromIndexSignature": true,
-    "exactOptionalPropertyTypes": true,
-    "allowUnusedLabels": false,
-    "allowUnreachableCode": false,
-    "noEmit": true,
     "esModuleInterop": true,
     "module": "esnext",
     "moduleResolution": "bundler",
@@ -36,7 +17,6 @@
     // TS5097이 안 난다. 허용일 뿐 강제가 아니라 앱 코드 스타일은 그대로다.
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
-    "isolatedModules": true,
     "jsx": "react-jsx",
     "incremental": true,
     "plugins": [

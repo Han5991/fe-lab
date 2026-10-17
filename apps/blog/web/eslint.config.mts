@@ -145,7 +145,6 @@ export default defineConfig([
       'out/**',
       'build/**',
       'public/**',
-      'supabase/**',
       '.cache/**',
       // vitest --coverage의 HTML 리포터가 뱉는 번들된 벤더 JS. 소스가 아니다.
       'coverage/**',
@@ -358,10 +357,10 @@ export default defineConfig([
   // 방향을 이중으로 막았지만, 레이어가 전부 src/ 안으로 들어오면서 상대경로에
   // `src` 세그먼트가 사라져 그 방식으로는 방향을 표현할 수 없다.)
   // 이 블록들은 boundaries가 못 보는 결을 맡는다 — 배럴 강제(같은 element 안의
-  // 파일 단위)와 Supabase 호출 문법, 모듈 모양.
+  // 파일 단위)와 모듈 모양. Supabase SDK를 누가 여는지는 경로 문제라 boundaries가 본다.
   {
     // app 레이어(src에서 레이어 폴더 제외)는 domain/<x>의 공개 API(배럴)만 쓰고,
-    // repository(인프라)를 직접 찌르거나 Supabase client를 직접 호출하지 않습니다.
+    // repository(인프라)를 직접 찌르지 않습니다.
     files: ['src/**/*.{ts,tsx}'],
     ignores: ['src/{shared,domain,lib}/**', '**/*.test.{ts,tsx}'],
     rules: {
@@ -375,28 +374,7 @@ export default defineConfig([
           patterns: [REPOSITORY_IMPORT_PATTERN],
         },
       ],
-      // 주의: 아래 selector는 식별자 이름(client/supabase/publicDb)에 매칭하므로,
-      // Supabase 클라이언트를 임의 이름으로 alias하면(예: `client as db`) 우회될
-      // 수 있습니다. 클라이언트 import 자체를 src/lib/platform/client·publicClient로
-      // 한정하는 컨벤션과 함께 봐야 합니다. 새 클라이언트를 만들면 이 정규식에도
-      // 이름을 추가하세요 — 안 그러면 가드에 구멍이 생깁니다.
-      'no-restricted-syntax': [
-        'error',
-        NO_ESCAPED_HEX,
-        CONTENT_DYNAMIC_IMPORT,
-        {
-          selector:
-            "CallExpression[callee.property.name='from'][callee.object.name=/^(client|supabase|publicDb)$/]",
-          message:
-            'Supabase 데이터 접근은 src에서 직접 하지 말고 domain repository/service(배럴)를 통하세요.',
-        },
-        {
-          selector:
-            "CallExpression[callee.property.name='rpc'][callee.object.name=/^(client|supabase|publicDb)$/]",
-          message:
-            'Supabase RPC는 src에서 직접 호출하지 말고 domain repository를 통하세요.',
-        },
-      ],
+      'no-restricted-syntax': ['error', NO_ESCAPED_HEX, CONTENT_DYNAMIC_IMPORT],
     },
   },
   {
@@ -596,14 +574,33 @@ export default defineConfig([
           type: 'layer-root',
           pattern: ['apps/blog/web/src/lib', 'apps/blog/web/src/domain'],
         },
+        // src 밖인데 src가 여는 로컬 대상. element가 없으면 boundaries는 이 import를
+        // "모르는 파일"로 보고 정책 검사 없이 통과시킨다 — default disallow가 닿지
+        // 않는다. 누가 열 수 있는지는 아래 policies에 적는다.
+        { type: 'styled-system', pattern: 'packages/@blog/styled-system' },
+        { type: 'preset', pattern: 'packages/@blog/preset' },
         // src 폴백 — 위 어디에도 안 걸린 src 파일은 전부 app 레이어다.
         { type: 'app', pattern: 'apps/blog/web/src' },
+        // 앱 루트(src 밖의 설정·값 파일·e2e). app보다 뒤에 둬야 src 파일이 여기로
+        // 빠지지 않는다. 이 폴더 안에서 src가 열어도 되는 파일은 아래 files
+        // 카테고리로만 고른다 — 루트에 새 파일이 생기면 열리지 않는 쪽이 기본이다.
+        { type: 'app-root', pattern: 'apps/blog/web' },
       ],
       // 테스트는 element 배정은 그대로 두고 파일 카테고리 축으로만 표시한다.
       // 아래 policies 마지막 두 줄이 "테스트는 전부 import 가능 / 프로덕션은
       // 테스트를 import 불가"를 만든다 — 예전 ignores 방식보다 후자가 공짜다.
+      // 앱 루트의 두 파일도 카테고리로 표시한다. element를 바꾸는 게 아니라 app-root
+      // 안에서 허용할 대상을 좁히는 표시다.
       'boundaries/files': [
         { category: 'test', pattern: ['**/*.test.*', '**/*.spec.*'] },
+        {
+          category: 'content-values',
+          pattern: 'apps/blog/web/content.values.mts',
+        },
+        {
+          category: 'content-config',
+          pattern: 'apps/blog/web/content.config.mts',
+        },
       ],
       // 'export'를 포함해 배럴의 `export * from`도 의존성으로 센다 — 안 세면
       // 배럴 한 줄로 모든 경계를 우회할 수 있다(src/components에 배럴 3개).
@@ -613,6 +610,12 @@ export default defineConfig([
       // no-unknown-files는 뺐다 — app이 src 전체의 폴백 element라 unknown 파일이
       // 존재할 수 없어 죽은 게이트가 된다. 스트레이 파일 방어는 layer-root
       // 격리 element(위)가 잇는다.
+      //
+      // 반대 방향(src가 어떤 element에도 없는 로컬 파일을 import)은 막는다. 안 막으면
+      // 그 import는 dependencies 정책을 건너뛰어, shared가 설정 객체를 열거나 app이
+      // next.config를 열어도 조용히 통과한다. 새 로컬 대상은 element로 등록하고
+      // 정책에 적어야 열린다. 재평가: 2027-04-17 — 그때까지 잡은 것이 없으면 내린다.
+      'boundaries/no-unknown-dependencies': 'error',
       'boundaries/dependencies': [
         'error',
         {
@@ -693,19 +696,51 @@ export default defineConfig([
               // 로그아웃·로그인)이 예외로 client를 직접 import했고, 그걸 막던
               // no-restricted-syntax는 변수 이름 기반이라 alias로 우회 가능했다.
               // 여기서 import 경로 자체를 끊으면 우회가 없다.
+              //
+              // 사이트 값(content-values)·스타일 런타임(styled-system)·설정
+              // 인스턴스(content-config)는 app만 연다. content-config는 서버
+              // 파일만 써야 하지만 element는 폴더 단위라 여기서 가르지 못한다 —
+              // 클라이언트로 새면 check-bundle의 llms 마커가 빌드에서 잡는다.
+              // preset은 panda 설정이 이름으로 읽을 뿐 src가 열 일이 없다.
               from: { element: { type: 'app' } },
               allow: [
                 {
                   to: {
                     element: {
                       types: {
-                        anyOf: ['shared', 'analytics', 'auth', 'content-pkg'],
+                        anyOf: [
+                          'shared',
+                          'analytics',
+                          'auth',
+                          'content-pkg',
+                          'styled-system',
+                        ],
+                      },
+                    },
+                  },
+                },
+                {
+                  to: {
+                    element: { type: 'app-root' },
+                    file: {
+                      categories: {
+                        anyOf: ['content-values', 'content-config'],
                       },
                     },
                   },
                 },
                 { to: { module: { origin: 'external' } } },
               ],
+            },
+            {
+              // Supabase SDK는 platform만 연다. app은 외부 패키지를 목록 없이 열 수
+              // 있으므로, 여기서 끊지 않으면 컴포넌트가 SDK로 클라이언트를 직접 만들어
+              // 도메인 레이어를 건너뛴다. 다른 레이어는 외부 허용 목록에 SDK가 없어
+              // 이미 막혀 있다. 마지막 매치가 이기므로 app 정책보다 뒤에 둔다.
+              from: { element: { type: 'app' } },
+              disallow: {
+                to: { module: { origin: 'external', source: '@supabase/**' } },
+              },
             },
             // 프로덕션 코드는 테스트 파일을 import할 수 없다.
             { disallow: { to: { file: { categories: 'test' } } } },

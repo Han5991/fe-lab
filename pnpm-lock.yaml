@@ -395,6 +395,9 @@ importers:
       '@axe-core/playwright':
         specifier: ^4.13.0
         version: 4.13.0(playwright-core@1.63.0)
+      '@blog/tsconfig':
+        specifier: workspace:*
+        version: link:../../../packages/@blog/tsconfig
       '@cloudflare/workers-types':
         specifier: 5.20260924.1
         version: 5.20260924.1
@@ -692,6 +695,9 @@ importers:
         specifier: 0.35.5
         version: 0.35.5(@types/node@24.13.6)
     devDependencies:
+      '@blog/tsconfig':
+        specifier: workspace:*
+        version: link:../tsconfig
       '@eslint-community/eslint-plugin-eslint-comments':
         specifier: catalog:lint
         version: 4.8.1(eslint@10.11.0(jiti@2.7.0)(supports-color@10.2.2))
@@ -734,6 +740,9 @@ importers:
 
   packages/@blog/preset:
     devDependencies:
+      '@blog/tsconfig':
+        specifier: workspace:*
+        version: link:../tsconfig
       '@pandacss/dev':
         specifier: 'catalog:'
         version: 2.1.2(@emnapi/core@1.10.0)(@emnapi/runtime@1.11.3)(postcss@8.5.28)
@@ -752,6 +761,8 @@ importers:
       '@pandacss/preset-panda':
         specifier: 'catalog:'
         version: 2.1.2
+
+  packages/@blog/tsconfig: {}
 
   packages/@design-system/ui:
     devDependencies:

@@ -73,9 +73,11 @@ here or anywhere else (this repo once carried four diverging copies of that prom
 
 ## 3. Coding Standards
 
-- `strict: true` everywhere. The blog stack's production tsconfig adds `noUncheckedIndexedAccess`,
-  `noPropertyAccessFromIndexSignature`, `exactOptionalPropertyTypes`; `tsconfig.test.json` turns exactly those
-  three off. `check-types` and the ESLint type rules follow the same split. Test includes are symmetric across
+- `strict: true` everywhere. The blog stack's strict flags have one source, `packages/@blog/tsconfig/strict.json`,
+  which the app, `@blog/content`, `@blog/preset` and the Edge Function typecheck extend — never copy a flag into a
+  consumer tsconfig. Production adds `noUncheckedIndexedAccess`, `noPropertyAccessFromIndexSignature`,
+  `exactOptionalPropertyTypes`; each `tsconfig.test.json` turns exactly those three off via
+  `packages/@blog/tsconfig/test.json`. `check-types` and the ESLint type rules follow the same split. Test includes are symmetric across
   tsconfig, vitest globs and the ESLint test block — change all three together. One exception: `apps/blog/web/e2e`
   is in tsconfig.test and the ESLint test block but not in the vitest globs (Playwright runs it).
 - Prefer `interface` over `type` for objects (lint-enforced in the blog stack), named exports over default

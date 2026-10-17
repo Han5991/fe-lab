@@ -68,7 +68,7 @@ apps/blog/web/
 │  ├─ domain/auth/      auth 레이어 — 세션 저장소(repository, DI 팩토리) + 관리자 이메일 판정(adminAccess) + 배럴 1개
 │  ├─ lib/platform/     platform 레이어 — Supabase 어댑터(client · publicClient · adminApi · adminActions · database.types)
 │  └─ shared/           최하단 레이어 — 앱 소유 라우트 경로의 단일 출처(routes) + 페이지 전환 네임스페이스(transitions). 모든 레이어가 import 가능
-├─ supabase/            로컬 Supabase 프로젝트(CLI 소유 — 앱 소스 아님) — config.toml · migrations/ · functions/(admin-analytics(Deno) · _shared(CORS) · _typecheck(Edge Function 타입체크 전용 tsconfig — 앱 tsconfig·eslint가 이 폴더를 제외하므로 유일한 게이트)). seed.sql은 프로덕션 데이터 사본이라 .gitignore — `pnpm seed:pull`로 만든다(없어도 db reset은 지나간다)
+├─ supabase/            로컬 Supabase 프로젝트(CLI 소유 — 앱 소스 아님) — config.toml · migrations/ · functions/(admin-analytics(Deno) · _shared(CORS) · _typecheck(Edge Function 타입체크 전용 tsconfig — 앱 tsconfig가 이 폴더를 제외하므로 유일한 타입 게이트, lint는 앱 eslint가 본다)). seed.sql은 프로덕션 데이터 사본이라 .gitignore — `pnpm seed:pull`로 만든다(없어도 db reset은 지나간다)
 ├─ e2e/                 Playwright 런타임 게이트 — `playwright.config.ts`(서버는 `wrangler dev`) · spec 넷(pages·representative·runtime·admin) · `support/`(페이지 집합 유도·네트워크 봉인과 Supabase 응답·hydration 비교·axe). 산출물은 `.playwright/`(.gitignore)
 ├─ scripts/             pull-prod-seed.sh — `pnpm seed:pull`의 본체
 ├─ public/              robots.txt · favicon · site.webmanifest · og-default.jpg · _headers(자산 응답 헤더 — 해시 자산 immutable, 프리뷰 URL noindex) … (+ 빌드가 생성하는 sitemap/rss/search-index/llms/og/thumbs/posts는 .gitignore)
@@ -103,7 +103,7 @@ apps/blog/web/
 
 ### tsconfig 분할
 
-`tsconfig.json`(프로덕션)은 `strict`에 더해 `noUncheckedIndexedAccess`·`noPropertyAccessFromIndexSignature`·`exactOptionalPropertyTypes`·`verbatimModuleSyntax`·`erasableSyntaxOnly` 등을 켠다. `tsconfig.test.json`은 이를 extends하되 include를 테스트 파일로 뒤집고 **앞의 세 플래그만 끈다**. `check-types`는 `next typegen`(라우트 타입 생성) 뒤에 세 프로그램을 돈다 — 프로덕션·테스트, 그리고 Edge Function용 `supabase/functions/_typecheck/tsconfig.json`(Deno 코드는 앱 tsconfig·eslint가 제외하므로 이것이 유일한 타입 게이트다). ESLint의 타입 정보 룰도 같은 분할을 따른다(프로덕션은 `projectService`, 테스트는 `project: tsconfig.test.json`).
+`tsconfig.json`(프로덕션)은 엄격 플래그(`strict`에 더해 `noUncheckedIndexedAccess`·`noPropertyAccessFromIndexSignature`·`exactOptionalPropertyTypes`·`verbatimModuleSyntax`·`erasableSyntaxOnly` 등)를 `@blog/tsconfig/strict.json`에서 extends하고 Next 앱의 환경만 적는다. `tsconfig.test.json`은 프로덕션과 `@blog/tsconfig/test.json`을 함께 extends해 include를 테스트 파일로 뒤집고 **앞의 세 플래그만 끈다**. `check-types`는 `next typegen`(라우트 타입 생성) 뒤에 세 프로그램을 돈다 — 프로덕션·테스트, 그리고 Edge Function용 `supabase/functions/_typecheck/tsconfig.json`(같은 베이스를 쓴다. Deno 코드는 앱 tsconfig가 제외하므로 이것이 유일한 타입 게이트이고, lint는 앱 eslint가 본다). ESLint의 타입 정보 룰도 같은 분할을 따른다(프로덕션은 `projectService`, 테스트는 `project: tsconfig.test.json`).
 
 ---
 

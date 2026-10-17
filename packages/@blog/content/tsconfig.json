@@ -1,29 +1,12 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
-  // 자립형 tsconfig — @package/config/tsconfig.json을 extends하지 않는다.
-  // 플래그 구성은 앱 tsconfig.json과 같은 엄격 수준을 유지한다 — 이 패키지의
-  // 소스가 앱 program에도 (import를 통해) 들어가므로 두 검사가 어긋나면 안 된다.
-  // allowImportingTsExtensions도 그래서 양쪽에 같이 켜져 있다(아래 참고).
+  // 엄격 플래그는 @blog/tsconfig/strict.json이 정한다 — 이 패키지의 소스는 앱 program에도
+  // (import를 통해) 들어가므로 앱과 같은 베이스를 쓴다. 실험 앱용 @package/config는
+  // extends하지 않는다. allowImportingTsExtensions는 양쪽에 같이 켜져 있다(아래 참고).
+  "extends": "@blog/tsconfig/strict.json",
   "compilerOptions": {
     "target": "ESNext",
     "lib": ["dom", "dom.iterable", "esnext"],
-    "allowJs": true,
-    "skipLibCheck": true,
-    "strict": true,
-    "noImplicitReturns": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true,
-    "noImplicitOverride": true,
-    "verbatimModuleSyntax": true,
-    "erasableSyntaxOnly": true,
-    "noUncheckedSideEffectImports": true,
-    "noUncheckedIndexedAccess": true,
-    "noPropertyAccessFromIndexSignature": true,
-    "exactOptionalPropertyTypes": true,
-    "allowUnusedLabels": false,
-    "allowUnreachableCode": false,
-    "noEmit": true,
     "esModuleInterop": true,
     "module": "esnext",
     "moduleResolution": "bundler",
@@ -33,8 +16,6 @@
     // 한쪽만 켜면 그쪽에서 TS5097이 난다.
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
-    // 앱 program에 소스째 섞이는 패키지이므로 파일 단위 트랜스파일 안전성이 필수다.
-    "isolatedModules": true,
     "incremental": true
   },
   // 루트의 `eslint.config.mts`도 프로그램에 든다. 앱은 include가 루트 기준

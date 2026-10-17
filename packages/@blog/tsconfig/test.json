@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  // 테스트 프로그램(각 패키지의 tsconfig.test.json)이 끄는 프로덕션 전용 엄격 플래그.
+  // 테스트의 인덱싱·옵셔널은 틀리면 그 테스트가 실패하는 코드라 비용 대비 이득이 없다.
+  // 사용: "extends": ["./tsconfig.json", "@blog/tsconfig/test.json"] — 뒤가 이긴다.
+  "compilerOptions": {
+    "noUncheckedIndexedAccess": false,
+    "noPropertyAccessFromIndexSignature": false,
+    "exactOptionalPropertyTypes": false
+  }
+}
