@@ -88,6 +88,11 @@ export function prepareWorktree(path, base, skillFile) {
     '--no-verify',
     '--allow-empty',
   );
+  install(path);
+}
+
+/** worktree에 의존성을 깐다. 스토어에 있으면 오프라인으로 끝난다. */
+export function install(path) {
   const offline = spawnSync(
     'pnpm',
     ['install', '--frozen-lockfile', '--offline'],

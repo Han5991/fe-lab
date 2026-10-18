@@ -32,7 +32,7 @@
 ```sh
 E=.claude/skills/strict-design/evals
 git show HEAD:.claude/skills/strict-design/SKILL.md > /tmp/old.md     # 고치기 전 판
-node $E/ab.mjs selftest                                              # 채점 함수가 기준 커밋에서 기대대로 나오는지
+node $E/ab.mjs selftest [--tasks t3]                                # 채점 함수가 기준 커밋에서 기대대로 나오는지
 node $E/ab.mjs run <OUT> --arm new=.claude/skills/strict-design/SKILL.md --arm old=/tmp/old.md --arm off
 node $E/ab.mjs grade <OUT>       # 조건별 요약표. --no-gates면 lint·타입·테스트를 다시 돌리지 않는다
 node $E/ab.mjs clean <OUT>       # worktree만 지운다. 기록과 채점은 남는다
@@ -66,7 +66,7 @@ HEAD에 worktree를 `--par`개 만들고, 프롬프트마다 `--reps`번 돌립�
 - **표본이 작습니다.** 3 대 3에서는 3/3 대 0/3도 p≈0.1입니다. 깨지는 사례를 찾는 데는 충분하지만, 두 판을 가르려면
   `--reps`를 늘립니다.
 - **t2는 표본 안 시험입니다.** 스킬의 "사본 검색에서 테스트를 빼지 않는다"가 바로 이 과제에서 나왔습니다. t2의 차이는
-  과대평가일 수 있습니다.
+  과대평가일 수 있습니다. t1과 t3는 스킬을 고친 계기가 아닌 과제입니다.
 - **비용은 `cost_usd`의 비율로 봅니다.** 본문 길이보다 스킬이 시키는 추가 작업(넓은 검색, 일부러 깨뜨려 확인)이 비용의
   대부분입니다.
 
@@ -76,6 +76,7 @@ HEAD에 worktree를 `--par`개 만들고, 프롬프트마다 `--reps`번 돌립�
 2. `tasks.json`에 부모 커밋(`base`), 머지 커밋(`ref`), 그때의 요청을 적습니다.
 3. `ab.mjs`의 `CHECKS`에 그 과제의 채점 함수를 더합니다. 채점은 문자열이나 실행 결과로 결정적으로 합니다.
 4. `selftest`로 `base`와 `ref`에서 채점이 갈리는지 먼저 봅니다. 둘 다 같은 값을 내는 항목은 아무것도 재지 못합니다.
+   채점이 lint 같은 도구를 돌리면 과제에 `"needs_install": true`를 적습니다 — `selftest`가 worktree에 의존성을 깝니다.
 
 ## 알아 둘 것
 
