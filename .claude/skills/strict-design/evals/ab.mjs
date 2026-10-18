@@ -187,7 +187,16 @@ function forcedRuleViolations(wt) {
   let total = 0;
   for (const [pkg, roots] of Object.entries(T3_LINT_ROOTS)) {
     const cwd = join(wt, pkg);
-    const files = git(cwd, 'ls-files', '--', ...roots)
+    // 에이전트가 새로 만든 파일(추적 전)도 센다 — 단언을 새 파일로 옮겨 피하는 경우까지.
+    const files = git(
+      cwd,
+      'ls-files',
+      '--cached',
+      '--others',
+      '--exclude-standard',
+      '--',
+      ...roots,
+    )
       .split('\n')
       .filter(
         f =>
