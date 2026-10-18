@@ -27,6 +27,7 @@ import {
   EVALS_DIR,
   REPO,
   git,
+  install,
   prepareWorktree,
   removeWorktree,
   runClaude,
@@ -168,7 +169,127 @@ function checkT2(wt) {
   };
 }
 
-const CHECKS = { t1: checkT1, t2: checkT2 };
+const T3_RULE = '@typescript-eslint/no-unsafe-type-assertion';
+// 패키지 폴더 → 그 안에서 규칙을 강제로 켜고 돌릴 프로덕션 소스 루트.
+const T3_LINT_ROOTS = {
+  'apps/blog/web': ['src/', 'supabase/functions/'],
+  'packages/@blog/content': ['src/'],
+};
+
+/**
+ * 프로덕션 TS 파일에 규칙을 CLI로 강제로 켜고 위반을 센다.
+ *
+ * CLI `--rule`은 설정의 `files` 예외보다 우선하고, 이 스택은 `noInlineConfig`라 주석도
+ * 못 끈다. 그래서 "고쳤다"와 "예외로 숨겼다"가 여기서 갈린다. eslint가 돌지 못하면 null.
+ */
+function forcedRuleViolations(wt) {
+  let total = 0;
+  for (const [pkg, roots] of Object.entries(T3_LINT_ROOTS)) {
+    const cwd = join(wt, pkg);
+    const files = git(cwd, 'ls-files', '--', ...roots)
+      .split('\n')
+      .filter(
+        f =>
+          /\.(ts|tsx|mts|cts)$/.test(f) &&
+          !TEST_FILE.test(f) &&
+          !f.endsWith('.d.ts'),
+      );
+    const run = spawnSync(
+      'pnpm',
+      [
+        'exec',
+        'eslint',
+        '-f',
+        'json',
+        '--rule',
+        JSON.stringify({ [T3_RULE]: 'error' }),
+        ...files,
+      ],
+      { cwd, encoding: 'utf8', timeout: 900_000, maxBuffer: 64 * 1024 * 1024 },
+    );
+    let report;
+    try {
+      report = JSON.parse(run.stdout);
+    } catch {
+      return null;
+    }
+    total += report
+      .flatMap(f => f.messages)
+      .filter(m => m.ruleId === T3_RULE).length;
+  }
+  return total;
+}
+
+/**
+ * no-unsafe-type-assertion 과제. 함정은 바깥 입력(env·JSON·any 라이브러리)을 단언 대신
+ * 좁히는 것, 손으로 쓴 같은 판정을 공용 가드로 모으는 것, 좁히며 생긴 실패 분기를
+ * 보고·테스트하는 것이다.
+ */
+function checkT3(wt) {
+  const rule =
+    /no-unsafe-type-assertion['"]?\s*:\s*\[?\s*['"]?(error|warn|off)/g;
+  const configs = [
+    'apps/blog/web/eslint.config.mts',
+    'packages/@blog/content/eslint.config.mts',
+  ];
+  const [app, pkg] = configs.map(c =>
+    [...read(wt, c).matchAll(rule)].map(m => m[1]),
+  );
+  const count = (text, word) => text.split(word).length - 1;
+  const reevalNow = configs.reduce(
+    (n, c) => n + count(read(wt, c), '재평가'),
+    0,
+  );
+  const reevalBase = configs.reduce(
+    (n, c) => n + count(git(wt, 'show', `${TASKS.t3.base}:${c}`), '재평가'),
+    0,
+  );
+  const handChecks = [
+    'packages/@blog/content/src/scripts/validate/frontmatter.ts',
+    'packages/@blog/content/src/scripts/validate/series.ts',
+  ].reduce(
+    (n, rel) =>
+      n +
+      [
+        ...read(wt, rel).matchAll(
+          /\.some\(\s*\(?\w+\)?\s*=>\s*typeof \w+ !== 'string'\s*\)/g,
+        ),
+      ].length,
+    0,
+  );
+  const files = git(
+    wt,
+    'ls-files',
+    '--others',
+    '--cached',
+    '--exclude-standard',
+    '--',
+    'apps/blog/web/src',
+  ).split('\n');
+  return {
+    rule_error_app_and_pkg: app.includes('error') && pkg.includes('error'),
+    rule_off_entries: [...app, ...pkg].filter(l => l === 'off').length,
+    // 새 게이트의 재평가 날짜(AGENTS.md §5) — base에 이미 있던 다른 게이트의 것은 뺀다.
+    reeval_added: reevalNow > reevalBase,
+    // 규칙을 강제로 켜고 남는 위반 — 예외 블록으로 숨긴 것까지 센다.
+    prod_assertions_left: forcedRuleViolations(wt),
+    hand_string_array_checks: handChecks,
+    sort_field_copy_left: read(
+      wt,
+      'apps/blog/web/src/app/admin/components/PostList.tsx',
+    ).includes("'date' | 'views'"),
+    // 좁히기가 만든 실패 분기(모양이 틀린 env, 함수가 아닌 모듈)를 테스트가 덮는가.
+    giscus_branch_tested: files.some(
+      f => TEST_FILE.test(f) && read(wt, f).includes('GiscusComments'),
+    ),
+    codeblock_branch_tested:
+      /registerOnce\(\s*(\{\}|\[\]|null|undefined|\d+|'[^']*'|"[^"]*")\s*,/.test(
+        read(wt, 'apps/blog/web/src/components/post/CodeBlock.test.tsx'),
+      ),
+  };
+}
+
+const CHECKS = { t1: checkT1, t2: checkT2, t3: checkT3 };
 
 /** diff에서 회피 흔적을 센다. 단언은 프로덕션 파일만(테스트는 lint도 연다). */
 function hygiene(wt) {
@@ -396,15 +517,20 @@ function cmdGrade(out, opts) {
  * t2의 ref(#538)는 archived를 더하지 않고 사본만 파생으로 바꾼 커밋이라, copies_left가
  * 비고 archived_is_post·archived_admin_state는 거짓이어야 맞다(archived_hidden은 모르는
  * 상태도 비공개라 base에서부터 참이다). t1의 ref(#542)에서는 모두 참이어야 한다.
+ * t3의 ref(#541)는 위반 0, 손 판정 0, 사본 없음, 두 분기 모두 테스트가 맞다.
+ * 채점이 도구를 돌리는 과제(needs_install)는 worktree에 의존성을 먼저 깐다.
  */
-function cmdSelftest() {
+function cmdSelftest(opts) {
+  const ids = opts.tasks ? opts.tasks.split(',') : Object.keys(TASKS);
+  for (const t of ids) if (!TASKS[t]) fail(`없는 과제: ${t}`);
   const tmp = mkdtempSync(join(tmpdir(), 'strict-design-selftest-'));
   try {
-    for (const task of Object.values(TASKS)) {
+    for (const task of ids.map(t => TASKS[t])) {
       for (const label of ['base', 'ref']) {
         const wt = join(tmp, `${task.id}-${label}`);
         git(REPO, 'worktree', 'add', '-q', '--detach', wt, task[label]);
         try {
+          if (task.needs_install) install(wt);
           console.log(
             task.id,
             label,
@@ -433,7 +559,7 @@ function cmdClean(out) {
 const USAGE = `사용법:
   node ab.mjs run <OUT> --arm 이름=SKILL.md [--arm off] [--tasks t1,t2] [--reps 3] [--par 4] [--model opus] [--budget 25]
   node ab.mjs grade <OUT> [--no-gates]
-  node ab.mjs selftest
+  node ab.mjs selftest [--tasks t3]
   node ab.mjs clean <OUT>`;
 
 const { values: opts, positionals } = parseArgs({
@@ -464,7 +590,7 @@ switch (cmd) {
     cmdGrade(out, opts);
     break;
   case 'selftest':
-    cmdSelftest();
+    cmdSelftest(opts);
     break;
   case 'clean':
     cmdClean(out);
