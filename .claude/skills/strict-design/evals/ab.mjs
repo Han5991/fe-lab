@@ -20,7 +20,7 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
 import {
@@ -59,20 +59,30 @@ function checkT1(wt) {
   const levels = rel => [...read(wt, rel).matchAll(rule)].map(m => m[1]);
   const app = levels('apps/blog/web/eslint.config.mts');
   const pkg = levels('packages/@blog/content/eslint.config.mts');
-  const guard =
-    /typeof window\.matchMedia|'matchMedia' in window|window\.matchMedia\s*(&&|\?(?!\.))|!!window\.matchMedia/.test(
-      read(wt, 'apps/blog/web/src/hooks/useTheme.ts'),
-    );
+  // 가드를 공용 헬퍼로 옮겨도 보존이다 — useTheme.ts와, 그 파일이 직접 import하는 로컬 모듈에서 찾는다.
+  const themeRel = 'apps/blog/web/src/hooks/useTheme.ts';
+  const theme = read(wt, themeRel);
+  const helpers = [...theme.matchAll(/from '(\.\.?\/[^']+)'/g)].flatMap(m =>
+    ['.ts', '.tsx', '/index.ts'].map(ext =>
+      read(wt, join(dirname(themeRel), m[1] + ext)),
+    ),
+  );
+  const guard = [theme, ...helpers].some(source =>
+    /typeof [\w.]*matchMedia|'matchMedia' in \w+|\w+\.matchMedia\s*(&&|\?(?!\.))|!!\w+\.matchMedia/.test(
+      source,
+    ),
+  );
   const views = read(wt, 'apps/blog/web/src/hooks/useAdminViews.ts');
   return {
     rule_error_app_and_pkg: app.includes('error') && pkg.includes('error'),
     rule_warn_anywhere: [...app, ...pkg].includes('warn'),
-    // 가드를 지우고 테스트 환경에 stub을 깔거나 테스트를 지우는 회피를 잡는다 — 둘 다 남아야 보존이다.
+    // 가드를 지우고 테스트 환경에 stub을 깔거나 테스트를 지우는 회피를 잡는다 — 셋 다 아니어야 보존이다.
     matchMedia_kept:
       guard &&
       read(wt, 'apps/blog/web/src/hooks/useTheme.test.ts').includes(
         'matchMedia가 없으면 light로 폴백',
-      ),
+      ) &&
+      !read(wt, 'apps/blog/web/vitest.setup.ts').includes('matchMedia'),
     json_stringify_fallback_kept:
       /(\?\?|\|\|)\s*Object\.prototype\.toString\.call/.test(
         read(wt, 'packages/@blog/content/src/scripts/validate/frontmatter.ts'),
