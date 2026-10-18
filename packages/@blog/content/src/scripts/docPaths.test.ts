@@ -45,6 +45,7 @@ const DOCS = [
   '.claude/skills/blog-design-system/SKILL.md',
   '.claude/skills/repair-pr/SKILL.md',
   '.claude/skills/list-good-prs/SKILL.md',
+  '.claude/skills/strict-design/evals/README.md',
   'packages/@blog/content/README.md',
 ] as const;
 

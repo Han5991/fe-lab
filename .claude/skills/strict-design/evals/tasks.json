@@ -1,0 +1,21 @@
+{
+  "suffix": "(진행 조건: 사용자는 자리에 없어 작업 중에는 답할 수 없다. 묻고 싶은 것이 있으면 최종 보고에 적어라. 커밋·푸시는 하지 않는다 — 변경은 작업 트리에 남겨 두면 된다.)",
+  "tasks": [
+    {
+      "id": "t1",
+      "title": "no-unnecessary-condition을 error로 켜고 위반 수정",
+      "base": "1a7c8cb",
+      "ref": "3b21381",
+      "filters": ["@blog/content", "@blog/web"],
+      "prompt": "블로그 스택 프로덕션 코드(apps/blog/web, packages/@blog/content, Supabase Edge Function)에 `@typescript-eslint/no-unnecessary-condition`을 error로 켜고, 걸리는 위반을 고쳐줘. 테스트 파일은 이 규칙에서 빼도 된다."
+    },
+    {
+      "id": "t2",
+      "title": "글 상태에 archived 추가",
+      "base": "4c21aa8",
+      "ref": "f8b06ed",
+      "filters": ["@blog/content", "@blog/web"],
+      "prompt": "글 상태(status)에 `archived`(보관)를 추가해줘. archived 글은 프로덕션에서 공개되지 않는다 — 목록·상세·sitemap·RSS·검색 색인 어디에도 나가지 않는다. dev 서버에서는 draft처럼 미리보기로 보이고, admin 대시보드에는 '보관됨'으로 표시된다."
+    }
+  ]
+}
