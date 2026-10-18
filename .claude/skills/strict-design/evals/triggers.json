@@ -1,0 +1,67 @@
+[
+  {
+    "id": "S1",
+    "expect": true,
+    "q": "admin 분석 기간에 '최근 180일'(180d)을 추가해줘."
+  },
+  {
+    "id": "S2",
+    "expect": true,
+    "q": "apps/blog/web/src/hooks/recentViews.ts가 localStorage에서 읽는 값을 더 안전하게 파싱하게 바꿔줘."
+  },
+  {
+    "id": "S3",
+    "expect": true,
+    "q": "글 frontmatter에 `canonical` 키(외부 원문 URL)를 선택 필드로 추가해줘."
+  },
+  {
+    "id": "S4",
+    "expect": true,
+    "q": "apps/react tsconfig에 noUncheckedIndexedAccess 켜고 나오는 타입 에러 고쳐줘."
+  },
+  {
+    "id": "S5",
+    "expect": true,
+    "q": "packages/@blog/content/src/scripts/validate 쪽 코드를 리팩토링해서 중복을 줄여줘."
+  },
+  {
+    "id": "S6",
+    "expect": true,
+    "q": "@blog/web lint 돌려서 나오는 경고·에러 있으면 고쳐줘."
+  },
+  {
+    "id": "N1",
+    "expect": false,
+    "q": "새 블로그 글 쓰고 싶어. 주제는 'Turbo 캐시 키 디버깅'. 아웃라인부터 같이 잡자."
+  },
+  {
+    "id": "N2",
+    "expect": false,
+    "q": "최근 커밋 5개가 각각 무엇을 바꿨는지 요약해줘."
+  },
+  {
+    "id": "N3",
+    "expect": false,
+    "q": "Rail 컴포넌트가 모바일에서 거터를 어떻게 잡는지 설명해줘."
+  },
+  {
+    "id": "N4",
+    "expect": false,
+    "q": "apps/blog/web/README.md에 pnpm blog-write 사용법을 한 줄 추가해줘."
+  },
+  {
+    "id": "N5",
+    "expect": false,
+    "q": "PR CI에서 blog e2e가 건너뛰어지는 조건을 설명해줘."
+  },
+  {
+    "id": "N6",
+    "expect": false,
+    "q": "apps/blog/posts에 있는 글 중 예약(scheduled) 상태인 글 목록을 알려줘."
+  },
+  {
+    "id": "B1",
+    "expect": null,
+    "q": "글 상세 페이지 코드 블록 글자 크기를 한 단계 키워줘."
+  }
+]
