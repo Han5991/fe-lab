@@ -60,8 +60,9 @@ function checkT1(wt) {
   const levels = rel => [...read(wt, rel).matchAll(rule)].map(m => m[1]);
   const app = levels('apps/blog/web/eslint.config.mts');
   const pkg = levels('packages/@blog/content/eslint.config.mts');
+  // 선택 호출(`matchMedia?.(`)도 검사다 — 타입을 선택 멤버로 넓혀 경계에서 읽는 해법이 이 꼴이 된다.
   const guard =
-    /typeof window\.matchMedia|'matchMedia' in window|window\.matchMedia\s*(&&|\?(?!\.))|!!window\.matchMedia/.test(
+    /typeof window\.matchMedia|'matchMedia' in window|window\.matchMedia\s*(&&|\?(?!\.))|!!window\.matchMedia|matchMedia\?\.\(/.test(
       read(wt, 'apps/blog/web/src/hooks/useTheme.ts'),
     );
   const views = read(wt, 'apps/blog/web/src/hooks/useAdminViews.ts');
