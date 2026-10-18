@@ -5,8 +5,8 @@
 
 ## 언제 돌리나
 
-- **description을 고쳤을 때**: 트리거 정확도를 잽니다(`trigger.py`). 싸고 빠릅니다.
-- **본문을 고쳤을 때**: 재연 과제 A/B를 돌립니다(`ab.py`). 고치기 전 판과 고친 판을 두 조건으로 놓습니다.
+- **description을 고쳤을 때**: 트리거 정확도를 잽니다(`trigger.mjs`). 싸고 빠릅니다.
+- **본문을 고쳤을 때**: 재연 과제 A/B를 돌립니다(`ab.mjs`). 고치기 전 판과 고친 판을 두 조건으로 놓습니다.
 - **모델이 바뀌었을 때**: 둘 다 다시 돌립니다. 스킬이 없는 조건(`off`)이 따라잡은 항목은 본문에서 지울 후보입니다.
 
 ## 무엇이 있나
@@ -15,9 +15,9 @@
 | --------------- | ------------------------------------------------------------------------- |
 | `tasks.json`    | 재연 과제 — 머지된 커밋의 부모(`base`), 기준 답안(`ref`), 그때의 요청     |
 | `triggers.json` | 트리거 세트 — 열어야 할(`true`)·열면 안 될(`false`)·경계(`null`) 프롬프트 |
-| `ab.py`         | A/B: `run` → `grade` → `clean`, 그리고 채점 함수의 대조 시험 `selftest`   |
-| `trigger.py`    | 트리거 정확도                                                             |
-| `common.py`     | worktree 준비, 헤드리스 `claude -p` 실행, 대화 기록 요약                  |
+| `ab.mjs`        | A/B: `run` → `grade` → `clean`, 그리고 채점 함수의 대조 시험 `selftest`   |
+| `trigger.mjs`   | 트리거 정확도                                                             |
+| `common.mjs`    | worktree 준비, 헤드리스 `claude -p` 실행, 대화 기록 요약                  |
 
 ## 준비
 
@@ -32,10 +32,10 @@
 ```sh
 E=.claude/skills/strict-design/evals
 git show HEAD:.claude/skills/strict-design/SKILL.md > /tmp/old.md     # 고치기 전 판
-python3 $E/ab.py selftest                                              # 채점 함수가 기준 커밋에서 기대대로 나오는지
-python3 $E/ab.py run <OUT> --arm new=.claude/skills/strict-design/SKILL.md --arm old=/tmp/old.md --arm off
-python3 $E/ab.py grade <OUT>       # 조건별 요약표. --no-gates면 lint·타입·테스트를 다시 돌리지 않는다
-python3 $E/ab.py clean <OUT>       # worktree만 지운다. 기록과 채점은 남는다
+node $E/ab.mjs selftest                                              # 채점 함수가 기준 커밋에서 기대대로 나오는지
+node $E/ab.mjs run <OUT> --arm new=.claude/skills/strict-design/SKILL.md --arm old=/tmp/old.md --arm off
+node $E/ab.mjs grade <OUT>       # 조건별 요약표. --no-gates면 lint·타입·테스트를 다시 돌리지 않는다
+node $E/ab.mjs clean <OUT>       # worktree만 지운다. 기록과 채점은 남는다
 ```
 
 - `--arm 이름=파일`은 그 파일을 `SKILL.md`로 둔 조건입니다. `--arm off`는 스킬 폴더를 지우고, AGENTS.md에서 스킬을 가리키는
@@ -47,8 +47,8 @@ python3 $E/ab.py clean <OUT>       # worktree만 지운다. 기록과 채점은 
 ## 트리거
 
 ```sh
-python3 $E/trigger.py <OUT>                 # 작업 트리의 SKILL.md로
-python3 $E/trigger.py <OUT> --skill /tmp/old.md --reps 3
+node $E/trigger.mjs <OUT>                 # 작업 트리의 SKILL.md로
+node $E/trigger.mjs <OUT> --skill /tmp/old.md --reps 3
 ```
 
 HEAD에 worktree를 `--par`개 만들고, 프롬프트마다 `--reps`번 돌립니다. 다음 중 하나가 나오면 그 자리에서 끊습니다.
@@ -74,13 +74,13 @@ HEAD에 worktree를 `--par`개 만들고, 프롬프트마다 `--reps`번 돌립�
 
 1. 에이전트가 실제로 틀렸던 머지 커밋을 고릅니다. 스킬을 고치는 데 쓴 사례는 평가에서 빼거나, 표본 안이라고 적어 둡니다.
 2. `tasks.json`에 부모 커밋(`base`), 머지 커밋(`ref`), 그때의 요청을 적습니다.
-3. `ab.py`의 `CHECKS`에 그 과제의 채점 함수를 더합니다. 채점은 문자열이나 실행 결과로 결정적으로 합니다.
+3. `ab.mjs`의 `CHECKS`에 그 과제의 채점 함수를 더합니다. 채점은 문자열이나 실행 결과로 결정적으로 합니다.
 4. `selftest`로 `base`와 `ref`에서 채점이 갈리는지 먼저 봅니다. 둘 다 같은 값을 내는 항목은 아무것도 재지 못합니다.
 
 ## 알아 둘 것
 
 - **편집 감지는 휴리스틱입니다.** 하위 세션은 파일을 `Edit` 도구보다 Bash(python heredoc·sed)로 고치는 일이 많습니다. 그래서
-  `common.py`는 Bash 명령의 쓰기 모양도 편집으로 봅니다. 놓치는 형태가 있을 수 있습니다.
+  `common.mjs`는 Bash 명령의 쓰기 모양도 편집으로 봅니다. 놓치는 형태가 있을 수 있습니다.
 - **worktree에서는 이 폴더를 지웁니다.** 기대 결과가 들어 있어서, 에이전트가 읽으면 시험이 오염됩니다.
 - **`claude`의 stdin은 막아 둡니다.** 막지 않으면 셸 루프의 남은 입력이 프롬프트 뒤에 붙습니다.
 - **비용은 최댓값, 토큰은 합계로 셉니다.** 백그라운드 작업 때문에 한 실행에 `result` 메시지가 여럿 나올 수 있습니다.
