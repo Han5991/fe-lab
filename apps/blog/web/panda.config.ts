@@ -51,9 +51,11 @@ export default defineConfig({
   // 공식 권장대로 프로덕션에서만 줄인다 — dev에서 생성 CSS를 읽을 수 있게. 최종 out/의 CSS는
   // Next가 한 번 더 줄이므로 배포물 크기는 이 값과 무관하다.
   minify: process.env.NODE_ENV === 'production',
-  // optimize는 비워 둔다(styling/optimization). removeUnusedTokens는 codeTheme.ts가 런타임에 고르는
-  // token.var(role)을 못 봐 code.* 변수를 지우고, removeUnusedKeyframes는 2.1.2에서 animations
-  // 토큰(`animation: 'pulse'`)으로 참조한 keyframes까지 지운다(실측 — 문서와 다르다).
+  // optimize(styling/optimization)는 removeUnusedKeyframes만 켠다 — preset-panda의 keyframes(spin·
+  // ping·bounce …) 중 쓰지 않는 것을 뺀다. animations 토큰(`animation: 'pulse'`)으로 참조한 keyframes는
+  // 2.3.0부터 남는다(2.1.2는 그것까지 지웠다). removeUnusedTokens는 codeTheme.ts가 런타임에 고르는
+  // token.var(role)을 못 봐 code.* 변수를 지우므로 켜지 않는다.
+  optimize: { removeUnusedKeyframes: true },
   // propertyFallback도 지금은 필요 없다: @property로 등록되는 변수는 backdrop-*뿐이고 빈
   // fallback(`var(--backdrop-blur, )`)이라 @property 미지원 브라우저(Firefox 128 미만)에서도 값이
   // 선다. transform·filter·mask 유틸리티를 쓰기 시작해 out/ CSS에 backdrop 밖의 `@property --`가
