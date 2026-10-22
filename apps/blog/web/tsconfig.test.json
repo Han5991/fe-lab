@@ -9,13 +9,12 @@
     // 타입 없는 패키지의 모듈 선언 — 그 패키지를 지연 로드하는 모듈이 컴포넌트를
     // 거쳐 테스트에 끌려 들어온다(프로덕션 tsconfig는 **/*.ts 글롭으로 이미 포함).
     "text-fragments-polyfill.d.ts",
-    "**/*.test.ts",
-    "**/*.test.tsx",
-    // vitest 두 프로젝트의 include 글롭(node: src/{shared,domain,lib}, jsdom: 나머지 src)을 합친 것과
-    // 대칭 — .spec 파일이 생겨도 프로덕션 tsconfig(무거운 플래그) 쪽으로 떨어지지
-    // 않게 미리 라우팅해 둔다.
-    "**/*.spec.ts",
-    "**/*.spec.tsx",
+    // 아래 테스트 글롭은 testFiles.mts의 TEST_PROGRAM_FILES와 같은 파일 집합이다 — JSON이라
+    // 그 값을 import하지 못해 src/app/testFiles.test.ts가 실제 파일 목록으로 잠근다.
+    "src/**/*.test.ts",
+    "src/**/*.test.tsx",
+    "src/**/*.spec.ts",
+    "src/**/*.spec.tsx",
     "vitest.config.mts",
     "vitest.setup.ts",
     // Playwright 런타임 게이트(e2e/) — 러너는 vitest가 아니지만 테스트 코드라 같은

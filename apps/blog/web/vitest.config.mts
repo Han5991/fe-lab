@@ -2,6 +2,7 @@ import { readFileSync, globSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { configDefaults, defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
+import { NODE_LAYERS, TEST_SUFFIX, UNIT_TESTS } from './testFiles.mts';
 
 /**
  * 러너는 vitest 하나이고, **환경**과 격리만 프로젝트로 나눈다.
@@ -24,18 +25,21 @@ import react from '@vitejs/plugin-react';
  * 0개를 매칭해도 exit 0이라 테스트가 조용히 사라질 수 있었다. 지금은 같은
  * 러너 안의 프로젝트 경계라 그 비용 없이 환경만 분리된다.
  *
- * include는 tsconfig.test.json·eslint의 테스트 블록과 대칭이다 — 한쪽을 고치면 셋을 함께.
- * 예외는 `e2e/` 하나다: 타입·린트는 그 둘이 덮지만 러너는 Playwright(`pnpm test:e2e`)라
- * 여기 글롭(src/**)에는 일부러 없다.
+ * 두 프로젝트의 include는 testFiles.mts의 `TEST_SUFFIX`·`NODE_LAYERS`에서 파생한다 — 합이
+ * 언제나 `UNIT_TESTS` 전체라, 타입 검사만 받고 아무도 돌리지 않는 테스트가 생기지 않는다.
+ * `e2e/`는 러너가 Playwright(`pnpm test:e2e`)라 여기 없다.
  */
 
 // tsconfig의 `@/* → ./*` 매핑을 vitest에도 동일 적용하는 프리픽스 alias.
 // (키에 트레일링 슬래시를 둬 `@/foo`만 매칭하고 `@/`가 아닌 경로엔 닿지 않게 함)
 const alias = { '@/': fileURLToPath(new URL('./', import.meta.url)) };
 
-const JSDOM_INCLUDE = ['src/**/*.{test,spec}.{ts,tsx}'];
-// 레이어 세 폴더는 node 프로젝트가 돌린다 — 여기서 겹치면 같은 테스트가 두 번 돈다.
-const JSDOM_EXCLUDE = [...configDefaults.exclude, 'src/{shared,domain,lib}/**'];
+const JSDOM_INCLUDE = [UNIT_TESTS];
+// 레이어 폴더는 node 프로젝트가 돌린다 — 여기서 겹치면 같은 테스트가 두 번 돈다.
+const JSDOM_EXCLUDE = [
+  ...configDefaults.exclude,
+  ...NODE_LAYERS.map(dir => `src/${dir}/**`),
+];
 
 /** jsdom 테스트 중 모듈·전역을 갈아 끼우는 파일 — 목록이 아니라 내용으로 고른다. */
 const MOCKING = globSync(JSDOM_INCLUDE, { exclude: JSDOM_EXCLUDE }).filter(
@@ -50,7 +54,7 @@ export default defineConfig({
     coverage: {
       include: ['src/**/*.{ts,tsx}'],
       exclude: [
-        '**/*.test.{ts,tsx}',
+        `**/${TEST_SUFFIX}`,
         '**/*.config.*',
         '**/database.types.ts',
         '**/index.ts',
@@ -62,11 +66,7 @@ export default defineConfig({
         test: {
           name: 'node',
           environment: 'node',
-          include: [
-            'src/shared/**/*.{test,spec}.ts',
-            'src/domain/**/*.{test,spec}.ts',
-            'src/lib/**/*.{test,spec}.ts',
-          ],
+          include: NODE_LAYERS.map(dir => `src/${dir}/**/${TEST_SUFFIX}`),
         },
       },
       {

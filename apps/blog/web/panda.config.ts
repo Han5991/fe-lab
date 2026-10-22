@@ -1,4 +1,5 @@
 import { defineConfig, definePlugin } from '@pandacss/dev';
+import { TEST_SUFFIX } from './testFiles.mts';
 
 // 색·라운드는 전부 @blog/preset에서 온다(AGENTS.md §9). preset-panda는 spacing·sizes·fontSizes 같은
 // 스케일만 빌리고 색 팔레트와 radii는 버린다 — v2의 팔레트(oklch 26색 × 11단)는 v1의 두 배 무게로
@@ -48,7 +49,8 @@ export default defineConfig({
   // 테스트는 스캔하지 않는다 — turbo.json이 테스트를 빌드 입력에서 빼는 전제다(테스트만 바꾼
   // 커밋이 빌드·e2e 캐시를 깨지 않게). 예전엔 픽스처의 JSX prop(`width={750}`)이 스타일로 읽혀
   // 프로덕션 CSS에 쓰레기 규칙도 실었다 — 그 경로는 jsxFramework를 끄며 닫혔다.
-  exclude: ['**/*.test.{ts,tsx}'],
+  // 앱과 @blog/content(위 include) 양쪽의 테스트라 `**/` 접두다.
+  exclude: [`**/${TEST_SUFFIX}`],
   // 디자인 토큰 강제: 임의 색/값 대신 토큰만 허용. 임의값이 꼭 필요하면
   // 대괄호 이스케이프(`'[6px]'`)로 명시적으로 표기한다.
   strictTokens: true,
