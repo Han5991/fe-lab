@@ -106,6 +106,8 @@ runs:
       run: |
         dir="$RUNNER_TEMP/playwright-apt"
         sudo mkdir -p "$dir/partial"
+        # apt는 받는 동안 _apt 사용자로 내려가 partial/에 쓴다 — 넘겨주지 않으면 root로 받으며 경고한다.
+        sudo chown _apt "$dir/partial"
         printf 'Dir::Cache::Archives "%s/";\nAPT::Keep-Downloaded-Packages "true";\n' "$dir" \
           | sudo tee /etc/apt/apt.conf.d/99playwright-apt-cache >/dev/null
 
