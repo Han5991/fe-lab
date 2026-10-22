@@ -191,7 +191,19 @@ export async function runClaude(
   ];
   // auto-memory를 끈다 — worktree는 원래 저장소의 메모리를 같이 읽는다. 개인 머신에서
   // 돌리면 사용자가 남긴 판단(예: 과제의 정답이 된 규칙)이 두 조건에 다 실려 차이를 지운다.
-  const env = { ...process.env, CLAUDE_CODE_DISABLE_AUTO_MEMORY: '1' };
+  //
+  // push와 gh는 여기서 끊는다. 위 권한 규칙은 명령이 `git push`·`gh`로 시작할 때만 걸려
+  // `git -C . push`가 지나간다. 빈 접두어 pushInsteadOf는 모든 push URL(원격·절대·상대 경로)을
+  // 없는 프로토콜로 바꾼다 — 저장소 설정을 건드리지 않게 환경 변수로 얹는다(fetch는 그대로).
+  // gh는 저장된 로그인보다 GH_TOKEN을 먼저 써서, 무효 토큰이면 API 호출이 401로 끝난다.
+  const env = {
+    ...process.env,
+    CLAUDE_CODE_DISABLE_AUTO_MEMORY: '1',
+    GIT_CONFIG_COUNT: '1',
+    GIT_CONFIG_KEY_0: 'url.no-push://blocked/.pushInsteadOf',
+    GIT_CONFIG_VALUE_0: '',
+    GH_TOKEN: 'invalid',
+  };
   if (tmpDir) {
     mkdirSync(tmpDir, { recursive: true });
     env.TMPDIR = tmpDir;

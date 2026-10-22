@@ -23,8 +23,12 @@
 
 - `claude` CLI에 로그인돼 있어야 합니다. 실행은 `--permission-mode bypassPermissions`로 권한 확인 없이 돌고, 자기 worktree를
   작업 폴더로 씁니다. worktree 밖 쓰기를 막는 장치는 없으니, 컨테이너나 버려도 되는 환경에서 돌립니다.
-- 하위 세션은 프로젝트 설정만 싣고(사용자 훅·플러그인 없음), MCP 커넥터와 `git push`·`gh`를 막고, auto-memory를 끈 채 돕니다.
-  worktree는 원래 저장소의 메모리를 같이 읽어서, 켜 두면 사용자가 남긴 판단이 모든 조건에 실립니다(#545의 t4 첫 실행).
+- 하위 세션은 프로젝트 설정만 싣고, MCP 커넥터를 막고, auto-memory를 끈 채 돕니다. worktree는 원래 저장소의 메모리를 같이
+  읽어서, 켜 두면 사용자가 남긴 판단이 모든 조건에 실립니다(#545의 t4 첫 실행). 사용자 설정의 훅·플러그인·`env`·`apiKeyHelper`도
+  실리지 않으니, 인증은 CLI 로그인이나 환경 변수로 해 둡니다.
+- push는 빈 접두어 `pushInsteadOf`를 환경 변수로 얹어 어느 URL로든 실패하게 하고, `gh`는 무효 `GH_TOKEN`으로 끊습니다. 명령
+  앞머리만 보는 권한 규칙 `Bash(git push:*)`는 `git -C . push`를 놓칩니다. 이것도 격리는 아닙니다 — worktree는 원래 저장소와
+  ref를 같이 씁니다.
 - pnpm과 Node는 `.tool-versions`의 버전을 씁니다. 클라우드 세션에서는 그 Node 폴더(`/opt/nvm/versions/node/v<버전>/bin`)를
   PATH 앞에 둡니다. 채점이 그 pnpm으로 lint·타입·테스트를 돌리고, `node`로 `.ts`를 직접 읽습니다.
 - 결과 폴더 `<OUT>`은 저장소 밖에 둡니다. worktree·대화 기록·채점이 거기 쌓입니다.
