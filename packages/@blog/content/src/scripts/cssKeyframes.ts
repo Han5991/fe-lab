@@ -14,6 +14,11 @@ import { collectAssetRefs } from './assetRefs.ts';
  * 풉니다(Panda는 `animation: 'pulse'`를 `animation:var(--animations-pulse)`로 냅니다).
  * 정의만 있고 아무 선언도 부르지 않는 변수의 이름은 세지 않습니다.
  *
+ * 범위는 HTML이 `<link>`로 부르는 **첫 로드 CSS 안의 선언**입니다. 지연 로드 청크가 붙이는
+ * CSS, 그리고 JS가 런타임에 고르는 애니메이션(인라인 style, `token.var('animations.x')`)은
+ * 보지 않습니다 — 후자는 Panda 옵티마이저도 사용처로 세지 않아 keyframes를 지우므로, 둘 다
+ * 놓치고 런타임 게이트(e2e)만 볼 수 있습니다.
+ *
  * 양성 대조: CSS에 `@keyframes` 정의가 있는데 모든 페이지를 통틀어 부르는 이름이 하나도
  * 없으면 실패합니다 — "빠진 것 없음"과 "파서가 아무것도 못 봄"(산출물 형태 변화)을 가르기
  * 위해서입니다. keyframes도 애니메이션도 없는 사이트는 볼 것이 없어 통과합니다.
@@ -45,7 +50,8 @@ const KEYFRAMES = /@(?:-webkit-)?keyframes\s+([^\s{]+)\s*\{/g;
 // 선언은 블록 시작·선언 끝·중첩 블록 끝 뒤에서 시작한다. 셀렉터 안의 글자
 // (`.\[\@supports_not_\(animation-timeline\:…`)나 `--animations-x`는 걸리지 않는다.
 const CUSTOM_PROPERTY = /[{;}]\s*(--[^\s:;{}]+)\s*:([^;{}]*)/g;
-const ANIMATION_DECL = /[{;}]\s*(?:animation|animation-name)\s*:([^;{}]*)/g;
+const ANIMATION_DECL =
+  /[{;}]\s*(?:-webkit-)?(?:animation|animation-name)\s*:([^;{}]*)/g;
 const VAR_REF = /var\(\s*(--[^\s,()]+)\s*(?:,((?:[^()]|\([^()]*\))*))?\)/g;
 const FUNCTION_CALL = /[\w-]+\([^()]*\)/g;
 const IDENT = /^-?[_a-zA-Z][\w-]*$/;

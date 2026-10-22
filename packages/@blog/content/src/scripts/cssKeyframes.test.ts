@@ -26,9 +26,16 @@ test('collectKeyframeUsage: 단축 속성 목록에서 시간·키워드·함수
   const usage = collectKeyframeUsage(
     '.a{animation:fade-in .2s cubic-bezier(.4,0,.6,1) infinite both,slide 1s steps(4,jump-end) alternate paused!important}' +
       // 줄이지 않은 CSS — 함수 인자의 키워드가 따로 떨어져도 이름이 아니다.
-      '.b{animation: blink 1s steps( 2 , start ) }',
+      '.b{animation: blink 1s steps( 2 , start ) }' +
+      // 접두사 선언도 부른다 — 정의(`@-webkit-keyframes`)와 대칭.
+      '.c{-webkit-animation-name:wobble}',
   );
-  expect(sorted(usage.referenced)).toEqual(['blink', 'fade-in', 'slide']);
+  expect(sorted(usage.referenced)).toEqual([
+    'blink',
+    'fade-in',
+    'slide',
+    'wobble',
+  ]);
 });
 
 test('collectKeyframeUsage: var()는 정의 전부·폴백·중첩까지 풀고, 순환해도 멈춘다', () => {
