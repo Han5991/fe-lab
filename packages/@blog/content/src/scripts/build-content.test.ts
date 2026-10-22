@@ -116,7 +116,7 @@ test('buildPhases: 단계 label은 중복 없음', () => {
 
 test('buildPhases: --strict는 validate-posts에만 전달 (predev는 비엄격)', () => {
   // predev도 이 파이프라인을 돌기 때문에, 엄격 검사를 항상 켜면 요약을 아직
-  // 안 적은 글 하나로 dev 서버가 안 뜬다. prebuild에서만 켠다.
+  // 안 적은 글 하나로 dev 서버가 안 뜬다. predev만 --no-strict로 끈다.
   const strict = buildPhases({
     skipValidate: false,
     force: false,

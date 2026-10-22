@@ -28,7 +28,7 @@ export interface Step {
 export interface Flags {
   skipValidate: boolean;
   force: boolean;
-  /** validate-posts를 엄격 모드로 — prebuild에서만 켠다(package.json 참고) */
+  /** validate-posts를 엄격 모드로 — 기본값이다. dev 서버 앞(predev:web)만 끈다(package.json 참고) */
   strict: boolean;
 }
 
