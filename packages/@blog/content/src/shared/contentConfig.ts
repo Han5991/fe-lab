@@ -768,6 +768,16 @@ function assertValidLocale(locale: string): void {
   }
 }
 
+/** 로고 경로는 사이트 origin 뒤에 그대로 붙는다 — 사이트 루트 기준 경로(`/…`)여야 한다. */
+function assertValidLogoPath(path: string): void {
+  if (!path.startsWith('/') || path.startsWith('//')) {
+    throw new Error(
+      `defineContent: site.logo.path('${path}')는 사이트 루트 기준 경로(예: '/logo.svg')여야 합니다 — ` +
+        'JSON-LD Organization의 logo URL이 site.url 뒤에 이 값을 붙여 만들어집니다.',
+    );
+  }
+}
+
 /** 상대 경로를 세그먼트 정규화한다 ('a/./b' → 'a/b', 'a/../b' → 'b') — 순수 문자열 연산 */
 function normalizeDir(p: string): string {
   const out: string[] = [];
@@ -826,6 +836,7 @@ export function defineContent(user: ContentUserConfig): ContentConfig {
   assertValidOgFonts(user.og.fonts);
   assertValidTimezone(user.timezone);
   assertValidLocale(user.site.locale);
+  assertValidLogoPath(user.site.logo.path);
   assertValidBundleBudgets(user.bundleBudgets);
   const config: ContentConfig = {
     root: user.root,

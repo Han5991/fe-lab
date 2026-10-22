@@ -219,6 +219,19 @@ test('site.locale: 언어_지역 형식이면 받는다', () => {
   expect(config.site.locale).toBe('ko_KR');
 });
 
+// 로고 경로는 사이트 origin 뒤에 그대로 붙는다 — 앞의 /가 빠지면 `https://blog.testlogo.svg`가 나간다.
+test.each(['logo.svg', 'https://cdn.test/logo.svg', ''])(
+  'site.logo.path %j는 던진다',
+  path => {
+    expect(() =>
+      defineTestContent({
+        root: FIXTURE_ROOT,
+        site: { ...TEST_VALUES.site, logo: { ...TEST_VALUES.site.logo, path } },
+      }),
+    ).toThrow(/site\.logo\.path/);
+  },
+);
+
 // ── defineContent: 병합 규칙 ─────────────────────────────────────────────────
 
 test('기본값이 있는 그룹의 부분 오버라이드는 나머지를 기본값으로 유지한다', () => {
