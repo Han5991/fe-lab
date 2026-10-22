@@ -9,6 +9,7 @@ import jsxA11y from 'eslint-plugin-jsx-a11y';
 import reactHooks from 'eslint-plugin-react-hooks';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
+import { TEST_PROGRAM_FILES, UNIT_TESTS } from './testFiles.mts';
 
 /**
  * Panda 대괄호 이스케이프로 색을 직접 박는 것을 막는다.
@@ -114,15 +115,9 @@ const SERVER_ONLY_BARREL_FILES = [
 
 /**
  * 테스트 프로그램(tsconfig.test.json)에 속한 파일. 타입 정보 블록과 단언 규칙의 테스트
- * 예외가 이 값을 함께 쓴다 — 목록은 tsconfig.test.json의 include와 대칭이다.
+ * 예외가 이 값을 함께 쓴다 — 출처는 testFiles.mts, tsconfig 쪽은 testFiles.test.ts가 잠근다.
  */
-const TEST_FILES = [
-  '**/*.test.{ts,tsx}',
-  '**/*.spec.{ts,tsx}',
-  'vitest.config.mts',
-  'vitest.setup.ts',
-  'e2e/**/*.ts',
-];
+const TEST_FILES = TEST_PROGRAM_FILES;
 
 /** app 레이어의 repository 직접 import 금지 — 아래 두 블록이 같은 값을 펼친다. */
 const REPOSITORY_IMPORT_PATTERN = {
@@ -204,8 +199,7 @@ export default defineConfig([
     // 나열해야 하고, 그렇게 열어도 tsconfig.test.json이 아니라 defaultProject
     // 단일 파일 추론으로 검사돼 check-types가 보는 프로그램과 어긋난다.
     // 대신 이 블록에서 tsconfig.test.json 프로그램을 명시해 check-types와
-    // 정확히 같은 타입 환경으로 린트한다. 파일 목록은 tsconfig.test.json의
-    // include와 대칭 — 저쪽을 고치면 여기도 함께 고칠 것.
+    // 정확히 같은 타입 환경으로 린트한다. 파일 목록은 TEST_FILES(testFiles.mts).
     files: TEST_FILES,
     languageOptions: {
       parserOptions: {
@@ -318,10 +312,10 @@ export default defineConfig([
   },
 
   // ── Panda 공식 lint (위 pandaRecommended 주석) ─────
-  { ...pandaRecommended, ignores: ['**/*.test.{ts,tsx}'] },
+  { ...pandaRecommended, ignores: [UNIT_TESTS] },
   {
     files: ['src/**/*.{ts,tsx}'],
-    ignores: ['**/*.test.{ts,tsx}'],
+    ignores: [UNIT_TESTS],
     rules: { '@pandacss/prefer-token': ['error', PREFER_TOKEN] },
   },
   {
@@ -352,7 +346,7 @@ export default defineConfig([
     // app 레이어(src에서 레이어 폴더 제외)는 domain/<x>의 공개 API(배럴)만 쓰고,
     // repository(인프라)를 직접 찌르지 않습니다.
     files: ['src/**/*.{ts,tsx}'],
-    ignores: ['src/{shared,domain,lib}/**', '**/*.test.{ts,tsx}'],
+    ignores: ['src/{shared,domain,lib}/**', UNIT_TESTS],
     rules: {
       // `**/` 접두로 alias(@/src/domain/...)와 상대경로(../../domain/...) 양쪽을 차단.
       // `paths`는 큰 배럴·SEO 문 값 import 금지 — flat config는 뒤 블록이 룰 옵션을
@@ -372,7 +366,7 @@ export default defineConfig([
     // 클라이언트 컴포넌트가 여는 content.values.mts. repository 패턴은 app 레이어의
     // 규칙이라 여기엔 없다.
     files: ['src/{shared,domain,lib}/**/*.{ts,tsx}', 'content.values.mts'],
-    ignores: ['**/*.test.{ts,tsx}'],
+    ignores: [UNIT_TESTS],
     rules: {
       'no-restricted-imports': [
         'error',
@@ -383,7 +377,7 @@ export default defineConfig([
   {
     // 테스트는 node에서만 돈다 — SEO 빌더를 직접 검사하므로 SEO 문은 연다. 배럴 값은
     // 프로덕션과 같은 문으로 연다.
-    files: ['src/**/*.test.{ts,tsx}'],
+    files: [UNIT_TESTS],
     rules: {
       'no-restricted-imports': ['error', { paths: [CONTENT_BARREL_VALUES] }],
     },
@@ -467,7 +461,7 @@ export default defineConfig([
     //     순수 함수 호출(`export const X = f(Y)`)은 문이 아니라 초기화라 걸리지
     //     않는다 — transitions.ts가 그 형태다.
     files: ['src/shared/**/*.{ts,tsx}'],
-    ignores: ['**/*.test.{ts,tsx}'],
+    ignores: [UNIT_TESTS],
     rules: {
       'no-restricted-syntax': [
         'error',

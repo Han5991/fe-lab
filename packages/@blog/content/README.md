@@ -19,7 +19,7 @@
 큰 배럴은 `series.ts`·로더로 `node:fs`를 함께 연다. 그걸 클라이언트 그래프에서
 걸러 주는 것이 앱별 번들러 설정(`optimizePackageImports`)이 아니라 패키지 계약이
 되도록 클라이언트 문을 따로 둔다 — "도달하는 모듈에 node 빌트인도 외부 패키지도
-없다"는 성질을 `src/clientDoor.test.ts`가 import 그래프를 따라가며 잠근다(큰
+없다"는 성질을 `src/door/clientDoor.test.ts`가 import 그래프를 따라가며 잠근다(큰
 배럴이 같은 검사에 **실패하는** 것이 양성 대조).
 
 fs를 읽는 API는 전부 **인스턴스**다 — 소비자가 `content.config.mts`로 만든
@@ -95,10 +95,12 @@ flowchart LR
 - 네이티브 이미지 스택(satori·sharp)은 `render-build`만 만질 수 있다. 이 패키지는
   React를 의존하지 않는다 — satori에 넘기는 엘리먼트 모양은 `generate-og-images.ts`의
   `OgNode`가 직접 선언한다.
-- boundaries 블록은 `src/{shared,post,seo,scripts}/**`에만 건다. 최상위 배럴
-  `src/index.ts`·`src/client.ts`와 그 문을 잠그는 `src/clientDoor.test.ts`만 그 스코프 밖이고(`src/seo/index.ts`는 `seo` element 안에서 검사된다),
-  새 파일을 `src/` 바로 아래 두면 경계 검사를 아예 받지 않으니 네 폴더 중 한 곳에 둘 것.
-  프로덕션은 테스트를 import 못 한다.
+- boundaries 블록은 `src` 전체에 건다. 문 `@blog/content`·`/client`도 자기 폴더 `src/door`를 가진
+  레이어(`door` — `shared`·`content`를 다시 내보낼 수만 있다)라, src의 모든 파일이 등록된 레이어 하나에
+  속하고 나머지를 받아 주는 폴백 element는 없다. 새 폴더나 src 직속 파일은 어떤 element에도 속하지 않아
+  `no-unknown-files`가 그 파일에서 바로 막고, 그쪽으로 가는 import는 `no-unknown-dependencies`가 막는다 —
+  레이어로 등록해야 열린다(`/seo` 문 `src/seo/index.ts`는 `seo` element 안에 있다). 프로덕션은 테스트를
+  import 못 한다.
 - 앱(`apps/blog/web`)의 eslint 설정과 **같은 엄격 수준**을 유지해야 한다 — 소스
   익스포트라 이 패키지 파일이 앱 program에 소스째 섞이기 때문. `lint`는 양쪽 다
   `--max-warnings=0`이고, `noInlineConfig` +
@@ -109,8 +111,8 @@ flowchart LR
 
 ```
 src/
-├─ index.ts · seo/index.ts · client.ts   익스포트 문 셋 (내부 배럴 post/index.ts는 별개)
-├─ clientDoor.test.ts             클라이언트 문의 성질(node 빌트인·외부 패키지 없음)을 import 그래프로 잠금
+├─ door/       익스포트 문 index.ts(`@blog/content`) · client.ts(`/client`) — `/seo` 문은 seo/index.ts
+│              · clientDoor.test.ts(클라이언트 문의 성질: node 빌트인·외부 패키지 없음을 import 그래프로 잠금)
 ├─ shared/     contentConfig(defineContent + ContentValues 계약) · contentPaths(절대 경로)
 │              · testValues(테스트 픽스처 — 패키지 안의 유일한 "어떤 사이트")
 │              · dates · format · guards · jsonLd · url · postFiles · prismLanguages

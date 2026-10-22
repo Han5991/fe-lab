@@ -77,9 +77,11 @@ here or anywhere else (this repo once carried four diverging copies of that prom
   which the app, `@blog/content`, `@blog/preset` and the Edge Function typecheck extend — never copy a flag into a
   consumer tsconfig. Production adds `noUncheckedIndexedAccess`, `noPropertyAccessFromIndexSignature`,
   `exactOptionalPropertyTypes`; each `tsconfig.test.json` turns exactly those three off via
-  `packages/@blog/tsconfig/test.json`. `check-types` and the ESLint type rules follow the same split. Test includes are symmetric across
-  tsconfig, vitest globs and the ESLint test block — change all three together. One exception: `apps/blog/web/e2e`
-  is in tsconfig.test and the ESLint test block but not in the vitest globs (Playwright runs it).
+  `packages/@blog/tsconfig/test.json`. `check-types` and the ESLint type rules follow the same split. In the app, test file sets have one
+  source, `apps/blog/web/testFiles.mts` (vitest projects, the ESLint test block and Panda's exclude derive from it;
+  `apps/blog/web/src/app/testFiles.test.ts` locks the JSON tsconfigs to it and fails on a test-named file no runner picks
+  up). `@blog/content` has no such source yet — its tsconfig, vitest globs and ESLint test block are kept symmetric by
+  hand, so change all three together. `apps/blog/web/e2e` is in the test program but not in the vitest globs (Playwright runs it).
 - Prefer `interface` over `type` for objects (lint-enforced in the blog stack), named exports over default
   (except Next.js pages/layouts), `import type`. No `any`, and no `as` that narrows a type — the blog stack
   lints it (`no-unsafe-type-assertion`, tests excepted); narrow with the shared guards in `@blog/content`

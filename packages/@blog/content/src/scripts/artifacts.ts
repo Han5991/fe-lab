@@ -1,4 +1,11 @@
-import { POSTS_PATH, postUrl, RSS_PATH, type PostData } from '../post/index.ts';
+import {
+  ADMIN_POSTS_INDEX_PATH,
+  POSTS_PATH,
+  postUrl,
+  RSS_PATH,
+  SEARCH_INDEX_PATH,
+  type PostData,
+} from '../post/index.ts';
 import type { ContentApi } from '../post/createContent.ts';
 import { isRecord } from '../shared/guards.ts';
 import { decodeUrlSafe } from '../shared/url.ts';
@@ -205,7 +212,7 @@ export const ARTIFACTS: readonly ArtifactSpec[] = [
   },
   {
     name: 'search-index.json',
-    path: 'search-index.json',
+    path: SEARCH_INDEX_PATH,
     kind: 'file',
     postSet: 'visible',
     relation: 'exact',
@@ -216,7 +223,7 @@ export const ARTIFACTS: readonly ArtifactSpec[] = [
     // search-index.json(visible)과 admin 대시보드용 이 파일(all). 한 줄로
     // 합치면 admin 인덱스가 검사에서 빠지거나, hidden 글이 extra로 오탐된다.
     name: 'admin-posts-index.json',
-    path: 'admin-posts-index.json',
+    path: ADMIN_POSTS_INDEX_PATH,
     kind: 'file',
     postSet: 'all',
     // draft·scheduled가 더 들어 있는 것이 정상 — 발행 글이 빠졌을 때만 위반.

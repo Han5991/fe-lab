@@ -1,4 +1,5 @@
 import { css } from '@blog/styled-system/css';
+import { siteHeaderStyle } from '../siteHeader';
 
 /**
  * 페이지 최상단 sticky 진행률 바.
@@ -14,9 +15,11 @@ import { css } from '@blog/styled-system/css';
 export const ReadingProgress = () => (
   <div
     aria-hidden="true"
+    style={siteHeaderStyle}
     className={css({
       pos: 'fixed',
-      top: '14',
+      // 사이트 헤더 바로 아래 — 헤더 높이는 siteHeader가 정한다.
+      top: '[var(--site-header-height)]',
       left: '0',
       right: '0',
       h: '[3px]',

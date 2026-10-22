@@ -52,6 +52,15 @@ export const POSTS_PATH = '/posts/';
  */
 export const RSS_PATH = '/rss.xml';
 
+/**
+ * 검색 색인 두 벌의 경로 — RSS와 같은 이유로 만드는 쪽(`scripts/generate-search-index.ts`)이
+ * 소유한다. 공개 색인은 검색 다이얼로그가, 전체 색인(draft·scheduled 포함)은 admin
+ * 대시보드가 fetch한다. 전체 색인은 비공개 글 제목을 담아 앱의 `public/_headers`가
+ * noindex를 거는데, 그 파일은 import할 수 없어 런타임 게이트(e2e)가 응답 헤더로 잠근다.
+ */
+export const SEARCH_INDEX_PATH = '/search-index.json';
+export const ADMIN_POSTS_INDEX_PATH = '/admin-posts-index.json';
+
 /** frontmatter `slug`로 받아도 되는가 — `postPath`가 `/posts/` 아래 한 경로로만 푸는 모양(`..`·빈 세그먼트·`\` 거부). */
 export function isSafeSlug(slug: string): boolean {
   if (slug === '' || slug.includes('\\')) return false;

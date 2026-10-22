@@ -142,16 +142,17 @@ export default defineConfig([
   },
 
   // ── 레이어 경계 (eslint-plugin-boundaries) ─────────────────────────────────
-  // element는 전부 폴더 단위다. 이 블록은 네 폴더에만 걸리므로 src/ 바로 아래 파일
-  // (최상위 배럴 src/index.ts·src/client.ts와 clientDoor.test.ts)은 경계 검사를 아예
-  // 받지 않는다 — 새 파일은 네 폴더 중 한 곳에 둘 것. (src/seo/index.ts는 seo
-  // element 안에서 검사된다.)
+  // element는 전부 폴더 단위이고, 이 블록은 src 전체에 걸린다. 패키지 문(`@blog/content`·
+  // `/client`)도 자기 폴더(src/door)를 가진 레이어다 — src 안의 모든 파일이 등록된 레이어
+  // 하나에 속하고, 나머지를 받아 주는 폴백 element는 없다. 새 폴더나 src 직속 파일은 어떤
+  // element에도 속하지 않아 no-unknown-files가 그 파일에서 바로 막는다(레이어로 등록해야 열린다).
+  // (`/seo` 문 src/seo/index.ts는 seo element 안에 있다.)
   //
   // 레이어 순서(아래→위): shared → content(post) → seo → build(scripts) →
   // render-build(scripts/render) → cli(scripts/cli). 각 레이어는 자기보다 아래
   // 레이어만 import한다.
   {
-    files: ['src/{shared,post,seo,scripts}/**/*.{js,mjs,cjs,ts,mts,cts}'],
+    files: ['src/**/*.{js,mjs,cjs,ts,mts,cts}'],
     plugins: { boundaries },
     settings: {
       'boundaries/root-path': import.meta.dirname,
@@ -165,6 +166,7 @@ export default defineConfig([
         { type: 'cli', pattern: 'src/scripts/cli' },
         { type: 'render-build', pattern: 'src/scripts/render' },
         { type: 'build', pattern: 'src/scripts' },
+        { type: 'door', pattern: 'src/door' },
       ],
       'boundaries/files': [
         { category: 'test', pattern: ['**/*.test.*', '**/*.spec.*'] },
@@ -174,6 +176,9 @@ export default defineConfig([
     },
     rules: {
       'boundaries/no-unknown-files': 'error',
+      // 어떤 element에도 없는 로컬 파일로 가는 import는 정책 검사를 건너뛴다(checkUnknownLocals
+      // 기본값 false) — default disallow가 닿지 않는 뒷문이라 막는다. 재평가: 2027-04-22.
+      'boundaries/no-unknown-dependencies': 'error',
       'boundaries/dependencies': [
         'error',
         {
@@ -244,6 +249,14 @@ export default defineConfig([
                   },
                 },
               ],
+            },
+            {
+              // 문(src/door)은 공개 레이어를 다시 내보낼 뿐이다 — SEO는 자기
+              // 문(src/seo/index.ts)이 따로 있고, 빌드 스크립트는 bin으로만 돈다.
+              from: { element: { type: 'door' } },
+              allow: {
+                to: { element: { types: { anyOf: ['shared', 'content'] } } },
+              },
             },
             {
               // CLI는 단계를 이름에 잇는 진입점이라 모든 단계를 든다. 위 레이어를

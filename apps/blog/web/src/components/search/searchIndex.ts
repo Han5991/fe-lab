@@ -1,4 +1,4 @@
-import { isRecord } from '@blog/content/client';
+import { isRecord, SEARCH_INDEX_PATH } from '@blog/content/client';
 
 /** 검색 색인(`public/search-index.json`)의 글 한 편. */
 export interface SearchPost {
@@ -12,10 +12,6 @@ export interface SearchPost {
   seriesTitle?: string | null;
   contentPreview: string;
 }
-
-// `blog-content search-index`가 `public/`에 쓰는 산출물 이름과 같다
-// (`packages/@blog/content/src/scripts/generate-search-index.ts`).
-const SEARCH_INDEX_URL = '/search-index.json';
 
 /** 네트워크로 온 색인 항목을 확인된 필드로 다시 만든다 — slug·title이 없으면 버린다. */
 export function toSearchPost(item: unknown): SearchPost | null {
@@ -48,7 +44,7 @@ export function toSearchPost(item: unknown): SearchPost | null {
 
 /** 색인을 받아 온다 — 실패 응답은 던져 "결과 없음"과 구분되게 한다. */
 export async function fetchSearchIndex(): Promise<SearchPost[]> {
-  const res = await fetch(SEARCH_INDEX_URL);
+  const res = await fetch(SEARCH_INDEX_PATH);
   if (!res.ok) throw new Error(`search index: HTTP ${res.status}`);
   const data: unknown = await res.json();
   if (!Array.isArray(data)) throw new Error('search index: not an array');

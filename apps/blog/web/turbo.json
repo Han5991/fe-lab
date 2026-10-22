@@ -11,6 +11,8 @@
         "!e2e/**",
         "!**/*.test.ts",
         "!**/*.test.tsx",
+        "!**/*.spec.ts",
+        "!**/*.spec.tsx",
         "!vitest.config.mts",
         "!vitest.setup.ts",
         "!tsconfig.test.json",

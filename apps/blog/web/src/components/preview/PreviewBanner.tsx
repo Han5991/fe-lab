@@ -1,5 +1,6 @@
 import { css } from '@blog/styled-system/css';
 import { publishAtOf, type PostSummary } from '@blog/content/client';
+import { siteHeaderStyle } from '../siteHeader';
 
 /**
  * 공개 시각 판정에 필요한 필드를 **한 덩어리로** 받습니다.
@@ -30,11 +31,12 @@ export function PreviewBanner({ post }: Props) {
   return (
     <div
       role="status"
+      style={siteHeaderStyle}
       className={css({
-        // 헤더(Layout.tsx: 52px + hairline) 아래에 붙는다 — 이 배너는 헤더보다 낮은
-        // stacking context 안이라 top 0이면 헤더에 덮인다. 헤더 높이를 바꾸면 함께.
+        // 사이트 헤더 아래에 붙는다 — 이 배너는 헤더보다 낮은 stacking context 안이라
+        // top 0이면 헤더에 덮인다.
         position: 'sticky',
-        top: '[53px]',
+        top: '[var(--site-header-height)]',
         zIndex: 100,
         bg: 'marker.600',
         color: 'paper.50',

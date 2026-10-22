@@ -9,6 +9,7 @@
  * 콘솔 에러·예외 0은 모든 테스트에 걸린다(`fixtures.ts`).
  */
 import type { BrowserContext, Page } from '@playwright/test';
+import { ADMIN_POSTS_INDEX_PATH } from '@blog/content/client';
 import { axeViolations } from './support/a11y';
 import { expect, test } from './support/fixtures';
 import { ADMIN_EMAIL, SUPABASE_URL, sitePages } from './support/site';
@@ -73,6 +74,15 @@ test.describe('비로그인', () => {
       }
     });
   }
+
+  // 전체 색인은 비공개 글 제목까지 담는다. noindex를 거는 public/_headers는 경로를 손으로 적은
+  // import할 수 없는 사본이라, 산출물 이름이 바뀌면 noindex만 조용히 빠진다 — 프로덕션과 같은
+  // Worker가 실제로 거는지 응답 헤더로 본다. 재평가: 2027-04-22 — 그때까지 잡은 것이 없으면 내린다.
+  test('admin 전체 색인은 noindex로 나간다', async ({ page }) => {
+    const response = await page.request.get(ADMIN_POSTS_INDEX_PATH);
+    expect(response.status(), '응답 코드').toBe(200);
+    expect(response.headers()['x-robots-tag'], 'X-Robots-Tag').toBe('noindex');
+  });
 });
 
 /** base64url(JSON) — 서명은 검증되지 않는다(auth-js는 저장된 토큰을 해독만 한다). */

@@ -7,6 +7,7 @@ import type { ReactNode } from 'react';
 
 import { PageTransition } from './PageTransition';
 import { railGutter, railColumn } from './Rail';
+import { siteHeaderStyle } from './siteHeader';
 import { NavLinks } from './home/NavLinks';
 import { SearchDialog } from './search/SearchDialog';
 import { ThemeToggle } from './ThemeToggle';
@@ -80,7 +81,10 @@ export const Layout = ({ children }: LayoutProps) => {
         본문으로 건너뛰기
       </a>
       <header
+        style={siteHeaderStyle}
         className={css({
+          // 높이는 hairline까지 포함한다(border-box) — 헤더 아래에 붙는 요소들이 같은 값을 쓴다.
+          h: '[var(--site-header-height)]',
           borderBottomWidth: 'hairline',
           borderBottomStyle: 'solid',
           borderColor: 'ink.border',
@@ -99,13 +103,12 @@ export const Layout = ({ children }: LayoutProps) => {
           zIndex: '10',
         })}
       >
-        <div className={railOuter}>
+        <div className={cx(railOuter, css({ h: 'full' }))}>
           <div
             className={cx(
               railInner,
               css({
-                // 이 높이(+ 하단 hairline)에 PreviewBanner의 sticky top이 맞물린다.
-                h: '[52px]',
+                h: 'full',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
