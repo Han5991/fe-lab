@@ -45,6 +45,14 @@ export interface SiteConfig {
    * 표기가 여기서 파생한다(`locale.ts`). 사이트 고유 값이라 기본값이 없다.
    */
   locale: SiteLocale;
+  /** 발행처 로고 — JSON-LD Organization의 `logo`. 경로는 사이트 루트 기준 */
+  logo: SiteLogo;
+}
+
+export interface SiteLogo {
+  path: string;
+  width: number;
+  height: number;
 }
 
 export interface AuthorConfig {

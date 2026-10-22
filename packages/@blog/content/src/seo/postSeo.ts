@@ -21,6 +21,11 @@ import { resolveAbsoluteThumbnailUrl } from '../post/thumbnail.ts';
 import type { ContentConfig } from '../shared/contentConfig.ts';
 import { localeLanguage } from '../shared/locale.ts';
 import {
+  buildAuthorJsonLd,
+  buildOrganizationJsonLd,
+  siteNodeId,
+} from '../shared/jsonLd.ts';
+import {
   isIsoDateOnly,
   isIsoDateTimeWithOffset,
   parseIsoOffset,
@@ -249,28 +254,11 @@ export function createPostSeo(
       ...(post.relativeDir && { articleSection: post.relativeDir }),
       mainEntityOfPage: { '@type': 'WebPage', '@id': url },
       url,
-      // 저자·발행처 식별값은 설정(defineContent의 author/site)에서 온다 —
-      // 예전에는 여기만 리터럴이라 constants와 어긋날 수 있었다.
-      author: {
-        '@type': 'Person',
-        '@id': `${site.url}/#author`,
-        name: config.author.name,
-        alternateName: config.author.alternateName,
-        url: site.url,
-      },
-      publisher: {
-        '@type': 'Organization',
-        '@id': `${site.url}/#organization`,
-        name: site.name,
-        url: site.url,
-        logo: {
-          '@type': 'ImageObject',
-          url: `${site.url}/logo-wordmark.svg`,
-          width: 280,
-          height: 60,
-        },
-      },
-      isPartOf: { '@id': `${site.url}/#website` },
+      // 저자·발행처 노드는 홈 @graph의 정의와 같은 공통 필드에서 나온다(shared/jsonLd.ts) —
+      // 값은 설정(defineContent의 author/site)에서 온다.
+      author: buildAuthorJsonLd(site, config.author),
+      publisher: buildOrganizationJsonLd(site),
+      isPartOf: { '@id': siteNodeId(site.url, 'website') },
       speakable: {
         '@type': 'SpeakableSpecification',
         cssSelector: [

@@ -12,6 +12,7 @@ import { ABOUT_PAGE_MODIFIED } from '@/content.values.mts';
 import { ABOUT_PATH } from '@/src/shared/routes';
 import type { Metadata } from 'next';
 import { buildAuthorPersonJsonLd } from '../authorPerson';
+import { defaultShareCard } from '../seoDefaults';
 
 // 사이트 정체성·SEO 예산은 해석된 설정에서 온다 — 값의 출처는
 // `content.values.mts`이고, 여기서 리터럴을 다시 읽지 않는다(서버 전용 모듈).
@@ -30,37 +31,26 @@ const SHARE_DESCRIPTION =
   '프론트엔드 엔지니어 한상욱(Sangwook Han). Mantine 27 PRs, Node.js 코어 기여, gemini-cli 74% 성능 개선. FEConf 2025 발표자.';
 
 export function buildAboutMetadata(): Metadata {
+  const card = defaultShareCard({
+    title: PAGE_TITLE,
+    description: SHARE_DESCRIPTION,
+    url: ABOUT_URL,
+    imageAlt: `${SITE.name} Blog`,
+  });
   return {
     title: PAGE_TITLE,
     description: SEARCH_DESCRIPTION,
     alternates: { canonical: ABOUT_PATH },
     openGraph: {
-      title: PAGE_TITLE,
-      description: SHARE_DESCRIPTION,
-      url: ABOUT_URL,
-      siteName: SITE.name,
+      ...card.openGraph,
       // 사람 소개 페이지라 website가 아니라 profile이다. 지정하지 않으면
       // og:type 자체가 빠져서 크롤러가 문서 종류를 추정하게 된다.
       type: 'profile',
       firstName: 'Sangwook',
       lastName: 'Han',
       username: 'Han5991',
-      locale: SITE.locale,
-      images: [
-        {
-          url: `${SITE.url}${SITE.ogDefaultImage}`,
-          width: 1200,
-          height: 630,
-          alt: `${SITE.name} Blog`,
-        },
-      ],
     },
-    twitter: {
-      card: 'summary_large_image',
-      title: PAGE_TITLE,
-      description: SHARE_DESCRIPTION,
-      images: [`${SITE.url}${SITE.ogDefaultImage}`],
-    },
+    twitter: card.twitter,
   };
 }
 

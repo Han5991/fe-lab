@@ -6,16 +6,15 @@
  * 설정의 `author`에서 오고, 이 페이지들에만 나가는 소개·관심사·사진만 여기 적는다.
  */
 import contentConfig from '@/content.config.mts';
+import { buildAuthorJsonLd } from '@blog/content/client';
 
 const { site: SITE, author: AUTHOR } = contentConfig;
 
 export function buildAuthorPersonJsonLd() {
   return {
-    '@type': 'Person',
-    '@id': `${SITE.url}/#author`,
-    name: AUTHOR.name,
-    alternateName: AUTHOR.alternateName,
-    url: SITE.url,
+    // 글의 author와 같은 공통 필드(@blog/content의 buildAuthorJsonLd)에 이 페이지들에만
+    // 나가는 사진·소개·관심사를 더한다.
+    ...buildAuthorJsonLd(SITE, AUTHOR),
     image: {
       '@type': 'ImageObject',
       url: 'https://github.com/Han5991.png?size=400',

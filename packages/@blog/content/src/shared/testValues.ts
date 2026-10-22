@@ -42,6 +42,7 @@ export const TEST_VALUES: ContentValues = {
     ogDefaultImage: '/og-default.jpg',
     // 실제 사이트(ko_KR)와 일부러 다르다 — 설정을 읽지 않고 언어를 적은 소비자가 여기서 걸린다.
     locale: 'en_US',
+    logo: { path: '/test-logo.svg', width: 100, height: 20 },
   },
   author: {
     name: 'Test Author',

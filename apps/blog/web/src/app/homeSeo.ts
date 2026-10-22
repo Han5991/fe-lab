@@ -10,17 +10,21 @@ import type { Metadata } from 'next';
 import {
   archiveUrl,
   type ArchiveFilters,
+  buildOrganizationJsonLd,
   localeLanguage,
+  siteNodeId,
 } from '@blog/content/client';
+import { SITE_ALTERNATE_NAME } from '@/content.values.mts';
 import { buildAuthorPersonJsonLd } from './authorPerson';
+import { defaultShareCard, SITE_DEFAULT_TITLE } from './seoDefaults';
 
 // 사이트 정체성·저자·SEO 예산은 해석된 설정에서 온다 — 값의 출처는
 // `content.values.mts`이고, 여기서 리터럴을 다시 읽지 않는다(서버 전용 모듈).
 const { site: SITE, author: AUTHOR } = contentConfig;
 
 // 제목은 meta·og·twitter 세 곳에 나가므로 한 번만 쓴다 — 한 곳만 고쳐지면
-// 검색 결과와 공유 카드가 다른 말을 한다.
-const PAGE_TITLE = `${SITE.name} | 프론트엔드 실험실`;
+// 검색 결과와 공유 카드가 다른 말을 한다. 홈의 제목은 사이트 기본 제목이다.
+const PAGE_TITLE = SITE_DEFAULT_TITLE;
 
 /** 검색어 쿼리 키 — 아카이브 필터의 키라 이름이 바뀌면 여기서 타입 에러가 난다. */
 const SEARCH_QUERY_KEY: keyof ArchiveFilters = 'q';
@@ -30,28 +34,12 @@ export function buildHomeMetadata(): Metadata {
     title: PAGE_TITLE,
     description: SITE.descriptionExpanded,
     alternates: { canonical: '/' },
-    openGraph: {
+    ...defaultShareCard({
       title: PAGE_TITLE,
       description: SITE.descriptionExpanded,
       url: SITE.url,
-      siteName: SITE.name,
-      images: [
-        {
-          url: `${SITE.url}${SITE.ogDefaultImage}`,
-          width: 1200,
-          height: 630,
-          alt: `${SITE.name} Blog`,
-        },
-      ],
-      locale: SITE.locale,
-      type: 'website',
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title: PAGE_TITLE,
-      description: SITE.descriptionExpanded,
-      images: [`${SITE.url}${SITE.ogDefaultImage}`],
-    },
+      imageAlt: `${SITE.name} Blog`,
+    }),
   };
 }
 
@@ -61,13 +49,13 @@ export function buildHomeJsonLd() {
     '@graph': [
       {
         '@type': 'WebSite',
-        '@id': `${SITE.url}/#website`,
-        name: 'Frontend Lab',
-        alternateName: '프론트엔드 실험실',
+        '@id': siteNodeId(SITE.url, 'website'),
+        name: SITE.name,
+        alternateName: SITE_ALTERNATE_NAME,
         url: SITE.url,
         description: SITE.descriptionExpanded,
         inLanguage: localeLanguage(SITE.locale),
-        publisher: { '@id': `${SITE.url}/#organization` },
+        publisher: { '@id': siteNodeId(SITE.url, 'organization') },
         potentialAction: {
           '@type': 'SearchAction',
           target: {
@@ -83,18 +71,11 @@ export function buildHomeJsonLd() {
         },
       },
       {
-        '@type': 'Organization',
-        '@id': `${SITE.url}/#organization`,
-        name: 'Frontend Lab',
-        url: SITE.url,
-        logo: {
-          '@type': 'ImageObject',
-          url: `${SITE.url}/logo-wordmark.svg`,
-          width: 280,
-          height: 60,
-        },
+        // 글의 publisher와 같은 공통 필드(@blog/content의 buildOrganizationJsonLd)에 홈만
+        // 아는 소개·창립자·링크를 더한다.
+        ...buildOrganizationJsonLd(SITE),
         description: SITE.descriptionExpanded,
-        founder: { '@id': `${SITE.url}/#author` },
+        founder: { '@id': siteNodeId(SITE.url, 'author') },
         sameAs: [AUTHOR.github, AUTHOR.linkedin],
       },
       buildAuthorPersonJsonLd(),

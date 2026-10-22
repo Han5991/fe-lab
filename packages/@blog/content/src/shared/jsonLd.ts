@@ -1,3 +1,5 @@
+import type { AuthorConfig, SiteConfig } from './contentConfig.ts';
+
 /**
  * `<script type="application/ld+json">` 본문에 안전하게 넣을 JSON 문자열을 만든다.
  *
@@ -12,4 +14,50 @@
  */
 export function safeJsonLd(data: unknown): string {
   return JSON.stringify(data).replace(/</g, '\\u003c');
+}
+
+/**
+ * 사이트 전역 JSON-LD 노드 — 홈 `@graph`가 정의하고, 다른 페이지와 글이 `@id`로 가리킨다.
+ * `@id`가 자리마다 손으로 조립되면 한 곳만 바뀌어 참조가 허공을 가리킨다.
+ */
+export type SiteNode = 'website' | 'organization' | 'author';
+
+export function siteNodeId(siteUrl: string, node: SiteNode): string {
+  return `${siteUrl}/#${node}`;
+}
+
+/**
+ * 발행처(Organization) 노드의 공통 필드 — 글의 `publisher`가 그대로 쓰고, 홈 `@graph`의
+ * 정의가 여기에 소개·창립자·링크를 더한다. 같은 `@id`의 두 정의가 이름·로고부터 갈라지지 않게
+ * 한 곳에서 만든다.
+ */
+export function buildOrganizationJsonLd(
+  site: Pick<SiteConfig, 'url' | 'name' | 'logo'>,
+) {
+  return {
+    '@type': 'Organization',
+    '@id': siteNodeId(site.url, 'organization'),
+    name: site.name,
+    url: site.url,
+    logo: {
+      '@type': 'ImageObject',
+      url: `${site.url}${site.logo.path}`,
+      width: site.logo.width,
+      height: site.logo.height,
+    },
+  };
+}
+
+/** 저자(Person) 노드의 공통 필드 — 글의 `author`가 그대로 쓰고, 앱의 저자 정의가 여기에 더한다. */
+export function buildAuthorJsonLd(
+  site: Pick<SiteConfig, 'url'>,
+  author: Pick<AuthorConfig, 'name' | 'alternateName'>,
+) {
+  return {
+    '@type': 'Person',
+    '@id': siteNodeId(site.url, 'author'),
+    name: author.name,
+    alternateName: author.alternateName,
+    url: site.url,
+  };
 }

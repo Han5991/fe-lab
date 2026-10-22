@@ -7,43 +7,25 @@
  */
 import contentConfig from '@/content.config.mts';
 import type { Metadata } from 'next';
+import { defaultShareCard, SITE_DEFAULT_TITLE } from './seoDefaults';
 
 // 사이트 정체성·저자·SEO 예산은 해석된 설정에서 온다 — 값의 출처는
 // `content.values.mts`이고, 여기서 리터럴을 다시 읽지 않는다(서버 전용 모듈).
 const { site: SITE } = contentConfig;
-
-// 제목은 meta·og·twitter 세 곳에 나간다. 한 번만 쓴다.
-const DEFAULT_TITLE = `${SITE.name} | 프론트엔드 실험실`;
 
 export function buildSiteMetadata(): Metadata {
   return {
     metadataBase: new URL(SITE.url),
     // RSS alternate link는 RootLayout의 <head>에 직접 추가합니다
     // (Next 16 metadata.alternates.types로는 출력되지 않는 문제 회피)
-    title: DEFAULT_TITLE,
+    title: SITE_DEFAULT_TITLE,
     description: SITE.descriptionExpanded,
-    openGraph: {
-      title: DEFAULT_TITLE,
+    ...defaultShareCard({
+      title: SITE_DEFAULT_TITLE,
       description: SITE.descriptionExpanded,
       url: SITE.url,
-      siteName: SITE.name,
-      images: [
-        {
-          url: SITE.ogDefaultImage,
-          width: 1200,
-          height: 630,
-          alt: `${SITE.name} Blog`,
-        },
-      ],
-      locale: SITE.locale,
-      type: 'website',
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title: DEFAULT_TITLE,
-      description: SITE.descriptionExpanded,
-      images: [SITE.ogDefaultImage],
-    },
+      imageAlt: `${SITE.name} Blog`,
+    }),
     verification: {
       other: {
         'naver-site-verification': '8f6135bb66d952d10dd08c6460797fd98fa26823',
