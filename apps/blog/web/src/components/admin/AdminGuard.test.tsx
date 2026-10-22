@@ -31,12 +31,19 @@ vi.mock('@/src/domain/auth', async () => ({
       listener: (session: unknown, event: string) => void,
     ) => {
       auth.listener = listener;
-      return () => undefined;
+      return () => {
+        if (auth.listener === listener) auth.listener = undefined;
+      };
     },
-    signOutAdmin: () => Promise.resolve(),
+    // auth-js의 signOut처럼 resolve하기 전에 같은 탭 구독자에게 SIGNED_OUT을 보낸다.
+    signOutAdmin: () => {
+      auth.listener?.(null, 'SIGNED_OUT');
+      return Promise.resolve();
+    },
   },
 }));
 
+import { ADMIN_LOGIN_UNAUTHORIZED_PATH } from '@/src/shared/routes';
 import { AdminGuard } from './AdminGuard';
 
 function renderGuard(client = new QueryClient()) {
@@ -112,10 +119,12 @@ describe('AdminGuard', () => {
     auth.listener?.({ user: { email: 'someone@example.com' } }, 'SIGNED_IN');
 
     await waitFor(() =>
-      expect(replace).toHaveBeenCalledWith(
-        expect.stringContaining('/admin/login/'),
-      ),
+      expect(replace).toHaveBeenCalledWith(ADMIN_LOGIN_UNAUTHORIZED_PATH),
     );
+    // 로그아웃이 보낸 SIGNED_OUT이 일반 로그인 리다이렉트로 이 안내를 덮지 않는다 — 렌더가
+    // 가라앉은 뒤의 마지막 목적지가 권한 없음이어야 한다.
+    await new Promise(resolve => setTimeout(resolve, 50));
+    expect(replace.mock.calls.at(-1)?.[0]).toBe(ADMIN_LOGIN_UNAUTHORIZED_PATH);
     expect(client.getQueryData(['admin', 'dashboard-data'])).toBeUndefined();
   });
 });

@@ -70,21 +70,27 @@ export function AdminGuard({ children }: { children: ReactNode }) {
     }
 
     // Listen for auth state changes (e.g., logging out from another tab)
-    return authRepository.subscribeAdminSession((currentSession, event) => {
-      if (isAdminLoginPath(pathname)) return;
+    const unsubscribe = authRepository.subscribeAdminSession(
+      (currentSession, event) => {
+        if (isAdminLoginPath(pathname)) return;
 
-      // 다른 탭의 로그아웃·계정 전환도 이 탭의 세션을 끝낸다 — 로그아웃 버튼과 같은 비우기를
-      // 거쳐야 뒤로 가기에 옛 세션 화면·집계가 남지 않는다.
-      if (event === 'SIGNED_OUT' || !currentSession) {
-        endAdminSession(queryClient);
-        router.replace(ADMIN_LOGIN_PATH);
-      } else if (!isAdminEmail(currentSession.user.email)) {
-        void authRepository.signOutAdmin().then(() => {
-          clearAdminData(queryClient);
-          router.replace(ADMIN_LOGIN_UNAUTHORIZED_PATH);
-        });
-      }
-    });
+        // 다른 탭의 로그아웃·계정 전환도 이 탭의 세션을 끝낸다 — 로그아웃 버튼과 같은 비우기를
+        // 거쳐야 뒤로 가기에 옛 세션 화면·집계가 남지 않는다.
+        if (event === 'SIGNED_OUT' || !currentSession) {
+          endAdminSession(queryClient);
+          router.replace(ADMIN_LOGIN_PATH);
+        } else if (!isAdminEmail(currentSession.user.email)) {
+          // 구독부터 끊는다 — signOut은 resolve하기 전에 같은 탭 구독자에게 SIGNED_OUT을 보내고,
+          // 그게 위 분기로 들어오면 세션 캐시를 비워 권한 없음 리다이렉트를 로그인으로 덮는다.
+          unsubscribe();
+          void authRepository.signOutAdmin().then(() => {
+            clearAdminData(queryClient);
+            router.replace(ADMIN_LOGIN_UNAUTHORIZED_PATH);
+          });
+        }
+      },
+    );
+    return unsubscribe;
   }, [session, router, pathname, queryClient]);
 
   if (DEV_BYPASS) {
