@@ -752,6 +752,7 @@ async function cmdRun(out, opts) {
       console.log('done', id, '(이미 있음)');
       return;
     }
+    const start = Date.now();
     await runClaude(
       join(out, 'wt', id),
       `${TASKS[t].prompt}\n\n${SPEC.suffix}`,
@@ -761,6 +762,11 @@ async function cmdRun(out, opts) {
         extra: ['--max-budget-usd', String(opts.budget)],
         tmpDir: join(out, 'tmp', id),
       },
+    );
+    // 실행 구간 — grade가 /tmp 경로가 겹친 실행을 가를 때 쓴다.
+    writeFileSync(
+      join(out, 'logs', `${id}.time.json`),
+      JSON.stringify({ start, end: Date.now() }),
     );
     console.log('done', id);
   });
@@ -847,18 +853,24 @@ function cmdGrade(out, opts) {
     rows.push(row);
   }
   // 같은 /tmp 경로를 직접 쓰면서 시간이 겹친 다른 실행 — 서로의 파일을 덮었을 수 있다. 실행
-  // 구간은 대화 기록을 마지막으로 쓴 시각에서 세션 길이를 빼 어림한다.
-  const span = new Map(
-    rows.map(r => {
-      const log = join(out, 'logs', `${r.id}.jsonl`);
-      if (!existsSync(log)) return [r.id, null];
-      const end = statSync(log).mtimeMs;
-      return [r.id, [end - (r.minutes ?? 0) * 60_000, end]];
-    }),
-  );
+  // 구간은 run이 남긴 <id>.time.json에서 읽는다. 그 파일이 없는 옛 기록은 대화 기록의 마지막 쓰기
+  // 시각에서 세션 길이를 빼 어림한다(기록을 -p 없이 복사했으면 틀어진다). 그것도 없으면(result
+  // 없이 끊긴 실행) 구간을 모르는 것이라 겹친 쪽으로 본다 — 백업을 남기고 끊긴 실행이 빠지지 않게.
+  const spanOf = r => {
+    const time = join(out, 'logs', `${r.id}.time.json`);
+    if (existsSync(time)) {
+      const { start, end } = JSON.parse(readFileSync(time, 'utf8'));
+      return [start, end];
+    }
+    const log = join(out, 'logs', `${r.id}.jsonl`);
+    if (r.minutes === undefined || !existsSync(log)) return null;
+    const end = statSync(log).mtimeMs;
+    return [end - r.minutes * 60_000, end];
+  };
+  const span = new Map(rows.map(r => [r.id, spanOf(r)]));
   const overlaps = (a, b) => {
     const [x, y] = [span.get(a.id), span.get(b.id)];
-    return x !== null && y !== null && x[0] < y[1] && y[0] < x[1];
+    return x === null || y === null || (x[0] < y[1] && y[0] < x[1]);
   };
   for (const row of rows) {
     row.tmp_shared_with = rows
