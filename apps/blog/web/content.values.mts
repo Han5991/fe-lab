@@ -198,8 +198,9 @@ export const SITEMAP_STATIC_PAGES = [
 // 양성(requiredIn — 마커가 살아 있음의 증명)이 짝이다: 코드에서 이름·문구를
 // 바꾸면 여기도 함께 바꿀 것(안 바꾸면 marker-dead로 빌드가 막히며 알려 준다).
 //
-// 마커는 minify를 살아남는 문자열이어야 한다 — export 이름(Turbopack이 청크에
-// 문자열로 등록), 문자열 리터럴, 라이브러리 클래스명.
+// 마커는 minify를 살아남는 문자열이어야 한다 — 문자열 리터럴, 라이브러리
+// 클래스명, 프로퍼티·메서드 이름. export 이름은 안 된다: Next 16.4의 Turbopack은
+// 청크에 등록하는 export 이름까지 한두 글자로 줄인다.
 
 /**
  * admin 라우트의 경로 접두. `src/shared/routes.ts`의 `ADMIN_BASE_PATH`(`'/admin'`)
@@ -235,12 +236,12 @@ const POSTS_CHUNKS = {
 
 export const BUNDLE_GUARDS = [
   // admin 전용 코드가 공개 청크에 실리면 실패 — #326에서 실제로 있었던 누수.
-  // 앞 둘은 src/domain/analytics의 admin 계산 export 이름, 셋째는 Edge Function
-  // 이름 리터럴, 넷째는 세션용 supabase-js(auth 클라이언트 클래스명 —
-  // src/domain/*/admin 배럴 분리가 지키는 것).
+  // 앞 둘은 admin 계산 파사드(src/domain/analytics의 `AnalyticsService`)의 메서드
+  // 이름, 셋째는 Edge Function 이름 리터럴, 넷째는 세션용 supabase-js(auth
+  // 클라이언트 클래스명 — src/domain/*/admin 배럴 분리가 지키는 것).
   {
     label: 'admin 전용 계산',
-    marker: 'computeAnalyticsOverview',
+    marker: 'computeOverview',
     forbiddenIn: [PUBLIC_CHUNKS],
     requiredIn: [ADMIN_CHUNKS],
   },

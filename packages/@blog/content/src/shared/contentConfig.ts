@@ -262,7 +262,8 @@ export type MarkerScope =
  * 마커의 살아 있음을 어디서 증명할지 함께 선언한다(fail-closed).
  *
  * 마커는 minify를 살아남는 문자열만 의미가 있다: 문자열 리터럴, 라이브러리
- * 클래스명, Turbopack이 청크에 문자열로 등록하는 export 이름.
+ * 클래스명, 프로퍼티·메서드 이름. export 이름은 번들러가 줄일 수 있다 — Next
+ * 16.4의 Turbopack은 청크에 등록하는 export 이름까지 한두 글자로 줄인다.
  */
 export interface BundleRule {
   /** 위반 메시지에 쓸 이 규칙의 이름 — 분류 어휘는 소비자가 정한다 */
