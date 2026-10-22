@@ -25,9 +25,8 @@ import { TEST_PROGRAM_FILES, UNIT_TESTS } from './testFiles.mts';
  *
  * `no-restricted-syntax`는 블록마다 통째로 덮어써지므로(뒤 블록이 이김) 이 항목을
  * 이 룰을 쓰는 **모든 블록에 함께** 펼친다. 새 블록에서 이 룰을 켜면 여기도 넣을 것.
- * 그 결과 실제 커버 범위는 app 레이어·`src/shared`·공개 배럴이다 — 스타일이 사는
- * 곳 전부다. `src/lib`·`src/domain`은 이 룰을 켜는 블록이 없어 빠져 있는데, 그쪽엔
- * 색이 없다(어댑터와 순수 계산).
+ * 그 결과 실제 커버 범위는 app 레이어·레이어 폴더(`src/{shared,domain,lib}`)·`content.values.mts`·
+ * 공개 배럴이다 — 이 룰을 켜는 블록 전부.
  */
 const NO_ESCAPED_HEX = {
   selector: 'Literal[value=/^\\[#/]',
@@ -81,8 +80,9 @@ const PREFER_TOKEN = {
  * 그 파일 안에서도 문에 있는 값은 문으로 연다 — 배럴 import 줄이 곧 "배럴에만 있는 것"의
  * 목록이 되게.
  *
- * `paths`는 정적 import·재수출만 본다. 동적 `import()`는 app 블록의
- * `no-restricted-syntax`(`CONTENT_DYNAMIC_IMPORT`)가 맡는다.
+ * `paths`는 정적 import·재수출만 본다. 동적 `import()`는 `no-restricted-syntax`를 켜는 모든
+ * 블록이 `CONTENT_DYNAMIC_IMPORT`를 펼쳐 맡는다 — 그 룰은 블록마다 통째로 덮어써지므로 하나라도
+ * 빠지면 그 파일에서 동적 import가 열린다(NO_ESCAPED_HEX 주석과 같은 이유).
  */
 const CONTENT_BARREL_VALUES = {
   name: '@blog/content',
@@ -372,6 +372,8 @@ export default defineConfig([
         'error',
         { paths: [CONTENT_BARREL_VALUES, CONTENT_SEO_VALUES] },
       ],
+      // 정적 import만 막으면 동적 import로 같은 문이 열린다 — app 블록과 같은 짝으로 건다.
+      'no-restricted-syntax': ['error', NO_ESCAPED_HEX, CONTENT_DYNAMIC_IMPORT],
     },
   },
   {
@@ -407,6 +409,7 @@ export default defineConfig([
       'no-restricted-syntax': [
         'error',
         NO_ESCAPED_HEX,
+        CONTENT_DYNAMIC_IMPORT,
         {
           selector: 'Program > ExpressionStatement > NewExpression',
           message:
@@ -466,6 +469,7 @@ export default defineConfig([
       'no-restricted-syntax': [
         'error',
         NO_ESCAPED_HEX,
+        CONTENT_DYNAMIC_IMPORT,
         {
           selector: 'ExportAllDeclaration',
           message:
@@ -493,6 +497,7 @@ export default defineConfig([
       'no-restricted-syntax': [
         'error',
         NO_ESCAPED_HEX,
+        CONTENT_DYNAMIC_IMPORT,
         {
           selector: 'Program',
           message:
@@ -526,6 +531,26 @@ export default defineConfig([
     rules: {
       '@typescript-eslint/no-unsafe-type-assertion': 'error',
       '@typescript-eslint/no-unnecessary-condition': 'error',
+    },
+  },
+  // no-unnecessary-type-parameters: 반환 타입에만 쓰이는 제네릭(`f<T>(): T`)은 호출자가 고른 타입을
+  // 확인 없이 붙이는 숨은 단언이다 — no-unsafe-type-assertion이 못 보는 같은 구멍. ban-ts-comment:
+  // 프로덕션에서는 설명을 단 @ts-expect-error도 막는다(타입 에러를 주석으로 넘기는 길). 테스트의 음성
+  // 타입 테스트는 프리셋 그대로 연다. 둘 다 켤 때 위반 0건. 재평가: 2027-04-22.
+  {
+    files: ['**/*.{ts,tsx,mts,cts}'],
+    rules: {
+      '@typescript-eslint/no-unnecessary-type-parameters': 'error',
+    },
+  },
+  {
+    files: ['**/*.{ts,tsx,mts,cts}'],
+    ignores: TEST_FILES,
+    rules: {
+      '@typescript-eslint/ban-ts-comment': [
+        'error',
+        { 'ts-expect-error': true },
+      ],
     },
   },
   {
