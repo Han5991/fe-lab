@@ -25,9 +25,8 @@ import { TEST_PROGRAM_FILES, UNIT_TESTS } from './testFiles.mts';
  *
  * `no-restricted-syntax`는 블록마다 통째로 덮어써지므로(뒤 블록이 이김) 이 항목을
  * 이 룰을 쓰는 **모든 블록에 함께** 펼친다. 새 블록에서 이 룰을 켜면 여기도 넣을 것.
- * 그 결과 실제 커버 범위는 app 레이어·`src/shared`·공개 배럴이다 — 스타일이 사는
- * 곳 전부다. `src/lib`·`src/domain`은 이 룰을 켜는 블록이 없어 빠져 있는데, 그쪽엔
- * 색이 없다(어댑터와 순수 계산).
+ * 그 결과 실제 커버 범위는 app 레이어·레이어 폴더(`src/{shared,domain,lib}`)·`content.values.mts`·
+ * 공개 배럴이다 — 이 룰을 켜는 블록 전부.
  */
 const NO_ESCAPED_HEX = {
   selector: 'Literal[value=/^\\[#/]',
@@ -372,6 +371,8 @@ export default defineConfig([
         'error',
         { paths: [CONTENT_BARREL_VALUES, CONTENT_SEO_VALUES] },
       ],
+      // 정적 import만 막으면 동적 import로 같은 문이 열린다 — app 블록과 같은 짝으로 건다.
+      'no-restricted-syntax': ['error', NO_ESCAPED_HEX, CONTENT_DYNAMIC_IMPORT],
     },
   },
   {
@@ -407,6 +408,7 @@ export default defineConfig([
       'no-restricted-syntax': [
         'error',
         NO_ESCAPED_HEX,
+        CONTENT_DYNAMIC_IMPORT,
         {
           selector: 'Program > ExpressionStatement > NewExpression',
           message:
@@ -466,6 +468,7 @@ export default defineConfig([
       'no-restricted-syntax': [
         'error',
         NO_ESCAPED_HEX,
+        CONTENT_DYNAMIC_IMPORT,
         {
           selector: 'ExportAllDeclaration',
           message:
@@ -493,6 +496,7 @@ export default defineConfig([
       'no-restricted-syntax': [
         'error',
         NO_ESCAPED_HEX,
+        CONTENT_DYNAMIC_IMPORT,
         {
           selector: 'Program',
           message:
