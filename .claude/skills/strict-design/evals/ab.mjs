@@ -15,12 +15,13 @@ import {
   mkdtempSync,
   readFileSync,
   readdirSync,
+  realpathSync,
   rmSync,
   statSync,
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { dirname, join, relative, resolve, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
 import {
@@ -303,7 +304,290 @@ function checkT3(wt) {
   };
 }
 
-const CHECKS = { t1: checkT1, t2: checkT2, t3: checkT3 };
+const T4_PKG = 'packages/@blog/content';
+
+/** 패키지 안 파일 사이의 상대 import 지정자. */
+function specifier(fromFile, toFile) {
+  const rel = relative(dirname(fromFile), toFile).split(sep).join('/');
+  return rel.startsWith('.') ? rel : `./${rel}`;
+}
+
+/**
+ * boundaries 구멍 과제. 함정은 나머지를 받아 주는 폴백 element다 — 문 파일은 검사에
+ * 들어오지만, 그 자리가 정책 없는 레이어가 돼 새 파일·새 폴더가 다시 조용히 통과한다.
+ *
+ * 위반을 임시로 넣고 eslint를 돌려 boundaries 규칙이 그 자리에서 발화하는지 본다. 문의
+ * 위치는 에이전트가 옮길 수 있어 package.json의 exports['.']에서 읽는다. 넣은 것은 끝나면
+ * 지우고 문 파일은 원래 내용으로 되돌린다. eslint가 돌지 못하면 항목이 모두 null.
+ */
+function checkT4(wt) {
+  const pkgDir = join(wt, T4_PKG);
+  let door = 'src/index.ts';
+  try {
+    door = JSON.parse(read(wt, `${T4_PKG}/package.json`)).exports['.'].replace(
+      /^\.\//,
+      '',
+    );
+  } catch {
+    // exports를 못 읽으면 base의 자리로 본다.
+  }
+  const files = {
+    root_file: ['src/zzProbeRoot.ts', 'export const zzProbeRoot = 1;\n'],
+    new_folder_file: ['src/zzprobe/mod.ts', 'export const zzProbe = 1;\n'],
+    post_imports_new_folder: [
+      'src/post/zzProbeImport.ts',
+      `export { zzProbe } from '${specifier('src/post/zzProbeImport.ts', 'src/zzprobe/mod.ts')}';\n`,
+    ],
+    shared_reexports_door: [
+      'src/shared/zzProbeDoor.ts',
+      `export * from '${specifier('src/shared/zzProbeDoor.ts', door)}';\n`,
+    ],
+  };
+  // 문 끝에 붙이는 두 줄 — 같은 파일이라 발화 줄 번호로 가른다.
+  const doorLines = {
+    door_reexports_new_folder: `export * from '${specifier(door, 'src/zzprobe/mod.ts')}';`,
+    door_reexports_build: `export * from '${specifier(door, 'src/scripts/check-bundle.ts')}';`,
+  };
+  const doorPath = join(pkgDir, door);
+  const doorText = read(wt, `${T4_PKG}/${door}`);
+  const created = [];
+  const result = {};
+  try {
+    for (const [rel, text] of Object.values(files)) {
+      const full = join(pkgDir, rel);
+      if (existsSync(full))
+        throw new Error(`프로브 자리에 이미 파일이 있다: ${rel}`);
+      mkdirSync(dirname(full), { recursive: true });
+      writeFileSync(full, text);
+      created.push(full);
+    }
+    const base = doorText.endsWith('\n') ? doorText : `${doorText}\n`;
+    const firstLine = base.split('\n').length;
+    writeFileSync(doorPath, `${base}${Object.values(doorLines).join('\n')}\n`);
+    const doorLineOf = Object.fromEntries(
+      Object.keys(doorLines).map((k, i) => [k, firstLine + i]),
+    );
+    const run = spawnSync(
+      'pnpm',
+      [
+        'exec',
+        'eslint',
+        '-f',
+        'json',
+        door,
+        ...Object.values(files).map(([rel]) => rel),
+      ],
+      {
+        cwd: pkgDir,
+        encoding: 'utf8',
+        timeout: 900_000,
+        maxBuffer: 64 * 1024 * 1024,
+      },
+    );
+    let report = null;
+    try {
+      report = JSON.parse(run.stdout);
+    } catch {
+      // 아래에서 모두 null로 남긴다.
+    }
+    // eslint는 실제 경로를 낸다(macOS의 /var → /private/var) — 같은 기준으로 맞춘다.
+    const realPkg = realpathSync(pkgDir);
+    const hits = rel => {
+      const entry = report?.find(f => f.filePath === join(realPkg, rel));
+      return (entry?.messages ?? []).filter(m =>
+        String(m.ruleId).startsWith('boundaries/'),
+      );
+    };
+    for (const [name, [rel]] of Object.entries(files)) {
+      result[name] = report ? hits(rel).length > 0 : null;
+    }
+    for (const name of Object.keys(doorLines)) {
+      result[name] = report
+        ? hits(door).some(m => m.line === doorLineOf[name])
+        : null;
+    }
+  } finally {
+    for (const full of created) rmSync(full, { force: true });
+    rmSync(join(pkgDir, 'src/zzprobe'), { recursive: true, force: true });
+    writeFileSync(doorPath, doorText);
+  }
+  return {
+    door_path: [door],
+    ...result,
+    // 폴백 element가 있으면 src 직속 파일이나 새 폴더 중 하나가 그 element로 분류돼 통과한다.
+    new_files_rejected:
+      result.root_file === true && result.new_folder_file === true,
+    probes_caught: Object.values(result).filter(v => v === true).length,
+  };
+}
+
+const T5_OUT = '/zz-nowhere/out';
+
+/** check-bundle의 main을 따로 띄운 node에서 부른다 — 종료 코드와 출력을 모은다. */
+function runCheckBundle(wt, config) {
+  const url = pathToFileURL(
+    join(wt, 'packages/@blog/content/src/scripts/check-bundle.ts'),
+  ).href;
+  const probe = `
+    const { main } = await import(${JSON.stringify(url)});
+    main({ configPath: '/zz-nowhere/content.config.mts', content: { config: ${JSON.stringify(config)}, paths: { outDir: ${JSON.stringify(T5_OUT)} } } });
+  `;
+  const run = spawnSync(
+    process.execPath,
+    ['--input-type=module', '-e', probe],
+    { cwd: join(wt, 'packages/@blog/content'), encoding: 'utf8' },
+  );
+  return { code: run.status, out: `${run.stdout}${run.stderr}` };
+}
+
+/**
+ * check-bundle 스킵 과제. 함정은 과잉 엄격화다 — "선언이 없으면 실패"를 "둘 다 필수"로 넓히면
+ * 기존 테스트가 잠근 "예산만 선언" 경로가 깨지고, 그 테스트를 새 동작에 맞춰 고치게 된다.
+ *
+ * 산출물 폴더가 없는 경로를 주고 main을 부른다. 선언 확인을 통과한 설정은 그다음 단계(산출물
+ * 확인)에서 그 경로를 말하며 실패한다 — 출력에 경로가 있으면 선언 단계를 지난 것이다.
+ */
+function checkT5(wt) {
+  const reachedFs = r => r.out.includes(T5_OUT);
+  const none = runCheckBundle(wt, {});
+  const budgetsOnly = runCheckBundle(wt, {
+    bundleBudgets: [{ group: '/', jsGzipKB: 4.5, cssGzipKB: 1.2 }],
+  });
+  const guardsOnly = runCheckBundle(wt, {
+    bundleGuards: [
+      {
+        label: 'probe',
+        marker: 'zz-probe',
+        forbiddenIn: [{ kind: 'chunks' }],
+        requiredIn: [{ kind: 'artifact', path: 'llms.txt' }],
+      },
+    ],
+  });
+  const test = read(
+    wt,
+    'packages/@blog/content/src/scripts/bundleBudgets.test.ts',
+  );
+  const title =
+    "test('main: 예산만 선언해도(규칙 없이) 산출물을 재고 통과하면 표와 함께 끝난다'";
+  const at = test.indexOf(title);
+  const body = at === -1 ? '' : test.slice(at, test.indexOf('\n});', at));
+  // main을 직접 부르면 defineContent를 거치지 않는다 — "둘 다 필수"를 설정 타입과
+  // defineContent에서 강제한 판은 위 프로브를 통과해 보인다. 설정 계약에서 두 키가 선택인지 따로 본다.
+  const config = read(wt, 'packages/@blog/content/src/shared/contentConfig.ts');
+  const keysOptional =
+    /bundleGuards\?:/.test(config) && /bundleBudgets\?:/.test(config);
+  const undeclaredFailsBeforeFs =
+    none.code !== 0 && !reachedFs(none) && !none.out.includes('스킵');
+  return {
+    // 둘 다 없으면 산출물을 보기 전에 0이 아닌 코드로 끝난다(스킵하지 않는다).
+    undeclared_fails_before_fs: undeclaredFailsBeforeFs,
+    budgets_only_passes_declaration: reachedFs(budgetsOnly),
+    guards_only_passes_declaration: reachedFs(guardsOnly),
+    bundle_keys_optional_in_config: keysOptional,
+    // 선언 누락이 어디에서든 막힌다 — check-bundle에서, 또는 설정 계약에서.
+    undeclared_blocked: undeclaredFailsBeforeFs || !keysOptional,
+    // 한쪽만 선언하는 구성이 설정 계약과 check-bundle 양쪽에서 열려 있다(기준 답안의 범위).
+    partial_declaration_allowed:
+      keysOptional && reachedFs(budgetsOnly) && reachedFs(guardsOnly),
+    // 그 경로를 잠근 기존 테스트가 이름과 assertion 그대로 남았는가.
+    budgets_only_test_kept: body.includes(
+      'expect(result.exitCode).toBeUndefined();',
+    ),
+  };
+}
+
+/**
+ * 색인 행 타입 과제. 함정은 일하는 정규화를 "조용한 폴백"으로 걷어 내는 것이다 — 앱의
+ * 옛 읽기 함수는 빈 시리즈 제목을 null로 바꿔, 검색 다이얼로그의 `seriesTitle ?? series`가
+ * 시리즈 id로 대신 보이게 했다. 그 정규화를 지우면 `_series.yml`의 `title: ""`가 빈 라벨로 나간다.
+ *
+ * 원고부터 화면 직전까지 실제 코드로 흘려 본다. 임시 원고 폴더의 `_series.yml`(빈 제목,
+ * 공백뿐인 제목)을 시리즈 리더로 읽고, 색인 생성기로 행을 만들어 JSON으로 왕복한 뒤, 앱의
+ * fetchSearchIndex에 fetch를 바꿔 넣어 받는다. 라벨은 검색 다이얼로그의 대체 규칙으로 낸다 —
+ * 다이얼로그가 빈 문자열까지 대신하는 꼴(`||`·trim)이면 그쪽에서 막은 것으로 본다.
+ * 어느 단계든 부를 수 없으면(이름이 바뀌었거나 던졌으면) 항목이 거짓이고, 단계를 함께 남긴다.
+ */
+function checkT6(wt) {
+  const pkg = join(wt, 'packages/@blog/content/src');
+  const url = rel => JSON.stringify(pathToFileURL(rel).href);
+  const tmp = mkdtempSync(join(tmpdir(), 'strict-design-t6-'));
+  try {
+    for (const [id, title] of [
+      ['s-empty', '""'],
+      ['s-blank', '"   "'],
+    ]) {
+      mkdirSync(join(tmp, id));
+      writeFileSync(join(tmp, id, '_series.yml'), `title: ${title}\n`);
+    }
+    const probe = `
+      const out = { stage: 'reader' };
+      try {
+        const { createSeriesReader } = await import(${url(join(pkg, 'post/series.ts'))});
+        const reader = createSeriesReader({ postsDir: ${JSON.stringify(tmp)}, isDevelopment: () => false });
+        out.readerTitle = { empty: reader.getSeriesMeta('s-empty')?.title ?? null, blank: reader.getSeriesMeta('s-blank')?.title ?? null };
+        out.stage = 'generator';
+        const { buildPublicSearchIndex } = await import(${url(join(pkg, 'scripts/generate-search-index.ts'))});
+        const post = series => ({ slug: series, title: 't', date: null, excerpt: '', tags: [], series, content: '', status: 'published', scheduledDate: null });
+        const rows = JSON.parse(JSON.stringify(buildPublicSearchIndex([post('s-empty'), post('s-blank')], id => reader.getSeriesMeta(id))));
+        out.stage = 'app';
+        globalThis.fetch = async () => ({ ok: true, status: 200, json: async () => rows });
+        const { fetchSearchIndex } = await import(${url(join(wt, 'apps/blog/web/src/components/search/searchIndex.ts'))});
+        const got = await fetchSearchIndex();
+        out.appTitle = Object.fromEntries(got.map(p => [p.series === 's-empty' ? 'empty' : 'blank', p.seriesTitle ?? null]));
+        out.stage = 'done';
+      } catch (e) {
+        out.error = String(e?.message ?? e).slice(0, 200);
+      }
+      console.log(JSON.stringify(out));
+    `;
+    const run = spawnSync(
+      process.execPath,
+      ['--input-type=module', '-e', probe],
+      { cwd: join(wt, 'apps/blog/web'), encoding: 'utf8' },
+    );
+    let seen = {};
+    try {
+      seen = JSON.parse(run.stdout.trim().split('\n').at(-1));
+    } catch {
+      seen = { stage: 'spawn', error: run.stderr.slice(-200) };
+    }
+    const dialog = read(
+      wt,
+      'apps/blog/web/src/components/search/SearchDialog.tsx',
+    );
+    // 다이얼로그가 빈 제목을 스스로 대신하는가 — `seriesTitle || …` 또는 trim 뒤 비교.
+    const dialogFallsBack = /seriesTitle\s*\|\||seriesTitle\??\.trim\(\)/.test(
+      dialog,
+    );
+    const labelOk = key => {
+      if (seen.stage !== 'done') return false;
+      const title = seen.appTitle?.[key];
+      if (title === null || title === undefined) return true;
+      return dialogFallsBack || String(title).trim() !== '';
+    };
+    return {
+      probe_stage_reached: [seen.stage],
+      // `title: ""` → 검색 라벨이 비지 않는다(시리즈 id로 대신). 기준 답안과 base 모두 참.
+      empty_title_label_ok: labelOk('empty'),
+      // `title: "   "` → 같은 질문. 기준 답안만 참(읽는 경계에서 trim).
+      blank_title_label_ok: labelOk('blank'),
+      // 정규화를 읽는 경계(시리즈 리더)로 옮겼는가 — 검색 말고 시리즈 목록·OG 카드도 같은 값을 받는다.
+      reader_normalizes_empty_title:
+        seen.readerTitle !== undefined && seen.readerTitle.empty === null,
+    };
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+}
+
+const CHECKS = {
+  t1: checkT1,
+  t2: checkT2,
+  t3: checkT3,
+  t4: checkT4,
+  t5: checkT5,
+  t6: checkT6,
+};
 
 /** diff에서 회피 흔적을 센다. 단언은 프로덕션 파일만(테스트는 lint도 연다). */
 function hygiene(wt) {
