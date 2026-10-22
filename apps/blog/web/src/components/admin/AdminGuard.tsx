@@ -4,10 +4,12 @@ import { type ReactNode, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
 import {
+  type AdminSession,
   authRepository,
   isAdminEmail,
   readOAuthRedirectError,
 } from '@/src/domain/auth';
+import { reportError } from '@/src/components/errorReporting';
 import {
   ADMIN_LOGIN_PATH,
   ADMIN_LOGIN_UNAUTHORIZED_PATH,
@@ -40,6 +42,24 @@ export function AdminGuard({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (DEV_BYPASS) return; // 우회: redirect/auth 리스너 skip
+
+    /**
+     * 관리자가 아닌 계정을 내보낸다. 세션 캐시는 null로 덮지 않고 그 비관리자 세션으로 맞춘다 —
+     * null이면 아래 "세션 없음" 분기가 로그인 화면으로 보내 권한 없음 리다이렉트와 다투고, 마운트
+     * 때의 관리자 세션이 남으면 뒤로 가기로 돌아왔을 때 가드가 그 세션으로 화면을 그린다. 비관리자
+     * 세션이면 이 판정이 계속 거절한다. 로그아웃이 실패해도 화면은 떠나고 실패는 보고한다.
+     */
+    const rejectNonAdmin = (nonAdmin: AdminSession) => {
+      const leave = () => {
+        clearAdminData(queryClient);
+        queryClient.setQueryData(ADMIN_SESSION_QUERY_KEY, nonAdmin);
+        router.replace(ADMIN_LOGIN_UNAUTHORIZED_PATH);
+      };
+      authRepository.signOutAdmin().then(leave, (error: unknown) => {
+        leave();
+        reportError(error, false);
+      });
+    };
     // Skip guard for the login page itself to prevent infinite loops
     if (isAdminLoginPath(pathname)) {
       return;
@@ -58,14 +78,9 @@ export function AdminGuard({ children }: { children: ReactNode }) {
     }
 
     // 화면 쪽 관리자 판정 — 실제 강제는 Edge Function이 한다(src/domain/auth 참고).
-    // 세션 캐시는 그대로 둔다 — null로 덮으면 위 분기가 로그인 화면으로 보내 이 리다이렉트와
-    // 다툰다. 남은 비관리자 세션은 이 판정이 계속 거절한다.
     if (!isAdminEmail(session.user.email)) {
       console.warn(`Unauthorized email attempt: ${session.user.email}`);
-      void authRepository.signOutAdmin().then(() => {
-        clearAdminData(queryClient);
-        router.replace(ADMIN_LOGIN_UNAUTHORIZED_PATH);
-      });
+      rejectNonAdmin(session);
       return;
     }
 
@@ -83,10 +98,7 @@ export function AdminGuard({ children }: { children: ReactNode }) {
           // 구독부터 끊는다 — signOut은 resolve하기 전에 같은 탭 구독자에게 SIGNED_OUT을 보내고,
           // 그게 위 분기로 들어오면 세션 캐시를 비워 권한 없음 리다이렉트를 로그인으로 덮는다.
           unsubscribe();
-          void authRepository.signOutAdmin().then(() => {
-            clearAdminData(queryClient);
-            router.replace(ADMIN_LOGIN_UNAUTHORIZED_PATH);
-          });
+          rejectNonAdmin(currentSession);
         }
       },
     );
