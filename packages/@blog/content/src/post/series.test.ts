@@ -271,6 +271,31 @@ test('getSeriesMeta: _series.yml YAML이 깨지면 파일 경로를 붙여 던�
   }
 });
 
+// 빈 title은 "제목 없음"이다 — 소비자(검색·시리즈 목록·OG)는 title이 없으면 id로 대신하는데,
+// 빈 문자열이 그대로 흘러가면 그 폴백(`??`)을 건너뛰어 빈 라벨이 그려진다.
+test.each(['', '   '])(
+  'getSeriesMeta: 빈 title(%j)은 제목 없음으로 읽는다',
+  title => {
+    const postsDir = mkdtempSync(join(tmpdir(), 'series-title-test-'));
+    try {
+      mkdirSync(join(postsDir, '연재'));
+      writeFileSync(
+        join(postsDir, '연재', '_series.yml'),
+        `title: "${title}"\ndescription: 설명\n`,
+        'utf8',
+      );
+      const reader = createSeriesReader({
+        postsDir,
+        isDevelopment: () => false,
+      });
+      expect(reader.getSeriesMeta('연재')?.title).toBeUndefined();
+      expect(reader.getSeriesMeta('연재')?.description).toBe('설명');
+    } finally {
+      rmSync(postsDir, { recursive: true, force: true });
+    }
+  },
+);
+
 test('isSeriesFolder: _series.yml이 없으면 시리즈가 아니다', () => {
   expect(isSeriesFolder('__없는-폴더__')).toBe(false);
 });
