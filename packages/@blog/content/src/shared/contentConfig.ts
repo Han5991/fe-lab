@@ -755,6 +755,19 @@ function assertValidTimezone(timezone: TimezoneConfig): void {
   }
 }
 
+/**
+ * og:locale 형식(`언어_지역`, 예: `ko_KR`)인지 — 타입은 빈 언어부·빈 지역부를 통과시키는데,
+ * 그러면 html lang·JSON-LD inLanguage·RSS language가 조용히 빈다.
+ */
+function assertValidLocale(locale: string): void {
+  if (!/^[a-z]{2,3}_[A-Z]{2}$/.test(locale)) {
+    throw new Error(
+      `defineContent: site.locale('${locale}')은 og:locale 형식(소문자 언어_대문자 지역, 예: 'ko_KR')이어야 합니다 — ` +
+        'html lang·JSON-LD inLanguage·RSS language가 이 값에서 파생됩니다.',
+    );
+  }
+}
+
 /** 상대 경로를 세그먼트 정규화한다 ('a/./b' → 'a/b', 'a/../b' → 'b') — 순수 문자열 연산 */
 function normalizeDir(p: string): string {
   const out: string[] = [];
@@ -812,6 +825,7 @@ export function defineContent(user: ContentUserConfig): ContentConfig {
   assertValidRoot(user.root);
   assertValidOgFonts(user.og.fonts);
   assertValidTimezone(user.timezone);
+  assertValidLocale(user.site.locale);
   assertValidBundleBudgets(user.bundleBudgets);
   const config: ContentConfig = {
     root: user.root,

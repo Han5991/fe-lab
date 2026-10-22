@@ -195,6 +195,30 @@ test('timezone: 일관된 다른 타임존(UTC)도 받는다', () => {
   expect(config.timezone.isoOffset).toBe('Z');
 });
 
+// ── defineContent: locale 검증 ───────────────────────────────────────────────
+
+// 타입(`${string}_${string}`)은 빈 언어부·빈 지역부를 통과시킨다 — 그러면 html lang·inLanguage·
+// RSS language가 조용히 빈다. 설정에서 던진다.
+test.each(['_KR', 'ko_', 'ko_KR_x', 'KO_kr', 'korean_KR'] as const)(
+  'site.locale %s는 던진다',
+  locale => {
+    expect(() =>
+      defineTestContent({
+        root: FIXTURE_ROOT,
+        site: { ...TEST_VALUES.site, locale },
+      }),
+    ).toThrow(/site\.locale/);
+  },
+);
+
+test('site.locale: 언어_지역 형식이면 받는다', () => {
+  const config = defineTestContent({
+    root: FIXTURE_ROOT,
+    site: { ...TEST_VALUES.site, locale: 'ko_KR' },
+  });
+  expect(config.site.locale).toBe('ko_KR');
+});
+
 // ── defineContent: 병합 규칙 ─────────────────────────────────────────────────
 
 test('기본값이 있는 그룹의 부분 오버라이드는 나머지를 기본값으로 유지한다', () => {
