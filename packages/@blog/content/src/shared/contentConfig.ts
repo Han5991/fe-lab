@@ -23,6 +23,7 @@
  * `contentPaths.ts`입니다.
  */
 import { parseIsoOffset } from './dates.ts';
+import type { SiteLocale } from './locale.ts';
 import { SUPPORTED_FENCE_LABELS } from './prismLanguages.ts';
 
 // ── 그룹별 타입 ──────────────────────────────────────────────────────────────
@@ -39,6 +40,19 @@ export interface SiteConfig {
    * (`.jpg`인 사연은 소비자 값 모듈의 OG_DEFAULT_IMAGE 주석에 있다.)
    */
   ogDefaultImage: string;
+  /**
+   * 사이트 언어 — og:locale 형식(`ko_KR`). html lang·JSON-LD inLanguage·RSS language·Intl
+   * 표기가 여기서 파생한다(`locale.ts`). 사이트 고유 값이라 기본값이 없다.
+   */
+  locale: SiteLocale;
+  /** 발행처 로고 — JSON-LD Organization의 `logo`. 경로는 사이트 루트 기준 */
+  logo: SiteLogo;
+}
+
+export interface SiteLogo {
+  path: string;
+  width: number;
+  height: number;
 }
 
 export interface AuthorConfig {
@@ -741,6 +755,29 @@ function assertValidTimezone(timezone: TimezoneConfig): void {
   }
 }
 
+/**
+ * og:locale 형식(`언어_지역`, 예: `ko_KR`)인지 — 타입은 빈 언어부·빈 지역부를 통과시키는데,
+ * 그러면 html lang·JSON-LD inLanguage·RSS language가 조용히 빈다.
+ */
+function assertValidLocale(locale: string): void {
+  if (!/^[a-z]{2,3}_[A-Z]{2}$/.test(locale)) {
+    throw new Error(
+      `defineContent: site.locale('${locale}')은 og:locale 형식(소문자 언어_대문자 지역, 예: 'ko_KR')이어야 합니다 — ` +
+        'html lang·JSON-LD inLanguage·RSS language가 이 값에서 파생됩니다.',
+    );
+  }
+}
+
+/** 로고 경로는 사이트 origin 뒤에 그대로 붙는다 — 사이트 루트 기준 경로(`/…`)여야 한다. */
+function assertValidLogoPath(path: string): void {
+  if (!path.startsWith('/') || path.startsWith('//')) {
+    throw new Error(
+      `defineContent: site.logo.path('${path}')는 사이트 루트 기준 경로(예: '/logo.svg')여야 합니다 — ` +
+        'JSON-LD Organization의 logo URL이 site.url 뒤에 이 값을 붙여 만들어집니다.',
+    );
+  }
+}
+
 /** 상대 경로를 세그먼트 정규화한다 ('a/./b' → 'a/b', 'a/../b' → 'b') — 순수 문자열 연산 */
 function normalizeDir(p: string): string {
   const out: string[] = [];
@@ -798,6 +835,8 @@ export function defineContent(user: ContentUserConfig): ContentConfig {
   assertValidRoot(user.root);
   assertValidOgFonts(user.og.fonts);
   assertValidTimezone(user.timezone);
+  assertValidLocale(user.site.locale);
+  assertValidLogoPath(user.site.logo.path);
   assertValidBundleBudgets(user.bundleBudgets);
   const config: ContentConfig = {
     root: user.root,

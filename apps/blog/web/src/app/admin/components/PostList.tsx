@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { getKSTDateISO } from '@blog/content/client';
-import { TIMEZONE } from '@/content.values.mts';
+import { getKSTDateISO, localeTag } from '@blog/content/client';
+import { SITE_LOCALE, TIMEZONE } from '@/content.values.mts';
 import { useAdminDashboardData } from '@/src/hooks/useAdminViews';
 import { css } from '@blog/styled-system/css';
 import { PostAccordion } from './PostAccordion';
@@ -117,7 +117,8 @@ export function PostList() {
               display: { base: 'none', md: 'inline' },
             })}
           >
-            업데이트: {new Date(dataUpdatedAt).toLocaleString('ko-KR')}
+            업데이트:{' '}
+            {new Date(dataUpdatedAt).toLocaleString(localeTag(SITE_LOCALE))}
           </span>
           {isRefetchError && (
             <span

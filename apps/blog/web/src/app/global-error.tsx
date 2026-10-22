@@ -3,7 +3,8 @@
 import 'pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css';
 import '@/src/styles/globals.css';
 import { useEffect, useSyncExternalStore } from 'react';
-import { SITE_NAME } from '@/content.values.mts';
+import { SITE_LOCALE, SITE_NAME } from '@/content.values.mts';
+import { localeLanguage } from '@blog/content/client';
 import { ErrorFallback } from '@/src/components/ErrorFallback';
 import { reportError } from '@/src/components/errorReporting';
 import { readCookie, systemTheme, type Theme } from '@/src/hooks/useTheme';
@@ -33,7 +34,7 @@ export default function GlobalError({ error, retry }: GlobalErrorProps) {
   }, [error]);
 
   return (
-    <html lang="ko" data-theme={theme}>
+    <html lang={localeLanguage(SITE_LOCALE)} data-theme={theme}>
       <body>
         <title>{`오류 | ${SITE_NAME}`}</title>
         <main>

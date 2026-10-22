@@ -7,16 +7,18 @@
 import contentConfig from '@/content.config.mts';
 import { SERIES_PATH } from '@/src/shared/routes';
 import type { Metadata } from 'next';
+import { localeLanguage, siteNodeId } from '@blog/content/client';
+import { defaultShareCard } from '../seoDefaults';
 
 // 사이트 정체성·저자·SEO 예산은 해석된 설정에서 온다 — 값의 출처는
 // `content.values.mts`이고, 여기서 리터럴을 다시 읽지 않는다(서버 전용 모듈).
-const { site: SITE } = contentConfig;
+const { site: SITE, seo: SEO } = contentConfig;
 
 // 절대 URL은 상대 경로에서 한 번만 파생한다(`@blog/content`의 postPath→postUrl과
 // 같은 관례). og url·JSON-LD `@id`·url이 이 하나를 공유한다.
 const SERIES_URL = `${SITE.url}${SERIES_PATH}`;
 
-const PAGE_TITLE = `시리즈 | ${SITE.name}`;
+const PAGE_TITLE = `시리즈${SEO.titleSuffix}`;
 export const PAGE_DESCRIPTION =
   '여러 편으로 이어지는 글을 시리즈로 묶었습니다. 번들러 직접 만들기, TypeScript로 설계하는 프로젝트, 우아한 에러 핸들링, ECS 배포 파이프라인까지 — 시리즈마다 1편부터 순서대로, 중간에 길을 잃지 않고 읽을 수 있습니다.';
 
@@ -25,28 +27,12 @@ export function buildSeriesMetadata(): Metadata {
     title: PAGE_TITLE,
     description: PAGE_DESCRIPTION,
     alternates: { canonical: SERIES_PATH },
-    openGraph: {
+    ...defaultShareCard({
       title: PAGE_TITLE,
       description: PAGE_DESCRIPTION,
       url: SERIES_URL,
-      siteName: SITE.name,
-      images: [
-        {
-          url: `${SITE.url}${SITE.ogDefaultImage}`,
-          width: 1200,
-          height: 630,
-          alt: `${SITE.name} Series`,
-        },
-      ],
-      locale: 'ko_KR',
-      type: 'website',
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title: PAGE_TITLE,
-      description: PAGE_DESCRIPTION,
-      images: [`${SITE.url}${SITE.ogDefaultImage}`],
-    },
+      imageAlt: `${SITE.name} Series`,
+    }),
   };
 }
 
@@ -55,10 +41,10 @@ export function buildSeriesJsonLd() {
     '@context': 'https://schema.org',
     '@type': 'CollectionPage',
     '@id': SERIES_URL,
-    name: `시리즈 | ${SITE.name}`,
+    name: PAGE_TITLE,
     url: SERIES_URL,
     description: PAGE_DESCRIPTION,
-    inLanguage: 'ko',
-    isPartOf: { '@id': `${SITE.url}/#website` },
+    inLanguage: localeLanguage(SITE.locale),
+    isPartOf: { '@id': siteNodeId(SITE.url, 'website') },
   };
 }

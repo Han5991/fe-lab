@@ -9,10 +9,13 @@ import contentConfig from '@/content.config.mts';
 import type { Metadata } from 'next';
 import {
   archiveUrl,
+  localeLanguage,
   postUrl,
+  siteNodeId,
   POSTS_PATH,
   type PostSummary,
 } from '@blog/content/client';
+import { defaultShareCard } from '../seoDefaults';
 
 // 사이트 정체성·저자·SEO 예산은 해석된 설정에서 온다 — 값의 출처는
 // `content.values.mts`이고, 여기서 리터럴을 다시 읽지 않는다(서버 전용 모듈).
@@ -30,28 +33,12 @@ export function buildPostsMetadata(): Metadata {
     title: PAGE_TITLE,
     description: PAGE_DESCRIPTION,
     alternates: { canonical: POSTS_PATH },
-    openGraph: {
+    ...defaultShareCard({
       title: PAGE_TITLE,
       description: PAGE_DESCRIPTION,
       url: archiveUrl(SITE.url),
-      siteName: SITE.name,
-      images: [
-        {
-          url: SITE.ogDefaultImage,
-          width: 1200,
-          height: 630,
-          alt: `${SITE.name} Blog Posts`,
-        },
-      ],
-      locale: 'ko_KR',
-      type: 'website',
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title: PAGE_TITLE,
-      description: PAGE_DESCRIPTION,
-      images: [SITE.ogDefaultImage],
-    },
+      imageAlt: `${SITE.name} Blog Posts`,
+    }),
   };
 }
 
@@ -60,11 +47,11 @@ export function buildCollectionPageJsonLd(posts: PostSummary[]) {
     '@context': 'https://schema.org',
     '@type': 'CollectionPage',
     '@id': archiveUrl(SITE.url),
-    name: 'Posts | Frontend Lab',
+    name: `Posts | ${SITE.name}`,
     url: archiveUrl(SITE.url),
     description: '프론트엔드 실험실의 모든 기록들을 확인해보세요.',
-    inLanguage: 'ko',
-    isPartOf: { '@id': `${SITE.url}/#website` },
+    inLanguage: localeLanguage(SITE.locale),
+    isPartOf: { '@id': siteNodeId(SITE.url, 'website') },
     mainEntity: {
       '@type': 'ItemList',
       itemListElement: posts.map((post, index) => ({
@@ -84,13 +71,13 @@ export function buildBlogJsonLd() {
     '@context': 'https://schema.org',
     '@type': 'Blog',
     '@id': `${archiveUrl(SITE.url)}#blog`,
-    name: 'Frontend Lab — 실험 기록들',
+    name: `${SITE.name} — 실험 기록들`,
     url: archiveUrl(SITE.url),
     description:
       '프론트엔드 실험실의 모든 기록들. React, TypeScript, 번들러 시리즈 등.',
-    inLanguage: 'ko',
-    author: { '@id': `${SITE.url}/#author` },
-    publisher: { '@id': `${SITE.url}/#organization` },
-    isPartOf: { '@id': `${SITE.url}/#website` },
+    inLanguage: localeLanguage(SITE.locale),
+    author: { '@id': siteNodeId(SITE.url, 'author') },
+    publisher: { '@id': siteNodeId(SITE.url, 'organization') },
+    isPartOf: { '@id': siteNodeId(SITE.url, 'website') },
   };
 }

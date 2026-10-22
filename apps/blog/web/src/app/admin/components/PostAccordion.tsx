@@ -1,6 +1,6 @@
 'use client';
 
-import { TIMEZONE } from '@/content.values.mts';
+import { SITE_LOCALE, TIMEZONE } from '@/content.values.mts';
 import { useId, useState } from 'react';
 import type { PostStatDetail } from '@/src/hooks/useAdminViews';
 import { analyticsService } from '@/src/domain/analytics/admin';
@@ -17,7 +17,11 @@ import {
 import Link from 'next/link';
 import { token } from '@blog/styled-system/tokens';
 import { motion, AnimatePresence } from 'motion/react';
-import { formatMonthDayISO, parseScheduledDateKST } from '@blog/content/client';
+import {
+  formatMonthDayISO,
+  localeTag,
+  parseScheduledDateKST,
+} from '@blog/content/client';
 import { DateRangeControls, useDateFilter } from './DateRangeControls';
 import { WeekGrowthIcon } from './WeekGrowthIcon';
 import { adminAnalyticsPostPath } from '@/src/shared/routes';
@@ -156,7 +160,7 @@ export function PostAccordion({ post, todayISO }: Props) {
                 state === 'scheduled' && publishAt
                   ? // 'YYYY-MM-DD'를 native Date에 넣으면 UTC 자정으로 파싱돼
                     // KST 09:00으로 잘못 표시됩니다.
-                    `예약: ${parseScheduledDateKST(TIMEZONE, publishAt).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })}`
+                    `예약: ${parseScheduledDateKST(TIMEZONE, publishAt).toLocaleString(localeTag(SITE_LOCALE), { timeZone: TIMEZONE.iana })}`
                   : undefined
               }
             >
