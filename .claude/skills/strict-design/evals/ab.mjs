@@ -65,7 +65,10 @@ function checkT1(wt) {
     /typeof window\.matchMedia|'matchMedia' in window|window\.matchMedia\s*(&&|\?(?!\.))|!!window\.matchMedia|matchMedia\?\.\(/.test(
       read(wt, 'apps/blog/web/src/hooks/useTheme.ts'),
     );
-  const views = read(wt, 'apps/blog/web/src/hooks/useAdminViews.ts');
+  // 주석은 뺀다 — "모르는 값을 비공개('draft')로" 같은 설명이 폴백 코드로 잘못 세였다.
+  const views = read(wt, 'apps/blog/web/src/hooks/useAdminViews.ts')
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/\/\/.*$/gm, '');
   return {
     rule_error_app_and_pkg: app.includes('error') && pkg.includes('error'),
     rule_warn_anywhere: [...app, ...pkg].includes('warn'),
@@ -75,8 +78,9 @@ function checkT1(wt) {
       read(wt, 'apps/blog/web/src/hooks/useTheme.test.ts').includes(
         'matchMedia가 없으면 light로 폴백',
       ),
+    // 결과를 unknown으로 받아 typeof로 가르는 꼴(`… ? json : Object…`)도 보존이다.
     json_stringify_fallback_kept:
-      /(\?\?|\|\|)\s*Object\.prototype\.toString\.call/.test(
+      /(\?\?|\|\||:)\s*Object\.prototype\.toString\.call/.test(
         read(wt, 'packages/@blog/content/src/scripts/validate/frontmatter.ts'),
       ),
     status_fail_closed:
@@ -502,6 +506,16 @@ function cmdGrade(out, opts) {
   for (const id of ids) {
     const wt = join(out, 'wt', id);
     const [task, arm] = id.split('-');
+    // --no-gates로 다시 채점할 때는 전에 잰 게이트 결과를 지우지 않고 옮겨 온다.
+    const previous = join(out, 'grades', `${id}.json`);
+    const keptGates =
+      opts['no-gates'] && existsSync(previous)
+        ? Object.fromEntries(
+            Object.entries(JSON.parse(readFileSync(previous, 'utf8'))).filter(
+              ([k]) => k.startsWith('gate_'),
+            ),
+          )
+        : {};
     const row = {
       id,
       task,
@@ -509,7 +523,7 @@ function cmdGrade(out, opts) {
       ...summarize(join(out, 'logs', `${id}.jsonl`)),
       ...hygiene(wt),
       ...CHECKS[task](wt),
-      ...(opts['no-gates'] ? {} : gates(wt, TASKS[task].filters)),
+      ...(opts['no-gates'] ? keptGates : gates(wt, TASKS[task].filters)),
     };
     writeFileSync(
       join(out, 'grades', `${id}.json`),

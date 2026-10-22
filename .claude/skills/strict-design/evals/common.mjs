@@ -156,10 +156,23 @@ export async function runClaude(
     randomUUID(),
     '--permission-mode',
     'bypassPermissions',
+    // 바깥으로 나가는 길을 닫는다 — 개인 머신에서 돌 때 MCP 커넥터(메일·메신저)와
+    // push·gh가 권한 확인 없이 열려 있게 된다. 사용자 설정(훅·플러그인)도 싣지 않는다.
+    // 모든 조건에 똑같이 걸린다. --disallowedTools는 가변 인자라 다음 옵션 앞에서
+    // 끝난다 — extra는 옵션(--…)으로 시작해야 한다.
+    '--setting-sources',
+    'project,local',
+    '--strict-mcp-config',
+    '--disallowedTools',
+    'Bash(git push:*)',
+    'Bash(gh:*)',
     ...extra,
   ];
+  // auto-memory를 끈다 — worktree는 원래 저장소의 메모리를 같이 읽는다. 개인 머신에서
+  // 돌리면 사용자가 남긴 판단(예: 과제의 정답이 된 규칙)이 두 조건에 다 실려 차이를 지운다.
   const child = spawn('claude', args, {
     cwd,
+    env: { ...process.env, CLAUDE_CODE_DISABLE_AUTO_MEMORY: '1' },
     stdio: ['ignore', 'pipe', 'ignore'],
   });
   const out = createWriteStream(log);
