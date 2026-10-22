@@ -12,24 +12,24 @@
  * `sideEffects: false`는 그래도 지킨다 — 배럴에 모듈을 추가할 때 모듈 평가 시점
  * I/O 같은 부수효과를 넣지 말 것.
  */
-export * from './post/index.ts';
+export * from '../post/index.ts';
 // 옛 domain/post 배럴이 큐레이션에서 뺐지만 앱이 leaf로 쓰던 모듈들 — 패키지
 // 문은 이 배럴 하나뿐이므로 여기서 연다.
-export * from './post/filtering.ts';
-export * from './post/assetUrl.ts';
+export * from '../post/filtering.ts';
+export * from '../post/assetUrl.ts';
 // shared 순수 유틸 — 옛 lib/shared. contentPaths(절대 경로 해석)는 node 전용.
 // 사이트 고유 값(SITE_URL·TIMEZONE·다이어그램 이름 …)은 여기서 나가지 않는다 —
 // 소비자의 값 모듈이 소유하고, 이 패키지는 그것을 설정으로 받는다
 // (contentConfig.ts의 `ContentValues`).
-export * from './shared/buildNow.ts';
-export * from './shared/contentConfig.ts';
-export * from './shared/contentPaths.ts';
-export * from './shared/dates.ts';
-export * from './shared/format.ts';
-export * from './shared/guards.ts';
-export * from './shared/jsonLd.ts';
-export * from './shared/markdownHeadings.ts';
-export * from './shared/postFiles.ts';
-export * from './shared/prismLanguages.ts';
-export * from './shared/url.ts';
-export * from './shared/viewCookie.ts';
+export * from '../shared/buildNow.ts';
+export * from '../shared/contentConfig.ts';
+export * from '../shared/contentPaths.ts';
+export * from '../shared/dates.ts';
+export * from '../shared/format.ts';
+export * from '../shared/guards.ts';
+export * from '../shared/jsonLd.ts';
+export * from '../shared/markdownHeadings.ts';
+export * from '../shared/postFiles.ts';
+export * from '../shared/prismLanguages.ts';
+export * from '../shared/url.ts';
+export * from '../shared/viewCookie.ts';

@@ -30,20 +30,20 @@
  */
 
 // ── shared: 순수 유틸 ────────────────────────────────────────────────────────
-export * from './shared/dates.ts';
-export * from './shared/format.ts';
-export * from './shared/guards.ts';
-export * from './shared/jsonLd.ts';
-export * from './shared/markdownHeadings.ts';
-export * from './shared/prismLanguages.ts';
-export * from './shared/url.ts';
-export * from './shared/viewCookie.ts';
+export * from '../shared/dates.ts';
+export * from '../shared/format.ts';
+export * from '../shared/guards.ts';
+export * from '../shared/jsonLd.ts';
+export * from '../shared/markdownHeadings.ts';
+export * from '../shared/prismLanguages.ts';
+export * from '../shared/url.ts';
+export * from '../shared/viewCookie.ts';
 
 // ── post: URL 계약 · 공개 판정 · 순수 필터 ───────────────────────────────────
-export * from './post/types.ts';
-export * from './post/urls.ts';
-export * from './post/utils.ts';
-export * from './post/visibility.ts';
-export * from './post/assetUrl.ts';
-export * from './post/filtering.ts';
-export * from './post/thumbnail.ts';
+export * from '../post/types.ts';
+export * from '../post/urls.ts';
+export * from '../post/utils.ts';
+export * from '../post/visibility.ts';
+export * from '../post/assetUrl.ts';
+export * from '../post/filtering.ts';
+export * from '../post/thumbnail.ts';

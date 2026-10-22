@@ -21,8 +21,8 @@ import { expect, test } from 'vitest';
  * 계속 옳아야 하기 때문이다.
  */
 
-const SRC = dirname(fileURLToPath(import.meta.url));
-const DOOR = resolve(SRC, 'client.ts');
+const SRC = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const DOOR = resolve(SRC, 'door/client.ts');
 
 /**
  * 이 파일이 여는 **모든** 모듈 지정자 — 정규식이 아니라 TypeScript의 전처리기로 뽑는다.
@@ -140,7 +140,7 @@ test('import의 모든 꼴을 따라간다', () => {
 test('큰 배럴은 이 검사를 통과하지 못한다', () => {
   // 대조군. 배럴이 어느 날 순수해지면 이 문이 존재할 이유가 없어지는데,
   // 그때 이 테스트가 알려 준다 — 그 전까지는 두 문이 정말로 다르다는 증거다.
-  expect(offenders(resolve(SRC, 'index.ts')).length).toBeGreaterThan(0);
+  expect(offenders(resolve(SRC, 'door/index.ts')).length).toBeGreaterThan(0);
 });
 
 test('SEO 문도 이 검사를 통과하지 못한다', () => {
