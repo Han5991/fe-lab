@@ -13,6 +13,10 @@
  *   새 외부 의존이 생기면 여기 목록에 명시적으로 넣어야 한다.
  */
 import type { BrowserContext, Request, Route } from '@playwright/test';
+import {
+  type AdminRequest,
+  parseAdminRequest,
+} from '../../src/lib/platform/adminActions';
 import { SUPABASE_URL } from './site';
 
 /** 조용히 막는 서드파티 — 응답이 비어도 앱 동작에 영향이 없는 것만. */
@@ -73,25 +77,22 @@ function isoDay(daysAgo: number): string {
   return d.toISOString().slice(0, 10);
 }
 
-/** Edge Function 요청 본문 — `adminActions.ts`의 `AdminRequest` 모양. */
-interface AdminRequestBody {
-  action?: string;
-  params?: { slugs?: string[]; slug?: string };
-}
-
-/** `admin-analytics` action별 응답 — 대리 호출하는 RPC의 `Returns` 모양을 `{ data }`로 감싼다. */
-function adminAnalytics(body: AdminRequestBody): unknown {
-  const slugs = body.params?.slugs ?? [];
-  const slug = body.params?.slug ?? '';
-  switch (body.action) {
+/**
+ * `admin-analytics` action별 응답 — 대리 호출하는 RPC의 `Returns` 모양을 `{ data }`로 감싼다.
+ * 요청은 Edge Function과 같은 `parseAdminRequest`로 읽어, 클라이언트가 보내는 본문이 계약에서
+ * 벗어나면 스텁도 실제 함수처럼 400을 준다. 거를 slug 목록이 없으면(필터 없음) 스텁은 지어낼
+ * 글이 없어 빈 목록을 준다 — 클라이언트는 언제나 글 인덱스의 slug를 싣는다.
+ */
+function adminAnalytics(request: AdminRequest): unknown {
+  switch (request.action) {
     case 'all_post_stats':
-      return slugs.map(s => ({
+      return (request.params?.slugs ?? []).map(s => ({
         slug: s,
         today_views: seeded(s, 2, 20),
         total_views: 50 + seeded(s, 3, 2000),
       }));
     case 'all_posts_trends':
-      return slugs.flatMap(s =>
+      return (request.params?.slugs ?? []).flatMap(s =>
         Array.from({ length: 30 }, (_, i) => ({
           slug: s,
           view_date: isoDay(i),
@@ -101,15 +102,13 @@ function adminAnalytics(body: AdminRequestBody): unknown {
     case 'post_hourly_distribution':
       return Array.from({ length: 24 }, (_, hour) => ({
         hour,
-        view_count: seeded(`${slug}:${hour}`, 5, 60),
+        view_count: seeded(`${request.params.slug}:${hour}`, 5, 60),
       }));
     case 'post_dow_distribution':
       return Array.from({ length: 7 }, (_, dow) => ({
         dow,
-        view_count: seeded(`${slug}:${dow}`, 6, 200),
+        view_count: seeded(`${request.params.slug}:${dow}`, 6, 200),
       }));
-    default:
-      return null;
   }
 }
 
@@ -138,10 +137,10 @@ async function fulfillSupabase(
     return route.fulfill({ status: 204, headers: CORS_HEADERS });
   }
   if (url.pathname === '/functions/v1/admin-analytics') {
-    const data = adminAnalytics(request.postDataJSON() as AdminRequestBody);
-    return data === null
-      ? json(route, 400, { error: 'unknown action' })
-      : json(route, 200, { data });
+    const parsed = parseAdminRequest(request.postDataJSON());
+    return parsed.ok
+      ? json(route, 200, { data: adminAnalytics(parsed.request) })
+      : json(route, 400, { error: parsed.error });
   }
   if (url.pathname === '/auth/v1/logout') {
     return route.fulfill({ status: 204, headers: CORS_HEADERS });

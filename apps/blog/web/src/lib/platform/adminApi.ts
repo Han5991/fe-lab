@@ -6,7 +6,8 @@
  *
  * action 목록·params 형태는 `adminActions.ts`(Edge Function과 공유)가, 응답 형태는
  * `database.types.ts`의 RPC `Returns`가 단일 출처입니다 — 호출자가 `call<T>()`로
- * 응답 타입을 손으로 적지 않습니다.
+ * 응답 타입을 손으로 적지 않고, 응답은 `unknown`으로 받아 `RESULT_COLUMNS`로 좁힙니다
+ * (Edge Function은 손으로 배포하므로 클라이언트와 어긋난 채 떠 있을 수 있다).
  *
  * 단위 테스트 가능성을 위해 순수 함수 + dependency injection 패턴을 사용합니다.
  */
@@ -28,8 +29,88 @@ type DbFunctions = Database['public']['Functions'];
  * action의 응답 = 대리 호출하는 RPC의 `Returns`.
  * `ADMIN_ACTION_RPC`의 값이 Functions 키가 아니면 여기서 컴파일 에러가 난다.
  */
-export type AdminActionResult<A extends AdminAction> =
-  DbFunctions[AdminActionRpc<A>]['Returns'];
+type GeneratedRow<A extends AdminAction> =
+  DbFunctions[AdminActionRpc<A>]['Returns'][number];
+
+/**
+ * 생성 타입이 실제보다 좁은 열. RETURNS TABLE의 bigint를 생성기는 non-null로 적지만,
+ * get_all_post_stats는 nullable 열(post_views.view_count)을 coalesce 없이 낸다(저장소의
+ * 마이그레이션 기준 — 프로덕션 함수 본문은 저장소와 다를 수 있어 SQL은 아직 고치지 않았다).
+ * 응답 타입이 그 null을 말하게 해서, 폴백은 소비자가 보이게 고른다.
+ */
+interface NullableColumns {
+  all_post_stats: 'total_views';
+}
+
+type ResultRow<A extends AdminAction> = A extends keyof NullableColumns
+  ? Omit<GeneratedRow<A>, NullableColumns[A]> & {
+      [K in NullableColumns[A]]: GeneratedRow<A>[K] | null;
+    }
+  : GeneratedRow<A>;
+
+export type AdminActionResult<A extends AdminAction> = ResultRow<A>[];
+
+/** 열의 런타임 검사 — 키가 곧 열 타입의 이름이다. */
+const COLUMN_CHECKS = {
+  string: (value: unknown) => typeof value === 'string',
+  number: (value: unknown) => typeof value === 'number',
+  'number|null': (value: unknown) =>
+    value === null || typeof value === 'number',
+};
+
+/** 열 타입 → 검사 이름. 여기 없는 열 타입이 생기면 `never`라 아래 표가 컴파일되지 않는다. */
+type ColumnTag<T> = [T] extends [string]
+  ? 'string'
+  : [T] extends [number]
+    ? 'number'
+    : [T] extends [number | null]
+      ? 'number|null'
+      : never;
+
+/** action → 응답 행의 열 → 그 열의 검사 이름. 키 전부가 `AdminAction`과 `Returns`에서 온다. */
+type ResultColumns = {
+  readonly [A in AdminAction]: {
+    readonly [K in keyof ResultRow<A>]-?: ColumnTag<ResultRow<A>[K]>;
+  };
+};
+
+/**
+ * action마다 응답 행의 열. 키와 열 타입이 `Returns`에 묶여(satisfies) 열이 늘거나 이름·타입이
+ * 바뀌면 여기서 컴파일 에러가 난다 — 타입 사본이 아니라 그 타입의 런타임 그림자다.
+ */
+const RESULT_COLUMNS = {
+  all_post_stats: {
+    slug: 'string',
+    today_views: 'number',
+    total_views: 'number|null',
+  },
+  all_posts_trends: {
+    slug: 'string',
+    view_count: 'number',
+    view_date: 'string',
+  },
+  post_hourly_distribution: { hour: 'number', view_count: 'number' },
+  post_dow_distribution: { dow: 'number', view_count: 'number' },
+} as const satisfies ResultColumns;
+
+/** 응답 본문이 그 action의 `Returns`(행 배열)인지 — 열마다 값의 타입까지 본다. */
+function isActionResult<A extends AdminAction>(
+  action: A,
+  value: unknown,
+): value is AdminActionResult<A> {
+  const columns: Readonly<Record<string, keyof typeof COLUMN_CHECKS>> =
+    RESULT_COLUMNS[action];
+  if (!Array.isArray(value)) return false;
+  // Array.isArray는 any[]로 좁힌다 — 행은 unknown으로 다시 받는다.
+  const rows: readonly unknown[] = value;
+  return rows.every(row => {
+    if (typeof row !== 'object' || row === null) return false;
+    const values = new Map<string, unknown>(Object.entries(row));
+    return Object.entries(columns).every(([name, tag]) =>
+      COLUMN_CHECKS[tag](values.get(name)),
+    );
+  });
+}
 
 /**
  * params가 필수인 action(`slug`)은 두 번째 인자를 강제하고, 없거나 전부
@@ -68,10 +149,11 @@ export interface FunctionsFailure {
  */
 export interface FunctionsInvoker {
   functions: {
-    invoke<T>(
+    /** 응답 본문은 `unknown`이다 — 모양은 받은 뒤 확인한다(반환 타입 제네릭은 숨은 단언이다). */
+    invoke(
       functionName: string,
       options?: { body?: unknown },
-    ): Promise<{ data: T | null; error: FunctionsFailure | null }>;
+    ): Promise<{ data: unknown; error: FunctionsFailure | null }>;
   };
 }
 
@@ -178,24 +260,27 @@ export class AdminApiClient implements AdminApi {
     action: A,
     ...[params]: CallArgs<A>
   ): Promise<AdminActionResult<A>> {
-    const { data, error } = await this.#client.functions.invoke<{
-      data: AdminActionResult<A> | null;
-    }>('admin-analytics', {
-      body: { action, params },
-    });
+    const { data, error } = await this.#client.functions.invoke(
+      'admin-analytics',
+      { body: { action, params } },
+    );
 
     if (error) {
       throw await toAdminApiError(action, error);
     }
 
     // Edge Function은 { data: Returns } 형태로 반환합니다. RPC가 0행이어도
-    // PostgREST는 []를 주므로, 봉투가 없거나 안이 null이면 프로토콜 위반이다.
-    if (!data || data.data == null) {
+    // PostgREST는 []를 주므로, 봉투가 없거나 안이 행 배열이 아니면 프로토콜 위반이다.
+    const result =
+      typeof data === 'object' && data !== null && 'data' in data
+        ? data.data
+        : undefined;
+    if (!isActionResult(action, result)) {
       throw new Error(
-        `admin-analytics Edge Function이 빈 응답을 반환했습니다 [${action}]`,
+        `admin-analytics Edge Function이 계약과 다른 응답을 반환했습니다 [${action}]`,
       );
     }
 
-    return data.data;
+    return result;
   }
 }

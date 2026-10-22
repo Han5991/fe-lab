@@ -30,13 +30,9 @@ function makeMockClient(response: InvokeResponse): {
 
   const client: FunctionsInvoker = {
     functions: {
-      invoke<T>(functionName: string, options?: { body?: unknown }) {
+      invoke(functionName: string, options?: { body?: unknown }) {
         calls.push({ functionName, options });
-        // mock은 T와 무관하게 고정 응답을 돌려준다 — 런타임 동작만 검증하므로
-        // 제네릭 반환 타입으로의 cast는 의도된 우회다.
-        return Promise.resolve(
-          response as { data: T | null; error: FunctionsFailure | null },
-        );
+        return Promise.resolve(response);
       },
     },
   };
@@ -201,7 +197,7 @@ test('AdminApiClient: data가 null이면 Error throw (빈 응답)', async () => 
   const rejected = api.call('all_post_stats');
 
   await expect(rejected).rejects.toBeInstanceOf(Error);
-  await expect(rejected).rejects.toThrow('빈 응답');
+  await expect(rejected).rejects.toThrow('계약과 다른 응답');
 });
 
 test('AdminApiClient: 봉투는 있는데 안이 null이어도 Error throw (빈 응답)', async () => {
@@ -218,7 +214,34 @@ test('AdminApiClient: 봉투는 있는데 안이 null이어도 Error throw (빈 
   const rejected = api.call('all_post_stats');
 
   await expect(rejected).rejects.toBeInstanceOf(Error);
-  await expect(rejected).rejects.toThrow('빈 응답');
+  await expect(rejected).rejects.toThrow('계약과 다른 응답');
+});
+
+// Edge Function은 손으로 배포한다 — 클라이언트와 어긋난 함수가 떠 있으면 화면이 NaN·undefined를
+// 그리는 대신 여기서 실패해야 한다. 열 이름·타입은 database.types.ts의 Returns에서 온다.
+test.each([
+  ['행 배열이 아닌 본문', { rows: [] }],
+  ['열이 빠진 행', [{ slug: 'post-a', total_views: 1 }]],
+  ['열 타입이 다른 행', [{ slug: 'post-a', total_views: '1', today_views: 0 }]],
+  ['객체가 아닌 행', ['post-a']],
+])(
+  'AdminApiClient: %s은 계약과 다른 응답으로 실패한다',
+  async (_kind, rows) => {
+    const { client } = makeMockClient({ data: { data: rows }, error: null });
+
+    await expect(
+      new AdminApiClient(client).call('all_post_stats'),
+    ).rejects.toThrow('계약과 다른 응답');
+  },
+);
+
+test('AdminApiClient: total_views의 null은 계약 안이다 — 생성 타입보다 넓은 열', async () => {
+  const rows = [{ slug: 'post-a', total_views: null, today_views: 0 }];
+  const { client } = makeMockClient({ data: { data: rows }, error: null });
+
+  const result = await new AdminApiClient(client).call('all_post_stats');
+
+  expect(result).toStrictEqual(rows);
 });
 
 test('AdminApiClient: 응답 타입이 action의 RPC Returns로 결정된다 (타입 계약)', async () => {

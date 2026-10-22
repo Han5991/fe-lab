@@ -59,11 +59,9 @@ function adminApi(): AdminApi {
 // 흘려보내면 될 뿐 필드를 옮겨 적는 map 은 필요 없다.
 //
 // bigint 도 마찬가지다 — PostgREST 는 이걸 JSON number 로 직렬화한다(문자열이
-// 아니다). 그래서 Number() 는 형변환이 아니라 null 방어로만 값을 한다. RPC 넷 중
-// 그 방어가 필요한 축은 get_all_post_stats.total_views 하나뿐이다:
-// post_views.view_count(nullable)를 coalesce 없이 그대로 내보내는데 RETURNS TABLE
-// 이 bigint 라 생성 타입은 non-null number 다. 나머지는 SQL 이 coalesce(...,0) 이나
-// count(*)/extract()::int 로 이미 not-null 을 보장한다.
+// 아니다). 응답 모양은 call()이 unknown에서 확인하고, 생성 타입보다 넓은 열
+// (get_all_post_stats.total_views의 null)은 응답 타입이 그대로 말한다 — 아래에서
+// 그 null을 0으로 읽는다고 보이게 고른다.
 
 // 목록형 두 읽기는 글 인덱스의 slug로 서버에서 거른다 — anon이 만든 가짜 slug 행이
 // 1000행 cap·페이지 상한을 채우지 않게(adminActions.ts의 AdminSlugFilter).
@@ -74,8 +72,8 @@ export async function getAllPostStats(
   // admin RPC — service_role 한정. Edge Function 경유.
   // PostgREST의 1000행 cap 페이징은 Edge Function 안에서 돈다(왕복 1회).
   const data = await adminApi().call('all_post_stats', { slugs });
-  // null 이 오면 Number(null) === 0 으로 굳어 소비처의 산술이 NaN 으로 번지지 않는다.
-  return data.map(s => ({ ...s, total_views: Number(s.total_views) }));
+  // 조회 기록이 없는 글의 누적 조회수는 0이다 — null을 산술에 흘리지 않는다.
+  return data.map(s => ({ ...s, total_views: s.total_views ?? 0 }));
 }
 
 export async function getAllPostsTrends(
