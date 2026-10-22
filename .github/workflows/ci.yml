@@ -91,6 +91,12 @@ jobs:
       - name: Quality checks
         uses: ./.github/actions/quality-checks
 
+      # 봇 PR(deps-audit·link-rot)은 쓰기 권한으로 열리고, 그 관문은 publish-bot-pr.sh의 경로
+      # 필터 하나다. 회귀 테스트가 손으로만 돌아서 필터가 약해져도 CI는 초록이었다(8초 남짓).
+      # 재평가: 2027-04-22 — 그때까지 실패한 적이 없으면 그 스크립트를 고칠 때만 돌게 줄인다.
+      - name: Bot PR publish filter tests
+        run: bash .github/scripts/publish-bot-pr.test.sh
+
       # 캐시가 실제로 일했는지는 hit/miss 로그로 알 수 없다. 위 빌드 로그에서
       # "⚠ No build cache found"가 사라지고 "Compiled successfully in Xs"의 X가
       # 콜드 대비 줄어야 성공이다(2026-08-09 배포 런 기준 콜드 12.0s). 캐시가

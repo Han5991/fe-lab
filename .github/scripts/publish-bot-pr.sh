@@ -13,7 +13,7 @@
 #   CI_WORKFLOW    PR을 연 뒤 workflow_dispatch로 부를 워크플로(GITHUB_TOKEN이 연 PR엔 pull_request가 안 돈다)
 #   GH_TOKEN       contents·pull-requests(·actions) write 토큰
 #
-# 이 파일을 고치면 `bash .github/scripts/publish-bot-pr.test.sh`를 손으로 돌릴 것(CI가 부르지 않는다).
+# 회귀 테스트는 `bash .github/scripts/publish-bot-pr.test.sh` — CI(Lint / Types / Tests 잡)가 PR마다 돌린다.
 set -euo pipefail
 export LC_ALL=C.UTF-8
 

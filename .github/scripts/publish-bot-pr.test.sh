@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# publish-bot-pr.sh 회귀 테스트(CI는 부르지 않는다). VERBOSE=1이면 통과한 것의 로그도 찍는다.
+# publish-bot-pr.sh 회귀 테스트(CI의 Lint / Types / Tests 잡이 부른다). VERBOSE=1이면 통과한 것의 로그도 찍는다.
 # 가짜 저장소·원격·gh로 시나리오마다 패치를 넘긴다. 필요한 것: bash, git, jq, perl.
 set -euo pipefail
 
