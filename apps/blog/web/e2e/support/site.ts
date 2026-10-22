@@ -11,6 +11,7 @@
  */
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join, relative, resolve, sep } from 'node:path';
+import { SEARCH_INDEX_PATH } from '@blog/content/client';
 
 export const APP_ROOT = resolve(__dirname, '..', '..');
 export const OUT_DIR = join(APP_ROOT, 'out');
@@ -76,9 +77,9 @@ function isIndexedPost(row: unknown): row is IndexedPost {
 
 /** 빌드가 공개로 판정한 글(검색 인덱스). 양성 대조의 기준이다. */
 export function publishedPosts(): IndexedPost[] {
-  const json: unknown = JSON.parse(readOut('search-index.json'));
+  const json: unknown = JSON.parse(readOut(SEARCH_INDEX_PATH));
   if (!Array.isArray(json) || !json.every(isIndexedPost)) {
-    throw new Error('out/search-index.json의 모양이 예상과 다릅니다');
+    throw new Error(`out${SEARCH_INDEX_PATH}의 모양이 예상과 다릅니다`);
   }
   return json;
 }

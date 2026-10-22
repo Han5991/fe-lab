@@ -103,7 +103,8 @@
   Cache-Control: public, max-age=86400, must-revalidate
 
 # admin 글 목록은 비공개 글 제목까지 담는다 — 받는 건 못 막아도 색인에서는 뺀다
-# (robots.txt Disallow는 색인을 막지 못한다).
+# (robots.txt Disallow는 색인을 막지 못한다). 경로는 @blog/content의 ADMIN_POSTS_INDEX_PATH
+# 사본이다 — e2e/admin.spec.ts가 실제 응답 헤더로 잠근다.
 /admin-posts-index.json
   X-Robots-Tag: noindex
 

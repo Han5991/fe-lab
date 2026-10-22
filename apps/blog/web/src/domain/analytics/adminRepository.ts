@@ -15,7 +15,12 @@
 
 import { client } from '../../lib/platform/client';
 import { AdminApiClient, type AdminApi } from '../../lib/platform/adminApi';
-import { isPostStatus, isRecord, type PostStatus } from '@blog/content/client';
+import {
+  ADMIN_POSTS_INDEX_PATH,
+  isPostStatus,
+  isRecord,
+  type PostStatus,
+} from '@blog/content/client';
 import type {
   PostStatsRow,
   PostTrendRow,
@@ -106,10 +111,10 @@ export async function getAdminPostsIndex(): Promise<AdminPostIndex[]> {
   // 서버 환경(SSG prerender 포함)에서는 상대 URL fetch가 ERR_INVALID_URL.
   // 어차피 admin은 클라이언트 hydration 후에만 유효하므로 SSR에선 빈 배열로 대기.
   if (typeof window === 'undefined') return [];
-  const res = await fetch('/admin-posts-index.json');
+  const res = await fetch(ADMIN_POSTS_INDEX_PATH);
   if (!res.ok) {
     throw new Error(
-      `admin-posts-index.json fetch failed: ${res.status} ${res.statusText}`,
+      `${ADMIN_POSTS_INDEX_PATH} fetch failed: ${res.status} ${res.statusText}`,
     );
   }
   // 배열이 아니거나 모양이 어긋난 행은 조용히 거른다 — 검증이 여기 한 곳에

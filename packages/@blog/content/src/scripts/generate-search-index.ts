@@ -1,8 +1,10 @@
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
+  ADMIN_POSTS_INDEX_PATH,
   extractPlainText,
   type PostData,
+  SEARCH_INDEX_PATH,
   type SeriesMeta,
 } from '../post/index.ts';
 import { resolvePostSet } from './artifacts.ts';
@@ -73,10 +75,10 @@ export function buildAdminPostsIndex(
 }
 
 export function main(ctx: ContentContext) {
-  const outputPath = join(ctx.content.paths.publicDir, 'search-index.json');
+  const outputPath = join(ctx.content.paths.publicDir, SEARCH_INDEX_PATH);
   const adminOutputPath = join(
     ctx.content.paths.publicDir,
-    'admin-posts-index.json',
+    ADMIN_POSTS_INDEX_PATH,
   );
 
   // 산출 파일이 두 개고 글 집합도 각각 다르다 — 레지스트리(artifacts.ts)의
