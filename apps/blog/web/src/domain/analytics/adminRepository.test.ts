@@ -45,31 +45,28 @@ describe('getAdminPostsIndex', () => {
     await expect(getAdminPostsIndex()).resolves.toEqual([VALID_ROW]);
   });
 
-  test('모양이 어긋난 행만 걸러진다 — 페이지째 깨지는 대신', async () => {
-    stubFetch([
-      VALID_ROW,
-      { ...VALID_ROW, date: 123 }, // date가 문자열도 null도 아님
-      { ...VALID_ROW, tags: 'tag' }, // tags가 배열이 아님
-      { ...VALID_ROW, status: undefined }, // status 누락
-      'not-an-object',
-      null,
-    ]);
+  // 예전에는 어긋난 행을 거르고, 모르는 발행 상태를 draft로 바꾸고, 배열이 아니면 빈 목록을
+  // 돌려줬다 — 화면은 살지만 글이 목록에서 조용히 빠지거나 다른 상태로 보였다. 색인은 화면과
+  // 같은 빌드가 만드므로 어긋남은 버그다: 통째로 던져 에러 경계가 보이게 한다.
+  test.each([
+    [
+      'date가 문자열도 null도 아닌 행',
+      [VALID_ROW, { ...VALID_ROW, date: 123 }],
+    ],
+    ['tags가 배열이 아닌 행', [VALID_ROW, { ...VALID_ROW, tags: 'tag' }]],
+    ['status가 빠진 행', [{ ...VALID_ROW, status: undefined }]],
+    ['모르는 발행 상태', [{ ...VALID_ROW, status: 'retired' }]],
+    ['객체가 아닌 행', [VALID_ROW, 'not-an-object', null]],
+  ])('%s이 있으면 계약 위반으로 throw한다', async (_kind, rows) => {
+    stubFetch(rows);
 
-    await expect(getAdminPostsIndex()).resolves.toEqual([VALID_ROW]);
+    await expect(getAdminPostsIndex()).rejects.toThrow('계약과 다른 행');
   });
 
-  test('모르는 발행 상태는 행을 남기고 draft로 좁힌다 — 공개 글로 보이지 않게(fail-closed)', async () => {
-    stubFetch([{ ...VALID_ROW, status: 'retired' }]);
-
-    await expect(getAdminPostsIndex()).resolves.toEqual([
-      { ...VALID_ROW, status: 'draft' },
-    ]);
-  });
-
-  test('비배열 응답이면 빈 배열 — 손으로 고쳐진 파일에도 화면은 산다', async () => {
+  test('배열이 아닌 본문은 throw한다', async () => {
     stubFetch({ broken: true });
 
-    await expect(getAdminPostsIndex()).resolves.toEqual([]);
+    await expect(getAdminPostsIndex()).rejects.toThrow('배열이 아닌 본문');
   });
 
   test('HTTP 실패는 상태를 담아 throw한다 (ErrorBoundary가 안내할 축)', async () => {

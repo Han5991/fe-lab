@@ -30,6 +30,7 @@ const post = (
   tags: [],
   series,
   seriesTitle,
+  contentPreview: '',
 });
 
 // '터보'로 거르면 앞의 둘만 남는다 — 화살표가 움직일 자리가 있어야 한다.
@@ -205,16 +206,12 @@ describe('SearchDialog - 시리즈 표기', () => {
     expect(option).not.toHaveTextContent('lab/error-handling');
   });
 
-  test('색인에 시리즈 제목이 없으면 id로 대신한다', async () => {
-    const { seriesTitle: _omit, ...legacy } = post(
-      'other',
-      '전혀 다른 글',
-      'lab/error-handling',
-    );
+  test('색인의 시리즈 제목이 null이면(_series.yml에 title 없음) id로 대신한다', async () => {
+    const untitled = post('other', '전혀 다른 글', 'lab/error-handling');
     vi.stubGlobal(
       'fetch',
       vi.fn(() =>
-        Promise.resolve({ ok: true, json: () => Promise.resolve([legacy]) }),
+        Promise.resolve({ ok: true, json: () => Promise.resolve([untitled]) }),
       ),
     );
     render(<SearchDialog />);

@@ -2,8 +2,10 @@ import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   ADMIN_POSTS_INDEX_PATH,
+  type AdminPostsIndexEntry,
   extractPlainText,
   type PostData,
+  type PublicSearchIndexEntry,
   SEARCH_INDEX_PATH,
   type SeriesMeta,
 } from '../post/index.ts';
@@ -11,28 +13,6 @@ import { resolvePostSet } from './artifacts.ts';
 import type { ContentContext } from './context.ts';
 
 export const CONTENT_PREVIEW_CHARS = 1500;
-
-export interface PublicSearchIndexEntry {
-  slug: string;
-  title: string;
-  date: string | null;
-  excerpt: string;
-  tags: string[];
-  series: string | null;
-  /** 시리즈 표시명(`_series.yml`의 `title`) — 없으면 null(화면은 `series`로 폴백) */
-  seriesTitle: string | null;
-  contentPreview: string;
-}
-
-/** admin 대시보드가 읽는 필드만 — 인증 없이 받는 정적 파일이라 공개 전 글의 요약·시리즈는 싣지 않는다. */
-export interface AdminPostsIndexEntry {
-  slug: string;
-  title: string;
-  date: string | null;
-  tags: string[];
-  status: string;
-  scheduledDate: string | null;
-}
 
 /**
  * 공개 포스트용 검색 인덱스 (프론트엔드 검색용).

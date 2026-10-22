@@ -12,6 +12,8 @@ export * from './service.ts';
 export * from './series.ts';
 export * from './utils.ts';
 export * from './urls.ts';
+// 검색 색인 두 벌의 행 계약 — 생성기와 앱의 fetch가 같은 타입·검사를 쓴다.
+export * from './indexEntries.ts';
 export * from './aggregate.ts';
 // repository는 인프라(파일시스템)라 순수 계산만 공개한다 — 렌더·검증·생성기가 같은 값을 내야 한다.
 export {

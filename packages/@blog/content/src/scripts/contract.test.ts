@@ -13,6 +13,10 @@ import { existsSync } from 'node:fs';
 import { join, posix } from 'node:path';
 import { expect, test } from 'vitest';
 import { isPostStatus, isPostVisible } from '../post/visibility.ts';
+import {
+  isAdminPostsIndexEntry,
+  isPublicSearchIndexEntry,
+} from '../post/indexEntries.ts';
 import { decodeUrlSafe } from '../shared/url.ts';
 import { testConfig, testContent } from '../post/testing.ts';
 import { buildSitemapXml, getPostPriority } from './generate-sitemap.ts';
@@ -121,6 +125,27 @@ test('search-index: 모든 entry는 필수 키 보유', () => {
     expect(typeof e.contentPreview === 'string').toBeTruthy();
     expect(e.contentPreview.length <= CONTENT_PREVIEW_CHARS).toBeTruthy();
   }
+});
+
+// 앱은 JSON으로 받은 색인을 이 검사로 읽고, 어긋나면 검색·admin 목록이 에러가 된다.
+// JSON을 한 번 거치게 해서 undefined로 남은 필드(직렬화되면 사라진다)도 잡는다.
+test('search-index: 두 색인의 모든 행이 JSON을 거친 뒤 앱이 읽는 계약 검사를 통과한다', () => {
+  const roundTrip = (value: unknown): unknown =>
+    JSON.parse(JSON.stringify(value));
+  const publicIdx = roundTrip(
+    buildPublicSearchIndex(getAllPosts(), testContent.getSeriesMeta),
+  );
+  const adminIdx = roundTrip(
+    buildAdminPostsIndex(getAllPostsIncludingHidden()),
+  );
+  expect(Array.isArray(publicIdx) && publicIdx.length > 0).toBe(true);
+  expect(Array.isArray(adminIdx) && adminIdx.length > 0).toBe(true);
+  expect(
+    Array.isArray(publicIdx) && publicIdx.every(isPublicSearchIndexEntry),
+  ).toBe(true);
+  expect(
+    Array.isArray(adminIdx) && adminIdx.every(isAdminPostsIndexEntry),
+  ).toBe(true);
 });
 
 test('search-index(admin): draft/scheduled 포함하여 전체 글 인덱싱', () => {

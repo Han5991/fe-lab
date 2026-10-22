@@ -11,7 +11,11 @@
  */
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join, relative, resolve, sep } from 'node:path';
-import { SEARCH_INDEX_PATH } from '@blog/content/client';
+import {
+  isPublicSearchIndexEntry,
+  type PublicSearchIndexEntry,
+  SEARCH_INDEX_PATH,
+} from '@blog/content/client';
 
 export const APP_ROOT = resolve(__dirname, '..', '..');
 export const OUT_DIR = join(APP_ROOT, 'out');
@@ -58,27 +62,10 @@ export const SUPABASE_URL = requireEnv(ENV, 'NEXT_PUBLIC_SUPABASE_URL').replace(
 );
 export const ADMIN_EMAIL = requireEnv(ENV, 'NEXT_PUBLIC_ADMIN_EMAIL');
 
-/** 검색 인덱스의 행 — 빌드가 공개로 판정한 글. 이 스위트가 읽는 축만 둔다. */
-export interface IndexedPost {
-  slug: string;
-  title: string;
-}
-
-function isIndexedPost(row: unknown): row is IndexedPost {
-  return (
-    typeof row === 'object' &&
-    row !== null &&
-    'slug' in row &&
-    typeof row.slug === 'string' &&
-    'title' in row &&
-    typeof row.title === 'string'
-  );
-}
-
 /** 빌드가 공개로 판정한 글(검색 인덱스). 양성 대조의 기준이다. */
-export function publishedPosts(): IndexedPost[] {
+export function publishedPosts(): PublicSearchIndexEntry[] {
   const json: unknown = JSON.parse(readOut(SEARCH_INDEX_PATH));
-  if (!Array.isArray(json) || !json.every(isIndexedPost)) {
+  if (!Array.isArray(json) || !json.every(isPublicSearchIndexEntry)) {
     throw new Error(`out${SEARCH_INDEX_PATH}의 모양이 예상과 다릅니다`);
   }
   return json;
