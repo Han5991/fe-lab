@@ -93,6 +93,8 @@ jobs:
 
       # 봇 PR(deps-audit·link-rot)은 쓰기 권한으로 열리고, 그 관문은 publish-bot-pr.sh의 경로
       # 필터 하나다. 회귀 테스트가 손으로만 돌아서 필터가 약해져도 CI는 초록이었다(8초 남짓).
+      # 블로그 산출물이 아니라 봇 PR 스크립트를 검증해 배포와 무관하므로, 위 주석의 원칙과 달리
+      # quality-checks composite 밖(여기)에 둔다.
       # 재평가: 2027-04-22 — 그때까지 실패한 적이 없으면 그 스크립트를 고칠 때만 돌게 줄인다.
       - name: Bot PR publish filter tests
         run: bash .github/scripts/publish-bot-pr.test.sh

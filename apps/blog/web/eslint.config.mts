@@ -80,8 +80,9 @@ const PREFER_TOKEN = {
  * 그 파일 안에서도 문에 있는 값은 문으로 연다 — 배럴 import 줄이 곧 "배럴에만 있는 것"의
  * 목록이 되게.
  *
- * `paths`는 정적 import·재수출만 본다. 동적 `import()`는 app 블록의
- * `no-restricted-syntax`(`CONTENT_DYNAMIC_IMPORT`)가 맡는다.
+ * `paths`는 정적 import·재수출만 본다. 동적 `import()`는 `no-restricted-syntax`를 켜는 모든
+ * 블록이 `CONTENT_DYNAMIC_IMPORT`를 펼쳐 맡는다 — 그 룰은 블록마다 통째로 덮어써지므로 하나라도
+ * 빠지면 그 파일에서 동적 import가 열린다(NO_ESCAPED_HEX 주석과 같은 이유).
  */
 const CONTENT_BARREL_VALUES = {
   name: '@blog/content',
