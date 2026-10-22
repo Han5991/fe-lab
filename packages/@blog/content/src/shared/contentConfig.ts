@@ -486,6 +486,8 @@ export interface ContentUserConfig extends Pick<
   /**
    * 규칙 목록이 통째로 실린다 — 접두·마커·산출물 이름 전부 그 사이트의 값이라
    * 패키지가 채워 줄 반쪽이 없다. 선언하면 규칙 1개 이상, 안 하면 누수 규칙 없음.
+   * `check-bundle`을 돌리는 사이트는 이것과 `bundleBudgets` 중 하나 이상을 선언해야 한다
+   * (둘 다 없으면 그 단계가 실패한다).
    */
   bundleGuards?: BundleGuardsConfig;
   /** 그룹별 예산이 통째로 실린다 — `bundleGuards`와 같은 이유로 기본값이 없다. */

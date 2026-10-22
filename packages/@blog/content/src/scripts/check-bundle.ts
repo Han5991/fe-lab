@@ -306,14 +306,18 @@ function readChunkSources(outDir: string): Map<string, string> {
 }
 
 export function main(ctx: ContentContext, target?: string) {
-  // 선언 자체가 없는 사이트는 검사 대상이 아니다. 규칙·예산 0개짜리 선언은
-  // 타입이 막으므로(비어 있을 수 없는 튜플) 여기 올 수 없다.
+  // 둘 다 없으면 건너뛰지 않고 실패한다 — 예전 스킵은 "✓"로 끝나 빌드 로그에 묻혔고,
+  // 선언과 무관한 keyframes 검사까지 함께 꺼졌다. 검사하지 않을 사이트는 build에서 이
+  // 단계를 뺀다(그 결정이 스크립트 diff로 보인다). 한쪽만 선언하는 것은 그 사이트의
+  // 선택이다(누수 규칙이 없는 사이트). 규칙·예산 0개짜리 선언은 타입이 막는다(비어 있을
+  // 수 없는 튜플).
   const { bundleGuards: rules, bundleBudgets: budgets } = ctx.content.config;
   if (!rules && !budgets) {
-    console.log(
-      '✓ check-bundle: bundleGuards·bundleBudgets 미선언 — 검사 스킵',
+    console.error(
+      `✖ check-bundle: 설정(${ctx.configPath})에 bundleGuards·bundleBudgets 선언이 둘 다 없습니다 — ` +
+        '검사하지 않으려면 build 스크립트에서 check-bundle 단계를 빼세요.',
     );
-    return;
+    process.exit(1);
   }
 
   const outDir = target
