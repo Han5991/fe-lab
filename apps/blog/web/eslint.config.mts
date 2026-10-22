@@ -528,6 +528,26 @@ export default defineConfig([
       '@typescript-eslint/no-unnecessary-condition': 'error',
     },
   },
+  // no-unnecessary-type-parameters: 반환 타입에만 쓰이는 제네릭(`f<T>(): T`)은 호출자가 고른 타입을
+  // 확인 없이 붙이는 숨은 단언이다 — no-unsafe-type-assertion이 못 보는 같은 구멍. ban-ts-comment:
+  // 프로덕션에서는 설명을 단 @ts-expect-error도 막는다(타입 에러를 주석으로 넘기는 길). 테스트의 음성
+  // 타입 테스트는 프리셋 그대로 연다. 둘 다 켤 때 위반 0건. 재평가: 2027-04-22.
+  {
+    files: ['**/*.{ts,tsx,mts,cts}'],
+    rules: {
+      '@typescript-eslint/no-unnecessary-type-parameters': 'error',
+    },
+  },
+  {
+    files: ['**/*.{ts,tsx,mts,cts}'],
+    ignores: TEST_FILES,
+    rules: {
+      '@typescript-eslint/ban-ts-comment': [
+        'error',
+        { 'ts-expect-error': true },
+      ],
+    },
+  },
   {
     // 테스트는 연다 — fixture·mock을 만드는 단언과 방어 검사가 대부분이고 프로덕션으로
     // 새지 않는다. 테스트 tsconfig가 엄격 플래그를 푸는 것과 같은 선이다.

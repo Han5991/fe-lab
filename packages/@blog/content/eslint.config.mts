@@ -117,6 +117,24 @@ export default defineConfig([
       '@typescript-eslint/no-unnecessary-condition': 'error',
     },
   },
+  // 반환 타입에만 쓰이는 제네릭·프로덕션의 @ts-expect-error 금지 — 앱 설정의 같은 블록 주석.
+  // 둘 다 켤 때 위반 0건. 재평가: 2027-04-22.
+  {
+    files: ['**/*.{ts,mts,cts}'],
+    rules: {
+      '@typescript-eslint/no-unnecessary-type-parameters': 'error',
+    },
+  },
+  {
+    files: ['**/*.{ts,mts,cts}'],
+    ignores: TEST_FILES,
+    rules: {
+      '@typescript-eslint/ban-ts-comment': [
+        'error',
+        { 'ts-expect-error': true },
+      ],
+    },
+  },
   {
     // 테스트는 연다 — fixture·mock을 만드는 단언과 방어 검사가 대부분이고 프로덕션으로
     // 새지 않는다.
