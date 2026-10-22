@@ -39,7 +39,6 @@ export {
  */
 export const analyticsService: AnalyticsCalculator = new AnalyticsService();
 
-export type { AdminPostIndex } from './adminRepository';
 // PostStatsRow·PostTrendRow는 DB 행 타입이라 types.ts에 있고, 공개 배럴
 // (`@/src/domain/analytics`)의 `export * from './types'`로도 나간다. 타입뿐이라
 // 런타임 모듈 그래프(위 주석의 번들 분리)에는 영향이 없다.

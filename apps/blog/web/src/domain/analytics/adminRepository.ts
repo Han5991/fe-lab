@@ -17,9 +17,8 @@ import { client } from '../../lib/platform/client';
 import { AdminApiClient, type AdminApi } from '../../lib/platform/adminApi';
 import {
   ADMIN_POSTS_INDEX_PATH,
-  isPostStatus,
-  isRecord,
-  type PostStatus,
+  type AdminPostsIndexEntry,
+  isAdminPostsIndexEntry,
 } from '@blog/content/client';
 import type {
   PostStatsRow,
@@ -27,20 +26,6 @@ import type {
   HourlyDistribution,
   DowDistribution,
 } from './types';
-
-// admin-posts-index.json 산출물의 행 계약 부분집합 — 필드 정의의 출처는
-// @blog/content의 generate-search-index.ts(AdminPostsIndexEntry)다. 여기에는
-// admin 화면이 실제로 읽는 축만 든다. 산출물에 있는데 이 타입에 없는 필드가
-// 필요해지면 여기 늘릴 것 — 예전 태그 분포 훅이 이 타입에 tags가 없다는
-// 이유로 src에서 같은 파일을 따로 fetch(타입까지 재선언)했다.
-export interface AdminPostIndex {
-  slug: string;
-  title: string;
-  date: string | null;
-  tags: string[];
-  status: PostStatus;
-  scheduledDate: string | null;
-}
 
 /**
  * admin-analytics Edge Function 클라이언트 (첫 호출 때 1회 생성).
@@ -59,11 +44,9 @@ function adminApi(): AdminApi {
 // 흘려보내면 될 뿐 필드를 옮겨 적는 map 은 필요 없다.
 //
 // bigint 도 마찬가지다 — PostgREST 는 이걸 JSON number 로 직렬화한다(문자열이
-// 아니다). 그래서 Number() 는 형변환이 아니라 null 방어로만 값을 한다. RPC 넷 중
-// 그 방어가 필요한 축은 get_all_post_stats.total_views 하나뿐이다:
-// post_views.view_count(nullable)를 coalesce 없이 그대로 내보내는데 RETURNS TABLE
-// 이 bigint 라 생성 타입은 non-null number 다. 나머지는 SQL 이 coalesce(...,0) 이나
-// count(*)/extract()::int 로 이미 not-null 을 보장한다.
+// 아니다). 응답 모양은 call()이 unknown에서 확인하고, 생성 타입보다 넓은 열
+// (get_all_post_stats.total_views의 null)은 응답 타입이 그대로 말한다 — 아래에서
+// 그 null을 0으로 읽는다고 보이게 고른다.
 
 // 목록형 두 읽기는 글 인덱스의 slug로 서버에서 거른다 — anon이 만든 가짜 slug 행이
 // 1000행 cap·페이지 상한을 채우지 않게(adminActions.ts의 AdminSlugFilter).
@@ -74,8 +57,8 @@ export async function getAllPostStats(
   // admin RPC — service_role 한정. Edge Function 경유.
   // PostgREST의 1000행 cap 페이징은 Edge Function 안에서 돈다(왕복 1회).
   const data = await adminApi().call('all_post_stats', { slugs });
-  // null 이 오면 Number(null) === 0 으로 굳어 소비처의 산술이 NaN 으로 번지지 않는다.
-  return data.map(s => ({ ...s, total_views: Number(s.total_views) }));
+  // 조회 기록이 없는 글의 누적 조회수는 0이다 — null을 산술에 흘리지 않는다.
+  return data.map(s => ({ ...s, total_views: s.total_views ?? 0 }));
 }
 
 export async function getAllPostsTrends(
@@ -86,28 +69,7 @@ export async function getAllPostsTrends(
   return adminApi().call('all_posts_trends', { slugs });
 }
 
-/** 산출물 행의 모양 — status는 아직 문자열이다(값은 {@link toAdminPostIndex}가 좁힌다). */
-interface AdminPostIndexRow extends Omit<AdminPostIndex, 'status'> {
-  status: string;
-}
-
-/** 응답 행이 AdminPostIndexRow 모양인지 — 어긋난 행 하나로 admin 화면이 통째로 깨지지 않게 거른다. */
-function isAdminPostIndexRow(row: unknown): row is AdminPostIndexRow {
-  if (!isRecord(row)) return false;
-  return (
-    typeof row['slug'] === 'string' &&
-    typeof row['title'] === 'string' &&
-    // date는 소비처(useAdminViews)가 폴백 없이 화면에 그대로 쓰므로 모양을 확인한다.
-    (typeof row['date'] === 'string' || row['date'] === null) &&
-    typeof row['status'] === 'string' &&
-    (typeof row['scheduledDate'] === 'string' ||
-      row['scheduledDate'] === null) &&
-    Array.isArray(row['tags']) &&
-    row['tags'].every(t => typeof t === 'string')
-  );
-}
-
-export async function getAdminPostsIndex(): Promise<AdminPostIndex[]> {
+export async function getAdminPostsIndex(): Promise<AdminPostsIndexEntry[]> {
   // 서버 환경(SSG prerender 포함)에서는 상대 URL fetch가 ERR_INVALID_URL.
   // 어차피 admin은 클라이언트 hydration 후에만 유효하므로 SSR에선 빈 배열로 대기.
   if (typeof window === 'undefined') return [];
@@ -117,23 +79,18 @@ export async function getAdminPostsIndex(): Promise<AdminPostIndex[]> {
       `${ADMIN_POSTS_INDEX_PATH} fetch failed: ${res.status} ${res.statusText}`,
     );
   }
-  // 배열이 아니거나 모양이 어긋난 행은 조용히 거른다 — 검증이 여기 한 곳에
-  // 있어야 소비자마다 방어 코드가 다시 자라지 않는다(예전 태그 분포 훅이
-  // 자기 가드를 따로 들고 있었다).
+  // 행 계약(타입·검사)은 만드는 쪽인 @blog/content가 소유한다. 색인은 화면과 같은 빌드가
+  // 만들므로 어긋난 행은 버그다 — 거르거나 모르는 발행 상태를 다른 값으로 바꾸면 글이
+  // 목록에서 조용히 빠지거나 다른 상태로 보인다. 그래서 통째로 실패시켜 에러 경계가 보인다.
   const json: unknown = await res.json();
-  return Array.isArray(json)
-    ? json.filter(isAdminPostIndexRow).map(toAdminPostIndex)
-    : [];
-}
-
-/**
- * 발행 상태를 값까지 좁힌다. 모르는 값은 fail-closed로 `'draft'` — `'published'`로
- * 두면 인덱스가 깨졌을 때 비공개 글이 admin 대시보드에서 공개 글로 보인다.
- * 행을 거르지 않고 바꾸는 이유: 거르면 발행 상태가 늘어날 때(사이트와 admin 배포가
- * 어긋난 사이) 그 글이 목록에서 조용히 사라진다.
- */
-function toAdminPostIndex(row: AdminPostIndexRow): AdminPostIndex {
-  return { ...row, status: isPostStatus(row.status) ? row.status : 'draft' };
+  if (!Array.isArray(json)) {
+    throw new Error(`${ADMIN_POSTS_INDEX_PATH}: 배열이 아닌 본문`);
+  }
+  const rows: readonly unknown[] = json;
+  if (!rows.every(isAdminPostsIndexEntry)) {
+    throw new Error(`${ADMIN_POSTS_INDEX_PATH}: 계약과 다른 행`);
+  }
+  return [...rows];
 }
 
 export async function getPostHourlyDistribution(

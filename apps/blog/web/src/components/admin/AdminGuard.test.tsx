@@ -8,7 +8,15 @@ import { render, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type * as AdminAccess from '@/src/domain/auth/adminAccess';
 
-const { replace } = vi.hoisted(() => ({ replace: vi.fn() }));
+const { replace, auth } = vi.hoisted(() => ({
+  replace: vi.fn(),
+  auth: {
+    session: null as { user: { email: string } } | null,
+    listener: undefined as
+      ((session: unknown, event: string) => void) | undefined,
+    signOutFails: false,
+  },
+}));
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ replace, push: vi.fn() }),
@@ -19,16 +27,30 @@ vi.mock('@/src/domain/auth', async () => ({
     '@/src/domain/auth/adminAccess',
   )),
   authRepository: {
-    getAdminSession: () => Promise.resolve(null),
-    subscribeAdminSession: () => () => undefined,
+    getAdminSession: () => Promise.resolve(auth.session),
+    subscribeAdminSession: (
+      listener: (session: unknown, event: string) => void,
+    ) => {
+      auth.listener = listener;
+      return () => {
+        if (auth.listener === listener) auth.listener = undefined;
+      };
+    },
+    // auth-js의 signOut처럼 resolve하기 전에 같은 탭 구독자에게 SIGNED_OUT을 보낸다.
+    signOutAdmin: () => {
+      if (auth.signOutFails) return Promise.reject(new Error('network'));
+      auth.listener?.(null, 'SIGNED_OUT');
+      return Promise.resolve();
+    },
   },
 }));
 
+import { ADMIN_LOGIN_UNAUTHORIZED_PATH } from '@/src/shared/routes';
 import { AdminGuard } from './AdminGuard';
 
-function renderGuard() {
+function renderGuard(client = new QueryClient()) {
   render(
-    <QueryClientProvider client={new QueryClient()}>
+    <QueryClientProvider client={client}>
       <Suspense fallback={null}>
         <AdminGuard>
           <p>관리자 화면</p>
@@ -40,6 +62,10 @@ function renderGuard() {
 
 afterEach(() => {
   replace.mockReset();
+  auth.session = null;
+  auth.listener = undefined;
+  auth.signOutFails = false;
+  vi.unstubAllEnvs();
   window.history.replaceState(null, '', '/');
 });
 
@@ -66,5 +92,64 @@ describe('AdminGuard', () => {
     expect(target.searchParams.get('error_description')).toBe(
       'Signups not allowed for this instance',
     );
+  });
+
+  // 다른 탭의 로그아웃도 로그아웃 버튼과 같은 비우기를 거친다 — 예전엔 로그인 화면으로 보내기만 해서
+  // 뒤로 가기에 옛 세션 화면과 집계 캐시가 그대로 남았다.
+  test('다른 탭에서 로그아웃하면 이 탭의 admin 집계와 세션 캐시를 비운다', async () => {
+    vi.stubEnv('NEXT_PUBLIC_ADMIN_EMAIL', 'admin@example.com');
+    auth.session = { user: { email: 'admin@example.com' } };
+    const client = new QueryClient();
+    client.setQueryData(['admin', 'dashboard-data'], { views: 1 });
+    renderGuard(client);
+    await waitFor(() => expect(auth.listener).toBeDefined());
+
+    auth.listener?.(null, 'SIGNED_OUT');
+
+    expect(client.getQueryData(['admin', 'dashboard-data'])).toBeUndefined();
+    expect(client.getQueryData(['admin-auth-session'])).toBeNull();
+    await waitFor(() => expect(replace).toHaveBeenCalledWith('/admin/login/'));
+  });
+
+  test('다른 탭에서 관리자가 아닌 계정으로 바뀌면 집계를 비우고 권한 없음 화면으로 보낸다', async () => {
+    vi.stubEnv('NEXT_PUBLIC_ADMIN_EMAIL', 'admin@example.com');
+    auth.session = { user: { email: 'admin@example.com' } };
+    const client = new QueryClient();
+    client.setQueryData(['admin', 'dashboard-data'], { views: 1 });
+    renderGuard(client);
+    await waitFor(() => expect(auth.listener).toBeDefined());
+
+    auth.listener?.({ user: { email: 'someone@example.com' } }, 'SIGNED_IN');
+
+    await waitFor(() =>
+      expect(replace).toHaveBeenCalledWith(ADMIN_LOGIN_UNAUTHORIZED_PATH),
+    );
+    // 로그아웃이 보낸 SIGNED_OUT이 일반 로그인 리다이렉트로 이 안내를 덮지 않는다 — 렌더가
+    // 가라앉은 뒤의 마지막 목적지가 권한 없음이어야 한다.
+    await new Promise(resolve => setTimeout(resolve, 50));
+    expect(replace.mock.calls.at(-1)?.[0]).toBe(ADMIN_LOGIN_UNAUTHORIZED_PATH);
+    expect(client.getQueryData(['admin', 'dashboard-data'])).toBeUndefined();
+    // 세션 캐시에 마운트 때의 관리자 세션이 남으면 뒤로 가기로 돌아왔을 때 가드가 그 세션으로
+    // 화면을 그린다 — 첫 진입의 비관리자 경로와 같은 상태(비관리자 세션 → 가드가 계속 거절)여야 한다.
+    expect(client.getQueryData(['admin-auth-session'])).toEqual({
+      user: { email: 'someone@example.com' },
+    });
+  });
+
+  test('관리자가 아닌 계정의 로그아웃이 실패해도 집계를 비우고 권한 없음 화면으로 떠난다', async () => {
+    vi.stubEnv('NEXT_PUBLIC_ADMIN_EMAIL', 'admin@example.com');
+    auth.session = { user: { email: 'admin@example.com' } };
+    auth.signOutFails = true;
+    const client = new QueryClient();
+    client.setQueryData(['admin', 'dashboard-data'], { views: 1 });
+    renderGuard(client);
+    await waitFor(() => expect(auth.listener).toBeDefined());
+
+    auth.listener?.({ user: { email: 'someone@example.com' } }, 'SIGNED_IN');
+
+    await waitFor(() =>
+      expect(replace).toHaveBeenCalledWith(ADMIN_LOGIN_UNAUTHORIZED_PATH),
+    );
+    expect(client.getQueryData(['admin', 'dashboard-data'])).toBeUndefined();
   });
 });

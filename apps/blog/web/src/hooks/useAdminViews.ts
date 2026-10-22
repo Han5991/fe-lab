@@ -5,6 +5,7 @@ import {
   getAllPostsTrends,
 } from '@/src/domain/analytics/admin';
 import type { PostStatDetail, TrendPoint } from '@/src/domain/analytics';
+import { ADMIN_QUERY_PREFIX } from './adminCache';
 
 export type { PostStatDetail };
 
@@ -13,7 +14,7 @@ export type { PostStatDetail };
  * 쿼리가 하므로 여기서는 끈다(두 겹으로 재시도하지 않게).
  */
 export const adminPostsIndexQuery = queryOptions({
-  queryKey: ['admin', 'posts-index'],
+  queryKey: [...ADMIN_QUERY_PREFIX, 'posts-index'],
   queryFn: getAdminPostsIndex,
   staleTime: Infinity,
   retry: false,
@@ -21,7 +22,7 @@ export const adminPostsIndexQuery = queryOptions({
 
 export function useAdminDashboardData() {
   return useSuspenseQuery({
-    queryKey: ['admin', 'dashboard-data'],
+    queryKey: [...ADMIN_QUERY_PREFIX, 'dashboard-data'],
     queryFn: async ({ client }): Promise<PostStatDetail[]> => {
       // 조회수 두 읽기는 인덱스의 slug로 서버에서 거른다(가짜 slug가 1000행 cap을 채우지 않게).
       const metadata = await client.ensureQueryData(adminPostsIndexQuery);

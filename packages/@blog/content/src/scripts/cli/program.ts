@@ -102,7 +102,9 @@ export function buildProgram(): Command {
   program
     .command('build')
     .description('콘텐츠 빌드 전체 (validate 게이트 → 생성 단계 병렬)')
-    .option('--strict', 'SEO 경고를 에러로 올린다 (prebuild에서만 켠다)')
+    // 기본이 엄격이다 — 플래그를 잊은 호출이 게이트를 낮추지 않고 높이게. 경고로 두는
+    // 쪽(dev 서버 앞 predev:web)이 --no-strict를 적는다.
+    .option('--no-strict', 'SEO 규칙을 경고로 둔다 (dev 서버 앞에서만)')
     .option('--skip-validate', 'validate 게이트를 건너뛴다')
     .option('--force', 'sync-posts를 전체 복사로 돌린다')
     .action(
@@ -110,7 +112,7 @@ export function buildProgram(): Command {
         const ctx = await loadContext(command);
         const { main } = await import('../build-content.ts');
         await main(ctx, {
-          strict: opts['strict'] ?? false,
+          strict: opts['strict'] ?? true,
           skipValidate: opts['skipValidate'] ?? false,
           force: opts['force'] ?? false,
         });

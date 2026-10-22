@@ -44,26 +44,32 @@ const SERVER_RULE: BundleRule = {
   requiredIn: [{ kind: 'artifact', path: 'llms.txt' }],
 };
 
-// ── main: 미선언 스킵 ────────────────────────────────────────────────────────
+// ── main: 미선언은 실패 ──────────────────────────────────────────────────────
 
-test('main: bundleGuards 미선언이면 fs를 만지기 전에 스킵을 알리고 끝난다', () => {
-  const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
-  const exit = vi
-    .spyOn(process, 'exit')
-    .mockImplementation((() => undefined) as () => never);
+// 예전에는 둘 다 미선언이면 "✓ 검사 스킵"으로 끝났다 — 선언이 빠지면 같은 단계의 keyframes
+// 검사까지 조용히 꺼졌다. 검사하지 않을 사이트는 build에서 이 단계를 뺀다.
+// 한쪽만 선언하는 것은 그 사이트의 선택이라 통과한다(bundleBudgets.test.ts가 잠근다).
+test('main: 규칙·예산이 둘 다 미선언이면 fs를 만지기 전에 실패한다', () => {
+  const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+  const exit = vi.spyOn(process, 'exit').mockImplementation(() => {
+    throw new Error('exit');
+  });
   try {
-    // 설정에 bundleGuards 키가 없는 컨텍스트 — defineContent가 미선언 시 키를
-    // 만들지 않는 계약은 contentConfig.test.ts가 잠근다. outDir이 실존하지
-    // 않는 경로인 것이 의도다: 스킵이 fs 검사보다 먼저가 아니면 여기서 exit(1)
-    // 스파이가 잡는다.
-    main({
-      configPath: '/nowhere/content.config.ts',
-      content: { config: {}, paths: { outDir: '/nowhere/out' } },
-    } as unknown as ContentContext);
-    expect(log).toHaveBeenCalledWith(expect.stringContaining('검사 스킵'));
-    expect(exit).not.toHaveBeenCalled();
+    // outDir이 실존하지 않는 경로인 것이 의도다 — 선언 확인이 fs 검사보다 먼저여야
+    // 첫 에러가 "선언 없음"이다.
+    expect(() =>
+      main({
+        configPath: '/nowhere/content.config.ts',
+        content: { config: {}, paths: { outDir: '/nowhere/out' } },
+      } as unknown as ContentContext),
+    ).toThrow('exit');
+    expect(exit).toHaveBeenCalledWith(1);
+    expect(error).toHaveBeenCalledTimes(1);
+    expect(error).toHaveBeenCalledWith(
+      expect.stringContaining('선언이 둘 다 없습니다'),
+    );
   } finally {
-    log.mockRestore();
+    error.mockRestore();
     exit.mockRestore();
   }
 });

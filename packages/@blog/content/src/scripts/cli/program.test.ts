@@ -59,9 +59,27 @@ test('BLOG_CONTENT_NOW: offset 없는 기준 시각은 스택이 아니라 메�
 test('build는 파이프라인 플래그 3개를 받는다', () => {
   const build = buildProgram().commands.find(c => c.name() === 'build');
   const flags = build?.options.map(o => o.long) ?? [];
-  expect(flags).toContain('--strict');
+  expect(flags).toContain('--no-strict');
   expect(flags).toContain('--skip-validate');
   expect(flags).toContain('--force');
+});
+
+// 엄격 검사는 끄는 쪽이 적는다 — 플래그를 잊은 호출(새 스크립트·CI 단계)은 SEO 규칙을
+// 경고로 낮추지 않고 에러로 둔다.
+test.each([
+  [['build'], true],
+  [['build', '--no-strict'], false],
+])('build %j의 엄격 모드는 %s다', async (argv, strict) => {
+  const program = buildProgram();
+  let seen: unknown;
+  // 실제 action은 설정을 찾아 단계를 돌린다 — 파싱된 값만 본다.
+  program.commands
+    .find(c => c.name() === 'build')
+    ?.action((opts: { strict?: boolean }) => {
+      seen = opts.strict;
+    });
+  await program.parseAsync(['node', 'blog-content', ...argv]);
+  expect(seen).toBe(strict);
 });
 
 test('new-post의 --status는 상태 목록(POST_STATUSES)을 그대로 받는다', () => {

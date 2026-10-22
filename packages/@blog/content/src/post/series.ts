@@ -77,7 +77,11 @@ export function createSeriesReader(deps: SeriesReaderDeps): SeriesReader {
 
     const meta: SeriesMeta = {
       name: seriesName,
-      title: typeof data['title'] === 'string' ? data['title'] : undefined,
+      // 빈 title은 제목 없음이다 — 소비자가 title이 없을 때 id로 대신하는 폴백을 건너뛰지 않게.
+      title:
+        typeof data['title'] === 'string' && data['title'].trim() !== ''
+          ? data['title']
+          : undefined,
       description:
         typeof data['description'] === 'string'
           ? data['description']

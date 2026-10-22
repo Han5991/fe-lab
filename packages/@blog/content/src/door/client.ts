@@ -42,6 +42,7 @@ export * from '../shared/viewCookie.ts';
 // ── post: URL 계약 · 공개 판정 · 순수 필터 ───────────────────────────────────
 export * from '../post/types.ts';
 export * from '../post/urls.ts';
+export * from '../post/indexEntries.ts';
 export * from '../post/utils.ts';
 export * from '../post/visibility.ts';
 export * from '../post/assetUrl.ts';

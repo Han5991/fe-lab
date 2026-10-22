@@ -287,7 +287,8 @@ Worker (`apps/blog/web/wrangler.jsonc`), Supabase for the dynamic bits.
 - 커스텀 태그(`<callout>`·`<diagram>`·`<dialogue>`·`<metrics>`·`<timeline>`·`<file-tree>`·`<figure>`), 코드 펜스
   `title=`·`<code-tabs>`는 `blog-components` 스킬, 구조 그림과 `hero:`는 `blog-diagrams` 스킬.
 
-> **`prebuild`는 `--strict`로 돈다.** `lint:posts`와 `predev:web`은 경고로 두는 SEO 규칙(`missing-excerpt`·
+> **`blog-content build`는 기본이 엄격이다** — `prebuild`는 플래그 없이 돌고, `predev:web`만 `--no-strict`를 적는다
+> (플래그를 잊은 호출이 게이트를 낮추지 않게). `lint:posts`와 `predev:web`은 경고로 두는 SEO 규칙(`missing-excerpt`·
 > `excerpt-length`·`long-title`·`missing-image-alt`·`truncated-excerpt`·`duplicate-description`)을 빌드 직전에는
 > **에러**로 올린다(`rules.test.ts`가 이 6개를 잠근다). 범위는 `check-seo`와 정확히 같은
 > `isPostVisible` — 아직 공개 전인 예약 글은 경고다. 로컬이 CI보다 엄격하면 그 글과 상관없는 배포까지 막힌다.

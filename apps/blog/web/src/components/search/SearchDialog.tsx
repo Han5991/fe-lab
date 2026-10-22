@@ -5,12 +5,16 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { css } from '@blog/styled-system/css';
 import { Search, X, Clock } from 'lucide-react';
-import { fmtDate, postPath } from '@blog/content/client';
+import {
+  fmtDate,
+  postPath,
+  type PublicSearchIndexEntry,
+} from '@blog/content/client';
 import { getRecentViews, type RecentView } from '@/src/hooks/recentViews';
 import { Portal } from '@/src/components/Portal';
 import { useModalDialog } from '@/src/components/useModalDialog';
 import { isModifiedClick } from '@/src/components/events';
-import { fetchSearchIndex, type SearchPost } from './searchIndex';
+import { fetchSearchIndex } from './searchIndex';
 import {
   matchesAllTokens,
   pickContentSnippet,
@@ -41,7 +45,8 @@ const Highlight = ({ text, tokens }: { text: string; tokens: string[] }) =>
   );
 
 /** 결과에 보일 시리즈 이름 — 색인에 제목이 없으면 id로 대신한다. */
-const seriesLabel = (post: SearchPost) => post.seriesTitle ?? post.series;
+const seriesLabel = (post: PublicSearchIndexEntry) =>
+  post.seriesTitle ?? post.series;
 
 /**
  * 사이트 검색 — 헤더의 트리거 버튼과 모달 다이얼로그. 트리거는 열린 동안에도 마운트된
@@ -50,7 +55,7 @@ const seriesLabel = (post: SearchPost) => post.seriesTitle ?? post.series;
 export const SearchDialog = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
-  const [posts, setPosts] = useState<SearchPost[]>([]);
+  const [posts, setPosts] = useState<PublicSearchIndexEntry[]>([]);
   const [indexStatus, setIndexStatus] = useState<IndexStatus>('loading');
   // 진행 중이거나 받은 색인 요청 — 다시 열어도 두 번 받지 않고, 실패하면 비운다.
   const indexRequest = useRef<Promise<void> | null>(null);
@@ -82,7 +87,7 @@ export const SearchDialog = () => {
   const tokens = searchTokens(query);
   const hasQuery = tokens.length > 0;
   const showRecentViews = !hasQuery && recentViews.length > 0;
-  const recentAsPosts: SearchPost[] = !showRecentViews
+  const recentAsPosts: PublicSearchIndexEntry[] = !showRecentViews
     ? []
     : recentViews.map(rv => {
         const found = posts.find(p => p.slug === rv.slug);
@@ -94,13 +99,14 @@ export const SearchDialog = () => {
             excerpt: '',
             tags: [],
             series: null,
+            seriesTitle: null,
             contentPreview: '',
           }
         );
       });
 
   // 검색 필터링 — query/posts/recentAsPosts에서 derived
-  const filteredPosts: SearchPost[] = !hasQuery
+  const filteredPosts: PublicSearchIndexEntry[] = !hasQuery
     ? recentAsPosts.length > 0
       ? recentAsPosts
       : posts.slice(0, 10)
