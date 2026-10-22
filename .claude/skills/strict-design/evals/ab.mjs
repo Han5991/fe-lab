@@ -33,6 +33,7 @@ import {
   removeWorktree,
   runClaude,
   summarize,
+  toolCalls,
 } from './common.mjs';
 
 const SPEC = JSON.parse(readFileSync(join(EVALS_DIR, 'tasks.json'), 'utf8'));
@@ -627,6 +628,35 @@ function hygiene(wt) {
   };
 }
 
+// /tmp 아래를 직접 가리키는 경로. 앞이 경로 글자면(`/Users/x/tmp/…`) 세지 않는다.
+const TMP_PATH = /(?<![\w.~/-])(?:\/private)?(\/tmp\/[^\s'"`;|&()<>\\]+)/g;
+// 셸이 실행마다 다른 이름으로 펼치는 조각(`/tmp/x-$$`, `/tmp/x-*.txt`, mktemp의 `XXXX`,
+// 따옴표 뒤에 이어 붙인 `/tmp/x-`)은 겹친다고 볼 수 없다.
+const TMP_EXPANDED = /[$*?]|X{3,}|[-_.]$/;
+
+/**
+ * 실행이 명령·파일 경로에 직접 적은 /tmp 경로. <OUT> 아래(자기 worktree·TMPDIR)는 뺀다.
+ *
+ * TMPDIR은 실행마다 나누지만(runClaude의 tmpDir) 경로를 직접 적는 명령은 병렬 실행끼리 같은
+ * 파일을 쓴다 — t3의 두 실행이 `/tmp/probe.bak`에 백업을 두고 서로 덮었다(#545). 막지는
+ * 못하므로, 다른 실행과 겹친 경로를 cmdGrade가 tmp_shared_with로 드러낸다.
+ */
+function tmpPaths(log, out) {
+  const own = out.replace(/^\/private(?=\/tmp\/)/, '');
+  const found = new Set();
+  for (const { input = {} } of toolCalls(log)) {
+    const text = [input.command, input.file_path, input.path]
+      .filter(v => typeof v === 'string')
+      .join('\n');
+    for (const [, match] of text.matchAll(TMP_PATH)) {
+      const path = match.replace(/\/+$/, '');
+      if (TMP_EXPANDED.test(path)) continue;
+      if (path !== own && !path.startsWith(`${own}/`)) found.add(path);
+    }
+  }
+  return [...found].sort();
+}
+
 function gates(wt, filters) {
   const flags = filters.map(f => `--filter=${f}`);
   const out = {};
@@ -729,6 +759,7 @@ async function cmdRun(out, opts) {
         model: opts.model,
         log,
         extra: ['--max-budget-usd', String(opts.budget)],
+        tmpDir: join(out, 'tmp', id),
       },
     );
     console.log('done', id);
@@ -800,23 +831,56 @@ function cmdGrade(out, opts) {
             ),
           )
         : {};
+    const log = join(out, 'logs', `${id}.jsonl`);
     const row = {
       id,
       task,
       arm,
-      ...summarize(join(out, 'logs', `${id}.jsonl`)),
+      ...summarize(log),
       ...hygiene(wt),
       ...CHECKS[task](wt),
       ...(opts['no-gates'] ? keptGates : gates(wt, TASKS[task].filters)),
+      tmp_paths: tmpPaths(log, out),
     };
-    writeFileSync(
-      join(out, 'grades', `${id}.json`),
-      JSON.stringify(row, null, 1),
-    );
+    writeFileSync(previous, JSON.stringify(row, null, 1));
     console.error('graded', id);
     rows.push(row);
   }
+  // 같은 /tmp 경로를 직접 쓰면서 시간이 겹친 다른 실행 — 서로의 파일을 덮었을 수 있다. 실행
+  // 구간은 대화 기록을 마지막으로 쓴 시각에서 세션 길이를 빼 어림한다.
+  const span = new Map(
+    rows.map(r => {
+      const log = join(out, 'logs', `${r.id}.jsonl`);
+      if (!existsSync(log)) return [r.id, null];
+      const end = statSync(log).mtimeMs;
+      return [r.id, [end - (r.minutes ?? 0) * 60_000, end]];
+    }),
+  );
+  const overlaps = (a, b) => {
+    const [x, y] = [span.get(a.id), span.get(b.id)];
+    return x !== null && y !== null && x[0] < y[1] && y[0] < x[1];
+  };
+  for (const row of rows) {
+    row.tmp_shared_with = rows
+      .filter(
+        o =>
+          o !== row &&
+          overlaps(row, o) &&
+          o.tmp_paths.some(p => row.tmp_paths.includes(p)),
+      )
+      .map(o => o.id);
+    writeFileSync(
+      join(out, 'grades', `${row.id}.json`),
+      JSON.stringify(row, null, 1),
+    );
+  }
   printSummary(rows);
+  const shared = rows.filter(r => r.tmp_shared_with.length > 0);
+  if (shared.length > 0) {
+    console.log(
+      `\n/tmp 경로가 다른 실행과 겹친 실행 — 최종 보고에서 덮어쓴 흔적을 확인한다: ${shared.map(r => r.id).join(', ')}`,
+    );
+  }
 }
 
 /**
