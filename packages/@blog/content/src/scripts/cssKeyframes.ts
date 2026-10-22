@@ -19,9 +19,15 @@ import { collectAssetRefs } from './assetRefs.ts';
  * 보지 않습니다 — 후자는 Panda 옵티마이저도 사용처로 세지 않아 keyframes를 지우므로, 둘 다
  * 놓치고 런타임 게이트(e2e)만 볼 수 있습니다.
  *
- * 양성 대조: CSS에 `@keyframes` 정의가 있는데 모든 페이지를 통틀어 부르는 이름이 하나도
- * 없으면 실패합니다 — "빠진 것 없음"과 "파서가 아무것도 못 봄"(산출물 형태 변화)을 가르기
- * 위해서입니다. keyframes도 애니메이션도 없는 사이트는 볼 것이 없어 통과합니다.
+ * 양성 대조 둘 — "빠진 것 없음"과 "검사가 못 봄"을 가르기 위해서입니다.
+ * - `keyframes-unreferenced`: 정의됐는데 어느 페이지의 선언도 부르지 않는 keyframes가 있으면
+ *   실패합니다. 쓰지 않는 keyframes를 빌드가 지운다는(Panda `removeUnusedKeyframes`) 전제라,
+ *   남은 정의는 전부 불려야 합니다 — 불리지 않은 것이 보이면 파서가 그 부르는 형태(예: `var()`
+ *   경유)를 놓친 것입니다. 옵티마이저를 끄면 이 규칙이 먼저 실패합니다.
+ * - `keyframes-unread`: 페이지가 부르는 CSS를 읽지 못하면 실패합니다 — 경로 해석이 어긋나면
+ *   검사가 빈 CSS를 보고 통과해 버립니다.
+ *
+ * keyframes도 애니메이션도 없는 사이트는 볼 것이 없어 통과합니다.
  *
  * 재평가: 2027-04-22 — 그때까지 빠진 keyframes를 한 번도 잡지 못했으면 줄이거나
  * 내린다(AGENTS.md §5).
@@ -35,7 +41,7 @@ export interface KeyframeUsage {
 }
 
 export interface KeyframeViolation {
-  rule: 'keyframes-missing' | 'keyframes-unseen';
+  rule: 'keyframes-missing' | 'keyframes-unreferenced' | 'keyframes-unread';
   message: string;
 }
 
@@ -147,8 +153,7 @@ export function collectKeyframeUsage(css: string): KeyframeUsage {
  * 페이지마다 그 페이지가 내려받는 CSS 전부를 한 덩어리로 보고 평가한다 — 다른 파일이
  * 정의한 keyframes를 부르는 것은 괜찮지만, 그 파일을 내려받지 않는 페이지에서는 빠진 것이다.
  *
- * @param readCss 사이트 루트 기준 CSS 경로 → 본문. 없는 파일(null)은 건너뛴다 — 예산
- *   측정이 `missing`으로 따로 보고한다.
+ * @param readCss 사이트 루트 기준 CSS 경로 → 본문. 읽지 못하면(null) `keyframes-unread`.
  */
 export function checkKeyframes(
   pages: ReadonlyMap<string, string>,
@@ -158,6 +163,7 @@ export function checkKeyframes(
   const missingPages = new Map<string, string[]>();
   const referencedAll = new Set<string>();
   const definedAll = new Set<string>();
+  const unread = new Set<string>();
   for (const [path, html] of pages) {
     const sheets = collectAssetRefs(html, path).filter(ref =>
       ref.endsWith('.css'),
@@ -165,9 +171,13 @@ export function checkKeyframes(
     const key = sheets.join('\n');
     let usage = usageBySheets.get(key);
     if (usage === undefined) {
-      usage = collectKeyframeUsage(
-        sheets.map(ref => readCss(ref) ?? '').join('\n'),
-      );
+      const bodies: string[] = [];
+      for (const ref of sheets) {
+        const body = readCss(ref);
+        if (body === null) unread.add(ref);
+        else bodies.push(body);
+      }
+      usage = collectKeyframeUsage(bodies.join('\n'));
       usageBySheets.set(key, usage);
     }
     for (const name of usage.defined) definedAll.add(name);
@@ -185,10 +195,17 @@ export function checkKeyframes(
       message: `CSS가 keyframes '${name}'를 부르지만 정의가 없습니다 — 페이지 ${paths.length}개(${paths.slice(0, 3).join(', ')}${paths.length > 3 ? ' …' : ''}). 빌드 도구의 최적화(Panda optimize.removeUnusedKeyframes 등)가 지웠는지 보세요.`,
     }),
   );
-  if (definedAll.size > 0 && referencedAll.size === 0) {
+  const unreferenced = [...definedAll].filter(name => !referencedAll.has(name));
+  if (unreferenced.length > 0) {
     violations.push({
-      rule: 'keyframes-unseen',
-      message: `CSS에 keyframes 정의가 ${definedAll.size}개(${[...definedAll].slice(0, 3).join(', ')}) 있는데 부르는 선언을 하나도 찾지 못했습니다 — 산출물 형태가 바뀌어 파서가 놓쳤거나, 아무도 쓰지 않는 keyframes가 실렸습니다(후자면 빌드 도구의 미사용 keyframes 제거를 켜세요).`,
+      rule: 'keyframes-unreferenced',
+      message: `CSS에 정의됐지만 어느 페이지의 선언도 부르지 않는 keyframes: ${unreferenced.join(', ')} — 산출물 형태가 바뀌어 파서가 그 부르는 형태를 놓쳤거나, 빌드가 쓰지 않는 keyframes를 싣고 있습니다(Panda optimize.removeUnusedKeyframes가 꺼졌는지 보세요).`,
+    });
+  }
+  if (unread.size > 0) {
+    violations.push({
+      rule: 'keyframes-unread',
+      message: `페이지가 부르는 CSS ${unread.size}개를 읽지 못했습니다(${[...unread].slice(0, 3).join(', ')}${unread.size > 3 ? ' …' : ''}) — 경로 해석이 어긋나면 검사가 빈 CSS를 보고 통과합니다.`,
     });
   }
   return { violations, referenced: referencedAll.size };

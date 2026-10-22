@@ -105,16 +105,37 @@ test('checkKeyframes: 페이지가 내려받는 CSS 전부를 한 덩어리로 �
   ).toEqual(['keyframes-missing']);
 });
 
-test('checkKeyframes: 정의는 있는데 부르는 이름이 하나도 없으면 keyframes-unseen — 파서가 아무것도 못 본 것과 가른다', () => {
+test('checkKeyframes: 정의됐는데 아무도 부르지 않는 keyframes는 keyframes-unreferenced — 파서가 한 부르는 형태만 놓쳐도 잡는다', () => {
   const report = checkKeyframes(
-    new Map([['/', page('defs.css', 'gone.css')]]),
+    new Map([['/', page('part.css')]]),
     reader({
-      // 파서가 모르는 형태로 부른다고 가정한 산출물 — 정의만 보인다.
-      'defs.css': '@keyframes pulse{50%{opacity:.5}}.a{color:red}',
+      // reading-progress-fill은 직접 선언으로 보이지만, pulse를 부르는 형태(예: var() 경유)를
+      // 파서가 놓쳤다고 가정한 산출물 — 정의만 보인다.
+      'part.css':
+        '@keyframes pulse{50%{opacity:.5}}@keyframes reading-progress-fill{to{transform:scaleX(1)}}' +
+        '.p{animation-name:reading-progress-fill}',
     }),
   );
-  expect(report.violations.map(v => v.rule)).toEqual(['keyframes-unseen']);
+  expect(report.violations.map(v => v.rule)).toEqual([
+    'keyframes-unreferenced',
+  ]);
   expect(report.violations[0]?.message).toContain('pulse');
+  expect(report.violations[0]?.message).not.toContain('reading-progress-fill');
+});
+
+test('checkKeyframes: 페이지가 부르는 CSS를 못 읽으면 keyframes-unread — 전부 못 읽어 빈 CSS로 통과하는 길을 막는다', () => {
+  const files = reader({ 'ok.css': PANDA_CSS });
+  const partly = checkKeyframes(
+    new Map([['/', page('ok.css', 'gone.css')]]),
+    files,
+  );
+  expect(partly.violations.map(v => v.rule)).toEqual(['keyframes-unread']);
+  expect(partly.violations[0]?.message).toContain('gone.css');
+  expect(
+    checkKeyframes(new Map([['/', page('gone.css')]]), files).violations.map(
+      v => v.rule,
+    ),
+  ).toEqual(['keyframes-unread']);
 });
 
 test('checkKeyframes: keyframes도 애니메이션도 없는 사이트는 볼 것이 없어 통과한다', () => {
