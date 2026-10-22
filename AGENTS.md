@@ -99,7 +99,7 @@ here or anywhere else (this repo once carried four diverging copies of that prom
   `strictTokens`, …) — they inherit them; one that differs regenerates its own runtime. A dev server re-emits
   codegen into its config's outdir — never point another config at the blog's.
 - Panda runs `strictTokens: true` — off-token values are escaped on purpose as `'[12px]'`. A token the config
-  drops (the blog trims preset-panda's palette and radii) or never had is emitted by Panda as raw CSS
+  drops (the blog trims preset-panda's palette, radii and shadows) or never had is emitted by Panda as raw CSS
   (`color: 'orange.500'`) with no diagnostic. `check-types` catches it, and in the blog so does the official Panda lint
   (`@pandacss/prefer-token` for colors·radii·borderWidths, `apps/blog/web/eslint.config.mts`). Raw `token(colors.x)`
   strings inside values are invisible to `check-types`; the same lint's `@pandacss/no-invalid-token-paths` reports a
@@ -326,5 +326,6 @@ Worker (`apps/blog/web/wrangler.jsonc`), Supabase for the dynamic bits.
   `themeColor('dark', 'paper.50')`으로 뽑는다. hex를 옮겨 적지 않는다.
 - 레일·거터의 단일 출처는 `src/components/Rail.tsx`다. **페이지에서 `maxW`·`px`를 직접 쓰지 않는다.** 거터는
   언제나 레일 바깥이다.
-- **그라데이션·글로우·box-shadow 장식 금지, 세리프 금지.** 플랫 유지.
+- **그라데이션·글로우·box-shadow 장식 금지, 세리프 금지.** 플랫 유지. preset-panda의 그림자 토큰도 같은 플러그인이
+  빼서 `boxShadow: 'md'`는 타입에서 막힌다.
 - 히어로 슬롯(`hero:`)은 이름 레지스트리에 등록된 다이어그램만 받는다.
