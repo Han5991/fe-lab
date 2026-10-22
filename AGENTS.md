@@ -306,7 +306,9 @@ Worker (`apps/blog/web/wrangler.jsonc`), Supabase for the dynamic bits.
 > (`BUNDLE_BUDGETS` — 첫 경로 세그먼트 그룹마다 첫 로드 JS·CSS gzip 상한, 그룹의 최대 페이지 기준, HTML은
 > 예산 없음)도 본다. 예산 없는 그룹(새 라우트), 페이지 0개인 예산, 측정 최대가 상한의 80% 아래인 느슨한
 > 예산도 실패다 — 마지막은 태그를 못 찾게 된 수집기도 잡는다. 예산은 무게를 바꾸는 PR에서 숫자와 이유를
-> 함께 고친다.
+> 함께 고친다. 페이지 CSS가 부르는 keyframes가 그 CSS에 있는지도 같은 단계가 본다
+> (`packages/@blog/content/src/scripts/cssKeyframes.ts`) — 빌드 도구의 최적화가 지우면 애니메이션이 진단 없이
+> 멈춘다(Panda `optimize.removeUnusedKeyframes`가 2.1.2에서 그랬다).
 
 > **본문 h1은 렌더 시 h2로 강등된다**(`src/components/post/markdownHeadings.tsx`) — 페이지 h1은 `PostHeader`
 > 하나여야 한다. 원문의 `# `은 `lint:posts`가 `body-h1` 경고로 알린다.

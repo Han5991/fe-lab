@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { join, resolve, sep } from 'node:path';
 import { listFilesRecursive } from '../shared/postFiles.ts';
 import { decodeUrlSafe } from '../shared/url.ts';
 import type {
@@ -15,6 +15,7 @@ import {
   formatBudgetTable,
   type BudgetViolation,
 } from './bundleBudgets.ts';
+import { checkKeyframes, type KeyframeViolation } from './cssKeyframes.ts';
 
 /**
  * 빌드 산출물(`out/`)에서 **있어선 안 되는 곳에 실린 코드·값**을 검사합니다.
@@ -41,6 +42,10 @@ import {
  * 로드 JS·CSS gzip 상한. 측정은 `measure-bundle`과 한 벌이고 판정은
  * `bundleBudgets.ts`가 합니다. 둘 다 `pnpm build`의 마지막 단계라는 같은 실행
  * 지점을 쓰려고 별도 명령으로 나누지 않았습니다.
+ *
+ * 페이지 CSS가 부르는 keyframes가 그 CSS에 정의돼 있는지도 같은 자리에서 봅니다
+ * (`cssKeyframes.ts`). 사이트 선언 없이 산출물만으로 판정하는 규칙이라, 이 명령이
+ * 도는 한 함께 돕니다.
  *
  * 사용: `pnpm build`의 마지막 단계 — `blog-content check-bundle`
  */
@@ -332,7 +337,17 @@ export function main(ctx: ContentContext, target?: string) {
     process.exit(1);
   }
 
-  const failures: (BundleViolation | BudgetViolation)[] = [];
+  const failures: (BundleViolation | BudgetViolation | KeyframeViolation)[] =
+    [];
+
+  const keyframes = checkKeyframes(pages, ref => {
+    const full = join(outDir, ref.slice(1).split('/').join(sep));
+    return existsSync(full) ? readFileSync(full, 'utf8') : null;
+  });
+  if (keyframes.violations.length === 0) {
+    console.log(`✓ CSS keyframes 참조 ${keyframes.referenced}개 모두 정의됨`);
+  }
+  failures.push(...keyframes.violations);
 
   if (rules) {
     // 규칙이 참조하는 산출물만 읽는다 — 없는 파일은 null로 넘겨 평가가
