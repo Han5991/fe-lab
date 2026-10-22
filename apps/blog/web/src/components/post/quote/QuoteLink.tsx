@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Check, Link2 } from 'lucide-react';
 import { sendGAEvent } from '@next/third-parties/google';
 import { css } from '@blog/styled-system/css';
+import { SITE_HEADER_HEIGHT } from '../../siteHeader';
 import {
   loadFragmentGenerator,
   type FragmentGenerator,
@@ -16,8 +17,8 @@ const CONTENT_ID = 'post-content';
 const HEIGHT = { fine: 36, coarse: 44 } as const;
 /** 선택과 버튼 사이 간격 */
 const GAP = 8;
-/** 이보다 위로는 버튼을 올리지 않는다 — 사이트 헤더(56px) 아래에서 8px. */
-const TOP_LIMIT = 64;
+/** 이보다 위로는 버튼을 올리지 않는다 — 사이트 헤더 아래에서 GAP만큼. */
+const TOP_LIMIT = SITE_HEADER_HEIGHT + GAP;
 /** 버튼과 화면 좌우 끝 사이의 최소 여백 */
 const MARGIN = 8;
 /**
