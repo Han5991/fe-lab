@@ -7,7 +7,7 @@
  */
 import contentConfig from '@/content.config.mts';
 import type { Metadata } from 'next';
-import { archiveUrl } from '@blog/content/client';
+import { archiveUrl, type ArchiveFilters } from '@blog/content/client';
 import { buildAuthorPersonJsonLd } from './authorPerson';
 
 // 사이트 정체성·저자·SEO 예산은 해석된 설정에서 온다 — 값의 출처는
@@ -17,6 +17,9 @@ const { site: SITE, author: AUTHOR } = contentConfig;
 // 제목은 meta·og·twitter 세 곳에 나가므로 한 번만 쓴다 — 한 곳만 고쳐지면
 // 검색 결과와 공유 카드가 다른 말을 한다.
 const PAGE_TITLE = `${SITE.name} | 프론트엔드 실험실`;
+
+/** 검색어 쿼리 키 — 아카이브 필터의 키라 이름이 바뀌면 여기서 타입 에러가 난다. */
+const SEARCH_QUERY_KEY: keyof ArchiveFilters = 'q';
 
 export function buildHomeMetadata(): Metadata {
   return {
@@ -68,8 +71,9 @@ export function buildHomeJsonLd() {
             // `{search_term_string}`은 Google이 치환하는 템플릿 플레이스홀더라
             // 인코딩되면 안 된다 — archivePath({ q })를 거치면
             // `%7Bsearch_term_string%7D`가 되어 템플릿으로 인식되지 않는다.
-            // 그래서 여기만 아카이브 절대 URL + 수동 쿼리로 조합한다.
-            urlTemplate: `${archiveUrl(SITE.url)}?q={search_term_string}`,
+            // 그래서 여기만 아카이브 절대 URL + 수동 쿼리로 조합한다. 키는 아카이브가
+            // 읽는 필터 키(ArchiveFilters)에 묶는다.
+            urlTemplate: `${archiveUrl(SITE.url)}?${SEARCH_QUERY_KEY}={search_term_string}`,
           },
           'query-input': 'required name=search_term_string',
         },
