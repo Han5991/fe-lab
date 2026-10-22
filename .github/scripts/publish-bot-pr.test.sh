@@ -10,6 +10,9 @@ trap 'rm -rf -- "$root"' EXIT
 export GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1
 export GIT_AUTHOR_NAME=test GIT_AUTHOR_EMAIL=test@example.com
 export GIT_COMMITTER_NAME=test GIT_COMMITTER_EMAIL=test@example.com
+# Actions 스텝의 바깥 상태가 시나리오로 새지 않게 지운다 — 요약 파일이 있으면 가짜 결과("PR을 열었다: …/pull/1")가
+# 실제 잡의 Step Summary에 쌓이고, 재실행(attempt 2)이면 브랜치 이름에 시도 번호가 붙는다.
+unset GITHUB_STEP_SUMMARY GITHUB_RUN_ATTEMPT
 
 # 가짜 gh: 호출을 기록하고 `pr list`는 FAKE_PRS를 --author로 거른 뒤 --jq를 적용한다.
 mkdir -p "$root/bin" "$root/runner"
