@@ -9,6 +9,7 @@ import contentConfig from '@/content.config.mts';
 import type { Metadata } from 'next';
 import {
   archiveUrl,
+  localeLanguage,
   postUrl,
   POSTS_PATH,
   type PostSummary,
@@ -43,7 +44,7 @@ export function buildPostsMetadata(): Metadata {
           alt: `${SITE.name} Blog Posts`,
         },
       ],
-      locale: 'ko_KR',
+      locale: SITE.locale,
       type: 'website',
     },
     twitter: {
@@ -63,7 +64,7 @@ export function buildCollectionPageJsonLd(posts: PostSummary[]) {
     name: 'Posts | Frontend Lab',
     url: archiveUrl(SITE.url),
     description: '프론트엔드 실험실의 모든 기록들을 확인해보세요.',
-    inLanguage: 'ko',
+    inLanguage: localeLanguage(SITE.locale),
     isPartOf: { '@id': `${SITE.url}/#website` },
     mainEntity: {
       '@type': 'ItemList',
@@ -88,7 +89,7 @@ export function buildBlogJsonLd() {
     url: archiveUrl(SITE.url),
     description:
       '프론트엔드 실험실의 모든 기록들. React, TypeScript, 번들러 시리즈 등.',
-    inLanguage: 'ko',
+    inLanguage: localeLanguage(SITE.locale),
     author: { '@id': `${SITE.url}/#author` },
     publisher: { '@id': `${SITE.url}/#organization` },
     isPartOf: { '@id': `${SITE.url}/#website` },

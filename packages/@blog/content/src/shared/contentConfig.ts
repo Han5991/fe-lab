@@ -23,6 +23,7 @@
  * `contentPaths.ts`입니다.
  */
 import { parseIsoOffset } from './dates.ts';
+import type { SiteLocale } from './locale.ts';
 import { SUPPORTED_FENCE_LABELS } from './prismLanguages.ts';
 
 // ── 그룹별 타입 ──────────────────────────────────────────────────────────────
@@ -39,6 +40,11 @@ export interface SiteConfig {
    * (`.jpg`인 사연은 소비자 값 모듈의 OG_DEFAULT_IMAGE 주석에 있다.)
    */
   ogDefaultImage: string;
+  /**
+   * 사이트 언어 — og:locale 형식(`ko_KR`). html lang·JSON-LD inLanguage·RSS language·Intl
+   * 표기가 여기서 파생한다(`locale.ts`). 사이트 고유 값이라 기본값이 없다.
+   */
+  locale: SiteLocale;
 }
 
 export interface AuthorConfig {

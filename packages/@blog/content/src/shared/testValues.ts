@@ -40,6 +40,8 @@ export const TEST_VALUES: ContentValues = {
     description: '테스트 픽스처 사이트입니다.',
     descriptionExpanded: '테스트 픽스처 사이트의 긴 소개입니다.',
     ogDefaultImage: '/og-default.jpg',
+    // 실제 사이트(ko_KR)와 일부러 다르다 — 설정을 읽지 않고 언어를 적은 소비자가 여기서 걸린다.
+    locale: 'en_US',
   },
   author: {
     name: 'Test Author',

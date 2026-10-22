@@ -1,4 +1,9 @@
-import { OG_DEFAULT_IMAGE, SITE_NAME, SITE_URL } from '@/content.values.mts';
+import {
+  OG_DEFAULT_IMAGE,
+  SITE_LOCALE,
+  SITE_NAME,
+  SITE_URL,
+} from '@/content.values.mts';
 import { PRIVACY_PATH } from '@/src/shared/routes';
 import { PRIVACY_TRANSITION_ID } from '@/src/shared/transitions';
 import { css, cx } from '@blog/styled-system/css';
@@ -27,7 +32,7 @@ export const metadata: Metadata = {
     url: `${SITE_URL}${PRIVACY_PATH}`,
     siteName: SITE_NAME,
     type: 'website',
-    locale: 'ko_KR',
+    locale: SITE_LOCALE,
     images: [
       {
         url: OG_DEFAULT_IMAGE,

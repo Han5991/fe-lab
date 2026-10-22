@@ -56,6 +56,11 @@ export const SITE_DESCRIPTION_EXPANDED =
  * 반면 JPEG는 33KB에 눈에 띄는 손실이 없다.
  */
 export const OG_DEFAULT_IMAGE = '/og-default.jpg';
+/**
+ * 사이트 언어(og:locale 형식). html lang·JSON-LD inLanguage·RSS language·Intl 표기는
+ * `@blog/content`의 `localeLanguage`·`localeTag`가 여기서 파생한다.
+ */
+export const SITE_LOCALE = 'ko_KR';
 // RSS 경로는 여기 없다 — 피드를 만드는 것도 파일 이름을 정하는 것도 패키지라
 // (`@blog/content`의 `RSS_PATH`) 이 사이트가 고를 수 있는 값이 아니다. 예전엔
 // 여기와 패키지 생성기 셋이 같은 리터럴을 따로 들고 있었다.
@@ -398,6 +403,7 @@ export const SITE = {
   description: SITE_DESCRIPTION,
   descriptionExpanded: SITE_DESCRIPTION_EXPANDED,
   ogDefaultImage: OG_DEFAULT_IMAGE,
+  locale: SITE_LOCALE,
 } as const satisfies SiteConfig;
 
 export const AUTHOR = {

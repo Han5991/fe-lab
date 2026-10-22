@@ -34,6 +34,7 @@ export * from '../shared/dates.ts';
 export * from '../shared/format.ts';
 export * from '../shared/guards.ts';
 export * from '../shared/jsonLd.ts';
+export * from '../shared/locale.ts';
 export * from '../shared/markdownHeadings.ts';
 export * from '../shared/prismLanguages.ts';
 export * from '../shared/url.ts';

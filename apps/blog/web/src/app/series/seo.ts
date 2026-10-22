@@ -7,6 +7,7 @@
 import contentConfig from '@/content.config.mts';
 import { SERIES_PATH } from '@/src/shared/routes';
 import type { Metadata } from 'next';
+import { localeLanguage } from '@blog/content/client';
 
 // 사이트 정체성·저자·SEO 예산은 해석된 설정에서 온다 — 값의 출처는
 // `content.values.mts`이고, 여기서 리터럴을 다시 읽지 않는다(서버 전용 모듈).
@@ -38,7 +39,7 @@ export function buildSeriesMetadata(): Metadata {
           alt: `${SITE.name} Series`,
         },
       ],
-      locale: 'ko_KR',
+      locale: SITE.locale,
       type: 'website',
     },
     twitter: {
@@ -58,7 +59,7 @@ export function buildSeriesJsonLd() {
     name: `시리즈 | ${SITE.name}`,
     url: SERIES_URL,
     description: PAGE_DESCRIPTION,
-    inLanguage: 'ko',
+    inLanguage: localeLanguage(SITE.locale),
     isPartOf: { '@id': `${SITE.url}/#website` },
   };
 }

@@ -7,7 +7,11 @@
  */
 import contentConfig from '@/content.config.mts';
 import type { Metadata } from 'next';
-import { archiveUrl, type ArchiveFilters } from '@blog/content/client';
+import {
+  archiveUrl,
+  type ArchiveFilters,
+  localeLanguage,
+} from '@blog/content/client';
 import { buildAuthorPersonJsonLd } from './authorPerson';
 
 // 사이트 정체성·저자·SEO 예산은 해석된 설정에서 온다 — 값의 출처는
@@ -39,7 +43,7 @@ export function buildHomeMetadata(): Metadata {
           alt: `${SITE.name} Blog`,
         },
       ],
-      locale: 'ko_KR',
+      locale: SITE.locale,
       type: 'website',
     },
     twitter: {
@@ -62,7 +66,7 @@ export function buildHomeJsonLd() {
         alternateName: '프론트엔드 실험실',
         url: SITE.url,
         description: SITE.descriptionExpanded,
-        inLanguage: 'ko',
+        inLanguage: localeLanguage(SITE.locale),
         publisher: { '@id': `${SITE.url}/#organization` },
         potentialAction: {
           '@type': 'SearchAction',

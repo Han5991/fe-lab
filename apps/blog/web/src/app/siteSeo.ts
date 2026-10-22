@@ -35,7 +35,7 @@ export function buildSiteMetadata(): Metadata {
           alt: `${SITE.name} Blog`,
         },
       ],
-      locale: 'ko_KR',
+      locale: SITE.locale,
       type: 'website',
     },
     twitter: {

@@ -16,13 +16,15 @@ import { jetbrainsMono } from './fonts';
 import { THEME_COOKIE_MATCH } from '@/src/hooks/theme-cookie';
 
 import { buildSiteMetadata } from './siteSeo';
+import { SITE_LOCALE } from '@/content.values.mts';
+import { localeLanguage } from '@blog/content/client';
 
 export const metadata = buildSiteMetadata();
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html
-      lang="ko"
+      lang={localeLanguage(SITE_LOCALE)}
       data-theme="dark"
       data-scroll-behavior="smooth"
       suppressHydrationWarning

@@ -45,7 +45,7 @@ export function buildAboutMetadata(): Metadata {
       firstName: 'Sangwook',
       lastName: 'Han',
       username: 'Han5991',
-      locale: 'ko_KR',
+      locale: SITE.locale,
       images: [
         {
           url: `${SITE.url}${SITE.ogDefaultImage}`,

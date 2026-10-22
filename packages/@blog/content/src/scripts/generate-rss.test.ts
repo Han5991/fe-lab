@@ -73,7 +73,8 @@ test('rss: 헤더와 channel 구조 포함', () => {
   expect(xml.includes('<channel>')).toBeTruthy();
   expect(xml.includes(`<link>${SITE}</link>`)).toBeTruthy();
   expect(xml.includes(`<description>${DESC}</description>`)).toBeTruthy();
-  expect(xml.includes('<language>ko</language>')).toBeTruthy();
+  // 언어는 설정의 locale(픽스처는 en_US)에서 온다 — 피드가 사이트 언어를 따로 적지 않는다.
+  expect(xml.includes('<language>en</language>')).toBeTruthy();
   expect(xml.trimEnd().endsWith('</rss>')).toBeTruthy();
 });
 

@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import type { SiteConfig, TimezoneConfig } from '../shared/contentConfig.ts';
 import { parseScheduledDateKST } from '../shared/dates.ts';
+import { localeLanguage } from '../shared/locale.ts';
 import { postUrl, RSS_PATH, type PostSummary } from '../post/index.ts';
 import { resolvePostSet } from './artifacts.ts';
 import type { ContentContext } from './context.ts';
@@ -55,7 +56,7 @@ export type RssPost = Pick<PostSummary, 'slug' | 'title' | 'date' | 'excerpt'>;
 
 interface RssBuildOptions {
   /** 사이트 정체성 — 진입점이 컨텍스트의 설정을 넘긴다(기본값 없음) */
-  site: Pick<SiteConfig, 'url' | 'name' | 'description'>;
+  site: Pick<SiteConfig, 'url' | 'name' | 'description' | 'locale'>;
   /** 'YYYY-MM-DD' pubDate를 어느 타임존의 자정으로 볼지 */
   timezone: Pick<TimezoneConfig, 'isoOffset'>;
   /** lastBuildDate / pubDate fallback 시 사용 — 테스트에서 결정성 확보용 */
@@ -71,7 +72,12 @@ export function buildRssXml(
   options: RssBuildOptions,
 ): string {
   const {
-    site: { url: siteUrl, name: siteName, description: siteDescription },
+    site: {
+      url: siteUrl,
+      name: siteName,
+      description: siteDescription,
+      locale,
+    },
     timezone,
     now = new Date(),
   } = options;
@@ -94,7 +100,7 @@ export function buildRssXml(
     <title>${escapeXml(`${siteName} | ${siteDescription.split('。')[0]}`)}</title>
     <link>${siteUrl}</link>
     <description>${escapeXml(siteDescription)}</description>
-    <language>ko</language>
+    <language>${localeLanguage(locale)}</language>
     <lastBuildDate>${now.toUTCString()}</lastBuildDate>
     <atom:link href="${siteUrl}${RSS_PATH}" rel="self" type="application/rss+xml"/>
 ${rssItems}
