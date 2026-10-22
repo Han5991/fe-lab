@@ -12,10 +12,11 @@ import {
   existsSync,
   mkdirSync,
   readFileSync,
+  readdirSync,
   rmSync,
   writeFileSync,
 } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { dirname, extname, join } from 'node:path';
 import { createInterface } from 'node:readline';
 import { fileURLToPath } from 'node:url';
 
@@ -58,13 +59,29 @@ export function prepareWorktree(path, base, skillFile) {
   if (existsSync(path)) return;
   git(REPO, 'worktree', 'add', '-q', '--detach', path, base);
   const skillDir = join(path, SKILL_DIR_REL);
-  // 평가 세트는 기대 결과를 담고 있어 에이전트가 읽으면 오염된다 — 어느 조건에서든 지운다.
-  rmSync(join(skillDir, 'evals'), { recursive: true, force: true });
+  // 평가 세트는 기대 결과를 담고 있어 에이전트가 읽으면 오염된다 — 어느 조건에서든 내용을
+  // 비운다. 파일은 지우지 않는다: docPaths.test.ts가 evals/README.md를 검사 대상 문서로 열어,
+  // 지우면 #546 이후 base에서 test가 시작부터 2건 빨갛다(채점 게이트도, 에이전트가 돌린 test도).
+  for (const rel of git(path, 'ls-files', '--', `${SKILL_DIR_REL}/evals`)
+    .split('\n')
+    .filter(Boolean)) {
+    writeFileSync(join(path, rel), extname(rel) === '.json' ? '{}\n' : '');
+  }
   if (skillFile) {
     mkdirSync(skillDir, { recursive: true });
     copyFileSync(skillFile, join(skillDir, 'SKILL.md'));
   } else {
-    rmSync(skillDir, { recursive: true, force: true });
+    // 평가 세트가 있는 base에서는 비운 평가 세트만 남긴다 — SKILL.md가 없는 폴더는 스킬로
+    // 잡히지 않는다. 없는 base(#546 전)에서는 폴더째 지운다.
+    if (existsSync(join(skillDir, 'evals'))) {
+      for (const name of readdirSync(skillDir)) {
+        if (name !== 'evals') {
+          rmSync(join(skillDir, name), { recursive: true, force: true });
+        }
+      }
+    } else {
+      rmSync(skillDir, { recursive: true, force: true });
+    }
     const agents = join(path, 'AGENTS.md');
     const text = readFileSync(agents, 'utf8');
     if (text.includes(AGENTS_POINTER)) {
@@ -137,11 +154,15 @@ export function isSkillCall(block) {
  * stdin은 반드시 막는다 — 막지 않으면 호출자 쪽 셸 루프의 남은 입력을 claude가 읽어
  * 프롬프트 뒤에 붙인다(첫 트리거 실험이 이걸로 망가졌다). stop이 지금까지의 도구 호출을
  * 보고 참을 돌려주면 그 자리에서 끊는다(트리거 판정용).
+ *
+ * tmpDir을 주면 그 폴더를 TMPDIR로 둔다 — 병렬 실행끼리 임시 파일이 겹치지 않게. os.tmpdir()·
+ * $TMPDIR을 읽는 도구(node·vitest·셸)는 여기로 간다. `/tmp/probe.bak`처럼 경로를 직접 적는
+ * 명령은 막지 못한다(macOS에는 프로세스별 /tmp가 없다) — ab.mjs 채점이 겹친 경로를 드러낸다.
  */
 export async function runClaude(
   cwd,
   prompt,
-  { model, log, extra = [], stop, timeoutMs = 3_600_000 },
+  { model, log, extra = [], stop, timeoutMs = 3_600_000, tmpDir },
 ) {
   const args = [
     '-p',
@@ -156,10 +177,40 @@ export async function runClaude(
     randomUUID(),
     '--permission-mode',
     'bypassPermissions',
+    // 바깥으로 나가는 길을 닫는다 — 개인 머신에서 돌 때 MCP 커넥터(메일·메신저)와
+    // push·gh가 권한 확인 없이 열려 있게 된다. 사용자 설정(훅·플러그인)도 싣지 않는다.
+    // 모든 조건에 똑같이 걸린다. --disallowedTools는 가변 인자라 다음 옵션 앞에서
+    // 끝난다 — extra는 옵션(--…)으로 시작해야 한다.
+    '--setting-sources',
+    'project,local',
+    '--strict-mcp-config',
+    '--disallowedTools',
+    'Bash(git push:*)',
+    'Bash(gh:*)',
     ...extra,
   ];
+  // auto-memory를 끈다 — worktree는 원래 저장소의 메모리를 같이 읽는다. 개인 머신에서
+  // 돌리면 사용자가 남긴 판단(예: 과제의 정답이 된 규칙)이 두 조건에 다 실려 차이를 지운다.
+  //
+  // push와 gh는 여기서 끊는다. 위 권한 규칙은 명령이 `git push`·`gh`로 시작할 때만 걸려
+  // `git -C . push`가 지나간다. 빈 접두어 pushInsteadOf는 모든 push URL(원격·절대·상대 경로)을
+  // 없는 프로토콜로 바꾼다 — 저장소 설정을 건드리지 않게 환경 변수로 얹는다(fetch는 그대로).
+  // gh는 저장된 로그인보다 GH_TOKEN을 먼저 써서, 무효 토큰이면 API 호출이 401로 끝난다.
+  const env = {
+    ...process.env,
+    CLAUDE_CODE_DISABLE_AUTO_MEMORY: '1',
+    GIT_CONFIG_COUNT: '1',
+    GIT_CONFIG_KEY_0: 'url.no-push://blocked/.pushInsteadOf',
+    GIT_CONFIG_VALUE_0: '',
+    GH_TOKEN: 'invalid',
+  };
+  if (tmpDir) {
+    mkdirSync(tmpDir, { recursive: true });
+    env.TMPDIR = tmpDir;
+  }
   const child = spawn('claude', args, {
     cwd,
+    env,
     stdio: ['ignore', 'pipe', 'ignore'],
   });
   const out = createWriteStream(log);
@@ -182,6 +233,22 @@ export async function runClaude(
   await new Promise(resolve => out.end(resolve));
 }
 
+function readEvents(log) {
+  const text = existsSync(log) ? readFileSync(log, 'utf8') : '';
+  return text.split('\n').flatMap(line => {
+    try {
+      return [JSON.parse(line)];
+    } catch {
+      return [];
+    }
+  });
+}
+
+/** 대화 기록의 도구 호출 블록(name·input). */
+export function toolCalls(log) {
+  return readEvents(log).flatMap(toolUses);
+}
+
 /**
  * 대화 기록에서 도구 호출과 비용을 뽑는다.
  *
@@ -189,19 +256,9 @@ export async function runClaude(
  * 세션 누적값이라 최댓값을, usage·num_turns·duration_ms는 구간 값이라 합계를 쓴다.
  */
 export function summarize(log) {
-  const calls = [];
-  const results = [];
-  const text = existsSync(log) ? readFileSync(log, 'utf8') : '';
-  for (const line of text.split('\n')) {
-    let event;
-    try {
-      event = JSON.parse(line);
-    } catch {
-      continue;
-    }
-    calls.push(...toolUses(event));
-    if (event.type === 'result') results.push(event);
-  }
+  const events = readEvents(log);
+  const calls = events.flatMap(toolUses);
+  const results = events.filter(e => e.type === 'result');
   const first = pred => {
     const i = calls.findIndex(pred);
     return i === -1 ? null : i + 1;

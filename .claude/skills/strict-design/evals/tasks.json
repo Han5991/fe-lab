@@ -25,6 +25,33 @@
       "filters": ["@blog/content", "@blog/web"],
       "needs_install": true,
       "prompt": "블로그 스택 프로덕션 코드(apps/blog/web, packages/@blog/content, Supabase Edge Function)에 `@typescript-eslint/no-unsafe-type-assertion`을 error로 켜고, 걸리는 위반을 고쳐줘. 테스트 파일은 이 규칙에서 빼도 된다."
+    },
+    {
+      "id": "t4",
+      "title": "@blog/content boundaries가 문·새 폴더를 검사하지 않는 구멍 막기",
+      "base": "025d210",
+      "ref": "aa26d22",
+      "filters": ["@blog/content"],
+      "needs_install": true,
+      "prompt": "packages/@blog/content의 eslint-plugin-boundaries 블록은 src/{shared,post,seo,scripts}/** 파일에만 걸려 있다. 그래서 패키지 문(src/index.ts·src/client.ts)이나 네 폴더 밖에 새로 만든 파일의 import·export는 레이어 검사를 받지 않는다. 이 구멍을 막아줘."
+    },
+    {
+      "id": "t5",
+      "title": "check-bundle이 선언이 없으면 스킵하는 게이트 고치기",
+      "base": "001e511",
+      "ref": "0144fc5",
+      "filters": ["@blog/content", "@blog/web"],
+      "needs_install": true,
+      "prompt": "packages/@blog/content의 check-bundle은 설정에 bundleGuards·bundleBudgets 선언이 없으면 '✓ 검사 스킵'을 찍고 exit 0으로 끝난다. 선언을 빠뜨리면 게이트가 조용히 꺼지는 셈이니 고쳐줘."
+    },
+    {
+      "id": "t6",
+      "title": "검색 색인 행 타입을 한 출처로 모으기",
+      "base": "44bae2e",
+      "ref": "d68bd11",
+      "filters": ["@blog/content", "@blog/web"],
+      "needs_install": true,
+      "prompt": "검색 색인(search-index.json)과 admin 글 색인(admin-posts-index.json)의 행 타입이 생성기(packages/@blog/content)와 앱(apps/blog/web), e2e에 따로 적혀 있다. 앱은 받은 JSON을 자기 타입으로 다시 만들면서 빠진 필드를 빈 값으로 채우거나 어긋난 행을 거른다. 그래서 생성기가 필드 이름을 바꾸면 컴파일은 통과하고 검색이 조용히 멈출 수 있다. 행 타입과 검사를 한 출처에서 내고, 앱과 e2e가 그것을 쓰게 고쳐줘."
     }
   ]
 }
