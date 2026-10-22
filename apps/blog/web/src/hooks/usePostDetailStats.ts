@@ -5,6 +5,7 @@ import {
 } from '@tanstack/react-query';
 import { getKSTDateISO } from '@blog/content/client';
 import { TIMEZONE } from '@/content.values.mts';
+import { ADMIN_QUERY_PREFIX } from './adminCache';
 import {
   analyticsService,
   getPostDowDistribution,
@@ -20,7 +21,7 @@ import type {
 /** 글 하나의 시간대·요일 분포(Edge Function) — slug만 있으면 받을 수 있다. */
 const distributionsQuery = (slug: string) =>
   queryOptions({
-    queryKey: ['admin', 'post-detail', slug],
+    queryKey: [...ADMIN_QUERY_PREFIX, 'post-detail', slug],
     // 실패는 삼키지 않는다 — 빈 분포면 401·500이 "조회 없음" 차트와 구분되지 않는다.
     queryFn: async (): Promise<{
       hourly: HourlyDistribution[];

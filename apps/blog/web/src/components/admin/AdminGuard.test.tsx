@@ -8,7 +8,14 @@ import { render, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type * as AdminAccess from '@/src/domain/auth/adminAccess';
 
-const { replace } = vi.hoisted(() => ({ replace: vi.fn() }));
+const { replace, auth } = vi.hoisted(() => ({
+  replace: vi.fn(),
+  auth: {
+    session: null as { user: { email: string } } | null,
+    listener: undefined as
+      ((session: unknown, event: string) => void) | undefined,
+  },
+}));
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ replace, push: vi.fn() }),
@@ -19,16 +26,22 @@ vi.mock('@/src/domain/auth', async () => ({
     '@/src/domain/auth/adminAccess',
   )),
   authRepository: {
-    getAdminSession: () => Promise.resolve(null),
-    subscribeAdminSession: () => () => undefined,
+    getAdminSession: () => Promise.resolve(auth.session),
+    subscribeAdminSession: (
+      listener: (session: unknown, event: string) => void,
+    ) => {
+      auth.listener = listener;
+      return () => undefined;
+    },
+    signOutAdmin: () => Promise.resolve(),
   },
 }));
 
 import { AdminGuard } from './AdminGuard';
 
-function renderGuard() {
+function renderGuard(client = new QueryClient()) {
   render(
-    <QueryClientProvider client={new QueryClient()}>
+    <QueryClientProvider client={client}>
       <Suspense fallback={null}>
         <AdminGuard>
           <p>관리자 화면</p>
@@ -40,6 +53,9 @@ function renderGuard() {
 
 afterEach(() => {
   replace.mockReset();
+  auth.session = null;
+  auth.listener = undefined;
+  vi.unstubAllEnvs();
   window.history.replaceState(null, '', '/');
 });
 
@@ -66,5 +82,40 @@ describe('AdminGuard', () => {
     expect(target.searchParams.get('error_description')).toBe(
       'Signups not allowed for this instance',
     );
+  });
+
+  // 다른 탭의 로그아웃도 로그아웃 버튼과 같은 비우기를 거친다 — 예전엔 로그인 화면으로 보내기만 해서
+  // 뒤로 가기에 옛 세션 화면과 집계 캐시가 그대로 남았다.
+  test('다른 탭에서 로그아웃하면 이 탭의 admin 집계와 세션 캐시를 비운다', async () => {
+    vi.stubEnv('NEXT_PUBLIC_ADMIN_EMAIL', 'admin@example.com');
+    auth.session = { user: { email: 'admin@example.com' } };
+    const client = new QueryClient();
+    client.setQueryData(['admin', 'dashboard-data'], { views: 1 });
+    renderGuard(client);
+    await waitFor(() => expect(auth.listener).toBeDefined());
+
+    auth.listener?.(null, 'SIGNED_OUT');
+
+    expect(client.getQueryData(['admin', 'dashboard-data'])).toBeUndefined();
+    expect(client.getQueryData(['admin-auth-session'])).toBeNull();
+    await waitFor(() => expect(replace).toHaveBeenCalledWith('/admin/login/'));
+  });
+
+  test('다른 탭에서 관리자가 아닌 계정으로 바뀌면 집계를 비우고 권한 없음 화면으로 보낸다', async () => {
+    vi.stubEnv('NEXT_PUBLIC_ADMIN_EMAIL', 'admin@example.com');
+    auth.session = { user: { email: 'admin@example.com' } };
+    const client = new QueryClient();
+    client.setQueryData(['admin', 'dashboard-data'], { views: 1 });
+    renderGuard(client);
+    await waitFor(() => expect(auth.listener).toBeDefined());
+
+    auth.listener?.({ user: { email: 'someone@example.com' } }, 'SIGNED_IN');
+
+    await waitFor(() =>
+      expect(replace).toHaveBeenCalledWith(
+        expect.stringContaining('/admin/login/'),
+      ),
+    );
+    expect(client.getQueryData(['admin', 'dashboard-data'])).toBeUndefined();
   });
 });
