@@ -99,10 +99,11 @@ here or anywhere else (this repo once carried four diverging copies of that prom
   `strictTokens`, …) — they inherit them; one that differs regenerates its own runtime. A dev server re-emits
   codegen into its config's outdir — never point another config at the blog's.
 - Panda runs `strictTokens: true` — off-token values are escaped on purpose as `'[12px]'`. A token the config
-  drops (the blog trims preset-panda's palette and radii) or never had is emitted by Panda as raw CSS
+  drops (the blog trims preset-panda's palette, radii and shadows) or never had is emitted by Panda as raw CSS
   (`color: 'orange.500'`) with no diagnostic. `check-types` catches it, and in the blog so does the official Panda lint
   (`@pandacss/prefer-token` for colors·radii·borderWidths, `apps/blog/web/eslint.config.mts`). Raw `token(colors.x)`
-  strings inside values are checked by neither.
+  strings inside values are invisible to `check-types`; the same lint's `@pandacss/no-invalid-token-paths` reports a
+  missing one, but only in the blog's `src/` — `panda.config.ts` (globalCss) and the lab apps are checked by neither.
 - Never run `panda codegen --clean` (or `panda build --clean`) on an outdir that is a whole package
   (`packages/@blog/styled-system`): v2's clean wipes the committed `package.json`/`turbo.json`. v2 also never deletes
   files it no longer writes — clear stale output with `git clean -fdX <dir>`.
@@ -305,7 +306,9 @@ Worker (`apps/blog/web/wrangler.jsonc`), Supabase for the dynamic bits.
 > (`BUNDLE_BUDGETS` — 첫 경로 세그먼트 그룹마다 첫 로드 JS·CSS gzip 상한, 그룹의 최대 페이지 기준, HTML은
 > 예산 없음)도 본다. 예산 없는 그룹(새 라우트), 페이지 0개인 예산, 측정 최대가 상한의 80% 아래인 느슨한
 > 예산도 실패다 — 마지막은 태그를 못 찾게 된 수집기도 잡는다. 예산은 무게를 바꾸는 PR에서 숫자와 이유를
-> 함께 고친다.
+> 함께 고친다. 페이지 CSS가 부르는 keyframes가 그 CSS에 있는지도 같은 단계가 본다
+> (`packages/@blog/content/src/scripts/cssKeyframes.ts`) — 빌드 도구의 최적화가 지우면 애니메이션이 진단 없이
+> 멈춘다(Panda `optimize.removeUnusedKeyframes`가 2.1.2에서 그랬다).
 
 > **본문 h1은 렌더 시 h2로 강등된다**(`src/components/post/markdownHeadings.tsx`) — 페이지 h1은 `PostHeader`
 > 하나여야 한다. 원문의 `# `은 `lint:posts`가 `body-h1` 경고로 알린다.
@@ -325,5 +328,6 @@ Worker (`apps/blog/web/wrangler.jsonc`), Supabase for the dynamic bits.
   `themeColor('dark', 'paper.50')`으로 뽑는다. hex를 옮겨 적지 않는다.
 - 레일·거터의 단일 출처는 `src/components/Rail.tsx`다. **페이지에서 `maxW`·`px`를 직접 쓰지 않는다.** 거터는
   언제나 레일 바깥이다.
-- **그라데이션·글로우·box-shadow 장식 금지, 세리프 금지.** 플랫 유지.
+- **그라데이션·글로우·box-shadow 장식 금지, 세리프 금지.** 플랫 유지. preset-panda의 그림자 토큰도 같은 플러그인이
+  빼서 `boxShadow: 'md'`는 타입에서 막힌다.
 - 히어로 슬롯(`hero:`)은 이름 레지스트리에 등록된 다이어그램만 받는다.

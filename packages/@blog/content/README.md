@@ -122,7 +122,7 @@ src/
 │              · types · utils · testing(테스트 픽스처 인스턴스)
 ├─ seo/        postSeo — createPostSeo(buildPostSeo·buildPostJsonLd·buildBreadcrumbJsonLd) + 순수 계산
 └─ scripts/    build-content(진입점) · validate-posts + validate/{rules,frontmatter,body,corpus,series,shared}
-               · check-seo · check-bundle(번들 누수 마커 + bundleBudgets 예산 평가) · artifacts(산출물 레지스트리 7종) · generate-{sitemap,rss,search-index,llms,llms-full}
+               · check-seo · check-bundle(번들 누수 마커 + bundleBudgets 예산 평가 + cssKeyframes — 페이지 CSS가 부르는 keyframes의 정의) · artifacts(산출물 레지스트리 7종) · generate-{sitemap,rss,search-index,llms,llms-full}
                · measure-bundle(첫 로드 전송량 자 — 게이트 아님) + assetRefs(첫 로드 자산 수집)
                · bundleBudgets(그룹별 예산 판정 — check-bundle이 measure-bundle의 측정으로 부른다)
                · sync-posts · new-post

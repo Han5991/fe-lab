@@ -92,10 +92,10 @@ catalog:
   # 프레임워크 · 언어
   # @pandacss/*는 한 버전으로만 움직인다(Panda v2 문서 "All @pandacss/* packages move on one
   # version. Don't mix") — 함께 올린다. catalogs.lint의 @pandacss/eslint-plugin도 같은 번호.
-  '@pandacss/dev': 2.1.2
-  '@pandacss/preset-base': 2.1.2
-  '@pandacss/preset-panda': 2.1.2
-  '@pandacss/vite': 2.1.2
+  '@pandacss/dev': 2.3.0
+  '@pandacss/preset-base': 2.3.0
+  '@pandacss/preset-panda': 2.3.0
+  '@pandacss/vite': 2.3.0
   'next': 16.3.8
   typescript: 6.0.3
   react: 19.3.0
@@ -149,4 +149,4 @@ catalogs:
     typescript-eslint: ^8.70.1
     # Panda 공식 lint 플러그인. @pandacss/compiler를 exact로 고정해서 기본 catalog의
     # @pandacss/dev와 같은 번호로만 움직인다(eslint-config-next ↔ next와 같은 관계).
-    '@pandacss/eslint-plugin': 2.1.2
+    '@pandacss/eslint-plugin': 2.3.0

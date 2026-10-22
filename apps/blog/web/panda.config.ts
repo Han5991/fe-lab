@@ -5,11 +5,15 @@ import { defineConfig, definePlugin } from '@pandacss/dev';
 // 토큰 레이어에 통째로 실렸고(쓰는 곳 0), strictTokens가 `orange.500` 같은 팔레트 밖 색을 통과시켰다.
 // radii는 블로그 토큰과 같은 값을 다른 이름으로 들고 있어(lg=8px=control, xl=12px=card, full≈pill)
 // 같은 라운드가 이름 셋(`'lg'`·`'control'`·`'[8px]'`)으로 갈렸다.
+// shadows도 버린다 — 그림자 장식은 금지라(AGENTS.md §9) 쓰는 곳이 0인데 변수 11개가 토큰 레이어에
+// 실렸고, `boxShadow: 'md'`가 타입을 통과했다. @blog/preset의 `shadows.markerLeft`는 남아 카테고리가
+// 비지 않는다. 쓰는 곳이 0인 blurs·durations·aspectRatios는 남긴다 — 카테고리가 통째로 비면 Panda가
+// 그 속성 타입을 아무 문자열로 넓혀(2.3.0 실측) strictTokens가 풀린다.
 // 서드파티 프리셋을 고치지 않고 일부만 빼는 v2 방식이 preset:resolved 훅이다(theming/plugins
 // "Trim a preset", theming/presets "extend only adds, so removing takes a plugin"). @blog/preset에
 // extend 없는 colors를 두는 길도 v2에서 동작하지만, 그러면 블로그 프리셋이 목록 순서에 묶인다.
-// 뺀 토큰을 쓰면 Panda는 진단 없이 raw 값(`color: orange.500`)을 내보낸다 — check-types와 Panda 공식
-// lint(prefer-token, eslint.config.mts)가 막는다.
+// 뺀 토큰을 쓰면 Panda는 진단 없이 raw 값(`color: orange.500`)을 내보낸다 — check-types가 막고,
+// 색·라운드는 Panda 공식 lint(prefer-token, eslint.config.mts)도 막는다.
 const trimPresetPanda = definePlugin({
   name: 'blog:trim-preset-panda',
   hooks: {
@@ -19,6 +23,7 @@ const trimPresetPanda = definePlugin({
             'theme.tokens.colors',
             'theme.semanticTokens.colors',
             'theme.tokens.radii',
+            'theme.tokens.shadows',
           ])
         : undefined,
   },
@@ -51,9 +56,11 @@ export default defineConfig({
   // 공식 권장대로 프로덕션에서만 줄인다 — dev에서 생성 CSS를 읽을 수 있게. 최종 out/의 CSS는
   // Next가 한 번 더 줄이므로 배포물 크기는 이 값과 무관하다.
   minify: process.env.NODE_ENV === 'production',
-  // optimize는 비워 둔다(styling/optimization). removeUnusedTokens는 codeTheme.ts가 런타임에 고르는
-  // token.var(role)을 못 봐 code.* 변수를 지우고, removeUnusedKeyframes는 2.1.2에서 animations
-  // 토큰(`animation: 'pulse'`)으로 참조한 keyframes까지 지운다(실측 — 문서와 다르다).
+  // optimize(styling/optimization)는 removeUnusedKeyframes만 켠다 — preset-panda의 keyframes(spin·
+  // ping·bounce …) 중 쓰지 않는 것을 뺀다. animations 토큰(`animation: 'pulse'`)으로 참조한 keyframes는
+  // 2.3.0부터 남는다(2.1.2는 그것까지 지웠다). removeUnusedTokens는 codeTheme.ts가 런타임에 고르는
+  // token.var(role)을 못 봐 code.* 변수를 지우므로 켜지 않는다.
+  optimize: { removeUnusedKeyframes: true },
   // propertyFallback도 지금은 필요 없다: @property로 등록되는 변수는 backdrop-*뿐이고 빈
   // fallback(`var(--backdrop-blur, )`)이라 @property 미지원 브라우저(Firefox 128 미만)에서도 값이
   // 선다. transform·filter·mask 유틸리티를 쓰기 시작해 out/ CSS에 backdrop 밖의 `@property --`가
