@@ -315,8 +315,20 @@ test.each([
   // >는 줄 머리의 인용 표시만 지운다
   ['> 인용문\n값이 x > 1이면', '인용문 값이 x > 1이면'],
   ['[`useState`](https://react.dev) 참고', 'useState 참고'],
+  // 이미지 alt는 첫 `](`에서 끝나고, 한 줄 안에서 닫히지 않으면 지우지 않는다
+  ['![a [b]](c.png) 뒤', '뒤'],
+  ['![a](b.png)와 ![c](d.png) 사이', '와 사이'],
+  ['![a](b\n![c](d.png) 끝', '![a](b 끝'],
 ])('extractPlainText: %j → %j', (input, expected) => {
   expect(extractPlainText(input)).toBe(expected);
+});
+
+test('extractPlainText: 닫히지 않는 이미지 문법이 되풀이돼도 길이에 비례해 끝난다', () => {
+  // 옛 정규식 `!\[.*?]\(.*?\)`은 이 입력(4KB)에 0.5초, 두 배 길이에 3.5초가 걸렸다(세제곱).
+  const input = '![]('.repeat(1000);
+  const started = performance.now();
+  expect(extractPlainText(input)).toBe(input);
+  expect(performance.now() - started).toBeLessThan(100);
 });
 
 test('resolveExcerpt: 서로게이트 쌍(이모지) 가운데서 자르지 않는다', () => {

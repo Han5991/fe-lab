@@ -27,6 +27,42 @@ const MARKUP_TAG =
 /** 강조의 `_` — 글자 사이의 `_`(`snake_case`)는 식별자라 남긴다. */
 const EMPHASIS_UNDERSCORE = /(?<![\p{L}\p{N}])_+|_+(?![\p{L}\p{N}])/gu;
 
+/** 이미지 alt 뒤의 경계(`](`)와 src 뒤의 경계(`)`) — 둘 다 `.`처럼 줄을 넘지 않는다. */
+const IMAGE_ALT_END = /\]\(|[\n\r\u2028\u2029]/g;
+const IMAGE_SRC_END = /\)|[\n\r\u2028\u2029]/g;
+
+/**
+ * 이미지(`![alt](src)`)를 지운다 — alt는 첫 `](`, src는 첫 `)`에서 끝나고 한 줄을 넘지 않는다.
+ * `/!\[.*?]\(.*?\)/g`와 결과가 같지만, 그 식은 `![`·`](`가 되풀이되는 줄에서 시작 위치마다
+ * 줄 끝까지 되짚어 세제곱으로 느려졌다(`![](` 2000개·8KB에 3.5초, CodeQL js/polynomial-redos).
+ * 한 시작점이 실패하면 같은 줄의 뒤 시작점도 전부 실패하므로 그 줄을 건너뛴다.
+ */
+function stripImages(text: string): string {
+  let out = '';
+  let pos = 0;
+  for (
+    let start = text.indexOf('![', pos);
+    start !== -1;
+    start = text.indexOf('![', pos)
+  ) {
+    IMAGE_ALT_END.lastIndex = start + 2;
+    let boundary = IMAGE_ALT_END.exec(text);
+    if (boundary?.[0] === '](') {
+      IMAGE_SRC_END.lastIndex = boundary.index + 2;
+      boundary = IMAGE_SRC_END.exec(text);
+      if (boundary?.[0] === ')') {
+        out += text.slice(pos, start);
+        pos = boundary.index + 1;
+        continue;
+      }
+    }
+    const lineEnd = boundary?.index ?? text.length;
+    out += text.slice(pos, lineEnd);
+    pos = lineEnd;
+  }
+  return out + text.slice(pos);
+}
+
 /** 본문 평문 — excerpt·readMin·검색 미리보기·wordCount·llms 요약이 함께 쓴다(`dropCode`면 펜스 코드를 뺀다). */
 export function extractPlainText(
   content: string,
@@ -46,8 +82,7 @@ export function extractPlainText(
 }
 
 function extractProse(text: string): string {
-  return text
-    .replace(/!\[.*?]\(.*?\)/g, '') // 이미지 제거
+  return stripImages(text)
     .replace(/\[([^\]]+)]\([^)]+\)/g, '$1') // 링크 텍스트만 남기기
     .replace(/^[ \t]*>+/gm, '') // 인용 표시(줄 머리의 >)
     .split(INLINE_CODE)
