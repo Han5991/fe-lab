@@ -2,6 +2,8 @@ import type { AuthorConfig, SiteConfig } from './contentConfig.ts';
 
 /**
  * `<script type="application/ld+json">` 본문에 안전하게 넣을 JSON 문자열을 만든다.
+ * 실행되는 인라인 스크립트에 값을 리터럴로 넣을 때도 이것을 쓴다(앱 layout의 테마 스크립트) —
+ * JSON은 그대로 JS 리터럴이고, 아래 이스케이프는 JS 문자열 안에서도 같은 `<`로 읽힌다.
  *
  * `JSON.stringify`는 `<`를 그대로 두기 때문에, 값에 `</script>`(태그 조기 종료)나
  * `<!--`(HTML 주석 시작)가 들어가면 스크립트 블록이 깨지거나 XSS로 이어질 수 있다.
