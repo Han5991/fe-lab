@@ -157,7 +157,7 @@ export default async function PostPage({ params }: Props) {
       <PageBoundary
         className={cx(railGutter, css({ py: { base: '10', md: '14' } }))}
       >
-        {/* 셸은 wide 레일이라 헤더·/posts와 좌우 끝이 같고, 그 안에서 본문이
+        {/* 셸은 wide 레일이라 홈·/about와 좌우 끝이 같고, 그 안에서 본문이
             text 레일(752)을 차지하고 TOC가 오른쪽 끝에 붙는다. */}
         <div
           className={cx(

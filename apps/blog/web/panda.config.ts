@@ -65,6 +65,15 @@ const NAV_SLIDE_OFFSET = '--nav-slide-offset';
 const NAV_SLIDE_LEFT = `${-NAV_SLIDE_PX}px` as const;
 const NAV_SLIDE_RIGHT = `${NAV_SLIDE_PX}px` as const;
 
+// 초점 링 — 초점을 받은 요소(`:focus-visible`)와, 상태를 숨긴 네이티브 radio가 든 칩·토글 칸(아래 globalCss)이
+// 같은 값을 쓴다. 초점 링은 inner 자리다(blog-preset.ts radii 주석). globalCss는 base 레이어라, 자기
+// 라운드를 가진 요소(utilities 레이어)는 초점을 받아도 그 라운드를 지킨다.
+const FOCUS_RING = {
+  outline: '2px solid token(colors.accent.solid)',
+  outlineOffset: '3px',
+  borderRadius: 'inner',
+} as const;
+
 export default defineConfig({
   // Panda 기본 프리셋 + 블로그 프리셋(@blog/preset — 블로그 소유, 컴포넌트 없는 설정 전용 패키지).
   // lab 디자인 시스템(@design-system/ui)은 걸지 않는다(lab 토큰·레시피가 실린다).
@@ -147,8 +156,8 @@ export default defineConfig({
           from: { opacity: '0' },
         },
         // 커버 짝의 바닥 스냅샷 모서리(아래 globalCss). 카드 쪽 끝은 카드 라운드 중 가장 큰
-        // container다 — 썸네일 행(element)·/posts 카드(위 모서리만)는 그 끝에서 위에 덮인 카드
-        // 스냅샷이 더 많이 깎여 있어 바닥이 모서리 밖으로 비치지 않는다. 상세 쪽 끝은 아래
+        // container다 — 썸네일 행(element)은 그 끝에서 위에 덮인 카드 스냅샷이 더 많이 깎여 있어
+        // 바닥이 모서리 밖으로 비치지 않는다. 상세 쪽 끝은 아래
         // 규칙의 정지값(히어로와 같은 element)이다.
         [VIEW_TRANSITION.coverCornerFromCard]: {
           from: { borderRadius: 'container' },
@@ -425,13 +434,11 @@ export default defineConfig({
       '::target-text': {
         bg: 'selection.bg',
       },
-      ':focus-visible': {
-        outline: '2px solid token(colors.accent.solid)',
-        outlineOffset: '3px',
-        // 초점 링은 inner 자리다(blog-preset.ts radii 주석). 이 규칙은 base 레이어라, 자기
-        // 라운드를 가진 요소(utilities 레이어)는 초점을 받아도 그 라운드를 지킨다.
-        borderRadius: 'inner',
-      },
+      ':focus-visible': FOCUS_RING,
+      // 숨긴 radio(`peer`)가 초점을 받으면 링은 바로 뒤 형제인 칩·토글 칸 면에 그린다(chip tone `toggle`,
+      // ViewToggle). `:has()`로 label에 그리지 않는 이유는 Firefox 111~120에 없어서다. 범위는 `peer`를 단
+      // radio의 바로 뒤 형제뿐이다.
+      'input.peer[type=radio]:focus-visible + *': FOCUS_RING,
       // 스크롤바는 얇은 실선처럼. 리뉴얼 톤이 hairline 보더 중심이라 8px
       // 막대가 지면에서 튄다.
       '::-webkit-scrollbar': {

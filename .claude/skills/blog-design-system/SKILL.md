@@ -88,7 +88,7 @@ OG 카드의 **브랜드 cyan**(`#67E8F9`, pill 보더는 그 42%)만 토큰이 
 | 헤더 내비 현재 위치                      | `accent.solid` + semibold(비활성 `ink.700`과 2.30 / 1.87:1)                                  |
 | 차례 현재 절 · 코드 탭 · 기간 세그먼트   | `accent.solid` 한 이름(아래 굵기 규칙)                                                       |
 | 시리즈 배지 · 대화 말풍선(나)            | `accent.muted` 면 + `accent.solid` 글자(`seriesBadge`)                                       |
-| 태그 배지(글 목록 카드)                  | `paper.200` 면 + `ink.950` 글자(`tagBadge`, Astryx Badge neutral)                            |
+| 태그 배지(글 목록 카드 · 활성 필터)      | `paper.200` 면 + `ink.950` 글자(`tagBadge`, Astryx Badge neutral)                            |
 | tip 대 info 콜아웃                       | 면은 1.07 / 1.22:1로 거의 같다 — 불투명 잉크 보더(info는 알파 28% / 32%)와 글리프            |
 | 다이어그램 · mermaid 강조 노드           | 잉크 스트로크 대 회색 보더                                                                   |
 | 검색어 강조(`<mark>`)                    | `accent.muted` 면 + semibold — 면은 행 배경과 1.17 / 1.39:1이고 제목 줄은 제목도 같은 잉크다 |
@@ -160,6 +160,7 @@ axe `link-in-text-block`은 밑줄·굵기·보더 차이를 구분으로 인정
   `compositions` 하위 레이어라 같은 요소의 유틸리티가 이긴다(헤더 내비 현재 위치 = `label` + semibold)
 - 쓰는 곳이 생긴 역할만 CSS로 나간다(Panda가 사용처에서 뽑는다) — 정의만 있는 역할은 무게가 없다
 - 메타(mono) 글자는 역할 밖이다 — 날짜·태그·워드마크는 `fontFamily: 'mono'`와 크기를 직접 준다
+- 글 목록 뷰 토글 칸은 13px — 역할 밖 예외다(`label`에 `fontSize: '[13px]'`, Astryx ToggleButton sm)
 
 ## 형태
 
@@ -168,21 +169,22 @@ axe `link-in-text-block`은 밑줄·굵기·보더 차이를 구분으로 인정
 고른다. **이 여섯이 전부다** — 블로그 설정이 preset-panda의 radii를 빼므로 다른 이름은
 strictTokens에 걸린다.
 
-| 토큰        | 값     | 자리                                                                                                    |
-| :---------- | :----- | :------------------------------------------------------------------------------------------------------ |
-| `none`      | 0      | 모바일 전체화면 검색 다이얼로그                                                                         |
-| `inner`     | 8px    | 인라인 코드 · 검색어 mark · 세그먼트 안쪽 탭 · 스켈레톤 줄 · 초점 링                                    |
-| `element`   | 12px   | 입력 · 검색창 · 헤더 내비 항목 · 세그먼트 그룹 · 필터 항목 행 · 코드 블록(코드 탭) · 파일 트리 · 이미지 |
-| `container` | 16px   | 카드·카드 커버 · 패널 · 콜아웃 · `details` · mermaid 상자 · 바텀시트 윗모서리 · 다이얼로그 · 차트 툴팁  |
-| `page`      | 32px   | 대화 말풍선(`<dialogue>`)만                                                                             |
-| `full`      | 9999px | 버튼(아이콘 버튼·FAB 포함) · 배지(태그·시리즈·상태·개수) · 칩(태그·오픈소스) · 원형 · 스크롤바          |
+| 토큰        | 값     | 자리                                                                                                   |
+| :---------- | :----- | :----------------------------------------------------------------------------------------------------- |
+| `none`      | 0      | 모바일 전체화면 검색 다이얼로그                                                                        |
+| `inner`     | 8px    | 인라인 코드 · 검색어 mark · 세그먼트 안쪽 탭 · 스켈레톤 줄 · 초점 링                                   |
+| `element`   | 12px   | 입력 · 검색창 · 헤더 내비 항목 · 세그먼트 그룹 · 코드 블록(코드 탭) · 파일 트리 · 이미지               |
+| `container` | 16px   | 카드·카드 커버 · 패널 · 콜아웃 · `details` · mermaid 상자 · 바텀시트 윗모서리 · 다이얼로그 · 차트 툴팁 |
+| `page`      | 32px   | 대화 말풍선(`<dialogue>`)만                                                                            |
+| `full`      | 9999px | 버튼(아이콘 버튼·FAB 포함) · 배지(태그·시리즈·상태·개수) · 칩(시리즈·오픈소스) · 원형 · 스크롤바       |
 
 - **버튼은 `full`이다.** Astryx 코어는 버튼을 `element`로 두지만 docsite 테마가 모든 버튼을
   pill로 덮는다. 복사 아이콘 버튼·헤더 검색 버튼·테마 전환 버튼도 버튼이라 같다
 - **태그·시리즈·상태 배지도 `full`이다**(Astryx Badge). 예전의 "배지는 6px, pill 아님" 규칙은
   이 스케일로 옮기며 폐기했다
 - **초점 링은 `inner`** — globalCss의 `:focus-visible`(base 레이어)이 준다. 자기 라운드가 있는
-  요소는 utilities 레이어라 그 라운드를 지킨다. 본문 표·자동 배치 그림의 가로 스크롤 래퍼도 초점
+  요소는 utilities 레이어라 그 라운드를 지킨다. 상태를 숨긴 네이티브 radio(칩·토글 칸)는 링을 바로
+  뒤 형제인 면에 그린다(`input.peer[type=radio]:focus-visible + *`) — 값은 같은 상수 `FOCUS_RING`이다. 본문 표·자동 배치 그림의 가로 스크롤 래퍼도 초점
   링 때문에 라운드를 갖는 자리라 `inner`다
 - **Astryx와 일부러 다르게 간 곳** — 말풍선은 Astryx의 chat 전용 28px 대신 `page`(Astryx 문서는
   page를 페이지 단위 컨테이너용으로 적는다). 안쪽 요소의 동심 라운드(바깥 − 패딩)는 계산하지 않고
@@ -227,18 +229,18 @@ strictTokens에 걸린다.
 
 lint는 그림자 **값**만 막는다. 어느 면에 붙였는지는 이 판정으로 리뷰가 본다.
 
-| 표면                                | 그림자              | 보더                                 | 라운드               |
-| :---------------------------------- | :------------------ | :----------------------------------- | :------------------- |
-| 검색 다이얼로그 — md 이상 센터 모달 | `overlay.high`      | hairline                             | `container`          |
-| 검색 다이얼로그 — 모바일 전체화면   | 없음(판정 2의 예외) | 없음                                 | `none`               |
-| 목차 바텀시트 · 글 필터 바텀시트    | `overlay.high`      | hairline(목차는 위, 필터는 위·좌·우) | 윗모서리 `container` |
-| admin 차트 툴팁                     | `overlay.med`       | hairline                             | `container`          |
+| 표면                                | 그림자              | 보더         | 라운드               |
+| :---------------------------------- | :------------------ | :----------- | :------------------- |
+| 검색 다이얼로그 — md 이상 센터 모달 | `overlay.high`      | hairline     | `container`          |
+| 검색 다이얼로그 — 모바일 전체화면   | 없음(판정 2의 예외) | 없음         | `none`               |
+| 목차 바텀시트                       | `overlay.high`      | hairline(위) | 윗모서리 `container` |
+| admin 차트 툴팁                     | `overlay.med`       | hairline     | `container`          |
 
 - **차트 툴팁은 공용 컴포넌트(`ChartTooltip`·`ChartTooltipFrame`) 하나로 그린다.** Recharts
   `contentStyle` 같은 인라인 style은 Panda 추출 밖이라 토큰 검사가 닿지 않는다. 표면은
   Recharts가 넘기는 `accessibilityLayer`를 필수로 받아, 기본 툴팁이 주던 스크린리더 알림
   (`role="status"`)을 잇는다
-- **떠 있어도 그림자가 없는 것** — FAB 셋(목차 열기·글 필터·맨 위로)은 버튼이라 없다(hairline
+- **떠 있어도 그림자가 없는 것** — FAB 둘(목차 열기·맨 위로)은 버튼이라 없다(hairline
   보더로 본문과 분리). 문장 공유 버튼(QuoteLink)은 반전 면이라 지면과 반대 톤이 이미 띄운다.
   스티키 헤더·건너뛰기 링크·미리보기 배너는 닫는 면이 아니다
 - 새 오버레이를 만들 때 단계는 Astryx를 따른다 — 다이얼로그·드로어·시트는 high, 토스트·차트
@@ -249,15 +251,15 @@ lint는 그림자 **값**만 막는다. 어느 면에 붙였는지는 이 판정
 - **다이얼로그에 hairline을 남긴다.** Astryx Dialog는 보더가 0이지만, 다크에서 다이얼로그
   면과 dim 아래 지면의 대비가 1.04:1이고 그림자도 어두운 지면 위에서는 거의 보이지 않는다 —
   다크의 경계는 보더가 맡는다. 바텀시트는 Astryx와 같다 — Astryx BottomSheet도 scrim을 향한
-  변에 hairline을 두고 high를 준다(다크에서 시트 가장자리가 보이지 않아 보더를 더했다). 블로그
-  시트 둘은 화면 폭 전체라 좌우 변이 화면 끝에 붙고, 목차 시트는 위 변에만 보더를 둔다
+  변에 hairline을 두고 high를 준다(다크에서 시트 가장자리가 보이지 않아 보더를 더했다). 목차
+  시트는 화면 폭 전체라 좌우 변이 화면 끝에 붙고, 위 변에만 보더를 둔다
 - **세그먼트 컨트롤(admin 기간 선택)의 선택 항목에 그림자가 없다.** Astryx는 low를 주지만 흐름
   안의 요소라 판정 1에 걸린다
 - **FAB에 그림자가 없다.** Astryx의 FAB 예제(IconButtonFloating 블록)는 아이콘 버튼에
   `elevation="high"`를 준다
 - **`overlay.low`는 정의하지 않았다.** 쓰는 면이 없다 — 첫 팝오버·메뉴를 만드는 커밋이 Astryx
   `--shadow-low` 값으로 더한다
-- **scrim은 합치지 않았다.** 검색은 `scrim.dialog`, 바텀시트 둘은 `scrim.sheet`다(Astryx는
+- **scrim은 합치지 않았다.** 검색은 `scrim.dialog`, 목차 바텀시트는 `scrim.sheet`다(Astryx는
   `--color-overlay` 하나). 두 값은 테마와 무관하게 어둡다 — 잉크 색(`ink.950`)을 반투명으로 깔면
   다크에서 백드롭이 밝아진다
 
@@ -343,7 +345,7 @@ motion"). 같은 깊이는 형제 순서(이전·다음)가 있을 때만 방향
   공유 요소 그룹(medium)과 거의 같아 카드에서 열 때 커버·제목·본문이 함께 자리에 닿는다. 바뀌는 순간
   거의 빈 지면이 한두 프레임 보인다
 - **카드에서 열 때도 방향을 단다** — 카드 열기만 페이드로 두면 새 글의 본문이 나가는 목록 위에 겹쳐
-  보였다(실측 프레임 비교). 같은 이동(목록 → 글)이 카드로 열든 인기 글 레일로 열든 같은 방향이어야 하기도
+  보였다(실측 프레임 비교). 같은 이동(목록 → 글)이 카드로 열든 목록 행으로 열든 같은 방향이어야 하기도
   하다
 - **거리 32px** — 들어오는 쪽이 지연 뒤에 출발해 거리 전부가 눈에 보인다. Next 가이드의 60px은 들어오는
   쪽이 처음부터 미끄러져 보이는 몫이 40px 안팎이고, Material shared axis는 30dp다. 방향 없는 페이드의
@@ -369,16 +371,16 @@ motion"). 같은 깊이는 형제 순서(이전·다음)가 있을 때만 방향
 움직인다(ssgoi hero와 같은 구성, 라이브러리 없이 React `<ViewTransition>`). 이름·클래스·transition
 type은 `src/shared/viewTransitions.ts`, 감싸개는 `src/components/shared/PostSharedElement.tsx`의 둘이다.
 
-- **짝** — 커버(카드의 커버 틀·`/posts` 카드 이미지 ↔ `PostHero`의 썸네일 이미지)와 제목(카드·목록
+- **짝** — 커버(카드의 커버 틀 ↔ `PostHero`의 썸네일 이미지)와 제목(카드·목록
   행의 h3 ↔ `PostHeader`의 h1). 다이어그램 히어로·히어로 없는 글은 제목만 짝이다. 쓰는 곳은 홈 카드
-  두 변형·썸네일 행·`/posts` 카드·글 목록 행(`PostListRow` — `/posts` 목록 보기와 `/series`, 제목만).
+  두 변형·썸네일 행·`/posts` 피처·그리드 카드·글 목록 행(`PostListRow` — `/posts` 목록 보기와 `/series`, 제목만).
   새 카드는 `PostCardShared`로 감싸고 제목 링크를 `<TransitionLink opensPost>`로 둔다(글을 여는 type과
   방향 `nav-forward`가 함께 붙는다)
 - **짝이 되는 이동은 둘뿐이다** — 카드를 눌러 글을 열 때(링크의 transition type)와, 그 글의 상세에서
   링크(헤더 내비·워드마크·태그·시리즈 목록)로 목록에 돌아갈 때(상세가 마운트 동안 "열린 글"로 적는다).
   목록 → 목록 이동(홈 → `/posts`)에서는 같은 글의 카드끼리도 짝이 되지 않는다 — 되면 화면의 카드
-  열네 개가 한꺼번에 날아다녔다(실측). 검색·인기 글 레일처럼 카드가 아닌 링크로 열면 짝 없이 페이지
-  전환만 한다(검색은 페이드, 인기 글 레일은 `nav-forward`)
+  열네 개가 한꺼번에 날아다녔다(실측). 검색처럼 카드가 아닌 링크로 열면 짝 없이 페이지
+  전환만 한다(검색은 페이드)
 - **양쪽이 화면 안일 때만** — React가 뷰포트 밖 요소의 이름을 거둔다. 상세에서 `/posts`로 돌아갔는데
   그 글의 카드가 화면 밖이면 상세의 커버·제목은 나가는 페이지와 같은 fast·exit로 사라진다(`:only-child`
   규칙 — 따로 찍힌 스냅샷이라 페이지와 함께 옆으로 밀리지는 않는다).
@@ -437,17 +439,19 @@ type은 `src/shared/viewTransitions.ts`, 감싸개는 `src/components/shared/Pos
 - **거터** — 화면 좌우 여백. `base 20px / md(768px↑) 32px` 한 쌍뿐. `railGutter`가 소유한다
 - **레일** — 콘텐츠 칼럼 폭. **세 개가 전부**다
 
-  | 레일       | 폭     | 쓰는 곳                                      |
-  | :--------- | :----- | :------------------------------------------- |
-  | `railWide` | 1200px | 홈, `/posts`, `/about`, 글 상세 셸, `/admin` |
-  | `railText` | 752px  | 글 본문, `/series`, `/privacy`               |
-  | `railForm` | 400px  | 로그인, 404                                  |
+  | 레일       | 폭     | 쓰는 곳                                  |
+  | :--------- | :----- | :--------------------------------------- |
+  | `railWide` | 1200px | 홈, `/about`, 글 상세 셸, `/admin`       |
+  | `railText` | 752px  | 글 본문, `/posts`, `/series`, `/privacy` |
+  | `railForm` | 400px  | 로그인, 404                              |
 
   `railText` 752px는 Astryx docsite 본문 칼럼(최대 800 − 좌우 24)이다 — 17px 본문 기준 약 44자/줄.
   그 전에는 680px였다
 
 - **섹션 간격** — `spacing.section`, md(768px) 이상 100px / 아래 48px(Astryx docsite의 섹션 간격).
   화면 폭에 따라 값이 바뀌는 토큰이라 `mt: 'section'`처럼 이름만 적는다. 푸터 위 간격이 이것이다
+- **페이지 위 여백** — `spacing.pageTop`, md 이상 72px / 아래 40px. 셸 헤더 아래에서 페이지 첫
+  제목(h1)까지다(목업 72 = Astryx main 위 48 + Section 24). 글 목록(`/posts`)이 쓴다
 
 > **거터는 언제나 레일 바깥이다.** `railGutter`를 준 요소의 **자식**에 `railColumn()`을
 > 붙인다(둘을 한 요소에 얹으면 콘텐츠 폭이 `레일 − 거터×2`가 된다). 그래서 `railText`
@@ -490,7 +494,7 @@ type은 `src/shared/viewTransitions.ts`, 감싸개는 `src/components/shared/Pos
   자리" 표. **홈(`/`)에는 현재 위치가 없다** — 내비의 어느 링크도 홈을 가리키지 않는다
 - 검색 트리거는 아이콘 버튼이다. 접근 이름 '검색', 단축키는 화면에 적지 않고
   `title="검색 (⌘K / Ctrl K)"`·`aria-keyshortcuts="Meta+K Control+K"`로 준다
-- 헤더 높이에 기대는 자리(진행 바·미리보기 배너의 top, 차례·글 목록 사이드바의 sticky top과
+- 헤더 높이에 기대는 자리(진행 바·미리보기 배너의 top, 차례의 sticky top과
   최대 높이, 문장 링크 버튼의 상한, 헤딩 이동 오프셋)는 전부 `SITE_HEADER_HEIGHT`나 그 CSS 변수
   `--site-header-height`(`siteHeaderStyle`을 쓰는 요소가 직접 단다)에서 계산한다 — px을 손으로 빼지 않는다
 
@@ -527,14 +531,22 @@ type은 `src/shared/viewTransitions.ts`, 감싸개는 `src/components/shared/Pos
 **칩** — `src/components/chip.ts`. 한 줄에 여럿이 줄바꿈되며 놓이는 32px pill(Astryx ToggleButton
 칩), 좌우 12, `label`.
 
-| tone      | 모양                                                    | 쓰는 곳                            |
-| :-------- | :------------------------------------------------------ | :--------------------------------- |
-| `neutral` | `paper.200` 면, `ink.950` 글자, hover `paper.300`       | 홈 오픈소스 프로젝트 칩(링크)      |
-| `accent`  | 잉크 면(`accent.solid`), `accent.onSolid` 글자 semibold | 줄에서 하나만 세우는 강조(합계 칩) |
+| tone      | 모양                                                                            | 쓰는 곳                            |
+| :-------- | :------------------------------------------------------------------------------ | :--------------------------------- |
+| `neutral` | `paper.200` 면, `ink.950` 글자, hover `paper.300`                               | 홈 오픈소스 프로젝트 칩(링크)      |
+| `accent`  | 잉크 면(`accent.solid`), `accent.onSolid` 글자 semibold                         | 줄에서 하나만 세우는 강조(합계 칩) |
+| `toggle`  | 면 없음, `ink.950` 글자, hover `paper.100`. 켜지면 `accent.muted` 면 + semibold | 글 목록 시리즈 칩                  |
 
 - 서체는 칩이 아니라 글자가 정한다 — 프로젝트 이름은 코드라 쓰는 쪽이 mono 13px로 덧씌운다
   (`css(chip.raw(…), {…})`)
 - 강조 칩은 누를 수 없는 표식이라 hover가 없다
+- **켜고 끄는 칩(`toggle`)은 네이티브 radio다.** 구조는 `label > input.peer(숨김) + span(칩 면)`이고,
+  켜짐·hover·초점 링은 면이 **형제 선택자**로 받는다(`_peerChecked`, hover는 `.peer:not(:checked) ~ &`로
+  켜진 칩을 뺀다). `:has()`는 쓰지 않는다 — Next 기본 대상의 Firefox 111~120에 없어 초점 링까지
+  사라진다. 초점 링은 globalCss가 같은 형제 선택자로 `FOCUS_RING`을 준다. 켜질 때 semibold가 되어도
+  폭이 밀리지 않게 면과 글자는 `SteadyLabel`(숨긴 semibold 사본을 겹친다)로 그린다. 강제 색상 모드는
+  면을 지우므로 켜진 칩에 밑줄을 더한다. 글 목록 뷰 토글 칸도 같은 구조다(트랙 `paper.100` 위에
+  켜진 칸이 `paper.50` 면, 13px)
 
 **태그 배지** — `src/components/tagBadge.ts`. `#태그` 하나를 담는 20px pill(Astryx Badge neutral),
 좌우 8, `supporting` 500, `paper.200` 면 + `ink.950` 글자.
@@ -542,7 +554,7 @@ type은 `src/shared/viewTransitions.ts`, 감싸개는 `src/components/shared/Pos
 - 기본은 누를 수 없는 표식이다 — 글 목록 카드의 메타 줄(`PostMeta`의 `badges`). 카드 안의 태그는
   링크가 아니다(아래 "카드")
 - `interactive` — 누르는 배지(필터를 푸는 버튼, 태그 필터로 가는 링크). hover `paper.300`, 칩·버튼과
-  같은 강제 색상 모드용 투명 hairline
+  같은 강제 색상 모드용 투명 hairline. 글 목록의 적용된 태그 필터(누르면 해제, mono)가 쓴다
 - 서체는 배지가 정하지 않는다(칩과 같은 규칙) — 카드 메타 줄 안에서는 mono를 물려받는다
 - 시리즈 배지(`seriesBadge`)와 다른 모양이다 — 라이트는 두 면이 거의 같지만 다크에서는
   `accent.muted`가 `paper.200`보다 한 단계 밝다
@@ -586,9 +598,8 @@ Astryx BlogCard·BlogFeatureCard·BlogShowcase의 블로그 판. `src/components
   글 상세의 태그다
 - **커버 틀과 제목 h3는 글 상세로 이어지는 공유 요소다**(모션 절) — 커버는 `<img>`가 아니라 틀
   (라운드·hairline)째 `PostCardShared`로 감싼다. 이름이 붙은 요소는 조상의 자르기 없이 따로 찍혀,
-  이미지에 이름을 달면 틀의 라운드가 빠져 전환 첫 프레임에 모서리가 각진다. 그래서 틀이 없는
-  `/posts` 카드는 이미지가 위 모서리 라운드를 직접 든다. 제목 링크는 `<TransitionLink opensPost>`다(글을
-  여는 type과 방향)
+  이미지에 이름을 달면 틀의 라운드가 빠져 전환 첫 프레임에 모서리가 각진다. 제목 링크는
+  `<TransitionLink opensPost>`다(글을 여는 type과 방향)
 
 ## 홈
 

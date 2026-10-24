@@ -92,8 +92,8 @@ interface PostCardProps {
 }
 
 /**
- * 카드 전체가 제목 링크 하나다(`cardParts.ts`). 제목은 h3 — 홈은 h1(이름) → h2(섹션) → h3(카드)라
- * 헤딩 단계를 건너뛰지 않는다.
+ * 카드 전체가 제목 링크 하나다(`cardParts.ts`). 제목은 h3 — 홈은 h1(이름) → h2(섹션) → h3(카드),
+ * 글 목록은 h1(모든 노트) → h2(N편) → h3(피처·카드)라 헤딩 단계를 건너뛰지 않는다.
  */
 export const PostCard = ({
   post,
