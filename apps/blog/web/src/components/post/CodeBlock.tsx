@@ -273,7 +273,7 @@ export function CodeBlock({
         customStyle={{
           borderRadius: 0,
           margin: 0,
-          // 크롬이 얇아진 만큼 안쪽 여백도 줄여 680px 본문 칼럼에서 코드가
+          // 크롬이 얇아진 만큼 안쪽 여백도 줄여 752px 본문 칼럼에서 코드가
           // 실제로 쓸 수 있는 가로폭을 넓힌다.
           padding: `${token('spacing.5')} ${token('spacing.6')}`,
           lineHeight: '1.7',
