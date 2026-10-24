@@ -82,7 +82,7 @@ export const PostGridCard = ({ post, priority = false }: PostGridCardProps) => {
             fontSize: 'md',
             fontWeight: 'semibold',
             lineHeight: 'header',
-            color: 'accent.600',
+            color: 'accent.solid',
             lineClamp: 2,
           })}
         >

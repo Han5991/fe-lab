@@ -271,10 +271,10 @@ test('registries: 사이트 고유 축은 준 값 그대로, 펜스 라벨만 �
 test('중첩 객체(og.palette, llms.facts)도 부분 병합된다', () => {
   const config = defineTestContent({
     root: FIXTURE_ROOT,
-    og: { palette: { accent: '#FF0000' } },
+    og: { palette: { brand: '#FF0000' } },
     llms: { facts: { speaking: 'somewhere' } },
   });
-  expect(config.og.palette.accent).toBe('#FF0000');
+  expect(config.og.palette.brand).toBe('#FF0000');
   // 덮지 않은 색은 픽스처 그대로 — 패키지에는 기본 팔레트가 없다.
   expect(config.og.palette.paper).toBe(TEST_VALUES.ogPalette.paper);
   expect(config.llms.facts.speaking).toBe('somewhere');

@@ -28,7 +28,8 @@ const rangeTab = cva({
   },
   variants: {
     active: {
-      true: { bg: 'ink.950', color: 'paper.50' },
+      // 선택 세그먼트는 잉크 면(Astryx 선택 표식이 accent) — 차례·코드 탭과 같은 이름이다.
+      true: { bg: 'accent.solid', color: 'accent.onSolid' },
       false: {
         bg: 'transparent',
         color: 'ink.600',

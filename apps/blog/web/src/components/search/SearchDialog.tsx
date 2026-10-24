@@ -25,10 +25,13 @@ import {
 /** 색인 요청의 진행 상태 — 여는 순간 요청이 걸리므로 요청 전도 'loading'이다. */
 type IndexStatus = 'loading' | 'ready' | 'error';
 
+// 일치어 강조. 틴트 면은 행 배경과 1.17 / 1.39:1(선택 행 위 1.17 / 1.50)이라 색만으로는
+// 약하고, 제목 줄은 제목도 ink.950·medium이라 면 말고는 갈리는 게 없다 — 굵기를 한 단계
+// 올려(semibold) 색 아닌 표식을 둔다. 메타 줄에서는 글자색(ink.500/700 대 ink.950)도 갈린다.
 const markClass = css({
-  bg: 'marker.300',
+  bg: 'accent.muted',
   color: 'ink.950',
-  fontWeight: 'medium',
+  fontWeight: 'semibold',
   px: '0.5',
   rounded: 'inner',
 });
@@ -449,8 +452,12 @@ export const SearchDialog = () => {
                             display: 'block',
                             px: '4',
                             py: { base: '4', md: '3' },
-                            bg: selected ? 'accent.50' : 'transparent',
-                            _active: { bg: 'accent.50' },
+                            bg: selected ? 'accent.muted' : 'transparent',
+                            // 메타 줄(날짜·시리즈·발췌)은 이 색을 물려받는다. 선택·눌림 행의
+                            // 틴트 위에서 ink.500은 다크 4.41:1로 AA를 놓쳐 ink.700(6.46 /
+                            // 6.11:1)으로 올린다. 제목·태그는 자기 색을 갖는다.
+                            color: selected ? 'ink.700' : 'ink.500',
+                            _active: { bg: 'accent.muted', color: 'ink.700' },
                             transition: '[background 0.1s]',
                             borderBottomWidth: { base: 'hairline', md: 'none' },
                             borderColor: 'paper.200',
@@ -469,7 +476,6 @@ export const SearchDialog = () => {
                           <p
                             className={css({
                               fontSize: 'xs',
-                              color: 'ink.500',
                               mt: '1',
                               lineClamp: 2,
                             })}

@@ -172,8 +172,9 @@ export const META_FILENAMES = [
   'STUDY_LOG.md',
 ] as const;
 
-// OG 카드 팔레트는 여기 없다 — 값이 아니라 **디자인 토큰에서 파생**되기 때문이다.
-// `blog-preset.ts`의 다크 색을 `themeColor('dark', …)`로 뽑아 `content.config.mts`가 조립한다.
+// OG 카드 팔레트는 여기 없다 — 값이 아니라 **프리셋에서 파생**되기 때문이다.
+// `blog-preset.ts`의 다크 색을 `themeColor('dark', …)`로, 토큰이 아닌 브랜드 cyan을 `ogBrand`로
+// 뽑아 `content.config.mts`가 조립한다.
 // 이 파일이 아니라 거기인 이유는 값 import 금지(위 제약) 때문이다: 프리셋을 여기서
 // 끌면 화면이 이 모듈의 다른 상수를 쓸 때 Panda 설정까지 클라이언트 번들에 실린다.
 
@@ -317,6 +318,11 @@ export const BUNDLE_GUARDS = [
  * CSS 예산은 33 → 30KB로 내렸다 — 측정 최대 27.9KB에 ~5% 여유. JS 예산은 그대로.
  * 2026-10-22 Panda 2.3.0 빌드로 다시 갱신: CSS는 쓰지 않는 keyframes 셋과 preset-panda 그림자
  * 토큰을 빼 −0.2KB — 최대 27.7KB에 ~5% 여유를 얹어도 30KB라 예산은 그대로).
+ * 2026-10-24 포인트색을 잉크로 옮긴 빌드로 다시 갱신: CSS는 cyan accent 계열 색 토큰 15개를
+ * 빼고 accent 4개를 더해 −0.3~0.4KB(최대 27.3KB) — 예산은 그대로. JS는 같은 날 바꾸기 전 빌드와
+ * 대 보면 0~−0.1KB다(공개 그룹). 줄별 JS 숫자가 크게 움직인 건 이 변경 탓이 아니다 — 줄 주석의
+ * 옛 값(251.1·187.3·434.9)이 이미 실측(바꾸기 전 빌드 251.8·188.4)과 어긋나 있던 것을 이 빌드의
+ * 측정값으로 바꿨다.
  * 그룹이 새로 생기면(새 라우트) 예산이 없어서, 라우트가
  * 사라지면 예산이 죽어서, 측정 최대가 상한의 80% 아래로 내려가면 예산이 느슨해서
  * (`budget-slack`) 빌드가 실패한다.
@@ -327,21 +333,21 @@ export const BUNDLE_GUARDS = [
  * 걸리면 같은 방식으로 내린다 — 여유가 크게 남으면 회귀가 그 안에 숨는다.
  */
 export const BUNDLE_BUDGETS = [
-  // 251.1 KB / 27.0 KB
+  // 251.8 KB / 26.7 KB
   { group: '/', jsGzipKB: 261, cssGzipKB: 30 },
-  // 251.1 KB / 27.7 KB — 목록과 글 상세 46쪽의 최대(mermaid·Giscus는 지연 로드라 밖)
+  // 251.9 KB / 27.3 KB — 목록과 글 상세 46쪽의 최대(mermaid·Giscus는 지연 로드라 밖)
   { group: '/posts/', jsGzipKB: 261, cssGzipKB: 30 },
-  // 251.1 KB / 27.0 KB
+  // 251.8 KB / 26.7 KB
   { group: '/about/', jsGzipKB: 261, cssGzipKB: 30 },
-  // 187.3 KB / 27.0 KB
+  // 188.4 KB / 26.7 KB
   { group: '/series/', jsGzipKB: 194, cssGzipKB: 30 },
-  // 187.3 KB / 27.0 KB
+  // 188.4 KB / 26.7 KB
   { group: '/privacy/', jsGzipKB: 194, cssGzipKB: 30 },
-  // 187.3 KB / 27.0 KB — 정적 404(`404-page` 처리)
+  // 188.4 KB / 26.7 KB — 정적 404(`404-page` 처리)
   { group: '/404/', jsGzipKB: 194, cssGzipKB: 30 },
-  // 187.3 KB / 27.0 KB — Next가 함께 내보내는 not-found 라우트
+  // 188.4 KB / 26.7 KB — Next가 함께 내보내는 not-found 라우트
   { group: '/_not-found/', jsGzipKB: 194, cssGzipKB: 30 },
-  // 434.9 KB / 27.0 KB — admin 48쪽의 최대(`/admin/analytics/`)
+  // 432.0 KB / 26.7 KB — admin 48쪽의 최대(`/admin/analytics/`)
   { group: '/admin/', jsGzipKB: 457, cssGzipKB: 30 },
 ] as const satisfies BundleBudgetsConfig;
 

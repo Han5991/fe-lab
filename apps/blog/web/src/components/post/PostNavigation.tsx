@@ -35,7 +35,7 @@ const navCard = sva({
     title: {
       fontSize: '[14px]',
       fontWeight: 'medium',
-      color: 'accent.600',
+      color: 'accent.solid',
     },
   },
   variants: {

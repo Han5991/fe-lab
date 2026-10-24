@@ -21,7 +21,7 @@
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { defineContent } from '@blog/content';
-import { themeColor } from '@blog/preset';
+import { ogBrand, themeColor } from '@blog/preset';
 import {
   AUTHOR,
   BUNDLE_BUDGETS,
@@ -68,6 +68,9 @@ export default defineContent({
      * 렌더는 성공하므로 아무도 실패로 알려주지 않았다.
      *
      * **다크만 쓴다** — OG 카드는 지면이 `paper.50` 다크인 한 가지 디자인이다.
+     *
+     * 브랜드 cyan만 토큰이 아니다 — 화면의 포인트색은 잉크(`accent.*`)로 옮겼고, cyan은
+     * 카드 렌더용 상수(`ogBrand`)로만 남았다. 출처가 프리셋 하나인 것은 같다.
      */
     palette: {
       paper: themeColor('dark', 'paper.50'),
@@ -76,9 +79,9 @@ export default defineContent({
       // 카드의 가로 룰. 같은 자리의 `ink.border`는 rgba라 카드 지면 위에서
       // 합성이 필요한데, 불투명 짝이 `ink.200`이라 그쪽을 쓴다.
       inkRule: themeColor('dark', 'ink.200'),
-      accent: themeColor('dark', 'accent.500'),
-      // 시리즈 pill의 2px 보더 — 반투명 accent.
-      pillBorder: themeColor('dark', 'accent.200'),
+      brand: ogBrand.color,
+      // 시리즈 pill의 2px 보더 — 반투명 브랜드 색.
+      pillBorder: ogBrand.pillBorder,
     },
     // 카드 템플릿이 쓰는 세 웨이트(400·500·700). name은 satori 등록용이다.
     fonts: [

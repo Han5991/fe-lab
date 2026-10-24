@@ -40,9 +40,9 @@ import {
 } from '../../components/DateRangeControls';
 import { WeekGrowthIcon } from '../../components/WeekGrowthIcon';
 
-// 차트 색상 — GitHub accent(파랑)로 통일. 데이터 강조는 accent 하나로.
-const CHART_LINE = token('colors.accent.600');
-const CHART_ACCENT = token('colors.accent.600');
+// 차트 데이터 색(선·점·막대·커서)은 admin 보조 강조색 spot 하나다 — accent는 본문
+// 잉크라 데이터를 칠하면 축·글자와 갈리지 않는다(blog-preset.ts의 spot 주석).
+const CHART_DATA = token('colors.spot.600');
 const CHART_AXIS = token('colors.ink.border');
 const CHART_TICK = token('colors.ink.400');
 const CHART_GUIDE = token('colors.ink.300');
@@ -92,7 +92,7 @@ function PostNotFound({ slug }: { slug: string }) {
         href={ADMIN_ANALYTICS_PATH}
         className={css({
           fontSize: 'sm',
-          color: 'accent.600',
+          color: 'accent.solid',
           _hover: { textDecoration: 'underline' },
         })}
       >
@@ -179,7 +179,7 @@ function PostDetailBody({ post }: { post: PostStatDetail }) {
             aria-label="글을 새 탭에서 열기"
             className={css({
               color: 'ink.500',
-              _hover: { color: 'accent.600' },
+              _hover: { color: 'accent.solid' },
               flexShrink: 0,
             })}
           >
@@ -235,7 +235,7 @@ function PostDetailBody({ post }: { post: PostStatDetail }) {
           {post.todayViews > 0 && (
             <span
               className={css({
-                color: 'accent.600',
+                color: 'spot.600',
                 fontWeight: 'bold',
                 fontSize: 'sm',
               })}
@@ -583,10 +583,10 @@ function PostDetailBody({ post }: { post: PostStatDetail }) {
                 <Line
                   type="monotone"
                   dataKey="views"
-                  stroke={CHART_LINE}
+                  stroke={CHART_DATA}
                   strokeWidth={3}
-                  dot={{ r: 4, fill: CHART_ACCENT, strokeWidth: 0 }}
-                  activeDot={{ r: 6, fill: CHART_ACCENT, strokeWidth: 0 }}
+                  dot={{ r: 4, fill: CHART_DATA, strokeWidth: 0 }}
+                  activeDot={{ r: 6, fill: CHART_DATA, strokeWidth: 0 }}
                 />
               </LineChart>
             </ResponsiveContainer>
@@ -654,7 +654,7 @@ function PostDetailBody({ post }: { post: PostStatDetail }) {
                 />
                 <Tooltip
                   cursor={{
-                    fill: token('colors.accent.600'),
+                    fill: CHART_DATA,
                     fillOpacity: 0.12,
                     radius: 4,
                   }}
@@ -664,7 +664,7 @@ function PostDetailBody({ post }: { post: PostStatDetail }) {
                   {hourlyData.map((entry, index) => (
                     <Cell
                       key={`cell-${index}`}
-                      fill={CHART_ACCENT}
+                      fill={CHART_DATA}
                       fillOpacity={0.3 + (entry.views / maxHourlyViews) * 0.7}
                     />
                   ))}
@@ -713,7 +713,7 @@ function PostDetailBody({ post }: { post: PostStatDetail }) {
                 />
                 <Tooltip
                   cursor={{
-                    fill: token('colors.accent.600'),
+                    fill: CHART_DATA,
                     fillOpacity: 0.12,
                     radius: 4,
                   }}
@@ -723,7 +723,7 @@ function PostDetailBody({ post }: { post: PostStatDetail }) {
                   {dowData.map((entry, index) => (
                     <Cell
                       key={`cell-${index}`}
-                      fill={CHART_ACCENT}
+                      fill={CHART_DATA}
                       fillOpacity={0.3 + (entry.views / maxDowViews) * 0.7}
                     />
                   ))}
@@ -768,7 +768,7 @@ export default function PostDetailClient() {
             color: 'ink.500',
             fontSize: 'sm',
             textDecoration: 'none',
-            _hover: { color: 'accent.600' },
+            _hover: { color: 'accent.solid', textDecoration: 'underline' },
           })}
         >
           <ArrowLeft size={16} />

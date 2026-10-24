@@ -29,6 +29,7 @@ import {
   DiagramNodeTag,
   DiagramEdgeTag,
 } from '@/src/components/diagram';
+import { inlineLink } from '@/src/components/inlineLink';
 import { HEADER_OFFSET } from '@/src/components/post/headerOffset';
 import { HEADING_COMPONENTS } from '@/src/components/post/markdownHeadings';
 import { isMarkdownTag } from '@/src/components/post/markdownTag';
@@ -196,10 +197,10 @@ export function buildPostComponents(relativeDir: string): PostComponents {
       return image(props);
     },
     // 링크로 감싼 이미지는 확대 없이 그린다 — 확대 래퍼(div·button)가 `<a>` 안이면
-    // 무효 중첩에 대화형 요소 중첩이다.
-    a({ node: _node, children, ...props }) {
+    // 무효 중첩에 대화형 요소 중첩이다. 링크 모양은 문장 속 링크의 단일 출처(inlineLink)다.
+    a({ node: _node, children, className, ...props }) {
       return (
-        <a {...props}>
+        <a {...props} className={cx(className, inlineLink)}>
           {Children.map(children, child =>
             // `src`만 보면 `<video src>` 같은 raw HTML까지 이미지로 오인한다.
             isMarkdownTag<ImageProps>(child, 'img')
@@ -384,11 +385,10 @@ export function PostBody({ content, relativeDir }: PostBodyProps) {
         // h1이 30px이라 제목보다 커서 위계가 뒤집혀 있었다. 레퍼런스가
         // 22px을 최대 크기로 두는 이상 본문 헤딩이 그 위로 올라갈 수
         // 없어서, 20 → 18 → 16으로 좁게 다시 깔았다.
-        // 간격이 좁은 만큼 구분은 크기와 여백(mt), 그리고 **색**이
-        // 맡는다. 20 → 18 → 16은 2px씩밖에 안 벌어져서 크기만으로는
-        // h2와 h3가 잘 안 갈린다. 최상위(h2)에만 액센트를 주면
-        // "대단원 / 그 아래"가 한눈에 잘리고, h3·h4는 무채색으로 남아
-        // 본문 흐름을 끊지 않는다.
+        // 간격이 좁은 만큼 구분은 크기와 여백(mt)이 맡는다. 20 → 18 → 16은
+        // 2px씩밖에 안 벌어지는데, 예전엔 h2에만 포인트색을 줘 "대단원 / 그
+        // 아래"를 갈랐다. 포인트색이 잉크가 되면서(blog-preset.ts accent 주석)
+        // 헤딩은 전부 본문 잉크(ink.950)이고, h2는 크기·여백만으로 갈린다.
         //
         // `& h1` 규칙은 없다 — 본문 h1은 렌더 시 h2로 강등되므로
         // (markdownHeadings.tsx) 이 컨테이너 안에 h1이 나올 수 없다.
@@ -399,7 +399,7 @@ export function PostBody({ content, relativeDir }: PostBodyProps) {
           letterSpacing: 'tightXs',
           mt: '12',
           mb: '4',
-          color: 'accent.900',
+          color: 'ink.950',
           lineHeight: 'header',
           scrollMarginTop: '[var(--post-heading-offset)]',
         },
@@ -440,7 +440,7 @@ export function PostBody({ content, relativeDir }: PostBodyProps) {
         '& li.task-list-item input[type="checkbox"]': {
           mt: '1.5',
           cursor: 'default',
-          accentColor: '[token(colors.marker.600)]',
+          accentColor: '[token(colors.accent.solid)]',
           boxSize: '4',
         },
         '& del': { color: 'ink.500' },
@@ -509,21 +509,6 @@ export function PostBody({ content, relativeDir }: PostBodyProps) {
         '@media (prefers-reduced-motion: reduce)': {
           '& details::details-content': { transition: '[none]' },
           '& details > summary::before': { transition: '[none]' },
-        },
-        '& a': {
-          color: 'accent.600',
-          textDecorationLine: 'none',
-          borderBottomWidth: 'hairline',
-          borderBottomColor: 'accent.200',
-          transition: '[all 0.15s]',
-          fontWeight: 'medium',
-          // 넘칠 때만 끊는다 — break-all은 평범한 단어 중간도 잘랐다.
-          overflowWrap: 'anywhere',
-          _hover: {
-            // 보더는 비텍스트라 원색(accent.500)을 그대로 쓴다.
-            borderBottomColor: 'accent.500',
-            bg: 'accent.50',
-          },
         },
         // 본문 이미지 모양은 MarkdownImage가 단일 출처다 — 여기 `& img`를 두면 명시도로 이긴다.
         '& hr': {

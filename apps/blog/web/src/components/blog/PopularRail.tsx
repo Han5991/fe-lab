@@ -91,9 +91,8 @@ export const PopularRail = ({ posts, limit = 5 }: PopularRailProps) => {
                 gap: '[10px]',
                 alignItems: 'baseline',
                 py: '[10px]',
-                transition: '[all 0.15s]',
                 _hover: {
-                  '& h3': { color: 'accent.700', textDecoration: 'underline' },
+                  '& h3': { textDecorationLine: 'underline' },
                 },
               })}
             >
@@ -117,8 +116,7 @@ export const PopularRail = ({ posts, limit = 5 }: PopularRailProps) => {
                     fontSize: 'sm',
                     fontWeight: 'semibold',
                     lineHeight: 'headerSm',
-                    color: 'accent.600',
-                    transition: '[color 0.15s]',
+                    color: 'accent.solid',
                   })}
                 >
                   {post.title}

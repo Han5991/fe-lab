@@ -16,9 +16,9 @@ let renderSeq = 0;
  * 쓰면 겹친 도형에서 톤이 어긋나므로, 불투명 값을 리터럴로 적는다. 값의 출처는
  * 세 갈래이고 `mermaidTheme.test.ts`가 갈래별로 잠근다.
  *
- *   1. 토큰 값 그대로 — `paper.*`·`ink.*`·`accent.500`. 테스트가 프리셋의
+ *   1. 토큰 값 그대로 — `paper.*`·`ink.*`·`accent.solid`. 테스트가 프리셋의
  *      `themeColor`와 글자 단위로 대조한다.
- *   2. 알파 토큰을 지면 위에 합성한 값 — `secondaryColor`는 `accent.50`을
+ *   2. 알파 토큰을 지면 위에 합성한 값 — `secondaryColor`는 `accent.muted`를
  *      `paper.50` 위에 올린 결과다. 테스트가 합성을 다시 계산해 대조한다.
  *   3. **눈으로 고른 값** — 라이트 보더 `#dedede` 하나뿐이다. 예전 주석은 보더
  *      둘 다 `ink.border` 합성이라고 적었지만 사실이 아니다(0.10 알파를 지면에
@@ -31,6 +31,9 @@ let renderSeq = 0;
  * rgba라 합성이 필요한데 불투명 짝이 `ink.200`이라 그쪽을 쓴다"). 라이트
  * `ink.200`은 `#d8d8d4`로 `#dedede`와 달라, 그쪽만 손으로 고른 값으로 남는다.
  *
+ * 강조 노드(secondary)와 tertiary는 면이 거의 같다 — 포인트색이 잉크라 틴트 면으로는
+ * 갈리지 않고, 보더가 가른다(secondary는 잉크, 나머지는 회색).
+ *
  * 팔레트를 바꾸면 위 테스트가 먼저 깨진다.
  */
 export const MERMAID_VARS = {
@@ -40,8 +43,8 @@ export const MERMAID_VARS = {
     primaryColor: '#f7f7f5',
     primaryTextColor: '#1a1a1a', // ink.950
     primaryBorderColor: '#dedede', // ③ 눈으로 고른 회색 (ink.200 라이트와 다르다)
-    secondaryColor: '#e6f4f7', // accent.50을 paper.50 위에 합성
-    secondaryBorderColor: '#0891b2', // accent.500
+    secondaryColor: '#ededed', // accent.muted를 paper.50 위에 합성
+    secondaryBorderColor: '#1a1a1a', // accent.solid
     tertiaryColor: '#ededea', // paper.200
     tertiaryBorderColor: '#dedede',
     lineColor: '#6b7280', // ink.600
@@ -58,8 +61,8 @@ export const MERMAID_VARS = {
     primaryColor: '#14171c',
     primaryTextColor: '#e6e8eb',
     primaryBorderColor: '#333941', // ① ink.200 다크 그대로
-    secondaryColor: '#182c31', // accent.50을 paper.50 위에 합성
-    secondaryBorderColor: '#67e8f9',
+    secondaryColor: '#2a2c2f', // accent.muted를 paper.50 위에 합성
+    secondaryBorderColor: '#e6e8eb',
     tertiaryColor: '#1b1f26',
     tertiaryBorderColor: '#333941',
     lineColor: '#8b919a',

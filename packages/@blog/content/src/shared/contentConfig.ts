@@ -179,7 +179,8 @@ export interface OgPalette {
   ink: string;
   inkMeta: string;
   inkRule: string;
-  accent: string;
+  /** 브랜드 사각형과 시리즈 pill 글자 색. */
+  brand: string;
   pillBorder: string;
 }
 
@@ -452,7 +453,8 @@ export interface ContentValues {
   /** 이름으로 부를 수 있는 다이어그램. 컴포넌트 매핑은 앱이 갖는다 */
   diagramNames: readonly string[];
   /**
-   * OG 카드 팔레트 — 앱 디자인 토큰(`blog-preset.ts`의 다크 값)의 hex 사본이다.
+   * OG 카드 팔레트 — 앱 프리셋(`blog-preset.ts`의 다크 토큰 값과 토큰이 아닌 브랜드
+   * 상수)에서 온 리터럴이다.
    * 기본값을 두면 소셜 미리보기가 사이트와 다른 색으로 조용히 나가므로 필수다.
    */
   ogPalette: OgPalette;

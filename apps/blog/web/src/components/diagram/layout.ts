@@ -70,9 +70,9 @@ export interface DiagramLayout {
 // 전부 SVG user unit = px. 값은 디자인 시안의 배포 파이프라인
 // SVG(`0 0 640 122`)에서 역산했다.
 
-/** primitives.tsx 의 `nodeTitle` — 12px/600. */
+/** primitives.tsx 의 `node` 레시피 `title` 슬롯 — 12px/600. */
 const TITLE_FONT_SIZE = 12;
-/** primitives.tsx 의 `nodeSubtitle` — fontSize 토큰 `xs` = 11px. */
+/** primitives.tsx 의 `node` 레시피 `subtitle` 슬롯 — fontSize 토큰 `xs` = 11px. */
 const DESC_FONT_SIZE = 11;
 
 /** 한글·CJK는 정사각에 가깝고, 라틴/숫자는 그 절반쯤이다. */

@@ -58,17 +58,6 @@ describe('Diagram — 문자열 prop 파싱', () => {
     ]);
   });
 
-  // 포인트색이 틸이던 시절 이름. 이미 발행된 글의 마크다운에 남아 있어 계속
-  // 받아줘야 한다 — 별칭을 지우면 그 글들의 핵심 노드가 조용히 회색이 된다.
-  test('옛 이름 tone="teal"도 핵심 경로로 받는다', () => {
-    const { container } = render(
-      <Diagram>
-        <DiagramNodeTag id="a" title="A" tone="teal" />
-      </Diagram>,
-    );
-    expect(rects(container)[0]).toHaveAttribute('data-tone', 'accent');
-  });
-
   test('shape="pill"은 rx를 높이의 절반으로 바꾼다', () => {
     const { container } = render(
       <Diagram>

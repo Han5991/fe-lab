@@ -23,30 +23,26 @@ export const postRowItem = css(postRowBorderRaw, {
   _last: { borderBottomWidth: 'hairline', borderBottomStyle: 'solid' },
 });
 
-// 행 링크 레이아웃: 제목 좌 / 날짜 우, baseline 정렬.
+// 행 링크: 제목 좌 / 날짜 우, baseline 정렬. hover는 제목(h3)에 밑줄로만 반응한다 —
+// 제목이 이미 본문 잉크라 더 진한 색이 없다. 홈(PostIndexRow)·아카이브·/series가 같다.
 // 좌우 패딩 없음 — 행 제목이 페이지 제목과 같은 세로선에서 시작해야 한다.
-export const postRowLinkLayoutRaw = css.raw({
+export const postRowLinkRaw = css.raw({
   display: 'flex',
   justifyContent: 'space-between',
   alignItems: 'baseline',
   gap: '[16px]',
   py: '[12px]',
+  _hover: { '& h3': { textDecorationLine: 'underline' } },
 });
+export const postRowLink = css(postRowLinkRaw);
 
-// 아카이브·시리즈의 행 링크. hover는 제목(h3)만 색+밑줄로 반응한다.
-// (홈 PostIndexRow는 밑줄 없이 색만 바꾸는 자기 hover를 로컬로 갖는다)
-export const postRowLink = css(postRowLinkLayoutRaw, {
-  _hover: { '& h3': { color: 'accent.600', textDecorationLine: 'underline' } },
-});
-
-// 행 제목(h3). 위 postRowLink의 hover가 이 색·transition을 상대로 동작한다.
+// 행 제목(h3). 위 postRowLink의 hover가 이 제목에 밑줄을 긋는다.
 export const postRowTitle = css({
   minW: '0',
   fontSize: '[14px]',
   fontWeight: 'normal',
   lineHeight: 'snug',
   color: 'ink.950',
-  transition: '[color 0.15s]',
 });
 
 // 레퍼런스 .meta / .date — 날짜·개수 등 수치는 전부 모노. 여백을 덧붙이는

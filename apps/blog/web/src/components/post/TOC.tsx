@@ -18,9 +18,9 @@ import { isModifiedClick } from '@/src/components/events';
  * 레일을 `clip-path: inset()`으로 잘라 보이는 구간만 남긴다. 자를 값만 바꾸면
  * 되므로 transition 한 줄로 부드럽게 미끄러진다(레일을 다시 그리지 않는다).
  *
- * 색은 액센트가 아니라 `ink.950`이다. 차례는 본문을 읽는 보조 장치라 포인트색을
- * 쓸 자리가 아니고(핸드오프 §3), 무채색이면 나중에 액센트를 바꿔도 여기는
- * 영향을 받지 않는다.
+ * 강조 레일·점·밝힌 항목은 `accent.solid`(본문 잉크)다 — 현재 위치 표식이라 선택 탭·
+ * 세그먼트·모바일 목차와 같은 이름을 쓴다(Astryx의 선택 표식이 accent). 굵기는 바꾸지
+ * 않는다(아래 항목 스타일 주석).
  */
 
 /** 레벨 한 단계당 레일이 오른쪽으로 밀리는 거리. */
@@ -326,7 +326,7 @@ export const TOC = () => {
                 strokeLinecap="square"
                 style={{ clipPath: clip }}
                 className={css({
-                  stroke: 'ink.950',
+                  stroke: 'accent.solid',
                   // ↓ 글자 색·점과 같은 시간. 위 주석 참고.
                   transition: '[clip-path 0.2s ease]',
                   '@media (prefers-reduced-motion: reduce)': {
@@ -346,7 +346,7 @@ export const TOC = () => {
                   top: '0',
                   boxSize: '[5px]',
                   rounded: 'full',
-                  bg: 'ink.950',
+                  bg: 'accent.solid',
                   transition: '[offset-distance 0.2s ease]',
                   '@media (prefers-reduced-motion: reduce)': {
                     transition: '[none]',
@@ -416,7 +416,7 @@ export const TOC = () => {
                     fontSize: '[13px]',
                     lineHeight: 'relaxed',
                     color: 'ink.600',
-                    '&[data-lit]': { color: 'ink.950' },
+                    '&[data-lit]': { color: 'accent.solid' },
                     // 활성 표시는 **색만** 바꾼다. 굵기를 400 → 500으로 올리면
                     // 글자 폭이 늘어 항목이 한 줄에서 두 줄로 접히고, 그 아래
                     // 항목이 전부 20px씩 밀린다(실측: 목록 높이 917 → 937px).

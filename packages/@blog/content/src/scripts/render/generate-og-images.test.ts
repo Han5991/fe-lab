@@ -63,7 +63,7 @@ test('ogContentHash: og 설정(팔레트·크기)이 바뀌면 해시 변경 —
     ogContentHash(
       post(),
       SITE,
-      { ...OG, palette: { ...OG.palette, accent: '#FF0000' } },
+      { ...OG, palette: { ...OG.palette, brand: '#FF0000' } },
       FONTS_KEY,
     ),
   ).not.toBe(base);

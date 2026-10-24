@@ -41,8 +41,8 @@ export function CopyButton({ content }: { content: string }) {
         cursor: 'pointer',
         transition: '[color 0.15s, background-color 0.15s]',
         _hover: { color: CODE_ACCENT, bg: 'paper.300' },
-        // 아이콘만 남으면 키보드 포커스가 어디 있는지 안 보인다.
-        _focusVisible: { outline: '[2px solid]', outlineColor: 'accent.500' },
+        // 키보드 초점 링은 globalCss의 :focus-visible(accent.solid)이 준다 — 여기서 다시
+        // 두면 같은 링이 두 벌이 된다.
       })}
     >
       {isCopied ? <Check size={15} /> : <Clipboard size={15} />}

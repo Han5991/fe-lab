@@ -114,13 +114,13 @@ export const ActiveFilters = ({
           ml: '2',
           fontSize: 'sm',
           fontWeight: 'medium',
-          color: 'accent.600',
+          color: 'accent.solid',
           cursor: 'pointer',
           textDecorationLine: 'underline',
           textDecorationColor: 'transparent',
           textUnderlineOffset: '[2px]',
           transition: '[text-decoration-color 0.15s]',
-          _hover: { textDecorationColor: 'accent.600' },
+          _hover: { textDecorationColor: 'accent.solid' },
         })}
       >
         모두 지우기

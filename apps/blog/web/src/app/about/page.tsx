@@ -35,7 +35,7 @@ const hoverRow = css.raw({
       insetY: '0',
       left: '0',
       w: '[2px]',
-      bg: 'accent.500',
+      bg: 'accent.solid',
     },
   },
 });
@@ -95,9 +95,9 @@ export default function AboutPage() {
                     fontWeight: 'normal',
                     letterSpacing: 'tighter',
                     lineHeight: 'heroDense',
-                    // 홈 히어로의 같은 이름과 맞춘다. 아래 로마자 부제와 소개
-                    // 문단, 섹션 라벨은 무채색으로 남는다.
-                    color: 'accent.900',
+                    // 홈 히어로의 같은 이름과 맞춘다 — 제목은 본문과 같은 잉크이고,
+                    // 위계는 크기가 낸다. 아래 로마자 부제는 ink.600으로 한 단계 물러난다.
+                    color: 'ink.950',
                     mb: '4',
                   })}
                 >
@@ -545,7 +545,7 @@ export default function AboutPage() {
                             className={css({
                               fontFamily: 'mono',
                               fontSize: '2xs',
-                              color: 'marker.600',
+                              color: 'accent.solid',
                               letterSpacing: 'monoXl',
                               textTransform: 'uppercase',
                               flexShrink: 0,

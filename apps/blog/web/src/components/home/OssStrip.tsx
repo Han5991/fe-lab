@@ -36,7 +36,7 @@ const chip = cva({
         transition: '[color 0.15s]',
         _hover: { color: 'ink.950' },
       },
-      highlight: { color: 'accent.600' },
+      highlight: { color: 'accent.solid' },
     },
   },
 });

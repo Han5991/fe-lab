@@ -121,12 +121,30 @@ export function DiagramFrame({
 
 // ── 노드 ────────────────────────────────────────────────────────────────────
 
-const node = cva({
-  base: { strokeWidth: 'hairline' },
+// SVG 안 font-size는 user unit이라 viewBox 좌표와 같은 축이다. 타이포 스케일
+// 토큰(rem 기반)을 끌어오면 루트 폰트 크기에 따라 도형과 글자 비율이 어긋나므로,
+// 레퍼런스 SVG의 px 값을 그대로 박아 둔다.
+const node = sva({
+  slots: ['shape', 'title', 'subtitle'],
+  base: {
+    shape: { strokeWidth: 'hairline' },
+    title: {
+      fontSize: '[12px]',
+      fontWeight: 'semibold',
+      fill: 'ink.950',
+      stroke: 'none',
+    },
+    subtitle: { fontSize: 'xs', fill: 'ink.600', stroke: 'none' },
+  },
   variants: {
     tone: {
-      gray: { fill: 'paper.100', stroke: 'ink.border' },
-      accent: { fill: 'accent.50', stroke: 'accent.500' },
+      gray: { shape: { fill: 'paper.100', stroke: 'ink.border' } },
+      // 틴트 면 위 부제는 ink.700이다 — ink.600은 accent.muted 위에서 4.13 / 4.41:1로
+      // AA를 놓친다(ink.700 6.46 / 6.11). 회색 면(paper.100) 위 ink.600은 4.51 / 5.66.
+      accent: {
+        shape: { fill: 'accent.muted', stroke: 'accent.solid' },
+        subtitle: { fill: 'ink.700' },
+      },
     },
   },
   defaultVariants: { tone: 'gray' },
@@ -137,28 +155,11 @@ const node = cva({
  *
  * 원래 `'gray' | 'teal'`이었는데, 포인트색을 틸에서 cyan으로 바꾸자 값 이름이
  * 곧바로 거짓말이 됐다. 이 값이 뜻하는 건 "청록색"이 아니라 "핵심 경로"이므로
- * 팔레트와 무관한 이름으로 바꿨다. 옛 `tone="teal"`은 `declarative.tsx`가
- * 별칭으로 받아준다.
+ * 팔레트와 무관한 이름으로 바꿨다 — 그 뒤 포인트색이 잉크가 됐어도 이름은 그대로다.
  *
  * 값 목록은 recipe의 variant 키에서 파생된다 — 따로 관리하지 않는다.
  */
 export type DiagramTone = RecipeVariant<typeof node>['tone'];
-
-// SVG 안 font-size는 user unit이라 viewBox 좌표와 같은 축이다. 타이포 스케일
-// 토큰(rem 기반)을 끌어오면 루트 폰트 크기에 따라 도형과 글자 비율이 어긋나므로,
-// 레퍼런스 SVG의 px 값을 그대로 박아 둔다.
-const nodeTitle = css({
-  fontSize: '[12px]',
-  fontWeight: 'semibold',
-  fill: 'ink.950',
-  stroke: 'none',
-});
-
-const nodeSubtitle = css({
-  fontSize: 'xs',
-  fill: 'ink.600',
-  stroke: 'none',
-});
 
 interface DiagramNodeProps {
   x: number;
@@ -185,6 +186,7 @@ export function DiagramNode({
 }: DiagramNodeProps) {
   const centerX = x + width / 2;
   const centerY = y + height / 2;
+  const classes = node({ tone });
 
   return (
     <g>
@@ -195,7 +197,7 @@ export function DiagramNode({
         height={height}
         rx={rx}
         data-tone={tone}
-        className={node({ tone })}
+        className={classes.shape}
       />
       {title && (
         <text
@@ -203,7 +205,7 @@ export function DiagramNode({
           // 부제가 있으면 두 줄이 노드 중앙을 사이에 두고 갈라선다.
           y={subtitle ? centerY - 3 : centerY + 4}
           textAnchor="middle"
-          className={nodeTitle}
+          className={classes.title}
         >
           {title}
         </text>
@@ -213,7 +215,7 @@ export function DiagramNode({
           x={centerX}
           y={centerY + 14}
           textAnchor="middle"
-          className={nodeSubtitle}
+          className={classes.subtitle}
         >
           {subtitle}
         </text>
@@ -237,8 +239,8 @@ const edge = sva({
   variants: {
     emphasis: {
       false: { root: { stroke: 'ink.600', opacity: '[0.55]' } },
-      // 핵심 경로만 액센트. 스트로크는 비텍스트라 accent.500(스펙 §3).
-      true: { root: { stroke: 'accent.500' } },
+      // 핵심 경로만 accent.solid(본문 잉크) — 회색 보더·흐린 선과 명도로 갈린다.
+      true: { root: { stroke: 'accent.solid' } },
     },
     flow: {
       sync: {},

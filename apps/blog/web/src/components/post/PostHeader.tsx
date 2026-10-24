@@ -3,6 +3,7 @@ import { css } from '@blog/styled-system/css';
 import type { PostData } from '@blog/content/client';
 import { archivePath } from '@blog/content/client';
 import { fmtDate } from '@blog/content/client';
+import { seriesBadge } from '@/src/components/seriesBadge';
 
 interface PostHeaderProps {
   post: PostData;
@@ -17,7 +18,7 @@ const tagLinkStyle = css({
   color: 'ink.500',
   textDecorationLine: 'none',
   transition: '[color 0.15s]',
-  _hover: { color: 'accent.600' },
+  _hover: { color: 'accent.solid' },
 });
 
 export const PostHeader = ({ post, seriesIndex }: PostHeaderProps) => {
@@ -26,22 +27,7 @@ export const PostHeader = ({ post, seriesIndex }: PostHeaderProps) => {
   return (
     <header>
       {seriesIndex && (
-        <span
-          className={css({
-            display: 'inline-block',
-            // 안에 `3/3` 같은 숫자가 있어도 sans다(레퍼런스 `.badge` 기준).
-            // 홈·/series의 같은 배지와 맞춘다.
-            fontFamily: 'sans',
-            fontSize: '[12px]',
-            // 배지는 accent.50 배경 위 작은 글씨라 제목용 accent.900을 쓰면
-            // 배경과 붙어 답답해진다. 링크와 같은 accent.600을 유지한다.
-            color: 'accent.600',
-            bg: 'accent.50',
-            rounded: 'full',
-            px: '[9px]',
-            py: '[2px]',
-          })}
-        >
+        <span className={seriesBadge}>
           시리즈 · {seriesIndex.displayName} {seriesIndex.current}/
           {seriesIndex.total}
         </span>
@@ -54,9 +40,9 @@ export const PostHeader = ({ post, seriesIndex }: PostHeaderProps) => {
           fontSize: '[22px]',
           fontWeight: 'bold',
           lineHeight: 'headerSm',
-          // 글 제목은 액센트. 바로 아래 메타 줄(ink.500)·excerpt(ink.600)와
-          // 본문 h3·h4는 무채색이라, 색이 제목 계열의 표식이 된다.
-          color: 'accent.900',
+          // 글 제목은 본문 잉크(ink.950)다. 바로 아래 메타 줄(ink.500)·excerpt(ink.600)와는
+          // 크기·굵기·명도로 갈린다.
+          color: 'ink.950',
           mt: '[12px]',
           mb: '[6px]',
         })}

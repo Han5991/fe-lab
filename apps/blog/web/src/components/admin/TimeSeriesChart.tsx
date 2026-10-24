@@ -114,14 +114,14 @@ export const TimeSeriesChart = ({
           <Area
             type="monotone"
             dataKey="value"
-            stroke={token('colors.accent.600')}
+            stroke={token('colors.spot.600')}
             strokeWidth={2}
-            fill={token('colors.accent.600')}
+            fill={token('colors.spot.600')}
             fillOpacity={0.15}
             dot={false}
             activeDot={{
               r: 4,
-              fill: token('colors.accent.600'),
+              fill: token('colors.spot.600'),
               stroke: token('colors.paper.50'),
               strokeWidth: 1.5,
             }}
