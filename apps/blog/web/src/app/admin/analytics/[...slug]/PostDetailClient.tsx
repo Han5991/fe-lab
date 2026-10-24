@@ -144,7 +144,8 @@ function PostDetailBody({ post }: { post: PostStatDetail }) {
           bg: 'paper.100',
           p: '[1.5rem 2rem]',
           rounded: 'control',
-          boxShadow: '[0 1px 2px 0 rgb(0 0 0 / 0.05)]',
+          borderWidth: 'hairline',
+          borderColor: 'ink.border',
           mb: '6',
         })}
       >
@@ -263,7 +264,8 @@ function PostDetailBody({ post }: { post: PostStatDetail }) {
             bg: 'paper.100',
             p: '5',
             rounded: 'control',
-            boxShadow: '[0 1px 2px 0 rgb(0 0 0 / 0.05)]',
+            borderWidth: 'hairline',
+            borderColor: 'ink.border',
           })}
         >
           <div
@@ -309,7 +311,8 @@ function PostDetailBody({ post }: { post: PostStatDetail }) {
             bg: 'paper.100',
             p: '5',
             rounded: 'control',
-            boxShadow: '[0 1px 2px 0 rgb(0 0 0 / 0.05)]',
+            borderWidth: 'hairline',
+            borderColor: 'ink.border',
           })}
         >
           <div
@@ -380,7 +383,8 @@ function PostDetailBody({ post }: { post: PostStatDetail }) {
             bg: 'paper.100',
             p: '5',
             rounded: 'control',
-            boxShadow: '[0 1px 2px 0 rgb(0 0 0 / 0.05)]',
+            borderWidth: 'hairline',
+            borderColor: 'ink.border',
           })}
         >
           <div
@@ -428,7 +432,8 @@ function PostDetailBody({ post }: { post: PostStatDetail }) {
             bg: 'paper.100',
             p: '5',
             rounded: 'control',
-            boxShadow: '[0 1px 2px 0 rgb(0 0 0 / 0.05)]',
+            borderWidth: 'hairline',
+            borderColor: 'ink.border',
           })}
         >
           <div
@@ -495,7 +500,8 @@ function PostDetailBody({ post }: { post: PostStatDetail }) {
           bg: 'paper.100',
           p: '8',
           rounded: 'control',
-          boxShadow: '[0 1px 2px 0 rgb(0 0 0 / 0.05)]',
+          borderWidth: 'hairline',
+          borderColor: 'ink.border',
           mb: '6',
         })}
       >
@@ -625,7 +631,8 @@ function PostDetailBody({ post }: { post: PostStatDetail }) {
             bg: 'paper.100',
             p: '8',
             rounded: 'control',
-            boxShadow: '[0 1px 2px 0 rgb(0 0 0 / 0.05)]',
+            borderWidth: 'hairline',
+            borderColor: 'ink.border',
           })}
         >
           <h3
@@ -696,7 +703,8 @@ function PostDetailBody({ post }: { post: PostStatDetail }) {
             bg: 'paper.100',
             p: '8',
             rounded: 'control',
-            boxShadow: '[0 1px 2px 0 rgb(0 0 0 / 0.05)]',
+            borderWidth: 'hairline',
+            borderColor: 'ink.border',
           })}
         >
           <h3
@@ -781,7 +789,8 @@ export default function PostDetailClient() {
           bg: 'paper.100',
           p: { base: '[0.75rem 1rem]', md: '[1rem 2rem]' },
           rounded: 'control',
-          boxShadow: '[0 1px 3px 0 rgb(0 0 0 / 0.1)]',
+          borderWidth: 'hairline',
+          borderColor: 'ink.border',
           gap: '4',
         })}
       >
