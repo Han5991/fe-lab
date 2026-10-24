@@ -49,6 +49,22 @@ describe('SeriesChips', () => {
     ]);
   });
 
+  // 줄보다 긴 칩은 CSS가 말줄임으로 자른다(jsdom은 CSS를 보지 않는다) — 그때도 전체 이름이 남는지 본다.
+  test('칩마다 전체 이름이 title로 남고, radio의 이름·설명은 칩 글자 그대로다', () => {
+    render(
+      <SeriesChips series={SERIES} total={9} value={null} onChange={vi.fn()} />,
+    );
+
+    const radio = screen.getByRole('radio', { name: '[픽스처 연재] (2)' });
+    // 툴팁은 radio를 이름 짓는 label(칩 면)에 있다.
+    expect(screen.getByTitle('[픽스처 연재] (2)')).toHaveAttribute(
+      'for',
+      radio.id,
+    );
+    // title이 설명으로 붙으면 낭독기가 이름을 두 번 읽는다.
+    expect(radio).toHaveAccessibleDescription('');
+  });
+
   test('시리즈를 고르면 그 id를, 전체를 고르면 null을 넘긴다', () => {
     const onChange = vi.fn();
     render(

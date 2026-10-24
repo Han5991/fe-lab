@@ -540,14 +540,19 @@ type은 `src/shared/viewTransitions.ts`, 감싸개는 `src/components/shared/Pos
 - 서체는 칩이 아니라 글자가 정한다 — 프로젝트 이름은 코드라 쓰는 쪽이 mono 13px로 덧씌운다
   (`css(chip.raw(…), {…})`)
 - 강조 칩은 누를 수 없는 표식이라 hover가 없다
-- **켜고 끄는 칩(`toggle`)은 네이티브 radio다.** 구조는 `label > input.peer(숨김) + span(칩 면)`이고,
-  켜짐·hover·초점 링은 면이 **형제 선택자**로 받는다(`_peerChecked`, hover는 `.peer:not(:checked) ~ &`로
-  켜진 칩을 뺀다). `:has()`는 쓰지 않는다 — Next 기본 대상의 Firefox 111~120에 없어 초점 링까지
-  사라진다. 초점 링은 globalCss가 같은 형제 선택자로 `FOCUS_RING`을 준다. 켜질 때 semibold가 되어도
-  폭이 밀리지 않게 면은 글자를 `data-label`로도 들고, `steadyLabel`(`src/components/steadyLabel.ts`)의
-  `::after`가 그 글자를 semibold로 높이 0·`visibility: hidden`에 그려 폭만 미리 잡는다(면은 flex 세로
-  방향이라 글자와 사본이 위아래로 쌓인다 — JS 없음, 접근성 트리에 없음). 강제 색상 모드는
-  면을 지우므로 켜진 칩에 밑줄을 더한다. 글 목록 뷰 토글 칸도 같은 구조다(트랙 `paper.100`, 13px).
+- **켜고 끄는 칩(`toggle`)은 네이티브 radio다.** 구조는 `span > input.peer(숨김) + label[for](칩 면) >
+span(글자)`이고, 켜짐·hover·초점 링은 면이 **형제 선택자**로 받는다(`_peerChecked`, hover는
+  `.peer:not(:checked) ~ &`로 켜진 칩을 뺀다 — 바깥 `span`이 형제 범위를 한 쌍으로 묶는다). `:has()`는
+  쓰지 않는다 — Next 기본 대상의 Firefox 111~120에 없어 초점 링까지 사라진다. 초점 링은 globalCss가 같은
+  형제 선택자로 `FOCUS_RING`을 준다. 켜질 때 semibold가 되어도 폭이 밀리지 않게 면은 글자를
+  `data-label`로도 들고, `steadyLabel`(`src/components/steadyLabel.ts`)의 `::after`가 그 글자를
+  semibold로 높이 0·`visibility: hidden`에 그려 폭만 미리 잡는다(면은 flex 세로 방향이라 글자와 사본이
+  위아래로 쌓인다 — JS 없음, 접근성 트리에 없음). 강제 색상 모드는 면을 지우므로 켜진 칩에 밑줄을 더한다.
+  줄 폭보다 긴 이름은 칩 안에서 끝을 말줄임으로 자르고 전체 이름은 면의 `title`에 남긴다. 말줄임은 면이
+  아니라 글자 `span`에 건다 — `text-overflow`는 블록 컨테이너에만 걸려 flex 면 바로 밑 글자(익명 항목)에
+  닿지 않는다. 면이 radio를 감싸는 `label`이 아니라 `label[for]` 자신인 이유는 글자 깊이다 — 감싸면
+  글자가 label에서 세 단계 아래라 jsx-a11y `label-has-associated-control`(깊이 2)이 보지 못한다. 글 목록
+  뷰 토글 칸은 글자가 잘리지 않아 `label > input.peer + span(칸)`이다(트랙 `paper.100`, 13px).
   다만 켜진 `paper.50` 면은 칸마다 칠하지 않고 면 하나가 고른 칸으로 미끄러진다 — 칸은 같은 폭
   (`gridAutoColumns: 1fr`), 면은 첫 칸의 grid 영역에 절대 위치로 겹치고 transform으로 옮긴다
   (fast·standard). 거리는 `translateX(calc(var(--segment-index) * (100% + 칸 사이)))`이고

@@ -436,7 +436,7 @@ export default defineConfig({
       },
       ':focus-visible': FOCUS_RING,
       // 숨긴 radio(`peer`)가 초점을 받으면 링은 바로 뒤 형제인 칩·토글 칸 면에 그린다(chip tone `toggle`,
-      // ViewToggle). `:has()`로 label에 그리지 않는 이유는 Firefox 111~120에 없어서다. 범위는 `peer`를 단
+      // ViewToggle). `:has()`로 감싸는 요소에 그리지 않는 이유는 Firefox 111~120에 없어서다. 범위는 `peer`를 단
       // radio의 바로 뒤 형제뿐이다.
       'input.peer[type=radio]:focus-visible + *': FOCUS_RING,
       // 스크롤바는 얇은 실선처럼. 리뉴얼 톤이 hairline 보더 중심이라 8px
