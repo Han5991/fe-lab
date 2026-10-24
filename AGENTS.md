@@ -236,7 +236,7 @@ Worker (`apps/blog/web/wrangler.jsonc`), Supabase for the dynamic bits.
   `error`·`unhandledrejection`에서 `exception` 이벤트(설명 100자, 자기 출처의 첫 스택 프레임 `frame`, 비치명은 탭 새로고침 전까지 5건)를 보내고, 다른 출처
   스크립트의 에러와 `Error`가 아닌 거절은 거른다. 화면에 드러나지 않는 실패도 같은 길로 간다 — 조회수 기록
   실패는 `useViewCount`가, 인기순 조회수 읽기 실패는 `usePopularViewCounts`가 직접 보낸다. **React Query는 admin만
-  쓴다** — `QueryClientProvider`는 admin 레이아웃에 있어 공개 페이지의 청크는 query-core를 싣지 않는다. 공개 화면의
+  쓴다** — `QueryClientProvider`는 admin 레이아웃에 있어 공개 페이지의 청크는 query-core를 싣지 않는다(`check-bundle` 가드가 지킨다). 공개 화면의
   조회 때문에 Provider를 루트로 되올리지 말고 위 두 훅처럼 손으로 쓴다. admin 쿼리 실패는 `admin/error.tsx`가
   401·403을 거른 뒤 보내고, `apps/blog/web/src/app/admin/queryClient.ts`의 QueryCache는 그 meta가 없는 쿼리만 보내는
   안전망이다. GA4 화면에서 보려면 `description`·`frame`을 맞춤 측정기준으로

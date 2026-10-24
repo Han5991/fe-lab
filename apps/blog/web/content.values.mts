@@ -271,6 +271,16 @@ export const BUNDLE_GUARDS = [
     forbiddenIn: [PUBLIC_CHUNKS],
     requiredIn: [ADMIN_CHUNKS],
   },
+  // React Query는 admin만 쓴다(Provider는 admin 레이아웃). 의존성이 남아 루트 import 한 줄이면 모든 공개
+  // 페이지가 query-core(≈8.5KB gzip)를 다시 싣는데, 그 크기가 공개 예산의 ×1.05 여유보다 작거나 비슷해
+  // 예산만으로는 못 잡는다. 마커는 query-core가 쿼리 함수 없는 쿼리에 던지는 문구(ensureQueryFn) —
+  // QueryClient가 끌어 와 Provider만 실려도 함께 실린다. 재평가 2027-04-24 — 그때까지 잡은 것이 없으면 내린다.
+  {
+    label: 'admin 데이터 캐시(React Query)',
+    marker: 'Missing queryFn',
+    forbiddenIn: [PUBLIC_CHUNKS],
+    requiredIn: [ADMIN_CHUNKS],
+  },
   // 글 상세에서만 지연 로드되는 것들 — 다른 라우트 청크에 실리면 실패.
   {
     label: '글 전용 다이어그램(Mermaid)',
