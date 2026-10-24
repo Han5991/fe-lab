@@ -31,8 +31,8 @@ import {
 
 export const metadata = buildSeriesMetadata();
 
-// 시리즈 배지는 글 상세·홈 대표글과 같은 모양이다. 여기서만 h2 안에 놓여 줄 높이를
-// snug로 고정한다(다른 두 자리는 둘레 줄 높이를 따른다).
+// 시리즈 배지는 글 상세 머리와 같은 모양이다. 여기서만 h2 안에 놓여 줄 높이를
+// snug로 고정한다(글 상세는 둘레 줄 높이를 따른다).
 const seriesHeadingBadge = css(seriesBadgeRaw, { lineHeight: 'snug' });
 
 // 글 목록에 기대지 않는 JSON-LD라 한 번만 만든다.
@@ -61,7 +61,7 @@ export default function SeriesPage() {
       />
       <PageBoundary>
         <div className={cx(css({ bg: 'paper.50' }), railGutter)}>
-          {/* 허브 계열 페이지는 홈·글 본문과 같은 text 레일을 쓴다. */}
+          {/* /series는 글 본문과 같은 text 레일을 쓴다. */}
           <div
             className={cx(
               railColumn({ width: 'text' }),

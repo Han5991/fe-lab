@@ -1,7 +1,7 @@
 import { css } from '@blog/styled-system/css';
 
 /**
- * 시리즈 배지(레퍼런스 `.badge`) — 글 상세 머리·홈 대표글·/series가 같은 모양을 쓴다.
+ * 시리즈 배지(레퍼런스 `.badge`) — 글 상세 머리·/series가 같은 모양을 쓴다.
  *
  * 중립 배지다: 잉크 틴트(accent.muted) 위 잉크 글자(accent.solid), 14.87 / 11.41:1.
  * 안에 `2/5` 같은 숫자가 있어도 sans다 — 레퍼런스 `.badge`가 font-family를 지정하지 않아

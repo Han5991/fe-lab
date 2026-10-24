@@ -61,7 +61,7 @@
   Cache-Control: public, max-age=86400, must-revalidate
 
 # /thumbs/**/*.webp — generate-thumbnails가 원고 썸네일을 최적화해 만든 것.
-# 목록 카드(PostGridCard·FeaturedPost의 resolveThumbnailSrc)가 <img>로 쓴다.
+# 목록·홈 카드(PostGridCard·PostCard·PostThumbRow의 resolveThumbnailSrc)가 <img>로 쓴다.
 # 여기도 생성 전용 디렉터리라 webp 말고는 없다.
 /thumbs/*
   Cache-Control: public, max-age=86400, must-revalidate

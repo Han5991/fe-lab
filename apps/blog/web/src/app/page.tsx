@@ -1,46 +1,25 @@
-import Link from 'next/link';
-import { css, cx } from '@blog/styled-system/css';
+import { css } from '@blog/styled-system/css';
 
-import { sortPostsBySeriesOrder } from '@blog/content';
-import { POSTS_PATH, safeJsonLd, type PostSummary } from '@blog/content/client';
-import { getAllPostSummaries, getSeriesMeta } from '@/src/content';
+import { POSTS_PATH, safeJsonLd } from '@blog/content/client';
+import { getAllPostSummaries } from '@/src/content';
 import { buildHomeJsonLd, buildHomeMetadata } from './homeSeo';
 
-import { FeaturedPost } from '@/src/components/blog/FeaturedPost';
 import { Hero } from '@/src/components/blog/Hero';
-import { PostIndexRow } from '@/src/components/blog/PostIndexRow';
+import { PostCard } from '@/src/components/blog/PostCard';
+import { PostThumbRow } from '@/src/components/blog/PostThumbRow';
+import { HomeSection } from '@/src/components/home/HomeSection';
 import { OssStrip } from '@/src/components/home/OssStrip';
-import { seriesBadgeLabel } from '@/src/components/home/seriesBadge';
 import { PageBoundary } from '@/src/components/PageBoundary';
-import { railGutter, railColumn } from '@/src/components/Rail';
+import { Rail } from '@/src/components/Rail';
 
 export const metadata = buildHomeMetadata();
 
 const jsonLd = buildHomeJsonLd();
 
-/** 허브에 노출할 최근 글 수. 대표 글 1개는 제외한 나머지에서 센다. */
-const RECENT_COUNT = 12;
-
-/**
- * 대표 글의 시리즈 배지 문구. 시리즈 안 순서는 `_series.yml`의 `order`를 따르고
- * (없으면 날짜 오름차순) 글 상세의 시리즈 네비게이션과 같은 규칙을 씁니다.
- */
-function buildSeriesLabel(
-  post: PostSummary,
-  allPosts: PostSummary[],
-): string | undefined {
-  // `series`는 `_series.yml`로 선언된 폴더에만 붙는다(`repository.ts`).
-  // 주제별로 모아 둔 폴더의 글은 여기서 그대로 빠진다.
-  if (!post.series) return undefined;
-  const siblings = allPosts.filter(p => p.series === post.series);
-  const meta = getSeriesMeta(post.series);
-  const ordered = sortPostsBySeriesOrder(siblings, meta?.order);
-  return seriesBadgeLabel(
-    meta?.title ?? post.series,
-    ordered.map(p => p.slug),
-    post.slug,
-  );
-}
+/** "최근 글" 쇼케이스에 놓는 글 수 — 큰 카드 1 + 옆 열 작은 카드 2(승인 목업). */
+const RECENT_COUNT = 3;
+/** "지난 글" 썸네일 목록의 글 수 — 두 열 네 줄. */
+const OLDER_COUNT = 8;
 
 export default function HomePage() {
   // 로더 호출은 컴포넌트 안에 둔다. dev에서 `readAllPosts()`는 캐시를 건너뛰고
@@ -48,8 +27,8 @@ export default function HomePage() {
   // 전제 위에 있다 — 모듈 최상위로 올리면 dev 서버가 재시작 전까지 첫 요청
   // 시점 목록에 고정돼 글을 추가·수정해도 화면에 반영되지 않는다.
   const allPosts = getAllPostSummaries();
-  const featured = allPosts[0];
-  const recent = allPosts.slice(1, 1 + RECENT_COUNT);
+  const [showcase, ...side] = allPosts.slice(0, RECENT_COUNT);
+  const older = allPosts.slice(RECENT_COUNT, RECENT_COUNT + OLDER_COUNT);
 
   return (
     <>
@@ -58,60 +37,101 @@ export default function HomePage() {
         dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }}
       />
       <PageBoundary>
-        <div className={cx(css({ bg: 'paper.50' }), railGutter)}>
-          <div
-            className={cx(
-              railColumn({ width: 'text' }),
-              css({ pt: '[36px]', pb: '[48px]' }),
-            )}
-          >
-            <Hero />
+        {/* 히어로 위 간격과 섹션 사이 간격이 같은 토큰이다(md 이상 100 · 아래 48). */}
+        <Rail
+          width="wide"
+          className={css({
+            display: 'flex',
+            flexDir: 'column',
+            gap: 'section',
+            pt: 'section',
+          })}
+        >
+          <Hero />
 
-            {featured && (
-              <FeaturedPost
-                post={featured}
-                seriesLabel={buildSeriesLabel(featured, allPosts)}
-              />
-            )}
-
-            {/* 장식 없는 텍스트 리스트. 행이 스스로 "마지막"인지 알 수 없어
-                목록을 닫는 아래 보더는 여기서 :last-child로 붙인다. */}
-            <ol
-              aria-label="최근 글"
-              className={css({
-                listStyleType: 'none',
-                p: '0',
-                m: '0',
-                '& > li:last-child > a': {
-                  borderBottomWidth: 'hairline',
-                  borderBottomStyle: 'solid',
-                  borderBottomColor: 'ink.border',
-                },
-              })}
+          {showcase && (
+            <HomeSection
+              id="recent-posts"
+              title="최근 글"
+              more={{ href: POSTS_PATH, label: '모든 글' }}
             >
-              {recent.map(post => (
-                <li key={post.slug}>
-                  <PostIndexRow post={post} />
-                </li>
-              ))}
-            </ol>
+              {/* 1024px 이상은 2.4fr : 1fr(Astryx BlogShowcase), 아래는 큰 카드가 한 줄을 다 쓴다.
+                  큰 카드의 커버는 옆 열 높이를 따라 늘지 않고 16:9로 고정이다 — 이미지 도착 전후로
+                  높이가 같고(CLS), OG 카드의 글자가 잘리지 않는다. 옆 열이 더 길면 큰 카드 아래가 빈다. */}
+              <div
+                className={css({
+                  display: 'grid',
+                  gridTemplateColumns: {
+                    base: '[minmax(0, 1fr)]',
+                    lg: '[minmax(0, 2.4fr) minmax(0, 1fr)]',
+                  },
+                  gap: '8',
+                  alignItems: 'start',
+                })}
+              >
+                {/* LCP 후보 — 첫 화면에서 가장 큰 이미지라 이것만 바로 받는다. */}
+                <PostCard post={showcase} variant="showcase" priority />
+                {/* 작은 카드 둘. lg 이상은 옆 열로 행 높이까지 늘어 두 카드를 위아래 끝에 붙인다 —
+                    옆 열이 더 짧으면 아래 카드의 끝이 큰 카드의 끝과 맞는다(목업 space-between).
+                    md~lg는 큰 카드 아래에 두 열로 놓는다 — 한 열로 쌓으면 작은 카드도 큰 카드와 같은
+                    폭의 커버를 받는데 제목은 작아 크기 위계가 뒤집힌다. md 미만은 한 열. */}
+                <div
+                  className={css({
+                    alignSelf: 'stretch',
+                    display: 'grid',
+                    gridTemplateColumns: {
+                      base: '[minmax(0, 1fr)]',
+                      md: '[repeat(2, minmax(0, 1fr))]',
+                      lg: '[minmax(0, 1fr)]',
+                    },
+                    alignContent: 'space-between',
+                    columnGap: '8',
+                    rowGap: '6',
+                  })}
+                >
+                  {side.map(post => (
+                    <PostCard key={post.slug} post={post} variant="default" />
+                  ))}
+                </div>
+              </div>
+            </HomeSection>
+          )}
 
-            <Link
-              href={POSTS_PATH}
-              className={css({
-                display: 'inline-block',
-                mt: '[14px]',
-                fontSize: '[13px]',
-                color: 'accent.solid',
-                _hover: { textDecoration: 'underline' },
-              })}
+          {older.length > 0 && (
+            <HomeSection
+              id="older-posts"
+              title="지난 글"
+              more={{
+                href: POSTS_PATH,
+                label: `${allPosts.length}편 모두 보기`,
+              }}
             >
-              모든 글 →
-            </Link>
+              <ol
+                aria-label="지난 글"
+                className={css({
+                  display: 'grid',
+                  gridTemplateColumns: {
+                    base: '[minmax(0, 1fr)]',
+                    lg: '[repeat(2, minmax(0, 1fr))]',
+                  },
+                  columnGap: '8',
+                  rowGap: '6',
+                  listStyleType: 'none',
+                  p: '0',
+                  m: '0',
+                })}
+              >
+                {older.map(post => (
+                  <li key={post.slug} className={css({ minW: '0' })}>
+                    <PostThumbRow post={post} />
+                  </li>
+                ))}
+              </ol>
+            </HomeSection>
+          )}
 
-            <OssStrip />
-          </div>
-        </div>
+          <OssStrip />
+        </Rail>
       </PageBoundary>
     </>
   );

@@ -88,7 +88,7 @@ const NODE_RADIUS = 8;
 
 /** 레퍼런스의 노드 간격(132 → 160). 엣지 하나가 들어갈 만큼만 띄운다. */
 const GAP_X = 28;
-/** fan의 세로 간격 — ParallelThumb(29 → 36)과 같은 값. */
+/** fan의 세로 간격 — 레퍼런스 홈 대표글 썸네일의 갈래 간격(한 노드 끝 y29 → 다음 노드 시작 y36)과 같은 값. */
 const GAP_Y = 7;
 
 const MARGIN_X = 24;
@@ -210,7 +210,7 @@ function placeRow(nodes: DiagramNodeSpec[]): PlacedNode[] {
 }
 
 /**
- * 첫 노드에서 나머지로 갈라지는 팬아웃(레퍼런스 홈의 ParallelThumb 모양).
+ * 첫 노드에서 나머지로 갈라지는 팬아웃(레퍼런스 홈 대표글 썸네일의 모양).
  *
  * 오른쪽 열은 폭을 최대값으로 통일한다 — 갈래마다 폭이 들쭉날쭉하면 "같은 층위의
  * 병렬 갈래"라는 뜻이 흐려진다.
