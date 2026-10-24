@@ -107,9 +107,9 @@ accent 토큰 전부가 그 테마의 primary 텍스트 잉크다 — 를 따랐
 서넛이 들어가야 해서다. 단일 출처는 `apps/blog/web/src/components/diagram/layout.ts` 의
 `TITLE_FONT_SIZE` / `DESC_FONT_SIZE`.
 
-강조 노드를 고르는 prop은 `tone="accent"` 다. 초안 시절 색 이름을 그대로 쓴 `tone="teal"`
-은 옛 글을 위한 별칭으로만 남아 있고 새 글에는 쓰지 않는다 — 값이 뜻하는 건 색이 아니라
-"핵심 경로"라서, 팔레트가 바뀌어도 안 흔들리는 이름으로 바꿨다.
+강조 노드를 고르는 prop은 `tone="accent"` 다. 값이 뜻하는 건 색이 아니라 "핵심 경로"라서,
+팔레트가 바뀌어도 안 흔들리는 이름으로 바꿨다. 초안 시절 색 이름 `tone="teal"`은 옛 글을 위한
+별칭으로 남아 있다가, 원고 사용이 0건이라 2026-10에 지웠다.
 
 저작법 전체(선언형 태그, 레지스트리, `hero:`)는 `.claude/skills/blog-diagrams/SKILL.md`.
 
