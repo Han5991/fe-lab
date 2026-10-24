@@ -8,7 +8,6 @@ import {
   getAllYears,
 } from '@/src/content';
 import { safeJsonLd } from '@blog/content/client';
-import { POSTS_TRANSITION_ID } from '@/src/shared/transitions';
 import {
   buildBlogJsonLd,
   buildCollectionPageJsonLd,
@@ -49,7 +48,7 @@ export default function PostsPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLd(blogJsonLd) }}
       />
-      <PageBoundary transitionId={POSTS_TRANSITION_ID} className={railGutter}>
+      <PageBoundary className={railGutter}>
         <div
           className={cx(
             railColumn({ width: 'wide' }),

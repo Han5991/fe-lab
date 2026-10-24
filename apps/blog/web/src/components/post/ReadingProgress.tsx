@@ -45,10 +45,10 @@ export const ReadingProgress = () => (
         animationName: 'reading-progress-fill',
         animationTimingFunction: 'linear',
         animationTimeline: 'scroll(root block)',
-        // 여기만 단축 속성 — 미디어 규칙이 기본 규칙보다 뒤에 나와 애니메이션을
-        // 통째로 끈다(타임라인 리셋도 애니메이션이 없으니 무해).
-        '@media (prefers-reduced-motion: reduce)': {
-          animation: '[none]',
+        // 움직임 줄이기는 여기서 직접 끈다 — 이 애니메이션은 시간이 아니라 스크롤에 묶여 있어
+        // 시간 토큰(0.01ms)이 끄지 못한다. 이름만 지워도 애니메이션이 사라진다.
+        _motionReduce: {
+          animationName: 'none',
         },
       })}
     />

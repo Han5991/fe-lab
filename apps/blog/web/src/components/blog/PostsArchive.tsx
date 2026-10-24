@@ -421,7 +421,7 @@ const PostsArchiveLayout = ({
                   rounded: 'full',
                   cursor: 'pointer',
                   _hover: { borderColor: 'accent.solid' },
-                  transition: '[border-color 0.15s]',
+                  transition: 'colors',
                 })}
               >
                 모두 지우기
@@ -526,7 +526,7 @@ const ArchiveSearchBar = ({ q, onChange }: ArchiveSearchBarProps) => {
         rounded: 'element',
         bg: 'paper.100',
         _focusWithin: { borderColor: 'accent.solid' },
-        transition: '[border-color 0.15s]',
+        transition: 'colors',
       })}
     >
       <span

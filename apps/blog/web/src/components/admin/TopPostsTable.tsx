@@ -26,7 +26,7 @@ export const TopPostsTable = ({ rows }: TopPostsTableProps) => {
             py: '3',
             borderBottomWidth: 'hairline',
             borderColor: 'ink.border',
-            transition: '[background 0.15s]',
+            transition: 'colors',
             _hover: { bg: 'paper.100' },
           })}
         >

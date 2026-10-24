@@ -148,7 +148,7 @@ function LoginForm() {
             opacity: isLoading ? 0.7 : 1,
             fontWeight: 'semibold',
             fontSize: 'sm',
-            transition: '[background 0.15s, opacity 0.15s]',
+            transition: 'common',
             _hover: { bg: 'accent.solidHover' },
           })}
         >

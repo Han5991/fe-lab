@@ -31,7 +31,6 @@
     "@blog/preset": "workspace:^",
     "@giscus/react": "^3.1.0",
     "@next/third-parties": "catalog:",
-    "@ssgoi/react": "6.6.10",
     "@supabase/postgrest-js": "^2.117.1",
     "@supabase/supabase-js": "^2.117.1",
     "@tanstack/react-query": "catalog:",

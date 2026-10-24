@@ -2,7 +2,6 @@ import Link from 'next/link';
 import { css, cx } from '@blog/styled-system/css';
 
 import { archivePath, POSTS_PATH, postPath } from '@blog/content/client';
-import { SERIES_TRANSITION_ID } from '@/src/shared/transitions';
 import {
   getAllPostSummaries,
   getAllSeries,
@@ -60,7 +59,7 @@ export default function SeriesPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }}
       />
-      <PageBoundary transitionId={SERIES_TRANSITION_ID}>
+      <PageBoundary>
         <div className={cx(css({ bg: 'paper.50' }), railGutter)}>
           {/* 허브 계열 페이지는 홈·글 본문과 같은 text 레일을 쓴다. */}
           <div

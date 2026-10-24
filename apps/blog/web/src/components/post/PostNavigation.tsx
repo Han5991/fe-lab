@@ -29,7 +29,7 @@ const navCard = sva({
       borderColor: 'ink.border',
       rounded: 'container',
       p: '[16px]',
-      transition: '[border-color 0.15s]',
+      transition: 'colors',
       _hover: { borderColor: 'ink.borderStrong' },
     },
     title: {

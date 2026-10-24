@@ -14,7 +14,7 @@ const pill = css({
   rounded: 'full',
   px: '[11px]',
   py: '[3px]',
-  transition: '[color 0.15s, border-color 0.15s]',
+  transition: 'colors',
   _hover: { color: 'ink.950', borderColor: 'ink.borderStrong' },
 });
 

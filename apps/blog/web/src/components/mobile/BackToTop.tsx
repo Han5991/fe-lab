@@ -1,9 +1,9 @@
 'use client';
 
 import { useSyncExternalStore } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
 import { ArrowUp } from 'lucide-react';
 import { css } from '@blog/styled-system/css';
+import { pressable } from '@/src/components/pressable';
 
 /** 이만큼 내려가면 버튼이 뜬다(px). */
 const SHOW_AFTER = 300;
@@ -28,46 +28,44 @@ export const BackToTop = () => {
     serverSnapshot,
   );
 
+  // 등장만 움직인다 — 스크롤로 나타날 때 95%에서 떠오르고(@starting-style), 맨 위로 돌아가면
+  // 바로 사라진다. 서버 HTML에는 없고(서버 스냅샷 false) 언제나 클라이언트가 나중에 삽입하므로,
+  // 서버가 그린 요소처럼 첫 페인트에서 등장이 재생되지 않는다.
+  if (!isVisible) return null;
+
   return (
-    <AnimatePresence>
-      {isVisible && (
-        <motion.button
-          type="button"
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.8 }}
-          onClick={scrollToTop}
-          // MobileTOC와 같은 이유 — 아이콘 단독 버튼이라 이름이 필요하다.
-          // 스크롤 전에는 렌더되지 않아 axe 스캔에 안 잡혔을 뿐, 같은 결함이다.
-          aria-label="맨 위로 이동"
-          whileTap={{ scale: 0.9 }}
-          className={css({
-            pos: 'fixed',
-            bottom: '6',
-            right: '6',
-            w: '12',
-            h: '12',
-            bg: 'paper.100',
-            rounded: 'full',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'ink.900',
-            // 떠 있어도 버튼이라 그림자를 두지 않는다(그림자는 닫히면 사라지는 표면에만,
-            // AGENTS.md §9) — hairline 보더로 본문과 분리한다.
-            borderWidth: 'hairline',
-            borderColor: 'ink.borderStrong',
-            cursor: 'pointer',
-            zIndex: '40',
-            // 아이콘(ink.900)은 이미 잉크라 hover에 더 진한 색이 없다(ink.950과
-            // 1.15 / 1.16:1) — 면을 필터 FAB의 hover 면(paper.300)으로 올린다
-            // (paper.100 대비 1.23 / 1.23:1).
-            _hover: { bg: 'paper.300', color: 'accent.solid' },
-          })}
-        >
-          <ArrowUp size={24} />
-        </motion.button>
-      )}
-    </AnimatePresence>
+    <button
+      type="button"
+      onClick={scrollToTop}
+      // MobileTOC와 같은 이유 — 아이콘 단독 버튼이라 이름이 필요하다.
+      // 스크롤 전에는 렌더되지 않아 axe 스캔에 안 잡혔을 뿐, 같은 결함이다.
+      aria-label="맨 위로 이동"
+      className={css(pressable, {
+        _starting: { opacity: '0', transform: 'scale(0.95)' },
+        pos: 'fixed',
+        bottom: '6',
+        right: '6',
+        w: '12',
+        h: '12',
+        bg: 'paper.100',
+        rounded: 'full',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: 'ink.900',
+        // 떠 있어도 버튼이라 그림자를 두지 않는다(그림자는 닫히면 사라지는 표면에만,
+        // AGENTS.md §9) — hairline 보더로 본문과 분리한다.
+        borderWidth: 'hairline',
+        borderColor: 'ink.borderStrong',
+        cursor: 'pointer',
+        zIndex: '40',
+        // 아이콘(ink.900)은 이미 잉크라 hover에 더 진한 색이 없다(ink.950과
+        // 1.15 / 1.16:1) — 면을 필터 FAB의 hover 면(paper.300)으로 올린다
+        // (paper.100 대비 1.23 / 1.23:1).
+        _hover: { bg: 'paper.300', color: 'accent.solid' },
+      })}
+    >
+      <ArrowUp size={24} />
+    </button>
   );
 };

@@ -1,7 +1,6 @@
 import { SITE_NAME, SITE_URL } from '@/content.values.mts';
 import contentConfig from '@/content.config.mts';
 import { PRIVACY_PATH } from '@/src/shared/routes';
-import { PRIVACY_TRANSITION_ID } from '@/src/shared/transitions';
 import { css, cx } from '@blog/styled-system/css';
 import type { Metadata } from 'next';
 
@@ -36,7 +35,7 @@ const LAST_UPDATED = '2026년 10월 5일';
 
 export default function PrivacyPage() {
   return (
-    <PageBoundary transitionId={PRIVACY_TRANSITION_ID}>
+    <PageBoundary>
       <div
         className={cx(
           css({ minHeight: '[calc(100lvh - 231px)]', bg: 'paper.50' }),

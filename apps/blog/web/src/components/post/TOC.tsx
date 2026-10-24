@@ -328,10 +328,9 @@ export const TOC = () => {
                 className={css({
                   stroke: 'accent.solid',
                   // ↓ 글자 색·점과 같은 시간. 위 주석 참고.
-                  transition: '[clip-path 0.2s ease]',
-                  '@media (prefers-reduced-motion: reduce)': {
-                    transition: '[none]',
-                  },
+                  transitionProperty: 'clip-path',
+                  transitionDuration: 'fast',
+                  transitionTimingFunction: 'standard',
                 })}
               />
             </svg>
@@ -347,10 +346,9 @@ export const TOC = () => {
                   boxSize: '[5px]',
                   rounded: 'full',
                   bg: 'accent.solid',
-                  transition: '[offset-distance 0.2s ease]',
-                  '@media (prefers-reduced-motion: reduce)': {
-                    transition: '[none]',
-                  },
+                  transitionProperty: 'offset-distance',
+                  transitionDuration: 'fast',
+                  transitionTimingFunction: 'standard',
                 })}
                 style={{
                   offsetPath: `path("${measured.d}")`,
@@ -423,7 +421,7 @@ export const TOC = () => {
                     // 스크롤할 때마다 차례가 들썩이는 데다, 레일 좌표가 clip-path
                     // 애니메이션 도중에 바뀌어 하이라이트가 엉뚱한 자리에 그려진다.
                     fontWeight: 'normal',
-                    transition: '[color 0.2s ease]',
+                    transition: 'colors',
                     _hover: { color: 'ink.950' },
                   })}
                   // 레일이 서는 자리(x)에서 한 칸 더 띄운다.

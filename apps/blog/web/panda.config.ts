@@ -1,5 +1,6 @@
 import { defineConfig, definePlugin } from '@pandacss/dev';
 import { TEST_SUFFIX } from './testFiles.mts';
+import { VIEW_TRANSITION } from './src/shared/viewTransitions';
 
 // 색·라운드는 전부 @blog/preset에서 온다(AGENTS.md §9). preset-panda는 spacing·sizes·fontSizes 같은
 // 스케일만 빌리고 색 팔레트와 radii는 버린다 — v2의 팔레트(oklch 26색 × 11단)는 v1의 두 배 무게로
@@ -8,13 +9,16 @@ import { TEST_SUFFIX } from './testFiles.mts';
 // 2xl=16px=container, 4xl=32px=page) 같은 라운드가 이름 둘 이상(`'lg'`·`'inner'`·`'[8px]'`)으로 갈린다.
 // shadows도 버린다 — 블로그 그림자는 떠 있는 표면의 `overlay.*` 둘뿐이라(AGENTS.md §9) preset-panda의
 // 변수 11개는 쓰는 곳이 0인데 토큰 레이어에 실렸고, `boxShadow: 'md'`가 타입을 통과했다. @blog/preset의
-// `shadows.overlay.*`가 있어 카테고리가 비지 않는다. 쓰는 곳이 0인 blurs·durations·aspectRatios는
-// 남긴다 — 카테고리가 통째로 비면 Panda가 그 속성 타입을 아무 문자열로 넓혀(2.3.0 실측) strictTokens가 풀린다.
+// `shadows.overlay.*`가 있어 카테고리가 비지 않는다. 모션(durations·easings·animations·keyframes)도
+// 버린다 — preset-panda의 `fast`(150ms)가 블로그의 `fast`(175ms, Astryx)와 같은 이름으로 섞이고, 쓰는
+// 곳이 0인 단계(`fastest`·`slower` …)와 easings·keyframes(spin·bounce …)가 타입을 통과했다. 세
+// 카테고리는 @blog/preset의 모션 토큰이 채운다. 쓰는 곳이 0인 blurs·aspectRatios는 남긴다 — 카테고리가
+// 통째로 비면 Panda가 그 속성 타입을 아무 문자열로 넓혀(2.3.0 실측) strictTokens가 풀린다.
 // 서드파티 프리셋을 고치지 않고 일부만 빼는 v2 방식이 preset:resolved 훅이다(theming/plugins
 // "Trim a preset", theming/presets "extend only adds, so removing takes a plugin"). @blog/preset에
 // extend 없는 colors를 두는 길도 v2에서 동작하지만, 그러면 블로그 프리셋이 목록 순서에 묶인다.
 // 뺀 토큰을 쓰면 Panda는 진단 없이 raw 값(`color: orange.500`)을 내보낸다 — check-types가 막고,
-// 색·라운드·그림자는 Panda 공식 lint(prefer-token, eslint.config.mts)도 막는다.
+// 색·라운드·그림자·모션은 Panda 공식 lint(prefer-token, eslint.config.mts)도 막는다.
 const trimPresetPanda = definePlugin({
   name: 'blog:trim-preset-panda',
   hooks: {
@@ -25,6 +29,10 @@ const trimPresetPanda = definePlugin({
             'theme.semanticTokens.colors',
             'theme.tokens.radii',
             'theme.tokens.shadows',
+            'theme.tokens.durations',
+            'theme.tokens.easings',
+            'theme.tokens.animations',
+            'theme.keyframes',
           ])
         : undefined,
   },
@@ -58,10 +66,11 @@ export default defineConfig({
   // 공식 권장대로 프로덕션에서만 줄인다 — dev에서 생성 CSS를 읽을 수 있게. 최종 out/의 CSS는
   // Next가 한 번 더 줄이므로 배포물 크기는 이 값과 무관하다.
   minify: process.env.NODE_ENV === 'production',
-  // optimize(styling/optimization)는 removeUnusedKeyframes만 켠다 — preset-panda의 keyframes(spin·
-  // ping·bounce …) 중 쓰지 않는 것을 뺀다. animations 토큰(`animation: 'pulse'`)으로 참조한 keyframes는
-  // 2.3.0부터 남는다(2.1.2는 그것까지 지웠다). removeUnusedTokens는 codeTheme.ts가 런타임에 고르는
-  // token.var(role)을 못 봐 code.* 변수를 지우므로 켜지 않는다.
+  // optimize(styling/optimization)는 removeUnusedKeyframes만 켠다 — 정의만 있고 아무도 부르지 않는
+  // keyframes를 뺀다(preset-panda의 keyframes는 위 플러그인이 이미 버린다). check-bundle의
+  // `keyframes-unreferenced`가 이 옵티마이저를 전제로 한다. animations 토큰(`animation: 'skeleton'`)으로
+  // 참조한 keyframes는 2.3.0부터 남는다(2.1.2는 그것까지 지웠다). removeUnusedTokens는 codeTheme.ts가
+  // 런타임에 고르는 token.var(role)을 못 봐 code.* 변수를 지우므로 켜지 않는다.
   optimize: { removeUnusedKeyframes: true },
   // propertyFallback도 지금은 필요 없다: @property로 등록되는 변수는 backdrop-*뿐이고 빈
   // fallback(`var(--backdrop-blur, )`)이라 @property 미지원 브라우저(Firefox 128 미만)에서도 값이
@@ -93,6 +102,17 @@ export default defineConfig({
         // 레이아웃을 유발해 스크롤 프레임마다 reflow가 돈다.
         'reading-progress-fill': {
           to: { transform: 'scaleX(1)' },
+        },
+        // 페이지 전환(아래 globalCss의 ::view-transition-* 규칙). 이름은 PageBoundary가 붙이는
+        // 클래스와 같은 출처다. 들어오는 페이지는 8px(Astryx spacing-2) 아래에서 떠오르고,
+        // 나가는 페이지는 제자리에서 사라진다. 방향(앞·뒤로 미끄러짐)은 담지 않는다 — 브라우저
+        // 뒤로·앞으로 가기에는 페이지 전환이 아예 돌지 않아(실측: startViewTransition이 불리지
+        // 않는다) 방향을 넣어도 링크 이동에서만 보인다.
+        [VIEW_TRANSITION.pageEnter]: {
+          from: { opacity: '0', transform: 'translateY(8px)' },
+        },
+        [VIEW_TRANSITION.pageExit]: {
+          to: { opacity: '0' },
         },
       },
     },
@@ -135,17 +155,62 @@ export default defineConfig({
           colorScheme: 'dark',
         },
       },
-      // 테마 전환 애니메이션 — View Transitions API(useTheme)로 전체
-      // 페이지를 한 번의 컴포지터 크로스페이드로 전환한다. 예전엔
-      // html.theme-transition * 로 모든 요소에 color/fill transition을
-      // 걸어, 차트·코드 하이라이팅이 많은 페이지(analytics 등)에서 요소
-      // 수만큼 style/paint가 터져 버벅였다. 루트 스냅샷 크로스페이드는
-      // 요소 수와 무관하게 GPU에서 처리돼 매끄럽다. (reduced-motion·
-      // 미지원 브라우저는 useTheme가 즉시 전환하므로 이 pseudo가 생성되지
-      // 않는다.)
-      '::view-transition-old(root), ::view-transition-new(root)': {
-        animationDuration: '[0.26s]',
-        animationTimingFunction: '[ease]',
+      // `transition: 'colors'` 같은 Panda 전환 유틸리티는 `var(--transition-prop, 속성 목록)`·
+      // `var(--transition-duration, 150ms)`·`var(--transition-easing, …)`를 낸다. 시간·곡선 변수에는
+      // 토큰을 주고, 속성 변수는 `initial`(무효 값)로 비워 유틸리티의 속성 목록이 쓰이게 한다.
+      // html이 아니라 모든 요소에 두는 이유: `transitionDuration`·`transitionTimingFunction`·
+      // `transitionProperty` 유틸리티가 이 변수를 그 요소에 직접 쓰는데, 상속되면 자손의 전환까지
+      // 그 값이 된다 — 시트의 medium이 안쪽 링크로, 검색 패널의 `opacity, transform`이 결과 행의
+      // `transition: 'colors'`로 내려가 hover 색 전환이 사라졌다. 요소마다 다시 정하면 상속이
+      // 끊긴다. base 레이어라 같은 요소의 유틸리티(utilities 레이어)가 이긴다.
+      '*, ::before, ::after': {
+        '--transition-prop': 'initial',
+        '--transition-duration': 'durations.fast',
+        '--transition-easing': 'easings.standard',
+      },
+      // ── View Transitions — 내비게이션의 페이지 전환과 테마 전환이 같은 의사 요소를 쓴다 ──
+      // 전환 레이어가 포인터를 삼키지 않게 한다 — 이름 없는 내용(푸터·고정 버튼)은 전환 중에도
+      // 클릭을 받는다. 이름 붙은 참여자 — 헤더와, `<ViewTransition>`이 이름을 붙이는 페이지 — 는
+      // 전환이 끝날 때까지 히트 테스트에서 빠진다(Next view-transitions 가이드 "Keeping the page
+      // interactive", 실측) — 전환을 짧게 두는 이유 중 하나다.
+      '::view-transition': {
+        pointerEvents: 'none',
+      },
+      // 페이지 전환 — PageBoundary(React <ViewTransition>)가 붙이는 클래스. 나가는 쪽은 빨리
+      // 비키고(fast·exit 곡선), 들어오는 쪽은 천천히 자리 잡는다(medium·standard).
+      [`::view-transition-old(.${VIEW_TRANSITION.pageExit})`]: {
+        animationName: VIEW_TRANSITION.pageExit,
+        animationDuration: 'fast',
+        animationTimingFunction: 'exit',
+        animationFillMode: 'both',
+      },
+      [`::view-transition-new(.${VIEW_TRANSITION.pageEnter})`]: {
+        animationName: VIEW_TRANSITION.pageEnter,
+        animationDuration: 'medium',
+        animationTimingFunction: 'standard',
+        animationFillMode: 'both',
+      },
+      // 테마 전환 — View Transitions API(useTheme)로 전체 페이지를 한 번의 컴포지터
+      // 크로스페이드로 전환한다. 예전엔 html.theme-transition * 로 모든 요소에 color/fill
+      // transition을 걸어, 차트·코드 하이라이팅이 많은 페이지(analytics 등)에서 요소 수만큼
+      // style/paint가 터져 버벅였다. 스냅샷 크로스페이드는 요소 수와 무관하게 GPU에서 처리돼
+      // 매끄럽다. 헤더는 이름이 있어 루트와 따로 찍히므로 같은 시간을 준다(안 주면 UA 기본
+      // 0.25s ease로 루트와 어긋난다). 그룹(위치·크기 보간)까지 토큰으로 줘야 움직임 줄이기에서
+      // UA 기본 0.25s가 남지 않는다. 내비게이션에서도 같은 규칙이 루트(페이지 밖 — 푸터·고정
+      // 버튼)와 헤더의 크로스페이드를 맡는다. (useTheme는 움직임 줄이기·미지원 브라우저에서
+      // 즉시 전환하므로 그때는 이 의사 요소가 생기지 않는다.)
+      [`::view-transition-group(root), ::view-transition-old(root), ::view-transition-new(root), ::view-transition-group(${VIEW_TRANSITION.siteHeader}), ::view-transition-old(${VIEW_TRANSITION.siteHeader}), ::view-transition-new(${VIEW_TRANSITION.siteHeader})`]:
+        {
+          animationDuration: 'fastMax',
+          animationTimingFunction: 'standard',
+        },
+      // 헤더 그룹을 페이지 그룹 위에 그린다 — 그룹은 문서 순서로 쌓여 헤더가 아래로 가고,
+      // 스크롤된 채 떠나는 페이지가 sticky 헤더 자리에 덧칠된다. 다른 그룹은 z-index가 없어 1이면 된다.
+      // 배경은 불투명 지면이다: 헤더의 반투명 배경(paper.50/80)은 backdrop-filter 흐림과 한 짝인데,
+      // 따로 찍힌 스냅샷에는 흐릴 뒤 배경이 없어 그대로 두면 전환 동안 뒤 본문이 선명하게 비친다.
+      [`::view-transition-group(${VIEW_TRANSITION.siteHeader})`]: {
+        zIndex: '1',
+        bg: 'paper.50',
       },
       // 문장 공유 링크(`#:~:text=`)로 들어온 독자에게 그 문장을 짚어 준다.
       // "여기"를 가리킨다는 점에서 선택과 같은 뜻이라 같은 토큰을 쓴다(대비는

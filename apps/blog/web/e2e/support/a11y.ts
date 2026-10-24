@@ -16,10 +16,38 @@ export interface AxeViolationSummary {
   targets: string[];
 }
 
+/**
+ * 시간으로 도는 유한한 애니메이션·전환이 끝날 때까지 기다린다 — 등장 중인 요소(검색
+ * 다이얼로그는 투명도 0에서 떠오른다)를 재면 axe가 반투명하게 합성된 색으로 대비를 계산한다.
+ * 끝나지 않는 것은 뺀다: 무한 반복(스켈레톤), 멈춘 것, 그리고 문서 시간이 아니라 스크롤에
+ * 묶인 것(글의 진행 바 — 끝까지 스크롤해야 끝난다). 취소된 것은 끝난 것으로 본다.
+ */
+async function settleAnimations(page: Page): Promise<void> {
+  await page.evaluate(async () => {
+    await Promise.all(
+      document
+        .getAnimations()
+        .filter(
+          a =>
+            a.timeline === document.timeline &&
+            a.playState === 'running' &&
+            a.effect?.getComputedTiming().endTime !== Infinity,
+        )
+        .map(a =>
+          a.finished.then(
+            () => undefined,
+            () => undefined,
+          ),
+        ),
+    );
+  });
+}
+
 /** 위반을 사람이 읽을 요약으로 — 실패 메시지에 그대로 실린다. */
 export async function axeViolations(
   page: Page,
 ): Promise<AxeViolationSummary[]> {
+  await settleAnimations(page);
   // 통과·미적용 항목은 버린다 — 긴 글에서 결과 직렬화가 검사 시간의 상당 부분이다.
   // `options()`는 옵션 객체를 통째로 바꾸므로 `withTags()`(runOnly)보다 먼저 부른다 —
   // 순서가 뒤집히면 태그 제한이 사라져 best-practice 규칙까지 돈다.

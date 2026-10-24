@@ -22,7 +22,6 @@ import { toNextMetadata } from './nextMetadata';
 import type { Metadata } from 'next';
 import { Rail, railGutter, railColumn } from '@/src/components/Rail';
 import { safeJsonLd } from '@blog/content/client';
-import { postTransitionId } from '@/src/shared/transitions';
 import { slugFromRouteParam } from '@/src/shared/routes';
 import GiscusComments from '@/src/components/GiscusComments';
 import { PageBoundary } from '@/src/components/PageBoundary';
@@ -108,8 +107,7 @@ export default async function PostPage({ params }: Props) {
     }
   }
 
-  // PostHero·전환 매칭이 쓰는 값 — 썸네일이 없는 글은 undefined로 둬서
-  // hero 슬롯·모핑 대상에서 빠진다.
+  // PostHero가 쓰는 값 — 썸네일이 없는 글은 undefined로 둬서 hero 슬롯에서 빠진다.
   const thumbnailUrl = post.thumbnail
     ? resolveThumbnailUrl(post, OG_DEFAULT_IMAGE)
     : undefined;
@@ -137,8 +135,8 @@ export default async function PostPage({ params }: Props) {
       <PostRuntime slug={post.slug} title={post.title} />
 
       {/* 문장을 선택하면 그 문장으로 열리는 링크를 복사하는 버튼.
-          - 페이지 전환 레이어(PageBoundary) 밖: fixed 위치가 전환 중 transform에
-            끌려가지 않는다.
+          - 페이지 전환 경계(PageBoundary) 밖: 내비게이션의 페이지 스냅샷에 담기지 않아
+            나가는 글과 함께 페이드·이동하지 않는다.
           - 페이지의 첫 포커스 가능 요소: 본문을 마우스로 고르면 초점이
             <main>(tabIndex -1, 건너뛰기 링크의 대상)으로 가서 Tab은 언제나 main
             맨 앞부터 다시 센다. 그래서 선택 지점 근처가 아니라 여기 둬야 첫
@@ -151,14 +149,10 @@ export default async function PostPage({ params }: Props) {
         <MobileTOC />
       </div>
 
+      {/* 배경을 칠하지 않는다 — 지면색은 Layout이 이미 칠하고, 전환 중 페이지 스냅샷이
+          불투명하면 그 아래(루트 스냅샷)의 고정 요소(FAB·진행 바)를 덮는다. */}
       <PageBoundary
-        // 썸네일 있으면 /posts/*(hero 모핑 대상), 없으면 /posts-plain/*(fade 폴백)으로
-        // 분기해 전환 매칭을 라우팅한다. (URL은 그대로 /posts/{slug})
-        transitionId={postTransitionId(post.slug, Boolean(thumbnailUrl))}
-        className={cx(
-          railGutter,
-          css({ py: { base: '10', md: '14' }, bg: 'paper.50' }),
-        )}
+        className={cx(railGutter, css({ py: { base: '10', md: '14' } }))}
       >
         {/* 셸은 wide 레일이라 헤더·/posts와 좌우 끝이 같고, 그 안에서 본문이
             text 레일(680)을 차지하고 TOC가 오른쪽 끝에 붙는다. */}
@@ -190,7 +184,6 @@ export default async function PostPage({ params }: Props) {
             {/* hero는 frontmatter 값 그대로다 — thumbnailUrl과 달리 경로 해석이
                 없어서 별도 계산을 거칠 이유가 없다. */}
             <PostHero
-              slug={post.slug}
               title={post.title}
               hero={post.hero}
               thumbnailUrl={thumbnailUrl}

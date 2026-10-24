@@ -91,7 +91,7 @@ export const mermaidContainerStyle = css({
   display: 'flex',
   justifyContent: 'center',
   overflow: 'auto',
-  transition: '[all 0.3s]',
+  transition: 'colors',
   // hover 강조도 그림자·들어올리기가 아니라 보더 톤으로만 준다 — 본문 안 상자라 그림자를
   // 두지 않는다(그림자는 떠 있는 표면에만, AGENTS.md §9).
   _hover: {

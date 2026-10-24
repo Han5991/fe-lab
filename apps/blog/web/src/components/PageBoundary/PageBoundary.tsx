@@ -1,15 +1,23 @@
-import type { ComponentPropsWithRef } from 'react';
+import { ViewTransition, type ComponentPropsWithRef } from 'react';
+import { VIEW_TRANSITION } from '@/src/shared/viewTransitions';
 
-interface PageBoundaryProps extends ComponentPropsWithRef<'div'> {
-  /**
-   * `data-ssgoi-transition` 값 — 라우트 전환(hero/fade)을 매칭하는 키.
-   * 리터럴을 적지 말고 `@/src/shared/transitions`의 전환 ID 상수/헬퍼를 쓸 것 —
-   * 매처(PageTransition.tsx)와 어긋나면 전환이 조용히 fade로 폴백한다.
-   * (HTML 표준 `id` 속성과 충돌하지 않도록 별도 이름을 쓴다.)
-   */
-  transitionId: string;
-}
-
-export const PageBoundary = ({ transitionId, ...rest }: PageBoundaryProps) => (
-  <div {...rest} data-ssgoi-transition={transitionId} />
+/**
+ * 페이지 내용의 경계 — 내비게이션이 페이지를 바꿀 때 나가는 쪽과 들어오는 쪽을 React
+ * `<ViewTransition>`의 exit/enter로 움직인다. 움직임의 모양은 `panda.config.ts` globalCss의
+ * `::view-transition-*` 규칙이다.
+ *
+ * - 레이아웃이 아니라 **페이지마다** 둔다 — 레이아웃은 내비게이션을 건너 살아남아 enter/exit가
+ *   발동하지 않는다(Next view-transitions 가이드).
+ * - `default="none"` — 페이지 안의 갱신(Suspense 드러남·전환으로 감싼 상태 변경)은 움직이지 않는다.
+ * - 하드 로드에는 전환이 없다 — Next의 클라이언트 내비게이션만 transition이다. 브라우저
+ *   뒤로·앞으로 가기에도 돌지 않는다(실측: startViewTransition이 불리지 않는다).
+ */
+export const PageBoundary = (props: ComponentPropsWithRef<'div'>) => (
+  <ViewTransition
+    enter={VIEW_TRANSITION.pageEnter}
+    exit={VIEW_TRANSITION.pageExit}
+    default="none"
+  >
+    <div {...props} />
+  </ViewTransition>
 );

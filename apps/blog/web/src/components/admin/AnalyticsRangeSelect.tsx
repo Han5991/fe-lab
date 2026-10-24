@@ -24,7 +24,7 @@ const rangeTab = cva({
     letterSpacing: 'monoLg',
     rounded: 'inner',
     cursor: 'pointer',
-    transition: '[all 0.15s]',
+    transition: 'colors',
   },
   variants: {
     active: {

@@ -211,7 +211,7 @@ function AdminOverviewContent() {
             justifyContent: 'center',
             alignItems: 'center',
             gap: '3',
-            transition: '[opacity 0.15s]',
+            transition: 'opacity',
             _hover: { opacity: '0.85' },
           })}
         >
@@ -294,7 +294,7 @@ function AdminOverviewContent() {
                     borderBottomWidth:
                       i < topPosts.length - 1 ? 'hairline' : 'none',
                     borderColor: 'ink.border',
-                    transition: '[background 0.15s]',
+                    transition: 'colors',
                     _hover: { bg: 'ink.50' },
                   })}
                 >
@@ -399,7 +399,7 @@ function AdminOverviewContent() {
                     borderBottomWidth:
                       i < recentPosts.length - 1 ? 'hairline' : 'none',
                     borderColor: 'ink.border',
-                    transition: '[background 0.15s]',
+                    transition: 'colors',
                     _hover: { bg: 'ink.50' },
                   })}
                 >
@@ -505,7 +505,7 @@ export default function AdminPage() {
                 fontWeight: 'medium',
                 fontSize: 'sm',
                 rounded: 'full',
-                transition: '[background 0.15s]',
+                transition: 'colors',
                 _hover: { bg: 'paper.100' },
               })}
             >
@@ -524,7 +524,7 @@ export default function AdminPage() {
                 cursor: 'pointer',
                 rounded: 'full',
                 fontSize: 'sm',
-                transition: '[all 0.15s]',
+                transition: 'colors',
                 _hover: { bg: 'paper.200', color: 'ink.900' },
               })}
             >

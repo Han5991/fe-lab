@@ -12,6 +12,7 @@ import {
 } from '@blog/content/client';
 import { getRecentViews, type RecentView } from '@/src/hooks/recentViews';
 import { Portal } from '@/src/components/Portal';
+import { pressable } from '@/src/components/pressable';
 import { useModalDialog } from '@/src/components/useModalDialog';
 import { isModifiedClick } from '@/src/components/events';
 import { fetchSearchIndex } from './searchIndex';
@@ -228,7 +229,7 @@ export const SearchDialog = () => {
         onClick={openDialog}
         aria-haspopup="dialog"
         aria-expanded={isOpen}
-        className={css({
+        className={css(pressable, {
           display: 'flex',
           alignItems: 'center',
           gap: '2',
@@ -242,7 +243,6 @@ export const SearchDialog = () => {
           cursor: 'pointer',
           _hover: { borderColor: 'ink.borderStrong', color: 'ink.700' },
           _active: { bg: 'paper.100' },
-          transition: '[all 0.2s]',
           bg: 'transparent',
           minW: { base: '[36px]', md: 'auto' },
           justifyContent: 'center',
@@ -273,7 +273,9 @@ export const SearchDialog = () => {
           block을 헤더로 바꿔, 안에 두면 풀스크린 패널이 헤더 높이로 접힌다. */}
       {isOpen && (
         <Portal>
-          {/* 백드롭 클릭은 포인터 편의다 — 키보드는 Escape·닫기 버튼으로 닫는다. */}
+          {/* 백드롭 클릭은 포인터 편의다 — 키보드는 Escape·닫기 버튼으로 닫는다.
+              등장만 움직인다(Astryx Dialog) — 닫힘은 즉시 사라진다. @starting-style은 열 때
+              삽입되는 이 요소에만 쓴다(서버가 그린 요소에 걸면 하드 로드에도 재생된다). */}
           <div
             role="presentation"
             className={css({
@@ -281,6 +283,8 @@ export const SearchDialog = () => {
               inset: '0',
               bg: 'scrim.dialog',
               zIndex: '50',
+              transition: 'opacity',
+              _starting: { opacity: '0' },
             })}
             onClick={closeDialog}
           />
@@ -302,8 +306,18 @@ export const SearchDialog = () => {
               w: { base: 'full', md: '[560px]' },
             })}
           >
+            {/* 등장은 바깥 래퍼(가운데 정렬의 translateX)가 아니라 이 패널에 건다. 데스크톱
+                센터 모달은 16px 아래·95%에서 떠오르고, 화면을 덮는 모바일은 투명도만 바뀐다
+                (Astryx Dialog의 풀스크린과 같다). */}
             <div
               className={css({
+                transitionProperty: 'opacity, transform',
+                transitionDuration: 'mediumMax',
+                transitionTimingFunction: 'standard',
+                _starting: {
+                  opacity: '0',
+                  transform: { md: 'translateY(16px) scale(0.95)' },
+                },
                 bg: 'paper.50',
                 rounded: { base: 'none', md: 'container' },
                 overflow: 'hidden',
@@ -458,7 +472,7 @@ export const SearchDialog = () => {
                             // 6.11:1)으로 올린다. 제목·태그는 자기 색을 갖는다.
                             color: selected ? 'ink.700' : 'ink.500',
                             _active: { bg: 'accent.muted', color: 'ink.700' },
-                            transition: '[background 0.1s]',
+                            transition: 'colors',
                             borderBottomWidth: { base: 'hairline', md: 'none' },
                             borderColor: 'paper.200',
                           })}

@@ -1,11 +1,11 @@
 import { RSS_PATH } from '@blog/content/client';
 import { AUTHOR_GITHUB, AUTHOR_LINKEDIN } from '@/content.values.mts';
 import { ABOUT_PATH, HOME_PATH, PRIVACY_PATH } from '@/src/shared/routes';
+import { VIEW_TRANSITION } from '@/src/shared/viewTransitions';
 import Link from 'next/link';
 import { css, cx } from '@blog/styled-system/css';
 import type { ReactNode } from 'react';
 
-import { PageTransition } from './PageTransition';
 import { railGutter, railColumn } from './Rail';
 import { siteHeaderStyle } from './siteHeader';
 import { NavLinks } from './home/NavLinks';
@@ -53,7 +53,7 @@ const footerLink = css({
   fontFamily: 'mono',
   fontSize: '[12px]',
   color: 'ink.500',
-  transition: '[color 0.15s]',
+  transition: 'colors',
   _hover: { color: 'ink.950' },
 });
 
@@ -80,8 +80,13 @@ export const Layout = ({ children }: LayoutProps) => {
       <a href={`#${MAIN_ID}`} className={skipLink}>
         본문으로 건너뛰기
       </a>
+      {/* view-transition-name은 인라인으로 준다 — `siteHeaderStyle`은 진행 바도 쓰므로 거기
+          두면 이름이 둘이 되고, 같은 이름이 둘이면 브라우저가 전환을 통째로 건너뛴다. */}
       <header
-        style={siteHeaderStyle}
+        style={{
+          ...siteHeaderStyle,
+          viewTransitionName: VIEW_TRANSITION.siteHeader,
+        }}
         className={css({
           // 높이는 hairline까지 포함한다(border-box) — 헤더 아래에 붙는 요소들이 같은 값을 쓴다.
           h: '[var(--site-header-height)]',
@@ -125,7 +130,7 @@ export const Layout = ({ children }: LayoutProps) => {
                 fontWeight: 'medium',
                 fontSize: '[15px]',
                 color: 'ink.950',
-                transition: '[opacity 0.15s]',
+                transition: 'opacity',
                 _hover: { opacity: '0.7' },
               })}
             >
@@ -161,7 +166,7 @@ export const Layout = ({ children }: LayoutProps) => {
         tabIndex={-1}
         className={css({ flex: '1', w: 'full', outline: 'none' })}
       >
-        <PageTransition>{children}</PageTransition>
+        {children}
       </main>
 
       <footer

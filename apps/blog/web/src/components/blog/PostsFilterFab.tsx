@@ -45,7 +45,7 @@ export const PostsFilterFab = ({
       fontWeight: 'medium',
       cursor: 'pointer',
       zIndex: '40',
-      transition: '[background-color 0.15s, border-color 0.15s]',
+      transition: 'colors',
       _hover: { bg: 'paper.300', borderColor: 'ink.borderStrong' },
     })}
   >

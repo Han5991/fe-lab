@@ -7,7 +7,6 @@ import { Label } from '@/src/components/blog';
 import { PageBoundary } from '@/src/components/PageBoundary';
 import { railGutter, railColumn } from '@/src/components/Rail';
 import { archivePath, postPath } from '@blog/content/client';
-import { ABOUT_TRANSITION_ID } from '@/src/shared/transitions';
 
 import { getAboutStats, getSeriesPostCounts } from './counts';
 import { FEATURED_SERIES } from './featuredSeries';
@@ -25,7 +24,10 @@ const jsonLd = buildAboutJsonLd();
 // 레이아웃만 다르다.
 const hoverRow = css.raw({
   pos: 'relative',
-  transition: '[background 0.15s, padding 0.15s]',
+  // 왼쪽 여백이 늘며 행이 밀려난다 — 단축 유틸리티 목록에 padding이 없어 속성을 직접 고른다.
+  transitionProperty: 'background-color, padding-left',
+  transitionDuration: 'fast',
+  transitionTimingFunction: 'standard',
   _hover: {
     bg: 'paper.100',
     pl: '4',
@@ -51,7 +53,7 @@ export default function AboutPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }}
       />
-      <PageBoundary transitionId={ABOUT_TRANSITION_ID}>
+      <PageBoundary>
         <div className={css({ bg: 'paper.50' })}>
           {/* Header */}
           {/* 배경은 화면 끝까지 가야 하므로 거터는 <header> 안쪽에 둔다 —
@@ -168,7 +170,7 @@ export default function AboutPage() {
                         bg: 'paper.300',
                         borderColor: 'ink.borderStrong',
                       },
-                      transition: '[background 0.15s, border-color 0.15s]',
+                      transition: 'colors',
                     })}
                   >
                     GitHub →
@@ -195,7 +197,7 @@ export default function AboutPage() {
                         bg: 'paper.300',
                         borderColor: 'ink.borderStrong',
                       },
-                      transition: '[background 0.15s, border-color 0.15s]',
+                      transition: 'colors',
                     })}
                   >
                     LinkedIn →
@@ -254,7 +256,7 @@ export default function AboutPage() {
                     color: 'ink.500',
                     letterSpacing: 'monoXl',
                     _hover: { color: 'ink.950' },
-                    transition: '[color 0.15s]',
+                    transition: 'colors',
                   })}
                 >
                   2025 회고 전체 읽기 →

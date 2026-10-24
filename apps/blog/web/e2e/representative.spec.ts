@@ -7,10 +7,10 @@
  * - 모바일(375px) 가로 넘침 — 레일·거터(`Rail.tsx`)가 좁은 화면에서 깨지면 내용이
  *   화면 밖으로 나간다. 상자 기반 검사(jsdom)로는 보이지 않는다.
  *
- * 넘침은 `documentElement.scrollWidth`만으로는 못 본다 — 본문은 `PageTransition`의
- * `overflowX: clip` 안에 있어, 넓은 요소가 잘려 읽을 수 없게 돼도 문서 폭은 그대로다.
- * 그래서 요소마다 상자를 잰다. 일부러 가로 스크롤하는 상자(코드 블록·표, overflow-x
- * auto/scroll) 안은 넘쳐도 정상이라 뺀다.
+ * 넘침은 `documentElement.scrollWidth`만으로는 못 본다 — `overflow: hidden`·`clip`인 조상
+ * 안에서 넓은 요소가 잘리면 읽을 수 없게 돼도 문서 폭은 그대로다. 그래서 요소마다 상자를
+ * 잰다. 일부러 가로 스크롤하는 상자(코드 블록·표, overflow-x auto/scroll) 안은 넘쳐도
+ * 정상이라 뺀다.
  */
 import { axeViolations } from './support/a11y';
 import { contentSelector, settle, waitForHydration } from './support/dom';

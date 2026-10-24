@@ -125,7 +125,7 @@ export function CodeTabsPanels({
                   // 세그먼트와 같은 "현재 선택" 이름(Astryx Tab의 선택 표식이
                   // accent). 굵기는 바꾸지 않는다 — 탭 폭이 늘어 크롬이 밀린다.
                   color: selected ? 'accent.solid' : 'ink.600',
-                  transition: '[color 0.15s]',
+                  transition: 'colors',
                   _hover: { color: 'ink.950' },
                   // 활성 표시는 밑줄 1px. 배경을 칠하면 크롬 안에 또 다른
                   // 상자가 생겨 위계가 한 겹 늘어난다.

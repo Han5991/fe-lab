@@ -91,7 +91,7 @@ export default function AdminAnalyticsPage() {
               fontFamily: 'mono',
               fontSize: 'xs',
               color: 'ink.600',
-              transition: '[color 0.15s]',
+              transition: 'colors',
               _hover: { color: 'ink.950' },
             })}
           >
@@ -109,7 +109,7 @@ export default function AdminAnalyticsPage() {
               fontSize: 'xs',
               color: 'ink.600',
               cursor: 'pointer',
-              transition: '[color 0.15s]',
+              transition: 'colors',
               _hover: { color: 'ink.950' },
             })}
           >
