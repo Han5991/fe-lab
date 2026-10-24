@@ -1,10 +1,11 @@
 import { OG_DEFAULT_IMAGE } from '@/content.values.mts';
-import Link from 'next/link';
 import { css } from '@blog/styled-system/css';
 import type { PostSummary } from '@blog/content/client';
 import { postPath } from '@blog/content/client';
 import { resolveThumbnailSrc } from '@blog/content/client';
 import { fmtDate, fmtReadMin } from '@blog/content/client';
+import { PostCardShared } from '@/src/components/shared/PostSharedElement';
+import { TransitionLink } from '@/src/components/shared/TransitionLink';
 import { Label } from './Label';
 import { tagPillStyle } from './tagPillStyle';
 
@@ -27,8 +28,10 @@ export const PostGridCard = ({ post, priority = false }: PostGridCardProps) => {
   const thumb = resolveThumbnailSrc(post, OG_DEFAULT_IMAGE);
   const readMin = fmtReadMin(post.readMin);
   return (
-    <Link
+    <TransitionLink
       href={postPath(post.slug)}
+      // 이 카드의 커버·제목이 글 상세로 이어지는 이동이라는 표시(PostCardShared).
+      opensPost
       className={css({
         display: 'flex',
         flexDir: 'column',
@@ -44,24 +47,30 @@ export const PostGridCard = ({ post, priority = false }: PostGridCardProps) => {
         },
       })}
     >
-      <img
-        src={thumb}
-        // 장식 이미지다 — 같은 링크 안의 h3가 이미 제목을 말한다.
-        alt=""
-        width={THUMB_WIDTH}
-        height={THUMB_HEIGHT}
-        loading={priority ? 'eager' : 'lazy'}
-        fetchPriority={priority ? 'high' : 'auto'}
-        decoding="async"
-        className={css({
-          display: 'block',
-          w: 'full',
-          h: '[160px]',
-          objectFit: 'cover',
-          borderBottomWidth: 'hairline',
-          borderColor: 'ink.border',
-        })}
-      />
+      <PostCardShared part="cover" slug={post.slug}>
+        <img
+          src={thumb}
+          // 장식 이미지다 — 같은 링크 안의 h3가 이미 제목을 말한다.
+          alt=""
+          width={THUMB_WIDTH}
+          height={THUMB_HEIGHT}
+          loading={priority ? 'eager' : 'lazy'}
+          fetchPriority={priority ? 'high' : 'auto'}
+          decoding="async"
+          className={css({
+            display: 'block',
+            w: 'full',
+            h: '[160px]',
+            objectFit: 'cover',
+            borderBottomWidth: 'hairline',
+            borderColor: 'ink.border',
+            // 화면에서는 링크의 라운드·overflow가 위 모서리를 자르지만, 공유 요소로 따로 찍힌
+            // 스냅샷에는 조상의 자르기가 없다 — 이미지가 제 모서리를 들고 있어야 전환 첫
+            // 프레임에 각지지 않는다.
+            roundedTop: 'container',
+          })}
+        />
+      </PostCardShared>
       <div
         className={css({
           p: '[16px]',
@@ -71,18 +80,20 @@ export const PostGridCard = ({ post, priority = false }: PostGridCardProps) => {
           flex: '1',
         })}
       >
-        <h3
-          className={css({
-            fontFamily: 'sans',
-            fontSize: 'md',
-            fontWeight: 'semibold',
-            lineHeight: 'header',
-            color: 'accent.solid',
-            lineClamp: 2,
-          })}
-        >
-          {post.title}
-        </h3>
+        <PostCardShared part="title" slug={post.slug}>
+          <h3
+            className={css({
+              fontFamily: 'sans',
+              fontSize: 'md',
+              fontWeight: 'semibold',
+              lineHeight: 'header',
+              color: 'accent.solid',
+              lineClamp: 2,
+            })}
+          >
+            {post.title}
+          </h3>
+        </PostCardShared>
         {post.excerpt && (
           <p
             className={css({
@@ -116,6 +127,6 @@ export const PostGridCard = ({ post, priority = false }: PostGridCardProps) => {
           )}
         </div>
       </div>
-    </Link>
+    </TransitionLink>
   );
 };

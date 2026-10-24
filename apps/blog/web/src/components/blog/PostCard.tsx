@@ -1,10 +1,11 @@
 import { OG_DEFAULT_IMAGE } from '@/content.values.mts';
-import Link from 'next/link';
 import { css, cx, sva } from '@blog/styled-system/css';
 import type { RecipeVariant } from '@blog/styled-system/css';
 import type { PostSummary } from '@blog/content/client';
 import { postPath, resolveThumbnailSrc } from '@blog/content/client';
 
+import { PostCardShared } from '@/src/components/shared/PostSharedElement';
+import { TransitionLink } from '@/src/components/shared/TransitionLink';
 import { cardLinkRaw, cardRoot, coverFrameRaw, coverImage } from './cardParts';
 import { HiddenPostBadge } from './HiddenPostBadge';
 import { PostMeta } from './PostMeta';
@@ -77,27 +78,38 @@ export const PostCard = ({
 
   return (
     <article className={cx(cardRoot, classes.root)}>
-      <div className={classes.cover}>
-        <img
-          // posts/ 안의 png·jpg는 빌드가 만든 webp, 썸네일이 없는 글은 생성 OG 카드(/og/{slug}.png).
-          src={resolveThumbnailSrc(post, OG_DEFAULT_IMAGE)}
-          alt=""
-          width={COVER_WIDTH}
-          height={COVER_HEIGHT}
-          loading={priority ? 'eager' : 'lazy'}
-          fetchPriority={priority ? 'high' : 'auto'}
-          decoding="async"
-          className={coverImage}
-        />
-      </div>
+      {/* 커버는 틀(라운드·hairline)째 글 상세 히어로로 이어진다 — 이름을 img에 달면 틀의 라운드가
+          스냅샷에서 빠져 첫 프레임에 모서리가 각진다. */}
+      <PostCardShared part="cover" slug={post.slug}>
+        <div className={classes.cover}>
+          <img
+            // posts/ 안의 png·jpg는 빌드가 만든 webp, 썸네일이 없는 글은 생성 OG 카드(/og/{slug}.png).
+            src={resolveThumbnailSrc(post, OG_DEFAULT_IMAGE)}
+            alt=""
+            width={COVER_WIDTH}
+            height={COVER_HEIGHT}
+            loading={priority ? 'eager' : 'lazy'}
+            fetchPriority={priority ? 'high' : 'auto'}
+            decoding="async"
+            className={coverImage}
+          />
+        </div>
+      </PostCardShared>
       <div className={classes.body}>
-        <h3>
-          <Link href={postPath(post.slug)} className={classes.link}>
-            {post.title}
-          </Link>
-          {/* dev에서만 — draft·예약 글 표시(프로덕션에서는 아무것도 렌더되지 않는다). */}
-          <HiddenPostBadge post={post} />
-        </h3>
+        <PostCardShared part="title" slug={post.slug}>
+          <h3>
+            <TransitionLink
+              href={postPath(post.slug)}
+              // 이 카드의 커버·제목이 글 상세로 이어지는 이동이라는 표시(PostCardShared).
+              opensPost
+              className={classes.link}
+            >
+              {post.title}
+            </TransitionLink>
+            {/* dev에서만 — draft·예약 글 표시(프로덕션에서는 아무것도 렌더되지 않는다). */}
+            <HiddenPostBadge post={post} />
+          </h3>
+        </PostCardShared>
         {post.excerpt && <p className={classes.excerpt}>{post.excerpt}</p>}
       </div>
       <PostMeta post={post} tags={tags} />

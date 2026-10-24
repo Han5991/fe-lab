@@ -1,9 +1,10 @@
-import Link from 'next/link';
 import { css, sva } from '@blog/styled-system/css';
 import type { RecipeVariant } from '@blog/styled-system/css';
 import type { PostNavItem } from '@blog/content/client';
 import { postPath } from '@blog/content/client';
+import { TransitionLink } from '@/src/components/shared/TransitionLink';
 import { SERIES_PATH } from '@/src/shared/routes';
+import type { SiblingOrder } from '@/src/shared/viewTransitions';
 
 interface PostNavigationProps {
   prev: PostNavItem | null;
@@ -39,7 +40,8 @@ const navCard = sva({
     },
   },
   variants: {
-    direction: {
+    // 카드의 자리 — 이전은 왼쪽, 다음은 오른쪽.
+    side: {
       prev: {},
       // 다음 글 카드만 우측 정렬. 모바일은 세로 스택이라 좌측 정렬을 유지한다.
       next: {
@@ -74,19 +76,26 @@ const rowStyle = css({
 interface NavCardProps {
   href: string;
   title: string;
-  direction: RecipeVariant<typeof navCard>['direction'];
+  /** 카드의 자리 — 이전은 왼쪽, 다음은 오른쪽 정렬. */
+  side: NonNullable<RecipeVariant<typeof navCard>['side']>;
+  /**
+   * 형제 순서 — 이전·다음 글(편)처럼 같은 깊이의 형제로 가는 카드만 준다. 이전은 왼쪽에서, 다음은
+   * 오른쪽에서 밀려 들어온다(`navTransitionType`). 자리와 따로 두는 이유: "시리즈 목록 →"은 다음
+   * 자리에 서지만 형제가 아니라(글 → 섹션) 주지 않는다 — 방향은 깊이가 정한다(위로).
+   */
+  order?: SiblingOrder | undefined;
   label: string;
   /** 제목 줄 수 — 시리즈 카드는 1줄, 전체 이전/다음은 2줄까지 */
   clamp: RecipeVariant<typeof navCard>['clamp'];
 }
 
-const NavCard = ({ href, title, direction, label, clamp }: NavCardProps) => {
-  const classes = navCard({ direction, clamp });
+const NavCard = ({ href, title, side, order, label, clamp }: NavCardProps) => {
+  const classes = navCard({ side, clamp });
   return (
-    <Link href={href} className={classes.card}>
+    <TransitionLink href={href} order={order} className={classes.card}>
       <span className={labelStyle}>{label}</span>
       <span className={classes.title}>{title}</span>
-    </Link>
+    </TransitionLink>
   );
 };
 
@@ -135,7 +144,8 @@ export const PostNavigation = ({
               <NavCard
                 href={postHref(seriesNav.prev)}
                 title={seriesNav.prev.title}
-                direction="prev"
+                side="prev"
+                order="prev"
                 label="← 이전 편"
                 clamp={1}
               />
@@ -146,7 +156,8 @@ export const PostNavigation = ({
               <NavCard
                 href={postHref(seriesNav.next)}
                 title={seriesNav.next.title}
-                direction="next"
+                side="next"
+                order="next"
                 label="다음 편 →"
                 clamp={1}
               />
@@ -155,7 +166,7 @@ export const PostNavigation = ({
               <NavCard
                 href={SERIES_PATH}
                 title="다른 시리즈 둘러보기"
-                direction="next"
+                side="next"
                 label="시리즈 목록 →"
                 clamp={1}
               />
@@ -168,7 +179,8 @@ export const PostNavigation = ({
             <NavCard
               href={postHref(prev)}
               title={prev.title}
-              direction="prev"
+              side="prev"
+              order="prev"
               label="← 이전 글"
               clamp={2}
             />
@@ -179,7 +191,8 @@ export const PostNavigation = ({
             <NavCard
               href={postHref(next)}
               title={next.title}
-              direction="next"
+              side="next"
+              order="next"
               label="다음 글 →"
               clamp={2}
             />

@@ -1,9 +1,9 @@
 'use client';
 
-import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { css } from '@blog/styled-system/css';
 import { POSTS_PATH } from '@blog/content/client';
+import { TransitionLink } from '@/src/components/shared/TransitionLink';
 import { ABOUT_PATH, SERIES_PATH } from '@/src/shared/routes';
 
 /**
@@ -72,14 +72,14 @@ export function NavLinks() {
         // 내비의 어느 링크도 홈을 가리키지 않는다(목업은 홈에서 "글"을 켰다).
         const isActive = pathname.startsWith(item.href);
         return (
-          <Link
+          <TransitionLink
             key={item.href}
             href={item.href}
             aria-current={isActive ? 'page' : undefined}
             className={css(linkStyle, isActive ? activeStyle : undefined)}
           >
             {item.label}
-          </Link>
+          </TransitionLink>
         );
       })}
     </nav>

@@ -1,26 +1,19 @@
-import Link from 'next/link';
 import { css, cx } from '@blog/styled-system/css';
 
-import { archivePath, POSTS_PATH, postPath } from '@blog/content/client';
+import { archivePath, POSTS_PATH } from '@blog/content/client';
 import {
   getAllPostSummaries,
   getAllSeries,
   getSeriesMeta,
 } from '@/src/content';
-import { fmtDate } from '@blog/content/client';
 import { safeJsonLd } from '@blog/content/client';
-import { HiddenPostBadge } from '@/src/components/blog/HiddenPostBadge';
-import {
-  postRowItem,
-  postRowLink,
-  postRowMeta,
-  postRowMetaRaw,
-  postRowTitle,
-} from '@/src/components/blog/postRow';
+import { PostListRow } from '@/src/components/blog/PostListRow';
+import { postRowMeta, postRowMetaRaw } from '@/src/components/blog/postRow';
 import { PageBoundary } from '@/src/components/PageBoundary';
 import { inlineLink } from '@/src/components/inlineLink';
 import { railGutter, railColumn } from '@/src/components/Rail';
 import { seriesBadgeRaw } from '@/src/components/seriesBadge';
+import { TransitionLink } from '@/src/components/shared/TransitionLink';
 
 import { attachSeriesPosts } from './seriesIndex';
 import {
@@ -109,9 +102,9 @@ export default function SeriesPage() {
                 아직 묶인 시리즈가 없습니다.{' '}
                 {/* 문장 속 링크 — 둘레 글자(ink.600)와 잉크 링크의 명도 차가 다크
                     2.59:1로 3:1에 못 미쳐 밑줄이 표식이다(inlineLink). */}
-                <Link href={POSTS_PATH} className={inlineLink}>
+                <TransitionLink href={POSTS_PATH} className={inlineLink}>
                   전체 글 목록
-                </Link>
+                </TransitionLink>
                 에서 모든 글을 볼 수 있습니다.
               </p>
             ) : (
@@ -132,7 +125,7 @@ export default function SeriesPage() {
                     {/* 배지 자체가 그 시리즈로 필터된 아카이브로 가는 링크다.
                         (글 목록 행이 h3라 시리즈 제목은 h2로 둔다) */}
                     <h2 className={css({ minW: '0' })}>
-                      <Link
+                      <TransitionLink
                         href={archivePath({ series: entry.id })}
                         className={css({
                           display: 'inline-block',
@@ -142,7 +135,7 @@ export default function SeriesPage() {
                         <span className={seriesHeadingBadge}>
                           {entry.title}
                         </span>
-                      </Link>
+                      </TransitionLink>
                     </h2>
                     <span className={postRowMeta}>{entry.posts.length}편</span>
                   </div>
@@ -164,23 +157,7 @@ export default function SeriesPage() {
                     className={css({ listStyleType: 'none', p: '0', m: '0' })}
                   >
                     {entry.posts.map(post => (
-                      <li key={post.slug} className={postRowItem}>
-                        <Link
-                          href={postPath(post.slug)}
-                          className={postRowLink}
-                        >
-                          <h3 className={postRowTitle}>
-                            {post.title}
-                            <HiddenPostBadge post={post} />
-                          </h3>
-                          {/* 날짜가 없으면 빈 span을 남기지 않는다(ArchiveRow와 같은 규칙). */}
-                          {post.date && (
-                            <span className={postRowMeta}>
-                              {fmtDate(post.date)}
-                            </span>
-                          )}
-                        </Link>
-                      </li>
+                      <PostListRow key={post.slug} post={post} />
                     ))}
                   </ol>
                 </section>

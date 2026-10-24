@@ -1,10 +1,16 @@
 /**
  * 홈 "지난 글"의 썸네일 행 — 카드처럼 행 하나가 제목 링크 하나다.
  */
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import type { PostSummary } from '@blog/content/client';
 import { PostThumbRow } from './PostThumbRow';
+
+// 링크가 현재 경로로 이동 방향을 고른다(TransitionLink) — 이 컴포넌트가 놓이는 홈에 둔다.
+vi.mock('next/navigation', async () => {
+  const { HOME_PATH } = await import('@/src/shared/routes');
+  return { usePathname: () => HOME_PATH };
+});
 
 const post = (over: Partial<PostSummary> = {}): PostSummary => ({
   slug: 'row-post',

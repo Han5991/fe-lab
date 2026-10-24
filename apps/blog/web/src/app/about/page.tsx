@@ -1,5 +1,4 @@
 import { AUTHOR_GITHUB, AUTHOR_LINKEDIN } from '@/content.values.mts';
-import Link from 'next/link';
 import { css, cx } from '@blog/styled-system/css';
 
 import { safeJsonLd } from '@blog/content/client';
@@ -7,6 +6,7 @@ import { Label } from '@/src/components/blog/Label';
 import { PageBoundary } from '@/src/components/PageBoundary';
 import { railGutter, railColumn } from '@/src/components/Rail';
 import { OSS_CONTRIBUTIONS } from '@/src/components/ossContributions';
+import { TransitionLink } from '@/src/components/shared/TransitionLink';
 import { archivePath, postPath } from '@blog/content/client';
 
 import { getAboutStats, getSeriesPostCounts } from './counts';
@@ -249,7 +249,7 @@ export default function AboutPage() {
                 {/* 아래 링크들의 slug는 리터럴이라 인코딩이 필요 없지만,
                     postPath를 거치면 후행 슬래시 표기가 저절로 통일된다 —
                     예전엔 이 페이지의 글 링크 중 한 곳만 슬래시가 없었다. */}
-                <Link
+                <TransitionLink
                   href={postPath('2025-retrospect')}
                   className={css({
                     fontFamily: 'mono',
@@ -261,7 +261,7 @@ export default function AboutPage() {
                   })}
                 >
                   2025 회고 전체 읽기 →
-                </Link>
+                </TransitionLink>
               </div>
             </div>
           </header>
@@ -305,7 +305,7 @@ export default function AboutPage() {
                 </div>
                 <div>
                   {OSS_CONTRIBUTIONS.map(item => (
-                    <Link
+                    <TransitionLink
                       key={item.slug}
                       href={postPath(item.slug)}
                       className={css(hoverRow, {
@@ -349,7 +349,7 @@ export default function AboutPage() {
                       >
                         {item.description}
                       </p>
-                    </Link>
+                    </TransitionLink>
                   ))}
                 </div>
               </section>
@@ -399,7 +399,7 @@ export default function AboutPage() {
                         link: postPath('2025-teoconf-presentation'),
                       },
                     ].map(item => (
-                      <Link
+                      <TransitionLink
                         key={item.event}
                         href={item.link}
                         className={css(hoverRow, {
@@ -444,7 +444,7 @@ export default function AboutPage() {
                         >
                           →
                         </span>
-                      </Link>
+                      </TransitionLink>
                     ))}
                   </div>
                 </section>
@@ -477,7 +477,7 @@ export default function AboutPage() {
                     {FEATURED_SERIES.map(series => (
                       // /series 페이지와 같은 링크 문법. 아카이브는 `tab`을 읽지
                       // 않고 `q`는 series와 AND로 걸리므로 series 하나만 넘긴다.
-                      <Link
+                      <TransitionLink
                         key={series.id}
                         href={archivePath({ series: series.id })}
                         className={css(hoverRow, {
@@ -531,7 +531,7 @@ export default function AboutPage() {
                             {seriesPostCounts.get(series.id)}편
                           </span>
                         )}
-                      </Link>
+                      </TransitionLink>
                     ))}
                   </div>
                 </section>

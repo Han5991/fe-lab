@@ -1,13 +1,13 @@
 'use client';
 
 import { useId } from 'react';
-import Link from 'next/link';
 import { css } from '@blog/styled-system/css';
 import { useQuery } from '@tanstack/react-query';
 import { getTopPosts } from '@/src/domain/analytics';
 import type { PostSummary } from '@blog/content/client';
 import { postPath } from '@blog/content/client';
 import { fmtNum } from '@blog/content/client';
+import { TransitionLink } from '@/src/components/shared/TransitionLink';
 
 interface PopularRailProps {
   posts: PostSummary[];
@@ -84,7 +84,7 @@ export const PopularRail = ({ posts, limit = 5 }: PopularRailProps) => {
               borderColor: 'ink.border',
             })}
           >
-            <Link
+            <TransitionLink
               href={postPath(post.slug)}
               className={css({
                 display: 'flex',
@@ -133,7 +133,7 @@ export const PopularRail = ({ posts, limit = 5 }: PopularRailProps) => {
                   {fmtNum(post.viewCount)} reads
                 </span>
               </div>
-            </Link>
+            </TransitionLink>
           </li>
         ))}
       </ol>

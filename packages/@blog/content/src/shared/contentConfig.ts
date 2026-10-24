@@ -311,7 +311,11 @@ export interface BundleBudget {
 export type BundleBudgetsConfig = readonly [BundleBudget, ...BundleBudget[]];
 
 export interface ThumbnailsConfig {
-  /** 최적화본의 최대 폭(가장 넓게 그리는 자리 — 홈 쇼케이스 카드 커버). 작은 원본은 확대하지 않음 */
+  /**
+   * 최적화본의 최대 폭. 쓰는 자리는 글 카드 커버(가장 넓은 것은 홈 쇼케이스)와 글 상세 히어로다 — 히어로는
+   * 카드에서 이미 받은 이 이미지를 공유 요소 전환에 그대로 쓰려고 원본 대신 받는다. 본문 레일을 2x로 그리면
+   * 최적화본이 조금 늘어날 수 있는데, 전송량과 전환이 이미지를 기다리지 않는 쪽을 택한 맞바꿈이다. 작은 원본은 확대하지 않음
+   */
   maxWidth: number;
   webpQuality: number;
 }

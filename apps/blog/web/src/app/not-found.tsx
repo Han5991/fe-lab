@@ -1,13 +1,17 @@
-import Link from 'next/link';
 import { css, cx } from '@blog/styled-system/css';
 import { POSTS_PATH } from '@blog/content/client';
 import { HOME_PATH } from '@/src/shared/routes';
 import { railGutter } from '@/src/components/Rail';
 import { actionButton } from '@/src/components/actionButton';
+import { PageBoundary } from '@/src/components/PageBoundary';
+import { TransitionLink } from '@/src/components/shared/TransitionLink';
 
+// 페이지 전환 경계(PageBoundary)에 담는다 — 경계 밖이면 404 화면이 전환 스냅샷에 담기지 않아 첫
+// 프레임에 사라지고, 방향 있는 이동(헤더 '글' 등)은 들어오는 페이지가 fast 뒤에 나타나 그 사이
+// 지면이 빈다.
 export default function NotFound() {
   return (
-    <div
+    <PageBoundary
       className={cx(
         css({
           display: 'flex',
@@ -62,19 +66,19 @@ export default function NotFound() {
           w: { base: 'full', sm: 'auto' },
         })}
       >
-        <Link
+        <TransitionLink
           href={HOME_PATH}
           className={actionButton({ tone: 'solid', size: 'lg' })}
         >
           홈으로 돌아가기
-        </Link>
-        <Link
+        </TransitionLink>
+        <TransitionLink
           href={POSTS_PATH}
           className={actionButton({ tone: 'neutral', size: 'lg' })}
         >
           글 목록 보기
-        </Link>
+        </TransitionLink>
       </div>
-    </div>
+    </PageBoundary>
   );
 }

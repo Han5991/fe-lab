@@ -1,8 +1,8 @@
 import { css } from '@blog/styled-system/css';
 
 // 목록 행 스타일의 단일 출처 — hairline 보더로만 구분하고 제목 좌 / 날짜
-// 우(모노)에 놓는 문법. 아카이브(ArchiveRow)·/series 글 목록이 함께 쓴다.
-// 각자 손으로 동기화하던 동일 블록을 한 곳으로 모은다.
+// 우(모노)에 놓는 문법. 행 마크업은 PostListRow 하나이고(/posts 목록 보기·/series
+// 글 목록), 날짜·개수 모노 글자는 /series 머리도 쓴다.
 // 로컬 변주는 호출부에서 `css(rawX, { ...override })`로 덧씌운다 — cx는
 // 충돌하는 원자 클래스를 병합하지 않으므로 raw 병합만 쓴다(NavLinks.tsx).
 // raw는 실제로 병합해 쓰는 소비처가 있는 조각만 내보낸다.

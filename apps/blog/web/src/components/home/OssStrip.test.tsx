@@ -4,11 +4,17 @@
  * 칩은 /about과 같은 출처(`ossContributions.ts`)를 그리고, merged 수는 CI가
  * 주입하는 NEXT_PUBLIC_PR_COUNT를 우선합니다(주입 실패 시에도 숫자가 비지 않게).
  */
-import { afterEach, describe, expect, test } from 'vitest';
+import { afterEach, describe, expect, test, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MERGED_PR_COUNT_FALLBACK } from '@/content.values.mts';
 import { OSS_CONTRIBUTIONS } from '@/src/components/ossContributions';
 import { OssStrip } from './OssStrip';
+
+// 링크가 현재 경로로 이동 방향을 고른다(TransitionLink) — 이 컴포넌트가 놓이는 홈에 둔다.
+vi.mock('next/navigation', async () => {
+  const { HOME_PATH } = await import('@/src/shared/routes');
+  return { usePathname: () => HOME_PATH };
+});
 
 /** href는 postPath 계약 그대로(후행 슬래시 포함) — vitest.setup.ts가 next.config를 비춰 둔다. */
 const hrefOf = (el: Element) => el.getAttribute('href');

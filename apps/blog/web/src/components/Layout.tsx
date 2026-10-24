@@ -5,7 +5,6 @@ import {
 } from '@/content.values.mts';
 import { ABOUT_PATH, HOME_PATH, PRIVACY_PATH } from '@/src/shared/routes';
 import { VIEW_TRANSITION } from '@/src/shared/viewTransitions';
-import Link from 'next/link';
 import { css, cx } from '@blog/styled-system/css';
 import type { ReactNode } from 'react';
 
@@ -15,6 +14,7 @@ import { SOCIAL_LINKS, ShellLink } from './shellLinks';
 import { siteHeaderStyle } from './siteHeader';
 import { NavLinks } from './home/NavLinks';
 import { SearchDialog } from './search/SearchDialog';
+import { TransitionLink } from './shared/TransitionLink';
 import { ThemeToggle } from './ThemeToggle';
 
 interface LayoutProps {
@@ -129,7 +129,7 @@ export const Layout = ({ children }: LayoutProps) => {
           )}
         >
           <div className={css({ display: 'flex', alignItems: 'center' })}>
-            <Link
+            <TransitionLink
               href={HOME_PATH}
               className={css({
                 display: 'inline-flex',
@@ -145,7 +145,7 @@ export const Layout = ({ children }: LayoutProps) => {
               })}
             >
               {WORDMARK}
-            </Link>
+            </TransitionLink>
           </div>
 
           <NavLinks />
