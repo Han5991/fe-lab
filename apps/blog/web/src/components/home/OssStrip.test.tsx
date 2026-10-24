@@ -1,12 +1,13 @@
 /**
  * 홈 하단 오픈소스 스트립.
  *
- * 칩은 about 페이지의 기여 데이터와 같은 출처여야 하고, merged 수는 CI가
+ * 칩은 /about과 같은 출처(`ossContributions.ts`)를 그리고, merged 수는 CI가
  * 주입하는 NEXT_PUBLIC_PR_COUNT를 우선합니다(주입 실패 시에도 숫자가 비지 않게).
  */
 import { afterEach, describe, expect, test } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MERGED_PR_COUNT_FALLBACK } from '@/content.values.mts';
+import { OSS_CONTRIBUTIONS } from '@/src/components/ossContributions';
 import { OssStrip } from './OssStrip';
 
 /** href는 postPath 계약 그대로(후행 슬래시 포함) — vitest.setup.ts가 next.config를 비춰 둔다. */
@@ -21,11 +22,21 @@ afterEach(() => {
 describe('OssStrip', () => {
   test('기여 프로젝트 칩이 각 기여 글로 연결된다', () => {
     render(<OssStrip />);
-    expect(hrefOf(screen.getByRole('link', { name: 'node.js' }))).toBe(
+    expect(hrefOf(screen.getByRole('link', { name: 'Node.js' }))).toBe(
       '/posts/nodejs-contribution/',
     );
     expect(hrefOf(screen.getByRole('link', { name: 'gemini-cli' }))).toBe(
       '/posts/ai-opensource-contribution/',
+    );
+  });
+
+  test('칩은 /about과 같은 기여 목록을 같은 순서로 그린다', () => {
+    render(<OssStrip />);
+    const chips = screen
+      .getAllByRole('link')
+      .map(el => [el.textContent, hrefOf(el)]);
+    expect(chips).toEqual(
+      OSS_CONTRIBUTIONS.map(c => [c.project, `/posts/${c.slug}/`]),
     );
   });
 

@@ -6,6 +6,7 @@ import { safeJsonLd } from '@blog/content/client';
 import { Label } from '@/src/components/blog/Label';
 import { PageBoundary } from '@/src/components/PageBoundary';
 import { railGutter, railColumn } from '@/src/components/Rail';
+import { OSS_CONTRIBUTIONS } from '@/src/components/ossContributions';
 import { archivePath, postPath } from '@blog/content/client';
 
 import { getAboutStats, getSeriesPostCounts } from './counts';
@@ -303,38 +304,10 @@ export default function AboutPage() {
                   </h2>
                 </div>
                 <div>
-                  {[
-                    {
-                      project: 'gemini-cli',
-                      org: 'Google',
-                      description:
-                        'Promise.allSettled 병렬 처리로 성능 74% 개선 (408ms → 107ms).',
-                      link: postPath('ai-opensource-contribution'),
-                    },
-                    {
-                      project: 'Mantine',
-                      org: 'Community',
-                      description:
-                        '27개 PR 병합. 컴포넌트 버그 수정 및 기능 개선.',
-                      link: postPath('first-open-source-contribution'),
-                    },
-                    {
-                      project: 'Node.js',
-                      org: 'OpenJS Foundation',
-                      description:
-                        'util.inspect의 numeric separator 포매팅 버그 수정.',
-                      link: postPath('nodejs-contribution'),
-                    },
-                    {
-                      project: 'Next.js',
-                      org: 'Vercel',
-                      description: 'Next.js 코어 기여.',
-                      link: postPath('nextjs-contributor'),
-                    },
-                  ].map(item => (
+                  {OSS_CONTRIBUTIONS.map(item => (
                     <Link
-                      key={item.project}
-                      href={item.link}
+                      key={item.slug}
+                      href={postPath(item.slug)}
                       className={css(hoverRow, {
                         display: 'block',
                         py: '5',
