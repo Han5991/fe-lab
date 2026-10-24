@@ -101,7 +101,7 @@ export default function HomePage() {
                 display: 'inline-block',
                 mt: '[14px]',
                 fontSize: '[13px]',
-                color: 'accent.600',
+                color: 'accent.solid',
                 _hover: { textDecoration: 'underline' },
               })}
             >

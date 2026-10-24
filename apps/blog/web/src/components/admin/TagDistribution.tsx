@@ -56,7 +56,7 @@ export const TagDistribution = ({
                   left: '0',
                   top: '0',
                   bottom: '0',
-                  bg: isHighlighted ? 'accent.600' : 'ink.400',
+                  bg: isHighlighted ? 'spot.600' : 'ink.400',
                 })}
                 style={{ width: `${ratio}%` }}
               />

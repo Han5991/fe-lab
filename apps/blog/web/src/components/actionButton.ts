@@ -16,13 +16,13 @@ export const actionButton = cva({
   variants: {
     tone: {
       primary: {
-        bg: 'btn.primary',
-        color: 'white',
+        bg: 'accent.solid',
+        color: 'accent.onSolid',
         borderColor: 'btn.primaryBorder',
         fontWeight: 'semibold',
         transition: '[background 0.2s]',
-        _hover: { bg: 'btn.primaryHover' },
-        _active: { bg: 'btn.primary' },
+        _hover: { bg: 'accent.solidHover' },
+        _active: { bg: 'accent.solid' },
       },
       secondary: {
         bg: 'paper.200',

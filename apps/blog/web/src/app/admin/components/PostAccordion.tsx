@@ -423,16 +423,16 @@ export function PostAccordion({ post, todayISO }: Props) {
                       <Line
                         type="monotone"
                         dataKey="views"
-                        stroke={token('colors.accent.600')}
+                        stroke={token('colors.spot.600')}
                         strokeWidth={2}
                         dot={{
                           r: 3,
-                          fill: token('colors.accent.600'),
+                          fill: token('colors.spot.600'),
                           strokeWidth: 0,
                         }}
                         activeDot={{
                           r: 5,
-                          fill: token('colors.accent.600'),
+                          fill: token('colors.spot.600'),
                           strokeWidth: 0,
                         }}
                       />

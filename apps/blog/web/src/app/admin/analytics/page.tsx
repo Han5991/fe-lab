@@ -72,10 +72,9 @@ export default function AdminAnalyticsPage() {
               px: '1.5',
               py: '0.5',
               rounded: 'full',
-              bg: 'accent.50',
-              // paper.100 띠 위 틴트 배지 — accent.600은 4.46:1로 AA를 놓쳐 accent.700을
-              // 쓴다(blog-preset.ts의 accent.700 주석이 이 역할을 적는다).
-              color: 'accent.700',
+              // paper.100 띠 위 잉크 틴트 배지 — 그 위 accent.solid는 13.80 / 10.18:1이다.
+              bg: 'accent.muted',
+              color: 'accent.solid',
               letterSpacing: 'mono',
               textTransform: 'uppercase',
             })}

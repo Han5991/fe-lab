@@ -154,7 +154,7 @@ export default defineConfig({
         bg: 'selection.bg',
       },
       ':focus-visible': {
-        outline: '2px solid token(colors.accent.600)',
+        outline: '2px solid token(colors.accent.solid)',
         outlineOffset: '3px',
         // 초점 링은 inner 자리다(blog-preset.ts radii 주석). 이 규칙은 base 레이어라, 자기
         // 라운드를 가진 요소(utilities 레이어)는 초점을 받아도 그 라운드를 지킨다.

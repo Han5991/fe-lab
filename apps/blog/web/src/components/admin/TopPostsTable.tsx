@@ -53,8 +53,7 @@ export const TopPostsTable = ({ rows }: TopPostsTableProps) => {
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
-              transition: '[color 0.15s]',
-              _hover: { color: 'accent.600', textDecorationLine: 'underline' },
+              _hover: { textDecorationLine: 'underline' },
             })}
           >
             {p.title}

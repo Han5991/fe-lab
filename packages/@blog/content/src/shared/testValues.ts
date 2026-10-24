@@ -69,7 +69,7 @@ export const TEST_VALUES: ContentValues = {
     ink: '#EEEEEE',
     inkMeta: '#888888',
     inkRule: '#333333',
-    accent: '#00FF00',
+    brand: '#00FF00',
     pillBorder: 'rgba(0, 255, 0, 0.4)',
   },
   /**

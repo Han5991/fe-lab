@@ -68,7 +68,7 @@ function LoginForm() {
             fontWeight: 'bold',
             letterSpacing: 'widest',
             textTransform: 'uppercase',
-            color: 'accent.600',
+            color: 'accent.solid',
             mb: '3',
           })}
         >
@@ -141,15 +141,15 @@ function LoginForm() {
             w: 'full',
             py: '3',
             px: '4',
-            bg: 'btn.accent',
-            color: 'white',
+            bg: 'accent.solid',
+            color: 'accent.onSolid',
             rounded: 'full',
             cursor: isLoading ? 'not-allowed' : 'pointer',
             opacity: isLoading ? 0.7 : 1,
             fontWeight: 'semibold',
             fontSize: 'sm',
-            transition: '[opacity 0.15s]',
-            _hover: { opacity: '0.85' },
+            transition: '[background 0.15s, opacity 0.15s]',
+            _hover: { bg: 'accent.solidHover' },
           })}
         >
           <LogIn size={18} />

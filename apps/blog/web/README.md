@@ -27,7 +27,7 @@ apps/blog/web  (이 앱)
   │                          (DIAGRAM_NAMES)·작업 노트 이름(META_FILENAMES)·번들 규칙
   │                          (BUNDLE_GUARDS)·번들 예산(BUNDLE_BUDGETS)까지.
   │                          (og 팔레트·폰트는 여기 없다 — 파생값이라 content.config.mts가
-  │                           themeColor()·join() 경로 조립으로 뽑는다)
+  │                           프리셋의 themeColor()·ogBrand와 join() 경로 조립으로 뽑는다)
   │                          개별 상수(SITE_URL·SITE_NAME…)가 1차이고 그룹 객체(SITE·
   │                          AUTHOR·SITEMAP_PRIORITY…)는 설정 배선 전용이다: 화면이 그룹을
   │                          import하면 안 쓰는 값까지 번들에 실린다.

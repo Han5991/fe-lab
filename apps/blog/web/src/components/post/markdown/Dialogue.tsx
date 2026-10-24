@@ -80,9 +80,9 @@ const msg = sva({
     speaker: {
       me: {
         row: { flexDirection: 'row-reverse' },
-        // 포인트색을 "글자"로 쓰므로 AA 확보를 위해 accent.600(스펙 §3)을 쓴다.
-        avatar: { bg: 'accent.50', color: 'accent.600' },
-        bubble: { bg: 'accent.50', color: 'accent.600' },
+        // 잉크 틴트 위 잉크 글자(14.87 / 11.41:1). 상대방은 회색 면이라 면 명도와 정렬로 갈린다.
+        avatar: { bg: 'accent.muted', color: 'accent.solid' },
+        bubble: { bg: 'accent.muted', color: 'accent.solid' },
       },
       other: {
         avatar: { bg: 'warn.bg', color: 'warn.text' },

@@ -325,7 +325,7 @@ Worker (`apps/blog/web/wrangler.jsonc`), Supabase for the dynamic bits.
 ## 9. Blog — design guardrails
 
 시각 기준은 구현된 화면(홈과 글 상세를 dev 서버로 대조)이고, 수치와 근거는 `blog-design-system` 스킬이
-단일 출처다. 금지선:
+단일 출처다 — 값을 옮겨 온 Astryx docsite 테마(MIT)와 일부러 다르게 간 자리도 거기 적는다. 금지선:
 
 - 색·라운드·그림자는 전부 `packages/@blog/preset/src/blog-preset.ts`에서 온다 — preset-panda의 팔레트·radii·그림자는
   블로그 설정의 `preset:resolved` 플러그인이 빼서 strictTokens를 통과하지 못하고(`boxShadow: 'md'`는 타입에서
@@ -333,6 +333,9 @@ Worker (`apps/blog/web/wrangler.jsonc`), Supabase for the dynamic bits.
   **컴포넌트에서 hex를 쓰지 않는다** —
   다이어그램 SVG도 `currentColor`나 Panda `css()`로 토큰에 잇는다. CSS 변수를 못 읽는 satori/sharp는
   `themeColor('dark', 'paper.50')`으로 뽑는다. hex를 옮겨 적지 않는다.
+- **따로 고른 포인트색은 없다.** `accent.*`는 본문 잉크·지면과 같은 상수에서 파생하고, 색으로 갈리지 않는 자리는
+  밑줄·굵기·틴트로 가른다. 브랜드 cyan은 Panda 토큰이 아니라 OG 카드 렌더용 상수라 CSS에서 쓸 수 없다 — 그
+  카드는 글 썸네일로 홈·목록에 보인다.
 - 레일·거터의 단일 출처는 `src/components/Rail.tsx`다. **페이지에서 `maxW`·`px`를 직접 쓰지 않는다.** 거터는
   언제나 레일 바깥이다.
 - **그림자는 떠 있는 표면에만** — 흐름 밖(Portal·absolute·fixed)에 떠서 아래를 가리고 닫히면 사라지는 면:

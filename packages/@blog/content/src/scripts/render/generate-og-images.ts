@@ -178,8 +178,8 @@ function el(
  * 팔레트는 **언제나 인자로 온다**(기본값 없음). satori/sharp가 CSS 변수를 못 읽어
  * 소비자가 자기 디자인 토큰에서 해석해 넘기는 리터럴 색이라, 패키지가 기본 팔레트를
  * 들면 색을 안 넘긴 소비자의 카드가 남의 사이트 색으로 조용히 나간다 — 실패조차
- * 하지 않는 종류의 사고다. 이 저장소에서는 `content.config.mts`가 디자인 시스템의
- * `themeColor('dark', …)`로 뽑는다.
+ * 하지 않는 종류의 사고다. 이 저장소에서는 `content.config.mts`가 디자인 시스템
+ * 프리셋에서 뽑는다(토큰은 `themeColor('dark', …)`, 토큰이 아닌 브랜드 색은 `ogBrand`).
  */
 export function ogTemplate(
   post: OgPostInput,
@@ -192,7 +192,7 @@ export function ogTemplate(
     ink: INK,
     inkMeta: INK_META,
     inkRule: INK_RULE,
-    accent: ACCENT,
+    brand: BRAND,
     pillBorder,
   } = og.palette;
 
@@ -203,7 +203,7 @@ export function ogTemplate(
   });
 
   const brand = el('div', { display: 'flex', alignItems: 'center', gap: 14 }, [
-    el('div', { width: 14, height: 14, backgroundColor: ACCENT }),
+    el('div', { width: 14, height: 14, backgroundColor: BRAND }),
     el(
       'div',
       { fontSize: 27, fontWeight: 500, color: INK, letterSpacing: 3 },
@@ -223,7 +223,7 @@ export function ogTemplate(
           padding: '6px 26px',
           fontSize: 25,
           fontWeight: 500,
-          color: ACCENT,
+          color: BRAND,
         },
         post.series,
       ),

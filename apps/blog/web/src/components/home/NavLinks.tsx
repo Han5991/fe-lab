@@ -45,13 +45,13 @@ const linkStyle = css.raw({
   },
 });
 
-// 현재 위치는 포인트색으로 표시한다. 무채색 굵기만으로는 13px 링크 셋 중
-// 어디에 있는지 눈에 안 들어온다. hover는 한 단계 더 진한 700으로 가야
-// 활성 링크에서도 hover 반응이 보인다.
+// 현재 위치는 accent.solid(본문 잉크) + semibold. 비활성 ink.600과는 명도 차가
+// 3.60 / 2.59:1뿐이라 굵기가 함께 가른다(Astryx docsite의 TopNav 선택 항목도 배경 없이
+// 굵기와 primary 잉크다). 활성 링크의 hover 색은 비활성 hover(ink.950)와 같은 값이라
+// 따로 두지 않는다.
 const activeStyle = css.raw({
-  color: 'accent.600',
+  color: 'accent.solid',
   fontWeight: 'semibold',
-  _hover: { color: 'accent.700' },
 });
 
 export function NavLinks() {

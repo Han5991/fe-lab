@@ -6,6 +6,7 @@ import { postPath } from '@blog/content/client';
 import { resolveThumbnailSrc } from '@blog/content/client';
 import { fmtDate } from '@blog/content/client';
 import { ParallelThumb } from '@/src/components/diagram';
+import { seriesBadge } from '@/src/components/seriesBadge';
 
 /** 레퍼런스 미니 썸네일 칸(150×92)과 같은 비율로 고정합니다. */
 const THUMB_WIDTH = 150;
@@ -43,42 +44,22 @@ export const FeaturedPost = ({ post, seriesLabel }: FeaturedPostProps) => {
         transition: '[border-color 0.15s]',
         _hover: {
           borderColor: 'ink.borderStrong',
-          // 제목이 기본부터 accent.600이라, hover는 한 단계 더 진한 700으로
-          // 간다. 그대로 600을 쓰면 hover에 아무 변화가 없다.
-          '& h2': { color: 'accent.700' },
+          // 제목은 본문 잉크라 hover에 더 진한 색이 없다 — 밑줄로 반응한다.
+          '& h2': { textDecorationLine: 'underline' },
         },
       })}
     >
       <div className={css({ minW: '0' })}>
-        {seriesLabel && (
-          <span
-            className={css({
-              display: 'inline-block',
-              // 안에 `2/5` 같은 숫자가 있어도 sans다. 레퍼런스 `.badge`가
-              // font-family를 지정하지 않아 sans로 렌더되고, 글 상세·/series의
-              // 같은 배지도 sans다. 숫자가 있다고 mono로 바꾸지 말 것.
-              fontFamily: 'sans',
-              fontSize: '[12px]',
-              color: 'accent.600',
-              bg: 'accent.50',
-              rounded: 'full',
-              px: '[9px]',
-              py: '[2px]',
-            })}
-          >
-            {seriesLabel}
-          </span>
-        )}
+        {seriesLabel && <span className={seriesBadge}>{seriesLabel}</span>}
         <h2
           className={css({
             fontSize: '[16px]',
             fontWeight: 'semibold',
-            // 대표글 제목은 액센트. 아래 `최근 글` 목록의 제목은 무채색으로
-            // 남겨서, 색이 곧 "이게 대표글"이라는 위계 신호가 되게 한다.
-            color: 'accent.900',
+            // 대표글 제목은 본문 잉크다. 아래 `최근 글` 목록과는 카드(보더)와
+            // 크기·굵기로 갈린다.
+            color: 'ink.950',
             mt: '[10px]',
             mb: '[5px]',
-            transition: '[color 0.15s]',
           })}
         >
           {post.title}

@@ -6,6 +6,7 @@ import { css, cx } from '@blog/styled-system/css';
 import type { Metadata } from 'next';
 
 import { PageBoundary } from '@/src/components/PageBoundary';
+import { inlineLink } from '@/src/components/inlineLink';
 import { railGutter, railColumn } from '@/src/components/Rail';
 import { defaultShareCard } from '../seoDefaults';
 
@@ -32,15 +33,6 @@ export const metadata: Metadata = {
 };
 
 const LAST_UPDATED = '2026년 10월 5일';
-
-// 문장 속 링크는 색만으로 구분하지 않는다 — 본문(ink.700)과 accent.600의 명도 차가
-// 3:1에 못 미쳐(axe link-in-text-block) 색약·흑백 화면에서 링크가 안 보인다. 밑줄을 단다.
-const inlineLink = css({
-  color: 'accent.600',
-  textDecoration: 'underline',
-  textUnderlineOffset: '[2px]',
-  _hover: { color: 'accent.700' },
-});
 
 export default function PrivacyPage() {
   return (

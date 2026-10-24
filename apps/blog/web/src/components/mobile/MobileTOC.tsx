@@ -19,7 +19,7 @@ const tocItem = cva({
     fontSize: 'md',
     cursor: 'pointer',
     transition: '[color 0.2s]',
-    _hover: { color: 'accent.600' },
+    _hover: { color: 'accent.solid' },
   },
   variants: {
     level: {
@@ -29,7 +29,7 @@ const tocItem = cva({
       4: { pl: '6' },
     },
     active: {
-      true: { fontWeight: 'bold', color: 'accent.600' },
+      true: { fontWeight: 'bold', color: 'accent.solid' },
       false: { fontWeight: 'medium', color: 'ink.600' },
     },
   },
@@ -94,7 +94,7 @@ export const MobileTOC = () => {
           borderColor: 'ink.borderStrong',
           zIndex: '39',
           cursor: 'pointer',
-          _hover: { color: 'accent.600', borderColor: 'accent.200' },
+          _hover: { color: 'accent.solid' },
         })}
       >
         <List size={24} />

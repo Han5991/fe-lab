@@ -35,7 +35,7 @@ export const ReadingProgress = () => (
       className={css({
         h: 'full',
         w: 'full',
-        bg: 'accent.600',
+        bg: 'accent.solid',
         transformOrigin: '[0% 50%]',
         transform: '[scaleX(0)]',
         // 단축 속성 `animation`을 쓰지 않고 longhand만 준다. 단축 속성은

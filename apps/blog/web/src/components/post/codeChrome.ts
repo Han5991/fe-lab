@@ -17,8 +17,8 @@ export const CODE_BORDER = 'ink.border';
 // 메타 텍스트(언어 라벨·파일명)는 code.chrome 위 12px라 ink.600(4.1:1)으로는 AA에
 // 못 미친다 — 서브 서피스 메타용 ink.500(라이트 4.5:1 · 다크 5.7:1)을 쓴다.
 export const CODE_META = 'ink.500';
-export const CODE_ACCENT = 'accent.600';
-// 드래그 선택 배경만 전용 토큰을 유지한다. 전역 ::selection(panda.config)의
-// selection.bg는 라이트에서 옅은 하늘색이라, 코드 표면 위 파란 계열 토큰
-// (string #0A3069, number #0550AE)을 지워버린다.
+export const CODE_ACCENT = 'accent.solid';
+// 드래그 선택 배경만 전용 토큰을 유지한다. code.*는 본문 팔레트(paper/ink)와 독립이라
+// 전역 ::selection(panda.config의 selection.bg — 잉크 합성)을 따라가지 않는다. 라이트
+// 값은 코드 표면 위 파란 계열 토큰(string #0A3069, number #0550AE)을 지우지 않게 골랐다.
 export const CODE_SELECTION = 'code.selection';

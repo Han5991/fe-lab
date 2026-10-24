@@ -412,7 +412,7 @@ const PostsArchiveLayout = ({
                 className={css({
                   fontFamily: 'mono',
                   fontSize: '[12px]',
-                  color: 'accent.600',
+                  color: 'accent.solid',
                   px: '[11px]',
                   py: '[5px]',
                   borderWidth: 'hairline',
@@ -420,7 +420,7 @@ const PostsArchiveLayout = ({
                   borderColor: 'ink.border',
                   rounded: 'full',
                   cursor: 'pointer',
-                  _hover: { borderColor: 'accent.500' },
+                  _hover: { borderColor: 'accent.solid' },
                   transition: '[border-color 0.15s]',
                 })}
               >
@@ -525,7 +525,7 @@ const ArchiveSearchBar = ({ q, onChange }: ArchiveSearchBarProps) => {
         borderColor: 'ink.border',
         rounded: 'element',
         bg: 'paper.100',
-        _focusWithin: { borderColor: 'accent.500' },
+        _focusWithin: { borderColor: 'accent.solid' },
         transition: '[border-color 0.15s]',
       })}
     >

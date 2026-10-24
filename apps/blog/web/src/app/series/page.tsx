@@ -19,7 +19,9 @@ import {
   postRowTitle,
 } from '@/src/components/blog/postRow';
 import { PageBoundary } from '@/src/components/PageBoundary';
+import { inlineLink } from '@/src/components/inlineLink';
 import { railGutter, railColumn } from '@/src/components/Rail';
+import { seriesBadgeRaw } from '@/src/components/seriesBadge';
 
 import { attachSeriesPosts } from './seriesIndex';
 import {
@@ -30,19 +32,9 @@ import {
 
 export const metadata = buildSeriesMetadata();
 
-// 레퍼런스 .badge — 배경 accent.50 + 글자 accent.600. 선/아이콘이 아니라
-// 텍스트라 accent.500이 아닌 600을 쓴다(라이트에서 500은 AA 미달).
-const seriesBadge = css({
-  display: 'inline-block',
-  fontFamily: 'sans',
-  fontSize: '[12px]',
-  lineHeight: 'snug',
-  color: 'accent.600',
-  bg: 'accent.50',
-  rounded: 'full',
-  px: '[9px]',
-  py: '[2px]',
-});
+// 시리즈 배지는 글 상세·홈 대표글과 같은 모양이다. 여기서만 h2 안에 놓여 줄 높이를
+// snug로 고정한다(다른 두 자리는 둘레 줄 높이를 따른다).
+const seriesHeadingBadge = css(seriesBadgeRaw, { lineHeight: 'snug' });
 
 // 글 목록에 기대지 않는 JSON-LD라 한 번만 만든다.
 const jsonLd = buildSeriesJsonLd();
@@ -116,13 +108,9 @@ export default function SeriesPage() {
                 })}
               >
                 아직 묶인 시리즈가 없습니다.{' '}
-                <Link
-                  href={POSTS_PATH}
-                  className={css({
-                    color: 'accent.600',
-                    _hover: { textDecorationLine: 'underline' },
-                  })}
-                >
+                {/* 문장 속 링크 — 둘레 글자(ink.600)와 잉크 링크의 명도 차가 다크
+                    2.59:1로 3:1에 못 미쳐 밑줄이 표식이다(inlineLink). */}
+                <Link href={POSTS_PATH} className={inlineLink}>
                   전체 글 목록
                 </Link>
                 에서 모든 글을 볼 수 있습니다.
@@ -152,7 +140,9 @@ export default function SeriesPage() {
                           _hover: { textDecorationLine: 'underline' },
                         })}
                       >
-                        <span className={seriesBadge}>{entry.title}</span>
+                        <span className={seriesHeadingBadge}>
+                          {entry.title}
+                        </span>
                       </Link>
                     </h2>
                     <span className={postRowMeta}>{entry.posts.length}편</span>

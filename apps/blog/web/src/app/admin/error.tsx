@@ -95,12 +95,12 @@ export default function AdminError({ error, reset }: AdminErrorProps) {
               px: '4',
               py: '2',
               rounded: 'full',
-              bg: 'btn.primary',
-              color: 'white',
+              bg: 'accent.solid',
+              color: 'accent.onSolid',
               fontSize: 'sm',
               fontWeight: 'semibold',
               cursor: 'pointer',
-              _hover: { bg: 'btn.primaryHover' },
+              _hover: { bg: 'accent.solidHover' },
             })}
           >
             다시 시도
