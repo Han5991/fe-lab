@@ -16,7 +16,6 @@ import {
 } from 'recharts';
 import Link from 'next/link';
 import { token } from '@blog/styled-system/tokens';
-import { motion, AnimatePresence } from 'motion/react';
 import {
   formatMonthDayISO,
   localeTag,
@@ -81,7 +80,7 @@ export function PostAccordion({ post, todayISO }: Props) {
           gap: '3',
           pl: '5',
           bg: isOpen ? 'ink.50' : 'transparent',
-          transition: '[background 0.15s]',
+          transition: 'colors',
           _hover: { bg: 'ink.50' },
         })}
       >
@@ -234,229 +233,220 @@ export function PostAccordion({ post, todayISO }: Props) {
               )}
             </span>
 
-            <motion.span
-              animate={{ rotate: isOpen ? 180 : 0 }}
-              transition={{ duration: 0.2 }}
+            {/* 셰브론만 돈다(Astryx Collapsible) — 패널은 높이를 애니메이션하지 않고 바로 열린다. */}
+            <span
               aria-hidden
               className={css({
                 color: 'ink.500',
                 display: 'flex',
                 alignItems: 'center',
+                transition: 'transform',
+                transform: isOpen ? 'rotate(180deg)' : 'none',
               })}
             >
               <ChevronDown size={16} />
-            </motion.span>
+            </span>
           </span>
         </button>
       </div>
 
-      <AnimatePresence initial={false}>
-        {isOpen && (
-          <motion.div
-            id={panelId}
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
-            className={css({ overflow: 'hidden' })}
+      {isOpen && (
+        <div
+          id={panelId}
+          className={css({
+            p: '5',
+            bg: 'ink.50',
+            borderTopWidth: 'hairline',
+            borderColor: 'ink.border',
+          })}
+        >
+          {/* Brief stats */}
+          <div
+            className={css({
+              display: 'grid',
+              gridTemplateColumns: { base: '1fr', sm: 'repeat(3, 1fr)' },
+              gap: '3',
+              mb: '4',
+            })}
           >
+            {/* 7일 증감 */}
             <div
               className={css({
-                p: '5',
-                bg: 'ink.50',
-                borderTopWidth: 'hairline',
+                bg: 'ink.25',
+                p: '3',
+                rounded: 'element',
+                borderWidth: 'hairline',
                 borderColor: 'ink.border',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '2',
               })}
             >
-              {/* Brief stats */}
-              <div
+              <WeekGrowthIcon rate={briefStats.weekGrowthRate} size={13} />
+              <span className={css({ fontSize: 'xs', color: 'ink.500' })}>
+                7일 증감
+              </span>
+              <span
                 className={css({
-                  display: 'grid',
-                  gridTemplateColumns: { base: '1fr', sm: 'repeat(3, 1fr)' },
-                  gap: '3',
-                  mb: '4',
+                  fontWeight: 'bold',
+                  fontSize: 'sm',
+                  ml: 'auto',
+                  color:
+                    briefStats.weekGrowthRate !== null
+                      ? briefStats.weekGrowthRate >= 0
+                        ? 'moss.700'
+                        : 'spot.600'
+                      : 'ink.500',
                 })}
               >
-                {/* 7일 증감 */}
-                <div
-                  className={css({
-                    bg: 'ink.25',
-                    p: '3',
-                    rounded: 'element',
-                    borderWidth: 'hairline',
-                    borderColor: 'ink.border',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '2',
-                  })}
-                >
-                  <WeekGrowthIcon rate={briefStats.weekGrowthRate} size={13} />
-                  <span className={css({ fontSize: 'xs', color: 'ink.500' })}>
-                    7일 증감
-                  </span>
-                  <span
-                    className={css({
-                      fontWeight: 'bold',
-                      fontSize: 'sm',
-                      ml: 'auto',
-                      color:
-                        briefStats.weekGrowthRate !== null
-                          ? briefStats.weekGrowthRate >= 0
-                            ? 'moss.700'
-                            : 'spot.600'
-                          : 'ink.500',
-                    })}
-                  >
-                    {briefStats.weekGrowthRate !== null
-                      ? `${briefStats.weekGrowthRate >= 0 ? '+' : ''}${briefStats.weekGrowthRate}%`
-                      : '—'}
-                  </span>
-                </div>
-                {/* 피크 */}
-                <div
-                  className={css({
-                    bg: 'ink.25',
-                    p: '3',
-                    rounded: 'element',
-                    borderWidth: 'hairline',
-                    borderColor: 'ink.border',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '2',
-                  })}
-                >
-                  {/* 피크는 정보 표시다 — 경고색(warn.*) 대신 admin 보조 강조색을 쓴다. */}
-                  <BarChart3 size={13} className={css({ color: 'spot.600' })} />
-                  <span className={css({ fontSize: 'xs', color: 'ink.500' })}>
-                    피크
-                  </span>
-                  <span
-                    className={css({
-                      fontWeight: 'bold',
-                      fontSize: 'sm',
-                      ml: 'auto',
-                      color: 'ink.950',
-                    })}
-                  >
-                    {briefStats.peakDay ? `${briefStats.peakDay.count}회` : '—'}
-                  </span>
-                  {briefStats.peakDay && (
-                    <span className={css({ fontSize: 'xs', color: 'ink.500' })}>
-                      {briefStats.peakDay.date}
-                    </span>
-                  )}
-                </div>
-                {/* 일평균 */}
-                <div
-                  className={css({
-                    bg: 'ink.25',
-                    p: '3',
-                    rounded: 'element',
-                    borderWidth: 'hairline',
-                    borderColor: 'ink.border',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '2',
-                  })}
-                >
-                  <span className={css({ fontSize: 'xs', color: 'ink.500' })}>
-                    일평균
-                  </span>
-                  <span
-                    className={css({
-                      fontWeight: 'bold',
-                      fontSize: 'sm',
-                      ml: 'auto',
-                      color: 'ink.950',
-                    })}
-                  >
-                    {briefStats.dailyAverage}회
-                  </span>
-                </div>
-              </div>
+                {briefStats.weekGrowthRate !== null
+                  ? `${briefStats.weekGrowthRate >= 0 ? '+' : ''}${briefStats.weekGrowthRate}%`
+                  : '—'}
+              </span>
+            </div>
+            {/* 피크 */}
+            <div
+              className={css({
+                bg: 'ink.25',
+                p: '3',
+                rounded: 'element',
+                borderWidth: 'hairline',
+                borderColor: 'ink.border',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '2',
+              })}
+            >
+              {/* 피크는 정보 표시다 — 경고색(warn.*) 대신 admin 보조 강조색을 쓴다. */}
+              <BarChart3 size={13} className={css({ color: 'spot.600' })} />
+              <span className={css({ fontSize: 'xs', color: 'ink.500' })}>
+                피크
+              </span>
+              <span
+                className={css({
+                  fontWeight: 'bold',
+                  fontSize: 'sm',
+                  ml: 'auto',
+                  color: 'ink.950',
+                })}
+              >
+                {briefStats.peakDay ? `${briefStats.peakDay.count}회` : '—'}
+              </span>
+              {briefStats.peakDay && (
+                <span className={css({ fontSize: 'xs', color: 'ink.500' })}>
+                  {briefStats.peakDay.date}
+                </span>
+              )}
+            </div>
+            {/* 일평균 */}
+            <div
+              className={css({
+                bg: 'ink.25',
+                p: '3',
+                rounded: 'element',
+                borderWidth: 'hairline',
+                borderColor: 'ink.border',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '2',
+              })}
+            >
+              <span className={css({ fontSize: 'xs', color: 'ink.500' })}>
+                일평균
+              </span>
+              <span
+                className={css({
+                  fontWeight: 'bold',
+                  fontSize: 'sm',
+                  ml: 'auto',
+                  color: 'ink.950',
+                })}
+              >
+                {briefStats.dailyAverage}회
+              </span>
+            </div>
+          </div>
 
-              {/* Date filter */}
+          {/* Date filter */}
+          <div
+            className={css({
+              display: 'flex',
+              justifyContent: 'flex-end',
+              mb: '3',
+            })}
+          >
+            <DateRangeControls
+              filterType={filterType}
+              setFilterType={setFilterType}
+              startDate={startDate}
+              setStartDate={setStartDate}
+              endDate={endDate}
+              setEndDate={setEndDate}
+            />
+          </div>
+
+          <div className={css({ h: '[220px]', w: 'full' })}>
+            {formattedData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={formattedData}
+                  margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+                >
+                  <XAxis
+                    dataKey="name"
+                    axisLine={{ stroke: token('colors.ink.border') }}
+                    tickLine={false}
+                    tick={{ fill: token('colors.ink.500'), fontSize: 11 }}
+                    dy={10}
+                  />
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: token('colors.ink.500'), fontSize: 11 }}
+                  />
+                  <Tooltip
+                    cursor={{
+                      stroke: token('colors.ink.border'),
+                      strokeWidth: 1,
+                      strokeDasharray: '4 4',
+                    }}
+                    content={ChartTooltip}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="views"
+                    stroke={token('colors.spot.600')}
+                    strokeWidth={2}
+                    dot={{
+                      r: 3,
+                      fill: token('colors.spot.600'),
+                      strokeWidth: 0,
+                    }}
+                    activeDot={{
+                      r: 5,
+                      fill: token('colors.spot.600'),
+                      strokeWidth: 0,
+                    }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
               <div
                 className={css({
                   display: 'flex',
-                  justifyContent: 'flex-end',
-                  mb: '3',
+                  h: 'full',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'ink.500',
+                  fontSize: 'sm',
                 })}
               >
-                <DateRangeControls
-                  filterType={filterType}
-                  setFilterType={setFilterType}
-                  startDate={startDate}
-                  setStartDate={setStartDate}
-                  endDate={endDate}
-                  setEndDate={setEndDate}
-                />
+                해당 기간에 데이터가 없습니다.
               </div>
-
-              <div className={css({ h: '[220px]', w: 'full' })}>
-                {formattedData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart
-                      data={formattedData}
-                      margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
-                    >
-                      <XAxis
-                        dataKey="name"
-                        axisLine={{ stroke: token('colors.ink.border') }}
-                        tickLine={false}
-                        tick={{ fill: token('colors.ink.500'), fontSize: 11 }}
-                        dy={10}
-                      />
-                      <YAxis
-                        axisLine={false}
-                        tickLine={false}
-                        tick={{ fill: token('colors.ink.500'), fontSize: 11 }}
-                      />
-                      <Tooltip
-                        cursor={{
-                          stroke: token('colors.ink.border'),
-                          strokeWidth: 1,
-                          strokeDasharray: '4 4',
-                        }}
-                        content={ChartTooltip}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="views"
-                        stroke={token('colors.spot.600')}
-                        strokeWidth={2}
-                        dot={{
-                          r: 3,
-                          fill: token('colors.spot.600'),
-                          strokeWidth: 0,
-                        }}
-                        activeDot={{
-                          r: 5,
-                          fill: token('colors.spot.600'),
-                          strokeWidth: 0,
-                        }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div
-                    className={css({
-                      display: 'flex',
-                      h: 'full',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: 'ink.500',
-                      fontSize: 'sm',
-                    })}
-                  >
-                    해당 기간에 데이터가 없습니다.
-                  </div>
-                )}
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

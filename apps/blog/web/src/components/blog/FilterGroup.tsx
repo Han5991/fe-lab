@@ -28,7 +28,7 @@ const filterItem = cva({
     rounded: 'element',
     fontSize: 'sm',
     textAlign: 'left',
-    transition: '[color 0.15s, background-color 0.15s]',
+    transition: 'colors',
     cursor: 'pointer',
     _hover: { color: 'ink.950', bg: 'paper.200' },
   },

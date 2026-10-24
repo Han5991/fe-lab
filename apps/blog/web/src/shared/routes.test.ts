@@ -17,16 +17,6 @@ import {
   SERIES_PATH,
   slugFromRouteParam,
 } from './routes';
-import {
-  ABOUT_TRANSITION_ID,
-  HOME_TRANSITION_ID,
-  POST_HERO_TRANSITION_GLOB,
-  POST_PLAIN_TRANSITION_GLOB,
-  POSTS_TRANSITION_ID,
-  postTransitionId,
-  PRIVACY_TRANSITION_ID,
-  SERIES_TRANSITION_ID,
-} from './transitions';
 
 describe('정적 페이지 경로', () => {
   test('내부 링크 경로는 후행 슬래시를 단 절대 경로다 — trailingSlash 계약', () => {
@@ -186,38 +176,5 @@ describe('slugFromRouteParam', () => {
         slug,
       );
     }
-  });
-});
-
-describe('전환 ID 네임스페이스', () => {
-  test('페이지 전환 ID는 라우트 경로의 무슬래시형이다', () => {
-    expect(HOME_TRANSITION_ID).toBe('/');
-    expect(POSTS_TRANSITION_ID).toBe('/posts');
-    expect(SERIES_TRANSITION_ID).toBe('/series');
-    expect(ABOUT_TRANSITION_ID).toBe('/about');
-    expect(PRIVACY_TRANSITION_ID).toBe('/privacy');
-  });
-
-  test('글 상세 전환 ID는 썸네일 유무로 hero/fade 네임스페이스가 갈린다', () => {
-    // 썸네일 있는 글만 hero 매처(/posts/*)에 걸리고, 없는 글은 /posts-plain/*로
-    // 빠져 fade 폴백을 탄다 — URL은 어느 쪽이든 /posts/{slug} 그대로다.
-    expect(postTransitionId('parallel-io', true)).toBe('/posts/parallel-io');
-    expect(postTransitionId('parallel-io', false)).toBe(
-      '/posts-plain/parallel-io',
-    );
-  });
-
-  test('상세 전환 ID는 매처 글롭의 접두와 일치한다 — 어긋나면 hero가 조용히 죽는다', () => {
-    const globPrefix = (glob: string) => glob.slice(0, -1); // '/posts/*' → '/posts/'
-    expect(
-      postTransitionId('any', true).startsWith(
-        globPrefix(POST_HERO_TRANSITION_GLOB),
-      ),
-    ).toBe(true);
-    expect(
-      postTransitionId('any', false).startsWith(
-        globPrefix(POST_PLAIN_TRANSITION_GLOB),
-      ),
-    ).toBe(true);
   });
 });

@@ -5,7 +5,6 @@ import type { PostSummary } from '@blog/content/client';
 import { postPath } from '@blog/content/client';
 import { resolveThumbnailSrc } from '@blog/content/client';
 import { fmtDate } from '@blog/content/client';
-import { postHeroKey } from '@/src/shared/transitions';
 import { Label } from './Label';
 import { tagPillStyle } from './tagPillStyle';
 
@@ -38,7 +37,7 @@ export const PostGridCard = ({ post, priority = false }: PostGridCardProps) => {
         borderColor: 'ink.border',
         rounded: 'container',
         overflow: 'hidden',
-        transition: '[border-color 0.15s]',
+        transition: 'colors',
         _hover: {
           borderColor: 'ink.borderStrong',
           '& h3': { textDecoration: 'underline' },
@@ -54,10 +53,6 @@ export const PostGridCard = ({ post, priority = false }: PostGridCardProps) => {
         loading={priority ? 'eager' : 'lazy'}
         fetchPriority={priority ? 'high' : 'auto'}
         decoding="async"
-        // 실제 썸네일이 있는 글만 hero 모핑 대상(목록=exit-key). 상세 헤더 이미지의
-        // data-hero-enter-key와 같은 키로 매칭돼 카드↔헤더 이미지가 모핑한다.
-        // 썸네일 없는 글은 키를 안 붙이고 상세 id도 /posts-plain/*이라 fade로 폴백.
-        data-hero-exit-key={post.thumbnail ? postHeroKey(post.slug) : undefined}
         className={css({
           display: 'block',
           w: 'full',

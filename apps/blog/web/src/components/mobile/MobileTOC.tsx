@@ -1,14 +1,15 @@
 'use client';
 
-import { useId, useRef, useState } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { useId, useRef } from 'react';
 import { List, X } from 'lucide-react';
 import { css, cva } from '@blog/styled-system/css';
 import type { RecipeVariant } from '@blog/styled-system/css';
 import { useTocHook, scrollToId } from '@/src/components/tocHooks';
 import { isModifiedClick } from '@/src/components/events';
 import { Portal } from '@/src/components/Portal';
+import { pressable } from '@/src/components/pressable';
 import { useModalDialog } from '@/src/components/useModalDialog';
+import { usePresence } from '@/src/components/usePresence';
 
 /** 목차 항목 한 줄 — level은 헤딩 깊이만큼 들여쓰고, active는 현재 절을 비춘다. */
 const tocItem = cva({
@@ -18,7 +19,7 @@ const tocItem = cva({
     display: 'block',
     fontSize: 'md',
     cursor: 'pointer',
-    transition: '[color 0.2s]',
+    transition: 'colors',
     _hover: { color: 'accent.solid' },
   },
   variants: {
@@ -46,16 +47,20 @@ const isTocLevel = (level: number): level is TocLevel =>
   tocItem.variantMap.level.map(Number).includes(level);
 
 export const MobileTOC = () => {
-  const [isOpen, setIsOpen] = useState(false);
   const { toc, activeId } = useTocHook();
   const drawerRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
+  // 닫을 때 시트가 내려가는 동안(closing) 마운트를 유지한다.
+  const sheet = usePresence(drawerRef);
+  const isOpen = sheet.state === 'open';
+  const closing = sheet.state === 'closing';
 
-  // 스크롤 잠금·초점·Escape는 다른 오버레이와 같은 훅이 맡는다.
+  // 스크롤 잠금·초점·Escape는 다른 오버레이와 같은 훅이 맡는다. 닫기 시작하면 바로 풀린다 —
+  // 내려가는 시트는 inert라 초점도 클릭도 받지 않는다.
   useModalDialog({
     // 차례가 비면 드로어도 그리지 않으므로 잠금도 걸지 않는다.
     open: isOpen && toc.length > 0,
-    onClose: () => setIsOpen(false),
+    onClose: sheet.close,
     containerRef: drawerRef,
   });
 
@@ -64,19 +69,17 @@ export const MobileTOC = () => {
 
   return (
     <>
-      {/* Floating Button */}
-      <motion.button
+      {/* Floating Button — 등장 애니메이션은 두지 않는다. 차례는 하이드레이션 뒤에 읽혀
+          모든 글의 첫 화면에서 버튼이 삽입되므로, 등장을 걸면 하드 로드마다 재생된다. */}
+      <button
         type="button"
-        onClick={() => setIsOpen(true)}
+        onClick={sheet.open}
         // 아이콘만 있는 버튼이라 접근 가능한 이름이 없었다(axe button-name,
         // impact critical). lucide 아이콘은 aria-hidden된 svg라 이름을 못 준다.
         aria-label="목차 열기"
         aria-haspopup="dialog"
         aria-expanded={isOpen}
-        initial={{ scale: 0 }}
-        animate={{ scale: 1 }}
-        whileTap={{ scale: 0.9 }}
-        className={css({
+        className={css(pressable, {
           pos: 'fixed',
           bottom: '20',
           right: '6',
@@ -98,132 +101,144 @@ export const MobileTOC = () => {
         })}
       >
         <List size={24} />
-      </motion.button>
+      </button>
 
-      {/* Drawer — body로 portal해 PageTransition 래퍼(zIndex:0) stacking에 갇히지 않게 한다 */}
+      {/* Drawer — body로 portal해 조상의 stacking context·containing block에 갇히지 않게 한다.
+          움직임은 Astryx BottomSheet 수치다: 시트는 아래에서 올라오고(medium·standard) 닫힐 때는
+          같은 시간에 가속 곡선(exit)으로 내려간다. 스크림은 같은 시간에 페이드하고 닫힐 때는
+          linear — 감속 곡선이면 시트가 아직 내려가는 동안 스크림이 먼저 걷힌다. */}
       <Portal>
-        <AnimatePresence>
-          {isOpen && (
-            <>
-              {/* 백드롭은 PostsFilterSheet와 같은 시트용 scrim이다. 예전엔 ink.950을
-                  반투명으로 깔아, 잉크가 밝아지는 다크에서 백드롭이 지면을 밝히는 회색 막이
-                  됐다 — scrim은 테마와 무관하게 어둡다. 그래서 라이트도 바뀐다: 50% 잉크의
-                  회색 막에서 필터 시트와 같은 짙은 막으로. */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={() => setIsOpen(false)}
+        {sheet.state !== 'closed' && (
+          <>
+            {/* 백드롭은 PostsFilterSheet와 같은 시트용 scrim이다. 예전엔 ink.950을
+                반투명으로 깔아, 잉크가 밝아지는 다크에서 백드롭이 지면을 밝히는 회색 막이
+                됐다 — scrim은 테마와 무관하게 어둡다. 그래서 라이트도 바뀐다: 50% 잉크의
+                회색 막에서 필터 시트와 같은 짙은 막으로. 백드롭 클릭은 포인터 편의다 —
+                키보드는 Escape·닫기 버튼으로 닫는다(검색 다이얼로그와 같다). */}
+            <div
+              role="presentation"
+              onClick={sheet.close}
+              inert={closing}
+              data-closing={closing ? '' : undefined}
+              className={css({
+                pos: 'fixed',
+                inset: '0',
+                bg: 'scrim.sheet',
+                zIndex: '50',
+                transition: 'opacity',
+                transitionDuration: 'medium',
+                _starting: { opacity: '0' },
+                '&[data-closing]': {
+                  opacity: '0',
+                  transitionTimingFunction: 'linear',
+                },
+              })}
+            />
+            <div
+              ref={drawerRef}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby={titleId}
+              inert={closing}
+              data-closing={closing ? '' : undefined}
+              className={css({
+                transition: 'transform',
+                transitionDuration: 'medium',
+                _starting: { transform: 'translateY(100%)' },
+                '&[data-closing]': {
+                  transform: 'translateY(100%)',
+                  transitionTimingFunction: 'exit',
+                },
+                pos: 'fixed',
+                bottom: '0',
+                left: '0',
+                right: '0',
+                bg: 'paper.50',
+                zIndex: '51',
+                roundedTop: 'container',
+                maxH: '[70vh]',
+                display: 'flex',
+                flexDir: 'column',
+                // 떠 있는 표면이라 overlay.high(AGENTS.md §9). 다크에서는 그림자가 scrim
+                // 위에서 거의 보이지 않으므로 상단 hairline이 경계를 맡는다.
+                borderTopWidth: 'hairline',
+                borderColor: 'ink.border',
+                boxShadow: 'overlay.high',
+                pb: '[env(safe-area-inset-bottom)]',
+              })}
+            >
+              <div
                 className={css({
-                  pos: 'fixed',
-                  inset: '0',
-                  bg: 'scrim.sheet',
-                  zIndex: '50',
-                })}
-              />
-              <motion.div
-                ref={drawerRef}
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby={titleId}
-                initial={{ y: '100%' }}
-                animate={{ y: 0 }}
-                exit={{ y: '100%' }}
-                transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                className={css({
-                  pos: 'fixed',
-                  bottom: '0',
-                  left: '0',
-                  right: '0',
-                  bg: 'paper.50',
-                  zIndex: '51',
-                  roundedTop: 'container',
-                  maxH: '[70vh]',
-                  display: 'flex',
-                  flexDir: 'column',
-                  // 떠 있는 표면이라 overlay.high(AGENTS.md §9). 다크에서는 그림자가 scrim
-                  // 위에서 거의 보이지 않으므로 상단 hairline이 경계를 맡는다.
-                  borderTopWidth: 'hairline',
+                  p: '5',
+                  borderBottomWidth: 'hairline',
                   borderColor: 'ink.border',
-                  boxShadow: 'overlay.high',
-                  pb: '[env(safe-area-inset-bottom)]',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
                 })}
               >
-                <div
+                <h2
+                  id={titleId}
+                  className={css({ fontSize: 'lg', fontWeight: 'bold' })}
+                >
+                  목차
+                </h2>
+                <button
+                  type="button"
+                  onClick={sheet.close}
+                  // 열기 버튼과 같은 axe button-name 위반. 드로어가 열렸을 때만
+                  // 존재해 스캔에서 늦게 잡혔을 뿐, 같은 이유로 이름이 필요하다.
+                  aria-label="목차 닫기"
+                  className={css({ cursor: 'pointer', color: 'ink.400' })}
+                >
+                  <X size={24} />
+                </button>
+              </div>
+              <div className={css({ p: '5', overflowY: 'auto', flex: '1' })}>
+                <ul
                   className={css({
-                    p: '5',
-                    borderBottomWidth: 'hairline',
-                    borderColor: 'ink.border',
                     display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
+                    flexDir: 'column',
+                    gap: '3',
                   })}
                 >
-                  <h2
-                    id={titleId}
-                    className={css({ fontSize: 'lg', fontWeight: 'bold' })}
-                  >
-                    목차
-                  </h2>
-                  <button
-                    type="button"
-                    onClick={() => setIsOpen(false)}
-                    // 열기 버튼과 같은 axe button-name 위반. 드로어가 열렸을 때만
-                    // 존재해 스캔에서 늦게 잡혔을 뿐, 같은 이유로 이름이 필요하다.
-                    aria-label="목차 닫기"
-                    className={css({ cursor: 'pointer', color: 'ink.400' })}
-                  >
-                    <X size={24} />
-                  </button>
-                </div>
-                <div className={css({ p: '5', overflowY: 'auto', flex: '1' })}>
-                  <ul
-                    className={css({
-                      display: 'flex',
-                      flexDir: 'column',
-                      gap: '3',
-                    })}
-                  >
-                    {toc.map(item => (
-                      <li key={item.id}>
-                        {/* 데스크탑 차례(post/TOC.tsx)와 같은 이유로 앵커다 —
+                  {toc.map(item => (
+                    <li key={item.id}>
+                      {/* 데스크탑 차례(post/TOC.tsx)와 같은 이유로 앵커다 —
                             스크롤은 아래 onClick이 가로채지만, href가 있어야
                             키보드 초점·Enter·새 탭으로 열기가 전부 공짜로
                             따라온다. li에 onClick만 달았을 때는 마우스로만
                             닿는 항목이었다. */}
-                        <a
-                          href={`#${item.id}`}
-                          onClick={e => {
-                            // 수정자 키가 눌린 클릭은 가로채지 않는다 — 여기서
-                            // 기본 동작을 막으면 Cmd/Ctrl+클릭의 새 탭까지 막혀
-                            // 앵커로 바꾼 이유가 사라진다.
-                            if (isModifiedClick(e)) return;
-                            e.preventDefault();
-                            scrollToId({
-                              id: item.id,
-                              action: () => setIsOpen(false),
-                            });
-                          }}
-                          aria-current={
-                            activeId === item.id ? 'true' : undefined
-                          }
-                          className={tocItem({
-                            level: isTocLevel(item.level)
-                              ? item.level
-                              : undefined,
-                            active: activeId === item.id,
-                          })}
-                        >
-                          {item.text}
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </motion.div>
-            </>
-          )}
-        </AnimatePresence>
+                      <a
+                        href={`#${item.id}`}
+                        onClick={e => {
+                          // 수정자 키가 눌린 클릭은 가로채지 않는다 — 여기서
+                          // 기본 동작을 막으면 Cmd/Ctrl+클릭의 새 탭까지 막혀
+                          // 앵커로 바꾼 이유가 사라진다.
+                          if (isModifiedClick(e)) return;
+                          e.preventDefault();
+                          scrollToId({
+                            id: item.id,
+                            action: sheet.close,
+                          });
+                        }}
+                        aria-current={activeId === item.id ? 'true' : undefined}
+                        className={tocItem({
+                          level: isTocLevel(item.level)
+                            ? item.level
+                            : undefined,
+                          active: activeId === item.id,
+                        })}
+                      >
+                        {item.text}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </>
+        )}
       </Portal>
     </>
   );

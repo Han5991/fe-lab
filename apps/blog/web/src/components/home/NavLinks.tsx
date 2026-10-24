@@ -35,7 +35,7 @@ const linkStyle = css.raw({
   pos: 'relative',
   fontSize: '[13px]',
   color: 'ink.600',
-  transition: '[color 0.15s]',
+  transition: 'colors',
   _hover: { color: 'ink.950' },
   _after: {
     content: '""',

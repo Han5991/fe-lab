@@ -102,7 +102,7 @@ export function PostList() {
               fontSize: 'xs',
               fontWeight: 'medium',
               cursor: 'pointer',
-              transition: '[all 0.15s]',
+              transition: 'common',
               _hover: { bg: 'paper.300', borderColor: 'ink.borderStrong' },
               _disabled: { cursor: 'wait', opacity: 0.6 },
             })}

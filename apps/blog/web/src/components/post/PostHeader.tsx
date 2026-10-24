@@ -17,7 +17,7 @@ interface PostHeaderProps {
 const tagLinkStyle = css({
   color: 'ink.500',
   textDecorationLine: 'none',
-  transition: '[color 0.15s]',
+  transition: 'colors',
   _hover: { color: 'accent.solid' },
 });
 

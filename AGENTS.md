@@ -103,9 +103,11 @@ here or anywhere else (this repo once carried four diverging copies of that prom
   `strictTokens`, …) — they inherit them; one that differs regenerates its own runtime. A dev server re-emits
   codegen into its config's outdir — never point another config at the blog's.
 - Panda runs `strictTokens: true` — off-token values are escaped on purpose as `'[12px]'`. A token the config
-  drops (the blog trims preset-panda's palette, radii and shadows) or never had is emitted by Panda as raw CSS
-  (`color: 'orange.500'`) with no diagnostic. `check-types` catches it, and in the blog so does the official Panda lint
-  (`@pandacss/prefer-token` for colors·radii·borderWidths·shadows·dropShadows, `apps/blog/web/eslint.config.mts`). Raw `token(colors.x)`
+  drops (the blog trims preset-panda's palette, radii, shadows and motion — durations·easings·animations·keyframes)
+  or never had is emitted by Panda as raw CSS (`color: 'orange.500'`) with no diagnostic. `check-types` catches it, and in the blog so does the official Panda lint
+  (`@pandacss/prefer-token` for colors·radii·borderWidths·shadows·dropShadows·durations·easings·animations,
+  `apps/blog/web/eslint.config.mts`; the `transition` shorthand has no token category, so `'[…]'` there is a
+  `no-restricted-syntax` error instead). Raw `token(colors.x)`
   strings inside values are invisible to `check-types`; the same lint's `@pandacss/no-invalid-token-paths` reports a
   missing one, but only in the blog's `src/` — `panda.config.ts` (globalCss) and the lab apps are checked by neither.
 - Never run `panda codegen --clean` (or `panda build --clean`) on an outdir that is a whole package
@@ -327,9 +329,9 @@ Worker (`apps/blog/web/wrangler.jsonc`), Supabase for the dynamic bits.
 시각 기준은 구현된 화면(홈과 글 상세를 dev 서버로 대조)이고, 수치와 근거는 `blog-design-system` 스킬이
 단일 출처다 — 값을 옮겨 온 Astryx docsite 테마(MIT)와 일부러 다르게 간 자리도 거기 적는다. 금지선:
 
-- 색·라운드·그림자는 전부 `packages/@blog/preset/src/blog-preset.ts`에서 온다 — preset-panda의 팔레트·radii·그림자는
-  블로그 설정의 `preset:resolved` 플러그인이 빼서 strictTokens를 통과하지 못하고(`boxShadow: 'md'`는 타입에서
-  막힌다), 토큰 밖 값과 대괄호 이스케이프는 §3의 `prefer-token`이 `src/`에서 막는다(예외는 그 설정의 `allow`).
+- 색·라운드·그림자·모션(시간·곡선)은 전부 `packages/@blog/preset/src/blog-preset.ts`에서 온다 — preset-panda의
+  팔레트·radii·그림자·모션은 블로그 설정의 `preset:resolved` 플러그인이 빼서 strictTokens를 통과하지
+  못하고(`boxShadow: 'md'`·`transitionDuration: 'normal'`은 타입에서 막힌다), 토큰 밖 값과 대괄호 이스케이프는 §3의 `prefer-token`이 `src/`에서 막는다(예외는 그 설정의 `allow`).
   **컴포넌트에서 hex를 쓰지 않는다** —
   다이어그램 SVG도 `currentColor`나 Panda `css()`로 토큰에 잇는다. CSS 변수를 못 읽는 satori/sharp는
   `themeColor('dark', 'paper.50')`으로 뽑는다. hex를 옮겨 적지 않는다.
@@ -341,5 +343,8 @@ Worker (`apps/blog/web/wrangler.jsonc`), Supabase for the dynamic bits.
 - **그림자는 떠 있는 표면에만** — 흐름 밖(Portal·absolute·fixed)에 떠서 아래를 가리고 닫히면 사라지는 면:
   다이얼로그·드로어·시트·팝오버·메뉴·토스트·차트 툴팁. 반전(잉크) 면·카드·버튼·hover에는 없고 위계는 보더로
   낸다. 그림자 토큰은 `overlay.*`뿐이다 — 값은 lint가 막지만 어느 면에 붙였는지는 리뷰가 본다.
+- **움직임 줄이기는 시간 토큰이 처리한다**(`prefers-reduced-motion`에서 0.01ms) — 컴포넌트에 따로 규칙을 두지
+  않는다(스크롤에 묶인 진행 바만 예외). `@starting-style` 등장은 상호작용으로 삽입되는 요소에만 — 서버가 그린
+  요소에 걸면 하드 로드마다 재생된다.
 - **그라데이션·글로우 금지, 세리프 금지.**
 - 히어로 슬롯(`hero:`)은 이름 레지스트리에 등록된 다이어그램만 받는다.

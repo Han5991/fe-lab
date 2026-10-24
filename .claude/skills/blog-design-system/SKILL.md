@@ -1,6 +1,6 @@
 ---
 name: blog-design-system
-description: 블로그(apps/blog/web)와 blog-preset.ts의 시각 시스템 단일 출처 — 컬러 semanticToken(라이트/다크, 대비비, 잉크에서 파생한 accent와 색 대신 쓰는 구분 수단), 타이포그래피(mono/sans를 어디에 쓰는지), 라운드·보더, 그림자(떠 있는 표면의 overlay.* — 판정 기준과 표면별 단계), 레일 그리드(railWide/railText/railForm와 거터), 코드 블록 테마(code.* 토큰, rehypeCodeMeta 순서). 블로그 UI 컴포넌트나 packages/@blog/preset/src/blog-preset.ts를 고칠 때, 색·간격·폭·글꼴을 정하거나 "이 값 어디서 왔지" 싶을 때 사용한다. 글 본문에 넣는 커스텀 태그(diagram·dialogue·metrics·callout 등)는 이 스킬이 아니라 blog-components 스킬을 볼 것.
+description: 블로그(apps/blog/web)와 blog-preset.ts의 시각 시스템 단일 출처 — 컬러 semanticToken(라이트/다크, 대비비, 잉크에서 파생한 accent와 색 대신 쓰는 구분 수단), 타이포그래피(mono/sans를 어디에 쓰는지), 라운드·보더, 그림자(떠 있는 표면의 overlay.* — 판정 기준과 표면별 단계), 모션(Astryx 시간·곡선 토큰, 움직임 줄이기, 페이지 전환·오버레이·누름 적용표), 레일 그리드(railWide/railText/railForm와 거터), 코드 블록 테마(code.* 토큰, rehypeCodeMeta 순서). 블로그 UI 컴포넌트나 packages/@blog/preset/src/blog-preset.ts를 고칠 때, 색·간격·폭·글꼴을 정하거나 "이 값 어디서 왔지" 싶을 때 사용한다. 글 본문에 넣는 커스텀 태그(diagram·dialogue·metrics·callout 등)는 이 스킬이 아니라 blog-components 스킬을 볼 것.
 ---
 
 # 블로그 디자인 시스템
@@ -169,7 +169,8 @@ strictTokens에 걸린다.
 - **그라데이션 · 글로우 금지**
 - Panda는 `strictTokens: true`다. 토큰 밖 값은 `fontSize: '[12px]'`, `maxH: '[70vh]'`처럼
   대괄호로 이스케이프해 "여긴 의도적으로 토큰을 벗어난다"를 코드에 남긴다. 단 색·라운드·보더
-  굵기·그림자는 이스케이프도 lint(`prefer-token`)가 막는다 — 맞는 토큰이 없으면 프리셋에 더한다
+  굵기·그림자·모션(시간·곡선·애니메이션, `transition` 단축 속성)은 이스케이프도 lint
+  (`prefer-token`, `transition`은 `no-restricted-syntax`)가 막는다 — 맞는 토큰이 없으면 프리셋에 더한다
 
 ## 그림자 — 떠 있는 표면에만
 
@@ -225,6 +226,70 @@ lint는 그림자 **값**만 막는다. 어느 면에 붙였는지는 이 판정
 - **scrim은 합치지 않았다.** 검색은 `scrim.dialog`, 바텀시트 둘은 `scrim.sheet`다(Astryx는
   `--color-overlay` 하나). 두 값은 테마와 무관하게 어둡다 — 잉크 색(`ink.950`)을 반투명으로 깔면
   다크에서 백드롭이 밝아진다
+
+## 모션
+
+시간과 곡선은 Astryx 코어(MIT)의 모션 토큰을 이름째 옮겼다(docsite 테마는 motion을 덮어쓰지
+않는다). 코어의 시간은 아홉 단이고 블로그는 쓰는 넷만 둔다. **이것이 전부다** — 블로그 설정이
+preset-panda의 durations·easings·animations·keyframes를 빼서 `transitionDuration: 'normal'`·
+`animation: 'pulse'`는 strictTokens에, 대괄호 이스케이프는 `prefer-token`에, `transition: '[…]'`는
+`no-restricted-syntax`에 걸린다.
+
+| 토큰                  | 값                               | 쓰는 곳                                                                |
+| :-------------------- | :------------------------------- | :--------------------------------------------------------------------- |
+| `durations.fast`      | 175ms                            | hover·색·누름·표식(차례 하이라이트)·나가는 페이지                      |
+| `durations.fastMax`   | 230ms                            | 테마 크로스페이드 · `<details>` 펼침                                   |
+| `durations.medium`    | 410ms                            | 바텀시트·시트 스크림 · 들어오는 페이지                                 |
+| `durations.mediumMax` | 550ms                            | 검색 다이얼로그 등장 · 스켈레톤 왕복                                   |
+| `easings.standard`    | `cubic-bezier(0.24, 1, 0.4, 1)`  | 기본 — 감속 곡선이라 등장·hover에 맞다                                 |
+| `easings.exit`        | `cubic-bezier(0.3, 0, 0.6, 0.6)` | 화면 밖으로 나가는 움직임(시트 닫힘·나가는 페이지)                     |
+| `easings.linear`      | `linear`                         | 거리 없는 퇴장 페이드(시트 스크림 닫힘)·스크롤에 묶인 진행 바·스켈레톤 |
+
+**쓰는 법**
+
+- 색·투명도 hover는 `transition: 'colors' | 'opacity' | 'common'`만 적는다 — 시간·곡선의 기본값
+  (fast·standard)은 globalCss가 모든 요소에 토큰으로 준다. 단축 목록에 없는 속성(`padding-left`·
+  `clip-path`·`block-size`)은 `transitionProperty` + `transitionDuration`·`transitionTimingFunction`
+  토큰으로 쓴다. 이 셋은 값을 CSS 변수(`--transition-prop`·`-duration`·`-easing`)로도 내고 단축
+  유틸리티가 그 변수를 읽는데, globalCss가 세 변수를 모든 요소에서 다시 정하므로 자손에 새지 않는다
+  — 그 블록에서 하나라도 빼면 바깥 요소의 값이 안쪽 hover 전환을 덮는다
+- **움직임 줄이기는 토큰이 처리한다.** 시간 토큰이 `prefers-reduced-motion: reduce`에서 0.01ms가
+  되므로 컴포넌트에 `@media (prefers-reduced-motion)` 규칙을 따로 두지 않는다. 0이 아니라 0.01ms인
+  이유는 `transitionend`가 그대로 오게 하려는 것이다(퇴장이 끝나야 언마운트하는 시트). 무한 반복
+  애니메이션은 0.01ms면 깜빡이므로 animations 토큰이 `none`이 된다(`skeleton`). 시간이 아니라 스크롤에
+  묶인 애니메이션(글의 진행 바)만 토큰이 끄지 못해 그 자리에서 `_motionReduce`로 끈다
+- **`@starting-style`(`_starting`)은 상호작용으로 삽입되는 요소에만** 쓴다. 서버가 그린 요소나
+  하이드레이션 직후 모든 페이지에 삽입되는 요소(목차 FAB)에 걸면 하드 로드마다 재생된다
+- **목록 진입·스크롤 리빌은 넣지 않는다.** 하드 로드의 모션은 LCP를 늦추고, 스크롤 리빌은 화면
+  밖 요소를 투명도 0으로 남겨 런타임 게이트의 가시성 검사에 걸린다
+
+**적용표**
+
+| 무엇              | 움직임                                                                                                                        |
+| :---------------- | :---------------------------------------------------------------------------------------------------------------------------- |
+| 페이지 전환       | `PageBoundary`(`<ViewTransition>`) — 나감 투명도 1→0(fast·exit), 들어옴 투명도 0→1과 8px 상승(medium·standard)                |
+| 헤더              | `view-transition-name`으로 따로 찍어 페이지 위에 불투명 지면으로 그린다(흐림 없음). 전환 중엔 클릭을 받지 않는다              |
+| 테마 전환         | 루트·헤더 스냅샷 크로스페이드(fastMax·standard). 움직임 줄이기면 즉시                                                         |
+| 검색 다이얼로그   | 등장만 — md 이상 패널은 투명도 0·16px 아래·95%에서(mediumMax), 모바일 전체화면은 투명도만, 스크림은 fast. 닫힘은 즉시         |
+| 목차 바텀시트     | 올라옴(medium·standard), 닫힐 때 같은 시간에 exit 곡선으로 내려감. 스크림은 medium, 닫힐 때 linear. 내려가는 동안 마운트 유지 |
+| 맨 위로 FAB       | 등장만 — 투명도 0·95%에서(fast). 사라짐은 즉시                                                                                |
+| 누름              | `pressable` — `:active`에서 98%(fast), 거친 포인터(터치)에서는 끔. 행동 버튼·아이콘 버튼·FAB                                  |
+| admin 글 아코디언 | 셰브론 회전만(fast). 패널은 높이를 애니메이션하지 않고 바로 열린다                                                            |
+| 스켈레톤(admin)   | 투명도 1↔0.5 왕복(mediumMax, linear). 움직임 줄이기면 멈춘다                                                                  |
+
+**Astryx와 일부러 다르게 간 곳**
+
+- **페이지 전환은 블로그 것이다.** Astryx에는 페이지 전환이 없다. 링크 이동에서만 돌고, 브라우저
+  뒤로·앞으로 가기에는 전환이 아예 없다(스크롤 복원만 일어난다). 그래서 방향(앞·뒤로 미끄러짐)은
+  담지 않는다 — 넣어도 링크 이동에서만 보인다. 들어오는 쪽의 8px는 Astryx spacing-2(Toast 등장
+  거리)다
+- **스켈레톤의 쉬는 투명도가 다르다.** Astryx는 .25↔1이지만 자리표시 면(`paper.100`)이 지면과 거의
+  같은 밝기라 .25에서는 보이지 않는다 — 1↔.5로 왕복한다. 곡선도 Astryx의 `steps(10, end)`가 아니라
+  `linear`(곡선 토큰을 셋으로 둔다)이고, 1초 지연은 두지 않았다
+- **맨 위로 FAB 등장은 fast다.** Astryx 레이어(팝오버) 등장은 fastMax지만 FAB은 레이어가 아니라
+  토스트처럼 나타나는 버튼이라 토스트(fast)를 따르고, 누름과 시간을 맞춘다
+- **목차 FAB에는 등장이 없다.** Astryx FAB 예제와 달리 — 하이드레이션 뒤 모든 글에서 삽입된다
+  (`@starting-style` 규칙)
 
 ## 레이아웃 그리드
 

@@ -74,7 +74,7 @@ export const ShareButton = ({ title }: ShareButtonProps) => {
           fontSize: 'sm',
           fontWeight: 'medium',
           cursor: 'pointer',
-          transition: '[all 0.2s]',
+          transition: 'colors',
           _hover: { bg: 'paper.300' },
         })}
       >

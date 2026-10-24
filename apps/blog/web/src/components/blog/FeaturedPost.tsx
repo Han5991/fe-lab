@@ -41,7 +41,7 @@ export const FeaturedPost = ({ post, seriesLabel }: FeaturedPostProps) => {
         px: '[20px]',
         py: '[18px]',
         mb: '[26px]',
-        transition: '[border-color 0.15s]',
+        transition: 'colors',
         _hover: {
           borderColor: 'ink.borderStrong',
           // 제목은 본문 잉크라 hover에 더 진한 색이 없다 — 밑줄로 반응한다.

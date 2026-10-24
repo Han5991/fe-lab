@@ -320,9 +320,6 @@ importers:
       '@next/third-parties':
         specifier: 'catalog:'
         version: 16.4.1(next@16.4.1(@babel/core@7.29.7(supports-color@10.2.2))(@playwright/test@1.63.0)(@types/node@24.13.6)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react@19.3.0)
-      '@ssgoi/react':
-        specifier: 6.6.10
-        version: 6.6.10(supports-color@10.2.2)
       '@supabase/postgrest-js':
         specifier: ^2.117.1
         version: 2.117.2
@@ -2156,14 +2153,6 @@ packages:
 
   '@speed-highlight/core@1.2.24':
     resolution: {integrity: sha512-qeW2e1l78afw8VhRPfPQ1Gjj+KU5XFQ/OFV5ti6eTa9bruO7mJyZtA4vw0ofqmA3tKCkROE9xLk3VZoeRc98nw==}
-
-  '@ssgoi/core@6.6.12':
-    resolution: {integrity: sha512-fYk0R3pM3qXpHUQQSM9SaX0JWdYKniDzh+bXlx8JNHcwSYu7U8VkjSBKnfpU7j8fxd6WML6VpLdAShArJl+krA==}
-    engines: {node: '>=18.0.0'}
-
-  '@ssgoi/react@6.6.10':
-    resolution: {integrity: sha512-hKWnORPeZNrsOFFB/J1sMx7D8YhFfTmD7PAH22pMjuLwOuSCNyWMCawGGWxhiN+5sgsKaJa+yrWASnzipuca/Q==}
-    engines: {node: '>=18.0.0'}
 
   '@standard-schema/spec@1.1.0':
     resolution: {integrity: sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==}
@@ -7011,16 +7000,6 @@ snapshots:
   '@sindresorhus/is@7.2.0': {}
 
   '@speed-highlight/core@1.2.24': {}
-
-  '@ssgoi/core@6.6.12': {}
-
-  '@ssgoi/react@6.6.10(supports-color@10.2.2)':
-    dependencies:
-      '@babel/core': 7.29.7(supports-color@10.2.2)
-      '@ssgoi/core': 6.6.12
-      unplugin: 2.3.11
-    transitivePeerDependencies:
-      - supports-color
 
   '@standard-schema/spec@1.1.0': {}
 

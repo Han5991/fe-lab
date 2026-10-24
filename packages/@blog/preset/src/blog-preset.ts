@@ -443,8 +443,51 @@ export const blogPreset = definePreset({
           /** 레일이 아니라 콘텐츠 제약 — /about 히어로 우측 문단 */
           heroAside: { value: '480px' },
         },
+        // 모션 곡선 — 시간은 아래 semanticTokens.durations. **곡선은 이 셋이 전부다** — 블로그
+        // 설정이 preset-panda의 easings를 빼므로(apps/blog/web/panda.config.ts) 다른 이름은
+        // strictTokens에, 이스케이프는 prefer-token에 걸린다.
+        //   standard — Astryx 코어(MIT)의 --ease-standard. 감속 곡선이라 등장·hover·표식에 쓴다
+        //   exit     — Astryx BottomSheet의 닫힘 곡선. 화면 밖으로 나가는 움직임은 가속한다
+        //   linear   — 거리 없는 퇴장 페이드(시트 스크림)·스크롤에 묶인 진행 바
+        easings: {
+          standard: { value: 'cubic-bezier(0.24, 1, 0.4, 1)' },
+          exit: { value: 'cubic-bezier(0.3, 0, 0.6, 0.6)' },
+          linear: { value: 'linear' },
+        },
       },
       semanticTokens: {
+        // 모션 시간 — Astryx 코어(MIT) 모션 스케일 아홉 단 중 블로그가 쓰는 넷을 이름째 옮겼다
+        // (docsite 테마는 motion을 덮어쓰지 않는다). 어느 움직임이 어느 단계인지는
+        // blog-design-system 스킬의 모션 절.
+        //   fast      175ms — hover·색·누름·표식·나가는 페이지
+        //   fastMax   230ms — 테마 크로스페이드·<details> 펼침
+        //   medium    410ms — 시트·스크림·들어오는 페이지
+        //   mediumMax 550ms — 검색 다이얼로그 등장·스켈레톤
+        // semantic token인 이유는 **움직임 줄이기를 여기 한 곳에서** 끄기 위해서다 — `_motionReduce`가
+        // 변수 값을 0.01ms로 바꾸므로 토큰으로 쓴 전환·애니메이션은 컴포넌트가 따로 규칙을 두지
+        // 않아도 꺼진다. 0이 아니라 0.01ms인 이유는 transitionend가 그대로 오게 하려는 것이다
+        // (퇴장이 끝나야 언마운트하는 시트 — Astryx Drawer와 같은 값). 무한 반복 애니메이션은
+        // 0.01ms면 깜빡임이 되므로 시간이 아니라 애니메이션 자체를 끈다(아래 animations).
+        // **시간은 이 넷이 전부다** — preset-panda의 durations는 블로그 설정이 뺀다.
+        durations: {
+          fast: { value: { base: '175ms', _motionReduce: '0.01ms' } },
+          fastMax: { value: { base: '230ms', _motionReduce: '0.01ms' } },
+          medium: { value: { base: '410ms', _motionReduce: '0.01ms' } },
+          mediumMax: { value: { base: '550ms', _motionReduce: '0.01ms' } },
+        },
+        // 반복 애니메이션 — keyframes는 아래 keyframes에 함께 둔다. 움직임 줄이기에서는 `none`
+        // (위 durations 주석의 깜빡임 이유). preset-panda의 animations(spin·ping·pulse·bounce)와
+        // keyframes는 블로그 설정이 뺀다.
+        //   skeleton — 로딩 자리표시(Astryx Skeleton: 투명도 왕복, mediumMax, alternate)
+        animations: {
+          skeleton: {
+            value: {
+              base: 'skeleton-pulse {durations.mediumMax} {easings.linear} infinite alternate',
+              _motionReduce: 'none',
+            },
+          },
+        },
+
         // 그림자는 **떠 있는 표면에만** 쓴다(AGENTS.md §9) — 흐름 밖에 떠서 아래를 가리고
         // 닫히면 사라지는 면. 값은 Astryx 코어(MIT)의 --shadow-med·--shadow-high를 그대로
         // 옮겼다(docsite 테마는 그림자를 덮어쓰지 않는다). light-dark() 쌍을 base/_dark로 나눴다.
@@ -472,6 +515,14 @@ export const blogPreset = definePreset({
           },
         },
         colors: blogColors,
+      },
+      keyframes: {
+        // semanticTokens.animations.skeleton. Astryx는 쉬는 투명도가 .25인데, 자리표시 면
+        // (paper.100)이 지면과 거의 같은 밝기라 .25에서는 보이지 않는다 — 1 ↔ .5로 왕복한다.
+        'skeleton-pulse': {
+          from: { opacity: '1' },
+          to: { opacity: '0.5' },
+        },
       },
     },
   },

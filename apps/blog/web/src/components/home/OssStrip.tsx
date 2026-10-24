@@ -33,7 +33,7 @@ const chip = cva({
   variants: {
     kind: {
       link: {
-        transition: '[color 0.15s]',
+        transition: 'colors',
         _hover: { color: 'ink.950' },
       },
       highlight: { color: 'accent.solid' },

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Check, Clipboard } from 'lucide-react';
 import { css } from '@blog/styled-system/css';
+import { pressable } from '@/src/components/pressable';
 import { CODE_ACCENT, CODE_META } from './codeChrome';
 
 // CodeBlock과 CodeTabs가 같은 버튼을 쓴다 — 탭 안에서는 상단 바를 탭이
@@ -29,7 +30,7 @@ export function CopyButton({ content }: { content: string }) {
       // 'Copy'라는 글자를 아이콘으로 바꾸면서 접근 가능한 이름이 사라진다.
       // 상태(복사됨)까지 이름에 실어 스크린리더가 결과를 알 수 있게 한다.
       aria-label={isCopied ? '코드 복사됨' : '코드 복사'}
-      className={css({
+      className={css(pressable, {
         display: 'inline-flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -39,7 +40,6 @@ export function CopyButton({ content }: { content: string }) {
         bg: 'transparent',
         rounded: 'full',
         cursor: 'pointer',
-        transition: '[color 0.15s, background-color 0.15s]',
         _hover: { color: CODE_ACCENT, bg: 'paper.300' },
         // 키보드 초점 링은 globalCss의 :focus-visible(accent.solid)이 준다 — 여기서 다시
         // 두면 같은 링이 두 벌이 된다.

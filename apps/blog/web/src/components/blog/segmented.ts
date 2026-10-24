@@ -29,7 +29,7 @@ export const segmentedItem = cva({
         fontSize: 'xs',
         letterSpacing: 'wide',
         textTransform: 'uppercase',
-        transition: '[all 0.15s]',
+        transition: 'colors',
       },
       radio: {
         display: 'flex',
@@ -38,7 +38,7 @@ export const segmentedItem = cva({
         fontWeight: 'medium',
         whiteSpace: 'nowrap',
         textAlign: 'left',
-        transition: '[color 0.15s, background 0.15s]',
+        transition: 'colors',
       },
     },
   },

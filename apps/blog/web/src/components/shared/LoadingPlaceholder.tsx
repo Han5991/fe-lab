@@ -17,9 +17,9 @@ export function LoadingPlaceholder({ height }: LoadingPlaceholderProps) {
       className={css({
         w: 'full',
         bg: 'paper.100',
-        // preset-panda animations.pulse와 같은 값이다. keyframes는 그 토큰이 싣는다 —
-        // optimize.removeUnusedKeyframes도 토큰을 따라가 남긴다(panda.config.ts 주석).
-        animation: 'pulse',
+        // keyframes는 토큰이 싣는다 — optimize.removeUnusedKeyframes도 토큰을 따라가 남긴다
+        // (panda.config.ts 주석). 움직임 줄이기에서는 토큰이 애니메이션을 끈다(blog-preset.ts).
+        animation: 'skeleton',
         rounded: 'container',
       })}
     />

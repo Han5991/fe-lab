@@ -1,8 +1,10 @@
 import { cva } from '@blog/styled-system/css';
+import { pressable } from './pressable';
 
 /** 페이지 단위 행동 버튼(주·보조) — 에러 화면과 404가 같은 모양을 쓴다. */
 export const actionButton = cva({
   base: {
+    ...pressable,
     px: '[16px]',
     py: '[8px]',
     borderWidth: 'hairline',
@@ -20,7 +22,6 @@ export const actionButton = cva({
         color: 'accent.onSolid',
         borderColor: 'btn.primaryBorder',
         fontWeight: 'semibold',
-        transition: '[background 0.2s]',
         _hover: { bg: 'accent.solidHover' },
         _active: { bg: 'accent.solid' },
       },
@@ -29,7 +30,6 @@ export const actionButton = cva({
         color: 'ink.800',
         borderColor: 'ink.border',
         fontWeight: 'medium',
-        transition: '[all 0.2s]',
         _hover: { bg: 'paper.300', borderColor: 'ink.borderStrong' },
         _active: { bg: 'paper.300' },
       },

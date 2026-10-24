@@ -4,7 +4,6 @@ import { css, cx } from '@blog/styled-system/css';
 import { sortPostsBySeriesOrder } from '@blog/content';
 import { POSTS_PATH, safeJsonLd, type PostSummary } from '@blog/content/client';
 import { getAllPostSummaries, getSeriesMeta } from '@/src/content';
-import { HOME_TRANSITION_ID } from '@/src/shared/transitions';
 import { buildHomeJsonLd, buildHomeMetadata } from './homeSeo';
 
 import { Hero, FeaturedPost, PostIndexRow } from '@/src/components/blog';
@@ -56,7 +55,7 @@ export default function HomePage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }}
       />
-      <PageBoundary transitionId={HOME_TRANSITION_ID}>
+      <PageBoundary>
         <div className={cx(css({ bg: 'paper.50' }), railGutter)}>
           <div
             className={cx(

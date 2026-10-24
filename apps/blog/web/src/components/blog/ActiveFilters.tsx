@@ -19,7 +19,7 @@ const chipClass = css(tagPillStyle, {
   color: 'ink.800',
   whiteSpace: 'nowrap',
   cursor: 'pointer',
-  transition: '[all 0.15s]',
+  transition: 'colors',
   _hover: { bg: 'paper.300', color: 'ink.950' },
 });
 
@@ -119,7 +119,7 @@ export const ActiveFilters = ({
           textDecorationLine: 'underline',
           textDecorationColor: 'transparent',
           textUnderlineOffset: '[2px]',
-          transition: '[text-decoration-color 0.15s]',
+          transition: 'colors',
           _hover: { textDecorationColor: 'accent.solid' },
         })}
       >

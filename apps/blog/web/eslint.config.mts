@@ -35,9 +35,35 @@ const NO_ESCAPED_HEX = {
 } as const;
 
 /**
+ * 모션 단축 속성 `transition`의 대괄호 이스케이프를 막는다.
+ *
+ * 시간·곡선은 토큰이고(blog-preset.ts의 durations·easings), 움직임 줄이기도 그 토큰이 0.01ms로
+ * 바꾸며 처리한다. `transition: '[transform 0.3s]'`는 그 둘을 모두 건너뛴다 — 움직임 줄이기를
+ * 켠 사용자에게도 움직이고, 화면은 멀쩡하니 아무것도 실패하지 않는다. prefer-token은 이 자리를
+ * 못 본다: `transition` 유틸리티의 값은 토큰 카테고리가 아니라 목록(colors·common …)이라
+ * 카테고리로 잡히지 않는다(`animation`은 animations 카테고리라 prefer-token이 본다). 2026-10
+ * 토큰 도입 전에는 preset-panda의 durations가 있었는데도 이 이스케이프가 31개 파일에 53개
+ * 쌓였다 — 토큰이 있다는 것만으로는 막히지 않았다.
+ *
+ * 쓰는 쪽은 유틸리티 값(`transition: 'colors'`, 기본 시간·곡선은 globalCss가 토큰으로 준다)이나
+ * longhand(`transitionProperty` + `transitionDuration`·`transitionTimingFunction` 토큰)다.
+ * `css()`를 쓰는 파일은 app element뿐이라(styled-system을 여는 레이어가 app뿐 — boundaries) app
+ * 블록 하나에만 건다. 템플릿 리터럴도 본다 — Panda는 상수를 끼운 템플릿
+ * (`` `[transform ${MS}ms]` ``)도 정적으로 풀어 추출한다.
+ *
+ * 재평가: 2027-04-24 — 그때까지 잡은 위반이 없으면 내린다(AGENTS.md §5).
+ */
+const NO_ESCAPED_TRANSITION = {
+  selector:
+    'Property:matches([key.name="transition"], [key.value="transition"]) :matches(Literal[value=/^\\[/], TemplateLiteral > TemplateElement[value.raw=/^\\[/])',
+  message:
+    "전환 시간·곡선은 토큰입니다. `transition: '[…]'` 대신 `transition: 'colors'` 같은 유틸리티 값이나 `transitionProperty` + `transitionDuration`·`transitionTimingFunction` 토큰을 쓰세요 — 이스케이프는 움직임 줄이기(토큰이 0.01ms로 바꾼다)를 건너뜁니다.",
+} as const;
+
+/**
  * Panda 공식 lint(`@pandacss/eslint-plugin`, Panda v2 get-started/linting) — 빌드와 같은 v2
  * 추출 결과로 스타일을 검사한다. recommended(토큰 경로·잘못된 중첩·include 밖 파일·추출
- * 진단 …) 위에 `prefer-token`을 색·라운드·보더 굵기·그림자로 넓혀 error로 건다: 그
+ * 진단 …) 위에 `prefer-token`을 색·라운드·보더 굵기·그림자·모션으로 넓혀 error로 건다: 그
  * 카테고리에 토큰이 있는데 원시 값이나 대괄호 이스케이프를 쓰면 막힌다(AGENTS.md §9). 예외는
  * 아래 파일 단위 블록의 `allow`(인용·대화 강조 바 `'[2px]'`) 하나다.
  *
@@ -68,9 +94,25 @@ const pandaRecommended = await panda.configs.recommended({
  * style 객체도 Panda 추출 밖이라 못 본다 — 그래서 차트 툴팁은 인라인 style 대신 Panda 클래스로
  * 그린다(src/components/admin/ChartTooltip.tsx).
  * 재평가: 2027-04-24 — 그때까지 그 9곳 밖에서 잡은 위반이 없으면 두 카테고리를 뺀다(AGENTS.md §5).
+ *
+ * `durations`·`easings`·`animations`도 2026-10에 더했다 — 모션 토큰(blog-preset.ts)이 움직임 줄이기를
+ * 한 곳에서 처리하므로, `transitionDuration: '[200ms]'`·`animation: '[spin 1s …]'`처럼 이스케이프로
+ * 들어온 값은 그 처리를 조용히 건너뛴다. 추가 시점 위반은 `animation: '[none]'` 1건(진행 바의 움직임
+ * 줄이기 — `animationName: 'none'`으로 바꿨다)이었다. `transition` 단축 속성은 카테고리가 없어 위
+ * NO_ESCAPED_TRANSITION이 본다.
+ * 재평가: 2027-04-24 — 그때까지 잡은 위반이 없으면 세 카테고리를 뺀다(AGENTS.md §5).
  */
 const PREFER_TOKEN = {
-  categories: ['colors', 'radii', 'borderWidths', 'shadows', 'dropShadows'],
+  categories: [
+    'colors',
+    'radii',
+    'borderWidths',
+    'shadows',
+    'dropShadows',
+    'durations',
+    'easings',
+    'animations',
+  ],
 };
 
 /**
@@ -368,7 +410,12 @@ export default defineConfig([
           patterns: [REPOSITORY_IMPORT_PATTERN],
         },
       ],
-      'no-restricted-syntax': ['error', NO_ESCAPED_HEX, CONTENT_DYNAMIC_IMPORT],
+      'no-restricted-syntax': [
+        'error',
+        NO_ESCAPED_HEX,
+        CONTENT_DYNAMIC_IMPORT,
+        NO_ESCAPED_TRANSITION,
+      ],
     },
   },
   {
@@ -472,7 +519,7 @@ export default defineConfig([
     //     생기면 모든 청크에 함께 실린다(공개 배럴 규칙과 같은 이유). 'use client'
     //     지시문도 여기 걸린다 — shared는 클라이언트 경계가 아니다. 파생 상수의
     //     순수 함수 호출(`export const X = f(Y)`)은 문이 아니라 초기화라 걸리지
-    //     않는다 — transitions.ts가 그 형태다.
+    //     않는다.
     files: ['src/shared/**/*.{ts,tsx}'],
     ignores: [UNIT_TESTS],
     rules: {

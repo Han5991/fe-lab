@@ -481,7 +481,7 @@ export function PostBody({ content, relativeDir }: PostBodyProps) {
           color: 'ink.600',
           fontSize: 'sm',
           fontWeight: 'medium',
-          transition: '[color 0.15s]',
+          transition: 'colors',
           _hover: { color: 'ink.900' },
           // Safari의 기본 삼각형 마커 제거 — 아래 ::before로 대체한다
           '&::-webkit-details-marker': { display: 'none' },
@@ -490,7 +490,9 @@ export function PostBody({ content, relativeDir }: PostBodyProps) {
             display: 'inline-block',
             flexShrink: '0',
             color: 'ink.500',
-            transition: '[transform 0.25s ease]',
+            // 펼침(아래 details-content)과 같은 시간이라 표식이 내용과 함께 돈다.
+            transition: 'transform',
+            transitionDuration: 'fastMax',
           },
         },
         '& details[open] > summary::before': {
@@ -499,17 +501,15 @@ export function PostBody({ content, relativeDir }: PostBodyProps) {
         '& details::details-content': {
           blockSize: '[0]',
           overflow: 'hidden',
-          transition:
-            '[block-size 0.28s ease, content-visibility 0.28s allow-discrete]',
+          transitionProperty: 'block-size, content-visibility',
+          transitionDuration: 'fastMax',
+          transitionTimingFunction: 'standard',
+          transitionBehavior: 'allow-discrete',
         },
         '& details[open]::details-content': { blockSize: '[auto]' },
         // 접힌 영역 안쪽 여백 정리 — 첫 요소는 summary에 붙고 마지막은 아래 여백만
         '& details > summary + *': { mt: '0' },
         '& details > *:last-child': { mb: '4' },
-        '@media (prefers-reduced-motion: reduce)': {
-          '& details::details-content': { transition: '[none]' },
-          '& details > summary::before': { transition: '[none]' },
-        },
         // 본문 이미지 모양은 MarkdownImage가 단일 출처다 — 여기 `& img`를 두면 명시도로 이긴다.
         '& hr': {
           my: '10',
