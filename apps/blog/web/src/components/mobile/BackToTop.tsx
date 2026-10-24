@@ -53,7 +53,8 @@ export const BackToTop = () => {
             alignItems: 'center',
             justifyContent: 'center',
             color: 'ink.900',
-            // 떠 있는 버튼이지만 그림자 대신 hairline 보더로 본문과 분리한다.
+            // 떠 있어도 버튼이라 그림자를 두지 않는다(그림자는 닫히면 사라지는 표면에만,
+            // AGENTS.md §9) — hairline 보더로 본문과 분리한다.
             borderWidth: 'hairline',
             borderColor: 'ink.borderStrong',
             cursor: 'pointer',

@@ -304,10 +304,13 @@ export const SearchDialog = () => {
                 bg: 'paper.50',
                 rounded: { base: 'none', md: 'container' },
                 overflow: 'hidden',
-                // dim 오버레이가 레이어를 갈라주므로 그림자 대신 hairline 보더로
-                // 다이얼로그 경계를 세운다(플랫 유지).
+                // 센터 모달은 떠 있는 표면이라 overlay.high를 두고(AGENTS.md §9), hairline도
+                // 남긴다 — 다크에서 다이얼로그 면과 dim 아래 지면은 대비가 거의 없어(1.04:1)
+                // 그림자만으로는 경계가 서지 않는다. 모바일은 화면 전체를 덮어 그림자가 떨어질
+                // 가장자리가 없으니 둘 다 두지 않는다.
                 borderWidth: { base: 'none', md: 'hairline' },
                 borderColor: 'ink.border',
+                boxShadow: { md: 'overlay.high' },
                 h: { base: 'full', md: 'auto' },
                 // body 스크롤이 잠겨 있으니 모달 높이를 묶고 결과 목록만 스크롤한다.
                 maxH: { md: '[70vh]' },

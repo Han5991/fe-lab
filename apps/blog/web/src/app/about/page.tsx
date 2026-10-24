@@ -17,6 +17,29 @@ export const metadata = buildAboutMetadata();
 
 const jsonLd = buildAboutJsonLd();
 
+// 목록 행(오픈소스·발표·시리즈) hover — 지면을 한 단계 올리고 왼쪽에 강조 막대를 세운다.
+// 막대는 2px(Astryx Outline·Tab 선택 표식과 같은 굵기)의 의사 요소다. 예전엔 inset
+// box-shadow였는데, 그림자는 떠 있는 표면에만 쓴다(AGENTS.md §9). 굵기는 획이라 px로
+// 고정한다 — sizes 스케일의 `0.5`도 기본 글자 크기에선 2px지만 rem이라 루트 글자 크기를
+// 따라 굵기가 변한다. 세 목록이 같은 객체를 `css(hoverRow, …)`로 합친다 — 행마다
+// 레이아웃만 다르다.
+const hoverRow = css.raw({
+  pos: 'relative',
+  transition: '[background 0.15s, padding 0.15s]',
+  _hover: {
+    bg: 'paper.100',
+    pl: '4',
+    _before: {
+      content: '""',
+      pos: 'absolute',
+      insetY: '0',
+      left: '0',
+      w: '[2px]',
+      bg: 'accent.500',
+    },
+  },
+});
+
 export default function AboutPage() {
   // 콘텐츠 집계를 읽는 값이라 컴포넌트 안에서 부른다 — 이유는 counts.ts 참고.
   const stats = getAboutStats();
@@ -310,18 +333,11 @@ export default function AboutPage() {
                     <Link
                       key={item.project}
                       href={item.link}
-                      className={css({
+                      className={css(hoverRow, {
                         display: 'block',
                         py: '5',
                         borderBottomWidth: 'hairline',
                         borderColor: 'ink.border',
-                        transition:
-                          '[background 0.15s, box-shadow 0.15s, padding 0.15s]',
-                        _hover: {
-                          bg: 'paper.100',
-                          boxShadow: 'markerLeft',
-                          pl: '4',
-                        },
                       })}
                     >
                       <div
@@ -411,7 +427,7 @@ export default function AboutPage() {
                       <Link
                         key={item.event}
                         href={item.link}
-                        className={css({
+                        className={css(hoverRow, {
                           display: 'flex',
                           justifyContent: 'space-between',
                           alignItems: 'center',
@@ -419,13 +435,6 @@ export default function AboutPage() {
                           py: '4',
                           borderBottomWidth: 'hairline',
                           borderColor: 'ink.border',
-                          transition:
-                            '[background 0.15s, box-shadow 0.15s, padding 0.15s]',
-                          _hover: {
-                            bg: 'paper.100',
-                            boxShadow: 'markerLeft',
-                            pl: '4',
-                          },
                         })}
                       >
                         <div>
@@ -496,7 +505,7 @@ export default function AboutPage() {
                       <Link
                         key={series.id}
                         href={archivePath({ series: series.id })}
-                        className={css({
+                        className={css(hoverRow, {
                           display: 'flex',
                           justifyContent: 'space-between',
                           alignItems: 'start',
@@ -504,13 +513,6 @@ export default function AboutPage() {
                           py: '4',
                           borderBottomWidth: 'hairline',
                           borderColor: 'ink.border',
-                          transition:
-                            '[background 0.15s, box-shadow 0.15s, padding 0.15s]',
-                          _hover: {
-                            bg: 'paper.100',
-                            boxShadow: 'markerLeft',
-                            pl: '4',
-                          },
                         })}
                       >
                         <div className={css({ flex: '1', minW: '0' })}>

@@ -335,5 +335,8 @@ Worker (`apps/blog/web/wrangler.jsonc`), Supabase for the dynamic bits.
   `themeColor('dark', 'paper.50')`으로 뽑는다. hex를 옮겨 적지 않는다.
 - 레일·거터의 단일 출처는 `src/components/Rail.tsx`다. **페이지에서 `maxW`·`px`를 직접 쓰지 않는다.** 거터는
   언제나 레일 바깥이다.
-- **그라데이션·글로우·box-shadow 장식 금지, 세리프 금지.** 플랫 유지 — 위계는 그림자가 아니라 보더로 낸다.
+- **그림자는 떠 있는 표면에만** — 흐름 밖(Portal·absolute·fixed)에 떠서 아래를 가리고 닫히면 사라지는 면:
+  다이얼로그·드로어·시트·팝오버·메뉴·토스트·차트 툴팁. 반전(잉크) 면·카드·버튼·hover에는 없고 위계는 보더로
+  낸다. 그림자 토큰은 `overlay.*`뿐이다 — 값은 lint가 막지만 어느 면에 붙였는지는 리뷰가 본다.
+- **그라데이션·글로우 금지, 세리프 금지.**
 - 히어로 슬롯(`hero:`)은 이름 레지스트리에 등록된 다이어그램만 받는다.
