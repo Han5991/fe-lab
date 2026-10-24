@@ -333,6 +333,10 @@ export const BUNDLE_GUARDS = [
  * 재수출해, 홈은 Hero·대표글·행을, 소개는 Label 하나를 열었는데도 그 클라이언트 청크 셋(js 파일
  * 14 → 11개)이 첫 로드에 실렸다 — 239.6 → 176.1KB(−63.5KB). 두 줄을 새 최대에 ~5% 여유(185)로 내렸다.
  * 같은 빌드에서 `/posts/`(최대는 글 목록)도 239.6 → 239.2KB(−0.4) — 예산은 그대로.
+ * 2026-10-24 홈을 카드(쇼케이스·썸네일 행)로 바꾼 빌드로 다시 갱신: CSS는 칩·카드·홈 격자의 원자
+ * 클래스로 +0.1~0.2KB(최대 28.0KB), JS는 0~+0.1KB — 예산은 그대로. 줄 주석의 옛 값(176.1 / 27.1,
+ * 239.2)은 셸을 바꾼 빌드(176.2 / 27.2, 239.3)부터 이미 실측과 어긋나 있던 것을 이 빌드의
+ * 측정값으로 바꿨다.
  * 그룹이 새로 생기면(새 라우트) 예산이 없어서, 라우트가
  * 사라지면 예산이 죽어서, 측정 최대가 상한의 80% 아래로 내려가면 예산이 느슨해서
  * (`budget-slack`) 빌드가 실패한다.
@@ -343,21 +347,21 @@ export const BUNDLE_GUARDS = [
  * 걸리면 같은 방식으로 내린다 — 여유가 크게 남으면 회귀가 그 안에 숨는다.
  */
 export const BUNDLE_BUDGETS = [
-  // 176.1 KB / 27.1 KB
+  // 176.2 KB / 27.3 KB
   { group: '/', jsGzipKB: 185, cssGzipKB: 30 },
-  // 239.2 KB / 27.8 KB — 목록과 글 상세 46쪽의 최대(목록. mermaid·Giscus는 지연 로드라 밖)
+  // 239.4 KB / 28.0 KB — 목록과 글 상세 46쪽의 최대(목록. mermaid·Giscus는 지연 로드라 밖)
   { group: '/posts/', jsGzipKB: 252, cssGzipKB: 30 },
-  // 176.1 KB / 27.1 KB
+  // 176.2 KB / 27.3 KB
   { group: '/about/', jsGzipKB: 185, cssGzipKB: 30 },
-  // 176.1 KB / 27.1 KB
+  // 176.2 KB / 27.3 KB
   { group: '/series/', jsGzipKB: 185, cssGzipKB: 30 },
-  // 176.1 KB / 27.1 KB
+  // 176.2 KB / 27.3 KB
   { group: '/privacy/', jsGzipKB: 185, cssGzipKB: 30 },
-  // 176.1 KB / 27.1 KB — 정적 404(`404-page` 처리)
+  // 176.2 KB / 27.3 KB — 정적 404(`404-page` 처리)
   { group: '/404/', jsGzipKB: 185, cssGzipKB: 30 },
-  // 176.1 KB / 27.1 KB — Next가 함께 내보내는 not-found 라우트
+  // 176.2 KB / 27.3 KB — Next가 함께 내보내는 not-found 라우트
   { group: '/_not-found/', jsGzipKB: 185, cssGzipKB: 30 },
-  // 378.8 KB / 27.1 KB — admin 48쪽의 최대(`/admin/analytics/`)
+  // 378.8 KB / 27.3 KB — admin 48쪽의 최대(`/admin/analytics/`)
   { group: '/admin/', jsGzipKB: 398, cssGzipKB: 30 },
 ] as const satisfies BundleBudgetsConfig;
 

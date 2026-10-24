@@ -11,7 +11,6 @@ export {
   DiagramLabel,
 } from './primitives';
 
-export { ParallelThumb } from './ParallelThumb';
 export { DeployPipeline } from './DeployPipeline';
 
 /**

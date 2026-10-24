@@ -55,8 +55,8 @@ export default function PostsPage() {
             css({ py: { base: '10', md: '16' } }),
           )}
         >
-          {/* 허브 문법에 맞춘 헤더 — 큰 세리프 타이틀 대신 21px 산세리프 +
-              모노 수치 한 줄, 구분은 hairline 보더 하나로만. */}
+          {/* 목록 헤더 — 큰 세리프 타이틀 대신 21px 산세리프 + 모노 수치 한 줄,
+              구분은 hairline 보더 하나로만. */}
           <header
             className={css({
               mb: '[30px]',

@@ -311,7 +311,7 @@ export interface BundleBudget {
 export type BundleBudgetsConfig = readonly [BundleBudget, ...BundleBudget[]];
 
 export interface ThumbnailsConfig {
-  /** 표시 최대 폭(FeaturedPost가 컨테이너 전체 폭). 작은 원본은 확대하지 않음 */
+  /** 최적화본의 최대 폭(가장 넓게 그리는 자리 — 홈 쇼케이스 카드 커버). 작은 원본은 확대하지 않음 */
   maxWidth: number;
   webpQuality: number;
 }

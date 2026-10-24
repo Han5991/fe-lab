@@ -77,8 +77,8 @@ export const ArchiveRow = ({ post }: { post: PostSummary }) => (
         {post.title}
         <HiddenPostBadge post={post} />
       </h3>
-      {/* 날짜가 없으면 태그 자체를 낸다 — fmtDate가 빈 문자열을 돌려주므로
-          크래시는 없지만 내용 없는 span이 남는다(홈의 PostIndexRow와 같은 패턴). */}
+      {/* 날짜가 없으면 태그 자체를 뺀다 — fmtDate가 빈 문자열을 돌려주므로
+          크래시는 없지만 내용 없는 span이 남는다(카드 메타 PostMeta와 같은 패턴). */}
       {post.date && <span className={postRowMeta}>{fmtDate(post.date)}</span>}
     </Link>
   </li>

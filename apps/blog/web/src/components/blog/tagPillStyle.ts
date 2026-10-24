@@ -1,7 +1,7 @@
 import { css } from '@blog/styled-system/css';
 
-// 포스트 목록 계열 컴포넌트(PostIndexRow / PostListRow / MiniPostCard /
-// PostGridCard)가 공통으로 쓰는 태그(토픽) 칩 스타일. 각자 손으로 복붙하던
+// 글 목록의 태그(토픽) 칩 스타일 — 그리드 카드(PostGridCard)의 태그와 적용 중인
+// 필터 칩(ActiveFilters)이 쓴다. 목록 계열 컴포넌트마다 손으로 복붙하던
 // 동일 블록을 한 곳으로 모은다. 미세한 변주(hover, fontFamily)는 호출부에서
 // `css(tagPillStyle, { ...override })`로 덧씌운다 — css()는 스타일 객체를 병합한다.
 export const tagPillStyle = css.raw({

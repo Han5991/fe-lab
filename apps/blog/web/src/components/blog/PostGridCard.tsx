@@ -4,7 +4,7 @@ import { css } from '@blog/styled-system/css';
 import type { PostSummary } from '@blog/content/client';
 import { postPath } from '@blog/content/client';
 import { resolveThumbnailSrc } from '@blog/content/client';
-import { fmtDate } from '@blog/content/client';
+import { fmtDate, fmtReadMin } from '@blog/content/client';
 import { Label } from './Label';
 import { tagPillStyle } from './tagPillStyle';
 
@@ -25,7 +25,7 @@ export const PostGridCard = ({ post, priority = false }: PostGridCardProps) => {
   // resolveThumbnailSrc는 posts/ 안의 png/jpg면 빌드 시 만든 WebP 최적화본을,
   // 아니면 원본(생성 OG 카드 /og/{slug}.png 포함)을 돌려줍니다.
   const thumb = resolveThumbnailSrc(post, OG_DEFAULT_IMAGE);
-  const readMin = post.readMin;
+  const readMin = fmtReadMin(post.readMin);
   return (
     <Link
       href={postPath(post.slug)}
@@ -107,9 +107,7 @@ export const PostGridCard = ({ post, priority = false }: PostGridCardProps) => {
           })}
         >
           <Label tone="meta">
-            {post.date
-              ? `${fmtDate(post.date)} · ${readMin}분`
-              : `${readMin}분`}
+            {post.date ? `${fmtDate(post.date)} · ${readMin}` : readMin}
           </Label>
           {post.tags && post.tags.length > 0 && (
             <span className={css(tagPillStyle, { fontFamily: 'sans' })}>

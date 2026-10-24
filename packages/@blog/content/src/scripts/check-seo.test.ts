@@ -509,9 +509,8 @@ test('checkPages: 인코딩을 풀어도 다르면 여전히 canonical-mismatch'
 });
 
 test('checkPages: 장식용 alt=""는 위반이 아니다', () => {
-  // 홈의 FeaturedPost는 제목 바로 옆 썸네일이라 의도적으로 alt=""를 쓴다.
-  // 이걸 잡으면 손수 썸네일을 지정한 글이 최신 글이 되는 순간, frontmatter로는
-  // 고칠 수 없는 이유로 배포가 막힌다.
+  // 홈·목록의 글 카드는 커버가 제목 바로 위라 의도적으로 alt=""를 쓴다(제목이 이름이다).
+  // 이걸 잡으면 카드가 있는 페이지마다, frontmatter로는 고칠 수 없는 이유로 배포가 막힌다.
   expect(
     rules(
       new Map([['/posts/a/', page({}, '<h1>t</h1><img src="a.png" alt=""/>')]]),

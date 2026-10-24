@@ -1,8 +1,9 @@
 import { MERGED_PR_COUNT_FALLBACK } from '@/content.values.mts';
 import Link from 'next/link';
-import { css, cva } from '@blog/styled-system/css';
+import { css } from '@blog/styled-system/css';
 // leaf import — 홈에서만 쓰는 프레젠테이션 컴포넌트라 배럴을 물릴 이유가 없다.
 import { postPath } from '@blog/content/client';
+import { chip } from '@/src/components/chip';
 
 /**
  * 오픈소스 기여를 칩 한 줄로만 노출합니다. 네비에서는 뺐고(SPEC §1), 자세한
@@ -18,28 +19,13 @@ const OSS_CHIPS = [
   { label: 'mantine', href: postPath('first-open-source-contribution') },
 ] as const;
 
-const chip = cva({
-  base: {
-    display: 'inline-block',
-    fontFamily: 'mono',
-    fontWeight: 'normal',
-    fontSize: '[12px]',
-    color: 'ink.500',
-    bg: 'paper.100',
-    rounded: 'inner',
-    px: '[11px]',
-    py: '[4px]',
-  },
-  variants: {
-    kind: {
-      link: {
-        transition: 'colors',
-        _hover: { color: 'ink.950' },
-      },
-      highlight: { color: 'accent.solid' },
-    },
-  },
+/** 프로젝트 칩 — 글자가 코드 이름이라 mono다(`chip` 머리 주석). 크기는 승인 목업의 13px. */
+const projectChip = css(chip.raw({ tone: 'neutral' }), {
+  fontFamily: 'mono',
+  fontSize: '[13px]',
 });
+
+const mergedChip = chip({ tone: 'accent' });
 
 const CAPTION_ID = 'oss-strip-caption';
 
@@ -51,40 +37,36 @@ export const OssStrip = () => {
 
   return (
     // section에 이름이 없으면 이름 없는 region 랜드마크로 노출된다 → 제목과 연결.
-    <section aria-labelledby={CAPTION_ID} className={css({ mt: '[26px]' })}>
-      <h2
-        id={CAPTION_ID}
-        className={css({
-          fontSize: '[12px]',
-          fontWeight: 'normal',
-          color: 'ink.600',
-          mb: '[10px]',
-        })}
-      >
+    // 섹션 사이 간격은 홈 페이지가 준다(`gap: 'section'`).
+    <section
+      aria-labelledby={CAPTION_ID}
+      className={css({ display: 'flex', flexDir: 'column', gap: '4' })}
+    >
+      <h2 id={CAPTION_ID} className={css({ textStyle: 'display3' })}>
         오픈소스 기여
       </h2>
       <ul
         className={css({
           display: 'flex',
           flexWrap: 'wrap',
-          gap: '[8px]',
+          alignItems: 'center',
+          gap: '2',
           listStyleType: 'none',
           p: '0',
           m: '0',
         })}
       >
+        {/* 합계가 줄의 맨 앞이다 — 프로젝트 칩은 그 숫자의 출처 몇 곳이다. */}
+        <li>
+          <span className={mergedChip}>{mergedPrCount}+ merged</span>
+        </li>
         {OSS_CHIPS.map(item => (
           <li key={item.label}>
-            <Link href={item.href} className={chip({ kind: 'link' })}>
+            <Link href={item.href} className={projectChip}>
               {item.label}
             </Link>
           </li>
         ))}
-        <li>
-          <span className={chip({ kind: 'highlight' })}>
-            {mergedPrCount}+ merged
-          </span>
-        </li>
       </ul>
     </section>
   );
