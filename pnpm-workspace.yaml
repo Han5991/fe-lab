@@ -102,7 +102,13 @@ catalog:
   '@pandacss/preset-base': 2.3.0
   '@pandacss/preset-panda': 2.3.0
   '@pandacss/vite': 2.3.0
+  # next와 같은 릴리스 트레인(@next/third-parties, catalogs.lint의 @next/eslint-plugin-next·
+  # eslint-config-next)은 next처럼 정확한 번호로 함께 올린다. 캐럿으로 두면 범위 안 최신 패치로
+  # 풀려 다시 어긋나고, eslint-config-next가 고정한 플러그인과 두 벌이 된다. 어긋나도 아무 검사도
+  # 실패하지 않는다 — 동반 패키지의 peer가 next를 ^13~^16으로 넓게 받는다. Renovate 보안 PR은
+  # 취약한 next 하나만 올리고 자동 머지되므로(#523·#558) 동반 패키지가 한 마이너 뒤처진 채 남았었다.
   'next': 16.4.1
+  '@next/third-parties': 16.4.1
   typescript: 6.0.3
   react: 19.3.0
   react-dom: 19.3.0
@@ -133,15 +139,15 @@ catalog:
   '@testing-library/user-event': ^14.6.7
 
 # lint 툴체인은 서로 버전이 맞물려 돌아간다(eslint 코어 ↔ @eslint/js ↔ typescript-eslint,
-# next ↔ eslint-config-next). 한 벌로 움직여야 하므로 named catalog로 떼어 둔다.
+# next ↔ eslint-config-next — 위 catalog의 next 주석). 한 벌로 움직여야 하므로 named catalog로 떼어 둔다.
 # 소비자가 하나뿐인 플러그인도 여기 둔다 — 툴체인 버전 표가 여러 곳으로 흩어지지 않게.
 catalogs:
   lint:
     eslint: ^10.11.0
     '@eslint/js': ^10.0.1
     '@eslint-community/eslint-plugin-eslint-comments': ^4.8.1
-    '@next/eslint-plugin-next': ^16.3.6
-    eslint-config-next: 16.3.6
+    '@next/eslint-plugin-next': 16.4.1
+    eslint-config-next: 16.4.1
     eslint-import-resolver-typescript: ^4.4.5
     eslint-plugin-boundaries: ^7.2.0
     eslint-plugin-jsx-a11y: ^6.10.2
