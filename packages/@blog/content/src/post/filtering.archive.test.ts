@@ -1,6 +1,7 @@
 import { expect, test } from 'vitest';
 import {
   filterAndSortPostsByArchiveParams,
+  formatTagParam,
   parseTagParam,
   type ArchiveFilterParams,
 } from './filtering.ts';
@@ -47,6 +48,17 @@ test('parseTagParam: 단일 태그', () => {
 
 test('parseTagParam: 다중 태그 + 빈 토큰 제거', () => {
   expect(parseTagParam('a,b,,c,')).toStrictEqual(['a', 'b', 'c']);
+});
+
+test('formatTagParam: 콤마로 잇고, 빈 배열은 빈 문자열', () => {
+  expect(formatTagParam(['a', 'b'])).toBe('a,b');
+  expect(formatTagParam([])).toBe('');
+});
+
+test('formatTagParam ↔ parseTagParam: 이은 값을 풀면 원래 태그로 돌아온다', () => {
+  for (const tags of [['typescript'], ['c++ & rust', '태그', 'next.js']]) {
+    expect(parseTagParam(formatTagParam(tags))).toStrictEqual(tags);
+  }
 });
 
 test('archive: query 비면 전체 포스트', () => {

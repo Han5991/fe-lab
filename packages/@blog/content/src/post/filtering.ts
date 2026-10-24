@@ -66,13 +66,25 @@ export function filterAndSortPostsByArchiveParams<
   return sorted;
 }
 
+/** 아카이브 `tag` 쿼리에서 태그를 잇는 문자 — 잇기(`formatTagParam`)와 풀기(`parseTagParam`)가 함께 읽는다. */
+const TAG_PARAM_SEPARATOR = ',';
+
 /**
  * `?tag=a,b,c` 같은 콤마 구분 문자열을 배열로 파싱합니다.
  * 빈 토큰은 제거하고, 비어 있으면 빈 배열을 돌려줍니다.
  */
 export function parseTagParam(tagParam: string | null | undefined): string[] {
   if (!tagParam) return [];
-  return tagParam.split(',').filter(Boolean);
+  return tagParam.split(TAG_PARAM_SEPARATOR).filter(Boolean);
+}
+
+/**
+ * `parseTagParam`의 역 — 태그 배열을 아카이브 `tag` 쿼리 값으로 잇습니다(`archivePath({ tag })`에
+ * 넘긴다). 빈 배열이면 빈 문자열이라, 태그가 없을 때는 호출부가 `tag` 키를 생략합니다.
+ * 콤마가 든 태그는 풀 때 둘로 갈립니다 — 구분자와 겹치는 태그는 이을 수 없습니다.
+ */
+export function formatTagParam(tags: readonly string[]): string {
+  return tags.join(TAG_PARAM_SEPARATOR);
 }
 
 /**
