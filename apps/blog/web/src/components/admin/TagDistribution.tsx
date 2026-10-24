@@ -1,13 +1,16 @@
-'use client';
-
 import { css } from '@blog/styled-system/css';
+import { barFill, barTrack, truncate } from './adminStyles';
 
 interface TagDistributionProps {
   tags: { id: string; count: number }[];
-  /** 강조할 태그 — bundler 등 시리즈 색을 입힐 ID */
+  /** 데이터 색으로 세울 태그 — 1위. 나머지는 무채색 막대다. */
   highlightId?: string | undefined;
 }
 
+/**
+ * 태그별 글 수 — 승인 목업의 가로 막대(태그 mono 13 · 높이 8 pill 막대 · 개수). 막대 폭은 1위
+ * 대비 비율이고, 개수를 글자로 함께 적어 막대 색에 기대지 않는다.
+ */
 export const TagDistribution = ({
   tags,
   highlightId,
@@ -15,66 +18,46 @@ export const TagDistribution = ({
   if (tags.length === 0) return null;
   const max = Math.max(...tags.map(t => t.count));
   return (
-    <div className={css({ display: 'flex', flexDir: 'column', gap: '2.5' })}>
-      {tags.map(t => {
-        const ratio = (t.count / max) * 100;
-        const isHighlighted = t.id === highlightId;
-        return (
-          <div
-            key={t.id}
-            className={css({
-              display: 'grid',
-              gridTemplateColumns: '[110px 1fr 32px]',
-              alignItems: 'center',
-              gap: '3',
+    <ul className={css({ display: 'flex', flexDir: 'column', gap: '2.5' })}>
+      {tags.map(t => (
+        <li
+          key={t.id}
+          className={css({
+            display: 'grid',
+            gridTemplateColumns: '[120px minmax(0, 1fr) 32px]',
+            alignItems: 'center',
+            gap: '3',
+          })}
+        >
+          <span
+            className={css(truncate, {
+              fontFamily: 'mono',
+              fontSize: '[13px]',
+              color: 'ink.950',
             })}
           >
+            #{t.id}
+          </span>
+          <span className={barTrack} aria-hidden>
             <span
-              className={css({
-                fontFamily: 'mono',
-                fontSize: 'xs',
-                color: 'ink.800',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
+              className={barFill({
+                tone: t.id === highlightId ? 'data' : 'muted',
               })}
-            >
-              #{t.id}
-            </span>
-            <div
-              className={css({
-                position: 'relative',
-                h: '[14px]',
-                bg: 'paper.100',
-                borderWidth: 'hairline',
-                borderColor: 'ink.border',
-              })}
-            >
-              <div
-                className={css({
-                  position: 'absolute',
-                  left: '0',
-                  top: '0',
-                  bottom: '0',
-                  bg: isHighlighted ? 'spot.600' : 'ink.400',
-                })}
-                style={{ width: `${ratio}%` }}
-              />
-            </div>
-            <span
-              className={css({
-                fontFamily: 'mono',
-                fontSize: 'xs',
-                color: 'ink.600',
-                textAlign: 'right',
-                fontVariantNumeric: 'tabular-nums',
-              })}
-            >
-              {t.count}
-            </span>
-          </div>
-        );
-      })}
-    </div>
+              style={{ width: `${(t.count / max) * 100}%` }}
+            />
+          </span>
+          <span
+            className={css({
+              textStyle: 'body',
+              color: 'ink.700',
+              textAlign: 'end',
+              fontVariantNumeric: 'tabular-nums',
+            })}
+          >
+            {t.count}
+          </span>
+        </li>
+      ))}
+    </ul>
   );
 };

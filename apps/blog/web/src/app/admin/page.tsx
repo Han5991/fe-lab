@@ -1,557 +1,492 @@
 'use client';
 
-import { Suspense } from 'react';
-import { LogOut, BarChart3, FileText } from 'lucide-react';
-import { css, cx } from '@blog/styled-system/css';
-import { railGutter, railColumn } from '@/src/components/Rail';
-import { TIMEZONE } from '@/content.values.mts';
-import { useAdminDashboardData } from '@/src/hooks/useAdminViews';
-import { countLivePosts } from '@/src/domain/analytics/admin';
-import { useAdminLogout } from '@/src/hooks/useAdminLogout';
-import { LoadingPlaceholder } from '@/src/components/shared/LoadingPlaceholder';
+import { Suspense, useState } from 'react';
 import Link from 'next/link';
-import { resolvePostState, type PostStatus } from '@blog/content/client';
+import { ArrowRight, ExternalLink } from 'lucide-react';
+import { css, cx } from '@blog/styled-system/css';
+import { fmtNum, localeTag, resolvePostState } from '@blog/content/client';
+import { SITE_LOCALE, TIMEZONE } from '@/content.values.mts';
+import { railColumn, railGutter } from '@/src/components/Rail';
+import { LoadingPlaceholder } from '@/src/components/shared/LoadingPlaceholder';
+import { AdminCard } from '@/src/components/admin/AdminCard';
+import { AdminPageHeader } from '@/src/components/admin/AdminPageHeader';
+import { MetricCard } from '@/src/components/admin/MetricCard';
+import { SegmentedControl } from '@/src/components/admin/SegmentedControl';
+import { TagDistribution } from '@/src/components/admin/TagDistribution';
+import { TimeSeriesChart } from '@/src/components/admin/TimeSeriesChart';
+import { TopPostsTable } from '@/src/components/admin/TopPostsTable';
+import {
+  adminCard,
+  adminCell,
+  adminTable,
+  adminTableBody,
+  barFill,
+  barTrack,
+  cardTableBleed,
+  panelIconButton,
+  rowLink,
+  truncate,
+} from '@/src/components/admin/adminStyles';
+import {
+  useAdminDashboardData,
+  type PostStatDetail,
+} from '@/src/hooks/useAdminViews';
+import {
+  useAnalyticsOverview,
+  UNIQUES_ESTIMATE_RATIO,
+} from '@/src/hooks/useAnalyticsOverview';
+import { useAdminTagDistribution } from '@/src/hooks/useAdminTagDistribution';
+import { countLivePosts } from '@/src/domain/analytics/admin';
+// 공개 배럴은 조회수 저장소(publicClient)를 바인딩하므로 기간 정의만 든 순수 leaf를 연다.
+import {
+  ANALYTICS_RANGES,
+  RANGE_DAYS,
+  type AnalyticsRange,
+} from '@/src/domain/analytics/ranges';
 import {
   ADMIN_ANALYTICS_PATH,
   adminAnalyticsPostPath,
 } from '@/src/shared/routes';
-import { STATUS_BADGE, livePostHref } from './components/postState';
+import { livePostHref } from './components/postState';
+import { StatusBadge } from './components/StatusBadge';
 
-/** 목록 한 줄이 여는 곳 — 공개 글은 실제 글(새 탭), 비공개 글은 그 글의 admin 통계. */
-function postLink(
-  slug: string,
-  state: PostStatus,
-): { href: string; target?: '_blank'; rel?: string } {
-  const live = livePostHref(slug, state);
-  return live
-    ? { href: live, target: '_blank', rel: 'noopener noreferrer' }
-    : { href: adminAnalyticsPostPath(slug) };
-}
+/** 목록 카드에 싣는 글 수 — 누적 상위·최근. */
+const LIST_LIMIT = 5;
 
-function HiddenBadge({ state }: { state: PostStatus }) {
-  if (state === 'published') return null;
+/** 태그 분포에 싣는 태그 수. */
+const TAG_LIMIT = 8;
+
+/** 기간의 화면 이름(`7일`) — 일수에서 만든다. 세그먼트와 카드 제목이 함께 쓴다. */
+const rangeLabel = (range: AnalyticsRange) => `${RANGE_DAYS[range]}일`;
+
+/** 집계 기간 세그먼트의 선택지 — 순서·값은 `ANALYTICS_RANGES`가 정한다. */
+const RANGE_OPTIONS = ANALYTICS_RANGES.map(range => ({
+  value: range,
+  label: rangeLabel(range),
+}));
+
+const gridThree = css({
+  display: 'grid',
+  gridTemplateColumns: { base: '1fr', md: 'repeat(3, minmax(0, 1fr))' },
+  gap: '4',
+});
+
+// 승인 목업의 두 칸 비율(6:5) — 표가 넓은 쪽, 분포·짧은 목록이 좁은 쪽.
+const gridSplit = css({
+  display: 'grid',
+  gridTemplateColumns: {
+    base: '1fr',
+    lg: '[minmax(0, 6fr) minmax(0, 5fr)]',
+  },
+  gap: '4',
+});
+
+const emptyNote = css({
+  textStyle: 'body',
+  color: 'ink.700',
+  py: '6',
+  textAlign: 'center',
+});
+
+/**
+ * 공개 글의 실제 주소를 새 탭으로 여는 아이콘 — 목록 제목은 그 글의 admin 통계로 열기 때문에,
+ * 글 자체로 가는 길은 여기 둔다. 정적 export는 비공개 글의 페이지를 만들지 않아 공개 글에만 있다.
+ */
+function LivePostLink({ post }: { post: PostStatDetail }) {
+  const href = livePostHref(post.slug, resolvePostState(post, TIMEZONE));
+  if (href === null) return null;
   return (
-    <span
-      className={css({
-        fontSize: 'xs',
-        fontWeight: 'semibold',
-        color: 'ink.500',
-        px: '1.5',
-        rounded: 'full',
-        borderWidth: 'hairline',
-        borderColor: 'ink.border',
-        flexShrink: 0,
-      })}
+    <Link
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label={`${post.title} 글을 새 탭에서 열기`}
+      className={panelIconButton}
     >
-      {STATUS_BADGE[state].label}
-    </span>
+      <ExternalLink size={16} aria-hidden />
+    </Link>
   );
 }
 
-function AdminOverviewContent() {
-  const { data } = useAdminDashboardData();
+/** 제목 칸 — 그 글의 admin 통계로 여는 링크와, 공개 중이 아니면 상태 배지. */
+function TitleCell({ post }: { post: PostStatDetail }) {
+  const state = resolvePostState(post, TIMEZONE);
+  return (
+    <td className={adminCell()}>
+      <span
+        className={css({ display: 'flex', alignItems: 'center', gap: '2' })}
+      >
+        <Link
+          href={adminAnalyticsPostPath(post.slug)}
+          className={css(truncate, rowLink)}
+        >
+          {post.title}
+        </Link>
+        {state !== 'published' && <StatusBadge state={state} post={post} />}
+      </span>
+    </td>
+  );
+}
 
-  const totalViews = data.reduce((acc, curr) => acc + curr.totalViews, 0);
-  const totalTodayViews = data.reduce((acc, curr) => acc + curr.todayViews, 0);
-  // /admin/analytics의 POSTS PUBLISHED와 같은 규칙(지금 공개 중인 글)으로 센다.
+const linkHeadCell = css(adminCell.raw({ kind: 'head' }), { w: '12' });
+
+/** 누적 상위 글 — 순위 · 제목 · 1위 대비 비중 · 누적 조회수(승인 목업의 인기 게시글). */
+function CumulativeTopTable({ posts }: { posts: PostStatDetail[] }) {
+  const max = posts[0]?.totalViews ?? 0;
+  return (
+    <div className={cardTableBleed}>
+      <table className={adminTable}>
+        <thead>
+          <tr>
+            <th
+              scope="col"
+              className={css(adminCell.raw({ kind: 'head' }), { w: '14' })}
+            >
+              순위
+            </th>
+            <th scope="col" className={adminCell({ kind: 'head' })}>
+              제목
+            </th>
+            <th
+              scope="col"
+              className={css(adminCell.raw({ kind: 'head' }), {
+                w: '28',
+                display: { base: 'none', md: 'table-cell' },
+              })}
+            >
+              비중
+            </th>
+            <th
+              scope="col"
+              className={css(adminCell.raw({ kind: 'head', align: 'end' }), {
+                w: '20',
+              })}
+            >
+              조회수
+            </th>
+            <th scope="col" className={linkHeadCell}>
+              <span className={css({ srOnly: true })}>글 열기</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody className={adminTableBody}>
+          {posts.map((post, i) => (
+            <tr key={post.slug}>
+              <td
+                className={css(adminCell.raw(), {
+                  fontFamily: 'mono',
+                  fontSize: '[13px]',
+                  color: 'ink.700',
+                })}
+              >
+                {String(i + 1).padStart(2, '0')}
+              </td>
+              <TitleCell post={post} />
+              <td
+                className={css(adminCell.raw(), {
+                  display: { base: 'none', md: 'table-cell' },
+                })}
+              >
+                <span className={barTrack} aria-hidden>
+                  <span
+                    className={barFill({ tone: 'ink' })}
+                    style={{
+                      width: `${max > 0 ? (post.totalViews / max) * 100 : 0}%`,
+                    }}
+                  />
+                </span>
+              </td>
+              <td
+                className={css(adminCell.raw({ align: 'end' }), {
+                  fontWeight: 'medium',
+                })}
+              >
+                {post.totalViews.toLocaleString()}
+              </td>
+              <td className={adminCell({ align: 'end' })}>
+                <LivePostLink post={post} />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+/** 최근 글 — 제목 · 작성일. */
+function RecentTable({ posts }: { posts: PostStatDetail[] }) {
+  return (
+    <div className={cardTableBleed}>
+      <table className={adminTable}>
+        <thead>
+          <tr>
+            <th scope="col" className={adminCell({ kind: 'head' })}>
+              제목
+            </th>
+            <th
+              scope="col"
+              className={css(adminCell.raw({ kind: 'head' }), {
+                w: '28',
+                display: { base: 'none', sm: 'table-cell' },
+              })}
+            >
+              작성일
+            </th>
+            <th scope="col" className={linkHeadCell}>
+              <span className={css({ srOnly: true })}>글 열기</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody className={adminTableBody}>
+          {posts.map(post => (
+            <tr key={post.slug}>
+              <TitleCell post={post} />
+              <td
+                className={css(adminCell.raw(), {
+                  display: { base: 'none', sm: 'table-cell' },
+                  color: 'ink.700',
+                  fontVariantNumeric: 'tabular-nums',
+                })}
+              >
+                {post.date}
+              </td>
+              <td className={adminCell({ align: 'end' })}>
+                <LivePostLink post={post} />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function DashboardContent() {
+  const { data, dataUpdatedAt } = useAdminDashboardData();
+  const [range, setRange] = useState<AnalyticsRange>('30d');
+  const overview = useAnalyticsOverview(range);
+  const tags = useAdminTagDistribution();
+
+  const totalViews = data.reduce((acc, post) => acc + post.totalViews, 0);
+  const todayViews = data.reduce((acc, post) => acc + post.todayViews, 0);
+  // 기간 지표의 글당 평균과 같은 규칙(지금 공개 중인 글)으로 센다.
   const livePosts = countLivePosts(data, { timezone: TIMEZONE });
   const hiddenPosts = data.length - livePosts;
 
   const topPosts = [...data]
     .sort((a, b) => b.totalViews - a.totalViews)
-    .slice(0, 5);
-
+    .slice(0, LIST_LIMIT);
   const recentPosts = [...data]
-    .filter(p => p.date)
-    .sort((a, b) => (b.date || '').localeCompare(a.date || ''))
-    .slice(0, 5);
+    .filter(post => post.date)
+    .sort((a, b) => (b.date ?? '').localeCompare(a.date ?? ''))
+    .slice(0, LIST_LIMIT);
+
+  const days = rangeLabel(overview.range);
 
   return (
     <>
-      {/* Stats row */}
-      <div
-        className={css({
-          display: 'grid',
-          gridTemplateColumns: { base: '1fr', md: 'repeat(3, 1fr)' },
-          gap: '4',
-          mb: '8',
-        })}
-      >
-        {/* 전체 조회수 */}
-        <div
-          className={css({
-            bg: 'ink.25',
-            borderWidth: 'hairline',
-            borderColor: 'ink.border',
-            rounded: 'container',
-            p: '6',
-          })}
-        >
-          <div
-            className={css({
-              display: 'flex',
-              alignItems: 'center',
-              gap: '2',
-              mb: '4',
-            })}
-          >
-            <BarChart3 size={16} className={css({ color: 'spot.600' })} />
-            <span
-              className={css({
-                fontSize: 'xs',
-                color: 'ink.500',
-                fontWeight: 'medium',
-              })}
-            >
-              전체 조회수
-            </span>
-          </div>
-          <div
-            className={css({
-              display: 'flex',
-              alignItems: 'baseline',
-              gap: '2',
-            })}
-          >
-            <span
-              className={css({
-                fontSize: '2xl',
-                fontWeight: 'bold',
-                color: 'ink.950',
-                letterSpacing: 'tight',
-              })}
-            >
-              {totalViews.toLocaleString()}
-            </span>
-            <span className={css({ fontSize: 'xs', color: 'ink.500' })}>
-              회
-            </span>
-            {totalTodayViews > 0 && (
-              <span
-                className={css({
-                  color: 'spot.600',
-                  fontWeight: 'bold',
-                  fontSize: 'sm',
-                })}
-              >
-                +{totalTodayViews}
-              </span>
-            )}
-          </div>
-        </div>
+      <AdminPageHeader
+        title="대시보드"
+        description={`누적 조회수 기준 · 업데이트: ${new Date(dataUpdatedAt).toLocaleString(localeTag(SITE_LOCALE))}`}
+      />
 
-        {/* 총 게시글 */}
-        <div
-          className={css({
-            bg: 'ink.25',
-            borderWidth: 'hairline',
-            borderColor: 'ink.border',
-            rounded: 'container',
-            p: '6',
-          })}
+      <div className={gridThree}>
+        <MetricCard
+          level="h2"
+          label="전체 조회수"
+          value={totalViews.toLocaleString()}
+          unit="회"
         >
-          <div
-            className={css({
-              display: 'flex',
-              alignItems: 'center',
-              gap: '2',
-              mb: '4',
-            })}
-          >
-            <FileText size={16} className={css({ color: 'spot.600' })} />
-            <span
-              className={css({
-                fontSize: 'xs',
-                color: 'ink.500',
-                fontWeight: 'medium',
-              })}
-            >
-              공개 게시글 수
+          {data.length}편 누적
+          {todayViews > 0 && (
+            <span className={css({ color: 'spot.600', fontWeight: 'medium' })}>
+              {' '}
+              · 오늘 +{todayViews}
             </span>
-          </div>
-          <div
-            className={css({
-              display: 'flex',
-              alignItems: 'baseline',
-              gap: '2',
-            })}
-          >
-            <span
-              className={css({
-                fontSize: '2xl',
-                fontWeight: 'bold',
-                color: 'ink.950',
-                letterSpacing: 'tight',
-              })}
-            >
-              {livePosts}
-            </span>
-            <span className={css({ fontSize: 'xs', color: 'ink.500' })}>
-              개
-            </span>
-            {hiddenPosts > 0 && (
-              <span className={css({ fontSize: 'xs', color: 'ink.500' })}>
-                · 비공개·예약 {hiddenPosts}개
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* 상세 분석 링크 */}
+          )}
+        </MetricCard>
+        <MetricCard
+          level="h2"
+          label="공개 게시글 수"
+          value={String(livePosts)}
+          unit="개"
+        >
+          {hiddenPosts > 0 ? `· 비공개·예약 ${hiddenPosts}개` : undefined}
+        </MetricCard>
         <Link
           href={ADMIN_ANALYTICS_PATH}
-          className={css({
-            bg: 'paper.200',
-            borderWidth: 'hairline',
-            borderColor: 'ink.border',
-            rounded: 'container',
-            p: '6',
+          className={css(adminCard, {
             display: 'flex',
             flexDir: 'column',
-            justifyContent: 'center',
-            alignItems: 'center',
-            gap: '3',
-            transition: 'opacity',
-            _hover: { opacity: '0.85' },
+            justifyContent: 'space-between',
+            gap: '1',
+            color: 'ink.950',
+            transition: 'colors',
+            _hover: { borderColor: 'ink.borderStrong' },
           })}
         >
-          <BarChart3 size={24} className={css({ color: 'ink.950' })} />
+          <span className={css({ textStyle: 'label', color: 'ink.700' })}>
+            상세 분석
+          </span>
           <span
             className={css({
-              color: 'ink.950',
-              fontWeight: 'semibold',
-              fontSize: 'sm',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '2',
             })}
           >
-            상세 분석 보기 →
+            <span className={css({ textStyle: 'h3' })}>
+              글 목록 · 글별 일별 추이 · 시간대·요일 분포
+            </span>
+            <ArrowRight size={20} aria-hidden />
           </span>
         </Link>
       </div>
 
-      {/* Content grid */}
-      <div
-        className={css({
-          display: 'grid',
-          gridTemplateColumns: { base: '1fr', lg: 'repeat(2, 1fr)' },
-          gap: '4',
-        })}
+      <div className={gridSplit}>
+        <AdminCard
+          level="h2"
+          title="인기 게시글"
+          meta={`누적 상위 ${topPosts.length}편`}
+        >
+          <CumulativeTopTable posts={topPosts} />
+        </AdminCard>
+        <AdminCard
+          level="h2"
+          title="최근 게시글"
+          meta={`작성일 최근 ${recentPosts.length}편`}
+        >
+          <RecentTable posts={recentPosts} />
+        </AdminCard>
+      </div>
+
+      <section
+        aria-labelledby="dashboard-period"
+        className={css({ display: 'flex', flexDir: 'column', gap: '4' })}
       >
-        {/* Top Posts */}
         <div
           className={css({
-            bg: 'ink.25',
-            borderWidth: 'hairline',
-            borderColor: 'ink.border',
-            rounded: 'container',
-            overflow: 'hidden',
+            display: 'flex',
+            flexWrap: 'wrap',
+            alignItems: 'flex-end',
+            justifyContent: 'space-between',
+            gap: '3',
+            pt: '4',
           })}
         >
-          <div
-            className={css({
-              px: '5',
-              py: '4',
-              borderBottomWidth: 'hairline',
-              borderColor: 'ink.border',
-              display: 'flex',
-              alignItems: 'baseline',
-              gap: '3',
-            })}
-          >
-            <span
-              className={css({
-                fontSize: 'xs',
-                fontWeight: 'bold',
-                color: 'spot.600',
-                letterSpacing: 'widest',
-                textTransform: 'uppercase',
-              })}
-            >
-              Top
-            </span>
-            <h2
-              className={css({
-                fontWeight: 'bold',
-                color: 'ink.950',
-                fontSize: 'sm',
-              })}
-            >
-              인기 게시글
-            </h2>
-          </div>
           <div>
-            {topPosts.map((post, i) => {
-              const state = resolvePostState(post, TIMEZONE);
-              return (
-                <Link
-                  key={post.slug}
-                  {...postLink(post.slug, state)}
-                  className={css({
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4',
-                    px: '5',
-                    py: '3',
-                    borderBottomWidth:
-                      i < topPosts.length - 1 ? 'hairline' : 'none',
-                    borderColor: 'ink.border',
-                    transition: 'colors',
-                    _hover: { bg: 'ink.50' },
-                  })}
-                >
-                  <span
-                    className={css({
-                      fontWeight: 'bold',
-                      color: 'spot.600',
-                      fontSize: 'sm',
-                      w: '5',
-                      textAlign: 'center',
-                      fontVariantNumeric: 'tabular-nums',
-                      flexShrink: 0,
-                    })}
-                  >
-                    {String(i + 1).padStart(2, '0')}
-                  </span>
-                  <span
-                    className={css({
-                      flex: '1',
-                      color: 'ink.950',
-                      fontSize: 'sm',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                    })}
-                  >
-                    {post.title}
-                  </span>
-                  <HiddenBadge state={state} />
-                  <span
-                    className={css({
-                      fontWeight: 'semibold',
-                      color: 'ink.700',
-                      fontSize: 'sm',
-                      flexShrink: 0,
-                      fontVariantNumeric: 'tabular-nums',
-                    })}
-                  >
-                    {post.totalViews.toLocaleString()}
-                  </span>
-                </Link>
-              );
-            })}
+            <h2 id="dashboard-period" className={css({ textStyle: 'h2' })}>
+              기간 추이
+            </h2>
+            <p className={css({ textStyle: 'supporting', color: 'ink.700' })}>
+              최근 {days} · 증감은 직전 {days} 대비
+            </p>
           </div>
+          <SegmentedControl
+            label="집계 기간"
+            options={RANGE_OPTIONS}
+            value={range}
+            onChange={setRange}
+          />
         </div>
 
-        {/* Recent Posts */}
-        <div
-          className={css({
-            bg: 'ink.25',
-            borderWidth: 'hairline',
-            borderColor: 'ink.border',
-            rounded: 'container',
-            overflow: 'hidden',
-          })}
-        >
-          <div
-            className={css({
-              px: '5',
-              py: '4',
-              borderBottomWidth: 'hairline',
-              borderColor: 'ink.border',
-              display: 'flex',
-              alignItems: 'baseline',
-              gap: '3',
-            })}
+        <div className={gridThree}>
+          <MetricCard
+            level="h3"
+            label={`조회수 · ${days}`}
+            value={fmtNum(overview.total)}
+            delta={overview.totalDelta}
+            series={overview.totalSeries.map(d => d.value)}
+          />
+          <MetricCard
+            level="h3"
+            label={`방문 추정 · ${days}`}
+            value={fmtNum(overview.uniques)}
+            delta={overview.uniquesDelta}
           >
-            <span
-              className={css({
-                fontSize: 'xs',
-                fontWeight: 'bold',
-                color: 'spot.600',
-                letterSpacing: 'widest',
-                textTransform: 'uppercase',
-              })}
-            >
-              Recent
-            </span>
-            <h2
-              className={css({
-                fontWeight: 'bold',
-                color: 'ink.950',
-                fontSize: 'sm',
-              })}
-            >
-              최근 게시글
-            </h2>
-          </div>
-          <div>
-            {recentPosts.map((post, i) => {
-              const state = resolvePostState(post, TIMEZONE);
-              return (
-                <Link
-                  key={post.slug}
-                  {...postLink(post.slug, state)}
-                  className={css({
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4',
-                    px: '5',
-                    py: '3',
-                    borderBottomWidth:
-                      i < recentPosts.length - 1 ? 'hairline' : 'none',
-                    borderColor: 'ink.border',
-                    transition: 'colors',
-                    _hover: { bg: 'ink.50' },
-                  })}
-                >
-                  <span
-                    className={css({
-                      flex: '1',
-                      color: 'ink.950',
-                      fontSize: 'sm',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                    })}
-                  >
-                    {post.title}
-                  </span>
-                  <HiddenBadge state={state} />
-                  <span
-                    className={css({
-                      color: 'ink.500',
-                      fontSize: 'xs',
-                      flexShrink: 0,
-                      fontVariantNumeric: 'tabular-nums',
-                    })}
-                  >
-                    {post.date}
-                  </span>
-                </Link>
-              );
-            })}
-          </div>
+            조회수의 {Math.round(UNIQUES_ESTIMATE_RATIO * 100)}%로 추정
+          </MetricCard>
+          <MetricCard
+            level="h3"
+            label={`글당 평균 · ${days}`}
+            value={fmtNum(overview.avgPerPost)}
+            unit="회"
+          >
+            공개 글 {overview.postsPublished}편 기준
+          </MetricCard>
         </div>
+
+        <AdminCard level="h3" title={`일별 조회수 · ${days}`} meta="일별 합산">
+          <TimeSeriesChart data={overview.totalSeries} />
+        </AdminCard>
+
+        <div className={gridSplit}>
+          <AdminCard
+            level="h3"
+            title={`기간 인기 글 · ${days}`}
+            meta={`${overview.topPosts.length}편`}
+          >
+            {overview.topPosts.length === 0 ? (
+              <p className={emptyNote}>해당 기간에 데이터가 없습니다.</p>
+            ) : (
+              <TopPostsTable rows={overview.topPosts} />
+            )}
+          </AdminCard>
+          <AdminCard
+            level="h3"
+            title="태그 분포"
+            meta={`상위 ${Math.min(TAG_LIMIT, tags.length)}`}
+          >
+            {tags.length === 0 ? (
+              <p className={emptyNote}>태그가 달린 글이 없습니다.</p>
+            ) : (
+              <TagDistribution
+                tags={tags.slice(0, TAG_LIMIT)}
+                highlightId={tags[0]?.id}
+              />
+            )}
+          </AdminCard>
+        </div>
+      </section>
+    </>
+  );
+}
+
+function DashboardSkeleton() {
+  return (
+    <>
+      <LoadingPlaceholder height="96px" />
+      <div className={gridThree}>
+        <LoadingPlaceholder height="120px" />
+        <LoadingPlaceholder height="120px" />
+        <LoadingPlaceholder height="120px" />
+      </div>
+      <div className={gridSplit}>
+        <LoadingPlaceholder height="280px" />
+        <LoadingPlaceholder height="280px" />
       </div>
     </>
   );
 }
 
+/**
+ * admin 대시보드 — 누적 요약(조회수·공개 글·상세 분석으로 가는 카드), 누적 인기·최근 글, 그리고
+ * 기간 추이(7·30·90일 지표·일별 시계열·기간 인기 글·태그 분포)를 한 화면에 잇는다. 예전에는
+ * 누적 요약이 여기, 기간 추이가 `/admin/analytics/`에 따로 있었다.
+ */
 export default function AdminPage() {
-  const { handleLogout } = useAdminLogout();
-
   return (
-    // 배경은 화면 끝까지, 내용은 /admin/analytics와 같은 wide 레일.
-    // 세로 여백은 레일과 무관하므로 바깥에 남긴다. 높이는 채우지 않는다 — 푸터를 바닥에 붙이는
-    // 일은 Layout(flex 열, main flex 1)이 한다. 예전의 최소 높이 calc(100dvh - 128px)는 헤더·푸터
-    // 높이를 손으로 뺀 값이라 셸이 바뀌면 어긋났다. 그래서 내용이 화면보다 짧으면(로딩 중, 큰 화면)
-    // 회색 면이 내용에서 끝나고 그 아래로 지면색이 보인다.
-    <div
-      className={cx(
-        css({
-          bg: 'ink.50',
-          py: { base: '4', md: '8' },
-        }),
-        railGutter,
-      )}
-    >
-      <div className={railColumn({ width: 'wide' })}>
-        <header
-          className={css({
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            mb: '6',
-            pb: '5',
-            borderBottomWidth: 'hairline',
-            borderColor: 'ink.border',
-            flexWrap: 'wrap',
-            gap: '3',
-          })}
-        >
-          <div>
-            <p
-              className={css({
-                fontSize: 'xs',
-                fontWeight: 'bold',
-                letterSpacing: 'widest',
-                textTransform: 'uppercase',
-                color: 'spot.600',
-                mb: '1',
-              })}
-            >
-              Admin
-            </p>
-            <h1
-              className={css({
-                fontSize: 'xl',
-                fontWeight: 'bold',
-                color: 'ink.950',
-              })}
-            >
-              대시보드
-            </h1>
-          </div>
-
-          <div
-            className={css({ display: 'flex', alignItems: 'center', gap: '2' })}
-          >
-            <Link
-              href={ADMIN_ANALYTICS_PATH}
-              className={css({
-                display: 'flex',
-                alignItems: 'center',
-                gap: '1.5',
-                px: '3',
-                py: '1.5',
-                color: 'spot.600',
-                fontWeight: 'medium',
-                fontSize: 'sm',
-                rounded: 'full',
-                transition: 'colors',
-                _hover: { bg: 'paper.100' },
-              })}
-            >
-              <BarChart3 size={16} />
-              상세 분석
-            </Link>
-            <button
-              onClick={() => void handleLogout()}
-              className={css({
-                display: 'flex',
-                alignItems: 'center',
-                gap: '1.5',
-                px: '3',
-                py: '1.5',
-                color: 'ink.500',
-                cursor: 'pointer',
-                rounded: 'full',
-                fontSize: 'sm',
-                transition: 'colors',
-                _hover: { bg: 'paper.200', color: 'ink.900' },
-              })}
-            >
-              <LogOut size={16} />
-              로그아웃
-            </button>
-          </div>
-        </header>
-
-        <Suspense
-          fallback={
-            <div
-              className={css({
-                display: 'grid',
-                gridTemplateColumns: { base: '1fr', md: 'repeat(3, 1fr)' },
-                gap: '4',
-              })}
-            >
-              <LoadingPlaceholder height="140px" />
-              <LoadingPlaceholder height="140px" />
-              <LoadingPlaceholder height="140px" />
-            </div>
-          }
-        >
-          <AdminOverviewContent />
+    <div className={cx(railGutter, css({ pb: '12' }))}>
+      <div
+        className={cx(
+          railColumn({ width: 'wide' }),
+          css({ display: 'flex', flexDir: 'column', gap: '6' }),
+        )}
+      >
+        <Suspense fallback={<DashboardSkeleton />}>
+          <DashboardContent />
         </Suspense>
       </div>
     </div>

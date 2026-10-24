@@ -2,6 +2,7 @@
 
 import { TIMEZONE } from '@/content.values.mts';
 import { useState } from 'react';
+import { ChevronDown } from 'lucide-react';
 import { css } from '@blog/styled-system/css';
 import { getKSTDateISO } from '@blog/content/client';
 import type { TrendPoint } from '@/src/domain/analytics';
@@ -104,17 +105,34 @@ export function useDateFilter(
   };
 }
 
-const inputClass = css({
-  py: '1.5',
-  px: '2',
-  borderWidth: 'hairline',
-  borderColor: 'ink.border',
-  rounded: 'element',
-  fontSize: 'xs',
-  bg: 'ink.25',
+// 승인 목업의 패널 컨트롤 — 기간은 pill 셀렉트(paper.200 면, 오른쪽 셰브론), 직접선택의
+// 날짜는 입력 모양(element 라운드·진한 hairline·카드 면). 높이는 옆의 '글 열기' 버튼(actionButton md)과
+// 같은 32 — 목업은 28이지만 버튼 레시피에 28이 없어 한 줄의 높이를 버튼에 맞췄다. 글자는 둘 다 `body`.
+const selectClass = css({
+  appearance: 'none',
+  h: '8',
+  pl: '3',
+  pr: '8',
+  rounded: 'full',
+  bg: 'paper.200',
   color: 'ink.950',
+  textStyle: 'body',
+  fontWeight: 'medium',
   cursor: 'pointer',
-  _focus: { outline: 'none', borderColor: 'ink.950' },
+  transition: 'colors',
+  _hover: { bg: 'paper.300' },
+});
+
+const dateInputClass = css({
+  h: '8',
+  px: '2',
+  rounded: 'element',
+  borderWidth: 'hairline',
+  borderColor: 'ink.borderStrong',
+  bg: 'surface.raised',
+  color: 'ink.950',
+  textStyle: 'body',
+  _focus: { borderColor: 'accent.solid' },
 });
 
 interface DateRangeControlsProps {
@@ -143,21 +161,39 @@ export function DateRangeControls({
         flexWrap: 'wrap',
       })}
     >
-      <select
-        aria-label="기간"
-        value={filterType}
-        onChange={e => {
-          const next = e.target.value;
-          if (isFilterType(next)) setFilterType(next);
-        }}
-        className={inputClass}
+      <span
+        className={css({
+          pos: 'relative',
+          display: 'inline-flex',
+          alignItems: 'center',
+        })}
       >
-        {Object.entries(FILTER_LABELS).map(([value, label]) => (
-          <option key={value} value={value}>
-            {label}
-          </option>
-        ))}
-      </select>
+        <select
+          aria-label="기간"
+          value={filterType}
+          onChange={e => {
+            const next = e.target.value;
+            if (isFilterType(next)) setFilterType(next);
+          }}
+          className={selectClass}
+        >
+          {Object.entries(FILTER_LABELS).map(([value, label]) => (
+            <option key={value} value={value}>
+              {label}
+            </option>
+          ))}
+        </select>
+        <ChevronDown
+          size={14}
+          aria-hidden
+          className={css({
+            pos: 'absolute',
+            right: '3',
+            pointerEvents: 'none',
+            color: 'ink.700',
+          })}
+        />
+      </span>
 
       {filterType === 'custom' && (
         <div
@@ -169,15 +205,17 @@ export function DateRangeControls({
             aria-label="시작일"
             value={startDate}
             onChange={e => setStartDate(e.target.value)}
-            className={inputClass}
+            className={dateInputClass}
           />
-          <span className={css({ color: 'ink.500', fontSize: 'xs' })}>—</span>
+          <span className={css({ color: 'ink.700', textStyle: 'body' })}>
+            —
+          </span>
           <input
             type="date"
             aria-label="종료일"
             value={endDate}
             onChange={e => setEndDate(e.target.value)}
-            className={inputClass}
+            className={dateInputClass}
           />
         </div>
       )}

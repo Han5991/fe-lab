@@ -5,6 +5,9 @@
  * - 로그인: 가짜 Supabase 세션을 저장소에 미리 심고(실제 OAuth를 흉내 내지 않는다 —
  *   auth-js는 저장된 세션이 만료 전이면 네트워크 없이 그대로 쓴다) Edge Function
  *   응답은 `network.ts`가 RPC 모양으로 채운다. 차트가 그려지고 axe를 지나야 한다.
+ * - 분석 화면은 고른 글을 주소에 둔다(`history.pushState` → Next 라우터가 `usePathname`을
+ *   맞춘다). jsdom에는 그 라우터가 없어 단위 테스트가 볼 수 없는 연결이라 여기서 본다 —
+ *   누르면 주소가 바뀌고, 뒤로 가기가 고르기 전으로 돌아간다.
  *
  * 콘솔 에러·예외 0은 모든 테스트에 걸린다(`fixtures.ts`).
  */
@@ -149,14 +152,33 @@ test.describe('로그인', () => {
       expect(await axeViolations(page), 'axe 위반').toEqual([]);
     });
   }
-  // 펼쳐야만 생기는 상태(글 아코디언·직접선택 기간의 날짜 입력)는 정지 화면 axe가 못 본다.
-  test('/admin/analytics/ 글 펼침 + 직접선택 기간 + axe', async ({ page }) => {
+  // 눌러야만 생기는 상태(고른 글의 패널·직접선택 기간의 날짜 입력)는 정지 화면 axe가 못 본다.
+  test('/admin/analytics/ 글 선택 → 오른쪽 패널 + 직접선택 기간 + axe + 뒤로 가기', async ({
+    page,
+  }) => {
     await renderAdmin(page, '/admin/analytics/');
-    const toggle = page.locator('main button[aria-expanded]').first();
-    await toggle.click();
-    await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    const panel = page.getByRole('region', { name: '글 통계' });
+    await expect(panel.getByText('선택한 글이 없습니다')).toBeVisible();
+
+    const row = page
+      .getByRole('table', { name: '글 목록' })
+      .getByRole('link')
+      .first();
+    const href = await row.getAttribute('href');
+    expect(href, '행 링크는 그 글의 통계 주소다').toMatch(
+      /^\/admin\/analytics\/.+\/$/,
+    );
+    await row.click();
+    await expect(row).toHaveAttribute('aria-current', 'page');
+    await expect(page, '주소가 고른 글을 든다').toHaveURL(href ?? '');
+    await expect(panel.locator('.recharts-surface').first()).toBeVisible();
     await chooseCustomPeriod(page);
     expect(await axeViolations(page), 'axe 위반').toEqual([]);
+
+    await page.goBack();
+    await expect(page).toHaveURL('/admin/analytics/');
+    await expect(panel.getByText('선택한 글이 없습니다')).toBeVisible();
+    await expect(row).not.toHaveAttribute('aria-current');
   });
 
   test(`${POST_DETAIL_PAGES[0] ?? ''} 직접선택 기간 + axe`, async ({
@@ -167,19 +189,50 @@ test.describe('로그인', () => {
     expect(await axeViolations(page), 'axe 위반').toEqual([]);
   });
 
+  test.describe('좁은 화면', () => {
+    test.use({ viewport: { width: 375, height: 812 } });
+
+    // lg 미만은 패널이 목록을 덮는 시트(다이얼로그)다 — 넓은 화면의 칼럼과 마크업이 달라 따로 본다.
+    test(`${POST_DETAIL_PAGES[0] ?? ''} 시트 + axe + Escape`, async ({
+      page,
+    }) => {
+      await page.goto(POST_DETAIL_PAGES[0] ?? '');
+      const sheet = page.getByRole('dialog');
+      await expect(sheet.locator('.recharts-surface').first()).toBeVisible();
+      await expect(sheet).toHaveAttribute('aria-modal', 'true');
+      expect(await axeViolations(page), 'axe 위반').toEqual([]);
+
+      await page.keyboard.press('Escape');
+      await expect(sheet).toBeHidden();
+      await expect(page).toHaveURL('/admin/analytics/');
+    });
+  });
+
   // 나머지 글별 분석 화면은 같은 컴포넌트에 slug만 다르고, 그 slug도 이 스위트에선
   // 가짜 응답의 씨앗일 뿐이다 — 로그인 렌더는 하나로 덮고, 경로마다의 가드는 위
   // 비로그인 묶음이 전부 연다(그쪽이 페이지당 1~2초라 전 경로를 감당할 수 있다).
 });
 
+/** 차트를 그리는 화면 — 대시보드(일별 시계열)와 글을 고른 분석 화면(패널의 차트). */
+const CHART_PAGES = new Set(['/admin/', ...POST_DETAIL_PAGES]);
+
 async function renderAdmin(page: Page, route: string): Promise<void> {
   await page.goto(route);
   await expect(page.locator('main svg').first(), route).toBeVisible();
   await expect(page, '가드가 로그인 화면으로 보냈다').toHaveURL(route);
-  if (route.startsWith('/admin/analytics/')) {
+  await expect(
+    page.getByRole('navigation', { name: '관리자 메뉴' }),
+    '관리자 바',
+  ).toBeVisible();
+  if (CHART_PAGES.has(route)) {
     // recharts가 실제로 그렸는지 — 데이터가 비면 차트 대신 안내 문구가 나온다.
     await expect(
       page.locator('.recharts-surface').first(),
+      route,
+    ).toBeVisible();
+  } else if (route === '/admin/analytics/') {
+    await expect(
+      page.getByRole('table', { name: '글 목록' }).getByRole('link').first(),
       route,
     ).toBeVisible();
   }

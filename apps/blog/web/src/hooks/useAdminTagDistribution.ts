@@ -1,8 +1,8 @@
 'use client';
 
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { adminPostsIndexQuery } from '@/src/hooks/useAdminViews';
-import { ADMIN_QUERY_PREFIX } from '@/src/hooks/adminCache';
+import { adminPostsIndexQuery } from './useAdminViews';
+import { ADMIN_QUERY_PREFIX } from './adminCache';
 
 /** admin 글 인덱스의 태그별 글 수 — 클라이언트 화면이라 서버의 getAllTags()를 못 쓴다. */
 export function useAdminTagDistribution() {

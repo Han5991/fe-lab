@@ -43,7 +43,7 @@ vi.mock('@/src/domain/analytics/admin', () => ({
   getAllPostsTrends,
 }));
 
-import { useAdminTagDistribution } from '@/src/app/admin/analytics/useAdminTagDistribution';
+import { useAdminTagDistribution } from './useAdminTagDistribution';
 import { setAdminQueryDefaults } from './adminQueryDefaults';
 import { useAdminDashboardData } from './useAdminViews';
 

@@ -9,16 +9,19 @@ export const STATUS_BADGE = {
 } as const satisfies Record<PostStatus, { label: string }>;
 
 /**
- * 상태 배지의 글자색. 상태는 런타임 값이라 `colors[state]` 같은 조회는 빌드 때 CSS가 되지
- * 않는다 — 변형(cva)으로 적어야 세 색이 모두 추출된다(styling/dynamic-styling). `PostStatus`가
- * 늘면 `statusTone({ state })` 호출이 컴파일되지 않는다.
+ * 상태 배지의 글자색 — 배지 면(`pillBadge`, paper.200) 위 글자다. 상태는 런타임 값이라
+ * `colors[state]` 같은 조회는 빌드 때 CSS가 되지 않는다 — 변형(cva)으로 적어야 세 색이 모두
+ * 추출된다(styling/dynamic-styling). `PostStatus`가 늘면 `statusTone({ state })` 호출이 컴파일되지
+ * 않는다. paper.200 위 대비(라이트 / 다크): moss.700 4.95 / 8.15, ink.700 6.44 / 7.22,
+ * spot.600 4.57 / 7.34.
  */
 export const statusTone = cva({
   variants: {
     state: {
       // 글자색이라 moss.700 — moss.600은 아이콘·배경용으로 라이트에서 AA 미달이다.
       published: { color: 'moss.700' },
-      draft: { color: 'ink.500' },
+      // ink.500은 paper.200 위 라이트 4.52로 문턱에 걸려 한 단계 진하게 둔다.
+      draft: { color: 'ink.700' },
       scheduled: { color: 'spot.600' },
     },
   },

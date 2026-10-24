@@ -10,6 +10,7 @@ import { css, cx } from '@blog/styled-system/css';
 import type { ReactNode } from 'react';
 
 import { headerIconButton, iconButton } from './iconButton';
+import { WORDMARK } from './wordmark';
 import { railGutter } from './Rail';
 import { SOCIAL_LINKS, ShellLink } from './shellLinks';
 import { siteHeaderStyle } from './siteHeader';
@@ -20,12 +21,6 @@ import { ThemeToggle } from './ThemeToggle';
 interface LayoutProps {
   children: ReactNode;
 }
-
-/**
- * 화면의 워드마크 — 헤더(홈 링크)와 푸터(글자)가 같은 표기를 쓴다. 표기만 도메인이고, metadata·JSON-LD의
- * 사이트명(`SITE_NAME`, Frontend Lab)은 검색 색인 보호를 위해 그대로 둔다.
- */
-const WORDMARK = 'sangwook.dev';
 
 /** 건너뛰기 링크가 가리키는 본문 영역 id. */
 const MAIN_ID = 'main-content';

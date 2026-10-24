@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useQueryErrorResetBoundary } from '@tanstack/react-query';
 import { css, cx } from '@blog/styled-system/css';
 import { railColumn, railGutter } from '@/src/components/Rail';
+import { actionButton } from '@/src/components/actionButton';
 import { ADMIN_LOGIN_PATH } from '@/src/shared/routes';
 import { reportError } from '@/src/components/errorReporting';
 // admin 배럴은 supabase 클라이언트를 바인딩하므로 순수 leaf를 연다.
@@ -43,12 +44,7 @@ export default function AdminError({ error, reset }: AdminErrorProps) {
   const message = error instanceof Error ? error.message : String(error);
 
   return (
-    <div
-      className={cx(
-        railGutter,
-        css({ py: { base: '12', md: '16' }, bg: 'paper.50' }),
-      )}
-    >
+    <div className={cx(railGutter, css({ py: { base: '12', md: '16' } }))}>
       <div
         role="alert"
         className={cx(
@@ -65,13 +61,7 @@ export default function AdminError({ error, reset }: AdminErrorProps) {
           }),
         )}
       >
-        <h1
-          className={css({
-            fontSize: 'lg',
-            fontWeight: 'bold',
-            color: 'danger.text',
-          })}
-        >
+        <h1 className={css({ textStyle: 'h3', color: 'danger.text' })}>
           {TITLES[kind]}
         </h1>
         <p
@@ -84,39 +74,20 @@ export default function AdminError({ error, reset }: AdminErrorProps) {
         >
           {message}
         </p>
-        <div className={css({ display: 'flex', gap: '3', flexWrap: 'wrap' })}>
+        <div className={css({ display: 'flex', gap: '2', flexWrap: 'wrap' })}>
           <button
             type="button"
             onClick={() => {
               resetQueryErrors();
               reset();
             }}
-            className={css({
-              px: '4',
-              py: '2',
-              rounded: 'full',
-              bg: 'accent.solid',
-              color: 'accent.onSolid',
-              fontSize: 'sm',
-              fontWeight: 'semibold',
-              cursor: 'pointer',
-              _hover: { bg: 'accent.solidHover' },
-            })}
+            className={actionButton({ tone: 'solid', size: 'md' })}
           >
             다시 시도
           </button>
           <Link
             href={ADMIN_LOGIN_PATH}
-            className={css({
-              px: '4',
-              py: '2',
-              rounded: 'full',
-              borderWidth: 'hairline',
-              borderColor: 'ink.border',
-              color: 'ink.800',
-              fontSize: 'sm',
-              _hover: { bg: 'paper.100' },
-            })}
+            className={actionButton({ tone: 'neutral', size: 'md' })}
           >
             다시 로그인
           </Link>

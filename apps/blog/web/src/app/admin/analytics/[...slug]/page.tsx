@@ -1,5 +1,5 @@
 import { getAllPostsIncludingHidden } from '@/src/content';
-import PostDetailClient from './PostDetailClient';
+import { AnalyticsScreen } from '../AnalyticsScreen';
 
 // admin은 인증된 본인만 접근하는 페이지이므로 draft·scheduled 글까지 모두 정적 라우트로 생성합니다.
 // 그렇지 않으면 draft가 published로 promote되거나 scheduled가 cron 사이에 활성화될 때
@@ -17,6 +17,10 @@ export function generateStaticParams() {
   }));
 }
 
+/**
+ * 글 하나를 고른 분석 화면 — 목록 페이지와 같은 `AnalyticsScreen`이고, 고른 글은 이 주소에서 읽는다.
+ * 대시보드·옛 링크·새 탭으로 연 주소가 정적 호스팅에서 그대로 열리게 하는 딥링크 페이지다.
+ */
 export default function PostDetailAnalyticsPage() {
-  return <PostDetailClient />;
+  return <AnalyticsScreen />;
 }

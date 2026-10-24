@@ -19,6 +19,7 @@ interface ThemePair<T> {
  * 돌려주기 때문이다(참조 문자열이 렌더러에 그대로 넘어간다).
  */
 const PAPER_50 = { base: '#ffffff', _dark: '#0b0d10' } as const;
+const PAPER_100 = { base: '#f7f7f5', _dark: '#14171c' } as const;
 const INK_950 = { base: '#1a1a1a', _dark: '#e6e8eb' } as const;
 const INK_800 = { base: '#3a3d42', _dark: '#c2c7ce' } as const;
 
@@ -109,9 +110,18 @@ const blogColors = defineSemanticTokens.colors({
   // ─────────────────────────────────────────────────────────────
   // paper — 서피스
   'paper.50': { value: PAPER_50 },
-  'paper.100': { value: { base: '#f7f7f5', _dark: '#14171c' } },
+  'paper.100': { value: PAPER_100 },
   'paper.200': { value: { base: '#ededea', _dark: '#1b1f26' } },
   'paper.300': { value: { base: '#e0e0dc', _dark: '#242931' } },
+  // surface — 앱 화면(admin)의 바닥과 그 위 카드·패널. Astryx의 body·card 쌍(승인 admin 목업)이다.
+  // **카드는 두 테마 모두 바닥보다 한 단계 밝다** — 라이트는 흰 카드가 옅은 바닥 위에, 다크는 한 단계
+  // 밝은 카드가 지면 위에 놓인다. paper 단계는 라이트에서 내려가고(50이 가장 밝다) 다크에서 올라가므로
+  // (50이 가장 어둡다) 한 이름으로는 이 쌍을 낼 수 없어, 같은 상수에서 테마마다 다른 단계를 고른다.
+  // 공개 페이지는 지면(paper.50) 한 장 위에 보더로 위계를 내므로 쓰지 않는다.
+  //   base   — 바닥. 라이트 paper.100 · 다크 paper.50
+  //   raised — 카드·패널. 라이트 paper.50 · 다크 paper.100
+  'surface.base': { value: { base: PAPER_100.base, _dark: PAPER_50._dark } },
+  'surface.raised': { value: { base: PAPER_50.base, _dark: PAPER_100._dark } },
   // ink — 텍스트/보더
   'ink.950': { value: INK_950 },
   'ink.900': { value: { base: '#262626', _dark: '#d5d9de' } },
@@ -437,6 +447,11 @@ export const blogPreset = definePreset({
 
           /** 레일이 아니라 콘텐츠 제약 — /about 히어로 우측 문단 */
           heroAside: { value: '480px' },
+          /**
+           * 레일이 아니라 화면 오른쪽 끝에 붙는 상세 패널의 폭 — admin 분석의 글 통계(Astryx
+           * dashboard-alert-rail의 오른쪽 패널 400). lg 이상은 목록 옆 칼럼, 아래는 같은 폭의 시트다.
+           */
+          inspector: { value: '400px' },
         },
         // 모션 곡선 — 시간은 아래 semanticTokens.durations. **곡선은 이 셋이 전부다** — 블로그
         // 설정이 preset-panda의 easings를 빼므로(apps/blog/web/panda.config.ts) 다른 이름은

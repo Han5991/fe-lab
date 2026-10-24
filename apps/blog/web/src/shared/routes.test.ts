@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs';
 import { describe, expect, test } from 'vitest';
 import { postPath, POSTS_PATH } from '@blog/content/client';
 import {
@@ -8,7 +9,9 @@ import {
   ADMIN_LOGIN_REDIRECT_PATH,
   ADMIN_LOGIN_UNAUTHORIZED_PATH,
   ADMIN_PATH,
+  ADMIN_SEGMENT,
   adminAnalyticsPostPath,
+  adminAnalyticsSlugFromPath,
   adminLoginErrorPath,
   adminLoginRedirectUrl,
   HOME_PATH,
@@ -176,5 +179,55 @@ describe('slugFromRouteParam', () => {
         slug,
       );
     }
+  });
+});
+
+describe('adminAnalyticsSlugFromPath', () => {
+  test('링크 → 주소 왕복: adminAnalyticsPostPath가 만든 경로에서 원래 slug가 나온다', () => {
+    // 분석 화면은 고른 글을 주소에만 둔다 — 행이 만드는 주소와 화면이 읽는 주소가 역함수여야 한다.
+    for (const slug of [
+      'cache-hit-cold-build',
+      'turborepo-next.js-docker',
+      '한글-슬러그',
+      '회고/2025 상반기',
+      'react/component/toast',
+    ]) {
+      expect(adminAnalyticsSlugFromPath(adminAnalyticsPostPath(slug))).toBe(
+        slug,
+      );
+    }
+  });
+
+  test('dev 서버의 무슬래시형도 같은 글이다', () => {
+    expect(adminAnalyticsSlugFromPath('/admin/analytics/my-post')).toBe(
+      'my-post',
+    );
+  });
+
+  test('통계 목록 자체와 통계 영역 밖은 고른 글이 없다', () => {
+    expect(adminAnalyticsSlugFromPath(ADMIN_ANALYTICS_PATH)).toBeNull();
+    expect(adminAnalyticsSlugFromPath('/admin/analytics')).toBeNull();
+    expect(adminAnalyticsSlugFromPath(ADMIN_PATH)).toBeNull();
+    expect(adminAnalyticsSlugFromPath('/posts/my-post/')).toBeNull();
+    // 접두만 같은 다른 경로(`/admin/analytics-old/…`)를 통계로 읽지 않는다.
+    expect(adminAnalyticsSlugFromPath('/admin/analytics-old/x/')).toBeNull();
+  });
+
+  test('잘못된 percent-encoding은 던지지 않는다 — slugFromRouteParam과 같은 규칙', () => {
+    expect(adminAnalyticsSlugFromPath('/admin/analytics/100%-done/')).toBe(
+      '100%-done',
+    );
+  });
+});
+
+describe('ADMIN_SEGMENT', () => {
+  // 세그먼트는 손으로 적은 폴더 이름의 사본이다(라우트는 파일 시스템이 정한다). 폴더를 옮기고
+  // 이 값을 두면 루트 레이아웃이 admin에 사이트 셸을 씌우고, 화면은 두 셸이 겹친 채 멀쩡히 뜬다.
+  test('src/app 아래 admin 라우트 폴더의 이름이다', () => {
+    expect(
+      existsSync(
+        new URL(`../app/${ADMIN_SEGMENT}/layout.tsx`, import.meta.url),
+      ),
+    ).toBe(true);
   });
 });

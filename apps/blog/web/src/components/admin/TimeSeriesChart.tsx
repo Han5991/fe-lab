@@ -77,11 +77,8 @@ export const TimeSeriesChart = ({
           data={data}
           margin={{ top: 10, right: 16, left: -12, bottom: 0 }}
         >
-          <CartesianGrid
-            strokeDasharray="2 4"
-            stroke={token('colors.ink.border')}
-            vertical={false}
-          />
+          {/* 가로 실선만 — Astryx 차트 그리드(1px 보더 색, 실선). */}
+          <CartesianGrid stroke={token('colors.ink.border')} vertical={false} />
           <XAxis
             dataKey="date"
             axisLine={{ stroke: token('colors.ink.border') }}
@@ -92,6 +89,8 @@ export const TimeSeriesChart = ({
               fontFamily: 'var(--font-jetbrains)',
             }}
             dy={8}
+            // 30일·90일이면 날짜 눈금이 칸보다 많다 — 겹치는 눈금은 건너뛴다(패널 폭 352에서도 읽힌다).
+            minTickGap={16}
           />
           <YAxis
             axisLine={false}
