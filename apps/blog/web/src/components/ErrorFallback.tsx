@@ -46,11 +46,14 @@ export const ErrorFallback = ({ onRetry }: ErrorFallbackProps) => (
       <button
         type="button"
         onClick={onRetry}
-        className={actionButton({ tone: 'primary' })}
+        className={actionButton({ tone: 'solid', size: 'lg' })}
       >
         다시 시도
       </button>
-      <Link href={HOME_PATH} className={actionButton({ tone: 'secondary' })}>
+      <Link
+        href={HOME_PATH}
+        className={actionButton({ tone: 'neutral', size: 'lg' })}
+      >
         홈으로 돌아가기
       </Link>
     </div>

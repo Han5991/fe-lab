@@ -36,12 +36,10 @@ const LAST_UPDATED = '2026년 10월 5일';
 export default function PrivacyPage() {
   return (
     <PageBoundary>
-      <div
-        className={cx(
-          css({ minHeight: '[calc(100lvh - 231px)]', bg: 'paper.50' }),
-          railGutter,
-        )}
-      >
+      {/* 높이를 채우지 않는다 — 푸터를 바닥에 붙이는 일은 Layout(flex 열, main flex 1)이 하고,
+          지면색도 Layout이 칠한다. 예전의 최소 높이 calc(100lvh - 231px)는 헤더·푸터 높이를 손으로
+          뺀 값이라 셸이 바뀔 때마다 어긋났다. */}
+      <div className={railGutter}>
         {/* 읽는 문서라 글 본문과 같은 text 레일. 예전엔 혼자 800px이었다. */}
         <div className={cx(railColumn({ width: 'text' }), css({ py: '16' }))}>
           <h1

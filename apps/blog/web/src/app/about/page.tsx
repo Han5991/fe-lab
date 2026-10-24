@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { css, cx } from '@blog/styled-system/css';
 
 import { safeJsonLd } from '@blog/content/client';
-import { Label } from '@/src/components/blog';
+import { Label } from '@/src/components/blog/Label';
 import { PageBoundary } from '@/src/components/PageBoundary';
 import { railGutter, railColumn } from '@/src/components/Rail';
 import { archivePath, postPath } from '@blog/content/client';

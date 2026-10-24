@@ -741,7 +741,6 @@ export default function PostDetailClient() {
   return (
     <div
       className={css({
-        minH: '[calc(100dvh - 128px)]',
         bg: 'paper.50',
         p: { base: '4', md: '8' },
       })}

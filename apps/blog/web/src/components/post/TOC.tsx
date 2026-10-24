@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { css } from '@blog/styled-system/css';
 import { useTocHook, scrollToId } from '@/src/components/tocHooks';
 import { isModifiedClick } from '@/src/components/events';
+import { siteHeaderStyle } from '@/src/components/siteHeader';
 
 /**
  * 글 차례 — 항목들을 잇는 **레일 한 줄**을 그리고, 지금 읽고 있는 구간만
@@ -260,13 +261,16 @@ export const TOC = () => {
   return (
     <nav
       ref={scrollRef}
+      style={siteHeaderStyle}
       className={css({
         pos: 'sticky',
-        top: '24',
+        // 사이트 헤더 아래 48px에 붙고, 최대 높이는 그 자리에서 화면 바닥까지다 — 둘 다 헤더 높이
+        // 변수에서 계산해 헤더가 바뀌어도 차례가 헤더 밑으로 들어가거나 화면 밖으로 넘치지 않는다.
+        top: '[calc(var(--site-header-height) + token(spacing.12))]',
         alignSelf: 'start',
         display: 'none',
         lg: { display: 'block' },
-        maxH: '[calc(100vh - 100px)]',
+        maxH: '[calc(100vh - var(--site-header-height) - token(spacing.12))]',
         overflowY: 'auto',
         overscrollBehavior: 'contain',
         // 잘린 위아래를 스크롤바 대신 **페이드**로 알린다.

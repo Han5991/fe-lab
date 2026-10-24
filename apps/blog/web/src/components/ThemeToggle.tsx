@@ -3,7 +3,7 @@
 import { Sun, Moon } from 'lucide-react';
 import { css } from '@blog/styled-system/css';
 import { setTheme } from '@/src/hooks/useTheme';
-import { pressable } from './pressable';
+import { headerIconButton } from './iconButton';
 
 // 아이콘은 JS 상태가 아니라 CSS(html[data-theme])로 토글한다.
 // - SSG hydration: 서버는 theme을 모르지만(getServerSnapshot='dark'), 이 컴포넌트는
@@ -25,24 +25,15 @@ export function ThemeToggle() {
       onClick={toggle}
       aria-label="테마 전환 (라이트/다크)"
       title="테마 전환"
-      className={css(pressable, {
-        display: 'inline-flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        boxSize: '9',
-        rounded: 'full',
-        color: 'ink.600',
-        cursor: 'pointer',
-        _hover: { color: 'ink.950', bg: 'paper.100' },
-      })}
+      className={headerIconButton}
     >
       {/* 다크일 때 Sun(→라이트 전환 안내), 라이트일 때 Moon(→다크 전환 안내) */}
       <Sun
-        size={16}
+        size={18}
         className={css({ display: 'none', _dark: { display: 'inline-flex' } })}
       />
       <Moon
-        size={16}
+        size={18}
         className={css({ display: 'inline-flex', _dark: { display: 'none' } })}
       />
     </button>

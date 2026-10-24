@@ -26,7 +26,6 @@ export default function AdminAnalyticsPage() {
   return (
     <div
       className={css({
-        minH: '[calc(100dvh - 128px)]',
         bg: 'paper.50',
       })}
     >

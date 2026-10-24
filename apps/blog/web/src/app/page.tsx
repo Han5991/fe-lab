@@ -6,7 +6,9 @@ import { POSTS_PATH, safeJsonLd, type PostSummary } from '@blog/content/client';
 import { getAllPostSummaries, getSeriesMeta } from '@/src/content';
 import { buildHomeJsonLd, buildHomeMetadata } from './homeSeo';
 
-import { Hero, FeaturedPost, PostIndexRow } from '@/src/components/blog';
+import { FeaturedPost } from '@/src/components/blog/FeaturedPost';
+import { Hero } from '@/src/components/blog/Hero';
+import { PostIndexRow } from '@/src/components/blog/PostIndexRow';
 import { OssStrip } from '@/src/components/home/OssStrip';
 import { seriesBadgeLabel } from '@/src/components/home/seriesBadge';
 import { PageBoundary } from '@/src/components/PageBoundary';

@@ -62,10 +62,16 @@ export default function NotFound() {
           w: { base: 'full', sm: 'auto' },
         })}
       >
-        <Link href={HOME_PATH} className={actionButton({ tone: 'primary' })}>
+        <Link
+          href={HOME_PATH}
+          className={actionButton({ tone: 'solid', size: 'lg' })}
+        >
           홈으로 돌아가기
         </Link>
-        <Link href={POSTS_PATH} className={actionButton({ tone: 'secondary' })}>
+        <Link
+          href={POSTS_PATH}
+          className={actionButton({ tone: 'neutral', size: 'lg' })}
+        >
           글 목록 보기
         </Link>
       </div>

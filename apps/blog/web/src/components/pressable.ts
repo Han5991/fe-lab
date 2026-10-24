@@ -2,7 +2,8 @@ import { css } from '@blog/styled-system/css';
 
 /**
  * 누름 피드백 — 마우스로 누르는 동안 버튼이 98%로 줄어든다(Astryx Button의 `pressable`).
- * 행동 버튼(`actionButton`)과 아이콘 버튼이 `css(pressable, { … })`로 합친다.
+ * 버튼 레시피(`actionButton`·`iconButton`)는 cva `base`에 펼치고, 레시피 밖의 버튼(맨 위로·목차 열기·
+ * 코드 복사)은 `css(pressable, { … })`로 합친다.
  *
  * - 전환은 `common`(색·투명도·transform)이라 hover 색과 누름이 같은 시간(fast)을 탄다.
  *   쓰는 쪽이 `transition`을 다시 적으면 transform이 빠져 누름이 뚝 끊긴다.

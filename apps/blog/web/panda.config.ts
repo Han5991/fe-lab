@@ -12,7 +12,9 @@ import { VIEW_TRANSITION } from './src/shared/viewTransitions';
 // `shadows.overlay.*`가 있어 카테고리가 비지 않는다. 모션(durations·easings·animations·keyframes)도
 // 버린다 — preset-panda의 `fast`(150ms)가 블로그의 `fast`(175ms, Astryx)와 같은 이름으로 섞이고, 쓰는
 // 곳이 0인 단계(`fastest`·`slower` …)와 easings·keyframes(spin·bounce …)가 타입을 통과했다. 세
-// 카테고리는 @blog/preset의 모션 토큰이 채운다. 쓰는 곳이 0인 blurs·aspectRatios는 남긴다 — 카테고리가
+// 카테고리는 @blog/preset의 모션 토큰이 채운다. textStyles도 버린다 — preset-panda의 `xs`~`9xl`은
+// fontSizes와 같은 이름·값에 행간만 붙인 것이라 블로그의 역할 이름(@blog/preset의 `display1`·`body` …)과
+// 같은 크기가 두 이름으로 갈리고, 쓰는 곳이 0이었다. 쓰는 곳이 0인 blurs·aspectRatios는 남긴다 — 카테고리가
 // 통째로 비면 Panda가 그 속성 타입을 아무 문자열로 넓혀(2.3.0 실측) strictTokens가 풀린다.
 // 서드파티 프리셋을 고치지 않고 일부만 빼는 v2 방식이 preset:resolved 훅이다(theming/plugins
 // "Trim a preset", theming/presets "extend only adds, so removing takes a plugin"). @blog/preset에
@@ -33,6 +35,7 @@ const trimPresetPanda = definePlugin({
             'theme.tokens.easings',
             'theme.tokens.animations',
             'theme.keyframes',
+            'theme.textStyles',
           ])
         : undefined,
   },
