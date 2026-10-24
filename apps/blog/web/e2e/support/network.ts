@@ -62,13 +62,11 @@ function parseInFilter(value: string | null): string[] {
 
 /** `post_views` 읽기 — `Database['public']['Tables']['post_views']['Row']`의 부분형. */
 function postViewsRows(url: URL) {
-  const rows = parseInFilter(url.searchParams.get('slug'))
+  return parseInFilter(url.searchParams.get('slug'))
     .map(slug => ({ slug, view_count: 10 + seeded(slug, 1, 990) }))
     .sort(
       (a, b) => b.view_count - a.view_count || a.slug.localeCompare(b.slug),
     );
-  const limit = Number(url.searchParams.get('limit') ?? rows.length);
-  return rows.slice(0, limit);
 }
 
 function isoDay(daysAgo: number): string {
