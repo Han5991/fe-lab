@@ -7,7 +7,10 @@ import { css } from '@blog/styled-system/css';
 import { getKSTDateISO } from '@blog/content/client';
 import type { TrendPoint } from '@/src/domain/analytics';
 // admin 배럴은 supabase 클라이언트를 바인딩하므로 순수 leaf를 연다.
-import { trailingWindowStartISO } from '@/src/domain/analytics/windows';
+import {
+  fillDailyGaps,
+  trailingWindowStartISO,
+} from '@/src/domain/analytics/windows';
 
 export type FilterType = 'all' | '7days' | '30days' | 'custom';
 
@@ -66,6 +69,37 @@ export function selectTrends(
   return sorted.filter(t => t.view_date >= start);
 }
 
+/**
+ * 차트에 그릴 일별 값 — 고른 기간의 날마다 한 칸이고 조회가 없던 날은 0이다(`fillDailyGaps`).
+ * `rows`는 `selectTrends`가 기간으로 자른 행(날짜순)이고, 그 기간에 조회가 하루도 없으면 빈 배열이다
+ * (차트 대신 "데이터 없음" 안내 — 0만 이어진 선을 그리지 않는다).
+ *
+ * 칸의 범위: 최근 N일은 그 창 그대로(첫날~오늘). 전체·직접선택은 첫 조회일부터 고른 끝(없거나 오늘보다
+ * 늦으면 오늘)까지다 — 글이 읽히기 전의 0을 길게 늘어놓지 않는다.
+ */
+export function selectDailySeries(
+  rows: readonly TrendPoint[],
+  effectiveFilterType: FilterType,
+  endDate: string,
+  todayISO: string,
+): TrendPoint[] {
+  const first = rows[0];
+  if (first === undefined) return [];
+  if (effectiveFilterType === '7days' || effectiveFilterType === '30days') {
+    return fillDailyGaps(
+      rows,
+      trailingWindowStartISO(todayISO, TRAILING_DAYS[effectiveFilterType]),
+      todayISO,
+    );
+  }
+  // 직접선택의 행은 이미 고른 시작 이후다(`selectTrends`) — 첫 행이 곧 두 날 중 늦은 날이다.
+  const end =
+    effectiveFilterType === 'custom' && endDate !== '' && endDate < todayISO
+      ? endDate
+      : todayISO;
+  return fillDailyGaps(rows, first.view_date, end);
+}
+
 /** @param todayISO KST 오늘(생략하면 지금) — 행이 많은 목록은 한 번 계산해 넘긴다. */
 export function useDateFilter(
   trends: TrendPoint[],
@@ -92,6 +126,12 @@ export function useDateFilter(
     endDate,
     todayISO,
   );
+  // 직접선택의 시작이 끝보다 늦으면 고른 기간이 비어 있다 — "데이터 없음"과 갈라 알린다.
+  const invalidRange =
+    filterType === 'custom' &&
+    startDate !== '' &&
+    endDate !== '' &&
+    startDate > endDate;
 
   return {
     filterType,
@@ -101,7 +141,14 @@ export function useDateFilter(
     endDate,
     setEndDate,
     filteredTrends,
+    dailyTrends: selectDailySeries(
+      filteredTrends,
+      effectiveFilterType,
+      endDate,
+      todayISO,
+    ),
     autoFellBackToAll,
+    invalidRange,
   };
 }
 
@@ -204,6 +251,9 @@ export function DateRangeControls({
             // 보이는 라벨이 없다 — 기간 select와 같이 이름을 단다(axe label).
             aria-label="시작일"
             value={startDate}
+            // 달력이 끝보다 늦은 시작(과 시작보다 이른 끝)을 고르지 못하게 한다. 손으로 친 값은
+            // 막지 못해 화면이 따로 알린다(`invalidRange`).
+            max={endDate || undefined}
             onChange={e => setStartDate(e.target.value)}
             className={dateInputClass}
           />
@@ -214,6 +264,7 @@ export function DateRangeControls({
             type="date"
             aria-label="종료일"
             value={endDate}
+            min={startDate || undefined}
             onChange={e => setEndDate(e.target.value)}
             className={dateInputClass}
           />

@@ -11,8 +11,9 @@
  *
  * 콘솔 에러·예외 0은 모든 테스트에 걸린다(`fixtures.ts`).
  */
-import type { BrowserContext, Page } from '@playwright/test';
+import type { BrowserContext, Locator, Page } from '@playwright/test';
 import { ADMIN_POSTS_INDEX_PATH } from '@blog/content/client';
+import { ADMIN_VIEW_TRANSITION } from '../src/shared/adminViewTransitions';
 import { axeViolations } from './support/a11y';
 import { expect, test } from './support/fixtures';
 import { ADMIN_EMAIL, SUPABASE_URL, sitePages } from './support/site';
@@ -172,6 +173,7 @@ test.describe('로그인', () => {
     await expect(row).toHaveAttribute('aria-current', 'page');
     await expect(page, '주소가 고른 글을 든다').toHaveURL(href ?? '');
     await expect(panel.locator('.recharts-surface').first()).toBeVisible();
+    await expectDistributions(panel);
     await chooseCustomPeriod(page);
     expect(await axeViolations(page), 'axe 위반').toEqual([]);
 
@@ -218,13 +220,23 @@ test.describe('로그인', () => {
     }) => {
       await page.goto(POST_DETAIL_PAGES[0] ?? '');
       const sheet = page.getByRole('dialog');
+      const bar = page.getByRole('banner');
+      const barTransitionName = () =>
+        bar.evaluate(el => getComputedStyle(el).viewTransitionName);
       await expect(sheet.locator('.recharts-surface').first()).toBeVisible();
+      await expectDistributions(sheet);
       await expect(sheet).toHaveAttribute('aria-modal', 'true');
+      // 시트가 떠 있는 동안 관리자 바는 따로 찍히지 않는다 — 찍히면 그 사이의 전환(분포 도착 등)에서
+      // 바가 루트 위로 올라와 시트 머리와 스크림을 덮는다(375·768 실측).
+      expect(await barTransitionName(), '시트가 열린 동안').toBe('none');
       expect(await axeViolations(page), 'axe 위반').toEqual([]);
 
       await page.keyboard.press('Escape');
       await expect(sheet).toBeHidden();
       await expect(page).toHaveURL('/admin/analytics/');
+      expect(await barTransitionName(), '시트를 닫은 뒤').toBe(
+        ADMIN_VIEW_TRANSITION.bar,
+      );
     });
   });
 
@@ -250,12 +262,24 @@ async function renderAdmin(page: Page, route: string): Promise<void> {
       page.locator('.recharts-surface').first(),
       route,
     ).toBeVisible();
+    if (POST_DETAIL_PAGES.includes(route)) await expectDistributions(page);
   } else if (route === '/admin/analytics/') {
     await expect(
       page.getByRole('table', { name: '글 목록' }).getByRole('link').first(),
       route,
     ).toBeVisible();
   }
+}
+
+/**
+ * 글 통계 패널의 시간대·요일 분포가 설 때까지. 분포는 패널의 나머지보다 늦게 와서 따로 드러나고,
+ * 패널이 밀려 오는 View Transition이 도는 동안에는 React가 그 커밋을 미룬다 — 일별 차트가 보여도
+ * 분포는 아직 없을 수 있다. 그때 axe를 부르면 `settleAnimations`가 기다릴 애니메이션이 아직 없어서,
+ * 검사 도중 투명도 0에서 떠오르는 분포 글자를 대비 위반(color-contrast)으로 잰다. 분포가 서면 그
+ * 진입 애니메이션은 이미 돌고 있어 `settleAnimations`가 끝까지 기다린다.
+ */
+async function expectDistributions(scope: Page | Locator): Promise<void> {
+  await expect(scope.getByRole('heading', { name: '시간대별' })).toBeVisible();
 }
 
 async function chooseCustomPeriod(page: Page): Promise<void> {

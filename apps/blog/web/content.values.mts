@@ -339,8 +339,8 @@ export const BUNDLE_GUARDS = [
  * 측정값으로 바꿨다.
  * 2026-10-24 admin을 자기 셸(관리자 바)과 분석 화면(목록 + 글 통계 패널)으로 다시 그린 빌드로 갱신:
  * `/admin/` 최대 JS 378.8 → 385.0KB(+6.2). 예전엔 목록 페이지(개요 차트·아코디언)와 글별 페이지
- * (상세 차트)가 따로였는데, 이제 분석의 48쪽이 모두 목록과 패널(시간대 막대·일별 영역 차트, 시트용
- * 모달 훅)을 함께 싣는다 — 예산(398, 여유 3.4%)은 그대로. 공개 그룹은 루트 레이아웃의 셸 고르기
+ * (상세 차트)가 따로였는데, 이제 admin 48쪽 중 분석 화면 46쪽(목록 1 + 글 45)이 모두 목록과 패널(시간대
+ * 막대·일별 영역 차트, 시트용 모달 훅)을 함께 싣는다 — 예산(398, 여유 3.4%)은 그대로. 공개 그룹은 루트 레이아웃의 셸 고르기
  * (`ShellSwitch`)로 JS +0.3KB, admin 카드·표의 원자 클래스로 CSS +0.2KB — 예산은 그대로.
  * 2026-10-24 admin에 모션(카드 진입·패널·시트·값 교체·정렬 교차·세그먼트 표식·막대 자람)을 넣은 빌드로
  * 갱신: 움직임을 CSS(keyframes·전환·View Transition 규칙)로 내고 새 훅·의존성이 없어 JS는 `/admin/`
@@ -348,6 +348,11 @@ export const BUNDLE_GUARDS = [
  * 그룹이 +0.7KB(최대 28.9KB, `/posts/`) — admin View Transition 규칙 20개·keyframes 6개가 0.28KB, 나머지가
  * 진입·표식·막대의 원자 클래스다. 예산(30)은 그대로지만 남은 여유가 1.1KB라 다음 admin 스타일은 공개
  * 페이지 CSS 예산과 겨룬다.
+ * 2026-10-25 admin 검증 수정(대시보드를 목업 순서로 — 태그 분포를 둘째 줄로, 「모든 글」 표를 맨 아래로 —,
+ * 패널 닫기 퇴장·'고른 글 없음' 페이드, 일별 차트의 빈 날 0 채우기, 건너뛰기 링크) 빌드로 갱신: `/admin/` 최대
+ * JS 386.0 → 387.1KB(+1.1 — 분석 화면이 새로고침 버튼·건너뛰기 링크 모듈, 빈 날 채우기·기간 오류 안내, 표의
+ * 링크 분기를 더 싣는다. 항목별로 나눠 재지는 않았다), 공개 그룹 JS는 그대로. CSS는 전 그룹 +0.1KB(최대 29.0KB, `/posts/` — 퇴장·페이드
+ * View Transition 규칙 셋과 원자 클래스). 예산은 그대로이고 CSS 여유는 1.0KB다.
  * 그룹이 새로 생기면(새 라우트) 예산이 없어서, 라우트가
  * 사라지면 예산이 죽어서, 측정 최대가 상한의 80% 아래로 내려가면 예산이 느슨해서
  * (`budget-slack`) 빌드가 실패한다.
@@ -358,21 +363,21 @@ export const BUNDLE_GUARDS = [
  * 걸리면 같은 방식으로 내린다 — 여유가 크게 남으면 회귀가 그 안에 숨는다.
  */
 export const BUNDLE_BUDGETS = [
-  // 176.5 KB / 28.2 KB
+  // 176.5 KB / 28.3 KB
   { group: '/', jsGzipKB: 185, cssGzipKB: 30 },
-  // 239.4 KB / 28.9 KB — 목록과 글 상세 46쪽의 최대(목록. mermaid·Giscus는 지연 로드라 밖)
+  // 239.4 KB / 29.0 KB — 목록과 글 상세 46쪽의 최대(목록. mermaid·Giscus는 지연 로드라 밖)
   { group: '/posts/', jsGzipKB: 252, cssGzipKB: 30 },
-  // 176.5 KB / 28.2 KB
+  // 176.5 KB / 28.3 KB
   { group: '/about/', jsGzipKB: 185, cssGzipKB: 30 },
-  // 176.5 KB / 28.2 KB
+  // 176.5 KB / 28.3 KB
   { group: '/series/', jsGzipKB: 185, cssGzipKB: 30 },
-  // 176.5 KB / 28.2 KB
+  // 176.5 KB / 28.3 KB
   { group: '/privacy/', jsGzipKB: 185, cssGzipKB: 30 },
-  // 176.5 KB / 28.2 KB — 정적 404(`404-page` 처리)
+  // 176.5 KB / 28.3 KB — 정적 404(`404-page` 처리)
   { group: '/404/', jsGzipKB: 185, cssGzipKB: 30 },
-  // 176.5 KB / 28.2 KB — Next가 함께 내보내는 not-found 라우트
+  // 176.5 KB / 28.3 KB — Next가 함께 내보내는 not-found 라우트
   { group: '/_not-found/', jsGzipKB: 185, cssGzipKB: 30 },
-  // 386.0 KB / 28.2 KB — admin 48쪽의 최대(분석 화면 — 목록과 글별 47쪽이 같은 화면이라 무게가 같다)
+  // 387.1 KB / 28.3 KB — admin 48쪽의 최대(분석 화면 — 목록 1 + 글별 45쪽이 같은 화면이라 무게가 같다)
   { group: '/admin/', jsGzipKB: 398, cssGzipKB: 30 },
 ] as const satisfies BundleBudgetsConfig;
 

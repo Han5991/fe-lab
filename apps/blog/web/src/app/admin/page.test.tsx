@@ -77,7 +77,7 @@ describe('AdminPage', () => {
   test('목록 제목은 그 글의 admin 통계로 열고, 실제 글은 공개 글만 새 탭 아이콘으로 연다', async () => {
     await renderPage();
 
-    // 누적 인기·최근 두 목록에 같은 글이 함께 나온다.
+    // 누적 인기·기간 인기·모든 글 세 표에 같은 글이 함께 나온다.
     for (const slug of ['live-post', 'draft-post', 'future-post']) {
       const links = screen.getAllByRole('link', { name: `${slug} 제목` });
       expect(links.length).toBeGreaterThan(0);
@@ -111,6 +111,67 @@ describe('AdminPage', () => {
     expect(rowOf('draft-post 제목')).toHaveTextContent('비공개');
     expect(rowOf('future-post 제목')).toHaveTextContent('예약');
     expect(rowOf('live-post 제목')).not.toHaveTextContent('공개');
+  });
+
+  // 기간 요약 줄에는 글의 공개 여부가 없다 — 표가 글 데이터로 링크를 정하지 않으면 비공개 글에도 404
+  // 링크가 붙는다.
+  test('기간 인기 글도 실제 글은 공개 글만 새 탭 아이콘으로 연다', async () => {
+    await renderPage();
+    const card = screen
+      .getByRole('heading', { name: '기간 인기 글 · 30일' })
+      .closest('section');
+    if (card === null) throw new Error('기간 인기 글 카드가 없다');
+
+    expect(
+      within(card).getByRole('link', {
+        name: 'live-post 제목 글을 새 탭에서 열기',
+      }),
+    ).toHaveAttribute('href', '/posts/live-post/');
+    expect(
+      within(card).queryAllByRole('link', {
+        name: /^(draft|future)-post 제목 글을 새 탭에서 열기$/,
+      }),
+    ).toHaveLength(0);
+  });
+
+  test('태그 분포는 태그가 달린 글 수를 함께 밝힌다', async () => {
+    await renderPage();
+
+    expect(screen.getByText('태그가 있는 3편 · 상위 1')).toBeInTheDocument();
+    expect(screen.getByText('#react')).toBeInTheDocument();
+  });
+
+  // 예전 「최근 게시글」(작성일 최근 5편)은 이 표의 기본 정렬 첫 줄들이다.
+  test('모든 글은 작성일 내림차순으로 시작하고, 정렬 기준을 조회수로 바꿀 수 있다', async () => {
+    await renderPage();
+    const table = screen.getByRole('table', { name: '글 목록' });
+    const titles = () =>
+      within(table)
+        .getAllByRole('link', { name: /제목$/ })
+        .map(link => link.textContent);
+
+    expect(
+      screen.getByRole('heading', { name: '모든 글' }),
+    ).toBeInTheDocument();
+    expect(titles()).toEqual([
+      // 날짜 순 — 2999 예약 · 02-01 비공개 · 01-01 공개(상태 배지가 sm 미만용으로 제목 앞에 붙는다)
+      '예약future-post 제목',
+      '비공개draft-post 제목',
+      'live-post 제목',
+    ]);
+
+    fireEvent.click(
+      within(screen.getByRole('radiogroup', { name: '정렬 기준' })).getByRole(
+        'radio',
+        { name: '조회수순' },
+      ),
+    );
+    expect(
+      within(table).getByRole('columnheader', { name: '조회수' }),
+    ).toHaveAttribute('aria-sort', 'descending');
+    expect(
+      screen.getByRole('button', { name: '새로고침' }),
+    ).toBeInTheDocument();
   });
 
   test('집계 기간을 바꾸면 기간 지표가 그 기간으로 다시 계산된다', async () => {

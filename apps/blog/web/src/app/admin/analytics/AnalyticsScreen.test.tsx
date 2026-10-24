@@ -233,13 +233,14 @@ describe('AnalyticsScreen — 고른 글', () => {
     expect(pushState).toHaveBeenCalledWith(null, '', '/admin/analytics/');
   });
 
-  test('아무 글도 고르지 않으면 패널이 고르라고 안내한다', async () => {
+  // 고른 글이 없으면 보일 통계가 없다 — 안내가 데이터를 기다리면 화면에 들어올 때마다 패널에
+  // 스켈레톤이 떴다가 안내로 바뀐다(실측 190ms → 698ms).
+  test('아무 글도 고르지 않으면 패널은 데이터를 기다리지 않고 고르라고 안내한다', () => {
+    getAdminPostsIndex.mockReturnValueOnce(new Promise(() => undefined));
     renderScreen();
 
-    const panel = await screen.findByRole('region', { name: '글 통계' });
-    expect(
-      await within(panel).findByText('선택한 글이 없습니다'),
-    ).toBeInTheDocument();
+    const panel = screen.getByRole('region', { name: '글 통계' });
+    expect(within(panel).getByText('선택한 글이 없습니다')).toBeInTheDocument();
   });
 
   test('좁은 화면에서는 패널이 목록을 덮는 시트(다이얼로그)로 뜨고 Escape로 닫는다', async () => {

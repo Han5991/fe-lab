@@ -288,16 +288,16 @@ preset-panda의 durations·easings·animations·keyframes를 빼서 `transitionD
 `animation: 'pulse'`는 strictTokens에, 대괄호 이스케이프는 `prefer-token`에, `transition: '[…]'`는
 `no-restricted-syntax`에 걸린다.
 
-| 토큰                  | 값                               | 쓰는 곳                                                                                             |
-| :-------------------- | :------------------------------- | :-------------------------------------------------------------------------------------------------- |
-| `durations.fast`      | 175ms                            | hover·색·누름·표식(차례 하이라이트·admin 선택 표식)·나가는 페이지·자리를 넘기는 스냅샷(admin `out`) |
-| `durations.fastMax`   | 230ms                            | 테마 크로스페이드 · `<details>` 펼침 · 교체로 들어오는 스냅샷(admin `rise`·`slideIn`, fast 뒤)      |
-| `durations.medium`    | 410ms                            | 바텀시트·시트 스크림 · 들어오는 페이지 · admin 카드 진입                                            |
-| `durations.mediumMax` | 550ms                            | 검색 다이얼로그 등장 · 스켈레톤 왕복 · admin 차트·가로 막대 그리기                                  |
-| `durations.stagger`   | 40ms                             | 간격 — admin 카드 진입이 순서 × 이 값만큼 늦게 출발한다                                             |
-| `easings.standard`    | `cubic-bezier(0.24, 1, 0.4, 1)`  | 기본 — 감속 곡선이라 등장·hover에 맞다                                                              |
-| `easings.exit`        | `cubic-bezier(0.3, 0, 0.6, 0.6)` | 화면 밖으로 나가는 움직임(시트 닫힘·나가는 페이지)                                                  |
-| `easings.linear`      | `linear`                         | 거리 없는 퇴장 페이드(시트 스크림 닫힘)·스크롤에 묶인 진행 바·스켈레톤                              |
+| 토큰                  | 값                               | 쓰는 곳                                                                                                        |
+| :-------------------- | :------------------------------- | :------------------------------------------------------------------------------------------------------------- |
+| `durations.fast`      | 175ms                            | hover·색·누름·표식(차례 하이라이트·admin 선택 표식)·나가는 페이지·자리를 넘기는 스냅샷(admin `out`·`slideOut`) |
+| `durations.fastMax`   | 230ms                            | 테마 크로스페이드 · `<details>` 펼침 · 교체로 들어오는 스냅샷(admin `rise`·`slideIn`·`fadeIn`, fast 뒤)        |
+| `durations.medium`    | 410ms                            | 바텀시트·시트 스크림 · 들어오는 페이지 · admin 카드 진입                                                       |
+| `durations.mediumMax` | 550ms                            | 검색 다이얼로그 등장 · 스켈레톤 왕복 · admin 차트·가로 막대 그리기                                             |
+| `durations.stagger`   | 40ms                             | 간격 — admin 카드 진입이 순서 × 이 값만큼 늦게 출발한다                                                        |
+| `easings.standard`    | `cubic-bezier(0.24, 1, 0.4, 1)`  | 기본 — 감속 곡선이라 등장·hover에 맞다                                                                         |
+| `easings.exit`        | `cubic-bezier(0.3, 0, 0.6, 0.6)` | 화면 밖으로 나가는 움직임(시트 닫힘·나가는 페이지)                                                             |
+| `easings.linear`      | `linear`                         | 거리 없는 퇴장 페이드(시트 스크림 닫힘)·스크롤에 묶인 진행 바·스켈레톤                                         |
 
 **쓰는 법**
 
@@ -321,31 +321,31 @@ preset-panda의 durations·easings·animations·keyframes를 빼서 `transitionD
 - **화면 안의 교체(admin)는 React `<ViewTransition>`이다** — 열림·닫힘·교체가 transition(주소 변경·
   `startTransition`)이라 React가 이전 화면의 스냅샷을 걷어 주므로 퇴장 동안 마운트를 붙들 상태가 없다.
   클래스는 무엇이 아니라 어떻게 움직이는지의 이름이다(`src/shared/adminViewTransitions.ts` — `out`·`rise`·
-  `slideIn`·`sheet`·`scrim`). 교체는 이전 것이 fast로 걷힌 **뒤에** 새 것이 fastMax로 선다 — 함께 돌리면 exit
+  `slideIn`·`slideOut`·`fadeIn`·`sheet`·`scrim`). 교체는 이전 것이 fast로 걷힌 **뒤에** 새 것이 fastMax로 선다 — 함께 돌리면 exit
   곡선의 느린 출발 때문에 옛 글자가 진한 채 새 글자와 두 겹으로 겹친다. 화면 밖 경계는 React가 움직이지
   않는다(스냅샷 없이 바로 바뀐다)
 
 **적용표**
 
-| 무엇               | 움직임                                                                                                                                                         |
-| :----------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 페이지 전환        | `PageBoundary`(`<ViewTransition>`) — 나감 투명도 1→0(fast·exit), 들어옴 투명도 0→1과 8px 상승(medium·standard)                                                 |
-| 헤더               | `view-transition-name`으로 따로 찍어 페이지 위에 불투명 지면으로 그린다(흐림 없음). 전환 중엔 클릭을 받지 않는다                                               |
-| 테마 전환          | 루트·헤더 스냅샷 크로스페이드(fastMax·standard). 움직임 줄이기면 즉시                                                                                          |
-| 검색 다이얼로그    | 등장만 — md 이상 패널은 투명도 0·16px 아래·95%에서(mediumMax), 모바일 전체화면은 투명도만, 스크림은 fast. 닫힘은 즉시                                          |
-| 목차 바텀시트      | 올라옴(medium·standard), 닫힐 때 같은 시간에 exit 곡선으로 내려감. 스크림은 medium, 닫힐 때 linear. 내려가는 동안 마운트 유지                                  |
-| 맨 위로 FAB        | 등장만 — 투명도 0·95%에서(fast). 사라짐은 즉시                                                                                                                 |
-| 누름               | `pressable` — `:active`에서 98%(fast), 거친 포인터(터치)에서는 끔. 행동 버튼·아이콘 버튼·FAB                                                                   |
-| 스켈레톤(admin)    | 투명도 1↔0.5 왕복(mediumMax, linear). 움직임 줄이기면 멈춘다. 데이터가 드러날 때 제자리에서 걷힌다(VT `out`)                                                   |
-| admin 진입         | 데이터가 드러날 때 머리·카드가 8px 아래에서 떠오른다(`page-enter`, medium·standard) — 순서마다 `stagger`씩 늦게, 대시보드는 줄+칸 순서                         |
-| admin 페이지 이동  | 대시보드↔분석은 공개 페이지와 같은 `PageBoundary`. 관리자 바는 `admin-bar`로 따로 찍혀 페이지 위에 남는다(불투명 `surface.base`)                               |
-| admin 글 통계 패널 | lg 이상 — 고르기·바꾸기·닫기마다 이전 내용이 걷히고(fast·exit) 새 내용이 오른쪽 16px에서 밀려 온다(fast 뒤 fastMax·standard)                                   |
-| admin 글 통계 시트 | lg 미만 — sm 미만은 아래에서, 그 위는 오른쪽에서 들어옴(medium·standard), 닫힐 때 같은 시간 exit로 되돌아감. 스크림 medium·닫힘 linear. 바·패널보다 위(z 2)    |
-| admin 지표 값      | 집계 기간을 바꾸면 값 줄(값·증감·추세선)이 걷히고 그 뒤 8px 아래에서 떠오른다. 숫자를 세는 카운트업은 없다(아래)                                               |
-| admin 정렬         | 목록이 걷히고 새 순서가 떠오른다(값과 같은 `out`·`rise`, `admin-sort` type일 때만). 행을 새 자리로 미끄러뜨리지 않는다(아래)                                   |
-| admin 선택 표식    | 세그먼트 — 면 하나가 고른 칸으로 미끄러진다(transform, fast). 목록 — 고른 줄의 배경(fast)과 왼쪽 2px 막대가 가운데서 펴진다(scaleY, fast)                      |
-| admin 차트·막대    | Recharts 선 드러남·막대 자람·데이터 보간 550ms·standard(`chartMotion.ts` — 토큰 사본, 테스트가 잠근다). 가로 막대는 트랙 왼쪽에서 자란다(transform, mediumMax) |
-| 로그인             | 묶음이 투명도 0·98%에서 선다(medium·standard). 서버가 그린 화면이지만 등장 자체가 화면이라 하드 로드마다 돈다. 버튼은 `pressable`                              |
+| 무엇               | 움직임                                                                                                                                                                                     |
+| :----------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 페이지 전환        | `PageBoundary`(`<ViewTransition>`) — 나감 투명도 1→0(fast·exit), 들어옴 투명도 0→1과 8px 상승(medium·standard)                                                                             |
+| 헤더               | `view-transition-name`으로 따로 찍어 페이지 위에 불투명 지면으로 그린다(흐림 없음). 전환 중엔 클릭을 받지 않는다                                                                           |
+| 테마 전환          | 루트·헤더 스냅샷 크로스페이드(fastMax·standard). 움직임 줄이기면 즉시                                                                                                                      |
+| 검색 다이얼로그    | 등장만 — md 이상 패널은 투명도 0·16px 아래·95%에서(mediumMax), 모바일 전체화면은 투명도만, 스크림은 fast. 닫힘은 즉시                                                                      |
+| 목차 바텀시트      | 올라옴(medium·standard), 닫힐 때 같은 시간에 exit 곡선으로 내려감. 스크림은 medium, 닫힐 때 linear. 내려가는 동안 마운트 유지                                                              |
+| 맨 위로 FAB        | 등장만 — 투명도 0·95%에서(fast). 사라짐은 즉시                                                                                                                                             |
+| 누름               | `pressable` — `:active`에서 98%(fast), 거친 포인터(터치)에서는 끔. 행동 버튼·아이콘 버튼·FAB                                                                                               |
+| 스켈레톤(admin)    | 투명도 1↔0.5 왕복(mediumMax, linear). 움직임 줄이기면 멈춘다. 데이터가 드러날 때 제자리에서 걷힌다(VT `out`)                                                                               |
+| admin 진입         | 데이터가 드러날 때 머리·카드가 8px 아래에서 떠오른다(`page-enter`, medium·standard) — 순서마다 `stagger`씩 늦게, 대시보드는 줄+칸 순서                                                     |
+| admin 페이지 이동  | 대시보드↔분석은 공개 페이지와 같은 `PageBoundary`. 관리자 바는 `admin-bar`로 따로 찍혀 페이지 위에 남는다(불투명 `surface.base`). 모달 시트가 떠 있는 동안은 이름을 뗀다(시트 아래 제자리) |
+| admin 글 통계 패널 | lg 이상 — 이전 내용은 오른쪽으로 16px 밀려 나가고(fast·exit) 새 내용은 그 뒤 오른쪽 16px에서 밀려 온다(fastMax·standard). 닫으면 '고른 글 없음'이 제자리에서 나타난다                      |
+| admin 글 통계 시트 | lg 미만 — sm 미만은 아래에서, 그 위는 오른쪽에서 들어옴(medium·standard), 닫힐 때 같은 시간 exit로 되돌아감. 스크림 medium·닫힘 linear. 바·패널보다 위(z 2)                                |
+| admin 지표 값      | 집계 기간을 바꾸면 값 줄(값·증감·추세선)이 걷히고 그 뒤 8px 아래에서 떠오른다. 숫자를 세는 카운트업은 없다(아래)                                                                           |
+| admin 정렬         | 목록이 걷히고 새 순서가 떠오른다(값과 같은 `out`·`rise`, `admin-sort` type일 때만). 행을 새 자리로 미끄러뜨리지 않는다(아래)                                                               |
+| admin 선택 표식    | 세그먼트 — 면 하나가 고른 칸으로 미끄러진다(transform, fast). 목록 — 고른 줄의 배경(fast)과 왼쪽 2px 막대가 가운데서 펴진다(scaleY, fast)                                                  |
+| admin 차트·막대    | Recharts 선 드러남·막대 자람·데이터 보간 550ms·standard(`chartMotion.ts` — 토큰 사본, 테스트가 잠근다). 가로 막대는 트랙 왼쪽에서 자란다(transform, mediumMax)                             |
+| 로그인             | 묶음이 투명도 0·98%에서 선다(medium·standard). 서버가 그린 화면이지만 등장 자체가 화면이라 하드 로드마다 돈다. 버튼은 `pressable`                                                          |
 
 **Astryx와 일부러 다르게 간 곳**
 
@@ -562,6 +562,10 @@ Astryx alert-rail의 오른쪽 패널)이고 화면 오른쪽 끝에 붙는다.
   `overlay.high`(위 그림자 표)
 - 패널 안쪽 위 16 · 좌우 24 · 아래 24, 덩어리 사이 16. 작은 지표 타일은 카드 안이라 `element` 라운드, 면 `ink.50`
 - 행 높이 44는 제목 링크의 안쪽 여백이 낸다(칸 전체가 링크)
+- 머리는 제목과 검색·정렬·새로고침이 한 줄이다 — 그래서 새로고침은 아이콘만(접근 이름 「새로고침」).
+  대시보드 「모든 글」 카드의 새로고침은 글자 버튼이다
+- 대시보드 「모든 글」은 같은 목록 표다(고르기 없음 — 제목은 그 글이 고른 분석 화면으로 가는 링크, 줄 끝은
+  새 탭 링크)
 
 **로그인** — 가운데 정렬한 `railForm` 묶음: 워드마크(mono `h3` bold) + 배지 → 카드(안쪽 32, 사이 16, 제목 `h2`
 가운데) → 블로그로 돌아가는 링크(`supporting`). 오류는 Astryx Banner — `danger.bg` 면, 안쪽 12/16, 아이콘 20

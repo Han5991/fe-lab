@@ -14,6 +14,7 @@ import { WORDMARK } from './wordmark';
 import { railGutter } from './Rail';
 import { SOCIAL_LINKS, ShellLink } from './shellLinks';
 import { siteHeaderStyle } from './siteHeader';
+import { MAIN_ID, skipLink } from './skipLink';
 import { NavLinks } from './home/NavLinks';
 import { SearchDialog } from './search/SearchDialog';
 import { ThemeToggle } from './ThemeToggle';
@@ -21,27 +22,6 @@ import { ThemeToggle } from './ThemeToggle';
 interface LayoutProps {
   children: ReactNode;
 }
-
-/** 건너뛰기 링크가 가리키는 본문 영역 id. */
-const MAIN_ID = 'main-content';
-
-// 헤더의 탭 정지점을 건너뛰는 링크 — 초점을 받을 때만 나타난다.
-const skipLink = css({
-  pos: 'absolute',
-  top: '2',
-  left: '4',
-  zIndex: '60',
-  px: '3',
-  py: '2',
-  bg: 'paper.50',
-  color: 'ink.950',
-  fontSize: 'sm',
-  borderWidth: 'hairline',
-  borderColor: 'ink.borderStrong',
-  rounded: 'element',
-  transform: 'translateY(-200%)',
-  _focus: { transform: 'none' },
-});
 
 /**
  * 푸터 가운데의 글자 링크. GitHub·RSS는 넣지 않는다 — 같은 줄 오른쪽에 아이콘(`SOCIAL_LINKS`)으로

@@ -90,12 +90,17 @@ export const TimeSeriesChart = ({
               fontFamily: 'var(--font-jetbrains)',
             }}
             dy={8}
-            // 30일·90일이면 날짜 눈금이 칸보다 많다 — 겹치는 눈금은 건너뛴다(패널 폭 352에서도 읽힌다).
+            // 30일·90일이면 날짜 눈금이 칸보다 많다 — 겹치지 않는 N을 골라 N일마다 하나씩, 마지막
+            // 날(오늘)을 남긴다. 기본값(preserveEnd)은 글자 폭(9/30·10/10)에 따라 건너뛰는 칸 수가
+            // 줄마다 달라 눈금 간격이 고르지 않다(실측 — 9/26·9/28·9/30 다음 10/1~10/8은 매일).
+            interval="equidistantPreserveEnd"
             minTickGap={16}
           />
           <YAxis
             axisLine={false}
             tickLine={false}
+            // 조회수는 정수다 — 값이 작으면(최대 1~2) 0.25·0.5 같은 눈금이 생긴다.
+            allowDecimals={false}
             tick={{
               fill: token('colors.ink.500'),
               fontSize: 11,

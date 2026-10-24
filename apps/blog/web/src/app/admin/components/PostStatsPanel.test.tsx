@@ -117,6 +117,36 @@ describe('PostStatsPanel', () => {
     expect(screen.getByLabelText('종료일')).toBeVisible();
   });
 
+  test('직접선택의 시작이 끝보다 늦으면 "데이터 없음"이 아니라 기간을 다시 고르라고 한다', () => {
+    renderPanel();
+
+    fireEvent.change(screen.getByRole('combobox', { name: '기간' }), {
+      target: { value: 'custom' },
+    });
+    fireEvent.change(screen.getByLabelText('시작일'), {
+      target: { value: '2026-03-10' },
+    });
+    fireEvent.change(screen.getByLabelText('종료일'), {
+      target: { value: '2026-03-01' },
+    });
+
+    expect(screen.getByRole('status')).toHaveTextContent(
+      '시작일이 종료일보다 늦습니다',
+    );
+    expect(
+      screen.queryByText('해당 기간에 데이터가 없습니다.'),
+    ).not.toBeInTheDocument();
+    // 달력은 처음부터 거꾸로 된 기간을 고르지 못하게 한다.
+    expect(screen.getByLabelText('시작일')).toHaveAttribute(
+      'max',
+      '2026-03-01',
+    );
+    expect(screen.getByLabelText('종료일')).toHaveAttribute(
+      'min',
+      '2026-03-10',
+    );
+  });
+
   // 직전 주와 비교할 수 없는 증감률(null)은 하락이 아니다.
   test.each([
     [null, '비교 불가', '감소'],

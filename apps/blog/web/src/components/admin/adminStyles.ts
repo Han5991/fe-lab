@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react';
 import { css, cva } from '@blog/styled-system/css';
+import { VIEW_TRANSITION } from '@/src/shared/viewTransitions';
 import { iconButton } from '../iconButton';
 
 /**
@@ -38,7 +39,7 @@ export const adminCard = css.raw({
  *   0.01ms가 되어 곧바로 선다.
  */
 export const enterMotion = css.raw({
-  animationName: 'page-enter',
+  animationName: VIEW_TRANSITION.pageEnter,
   animationDuration: 'medium',
   animationTimingFunction: 'standard',
   animationFillMode: 'both',

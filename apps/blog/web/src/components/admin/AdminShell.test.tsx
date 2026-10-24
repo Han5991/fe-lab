@@ -60,6 +60,20 @@ describe('AdminShell', () => {
     expect(screen.getByRole('main')).toHaveTextContent('본문');
   });
 
+  // 사이트 셸의 건너뛰기 링크는 admin에 없다(`ShellSwitch`) — 바의 탭 정지점 다섯을 건너뛰는 길.
+  test('건너뛰기 링크가 바보다 먼저 오고 main을 가리킨다', () => {
+    renderShell('/admin/');
+
+    const skip = screen.getByRole('link', { name: '본문으로 건너뛰기' });
+    const main = screen.getByRole('main');
+    expect(skip).toHaveAttribute('href', `#${main.id}`);
+    expect(main).toHaveAttribute('tabindex', '-1');
+    expect(
+      skip.compareDocumentPosition(screen.getByRole('banner')) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
   test.each([
     ['/admin/', '대시보드'],
     // dev 서버는 무슬래시형도 서빙한다.

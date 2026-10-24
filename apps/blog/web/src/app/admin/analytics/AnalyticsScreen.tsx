@@ -1,8 +1,6 @@
 'use client';
 
 import {
-  addTransitionType,
-  startTransition,
   Suspense,
   useId,
   useRef,
@@ -12,15 +10,18 @@ import {
   type ReactNode,
 } from 'react';
 import { usePathname } from 'next/navigation';
-import { RefreshCw, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { css, cva, cx } from '@blog/styled-system/css';
 import { token } from '@blog/styled-system/tokens';
 import { localeTag } from '@blog/content/client';
 import { SITE_LOCALE } from '@/content.values.mts';
 import { Portal } from '@/src/components/Portal';
 import { railColumn, railGutter } from '@/src/components/Rail';
-import { actionButton } from '@/src/components/actionButton';
 import { AdminPageHeader } from '@/src/components/admin/AdminPageHeader';
+import {
+  RefreshButton,
+  RefreshFailedNote,
+} from '@/src/components/admin/RefreshButton';
 import { SegmentedControl } from '@/src/components/admin/SegmentedControl';
 import { LoadingPlaceholder } from '@/src/components/shared/LoadingPlaceholder';
 import { siteHeaderStyle } from '@/src/components/siteHeader';
@@ -33,23 +34,14 @@ import {
   adminAnalyticsPostPath,
   adminAnalyticsSlugFromPath,
 } from '@/src/shared/routes';
-import {
-  ADMIN_TRANSITION_TYPE,
-  ADMIN_VIEW_TRANSITION,
-} from '@/src/shared/adminViewTransitions';
+import { ADMIN_VIEW_TRANSITION } from '@/src/shared/adminViewTransitions';
 import {
   NoSelection,
   PanelSkeleton,
   PostNotFound,
   PostStatsPanel,
 } from '../components/PostStatsPanel';
-import {
-  PostTable,
-  SORT_OPTIONS,
-  sortPosts,
-  type SortField,
-  type SortOrder,
-} from '../components/PostTable';
+import { PostTable, SORT_OPTIONS, usePostSort } from '../components/PostTable';
 
 /**
  * 패널이 목록 옆 칼럼이 되는 폭 — Panda의 lg 브레이크포인트 토큰에서 만든다(CSS 쪽 `lg:`와 같은 값).
@@ -107,38 +99,15 @@ function PostListView({ selectedSlug, onSelect }: PostListViewProps) {
   const { data, dataUpdatedAt, isFetching, isRefetchError, refetch } =
     useAdminDashboardData();
   const [query, setQuery] = useState('');
-  const [sortField, setSortField] = useState<SortField>('date');
-  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+  const sort = usePostSort();
 
   const totalViews = data.reduce((acc, post) => acc + post.totalViews, 0);
   const needle = query.trim().toLowerCase();
-  const visible = sortPosts(
+  // 검색 입력은 transition이 아니라 행이 즉시 걸러진다(정렬만 목록이 교차한다 — `usePostSort`).
+  const visible =
     needle === ''
       ? data
-      : data.filter(post => post.title.toLowerCase().includes(needle)),
-    sortField,
-    sortOrder,
-  );
-
-  // 정렬은 type을 단 transition이다 — 목록의 `<ViewTransition>`이 이 type에서만 이전 순서를 걷고 새
-  // 순서를 띄운다(`PostTable`의 SORT_SWAP). 검색 입력은 transition이 아니라 행이 즉시 걸러진다.
-  const sortTransition = (update: () => void) =>
-    startTransition(() => {
-      addTransitionType(ADMIN_TRANSITION_TYPE.sort);
-      update();
-    });
-
-  const changeSortField = (field: SortField) =>
-    sortTransition(() => setSortField(field));
-
-  const handleSort = (field: SortField) =>
-    sortTransition(() => {
-      if (field === sortField) {
-        setSortOrder(order => (order === 'desc' ? 'asc' : 'desc'));
-      } else {
-        setSortField(field);
-      }
-    });
+      : data.filter(post => post.title.toLowerCase().includes(needle));
 
   return (
     <>
@@ -151,16 +120,10 @@ function PostListView({ selectedSlug, onSelect }: PostListViewProps) {
               업데이트:{' '}
               {new Date(dataUpdatedAt).toLocaleString(localeTag(SITE_LOCALE))}
             </span>
-            {isRefetchError && (
-              <span
-                role="status"
-                className={css({ display: 'block', color: 'danger.text' })}
-              >
-                새로고침 실패 — 이전 데이터를 보여 주는 중
-              </span>
-            )}
+            {isRefetchError && <RefreshFailedNote />}
           </>
         }
+        // 검색·정렬·새로고침이 제목과 한 줄에 들도록(목업 — lg에서 목록 칸 816) 새로고침은 아이콘만 둔다.
         actions={
           <>
             <label
@@ -206,33 +169,22 @@ function PostListView({ selectedSlug, onSelect }: PostListViewProps) {
             <SegmentedControl
               label="정렬 기준"
               options={SORT_OPTIONS}
-              value={sortField}
-              onChange={changeSortField}
+              value={sort.field}
+              onChange={sort.changeField}
             />
-            <button
-              type="button"
-              onClick={() => void refetch()}
-              disabled={isFetching}
-              className={css(
-                actionButton.raw({ tone: 'neutral', size: 'md' }),
-                {
-                  _disabled: { cursor: 'wait', opacity: '0.6' },
-                },
-              )}
-            >
-              <RefreshCw size={16} aria-hidden />
-              {isFetching ? '새로고침 중…' : '새로고침'}
-            </button>
+            <RefreshButton
+              iconOnly
+              isFetching={isFetching}
+              onRefresh={() => void refetch()}
+            />
           </>
         }
       />
       <PostTable
+        frame="card"
         posts={visible}
-        selectedSlug={selectedSlug}
-        onSelect={onSelect}
-        sortField={sortField}
-        sortOrder={sortOrder}
-        onSort={handleSort}
+        sort={sort}
+        selection={{ slug: selectedSlug, onSelect }}
         emptyMessage={
           data.length === 0
             ? '게시글 데이터가 없습니다.'
@@ -351,21 +303,22 @@ interface InspectorBodyProps {
 /**
  * 고른 글의 통계 — 데이터 구독(대시보드 데이터·태그)은 화면이 떠 있는 동안 여기 하나로 유지한다.
  * admin 쿼리는 구독이 새로 붙을 때마다 다시 받으므로(`adminQueryDefaults`) 글을 고르고 닫을 때마다
- * 구독을 붙였다 떼면 그때마다 목록 전체를 다시 받는다 — 그래서 시트를 닫아도 이 컴포넌트는 남고,
- * 시트만 사라진다.
+ * 구독을 붙였다 떼면 그때마다 목록 전체를 다시 받는다 — 그래서 고른 글이 없어도(칼럼의 '고른 글
+ * 없음', 닫힌 시트) 이 컴포넌트는 남아 아무것도 그리지 않는다.
  */
 function InspectorBody({ slug, mode, onClose }: InspectorBodyProps) {
   const { data } = useAdminDashboardData();
   const postTags = useAdminPostTags();
   const titleId = useId();
 
-  const post =
-    slug === null ? undefined : data.find(item => item.slug === slug);
-  const tags = slug === null ? undefined : postTags.get(slug);
+  if (slug === null) return null;
+
+  const post = data.find(item => item.slug === slug);
+  const tags = postTags.get(slug);
 
   // 대시보드 데이터는 인덱스에서 만든다 — 한쪽에만 있는 글은 없지만, 둘 다 있을 때만 통계를 그린다.
   const content =
-    slug === null ? null : post !== undefined && tags !== undefined ? (
+    post !== undefined && tags !== undefined ? (
       <PostStatsPanel
         key={post.slug}
         post={post}
@@ -378,23 +331,21 @@ function InspectorBody({ slug, mode, onClose }: InspectorBodyProps) {
     );
 
   if (mode === 'column') {
-    // 글이 바뀔 때(고르기·다른 글·닫기) 내용 단위로 들고 난다 — slug가 key라 이전 내용은 exit로
-    // 제자리에서 걷히고(fast·exit) 새 내용은 그 뒤 오른쪽 16px에서 밀려 온다(fastMax·standard). 고르기·닫기가
+    // 글이 바뀔 때(고르기·다른 글·닫기) 내용 단위로 들고 난다 — slug가 key라 이전 내용은 오른쪽으로
+    // 밀려 나가고(fast·exit) 새 내용은 그 뒤 오른쪽 16px에서 밀려 온다(fastMax·standard). 고르기·닫기가
     // 주소 변경 transition이라 React가 이 경계를 움직인다(`navigateTo`). 같은 글 안의 갱신(기간 선택,
     // 분포 도착)은 움직이지 않는다(`default="none"`).
     return (
       <ViewTransition
-        // 빈 slug(손으로 친 주소)도 '고른 글 없음'과 갈리게 접두를 단다.
-        key={slug === null ? 'no-selection' : `post:${slug}`}
+        key={slug}
         enter={ADMIN_VIEW_TRANSITION.slideIn}
-        exit={ADMIN_VIEW_TRANSITION.out}
+        exit={ADMIN_VIEW_TRANSITION.slideOut}
         default="none"
       >
-        {content ?? <NoSelection />}
+        {content}
       </ViewTransition>
     );
   }
-  if (content === null) return null;
   return (
     <PostSheet titleId={titleId} onClose={onClose}>
       {content}
@@ -411,16 +362,32 @@ interface InspectorProps {
 /**
  * 고른 글의 통계를 넓은 화면은 목록 옆 칼럼에, 좁은 화면은 시트에 그린다. 칼럼은 데이터를
  * 기다리는 동안에도 자리를 지킨다(목록 옆이 비었다가 생기면 목록 폭이 한 번 바뀐다).
+ *
+ * 칼럼의 '고른 글 없음'은 데이터를 기다리지 않는다 — 고른 글이 없으면 보일 통계가 없으므로 Suspense
+ * 밖에서 곧바로 그리고, 데이터 구독(`InspectorBody`)은 그 뒤에서 아무것도 그리지 않고 기다린다.
+ * 스켈레톤은 고른 글의 통계를 기다릴 때만 나온다. 패널을 닫으면 이전 내용이 오른쪽으로 빠진 뒤 이
+ * 안내가 제자리에서 나타나고(fadeIn), 글을 고르면 안내는 제자리에서 걷힌다(out).
  */
 function Inspector({ slug, isWide, onClose }: InspectorProps) {
   if (isWide) {
     return (
       <PanelColumn>
+        {slug === null && (
+          <ViewTransition
+            enter={ADMIN_VIEW_TRANSITION.fadeIn}
+            exit={ADMIN_VIEW_TRANSITION.out}
+            default="none"
+          >
+            <NoSelection />
+          </ViewTransition>
+        )}
         <Suspense
           fallback={
-            <ViewTransition exit={ADMIN_VIEW_TRANSITION.out} default="none">
-              <PanelSkeleton />
-            </ViewTransition>
+            slug === null ? null : (
+              <ViewTransition exit={ADMIN_VIEW_TRANSITION.out} default="none">
+                <PanelSkeleton />
+              </ViewTransition>
+            )
           }
         >
           <InspectorBody slug={slug} mode="column" onClose={onClose} />

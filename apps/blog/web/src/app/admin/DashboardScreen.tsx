@@ -11,6 +11,10 @@ import { LoadingPlaceholder } from '@/src/components/shared/LoadingPlaceholder';
 import { AdminCard } from '@/src/components/admin/AdminCard';
 import { AdminPageHeader } from '@/src/components/admin/AdminPageHeader';
 import { MetricCard } from '@/src/components/admin/MetricCard';
+import {
+  RefreshButton,
+  RefreshFailedNote,
+} from '@/src/components/admin/RefreshButton';
 import { SegmentedControl } from '@/src/components/admin/SegmentedControl';
 import { TagDistribution } from '@/src/components/admin/TagDistribution';
 import { TimeSeriesChart } from '@/src/components/admin/TimeSeriesChart';
@@ -52,9 +56,10 @@ import {
 } from '@/src/shared/routes';
 import { ADMIN_VIEW_TRANSITION } from '@/src/shared/adminViewTransitions';
 import { livePostHref } from './components/postState';
+import { PostTable, SORT_OPTIONS, usePostSort } from './components/PostTable';
 import { StatusBadge } from './components/StatusBadge';
 
-/** 목록 카드에 싣는 글 수 — 누적 상위·최근. */
+/** 누적 인기 글 카드에 싣는 글 수. */
 const LIST_LIMIT = 5;
 
 /** 태그 분포에 싣는 태그 수. */
@@ -95,12 +100,15 @@ const emptyNote = css({
 /**
  * 공개 글의 실제 주소를 새 탭으로 여는 아이콘 — 목록 제목은 그 글의 admin 통계로 열기 때문에,
  * 글 자체로 가는 길은 여기 둔다. 정적 export는 비공개 글의 페이지를 만들지 않아 공개 글에만 있다.
+ *
+ * Next `Link`가 아니라 `<a>`다 — 새 탭은 어차피 문서를 처음부터 받으므로 클라이언트 이동이 할 일이
+ * 없고, `Link`는 화면에 든 링크마다 글 페이지를 미리 받는다(「모든 글」만 45편).
  */
 function LivePostLink({ post }: { post: PostStatDetail }) {
   const href = livePostHref(post.slug, resolvePostState(post, TIMEZONE));
   if (href === null) return null;
   return (
-    <Link
+    <a
       href={href}
       target="_blank"
       rel="noopener noreferrer"
@@ -108,7 +116,7 @@ function LivePostLink({ post }: { post: PostStatDetail }) {
       className={panelIconButton}
     >
       <ExternalLink size={16} aria-hidden />
-    </Link>
+    </a>
   );
 }
 
@@ -216,79 +224,30 @@ function CumulativeTopTable({ posts }: { posts: PostStatDetail[] }) {
   );
 }
 
-/** 최근 글 — 제목 · 작성일. */
-function RecentTable({ posts }: { posts: PostStatDetail[] }) {
-  return (
-    <div className={cardTableBleed}>
-      <table className={adminTable}>
-        <thead>
-          <tr>
-            <th scope="col" className={adminCell({ kind: 'head' })}>
-              제목
-            </th>
-            <th
-              scope="col"
-              className={css(adminCell.raw({ kind: 'head' }), {
-                w: '28',
-                display: { base: 'none', sm: 'table-cell' },
-              })}
-            >
-              작성일
-            </th>
-            <th scope="col" className={linkHeadCell}>
-              <span className={css({ srOnly: true })}>글 열기</span>
-            </th>
-          </tr>
-        </thead>
-        <tbody className={adminTableBody}>
-          {posts.map(post => (
-            <tr key={post.slug}>
-              <TitleCell post={post} />
-              <td
-                className={css(adminCell.raw(), {
-                  display: { base: 'none', sm: 'table-cell' },
-                  color: 'ink.700',
-                  fontVariantNumeric: 'tabular-nums',
-                })}
-              >
-                {post.date}
-              </td>
-              <td className={adminCell({ align: 'end' })}>
-                <LivePostLink post={post} />
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
 function DashboardContent() {
-  const { data, dataUpdatedAt } = useAdminDashboardData();
+  const { data, dataUpdatedAt, isFetching, isRefetchError, refetch } =
+    useAdminDashboardData();
   const [range, setRange] = useState<AnalyticsRange>('30d');
   const overview = useAnalyticsOverview(range);
-  const tags = useAdminTagDistribution();
+  const { tags, taggedPosts } = useAdminTagDistribution();
+  const sort = usePostSort();
 
   const totalViews = data.reduce((acc, post) => acc + post.totalViews, 0);
   const todayViews = data.reduce((acc, post) => acc + post.todayViews, 0);
   // 기간 지표의 글당 평균과 같은 규칙(지금 공개 중인 글)으로 센다.
   const livePosts = countLivePosts(data, { timezone: TIMEZONE });
   const hiddenPosts = data.length - livePosts;
+  const postBySlug = new Map(data.map(post => [post.slug, post]));
 
   const topPosts = [...data]
     .sort((a, b) => b.totalViews - a.totalViews)
-    .slice(0, LIST_LIMIT);
-  const recentPosts = [...data]
-    .filter(post => post.date)
-    .sort((a, b) => (b.date ?? '').localeCompare(a.date ?? ''))
     .slice(0, LIST_LIMIT);
 
   const days = rangeLabel(overview.range);
 
   // 기간을 바꾸는 것은 transition이다 — 지표 카드의 값 줄(`MetricCard`의 `<ViewTransition>`)이 이전
-  // 값을 걷고 새 값을 띄우고, 나머지(제목의 일수·표·분포)는 루트 크로스페이드로 바뀐다. 차트는
-  // Recharts가 이전 선에서 새 선으로 보간한다.
+  // 값을 걷고 새 값을 띄우고, 나머지(제목의 일수·표)는 루트 크로스페이드로 바뀐다. 차트는 Recharts가
+  // 이전 선에서 새 선으로 보간한다.
   const changeRange = (next: AnalyticsRange) =>
     startTransition(() => setRange(next));
 
@@ -296,9 +255,16 @@ function DashboardContent() {
     <>
       <AdminPageHeader
         title="대시보드"
-        description={`누적 조회수 기준 · 업데이트: ${new Date(dataUpdatedAt).toLocaleString(localeTag(SITE_LOCALE))}`}
+        description={
+          <>
+            누적 조회수 기준 · 업데이트:{' '}
+            {new Date(dataUpdatedAt).toLocaleString(localeTag(SITE_LOCALE))}
+            {isRefetchError && <RefreshFailedNote />}
+          </>
+        }
       />
 
+      {/* ── 누적 — 요약 카드, 누적 인기 글, 태그 분포(승인 목업의 위 두 줄) ── */}
       <div className={gridThree}>
         <MetricCard
           level="h2"
@@ -368,13 +334,21 @@ function DashboardContent() {
         <AdminCard
           level="h2"
           enterOrder={3}
-          title="최근 게시글"
-          meta={`작성일 최근 ${recentPosts.length}편`}
+          title="태그 분포"
+          meta={`태그가 있는 ${taggedPosts}편 · 상위 ${Math.min(TAG_LIMIT, tags.length)}`}
         >
-          <RecentTable posts={recentPosts} />
+          {tags.length === 0 ? (
+            <p className={emptyNote}>태그가 달린 글이 없습니다.</p>
+          ) : (
+            <TagDistribution
+              tags={tags.slice(0, TAG_LIMIT)}
+              highlightId={tags[0]?.id}
+            />
+          )}
         </AdminCard>
       </div>
 
+      {/* ── 기간 추이 — 집계 기간(7·30·90일)을 고르는 절. 목업에는 없고 예전 분석 화면 위쪽에 있던 것 ── */}
       <section
         aria-labelledby="dashboard-period"
         className={css({ display: 'flex', flexDir: 'column', gap: '4' })}
@@ -444,36 +418,57 @@ function DashboardContent() {
           <TimeSeriesChart data={overview.totalSeries} />
         </AdminCard>
 
-        <div className={gridSplit}>
-          <AdminCard
-            level="h3"
-            enterOrder={6}
-            title={`기간 인기 글 · ${days}`}
-            meta={`${overview.topPosts.length}편`}
-          >
-            {overview.topPosts.length === 0 ? (
-              <p className={emptyNote}>해당 기간에 데이터가 없습니다.</p>
-            ) : (
-              <TopPostsTable rows={overview.topPosts} />
-            )}
-          </AdminCard>
-          <AdminCard
-            level="h3"
-            enterOrder={7}
-            title="태그 분포"
-            meta={`상위 ${Math.min(TAG_LIMIT, tags.length)}`}
-          >
-            {tags.length === 0 ? (
-              <p className={emptyNote}>태그가 달린 글이 없습니다.</p>
-            ) : (
-              <TagDistribution
-                tags={tags.slice(0, TAG_LIMIT)}
-                highlightId={tags[0]?.id}
-              />
-            )}
-          </AdminCard>
-        </div>
+        <AdminCard
+          level="h3"
+          enterOrder={6}
+          title={`기간 인기 글 · ${days}`}
+          meta={`${overview.topPosts.length}편`}
+        >
+          {overview.topPosts.length === 0 ? (
+            <p className={emptyNote}>해당 기간에 데이터가 없습니다.</p>
+          ) : (
+            <TopPostsTable
+              rows={overview.topPosts}
+              renderAction={row => {
+                const post = postBySlug.get(row.slug);
+                return post === undefined ? null : <LivePostLink post={post} />;
+              }}
+            />
+          )}
+        </AdminCard>
       </section>
+
+      {/* ── 모든 글 — 승인 목업의 맨 아래 표. 분석 화면의 목록과 같은 표이고, 제목은 그 글이 고른
+          분석 화면으로, 줄 끝 아이콘은 실제 글로 간다. 예전 「최근 게시글」(작성일 최근 5편)은 이 표의
+          기본 정렬(작성일 내림차순) 첫 다섯 줄이다. ── */}
+      <AdminCard
+        level="h2"
+        enterOrder={7}
+        title="모든 글"
+        meta={`${data.length}편`}
+        actions={
+          <>
+            <SegmentedControl
+              label="정렬 기준"
+              options={SORT_OPTIONS}
+              value={sort.field}
+              onChange={sort.changeField}
+            />
+            <RefreshButton
+              isFetching={isFetching}
+              onRefresh={() => void refetch()}
+            />
+          </>
+        }
+      >
+        <PostTable
+          frame="bleed"
+          posts={data}
+          sort={sort}
+          emptyMessage="게시글 데이터가 없습니다."
+          renderAction={post => <LivePostLink post={post} />}
+        />
+      </AdminCard>
     </>
   );
 }
@@ -481,8 +476,8 @@ function DashboardContent() {
 /**
  * 데이터를 기다리는 동안의 자리 — 드러날 때 내용과 교차한다: 스켈레톤은 `<ViewTransition>`의 exit로
  * 제자리에서 걷히고(fast·exit), 같은 순간 내용의 카드들이 차례로 떠오른다(`enterMotion`). 높이는
- * 처음 화면에 보이는 머리·지표 줄·표 두 장의 실측(1280px — 머리 101, 지표 카드 114, 다섯 줄 표 카드
- * 339)이라 드러날 때 카드가 제자리에서 바뀐다.
+ * 처음 화면에 보이는 머리·지표 줄·둘째 줄의 실측(1280px — 머리 101, 지표 카드 114, 다섯 줄 표 카드
+ * 339 — 옆의 태그 분포 카드가 같은 줄 높이로 늘어난다)이라 드러날 때 카드가 제자리에서 바뀐다.
  */
 function DashboardSkeleton() {
   return (
@@ -502,9 +497,10 @@ function DashboardSkeleton() {
 }
 
 /**
- * admin 대시보드 — 누적 요약(조회수·공개 글·상세 분석으로 가는 카드), 누적 인기·최근 글, 그리고
- * 기간 추이(7·30·90일 지표·일별 시계열·기간 인기 글·태그 분포)를 한 화면에 잇는다. 예전에는
- * 누적 요약이 여기, 기간 추이가 `/admin/analytics/`에 따로 있었다.
+ * admin 대시보드 — 승인 목업 순서대로 누적 요약(조회수·공개 글·상세 분석으로 가는 카드), 누적 인기
+ * 글·태그 분포, 그리고 맨 아래 모든 글 표다. 목업에 없는 기간 추이(7·30·90일 지표·일별 시계열·기간
+ * 인기 글)는 누적 두 줄과 모든 글 사이에 둔다 — 45줄 표 아래로 내리면 화면 여러 장 밑에 묻힌다.
+ * 예전에는 누적 요약이 여기, 기간 추이가 `/admin/analytics/`에 따로 있었다.
  *
  * 페이지(`page.tsx`)는 서버 컴포넌트로 남아 페이지 전환 경계(`PageBoundary`)만 씌운다 — 경계를
  * 클라이언트 그래프에 들이지 않는다.

@@ -11,8 +11,8 @@ export const STATUS_BADGE = {
 /**
  * 상태 배지의 글자색 — 배지 면(`pillBadge`, paper.200) 위 글자다. 상태는 런타임 값이라
  * `colors[state]` 같은 조회는 빌드 때 CSS가 되지 않는다 — 변형(cva)으로 적어야 세 색이 모두
- * 추출된다(styling/dynamic-styling). `PostStatus`가 늘면 `statusTone({ state })` 호출이 컴파일되지
- * 않는다. paper.200 위 대비(라이트 / 다크): moss.700 4.95 / 8.15, ink.700 6.44 / 7.22,
+ * 추출된다(styling/dynamic-styling). `PostStatus`가 늘면 배지의 상태별 클래스(`StatusBadge`)가
+ * 컴파일되지 않는다. paper.200 위 대비(라이트 / 다크): moss.700 4.95 / 8.15, ink.700 6.44 / 7.22,
  * spot.600 4.57 / 7.34.
  */
 export const statusTone = cva({

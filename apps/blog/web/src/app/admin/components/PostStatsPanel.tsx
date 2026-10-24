@@ -11,7 +11,7 @@ import {
   Tooltip,
   XAxis,
 } from 'recharts';
-import { css, cva } from '@blog/styled-system/css';
+import { css, cva, cx } from '@blog/styled-system/css';
 import { token } from '@blog/styled-system/tokens';
 import {
   formatMonthDayISO,
@@ -73,6 +73,14 @@ const emptyNote = css({
   color: 'ink.700',
   py: '6',
   textAlign: 'center',
+});
+
+// 증감 줄의 배치와 방향 색 — 방향은 런타임 값이라 정적 클래스 둘을 잇는다(한 `css()`에 섞으면 Panda가
+// 그 호출을 추출하지 못한다).
+const growthLine = css({
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '1',
 });
 
 const growthTone = cva({
@@ -271,10 +279,11 @@ export function PostStatsPanel({
     setStartDate,
     endDate,
     setEndDate,
-    filteredTrends,
+    dailyTrends,
     autoFellBackToAll,
+    invalidRange,
   } = useDateFilter(post.trends, todayISO);
-  const trendData = filteredTrends.map(d => ({
+  const trendData = dailyTrends.map(d => ({
     date: formatMonthDayISO(d.view_date),
     value: d.view_count,
   }));
@@ -324,8 +333,9 @@ export function PostStatsPanel({
           gap: '2',
         })}
       >
+        {/* 새 탭은 문서를 처음부터 받으므로 Next `Link`(미리 받기·클라이언트 이동)가 아니라 `<a>`다. */}
         {liveHref !== null && (
-          <Link
+          <a
             href={liveHref}
             target="_blank"
             rel="noopener noreferrer"
@@ -333,7 +343,7 @@ export function PostStatsPanel({
           >
             <ExternalLink size={14} aria-hidden />글 열기{' '}
             <span className={css({ srOnly: true })}>(새 탭)</span>
-          </Link>
+          </a>
         )}
         <DateRangeControls
           filterType={filterType}
@@ -452,9 +462,9 @@ export function PostStatsPanel({
       >
         <StatTile label="7일 증감">
           <span
-            className={css(
-              { display: 'inline-flex', alignItems: 'center', gap: '1' },
-              growthTone.raw({ direction: growthDirection }),
+            className={cx(
+              growthLine,
+              growthTone({ direction: growthDirection }),
             )}
           >
             <WeekGrowthIcon rate={growth} size={14} />
@@ -503,7 +513,11 @@ export function PostStatsPanel({
             </span>
           )}
         </div>
-        {trendData.length > 0 ? (
+        {invalidRange ? (
+          <p role="status" className={emptyNote}>
+            시작일이 종료일보다 늦습니다. 기간을 다시 골라 주세요.
+          </p>
+        ) : trendData.length > 0 ? (
           <TimeSeriesChart data={trendData} height={160} />
         ) : (
           <p className={emptyNote}>해당 기간에 데이터가 없습니다.</p>

@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ExternalLink, LogOut } from 'lucide-react';
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { css, cx } from '@blog/styled-system/css';
 import {
   ADMIN_ANALYTICS_PATH,
@@ -16,6 +16,7 @@ import { actionButton } from '../actionButton';
 import { iconButton } from '../iconButton';
 import { railGutter } from '../Rail';
 import { siteHeaderStyle } from '../siteHeader';
+import { MAIN_ID, skipLink } from '../skipLink';
 import { WORDMARK } from '../wordmark';
 import { AdminGuard } from './AdminGuard';
 import { pillBadge } from './adminStyles';
@@ -63,6 +64,35 @@ const navLinkCurrent = css.raw({
   fontWeight: 'semibold',
 });
 
+/**
+ * 바의 높이 변수와 View Transition 이름. 이름은 인라인 `view-transition-name`이 아니라 변수로 실어
+ * 클래스가 읽는다(`barClass`) — 인라인 속성은 셀렉터로 덮을 수 없어서다.
+ */
+const barStyle: CSSProperties & Record<`--${string}`, string> = {
+  ...siteHeaderStyle,
+  '--admin-bar-transition-name': ADMIN_VIEW_TRANSITION.bar,
+};
+
+const barClass = css({
+  h: '[var(--site-header-height)]',
+  pos: 'sticky',
+  top: '0',
+  zIndex: '10',
+  bg: 'surface.base/80',
+  backdropFilter: 'auto',
+  backdropBlur: '[12px]',
+  borderBottomWidth: 'hairline',
+  borderColor: 'ink.border',
+  viewTransitionName: 'var(--admin-bar-transition-name)',
+  // 모달(좁은 화면의 글 통계 시트)이 떠 있는 동안은 이름을 뗀다. 이름 붙은 바는 전환마다 따로 찍혀
+  // 루트 위에 그려지는데, 시트·스크림은 들고 날 때만 이름이 붙고 그 사이의 전환(시트 안 분포가
+  // 도착해 스켈레톤이 걷히는 것 등)에서는 루트 스냅샷 안에 있다 — 그때 바가 시트 머리와 스크림 위로
+  // 올라온다(실측, 375·768). 이름을 떼면 바는 루트 안에서 시트·스크림 아래 제자리에 있다. 시트가
+  // 들고 나는 전환에서는 바가 한쪽 상태에만 이름을 가져 자기 자신과 교차한다 — 같은 그림이라 보이지
+  // 않는다.
+  'html:has([aria-modal=true]) &': { viewTransitionName: 'none' },
+});
+
 function AdminBar() {
   const pathname = usePathname();
   const current = currentNavHref(pathname);
@@ -72,25 +102,9 @@ function AdminBar() {
     // 높이는 사이트 헤더와 같은 48(Astryx TopNav)이고 같은 변수에서 온다 — 분석 화면의 오른쪽
     // 패널이 이 높이 아래에 붙는다. 사이트 헤더와 달리 아래 hairline을 둔다(승인 목업): 분석
     // 화면에서 패널의 왼쪽 보더와 만나 화면을 나눈다.
-    // 페이지 전환·시트·정렬의 View Transition에서는 사이트 헤더처럼 따로 찍혀 페이지 위에 남는다
+    // 페이지 전환·패널·정렬의 View Transition에서는 사이트 헤더처럼 따로 찍혀 페이지 위에 남는다
     // (`ADMIN_VIEW_TRANSITION.bar` — 스크롤된 채 바뀌는 목록이 바 자리에 덧칠되지 않게).
-    <header
-      style={{
-        ...siteHeaderStyle,
-        viewTransitionName: ADMIN_VIEW_TRANSITION.bar,
-      }}
-      className={css({
-        h: '[var(--site-header-height)]',
-        pos: 'sticky',
-        top: '0',
-        zIndex: '10',
-        bg: 'surface.base/80',
-        backdropFilter: 'auto',
-        backdropBlur: '[12px]',
-        borderBottomWidth: 'hairline',
-        borderColor: 'ink.border',
-      })}
-    >
+    <header style={barStyle} className={barClass}>
       {/* 세 슬롯 — 워드마크·배지 | 내비 | 블로그·로그아웃. md 이상은 사이트 헤더와 같은
           `1fr auto 1fr` 격자라 내비가 화면 가운데에 선다. md 미만은 워드마크를 숨기고(배지가
           admin임을 말한다) 로그아웃을 아이콘만 남겨 360px 기기에도 한 줄에 들어간다. */}
@@ -198,8 +212,18 @@ function AdminBar() {
 export function AdminShell({ children }: { children: ReactNode }) {
   return (
     <AdminGuard>
+      <a href={`#${MAIN_ID}`} className={skipLink}>
+        본문으로 건너뛰기
+      </a>
       <AdminBar />
-      <main className={css({ flex: '1', w: 'full' })}>{children}</main>
+      {/* tabIndex -1: 건너뛰기 링크가 초점을 여기로 옮길 수 있게(탭 순서에는 없다). */}
+      <main
+        id={MAIN_ID}
+        tabIndex={-1}
+        className={css({ flex: '1', w: 'full', outline: 'none' })}
+      >
+        {children}
+      </main>
     </AdminGuard>
   );
 }
