@@ -1,7 +1,13 @@
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import type { PostSummary } from '@blog/content/client';
 import { PostGridCard } from './PostGridCard';
+
+// 링크가 현재 경로로 이동 방향을 고른다(TransitionLink) — 이 컴포넌트가 놓이는 글 목록에 둔다.
+vi.mock('next/navigation', async () => {
+  const { POSTS_PATH } = await import('@blog/content/client');
+  return { usePathname: () => POSTS_PATH };
+});
 
 const post: PostSummary = {
   slug: 'grid-post',

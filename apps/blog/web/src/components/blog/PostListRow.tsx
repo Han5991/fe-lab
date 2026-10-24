@@ -1,9 +1,8 @@
-import Link from 'next/link';
 import type { PostSummary } from '@blog/content/client';
 import { fmtDate, postPath } from '@blog/content/client';
 
 import { PostCardShared } from '@/src/components/shared/PostSharedElement';
-import { POST_OPEN_TRANSITION_TYPE } from '@/src/shared/viewTransitions';
+import { TransitionLink } from '@/src/components/shared/TransitionLink';
 import { HiddenPostBadge } from './HiddenPostBadge';
 import { postRowItem, postRowLink, postRowMeta, postRowTitle } from './postRow';
 
@@ -18,10 +17,10 @@ interface PostListRowProps {
  */
 export const PostListRow = ({ post }: PostListRowProps) => (
   <li className={postRowItem}>
-    <Link
+    <TransitionLink
       href={postPath(post.slug)}
       // 이 행의 제목이 글 상세 h1로 이어지는 이동이라는 표시(PostCardShared).
-      transitionTypes={[POST_OPEN_TRANSITION_TYPE]}
+      opensPost
       className={postRowLink}
     >
       <PostCardShared part="title" slug={post.slug}>
@@ -33,6 +32,6 @@ export const PostListRow = ({ post }: PostListRowProps) => (
       {/* 날짜가 없으면 태그 자체를 뺀다 — fmtDate가 빈 문자열을 돌려주므로 크래시는 없지만 내용
           없는 span이 남는다(카드 메타 PostMeta와 같은 패턴). */}
       {post.date && <span className={postRowMeta}>{fmtDate(post.date)}</span>}
-    </Link>
+    </TransitionLink>
   </li>
 );

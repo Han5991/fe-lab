@@ -150,6 +150,42 @@ const CONTENT_SEO_VALUES = {
     'SEO 빌더는 post/index.ts를 거쳐 node:fs를 엽니다 — 인스턴스는 서버 전용인 @/src/content에서 쓰세요. 타입만 필요하면 import type으로.',
 } as const;
 
+/**
+ * 사이트 안 링크는 `TransitionLink`(src/components/shared/TransitionLink.tsx)로 — 그것이 현재 경로와
+ * 도착 경로로 이동의 방향(transition type, `navTransitionType`)을 단다. `next/link`를 바로 쓰면 그
+ * 이동만 방향 없이 페이드로 남고, 빌드·테스트·브라우저 어디서도 에러가 없다 — 같은 이동(홈 →
+ * `/posts`)이 헤더로 가면 밀리고 다른 링크로 가면 페이드하는 식으로 조용히 갈린다.
+ *
+ * 허용은 `NEXT_LINK_FILES`만이다(그 블록의 사유). 타입은 번들·동작과 무관하니 연다.
+ *
+ * 재평가: 2027-04-24 — 그때까지 잡은 위반이 없으면 내린다(AGENTS.md §5).
+ */
+const NEXT_LINK_DIRECT = {
+  name: 'next/link',
+  allowTypeImports: true,
+  message:
+    '사이트 안 링크는 @/src/components/shared/TransitionLink를 쓰세요 — 이동의 방향(transition type)을 앱의 계층으로 답니다. next/link를 바로 쓰면 그 이동만 조용히 페이드로 남습니다. 방향을 일부러 달지 않는 곳이면 eslint.config.mts의 NEXT_LINK_FILES에 사유와 함께 추가하세요.',
+} as const;
+
+/**
+ * `next/link`를 바로 여는 것이 허용된 파일 — 방향 type을 일부러 달지 않는 곳만.
+ *
+ * - `TransitionLink.tsx` — 감싸개 자신
+ * - `SearchDialog.tsx` — 결과는 모달을 닫으며 가는 이동이라 페이지가 옆으로 밀리면 닫히는 패널과
+ *   엇갈린다(페이드)
+ * - `ErrorFallback.tsx` — 에러 경계(`error.tsx`·`global-error.tsx`)가 그리는데, 에러 경계에는 페이지
+ *   전환 경계가 없어(PageBoundary 주석) 방향 있는 이동이면 들어오는 페이지가 늦게 나타나는 동안
+ *   화면이 빈다
+ * - admin 영역 — 공개 계층(홈·섹션·글) 밖의 도구 화면이라 방향을 정하지 않는다
+ */
+const NEXT_LINK_FILES = [
+  'src/components/shared/TransitionLink.tsx',
+  'src/components/search/SearchDialog.tsx',
+  'src/components/ErrorFallback.tsx',
+  'src/app/admin/**/*.tsx',
+  'src/components/admin/**/*.tsx',
+];
+
 const CONTENT_DYNAMIC_IMPORT = {
   selector:
     "ImportExpression:matches([source.value='@blog/content'], [source.value='@blog/content/seo'])",
@@ -171,12 +207,22 @@ const SERVER_ONLY_BARREL_FILES = [
  */
 const TEST_FILES = TEST_PROGRAM_FILES;
 
-/** app 레이어의 repository 직접 import 금지 — 아래 두 블록이 같은 값을 펼친다. */
+/** app 레이어의 repository 직접 import 금지 — 아래 블록들이 같은 값을 펼친다. */
 const REPOSITORY_IMPORT_PATTERN = {
   // adminRepository처럼 접두사가 붙은 것도 함께 막습니다.
   group: ['**/domain/*/*[rR]epository', '**/domain/*/*[rR]epository.*'],
   message:
     'repository는 인프라 레이어입니다. domain/<x> 공개 API(배럴, 예: @/src/domain/analytics, @/src/domain/analytics/admin)를 통해 접근하세요.',
+};
+
+/**
+ * app 레이어의 import 금지에서 next/link만 뺀 것 — `NEXT_LINK_FILES` 블록이 그대로 쓰고, app 블록은
+ * 여기에 `NEXT_LINK_DIRECT`를 더한다. 허용 파일의 설정이 언제나 "app 블록 − next/link"가 되게 한 값에서
+ * 둘 다 뽑는다.
+ */
+const APP_IMPORTS_EXCEPT_NEXT_LINK = {
+  paths: [CONTENT_BARREL_VALUES, CONTENT_SEO_VALUES],
+  patterns: [REPOSITORY_IMPORT_PATTERN],
 };
 
 /**
@@ -401,13 +447,13 @@ export default defineConfig([
     ignores: ['src/{shared,domain,lib}/**', UNIT_TESTS],
     rules: {
       // `**/` 접두로 alias(@/src/domain/...)와 상대경로(../../domain/...) 양쪽을 차단.
-      // `paths`는 큰 배럴·SEO 문 값 import 금지 — flat config는 뒤 블록이 룰 옵션을
-      // 통째로 덮으므로 한 룰 설정에 함께 둔다.
+      // `paths`는 큰 배럴·SEO 문 값 import 금지와 next/link 직접 import 금지 — flat config는 뒤
+      // 블록이 룰 옵션을 통째로 덮으므로 한 룰 설정에 함께 둔다.
       'no-restricted-imports': [
         'error',
         {
-          paths: [CONTENT_BARREL_VALUES, CONTENT_SEO_VALUES],
-          patterns: [REPOSITORY_IMPORT_PATTERN],
+          ...APP_IMPORTS_EXCEPT_NEXT_LINK,
+          paths: [...APP_IMPORTS_EXCEPT_NEXT_LINK.paths, NEXT_LINK_DIRECT],
         },
       ],
       'no-restricted-syntax': [
@@ -419,6 +465,15 @@ export default defineConfig([
     },
   },
   {
+    // next/link를 바로 여는 것이 허용된 파일(NEXT_LINK_FILES의 사유) — 그 금지만 풀고 나머지는
+    // 위 app 블록과 같다(뒤 블록이 옵션을 통째로 덮으므로 같은 값에서 다시 펼친다).
+    files: NEXT_LINK_FILES,
+    ignores: [UNIT_TESTS],
+    rules: {
+      'no-restricted-imports': ['error', APP_IMPORTS_EXCEPT_NEXT_LINK],
+    },
+  },
+  {
     // 위 app 블록이 덮지 않는 파일에도 같은 금지를 건다 — 레이어 폴더와, src 밖이지만
     // 클라이언트 컴포넌트가 여는 content.values.mts. repository 패턴은 app 레이어의
     // 규칙이라 여기엔 없다.
@@ -427,7 +482,9 @@ export default defineConfig([
     rules: {
       'no-restricted-imports': [
         'error',
-        { paths: [CONTENT_BARREL_VALUES, CONTENT_SEO_VALUES] },
+        {
+          paths: [CONTENT_BARREL_VALUES, CONTENT_SEO_VALUES, NEXT_LINK_DIRECT],
+        },
       ],
       // 정적 import만 막으면 동적 import로 같은 문이 열린다 — app 블록과 같은 짝으로 건다.
       'no-restricted-syntax': ['error', NO_ESCAPED_HEX, CONTENT_DYNAMIC_IMPORT],
@@ -442,13 +499,13 @@ export default defineConfig([
     },
   },
   {
-    // 배럴에만 있는 값이 필요한 서버 전용 파일 — 배럴·SEO 문 금지만 풀고 repository
-    // 금지는 그대로 둔다(뒤 블록이 옵션을 통째로 덮으므로 패턴을 다시 적는다).
+    // 배럴에만 있는 값이 필요한 서버 전용 파일 — 배럴·SEO 문 금지만 풀고 repository·next/link
+    // 금지는 그대로 둔다(뒤 블록이 옵션을 통째로 덮으므로 다시 적는다).
     files: SERVER_ONLY_BARREL_FILES,
     rules: {
       'no-restricted-imports': [
         'error',
-        { patterns: [REPOSITORY_IMPORT_PATTERN] },
+        { paths: [NEXT_LINK_DIRECT], patterns: [REPOSITORY_IMPORT_PATTERN] },
       ],
     },
   },

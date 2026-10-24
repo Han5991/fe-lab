@@ -1,6 +1,7 @@
 import { defineConfig, definePlugin } from '@pandacss/dev';
 import { TEST_SUFFIX } from './testFiles.mts';
 import {
+  NAV_TRANSITION,
   POST_SHARED,
   POST_SHARED_SIDE,
   VIEW_TRANSITION,
@@ -52,6 +53,17 @@ const VT_STACK = {
   cover: '2',
   siteHeader: '3',
 } as const;
+
+// 방향 있는 이동(NAV_TRANSITION)에서 페이지가 미끄러지는 거리와, 그 거리를 의사 요소마다 부호를 붙여
+// 넘기는 변수(아래 keyframes·globalCss). 32px인 이유: 나가는 페이지는 이 거리를 fast(175ms) 동안
+// 가속하며 걷히고 들어오는 페이지는 그 뒤 fastMax(230ms) 동안 감속하며 다 와서, 거리 전부가 눈에
+// 보인다 — Next 가이드의 60px은 들어오는 쪽이 처음부터 미끄러져(400ms) 보이는 몫이 40px 안팎이고,
+// Material의 shared axis가 30dp다. 들어오는 페이지의 8px 떠오름(타입 없는 페이드)의 네 배라 방향은
+// 읽히고, 375px 화면에서도 폭의 9%라 화면을 가로지르는 움직임이 되지 않는다.
+const NAV_SLIDE_PX = 32;
+const NAV_SLIDE_OFFSET = '--nav-slide-offset';
+const NAV_SLIDE_LEFT = `${-NAV_SLIDE_PX}px` as const;
+const NAV_SLIDE_RIGHT = `${NAV_SLIDE_PX}px` as const;
 
 export default defineConfig({
   // Panda 기본 프리셋 + 블로그 프리셋(@blog/preset — 블로그 소유, 컴포넌트 없는 설정 전용 패키지).
@@ -119,10 +131,10 @@ export default defineConfig({
           to: { transform: 'scaleX(1)' },
         },
         // 페이지 전환(아래 globalCss의 ::view-transition-* 규칙). 이름은 PageBoundary가 붙이는
-        // 클래스와 같은 출처다. 들어오는 페이지는 8px(Astryx spacing-2) 아래에서 떠오르고,
-        // 나가는 페이지는 제자리에서 사라진다. 방향(앞·뒤로 미끄러짐)은 담지 않는다 — 브라우저
-        // 뒤로·앞으로 가기에는 페이지 전환이 아예 돌지 않아(실측: startViewTransition이 불리지
-        // 않는다) 방향을 넣어도 링크 이동에서만 보인다.
+        // 클래스와 같은 출처다. 방향 없는 이동(같은 깊이·검색 결과)의 페이드 — 들어오는 페이지는
+        // 8px(Astryx spacing-2) 아래에서 떠오르고, 나가는 페이지는 제자리에서 사라진다. 방향 있는
+        // 이동은 아래 navSlideOut·navSlideIn이다(브라우저 뒤로·앞으로 가기에는 페이지 전환이 아예
+        // 돌지 않아 방향도 링크 이동에서만 보인다).
         [VIEW_TRANSITION.pageEnter]: {
           from: { opacity: '0', transform: 'translateY(8px)' },
         },
@@ -143,6 +155,21 @@ export default defineConfig({
         },
         [VIEW_TRANSITION.coverCornerToCard]: {
           to: { borderRadius: 'container' },
+        },
+        // 방향 있는 이동의 페이지(아래 globalCss의 NAV_TRANSITION 규칙). 투명도와 자리를 한 keyframes에
+        // 묶는다 — 한 쪽(나감·들어옴)의 둘은 시간·곡선이 같다. 어느 쪽으로 미끄러지는지는 의사 요소가
+        // 주는 거리 변수의 부호다(Next view-transitions 가이드의 `--slide-offset`).
+        [VIEW_TRANSITION.navSlideOut]: {
+          to: {
+            opacity: '0',
+            transform: `translateX(var(${NAV_SLIDE_OFFSET}))`,
+          },
+        },
+        [VIEW_TRANSITION.navSlideIn]: {
+          from: {
+            opacity: '0',
+            transform: `translateX(var(${NAV_SLIDE_OFFSET}))`,
+          },
         },
       },
     },
@@ -206,8 +233,9 @@ export default defineConfig({
       '::view-transition': {
         pointerEvents: 'none',
       },
-      // 페이지 전환 — PageBoundary(React <ViewTransition>)가 붙이는 클래스. 나가는 쪽은 빨리
-      // 비키고(fast·exit 곡선), 들어오는 쪽은 천천히 자리 잡는다(medium·standard).
+      // 페이지 전환 — PageBoundary(React <ViewTransition>)가 방향 없는 이동(같은 깊이의 형제 이동·
+      // 검색 결과)에 붙이는 클래스. 나가는 쪽은 빨리 비키고(fast·exit 곡선), 들어오는 쪽은 천천히
+      // 자리 잡는다(medium·standard).
       [`::view-transition-old(.${VIEW_TRANSITION.pageExit})`]: {
         animationName: VIEW_TRANSITION.pageExit,
         animationDuration: 'fast',
@@ -220,6 +248,41 @@ export default defineConfig({
         animationTimingFunction: 'standard',
         animationFillMode: 'both',
       },
+      // 방향 있는 이동 — 링크 이동의 transition type이 nav-forward·nav-back이면 PageBoundary가 위
+      // 페이드 대신 type과 같은 이름의 클래스를 붙인다(TransitionLink가 앱의 계층으로 고른다). 나가는
+      // 페이지는 페이드와 같은 fast·exit로 가속하며 걷히면서 밀려나고, 들어오는 페이지는 그 뒤에(fast
+      // 지연) fastMax·standard로 감속하며 들어온다 — 공유 요소의 제목과 같은 박자이고, 합(405ms)이
+      // 그룹의 medium과 거의 같아 카드에서 열 때 커버·제목·본문이 함께 자리에 닿는다. 투명도를
+      // 순서대로(나감 뒤 들어옴) 두는 것은 가이드와 같다 — 나가는 내용이 들어오는 내용과 시선을
+      // 다투지 않게. 가이드와 다른 점은 들어오는 쪽의 **자리**도 지연한다는 것이다: 가이드는 양쪽
+      // 슬라이드를 0ms부터 함께 돌리는데, standard는 앞에 몰린 감속 곡선이라 그대로면 투명도가 올라올
+      // 때 이미 거리의 대부분을 와 있어 방향이 안 보이고, 같은 쪽으로 미끄러지는 두 페이지의 글자가
+      // 겹쳐 보인다. 헤더는 이름이 따로라 미끄러지지 않고 아래 크로스페이드 그대로다.
+      [`::view-transition-old(.${NAV_TRANSITION.forward}), ::view-transition-old(.${NAV_TRANSITION.back})`]:
+        {
+          animationName: VIEW_TRANSITION.navSlideOut,
+          animationDuration: 'fast',
+          animationTimingFunction: 'exit',
+          animationFillMode: 'both',
+        },
+      [`::view-transition-new(.${NAV_TRANSITION.forward}), ::view-transition-new(.${NAV_TRANSITION.back})`]:
+        {
+          animationName: VIEW_TRANSITION.navSlideIn,
+          animationDuration: 'fastMax',
+          animationDelay: 'fast',
+          animationTimingFunction: 'standard',
+          animationFillMode: 'both',
+        },
+      // 왼쪽 — 앞으로 갈 때 나가는 페이지가 밀려나는 쪽, 뒤로 갈 때 들어오는 페이지가 오는 쪽.
+      [`::view-transition-old(.${NAV_TRANSITION.forward}), ::view-transition-new(.${NAV_TRANSITION.back})`]:
+        {
+          [NAV_SLIDE_OFFSET]: NAV_SLIDE_LEFT,
+        },
+      // 오른쪽 — 그 반대.
+      [`::view-transition-new(.${NAV_TRANSITION.forward}), ::view-transition-old(.${NAV_TRANSITION.back})`]:
+        {
+          [NAV_SLIDE_OFFSET]: NAV_SLIDE_RIGHT,
+        },
       // 테마 전환 — View Transitions API(useTheme)로 전체 페이지를 한 번의 컴포지터
       // 크로스페이드로 전환한다. 예전엔 html.theme-transition * 로 모든 요소에 color/fill
       // transition을 걸어, 차트·코드 하이라이팅이 많은 페이지(analytics 등)에서 요소 수만큼

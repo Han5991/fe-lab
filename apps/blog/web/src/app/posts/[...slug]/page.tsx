@@ -218,12 +218,17 @@ export default async function PostPage({ params }: Props) {
       </PageBoundary>
 
       {/* 본문 셸과 같은 wide 레일이라 왼쪽 끝이 본문과 맞는다.
-          위 여백을 따로 주지 않는 것은 PageBoundary 하단 패딩이
+          위 여백을 따로 주지 않는 것은 위 PageBoundary 하단 패딩이
           이미 그 간격을 만들기 때문 — 둘 다 주면 댓글과 네비 사이가 200px
-          가까이 벌어진다. */}
-      <Rail width="wide">
-        <PostNavigation prev={prev} next={next} seriesNav={seriesNav} />
-      </Rail>
+          가까이 벌어진다. 페이지 전환 경계는 따로 하나 더 둔다: 경계 밖이면
+          페이지 스냅샷에 담기지 않고, React가 루트 스냅샷을 감추므로(경계 밖에
+          바뀐 것이 없다고 보면 루트 그룹을 투명하게 둔다) 누른 이전·다음 카드가
+          전환 첫 프레임에 사라졌다. 경계 안이면 글과 함께 밀려난다. */}
+      <PageBoundary>
+        <Rail width="wide">
+          <PostNavigation prev={prev} next={next} seriesNav={seriesNav} />
+        </Rail>
+      </PageBoundary>
     </>
   );
 }

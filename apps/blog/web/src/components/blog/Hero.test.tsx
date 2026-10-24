@@ -2,10 +2,16 @@
  * 홈 히어로 — 이름과 버튼 셋. 바깥 채널 버튼은 셸의 `SOCIAL_LINKS`(헤더·푸터 아이콘과 같은 목록)를
  * 그리므로, 목록에서 빠지거나 가는 곳의 종류(새 탭 여부)가 갈리면 여기서 드러난다.
  */
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { SOCIAL_LINKS } from '@/src/components/shellLinks';
 import { Hero } from './Hero';
+
+// 링크가 현재 경로로 이동 방향을 고른다(TransitionLink) — 이 컴포넌트가 놓이는 홈에 둔다.
+vi.mock('next/navigation', async () => {
+  const { HOME_PATH } = await import('@/src/shared/routes');
+  return { usePathname: () => HOME_PATH };
+});
 
 describe('Hero', () => {
   test('페이지 제목(h1)은 이름이다', () => {

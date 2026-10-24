@@ -1,10 +1,10 @@
-import Link from 'next/link';
 import { css } from '@blog/styled-system/css';
 import type { PostData } from '@blog/content/client';
 import { archivePath } from '@blog/content/client';
 import { fmtDate } from '@blog/content/client';
 import { seriesBadge } from '@/src/components/seriesBadge';
 import { PostDetailShared } from '@/src/components/shared/PostSharedElement';
+import { TransitionLink } from '@/src/components/shared/TransitionLink';
 
 interface PostHeaderProps {
   post: PostData;
@@ -72,9 +72,12 @@ export const PostHeader = ({ post, seriesIndex }: PostHeaderProps) => {
         {tags.map((t, i) => (
           <span key={t}>
             {i > 0 && ' '}
-            <Link href={archivePath({ tag: t })} className={tagLinkStyle}>
+            <TransitionLink
+              href={archivePath({ tag: t })}
+              className={tagLinkStyle}
+            >
               #{t}
-            </Link>
+            </TransitionLink>
           </span>
         ))}
       </p>

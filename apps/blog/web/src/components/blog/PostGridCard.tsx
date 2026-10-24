@@ -1,12 +1,11 @@
 import { OG_DEFAULT_IMAGE } from '@/content.values.mts';
-import Link from 'next/link';
 import { css } from '@blog/styled-system/css';
 import type { PostSummary } from '@blog/content/client';
 import { postPath } from '@blog/content/client';
 import { resolveThumbnailSrc } from '@blog/content/client';
 import { fmtDate, fmtReadMin } from '@blog/content/client';
 import { PostCardShared } from '@/src/components/shared/PostSharedElement';
-import { POST_OPEN_TRANSITION_TYPE } from '@/src/shared/viewTransitions';
+import { TransitionLink } from '@/src/components/shared/TransitionLink';
 import { Label } from './Label';
 import { tagPillStyle } from './tagPillStyle';
 
@@ -29,10 +28,10 @@ export const PostGridCard = ({ post, priority = false }: PostGridCardProps) => {
   const thumb = resolveThumbnailSrc(post, OG_DEFAULT_IMAGE);
   const readMin = fmtReadMin(post.readMin);
   return (
-    <Link
+    <TransitionLink
       href={postPath(post.slug)}
       // 이 카드의 커버·제목이 글 상세로 이어지는 이동이라는 표시(PostCardShared).
-      transitionTypes={[POST_OPEN_TRANSITION_TYPE]}
+      opensPost
       className={css({
         display: 'flex',
         flexDir: 'column',
@@ -128,6 +127,6 @@ export const PostGridCard = ({ post, priority = false }: PostGridCardProps) => {
           )}
         </div>
       </div>
-    </Link>
+    </TransitionLink>
   );
 };

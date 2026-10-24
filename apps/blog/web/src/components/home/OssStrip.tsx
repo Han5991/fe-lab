@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { css } from '@blog/styled-system/css';
 // leaf import — 홈에서만 쓰는 프레젠테이션 컴포넌트라 배럴을 물릴 이유가 없다.
 import { postPath } from '@blog/content/client';
@@ -7,6 +6,7 @@ import {
   mergedPrCount,
   OSS_CONTRIBUTIONS,
 } from '@/src/components/ossContributions';
+import { TransitionLink } from '@/src/components/shared/TransitionLink';
 
 /**
  * 오픈소스 기여를 칩 한 줄로만 노출합니다. 네비에서는 뺐고(SPEC §1), 자세한
@@ -52,9 +52,9 @@ export const OssStrip = () => {
         </li>
         {OSS_CONTRIBUTIONS.map(item => (
           <li key={item.slug}>
-            <Link href={postPath(item.slug)} className={projectChip}>
+            <TransitionLink href={postPath(item.slug)} className={projectChip}>
               {item.project}
-            </Link>
+            </TransitionLink>
           </li>
         ))}
       </ul>

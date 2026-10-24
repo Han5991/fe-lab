@@ -1,12 +1,11 @@
 import { OG_DEFAULT_IMAGE } from '@/content.values.mts';
-import Link from 'next/link';
 import { css, cx, sva } from '@blog/styled-system/css';
 import type { RecipeVariant } from '@blog/styled-system/css';
 import type { PostSummary } from '@blog/content/client';
 import { postPath, resolveThumbnailSrc } from '@blog/content/client';
 
 import { PostCardShared } from '@/src/components/shared/PostSharedElement';
-import { POST_OPEN_TRANSITION_TYPE } from '@/src/shared/viewTransitions';
+import { TransitionLink } from '@/src/components/shared/TransitionLink';
 import { cardLinkRaw, cardRoot, coverFrameRaw, coverImage } from './cardParts';
 import { HiddenPostBadge } from './HiddenPostBadge';
 import { PostMeta } from './PostMeta';
@@ -99,14 +98,14 @@ export const PostCard = ({
       <div className={classes.body}>
         <PostCardShared part="title" slug={post.slug}>
           <h3>
-            <Link
+            <TransitionLink
               href={postPath(post.slug)}
               // 이 카드의 커버·제목이 글 상세로 이어지는 이동이라는 표시(PostCardShared).
-              transitionTypes={[POST_OPEN_TRANSITION_TYPE]}
+              opensPost
               className={classes.link}
             >
               {post.title}
-            </Link>
+            </TransitionLink>
             {/* dev에서만 — draft·예약 글 표시(프로덕션에서는 아무것도 렌더되지 않는다). */}
             <HiddenPostBadge post={post} />
           </h3>

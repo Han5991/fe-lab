@@ -5,10 +5,16 @@
  * 이때 `/posts/?tag=...` 링크가 같이 사라지면 아카이브 태그 필터로 들어가는
  * 유일한 진입점이 끊깁니다. 그래서 링크 유지가 이 파일의 핵심 회귀 테스트입니다.
  */
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { PostHeader } from './PostHeader';
 import type { PostData } from '@blog/content/client';
+
+// 링크가 현재 경로로 이동 방향을 고른다(TransitionLink) — 이 컴포넌트가 놓이는 글 상세에 둔다.
+vi.mock('next/navigation', async () => {
+  const { postPath } = await import('@blog/content/client');
+  return { usePathname: () => postPath('some-post') };
+});
 
 const basePost: PostData = {
   slug: 'next-js-ecs-deploy',

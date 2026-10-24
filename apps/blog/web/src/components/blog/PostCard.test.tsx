@@ -1,10 +1,16 @@
 /**
  * 글 카드 — 카드 하나가 링크 하나(제목)이고, 커버는 장식이다.
  */
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import type { PostSummary } from '@blog/content/client';
 import { PostCard } from './PostCard';
+
+// 링크가 현재 경로로 이동 방향을 고른다(TransitionLink) — 이 컴포넌트가 놓이는 홈에 둔다.
+vi.mock('next/navigation', async () => {
+  const { HOME_PATH } = await import('@/src/shared/routes');
+  return { usePathname: () => HOME_PATH };
+});
 
 /** href는 postPath 계약 그대로(후행 슬래시 포함) — vitest.setup.ts가 next.config를 비춰 둔다. */
 const hrefOf = (el: Element) => el.getAttribute('href');

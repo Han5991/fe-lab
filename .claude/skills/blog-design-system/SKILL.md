@@ -1,6 +1,6 @@
 ---
 name: blog-design-system
-description: 블로그(apps/blog/web)와 blog-preset.ts의 시각 시스템 단일 출처 — 컬러 semanticToken(라이트/다크, 대비비, 잉크에서 파생한 accent와 색 대신 쓰는 구분 수단), 타이포그래피(mono/sans를 어디에 쓰는지, 글자 역할 textStyles), 라운드·보더, 그림자(떠 있는 표면의 overlay.* — 판정 기준과 표면별 단계), 모션(Astryx 시간·곡선 토큰, 움직임 줄이기, 페이지 전환·공유 요소(글 카드 ↔ 글 상세)·오버레이·누름 적용표), 레일 그리드(railWide/railText/railForm와 거터, 섹션 간격), 셸(헤더·푸터의 슬롯·반응형·헤더 높이 파생), 버튼(actionButton·iconButton의 tone·size)과 칩, 카드(글 카드·썸네일 행·메타 줄 — 링크 하나 구조, 커버 비율, 이미지 우선순위), 홈 구성, 코드 블록 테마(code.* 토큰, rehypeCodeMeta 순서). 블로그 UI 컴포넌트나 packages/@blog/preset/src/blog-preset.ts를 고칠 때, 색·간격·폭·글꼴을 정하거나 "이 값 어디서 왔지" 싶을 때 사용한다. 글 본문에 넣는 커스텀 태그(diagram·dialogue·metrics·callout 등)는 이 스킬이 아니라 blog-components 스킬을 볼 것.
+description: 블로그(apps/blog/web)와 blog-preset.ts의 시각 시스템 단일 출처 — 컬러 semanticToken(라이트/다크, 대비비, 잉크에서 파생한 accent와 색 대신 쓰는 구분 수단), 타이포그래피(mono/sans를 어디에 쓰는지, 글자 역할 textStyles), 라운드·보더, 그림자(떠 있는 표면의 overlay.* — 판정 기준과 표면별 단계), 모션(Astryx 시간·곡선 토큰, 움직임 줄이기, 페이지 전환(이동 방향 — 깊이 들어가면 왼쪽으로·돌아오면 오른쪽으로 미끄러짐)·공유 요소(글 카드 ↔ 글 상세)·오버레이·누름 적용표), 레일 그리드(railWide/railText/railForm와 거터, 섹션 간격), 셸(헤더·푸터의 슬롯·반응형·헤더 높이 파생), 버튼(actionButton·iconButton의 tone·size)과 칩, 카드(글 카드·썸네일 행·메타 줄 — 링크 하나 구조, 커버 비율, 이미지 우선순위), 홈 구성, 코드 블록 테마(code.* 토큰, rehypeCodeMeta 순서). 블로그 UI 컴포넌트나 packages/@blog/preset/src/blog-preset.ts를 고칠 때, 색·간격·폭·글꼴을 정하거나 "이 값 어디서 왔지" 싶을 때 사용한다. 글 본문에 넣는 커스텀 태그(diagram·dialogue·metrics·callout 등)는 이 스킬이 아니라 blog-components 스킬을 볼 것.
 ---
 
 # 블로그 디자인 시스템
@@ -271,7 +271,7 @@ preset-panda의 durations·easings·animations·keyframes를 빼서 `transitionD
 | 토큰                  | 값                               | 쓰는 곳                                                                |
 | :-------------------- | :------------------------------- | :--------------------------------------------------------------------- |
 | `durations.fast`      | 175ms                            | hover·색·누름·표식(차례 하이라이트)·나가는 페이지                      |
-| `durations.fastMax`   | 230ms                            | 테마 크로스페이드 · `<details>` 펼침                                   |
+| `durations.fastMax`   | 230ms                            | 테마 크로스페이드 · `<details>` 펼침 · 옆에서 들어오는 페이지          |
 | `durations.medium`    | 410ms                            | 바텀시트·시트 스크림 · 들어오는 페이지                                 |
 | `durations.mediumMax` | 550ms                            | 검색 다이얼로그 등장 · 스켈레톤 왕복                                   |
 | `easings.standard`    | `cubic-bezier(0.24, 1, 0.4, 1)`  | 기본 — 감속 곡선이라 등장·hover에 맞다                                 |
@@ -300,7 +300,7 @@ preset-panda의 durations·easings·animations·keyframes를 빼서 `transitionD
 
 | 무엇              | 움직임                                                                                                                        |
 | :---------------- | :---------------------------------------------------------------------------------------------------------------------------- |
-| 페이지 전환       | `PageBoundary`(`<ViewTransition>`) — 나감 투명도 1→0(fast·exit), 들어옴 투명도 0→1과 8px 상승(medium·standard)                |
+| 페이지 전환       | `PageBoundary`(`<ViewTransition>`) — 이동의 방향(아래 전환 표)대로 옆으로 밀리거나, 방향이 없으면 제자리 페이드               |
 | 공유 요소 — 커버  | 카드 커버 ↔ 상세 히어로. 자리·크기·모서리 medium·standard. 바닥은 상세 스냅샷, 카드 스냅샷만 걷힘·나타남(아래)                |
 | 공유 요소 — 제목  | 카드 제목 ↔ 상세 h1. 자리 medium·standard, 글자는 늘이지 않고 나감(fast) 뒤 들어옴(fast 지연·fastMax)                         |
 | 헤더              | `view-transition-name`으로 따로 찍어 페이지 위에 불투명 지면으로 그린다(흐림 없음). 전환 중엔 클릭을 받지 않는다              |
@@ -312,20 +312,75 @@ preset-panda의 durations·easings·animations·keyframes를 빼서 `transitionD
 | admin 글 아코디언 | 셰브론 회전만(fast). 패널은 높이를 애니메이션하지 않고 바로 열린다                                                            |
 | 스켈레톤(admin)   | 투명도 1↔0.5 왕복(mediumMax, linear). 움직임 줄이기면 멈춘다                                                                  |
 
+**페이지 전환 — 이동의 방향** — 앱의 계층(홈 0 · 섹션 1 · 글 2)에서 더 깊이 들어가면 내용이 왼쪽으로
+밀리고 새 내용이 오른쪽에서 들어오며, 위로 돌아오면 반대다(Next view-transitions 가이드의 "directional
+motion"). 같은 깊이는 형제 순서(이전·다음)가 있을 때만 방향이 있고, 나머지와 검색 결과는 제자리 페이드다.
+
+| 이동                                                                                                                  | type                        | 효과                                                                                                                   |
+| :-------------------------------------------------------------------------------------------------------------------- | :-------------------------- | :--------------------------------------------------------------------------------------------------------------------- |
+| 홈 → `/posts`·`/series`·`/about`(헤더·"더 보기"·히어로·푸터), 목록·`/about` → 글, 다음 글·다음 편                     | `nav-forward`               | 나감: 투명도 1→0과 왼쪽으로 32px(fast·exit). 들어옴: fast 뒤에 투명도 0→1과 오른쪽 32px에서 제자리로(fastMax·standard) |
+| 카드·목록 행 → 글                                                                                                     | `post-open` + `nav-forward` | 위 + 공유 요소(커버·제목) 모핑(아래 공유 요소 절)                                                                      |
+| 글 → 헤더 '글'·'시리즈'·워드마크·태그·"시리즈 목록 →", 섹션 → 워드마크, 이전 글·이전 편                               | `nav-back`                  | 방향만 반대(나감은 오른쪽으로, 들어옴은 왼쪽에서). 그 글의 카드가 화면에 있으면 공유 요소가 거꾸로 모핑                |
+| 헤더 형제(`/posts` ↔ `/series` ↔ `/about`), 섹션 → 필터된 목록(`/series` → `archivePath`), 검색 결과(깊이와 상관없이) | 없음                        | 제자리 페이드 — 나감 1→0(fast·exit), 들어옴 0→1과 8px 상승(medium·standard)                                            |
+
+- **규칙은 한 곳이다** — `src/shared/viewTransitions.ts`의 `navTransitionType(출발, 도착, 형제 순서)`.
+  깊이가 다르면 깊이가 정하고, 같으면 형제 순서(이전·다음)가 있을 때만 정한다. 깊이가 순서보다 먼저라
+  시리즈 마지막 편의 "시리즈 목록 →"(오른쪽 자리)도 헤더 '시리즈'와 같은 `nav-back`이다 — 방향은
+  링크가 아니라 이동의 성질이다. 깊이는 경로 세그먼트 수가 아니다(폴더 slug도 글 하나)
+- **링크는 방향을 적지 않는다** — 사이트 안 링크는 `TransitionLink`(`src/components/shared/TransitionLink.tsx`)를
+  쓰고, 그것이 현재 경로(`usePathname`)와 도착 경로로 type을 단다. 링크가 주는 것은 사실뿐이다: 형제
+  순서(`order` — 이전·다음 카드만. "시리즈 목록 →"처럼 형제가 아닌 카드는 자리만 다음 쪽이고 순서를
+  주지 않는다)와 글을 여는 카드인지(`opensPost`). `next/link`를 바로 쓰면 그 이동만 에러 없이 페이드로
+  남으므로 lint가 막는다(`eslint.config.mts`의 `NEXT_LINK_DIRECT`). 허용은 `NEXT_LINK_FILES`뿐이다: 검색
+  다이얼로그(결과는 모달을 닫으며 가는 이동 — 페이드), `ErrorFallback`(그것을 그리는 에러 경계에는
+  페이지 전환 경계가 없다 — 아래), admin(공개 계층 밖의 도구 화면)
+- **나감과 들어옴을 겹치지 않는다** — 나가는 쪽이 fast·exit로 걷힌 뒤 들어오는 쪽이 fast 지연·
+  fastMax·standard로 들어온다. 투명도를 순서대로 두는 것은 가이드와 같지만(나가는 내용이 시선을 다투지
+  않게), 가이드는 양쪽 슬라이드를 0ms부터 함께 돌리고 여기서는 들어오는 쪽의 자리도 지연한다 —
+  standard는 앞에 몰린 곡선이라 처음부터 돌리면 보일 때 이미 거리의 대부분을 와 있어 방향이 안 보이고,
+  같은 쪽으로 미끄러지는 두 페이지의 글자가 겹쳐 보인다. 공유 요소 제목과 같은 박자이고, 합(405ms)이
+  공유 요소 그룹(medium)과 거의 같아 카드에서 열 때 커버·제목·본문이 함께 자리에 닿는다. 바뀌는 순간
+  거의 빈 지면이 한두 프레임 보인다
+- **카드에서 열 때도 방향을 단다** — 카드 열기만 페이드로 두면 새 글의 본문이 나가는 목록 위에 겹쳐
+  보였다(실측 프레임 비교). 같은 이동(목록 → 글)이 카드로 열든 인기 글 레일로 열든 같은 방향이어야 하기도
+  하다
+- **거리 32px** — 들어오는 쪽이 지연 뒤에 출발해 거리 전부가 눈에 보인다. Next 가이드의 60px은 들어오는
+  쪽이 처음부터 미끄러져 보이는 몫이 40px 안팎이고, Material shared axis는 30dp다. 방향 없는 페이드의
+  8px 상승의 네 배라 방향이 읽히고, 375px 화면에서도 폭의 9%다. 값은 `panda.config.ts`의 `NAV_SLIDE_PX`
+  한 곳이다
+- **헤더는 미끄러지지 않는다** — 이름이 따로라 페이지 그룹 밖이고, 테마 전환과 같은 크로스페이드
+  (fastMax·standard)다. 공유 요소와 헤더의 쌓는 순서(`VT_STACK`)는 그대로다
+- **라우트의 내용은 경계 안에** — 404(`not-found.tsx`)도 페이지처럼 `PageBoundary`에 담고, admin은
+  영역 전체를 서버 레이아웃(`src/app/admin/layout.tsx`)의 경계 하나에 담는다(영역을 드나드는 이동만
+  움직이고 admin 안의 이동은 움직이지 않는다). 경계 밖 내용은 첫 프레임에 사라지는데 방향 있는 이동은
+  들어오는 페이지가 fast 뒤에 나타나서, 경계 없는 화면에서 떠나면 그 사이 헤더만 남은 빈 지면이
+  보였다(404 → 헤더 '글', 175ms). `PageBoundary`는 서버 컴포넌트에서만 쓴다 — 클라이언트 파일이 쓰면 그
+  코드와 `VIEW_TRANSITION` 그룹 객체가 클라이언트 그래프에 들어와 공개 페이지 첫 로드가 무거워진다. 그래서
+  클라이언트 컴포넌트인 에러 경계(`error.tsx`·`global-error.tsx`)는 경계 없이 뒀다(실측 +314B gzip)
+- **경계 밖에 남는 것** — 글 하단 이전·다음 카드는 경계(`PageBoundary`)를 하나 더 둬서 글과 함께 밀린다.
+  경계 밖(푸터·고정 버튼)은 React가 루트 스냅샷을 투명하게 두는 이동(경계 밖에 바뀐 것이 없다고 볼
+  때)에서 첫 프레임에 사라진다 — 방향과 상관없는 기존 동작이다
+- 하드 로드·해시 이동·`/posts` 안의 필터(쿼리만 바꾸는 얕은 갱신이라 내비게이션이 아니다)·브라우저
+  뒤로·앞으로 가기(공유 요소 절)에는 페이지 전환 자체가 없고, 테마 전환은 루트·헤더만 돈다(방향
+  없음). 움직임 줄이기면 시간·지연이 0.01ms라 거리가 있어도 즉시 바뀐다
+
 **공유 요소(글 카드 ↔ 글 상세)** — 목록의 썸네일이 상세로 그대로 이어지고 주변은 페이지 전환대로
-페이드한다(ssgoi hero와 같은 구성, 라이브러리 없이 React `<ViewTransition>`). 이름·클래스·transition
+움직인다(ssgoi hero와 같은 구성, 라이브러리 없이 React `<ViewTransition>`). 이름·클래스·transition
 type은 `src/shared/viewTransitions.ts`, 감싸개는 `src/components/shared/PostSharedElement.tsx`의 둘이다.
 
 - **짝** — 커버(카드의 커버 틀·`/posts` 카드 이미지 ↔ `PostHero`의 썸네일 이미지)와 제목(카드·목록
   행의 h3 ↔ `PostHeader`의 h1). 다이어그램 히어로·히어로 없는 글은 제목만 짝이다. 쓰는 곳은 홈 카드
   두 변형·썸네일 행·`/posts` 카드·글 목록 행(`PostListRow` — `/posts` 목록 보기와 `/series`, 제목만).
-  새 카드는 `PostCardShared`로 감싸고 제목 링크에 `transitionTypes={[POST_OPEN_TRANSITION_TYPE]}`를 단다
+  새 카드는 `PostCardShared`로 감싸고 제목 링크를 `<TransitionLink opensPost>`로 둔다(글을 여는 type과
+  방향 `nav-forward`가 함께 붙는다)
 - **짝이 되는 이동은 둘뿐이다** — 카드를 눌러 글을 열 때(링크의 transition type)와, 그 글의 상세에서
   링크(헤더 내비·워드마크·태그·시리즈 목록)로 목록에 돌아갈 때(상세가 마운트 동안 "열린 글"로 적는다).
   목록 → 목록 이동(홈 → `/posts`)에서는 같은 글의 카드끼리도 짝이 되지 않는다 — 되면 화면의 카드
-  열네 개가 한꺼번에 날아다녔다(실측). 검색·인기 글 레일처럼 카드가 아닌 링크로 열면 페이드만 한다
+  열네 개가 한꺼번에 날아다녔다(실측). 검색·인기 글 레일처럼 카드가 아닌 링크로 열면 짝 없이 페이지
+  전환만 한다(검색은 페이드, 인기 글 레일은 `nav-forward`)
 - **양쪽이 화면 안일 때만** — React가 뷰포트 밖 요소의 이름을 거둔다. 상세에서 `/posts`로 돌아갔는데
-  그 글의 카드가 화면 밖이면 상세의 커버·제목은 나가는 페이지와 같이 사라진다(`:only-child` 규칙).
+  그 글의 카드가 화면 밖이면 상세의 커버·제목은 나가는 페이지와 같은 fast·exit로 사라진다(`:only-child`
+  규칙 — 따로 찍힌 스냅샷이라 페이지와 함께 옆으로 밀리지는 않는다).
   카드 쪽도 같다 — 홈 첫 화면에서 쇼케이스 제목이 화면 아래에 있으면(데스크톱 높이 800 안팎) 커버만
   짝이 되고 제목은 페이지와 같이 바뀐다
 - **커버는 늘이지도 겹치지도 않는다** — 카드는 원본의 가운데를 잘라 보이므로, 상세 스냅샷(원본
@@ -362,9 +417,10 @@ type은 `src/shared/viewTransitions.ts`, 감싸개는 `src/components/shared/Pos
 **Astryx와 일부러 다르게 간 곳**
 
 - **페이지 전환과 공유 요소는 블로그 것이다.** Astryx에는 페이지 전환이 없다. 링크 이동에서만 돌고,
-  브라우저 뒤로·앞으로 가기에는 전환이 아예 없다(스크롤 복원만 일어난다 — 공유 요소 절). 그래서
-  방향(앞·뒤로 미끄러짐)은 담지 않는다 — 넣어도 링크 이동에서만 보인다. 들어오는 쪽의 8px는 Astryx
-  spacing-2(Toast 등장 거리)다
+  브라우저 뒤로·앞으로 가기에는 전환이 아예 없다(스크롤 복원만 일어난다 — 공유 요소 절) — 방향(앞·뒤로
+  미끄러짐)도 링크 이동에서만 보인다. 시간·곡선은 Astryx 토큰 그대로이고(나감 fast·exit, 들어옴 fast
+  지연·fastMax·standard), 방향 없는 페이드의 8px 상승은 Astryx spacing-2(Toast 등장 거리)다. 방향의 32px는
+  Astryx에 대응하는 값이 없어 Next 가이드와 Material shared axis에서 정했다(방향 절)
 - **스켈레톤의 쉬는 투명도가 다르다.** Astryx는 .25↔1이지만 자리표시 면(`paper.100`)이 지면과 거의
   같은 밝기라 .25에서는 보이지 않는다 — 1↔.5로 왕복한다. 곡선도 Astryx의 `steps(10, end)`가 아니라
   `linear`(곡선 토큰을 셋으로 둔다)이고, 1초 지연은 두지 않았다
@@ -444,7 +500,8 @@ type은 `src/shared/viewTransitions.ts`, 감싸개는 `src/components/shared/Pos
 - **GitHub·RSS는 아이콘으로만 한 번** 나온다 — 헤더와 푸터의 아이콘이 같은 목록(`SOCIAL_LINKS`)을
   그리고, 글자 링크 목록(`FOOTER_LINKS`)에는 없다
 - 셸 링크는 가는 곳의 종류(`kind`: route · file · external) 하나로 그리는 법이 갈린다 — 사이트 라우트는
-  `next/link`, RSS 같은 정적 파일은 맨 `<a>`(새 탭 아님), 바깥 사이트(GitHub · LinkedIn)는 새 탭
+  `TransitionLink`(`next/link`에 이동 방향을 단다 — 모션 절), RSS 같은 정적 파일은 맨 `<a>`(새 탭 아님),
+  바깥 사이트(GitHub · LinkedIn)는 새 탭
 
 ## 버튼
 
@@ -509,7 +566,8 @@ Astryx BlogCard·BlogShowcase의 블로그 판. `src/components/blog/`의 `PostC
 - **커버 틀과 제목 h3는 글 상세로 이어지는 공유 요소다**(모션 절) — 커버는 `<img>`가 아니라 틀
   (라운드·hairline)째 `PostCardShared`로 감싼다. 이름이 붙은 요소는 조상의 자르기 없이 따로 찍혀,
   이미지에 이름을 달면 틀의 라운드가 빠져 전환 첫 프레임에 모서리가 각진다. 그래서 틀이 없는
-  `/posts` 카드는 이미지가 위 모서리 라운드를 직접 든다. 제목 링크는 글을 여는 transition type을 단다
+  `/posts` 카드는 이미지가 위 모서리 라운드를 직접 든다. 제목 링크는 `<TransitionLink opensPost>`다(글을
+  여는 type과 방향)
 
 ## 홈
 

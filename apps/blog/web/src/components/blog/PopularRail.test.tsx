@@ -16,6 +16,12 @@ const { getTopPosts } = vi.hoisted(() => ({
 }));
 vi.mock('@/src/domain/analytics', () => ({ getTopPosts }));
 
+// 링크가 현재 경로로 이동 방향을 고른다(TransitionLink) — 이 컴포넌트가 놓이는 글 목록에 둔다.
+vi.mock('next/navigation', async () => {
+  const { POSTS_PATH } = await import('@blog/content/client');
+  return { usePathname: () => POSTS_PATH };
+});
+
 import { PopularRail } from './PopularRail';
 
 const post = (slug: string, title: string): PostSummary => ({

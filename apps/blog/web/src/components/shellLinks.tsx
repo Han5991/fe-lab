@@ -1,15 +1,15 @@
 import { RSS_PATH } from '@blog/content/client';
 import { AUTHOR_GITHUB } from '@/content.values.mts';
 import { Rss } from 'lucide-react';
-import Link from 'next/link';
 import type { ReactNode } from 'react';
 
 import { GithubIcon } from './GithubIcon';
+import { TransitionLink } from './shared/TransitionLink';
 
 /**
  * 셸 링크가 가는 곳 — 그리는 법이 `kind` 하나로 갈린다(`ShellLink`).
  *
- * - `route` — 사이트 안 Next 라우트. `next/link`
+ * - `route` — 사이트 안 Next 라우트. `TransitionLink`(앱의 계층으로 고른 방향을 단 `next/link`)
  * - `file` — 같은 도메인의 정적 파일(RSS). 맨 `<a>`다 — `next/link`면 클라이언트 내비게이션이 RSC
  *   페이로드를 찾는다. 같은 사이트라 새 탭도 아니다
  * - `external` — 바깥 사이트. 새 탭에서 열고 opener를 끊는다
@@ -47,9 +47,9 @@ export const ShellLink = ({
 }: ShellLinkProps) => {
   if (kind === 'route') {
     return (
-      <Link href={href} aria-label={ariaLabel} className={className}>
+      <TransitionLink href={href} aria-label={ariaLabel} className={className}>
         {children}
-      </Link>
+      </TransitionLink>
     );
   }
   return (

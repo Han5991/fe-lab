@@ -1,9 +1,9 @@
 import { POSTS_PATH } from '@blog/content/client';
 import { ArrowRight } from 'lucide-react';
-import Link from 'next/link';
 import { css } from '@blog/styled-system/css';
 
 import { actionButton } from '@/src/components/actionButton';
+import { TransitionLink } from '@/src/components/shared/TransitionLink';
 import {
   SOCIAL_LINKS,
   ShellLink,
@@ -56,13 +56,13 @@ export const Hero = () => {
           mt: '2',
         })}
       >
-        <Link
+        <TransitionLink
           href={POSTS_PATH}
           className={actionButton({ tone: 'solid', size: 'lg' })}
         >
           모든 글 보기
           <ArrowRight size={16} />
-        </Link>
+        </TransitionLink>
         {SOCIAL_LINKS.map(({ label, href, kind }) => (
           <ShellLink
             key={label}

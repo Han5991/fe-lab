@@ -7,7 +7,7 @@
  *
  * jsdom에는 View Transitions가 없어 React가 이름을 DOM에 붙이지 않는다. `<ViewTransition>`과
  * `next/link`를 받은 props를 data 속성으로 드러내는 상자로 바꿔 끼워, 이름이 **어느 요소에** 붙는지와
- * 카드 링크가 여는 type을 다는지를 본다.
+ * 카드 링크가 여는 type(과 목록 → 글의 방향)을 다는지를 본다.
  */
 import { describe, expect, test, vi } from 'vitest';
 import { act, render } from '@testing-library/react';
@@ -22,6 +22,7 @@ import { PostThumbRow } from '@/src/components/blog/PostThumbRow';
 import { PostHeader } from '@/src/components/post/PostHeader';
 import { PostHero } from '@/src/components/post/PostHero';
 import {
+  NAV_TRANSITION,
   POST_OPEN_TRANSITION_TYPE,
   POST_SHARED,
   POST_SHARED_SIDE,
@@ -44,6 +45,12 @@ vi.mock('react', async () => {
       </div>
     ),
   };
+});
+
+// 카드 링크는 현재 경로로 이동 방향을 고른다(TransitionLink) — 카드가 놓이는 목록(홈)에 둔다.
+vi.mock('next/navigation', async () => {
+  const routes = await import('@/src/shared/routes');
+  return { usePathname: () => routes.HOME_PATH };
 });
 
 vi.mock('next/link', () => ({
@@ -185,11 +192,11 @@ describe('글 카드 → 글 상세 공유 요소', () => {
           default: 'none',
         });
       }
-      // 카드의 링크는 하나이고(cardParts.ts), 그 링크가 여는 type을 단다.
+      // 카드의 링크는 하나이고(cardParts.ts), 그 링크가 여는 type을 목록 → 글의 방향과 함께 단다.
       const links = container.querySelectorAll('a');
       expect(links).toHaveLength(1);
       expect(links[0]?.dataset['transitionTypes']).toBe(
-        JSON.stringify([POST_OPEN_TRANSITION_TYPE]),
+        JSON.stringify([POST_OPEN_TRANSITION_TYPE, NAV_TRANSITION.forward]),
       );
     },
   );
