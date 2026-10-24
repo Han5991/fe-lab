@@ -328,6 +328,11 @@ export const BUNDLE_GUARDS = [
  * 빠져 −53.2KB다. 글 상세는 목차 시트·맨 위로 버튼의 motion도 빠져 199.3KB(−52.6KB)지만 `/posts/` 줄은
  * 그룹 최대인 글 목록(필터 시트가 아직 motion을 쓴다)이 정한다. CSS는 모션 토큰·전환 규칙이 더해져
  * +0.4~0.5KB(최대 27.8KB) — 예산은 그대로. JS 예산은 새 최대에 ~5% 여유로 내렸다.
+ * 2026-10-24 서버 페이지가 컴포넌트를 배럴(`components/blog/index.ts`, 삭제) 대신 제 경로로 열게 한
+ * 빌드로 `/`·`/about/`을 다시 갱신: 그 배럴이 클라이언트 모듈(글 목록 아카이브·필터·인기 레일)까지
+ * 재수출해, 홈은 Hero·대표글·행을, 소개는 Label 하나를 열었는데도 그 클라이언트 청크 셋(js 파일
+ * 14 → 11개)이 첫 로드에 실렸다 — 239.6 → 176.1KB(−63.5KB). 두 줄을 새 최대에 ~5% 여유(185)로 내렸다.
+ * 같은 빌드에서 `/posts/`(최대는 글 목록)도 239.6 → 239.2KB(−0.4) — 예산은 그대로.
  * 그룹이 새로 생기면(새 라우트) 예산이 없어서, 라우트가
  * 사라지면 예산이 죽어서, 측정 최대가 상한의 80% 아래로 내려가면 예산이 느슨해서
  * (`budget-slack`) 빌드가 실패한다.
@@ -338,12 +343,12 @@ export const BUNDLE_GUARDS = [
  * 걸리면 같은 방식으로 내린다 — 여유가 크게 남으면 회귀가 그 안에 숨는다.
  */
 export const BUNDLE_BUDGETS = [
-  // 239.6 KB / 27.1 KB
-  { group: '/', jsGzipKB: 252, cssGzipKB: 30 },
-  // 239.6 KB / 27.8 KB — 목록과 글 상세 46쪽의 최대(목록. mermaid·Giscus는 지연 로드라 밖)
+  // 176.1 KB / 27.1 KB
+  { group: '/', jsGzipKB: 185, cssGzipKB: 30 },
+  // 239.2 KB / 27.8 KB — 목록과 글 상세 46쪽의 최대(목록. mermaid·Giscus는 지연 로드라 밖)
   { group: '/posts/', jsGzipKB: 252, cssGzipKB: 30 },
-  // 239.6 KB / 27.1 KB
-  { group: '/about/', jsGzipKB: 252, cssGzipKB: 30 },
+  // 176.1 KB / 27.1 KB
+  { group: '/about/', jsGzipKB: 185, cssGzipKB: 30 },
   // 176.1 KB / 27.1 KB
   { group: '/series/', jsGzipKB: 185, cssGzipKB: 30 },
   // 176.1 KB / 27.1 KB
