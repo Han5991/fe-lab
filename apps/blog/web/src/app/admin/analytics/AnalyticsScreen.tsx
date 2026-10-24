@@ -26,7 +26,7 @@ import { SegmentedControl } from '@/src/components/admin/SegmentedControl';
 import { LoadingPlaceholder } from '@/src/components/shared/LoadingPlaceholder';
 import { siteHeaderStyle } from '@/src/components/siteHeader';
 import { useModalDialog } from '@/src/components/useModalDialog';
-import { useAdminPostTags } from '@/src/hooks/useAdminPostTags';
+import { useAdminPostsWithTags } from '@/src/hooks/useAdminPostTags';
 import { useAdminDashboardData } from '@/src/hooks/useAdminViews';
 import { usePrefetchPostDetailStats } from '@/src/hooks/usePostDetailStats';
 import {
@@ -301,20 +301,20 @@ interface InspectorBodyProps {
 }
 
 /**
- * 고른 글의 통계 — 데이터 구독(대시보드 데이터·태그)은 화면이 떠 있는 동안 여기 하나로 유지한다.
+ * 고른 글의 통계 — 데이터 구독(대시보드 데이터·태그, 한 번에 기다린다)은 화면이 떠 있는 동안 여기 하나로
+ * 유지한다.
  * admin 쿼리는 구독이 새로 붙을 때마다 다시 받으므로(`adminQueryDefaults`) 글을 고르고 닫을 때마다
  * 구독을 붙였다 떼면 그때마다 목록 전체를 다시 받는다 — 그래서 고른 글이 없어도(칼럼의 '고른 글
  * 없음', 닫힌 시트) 이 컴포넌트는 남아 아무것도 그리지 않는다.
  */
 function InspectorBody({ slug, mode, onClose }: InspectorBodyProps) {
-  const { data } = useAdminDashboardData();
-  const postTags = useAdminPostTags();
+  const { posts, tagsBySlug } = useAdminPostsWithTags();
   const titleId = useId();
 
   if (slug === null) return null;
 
-  const post = data.find(item => item.slug === slug);
-  const tags = postTags.get(slug);
+  const post = posts.find(item => item.slug === slug);
+  const tags = tagsBySlug.get(slug);
 
   // 대시보드 데이터는 인덱스에서 만든다 — 한쪽에만 있는 글은 없지만, 둘 다 있을 때만 통계를 그린다.
   const content =

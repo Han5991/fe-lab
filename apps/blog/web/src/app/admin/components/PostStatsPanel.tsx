@@ -247,7 +247,7 @@ function PostDistributions({ post }: { post: PostStatDetail }) {
 
 interface PostStatsPanelProps extends CloseProps {
   post: PostStatDetail;
-  /** 글 인덱스의 태그 — 대시보드 데이터에는 없다(`useAdminPostTags`). */
+  /** 글 인덱스의 태그 — 대시보드 데이터에는 없다(`useAdminPostsWithTags`). */
   tags: readonly string[];
   /** 제목 헤딩의 id — 좁은 화면의 시트(다이얼로그)가 이름으로 쓴다. */
   titleId: string;

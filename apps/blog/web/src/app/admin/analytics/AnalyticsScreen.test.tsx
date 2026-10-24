@@ -14,6 +14,7 @@ import {
 } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type * as Service from '@/src/domain/analytics/service';
+import { adminPostTagsQuery } from '@/src/hooks/useAdminPostTags';
 
 const {
   nav,
@@ -273,6 +274,24 @@ describe('AnalyticsScreen — 고른 글', () => {
     expect(
       screen.getByRole('link', { name: '조회수 분석 목록으로' }),
     ).toHaveAttribute('href', '/admin/analytics/');
+  });
+
+  // 대시보드 데이터가 온 뒤에야 태그를 기다리면 패널이 두 번 suspend해, 데이터가 React의 드러냄 throttle
+  // 창(300ms) 뒤에 오면(프로덕션) 패널이 목록보다 300ms 늦게 드러난다(실측).
+  test('패널은 글 태그를 대시보드 데이터와 함께 기다린다', async () => {
+    nav.pathname = '/admin/analytics/a/';
+    window.history.replaceState(null, '', nav.pathname);
+    getAllPostStats.mockReturnValueOnce(new Promise(() => undefined));
+    const client = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    renderScreen(client);
+
+    await waitFor(() =>
+      expect(client.getQueryState(adminPostTagsQuery.queryKey)?.status).toBe(
+        'success',
+      ),
+    );
   });
 
   // 대시보드를 기다린 뒤에 요청하면 패널이 왕복 둘을 차례로 기다린다.
