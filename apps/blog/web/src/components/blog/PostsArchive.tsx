@@ -245,6 +245,10 @@ const gridList = css({
   _loading: { visibility: 'hidden' },
 });
 
+// 피처는 목록의 첫 항목으로 한 줄을 다 쓴다 — 그 아래 카드 줄과의 간격은 그리드의 rowGap(40)이라 페이지
+// 칼럼의 gap(40)으로 떨어져 있던 때와 같다.
+const featureItem = css({ gridColumn: '1 / -1' });
+
 const rowList = css({
   listStyleType: 'none',
   p: '0',
@@ -273,8 +277,8 @@ interface PostsArchiveLayoutProps extends PostsArchiveProps {
 }
 
 /**
- * 컨트롤 묶음(검색·시리즈 칩·툴바·적용된 필터) 다음에 피처 카드와 목록이 온다. Fragment라 이 형제들이
- * 페이지 칼럼(flex col)의 항목이 된다.
+ * 컨트롤 묶음(검색·시리즈 칩·툴바·적용된 필터) 다음에 목록이 온다. Fragment라 이 형제들이 페이지
+ * 칼럼(flex col)의 항목이 된다.
  */
 const PostsArchiveLayout = ({
   posts,
@@ -295,17 +299,15 @@ const PostsArchiveLayout = ({
   });
 
   // 피처 카드는 아무것도 거르지 않은 최신순 카드 보기에서만 맨 앞 글을 크게 세운다. 검색어 공백 처리는
-  // 필터와 같다 — 공백만 친 검색어가 피처만 내리는 점프를 막는다. 피처로 세운 글은 그리드에서 빼 같은
-  // 글의 카드를 한 페이지에 두 번 그리지 않는다(공유 요소 이름이 겹치면 전환이 통째로 빠진다).
+  // 필터와 같다 — 공백만 친 검색어가 피처만 내리는 점프를 막는다. 피처는 "글 목록"의 첫 항목이다 —
+  // 목록 밖에 두면 목록 항목 수가 h2의 "N편"보다 하나 적고, 목록으로 건너뛴 낭독기 사용자가 최신 글을
+  // 놓친다. 글마다 카드가 하나라 공유 요소 이름이 겹치지 않는다(겹치면 전환이 통째로 빠진다).
   const showFeature =
     state.view === 'cards' &&
     state.sort === DEFAULT_SORT &&
     state.q.trim() === '' &&
     state.tags.length === 0 &&
     state.series === null;
-  const [first, ...rest] = filtered;
-  const feature = showFeature ? first : undefined;
-  const listed = feature ? rest : filtered;
 
   return (
     <>
@@ -352,39 +354,39 @@ const PostsArchiveLayout = ({
             모두 지우기
           </button>
         </div>
+      ) : state.view === 'cards' ? (
+        <ol
+          aria-label="글 목록"
+          aria-busy={pending || undefined}
+          className={gridList}
+        >
+          {filtered.map((post, index) => {
+            const isFeature = showFeature && index === 0;
+            return (
+              <li
+                key={post.slug}
+                className={isFeature ? featureItem : undefined}
+              >
+                {/* 첫 화면의 가장 큰 이미지 하나만 우선 받는다 — 피처가 있으면 피처, 없으면 그리드 첫 카드. */}
+                <PostCard
+                  post={post}
+                  variant={isFeature ? 'feature' : 'grid'}
+                  priority={index === 0}
+                />
+              </li>
+            );
+          })}
+        </ol>
       ) : (
-        <>
-          {/* 첫 화면의 가장 큰 이미지 하나만 우선 받는다 — 피처가 있으면 피처, 없으면 그리드 첫 카드. */}
-          {feature && <PostCard post={feature} variant="feature" priority />}
-          {listed.length > 0 &&
-            (state.view === 'cards' ? (
-              <ol
-                aria-label="글 목록"
-                aria-busy={pending || undefined}
-                className={gridList}
-              >
-                {listed.map((post, index) => (
-                  <li key={post.slug}>
-                    <PostCard
-                      post={post}
-                      variant="grid"
-                      priority={!feature && index === 0}
-                    />
-                  </li>
-                ))}
-              </ol>
-            ) : (
-              <ol
-                aria-label="글 목록"
-                aria-busy={pending || undefined}
-                className={rowList}
-              >
-                {listed.map(post => (
-                  <PostListRow key={post.slug} post={post} />
-                ))}
-              </ol>
-            ))}
-        </>
+        <ol
+          aria-label="글 목록"
+          aria-busy={pending || undefined}
+          className={rowList}
+        >
+          {filtered.map(post => (
+            <PostListRow key={post.slug} post={post} />
+          ))}
+        </ol>
       )}
     </>
   );

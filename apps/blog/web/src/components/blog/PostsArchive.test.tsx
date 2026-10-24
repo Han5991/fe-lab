@@ -59,9 +59,9 @@ const post = (
   ...extra,
 });
 
-// 실제 사이트 값과 다른 픽스처 — 시리즈 하나, 태그 둘.
+// 실제 사이트 값과 다른 픽스처 — 시리즈 하나, 태그 셋. 태그가 둘인 글은 최신 글 하나다(`featureCard`).
 const POSTS = [
-  post('b-post', '2026-02-01', ['react'], { series: 's1', readMin: 5 }),
+  post('b-post', '2026-02-01', ['react', 'ci'], { series: 's1', readMin: 5 }),
   post('a-post', '2026-01-01', ['vitest'], { readMin: 2 }),
 ];
 const SERIES = [{ id: 's1', title: '픽스처 연재', count: 1 }];
@@ -125,10 +125,18 @@ const searchbox = () => screen.getByRole('searchbox', { name: '글 검색' });
 const list = () => screen.getByRole('list', { name: '글 목록' });
 const titles = () =>
   screen.getAllByRole('heading', { level: 3 }).map(h => h.textContent);
-/** 목록(`ol`) 밖의 h3 — 피처 카드 제목. */
-const featureTitle = () =>
-  screen.getAllByRole('heading', { level: 3 }).find(h => !h.closest('ol'))
-    ?.textContent;
+const items = () => within(list()).getAllByRole('listitem');
+/**
+ * 피처 카드 제목. 피처는 앞 태그 둘을 배지로, 그리드 카드는 첫 태그 하나만 단다(`PostCard`) — 둘째 태그
+ * 배지(`#ci`)가 보이는 카드가 피처다.
+ */
+const featureCard = () => screen.queryByText('#ci')?.closest('article');
+const featureTitle = () => {
+  const card = featureCard();
+  return card
+    ? within(card).getByRole('heading', { level: 3 }).textContent
+    : undefined;
+};
 
 /** 화면이 "같다"의 기준. 썸네일은 장식(alt="")이라 역할이 없어 요소로 센다. */
 const fingerprint = () => ({
@@ -150,14 +158,15 @@ describe('PostsArchive 폴백 ↔ 뷰', () => {
     expect(fingerprint()).toEqual(fallback);
   });
 
-  test('폴백은 편수 h2·최신 글 피처·나머지 목록을 정적 HTML에 남기고 컨트롤은 inert다', () => {
+  test('폴백은 편수 h2와 최신 글을 피처로 세운 목록을 정적 HTML에 남기고 컨트롤은 inert다', () => {
     render(<PostsArchiveFallback {...props} />);
 
     expect(
       screen.getByRole('heading', { level: 2, name: '2편' }),
     ).toBeInTheDocument();
     expect(featureTitle()).toBe('b-post 제목');
-    expect(within(list()).getAllByRole('listitem')).toHaveLength(1);
+    expect(items()).toHaveLength(POSTS.length);
+    expect(featureCard()?.closest('li')).toBe(items()[0]);
     expect(fingerprint().thumbnails).toBe(POSTS.length);
     expect(searchbox().closest('[inert]')).not.toBeNull();
     expect(list().closest('[inert]')).toBeNull();
@@ -181,7 +190,36 @@ describe('PostsArchive 피처 카드', () => {
     renderView('?view=list');
 
     expect(fingerprint().thumbnails).toBe(0);
-    expect(within(list()).getAllByRole('listitem')).toHaveLength(2);
+    expect(items()).toHaveLength(2);
+  });
+
+  // 피처가 목록 밖에 있으면 기본 상태에서 목록이 한 편 적다 — 목록으로 건너뛴 낭독기가 듣는 항목 수와
+  // h2가 갈린다.
+  test.each([
+    ['', 2],
+    ['?view=list', 2],
+    ['?sort=shortest', 2],
+    ['?q=%20', 2],
+    ['?series=s1', 1],
+    ['?q=a-post', 1],
+    ['?tag=react', 1],
+  ])(
+    '/posts/%s — "글 목록" 항목 수가 h2의 편수(%i)와 같다',
+    (search, count) => {
+      renderView(search);
+
+      expect(
+        screen.getByRole('heading', { level: 2, name: `${count}편` }),
+      ).toBeInTheDocument();
+      expect(items()).toHaveLength(count);
+    },
+  );
+
+  test('피처는 "글 목록"의 첫 항목이다', () => {
+    renderView();
+
+    expect(featureCard()?.closest('li')).toBe(items()[0]);
+    expect(titles()).toEqual(['b-post 제목', 'a-post 제목']);
   });
 
   test('공백만 친 검색어는 필터처럼 없는 것으로 보고 피처를 남긴다', () => {
