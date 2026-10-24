@@ -342,6 +342,10 @@ export const BUNDLE_GUARDS = [
  * 코드가 지연 로드로 나가 240.2 → 185.2KB(−55.0KB — 목록 전용 청크 63.8 → 9.4KB, 공용 청크 −0.6KB).
  * 그룹 최대는 이제 글 상세(199.5KB)가 정하고 이 값이 옛 예산의 80%(201.6) 아래라, `/posts/`를 252 → 207로
  * 내렸다 — 지금 최대에 ~4% 여유이고, 루트의 nuqs 어댑터(약 −3.8KB)가 빠져도 하한(165.6) 위다.
+ * 2026-10-25 블로그가 `motion`·`nuqs`를 싣지 않게 한 빌드로 다시 갱신: 루트 `NuqsAdapter`가 빠져 모든
+ * 공개 그룹과 admin이 −3.1~−3.2KB다(공개 175.7~176.5 → 172.5~173.3, 글 상세 199.5 → 196.3, 목록 185.2 →
+ * 182.0, admin 378.0 → 374.9). CSS는 그대로(최대 28.5KB) — 예산은 전부 그대로. 줄 주석의 옛 값(176.2 /
+ * 27.3, 378.8 / 27.3)은 앞선 빌드부터 실측과 어긋나 있던 것을 이 빌드의 측정값으로 바꿨다.
  * 그룹이 새로 생기면(새 라우트) 예산이 없어서, 라우트가
  * 사라지면 예산이 죽어서, 측정 최대가 상한의 80% 아래로 내려가면 예산이 느슨해서
  * (`budget-slack`) 빌드가 실패한다.
@@ -352,21 +356,21 @@ export const BUNDLE_GUARDS = [
  * 걸리면 같은 방식으로 내린다 — 여유가 크게 남으면 회귀가 그 안에 숨는다.
  */
 export const BUNDLE_BUDGETS = [
-  // 176.2 KB / 27.3 KB
+  // 173.3 KB / 27.9 KB
   { group: '/', jsGzipKB: 185, cssGzipKB: 30 },
-  // 199.5 KB / 28.5 KB — 목록과 글 상세 46쪽의 최대(글 상세. 목록은 185.2 KB — mermaid·Giscus는 지연 로드라 밖)
+  // 196.3 KB / 28.5 KB — 목록과 글 상세 46쪽의 최대(글 상세. 목록은 182.0 KB — mermaid·Giscus는 지연 로드라 밖)
   { group: '/posts/', jsGzipKB: 207, cssGzipKB: 30 },
-  // 176.2 KB / 27.3 KB
+  // 172.5 KB / 27.9 KB
   { group: '/about/', jsGzipKB: 185, cssGzipKB: 30 },
-  // 176.2 KB / 27.3 KB
+  // 173.3 KB / 27.9 KB
   { group: '/series/', jsGzipKB: 185, cssGzipKB: 30 },
-  // 176.2 KB / 27.3 KB
+  // 172.5 KB / 27.9 KB
   { group: '/privacy/', jsGzipKB: 185, cssGzipKB: 30 },
-  // 176.2 KB / 27.3 KB — 정적 404(`404-page` 처리)
+  // 172.5 KB / 27.9 KB — 정적 404(`404-page` 처리)
   { group: '/404/', jsGzipKB: 185, cssGzipKB: 30 },
-  // 176.2 KB / 27.3 KB — Next가 함께 내보내는 not-found 라우트
+  // 172.5 KB / 27.9 KB — Next가 함께 내보내는 not-found 라우트
   { group: '/_not-found/', jsGzipKB: 185, cssGzipKB: 30 },
-  // 378.8 KB / 27.3 KB — admin 48쪽의 최대(`/admin/analytics/`)
+  // 374.9 KB / 27.9 KB — admin 48쪽의 최대(`/admin/analytics/`)
   { group: '/admin/', jsGzipKB: 398, cssGzipKB: 30 },
 ] as const satisfies BundleBudgetsConfig;
 
