@@ -150,7 +150,7 @@ const blogColors = defineSemanticTokens.colors({
   // 스킬). 대비는 라이트 / 다크.
   //   solid      = ink.950. 링크·현재 위치 표식·주 버튼 면·다이어그램 핵심 경로.
   //                paper.50 위 17.40 / 15.85.
-  //   muted      = ink.950 8% / 14%. 틴트 — 배지·선택 행·검색어·tip 콜아웃·다이어그램 노드.
+  //   muted      = ink.950 8% / 14%. 틴트 — 시리즈 배지·선택 행·검색어·tip 콜아웃·다이어그램 노드.
   //                paper.50 위 합성 #ededed / #2a2c2f, 그 위 solid 14.87 / 11.41.
   //                보조 글자(ink.500)는 다크에서 4.41로 AA를 놓쳐 ink.700 이상을 쓴다(6.46 / 6.11).
   //   onSolid    = paper.50. solid 면 위 글자 17.40 / 15.85 — 다크 solid가 밝은 잉크라 흰 글자는

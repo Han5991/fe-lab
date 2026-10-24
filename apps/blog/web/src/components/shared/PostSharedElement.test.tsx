@@ -1,5 +1,5 @@
 /**
- * 공유 요소(`PostCardShared`·`PostDetailShared`)를 쓰는 자리 — 글 카드(홈 카드 두 변형·썸네일 행·
+ * 공유 요소(`PostCardShared`·`PostDetailShared`)를 쓰는 자리 — 글 카드(`PostCard` 네 종류·썸네일 행·
  * /posts 카드·글 목록 행)와 글 상세(히어로 이미지·h1)가 같은 글에 대해 **같은 이름**의
  * `<ViewTransition>`을 달고, 카드는 그 글을 여는 링크 이동이나 그 글의 상세에서 떠나 올 때만 짝이
  * 된다. 이름이나 짝의 조건이 한쪽만 어긋나면 빌드·브라우저 어디서도 에러 없이 모핑만 사라지거나
@@ -141,6 +141,16 @@ describe('글 카드 → 글 상세 공유 요소', () => {
     {
       card: '홈 작은 카드',
       ui: <PostCard post={summary} variant="default" />,
+      cover: isCoverFrame,
+    },
+    {
+      card: '글 목록 피처 카드',
+      ui: <PostCard post={summary} variant="feature" />,
+      cover: isCoverFrame,
+    },
+    {
+      card: '글 목록 그리드 카드',
+      ui: <PostCard post={summary} variant="grid" />,
       cover: isCoverFrame,
     },
     {
