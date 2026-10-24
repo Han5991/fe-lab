@@ -276,7 +276,6 @@ const PostsArchiveLayout = ({
     q: state.q,
     tags: state.tags,
     series: state.series,
-    year: null,
     sort: state.sort,
     viewCounts,
   });

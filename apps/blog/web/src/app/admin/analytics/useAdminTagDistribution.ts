@@ -4,7 +4,7 @@ import { useSuspenseQuery } from '@tanstack/react-query';
 import { adminPostsIndexQuery } from '@/src/hooks/useAdminViews';
 import { ADMIN_QUERY_PREFIX } from '@/src/hooks/adminCache';
 
-/** admin 글 인덱스의 태그별 글 수 — 클라이언트 화면이라 서버의 getAllTags()를 못 쓴다. */
+/** admin 글 인덱스의 태그별 글 수 — 태그 집계를 쓰는 화면이 여기뿐이라 클라이언트에서 직접 센다. */
 export function useAdminTagDistribution() {
   const { data } = useSuspenseQuery({
     queryKey: [...ADMIN_QUERY_PREFIX, 'tag-distribution'],

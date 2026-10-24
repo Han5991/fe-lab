@@ -356,7 +356,7 @@ test('resolveExcerpt: 서로게이트 쌍(이모지) 가운데서 자르지 않�
 });
 
 // 태그는 의미상 집합이다. 중복이 흘러가면 글 메타에 `#ci #ci`가 두 번 찍히고,
-// getAllTags() 개수가 부풀고, 목록 렌더에서 React key가 충돌한다.
+// 태그별 글 수 집계가 부풀고, 목록 렌더에서 React key가 충돌한다.
 test('parsePost: 중복 태그는 하나로 합친다', () => {
   const post = parsePost(
     `---\nstatus: published\ntitle: T\ndate: '2026-01-01'\ntags: [ci, ci, build]\n---\n본문`,

@@ -35,7 +35,6 @@ describe('About 주요 시리즈 카드', () => {
         q: '',
         tags: [],
         series: seriesParam,
-        year: null,
         sort: 'recent',
       });
       expect(

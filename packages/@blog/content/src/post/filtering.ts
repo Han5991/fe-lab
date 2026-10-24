@@ -11,15 +11,14 @@ export interface ArchiveFilterParams {
   q: string;
   tags: string[];
   series: string | null;
-  year: string | null;
   sort: ArchiveSortKey;
   /** 인기순 정렬 시 Supabase post_views로 받은 slug→view_count 맵. 없으면 0 취급. */
   viewCounts?: Map<string, number> | undefined;
 }
 
 /**
- * URL 파라미터(q/tags/series/year/sort)를 받아 포스트 목록을 필터·정렬한 배열을 반환합니다.
- * `PostsArchiveView` 컴포넌트의 useMemo 본문과 동일한 로직 — 컴포넌트는 이 함수를 호출만 합니다.
+ * URL 파라미터(q/tags/series/sort)를 받아 포스트 목록을 필터·정렬한 배열을 반환합니다.
+ * 글 목록 화면은 이 함수를 호출만 합니다 — 필터·정렬 규칙은 여기 한 곳입니다.
  */
 export function filterAndSortPostsByArchiveParams<
   T extends Pick<
@@ -27,7 +26,7 @@ export function filterAndSortPostsByArchiveParams<
     'slug' | 'title' | 'excerpt' | 'tags' | 'series' | 'date' | 'readMin'
   >,
 >(posts: T[], params: ArchiveFilterParams): T[] {
-  const { q, tags, series, year, sort, viewCounts } = params;
+  const { q, tags, series, sort, viewCounts } = params;
   let r: T[] = posts;
 
   const query = q.trim().toLowerCase();
@@ -44,10 +43,6 @@ export function filterAndSortPostsByArchiveParams<
   }
   if (series) {
     r = r.filter(p => p.series === series);
-  }
-  if (year) {
-    // 연도는 정확히 비교한다 — 접두사면 `?year=20`이 20xx 글 전부를 고른다.
-    r = r.filter(p => p.date?.slice(0, 4) === year);
   }
 
   const sorted: T[] = [...r];
