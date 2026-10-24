@@ -123,6 +123,10 @@ catalog:
   '@tanstack/react-query': ^5.103.2
   pretendard: ^1.3.9
 
+  # 빌드 · 실행 도구
+  # 루트(format·lefthook)와 @blog/web(gen:types)이 함께 쓴다
+  prettier: ^3.9.9
+
   # 테스트
   vitest: ^5.0.5
   '@vitest/coverage-v8': ^5.0.5
