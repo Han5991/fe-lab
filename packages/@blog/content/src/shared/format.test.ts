@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { estimateReadMin, fmtDate, fmtNum } from './format.ts';
+import { estimateReadMin, fmtDate, fmtNum, fmtReadMin } from './format.ts';
 
 test('estimateReadMin: 빈 문자열도 최소 1분', () => {
   expect(estimateReadMin('')).toBe(1);
@@ -15,6 +15,12 @@ test('estimateReadMin: 정확히 500자는 1분 (Math.ceil(500/500) = 1)', () =>
 
 test('estimateReadMin: 501자는 2분', () => {
   expect(estimateReadMin('a'.repeat(501))).toBe(2);
+});
+
+// 카드·행마다 `N min`과 `N분`이 섞여 있던 표기를 하나로 모았다. 다시 갈리지 않도록 고정한다.
+test('fmtReadMin: 분 단위 한국어 표기', () => {
+  expect(fmtReadMin(1)).toBe('1분');
+  expect(fmtReadMin(20)).toBe('20분');
 });
 
 // 리뉴얼 디자인 시안이 홈·상세 모두 하이픈 표기라
