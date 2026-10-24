@@ -7,9 +7,6 @@
     "check-types": "tsc --noEmit",
     "test": "vitest run"
   },
-  "engines": {
-    "node": ">=24.21.0"
-  },
   "devDependencies": {
     "@package/config": "workspace:*",
     "@types/node": "catalog:",
