@@ -62,7 +62,8 @@ const pandaRecommended = await panda.configs.recommended({
  * 9곳이 `boxShadow: '[0 1px 2px …]'` 이스케이프로 들어와 있었다(추가 직후 정확히 그 9건이
  * 잡혔다). `textShadow`·`shadow` 단축도 shadows로 잡힌다. `dropShadows`는 비어 있는 카테고리라
  * 쓰는 곳이 0이지만, 빼면 `dropShadow: '[…]'` 글로우가 lint와 check-types를 둘 다 통과한다.
- * `filter: '[drop-shadow(…)]'`는 카테고리가 없어 여기서 못 본다.
+ * `filter: '[drop-shadow(…)]'`는 카테고리가 없어 여기서 못 본다. Recharts `contentStyle` 같은 인라인
+ * style 객체도 Panda 추출 밖이라 못 본다(admin 차트 툴팁 3곳이 아직 원시 그림자다).
  * 재평가: 2027-04-24 — 그때까지 그 9곳 밖에서 잡은 위반이 없으면 두 카테고리를 뺀다(AGENTS.md §5).
  */
 const PREFER_TOKEN = {

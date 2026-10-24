@@ -329,7 +329,8 @@ Worker (`apps/blog/web/wrangler.jsonc`), Supabase for the dynamic bits.
 
 - 색·라운드·그림자는 전부 `packages/@blog/preset/src/blog-preset.ts`에서 온다 — preset-panda의 팔레트·radii·그림자는
   블로그 설정의 `preset:resolved` 플러그인이 빼서 strictTokens를 통과하지 못하고(`boxShadow: 'md'`는 타입에서
-  막힌다), 토큰 밖 값과 대괄호 이스케이프는 §3의 `prefer-token`이 `src/`에서 막는다. **컴포넌트에서 hex를 쓰지 않는다** —
+  막힌다), 토큰 밖 값과 대괄호 이스케이프는 §3의 `prefer-token`이 `src/`에서 막는다(예외는 그 설정의 `allow`).
+  **컴포넌트에서 hex를 쓰지 않는다** —
   다이어그램 SVG도 `currentColor`나 Panda `css()`로 토큰에 잇는다. CSS 변수를 못 읽는 satori/sharp는
   `themeColor('dark', 'paper.50')`으로 뽑는다. hex를 옮겨 적지 않는다.
 - 레일·거터의 단일 출처는 `src/components/Rail.tsx`다. **페이지에서 `maxW`·`px`를 직접 쓰지 않는다.** 거터는
