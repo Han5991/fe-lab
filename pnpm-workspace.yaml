@@ -94,6 +94,9 @@ auditConfig:
 # 두 개 이상의 워크스페이스 패키지가 쓰는 버전은 전부 여기로 올린다. 패키지의
 # package.json에는 'catalog:'(기본) 또는 'catalog:lint'(아래 named catalog)만 적고,
 # 숫자는 이 파일에만 존재한다 — 한 곳을 올리면 저장소 전체가 같이 움직인다.
+# 소비자가 하나뿐인 항목은 한 번호로 함께 움직이는 묶음(@pandacss/*, next 릴리스 트레인,
+# 아래 '# 테스트' 툴체인, catalogs.lint)에 속할 때만 둔다. 그 밖의 단일 소비자 의존성은
+# 그 패키지의 package.json에 숫자로 적고, 두 번째 소비자가 생기면 여기로 올린다.
 catalog:
   # 프레임워크 · 언어
   # @pandacss/*는 한 버전으로만 움직인다(Panda v2 문서 "All @pandacss/* packages move on one
@@ -119,13 +122,6 @@ catalog:
   # 런타임 라이브러리
   '@tanstack/react-query': ^5.103.2
   pretendard: ^1.3.9
-  react-markdown: ^10.1.0
-  rehype-raw: ^7.0.0
-  remark-gfm: ^4.0.1
-
-  # 빌드 · 실행 도구
-  commander: ^15.0.0
-  tsdown: 0.23.0
 
   # 테스트
   vitest: ^5.0.5
