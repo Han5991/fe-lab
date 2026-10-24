@@ -63,6 +63,38 @@ function stripImages(text: string): string {
   return out + text.slice(pos);
 }
 
+/**
+ * 링크(`[텍스트](href)`)를 텍스트만 남긴다 — 텍스트는 첫 `]`, href는 첫 `)`에서 끝나고 둘 다 비면
+ * 링크가 아니다(줄은 넘을 수 있다). `/\[([^\]]+)]\([^)]+\)/g`와 결과가 같지만, 그 식은 닫히지 않는
+ * `[`가 되풀이되면 시작 위치마다 끝까지 훑어 제곱으로 느려졌다(`[` 2만 개에 0.58초, CodeQL
+ * js/polynomial-redos). 한 시작점이 실패하면 그 `]` 앞의 시작점도 같은 `]`에서 실패하므로 `]` 뒤로
+ * 건너뛰고, 뒤에 `]`나 `)`가 아예 없으면 거기서 멈춘다.
+ */
+function unwrapLinks(text: string): string {
+  let out = '';
+  let pos = 0;
+  for (
+    let start = text.indexOf('[', pos);
+    start !== -1;
+    start = text.indexOf('[', pos)
+  ) {
+    const close = text.indexOf(']', start + 1);
+    if (close === -1) break;
+    if (close > start + 1 && text.startsWith('](', close)) {
+      const end = text.indexOf(')', close + 2);
+      if (end === -1) break;
+      if (end > close + 2) {
+        out += text.slice(pos, start) + text.slice(start + 1, close);
+        pos = end + 1;
+        continue;
+      }
+    }
+    out += text.slice(pos, close + 1);
+    pos = close + 1;
+  }
+  return out + text.slice(pos);
+}
+
 /** 본문 평문 — excerpt·readMin·검색 미리보기·wordCount·llms 요약이 함께 쓴다(`dropCode`면 펜스 코드를 뺀다). */
 export function extractPlainText(
   content: string,
@@ -82,8 +114,7 @@ export function extractPlainText(
 }
 
 function extractProse(text: string): string {
-  return stripImages(text)
-    .replace(/\[([^\]]+)]\([^)]+\)/g, '$1') // 링크 텍스트만 남기기
+  return unwrapLinks(stripImages(text))
     .replace(/^[ \t]*>+/gm, '') // 인용 표시(줄 머리의 >)
     .split(INLINE_CODE)
     .map((part, i) =>
