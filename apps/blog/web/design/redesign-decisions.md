@@ -175,8 +175,9 @@ docsite의 BlogIndex). 위에서부터 제목 묶음(가운데 정렬 `display1`
   정지점이 하나다(목업은 `aria-pressed` 버튼 여럿). 켜짐·hover·초점 링·강제 색상은
   `label > input.peer + span` 구조의 **형제 선택자**로 냈다 — `:has()`는 Next 기본 대상의 Firefox
   111~120에 없어서 쓰지 않는다. 검색 "지우기"는 `:placeholder-shown` 형제 선택자가 숨긴다. 칩·칸은 켜질
-  때 semibold가 되어도 폭이 그대로다(숨긴 semibold 사본을 겹치는 `SteadyLabel`, Astryx ToggleButton
-  동작).
+  때 semibold가 되어도 폭이 그대로다(Astryx ToggleButton 동작). 면이 글자를 `data-label`로도 들고
+  `::after`가 그 글자를 semibold로 높이 0에 숨겨 그려 폭만 잡는다 — 숨긴 사본 요소를 겹치는 컴포넌트
+  없이 CSS만으로 같은 폭이 나온다.
 - **보기 토글의 켜진 면은 고른 칸으로 미끄러진다**(fast·standard, transform만이라 합성된다). 면 하나가
   움직이려면 칸 폭이 같아야 해서 '카드' 칸이 '리스트' 칸 폭으로 넓어졌다(목업은 글자 폭). 위치는 고른
   칸의 순서를 트랙의 style 변수로 내보내 CSS가 계산한다 — 새 훅이 없고, 정적 HTML에도 실려 기본 보기는

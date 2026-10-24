@@ -18,8 +18,18 @@ const SERIES = [
   { id: '[픽스처 연재]', title: '[픽스처 연재]', count: 2 },
 ];
 
+// 켜지면 semibold가 되는 면은 굵은 폭을 CSS(`steadyLabel`의 `::after`)로 미리 잡는다 — 그 사본의 글자는
+// 면의 `data-label`이다. 글자와 어긋나거나 빠지면 폭 예약이 조용히 틀어지므로 radio마다 짝을 본다.
+const faceLabels = (group: HTMLElement) =>
+  within(group)
+    .getAllByRole('radio')
+    .map(radio => {
+      const face = radio.nextElementSibling;
+      return [face?.textContent, face?.getAttribute('data-label')];
+    });
+
 describe('SeriesChips', () => {
-  test('"시리즈" radio 묶음이고, 전체가 맨 앞이며 이름에 숨긴 굵기 사본이 섞이지 않는다', () => {
+  test('"시리즈" radio 묶음이고 전체가 맨 앞이며, 칩 면은 자기 글자를 data-label로도 든다', () => {
     render(
       <SeriesChips series={SERIES} total={9} value={null} onChange={vi.fn()} />,
     );
@@ -32,6 +42,11 @@ describe('SeriesChips', () => {
     ).toEqual(['', 'fixture-bundler', '[픽스처 연재]']);
     expect(screen.getByRole('radio', { name: '전체 (9)' })).toBeChecked();
     expect(screen.getByRole('radio', { name: '번들러 (5)' })).not.toBeChecked();
+    expect(faceLabels(group)).toEqual([
+      ['전체 (9)', '전체 (9)'],
+      ['번들러 (5)', '번들러 (5)'],
+      ['[픽스처 연재] (2)', '[픽스처 연재] (2)'],
+    ]);
   });
 
   test('시리즈를 고르면 그 id를, 전체를 고르면 null을 넘긴다', () => {
@@ -78,7 +93,7 @@ describe('SortSelect', () => {
 });
 
 describe('ViewToggle', () => {
-  test('"뷰" radio 묶음이고 탭 역할이 없으며, 칸은 카드·리스트 순서다', () => {
+  test('"뷰" radio 묶음이고 탭 역할이 없으며, 칸은 카드·리스트 순서이고 자기 글자를 data-label로도 든다', () => {
     render(<ViewToggle value="cards" onChange={vi.fn()} />);
 
     const group = screen.getByRole('radiogroup', { name: '뷰' });
@@ -89,6 +104,10 @@ describe('ViewToggle', () => {
         .map(r => r.getAttribute('value')),
     ).toEqual(['cards', 'list']);
     expect(screen.getByRole('radio', { name: '카드' })).toBeChecked();
+    expect(faceLabels(group)).toEqual([
+      ['카드', '카드'],
+      ['리스트', '리스트'],
+    ]);
   });
 
   test('다른 보기를 고르면 그 값을 넘긴다', () => {

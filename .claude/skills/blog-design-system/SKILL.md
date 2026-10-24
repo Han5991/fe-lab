@@ -544,7 +544,9 @@ type은 `src/shared/viewTransitions.ts`, 감싸개는 `src/components/shared/Pos
   켜짐·hover·초점 링은 면이 **형제 선택자**로 받는다(`_peerChecked`, hover는 `.peer:not(:checked) ~ &`로
   켜진 칩을 뺀다). `:has()`는 쓰지 않는다 — Next 기본 대상의 Firefox 111~120에 없어 초점 링까지
   사라진다. 초점 링은 globalCss가 같은 형제 선택자로 `FOCUS_RING`을 준다. 켜질 때 semibold가 되어도
-  폭이 밀리지 않게 면과 글자는 `SteadyLabel`(숨긴 semibold 사본을 겹친다)로 그린다. 강제 색상 모드는
+  폭이 밀리지 않게 면은 글자를 `data-label`로도 들고, `steadyLabel`(`src/components/steadyLabel.ts`)의
+  `::after`가 그 글자를 semibold로 높이 0·`visibility: hidden`에 그려 폭만 미리 잡는다(면은 flex 세로
+  방향이라 글자와 사본이 위아래로 쌓인다 — JS 없음, 접근성 트리에 없음). 강제 색상 모드는
   면을 지우므로 켜진 칩에 밑줄을 더한다. 글 목록 뷰 토글 칸도 같은 구조다(트랙 `paper.100`, 13px).
   다만 켜진 `paper.50` 면은 칸마다 칠하지 않고 면 하나가 고른 칸으로 미끄러진다 — 칸은 같은 폭
   (`gridAutoColumns: 1fr`), 면은 첫 칸의 grid 영역에 절대 위치로 겹치고 transform으로 옮긴다

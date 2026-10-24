@@ -3,7 +3,7 @@
 import type { CSSProperties } from 'react';
 import { css, cx } from '@blog/styled-system/css';
 
-import { SteadyLabel } from '@/src/components/SteadyLabel';
+import { steadyLabel } from '@/src/components/steadyLabel';
 import { VIEW_MODES, type ViewMode } from './archiveParams';
 
 interface ViewToggleProps {
@@ -54,12 +54,11 @@ const cellLabel = css({ pos: 'relative', display: 'inline-flex' });
 const radio = cx('peer', css({ srOnly: true }));
 
 // 13px은 글자 역할 밖의 예외다(Astryx ToggleButton sm). 켜짐은 글자색·굵기만 형제 선택자로 받는다 —
-// 면은 위 `face`가 그린다.
-const cell = css({
+// 면은 위 `face`가 그린다. 칸은 글자를 `data-label`로도 들어 semibold 폭을 CSS가 미리 잡는다.
+const cell = css(steadyLabel, {
   display: 'inline-flex',
   flexGrow: '1',
   alignItems: 'center',
-  justifyContent: 'center',
   h: '7',
   px: '2.5',
   rounded: 'inner',
@@ -96,7 +95,9 @@ export const ViewToggle = ({ value, onChange }: ViewToggleProps) => {
             onChange={() => onChange(mode)}
             className={radio}
           />
-          <SteadyLabel className={cell}>{VIEW_LABEL[mode]}</SteadyLabel>
+          <span data-label={VIEW_LABEL[mode]} className={cell}>
+            {VIEW_LABEL[mode]}
+          </span>
         </label>
       ))}
     </div>

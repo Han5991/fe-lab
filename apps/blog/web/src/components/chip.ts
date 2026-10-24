@@ -1,5 +1,6 @@
 import { cva } from '@blog/styled-system/css';
 import { forcedColorsEdge } from './forcedColorsEdge';
+import { steadyLabel } from './steadyLabel';
 
 /**
  * 칩 — 한 줄에 여럿이 줄바꿈되며 놓이는 32px pill. Astryx ToggleButton 칩(ghost md)의 모양이고,
@@ -12,7 +13,8 @@ import { forcedColorsEdge } from './forcedColorsEdge';
  *   accent.muted 면에 semibold. 상태는 칩이 아니라 바로 앞의 네이티브 radio가 든다 —
  *   `label > input.peer + span(이 칩)` 구조에서 형제 선택자(`_peerChecked`)로 받는다. `:has()`는 쓰지 않는다
  *   (Next 기본 대상의 Firefox 111~120에 없다). 초점 링은 globalCss가 같은 형제 선택자로 준다. 강제 색상
- *   모드는 면을 지우므로 켜진 칩에 밑줄을 더한다. 켜질 때 폭이 밀리지 않게 글자는 `SteadyLabel`로 감싼다.
+ *   모드는 면을 지우므로 켜진 칩에 밑줄을 더한다. 켜질 때 폭이 밀리지 않게 칩은 글자를 `data-label`로도
+ *   들고, semibold 폭은 CSS가 미리 잡는다(`steadyLabel`).
  *
  * 글자는 `label`(14/20 500)이다. 칩 안 글자가 코드 이름(프로젝트·패키지)이면 쓰는 쪽이 mono로
  * 덧씌운다 — 서체는 칩이 아니라 글자의 성격이 정한다. 덧씌울 때는 `css(chip.raw(…), {…})`로
@@ -45,6 +47,7 @@ export const chip = cva({
         fontWeight: 'semibold',
       },
       toggle: {
+        ...steadyLabel,
         bg: 'transparent',
         color: 'ink.950',
         cursor: 'pointer',

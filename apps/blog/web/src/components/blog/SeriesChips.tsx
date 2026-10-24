@@ -3,7 +3,6 @@
 import { css, cx } from '@blog/styled-system/css';
 
 import { chip } from '@/src/components/chip';
-import { SteadyLabel } from '@/src/components/SteadyLabel';
 import type { ArchiveSeries } from './archiveParams';
 
 interface SeriesChipsProps {
@@ -24,7 +23,8 @@ const row = css({
 
 const chipLabel = css({ display: 'inline-flex', maxW: 'full' });
 
-// 상태는 radio가 들고 모양은 바로 뒤 형제(칩 면)가 형제 선택자로 받는다(chip tone `toggle`).
+// 상태는 radio가 들고 모양은 바로 뒤 형제(칩 면)가 형제 선택자로 받는다(chip tone `toggle`). 면은
+// 글자를 `data-label`로도 들어 켜졌을 때의 semibold 폭을 CSS가 미리 잡는다.
 const radio = cx('peer', css({ srOnly: true }));
 const face = chip({ tone: 'toggle' });
 
@@ -41,19 +41,24 @@ export const SeriesChips = ({
   const options = [{ id: null, title: '전체', count: total }, ...series];
   return (
     <div role="radiogroup" aria-label="시리즈" className={row}>
-      {options.map(({ id, title, count }) => (
-        <label key={id ?? ''} className={chipLabel}>
-          <input
-            type="radio"
-            name="series"
-            value={id ?? ''}
-            checked={value === id}
-            onChange={() => onChange(id)}
-            className={radio}
-          />
-          <SteadyLabel className={face}>{`${title} (${count})`}</SteadyLabel>
-        </label>
-      ))}
+      {options.map(({ id, title, count }) => {
+        const text = `${title} (${count})`;
+        return (
+          <label key={id ?? ''} className={chipLabel}>
+            <input
+              type="radio"
+              name="series"
+              value={id ?? ''}
+              checked={value === id}
+              onChange={() => onChange(id)}
+              className={radio}
+            />
+            <span data-label={text} className={face}>
+              {text}
+            </span>
+          </label>
+        );
+      })}
     </div>
   );
 };
