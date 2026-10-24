@@ -262,9 +262,11 @@ function DashboardContent() {
 
   const days = rangeLabel(overview.range);
 
-  // 기간을 바꾸는 것은 transition이다 — 지표 카드의 값 줄(`MetricCard`의 `<ViewTransition>`)이 이전
-  // 값을 걷고 새 값을 띄우고, 나머지(제목의 일수·차트·표)는 루트 크로스페이드로 바뀐다 — 차트는 선을
-  // 보간하지 않는다(`chartMotion.ts`).
+  // 기간을 바꾸는 것은 transition이다 — 움직이는 것은 지표 카드의 값 줄(`MetricCard`의 `<ViewTransition>`)
+  // 뿐이고 이전 값을 걷은 뒤 새 값을 띄운다. 나머지(제목의 일수·차트·표·세그먼트 표식)는 스냅샷 없이
+  // 곧바로 바뀐다 — React가 이 transition의 새 화면에서 루트를 빼서(`view-transition-name: none`) 루트
+  // 크로스페이드가 없다(실측). 차트는 선을 보간하지 않는다(`chartMotion.ts`). View Transition은 한 번에
+  // 하나라, 하나가 도는 동안(~480ms) 다시 고르면 React가 그 끝까지 커밋을 미뤘다가 마지막 값으로 한 번 더 돈다.
   const changeRange = (next: AnalyticsRange) =>
     startTransition(() => setRange(next));
 

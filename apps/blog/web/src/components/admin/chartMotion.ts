@@ -8,8 +8,8 @@ import { css } from '@blog/styled-system/css';
  *   덜 그려진 채로 남아 화면이 다 보이기까지의 시간에 그대로 더해졌다(로컬 실측 — 550ms 그리기를 이 등장으로
  *   바꾸자 글 통계 패널의 차트 완성이 1.70 → 1.33s). 시간을 숫자로 받아 모션 토큰의 사본을 테스트로 잠가야
  *   했던 것도 함께 사라진다.
- * - 데이터가 바뀌면(집계 기간·글별 기간) 새 모양으로 곧바로 바뀐다. 대시보드의 기간 변경은 transition이라
- *   루트 크로스페이드가 차트도 함께 바꾼다.
+ * - 데이터가 바뀌면(집계 기간·글별 기간) 새 모양으로 곧바로 바뀐다 — 대시보드의 기간 변경 View Transition은
+ *   지표 값 줄만 움직이고 차트를 스냅샷에 담지 않는다(`DashboardScreen`의 `changeRange`).
  */
 export const CHART_MOTION = {
   isAnimationActive: false,
