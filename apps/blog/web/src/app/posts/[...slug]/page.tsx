@@ -157,8 +157,8 @@ export default async function PostPage({ params }: Props) {
       <PageBoundary
         className={cx(railGutter, css({ py: { base: '10', md: '14' } }))}
       >
-        {/* 셸은 wide 레일이라 헤더·/posts와 좌우 끝이 같고, 그 안에서 본문이
-            text 레일(680)을 차지하고 TOC가 오른쪽 끝에 붙는다. */}
+        {/* 셸은 wide 레일이라 홈·/about와 좌우 끝이 같고, 그 안에서 본문이
+            text 레일(752)을 차지하고 TOC가 오른쪽 끝에 붙는다. */}
         <div
           className={cx(
             railColumn({ width: 'wide' }),
@@ -167,7 +167,7 @@ export default async function PostPage({ params }: Props) {
               // 차례 칼럼 268px은 레퍼런스(fumadocs)와 같은 폭이다. 240px에서는
               // 한국어 헤딩이 대부분 두 줄로 접혀 목록이 두 배로 길어졌다.
               // wide 레일(1200) − 차례(268) − 간격(64) = 868px이라 본문
-              // 칼럼(railText 680)에는 영향이 없다.
+              // 칼럼(railText 752)에는 영향이 없다.
               gridTemplateColumns: { base: '1fr', lg: '[1fr 268px]' },
               gap: { base: '0', lg: '16' },
               alignItems: 'start',

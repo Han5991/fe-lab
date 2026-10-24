@@ -28,6 +28,15 @@ const post = (over: Partial<PostSummary> = {}): PostSummary => ({
   ...over,
 });
 
+/** 메타 줄의 보이는 항목 글자 — 구분선(aria-hidden)은 뺀다. */
+const metaTexts = (container: HTMLElement) => {
+  const meta = container.querySelector('time')?.parentElement;
+  if (!meta) throw new Error('메타 줄이 없다');
+  return [...meta.children]
+    .filter(el => el.getAttribute('aria-hidden') !== 'true')
+    .map(el => el.textContent);
+};
+
 const imgOf = (container: HTMLElement) => {
   const img = container.querySelector('img');
   if (!img) throw new Error('커버 이미지가 없다');
@@ -55,19 +64,52 @@ describe('PostCard', () => {
 
   test('쇼케이스 메타는 날짜 → 읽기 시간 → 앞 태그 셋 순서다', () => {
     const { container } = render(<PostCard post={post()} variant="showcase" />);
-    const meta = container.querySelector('time')?.parentElement;
-    if (!meta) throw new Error('메타 줄이 없다');
-    expect(
-      [...meta.children]
-        .filter(el => el.getAttribute('aria-hidden') !== 'true')
-        .map(el => el.textContent),
-    ).toEqual(['2025-06-08', '7분', 'alpha · beta · gamma']);
+    expect(metaTexts(container)).toEqual([
+      '2025-06-08',
+      '7분',
+      'alpha · beta · gamma',
+    ]);
   });
 
   test('작은 카드 메타에는 태그가 없다', () => {
     render(<PostCard post={post()} variant="default" />);
     expect(screen.queryByText(/alpha/)).not.toBeInTheDocument();
     expect(screen.getByText('7분')).toBeInTheDocument();
+  });
+
+  test('피처 제목은 h3다 — 글 목록은 h1 → h2(편수) → h3(카드)', () => {
+    render(<PostCard post={post()} variant="feature" />);
+    expect(screen.getByRole('heading', { level: 3 })).toHaveTextContent(
+      '카드 제목',
+    );
+  });
+
+  test('피처 메타는 날짜 → 읽기 시간 → 앞 태그 둘의 배지이고, 배지 앞에는 구분선이 없다', () => {
+    const { container } = render(<PostCard post={post()} variant="feature" />);
+    expect(metaTexts(container)).toEqual([
+      '2025-06-08',
+      '7분',
+      '#alpha',
+      '#beta',
+    ]);
+    // 배지는 구분선 없이 줄 간격만으로 잇는다(목업) — 날짜와 N분 사이에만 구분선이 있다.
+    expect(
+      screen.getByText('7분').nextElementSibling?.getAttribute('aria-hidden'),
+    ).not.toBe('true');
+    // 카드 링크 안에 링크를 둘 수 없다 — 배지는 표식이고 링크는 제목 하나다.
+    expect(screen.getAllByRole('link')).toHaveLength(1);
+  });
+
+  test('그리드 카드 메타에는 첫 태그 하나만 배지로 붙는다', () => {
+    const { container } = render(<PostCard post={post()} variant="grid" />);
+    expect(metaTexts(container)).toEqual(['2025-06-08', '7분', '#alpha']);
+  });
+
+  test('태그가 없는 글의 그리드 카드는 날짜와 읽기 시간만 보인다', () => {
+    const { container } = render(
+      <PostCard post={post({ tags: undefined })} variant="grid" />,
+    );
+    expect(metaTexts(container)).toEqual(['2025-06-08', '7분']);
   });
 
   test('priority면 커버를 바로, 높은 우선순위로 받는다', () => {

@@ -74,6 +74,13 @@ test('archivePath: 복수 필터는 &로 잇는다', () => {
   );
 });
 
+test('archivePath: 정렬 키도 쿼리로 싣는다', () => {
+  expect(archivePath({ sort: 'popular' })).toBe('/posts/?sort=popular');
+  expect(archivePath({ tag: 'a', sort: 'shortest' })).toBe(
+    '/posts/?tag=a&sort=shortest',
+  );
+});
+
 test('archiveUrl: siteUrl 주입 + POSTS_PATH 규칙 공유', () => {
   expect(archiveUrl(SITE_URL)).toBe(`${SITE_URL}${POSTS_PATH}`);
   expect(archiveUrl('https://example.dev')).toBe('https://example.dev/posts/');

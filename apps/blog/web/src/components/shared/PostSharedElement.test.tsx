@@ -1,6 +1,6 @@
 /**
- * 공유 요소(`PostCardShared`·`PostDetailShared`)를 쓰는 자리 — 글 카드(홈 카드 두 변형·썸네일 행·
- * /posts 카드·글 목록 행)와 글 상세(히어로 이미지·h1)가 같은 글에 대해 **같은 이름**의
+ * 공유 요소(`PostCardShared`·`PostDetailShared`)를 쓰는 자리 — 글 카드(`PostCard` 네 종류·썸네일 행·
+ * 글 목록 행)와 글 상세(히어로 이미지·h1)가 같은 글에 대해 **같은 이름**의
  * `<ViewTransition>`을 달고, 카드는 그 글을 여는 링크 이동이나 그 글의 상세에서 떠나 올 때만 짝이
  * 된다. 이름이나 짝의 조건이 한쪽만 어긋나면 빌드·브라우저 어디서도 에러 없이 모핑만 사라지거나
  * (이름) 목록 → 목록 이동에서 카드가 전부 날아다닌다(조건).
@@ -16,7 +16,6 @@ import type { LinkProps } from 'next/link';
 import type { PostData, PostSummary } from '@blog/content/client';
 import { DIAGRAM_NAMES } from '@/src/components/diagram/registry';
 import { PostCard } from '@/src/components/blog/PostCard';
-import { PostGridCard } from '@/src/components/blog/PostGridCard';
 import { PostListRow } from '@/src/components/blog/PostListRow';
 import { PostThumbRow } from '@/src/components/blog/PostThumbRow';
 import { PostHeader } from '@/src/components/post/PostHeader';
@@ -144,15 +143,19 @@ describe('글 카드 → 글 상세 공유 요소', () => {
       cover: isCoverFrame,
     },
     {
+      card: '글 목록 피처 카드',
+      ui: <PostCard post={summary} variant="feature" />,
+      cover: isCoverFrame,
+    },
+    {
+      card: '글 목록 그리드 카드',
+      ui: <PostCard post={summary} variant="grid" />,
+      cover: isCoverFrame,
+    },
+    {
       card: '홈 썸네일 행',
       ui: <PostThumbRow post={summary} />,
       cover: isCoverFrame,
-    },
-    // /posts 카드는 커버 틀이 없다 — 이미지가 자기 모서리를 들고 이름을 받는다.
-    {
-      card: '/posts 카드',
-      ui: <PostGridCard post={summary} />,
-      cover: isImage,
     },
     // /posts 목록 보기와 /series의 행 — 커버가 없어 제목만 이어진다.
     {

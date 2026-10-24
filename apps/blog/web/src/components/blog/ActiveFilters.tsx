@@ -1,128 +1,72 @@
 'use client';
 
 import { css } from '@blog/styled-system/css';
-import { tagPillStyle } from './tagPillStyle';
+import { tagBadge } from '@/src/components/tagBadge';
 
 interface ActiveFiltersProps {
-  tags: string[];
-  /** 활성 시리즈의 제목 — URL에는 id(폴더 경로)가 실린다. */
-  seriesLabel: string | null;
-  year: string | null;
+  tags: readonly string[];
   onRemoveTag: (tag: string) => void;
-  onClearSeries: () => void;
-  onClearYear: () => void;
+  /** 검색어·태그·시리즈를 지운다(정렬·보기는 남는다) */
   onClearAll: () => void;
 }
 
-const chipClass = css(tagPillStyle, {
-  gap: '[6px]',
-  color: 'ink.800',
-  whiteSpace: 'nowrap',
+const row = css({
+  display: 'flex',
+  flexWrap: 'wrap',
+  alignItems: 'center',
+  gap: '2',
+});
+
+// 태그는 코드 이름이라 mono다(카드 메타 줄의 배지와 같은 글자).
+const tagButton = css(tagBadge.raw({ interactive: true }), {
+  fontFamily: 'mono',
+  gap: '1',
+});
+
+const removeIcon = css({ fontSize: '2xs', color: 'ink.700' });
+
+// 독립 텍스트 버튼 — hover에 밑줄(색 표의 링크·버튼 hover 규칙).
+const clearAll = css({
+  textStyle: 'supporting',
+  fontWeight: 'medium',
+  color: 'ink.950',
   cursor: 'pointer',
+  textDecorationLine: 'underline',
+  textDecorationColor: 'transparent',
+  textUnderlineOffset: '[2px]',
   transition: 'colors',
-  _hover: { bg: 'paper.300', color: 'ink.950' },
+  _hover: { textDecorationColor: 'currentColor' },
 });
 
-const removeIconClass = css({
-  fontSize: '[10px]',
-  color: 'ink.500',
-  lineHeight: 'flat',
-});
-
-/** 칩은 누르면 그 필터를 푸는 버튼이다 — 이름에 "해제"를 담는다. */
-const removeLabel = (label: string) => `${label} 필터 해제`;
-
+/**
+ * 적용된 태그 필터 — 태그는 글 상세의 태그 링크(`?tag=`)로만 들어오고 화면에 고르는 컨트롤이 없어,
+ * 걸린 태그를 여기서 보이고 푼다. 시리즈는 칩이 이미 켜져 보여 여기 두지 않는다.
+ */
 export const ActiveFilters = ({
   tags,
-  seriesLabel,
-  year,
   onRemoveTag,
-  onClearSeries,
-  onClearYear,
   onClearAll,
 }: ActiveFiltersProps) => {
-  const total = tags.length + (seriesLabel ? 1 : 0) + (year ? 1 : 0);
-  if (total === 0) return null;
+  if (tags.length === 0) return null;
 
   return (
-    <div
-      className={css({
-        display: 'flex',
-        alignItems: 'center',
-        gap: '2',
-        flexWrap: 'wrap',
-        py: '3',
-        mb: '4',
-        borderTopWidth: 'hairline',
-        borderBottomWidth: 'hairline',
-        borderColor: 'ink.border',
-      })}
-    >
-      <span
-        className={css({
-          fontSize: '[12px]',
-          fontWeight: 'medium',
-          color: 'ink.500',
-        })}
-      >
-        필터
-      </span>
-      {seriesLabel && (
+    <div role="group" aria-label="적용된 필터" className={row}>
+      {tags.map(tag => (
         <button
+          key={tag}
           type="button"
-          onClick={onClearSeries}
-          aria-label={removeLabel(seriesLabel)}
-          className={chipClass}
+          onClick={() => onRemoveTag(tag)}
+          // 누르면 그 필터가 풀린다 — 이름에 "해제"를 담는다.
+          aria-label={`#${tag} 필터 해제`}
+          className={tagButton}
         >
-          {seriesLabel}
-          <span aria-hidden="true" className={removeIconClass}>
-            ✕
-          </span>
-        </button>
-      )}
-      {year && (
-        <button
-          type="button"
-          onClick={onClearYear}
-          aria-label={removeLabel(year)}
-          className={chipClass}
-        >
-          {year}
-          <span aria-hidden="true" className={removeIconClass}>
-            ✕
-          </span>
-        </button>
-      )}
-      {tags.map(t => (
-        <button
-          key={t}
-          type="button"
-          onClick={() => onRemoveTag(t)}
-          aria-label={removeLabel(`#${t}`)}
-          className={chipClass}
-        >
-          #{t}
-          <span aria-hidden="true" className={removeIconClass}>
+          #{tag}
+          <span aria-hidden="true" className={removeIcon}>
             ✕
           </span>
         </button>
       ))}
-      <button
-        type="button"
-        onClick={onClearAll}
-        className={css({
-          ml: '2',
-          fontSize: 'sm',
-          fontWeight: 'medium',
-          color: 'accent.solid',
-          cursor: 'pointer',
-          textDecorationLine: 'underline',
-          textDecorationColor: 'transparent',
-          textUnderlineOffset: '[2px]',
-          transition: 'colors',
-          _hover: { textDecorationColor: 'accent.solid' },
-        })}
-      >
+      <button type="button" onClick={onClearAll} className={clearAll}>
         모두 지우기
       </button>
     </div>

@@ -60,7 +60,7 @@ export const BackToTop = () => {
         cursor: 'pointer',
         zIndex: '40',
         // 아이콘(ink.900)은 이미 잉크라 hover에 더 진한 색이 없다(ink.950과
-        // 1.15 / 1.16:1) — 면을 필터 FAB의 hover 면(paper.300)으로 올린다
+        // 1.15 / 1.16:1) — 면을 칩·배지 hover와 같은 면(paper.300)으로 올린다
         // (paper.100 대비 1.23 / 1.23:1).
         _hover: { bg: 'paper.300', color: 'accent.solid' },
       })}

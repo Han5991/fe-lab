@@ -38,8 +38,8 @@ export const PostHeader = ({ post, seriesIndex }: PostHeaderProps) => {
         <h1
           className={css({
             fontFamily: 'sans',
-            // 레퍼런스(화면 2)의 22px을 그대로 쓴다. 목업 콘텐츠 폭(640px)과
-            // 실제 본문 칼럼(railText 680px)이 거의 같아 반응형 분기가 필요 없다.
+            // 레퍼런스(화면 2)의 22px을 그대로 쓴다 — 글 상세 머리는 Astryx 개편의 글 상세
+            // 단계에서 display1로 다시 짠다.
             fontSize: '[22px]',
             fontWeight: 'bold',
             lineHeight: 'headerSm',
