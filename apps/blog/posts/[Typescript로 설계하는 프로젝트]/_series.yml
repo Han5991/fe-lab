@@ -3,4 +3,4 @@
 #
 # 표시명은 title:이다(없으면 폴더명). 시리즈 id와 ?series= 링크는 바꾸지 않는다 —
 # 폴더명 그대로다. 읽는 순서를 고정하려면 order: [slug, ...] 를 넣는다.
-title: Typescript로 설계하는 프로젝트
+title: TypeScript로 설계하는 프로젝트
