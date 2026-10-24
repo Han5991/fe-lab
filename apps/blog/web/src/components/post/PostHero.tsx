@@ -1,7 +1,10 @@
 import { css } from '@blog/styled-system/css';
 import { DIAGRAMS, isDiagramName } from '@/src/components/diagram/registry';
+import { PostDetailShared } from '@/src/components/shared/PostSharedElement';
 
 interface PostHeroProps {
+  /** 썸네일이 글 카드의 커버와 이어지는 공유 요소 이름의 열쇠(`PostDetailShared`). */
+  slug: string;
   title: string;
   /**
    * frontmatter `hero` — 다이어그램 레지스트리의 이름.
@@ -9,7 +12,10 @@ interface PostHeroProps {
    * 다이어그램을 붙이려면 코드를 고쳐야 했다. 이제 글이 스스로 지정한다.
    */
   hero?: string | undefined;
-  /** frontmatter thumbnail이 있을 때만 채워진다(page.tsx에서 분기) */
+  /**
+   * frontmatter thumbnail이 있을 때만 채워진다(page.tsx에서 분기). 글 카드의 커버와 같은 주소
+   * (`resolveThumbnailSrc` — 최적화본이 있으면 webp)라, 카드에서 넘어오면 이미 받은 이미지다.
+   */
   thumbnailUrl?: string | undefined;
 }
 
@@ -18,8 +24,15 @@ interface PostHeroProps {
  *
  * 등록되지 않은 `hero` 이름은 여기서 조용히 썸네일로 폴백한다 — 오타 하나로
  * 글 전체가 렌더 실패하는 것보다 낫다. 오타는 `lint:posts`가 빌드 전에 잡는다.
+ *
+ * 썸네일만 글 카드의 커버와 짝이다 — 다이어그램은 카드에 없는 그림이라 이어 붙이지 않는다.
  */
-export const PostHero = ({ title, hero, thumbnailUrl }: PostHeroProps) => {
+export const PostHero = ({
+  slug,
+  title,
+  hero,
+  thumbnailUrl,
+}: PostHeroProps) => {
   // `getDiagram(hero)`가 아니라 맵을 직접 인덱싱한다 — react-hooks/static-components는
   // "렌더 중 **함수 호출**로 얻은 대문자 값"을 렌더마다 새로 만들어지는 컴포넌트로
   // 보고 에러를 낸다. 모듈 상수 맵의 인덱싱은 렌더 간 같은 참조라 그 오탐을 피한다.
@@ -38,23 +51,27 @@ export const PostHero = ({ title, hero, thumbnailUrl }: PostHeroProps) => {
 
   if (thumbnailUrl) {
     return (
-      <img
-        src={thumbnailUrl}
-        alt={title}
-        width={1200}
-        height={630}
-        // 다이어그램 분기와 같은 24px 리듬을 쓴다 — 히어로가 무엇으로 채워지든
-        // 본문 첫 블록까지의 간격이 달라질 이유가 없다.
-        className={css({
-          display: 'block',
-          mb: '[24px]',
-          w: 'full',
-          h: 'auto',
-          rounded: 'element',
-          borderWidth: 'hairline',
-          borderColor: 'ink.border',
-        })}
-      />
+      <PostDetailShared part="cover" slug={slug}>
+        <img
+          src={thumbnailUrl}
+          alt={title}
+          width={1200}
+          height={630}
+          // 다이어그램 분기와 같은 24px 리듬을 쓴다 — 히어로가 무엇으로 채워지든
+          // 본문 첫 블록까지의 간격이 달라질 이유가 없다.
+          //
+          // 보더를 두지 않는다 — 글 카드 커버와 이어지는 전환에서 두 스냅샷은 이미지가 가장자리까지
+          // 차 있어야 겹친다(panda.config.ts globalCss의 커버 규칙). 선이 필요하면 카드 틀처럼
+          // 이미지 위에 덮어 그린다(cardParts.ts의 coverFrameRaw).
+          className={css({
+            display: 'block',
+            mb: '[24px]',
+            w: 'full',
+            h: 'auto',
+            rounded: 'element',
+          })}
+        />
+      </PostDetailShared>
     );
   }
 

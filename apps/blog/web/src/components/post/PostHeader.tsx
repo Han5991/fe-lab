@@ -4,6 +4,7 @@ import type { PostData } from '@blog/content/client';
 import { archivePath } from '@blog/content/client';
 import { fmtDate } from '@blog/content/client';
 import { seriesBadge } from '@/src/components/seriesBadge';
+import { PostDetailShared } from '@/src/components/shared/PostSharedElement';
 
 interface PostHeaderProps {
   post: PostData;
@@ -32,23 +33,26 @@ export const PostHeader = ({ post, seriesIndex }: PostHeaderProps) => {
           {seriesIndex.total}
         </span>
       )}
-      <h1
-        className={css({
-          fontFamily: 'sans',
-          // 레퍼런스(화면 2)의 22px을 그대로 쓴다. 목업 콘텐츠 폭(640px)과
-          // 실제 본문 칼럼(railText 680px)이 거의 같아 반응형 분기가 필요 없다.
-          fontSize: '[22px]',
-          fontWeight: 'bold',
-          lineHeight: 'headerSm',
-          // 글 제목은 본문 잉크(ink.950)다. 바로 아래 메타 줄(ink.500)·excerpt(ink.600)와는
-          // 크기·굵기·명도로 갈린다.
-          color: 'ink.950',
-          mt: '[12px]',
-          mb: '[6px]',
-        })}
-      >
-        {post.title}
-      </h1>
+      {/* 글 카드·목록 행의 제목이 이 h1로 이어진다(공유 요소). */}
+      <PostDetailShared part="title" slug={post.slug}>
+        <h1
+          className={css({
+            fontFamily: 'sans',
+            // 레퍼런스(화면 2)의 22px을 그대로 쓴다. 목업 콘텐츠 폭(640px)과
+            // 실제 본문 칼럼(railText 680px)이 거의 같아 반응형 분기가 필요 없다.
+            fontSize: '[22px]',
+            fontWeight: 'bold',
+            lineHeight: 'headerSm',
+            // 글 제목은 본문 잉크(ink.950)다. 바로 아래 메타 줄(ink.500)·excerpt(ink.600)와는
+            // 크기·굵기·명도로 갈린다.
+            color: 'ink.950',
+            mt: '[12px]',
+            mb: '[6px]',
+          })}
+        >
+          {post.title}
+        </h1>
+      </PostDetailShared>
       <p
         className={css({
           fontFamily: 'mono',

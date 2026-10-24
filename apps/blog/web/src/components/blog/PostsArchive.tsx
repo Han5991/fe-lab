@@ -1,7 +1,6 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import Link from 'next/link';
 import { useQueryStates, parseAsString, parseAsStringLiteral } from 'nuqs';
 import { useQuery } from '@tanstack/react-query';
 import { css } from '@blog/styled-system/css';
@@ -16,19 +15,16 @@ import {
 } from '@blog/content/client';
 import { getAllViewCounts } from '@/src/domain/analytics';
 import { siteHeaderStyle } from '@/src/components/siteHeader';
-import { postPath } from '@blog/content/client';
-import { fmtDate } from '@blog/content/client';
 
 import { Label } from './Label';
 import type { ViewMode } from './ViewToggle';
 import { ActiveFilters } from './ActiveFilters';
-import { HiddenPostBadge } from './HiddenPostBadge';
 import { PostGridCard } from './PostGridCard';
+import { PostListRow } from './PostListRow';
 import { PopularRail } from './PopularRail';
 import { PostsFilterSheet } from './PostsFilterSheet';
 import { PostsFilterFab } from './PostsFilterFab';
 import { PostsFilterPanel } from './PostsFilterPanel';
-import { postRowItem, postRowLink, postRowMeta, postRowTitle } from './postRow';
 
 interface PostsArchiveViewProps {
   posts: PostSummary[];
@@ -69,20 +65,6 @@ interface ArchiveActions {
   setSort: (v: ArchiveSortKey) => void;
   setView: (v: ViewMode) => void;
 }
-
-export const ArchiveRow = ({ post }: { post: PostSummary }) => (
-  <li className={postRowItem}>
-    <Link href={postPath(post.slug)} className={postRowLink}>
-      <h3 className={postRowTitle}>
-        {post.title}
-        <HiddenPostBadge post={post} />
-      </h3>
-      {/* 날짜가 없으면 태그 자체를 뺀다 — fmtDate가 빈 문자열을 돌려주므로
-          크래시는 없지만 내용 없는 span이 남는다(카드 메타 PostMeta와 같은 패턴). */}
-      {post.date && <span className={postRowMeta}>{fmtDate(post.date)}</span>}
-    </Link>
-  </li>
-);
 
 export const PostsArchiveView = ({
   posts,
@@ -457,7 +439,7 @@ const PostsArchiveLayout = ({
           ) : (
             <ol className={css({ listStyleType: 'none', p: '0', m: '0' })}>
               {filtered.map(p => (
-                <ArchiveRow key={p.slug} post={p} />
+                <PostListRow key={p.slug} post={p} />
               ))}
             </ol>
           )}

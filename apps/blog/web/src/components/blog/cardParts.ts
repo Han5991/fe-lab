@@ -32,6 +32,12 @@ export const cardLinkRaw = css.raw({
  * 커버 틀 — 16:9 고정, hairline, 이미지가 늦게 와도 자리를 지키는 `paper.100` 면. 비율을 틀이 정하므로
  * 이미지가 오기 전후로 높이가 같다(CLS 0). hover에는 잉크 틴트(`accent.muted`)가 덮인다 — 카드 링크는
  * 제목 밑줄 대신 커버로 반응한다(승인 목업).
+ *
+ * hairline은 틀의 보더가 아니라 이미지 **위에** 그린 선이다(`_before`) — 이미지가 틀 가장자리까지
+ * 찬다. 틀은 글 상세 히어로로 이어지는 공유 요소라(`PostCardShared`), 전환 중 카드 스냅샷과 히어로
+ * 스냅샷이 원본의 같은 부분을 같은 배율로 그리려면 둘 다 이미지가 스냅샷 끝까지 차 있어야 한다
+ * (panda.config.ts globalCss의 커버 규칙). 진짜 보더는 이미지를 사방 1px 안으로 밀어 이미지 상자가
+ * 16:9에서 벗어나고, 겹친 두 스냅샷이 최대 4px 어긋나 이미지 속 글자가 두 겹으로 보였다(실측).
  */
 export const coverFrameRaw = css.raw({
   pos: 'relative',
@@ -39,9 +45,17 @@ export const coverFrameRaw = css.raw({
   overflow: 'hidden',
   aspectRatio: 'wide',
   bg: 'paper.100',
-  borderWidth: 'hairline',
-  borderStyle: 'solid',
-  borderColor: 'ink.border',
+  _before: {
+    content: '""',
+    pos: 'absolute',
+    inset: '0',
+    // 틀의 라운드를 따라 돈다 — 틀의 자르기는 직사각 선의 모서리를 곡선 밖에서 끊을 뿐이다.
+    rounded: 'inherit',
+    borderWidth: 'hairline',
+    borderStyle: 'solid',
+    borderColor: 'ink.border',
+    pointerEvents: 'none',
+  },
   _after: {
     content: '""',
     pos: 'absolute',

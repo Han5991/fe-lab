@@ -16,6 +16,7 @@ describe('PostHero', () => {
   test('레지스트리에 있는 hero 이름은 썸네일보다 먼저 그린다', () => {
     const { container } = render(
       <PostHero
+        slug={SLUG}
         title="무중단 배포"
         hero={REGISTERED_HERO}
         thumbnailUrl={`/og/${SLUG}.png`}
@@ -28,6 +29,7 @@ describe('PostHero', () => {
   test('hero가 없으면 기존 썸네일 이미지로 폴백한다', () => {
     render(
       <PostHero
+        slug={SLUG}
         title="도커라이징"
         thumbnailUrl="/og/turborepo-next.js-docker.png"
       />,
@@ -40,6 +42,7 @@ describe('PostHero', () => {
     // 오타 하나로 렌더가 터지면 안 된다. 오타 자체는 lint:posts가 잡는다.
     render(
       <PostHero
+        slug={SLUG}
         title="무중단 배포"
         hero="deploy-pipelnie"
         thumbnailUrl={`/og/${SLUG}.png`}
@@ -51,7 +54,7 @@ describe('PostHero', () => {
   });
 
   test('다이어그램도 썸네일도 없으면 아무것도 그리지 않는다', () => {
-    const { container } = render(<PostHero title="도커라이징" />);
+    const { container } = render(<PostHero slug={SLUG} title="도커라이징" />);
     expect(container).toBeEmptyDOMElement();
   });
 });

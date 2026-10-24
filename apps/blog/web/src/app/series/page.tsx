@@ -1,22 +1,15 @@
 import Link from 'next/link';
 import { css, cx } from '@blog/styled-system/css';
 
-import { archivePath, POSTS_PATH, postPath } from '@blog/content/client';
+import { archivePath, POSTS_PATH } from '@blog/content/client';
 import {
   getAllPostSummaries,
   getAllSeries,
   getSeriesMeta,
 } from '@/src/content';
-import { fmtDate } from '@blog/content/client';
 import { safeJsonLd } from '@blog/content/client';
-import { HiddenPostBadge } from '@/src/components/blog/HiddenPostBadge';
-import {
-  postRowItem,
-  postRowLink,
-  postRowMeta,
-  postRowMetaRaw,
-  postRowTitle,
-} from '@/src/components/blog/postRow';
+import { PostListRow } from '@/src/components/blog/PostListRow';
+import { postRowMeta, postRowMetaRaw } from '@/src/components/blog/postRow';
 import { PageBoundary } from '@/src/components/PageBoundary';
 import { inlineLink } from '@/src/components/inlineLink';
 import { railGutter, railColumn } from '@/src/components/Rail';
@@ -164,23 +157,7 @@ export default function SeriesPage() {
                     className={css({ listStyleType: 'none', p: '0', m: '0' })}
                   >
                     {entry.posts.map(post => (
-                      <li key={post.slug} className={postRowItem}>
-                        <Link
-                          href={postPath(post.slug)}
-                          className={postRowLink}
-                        >
-                          <h3 className={postRowTitle}>
-                            {post.title}
-                            <HiddenPostBadge post={post} />
-                          </h3>
-                          {/* 날짜가 없으면 빈 span을 남기지 않는다(ArchiveRow와 같은 규칙). */}
-                          {post.date && (
-                            <span className={postRowMeta}>
-                              {fmtDate(post.date)}
-                            </span>
-                          )}
-                        </Link>
-                      </li>
+                      <PostListRow key={post.slug} post={post} />
                     ))}
                   </ol>
                 </section>

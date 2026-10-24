@@ -1,6 +1,6 @@
 ---
 name: blog-design-system
-description: 블로그(apps/blog/web)와 blog-preset.ts의 시각 시스템 단일 출처 — 컬러 semanticToken(라이트/다크, 대비비, 잉크에서 파생한 accent와 색 대신 쓰는 구분 수단), 타이포그래피(mono/sans를 어디에 쓰는지, 글자 역할 textStyles), 라운드·보더, 그림자(떠 있는 표면의 overlay.* — 판정 기준과 표면별 단계), 모션(Astryx 시간·곡선 토큰, 움직임 줄이기, 페이지 전환·오버레이·누름 적용표), 레일 그리드(railWide/railText/railForm와 거터, 섹션 간격), 셸(헤더·푸터의 슬롯·반응형·헤더 높이 파생), 버튼(actionButton·iconButton의 tone·size)과 칩, 카드(글 카드·썸네일 행·메타 줄 — 링크 하나 구조, 커버 비율, 이미지 우선순위), 홈 구성, 코드 블록 테마(code.* 토큰, rehypeCodeMeta 순서). 블로그 UI 컴포넌트나 packages/@blog/preset/src/blog-preset.ts를 고칠 때, 색·간격·폭·글꼴을 정하거나 "이 값 어디서 왔지" 싶을 때 사용한다. 글 본문에 넣는 커스텀 태그(diagram·dialogue·metrics·callout 등)는 이 스킬이 아니라 blog-components 스킬을 볼 것.
+description: 블로그(apps/blog/web)와 blog-preset.ts의 시각 시스템 단일 출처 — 컬러 semanticToken(라이트/다크, 대비비, 잉크에서 파생한 accent와 색 대신 쓰는 구분 수단), 타이포그래피(mono/sans를 어디에 쓰는지, 글자 역할 textStyles), 라운드·보더, 그림자(떠 있는 표면의 overlay.* — 판정 기준과 표면별 단계), 모션(Astryx 시간·곡선 토큰, 움직임 줄이기, 페이지 전환·공유 요소(글 카드 ↔ 글 상세)·오버레이·누름 적용표), 레일 그리드(railWide/railText/railForm와 거터, 섹션 간격), 셸(헤더·푸터의 슬롯·반응형·헤더 높이 파생), 버튼(actionButton·iconButton의 tone·size)과 칩, 카드(글 카드·썸네일 행·메타 줄 — 링크 하나 구조, 커버 비율, 이미지 우선순위), 홈 구성, 코드 블록 테마(code.* 토큰, rehypeCodeMeta 순서). 블로그 UI 컴포넌트나 packages/@blog/preset/src/blog-preset.ts를 고칠 때, 색·간격·폭·글꼴을 정하거나 "이 값 어디서 왔지" 싶을 때 사용한다. 글 본문에 넣는 커스텀 태그(diagram·dialogue·metrics·callout 등)는 이 스킬이 아니라 blog-components 스킬을 볼 것.
 ---
 
 # 블로그 디자인 시스템
@@ -301,6 +301,8 @@ preset-panda의 durations·easings·animations·keyframes를 빼서 `transitionD
 | 무엇              | 움직임                                                                                                                        |
 | :---------------- | :---------------------------------------------------------------------------------------------------------------------------- |
 | 페이지 전환       | `PageBoundary`(`<ViewTransition>`) — 나감 투명도 1→0(fast·exit), 들어옴 투명도 0→1과 8px 상승(medium·standard)                |
+| 공유 요소 — 커버  | 카드 커버 ↔ 상세 히어로. 자리·크기·모서리 medium·standard. 바닥은 상세 스냅샷, 카드 스냅샷만 걷힘·나타남(아래)                |
+| 공유 요소 — 제목  | 카드 제목 ↔ 상세 h1. 자리 medium·standard, 글자는 늘이지 않고 나감(fast) 뒤 들어옴(fast 지연·fastMax)                         |
 | 헤더              | `view-transition-name`으로 따로 찍어 페이지 위에 불투명 지면으로 그린다(흐림 없음). 전환 중엔 클릭을 받지 않는다              |
 | 테마 전환         | 루트·헤더 스냅샷 크로스페이드(fastMax·standard). 움직임 줄이기면 즉시                                                         |
 | 검색 다이얼로그   | 등장만 — md 이상 패널은 투명도 0·16px 아래·95%에서(mediumMax), 모바일 전체화면은 투명도만, 스크림은 fast. 닫힘은 즉시         |
@@ -310,12 +312,59 @@ preset-panda의 durations·easings·animations·keyframes를 빼서 `transitionD
 | admin 글 아코디언 | 셰브론 회전만(fast). 패널은 높이를 애니메이션하지 않고 바로 열린다                                                            |
 | 스켈레톤(admin)   | 투명도 1↔0.5 왕복(mediumMax, linear). 움직임 줄이기면 멈춘다                                                                  |
 
+**공유 요소(글 카드 ↔ 글 상세)** — 목록의 썸네일이 상세로 그대로 이어지고 주변은 페이지 전환대로
+페이드한다(ssgoi hero와 같은 구성, 라이브러리 없이 React `<ViewTransition>`). 이름·클래스·transition
+type은 `src/shared/viewTransitions.ts`, 감싸개는 `src/components/shared/PostSharedElement.tsx`의 둘이다.
+
+- **짝** — 커버(카드의 커버 틀·`/posts` 카드 이미지 ↔ `PostHero`의 썸네일 이미지)와 제목(카드·목록
+  행의 h3 ↔ `PostHeader`의 h1). 다이어그램 히어로·히어로 없는 글은 제목만 짝이다. 쓰는 곳은 홈 카드
+  두 변형·썸네일 행·`/posts` 카드·글 목록 행(`PostListRow` — `/posts` 목록 보기와 `/series`, 제목만).
+  새 카드는 `PostCardShared`로 감싸고 제목 링크에 `transitionTypes={[POST_OPEN_TRANSITION_TYPE]}`를 단다
+- **짝이 되는 이동은 둘뿐이다** — 카드를 눌러 글을 열 때(링크의 transition type)와, 그 글의 상세에서
+  링크(헤더 내비·워드마크·태그·시리즈 목록)로 목록에 돌아갈 때(상세가 마운트 동안 "열린 글"로 적는다).
+  목록 → 목록 이동(홈 → `/posts`)에서는 같은 글의 카드끼리도 짝이 되지 않는다 — 되면 화면의 카드
+  열네 개가 한꺼번에 날아다녔다(실측). 검색·인기 글 레일처럼 카드가 아닌 링크로 열면 페이드만 한다
+- **양쪽이 화면 안일 때만** — React가 뷰포트 밖 요소의 이름을 거둔다. 상세에서 `/posts`로 돌아갔는데
+  그 글의 카드가 화면 밖이면 상세의 커버·제목은 나가는 페이지와 같이 사라진다(`:only-child` 규칙).
+  카드 쪽도 같다 — 홈 첫 화면에서 쇼케이스 제목이 화면 아래에 있으면(데스크톱 높이 800 안팎) 커버만
+  짝이 되고 제목은 페이지와 같이 바뀐다
+- **커버는 늘이지도 겹치지도 않는다** — 카드는 원본의 가운데를 잘라 보이므로, 상세 스냅샷(원본
+  전체)은 그룹 상자를 cover로, 카드 스냅샷은 contain으로 맞춘다 — 둘이 원본의 같은 부분을 같은
+  배율로 그린다. 그러려면 두 스냅샷 모두 이미지가 가장자리까지 차 있어야 한다: 카드 틀의 hairline은
+  이미지 위에 덮어 그린 선이고(`coverFrameRaw`의 `_before`), 상세 히어로에는 보더가 없다. 틀의 진짜
+  보더가 이미지를 1px 안으로 밀었을 때는 둘이 최대 4px 어긋나 이미지 속 글자가 두 겹이었다
+- **커버의 겹치는 방식** — UA 크로스페이드(plus-lighter로 두 장을 함께 흐리게)는 쓰지 않는다: 상자를
+  늘 채우는 상세 스냅샷이 불투명한 바닥이고, 카드 스냅샷(같은 그림에 라운드·hairline·hover 틴트만 더
+  있다)만 위에서 걷히거나 나타난다. 카드 스냅샷은 카드 크기에서만 바닥과 모양이 같아서 카드 → 상세는
+  처음에 빨리(fast) 걷히고, 상세 → 카드는 그룹이 카드 크기에 거의 닿은 뒤(fast 지연, fastMax)
+  나타난다. 바닥은 cover로 잘리며 히어로의 라운드도 잘려 나가므로 모서리를 다시 깎는다 — 카드 쪽 끝은
+  `container`, 상세 쪽 끝은 `element`로 그룹과 같은 시간에 바뀐다. 짝의 그룹은 들어오는 쪽 요소의
+  클래스만 받아서, 방향은 `post-card`/`post-detail` 클래스로 가른다. 상세 히어로는 카드와 같은
+  주소(`resolveThumbnailSrc`)라 이미 받은 이미지다
+- **제목은 순서대로 바꾼다** — 카드(14~24px, 좁은 칼럼)와 h1(22px, 680px)은 글자 크기도 줄바꿈도
+  달라 스냅샷을 그룹 크기로 늘이면 글자가 뭉갠다. 제 크기 그대로 그룹 왼쪽 위에 붙여 자리만 옮기고,
+  두 글자가 겹치지 않게 나가는 제목이 먼저 사라진 뒤(fast·standard — 처음에 대부분 걷힌다) 들어오는
+  제목이 나타난다(fast 지연, fastMax). 그룹 상자 밖은 자른다 — 680px 한 줄 h1이 254px 카드 제목으로
+  줄어드는 동안 글자 끝이 옆 카드 위를 지나갔다
+- **쌓는 순서** — 헤더 > 커버 > 제목 > 페이지(`panda.config.ts`의 `VT_STACK`). 기본 순서면 들어오는
+  페이지가 날아가는 커버 위에 덧칠되고, 헤더 밑에 반쯤 가린 채 눌린 카드는 가려진 부분까지 찍혀 헤더를
+  덮는다. 제목이 커버 아래인 이유: 카드 제목은 커버 아래, 상세 h1은 히어로 위라 제목이 날아가는 커버를
+  가로지르는데, 위에 그리면 다크에서 흰 글자가 커버 그림 위를 지나갔다
+- **브라우저 뒤로·앞으로 가기는 지원하지 않는다(보류)** — Next 16.4 `handlePopState`는
+  `traverse`를 `startTransition`으로 넘기지만, React DOM이 popstate 이벤트 안의 전환을 동기 레인과
+  묶어 그 자리에서 커밋하고(브라우저 스크롤 복원이 새 페이지에 걸리게) 동기 레인이 섞인 커밋은 View
+  Transition을 열지 않는다(실측 `startViewTransition` 0회, 스크롤은 1500px 그대로 복원). Next 가이드는
+  "뒤로 가기에도 모핑은 남는다"고 적지만 이 조합에서는 재현되지 않는다. 프레임워크가 여는 길이 없어
+  Navigation API 가로채기 같은 우회는 넣지 않았다 — 스크롤 복원과 싸운다
+- 하드 로드·같은 페이지 해시 이동·테마 전환에는 끼지 않는다(실측). 움직임 줄이기면 시간 토큰이
+  전부 0.01ms라 즉시 바뀐다
+
 **Astryx와 일부러 다르게 간 곳**
 
-- **페이지 전환은 블로그 것이다.** Astryx에는 페이지 전환이 없다. 링크 이동에서만 돌고, 브라우저
-  뒤로·앞으로 가기에는 전환이 아예 없다(스크롤 복원만 일어난다). 그래서 방향(앞·뒤로 미끄러짐)은
-  담지 않는다 — 넣어도 링크 이동에서만 보인다. 들어오는 쪽의 8px는 Astryx spacing-2(Toast 등장
-  거리)다
+- **페이지 전환과 공유 요소는 블로그 것이다.** Astryx에는 페이지 전환이 없다. 링크 이동에서만 돌고,
+  브라우저 뒤로·앞으로 가기에는 전환이 아예 없다(스크롤 복원만 일어난다 — 공유 요소 절). 그래서
+  방향(앞·뒤로 미끄러짐)은 담지 않는다 — 넣어도 링크 이동에서만 보인다. 들어오는 쪽의 8px는 Astryx
+  spacing-2(Toast 등장 거리)다
 - **스켈레톤의 쉬는 투명도가 다르다.** Astryx는 .25↔1이지만 자리표시 면(`paper.100`)이 지면과 거의
   같은 밝기라 .25에서는 보이지 않는다 — 1↔.5로 왕복한다. 곡선도 Astryx의 `steps(10, end)`가 아니라
   `linear`(곡선 토큰을 셋으로 둔다)이고, 1초 지연은 두지 않았다
@@ -448,14 +497,19 @@ Astryx BlogCard·BlogShowcase의 블로그 판. `src/components/blog/`의 `PostC
   받아들인다 — 상세 커버와 다르다). 쇼케이스도 옆 열 높이를 따라 늘리지 않는다: 이미지가 오기 전후로
   높이가 같고(CLS), 생성 OG 카드의 글자가 잘리지 않는다(1200×630 카드를 16:9로 자르면 좌우 40px씩이고
   카드의 좌우 안전 여백은 90px). src는 `resolveThumbnailSrc` — 원고 썸네일은 `/thumbs/*.webp`, 없으면 `/og/{slug}.png`
-- 커버 틀은 `paper.100` 면에 hairline. hover는 커버 위 `accent.muted` 틴트(`group` hover) — 밑줄은
-  쓰지 않는다
+- 커버 틀은 `paper.100` 면에 hairline. hairline은 틀의 보더가 아니라 이미지 위에 덮어 그린 선이다
+  (`_before`, 라운드는 틀을 따른다) — 이미지가 틀 끝까지 차야 글 상세로 이어지는 전환에서 두 스냅샷이
+  겹친다(모션 절). hover는 커버 위 `accent.muted` 틴트(`group` hover) — 밑줄은 쓰지 않는다
 - **이미지 우선순위는 `priority` 하나다** — 첫 화면에서 가장 큰 이미지(LCP 후보)만 `eager` +
   `fetchPriority="high"`, 나머지는 `lazy`. 여러 장에 걸면 화면 밖 이미지까지 받아 LCP가 밀린다
 - 메타 줄은 mono `supporting`, `ink.700`, 항목 사이 세로선(1px × 0.75em, `ink.borderStrong`,
   `aria-hidden`). 읽기 시간 표기는 `@blog/content`의 `fmtReadMin`(`N분`) 하나다
 - 카드 안의 태그는 링크가 아니다(카드 링크 안에 링크를 둘 수 없다) — 태그 필터로 들어오는 입구는
   글 상세의 태그다
+- **커버 틀과 제목 h3는 글 상세로 이어지는 공유 요소다**(모션 절) — 커버는 `<img>`가 아니라 틀
+  (라운드·hairline)째 `PostCardShared`로 감싼다. 이름이 붙은 요소는 조상의 자르기 없이 따로 찍혀,
+  이미지에 이름을 달면 틀의 라운드가 빠져 전환 첫 프레임에 모서리가 각진다. 그래서 틀이 없는
+  `/posts` 카드는 이미지가 위 모서리 라운드를 직접 든다. 제목 링크는 글을 여는 transition type을 단다
 
 ## 홈
 
