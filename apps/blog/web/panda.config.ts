@@ -14,7 +14,7 @@ import { TEST_SUFFIX } from './testFiles.mts';
 // "Trim a preset", theming/presets "extend only adds, so removing takes a plugin"). @blog/preset에
 // extend 없는 colors를 두는 길도 v2에서 동작하지만, 그러면 블로그 프리셋이 목록 순서에 묶인다.
 // 뺀 토큰을 쓰면 Panda는 진단 없이 raw 값(`color: orange.500`)을 내보낸다 — check-types가 막고,
-// 색·라운드는 Panda 공식 lint(prefer-token, eslint.config.mts)도 막는다.
+// 색·라운드·그림자는 Panda 공식 lint(prefer-token, eslint.config.mts)도 막는다.
 const trimPresetPanda = definePlugin({
   name: 'blog:trim-preset-panda',
   hooks: {
