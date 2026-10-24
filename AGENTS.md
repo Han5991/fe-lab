@@ -105,7 +105,7 @@ here or anywhere else (this repo once carried four diverging copies of that prom
 - Panda runs `strictTokens: true` — off-token values are escaped on purpose as `'[12px]'`. A token the config
   drops (the blog trims preset-panda's palette, radii and shadows) or never had is emitted by Panda as raw CSS
   (`color: 'orange.500'`) with no diagnostic. `check-types` catches it, and in the blog so does the official Panda lint
-  (`@pandacss/prefer-token` for colors·radii·borderWidths, `apps/blog/web/eslint.config.mts`). Raw `token(colors.x)`
+  (`@pandacss/prefer-token` for colors·radii·borderWidths·shadows·dropShadows, `apps/blog/web/eslint.config.mts`). Raw `token(colors.x)`
   strings inside values are invisible to `check-types`; the same lint's `@pandacss/no-invalid-token-paths` reports a
   missing one, but only in the blog's `src/` — `panda.config.ts` (globalCss) and the lab apps are checked by neither.
 - Never run `panda codegen --clean` (or `panda build --clean`) on an outdir that is a whole package
@@ -327,12 +327,13 @@ Worker (`apps/blog/web/wrangler.jsonc`), Supabase for the dynamic bits.
 시각 기준은 구현된 화면(홈과 글 상세를 dev 서버로 대조)이고, 수치와 근거는 `blog-design-system` 스킬이
 단일 출처다. 금지선:
 
-- 색과 라운드는 전부 `packages/@blog/preset/src/blog-preset.ts`에서 온다 — preset-panda의 팔레트와 radii는
-  블로그 설정의 `preset:resolved` 플러그인이 빼서 strictTokens를 통과하지 못한다. **컴포넌트에서 hex를 쓰지 않는다** —
+- 색·라운드·그림자는 전부 `packages/@blog/preset/src/blog-preset.ts`에서 온다 — preset-panda의 팔레트·radii·그림자는
+  블로그 설정의 `preset:resolved` 플러그인이 빼서 strictTokens를 통과하지 못하고(`boxShadow: 'md'`는 타입에서
+  막힌다), 토큰 밖 값과 대괄호 이스케이프는 §3의 `prefer-token`이 `src/`에서 막는다(예외는 그 설정의 `allow`).
+  **컴포넌트에서 hex를 쓰지 않는다** —
   다이어그램 SVG도 `currentColor`나 Panda `css()`로 토큰에 잇는다. CSS 변수를 못 읽는 satori/sharp는
   `themeColor('dark', 'paper.50')`으로 뽑는다. hex를 옮겨 적지 않는다.
 - 레일·거터의 단일 출처는 `src/components/Rail.tsx`다. **페이지에서 `maxW`·`px`를 직접 쓰지 않는다.** 거터는
   언제나 레일 바깥이다.
-- **그라데이션·글로우·box-shadow 장식 금지, 세리프 금지.** 플랫 유지. preset-panda의 그림자 토큰도 같은 플러그인이
-  빼서 `boxShadow: 'md'`는 타입에서 막힌다.
+- **그라데이션·글로우·box-shadow 장식 금지, 세리프 금지.** 플랫 유지 — 위계는 그림자가 아니라 보더로 낸다.
 - 히어로 슬롯(`hero:`)은 이름 레지스트리에 등록된 다이어그램만 받는다.
