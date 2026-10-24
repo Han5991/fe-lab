@@ -234,9 +234,12 @@ Worker (`apps/blog/web/wrangler.jsonc`), Supabase for the dynamic bits.
   이 문단과 `/privacy`를 함께 갱신할 것. 감점을 없애려면 고지가 아니라 GTM 콘솔에서 Clarity를 내려야 한다.
   **런타임 예외도 같은 GA4로 간다** — `apps/blog/web/src/components/errorReporting.ts`가 에러 경계 셋과 전역
   `error`·`unhandledrejection`에서 `exception` 이벤트(설명 100자, 자기 출처의 첫 스택 프레임 `frame`, 비치명은 탭 새로고침 전까지 5건)를 보내고, 다른 출처
-  스크립트의 에러와 `Error`가 아닌 거절은 거른다. 화면에 드러나지 않는 실패도 같은 길로 간다 — React Query 실패는
-  `apps/blog/web/src/app/queryClient.ts`의 QueryCache가(에러 경계가 보고하는 admin 쿼리는 meta로 빼고), 조회수 기록
-  실패는 `useViewCount`가, 인기순 조회수 읽기 실패는 `usePopularViewCounts`가 보낸다. GA4 화면에서 보려면 `description`·`frame`을 맞춤 측정기준으로
+  스크립트의 에러와 `Error`가 아닌 거절은 거른다. 화면에 드러나지 않는 실패도 같은 길로 간다 — 조회수 기록
+  실패는 `useViewCount`가, 인기순 조회수 읽기 실패는 `usePopularViewCounts`가 직접 보낸다. **React Query는 admin만
+  쓴다** — `QueryClientProvider`는 admin 레이아웃에 있어 공개 페이지의 청크는 query-core를 싣지 않는다. 공개 화면의
+  조회 때문에 Provider를 루트로 되올리지 말고 위 두 훅처럼 손으로 쓴다. admin 쿼리 실패는 `admin/error.tsx`가
+  401·403을 거른 뒤 보내고, `apps/blog/web/src/app/admin/queryClient.ts`의 QueryCache는 그 meta가 없는 쿼리만 보내는
+  안전망이다. GA4 화면에서 보려면 `description`·`frame`을 맞춤 측정기준으로
   등록해야 한다. `frame`의 원래 위치는 함께 배포되는 소스맵(`productionBrowserSourceMaps`)으로 찾는다. **실사용자 Web Vitals도 같은 GA4로 간다** — `apps/blog/web/src/instrumentation-client.ts`가 GA(`gtag`)가
   초기화된 뒤 web-vitals를 등록하고(곧바로 등록하면 그 전에 보고된 FCP·TTFB를 `sendGAEvent`가 버린다)
   `apps/blog/web/src/components/webVitals.ts`의 매개변수로 지표마다 이벤트를 보낸다. 단위는 **하드 로드 한 번**이다:

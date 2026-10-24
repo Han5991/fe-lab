@@ -346,6 +346,13 @@ export const BUNDLE_GUARDS = [
  * 공개 그룹과 admin이 −3.1~−3.2KB다(공개 175.7~176.5 → 172.5~173.3, 글 상세 199.5 → 196.3, 목록 185.2 →
  * 182.0, admin 378.0 → 374.9). CSS는 그대로(최대 28.5KB) — 예산은 전부 그대로. 줄 주석의 옛 값(176.2 /
  * 27.3, 378.8 / 27.3)은 앞선 빌드부터 실측과 어긋나 있던 것을 이 빌드의 측정값으로 바꿨다.
+ * 2026-10-25 루트 `QueryClientProvider`를 admin 레이아웃으로 옮긴 빌드로 다시 갱신했다. query-core·react-query가
+ * 모든 공개 페이지의 공유 청크에서 빠져 공개 그룹 −8.6KB(172.5~173.3 → 163.9~164.7), 글 상세 −8.6KB(196.3 →
+ * 187.7), 목록 −8.6KB(182.3 → 173.7)가 됐고, admin은 같은 코드가 admin 청크로 자리만 옮겨 −870B(374.9 →
+ * 374.0 — 공유 청크 셋에 흩어져 있던 query-core가 한 청크에 모여 더 잘 압축된다)다. 하한에 걸린 그룹은
+ * 없지만, 185·207을 두면 Provider가 루트로 돌아와도 예산 안에 숨는다. 그래서 공개 6줄과 `/posts/`를 새 최대
+ * ×1.05로 내렸다(185 → 173, 207 → 198). CSS는 그대로다 — 줄 주석의 옛 값(27.9, 28.5)은 앞선 빌드부터 실측
+ * (28.0, 28.6)과 어긋나 있던 것을 이 빌드의 측정값으로 바꿨다.
  * 그룹이 새로 생기면(새 라우트) 예산이 없어서, 라우트가
  * 사라지면 예산이 죽어서, 측정 최대가 상한의 80% 아래로 내려가면 예산이 느슨해서
  * (`budget-slack`) 빌드가 실패한다.
@@ -356,21 +363,21 @@ export const BUNDLE_GUARDS = [
  * 걸리면 같은 방식으로 내린다 — 여유가 크게 남으면 회귀가 그 안에 숨는다.
  */
 export const BUNDLE_BUDGETS = [
-  // 173.3 KB / 27.9 KB
-  { group: '/', jsGzipKB: 185, cssGzipKB: 30 },
-  // 196.3 KB / 28.5 KB — 목록과 글 상세 46쪽의 최대(글 상세. 목록은 182.0 KB — mermaid·Giscus는 지연 로드라 밖)
-  { group: '/posts/', jsGzipKB: 207, cssGzipKB: 30 },
-  // 172.5 KB / 27.9 KB
-  { group: '/about/', jsGzipKB: 185, cssGzipKB: 30 },
-  // 173.3 KB / 27.9 KB
-  { group: '/series/', jsGzipKB: 185, cssGzipKB: 30 },
-  // 172.5 KB / 27.9 KB
-  { group: '/privacy/', jsGzipKB: 185, cssGzipKB: 30 },
-  // 172.5 KB / 27.9 KB — 정적 404(`404-page` 처리)
-  { group: '/404/', jsGzipKB: 185, cssGzipKB: 30 },
-  // 172.5 KB / 27.9 KB — Next가 함께 내보내는 not-found 라우트
-  { group: '/_not-found/', jsGzipKB: 185, cssGzipKB: 30 },
-  // 374.9 KB / 27.9 KB — admin 48쪽의 최대(`/admin/analytics/`)
+  // 164.7 KB / 28.0 KB
+  { group: '/', jsGzipKB: 173, cssGzipKB: 30 },
+  // 187.7 KB / 28.6 KB — 목록과 글 상세 46쪽의 최대(글 상세. 목록은 173.7 KB — mermaid·Giscus는 지연 로드라 밖)
+  { group: '/posts/', jsGzipKB: 198, cssGzipKB: 30 },
+  // 163.9 KB / 28.0 KB
+  { group: '/about/', jsGzipKB: 173, cssGzipKB: 30 },
+  // 164.7 KB / 28.0 KB
+  { group: '/series/', jsGzipKB: 173, cssGzipKB: 30 },
+  // 163.9 KB / 28.0 KB
+  { group: '/privacy/', jsGzipKB: 173, cssGzipKB: 30 },
+  // 163.9 KB / 28.0 KB — 정적 404(`404-page` 처리)
+  { group: '/404/', jsGzipKB: 173, cssGzipKB: 30 },
+  // 163.9 KB / 28.0 KB — Next가 함께 내보내는 not-found 라우트
+  { group: '/_not-found/', jsGzipKB: 173, cssGzipKB: 30 },
+  // 374.0 KB / 28.0 KB — admin 48쪽의 최대(`/admin/analytics/`)
   { group: '/admin/', jsGzipKB: 398, cssGzipKB: 30 },
 ] as const satisfies BundleBudgetsConfig;
 
