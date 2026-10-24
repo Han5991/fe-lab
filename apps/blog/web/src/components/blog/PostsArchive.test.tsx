@@ -383,6 +383,17 @@ describe('PostsArchive 결과 수 알림', () => {
 
     expect(status()).toHaveTextContent(/^글 2편$/);
   });
+
+  test('밖에서 바뀐 URL(헤더의 글 링크, 뒤로 가기)을 다시 읽으면 그 결과 수를 알린다', () => {
+    const view = renderView('?q=b-post');
+
+    expect(status()).toHaveTextContent(/^$/);
+    view.rerenderAt(''); // 헤더의 글 링크
+    expect(status()).toHaveTextContent(/^글 2편$/);
+    view.rerenderAt('?q=b-post'); // 뒤로 가기
+
+    expect(status()).toHaveTextContent(/^글 1편$/);
+  });
 });
 
 describe('PostsArchive 컨트롤', () => {
