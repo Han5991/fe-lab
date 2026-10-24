@@ -99,6 +99,30 @@ describe('ViewToggle', () => {
 
     expect(onChange).toHaveBeenCalledWith('list');
   });
+
+  // 켜진 면은 칸이 아니라 트랙에 하나 있고, 자리는 트랙의 style 변수에서 CSS가 계산한다.
+  test('켜진 면은 접근성 트리 밖이라 묶음·칸 이름에 섞이지 않는다', () => {
+    render(<ViewToggle value="cards" onChange={vi.fn()} />);
+
+    const group = screen.getByRole('radiogroup', { name: '뷰' });
+    const faces = group.querySelectorAll(':scope > [aria-hidden="true"]');
+    expect(faces).toHaveLength(1);
+    expect(faces[0]?.textContent).toBe('');
+    expect(within(group).getAllByRole('radio')).toHaveLength(2);
+    expect(screen.getByRole('radio', { name: '카드' })).toBeChecked();
+    expect(screen.getByRole('radio', { name: '리스트' })).not.toBeChecked();
+  });
+
+  test('고른 칸의 순서를 트랙의 --segment-index로 내보낸다', () => {
+    const { rerender } = render(
+      <ViewToggle value="cards" onChange={vi.fn()} />,
+    );
+    const group = screen.getByRole('radiogroup', { name: '뷰' });
+    expect(group.style.getPropertyValue('--segment-index')).toBe('0');
+
+    rerender(<ViewToggle value="list" onChange={vi.fn()} />);
+    expect(group.style.getPropertyValue('--segment-index')).toBe('1');
+  });
 });
 
 describe('ArchiveSearchBox', () => {

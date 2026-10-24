@@ -273,7 +273,7 @@ preset-panda의 durations·easings·animations·keyframes를 빼서 `transitionD
 
 | 토큰                  | 값                               | 쓰는 곳                                                                |
 | :-------------------- | :------------------------------- | :--------------------------------------------------------------------- |
-| `durations.fast`      | 175ms                            | hover·색·누름·표식(차례 하이라이트)·나가는 페이지                      |
+| `durations.fast`      | 175ms                            | hover·색·누름·표식(차례 하이라이트·뷰 토글 면)·나가는 페이지           |
 | `durations.fastMax`   | 230ms                            | 테마 크로스페이드 · `<details>` 펼침 · 옆에서 들어오는 페이지          |
 | `durations.medium`    | 410ms                            | 바텀시트·시트 스크림 · 들어오는 페이지                                 |
 | `durations.mediumMax` | 550ms                            | 검색 다이얼로그 등장 · 스켈레톤 왕복                                   |
@@ -545,8 +545,12 @@ type은 `src/shared/viewTransitions.ts`, 감싸개는 `src/components/shared/Pos
   켜진 칩을 뺀다). `:has()`는 쓰지 않는다 — Next 기본 대상의 Firefox 111~120에 없어 초점 링까지
   사라진다. 초점 링은 globalCss가 같은 형제 선택자로 `FOCUS_RING`을 준다. 켜질 때 semibold가 되어도
   폭이 밀리지 않게 면과 글자는 `SteadyLabel`(숨긴 semibold 사본을 겹친다)로 그린다. 강제 색상 모드는
-  면을 지우므로 켜진 칩에 밑줄을 더한다. 글 목록 뷰 토글 칸도 같은 구조다(트랙 `paper.100` 위에
-  켜진 칸이 `paper.50` 면, 13px)
+  면을 지우므로 켜진 칩에 밑줄을 더한다. 글 목록 뷰 토글 칸도 같은 구조다(트랙 `paper.100`, 13px).
+  다만 켜진 `paper.50` 면은 칸마다 칠하지 않고 면 하나가 고른 칸으로 미끄러진다 — 칸은 같은 폭
+  (`gridAutoColumns: 1fr`), 면은 첫 칸의 grid 영역에 절대 위치로 겹치고 transform으로 옮긴다
+  (fast·standard). 거리는 `translateX(calc(var(--segment-index) * (100% + 칸 사이)))`이고
+  `--segment-index`는 React가 트랙에 내보내는 style 변수라 서버 HTML에도 있다. 면은
+  `aria-hidden`·`pointer-events: none`이고 칸 글자는 `pos: relative`로 면 위에 그린다
 
 **태그 배지** — `src/components/tagBadge.ts`. `#태그` 하나를 담는 20px pill(Astryx Badge neutral),
 좌우 8, `supporting` 500, `paper.200` 면 + `ink.950` 글자.

@@ -177,6 +177,13 @@ docsite의 BlogIndex). 위에서부터 제목 묶음(가운데 정렬 `display1`
   111~120에 없어서 쓰지 않는다. 검색 "지우기"는 `:placeholder-shown` 형제 선택자가 숨긴다. 칩·칸은 켜질
   때 semibold가 되어도 폭이 그대로다(숨긴 semibold 사본을 겹치는 `SteadyLabel`, Astryx ToggleButton
   동작).
+- **보기 토글의 켜진 면은 고른 칸으로 미끄러진다**(fast·standard, transform만이라 합성된다). 면 하나가
+  움직이려면 칸 폭이 같아야 해서 '카드' 칸이 '리스트' 칸 폭으로 넓어졌다(목업은 글자 폭). 위치는 고른
+  칸의 순서를 트랙의 style 변수로 내보내 CSS가 계산한다 — 새 훅이 없고, 정적 HTML에도 실려 기본 보기는
+  하드 로드 첫 페인트부터 제자리다. `?view=list`로 들어오면 아래 하드 로드 항목대로 기본 상태가 잠깐
+  보인 뒤 면은 미끄러지지 않고 리스트 칸에 바로 놓인다 — 정적 HTML은 Suspense 폴백이라 클라이언트가
+  컨트롤을 새 요소로 그려 전환이 없다. 강제 색상 모드는 면을 지우므로 켜진 칸의 밑줄이 그대로 선택을
+  가른다.
 - **상태는 로컬이 진실이고 URL은 뒤따라 쓴다**(`nuqs` 대신). 컨트롤은 로컬 상태로 제어하고 URL은
   `history.replaceState`로 쓴다 — Next가 라우터·`useSearchParams`에 동기화한다. `useSearchParams`를
   그대로 제어 값으로 쓰지 않은 것은, Next가 `replaceState`를 transition으로 반영하는 동안 React가 제어
