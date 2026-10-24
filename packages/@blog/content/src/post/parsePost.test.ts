@@ -315,9 +315,31 @@ test.each([
   // >는 줄 머리의 인용 표시만 지운다
   ['> 인용문\n값이 x > 1이면', '인용문 값이 x > 1이면'],
   ['[`useState`](https://react.dev) 참고', 'useState 참고'],
+  // 이미지 alt는 첫 `](`에서 끝나고, 한 줄 안에서 닫히지 않으면 지우지 않는다
+  ['![a [b]](c.png) 뒤', '뒤'],
+  ['![a](b.png)와 ![c](d.png) 사이', '와 사이'],
+  ['![a](b\n![c](d.png) 끝', '![a](b 끝'],
+  // 링크 텍스트는 첫 `]`에서 끝나고 줄을 넘을 수 있다. 텍스트나 href가 비면 링크가 아니다
+  ['[a [b](c) 뒤', 'a [b 뒤'],
+  ['[a\nb](c)', 'a b'],
+  ['[]() [a]() [b](c)', '[]() [a]() b'],
 ])('extractPlainText: %j → %j', (input, expected) => {
   expect(extractPlainText(input)).toBe(expected);
 });
+
+test.each([
+  // 옛 정규식 `!\[.*?]\(.*?\)`은 이 입력(4KB)에 0.43초, 두 배 길이에 3.5초가 걸렸다(세제곱).
+  { syntax: '이미지', input: '![]('.repeat(1000) },
+  // 옛 정규식 `\[([^\]]+)]\([^)]+\)`은 이 입력(20KB)에 0.58초가 걸렸다(제곱).
+  { syntax: '링크', input: '['.repeat(20000) },
+])(
+  'extractPlainText: 닫히지 않는 $syntax 문법이 되풀이돼도 길이에 비례해 끝난다',
+  ({ input }) => {
+    const started = performance.now();
+    expect(extractPlainText(input)).toBe(input);
+    expect(performance.now() - started).toBeLessThan(100);
+  },
+);
 
 test('resolveExcerpt: 서로게이트 쌍(이모지) 가운데서 자르지 않는다', () => {
   // 외톨이 상위 서로게이트는 encodeURIComponent가 URIError를 던진다.

@@ -46,6 +46,12 @@ overrides:
   # CSS 클래스 접두사 변경만 내부 클래스를 셀렉터로 쓰는 커스텀 스타일에 영향 가능하나, 이
   # 저장소엔 그런 스타일이 없다. 제거 조건: mermaid가 katex 범위를 0.18.2+로 올리면 삭제.
   katex: 0.18.2
+  # miniflare(wrangler 경유)가 undici를 7.29.1로 exact 핀 고정해 GHSA-4qv8-2p9j-2685
+  # (moderate, EventSource 무제한 메모리 DoS)·GHSA-f72v-6w45-q472(moderate, 대문자 알고리즘
+  # 이름으로 SRI 우회)를 report한다. 패치는 7.30.1(최신 5.x 베타 5.20261019.2-beta도
+  # 같은 핀, 2026-10-24 확인). jsdom의 undici는 8.x(^8.10.2)라 전역 override로 묶으면
+  # 메이저가 섞이므로 miniflare 아래만 고친다. 제거 조건: miniflare가 핀을 7.30.1+로 올리면 삭제.
+  'miniflare>undici': 7.30.1
 
 allowBuilds:
   esbuild: true
@@ -116,8 +122,8 @@ catalog:
   tsdown: 0.23.0
 
   # 테스트
-  vitest: ^5.0.1
-  '@vitest/coverage-v8': ^5.0.1
+  vitest: ^5.0.5
+  '@vitest/coverage-v8': ^5.0.5
   jsdom: ^30.1.1
   msw: ^2.15.0
   '@vitejs/plugin-react': ^6.1.1

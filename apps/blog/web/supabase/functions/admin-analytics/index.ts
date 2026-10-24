@@ -227,9 +227,11 @@ Deno.serve(async (req: Request) => {
     }
 
     if (rpcError) {
+      // 원인(code·message·details·hint)은 로그에만 남긴다 — 응답에 실으면 DB 내부 정보가
+      // 브라우저로 나간다(CodeQL js/stack-trace-exposure). 화면은 `error` 문구만 읽는다.
       console.error('RPC 오류:', rpcError);
       return new Response(
-        JSON.stringify({ error: 'RPC 호출에 실패했습니다.', detail: rpcError }),
+        JSON.stringify({ error: 'RPC 호출에 실패했습니다.' }),
         {
           status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },

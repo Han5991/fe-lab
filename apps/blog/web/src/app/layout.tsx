@@ -3,7 +3,7 @@
 // 542KB 스타일시트라 렌더 블로킹 CSS 청크가 gzip 137KB까지 부풀었다(Lighthouse
 // unused-css-rules에서 100% 미사용으로 잡힌 파일이 이것). 가변 폰트 한 벌이면
 // 같은 서브셋 92개를 @font-face 92개로 덮고, 웨이트는 45~920 축에서 뽑는다.
-import { RSS_PATH } from '@blog/content/client';
+import { RSS_PATH, safeJsonLd } from '@blog/content/client';
 import { SITE_NAME } from '@/content.values.mts';
 import 'pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css';
 import '@/src/styles/globals.css';
@@ -52,7 +52,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             실사용자 FCP를 깎는 건 남는 장사가 아니라서 그대로 둔다. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var m=document.cookie.match(new RegExp(${JSON.stringify(
+            __html: `(function(){try{var m=document.cookie.match(new RegExp(${safeJsonLd(
               THEME_COOKIE_MATCH,
             )}));var t=m?m[1]:((window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light');document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme='dark';}})();`,
           }}
