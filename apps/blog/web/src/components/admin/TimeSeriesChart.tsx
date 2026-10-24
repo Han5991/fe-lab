@@ -18,7 +18,8 @@ import { CHART_MOTION, chartReveal } from './chartMotion';
 
 interface TimeSeriesChartProps {
   data: { date: string; value: number }[];
-  height?: number;
+  /** 차트 칸의 높이(px) — 부르는 쪽이 정한다. 대시보드는 차트 청크를 기다리는 골격도 같은 값으로 그린다. */
+  height: number;
 }
 
 // 표면은 다른 차트 툴팁과 같은 ChartTooltipFrame이고, 내용만 큰 숫자로 따로 그린다.
@@ -67,10 +68,7 @@ const CustomTooltip = ({
   );
 };
 
-export const TimeSeriesChart = ({
-  data,
-  height = 240,
-}: TimeSeriesChartProps) => {
+export const TimeSeriesChart = ({ data, height }: TimeSeriesChartProps) => {
   return (
     <div className={css(chartReveal, { w: 'full' })} style={{ height }}>
       <ResponsiveContainer width="100%" height="100%">

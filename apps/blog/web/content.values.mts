@@ -264,7 +264,7 @@ export const BUNDLE_GUARDS = [
     forbiddenIn: [PUBLIC_CHUNKS],
     requiredIn: [ADMIN_CHUNKS],
   },
-  // admin 대시보드의 차트 라이브러리 — 공개 페이지에는 차트가 없다.
+  // admin 차트 라이브러리(분석 화면은 첫 로드, 대시보드는 차트만 지연 로드) — 공개 페이지에는 차트가 없다.
   {
     label: 'admin 차트(Recharts)',
     marker: 'recharts',
@@ -356,6 +356,9 @@ export const BUNDLE_GUARDS = [
  * 2026-10-25 admin 차트의 Recharts 그리기 애니메이션을 끄고 등장을 CSS(Recharts 래퍼의 keyframes)로 바꾼
  * 빌드로 갱신: JS는 `/admin/` 최대 387.0 → 387.1KB(같은 날 바꾸기 전 빌드 대비), 공개 그룹은 그대로. CSS는 그
  * 등장 규칙 셋(래퍼 자손 셀렉터)으로 전 그룹 +0.1KB(최대 29.1KB, `/posts/`) — 예산은 그대로이고 CSS 여유는 0.9KB다.
+ * 2026-10-25 대시보드의 일별 조회수 차트를 `next/dynamic`으로 나눈 빌드로 갱신: 대시보드(`/admin/`) 첫 로드 JS는
+ * 377.6 → 268.4KB(−109.2 — Recharts가 빠졌다)지만 그룹 최대는 분석 화면이라 387.1 → 387.6KB(+0.5 — 차트
+ * 모듈이 지연·정적 import 양쪽에서 쓰여 따로 떨어진 청크 하나와 그 로더) — 예산은 그대로.
  * 그룹이 새로 생기면(새 라우트) 예산이 없어서, 라우트가
  * 사라지면 예산이 죽어서, 측정 최대가 상한의 80% 아래로 내려가면 예산이 느슨해서
  * (`budget-slack`) 빌드가 실패한다.
@@ -380,7 +383,7 @@ export const BUNDLE_BUDGETS = [
   { group: '/404/', jsGzipKB: 185, cssGzipKB: 30 },
   // 176.5 KB / 28.4 KB — Next가 함께 내보내는 not-found 라우트
   { group: '/_not-found/', jsGzipKB: 185, cssGzipKB: 30 },
-  // 387.1 KB / 28.4 KB — admin 48쪽의 최대(분석 화면 — 목록 1 + 글별 45쪽이 같은 화면이라 무게가 같다)
+  // 387.6 KB / 28.4 KB — admin 48쪽의 최대(분석 화면 — 목록 1 + 글별 45쪽이 같은 화면이라 무게가 같다)
   { group: '/admin/', jsGzipKB: 398, cssGzipKB: 30 },
 ] as const satisfies BundleBudgetsConfig;
 

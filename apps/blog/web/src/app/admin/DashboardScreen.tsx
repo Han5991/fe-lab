@@ -1,6 +1,7 @@
 'use client';
 
 import { startTransition, Suspense, useState, ViewTransition } from 'react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { ArrowRight, ExternalLink } from 'lucide-react';
 import { css, cx } from '@blog/styled-system/css';
@@ -17,7 +18,6 @@ import {
 } from '@/src/components/admin/RefreshButton';
 import { SegmentedControl } from '@/src/components/admin/SegmentedControl';
 import { TagDistribution } from '@/src/components/admin/TagDistribution';
-import { TimeSeriesChart } from '@/src/components/admin/TimeSeriesChart';
 import { TopPostsTable } from '@/src/components/admin/TopPostsTable';
 import {
   adminCard,
@@ -64,6 +64,23 @@ const LIST_LIMIT = 5;
 
 /** 태그 분포에 싣는 태그 수. */
 const TAG_LIMIT = 8;
+
+/** 일별 조회수 차트의 높이(px) — 차트와, 차트 청크를 기다리는 골격이 함께 쓴다(들어설 때 아래가 밀리지 않게). */
+const PERIOD_CHART_HEIGHT = 240;
+
+// 일별 조회수 차트는 Recharts(~110KB gzip)를 싣는다 — 대시보드의 다른 칸은 Recharts를 쓰지 않으므로 차트만
+// 따로 나눠 받아 첫 로드(문서가 부르는 JS)에서 뺀다. 받는 동안은 같은 높이의 골격이 자리를 지킨다. Recharts
+// 청크는 분석 화면과 같은 것이라, 하이드레이션 뒤 관리자 바의 분석 링크 프리페치가 먼저 받아 두는 일이 많다.
+const TimeSeriesChart = dynamic(
+  () =>
+    import('@/src/components/admin/TimeSeriesChart').then(
+      mod => mod.TimeSeriesChart,
+    ),
+  {
+    ssr: false,
+    loading: () => <LoadingPlaceholder height={`${PERIOD_CHART_HEIGHT}px`} />,
+  },
+);
 
 /** 기간의 화면 이름(`7일`) — 일수에서 만든다. 세그먼트와 카드 제목이 함께 쓴다. */
 const rangeLabel = (range: AnalyticsRange) => `${RANGE_DAYS[range]}일`;
@@ -415,7 +432,10 @@ function DashboardContent() {
           title={`일별 조회수 · ${days}`}
           meta="일별 합산"
         >
-          <TimeSeriesChart data={overview.totalSeries} />
+          <TimeSeriesChart
+            data={overview.totalSeries}
+            height={PERIOD_CHART_HEIGHT}
+          />
         </AdminCard>
 
         <AdminCard
