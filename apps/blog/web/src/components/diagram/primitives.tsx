@@ -55,7 +55,7 @@ const scroller = css({
   overflowX: 'auto',
   overscrollBehaviorX: 'contain',
   // 스크롤 컨테이너의 초점 링이 그림 끝에 붙지 않게(본문 표 래퍼와 같다).
-  borderRadius: 'control',
+  borderRadius: 'inner',
 });
 
 function intrinsicMinWidth(width: number): string {

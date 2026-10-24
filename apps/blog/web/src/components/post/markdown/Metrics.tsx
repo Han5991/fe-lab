@@ -113,7 +113,7 @@ function clampColumns(count: number): GridColumns {
 
 const card = css({
   bg: 'paper.100',
-  rounded: 'control',
+  rounded: 'container',
   px: '4',
   py: '[14px]',
   minW: '0',

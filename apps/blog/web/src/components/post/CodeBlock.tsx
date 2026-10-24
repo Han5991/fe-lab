@@ -200,8 +200,8 @@ export function CodeBlock({
           css({
             mb: '12',
             mt: '8',
-            // 8px(control) → 12px(card). 레퍼런스와 같은 카드 라운드다.
-            rounded: 'card',
+            // 코드 블록은 element 자리다(Astryx CodeBlock).
+            rounded: 'element',
             borderWidth: 'hairline',
             borderColor: CODE_BORDER,
           }),
@@ -300,9 +300,8 @@ export function CodeBlock({
           color: 'ink.900',
           px: '1.5',
           py: '0.5',
-          // 인라인 코드는 서브 서피스(paper.100) 위에 얹히는 칩이라
-          // 레퍼런스의 chip과 같은 8px(control) 라운드를 쓴다.
-          rounded: 'control',
+          // 인라인 코드는 글줄 안의 작은 요소라 inner 자리다(Astryx Code·Kbd와 같다).
+          rounded: 'inner',
           fontSize: '[0.9em]',
           fontWeight: 'normal',
           whiteSpace: 'pre-wrap',

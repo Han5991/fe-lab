@@ -44,7 +44,7 @@ const skipLink = css({
   fontSize: 'sm',
   borderWidth: 'hairline',
   borderColor: 'ink.borderStrong',
-  rounded: 'md',
+  rounded: 'element',
   transform: 'translateY(-200%)',
   _focus: { transform: 'none' },
 });

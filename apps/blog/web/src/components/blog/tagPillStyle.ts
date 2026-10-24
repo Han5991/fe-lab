@@ -9,7 +9,7 @@ export const tagPillStyle = css.raw({
   alignItems: 'center',
   px: '[10px]',
   py: '[2px]',
-  rounded: 'pill',
+  rounded: 'full',
   bg: 'paper.200',
   color: 'ink.700',
   fontSize: 'xs',

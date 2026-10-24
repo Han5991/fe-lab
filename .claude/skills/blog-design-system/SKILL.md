@@ -92,10 +92,41 @@ Panda가 주는 `defineSemanticTokens.colors()`로 감싸 시맨틱 토큰 계�
 
 ## 형태
 
-- 라운드(radii): `card`(12px, 카드) · `control`(8px, 작은 요소) · `md`(6px) · `sm`(4px) ·
-  `pill`(원형 아바타·아이콘·히어로 pill). **이 다섯이 전부다** — 블로그 설정이 preset-panda의
-  radii를 빼므로 다른 이름은 strictTokens에 걸린다. **시리즈 배지는 `md`(6px)** — 레퍼런스
-  `.badge`가 6px이라 pill이 아니다
+**라운드(radii)는 Astryx docsite 테마(MIT)의 스케일이다** — 코어 기본값(4/8/12/28)에 4px씩
+더한 값이고 `none`·`full`은 코어 그대로다. 이름은 크기가 아니라 **자리**라, 요소가 어느 자리인지로
+고른다. **이 여섯이 전부다** — 블로그 설정이 preset-panda의 radii를 빼므로 다른 이름은
+strictTokens에 걸린다.
+
+| 토큰        | 값     | 자리                                                                                         |
+| :---------- | :----- | :------------------------------------------------------------------------------------------- |
+| `none`      | 0      | 모바일 전체화면 검색 다이얼로그                                                              |
+| `inner`     | 8px    | kbd · 인라인 코드 · 검색어 mark · 세그먼트 안쪽 탭 · 스켈레톤 줄 · 오픈소스 칩 · 초점 링     |
+| `element`   | 12px   | 입력 · 검색창 · 세그먼트 그룹 · 필터 항목 행 · 코드 블록(코드 탭) · 파일 트리 · 이미지       |
+| `container` | 16px   | 카드 · 패널 · 콜아웃 · `details` · mermaid 상자 · 바텀시트 윗모서리 · 다이얼로그 · 차트 툴팁 |
+| `page`      | 32px   | 대화 말풍선(`<dialogue>`)만                                                                  |
+| `full`      | 9999px | 버튼(아이콘 버튼·FAB 포함) · 배지(시리즈·상태·개수) · 태그 칩 · 원형 · 스크롤바              |
+
+- **버튼은 `full`이다.** Astryx 코어는 버튼을 `element`로 두지만 docsite 테마가 모든 버튼을
+  pill로 덮는다. 복사 아이콘 버튼·헤더 검색 버튼·테마 전환 버튼도 버튼이라 같다
+- **시리즈 배지·상태 배지도 `full`이다**(Astryx Badge). 예전의 "배지는 6px, pill 아님" 규칙은
+  이 스케일로 옮기며 폐기했다
+- **초점 링은 `inner`** — globalCss의 `:focus-visible`(base 레이어)이 준다. 자기 라운드가 있는
+  요소는 utilities 레이어라 그 라운드를 지킨다. 본문 표·자동 배치 그림의 가로 스크롤 래퍼도 초점
+  링 때문에 라운드를 갖는 자리라 `inner`다
+- **Astryx와 일부러 다르게 간 곳** — 말풍선은 Astryx의 chat 전용 28px 대신 `page`(Astryx 문서는
+  page를 페이지 단위 컨테이너용으로 적는다). 안쪽 요소의 동심 라운드(바깥 − 패딩)는 계산하지 않고
+  토큰 하나를 고른다
+- **`container` 안에 든 상자는 한 단계 아래인 `element`다** — 카드 안의 경고 배너, 펼친 패널 안의
+  통계 타일처럼 따로 놓이면 `container`인 상자라도, 안에 들면 바깥과 같거나 큰 라운드를 두지 않는다.
+  최상위에 나란히 놓인 타일은 그대로 `container`다
+- **건너뛰기 링크는 `element`** — 버튼 모양 링크(공용 액션 버튼 스타일, about의 CTA)는 버튼이라
+  `full`이다. 건너뛰기 링크는 Astryx AppShell에서도 Button이 아닌 맨 앵커라(자기 라운드 없음) docsite의
+  버튼 pill 덮어쓰기 밖이고, 보더 있는 한 줄 상자라 입력과 같은 자리에 둔다
+- **Panda 밖의 숫자는 이 스케일과 무관하다** — 다이어그램 노드 `rx`(SVG), Recharts 막대 `radius`,
+  코드 하이라이터의 `customStyle.borderRadius: 0`(바깥 상자가 자른다)은 그대로 둔다
+
+그 밖의 형태:
+
 - 보더: `borderWidths.hairline`(1px) 단일 소스. **위계는 그림자가 아니라 보더로 표현한다**
 - **그라데이션 · 글로우 · box-shadow 장식 금지.** 플랫 유지
 - Panda는 `strictTokens: true`다. 토큰 밖 값은 `fontSize: '[12px]'`, `shadow: '[none]'`처럼

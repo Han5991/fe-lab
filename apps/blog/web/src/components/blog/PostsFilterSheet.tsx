@@ -70,7 +70,7 @@ export const PostsFilterSheet = ({
                 borderStyle: 'solid',
                 borderColor: 'ink.border',
                 zIndex: '51',
-                roundedTop: 'card',
+                roundedTop: 'container',
                 maxH: '[85vh]',
                 display: 'flex',
                 flexDir: 'column',
@@ -89,7 +89,7 @@ export const PostsFilterSheet = ({
                   className={css({
                     width: '[32px]',
                     height: '[4px]',
-                    rounded: 'pill',
+                    rounded: 'full',
                     bg: 'ink.border',
                   })}
                 />
@@ -134,7 +134,7 @@ export const PostsFilterSheet = ({
                         borderWidth: 'hairline',
                         borderStyle: 'solid',
                         borderColor: 'ink.border',
-                        rounded: 'md',
+                        rounded: 'full',
                         px: '[16px]',
                         py: '[5px]',
                         color: 'ink.800',

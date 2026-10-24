@@ -22,7 +22,7 @@ const rangeTab = cva({
     fontFamily: 'mono',
     fontSize: 'xs',
     letterSpacing: 'monoLg',
-    rounded: 'sm',
+    rounded: 'inner',
     cursor: 'pointer',
     transition: '[all 0.15s]',
   },
@@ -50,7 +50,7 @@ export const AnalyticsRangeSelect = ({
         display: 'flex',
         borderWidth: 'hairline',
         borderColor: 'ink.border',
-        rounded: 'md',
+        rounded: 'element',
         bg: 'paper.100',
         p: '0.5',
       })}

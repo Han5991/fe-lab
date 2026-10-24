@@ -19,7 +19,7 @@ const group = css({
   display: 'flex',
   borderWidth: 'hairline',
   borderColor: 'ink.border',
-  rounded: 'md',
+  rounded: 'element',
   overflow: 'hidden',
 });
 

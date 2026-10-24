@@ -65,7 +65,7 @@ const railColumn = css({
 const icon = cva({
   base: {
     boxSize: '6',
-    rounded: 'pill',
+    rounded: 'full',
     borderWidth: 'hairline',
     borderStyle: 'solid',
     display: 'flex',

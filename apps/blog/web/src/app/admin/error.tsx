@@ -58,7 +58,7 @@ export default function AdminError({ error, reset }: AdminErrorProps) {
             flexDir: 'column',
             gap: '4',
             p: '6',
-            rounded: 'control',
+            rounded: 'container',
             borderWidth: 'hairline',
             borderColor: 'danger.border',
             bg: 'danger.bg',
@@ -94,7 +94,7 @@ export default function AdminError({ error, reset }: AdminErrorProps) {
             className={css({
               px: '4',
               py: '2',
-              rounded: 'md',
+              rounded: 'full',
               bg: 'btn.primary',
               color: 'white',
               fontSize: 'sm',
@@ -110,7 +110,7 @@ export default function AdminError({ error, reset }: AdminErrorProps) {
             className={css({
               px: '4',
               py: '2',
-              rounded: 'md',
+              rounded: 'full',
               borderWidth: 'hairline',
               borderColor: 'ink.border',
               color: 'ink.800',

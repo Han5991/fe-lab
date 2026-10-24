@@ -27,7 +27,7 @@ const navCard = sva({
       borderWidth: 'hairline',
       borderStyle: 'solid',
       borderColor: 'ink.border',
-      rounded: 'card',
+      rounded: 'container',
       p: '[16px]',
       transition: '[border-color 0.15s]',
       _hover: { borderColor: 'ink.borderStrong' },

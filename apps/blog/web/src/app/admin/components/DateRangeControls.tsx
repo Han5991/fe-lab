@@ -109,7 +109,7 @@ const inputClass = css({
   px: '2',
   borderWidth: 'hairline',
   borderColor: 'ink.border',
-  rounded: 'md',
+  rounded: 'element',
   fontSize: 'xs',
   bg: 'ink.25',
   color: 'ink.950',

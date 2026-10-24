@@ -37,7 +37,7 @@ export function HiddenPostBadge({ post }: Props) {
         ml: '2',
         px: '1.5',
         py: '0.5',
-        borderRadius: 'sm',
+        borderRadius: 'full',
         bg: 'marker.600',
         color: 'paper.50',
         fontFamily: 'mono',

@@ -64,7 +64,7 @@ export const PostHero = ({
           mb: '[24px]',
           w: 'full',
           h: 'auto',
-          rounded: 'card',
+          rounded: 'element',
           borderWidth: 'hairline',
           borderColor: 'ink.border',
         })}

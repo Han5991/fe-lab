@@ -79,7 +79,7 @@ export const PopularRail = ({ posts, limit = 5 }: PopularRailProps) => {
           <li
             key={post.slug}
             className={css({
-              borderTopWidth: i === 0 ? '[0]' : 'hairline',
+              borderTopWidth: i === 0 ? 'none' : 'hairline',
               borderStyle: 'solid',
               borderColor: 'ink.border',
             })}
@@ -152,7 +152,7 @@ const PopularRailSkeleton = ({ rows }: { rows: number }) => (
         h: '[14px]',
         w: '[88px]',
         mb: '3',
-        rounded: 'sm',
+        rounded: 'inner',
         bg: 'paper.100',
       })}
     />
@@ -162,7 +162,7 @@ const PopularRailSkeleton = ({ rows }: { rows: number }) => (
         className={css({
           h: '[18px]',
           my: '[10px]',
-          rounded: 'sm',
+          rounded: 'inner',
           bg: 'paper.100',
         })}
       />

@@ -223,7 +223,7 @@ export function buildPostComponents(relativeDir: string): PostComponents {
             mb: '8',
             mt: '6',
             // 스크롤 컨테이너의 초점 링이 표 테두리에 붙지 않게
-            borderRadius: 'control',
+            borderRadius: 'inner',
           })}
         >
           <table
@@ -466,7 +466,7 @@ export function PostBody({ content, relativeDir }: PostBodyProps) {
           my: '6',
           borderWidth: 'hairline',
           borderColor: 'ink.border',
-          rounded: 'control',
+          rounded: 'container',
           bg: 'paper.100',
           px: '4',
         },
@@ -562,8 +562,7 @@ export function PostBody({ content, relativeDir }: PostBodyProps) {
           borderColor: 'ink.border',
           color: 'ink.700',
         },
-        // borderWidths 토큰은 hairline 하나뿐이라 0은 이스케이프해서 쓴다
-        '& tr:last-child td': { borderBottomWidth: '[0]' },
+        '& tr:last-child td': { borderBottomWidth: 'none' },
         '& tr:hover td': { bg: 'paper.100' },
       })}
     >

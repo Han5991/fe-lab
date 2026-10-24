@@ -72,6 +72,11 @@ GA 추적 코드를 함께 걷어냈다.
 
 카드 12px / 작은 요소 8px. **배지는 pill이 아니라 6px로 정착**했다.
 
+**2026-10: 라운드 스케일을 Astryx docsite 테마(MIT)의 것으로 바꿨다.** 이름이 크기(`sm`·`md`)나
+한 용도(`card`·`control`)가 아니라 자리(`inner`·`element`·`container`·`page`·`full`)라서, 새
+요소는 이름만 보고 값을 고른다. 카드는 12px에서 16px로 커졌고 버튼·배지는 pill이 됐다 — 위의
+"배지 6px" 정착은 이때 폐기됐다.
+
 보더는 hairline 하나다. 초안은 "0.5~1px"이라는 범위였는데 폭이 갈리면 같은 화면에 두
 굵기가 섞이므로 **1px 단일값**(`borderWidths.hairline`)으로 고정했다.
 

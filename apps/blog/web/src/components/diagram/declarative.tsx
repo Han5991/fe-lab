@@ -106,7 +106,7 @@ const missing = css({
   my: '6',
   px: '4',
   py: '3',
-  rounded: 'control',
+  rounded: 'container',
   borderWidth: 'hairline',
   borderColor: 'danger.border',
   color: 'danger.text',
