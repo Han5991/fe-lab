@@ -100,6 +100,10 @@ export const PostsArchiveView = ({
   const searchInput = useRef<HTMLInputElement>(null);
   useEffect(() => () => clearTimeout(searchTimer.current), []);
 
+  // 거른 결과 수의 상태 메시지(WCAG 4.1.3) — URL에 쓸 때 바꾼다. 글자마다 바꾸면 읽기가 타자를
+  // 따라가지 못하고, 처음 그릴 때는 비워 둬 페이지를 열자마자 읽지 않는다.
+  const [announcement, setAnnouncement] = useState('');
+
   const { counts, pending } = usePopularViewCounts(
     posts,
     state.sort === 'popular',
@@ -115,6 +119,9 @@ export const PostsArchiveView = ({
     if (!isArchiveLocation(window.location.pathname)) return;
     const href = archiveHref(next);
     setSync(s => ({ ...s, written: href }));
+    setAnnouncement(
+      `글 ${filterAndSortPostsByArchiveParams(posts, next).length}편`,
+    );
     window.history.replaceState(null, '', href);
   };
   const apply = (patch: Partial<ArchiveState>) => {
@@ -155,18 +162,25 @@ export const PostsArchiveView = ({
   };
 
   return (
-    <PostsArchiveLayout
-      posts={posts}
-      series={series}
-      state={state}
-      viewCounts={counts}
-      pending={pending}
-      actions={actions}
-      searchInputRef={searchInput}
-      controlsInert={false}
-    />
+    <>
+      <PostsArchiveLayout
+        posts={posts}
+        series={series}
+        state={state}
+        viewCounts={counts}
+        pending={pending}
+        actions={actions}
+        searchInputRef={searchInput}
+        controlsInert={false}
+      />
+      <p role="status" className={visuallyHidden}>
+        {announcement}
+      </p>
+    </>
   );
 };
+
+const visuallyHidden = css({ srOnly: true });
 
 const noop = () => undefined;
 const FALLBACK_ACTIONS: ArchiveActions = {

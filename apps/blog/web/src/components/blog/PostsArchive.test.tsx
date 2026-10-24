@@ -319,6 +319,34 @@ describe('PostsArchive 검색', () => {
   });
 });
 
+describe('PostsArchive 결과 수 알림', () => {
+  const status = () => screen.getByRole('status');
+
+  test('처음엔 비어 있고, 검색어는 글자마다가 아니라 URL에 쓸 때 결과 수를 알린다', () => {
+    vi.useFakeTimers();
+    renderView();
+
+    expect(status()).toHaveTextContent(/^$/);
+    fireEvent.change(searchbox(), { target: { value: 'b' } });
+    expect(status()).toHaveTextContent(/^$/);
+    act(() => {
+      vi.advanceTimersByTime(SEARCH_COMMIT_MS);
+    });
+
+    expect(status()).toHaveTextContent(/^글 1편$/);
+  });
+
+  test('시리즈 칩·모두 지우기는 바로 알리고, 0편도 알린다', () => {
+    renderView('?q=zzzz');
+
+    fireEvent.click(screen.getByRole('radio', { name: '픽스처 연재 (1)' }));
+    expect(status()).toHaveTextContent(/^글 0편$/);
+    fireEvent.click(screen.getByRole('button', { name: '모두 지우기' }));
+
+    expect(status()).toHaveTextContent(/^글 2편$/);
+  });
+});
+
 describe('PostsArchive 컨트롤', () => {
   test('시리즈 칩은 정렬을 남긴 채 쓰고, 전체로 돌아가면 시리즈 키를 뺀다', () => {
     renderView('?sort=shortest');
