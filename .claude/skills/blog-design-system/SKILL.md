@@ -1,6 +1,6 @@
 ---
 name: blog-design-system
-description: 블로그(apps/blog/web)와 blog-preset.ts의 시각 시스템 단일 출처 — 컬러 semanticToken(라이트/다크, 대비비, accent 3단계), 타이포그래피(mono/sans를 어디에 쓰는지), 라운드·보더, 레일 그리드(railWide/railText/railForm와 거터), 코드 블록 테마(code.* 토큰, rehypeCodeMeta 순서). 블로그 UI 컴포넌트나 packages/@blog/preset/src/blog-preset.ts를 고칠 때, 색·간격·폭·글꼴을 정하거나 "이 값 어디서 왔지" 싶을 때 사용한다. 글 본문에 넣는 커스텀 태그(diagram·dialogue·metrics·callout 등)는 이 스킬이 아니라 blog-components 스킬을 볼 것.
+description: 블로그(apps/blog/web)와 blog-preset.ts의 시각 시스템 단일 출처 — 컬러 semanticToken(라이트/다크, 대비비, accent 3단계), 타이포그래피(mono/sans를 어디에 쓰는지), 라운드·보더, 그림자(떠 있는 표면의 overlay.* — 판정 기준과 표면별 단계), 레일 그리드(railWide/railText/railForm와 거터), 코드 블록 테마(code.* 토큰, rehypeCodeMeta 순서). 블로그 UI 컴포넌트나 packages/@blog/preset/src/blog-preset.ts를 고칠 때, 색·간격·폭·글꼴을 정하거나 "이 값 어디서 왔지" 싶을 때 사용한다. 글 본문에 넣는 커스텀 태그(diagram·dialogue·metrics·callout 등)는 이 스킬이 아니라 blog-components 스킬을 볼 것.
 ---
 
 # 블로그 디자인 시스템
@@ -127,10 +127,67 @@ strictTokens에 걸린다.
 
 그 밖의 형태:
 
-- 보더: `borderWidths.hairline`(1px) 단일 소스. **위계는 그림자가 아니라 보더로 표현한다**
-- **그라데이션 · 글로우 · box-shadow 장식 금지.** 플랫 유지
-- Panda는 `strictTokens: true`다. 토큰 밖 값은 `fontSize: '[12px]'`, `shadow: '[none]'`처럼
-  대괄호로 이스케이프해 "여긴 의도적으로 토큰을 벗어난다"를 코드에 남긴다
+- 보더: `borderWidths.hairline`(1px) 단일 소스. **지면 위의 위계(카드·패널·행·hover)는 보더로
+  표현한다** — 그림자는 아래 "그림자" 절의 떠 있는 표면에만 쓴다
+- **그라데이션 · 글로우 금지**
+- Panda는 `strictTokens: true`다. 토큰 밖 값은 `fontSize: '[12px]'`, `maxH: '[70vh]'`처럼
+  대괄호로 이스케이프해 "여긴 의도적으로 토큰을 벗어난다"를 코드에 남긴다. 단 색·라운드·보더
+  굵기·그림자는 이스케이프도 lint(`prefer-token`)가 막는다 — 맞는 토큰이 없으면 프리셋에 더한다
+
+## 그림자 — 떠 있는 표면에만
+
+값은 Astryx 코어(MIT)의 `--shadow-med`·`--shadow-high`를 그대로 옮겼다(docsite 테마는 그림자를
+덮어쓰지 않는다). 코어의 `light-dark()` 쌍을 라이트/다크로 나눴다. **이 둘이 전부다** — 블로그
+설정이 preset-panda의 그림자를 빼서 다른 이름은 strictTokens에, 대괄호 이스케이프는
+`prefer-token`에 걸린다.
+
+| 토큰           | 라이트                                                      | 다크                                                        |
+| :------------- | :---------------------------------------------------------- | :---------------------------------------------------------- |
+| `overlay.med`  | `0px 1px 2px rgba(0,0,0,0.1), 0px 2px 12px rgba(0,0,0,0.1)` | `0px 1px 2px rgba(0,0,0,0.2), 0px 2px 12px rgba(0,0,0,0.2)` |
+| `overlay.high` | `0px 2px 2px rgba(0,0,0,0.1), 0px 8px 24px rgba(0,0,0,0.1)` | `0px 2px 2px rgba(0,0,0,0.2), 0px 8px 24px rgba(0,0,0,0.3)` |
+
+**판정 — 넷을 모두 만족하는 면에만 그림자를 단다.**
+
+1. 흐름 밖(Portal·absolute·fixed)에 뜬다
+2. 아래 콘텐츠를 가린다 — 단 화면 전체를 덮는 면은 그림자가 떨어질 가장자리가 없어 제외한다
+3. 닫기·Escape·포인터 이탈 중 하나로 사라진다
+4. 반전(잉크) 면이 아니다
+
+lint는 그림자 **값**만 막는다. 어느 면에 붙였는지는 이 판정으로 리뷰가 본다.
+
+| 표면                                | 그림자              | 보더                                 | 라운드               |
+| :---------------------------------- | :------------------ | :----------------------------------- | :------------------- |
+| 검색 다이얼로그 — md 이상 센터 모달 | `overlay.high`      | hairline                             | `container`          |
+| 검색 다이얼로그 — 모바일 전체화면   | 없음(판정 2의 예외) | 없음                                 | `none`               |
+| 목차 바텀시트 · 글 필터 바텀시트    | `overlay.high`      | hairline(목차는 위, 필터는 위·좌·우) | 윗모서리 `container` |
+| admin 차트 툴팁                     | `overlay.med`       | hairline                             | `container`          |
+
+- **차트 툴팁은 공용 컴포넌트(`ChartTooltip`·`ChartTooltipFrame`) 하나로 그린다.** Recharts
+  `contentStyle` 같은 인라인 style은 Panda 추출 밖이라 토큰 검사가 닿지 않는다. 표면은
+  Recharts가 넘기는 `accessibilityLayer`를 필수로 받아, 기본 툴팁이 주던 스크린리더 알림
+  (`role="status"`)을 잇는다
+- **떠 있어도 그림자가 없는 것** — FAB 셋(목차 열기·글 필터·맨 위로)은 버튼이라 없다(hairline
+  보더로 본문과 분리). 문장 공유 버튼(QuoteLink)은 반전 면이라 지면과 반대 톤이 이미 띄운다.
+  스티키 헤더·건너뛰기 링크·미리보기 배너는 닫는 면이 아니다
+- 새 오버레이를 만들 때 단계는 Astryx를 따른다 — 다이얼로그·드로어·시트는 high, 토스트·차트
+  툴팁은 med, 팝오버·메뉴는 low
+
+**Astryx와 일부러 다르게 간 곳**
+
+- **다이얼로그에 hairline을 남긴다.** Astryx Dialog는 보더가 0이지만, 다크에서 다이얼로그
+  면과 dim 아래 지면의 대비가 1.04:1이고 그림자도 어두운 지면 위에서는 거의 보이지 않는다 —
+  다크의 경계는 보더가 맡는다. 바텀시트는 Astryx와 같다 — Astryx BottomSheet도 scrim을 향한
+  변에 hairline을 두고 high를 준다(다크에서 시트 가장자리가 보이지 않아 보더를 더했다). 블로그
+  시트 둘은 화면 폭 전체라 좌우 변이 화면 끝에 붙고, 목차 시트는 위 변에만 보더를 둔다
+- **세그먼트 컨트롤(admin 기간 선택)의 선택 항목에 그림자가 없다.** Astryx는 low를 주지만 흐름
+  안의 요소라 판정 1에 걸린다
+- **FAB에 그림자가 없다.** Astryx의 FAB 예제(IconButtonFloating 블록)는 아이콘 버튼에
+  `elevation="high"`를 준다
+- **`overlay.low`는 정의하지 않았다.** 쓰는 면이 없다 — 첫 팝오버·메뉴를 만드는 커밋이 Astryx
+  `--shadow-low` 값으로 더한다
+- **scrim은 합치지 않았다.** 검색은 `scrim.dialog`, 바텀시트 둘은 `scrim.sheet`다(Astryx는
+  `--color-overlay` 하나). 두 값은 테마와 무관하게 어둡다 — 잉크 색(`ink.950`)을 반투명으로 깔면
+  다크에서 백드롭이 밝아진다
 
 ## 레이아웃 그리드
 

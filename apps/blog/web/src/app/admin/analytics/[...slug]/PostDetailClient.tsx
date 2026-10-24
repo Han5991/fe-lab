@@ -33,6 +33,7 @@ import { ADMIN_ANALYTICS_PATH, slugFromRouteParam } from '@/src/shared/routes';
 import { postPath } from '@blog/content/client';
 import { formatMonthDayISO } from '@blog/content/client';
 import { LoadingPlaceholder } from '@/src/components/shared/LoadingPlaceholder';
+import { ChartTooltip } from '@/src/components/admin/ChartTooltip';
 import {
   DateRangeControls,
   useDateFilter,
@@ -577,19 +578,7 @@ function PostDetailBody({ post }: { post: PostStatDetail }) {
                     strokeWidth: 1,
                     strokeDasharray: '4 4',
                   }}
-                  contentStyle={{
-                    borderRadius: token('radii.container'),
-                    border: `1px solid ${token('colors.ink.border')}`,
-                    background: token('colors.ink.25'),
-                    color: token('colors.ink.900'),
-                    boxShadow: '0 4px 12px rgb(0 0 0 / 0.4)',
-                    fontSize: '12px',
-                  }}
-                  labelStyle={{
-                    color: token('colors.ink.600'),
-                    marginBottom: '2px',
-                  }}
-                  itemStyle={{ color: token('colors.ink.800') }}
+                  content={ChartTooltip}
                 />
                 <Line
                   type="monotone"
@@ -669,19 +658,7 @@ function PostDetailBody({ post }: { post: PostStatDetail }) {
                     fillOpacity: 0.12,
                     radius: 4,
                   }}
-                  contentStyle={{
-                    borderRadius: token('radii.container'),
-                    border: `1px solid ${token('colors.ink.border')}`,
-                    background: token('colors.ink.25'),
-                    color: token('colors.ink.900'),
-                    boxShadow: '0 4px 12px rgb(0 0 0 / 0.4)',
-                    fontSize: '12px',
-                  }}
-                  labelStyle={{
-                    color: token('colors.ink.600'),
-                    marginBottom: '2px',
-                  }}
-                  itemStyle={{ color: token('colors.ink.800') }}
+                  content={ChartTooltip}
                 />
                 <Bar dataKey="views" radius={[4, 4, 0, 0]}>
                   {hourlyData.map((entry, index) => (
@@ -740,19 +717,7 @@ function PostDetailBody({ post }: { post: PostStatDetail }) {
                     fillOpacity: 0.12,
                     radius: 4,
                   }}
-                  contentStyle={{
-                    borderRadius: token('radii.container'),
-                    border: `1px solid ${token('colors.ink.border')}`,
-                    background: token('colors.ink.25'),
-                    color: token('colors.ink.900'),
-                    boxShadow: '0 4px 12px rgb(0 0 0 / 0.4)',
-                    fontSize: '12px',
-                  }}
-                  labelStyle={{
-                    color: token('colors.ink.600'),
-                    marginBottom: '2px',
-                  }}
-                  itemStyle={{ color: token('colors.ink.800') }}
+                  content={ChartTooltip}
                 />
                 <Bar dataKey="views" radius={[4, 4, 0, 0]}>
                   {dowData.map((entry, index) => (

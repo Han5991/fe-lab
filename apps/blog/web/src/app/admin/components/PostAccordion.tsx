@@ -25,6 +25,7 @@ import {
 import { DateRangeControls, useDateFilter } from './DateRangeControls';
 import { WeekGrowthIcon } from './WeekGrowthIcon';
 import { adminAnalyticsPostPath } from '@/src/shared/routes';
+import { ChartTooltip } from '@/src/components/admin/ChartTooltip';
 import { publishAtOf, resolvePostState } from '@blog/content/client';
 import { STATUS_BADGE, livePostHref, statusTone } from './postState';
 
@@ -417,18 +418,7 @@ export function PostAccordion({ post, todayISO }: Props) {
                           strokeWidth: 1,
                           strokeDasharray: '4 4',
                         }}
-                        contentStyle={{
-                          borderRadius: token('radii.container'),
-                          border: `1px solid ${token('colors.ink.border')}`,
-                          background: token('colors.ink.25'),
-                          color: token('colors.ink.900'),
-                          fontSize: '12px',
-                        }}
-                        labelStyle={{
-                          color: token('colors.ink.600'),
-                          marginBottom: '2px',
-                        }}
-                        itemStyle={{ color: token('colors.ink.800') }}
+                        content={ChartTooltip}
                       />
                       <Line
                         type="monotone"

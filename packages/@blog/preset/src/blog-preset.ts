@@ -319,9 +319,6 @@ export const blogPreset = definePreset({
   theme: {
     extend: {
       tokens: {
-        // 강조 좌측 바(about 페이지)는 semanticTokens.shadows 로 내려 라이트/다크
-        // accent를 각각 탄다. plain `tokens.*` 는 `_dark` 배리언트를 지원하지 않아
-        // hex를 박으면 다크에서도 라이트 틸이 그대로 나온다.
         radii: {
           // Astryx docsite 테마(MIT)의 라운드 스케일을 이름째 옮겼다 — 코어 기본값(4/8/12/28)에
           // 4px씩 더한 값이고, none·full은 코어 그대로다. 이름은 크기가 아니라 자리다:
@@ -341,7 +338,8 @@ export const blogPreset = definePreset({
           full: { value: '9999px' },
         },
         borderWidths: {
-          // "그림자 대신 보더로 위계 표현" — hairline 단일 소스. none은 보더를 지우는 자리
+          // 지면 위 카드·패널·행의 위계는 보더로 낸다(그림자는 떠 있는 표면에만 — 아래
+          // semanticTokens.shadows) — hairline 단일 소스. none은 보더를 지우는 자리
           // (마지막 행 등) — radii의 none과 같이 0도 토큰으로 써서 대괄호 이스케이프가 남지 않게 한다.
           none: { value: '0' },
           hairline: { value: '1px' },
@@ -423,11 +421,29 @@ export const blogPreset = definePreset({
         },
       },
       semanticTokens: {
+        // 그림자는 **떠 있는 표면에만** 쓴다(AGENTS.md §9) — 흐름 밖에 떠서 아래를 가리고
+        // 닫히면 사라지는 면. 값은 Astryx 코어(MIT)의 --shadow-med·--shadow-high를 그대로
+        // 옮겼다(docsite 테마는 그림자를 덮어쓰지 않는다). light-dark() 쌍을 base/_dark로 나눴다.
+        //   med  — 차트 툴팁
+        //   high — 다이얼로그·바텀시트
+        // **그림자는 이 둘이 전부다** — 블로그 설정이 preset-panda의 shadows를 빼므로 다른 이름은
+        // strictTokens에, 이스케이프는 prefer-token에 걸린다. Astryx의 low(팝오버·메뉴)는 쓰는
+        // 면이 생길 때 더한다. 어느 면이 어느 단계인지는 blog-design-system 스킬.
         shadows: {
-          markerLeft: {
-            value: {
-              base: 'inset 3px 0 0 #0891b2',
-              _dark: 'inset 3px 0 0 #67e8f9',
+          overlay: {
+            med: {
+              value: {
+                base: '0px 1px 2px rgba(0,0,0,0.1), 0px 2px 12px rgba(0,0,0,0.1)',
+                _dark:
+                  '0px 1px 2px rgba(0,0,0,0.2), 0px 2px 12px rgba(0,0,0,0.2)',
+              },
+            },
+            high: {
+              value: {
+                base: '0px 2px 2px rgba(0,0,0,0.1), 0px 8px 24px rgba(0,0,0,0.1)',
+                _dark:
+                  '0px 2px 2px rgba(0,0,0,0.2), 0px 8px 24px rgba(0,0,0,0.3)',
+              },
             },
           },
         },

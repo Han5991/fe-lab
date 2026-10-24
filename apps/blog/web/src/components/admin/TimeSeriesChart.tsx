@@ -10,60 +10,59 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
+import type { TooltipContentProps } from 'recharts';
 import { token } from '@blog/styled-system/tokens';
 import { fmtNum } from '@blog/content/client';
+import { ChartTooltipFrame } from './ChartTooltip';
 
 interface TimeSeriesChartProps {
   data: { date: string; value: number }[];
   height?: number;
 }
 
-interface TooltipPayload {
-  value?: number;
-}
-
-interface CustomTooltipProps {
-  active?: boolean;
-  label?: string;
-  payload?: TooltipPayload[];
-}
-
-const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
-  const first = payload?.[0];
+// 표면은 다른 차트 툴팁과 같은 ChartTooltipFrame이고, 내용만 큰 숫자로 따로 그린다.
+// `content`에 함수로 넘겨 props가 Recharts 계약(TooltipContentProps)으로 검사된다.
+const CustomTooltip = ({
+  active,
+  payload,
+  label,
+  accessibilityLayer,
+}: TooltipContentProps) => {
+  const first = payload[0];
   if (!active || first === undefined) return null;
-  const value = first.value ?? 0;
+  const { value } = first;
   return (
-    <div
-      className={css({
-        bg: 'paper.100',
-        color: 'ink.950',
-        px: '3',
-        py: '2',
-        fontFamily: 'mono',
-        fontSize: 'xs',
-        letterSpacing: 'mono',
-      })}
-    >
-      <div className={css({ color: 'spot.600', fontSize: '2xs' })}>{label}</div>
+    <ChartTooltipFrame accessibilityLayer={accessibilityLayer}>
       <div
         className={css({
-          fontSize: 'lg',
-          fontWeight: 'semibold',
-          mt: '0.5',
+          color: 'ink.950',
+          fontFamily: 'mono',
+          letterSpacing: 'mono',
         })}
       >
-        {fmtNum(value)}{' '}
-        <span
+        <div className={css({ color: 'spot.600', fontSize: '2xs' })}>
+          {label}
+        </div>
+        <div
           className={css({
-            fontFamily: 'mono',
-            fontSize: '2xs',
-            color: 'ink.500',
+            fontSize: 'lg',
+            fontWeight: 'semibold',
+            mt: '0.5',
           })}
         >
-          views
-        </span>
+          {typeof value === 'number' ? fmtNum(value) : value}{' '}
+          <span
+            className={css({
+              fontFamily: 'mono',
+              fontSize: '2xs',
+              color: 'ink.500',
+            })}
+          >
+            views
+          </span>
+        </div>
       </div>
-    </div>
+    </ChartTooltipFrame>
   );
 };
 
@@ -110,7 +109,7 @@ export const TimeSeriesChart = ({
               strokeWidth: 1,
               strokeDasharray: '2 3',
             }}
-            content={<CustomTooltip />}
+            content={CustomTooltip}
           />
           <Area
             type="monotone"

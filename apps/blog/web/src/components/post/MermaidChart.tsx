@@ -89,7 +89,8 @@ export const mermaidContainerStyle = css({
   justifyContent: 'center',
   overflow: 'auto',
   transition: '[all 0.3s]',
-  // hover 강조도 그림자·들어올리기가 아니라 보더 톤으로만 준다(플랫 유지).
+  // hover 강조도 그림자·들어올리기가 아니라 보더 톤으로만 준다 — 본문 안 상자라 그림자를
+  // 두지 않는다(그림자는 떠 있는 표면에만, AGENTS.md §9).
   _hover: {
     borderColor: 'ink.borderStrong',
     bg: 'paper.50',
@@ -138,7 +139,8 @@ export function MermaidChart({ chart }: { chart: string }) {
           // mermaid 12가 기본값을 바꾼 두 축을 v11 값으로 못박는다. 렌더는 어느 쪽이든
           // 성공하므로 기본값을 따라가면 발행한 도표가 아무 경고 없이 달라진다.
           //   look — 기본 'neo'는 노드에 drop-shadow 필터를 건다(색도 테마와 무관한
-          //          고정 회색). 블로그는 플랫이 원칙이라 그림자 장식을 쓰지 않는다.
+          //          고정 회색). 블로그는 본문 도표에 그림자를 쓰지 않는다(그림자는 떠
+          //          있는 표면에만, AGENTS.md §9).
           //   layout — 기본이 ELK로 바뀌어 flowchart가 재배치된다(곡선 부채꼴 →
           //          직각 가지). 글을 쓸 때 보고 고른 dagre 배치를 유지한다.
           look: 'classic',

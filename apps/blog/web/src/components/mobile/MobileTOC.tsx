@@ -88,7 +88,8 @@ export const MobileTOC = () => {
           alignItems: 'center',
           justifyContent: 'center',
           color: 'ink.600',
-          // 떠 있는 버튼이지만 그림자 대신 hairline 보더로 본문과 분리한다.
+          // 떠 있어도 버튼이라 그림자를 두지 않는다(그림자는 닫히면 사라지는 표면에만,
+          // AGENTS.md §9) — hairline 보더로 본문과 분리한다.
           borderWidth: 'hairline',
           borderColor: 'ink.borderStrong',
           zIndex: '39',
@@ -104,15 +105,19 @@ export const MobileTOC = () => {
         <AnimatePresence>
           {isOpen && (
             <>
+              {/* 백드롭은 PostsFilterSheet와 같은 시트용 scrim이다. 예전엔 ink.950을
+                  반투명으로 깔아, 잉크가 밝아지는 다크에서 백드롭이 지면을 밝히는 회색 막이
+                  됐다 — scrim은 테마와 무관하게 어둡다. 그래서 라이트도 바뀐다: 50% 잉크의
+                  회색 막에서 필터 시트와 같은 짙은 막으로. */}
               <motion.div
                 initial={{ opacity: 0 }}
-                animate={{ opacity: 0.5 }}
+                animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 onClick={() => setIsOpen(false)}
                 className={css({
                   pos: 'fixed',
                   inset: '0',
-                  bg: 'ink.950',
+                  bg: 'scrim.sheet',
                   zIndex: '50',
                 })}
               />
@@ -136,10 +141,11 @@ export const MobileTOC = () => {
                   maxH: '[70vh]',
                   display: 'flex',
                   flexDir: 'column',
-                  // 뒤를 덮는 dim 오버레이가 이미 레이어를 갈라주므로 그림자는
-                  // 빼고 상단 hairline 보더만 남긴다.
+                  // 떠 있는 표면이라 overlay.high(AGENTS.md §9). 다크에서는 그림자가 scrim
+                  // 위에서 거의 보이지 않으므로 상단 hairline이 경계를 맡는다.
                   borderTopWidth: 'hairline',
                   borderColor: 'ink.border',
+                  boxShadow: 'overlay.high',
                   pb: '[env(safe-area-inset-bottom)]',
                 })}
               >

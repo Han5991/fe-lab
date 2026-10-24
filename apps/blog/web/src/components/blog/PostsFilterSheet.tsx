@@ -69,6 +69,9 @@ export const PostsFilterSheet = ({
                 borderLeftWidth: 'hairline',
                 borderStyle: 'solid',
                 borderColor: 'ink.border',
+                // 떠 있는 표면이라 overlay.high(AGENTS.md §9). 다크에서는 그림자가 scrim
+                // 위에서 거의 보이지 않으므로 hairline이 경계를 맡는다.
+                boxShadow: 'overlay.high',
                 zIndex: '51',
                 roundedTop: 'container',
                 maxH: '[85vh]',

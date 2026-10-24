@@ -273,7 +273,8 @@ pnpm add typesense
 - 라운드는 자리로 고른다: `inner`(kbd·인라인 코드) / `element`(코드 블록·이미지) /
   `container`(카드·콜아웃·패널) / `page`(대화 말풍선) / `full`(버튼·배지·태그 칩·원형), 그리고 `none` —
   이 여섯뿐. 수치와 근거는 `blog-design-system` 스킬
-- 보더는 `hairline`. **그림자·그라데이션·글로우 금지** — 위계는 보더로만
+- 보더는 `hairline`. **그라데이션·글로우 금지**, 본문 컴포넌트에는 그림자도 없다(그림자는 떠 있는
+  표면에만 — `blog-design-system` 스킬) — 위계는 보더로만
 - 메타 정보(날짜·읽기시간·조회수·태그·코드·로고)는 `fontFamily: 'mono'`.
   단 시리즈 배지는 안에 숫자가 있어도 sans다 — 레퍼런스 `.badge`가 sans고
   홈·글 상세·`/series`가 모두 그렇게 맞춰져 있다

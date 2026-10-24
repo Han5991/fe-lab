@@ -6,10 +6,10 @@ import { TEST_SUFFIX } from './testFiles.mts';
 // 토큰 레이어에 통째로 실렸고(쓰는 곳 0), strictTokens가 `orange.500` 같은 팔레트 밖 색을 통과시켰다.
 // radii는 블로그 토큰과 같은 값을 다른 이름으로 들고 있어(lg=8px=inner, xl=12px=element,
 // 2xl=16px=container, 4xl=32px=page) 같은 라운드가 이름 둘 이상(`'lg'`·`'inner'`·`'[8px]'`)으로 갈린다.
-// shadows도 버린다 — 그림자 장식은 금지라(AGENTS.md §9) 쓰는 곳이 0인데 변수 11개가 토큰 레이어에
-// 실렸고, `boxShadow: 'md'`가 타입을 통과했다. @blog/preset의 `shadows.markerLeft`는 남아 카테고리가
-// 비지 않는다. 쓰는 곳이 0인 blurs·durations·aspectRatios는 남긴다 — 카테고리가 통째로 비면 Panda가
-// 그 속성 타입을 아무 문자열로 넓혀(2.3.0 실측) strictTokens가 풀린다.
+// shadows도 버린다 — 블로그 그림자는 떠 있는 표면의 `overlay.*` 둘뿐이라(AGENTS.md §9) preset-panda의
+// 변수 11개는 쓰는 곳이 0인데 토큰 레이어에 실렸고, `boxShadow: 'md'`가 타입을 통과했다. @blog/preset의
+// `shadows.overlay.*`가 있어 카테고리가 비지 않는다. 쓰는 곳이 0인 blurs·durations·aspectRatios는
+// 남긴다 — 카테고리가 통째로 비면 Panda가 그 속성 타입을 아무 문자열로 넓혀(2.3.0 실측) strictTokens가 풀린다.
 // 서드파티 프리셋을 고치지 않고 일부만 빼는 v2 방식이 preset:resolved 훅이다(theming/plugins
 // "Trim a preset", theming/presets "extend only adds, so removing takes a plugin"). @blog/preset에
 // extend 없는 colors를 두는 길도 v2에서 동작하지만, 그러면 블로그 프리셋이 목록 순서에 묶인다.
@@ -175,12 +175,6 @@ export default defineConfig({
       },
       '::-webkit-scrollbar-thumb:hover': {
         bg: 'ink.borderStrong',
-      },
-      // Marker(형광펜) — raw HTML 본문의 <span class="marker">…</span> 강조
-      '.marker': {
-        background:
-          'linear-gradient(180deg, transparent 55%, token(colors.marker.300) 55%, token(colors.marker.300) 92%, transparent 92%)',
-        padding: '0 2px',
       },
     },
   },
