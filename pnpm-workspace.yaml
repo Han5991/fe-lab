@@ -1,8 +1,10 @@
+# 패키지가 실제로 있는 깊이만 적는다. 예전의 'apps/**/*'·'packages/**/*'는 산출물 안의
+# package.json(minibundler가 쓰는 sample-lib/dist/package.json)까지 importer로 잡아 frozen
+# install을 깨뜨렸고, 그래서 '!**/dist/**' 예외가 붙어 있었다.
 packages:
-  - 'apps/**/*'
-  - 'packages/**/*'
-  # minibundler가 쓰는 dist/package.json을 importer로 잡으면 frozen install이 실패한다
-  - '!**/dist/**'
+  - 'apps/*'
+  - 'apps/blog/*'
+  - 'packages/*/*'
 
 overrides:
   # next가 postcss를 8.4.31로 exact 핀 고정해서, 오버라이드를 빼면 postcss가 next용 한 벌과
