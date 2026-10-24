@@ -441,11 +441,13 @@ export default function AdminPage() {
 
   return (
     // 배경은 화면 끝까지, 내용은 /admin/analytics와 같은 wide 레일.
-    // 세로 여백은 레일과 무관하므로 바깥에 남긴다.
+    // 세로 여백은 레일과 무관하므로 바깥에 남긴다. 높이는 채우지 않는다 — 푸터를 바닥에 붙이는
+    // 일은 Layout(flex 열, main flex 1)이 한다. 예전의 최소 높이 calc(100dvh - 128px)는 헤더·푸터
+    // 높이를 손으로 뺀 값이라 셸이 바뀌면 어긋났다. 그래서 내용이 화면보다 짧으면(로딩 중, 큰 화면)
+    // 회색 면이 내용에서 끝나고 그 아래로 지면색이 보인다.
     <div
       className={cx(
         css({
-          minH: '[calc(100dvh - 128px)]',
           bg: 'ink.50',
           py: { base: '4', md: '8' },
         }),

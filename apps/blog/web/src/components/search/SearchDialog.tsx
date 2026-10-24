@@ -12,7 +12,7 @@ import {
 } from '@blog/content/client';
 import { getRecentViews, type RecentView } from '@/src/hooks/recentViews';
 import { Portal } from '@/src/components/Portal';
-import { pressable } from '@/src/components/pressable';
+import { headerIconButton } from '@/src/components/iconButton';
 import { useModalDialog } from '@/src/components/useModalDialog';
 import { isModifiedClick } from '@/src/components/events';
 import { fetchSearchIndex } from './searchIndex';
@@ -224,49 +224,19 @@ export const SearchDialog = () => {
 
   return (
     <>
+      {/* 아이콘 버튼이라 단축키는 화면에 적지 않는다 — 마우스는 title 툴팁으로, 보조기술은
+          aria-keyshortcuts로 받는다(위 핸들러가 Meta·Control 둘 다 받는다). 이름은 '검색' 그대로다. */}
       <button
         type="button"
         onClick={openDialog}
         aria-haspopup="dialog"
         aria-expanded={isOpen}
-        className={css(pressable, {
-          display: 'flex',
-          alignItems: 'center',
-          gap: '2',
-          px: { base: '2', md: '3' },
-          py: '1.5',
-          rounded: 'full',
-          borderWidth: 'hairline',
-          borderColor: 'ink.border',
-          color: 'ink.500',
-          fontSize: 'sm',
-          cursor: 'pointer',
-          _hover: { borderColor: 'ink.borderStrong', color: 'ink.700' },
-          _active: { bg: 'paper.100' },
-          bg: 'transparent',
-          minW: { base: '[36px]', md: 'auto' },
-          justifyContent: 'center',
-        })}
         aria-label="검색"
+        aria-keyshortcuts="Meta+K Control+K"
+        title="검색 (⌘K / Ctrl K)"
+        className={headerIconButton}
       >
-        <Search size={16} />
-        <span className={css({ display: { base: 'none', md: 'inline' } })}>
-          검색
-        </span>
-        <kbd
-          className={css({
-            display: { base: 'none', md: 'inline' },
-            px: '1.5',
-            py: '0.5',
-            rounded: 'inner',
-            bg: 'paper.100',
-            fontSize: 'xs',
-            // paper.100 위 12px 글자라 ink.500(서브 서피스 메타 톤)이 AA 하한이다.
-            color: 'ink.500',
-          })}
-        >
-          ⌘K
-        </kbd>
+        <Search size={18} />
       </button>
 
       {/* body로 portal한다 — 헤더의 backdrop-filter가 fixed 자손의 containing

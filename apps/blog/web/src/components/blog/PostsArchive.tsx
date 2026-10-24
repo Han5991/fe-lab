@@ -15,6 +15,7 @@ import {
   type ArchiveSortKey,
 } from '@blog/content/client';
 import { getAllViewCounts } from '@/src/domain/analytics';
+import { siteHeaderStyle } from '@/src/components/siteHeader';
 import { postPath } from '@blog/content/client';
 import { fmtDate } from '@blog/content/client';
 
@@ -290,13 +291,17 @@ const PostsArchiveLayout = ({
         })}
       >
         <aside
+          style={siteHeaderStyle}
           className={css({
             // 모바일에서는 사이드바를 숨기고 FAB+바텀시트로 필터 노출.
             display: { base: 'none', md: 'flex' },
             position: { md: 'sticky' },
-            top: { md: '20' },
+            // 사이트 헤더 아래 32px에 붙고, 화면 바닥에서 8px 위까지 — 헤더 높이 변수에서 계산한다.
+            top: { md: '[calc(var(--site-header-height) + token(spacing.8))]' },
             alignSelf: { md: 'start' },
-            maxH: { md: '[calc(100vh - 88px)]' },
+            maxH: {
+              md: '[calc(100vh - var(--site-header-height) - token(spacing.8) - token(spacing.2))]',
+            },
             overflowY: { md: 'auto' },
             flexDir: 'column',
             gap: '7',

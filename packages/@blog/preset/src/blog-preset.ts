@@ -1,6 +1,10 @@
 // 런타임에 실행되는 파일(content.config.mts가 themeColor를 부른다)이라 가벼운 define 진입점을
 // 쓴다(Panda v2 design-systems/publishing).
-import { definePreset, defineSemanticTokens } from '@pandacss/dev/define';
+import {
+  definePreset,
+  defineSemanticTokens,
+  defineTextStyles,
+} from '@pandacss/dev/define';
 
 /** 라이트(`base`)·다크(`_dark`) 한 쌍 — 시맨틱 토큰 값의 모양 그대로다. */
 interface ThemePair<T> {
@@ -197,15 +201,6 @@ const blogColors = defineSemanticTokens.colors({
   // warning 콜아웃이 공유한다.
   'warn.bg': { value: { base: '#faeeda', _dark: '#3a2a10' } },
   'warn.text': { value: { base: '#854f0b', _dark: '#fac775' } },
-  // btn.primaryBorder — 주 버튼의 hairline 보더. 면·글자·hover는 accent.solid·
-  // accent.onSolid·accent.solidHover다(예전의 버튼 전용 배경 셋은 cyan 명도를 흰 글씨에
-  // 맞춘 값이라 accent와 함께 걷었다).
-  'btn.primaryBorder': {
-    value: {
-      base: 'rgba(26,26,26,0.15)',
-      _dark: 'rgba(230,232,235,0.12)',
-    },
-  },
   // scrim — 모달 뒤를 덮는 백드롭. 지면을 가리고 위 패널을 띄우는 역할이라 테마와
   // 무관하게 어둡다. 두 값은 예전 대괄호 이스케이프 그대로다 — 하나로 합치면 한쪽
   // 백드롭이 눈에 띄게 바뀐다.
@@ -351,8 +346,8 @@ export const blogPreset = definePreset({
         radii: {
           // Astryx docsite 테마(MIT)의 라운드 스케일을 이름째 옮겼다 — 코어 기본값(4/8/12/28)에
           // 4px씩 더한 값이고, none·full은 코어 그대로다. 이름은 크기가 아니라 자리다:
-          //   inner     — kbd·인라인 코드·작은 안쪽 요소·포커스 링
-          //   element   — 입력·세그먼트 그룹·코드 블록·미디어(이미지)
+          //   inner     — 인라인 코드·검색어 강조·작은 안쪽 요소·포커스 링
+          //   element   — 입력·헤더 내비 항목·세그먼트 그룹·코드 블록·미디어(이미지)
           //   container — 카드·패널·콜아웃·오버레이
           //   page      — 대화 말풍선(<dialogue>)
           //   full      — 버튼(docsite 테마가 버튼을 pill로 덮는다)·배지·태그 칩·원형·스크롤바
@@ -433,7 +428,7 @@ export const blogPreset = definePreset({
           // 헤더 로고와 본문 제목이 어긋난다(리팩터링 전 실측: 페이지에
           // 따라 최대 248px 차이).
           // ─────────────────────────────────────────────────────────────
-          /** 도구형 화면 — 목록/소개/대시보드, 글 상세 셸, 헤더·푸터 */
+          /** 도구형 화면 — 목록/소개/대시보드, 글 상세 셸(헤더·푸터는 레일 없이 전폭) */
           railWide: { value: '1200px' },
           /** 읽는 화면 — 홈 허브, 글 본문, 시리즈, 정책. 한글 약 42자/줄 */
           railText: { value: '680px' },
@@ -515,7 +510,124 @@ export const blogPreset = definePreset({
           },
         },
         colors: blogColors,
+
+        // 섹션 사이 간격 — Astryx docsite의 `--astryx-marketing-section-gap`(MIT)을 옮겼다. 768px(md)
+        // 이상 100px, 아래 48px. 화면 폭에 따라 값이 바뀌는 간격이라 토큰 한 이름이 둘을 들고,
+        // 쓰는 요소는 `mt: 'section'`처럼 이름만 적는다(반응형 객체를 자리마다 다시 적지 않는다).
+        spacing: {
+          section: { value: { base: '3rem', md: '6.25rem' } },
+        },
       },
+      // 글자 크기·행간·굵기의 묶음 — Astryx 코어 타이포 스케일(MIT)의 **역할 이름**이고, 값은
+      // 승인 목업(블로그 Astryx 리디자인)의 수치다. 크기만 고르고 행간을 따로 적던 자리(`fontSize`
+      // + `lineHeight`)를 이름 하나로 묶는다. 자간은 두지 않는다 — Astryx는 전부 normal이고, 한글
+      // 본문·제목에 음수 자간을 주면 받침이 붙어 보인다. 줄바꿈은 html의 `word-break: keep-all`이 맡는다.
+      // 단위는 rem(루트 16px 기준 — 주석의 px는 그때 값)이라 브라우저 글자 크기 설정을 따른다.
+      // preset-panda의 textStyles(`xs`~`9xl`, fontSizes와 같은 이름·값)는 블로그 설정이 뺀다 —
+      // 같은 크기가 두 이름으로 갈리지 않게.
+      //
+      //   역할        px      굵기  자리
+      //   display1   42/52   600   페이지 제목 — 홈 이름 · 글 목록 · 글 상세 제목
+      //   display2   35/44   600   홈 섹션 제목(최근 글 · 지난 글)
+      //   display3   29/36   600   홈 오픈소스 섹션 제목
+      //   h1         24/32   600   대표글 제목
+      //   h2         20/28   600   본문 `##`
+      //   h3         17/24   600   카드·행 제목
+      //   h4         14/20   600   본문 표 머리
+      //   large      20/32   400   리드 문단 — 홈 소개 · 글 상세 dek
+      //   prose      17/28   400   글 본문
+      //   bodyLarge  17/24   400   대표글 발췌
+      //   body       14/20   400   UI 기본 글자 · 카드 발췌
+      //   label      14/20   500   버튼 · 헤더 내비
+      //   supporting 12/20   400   메타 · 푸터 · 보조 설명
+      //
+      // `css({ textStyle: 'h1' })`로 쓰고, 굵기·색만 다른 자리는 같은 호출에 `fontWeight`를 더한다
+      // (textStyle은 utilities보다 낮은 레이어라 덮인다).
+      textStyles: defineTextStyles({
+        display1: {
+          value: {
+            fontSize: '2.625rem',
+            lineHeight: '3.25rem',
+            fontWeight: '600',
+          },
+        },
+        display2: {
+          value: {
+            fontSize: '2.1875rem',
+            lineHeight: '2.75rem',
+            fontWeight: '600',
+          },
+        },
+        display3: {
+          value: {
+            fontSize: '1.8125rem',
+            lineHeight: '2.25rem',
+            fontWeight: '600',
+          },
+        },
+        h1: {
+          value: { fontSize: '1.5rem', lineHeight: '2rem', fontWeight: '600' },
+        },
+        h2: {
+          value: {
+            fontSize: '1.25rem',
+            lineHeight: '1.75rem',
+            fontWeight: '600',
+          },
+        },
+        h3: {
+          value: {
+            fontSize: '1.0625rem',
+            lineHeight: '1.5rem',
+            fontWeight: '600',
+          },
+        },
+        h4: {
+          value: {
+            fontSize: '0.875rem',
+            lineHeight: '1.25rem',
+            fontWeight: '600',
+          },
+        },
+        large: {
+          value: { fontSize: '1.25rem', lineHeight: '2rem', fontWeight: '400' },
+        },
+        prose: {
+          value: {
+            fontSize: '1.0625rem',
+            lineHeight: '1.75rem',
+            fontWeight: '400',
+          },
+        },
+        bodyLarge: {
+          value: {
+            fontSize: '1.0625rem',
+            lineHeight: '1.5rem',
+            fontWeight: '400',
+          },
+        },
+        body: {
+          value: {
+            fontSize: '0.875rem',
+            lineHeight: '1.25rem',
+            fontWeight: '400',
+          },
+        },
+        label: {
+          value: {
+            fontSize: '0.875rem',
+            lineHeight: '1.25rem',
+            fontWeight: '500',
+          },
+        },
+        supporting: {
+          value: {
+            fontSize: '0.75rem',
+            lineHeight: '1.25rem',
+            fontWeight: '400',
+          },
+        },
+      }),
       keyframes: {
         // semanticTokens.animations.skeleton. Astryx는 쉬는 투명도가 .25인데, 자리표시 면
         // (paper.100)이 지면과 거의 같은 밝기라 .25에서는 보이지 않는다 — 1 ↔ .5로 왕복한다.

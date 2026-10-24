@@ -30,14 +30,12 @@ describe('NavLinks', () => {
     ]);
   });
 
-  // 홈은 `/posts/`가 아니지만 리뉴얼 후 대표글 + 글 목록을 얹은 글 허브라,
-  // 레퍼런스 화면 1처럼 "글"을 켠다. prefix 판정만으로는 홈이 통째로
-  // 비활성이 되므로 예외 분기가 필요하고, 그 분기를 여기서 고정한다.
-  test('홈에서는 "글"이 활성이다', () => {
+  // 홈은 글 허브지만 내비의 어느 링크도 홈을 가리키지 않는다 — "글"을 켜면 `/posts/`가
+  // 현재 페이지라고 알리는 셈이다. 예전엔 홈에서 "글"을 켜는 예외 분기가 있었다.
+  test('홈에서는 활성 항목이 없다', () => {
     renderAt('/');
-    expect(screen.getByRole('link', { current: 'page' })).toHaveTextContent(
-      '글',
-    );
+    expect(screen.getAllByRole('link')).toHaveLength(3);
+    expect(screen.queryByRole('link', { current: 'page' })).toBeNull();
   });
 
   test('글 상세에서도 "글"이 활성으로 남는다', () => {
