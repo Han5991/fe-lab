@@ -282,4 +282,39 @@ describe('열린 글 — 상세에서 링크로 목록에 돌아갈 때', () => 
       default: 'none',
     });
   });
+
+  // 이전·다음 글로 상세 → 상세를 건넌 뒤 목록으로 돌아가면 짝은 **마지막에 연 글**의 카드다. 정리
+  // (이 글이 열린 글일 때만 비움)와 다음 상세의 등록이 effect 순서로 맞물리는데, 같은 인스턴스가 slug만
+  // 바뀌는 경우와 상세가 통째로 바뀌는 경우 모두 열린 글이 B로 끝나야 한다 — 비면 B 카드와 짝 없이
+  // 페이드만 남는다(진단 없음).
+  test.each<[string, (slug: string) => string]>([
+    ['같은 상세가 slug만 바뀔 때', () => 'detail'],
+    ['상세가 통째로 바뀔 때', (slug: string) => slug],
+  ])('상세 → 상세(%s) 뒤에는 마지막 글의 카드가 짝이 된다', (_when, keyOf) => {
+    const B = 'next-post';
+    const detail = (slug: string) => (
+      <PostDetailShared key={keyOf(slug)} part="title" slug={slug}>
+        <h1>{slug}</h1>
+      </PostDetailShared>
+    );
+    const { container, rerender } = render(detail(SLUG));
+    act(() => {
+      rerender(detail(B));
+    });
+    act(() => {
+      rerender(
+        <>
+          {detail(B)}
+          {card(SLUG)}
+          {card(B)}
+        </>,
+      );
+    });
+
+    expect(shareOf(container, B)).toBe(cardClass('title'));
+    expect(shareOf(container, SLUG)).toEqual({
+      [POST_OPEN_TRANSITION_TYPE]: cardClass('title'),
+      default: 'none',
+    });
+  });
 });

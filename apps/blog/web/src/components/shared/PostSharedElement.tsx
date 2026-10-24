@@ -64,6 +64,9 @@ const shareClass = (part: PostSharedPart, side: PostSharedSide) =>
  *   목록에서 화면 밖 카드로 돌아가면 나가는 쪽만 남아 페이지와 함께 사라진다.
  * - 브라우저 뒤로·앞으로 가기에는 돌지 않는다 — React가 popstate의 전환을 동기로 끝내
  *   (스크롤 복원을 위해) View Transition을 열지 않는다. 링크 이동만 짝을 잇는다.
+ * - **한 페이지에 같은 글의 카드는 하나다** — 이름은 `part`·`slug`로만 정해져, 같은 글의 카드가 둘이면
+ *   짝이 될 때 같은 `view-transition-name`이 둘 생기고 브라우저가 그 전환을 통째로 건너뛴다(페이지
+ *   전환까지 사라진다). 같은 글을 다시 그리는 섹션(추천 글 등)은 공유 요소 없이 그린다.
  */
 export const PostCardShared = ({
   part,
