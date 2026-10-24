@@ -1,11 +1,14 @@
 'use client';
 
 import {
+  addTransitionType,
+  startTransition,
   Suspense,
   useId,
   useRef,
   useState,
   useSyncExternalStore,
+  ViewTransition,
   type ReactNode,
 } from 'react';
 import { usePathname } from 'next/navigation';
@@ -30,6 +33,10 @@ import {
   adminAnalyticsPostPath,
   adminAnalyticsSlugFromPath,
 } from '@/src/shared/routes';
+import {
+  ADMIN_TRANSITION_TYPE,
+  ADMIN_VIEW_TRANSITION,
+} from '@/src/shared/adminViewTransitions';
 import {
   NoSelection,
   PanelSkeleton,
@@ -73,6 +80,9 @@ function useIsWide(): boolean {
  * Next 라우터로 이동하면 목록 페이지와 글별 페이지(`[...slug]`)가 서로 다른 페이지라 화면이 통째로
  * 다시 마운트된다 — `pushState`는 Next 라우터가 받아 `usePathname`만 맞춘다. 같은 주소면 기록을
  * 늘리지 않는다.
+ *
+ * Next는 그 맞춤을 `startTransition`으로 넘긴다 — 그래서 고르기·닫기는 React transition이고, 패널
+ * 내용·시트의 `<ViewTransition>`이 그 커밋에서 들어오고 나간다(Next 16 `restore`).
  */
 function navigateTo(href: string): void {
   if (window.location.pathname === href) return;
@@ -110,13 +120,25 @@ function PostListView({ selectedSlug, onSelect }: PostListViewProps) {
     sortOrder,
   );
 
-  const handleSort = (field: SortField) => {
-    if (field === sortField) {
-      setSortOrder(order => (order === 'desc' ? 'asc' : 'desc'));
-    } else {
-      setSortField(field);
-    }
-  };
+  // 정렬은 type을 단 transition이다 — 목록의 `<ViewTransition>`이 이 type에서만 이전 순서를 걷고 새
+  // 순서를 띄운다(`PostTable`의 SORT_SWAP). 검색 입력은 transition이 아니라 행이 즉시 걸러진다.
+  const sortTransition = (update: () => void) =>
+    startTransition(() => {
+      addTransitionType(ADMIN_TRANSITION_TYPE.sort);
+      update();
+    });
+
+  const changeSortField = (field: SortField) =>
+    sortTransition(() => setSortField(field));
+
+  const handleSort = (field: SortField) =>
+    sortTransition(() => {
+      if (field === sortField) {
+        setSortOrder(order => (order === 'desc' ? 'asc' : 'desc'));
+      } else {
+        setSortField(field);
+      }
+    });
 
   return (
     <>
@@ -185,7 +207,7 @@ function PostListView({ selectedSlug, onSelect }: PostListViewProps) {
               label="정렬 기준"
               options={SORT_OPTIONS}
               value={sortField}
-              onChange={setSortField}
+              onChange={changeSortField}
             />
             <button
               type="button"
@@ -246,9 +268,15 @@ function PanelColumn({ children }: { children: ReactNode }) {
 }
 
 /**
- * lg 미만의 시트 — 패널을 목록 위에 덮는 오른쪽 드로어. 떠서 아래를 가리고 닫으면 사라지는 면이라
- * 그림자가 붙는 유일한 admin 표면이다(`overlay.high`, AGENTS.md §9 — 다이얼로그·시트는 high).
- * 스크롤 잠금·초점 가두기·Escape는 검색·목차 시트와 같은 `useModalDialog`가 맡는다.
+ * lg 미만의 시트 — 패널을 목록 위에 덮는 면. sm 이상은 화면 오른쪽 끝에 붙은 400 드로어, sm 미만은
+ * 화면 폭 전체다. 떠서 아래를 가리고 닫으면 사라지는 면이라 그림자가 붙는 유일한 admin 표면이다
+ * (`overlay.high`, AGENTS.md §9 — 다이얼로그·시트는 high). 스크롤 잠금·초점 가두기·Escape는 검색·목차
+ * 시트와 같은 `useModalDialog`가 맡는다.
+ *
+ * 움직임은 `<ViewTransition>`의 enter·exit다 — 열림·닫힘이 주소 변경(transition)이라 React가 이전
+ * 화면의 스냅샷으로 닫히는 시트를 그려 주고, 시트는 닫히는 즉시 DOM에서 빠진다(퇴장 동안 마운트를
+ * 붙들 상태가 없다). sm 미만은 아래에서 올라오고 그 위는 오른쪽에서 들어온다(globalCss의 admin
+ * 블록). 뒤로 가기로 닫힐 때는 React가 그 커밋을 동기로 처리해 움직임 없이 사라진다.
  */
 function PostSheet({
   titleId,
@@ -264,39 +292,51 @@ function PostSheet({
   return (
     <Portal>
       {/* 백드롭 클릭은 포인터 편의다 — 키보드는 Escape·닫기 버튼으로 닫는다. */}
-      <div
-        role="presentation"
-        onClick={onClose}
-        className={css({
-          pos: 'fixed',
-          inset: '0',
-          bg: 'scrim.sheet',
-          zIndex: '50',
-        })}
-      />
-      <div
-        ref={sheetRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        className={css({
-          pos: 'fixed',
-          top: '0',
-          right: '0',
-          bottom: '0',
-          w: 'full',
-          maxW: 'inspector',
-          overflowY: 'auto',
-          bg: 'surface.raised',
-          borderLeftWidth: 'hairline',
-          borderColor: 'ink.border',
-          boxShadow: 'overlay.high',
-          zIndex: '51',
-          pb: '[env(safe-area-inset-bottom)]',
-        })}
+      <ViewTransition
+        enter={ADMIN_VIEW_TRANSITION.scrim}
+        exit={ADMIN_VIEW_TRANSITION.scrim}
+        default="none"
       >
-        {children}
-      </div>
+        <div
+          role="presentation"
+          onClick={onClose}
+          className={css({
+            pos: 'fixed',
+            inset: '0',
+            bg: 'scrim.sheet',
+            zIndex: '50',
+          })}
+        />
+      </ViewTransition>
+      <ViewTransition
+        enter={ADMIN_VIEW_TRANSITION.sheet}
+        exit={ADMIN_VIEW_TRANSITION.sheet}
+        default="none"
+      >
+        <div
+          ref={sheetRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={titleId}
+          className={css({
+            pos: 'fixed',
+            top: '0',
+            right: '0',
+            bottom: '0',
+            w: 'full',
+            maxW: { sm: 'inspector' },
+            overflowY: 'auto',
+            bg: 'surface.raised',
+            borderLeftWidth: 'hairline',
+            borderColor: 'ink.border',
+            boxShadow: 'overlay.high',
+            zIndex: '51',
+            pb: '[env(safe-area-inset-bottom)]',
+          })}
+        >
+          {children}
+        </div>
+      </ViewTransition>
     </Portal>
   );
 }
@@ -337,7 +377,23 @@ function InspectorBody({ slug, mode, onClose }: InspectorBodyProps) {
       <PostNotFound slug={slug} titleId={titleId} onClose={onClose} />
     );
 
-  if (mode === 'column') return content ?? <NoSelection />;
+  if (mode === 'column') {
+    // 글이 바뀔 때(고르기·다른 글·닫기) 내용 단위로 들고 난다 — slug가 key라 이전 내용은 exit로
+    // 제자리에서 걷히고(fast·exit) 새 내용은 그 뒤 오른쪽 16px에서 밀려 온다(fastMax·standard). 고르기·닫기가
+    // 주소 변경 transition이라 React가 이 경계를 움직인다(`navigateTo`). 같은 글 안의 갱신(기간 선택,
+    // 분포 도착)은 움직이지 않는다(`default="none"`).
+    return (
+      <ViewTransition
+        // 빈 slug(손으로 친 주소)도 '고른 글 없음'과 갈리게 접두를 단다.
+        key={slug === null ? 'no-selection' : `post:${slug}`}
+        enter={ADMIN_VIEW_TRANSITION.slideIn}
+        exit={ADMIN_VIEW_TRANSITION.out}
+        default="none"
+      >
+        {content ?? <NoSelection />}
+      </ViewTransition>
+    );
+  }
   if (content === null) return null;
   return (
     <PostSheet titleId={titleId} onClose={onClose}>
@@ -360,7 +416,13 @@ function Inspector({ slug, isWide, onClose }: InspectorProps) {
   if (isWide) {
     return (
       <PanelColumn>
-        <Suspense fallback={<PanelSkeleton />}>
+        <Suspense
+          fallback={
+            <ViewTransition exit={ADMIN_VIEW_TRANSITION.out} default="none">
+              <PanelSkeleton />
+            </ViewTransition>
+          }
+        >
           <InspectorBody slug={slug} mode="column" onClose={onClose} />
         </Suspense>
       </PanelColumn>
@@ -412,12 +474,13 @@ export function AnalyticsScreen() {
             css({ display: 'flex', flexDir: 'column', gap: '4' }),
           )}
         >
+          {/* 드러날 때 스켈레톤은 걷히고(exit) 머리·목록이 차례로 떠오른다(`enterMotion`). */}
           <Suspense
             fallback={
-              <>
+              <ViewTransition exit={ADMIN_VIEW_TRANSITION.out} default="none">
                 <LoadingPlaceholder height="96px" />
                 <LoadingPlaceholder height="480px" />
-              </>
+              </ViewTransition>
             }
           >
             <PostListView selectedSlug={selectedSlug} onSelect={select} />

@@ -14,6 +14,7 @@ import type { TooltipContentProps } from 'recharts';
 import { token } from '@blog/styled-system/tokens';
 import { fmtNum } from '@blog/content/client';
 import { ChartTooltipFrame } from './ChartTooltip';
+import { CHART_MOTION } from './chartMotion';
 
 interface TimeSeriesChartProps {
   data: { date: string; value: number }[];
@@ -118,6 +119,7 @@ export const TimeSeriesChart = ({
             fill={token('colors.spot.600')}
             fillOpacity={0.15}
             dot={false}
+            {...CHART_MOTION}
             activeDot={{
               r: 4,
               fill: token('colors.spot.600'),

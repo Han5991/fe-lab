@@ -1,4 +1,5 @@
 import { defineConfig, definePlugin } from '@pandacss/dev';
+import { ADMIN_VIEW_TRANSITION } from './src/shared/adminViewTransitions';
 import { TEST_SUFFIX } from './testFiles.mts';
 import { VIEW_TRANSITION } from './src/shared/viewTransitions';
 
@@ -99,6 +100,34 @@ export default defineConfig({
   theme: {
     extend: {
       keyframes: {
+        // ── admin 화면(아래 globalCss의 admin 블록·admin 컴포넌트) ──
+        // 들어오는 쪽은 토큰 곡선(standard)으로 감속하고, 나가는 쪽은 페이지 전환의 pageExit(제자리
+        // 페이드)을 같이 쓴다. 세로로 떠오르는 진입(카드·값·스켈레톤 뒤 내용)도 페이지 전환의
+        // pageEnter(8px)를 같이 쓴다 — 같은 움직임에 keyframes를 둘 두지 않는다.
+        //   admin-inspector-in — 넓은 화면 글 통계 패널의 내용이 오른쪽 16px에서 밀려 온다
+        //   admin-sheet-in/out — 좁은 화면 시트가 화면 밖에서 들어오고 나간다. 어느 쪽인지는 의사
+        //                        요소가 주는 변수(--admin-sheet-from)다(sm 미만 아래, 그 위 오른쪽)
+        //   admin-fade-in      — 시트 뒤 스크림
+        //   admin-bar-grow     — 가로 막대가 트랙 왼쪽에서 자기 길이까지 자란다(transform만)
+        //   admin-card-in      — 로그인 카드가 98%에서 제 크기로 선다
+        'admin-inspector-in': {
+          from: { opacity: '0', transform: 'translateX(16px)' },
+        },
+        'admin-sheet-in': {
+          from: { transform: 'var(--admin-sheet-from)' },
+        },
+        'admin-sheet-out': {
+          to: { transform: 'var(--admin-sheet-from)' },
+        },
+        'admin-fade-in': {
+          from: { opacity: '0' },
+        },
+        'admin-bar-grow': {
+          from: { transform: 'translateX(-100%)' },
+        },
+        'admin-card-in': {
+          from: { opacity: '0', transform: 'scale(0.98)' },
+        },
         // ReadingProgress(src/components/post/ReadingProgress.tsx)의
         // scroll-driven 진행 바. width 대신 transform: scaleX()를
         // 애니메이션해 컴포지터 스레드만으로 처리되게 한다 — width는
@@ -243,6 +272,87 @@ export default defineConfig({
       },
       '::-webkit-scrollbar-thumb:hover': {
         bg: 'ink.borderStrong',
+      },
+      // ── admin 화면 — React `<ViewTransition>`이 붙이는 이름·클래스(adminViewTransitions.ts) ──
+      // 페이지 전환과 같은 문법이다: 들어오는 것은 standard로 감속하며 자리 잡고, 나가는 것은 exit로
+      // 가속하며 빨리 비킨다. 클래스는 움직임의 이름이라(무엇이 아니라 어떻게) 여러 자리가 나눠 쓴다.
+      // 무엇이 언제 transition이 되는지는 각 컴포넌트 주석에 있다.
+      //
+      // 관리자 바 — 사이트 헤더와 같은 이유로 페이지·목록 그룹 위에 불투명 바닥으로 그린다(위 헤더
+      // 규칙의 주석). 바닥은 바 자신의 면(surface.base)이고, 시간은 루트 크로스페이드와 같다.
+      [`::view-transition-group(${ADMIN_VIEW_TRANSITION.bar})`]: {
+        zIndex: '1',
+        bg: 'surface.base',
+      },
+      [`::view-transition-group(${ADMIN_VIEW_TRANSITION.bar}), ::view-transition-old(${ADMIN_VIEW_TRANSITION.bar}), ::view-transition-new(${ADMIN_VIEW_TRANSITION.bar})`]:
+        {
+          animationDuration: 'fastMax',
+          animationTimingFunction: 'standard',
+        },
+      // out — 자리를 넘기고 사라지는 것(스켈레톤, 패널의 이전 내용, 바뀌기 전 지표 값). 페이지가 나갈
+      // 때처럼 제자리에서 fast·exit로 걷힌다.
+      [`::view-transition-old(.${ADMIN_VIEW_TRANSITION.out})`]: {
+        animationName: VIEW_TRANSITION.pageExit,
+        animationDuration: 'fast',
+        animationTimingFunction: 'exit',
+        animationFillMode: 'both',
+      },
+      // rise·slideIn — 같은 자리에 새로 서는 것(바뀐 지표 값·정렬을 바꾼 목록은 8px 아래에서 떠오르고,
+      // 패널의 새 내용은 패널이 붙은 오른쪽에서 16px 밀려 온다). 이전 것(out)이 fast로 걷힌 **뒤에**
+      // fastMax로 선다 — 둘을 함께 돌리면 exit 곡선이 처음에 느려 옛 글자가 진한 채 새 글자와 두 겹으로
+      // 겹친다(실측, 60ms에 둘 다 50% 넘게 보였다). 합(405ms)이 medium과 거의 같다. 줄 높이가 바뀌면
+      // (증감 줄바꿈) 그룹이 medium으로 따라간다.
+      [`::view-transition-group(.${ADMIN_VIEW_TRANSITION.rise})`]: {
+        animationDuration: 'medium',
+        animationTimingFunction: 'standard',
+      },
+      [`::view-transition-new(.${ADMIN_VIEW_TRANSITION.rise}), ::view-transition-new(.${ADMIN_VIEW_TRANSITION.slideIn})`]:
+        {
+          animationDuration: 'fastMax',
+          animationDelay: 'fast',
+          animationTimingFunction: 'standard',
+          animationFillMode: 'both',
+        },
+      [`::view-transition-new(.${ADMIN_VIEW_TRANSITION.rise})`]: {
+        animationName: VIEW_TRANSITION.pageEnter,
+      },
+      [`::view-transition-new(.${ADMIN_VIEW_TRANSITION.slideIn})`]: {
+        animationName: 'admin-inspector-in',
+      },
+      // sheet·scrim — 좁은 화면 시트와 그 뒤. 화면을 덮는 면이라 관리자 바(1)보다 위에 그린다. 시트는
+      // 목차 바텀시트와 같은 박자다: 열릴 때 medium·standard, 닫힐 때 같은 시간에 exit로 되돌아 나가고,
+      // 스크림은 열릴 때 medium, 닫힐 때 linear(거리 없는 퇴장). sm 미만은 시트가 화면 폭 전체라
+      // 아래에서 올라오고, 그 위는 오른쪽 끝에 붙은 400 드로어라 오른쪽에서 들어온다.
+      [`::view-transition-group(.${ADMIN_VIEW_TRANSITION.sheet}), ::view-transition-group(.${ADMIN_VIEW_TRANSITION.scrim})`]:
+        {
+          zIndex: '2',
+        },
+      [`::view-transition-new(.${ADMIN_VIEW_TRANSITION.sheet}), ::view-transition-old(.${ADMIN_VIEW_TRANSITION.sheet})`]:
+        {
+          '--admin-sheet-from': 'translateY(100%)',
+          sm: { '--admin-sheet-from': 'translateX(100%)' },
+          animationDuration: 'medium',
+          animationFillMode: 'both',
+        },
+      [`::view-transition-new(.${ADMIN_VIEW_TRANSITION.sheet})`]: {
+        animationName: 'admin-sheet-in',
+        animationTimingFunction: 'standard',
+      },
+      [`::view-transition-old(.${ADMIN_VIEW_TRANSITION.sheet})`]: {
+        animationName: 'admin-sheet-out',
+        animationTimingFunction: 'exit',
+      },
+      [`::view-transition-new(.${ADMIN_VIEW_TRANSITION.scrim})`]: {
+        animationName: 'admin-fade-in',
+        animationDuration: 'medium',
+        animationTimingFunction: 'standard',
+        animationFillMode: 'both',
+      },
+      [`::view-transition-old(.${ADMIN_VIEW_TRANSITION.scrim})`]: {
+        animationName: VIEW_TRANSITION.pageExit,
+        animationDuration: 'medium',
+        animationTimingFunction: 'linear',
+        animationFillMode: 'both',
       },
     },
   },

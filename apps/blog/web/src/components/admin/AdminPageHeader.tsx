@@ -1,5 +1,6 @@
 import { css } from '@blog/styled-system/css';
 import type { ReactNode } from 'react';
+import { enterMotion } from './adminStyles';
 
 interface AdminPageHeaderProps {
   title: string;
@@ -12,6 +13,8 @@ interface AdminPageHeaderProps {
 /**
  * admin 페이지 머리 — 승인 목업(Astryx comparison 템플릿의 LayoutHeader)이다. h1 24/32 + 보조 한 줄,
  * 오른쪽 컨트롤, 아래 hairline. 위 32 · 아래 16(목업 그대로).
+ *
+ * 데이터가 드러날 때 화면에서 가장 먼저(진입 순서 0) 떠오른다(`enterMotion`).
  */
 export function AdminPageHeader({
   title,
@@ -20,7 +23,7 @@ export function AdminPageHeader({
 }: AdminPageHeaderProps) {
   return (
     <div
-      className={css({
+      className={css(enterMotion, {
         display: 'flex',
         flexWrap: 'wrap',
         alignItems: 'flex-end',

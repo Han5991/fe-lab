@@ -10,6 +10,7 @@ import {
   ADMIN_PATH,
   HOME_PATH,
 } from '@/src/shared/routes';
+import { ADMIN_VIEW_TRANSITION } from '@/src/shared/adminViewTransitions';
 import { useAdminLogout } from '@/src/hooks/useAdminLogout';
 import { actionButton } from '../actionButton';
 import { iconButton } from '../iconButton';
@@ -71,8 +72,13 @@ function AdminBar() {
     // 높이는 사이트 헤더와 같은 48(Astryx TopNav)이고 같은 변수에서 온다 — 분석 화면의 오른쪽
     // 패널이 이 높이 아래에 붙는다. 사이트 헤더와 달리 아래 hairline을 둔다(승인 목업): 분석
     // 화면에서 패널의 왼쪽 보더와 만나 화면을 나눈다.
+    // 페이지 전환·시트·정렬의 View Transition에서는 사이트 헤더처럼 따로 찍혀 페이지 위에 남는다
+    // (`ADMIN_VIEW_TRANSITION.bar` — 스크롤된 채 바뀌는 목록이 바 자리에 덧칠되지 않게).
     <header
-      style={siteHeaderStyle}
+      style={{
+        ...siteHeaderStyle,
+        viewTransitionName: ADMIN_VIEW_TRANSITION.bar,
+      }}
       className={css({
         h: '[var(--site-header-height)]',
         pos: 'sticky',

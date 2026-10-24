@@ -342,6 +342,12 @@ export const BUNDLE_GUARDS = [
  * (상세 차트)가 따로였는데, 이제 분석의 48쪽이 모두 목록과 패널(시간대 막대·일별 영역 차트, 시트용
  * 모달 훅)을 함께 싣는다 — 예산(398, 여유 3.4%)은 그대로. 공개 그룹은 루트 레이아웃의 셸 고르기
  * (`ShellSwitch`)로 JS +0.3KB, admin 카드·표의 원자 클래스로 CSS +0.2KB — 예산은 그대로.
+ * 2026-10-24 admin에 모션(카드 진입·패널·시트·값 교체·정렬 교차·세그먼트 표식·막대 자람)을 넣은 빌드로
+ * 갱신: 움직임을 CSS(keyframes·전환·View Transition 규칙)로 내고 새 훅·의존성이 없어 JS는 `/admin/`
+ * 최대 385.0 → 386.0KB(+1.0)이고 공개 그룹 JS는 그대로다. 대신 CSS는 한 장을 모든 페이지가 받아 전
+ * 그룹이 +0.7KB(최대 28.9KB, `/posts/`) — admin View Transition 규칙 20개·keyframes 6개가 0.28KB, 나머지가
+ * 진입·표식·막대의 원자 클래스다. 예산(30)은 그대로지만 남은 여유가 1.1KB라 다음 admin 스타일은 공개
+ * 페이지 CSS 예산과 겨룬다.
  * 그룹이 새로 생기면(새 라우트) 예산이 없어서, 라우트가
  * 사라지면 예산이 죽어서, 측정 최대가 상한의 80% 아래로 내려가면 예산이 느슨해서
  * (`budget-slack`) 빌드가 실패한다.
@@ -352,21 +358,21 @@ export const BUNDLE_GUARDS = [
  * 걸리면 같은 방식으로 내린다 — 여유가 크게 남으면 회귀가 그 안에 숨는다.
  */
 export const BUNDLE_BUDGETS = [
-  // 176.5 KB / 27.5 KB
+  // 176.5 KB / 28.2 KB
   { group: '/', jsGzipKB: 185, cssGzipKB: 30 },
-  // 239.4 KB / 28.2 KB — 목록과 글 상세 46쪽의 최대(목록. mermaid·Giscus는 지연 로드라 밖)
+  // 239.4 KB / 28.9 KB — 목록과 글 상세 46쪽의 최대(목록. mermaid·Giscus는 지연 로드라 밖)
   { group: '/posts/', jsGzipKB: 252, cssGzipKB: 30 },
-  // 176.5 KB / 27.5 KB
+  // 176.5 KB / 28.2 KB
   { group: '/about/', jsGzipKB: 185, cssGzipKB: 30 },
-  // 176.5 KB / 27.5 KB
+  // 176.5 KB / 28.2 KB
   { group: '/series/', jsGzipKB: 185, cssGzipKB: 30 },
-  // 176.5 KB / 27.5 KB
+  // 176.5 KB / 28.2 KB
   { group: '/privacy/', jsGzipKB: 185, cssGzipKB: 30 },
-  // 176.5 KB / 27.5 KB — 정적 404(`404-page` 처리)
+  // 176.5 KB / 28.2 KB — 정적 404(`404-page` 처리)
   { group: '/404/', jsGzipKB: 185, cssGzipKB: 30 },
-  // 176.5 KB / 27.5 KB — Next가 함께 내보내는 not-found 라우트
+  // 176.5 KB / 28.2 KB — Next가 함께 내보내는 not-found 라우트
   { group: '/_not-found/', jsGzipKB: 185, cssGzipKB: 30 },
-  // 385.0 KB / 27.5 KB — admin 48쪽의 최대(분석 화면 — 목록과 글별 47쪽이 같은 화면이라 무게가 같다)
+  // 386.0 KB / 28.2 KB — admin 48쪽의 최대(분석 화면 — 목록과 글별 47쪽이 같은 화면이라 무게가 같다)
   { group: '/admin/', jsGzipKB: 398, cssGzipKB: 30 },
 ] as const satisfies BundleBudgetsConfig;
 

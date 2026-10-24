@@ -45,6 +45,18 @@ describe('SegmentedControl', () => {
     expect(screen.getByRole('radio', { name: '가' })).not.toBeChecked();
   });
 
+  // 선택 면(표식)의 자리는 CSS가 트랙의 변수로 계산한다 — 변수가 고른 칸을 따라가지 않으면 표식만
+  // 엉뚱한 칸에 남고 아무것도 실패하지 않는다.
+  test('표식의 자리 변수는 칸 수와 고른 칸의 순서다', () => {
+    render(<Harness />);
+    const group = screen.getByRole('radiogroup', { name: '보기' });
+    expect(group.style.getPropertyValue('--segment-count')).toBe('3');
+    expect(group.style.getPropertyValue('--segment-index')).toBe('0');
+
+    fireEvent.click(screen.getByRole('radio', { name: '다' }));
+    expect(group.style.getPropertyValue('--segment-index')).toBe('2');
+  });
+
   test('화살표는 선택과 초점을 옮기고 양끝에서 돌아간다', () => {
     render(<Harness />);
     const first = screen.getByRole('radio', { name: '가' });

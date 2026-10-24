@@ -1,5 +1,5 @@
 import { css } from '@blog/styled-system/css';
-import { barFill, barTrack, truncate } from './adminStyles';
+import { barFill, barShare, barTrack, truncate } from './adminStyles';
 
 interface TagDistributionProps {
   tags: { id: string; count: number }[];
@@ -43,7 +43,7 @@ export const TagDistribution = ({
               className={barFill({
                 tone: t.id === highlightId ? 'data' : 'muted',
               })}
-              style={{ width: `${(t.count / max) * 100}%` }}
+              style={barShare(t.count / max)}
             />
           </span>
           <span

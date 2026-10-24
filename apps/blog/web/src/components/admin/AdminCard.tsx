@@ -1,6 +1,11 @@
 import { css } from '@blog/styled-system/css';
 import type { ReactNode } from 'react';
-import { adminCard, type CardHeadingLevel } from './adminStyles';
+import {
+  adminCard,
+  enterMotion,
+  enterOrderStyle,
+  type CardHeadingLevel,
+} from './adminStyles';
 
 interface AdminCardProps {
   title: string;
@@ -8,6 +13,8 @@ interface AdminCardProps {
   /** 머리 오른쪽의 보조 글자(편수·기준). */
   meta?: ReactNode;
   children: ReactNode;
+  /** 화면에 처음 그려질 때의 진입 순서(`enterMotion` — 0이 먼저 선다). */
+  enterOrder: number;
 }
 
 /**
@@ -19,10 +26,12 @@ export function AdminCard({
   level: Heading,
   meta,
   children,
+  enterOrder,
 }: AdminCardProps) {
   return (
     <section
-      className={css(adminCard, {
+      style={enterOrderStyle(enterOrder)}
+      className={css(adminCard, enterMotion, {
         display: 'flex',
         flexDir: 'column',
         gap: '4',

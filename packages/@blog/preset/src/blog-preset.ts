@@ -473,17 +473,22 @@ export const blogPreset = definePreset({
         //   fastMax   230ms — 테마 크로스페이드·<details> 펼침
         //   medium    410ms — 시트·스크림·들어오는 페이지
         //   mediumMax 550ms — 검색 다이얼로그 등장·스켈레톤
+        //   stagger    40ms — 길이가 아니라 **간격**: 함께 들어오는 카드들이 진입 순서마다 이만큼씩
+        //                     늦게 출발한다(admin 대시보드 — `animation-delay`가 순서 × 이 값).
+        //                     Astryx 스케일에 없는 블로그 것이다 — Astryx에는 엇갈린 진입이 없다
         // semantic token인 이유는 **움직임 줄이기를 여기 한 곳에서** 끄기 위해서다 — `_motionReduce`가
         // 변수 값을 0.01ms로 바꾸므로 토큰으로 쓴 전환·애니메이션은 컴포넌트가 따로 규칙을 두지
-        // 않아도 꺼진다. 0이 아니라 0.01ms인 이유는 transitionend가 그대로 오게 하려는 것이다
+        // 않아도 꺼진다(간격도 0에 수렴해 카드가 한 번에 선다). 0이 아니라 0.01ms인 이유는
+        // transitionend가 그대로 오게 하려는 것이다
         // (퇴장이 끝나야 언마운트하는 시트 — Astryx Drawer와 같은 값). 무한 반복 애니메이션은
         // 0.01ms면 깜빡임이 되므로 시간이 아니라 애니메이션 자체를 끈다(아래 animations).
-        // **시간은 이 넷이 전부다** — preset-panda의 durations는 블로그 설정이 뺀다.
+        // **시간은 이 다섯이 전부다** — preset-panda의 durations는 블로그 설정이 뺀다.
         durations: {
           fast: { value: { base: '175ms', _motionReduce: '0.01ms' } },
           fastMax: { value: { base: '230ms', _motionReduce: '0.01ms' } },
           medium: { value: { base: '410ms', _motionReduce: '0.01ms' } },
           mediumMax: { value: { base: '550ms', _motionReduce: '0.01ms' } },
+          stagger: { value: { base: '40ms', _motionReduce: '0.01ms' } },
         },
         // 반복 애니메이션 — keyframes는 아래 keyframes에 함께 둔다. 움직임 줄이기에서는 `none`
         // (위 durations 주석의 깜빡임 이유). preset-panda의 animations(spin·ping·pulse·bounce)와
@@ -645,7 +650,7 @@ export const blogPreset = definePreset({
       }),
       keyframes: {
         // semanticTokens.animations.skeleton. Astryx는 쉬는 투명도가 .25인데, 자리표시 면
-        // (paper.100)이 지면과 거의 같은 밝기라 .25에서는 보이지 않는다 — 1 ↔ .5로 왕복한다.
+        // (paper.200)이 admin 바닥·카드와 가까운 밝기라 .25에서는 보이지 않는다 — 1 ↔ .5로 왕복한다.
         'skeleton-pulse': {
           from: { opacity: '1' },
           to: { opacity: '0.5' },

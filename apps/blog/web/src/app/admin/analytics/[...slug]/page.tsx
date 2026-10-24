@@ -1,4 +1,5 @@
 import { getAllPostsIncludingHidden } from '@/src/content';
+import { PageBoundary } from '@/src/components/PageBoundary';
 import { AnalyticsScreen } from '../AnalyticsScreen';
 
 // admin은 인증된 본인만 접근하는 페이지이므로 draft·scheduled 글까지 모두 정적 라우트로 생성합니다.
@@ -22,5 +23,9 @@ export function generateStaticParams() {
  * 대시보드·옛 링크·새 탭으로 연 주소가 정적 호스팅에서 그대로 열리게 하는 딥링크 페이지다.
  */
 export default function PostDetailAnalyticsPage() {
-  return <AnalyticsScreen />;
+  return (
+    <PageBoundary>
+      <AnalyticsScreen />
+    </PageBoundary>
+  );
 }

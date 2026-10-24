@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, type ReactNode } from 'react';
+import { Suspense, ViewTransition, type ReactNode } from 'react';
 import Link from 'next/link';
 import { BarChart3, ExternalLink, X } from 'lucide-react';
 import {
@@ -24,14 +24,19 @@ import { ChartTooltip } from '@/src/components/admin/ChartTooltip';
 import { TimeSeriesChart } from '@/src/components/admin/TimeSeriesChart';
 import {
   barFill,
+  barShare,
   barTrack,
+  enterMotion,
   panelIconButton,
   pillBadge,
+  rowLink,
 } from '@/src/components/admin/adminStyles';
+import { CHART_MOTION } from '@/src/components/admin/chartMotion';
 import { LoadingPlaceholder } from '@/src/components/shared/LoadingPlaceholder';
 import { analyticsService } from '@/src/domain/analytics/admin';
 import type { PostStatDetail } from '@/src/hooks/useAdminViews';
 import { usePostDetailStats } from '@/src/hooks/usePostDetailStats';
+import { ADMIN_VIEW_TRANSITION } from '@/src/shared/adminViewTransitions';
 import { ADMIN_ANALYTICS_PATH } from '@/src/shared/routes';
 import { DateRangeControls, useDateFilter } from './DateRangeControls';
 import { StatusBadge } from './StatusBadge';
@@ -127,7 +132,11 @@ const tileValue = css({
   fontVariantNumeric: 'tabular-nums',
 });
 
-/** 시간대·요일 분포 — 글 하나의 Edge Function 두 번. 패널의 나머지보다 늦게 와서 따로 기다린다. */
+/**
+ * 시간대·요일 분포 — 글 하나의 Edge Function 두 번. 패널의 나머지보다 늦게 와서 따로 기다린다.
+ * 드러날 때 스켈레톤이 걷히고 이 덩어리가 떠오르며, 막대는 차트(Recharts)·가로 막대(CSS) 모두 0에서
+ * 자란다.
+ */
 function PostDistributions({ post }: { post: PostStatDetail }) {
   const { hourly, dow } = usePostDetailStats(post);
 
@@ -144,7 +153,13 @@ function PostDistributions({ post }: { post: PostStatDetail }) {
   const maxDow = Math.max(...dowData.map(d => d.views), 1);
 
   return (
-    <>
+    <div
+      className={css(enterMotion, {
+        display: 'flex',
+        flexDir: 'column',
+        gap: '4',
+      })}
+    >
       <div className={css({ display: 'flex', flexDir: 'column', gap: '2' })}>
         <h3 className={sectionTitle}>시간대별</h3>
         {/* 막대 불투명도는 값에 비례(0.3~1) — 많이 읽힌 시간대가 진하다. 값은 툴팁에 있다. */}
@@ -166,7 +181,7 @@ function PostDistributions({ post }: { post: PostStatDetail }) {
                 cursor={{ fill: CHART_DATA, fillOpacity: 0.12 }}
                 content={ChartTooltip}
               />
-              <Bar dataKey="views" radius={[2, 2, 0, 0]}>
+              <Bar dataKey="views" radius={[2, 2, 0, 0]} {...CHART_MOTION}>
                 {hourlyData.map(entry => (
                   <Cell
                     key={entry.hour}
@@ -201,7 +216,7 @@ function PostDistributions({ post }: { post: PostStatDetail }) {
               <span className={barTrack} aria-hidden>
                 <span
                   className={barFill()}
-                  style={{ width: `${(d.views / maxDow) * 100}%` }}
+                  style={barShare(d.views / maxDow)}
                 />
               </span>
               <span
@@ -218,7 +233,7 @@ function PostDistributions({ post }: { post: PostStatDetail }) {
           ))}
         </ul>
       </div>
-    </>
+    </div>
   );
 }
 
@@ -497,12 +512,14 @@ export function PostStatsPanel({
 
       <Suspense
         fallback={
-          <div
-            className={css({ display: 'flex', flexDir: 'column', gap: '4' })}
-          >
-            <LoadingPlaceholder height="150px" />
-            <LoadingPlaceholder height="180px" />
-          </div>
+          <ViewTransition exit={ADMIN_VIEW_TRANSITION.out} default="none">
+            <div
+              className={css({ display: 'flex', flexDir: 'column', gap: '4' })}
+            >
+              <LoadingPlaceholder height="150px" />
+              <LoadingPlaceholder height="180px" />
+            </div>
+          </ViewTransition>
         }
       >
         <PostDistributions post={post} />
@@ -530,14 +547,10 @@ export function PostNotFound({ slug, titleId, onClose }: PostNotFoundProps) {
         분석 목록에 <code>{slug || '(빈 slug)'}</code> 글이 없습니다. 주소를
         확인하거나 목록에서 다시 골라 주세요.
       </p>
+      {/* 문장 밖의 독립 링크라 hover 밑줄로 가른다(blog-design-system 스킬 "색으로 갈리지 않는 자리"). */}
       <Link
         href={ADMIN_ANALYTICS_PATH}
-        className={css({
-          textStyle: 'body',
-          color: 'accent.solid',
-          textDecorationLine: 'underline',
-          _hover: { textDecorationThickness: '2px' },
-        })}
+        className={css(rowLink, { alignSelf: 'flex-start', textStyle: 'body' })}
       >
         조회수 분석 목록으로
       </Link>

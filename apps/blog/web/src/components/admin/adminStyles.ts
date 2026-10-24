@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 import { css, cva } from '@blog/styled-system/css';
 import { iconButton } from '../iconButton';
 
@@ -22,6 +23,33 @@ export const adminCard = css.raw({
   borderColor: 'ink.border',
   rounded: 'container',
   p: '4',
+});
+
+/**
+ * 진입 — 데이터가 처음 그려질 때(스켈레톤이 걷힌 뒤) 카드·덩어리가 8px 아래에서 떠오른다. keyframes·
+ * 시간·곡선이 들어오는 페이지와 같다(`page-enter`, medium·standard). 함께 그려지는 것들은
+ * `enterOrderStyle`로 받은 순서마다 `durations.stagger`씩 늦게 출발해 위에서 아래로 차례로 선다.
+ *
+ * - 마운트될 때 한 번 돈다 — 집계 기간을 바꿔도 카드는 다시 마운트되지 않아 반복되지 않는다.
+ * - 공개 페이지에는 목록 진입을 넣지 않는다(blog-design-system 스킬 모션 절 — 하드 로드의 LCP·가시성
+ *   검사). admin 화면은 가드와 데이터를 기다린 뒤에만 그려져, 이 진입은 첫 페인트가 아니라
+ *   스켈레톤 다음 장면이다.
+ * - 유한 애니메이션이라 e2e axe 도우미가 끝날 때까지 기다린다. 움직임 줄이기에서는 시간·간격 토큰이
+ *   0.01ms가 되어 곧바로 선다.
+ */
+export const enterMotion = css.raw({
+  animationName: 'page-enter',
+  animationDuration: 'medium',
+  animationTimingFunction: 'standard',
+  animationFillMode: 'both',
+  animationDelay: '[calc(var(--enter-order, 0) * token(durations.stagger))]',
+});
+
+/** 진입 순서 — `enterMotion`을 단 요소의 style로 준다(0이 먼저 선다). */
+export const enterOrderStyle = (
+  order: number,
+): CSSProperties & Record<`--${string}`, string> => ({
+  '--enter-order': String(order),
 });
 
 /**
@@ -105,7 +133,12 @@ export const rowLink = css.raw({
 
 /**
  * 가로 막대 한 줄의 트랙과 채움 — 태그 분포·누적 비중·요일 분포(Astryx ProgressBar, 높이 8 pill).
- * 채움 폭은 값이라 인라인 style(`width: N%`)로 준다.
+ *
+ * 채움은 트랙 폭 그대로이고 값만큼 왼쪽으로 밀려 있다(`barShare` — 인라인 transform). 폭(`width: N%`)
+ * 대신 transform으로 길이를 내는 이유는 움직임이다: 처음 그려질 때 트랙 왼쪽 밖에서 자기 자리까지
+ * 자라고(`admin-bar-grow`, 차트 막대와 같은 mediumMax·standard), 값이 바뀌면 그 자리로 미끄러진다 —
+ * 둘 다 레이아웃 없이 합성만 돈다. 트랙의 `overflow: hidden`과 pill 라운드가 밀려난 쪽을 잘라 왼쪽
+ * 끝도 둥글게 보인다(폭으로 그리던 때와 같은 모양).
  */
 export const barTrack = css({
   display: 'block',
@@ -115,8 +148,24 @@ export const barTrack = css({
   overflow: 'hidden',
 });
 
+/** 채움의 길이 — 트랙 대비 비율(0~1)만큼만 보이게 채움을 왼쪽으로 민다. */
+export const barShare = (ratio: number): CSSProperties => ({
+  transform: `translateX(${(ratio - 1) * 100}%)`,
+});
+
 export const barFill = cva({
-  base: { display: 'block', h: 'full', rounded: 'full' },
+  base: {
+    display: 'block',
+    w: 'full',
+    h: 'full',
+    rounded: 'full',
+    transition: 'transform',
+    transitionDuration: 'mediumMax',
+    animationName: 'admin-bar-grow',
+    animationDuration: 'mediumMax',
+    animationTimingFunction: 'standard',
+    animationFillMode: 'both',
+  },
   variants: {
     tone: {
       // 데이터 색 — admin 차트와 같은 spot.600(blog-preset.ts의 spot 주석).

@@ -181,6 +181,26 @@ test.describe('로그인', () => {
     await expect(row).not.toHaveAttribute('aria-current');
   });
 
+  // 정렬은 type을 단 transition이라 실제 브라우저에서는 View Transition(목록 교차)을 탄다 — jsdom에는
+  // startViewTransition이 없어 그 경로를 지나지 않는다. 전환이 실패하면 React가 전역 에러로 보고해
+  // 픽스처의 예외·콘솔 검사가 잡는다.
+  test('/admin/analytics/ 정렬을 바꾸면 목록이 교차하며 조회수순이 된다', async ({
+    page,
+  }) => {
+    await renderAdmin(page, '/admin/analytics/');
+    const table = page.getByRole('table', { name: '글 목록' });
+    await page.getByRole('radio', { name: '조회수순' }).click();
+    await expect(
+      table.getByRole('columnheader', { name: /조회수/ }),
+    ).toHaveAttribute('aria-sort', 'descending');
+    const views = (
+      await table.locator('tbody tr td:last-child').allTextContents()
+    ).map(text => Number(/^[\d,]+/.exec(text)?.[0].replaceAll(',', '')));
+    expect(views.length, '행').toBeGreaterThan(1);
+    expect(views, '조회수 내림차순').toEqual([...views].sort((a, b) => b - a));
+    expect(await axeViolations(page), 'axe 위반').toEqual([]);
+  });
+
   test(`${POST_DETAIL_PAGES[0] ?? ''} 직접선택 기간 + axe`, async ({
     page,
   }) => {
