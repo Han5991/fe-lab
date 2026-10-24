@@ -68,7 +68,7 @@
   },
   "peerDependencies": {
     "@pandacss/dev": "^2.0.0",
-    "react": "catalog:",
-    "react-dom": "catalog:"
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
   }
 }

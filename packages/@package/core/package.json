@@ -1,12 +1,10 @@
 {
   "name": "@package/core",
   "version": "1.0.0",
+  "private": true,
   "description": "",
   "main": "src/index.ts",
   "scripts": {},
-  "engines": {
-    "node": ">=24.21.0"
-  },
   "keywords": [],
   "author": "",
   "license": "ISC",

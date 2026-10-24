@@ -10,9 +10,6 @@
     "check-types": "tsc --noEmit",
     "test": "vitest run"
   },
-  "engines": {
-    "node": ">=24.21.0"
-  },
   "dependencies": {},
   "devDependencies": {
     "@types/node": "catalog:",

@@ -19,7 +19,8 @@
 
 ## 📁 워크스페이스
 
-`pnpm-workspace.yaml`이 `apps/**/*`·`packages/**/*`를 워크스페이스로 잡습니다. 패키지 스코프는 셋 —
+`pnpm-workspace.yaml`이 `apps/*`·`apps/blog/*`·`packages/*/*`를 워크스페이스로 잡습니다(깊이를 고정해 산출물 안의
+`package.json`이 끼지 않게). 패키지 스코프는 셋 —
 `@blog/*`(블로그 전용), `@design-system/*`(디자인 시스템), `@package/*`(범용 실험).
 
 ### apps/

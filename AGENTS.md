@@ -32,7 +32,9 @@ here or anywhere else (this repo once carried four diverging copies of that prom
   about "add" vs "move" vs "promote" when describing dependency/catalog changes.
 - **Catalog is the single source** for any dependency used by two or more packages: package.json says `catalog:`
   (default) or `catalog:lint` (the eslint toolchain — core and plugins move together, so single-consumer plugins
-  live there too), never a number. Exception: `peerDependencies`, which declare a compatibility range.
+  live there too), never a number. A single-consumer entry stays in the catalog only as part of a group that moves
+  on one version (`@pandacss/*`, the Next release train, the test toolchain, `catalog:lint`); otherwise it is a
+  number in its one package.json. Exception: `peerDependencies`, which declare a compatibility range.
 - **Vitest everywhere.** Only the environment varies; `apps/blog/web` splits `test.projects` into `node`
   (`src/shared`·`src/domain`·`src/lib`) and `jsdom` (rest of `src`). The `jsdom` project runs **without isolation**
   (one jsdom per worker); files that call `vi.mock`/`vi.doMock`/`vi.stubGlobal`/`vi.stubEnv`/`vi.useFakeTimers` are
