@@ -31,7 +31,7 @@ import {
   pillBadge,
   rowLink,
 } from '@/src/components/admin/adminStyles';
-import { CHART_MOTION } from '@/src/components/admin/chartMotion';
+import { CHART_MOTION, chartReveal } from '@/src/components/admin/chartMotion';
 import { LoadingPlaceholder } from '@/src/components/shared/LoadingPlaceholder';
 import { analyticsService } from '@/src/domain/analytics/admin';
 import type { PostStatDetail } from '@/src/hooks/useAdminViews';
@@ -142,8 +142,8 @@ const tileValue = css({
 
 /**
  * 시간대·요일 분포 — 글 하나의 Edge Function 두 번. 패널의 나머지보다 늦게 와서 따로 기다린다.
- * 드러날 때 스켈레톤이 걷히고 이 덩어리가 떠오르며, 막대는 차트(Recharts)·가로 막대(CSS) 모두 0에서
- * 자란다.
+ * 드러날 때 스켈레톤이 걷히고 이 덩어리가 떠오른다. 시간대 차트는 다 그려진 채 투명도로 나타나고
+ * (`chartReveal`), 요일 가로 막대(CSS)는 0에서 자란다.
  */
 function PostDistributions({ post }: { post: PostStatDetail }) {
   const { hourly, dow } = usePostDetailStats(post);
@@ -171,7 +171,7 @@ function PostDistributions({ post }: { post: PostStatDetail }) {
       <div className={css({ display: 'flex', flexDir: 'column', gap: '2' })}>
         <h3 className={sectionTitle}>시간대별</h3>
         {/* 막대 불투명도는 값에 비례(0.3~1) — 많이 읽힌 시간대가 진하다. 값은 툴팁에 있다. */}
-        <div className={css({ h: '[120px]', w: 'full' })}>
+        <div className={css(chartReveal, { h: '[120px]', w: 'full' })}>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={hourlyData}

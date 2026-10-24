@@ -1,22 +1,39 @@
 import type { AreaProps, BarProps } from 'recharts';
+import { css } from '@blog/styled-system/css';
 
 /**
- * admin 차트(Recharts)의 그리기 움직임 — 처음 그릴 때 선이 왼쪽부터 드러나고 막대가 자라며, 데이터가
- * 바뀌면(집계 기간·글별 기간) 이전 모양에서 새 모양으로 보간한다. Recharts 내장 애니메이션이라 JS가
- * 늘지 않는다.
+ * admin 차트(Recharts)의 움직임 — 그리기 애니메이션은 끄고, 차트가 그려질 때 CSS가 투명도만 올린다.
  *
- * - 시간·곡선은 모션 토큰 `durations.mediumMax`(550ms)·`easings.standard`의 **사본**이다. Recharts는
- *   CSS 변수가 아니라 숫자·곡선 문자열을 받고, src는 경계상 `@blog/preset`을 열지 않는다 —
- *   `chartMotion.test.ts`가 프리셋 값과 같음을 잠근다. mediumMax인 이유: 검색 다이얼로그 등장처럼
- *   화면에서 가장 큰 덩어리가 자리 잡는 단계이고, 같이 그려지는 가로 막대(`admin-bar-grow`)와 끝이 맞는다.
- * - 움직임 줄이기는 Recharts의 `'auto'`가 맡는다 — `prefers-reduced-motion: reduce`면 애니메이션을 끈다
- *   (토큰이 0.01ms가 되는 CSS 쪽과 같은 결과).
+ * - Recharts 내장 애니메이션(선 드러남·막대 자람·데이터 보간)은 끈다. 데이터가 도착해도 그 시간만큼 차트가
+ *   덜 그려진 채로 남아 화면이 다 보이기까지의 시간에 그대로 더해졌다(로컬 실측 — 550ms 그리기를 이 등장으로
+ *   바꾸자 글 통계 패널의 차트 완성이 1.70 → 1.33s). 시간을 숫자로 받아 모션 토큰의 사본을 테스트로 잠가야
+ *   했던 것도 함께 사라진다.
+ * - 데이터가 바뀌면(집계 기간·글별 기간) 새 모양으로 곧바로 바뀐다. 대시보드의 기간 변경은 transition이라
+ *   루트 크로스페이드가 차트도 함께 바꾼다.
  */
 export const CHART_MOTION = {
-  isAnimationActive: 'auto',
-  animationDuration: 550,
-  animationEasing: 'cubic-bezier(0.24,1,0.4,1)',
+  isAnimationActive: false,
 } as const satisfies Pick<
   AreaProps<unknown, unknown> & BarProps<unknown, unknown>,
-  'isAnimationActive' | 'animationDuration' | 'animationEasing'
+  'isAnimationActive'
 >;
+
+/**
+ * 차트의 등장 — 차트 칸(`ResponsiveContainer`를 감싼 요소)에 주면 그려진 차트가 투명도 0에서 오른다.
+ * 거리 없이 제자리에서 나타나는 것이라 패널을 닫고 드러나는 '고른 글 없음'과 같은 keyframes
+ * (`admin-fade-in`)·fastMax·standard다.
+ *
+ * - 칸이 아니라 안쪽 Recharts 래퍼(`.recharts-wrapper`)에 건다. `ResponsiveContainer`는 제 상자를 잰 뒤에야
+ *   차트를 그리고, 데이터가 드러나는 View Transition이 끝날 때까지 React가 그 커밋을 미룬다 — 칸은 차트보다
+ *   250~450ms 먼저 빈 채로 서 있어서(실측) 칸에 걸면 차트가 그려지기 전에 끝난다. 래퍼는 그려질 때 생긴다.
+ * - 카드 진입처럼 마운트 때 한 번 도는 keyframes라 다시 렌더해도(기간을 바꿔도) 돌지 않는다 —
+ *   `@starting-style`은 상호작용으로 삽입되는 요소에만 쓴다(AGENTS.md §9). 움직임 줄이기는 시간 토큰이
+ *   처리한다.
+ */
+export const chartReveal = css.raw({
+  '& .recharts-wrapper': {
+    animationName: 'admin-fade-in',
+    animationDuration: 'fastMax',
+    animationTimingFunction: 'standard',
+  },
+});

@@ -293,7 +293,7 @@ preset-panda의 durations·easings·animations·keyframes를 빼서 `transitionD
 | `durations.fast`      | 175ms                            | hover·색·누름·표식(차례 하이라이트·admin 선택 표식)·나가는 페이지·자리를 넘기는 스냅샷(admin `out`·`slideOut`) |
 | `durations.fastMax`   | 230ms                            | 테마 크로스페이드 · `<details>` 펼침 · 교체로 들어오는 스냅샷(admin `rise`·`slideIn`·`fadeIn`, fast 뒤)        |
 | `durations.medium`    | 410ms                            | 바텀시트·시트 스크림 · 들어오는 페이지 · admin 카드 진입                                                       |
-| `durations.mediumMax` | 550ms                            | 검색 다이얼로그 등장 · 스켈레톤 왕복 · admin 차트·가로 막대 그리기                                             |
+| `durations.mediumMax` | 550ms                            | 검색 다이얼로그 등장 · 스켈레톤 왕복 · admin 가로 막대 그리기                                                  |
 | `durations.stagger`   | 40ms                             | 간격 — admin 카드 진입이 순서 × 이 값만큼 늦게 출발한다                                                        |
 | `easings.standard`    | `cubic-bezier(0.24, 1, 0.4, 1)`  | 기본 — 감속 곡선이라 등장·hover에 맞다                                                                         |
 | `easings.exit`        | `cubic-bezier(0.3, 0, 0.6, 0.6)` | 화면 밖으로 나가는 움직임(시트 닫힘·나가는 페이지)                                                             |
@@ -344,7 +344,7 @@ preset-panda의 durations·easings·animations·keyframes를 빼서 `transitionD
 | admin 지표 값      | 집계 기간을 바꾸면 값 줄(값·증감·추세선)이 걷히고 그 뒤 8px 아래에서 떠오른다. 숫자를 세는 카운트업은 없다(아래)                                                                           |
 | admin 정렬         | 목록이 걷히고 새 순서가 떠오른다(값과 같은 `out`·`rise`, `admin-sort` type일 때만). 행을 새 자리로 미끄러뜨리지 않는다(아래)                                                               |
 | admin 선택 표식    | 세그먼트 — 면 하나가 고른 칸으로 미끄러진다(transform, fast). 목록 — 고른 줄의 배경(fast)과 왼쪽 2px 막대가 가운데서 펴진다(scaleY, fast)                                                  |
-| admin 차트·막대    | Recharts 선 드러남·막대 자람·데이터 보간 550ms·standard(`chartMotion.ts` — 토큰 사본, 테스트가 잠근다). 가로 막대는 트랙 왼쪽에서 자란다(transform, mediumMax)                             |
+| admin 차트·막대    | Recharts 그리기·보간은 끈다 — 그려진 차트가 투명도 0에서 선다(`admin-fade-in`, fastMax·standard, `chartMotion.ts`). 가로 막대는 트랙 왼쪽에서 자란다(transform, mediumMax)                 |
 | 로그인             | 묶음이 투명도 0·98%에서 선다(medium·standard). 서버가 그린 화면이지만 등장 자체가 화면이라 하드 로드마다 돈다. 버튼은 `pressable`                                                          |
 
 **Astryx와 일부러 다르게 간 곳**

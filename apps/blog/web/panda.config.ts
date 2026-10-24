@@ -108,7 +108,7 @@ export default defineConfig({
         //                            밀려 나간다
         //   admin-sheet-in/out — 좁은 화면 시트가 화면 밖에서 들어오고 나간다. 어느 쪽인지는 의사
         //                        요소가 주는 변수(--admin-sheet-from)다(sm 미만 아래, 그 위 오른쪽)
-        //   admin-fade-in      — 시트 뒤 스크림, 패널을 닫고 드러나는 '고른 글 없음'
+        //   admin-fade-in      — 시트 뒤 스크림, 패널을 닫고 드러나는 '고른 글 없음', 차트 등장
         //   admin-bar-grow     — 가로 막대가 트랙 왼쪽에서 자기 길이까지 자란다(transform만)
         //   admin-card-in      — 로그인 카드가 98%에서 제 크기로 선다
         'admin-inspector-in': {

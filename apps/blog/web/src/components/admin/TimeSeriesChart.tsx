@@ -14,7 +14,7 @@ import type { TooltipContentProps } from 'recharts';
 import { token } from '@blog/styled-system/tokens';
 import { fmtNum } from '@blog/content/client';
 import { ChartTooltipFrame } from './ChartTooltip';
-import { CHART_MOTION } from './chartMotion';
+import { CHART_MOTION, chartReveal } from './chartMotion';
 
 interface TimeSeriesChartProps {
   data: { date: string; value: number }[];
@@ -72,7 +72,7 @@ export const TimeSeriesChart = ({
   height = 240,
 }: TimeSeriesChartProps) => {
   return (
-    <div className={css({ w: 'full' })} style={{ height }}>
+    <div className={css(chartReveal, { w: 'full' })} style={{ height }}>
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart
           data={data}

@@ -353,6 +353,9 @@ export const BUNDLE_GUARDS = [
  * JS 386.0 → 387.1KB(+1.1 — 분석 화면이 새로고침 버튼·건너뛰기 링크 모듈, 빈 날 채우기·기간 오류 안내, 표의
  * 링크 분기를 더 싣는다. 항목별로 나눠 재지는 않았다), 공개 그룹 JS는 그대로. CSS는 전 그룹 +0.1KB(최대 29.0KB, `/posts/` — 퇴장·페이드
  * View Transition 규칙 셋과 원자 클래스). 예산은 그대로이고 CSS 여유는 1.0KB다.
+ * 2026-10-25 admin 차트의 Recharts 그리기 애니메이션을 끄고 등장을 CSS(Recharts 래퍼의 keyframes)로 바꾼
+ * 빌드로 갱신: JS는 `/admin/` 최대 387.0 → 387.1KB(같은 날 바꾸기 전 빌드 대비), 공개 그룹은 그대로. CSS는 그
+ * 등장 규칙 셋(래퍼 자손 셀렉터)으로 전 그룹 +0.1KB(최대 29.1KB, `/posts/`) — 예산은 그대로이고 CSS 여유는 0.9KB다.
  * 그룹이 새로 생기면(새 라우트) 예산이 없어서, 라우트가
  * 사라지면 예산이 죽어서, 측정 최대가 상한의 80% 아래로 내려가면 예산이 느슨해서
  * (`budget-slack`) 빌드가 실패한다.
@@ -363,21 +366,21 @@ export const BUNDLE_GUARDS = [
  * 걸리면 같은 방식으로 내린다 — 여유가 크게 남으면 회귀가 그 안에 숨는다.
  */
 export const BUNDLE_BUDGETS = [
-  // 176.5 KB / 28.3 KB
+  // 176.5 KB / 28.4 KB
   { group: '/', jsGzipKB: 185, cssGzipKB: 30 },
-  // 239.4 KB / 29.0 KB — 목록과 글 상세 46쪽의 최대(목록. mermaid·Giscus는 지연 로드라 밖)
+  // 239.4 KB / 29.1 KB — 목록과 글 상세 46쪽의 최대(목록. mermaid·Giscus는 지연 로드라 밖)
   { group: '/posts/', jsGzipKB: 252, cssGzipKB: 30 },
-  // 176.5 KB / 28.3 KB
+  // 176.5 KB / 28.4 KB
   { group: '/about/', jsGzipKB: 185, cssGzipKB: 30 },
-  // 176.5 KB / 28.3 KB
+  // 176.5 KB / 28.4 KB
   { group: '/series/', jsGzipKB: 185, cssGzipKB: 30 },
-  // 176.5 KB / 28.3 KB
+  // 176.5 KB / 28.4 KB
   { group: '/privacy/', jsGzipKB: 185, cssGzipKB: 30 },
-  // 176.5 KB / 28.3 KB — 정적 404(`404-page` 처리)
+  // 176.5 KB / 28.4 KB — 정적 404(`404-page` 처리)
   { group: '/404/', jsGzipKB: 185, cssGzipKB: 30 },
-  // 176.5 KB / 28.3 KB — Next가 함께 내보내는 not-found 라우트
+  // 176.5 KB / 28.4 KB — Next가 함께 내보내는 not-found 라우트
   { group: '/_not-found/', jsGzipKB: 185, cssGzipKB: 30 },
-  // 387.1 KB / 28.3 KB — admin 48쪽의 최대(분석 화면 — 목록 1 + 글별 45쪽이 같은 화면이라 무게가 같다)
+  // 387.1 KB / 28.4 KB — admin 48쪽의 최대(분석 화면 — 목록 1 + 글별 45쪽이 같은 화면이라 무게가 같다)
   { group: '/admin/', jsGzipKB: 398, cssGzipKB: 30 },
 ] as const satisfies BundleBudgetsConfig;
 

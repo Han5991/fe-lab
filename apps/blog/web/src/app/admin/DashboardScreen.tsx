@@ -246,8 +246,8 @@ function DashboardContent() {
   const days = rangeLabel(overview.range);
 
   // 기간을 바꾸는 것은 transition이다 — 지표 카드의 값 줄(`MetricCard`의 `<ViewTransition>`)이 이전
-  // 값을 걷고 새 값을 띄우고, 나머지(제목의 일수·표)는 루트 크로스페이드로 바뀐다. 차트는 Recharts가
-  // 이전 선에서 새 선으로 보간한다.
+  // 값을 걷고 새 값을 띄우고, 나머지(제목의 일수·차트·표)는 루트 크로스페이드로 바뀐다 — 차트는 선을
+  // 보간하지 않는다(`chartMotion.ts`).
   const changeRange = (next: AnalyticsRange) =>
     startTransition(() => setRange(next));
 

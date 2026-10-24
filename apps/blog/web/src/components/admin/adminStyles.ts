@@ -137,7 +137,7 @@ export const rowLink = css.raw({
  *
  * 채움은 트랙 폭 그대로이고 값만큼 왼쪽으로 밀려 있다(`barShare` — 인라인 transform). 폭(`width: N%`)
  * 대신 transform으로 길이를 내는 이유는 움직임이다: 처음 그려질 때 트랙 왼쪽 밖에서 자기 자리까지
- * 자라고(`admin-bar-grow`, 차트 막대와 같은 mediumMax·standard), 값이 바뀌면 그 자리로 미끄러진다 —
+ * 자라고(`admin-bar-grow`, mediumMax·standard), 값이 바뀌면 그 자리로 미끄러진다 —
  * 둘 다 레이아웃 없이 합성만 돈다. 트랙의 `overflow: hidden`과 pill 라운드가 밀려난 쪽을 잘라 왼쪽
  * 끝도 둥글게 보인다(폭으로 그리던 때와 같은 모양).
  */
