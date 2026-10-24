@@ -62,7 +62,8 @@ async function expectBodySurvived(
       server.counts,
     );
   } else {
-    // 목록·홈은 클라이언트가 덧붙이는 영역(인기 글 레일 등)이 있다 — 줄어들지만 않으면 된다.
+    // 목록은 하이드레이션 때 클라이언트가 같은 목록을 다시 그리고(Suspense 경계), 홈은 클라이언트가
+    // 덧붙이는 영역이 있다 — 줄어들지만 않으면 된다.
     for (const [tag, n] of Object.entries(server.counts)) {
       expect(
         live.counts[tag as keyof typeof live.counts],
@@ -76,7 +77,8 @@ async function expectBodySurvived(
     `${selector} 글자 수가 서버 HTML보다 줄었다 (${when})`,
   ).toBeGreaterThanOrEqual(server.textLength);
   if (kind === 'post') {
-    // 글 본문만 본다 — 목록·홈은 반응형으로 한쪽 폭에서만 보이는 영역(인기 글 레일 등)이 있다.
+    // 글 본문만 본다 — 목록·홈은 클라이언트가 상태에 따라 가리는 영역(인기순 조회수를 기다리는 동안의
+    // 글 목록 등)을 둘 수 있다.
     expect(live.hidden, `${selector} 안에서 가려진 요소 (${when})`).toEqual([]);
   }
   expect(live.height, `${selector}의 렌더 높이 (${when})`).toBeGreaterThan(100);

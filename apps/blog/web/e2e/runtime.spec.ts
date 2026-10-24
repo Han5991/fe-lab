@@ -1,11 +1,18 @@
 /**
  * JS 없이는 존재하지 않는 동작만 확인한다 — 웹 폰트 적재, 테마 전환, ⌘K 검색,
- * mermaid 렌더, Web Vitals 전송. 화면 문구·배치는 다른 게이트(jsdom·check-seo)의 몫이다.
+ * mermaid 렌더, Web Vitals 전송, 글 목록 인기순 정렬. 화면 문구·배치는 다른 게이트
+ * (jsdom·check-seo)의 몫이다.
  */
 import type { Page } from '@playwright/test';
+import {
+  archivePath,
+  filterAndSortPostsByArchiveParams,
+  type ArchiveSortKey,
+} from '@blog/content/client';
 import { axeViolations } from './support/a11y';
 import { waitForHydration } from './support/dom';
 import { expect, test } from './support/fixtures';
+import { stubViewCount } from './support/network';
 import {
   mermaidChartCount,
   publishedPosts,
@@ -138,6 +145,53 @@ for (const colorScheme of ['light', 'dark'] as const) {
     });
   });
 }
+
+// 인기순은 런타임 Supabase 데이터로만 정해지는 순서다 — 조회수 읽기(지연 import된 조회 코드 → post_views
+// GET 스텁)가 목록까지 닿는지 본다. 공개 화면에서 그 스텁을 지나는 경로는 이것 하나다.
+// 재평가: 2027-04-24 — 그때까지 이 순서 단언이 잡은 것이 없으면 "목록이 보이고 정렬 콤보박스가
+// popular"까지로 줄인다.
+test('인기순은 조회수 스텁 순서로 목록을 다시 그린다', async ({ page }) => {
+  // 기대 순서는 스텁과 같은 조회수 함수를 앱과 같은 정렬 함수에 넣어 만든다 — 정렬 규칙을 여기 다시
+  // 적지 않는다. 검색 인덱스에는 readMin이 없고 series가 null일 수 있다(인기순은 둘을 보지 않는다).
+  const posts = publishedPosts().map(post => ({
+    ...post,
+    series: post.series ?? undefined,
+    readMin: 0,
+  }));
+  const top3 = (sort: ArchiveSortKey) =>
+    filterAndSortPostsByArchiveParams(posts, {
+      q: '',
+      tags: [],
+      series: null,
+      sort,
+      viewCounts: new Map(
+        posts.map(post => [post.slug, stubViewCount(post.slug)]),
+      ),
+    })
+      .slice(0, 3)
+      .map(post => post.title);
+  const expectedTop3 = top3('popular');
+  expect(expectedTop3, '기대 순서를 만들 글').toHaveLength(3);
+  // 양성 대조 — 기대가 최신순과 같으면 정렬이 돌지 않아도(조회수가 안 와도) 아래 단언이 통과한다.
+  expect(expectedTop3, '인기순 기대가 최신순과 갈려야 한다').not.toEqual(
+    top3('recent'),
+  );
+
+  await page.goto(archivePath({ sort: 'popular' }));
+  await waitForHydration(page, 'main');
+  // 1) 뷰가 마운트됐다 — 폴백 select는 기본값(recent)이다.
+  await expect(page.getByRole('combobox', { name: '정렬' })).toHaveValue(
+    'popular',
+  );
+  // 2) 숨김이 풀렸다 — 조회수를 기다리는 목록은 visibility:hidden이라 역할 질의에 잡히지 않는다.
+  const list = page.getByRole('list', { name: '글 목록' });
+  await expect(list).toBeVisible();
+  // 3) 앞 3개 순서 — 재시도하는 단언이라 숨김 상한(2초)이 먼저 풀려 최신순이 잠깐 보여도 기다린다.
+  const headings = list.getByRole('heading', { level: 3 });
+  for (const [i, title] of expectedTop3.entries()) {
+    await expect(headings.nth(i)).toHaveText(title);
+  }
+});
 
 test('mermaid 펜스가 SVG로 그려진다', async ({ page }) => {
   const charts = mermaidChartCount(mermaidPost);
