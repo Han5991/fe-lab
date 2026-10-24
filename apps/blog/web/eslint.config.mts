@@ -38,7 +38,8 @@ const NO_ESCAPED_HEX = {
  * Panda 공식 lint(`@pandacss/eslint-plugin`, Panda v2 get-started/linting) — 빌드와 같은 v2
  * 추출 결과로 스타일을 검사한다. recommended(토큰 경로·잘못된 중첩·include 밖 파일·추출
  * 진단 …) 위에 `prefer-token`을 색·라운드·보더 굵기·그림자로 넓혀 error로 건다: 그
- * 카테고리에 토큰이 있는데 원시 값이나 대괄호 이스케이프를 쓰면 막힌다(AGENTS.md §9).
+ * 카테고리에 토큰이 있는데 원시 값이나 대괄호 이스케이프를 쓰면 막힌다(AGENTS.md §9). 예외는
+ * 아래 파일 단위 블록의 `allow`(인용·대화 강조 바 `'[2px]'`) 하나다.
  *
  * NO_ESCAPED_HEX는 남긴다 — 플러그인은 Panda가 정적으로 추출한 스타일만 보므로, 빌드 때
  * 값을 따라가지 못하는 자리와 Panda include 밖(`content.values.mts`)의 `'[#hex]'`는 그
@@ -55,8 +56,9 @@ const pandaRecommended = await panda.configs.recommended({
 
 /**
  * prefer-token 옵션. flat config는 뒤 블록이 룰 옵션을 통째로 덮으므로 파일 단위 예외도
- * 이 객체를 펼쳐 쓴다. `allow`는 원시 문자열과 비교한다 — `'[0]'`(보더·라운드 없음)은
- * 토큰이 없고 v2 타입이 맨 `'0'`을 받지 않는다.
+ * 이 객체를 펼쳐 쓴다. 공통 `allow`는 없다 — 라운드·보더의 0도 `none` 토큰이라 `'[0]'`은
+ * error다(`allow`는 원시 문자열 비교라 카테고리를 가리지 않아, 남겨 두면 `rounded: '[0]'`이
+ * `none`을 우회했다).
  *
  * `shadows`·`dropShadows`는 2026-10에 더했다 — 블로그 그림자는 프리셋 토큰뿐인데, admin 카드
  * 9곳이 `boxShadow: '[0 1px 2px …]'` 이스케이프로 들어와 있었다(추가 직후 정확히 그 9건이
@@ -68,7 +70,6 @@ const pandaRecommended = await panda.configs.recommended({
  */
 const PREFER_TOKEN = {
   categories: ['colors', 'radii', 'borderWidths', 'shadows', 'dropShadows'],
-  allow: ['[0]'],
 };
 
 /**
@@ -336,7 +337,7 @@ export default defineConfig([
     rules: {
       '@pandacss/prefer-token': [
         'error',
-        { ...PREFER_TOKEN, allow: [...PREFER_TOKEN.allow, '[2px]'] },
+        { ...PREFER_TOKEN, allow: ['[2px]'] },
       ],
     },
   },

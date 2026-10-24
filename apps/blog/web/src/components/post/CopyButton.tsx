@@ -37,7 +37,7 @@ export function CopyButton({ content }: { content: string }) {
         h: '7',
         color: CODE_META,
         bg: 'transparent',
-        rounded: 'control',
+        rounded: 'full',
         cursor: 'pointer',
         transition: '[color 0.15s, background-color 0.15s]',
         _hover: { color: CODE_ACCENT, bg: 'paper.300' },

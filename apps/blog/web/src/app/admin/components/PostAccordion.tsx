@@ -69,7 +69,7 @@ export function PostAccordion({ post, todayISO }: Props) {
       className={css({
         borderBottomWidth: 'hairline',
         borderColor: 'ink.border',
-        _last: { borderBottomWidth: '[0]' },
+        _last: { borderBottomWidth: 'none' },
       })}
     >
       {/* 링크와 펼침 버튼은 형제다 — 버튼 안에는 대화형 요소가 올 수 없다. */}
@@ -148,7 +148,7 @@ export function PostAccordion({ post, todayISO }: Props) {
                   fontWeight: 'semibold',
                   px: '2',
                   py: '0.5',
-                  rounded: 'pill',
+                  rounded: 'full',
                   flexShrink: 0,
                   bg: 'paper.100',
                   borderWidth: 'hairline',
@@ -281,7 +281,7 @@ export function PostAccordion({ post, todayISO }: Props) {
                   className={css({
                     bg: 'ink.25',
                     p: '3',
-                    rounded: 'control',
+                    rounded: 'element',
                     borderWidth: 'hairline',
                     borderColor: 'ink.border',
                     display: 'flex',
@@ -316,7 +316,7 @@ export function PostAccordion({ post, todayISO }: Props) {
                   className={css({
                     bg: 'ink.25',
                     p: '3',
-                    rounded: 'control',
+                    rounded: 'element',
                     borderWidth: 'hairline',
                     borderColor: 'ink.border',
                     display: 'flex',
@@ -350,7 +350,7 @@ export function PostAccordion({ post, todayISO }: Props) {
                   className={css({
                     bg: 'ink.25',
                     p: '3',
-                    rounded: 'control',
+                    rounded: 'element',
                     borderWidth: 'hairline',
                     borderColor: 'ink.border',
                     display: 'flex',
@@ -418,7 +418,7 @@ export function PostAccordion({ post, todayISO }: Props) {
                           strokeDasharray: '4 4',
                         }}
                         contentStyle={{
-                          borderRadius: token('radii.control'),
+                          borderRadius: token('radii.container'),
                           border: `1px solid ${token('colors.ink.border')}`,
                           background: token('colors.ink.25'),
                           color: token('colors.ink.900'),

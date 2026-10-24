@@ -61,7 +61,7 @@ export function CodeTabsPanels({
       className={css({
         mb: '12',
         mt: '8',
-        rounded: 'card',
+        rounded: 'element',
         overflow: 'hidden',
         bg: 'code.surface',
         borderWidth: 'hairline',

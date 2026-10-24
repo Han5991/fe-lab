@@ -36,7 +36,7 @@ export const PostGridCard = ({ post, priority = false }: PostGridCardProps) => {
         bg: 'paper.100',
         borderWidth: 'hairline',
         borderColor: 'ink.border',
-        rounded: 'card',
+        rounded: 'container',
         overflow: 'hidden',
         transition: '[border-color 0.15s]',
         _hover: {

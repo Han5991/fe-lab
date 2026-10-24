@@ -30,7 +30,7 @@ const markClass = css({
   color: 'ink.950',
   fontWeight: 'medium',
   px: '0.5',
-  rounded: 'sm',
+  rounded: 'inner',
 });
 
 const Highlight = ({ text, tokens }: { text: string; tokens: string[] }) =>
@@ -231,7 +231,7 @@ export const SearchDialog = () => {
           gap: '2',
           px: { base: '2', md: '3' },
           py: '1.5',
-          rounded: 'control',
+          rounded: 'full',
           borderWidth: 'hairline',
           borderColor: 'ink.border',
           color: 'ink.500',
@@ -255,7 +255,7 @@ export const SearchDialog = () => {
             display: { base: 'none', md: 'inline' },
             px: '1.5',
             py: '0.5',
-            rounded: 'md',
+            rounded: 'inner',
             bg: 'paper.100',
             fontSize: 'xs',
             // paper.100 위 12px 글자라 ink.500(서브 서피스 메타 톤)이 AA 하한이다.
@@ -302,11 +302,11 @@ export const SearchDialog = () => {
             <div
               className={css({
                 bg: 'paper.50',
-                rounded: { base: '[0]', md: 'card' },
+                rounded: { base: 'none', md: 'container' },
                 overflow: 'hidden',
                 // dim 오버레이가 레이어를 갈라주므로 그림자 대신 hairline 보더로
                 // 다이얼로그 경계를 세운다(플랫 유지).
-                borderWidth: { base: '[0]', md: 'hairline' },
+                borderWidth: { base: 'none', md: 'hairline' },
                 borderColor: 'ink.border',
                 h: { base: 'full', md: 'auto' },
                 // body 스크롤이 잠겨 있으니 모달 높이를 묶고 결과 목록만 스크롤한다.
@@ -363,7 +363,7 @@ export const SearchDialog = () => {
                   aria-label="검색 닫기"
                   className={css({
                     p: '2',
-                    rounded: 'md',
+                    rounded: 'full',
                     color: 'ink.400',
                     _hover: { color: 'ink.600', bg: 'paper.200' },
                     _active: { bg: 'paper.200' },
@@ -449,7 +449,7 @@ export const SearchDialog = () => {
                             bg: selected ? 'accent.50' : 'transparent',
                             _active: { bg: 'accent.50' },
                             transition: '[background 0.1s]',
-                            borderBottomWidth: { base: 'hairline', md: '[0]' },
+                            borderBottomWidth: { base: 'hairline', md: 'none' },
                             borderColor: 'paper.200',
                           })}
                         >
@@ -498,7 +498,7 @@ export const SearchDialog = () => {
                                     bg: 'paper.200',
                                     // paper.200 위 작은 글자 — 서브 서피스 메타 톤(ink.500)이 AA 하한이다.
                                     color: 'ink.500',
-                                    rounded: 'md',
+                                    rounded: 'full',
                                   })}
                                 >
                                   {tag}
@@ -536,7 +536,7 @@ export const SearchDialog = () => {
                           className={css({
                             px: '3',
                             py: '1',
-                            rounded: 'md',
+                            rounded: 'full',
                             borderWidth: 'hairline',
                             borderColor: 'ink.border',
                             color: 'ink.700',

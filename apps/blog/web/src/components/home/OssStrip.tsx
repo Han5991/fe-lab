@@ -26,7 +26,7 @@ const chip = cva({
     fontSize: '[12px]',
     color: 'ink.500',
     bg: 'paper.100',
-    rounded: 'control',
+    rounded: 'inner',
     px: '[11px]',
     py: '[4px]',
   },

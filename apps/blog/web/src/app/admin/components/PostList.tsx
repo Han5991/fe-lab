@@ -49,7 +49,7 @@ export function PostList() {
     px: '2',
     borderWidth: 'hairline',
     borderColor: 'ink.border',
-    rounded: 'md',
+    rounded: 'element',
     fontSize: 'xs',
     bg: 'ink.25',
     color: 'ink.950',
@@ -63,7 +63,7 @@ export function PostList() {
         bg: 'ink.25',
         borderWidth: 'hairline',
         borderColor: 'ink.border',
-        rounded: 'control',
+        rounded: 'container',
         overflow: 'hidden',
       })}
     >
@@ -98,7 +98,7 @@ export function PostList() {
               borderColor: 'ink.border',
               px: '3',
               py: '1.5',
-              rounded: 'md',
+              rounded: 'full',
               fontSize: 'xs',
               fontWeight: 'medium',
               cursor: 'pointer',

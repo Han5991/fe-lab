@@ -67,7 +67,7 @@ function PostNotFound({ slug }: { slug: string }) {
       className={css({
         bg: 'paper.100',
         p: '8',
-        rounded: 'control',
+        rounded: 'container',
         display: 'flex',
         flexDir: 'column',
         alignItems: 'flex-start',
@@ -143,7 +143,7 @@ function PostDetailBody({ post }: { post: PostStatDetail }) {
         className={css({
           bg: 'paper.100',
           p: '[1.5rem 2rem]',
-          rounded: 'control',
+          rounded: 'container',
           borderWidth: 'hairline',
           borderColor: 'ink.border',
           mb: '6',
@@ -263,7 +263,7 @@ function PostDetailBody({ post }: { post: PostStatDetail }) {
           className={css({
             bg: 'paper.100',
             p: '5',
-            rounded: 'control',
+            rounded: 'container',
             borderWidth: 'hairline',
             borderColor: 'ink.border',
           })}
@@ -310,7 +310,7 @@ function PostDetailBody({ post }: { post: PostStatDetail }) {
           className={css({
             bg: 'paper.100',
             p: '5',
-            rounded: 'control',
+            rounded: 'container',
             borderWidth: 'hairline',
             borderColor: 'ink.border',
           })}
@@ -382,7 +382,7 @@ function PostDetailBody({ post }: { post: PostStatDetail }) {
           className={css({
             bg: 'paper.100',
             p: '5',
-            rounded: 'control',
+            rounded: 'container',
             borderWidth: 'hairline',
             borderColor: 'ink.border',
           })}
@@ -431,7 +431,7 @@ function PostDetailBody({ post }: { post: PostStatDetail }) {
           className={css({
             bg: 'paper.100',
             p: '5',
-            rounded: 'control',
+            rounded: 'container',
             borderWidth: 'hairline',
             borderColor: 'ink.border',
           })}
@@ -499,7 +499,7 @@ function PostDetailBody({ post }: { post: PostStatDetail }) {
         className={css({
           bg: 'paper.100',
           p: '8',
-          rounded: 'control',
+          rounded: 'container',
           borderWidth: 'hairline',
           borderColor: 'ink.border',
           mb: '6',
@@ -578,7 +578,7 @@ function PostDetailBody({ post }: { post: PostStatDetail }) {
                     strokeDasharray: '4 4',
                   }}
                   contentStyle={{
-                    borderRadius: token('radii.control'),
+                    borderRadius: token('radii.container'),
                     border: `1px solid ${token('colors.ink.border')}`,
                     background: token('colors.ink.25'),
                     color: token('colors.ink.900'),
@@ -630,7 +630,7 @@ function PostDetailBody({ post }: { post: PostStatDetail }) {
           className={css({
             bg: 'paper.100',
             p: '8',
-            rounded: 'control',
+            rounded: 'container',
             borderWidth: 'hairline',
             borderColor: 'ink.border',
           })}
@@ -670,7 +670,7 @@ function PostDetailBody({ post }: { post: PostStatDetail }) {
                     radius: 4,
                   }}
                   contentStyle={{
-                    borderRadius: token('radii.control'),
+                    borderRadius: token('radii.container'),
                     border: `1px solid ${token('colors.ink.border')}`,
                     background: token('colors.ink.25'),
                     color: token('colors.ink.900'),
@@ -702,7 +702,7 @@ function PostDetailBody({ post }: { post: PostStatDetail }) {
           className={css({
             bg: 'paper.100',
             p: '8',
-            rounded: 'control',
+            rounded: 'container',
             borderWidth: 'hairline',
             borderColor: 'ink.border',
           })}
@@ -741,7 +741,7 @@ function PostDetailBody({ post }: { post: PostStatDetail }) {
                     radius: 4,
                   }}
                   contentStyle={{
-                    borderRadius: token('radii.control'),
+                    borderRadius: token('radii.container'),
                     border: `1px solid ${token('colors.ink.border')}`,
                     background: token('colors.ink.25'),
                     color: token('colors.ink.900'),
@@ -788,7 +788,7 @@ export default function PostDetailClient() {
           mb: '8',
           bg: 'paper.100',
           p: { base: '[0.75rem 1rem]', md: '[1rem 2rem]' },
-          rounded: 'control',
+          rounded: 'container',
           borderWidth: 'hairline',
           borderColor: 'ink.border',
           gap: '4',

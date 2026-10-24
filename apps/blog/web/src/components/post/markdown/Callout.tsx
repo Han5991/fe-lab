@@ -12,7 +12,7 @@ const callout = sva({
       my: '6',
       px: '4',
       py: '3.5',
-      rounded: 'control',
+      rounded: 'container',
       borderWidth: 'hairline',
     },
     // 아바타·타임라인 아이콘과 같은 어휘 — hairline 원형에 문자 하나.
@@ -24,7 +24,7 @@ const callout = sva({
       justifyContent: 'center',
       boxSize: '5',
       mt: '[1px]',
-      rounded: 'pill',
+      rounded: 'full',
       borderWidth: 'hairline',
       fontFamily: 'mono',
       fontSize: 'xs',

@@ -25,7 +25,7 @@ const group = css({
   borderWidth: 'hairline',
   borderStyle: 'solid',
   borderColor: 'ink.border',
-  rounded: 'md',
+  rounded: 'element',
   overflow: 'hidden',
 });
 

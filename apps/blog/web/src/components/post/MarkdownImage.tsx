@@ -21,7 +21,7 @@ const imageStyle = css({
   display: 'block',
   my: '4',
   // 리뉴얼 규칙: 위계는 그림자가 아니라 hairline 보더로만 표현한다.
-  rounded: 'control',
+  rounded: 'element',
   h: 'auto',
   borderWidth: 'hairline',
   borderColor: 'ink.border',

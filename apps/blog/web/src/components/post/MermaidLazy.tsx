@@ -13,7 +13,7 @@ export const mermaidBoxStyle = css({
   p: '6',
   minH: '[120px]',
   bg: 'paper.100',
-  rounded: 'card',
+  rounded: 'container',
   borderWidth: 'hairline',
   borderColor: 'ink.border',
 });

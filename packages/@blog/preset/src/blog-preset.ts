@@ -323,20 +323,27 @@ export const blogPreset = definePreset({
         // accent를 각각 탄다. plain `tokens.*` 는 `_dark` 배리언트를 지원하지 않아
         // hex를 박으면 다크에서도 라이트 틸이 그대로 나온다.
         radii: {
-          // 핸드오프 §3 "기타": 카드 12px / 작은 요소 8px / 배지 pill.
-          // 의미 기반 이름으로 고정해 컴포넌트가 숫자를 직접 쓰지 않게 한다.
-          // **라운드는 이 다섯이 전부다** — 블로그 설정이 preset-panda의 radii를 빼므로
-          // (apps/blog/web/panda.config.ts) 여기 없는 값은 strictTokens에 걸린다. sm·md는
-          // 핸드오프 밖의 작은 칩·컨트롤 값으로, 예전엔 preset-panda(rem)와 `'[6px]'`
-          // 이스케이프로 갈려 있던 것을 px로 모았다.
-          sm: { value: '4px' },
-          md: { value: '6px' },
-          card: { value: '12px' },
-          control: { value: '8px' },
-          pill: { value: '999px' },
+          // Astryx docsite 테마(MIT)의 라운드 스케일을 이름째 옮겼다 — 코어 기본값(4/8/12/28)에
+          // 4px씩 더한 값이고, none·full은 코어 그대로다. 이름은 크기가 아니라 자리다:
+          //   inner     — kbd·인라인 코드·작은 안쪽 요소·포커스 링
+          //   element   — 입력·세그먼트 그룹·코드 블록·미디어(이미지)
+          //   container — 카드·패널·콜아웃·오버레이
+          //   page      — 대화 말풍선(<dialogue>)
+          //   full      — 버튼(docsite 테마가 버튼을 pill로 덮는다)·배지·태그 칩·원형·스크롤바
+          // **라운드는 이 여섯이 전부다** — 블로그 설정이 preset-panda의 radii를 빼므로
+          // (apps/blog/web/panda.config.ts) 여기 없는 값은 strictTokens에 걸린다. 자리별 근거와
+          // 일부러 다르게 간 곳은 blog-design-system 스킬.
+          none: { value: '0' },
+          inner: { value: '8px' },
+          element: { value: '12px' },
+          container: { value: '16px' },
+          page: { value: '32px' },
+          full: { value: '9999px' },
         },
         borderWidths: {
-          // "그림자 대신 보더로 위계 표현" — hairline 단일 소스
+          // "그림자 대신 보더로 위계 표현" — hairline 단일 소스. none은 보더를 지우는 자리
+          // (마지막 행 등) — radii의 none과 같이 0도 토큰으로 써서 대괄호 이스케이프가 남지 않게 한다.
+          none: { value: '0' },
           hairline: { value: '1px' },
         },
         fonts: {

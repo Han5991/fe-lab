@@ -54,7 +54,7 @@ const msg = sva({
     },
     avatar: {
       boxSize: '[30px]',
-      rounded: 'pill',
+      rounded: 'full',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -64,8 +64,8 @@ const msg = sva({
       flexShrink: '0',
     },
     bubble: {
-      // 12px = radii.card. 레퍼런스 말풍선 라운드가 카드와 같은 값이라 토큰을 재사용한다.
-      rounded: 'card',
+      // 말풍선은 같은 화면의 카드보다 둥글게 — Astryx chat 말풍선(28px)에 가장 가까운 page를 쓴다.
+      rounded: 'page',
       px: '3',
       py: '2',
       fontSize: '[13px]',

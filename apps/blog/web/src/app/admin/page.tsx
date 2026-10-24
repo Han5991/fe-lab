@@ -37,7 +37,7 @@ function HiddenBadge({ state }: { state: PostStatus }) {
         fontWeight: 'semibold',
         color: 'ink.500',
         px: '1.5',
-        rounded: 'sm',
+        rounded: 'full',
         borderWidth: 'hairline',
         borderColor: 'ink.border',
         flexShrink: 0,
@@ -83,7 +83,7 @@ function AdminOverviewContent() {
             bg: 'ink.25',
             borderWidth: 'hairline',
             borderColor: 'ink.border',
-            rounded: 'control',
+            rounded: 'container',
             p: '6',
           })}
         >
@@ -146,7 +146,7 @@ function AdminOverviewContent() {
             bg: 'ink.25',
             borderWidth: 'hairline',
             borderColor: 'ink.border',
-            rounded: 'control',
+            rounded: 'container',
             p: '6',
           })}
         >
@@ -204,7 +204,7 @@ function AdminOverviewContent() {
             bg: 'paper.200',
             borderWidth: 'hairline',
             borderColor: 'ink.border',
-            rounded: 'control',
+            rounded: 'container',
             p: '6',
             display: 'flex',
             flexDir: 'column',
@@ -242,7 +242,7 @@ function AdminOverviewContent() {
             bg: 'ink.25',
             borderWidth: 'hairline',
             borderColor: 'ink.border',
-            rounded: 'control',
+            rounded: 'container',
             overflow: 'hidden',
           })}
         >
@@ -292,7 +292,7 @@ function AdminOverviewContent() {
                     px: '5',
                     py: '3',
                     borderBottomWidth:
-                      i < topPosts.length - 1 ? 'hairline' : '[0]',
+                      i < topPosts.length - 1 ? 'hairline' : 'none',
                     borderColor: 'ink.border',
                     transition: '[background 0.15s]',
                     _hover: { bg: 'ink.50' },
@@ -347,7 +347,7 @@ function AdminOverviewContent() {
             bg: 'ink.25',
             borderWidth: 'hairline',
             borderColor: 'ink.border',
-            rounded: 'control',
+            rounded: 'container',
             overflow: 'hidden',
           })}
         >
@@ -397,7 +397,7 @@ function AdminOverviewContent() {
                     px: '5',
                     py: '3',
                     borderBottomWidth:
-                      i < recentPosts.length - 1 ? 'hairline' : '[0]',
+                      i < recentPosts.length - 1 ? 'hairline' : 'none',
                     borderColor: 'ink.border',
                     transition: '[background 0.15s]',
                     _hover: { bg: 'ink.50' },
@@ -504,7 +504,7 @@ export default function AdminPage() {
                 color: 'spot.600',
                 fontWeight: 'medium',
                 fontSize: 'sm',
-                rounded: 'md',
+                rounded: 'full',
                 transition: '[background 0.15s]',
                 _hover: { bg: 'paper.100' },
               })}
@@ -522,7 +522,7 @@ export default function AdminPage() {
                 py: '1.5',
                 color: 'ink.500',
                 cursor: 'pointer',
-                rounded: 'md',
+                rounded: 'full',
                 fontSize: 'sm',
                 transition: '[all 0.15s]',
                 _hover: { bg: 'paper.200', color: 'ink.900' },

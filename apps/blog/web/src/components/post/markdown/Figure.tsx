@@ -16,7 +16,7 @@ export function Figure({ children }: FigureProps) {
           mx: 'auto',
           mt: '0',
           mb: '0',
-          rounded: 'control',
+          rounded: 'element',
           borderWidth: 'hairline',
           borderColor: 'ink.border',
         },

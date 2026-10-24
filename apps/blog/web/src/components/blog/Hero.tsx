@@ -11,7 +11,7 @@ const pill = css({
   borderWidth: 'hairline',
   borderStyle: 'solid',
   borderColor: 'ink.border',
-  rounded: 'pill',
+  rounded: 'full',
   px: '[11px]',
   py: '[3px]',
   transition: '[color 0.15s, border-color 0.15s]',
