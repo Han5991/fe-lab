@@ -14,7 +14,7 @@ export interface PublicSearchIndexEntry {
   excerpt: string;
   tags: string[];
   series: string | null;
-  /** 시리즈 표시명(`_series.yml`의 `title`) — 없으면 null(화면은 `series`로 폴백) */
+  /** 시리즈 표시명(`seriesDisplayName`: `_series.yml`의 `title`, 없으면 id) — 시리즈가 아닌 글만 null */
   seriesTitle: string | null;
   contentPreview: string;
 }

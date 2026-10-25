@@ -48,10 +48,6 @@ const Highlight = ({ text, tokens }: { text: string; tokens: string[] }) =>
     ),
   );
 
-/** 결과에 보일 시리즈 이름 — 색인에 제목이 없으면 id로 대신한다. */
-const seriesLabel = (post: PublicSearchIndexEntry) =>
-  post.seriesTitle ?? post.series;
-
 /**
  * 사이트 검색 — 헤더의 트리거 버튼과 모달 다이얼로그. 트리거는 열린 동안에도 마운트된
  * 채 남아야 닫힐 때 초점이 돌아갈 곳이 있다. 입력창은 콤보박스, 결과는 리스트박스다.
@@ -467,8 +463,8 @@ export const SearchDialog = () => {
                             {/* 예약 글의 date는 ISO 일시일 수 있다 — 목록들과 같은
                                 fmtDate로 날짜만 보인다. */}
                             {post.date && <span>{fmtDate(post.date)} · </span>}
-                            {post.series && (
-                              <span>📚 {seriesLabel(post)} · </span>
+                            {post.seriesTitle && (
+                              <span>📚 {post.seriesTitle} · </span>
                             )}
                             <Highlight text={snippet} tokens={tokens} />
                           </p>

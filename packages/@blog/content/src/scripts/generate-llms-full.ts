@@ -7,7 +7,11 @@ import {
   sortByDateDesc,
 } from '../post/index.ts';
 import type { PostData } from '../post/index.ts';
-import { sortPostsBySeriesOrder, type SeriesMeta } from '../post/series.ts';
+import {
+  seriesDisplayName,
+  sortPostsBySeriesOrder,
+  type SeriesMeta,
+} from '../post/series.ts';
 import { resolvePostSet } from './artifacts.ts';
 // Key Facts 조립은 색인(llms.txt)과 같은 규칙을 쓴다 — 한쪽만 빈 항목을 남기면
 // 두 산출물이 저자에 대해 서로 다른 말을 하게 된다.
@@ -102,7 +106,7 @@ export function buildLlmsFullText(
       standalone.push(...seriesPosts);
       continue;
     }
-    lines.push(`## 시리즈: ${meta.title ?? seriesId}`, ``);
+    lines.push(`## 시리즈: ${seriesDisplayName(seriesId, meta)}`, ``);
     if (meta.description) lines.push(meta.description, ``);
     for (const post of sortPostsBySeriesOrder(seriesPosts, meta.order)) {
       lines.push(...postEntry(post, SITE_URL));
