@@ -61,6 +61,43 @@ const NO_ESCAPED_TRANSITION = {
 } as const;
 
 /**
+ * 누름·초점 상태를 컴포넌트가 직접 정하지 못하게 막는다 — 때는 panda.config의 조건이, 모양은
+ * `src/components/interaction.ts`의 프리셋이 정한다(blog-design-system 스킬 "인터랙션 상태").
+ * 컴포넌트는 `_hover`에 값만 적는다(터치에서는 그 값이 누르는 동안 켜진다). 막는 것은 `_active`·
+ * `_groupActive`(누름을 따로 적은 사본 — 검색 결과 행과 닫기 버튼이 하나씩 갖고 있었다), `_focus`·
+ * `_focusVisible`(초점 링은 globalCss `:focus-visible` 하나다 — `_focus: { outline: 'none' }`이 그 링을
+ * 지웠다), `_press`·`_groupPress`·`_pressScale`(프리셋 몫), 같은 뜻의 `'&:active'`·`'&:focus'` 선택자 키다.
+ * `_focusWithin`은 막지 않는다 — 입력을 감싸는 상자의 보더가 그 자리다(`ArchiveSearchBox`).
+ *
+ * 쓸 수 있는 파일은 `INTERACTION_FILES`뿐이다. `no-restricted-syntax`는 블록마다 통째로 덮어써지므로(위
+ * NO_ESCAPED_HEX 주석) 그 블록은 이 룰만 빼고 나머지를 다시 펼친다.
+ *
+ * 재평가: 2027-04-25 — 그때까지 잡은 위반이 없으면 내린다(AGENTS.md §5). `_hover`까지 넓히는 것은 열린
+ * PR(#578·#579)과 admin 브랜치가 머지된 뒤다 — 지금 막으면 그 파일들이 한꺼번에 걸린다.
+ */
+const NO_LOCAL_INTERACTION = {
+  selector:
+    'Property:matches([key.name=/^_(active|groupActive|focus|focusVisible|press|groupPress|pressScale)$/], [key.value=/:(active|focus|focus-visible)([^-\\w]|$)/])',
+  message:
+    '누름·초점 상태는 직접 정하지 않습니다 — 때는 panda.config의 조건, 모양은 src/components/interaction.ts의 프리셋입니다. `_hover`에 값만 적으면 터치에서는 누르는 동안 켜집니다(blog-design-system 스킬 "인터랙션 상태").',
+} as const;
+
+/**
+ * NO_LOCAL_INTERACTION의 허용 파일 — 누름·초점 조건을 실제로 쓰는 곳이다.
+ * - `interaction.ts`·`cardParts.ts`: 프리셋이 `_press`·`_groupPress`·`_pressScale`을 건다.
+ * - `Layout.tsx`: 스킵 링크가 초점을 받으면 화면 안으로 들어온다(`_focus: { transform: 'none' }`).
+ * - admin 둘: 전역 초점 링을 지우는 `_focus: { outline: 'none' }`이 남아 있다. admin 재작성
+ *   (`blog-web/astryx-admin`)이 두 파일을 갈아엎으므로 그 PR이 머지되면 이 둘을 뺀다.
+ */
+const INTERACTION_FILES = [
+  'src/components/interaction.ts',
+  'src/components/blog/cardParts.ts',
+  'src/components/Layout.tsx',
+  'src/app/admin/components/DateRangeControls.tsx',
+  'src/app/admin/components/PostList.tsx',
+];
+
+/**
  * Panda 공식 lint(`@pandacss/eslint-plugin`, Panda v2 get-started/linting) — 빌드와 같은 v2
  * 추출 결과로 스타일을 검사한다. recommended(토큰 경로·잘못된 중첩·include 밖 파일·추출
  * 진단 …) 위에 `prefer-token`을 색·라운드·보더 굵기·그림자·모션으로 넓혀 error로 건다: 그
@@ -456,6 +493,20 @@ export default defineConfig([
           paths: [...APP_IMPORTS_EXCEPT_NEXT_LINK.paths, NEXT_LINK_DIRECT],
         },
       ],
+      'no-restricted-syntax': [
+        'error',
+        NO_ESCAPED_HEX,
+        CONTENT_DYNAMIC_IMPORT,
+        NO_ESCAPED_TRANSITION,
+        NO_LOCAL_INTERACTION,
+      ],
+    },
+  },
+  {
+    // 누름·초점 조건을 쓰는 파일(INTERACTION_FILES) — 그 룰만 풀고 나머지는 위 app 블록과 같다.
+    files: INTERACTION_FILES,
+    ignores: [UNIT_TESTS],
+    rules: {
       'no-restricted-syntax': [
         'error',
         NO_ESCAPED_HEX,
