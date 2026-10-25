@@ -7,7 +7,7 @@ import {
 
 const failure = (status: number | null) =>
   new AdminApiError({
-    action: 'all_post_stats',
+    action: 'posts_overview',
     status,
     serverMessage: null,
     fallbackMessage: 'x',

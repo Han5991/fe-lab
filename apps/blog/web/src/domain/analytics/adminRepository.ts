@@ -1,7 +1,7 @@
 /**
  * Analytics 도메인 중 **admin 전용** 데이터 접근 layer.
  *
- * 여기 있는 RPC 4건은 PR #114에서 service_role 한정으로 lockdown 되었기
+ * 여기 있는 RPC(`get_all_post_stats`·`get_posts_trends`·시간대/요일 분포)는 PR #114에서 service_role 한정으로 lockdown 되었기
  * 때문에 anon key로 직접 호출할 수 없고, admin-analytics Edge Function을
  * 경유합니다. 그래서 인증 세션이 붙은 `lib/platform/client.ts`(전체 supabase-js)가
  * 필요합니다.
@@ -48,25 +48,26 @@ function adminApi(): AdminApi {
 // (get_all_post_stats.total_views의 null)은 응답 타입이 그대로 말한다 — 아래에서
 // 그 null을 0으로 읽는다고 보이게 고른다.
 
-// 목록형 두 읽기는 글 인덱스의 slug로 서버에서 거른다 — anon이 만든 가짜 slug 행이
+// 목록 읽기는 글 인덱스의 slug로 서버에서 거른다 — anon이 만든 가짜 slug 행이
 // 1000행 cap·페이지 상한을 채우지 않게(adminActions.ts의 AdminSlugFilter).
 
-export async function getAllPostStats(
-  slugs: readonly string[],
-): Promise<PostStatsRow[]> {
-  // admin RPC — service_role 한정. Edge Function 경유.
-  // PostgREST의 1000행 cap 페이징은 Edge Function 안에서 돈다(왕복 1회).
-  const data = await adminApi().call('all_post_stats', { slugs });
-  // 조회 기록이 없는 글의 누적 조회수는 0이다 — null을 산술에 흘리지 않는다.
-  return data.map(s => ({ ...s, total_views: s.total_views ?? 0 }));
+/** 글별 누적·오늘 조회수와 일별 추이 — Edge Function 한 번(`posts_overview`)으로 받는다. */
+export interface PostsOverview {
+  stats: PostStatsRow[];
+  trends: PostTrendRow[];
 }
 
-export async function getAllPostsTrends(
+export async function getPostsOverview(
   slugs: readonly string[],
-): Promise<PostTrendRow[]> {
-  // admin RPC — service_role 한정. Edge Function 경유.
-  // Edge Function이 json 배열을 내는 RPC 한 번으로 받는다(왕복 1회, max_rows 페이징 없음).
-  return adminApi().call('all_posts_trends', { slugs });
+): Promise<PostsOverview> {
+  // admin RPC — service_role 한정. Edge Function 경유 — 왕복·JWT 검증 한 번에 두 RPC를 병렬로 부른다.
+  // 통계의 PostgREST 1000행 cap 페이징은 Edge Function 안에서 돈다.
+  const { stats, trends } = await adminApi().call('posts_overview', { slugs });
+  return {
+    // 조회 기록이 없는 글의 누적 조회수는 0이다 — null을 산술에 흘리지 않는다.
+    stats: stats.map(s => ({ ...s, total_views: s.total_views ?? 0 })),
+    trends,
+  };
 }
 
 export async function getAdminPostsIndex(): Promise<AdminPostsIndexEntry[]> {
