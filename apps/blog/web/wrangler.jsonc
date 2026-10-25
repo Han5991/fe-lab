@@ -29,6 +29,13 @@
   // `wrangler versions upload`가 <version>-blog.<subdomain>.workers.dev 를 낸다.
   "preview_urls": true,
 
+  // Workers Logs(관찰 가능성)는 끈 상태가 지금 배포된 설정이다. 여기 적지 않으면 대시보드가
+  // "배포를 동기화하려면 Wrangler 구성을 업데이트하라"고 불일치를 알린다 — 저장소가 단일 출처가
+  // 되도록 같은 값을 선언한다. 켜려면 대시보드가 아니라 여기서 바꾼다.
+  "observability": {
+    "enabled": false,
+  },
+
   "assets": {
     "directory": "./out",
 
