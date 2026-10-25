@@ -333,6 +333,8 @@ export default defineConfig({
         rounded: 'full',
         bg: 'accent.solid',
         viewTransitionName: VIEW_TRANSITION.navIndicator,
+        // 강제 색상 모드는 배경을 Canvas로 덮어 면만으로 그린 막대가 사라진다 — 시스템 글자색으로 남긴다.
+        '@media (forced-colors: active)': { bg: 'CanvasText' },
       },
       // 이동 사이에 옛 링크 아래에서 새 링크 아래로 미끄러진다. 크기가 고정이라 그룹은 자리만 보간하고,
       // React가 처음·끝 크기가 같은 그룹의 width·height keyframes를 지워 transform만 남는다(합성).
