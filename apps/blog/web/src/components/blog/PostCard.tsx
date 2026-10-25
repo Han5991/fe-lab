@@ -10,7 +10,13 @@ import {
 
 import { PostCardShared } from '@/src/components/shared/PostSharedElement';
 import { TransitionLink } from '@/src/components/shared/TransitionLink';
-import { cardLinkRaw, cardRoot, coverFrameRaw, coverImage } from './cardParts';
+import {
+  cardLinkRaw,
+  cardRoot,
+  coverFrameRaw,
+  coverImage,
+  noPreloadPicture,
+} from './cardParts';
 import { HiddenPostBadge } from './HiddenPostBadge';
 import { PostMeta } from './PostMeta';
 
@@ -118,17 +124,21 @@ export const PostCard = ({
         rescaled={!isWideThumbnail(post)}
       >
         <div className={classes.cover}>
-          <img
-            // posts/ 안의 png·jpg는 빌드가 만든 webp, 썸네일이 없는 글은 생성 OG 카드(/og/{slug}.png).
-            src={resolveThumbnailSrc(post, OG_DEFAULT_IMAGE)}
-            alt=""
-            width={COVER_WIDTH}
-            height={COVER_HEIGHT}
-            loading={priority ? 'eager' : 'lazy'}
-            fetchPriority={priority ? 'high' : 'auto'}
-            decoding="async"
-            className={coverImage}
-          />
+          {/* `<picture>`는 첫 카드(eager)의 preload 힌트가 홈·글 목록으로 가는 링크를 프리페치하는 모든 페이지로
+              번지지 않게 하려는 것이다(`noPreloadPicture` 주석). */}
+          <picture className={noPreloadPicture}>
+            <img
+              // posts/ 안의 png·jpg는 빌드가 만든 webp, 썸네일이 없는 글은 생성 OG 카드(/og/{slug}.png).
+              src={resolveThumbnailSrc(post, OG_DEFAULT_IMAGE)}
+              alt=""
+              width={COVER_WIDTH}
+              height={COVER_HEIGHT}
+              loading={priority ? 'eager' : 'lazy'}
+              fetchPriority={priority ? 'high' : 'auto'}
+              decoding="async"
+              className={coverImage}
+            />
+          </picture>
         </div>
       </PostCardShared>
       <div className={classes.body}>

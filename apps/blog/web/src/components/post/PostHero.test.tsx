@@ -42,6 +42,16 @@ describe('PostHero', () => {
     expect(img).not.toHaveAttribute('loading', 'lazy');
   });
 
+  // lazy가 아닌 img는 React가 RSC 페이로드에 preload 힌트로 싣고, 목록 페이지가 글을 프리페치하면 그 힌트로
+  // 글마다 히어로를 받았다. `<picture>` 안의 img에는 힌트를 만들지 않는다(cardParts의 noPreloadPicture).
+  test('커버 img는 picture 안이라 프리페치한 페이지에 preload 힌트를 남기지 않는다', () => {
+    const { container } = render(<PostHero slug={SLUG} thumbnail={SQUARE} />);
+
+    expect(container.querySelector('img')?.parentElement?.tagName).toBe(
+      'PICTURE',
+    );
+  });
+
   test('16:9 비율 힌트를 단다', () => {
     const { container } = render(<PostHero slug={SLUG} thumbnail={SQUARE} />);
 

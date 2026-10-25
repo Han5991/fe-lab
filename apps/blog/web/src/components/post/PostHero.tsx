@@ -1,5 +1,9 @@
 import { css } from '@blog/styled-system/css';
-import { coverFrameRaw, coverImage } from '@/src/components/blog/cardParts';
+import {
+  coverFrameRaw,
+  coverImage,
+  noPreloadPicture,
+} from '@/src/components/blog/cardParts';
 import { PostDetailShared } from '@/src/components/shared/PostSharedElement';
 import { DIAGRAMS, isDiagramName } from '@/src/components/diagram/registry';
 
@@ -76,15 +80,18 @@ export const PostHero = ({ slug, hero, thumbnail }: PostHeroProps) => {
       <div className={frame}>
         {/* LCP 후보다 — 첫 화면의 가장 큰 이미지라 바로, 높은 우선순위로 받는다. `alt=""`: 바로 위
               h1이 이 글의 이름이고, 그림은 제목을 되풀이하지 않는 장식이다(check-seo가 허용한다). */}
-        <img
-          src={thumbnail.src}
-          alt=""
-          width={COVER_WIDTH}
-          height={COVER_HEIGHT}
-          fetchPriority="high"
-          decoding="async"
-          className={thumbnail.wide ? coverImage : containImage}
-        />
+        {/* `<picture>`는 RSC 페이로드에 preload 힌트를 싣지 않으려는 것이다(`noPreloadPicture` 주석). */}
+        <picture className={noPreloadPicture}>
+          <img
+            src={thumbnail.src}
+            alt=""
+            width={COVER_WIDTH}
+            height={COVER_HEIGHT}
+            fetchPriority="high"
+            decoding="async"
+            className={thumbnail.wide ? coverImage : containImage}
+          />
+        </picture>
       </div>
     );
     return (

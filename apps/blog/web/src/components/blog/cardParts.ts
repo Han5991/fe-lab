@@ -77,6 +77,16 @@ export const coverFrameRaw = css.raw({
 });
 
 /** 틀을 채우는 이미지. 정사각 썸네일은 가운데가 남고 위아래가 잘린다(카드는 크롭을 받아들인다). */
+/**
+ * 미리 받을 이유가 없는 페이지로 번지지 않게 이미지를 감싸는 `<picture>` — React는 `<picture>` 안의 `<img>`에는
+ * preload 힌트를 만들지 않는다(react-dom 서버 렌더러의 img 규칙). 감싸지 않으면 lazy가 아닌 이미지(글 상세 히어로,
+ * 홈·글 목록의 첫 카드)가 그 페이지의 RSC 페이로드에 `:HL` 힌트로 실리고, 다른 페이지가 그 페이지로 가는 링크를
+ * 프리페치하면 React가 그 힌트를 지금 문서에 적용해 쓰지 않을 이미지를 받는다 — 글 목록·시리즈가 글마다 히어로를
+ * 받았다(`/series/` preload 34개, 콘솔 경고 120개). 이미지는 HTML 본문에 바로 있어 그 페이지에서는 힌트 없이도
+ * 브라우저가 곧바로 찾는다. 상자는 만들지 않는다(`display: contents`) — 틀을 채우는 `img`의 배치가 그대로다.
+ */
+export const noPreloadPicture = css({ display: 'contents' });
+
 export const coverImage = css({
   display: 'block',
   w: 'full',
