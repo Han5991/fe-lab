@@ -32,7 +32,8 @@ export const cardLinkRaw = css.raw({
 /**
  * 커버 틀 — 16:9 고정, hairline, 이미지가 늦게 와도 자리를 지키는 `paper.100` 면. 비율을 틀이 정하므로
  * 이미지가 오기 전후로 높이가 같다(CLS 0). hover에는 잉크 틴트(`accent.muted`)가 덮인다 — 카드 링크는
- * 제목 밑줄 대신 커버로 반응한다(승인 목업). 누르는 동안에는 틴트에 hairline이 한 단계 진해진다
+ * 제목 밑줄 대신 커버로 반응한다(승인 목업). 키보드 초점이 카드 안(제목 링크)에 있어도 같은 틴트가 덮인다.
+ * 누르는 동안에는 틴트에 hairline이 한 단계 진해진다
  * (`ink.borderStrong`) — 터치에서는 hover가 곧 누름이라 틴트가, hairline은 `_groupPress`가 모든 포인터에
  * 더한다.
  *
@@ -69,6 +70,9 @@ export const coverFrameRaw = css.raw({
     transition: 'opacity',
   },
   _groupHover: { _after: { opacity: '1' } },
+  // 키보드 초점은 제목 링크가 든다 — 카드를 올린 것과 같은 틴트가 켜져 어느 카드인지 면으로도 보인다
+  // (초점 링은 제목 상자만 두른다). 마우스·터치로 누른 링크는 켜지지 않는다(`:focus-visible`).
+  _groupKeyboardFocus: { _after: { opacity: '1' } },
   _groupPress: { _before: { borderColor: 'ink.borderStrong' } },
 });
 
