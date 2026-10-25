@@ -412,4 +412,18 @@ describe('본문 접근성 보정', () => {
     expect(red?.className).toContain('danger.text');
     expect(other?.getAttribute('style')).toBe('color:#123456');
   });
+
+  test('제목 안 인라인 코드만 둘러싼 제목 글자를 따른다', () => {
+    // 인라인 코드는 고정 14px라 20px·17px 제목 안에서 작아진다 — 본문 컨테이너가 제목 안 code에만
+    // 상대 크기를 건다. Panda 클래스명은 선택자와 값을 인코딩한다(`[&_:is(h2,_h3,_h4)_code]:fs_0.9em`).
+    const html = serverHtml('## 제목의 `code`\n\n문단의 `code`');
+    const root = parsed(html).getElementById('post-content');
+    const rule = root?.className
+      .split(' ')
+      .find(cls => cls.includes('code') && cls.includes('0.9em'));
+    expect(rule).toBeDefined();
+    expect(rule).toContain(':is(h2,_h3,_h4)_code');
+    // 문단에는 이 규칙이 닿지 않는다 — 선택자가 제목 안으로 한정돼 있다.
+    expect(rule).not.toContain('_p_');
+  });
 });
