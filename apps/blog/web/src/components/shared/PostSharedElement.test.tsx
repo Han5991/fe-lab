@@ -24,6 +24,7 @@ import {
   NAV_TRANSITION,
   POST_OPEN_TRANSITION_TYPE,
   POST_SHARED,
+  POST_SHARED_RESCALED,
   POST_SHARED_SIDE,
   postSharedName,
   type PostSharedPart,
@@ -126,7 +127,6 @@ function sharedPart(container: HTMLElement, part: PostSharedPart) {
 
 const isCoverFrame = (el: Element | undefined) =>
   el?.tagName === 'DIV' && el.querySelector('img') !== null;
-const isImage = (el: Element | undefined) => el?.tagName === 'IMG';
 const isTitleHeading = (level: 1 | 3) => (el: Element | undefined) =>
   el?.tagName === `H${level}` && el.textContent.includes(summary.title);
 
@@ -204,38 +204,76 @@ describe('글 카드 → 글 상세 공유 요소', () => {
     },
   );
 
-  test('글 상세 — 히어로 이미지와 h1이 같은 이름을 달고 언제나 짝이 될 수 있다', () => {
-    const { container: hero } = render(
-      <PostHero
-        slug={detail.slug}
-        title={detail.title}
-        thumbnailUrl="/thumbs/react/component/toast.webp"
-      />,
-    );
-    const cover = sharedPart(hero, 'cover');
-    expect(isImage(cover.target)).toBe(true);
-    expect(cover.share).toBe(detailClass('cover'));
-
+  test('글 상세 — h1이 이름을 달고 언제나 짝이 될 수 있다', () => {
     const { container: header } = render(<PostHeader post={detail} />);
     const title = sharedPart(header, 'title');
     expect(isTitleHeading(1)(title.target)).toBe(true);
     expect(title.share).toBe(detailClass('title'));
   });
 
-  test('다이어그램 히어로와 히어로 없는 글은 커버 짝이 없다 — 카드에 없는 그림이다', () => {
+  // OG 카드(썸네일 없음)는 카드 커버와 같은 16:9 cover라 같은 배율의 그림이다 — 카드 커버와 짝이다.
+  test('상세 히어로의 OG 카드 커버는 카드 커버와 짝이다 — 같은 이름과 상세 쪽 클래스', () => {
+    const { container } = render(
+      <PostHero
+        slug={detail.slug}
+        thumbnail={{ src: `/og/${detail.slug}.png`, authored: false }}
+      />,
+    );
+    const cover = sharedPart(container, 'cover');
+    expect(isCoverFrame(cover.target)).toBe(true);
+    expect(cover.share).toBe(detailClass('cover'));
+  });
+
+  // 카드는 cover로 가운데를 잘라 보이고 자기 썸네일의 상세 틀은 contain으로 전체를 보여 두 스냅샷의 배율이
+  // 다르다 — 겹치면 전환 중 그림이 두 겹으로 보인다. 그래도 짝(같은 이름)이다: 이름이 없으면 커버가 페이지
+  // 스냅샷에 섞여 위에 쌓이는 제목 그룹이 그림 위를 지난다. 겹치지 않고 차례로 바꾸도록 `post-rescaled`를 달고,
+  // 짝은 들어오는 쪽의 클래스만 받으므로 카드와 상세가 같이 단다.
+  test('자기 썸네일 글의 커버는 짝이되 post-rescaled를 카드와 상세가 같이 단다', () => {
+    const src = '/thumbs/react/component/toast.webp';
+    const { container: thumb, unmount } = render(
+      <PostHero slug={detail.slug} thumbnail={{ src, authored: true }} />,
+    );
+    const hero = sharedPart(thumb, 'cover');
+    expect(isCoverFrame(hero.target)).toBe(true);
+    expect(hero.share).toBe(`${detailClass('cover')} ${POST_SHARED_RESCALED}`);
+    // 열린 글(상세가 마운트된 동안)은 카드가 type 없이 짝이 된다 — 카드는 상세가 떠난 뒤의 모양으로 본다.
+    unmount();
+
+    const { container: card } = render(
+      <PostCard
+        post={{ ...summary, thumbnail: './toast.png' }}
+        variant="grid"
+      />,
+    );
+    expect(sharedPart(card, 'cover').share).toEqual({
+      [POST_OPEN_TRANSITION_TYPE]: `${cardClass('cover')} ${POST_SHARED_RESCALED}`,
+      default: 'none',
+    });
+  });
+
+  test('OG 카드 글(썸네일 없음·/og/…을 적은 글)의 카드는 post-rescaled가 없다', () => {
+    for (const thumbnail of [undefined, `/og/${SLUG}.png`]) {
+      const { container } = render(
+        <PostCard post={{ ...summary, thumbnail }} variant="grid" />,
+      );
+      expect(sharedPart(container, 'cover').share).toEqual({
+        [POST_OPEN_TRANSITION_TYPE]: cardClass('cover'),
+        default: 'none',
+      });
+    }
+  });
+
+  test('다이어그램·히어로 없음은 공유 요소가 없다', () => {
     const { container: diagram } = render(
       <PostHero
         slug={detail.slug}
-        title={detail.title}
         hero={DIAGRAM_NAMES[0]}
-        thumbnailUrl="/thumbs/react/component/toast.webp"
+        thumbnail={{ src: `/og/${detail.slug}.png`, authored: false }}
       />,
     );
     expect(sharedElements(diagram)).toEqual([]);
 
-    const { container: none } = render(
-      <PostHero slug={detail.slug} title={detail.title} />,
-    );
+    const { container: none } = render(<PostHero slug={detail.slug} />);
     expect(sharedElements(none)).toEqual([]);
   });
 });

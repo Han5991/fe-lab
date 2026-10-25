@@ -2,7 +2,11 @@ import { OG_DEFAULT_IMAGE } from '@/content.values.mts';
 import { css, cx, sva } from '@blog/styled-system/css';
 import type { RecipeVariant } from '@blog/styled-system/css';
 import type { PostSummary } from '@blog/content/client';
-import { postPath, resolveThumbnailSrc } from '@blog/content/client';
+import {
+  hasAuthoredThumbnail,
+  postPath,
+  resolveThumbnailSrc,
+} from '@blog/content/client';
 
 import { PostCardShared } from '@/src/components/shared/PostSharedElement';
 import { TransitionLink } from '@/src/components/shared/TransitionLink';
@@ -108,7 +112,11 @@ export const PostCard = ({
     <article className={cx(cardRoot, classes.root)}>
       {/* 커버는 틀(라운드·hairline)째 글 상세 히어로로 이어진다 — 이름을 img에 달면 틀의 라운드가
           스냅샷에서 빠져 첫 프레임에 모서리가 각진다. */}
-      <PostCardShared part="cover" slug={post.slug}>
+      <PostCardShared
+        part="cover"
+        slug={post.slug}
+        rescaled={hasAuthoredThumbnail(post)}
+      >
         <div className={classes.cover}>
           <img
             // posts/ 안의 png·jpg는 빌드가 만든 webp, 썸네일이 없는 글은 생성 OG 카드(/og/{slug}.png).

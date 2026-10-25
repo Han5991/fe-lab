@@ -145,8 +145,9 @@ export const navTransitionType = (
  * 글 카드에서 글 상세로 이어지는 **공유 요소**(shared element)의 짝. 값은 그 짝의
  * `view-transition-class`(React `<ViewTransition share>`)이자 이름의 접두사다.
  *
- * - `cover` — 카드 커버 ↔ 글 상세 히어로 이미지(`PostHero`의 썸네일. 다이어그램 히어로나
- *   히어로가 없는 글은 짝이 없어 페이드만 한다)
+ * - `cover` — 카드 커버 ↔ 글 상세 히어로(`PostHero`). **OG 카드 글만** 겹쳐 모핑한다 — 둘 다 16:9 cover라 같은 배율이다.
+ *   자기 썸네일 글(상세는 contain)은 카드의 cover 크롭과 배율이 달라 겹치면 그림이 두 겹이 되므로 같은 이름의 짝이되
+ *   `POST_SHARED_RESCALED`가 붙어 차례로 바뀐다. 다이어그램 히어로·히어로 없는 글은 짝이 없다
  * - `title` — 카드 제목 ↔ 글 상세 h1(`PostHeader`)
  */
 export const POST_SHARED = {
@@ -168,6 +169,15 @@ export const POST_SHARED_SIDE = {
 } as const;
 
 export type PostSharedSide = keyof typeof POST_SHARED_SIDE;
+
+/**
+ * 커버 짝의 세 번째 `view-transition-class` — **두 스냅샷의 배율이 다른 짝**(자기 썸네일 글: 카드는 cover로
+ * 잘라 보이고 상세 히어로는 contain). 겹치면 그림이 두 겹이라 둘을 겹치지 않고 차례로 바꾼다(나가는 쪽이
+ * 먼저 걷히고 들어오는 쪽이 그 뒤에 나타난다 — `panda.config.ts` globalCss). 그래도 **짝(같은 이름)으로
+ * 두는 이유는 쌓는 순서다** — 이름이 없으면 커버가 페이지 스냅샷에 섞여, 그 위에 쌓이는 제목 그룹이 그림 위를
+ * 지난다. 짝은 들어오는 쪽의 클래스만 받으므로 카드와 상세가 둘 다 이 클래스를 달아야 한다.
+ */
+export const POST_SHARED_RESCALED = 'post-rescaled';
 
 /**
  * 글을 여는 링크 이동의 transition type(Next `<Link transitionTypes>`) — 글 카드·목록 행의 제목

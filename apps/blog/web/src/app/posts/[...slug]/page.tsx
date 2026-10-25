@@ -5,7 +5,11 @@ import {
   getAdjacentPosts,
   getSeriesAdjacentPosts,
 } from '@/src/content';
-import { isPostVisible, resolveThumbnailSrc } from '@blog/content/client';
+import {
+  hasAuthoredThumbnail,
+  isPostVisible,
+  resolveThumbnailSrc,
+} from '@blog/content/client';
 import { notFound } from 'next/navigation';
 import { css, cx } from '@blog/styled-system/css';
 import { PreviewBanner } from '@/src/components/preview/PreviewBanner';
@@ -89,13 +93,14 @@ export default async function PostPage({ params }: Props) {
       }
     : null;
 
-  // PostHero가 쓰는 값 — 썸네일이 없는 글은 undefined로 둬서 hero 슬롯에서 빠진다.
-  // 화면에 띄우는 주소라 글 카드 커버와 같은 resolveThumbnailSrc(최적화본 webp)다 — 카드에서
-  // 넘어오면 이미 받은 이미지라 공유 요소 전환이 이미지를 기다리지 않는다. OG·JSON-LD는 PNG
-  // 원본(resolveAbsoluteThumbnailUrl)을 그대로 쓴다.
-  const thumbnailUrl = post.thumbnail
-    ? resolveThumbnailSrc(post, OG_DEFAULT_IMAGE)
-    : undefined;
+  // PostHero가 쓰는 값 — 모든 글이 가진다(썸네일이 없으면 OG 카드가 그 자리다). 자기 썸네일인지(`authored`)에
+  // 따라 틀을 채우는 방식과 카드 커버와의 짝이 갈린다(PostHero) — 판정은 여기 한 곳이다. 화면에 띄우는
+  // 주소라 글 카드 커버와 같은 resolveThumbnailSrc(최적화본 webp)다 — 카드에서 넘어오면 이미 받은
+  // 이미지라 공유 요소 전환이 이미지를 기다리지 않는다. OG·JSON-LD는 PNG 원본(resolveAbsoluteThumbnailUrl)을 쓴다.
+  const thumbnail = {
+    src: resolveThumbnailSrc(post, OG_DEFAULT_IMAGE),
+    authored: hasAuthoredThumbnail(post),
+  };
   const jsonLd = buildPostJsonLd(post, slug);
   const breadcrumbJsonLd = buildBreadcrumbJsonLd(post, slug);
 
@@ -151,14 +156,9 @@ export default async function PostPage({ params }: Props) {
               seriesName={seriesAdj.seriesName ?? undefined}
             />
 
-            {/* hero는 frontmatter 값 그대로다 — thumbnailUrl과 달리 경로 해석이
+            {/* hero는 frontmatter 값 그대로다 — thumbnail과 달리 경로 해석이
                 없어서 별도 계산을 거칠 이유가 없다. */}
-            <PostHero
-              slug={post.slug}
-              title={post.title}
-              hero={post.hero}
-              thumbnailUrl={thumbnailUrl}
-            />
+            <PostHero slug={post.slug} hero={post.hero} thumbnail={thumbnail} />
 
             <PostBody content={post.content} relativeDir={post.relativeDir} />
 
