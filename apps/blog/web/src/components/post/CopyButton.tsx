@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Check, Clipboard } from 'lucide-react';
 import { css } from '@blog/styled-system/css';
 import { pressable } from '@/src/components/pressable';
@@ -13,12 +13,17 @@ import { CODE_ACCENT, CODE_META } from './codeChrome';
 // 스택 포함) 클라이언트 번들로 끌어온다.
 export function CopyButton({ content }: { content: string }) {
   const [isCopied, setIsCopied] = useState(false);
+  // "복사됨"을 거두는 타이머. 다시 누르면 앞 타이머가 새 표시를 일찍 거두고, 언마운트 뒤에
+  // 터지면 사라진 컴포넌트의 상태를 바꾼다 — 둘 다 이 하나로 막는다.
+  const timerRef = useRef<number | undefined>(undefined);
+  useEffect(() => () => window.clearTimeout(timerRef.current), []);
 
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(content);
       setIsCopied(true);
-      setTimeout(() => setIsCopied(false), 2000);
+      window.clearTimeout(timerRef.current);
+      timerRef.current = window.setTimeout(() => setIsCopied(false), 2000);
     } catch (err) {
       console.error('Copy failed', err);
     }
