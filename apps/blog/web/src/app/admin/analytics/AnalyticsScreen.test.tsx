@@ -20,18 +20,18 @@ const {
   nav,
   wide,
   getAdminPostsIndex,
-  getAllPostStats,
+  getPostsOverview,
   getPostHourlyDistribution,
 } = vi.hoisted(() => ({
   nav: { pathname: '/admin/analytics/' },
   wide: { matches: true },
   getAdminPostsIndex: vi.fn<() => Promise<unknown[]>>(),
-  getAllPostStats:
-    vi.fn<
-      () => Promise<
-        { slug: string; total_views: number; today_views: number }[]
-      >
-    >(),
+  getPostsOverview: vi.fn<
+    () => Promise<{
+      stats: { slug: string; total_views: number; today_views: number }[];
+      trends: never[];
+    }>
+  >(),
   getPostHourlyDistribution: vi.fn(() => Promise.resolve([])),
 }));
 
@@ -45,8 +45,7 @@ vi.mock('@/src/domain/analytics/admin', async () => {
   return {
     analyticsService: new AnalyticsService(),
     getAdminPostsIndex,
-    getAllPostStats,
-    getAllPostsTrends: () => Promise.resolve([]),
+    getPostsOverview,
     getPostHourlyDistribution,
     getPostDowDistribution: () => Promise.resolve([]),
   };
@@ -90,10 +89,13 @@ beforeEach(() => {
     post('a', '글 A', '2026-04-01', ['react']),
     post('b', '글 B', '2026-05-01', []),
   ]);
-  getAllPostStats.mockResolvedValue([
-    { slug: 'a', total_views: 7, today_views: 0 },
-    { slug: 'b', total_views: 30, today_views: 2 },
-  ]);
+  getPostsOverview.mockResolvedValue({
+    stats: [
+      { slug: 'a', total_views: 7, today_views: 0 },
+      { slug: 'b', total_views: 30, today_views: 2 },
+    ],
+    trends: [],
+  });
 });
 
 afterEach(() => {
@@ -126,7 +128,7 @@ describe('AnalyticsScreen — 목록', () => {
   test('새로고침이 실패하면 실패를 알리고 업데이트 시각을 바꾸지 않는다', async () => {
     renderScreen();
 
-    // 마운트 직후의 재요청(refetchOnMount: 'always')까지 끝나길 기다린다.
+    // 첫 요청이 끝나 새로고침 버튼이 켜지길 기다린다.
     const refresh = await screen.findByRole('button', { name: '새로고침' });
     await waitFor(() => expect(refresh).toBeEnabled());
     const before = screen.getByText(/^업데이트:/).textContent;
@@ -134,7 +136,7 @@ describe('AnalyticsScreen — 목록', () => {
     // 시계(Date)만 한 시간 옮긴다 — "지금"을 업데이트 시각으로 적는 구현이면 표시가 바뀐다.
     vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(Date.now() + 60 * 60 * 1000);
-    getAllPostStats.mockRejectedValueOnce(new Error('Edge Function 500'));
+    getPostsOverview.mockRejectedValueOnce(new Error('Edge Function 500'));
     fireEvent.click(screen.getByRole('button', { name: '새로고침' }));
 
     expect(await screen.findByRole('status')).toHaveTextContent(
@@ -334,7 +336,7 @@ describe('AnalyticsScreen — 고른 글', () => {
   test('패널은 글 태그를 대시보드 데이터와 함께 기다린다', async () => {
     nav.pathname = '/admin/analytics/a/';
     window.history.replaceState(null, '', nav.pathname);
-    getAllPostStats.mockReturnValueOnce(new Promise(() => undefined));
+    getPostsOverview.mockReturnValueOnce(new Promise(() => undefined));
     const client = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     });

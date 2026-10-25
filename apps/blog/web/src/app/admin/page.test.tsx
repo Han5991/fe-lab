@@ -35,11 +35,11 @@ vi.mock('@/src/domain/analytics/admin', async () => {
         // 먼 미래 날짜라 테스트가 언제 돌아도 공개 전이다.
         row('future-post', 'scheduled', '2999-01-01'),
       ]),
-    getAllPostStats: (slugs: readonly string[]) =>
-      Promise.resolve(
-        slugs.map(slug => ({ slug, total_views: 5, today_views: 0 })),
-      ),
-    getAllPostsTrends: () => Promise.resolve([]),
+    getPostsOverview: (slugs: readonly string[]) =>
+      Promise.resolve({
+        stats: slugs.map(slug => ({ slug, total_views: 5, today_views: 0 })),
+        trends: [],
+      }),
   };
 });
 

@@ -1,8 +1,7 @@
 import { queryOptions, useSuspenseQuery } from '@tanstack/react-query';
 import {
   getAdminPostsIndex,
-  getAllPostStats,
-  getAllPostsTrends,
+  getPostsOverview,
 } from '@/src/domain/analytics/admin';
 import type { PostStatDetail, TrendPoint } from '@/src/domain/analytics';
 import { ADMIN_QUERY_PREFIX } from './adminCache';
@@ -20,17 +19,18 @@ export const adminPostsIndexQuery = queryOptions({
   retry: false,
 });
 
-/** 대시보드 데이터 — 글 인덱스의 글마다 누적 조회수와 일별 추이를 붙인다. 목록·지표·글 통계 패널이 함께 읽는다. */
+/**
+ * 대시보드 데이터 — 글 인덱스의 글마다 누적 조회수와 일별 추이를 붙인다. 대시보드·분석 두 화면(목록·지표·글 통계 패널)이
+ * 이 쿼리 하나를 읽고, 각 훅(`useAnalyticsOverview` 등)이 거기서 자기 몫을 파생한다 — Edge Function 요청은
+ * 구독이 몇이든 한 번이다(`posts_overview`).
+ */
 export const adminDashboardDataQuery = queryOptions({
   queryKey: [...ADMIN_QUERY_PREFIX, 'dashboard-data'],
   queryFn: async ({ client }): Promise<PostStatDetail[]> => {
-    // 조회수 두 읽기는 인덱스의 slug로 서버에서 거른다(가짜 slug가 1000행 cap을 채우지 않게).
+    // 조회수 읽기는 인덱스의 slug로 서버에서 거른다(가짜 slug가 1000행 cap을 채우지 않게).
     const metadata = await client.ensureQueryData(adminPostsIndexQuery);
     const slugs = metadata.map(post => post.slug);
-    const [stats, trends] = await Promise.all([
-      getAllPostStats(slugs),
-      getAllPostsTrends(slugs),
-    ]);
+    const { stats, trends } = await getPostsOverview(slugs);
 
     // 같은 (slug, 날짜)는 나중 값 하나만 남긴다 — 페이지 경계 행이 두 번 와도 두 번
     // 합산하지 않게(서버도 거르지만 함수 배포는 수동이다).

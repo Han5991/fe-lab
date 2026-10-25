@@ -13,6 +13,7 @@
 
 import type { PostStatus } from '@blog/content/client';
 import type { TimezoneConfig } from '@blog/content';
+import type { PostTrendRow } from '../../lib/platform/adminActions';
 import type { Database, Tables } from '../../lib/platform/database.types';
 
 type DbFunctions = Database['public']['Functions'];
@@ -33,9 +34,12 @@ export interface TopPostRow extends Pick<PostViewsRow, 'slug'> {
 /** `get_all_post_stats` RPC 한 행 — 글별 누적·오늘 조회수. */
 export type PostStatsRow = DbFunctions['get_all_post_stats']['Returns'][number];
 
-/** `get_all_posts_trends` RPC 한 행 — 글별·일별(KST) 조회수. */
-export type PostTrendRow =
-  DbFunctions['get_all_posts_trends']['Returns'][number];
+/**
+ * `get_posts_trends` RPC가 내는 json 배열의 한 행 — 글별·일별(KST) 조회수. 이 RPC는 `Json`을
+ * 돌려줘 생성 타입이 행 모양을 말하지 못한다 — 행 정의와 좁히는 가드는 Edge Function과 공유하는
+ * `adminActions.ts`에 있다.
+ */
+export type { PostTrendRow } from '../../lib/platform/adminActions';
 
 /** 글 하나의 일별 추이 한 점 — `PostTrendRow`에서 slug를 뗀 것. */
 export type TrendPoint = Pick<PostTrendRow, 'view_date' | 'view_count'>;
