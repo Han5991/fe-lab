@@ -7,43 +7,38 @@ import { Suspense, type ReactNode } from 'react';
 import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-const { getAdminPostsIndex, getAllPostStats, getAllPostsTrends } = vi.hoisted(
-  () => ({
-    getAdminPostsIndex: vi.fn(() =>
-      Promise.resolve([
-        {
-          slug: 'a',
-          title: 'A',
-          date: '2026-04-01',
-          tags: ['x'],
-          status: 'published',
-          scheduledDate: null,
-        },
-      ]),
-    ),
-    getAllPostStats: vi.fn((slugs: readonly string[]) =>
-      Promise.resolve(
-        slugs.map(slug => ({ slug, total_views: 10, today_views: 1 })),
-      ),
-    ),
-    getAllPostsTrends: vi.fn((_slugs: readonly string[]) =>
-      Promise.resolve([
+const { getAdminPostsIndex, getPostsOverview } = vi.hoisted(() => ({
+  getAdminPostsIndex: vi.fn(() =>
+    Promise.resolve([
+      {
+        slug: 'a',
+        title: 'A',
+        date: '2026-04-01',
+        tags: ['x'],
+        status: 'published',
+        scheduledDate: null,
+      },
+    ]),
+  ),
+  getPostsOverview: vi.fn((slugs: readonly string[]) =>
+    Promise.resolve({
+      stats: slugs.map(slug => ({ slug, total_views: 10, today_views: 1 })),
+      trends: [
         { slug: 'a', view_date: '2026-05-01', view_count: 3 },
         // 페이지 경계에서 밀려 한 번 더 온 행 — 그 사이 조회가 늘었다.
         { slug: 'a', view_date: '2026-05-01', view_count: 4 },
         { slug: 'a', view_date: '2026-05-02', view_count: 2 },
-      ]),
-    ),
-  }),
-);
+      ],
+    }),
+  ),
+}));
 
 vi.mock('@/src/domain/analytics/admin', () => ({
   getAdminPostsIndex,
-  getAllPostStats,
-  getAllPostsTrends,
+  getPostsOverview,
 }));
 
-import { useAdminTagDistribution } from '@/src/app/admin/analytics/useAdminTagDistribution';
+import { useAdminTagDistribution } from './useAdminTagDistribution';
 import { setAdminQueryDefaults } from './adminQueryDefaults';
 import { useAdminDashboardData } from './useAdminViews';
 
@@ -60,8 +55,7 @@ describe('useAdminDashboardData', () => {
     const { result } = renderHook(() => useAdminDashboardData(), { wrapper });
 
     await waitFor(() => expect(result.current).not.toBeNull());
-    expect(getAllPostStats).toHaveBeenCalledWith(['a']);
-    expect(getAllPostsTrends).toHaveBeenCalledWith(['a']);
+    expect(getPostsOverview).toHaveBeenCalledWith(['a']);
   });
 
   test('같은 (slug, 날짜) 행이 두 번 와도 그날을 한 번만 싣는다 — 나중 값으로', async () => {
@@ -75,8 +69,10 @@ describe('useAdminDashboardData', () => {
   });
 
   // 인덱스는 배포 때만 바뀐다 — 마운트마다 받으면 조회수 읽기가 매번 그 왕복을 기다린다.
-  test('인덱스는 대시보드·태그 분포가 한 번 받아 나눠 쓰고, 다시 마운트해도 다시 받지 않는다', async () => {
+  // 조회수(통계·추이)는 Edge Function 요청 하나(`posts_overview`)이고, 30초 안의 재마운트는 다시 받지 않는다.
+  test('인덱스·조회수는 구독이 나눠 쓰는 한 번의 요청이고, 다시 마운트해도 다시 받지 않는다', async () => {
     getAdminPostsIndex.mockClear();
+    getPostsOverview.mockClear();
     const client = new QueryClient();
     setAdminQueryDefaults(client);
     const shared = ({ children }: { children: ReactNode }) => (
@@ -92,7 +88,26 @@ describe('useAdminDashboardData', () => {
     const again = renderHook(useBoth, { wrapper: shared });
     await waitFor(() => expect(again.result.current).not.toBeNull());
 
-    expect(getAllPostStats.mock.calls.length).toBeGreaterThan(1);
+    expect(getPostsOverview).toHaveBeenCalledOnce();
     expect(getAdminPostsIndex).toHaveBeenCalledOnce();
+  });
+
+  test('같은 화면에서 구독이 둘 붙어도 조회수 요청은 하나다', async () => {
+    getPostsOverview.mockClear();
+    const client = new QueryClient();
+    setAdminQueryDefaults(client);
+    const shared = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={client}>
+        <Suspense fallback={null}>{children}</Suspense>
+      </QueryClientProvider>
+    );
+
+    const { result } = renderHook(
+      () => [useAdminDashboardData(), useAdminDashboardData()],
+      { wrapper: shared },
+    );
+    await waitFor(() => expect(result.current).not.toBeNull());
+
+    expect(getPostsOverview).toHaveBeenCalledOnce();
   });
 });

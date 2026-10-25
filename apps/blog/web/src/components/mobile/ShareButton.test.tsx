@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { ShareButton } from './ShareButton';
 
 let writeText: ReturnType<typeof vi.fn>;
@@ -38,8 +38,12 @@ describe('ShareButton', () => {
 
     share();
 
-    expect(await screen.findByRole('status')).toHaveTextContent(
-      '링크를 복사했습니다',
+    // 상태 영역은 처음부터 (빈 채로) 있다 — findByRole은 그 빈 요소에서 바로 끝나므로, 문구가
+    // 들어올 때까지 기다리는 것은 단언 자체여야 한다(복사가 늦게 끝나면 빈 문구를 단언했다).
+    await waitFor(() =>
+      expect(screen.getByRole('status')).toHaveTextContent(
+        '링크를 복사했습니다',
+      ),
     );
     expect(writeText).toHaveBeenCalledWith(window.location.href);
   });

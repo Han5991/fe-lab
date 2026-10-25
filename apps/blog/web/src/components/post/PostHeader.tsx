@@ -1,105 +1,48 @@
-import Link from 'next/link';
 import { css } from '@blog/styled-system/css';
 import type { PostData } from '@blog/content/client';
-import { archivePath } from '@blog/content/client';
-import { fmtDate } from '@blog/content/client';
+import { PostDetailShared } from '@/src/components/shared/PostSharedElement';
+import { Breadcrumbs } from './Breadcrumbs';
+import { Dateline } from './Dateline';
 
 interface PostHeaderProps {
-  post: PostData;
-  /** 시리즈 내 위치 — 있다면 `시리즈 · {표시명} 3/3` 배지로 표시 */
-  seriesIndex?:
-    { current: number; total: number; displayName: string } | undefined;
+  post: Pick<
+    PostData,
+    'slug' | 'title' | 'excerpt' | 'date' | 'readMin' | 'series'
+  >;
+  /** 시리즈 글이면 그 표시명 — 있을 때만 빵부스러기를 그린다. */
+  seriesName?: string | undefined;
 }
 
-// 메타 줄(mono 12px) 안에서 태그를 해시태그로 인라인시킨다. 별도 pill 그룹을
-// 없앴을 뿐 필터 링크는 그대로라, /posts/?tag=... 아카이브 필터가 계속 산다.
-const tagLinkStyle = css({
-  color: 'ink.500',
-  textDecorationLine: 'none',
-  transition: '[color 0.15s]',
-  _hover: { color: 'accent.600' },
-});
-
-export const PostHeader = ({ post, seriesIndex }: PostHeaderProps) => {
-  const tags = post.tags?.slice(0, 4) ?? [];
-
-  return (
-    <header>
-      {seriesIndex && (
-        <span
-          className={css({
-            display: 'inline-block',
-            // 안에 `3/3` 같은 숫자가 있어도 sans다(레퍼런스 `.badge` 기준).
-            // 홈·/series의 같은 배지와 맞춘다.
-            fontFamily: 'sans',
-            fontSize: '[12px]',
-            // 배지는 accent.50 배경 위 작은 글씨라 제목용 accent.900을 쓰면
-            // 배경과 붙어 답답해진다. 링크와 같은 accent.600을 유지한다.
-            color: 'accent.600',
-            bg: 'accent.50',
-            rounded: 'md',
-            px: '[9px]',
-            py: '[2px]',
-          })}
-        >
-          시리즈 · {seriesIndex.displayName} {seriesIndex.current}/
-          {seriesIndex.total}
-        </span>
-      )}
+/**
+ * 글 머리 — `[빵부스러기] 제목(h1) → dek → 날짜 줄 → 구분선`. 블록 사이는 16이다(목업).
+ *
+ * 제목은 display1(42/52)이지만 md(768px) 미만에서는 display3(29/36)으로 낮춘다 — 375px에서는 한 줄에
+ * 한글 여덟 자 안팎이라 긴 제목이 네댓 줄로 쌓인다(목업은 폭을 정의하지 않았다).
+ * dek는 frontmatter `excerpt`다. 태그와 공유는 본문 아래 `TagBadges` 줄로 갔다.
+ */
+export const PostHeader = ({ post, seriesName }: PostHeaderProps) => (
+  <header className={css({ display: 'flex', flexDir: 'column', gap: '4' })}>
+    {post.series && seriesName && (
+      <Breadcrumbs series={{ id: post.series, name: seriesName }} />
+    )}
+    {/* 글 카드·목록 행의 제목이 이 h1로 이어진다(공유 요소). */}
+    <PostDetailShared part="title" slug={post.slug}>
       <h1
         className={css({
-          fontFamily: 'sans',
-          // 레퍼런스(화면 2)의 22px을 그대로 쓴다. 목업 콘텐츠 폭(640px)과
-          // 실제 본문 칼럼(railText 680px)이 거의 같아 반응형 분기가 필요 없다.
-          fontSize: '[22px]',
-          fontWeight: 'bold',
-          lineHeight: 'headerSm',
-          // 글 제목은 액센트. 바로 아래 메타 줄(ink.500)·excerpt(ink.600)와
-          // 본문 h3·h4는 무채색이라, 색이 제목 계열의 표식이 된다.
-          color: 'accent.900',
-          mt: '[12px]',
-          mb: '[6px]',
+          textStyle: { base: 'display3', md: 'display1' },
+          // 글 제목은 본문 잉크다. 바로 아래 dek(ink.700)와는 크기·굵기·명도로 갈린다.
+          color: 'ink.950',
         })}
       >
         {post.title}
       </h1>
-      <p
-        className={css({
-          fontFamily: 'mono',
-          fontSize: '[12px]',
-          color: 'ink.500',
-          fontVariantNumeric: 'tabular-nums',
-          // excerpt가 뒤따르면 메타는 제목 쪽에 붙여두고, 히어로 앞 여백은
-          // excerpt가 대신 만든다(레퍼런스의 리드 문단 mb 22px과 같은 리듬).
-          mb: post.excerpt ? '[10px]' : '[22px]',
-        })}
-      >
-        {post.date && `${fmtDate(post.date)} · `}
-        {post.readMin} min
-        {/* 레퍼런스 표기: `2025-03-31 · 14 min · #ecs #docker` — 태그 묶음
-            앞에만 가운뎃점을 두고 태그끼리는 공백으로 잇는다. */}
-        {tags.length > 0 && ' · '}
-        {tags.map((t, i) => (
-          <span key={t}>
-            {i > 0 && ' '}
-            <Link href={archivePath({ tag: t })} className={tagLinkStyle}>
-              #{t}
-            </Link>
-          </span>
-        ))}
+    </PostDetailShared>
+    {post.excerpt && (
+      <p className={css({ textStyle: 'large', color: 'ink.700' })}>
+        {post.excerpt}
       </p>
-      {post.excerpt && (
-        <p
-          className={css({
-            fontSize: '[14px]',
-            color: 'ink.600',
-            lineHeight: 'comfortable',
-            mb: '[22px]',
-          })}
-        >
-          {post.excerpt}
-        </p>
-      )}
-    </header>
-  );
-};
+    )}
+    <Dateline date={post.date} readMin={post.readMin} />
+    <hr className={css({ m: '0', borderColor: 'ink.border' })} />
+  </header>
+);

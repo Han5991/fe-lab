@@ -1,13 +1,32 @@
 'use client';
 
 import { Suspense } from 'react';
+import Link from 'next/link';
 import { authRepository } from '@/src/domain/auth';
-import { adminLoginRedirectUrl } from '@/src/shared/routes';
+import { adminLoginRedirectUrl, HOME_PATH } from '@/src/shared/routes';
 import { css, cx } from '@blog/styled-system/css';
-import { railGutter } from '@/src/components/Rail';
-import { LogIn } from 'lucide-react';
+import { railColumn, railGutter } from '@/src/components/Rail';
+import { actionButton } from '@/src/components/actionButton';
+import { adminCard, pillBadge } from '@/src/components/admin/adminStyles';
+import { WORDMARK } from '@/src/components/wordmark';
+import { AlertCircle, LogIn } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { useMutation } from '@tanstack/react-query';
+
+// 오류 배너 — Astryx Banner error(위험 틴트 면, 안쪽 12/16, 아이콘 20, 보더·그림자 없음). 카드 안에
+// 든 상자라 라운드는 한 단계 아래인 element다(blog-design-system 스킬 형태 절).
+const banner = css({
+  display: 'flex',
+  alignItems: 'flex-start',
+  gap: '2',
+  py: '3',
+  px: '4',
+  rounded: 'element',
+  bg: 'danger.bg',
+  color: 'ink.950',
+});
+
+const bannerIcon = css({ flexShrink: '0', color: 'danger.text' });
 
 function LoginForm() {
   const searchParams = useSearchParams();
@@ -35,128 +54,137 @@ function LoginForm() {
   const oauthErrorDescription = searchParams.get('error_description');
 
   return (
-    <div
+    // 가운데 정렬한 400 묶음(Astryx login 템플릿) — 워드마크·배지, 카드, 블로그로 돌아가는 링크.
+    // 거터가 없으면 400px보다 좁은 화면에서 카드 테두리가 화면 끝에 붙는다(404와 같은 대우).
+    <main
       className={cx(
+        railGutter,
         css({
+          flex: '1',
           display: 'flex',
-          flexDir: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          minH: '[100vh]',
-          bg: 'ink.50',
+          py: '6',
         }),
-        // 거터가 없으면 400px보다 좁은 화면에서 카드 테두리가 화면 끝에
-        // 붙는다. 404(railForm)와 같은 대우를 해준다.
-        railGutter,
       )}
     >
+      {/* 등장 — 묶음이 98%에서 제 크기로 서며 나타난다(medium·standard). 서버가 그린 화면이라 하드
+          로드마다 돈다: 로그인 화면은 들어오는 장면 자체가 이 화면의 전부라 일부러 그렇게 둔다(공개
+          페이지의 "서버가 그린 요소에는 등장 없음"과 다른 자리 — blog-design-system 스킬 admin 절).
+          버튼 누름·비활성은 `actionButton`이 펼친 `pressButton`이 맡는다. */}
       <div
-        className={css({
-          p: '8',
-          rounded: 'card',
-          borderWidth: 'hairline',
-          borderColor: 'ink.border',
-          bg: 'ink.25',
-          textAlign: 'center',
-          maxW: 'railForm',
-          w: 'full',
-        })}
+        className={cx(
+          railColumn({ width: 'form' }),
+          css({
+            w: 'full',
+            display: 'flex',
+            flexDir: 'column',
+            gap: '4',
+            animationName: 'admin-card-in',
+            animationDuration: 'medium',
+            animationTimingFunction: 'standard',
+            animationFillMode: 'both',
+          }),
+        )}
       >
-        <p
-          className={css({
-            fontSize: 'xs',
-            fontWeight: 'bold',
-            letterSpacing: 'widest',
-            textTransform: 'uppercase',
-            color: 'accent.600',
-            mb: '3',
-          })}
-        >
-          Admin
-        </p>
-        <h1
-          className={css({
-            fontSize: 'xl',
-            fontWeight: 'bold',
-            mb: '6',
-            color: 'ink.950',
-          })}
-        >
-          FE Lab 관리자
-        </h1>
-
-        {error === 'unauthorized' && (
-          <div
-            className={css({
-              color: 'danger.text',
-              fontSize: 'sm',
-              mb: '4',
-              p: '3',
-              bg: 'danger.bg',
-              rounded: 'control',
-              borderWidth: 'hairline',
-              borderColor: 'danger.border',
-            })}
-          >
-            등록되지 않은 이메일입니다. 지정된 관리자 계정으로 로그인해주세요.
-          </div>
-        )}
-
-        {(error === 'oauth' || signInError) && (
-          <div
-            role="alert"
-            className={css({
-              color: 'danger.text',
-              fontSize: 'sm',
-              mb: '4',
-              p: '3',
-              bg: 'danger.bg',
-              rounded: 'control',
-              borderWidth: 'hairline',
-              borderColor: 'danger.border',
-              display: 'flex',
-              flexDir: 'column',
-              gap: '1',
-            })}
-          >
-            <span>Google 로그인에 실패했습니다.</span>
-            {(signInError?.message ?? oauthErrorDescription) && (
-              <span
-                className={css({ fontSize: 'xs', wordBreak: 'break-word' })}
-              >
-                {signInError?.message ?? oauthErrorDescription}
-              </span>
-            )}
-          </div>
-        )}
-
-        <button
-          onClick={() => handleGoogleLogin()}
-          disabled={isLoading}
+        <div
           className={css({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             gap: '2',
-            w: 'full',
-            py: '3',
-            px: '4',
-            bg: 'btn.accent',
-            color: 'white',
-            rounded: 'control',
-            cursor: isLoading ? 'not-allowed' : 'pointer',
-            opacity: isLoading ? 0.7 : 1,
-            fontWeight: 'semibold',
-            fontSize: 'sm',
-            transition: '[opacity 0.15s]',
-            _hover: { opacity: '0.85' },
           })}
         >
-          <LogIn size={18} />
-          {isLoading ? '로그인 중...' : 'Google 계정으로 계속하기'}
-        </button>
+          <span
+            className={css({
+              fontFamily: 'mono',
+              textStyle: 'h3',
+              fontWeight: 'bold',
+            })}
+          >
+            {WORDMARK}
+          </span>
+          <span className={css(pillBadge)}>Admin</span>
+        </div>
+
+        <section
+          className={css(adminCard, {
+            p: '8',
+            display: 'flex',
+            flexDir: 'column',
+            gap: '4',
+          })}
+        >
+          <h1 className={css({ textStyle: 'h2', textAlign: 'center' })}>
+            FE Lab 관리자
+          </h1>
+
+          {error === 'unauthorized' && (
+            <div className={banner}>
+              <AlertCircle size={20} aria-hidden className={bannerIcon} />
+              <p className={css({ textStyle: 'body' })}>
+                등록되지 않은 이메일입니다. 지정된 관리자 계정으로
+                로그인해주세요.
+              </p>
+            </div>
+          )}
+
+          {(error === 'oauth' || signInError) && (
+            <div role="alert" className={banner}>
+              <AlertCircle size={20} aria-hidden className={bannerIcon} />
+              <div
+                className={css({
+                  display: 'flex',
+                  flexDir: 'column',
+                  minW: '0',
+                })}
+              >
+                <p
+                  className={css({ textStyle: 'body', fontWeight: 'semibold' })}
+                >
+                  Google 로그인에 실패했습니다.
+                </p>
+                {(signInError?.message ?? oauthErrorDescription) && (
+                  <p
+                    className={css({
+                      textStyle: 'supporting',
+                      color: 'ink.700',
+                      wordBreak: 'break-word',
+                    })}
+                  >
+                    {signInError?.message ?? oauthErrorDescription}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+
+          <button
+            type="button"
+            onClick={() => handleGoogleLogin()}
+            disabled={isLoading}
+            className={css(actionButton.raw({ tone: 'solid', size: 'lg' }), {
+              w: 'full',
+            })}
+          >
+            <LogIn size={20} aria-hidden />
+            {isLoading ? '로그인 중...' : 'Google 계정으로 계속하기'}
+          </button>
+        </section>
+
+        <Link
+          href={HOME_PATH}
+          className={css({
+            alignSelf: 'center',
+            textStyle: 'supporting',
+            color: 'ink.700',
+            _hover: { color: 'ink.950', textDecorationLine: 'underline' },
+          })}
+        >
+          ← 블로그로 돌아가기
+        </Link>
       </div>
-    </div>
+    </main>
   );
 }
 

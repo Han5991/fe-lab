@@ -76,11 +76,19 @@ test('buildPublicSearchIndex: 필수 필드 모두 포함 — 시리즈 표시�
   });
 });
 
-test('buildPublicSearchIndex: 시리즈 메타에 title이 없으면 seriesTitle은 null', () => {
+test('buildPublicSearchIndex: 시리즈 메타에 title이 없으면 seriesTitle은 id(표시명 규칙)', () => {
   const idx = buildPublicSearchIndex([makePost({ series: 's' })], id => ({
     name: id,
   }));
-  expect(idx[0].seriesTitle).toBe(null);
+  expect(idx[0].seriesTitle).toBe('s');
+});
+
+test('buildPublicSearchIndex: 시리즈 메타 자체가 없어도 seriesTitle은 id', () => {
+  const idx = buildPublicSearchIndex(
+    [makePost({ series: 'lab/s' })],
+    noSeriesMeta,
+  );
+  expect(idx[0].seriesTitle).toBe('lab/s');
 });
 
 test('buildPublicSearchIndex: 결측 필드는 기본값', () => {

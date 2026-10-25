@@ -29,6 +29,7 @@ import {
   DiagramNodeTag,
   DiagramEdgeTag,
 } from '@/src/components/diagram';
+import { inlineLink } from '@/src/components/inlineLink';
 import { HEADER_OFFSET } from '@/src/components/post/headerOffset';
 import { HEADING_COMPONENTS } from '@/src/components/post/markdownHeadings';
 import { isMarkdownTag } from '@/src/components/post/markdownTag';
@@ -196,10 +197,10 @@ export function buildPostComponents(relativeDir: string): PostComponents {
       return image(props);
     },
     // 링크로 감싼 이미지는 확대 없이 그린다 — 확대 래퍼(div·button)가 `<a>` 안이면
-    // 무효 중첩에 대화형 요소 중첩이다.
-    a({ node: _node, children, ...props }) {
+    // 무효 중첩에 대화형 요소 중첩이다. 링크 모양은 문장 속 링크의 단일 출처(inlineLink)다.
+    a({ node: _node, children, className, ...props }) {
       return (
-        <a {...props}>
+        <a {...props} className={cx(className, inlineLink)}>
           {Children.map(children, child =>
             // `src`만 보면 `<video src>` 같은 raw HTML까지 이미지로 오인한다.
             isMarkdownTag<ImageProps>(child, 'img')
@@ -220,10 +221,13 @@ export function buildPostComponents(relativeDir: string): PostComponents {
           className={css({
             overflowX: 'auto',
             overscrollBehaviorX: 'contain',
-            mb: '8',
-            mt: '6',
-            // 스크롤 컨테이너의 초점 링이 표 테두리에 붙지 않게
-            borderRadius: 'control',
+            my: '4',
+            // 보더와 라운드는 스크롤하는 이 래퍼가 쥔다 — 표에 걸면 가로로 스크롤될 때 보더가
+            // 표와 함께 밀려 나가고, overflow: hidden으로 자르면 넓은 표가 잘려 읽을 수 없다.
+            // 초점 링도 이 라운드를 따른다.
+            borderWidth: 'hairline',
+            borderColor: 'ink.border',
+            rounded: 'element',
           })}
         >
           <table
@@ -372,102 +376,93 @@ export function PostBody({ content, relativeDir }: PostBodyProps) {
       id="post-content"
       style={headingOffsetStyle}
       className={css({
-        // 리뉴얼로 세리프 정체성을 폐기했다. serif 토큰이 sans로
-        // 매핑돼 있긴 하지만 의도를 코드에 남기려 명시적으로 sans.
-        // 크기는 본문 가독성 기준인 lg(18px)를 유지한다 — 레퍼런스의
-        // 14px은 목업 리드 문단이지 본문 스펙이 아니다.
+        // 서체는 sans다(세리프 정체성은 폐기했다 — serif 토큰도 sans로 매핑돼 있다).
+        // 본문은 prose 17/28이고 색은 ink.950이다.
         fontFamily: 'sans',
-        fontSize: 'lg',
-        lineHeight: 'prose',
-        color: 'ink.900',
-        // 본문 헤딩 스케일의 천장은 글 제목(22px)이다. 예전 스케일은
-        // h1이 30px이라 제목보다 커서 위계가 뒤집혀 있었다. 레퍼런스가
-        // 22px을 최대 크기로 두는 이상 본문 헤딩이 그 위로 올라갈 수
-        // 없어서, 20 → 18 → 16으로 좁게 다시 깔았다.
-        // 간격이 좁은 만큼 구분은 크기와 여백(mt), 그리고 **색**이
-        // 맡는다. 20 → 18 → 16은 2px씩밖에 안 벌어져서 크기만으로는
-        // h2와 h3가 잘 안 갈린다. 최상위(h2)에만 액센트를 주면
-        // "대단원 / 그 아래"가 한눈에 잘리고, h3·h4는 무채색으로 남아
-        // 본문 흐름을 끊지 않는다.
+        textStyle: 'prose',
+        color: 'ink.950',
+        // 블록 사이 간격은 마진 상쇄에 맡긴다 — 문단·리스트 12, 코드·표·인용 16, 헤딩 위 32.
+        // 첫 블록은 위, 마지막 블록은 아래 마진이 없어 본문 상자 밖으로 새지 않는다.
+        '& > :first-child': { mt: '0' },
+        '& > :last-child': { mb: '0' },
+        // 본문 헤딩은 h2(20/28)가 천장이다 — 글 제목(display1)보다 클 수 없다. h3·h4는 본문과 같은
+        // 17px이라 크기가 아니라 굵기(600)와 위 여백이 가르고, h4만 한 단계 옅다(ink.700). 따로
+        // 고른 포인트색이 없어(blog-preset accent) 색으로는 위계를 내지 않는다.
         //
         // `& h1` 규칙은 없다 — 본문 h1은 렌더 시 h2로 강등되므로
         // (markdownHeadings.tsx) 이 컨테이너 안에 h1이 나올 수 없다.
         // 페이지의 h1은 PostHeader의 글 제목 하나뿐이다.
         '& h2': {
-          fontSize: '[20px]',
-          fontWeight: 'semibold',
-          letterSpacing: 'tightXs',
-          mt: '12',
-          mb: '4',
-          color: 'accent.900',
-          lineHeight: 'header',
-          scrollMarginTop: '[var(--post-heading-offset)]',
-        },
-        // h3는 본문(18px)과 크기가 같다. 굵기·색(ink.950)·위 여백으로
-        // 구분되므로 크기까지 벌리면 위 단계와 붙어버린다.
-        '& h3': {
-          fontSize: '[18px]',
-          fontWeight: 'semibold',
-          lineHeight: 'header',
-          mt: '10',
-          mb: '3',
-          color: 'ink.950',
-          scrollMarginTop: '[var(--post-heading-offset)]',
-        },
-        '& h4': {
-          fontSize: '[16px]',
-          fontWeight: 'semibold',
-          lineHeight: 'header',
+          textStyle: 'h2',
           mt: '8',
           mb: '3',
           color: 'ink.950',
           scrollMarginTop: '[var(--post-heading-offset)]',
         },
-        '& p': { mb: '6' },
-        '& ul': { listStyleType: 'disc', pl: '6', mb: '6' },
-        '& ol': { listStyleType: 'decimal', pl: '6', mb: '6' },
-        '& li': { mb: '2', pl: '1' },
-        '& li > ul': { mt: '2', mb: '0' },
-        '& li.task-list-item > div > ul': { mt: '2', mb: '0' },
+        '& h3': {
+          textStyle: 'h3',
+          mt: '6',
+          mb: '3',
+          color: 'ink.950',
+          scrollMarginTop: '[var(--post-heading-offset)]',
+        },
+        '& h4': {
+          textStyle: 'h3',
+          mt: '4',
+          mb: '2',
+          color: 'ink.700',
+          scrollMarginTop: '[var(--post-heading-offset)]',
+        },
+        '& p': { my: '3' },
+        '& ul': { listStyleType: 'disc', pl: '6', my: '3' },
+        '& ol': { listStyleType: 'decimal', pl: '6', my: '3' },
+        '& li': { my: '1' },
+        '& li > ul': { mt: '1', mb: '0' },
+        '& li.task-list-item > div > ul': { mt: '1', mb: '0' },
         '& li.task-list-item': {
           listStyleType: 'none',
           pl: '0',
           display: 'flex',
           alignItems: 'flex-start',
           gap: '3',
-          mb: '4',
         },
         '& li.task-list-item input[type="checkbox"]': {
           mt: '1.5',
           cursor: 'default',
-          accentColor: '[token(colors.marker.600)]',
+          accentColor: '[token(colors.accent.solid)]',
           boxSize: '4',
         },
         '& del': { color: 'ink.500' },
+        // 제목 안 인라인 코드는 둘러싼 제목 글자를 따른다 — 고정 14px(CodeBlock의 인라인 분기)이면
+        // 20px·17px 제목 안에서 코드만 작아진다. 본문 문단 안 코드는 14px 그대로다. 규칙의
+        // 명시도(클래스 + 요소 둘)가 CodeBlock의 단일 클래스를 이긴다. strictTokens 밖 값이라
+        // 대괄호로 적는다(`prefer-token`은 fontSizes를 검사하지 않는다).
+        '& :is(h2, h3, h4) code': { fontSize: '[0.9em]' },
         // 인라인 코드 스타일은 CodeBlock의 인라인 분기가 전담한다.
         // ReactMarkdown의 code 매퍼가 모든 <code>를 CodeBlock으로
         // 보내고 CodeBlock이 항상 클래스를 붙이므로, 여기에
         // `& code:not([class])` 규칙을 두면 절대 매칭되지 않는다.
-        // 인용은 Dialogue와 같은 2px hairline 좌측 바로 통일한다.
+        // 인용은 Dialogue와 같은 2px 좌측 바로 통일한다(강조 보더 + 보조 잉크).
         '& blockquote': {
           borderLeftWidth: '[2px]',
-          borderLeftColor: 'ink.border',
+          borderLeftColor: 'ink.borderStrong',
           pl: '4',
-          py: '1',
-          my: '6',
-          color: 'ink.600',
-          '& p': { mb: '0' },
+          my: '4',
+          color: 'ink.700',
+          '& p': { my: '0' },
+          '& p + p': { mt: '3' },
         },
         // 본문에서 비켜둔 보조 설명(측정 방법론·재현 환경 고지 등)을 접어두는 블록.
         // 펼침 애니메이션은 ::details-content의 block-size를 0 ↔ auto로 전환한다.
         // auto 보간에 필요한 interpolate-size는 panda.config.ts globalCss의 html에 있고,
         // 미지원 브라우저는 애니메이션 없이 즉시 펼쳐진다(기능 손실 없음).
         '& details': {
-          my: '6',
+          my: '4',
           borderWidth: 'hairline',
           borderColor: 'ink.border',
-          rounded: 'control',
-          bg: 'paper.100',
+          rounded: 'container',
+          // 면을 깔지 않는다 — 인라인 코드 칩과 코드 블록이 paper.100(다크 #14171c)이라 같은 면 위에서는 지워진다.
+          bg: 'transparent',
           px: '4',
         },
         '& details > summary': {
@@ -481,7 +476,7 @@ export function PostBody({ content, relativeDir }: PostBodyProps) {
           color: 'ink.600',
           fontSize: 'sm',
           fontWeight: 'medium',
-          transition: '[color 0.15s]',
+          transition: 'colors',
           _hover: { color: 'ink.900' },
           // Safari의 기본 삼각형 마커 제거 — 아래 ::before로 대체한다
           '&::-webkit-details-marker': { display: 'none' },
@@ -490,7 +485,9 @@ export function PostBody({ content, relativeDir }: PostBodyProps) {
             display: 'inline-block',
             flexShrink: '0',
             color: 'ink.500',
-            transition: '[transform 0.25s ease]',
+            // 펼침(아래 details-content)과 같은 시간이라 표식이 내용과 함께 돈다.
+            transition: 'transform',
+            transitionDuration: 'fastMax',
           },
         },
         '& details[open] > summary::before': {
@@ -499,72 +496,49 @@ export function PostBody({ content, relativeDir }: PostBodyProps) {
         '& details::details-content': {
           blockSize: '[0]',
           overflow: 'hidden',
-          transition:
-            '[block-size 0.28s ease, content-visibility 0.28s allow-discrete]',
+          transitionProperty: 'block-size, content-visibility',
+          transitionDuration: 'fastMax',
+          transitionTimingFunction: 'standard',
+          transitionBehavior: 'allow-discrete',
         },
         '& details[open]::details-content': { blockSize: '[auto]' },
         // 접힌 영역 안쪽 여백 정리 — 첫 요소는 summary에 붙고 마지막은 아래 여백만
         '& details > summary + *': { mt: '0' },
         '& details > *:last-child': { mb: '4' },
-        '@media (prefers-reduced-motion: reduce)': {
-          '& details::details-content': { transition: '[none]' },
-          '& details > summary::before': { transition: '[none]' },
-        },
-        '& a': {
-          color: 'accent.600',
-          textDecorationLine: 'none',
-          borderBottomWidth: 'hairline',
-          borderBottomColor: 'accent.200',
-          transition: '[all 0.15s]',
-          fontWeight: 'medium',
-          // 넘칠 때만 끊는다 — break-all은 평범한 단어 중간도 잘랐다.
-          overflowWrap: 'anywhere',
-          _hover: {
-            // 보더는 비텍스트라 원색(accent.500)을 그대로 쓴다.
-            borderBottomColor: 'accent.500',
-            bg: 'accent.50',
-          },
-        },
         // 본문 이미지 모양은 MarkdownImage가 단일 출처다 — 여기 `& img`를 두면 명시도로 이긴다.
         '& hr': {
-          my: '10',
+          my: '6',
           h: '[1px]',
           border: '[none]',
           bg: 'ink.border',
         },
+        // 표는 래퍼(table 매퍼)가 보더·라운드·스크롤을 쥐고, 표 자신은 보더가 없다. 칸 사이는
+        // 세로선(왼쪽 보더)과 행 사이 가로선(위쪽 보더)뿐이라 바깥 테두리는 래퍼 하나다.
+        // 상하 여백도 래퍼가 가진다 — 여기서도 주면 겹쳐 표 앞뒤가 두 배로 벌어진다.
         '& table': {
           w: 'full',
-          // 상하 여백은 가로 스크롤 래퍼가 가진다. 여기서도 주면
-          // 래퍼 여백과 겹쳐 표 앞뒤가 두 배로 벌어진다.
-          borderCollapse: 'separate',
-          borderSpacing: '0',
-          fontSize: 'sm',
-          fontFamily: 'sans',
-          borderWidth: 'hairline',
-          borderColor: 'ink.border',
+          borderCollapse: 'collapse',
+          textStyle: 'prose',
         },
+        // 머리 칸은 14/20 600 보조 잉크 — 본문 칸(17/28)보다 작아 머리가 데이터 위에 얹힌다.
         '& th': {
-          bg: 'paper.100',
-          fontWeight: 'semibold',
-          p: '4',
+          textStyle: 'h4',
+          textAlign: 'left',
+          color: 'ink.700',
+          px: '3',
+          py: '2',
           borderBottomWidth: 'hairline',
           borderColor: 'ink.border',
-          textAlign: 'left',
-          color: 'ink.950',
-          fontSize: 'xs',
-          letterSpacing: 'mono',
-          textTransform: 'uppercase',
-          fontFamily: 'mono',
         },
         '& td': {
-          p: '4',
-          borderBottomWidth: 'hairline',
+          px: '3',
+          py: '2',
+          color: 'ink.950',
           borderColor: 'ink.border',
-          color: 'ink.700',
         },
-        // borderWidths 토큰은 hairline 하나뿐이라 0은 이스케이프해서 쓴다
-        '& tr:last-child td': { borderBottomWidth: '[0]' },
-        '& tr:hover td': { bg: 'paper.100' },
+        '& th + th': { borderLeftWidth: 'hairline' },
+        '& td + td': { borderLeftWidth: 'hairline' },
+        '& tbody tr + tr td': { borderTopWidth: 'hairline' },
       })}
     >
       <ReactMarkdown

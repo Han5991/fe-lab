@@ -1,29 +1,31 @@
-import { RSS_PATH } from '@blog/content/client';
-import { AUTHOR_GITHUB } from '@/content.values.mts';
+import { POSTS_PATH } from '@blog/content/client';
+import { ArrowRight } from 'lucide-react';
 import { css } from '@blog/styled-system/css';
 
-/** 히어로 pill — 이름 아래 외부 채널. 레퍼런스 `.pill` 수치 그대로. */
-const pill = css({
-  fontFamily: 'mono',
-  fontWeight: 'normal',
-  fontSize: '[12px]',
-  color: 'ink.600',
-  borderWidth: 'hairline',
-  borderStyle: 'solid',
-  borderColor: 'ink.border',
-  rounded: 'pill',
-  px: '[11px]',
-  py: '[3px]',
-  transition: '[color 0.15s, border-color 0.15s]',
-  _hover: { color: 'ink.950', borderColor: 'ink.borderStrong' },
-});
+import { actionButton } from '@/src/components/actionButton';
+import { TransitionLink } from '@/src/components/shared/TransitionLink';
+import {
+  SOCIAL_LINKS,
+  ShellLink,
+  type SocialLabel,
+} from '@/src/components/shellLinks';
 
-// 레퍼런스에는 velog pill도 있지만 크로스포스팅을 접기로 해서 뺐다.
-const PILLS = [
-  { href: AUTHOR_GITHUB, label: 'github', external: true },
-  // RSS는 같은 도메인의 정적 파일이라 새 탭으로 열지 않는다.
-  { href: RSS_PATH, label: 'rss', external: false },
-] as const;
+/**
+ * 바깥 채널 버튼의 tone — 목록 자체는 셸의 `SOCIAL_LINKS`(헤더·푸터 아이콘과 같은 출처)이고, 히어로가
+ * 정하는 건 모양뿐이다. 주 행동(모든 글 보기) 다음 자리라 GitHub가 보조(neutral), RSS가 가장 약한
+ * ghost다(승인 목업).
+ */
+const SOCIAL_TONE = {
+  GitHub: 'neutral',
+  RSS: 'ghost',
+} as const satisfies Record<SocialLabel, 'neutral' | 'ghost'>;
+
+/**
+ * 소개 문단의 한 문장 — sm(640) 이상에서만 제 줄을 차지한다. 문장 하나가 한 줄에 드는 폭부터 문장마다
+ * 끊고, 그보다 좁으면 이어 흐른다. 줄바꿈(`<br>`)을 박아 두면 375에서 첫 문장이 접히며 "엔지니어."가
+ * 한 줄에 혼자 남았다.
+ */
+const introSentence = css({ display: { sm: 'block' } });
 
 export const Hero = () => {
   return (
@@ -34,43 +36,42 @@ export const Hero = () => {
     // `aria-hidden` 장식이라 정보가 0인데, 정작 다이어그램이 의미를 갖는 자리
     // (글 히어로·본문)와 언어가 겹쳐 그쪽 무게를 깎았다. 다이어그램은 글 안에서만
     // 쓴다.
-    <div className={css({ mb: '[30px]' })}>
-      <h1
-        className={css({
-          fontSize: '[21px]',
-          fontWeight: 'bold',
-          // 페이지의 최상위 제목이라 액센트를 준다. 아래 소개 문단과 pill,
-          // 섹션 라벨은 전부 무채색으로 남는다 — 액센트가 제목 계열에만
-          // 붙어야 "제목 > 그 외"라는 위계가 색으로 읽힌다.
-          color: 'accent.900',
-          mb: '[8px]',
-        })}
-      >
-        한상욱
-      </h1>
-      <p className={css({ fontSize: '[14px]', color: 'ink.600' })}>
-        구조를 그려서 문제를 푸는 프론트엔드 엔지니어.
-        <br />
-        디자인 시스템, 모노레포, 배포 파이프라인을 다룹니다.
+    <div className={css({ display: 'flex', flexDir: 'column', gap: '4' })}>
+      {/* 페이지의 최상위 제목 — 본문 잉크(ink.950). 아래 소개 문단(ink.700)과는 크기·굵기·명도로 갈린다. */}
+      <h1 className={css({ textStyle: 'display1' })}>한상욱</h1>
+      {/* 승인 목업의 문단 폭 상한(752)은 두지 않았다 — 문장마다 줄을 끊어 두 줄 다 그보다 짧다. */}
+      <p className={css({ textStyle: 'large', color: 'ink.700' })}>
+        <span className={introSentence}>
+          구조를 그려서 문제를 푸는 프론트엔드 엔지니어.
+        </span>{' '}
+        <span className={introSentence}>
+          디자인 시스템, 모노레포, 배포 파이프라인을 다룹니다.
+        </span>
       </p>
       <div
         className={css({
           display: 'flex',
           flexWrap: 'wrap',
-          gap: '[8px]',
-          mt: '[14px]',
+          gap: '2',
+          mt: '2',
         })}
       >
-        {PILLS.map(item => (
-          <a
-            key={item.label}
-            href={item.href}
-            target={item.external ? '_blank' : undefined}
-            rel={item.external ? 'noopener noreferrer' : undefined}
-            className={pill}
+        <TransitionLink
+          href={POSTS_PATH}
+          className={actionButton({ tone: 'solid', size: 'lg' })}
+        >
+          모든 글 보기
+          <ArrowRight size={16} />
+        </TransitionLink>
+        {SOCIAL_LINKS.map(({ label, href, kind }) => (
+          <ShellLink
+            key={label}
+            href={href}
+            kind={kind}
+            className={actionButton({ tone: SOCIAL_TONE[label], size: 'lg' })}
           >
-            {item.label}
-          </a>
+            {label}
+          </ShellLink>
         ))}
       </div>
     </div>

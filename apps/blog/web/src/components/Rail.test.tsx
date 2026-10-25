@@ -10,7 +10,13 @@
 import { describe, expect, test } from 'vitest';
 import { render } from '@testing-library/react';
 
-import { Rail, railGutter, railColumn } from './Rail';
+import {
+  Rail,
+  railGutter,
+  railColumn,
+  railWithAside,
+  railAsideMain,
+} from './Rail';
 
 /** Panda는 클래스를 원자 단위로 쪼개 내보내므로 토큰 단위로 비교한다. */
 const classes = (el: Element) =>
@@ -41,6 +47,8 @@ describe('railColumn', () => {
   // 여기서 먼저 막는다.
   test('클래스 문자열이 비어 있지 않다', () => {
     expect(railGutter).not.toBe('');
+    expect(railWithAside).not.toBe('');
+    expect(railAsideMain).not.toBe('');
     for (const w of ['wide', 'text', 'form'] as const) {
       expect(railColumn({ width: w })).not.toBe('');
     }

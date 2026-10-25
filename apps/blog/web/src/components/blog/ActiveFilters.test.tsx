@@ -2,45 +2,32 @@ import { describe, expect, test, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { ActiveFilters } from './ActiveFilters';
 
-const handlers = () => ({
-  onRemoveTag: vi.fn(),
-  onClearSeries: vi.fn(),
-  onClearYear: vi.fn(),
-  onClearAll: vi.fn(),
-});
-
 describe('ActiveFilters', () => {
-  // 칩 이름은 "해제"를 말한다. 시리즈 칩은 URL의 id(폴더 경로)가 아니라 제목이다.
-  test('칩마다 이름에 해제를 말하고, 누르면 그 필터를 푼다', () => {
-    const h = handlers();
+  // 태그 버튼 이름은 "해제"를 말한다 — 누르면 그 필터가 풀린다.
+  test('태그마다 이름에 해제를 말하고, 누르면 그 태그를, 모두 지우기는 전부를 푼다', () => {
+    const onRemoveTag = vi.fn();
+    const onClearAll = vi.fn();
     render(
       <ActiveFilters
-        tags={['react']}
-        seriesLabel="우아한 에러 처리"
-        year="2026"
-        {...h}
+        tags={['react', 'vitest']}
+        onRemoveTag={onRemoveTag}
+        onClearAll={onClearAll}
       />,
     );
 
+    expect(
+      screen.getByRole('group', { name: '적용된 필터' }),
+    ).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: '#react 필터 해제' }));
-    fireEvent.click(
-      screen.getByRole('button', { name: '우아한 에러 처리 필터 해제' }),
-    );
-    fireEvent.click(screen.getByRole('button', { name: '2026 필터 해제' }));
+    fireEvent.click(screen.getByRole('button', { name: '모두 지우기' }));
 
-    expect(h.onRemoveTag).toHaveBeenCalledWith('react');
-    expect(h.onClearSeries).toHaveBeenCalledOnce();
-    expect(h.onClearYear).toHaveBeenCalledOnce();
+    expect(onRemoveTag).toHaveBeenCalledWith('react');
+    expect(onClearAll).toHaveBeenCalledOnce();
   });
 
-  test('활성 필터가 없으면 아무것도 그리지 않는다', () => {
+  test('걸린 태그가 없으면 아무것도 그리지 않는다', () => {
     const { container } = render(
-      <ActiveFilters
-        tags={[]}
-        seriesLabel={null}
-        year={null}
-        {...handlers()}
-      />,
+      <ActiveFilters tags={[]} onRemoveTag={vi.fn()} onClearAll={vi.fn()} />,
     );
 
     expect(container).toBeEmptyDOMElement();

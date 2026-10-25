@@ -1,584 +1,441 @@
 'use client';
 
-import { useRef, useState } from 'react';
-import Link from 'next/link';
-import { useQueryStates, parseAsString, parseAsStringLiteral } from 'nuqs';
-import { useQuery } from '@tanstack/react-query';
-import { css } from '@blog/styled-system/css';
-
-import type { ArchiveFilters, PostSummary } from '@blog/content/client';
-import type { SeriesSummary, TagSummary } from '@blog/content';
 import {
-  ARCHIVE_SORT_KEYS,
+  addTransitionType,
+  startTransition,
+  useEffect,
+  useRef,
+  useState,
+  ViewTransition,
+  type Ref,
+} from 'react';
+import { useSearchParams } from 'next/navigation';
+import { css } from '@blog/styled-system/css';
+import {
   filterAndSortPostsByArchiveParams,
-  parseTagParam,
   type ArchiveSortKey,
+  type PostSummary,
 } from '@blog/content/client';
-import { getAllViewCounts } from '@/src/domain/analytics';
-import { postPath } from '@blog/content/client';
-import { fmtDate } from '@blog/content/client';
 
-import { Label } from './Label';
-import type { ViewMode } from './ViewToggle';
+import { actionButton } from '@/src/components/actionButton';
+import {
+  ARCHIVE_FILTER_TRANSITION_TYPE,
+  ARCHIVE_LIST_SWAP,
+} from '@/src/shared/viewTransitions';
+import {
+  usePopularViewCounts,
+  viewCountsSource as appViewCountsSource,
+  type ViewCountsSource,
+} from '@/src/hooks/usePopularViewCounts';
 import { ActiveFilters } from './ActiveFilters';
-import { HiddenPostBadge } from './HiddenPostBadge';
-import { PostGridCard } from './PostGridCard';
-import { PopularRail } from './PopularRail';
-import { PostsFilterSheet } from './PostsFilterSheet';
-import { PostsFilterFab } from './PostsFilterFab';
-import { PostsFilterPanel } from './PostsFilterPanel';
-import { postRowItem, postRowLink, postRowMeta, postRowTitle } from './postRow';
+import { ArchiveSearchBox } from './ArchiveSearchBox';
+import { PostCard } from './PostCard';
+import { PostListRow } from './PostListRow';
+import { SeriesChips } from './SeriesChips';
+import { SortSelect } from './SortSelect';
+import { ViewToggle } from './ViewToggle';
+import {
+  DEFAULT_ARCHIVE_STATE,
+  DEFAULT_SORT,
+  SEARCH_COMMIT_MS,
+  archiveHref,
+  isArchiveLocation,
+  readArchiveParams,
+  type ArchiveSeries,
+  type ArchiveState,
+  type ViewMode,
+} from './archiveParams';
 
-interface PostsArchiveViewProps {
+interface PostsArchiveProps {
   posts: PostSummary[];
-  series: SeriesSummary[];
-  tags: TagSummary[];
-  years: { year: string; count: number }[];
+  series: ArchiveSeries[];
 }
 
-// 정렬 키는 패키지 목록(ARCHIVE_SORT_KEYS)을 그대로 파서에 넘긴다. 뷰 키는
-// `satisfies`로 ViewToggle의 타입에 묶어 둔다 — useQueryStates는 파서에서 타입을
-// 추론하므로 여기서 잡지 않으면 오타가 그대로 통과한다. 반대 방향(키 누락)은 아래
-// onViewChange가 ViewMode를 좁은 리터럴 유니온에 넣으면서 걸린다.
-const VIEW_KEYS = ['list', 'cards'] as const satisfies readonly ViewMode[];
-
-/** URL에 값이 없을 때의 정렬·뷰 — 파서의 기본값과 정적 폴백이 같은 상수를 읽는다. */
-const DEFAULT_SORT = 'recent' satisfies ArchiveSortKey;
-const DEFAULT_VIEW = 'cards' satisfies ViewMode;
-
-/** 아카이브 화면이 그리는 필터 상태 — URL에서 읽거나(뷰) 기본값으로 둔다(폴백). */
-interface ArchiveState {
-  q: string;
-  activeTags: string[];
-  series: string | null;
-  year: string | null;
-  sort: ArchiveSortKey;
-  view: ViewMode;
+interface PostsArchiveViewProps extends PostsArchiveProps {
+  /** 인기순 조회수의 출처 — 테스트 이음새. 페이지는 넘기지 않는다(앱 싱글턴). */
+  viewCountsSource?: ViewCountsSource;
 }
 
-/** 필터 컨트롤이 부르는 동작. 폴백에서는 전부 아무것도 하지 않는다. */
+/** 컨트롤이 부르는 동작. 폴백에서는 전부 아무것도 하지 않는다. */
 interface ArchiveActions {
-  setQuery: (q: string) => void;
-  toggleTag: (tag: string) => void;
-  toggleSeries: (id: string) => void;
-  toggleYear: (id: string) => void;
-  clearSeries: () => void;
-  clearYear: () => void;
+  search: (q: string) => void;
+  commitSearch: () => void;
+  clearSearch: () => void;
+  selectSeries: (id: string | null) => void;
+  selectSort: (sort: ArchiveSortKey) => void;
+  selectView: (view: ViewMode) => void;
+  removeTag: (tag: string) => void;
   clearAll: () => void;
-  setSort: (v: ArchiveSortKey) => void;
-  setView: (v: ViewMode) => void;
 }
 
-export const ArchiveRow = ({ post }: { post: PostSummary }) => (
-  <li className={postRowItem}>
-    <Link href={postPath(post.slug)} className={postRowLink}>
-      <h3 className={postRowTitle}>
-        {post.title}
-        <HiddenPostBadge post={post} />
-      </h3>
-      {/* 날짜가 없으면 태그 자체를 낸다 — fmtDate가 빈 문자열을 돌려주므로
-          크래시는 없지만 내용 없는 span이 남는다(홈의 PostIndexRow와 같은 패턴). */}
-      {post.date && <span className={postRowMeta}>{fmtDate(post.date)}</span>}
-    </Link>
-  </li>
-);
-
+/**
+ * 글 목록 — URL 쿼리(`archiveParams.ts`)를 읽어 그리고, 컨트롤이 바꾼 상태를 URL에 다시 쓴다.
+ *
+ * **화면의 진실은 로컬 상태이고 URL은 그 뒤를 따라 쓴다.** `useSearchParams`를 그대로 컨트롤의 값으로
+ * 쓰면 안 된다 — Next는 `history.replaceState`를 라우터에 transition으로 반영하는데, React는 change
+ * 핸들러가 끝나면 제어 입력을 지금 props 값으로 되돌린다. 그래서 transition이 커밋될 때까지 칩·select가
+ * 옛 값으로 돌아가 있고, 검색창은 그 사이 친 글자를 잃는다. 로컬 상태는 urgent 갱신이라 되돌림 전에
+ * 커밋되고, 목록도 글자마다 바로 걸러진다.
+ *
+ * URL은 `history.replaceState`로 쓴다 — Next가 라우터·`useSearchParams`에 동기화하고(네이티브 히스토리
+ * API 통합), 내비게이션이 아니라 페이지 전환·RSC 요청·스크롤이 없으며, 필터 단계가 뒤로 가기 기록에
+ * 쌓이지 않는다.
+ *
+ * URL이 바뀌어 오면 렌더 중에 비교한다: 내가 마지막으로 쓴 값이면(메아리) 로컬을 건드리지 않고 — 그
+ * 사이 더 친 글자가 남는다 — 아니면(헤더의 '글' 링크로 같은 페이지, 뒤로·앞으로 가기) 로컬을 URL에서
+ * 다시 읽는다. 비교는 정규화한 href로 한다.
+ */
 export const PostsArchiveView = ({
   posts,
   series,
-  tags,
-  years,
+  viewCountsSource = appViewCountsSource,
 }: PostsArchiveViewProps) => {
-  // 아카이브의 URL 상태 6개는 한 덩어리로 움직인다(검색어·태그·시리즈·연도·정렬·뷰).
-  // 파서 맵 하나로 묶으면 "이 화면의 URL 계약"이 한자리에 남고, clearAll처럼 여러
-  // 개를 동시에 지우는 동작이 setParams 한 번으로 표현된다.
-  //
-  // `satisfies`의 Record 절반이 링크 쪽 계약과 잠근다 — 필터 링크를 만드는
-  // `archivePath`(`@blog/content`의 ArchiveFilters: q·tag·series)가 내보내는
-  // 쿼리 키는 전부 이 파서 맵에 있어야 읽힌다. 키 이름이 한쪽만 바뀌면 태그·
-  // 시리즈 필터 링크가 경고 없이 빈 목록으로 떨어지는데, 예전엔 두 정의가
-  // 독립이라 그 어긋남을 아무것도 잡지 않았다. year·sort·view는 이 화면만
-  // 아는 상태라 링크 계약 밖이다(인덱스 시그니처 쪽이 받는다).
-  const [
-    { q, tag: tagParam, series: seriesParam, year: yearParam, sort, view },
-    setParams,
-  ] = useQueryStates({
-    q: parseAsString.withDefault(''),
-    tag: parseAsString.withDefault(''),
-    series: parseAsString.withDefault(''),
-    year: parseAsString.withDefault(''),
-    sort: parseAsStringLiteral(ARCHIVE_SORT_KEYS).withDefault(DEFAULT_SORT),
-    view: parseAsStringLiteral(VIEW_KEYS).withDefault(DEFAULT_VIEW),
-  } satisfies Record<keyof Required<ArchiveFilters>, unknown> &
-    Record<string, unknown>);
+  const params = useSearchParams();
+  const fromUrl = readArchiveParams(
+    params,
+    series.map(s => s.id),
+  );
+  const urlHref = archiveHref(fromUrl);
+  const [state, setState] = useState(fromUrl);
+  // 목록이 그리는 상태 — 컨트롤 값(`state`)은 urgent로 먼저 커밋하고, 목록만 type을 단 transition으로 따라간다.
+  const [listState, setListState] = useState(fromUrl);
 
-  // 인기순을 고르기 전에는 요청하지 않는다. 조회수는 이 빌드의 slug로 서버에서 걸러
-  // 받으므로(가짜 slug가 1000행 상한을 채우지 않게) slug 목록이 캐시 키다.
-  const slugs = posts.map(p => p.slug);
-  const { data: viewCounts } = useQuery({
-    queryKey: ['posts-view-counts', slugs],
-    queryFn: async () => {
-      const rows = await getAllViewCounts(slugs);
-      const map = new Map<string, number>();
-      for (const row of rows) {
-        map.set(row.slug, row.view_count);
-      }
-      return map;
-    },
-    enabled: sort === 'popular',
-    staleTime: 5 * 60 * 1000,
-    gcTime: 30 * 60 * 1000,
-  });
+  // 거른 결과 수의 상태 메시지(WCAG 4.1.3) — 목록을 바꾸는 URL 쓰기와, 밖에서 바뀐 URL을 다시 읽을 때
+  // 바꾼다. 글자마다 바꾸면 읽기가 타자를 따라가지 못하고, 처음 그릴 때는 비워 둬 페이지를 열자마자 읽지
+  // 않는다.
+  const [announcement, setAnnouncement] = useState('');
+  const announce = (next: ArchiveState) =>
+    setAnnouncement(
+      `글 ${filterAndSortPostsByArchiveParams(posts, next).length}편`,
+    );
 
-  const activeTags = parseTagParam(tagParam);
+  const [sync, setSync] = useState({ seen: urlHref, written: urlHref });
+  if (urlHref !== sync.seen) {
+    if (urlHref !== sync.written) {
+      setState(fromUrl);
+      setListState(fromUrl);
+      // 뒤로·앞으로 가기나 헤더의 '글' 링크도 사용자가 목록을 바꾼 동작이다 — 쓸 때와 같이 알린다.
+      announce(fromUrl);
+    }
+    // 밖에서 바뀌었으면 마지막으로 쓴 값도 지금 URL로 맞춘다 — 그대로 두면 뒤로 가기로 그 값에 돌아왔을
+    // 때 메아리로 오인해 다시 읽지 않는다.
+    setSync({ seen: urlHref, written: urlHref });
+  }
 
-  // 핸들러들은 전부 JSX prop(`() => void` 자리)으로만 쓰인다. setParams의
-  // promise는 아무도 기다리지 않으므로 void로 명시해 버린다(no-misused-promises).
+  // 검색어의 URL 쓰기만 늦춘다(SEARCH_COMMIT_MS). ref는 핸들러와 정리에서만 읽는다.
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | undefined>(
+    undefined,
+  );
+  const searchInput = useRef<HTMLInputElement>(null);
+  useEffect(() => () => clearTimeout(searchTimer.current), []);
+
+  const { counts, pending } = usePopularViewCounts(
+    posts,
+    listState.sort === 'popular',
+    viewCountsSource,
+  );
+
+  /** URL에 쓴다. 모든 쓰기는 미뤄 둔 검색어 쓰기를 지운다 — 쓰는 상태에 그 검색어가 이미 들어 있다. */
+  const write = (next: ArchiveState) => {
+    clearTimeout(searchTimer.current);
+    searchTimer.current = undefined;
+    // 타자 직후 뒤로 가기를 누르면 이 화면이 내려가기 전에 타이머가 터질 수 있다 — 그때 주소는 이미
+    // 이전 페이지의 기록 항목이라 거기에 목록 쿼리를 덮어쓰지 않는다.
+    if (!isArchiveLocation(window.location.pathname)) return;
+    const href = archiveHref(next);
+    setSync(s => ({ ...s, written: href }));
+    announce(next);
+    window.history.replaceState(null, '', href);
+  };
+  // 칩·정렬·보기·필터 해제는 type을 단 transition이다 — 목록의 `<ViewTransition>`이 이 type에서만 이전
+  // 목록을 걷고 새 목록을 띄운다(`ARCHIVE_LIST_SWAP`). 검색어(`actions.search`)는 일부러 urgent 갱신이다:
+  // 글자마다 목록이 교차하지 않고, 입력도 되돌려지지 않는다. 페이지 경계는 `default="none"`이라 같은
+  // transition에서도 돌지 않는다.
+  const apply = (patch: Partial<ArchiveState>) => {
+    const next = { ...state, ...patch };
+    // 컨트롤 값은 urgent다 — transition에 넣으면 change 핸들러가 끝날 때 제어 입력이 옛 props 값으로
+    // 되돌려져 transition이 커밋될 때까지 칩·select가 눌리지 않은 것처럼 보인다.
+    setState(next);
+    startTransition(() => {
+      addTransitionType(ARCHIVE_FILTER_TRANSITION_TYPE);
+      setListState(next);
+    });
+    write(next);
+  };
+  // 누른 버튼이 사라지는 동작(지우기·필터 해제) 뒤에는 초점이 <body>로 떨어지지 않게 검색 입력으로 옮긴다.
+  const focusSearch = () => searchInput.current?.focus();
+
   const actions: ArchiveActions = {
-    setQuery: v => void setParams({ q: v || null }),
-    toggleTag: tag => {
-      const next = activeTags.includes(tag)
-        ? activeTags.filter(t => t !== tag)
-        : [...activeTags, tag];
-      void setParams({ tag: next.length ? next.join(',') : null });
+    search: q => {
+      const next = { ...state, q };
+      setState(next);
+      setListState(next);
+      clearTimeout(searchTimer.current);
+      searchTimer.current = setTimeout(() => write(next), SEARCH_COMMIT_MS);
     },
-    toggleSeries: id =>
-      void setParams({ series: seriesParam === id ? null : id }),
-    toggleYear: id => void setParams({ year: yearParam === id ? null : id }),
-    clearSeries: () => void setParams({ series: null }),
-    clearYear: () => void setParams({ year: null }),
-    // 네 개를 한 번에 지운다. 개별 setter를 연달아 부르는 것과 URL 쓰기 횟수는
-    // 같지만(nuqs가 전역 큐로 합친다), 무엇을 지우는지가 한 객체로 드러난다.
-    clearAll: () =>
-      void setParams({ q: null, tag: null, series: null, year: null }),
-    setSort: v => void setParams({ sort: v }),
-    setView: v => void setParams({ view: v }),
+    // 입력을 떠나면 미뤄 둔 쓰기를 바로 낸다. 링크를 누르면 pointerdown의 blur가 먼저 나서, 늦게 터진
+    // 쓰기가 진행 중인 링크 이동을 버리지 않는다(Next는 대기 중인 이동 뒤에 온 restore에 이동을 버린다).
+    commitSearch: () => {
+      if (searchTimer.current !== undefined) write(state);
+    },
+    clearSearch: () => {
+      apply({ q: '' });
+      focusSearch();
+    },
+    selectSeries: id => apply({ series: id }),
+    selectSort: sort => apply({ sort }),
+    selectView: view => apply({ view }),
+    removeTag: tag => {
+      apply({ tags: state.tags.filter(t => t !== tag) });
+      focusSearch();
+    },
+    clearAll: () => {
+      apply({ q: '', tags: [], series: null });
+      focusSearch();
+    },
   };
 
   return (
-    <PostsArchiveLayout
-      posts={posts}
-      series={series}
-      tags={tags}
-      years={years}
-      viewCounts={viewCounts}
-      state={{
-        q,
-        activeTags,
-        series: seriesParam || null,
-        year: yearParam || null,
-        sort,
-        view,
-      }}
-      actions={actions}
-    />
-  );
-};
-
-const noop = () => undefined;
-const FALLBACK_ACTIONS: ArchiveActions = {
-  setQuery: noop,
-  toggleTag: noop,
-  toggleSeries: noop,
-  toggleYear: noop,
-  clearSeries: noop,
-  clearYear: noop,
-  clearAll: noop,
-  setSort: noop,
-  setView: noop,
-};
-const FALLBACK_STATE: ArchiveState = {
-  q: '',
-  activeTags: [],
-  series: null,
-  year: null,
-  sort: DEFAULT_SORT,
-  view: DEFAULT_VIEW,
-};
-
-/**
- * `/posts/`의 정적 HTML — 뷰는 nuqs 때문에 프리렌더에서 빠진다. 같은 레이아웃을 기본
- * 상태로 그려 하이드레이션 때 목록이 바뀌지 않게 한다(컨트롤은 그 전까지 동작하지 않는다).
- */
-export const PostsArchiveFallback = (props: PostsArchiveViewProps) => (
-  <PostsArchiveLayout
-    {...props}
-    viewCounts={undefined}
-    state={FALLBACK_STATE}
-    actions={FALLBACK_ACTIONS}
-  />
-);
-
-interface PostsArchiveLayoutProps extends PostsArchiveViewProps {
-  viewCounts: Map<string, number> | undefined;
-  state: ArchiveState;
-  actions: ArchiveActions;
-}
-
-const PostsArchiveLayout = ({
-  posts,
-  series,
-  tags,
-  years,
-  viewCounts,
-  state,
-  actions,
-}: PostsArchiveLayoutProps) => {
-  const {
-    q,
-    activeTags,
-    series: seriesParam,
-    year: yearParam,
-    sort,
-    view,
-  } = state;
-  const {
-    setQuery,
-    toggleTag,
-    toggleSeries,
-    toggleYear,
-    clearSeries,
-    clearYear,
-    clearAll,
-    setSort,
-    setView,
-  } = actions;
-  const [sheetOpen, setSheetOpen] = useState(false);
-
-  const filtered = filterAndSortPostsByArchiveParams(posts, {
-    q,
-    tags: activeTags,
-    series: seriesParam,
-    year: yearParam,
-    sort,
-    viewCounts,
-  });
-
-  const seriesItems = series.map(s => ({
-    id: s.id,
-    label: s.title,
-    count: s.count,
-  }));
-  const tagItems = tags.map(t => ({
-    id: t.id,
-    label: `#${t.id}`,
-    count: t.count,
-  }));
-  const yearItems = years.map(y => ({
-    id: y.year,
-    label: y.year,
-    count: y.count,
-  }));
-
-  // 활성 필터 합산 (FAB·시트 헤더의 N 뱃지 + 정렬도 기본값이 아니면 카운트)
-  const activeCount =
-    activeTags.length +
-    (seriesParam ? 1 : 0) +
-    (yearParam ? 1 : 0) +
-    (sort !== DEFAULT_SORT ? 1 : 0) +
-    (view !== DEFAULT_VIEW ? 1 : 0);
-
-  return (
-    // FAB·시트는 grid 자식으로 두면 fixed 포지션이라도 DOM상 grid item이 되어
-    // 접근성/레이아웃 어색함이 있으므로, 둘은 grid 바깥의 sibling으로 분리합니다.
     <>
-      <div
-        className={css({
-          display: 'grid',
-          gridTemplateColumns: { base: '1fr', md: '[240px 1fr]' },
-          gap: { base: '4', md: '12' },
-        })}
-      >
-        <aside
-          className={css({
-            // 모바일에서는 사이드바를 숨기고 FAB+바텀시트로 필터 노출.
-            display: { base: 'none', md: 'flex' },
-            position: { md: 'sticky' },
-            top: { md: '20' },
-            alignSelf: { md: 'start' },
-            maxH: { md: '[calc(100vh - 88px)]' },
-            overflowY: { md: 'auto' },
-            flexDir: 'column',
-            gap: '7',
-          })}
-        >
-          <ArchiveSearchBar q={q} onChange={setQuery} />
-          <PostsFilterPanel
-            sort={sort}
-            onSortChange={setSort}
-            view={view}
-            onViewChange={setView}
-            tagItems={tagItems}
-            activeTags={activeTags}
-            onToggleTag={toggleTag}
-            seriesItems={seriesItems}
-            activeSeries={seriesParam}
-            onToggleSeries={toggleSeries}
-            yearItems={yearItems}
-            activeYear={yearParam}
-            onToggleYear={toggleYear}
-          />
-          {/*
-            홈에서 내려온 인기글 레일(Supabase 조회수 기반). 데스크톱은 사이드바
-            하단, 모바일은 목록 아래에 같은 컴포넌트를 한 번씩 둡니다 — 위 검색창과
-            동일한 패턴으로, 둘은 브레이크포인트상 배타적으로만 보이고 React Query
-            캐시 키가 같아 요청은 한 번만 나갑니다.
-          */}
-          <div
-            className={css({
-              pt: '6',
-              borderTopWidth: 'hairline',
-              borderTopStyle: 'solid',
-              borderColor: 'ink.border',
-              // 레일이 비면 구분선·여백만 남은 빈 띠가 되지 않게 래퍼째 접는다.
-              _empty: { display: 'none' },
-            })}
-          >
-            <PopularRail posts={posts} />
-          </div>
-        </aside>
-
-        <div>
-          {/* 모바일 전용 검색창. 데스크톱은 aside 안의 검색창을 그대로 사용. */}
-          <div
-            className={css({
-              display: { base: 'block', md: 'none' },
-              mb: '4',
-            })}
-          >
-            <ArchiveSearchBar q={q} onChange={setQuery} />
-          </div>
-
-          <ActiveFilters
-            tags={activeTags}
-            seriesLabel={
-              seriesParam === null
-                ? null
-                : (series.find(s => s.id === seriesParam)?.title ?? seriesParam)
-            }
-            year={yearParam}
-            onRemoveTag={toggleTag}
-            onClearSeries={clearSeries}
-            onClearYear={clearYear}
-            onClearAll={clearAll}
-          />
-
-          <div
-            className={css({
-              display: 'flex',
-              alignItems: 'baseline',
-              justifyContent: 'space-between',
-              mb: '4',
-            })}
-          >
-            {/* 아래 목록 카드/행 제목이 h3라, 이 라벨이 span이면 페이지 h1에서
-                h3로 건너뛴다(axe heading-order). 목록의 섹션 헤딩으로 올린다. */}
-            <Label as="h2" tone="meta">
-              {filtered.length}편
-            </Label>
-          </div>
-
-          {filtered.length === 0 ? (
-            <div
-              className={css({
-                py: '20',
-                textAlign: 'center',
-                display: 'flex',
-                flexDir: 'column',
-                alignItems: 'center',
-                gap: '3',
-              })}
-            >
-              <p
-                className={css({
-                  fontSize: '[16px]',
-                  fontWeight: 'semibold',
-                  color: 'ink.950',
-                })}
-              >
-                조건에 맞는 글이 없습니다.
-              </p>
-              <p
-                className={css({
-                  fontSize: '[13px]',
-                  color: 'ink.600',
-                })}
-              >
-                필터를 풀거나 다른 검색어로 시도해보세요.
-              </p>
-              <button
-                type="button"
-                onClick={clearAll}
-                className={css({
-                  fontFamily: 'mono',
-                  fontSize: '[12px]',
-                  color: 'accent.600',
-                  px: '[11px]',
-                  py: '[5px]',
-                  borderWidth: 'hairline',
-                  borderStyle: 'solid',
-                  borderColor: 'ink.border',
-                  rounded: 'control',
-                  cursor: 'pointer',
-                  _hover: { borderColor: 'accent.500' },
-                  transition: '[border-color 0.15s]',
-                })}
-              >
-                모두 지우기
-              </button>
-            </div>
-          ) : view === 'cards' ? (
-            <div
-              className={css({
-                display: 'grid',
-                gridTemplateColumns: {
-                  base: '1fr',
-                  sm: '[repeat(2, 1fr)]',
-                  lg: '[repeat(3, 1fr)]',
-                },
-                gap: '6',
-              })}
-            >
-              {/* 앞의 2개만 우선 로드하고 나머지는 lazy — 목록 전체를 한꺼번에 받으면
-                  첫 화면 이미지가 대역폭을 뺏겨 LCP가 밀린다. loading/fetchPriority는
-                  정적 속성이라 브레이크포인트별로 달리 줄 수 없는데, 그리드는 모바일
-                  1열 / sm 2열 / lg 3열이다. 가장 좁은 화면에 맞춰 잡아야 "안 보이는
-                  이미지를 high로 요청"하는 일이 없다. 나머지도 뷰포트에 들어오면
-                  lazy가 곧바로 로드하므로 손해가 아니다. */}
-              {filtered.map((p, i) => (
-                <PostGridCard key={p.slug} post={p} priority={i < 2} />
-              ))}
-            </div>
-          ) : (
-            <ol className={css({ listStyleType: 'none', p: '0', m: '0' })}>
-              {filtered.map(p => (
-                <ArchiveRow key={p.slug} post={p} />
-              ))}
-            </ol>
-          )}
-
-          {/* 모바일 전용 인기글 레일 — 목록을 밀어내지 않도록 아래에 둔다. */}
-          <div
-            className={css({
-              display: { base: 'block', md: 'none' },
-              mt: '10',
-              pt: '6',
-              borderTopWidth: 'hairline',
-              borderTopStyle: 'solid',
-              borderColor: 'ink.border',
-              // 데스크톱 래퍼와 같은 이유 — 레일이 비면 빈 띠를 남기지 않는다.
-              _empty: { display: 'none' },
-            })}
-          >
-            <PopularRail posts={posts} />
-          </div>
-        </div>
-      </div>
-
-      <PostsFilterFab
-        onClick={() => setSheetOpen(true)}
-        activeCount={activeCount}
+      <PostsArchiveLayout
+        posts={posts}
+        series={series}
+        state={state}
+        listState={listState}
+        viewCounts={counts}
+        pending={pending}
+        actions={actions}
+        searchInputRef={searchInput}
+        controlsInert={false}
       />
-      <PostsFilterSheet
-        open={sheetOpen}
-        onClose={() => setSheetOpen(false)}
-        onClearAll={clearAll}
-        activeCount={activeCount}
-      >
-        <PostsFilterPanel
-          sort={sort}
-          onSortChange={setSort}
-          view={view}
-          onViewChange={setView}
-          tagItems={tagItems}
-          activeTags={activeTags}
-          onToggleTag={toggleTag}
-          seriesItems={seriesItems}
-          activeSeries={seriesParam}
-          onToggleSeries={toggleSeries}
-          yearItems={yearItems}
-          activeYear={yearParam}
-          onToggleYear={toggleYear}
-        />
-      </PostsFilterSheet>
+      <p role="status" className={visuallyHidden}>
+        {announcement}
+      </p>
     </>
   );
 };
 
-interface ArchiveSearchBarProps {
-  q: string;
-  onChange: (v: string) => void;
+const visuallyHidden = css({ srOnly: true });
+
+const noop = () => undefined;
+const FALLBACK_ACTIONS: ArchiveActions = {
+  search: noop,
+  commitSearch: noop,
+  clearSearch: noop,
+  selectSeries: noop,
+  selectSort: noop,
+  selectView: noop,
+  removeTag: noop,
+  clearAll: noop,
+};
+
+/**
+ * `/posts/`의 정적 HTML — 뷰는 `useSearchParams` 때문에 프리렌더에서 빠진다. 같은 레이아웃을 기본
+ * 상태로 그려 하이드레이션 때 목록이 바뀌지 않게 한다. 컨트롤 묶음은 `inert`다 — 하이드레이션 전에
+ * 네이티브 radio·select를 누르면 바뀌어 보였다가 되돌아가므로, 그때까지는 눌리지도 초점을 받지도 않는다.
+ * 목록·링크는 inert가 아니다(정적 HTML의 글 링크를 check-seo가 센다).
+ */
+export const PostsArchiveFallback = ({ posts, series }: PostsArchiveProps) => (
+  <PostsArchiveLayout
+    posts={posts}
+    series={series}
+    state={DEFAULT_ARCHIVE_STATE}
+    listState={DEFAULT_ARCHIVE_STATE}
+    viewCounts={undefined}
+    pending={false}
+    actions={FALLBACK_ACTIONS}
+    searchInputRef={null}
+    controlsInert
+  />
+);
+
+const controls = css({ display: 'flex', flexDir: 'column', gap: '4' });
+
+const toolbar = css({
+  display: 'flex',
+  flexWrap: 'wrap',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: '3',
+  pt: '3',
+  borderTopWidth: 'hairline',
+  borderTopStyle: 'solid',
+  borderColor: 'ink.border',
+});
+
+const toolbarEnd = css({ display: 'flex', alignItems: 'center', gap: '2' });
+
+const countHeading = css({ textStyle: 'supporting', color: 'ink.700' });
+
+// 인기순 조회수가 오기 전에는 목록을 자리만 잡아 숨긴다(`aria-busy` → `_loading`) — 최신순으로 그렸다가
+// 재배열하면 목록 전체가 움직인다. 숨긴 노드의 재배열은 레이아웃 이동이 아니다.
+const gridList = css({
+  listStyleType: 'none',
+  p: '0',
+  m: '0',
+  display: 'grid',
+  // 칼럼 폭이 열 수를 정한다 — 752 칼럼에서 2열, 칸이 320보다 좁아지면 1열(Astryx BlogIndex).
+  gridTemplateColumns: '[repeat(auto-fill, minmax(min(320px, 100%), 1fr))]',
+  columnGap: '5',
+  rowGap: '10',
+  _loading: { visibility: 'hidden' },
+});
+
+// 피처는 목록의 첫 항목으로 한 줄을 다 쓴다 — 그 아래 카드 줄과의 간격은 그리드의 rowGap(40)이라 페이지
+// 칼럼의 gap(40)으로 떨어져 있던 때와 같다.
+const featureItem = css({ gridColumn: '1 / -1' });
+
+const rowList = css({
+  listStyleType: 'none',
+  p: '0',
+  m: '0',
+  _loading: { visibility: 'hidden' },
+});
+
+const empty = css({
+  display: 'flex',
+  flexDir: 'column',
+  alignItems: 'center',
+  gap: '3',
+  py: '20',
+  textAlign: 'center',
+});
+
+interface PostsArchiveLayoutProps extends PostsArchiveProps {
+  /** 컨트롤이 보이는 값 */
+  state: ArchiveState;
+  /** 목록이 그리는 값 — 필터 transition에서만 `state`보다 늦게 따라온다 */
+  listState: ArchiveState;
+  viewCounts: Map<string, number> | undefined;
+  /** 인기순 조회수를 기다리는 중 — 목록을 자리만 잡아 숨긴다 */
+  pending: boolean;
+  actions: ArchiveActions;
+  searchInputRef: Ref<HTMLInputElement>;
+  /** 하이드레이션 전(폴백) — 컨트롤 묶음을 inert로 */
+  controlsInert: boolean;
 }
 
-const ArchiveSearchBar = ({ q, onChange }: ArchiveSearchBarProps) => {
-  const inputRef = useRef<HTMLInputElement>(null);
+/**
+ * 컨트롤 묶음(검색·시리즈 칩·툴바·적용된 필터) 다음에 목록이 온다. Fragment라 이 형제들이 페이지
+ * 칼럼(flex col)의 항목이 된다.
+ */
+const PostsArchiveLayout = ({
+  posts,
+  series,
+  state,
+  listState,
+  viewCounts,
+  pending,
+  actions,
+  searchInputRef,
+  controlsInert,
+}: PostsArchiveLayoutProps) => {
+  const filtered = filterAndSortPostsByArchiveParams(posts, {
+    q: listState.q,
+    tags: listState.tags,
+    series: listState.series,
+    sort: listState.sort,
+    viewCounts,
+  });
+
+  // 피처 카드는 아무것도 거르지 않은 최신순 카드 보기에서만 맨 앞 글을 크게 세운다. 검색어 공백 처리는
+  // 필터와 같다 — 공백만 친 검색어가 피처만 내리는 점프를 막는다. 피처는 "글 목록"의 첫 항목이다 —
+  // 목록 밖에 두면 목록 항목 수가 h2의 "N편"보다 하나 적고, 목록으로 건너뛴 낭독기 사용자가 최신 글을
+  // 놓친다. 글마다 카드가 하나라 공유 요소 이름이 겹치지 않는다(겹치면 전환이 통째로 빠진다).
+  const showFeature =
+    listState.view === 'cards' &&
+    listState.sort === DEFAULT_SORT &&
+    listState.q.trim() === '' &&
+    listState.tags.length === 0 &&
+    listState.series === null;
+
   return (
-    <div
-      className={css({
-        display: 'flex',
-        alignItems: 'center',
-        gap: '2',
-        px: '3',
-        py: '2.5',
-        borderWidth: 'hairline',
-        borderStyle: 'solid',
-        borderColor: 'ink.border',
-        rounded: 'control',
-        bg: 'paper.100',
-        _focusWithin: { borderColor: 'accent.500' },
-        transition: '[border-color 0.15s]',
-      })}
-    >
-      <span
-        aria-hidden="true"
-        className={css({
-          fontFamily: 'mono',
-          fontSize: '[12px]',
-          color: 'ink.500',
-          flexShrink: 0,
-        })}
-      >
-        ⌕
-      </span>
-      <input
-        ref={inputRef}
-        type="search"
-        value={q}
-        onChange={e => onChange(e.target.value)}
-        // 검색 대상은 제목·요약·태그다(filterAndSortPostsByArchiveParams) — 본문은 아니다.
-        placeholder="제목, 요약, 태그 검색…"
-        aria-label="글 검색"
-        className={css({
-          flex: '1',
-          bg: 'transparent',
-          border: '[none]',
-          outline: '[none]',
-          fontSize: '[13px]',
-          color: 'ink.950',
-          fontFamily: 'sans',
-          _placeholder: { color: 'ink.500' },
-        })}
-      />
-      {q && (
-        <button
-          type="button"
-          // 누르면 이 버튼이 사라지므로 초점을 입력창으로 되돌린다.
-          onClick={() => {
-            onChange('');
-            inputRef.current?.focus();
-          }}
-          className={css({
-            fontFamily: 'mono',
-            fontSize: '[12px]',
-            color: 'ink.500',
-            flexShrink: 0,
-            cursor: 'pointer',
-            _hover: { color: 'ink.950' },
-          })}
-        >
-          지우기
-        </button>
-      )}
-    </div>
+    <>
+      <div inert={controlsInert} className={controls}>
+        <ArchiveSearchBox
+          value={state.q}
+          onChange={actions.search}
+          onClear={actions.clearSearch}
+          onBlur={actions.commitSearch}
+          inputRef={searchInputRef}
+        />
+        <SeriesChips
+          series={series}
+          total={posts.length}
+          value={state.series}
+          onChange={actions.selectSeries}
+        />
+        <div className={toolbar}>
+          {/* 목록의 섹션 헤딩 — 카드·행 제목(h3) 위의 h2다(axe heading-order). */}
+          <h2 className={countHeading}>{filtered.length}편</h2>
+          <div className={toolbarEnd}>
+            <SortSelect value={state.sort} onChange={actions.selectSort} />
+            <ViewToggle value={state.view} onChange={actions.selectView} />
+          </div>
+        </div>
+        <ActiveFilters
+          tags={state.tags}
+          onRemoveTag={actions.removeTag}
+          onClearAll={actions.clearAll}
+        />
+      </div>
+
+      {/* 목록 경계 — 필터 transition에서만 교차한다. 0편 빈 상태와 카드·행 목록이 같은 경계 안에서 서로
+          바뀌고, 피처 카드가 생기고 사라지는 것도 이 안이다. 래퍼 하나라 페이지 칼럼의 항목 수는 그대로다. */}
+      <ViewTransition update={ARCHIVE_LIST_SWAP} default="none">
+        <div>
+          {filtered.length === 0 ? (
+            <div className={empty}>
+              <p className={css({ textStyle: 'h3' })}>
+                조건에 맞는 글이 없습니다.
+              </p>
+              <p className={css({ textStyle: 'body', color: 'ink.700' })}>
+                필터를 풀거나 다른 검색어로 시도해보세요.
+              </p>
+              <button
+                type="button"
+                onClick={actions.clearAll}
+                className={actionButton({ tone: 'ghost', size: 'md' })}
+              >
+                모두 지우기
+              </button>
+            </div>
+          ) : listState.view === 'cards' ? (
+            <ol
+              aria-label="글 목록"
+              aria-busy={pending || undefined}
+              className={gridList}
+            >
+              {filtered.map((post, index) => {
+                const isFeature = showFeature && index === 0;
+                return (
+                  <li
+                    key={post.slug}
+                    className={isFeature ? featureItem : undefined}
+                  >
+                    {/* 첫 화면의 가장 큰 이미지 하나만 우선 받는다 — 피처가 있으면 피처, 없으면 그리드 첫 카드. */}
+                    <PostCard
+                      post={post}
+                      variant={isFeature ? 'feature' : 'grid'}
+                      priority={index === 0}
+                    />
+                  </li>
+                );
+              })}
+            </ol>
+          ) : (
+            <ol
+              aria-label="글 목록"
+              aria-busy={pending || undefined}
+              className={rowList}
+            >
+              {filtered.map(post => (
+                <PostListRow key={post.slug} post={post} />
+              ))}
+            </ol>
+          )}
+        </div>
+      </ViewTransition>
+    </>
   );
 };

@@ -5,7 +5,8 @@
 import { readFileSync } from 'node:fs';
 import { expect, test } from 'vitest';
 import {
-  ADMIN_ACTION_RPC,
+  ADMIN_ACTION_RPCS,
+  isPostTrendRows,
   MAX_FILTER_SLUGS,
   MAX_SLUG_LENGTH,
   isAdminAction,
@@ -14,7 +15,7 @@ import {
 } from './adminActions';
 
 test('isAdminAction: 등록된 action만 통과한다', () => {
-  for (const action of Object.keys(ADMIN_ACTION_RPC)) {
+  for (const action of Object.keys(ADMIN_ACTION_RPCS)) {
     expect(isAdminAction(action), `${action}은 등록된 action`).toBeTruthy();
   }
   expect(
@@ -25,7 +26,10 @@ test('isAdminAction: 등록된 action만 통과한다', () => {
   expect(isAdminAction(undefined)).toBe(false);
   expect(isAdminAction(null)).toBe(false);
   expect(isAdminAction(42)).toBe(false);
-  expect(isAdminAction({ action: 'all_post_stats' })).toBe(false);
+  expect(isAdminAction({ action: 'posts_overview' })).toBe(false);
+  // 통계·추이를 따로 부르던 옛 action 이름은 더는 등록돼 있지 않다.
+  expect(isAdminAction('all_post_stats')).toBe(false);
+  expect(isAdminAction('all_posts_trends')).toBe(false);
 });
 
 test('isAdminAction: 프로토타입 키(toString 등)는 거른다', () => {
@@ -57,8 +61,8 @@ test('adminActions.ts에는 import가 없다 (Deno Edge Function이 그대로 �
   expect(code, 'require()가 없어야 한다').not.toMatch(/\brequire\s*\(/);
 });
 
-test('ADMIN_ACTION_RPC: 모든 action이 서로 다른 get_* RPC에 대응한다', () => {
-  const rpcs = Object.values(ADMIN_ACTION_RPC);
+test('ADMIN_ACTION_RPCS: 모든 action이 서로 다른 get_* RPC에 대응한다', () => {
+  const rpcs = Object.values(ADMIN_ACTION_RPCS).flat();
   expect(new Set(rpcs).size, 'RPC 이름 중복 없음').toBe(rpcs.length);
   for (const rpc of rpcs) {
     expect(rpc, `${rpc}: admin 대리 호출은 읽기 전용 RPC만`).toMatch(/^get_/);
@@ -85,7 +89,7 @@ test('isSlugList: 거를 slug 목록으로 쓸 수 있는 문자열 배열만 �
 test('parseAdminRequest: 등록되지 않은 action·객체가 아닌 body는 거절한다', () => {
   for (const body of [
     null,
-    'all_post_stats',
+    'posts_overview',
     {},
     { action: 'get_all_post_stats' },
     { action: 'toString' },
@@ -96,28 +100,28 @@ test('parseAdminRequest: 등록되지 않은 action·객체가 아닌 body는 �
   }
 });
 
-test('parseAdminRequest: 목록 action은 slugs가 없으면 필터 없이, 있으면 검증해 싣는다', () => {
-  expect(parseAdminRequest({ action: 'all_post_stats' })).toEqual({
+test('parseAdminRequest: posts_overview는 slugs가 없으면 필터 없이, 있으면 검증해 싣는다', () => {
+  expect(parseAdminRequest({ action: 'posts_overview' })).toEqual({
     ok: true,
-    request: { action: 'all_post_stats' },
+    request: { action: 'posts_overview' },
   });
   // params가 객체가 아니면 slugs가 없는 것과 같다.
-  expect(
-    parseAdminRequest({ action: 'all_posts_trends', params: null }),
-  ).toEqual({ ok: true, request: { action: 'all_posts_trends' } });
+  expect(parseAdminRequest({ action: 'posts_overview', params: null })).toEqual(
+    { ok: true, request: { action: 'posts_overview' } },
+  );
   expect(
     parseAdminRequest({
-      action: 'all_posts_trends',
+      action: 'posts_overview',
       params: { slugs: ['a', 'b'] },
     }),
   ).toEqual({
     ok: true,
-    request: { action: 'all_posts_trends', params: { slugs: ['a', 'b'] } },
+    request: { action: 'posts_overview', params: { slugs: ['a', 'b'] } },
   });
 
   // 모양이 어긋난 필터로 거르지 않은 채 진행하지 않는다.
   const bad = parseAdminRequest({
-    action: 'all_post_stats',
+    action: 'posts_overview',
     params: { slugs: 'a' },
   });
   expect(bad.ok).toBe(false);
@@ -142,4 +146,21 @@ test('parseAdminRequest: slug action은 비어 있지 않은 문자열 slug가 �
     expect(parsed.ok, JSON.stringify(params)).toBe(false);
     if (!parsed.ok) expect(parsed.error).toBe('slug 파라미터가 필요합니다.');
   }
+});
+
+test('isPostTrendRows: 열 셋의 값 타입까지 맞는 행 배열만 통과한다', () => {
+  const row = { slug: 'a', view_date: '2026-05-01', view_count: 3 };
+  expect(isPostTrendRows([])).toBe(true);
+  expect(isPostTrendRows([row, { ...row, slug: 'b' }])).toBe(true);
+
+  // get_posts_trends는 Json을 돌려준다 — 배열이 아니거나 행이 어긋나면 받지 않는다.
+  expect(isPostTrendRows(null)).toBe(false);
+  expect(isPostTrendRows({ rows: [row] })).toBe(false);
+  expect(isPostTrendRows([null])).toBe(false);
+  expect(isPostTrendRows(['a'])).toBe(false);
+  expect(isPostTrendRows([{ slug: 'a', view_count: 3 }])).toBe(false);
+  expect(isPostTrendRows([{ ...row, view_count: '3' }])).toBe(false);
+  expect(isPostTrendRows([{ ...row, view_date: 20260501 }])).toBe(false);
+  expect(isPostTrendRows([{ ...row, slug: null }])).toBe(false);
+  expect(isPostTrendRows([row, { slug: 'b' }])).toBe(false);
 });

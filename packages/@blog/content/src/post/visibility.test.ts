@@ -216,7 +216,7 @@ test('비-scheduled status는 now 주입과 무관 (회귀 가드)', () => {
 
 // --- resolvePostState: 화면에 보여줄 "현재 상태" ---
 // status는 발행 의도의 기록이고, 배지는 지금 공개인지를 말해야 합니다.
-// admin PostAccordion이 이 규칙을 자체 구현했다가 아래 두 케이스를 놓쳐서,
+// 예전 admin 목록 아코디언이 이 규칙을 자체 구현했다가 아래 두 케이스를 놓쳐서(지금은 PostTable·PostStatsPanel이 이 함수를 쓴다),
 // 이미 공개돼 조회수가 쌓이는 글을 몇 달째 "예약"으로 표시했습니다.
 
 test('resolvePostState: published/draft는 status 그대로', () => {

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Share2 } from 'lucide-react';
 import { css } from '@blog/styled-system/css';
+import { actionButton } from '@/src/components/actionButton';
 
 interface ShareButtonProps {
   title: string;
@@ -56,27 +57,16 @@ export const ShareButton = ({ title }: ShareButtonProps) => {
 
   return (
     <div className={css({ display: 'flex', alignItems: 'center', gap: '3' })}>
-      <span role="status" className={css({ fontSize: 'sm', color: 'ink.600' })}>
+      <span
+        role="status"
+        className={css({ textStyle: 'supporting', color: 'ink.700' })}
+      >
         {notice}
       </span>
       <button
         type="button"
         onClick={() => void handleShare()}
-        className={css({
-          display: 'flex',
-          alignItems: 'center',
-          gap: '2',
-          px: '4',
-          py: '2',
-          bg: 'paper.200',
-          rounded: 'pill',
-          color: 'ink.800',
-          fontSize: 'sm',
-          fontWeight: 'medium',
-          cursor: 'pointer',
-          transition: '[all 0.2s]',
-          _hover: { bg: 'paper.300' },
-        })}
+        className={actionButton({ tone: 'ghost', size: 'md' })}
       >
         <Share2 size={16} />
         <span>공유하기</span>

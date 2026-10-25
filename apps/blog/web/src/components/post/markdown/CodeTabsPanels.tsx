@@ -61,7 +61,7 @@ export function CodeTabsPanels({
       className={css({
         mb: '12',
         mt: '8',
-        rounded: 'card',
+        rounded: 'element',
         overflow: 'hidden',
         bg: 'code.surface',
         borderWidth: 'hairline',
@@ -121,14 +121,11 @@ export function CodeTabsPanels({
                   letterSpacing: 'mono',
                   whiteSpace: 'nowrap',
                   cursor: 'pointer',
-                  // 선택 표시는 **무채색**이다. 포인트색이 가는 자리는 제목 ·
-                  // 링크 · 시리즈 배지 · 다이어그램의 핵심 경로 넷뿐이고
-                  // (AGENTS.md 디자인 금지선), 탭은 그 어디도 아니다. 차례
-                  // 레일이 같은 이유로 무채색인 것과도 맞춘다 — 코드 블록
-                  // 크롬처럼 본문을 읽는 보조 장치에까지 액센트를 뿌리면
-                  // "액센트가 붙은 곳 = 중요한 곳"이라는 신호가 닳는다.
-                  color: selected ? 'ink.950' : 'ink.600',
-                  transition: '[color 0.15s]',
+                  // 선택 표시는 accent.solid(본문 잉크)다 — 차례 레일·admin 기간
+                  // 세그먼트와 같은 "현재 선택" 이름(Astryx Tab의 선택 표식이
+                  // accent). 굵기는 바꾸지 않는다 — 탭 폭이 늘어 크롬이 밀린다.
+                  color: selected ? 'accent.solid' : 'ink.600',
+                  transition: 'colors',
                   _hover: { color: 'ink.950' },
                   // 활성 표시는 밑줄 1px. 배경을 칠하면 크롬 안에 또 다른
                   // 상자가 생겨 위계가 한 겹 늘어난다.
@@ -138,7 +135,7 @@ export function CodeTabsPanels({
                     insetX: '2',
                     bottom: '0',
                     h: '[1px]',
-                    bg: 'ink.950',
+                    bg: 'accent.solid',
                   },
                 })}
               >

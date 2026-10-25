@@ -46,9 +46,9 @@ const dispatchClick = (el: Element, init: MouseEventInit = {}) => {
 /**
  * 드로어가 열려 있는지는 **body 스크롤 잠금**으로 본다.
  *
- * 닫기는 AnimatePresence의 exit 애니메이션을 거치므로 DOM에서 사라지는 시점이
- * jsdom에서는 결정적이지 않다. 잠금은 isOpen에 직접 매달린 effect라 상태가
- * 바뀌는 즉시 반영된다.
+ * 잠금은 열림 상태에 직접 매달린 effect라 닫기를 시작하는 즉시 풀린다 — 시트가 내려가는
+ * 동안(퇴장 전환) DOM에 남아 있는 브라우저와 같은 기준이다. jsdom에는 CSS가 없어 퇴장
+ * 전환 시간이 0이라 시트는 닫자마자 사라지지만(usePresence), 이 기준은 그것에 기대지 않는다.
  */
 const drawerOpen = () => document.body.style.overflow === 'hidden';
 

@@ -91,7 +91,7 @@ export function FileTree({ children }: FileTreeProps) {
         bg: 'paper.100',
         borderWidth: 'hairline',
         borderColor: 'ink.border',
-        rounded: 'control',
+        rounded: 'element',
         px: '5',
         py: '4',
         my: '6',

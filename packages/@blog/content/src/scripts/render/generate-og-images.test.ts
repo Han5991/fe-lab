@@ -13,6 +13,7 @@ import {
   ogFileRelPath,
   ogTemplate,
   titleFontSize,
+  toOgPostInput,
   findOrphanPngs,
   loadFonts,
   renderOgPng,
@@ -31,6 +32,10 @@ const FONTS_KEY = 'fixture-fonts-key';
 // 판별한다. 리터럴로 복사해 두면 팔레트를 바꿀 때마다 색 때문에 깨진다
 // (정작 검증하려는 건 색이 아니라 조건부 렌더다).
 const PILL_BORDER = OG.palette.pillBorder;
+
+function series(id: string, title = id): OgPostInput['series'] {
+  return { id, title };
+}
 
 function post(over: Partial<OgPostInput> = {}): OgPostInput {
   return { slug: 'my-post', title: '테스트 글', date: '2026-06-09', ...over };
@@ -53,8 +58,52 @@ test('ogContentHash: 이미지에 들어가는 필드(title/date/series)가 바�
     ogContentHash(post({ date: '2025-01-01' }), SITE, OG, FONTS_KEY),
   ).not.toBe(base);
   expect(
-    ogContentHash(post({ series: 'bundler' }), SITE, OG, FONTS_KEY),
+    ogContentHash(post({ series: series('bundler') }), SITE, OG, FONTS_KEY),
   ).not.toBe(base);
+});
+
+test('ogContentHash: 시리즈 표시명만 바뀌어도 해시 변경 — _series.yml title 수정이 재생성을 트리거', () => {
+  const before = ogContentHash(
+    post({ series: series('bundler') }),
+    SITE,
+    OG,
+    FONTS_KEY,
+  );
+  const after = ogContentHash(
+    post({ series: series('bundler', '번들러 만들기') }),
+    SITE,
+    OG,
+    FONTS_KEY,
+  );
+  expect(after).not.toBe(before);
+});
+
+// ── toOgPostInput ────────────────────────────────────────────────────────────
+
+test('toOgPostInput: _series.yml에 title이 있으면 그 표시명, id는 폴더 이름 그대로', () => {
+  const input = toOgPostInput(
+    { slug: 's', title: 't', date: null, series: 'bundler' },
+    () => ({ name: 'bundler', title: '번들러 만들기' }),
+  );
+  expect(input.series).toStrictEqual({ id: 'bundler', title: '번들러 만들기' });
+});
+
+test('toOgPostInput: title이 없는 시리즈는 폴더 id가 표시명', () => {
+  const input = toOgPostInput(
+    { slug: 's', title: 't', date: null, series: '회고/2025' },
+    () => ({ name: '회고/2025', title: undefined }),
+  );
+  expect(input.series).toStrictEqual({ id: '회고/2025', title: '회고/2025' });
+});
+
+test('toOgPostInput: 시리즈 글이 아니면 series 없음 — 메타를 조회하지 않는다', () => {
+  const lookup = vi.fn(() => null);
+  const input = toOgPostInput(
+    { slug: 's', title: 't', date: '2026-01-01' },
+    lookup,
+  );
+  expect(input.series).toBeUndefined();
+  expect(lookup).not.toHaveBeenCalled();
 });
 
 test('ogContentHash: og 설정(팔레트·크기)이 바뀌면 해시 변경 — 설정 오버라이드가 재생성을 트리거', () => {
@@ -63,7 +112,7 @@ test('ogContentHash: og 설정(팔레트·크기)이 바뀌면 해시 변경 —
     ogContentHash(
       post(),
       SITE,
-      { ...OG, palette: { ...OG.palette, accent: '#FF0000' } },
+      { ...OG, palette: { ...OG.palette, brand: '#FF0000' } },
       FONTS_KEY,
     ),
   ).not.toBe(base);
@@ -148,16 +197,29 @@ test('titleFontSize: 길이에 따라 76/64/54px 3단계', () => {
   expect(titleFontSize('가'.repeat(39))).toBe(54);
 });
 
-test('displayTitle: 시리즈명과 정확히 일치하는 prefix만 제거', () => {
-  expect(displayTitle('[TS로 설계] 당신의 Type', '[TS로 설계]')).toBe(
-    '당신의 Type',
-  );
-  expect(displayTitle('그냥 제목', '[TS로 설계]')).toBe('그냥 제목');
+test('displayTitle: 시리즈 id나 표시명과 정확히 일치하는 prefix만 제거', () => {
+  const ts = series('[TS로 설계]', 'TS로 설계');
+  expect(displayTitle('[TS로 설계] 당신의 Type', ts)).toBe('당신의 Type');
+  expect(displayTitle('TS로 설계: 당신의 Type', ts)).toBe('당신의 Type');
+  expect(displayTitle('그냥 제목', ts)).toBe('그냥 제목');
   expect(displayTitle('그냥 제목', undefined)).toBe('그냥 제목');
 });
 
+test('displayTitle: 폴더 id와 다른 표시명이어도 제목의 폴더명 prefix를 제거', () => {
+  // 제목은 폴더 이름으로 시작하고, pill에는 표시명이 그려지는 실제 모양.
+  expect(
+    displayTitle(
+      '[Typescript로 설계하는 프로젝트] 당신의 Type',
+      series(
+        '[Typescript로 설계하는 프로젝트]',
+        'TypeScript로 설계하는 프로젝트',
+      ),
+    ),
+  ).toBe('당신의 Type');
+});
+
 test('displayTitle: prefix 제거 후 빈 제목이 되면 원본 유지', () => {
-  expect(displayTitle('bundler', 'bundler')).toBe('bundler');
+  expect(displayTitle('bundler', series('bundler'))).toBe('bundler');
 });
 
 test('ogTemplate: 제목/날짜/도메인이 트리에 포함', () => {
@@ -167,11 +229,12 @@ test('ogTemplate: 제목/날짜/도메인이 트리에 포함', () => {
   expect(json.includes(SITE.url.replace('https://', ''))).toBeTruthy();
 });
 
-test('ogTemplate: series가 있을 때만 pill 노출', () => {
+test('ogTemplate: series가 있을 때만 pill 노출 — 폴더 id가 아니라 표시명을 그린다', () => {
   const withSeries = JSON.stringify(
-    ogTemplate(post({ series: 'bundler' }), SITE, OG),
+    ogTemplate(post({ series: series('bundler', '번들러 만들기') }), SITE, OG),
   );
-  expect(withSeries.includes('bundler')).toBeTruthy();
+  expect(withSeries.includes('번들러 만들기')).toBeTruthy();
+  expect(withSeries.includes('bundler')).toBeFalsy();
   expect(withSeries.includes(PILL_BORDER)).toBeTruthy();
   expect(
     !JSON.stringify(ogTemplate(post(), SITE, OG)).includes(PILL_BORDER),
@@ -181,7 +244,10 @@ test('ogTemplate: series가 있을 때만 pill 노출', () => {
 test('ogTemplate: 시리즈명이 제목 prefix와 중복되면 제목에서 제거', () => {
   const json = JSON.stringify(
     ogTemplate(
-      post({ title: '[TS 설계] 당신의 Type', series: '[TS 설계]' }),
+      post({
+        title: '[TS 설계] 당신의 Type',
+        series: series('[TS 설계]', 'TS 설계'),
+      }),
       SITE,
       OG,
     ),
@@ -221,7 +287,7 @@ test('renderOgPng: 설정의 폰트 서술자로 유효한 PNG 생성', async ()
   const png = await renderOgPng(
     post({
       title: '번들러 만들기: 아주 긴 한글 제목도 안전하게 렌더링',
-      series: 'bundler',
+      series: series('bundler', '번들러 만들기'),
     }),
     loadFonts(OG.fonts),
     SITE,
@@ -282,4 +348,42 @@ test('main: 생성 → 재실행 스킵 → 폰트 서술자 변경 시 재생�
     og: { fonts: [{ ...TEST_VALUES.ogFonts[0], name: 'Renamed Sans' }] },
   });
   expect(await runMain(renamedFonts)).toContain('1 생성, 0 스킵');
+});
+
+test('main: _series.yml의 title을 고치면 그 시리즈 글만 다시 생성된다', async () => {
+  const tmp = mkdtempSync(join(tmpdir(), 'og-series-'));
+  const root = join(tmp, 'app');
+  const postsDir = join(tmp, 'posts');
+  const folder = join(postsDir, 'bundler');
+  mkdirSync(root, { recursive: true });
+  mkdirSync(folder, { recursive: true });
+  writeFileSync(join(folder, '_series.yml'), 'title: 번들러 만들기\n');
+  writeFileSync(
+    join(folder, 'in-series.md'),
+    '---\nstatus: published\ntitle: 시리즈 글\ndate: 2020-01-01\n---\n\n본문.\n',
+  );
+  writeFileSync(
+    join(postsDir, 'standalone.md'),
+    '---\nstatus: published\ntitle: 독립 글\ndate: 2020-01-02\n---\n\n본문.\n',
+  );
+
+  const runMain = async (): Promise<string> => {
+    const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    try {
+      await main(
+        createContext(
+          defineTestContent({ root }),
+          join(root, 'content.config.mts'),
+        ),
+      );
+      return log.mock.calls.map(args => String(args[0])).at(-1) ?? '';
+    } finally {
+      log.mockRestore();
+    }
+  };
+
+  expect(await runMain()).toContain('2 생성, 0 스킵');
+  expect(await runMain()).toContain('0 생성, 2 스킵');
+  writeFileSync(join(folder, '_series.yml'), 'title: 번들러를 직접 만들기\n');
+  expect(await runMain()).toContain('1 생성, 1 스킵');
 });

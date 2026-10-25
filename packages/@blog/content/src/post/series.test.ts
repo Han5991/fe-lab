@@ -2,7 +2,11 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { expect, test } from 'vitest';
-import { createSeriesReader, sortPostsBySeriesOrder } from './series.ts';
+import {
+  createSeriesReader,
+  seriesDisplayName,
+  sortPostsBySeriesOrder,
+} from './series.ts';
 import { testContent } from './testing.ts';
 
 // 실제 코퍼스(_series.yml)에 앵커한 테스트 인스턴스의 판정을 검증한다.
@@ -326,4 +330,14 @@ test('isSeriesFolder: null을 명시하면 디스크를 읽지 않고 "메타 �
   // bundler는 실제로 `_series.yml`이 있는 폴더라, 조회했다면 true가 나온다.
   expect(isSeriesFolder('bundler', null)).toBe(false);
   expect(isSeriesFolder('bundler')).toBe(true);
+});
+
+test('seriesDisplayName: _series.yml의 title이 있으면 title, 없거나 메타가 없으면 폴더 id', () => {
+  expect(
+    seriesDisplayName('bundler', { name: 'bundler', title: '번들러' }),
+  ).toBe('번들러');
+  expect(
+    seriesDisplayName('회고/2025', { name: '회고/2025', title: undefined }),
+  ).toBe('회고/2025');
+  expect(seriesDisplayName('회고/2025', null)).toBe('회고/2025');
 });

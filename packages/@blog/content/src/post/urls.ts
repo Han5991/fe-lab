@@ -1,3 +1,4 @@
+import type { ArchiveSortKey } from './filtering.ts';
 import { encodePostSlug } from './utils.ts';
 
 /**
@@ -99,11 +100,20 @@ export function postUrl(slug: string, siteUrl: string): string {
   return `${siteUrl}${postPath(slug)}`;
 }
 
-/** 아카이브 필터 — 없는 키는 쿼리에 넣지 않는다(빈 `?`가 생기지 않도록). */
+/**
+ * 아카이브 필터 — 없는 키는 쿼리에 넣지 않는다(빈 `?`가 생기지 않도록).
+ *
+ * - `tag` — 콤마로 이은 태그(`formatTagParam`이 잇고 `parseTagParam`이 푼다). 여럿이면 AND.
+ * - `sort` — 정렬도 공유할 수 있는 링크 상태다. 기본값(`recent`)은 넣지 않는다 — 호출부가 생략한다.
+ *
+ * 목록 화면이 읽는 쿼리 키도 이 타입에 묶여 있다 — 한쪽만 이름이 바뀌면 필터 링크가 경고 없이 빈
+ * 목록으로 떨어진다.
+ */
 export interface ArchiveFilters {
   tag?: string;
   series?: string;
   q?: string;
+  sort?: ArchiveSortKey;
 }
 
 /**

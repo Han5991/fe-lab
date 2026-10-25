@@ -205,22 +205,6 @@ describe('SearchDialog - 시리즈 표기', () => {
     expect(option).toHaveTextContent('우아한 에러 처리');
     expect(option).not.toHaveTextContent('lab/error-handling');
   });
-
-  test('색인의 시리즈 제목이 null이면(_series.yml에 title 없음) id로 대신한다', async () => {
-    const untitled = post('other', '전혀 다른 글', 'lab/error-handling');
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(() =>
-        Promise.resolve({ ok: true, json: () => Promise.resolve([untitled]) }),
-      ),
-    );
-    render(<SearchDialog />);
-    fireEvent.click(screen.getByRole('button', { name: '검색' }));
-
-    expect(
-      await screen.findByRole('option', { name: /전혀 다른 글/ }),
-    ).toHaveTextContent('lab/error-handling');
-  });
 });
 
 describe('SearchDialog - 검색 색인 불러오기', () => {

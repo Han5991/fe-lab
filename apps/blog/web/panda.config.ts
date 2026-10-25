@@ -1,20 +1,39 @@
 import { defineConfig, definePlugin } from '@pandacss/dev';
+import { ADMIN_VIEW_TRANSITION } from './src/shared/adminViewTransitions';
 import { TEST_SUFFIX } from './testFiles.mts';
+import {
+  ACTIVE_NAV_INDICATOR_SELECTOR,
+  ARCHIVE_FILTER_TRANSITION_TYPE,
+  ARCHIVE_LIST_RISE,
+  NAV_INDICATOR_ATTRIBUTE,
+  NAV_TRANSITION,
+  POST_OPEN_TRANSITION_TYPE,
+  POST_SHARED,
+  POST_SHARED_RESCALED,
+  POST_SHARED_SIDE,
+  THEME_TRANSITION_TYPE,
+  VIEW_TRANSITION,
+} from './src/shared/viewTransitions';
 
 // 색·라운드는 전부 @blog/preset에서 온다(AGENTS.md §9). preset-panda는 spacing·sizes·fontSizes 같은
 // 스케일만 빌리고 색 팔레트와 radii는 버린다 — v2의 팔레트(oklch 26색 × 11단)는 v1의 두 배 무게로
 // 토큰 레이어에 통째로 실렸고(쓰는 곳 0), strictTokens가 `orange.500` 같은 팔레트 밖 색을 통과시켰다.
-// radii는 블로그 토큰과 같은 값을 다른 이름으로 들고 있어(lg=8px=control, xl=12px=card, full≈pill)
-// 같은 라운드가 이름 셋(`'lg'`·`'control'`·`'[8px]'`)으로 갈렸다.
-// shadows도 버린다 — 그림자 장식은 금지라(AGENTS.md §9) 쓰는 곳이 0인데 변수 11개가 토큰 레이어에
-// 실렸고, `boxShadow: 'md'`가 타입을 통과했다. @blog/preset의 `shadows.markerLeft`는 남아 카테고리가
-// 비지 않는다. 쓰는 곳이 0인 blurs·durations·aspectRatios는 남긴다 — 카테고리가 통째로 비면 Panda가
-// 그 속성 타입을 아무 문자열로 넓혀(2.3.0 실측) strictTokens가 풀린다.
+// radii는 블로그 토큰과 같은 값을 다른 이름으로 들고 있어(lg=8px=inner, xl=12px=element,
+// 2xl=16px=container, 4xl=32px=page) 같은 라운드가 이름 둘 이상(`'lg'`·`'inner'`·`'[8px]'`)으로 갈린다.
+// shadows도 버린다 — 블로그 그림자는 떠 있는 표면의 `overlay.*` 둘뿐이라(AGENTS.md §9) preset-panda의
+// 변수 11개는 쓰는 곳이 0인데 토큰 레이어에 실렸고, `boxShadow: 'md'`가 타입을 통과했다. @blog/preset의
+// `shadows.overlay.*`가 있어 카테고리가 비지 않는다. 모션(durations·easings·animations·keyframes)도
+// 버린다 — preset-panda의 `fast`(150ms)가 블로그의 `fast`(175ms, Astryx)와 같은 이름으로 섞이고, 쓰는
+// 곳이 0인 단계(`fastest`·`slower` …)와 easings·keyframes(spin·bounce …)가 타입을 통과했다. 세
+// 카테고리는 @blog/preset의 모션 토큰이 채운다. textStyles도 버린다 — preset-panda의 `xs`~`9xl`은
+// fontSizes와 같은 이름·값에 행간만 붙인 것이라 블로그의 역할 이름(@blog/preset의 `display1`·`body` …)과
+// 같은 크기가 두 이름으로 갈리고, 쓰는 곳이 0이었다. 쓰는 곳이 0인 blurs·aspectRatios는 남긴다 — 카테고리가
+// 통째로 비면 Panda가 그 속성 타입을 아무 문자열로 넓혀(2.3.0 실측) strictTokens가 풀린다.
 // 서드파티 프리셋을 고치지 않고 일부만 빼는 v2 방식이 preset:resolved 훅이다(theming/plugins
 // "Trim a preset", theming/presets "extend only adds, so removing takes a plugin"). @blog/preset에
 // extend 없는 colors를 두는 길도 v2에서 동작하지만, 그러면 블로그 프리셋이 목록 순서에 묶인다.
 // 뺀 토큰을 쓰면 Panda는 진단 없이 raw 값(`color: orange.500`)을 내보낸다 — check-types가 막고,
-// 색·라운드는 Panda 공식 lint(prefer-token, eslint.config.mts)도 막는다.
+// 색·라운드·그림자·모션은 Panda 공식 lint(prefer-token, eslint.config.mts)도 막는다.
 const trimPresetPanda = definePlugin({
   name: 'blog:trim-preset-panda',
   hooks: {
@@ -25,10 +44,44 @@ const trimPresetPanda = definePlugin({
             'theme.semanticTokens.colors',
             'theme.tokens.radii',
             'theme.tokens.shadows',
+            'theme.tokens.durations',
+            'theme.tokens.easings',
+            'theme.tokens.animations',
+            'theme.keyframes',
+            'theme.textStyles',
           ])
         : undefined,
   },
 });
+
+// View Transitions 그룹을 쌓는 순서(아래 globalCss) — 페이지 < 제목 < 커버 < 헤더 < 내비 표식. 그룹은
+// z-index가 없으면 문서 순서로 쌓인다. 이유는 각 규칙 옆에 있다.
+const VT_STACK = {
+  title: '1',
+  cover: '2',
+  siteHeader: '3',
+  navIndicator: '4',
+} as const;
+
+// 방향 있는 이동(NAV_TRANSITION)에서 페이지가 미끄러지는 거리와, 그 거리를 의사 요소마다 부호를 붙여
+// 넘기는 변수(아래 keyframes·globalCss). 32px인 이유: 나가는 페이지는 이 거리를 fast(175ms) 동안
+// 가속하며 걷히고 들어오는 페이지는 그 뒤 fastMax(230ms) 동안 감속하며 다 와서, 거리 전부가 눈에
+// 보인다 — Next 가이드의 60px은 들어오는 쪽이 처음부터 미끄러져(400ms) 보이는 몫이 40px 안팎이고,
+// Material의 shared axis가 30dp다. 들어오는 페이지의 8px 떠오름(타입 없는 페이드)의 네 배라 방향은
+// 읽히고, 375px 화면에서도 폭의 9%라 화면을 가로지르는 움직임이 되지 않는다.
+const NAV_SLIDE_PX = 32;
+const NAV_SLIDE_OFFSET = '--nav-slide-offset';
+const NAV_SLIDE_LEFT = `${-NAV_SLIDE_PX}px` as const;
+const NAV_SLIDE_RIGHT = `${NAV_SLIDE_PX}px` as const;
+
+// 초점 링 — 초점을 받은 요소(`:focus-visible`)와, 상태를 숨긴 네이티브 radio가 든 칩·토글 칸(아래 globalCss)이
+// 같은 값을 쓴다. 초점 링은 inner 자리다(blog-preset.ts radii 주석). globalCss는 base 레이어라, 자기
+// 라운드를 가진 요소(utilities 레이어)는 초점을 받아도 그 라운드를 지킨다.
+const FOCUS_RING = {
+  outline: '2px solid token(colors.accent.solid)',
+  outlineOffset: '3px',
+  borderRadius: 'inner',
+} as const;
 
 export default defineConfig({
   // Panda 기본 프리셋 + 블로그 프리셋(@blog/preset — 블로그 소유, 컴포넌트 없는 설정 전용 패키지).
@@ -58,10 +111,11 @@ export default defineConfig({
   // 공식 권장대로 프로덕션에서만 줄인다 — dev에서 생성 CSS를 읽을 수 있게. 최종 out/의 CSS는
   // Next가 한 번 더 줄이므로 배포물 크기는 이 값과 무관하다.
   minify: process.env.NODE_ENV === 'production',
-  // optimize(styling/optimization)는 removeUnusedKeyframes만 켠다 — preset-panda의 keyframes(spin·
-  // ping·bounce …) 중 쓰지 않는 것을 뺀다. animations 토큰(`animation: 'pulse'`)으로 참조한 keyframes는
-  // 2.3.0부터 남는다(2.1.2는 그것까지 지웠다). removeUnusedTokens는 codeTheme.ts가 런타임에 고르는
-  // token.var(role)을 못 봐 code.* 변수를 지우므로 켜지 않는다.
+  // optimize(styling/optimization)는 removeUnusedKeyframes만 켠다 — 정의만 있고 아무도 부르지 않는
+  // keyframes를 뺀다(preset-panda의 keyframes는 위 플러그인이 이미 버린다). check-bundle의
+  // `keyframes-unreferenced`가 이 옵티마이저를 전제로 한다. animations 토큰(`animation: 'skeleton'`)으로
+  // 참조한 keyframes는 2.3.0부터 남는다(2.1.2는 그것까지 지웠다). removeUnusedTokens는 codeTheme.ts가
+  // 런타임에 고르는 token.var(role)을 못 봐 code.* 변수를 지우므로 켜지 않는다.
   optimize: { removeUnusedKeyframes: true },
   // propertyFallback도 지금은 필요 없다: @property로 등록되는 변수는 backdrop-*뿐이고 빈
   // fallback(`var(--backdrop-blur, )`)이라 @property 미지원 브라우저(Firefox 128 미만)에서도 값이
@@ -78,6 +132,46 @@ export default defineConfig({
   conditions: {
     extend: {
       dark: '[data-theme=dark] &',
+      // 인터랙션 상태의 "때"는 아래 한 곳에서 정한다(blog-design-system 스킬 "인터랙션 상태"). 이름은 Panda
+      // 기본 조건(`_hover`·`_groupHover`)을 덮어쓴다 — 쓰는 곳 전부가 컴포넌트를 고치지 않고 따라온다.
+      // - `_hover` · `_groupHover`: hover가 되는 기기에서는 마우스를 올린 동안, 안 되는 기기(터치)에서는
+      //   누르는 동안이다. 터치는 탭 뒤에도 :hover가 남아(sticky hover) hover 면이 다음 탭까지 붙어 있었다.
+      //   Panda preflight가 브라우저의 탭 하이라이트를 지우므로(`-webkit-tap-highlight-color`) 터치의 누름
+      //   피드백이 곧 이 hover 모양이다 — 면·색·밑줄은 `_hover`에 한 번만 적는다.
+      // - `_press` · `_groupPress`: 모든 포인터에서 누르는 동안. hover와 다른 모양이 필요한 자리만 쓴다.
+      // - `_pressScale`: 누르는 동안의 **크기**. 마우스류(hover·fine)에서만 — 터치의 :active는 스크롤을
+      //   시작하는 손가락에도 칠해진다(Astryx와 같은 판단). disabled는 뺀다.
+      // - `_groupKeyboardFocus`: 그룹(카드) 안이나 그룹 자신에 **키보드 초점**(`:focus-visible`)이 있는 동안.
+      //   `:focus-within`이 아닌 이유는 마우스·터치로 누른 링크도 초점을 받아, 터치에서 탭 뒤에 카드
+      //   틴트가 남기 때문이다(`_hover`를 터치에서 누르는 동안으로 바꾼 것과 같은 문제). 링크가 그룹 자신인
+      //   카드(이전·다음)도 있어 `:has()`만으로는 모자라고 `:is()`로 자신을 더한다.
+      // `_press*`·`_groupKeyboardFocus`·`_active`·`_focus`·`_focusVisible`은 eslint의 허용 파일(`INTERACTION_FILES` —
+      // 프리셋인 `interaction.ts`·`cardParts.ts`, 두 셸이 함께 쓰는 건너뛰기 링크 `skipLink.ts`) 밖에서
+      // 쓰지 못한다(`NO_LOCAL_INTERACTION`). 버튼 레시피도 직접 쓰지 않고 프리셋을 펼친다. `_hover`는
+      // 컴포넌트가 쓴다.
+      hover: {
+        '@media (hover: hover)': { '&:is(:hover, [data-hover])': '@slot' },
+        '@media (hover: none)': { '&:is(:active, [data-active])': '@slot' },
+      },
+      groupHover: {
+        '@media (hover: hover)': {
+          '.group:is(:hover, [data-hover]) &': '@slot',
+        },
+        '@media (hover: none)': {
+          '.group:is(:active, [data-active]) &': '@slot',
+        },
+      },
+      press:
+        '&:is(:active, [data-active]):not(:disabled, [aria-disabled=true])',
+      groupPress: '.group:is(:active, [data-active]) &',
+      groupKeyboardFocus:
+        '.group:is(:focus-visible, :has(:focus-visible), [data-focus-visible]) &',
+      pressScale: {
+        '@media (hover: hover) and (pointer: fine)': {
+          '&:is(:active, [data-active]):not(:disabled, [aria-disabled=true])':
+            '@slot',
+        },
+      },
     },
   },
   // 생성물은 이 설정만 쓰는 전용 패키지로 간다 — 출력 자리 하나에 작성자 하나.
@@ -87,12 +181,101 @@ export default defineConfig({
   theme: {
     extend: {
       keyframes: {
+        // ── admin 화면(아래 globalCss의 admin 블록·admin 컴포넌트) ──
+        // 들어오는 쪽은 토큰 곡선(standard)으로 감속하고, 나가는 쪽은 페이지 전환의 pageExit(제자리
+        // 페이드)을 같이 쓴다. 세로로 떠오르는 진입(카드·값·스켈레톤 뒤 내용)도 페이지 전환의
+        // pageEnter(8px)를 같이 쓴다 — 같은 움직임에 keyframes를 둘 두지 않는다.
+        //   admin-inspector-in/out — 넓은 화면 글 통계 패널의 내용이 오른쪽 16px에서 밀려 오고, 그쪽으로
+        //                            밀려 나간다
+        //   admin-sheet-in/out — 좁은 화면 시트가 화면 밖에서 들어오고 나간다. 어느 쪽인지는 의사
+        //                        요소가 주는 변수(--admin-sheet-from)다(sm 미만 아래, 그 위 오른쪽)
+        //   admin-fade-in      — 시트 뒤 스크림, 차트 등장
+        //   admin-bar-grow     — 가로 막대가 트랙 왼쪽에서 자기 길이까지 자란다(transform만)
+        //   admin-chart-wipe   — 차트의 선·면이 왼쪽에서 오른쪽으로 그려진다(clip-path inset)
+        //   admin-chart-rise   — 차트의 세로 막대가 바닥에서 자란다(transform만)
+        //   admin-card-in      — 로그인 카드가 98%에서 제 크기로 선다
+        'admin-inspector-in': {
+          from: { opacity: '0', transform: 'translateX(16px)' },
+        },
+        'admin-inspector-out': {
+          to: { opacity: '0', transform: 'translateX(16px)' },
+        },
+        'admin-sheet-in': {
+          from: { transform: 'var(--admin-sheet-from)' },
+        },
+        'admin-sheet-out': {
+          to: { transform: 'var(--admin-sheet-from)' },
+        },
+        'admin-fade-in': {
+          from: { opacity: '0' },
+        },
+        'admin-bar-grow': {
+          from: { transform: 'translateX(-100%)' },
+        },
+        // 끝도 명시한다 — clip-path는 inset()에서 none으로 보간되지 않아 도중에 뚝 열린다.
+        'admin-chart-wipe': {
+          from: { clipPath: 'inset(0 100% 0 0)' },
+          to: { clipPath: 'inset(0 0 0 0)' },
+        },
+        'admin-chart-rise': {
+          from: { transform: 'scaleY(0)' },
+        },
+        'admin-card-in': {
+          from: { opacity: '0', transform: 'scale(0.98)' },
+        },
         // ReadingProgress(src/components/post/ReadingProgress.tsx)의
         // scroll-driven 진행 바. width 대신 transform: scaleX()를
         // 애니메이션해 컴포지터 스레드만으로 처리되게 한다 — width는
         // 레이아웃을 유발해 스크롤 프레임마다 reflow가 돈다.
         'reading-progress-fill': {
           to: { transform: 'scaleX(1)' },
+        },
+        // 목차 버튼(MobileTOC)이 푸터 앞에서 사라지는 움직임. 시간이 아니라 푸터가 화면에 들어오는 정도에
+        // 묶인다(Layout의 `--site-footer` view timeline) — 끝에서 `visibility: hidden`이라 사라진 버튼에
+        // 초점도 눌림도 가지 않는다.
+        'fab-away': {
+          to: { opacity: '0', visibility: 'hidden' },
+        },
+        // 페이지 전환(아래 globalCss의 ::view-transition-* 규칙). 이름은 PageBoundary가 붙이는
+        // 클래스와 같은 출처다. 방향 없는 이동(같은 깊이·검색 결과)의 페이드 — 들어오는 페이지는
+        // 8px(Astryx spacing-2) 아래에서 떠오르고, 나가는 페이지는 제자리에서 사라진다. 방향 있는
+        // 이동은 아래 navSlideOut·navSlideIn이다(브라우저 뒤로·앞으로 가기에는 페이지 전환이 아예
+        // 돌지 않아 방향도 링크 이동에서만 보인다).
+        [VIEW_TRANSITION.pageEnter]: {
+          from: { opacity: '0', transform: 'translateY(8px)' },
+        },
+        [VIEW_TRANSITION.pageExit]: {
+          to: { opacity: '0' },
+        },
+        // 공유 요소의 나타나는 스냅샷(아래 globalCss — 들어오는 제목, 상세 → 카드의 카드 커버).
+        // 자리는 그룹이 옮기므로 투명도만 올린다. 사라지는 쪽은 pageExit을 같이 쓴다.
+        [VIEW_TRANSITION.sharedFadeIn]: {
+          from: { opacity: '0' },
+        },
+        // 커버 짝의 바닥 스냅샷 모서리(아래 globalCss). 카드 쪽 끝은 카드 라운드 중 가장 큰
+        // container다 — 썸네일 행(element)은 그 끝에서 위에 덮인 카드 스냅샷이 더 많이 깎여 있어
+        // 바닥이 모서리 밖으로 비치지 않는다. 상세 쪽 끝은 아래 규칙의 정지값(element)이다 —
+        // 히어로 스냅샷에는 container(16px) 라운드가 이미 찍혀 있어 이 끝은 화면에 드러나지 않는다.
+        [VIEW_TRANSITION.coverCornerFromCard]: {
+          from: { borderRadius: 'container' },
+        },
+        [VIEW_TRANSITION.coverCornerToCard]: {
+          to: { borderRadius: 'container' },
+        },
+        // 방향 있는 이동의 페이지(아래 globalCss의 NAV_TRANSITION 규칙). 투명도와 자리를 한 keyframes에
+        // 묶는다 — 한 쪽(나감·들어옴)의 둘은 시간·곡선이 같다. 어느 쪽으로 미끄러지는지는 의사 요소가
+        // 주는 거리 변수의 부호다(Next view-transitions 가이드의 `--slide-offset`).
+        [VIEW_TRANSITION.navSlideOut]: {
+          to: {
+            opacity: '0',
+            transform: `translateX(var(${NAV_SLIDE_OFFSET}))`,
+          },
+        },
+        [VIEW_TRANSITION.navSlideIn]: {
+          from: {
+            opacity: '0',
+            transform: `translateX(var(${NAV_SLIDE_OFFSET}))`,
+          },
         },
       },
     },
@@ -135,29 +318,338 @@ export default defineConfig({
           colorScheme: 'dark',
         },
       },
-      // 테마 전환 애니메이션 — View Transitions API(useTheme)로 전체
-      // 페이지를 한 번의 컴포지터 크로스페이드로 전환한다. 예전엔
-      // html.theme-transition * 로 모든 요소에 color/fill transition을
-      // 걸어, 차트·코드 하이라이팅이 많은 페이지(analytics 등)에서 요소
-      // 수만큼 style/paint가 터져 버벅였다. 루트 스냅샷 크로스페이드는
-      // 요소 수와 무관하게 GPU에서 처리돼 매끄럽다. (reduced-motion·
-      // 미지원 브라우저는 useTheme가 즉시 전환하므로 이 pseudo가 생성되지
-      // 않는다.)
-      '::view-transition-old(root), ::view-transition-new(root)': {
-        animationDuration: '[0.26s]',
-        animationTimingFunction: '[ease]',
+      // `transition: 'colors'` 같은 Panda 전환 유틸리티는 `var(--transition-prop, 속성 목록)`·
+      // `var(--transition-duration, 150ms)`·`var(--transition-easing, …)`를 낸다. 시간·곡선 변수에는
+      // 토큰을 주고, 속성 변수는 `initial`(무효 값)로 비워 유틸리티의 속성 목록이 쓰이게 한다.
+      // html이 아니라 모든 요소에 두는 이유: `transitionDuration`·`transitionTimingFunction`·
+      // `transitionProperty` 유틸리티가 이 변수를 그 요소에 직접 쓰는데, 상속되면 자손의 전환까지
+      // 그 값이 된다 — 시트의 medium이 안쪽 링크로, 검색 패널의 `opacity, transform`이 결과 행의
+      // `transition: 'colors'`로 내려가 hover 색 전환이 사라졌다. 요소마다 다시 정하면 상속이
+      // 끊긴다. base 레이어라 같은 요소의 유틸리티(utilities 레이어)가 이긴다.
+      '*, ::before, ::after': {
+        '--transition-prop': 'initial',
+        '--transition-duration': 'durations.fast',
+        '--transition-easing': 'easings.standard',
       },
+      // ── View Transitions — 내비게이션의 페이지 전환과 테마 전환이 같은 의사 요소를 쓴다 ──
+      // 전환 레이어가 포인터를 삼키지 않게 한다 — 이름 없는 내용(푸터·고정 버튼)은 전환 중에도
+      // 클릭을 받는다. 이름 붙은 참여자 — 헤더와, `<ViewTransition>`이 이름을 붙이는 페이지·
+      // 공유 요소 — 는 전환이 끝날 때까지 히트 테스트에서 빠진다(Next view-transitions 가이드 "Keeping the page
+      // interactive", 실측) — 전환을 짧게 두는 이유 중 하나다.
+      '::view-transition': {
+        pointerEvents: 'none',
+      },
+      // 페이지 전환 — PageBoundary(React <ViewTransition>)가 방향 없는 이동(같은 깊이의 형제 이동·
+      // 검색 결과)에 붙이는 클래스. 나가는 쪽은 빨리 비키고(fast·exit 곡선), 들어오는 쪽은 천천히
+      // 자리 잡는다(medium·standard).
+      [`::view-transition-old(.${VIEW_TRANSITION.pageExit})`]: {
+        animationName: VIEW_TRANSITION.pageExit,
+        animationDuration: 'fast',
+        animationTimingFunction: 'exit',
+        animationFillMode: 'both',
+      },
+      [`::view-transition-new(.${VIEW_TRANSITION.pageEnter})`]: {
+        animationName: VIEW_TRANSITION.pageEnter,
+        animationDuration: 'medium',
+        animationTimingFunction: 'standard',
+        animationFillMode: 'both',
+      },
+      // 방향 있는 이동 — 링크 이동의 transition type이 nav-forward·nav-back이면 PageBoundary가 위
+      // 페이드 대신 type과 같은 이름의 클래스를 붙인다(TransitionLink가 앱의 계층으로 고른다). 나가는
+      // 페이지는 페이드와 같은 fast·exit로 가속하며 걷히면서 밀려나고, 들어오는 페이지는 그 뒤에(fast
+      // 지연) fastMax·standard로 감속하며 들어온다 — 공유 요소의 제목과 같은 박자이고, 합(405ms)이
+      // 그룹의 medium과 거의 같아 카드에서 열 때 커버·제목·본문이 함께 자리에 닿는다. 투명도를
+      // 순서대로(나감 뒤 들어옴) 두는 것은 가이드와 같다 — 나가는 내용이 들어오는 내용과 시선을
+      // 다투지 않게. 가이드와 다른 점은 들어오는 쪽의 **자리**도 지연한다는 것이다: 가이드는 양쪽
+      // 슬라이드를 0ms부터 함께 돌리는데, standard는 앞에 몰린 감속 곡선이라 그대로면 투명도가 올라올
+      // 때 이미 거리의 대부분을 와 있어 방향이 안 보이고, 같은 쪽으로 미끄러지는 두 페이지의 글자가
+      // 겹쳐 보인다. 헤더는 이름이 따로라 미끄러지지 않고, 이동 중에는 새 스냅샷을 그대로 둔다(아래 헤더 규칙).
+      [`::view-transition-old(.${NAV_TRANSITION.forward}), ::view-transition-old(.${NAV_TRANSITION.back})`]:
+        {
+          animationName: VIEW_TRANSITION.navSlideOut,
+          animationDuration: 'fast',
+          animationTimingFunction: 'exit',
+          animationFillMode: 'both',
+        },
+      [`::view-transition-new(.${NAV_TRANSITION.forward}), ::view-transition-new(.${NAV_TRANSITION.back})`]:
+        {
+          animationName: VIEW_TRANSITION.navSlideIn,
+          animationDuration: 'fastMax',
+          animationDelay: 'fast',
+          animationTimingFunction: 'standard',
+          animationFillMode: 'both',
+        },
+      // 왼쪽 — 앞으로 갈 때 나가는 페이지가 밀려나는 쪽, 뒤로 갈 때 들어오는 페이지가 오는 쪽.
+      [`::view-transition-old(.${NAV_TRANSITION.forward}), ::view-transition-new(.${NAV_TRANSITION.back})`]:
+        {
+          [NAV_SLIDE_OFFSET]: NAV_SLIDE_LEFT,
+        },
+      // 오른쪽 — 그 반대.
+      [`::view-transition-new(.${NAV_TRANSITION.forward}), ::view-transition-old(.${NAV_TRANSITION.back})`]:
+        {
+          [NAV_SLIDE_OFFSET]: NAV_SLIDE_RIGHT,
+        },
+      // 테마 전환 — View Transitions API(useTheme)로 전체 페이지를 한 번의 컴포지터
+      // 크로스페이드로 전환한다. 예전엔 html.theme-transition * 로 모든 요소에 color/fill
+      // transition을 걸어, 차트·코드 하이라이팅이 많은 페이지(analytics 등)에서 요소 수만큼
+      // style/paint가 터져 버벅였다. 스냅샷 크로스페이드는 요소 수와 무관하게 GPU에서 처리돼
+      // 매끄럽다. 헤더는 이름이 있어 루트와 따로 찍히므로 같은 시간을 준다(안 주면 UA 기본
+      // 0.25s ease로 루트와 어긋난다). 그룹(위치·크기 보간)까지 토큰으로 줘야 움직임 줄이기에서
+      // UA 기본 0.25s가 남지 않는다. 내비게이션에서도 같은 규칙이 루트(페이지 밖 — 푸터·고정
+      // 버튼)의 크로스페이드를 맡는다. 헤더는 아래 규칙대로 테마 전환에서만 크로스페이드한다.
+      // (useTheme는 움직임 줄이기·미지원 브라우저에서 즉시 전환하므로 그때는 이 의사 요소가
+      // 생기지 않는다.)
+      [`::view-transition-group(root), ::view-transition-old(root), ::view-transition-new(root), ::view-transition-group(${VIEW_TRANSITION.siteHeader}), ::view-transition-old(${VIEW_TRANSITION.siteHeader}), ::view-transition-new(${VIEW_TRANSITION.siteHeader})`]:
+        {
+          animationDuration: 'fastMax',
+          animationTimingFunction: 'standard',
+        },
+      // 헤더 그룹을 맨 위에 그린다(VT_STACK) — 그룹은 문서 순서로 쌓여 헤더가 아래로 가고, 스크롤된
+      // 채 떠나는 페이지가 sticky 헤더 자리에 덧칠된다. 공유 요소보다도 위다: 헤더 밑에 반쯤 가린 채
+      // 눌린 카드의 스냅샷은 가려진 부분까지 찍혀 있어, 헤더보다 위면 첫 프레임에 헤더를 덮는다.
+      // 배경은 불투명 지면이다: 헤더의 반투명 배경(paper.50/80)은 backdrop-filter 흐림과 한 짝인데,
+      // 따로 찍힌 스냅샷에는 흐릴 뒤 배경이 없어 그대로 두면 전환 동안 뒤 본문이 선명하게 비친다.
+      [`::view-transition-group(${VIEW_TRANSITION.siteHeader})`]: {
+        zIndex: VT_STACK.siteHeader,
+        bg: 'paper.50',
+      },
+      // 헤더는 테마 전환에서만 크로스페이드한다. 페이지 이동 사이의 헤더는 같은 헤더다 — 바뀌는 건 내비
+      // 라벨의 현재 위치뿐이고 표식 막대는 이름이 따로라 스스로 미끄러진다. 같은 두 스냅샷을 겹쳐
+      // 페이드하면 비트맵 합성이라 중간에 글자가 묽어져, 이동할 때마다 로고(sangwook.dev)가 연해졌다
+      // 돌아왔다. 옛 스냅샷은 지우고 새 스냅샷만 그대로 둔다(둘을 겹친 채 애니메이션만 끄면 UA의
+      // plus-lighter 합성이 밝게 뜬다). type을 모르는 브라우저는 이 규칙을 통째로 버려 예전처럼
+      // 크로스페이드한다.
+      [`:root:not(:active-view-transition-type(${THEME_TRANSITION_TYPE}))::view-transition-old(${VIEW_TRANSITION.siteHeader})`]:
+        {
+          display: 'none',
+        },
+      [`:root:not(:active-view-transition-type(${THEME_TRANSITION_TYPE}))::view-transition-new(${VIEW_TRANSITION.siteHeader})`]:
+        {
+          animationName: 'none',
+        },
+      // ── 내비 표식 — 헤더 내비 링크마다 있는 빈 span(NavLinks) ──
+      // 모양·자리·이름을 전부 여기서 준다. NavLinks는 모든 공개 페이지에 실리는 클라이언트 컴포넌트라
+      // span에 Panda `css()`와 인라인 이름을 두면 첫 로드 JS가 108B(gzip) 늘었다 — 스타일 객체가 JS에
+      // 실린다. 이름은 링크의 `::after`가 아니라 span에 단다 — 의사 요소가 이름으로 찍히는지는
+      // Chromium에서만 확인했다.
+      // span은 모든 링크에 있고 막대는 현재 페이지 링크(aria-current)의 것만 그린다 — 활성 링크에만
+      // span을 두면 미리 그린 404가 섹션 아래 경로에서 하이드레이션이 깨진다(viewTransitions.ts의
+      // NAV_INDICATOR_ATTRIBUTE). 나머지 span은 그리지 않아 링크 상자에 아무 영향이 없다.
+      [`[${NAV_INDICATOR_ATTRIBUTE}]`]: {
+        display: 'none',
+      },
+      // 라벨 가운데 아래, 항목 상자 아래 1px에 걸친 16×2 막대다.
+      [ACTIVE_NAV_INDICATOR_SELECTOR]: {
+        display: 'block',
+        pos: 'absolute',
+        insetInline: '0',
+        bottom: '[-1px]',
+        mx: 'auto',
+        w: '4',
+        h: '0.5',
+        rounded: 'full',
+        bg: 'accent.solid',
+        viewTransitionName: VIEW_TRANSITION.navIndicator,
+        // 강제 색상 모드는 배경을 Canvas로 덮어 면만으로 그린 막대가 사라진다 — 시스템 글자색으로 남긴다.
+        '@media (forced-colors: active)': { bg: 'CanvasText' },
+      },
+      // 이동 사이에 옛 링크 아래에서 새 링크 아래로 미끄러진다. 크기가 고정이라 그룹은 자리만 보간하고,
+      // React가 처음·끝 크기가 같은 그룹의 width·height keyframes를 지워 transform만 남는다(합성).
+      // 시간은 표식의 fast·standard다. old/new에도 같은 값을 준다 — 홈에는 활성 링크가 없어 홈을
+      // 드나들면 짝 없는 쪽(`:only-child`)만 남는데, 그 그룹은 움직이지 않아 막대가 제자리에서 UA
+      // 페이드로 사라지거나 나타난다. UA는 시간만 그룹에서 물려주고 곡선은 기본 ease로 둔다.
+      [`::view-transition-group(${VIEW_TRANSITION.navIndicator}), ::view-transition-old(${VIEW_TRANSITION.navIndicator}), ::view-transition-new(${VIEW_TRANSITION.navIndicator})`]:
+        {
+          animationDuration: 'fast',
+          animationTimingFunction: 'standard',
+        },
+      // 헤더보다 위(VT_STACK) — 막대는 헤더 안에 있지만 이름이 따로라 헤더 스냅샷에 찍히지 않고,
+      // 헤더 그룹의 불투명 지면이 그 아래를 덮는다.
+      [`::view-transition-group(${VIEW_TRANSITION.navIndicator})`]: {
+        zIndex: VT_STACK.navIndicator,
+      },
+      // 글을 여는 이동(카드 → 글 상세)에서는 막대가 미끄러지지 않고 새 자리에 바로 선다 — 커버·제목이
+      // 날아가는 동안 헤더에서 또 하나가 움직이면 시선이 갈린다. old/new는 같은 막대라 겹쳐도 그대로다.
+      [`:root:active-view-transition-type(${POST_OPEN_TRANSITION_TYPE})::view-transition-group(${VIEW_TRANSITION.navIndicator})`]:
+        {
+          animationName: 'none',
+        },
+      // ── 글 목록 교차 — `/posts`의 필터·정렬·보기 변경(PostsArchive의 `<ViewTransition>`) ──
+      // 이전 목록은 페이지가 나갈 때와 같은 `page-exit`(위 규칙)로 fast 안에 걷히고, 새 목록은 그 뒤에
+      // (fast 지연) fastMax·standard로 8px 떠오른다 — 둘을 함께 돌리면 exit 곡선이 처음에 느려 옛 카드가
+      // 진한 채 새 카드와 겹친다. 목록 줄 수가 바뀌어 상자 높이가 달라지면 그룹이 medium으로 따라간다.
+      [`::view-transition-group(.${ARCHIVE_LIST_RISE})`]: {
+        animationDuration: 'medium',
+        animationTimingFunction: 'standard',
+      },
+      [`::view-transition-new(.${ARCHIVE_LIST_RISE})`]: {
+        animationName: VIEW_TRANSITION.pageEnter,
+        animationDuration: 'fastMax',
+        animationDelay: 'fast',
+        animationTimingFunction: 'standard',
+        animationFillMode: 'both',
+      },
+      // 같은 transition의 루트·헤더는 페이지가 바뀐 게 아니라 움직이지 않는다 — 위 크로스페이드 규칙을
+      // 걷는다. 옛 스냅샷은 지우고 새 스냅샷만 그대로 둔다(둘을 겹친 채 애니메이션만 끄면 UA의
+      // plus-lighter 합성이 밝게 뜬다). 이름 붙은 목록만 움직이고, 그 밖의 바뀐 곳은 바로 바뀐다 — 칩·적용된
+      // 필터는 눌린 즉시, 편수는 목록과 같은 커밋에서.
+      [`:root:active-view-transition-type(${ARCHIVE_FILTER_TRANSITION_TYPE})::view-transition-old(root), :root:active-view-transition-type(${ARCHIVE_FILTER_TRANSITION_TYPE})::view-transition-old(${VIEW_TRANSITION.siteHeader})`]:
+        {
+          display: 'none',
+        },
+      [`:root:active-view-transition-type(${ARCHIVE_FILTER_TRANSITION_TYPE})::view-transition-new(root), :root:active-view-transition-type(${ARCHIVE_FILTER_TRANSITION_TYPE})::view-transition-new(${VIEW_TRANSITION.siteHeader})`]:
+        {
+          animationName: 'none',
+        },
+      // ── 공유 요소 — 글 카드의 커버·제목 ↔ 글 상세의 히어로 이미지·h1(PostSharedElement) ──
+      // 그룹(자리·크기 보간)은 들어오는 페이지와 같은 medium·standard다 — 나가는 페이지가 fast로
+      // 비키는 동안 공유 요소가 자리를 옮긴다. old/new 스냅샷은 따로 적지 않은 시간·곡선을 그룹에서
+      // 물려받는다(UA).
+      [`::view-transition-group(.${POST_SHARED.cover}), ::view-transition-group(.${POST_SHARED.title})`]:
+        {
+          animationDuration: 'medium',
+          animationTimingFunction: 'standard',
+        },
+      // 커버 짝은 두 종류다. **가로형 글**(OG 카드·가로/세로 1.6 이상의 자기 썸네일)은 카드 커버 ↔ 상세 히어로가 둘 다 16:9 cover라 같은 그림을 같은
+      // 배율로 그려 겹쳐 모핑한다. **정사각 같은 자기 썸네일 글**(`post-rescaled`, viewTransitions.ts)은 상세가 16:9 틀에
+      // contain이라 카드의 cover 크롭과 배율이 달라 겹치면 그림이 두 겹이 되므로, 겹치지 않고 차례로 바꾼다 —
+      // 맨 아래 규칙. 그래도 짝(같은 이름)이다: 이름이 없으면 커버가 페이지 스냅샷에 섞여, 그 위에 쌓이는 제목
+      // 그룹(VT_STACK)이 그림 위를 지난다.
+      // 커버 — UA 기본(폭 100%·높이 auto)은 두 스냅샷을 제 비율대로 위에 붙여, 원본의 서로 다른 부분이 겹쳐
+      // 크로스페이드가 두 겹으로 보인다. 두 스냅샷을 그룹 상자에 같은 16:9로 맞추면(그룹이 카드 비율에서 상세 비율로
+      // 바뀌는 동안에도) 원본의 같은 부분을 같은 배율로 그려 늘어나지도 어긋나지도 않는다. 둘 다 이미지가
+      // 스냅샷 가장자리까지 차 있어야 성립한다: 카드 커버 틀의 hairline은 이미지 **위에** 그리고(cardParts.ts),
+      // 상세 히어로도 같은 틀을 쓴다(PostHero — 16:9, 이미지는 cover).
+      // 틀의 진짜 보더가 이미지를 1px 안으로 밀었을 때는 둘이 최대 4px 어긋나 이미지 속 글자가 두 겹으로 보였다(실측).
+      //
+      // 겹치는 방식도 UA 크로스페이드(두 장을 함께 흐리게 해 plus-lighter로 더한다)가 아니다. 상자를
+      // 늘 꽉 채우는 상세 스냅샷을 불투명한 바닥에 두고, 카드 스냅샷(같은 그림에 라운드·hairline·hover
+      // 틴트만 더 있다)만 위에서 사라지거나(카드 → 상세) 나타난다(상세 → 카드). 둘을 함께 흐리게 하면
+      // contain으로 빈 가장자리에서 뒤 페이지가 비쳐 이미지 양옆에 밝은 띠가 생겼다(실측 — 30% 지점에
+      // 18px). 카드 스냅샷은 카드 크기에서만 바닥과 모양이 같아서, 카드 → 상세는 처음에 빨리(fast)
+      // 걷히고 상세 → 카드는 그룹이 거의 카드 크기에 닿은 뒤(fast 지연, fastMax) 나타난다 — 그 사이에
+      // 보이면 커진 카드의 hairline·틴트가 이미지 속 상자로 보인다.
+      //
+      // 짝은 들어오는 쪽의 클래스만 받으므로(viewTransitions.ts의 POST_SHARED_SIDE) 카드 스냅샷은
+      // 카드 → 상세(.post-detail)의 old, 상세 → 카드(.post-card)의 new다. 바닥은 그 반대쪽이다.
+      [`::view-transition-group(.${POST_SHARED.cover})`]: {
+        zIndex: VT_STACK.cover,
+      },
+      [`::view-transition-old(.${POST_SHARED.cover}), ::view-transition-new(.${POST_SHARED.cover})`]:
+        {
+          height: 'full',
+          objectFit: 'cover',
+          overflow: 'clip',
+          mixBlendMode: 'normal',
+          animationName: 'none',
+        },
+      // 바닥 — 스냅샷이 그룹 상자와 비율이 다를 때(카드가 16:9가 아닌 썸네일 행) 잘려 스냅샷에 찍힌 라운드도 함께
+      // 잘리므로, 모서리를 그룹 상자에 다시 깎는다. 시간·곡선은 그룹과 같다(UA 상속).
+      [`::view-transition-new(.${POST_SHARED.cover}.${POST_SHARED_SIDE.detail}), ::view-transition-old(.${POST_SHARED.cover}.${POST_SHARED_SIDE.card})`]:
+        {
+          borderRadius: 'element',
+        },
+      [`::view-transition-new(.${POST_SHARED.cover}.${POST_SHARED_SIDE.detail})`]:
+        {
+          animationName: VIEW_TRANSITION.coverCornerFromCard,
+        },
+      [`::view-transition-old(.${POST_SHARED.cover}.${POST_SHARED_SIDE.card})`]:
+        {
+          animationName: VIEW_TRANSITION.coverCornerToCard,
+        },
+      // 위 — 카드 스냅샷.
+      [`::view-transition-old(.${POST_SHARED.cover}.${POST_SHARED_SIDE.detail}), ::view-transition-new(.${POST_SHARED.cover}.${POST_SHARED_SIDE.card})`]:
+        {
+          objectFit: 'contain',
+          zIndex: '1',
+          animationTimingFunction: 'standard',
+          animationFillMode: 'both',
+        },
+      [`::view-transition-old(.${POST_SHARED.cover}.${POST_SHARED_SIDE.detail})`]:
+        {
+          animationName: VIEW_TRANSITION.pageExit,
+          animationDuration: 'fast',
+        },
+      [`::view-transition-new(.${POST_SHARED.cover}.${POST_SHARED_SIDE.card})`]:
+        {
+          animationName: VIEW_TRANSITION.sharedFadeIn,
+          animationDuration: 'fastMax',
+          animationDelay: 'fast',
+        },
+      // 제목 — 글자 크기(카드 14~24px ↔ 상세 22px)도 줄바꿈 폭도 달라, 스냅샷을 그룹 크기로 늘이면
+      // 글자가 늘어나 뭉갠다. 스냅샷은 제 크기 그대로 그룹의 왼쪽 위에 붙여 자리만 옮기고, 두 글자가
+      // 겹쳐 보이지 않게 순서대로 바꾼다 — 나가는 제목이 먼저 사라지고(fast), 들어오는 제목은 그
+      // 뒤에 나타난다(fast 지연, fastMax — 합이 그룹의 medium과 거의 같다).
+      //
+      // 그룹 상자 밖은 자른다: 제 크기 그대로인 스냅샷은 그룹보다 넓을 수 있어(상세 h1 한 줄 752px
+      // → 카드 제목 254px), 자르지 않으면 줄어드는 그룹 밖으로 글자 끝이 옆 카드 위를 지나갔다.
+      // 커버 아래에 쌓는다(VT_STACK): 카드 제목은 커버 아래, 상세 h1은 히어로 위라 제목이 날아가는
+      // 커버를 가로지르는데, 위에 그리면 다크에서 흰 글자가 커버 그림 위를 지나갔다. 나가는 제목은
+      // 감속 곡선(standard)으로 처음에 대부분 걷혀, 커버 가장자리를 지날 때는 거의 보이지 않는다.
+      [`::view-transition-group(.${POST_SHARED.title})`]: {
+        zIndex: VT_STACK.title,
+        overflow: 'clip',
+      },
+      [`::view-transition-old(.${POST_SHARED.title}), ::view-transition-new(.${POST_SHARED.title})`]:
+        {
+          width: 'auto',
+          height: 'auto',
+        },
+      [`::view-transition-old(.${POST_SHARED.title})`]: {
+        animationName: VIEW_TRANSITION.pageExit,
+        animationDuration: 'fast',
+        animationTimingFunction: 'standard',
+        animationFillMode: 'both',
+      },
+      [`::view-transition-new(.${POST_SHARED.title})`]: {
+        animationName: VIEW_TRANSITION.sharedFadeIn,
+        animationDuration: 'fastMax',
+        animationDelay: 'fast',
+        animationTimingFunction: 'standard',
+        animationFillMode: 'both',
+      },
+      // 짝 없이 나가는 쪽만 남은 커버·제목(들어오는 쪽이 화면 밖이라 React가 이름을 거뒀다 —
+      // `:only-child`, 위 규칙들보다 구체적이다) — 나가는 페이지와 똑같이(fast·exit) 사라진다.
+      [`::view-transition-old(.${POST_SHARED.cover}):only-child, ::view-transition-old(.${POST_SHARED.title}):only-child`]:
+        {
+          animationName: VIEW_TRANSITION.pageExit,
+          animationDuration: 'fast',
+          animationTimingFunction: 'exit',
+          animationFillMode: 'both',
+        },
+      // 짝의 배율이 다른 커버(`post-rescaled` — 정사각 같은 자기 썸네일 글): 두 스냅샷이 겹치면 두 겹으로 보이므로 겹치지 않고
+      // 차례로 바꾼다. 나가는 쪽이 먼저 걷히고(fast) 들어오는 쪽이 그 뒤에 나타난다(fast 지연, fastMax). 바닥을
+      // 두지 않는다 — 바닥이 불투명하면 그 위로 카드 스냅샷이 겹쳐 보인다. 그룹은 그대로 자리·크기를 옮기고
+      // z-index가 제목 위라, 날아가는 제목이 그림 위를 지나지 않는다. 클래스는 들어오는 쪽만 받으므로 방향은
+      // 상세(카드 → 상세, 나가는 old가 카드 스냅샷)와 카드(상세 → 카드, old가 상세 스냅샷)로 가른다.
+      [`::view-transition-new(.${POST_SHARED.cover}.${POST_SHARED_RESCALED}.${POST_SHARED_SIDE.detail}), ::view-transition-old(.${POST_SHARED.cover}.${POST_SHARED_RESCALED}.${POST_SHARED_SIDE.card})`]:
+        {
+          borderRadius: 'container',
+          animationTimingFunction: 'standard',
+          animationFillMode: 'both',
+        },
+      [`::view-transition-new(.${POST_SHARED.cover}.${POST_SHARED_RESCALED}.${POST_SHARED_SIDE.detail})`]:
+        {
+          animationName: VIEW_TRANSITION.sharedFadeIn,
+          animationDuration: 'fastMax',
+          animationDelay: 'fast',
+        },
+      [`::view-transition-old(.${POST_SHARED.cover}.${POST_SHARED_RESCALED}.${POST_SHARED_SIDE.card})`]:
+        {
+          animationName: VIEW_TRANSITION.pageExit,
+          animationDuration: 'fast',
+        },
       // 문장 공유 링크(`#:~:text=`)로 들어온 독자에게 그 문장을 짚어 준다.
       // "여기"를 가리킨다는 점에서 선택과 같은 뜻이라 같은 토큰을 쓴다(대비는
       // html의 --global-color-selection 주석). 브라우저 기본값은 노랑이라 팔레트 밖이다.
       '::target-text': {
         bg: 'selection.bg',
       },
-      ':focus-visible': {
-        outline: '2px solid token(colors.accent.600)',
-        outlineOffset: '3px',
-        borderRadius: '3px',
-      },
+      ':focus-visible': FOCUS_RING,
+      // 숨긴 radio(`peer`)가 초점을 받으면 링은 바로 뒤 형제인 칩·토글 칸 면에 그린다(chip tone `toggle`,
+      // ViewToggle). `:has()`로 감싸는 요소에 그리지 않는 이유는 Firefox 111~120에 없어서다. 범위는 `peer`를 단
+      // radio의 바로 뒤 형제뿐이다.
+      'input.peer[type=radio]:focus-visible + *': FOCUS_RING,
       // 스크롤바는 얇은 실선처럼. 리뉴얼 톤이 hairline 보더 중심이라 8px
       // 막대가 지면에서 튄다.
       '::-webkit-scrollbar': {
@@ -169,16 +661,142 @@ export default defineConfig({
       },
       '::-webkit-scrollbar-thumb': {
         bg: 'ink.border',
-        borderRadius: 'pill',
+        borderRadius: 'full',
       },
       '::-webkit-scrollbar-thumb:hover': {
         bg: 'ink.borderStrong',
       },
-      // Marker(형광펜) — raw HTML 본문의 <span class="marker">…</span> 강조
-      '.marker': {
-        background:
-          'linear-gradient(180deg, transparent 55%, token(colors.marker.300) 55%, token(colors.marker.300) 92%, transparent 92%)',
-        padding: '0 2px',
+      // ── admin 화면 — React `<ViewTransition>`이 붙이는 이름·클래스(adminViewTransitions.ts) ──
+      // 페이지 전환과 같은 문법이다: 들어오는 것은 standard로 감속하며 자리 잡고, 나가는 것은 exit로
+      // 가속하며 빨리 비킨다. 클래스는 움직임의 이름이라(무엇이 아니라 어떻게) 여러 자리가 나눠 쓴다.
+      // 무엇이 언제 transition이 되는지는 각 컴포넌트 주석에 있다.
+      //
+      // 관리자 바 — 사이트 헤더와 같은 이유로 페이지·목록 그룹 위에 불투명 바닥으로 그린다(위 헤더
+      // 규칙의 주석). 바닥은 바 자신의 면(surface.base)이고, 시간은 루트 크로스페이드와 같다.
+      [`::view-transition-group(${ADMIN_VIEW_TRANSITION.bar})`]: {
+        zIndex: '1',
+        bg: 'surface.base',
+      },
+      [`::view-transition-group(${ADMIN_VIEW_TRANSITION.bar}), ::view-transition-old(${ADMIN_VIEW_TRANSITION.bar}), ::view-transition-new(${ADMIN_VIEW_TRANSITION.bar})`]:
+        {
+          animationDuration: 'fastMax',
+          animationTimingFunction: 'standard',
+        },
+      // 관리자 바도 사이트 헤더처럼 테마 전환에서만 크로스페이드한다 — 대시보드 ↔ 분석 이동 사이의 바는 같은
+      // 바라 옛 스냅샷을 지우고 새 스냅샷을 그대로 둔다(겹친 페이드는 중간 프레임에 로고 글자가 묽어진다 —
+      // 위 헤더 규칙).
+      [`:root:not(:active-view-transition-type(${THEME_TRANSITION_TYPE}))::view-transition-old(${ADMIN_VIEW_TRANSITION.bar})`]:
+        {
+          display: 'none',
+        },
+      [`:root:not(:active-view-transition-type(${THEME_TRANSITION_TYPE}))::view-transition-new(${ADMIN_VIEW_TRANSITION.bar})`]:
+        {
+          animationName: 'none',
+        },
+      // out·slideOut — 자리를 넘기고 사라지는 것. 페이지가 나갈 때처럼 fast·exit로 빨리 비킨다. out은
+      // 제자리에서 걷히고(스켈레톤, 바뀌기 전 지표 값), slideOut은 패널이 붙은 오른쪽으로 16px 밀려
+      // 나간다(넓은 화면 패널에서 다른 글로 바꿀 때의 이전 내용).
+      [`::view-transition-old(.${ADMIN_VIEW_TRANSITION.out}), ::view-transition-old(.${ADMIN_VIEW_TRANSITION.slideOut})`]:
+        {
+          animationDuration: 'fast',
+          animationTimingFunction: 'exit',
+          animationFillMode: 'both',
+        },
+      [`::view-transition-old(.${ADMIN_VIEW_TRANSITION.out})`]: {
+        animationName: VIEW_TRANSITION.pageExit,
+      },
+      [`::view-transition-old(.${ADMIN_VIEW_TRANSITION.slideOut})`]: {
+        animationName: 'admin-inspector-out',
+      },
+      // rise·slideIn — 같은 자리에 새로 서는 것(바뀐 지표 값·정렬을 바꾼 목록은 8px 아래에서 떠오르고,
+      // 패널의 새 내용은 패널이 붙은 오른쪽에서 16px 밀려 온다). 이전 것이 fast로 걷힌 **뒤에** fastMax로 선다 — 둘을 함께 돌리면
+      // exit 곡선이 처음에 느려 옛 글자가 진한 채 새 글자와 두 겹으로 겹친다(실측, 60ms에 둘 다 50% 넘게
+      // 보였다). 합(405ms)이 medium과 거의 같다. 줄 높이가 바뀌면(증감 줄바꿈) 그룹이 medium으로 따라간다.
+      [`::view-transition-group(.${ADMIN_VIEW_TRANSITION.rise})`]: {
+        animationDuration: 'medium',
+        animationTimingFunction: 'standard',
+      },
+      [`::view-transition-new(.${ADMIN_VIEW_TRANSITION.rise}), ::view-transition-new(.${ADMIN_VIEW_TRANSITION.slideIn})`]:
+        {
+          animationDuration: 'fastMax',
+          animationDelay: 'fast',
+          animationTimingFunction: 'standard',
+          animationFillMode: 'both',
+        },
+      [`::view-transition-new(.${ADMIN_VIEW_TRANSITION.rise})`]: {
+        animationName: VIEW_TRANSITION.pageEnter,
+      },
+      [`::view-transition-new(.${ADMIN_VIEW_TRANSITION.slideIn})`]: {
+        animationName: 'admin-inspector-in',
+      },
+      // drawer·resize — 넓은 화면 분석의 글 통계 칼럼과 옆 목록 칼럼. 칼럼이 오른쪽 화면 밖과 오가는 동안 목록
+      // 상자가 같은 시간·곡선(medium·standard)으로 줄고 는다 — 그룹 애니메이션은 방향마다 곡선을 바꿀 수 없어
+      // 칼럼의 닫힘도 시트(exit)가 아니라 standard다. exit로 두면 목록이 먼저 닿고 칼럼이 뒤늦게 빠졌다. 스냅샷은 늘이지 않는다 — 폭이 다른 두 목록(줄바꿈이 다르다)을 상자에 맞춰
+      // 늘이면 글자가 찌그러지고 겹친다. 새 스냅샷만 제 크기로 왼쪽 위에 두고 상자가 자른다: 열 때는 새(좁은)
+      // 목록이 바로 서고, 닫을 때는 넓어진 목록이 나가는 칼럼 뒤에서 드러난다.
+      [`::view-transition-group(.${ADMIN_VIEW_TRANSITION.drawer})`]: {
+        zIndex: '2',
+      },
+      [`::view-transition-new(.${ADMIN_VIEW_TRANSITION.drawer}), ::view-transition-old(.${ADMIN_VIEW_TRANSITION.drawer})`]:
+        {
+          '--admin-sheet-from': 'translateX(100%)',
+          animationDuration: 'medium',
+          animationTimingFunction: 'standard',
+          animationFillMode: 'both',
+        },
+      [`::view-transition-new(.${ADMIN_VIEW_TRANSITION.drawer})`]: {
+        animationName: 'admin-sheet-in',
+      },
+      [`::view-transition-old(.${ADMIN_VIEW_TRANSITION.drawer})`]: {
+        animationName: 'admin-sheet-out',
+      },
+      [`::view-transition-group(.${ADMIN_VIEW_TRANSITION.resize})`]: {
+        animationDuration: 'medium',
+        animationTimingFunction: 'standard',
+        overflow: 'clip',
+      },
+      [`::view-transition-old(.${ADMIN_VIEW_TRANSITION.resize})`]: {
+        display: 'none',
+      },
+      [`::view-transition-new(.${ADMIN_VIEW_TRANSITION.resize})`]: {
+        animationName: 'none',
+        w: 'auto',
+        h: 'auto',
+      },
+      // sheet·scrim — 좁은 화면 시트와 그 뒤. 화면을 덮는 면이라 관리자 바(1)보다 위에 그린다. 시트는
+      // 목차 바텀시트와 같은 박자다: 열릴 때 medium·standard, 닫힐 때 같은 시간에 exit로 되돌아 나가고,
+      // 스크림은 열릴 때 medium, 닫힐 때 linear(거리 없는 퇴장). sm 미만은 시트가 화면 폭 전체라
+      // 아래에서 올라오고, 그 위는 오른쪽 끝에 붙은 400 드로어라 오른쪽에서 들어온다.
+      [`::view-transition-group(.${ADMIN_VIEW_TRANSITION.sheet}), ::view-transition-group(.${ADMIN_VIEW_TRANSITION.scrim})`]:
+        {
+          zIndex: '2',
+        },
+      [`::view-transition-new(.${ADMIN_VIEW_TRANSITION.sheet}), ::view-transition-old(.${ADMIN_VIEW_TRANSITION.sheet})`]:
+        {
+          '--admin-sheet-from': 'translateY(100%)',
+          sm: { '--admin-sheet-from': 'translateX(100%)' },
+          animationDuration: 'medium',
+          animationFillMode: 'both',
+        },
+      [`::view-transition-new(.${ADMIN_VIEW_TRANSITION.sheet})`]: {
+        animationName: 'admin-sheet-in',
+        animationTimingFunction: 'standard',
+      },
+      [`::view-transition-old(.${ADMIN_VIEW_TRANSITION.sheet})`]: {
+        animationName: 'admin-sheet-out',
+        animationTimingFunction: 'exit',
+      },
+      [`::view-transition-new(.${ADMIN_VIEW_TRANSITION.scrim})`]: {
+        animationName: 'admin-fade-in',
+        animationDuration: 'medium',
+        animationTimingFunction: 'standard',
+        animationFillMode: 'both',
+      },
+      [`::view-transition-old(.${ADMIN_VIEW_TRANSITION.scrim})`]: {
+        animationName: VIEW_TRANSITION.pageExit,
+        animationDuration: 'medium',
+        animationTimingFunction: 'linear',
+        animationFillMode: 'both',
       },
     },
   },

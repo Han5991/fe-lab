@@ -11,23 +11,58 @@
  * 그래프를 따라 이 파일을 `supabase/functions` 밖에서 그대로 집어 간다 — 여기서
  * 다른 앱 모듈을 끌어오면 그 파일도 같은 제약을 받는다.
  *
- * RPC 이름이 `database.types.ts`의 Functions 키와 맞는지는 `adminApi.ts`의
- * `AdminActionResult`가 인덱싱으로 검사한다 — 어긋나면 그쪽이 컴파일 에러다.
+ * RPC 이름이 `database.types.ts`의 Functions 키와 맞는지는 `adminApi.ts`의 `RpcReturns`가
+ * 인덱싱으로 검사한다 — 어긋나면 그쪽이 컴파일 에러다.
+ *
+ * `get_posts_trends`는 `Json`을 돌려줘 생성 타입이 행 모양을 말하지 못한다 — 그 행(`PostTrendRow`)은
+ * 아래에 값으로 세우고 `isPostTrendRows`로 좁힌다. Edge Function이 RPC 결과를 받는 자리와 클라이언트가
+ * 응답을 받는 자리가 같은 가드를 쓴다.
  */
 
-/** action → 대리 호출하는 RPC(`Database['public']['Functions']`의 키). */
-export const ADMIN_ACTION_RPC = {
-  all_post_stats: 'get_all_post_stats',
-  all_posts_trends: 'get_all_posts_trends',
-  post_hourly_distribution: 'get_post_hourly_distribution',
-  post_dow_distribution: 'get_post_dow_distribution',
+/**
+ * action → 그 action이 부르는 RPC(`Database['public']['Functions']`의 키). 클라이언트는 이 RPC들의
+ * `Returns`에서 응답 타입을 파생한다. Edge Function은 `posts_overview`에서 둘을 병렬로 불러 한 응답으로
+ * 묶는다 — 글 목록 화면이 둘을 늘 같이 쓰므로 왕복(콜드 preflight·JWT 검증 포함, 프로덕션 p50 ~1s)이 한 번이다.
+ * `get_posts_trends`는 같은 행을 json 배열 하나로 내 PostgREST max_rows(1000)에 잘리지 않는다
+ * (`get_all_post_stats`는 RETURNS TABLE이라 Edge Function이 페이징한다).
+ */
+export const ADMIN_ACTION_RPCS = {
+  posts_overview: ['get_all_post_stats', 'get_posts_trends'],
+  post_hourly_distribution: ['get_post_hourly_distribution'],
+  post_dow_distribution: ['get_post_dow_distribution'],
 } as const;
 
-export type AdminAction = keyof typeof ADMIN_ACTION_RPC;
+export type AdminAction = keyof typeof ADMIN_ACTION_RPCS;
 
 /** action이 대리 호출하는 RPC 이름. */
 export type AdminActionRpc<A extends AdminAction = AdminAction> =
-  (typeof ADMIN_ACTION_RPC)[A];
+  (typeof ADMIN_ACTION_RPCS)[A][number];
+
+/** `get_posts_trends`가 내는 json 배열의 한 행 — 글별·일별(KST) 조회수. */
+export interface PostTrendRow {
+  slug: string;
+  /** KST 날짜, `YYYY-MM-DD`. */
+  view_date: string;
+  view_count: number;
+}
+
+/** `get_posts_trends`의 `Json`(또는 응답 본문)이 `PostTrendRow[]`인지 — 행마다 열의 값 타입까지 본다. */
+export function isPostTrendRows(value: unknown): value is PostTrendRow[] {
+  if (!Array.isArray(value)) return false;
+  // Array.isArray는 any[]로 좁힌다 — 행은 unknown으로 다시 받는다.
+  const rows: readonly unknown[] = value;
+  return rows.every(
+    row =>
+      typeof row === 'object' &&
+      row !== null &&
+      'slug' in row &&
+      typeof row.slug === 'string' &&
+      'view_date' in row &&
+      typeof row.view_date === 'string' &&
+      'view_count' in row &&
+      typeof row.view_count === 'number',
+  );
+}
 
 /**
  * 목록형 action의 선택 params — 이 글들만 서버에서 거른다(anon이 만든 가짜 slug 행이
@@ -39,8 +74,9 @@ export interface AdminSlugFilter {
 }
 
 /**
- * `slugs` 한 요청의 최대 개수(입력 검증용). 실제 한계는 필터가 실리는 쿼리스트링
- * 길이다 — 한도에 가까워지면 slug 목록을 POST 본문으로 받는 RPC로 옮긴다.
+ * `slugs` 한 요청의 최대 개수(입력 검증용). `get_all_post_stats` 쪽의 실제 한계는 필터가 실리는
+ * 쿼리스트링 길이다 — 한도에 가까워지면 `get_posts_trends`처럼 slug 목록을 RPC 인자(POST 본문)로
+ * 받는 RPC로 옮긴다.
  */
 export const MAX_FILTER_SLUGS = 1000;
 
@@ -53,9 +89,8 @@ export const MAX_SLUG_LENGTH = 200;
  * 여기서 같은 형태를 본다.
  */
 export interface AdminActionParams {
-  all_post_stats: AdminSlugFilter | undefined;
-  /** 1000행 cap(`max_rows`) 페이징은 Edge Function 안에서 돈다 — 왕복·JWT 검증은 한 번. */
-  all_posts_trends: AdminSlugFilter | undefined;
+  /** 글별 누적·오늘 조회수와 일별 추이 — 한 요청(왕복·JWT 검증 한 번)으로 둘 다 받는다. */
+  posts_overview: AdminSlugFilter | undefined;
   post_hourly_distribution: { slug: string };
   post_dow_distribution: { slug: string };
 }
@@ -77,7 +112,7 @@ export type ParsedAdminRequest =
 
 /** 런타임 가드 — 요청 body의 `action`이 등록된 것인지. 프로토타입 키(`toString` 등)는 거른다. */
 export function isAdminAction(value: unknown): value is AdminAction {
-  return typeof value === 'string' && Object.hasOwn(ADMIN_ACTION_RPC, value);
+  return typeof value === 'string' && Object.hasOwn(ADMIN_ACTION_RPCS, value);
 }
 
 /** 요청 body의 `slugs`가 거를 slug 목록으로 쓸 수 있는 모양인지(JSON에서 온 값이다). */
@@ -115,8 +150,7 @@ export function parseAdminRequest(body: unknown): ParsedAdminRequest {
       : {};
 
   switch (action) {
-    case 'all_post_stats':
-    case 'all_posts_trends': {
+    case 'posts_overview': {
       const slugs = 'slugs' in params ? params.slugs : undefined;
       if (slugs === undefined) return { ok: true, request: { action } };
       if (!isSlugList(slugs)) {

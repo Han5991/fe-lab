@@ -12,6 +12,9 @@ import {
 } from '@blog/content/client';
 import { getRecentViews, type RecentView } from '@/src/hooks/recentViews';
 import { Portal } from '@/src/components/Portal';
+import { actionButton } from '@/src/components/actionButton';
+import { headerIconButton, iconButton } from '@/src/components/iconButton';
+import { optionSelected, pressOption } from '@/src/components/interaction';
 import { useModalDialog } from '@/src/components/useModalDialog';
 import { isModifiedClick } from '@/src/components/events';
 import { fetchSearchIndex } from './searchIndex';
@@ -25,12 +28,24 @@ import {
 /** 색인 요청의 진행 상태 — 여는 순간 요청이 걸리므로 요청 전도 'loading'이다. */
 type IndexStatus = 'loading' | 'ready' | 'error';
 
+// 일치어 강조. 틴트 면은 행 배경과 1.17 / 1.39:1(선택 행 위 1.17 / 1.50)이라 색만으로는
+// 약하고, 제목 줄은 제목도 ink.950·medium이라 면 말고는 갈리는 게 없다 — 굵기를 한 단계
+// 올려(semibold) 색 아닌 표식을 둔다. 메타 줄에서는 글자색(ink.500/700 대 ink.950)도 갈린다.
 const markClass = css({
-  bg: 'marker.300',
+  bg: 'accent.muted',
   color: 'ink.950',
-  fontWeight: 'medium',
+  fontWeight: 'semibold',
   px: '0.5',
-  rounded: 'sm',
+  rounded: 'inner',
+});
+
+// 검색 닫기 — ghost 아이콘 버튼의 누름을 쓰되 모양은 예전 그대로다: 입력 옆에서 본문보다 물러난
+// 보조 잉크(ink.400, hover ink.600 + paper.200)이고, 상자는 패딩 8 + 글리프 18 = 34다.
+const closeButton = css(iconButton.raw({ tone: 'ghost' }), {
+  boxSize: 'auto',
+  p: '2',
+  color: 'ink.400',
+  _hover: { color: 'ink.600', bg: 'paper.200' },
 });
 
 const Highlight = ({ text, tokens }: { text: string; tokens: string[] }) =>
@@ -43,10 +58,6 @@ const Highlight = ({ text, tokens }: { text: string; tokens: string[] }) =>
       part.text
     ),
   );
-
-/** 결과에 보일 시리즈 이름 — 색인에 제목이 없으면 id로 대신한다. */
-const seriesLabel = (post: PublicSearchIndexEntry) =>
-  post.seriesTitle ?? post.series;
 
 /**
  * 사이트 검색 — 헤더의 트리거 버튼과 모달 다이얼로그. 트리거는 열린 동안에도 마운트된
@@ -220,57 +231,28 @@ export const SearchDialog = () => {
 
   return (
     <>
+      {/* 아이콘 버튼이라 단축키는 화면에 적지 않는다 — 마우스는 title 툴팁으로, 보조기술은
+          aria-keyshortcuts로 받는다(위 핸들러가 Meta·Control 둘 다 받는다). 이름은 '검색' 그대로다. */}
       <button
         type="button"
         onClick={openDialog}
         aria-haspopup="dialog"
         aria-expanded={isOpen}
-        className={css({
-          display: 'flex',
-          alignItems: 'center',
-          gap: '2',
-          px: { base: '2', md: '3' },
-          py: '1.5',
-          rounded: 'control',
-          borderWidth: 'hairline',
-          borderColor: 'ink.border',
-          color: 'ink.500',
-          fontSize: 'sm',
-          cursor: 'pointer',
-          _hover: { borderColor: 'ink.borderStrong', color: 'ink.700' },
-          _active: { bg: 'paper.100' },
-          transition: '[all 0.2s]',
-          bg: 'transparent',
-          minW: { base: '[36px]', md: 'auto' },
-          justifyContent: 'center',
-        })}
         aria-label="검색"
+        aria-keyshortcuts="Meta+K Control+K"
+        title="검색 (⌘K / Ctrl K)"
+        className={headerIconButton}
       >
-        <Search size={16} />
-        <span className={css({ display: { base: 'none', md: 'inline' } })}>
-          검색
-        </span>
-        <kbd
-          className={css({
-            display: { base: 'none', md: 'inline' },
-            px: '1.5',
-            py: '0.5',
-            rounded: 'md',
-            bg: 'paper.100',
-            fontSize: 'xs',
-            // paper.100 위 12px 글자라 ink.500(서브 서피스 메타 톤)이 AA 하한이다.
-            color: 'ink.500',
-          })}
-        >
-          ⌘K
-        </kbd>
+        <Search size={18} />
       </button>
 
       {/* body로 portal한다 — 헤더의 backdrop-filter가 fixed 자손의 containing
           block을 헤더로 바꿔, 안에 두면 풀스크린 패널이 헤더 높이로 접힌다. */}
       {isOpen && (
         <Portal>
-          {/* 백드롭 클릭은 포인터 편의다 — 키보드는 Escape·닫기 버튼으로 닫는다. */}
+          {/* 백드롭 클릭은 포인터 편의다 — 키보드는 Escape·닫기 버튼으로 닫는다.
+              등장만 움직인다(Astryx Dialog) — 닫힘은 즉시 사라진다. @starting-style은 열 때
+              삽입되는 이 요소에만 쓴다(서버가 그린 요소에 걸면 하드 로드에도 재생된다). */}
           <div
             role="presentation"
             className={css({
@@ -278,6 +260,8 @@ export const SearchDialog = () => {
               inset: '0',
               bg: 'scrim.dialog',
               zIndex: '50',
+              transition: 'opacity',
+              _starting: { opacity: '0' },
             })}
             onClick={closeDialog}
           />
@@ -299,15 +283,28 @@ export const SearchDialog = () => {
               w: { base: 'full', md: '[560px]' },
             })}
           >
+            {/* 등장은 바깥 래퍼(가운데 정렬의 translateX)가 아니라 이 패널에 건다. 데스크톱
+                센터 모달은 16px 아래·95%에서 떠오르고, 화면을 덮는 모바일은 투명도만 바뀐다
+                (Astryx Dialog의 풀스크린과 같다). */}
             <div
               className={css({
+                transitionProperty: 'opacity, transform',
+                transitionDuration: 'mediumMax',
+                transitionTimingFunction: 'standard',
+                _starting: {
+                  opacity: '0',
+                  transform: { md: 'translateY(16px) scale(0.95)' },
+                },
                 bg: 'paper.50',
-                rounded: { base: '[0]', md: 'card' },
+                rounded: { base: 'none', md: 'container' },
                 overflow: 'hidden',
-                // dim 오버레이가 레이어를 갈라주므로 그림자 대신 hairline 보더로
-                // 다이얼로그 경계를 세운다(플랫 유지).
-                borderWidth: { base: '[0]', md: 'hairline' },
+                // 센터 모달은 떠 있는 표면이라 overlay.high를 두고(AGENTS.md §9), hairline도
+                // 남긴다 — 다크에서 다이얼로그 면과 dim 아래 지면은 대비가 거의 없어(1.04:1)
+                // 그림자만으로는 경계가 서지 않는다. 모바일은 화면 전체를 덮어 그림자가 떨어질
+                // 가장자리가 없으니 둘 다 두지 않는다.
+                borderWidth: { base: 'none', md: 'hairline' },
                 borderColor: 'ink.border',
+                boxShadow: { md: 'overlay.high' },
                 h: { base: 'full', md: 'auto' },
                 // body 스크롤이 잠겨 있으니 모달 높이를 묶고 결과 목록만 스크롤한다.
                 maxH: { md: '[70vh]' },
@@ -361,16 +358,7 @@ export const SearchDialog = () => {
                   onClick={closeDialog}
                   // 아이콘은 aria-hidden svg라 이름을 주지 못한다(axe button-name).
                   aria-label="검색 닫기"
-                  className={css({
-                    p: '2',
-                    rounded: 'md',
-                    color: 'ink.400',
-                    _hover: { color: 'ink.600', bg: 'paper.200' },
-                    _active: { bg: 'paper.200' },
-                    cursor: 'pointer',
-                    bg: 'transparent',
-                    border: 'none',
-                  })}
+                  className={closeButton}
                 >
                   <X size={18} />
                 </button>
@@ -442,16 +430,24 @@ export const SearchDialog = () => {
                           onClick={e => {
                             if (!isModifiedClick(e)) closeDialog();
                           }}
-                          className={css({
-                            display: 'block',
-                            px: '4',
-                            py: { base: '4', md: '3' },
-                            bg: selected ? 'accent.50' : 'transparent',
-                            _active: { bg: 'accent.50' },
-                            transition: '[background 0.1s]',
-                            borderBottomWidth: { base: 'hairline', md: '[0]' },
-                            borderColor: 'paper.200',
-                          })}
+                          className={css(
+                            pressOption,
+                            {
+                              display: 'block',
+                              px: '4',
+                              py: { base: '4', md: '3' },
+                              bg: 'transparent',
+                              color: 'ink.500',
+                              transition: 'colors',
+                              borderBottomWidth: {
+                                base: 'hairline',
+                                md: 'none',
+                              },
+                              borderColor: 'paper.200',
+                            },
+                            // 선택 행의 면·글자색은 눌린 행과 같은 `optionSelected`다.
+                            selected && optionSelected,
+                          )}
                         >
                           <p
                             className={css({
@@ -466,7 +462,6 @@ export const SearchDialog = () => {
                           <p
                             className={css({
                               fontSize: 'xs',
-                              color: 'ink.500',
                               mt: '1',
                               lineClamp: 2,
                             })}
@@ -474,8 +469,8 @@ export const SearchDialog = () => {
                             {/* 예약 글의 date는 ISO 일시일 수 있다 — 목록들과 같은
                                 fmtDate로 날짜만 보인다. */}
                             {post.date && <span>{fmtDate(post.date)} · </span>}
-                            {post.series && (
-                              <span>📚 {seriesLabel(post)} · </span>
+                            {post.seriesTitle && (
+                              <span>📚 {post.seriesTitle} · </span>
                             )}
                             <Highlight text={snippet} tokens={tokens} />
                           </p>
@@ -498,7 +493,7 @@ export const SearchDialog = () => {
                                     bg: 'paper.200',
                                     // paper.200 위 작은 글자 — 서브 서피스 메타 톤(ink.500)이 AA 하한이다.
                                     color: 'ink.500',
-                                    rounded: 'md',
+                                    rounded: 'full',
                                   })}
                                 >
                                   {tag}
@@ -533,16 +528,7 @@ export const SearchDialog = () => {
                         <button
                           type="button"
                           onClick={loadIndex}
-                          className={css({
-                            px: '3',
-                            py: '1',
-                            rounded: 'md',
-                            borderWidth: 'hairline',
-                            borderColor: 'ink.border',
-                            color: 'ink.700',
-                            cursor: 'pointer',
-                            _hover: { borderColor: 'ink.borderStrong' },
-                          })}
+                          className={actionButton({ tone: 'outline' })}
                         >
                           다시 시도
                         </button>

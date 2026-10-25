@@ -1,14 +1,9 @@
 import { Suspense } from 'react';
 import { css, cx } from '@blog/styled-system/css';
 
-import {
-  getAllPostSummaries,
-  getAllSeries,
-  getAllTags,
-  getAllYears,
-} from '@/src/content';
+import { SITE_DESCRIPTION } from '@/content.values.mts';
+import { getAllPostSummaries, getAllSeries } from '@/src/content';
 import { safeJsonLd } from '@blog/content/client';
-import { POSTS_TRANSITION_ID } from '@/src/shared/transitions';
 import {
   buildBlogJsonLd,
   buildCollectionPageJsonLd,
@@ -34,9 +29,12 @@ export default function PostsPage() {
   // 시점 목록에 고정된다. draft·scheduled 글을 그대로 노출하는 목록이라
   // 글을 쓰는 동안 특히 크게 어긋난다.
   const posts = getAllPostSummaries();
-  const series = getAllSeries();
-  const tags = getAllTags();
-  const years = getAllYears();
+  // 칩은 id·제목·편수만 쓴다 — 설명문을 RSC 페이로드에 싣지 않는다.
+  const series = getAllSeries().map(({ id, title, count }) => ({
+    id,
+    title,
+    count,
+  }));
   const collectionPageJsonLd = buildCollectionPageJsonLd(posts);
 
   return (
@@ -49,69 +47,38 @@ export default function PostsPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLd(blogJsonLd) }}
       />
-      <PageBoundary transitionId={POSTS_TRANSITION_ID} className={railGutter}>
+      <PageBoundary className={railGutter}>
         <div
           className={cx(
-            railColumn({ width: 'wide' }),
-            css({ py: { base: '10', md: '16' } }),
+            railColumn({ width: 'text' }),
+            css({
+              display: 'flex',
+              flexDir: 'column',
+              gap: '10',
+              pt: 'pageTop',
+            }),
           )}
         >
-          {/* 허브 문법에 맞춘 헤더 — 큰 세리프 타이틀 대신 21px 산세리프 +
-              모노 수치 한 줄, 구분은 hairline 보더 하나로만. */}
-          <header
+          <div
             className={css({
-              mb: '[30px]',
-              pb: '[16px]',
-              borderBottomWidth: 'hairline',
-              borderBottomStyle: 'solid',
-              borderColor: 'ink.border',
               display: 'flex',
-              alignItems: 'baseline',
-              justifyContent: 'space-between',
-              gap: '[16px]',
-              flexWrap: 'wrap',
+              flexDir: 'column',
+              gap: '2',
+              textAlign: 'center',
             })}
           >
-            <h1
-              className={css({
-                fontSize: '[21px]',
-                fontWeight: 'bold',
-                color: 'ink.950',
-              })}
-            >
-              모든 노트
-            </h1>
-            <span
-              className={css({
-                fontFamily: 'mono',
-                fontWeight: 'normal',
-                fontSize: '[12px]',
-                color: 'ink.500',
-                fontVariantNumeric: 'tabular-nums',
-              })}
-            >
-              {posts.length}편
-            </span>
-          </header>
+            <h1 className={css({ textStyle: 'display1' })}>모든 노트</h1>
+            <p className={css({ textStyle: 'body', color: 'ink.700' })}>
+              {SITE_DESCRIPTION}
+            </p>
+          </div>
 
-          {/* 뷰는 nuqs 때문에 프리렌더에서 빠져 정적 HTML에는 이 폴백만 남는다 — 링크를
+          {/* 뷰는 `useSearchParams` 때문에 프리렌더에서 빠져 정적 HTML에는 이 폴백만 남는다 — 링크를
               남기려고 목록을 그리고, 파라미터 없는 뷰와 같은 레이아웃이라 하이드레이션 뒤 바뀌지 않는다. */}
           <Suspense
-            fallback={
-              <PostsArchiveFallback
-                posts={posts}
-                series={series}
-                tags={tags}
-                years={years}
-              />
-            }
+            fallback={<PostsArchiveFallback posts={posts} series={series} />}
           >
-            <PostsArchiveView
-              posts={posts}
-              series={series}
-              tags={tags}
-              years={years}
-            />
+            <PostsArchiveView posts={posts} series={series} />
           </Suspense>
         </div>
       </PageBoundary>

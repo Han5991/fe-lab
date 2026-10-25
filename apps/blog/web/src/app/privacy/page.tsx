@@ -1,11 +1,11 @@
 import { SITE_NAME, SITE_URL } from '@/content.values.mts';
 import contentConfig from '@/content.config.mts';
 import { PRIVACY_PATH } from '@/src/shared/routes';
-import { PRIVACY_TRANSITION_ID } from '@/src/shared/transitions';
 import { css, cx } from '@blog/styled-system/css';
 import type { Metadata } from 'next';
 
 import { PageBoundary } from '@/src/components/PageBoundary';
+import { inlineLink } from '@/src/components/inlineLink';
 import { railGutter, railColumn } from '@/src/components/Rail';
 import { defaultShareCard } from '../seoDefaults';
 
@@ -33,24 +33,13 @@ export const metadata: Metadata = {
 
 const LAST_UPDATED = '2026년 10월 5일';
 
-// 문장 속 링크는 색만으로 구분하지 않는다 — 본문(ink.700)과 accent.600의 명도 차가
-// 3:1에 못 미쳐(axe link-in-text-block) 색약·흑백 화면에서 링크가 안 보인다. 밑줄을 단다.
-const inlineLink = css({
-  color: 'accent.600',
-  textDecoration: 'underline',
-  textUnderlineOffset: '[2px]',
-  _hover: { color: 'accent.700' },
-});
-
 export default function PrivacyPage() {
   return (
-    <PageBoundary transitionId={PRIVACY_TRANSITION_ID}>
-      <div
-        className={cx(
-          css({ minHeight: '[calc(100lvh - 231px)]', bg: 'paper.50' }),
-          railGutter,
-        )}
-      >
+    <PageBoundary>
+      {/* 높이를 채우지 않는다 — 푸터를 바닥에 붙이는 일은 Layout(flex 열, main flex 1)이 하고,
+          지면색도 Layout이 칠한다. 예전의 최소 높이 calc(100lvh - 231px)는 헤더·푸터 높이를 손으로
+          뺀 값이라 셸이 바뀔 때마다 어긋났다. */}
+      <div className={railGutter}>
         {/* 읽는 문서라 글 본문과 같은 text 레일. 예전엔 혼자 800px이었다. */}
         <div className={cx(railColumn({ width: 'text' }), css({ py: '16' }))}>
           <h1

@@ -26,11 +26,17 @@ export const PRIVACY_PATH = '/privacy/';
 // ── admin 영역 ───────────────────────────────────────────────────────────────
 
 /**
+ * admin 영역의 라우트 세그먼트 — `src/app/admin` 폴더 이름이다. 루트 레이아웃이 이 세그먼트를
+ * 보고 사이트 셸(헤더·푸터)을 씌우지 않는다(`ShellSwitch` — admin은 자기 셸이 있다).
+ */
+export const ADMIN_SEGMENT = 'admin';
+
+/**
  * admin 영역의 루트. 아래 경로는 전부 여기서 파생된다 — `/admin`을 여러 번
  * 적어 두면 영역을 옮길 때 한 곳만 고쳐지고 나머지가 조용히 어긋난다.
  * 후행 슬래시는 붙이지 않는다(필요한 쪽이 붙인다).
  */
-export const ADMIN_BASE_PATH = '/admin';
+export const ADMIN_BASE_PATH = `/${ADMIN_SEGMENT}`;
 
 /** admin 대시보드의 canonical 경로(슬래시형) — 내부 `<Link href>`용. */
 export const ADMIN_PATH = `${ADMIN_BASE_PATH}/`;
@@ -109,6 +115,23 @@ export const ADMIN_ANALYTICS_PATH = `${ADMIN_BASE_PATH}/analytics/`;
  */
 export function adminAnalyticsPostPath(slug: string): string {
   return `${ADMIN_ANALYTICS_PATH}${encodePostSlug(slug)}/`;
+}
+
+/**
+ * 현재 경로에서 admin 통계가 고른 글의 slug를 꺼낸다 — `adminAnalyticsPostPath`의 역함수다.
+ * 통계 목록 자체(`/admin/analytics/`)면 고른 글이 없어 null, 통계 영역 밖이어도 null이다.
+ *
+ * 분석 화면은 고른 글을 이 경로에만 둔다 — 행을 누르면 `history.pushState`로 주소만 바꾸고
+ * (Next 라우터가 `usePathname`을 맞춘다) 화면은 이 함수로 다시 읽는다. 그래서 새로고침·뒤로
+ * 가기·주소 공유가 고른 글을 그대로 잇고, 정적 export가 글마다 만든 `[...slug]` 페이지도 같은
+ * 화면을 그 글이 고른 상태로 연다. dev 서버는 무슬래시형도 200으로 서빙하므로(`isAdminLoginPath`
+ * 주석) 그 형태도 받는다. 디코드는 `slugFromRouteParam`과 같이 던지지 않는다.
+ */
+export function adminAnalyticsSlugFromPath(pathname: string): string | null {
+  const path = pathname.endsWith('/') ? pathname : `${pathname}/`;
+  if (!path.startsWith(ADMIN_ANALYTICS_PATH)) return null;
+  const encoded = path.slice(ADMIN_ANALYTICS_PATH.length, -1);
+  return encoded === '' ? null : decodeUrlSafe(encoded);
 }
 
 /**

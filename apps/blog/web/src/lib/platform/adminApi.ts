@@ -5,17 +5,20 @@
  * functions.invoke()는 현재 세션의 JWT를 Authorization 헤더에 자동 첨부합니다.
  *
  * action 목록·params 형태는 `adminActions.ts`(Edge Function과 공유)가, 응답 형태는
- * `database.types.ts`의 RPC `Returns`가 단일 출처입니다 — 호출자가 `call<T>()`로
- * 응답 타입을 손으로 적지 않고, 응답은 `unknown`으로 받아 `RESULT_COLUMNS`로 좁힙니다
- * (Edge Function은 손으로 배포하므로 클라이언트와 어긋난 채 떠 있을 수 있다).
+ * `database.types.ts`의 RPC `Returns`(추이 행은 `adminActions.ts`의 `PostTrendRow`)가
+ * 단일 출처입니다 — 호출자가 `call<T>()`로 응답 타입을 손으로 적지 않고, 응답은
+ * `unknown`으로 받아 `RESULT_GUARDS`로 좁힙니다 (Edge Function은 손으로 배포하므로
+ * 클라이언트와 어긋난 채 떠 있을 수 있다).
  *
  * 단위 테스트 가능성을 위해 순수 함수 + dependency injection 패턴을 사용합니다.
  */
 
-import type {
-  AdminAction,
-  AdminActionParams,
-  AdminActionRpc,
+import {
+  isPostTrendRows,
+  type AdminAction,
+  type AdminActionParams,
+  type AdminActionRpc,
+  type PostTrendRow,
 } from './adminActions';
 import type { Database } from './database.types';
 
@@ -26,11 +29,11 @@ export type { AdminAction, AdminActionParams } from './adminActions';
 type DbFunctions = Database['public']['Functions'];
 
 /**
- * action의 응답 = 대리 호출하는 RPC의 `Returns`.
- * `ADMIN_ACTION_RPC`의 값이 Functions 키가 아니면 여기서 컴파일 에러가 난다.
+ * RPC의 행 배열 `Returns`. `AdminActionRpc`(`ADMIN_ACTION_RPCS`의 RPC 이름 전부)가 Functions 키가
+ * 아니면 여기서 컴파일 에러가 난다 — `get_posts_trends`처럼 행 배열이 아닌 `Json`을 돌려주는 RPC는
+ * 이 타입으로 읽지 않는다(그 행은 `adminActions.ts`의 `PostTrendRow`).
  */
-type GeneratedRow<A extends AdminAction> =
-  DbFunctions[AdminActionRpc<A>]['Returns'][number];
+type RpcReturns<N extends AdminActionRpc> = DbFunctions[N]['Returns'];
 
 /**
  * 생성 타입이 실제보다 좁은 열. RETURNS TABLE의 bigint를 생성기는 non-null로 적지만,
@@ -38,17 +41,22 @@ type GeneratedRow<A extends AdminAction> =
  * 마이그레이션 기준 — 프로덕션 함수 본문은 저장소와 다를 수 있어 SQL은 아직 고치지 않았다).
  * 응답 타입이 그 null을 말하게 해서, 폴백은 소비자가 보이게 고른다.
  */
-interface NullableColumns {
-  all_post_stats: 'total_views';
+type StatsRow = Omit<
+  RpcReturns<'get_all_post_stats'>[number],
+  'total_views'
+> & { total_views: number | null };
+type HourlyRow = RpcReturns<'get_post_hourly_distribution'>[number];
+type DowRow = RpcReturns<'get_post_dow_distribution'>[number];
+
+/** action별 응답 본문(Edge Function의 `{ data }` 안). */
+interface AdminActionResults {
+  /** 글별 누적·오늘 조회수(`get_all_post_stats`)와 일별 추이(`get_posts_trends`). */
+  posts_overview: { stats: StatsRow[]; trends: PostTrendRow[] };
+  post_hourly_distribution: HourlyRow[];
+  post_dow_distribution: DowRow[];
 }
 
-type ResultRow<A extends AdminAction> = A extends keyof NullableColumns
-  ? Omit<GeneratedRow<A>, NullableColumns[A]> & {
-      [K in NullableColumns[A]]: GeneratedRow<A>[K] | null;
-    }
-  : GeneratedRow<A>;
-
-export type AdminActionResult<A extends AdminAction> = ResultRow<A>[];
+export type AdminActionResult<A extends AdminAction> = AdminActionResults[A];
 
 /** 열의 런타임 검사 — 키가 곧 열 타입의 이름이다. */
 const COLUMN_CHECKS = {
@@ -67,39 +75,34 @@ type ColumnTag<T> = [T] extends [string]
       ? 'number|null'
       : never;
 
-/** action → 응답 행의 열 → 그 열의 검사 이름. 키 전부가 `AdminAction`과 `Returns`에서 온다. */
-type ResultColumns = {
-  readonly [A in AdminAction]: {
-    readonly [K in keyof ResultRow<A>]-?: ColumnTag<ResultRow<A>[K]>;
-  };
+/** 행의 열 → 그 열의 검사 이름. 키 전부가 행 타입에서 온다. */
+type RowColumns<Row> = {
+  readonly [K in keyof Row]-?: ColumnTag<Row[K]>;
 };
 
 /**
- * action마다 응답 행의 열. 키와 열 타입이 `Returns`에 묶여(satisfies) 열이 늘거나 이름·타입이
+ * 행마다 열의 표. 키와 열 타입이 행 타입(`Returns`)에 묶여(satisfies) 열이 늘거나 이름·타입이
  * 바뀌면 여기서 컴파일 에러가 난다 — 타입 사본이 아니라 그 타입의 런타임 그림자다.
  */
-const RESULT_COLUMNS = {
-  all_post_stats: {
-    slug: 'string',
-    today_views: 'number',
-    total_views: 'number|null',
-  },
-  all_posts_trends: {
-    slug: 'string',
-    view_count: 'number',
-    view_date: 'string',
-  },
-  post_hourly_distribution: { hour: 'number', view_count: 'number' },
-  post_dow_distribution: { dow: 'number', view_count: 'number' },
-} as const satisfies ResultColumns;
+const STATS_COLUMNS = {
+  slug: 'string',
+  today_views: 'number',
+  total_views: 'number|null',
+} as const satisfies RowColumns<StatsRow>;
+const HOURLY_COLUMNS = {
+  hour: 'number',
+  view_count: 'number',
+} as const satisfies RowColumns<HourlyRow>;
+const DOW_COLUMNS = {
+  dow: 'number',
+  view_count: 'number',
+} as const satisfies RowColumns<DowRow>;
 
-/** 응답 본문이 그 action의 `Returns`(행 배열)인지 — 열마다 값의 타입까지 본다. */
-function isActionResult<A extends AdminAction>(
-  action: A,
+/** 값이 행 배열인지 — `columns`의 열마다 값의 타입까지 본다. 표가 행 타입에 묶이는 곳은 위 `satisfies`다. */
+function isRows(
   value: unknown,
-): value is AdminActionResult<A> {
-  const columns: Readonly<Record<string, keyof typeof COLUMN_CHECKS>> =
-    RESULT_COLUMNS[action];
+  columns: Readonly<Record<string, keyof typeof COLUMN_CHECKS>>,
+): boolean {
   if (!Array.isArray(value)) return false;
   // Array.isArray는 any[]로 좁힌다 — 행은 unknown으로 다시 받는다.
   const rows: readonly unknown[] = value;
@@ -110,6 +113,38 @@ function isActionResult<A extends AdminAction>(
       COLUMN_CHECKS[tag](values.get(name)),
     );
   });
+}
+
+/** action마다 그 응답 모양을 좁히는 검사 — 키가 정확히 `AdminAction`이고 검사 대상이 `AdminActionResults`다. */
+type ResultGuards = {
+  readonly [A in AdminAction]: (
+    value: unknown,
+  ) => value is AdminActionResults[A];
+};
+
+/** action → 응답 본문 검사. 키·검사 대상은 `ResultGuards`가 묶는다(action 이름의 출처는 `adminActions.ts`). */
+const RESULT_GUARDS = {
+  posts_overview: (
+    value: unknown,
+  ): value is AdminActionResults['posts_overview'] =>
+    typeof value === 'object' &&
+    value !== null &&
+    'stats' in value &&
+    isRows(value.stats, STATS_COLUMNS) &&
+    'trends' in value &&
+    isPostTrendRows(value.trends),
+  post_hourly_distribution: (value: unknown): value is HourlyRow[] =>
+    isRows(value, HOURLY_COLUMNS),
+  post_dow_distribution: (value: unknown): value is DowRow[] =>
+    isRows(value, DOW_COLUMNS),
+} as const satisfies ResultGuards;
+
+/** 응답 본문이 그 action의 응답 모양인지. */
+function isActionResult<A extends AdminAction>(
+  action: A,
+  value: unknown,
+): value is AdminActionResult<A> {
+  return RESULT_GUARDS[action](value);
 }
 
 /**
@@ -269,8 +304,8 @@ export class AdminApiClient implements AdminApi {
       throw await toAdminApiError(action, error);
     }
 
-    // Edge Function은 { data: Returns } 형태로 반환합니다. RPC가 0행이어도
-    // PostgREST는 []를 주므로, 봉투가 없거나 안이 행 배열이 아니면 프로토콜 위반이다.
+    // Edge Function은 { data: 그 action의 응답 } 형태로 반환합니다. RPC가 0행이어도
+    // PostgREST는 []를 주므로, 봉투가 없거나 안이 그 action의 모양이 아니면 프로토콜 위반이다.
     const result =
       typeof data === 'object' && data !== null && 'data' in data
         ? data.data

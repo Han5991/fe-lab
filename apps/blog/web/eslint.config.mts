@@ -21,7 +21,7 @@ import { TEST_PROGRAM_FILES, UNIT_TESTS } from './testFiles.mts';
  *
  * CSS 변수를 못 읽는 렌더러(satori/sharp의 OG 카드, mermaid)는 여기 걸리지 않는다 —
  * 그쪽은 `css()` 값이 아니라 평범한 문자열 상수다. 팔레트와의 정합은 각자
- * `themeColor()` 파생과 `mermaidTheme.test.ts` 잠금 테스트가 본다.
+ * 프리셋에서 뽑는 값(`themeColor()`·`ogBrand`)과 `mermaidTheme.test.ts` 잠금 테스트가 본다.
  *
  * `no-restricted-syntax`는 블록마다 통째로 덮어써지므로(뒤 블록이 이김) 이 항목을
  * 이 룰을 쓰는 **모든 블록에 함께** 펼친다. 새 블록에서 이 룰을 켜면 여기도 넣을 것.
@@ -35,10 +35,85 @@ const NO_ESCAPED_HEX = {
 } as const;
 
 /**
+ * 모션 단축 속성 `transition`의 대괄호 이스케이프를 막는다.
+ *
+ * 시간·곡선은 토큰이고(blog-preset.ts의 durations·easings), 움직임 줄이기도 그 토큰이 0.01ms로
+ * 바꾸며 처리한다. `transition: '[transform 0.3s]'`는 그 둘을 모두 건너뛴다 — 움직임 줄이기를
+ * 켠 사용자에게도 움직이고, 화면은 멀쩡하니 아무것도 실패하지 않는다. prefer-token은 이 자리를
+ * 못 본다: `transition` 유틸리티의 값은 토큰 카테고리가 아니라 목록(colors·common …)이라
+ * 카테고리로 잡히지 않는다(`animation`은 animations 카테고리라 prefer-token이 본다). 2026-10
+ * 토큰 도입 전에는 preset-panda의 durations가 있었는데도 이 이스케이프가 31개 파일에 53개
+ * 쌓였다 — 토큰이 있다는 것만으로는 막히지 않았다.
+ *
+ * 쓰는 쪽은 유틸리티 값(`transition: 'colors'`, 기본 시간·곡선은 globalCss가 토큰으로 준다)이나
+ * longhand(`transitionProperty` + `transitionDuration`·`transitionTimingFunction` 토큰)다.
+ * `css()`를 쓰는 파일은 app element뿐이라(styled-system을 여는 레이어가 app뿐 — boundaries) app
+ * 블록 하나에만 건다. 템플릿 리터럴도 본다 — Panda는 상수를 끼운 템플릿
+ * (`` `[transform ${MS}ms]` ``)도 정적으로 풀어 추출한다.
+ *
+ * 재평가: 2027-04-24 — 그때까지 잡은 위반이 없으면 내린다(AGENTS.md §5).
+ */
+const NO_ESCAPED_TRANSITION = {
+  selector:
+    'Property:matches([key.name="transition"], [key.value="transition"]) :matches(Literal[value=/^\\[/], TemplateLiteral > TemplateElement[value.raw=/^\\[/])',
+  message:
+    "전환 시간·곡선은 토큰입니다. `transition: '[…]'` 대신 `transition: 'colors'` 같은 유틸리티 값이나 `transitionProperty` + `transitionDuration`·`transitionTimingFunction` 토큰을 쓰세요 — 이스케이프는 움직임 줄이기(토큰이 0.01ms로 바꾼다)를 건너뜁니다.",
+} as const;
+
+/**
+ * 누름·초점 상태를 컴포넌트가 직접 정하지 못하게 막는다 — 때는 panda.config의 조건이, 모양은
+ * `src/components/interaction.ts`의 프리셋이 정한다(blog-design-system 스킬 "인터랙션 상태").
+ * 컴포넌트는 `_hover`에 값만 적는다(터치에서는 그 값이 누르는 동안 켜진다). 막는 것은 같은 뜻의 조건
+ * 이름 전부와 그 조건을 선택자로 풀어 적은 키다:
+ * - 누름: `_active`·`_groupActive`·`_peerActive`(누름을 따로 적은 사본 — 검색 결과 행과 닫기 버튼이 하나씩
+ *   갖고 있었다), `_press`·`_groupPress`·`_pressScale`(프리셋 몫).
+ * - 초점: `_focus`·`_focusVisible`(초점 링은 globalCss `:focus-visible` 하나다 — `_focus: { outline: 'none' }`이
+ *   그 링을 지웠다), `_groupFocus`·`_groupFocusVisible`·`_groupFocusWithin`·`_groupKeyboardFocus`와 `_peerFocus*`
+ *   (그룹·형제의 초점 — 카드의 키보드 초점 틴트는 `cardParts.ts`가 `_groupKeyboardFocus`로 건다).
+ * - 입력 종류: `_pointerCoarse`(누름 크기가 마우스류에서만 도는 것은 `_pressScale`이 정한다).
+ * - 선택자 키: `'&:active'`·`'&:focus'`·`'&:focus-visible'`·`'&:hover'`와 `` [`&:active`] `` 같은 템플릿 리터럴 키.
+ *   `:hover`를 선택자 문자열에 직접 적으면 Panda 조건을 거치지 않아 터치에서 탭 뒤에도 hover가 남는다
+ *   (글 본문 표의 `'& tr:hover td'`가 그랬다).
+ * `_hover`·`_groupHover`는 막지 않는다 — 컴포넌트가 면·색을 적는 설계상의 조건이다. `_focusWithin`도
+ * 막지 않는다 — 입력을 감싸는 상자의 보더가 그 자리다(`ArchiveSearchBox`).
+ *
+ * 쓸 수 있는 파일은 `INTERACTION_FILES`뿐이다. `no-restricted-syntax`는 블록마다 통째로 덮어써지므로(위
+ * NO_ESCAPED_HEX 주석) 그 블록은 이 룰만 빼고 나머지를 다시 펼친다.
+ *
+ * 재평가: 2027-04-25 — 그때까지 잡은 위반이 없으면 내린다(AGENTS.md §5).
+ */
+const NO_LOCAL_INTERACTION_NAME =
+  '^_(active|groupActive|peerActive|focus|focusVisible|groupFocus|groupFocusVisible|groupFocusWithin|groupKeyboardFocus|peerFocus|peerFocusVisible|peerFocusWithin|press|groupPress|pressScale|pointerCoarse)$';
+const NO_LOCAL_INTERACTION_SELECTOR =
+  ':(active|focus|focus-visible|hover)([^-\\w]|$)';
+const NO_LOCAL_INTERACTION = {
+  selector: [
+    `Property:matches([key.name=/${NO_LOCAL_INTERACTION_NAME}/], [key.value=/${NO_LOCAL_INTERACTION_SELECTOR}/])`,
+    // 템플릿 리터럴 키 — 값이 없는 노드라 `key.value`로는 안 보인다. 상수를 끼운 템플릿도 첫 조각이 보인다.
+    `Property > TemplateLiteral.key > TemplateElement[value.raw=/${NO_LOCAL_INTERACTION_SELECTOR}/]`,
+  ].join(', '),
+  message:
+    '누름·초점 상태는 직접 정하지 않습니다 — 때는 panda.config의 조건, 모양은 src/components/interaction.ts의 프리셋입니다. `_hover`에 값만 적으면 터치에서는 누르는 동안 켜집니다(blog-design-system 스킬 "인터랙션 상태"). `:hover`를 선택자 문자열에 적지 말고 `_hover`를 쓰세요.',
+} as const;
+
+/**
+ * NO_LOCAL_INTERACTION의 허용 파일 — 누름·초점 조건을 실제로 쓰는 곳이다.
+ * - `interaction.ts`·`cardParts.ts`: 프리셋이 `_press`·`_groupPress`·`_pressScale`·`_groupKeyboardFocus`를 건다.
+ * - `skipLink.ts`: 건너뛰기 링크가 초점을 받으면 화면 안으로 들어온다(`_focus: { transform: 'none' }`).
+ *   사이트 셸과 admin 셸이 함께 쓰는 모듈 하나라 셸 파일 전체를 열지 않는다.
+ */
+const INTERACTION_FILES = [
+  'src/components/interaction.ts',
+  'src/components/blog/cardParts.ts',
+  'src/components/skipLink.ts',
+];
+
+/**
  * Panda 공식 lint(`@pandacss/eslint-plugin`, Panda v2 get-started/linting) — 빌드와 같은 v2
  * 추출 결과로 스타일을 검사한다. recommended(토큰 경로·잘못된 중첩·include 밖 파일·추출
- * 진단 …) 위에 `prefer-token`을 색·라운드·보더 굵기로 넓혀 error로 건다: 그 카테고리에
- * 토큰이 있는데 원시 값이나 대괄호 이스케이프를 쓰면 막힌다(AGENTS.md §9).
+ * 진단 …) 위에 `prefer-token`을 색·라운드·보더 굵기·그림자·모션으로 넓혀 error로 건다: 그
+ * 카테고리에 토큰이 있는데 원시 값이나 대괄호 이스케이프를 쓰면 막힌다(AGENTS.md §9). 예외는
+ * 아래 파일 단위 블록의 `allow`(인용·대화 강조 바 `'[2px]'`) 하나다.
  *
  * NO_ESCAPED_HEX는 남긴다 — 플러그인은 Panda가 정적으로 추출한 스타일만 보므로, 빌드 때
  * 값을 따라가지 못하는 자리와 Panda include 밖(`content.values.mts`)의 `'[#hex]'`는 그
@@ -55,12 +130,37 @@ const pandaRecommended = await panda.configs.recommended({
 
 /**
  * prefer-token 옵션. flat config는 뒤 블록이 룰 옵션을 통째로 덮으므로 파일 단위 예외도
- * 이 객체를 펼쳐 쓴다. `allow`는 원시 문자열과 비교한다 — `'[0]'`(보더·라운드 없음)은
- * 토큰이 없고 v2 타입이 맨 `'0'`을 받지 않는다.
+ * 이 객체를 펼쳐 쓴다. 공통 `allow`는 없다 — 라운드·보더의 0도 `none` 토큰이라 `'[0]'`은
+ * error다(`allow`는 원시 문자열 비교라 카테고리를 가리지 않아, 남겨 두면 `rounded: '[0]'`이
+ * `none`을 우회했다).
+ *
+ * `shadows`·`dropShadows`는 2026-10에 더했다 — 블로그 그림자는 프리셋의 `overlay.*`뿐인데, admin 카드
+ * 9곳이 `boxShadow: '[0 1px 2px …]'` 이스케이프로 들어와 있었다(추가 직후 정확히 그 9건이
+ * 잡혔다). `textShadow`·`shadow` 단축도 shadows로 잡힌다. `dropShadows`는 비어 있는 카테고리라
+ * 쓰는 곳이 0이지만, 빼면 `dropShadow: '[…]'` 글로우가 lint와 check-types를 둘 다 통과한다.
+ * `filter: '[drop-shadow(…)]'`는 카테고리가 없어 여기서 못 본다. Recharts `contentStyle` 같은 인라인
+ * style 객체도 Panda 추출 밖이라 못 본다 — 그래서 차트 툴팁은 인라인 style 대신 Panda 클래스로
+ * 그린다(src/components/admin/ChartTooltip.tsx).
+ * 재평가: 2027-04-24 — 그때까지 그 9곳 밖에서 잡은 위반이 없으면 두 카테고리를 뺀다(AGENTS.md §5).
+ *
+ * `durations`·`easings`·`animations`도 2026-10에 더했다 — 모션 토큰(blog-preset.ts)이 움직임 줄이기를
+ * 한 곳에서 처리하므로, `transitionDuration: '[200ms]'`·`animation: '[spin 1s …]'`처럼 이스케이프로
+ * 들어온 값은 그 처리를 조용히 건너뛴다. 추가 시점 위반은 `animation: '[none]'` 1건(진행 바의 움직임
+ * 줄이기 — `animationName: 'none'`으로 바꿨다)이었다. `transition` 단축 속성은 카테고리가 없어 위
+ * NO_ESCAPED_TRANSITION이 본다.
+ * 재평가: 2027-04-24 — 그때까지 잡은 위반이 없으면 세 카테고리를 뺀다(AGENTS.md §5).
  */
 const PREFER_TOKEN = {
-  categories: ['colors', 'radii', 'borderWidths'],
-  allow: ['[0]'],
+  categories: [
+    'colors',
+    'radii',
+    'borderWidths',
+    'shadows',
+    'dropShadows',
+    'durations',
+    'easings',
+    'animations',
+  ],
 };
 
 /**
@@ -98,6 +198,42 @@ const CONTENT_SEO_VALUES = {
     'SEO 빌더는 post/index.ts를 거쳐 node:fs를 엽니다 — 인스턴스는 서버 전용인 @/src/content에서 쓰세요. 타입만 필요하면 import type으로.',
 } as const;
 
+/**
+ * 사이트 안 링크는 `TransitionLink`(src/components/shared/TransitionLink.tsx)로 — 그것이 현재 경로와
+ * 도착 경로로 이동의 방향(transition type, `navTransitionType`)을 단다. `next/link`를 바로 쓰면 그
+ * 이동만 방향 없이 페이드로 남고, 빌드·테스트·브라우저 어디서도 에러가 없다 — 같은 이동(홈 →
+ * `/posts`)이 헤더로 가면 밀리고 다른 링크로 가면 페이드하는 식으로 조용히 갈린다.
+ *
+ * 허용은 `NEXT_LINK_FILES`만이다(그 블록의 사유). 타입은 번들·동작과 무관하니 연다.
+ *
+ * 재평가: 2027-04-24 — 그때까지 잡은 위반이 없으면 내린다(AGENTS.md §5).
+ */
+const NEXT_LINK_DIRECT = {
+  name: 'next/link',
+  allowTypeImports: true,
+  message:
+    '사이트 안 링크는 @/src/components/shared/TransitionLink를 쓰세요 — 이동의 방향(transition type)을 앱의 계층으로 답니다. next/link를 바로 쓰면 그 이동만 조용히 페이드로 남습니다. 방향을 일부러 달지 않는 곳이면 eslint.config.mts의 NEXT_LINK_FILES에 사유와 함께 추가하세요.',
+} as const;
+
+/**
+ * `next/link`를 바로 여는 것이 허용된 파일 — 방향 type을 일부러 달지 않는 곳만.
+ *
+ * - `TransitionLink.tsx` — 감싸개 자신
+ * - `SearchDialog.tsx` — 결과는 모달을 닫으며 가는 이동이라 페이지가 옆으로 밀리면 닫히는 패널과
+ *   엇갈린다(페이드)
+ * - `ErrorFallback.tsx` — 에러 경계(`error.tsx`·`global-error.tsx`)가 그리는데, 에러 경계에는 페이지
+ *   전환 경계가 없어(PageBoundary 주석) 방향 있는 이동이면 들어오는 페이지가 늦게 나타나는 동안
+ *   화면이 빈다
+ * - admin 영역 — 공개 계층(홈·섹션·글) 밖의 도구 화면이라 방향을 정하지 않는다
+ */
+const NEXT_LINK_FILES = [
+  'src/components/shared/TransitionLink.tsx',
+  'src/components/search/SearchDialog.tsx',
+  'src/components/ErrorFallback.tsx',
+  'src/app/admin/**/*.tsx',
+  'src/components/admin/**/*.tsx',
+];
+
 const CONTENT_DYNAMIC_IMPORT = {
   selector:
     "ImportExpression:matches([source.value='@blog/content'], [source.value='@blog/content/seo'])",
@@ -119,12 +255,22 @@ const SERVER_ONLY_BARREL_FILES = [
  */
 const TEST_FILES = TEST_PROGRAM_FILES;
 
-/** app 레이어의 repository 직접 import 금지 — 아래 두 블록이 같은 값을 펼친다. */
+/** app 레이어의 repository 직접 import 금지 — 아래 블록들이 같은 값을 펼친다. */
 const REPOSITORY_IMPORT_PATTERN = {
   // adminRepository처럼 접두사가 붙은 것도 함께 막습니다.
   group: ['**/domain/*/*[rR]epository', '**/domain/*/*[rR]epository.*'],
   message:
     'repository는 인프라 레이어입니다. domain/<x> 공개 API(배럴, 예: @/src/domain/analytics, @/src/domain/analytics/admin)를 통해 접근하세요.',
+};
+
+/**
+ * app 레이어의 import 금지에서 next/link만 뺀 것 — `NEXT_LINK_FILES` 블록이 그대로 쓰고, app 블록은
+ * 여기에 `NEXT_LINK_DIRECT`를 더한다. 허용 파일의 설정이 언제나 "app 블록 − next/link"가 되게 한 값에서
+ * 둘 다 뽑는다.
+ */
+const APP_IMPORTS_EXCEPT_NEXT_LINK = {
+  paths: [CONTENT_BARREL_VALUES, CONTENT_SEO_VALUES],
+  patterns: [REPOSITORY_IMPORT_PATTERN],
 };
 
 /**
@@ -328,7 +474,7 @@ export default defineConfig([
     rules: {
       '@pandacss/prefer-token': [
         'error',
-        { ...PREFER_TOKEN, allow: [...PREFER_TOKEN.allow, '[2px]'] },
+        { ...PREFER_TOKEN, allow: ['[2px]'] },
       ],
     },
   },
@@ -349,16 +495,44 @@ export default defineConfig([
     ignores: ['src/{shared,domain,lib}/**', UNIT_TESTS],
     rules: {
       // `**/` 접두로 alias(@/src/domain/...)와 상대경로(../../domain/...) 양쪽을 차단.
-      // `paths`는 큰 배럴·SEO 문 값 import 금지 — flat config는 뒤 블록이 룰 옵션을
-      // 통째로 덮으므로 한 룰 설정에 함께 둔다.
+      // `paths`는 큰 배럴·SEO 문 값 import 금지와 next/link 직접 import 금지 — flat config는 뒤
+      // 블록이 룰 옵션을 통째로 덮으므로 한 룰 설정에 함께 둔다.
       'no-restricted-imports': [
         'error',
         {
-          paths: [CONTENT_BARREL_VALUES, CONTENT_SEO_VALUES],
-          patterns: [REPOSITORY_IMPORT_PATTERN],
+          ...APP_IMPORTS_EXCEPT_NEXT_LINK,
+          paths: [...APP_IMPORTS_EXCEPT_NEXT_LINK.paths, NEXT_LINK_DIRECT],
         },
       ],
-      'no-restricted-syntax': ['error', NO_ESCAPED_HEX, CONTENT_DYNAMIC_IMPORT],
+      'no-restricted-syntax': [
+        'error',
+        NO_ESCAPED_HEX,
+        CONTENT_DYNAMIC_IMPORT,
+        NO_ESCAPED_TRANSITION,
+        NO_LOCAL_INTERACTION,
+      ],
+    },
+  },
+  {
+    // 누름·초점 조건을 쓰는 파일(INTERACTION_FILES) — 그 룰만 풀고 나머지는 위 app 블록과 같다.
+    files: INTERACTION_FILES,
+    ignores: [UNIT_TESTS],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        NO_ESCAPED_HEX,
+        CONTENT_DYNAMIC_IMPORT,
+        NO_ESCAPED_TRANSITION,
+      ],
+    },
+  },
+  {
+    // next/link를 바로 여는 것이 허용된 파일(NEXT_LINK_FILES의 사유) — 그 금지만 풀고 나머지는
+    // 위 app 블록과 같다(뒤 블록이 옵션을 통째로 덮으므로 같은 값에서 다시 펼친다).
+    files: NEXT_LINK_FILES,
+    ignores: [UNIT_TESTS],
+    rules: {
+      'no-restricted-imports': ['error', APP_IMPORTS_EXCEPT_NEXT_LINK],
     },
   },
   {
@@ -370,7 +544,9 @@ export default defineConfig([
     rules: {
       'no-restricted-imports': [
         'error',
-        { paths: [CONTENT_BARREL_VALUES, CONTENT_SEO_VALUES] },
+        {
+          paths: [CONTENT_BARREL_VALUES, CONTENT_SEO_VALUES, NEXT_LINK_DIRECT],
+        },
       ],
       // 정적 import만 막으면 동적 import로 같은 문이 열린다 — app 블록과 같은 짝으로 건다.
       'no-restricted-syntax': ['error', NO_ESCAPED_HEX, CONTENT_DYNAMIC_IMPORT],
@@ -385,13 +561,13 @@ export default defineConfig([
     },
   },
   {
-    // 배럴에만 있는 값이 필요한 서버 전용 파일 — 배럴·SEO 문 금지만 풀고 repository
-    // 금지는 그대로 둔다(뒤 블록이 옵션을 통째로 덮으므로 패턴을 다시 적는다).
+    // 배럴에만 있는 값이 필요한 서버 전용 파일 — 배럴·SEO 문 금지만 풀고 repository·next/link
+    // 금지는 그대로 둔다(뒤 블록이 옵션을 통째로 덮으므로 다시 적는다).
     files: SERVER_ONLY_BARREL_FILES,
     rules: {
       'no-restricted-imports': [
         'error',
-        { patterns: [REPOSITORY_IMPORT_PATTERN] },
+        { paths: [NEXT_LINK_DIRECT], patterns: [REPOSITORY_IMPORT_PATTERN] },
       ],
     },
   },
@@ -462,7 +638,7 @@ export default defineConfig([
     //     생기면 모든 청크에 함께 실린다(공개 배럴 규칙과 같은 이유). 'use client'
     //     지시문도 여기 걸린다 — shared는 클라이언트 경계가 아니다. 파생 상수의
     //     순수 함수 호출(`export const X = f(Y)`)은 문이 아니라 초기화라 걸리지
-    //     않는다 — transitions.ts가 그 형태다.
+    //     않는다.
     files: ['src/shared/**/*.{ts,tsx}'],
     ignores: [UNIT_TESTS],
     rules: {

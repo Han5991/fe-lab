@@ -42,23 +42,29 @@ function makeMockClient(response: InvokeResponse): {
 
 // ── 테스트 ────────────────────────────────────────────────────────────────────
 
-test('AdminApiClient: all_post_stats — functions.invoke를 올바른 action으로 호출', async () => {
-  const mockData = [{ slug: 'post-a', total_views: 100, today_views: 5 }];
+const OVERVIEW = {
+  stats: [{ slug: 'post-a', total_views: 100, today_views: 5 }],
+  trends: [{ slug: 'post-a', view_date: '2026-05-01', view_count: 5 }],
+};
+
+test('AdminApiClient: posts_overview — 요청 한 번으로 통계와 추이를 함께 받는다', async () => {
+  // 통계(페이징)와 추이는 Edge Function 안에서 병렬로 돈다. 예전엔 action 둘을 따로 불러
+  // 왕복·JWT 검증이 두 번이었다.
   const { client, calls } = makeMockClient({
-    data: { data: mockData },
+    data: { data: OVERVIEW },
     error: null,
   });
 
   const api = new AdminApiClient(client);
-  const result = await api.call('all_post_stats');
+  const result = await api.call('posts_overview');
 
-  expect(calls.length).toBe(1);
+  expect(calls).toHaveLength(1);
   expect(calls[0].functionName).toBe('admin-analytics');
   expect(calls[0].options?.body).toStrictEqual({
-    action: 'all_post_stats',
+    action: 'posts_overview',
     params: undefined,
   });
-  expect(result).toStrictEqual(mockData);
+  expect(result).toStrictEqual(OVERVIEW);
 });
 
 test('AdminApiClient: post_hourly_distribution — slug 파라미터 전달 확인', async () => {
@@ -100,39 +106,20 @@ test('AdminApiClient: post_dow_distribution — slug 파라미터 전달 확인'
   expect(result).toStrictEqual(mockData);
 });
 
-test('AdminApiClient: all_posts_trends — params 없이 한 번만 호출한다', async () => {
-  // 1000행 cap 페이징은 Edge Function 안에서 돈다. 예전엔 여기서 range를
-  // 바꿔가며 직렬로 여러 번 불렀고, 그러면 왕복마다 JWT 검증까지 반복됐다.
-  const mockData = [{ slug: 'post-a', view_date: '2026-05-01', view_count: 5 }];
+test('AdminApiClient: posts_overview는 거를 slug 목록을 params로 싣는다', async () => {
   const { client, calls } = makeMockClient({
-    data: { data: mockData },
+    data: { data: OVERVIEW },
     error: null,
   });
-
-  const api = new AdminApiClient(client);
-  const result = await api.call('all_posts_trends');
-
-  expect(calls).toHaveLength(1);
-  expect(calls[0].options?.body).toStrictEqual({
-    action: 'all_posts_trends',
-    params: undefined,
-  });
-  expect(result).toStrictEqual(mockData);
-});
-
-test('AdminApiClient: 목록형 action은 거를 slug 목록을 params로 싣는다', async () => {
-  const { client, calls } = makeMockClient({ data: { data: [] }, error: null });
   const api = new AdminApiClient(client);
 
-  await api.call('all_post_stats', { slugs: ['post-a', 'series/post-b'] });
-  await api.call('all_posts_trends', { slugs: ['post-a'] });
+  await api.call('posts_overview', { slugs: ['post-a', 'series/post-b'] });
 
   expect(calls.map(c => c.options?.body)).toStrictEqual([
     {
-      action: 'all_post_stats',
+      action: 'posts_overview',
       params: { slugs: ['post-a', 'series/post-b'] },
     },
-    { action: 'all_posts_trends', params: { slugs: ['post-a'] } },
   ]);
 });
 
@@ -174,11 +161,11 @@ test.each([
   async (_kind, error, fields, message) => {
     const { client } = makeMockClient({ data: null, error });
 
-    const rejected = new AdminApiClient(client).call('all_post_stats');
+    const rejected = new AdminApiClient(client).call('posts_overview');
 
     await expect(rejected).rejects.toBeInstanceOf(AdminApiError);
     await expect(rejected).rejects.toMatchObject({
-      action: 'all_post_stats',
+      action: 'posts_overview',
       ...fields,
     });
     await expect(rejected).rejects.toThrow(message);
@@ -194,7 +181,7 @@ test('AdminApiClient: data가 null이면 Error throw (빈 응답)', async () => 
 
   const api = new AdminApiClient(client);
 
-  const rejected = api.call('all_post_stats');
+  const rejected = api.call('posts_overview');
 
   await expect(rejected).rejects.toBeInstanceOf(Error);
   await expect(rejected).rejects.toThrow('계약과 다른 응답');
@@ -211,92 +198,141 @@ test('AdminApiClient: 봉투는 있는데 안이 null이어도 Error throw (빈 
 
   const api = new AdminApiClient(client);
 
-  const rejected = api.call('all_post_stats');
+  const rejected = api.call('posts_overview');
 
   await expect(rejected).rejects.toBeInstanceOf(Error);
   await expect(rejected).rejects.toThrow('계약과 다른 응답');
 });
 
 // Edge Function은 손으로 배포한다 — 클라이언트와 어긋난 함수가 떠 있으면 화면이 NaN·undefined를
-// 그리는 대신 여기서 실패해야 한다. 열 이름·타입은 database.types.ts의 Returns에서 온다.
+// 그리는 대신 여기서 실패해야 한다. 열 이름·타입은 database.types.ts의 Returns(추이는 adminActions.ts의
+// PostTrendRow)에서 온다.
 test.each([
-  ['행 배열이 아닌 본문', { rows: [] }],
-  ['열이 빠진 행', [{ slug: 'post-a', total_views: 1 }]],
-  ['열 타입이 다른 행', [{ slug: 'post-a', total_views: '1', today_views: 0 }]],
-  ['객체가 아닌 행', ['post-a']],
+  ['객체가 아닌 본문', []],
+  ['stats가 없는 본문', { trends: OVERVIEW.trends }],
+  ['trends가 없는 본문', { stats: OVERVIEW.stats }],
+  [
+    'stats가 행 배열이 아닌 본문',
+    { stats: { rows: [] }, trends: OVERVIEW.trends },
+  ],
+  [
+    '열이 빠진 stats 행',
+    { stats: [{ slug: 'post-a', total_views: 1 }], trends: OVERVIEW.trends },
+  ],
+  [
+    '열 타입이 다른 stats 행',
+    {
+      stats: [{ slug: 'post-a', total_views: '1', today_views: 0 }],
+      trends: OVERVIEW.trends,
+    },
+  ],
+  ['객체가 아닌 stats 행', { stats: ['post-a'], trends: OVERVIEW.trends }],
+  [
+    '열이 빠진 trends 행',
+    { stats: OVERVIEW.stats, trends: [{ slug: 'post-a', view_count: 1 }] },
+  ],
+  [
+    '열 타입이 다른 trends 행',
+    {
+      stats: OVERVIEW.stats,
+      trends: [{ slug: 'post-a', view_date: '2026-05-01', view_count: '5' }],
+    },
+  ],
+  ['행 배열이 아닌 trends', { stats: OVERVIEW.stats, trends: null }],
 ])(
   'AdminApiClient: %s은 계약과 다른 응답으로 실패한다',
-  async (_kind, rows) => {
-    const { client } = makeMockClient({ data: { data: rows }, error: null });
+  async (_kind, body) => {
+    const { client } = makeMockClient({ data: { data: body }, error: null });
 
     await expect(
-      new AdminApiClient(client).call('all_post_stats'),
+      new AdminApiClient(client).call('posts_overview'),
     ).rejects.toThrow('계약과 다른 응답');
   },
 );
 
+test('AdminApiClient: 분포 action도 행의 열을 확인한다', async () => {
+  const { client } = makeMockClient({
+    data: { data: [{ hour: 9, view_count: '3' }] },
+    error: null,
+  });
+
+  await expect(
+    new AdminApiClient(client).call('post_hourly_distribution', {
+      slug: 'post-a',
+    }),
+  ).rejects.toThrow('계약과 다른 응답');
+});
+
 test('AdminApiClient: total_views의 null은 계약 안이다 — 생성 타입보다 넓은 열', async () => {
-  const rows = [{ slug: 'post-a', total_views: null, today_views: 0 }];
-  const { client } = makeMockClient({ data: { data: rows }, error: null });
+  const body = {
+    stats: [{ slug: 'post-a', total_views: null, today_views: 0 }],
+    trends: [],
+  };
+  const { client } = makeMockClient({ data: { data: body }, error: null });
 
-  const result = await new AdminApiClient(client).call('all_post_stats');
+  const result = await new AdminApiClient(client).call('posts_overview');
 
-  expect(result).toStrictEqual(rows);
+  expect(result).toStrictEqual(body);
 });
 
 test('AdminApiClient: 응답 타입이 action의 RPC Returns로 결정된다 (타입 계약)', async () => {
   const { client } = makeMockClient({
-    data: { data: [{ slug: 'post-a', total_views: 100, today_views: 5 }] },
+    data: { data: OVERVIEW },
     error: null,
   });
   const api = new AdminApiClient(client);
 
   // call<T>()로 응답 타입을 손으로 적지 않는다 — database.types.ts의
-  // get_all_post_stats Returns가 그대로 추론된다.
-  const rows = await api.call('all_post_stats');
-  const first = rows[0];
-  expect(first.total_views).toBe(100);
-  expect(first.today_views).toBe(5);
+  // get_all_post_stats Returns와 adminActions.ts의 PostTrendRow가 그대로 추론된다.
+  const { stats, trends } = await api.call('posts_overview');
+  expect(stats[0].total_views).toBe(100);
+  expect(stats[0].today_views).toBe(5);
+  expect(trends[0].view_date).toBe('2026-05-01');
 
   // @ts-expect-error — get_all_post_stats 행에는 view_date가 없다
-  void first.view_date;
+  void stats[0].view_date;
+  // @ts-expect-error — 추이 행에는 total_views가 없다
+  void trends[0].total_views;
 });
 
-test('AdminApiClient: params 계약 — 필수 slug 누락·미등록 action은 컴파일 에러', () => {
+test('AdminApiClient: params 계약 — 필수 slug 누락·미등록 action은 컴파일 에러', async () => {
   const { client, calls } = makeMockClient({
-    data: { data: [] },
+    data: { data: OVERVIEW },
     error: null,
   });
   const api = new AdminApiClient(client);
 
   // 아래는 전부 타입 계약 검증이다. tsc(tsconfig.test.json)가 @ts-expect-error
-  // 줄에서 에러가 사라지면 "unused directive"로 실패시킨다.
+  // 줄에서 에러가 사라지면 "unused directive"로 실패시킨다. 호출은 실제로 나가므로 약속을 모아 끝까지 기다린다
+  // (응답이 그 action의 모양이 아니면 거절된다 — 여기서 보는 건 타입뿐이다).
+  const pending = [
+    // @ts-expect-error — post_hourly_distribution은 { slug } 필수
+    api.call('post_hourly_distribution'),
+    // @ts-expect-error — post_dow_distribution은 { slug } 필수
+    api.call('post_dow_distribution', {}),
+    // @ts-expect-error — 등록되지 않은 action
+    api.call('nope'),
+    // @ts-expect-error — posts_overview의 params는 거를 slug 목록(slugs)뿐이다
+    api.call('posts_overview', { slug: 'x' }),
+    // @ts-expect-error — 옛 action 이름(통계·추이를 따로 부르던 때)은 더는 없다
+    api.call('all_post_stats'),
+    // params가 전부 선택인 action은 생략 가능
+    api.call('posts_overview'),
+  ];
+  await Promise.allSettled(pending);
 
-  // @ts-expect-error — post_hourly_distribution은 { slug } 필수
-  void api.call('post_hourly_distribution');
-  // @ts-expect-error — post_dow_distribution은 { slug } 필수
-  void api.call('post_dow_distribution', {});
-  // @ts-expect-error — 등록되지 않은 action
-  void api.call('nope');
-  // @ts-expect-error — all_post_stats의 params는 거를 slug 목록(slugs)뿐이다
-  void api.call('all_post_stats', { slug: 'x' });
-
-  // params가 전부 선택인 action은 생략 가능
-  void api.call('all_posts_trends');
-
-  expect(calls.length).toBe(5);
+  expect(calls).toHaveLength(6);
 });
 
 test('AdminApiClient: 여러 번 호출해도 독립적으로 동작', async () => {
-  const mockData = { slug: 'x', total_views: 1, today_views: 0 };
   const { client, calls } = makeMockClient({
-    data: { data: [mockData] },
+    data: { data: OVERVIEW },
     error: null,
   });
 
   const api = new AdminApiClient(client);
-  await api.call('all_post_stats');
-  await api.call('all_post_stats');
+  await api.call('posts_overview');
+  await api.call('posts_overview');
 
   expect(calls.length).toBe(2);
   expect(calls[0].functionName).toBe('admin-analytics');

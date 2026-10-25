@@ -127,7 +127,7 @@ describe('QuoteLink 버튼', () => {
     // 달라서(복사하면 길어진다) %로 둔다 — translate의 %는 버튼 자신의 폭이다.
     expect(button).toHaveStyle({
       left: '10px',
-      transform: 'translateX(clamp(-2px, -50%, calc(372px - 100%)))',
+      translate: 'clamp(-2px, -50%, calc(372px - 100%))',
     });
   });
 
@@ -320,6 +320,49 @@ describe('QuoteLink 복사', () => {
 
     await elapse(2500);
     expect(screen.queryByRole('button')).toBeNull();
+  });
+});
+
+describe('QuoteLink 알약 폭', () => {
+  test('보이는 라벨은 지금 상태의 하나뿐이고 나머지는 접근성 트리에서 빠진다', async () => {
+    renderQuote();
+    select(textOf('second'));
+
+    const button = await findButton();
+
+    // 이름은 켜진 라벨 하나다 — 숨은 네 라벨과 크기 재기 줄이 이름에 섞이면 이어 붙은 문장이 된다.
+    expect(button).toHaveAccessibleName('링크 복사');
+    // 크기 재기 줄 안의 칸도 data-on을 달고 있다 — aria-hidden 조상이 없는, 정말 읽히는 켜진 칸만 센다.
+    const faces = [...button.querySelectorAll('[data-on]')].filter(
+      node => node.closest('[aria-hidden="true"]') === null,
+    );
+    expect(faces.map(node => node.textContent)).toEqual(['링크 복사']);
+  });
+
+  test('복사 결과로 바뀌면 data-copied와 켜진 라벨이 함께 바뀐다', async () => {
+    renderQuote();
+    select(textOf('second'));
+    const button = await findButton();
+    expect(button).toHaveAttribute('data-copied', 'idle');
+
+    fireEvent.click(button);
+    const copied = await screen.findByRole('button', {
+      name: '링크를 복사했어요',
+    });
+
+    expect(copied).toBe(button);
+    expect(copied).toHaveAttribute('data-copied', 'text');
+  });
+
+  test('실패도 같은 칸 구조로 보여 준다', async () => {
+    renderQuote({ write: () => Promise.reject(new Error('denied')) });
+    select(textOf('second'));
+
+    fireEvent.click(await findButton());
+
+    expect(
+      await screen.findByRole('button', { name: '복사하지 못했어요' }),
+    ).toHaveAttribute('data-copied', 'failed');
   });
 });
 

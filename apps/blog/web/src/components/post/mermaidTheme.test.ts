@@ -45,7 +45,7 @@ const FROM_TOKEN = {
   mainBkg: 'paper.100',
   primaryColor: 'paper.100',
   primaryTextColor: 'ink.950',
-  secondaryBorderColor: 'accent.500',
+  secondaryBorderColor: 'accent.solid',
   tertiaryColor: 'paper.200',
   lineColor: 'ink.600',
   textColor: 'ink.950',
@@ -56,7 +56,7 @@ const FROM_TOKEN = {
 
 /** ② 알파 토큰을 지면 위에 합성한 자리 — mermaid 키 → [알파 토큰, 지면 토큰]. */
 const FROM_COMPOSITE = {
-  secondaryColor: ['accent.50', 'paper.50'],
+  secondaryColor: ['accent.muted', 'paper.50'],
 } as const satisfies Record<string, readonly [BlogColorName, BlogColorName]>;
 
 /**

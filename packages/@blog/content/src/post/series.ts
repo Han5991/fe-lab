@@ -18,6 +18,18 @@ export interface SeriesMeta {
   order?: string[] | undefined;
 }
 
+/**
+ * 시리즈의 **표시명** — `_series.yml`의 `title`, 없으면 폴더 id. 사이트 화면·시리즈
+ * 목록·llms.txt·OG 카드의 시리즈 이름이 모두 이 함수 하나에서 나온다(예전에는 식
+ * `meta?.title ?? id`가 호출부마다 복사돼 있었다).
+ */
+export function seriesDisplayName(
+  seriesId: string,
+  meta: SeriesMeta | null,
+): string {
+  return meta?.title ?? seriesId;
+}
+
 export interface SeriesReader {
   getSeriesMeta: (seriesName: string) => SeriesMeta | null;
   isSeriesFolder: (seriesName: string, meta?: SeriesMeta | null) => boolean;

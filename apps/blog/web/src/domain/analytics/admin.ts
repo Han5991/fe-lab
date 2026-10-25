@@ -17,8 +17,7 @@ import { AnalyticsService, type AnalyticsCalculator } from './service';
 export { countLivePosts, UNIQUES_ESTIMATE_RATIO } from './overview';
 
 export {
-  getAllPostStats,
-  getAllPostsTrends,
+  getPostsOverview,
   getAdminPostsIndex,
   getPostHourlyDistribution,
   getPostDowDistribution,

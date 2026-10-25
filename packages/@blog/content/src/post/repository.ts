@@ -1,10 +1,18 @@
-import { readFileSync } from 'node:fs';
-import { relative } from 'node:path';
+import {
+  closeSync,
+  existsSync,
+  openSync,
+  readFileSync,
+  readSync,
+} from 'node:fs';
+import { join, relative } from 'node:path';
 import matter from 'gray-matter';
 import { estimateReadMin } from '../shared/format.ts';
 import { collectMarkdownFiles, hasFrontmatter } from '../shared/postFiles.ts';
 import { pathSlug, resolvePostSlug } from './urls.ts';
 import { isPostFile } from './visibility.ts';
+import { readImageSize } from './imageSize.ts';
+import { isOptimizableThumbnail } from './thumbnail.ts';
 import {
   toDateString,
   toOptionalString,
@@ -262,6 +270,32 @@ export function parsePost(
   };
 }
 
+/** 이미지 머리말로 읽는 바이트 수 — PNG는 24바이트, JPEG의 SOF는 보통 수 KB 안이다. 넘으면 비율을 모르는 글이다. */
+const IMAGE_HEADER_BYTES = 64 * 1024;
+
+/**
+ * 글 폴더의 자기 썸네일(png·jpg 파일)에서 가로/세로를 읽는다. 대상이 아니거나(외부 URL·사이트 경로·다른 형식)
+ * 파일이 없거나(`lint:posts`가 broken-image로 막는다) 머리말에서 못 읽으면 undefined다.
+ */
+function readThumbnailAspect(
+  postsDir: string,
+  post: Pick<PostData, 'thumbnail' | 'relativeDir'>,
+): number | undefined {
+  const { thumbnail, relativeDir } = post;
+  if (!isOptimizableThumbnail(thumbnail)) return undefined;
+  const path = join(postsDir, relativeDir, thumbnail);
+  if (!existsSync(path)) return undefined;
+  const fd = openSync(path, 'r');
+  try {
+    const header = Buffer.alloc(IMAGE_HEADER_BYTES);
+    const read = readSync(fd, header, 0, IMAGE_HEADER_BYTES, 0);
+    const size = readImageSize(header.subarray(0, read));
+    return size ? size.width / size.height : undefined;
+  } finally {
+    closeSync(fd);
+  }
+}
+
 /**
  * dirPath 아래의 모든 마크다운 파일을 읽어 PostData 배열로 반환합니다.
  *
@@ -297,12 +331,16 @@ function collectPosts(
 
   for (const fullPath of collectMarkdownFiles(dirPath, deps.metaFilenames)) {
     const fileContents = readFileSync(fullPath, 'utf8');
-    const post = parsePost(
+    const parsed = parsePost(
       fileContents,
       relative(dirPath, fullPath),
       parseOpts,
     );
-    if (!post) continue;
+    if (!parsed) continue;
+    // 파일을 읽어야 아는 값이라 순수 함수 parsePost 밖에서 붙인다(없으면 키째 뺀다).
+    const thumbnailAspect = readThumbnailAspect(dirPath, parsed);
+    const post: PostData =
+      thumbnailAspect === undefined ? parsed : { ...parsed, thumbnailAspect };
 
     if (post.series) {
       let declared = declaredSeries.get(post.series);

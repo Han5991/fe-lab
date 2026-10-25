@@ -12,7 +12,7 @@ const callout = sva({
       my: '6',
       px: '4',
       py: '3.5',
-      rounded: 'control',
+      rounded: 'container',
       borderWidth: 'hairline',
     },
     // 아바타·타임라인 아이콘과 같은 어휘 — hairline 원형에 문자 하나.
@@ -24,7 +24,7 @@ const callout = sva({
       justifyContent: 'center',
       boxSize: '5',
       mt: '[1px]',
-      rounded: 'pill',
+      rounded: 'full',
       borderWidth: 'hairline',
       fontFamily: 'mono',
       fontSize: 'xs',
@@ -42,12 +42,14 @@ const callout = sva({
         badge: { borderColor: 'callout.info.border' },
       },
       tip: {
+        // tip은 잉크 틴트다 — info와 면은 거의 같고(1.07 / 1.22:1) 불투명 잉크 보더와
+        // 글리프(+)가 가른다(blog-preset.ts callout 주석).
         surface: {
-          bg: 'callout.tip.bg',
-          borderColor: 'callout.tip.border',
-          color: 'callout.tip.text',
+          bg: 'accent.muted',
+          borderColor: 'accent.solid',
+          color: 'accent.solid',
         },
-        badge: { borderColor: 'callout.tip.border' },
+        badge: { borderColor: 'accent.solid' },
       },
       warning: {
         surface: {
@@ -75,7 +77,7 @@ const callout = sva({
 type CalloutType = NonNullable<RecipeVariant<typeof callout>['type']>;
 
 // 아이콘을 이모지에서 hairline 원형 + 문자 하나로 바꿨다. 이모지는 색을 우리가
-// 통제할 수 없어서 "무채색 베이스 + 포인트 1색" 팔레트 밖으로 튀고, 플랫한
+// 통제할 수 없어서 무채색 팔레트 밖으로 튀고, 플랫한
 // 보더 위계와도 톤이 맞지 않는다. 타입 구분은 글리프가 먼저 하고 색이 거든다.
 //
 // 주석이 아니라 `satisfies`로 계약을 건다 — 레시피가 variant를 얻거나 잃으면

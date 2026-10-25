@@ -172,8 +172,9 @@ export const META_FILENAMES = [
   'STUDY_LOG.md',
 ] as const;
 
-// OG 카드 팔레트는 여기 없다 — 값이 아니라 **디자인 토큰에서 파생**되기 때문이다.
-// `blog-preset.ts`의 다크 색을 `themeColor('dark', …)`로 뽑아 `content.config.mts`가 조립한다.
+// OG 카드 팔레트는 여기 없다 — 값이 아니라 **프리셋에서 파생**되기 때문이다.
+// `blog-preset.ts`의 다크 색을 `themeColor('dark', …)`로, 토큰이 아닌 브랜드 cyan을 `ogBrand`로
+// 뽑아 `content.config.mts`가 조립한다.
 // 이 파일이 아니라 거기인 이유는 값 import 금지(위 제약) 때문이다: 프리셋을 여기서
 // 끌면 화면이 이 모듈의 다른 상수를 쓸 때 Panda 설정까지 클라이언트 번들에 실린다.
 
@@ -263,10 +264,20 @@ export const BUNDLE_GUARDS = [
     forbiddenIn: [PUBLIC_CHUNKS],
     requiredIn: [ADMIN_CHUNKS],
   },
-  // admin 대시보드의 차트 라이브러리 — 공개 페이지에는 차트가 없다.
+  // admin 차트 라이브러리(분석 화면은 첫 로드, 대시보드는 차트만 지연 로드) — 공개 페이지에는 차트가 없다.
   {
     label: 'admin 차트(Recharts)',
     marker: 'recharts',
+    forbiddenIn: [PUBLIC_CHUNKS],
+    requiredIn: [ADMIN_CHUNKS],
+  },
+  // React Query는 admin만 쓴다(Provider는 admin 레이아웃). 의존성이 남아 루트 import 한 줄이면 모든 공개
+  // 페이지가 query-core(≈8.5KB gzip)를 다시 싣는데, 그 크기가 공개 예산의 ×1.05 여유보다 작거나 비슷해
+  // 예산만으로는 못 잡는다. 마커는 query-core가 쿼리 함수 없는 쿼리에 던지는 문구(ensureQueryFn) —
+  // QueryClient가 끌어 와 Provider만 실려도 함께 실린다. 재평가 2027-04-24 — 그때까지 잡은 것이 없으면 내린다.
+  {
+    label: 'admin 데이터 캐시(React Query)',
+    marker: 'Missing queryFn',
     forbiddenIn: [PUBLIC_CHUNKS],
     requiredIn: [ADMIN_CHUNKS],
   },
@@ -317,6 +328,51 @@ export const BUNDLE_GUARDS = [
  * CSS 예산은 33 → 30KB로 내렸다 — 측정 최대 27.9KB에 ~5% 여유. JS 예산은 그대로.
  * 2026-10-22 Panda 2.3.0 빌드로 다시 갱신: CSS는 쓰지 않는 keyframes 셋과 preset-panda 그림자
  * 토큰을 빼 −0.2KB — 최대 27.7KB에 ~5% 여유를 얹어도 30KB라 예산은 그대로).
+ * 2026-10-24 포인트색을 잉크로 옮긴 빌드로 다시 갱신: CSS는 cyan accent 계열 색 토큰 15개를
+ * 빼고 accent 4개를 더해 −0.3~0.4KB(최대 27.3KB) — 예산은 그대로. JS는 같은 날 바꾸기 전 빌드와
+ * 대 보면 0~−0.1KB다(공개 그룹). 줄별 JS 숫자가 크게 움직인 건 이 변경 탓이 아니다 — 줄 주석의
+ * 옛 값(251.1·187.3·434.9)이 이미 실측(바꾸기 전 빌드 251.8·188.4)과 어긋나 있던 것을 이 빌드의
+ * 측정값으로 바꿨다.
+ * 2026-10-24 페이지 전환을 ssgoi에서 React ViewTransition으로 옮긴 빌드로 다시 갱신: 레이아웃이 싣던
+ * `@ssgoi/react`가 빠져 모든 공개 그룹의 JS가 −12.1~−12.3KB, admin은 글 아코디언의 motion(framer)까지
+ * 빠져 −53.2KB다. 글 상세는 목차 시트·맨 위로 버튼의 motion도 빠져 199.3KB(−52.6KB)지만 `/posts/` 줄은
+ * 그룹 최대인 글 목록(필터 시트가 아직 motion을 쓴다)이 정한다. CSS는 모션 토큰·전환 규칙이 더해져
+ * +0.4~0.5KB(최대 27.8KB) — 예산은 그대로. JS 예산은 새 최대에 ~5% 여유로 내렸다.
+ * 2026-10-24 서버 페이지가 컴포넌트를 배럴(`components/blog/index.ts`, 삭제) 대신 제 경로로 열게 한
+ * 빌드로 `/`·`/about/`을 다시 갱신: 그 배럴이 클라이언트 모듈(글 목록 아카이브·필터·인기 레일)까지
+ * 재수출해, 홈은 Hero·대표글·행을, 소개는 Label 하나를 열었는데도 그 클라이언트 청크 셋(js 파일
+ * 14 → 11개)이 첫 로드에 실렸다 — 239.6 → 176.1KB(−63.5KB). 두 줄을 새 최대에 ~5% 여유(185)로 내렸다.
+ * 같은 빌드에서 `/posts/`(최대는 글 목록)도 239.6 → 239.2KB(−0.4) — 예산은 그대로.
+ * 2026-10-24 홈을 카드(쇼케이스·썸네일 행)로 바꾼 빌드로 다시 갱신: CSS는 칩·카드·홈 격자의 원자
+ * 클래스로 +0.1~0.2KB(최대 28.0KB), JS는 0~+0.1KB — 예산은 그대로. 줄 주석의 옛 값(176.1 / 27.1,
+ * 239.2)은 셸을 바꾼 빌드(176.2 / 27.2, 239.3)부터 이미 실측과 어긋나 있던 것을 이 빌드의
+ * 측정값으로 바꿨다.
+ * 2026-10-25 글 목록을 752 단일 칼럼으로 바꾼 빌드로 `/posts/`를 다시 갱신: 목록은 필터 시트·FAB(과 그
+ * `motion`)·필터 패널·인기 글 레일·옛 카드·세그먼트 컨트롤, nuqs 훅, react-query 훅이 빠지고 인기순 조회
+ * 코드가 지연 로드로 나가 240.2 → 185.2KB(−55.0KB — 목록 전용 청크 63.8 → 9.4KB, 공용 청크 −0.6KB).
+ * 그룹 최대는 이제 글 상세(199.5KB)가 정하고 이 값이 옛 예산의 80%(201.6) 아래라, `/posts/`를 252 → 207로
+ * 내렸다 — 지금 최대에 ~4% 여유이고, 루트의 nuqs 어댑터(약 −3.8KB)가 빠져도 하한(165.6) 위다.
+ * 2026-10-25 블로그가 `motion`·`nuqs`를 싣지 않게 한 빌드로 다시 갱신: 루트 `NuqsAdapter`가 빠져 모든
+ * 공개 그룹과 admin이 −3.1~−3.2KB다(공개 175.7~176.5 → 172.5~173.3, 글 상세 199.5 → 196.3, 목록 185.2 →
+ * 182.0, admin 378.0 → 374.9). CSS는 그대로(최대 28.5KB) — 예산은 전부 그대로. 줄 주석의 옛 값(176.2 /
+ * 27.3, 378.8 / 27.3)은 앞선 빌드부터 실측과 어긋나 있던 것을 이 빌드의 측정값으로 바꿨다.
+ * 2026-10-25 루트 `QueryClientProvider`를 admin 레이아웃으로 옮긴 빌드로 다시 갱신했다. query-core·react-query가
+ * 모든 공개 페이지의 공유 청크에서 빠져 공개 그룹 −8.6KB(172.5~173.3 → 163.9~164.7), 글 상세 −8.6KB(196.3 →
+ * 187.7), 목록 −8.6KB(182.3 → 173.7)가 됐고, admin은 같은 코드가 admin 청크로 자리만 옮겨 −870B(374.9 →
+ * 374.0 — 공유 청크 셋에 흩어져 있던 query-core가 한 청크에 모여 더 잘 압축된다)다. 하한에 걸린 그룹은
+ * 없지만, 185·207을 두면 Provider가 루트로 돌아와도 예산 안에 숨는다. 그래서 공개 6줄과 `/posts/`를 새 최대
+ * ×1.05로 내렸다(185 → 173, 207 → 198). CSS는 그대로다 — 줄 주석의 옛 값(27.9, 28.5)은 앞선 빌드부터 실측
+ * (28.0, 28.6)과 어긋나 있던 것을 이 빌드의 측정값으로 바꿨다.
+ * 2026-10-25 인터랙션 상태(누름 조건·프리셋)를 글 목록·글 상세(#578·#579)가 들어간 release 위에 얹은 빌드로
+ * `/posts/`의 CSS만 올렸다: 30.1KB가 예산 30을 넘었다(누름·터치 hover 조건이 +0.2KB, 앞선 두 PR의 본문·상세
+ * 스타일이 나머지). 새 최대 ×1.05로 32. 다른 그룹의 CSS(29.5)는 예산 안이라 그대로다.
+ * 2026-10-25 admin 재작성(관리자 바 셸·분석 화면·모션·테마 토글)을 글 목록·글 상세·인터랙션 상태가 들어간
+ * release에 합친 빌드로 갱신: CSS는 한 장을 모든 페이지가 받아 전 그룹 +0.9KB다(공개 29.5 → 30.4,
+ * `/posts/` 30.1 → 31.1 — admin의 원자 클래스·View Transition 규칙·keyframes). 공개 그룹의 CSS 예산 30을
+ * 넘어 새 최대 ×1.05로 32, `/posts/`는 33으로 올렸다. JS는 `/admin/` 최대 374.0 → 384.4KB(+10.4 — 분석
+ * 화면의 목록·패널·차트가 한 페이지에 모였다), 공개 그룹 +0.9KB(루트의 셸 고르기와 테마 토글의 className) —
+ * JS 예산은 그대로. 대시보드(`/admin/`) 자체는 일별 차트를 `next/dynamic`으로 나눠 Recharts(~110KB)가 첫
+ * 로드에서 빠진다 — 그룹 최대는 분석 화면이 정한다. (브랜치에서 단계마다 잰 값은 이 합본 측정으로 접었다.)
  * 그룹이 새로 생기면(새 라우트) 예산이 없어서, 라우트가
  * 사라지면 예산이 죽어서, 측정 최대가 상한의 80% 아래로 내려가면 예산이 느슨해서
  * (`budget-slack`) 빌드가 실패한다.
@@ -327,22 +383,22 @@ export const BUNDLE_GUARDS = [
  * 걸리면 같은 방식으로 내린다 — 여유가 크게 남으면 회귀가 그 안에 숨는다.
  */
 export const BUNDLE_BUDGETS = [
-  // 251.1 KB / 27.0 KB
-  { group: '/', jsGzipKB: 261, cssGzipKB: 30 },
-  // 251.1 KB / 27.7 KB — 목록과 글 상세 46쪽의 최대(mermaid·Giscus는 지연 로드라 밖)
-  { group: '/posts/', jsGzipKB: 261, cssGzipKB: 30 },
-  // 251.1 KB / 27.0 KB
-  { group: '/about/', jsGzipKB: 261, cssGzipKB: 30 },
-  // 187.3 KB / 27.0 KB
-  { group: '/series/', jsGzipKB: 194, cssGzipKB: 30 },
-  // 187.3 KB / 27.0 KB
-  { group: '/privacy/', jsGzipKB: 194, cssGzipKB: 30 },
-  // 187.3 KB / 27.0 KB — 정적 404(`404-page` 처리)
-  { group: '/404/', jsGzipKB: 194, cssGzipKB: 30 },
-  // 187.3 KB / 27.0 KB — Next가 함께 내보내는 not-found 라우트
-  { group: '/_not-found/', jsGzipKB: 194, cssGzipKB: 30 },
-  // 434.9 KB / 27.0 KB — admin 48쪽의 최대(`/admin/analytics/`)
-  { group: '/admin/', jsGzipKB: 457, cssGzipKB: 30 },
+  // 165.8 KB / 30.4 KB
+  { group: '/', jsGzipKB: 173, cssGzipKB: 32 },
+  // 189.4 KB / 31.1 KB — 목록과 글 상세 46쪽의 최대(글 상세. mermaid·Giscus는 지연 로드라 밖)
+  { group: '/posts/', jsGzipKB: 198, cssGzipKB: 33 },
+  // 165.0 KB / 30.4 KB
+  { group: '/about/', jsGzipKB: 173, cssGzipKB: 32 },
+  // 165.8 KB / 30.4 KB
+  { group: '/series/', jsGzipKB: 173, cssGzipKB: 32 },
+  // 165.0 KB / 30.4 KB
+  { group: '/privacy/', jsGzipKB: 173, cssGzipKB: 32 },
+  // 165.0 KB / 30.4 KB — 정적 404(`404-page` 처리)
+  { group: '/404/', jsGzipKB: 173, cssGzipKB: 32 },
+  // 165.0 KB / 30.4 KB — Next가 함께 내보내는 not-found 라우트
+  { group: '/_not-found/', jsGzipKB: 173, cssGzipKB: 32 },
+  // 384.4 KB / 30.4 KB — admin 48쪽의 최대(분석 화면 — 목록 1 + 글별 45쪽이 같은 화면이라 무게가 같다)
+  { group: '/admin/', jsGzipKB: 398, cssGzipKB: 32 },
 ] as const satisfies BundleBudgetsConfig;
 
 /**

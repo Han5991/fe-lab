@@ -103,9 +103,11 @@ here or anywhere else (this repo once carried four diverging copies of that prom
   `strictTokens`, …) — they inherit them; one that differs regenerates its own runtime. A dev server re-emits
   codegen into its config's outdir — never point another config at the blog's.
 - Panda runs `strictTokens: true` — off-token values are escaped on purpose as `'[12px]'`. A token the config
-  drops (the blog trims preset-panda's palette, radii and shadows) or never had is emitted by Panda as raw CSS
-  (`color: 'orange.500'`) with no diagnostic. `check-types` catches it, and in the blog so does the official Panda lint
-  (`@pandacss/prefer-token` for colors·radii·borderWidths, `apps/blog/web/eslint.config.mts`). Raw `token(colors.x)`
+  drops (the blog trims preset-panda's palette, radii, shadows and motion — durations·easings·animations·keyframes)
+  or never had is emitted by Panda as raw CSS (`color: 'orange.500'`) with no diagnostic. `check-types` catches it, and in the blog so does the official Panda lint
+  (`@pandacss/prefer-token` for colors·radii·borderWidths·shadows·dropShadows·durations·easings·animations,
+  `apps/blog/web/eslint.config.mts`; the `transition` shorthand has no token category, so `'[…]'` there is a
+  `no-restricted-syntax` error instead). Raw `token(colors.x)`
   strings inside values are invisible to `check-types`; the same lint's `@pandacss/no-invalid-token-paths` reports a
   missing one, but only in the blog's `src/` — `panda.config.ts` (globalCss) and the lab apps are checked by neither.
 - Never run `panda codegen --clean` (or `panda build --clean`) on an outdir that is a whole package
@@ -135,10 +137,10 @@ here or anywhere else (this repo once carried four diverging copies of that prom
   test. A console filter or axe exclusion must be scoped by selector/pattern with the reason next to it, never
   rule-wide. Retries are 0 except in the deploy job (1, so one flake doesn't block the cron publish). PR CI opens a
   sample (blog-e2e `sample-pages`: every non-post page, the representative posts, the newest post); deploy opens all.
-- **Every migration must also apply in PGlite.** `apps/blog/web/src/lib/platform/incrementViewCount.test.ts`
+- **Every migration must also apply in PGlite.** `apps/blog/web/src/lib/platform/migrations.test.ts`
   replays all of `apps/blog/web/supabase/migrations/` into PGlite (WASM Postgres, stubbing Supabase's roles and
-  default privileges) and calls the view-count RPC as `anon` — a migration that needs an extension PGlite doesn't
-  ship breaks it.
+  default privileges) and calls the RPCs on top (the view-count RPC as `anon`, the admin trends RPCs as
+  `service_role`) — a migration that needs an extension PGlite doesn't ship breaks it.
 
 ## 5. Git & PR Workflow
 
@@ -232,9 +234,12 @@ Worker (`apps/blog/web/wrangler.jsonc`), Supabase for the dynamic bits.
   이 문단과 `/privacy`를 함께 갱신할 것. 감점을 없애려면 고지가 아니라 GTM 콘솔에서 Clarity를 내려야 한다.
   **런타임 예외도 같은 GA4로 간다** — `apps/blog/web/src/components/errorReporting.ts`가 에러 경계 셋과 전역
   `error`·`unhandledrejection`에서 `exception` 이벤트(설명 100자, 자기 출처의 첫 스택 프레임 `frame`, 비치명은 탭 새로고침 전까지 5건)를 보내고, 다른 출처
-  스크립트의 에러와 `Error`가 아닌 거절은 거른다. 화면에 드러나지 않는 실패도 같은 길로 간다 — React Query 실패는
-  `apps/blog/web/src/app/queryClient.ts`의 QueryCache가(에러 경계가 보고하는 admin 쿼리는 meta로 빼고), 조회수 기록
-  실패는 `useViewCount`가 보낸다. GA4 화면에서 보려면 `description`·`frame`을 맞춤 측정기준으로
+  스크립트의 에러와 `Error`가 아닌 거절은 거른다. 화면에 드러나지 않는 실패도 같은 길로 간다 — 조회수 기록
+  실패는 `useViewCount`가, 인기순 조회수 읽기 실패는 `usePopularViewCounts`가 직접 보낸다. **React Query는 admin만
+  쓴다** — `QueryClientProvider`는 admin 레이아웃에 있어 공개 페이지의 청크는 query-core를 싣지 않는다(`check-bundle` 가드가 지킨다). 공개 화면의
+  조회 때문에 Provider를 루트로 되올리지 말고 위 두 훅처럼 손으로 쓴다. admin 쿼리 실패는 `admin/error.tsx`가
+  401·403을 거른 뒤 보내고, `apps/blog/web/src/app/admin/queryClient.ts`의 QueryCache는 그 meta가 없는 쿼리만 보내는
+  안전망이다. GA4 화면에서 보려면 `description`·`frame`을 맞춤 측정기준으로
   등록해야 한다. `frame`의 원래 위치는 함께 배포되는 소스맵(`productionBrowserSourceMaps`)으로 찾는다. **실사용자 Web Vitals도 같은 GA4로 간다** — `apps/blog/web/src/instrumentation-client.ts`가 GA(`gtag`)가
   초기화된 뒤 web-vitals를 등록하고(곧바로 등록하면 그 전에 보고된 FCP·TTFB를 `sendGAEvent`가 버린다)
   `apps/blog/web/src/components/webVitals.ts`의 매개변수로 지표마다 이벤트를 보낸다. 단위는 **하드 로드 한 번**이다:
@@ -325,14 +330,24 @@ Worker (`apps/blog/web/wrangler.jsonc`), Supabase for the dynamic bits.
 ## 9. Blog — design guardrails
 
 시각 기준은 구현된 화면(홈과 글 상세를 dev 서버로 대조)이고, 수치와 근거는 `blog-design-system` 스킬이
-단일 출처다. 금지선:
+단일 출처다 — 값을 옮겨 온 Astryx docsite 테마(MIT)와 일부러 다르게 간 자리도 거기 적는다. 금지선:
 
-- 색과 라운드는 전부 `packages/@blog/preset/src/blog-preset.ts`에서 온다 — preset-panda의 팔레트와 radii는
-  블로그 설정의 `preset:resolved` 플러그인이 빼서 strictTokens를 통과하지 못한다. **컴포넌트에서 hex를 쓰지 않는다** —
+- 색·라운드·그림자·모션(시간·곡선)은 전부 `packages/@blog/preset/src/blog-preset.ts`에서 온다 — preset-panda의
+  팔레트·radii·그림자·모션은 블로그 설정의 `preset:resolved` 플러그인이 빼서 strictTokens를 통과하지
+  못하고(`boxShadow: 'md'`·`transitionDuration: 'normal'`은 타입에서 막힌다), 토큰 밖 값과 대괄호 이스케이프는 §3의 `prefer-token`이 `src/`에서 막는다(예외는 그 설정의 `allow`).
+  **컴포넌트에서 hex를 쓰지 않는다** —
   다이어그램 SVG도 `currentColor`나 Panda `css()`로 토큰에 잇는다. CSS 변수를 못 읽는 satori/sharp는
   `themeColor('dark', 'paper.50')`으로 뽑는다. hex를 옮겨 적지 않는다.
+- **따로 고른 포인트색은 없다.** `accent.*`는 본문 잉크·지면과 같은 상수에서 파생하고, 색으로 갈리지 않는 자리는
+  밑줄·굵기·틴트로 가른다. 브랜드 cyan은 Panda 토큰이 아니라 OG 카드 렌더용 상수라 CSS에서 쓸 수 없다 — 그
+  카드는 글 썸네일로 홈·목록에 보인다.
 - 레일·거터의 단일 출처는 `src/components/Rail.tsx`다. **페이지에서 `maxW`·`px`를 직접 쓰지 않는다.** 거터는
   언제나 레일 바깥이다.
-- **그라데이션·글로우·box-shadow 장식 금지, 세리프 금지.** 플랫 유지. preset-panda의 그림자 토큰도 같은 플러그인이
-  빼서 `boxShadow: 'md'`는 타입에서 막힌다.
+- **그림자는 떠 있는 표면에만** — 흐름 밖(Portal·absolute·fixed)에 떠서 아래를 가리고 닫히면 사라지는 면:
+  다이얼로그·드로어·시트·팝오버·메뉴·토스트·차트 툴팁. 반전(잉크) 면·카드·버튼·hover에는 없고 위계는 보더로
+  낸다. 그림자 토큰은 `overlay.*`뿐이다 — 값은 lint가 막지만 어느 면에 붙였는지는 리뷰가 본다.
+- **움직임 줄이기는 시간 토큰이 처리한다**(`prefers-reduced-motion`에서 0.01ms) — 컴포넌트에 따로 규칙을 두지
+  않는다(스크롤에 묶인 진행 바만 예외). `@starting-style` 등장은 상호작용으로 삽입되는 요소에만 — 서버가 그린
+  요소에 걸면 하드 로드마다 재생된다.
+- **그라데이션·글로우 금지, 세리프 금지.**
 - 히어로 슬롯(`hero:`)은 이름 레지스트리에 등록된 다이어그램만 받는다.

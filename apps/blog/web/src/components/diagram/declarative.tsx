@@ -106,7 +106,7 @@ const missing = css({
   my: '6',
   px: '4',
   py: '3',
-  rounded: 'control',
+  rounded: 'container',
   borderWidth: 'hairline',
   borderColor: 'danger.border',
   color: 'danger.text',
@@ -306,9 +306,7 @@ function isTag<P>(
 }
 
 function toTone(value: unknown): DiagramTone {
-  // `teal`은 포인트색이 액센트이던 시절의 이름이다. 이미 발행된 글의 마크다운에
-  // 남아 있어 계속 받아준다 — 새 글은 `accent`를 쓰고, 문서에도 그쪽만 적는다.
-  return value === 'accent' || value === 'teal' ? 'accent' : 'gray';
+  return value === 'accent' ? 'accent' : 'gray';
 }
 
 function toShape(value: unknown): DiagramShape {

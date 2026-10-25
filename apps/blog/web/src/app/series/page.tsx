@@ -1,25 +1,19 @@
-import Link from 'next/link';
 import { css, cx } from '@blog/styled-system/css';
 
-import { archivePath, POSTS_PATH, postPath } from '@blog/content/client';
-import { SERIES_TRANSITION_ID } from '@/src/shared/transitions';
+import { archivePath, POSTS_PATH } from '@blog/content/client';
 import {
   getAllPostSummaries,
   getAllSeries,
   getSeriesMeta,
 } from '@/src/content';
-import { fmtDate } from '@blog/content/client';
 import { safeJsonLd } from '@blog/content/client';
-import { HiddenPostBadge } from '@/src/components/blog/HiddenPostBadge';
-import {
-  postRowItem,
-  postRowLink,
-  postRowMeta,
-  postRowMetaRaw,
-  postRowTitle,
-} from '@/src/components/blog/postRow';
+import { PostListRow } from '@/src/components/blog/PostListRow';
+import { postRowMeta, postRowMetaRaw } from '@/src/components/blog/postRow';
 import { PageBoundary } from '@/src/components/PageBoundary';
+import { inlineLink } from '@/src/components/inlineLink';
 import { railGutter, railColumn } from '@/src/components/Rail';
+import { seriesBadgeRaw } from '@/src/components/seriesBadge';
+import { TransitionLink } from '@/src/components/shared/TransitionLink';
 
 import { attachSeriesPosts } from './seriesIndex';
 import {
@@ -30,19 +24,9 @@ import {
 
 export const metadata = buildSeriesMetadata();
 
-// 레퍼런스 .badge — 배경 accent.50 + 글자 accent.600. 선/아이콘이 아니라
-// 텍스트라 accent.500이 아닌 600을 쓴다(라이트에서 500은 AA 미달).
-const seriesBadge = css({
-  display: 'inline-block',
-  fontFamily: 'sans',
-  fontSize: '[12px]',
-  lineHeight: 'snug',
-  color: 'accent.600',
-  bg: 'accent.50',
-  rounded: 'md',
-  px: '[9px]',
-  py: '[2px]',
-});
+// 시리즈 배지는 글 상세 머리와 같은 모양이다. 여기서만 h2 안에 놓여 줄 높이를
+// snug로 고정한다(글 상세는 둘레 줄 높이를 따른다).
+const seriesHeadingBadge = css(seriesBadgeRaw, { lineHeight: 'snug' });
 
 // 글 목록에 기대지 않는 JSON-LD라 한 번만 만든다.
 const jsonLd = buildSeriesJsonLd();
@@ -68,9 +52,9 @@ export default function SeriesPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }}
       />
-      <PageBoundary transitionId={SERIES_TRANSITION_ID}>
+      <PageBoundary>
         <div className={cx(css({ bg: 'paper.50' }), railGutter)}>
-          {/* 허브 계열 페이지는 홈·글 본문과 같은 text 레일을 쓴다. */}
+          {/* /series는 글 본문과 같은 text 레일을 쓴다. */}
           <div
             className={cx(
               railColumn({ width: 'text' }),
@@ -116,15 +100,11 @@ export default function SeriesPage() {
                 })}
               >
                 아직 묶인 시리즈가 없습니다.{' '}
-                <Link
-                  href={POSTS_PATH}
-                  className={css({
-                    color: 'accent.600',
-                    _hover: { textDecorationLine: 'underline' },
-                  })}
-                >
+                {/* 문장 속 링크 — 둘레 글자(ink.600)와 잉크 링크의 명도 차가 다크
+                    2.59:1로 3:1에 못 미쳐 밑줄이 표식이다(inlineLink). */}
+                <TransitionLink href={POSTS_PATH} className={inlineLink}>
                   전체 글 목록
-                </Link>
+                </TransitionLink>
                 에서 모든 글을 볼 수 있습니다.
               </p>
             ) : (
@@ -145,15 +125,17 @@ export default function SeriesPage() {
                     {/* 배지 자체가 그 시리즈로 필터된 아카이브로 가는 링크다.
                         (글 목록 행이 h3라 시리즈 제목은 h2로 둔다) */}
                     <h2 className={css({ minW: '0' })}>
-                      <Link
+                      <TransitionLink
                         href={archivePath({ series: entry.id })}
                         className={css({
                           display: 'inline-block',
                           _hover: { textDecorationLine: 'underline' },
                         })}
                       >
-                        <span className={seriesBadge}>{entry.title}</span>
-                      </Link>
+                        <span className={seriesHeadingBadge}>
+                          {entry.title}
+                        </span>
+                      </TransitionLink>
                     </h2>
                     <span className={postRowMeta}>{entry.posts.length}편</span>
                   </div>
@@ -175,23 +157,7 @@ export default function SeriesPage() {
                     className={css({ listStyleType: 'none', p: '0', m: '0' })}
                   >
                     {entry.posts.map(post => (
-                      <li key={post.slug} className={postRowItem}>
-                        <Link
-                          href={postPath(post.slug)}
-                          className={postRowLink}
-                        >
-                          <h3 className={postRowTitle}>
-                            {post.title}
-                            <HiddenPostBadge post={post} />
-                          </h3>
-                          {/* 날짜가 없으면 빈 span을 남기지 않는다(ArchiveRow와 같은 규칙). */}
-                          {post.date && (
-                            <span className={postRowMeta}>
-                              {fmtDate(post.date)}
-                            </span>
-                          )}
-                        </Link>
-                      </li>
+                      <PostListRow key={post.slug} post={post} />
                     ))}
                   </ol>
                 </section>

@@ -83,7 +83,7 @@ describe('AdminError', () => {
     [
       '401',
       new AdminApiError({
-        action: 'all_post_stats',
+        action: 'posts_overview',
         status: 401,
         serverMessage: '인증에 실패했습니다.',
         fallbackMessage: 'Edge Function returned a non-2xx status code',
@@ -95,7 +95,7 @@ describe('AdminError', () => {
     [
       '403',
       new AdminApiError({
-        action: 'all_post_stats',
+        action: 'posts_overview',
         status: 403,
         serverMessage: '관리자 권한이 없습니다.',
         fallbackMessage: 'Edge Function returned a non-2xx status code',

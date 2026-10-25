@@ -8,7 +8,7 @@
  * Content-Profile을 빠뜨렸고, 지금 이 테스트가 그걸 잡았다).
  *
  * 그래서 로컬 echo 서버에 두 클라이언트를 붙여, 공개 페이지가 실제로 하는
- * 세 호출의 요청(method·경로·쿼리·헤더·본문)을 직접 비교한다.
+ * 두 호출의 요청(method·경로·쿼리·헤더·본문)을 직접 비교한다.
  */
 
 import { afterAll, beforeAll, expect, test } from 'vitest';
@@ -98,7 +98,6 @@ afterAll(() => server.close());
 interface WireQuery extends PromiseLike<unknown> {
   in(column: string, values: readonly string[]): WireQuery;
   order(column: string, opts: { ascending: boolean }): WireQuery;
-  limit(n: number): WireQuery;
 }
 
 interface WireClient {
@@ -131,17 +130,7 @@ const SCENARIOS: {
   run: (c: WireClient) => PromiseLike<unknown>;
 }[] = [
   // 체인은 domain/analytics/repository.ts와 같은 모양이다 — 저쪽을 고치면 함께 고친다.
-  {
-    name: 'getTopPosts',
-    run: c =>
-      c
-        .from('post_views')
-        .select('slug, view_count')
-        .in('slug', ['hello-world', 'series/second-post'])
-        .order('view_count', { ascending: false })
-        .order('slug', { ascending: true })
-        .limit(5),
-  },
+  // 아래 헤더 테스트가 쓰는 SCENARIOS[0]은 GET 읽기면 된다(헤더는 호출마다 같다).
   {
     name: 'getAllViewCounts',
     run: c =>

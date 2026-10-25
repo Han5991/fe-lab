@@ -54,7 +54,7 @@ const msg = sva({
     },
     avatar: {
       boxSize: '[30px]',
-      rounded: 'pill',
+      rounded: 'full',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -64,8 +64,8 @@ const msg = sva({
       flexShrink: '0',
     },
     bubble: {
-      // 12px = radii.card. 레퍼런스 말풍선 라운드가 카드와 같은 값이라 토큰을 재사용한다.
-      rounded: 'card',
+      // 말풍선은 같은 화면의 카드보다 둥글게 — Astryx chat 말풍선(28px)에 가장 가까운 page를 쓴다.
+      rounded: 'page',
       px: '3',
       py: '2',
       fontSize: '[13px]',
@@ -80,9 +80,9 @@ const msg = sva({
     speaker: {
       me: {
         row: { flexDirection: 'row-reverse' },
-        // 포인트색을 "글자"로 쓰므로 AA 확보를 위해 accent.600(스펙 §3)을 쓴다.
-        avatar: { bg: 'accent.50', color: 'accent.600' },
-        bubble: { bg: 'accent.50', color: 'accent.600' },
+        // 잉크 틴트 위 잉크 글자(14.87 / 11.41:1). 상대방은 회색 면이라 면 명도와 정렬로 갈린다.
+        avatar: { bg: 'accent.muted', color: 'accent.solid' },
+        bubble: { bg: 'accent.muted', color: 'accent.solid' },
       },
       other: {
         avatar: { bg: 'warn.bg', color: 'warn.text' },

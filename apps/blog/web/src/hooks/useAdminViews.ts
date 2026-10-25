@@ -1,8 +1,7 @@
 import { queryOptions, useSuspenseQuery } from '@tanstack/react-query';
 import {
   getAdminPostsIndex,
-  getAllPostStats,
-  getAllPostsTrends,
+  getPostsOverview,
 } from '@/src/domain/analytics/admin';
 import type { PostStatDetail, TrendPoint } from '@/src/domain/analytics';
 import { ADMIN_QUERY_PREFIX } from './adminCache';
@@ -20,48 +19,52 @@ export const adminPostsIndexQuery = queryOptions({
   retry: false,
 });
 
+/**
+ * 대시보드 데이터 — 글 인덱스의 글마다 누적 조회수와 일별 추이를 붙인다. 대시보드·분석 두 화면(목록·지표·글 통계 패널)이
+ * 이 쿼리 하나를 읽고, 각 훅(`useAnalyticsOverview` 등)이 거기서 자기 몫을 파생한다 — Edge Function 요청은
+ * 구독이 몇이든 한 번이다(`posts_overview`).
+ */
+export const adminDashboardDataQuery = queryOptions({
+  queryKey: [...ADMIN_QUERY_PREFIX, 'dashboard-data'],
+  queryFn: async ({ client }): Promise<PostStatDetail[]> => {
+    // 조회수 읽기는 인덱스의 slug로 서버에서 거른다(가짜 slug가 1000행 cap을 채우지 않게).
+    const metadata = await client.ensureQueryData(adminPostsIndexQuery);
+    const slugs = metadata.map(post => post.slug);
+    const { stats, trends } = await getPostsOverview(slugs);
+
+    // 같은 (slug, 날짜)는 나중 값 하나만 남긴다 — 페이지 경계 행이 두 번 와도 두 번
+    // 합산하지 않게(서버도 거르지만 함수 배포는 수동이다).
+    const trendsMap = new Map<string, Map<string, number>>();
+    for (const t of trends) {
+      const byDate = trendsMap.get(t.slug) ?? new Map<string, number>();
+      byDate.set(t.view_date, t.view_count);
+      trendsMap.set(t.slug, byDate);
+    }
+    const trendsOf = (slug: string): TrendPoint[] =>
+      Array.from(trendsMap.get(slug) ?? [], ([view_date, view_count]) => ({
+        view_date,
+        view_count,
+      }));
+
+    const statsMap = new Map(stats.map(s => [s.slug, s]));
+
+    return metadata.map(post => {
+      const postStats = statsMap.get(post.slug);
+      return {
+        slug: post.slug,
+        title: post.title,
+        date: post.date,
+        totalViews: postStats?.total_views ?? 0,
+        todayViews: postStats?.today_views ?? 0,
+        trends: trendsOf(post.slug),
+        // 모르는 값의 fail-closed 폴백은 경계(getAdminPostsIndex)가 이미 했다.
+        status: post.status,
+        scheduledDate: post.scheduledDate || null,
+      };
+    });
+  },
+});
+
 export function useAdminDashboardData() {
-  return useSuspenseQuery({
-    queryKey: [...ADMIN_QUERY_PREFIX, 'dashboard-data'],
-    queryFn: async ({ client }): Promise<PostStatDetail[]> => {
-      // 조회수 두 읽기는 인덱스의 slug로 서버에서 거른다(가짜 slug가 1000행 cap을 채우지 않게).
-      const metadata = await client.ensureQueryData(adminPostsIndexQuery);
-      const slugs = metadata.map(post => post.slug);
-      const [stats, trends] = await Promise.all([
-        getAllPostStats(slugs),
-        getAllPostsTrends(slugs),
-      ]);
-
-      // 같은 (slug, 날짜)는 나중 값 하나만 남긴다 — 페이지 경계 행이 두 번 와도 두 번
-      // 합산하지 않게(서버도 거르지만 함수 배포는 수동이다).
-      const trendsMap = new Map<string, Map<string, number>>();
-      for (const t of trends) {
-        const byDate = trendsMap.get(t.slug) ?? new Map<string, number>();
-        byDate.set(t.view_date, t.view_count);
-        trendsMap.set(t.slug, byDate);
-      }
-      const trendsOf = (slug: string): TrendPoint[] =>
-        Array.from(trendsMap.get(slug) ?? [], ([view_date, view_count]) => ({
-          view_date,
-          view_count,
-        }));
-
-      const statsMap = new Map(stats.map(s => [s.slug, s]));
-
-      return metadata.map(post => {
-        const postStats = statsMap.get(post.slug);
-        return {
-          slug: post.slug,
-          title: post.title,
-          date: post.date,
-          totalViews: postStats?.total_views ?? 0,
-          todayViews: postStats?.today_views ?? 0,
-          trends: trendsOf(post.slug),
-          // 모르는 값의 fail-closed 폴백은 경계(getAdminPostsIndex)가 이미 했다.
-          status: post.status,
-          scheduledDate: post.scheduledDate || null,
-        };
-      });
-    },
-  });
+  return useSuspenseQuery(adminDashboardDataQuery);
 }

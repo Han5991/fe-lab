@@ -7,6 +7,16 @@ export function estimateReadMin(content: string): number {
 }
 
 /**
+ * 화면에 찍는 읽기 시간 표기. `20` → `20분`.
+ *
+ * 값은 로더가 계산한 `readMin`(위 `estimateReadMin`)이고, 여기서는 글자만 정한다. 카드마다
+ * `N min`·`N분`이 섞여 있던 것을 한 표기로 모은다 — `fmtDate`와 같은 "표기는 한 곳에서" 지점이다.
+ */
+export function fmtReadMin(readMin: number): string {
+  return `${readMin}분`;
+}
+
+/**
  * 목록·메타에 찍는 날짜 표기. `2026-04-28` → `2026-04-28`.
  *
  * 예전에는 점 표기(`2026.04.28`)로 바꿨는데, 리뉴얼 디자인 시안이 홈과 글 상세

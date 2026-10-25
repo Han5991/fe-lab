@@ -60,15 +60,21 @@ function parseInFilter(value: string | null): string[] {
   return out.filter(Boolean);
 }
 
+/**
+ * 스텁이 글 하나에 주는 조회수(10~999). 인기순 검사는 기대 순서를 이 함수로 만든다 — 스텁과 기대값이
+ * 같은 출처를 읽는다.
+ */
+export function stubViewCount(slug: string): number {
+  return 10 + seeded(slug, 1, 990);
+}
+
 /** `post_views` 읽기 — `Database['public']['Tables']['post_views']['Row']`의 부분형. */
 function postViewsRows(url: URL) {
-  const rows = parseInFilter(url.searchParams.get('slug'))
-    .map(slug => ({ slug, view_count: 10 + seeded(slug, 1, 990) }))
+  return parseInFilter(url.searchParams.get('slug'))
+    .map(slug => ({ slug, view_count: stubViewCount(slug) }))
     .sort(
       (a, b) => b.view_count - a.view_count || a.slug.localeCompare(b.slug),
     );
-  const limit = Number(url.searchParams.get('limit') ?? rows.length);
-  return rows.slice(0, limit);
 }
 
 function isoDay(daysAgo: number): string {
@@ -78,27 +84,30 @@ function isoDay(daysAgo: number): string {
 }
 
 /**
- * `admin-analytics` action별 응답 — 대리 호출하는 RPC의 `Returns` 모양을 `{ data }`로 감싼다.
+ * `admin-analytics` action별 응답 — 대리 호출하는 RPC의 `Returns` 모양(`posts_overview`는 통계·추이를 `{ stats, trends }`로 묶은 것)을 `{ data }`로 감싼다.
  * 요청은 Edge Function과 같은 `parseAdminRequest`로 읽어, 클라이언트가 보내는 본문이 계약에서
  * 벗어나면 스텁도 실제 함수처럼 400을 준다. 거를 slug 목록이 없으면(필터 없음) 스텁은 지어낼
  * 글이 없어 빈 목록을 준다 — 클라이언트는 언제나 글 인덱스의 slug를 싣는다.
  */
 function adminAnalytics(request: AdminRequest): unknown {
   switch (request.action) {
-    case 'all_post_stats':
-      return (request.params?.slugs ?? []).map(s => ({
-        slug: s,
-        today_views: seeded(s, 2, 20),
-        total_views: 50 + seeded(s, 3, 2000),
-      }));
-    case 'all_posts_trends':
-      return (request.params?.slugs ?? []).flatMap(s =>
-        Array.from({ length: 30 }, (_, i) => ({
+    case 'posts_overview': {
+      const slugs = request.params?.slugs ?? [];
+      return {
+        stats: slugs.map(s => ({
           slug: s,
-          view_date: isoDay(i),
-          view_count: seeded(`${s}:${i}`, 4, 40),
+          today_views: seeded(s, 2, 20),
+          total_views: 50 + seeded(s, 3, 2000),
         })),
-      );
+        trends: slugs.flatMap(s =>
+          Array.from({ length: 30 }, (_, i) => ({
+            slug: s,
+            view_date: isoDay(i),
+            view_count: seeded(`${s}:${i}`, 4, 40),
+          })),
+        ),
+      };
+    }
     case 'post_hourly_distribution':
       return Array.from({ length: 24 }, (_, hour) => ({
         hour,

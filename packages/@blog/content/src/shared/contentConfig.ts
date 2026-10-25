@@ -179,7 +179,8 @@ export interface OgPalette {
   ink: string;
   inkMeta: string;
   inkRule: string;
-  accent: string;
+  /** 브랜드 사각형과 시리즈 pill 글자 색. */
+  brand: string;
   pillBorder: string;
 }
 
@@ -310,7 +311,11 @@ export interface BundleBudget {
 export type BundleBudgetsConfig = readonly [BundleBudget, ...BundleBudget[]];
 
 export interface ThumbnailsConfig {
-  /** 표시 최대 폭(FeaturedPost가 컨테이너 전체 폭). 작은 원본은 확대하지 않음 */
+  /**
+   * 최적화본의 최대 폭. 쓰는 자리는 글 카드 커버(가장 넓은 것은 홈 쇼케이스)와 글 상세 히어로다 — 히어로는
+   * 카드에서 이미 받은 이 이미지를 공유 요소 전환에 그대로 쓰려고 원본 대신 받는다. 본문 레일을 2x로 그리면
+   * 최적화본이 조금 늘어날 수 있는데, 전송량과 전환이 이미지를 기다리지 않는 쪽을 택한 맞바꿈이다. 작은 원본은 확대하지 않음
+   */
   maxWidth: number;
   webpQuality: number;
 }
@@ -452,7 +457,8 @@ export interface ContentValues {
   /** 이름으로 부를 수 있는 다이어그램. 컴포넌트 매핑은 앱이 갖는다 */
   diagramNames: readonly string[];
   /**
-   * OG 카드 팔레트 — 앱 디자인 토큰(`blog-preset.ts`의 다크 값)의 hex 사본이다.
+   * OG 카드 팔레트 — 앱 프리셋(`blog-preset.ts`의 다크 토큰 값과 토큰이 아닌 브랜드
+   * 상수)에서 온 리터럴이다.
    * 기본값을 두면 소셜 미리보기가 사이트와 다른 색으로 조용히 나가므로 필수다.
    */
   ogPalette: OgPalette;
