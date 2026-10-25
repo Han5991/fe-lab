@@ -271,7 +271,7 @@ export default defineConfig({
       // 다투지 않게. 가이드와 다른 점은 들어오는 쪽의 **자리**도 지연한다는 것이다: 가이드는 양쪽
       // 슬라이드를 0ms부터 함께 돌리는데, standard는 앞에 몰린 감속 곡선이라 그대로면 투명도가 올라올
       // 때 이미 거리의 대부분을 와 있어 방향이 안 보이고, 같은 쪽으로 미끄러지는 두 페이지의 글자가
-      // 겹쳐 보인다. 헤더는 이름이 따로라 미끄러지지 않고 아래 크로스페이드 그대로다.
+      // 겹쳐 보인다. 헤더는 이름이 따로라 미끄러지지 않고, 이동 중에는 새 스냅샷을 그대로 둔다(아래 헤더 규칙).
       [`::view-transition-old(.${NAV_TRANSITION.forward}), ::view-transition-old(.${NAV_TRANSITION.back})`]:
         {
           animationName: VIEW_TRANSITION.navSlideOut,
@@ -304,8 +304,9 @@ export default defineConfig({
       // 매끄럽다. 헤더는 이름이 있어 루트와 따로 찍히므로 같은 시간을 준다(안 주면 UA 기본
       // 0.25s ease로 루트와 어긋난다). 그룹(위치·크기 보간)까지 토큰으로 줘야 움직임 줄이기에서
       // UA 기본 0.25s가 남지 않는다. 내비게이션에서도 같은 규칙이 루트(페이지 밖 — 푸터·고정
-      // 버튼)의 크로스페이드를 맡는다(헤더는 아래 규칙대로 테마 전환에서만 크로스페이드한다). (useTheme는 움직임 줄이기·미지원 브라우저에서
-      // 즉시 전환하므로 그때는 이 의사 요소가 생기지 않는다.)
+      // 버튼)의 크로스페이드를 맡는다. 헤더는 아래 규칙대로 테마 전환에서만 크로스페이드한다.
+      // (useTheme는 움직임 줄이기·미지원 브라우저에서 즉시 전환하므로 그때는 이 의사 요소가
+      // 생기지 않는다.)
       [`::view-transition-group(root), ::view-transition-old(root), ::view-transition-new(root), ::view-transition-group(${VIEW_TRANSITION.siteHeader}), ::view-transition-old(${VIEW_TRANSITION.siteHeader}), ::view-transition-new(${VIEW_TRANSITION.siteHeader})`]:
         {
           animationDuration: 'fastMax',
