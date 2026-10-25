@@ -80,6 +80,7 @@ export type Database = {
           view_count: number;
         }[];
       };
+      get_posts_trends: { Args: { slugs?: string[] }; Returns: Json };
       increment_view_count: {
         Args: { slug_input: string };
         Returns: undefined;

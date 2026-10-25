@@ -65,7 +65,7 @@ export async function getAllPostsTrends(
   slugs: readonly string[],
 ): Promise<PostTrendRow[]> {
   // admin RPC — service_role 한정. Edge Function 경유.
-  // PostgREST의 1000행 cap 페이징은 Edge Function 안에서 돈다(왕복 1회).
+  // Edge Function이 json 배열을 내는 RPC 한 번으로 받는다(왕복 1회, max_rows 페이징 없음).
   return adminApi().call('all_posts_trends', { slugs });
 }
 
