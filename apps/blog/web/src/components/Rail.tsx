@@ -17,7 +17,8 @@ import type { ReactNode } from 'react';
  * 홈(640)과 /series(576)가 정확히 그 상태였다.
  *
  * 새 페이지를 만들 때 `maxW`와 `px`를 직접 쓰지 말고 이 모듈을 거친다.
- * 레일이 아닌 폭(카드 안쪽 패딩, 문단 최대 폭 등)은 그대로 `css()`를 쓴다.
+ * 레일이 아닌 폭(카드 안쪽 패딩, 문단 최대 폭 등)은 그대로 `css()`를 쓴다. 레일 위에 얹는 조합은 이
+ * 모듈이 이름을 준다 — 글 상세의 본문 + 차례(`railWithAside`).
  */
 
 /** 레일 바깥 거터. 레일을 감싸는 요소에 붙인다. */
@@ -40,6 +41,37 @@ export const railColumn = cva({
     },
   },
   defaultVariants: { width: 'text' },
+});
+
+/**
+ * 글 상세의 셸 — wide 레일(`railColumn({ width: 'wide' })`) **안쪽**에 붙인다. 본문 칸(`railText` 752)과
+ * 차례 칸(`tocAside` 268)을 간격 32로 나란히 놓고 가운데에 둔다: 752 + 32 + 268 = 1052 ≤ 1200.
+ * lg(1024px) 미만은 한 열이고 차례는 `MobileTOC`가 맡는다 — 1024px에서도 차례 칸이 줄지 않고 본문
+ * 칸이 줄어든다(`minmax(0, …)`).
+ *
+ * 폭을 페이지가 직접 적지 않게 조합식을 여기 한 곳에 둔다(AGENTS.md §9). `tocAside`는 레일이 아니라
+ * 콘텐츠 제약이라(`blog-preset.ts` sizes 주석) 레일 목록에 들지 않는다.
+ */
+export const railWithAside = css({
+  display: 'grid',
+  gridTemplateColumns: {
+    base: '[minmax(0, 1fr)]',
+    lg: '[minmax(0, token(sizes.railText)) token(sizes.tocAside)]',
+  },
+  columnGap: { lg: '8' },
+  justifyContent: 'center',
+  alignItems: 'start',
+});
+
+/**
+ * `railWithAside`의 본문 칸. 한 열일 때도(lg 미만) 본문은 `railText`를 넘지 않고 가운데에 서서, 레일이
+ * 줄어드는 좁은 화면에서만 칸이 `viewport - 거터×2`가 된다.
+ */
+export const railAsideMain = css({
+  minW: '0',
+  w: 'full',
+  maxW: 'railText',
+  mx: { base: 'auto', lg: '0' },
 });
 
 /** 레일 폭 목록은 recipe의 variant 키에서 파생된다 — 따로 관리하지 않는다. */
