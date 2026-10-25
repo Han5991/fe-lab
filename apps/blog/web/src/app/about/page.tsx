@@ -2,6 +2,7 @@ import { AUTHOR_GITHUB, AUTHOR_LINKEDIN } from '@/content.values.mts';
 import { css, cx } from '@blog/styled-system/css';
 
 import { safeJsonLd } from '@blog/content/client';
+import { actionButton } from '@/src/components/actionButton';
 import { Label } from '@/src/components/blog/Label';
 import { PageBoundary } from '@/src/components/PageBoundary';
 import { railGutter, railColumn } from '@/src/components/Rail';
@@ -153,26 +154,7 @@ export default function AboutPage() {
                     href={AUTHOR_GITHUB}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={css({
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '2',
-                      px: '[16px]',
-                      py: '[6px]',
-                      bg: 'paper.200',
-                      color: 'ink.800',
-                      borderWidth: 'hairline',
-                      borderStyle: 'solid',
-                      borderColor: 'ink.border',
-                      rounded: 'full',
-                      fontSize: 'sm',
-                      fontWeight: 'medium',
-                      _hover: {
-                        bg: 'paper.300',
-                        borderColor: 'ink.borderStrong',
-                      },
-                      transition: 'colors',
-                    })}
+                    className={actionButton({ tone: 'outline', size: 'lg' })}
                   >
                     GitHub →
                   </a>
@@ -180,26 +162,7 @@ export default function AboutPage() {
                     href={AUTHOR_LINKEDIN}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={css({
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '2',
-                      px: '[16px]',
-                      py: '[6px]',
-                      bg: 'paper.200',
-                      color: 'ink.800',
-                      borderWidth: 'hairline',
-                      borderStyle: 'solid',
-                      borderColor: 'ink.border',
-                      rounded: 'full',
-                      fontSize: 'sm',
-                      fontWeight: 'medium',
-                      _hover: {
-                        bg: 'paper.300',
-                        borderColor: 'ink.borderStrong',
-                      },
-                      transition: 'colors',
-                    })}
+                    className={actionButton({ tone: 'outline', size: 'lg' })}
                   >
                     LinkedIn →
                   </a>

@@ -131,6 +131,40 @@ export default defineConfig({
   conditions: {
     extend: {
       dark: '[data-theme=dark] &',
+      // 인터랙션 상태의 "때"는 아래 한 곳에서 정한다(blog-design-system 스킬 "인터랙션 상태"). 이름은 Panda
+      // 기본 조건(`_hover`·`_groupHover`)을 덮어쓴다 — 쓰는 곳 전부가 컴포넌트를 고치지 않고 따라온다.
+      // - `_hover` · `_groupHover`: hover가 되는 기기에서는 마우스를 올린 동안, 안 되는 기기(터치)에서는
+      //   누르는 동안이다. 터치는 탭 뒤에도 :hover가 남아(sticky hover) hover 면이 다음 탭까지 붙어 있었다.
+      //   Panda preflight가 브라우저의 탭 하이라이트를 지우므로(`-webkit-tap-highlight-color`) 터치의 누름
+      //   피드백이 곧 이 hover 모양이다 — 면·색·밑줄은 `_hover`에 한 번만 적는다.
+      // - `_press` · `_groupPress`: 모든 포인터에서 누르는 동안. hover와 다른 모양이 필요한 자리만 쓴다.
+      // - `_pressScale`: 누르는 동안의 **크기**. 마우스류(hover·fine)에서만 — 터치의 :active는 스크롤을
+      //   시작하는 손가락에도 칠해진다(Astryx와 같은 판단). disabled는 뺀다.
+      // `_press*`·`_active`·`_focus`·`_focusVisible`은 eslint의 허용 파일(`INTERACTION_FILES` — 프리셋인
+      // `interaction.ts`·`cardParts.ts`, 스킵 링크가 있는 `Layout.tsx`, 재작성 전의 admin 두 파일) 밖에서
+      // 쓰지 못한다(`NO_LOCAL_INTERACTION`). 버튼 레시피도 직접 쓰지 않고 프리셋을 펼친다. `_hover`는
+      // 컴포넌트가 쓴다.
+      hover: {
+        '@media (hover: hover)': { '&:is(:hover, [data-hover])': '@slot' },
+        '@media (hover: none)': { '&:is(:active, [data-active])': '@slot' },
+      },
+      groupHover: {
+        '@media (hover: hover)': {
+          '.group:is(:hover, [data-hover]) &': '@slot',
+        },
+        '@media (hover: none)': {
+          '.group:is(:active, [data-active]) &': '@slot',
+        },
+      },
+      press:
+        '&:is(:active, [data-active]):not(:disabled, [aria-disabled=true])',
+      groupPress: '.group:is(:active, [data-active]) &',
+      pressScale: {
+        '@media (hover: hover) and (pointer: fine)': {
+          '&:is(:active, [data-active]):not(:disabled, [aria-disabled=true])':
+            '@slot',
+        },
+      },
     },
   },
   // 생성물은 이 설정만 쓰는 전용 패키지로 간다 — 출력 자리 하나에 작성자 하나.

@@ -1,4 +1,5 @@
 import { css, cx } from '@blog/styled-system/css';
+import { pressCard } from '@/src/components/interaction';
 
 // 글 카드(`PostCard`)와 썸네일 행(`PostThumbRow`)이 함께 쓰는 조각 — "카드 전체가 링크 하나"인 구조와
 // 커버 틀. 라운드처럼 자리마다 다른 값은 쓰는 쪽이 `css(조각, { … })`로 병합한다(`cx`는 충돌하는 원자
@@ -10,11 +11,11 @@ import { css, cx } from '@blog/styled-system/css';
 
 /**
  * 카드 뿌리에 다는 클래스. 제목 링크의 덮개가 이 상자를 기준으로 퍼지고(`position: relative`), 커버
- * hover 틴트가 이 상자의 hover를 본다(`group`). 둘을 한 클래스로 묶어 둔다 — 틴트만 따로 빠뜨리면
- * 조용히 꺼지지만, 이 클래스를 빠뜨리면 덮개가 카드 밖으로 퍼져 바로 드러난다. 배치(flex·gap)는 쓰는
+ * hover 틴트가 이 상자의 hover를 본다(`group`). 마우스로 누르는 동안 카드가 99%로 줄어든다(`pressCard`).
+ * 둘을 한 클래스로 묶어 둔다 — 틴트만 따로 빠뜨리면 조용히 꺼지지만, 이 클래스를 빠뜨리면 덮개가 카드 밖으로 퍼져 바로 드러난다. 배치(flex·gap)는 쓰는
  * 쪽이 `cx`로 더한다 — 겹치는 속성이 없어 원자 클래스가 겨루지 않는다.
  */
-export const cardRoot = cx('group', css({ pos: 'relative' }));
+export const cardRoot = cx('group', css(pressCard, { pos: 'relative' }));
 
 /**
  * 제목 링크. 쓰는 쪽이 블록으로 만든다 — 줄 수를 자르면 `lineClamp`(블록 상자를 낸다), 자르지 않으면
@@ -31,7 +32,9 @@ export const cardLinkRaw = css.raw({
 /**
  * 커버 틀 — 16:9 고정, hairline, 이미지가 늦게 와도 자리를 지키는 `paper.100` 면. 비율을 틀이 정하므로
  * 이미지가 오기 전후로 높이가 같다(CLS 0). hover에는 잉크 틴트(`accent.muted`)가 덮인다 — 카드 링크는
- * 제목 밑줄 대신 커버로 반응한다(승인 목업).
+ * 제목 밑줄 대신 커버로 반응한다(승인 목업). 누르는 동안에는 틴트에 hairline이 한 단계 진해진다
+ * (`ink.borderStrong`) — 터치에서는 hover가 곧 누름이라 틴트가, hairline은 `_groupPress`가 모든 포인터에
+ * 더한다.
  *
  * hairline은 틀의 보더가 아니라 이미지 **위에** 그린 선이다(`_before`) — 이미지가 틀 가장자리까지
  * 찬다. 틀은 글 상세 히어로로 이어지는 공유 요소라(`PostCardShared`), 전환 중 카드 스냅샷과 히어로
@@ -55,6 +58,7 @@ export const coverFrameRaw = css.raw({
     borderStyle: 'solid',
     borderColor: 'ink.border',
     pointerEvents: 'none',
+    transition: 'colors',
   },
   _after: {
     content: '""',
@@ -65,6 +69,7 @@ export const coverFrameRaw = css.raw({
     transition: 'opacity',
   },
   _groupHover: { _after: { opacity: '1' } },
+  _groupPress: { _before: { borderColor: 'ink.borderStrong' } },
 });
 
 /** 틀을 채우는 이미지. 정사각 썸네일은 가운데가 남고 위아래가 잘린다(카드는 크롭을 받아들인다). */

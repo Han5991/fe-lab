@@ -1,5 +1,5 @@
 import { css, cva } from '@blog/styled-system/css';
-import { pressable } from './pressable';
+import { pressButton } from './interaction';
 
 /** 두 크기의 상자(28 · 32) — size 변형과 헤더의 반응형 크기(`headerIconButton`)가 함께 읽는다. */
 const BOX_SIZE = { sm: '7', md: '8' } as const;
@@ -18,7 +18,7 @@ const BOX_SIZE = { sm: '7', md: '8' } as const;
  */
 export const iconButton = cva({
   base: {
-    ...pressable,
+    ...pressButton,
     display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',

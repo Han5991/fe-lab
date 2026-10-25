@@ -1,6 +1,6 @@
 ---
 name: blog-design-system
-description: 블로그(apps/blog/web)와 blog-preset.ts의 시각 시스템 단일 출처 — 컬러 semanticToken(라이트/다크, 대비비, 잉크에서 파생한 accent와 색 대신 쓰는 구분 수단), 타이포그래피(mono/sans를 어디에 쓰는지, 글자 역할 textStyles), 라운드·보더, 그림자(떠 있는 표면의 overlay.* — 판정 기준과 표면별 단계), 모션(Astryx 시간·곡선 토큰, 움직임 줄이기, 페이지 전환(이동 방향 — 깊이 들어가면 왼쪽으로·돌아오면 오른쪽으로 미끄러짐)·공유 요소(글 카드 ↔ 글 상세)·오버레이·누름 적용표), 레일 그리드(railWide/railText/railForm와 거터, 섹션 간격), 셸(헤더·푸터의 슬롯·반응형·헤더 높이 파생), 버튼(actionButton·iconButton의 tone·size)과 칩, 카드(글 카드·썸네일 행·메타 줄 — 링크 하나 구조, 커버 비율, 이미지 우선순위), 홈 구성, 코드 블록 테마(code.* 토큰, rehypeCodeMeta 순서). 블로그 UI 컴포넌트나 packages/@blog/preset/src/blog-preset.ts를 고칠 때, 색·간격·폭·글꼴을 정하거나 "이 값 어디서 왔지" 싶을 때 사용한다. 글 본문에 넣는 커스텀 태그(diagram·dialogue·metrics·callout 등)는 이 스킬이 아니라 blog-components 스킬을 볼 것.
+description: 블로그(apps/blog/web)와 blog-preset.ts의 시각 시스템 단일 출처 — 컬러 semanticToken(라이트/다크, 대비비, 잉크에서 파생한 accent와 색 대신 쓰는 구분 수단), 타이포그래피(mono/sans를 어디에 쓰는지, 글자 역할 textStyles), 라운드·보더, 그림자(떠 있는 표면의 overlay.* — 판정 기준과 표면별 단계), 모션(Astryx 시간·곡선 토큰, 움직임 줄이기, 페이지 전환(이동 방향 — 깊이 들어가면 왼쪽으로·돌아오면 오른쪽으로 미끄러짐)·공유 요소(글 카드 ↔ 글 상세)·오버레이·누름 적용표), 인터랙션 상태(hover·누름·초점·비활성 — `_hover`가 터치에서는 누르는 동안이라는 조건, `pressButton`·`pressCard` 프리셋, 종류별 누름 모양, `NO_LOCAL_INTERACTION` lint), 레일 그리드(railWide/railText/railForm와 거터, 섹션 간격), 셸(헤더·푸터의 슬롯·반응형·헤더 높이 파생), 버튼(actionButton·iconButton의 tone·size)과 칩, 카드(글 카드·썸네일 행·메타 줄 — 링크 하나 구조, 커버 비율, 이미지 우선순위), 홈 구성, 코드 블록 테마(code.* 토큰, rehypeCodeMeta 순서). 블로그 UI 컴포넌트나 packages/@blog/preset/src/blog-preset.ts를 고칠 때, 색·간격·폭·글꼴을 정하거나 "이 값 어디서 왔지" 싶을 때 사용한다. 글 본문에 넣는 커스텀 태그(diagram·dialogue·metrics·callout 등)는 이 스킬이 아니라 blog-components 스킬을 볼 것.
 ---
 
 # 블로그 디자인 시스템
@@ -318,7 +318,7 @@ preset-panda의 durations·easings·animations·keyframes를 빼서 `transitionD
 | 목차 바텀시트     | 목차 버튼 자리에서 펼쳐짐 — 버튼 크기의 원으로 잘린 시트가 medium·standard로 열리고(`clip-path`), 닫힐 때 fast·exit로 같은 길을 접힘. 스크림은 medium, 닫힐 때 linear. 접히는 동안 마운트 유지 |
 | 목차 FAB          | 푸터가 화면에 들어오면 푸터 윗변이 바닥에서 버튼 아랫변(80px)에 닿을 때까지 옅어져 사라진다 — 스크롤에 묶인 view timeline(CSS만). 미지원 브라우저는 그대로 남는다                              |
 | 맨 위로 FAB       | 등장만 — 투명도 0·95%에서(fast). 사라짐은 즉시                                                                                                                                                 |
-| 누름              | `pressable` — `:active`에서 98%(fast), 거친 포인터(터치)에서는 끔. 행동 버튼·아이콘 버튼·FAB                                                                                                   |
+| 누름              | `pressButton` — 마우스로 누르는 동안 98%(fast), 카드는 `pressCard` 99%. 터치는 크기 없이 hover 모양을 누르는 동안 보인다(아래 "인터랙션 상태")                                                 |
 | admin 글 아코디언 | 셰브론 회전만(fast). 패널은 높이를 애니메이션하지 않고 바로 열린다                                                                                                                             |
 | 스켈레톤(admin)   | 투명도 1↔0.5 왕복(mediumMax, linear). 움직임 줄이기면 멈춘다                                                                                                                                   |
 
@@ -541,17 +541,71 @@ type은 `src/shared/viewTransitions.ts`, 감싸개는 `src/components/shared/Pos
   `TransitionLink`(`next/link`에 이동 방향을 단다 — 모션 절), RSS 같은 정적 파일은 맨 `<a>`(새 탭 아님),
   바깥 사이트(GitHub · LinkedIn)는 새 탭
 
+## 인터랙션 상태 — hover · 누름 · 초점 · 비활성
+
+상태의 **때**는 `panda.config.ts`의 `conditions`가, 누르는 **모양**의 공통부는 `src/components/interaction.ts`의
+프리셋이 정한다. 컴포넌트는 `_hover`에 면·색·밑줄 **값만** 적는다 — 터치에서는 그 값이 누르는 동안 켜지므로,
+마우스의 hover와 터치의 누름을 한 줄이 함께 맡는다. 조건은 Panda 기본 `_hover`·`_groupHover`를 **덮어쓴다**(이름이
+같아 컴포넌트 diff 없이 전부 따라온다):
+
+| 조건                     | 뜻                                                                                                                                                |
+| :----------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `_hover` · `_groupHover` | `@media (hover: hover)`에서는 올린 동안, `(hover: none)`(터치)에서는 누르는 동안(`:active`). 터치의 탭 뒤 `:hover`가 남는 고착은 이 조건이 막는다 |
+| `_press` · `_groupPress` | 모든 포인터에서 누르는 동안 — hover와 **다른** 모양이 필요한 자리만(카드 커버 hairline, 검색 결과 행)                                             |
+| `_pressScale`            | 누르는 동안의 **크기**. `(hover: hover) and (pointer: fine)`에서만, `:disabled`·`aria-disabled` 제외                                              |
+| `:focus-visible`         | globalCss `FOCUS_RING` 하나(2px `accent.solid`, offset 3, `inner`)                                                                                |
+
+| 종류                            | hover                    | 누름(마우스)                                  | 누름(터치)                 | 쓰는 것                                    |
+| :------------------------------ | :----------------------- | :-------------------------------------------- | :------------------------- | :----------------------------------------- |
+| 버튼(행동·아이콘·FAB)           | 면 한 단계               | hover 면 + 98%                                | hover 면                   | `pressButton`(`actionButton`·`iconButton`) |
+| 칩 · 누르는 배지                | 면 한 단계               | hover 면 + 98%                                | hover 면                   | `pressButton`(`chip`·`tagBadge`)           |
+| 세그먼트 · 탭 · 목록 행 · 링크  | 색·밑줄·글자색           | hover와 같음, 크기 없음                       | hover 모양                 | 없음 — `_hover` 값만                       |
+| 글 카드 · 썸네일 행             | 커버 `accent.muted` 틴트 | 틴트 + 커버 hairline `ink.borderStrong` + 99% | 틴트 + hairline(크기 없음) | `pressCard`·`cardParts`                    |
+| 선택 면이 따로 있는 행(검색)    | JS 선택(올리면 선택)     | 선택 면                                       | 선택 면                    | `pressOption`                              |
+| 누를 수 없는 상자(mermaid·코드) | 없음                     | 없음                                          | 없음                       | —                                          |
+
+- **크기는 버튼·칩·카드에만.** 세그먼트는 칸 뒤에서 미끄러지는 표식 면과 어긋나고, 인라인 링크는 transform이
+  걸리지 않으며(비대체 인라인 요소), 터치의 `:active`는 스크롤을 시작하는 손가락에도 칠해져(Astryx와 같은 판단)
+  터치에는 크기를 주지 않는다. 카드는 상자가 커서 99%다(98%면 가장자리가 8px 움직인다). **카드의 눌린 크기는 글
+  상세 전환을 해치지 않는다** — 공유 요소 그룹은 조상의 transform을 그룹 transform으로 받아 눌린 모양에서 이어
+  모핑하고, 클릭 뒤 175ms 안에 1로 돌아온다(전환 스냅샷의 `old` 크기는 그대로 레이아웃 크기다)
+- 누름의 면은 hover 면과 같은 값이다 — paper는 50·100·200·300 네 단이라 neutral·solid는 그 위가 없다. 그래서
+  tone마다 누름 값을 따로 두지 않는다
+- 데스크톱의 텍스트 링크·세그먼트는 hover 이상의 누름 변화가 없다(이미 hover 모양이 보이고 있다)
+- 그림자 · 글로우 · 그라데이션 · 떠오르기(translateY) 없음. 전환은 `pressButton`의 `common`(색+크기)이나
+  `colors`다. 움직임 줄이기는 시간 토큰이 처리한다
+- 비활성: `pressButton`이 opacity .5 · `cursor: not-allowed`를 주고 `_pressScale`·`_press`를 뺀다. hover 면은
+  비활성에도 남는다 — 공개 화면에는 비활성 버튼이 없어 아직 맞출 일이 없다
+- 탭 하이라이트는 Panda preflight가 투명으로 지운다(`-webkit-tap-highlight-color`) — 터치 피드백은 `_hover`가
+  맡는다
+- **hover 갈래는 주 입력(`hover`)으로 가른다 — 의도한 절충이다.** 주 입력이 터치로 보고되는 기기(iPad +
+  트랙패드·마우스)에서는 포인터를 올려도 hover가 켜지지 않고 누르는 동안만 켜진다. `any-hover: hover`로 넓히면
+  그 기기의 손가락 탭에 hover 고착이 돌아온다 — 더 흔한 손가락 입력 쪽을 택했다
+- **실기기 확인 전인 것:** 터치에서 스크롤을 시작하는 손가락에도 `:active`가 잠깐 칠해지면 그동안 hover 면(카드
+  커버 틴트 포함)이 켜질 수 있다. 크기를 터치에서 뺀 것과 같은 이유인데 면은 남겼다 — 누름 피드백이 곧 그 면이라서다.
+  iOS Safari·Android Chrome에서 목록 스크롤을 확인하고 깜빡임이 보이면 여기에 적고 다시 정한다
+- **초점 링은 컴포넌트가 다시 정하지 않는다.** `outline: none`·`_focus`·`_focusVisible`로 지우거나 바꾸지 않는다
+  (utilities 레이어가 base 레이어의 `:focus-visible`을 이겨 링이 사라진다). 입력은 감싸는 상자의 `_focusWithin`
+  보더를 함께 둘 수 있다(`ArchiveSearchBox`). 카드는 링이 제목 상자만 두른다 — 카드 전체로 옮기려면 `FOCUS_RING`을
+  `panda.config.ts` 밖의 값 모듈로 빼야 한다
+- `_active`·`_focus`·`_focusVisible`·`_press*`는 허용 파일(`INTERACTION_FILES` — 프리셋인 `interaction.ts`·
+  `cardParts.ts`, 스킵 링크가 있는 `Layout.tsx`, 재작성 전의 admin 두 파일) 밖에서 쓰면 lint
+  (`NO_LOCAL_INTERACTION`)가 막는다. 버튼 레시피 파일도 허용 파일이 아니라 프리셋(`pressButton`)을 펼친다.
+  새 종류의 누름이 필요하면 `interaction.ts`에 프리셋으로 더한다
+
 ## 버튼
 
-둘 다 pill(`full`)이고 누름 피드백(`pressable`)을 갖는다. 보이는 보더는 없다.
+둘 다 pill(`full`)이고 누름 피드백(`pressButton`)을 갖는다. 보이는 보더는 `outline` tone에만 있다.
 
-| 레시피         | tone                                                            | size                                | 쓰는 곳                     |
-| :------------- | :-------------------------------------------------------------- | :---------------------------------- | :-------------------------- |
-| `actionButton` | `solid`(잉크 면) · `neutral`(`paper.200`) · `ghost`             | `md` 32(좌우 12) · `lg` 36(좌우 16) | 홈 · 404 · 에러 화면(`lg`)  |
-| `iconButton`   | `ghost`(면 없음, `ink.950`) · `neutral`(`paper.200`, `ink.700`) | `sm` 28 · `md` 32                   | 헤더(ghost) · 푸터(neutral) |
+| 레시피         | tone                                                                              | size                                | 쓰는 곳                                                                                 |
+| :------------- | :-------------------------------------------------------------------------------- | :---------------------------------- | :-------------------------------------------------------------------------------------- |
+| `actionButton` | `solid`(잉크 면) · `neutral`(`paper.200`) · `ghost` · `outline`(면 없이 hairline) | `md` 32(좌우 12) · `lg` 36(좌우 16) | 홈 · 404 · 에러 화면(`lg`), About 외부 링크(`outline` `lg`) · 검색 다시 시도(`outline`) |
+| `iconButton`   | `ghost`(면 없음, `ink.950`) · `neutral`(`paper.200`, `ink.700`)                   | `sm` 28 · `md` 32                   | 헤더(ghost) · 푸터(neutral) · 검색 닫기(ghost)                                          |
 
 - 라벨은 `label`(14/20 500), 아이콘과 글자 사이 8. hover는 solid → `accent.solidHover`, neutral →
-  `paper.300`, ghost → `paper.100`
+  `paper.300`, ghost → `paper.100`, outline → `paper.200`(보더는 `ink.borderStrong` 그대로)
+- `outline`은 보더가 구분을 맡는 자리에 쓴다 — 면 있는 버튼이 놓이면 안 되는 지면(About 머리의 외부 링크).
+  보더는 강제 색상 모드용 투명 hairline(`forcedColorsEdge`)의 색만 바꾼 것이라 크기가 같다
 - **`actionButton`·칩의 투명 hairline은 강제 색상 모드용이다**(`src/components/forcedColorsEdge.ts`) — 그
   모드는 면을 지우고 보더만 시스템 색으로 칠한다. 보더가 없으면 면으로만 갈리던 버튼·칩이 맨 글자로
   남는다. 아이콘 버튼은 글리프가 남아 두지 않는다
@@ -629,7 +683,8 @@ Astryx BlogCard·BlogFeatureCard·BlogShowcase의 블로그 판. `src/components
   카드의 좌우 안전 여백은 90px). src는 `resolveThumbnailSrc` — 원고 썸네일은 `/thumbs/*.webp`, 없으면 `/og/{slug}.png`
 - 커버 틀은 `paper.100` 면에 hairline. hairline은 틀의 보더가 아니라 이미지 위에 덮어 그린 선이다
   (`_before`, 라운드는 틀을 따른다) — 이미지가 틀 끝까지 차야 글 상세로 이어지는 전환에서 두 스냅샷이
-  겹친다(모션 절). hover는 커버 위 `accent.muted` 틴트(`group` hover) — 밑줄은 쓰지 않는다
+  겹친다(모션 절). hover는 커버 위 `accent.muted` 틴트(`group` hover) — 밑줄은 쓰지 않는다. 누르는 동안은 틴트에 커버
+  hairline이 `ink.borderStrong`으로 진해지고, 마우스는 카드 뿌리가 99%로 줄어든다(위 "인터랙션 상태")
 - **이미지 우선순위는 `priority` 하나다** — 첫 화면에서 가장 큰 이미지(LCP 후보)만 `eager` +
   `fetchPriority="high"`, 나머지는 `lazy`. 여러 장에 걸면 화면 밖 이미지까지 받아 LCP가 밀린다
 - 메타 줄은 mono `supporting`, `ink.700`, 항목 사이 세로선(1px × 0.75em, `ink.borderStrong`,
