@@ -110,10 +110,10 @@ export const MobileTOC = () => {
       <Portal>
         {sheet.state !== 'closed' && (
           <>
-            {/* 백드롭은 PostsFilterSheet와 같은 시트용 scrim이다. 예전엔 ink.950을
+            {/* 백드롭은 시트용 scrim이다. 예전엔 ink.950을
                 반투명으로 깔아, 잉크가 밝아지는 다크에서 백드롭이 지면을 밝히는 회색 막이
                 됐다 — scrim은 테마와 무관하게 어둡다. 그래서 라이트도 바뀐다: 50% 잉크의
-                회색 막에서 필터 시트와 같은 짙은 막으로. 백드롭 클릭은 포인터 편의다 —
+                회색 막에서 짙은 scrim 막으로. 백드롭 클릭은 포인터 편의다 —
                 키보드는 Escape·닫기 버튼으로 닫는다(검색 다이얼로그와 같다). */}
             <div
               role="presentation"

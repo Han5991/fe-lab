@@ -61,7 +61,7 @@
   Cache-Control: public, max-age=86400, must-revalidate
 
 # /thumbs/**/*.webp — generate-thumbnails가 원고 썸네일을 최적화해 만든 것.
-# 목록·홈 카드(PostGridCard·PostCard·PostThumbRow)와 원고가 thumbnail을 지정한 글의 상세
+# 목록·홈 카드(PostCard·PostThumbRow)와 원고가 thumbnail을 지정한 글의 상세
 # 히어로(PostHero)가 resolveThumbnailSrc로 같은 주소를 <img>로 쓴다 — 카드에서 글로 넘어갈
 # 때 히어로가 이미 받은 이미지라 공유 요소 전환이 기다리지 않는다.
 # 여기도 생성 전용 디렉터리라 webp 말고는 없다.

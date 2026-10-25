@@ -9,15 +9,8 @@ export interface SeriesSummary {
   updated: string | null;
 }
 
-export interface TagSummary {
-  id: string;
-  count: number;
-}
-
 export interface Aggregate {
   getAllSeries: () => SeriesSummary[];
-  getAllTags: () => TagSummary[];
-  getAllYears: () => { year: string; count: number }[];
 }
 
 export interface AggregateDeps {
@@ -25,7 +18,7 @@ export interface AggregateDeps {
   getSeriesMeta: (seriesName: string) => SeriesMeta | null;
 }
 
-/** 시리즈/태그/연도 집계 factory. */
+/** 시리즈 집계 factory. */
 export function createAggregate(deps: AggregateDeps): Aggregate {
   const { getAllPosts, getSeriesMeta } = deps;
 
@@ -76,33 +69,5 @@ export function createAggregate(deps: AggregateDeps): Aggregate {
     });
   }
 
-  /** 모든 태그를 사용 빈도 내림차순으로 반환합니다. */
-  function getAllTags(): TagSummary[] {
-    const posts = getAllPosts();
-    const counts = new Map<string, number>();
-    for (const post of posts) {
-      for (const tag of post.tags ?? []) {
-        counts.set(tag, (counts.get(tag) ?? 0) + 1);
-      }
-    }
-    return Array.from(counts.entries())
-      .map(([id, count]) => ({ id, count }))
-      .sort((a, b) => b.count - a.count || a.id.localeCompare(b.id));
-  }
-
-  /** 모든 연도(YYYY)를 내림차순으로 반환합니다. */
-  function getAllYears(): { year: string; count: number }[] {
-    const posts = getAllPosts();
-    const counts = new Map<string, number>();
-    for (const post of posts) {
-      if (!post.date) continue;
-      const year = post.date.slice(0, 4);
-      counts.set(year, (counts.get(year) ?? 0) + 1);
-    }
-    return Array.from(counts.entries())
-      .map(([year, count]) => ({ year, count }))
-      .sort((a, b) => b.year.localeCompare(a.year));
-  }
-
-  return { getAllSeries, getAllTags, getAllYears };
+  return { getAllSeries };
 }

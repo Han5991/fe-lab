@@ -2,14 +2,14 @@ import { expect, test, vi } from 'vitest';
 import { setAdminQueryDefaults } from '@/src/hooks/adminQueryDefaults';
 import { createQueryClient } from './queryClient';
 
-test('공개 쿼리의 실패는 재시도가 끝난 뒤 비치명 오류로 한 번 보고한다', async () => {
+test('에러 경계가 보고하지 않는 쿼리의 실패는 재시도가 끝난 뒤 비치명 오류로 한 번 보고한다', async () => {
   const report = vi.fn();
   const client = createQueryClient(report);
   const failure = new Error('supabase down');
 
   await expect(
     client.fetchQuery({
-      queryKey: ['popular-rail'],
+      queryKey: ['unbounded-query'],
       queryFn: () => Promise.reject(failure),
       retry: 1,
       retryDelay: 0,

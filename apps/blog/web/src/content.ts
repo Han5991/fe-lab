@@ -32,8 +32,6 @@ export const {
   getSeriesAdjacentPosts,
   getSeriesMeta,
   getAllSeries,
-  getAllTags,
-  getAllYears,
 } = content;
 
 export const { buildPostSeo, buildPostJsonLd, buildBreadcrumbJsonLd } =

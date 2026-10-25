@@ -14,14 +14,15 @@ import { PostMeta } from './PostMeta';
 const COVER_WIDTH = 1200;
 const COVER_HEIGHT = 675;
 
-/** 쇼케이스 메타 줄에 이어 붙이는 태그 수(승인 목업 `vitest · testing · ci`). */
-const SHOWCASE_TAG_COUNT = 3;
-
 /**
  * 글 카드 — Astryx BlogCard·BlogFeatureCard의 블로그 판. 커버(16:9) → 제목·발췌 → 메타 순서다.
+ * 배치(sva 변형)는 셋이다.
  *
- * - `showcase` — 홈 "최근 글"의 큰 카드. 제목 24/32(md 이상), 발췌 17/24, 메타 끝에 태그 셋.
+ * - `showcase` — 큰 카드. 제목 24/32(md 이상), 발췌 17/24를 두 줄에서 자른다.
+ * - `feature` — showcase와 같은 크기에 발췌를 자르지 않는다(승인 목업의 글 목록 피처는 세 줄).
  * - `default` — 작은 카드. 제목 17/24와 발췌 14/20을 각각 두 줄에서 자른다.
+ *
+ * 변형 값은 리터럴 객체로 적는다 — Panda가 정적으로 추출하므로 공유 상수를 펼쳐 넣지 않는다.
  */
 const postCard = sva({
   slots: ['root', 'cover', 'body', 'link', 'excerpt'],
@@ -30,7 +31,7 @@ const postCard = sva({
     cover: css.raw(coverFrameRaw, { rounded: 'container' }),
     body: { display: 'flex', flexDir: 'column', gap: '1' },
     link: cardLinkRaw,
-    excerpt: { color: 'ink.700', lineClamp: 2 },
+    excerpt: { color: 'ink.700' },
   },
   variants: {
     variant: {
@@ -38,22 +39,51 @@ const postCard = sva({
         root: { gap: '4' },
         // 1024px 아래에서 한 열로 쌓이면 커버가 화면 폭이 된다 — 제목도 md부터 큰 단계로 간다.
         link: { display: 'block', textStyle: { base: 'h3', md: 'h1' } },
+        excerpt: { textStyle: { base: 'body', md: 'bodyLarge' }, lineClamp: 2 },
+      },
+      feature: {
+        root: { gap: '4' },
+        link: { display: 'block', textStyle: { base: 'h3', md: 'h1' } },
+        // 길이는 원고의 excerpt 상한(check-seo `excerpt-length`)이 막는다.
         excerpt: { textStyle: { base: 'body', md: 'bodyLarge' } },
       },
       default: {
         root: { gap: '3' },
         link: { textStyle: 'h3', lineClamp: 2 },
-        excerpt: { textStyle: 'body' },
+        excerpt: { textStyle: 'body', lineClamp: 2 },
       },
     },
   },
 });
 
-type PostCardVariant = NonNullable<RecipeVariant<typeof postCard>['variant']>;
+type PostCardLayout = NonNullable<RecipeVariant<typeof postCard>['variant']>;
+
+/** 카드 한 종류 — 배치(sva 변형)와 메타 줄의 태그(글자로 이을지 배지로 달지, 앞에서 몇 개). */
+interface CardKindSpec {
+  layout: PostCardLayout;
+  tags: { as: 'text' | 'badge'; count: number } | null;
+}
+
+/**
+ * 카드 종류마다 배치와 태그 표시를 이 표 한 곳에서 정한다 — 태그 정책을 쓰는 쪽 prop으로 흩지 않는다.
+ *
+ * - `showcase` — 홈 "최근 글"의 큰 카드. 메타 끝에 앞 태그 셋을 글자로(승인 목업 `vitest · testing · ci`).
+ * - `default` — 홈 "최근 글"의 작은 카드. 태그 없음.
+ * - `feature` — 글 목록(`/posts`) 맨 위 피처. 앞 태그 둘을 배지로.
+ * - `grid` — 글 목록 그리드. 작은 카드 배치에 첫 태그 하나를 배지로.
+ */
+const CARD_KIND = {
+  showcase: { layout: 'showcase', tags: { as: 'text', count: 3 } },
+  default: { layout: 'default', tags: null },
+  feature: { layout: 'feature', tags: { as: 'badge', count: 2 } },
+  grid: { layout: 'default', tags: { as: 'badge', count: 1 } },
+} as const satisfies Record<string, CardKindSpec>;
+
+type PostCardKind = keyof typeof CARD_KIND;
 
 interface PostCardProps {
   post: PostSummary;
-  variant: PostCardVariant;
+  variant: PostCardKind;
   /**
    * 첫 화면의 가장 큰 이미지(LCP 후보)만 켠다 — lazy 대신 바로, 높은 우선순위로 받는다. 여러 장에
    * 걸면 화면 밖 이미지까지 한꺼번에 받아 오히려 LCP가 밀린다.
@@ -62,19 +92,17 @@ interface PostCardProps {
 }
 
 /**
- * 카드 전체가 제목 링크 하나다(`cardParts.ts`). 제목은 h3 — 홈은 h1(이름) → h2(섹션) → h3(카드)라
- * 헤딩 단계를 건너뛰지 않는다.
+ * 카드 전체가 제목 링크 하나다(`cardParts.ts`). 제목은 h3 — 홈은 h1(이름) → h2(섹션) → h3(카드),
+ * 글 목록은 h1(모든 노트) → h2(N편) → h3(피처·카드)라 헤딩 단계를 건너뛰지 않는다.
  */
 export const PostCard = ({
   post,
   variant,
   priority = false,
 }: PostCardProps) => {
-  const classes = postCard({ variant });
-  const tags =
-    variant === 'showcase'
-      ? post.tags?.slice(0, SHOWCASE_TAG_COUNT)
-      : undefined;
+  const { layout, tags: tagSpec } = CARD_KIND[variant];
+  const classes = postCard({ variant: layout });
+  const tags = tagSpec ? post.tags?.slice(0, tagSpec.count) : undefined;
 
   return (
     <article className={cx(cardRoot, classes.root)}>
@@ -112,7 +140,11 @@ export const PostCard = ({
         </PostCardShared>
         {post.excerpt && <p className={classes.excerpt}>{post.excerpt}</p>}
       </div>
-      <PostMeta post={post} tags={tags} />
+      <PostMeta
+        post={post}
+        tags={tagSpec?.as === 'text' ? tags : undefined}
+        badges={tagSpec?.as === 'badge' ? tags : undefined}
+      />
     </article>
   );
 };

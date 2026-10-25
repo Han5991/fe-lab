@@ -18,9 +18,10 @@ declare module '@tanstack/react-query' {
 /**
  * 앱 전체가 쓰는 QueryClient.
  *
- * 쿼리 실패는 캐시에서 GA4로 보고한다. 공개 화면은 실패하면 섹션을 숨기거나 기본
- * 정렬로 그려서(인기 글 레일·인기순) 화면에서는 실패가 보이지 않는다 — 여기서 보고하지
- * 않으면 Supabase가 멈춰도 아무 데도 남지 않는다. 재시도가 끝난 뒤 한 번만 불린다.
+ * 쿼리 실패는 캐시에서 GA4로 보고한다. 공개 화면은 지금 쿼리를 쓰지 않는다(인기순 조회수는
+ * `usePopularViewCounts`가 직접 보고한다). 에러 경계 밖 쿼리가 생기면 여기서 보고한다 — 화면에
+ * 드러나지 않는 실패는 보고하지 않으면 Supabase가 멈춰도 아무 데도 남지 않는다. 재시도가 끝난 뒤
+ * 한 번만 불린다.
  */
 export function createQueryClient(report: ReportError = reportError) {
   return new QueryClient({
