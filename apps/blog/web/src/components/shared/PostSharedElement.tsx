@@ -9,6 +9,7 @@ import {
 import {
   POST_OPEN_TRANSITION_TYPE,
   POST_SHARED,
+  POST_SHARED_RESCALED,
   POST_SHARED_SIDE,
   postSharedName,
   type PostSharedPart,
@@ -46,10 +47,20 @@ interface PostSharedElementProps {
    * `_1`·`_2`를 덧붙이므로, 요소가 둘이면 짝의 이름이 어긋난다.
    */
   children: ReactElement;
+  /**
+   * 커버만 — 이 글의 카드 커버와 상세 히어로가 서로 다른 배율로 그려지는가(가로형이 아닌 자기 썸네일 글,
+   * `!isWideThumbnail`). 참이면 짝의 클래스에 `POST_SHARED_RESCALED`가 붙어 겹치지 않고 차례로 바뀐다.
+   * 카드와 상세가 **같은 값**을 줘야 한다 — 짝은 들어오는 쪽의 클래스만 받는다.
+   */
+  rescaled?: boolean | undefined;
 }
 
-const shareClass = (part: PostSharedPart, side: PostSharedSide) =>
-  `${POST_SHARED[part]} ${POST_SHARED_SIDE[side]}`;
+const shareClass = (
+  part: PostSharedPart,
+  side: PostSharedSide,
+  rescaled: boolean,
+) =>
+  `${POST_SHARED[part]} ${POST_SHARED_SIDE[side]}${rescaled ? ` ${POST_SHARED_RESCALED}` : ''}`;
 
 /**
  * 글 카드와 글 상세에 걸쳐 이어지는 **공유 요소** — 카드의 커버·제목(`PostCardShared`)과 상세의
@@ -72,9 +83,10 @@ export const PostCardShared = ({
   part,
   slug,
   children,
+  rescaled = false,
 }: PostSharedElementProps) => {
   const open = useSyncExternalStore(subscribe, getOpenSlug, getServerOpenSlug);
-  const className = shareClass(part, 'card');
+  const className = shareClass(part, 'card', rescaled);
   return (
     <ViewTransition
       name={postSharedName(part, slug)}
@@ -96,6 +108,7 @@ export const PostDetailShared = ({
   part,
   slug,
   children,
+  rescaled = false,
 }: PostSharedElementProps) => {
   useEffect(() => {
     setOpenSlug(slug);
@@ -106,7 +119,7 @@ export const PostDetailShared = ({
   return (
     <ViewTransition
       name={postSharedName(part, slug)}
-      share={shareClass(part, 'detail')}
+      share={shareClass(part, 'detail', rescaled)}
       default="none"
     >
       {children}

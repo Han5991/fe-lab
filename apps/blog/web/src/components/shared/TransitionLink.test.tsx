@@ -17,8 +17,9 @@ import {
   type PostNavItem,
 } from '@blog/content/client';
 import { Layout } from '@/src/components/Layout';
-import { PostHeader } from '@/src/components/post/PostHeader';
+import { Breadcrumbs } from '@/src/components/post/Breadcrumbs';
 import { PostNavigation } from '@/src/components/post/PostNavigation';
+import { TagBadges } from '@/src/components/post/TagBadges';
 import {
   ABOUT_PATH,
   HOME_PATH,
@@ -132,7 +133,11 @@ describe('셸 링크 — 현재 경로에서 앱의 계층으로 방향을 고�
 });
 
 describe('글 상세의 링크', () => {
-  const item = (slug: string): PostNavItem => ({ slug, title: slug });
+  const item = (slug: string): PostNavItem => ({
+    slug,
+    title: slug,
+    relativeDir: '',
+  });
 
   beforeEach(() => {
     pathname.current = POST;
@@ -164,23 +169,19 @@ describe('글 상세의 링크', () => {
     expect(typesOf(toSeries)).toEqual([back]);
   });
 
+  test('빵부스러기의 두 칸은 목록으로 올라가는 이동이다', () => {
+    render(<Breadcrumbs series={{ id: 'bundler', name: '번들러' }} />);
+
+    const posts = screen.getByRole('link', { name: '글' });
+    expect(posts).toHaveAttribute('href', POSTS_PATH);
+    expect(typesOf(posts)).toEqual([back]);
+    const series = screen.getByRole('link', { name: '번들러' });
+    expect(series).toHaveAttribute('href', archivePath({ series: 'bundler' }));
+    expect(typesOf(series)).toEqual([back]);
+  });
+
   test('태그 링크는 필터된 글 목록으로 돌아가는 이동이다', () => {
-    render(
-      <PostHeader
-        post={{
-          slug: 'vitest-project-split',
-          originalSlug: 'vitest-project-split',
-          relativeDir: '',
-          title: '제목',
-          excerpt: '',
-          date: '2026-09-18',
-          readMin: 3,
-          tags: ['ci'],
-          status: 'published',
-          content: '',
-        }}
-      />,
-    );
+    render(<TagBadges tags={['ci']} />);
     const tag = screen.getByRole('link', { name: '#ci' });
     expect(tag).toHaveAttribute('href', archivePath({ tag: 'ci' }));
     expect(typesOf(tag)).toEqual([back]);

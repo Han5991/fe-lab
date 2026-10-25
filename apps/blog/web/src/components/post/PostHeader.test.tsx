@@ -1,14 +1,12 @@
 /**
- * 글 상세 헤더의 표기 규칙.
+ * 글 상세 머리의 구성 — `[빵부스러기] h1 → dek → 날짜 줄 → 구분선`.
  *
- * 리뉴얼에서 태그 pill 그룹을 없애고 메타 줄 안의 해시태그로 인라인시켰는데,
- * 이때 `/posts/?tag=...` 링크가 같이 사라지면 아카이브 태그 필터로 들어가는
- * 유일한 진입점이 끊깁니다. 그래서 링크 유지가 이 파일의 핵심 회귀 테스트입니다.
+ * 태그 링크(아카이브 태그 필터의 입구)는 머리가 아니라 본문 아래 `TagBadges`의 몫이고, 그 회귀는
+ * `TagBadges.test.tsx`가 잠근다.
  */
 import { describe, expect, test, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { PostHeader } from './PostHeader';
-import type { PostData } from '@blog/content/client';
 
 // 링크가 현재 경로로 이동 방향을 고른다(TransitionLink) — 이 컴포넌트가 놓이는 글 상세에 둔다.
 vi.mock('next/navigation', async () => {
@@ -16,60 +14,67 @@ vi.mock('next/navigation', async () => {
   return { usePathname: () => postPath('some-post') };
 });
 
-const basePost: PostData = {
+const basePost = {
   slug: 'next-js-ecs-deploy',
-  originalSlug: 'next-js-ecs-deploy',
-  relativeDir: 'nextjs deploy',
   title: 'ECS와 CodeDeploy를 활용한 Next.js 무중단 배포',
   date: '2025-03-31',
-  content: '',
   readMin: 14,
-  status: 'published',
 };
 
 describe('PostHeader', () => {
-  test('시리즈 배지는 `시리즈 · 표시명 현재/전체` 형식이다', () => {
-    render(
-      <PostHeader
-        post={basePost}
-        seriesIndex={{ current: 3, total: 3, displayName: 'Turborepo 인프라' }}
-      />,
-    );
-    expect(
-      screen.getByText('시리즈 · Turborepo 인프라 3/3'),
-    ).toBeInTheDocument();
-  });
-
-  test('시리즈가 없으면 배지를 그리지 않는다', () => {
+  test('제목은 이 페이지의 h1 하나다', () => {
     render(<PostHeader post={basePost} />);
-    expect(screen.queryByText(/^시리즈 ·/)).not.toBeInTheDocument();
+
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
+      basePost.title,
+    );
   });
 
-  test('메타 줄은 날짜 · 읽기시간 · 해시태그 순으로 한 줄에 붙는다', () => {
+  test('시리즈 글은 빵부스러기를 그린다', () => {
     render(
       <PostHeader
-        post={{ ...basePost, tags: ['ecs', 'docker', 'turborepo'] }}
+        post={{ ...basePost, series: 'turborepo-infra' }}
+        seriesName="Turborepo 인프라"
       />,
     );
-    const meta = screen.getByText(/2025-03-31/);
-    expect(meta.textContent).toBe(
-      '2025-03-31 · 14 min · #ecs #docker #turborepo',
+
+    expect(
+      screen.getByRole('navigation', { name: '위치' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: 'Turborepo 인프라' }),
+    ).toHaveAttribute('href', '/posts/?series=turborepo-infra');
+  });
+
+  test('시리즈가 아닌 글에는 빵부스러기가 없다', () => {
+    render(<PostHeader post={basePost} />);
+
+    expect(screen.queryByRole('navigation')).not.toBeInTheDocument();
+  });
+
+  test('시리즈 id만 있고 표시명을 알 수 없으면 빵부스러기를 그리지 않는다', () => {
+    render(<PostHeader post={{ ...basePost, series: 'x' }} />);
+
+    expect(screen.queryByRole('navigation')).not.toBeInTheDocument();
+  });
+
+  test('날짜 줄은 날짜와 읽기 시간을 보인다', () => {
+    render(<PostHeader post={basePost} />);
+
+    expect(screen.getByText('2025-03-31')).toBeInTheDocument();
+    expect(screen.getByText('14분 읽기')).toBeInTheDocument();
+  });
+
+  test('(회귀) 시리즈 배지와 메타 줄의 해시태그는 머리에 없다', () => {
+    render(
+      <PostHeader
+        post={{ ...basePost, series: 's' }}
+        seriesName="시리즈 이름"
+      />,
     );
-  });
 
-  // href는 archivePath 계약(`/posts/?tag=…`) 그대로다 — next/link의 후행 슬래시
-  // 정규화는 vitest.setup.ts가 next.config를 비춰 실제 빌드와 같게 맞춰 둔다.
-  const hrefOf = (name: string) =>
-    screen.getByRole('link', { name }).getAttribute('href');
-
-  test('(회귀) 태그는 아카이브 태그 필터로 가는 링크를 유지한다', () => {
-    render(<PostHeader post={{ ...basePost, tags: ['ecs'] }} />);
-    expect(hrefOf('#ecs')).toBe('/posts/?tag=ecs');
-  });
-
-  test('태그에 쿼리 특수문자가 있어도 인코딩해서 넘긴다', () => {
-    render(<PostHeader post={{ ...basePost, tags: ['c++ & rust'] }} />);
-    expect(hrefOf('#c++ & rust')).toBe('/posts/?tag=c%2B%2B%20%26%20rust');
+    expect(screen.queryByText(/^시리즈 ·/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/min$/)).not.toBeInTheDocument();
   });
 
   test('excerpt는 있을 때만 그린다', () => {

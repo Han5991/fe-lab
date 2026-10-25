@@ -6,6 +6,7 @@ import {
   NAV_TRANSITION,
   POST_OPEN_TRANSITION_TYPE,
   POST_SHARED,
+  POST_SHARED_RESCALED,
   POST_SHARED_SIDE,
   VIEW_TRANSITION,
 } from './src/shared/viewTransitions';
@@ -143,6 +144,12 @@ export default defineConfig({
         'reading-progress-fill': {
           to: { transform: 'scaleX(1)' },
         },
+        // 목차 버튼(MobileTOC)이 푸터 앞에서 사라지는 움직임. 시간이 아니라 푸터가 화면에 들어오는 정도에
+        // 묶인다(Layout의 `--site-footer` view timeline) — 끝에서 `visibility: hidden`이라 사라진 버튼에
+        // 초점도 눌림도 가지 않는다.
+        'fab-away': {
+          to: { opacity: '0', visibility: 'hidden' },
+        },
         // 페이지 전환(아래 globalCss의 ::view-transition-* 규칙). 이름은 PageBoundary가 붙이는
         // 클래스와 같은 출처다. 방향 없는 이동(같은 깊이·검색 결과)의 페이드 — 들어오는 페이지는
         // 8px(Astryx spacing-2) 아래에서 떠오르고, 나가는 페이지는 제자리에서 사라진다. 방향 있는
@@ -161,8 +168,8 @@ export default defineConfig({
         },
         // 커버 짝의 바닥 스냅샷 모서리(아래 globalCss). 카드 쪽 끝은 카드 라운드 중 가장 큰
         // container다 — 썸네일 행(element)은 그 끝에서 위에 덮인 카드 스냅샷이 더 많이 깎여 있어
-        // 바닥이 모서리 밖으로 비치지 않는다. 상세 쪽 끝은 아래
-        // 규칙의 정지값(히어로와 같은 element)이다.
+        // 바닥이 모서리 밖으로 비치지 않는다. 상세 쪽 끝은 아래 규칙의 정지값(element)이다 —
+        // 히어로 스냅샷에는 container(16px) 라운드가 이미 찍혀 있어 이 끝은 화면에 드러나지 않는다.
         [VIEW_TRANSITION.coverCornerFromCard]: {
           from: { borderRadius: 'container' },
         },
@@ -375,14 +382,17 @@ export default defineConfig({
           animationDuration: 'medium',
           animationTimingFunction: 'standard',
         },
-      // 커버 — 카드는 원본의 가운데를 잘라(cover) 보이고, 글 상세는 원본 비율 그대로다(OG 카드
-      // 1.9:1, 정사각 썸네일 1:1). UA 기본(폭 100%·높이 auto)은 두 스냅샷을 제 비율대로 위에 붙여,
-      // 원본의 서로 다른 부분이 겹쳐 크로스페이드가 두 겹으로 보인다. 상세 스냅샷(원본 전체)은 그룹
-      // 상자를 cover로 채워 가운데를 자르고, 카드 스냅샷(이미 가운데를 자른 것)은 contain으로 두면 둘이
-      // 원본의 같은 부분을 같은 배율로 그린다 — 비율이 바뀌는 동안 늘어나지도 어긋나지도 않는다. 둘 다
-      // 이미지가 스냅샷 가장자리까지 차 있어야 성립한다: 카드 커버 틀의 hairline은 이미지 **위에**
-      // 그리고(cardParts.ts), 상세 히어로에는 보더가 없다(PostHero). 틀의 진짜 보더가 이미지를 1px
-      // 안으로 밀었을 때는 둘이 최대 4px 어긋나 이미지 속 글자가 두 겹으로 보였다(실측).
+      // 커버 짝은 두 종류다. **가로형 글**(OG 카드·가로/세로 1.6 이상의 자기 썸네일)은 카드 커버 ↔ 상세 히어로가 둘 다 16:9 cover라 같은 그림을 같은
+      // 배율로 그려 겹쳐 모핑한다. **정사각 같은 자기 썸네일 글**(`post-rescaled`, viewTransitions.ts)은 상세가 16:9 틀에
+      // contain이라 카드의 cover 크롭과 배율이 달라 겹치면 그림이 두 겹이 되므로, 겹치지 않고 차례로 바꾼다 —
+      // 맨 아래 규칙. 그래도 짝(같은 이름)이다: 이름이 없으면 커버가 페이지 스냅샷에 섞여, 그 위에 쌓이는 제목
+      // 그룹(VT_STACK)이 그림 위를 지난다.
+      // 커버 — UA 기본(폭 100%·높이 auto)은 두 스냅샷을 제 비율대로 위에 붙여, 원본의 서로 다른 부분이 겹쳐
+      // 크로스페이드가 두 겹으로 보인다. 두 스냅샷을 그룹 상자에 같은 16:9로 맞추면(그룹이 카드 비율에서 상세 비율로
+      // 바뀌는 동안에도) 원본의 같은 부분을 같은 배율로 그려 늘어나지도 어긋나지도 않는다. 둘 다 이미지가
+      // 스냅샷 가장자리까지 차 있어야 성립한다: 카드 커버 틀의 hairline은 이미지 **위에** 그리고(cardParts.ts),
+      // 상세 히어로도 같은 틀을 쓴다(PostHero — 16:9, 이미지는 cover).
+      // 틀의 진짜 보더가 이미지를 1px 안으로 밀었을 때는 둘이 최대 4px 어긋나 이미지 속 글자가 두 겹으로 보였다(실측).
       //
       // 겹치는 방식도 UA 크로스페이드(두 장을 함께 흐리게 해 plus-lighter로 더한다)가 아니다. 상자를
       // 늘 꽉 채우는 상세 스냅샷을 불투명한 바닥에 두고, 카드 스냅샷(같은 그림에 라운드·hairline·hover
@@ -405,7 +415,7 @@ export default defineConfig({
           mixBlendMode: 'normal',
           animationName: 'none',
         },
-      // 바닥 — cover로 맞추면 양옆(정사각은 위아래)이 잘려 스냅샷에 찍힌 히어로의 라운드도 함께
+      // 바닥 — 스냅샷이 그룹 상자와 비율이 다를 때(카드가 16:9가 아닌 썸네일 행) 잘려 스냅샷에 찍힌 라운드도 함께
       // 잘리므로, 모서리를 그룹 상자에 다시 깎는다. 시간·곡선은 그룹과 같다(UA 상속).
       [`::view-transition-new(.${POST_SHARED.cover}.${POST_SHARED_SIDE.detail}), ::view-transition-old(.${POST_SHARED.cover}.${POST_SHARED_SIDE.card})`]:
         {
@@ -478,6 +488,28 @@ export default defineConfig({
           animationDuration: 'fast',
           animationTimingFunction: 'exit',
           animationFillMode: 'both',
+        },
+      // 짝의 배율이 다른 커버(`post-rescaled` — 정사각 같은 자기 썸네일 글): 두 스냅샷이 겹치면 두 겹으로 보이므로 겹치지 않고
+      // 차례로 바꾼다. 나가는 쪽이 먼저 걷히고(fast) 들어오는 쪽이 그 뒤에 나타난다(fast 지연, fastMax). 바닥을
+      // 두지 않는다 — 바닥이 불투명하면 그 위로 카드 스냅샷이 겹쳐 보인다. 그룹은 그대로 자리·크기를 옮기고
+      // z-index가 제목 위라, 날아가는 제목이 그림 위를 지나지 않는다. 클래스는 들어오는 쪽만 받으므로 방향은
+      // 상세(카드 → 상세, 나가는 old가 카드 스냅샷)와 카드(상세 → 카드, old가 상세 스냅샷)로 가른다.
+      [`::view-transition-new(.${POST_SHARED.cover}.${POST_SHARED_RESCALED}.${POST_SHARED_SIDE.detail}), ::view-transition-old(.${POST_SHARED.cover}.${POST_SHARED_RESCALED}.${POST_SHARED_SIDE.card})`]:
+        {
+          borderRadius: 'container',
+          animationTimingFunction: 'standard',
+          animationFillMode: 'both',
+        },
+      [`::view-transition-new(.${POST_SHARED.cover}.${POST_SHARED_RESCALED}.${POST_SHARED_SIDE.detail})`]:
+        {
+          animationName: VIEW_TRANSITION.sharedFadeIn,
+          animationDuration: 'fastMax',
+          animationDelay: 'fast',
+        },
+      [`::view-transition-old(.${POST_SHARED.cover}.${POST_SHARED_RESCALED}.${POST_SHARED_SIDE.card})`]:
+        {
+          animationName: VIEW_TRANSITION.pageExit,
+          animationDuration: 'fast',
         },
       // 문장 공유 링크(`#:~:text=`)로 들어온 독자에게 그 문장을 짚어 준다.
       // "여기"를 가리킨다는 점에서 선택과 같은 뜻이라 같은 토큰을 쓴다(대비는

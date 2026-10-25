@@ -1,7 +1,8 @@
-import { css, sva } from '@blog/styled-system/css';
-import type { RecipeVariant } from '@blog/styled-system/css';
+import { OG_DEFAULT_IMAGE } from '@/content.values.mts';
+import { css, cx } from '@blog/styled-system/css';
 import type { PostNavItem } from '@blog/content/client';
-import { postPath } from '@blog/content/client';
+import { postPath, resolveThumbnailSrc } from '@blog/content/client';
+import { coverFrameRaw, coverImage } from '@/src/components/blog/cardParts';
 import { TransitionLink } from '@/src/components/shared/TransitionLink';
 import { SERIES_PATH } from '@/src/shared/routes';
 import type { SiblingOrder } from '@/src/shared/viewTransitions';
@@ -16,99 +17,111 @@ interface PostNavigationProps {
   } | null;
 }
 
-const navCard = sva({
-  slots: ['card', 'title'],
-  base: {
-    // 위계는 그림자 없이 hairline 보더 하나로만 만들고, hover에서 보더만 진해진다.
-    card: {
-      display: 'flex',
-      flexDir: 'column',
-      gap: '1',
-      flex: '1',
-      borderWidth: 'hairline',
-      borderStyle: 'solid',
-      borderColor: 'ink.border',
-      rounded: 'container',
-      p: '[16px]',
-      transition: 'colors',
-      _hover: { borderColor: 'ink.borderStrong' },
-    },
-    title: {
-      fontSize: '[14px]',
-      fontWeight: 'medium',
-      color: 'accent.solid',
-    },
+/** 썸네일 `<img>`의 width·height — 보이는 크기(96×54, 16:9) 그대로다. */
+const THUMB_WIDTH = 96;
+const THUMB_HEIGHT = 54;
+
+// 좁은 화면(md 미만)은 한 열이다 — 두 열이면 375px에서 썸네일(96)을 빼고 글자 칸이 31px만 남는다.
+const grid = css({
+  display: 'grid',
+  gridTemplateColumns: {
+    base: '[minmax(0, 1fr)]',
+    md: '[repeat(2, minmax(0, 1fr))]',
   },
-  variants: {
-    // 카드의 자리 — 이전은 왼쪽, 다음은 오른쪽.
-    side: {
-      prev: {},
-      // 다음 글 카드만 우측 정렬. 모바일은 세로 스택이라 좌측 정렬을 유지한다.
-      next: {
-        card: {
-          alignItems: { base: 'flex-start', md: 'flex-end' },
-          textAlign: { base: 'left', md: 'right' },
-        },
-      },
-    },
-    clamp: {
-      1: { title: { lineClamp: 1 } },
-      2: { title: { lineClamp: 2 } },
-    },
-  },
+  gap: '2',
+  m: '0',
+  p: '0',
+  listStyleType: 'none',
 });
 
-const labelStyle = css({
-  fontFamily: 'mono',
-  fontSize: '[12px]',
-  color: 'ink.500',
-});
-
-const rowStyle = css({
+// `muted` 면 위의 카드 — 보더 대신 면으로 갈린다(Astryx ClickableCard muted). 카드 전체가 링크 하나다.
+// 두 열에서 한 줄의 칸(li)은 grid가 같은 높이로 늘리니, 카드가 그 높이를 채워야 옆 카드와 면이 맞는다
+// (썸네일 없는 "시리즈 목록" 카드가 썸네일 카드보다 낮게 떠 있었다).
+const card = css({
   display: 'flex',
-  flexDir: { base: 'column', md: 'row' },
-  justifyContent: 'space-between',
-  alignItems: 'stretch',
+  alignItems: 'center',
   gap: '3',
+  h: 'full',
+  minH: '0',
+  p: '3',
+  rounded: 'container',
+  bg: 'paper.100',
+  color: 'ink.950',
+  transition: 'colors',
+  _hover: { bg: 'paper.200' },
 });
 
-// 카드들이 같은 블록을 복붙하고 있어 한 컴포넌트로 모았다.
+const thumb = css(coverFrameRaw, { w: '24', rounded: 'element' });
+
+const texts = css({
+  display: 'flex',
+  flexDir: 'column',
+  gap: '0.5',
+  minW: '0',
+});
+
+const label = css({ textStyle: 'supporting', color: 'ink.700' });
+
+const title = css({ textStyle: 'h3', lineClamp: 2 });
+
 interface NavCardProps {
   href: string;
   title: string;
-  /** 카드의 자리 — 이전은 왼쪽, 다음은 오른쪽 정렬. */
-  side: NonNullable<RecipeVariant<typeof navCard>['side']>;
+  label: string;
+  /** 카드의 자리 — 다음 글은 두 열에서 오른쪽 칸에 서서, 이전 글이 없을 때도 오른쪽에 남는다. */
+  side: SiblingOrder;
   /**
    * 형제 순서 — 이전·다음 글(편)처럼 같은 깊이의 형제로 가는 카드만 준다. 이전은 왼쪽에서, 다음은
    * 오른쪽에서 밀려 들어온다(`navTransitionType`). 자리와 따로 두는 이유: "시리즈 목록 →"은 다음
    * 자리에 서지만 형제가 아니라(글 → 섹션) 주지 않는다 — 방향은 깊이가 정한다(위로).
    */
   order?: SiblingOrder | undefined;
-  label: string;
-  /** 제목 줄 수 — 시리즈 카드는 1줄, 전체 이전/다음은 2줄까지 */
-  clamp: RecipeVariant<typeof navCard>['clamp'];
+  /** 썸네일을 그릴 글 — 글이 아닌 곳으로 가는 카드("시리즈 목록")에는 없다. */
+  post?: PostNavItem | undefined;
 }
 
-const NavCard = ({ href, title, side, order, label, clamp }: NavCardProps) => {
-  const classes = navCard({ side, clamp });
-  return (
-    <TransitionLink href={href} order={order} className={classes.card}>
-      <span className={labelStyle}>{label}</span>
-      <span className={classes.title}>{title}</span>
+const NavCard = ({
+  href,
+  title: text,
+  label: name,
+  side,
+  order,
+  post,
+}: NavCardProps) => (
+  <li
+    className={
+      side === 'next' ? css({ md: { gridColumnStart: '2' } }) : undefined
+    }
+  >
+    <TransitionLink href={href} order={order} className={cx('group', card)}>
+      {post && (
+        <span className={thumb}>
+          <img
+            // 카드·히어로와 같은 주소다 — posts/ 안의 png·jpg는 빌드가 만든 webp, 썸네일이 없는 글은
+            // 생성 OG 카드(/og/{slug}.png).
+            src={resolveThumbnailSrc(post, OG_DEFAULT_IMAGE)}
+            alt=""
+            width={THUMB_WIDTH}
+            height={THUMB_HEIGHT}
+            loading="lazy"
+            decoding="async"
+            className={coverImage}
+          />
+        </span>
+      )}
+      <span className={texts}>
+        <span className={label}>{name}</span>
+        <span className={title}>{text}</span>
+      </span>
     </TransitionLink>
-  );
-};
+  </li>
+);
 
 const postHref = (item: PostNavItem) => postPath(item.slug);
 
-// 한쪽만 있을 때 남은 칸을 차지해 좌/우 정렬을 유지하는 자리끝. 모바일에서는
-// 세로 스택이라 빈 칸이 필요 없다.
-const NavSpacer = () => (
-  <div className={css({ flex: '1', display: { base: 'none', md: 'block' } })} />
-);
-
 /**
- * 글 하단 이동 카드.
+ * 글 아래 이동 카드 — `<nav aria-label="이전·다음 글">` 안의 목록이다. 글(article) 칼럼 안, 태그 줄 다음에
+ * 선다.
  *
  * **시리즈 글이면 시리즈 네비만, 아니면 전체 이전/다음만** 보여준다.
  * 둘을 같이 그리면 순서 개념이 두 개가 되어 같은 글이 두 번 나온다 —
@@ -118,6 +131,7 @@ const NavSpacer = () => (
  * 구분이 안 됐다.
  *
  * 시리즈 마지막 편에는 나갈 곳이 없으므로 `시리즈 목록 →`을 대신 둔다.
+ * 이전·다음 글이 둘 다 없으면(글이 하나뿐) 아무것도 그리지 않는다.
  */
 export const PostNavigation = ({
   prev,
@@ -126,81 +140,73 @@ export const PostNavigation = ({
 }: PostNavigationProps) => {
   const inSeries = Boolean(seriesNav && (seriesNav.prev || seriesNav.next));
 
-  return (
-    <div className={css({ mb: '8' })}>
-      {inSeries && seriesNav ? (
-        <>
-          <p
-            className={css({
-              fontSize: '[12px]',
-              color: 'ink.600',
-              mb: '[10px]',
-            })}
-          >
-            시리즈 · {seriesNav.seriesName}
-          </p>
-          <div className={rowStyle}>
-            {seriesNav.prev ? (
-              <NavCard
-                href={postHref(seriesNav.prev)}
-                title={seriesNav.prev.title}
-                side="prev"
-                order="prev"
-                label="← 이전 편"
-                clamp={1}
-              />
-            ) : (
-              <NavSpacer />
-            )}
-            {seriesNav.next ? (
-              <NavCard
-                href={postHref(seriesNav.next)}
-                title={seriesNav.next.title}
-                side="next"
-                order="next"
-                label="다음 편 →"
-                clamp={1}
-              />
-            ) : (
-              // 마지막 편. 여기서 끊기면 갈 곳이 없어 시리즈 목록으로 보낸다.
-              <NavCard
-                href={SERIES_PATH}
-                title="다른 시리즈 둘러보기"
-                side="next"
-                label="시리즈 목록 →"
-                clamp={1}
-              />
-            )}
-          </div>
-        </>
-      ) : (
-        <div className={rowStyle}>
-          {prev ? (
+  if (inSeries && seriesNav) {
+    return (
+      <nav
+        aria-label="이전·다음 글"
+        className={css({ display: 'flex', flexDir: 'column', gap: '2' })}
+      >
+        <p className={label}>시리즈 · {seriesNav.seriesName}</p>
+        <ul className={grid}>
+          {seriesNav.prev && (
             <NavCard
-              href={postHref(prev)}
-              title={prev.title}
+              href={postHref(seriesNav.prev)}
+              title={seriesNav.prev.title}
+              label="← 이전 편"
               side="prev"
               order="prev"
-              label="← 이전 글"
-              clamp={2}
+              post={seriesNav.prev}
             />
-          ) : (
-            <NavSpacer />
           )}
-          {next ? (
+          {seriesNav.next ? (
             <NavCard
-              href={postHref(next)}
-              title={next.title}
+              href={postHref(seriesNav.next)}
+              title={seriesNav.next.title}
+              label="다음 편 →"
               side="next"
               order="next"
-              label="다음 글 →"
-              clamp={2}
+              post={seriesNav.next}
             />
           ) : (
-            <NavSpacer />
+            // 마지막 편. 여기서 끊기면 갈 곳이 없어 시리즈 목록으로 보낸다.
+            <NavCard
+              href={SERIES_PATH}
+              title="다른 시리즈 둘러보기"
+              label="시리즈 목록 →"
+              side="next"
+            />
           )}
-        </div>
-      )}
-    </div>
+        </ul>
+      </nav>
+    );
+  }
+
+  if (!prev && !next) return null;
+
+  return (
+    <nav aria-label="이전·다음 글">
+      <ul className={grid}>
+        {prev && (
+          <NavCard
+            href={postHref(prev)}
+            title={prev.title}
+            label="← 이전 글"
+            side="prev"
+            order="prev"
+            post={prev}
+          />
+        )}
+        {next && (
+          <NavCard
+            href={postHref(next)}
+            title={next.title}
+            label="다음 글 →"
+            side="next"
+            order="next"
+            post={next}
+          />
+        )}
+      </ul>
+    </nav>
   );
 };

@@ -442,6 +442,12 @@ export const blogPreset = definePreset({
 
           /** 레일이 아니라 콘텐츠 제약 — /about 히어로 우측 문단 */
           heroAside: { value: '480px' },
+          /**
+           * 레일이 아니라 콘텐츠 제약 — 글 상세의 차례 칼럼. 본문(`railText`) 오른쪽에 간격 32로 붙어
+           * 752 + 32 + 268 = 1052가 wide 레일(1200) 안에 들어간다(`railWithAside`). 240px에서는
+           * 한국어 헤딩이 대부분 두 줄로 접혀 목록이 두 배로 길어졌다.
+           */
+          tocAside: { value: '268px' },
         },
         // 모션 곡선 — 시간은 아래 semanticTokens.durations. **곡선은 이 셋이 전부다** — 블로그
         // 설정이 preset-panda의 easings를 빼므로(apps/blog/web/panda.config.ts) 다른 이름은

@@ -3,7 +3,10 @@ import {
   resolveThumbnailUrl as resolveThumbnailUrlIn,
   resolveAbsoluteThumbnailUrl as resolveAbsoluteThumbnailUrlIn,
   resolveThumbnailSrc as resolveThumbnailSrcIn,
+  hasAuthoredThumbnail,
   isOptimizableThumbnail,
+  isWideThumbnail,
+  WIDE_THUMBNAIL_MIN_ASPECT,
   thumbnailWebpRelPath,
 } from './thumbnail.ts';
 import { TEST_VALUES } from '../shared/testValues.ts';
@@ -307,4 +310,47 @@ test('resolveThumbnailSrc: 파일명의 공백은 인코딩', () => {
   expect(
     resolveThumbnailSrc(p({ thumbnail: 'my thumb.png', relativeDir: 'dir' })),
   ).toBe('/thumbs/dir/my%20thumb.webp');
+});
+
+// ── hasAuthoredThumbnail ─────────────────────────────────────────────────────
+
+test.each([
+  ['상대 파일', 'cover.png', true],
+  ['외부 URL', 'https://cdn.example/x.png', true],
+  ['사이트 절대 경로(생성 카드가 아닌)', '/images/cover.png', true],
+  ['생성 OG 카드를 적어 둔 글', '/og/my-post.png', false],
+  ['없음', undefined, false],
+  ['빈 문자열', '', false],
+])('hasAuthoredThumbnail: %s', (_name, thumbnail, expected) => {
+  expect(
+    hasAuthoredThumbnail(thumbnail === undefined ? {} : { thumbnail }),
+  ).toBe(expected);
+});
+
+// ── isWideThumbnail ──────────────────────────────────────────────────────────
+
+test.each([
+  ['썸네일 없음(생성 OG 카드)', undefined, undefined, true],
+  ['/og/…을 적어 둔 글', '/og/my-post.png', undefined, true],
+  ['OG 카드 비율의 자기 썸네일(1200×630)', 'cover.png', 1200 / 630, true],
+  ['16:9 자기 썸네일', 'cover.png', 16 / 9, true],
+  ['하한 정확히', 'cover.png', WIDE_THUMBNAIL_MIN_ASPECT, true],
+  ['하한 바로 아래', 'cover.png', WIDE_THUMBNAIL_MIN_ASPECT - 0.01, false],
+  ['4:3 자기 썸네일', 'cover.png', 4 / 3, false],
+  ['정사각 자기 썸네일', 'cover.png', 1, false],
+  ['세로형 자기 썸네일', 'cover.png', 0.5, false],
+  [
+    '비율을 모르는 자기 썸네일(외부 URL 등)',
+    'https://cdn/x.png',
+    undefined,
+    false,
+  ],
+  ['OG 카드 경로면 비율은 보지 않는다', '/og/my-post.png', 1, true],
+])('isWideThumbnail: %s', (_name, thumbnail, thumbnailAspect, expected) => {
+  expect(
+    isWideThumbnail({
+      ...(thumbnail === undefined ? {} : { thumbnail }),
+      ...(thumbnailAspect === undefined ? {} : { thumbnailAspect }),
+    }),
+  ).toBe(expected);
 });

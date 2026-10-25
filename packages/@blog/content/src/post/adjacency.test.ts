@@ -37,6 +37,29 @@ test('pickAdjacent: 중간 글 → prev=더 과거, next=더 최신', () => {
   expect(prev?.title).toBe('title-a');
 });
 
+test('pickAdjacent: 카드가 쓸 썸네일과 폴더를 함께 싣는다 — 썸네일이 없으면 키째 없다', () => {
+  const withThumb = [
+    makePost({ slug: 'c', relativeDir: 'ci', thumbnail: 'c.png' }),
+    makePost({ slug: 'b', relativeDir: 'ci' }),
+    makePost({ slug: 'a', relativeDir: '', thumbnail: 'a.png' }),
+  ];
+
+  expect(pickAdjacent(withThumb, 'b')).toStrictEqual({
+    prev: { slug: 'a', title: 'title-a', relativeDir: '', thumbnail: 'a.png' },
+    next: {
+      slug: 'c',
+      title: 'title-c',
+      relativeDir: 'ci',
+      thumbnail: 'c.png',
+    },
+  });
+  expect(pickAdjacent(withThumb, 'a').next).toStrictEqual({
+    slug: 'b',
+    title: 'title-b',
+    relativeDir: 'ci',
+  });
+});
+
 test('pickAdjacent: 최신 글 → next=null', () => {
   const { prev, next } = pickAdjacent(posts, 'c');
   expect(next).toBe(null);
@@ -145,3 +168,27 @@ test.each([
     expect(walkNext(service, expected[0] ?? '')).toStrictEqual(expected);
   },
 );
+
+test('getSeriesAdjacentPosts: 이전·다음 편도 썸네일과 폴더를 싣는다', () => {
+  const service = seriesService([
+    makePost({
+      slug: 's2',
+      date: '2025-06-01',
+      series: 'S',
+      thumbnail: 'x.png',
+    }),
+    makePost({ slug: 's1', date: '2025-05-05', series: 'S', relativeDir: 'S' }),
+  ]);
+
+  expect(service.getSeriesAdjacentPosts('s1').next).toStrictEqual({
+    slug: 's2',
+    title: 'title-s2',
+    relativeDir: '',
+    thumbnail: 'x.png',
+  });
+  expect(service.getSeriesAdjacentPosts('s2').prev).toStrictEqual({
+    slug: 's1',
+    title: 'title-s1',
+    relativeDir: 'S',
+  });
+});

@@ -1,7 +1,11 @@
 import { OG_DEFAULT_IMAGE } from '@/content.values.mts';
 import { css, cx } from '@blog/styled-system/css';
 import type { PostSummary } from '@blog/content/client';
-import { postPath, resolveThumbnailSrc } from '@blog/content/client';
+import {
+  isWideThumbnail,
+  postPath,
+  resolveThumbnailSrc,
+} from '@blog/content/client';
 
 import { PostCardShared } from '@/src/components/shared/PostSharedElement';
 import { TransitionLink } from '@/src/components/shared/TransitionLink';
@@ -39,7 +43,11 @@ interface PostThumbRowProps {
  */
 export const PostThumbRow = ({ post }: PostThumbRowProps) => (
   <div className={cx(cardRoot, row)}>
-    <PostCardShared part="cover" slug={post.slug}>
+    <PostCardShared
+      part="cover"
+      slug={post.slug}
+      rescaled={!isWideThumbnail(post)}
+    >
       <div className={thumb}>
         <img
           src={resolveThumbnailSrc(post, OG_DEFAULT_IMAGE)}
