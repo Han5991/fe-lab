@@ -466,7 +466,9 @@ type은 `src/shared/viewTransitions.ts`, 감싸개는 `src/components/shared/Pos
 - **`tocAside`(268px)는 레일이 아니라 콘텐츠 제약이다**(`heroAside`와 같은 부류) — 글 상세의 차례
   칼럼. `Rail.tsx`의 `railWithAside`가 본문 `railText` 752 + 간격 32 + 268 = 1052를 wide 레일 안에
   가운데로 놓는다(lg 미만은 한 열이고 차례는 모바일 목차 시트). 240에서는 한국어 헤딩이 두 줄로 접혀 목록이
-  두 배로 길어졌다
+  두 배로 길어졌다. **헤딩(h1~h4)이 없는 글은 차례 칸을 잡지 않아** 본문이 레일 중심에 선다 — 판정은 서버가
+  그린 `#post-content` 안의 헤딩을 CSS `:has()`로 본다(차례는 하이드레이션 뒤에야 그려져 그걸 보면 첫
+  페인트 뒤에 본문이 움직인다)
 
 - **섹션 간격** — `spacing.section`, md(768px) 이상 100px / 아래 48px(Astryx docsite의 섹션 간격).
   화면 폭에 따라 값이 바뀌는 토큰이라 `mt: 'section'`처럼 이름만 적는다. 푸터 위 간격이 이것이다
