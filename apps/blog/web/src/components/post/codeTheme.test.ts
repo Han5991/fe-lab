@@ -9,6 +9,7 @@
 import { describe, expect, test } from 'vitest';
 import type { CSSProperties } from 'react';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/cjs/styles/prism';
+import { themeColor, type BlogColorName, type BlogTheme } from '@blog/preset';
 import { CODE_COLOR_ROLES, swapColors, toDualTheme } from './codeTheme';
 
 const HEX = /#[0-9a-f]{3,8}/gi;
@@ -103,5 +104,79 @@ describe('toDualTheme', () => {
     expect(dual['code[class*="language-"]'].fontFamily).toBe(
       vscDarkPlus['code[class*="language-"]'].fontFamily,
     );
+  });
+});
+
+/** WCAG 상대 휘도 — 채널은 sRGB 전달 함수를 거친다. */
+function luminance(hex: string): number {
+  const [r = 0, g = 0, b = 0] = [1, 3, 5].map(i => {
+    const channel = parseInt(hex.slice(i, i + 2), 16) / 255;
+    return channel <= 0.03928
+      ? channel / 12.92
+      : ((channel + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+function contrast(a: string, b: string): number {
+  const [hi = 0, lo = 0] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+  return (hi + 0.05) / (lo + 0.05);
+}
+
+describe('코드 색의 대비', () => {
+  // 코드 글자는 표면 위에, 주석·메타는 탭 바(chrome) 위에도 앉을 수 있다. 주석은 눈에 덜 띄게
+  // 두는 색이라 AA(4.5)에 여유를 두고 4.8 이상으로 잠근다(표면이 밝아질 때 먼저 무너지는 자리).
+  const THEMES: readonly BlogTheme[] = ['light', 'dark'];
+  const SYNTAX: readonly BlogColorName[] = [
+    'code.fg',
+    'code.comment',
+    'code.keyword',
+    'code.keywordFlow',
+    'code.string',
+    'code.number',
+    'code.function',
+    'code.class',
+    'code.property',
+    'code.tag',
+    'code.inserted',
+    'code.deleted',
+    'code.regex',
+    'code.selector',
+    'code.muted',
+  ];
+
+  for (const theme of THEMES) {
+    const surface = themeColor(theme, 'code.surface');
+
+    test(`${theme}: 모든 구문 색이 코드 표면 위에서 AA(4.5)를 넘는다`, () => {
+      const failing = SYNTAX.filter(
+        name => contrast(themeColor(theme, name), surface) < 4.5,
+      );
+
+      expect(failing).toEqual([]);
+    });
+
+    test(`${theme}: 주석은 코드 표면과 탭 바 위에서 4.8 이상이다`, () => {
+      const comment = themeColor(theme, 'code.comment');
+
+      expect(contrast(comment, surface)).toBeGreaterThanOrEqual(4.8);
+      expect(
+        contrast(comment, themeColor(theme, 'code.chrome')),
+      ).toBeGreaterThanOrEqual(4.8);
+    });
+  }
+
+  test('다크 표면은 본문 지면과 갈라져 상자가 면으로 읽힌다', () => {
+    expect(themeColor('dark', 'code.surface')).not.toBe(
+      themeColor('dark', 'paper.50'),
+    );
+  });
+
+  test('코드 탭 바(chrome)는 표면과 다른 면이다', () => {
+    for (const theme of THEMES) {
+      expect(themeColor(theme, 'code.chrome')).not.toBe(
+        themeColor(theme, 'code.surface'),
+      );
+    }
   });
 });

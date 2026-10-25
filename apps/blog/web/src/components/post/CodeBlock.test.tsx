@@ -9,7 +9,8 @@
  *      한쪽만 바뀌면 청크가 도착하는 순간 본문이 밀린다.
  */
 import { describe, expect, test, vi } from 'vitest';
-import { CODE_THEME, registerOnce } from './CodeBlock';
+import { render, screen } from '@testing-library/react';
+import { CODE_THEME, CodeBlock, registerOnce } from './CodeBlock';
 import { mermaidBoxStyle } from './MermaidLazy';
 import { mermaidContainerStyle } from './MermaidChart';
 
@@ -150,5 +151,57 @@ describe('코드 블록 글꼴', () => {
 
     expect(fonts.length).toBeGreaterThan(0);
     expect(new Set(fonts)).toEqual(new Set(['var(--fonts-mono)']));
+  });
+});
+
+describe('코드 블록 크롬', () => {
+  const block = (props: { language?: string; title?: string }) =>
+    render(
+      <CodeBlock
+        className={props.language ? `language-${props.language}` : undefined}
+        data-title={props.title}
+      >
+        {'const long = 1;\n'}
+      </CodeBlock>,
+    );
+
+  test('헤더는 언어가 없어도 그리고 라벨은 text다', () => {
+    block({});
+
+    expect(screen.getByText('text')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '코드 복사' })).toBeVisible();
+  });
+
+  test('라벨은 파일명 → 언어 → text 순서로 하나만 단다', () => {
+    const { container, unmount } = block({ language: 'ts', title: 'a.ts' });
+    expect(container.querySelector('figcaption')?.textContent).toBe('a.ts');
+    expect(screen.queryByText('ts')).not.toBeInTheDocument();
+    unmount();
+
+    block({ language: 'ts' });
+    expect(screen.getByText('ts')).toBeInTheDocument();
+  });
+
+  test('코드는 줄바꿈하고 600px을 넘으면 상자 안에서 스크롤하며 키보드로 초점을 받는다', () => {
+    const { container } = block({ language: 'ts' });
+    const pre = container.querySelector('pre');
+
+    expect(pre).toHaveAttribute('tabindex', '0');
+    expect(pre?.style.maxHeight).toBe('600px');
+    expect(pre?.style.whiteSpace).toBe('pre-wrap');
+    // 글자 크기·행간은 pre가 아니라 code가 쥐고 있어(테마가 둘 다에 건다) code에도 걸린다.
+    const code = container.querySelector<HTMLElement>('pre code');
+    expect(code?.style.fontSize).toBe('0.875rem');
+    expect(code?.style.whiteSpace).toBe('pre-wrap');
+    // codeTagProps.style은 테마의 code 규칙을 대체하므로, 글꼴이 UA 기본으로 떨어지지 않았는지 본다.
+    expect(code?.style.fontFamily).toBe('var(--fonts-mono)');
+  });
+
+  test('블록이 아닌 코드는 헤더 없이 인라인 코드로 그린다', () => {
+    const { container } = render(<CodeBlock>inline</CodeBlock>);
+
+    expect(container.querySelector('figure')).toBeNull();
+    expect(screen.queryByRole('button')).toBeNull();
+    expect(container.querySelector('code')?.textContent).toBe('inline');
   });
 });
