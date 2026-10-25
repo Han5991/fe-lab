@@ -3,6 +3,7 @@ import { fmtDate, fmtReadMin } from '@blog/content/client';
 import type { PostSummary } from '@blog/content/client';
 import { Fragment, type ReactNode } from 'react';
 
+import { metaDivider } from '@/src/components/metaDivider';
 import { tagBadge } from '@/src/components/tagBadge';
 
 interface PostMetaProps {
@@ -28,14 +29,6 @@ const metaRow = css({
   color: 'ink.700',
 });
 
-/** 항목 사이 세로 구분선 — 글자 높이의 3/4, 강조 보더 색. 읽을 거리가 아니라 숨긴다. */
-const divider = css({
-  h: '[0.75em]',
-  borderLeftWidth: 'hairline',
-  borderLeftStyle: 'solid',
-  borderColor: 'ink.borderStrong',
-});
-
 const badge = tagBadge();
 
 /**
@@ -58,7 +51,7 @@ export const PostMeta = ({ post, tags, badges }: PostMetaProps) => {
     <div className={metaRow}>
       {items.map(({ key, node }, index) => (
         <Fragment key={key}>
-          {index > 0 && <span aria-hidden="true" className={divider} />}
+          {index > 0 && <span aria-hidden="true" className={metaDivider} />}
           {node}
         </Fragment>
       ))}

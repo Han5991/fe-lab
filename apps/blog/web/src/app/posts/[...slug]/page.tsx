@@ -4,10 +4,7 @@ import {
   getPostBySlug,
   getAdjacentPosts,
   getSeriesAdjacentPosts,
-  getAllPosts,
-  getSeriesMeta,
 } from '@/src/content';
-import { sortPostsBySeriesOrder } from '@blog/content';
 import { isPostVisible, resolveThumbnailSrc } from '@blog/content/client';
 import { notFound } from 'next/navigation';
 import { css, cx } from '@blog/styled-system/css';
@@ -38,6 +35,7 @@ import { TOC } from '@/src/components/post/TOC';
 import { ReadingProgress } from '@/src/components/post/ReadingProgress';
 import { PostHeader } from '@/src/components/post/PostHeader';
 import { PostHero } from '@/src/components/post/PostHero';
+import { TagBadges } from '@/src/components/post/TagBadges';
 import { QuoteLink } from '@/src/components/post/quote/QuoteLink';
 import { PostBody } from './PostBody';
 import { PostRuntime } from './PostRuntime';
@@ -92,27 +90,6 @@ export default async function PostPage({ params }: Props) {
       }
     : null;
 
-  // 시리즈 내 위치 계산 (헤더 라벨용)
-  let seriesIndex:
-    { current: number; total: number; displayName: string } | undefined;
-  // `series`는 `_series.yml`로 선언된 폴더에만 붙는다(`repository.ts`). 주제별로
-  // 모아 둔 폴더의 글은 series가 비어 있어 배지가 생기지 않는다.
-  const seriesPosts = post.series
-    ? getAllPosts().filter(p => p.series === post.series)
-    : [];
-  if (post.series && seriesPosts.length > 0) {
-    const meta = getSeriesMeta(post.series);
-    const orderedPosts = sortPostsBySeriesOrder(seriesPosts, meta?.order);
-    const idx = orderedPosts.findIndex(p => p.slug === slug);
-    if (idx !== -1) {
-      seriesIndex = {
-        current: idx + 1,
-        total: orderedPosts.length,
-        displayName: meta?.title ?? post.series,
-      };
-    }
-  }
-
   // PostHero가 쓰는 값 — 썸네일이 없는 글은 undefined로 둬서 hero 슬롯에서 빠진다.
   // 화면에 띄우는 주소라 글 카드 커버와 같은 resolveThumbnailSrc(최적화본 webp)다 — 카드에서
   // 넘어오면 이미 받은 이미지라 공유 요소 전환이 이미지를 기다리지 않는다. OG·JSON-LD는 PNG
@@ -164,8 +141,16 @@ export default async function PostPage({ params }: Props) {
         {/* 셸은 wide 레일이라 홈·/about와 좌우 끝이 같고, 그 안에서 본문(railText 752)과 차례
             (tocAside 268)가 간격 32로 나란히 가운데에 선다(`railWithAside`). */}
         <div className={cx(railColumn({ width: 'wide' }), railWithAside)}>
-          <article className={railAsideMain}>
-            <PostHeader post={post} seriesIndex={seriesIndex} />
+          <article
+            className={cx(
+              railAsideMain,
+              css({ display: 'flex', flexDir: 'column', gap: '10' }),
+            )}
+          >
+            <PostHeader
+              post={post}
+              seriesName={seriesAdj.seriesName ?? undefined}
+            />
 
             {/* hero는 frontmatter 값 그대로다 — thumbnailUrl과 달리 경로 해석이
                 없어서 별도 계산을 거칠 이유가 없다. */}
@@ -178,22 +163,32 @@ export default async function PostPage({ params }: Props) {
 
             <PostBody content={post.content} relativeDir={post.relativeDir} />
 
+            {/* 본문 아래 — 구분선 → 태그(아카이브 태그 필터의 유일한 입구)와 공유. */}
             <div
               className={css({
-                mt: '14',
-                pt: '6',
-                borderTopWidth: 'hairline',
-                borderColor: 'ink.border',
                 display: 'flex',
-                justifyContent: 'flex-end',
+                flexDir: 'column',
+                gap: '6',
               })}
             >
-              <ShareButton title={post.title} />
+              <hr className={css({ m: '0', borderColor: 'ink.border' })} />
+              <div
+                className={css({
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '3',
+                })}
+              >
+                <TagBadges tags={post.tags ?? []} />
+                <div className={css({ ml: 'auto' })}>
+                  <ShareButton title={post.title} />
+                </div>
+              </div>
             </div>
 
-            <div className={css({ mt: '10' })}>
-              <GiscusComments />
-            </div>
+            <GiscusComments />
           </article>
 
           <TOC />
