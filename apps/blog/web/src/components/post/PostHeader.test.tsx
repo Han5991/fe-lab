@@ -1,5 +1,5 @@
 /**
- * 글 상세 머리의 구성 — `[빵부스러기] h1 → dek → 바이라인 → 구분선`.
+ * 글 상세 머리의 구성 — `[빵부스러기] h1 → dek → 날짜 줄 → 구분선`.
  *
  * 태그 링크(아카이브 태그 필터의 입구)는 머리가 아니라 본문 아래 `TagBadges`의 몫이고, 그 회귀는
  * `TagBadges.test.tsx`가 잠근다.
@@ -58,7 +58,7 @@ describe('PostHeader', () => {
     expect(screen.queryByRole('navigation')).not.toBeInTheDocument();
   });
 
-  test('바이라인은 날짜와 읽기 시간을 보인다', () => {
+  test('날짜 줄은 날짜와 읽기 시간을 보인다', () => {
     render(<PostHeader post={basePost} />);
 
     expect(screen.getByText('2025-03-31')).toBeInTheDocument();

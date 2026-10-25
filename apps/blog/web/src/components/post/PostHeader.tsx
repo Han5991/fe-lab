@@ -2,7 +2,7 @@ import { css } from '@blog/styled-system/css';
 import type { PostData } from '@blog/content/client';
 import { PostDetailShared } from '@/src/components/shared/PostSharedElement';
 import { Breadcrumbs } from './Breadcrumbs';
-import { Byline } from './Byline';
+import { Dateline } from './Dateline';
 
 interface PostHeaderProps {
   post: Pick<
@@ -14,7 +14,7 @@ interface PostHeaderProps {
 }
 
 /**
- * 글 머리 — `[빵부스러기] 제목(h1) → dek → 바이라인 → 구분선`. 블록 사이는 16이다(목업).
+ * 글 머리 — `[빵부스러기] 제목(h1) → dek → 날짜 줄 → 구분선`. 블록 사이는 16이다(목업).
  *
  * 제목은 display1(42/52)이지만 md(768px) 미만에서는 display3(29/36)으로 낮춘다 — 375px에서는 한 줄에
  * 한글 여덟 자 안팎이라 긴 제목이 네댓 줄로 쌓인다(목업은 폭을 정의하지 않았다).
@@ -42,7 +42,7 @@ export const PostHeader = ({ post, seriesName }: PostHeaderProps) => (
         {post.excerpt}
       </p>
     )}
-    <Byline date={post.date} readMin={post.readMin} />
+    <Dateline date={post.date} readMin={post.readMin} />
     <hr className={css({ m: '0', borderColor: 'ink.border' })} />
   </header>
 );
