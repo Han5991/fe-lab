@@ -161,7 +161,8 @@ export default defineConfig({
       groupPress: '.group:is(:active, [data-active]) &',
       pressScale: {
         '@media (hover: hover) and (pointer: fine)': {
-          '&:is(:active):not(:disabled, [aria-disabled=true])': '@slot',
+          '&:is(:active, [data-active]):not(:disabled, [aria-disabled=true])':
+            '@slot',
         },
       },
     },
