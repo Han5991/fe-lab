@@ -4,14 +4,17 @@
  *
  * - increment_view_count는 형식 밖 slug를 에러 없이 버린다(fail-soft) — 검증이 틀려도 다른 신호가 없어서,
  *   anon으로 불러 쌓인 행을 센다.
- * - get_posts_trends는 get_all_posts_trends와 같은 행을 json 하나로 낸다 — Edge Function이 옛 RPC 대신 이걸
- *   부르므로, 둘이 어긋나면 admin 추이가 에러 없이 달라진다. 옛 RPC를 지우는 마이그레이션에서 이 비교도 함께
- *   지운다(재평가 2027-01-31 — 그때까지 옛 RPC가 남아 있으면 지울 수 있는지부터 본다).
+ * - get_posts_trends는 admin 추이를 json 하나로 낸다 — 날짜 경계(KST·365일 창)와 거르기, service_role 전용 권한을
+ *   값으로 잠근다. 옛 get_all_posts_trends는 지워졌고(20261025010000) 더는 없다.
  */
 import { readdirSync, readFileSync } from 'node:fs';
 import { PGlite, type Transaction } from '@electric-sql/pglite';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
-import { MAX_SLUG_LENGTH } from './adminActions';
+import {
+  isPostTrendRows,
+  MAX_SLUG_LENGTH,
+  type PostTrendRow,
+} from './adminActions';
 
 const MIGRATIONS = new URL('../../../supabase/migrations/', import.meta.url);
 
@@ -107,12 +110,6 @@ describe('increment_view_count', () => {
 });
 
 describe('get_posts_trends', () => {
-  interface TrendRow {
-    slug: string;
-    view_date: string;
-    view_count: number;
-  }
-
   /** 시드에 쓴 KST 날짜들 — 같은 트랜잭션의 now()에서 뽑아 기대값을 만든다. */
   interface SeedDates {
     first: string;
@@ -158,28 +155,18 @@ describe('get_posts_trends', () => {
     return rows[0];
   }
 
-  /**
-   * service_role(Edge Function)로 두 RPC를 부른다. 옛 RPC는 Edge Function이 PostgREST로 받던 모양 그대로 —
-   * `slug=in.(…)` 필터, `order=slug,view_date`, PostgREST가 응답을 만드는 `json_agg` — 으로 비교 대상을 만든다.
-   */
-  async function bothRpcs(
+  /** service_role(Edge Function)로 get_posts_trends를 부른다. */
+  async function trendsRpc(
     tx: Transaction,
     slugs: readonly string[] | null,
-  ): Promise<{ legacy: TrendRow[]; single: TrendRow[] }> {
-    const param = slugs === null ? null : [...slugs];
+  ): Promise<PostTrendRow[]> {
     await tx.exec('set local role service_role');
-    const legacy = await tx.query<{ rows: TrendRow[] }>(
-      `select coalesce(json_agg(t order by t.slug, t.view_date), '[]'::json) as rows
-       from public.get_all_posts_trends() t
-       where $1::text[] is null or t.slug = any ($1::text[])`,
-      [param],
-    );
-    const single = await tx.query<{ rows: TrendRow[] }>(
+    const result = await tx.query<{ rows: PostTrendRow[] }>(
       'select public.get_posts_trends($1::text[]) as rows',
-      [param],
+      [slugs === null ? null : [...slugs]],
     );
     await tx.exec('reset role');
-    return { legacy: legacy.rows[0].rows, single: single.rows[0].rows };
+    return result.rows[0].rows;
   }
 
   /** 시드를 심고 조회한 뒤 되돌린다 — 다른 테스트가 이 행을 보지 않게. */
@@ -194,30 +181,52 @@ describe('get_posts_trends', () => {
     });
   }
 
-  test.each([
-    ['필터 없음(null)', null],
-    ['일부 slug', ['trend-a', 'trend-v3.0']],
-    ['한글·공백·괄호가 든 경로 slug', ['trend/한글 경로 (1편)']],
-    ['창 밖 기록뿐인 slug', ['trend-old']],
-    ['기록 없는 slug', ['no-such-post']],
-    ['빈 목록', []],
-  ])('%s: 옛 RPC를 PostgREST로 받던 결과와 같다', async (_, slugs) => {
-    const { legacy, single } = await inSeededTransaction(tx =>
-      bothRpcs(tx, slugs),
+  test('옛 get_all_posts_trends는 지워졌다', async () => {
+    const { rows } = await db.query<{ gone: boolean }>(
+      "select to_regprocedure('public.get_all_posts_trends()') is null as gone",
     );
-    expect(single).toStrictEqual(legacy);
+    expect(rows[0].gone).toBe(true);
+  });
+
+  test('slug 목록을 주면 그 글만, 주지 않으면(null) 기록이 있는 모든 글을 싣는다', async () => {
+    const { everything, picked, none, empty } = await inSeededTransaction(
+      async tx => ({
+        // 같은 DB에 다른 테스트가 남긴 기록(increment_view_count)이 섞이므로 이 테스트의 시드만 본다.
+        everything: new Set(
+          (await trendsRpc(tx, null))
+            .map(r => r.slug)
+            .filter(slug => slug.startsWith('trend')),
+        ),
+        picked: new Set(
+          (await trendsRpc(tx, ['trend-a', 'trend-v3.0'])).map(r => r.slug),
+        ),
+        none: await trendsRpc(tx, ['no-such-post']),
+        empty: await trendsRpc(tx, []),
+      }),
+    );
+    // 창 밖 기록뿐인 trend-old는 어느 쪽에도 없다.
+    expect(everything).toStrictEqual(
+      new Set(['trend-a', 'trend-b', 'trend/한글 경로 (1편)', 'trend-v3.0']),
+    );
+    expect(picked).toStrictEqual(new Set(['trend-a', 'trend-v3.0']));
+    expect(none).toStrictEqual([]);
+    expect(empty).toStrictEqual([]);
+  });
+
+  test('한글·공백·괄호가 든 경로 slug도 그대로 거른다', async () => {
+    const rows = await inSeededTransaction(tx =>
+      trendsRpc(tx, ['trend/한글 경로 (1편)']),
+    );
+    expect(rows.map(r => r.slug)).toStrictEqual(['trend/한글 경로 (1편)']);
   });
 
   test('KST 날짜로 묶고, 365일 창의 첫 순간부터 싣는다', async () => {
     const { rows, dates } = await inSeededTransaction(async (tx, dates) => {
-      const { single } = await bothRpcs(tx, [
-        'trend-a',
-        'trend-b',
-        'trend-old',
-      ]);
-      return { rows: single, dates };
+      const rows = await trendsRpc(tx, ['trend-a', 'trend-b', 'trend-old']);
+      return { rows, dates };
     });
-    // 비교 테스트만으로는 두 함수가 함께 틀려도(둘 다 빈 결과 등) 통과한다 — 값을 직접 잠근다.
+    // Edge Function·클라이언트가 이 json을 좁히는 가드가 실제 RPC 출력을 받아들인다(bigint는 JSON number).
+    expect(isPostTrendRows(rows)).toBe(true);
     expect(rows).toStrictEqual([
       { slug: 'trend-a', view_date: dates.first, view_count: 1 },
       { slug: 'trend-a', view_date: dates.beforeMidnight, view_count: 1 },

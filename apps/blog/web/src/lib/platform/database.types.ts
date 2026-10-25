@@ -58,14 +58,6 @@ export type Database = {
           total_views: number;
         }[];
       };
-      get_all_posts_trends: {
-        Args: never;
-        Returns: {
-          slug: string;
-          view_count: number;
-          view_date: string;
-        }[];
-      };
       get_post_dow_distribution: {
         Args: { slug_input: string };
         Returns: {
