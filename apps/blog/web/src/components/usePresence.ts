@@ -44,6 +44,8 @@ function transformTransitionMs(el: Element): number {
  * - `closing` 동안 패널은 퇴장 스타일(쓰는 쪽의 `data-closing`)로 움직이고, `transitionend`가
  *   오면 `closed`가 된다. 이벤트가 끝내 오지 않아도(요소가 숨겨지는 등) 계산된 시간 +
  *   여유 뒤의 백스톱이 닫는다 — Astryx `useDrawerDialogPresence`와 같은 구조다.
+ * - 열리는 중에 닫으면 열림 전환이 취소되며 `transitioncancel`이 온다. 퇴장의 끝은 `transitionend`와
+ *   백스톱만으로 판정한다 — 취소를 끝으로 세면 시트가 되돌아가지 않고 사라진다.
  * - 움직임 줄이기에서는 시간 토큰이 0.01ms라 전환이 즉시 끝나고 이벤트는 그대로 온다.
  */
 export function usePresence(panelRef: RefObject<HTMLElement | null>): {
@@ -66,7 +68,7 @@ export function usePresence(panelRef: RefObject<HTMLElement | null>): {
   useEffect(() => {
     const panel = panelRef.current;
     if (state !== 'closing' || panel === null) return;
-    // 다시 열린 뒤 늦게 온 취소 이벤트가 열린 시트를 닫지 않게, 닫는 중일 때만 닫는다.
+    // 다시 열린 뒤 늦게 온 이벤트가 열린 시트를 닫지 않게, 닫는 중일 때만 닫는다.
     const finish = () =>
       setState(current => (current === 'closing' ? 'closed' : current));
     const onEnd = (event: TransitionEvent) => {
@@ -74,15 +76,16 @@ export function usePresence(panelRef: RefObject<HTMLElement | null>): {
         finish();
       }
     };
+    // `transitioncancel`은 듣지 않는다 — 열리는 중에 닫으면 진행 중이던 열림 전환이 취소되며
+    // 그 이벤트가 오는데, 이것을 퇴장 끝으로 세면 시트가 되돌아가지 않고 그 자리에서
+    // 언마운트된다. 퇴장 전환이 끝내 오지 않는 경우는 아래 백스톱이 닫는다.
     panel.addEventListener('transitionend', onEnd);
-    panel.addEventListener('transitioncancel', onEnd);
     const backstop = setTimeout(
       finish,
       transformTransitionMs(panel) + BACKSTOP_BUFFER_MS,
     );
     return () => {
       panel.removeEventListener('transitionend', onEnd);
-      panel.removeEventListener('transitioncancel', onEnd);
       clearTimeout(backstop);
     };
   }, [state, panelRef]);

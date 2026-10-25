@@ -104,9 +104,27 @@ describe('usePresence', () => {
     expect(state()).toBe('closed');
   });
 
-  // 다시 열면 퇴장 전환이 취소돼 transitioncancel이 온다. 그 이벤트가 리스너 정리(effect)보다
-  // 먼저 도착하는 경우를 한 act 안에서 만든다 — 열기와 취소가 같은 배치로 처리된다.
-  test('닫는 중에 다시 열면, 그 사이 도착한 취소 이벤트가 시트를 닫지 않는다', () => {
+  // 열리는 중에 닫으면 진행 중이던 열림 전환이 취소돼 transitioncancel이 온다. 그것은 퇴장의
+  // 끝이 아니다 — 시트는 되돌아가는 동안 마운트돼 있어야 하고, 퇴장의 transitionend로만 닫힌다.
+  test('닫는 중에 온 취소 이벤트는 퇴장의 끝이 아니다 — 시트는 transitionend까지 남는다', () => {
+    render(<Sheet panelStyle={SHEET_TRANSITION} />);
+    click('열기');
+    click('닫기');
+    const dialog = screen.getByRole('dialog', { name: '시트' });
+
+    act(() => {
+      dialog.dispatchEvent(transitionEvent('transitioncancel', 'transform'));
+    });
+    expect(state()).toBe('closing');
+    expect(screen.getByRole('dialog', { name: '시트' })).toBe(dialog);
+
+    act(() => {
+      dialog.dispatchEvent(transitionEvent('transitionend', 'transform'));
+    });
+    expect(state()).toBe('closed');
+  });
+
+  test('닫는 중에 다시 열면 열린 채로 남는다 — 그 사이 도착한 취소 이벤트도 닫지 못한다', () => {
     render(<Sheet panelStyle={SHEET_TRANSITION} />);
     click('열기');
     click('닫기');
