@@ -18,7 +18,7 @@ import { railGutter } from '../Rail';
 import { siteHeaderStyle } from '../siteHeader';
 import { MAIN_ID, skipLink } from '../skipLink';
 import { ThemeToggle } from '../ThemeToggle';
-import { WORDMARK } from '../wordmark';
+import { WORDMARK, wordmarkLink } from '../wordmark';
 import { AdminGuard } from './AdminGuard';
 import { pillBadge } from './adminStyles';
 
@@ -132,17 +132,8 @@ function AdminBar() {
         >
           <Link
             href={ADMIN_PATH}
-            className={css({
+            className={css(wordmarkLink, {
               display: { base: 'none', md: 'inline-flex' },
-              alignItems: 'center',
-              minH: '8',
-              fontFamily: 'mono',
-              fontWeight: 'medium',
-              fontSize: '[15px]',
-              color: 'ink.950',
-              whiteSpace: 'nowrap',
-              transition: 'opacity',
-              _hover: { opacity: '0.7' },
             })}
           >
             {WORDMARK}

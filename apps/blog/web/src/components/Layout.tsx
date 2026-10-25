@@ -9,7 +9,7 @@ import { css, cx } from '@blog/styled-system/css';
 import type { ReactNode } from 'react';
 
 import { headerIconButton, iconButton } from './iconButton';
-import { WORDMARK } from './wordmark';
+import { WORDMARK, wordmarkLink } from './wordmark';
 import { railGutter } from './Rail';
 import { SOCIAL_LINKS, ShellLink } from './shellLinks';
 import { siteHeaderStyle } from './siteHeader';
@@ -107,21 +107,7 @@ export const Layout = ({ children }: LayoutProps) => {
           )}
         >
           <div className={css({ display: 'flex', alignItems: 'center' })}>
-            <TransitionLink
-              href={HOME_PATH}
-              className={css({
-                display: 'inline-flex',
-                alignItems: 'center',
-                minH: '8',
-                fontFamily: 'mono',
-                fontWeight: 'medium',
-                fontSize: '[15px]',
-                color: 'ink.950',
-                whiteSpace: 'nowrap',
-                transition: 'opacity',
-                _hover: { opacity: '0.7' },
-              })}
-            >
+            <TransitionLink href={HOME_PATH} className={css(wordmarkLink)}>
               {WORDMARK}
             </TransitionLink>
           </div>
