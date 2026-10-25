@@ -16,9 +16,15 @@ const SHEET_TRANSITION: CSSProperties = {
   transitionDelay: '0s, 0s',
 };
 
-function Sheet({ panelStyle }: { panelStyle?: CSSProperties }) {
+function Sheet({
+  panelStyle,
+  property = 'transform',
+}: {
+  panelStyle?: CSSProperties;
+  property?: string;
+}) {
   const panelRef = useRef<HTMLDivElement>(null);
-  const { state, open, close } = usePresence(panelRef);
+  const { state, open, close, closeNow } = usePresence(panelRef, property);
   return (
     <>
       <output>{state}</output>
@@ -27,6 +33,9 @@ function Sheet({ panelStyle }: { panelStyle?: CSSProperties }) {
       </button>
       <button type="button" onClick={close}>
         닫기
+      </button>
+      <button type="button" onClick={closeNow}>
+        바로 닫기
       </button>
       {state !== 'closed' && (
         <div ref={panelRef} role="dialog" aria-label="시트" style={panelStyle}>
@@ -137,5 +146,49 @@ describe('usePresence', () => {
 
     expect(state()).toBe('open');
     expect(screen.getByRole('dialog', { name: '시트' })).toBe(dialog);
+  });
+
+  test('듣는 속성은 쓰는 쪽이 고른다 — clip-path 전환의 끝만 센다', () => {
+    render(
+      <Sheet
+        property="clip-path"
+        panelStyle={{
+          transitionProperty: 'opacity, clip-path',
+          transitionDuration: '0.2s, 175ms',
+        }}
+      />,
+    );
+    click('열기');
+    click('닫기');
+    const dialog = screen.getByRole('dialog', { name: '시트' });
+
+    act(() => {
+      dialog.dispatchEvent(transitionEvent('transitionend', 'transform'));
+      dialog.dispatchEvent(transitionEvent('transitionend', 'opacity'));
+    });
+    expect(state()).toBe('closing');
+
+    act(() => {
+      dialog.dispatchEvent(transitionEvent('transitionend', 'clip-path'));
+    });
+    expect(state()).toBe('closed');
+  });
+
+  test('닫는 속성에 전환이 없으면 닫자마자 언마운트한다 — 다른 속성의 전환은 세지 않는다', () => {
+    render(<Sheet property="clip-path" panelStyle={SHEET_TRANSITION} />);
+    click('열기');
+    click('닫기');
+
+    expect(state()).toBe('closed');
+  });
+
+  test('바로 닫기는 퇴장 전환을 건너뛴다', () => {
+    render(<Sheet panelStyle={SHEET_TRANSITION} />);
+    click('열기');
+
+    click('바로 닫기');
+
+    expect(state()).toBe('closed');
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 });
