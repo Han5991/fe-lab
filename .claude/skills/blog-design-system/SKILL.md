@@ -1,6 +1,6 @@
 ---
 name: blog-design-system
-description: 블로그(apps/blog/web)와 blog-preset.ts의 시각 시스템 단일 출처 — 컬러 semanticToken(라이트/다크, 대비비, 잉크에서 파생한 accent와 색 대신 쓰는 구분 수단), 타이포그래피(mono/sans를 어디에 쓰는지, 글자 역할 textStyles), 라운드·보더, 그림자(떠 있는 표면의 overlay.* — 판정 기준과 표면별 단계), 모션(Astryx 시간·곡선 토큰, 움직임 줄이기, 페이지 전환(이동 방향 — 깊이 들어가면 왼쪽으로·돌아오면 오른쪽으로 미끄러짐)·공유 요소(글 카드 ↔ 글 상세)·오버레이·누름 적용표), 인터랙션 상태(hover·누름·초점·비활성 — `_hover`가 터치에서는 누르는 동안이라는 조건, `pressButton`·`pressCard` 프리셋, 종류별 누름 모양, `NO_LOCAL_INTERACTION` lint), 레일 그리드(railWide/railText/railForm와 거터, 섹션 간격), 셸(헤더·푸터의 슬롯·반응형·헤더 높이 파생), 버튼(actionButton·iconButton의 tone·size)과 칩, 카드(글 카드·썸네일 행·메타 줄 — 링크 하나 구조, 커버 비율, 이미지 우선순위), 홈 구성, 코드 블록 테마(code.* 토큰, rehypeCodeMeta 순서). 블로그 UI 컴포넌트나 packages/@blog/preset/src/blog-preset.ts를 고칠 때, 색·간격·폭·글꼴을 정하거나 "이 값 어디서 왔지" 싶을 때 사용한다. 글 본문에 넣는 커스텀 태그(diagram·dialogue·metrics·callout 등)는 이 스킬이 아니라 blog-components 스킬을 볼 것.
+description: 블로그(apps/blog/web)와 blog-preset.ts의 시각 시스템 단일 출처 — 컬러 semanticToken(라이트/다크, 대비비, 잉크에서 파생한 accent와 색 대신 쓰는 구분 수단), 타이포그래피(mono/sans를 어디에 쓰는지, 글자 역할 textStyles), 라운드·보더, 그림자(떠 있는 표면의 overlay.* — 판정 기준과 표면별 단계), 모션(Astryx 시간·곡선 토큰, 움직임 줄이기, 페이지 전환(이동 방향 — 깊이 들어가면 왼쪽으로·돌아오면 오른쪽으로 미끄러짐)·공유 요소(글 카드 ↔ 글 상세)·오버레이·누름 적용표), 인터랙션 상태(hover·누름·초점·비활성 — `_hover`가 터치에서는 누르는 동안이라는 조건, `pressButton`·`pressCard` 프리셋, 종류별 누름 모양, 카드의 키보드 초점 틴트, `NO_LOCAL_INTERACTION` lint), 레일 그리드(railWide/railText/railForm와 거터, 섹션 간격), 셸(헤더·푸터의 슬롯·반응형·헤더 높이 파생), 버튼(actionButton·iconButton의 tone·size)과 칩, 카드(글 카드·썸네일 행·메타 줄 — 링크 하나 구조, 커버 비율, 이미지 우선순위), 홈 구성, 코드 블록 테마(code.* 토큰, rehypeCodeMeta 순서). 블로그 UI 컴포넌트나 packages/@blog/preset/src/blog-preset.ts를 고칠 때, 색·간격·폭·글꼴을 정하거나 "이 값 어디서 왔지" 싶을 때 사용한다. 글 본문에 넣는 커스텀 태그(diagram·dialogue·metrics·callout 등)는 이 스킬이 아니라 blog-components 스킬을 볼 것.
 ---
 
 # 블로그 디자인 시스템
@@ -347,7 +347,7 @@ preset-panda의 durations·easings·animations·keyframes를 빼서 `transitionD
 | 목차 바텀시트      | 목차 버튼 자리에서 펼쳐짐 — 버튼 크기의 원으로 잘린 시트가 medium·standard로 열리고(`clip-path`), 닫힐 때 fast·exit로 같은 길을 접힘. 스크림은 medium, 닫힐 때 linear. 접히는 동안 마운트 유지                                                                                                                                                                                                  |
 | 목차 FAB           | 푸터가 화면에 들어오면 푸터 윗변이 바닥에서 버튼 아랫변(80px)에 닿을 때까지 옅어져 사라진다 — 스크롤에 묶인 view timeline(CSS만). 미지원 브라우저는 그대로 남는다                                                                                                                                                                                                                               |
 | 맨 위로 FAB        | 등장만 — 투명도 0·95%에서(fast). 사라짐은 즉시                                                                                                                                                                                                                                                                                                                                                  |
-| 누름               | `pressButton` — 마우스로 누르는 동안 98%(fast), 카드는 `pressCard` 99%. 터치는 크기 없이 hover 모양을 누르는 동안 보인다(아래 "인터랙션 상태")                                                                                                                                                                                                                                                  |
+| 누름               | `pressButton` — 마우스로 누르는 동안 98%(fast), 글 카드·이전·다음 카드는 `pressCard` 99%. 터치는 크기 없이 hover 모양을 누르는 동안 보인다(아래 "인터랙션 상태")                                                                                                                                                                                                                                |
 | 스켈레톤(admin)    | 투명도 1↔0.5 왕복(mediumMax, linear). 움직임 줄이기면 멈춘다. 데이터가 드러날 때 제자리에서 걷힌다(VT `out`)                                                                                                                                                                                                                                                                                    |
 | admin 진입         | 데이터가 드러날 때 머리·카드가 8px 아래에서 떠오른다(`page-enter`, medium·standard) — 순서마다 `stagger`씩 늦게, 대시보드는 줄+칸 순서                                                                                                                                                                                                                                                          |
 | admin 페이지 이동  | 대시보드↔분석은 각 페이지의 `PageBoundary`(영역 전체를 감싼 레이아웃 경계 안). 관리자 바는 `admin-bar`로 따로 찍혀 페이지 위에 남는다(불투명 `surface.base`). 모달 시트가 떠 있는 동안은 이름을 뗀다(시트 아래 제자리)                                                                                                                                                                          |
@@ -555,11 +555,11 @@ type은 `src/shared/viewTransitions.ts`, 감싸개는 `src/components/shared/Pos
 **헤더** — 높이 48(`siteHeader.ts`의 `SITE_HEADER_HEIGHT`), **아래 구분선 없음**, `paper.50` 80% + 흐림
 12px, sticky. 세 슬롯이다.
 
-| 슬롯   | 내용                                                         | 모양                                                                     |
-| :----- | :----------------------------------------------------------- | :----------------------------------------------------------------------- |
-| 왼쪽   | 워드마크 `sangwook.dev`                                      | mono 15 medium `ink.950`, 높이 32, 좌우 여백 없음(글자가 거터 선에 선다) |
-| 가운데 | 내비 글 · 시리즈 · About(`NavLinks`, `aria-label` 주요 메뉴) | `label`, 안쪽 6/12(md 미만 6/8), `element` 라운드, 사이 4                |
-| 오른쪽 | 검색 · 테마 · GitHub · RSS                                   | `headerIconButton`(ghost, 글리프 18), 사이 2                             |
+| 슬롯   | 내용                                                         | 모양                                                                                                                                                        |
+| :----- | :----------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 왼쪽   | 워드마크 `sangwook.dev`                                      | mono 15 medium `ink.950`, 높이 32, 좌우 여백 없음(글자가 거터 선에 선다). 스타일은 `wordmark.ts`의 `wordmarkLink` 하나를 사이트 헤더와 admin 바가 나눠 쓴다 |
+| 가운데 | 내비 글 · 시리즈 · About(`NavLinks`, `aria-label` 주요 메뉴) | `label`, 안쪽 6/12(md 미만 6/8), `element` 라운드, 사이 4                                                                                                   |
+| 오른쪽 | 검색 · 테마 · GitHub · RSS                                   | `headerIconButton`(ghost, 글리프 18), 사이 2                                                                                                                |
 
 - md 이상은 `1fr auto 1fr` 격자라 내비가 화면 가운데에 선다. **md 미만은 격자를 끄고 양끝 정렬**,
   GitHub·RSS를 숨기고(푸터에 같은 아이콘이 있다) 아이콘 28·내비 좌우 8로 줄인다 — 360px 기기에서
@@ -597,18 +597,21 @@ type은 `src/shared/viewTransitions.ts`, 감싸개는 `src/components/shared/Pos
 | `_hover` · `_groupHover` | `@media (hover: hover)`에서는 올린 동안, `(hover: none)`(터치)에서는 누르는 동안(`:active`). 터치의 탭 뒤 `:hover`가 남는 고착은 이 조건이 막는다 |
 | `_press` · `_groupPress` | 모든 포인터에서 누르는 동안 — hover와 **다른** 모양이 필요한 자리만(카드 커버 hairline, 검색 결과 행)                                             |
 | `_pressScale`            | 누르는 동안의 **크기**. `(hover: hover) and (pointer: fine)`에서만, `:disabled`·`aria-disabled` 제외                                              |
+| `_groupKeyboardFocus`    | 그룹 자신이나 안쪽에 **키보드 초점**(`:focus-visible`)이 있는 동안 — 카드의 제목 링크가 초점을 들면 커버 틴트가 켜진다. `:focus-within`이 아니다  |
 | `:focus-visible`         | globalCss `FOCUS_RING` 하나(2px `accent.solid`, offset 3, `inner`)                                                                                |
 
-| 종류                            | hover                    | 누름(마우스)                                  | 누름(터치)                 | 쓰는 것                                    |
-| :------------------------------ | :----------------------- | :-------------------------------------------- | :------------------------- | :----------------------------------------- |
-| 버튼(행동·아이콘·FAB)           | 면 한 단계               | hover 면 + 98%                                | hover 면                   | `pressButton`(`actionButton`·`iconButton`) |
-| 칩 · 누르는 배지                | 면 한 단계               | hover 면 + 98%                                | hover 면                   | `pressButton`(`chip`·`tagBadge`)           |
-| 세그먼트 · 탭 · 목록 행 · 링크  | 색·밑줄·글자색           | hover와 같음, 크기 없음                       | hover 모양                 | 없음 — `_hover` 값만                       |
-| 글 카드 · 썸네일 행             | 커버 `accent.muted` 틴트 | 틴트 + 커버 hairline `ink.borderStrong` + 99% | 틴트 + hairline(크기 없음) | `pressCard`·`cardParts`                    |
-| 선택 면이 따로 있는 행(검색)    | JS 선택(올리면 선택)     | 선택 면                                       | 선택 면                    | `pressOption`                              |
-| 누를 수 없는 상자(mermaid·코드) | 없음                     | 없음                                          | 없음                       | —                                          |
+| 종류                            | hover                           | 누름(마우스)                                  | 누름(터치)                 | 쓰는 것                                    |
+| :------------------------------ | :------------------------------ | :-------------------------------------------- | :------------------------- | :----------------------------------------- |
+| 버튼(행동·아이콘·FAB)           | 면 한 단계                      | hover 면 + 98%                                | hover 면                   | `pressButton`(`actionButton`·`iconButton`) |
+| 칩 · 누르는 배지                | 면 한 단계                      | hover 면 + 98%                                | hover 면                   | `pressButton`(`chip`·`tagBadge`)           |
+| 세그먼트 · 탭 · 목록 행 · 링크  | 색·밑줄·글자색                  | hover와 같음, 크기 없음                       | hover 모양                 | 없음 — `_hover` 값만                       |
+| 글 카드 · 썸네일 행             | 커버 `accent.muted` 틴트        | 틴트 + 커버 hairline `ink.borderStrong` + 99% | 틴트 + hairline(크기 없음) | `pressCard`·`cardParts`                    |
+| 글 하단 이전·다음 카드          | 카드 면 `paper.200` + 커버 틴트 | 위와 같음 + 99%                               | 면 + 틴트(크기 없음)       | `pressCard`·`cardParts`(커버)              |
+| 선택 면이 따로 있는 행(검색)    | JS 선택(올리면 선택)            | 선택 면                                       | 선택 면                    | `pressOption`                              |
+| 누를 수 없는 상자(mermaid·코드) | 없음                            | 없음                                          | 없음                       | —                                          |
 
-- **크기는 버튼·칩·카드에만.** 세그먼트는 칸 뒤에서 미끄러지는 표식 면과 어긋나고, 인라인 링크는 transform이
+- **크기는 버튼·칩·카드에만.** 면이 없는 글자 버튼(검색 지우기·admin 정렬 머리)도 버튼이라 `pressButton`이다 —
+  링크(`<a>`로 글자만 있는 것)만 크기가 없다. 세그먼트는 칸 뒤에서 미끄러지는 표식 면과 어긋나고, 인라인 링크는 transform이
   걸리지 않으며(비대체 인라인 요소), 터치의 `:active`는 스크롤을 시작하는 손가락에도 칠해져(Astryx와 같은 판단)
   터치에는 크기를 주지 않는다. 카드는 상자가 커서 99%다(98%면 가장자리가 8px 움직인다). **카드의 눌린 크기는 글
   상세 전환을 해치지 않는다** — 공유 요소 그룹은 조상의 transform을 그룹 transform으로 받아 눌린 모양에서 이어
@@ -619,7 +622,11 @@ type은 `src/shared/viewTransitions.ts`, 감싸개는 `src/components/shared/Pos
 - 그림자 · 글로우 · 그라데이션 · 떠오르기(translateY) 없음. 전환은 `pressButton`의 `common`(색+크기)이나
   `colors`다. 움직임 줄이기는 시간 토큰이 처리한다
 - 비활성: `pressButton`이 opacity .5 · `cursor: not-allowed`를 주고 `_pressScale`·`_press`를 뺀다. hover 면은
-  비활성에도 남는다 — 공개 화면에는 비활성 버튼이 없어 아직 맞출 일이 없다
+  비활성에도 남는다 — 공개 화면에는 비활성 버튼이 없어 아직 맞출 일이 없다. 비활성은 한 값이다: admin 로그인
+  버튼은 프리셋 그대로이고, 새로고침 버튼은 받는 중이라는 뜻으로 커서만 `wait`로 바꾼다(흐림은 같다)
+- **`transform`을 이미 쓰는 요소는 위치를 `translate`로 옮긴다.** 인라인 `transform`(QuoteLink의 화면 안
+  가운데 맞춤)은 클래스의 `scale(0.98)`을 덮어 누름이 조용히 꺼진다. 개별 속성 `translate`는 `transform`과
+  겹쳐 적용되고 `common`의 전환 대상이 아니라서, 위치가 스크롤·폭 보간을 따라 바뀌어도 미끄러지지 않는다
 - 탭 하이라이트는 Panda preflight가 투명으로 지운다(`-webkit-tap-highlight-color`) — 터치 피드백은 `_hover`가
   맡는다
 - **hover 갈래는 주 입력(`hover`)으로 가른다 — 의도한 절충이다.** 주 입력이 터치로 보고되는 기기(iPad +
@@ -630,11 +637,16 @@ type은 `src/shared/viewTransitions.ts`, 감싸개는 `src/components/shared/Pos
   iOS Safari·Android Chrome에서 목록 스크롤을 확인하고 깜빡임이 보이면 여기에 적고 다시 정한다
 - **초점 링은 컴포넌트가 다시 정하지 않는다.** `outline: none`·`_focus`·`_focusVisible`로 지우거나 바꾸지 않는다
   (utilities 레이어가 base 레이어의 `:focus-visible`을 이겨 링이 사라진다). 입력은 감싸는 상자의 `_focusWithin`
-  보더를 함께 둘 수 있다(`ArchiveSearchBox`). 카드는 링이 제목 상자만 두른다 — 카드 전체로 옮기려면 `FOCUS_RING`을
-  `panda.config.ts` 밖의 값 모듈로 빼야 한다
-- `_active`·`_focus`·`_focusVisible`·`_press*`는 허용 파일(`INTERACTION_FILES` — 프리셋인 `interaction.ts`·
-  `cardParts.ts`, 두 셸이 함께 쓰는 건너뛰기 링크 `skipLink.ts`) 밖에서 쓰면 lint
-  (`NO_LOCAL_INTERACTION`)가 막는다. 버튼 레시피 파일도 허용 파일이 아니라 프리셋(`pressButton`)을 펼친다.
+  보더를 함께 둘 수 있다(`ArchiveSearchBox`). 카드는 링이 제목 상자만 두르고, 키보드 초점이 오면 커버 틴트가 hover 때와
+  같이 켜져(`_groupKeyboardFocus`) 어느 카드인지 면으로도 보인다 — 마우스·터치로 누른 링크는 `:focus-visible`이
+  아니라 켜지지 않는다. 링을 카드 전체로 옮기려면 `FOCUS_RING`을 `panda.config.ts` 밖의 값 모듈로 빼야 한다
+- 누름·초점 조건은 허용 파일(`INTERACTION_FILES` — 프리셋인 `interaction.ts`·`cardParts.ts`, 두 셸이 함께 쓰는
+  건너뛰기 링크 `skipLink.ts`) 밖에서 쓰면 lint(`NO_LOCAL_INTERACTION`)가 막는다 — `_active`·`_groupActive`·
+  `_peerActive`, `_focus`·`_focusVisible`·`_groupFocus*`·`_peerFocus*`, `_press*`, `_groupKeyboardFocus`,
+  `_pointerCoarse`, 그리고 `:hover`·`:active`·`:focus`·`:focus-visible`을 선택자 문자열(템플릿 리터럴 키 포함)로
+  직접 적은 키다. `:hover`를 문자열로 적으면 Panda 조건을 거치지 않아 터치에서 탭 뒤에도 hover가 남는다(글 본문
+  표의 `'& tr:hover td'`가 그랬다). `_hover`·`_groupHover`·`_focusWithin`은 컴포넌트가 쓰는 조건이라 막지
+  않는다. 버튼 레시피 파일도 허용 파일이 아니라 프리셋(`pressButton`)을 펼친다.
   새 종류의 누름이 필요하면 `interaction.ts`에 프리셋으로 더한다
 
 ## 버튼
@@ -728,7 +740,7 @@ Astryx BlogCard·BlogFeatureCard·BlogShowcase의 블로그 판. `src/components
 - 커버 틀은 `paper.100` 면에 hairline. hairline은 틀의 보더가 아니라 이미지 위에 덮어 그린 선이다
   (`_before`, 라운드는 틀을 따른다) — 이미지가 틀 끝까지 차야 글 상세로 이어지는 전환에서 두 스냅샷이
   겹친다(모션 절). hover는 커버 위 `accent.muted` 틴트(`group` hover) — 밑줄은 쓰지 않는다. 누르는 동안은 틴트에 커버
-  hairline이 `ink.borderStrong`으로 진해지고, 마우스는 카드 뿌리가 99%로 줄어든다(위 "인터랙션 상태")
+  hairline이 `ink.borderStrong`으로 진해지고, 마우스는 카드 뿌리가 99%로 줄어든다. 키보드 초점이 제목 링크에 오면 hover와 같은 틴트가 켜진다(위 "인터랙션 상태")
 - **이미지 우선순위는 `priority` 하나다** — 첫 화면에서 가장 큰 이미지(LCP 후보)만 `eager` +
   `fetchPriority="high"`, 나머지는 `lazy`. 여러 장에 걸면 화면 밖 이미지까지 받아 LCP가 밀린다
 - 메타 줄은 mono `supporting`, `ink.700`, 항목 사이 세로선(1px × 0.75em, `ink.borderStrong`,
