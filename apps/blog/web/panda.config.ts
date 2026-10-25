@@ -7,6 +7,7 @@ import {
   POST_OPEN_TRANSITION_TYPE,
   POST_SHARED,
   POST_SHARED_SIDE,
+  THEME_TRANSITION_TYPE,
   VIEW_TRANSITION,
 } from './src/shared/viewTransitions';
 
@@ -303,7 +304,7 @@ export default defineConfig({
       // 매끄럽다. 헤더는 이름이 있어 루트와 따로 찍히므로 같은 시간을 준다(안 주면 UA 기본
       // 0.25s ease로 루트와 어긋난다). 그룹(위치·크기 보간)까지 토큰으로 줘야 움직임 줄이기에서
       // UA 기본 0.25s가 남지 않는다. 내비게이션에서도 같은 규칙이 루트(페이지 밖 — 푸터·고정
-      // 버튼)와 헤더의 크로스페이드를 맡는다. (useTheme는 움직임 줄이기·미지원 브라우저에서
+      // 버튼)의 크로스페이드를 맡는다(헤더는 아래 규칙대로 테마 전환에서만 크로스페이드한다). (useTheme는 움직임 줄이기·미지원 브라우저에서
       // 즉시 전환하므로 그때는 이 의사 요소가 생기지 않는다.)
       [`::view-transition-group(root), ::view-transition-old(root), ::view-transition-new(root), ::view-transition-group(${VIEW_TRANSITION.siteHeader}), ::view-transition-old(${VIEW_TRANSITION.siteHeader}), ::view-transition-new(${VIEW_TRANSITION.siteHeader})`]:
         {
@@ -319,6 +320,20 @@ export default defineConfig({
         zIndex: VT_STACK.siteHeader,
         bg: 'paper.50',
       },
+      // 헤더는 테마 전환에서만 크로스페이드한다. 페이지 이동 사이의 헤더는 같은 헤더다 — 바뀌는 건 내비
+      // 라벨의 현재 위치뿐이고 표식 막대는 이름이 따로라 스스로 미끄러진다. 같은 두 스냅샷을 겹쳐
+      // 페이드하면 비트맵 합성이라 중간에 글자가 묽어져, 이동할 때마다 로고(sangwook.dev)가 연해졌다
+      // 돌아왔다. 옛 스냅샷은 지우고 새 스냅샷만 그대로 둔다(둘을 겹친 채 애니메이션만 끄면 UA의
+      // plus-lighter 합성이 밝게 뜬다). type을 모르는 브라우저는 이 규칙을 통째로 버려 예전처럼
+      // 크로스페이드한다.
+      [`:root:not(:active-view-transition-type(${THEME_TRANSITION_TYPE}))::view-transition-old(${VIEW_TRANSITION.siteHeader})`]:
+        {
+          display: 'none',
+        },
+      [`:root:not(:active-view-transition-type(${THEME_TRANSITION_TYPE}))::view-transition-new(${VIEW_TRANSITION.siteHeader})`]:
+        {
+          animationName: 'none',
+        },
       // ── 내비 표식 — 헤더 내비 링크마다 있는 빈 span(NavLinks) ──
       // 모양·자리·이름을 전부 여기서 준다. NavLinks는 모든 공개 페이지에 실리는 클라이언트 컴포넌트라
       // span에 Panda `css()`와 인라인 이름을 두면 첫 로드 JS가 108B(gzip) 늘었다 — 스타일 객체가 JS에
