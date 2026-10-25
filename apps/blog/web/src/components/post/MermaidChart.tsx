@@ -91,13 +91,7 @@ export const mermaidContainerStyle = css({
   display: 'flex',
   justifyContent: 'center',
   overflow: 'auto',
-  transition: 'colors',
-  // hover 강조도 그림자·들어올리기가 아니라 보더 톤으로만 준다 — 본문 안 상자라 그림자를
-  // 두지 않는다(그림자는 떠 있는 표면에만, AGENTS.md §9).
-  _hover: {
-    borderColor: 'ink.borderStrong',
-    bg: 'paper.50',
-  },
+  // 누를 수 없는 상자라 hover·누름 모양이 없다(blog-design-system 스킬 "인터랙션 상태").
 });
 
 /** 문법 오류로 못 그렸을 때 빈 상자 대신 원문을 보여 주는 자리. */

@@ -7,6 +7,7 @@ import {
   type PostData,
   type PublicSearchIndexEntry,
   SEARCH_INDEX_PATH,
+  seriesDisplayName,
   type SeriesMeta,
 } from '../post/index.ts';
 import { resolvePostSet } from './artifacts.ts';
@@ -32,7 +33,9 @@ export function buildPublicSearchIndex(
     excerpt: p.excerpt || '',
     tags: p.tags || [],
     series: p.series || null,
-    seriesTitle: p.series ? (resolveSeriesMeta(p.series)?.title ?? null) : null,
+    seriesTitle: p.series
+      ? seriesDisplayName(p.series, resolveSeriesMeta(p.series))
+      : null,
     contentPreview: extractPlainText(p.content, { dropCode: true }).slice(
       0,
       CONTENT_PREVIEW_CHARS,

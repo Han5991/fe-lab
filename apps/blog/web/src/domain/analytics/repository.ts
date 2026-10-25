@@ -19,28 +19,10 @@ function toTopPostRows(
 }
 
 /**
- * 조회수 상위 `limit`개 — 이 빌드의 slug 안에서 서버가 고른다(받은 뒤 거르면 가짜 slug가
- * 칸을 차지한다). 필터가 URL에 실려 글 수에 비례해 길어지므로(45편 ≈ 1.6KB), 한도에
- * 가까워지면 slug 목록을 본문으로 받는 RPC로 옮긴다.
- */
-export async function getTopPosts(
-  limit: number,
-  slugs: readonly string[],
-): Promise<TopPostRow[]> {
-  if (limit <= 0 || slugs.length === 0) return [];
-  const { data, error } = await publicDb
-    .from('post_views')
-    .select('slug, view_count')
-    .in('slug', slugs)
-    .order('view_count', { ascending: false })
-    .order('slug', { ascending: true })
-    .limit(limit);
-  if (error) throw error;
-  return toTopPostRows(data);
-}
-
-/**
- * 글별 조회수(인기순 정렬용) — 1000행에서 잘려도 매번 같은 행이 오게 조회수순으로 정렬한다.
+ * 글별 조회수(인기순 정렬용) — 이 빌드의 slug 안에서 서버가 거른다(받은 뒤 거르면 가짜 slug가
+ * 1000행 cap을 차지한다). 그 cap에서 잘려도 매번 같은 행이 오게 조회수순으로 정렬한다.
+ * 필터가 URL에 실려 글 수에 비례해 길어지므로(45편 ≈ 1.6KB), 한도에 가까워지면 slug 목록을
+ * 본문으로 받는 RPC로 옮긴다.
  */
 export async function getAllViewCounts(
   slugs: readonly string[],

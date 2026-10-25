@@ -14,14 +14,12 @@ import markdown from 'react-syntax-highlighter/dist/cjs/languages/prism/markdown
 import docker from 'react-syntax-highlighter/dist/cjs/languages/prism/docker';
 import jsExtras from 'react-syntax-highlighter/dist/cjs/languages/prism/js-extras';
 import jsdoc from 'react-syntax-highlighter/dist/cjs/languages/prism/jsdoc';
-import { FileCode } from 'lucide-react';
 import { css, cx } from '@blog/styled-system/css';
 import { token } from '@blog/styled-system/tokens';
 import { codeText, isBlockCode } from './markdownCode';
 import { toDualTheme } from './codeTheme';
 import {
   CODE_BORDER,
-  CODE_CHROME,
   CODE_META,
   CODE_SELECTION,
   CODE_SURFACE,
@@ -134,9 +132,34 @@ export const CODE_THEME: typeof THEMED = Object.fromEntries(
   ]),
 );
 
+/** 코드 글자 크기 — `pre`(customStyle)와 `code`(CODE_TAG_STYLE)가 같은 값을 써야 한다. */
+const CODE_FONT_SIZE = '0.875rem';
+const CODE_LINE_HEIGHT = '1.25rem';
+
+/** `code` 태그의 글자 — 테마의 code 규칙(mono·색) 위에 14/20과 줄바꿈을 덮는다. */
+const CODE_TAG_STYLE = {
+  ...CODE_THEME['code[class*="language-"]'],
+  fontSize: CODE_FONT_SIZE,
+  lineHeight: CODE_LINE_HEIGHT,
+  whiteSpace: 'pre-wrap',
+  overflowWrap: 'anywhere',
+} as const;
+
 // 스크롤 없이 펼치는 코드의 한계. 레퍼런스(fumadocs)와 같은 600px이다.
 // 이걸 넘는 블록은 글의 흐름을 끊고 목차·본문 위치 감각을 통째로 지운다.
 const CODE_MAX_HEIGHT = 600;
+
+/** 헤더 라벨 — 파일명이든 언어든 mono 12/20 500이다. 긴 경로는 말줄임한다. */
+const labelStyle = css({
+  textStyle: 'supporting',
+  fontFamily: 'mono',
+  fontWeight: 'medium',
+  color: CODE_META,
+  minW: '0',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+});
 
 interface CodeBlockProps {
   node?: unknown;
@@ -198,8 +221,7 @@ export function CodeBlock({
         // 있다. 여기서 또 그리면 상자가 이중으로 겹친다.
         !bare &&
           css({
-            mb: '12',
-            mt: '8',
+            my: '4',
             // 코드 블록은 element 자리다(Astryx CodeBlock).
             rounded: 'element',
             borderWidth: 'hairline',
@@ -208,63 +230,35 @@ export function CodeBlock({
       )}
     >
       {!bare && (
+        // 헤더는 항상 그린다(라벨이 없어도 'text'). 표면과 같은 면이라 보더로 가르지 않는다 —
+        // 라벨과 복사 버튼이 코드와 한 상자로 읽힌다.
         <div
           className={css({
-            bg: CODE_CHROME,
-            px: '4',
-            py: '2',
             display: 'flex',
             alignItems: 'center',
+            justifyContent: 'space-between',
             gap: '2',
-            minH: '[36px]',
-            borderBottomWidth: 'hairline',
-            borderColor: CODE_BORDER,
+            pt: '2',
+            pr: '2',
+            pl: '4',
           })}
         >
-          {/* 맥 신호등 점 3개는 뺐다 — 아무 정보도 주지 않는 순수 장식이고,
-              팔레트 밖의 빨강·노랑·초록이라 무채색 팔레트(포인트색도 잉크다)와
-              정면으로 부딪힌다. 남은 건 파일명(없으면 언어 라벨)과 복사 버튼뿐. */}
+          {/* 맥 신호등 점 3개와 파일 아이콘은 뺐다 — 아무 정보도 주지 않는 순수 장식이고, 팔레트
+              밖의 색이라 무채색 팔레트(포인트색도 잉크다)와 부딪힌다. 라벨은 파일명 → 언어 →
+              'text' 순서로 하나만 단다. */}
           {title ? (
-            <>
-              <FileCode
-                size={14}
-                className={css({ color: CODE_META, flexShrink: '0' })}
-                aria-hidden
-              />
-              <figcaption
-                // 좁은 칼럼에서는 경로가 말줄임되는데, 그때 전체를 볼
-                // 방법이 없으면 파일명을 단 의미가 반쯤 사라진다.
-                title={title}
-                className={css({
-                  fontFamily: 'mono',
-                  fontSize: 'xs',
-                  letterSpacing: 'mono',
-                  color: CODE_META,
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                })}
-              >
-                {title}
-              </figcaption>
-            </>
+            <figcaption
+              // 좁은 칼럼에서는 경로가 말줄임되는데, 그때 전체를 볼
+              // 방법이 없으면 파일명을 단 의미가 반쯤 사라진다.
+              title={title}
+              className={labelStyle}
+            >
+              {title}
+            </figcaption>
           ) : (
-            language && (
-              <span
-                className={css({
-                  fontFamily: 'mono',
-                  fontSize: 'xs',
-                  letterSpacing: 'mono',
-                  color: CODE_META,
-                })}
-              >
-                {language}
-              </span>
-            )
+            <span className={labelStyle}>{language ?? 'text'}</span>
           )}
-          <div className={css({ ml: 'auto' })}>
-            <CopyButton content={content} />
-          </div>
+          <CopyButton content={content} />
         </div>
       )}
       <SyntaxHighlighter
@@ -273,15 +267,22 @@ export function CodeBlock({
         customStyle={{
           borderRadius: 0,
           margin: 0,
-          // 크롬이 얇아진 만큼 안쪽 여백도 줄여 680px 본문 칼럼에서 코드가
-          // 실제로 쓸 수 있는 가로폭을 넓힌다.
-          padding: `${token('spacing.5')} ${token('spacing.6')}`,
-          lineHeight: '1.7',
+          // 헤더가 위 여백을 이미 쥐고 있어 위는 4px, 아래는 12px(목업). 좌우 16px.
+          padding: `${token('spacing.1')} ${token('spacing.4')} ${token('spacing.3')}`,
+          fontSize: CODE_FONT_SIZE,
+          lineHeight: CODE_LINE_HEIGHT,
           background: 'transparent',
+          // 긴 줄은 줄바꿈한다 — 가로로 스크롤하면 코드가 좁은 칼럼에서 잘려 보인다.
+          whiteSpace: 'pre-wrap',
           // 아주 긴 블록은 글의 흐름을 끊는다. 여기서 잘라 상자 안에서
-          // 스크롤한다 — pre가 이미 가로 스크롤 컨테이너라 세로만 더하면 된다.
+          // 스크롤한다 — 세로 스크롤 컨테이너라 아래 tabIndex가 꼭 필요하다.
           maxHeight: `${CODE_MAX_HEIGHT}px`,
         }}
+        // 테마가 `code`에도 13px·글꼴·색을 걸어 두므로 pre의 크기만 바꿔서는 글자가 안 바뀐다.
+        // `codeTagProps.style`은 테마의 code 규칙을 **통째로 대체**한다(합치지 않는다) — 그래서
+        // 테마 규칙(mono 글꼴·색)을 펼친 위에 덮는다. 빠뜨리면 글꼴이 UA 기본 monospace로
+        // 떨어진다(런타임 게이트 `웹 폰트 — #post-content pre code`가 잡는다).
+        codeTagProps={{ style: CODE_TAG_STYLE }}
         {...props}
         // 코드 블록은 가로 스크롤되는데 포커스를 받을 수 없어 키보드만 쓰는
         // 사용자가 잘린 코드를 볼 방법이 없었다(axe scrollable-region-focusable,
@@ -296,13 +297,16 @@ export function CodeBlock({
       className={cx(
         className,
         css({
-          bg: 'paper.200',
-          color: 'ink.900',
+          bg: 'paper.100',
+          // 본문 안에서도 줄지 않는 14px — 17px 본문 옆에서 mono가 작아 보이는 만큼을 보정한다.
+          // 색은 둘러싼 글(본문·인용·표)을 따른다.
+          color: 'inherit',
           px: '1.5',
           py: '0.5',
           // 인라인 코드는 글줄 안의 작은 요소라 inner 자리다(Astryx Code·Kbd와 같다).
           rounded: 'inner',
-          fontSize: '[0.9em]',
+          fontFamily: 'mono',
+          fontSize: 'sm',
           fontWeight: 'normal',
           whiteSpace: 'pre-wrap',
           wordBreak: 'break-word',

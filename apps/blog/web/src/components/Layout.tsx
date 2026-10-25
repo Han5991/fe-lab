@@ -5,7 +5,6 @@ import {
 } from '@/content.values.mts';
 import { ABOUT_PATH, HOME_PATH, PRIVACY_PATH } from '@/src/shared/routes';
 import { VIEW_TRANSITION } from '@/src/shared/viewTransitions';
-import Link from 'next/link';
 import { css, cx } from '@blog/styled-system/css';
 import type { ReactNode } from 'react';
 
@@ -17,6 +16,7 @@ import { siteHeaderStyle } from './siteHeader';
 import { MAIN_ID, skipLink } from './skipLink';
 import { NavLinks } from './home/NavLinks';
 import { SearchDialog } from './search/SearchDialog';
+import { TransitionLink } from './shared/TransitionLink';
 import { ThemeToggle } from './ThemeToggle';
 
 interface LayoutProps {
@@ -45,7 +45,7 @@ const footerIconButton = iconButton({ tone: 'neutral', size: 'md' });
  * 셸 — Astryx docsite의 TopNav·SiteFooter 모양(승인 목업)이다.
  *
  * **헤더·푸터는 레일 없이 전폭이고 좌우 여백은 거터(`railGutter`) 하나다.** 페이지마다 본문
- * 레일(wide 1200 / text 680)이 달라도 헤더는 화면 양끝에 붙어 있어 어느 페이지에서나 같은 자리다.
+ * 레일(wide 1200 / text 752)이 달라도 헤더는 화면 양끝에 붙어 있어 어느 페이지에서나 같은 자리다.
  * 목업은 헤더 8 + 워드마크 8, 푸터 24를 좌우에 줬는데 거터 단일 출처(AGENTS.md §9)를 따라 20/32로
  * 바꿨다 — 워드마크도 자기 좌우 여백을 두지 않아 글자가 거터 선에서 시작한다(본문이 레일을 꽉
  * 채우는 1264px 이하에서는 본문 왼쪽 끝과 맞는다).
@@ -59,6 +59,9 @@ export const Layout = ({ children }: LayoutProps) => {
         color: 'ink.950',
         display: 'flex',
         flexDir: 'column',
+        // 푸터의 view timeline(아래 `<footer>`)을 이 아래 어디서든 읽게 한다 — 푸터를 가리는
+        // 고정 버튼(MobileTOC)이 푸터가 화면에 들어오는 정도로 사라진다.
+        timelineScope: '--site-footer',
       })}
     >
       <a href={`#${MAIN_ID}`} className={skipLink}>
@@ -104,7 +107,7 @@ export const Layout = ({ children }: LayoutProps) => {
           )}
         >
           <div className={css({ display: 'flex', alignItems: 'center' })}>
-            <Link
+            <TransitionLink
               href={HOME_PATH}
               className={css({
                 display: 'inline-flex',
@@ -120,7 +123,7 @@ export const Layout = ({ children }: LayoutProps) => {
               })}
             >
               {WORDMARK}
-            </Link>
+            </TransitionLink>
           </div>
 
           <NavLinks />
@@ -168,7 +171,17 @@ export const Layout = ({ children }: LayoutProps) => {
 
       {/* 두 줄 — 워드마크 | 글자 링크(가운데) | 아이콘 / 구분선 / 사이트 설명 | ©. md 이상은
           5칸 격자(가운데 링크가 3칸), md 미만은 가운데 정렬 한 열이다(Astryx SiteFooter). */}
-      <footer className={cx(railGutter, css({ mt: 'section', pb: '6' }))}>
+      <footer
+        className={cx(
+          railGutter,
+          css({
+            mt: 'section',
+            pb: '6',
+            viewTimelineName: '--site-footer',
+            viewTimelineAxis: 'block',
+          }),
+        )}
+      >
         <div
           className={css({
             display: { base: 'flex', md: 'grid' },

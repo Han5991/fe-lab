@@ -60,15 +60,21 @@ function parseInFilter(value: string | null): string[] {
   return out.filter(Boolean);
 }
 
+/**
+ * 스텁이 글 하나에 주는 조회수(10~999). 인기순 검사는 기대 순서를 이 함수로 만든다 — 스텁과 기대값이
+ * 같은 출처를 읽는다.
+ */
+export function stubViewCount(slug: string): number {
+  return 10 + seeded(slug, 1, 990);
+}
+
 /** `post_views` 읽기 — `Database['public']['Tables']['post_views']['Row']`의 부분형. */
 function postViewsRows(url: URL) {
-  const rows = parseInFilter(url.searchParams.get('slug'))
-    .map(slug => ({ slug, view_count: 10 + seeded(slug, 1, 990) }))
+  return parseInFilter(url.searchParams.get('slug'))
+    .map(slug => ({ slug, view_count: stubViewCount(slug) }))
     .sort(
       (a, b) => b.view_count - a.view_count || a.slug.localeCompare(b.slug),
     );
-  const limit = Number(url.searchParams.get('limit') ?? rows.length);
-  return rows.slice(0, limit);
 }
 
 function isoDay(daysAgo: number): string {

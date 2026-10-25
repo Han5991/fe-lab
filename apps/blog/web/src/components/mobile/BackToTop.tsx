@@ -3,7 +3,7 @@
 import { useSyncExternalStore } from 'react';
 import { ArrowUp } from 'lucide-react';
 import { css } from '@blog/styled-system/css';
-import { pressable } from '@/src/components/pressable';
+import { pressButton } from '@/src/components/interaction';
 
 /** 이만큼 내려가면 버튼이 뜬다(px). */
 const SHOW_AFTER = 300;
@@ -40,7 +40,7 @@ export const BackToTop = () => {
       // MobileTOC와 같은 이유 — 아이콘 단독 버튼이라 이름이 필요하다.
       // 스크롤 전에는 렌더되지 않아 axe 스캔에 안 잡혔을 뿐, 같은 결함이다.
       aria-label="맨 위로 이동"
-      className={css(pressable, {
+      className={css(pressButton, {
         _starting: { opacity: '0', transform: 'scale(0.95)' },
         pos: 'fixed',
         bottom: '6',
@@ -60,7 +60,7 @@ export const BackToTop = () => {
         cursor: 'pointer',
         zIndex: '40',
         // 아이콘(ink.900)은 이미 잉크라 hover에 더 진한 색이 없다(ink.950과
-        // 1.15 / 1.16:1) — 면을 필터 FAB의 hover 면(paper.300)으로 올린다
+        // 1.15 / 1.16:1) — 면을 칩·배지 hover와 같은 면(paper.300)으로 올린다
         // (paper.100 대비 1.23 / 1.23:1).
         _hover: { bg: 'paper.300', color: 'accent.solid' },
       })}

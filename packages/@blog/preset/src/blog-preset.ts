@@ -160,7 +160,7 @@ const blogColors = defineSemanticTokens.colors({
   // 스킬). 대비는 라이트 / 다크.
   //   solid      = ink.950. 링크·현재 위치 표식·주 버튼 면·다이어그램 핵심 경로.
   //                paper.50 위 17.40 / 15.85.
-  //   muted      = ink.950 8% / 14%. 틴트 — 배지·선택 행·검색어·tip 콜아웃·다이어그램 노드.
+  //   muted      = ink.950 8% / 14%. 틴트 — 시리즈 배지·선택 행·검색어·tip 콜아웃·다이어그램 노드.
   //                paper.50 위 합성 #ededed / #2a2c2f, 그 위 solid 14.87 / 11.41.
   //                보조 글자(ink.500)는 다크에서 4.41로 AA를 놓쳐 ink.700 이상을 쓴다(6.46 / 6.11).
   //   onSolid    = paper.50. solid 면 위 글자 17.40 / 15.85 — 다크 solid가 밝은 잉크라 흰 글자는
@@ -257,17 +257,19 @@ const blogColors = defineSemanticTokens.colors({
   // **정의**를 semanticToken으로 옮겨서 쓴다. 색이 HTML이 아니라
   // 스타일시트에 한 번만 있으므로 마크업은 오히려 가벼워진다.
   //
-  // 다크 값은 지금 쓰는 vscDarkPlus 그대로다(코드 화면이 바뀌지
-  // 않는다). 라이트 값은 fumadocs가 라이트 테마로 쓰는 github-light
+  // 다크 값은 vscDarkPlus 그대로다(표면과 주석만 예외 — 아래 각 토큰). 라이트 값은 fumadocs가 라이트 테마로 쓰는 github-light
   // 계열에서 가져왔고, 표면(#F7F7F5) 위 대비를 전부 확인했다 —
   // 주석만 원본 #6E7781이 4.24:1로 AA에 못 미쳐 한 톤 내렸다(5.67:1).
   // 나머지는 4.70:1(function) ~ 13.66:1(기본 텍스트) 범위다.
   // ─────────────────────────────────────────────────────────────
-  // 표면 — 라이트는 본문(paper.50)에서 한 단계 뜬 서브 서피스,
-  // 다크는 기존 코드 표면 값을 유지한다.
-  'code.surface': { value: { base: '#f7f7f5', _dark: '#0b0d10' } },
-  // 파일명·언어 라벨이 앉는 상단 바. 표면보다 한 단계 더 진하다.
-  'code.chrome': { value: { base: '#ededea', _dark: '#14171c' } },
+  // 표면 — 라이트는 본문(paper.50)에서 한 단계 뜬 서브 서피스, 다크는 목업의 muted(#14171c)다.
+  // 다크 지면(paper.50)이 거의 검은색(#0b0d10)이라 예전 표면 값 #0b0d10은 지면과 같은 색이어서
+  // 코드 상자가 보더만 남고 면으로는 읽히지 않았다. 한 단계 띄운 값이 paper.100과 같지만 code.*는
+  // 본문 팔레트와 독립이라 값을 따로 적는다(아래 selection 주석의 규칙).
+  'code.surface': { value: { base: '#f7f7f5', _dark: '#14171c' } },
+  // 코드 탭 바(CodeTabsPanels)가 앉는 면. 표면보다 한 단계 더 진하다 — 코드 블록의 헤더 행은 이 면이
+  // 아니라 표면과 같은 색이다(파일명·복사 버튼이 코드와 한 상자로 읽히게).
+  'code.chrome': { value: { base: '#ededea', _dark: '#1b1f26' } },
   // 드래그 선택 배경. 전역 selection.bg를 따라가지 않는다 — code.*는 본문 팔레트
   // (paper/ink)와 독립이어야 본문 톤을 손볼 때 코드 화면이 같이 흔들리지 않는다
   // (codeTheme.test.ts가 구문 색 매핑에 같은 규칙을 잠근다). 라이트는 표면 위 파란
@@ -276,7 +278,10 @@ const blogColors = defineSemanticTokens.colors({
   'code.selection': { value: { base: '#d7dce3', _dark: '#214248' } },
   // 구문 강조 — 키는 "역할", 값은 (github-light, vscDarkPlus) 쌍.
   'code.fg': { value: { base: '#24292f', _dark: '#d4d4d4' } },
-  'code.comment': { value: { base: '#5b636d', _dark: '#6a9955' } },
+  // 다크 주석은 vscDarkPlus 원본(#6a9955)보다 한 단계 올렸다 — 주석은 코드에서 가장 옅은 글자라
+  // 표면·탭 바 위에서 4.8 이상을 계획의 기준으로 두고 여유를 더했다. 새 값은 표면 6.43:1 ·
+  // 탭 바 5.91:1이다(codeTheme.test.ts가 4.8 이상을 잠근다).
+  'code.comment': { value: { base: '#5b636d', _dark: '#7ca668' } },
   'code.keyword': { value: { base: '#cf222e', _dark: '#569cd6' } },
   // import/return 처럼 흐름을 바꾸는 키워드만 따로 물들이는 건
   // vscDarkPlus의 특징이다(#c586c0). 라이트에서도 keyword와 구분되게
@@ -428,7 +433,7 @@ export const blogPreset = definePreset({
           //
           // 이 값은 거터를 **뺀** 순수 콘텐츠 폭이다. 거터는 항상 레일
           // 바깥(`railGutter`)에 있으므로 `railText`를 쓴 화면의 글줄은
-          // 어느 페이지에서나 정확히 680px이다. 예전에는 거터를 레일
+          // 어느 페이지에서나 정확히 752px이다. 예전에는 거터를 레일
           // 안쪽에 준 페이지(`px: '8'`)와 바깥에 준 페이지(홈)가 섞여
           // 있어서, 같은 640px 토큰을 쓰고도 실제 폭이 640과 576으로
           // 갈렸다. 레일을 쓸 때는 반드시 `Rail`/`railGutter`를 거친다.
@@ -438,15 +443,21 @@ export const blogPreset = definePreset({
           // 헤더 로고와 본문 제목이 어긋난다(리팩터링 전 실측: 페이지에
           // 따라 최대 248px 차이).
           // ─────────────────────────────────────────────────────────────
-          /** 넓은 화면 — 홈(카드), 목록/소개/대시보드, 글 상세 셸(헤더·푸터는 레일 없이 전폭) */
+          /** 넓은 화면 — 홈(카드), 소개/대시보드, 글 상세 셸(헤더·푸터는 레일 없이 전폭) */
           railWide: { value: '1200px' },
-          /** 읽는 화면 — 글 본문, 시리즈, 정책. 한글 약 42자/줄 */
-          railText: { value: '680px' },
+          /** 읽는 화면 — 글 본문, 글 목록, 시리즈, 정책. 17px 기준 약 44자/줄 */
+          railText: { value: '752px' },
           /** 단일 폼 — 로그인, 404 */
           railForm: { value: '400px' },
 
           /** 레일이 아니라 콘텐츠 제약 — /about 히어로 우측 문단 */
           heroAside: { value: '480px' },
+          /**
+           * 레일이 아니라 콘텐츠 제약 — 글 상세의 차례 칼럼. 본문(`railText`) 오른쪽에 간격 32로 붙어
+           * 752 + 32 + 268 = 1052가 wide 레일(1200) 안에 들어간다(`railWithAside`). 240px에서는
+           * 한국어 헤딩이 대부분 두 줄로 접혀 목록이 두 배로 길어졌다.
+           */
+          tocAside: { value: '268px' },
           /**
            * 레일이 아니라 화면 오른쪽 끝에 붙는 상세 패널의 폭 — admin 분석의 글 통계(Astryx
            * dashboard-alert-rail의 오른쪽 패널 400). lg 이상은 목록 옆 칼럼, 아래는 같은 폭의 시트다.
@@ -536,6 +547,9 @@ export const blogPreset = definePreset({
         // 쓰는 요소는 `mt: 'section'`처럼 이름만 적는다(반응형 객체를 자리마다 다시 적지 않는다).
         spacing: {
           section: { value: { base: '3rem', md: '6.25rem' } },
+          // 페이지 첫 제목 위 여백 — 셸 헤더 아래에서 h1까지. 목업 72(Astryx main pt 48 + Section 24).
+          // md 미만은 40.
+          pageTop: { value: { base: '2.5rem', md: '4.5rem' } },
         },
       },
       // 글자 크기·행간·굵기의 묶음 — Astryx 코어 타이포 스케일(MIT)의 **역할 이름**이고, 값은

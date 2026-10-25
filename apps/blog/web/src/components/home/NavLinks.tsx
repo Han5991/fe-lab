@@ -1,9 +1,9 @@
 'use client';
 
-import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { css } from '@blog/styled-system/css';
 import { POSTS_PATH } from '@blog/content/client';
+import { TransitionLink } from '@/src/components/shared/TransitionLink';
 import { ABOUT_PATH, SERIES_PATH } from '@/src/shared/routes';
 
 /**
@@ -31,6 +31,8 @@ const NAV_ITEMS = [
 // 색이 이겨서 활성 표시가 굵기로만 남아 있었다. `css()`는 객체 단계에서
 // 병합해 color 클래스를 하나만 낸다.
 const linkStyle = css.raw({
+  // 현재 위치 표식(아래 span)이 이 상자를 기준으로 선다.
+  pos: 'relative',
   display: 'inline-flex',
   alignItems: 'center',
   px: { base: '2', md: '3' },
@@ -72,14 +74,22 @@ export function NavLinks() {
         // 내비의 어느 링크도 홈을 가리키지 않는다(목업은 홈에서 "글"을 켰다).
         const isActive = pathname.startsWith(item.href);
         return (
-          <Link
+          <TransitionLink
             key={item.href}
             href={item.href}
             aria-current={isActive ? 'page' : undefined}
             className={css(linkStyle, isActive ? activeStyle : undefined)}
           >
             {item.label}
-          </Link>
+            {/* 현재 위치 표식 — 라벨 아래 16×2 막대가 이동 사이에 옛 링크에서 새 링크로 미끄러진다.
+                모양·자리와 view-transition-name은 panda.config.ts globalCss가 이 속성
+                (viewTransitions.ts의 NAV_INDICATOR_ATTRIBUTE)으로 aria-current 링크의 span에만 준다 —
+                이 파일은 모든 공개 페이지의 첫 로드 JS라 스타일 객체·이름을 두지 않는다. span은 활성
+                여부와 상관없이 링크마다 둔다: 활성 여부로 넣고 빼면 미리 그린 404가 `/posts/없는-글/`
+                같은 경로에서 하이드레이션이 깨진다. 현재 위치는 색·굵기와 aria-current가 이미 알리므로
+                aria-hidden이다. */}
+            <span aria-hidden="true" data-nav-indicator="" />
+          </TransitionLink>
         );
       })}
     </nav>

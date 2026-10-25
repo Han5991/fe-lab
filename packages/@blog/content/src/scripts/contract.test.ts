@@ -13,6 +13,7 @@ import { existsSync } from 'node:fs';
 import { join, posix } from 'node:path';
 import { expect, test } from 'vitest';
 import { isPostStatus, isPostVisible } from '../post/visibility.ts';
+import { seriesDisplayName } from '../post/series.ts';
 import {
   isAdminPostsIndexEntry,
   isPublicSearchIndexEntry,
@@ -198,7 +199,9 @@ test('contract: 검색 인덱스의 series는 선언된 시리즈만', () => {
       ).toBeTruthy();
     }
     expect(e.seriesTitle).toBe(
-      e.series ? (testContent.getSeriesMeta(e.series)?.title ?? null) : null,
+      e.series
+        ? seriesDisplayName(e.series, testContent.getSeriesMeta(e.series))
+        : null,
     );
   }
 });

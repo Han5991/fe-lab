@@ -1,11 +1,13 @@
 import { AUTHOR_GITHUB, AUTHOR_LINKEDIN } from '@/content.values.mts';
-import Link from 'next/link';
 import { css, cx } from '@blog/styled-system/css';
 
 import { safeJsonLd } from '@blog/content/client';
+import { actionButton } from '@/src/components/actionButton';
 import { Label } from '@/src/components/blog/Label';
 import { PageBoundary } from '@/src/components/PageBoundary';
 import { railGutter, railColumn } from '@/src/components/Rail';
+import { OSS_CONTRIBUTIONS } from '@/src/components/ossContributions';
+import { TransitionLink } from '@/src/components/shared/TransitionLink';
 import { archivePath, postPath } from '@blog/content/client';
 
 import { getAboutStats, getSeriesPostCounts } from './counts';
@@ -152,26 +154,7 @@ export default function AboutPage() {
                     href={AUTHOR_GITHUB}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={css({
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '2',
-                      px: '[16px]',
-                      py: '[6px]',
-                      bg: 'paper.200',
-                      color: 'ink.800',
-                      borderWidth: 'hairline',
-                      borderStyle: 'solid',
-                      borderColor: 'ink.border',
-                      rounded: 'full',
-                      fontSize: 'sm',
-                      fontWeight: 'medium',
-                      _hover: {
-                        bg: 'paper.300',
-                        borderColor: 'ink.borderStrong',
-                      },
-                      transition: 'colors',
-                    })}
+                    className={actionButton({ tone: 'outline', size: 'lg' })}
                   >
                     GitHub →
                   </a>
@@ -179,26 +162,7 @@ export default function AboutPage() {
                     href={AUTHOR_LINKEDIN}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={css({
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '2',
-                      px: '[16px]',
-                      py: '[6px]',
-                      bg: 'paper.200',
-                      color: 'ink.800',
-                      borderWidth: 'hairline',
-                      borderStyle: 'solid',
-                      borderColor: 'ink.border',
-                      rounded: 'full',
-                      fontSize: 'sm',
-                      fontWeight: 'medium',
-                      _hover: {
-                        bg: 'paper.300',
-                        borderColor: 'ink.borderStrong',
-                      },
-                      transition: 'colors',
-                    })}
+                    className={actionButton({ tone: 'outline', size: 'lg' })}
                   >
                     LinkedIn →
                   </a>
@@ -248,7 +212,7 @@ export default function AboutPage() {
                 {/* 아래 링크들의 slug는 리터럴이라 인코딩이 필요 없지만,
                     postPath를 거치면 후행 슬래시 표기가 저절로 통일된다 —
                     예전엔 이 페이지의 글 링크 중 한 곳만 슬래시가 없었다. */}
-                <Link
+                <TransitionLink
                   href={postPath('2025-retrospect')}
                   className={css({
                     fontFamily: 'mono',
@@ -260,7 +224,7 @@ export default function AboutPage() {
                   })}
                 >
                   2025 회고 전체 읽기 →
-                </Link>
+                </TransitionLink>
               </div>
             </div>
           </header>
@@ -303,38 +267,10 @@ export default function AboutPage() {
                   </h2>
                 </div>
                 <div>
-                  {[
-                    {
-                      project: 'gemini-cli',
-                      org: 'Google',
-                      description:
-                        'Promise.allSettled 병렬 처리로 성능 74% 개선 (408ms → 107ms).',
-                      link: postPath('ai-opensource-contribution'),
-                    },
-                    {
-                      project: 'Mantine',
-                      org: 'Community',
-                      description:
-                        '27개 PR 병합. 컴포넌트 버그 수정 및 기능 개선.',
-                      link: postPath('first-open-source-contribution'),
-                    },
-                    {
-                      project: 'Node.js',
-                      org: 'OpenJS Foundation',
-                      description:
-                        'util.inspect의 numeric separator 포매팅 버그 수정.',
-                      link: postPath('nodejs-contribution'),
-                    },
-                    {
-                      project: 'Next.js',
-                      org: 'Vercel',
-                      description: 'Next.js 코어 기여.',
-                      link: postPath('nextjs-contributor'),
-                    },
-                  ].map(item => (
-                    <Link
-                      key={item.project}
-                      href={item.link}
+                  {OSS_CONTRIBUTIONS.map(item => (
+                    <TransitionLink
+                      key={item.slug}
+                      href={postPath(item.slug)}
                       className={css(hoverRow, {
                         display: 'block',
                         py: '5',
@@ -376,7 +312,7 @@ export default function AboutPage() {
                       >
                         {item.description}
                       </p>
-                    </Link>
+                    </TransitionLink>
                   ))}
                 </div>
               </section>
@@ -426,7 +362,7 @@ export default function AboutPage() {
                         link: postPath('2025-teoconf-presentation'),
                       },
                     ].map(item => (
-                      <Link
+                      <TransitionLink
                         key={item.event}
                         href={item.link}
                         className={css(hoverRow, {
@@ -471,7 +407,7 @@ export default function AboutPage() {
                         >
                           →
                         </span>
-                      </Link>
+                      </TransitionLink>
                     ))}
                   </div>
                 </section>
@@ -504,7 +440,7 @@ export default function AboutPage() {
                     {FEATURED_SERIES.map(series => (
                       // /series 페이지와 같은 링크 문법. 아카이브는 `tab`을 읽지
                       // 않고 `q`는 series와 AND로 걸리므로 series 하나만 넘긴다.
-                      <Link
+                      <TransitionLink
                         key={series.id}
                         href={archivePath({ series: series.id })}
                         className={css(hoverRow, {
@@ -558,7 +494,7 @@ export default function AboutPage() {
                             {seriesPostCounts.get(series.id)}편
                           </span>
                         )}
-                      </Link>
+                      </TransitionLink>
                     ))}
                   </div>
                 </section>

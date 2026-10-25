@@ -76,7 +76,7 @@ export function toOptionalString(value: unknown): string | undefined {
  * 원소가 섞이면 undefined — validate-posts의 invalid-tags 규칙이 별도로 에러를 냅니다.
  *
  * 태그는 의미상 집합입니다. 중복이 그대로 흘러가면 글 메타에 `#ci #ci`가 두 번
- * 찍히고, `getAllTags()`의 개수가 부풀고, 목록 렌더에서 React key가 충돌합니다.
+ * 찍히고, 태그별 글 수 집계가 부풀고, 목록 렌더에서 React key가 충돌합니다.
  * 세 증상 모두 원인이 하나라 여기서 한 번만 정규화합니다.
  * (frontmatter에 중복이 남아 있다는 사실 자체는 lint:posts가 경고로 알립니다.)
  */

@@ -1,11 +1,9 @@
 /**
- * 레일 path를 만드는 규칙.
+ * 글 차례 — 곧은 트랙과 보이는 절을 덮는 막대, 깊이에 따른 들여쓰기, 클릭 처리.
  *
- * 화면으로는 "선이 조금 이상하다" 정도로만 보이고, 어긋나도 아무것도
- * 던지지 않는 종류의 코드다. 특히 단이 바뀌는 구간의 곡선은 **다음 항목
- * 안쪽에 전부 들어가야** 하는데(경계에 걸치면 하이라이트가 한 항목만 비출
- * 때 곡선이 반토막 나 허공에 뜬 조각처럼 남는다), 그 불변식은 눈으로
- * 확인하기 어렵다. 여기서 좌표로 고정한다.
+ * 막대의 위치는 항목의 실측(`getBoundingClientRect`)에서 나오는데 jsdom은 전부 0을 준다 — 위치 값
+ * 자체는 브라우저(e2e·화면 대조)가 보고, 여기서는 "있어야 할 때 있고 없어야 할 때 없다"와 들여쓰기·
+ * 이름 계약을 잠근다.
  */
 import {
   afterEach,
@@ -16,76 +14,115 @@ import {
   vi,
   type Mock,
 } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import { TOC, buildPath, measureLengths, type Row } from './TOC';
+import { render, screen, waitFor } from '@testing-library/react';
+import { TOC } from './TOC';
 
-/** 한 줄짜리 항목 하나. 높이 20px로 촘촘히 쌓는다. */
-const row = (x: number, top: number, height = 20): Row => ({
-  x,
-  top,
-  bottom: top + height,
+/** 차례가 읽어 가는 본문. 헤딩 하나당 (id, 레벨, 글)이다. */
+const mountContent = (
+  headings: { id: string; level: 2 | 3 | 4; text: string }[],
+) => {
+  const content = document.createElement('div');
+  content.id = 'post-content';
+  for (const { id, level, text } of headings) {
+    const h = document.createElement(`h${level}`);
+    h.id = id;
+    h.textContent = text;
+    content.appendChild(h);
+  }
+  document.body.appendChild(content);
+};
+
+/** jsdom에 없는 것들 — 없으면 TOC가 마운트되다 던진다. */
+const stubResizeObserver = () =>
+  vi.stubGlobal(
+    'ResizeObserver',
+    class {
+      observe() {
+        // 관측 콜백을 검사하지 않으므로 기록만 안 하면 된다
+      }
+      disconnect() {
+        // observe가 아무것도 안 하므로 해제할 것도 없다
+      }
+    },
+  );
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+  document.body.replaceChildren();
 });
 
-/** path에서 곡선 명령(C)만 뽑는다. */
-const curves = (d: string) => d.match(/C [^LC]+/g) ?? [];
-
-describe('buildPath', () => {
-  test('항목이 없으면 빈 문자열', () => {
-    expect(buildPath([])).toBe('');
+describe('TOC 구조', () => {
+  beforeEach(() => {
+    mountContent([
+      { id: 'a', level: 2, text: '첫 절' },
+      { id: 'b', level: 3, text: '하위 절' },
+      { id: 'c', level: 4, text: '더 깊은 절' },
+      { id: 'd', level: 2, text: '둘째 절' },
+    ]);
+    stubResizeObserver();
   });
 
-  test('단이 같으면 세로선만 그린다', () => {
-    const d = buildPath([row(8, 0), row(8, 20), row(8, 40)]);
+  test('이름이 "이 글의 차례"인 내비게이션 안의 목록이다', () => {
+    render(<TOC />);
 
-    expect(curves(d)).toEqual([]);
-    // 첫 항목의 머리(0)에서 마지막 항목의 바닥(60)까지 이어진다.
-    expect(d.startsWith('M 8 0')).toBe(true);
-    expect(d.endsWith('L 8 60')).toBe(true);
+    const nav = screen.getByRole('navigation', { name: '이 글의 차례' });
+    expect(nav.querySelectorAll('li')).toHaveLength(4);
   });
 
-  test('단이 바뀌면 곡선으로 갈아탄다', () => {
-    const d = buildPath([row(8, 0), row(16, 20)]);
+  test('들여쓰기는 가장 얕은 헤딩이 12이고 한 단계마다 16씩이다', () => {
+    render(<TOC />);
 
-    expect(curves(d)).toHaveLength(1);
-    // 끝점은 다음 항목의 x, 그리고 그 항목 **안쪽**이다.
-    expect(d).toContain('16 28');
+    const padding = (name: string) =>
+      screen.getByRole('link', { name }).style.paddingLeft;
+    expect(padding('첫 절')).toBe('12px');
+    expect(padding('하위 절')).toBe('28px');
+    expect(padding('더 깊은 절')).toBe('44px');
+    expect(padding('둘째 절')).toBe('12px');
   });
 
-  test('곡선은 전부 다음 항목 안에 들어간다', () => {
-    // 항목 높이(20)의 절반이 ELBOW(8)보다 크므로 8px만 내려간다.
-    const rows = [row(8, 0), row(16, 20)];
-    const d = buildPath(rows);
+  test('트랙과 막대는 장식이라 스크린리더에서 숨긴다', () => {
+    render(<TOC />);
 
-    // 곡선의 세로 끝(28)이 다음 항목 구간 [20, 40) 안이다.
-    // (C 명령의 마지막 좌표쌍이 끝점 — 그 y를 본다.)
-    // 곡선이 없으면 빈 문자열 → NaN이 되어 아래 단언이 실패한다.
-    const curve = curves(d)[0] ?? '';
-    const end = Number(curve.trim().split(/\s+/).pop());
-    expect(end).toBeGreaterThan(rows[1].top);
-    expect(end).toBeLessThan(rows[1].bottom);
+    const nav = screen.getByRole('navigation', { name: '이 글의 차례' });
+    const decor = nav.querySelectorAll(':scope > div > div[aria-hidden]');
+    expect(decor.length).toBeGreaterThanOrEqual(1);
+    for (const el of decor) expect(el).toHaveAttribute('aria-hidden', 'true');
   });
 
-  test('항목이 낮으면 곡선도 그만큼 짧아진다', () => {
-    // 높이 10짜리 항목으로 갈아타면 절반인 5px만 쓴다(8px을 쓰면 그 항목을
-    // 넘어 다음 경계를 침범한다).
-    const d = buildPath([row(8, 0), row(16, 20, 10)]);
+  // 막대는 합성 전용 transform으로만 움직인다 — 위치는 translateY, 길이는 scaleY다. top·height를
+  // 전환하면 프레임마다 레이아웃이 돈다. 값은 항목의 실측이라 jsdom에서는 상자를 꾸며 줘야 나온다.
+  test('막대의 위치와 길이는 transform으로 놓이고 top·height는 쓰지 않는다', async () => {
+    // 헤딩 상자가 전부 0이라 활성 구간은 마지막 항목(둘째 절) 하나다 — 그 항목의 위·아래가 막대가 된다.
+    const rect = vi
+      .spyOn(HTMLLIElement.prototype, 'getBoundingClientRect')
+      .mockImplementation(function (this: HTMLElement) {
+        const [top, bottom] =
+          this.textContent === '둘째 절' ? [60, 100] : [0, 20];
+        return new DOMRect(0, top, 100, bottom - top);
+      });
+    try {
+      render(<TOC />);
 
-    expect(d).toContain('16 25');
+      const nav = screen.getByRole('navigation', { name: '이 글의 차례' });
+      // 막대는 실측과 활성 구간이 정해진 뒤에야 그려진다(두 번째 장식 요소).
+      const bar = () =>
+        nav.querySelectorAll<HTMLElement>(':scope > div > div[aria-hidden]')[1];
+      await waitFor(() =>
+        expect(bar()?.style.transform).toBe('translateY(60px) scaleY(40)'),
+      );
+      expect(bar()?.style.top).toBe('');
+      expect(bar()?.style.height).toBe('');
+    } finally {
+      rect.mockRestore();
+    }
   });
 
-  test('되돌아오는 단 변화도 곡선으로 잇는다', () => {
-    // h2 → h3 → h2 처럼 들어갔다 나오는 흔한 모양.
-    const d = buildPath([row(8, 0), row(16, 20), row(8, 40)]);
+  test('헤딩이 없으면 아무것도 그리지 않는다', () => {
+    document.body.replaceChildren();
+    mountContent([]);
+    const { container } = render(<TOC />);
 
-    expect(curves(d)).toHaveLength(2);
-  });
-});
-
-describe('measureLengths', () => {
-  test('getTotalLength가 없는 환경에서는 빈 배열을 준다', () => {
-    // jsdom에는 SVG 기하 API가 없다. 여기서 던지면 차례 전체가 못 그려지고,
-    // 빈 배열이면 레일과 하이라이트는 그대로 두고 점만 빠진다.
-    expect(measureLengths('M 8 0 L 8 20', [row(8, 0)])).toEqual([]);
+    expect(container).toBeEmptyDOMElement();
   });
 });
 

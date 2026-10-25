@@ -1,9 +1,9 @@
 import { ArrowRight } from 'lucide-react';
-import Link from 'next/link';
 import { css } from '@blog/styled-system/css';
 import type { ReactNode } from 'react';
 
 import { actionButton } from '@/src/components/actionButton';
+import { TransitionLink } from '@/src/components/shared/TransitionLink';
 
 interface HomeSectionProps {
   /** 제목 요소의 id — 섹션(region 랜드마크)의 이름이 이 제목에서 온다. */
@@ -40,10 +40,13 @@ export const HomeSection = ({
       <h2 id={id} className={css({ textStyle: 'display2' })}>
         {title}
       </h2>
-      <Link href={more.href} className={actionButton({ tone: 'ghost' })}>
+      <TransitionLink
+        href={more.href}
+        className={actionButton({ tone: 'ghost' })}
+      >
         {more.label}
         <ArrowRight size={16} />
-      </Link>
+      </TransitionLink>
     </div>
     {children}
   </section>

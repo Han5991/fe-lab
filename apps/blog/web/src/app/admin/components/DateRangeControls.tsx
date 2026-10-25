@@ -179,7 +179,6 @@ const dateInputClass = css({
   bg: 'surface.raised',
   color: 'ink.950',
   textStyle: 'body',
-  _focus: { borderColor: 'accent.solid' },
 });
 
 interface DateRangeControlsProps {

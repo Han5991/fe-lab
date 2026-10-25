@@ -4,11 +4,12 @@
  * admin RPC를 service_role 권한으로 대리 호출합니다.
  * 호출자의 JWT를 검증하고 ADMIN_EMAIL과 일치하는지 확인한 후에만 실행합니다.
  *
- * 지원 action과 각각이 부르는 RPC, params 형태는 **`src/lib/platform/adminActions.ts`가
+ * 지원 action과 각각의 응답 행을 정하는 RPC, params 형태는 **`src/lib/platform/adminActions.ts`가
  * 단일 출처**입니다(`ADMIN_ACTION_RPC` · `AdminRequest`). 브라우저 클라이언트
  * (`src/lib/platform/adminApi.ts`)도 같은 파일을 import 하므로 여기서 목록을 따로
  * 적지 않습니다 — action을 추가하려면 그 파일에 등록하고 아래 switch에 case를
  * 더하면 되고, case를 빼먹으면 `default`의 never 대입이 컴파일 에러를 냅니다.
+ * `all_posts_trends`만 같은 행을 json 하나로 내는 다른 RPC로 받습니다(아래 case 참고).
  *
  * `supabase/functions` 밖의 파일을 import 하는 것은 의도된 것입니다.
  * `supabase functions deploy`는 entrypoint의 import 그래프를 따라 밖의 파일도
@@ -151,11 +152,11 @@ Deno.serve(async (req: Request) => {
         ? request.params?.slugs
         : undefined;
 
-    // PostgREST 는 한 응답에 max_rows(1000)까지만 줘서 여기서 페이징해 합친다(브라우저가 돌면
-    // 페이지마다 왕복·JWT 검증이 반복된다). 루프는 테스트가 있는 collectPagedRows 에 있다.
-    // 정렬된 결과를 잘라야 행이 빠지거나 겹치지 않고, pageSize 는 서버 max_rows 와 같아야 한다.
+    // all_post_stats 는 RETURNS TABLE 이라 PostgREST 가 한 응답에 max_rows(1000)까지만 줘서 여기서
+    // 페이징해 합친다(브라우저가 돌면 페이지마다 왕복·JWT 검증이 반복된다). 루프는 테스트가 있는
+    // collectPagedRows 에 있다. 정렬된 결과를 잘라야 행이 빠지거나 겹치지 않고, pageSize 는 서버
+    // max_rows 와 같아야 한다. 페이지마다 시점이 달라 새 행이 끼면 앞 행이 다시 와서 식별 키로 한 번만 싣는다.
     const paging = { pageSize: 1000, maxPages: 50 };
-    // 페이지마다 시점이 달라 새 행이 끼면 앞 행이 다시 온다 — 식별 키로 한 번만 싣는다.
 
     switch (request.action) {
       case 'all_post_stats': {
@@ -179,23 +180,16 @@ Deno.serve(async (req: Request) => {
       }
 
       case 'all_posts_trends': {
-        try {
-          data = await collectPagedRows(
-            async (from, to) => {
-              const base = serviceClient.rpc(ADMIN_ACTION_RPC[request.action]);
-              const filtered = slugFilter ? base.in('slug', slugFilter) : base;
-              const result = await filtered
-                .order('slug', { ascending: true })
-                .order('view_date', { ascending: true })
-                .range(from, to);
-              if (result.error) throw result.error;
-              return result.data;
-            },
-            { ...paging, key: row => `${row.slug}\u0000${row.view_date}` },
-          );
-        } catch (err) {
-          rpcError = err;
-        }
+        // 응답 행은 ADMIN_ACTION_RPC 의 get_all_posts_trends 와 같은 모양·순서지만, 그 RPC 는
+        // max_rows 에 잘려 페이지마다 365일 집계를 다시 하므로 같은 행을 json 배열 하나로 내는
+        // get_posts_trends 를 한 번 부른다(마이그레이션 20261025000000 — 두 결과가 같다는 것은
+        // src/lib/platform/migrations.test.ts 가 잠근다). slug 를 생략하면 거르지 않는다.
+        const result = await serviceClient.rpc(
+          'get_posts_trends',
+          slugFilter ? { slugs: [...slugFilter] } : {},
+        );
+        data = result.data;
+        rpcError = result.error;
         break;
       }
 

@@ -26,7 +26,7 @@ const { site: SITE, seo: SEO } = contentConfig;
 // 쓰는 방식과 같다.
 const PAGE_TITLE = `모든 노트${SEO.titleSuffix}`;
 const PAGE_DESCRIPTION =
-  '프론트엔드 실험실에 쌓인 글 전부를 한 곳에서 봅니다. 태그·시리즈·연도로 좁혀 가며 번들러 만들기, TypeScript 설계, React 컴포넌트 패턴, 배포 파이프라인, 오픈소스 기여 기록 중 지금 필요한 글을 찾아보세요.';
+  '프론트엔드 실험실에 쌓인 글 전부를 한 곳에서 봅니다. 시리즈와 검색어로 좁혀 가며 번들러 만들기, TypeScript 설계, React 컴포넌트 패턴, 배포 파이프라인, 오픈소스 기여 기록 중 지금 필요한 글을 찾아보세요.';
 
 export function buildPostsMetadata(): Metadata {
   return {

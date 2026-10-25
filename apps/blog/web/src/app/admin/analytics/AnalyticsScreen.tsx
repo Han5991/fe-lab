@@ -162,7 +162,6 @@ function PostListView({ selectedSlug, onSelect }: PostListViewProps) {
                   color: 'ink.950',
                   textStyle: 'body',
                   _placeholder: { color: 'ink.600' },
-                  _focus: { borderColor: 'accent.solid' },
                 })}
               />
             </label>

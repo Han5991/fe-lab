@@ -16,9 +16,15 @@ const SHEET_TRANSITION: CSSProperties = {
   transitionDelay: '0s, 0s',
 };
 
-function Sheet({ panelStyle }: { panelStyle?: CSSProperties }) {
+function Sheet({
+  panelStyle,
+  property = 'transform',
+}: {
+  panelStyle?: CSSProperties;
+  property?: string;
+}) {
   const panelRef = useRef<HTMLDivElement>(null);
-  const { state, open, close } = usePresence(panelRef);
+  const { state, open, close, closeNow } = usePresence(panelRef, property);
   return (
     <>
       <output>{state}</output>
@@ -27,6 +33,9 @@ function Sheet({ panelStyle }: { panelStyle?: CSSProperties }) {
       </button>
       <button type="button" onClick={close}>
         닫기
+      </button>
+      <button type="button" onClick={closeNow}>
+        바로 닫기
       </button>
       {state !== 'closed' && (
         <div ref={panelRef} role="dialog" aria-label="시트" style={panelStyle}>
@@ -104,9 +113,27 @@ describe('usePresence', () => {
     expect(state()).toBe('closed');
   });
 
-  // 다시 열면 퇴장 전환이 취소돼 transitioncancel이 온다. 그 이벤트가 리스너 정리(effect)보다
-  // 먼저 도착하는 경우를 한 act 안에서 만든다 — 열기와 취소가 같은 배치로 처리된다.
-  test('닫는 중에 다시 열면, 그 사이 도착한 취소 이벤트가 시트를 닫지 않는다', () => {
+  // 열리는 중에 닫으면 진행 중이던 열림 전환이 취소돼 transitioncancel이 온다. 그것은 퇴장의
+  // 끝이 아니다 — 시트는 되돌아가는 동안 마운트돼 있어야 하고, 퇴장의 transitionend로만 닫힌다.
+  test('닫는 중에 온 취소 이벤트는 퇴장의 끝이 아니다 — 시트는 transitionend까지 남는다', () => {
+    render(<Sheet panelStyle={SHEET_TRANSITION} />);
+    click('열기');
+    click('닫기');
+    const dialog = screen.getByRole('dialog', { name: '시트' });
+
+    act(() => {
+      dialog.dispatchEvent(transitionEvent('transitioncancel', 'transform'));
+    });
+    expect(state()).toBe('closing');
+    expect(screen.getByRole('dialog', { name: '시트' })).toBe(dialog);
+
+    act(() => {
+      dialog.dispatchEvent(transitionEvent('transitionend', 'transform'));
+    });
+    expect(state()).toBe('closed');
+  });
+
+  test('닫는 중에 다시 열면 열린 채로 남는다 — 그 사이 도착한 취소 이벤트도 닫지 못한다', () => {
     render(<Sheet panelStyle={SHEET_TRANSITION} />);
     click('열기');
     click('닫기');
@@ -119,5 +146,49 @@ describe('usePresence', () => {
 
     expect(state()).toBe('open');
     expect(screen.getByRole('dialog', { name: '시트' })).toBe(dialog);
+  });
+
+  test('듣는 속성은 쓰는 쪽이 고른다 — clip-path 전환의 끝만 센다', () => {
+    render(
+      <Sheet
+        property="clip-path"
+        panelStyle={{
+          transitionProperty: 'opacity, clip-path',
+          transitionDuration: '0.2s, 175ms',
+        }}
+      />,
+    );
+    click('열기');
+    click('닫기');
+    const dialog = screen.getByRole('dialog', { name: '시트' });
+
+    act(() => {
+      dialog.dispatchEvent(transitionEvent('transitionend', 'transform'));
+      dialog.dispatchEvent(transitionEvent('transitionend', 'opacity'));
+    });
+    expect(state()).toBe('closing');
+
+    act(() => {
+      dialog.dispatchEvent(transitionEvent('transitionend', 'clip-path'));
+    });
+    expect(state()).toBe('closed');
+  });
+
+  test('닫는 속성에 전환이 없으면 닫자마자 언마운트한다 — 다른 속성의 전환은 세지 않는다', () => {
+    render(<Sheet property="clip-path" panelStyle={SHEET_TRANSITION} />);
+    click('열기');
+    click('닫기');
+
+    expect(state()).toBe('closed');
+  });
+
+  test('바로 닫기는 퇴장 전환을 건너뛴다', () => {
+    render(<Sheet panelStyle={SHEET_TRANSITION} />);
+    click('열기');
+
+    click('바로 닫기');
+
+    expect(state()).toBe('closed');
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 });

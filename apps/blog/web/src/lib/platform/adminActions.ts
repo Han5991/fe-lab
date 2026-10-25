@@ -15,7 +15,12 @@
  * `AdminActionResult`가 인덱싱으로 검사한다 — 어긋나면 그쪽이 컴파일 에러다.
  */
 
-/** action → 대리 호출하는 RPC(`Database['public']['Functions']`의 키). */
+/**
+ * action → 응답 행 모양을 정하는 RPC(`Database['public']['Functions']`의 키 — 클라이언트가 그 `Returns`로
+ * 응답 타입을 파생한다). Edge Function은 대개 이 RPC를 그대로 대리 호출한다. `all_posts_trends`만 같은 행을
+ * json 배열 하나로 내는 `get_posts_trends`로 받는다 — 이 RPC는 PostgREST max_rows(1000)에 잘려 페이지마다
+ * 다시 집계하기 때문이다(두 결과가 같다는 것은 `migrations.test.ts`가 잠근다).
+ */
 export const ADMIN_ACTION_RPC = {
   all_post_stats: 'get_all_post_stats',
   all_posts_trends: 'get_all_posts_trends',
@@ -39,8 +44,9 @@ export interface AdminSlugFilter {
 }
 
 /**
- * `slugs` 한 요청의 최대 개수(입력 검증용). 실제 한계는 필터가 실리는 쿼리스트링
- * 길이다 — 한도에 가까워지면 slug 목록을 POST 본문으로 받는 RPC로 옮긴다.
+ * `slugs` 한 요청의 최대 개수(입력 검증용). `all_post_stats`의 실제 한계는 필터가 실리는
+ * 쿼리스트링 길이다 — 한도에 가까워지면 `all_posts_trends`처럼 slug 목록을 RPC 인자(POST 본문)로
+ * 받는 RPC로 옮긴다.
  */
 export const MAX_FILTER_SLUGS = 1000;
 
@@ -54,7 +60,7 @@ export const MAX_SLUG_LENGTH = 200;
  */
 export interface AdminActionParams {
   all_post_stats: AdminSlugFilter | undefined;
-  /** 1000행 cap(`max_rows`) 페이징은 Edge Function 안에서 돈다 — 왕복·JWT 검증은 한 번. */
+  /** Edge Function이 json 배열을 내는 RPC 한 번으로 받는다(`max_rows` 페이징 없음) — 왕복·JWT 검증은 한 번. */
   all_posts_trends: AdminSlugFilter | undefined;
   post_hourly_distribution: { slug: string };
   post_dow_distribution: { slug: string };

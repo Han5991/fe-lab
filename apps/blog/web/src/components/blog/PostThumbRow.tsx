@@ -1,9 +1,14 @@
 import { OG_DEFAULT_IMAGE } from '@/content.values.mts';
-import Link from 'next/link';
 import { css, cx } from '@blog/styled-system/css';
 import type { PostSummary } from '@blog/content/client';
-import { postPath, resolveThumbnailSrc } from '@blog/content/client';
+import {
+  isWideThumbnail,
+  postPath,
+  resolveThumbnailSrc,
+} from '@blog/content/client';
 
+import { PostCardShared } from '@/src/components/shared/PostSharedElement';
+import { TransitionLink } from '@/src/components/shared/TransitionLink';
 import { cardLinkRaw, cardRoot, coverFrameRaw, coverImage } from './cardParts';
 import { HiddenPostBadge } from './HiddenPostBadge';
 import { PostMeta } from './PostMeta';
@@ -38,17 +43,23 @@ interface PostThumbRowProps {
  */
 export const PostThumbRow = ({ post }: PostThumbRowProps) => (
   <div className={cx(cardRoot, row)}>
-    <div className={thumb}>
-      <img
-        src={resolveThumbnailSrc(post, OG_DEFAULT_IMAGE)}
-        alt=""
-        width={THUMB_WIDTH}
-        height={THUMB_HEIGHT}
-        loading="lazy"
-        decoding="async"
-        className={coverImage}
-      />
-    </div>
+    <PostCardShared
+      part="cover"
+      slug={post.slug}
+      rescaled={!isWideThumbnail(post)}
+    >
+      <div className={thumb}>
+        <img
+          src={resolveThumbnailSrc(post, OG_DEFAULT_IMAGE)}
+          alt=""
+          width={THUMB_WIDTH}
+          height={THUMB_HEIGHT}
+          loading="lazy"
+          decoding="async"
+          className={coverImage}
+        />
+      </div>
+    </PostCardShared>
     <div
       className={css({
         display: 'flex',
@@ -57,13 +68,20 @@ export const PostThumbRow = ({ post }: PostThumbRowProps) => (
         minW: '0',
       })}
     >
-      <h3>
-        <Link href={postPath(post.slug)} className={title}>
-          {post.title}
-        </Link>
-        {/* dev에서만 — draft·예약 글 표시(프로덕션에서는 아무것도 렌더되지 않는다). */}
-        <HiddenPostBadge post={post} />
-      </h3>
+      <PostCardShared part="title" slug={post.slug}>
+        <h3>
+          <TransitionLink
+            href={postPath(post.slug)}
+            // 이 행의 썸네일·제목이 글 상세로 이어지는 이동이라는 표시(PostCardShared).
+            opensPost
+            className={title}
+          >
+            {post.title}
+          </TransitionLink>
+          {/* dev에서만 — draft·예약 글 표시(프로덕션에서는 아무것도 렌더되지 않는다). */}
+          <HiddenPostBadge post={post} />
+        </h3>
+      </PostCardShared>
       <PostMeta post={post} />
     </div>
   </div>
