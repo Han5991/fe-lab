@@ -223,13 +223,6 @@ export default defineConfig({
         'admin-card-in': {
           from: { opacity: '0', transform: 'scale(0.98)' },
         },
-        // ReadingProgress(src/components/post/ReadingProgress.tsx)의
-        // scroll-driven 진행 바. width 대신 transform: scaleX()를
-        // 애니메이션해 컴포지터 스레드만으로 처리되게 한다 — width는
-        // 레이아웃을 유발해 스크롤 프레임마다 reflow가 돈다.
-        'reading-progress-fill': {
-          to: { transform: 'scaleX(1)' },
-        },
         // 목차 버튼(MobileTOC)이 푸터 앞에서 사라지는 움직임. 시간이 아니라 푸터가 화면에 들어오는 정도에
         // 묶인다(Layout의 `--site-footer` view timeline) — 끝에서 `visibility: hidden`이라 사라진 버튼에
         // 초점도 눌림도 가지 않는다.

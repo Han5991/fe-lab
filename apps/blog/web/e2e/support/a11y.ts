@@ -20,7 +20,7 @@ export interface AxeViolationSummary {
  * 시간으로 도는 유한한 애니메이션·전환이 끝날 때까지 기다린다 — 등장 중인 요소(검색
  * 다이얼로그는 투명도 0에서 떠오른다)를 재면 axe가 반투명하게 합성된 색으로 대비를 계산한다.
  * 끝나지 않는 것은 뺀다: 무한 반복(스켈레톤), 멈춘 것, 그리고 문서 시간이 아니라 스크롤에
- * 묶인 것(글의 진행 바 — 끝까지 스크롤해야 끝난다). 취소된 것은 끝난 것으로 본다.
+ * 묶인 것(끝까지 스크롤해야 끝난다). 취소된 것은 끝난 것으로 본다.
  */
 async function settleAnimations(page: Page): Promise<void> {
   await page.evaluate(async () => {
