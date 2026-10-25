@@ -75,8 +75,10 @@ describe('useAdminDashboardData', () => {
   });
 
   // 인덱스는 배포 때만 바뀐다 — 마운트마다 받으면 조회수 읽기가 매번 그 왕복을 기다린다.
-  test('인덱스는 대시보드·태그 분포가 한 번 받아 나눠 쓰고, 다시 마운트해도 다시 받지 않는다', async () => {
+  test('인덱스·조회수는 구독이 나눠 쓰는 한 번의 요청이고, 다시 마운트해도 다시 받지 않는다', async () => {
     getAdminPostsIndex.mockClear();
+    getAllPostStats.mockClear();
+    getAllPostsTrends.mockClear();
     const client = new QueryClient();
     setAdminQueryDefaults(client);
     const shared = ({ children }: { children: ReactNode }) => (
@@ -92,7 +94,28 @@ describe('useAdminDashboardData', () => {
     const again = renderHook(useBoth, { wrapper: shared });
     await waitFor(() => expect(again.result.current).not.toBeNull());
 
-    expect(getAllPostStats.mock.calls.length).toBeGreaterThan(1);
+    // 조회수(통계·추이)도 30초 안의 재마운트는 다시 받지 않는다.
+    expect(getAllPostStats).toHaveBeenCalledOnce();
+    expect(getAllPostsTrends).toHaveBeenCalledOnce();
     expect(getAdminPostsIndex).toHaveBeenCalledOnce();
+  });
+
+  test('같은 화면에서 구독이 둘 붙어도 조회수 요청은 하나다', async () => {
+    getAllPostStats.mockClear();
+    const client = new QueryClient();
+    setAdminQueryDefaults(client);
+    const shared = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={client}>
+        <Suspense fallback={null}>{children}</Suspense>
+      </QueryClientProvider>
+    );
+
+    const { result } = renderHook(
+      () => [useAdminDashboardData(), useAdminDashboardData()],
+      { wrapper: shared },
+    );
+    await waitFor(() => expect(result.current).not.toBeNull());
+
+    expect(getAllPostStats).toHaveBeenCalledOnce();
   });
 });

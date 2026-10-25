@@ -126,7 +126,7 @@ describe('AnalyticsScreen — 목록', () => {
   test('새로고침이 실패하면 실패를 알리고 업데이트 시각을 바꾸지 않는다', async () => {
     renderScreen();
 
-    // 마운트 직후의 재요청(refetchOnMount: 'always')까지 끝나길 기다린다.
+    // 첫 요청이 끝나 새로고침 버튼이 켜지길 기다린다.
     const refresh = await screen.findByRole('button', { name: '새로고침' });
     await waitFor(() => expect(refresh).toBeEnabled());
     const before = screen.getByText(/^업데이트:/).textContent;
