@@ -1,5 +1,6 @@
 import { cva } from '@blog/styled-system/css';
 import { forcedColorsEdge } from './forcedColorsEdge';
+import { pressButton } from './interaction';
 import { steadyLabel } from './steadyLabel';
 
 /**
@@ -37,9 +38,9 @@ export const chip = cva({
   variants: {
     tone: {
       neutral: {
+        ...pressButton,
         bg: 'paper.200',
         color: 'ink.950',
-        transition: 'colors',
         _hover: { bg: 'paper.300' },
       },
       accent: {
@@ -49,10 +50,10 @@ export const chip = cva({
       },
       toggle: {
         ...steadyLabel,
+        ...pressButton,
         bg: 'transparent',
         color: 'ink.950',
         cursor: 'pointer',
-        transition: 'colors',
         maxW: 'full',
         // 줄 폭(320px 기기에서 280)보다 긴 이름은 칩 안에서 끝을 말줄임으로 자른다. `text-overflow`는 블록
         // 컨테이너에만 걸려, flex인 면이 아니라 글자를 담은 자식 `span`에 건다 — 면에 걸면 면 바로 밑

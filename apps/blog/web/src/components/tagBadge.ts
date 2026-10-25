@@ -1,5 +1,6 @@
 import { cva } from '@blog/styled-system/css';
 import { forcedColorsEdge } from './forcedColorsEdge';
+import { pressButton } from './interaction';
 
 /**
  * 태그 배지 — `#태그` 한 개를 담는 20px pill. Astryx Badge(neutral)의 모양이다: `paper.200` 면에
@@ -34,8 +35,8 @@ export const tagBadge = cva({
     interactive: {
       true: {
         ...forcedColorsEdge,
+        ...pressButton,
         cursor: 'pointer',
-        transition: 'colors',
         _hover: { bg: 'paper.300' },
       },
     },
