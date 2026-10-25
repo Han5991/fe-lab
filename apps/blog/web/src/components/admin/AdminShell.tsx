@@ -17,6 +17,7 @@ import { iconButton } from '../iconButton';
 import { railGutter } from '../Rail';
 import { siteHeaderStyle } from '../siteHeader';
 import { MAIN_ID, skipLink } from '../skipLink';
+import { ThemeToggle } from '../ThemeToggle';
 import { WORDMARK } from '../wordmark';
 import { AdminGuard } from './AdminGuard';
 import { pillBadge } from './adminStyles';
@@ -73,6 +74,11 @@ const barStyle: CSSProperties & Record<`--${string}`, string> = {
   '--admin-bar-transition-name': ADMIN_VIEW_TRANSITION.bar,
 };
 
+// 바의 아이콘 버튼 — ghost의 hover 면(paper.100)은 라이트 바닥(surface.base)과 같은 색이라 한 단계 위로 올린다.
+const barIconButton = css(iconButton.raw({ tone: 'ghost', size: 'md' }), {
+  _hover: { bg: 'paper.200' },
+});
+
 const barClass = css({
   h: '[var(--site-header-height)]',
   pos: 'sticky',
@@ -105,7 +111,7 @@ function AdminBar() {
     // 페이지 전환·패널·정렬의 View Transition에서는 사이트 헤더처럼 따로 찍혀 페이지 위에 남는다
     // (`ADMIN_VIEW_TRANSITION.bar` — 스크롤된 채 바뀌는 목록이 바 자리에 덧칠되지 않게).
     <header style={barStyle} className={barClass}>
-      {/* 세 슬롯 — 워드마크·배지 | 내비 | 블로그·로그아웃. md 이상은 사이트 헤더와 같은
+      {/* 세 슬롯 — 워드마크·배지 | 내비 | 블로그·테마·로그아웃. md 이상은 사이트 헤더와 같은
           `1fr auto 1fr` 격자라 내비가 화면 가운데에 선다. md 미만은 워드마크를 숨기고(배지가
           admin임을 말한다) 로그아웃을 아이콘만 남겨 360px 기기에도 한 줄에 들어간다. */}
       <div
@@ -177,13 +183,12 @@ function AdminBar() {
             target="_blank"
             rel="noopener noreferrer"
             aria-label="블로그 열기"
-            // ghost의 hover 면(paper.100)은 라이트 바닥(surface.base)과 같은 색이라 한 단계 위로 올린다.
-            className={css(iconButton.raw({ tone: 'ghost', size: 'md' }), {
-              _hover: { bg: 'paper.200' },
-            })}
+            className={barIconButton}
           >
             <ExternalLink size={18} aria-hidden />
           </a>
+          {/* 사이트 헤더와 같은 컴포넌트 — 같은 쿠키·같은 View Transition 전환. */}
+          <ThemeToggle className={barIconButton} />
           <button
             type="button"
             onClick={() => void handleLogout()}

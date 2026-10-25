@@ -362,6 +362,9 @@ export const BUNDLE_GUARDS = [
  * 2026-10-25 admin 차트가 CSS로 움직이는(선·면 와이프, 막대 자람) 빌드로 갱신: JS는 `/admin/` 최대 387.6 → 387.8KB(같은
  * 날 바꾸기 전 빌드 대비 — 기간 키 한 줄), 공개 그룹은 그대로. CSS는 keyframes 둘과 래퍼 자손 규칙 둘로 전 그룹 +0.2KB(최대 29.2KB,
  * `/posts/`) — 예산은 그대로이고 CSS 여유는 0.8KB다.
+ * 2026-10-25 admin 관리자 바에 테마 토글(사이트 헤더와 같은 `ThemeToggle`)을 단 빌드로 갱신: JS는 `/admin/` 최대
+ * 387.8 → 388.0KB(+0.2), 공개 그룹도 +0.2KB(176.5 → 176.7, `/posts/` 239.4 → 239.6 — 토글이 `className`을 받는다).
+ * CSS는 그대로(28.6, 최대 29.2KB `/posts/`) — 예산은 그대로.
  * 그룹이 새로 생기면(새 라우트) 예산이 없어서, 라우트가
  * 사라지면 예산이 죽어서, 측정 최대가 상한의 80% 아래로 내려가면 예산이 느슨해서
  * (`budget-slack`) 빌드가 실패한다.
@@ -372,21 +375,21 @@ export const BUNDLE_GUARDS = [
  * 걸리면 같은 방식으로 내린다 — 여유가 크게 남으면 회귀가 그 안에 숨는다.
  */
 export const BUNDLE_BUDGETS = [
-  // 176.5 KB / 28.6 KB
+  // 176.7 KB / 28.6 KB
   { group: '/', jsGzipKB: 185, cssGzipKB: 30 },
-  // 239.4 KB / 29.2 KB — 목록과 글 상세 46쪽의 최대(목록. mermaid·Giscus는 지연 로드라 밖)
+  // 239.6 KB / 29.2 KB — 목록과 글 상세 46쪽의 최대(목록. mermaid·Giscus는 지연 로드라 밖)
   { group: '/posts/', jsGzipKB: 252, cssGzipKB: 30 },
-  // 176.5 KB / 28.6 KB
+  // 176.7 KB / 28.6 KB
   { group: '/about/', jsGzipKB: 185, cssGzipKB: 30 },
-  // 176.5 KB / 28.6 KB
+  // 176.7 KB / 28.6 KB
   { group: '/series/', jsGzipKB: 185, cssGzipKB: 30 },
-  // 176.5 KB / 28.6 KB
+  // 176.7 KB / 28.6 KB
   { group: '/privacy/', jsGzipKB: 185, cssGzipKB: 30 },
-  // 176.5 KB / 28.6 KB — 정적 404(`404-page` 처리)
+  // 176.7 KB / 28.6 KB — 정적 404(`404-page` 처리)
   { group: '/404/', jsGzipKB: 185, cssGzipKB: 30 },
-  // 176.5 KB / 28.6 KB — Next가 함께 내보내는 not-found 라우트
+  // 176.7 KB / 28.6 KB — Next가 함께 내보내는 not-found 라우트
   { group: '/_not-found/', jsGzipKB: 185, cssGzipKB: 30 },
-  // 387.8 KB / 28.6 KB — admin 48쪽의 최대(분석 화면 — 목록 1 + 글별 45쪽이 같은 화면이라 무게가 같다)
+  // 388.0 KB / 28.6 KB — admin 48쪽의 최대(분석 화면 — 목록 1 + 글별 45쪽이 같은 화면이라 무게가 같다)
   { group: '/admin/', jsGzipKB: 398, cssGzipKB: 30 },
 ] as const satisfies BundleBudgetsConfig;
 

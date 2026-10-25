@@ -1,9 +1,9 @@
 /**
- * admin 셸 — 모든 admin 화면이 같은 관리자 바(워드마크·Admin | 대시보드·분석 | 블로그·로그아웃)와
+ * admin 셸 — 모든 admin 화면이 같은 관리자 바(워드마크·Admin | 대시보드·분석 | 블로그·테마·로그아웃)와
  * 본문을 쓴다. 가드는 따로 검사하므로(AdminGuard.test) 여기서는 통과시킨다. auth 배럴은 import
  * 시점에 supabase 클라이언트를 만들어 가짜로 바꾼다.
  */
-import { describe, expect, test, vi } from 'vitest';
+import { afterEach, describe, expect, test, vi } from 'vitest';
 import {
   fireEvent,
   render,
@@ -53,6 +53,11 @@ function currentItem(): string | null {
 }
 
 describe('AdminShell', () => {
+  afterEach(() => {
+    delete document.documentElement.dataset['theme'];
+    document.cookie = 'theme=; path=/; max-age=0';
+  });
+
   test('관리자 바는 배너 랜드마크이고 화면 내용은 그 아래 main에 든다', () => {
     renderShell('/admin/');
 
@@ -107,6 +112,23 @@ describe('AdminShell', () => {
     expect(blog).toHaveAttribute('href', '/');
     expect(blog).toHaveAttribute('target', '_blank');
     expect(blog).toHaveAttribute('rel', 'noopener noreferrer');
+  });
+
+  // 사이트 헤더와 같은 컴포넌트(`ThemeToggle`)다 — 접근 이름이 같고, 누르면 같은 쿠키·data-theme를 바꾼다.
+  test('테마 토글이 이름으로 잡히고 누르면 라이트와 다크가 바뀌며 쿠키에 남는다', () => {
+    document.documentElement.dataset['theme'] = 'dark';
+    renderShell('/admin/');
+
+    const toggle = within(screen.getByRole('banner')).getByRole('button', {
+      name: '테마 전환 (라이트/다크)',
+    });
+    fireEvent.click(toggle);
+    expect(document.documentElement.dataset['theme']).toBe('light');
+    expect(document.cookie).toContain('theme=light');
+
+    fireEvent.click(toggle);
+    expect(document.documentElement.dataset['theme']).toBe('dark');
+    expect(document.cookie).toContain('theme=dark');
   });
 
   test('로그아웃은 이 탭의 세션을 끝내고 로그인 화면으로 보낸다', async () => {
