@@ -235,6 +235,8 @@ describe('AnalyticsScreen — 고른 글', () => {
 
     fireEvent.click(within(panel).getByRole('button', { name: '통계 닫기' }));
     expect(pushState).toHaveBeenCalledWith(null, '', '/admin/analytics/');
+    // 칼럼이 빠지기 전에 초점을 고른 줄로 돌려준다 — 문서 처음으로 떨어지지 않게.
+    expect(screen.getByRole('link', { name: '글 A' })).toHaveFocus();
   });
 
   // 칼럼은 DOM에서 목록 뒤라, 고른 뒤 초점을 옮기지 않으면 키보드로는 남은 줄을 다 지나야 닿는다.

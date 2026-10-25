@@ -442,13 +442,26 @@ export function AnalyticsScreen() {
   const selectedSlug = adminAnalyticsSlugFromPath(usePathname());
   const isWide = useIsWide();
 
-  // 목록에서 고른 뒤에만 칼럼 제목으로 초점을 옮긴다 — 주소로 바로 연 화면은 그대로 둔다.
-  const [focusTitle, setFocusTitle] = useState(false);
+  // 목록에서 고른 글일 때만 칼럼 제목으로 초점을 옮긴다 — 주소로 바로 연 화면이나 뒤로·앞으로 가기로
+  // 바뀐 글은 그대로 둔다(고른 slug와 지금 주소의 slug가 같을 때만).
+  const [focusedSlug, setFocusedSlug] = useState<string | null>(null);
+  const listRef = useRef<HTMLDivElement>(null);
   const select = (slug: string) => {
-    setFocusTitle(true);
+    setFocusedSlug(slug);
     navigateTo(adminAnalyticsPostPath(slug));
   };
-  const close = () => navigateTo(ADMIN_ANALYTICS_PATH);
+  const close = () => {
+    setFocusedSlug(null);
+    // 넓은 화면의 칼럼은 닫으면 통째로 빠져, 초점을 든 닫기 버튼과 함께 초점이 문서 처음으로 떨어진다.
+    // 칼럼이 빠지기 전에 고른 줄의 제목 링크로 돌려준다 — 목록의 어디까지 왔는지 잃지 않게. 좁은 화면
+    // 시트는 `useModalDialog`가 연 자리로 돌려준다.
+    if (isWide) {
+      listRef.current
+        ?.querySelector<HTMLAnchorElement>('a[aria-current="page"]')
+        ?.focus({ preventScroll: true });
+    }
+    navigateTo(ADMIN_ANALYTICS_PATH);
+  };
 
   return (
     <div className={layout({ panel: isWide && selectedSlug !== null })}>
@@ -458,6 +471,7 @@ export function AnalyticsScreen() {
       <ViewTransition update={ADMIN_VIEW_TRANSITION.resize} default="none">
         <div className={cx(railGutter, css({ pb: '12', minW: '0' }))}>
           <div
+            ref={listRef}
             className={cx(
               railColumn({ width: 'wide' }),
               css({ display: 'flex', flexDir: 'column', gap: '4' }),
@@ -481,7 +495,7 @@ export function AnalyticsScreen() {
         slug={selectedSlug}
         isWide={isWide}
         onClose={close}
-        focusTitle={focusTitle}
+        focusTitle={selectedSlug !== null && focusedSlug === selectedSlug}
       />
     </div>
   );

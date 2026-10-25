@@ -331,8 +331,9 @@ export function PostStatsPanel({
       <h2
         id={titleId}
         tabIndex={focusTitle ? -1 : undefined}
-        // 그려지는 순간 한 번 — 효과 훅 없이 ref 콜백이 맡는다. 칼럼은 sticky라 스크롤은 막는다.
-        ref={focusTitle ? el => el?.focus({ preventScroll: true }) : undefined}
+        // 그려지는 순간 한 번 — 효과 훅 없이 ref 콜백이 맡는다. 콜백은 모듈 수준 함수라 다시 그려도
+        // identity가 같아 다시 불리지 않는다(입력에 든 초점이 제목으로 튀지 않는다).
+        ref={focusTitle ? focusOnMount : undefined}
         className={css({ textStyle: 'h2' })}
       >
         {post.title}
@@ -555,6 +556,11 @@ export function PostStatsPanel({
   );
 }
 
+/** 붙는 순간 초점을 받는 ref 콜백 — 칼럼은 sticky라 스크롤은 막는다. */
+const focusOnMount = (el: HTMLElement | null) => {
+  el?.focus({ preventScroll: true });
+};
+
 interface PostNotFoundProps extends CloseProps {
   slug: string;
   titleId: string;
@@ -563,17 +569,20 @@ interface PostNotFoundProps extends CloseProps {
 /** 목록에 없는 글(인덱스에서 빠진 글·손으로 친 주소) — 에러가 아니라 안내다. */
 export function PostNotFound({ slug, titleId, onClose }: PostNotFoundProps) {
   return (
-    <div role="status" className={panelBody}>
+    <div className={panelBody}>
       <div className={css({ display: 'flex', justifyContent: 'flex-end' })}>
         <CloseButton onClose={onClose} />
       </div>
-      <h2 id={titleId} className={css({ textStyle: 'h3' })}>
-        이 글의 통계를 찾을 수 없습니다
-      </h2>
-      <p className={css({ textStyle: 'body', color: 'ink.700' })}>
-        분석 목록에 <code>{slug || '(빈 slug)'}</code> 글이 없습니다. 주소를
-        확인하거나 목록에서 다시 골라 주세요.
-      </p>
+      {/* 라이브 영역은 안내 문장만 — 닫기 버튼·링크 이름까지 함께 읽히지 않게. */}
+      <div role="status" className={css({ display: 'contents' })}>
+        <h2 id={titleId} className={css({ textStyle: 'h3' })}>
+          이 글의 통계를 찾을 수 없습니다
+        </h2>
+        <p className={css({ textStyle: 'body', color: 'ink.700' })}>
+          분석 목록에 <code>{slug || '(빈 slug)'}</code> 글이 없습니다. 주소를
+          확인하거나 목록에서 다시 골라 주세요.
+        </p>
+      </div>
       {/* 문장 밖의 독립 링크라 hover 밑줄로 가른다(blog-design-system 스킬 "색으로 갈리지 않는 자리"). */}
       <Link
         href={ADMIN_ANALYTICS_PATH}
