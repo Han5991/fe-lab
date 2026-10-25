@@ -676,6 +676,17 @@ export default defineConfig({
           animationDuration: 'fastMax',
           animationTimingFunction: 'standard',
         },
+      // 관리자 바도 사이트 헤더처럼 테마 전환에서만 크로스페이드한다 — 대시보드 ↔ 분석 이동 사이의 바는 같은
+      // 바라 옛 스냅샷을 지우고 새 스냅샷을 그대로 둔다(겹친 페이드는 중간 프레임에 로고 글자가 묽어진다 —
+      // 위 헤더 규칙).
+      [`:root:not(:active-view-transition-type(${THEME_TRANSITION_TYPE}))::view-transition-old(${ADMIN_VIEW_TRANSITION.bar})`]:
+        {
+          display: 'none',
+        },
+      [`:root:not(:active-view-transition-type(${THEME_TRANSITION_TYPE}))::view-transition-new(${ADMIN_VIEW_TRANSITION.bar})`]:
+        {
+          animationName: 'none',
+        },
       // out·slideOut — 자리를 넘기고 사라지는 것. 페이지가 나갈 때처럼 fast·exit로 빨리 비킨다. out은
       // 제자리에서 걷히고(스켈레톤, '고른 글 없음', 바뀌기 전 지표 값), slideOut은 패널이 붙은 오른쪽으로
       // 16px 밀려 나간다(넓은 화면 패널의 이전 내용 — 닫기는 들어올 때를 거꾸로 돈다).
