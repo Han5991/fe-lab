@@ -582,8 +582,10 @@ type은 `src/shared/viewTransitions.ts`, 감싸개는 `src/components/shared/Pos
   (utilities 레이어가 base 레이어의 `:focus-visible`을 이겨 링이 사라진다). 입력은 감싸는 상자의 `_focusWithin`
   보더를 함께 둘 수 있다(`ArchiveSearchBox`). 카드는 링이 제목 상자만 두른다 — 카드 전체로 옮기려면 `FOCUS_RING`을
   `panda.config.ts` 밖의 값 모듈로 빼야 한다
-- 레시피 밖에서 `_active`·`_focus`·`_focusVisible`·`_press*`를 쓰면 lint(`NO_LOCAL_INTERACTION`, 허용 파일은
-  `INTERACTION_FILES`)가 막는다. 새 종류의 누름이 필요하면 `interaction.ts`에 프리셋으로 더한다
+- `_active`·`_focus`·`_focusVisible`·`_press*`는 허용 파일(`INTERACTION_FILES` — 프리셋인 `interaction.ts`·
+  `cardParts.ts`, 스킵 링크가 있는 `Layout.tsx`, 재작성 전의 admin 두 파일) 밖에서 쓰면 lint
+  (`NO_LOCAL_INTERACTION`)가 막는다. 버튼 레시피 파일도 허용 파일이 아니라 프리셋(`pressButton`)을 펼친다.
+  새 종류의 누름이 필요하면 `interaction.ts`에 프리셋으로 더한다
 
 ## 버튼
 

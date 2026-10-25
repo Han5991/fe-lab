@@ -140,8 +140,10 @@ export default defineConfig({
       // - `_press` · `_groupPress`: 모든 포인터에서 누르는 동안. hover와 다른 모양이 필요한 자리만 쓴다.
       // - `_pressScale`: 누르는 동안의 **크기**. 마우스류(hover·fine)에서만 — 터치의 :active는 스크롤을
       //   시작하는 손가락에도 칠해진다(Astryx와 같은 판단). disabled는 뺀다.
-      // `_press*`·`_active`·`_focus`·`_focusVisible`은 `src/components/interaction.ts`와 `cardParts.ts` 밖에서
-      // 쓰지 못한다(eslint `NO_LOCAL_INTERACTION`) — `_hover`는 컴포넌트가 쓴다.
+      // `_press*`·`_active`·`_focus`·`_focusVisible`은 eslint의 허용 파일(`INTERACTION_FILES` — 프리셋인
+      // `interaction.ts`·`cardParts.ts`, 스킵 링크가 있는 `Layout.tsx`, 재작성 전의 admin 두 파일) 밖에서
+      // 쓰지 못한다(`NO_LOCAL_INTERACTION`). 버튼 레시피도 직접 쓰지 않고 프리셋을 펼친다. `_hover`는
+      // 컴포넌트가 쓴다.
       hover: {
         '@media (hover: hover)': { '&:is(:hover, [data-hover])': '@slot' },
         '@media (hover: none)': { '&:is(:active, [data-active])': '@slot' },
