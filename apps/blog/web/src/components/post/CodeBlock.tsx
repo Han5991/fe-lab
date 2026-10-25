@@ -132,6 +132,19 @@ export const CODE_THEME: typeof THEMED = Object.fromEntries(
   ]),
 );
 
+/** 코드 글자 크기 — `pre`(customStyle)와 `code`(CODE_TAG_STYLE)가 같은 값을 써야 한다. */
+const CODE_FONT_SIZE = '0.875rem';
+const CODE_LINE_HEIGHT = '1.25rem';
+
+/** `code` 태그의 글자 — 테마의 code 규칙(mono·색) 위에 14/20과 줄바꿈을 덮는다. */
+const CODE_TAG_STYLE = {
+  ...CODE_THEME['code[class*="language-"]'],
+  fontSize: CODE_FONT_SIZE,
+  lineHeight: CODE_LINE_HEIGHT,
+  whiteSpace: 'pre-wrap',
+  overflowWrap: 'anywhere',
+} as const;
+
 // 스크롤 없이 펼치는 코드의 한계. 레퍼런스(fumadocs)와 같은 600px이다.
 // 이걸 넘는 블록은 글의 흐름을 끊고 목차·본문 위치 감각을 통째로 지운다.
 const CODE_MAX_HEIGHT = 600;
@@ -256,8 +269,8 @@ export function CodeBlock({
           margin: 0,
           // 헤더가 위 여백을 이미 쥐고 있어 위는 4px, 아래는 12px(목업). 좌우 16px.
           padding: `${token('spacing.1')} ${token('spacing.4')} ${token('spacing.3')}`,
-          fontSize: '0.875rem',
-          lineHeight: '1.25rem',
+          fontSize: CODE_FONT_SIZE,
+          lineHeight: CODE_LINE_HEIGHT,
           background: 'transparent',
           // 긴 줄은 줄바꿈한다 — 가로로 스크롤하면 코드가 좁은 칼럼에서 잘려 보인다.
           whiteSpace: 'pre-wrap',
@@ -265,15 +278,11 @@ export function CodeBlock({
           // 스크롤한다 — 세로 스크롤 컨테이너라 아래 tabIndex가 꼭 필요하다.
           maxHeight: `${CODE_MAX_HEIGHT}px`,
         }}
-        // 테마가 `code`에도 13px·pre를 걸어 두므로 pre의 크기만 바꿔서는 글자가 안 바뀐다.
-        codeTagProps={{
-          style: {
-            fontSize: '0.875rem',
-            lineHeight: '1.25rem',
-            whiteSpace: 'pre-wrap',
-            overflowWrap: 'anywhere',
-          },
-        }}
+        // 테마가 `code`에도 13px·글꼴·색을 걸어 두므로 pre의 크기만 바꿔서는 글자가 안 바뀐다.
+        // `codeTagProps.style`은 테마의 code 규칙을 **통째로 대체**한다(합치지 않는다) — 그래서
+        // 테마 규칙(mono 글꼴·색)을 펼친 위에 덮는다. 빠뜨리면 글꼴이 UA 기본 monospace로
+        // 떨어진다(런타임 게이트 `웹 폰트 — #post-content pre code`가 잡는다).
+        codeTagProps={{ style: CODE_TAG_STYLE }}
         {...props}
         // 코드 블록은 가로 스크롤되는데 포커스를 받을 수 없어 키보드만 쓰는
         // 사용자가 잘린 코드를 볼 방법이 없었다(axe scrollable-region-focusable,

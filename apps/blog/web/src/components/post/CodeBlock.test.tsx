@@ -193,6 +193,8 @@ describe('코드 블록 크롬', () => {
     const code = container.querySelector<HTMLElement>('pre code');
     expect(code?.style.fontSize).toBe('0.875rem');
     expect(code?.style.whiteSpace).toBe('pre-wrap');
+    // codeTagProps.style은 테마의 code 규칙을 대체하므로, 글꼴이 UA 기본으로 떨어지지 않았는지 본다.
+    expect(code?.style.fontFamily).toBe('var(--fonts-mono)');
   });
 
   test('블록이 아닌 코드는 헤더 없이 인라인 코드로 그린다', () => {
