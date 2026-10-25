@@ -35,10 +35,13 @@ const grid = css({
 });
 
 // `muted` 면 위의 카드 — 보더 대신 면으로 갈린다(Astryx ClickableCard muted). 카드 전체가 링크 하나다.
+// 두 열에서 한 줄의 칸(li)은 grid가 같은 높이로 늘리니, 카드가 그 높이를 채워야 옆 카드와 면이 맞는다
+// (썸네일 없는 "시리즈 목록" 카드가 썸네일 카드보다 낮게 떠 있었다).
 const card = css({
   display: 'flex',
   alignItems: 'center',
   gap: '3',
+  h: 'full',
   minH: '0',
   p: '3',
   rounded: 'container',
