@@ -18,7 +18,6 @@ import {
 import { toNextMetadata } from './nextMetadata';
 import type { Metadata } from 'next';
 import {
-  Rail,
   railGutter,
   railColumn,
   railWithAside,
@@ -163,7 +162,9 @@ export default async function PostPage({ params }: Props) {
 
             <PostBody content={post.content} relativeDir={post.relativeDir} />
 
-            {/* 본문 아래 — 구분선 → 태그(아카이브 태그 필터의 유일한 입구)와 공유. */}
+            {/* 본문 아래 — 구분선 → 태그(아카이브 태그 필터의 유일한 입구)와 공유 → 이전·다음 글.
+                이전·다음 카드는 글 칼럼 안이라 페이지 전환 경계(PageBoundary) 안이다 — 경계 밖이면
+                페이지 스냅샷에 담기지 않아 누른 카드가 전환 첫 프레임에 사라졌다. */}
             <div
               className={css({
                 display: 'flex',
@@ -186,6 +187,7 @@ export default async function PostPage({ params }: Props) {
                   <ShareButton title={post.title} />
                 </div>
               </div>
+              <PostNavigation prev={prev} next={next} seriesNav={seriesNav} />
             </div>
 
             <GiscusComments />
@@ -193,17 +195,6 @@ export default async function PostPage({ params }: Props) {
 
           <TOC />
         </div>
-      </PageBoundary>
-
-      {/* 본문 셸과 같은 wide 레일이라 왼쪽 끝이 본문과 맞는다.
-          페이지 전환 경계는 따로 하나 더 둔다: 경계 밖이면
-          페이지 스냅샷에 담기지 않고, React가 루트 스냅샷을 감추므로(경계 밖에
-          바뀐 것이 없다고 보면 루트 그룹을 투명하게 둔다) 누른 이전·다음 카드가
-          전환 첫 프레임에 사라졌다. 경계 안이면 글과 함께 밀려난다. */}
-      <PageBoundary>
-        <Rail width="wide" className={css({ pt: '10' })}>
-          <PostNavigation prev={prev} next={next} seriesNav={seriesNav} />
-        </Rail>
       </PageBoundary>
     </>
   );
