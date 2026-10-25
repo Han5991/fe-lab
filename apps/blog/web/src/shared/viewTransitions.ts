@@ -39,7 +39,36 @@ export const VIEW_TRANSITION = {
    */
   navSlideOut: 'nav-slide-out',
   navSlideIn: 'nav-slide-in',
+  /**
+   * 헤더 내비의 현재 위치 표식(`ACTIVE_NAV_INDICATOR_SELECTOR`)의 `view-transition-name` — 이동 사이에
+   * 막대가 옛 링크 아래에서 새 링크 아래로 옮겨 간다. 현재 페이지 링크의 표식에만 붙어 문서에 하나뿐이다.
+   */
+  navIndicator: 'nav-indicator',
 } as const;
+
+/**
+ * 헤더 내비의 현재 위치 표식을 고르는 속성 — `NavLinks`가 **모든** 링크 안에 두는 빈 span에 달린다. 막대를
+ * 그리고 이름(`VIEW_TRANSITION.navIndicator`)을 다는 건 그중 현재 페이지 링크의 span뿐이고
+ * (`ACTIVE_NAV_INDICATOR_SELECTOR`), 모양·자리·이름은 전부 `panda.config.ts` globalCss가 준다.
+ *
+ * span을 활성 링크에만 두지 않는 이유는 404다. `404.html`은 빌드 때 활성 링크 없이 미리 그려지는데, 그
+ * 파일이 `/posts/없는-글/`로 열리면 클라이언트의 `usePathname`은 "글"을 활성으로 본다. 활성 여부로 자식을
+ * 넣고 빼면 서버 HTML에 없는 요소가 생겨 하이드레이션이 깨지고(React #418) 루트가 클라이언트에서 다시
+ * 그려진다 — 그 재렌더가 `<html data-theme>`를 서버 값(dark)으로 덮어 라이트 사용자 화면이 뒤집혔다.
+ * 활성 여부가 속성(`aria-current`·class)에만 있으면 React는 서버 값을 둔 채 넘어간다.
+ *
+ * `NavLinks`는 이 상수를 import하지 않고 JSX 속성 이름으로 직접 적는다 — 모든 공개 페이지에 실리는
+ * 클라이언트 컴포넌트라, 계산된 키(spread)나 Panda `css()`(런타임 함수라 스타일 객체가 JS에 실린다)·인라인
+ * 이름을 두면 첫 로드 JS가 는다. 그 사본은 `NavLinks.test.tsx`가 이 값으로 span을 찾아 잠근다.
+ */
+export const NAV_INDICATOR_ATTRIBUTE = 'data-nav-indicator';
+
+/**
+ * 막대가 그려지고 이름이 붙는 표식 — 현재 페이지 링크(`aria-current="page"`)의 직속 span. `panda.config.ts`
+ * globalCss의 셀렉터이자 `NavLinks.test.tsx`가 "문서에 하나뿐"을 확인하는 셀렉터다(이름이 둘이면 브라우저가
+ * 전환을 통째로 건너뛴다).
+ */
+export const ACTIVE_NAV_INDICATOR_SELECTOR = `[aria-current="page"] > [${NAV_INDICATOR_ATTRIBUTE}]`;
 
 /**
  * 방향 있는 이동의 transition type(Next `<Link transitionTypes>`)이자, 그 type일 때 `PageBoundary`가
