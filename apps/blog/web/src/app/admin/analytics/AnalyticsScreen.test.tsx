@@ -237,6 +237,36 @@ describe('AnalyticsScreen — 고른 글', () => {
     expect(pushState).toHaveBeenCalledWith(null, '', '/admin/analytics/');
   });
 
+  // 칼럼은 DOM에서 목록 뒤라, 고른 뒤 초점을 옮기지 않으면 키보드로는 남은 줄을 다 지나야 닿는다.
+  test('넓은 화면에서 줄을 고르면 칼럼 제목으로 초점이 가고, 주소로 바로 열면 옮기지 않는다', async () => {
+    nav.pathname = '/admin/analytics/a/';
+    const deepLink = renderScreen();
+    expect(
+      await screen.findByRole('heading', { name: '글 A', level: 2 }),
+    ).not.toHaveFocus();
+    deepLink.unmount();
+
+    nav.pathname = '/admin/analytics/';
+    const client = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    const view = renderScreen(client);
+    // jsdom의 pushState는 usePathname을 바꾸지 않는다 — 주소를 바꾸고 다시 그린다(파일 머리 주석).
+    vi.spyOn(window.history, 'pushState').mockImplementation(() => {
+      nav.pathname = '/admin/analytics/b/';
+    });
+    fireEvent.click(await screen.findByRole('link', { name: '글 B' }));
+    view.rerender(
+      <QueryClientProvider client={client}>
+        <AnalyticsScreen />
+      </QueryClientProvider>,
+    );
+
+    expect(
+      await screen.findByRole('heading', { name: '글 B', level: 2 }),
+    ).toHaveFocus();
+  });
+
   // 고른 글이 없으면 보일 통계가 없다 — 칼럼도 스켈레톤도 없이 목록이 폭을 다 쓴다(데이터를 기다리는
   // 동안에도 빈 칼럼이 서지 않는다).
   test('아무 글도 고르지 않으면 패널 칼럼이 없다', () => {

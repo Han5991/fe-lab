@@ -251,6 +251,12 @@ interface PostStatsPanelProps extends CloseProps {
   tags: readonly string[];
   /** 제목 헤딩의 id — 좁은 화면의 시트(다이얼로그)가 이름으로 쓴다. */
   titleId: string;
+  /**
+   * 그려질 때 제목으로 초점을 옮긴다 — 넓은 화면에서 목록 줄을 눌러 연 칼럼. 칼럼은 DOM에서 목록 뒤라
+   * 옮기지 않으면 키보드로는 남은 줄 링크를 다 지나야 닿는다. 좁은 화면 시트는 `useModalDialog`가 옮긴다.
+   * 주소로 바로 연 화면(딥링크)에서는 옮기지 않는다 — 사용자가 고른 것이 아니다.
+   */
+  focusTitle?: boolean;
 }
 
 /**
@@ -265,6 +271,7 @@ export function PostStatsPanel({
   tags,
   titleId,
   onClose,
+  focusTitle = false,
 }: PostStatsPanelProps) {
   const todayISO = getKSTDateISO(TIMEZONE);
   const derived = analyticsService.computeDerivedStats(post, todayISO);
@@ -321,7 +328,13 @@ export function PostStatsPanel({
         <CloseButton onClose={onClose} />
       </div>
 
-      <h2 id={titleId} className={css({ textStyle: 'h2' })}>
+      <h2
+        id={titleId}
+        tabIndex={focusTitle ? -1 : undefined}
+        // 그려지는 순간 한 번 — 효과 훅 없이 ref 콜백이 맡는다. 칼럼은 sticky라 스크롤은 막는다.
+        ref={focusTitle ? el => el?.focus({ preventScroll: true }) : undefined}
+        className={css({ textStyle: 'h2' })}
+      >
         {post.title}
       </h2>
 

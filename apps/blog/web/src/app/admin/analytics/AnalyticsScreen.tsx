@@ -295,6 +295,8 @@ interface InspectorBodyProps {
   /** 넓은 화면은 칼럼 안의 내용, 좁은 화면은 시트(고른 글이 있을 때만). */
   mode: 'column' | 'sheet';
   onClose: () => void;
+  /** 칼럼을 사용자가 목록에서 골라 열었는가 — 그때만 제목으로 초점을 옮긴다(`PostStatsPanel`). */
+  focusTitle: boolean;
 }
 
 /**
@@ -304,7 +306,12 @@ interface InspectorBodyProps {
  * 구독을 붙였다 떼면 그때마다 목록 전체를 다시 받는다 — 그래서 고른 글이 없어도(칼럼의 '고른 글
  * 없음', 닫힌 시트) 이 컴포넌트는 남아 아무것도 그리지 않는다.
  */
-function InspectorBody({ slug, mode, onClose }: InspectorBodyProps) {
+function InspectorBody({
+  slug,
+  mode,
+  onClose,
+  focusTitle,
+}: InspectorBodyProps) {
   const { posts, tagsBySlug } = useAdminPostsWithTags();
   const titleId = useId();
 
@@ -322,6 +329,7 @@ function InspectorBody({ slug, mode, onClose }: InspectorBodyProps) {
         tags={tags}
         titleId={titleId}
         onClose={onClose}
+        focusTitle={mode === 'column' && focusTitle}
       />
     ) : (
       <PostNotFound slug={slug} titleId={titleId} onClose={onClose} />
@@ -364,6 +372,7 @@ interface InspectorProps {
   slug: string | null;
   isWide: boolean;
   onClose: () => void;
+  focusTitle: boolean;
 }
 
 /**
@@ -371,7 +380,7 @@ interface InspectorProps {
  * 없다 — 목록이 화면 폭을 다 쓴다. 칼럼은 고른 글의 데이터를 기다리는 동안에도 자리를 지킨다(스켈레톤).
  * 데이터 구독(`InspectorBody`)은 고른 글이 없어도 아무것도 그리지 않고 남는다(그 주석).
  */
-function Inspector({ slug, isWide, onClose }: InspectorProps) {
+function Inspector({ slug, isWide, onClose, focusTitle }: InspectorProps) {
   if (isWide) {
     return (
       <Suspense
@@ -385,13 +394,23 @@ function Inspector({ slug, isWide, onClose }: InspectorProps) {
           )
         }
       >
-        <InspectorBody slug={slug} mode="column" onClose={onClose} />
+        <InspectorBody
+          slug={slug}
+          mode="column"
+          onClose={onClose}
+          focusTitle={focusTitle}
+        />
       </Suspense>
     );
   }
   return (
     <Suspense fallback={null}>
-      <InspectorBody slug={slug} mode="sheet" onClose={onClose} />
+      <InspectorBody
+        slug={slug}
+        mode="sheet"
+        onClose={onClose}
+        focusTitle={false}
+      />
     </Suspense>
   );
 }
@@ -423,7 +442,12 @@ export function AnalyticsScreen() {
   const selectedSlug = adminAnalyticsSlugFromPath(usePathname());
   const isWide = useIsWide();
 
-  const select = (slug: string) => navigateTo(adminAnalyticsPostPath(slug));
+  // 목록에서 고른 뒤에만 칼럼 제목으로 초점을 옮긴다 — 주소로 바로 연 화면은 그대로 둔다.
+  const [focusTitle, setFocusTitle] = useState(false);
+  const select = (slug: string) => {
+    setFocusTitle(true);
+    navigateTo(adminAnalyticsPostPath(slug));
+  };
   const close = () => navigateTo(ADMIN_ANALYTICS_PATH);
 
   return (
@@ -453,7 +477,12 @@ export function AnalyticsScreen() {
           </div>
         </div>
       </ViewTransition>
-      <Inspector slug={selectedSlug} isWide={isWide} onClose={close} />
+      <Inspector
+        slug={selectedSlug}
+        isWide={isWide}
+        onClose={close}
+        focusTitle={focusTitle}
+      />
     </div>
   );
 }
