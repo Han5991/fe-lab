@@ -2,6 +2,8 @@ import { defineConfig, definePlugin } from '@pandacss/dev';
 import { TEST_SUFFIX } from './testFiles.mts';
 import {
   ACTIVE_NAV_INDICATOR_SELECTOR,
+  ARCHIVE_FILTER_TRANSITION_TYPE,
+  ARCHIVE_LIST_RISE,
   NAV_INDICATOR_ATTRIBUTE,
   NAV_TRANSITION,
   POST_OPEN_TRANSITION_TYPE,
@@ -370,6 +372,33 @@ export default defineConfig({
       // 글을 여는 이동(카드 → 글 상세)에서는 막대가 미끄러지지 않고 새 자리에 바로 선다 — 커버·제목이
       // 날아가는 동안 헤더에서 또 하나가 움직이면 시선이 갈린다. old/new는 같은 막대라 겹쳐도 그대로다.
       [`:root:active-view-transition-type(${POST_OPEN_TRANSITION_TYPE})::view-transition-group(${VIEW_TRANSITION.navIndicator})`]:
+        {
+          animationName: 'none',
+        },
+      // ── 글 목록 교차 — `/posts`의 필터·정렬·보기 변경(PostsArchive의 `<ViewTransition>`) ──
+      // 이전 목록은 페이지가 나갈 때와 같은 `page-exit`(위 규칙)로 fast 안에 걷히고, 새 목록은 그 뒤에
+      // (fast 지연) fastMax·standard로 8px 떠오른다 — 둘을 함께 돌리면 exit 곡선이 처음에 느려 옛 카드가
+      // 진한 채 새 카드와 겹친다. 목록 줄 수가 바뀌어 상자 높이가 달라지면 그룹이 medium으로 따라간다.
+      [`::view-transition-group(.${ARCHIVE_LIST_RISE})`]: {
+        animationDuration: 'medium',
+        animationTimingFunction: 'standard',
+      },
+      [`::view-transition-new(.${ARCHIVE_LIST_RISE})`]: {
+        animationName: VIEW_TRANSITION.pageEnter,
+        animationDuration: 'fastMax',
+        animationDelay: 'fast',
+        animationTimingFunction: 'standard',
+        animationFillMode: 'both',
+      },
+      // 같은 transition의 루트·헤더는 페이지가 바뀐 게 아니라 움직이지 않는다 — 위 크로스페이드 규칙을
+      // 걷는다. 옛 스냅샷은 지우고 새 스냅샷만 그대로 둔다(둘을 겹친 채 애니메이션만 끄면 UA의
+      // plus-lighter 합성이 밝게 뜬다). 이름 붙은 목록만 움직이고, 그 밖의 바뀐 곳은 바로 바뀐다 — 칩·적용된
+      // 필터는 눌린 즉시, 편수는 목록과 같은 커밋에서.
+      [`:root:active-view-transition-type(${ARCHIVE_FILTER_TRANSITION_TYPE})::view-transition-old(root), :root:active-view-transition-type(${ARCHIVE_FILTER_TRANSITION_TYPE})::view-transition-old(${VIEW_TRANSITION.siteHeader})`]:
+        {
+          display: 'none',
+        },
+      [`:root:active-view-transition-type(${ARCHIVE_FILTER_TRANSITION_TYPE})::view-transition-new(root), :root:active-view-transition-type(${ARCHIVE_FILTER_TRANSITION_TYPE})::view-transition-new(${VIEW_TRANSITION.siteHeader})`]:
         {
           animationName: 'none',
         },

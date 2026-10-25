@@ -1,6 +1,9 @@
 import { POSTS_PATH } from '@blog/content/client';
 import { HOME_PATH } from './routes';
 
+// 나가는 쪽의 클래스이자 keyframes 이름 — `VIEW_TRANSITION.pageExit`와 글 목록 교차(아래)가 함께 읽는다.
+const PAGE_EXIT = 'page-exit';
+
 /**
  * 페이지 전환(View Transitions) 이름의 **단일 출처**.
  *
@@ -13,7 +16,7 @@ export const VIEW_TRANSITION = {
   /** 들어오는 페이지의 클래스이자 keyframes 이름 — 8px 아래에서 떠오르며 나타난다. */
   pageEnter: 'page-enter',
   /** 나가는 페이지의 클래스이자 keyframes 이름 — 제자리에서 사라진다. */
-  pageExit: 'page-exit',
+  pageExit: PAGE_EXIT,
   /**
    * sticky 헤더의 `view-transition-name` — 헤더를 따로 떼어 페이지 그룹 위에 그린다(안 그러면
    * 스크롤된 채 떠나는 페이지가 헤더 자리에 덧칠된다). 문서에 하나뿐이어야 한다 — 같은 이름이
@@ -234,4 +237,26 @@ export const postSharedName = (part: PostSharedPart, slug: string): string => {
       : `_${byte.toString(16).padStart(2, '0')}`;
   }
   return `${POST_SHARED[part]}-${ident}`;
+};
+
+/**
+ * 글 목록(`/posts`)에서 필터·정렬·보기를 바꿀 때의 transition type(`addTransitionType`). 목록의
+ * `<ViewTransition>`은 이 type에서만 교차한다 — 같은 transition 안의 다른 변경(URL 쓰기가 라우터에
+ * 반영되는 갱신)과 페이지 전환(`PageBoundary`는 `default="none"`이라 쿼리 변경에 돌지 않는다)은
+ * 움직이지 않는다. `post-open`(`POST_OPEN_TRANSITION_TYPE`)이 아니라서 카드의 공유 요소도 짝을 짓지
+ * 않는다.
+ */
+export const ARCHIVE_FILTER_TRANSITION_TYPE = 'archive-filter';
+
+/**
+ * 글 목록 교차에서 새 목록의 클래스이자 `panda.config.ts`의 셀렉터 — 이전 목록이 걷힌 **뒤에** 8px
+ * 아래에서 떠오른다(둘을 함께 돌리면 exit 곡선이 처음에 느려 옛 카드가 진한 채 새 카드와 겹친다).
+ * 이전 목록은 페이지가 나갈 때와 같은 `page-exit`이다.
+ */
+export const ARCHIVE_LIST_RISE = 'archive-list-rise';
+
+/** 글 목록 경계의 `update` — 필터 type에서만 이전 목록이 걷히고 새 목록이 떠오른다. */
+export const ARCHIVE_LIST_SWAP = {
+  [ARCHIVE_FILTER_TRANSITION_TYPE]: `${PAGE_EXIT} ${ARCHIVE_LIST_RISE}`,
+  default: 'none',
 };
