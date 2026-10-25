@@ -25,6 +25,7 @@ afterEach(() => {
 async function press() {
   await act(async () => {
     fireEvent.click(screen.getByRole('button'));
+    await Promise.resolve();
   });
 }
 
@@ -39,6 +40,21 @@ describe('CopyButton', () => {
       vi.advanceTimersByTime(COPIED_MS);
     });
     expect(screen.getByRole('button', { name: '코드 복사' })).toBeVisible();
+  });
+
+  test('복사한 동안에만 아이콘 교차가 켜진다(data-on)', async () => {
+    render(<CopyButton content="pnpm test" />);
+    const swap = () =>
+      screen.getByRole('button').querySelector('[aria-hidden="true"]');
+    expect(swap()).not.toHaveAttribute('data-on');
+
+    await press();
+    expect(swap()).toHaveAttribute('data-on');
+
+    act(() => {
+      vi.advanceTimersByTime(COPIED_MS);
+    });
+    expect(swap()).not.toHaveAttribute('data-on');
   });
 
   test('다시 누르면 표시 시간이 마지막 누름부터 다시 센다', async () => {

@@ -5,6 +5,7 @@ import { Check, Link2 } from 'lucide-react';
 import { sendGAEvent } from '@next/third-parties/google';
 import { css } from '@blog/styled-system/css';
 import { SITE_HEADER_HEIGHT } from '../../siteHeader';
+import { MorphSwap } from '../MorphSwap';
 import {
   loadFragmentGenerator,
   type FragmentGenerator,
@@ -400,11 +401,11 @@ export function QuoteLink({
             '@media (pointer: coarse)': { h: '11', px: '4' },
           })}
         >
-          {copied && copied !== 'failed' ? (
-            <Check size={14} aria-hidden />
-          ) : (
-            <Link2 size={14} aria-hidden />
-          )}
+          <MorphSwap
+            on={copied !== null && copied !== 'failed'}
+            before={<Link2 size={14} />}
+            after={<Check size={14} />}
+          />
           {copied ? LABEL[copied] : LABEL.idle}
         </button>
       )}
