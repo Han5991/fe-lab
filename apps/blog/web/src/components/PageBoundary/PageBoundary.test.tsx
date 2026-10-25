@@ -14,7 +14,11 @@ import { postPath } from '@blog/content/client';
 import NotFound from '@/src/app/not-found';
 import AdminLayout from '@/src/app/admin/layout';
 import { ADMIN_LOGIN_PATH } from '@/src/shared/routes';
-import { NAV_TRANSITION, VIEW_TRANSITION } from '@/src/shared/viewTransitions';
+import {
+  ARCHIVE_FILTER_TRANSITION_TYPE,
+  NAV_TRANSITION,
+  VIEW_TRANSITION,
+} from '@/src/shared/viewTransitions';
 import { PageBoundary } from './PageBoundary';
 
 const pathname = vi.hoisted(() => ({ current: '/' }));
@@ -31,6 +35,7 @@ vi.mock('react', async () => {
       <div
         data-vt-enter={JSON.stringify(props.enter)}
         data-vt-exit={JSON.stringify(props.exit)}
+        data-vt-update={JSON.stringify(props.update)}
         data-vt-default={props.default}
       >
         {props.children}
@@ -58,6 +63,18 @@ describe('PageBoundary', () => {
     );
     // 페이지 안의 갱신은 움직이지 않는다.
     expect(box.dataset['vtDefault']).toBe('none');
+  });
+
+  test('글 목록의 필터 type에는 반응하지 않는다 — 쿼리 변경에 페이지 전환은 돌지 않는다', () => {
+    const { container } = render(<PageBoundary>본문</PageBoundary>);
+    const box = container.querySelector<HTMLElement>('[data-vt-default]');
+    if (!box) throw new Error('ViewTransition이 없다');
+    // enter·exit의 키(방향 type들과 default)에 필터 type이 없다 — JSON 문자열에 그 이름이 나오지 않는다.
+    for (const key of ['vtEnter', 'vtExit'] as const) {
+      expect(box.dataset[key]).not.toContain(ARCHIVE_FILTER_TRANSITION_TYPE);
+    }
+    // update는 아예 없다 — 같은 페이지 안의 갱신은 `default="none"`이다.
+    expect(box.dataset['vtUpdate']).toBeUndefined();
   });
 });
 
