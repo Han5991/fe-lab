@@ -8,6 +8,7 @@ import { useTocHook, scrollToId } from '@/src/components/tocHooks';
 import { isModifiedClick } from '@/src/components/events';
 import { Portal } from '@/src/components/Portal';
 import { pressable } from '@/src/components/pressable';
+import { holdAnimationWhileFocused } from '@/src/components/interaction';
 import { useModalDialog } from '@/src/components/useModalDialog';
 import { usePresence } from '@/src/components/usePresence';
 
@@ -253,7 +254,7 @@ export const MobileTOC = () => {
             animationFillMode: 'both',
             animationTimeline: '--site-footer',
             animationRange: `[entry 0px entry token(spacing.${FAB.bottom})]`,
-            '&:focus-visible': { animationName: 'none' },
+            ...holdAnimationWhileFocused,
           },
         })}
       >

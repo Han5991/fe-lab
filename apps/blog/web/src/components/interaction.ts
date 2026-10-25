@@ -52,3 +52,12 @@ export const optionSelected = css.raw({ bg: 'accent.muted', color: 'ink.700' });
 export const pressOption = css.raw({
   _press: optionSelected,
 });
+
+/**
+ * 키보드 초점이 있는 동안 요소의 애니메이션을 멈춘다 — 사라지는 애니메이션(끝 상태 `visibility: hidden`)이
+ * 초점을 든 요소를 초점 불가로 만들어 초점이 문서 맨 앞으로 떨어지는 자리에 쓴다(목차 FAB). 마우스·터치로
+ * 누른 요소는 `:focus-visible`이 아니라 그대로 애니메이션을 탄다. 애니메이션을 거는 블록 안에 펼친다.
+ */
+export const holdAnimationWhileFocused = css.raw({
+  '&:focus-visible': { animationName: 'none' },
+});
