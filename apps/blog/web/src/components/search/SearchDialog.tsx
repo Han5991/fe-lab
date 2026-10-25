@@ -12,7 +12,9 @@ import {
 } from '@blog/content/client';
 import { getRecentViews, type RecentView } from '@/src/hooks/recentViews';
 import { Portal } from '@/src/components/Portal';
-import { headerIconButton } from '@/src/components/iconButton';
+import { actionButton } from '@/src/components/actionButton';
+import { headerIconButton, iconButton } from '@/src/components/iconButton';
+import { optionSelected, pressOption } from '@/src/components/interaction';
 import { useModalDialog } from '@/src/components/useModalDialog';
 import { isModifiedClick } from '@/src/components/events';
 import { fetchSearchIndex } from './searchIndex';
@@ -351,16 +353,7 @@ export const SearchDialog = () => {
                   onClick={closeDialog}
                   // 아이콘은 aria-hidden svg라 이름을 주지 못한다(axe button-name).
                   aria-label="검색 닫기"
-                  className={css({
-                    p: '2',
-                    rounded: 'full',
-                    color: 'ink.400',
-                    _hover: { color: 'ink.600', bg: 'paper.200' },
-                    _active: { bg: 'paper.200' },
-                    cursor: 'pointer',
-                    bg: 'transparent',
-                    border: 'none',
-                  })}
+                  className={iconButton({ tone: 'ghost', size: 'md' })}
                 >
                   <X size={18} />
                 </button>
@@ -432,20 +425,24 @@ export const SearchDialog = () => {
                           onClick={e => {
                             if (!isModifiedClick(e)) closeDialog();
                           }}
-                          className={css({
-                            display: 'block',
-                            px: '4',
-                            py: { base: '4', md: '3' },
-                            bg: selected ? 'accent.muted' : 'transparent',
-                            // 메타 줄(날짜·시리즈·발췌)은 이 색을 물려받는다. 선택·눌림 행의
-                            // 틴트 위에서 ink.500은 다크 4.41:1로 AA를 놓쳐 ink.700(6.46 /
-                            // 6.11:1)으로 올린다. 제목·태그는 자기 색을 갖는다.
-                            color: selected ? 'ink.700' : 'ink.500',
-                            _active: { bg: 'accent.muted', color: 'ink.700' },
-                            transition: 'colors',
-                            borderBottomWidth: { base: 'hairline', md: 'none' },
-                            borderColor: 'paper.200',
-                          })}
+                          className={css(
+                            pressOption,
+                            {
+                              display: 'block',
+                              px: '4',
+                              py: { base: '4', md: '3' },
+                              bg: 'transparent',
+                              color: 'ink.500',
+                              transition: 'colors',
+                              borderBottomWidth: {
+                                base: 'hairline',
+                                md: 'none',
+                              },
+                              borderColor: 'paper.200',
+                            },
+                            // 선택 행의 면·글자색은 눌린 행과 같은 `optionSelected`다.
+                            selected && optionSelected,
+                          )}
                         >
                           <p
                             className={css({
@@ -526,16 +523,7 @@ export const SearchDialog = () => {
                         <button
                           type="button"
                           onClick={loadIndex}
-                          className={css({
-                            px: '3',
-                            py: '1',
-                            rounded: 'full',
-                            borderWidth: 'hairline',
-                            borderColor: 'ink.border',
-                            color: 'ink.700',
-                            cursor: 'pointer',
-                            _hover: { borderColor: 'ink.borderStrong' },
-                          })}
+                          className={actionButton({ tone: 'outline' })}
                         >
                           다시 시도
                         </button>
