@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import type { Metadata } from 'next';
 import { PageBoundary } from '@/src/components/PageBoundary';
 import { AdminLayoutClient } from './AdminLayoutClient';
+import { AdminQueryProvider } from './AdminQueryProvider';
 
 // robots.txt의 Disallow는 크롤만 막고 색인은 막지 못하므로 noindex를 명시한다.
 export const metadata: Metadata = {
@@ -18,11 +19,17 @@ export const metadata: Metadata = {
  * - 클라이언트 레이아웃(`AdminLayoutClient`)이 아니라 이 서버 레이아웃에 둔다 — 클라이언트에서 쓰면
  *   경계 코드와 `VIEW_TRANSITION` 그룹 객체가 클라이언트 그래프에 들어와, 공유 모듈을 거쳐 공개
  *   페이지 첫 로드까지 무거워졌다(실측 +128B gzip).
+ *
+ * React Query의 Provider(`AdminQueryProvider`)는 여기, 가장 바깥에 둔다. 가드(`AdminGuard`) 안이
+ * 아니라 레이아웃인 것은 가드 밖에서 그려지는 로그인 화면도 `useMutation`을 쓰기 때문이고, 가장
+ * 바깥인 것은 `PageBoundary` 안쪽 트리를 그대로 두기 위해서다.
  */
 export default function AdminLayout({ children }: { children: ReactNode }) {
   return (
-    <PageBoundary>
-      <AdminLayoutClient>{children}</AdminLayoutClient>
-    </PageBoundary>
+    <AdminQueryProvider>
+      <PageBoundary>
+        <AdminLayoutClient>{children}</AdminLayoutClient>
+      </PageBoundary>
+    </AdminQueryProvider>
   );
 }

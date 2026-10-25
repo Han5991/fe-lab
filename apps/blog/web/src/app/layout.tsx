@@ -7,7 +7,6 @@ import { RSS_PATH, safeJsonLd } from '@blog/content/client';
 import { SITE_NAME } from '@/content.values.mts';
 import 'pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css';
 import '@/src/styles/globals.css';
-import { Providers } from './providers';
 import { Layout } from '@/src/components/Layout';
 import { GoogleAnalytics, GoogleTagManager } from '@next/third-parties/google';
 import { ErrorReporter } from '@/src/components/ErrorReporter';
@@ -65,9 +64,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         />
       </head>
       <body>
-        <Providers>
-          <Layout>{children}</Layout>
-        </Providers>
+        <Layout>{children}</Layout>
         {process.env.NODE_ENV === 'production' && (
           <>
             <GoogleAnalytics gaId="G-ZS9ENFSSQ0" />
