@@ -19,6 +19,7 @@ import type {
 } from '../../shared/contentConfig.ts';
 import { isRecord } from '../../shared/guards.ts';
 import type { ContentContext } from '../context.ts';
+import { hasAuthoredThumbnail } from '../../post/thumbnail.ts';
 import { isSafeSlug } from '../../post/urls.ts';
 /*
  * 폰트는 **설정에서 온다**(`og.fonts` — OgFont 서술자 배열). 예전에는
@@ -117,7 +118,7 @@ export function ogFileRelPath(slug: string): string {
 export function needsGeneratedOg(post: {
   thumbnail?: string | undefined;
 }): boolean {
-  return !post.thumbnail || post.thumbnail.startsWith('/og/');
+  return !hasAuthoredThumbnail(post);
 }
 
 /** 긴 한글 제목이 3줄을 넘지 않도록 글자수 기준으로 폰트 크기를 줄입니다. */

@@ -61,10 +61,13 @@ export interface PostData {
 
 export type PostSummary = Omit<PostData, 'content'>;
 
-export interface PostNavItem {
-  slug: string;
-  title: string;
-}
+/**
+ * 이전·다음 글 카드가 그리는 값. 제목과 주소 외에 썸네일을 해석하는 두 값(`thumbnail`·`relativeDir`)을 함께
+ * 싣는다 — 카드가 글 상세의 히어로와 같은 판정(`hasAuthoredThumbnail`)과 같은 주소(`resolveThumbnailSrc`)를
+ * 쓰게 하려는 것이다.
+ */
+export type PostNavItem = Pick<PostData, 'slug' | 'title' | 'relativeDir'> &
+  Partial<Pick<PostData, 'thumbnail'>>;
 
 export interface AdjacentPostsOptions {
   filterTag?: string;

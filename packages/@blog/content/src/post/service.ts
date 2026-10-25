@@ -20,6 +20,14 @@ function toPostSummary(post: PostData): PostSummary {
   return summary;
 }
 
+/** 이전·다음 글 카드의 값. 썸네일이 없는 글은 키째 뺀다(`exactOptionalPropertyTypes`). */
+function toPostNavItem(post: PostData): PostNavItem {
+  const { slug, title, relativeDir, thumbnail } = post;
+  return thumbnail === undefined
+    ? { slug, title, relativeDir }
+    : { slug, title, relativeDir, thumbnail };
+}
+
 // ---------- Public API ----------
 
 export interface PostService {
@@ -158,8 +166,8 @@ export function createPostService(deps: PostServiceDeps): PostService {
     const prevPost = idx > 0 ? ordered[idx - 1] : null;
     const nextPost = idx < ordered.length - 1 ? ordered[idx + 1] : null;
     return {
-      prev: prevPost ? { slug: prevPost.slug, title: prevPost.title } : null,
-      next: nextPost ? { slug: nextPost.slug, title: nextPost.title } : null,
+      prev: prevPost ? toPostNavItem(prevPost) : null,
+      next: nextPost ? toPostNavItem(nextPost) : null,
       seriesName: displayName,
     };
   }
@@ -214,7 +222,7 @@ export function pickAdjacent(
   const nextPost = currentIndex > 0 ? list[currentIndex - 1] : null;
 
   return {
-    prev: prevPost ? { slug: prevPost.slug, title: prevPost.title } : null,
-    next: nextPost ? { slug: nextPost.slug, title: nextPost.title } : null,
+    prev: prevPost ? toPostNavItem(prevPost) : null,
+    next: nextPost ? toPostNavItem(nextPost) : null,
   };
 }

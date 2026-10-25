@@ -3,6 +3,7 @@ import {
   resolveThumbnailUrl as resolveThumbnailUrlIn,
   resolveAbsoluteThumbnailUrl as resolveAbsoluteThumbnailUrlIn,
   resolveThumbnailSrc as resolveThumbnailSrcIn,
+  hasAuthoredThumbnail,
   isOptimizableThumbnail,
   thumbnailWebpRelPath,
 } from './thumbnail.ts';
@@ -307,4 +308,19 @@ test('resolveThumbnailSrc: 파일명의 공백은 인코딩', () => {
   expect(
     resolveThumbnailSrc(p({ thumbnail: 'my thumb.png', relativeDir: 'dir' })),
   ).toBe('/thumbs/dir/my%20thumb.webp');
+});
+
+// ── hasAuthoredThumbnail ─────────────────────────────────────────────────────
+
+test.each([
+  ['상대 파일', 'cover.png', true],
+  ['외부 URL', 'https://cdn.example/x.png', true],
+  ['사이트 절대 경로(생성 카드가 아닌)', '/images/cover.png', true],
+  ['생성 OG 카드를 적어 둔 글', '/og/my-post.png', false],
+  ['없음', undefined, false],
+  ['빈 문자열', '', false],
+])('hasAuthoredThumbnail: %s', (_name, thumbnail, expected) => {
+  expect(
+    hasAuthoredThumbnail(thumbnail === undefined ? {} : { thumbnail }),
+  ).toBe(expected);
 });

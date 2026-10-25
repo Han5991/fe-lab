@@ -132,7 +132,11 @@ describe('셸 링크 — 현재 경로에서 앱의 계층으로 방향을 고�
 });
 
 describe('글 상세의 링크', () => {
-  const item = (slug: string): PostNavItem => ({ slug, title: slug });
+  const item = (slug: string): PostNavItem => ({
+    slug,
+    title: slug,
+    relativeDir: '',
+  });
 
   beforeEach(() => {
     pathname.current = POST;

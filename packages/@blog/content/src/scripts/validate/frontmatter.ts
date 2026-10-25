@@ -16,6 +16,7 @@ import {
   POST_STATUSES,
   FRONTMATTER_KEYS,
   isBareThumbnailName,
+  OG_CARD_PREFIX,
   isPostStatus,
   isPostFile,
   rejectionReasonFor,
@@ -541,17 +542,15 @@ const heroChain: Chain = ({ record: { data, relPath }, raw, options }) => {
 
 // ── thumbnail 사슬: og-thumbnail-mismatch · invalid-thumbnail-path · missing-thumbnail
 
-const OG_THUMBNAIL_PREFIX = '/og/';
-
 const thumbnailChain: Chain = ({ record, raw, options }) => {
   const { data, relPath, absPath } = record;
   if (!('thumbnail' in data) || typeof data['thumbnail'] !== 'string')
     return [];
   const thumb = data['thumbnail'];
   // 생성기는 `/og/{slug}.png`만 만들고 나머지는 orphan으로 지운다 — slug만 고치면 404.
-  if (thumb.startsWith(OG_THUMBNAIL_PREFIX)) {
+  if (thumb.startsWith(OG_CARD_PREFIX)) {
     const slug = resolvePostSlug(data['slug'], relPath);
-    const expected = `${OG_THUMBNAIL_PREFIX}${slug}.png`;
+    const expected = `${OG_CARD_PREFIX}${slug}.png`;
     if (decodeUrlSafe(thumb) === expected) return [];
     return [
       {

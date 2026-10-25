@@ -7,6 +7,32 @@ import type { PostData } from './types.ts';
 import { isExternalUrl } from './assetUrl.ts';
 import { encodePostSlug } from './utils.ts';
 
+/**
+ * 빌드가 글마다 만드는 OG 카드의 경로 접두사(`/og/{slug}.png`). 이 경로는 글이 가진 이미지가 아니라
+ * 생성기의 출력물이다 — frontmatter가 그 경로를 적어 두어도(`thumbnail: /og/{slug}.png`) 같은 카드다.
+ */
+export const OG_CARD_PREFIX = '/og/';
+
+/**
+ * 글이 **자기 썸네일**을 갖는가 — frontmatter `thumbnail`이 있고, 생성 OG 카드(`/og/…`)가 아니다.
+ * 반대는 "OG 카드가 카드·메타의 이미지가 되는 글"이다(`썸네일 없음`과 `/og/…`를 적어 둔 글 둘 다).
+ *
+ * OG 카드는 제목이 박힌 그림이라 글 상세에서 h1 바로 아래에 다시 그리면 제목이 한 번 더 나온다. 그래서
+ * 글 상세의 커버와 카드 → 커버 공유 요소 전환은 이 판정이 참인 글에만 쓴다. 판정을 쓰는 곳이 여럿이라
+ * (생성기의 `needsGeneratedOg`는 이 함수의 반대다) 한 함수에 둔다 — 호출마다 `Boolean(post.thumbnail)`을
+ * 적으면 `/og/…`를 적어 둔 글을 자기 썸네일로 읽는다.
+ */
+export function hasAuthoredThumbnail(
+  post: Pick<PostData, 'thumbnail'>,
+): boolean {
+  const { thumbnail } = post;
+  return (
+    thumbnail !== undefined &&
+    thumbnail !== '' &&
+    !thumbnail.startsWith(OG_CARD_PREFIX)
+  );
+}
+
 /** 그대로 쓰는 값인가 — 외부 URL이거나 사이트 루트 경로(`/og/…`). */
 function isAbsoluteThumbnail(thumbnail: string): boolean {
   return isExternalUrl(thumbnail) || thumbnail.startsWith('/');
@@ -31,7 +57,9 @@ export function resolveThumbnailUrl(
 ): string {
   const { thumbnail, relativeDir, slug } = post;
   if (!thumbnail) {
-    return slug ? `/og/${encodePostSlug(slug)}.png` : ogDefaultImage;
+    return slug
+      ? `${OG_CARD_PREFIX}${encodePostSlug(slug)}.png`
+      : ogDefaultImage;
   }
   if (isAbsoluteThumbnail(thumbnail)) return thumbnail;
   const dir = relativeDir ? `${encodePostSlug(relativeDir)}/` : '';
