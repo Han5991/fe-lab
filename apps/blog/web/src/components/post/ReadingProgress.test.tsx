@@ -77,7 +77,7 @@ const report = (observer: FakeObserver, count: number) => {
 };
 
 describe('ReadingProgress', () => {
-  test('스크롤 거리를 100칸으로 나눈 표지를 화면 위 끝의 선(높이 0)에 대고 본다', () => {
+  test('스크롤 거리를 PROGRESS_STEPS칸으로 나눈 표지를 화면 위 끝의 선(높이 0)에 대고 본다', () => {
     render(<ReadingProgress />);
 
     expect(observers).toHaveLength(1);
@@ -97,14 +97,14 @@ describe('ReadingProgress', () => {
     const [observer] = observers;
     if (!observer) throw new Error('관찰자가 없다');
 
-    report(observer, 30);
+    report(observer, PROGRESS_STEPS * 0.3);
     expect(fill()?.style.transform).toBe('scaleX(0.3)');
 
-    // 한 번에 끝까지 건너뛰어도(맨 아래로) 100칸이 다 찬다.
+    // 한 번에 끝까지 건너뛰어도(맨 아래로) 모든 칸이 다 찬다.
     report(observer, PROGRESS_STEPS);
     expect(fill()?.style.transform).toBe('scaleX(1)');
 
-    report(observer, 12);
+    report(observer, PROGRESS_STEPS * 0.12);
     expect(fill()?.style.transform).toBe('scaleX(0.12)');
   });
 
