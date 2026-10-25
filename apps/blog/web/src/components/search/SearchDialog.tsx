@@ -39,6 +39,15 @@ const markClass = css({
   rounded: 'inner',
 });
 
+// 검색 닫기 — ghost 아이콘 버튼의 누름을 쓰되 모양은 예전 그대로다: 입력 옆에서 본문보다 물러난
+// 보조 잉크(ink.400, hover ink.600 + paper.200)이고, 상자는 패딩 8 + 글리프 18 = 34다.
+const closeButton = css(iconButton.raw({ tone: 'ghost' }), {
+  boxSize: 'auto',
+  p: '2',
+  color: 'ink.400',
+  _hover: { color: 'ink.600', bg: 'paper.200' },
+});
+
 const Highlight = ({ text, tokens }: { text: string; tokens: string[] }) =>
   splitByTokens(text, tokens).map((part, i) =>
     part.match ? (
@@ -353,7 +362,7 @@ export const SearchDialog = () => {
                   onClick={closeDialog}
                   // 아이콘은 aria-hidden svg라 이름을 주지 못한다(axe button-name).
                   aria-label="검색 닫기"
-                  className={iconButton({ tone: 'ghost', size: 'md' })}
+                  className={closeButton}
                 >
                   <X size={18} />
                 </button>
