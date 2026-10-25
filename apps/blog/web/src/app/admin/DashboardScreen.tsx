@@ -319,7 +319,7 @@ function DashboardContent() {
             <>
               {hiddenPosts > 0 && (
                 <span className={supportingLine}>
-                  {`· 비공개·예약 ${hiddenPosts}개`}
+                  비공개·예약 {hiddenPosts}개
                 </span>
               )}
               {topTags.length > 0 && (

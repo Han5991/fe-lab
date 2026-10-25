@@ -71,7 +71,7 @@ describe('AdminPage', () => {
   test('글 수는 지금 공개 중인 글만 세고, 나머지는 따로 알린다', async () => {
     await renderPage();
 
-    expect(screen.getByText('· 비공개·예약 2개')).toBeInTheDocument();
+    expect(screen.getByText('비공개·예약 2개')).toBeInTheDocument();
   });
 
   test('목록 제목은 그 글의 admin 통계로 열고, 실제 글은 공개 글만 새 탭 아이콘으로 연다', async () => {
