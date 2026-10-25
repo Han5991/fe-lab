@@ -455,10 +455,13 @@ export function AnalyticsScreen() {
     // 넓은 화면의 칼럼은 닫으면 통째로 빠져, 초점을 든 닫기 버튼과 함께 초점이 문서 처음으로 떨어진다.
     // 칼럼이 빠지기 전에 고른 줄의 제목 링크로 돌려준다 — 목록의 어디까지 왔는지 잃지 않게. 좁은 화면
     // 시트는 `useModalDialog`가 연 자리로 돌려준다.
+    // 고른 줄이 검색으로 걸러져 목록에 없으면 검색 입력으로 돌려준다.
     if (isWide) {
-      listRef.current
-        ?.querySelector<HTMLAnchorElement>('a[aria-current="page"]')
-        ?.focus({ preventScroll: true });
+      const list = listRef.current;
+      (
+        list?.querySelector<HTMLAnchorElement>('a[aria-current="page"]') ??
+        list?.querySelector<HTMLInputElement>('input[type="search"]')
+      )?.focus({ preventScroll: true });
     }
     navigateTo(ADMIN_ANALYTICS_PATH);
   };

@@ -239,6 +239,23 @@ describe('AnalyticsScreen — 고른 글', () => {
     expect(screen.getByRole('link', { name: '글 A' })).toHaveFocus();
   });
 
+  test('고른 줄이 검색으로 걸러진 채 칼럼을 닫으면 초점은 검색 입력으로 간다', async () => {
+    nav.pathname = '/admin/analytics/a/';
+    window.history.replaceState(null, '', nav.pathname);
+    vi.spyOn(window.history, 'pushState');
+    renderScreen();
+
+    await screen.findByRole('heading', { name: '글 A', level: 2 });
+    const search = screen.getByRole('searchbox');
+    fireEvent.change(search, { target: { value: '글 B' } });
+    expect(
+      screen.queryByRole('link', { name: '글 A' }),
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: '통계 닫기' }));
+    expect(search).toHaveFocus();
+  });
+
   // 칼럼은 DOM에서 목록 뒤라, 고른 뒤 초점을 옮기지 않으면 키보드로는 남은 줄을 다 지나야 닿는다.
   test('넓은 화면에서 줄을 고르면 칼럼 제목으로 초점이 가고, 주소로 바로 열면 옮기지 않는다', async () => {
     nav.pathname = '/admin/analytics/a/';
