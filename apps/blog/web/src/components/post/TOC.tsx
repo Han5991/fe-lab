@@ -15,7 +15,12 @@ import { siteHeaderStyle } from '@/src/components/siteHeader';
  * 다시 재고(`getTotalLength`로 점의 거리까지) 같은 path를 두 번 그려 clip-path로 잘랐는데, 깊이는 들여쓰기
  * 로도 읽히고 곡선이 길이 계산·ResizeObserver·SVG를 끌고 왔다. 지금은 항목의 위·아래 두 값만 잰다.
  *
- * 막대는 `top`·`height` 전환 하나로 미끄러진다. 막대·밝힌 항목은 `accent.solid`(본문 잉크)다 — 현재 위치
+ * 막대는 `transform` 전환 하나로 미끄러진다 — 높이 1px짜리 막대를 `translateY(위) scaleY(높이)`로 놓고
+ * `transform-origin`을 위로 잡아, 레이아웃을 건드리지 않는 합성 전용 속성만 움직인다(`top`·`height`는 전환
+ * 프레임마다 레이아웃을 돌렸다). 값은 실측 그대로다. 대가는 모서리다: scaleY는 `border-radius`도 같이
+ * 늘리므로(1px 상자의 둥근 끝이 수십~수백 px 타원이 된다) 막대에는 라운드를 두지 않는다 — 폭이 2px라
+ * 둥근 끝(반지름 1px)과 네모 끝의 차이는 화면에서 보이지 않고, 트랙은 그대로 둥글다.
+ * 막대·밝힌 항목은 `accent.solid`(본문 잉크)다 — 현재 위치
  * 표식이라 선택 탭·세그먼트·모바일 목차와 같은 이름을 쓴다. 굵기는 바꾸지 않는다(아래 항목 스타일 주석).
  */
 
@@ -25,7 +30,7 @@ const FADE = 16;
 const INDENT_BASE = 12;
 const INDENT_STEP = 16;
 
-// 활성 표시는 **둘**이 동시에 움직인다 — 글자 색과 막대(top·height). 목표값은 같은 순간에 바뀌므로
+// 활성 표시는 **둘**이 동시에 움직인다 — 글자 색과 막대(transform). 목표값은 같은 순간에 바뀌므로
 // 전환 시간이 다르면 따로 도착한다. 막대가 늦으면 글자가 먼저 켜지고 막대가 따라붙어, 둘이 같은
 // 사건을 가리킨다는 게 읽히지 않는다. 값을 바꿀 일이 있으면 **둘 다** 함께 바꿀 것.
 
@@ -178,21 +183,26 @@ export const TOC = () => {
         />
         {first && last && (
           // 막대 — 보이는 절들의 첫 항목 위에서 마지막 항목 아래까지. 움직임 줄이기는 시간 토큰이 끈다.
+          // 1px 상자를 위(0)에 박아 두고 위치는 translateY, 길이는 scaleY(위 주석 — 라운드가 없는 이유).
           <div
             aria-hidden
             className={css({
               pos: 'absolute',
+              top: '0',
               left: '0',
               w: '[2px]',
-              rounded: 'full',
+              h: '[1px]',
+              transformOrigin: 'top',
               bg: 'accent.solid',
               pointerEvents: 'none',
               // ↓ 글자 색과 같은 시간. 위 주석 참고.
-              transitionProperty: 'top, height',
+              transitionProperty: 'transform',
               transitionDuration: 'fast',
               transitionTimingFunction: 'standard',
             })}
-            style={{ top: first.top, height: last.bottom - first.top }}
+            style={{
+              transform: `translateY(${first.top}px) scaleY(${last.bottom - first.top})`,
+            }}
           />
         )}
 

@@ -14,7 +14,7 @@ import {
   vi,
   type Mock,
 } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { TOC } from './TOC';
 
 /** 차례가 읽어 가는 본문. 헤딩 하나당 (id, 레벨, 글)이다. */
@@ -87,6 +87,34 @@ describe('TOC 구조', () => {
     const decor = nav.querySelectorAll(':scope > div > div[aria-hidden]');
     expect(decor.length).toBeGreaterThanOrEqual(1);
     for (const el of decor) expect(el).toHaveAttribute('aria-hidden', 'true');
+  });
+
+  // 막대는 합성 전용 transform으로만 움직인다 — 위치는 translateY, 길이는 scaleY다. top·height를
+  // 전환하면 프레임마다 레이아웃이 돈다. 값은 항목의 실측이라 jsdom에서는 상자를 꾸며 줘야 나온다.
+  test('막대의 위치와 길이는 transform으로 놓이고 top·height는 쓰지 않는다', async () => {
+    // 헤딩 상자가 전부 0이라 활성 구간은 마지막 항목(둘째 절) 하나다 — 그 항목의 위·아래가 막대가 된다.
+    const rect = vi
+      .spyOn(HTMLLIElement.prototype, 'getBoundingClientRect')
+      .mockImplementation(function (this: HTMLElement) {
+        const [top, bottom] =
+          this.textContent === '둘째 절' ? [60, 100] : [0, 20];
+        return new DOMRect(0, top, 100, bottom - top);
+      });
+    try {
+      render(<TOC />);
+
+      const nav = screen.getByRole('navigation', { name: '이 글의 차례' });
+      // 막대는 실측과 활성 구간이 정해진 뒤에야 그려진다(두 번째 장식 요소).
+      const bar = () =>
+        nav.querySelectorAll<HTMLElement>(':scope > div > div[aria-hidden]')[1];
+      await waitFor(() =>
+        expect(bar()?.style.transform).toBe('translateY(60px) scaleY(40)'),
+      );
+      expect(bar()?.style.top).toBe('');
+      expect(bar()?.style.height).toBe('');
+    } finally {
+      rect.mockRestore();
+    }
   });
 
   test('헤딩이 없으면 아무것도 그리지 않는다', () => {
