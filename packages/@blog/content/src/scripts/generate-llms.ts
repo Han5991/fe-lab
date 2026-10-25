@@ -16,7 +16,11 @@ import {
   type SiteConfig,
 } from '../shared/contentConfig.ts';
 import type { ContentContext } from './context.ts';
-import { sortPostsBySeriesOrder, type SeriesMeta } from '../post/series.ts';
+import {
+  seriesDisplayName,
+  sortPostsBySeriesOrder,
+  type SeriesMeta,
+} from '../post/series.ts';
 
 /**
  * `llms.txt` — AI 크롤러용 **색인**입니다. (본문 전문은 `llms-full.txt`)
@@ -183,11 +187,11 @@ export function buildLlmsText(
       standalone.push(...folderPosts);
       continue;
     }
-    // 표시명은 사이트와 **같은 식**이다(`meta?.title ?? post.series` — page.tsx).
+    // 표시명은 사이트와 **같은 함수**(`seriesDisplayName`)에서 온다.
     // `_series.yml`이 없는 폴더는 사이트에서도 `회고/2025`처럼 경로가 그대로
     // 나오므로, 여기서만 다듬으면 색인과 화면의 시리즈명이 갈린다.
     // 이름을 고치고 싶으면 그 폴더에 `_series.yml`의 `title`을 넣으면 양쪽이 함께 바뀐다.
-    lines.push(`## 시리즈: ${meta.title ?? seriesId}`, ``);
+    lines.push(`## 시리즈: ${seriesDisplayName(seriesId, meta)}`, ``);
     if (meta.description) lines.push(meta.description, ``);
     // 1편부터 읽을 수 있도록 — `_series.yml`의 order가 있으면 그 순서.
     for (const post of sortPostsBySeriesOrder(folderPosts, meta.order)) {

@@ -1,6 +1,10 @@
 import { isPostVisible } from './visibility.ts';
 import type { TimezoneConfig } from '../shared/contentConfig.ts';
-import { sortPostsBySeriesOrder, type SeriesMeta } from './series.ts';
+import {
+  seriesDisplayName,
+  sortPostsBySeriesOrder,
+  type SeriesMeta,
+} from './series.ts';
 import type {
   PostData,
   PostNavItem,
@@ -157,7 +161,7 @@ export function createPostService(deps: PostServiceDeps): PostService {
     }
 
     const meta = getSeriesMeta(currentPost.series);
-    const displayName = meta?.title ?? currentPost.series;
+    const displayName = seriesDisplayName(currentPost.series, meta);
 
     const seriesPosts = getAllPosts().filter(
       p => p.series === currentPost.series,

@@ -1,4 +1,4 @@
-import type { SeriesMeta } from './series.ts';
+import { seriesDisplayName, type SeriesMeta } from './series.ts';
 import type { PostData, PostSummary } from './types.ts';
 
 export interface SeriesSummary {
@@ -53,7 +53,7 @@ export function createAggregate(deps: AggregateDeps): Aggregate {
         const meta = getSeriesMeta(id);
         return {
           id,
-          title: meta?.title ?? id,
+          title: seriesDisplayName(id, meta),
           count: ps.length,
           description: meta?.description,
           updated,

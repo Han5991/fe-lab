@@ -20,6 +20,8 @@ import type {
 import { isRecord } from '../../shared/guards.ts';
 import type { ContentContext } from '../context.ts';
 import { hasAuthoredThumbnail } from '../../post/thumbnail.ts';
+import { seriesDisplayName, type SeriesMeta } from '../../post/series.ts';
+import type { PostData } from '../../post/types.ts';
 import { isSafeSlug } from '../../post/urls.ts';
 /*
  * 폰트는 **설정에서 온다**(`og.fonts` — OgFont 서술자 배열). 예전에는
@@ -41,11 +43,38 @@ import { isSafeSlug } from '../../post/urls.ts';
  */
 const TEMPLATE_VERSION = 7;
 
+/**
+ * 카드에 들어가는 시리즈 — `title`이 pill에 그려지는 **표시명**(`seriesDisplayName`,
+ * 사이트와 같은 함수)이고, `id`(폴더 이름)는 제목 prefix 중복 제거에만 쓴다. 글 제목은
+ * 폴더 이름으로 시작하는 경우가 많아('[Typescript로 설계하는 프로젝트] …') 표시명만
+ * 들고 있으면 그 prefix를 못 알아본다.
+ */
+export interface OgSeries {
+  id: string;
+  title: string;
+}
+
 export interface OgPostInput {
   slug: string;
   title: string;
   date: string | null;
-  series?: string | undefined;
+  series?: OgSeries | undefined;
+}
+
+/** 글 → 카드 입력. 시리즈 표시명은 여기서 한 번 풀어 pill·해시가 같은 값을 본다. */
+export function toOgPostInput(
+  post: Pick<PostData, 'slug' | 'title' | 'date' | 'series'>,
+  getSeriesMeta: (seriesId: string) => SeriesMeta | null,
+): OgPostInput {
+  const { series } = post;
+  return {
+    slug: post.slug,
+    title: post.title,
+    date: post.date,
+    series: series
+      ? { id: series, title: seriesDisplayName(series, getSeriesMeta(series)) }
+      : undefined,
+  };
 }
 
 /**
@@ -89,7 +118,10 @@ export function ogContentHash(
         v: TEMPLATE_VERSION,
         title: post.title,
         date: post.date,
-        series: post.series ?? null,
+        // id와 표시명 모두 렌더 입력이다 — `_series.yml`의 title만 바꿔도 다시 그린다.
+        series: post.series
+          ? { id: post.series.id, title: post.series.title }
+          : null,
         og: { width: og.width, height: og.height, palette: og.palette },
         fonts: fontsKey,
         site: { name: site.name, url: site.url },
@@ -130,13 +162,17 @@ export function titleFontSize(title: string): number {
 
 /**
  * 시리즈 pill과 중복되는 제목의 시리즈 prefix를 이미지에서만 제거합니다.
- * (예: '[Typescript로 설계하는 프로젝트] 당신의 Type...' — 폴더명과 정확히
- * 일치하는 prefix만, 남는 제목이 있을 때만 제거하는 보수적 규칙)
+ * (예: '[Typescript로 설계하는 프로젝트] 당신의 Type...' — 폴더 이름이나 표시명과
+ * 정확히 일치하는 prefix만, 남는 제목이 있을 때만 제거하는 보수적 규칙)
  */
-export function displayTitle(title: string, series?: string): string {
-  if (!series || !title.startsWith(series)) return title;
-  const rest = title.slice(series.length).replace(/^[\s:·—-]+/, '');
-  return rest || title;
+export function displayTitle(title: string, series?: OgSeries): string {
+  if (!series) return title;
+  for (const prefix of [series.id, series.title]) {
+    if (!title.startsWith(prefix)) continue;
+    const rest = title.slice(prefix.length).replace(/^[\s:·—-]+/, '');
+    if (rest) return rest;
+  }
+  return title;
 }
 
 /**
@@ -226,7 +262,7 @@ export function ogTemplate(
           fontWeight: 500,
           color: BRAND,
         },
-        post.series,
+        post.series.title,
       ),
     );
   }
@@ -400,7 +436,8 @@ export async function main(ctx: ContentContext) {
   // skip 판정에도 폰트 정체성이 필요하므로 렌더 여부와 무관하게 한 번 계산한다.
   const fontsKey = ogFontsCacheKey(ctx.content.config.og.fonts);
 
-  for (const post of posts) {
+  for (const source of posts) {
+    const post = toOgPostInput(source, ctx.content.getSeriesMeta);
     const hash = ogContentHash(
       post,
       ctx.content.config.site,
