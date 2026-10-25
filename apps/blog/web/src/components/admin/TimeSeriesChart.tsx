@@ -69,6 +69,9 @@ const CustomTooltip = ({
 };
 
 export const TimeSeriesChart = ({ data, height }: TimeSeriesChartProps) => {
+  // 기간(첫 날과 길이)이 바뀌면 선·면 층만 새로 마운트해 CSS 와이프(`chartReveal`)가 다시 돈다 — 같은 기간의
+  // 새로고침은 키가 그대로라 다시 그리지 않는다. 축은 마운트를 유지한다.
+  const rangeKey = `${data[0]?.date ?? ''}:${data.length}`;
   return (
     <div className={css(chartReveal, { w: 'full' })} style={{ height }}>
       <ResponsiveContainer width="100%" height="100%">
@@ -115,6 +118,7 @@ export const TimeSeriesChart = ({ data, height }: TimeSeriesChartProps) => {
             content={CustomTooltip}
           />
           <Area
+            key={rangeKey}
             type="monotone"
             dataKey="value"
             stroke={token('colors.spot.600')}

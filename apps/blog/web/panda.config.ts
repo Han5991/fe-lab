@@ -110,6 +110,8 @@ export default defineConfig({
         //                        요소가 주는 변수(--admin-sheet-from)다(sm 미만 아래, 그 위 오른쪽)
         //   admin-fade-in      — 시트 뒤 스크림, 패널을 닫고 드러나는 '고른 글 없음', 차트 등장
         //   admin-bar-grow     — 가로 막대가 트랙 왼쪽에서 자기 길이까지 자란다(transform만)
+        //   admin-chart-wipe   — 차트의 선·면이 왼쪽에서 오른쪽으로 그려진다(clip-path inset)
+        //   admin-chart-rise   — 차트의 세로 막대가 바닥에서 자란다(transform만)
         //   admin-card-in      — 로그인 카드가 98%에서 제 크기로 선다
         'admin-inspector-in': {
           from: { opacity: '0', transform: 'translateX(16px)' },
@@ -128,6 +130,14 @@ export default defineConfig({
         },
         'admin-bar-grow': {
           from: { transform: 'translateX(-100%)' },
+        },
+        // 끝도 명시한다 — clip-path는 inset()에서 none으로 보간되지 않아 도중에 뚝 열린다.
+        'admin-chart-wipe': {
+          from: { clipPath: 'inset(0 100% 0 0)' },
+          to: { clipPath: 'inset(0 0 0 0)' },
+        },
+        'admin-chart-rise': {
+          from: { transform: 'scaleY(0)' },
         },
         'admin-card-in': {
           from: { opacity: '0', transform: 'scale(0.98)' },
