@@ -140,14 +140,31 @@ describe('setTheme — View Transition', () => {
 
   test('type을 아는 브라우저에는 테마 type을 단다 — 헤더는 이 type일 때만 크로스페이드한다', () => {
     mockMatchMedia(false);
-    vi.stubGlobal('CSS', { supports: vi.fn(() => true) });
+    const supports = vi.fn(() => true);
+    vi.stubGlobal('CSS', { supports });
     const start = installStartViewTransition();
 
     setTheme('light');
 
-    expect(start).toHaveBeenCalledWith(
-      expect.objectContaining({ types: [THEME_TRANSITION_TYPE] }),
+    // 감지는 CSS 규칙과 같은 셀렉터로 한다 — 규칙을 버리는 브라우저에서만 콜백으로 떨어진다.
+    expect(supports).toHaveBeenCalledWith(
+      `selector(:active-view-transition-type(${THEME_TRANSITION_TYPE}))`,
     );
+    const arg = start.mock.calls[0]?.[0];
+    expect(
+      typeof arg === 'object' ? [typeof arg.update, arg.types] : arg,
+    ).toEqual(['function', [THEME_TRANSITION_TYPE]]);
+    expect(document.documentElement.dataset.theme).toBe('light');
+  });
+
+  test('CSS 객체가 없는 환경에서도 콜백만 넘긴다', () => {
+    mockMatchMedia(false);
+    vi.stubGlobal('CSS', undefined);
+    const start = installStartViewTransition();
+
+    setTheme('light');
+
+    expect(start).toHaveBeenCalledWith(expect.any(Function));
     expect(document.documentElement.dataset.theme).toBe('light');
   });
 
