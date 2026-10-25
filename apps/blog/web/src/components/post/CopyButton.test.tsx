@@ -86,4 +86,30 @@ describe('CopyButton', () => {
     unmount();
     expect(vi.getTimerCount()).toBe(0);
   });
+
+  test('복사 프라미스가 풀리기 전에 언마운트하면 타이머를 새로 걸지 않는다', async () => {
+    let resolveWrite: () => void = () => undefined;
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      clipboard: {
+        writeText: vi.fn(
+          () =>
+            new Promise<void>(resolve => {
+              resolveWrite = resolve;
+            }),
+        ),
+      },
+    });
+    const { unmount } = render(<CopyButton content="pnpm test" />);
+
+    await press();
+    unmount();
+    await act(async () => {
+      resolveWrite();
+      await Promise.resolve();
+    });
+
+    // 언마운트 cleanup은 이미 지나갔다 — 그 뒤 await가 풀리며 건 타이머는 아무도 걷지 못한다.
+    expect(vi.getTimerCount()).toBe(0);
+  });
 });

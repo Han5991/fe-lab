@@ -17,11 +17,22 @@ export function CopyButton({ content }: { content: string }) {
   // "복사됨"을 거두는 타이머. 다시 누르면 앞 타이머가 새 표시를 일찍 거두고, 언마운트 뒤에
   // 터지면 사라진 컴포넌트의 상태를 바꾼다 — 둘 다 이 하나로 막는다.
   const timerRef = useRef<number | undefined>(undefined);
-  useEffect(() => () => window.clearTimeout(timerRef.current), []);
+  // 클립보드 쓰기를 기다리는 동안 언마운트되면 cleanup은 이미 지나갔다 — 그 뒤 await가 풀리며
+  // 거는 타이머는 아무도 걷지 못한다. 풀린 뒤에 아직 붙어 있는지 이 값으로 본다. Strict Mode의
+  // 마운트→cleanup→마운트에서도 맞도록 켜는 쪽도 effect 안에서 한다.
+  const mountedRef = useRef(false);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      window.clearTimeout(timerRef.current);
+    };
+  }, []);
 
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(content);
+      if (!mountedRef.current) return;
       setIsCopied(true);
       window.clearTimeout(timerRef.current);
       timerRef.current = window.setTimeout(() => setIsCopied(false), 2000);
