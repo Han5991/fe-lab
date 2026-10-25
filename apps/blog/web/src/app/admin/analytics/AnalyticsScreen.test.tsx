@@ -312,6 +312,13 @@ describe('AnalyticsScreen — 고른 글', () => {
       screen.queryByRole('region', { name: '글 통계' }),
     ).not.toBeInTheDocument();
 
+    // Escape 리스너는 커밋 뒤에 도는 effect(`useModalDialog`)가 건다 — 다이얼로그가 DOM에 붙은 순간과 키를
+    // 받을 준비가 된 순간은 다르다. React Scheduler가 커밋 뒤 양보하면(느린 CI) 그 effect는 다음
+    // 매크로태스크로 밀리고, 그 사이에 누른 Escape는 아무도 받지 않는다(2026-10-25 배포 CI에서 실패).
+    // 같은 effect가 리스너보다 먼저 거는 스크롤 잠금을 보고 누른다.
+    await waitFor(() =>
+      expect(document.body).toHaveStyle({ overflow: 'hidden' }),
+    );
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(pushState).toHaveBeenCalledWith(null, '', '/admin/analytics/');
   });
