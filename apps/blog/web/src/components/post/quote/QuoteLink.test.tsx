@@ -332,10 +332,11 @@ describe('QuoteLink 알약 폭', () => {
 
     // 이름은 켜진 라벨 하나다 — 숨은 네 라벨과 크기 재기 줄이 이름에 섞이면 이어 붙은 문장이 된다.
     expect(button).toHaveAccessibleName('링크 복사');
+    // 크기 재기 줄 안의 칸도 data-on을 달고 있다 — aria-hidden 조상이 없는, 정말 읽히는 켜진 칸만 센다.
     const faces = [...button.querySelectorAll('[data-on]')].filter(
-      node => node.getAttribute('aria-hidden') !== 'true',
+      node => node.closest('[aria-hidden="true"]') === null,
     );
-    expect(faces.map(node => node.textContent)).toContain('링크 복사');
+    expect(faces.map(node => node.textContent)).toEqual(['링크 복사']);
   });
 
   test('복사 결과로 바뀌면 data-copied와 켜진 라벨이 함께 바뀐다', async () => {
