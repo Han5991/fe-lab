@@ -48,8 +48,8 @@ interface PostSharedElementProps {
    */
   children: ReactElement;
   /**
-   * 커버만 — 이 글의 카드 커버와 상세 히어로가 서로 다른 배율로 그려지는가(자기 썸네일 글,
-   * `hasAuthoredThumbnail`). 참이면 짝의 클래스에 `POST_SHARED_RESCALED`가 붙어 겹치지 않고 차례로 바뀐다.
+   * 커버만 — 이 글의 카드 커버와 상세 히어로가 서로 다른 배율로 그려지는가(가로형이 아닌 자기 썸네일 글,
+   * `!isWideThumbnail`). 참이면 짝의 클래스에 `POST_SHARED_RESCALED`가 붙어 겹치지 않고 차례로 바뀐다.
    * 카드와 상세가 **같은 값**을 줘야 한다 — 짝은 들어오는 쪽의 클래스만 받는다.
    */
   rescaled?: boolean | undefined;

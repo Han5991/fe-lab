@@ -17,10 +17,9 @@ export const OG_CARD_PREFIX = '/og/';
  * 글이 **자기 썸네일**을 갖는가 — frontmatter `thumbnail`이 있고, 생성 OG 카드(`/og/…`)가 아니다.
  * 반대는 "OG 카드가 카드·메타의 이미지가 되는 글"이다(`썸네일 없음`과 `/og/…`를 적어 둔 글 둘 다).
  *
- * 글 상세의 커버가 이 판정으로 갈린다 — 자기 썸네일은 16:9 틀에 contain이라 카드 커버와 겹쳐 모핑하지 않고 차례로 바뀌며, OG 카드는
- * cover이고 카드 커버와 짝이다(카드는 둘 다 cover라 OG 카드만 같은 배율이다). 판정을 쓰는 곳이 여럿이라
- * (생성기의 `needsGeneratedOg`는 이 함수의 반대다) 한 함수에 둔다 — 호출마다 `Boolean(post.thumbnail)`을
- * 적으면 `/og/…`를 적어 둔 글을 자기 썸네일로 읽는다.
+ * 생성기의 `needsGeneratedOg`가 이 함수의 반대다 — 판정을 쓰는 곳이 여럿이라 한 함수에 둔다. 호출마다
+ * `Boolean(post.thumbnail)`을 적으면 `/og/…`를 적어 둔 글을 자기 썸네일로 읽는다. 글 상세의 커버가
+ * 갈리는 기준은 이 함수가 아니라 `isWideThumbnail`이다.
  */
 export function hasAuthoredThumbnail(
   post: Pick<PostData, 'thumbnail'>,
@@ -30,6 +29,33 @@ export function hasAuthoredThumbnail(
     thumbnail !== undefined &&
     thumbnail !== '' &&
     !thumbnail.startsWith(OG_CARD_PREFIX)
+  );
+}
+
+/**
+ * 가로형으로 치는 가로/세로의 하한. OG 카드는 1200×630(약 1.905)이고 커버 틀은 16:9(약 1.78)다 —
+ * 1.6 이상이면 틀의 양옆(또는 위아래)을 최대 약 10%만 잘라 cover로 채워도 그림이 읽힌다. 정사각(1.0)과
+ * 4:3(약 1.33)은 cover로 채우면 위아래가 25~44% 잘린다.
+ */
+export const WIDE_THUMBNAIL_MIN_ASPECT = 1.6;
+
+/**
+ * 글의 커버 이미지가 가로형인가 — 참이면 16:9 커버 틀을 cover로 채우고(카드 커버와 같은 배율이라 글 카드 ↔ 글 상세가
+ * 겹쳐 모핑한다), 거짓이면 contain으로 그리고 차례로 바뀐다(`PostHero`, `PostCardShared`의 `rescaled`).
+ * 카드·상세·이전/다음 글이 **같은 함수**로 갈라야 한다 — 짝은 들어오는 쪽의 클래스만 받는다.
+ *
+ * - OG 카드(썸네일이 없거나 `/og/…`): 언제나 가로형이다(생성기가 1200×630으로 그린다).
+ * - 자기 썸네일: 비율(`thumbnailAspect` — 빌드가 파일 머리말에서 읽는다)이 하한 이상일 때만. 비율을 모르면(외부 URL·
+ *   없는 파일·다른 형식) 가로형이 아니다 — contain은 어떤 그림도 자르지 않는 쪽이다.
+ */
+export function isWideThumbnail(
+  post: Pick<PostData, 'thumbnail' | 'thumbnailAspect'>,
+): boolean {
+  if (!hasAuthoredThumbnail(post)) return true;
+  const { thumbnailAspect } = post;
+  return (
+    thumbnailAspect !== undefined &&
+    thumbnailAspect >= WIDE_THUMBNAIL_MIN_ASPECT
   );
 }
 

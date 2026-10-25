@@ -47,6 +47,12 @@ export interface PostData {
   excerpt?: string;
   thumbnail?: string | undefined;
   /**
+   * 자기 썸네일 원본의 가로/세로 — 파일 머리말에서 읽는다(`collectPosts`). 비율을 알 수 있는 글만 갖는다
+   * (글 폴더의 png·jpg 파일). 외부 URL·사이트 경로·없는 파일·다른 형식은 비어 있고, 그 글은 가로형이 아닌 것으로 본다
+   * (`isWideThumbnail`).
+   */
+  thumbnailAspect?: number | undefined;
+  /**
    * 글 상단 히어로 슬롯에 꽂을 다이어그램 **이름**.
    * 유효성은 도메인이 아니라 렌더 계층(레지스트리)과 `lint:posts`가 판정합니다 —
    * 도메인이 UI 컴포넌트 목록을 알면 의존 방향이 뒤집힙니다.
@@ -62,12 +68,12 @@ export interface PostData {
 export type PostSummary = Omit<PostData, 'content'>;
 
 /**
- * 이전·다음 글 카드가 그리는 값. 제목과 주소 외에 썸네일을 해석하는 두 값(`thumbnail`·`relativeDir`)을 함께
- * 싣는다 — 카드가 글 상세의 히어로와 같은 판정(`hasAuthoredThumbnail`)과 같은 주소(`resolveThumbnailSrc`)를
+ * 이전·다음 글 카드가 그리는 값. 제목과 주소 외에 썸네일을 해석하는 값(`thumbnail`·`thumbnailAspect`·`relativeDir`)을
+ * 함께 싣는다 — 카드가 글 상세의 히어로와 같은 판정(`isWideThumbnail`)과 같은 주소(`resolveThumbnailSrc`)를
  * 쓰게 하려는 것이다.
  */
 export type PostNavItem = Pick<PostData, 'slug' | 'title' | 'relativeDir'> &
-  Partial<Pick<PostData, 'thumbnail'>>;
+  Partial<Pick<PostData, 'thumbnail' | 'thumbnailAspect'>>;
 
 export interface AdjacentPostsOptions {
   filterTag?: string;

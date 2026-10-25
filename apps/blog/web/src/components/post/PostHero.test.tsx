@@ -10,8 +10,8 @@ import { PostHero } from './PostHero';
 import { DIAGRAM_NAMES } from '@/src/components/diagram/registry';
 
 const SLUG = 'next-js-ecs-deploy';
-const AUTHORED = { src: '/thumbs/cover.webp', authored: true };
-const OG_CARD = { src: `/og/${SLUG}.png`, authored: false };
+const SQUARE = { src: '/thumbs/cover.webp', wide: false };
+const OG_CARD = { src: `/og/${SLUG}.png`, wide: true };
 const REGISTERED_HERO = DIAGRAM_NAMES[0];
 
 describe('PostHero', () => {
@@ -24,7 +24,7 @@ describe('PostHero', () => {
   });
 
   test('hero가 없으면 썸네일 이미지로 폴백한다', () => {
-    const { container } = render(<PostHero slug={SLUG} thumbnail={AUTHORED} />);
+    const { container } = render(<PostHero slug={SLUG} thumbnail={SQUARE} />);
 
     expect(container.querySelector('img')).toHaveAttribute(
       'src',
@@ -34,7 +34,7 @@ describe('PostHero', () => {
 
   // 바로 위 h1이 이 글의 이름이다. 그림에 제목을 다시 이름으로 달면 스크린리더가 같은 말을 두 번 읽는다.
   test('커버는 장식이다 — 이름이 없고 첫 화면의 큰 이미지라 높은 우선순위로 받는다', () => {
-    const { container } = render(<PostHero slug={SLUG} thumbnail={AUTHORED} />);
+    const { container } = render(<PostHero slug={SLUG} thumbnail={SQUARE} />);
 
     const img = container.querySelector('img');
     expect(img).toHaveAttribute('alt', '');
@@ -43,7 +43,7 @@ describe('PostHero', () => {
   });
 
   test('16:9 비율 힌트를 단다', () => {
-    const { container } = render(<PostHero slug={SLUG} thumbnail={AUTHORED} />);
+    const { container } = render(<PostHero slug={SLUG} thumbnail={SQUARE} />);
 
     const img = container.querySelector('img');
     expect(img).toHaveAttribute('width', '1200');
@@ -53,7 +53,7 @@ describe('PostHero', () => {
   test('등록되지 않은 hero 이름은 글을 죽이지 않고 썸네일로 폴백한다', () => {
     // 오타 하나로 렌더가 터지면 안 된다. 오타 자체는 lint:posts가 잡는다.
     const { container } = render(
-      <PostHero slug={SLUG} hero="deploy-pipelnie" thumbnail={AUTHORED} />,
+      <PostHero slug={SLUG} hero="deploy-pipelnie" thumbnail={SQUARE} />,
     );
 
     expect(container.querySelector('img')).not.toBeNull();

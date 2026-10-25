@@ -3,7 +3,7 @@ import { css, cx, sva } from '@blog/styled-system/css';
 import type { RecipeVariant } from '@blog/styled-system/css';
 import type { PostSummary } from '@blog/content/client';
 import {
-  hasAuthoredThumbnail,
+  isWideThumbnail,
   postPath,
   resolveThumbnailSrc,
 } from '@blog/content/client';
@@ -115,7 +115,7 @@ export const PostCard = ({
       <PostCardShared
         part="cover"
         slug={post.slug}
-        rescaled={hasAuthoredThumbnail(post)}
+        rescaled={!isWideThumbnail(post)}
       >
         <div className={classes.cover}>
           <img

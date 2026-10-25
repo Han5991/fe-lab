@@ -145,8 +145,8 @@ export const navTransitionType = (
  * 글 카드에서 글 상세로 이어지는 **공유 요소**(shared element)의 짝. 값은 그 짝의
  * `view-transition-class`(React `<ViewTransition share>`)이자 이름의 접두사다.
  *
- * - `cover` — 카드 커버 ↔ 글 상세 히어로(`PostHero`). **OG 카드 글만** 겹쳐 모핑한다 — 둘 다 16:9 cover라 같은 배율이다.
- *   자기 썸네일 글(상세는 contain)은 카드의 cover 크롭과 배율이 달라 겹치면 그림이 두 겹이 되므로 같은 이름의 짝이되
+ * - `cover` — 카드 커버 ↔ 글 상세 히어로(`PostHero`). **가로형 글**(OG 카드, 가로/세로 1.6 이상인 자기 썸네일 — `isWideThumbnail`)만 겹쳐 모핑한다 — 둘 다 16:9 cover라 같은 배율이다.
+ *   정사각 같은 자기 썸네일 글(상세는 contain)은 카드의 cover 크롭과 배율이 달라 겹치면 그림이 두 겹이 되므로 같은 이름의 짝이되
  *   `POST_SHARED_RESCALED`가 붙어 차례로 바뀐다. 다이어그램 히어로·히어로 없는 글은 짝이 없다
  * - `title` — 카드 제목 ↔ 글 상세 h1(`PostHeader`)
  */

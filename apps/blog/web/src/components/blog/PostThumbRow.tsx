@@ -2,7 +2,7 @@ import { OG_DEFAULT_IMAGE } from '@/content.values.mts';
 import { css, cx } from '@blog/styled-system/css';
 import type { PostSummary } from '@blog/content/client';
 import {
-  hasAuthoredThumbnail,
+  isWideThumbnail,
   postPath,
   resolveThumbnailSrc,
 } from '@blog/content/client';
@@ -46,7 +46,7 @@ export const PostThumbRow = ({ post }: PostThumbRowProps) => (
     <PostCardShared
       part="cover"
       slug={post.slug}
-      rescaled={hasAuthoredThumbnail(post)}
+      rescaled={!isWideThumbnail(post)}
     >
       <div className={thumb}>
         <img

@@ -11,6 +11,7 @@
  */
 import { expect, test } from 'vitest';
 import { isPostStatus, isPostVisible, publishAtOf } from './visibility.ts';
+import { isOptimizableThumbnail } from './thumbnail.ts';
 import { sortPostsBySeriesOrder } from './series.ts';
 import { testConfig, testContent } from './testing.ts';
 
@@ -213,3 +214,16 @@ test('contract: 선언된 시리즈의 글은 시리즈 네비게이션이 있�
 
 // 검색 인덱스·sitemap 우선순위처럼 **생성기를 import해야 하는** 시리즈 계약은
 // scripts/contract.test.ts에 있다 (domain → scripts 역의존 금지).
+
+// 커버가 cover(모핑)인지 contain(차례 교체)인지는 비율로 갈린다(`isWideThumbnail`). 글 폴더의 png·jpg 썸네일이 비율
+// 없이 로드되면 — 머리말을 못 읽는 형식이 들어왔거나 파일이 없으면 — 그 글은 말없이 contain으로 떨어진다.
+test('contract: 글 폴더의 png·jpg 썸네일은 비율(thumbnailAspect)을 읽었다', () => {
+  const unread = getAllPostsIncludingHidden()
+    .filter(p => isOptimizableThumbnail(p.thumbnail))
+    .filter(p => !(p.thumbnailAspect !== undefined && p.thumbnailAspect > 0))
+    .map(p => `${p.slug} (${p.thumbnail})`);
+  expect(
+    unread,
+    `썸네일 비율을 못 읽은 글: ${unread.join(', ')}`,
+  ).toStrictEqual([]);
+});

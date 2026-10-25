@@ -382,8 +382,8 @@ export default defineConfig({
           animationDuration: 'medium',
           animationTimingFunction: 'standard',
         },
-      // 커버 짝은 두 종류다. **OG 카드 글**은 카드 커버 ↔ 상세 히어로가 둘 다 16:9 cover라 같은 그림을 같은
-      // 배율로 그려 겹쳐 모핑한다. **자기 썸네일 글**(`post-rescaled`, viewTransitions.ts)은 상세가 16:9 틀에
+      // 커버 짝은 두 종류다. **가로형 글**(OG 카드·가로/세로 1.6 이상의 자기 썸네일)은 카드 커버 ↔ 상세 히어로가 둘 다 16:9 cover라 같은 그림을 같은
+      // 배율로 그려 겹쳐 모핑한다. **정사각 같은 자기 썸네일 글**(`post-rescaled`, viewTransitions.ts)은 상세가 16:9 틀에
       // contain이라 카드의 cover 크롭과 배율이 달라 겹치면 그림이 두 겹이 되므로, 겹치지 않고 차례로 바꾼다 —
       // 맨 아래 규칙. 그래도 짝(같은 이름)이다: 이름이 없으면 커버가 페이지 스냅샷에 섞여, 그 위에 쌓이는 제목
       // 그룹(VT_STACK)이 그림 위를 지난다.
@@ -489,7 +489,7 @@ export default defineConfig({
           animationTimingFunction: 'exit',
           animationFillMode: 'both',
         },
-      // 짝의 배율이 다른 커버(`post-rescaled` — 자기 썸네일 글): 두 스냅샷이 겹치면 두 겹으로 보이므로 겹치지 않고
+      // 짝의 배율이 다른 커버(`post-rescaled` — 정사각 같은 자기 썸네일 글): 두 스냅샷이 겹치면 두 겹으로 보이므로 겹치지 않고
       // 차례로 바꾼다. 나가는 쪽이 먼저 걷히고(fast) 들어오는 쪽이 그 뒤에 나타난다(fast 지연, fastMax). 바닥을
       // 두지 않는다 — 바닥이 불투명하면 그 위로 카드 스냅샷이 겹쳐 보인다. 그룹은 그대로 자리·크기를 옮기고
       // z-index가 제목 위라, 날아가는 제목이 그림 위를 지나지 않는다. 클래스는 들어오는 쪽만 받으므로 방향은

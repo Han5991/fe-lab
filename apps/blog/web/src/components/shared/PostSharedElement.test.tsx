@@ -211,12 +211,12 @@ describe('글 카드 → 글 상세 공유 요소', () => {
     expect(title.share).toBe(detailClass('title'));
   });
 
-  // OG 카드(썸네일 없음)는 카드 커버와 같은 16:9 cover라 같은 배율의 그림이다 — 카드 커버와 짝이다.
-  test('상세 히어로의 OG 카드 커버는 카드 커버와 짝이다 — 같은 이름과 상세 쪽 클래스', () => {
+  // 가로형(OG 카드, 1200×630 같은 자기 썸네일)은 카드 커버와 같은 16:9 cover라 같은 배율의 그림이다 — 카드 커버와 짝이다.
+  test('상세 히어로의 가로형 커버는 카드 커버와 짝이다 — 같은 이름과 상세 쪽 클래스', () => {
     const { container } = render(
       <PostHero
         slug={detail.slug}
-        thumbnail={{ src: `/og/${detail.slug}.png`, authored: false }}
+        thumbnail={{ src: `/og/${detail.slug}.png`, wide: true }}
       />,
     );
     const cover = sharedPart(container, 'cover');
@@ -224,14 +224,14 @@ describe('글 카드 → 글 상세 공유 요소', () => {
     expect(cover.share).toBe(detailClass('cover'));
   });
 
-  // 카드는 cover로 가운데를 잘라 보이고 자기 썸네일의 상세 틀은 contain으로 전체를 보여 두 스냅샷의 배율이
+  // 카드는 cover로 가운데를 잘라 보이고 정사각 같은 썸네일의 상세 틀은 contain으로 전체를 보여 두 스냅샷의 배율이
   // 다르다 — 겹치면 전환 중 그림이 두 겹으로 보인다. 그래도 짝(같은 이름)이다: 이름이 없으면 커버가 페이지
   // 스냅샷에 섞여 위에 쌓이는 제목 그룹이 그림 위를 지난다. 겹치지 않고 차례로 바꾸도록 `post-rescaled`를 달고,
   // 짝은 들어오는 쪽의 클래스만 받으므로 카드와 상세가 같이 단다.
-  test('자기 썸네일 글의 커버는 짝이되 post-rescaled를 카드와 상세가 같이 단다', () => {
+  test('정사각 썸네일 글의 커버는 짝이되 post-rescaled를 카드와 상세가 같이 단다', () => {
     const src = '/thumbs/react/component/toast.webp';
     const { container: thumb, unmount } = render(
-      <PostHero slug={detail.slug} thumbnail={{ src, authored: true }} />,
+      <PostHero slug={detail.slug} thumbnail={{ src, wide: false }} />,
     );
     const hero = sharedPart(thumb, 'cover');
     expect(isCoverFrame(hero.target)).toBe(true);
@@ -241,11 +241,41 @@ describe('글 카드 → 글 상세 공유 요소', () => {
 
     const { container: card } = render(
       <PostCard
-        post={{ ...summary, thumbnail: './toast.png' }}
+        post={{ ...summary, thumbnail: './toast.png', thumbnailAspect: 1 }}
         variant="grid"
       />,
     );
     expect(sharedPart(card, 'cover').share).toEqual({
+      [POST_OPEN_TRANSITION_TYPE]: `${cardClass('cover')} ${POST_SHARED_RESCALED}`,
+      default: 'none',
+    });
+  });
+
+  // 판정은 소유한 그림이 아니라 비율이다 — 1200×630 같은 가로형 자기 썸네일은 OG 카드처럼 카드와 상세가 같은 배율의
+  // cover라 겹쳐 모핑한다. 비율을 모르면(외부 URL 등) contain 쪽, 곧 차례로 바뀐다.
+  test('가로형 자기 썸네일 글의 카드는 post-rescaled가 없고, 비율을 모르는 자기 썸네일은 있다', () => {
+    const { container: wide } = render(
+      <PostCard
+        post={{
+          ...summary,
+          thumbnail: './wide.png',
+          thumbnailAspect: 1200 / 630,
+        }}
+        variant="grid"
+      />,
+    );
+    expect(sharedPart(wide, 'cover').share).toEqual({
+      [POST_OPEN_TRANSITION_TYPE]: cardClass('cover'),
+      default: 'none',
+    });
+
+    const { container: unknown } = render(
+      <PostCard
+        post={{ ...summary, thumbnail: 'https://cdn.example/x.png' }}
+        variant="grid"
+      />,
+    );
+    expect(sharedPart(unknown, 'cover').share).toEqual({
       [POST_OPEN_TRANSITION_TYPE]: `${cardClass('cover')} ${POST_SHARED_RESCALED}`,
       default: 'none',
     });
@@ -268,7 +298,7 @@ describe('글 카드 → 글 상세 공유 요소', () => {
       <PostHero
         slug={detail.slug}
         hero={DIAGRAM_NAMES[0]}
-        thumbnail={{ src: `/og/${detail.slug}.png`, authored: false }}
+        thumbnail={{ src: `/og/${detail.slug}.png`, wide: true }}
       />,
     );
     expect(sharedElements(diagram)).toEqual([]);

@@ -20,12 +20,16 @@ function toPostSummary(post: PostData): PostSummary {
   return summary;
 }
 
-/** 이전·다음 글 카드의 값. 썸네일이 없는 글은 키째 뺀다(`exactOptionalPropertyTypes`). */
+/** 이전·다음 글 카드의 값. 없는 값은 키째 뺀다(`exactOptionalPropertyTypes`). */
 function toPostNavItem(post: PostData): PostNavItem {
-  const { slug, title, relativeDir, thumbnail } = post;
-  return thumbnail === undefined
-    ? { slug, title, relativeDir }
-    : { slug, title, relativeDir, thumbnail };
+  const { slug, title, relativeDir, thumbnail, thumbnailAspect } = post;
+  return {
+    slug,
+    title,
+    relativeDir,
+    ...(thumbnail === undefined ? {} : { thumbnail }),
+    ...(thumbnailAspect === undefined ? {} : { thumbnailAspect }),
+  };
 }
 
 // ---------- Public API ----------
