@@ -578,6 +578,12 @@ type은 `src/shared/viewTransitions.ts`, 감싸개는 `src/components/shared/Pos
   비활성에도 남는다 — 공개 화면에는 비활성 버튼이 없어 아직 맞출 일이 없다
 - 탭 하이라이트는 Panda preflight가 투명으로 지운다(`-webkit-tap-highlight-color`) — 터치 피드백은 `_hover`가
   맡는다
+- **hover 갈래는 주 입력(`hover`)으로 가른다 — 의도한 절충이다.** 주 입력이 터치로 보고되는 기기(iPad +
+  트랙패드·마우스)에서는 포인터를 올려도 hover가 켜지지 않고 누르는 동안만 켜진다. `any-hover: hover`로 넓히면
+  그 기기의 손가락 탭에 hover 고착이 돌아온다 — 더 흔한 손가락 입력 쪽을 택했다
+- **실기기 확인 전인 것:** 터치에서 스크롤을 시작하는 손가락에도 `:active`가 잠깐 칠해지면 그동안 hover 면(카드
+  커버 틴트 포함)이 켜질 수 있다. 크기를 터치에서 뺀 것과 같은 이유인데 면은 남겼다 — 누름 피드백이 곧 그 면이라서다.
+  iOS Safari·Android Chrome에서 목록 스크롤을 확인하고 깜빡임이 보이면 여기에 적고 다시 정한다
 - **초점 링은 컴포넌트가 다시 정하지 않는다.** `outline: none`·`_focus`·`_focusVisible`로 지우거나 바꾸지 않는다
   (utilities 레이어가 base 레이어의 `:focus-visible`을 이겨 링이 사라진다). 입력은 감싸는 상자의 `_focusWithin`
   보더를 함께 둘 수 있다(`ArchiveSearchBox`). 카드는 링이 제목 상자만 두른다 — 카드 전체로 옮기려면 `FOCUS_RING`을

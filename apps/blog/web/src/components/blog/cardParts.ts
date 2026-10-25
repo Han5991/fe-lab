@@ -11,8 +11,8 @@ import { pressCard } from '@/src/components/interaction';
 
 /**
  * 카드 뿌리에 다는 클래스. 제목 링크의 덮개가 이 상자를 기준으로 퍼지고(`position: relative`), 커버
- * hover 틴트가 이 상자의 hover를 본다(`group`). 마우스로 누르는 동안 카드가 99%로 줄어든다(`pressCard`). 둘을 한 클래스로 묶어 둔다 — 틴트만 따로 빠뜨리면
- * 조용히 꺼지지만, 이 클래스를 빠뜨리면 덮개가 카드 밖으로 퍼져 바로 드러난다. 배치(flex·gap)는 쓰는
+ * hover 틴트가 이 상자의 hover를 본다(`group`). 마우스로 누르는 동안 카드가 99%로 줄어든다(`pressCard`).
+ * 둘을 한 클래스로 묶어 둔다 — 틴트만 따로 빠뜨리면 조용히 꺼지지만, 이 클래스를 빠뜨리면 덮개가 카드 밖으로 퍼져 바로 드러난다. 배치(flex·gap)는 쓰는
  * 쪽이 `cx`로 더한다 — 겹치는 속성이 없어 원자 클래스가 겨루지 않는다.
  */
 export const cardRoot = cx('group', css(pressCard, { pos: 'relative' }));
