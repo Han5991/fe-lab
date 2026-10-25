@@ -120,6 +120,15 @@ describe('PostCard', () => {
     expect(imgOf(container)).toHaveAttribute('fetchpriority', 'high');
   });
 
+  // 첫 카드(eager)의 preload 힌트가 홈·글 목록을 프리페치하는 모든 페이지로 번지지 않게(cardParts의 noPreloadPicture).
+  test('priority 커버도 picture 안이라 프리페치한 페이지에 preload 힌트를 남기지 않는다', () => {
+    const { container } = render(
+      <PostCard post={post()} variant="showcase" priority />,
+    );
+
+    expect(imgOf(container).parentElement?.tagName).toBe('PICTURE');
+  });
+
   test('priority가 아니면 지연 로드한다', () => {
     const { container } = render(<PostCard post={post()} variant="default" />);
     expect(imgOf(container)).toHaveAttribute('loading', 'lazy');
