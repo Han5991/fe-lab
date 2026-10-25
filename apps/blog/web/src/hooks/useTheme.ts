@@ -1,6 +1,7 @@
 'use client';
 
 import { useSyncExternalStore } from 'react';
+import { THEME_TRANSITION_TYPE } from '@/src/shared/viewTransitions';
 import { THEME_COOKIE, THEME_COOKIE_MATCH } from './theme-cookie';
 
 // 팔레트(@blog/preset의 BlogTheme)와 같은 집합이다. src는 경계상 preset을 열지 않아
@@ -84,6 +85,19 @@ function applyTheme(next: Theme) {
 // 차트·코드 하이라이팅이 많은 페이지(analytics 등)에서 요소 수만큼 style/paint가
 // 터져 버벅였다. 루트 스냅샷 크로스페이드는 요소 수와 무관하게 GPU에서 처리돼
 // 매끄럽다. 미지원 브라우저·reduced-motion은 즉시 전환.
+// 테마 type을 다는 이유: 헤더는 이 type일 때만 크로스페이드한다(panda.config.ts globalCss). type을
+// 모르는 브라우저(Safari 18.2 미만)는 CSS 쪽 규칙도 통째로 버려 헤더가 예전처럼 크로스페이드하므로
+// 콜백만 넘긴다 — 옵션 객체를 모르는 구현에 객체를 넘기면 update가 불리지 않는다.
+function supportsTransitionTypes(): boolean {
+  return (
+    typeof CSS !== 'undefined' &&
+    typeof CSS.supports === 'function' &&
+    CSS.supports(
+      `selector(:active-view-transition-type(${THEME_TRANSITION_TYPE}))`,
+    )
+  );
+}
+
 function applyWithTransition(next: Theme) {
   if (
     prefersReducedMotion() ||
@@ -92,7 +106,12 @@ function applyWithTransition(next: Theme) {
     applyTheme(next);
     return;
   }
-  document.startViewTransition(() => applyTheme(next));
+  const update = () => applyTheme(next);
+  document.startViewTransition(
+    supportsTransitionTypes()
+      ? { update, types: [THEME_TRANSITION_TYPE] }
+      : update,
+  );
 }
 
 /** 사용자가 명시적으로 테마를 바꾼다 → 쿠키에 저장하고 부드럽게 전환. */

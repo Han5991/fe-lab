@@ -8,6 +8,7 @@ import {
   useTheme,
   writeCookie,
 } from './useTheme';
+import { THEME_TRANSITION_TYPE } from '@/src/shared/viewTransitions';
 
 // jsdom엔 matchMedia/startViewTransition가 없다. matchMedia는 테스트마다
 // 필요 시 개별 설치하고, startViewTransition은 정의하지 않아 setTheme가 즉시
@@ -114,6 +115,68 @@ describe('setTheme', () => {
     expect(getSnapshot()).toBe('light');
     setTheme('dark');
     expect(getSnapshot()).toBe('dark');
+  });
+});
+
+describe('setTheme — View Transition', () => {
+  // startViewTransition은 document의 메서드라 stubGlobal로 못 바꾼다 — 테스트 안에서 달고 여기서 뗀다.
+  afterEach(() => {
+    Reflect.deleteProperty(document, 'startViewTransition');
+  });
+
+  const installStartViewTransition = () => {
+    const start = vi.fn(
+      (arg: ViewTransitionUpdateCallback | StartViewTransitionOptions) => {
+        const update = typeof arg === 'function' ? arg : arg.update;
+        void update?.();
+      },
+    );
+    Object.defineProperty(document, 'startViewTransition', {
+      value: start,
+      configurable: true,
+    });
+    return start;
+  };
+
+  test('type을 아는 브라우저에는 테마 type을 단다 — 헤더는 이 type일 때만 크로스페이드한다', () => {
+    mockMatchMedia(false);
+    const supports = vi.fn(() => true);
+    vi.stubGlobal('CSS', { supports });
+    const start = installStartViewTransition();
+
+    setTheme('light');
+
+    // 감지는 CSS 규칙과 같은 셀렉터로 한다 — 규칙을 버리는 브라우저에서만 콜백으로 떨어진다.
+    expect(supports).toHaveBeenCalledWith(
+      `selector(:active-view-transition-type(${THEME_TRANSITION_TYPE}))`,
+    );
+    const arg = start.mock.calls[0]?.[0];
+    expect(
+      typeof arg === 'object' ? [typeof arg.update, arg.types] : arg,
+    ).toEqual(['function', [THEME_TRANSITION_TYPE]]);
+    expect(document.documentElement.dataset.theme).toBe('light');
+  });
+
+  test('CSS 객체가 없는 환경에서도 콜백만 넘긴다', () => {
+    mockMatchMedia(false);
+    vi.stubGlobal('CSS', undefined);
+    const start = installStartViewTransition();
+
+    setTheme('light');
+
+    expect(start).toHaveBeenCalledWith(expect.any(Function));
+    expect(document.documentElement.dataset.theme).toBe('light');
+  });
+
+  test('type을 모르는 브라우저에는 콜백만 넘긴다', () => {
+    mockMatchMedia(false);
+    vi.stubGlobal('CSS', { supports: vi.fn(() => false) });
+    const start = installStartViewTransition();
+
+    setTheme('dark');
+
+    expect(start).toHaveBeenCalledWith(expect.any(Function));
+    expect(document.documentElement.dataset.theme).toBe('dark');
   });
 });
 

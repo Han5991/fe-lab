@@ -190,6 +190,13 @@ export const POST_SHARED_RESCALED = 'post-rescaled';
  */
 export const POST_OPEN_TRANSITION_TYPE = 'post-open';
 
+/**
+ * 테마 전환의 transition type(`useTheme`의 `startViewTransition({ types })`). 헤더는 이 type일 때만
+ * 크로스페이드한다 — 헤더의 색이 바뀌는 건 테마 전환뿐이고, 페이지 이동 사이에는 같은 헤더라
+ * 새 스냅샷을 그대로 둔다(`panda.config.ts` globalCss).
+ */
+export const THEME_TRANSITION_TYPE = 'theme-change';
+
 interface LinkTransitionOptions {
   /** 같은 깊이 형제 사이의 순서 — 글 하단의 이전·다음 글만 준다. */
   order?: SiblingOrder | undefined;
