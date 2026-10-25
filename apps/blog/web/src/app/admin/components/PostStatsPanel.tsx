@@ -2,7 +2,7 @@
 
 import { Suspense, ViewTransition, type ReactNode } from 'react';
 import Link from 'next/link';
-import { BarChart3, ExternalLink, X } from 'lucide-react';
+import { ExternalLink, X } from 'lucide-react';
 import {
   Bar,
   BarChart,
@@ -568,39 +568,6 @@ export function PostNotFound({ slug, titleId, onClose }: PostNotFoundProps) {
       >
         조회수 분석 목록으로
       </Link>
-    </div>
-  );
-}
-
-/** 넓은 화면에서 아무 글도 고르지 않았을 때의 패널. */
-export function NoSelection() {
-  return (
-    <div
-      className={css({
-        h: 'full',
-        p: '6',
-        display: 'flex',
-        flexDir: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: '2',
-        textAlign: 'center',
-        color: 'ink.700',
-      })}
-    >
-      <BarChart3 size={24} aria-hidden />
-      <p
-        className={css({
-          textStyle: 'body',
-          fontWeight: 'semibold',
-          color: 'ink.950',
-        })}
-      >
-        선택한 글이 없습니다
-      </p>
-      <p className={css({ textStyle: 'supporting' })}>
-        목록에서 글을 고르면 통계가 여기 열립니다.
-      </p>
     </div>
   );
 }

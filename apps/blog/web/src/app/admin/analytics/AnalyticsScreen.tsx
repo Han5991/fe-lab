@@ -36,7 +36,6 @@ import {
 } from '@/src/shared/routes';
 import { ADMIN_VIEW_TRANSITION } from '@/src/shared/adminViewTransitions';
 import {
-  NoSelection,
   PanelSkeleton,
   PostNotFound,
   PostStatsPanel,
@@ -180,7 +179,6 @@ function PostListView({ selectedSlug, onSelect }: PostListViewProps) {
         }
       />
       <PostTable
-        frame="card"
         posts={visible}
         sort={sort}
         selection={{ slug: selectedSlug, onSelect }}
@@ -330,18 +328,28 @@ function InspectorBody({ slug, mode, onClose }: InspectorBodyProps) {
     );
 
   if (mode === 'column') {
-    // 글이 바뀔 때(고르기·다른 글·닫기) 내용 단위로 들고 난다 — slug가 key라 이전 내용은 오른쪽으로
-    // 밀려 나가고(fast·exit) 새 내용은 그 뒤 오른쪽 16px에서 밀려 온다(fastMax·standard). 고르기·닫기가
-    // 주소 변경 transition이라 React가 이 경계를 움직인다(`navigateTo`). 같은 글 안의 갱신(기간 선택,
-    // 분포 도착)은 움직이지 않는다(`default="none"`).
+    // 칼럼은 고른 글이 있을 때만 있다 — 글을 고르면 칼럼째 오른쪽 화면 밖에서 밀려 들어오고, 닫으면 같은
+    // 길로 나간다(바깥 경계 `drawer` — 목록 칼럼의 폭과 같은 시간·곡선). 칼럼이 열린 채 다른 글로 바꾸면
+    // 내용 단위로 들고 난다 — slug가 key라 이전 내용은 오른쪽으로 밀려 나가고(fast·exit) 새 내용은 그 뒤
+    // 오른쪽 16px에서 밀려 온다(fastMax·standard). 고르기·닫기가 주소 변경 transition이라 React가 이
+    // 경계들을 움직인다(`navigateTo`). 같은 글 안의 갱신(기간 선택, 분포 도착)은 움직이지 않는다
+    // (`default="none"`).
     return (
       <ViewTransition
-        key={slug}
-        enter={ADMIN_VIEW_TRANSITION.slideIn}
-        exit={ADMIN_VIEW_TRANSITION.slideOut}
+        enter={ADMIN_VIEW_TRANSITION.drawer}
+        exit={ADMIN_VIEW_TRANSITION.drawer}
         default="none"
       >
-        {content}
+        <PanelColumn>
+          <ViewTransition
+            key={slug}
+            enter={ADMIN_VIEW_TRANSITION.slideIn}
+            exit={ADMIN_VIEW_TRANSITION.slideOut}
+            default="none"
+          >
+            {content}
+          </ViewTransition>
+        </PanelColumn>
       </ViewTransition>
     );
   }
@@ -359,39 +367,26 @@ interface InspectorProps {
 }
 
 /**
- * 고른 글의 통계를 넓은 화면은 목록 옆 칼럼에, 좁은 화면은 시트에 그린다. 칼럼은 데이터를
- * 기다리는 동안에도 자리를 지킨다(목록 옆이 비었다가 생기면 목록 폭이 한 번 바뀐다).
- *
- * 칼럼의 '고른 글 없음'은 데이터를 기다리지 않는다 — 고른 글이 없으면 보일 통계가 없으므로 Suspense
- * 밖에서 곧바로 그리고, 데이터 구독(`InspectorBody`)은 그 뒤에서 아무것도 그리지 않고 기다린다.
- * 스켈레톤은 고른 글의 통계를 기다릴 때만 나온다. 패널을 닫으면 이전 내용이 오른쪽으로 빠진 뒤 이
- * 안내가 제자리에서 나타나고(fadeIn), 글을 고르면 안내는 제자리에서 걷힌다(out).
+ * 고른 글의 통계를 넓은 화면은 목록 옆 칼럼에, 좁은 화면은 시트에 그린다. 고른 글이 없으면 칼럼도
+ * 없다 — 목록이 화면 폭을 다 쓴다. 칼럼은 고른 글의 데이터를 기다리는 동안에도 자리를 지킨다(스켈레톤).
+ * 데이터 구독(`InspectorBody`)은 고른 글이 없어도 아무것도 그리지 않고 남는다(그 주석).
  */
 function Inspector({ slug, isWide, onClose }: InspectorProps) {
   if (isWide) {
     return (
-      <PanelColumn>
-        {slug === null && (
-          <ViewTransition
-            enter={ADMIN_VIEW_TRANSITION.fadeIn}
-            exit={ADMIN_VIEW_TRANSITION.out}
-            default="none"
-          >
-            <NoSelection />
-          </ViewTransition>
-        )}
-        <Suspense
-          fallback={
-            slug === null ? null : (
+      <Suspense
+        fallback={
+          slug === null ? null : (
+            <PanelColumn>
               <ViewTransition exit={ADMIN_VIEW_TRANSITION.out} default="none">
                 <PanelSkeleton />
               </ViewTransition>
-            )
-          }
-        >
-          <InspectorBody slug={slug} mode="column" onClose={onClose} />
-        </Suspense>
-      </PanelColumn>
+            </PanelColumn>
+          )
+        }
+      >
+        <InspectorBody slug={slug} mode="column" onClose={onClose} />
+      </Suspense>
     );
   }
   return (
@@ -403,7 +398,8 @@ function Inspector({ slug, isWide, onClose }: InspectorProps) {
 
 const layout = cva({
   variants: {
-    wide: {
+    // 고른 글이 있는 넓은 화면만 두 칸이다 — 고른 글이 없으면 목록이 폭을 다 쓴다.
+    panel: {
       // 목록 | 패널(400). 패널은 sticky라 칸이 자기 높이만 차지해야 한다(align-items start).
       true: {
         display: 'grid',
@@ -431,28 +427,32 @@ export function AnalyticsScreen() {
   const close = () => navigateTo(ADMIN_ANALYTICS_PATH);
 
   return (
-    <div className={layout({ wide: isWide })}>
+    <div className={layout({ panel: isWide && selectedSlug !== null })}>
       {selectedSlug !== null && <PrefetchPostStats slug={selectedSlug} />}
-      <div className={cx(railGutter, css({ pb: '12', minW: '0' }))}>
-        <div
-          className={cx(
-            railColumn({ width: 'wide' }),
-            css({ display: 'flex', flexDir: 'column', gap: '4' }),
-          )}
-        >
-          {/* 드러날 때 스켈레톤은 걷히고(exit) 머리·목록이 차례로 떠오른다(`enterMotion`). */}
-          <Suspense
-            fallback={
-              <ViewTransition exit={ADMIN_VIEW_TRANSITION.out} default="none">
-                <LoadingPlaceholder height="96px" />
-                <LoadingPlaceholder height="480px" />
-              </ViewTransition>
-            }
+      {/* 글 통계 칼럼이 열리고 닫히면 이 칼럼의 폭이 바뀐다 — 루트에 섞여 있으면 옛 폭의 목록이 새 폭 위에
+          크로스페이드로 겹쳤다(230ms, 칼럼은 410ms에 걸쳐 들어오는데). 따로 찍어 상자만 칼럼과 같이 움직인다. */}
+      <ViewTransition update={ADMIN_VIEW_TRANSITION.resize} default="none">
+        <div className={cx(railGutter, css({ pb: '12', minW: '0' }))}>
+          <div
+            className={cx(
+              railColumn({ width: 'wide' }),
+              css({ display: 'flex', flexDir: 'column', gap: '4' }),
+            )}
           >
-            <PostListView selectedSlug={selectedSlug} onSelect={select} />
-          </Suspense>
+            {/* 드러날 때 스켈레톤은 걷히고(exit) 머리·목록이 차례로 떠오른다(`enterMotion`). */}
+            <Suspense
+              fallback={
+                <ViewTransition exit={ADMIN_VIEW_TRANSITION.out} default="none">
+                  <LoadingPlaceholder height="96px" />
+                  <LoadingPlaceholder height="480px" />
+                </ViewTransition>
+              }
+            >
+              <PostListView selectedSlug={selectedSlug} onSelect={select} />
+            </Suspense>
+          </div>
         </div>
-      </div>
+      </ViewTransition>
       <Inspector slug={selectedSlug} isWide={isWide} onClose={close} />
     </div>
   );

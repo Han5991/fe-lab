@@ -216,10 +216,13 @@ describe('AnalyticsScreen — 고른 글', () => {
     const pushState = vi.spyOn(window.history, 'pushState');
     renderScreen();
 
-    const panel = await screen.findByRole('region', { name: '글 통계' });
-    expect(
-      await within(panel).findByRole('heading', { name: '글 A', level: 2 }),
-    ).toBeInTheDocument();
+    // 데이터를 기다리는 동안의 칼럼(스켈레톤)과 내용이 든 칼럼은 다른 요소다 — 내용이 선 뒤에 칼럼을 찾는다.
+    const heading = await screen.findByRole('heading', {
+      name: '글 A',
+      level: 2,
+    });
+    const panel = screen.getByRole('region', { name: '글 통계' });
+    expect(panel).toContainElement(heading);
     // 태그는 대시보드 데이터가 아니라 글 인덱스에서 온다.
     expect(within(panel).getByText('#react')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: '글 A' })).toHaveAttribute(
@@ -234,14 +237,15 @@ describe('AnalyticsScreen — 고른 글', () => {
     expect(pushState).toHaveBeenCalledWith(null, '', '/admin/analytics/');
   });
 
-  // 고른 글이 없으면 보일 통계가 없다 — 안내가 데이터를 기다리면 화면에 들어올 때마다 패널에
-  // 스켈레톤이 떴다가 안내로 바뀐다(실측 190ms → 698ms).
-  test('아무 글도 고르지 않으면 패널은 데이터를 기다리지 않고 고르라고 안내한다', () => {
+  // 고른 글이 없으면 보일 통계가 없다 — 칼럼도 스켈레톤도 없이 목록이 폭을 다 쓴다(데이터를 기다리는
+  // 동안에도 빈 칼럼이 서지 않는다).
+  test('아무 글도 고르지 않으면 패널 칼럼이 없다', () => {
     getAdminPostsIndex.mockReturnValueOnce(new Promise(() => undefined));
     renderScreen();
 
-    const panel = screen.getByRole('region', { name: '글 통계' });
-    expect(within(panel).getByText('선택한 글이 없습니다')).toBeInTheDocument();
+    expect(
+      screen.queryByRole('region', { name: '글 통계' }),
+    ).not.toBeInTheDocument();
   });
 
   test('좁은 화면에서는 패널이 목록을 덮는 시트(다이얼로그)로 뜨고 Escape로 닫는다', async () => {

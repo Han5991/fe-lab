@@ -22,7 +22,7 @@ export const ADMIN_VIEW_TRANSITION = {
    * 함께 있는 일은 없다.
    */
   bar: 'admin-bar',
-  /** 자리를 넘기고 제자리에서 걷힌다 — 스켈레톤, '고른 글 없음', 바뀌기 전 지표 값. */
+  /** 자리를 넘기고 제자리에서 걷힌다 — 스켈레톤, 바뀌기 전 지표 값. */
   out: 'admin-out',
   /** `out`이 걷힌 뒤 8px 아래에서 떠오른다 — 바뀐 지표 값, 정렬을 바꾼 글 목록. */
   rise: 'admin-rise',
@@ -33,10 +33,19 @@ export const ADMIN_VIEW_TRANSITION = {
    * `slideIn`을 거꾸로 돈다.
    */
   slideOut: 'admin-slide-out',
-  /** `slideOut`이 걷힌 뒤 제자리에서 나타난다 — 패널을 닫고 드러나는 '고른 글 없음'. */
-  fadeIn: 'admin-fade-in',
   /** 좁은 화면 글 통계 시트 — 열림·닫힘(sm 미만은 아래, 그 위는 오른쪽 화면 밖과 오간다). */
   sheet: 'admin-sheet',
+  /**
+   * 넓은 화면 글 통계 칼럼 — 고른 글이 있을 때만 있고, 오른쪽 화면 밖과 오간다. 시트와 달리 열림·닫힘이 같은
+   * 곡선(standard)이다 — 옆 목록 칼럼(`resize`)의 상자가 한 그룹 애니메이션이라 방향마다 곡선을 바꿀 수 없어,
+   * 칼럼도 같은 곡선으로 맞춰야 둘이 함께 닿는다.
+   */
+  drawer: 'admin-drawer',
+  /**
+   * 넓은 화면 분석의 목록 칼럼 — 글 통계 칼럼이 열리고 닫히며 폭이 바뀔 때. 이전 스냅샷은 지우고 새
+   * 스냅샷을 늘이지 않은 채 왼쪽 위에 붙여, 칼럼 상자만 글 통계 칼럼(`drawer`)과 같은 시간·곡선으로 줄고 는다.
+   */
+  resize: 'admin-resize',
   /** 시트 뒤 스크림 — 나타남·사라짐. */
   scrim: 'admin-scrim',
 } as const;

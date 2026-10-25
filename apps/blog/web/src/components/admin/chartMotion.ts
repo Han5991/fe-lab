@@ -23,7 +23,7 @@ export const CHART_MOTION = {
 /**
  * 차트의 등장 — 차트 칸(`ResponsiveContainer`를 감싼 요소)에 주면 차트가 그려질 때 CSS가 움직인다. 선·면은
  * 왼쪽에서 오른쪽으로 그려 나가고(`admin-chart-wipe`), 막대는 바닥에서 자라며(`admin-chart-rise`), 축·격자는
- * 제자리에서 투명도만 오른다(`admin-fade-in`, 패널을 닫고 드러나는 '고른 글 없음'과 같은 것). Recharts
+ * 제자리에서 투명도만 오른다(`admin-fade-in`, 시트 뒤 스크림과 같은 것). Recharts
  * 내장 애니메이션(CHART_MOTION으로 끔)이 하던 드러남을 CSS로 되돌린 것이라 JS는 늘지 않는다.
  *
  * - 시간·곡선은 선·막대 모두 mediumMax·standard — 같이 그려지는 가로 막대(`admin-bar-grow`)와 끝이 맞는다.

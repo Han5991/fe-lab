@@ -133,7 +133,7 @@ export const rowLink = css.raw({
 });
 
 /**
- * 가로 막대 한 줄의 트랙과 채움 — 태그 분포·누적 비중·요일 분포(Astryx ProgressBar, 높이 8 pill).
+ * 가로 막대 한 줄의 트랙과 채움 — 누적 비중·요일 분포(Astryx ProgressBar, 높이 8 pill).
  *
  * 채움은 트랙 폭 그대로이고 값만큼 왼쪽으로 밀려 있다(`barShare` — 인라인 transform). 폭(`width: N%`)
  * 대신 transform으로 길이를 내는 이유는 움직임이다: 처음 그려질 때 트랙 왼쪽 밖에서 자기 자리까지

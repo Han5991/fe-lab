@@ -6,9 +6,7 @@ import {
   useState,
   ViewTransition,
   type MouseEvent,
-  type ReactNode,
 } from 'react';
-import Link from 'next/link';
 import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
 import { css, cva } from '@blog/styled-system/css';
 import { resolvePostState } from '@blog/content/client';
@@ -18,7 +16,6 @@ import {
   adminCell,
   adminTable,
   adminTableBody,
-  cardTableBleed,
   enterMotion,
   enterOrderStyle,
   truncate,
@@ -65,7 +62,7 @@ export function sortPosts(
 }
 
 /**
- * 글 목록의 정렬 상태 — 분석 화면의 목록과 대시보드 「모든 글」이 같은 규칙을 쓴다: 기본은 작성일
+ * 분석 화면 글 목록의 정렬 상태 — 기본은 작성일
  * 내림차순, 세그먼트는 기준만 바꾸고, 정렬 중인 열 머리를 다시 누르면 방향이 바뀐다(예전 오름차순
  * 체크박스의 자리).
  *
@@ -242,14 +239,8 @@ interface PostSelection {
   onSelect: (slug: string) => void;
 }
 
-/**
- * 표를 감싸는 면 — 분석 화면은 표 자체가 카드이고(머리 다음 진입 순서 1로 떠오른다), 대시보드는
- * 제목 있는 카드(`AdminCard`) 안에서 카드 가장자리까지 붙는다.
- */
-const frame = {
-  card: css(adminCard, enterMotion, { p: '0', overflow: 'hidden' }),
-  bleed: cardTableBleed,
-} as const;
+/** 표를 감싸는 면 — 표 자체가 카드이고, 머리 다음(진입 순서 1)으로 떠오른다. */
+const frame = css(adminCard, enterMotion, { p: '0', overflow: 'hidden' });
 
 interface PostTableProps {
   /** 거른 글 — 정렬은 표가 `sort`로 한다. */
@@ -257,19 +248,12 @@ interface PostTableProps {
   sort: PostSort;
   /** 표 아래(행 대신) 보일 안내 — 데이터가 없거나 검색이 비었을 때. */
   emptyMessage: string;
-  frame: keyof typeof frame;
-  /**
-   * 분석 화면의 고르기. 있으면 제목이 주소만 바꾸고(`onSelect`) 고른 줄을 세운다. 없으면(대시보드)
-   * 제목은 그 글이 고른 분석 화면으로 가는 Next 링크다.
-   */
-  selection?: PostSelection;
-  /** 줄 끝 칸 — 대시보드의 '새 탭에서 열기'. */
-  renderAction?: (post: PostStatDetail) => ReactNode;
+  /** 분석 화면의 고르기 — 제목을 누르면 주소만 바꾸고(`onSelect`) 고른 줄을 세운다. */
+  selection: PostSelection;
 }
 
 /**
- * admin 글 목록 — 상태 · 제목 · 작성일 · 조회수(승인 목업, Astryx table-inbox의 목록 칸). 분석 화면의
- * 목록과 대시보드의 「모든 글」이 같은 표다.
+ * admin 분석 화면의 글 목록 — 상태 · 제목 · 작성일 · 조회수(승인 목업, Astryx table-inbox의 목록 칸).
  *
  * 제목은 그 글의 통계 주소로 가는 **링크**다. 분석 화면에서는 누르면 주소만 바꾸고(`onSelect` →
  * `history.pushState`) 오른쪽 패널이 그 글을 연다 — 새 탭·주소 복사는 링크 그대로 되고, 정적 export가
@@ -280,9 +264,7 @@ export function PostTable({
   posts,
   sort,
   emptyMessage,
-  frame: frameKind,
   selection,
-  renderAction,
 }: PostTableProps) {
   const sorted = sortPosts(posts, sort.field, sort.order);
   const handleClick =
@@ -294,11 +276,8 @@ export function PostTable({
 
   return (
     <ViewTransition update={SORT_SWAP} default="none">
-      {/* 분석 화면에서는 머리(진입 순서 0) 다음으로 떠오른다. */}
-      <div
-        style={frameKind === 'card' ? enterOrderStyle(1) : undefined}
-        className={frame[frameKind]}
-      >
+      {/* 머리(진입 순서 0) 다음으로 떠오른다. */}
+      <div style={enterOrderStyle(1)} className={frame}>
         <table className={adminTable}>
           <caption className={css({ srOnly: true })}>글 목록</caption>
           <thead>
@@ -319,19 +298,11 @@ export function PostTable({
               </th>
               <SortHeader field="date" sort={sort} />
               <SortHeader field="views" sort={sort} />
-              {renderAction !== undefined && (
-                <th
-                  scope="col"
-                  className={css(adminCell.raw({ kind: 'head' }), { w: '12' })}
-                >
-                  <span className={css({ srOnly: true })}>글 열기</span>
-                </th>
-              )}
             </tr>
           </thead>
           <tbody className={adminTableBody}>
             {sorted.map(post => {
-              const selected = post.slug === selection?.slug;
+              const selected = post.slug === selection.slug;
               const href = adminAnalyticsPostPath(post.slug);
               const state = resolvePostState(post, TIMEZONE);
               const title = (
@@ -367,26 +338,14 @@ export function PostTable({
                       _before: { display: { sm: 'none' } },
                     })}
                   >
-                    {selection === undefined ? (
-                      // 미리 받지 않는다 — 줄마다 같은 분석 화면의 글별 주소라, 표가 화면에 들면
-                      // 글 수만큼(45) 요청이 나간다. 누를 때 한 번 받는다.
-                      <Link
-                        href={href}
-                        prefetch={false}
-                        className={titleLink({ selected })}
-                      >
-                        {title}
-                      </Link>
-                    ) : (
-                      <a
-                        href={href}
-                        aria-current={selected ? 'page' : undefined}
-                        onClick={handleClick(selection.onSelect, post.slug)}
-                        className={titleLink({ selected })}
-                      >
-                        {title}
-                      </a>
-                    )}
+                    <a
+                      href={href}
+                      aria-current={selected ? 'page' : undefined}
+                      onClick={handleClick(selection.onSelect, post.slug)}
+                      className={titleLink({ selected })}
+                    >
+                      {title}
+                    </a>
                   </td>
                   <td
                     className={css(adminCell.raw(), {
@@ -417,11 +376,6 @@ export function PostTable({
                       </span>
                     )}
                   </td>
-                  {renderAction !== undefined && (
-                    <td className={adminCell({ align: 'end' })}>
-                      {renderAction(post)}
-                    </td>
-                  )}
                 </tr>
               );
             })}

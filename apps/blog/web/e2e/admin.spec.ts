@@ -159,7 +159,7 @@ test.describe('로그인', () => {
   }) => {
     await renderAdmin(page, '/admin/analytics/');
     const panel = page.getByRole('region', { name: '글 통계' });
-    await expect(panel.getByText('선택한 글이 없습니다')).toBeVisible();
+    await expect(panel, '고른 글이 없으면 패널 칼럼이 없다').toHaveCount(0);
 
     const row = page
       .getByRole('table', { name: '글 목록' })
@@ -179,7 +179,7 @@ test.describe('로그인', () => {
 
     await page.goBack();
     await expect(page).toHaveURL('/admin/analytics/');
-    await expect(panel.getByText('선택한 글이 없습니다')).toBeVisible();
+    await expect(panel).toHaveCount(0);
     await expect(row).not.toHaveAttribute('aria-current');
   });
 
