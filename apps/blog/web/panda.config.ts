@@ -1,7 +1,10 @@
 import { defineConfig, definePlugin } from '@pandacss/dev';
 import { TEST_SUFFIX } from './testFiles.mts';
 import {
+  ACTIVE_NAV_INDICATOR_SELECTOR,
+  NAV_INDICATOR_ATTRIBUTE,
   NAV_TRANSITION,
+  POST_OPEN_TRANSITION_TYPE,
   POST_SHARED,
   POST_SHARED_SIDE,
   VIEW_TRANSITION,
@@ -46,12 +49,13 @@ const trimPresetPanda = definePlugin({
   },
 });
 
-// View Transitions 그룹을 쌓는 순서(아래 globalCss) — 페이지 < 제목 < 커버 < 헤더. 그룹은 z-index가
-// 없으면 문서 순서로 쌓인다. 이유는 각 규칙 옆에 있다.
+// View Transitions 그룹을 쌓는 순서(아래 globalCss) — 페이지 < 제목 < 커버 < 헤더 < 내비 표식. 그룹은
+// z-index가 없으면 문서 순서로 쌓인다. 이유는 각 규칙 옆에 있다.
 const VT_STACK = {
   title: '1',
   cover: '2',
   siteHeader: '3',
+  navIndicator: '4',
 } as const;
 
 // 방향 있는 이동(NAV_TRANSITION)에서 페이지가 미끄러지는 거리와, 그 거리를 의사 요소마다 부호를 붙여
@@ -315,6 +319,53 @@ export default defineConfig({
         zIndex: VT_STACK.siteHeader,
         bg: 'paper.50',
       },
+      // ── 내비 표식 — 헤더 내비 링크마다 있는 빈 span(NavLinks) ──
+      // 모양·자리·이름을 전부 여기서 준다. NavLinks는 모든 공개 페이지에 실리는 클라이언트 컴포넌트라
+      // span에 Panda `css()`와 인라인 이름을 두면 첫 로드 JS가 108B(gzip) 늘었다 — 스타일 객체가 JS에
+      // 실린다. 이름은 링크의 `::after`가 아니라 span에 단다 — 의사 요소가 이름으로 찍히는지는
+      // Chromium에서만 확인했다.
+      // span은 모든 링크에 있고 막대는 현재 페이지 링크(aria-current)의 것만 그린다 — 활성 링크에만
+      // span을 두면 미리 그린 404가 섹션 아래 경로에서 하이드레이션이 깨진다(viewTransitions.ts의
+      // NAV_INDICATOR_ATTRIBUTE). 나머지 span은 그리지 않아 링크 상자에 아무 영향이 없다.
+      [`[${NAV_INDICATOR_ATTRIBUTE}]`]: {
+        display: 'none',
+      },
+      // 라벨 가운데 아래, 항목 상자 아래 1px에 걸친 16×2 막대다.
+      [ACTIVE_NAV_INDICATOR_SELECTOR]: {
+        display: 'block',
+        pos: 'absolute',
+        insetInline: '0',
+        bottom: '[-1px]',
+        mx: 'auto',
+        w: '4',
+        h: '0.5',
+        rounded: 'full',
+        bg: 'accent.solid',
+        viewTransitionName: VIEW_TRANSITION.navIndicator,
+        // 강제 색상 모드는 배경을 Canvas로 덮어 면만으로 그린 막대가 사라진다 — 시스템 글자색으로 남긴다.
+        '@media (forced-colors: active)': { bg: 'CanvasText' },
+      },
+      // 이동 사이에 옛 링크 아래에서 새 링크 아래로 미끄러진다. 크기가 고정이라 그룹은 자리만 보간하고,
+      // React가 처음·끝 크기가 같은 그룹의 width·height keyframes를 지워 transform만 남는다(합성).
+      // 시간은 표식의 fast·standard다. old/new에도 같은 값을 준다 — 홈에는 활성 링크가 없어 홈을
+      // 드나들면 짝 없는 쪽(`:only-child`)만 남는데, 그 그룹은 움직이지 않아 막대가 제자리에서 UA
+      // 페이드로 사라지거나 나타난다. UA는 시간만 그룹에서 물려주고 곡선은 기본 ease로 둔다.
+      [`::view-transition-group(${VIEW_TRANSITION.navIndicator}), ::view-transition-old(${VIEW_TRANSITION.navIndicator}), ::view-transition-new(${VIEW_TRANSITION.navIndicator})`]:
+        {
+          animationDuration: 'fast',
+          animationTimingFunction: 'standard',
+        },
+      // 헤더보다 위(VT_STACK) — 막대는 헤더 안에 있지만 이름이 따로라 헤더 스냅샷에 찍히지 않고,
+      // 헤더 그룹의 불투명 지면이 그 아래를 덮는다.
+      [`::view-transition-group(${VIEW_TRANSITION.navIndicator})`]: {
+        zIndex: VT_STACK.navIndicator,
+      },
+      // 글을 여는 이동(카드 → 글 상세)에서는 막대가 미끄러지지 않고 새 자리에 바로 선다 — 커버·제목이
+      // 날아가는 동안 헤더에서 또 하나가 움직이면 시선이 갈린다. old/new는 같은 막대라 겹쳐도 그대로다.
+      [`:root:active-view-transition-type(${POST_OPEN_TRANSITION_TYPE})::view-transition-group(${VIEW_TRANSITION.navIndicator})`]:
+        {
+          animationName: 'none',
+        },
       // ── 공유 요소 — 글 카드의 커버·제목 ↔ 글 상세의 히어로 이미지·h1(PostSharedElement) ──
       // 그룹(자리·크기 보간)은 들어오는 페이지와 같은 medium·standard다 — 나가는 페이지가 fast로
       // 비키는 동안 공유 요소가 자리를 옮긴다. old/new 스냅샷은 따로 적지 않은 시간·곡선을 그룹에서
