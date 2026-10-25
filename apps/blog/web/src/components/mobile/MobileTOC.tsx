@@ -7,8 +7,11 @@ import type { RecipeVariant } from '@blog/styled-system/css';
 import { useTocHook, scrollToId } from '@/src/components/tocHooks';
 import { isModifiedClick } from '@/src/components/events';
 import { Portal } from '@/src/components/Portal';
-import { pressable } from '@/src/components/pressable';
-import { holdAnimationWhileFocused } from '@/src/components/interaction';
+import { iconButton } from '@/src/components/iconButton';
+import {
+  holdAnimationWhileFocused,
+  pressButton,
+} from '@/src/components/interaction';
 import { useModalDialog } from '@/src/components/useModalDialog';
 import { usePresence } from '@/src/components/usePresence';
 
@@ -220,7 +223,7 @@ export const MobileTOC = () => {
         aria-label="목차 열기"
         aria-haspopup="dialog"
         aria-expanded={isOpen}
-        className={css(pressable, {
+        className={css(pressButton, {
           pos: 'fixed',
           bottom: FAB.bottom,
           right: FAB.right,
@@ -308,7 +311,12 @@ export const MobileTOC = () => {
                       // 열기 버튼과 같은 axe button-name 위반. 드로어가 열렸을 때만
                       // 존재해 스캔에서 늦게 잡혔을 뿐, 같은 이유로 이름이 필요하다.
                       aria-label="목차 닫기"
-                      className={css({ cursor: 'pointer', color: 'ink.400' })}
+                      className={css(
+                        iconButton.raw({ tone: 'ghost', size: 'md' }),
+                        // 보조 잉크는 예전 그대로. 32 상자가 글리프를 4px 안으로 밀어 낸 만큼 되돌려 X가
+                        // 제목 줄의 오른쪽 끝에 서게 한다.
+                        { color: 'ink.400', mr: '-1' },
+                      )}
                     >
                       <X size={24} />
                     </button>

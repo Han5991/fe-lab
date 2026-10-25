@@ -141,8 +141,12 @@ export default defineConfig({
       // - `_press` · `_groupPress`: 모든 포인터에서 누르는 동안. hover와 다른 모양이 필요한 자리만 쓴다.
       // - `_pressScale`: 누르는 동안의 **크기**. 마우스류(hover·fine)에서만 — 터치의 :active는 스크롤을
       //   시작하는 손가락에도 칠해진다(Astryx와 같은 판단). disabled는 뺀다.
-      // `_press*`·`_active`·`_focus`·`_focusVisible`은 eslint의 허용 파일(`INTERACTION_FILES` — 프리셋인
-      // `interaction.ts`·`cardParts.ts`, 두 셸이 함께 쓰는 건너뛰기 링크 `skipLink.ts`) 밖에서
+      // - `_groupKeyboardFocus`: 그룹(카드) 안이나 그룹 자신에 **키보드 초점**(`:focus-visible`)이 있는 동안.
+      //   `:focus-within`이 아닌 이유는 마우스·터치로 누른 링크도 초점을 받아, 터치에서 탭 뒤에 카드
+      //   틴트가 남기 때문이다(`_hover`를 터치에서 누르는 동안으로 바꾼 것과 같은 문제). 링크가 그룹 자신인
+      //   카드(이전·다음)도 있어 `:has()`만으로는 모자라고 `:is()`로 자신을 더한다.
+      // `_press*`·`_groupKeyboardFocus`·`_active`·`_focus`·`_focusVisible`은 eslint의 허용 파일(`INTERACTION_FILES` —
+      // 프리셋인 `interaction.ts`·`cardParts.ts`, 두 셸이 함께 쓰는 건너뛰기 링크 `skipLink.ts`) 밖에서
       // 쓰지 못한다(`NO_LOCAL_INTERACTION`). 버튼 레시피도 직접 쓰지 않고 프리셋을 펼친다. `_hover`는
       // 컴포넌트가 쓴다.
       hover: {
@@ -160,6 +164,8 @@ export default defineConfig({
       press:
         '&:is(:active, [data-active]):not(:disabled, [aria-disabled=true])',
       groupPress: '.group:is(:active, [data-active]) &',
+      groupKeyboardFocus:
+        '.group:is(:focus-visible, :has(:focus-visible), [data-focus-visible]) &',
       pressScale: {
         '@media (hover: hover) and (pointer: fine)': {
           '&:is(:active, [data-active]):not(:disabled, [aria-disabled=true])':

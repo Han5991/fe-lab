@@ -63,28 +63,42 @@ const NO_ESCAPED_TRANSITION = {
 /**
  * 누름·초점 상태를 컴포넌트가 직접 정하지 못하게 막는다 — 때는 panda.config의 조건이, 모양은
  * `src/components/interaction.ts`의 프리셋이 정한다(blog-design-system 스킬 "인터랙션 상태").
- * 컴포넌트는 `_hover`에 값만 적는다(터치에서는 그 값이 누르는 동안 켜진다). 막는 것은 `_active`·
- * `_groupActive`(누름을 따로 적은 사본 — 검색 결과 행과 닫기 버튼이 하나씩 갖고 있었다), `_focus`·
- * `_focusVisible`(초점 링은 globalCss `:focus-visible` 하나다 — `_focus: { outline: 'none' }`이 그 링을
- * 지웠다), `_press`·`_groupPress`·`_pressScale`(프리셋 몫), 같은 뜻의 `'&:active'`·`'&:focus'` 선택자 키다.
- * `_focusWithin`은 막지 않는다 — 입력을 감싸는 상자의 보더가 그 자리다(`ArchiveSearchBox`).
+ * 컴포넌트는 `_hover`에 값만 적는다(터치에서는 그 값이 누르는 동안 켜진다). 막는 것은 같은 뜻의 조건
+ * 이름 전부와 그 조건을 선택자로 풀어 적은 키다:
+ * - 누름: `_active`·`_groupActive`·`_peerActive`(누름을 따로 적은 사본 — 검색 결과 행과 닫기 버튼이 하나씩
+ *   갖고 있었다), `_press`·`_groupPress`·`_pressScale`(프리셋 몫).
+ * - 초점: `_focus`·`_focusVisible`(초점 링은 globalCss `:focus-visible` 하나다 — `_focus: { outline: 'none' }`이
+ *   그 링을 지웠다), `_groupFocus`·`_groupFocusVisible`·`_groupFocusWithin`·`_groupKeyboardFocus`와 `_peerFocus*`
+ *   (그룹·형제의 초점 — 카드의 키보드 초점 틴트는 `cardParts.ts`가 `_groupKeyboardFocus`로 건다).
+ * - 입력 종류: `_pointerCoarse`(누름 크기가 마우스류에서만 도는 것은 `_pressScale`이 정한다).
+ * - 선택자 키: `'&:active'`·`'&:focus'`·`'&:focus-visible'`·`'&:hover'`와 `` [`&:active`] `` 같은 템플릿 리터럴 키.
+ *   `:hover`를 선택자 문자열에 직접 적으면 Panda 조건을 거치지 않아 터치에서 탭 뒤에도 hover가 남는다
+ *   (글 본문 표의 `'& tr:hover td'`가 그랬다).
+ * `_hover`·`_groupHover`는 막지 않는다 — 컴포넌트가 면·색을 적는 설계상의 조건이다. `_focusWithin`도
+ * 막지 않는다 — 입력을 감싸는 상자의 보더가 그 자리다(`ArchiveSearchBox`).
  *
  * 쓸 수 있는 파일은 `INTERACTION_FILES`뿐이다. `no-restricted-syntax`는 블록마다 통째로 덮어써지므로(위
  * NO_ESCAPED_HEX 주석) 그 블록은 이 룰만 빼고 나머지를 다시 펼친다.
  *
- * 재평가: 2027-04-25 — 그때까지 잡은 위반이 없으면 내린다(AGENTS.md §5). `_hover`까지 넓히는 것은 열린
- * PR(#578·#579)과 admin 브랜치가 머지된 뒤다 — 지금 막으면 그 파일들이 한꺼번에 걸린다.
+ * 재평가: 2027-04-25 — 그때까지 잡은 위반이 없으면 내린다(AGENTS.md §5).
  */
+const NO_LOCAL_INTERACTION_NAME =
+  '^_(active|groupActive|peerActive|focus|focusVisible|groupFocus|groupFocusVisible|groupFocusWithin|groupKeyboardFocus|peerFocus|peerFocusVisible|peerFocusWithin|press|groupPress|pressScale|pointerCoarse)$';
+const NO_LOCAL_INTERACTION_SELECTOR =
+  ':(active|focus|focus-visible|hover)([^-\\w]|$)';
 const NO_LOCAL_INTERACTION = {
-  selector:
-    'Property:matches([key.name=/^_(active|groupActive|focus|focusVisible|press|groupPress|pressScale)$/], [key.value=/:(active|focus|focus-visible)([^-\\w]|$)/])',
+  selector: [
+    `Property:matches([key.name=/${NO_LOCAL_INTERACTION_NAME}/], [key.value=/${NO_LOCAL_INTERACTION_SELECTOR}/])`,
+    // 템플릿 리터럴 키 — 값이 없는 노드라 `key.value`로는 안 보인다. 상수를 끼운 템플릿도 첫 조각이 보인다.
+    `Property > TemplateLiteral.key > TemplateElement[value.raw=/${NO_LOCAL_INTERACTION_SELECTOR}/]`,
+  ].join(', '),
   message:
-    '누름·초점 상태는 직접 정하지 않습니다 — 때는 panda.config의 조건, 모양은 src/components/interaction.ts의 프리셋입니다. `_hover`에 값만 적으면 터치에서는 누르는 동안 켜집니다(blog-design-system 스킬 "인터랙션 상태").',
+    '누름·초점 상태는 직접 정하지 않습니다 — 때는 panda.config의 조건, 모양은 src/components/interaction.ts의 프리셋입니다. `_hover`에 값만 적으면 터치에서는 누르는 동안 켜집니다(blog-design-system 스킬 "인터랙션 상태"). `:hover`를 선택자 문자열에 적지 말고 `_hover`를 쓰세요.',
 } as const;
 
 /**
  * NO_LOCAL_INTERACTION의 허용 파일 — 누름·초점 조건을 실제로 쓰는 곳이다.
- * - `interaction.ts`·`cardParts.ts`: 프리셋이 `_press`·`_groupPress`·`_pressScale`을 건다.
+ * - `interaction.ts`·`cardParts.ts`: 프리셋이 `_press`·`_groupPress`·`_pressScale`·`_groupKeyboardFocus`를 건다.
  * - `skipLink.ts`: 건너뛰기 링크가 초점을 받으면 화면 안으로 들어온다(`_focus: { transform: 'none' }`).
  *   사이트 셸과 admin 셸이 함께 쓰는 모듈 하나라 셸 파일 전체를 열지 않는다.
  */

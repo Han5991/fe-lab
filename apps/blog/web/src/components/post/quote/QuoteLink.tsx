@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Check, Link2 } from 'lucide-react';
 import { sendGAEvent } from '@next/third-parties/google';
 import { css } from '@blog/styled-system/css';
+import { pressButton } from '../../interaction';
 import { SITE_HEADER_HEIGHT } from '../../siteHeader';
 import { MorphSwap } from '../MorphSwap';
 import {
@@ -112,9 +113,14 @@ function placeFor(range: Range, coarse: boolean): Anchor | null {
  * 버튼을 `left`에 가운데 맞추되(-50%) 양 끝이 화면 여백 안에 들게 민다. 버튼
  * 폭은 라벨마다(복사하면 길어진다), 글꼴 크기 설정마다 달라서 픽셀 상수로는
  * 못 막는다 — translate의 %는 버튼 자신의 폭이라 브라우저가 실제 폭으로 계산한다.
+ *
+ * `transform`이 아니라 개별 속성 `translate`에 싣는다 — 인라인 `transform`은 클래스의 누름 크기
+ * (`pressButton`의 `transform: scale(0.98)`)를 덮어 버튼이 눌리지 않고, 둘을 한 `transform`에 합치려면
+ * 누름 값을 이 파일이 복사해야 한다. `translate`는 `transform`과 겹쳐 적용되고 전환 대상도 아니라
+ * (`common`에 없다) 위치가 스크롤·라벨 폭을 따라 바뀔 때 미끄러지지 않는다.
  */
 const centerWithin = ({ left, viewport }: Anchor) =>
-  `translateX(clamp(${MARGIN - left}px, -50%, calc(${viewport - MARGIN - left}px - 100%)))`;
+  `clamp(${MARGIN - left}px, -50%, calc(${viewport - MARGIN - left}px - 100%))`;
 
 /**
  * 지금 주 입력이 터치인가. 마운트 때 한 번만 보지 않고 쓸 때마다 다시 본다 —
@@ -433,9 +439,10 @@ export function QuoteLink({
           style={{
             top: anchor.top,
             left: anchor.left,
-            transform: centerWithin(anchor),
+            translate: centerWithin(anchor),
           }}
-          className={css({
+          // 누름은 버튼 프리셋이다 — 눌리는 동안 98%. 위치는 `translate`라 겨루지 않는다.
+          className={css(pressButton, {
             pos: 'fixed',
             // 라벨 칸이 0fr까지 접히면 min-content가 0이라, left만 준 fixed 버튼이 shrink-to-fit에서
             // `화면 폭 − left`로 줄어든다(오른쪽 끝 선택에서 라벨이 잘린다) — 내용 폭을 고정한다.
@@ -444,7 +451,7 @@ export function QuoteLink({
             // 앞이라 같은 값이면 겹친 자리에서 가려진다.
             zIndex: '41',
             // 위 인라인 clamp를 못 읽는 브라우저의 폴백(가운데 맞춤만)
-            transform: '[translateX(-50%)]',
+            translate: '[-50%]',
             display: 'flex',
             alignItems: 'center',
             gap: '1.5',

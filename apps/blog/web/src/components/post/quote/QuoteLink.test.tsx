@@ -127,7 +127,7 @@ describe('QuoteLink 버튼', () => {
     // 달라서(복사하면 길어진다) %로 둔다 — translate의 %는 버튼 자신의 폭이다.
     expect(button).toHaveStyle({
       left: '10px',
-      transform: 'translateX(clamp(-2px, -50%, calc(372px - 100%)))',
+      translate: 'clamp(-2px, -50%, calc(372px - 100%))',
     });
   });
 

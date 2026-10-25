@@ -45,6 +45,31 @@ describe('SegmentedControl', () => {
     expect(screen.getByRole('radio', { name: '가' })).not.toBeChecked();
   });
 
+  // 값이 선택지 밖이면(주소의 오래된 값 등) 모든 칸이 -1이라 키보드가 묶음에 들어갈 길이 없었다.
+  test('값이 선택지 밖이면 첫 칸이 탭 정지점이고 표식은 없다', () => {
+    render(
+      <SegmentedControl<string>
+        label="보기"
+        options={OPTIONS}
+        value="z"
+        onChange={() => undefined}
+      />,
+    );
+
+    const radios = screen.getAllByRole('radio');
+    expect(radios.map(radio => radio.getAttribute('tabindex'))).toEqual([
+      '0',
+      '-1',
+      '-1',
+    ]);
+    expect(radios.map(radio => radio.getAttribute('aria-checked'))).toEqual([
+      'false',
+      'false',
+      'false',
+    ]);
+    expect(document.querySelector('[aria-hidden="true"]')).toBeNull();
+  });
+
   // 선택 면(표식)의 자리는 CSS가 트랙의 변수로 계산한다 — 변수가 고른 칸을 따라가지 않으면 표식만
   // 엉뚱한 칸에 남고 아무것도 실패하지 않는다.
   test('표식의 자리 변수는 칸 수와 고른 칸의 순서다', () => {

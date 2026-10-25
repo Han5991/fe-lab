@@ -3,6 +3,7 @@
 import type { Ref } from 'react';
 import { Search } from 'lucide-react';
 import { css, cx } from '@blog/styled-system/css';
+import { pressButton } from '@/src/components/interaction';
 
 interface ArchiveSearchBoxProps {
   /** 지금 검색어 — 상태는 쓰는 쪽(글 목록)이 든다 */
@@ -50,8 +51,9 @@ const input = cx(
   }),
 );
 
-// 늘 그리고, 입력이 비어 플레이스홀더가 보이는 동안은 CSS가 숨긴다.
-const clear = css({
+// 늘 그리고, 입력이 비어 플레이스홀더가 보이는 동안은 CSS가 숨긴다. 글자만 있는 버튼이라 면은 없고
+// 누르는 동안 98%로 줄어든다(`pressButton`).
+const clear = css(pressButton, {
   textStyle: 'supporting',
   color: 'ink.700',
   flexShrink: '0',

@@ -78,7 +78,7 @@ const segment = cva({
  * 하나만 고르는 세그먼트 — Astryx SegmentedControl md(트랙 32 · 항목 28, 트랙 안쪽·사이 2).
  * 정렬 기준·집계 기간처럼 화면 위 목록의 보기 방식을 바꾼다.
  *
- * ARIA radiogroup 패턴이다: 탭 정지점은 선택된 항목 하나이고 화살표가 선택을 옮긴다(선택이 곧
+ * ARIA radiogroup 패턴이다: 탭 정지점은 선택된 항목 하나(값이 선택지 밖이면 첫 항목)이고 화살표가 선택을 옮긴다(선택이 곧
  * 적용이라 따로 확정할 것이 없다). 탭(`tablist`)으로 두지 않는 이유는 바꾸는 것이 패널이 아니라
  * 같은 자리의 값이기 때문이다.
  *
@@ -112,6 +112,9 @@ export function SegmentedControl<T extends string>({
   };
 
   const selectedIndex = options.findIndex(option => option.value === value);
+  // 탭 정지점은 묶음에 하나다 — 선택된 칸, 값이 선택지 밖이면 첫 칸이다(모두 -1이면 키보드가 묶음에 들어갈
+  // 길이 없다).
+  const stopIndex = Math.max(selectedIndex, 0);
   const trackStyle: CSSProperties & Record<`--${string}`, string> = {
     '--segment-count': String(options.length),
     '--segment-index': String(selectedIndex),
@@ -137,7 +140,7 @@ export function SegmentedControl<T extends string>({
             type="button"
             role="radio"
             aria-checked={checked}
-            tabIndex={checked ? 0 : -1}
+            tabIndex={index === stopIndex ? 0 : -1}
             onClick={() => onChange(option.value)}
             onKeyDown={onKeyDown(index)}
             className={segment({ checked })}

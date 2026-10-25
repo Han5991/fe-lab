@@ -71,7 +71,7 @@ function LoginForm() {
       {/* 등장 — 묶음이 98%에서 제 크기로 서며 나타난다(medium·standard). 서버가 그린 화면이라 하드
           로드마다 돈다: 로그인 화면은 들어오는 장면 자체가 이 화면의 전부라 일부러 그렇게 둔다(공개
           페이지의 "서버가 그린 요소에는 등장 없음"과 다른 자리 — blog-design-system 스킬 admin 절).
-          버튼 누름은 `actionButton`의 pressable이 맡는다. */}
+          버튼 누름·비활성은 `actionButton`이 펼친 `pressButton`이 맡는다. */}
       <div
         className={cx(
           railColumn({ width: 'form' }),
@@ -165,7 +165,6 @@ function LoginForm() {
             disabled={isLoading}
             className={css(actionButton.raw({ tone: 'solid', size: 'lg' }), {
               w: 'full',
-              _disabled: { cursor: 'not-allowed', opacity: '0.7' },
             })}
           >
             <LogIn size={20} aria-hidden />
