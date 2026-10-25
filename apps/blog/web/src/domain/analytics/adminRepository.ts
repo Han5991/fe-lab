@@ -1,8 +1,8 @@
 /**
  * Analytics 도메인 중 **admin 전용** 데이터 접근 layer.
  *
- * 여기 있는 RPC(`get_all_post_stats`·`get_posts_trends`·시간대/요일 분포)는 PR #114에서 service_role 한정으로 lockdown 되었기
- * 때문에 anon key로 직접 호출할 수 없고, admin-analytics Edge Function을
+ * 여기 있는 RPC(`get_all_post_stats`·`get_posts_trends`·시간대/요일 분포)는 전부 service_role 한정이라(`get_posts_trends`는 자기
+ * 마이그레이션 `20261025000000_get_posts_trends_single_rpc.sql`에서, 나머지는 PR #114에서 lockdown) anon key로 직접 호출할 수 없고, admin-analytics Edge Function을
  * 경유합니다. 그래서 인증 세션이 붙은 `lib/platform/client.ts`(전체 supabase-js)가
  * 필요합니다.
  *
