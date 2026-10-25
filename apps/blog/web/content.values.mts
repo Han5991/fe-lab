@@ -363,6 +363,9 @@ export const BUNDLE_GUARDS = [
  * 없지만, 185·207을 두면 Provider가 루트로 돌아와도 예산 안에 숨는다. 그래서 공개 6줄과 `/posts/`를 새 최대
  * ×1.05로 내렸다(185 → 173, 207 → 198). CSS는 그대로다 — 줄 주석의 옛 값(27.9, 28.5)은 앞선 빌드부터 실측
  * (28.0, 28.6)과 어긋나 있던 것을 이 빌드의 측정값으로 바꿨다.
+ * 2026-10-25 인터랙션 상태(누름 조건·프리셋)를 글 목록·글 상세(#578·#579)가 들어간 release 위에 얹은 빌드로
+ * `/posts/`의 CSS만 올렸다: 30.1KB가 예산 30을 넘었다(누름·터치 hover 조건이 +0.2KB, 앞선 두 PR의 본문·상세
+ * 스타일이 나머지). 새 최대 ×1.05로 32. 다른 그룹의 CSS(29.5)는 예산 안이라 그대로다.
  * 그룹이 새로 생기면(새 라우트) 예산이 없어서, 라우트가
  * 사라지면 예산이 죽어서, 측정 최대가 상한의 80% 아래로 내려가면 예산이 느슨해서
  * (`budget-slack`) 빌드가 실패한다.
@@ -375,8 +378,8 @@ export const BUNDLE_GUARDS = [
 export const BUNDLE_BUDGETS = [
   // 164.7 KB / 28.0 KB
   { group: '/', jsGzipKB: 173, cssGzipKB: 30 },
-  // 187.7 KB / 28.6 KB — 목록과 글 상세 46쪽의 최대(글 상세. 목록은 173.7 KB — mermaid·Giscus는 지연 로드라 밖)
-  { group: '/posts/', jsGzipKB: 198, cssGzipKB: 30 },
+  // 188.5 KB / 30.1 KB — 목록과 글 상세 46쪽의 최대(글 상세. mermaid·Giscus는 지연 로드라 밖)
+  { group: '/posts/', jsGzipKB: 198, cssGzipKB: 32 },
   // 163.9 KB / 28.0 KB
   { group: '/about/', jsGzipKB: 173, cssGzipKB: 30 },
   // 164.7 KB / 28.0 KB
