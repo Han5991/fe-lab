@@ -237,6 +237,18 @@ export const MobileTOC = () => {
           zIndex: '39',
           cursor: 'pointer',
           _hover: { color: 'accent.solid' },
+          // 푸터가 화면에 들어오면 사라진다 — 고정 버튼이 푸터의 아이콘 링크를 덮고 눌림까지 가로챘다.
+          // 푸터의 윗변이 화면 바닥에서 버튼 아랫변(`bottom`)에 닿을 때까지의 거리 동안 옅어지므로,
+          // 버튼이 푸터와 겹치는 순간에는 이미 없다. 시간이 아니라 스크롤에 묶인 CSS라 JS가 늘지 않는다.
+          // 지원하지 않는 브라우저(Firefox)는 이 블록이 통째로 빠져 버튼이 그대로 남는다 — 이름만 주고
+          // 타임라인이 없으면 0초 애니메이션이 끝 상태(사라짐)에 머물기 때문에 `@supports`로 감싼다.
+          '@supports (animation-timeline: view())': {
+            animationName: 'fab-away',
+            animationTimingFunction: 'linear',
+            animationFillMode: 'both',
+            animationTimeline: '--site-footer',
+            animationRange: `[entry 0px entry token(spacing.${FAB.bottom})]`,
+          },
         })}
       >
         <List size={24} />

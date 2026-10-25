@@ -84,6 +84,9 @@ export const Layout = ({ children }: LayoutProps) => {
         color: 'ink.950',
         display: 'flex',
         flexDir: 'column',
+        // 푸터의 view timeline(아래 `<footer>`)을 이 아래 어디서든 읽게 한다 — 푸터를 가리는
+        // 고정 버튼(MobileTOC)이 푸터가 화면에 들어오는 정도로 사라진다.
+        timelineScope: '--site-footer',
       })}
     >
       <a href={`#${MAIN_ID}`} className={skipLink}>
@@ -193,7 +196,17 @@ export const Layout = ({ children }: LayoutProps) => {
 
       {/* 두 줄 — 워드마크 | 글자 링크(가운데) | 아이콘 / 구분선 / 사이트 설명 | ©. md 이상은
           5칸 격자(가운데 링크가 3칸), md 미만은 가운데 정렬 한 열이다(Astryx SiteFooter). */}
-      <footer className={cx(railGutter, css({ mt: 'section', pb: '6' }))}>
+      <footer
+        className={cx(
+          railGutter,
+          css({
+            mt: 'section',
+            pb: '6',
+            viewTimelineName: '--site-footer',
+            viewTimelineAxis: 'block',
+          }),
+        )}
+      >
         <div
           className={css({
             display: { base: 'flex', md: 'grid' },

@@ -143,6 +143,12 @@ export default defineConfig({
         'reading-progress-fill': {
           to: { transform: 'scaleX(1)' },
         },
+        // 목차 버튼(MobileTOC)이 푸터 앞에서 사라지는 움직임. 시간이 아니라 푸터가 화면에 들어오는 정도에
+        // 묶인다(Layout의 `--site-footer` view timeline) — 끝에서 `visibility: hidden`이라 사라진 버튼에
+        // 초점도 눌림도 가지 않는다.
+        'fab-away': {
+          to: { opacity: '0', visibility: 'hidden' },
+        },
         // 페이지 전환(아래 globalCss의 ::view-transition-* 규칙). 이름은 PageBoundary가 붙이는
         // 클래스와 같은 출처다. 방향 없는 이동(같은 깊이·검색 결과)의 페이드 — 들어오는 페이지는
         // 8px(Astryx spacing-2) 아래에서 떠오르고, 나가는 페이지는 제자리에서 사라진다. 방향 있는
