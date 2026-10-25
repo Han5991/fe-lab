@@ -125,7 +125,8 @@ export const PostCard = ({
       >
         <div className={classes.cover}>
           {/* `<picture>`는 첫 카드(eager)의 preload 힌트가 홈·글 목록으로 가는 링크를 프리페치하는 모든 페이지로
-              번지지 않게 하려는 것이다(`noPreloadPicture` 주석). */}
+              번지지 않게 하려는 것이다(`noPreloadPicture` 주석). lazy 카드는 원래 힌트가 없지만 모양을 하나로 두려고
+              함께 감싼다 — 공유 요소 전환이 보는 DOM이 카드 종류와 상관없이 같다. */}
           <picture className={noPreloadPicture}>
             <img
               // posts/ 안의 png·jpg는 빌드가 만든 webp, 썸네일이 없는 글은 생성 OG 카드(/og/{slug}.png).

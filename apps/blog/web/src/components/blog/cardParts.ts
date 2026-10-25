@@ -76,7 +76,6 @@ export const coverFrameRaw = css.raw({
   _groupPress: { _before: { borderColor: 'ink.borderStrong' } },
 });
 
-/** 틀을 채우는 이미지. 정사각 썸네일은 가운데가 남고 위아래가 잘린다(카드는 크롭을 받아들인다). */
 /**
  * 미리 받을 이유가 없는 페이지로 번지지 않게 이미지를 감싸는 `<picture>` — React는 `<picture>` 안의 `<img>`에는
  * preload 힌트를 만들지 않는다(react-dom 서버 렌더러의 img 규칙). 감싸지 않으면 lazy가 아닌 이미지(글 상세 히어로,
@@ -87,6 +86,7 @@ export const coverFrameRaw = css.raw({
  */
 export const noPreloadPicture = css({ display: 'contents' });
 
+/** 틀을 채우는 이미지. 정사각 썸네일은 가운데가 남고 위아래가 잘린다(카드는 크롭을 받아들인다). */
 export const coverImage = css({
   display: 'block',
   w: 'full',
