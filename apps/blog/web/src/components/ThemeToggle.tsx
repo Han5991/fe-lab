@@ -12,7 +12,14 @@ import { headerIconButton } from './iconButton';
 //   즉시 반응한다.
 // onClick은 신뢰 가능한 현재값을 DOM에서 직접 읽어(초기 hydration 창의 stale
 // state로 첫 클릭이 no-op가 되던 문제 방지) 반대 테마로 전환한다.
-export function ThemeToggle() {
+//
+// `className`은 버튼의 모양(기본은 사이트 헤더의 `headerIconButton`)이다. admin 바는 지면이 달라 hover 면이
+// 다른 같은 레시피를 넘긴다 — 동작·접근 이름·저장 키는 그대로다.
+export function ThemeToggle({
+  className = headerIconButton,
+}: {
+  className?: string;
+}) {
   const toggle = () => {
     const current =
       document.documentElement.dataset['theme'] === 'light' ? 'light' : 'dark';
@@ -25,7 +32,7 @@ export function ThemeToggle() {
       onClick={toggle}
       aria-label="테마 전환 (라이트/다크)"
       title="테마 전환"
-      className={headerIconButton}
+      className={className}
     >
       {/* 다크일 때 Sun(→라이트 전환 안내), 라이트일 때 Moon(→다크 전환 안내) */}
       <Sun

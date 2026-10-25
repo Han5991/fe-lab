@@ -85,16 +85,13 @@ const NO_LOCAL_INTERACTION = {
 /**
  * NO_LOCAL_INTERACTION의 허용 파일 — 누름·초점 조건을 실제로 쓰는 곳이다.
  * - `interaction.ts`·`cardParts.ts`: 프리셋이 `_press`·`_groupPress`·`_pressScale`을 건다.
- * - `Layout.tsx`: 스킵 링크가 초점을 받으면 화면 안으로 들어온다(`_focus: { transform: 'none' }`).
- * - admin 둘: 전역 초점 링을 지우는 `_focus: { outline: 'none' }`이 남아 있다. admin 재작성
- *   (`blog-web/astryx-admin`)이 두 파일을 갈아엎으므로 그 PR이 머지되면 이 둘을 뺀다.
+ * - `skipLink.ts`: 건너뛰기 링크가 초점을 받으면 화면 안으로 들어온다(`_focus: { transform: 'none' }`).
+ *   사이트 셸과 admin 셸이 함께 쓰는 모듈 하나라 셸 파일 전체를 열지 않는다.
  */
 const INTERACTION_FILES = [
   'src/components/interaction.ts',
   'src/components/blog/cardParts.ts',
-  'src/components/Layout.tsx',
-  'src/app/admin/components/DateRangeControls.tsx',
-  'src/app/admin/components/PostList.tsx',
+  'src/components/skipLink.ts',
 ];
 
 /**

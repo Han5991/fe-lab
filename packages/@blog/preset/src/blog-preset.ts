@@ -19,6 +19,7 @@ interface ThemePair<T> {
  * 돌려주기 때문이다(참조 문자열이 렌더러에 그대로 넘어간다).
  */
 const PAPER_50 = { base: '#ffffff', _dark: '#0b0d10' } as const;
+const PAPER_100 = { base: '#f7f7f5', _dark: '#14171c' } as const;
 const INK_950 = { base: '#1a1a1a', _dark: '#e6e8eb' } as const;
 const INK_800 = { base: '#3a3d42', _dark: '#c2c7ce' } as const;
 
@@ -109,9 +110,18 @@ const blogColors = defineSemanticTokens.colors({
   // ─────────────────────────────────────────────────────────────
   // paper — 서피스
   'paper.50': { value: PAPER_50 },
-  'paper.100': { value: { base: '#f7f7f5', _dark: '#14171c' } },
+  'paper.100': { value: PAPER_100 },
   'paper.200': { value: { base: '#ededea', _dark: '#1b1f26' } },
   'paper.300': { value: { base: '#e0e0dc', _dark: '#242931' } },
+  // surface — 앱 화면(admin)의 바닥과 그 위 카드·패널. Astryx의 body·card 쌍(승인 admin 목업)이다.
+  // **카드는 두 테마 모두 바닥보다 한 단계 밝다** — 라이트는 흰 카드가 옅은 바닥 위에, 다크는 한 단계
+  // 밝은 카드가 지면 위에 놓인다. paper 단계는 라이트에서 내려가고(50이 가장 밝다) 다크에서 올라가므로
+  // (50이 가장 어둡다) 한 이름으로는 이 쌍을 낼 수 없어, 같은 상수에서 테마마다 다른 단계를 고른다.
+  // 공개 페이지는 지면(paper.50) 한 장 위에 보더로 위계를 내므로 쓰지 않는다.
+  //   base   — 바닥. 라이트 paper.100 · 다크 paper.50
+  //   raised — 카드·패널. 라이트 paper.50 · 다크 paper.100
+  'surface.base': { value: { base: PAPER_100.base, _dark: PAPER_50._dark } },
+  'surface.raised': { value: { base: PAPER_50.base, _dark: PAPER_100._dark } },
   // ink — 텍스트/보더
   'ink.950': { value: INK_950 },
   'ink.900': { value: { base: '#262626', _dark: '#d5d9de' } },
@@ -448,6 +458,11 @@ export const blogPreset = definePreset({
            * 한국어 헤딩이 대부분 두 줄로 접혀 목록이 두 배로 길어졌다.
            */
           tocAside: { value: '268px' },
+          /**
+           * 레일이 아니라 화면 오른쪽 끝에 붙는 상세 패널의 폭 — admin 분석의 글 통계(Astryx
+           * dashboard-alert-rail의 오른쪽 패널 400). lg 이상은 목록 옆 칼럼, 아래는 같은 폭의 시트다.
+           */
+          inspector: { value: '400px' },
         },
         // 모션 곡선 — 시간은 아래 semanticTokens.durations. **곡선은 이 셋이 전부다** — 블로그
         // 설정이 preset-panda의 easings를 빼므로(apps/blog/web/panda.config.ts) 다른 이름은
@@ -469,17 +484,22 @@ export const blogPreset = definePreset({
         //   fastMax   230ms — 테마 크로스페이드·<details> 펼침
         //   medium    410ms — 시트·스크림·들어오는 페이지
         //   mediumMax 550ms — 검색 다이얼로그 등장·스켈레톤
+        //   stagger    40ms — 길이가 아니라 **간격**: 함께 들어오는 카드들이 진입 순서마다 이만큼씩
+        //                     늦게 출발한다(admin 대시보드 — `animation-delay`가 순서 × 이 값).
+        //                     Astryx 스케일에 없는 블로그 것이다 — Astryx에는 엇갈린 진입이 없다
         // semantic token인 이유는 **움직임 줄이기를 여기 한 곳에서** 끄기 위해서다 — `_motionReduce`가
         // 변수 값을 0.01ms로 바꾸므로 토큰으로 쓴 전환·애니메이션은 컴포넌트가 따로 규칙을 두지
-        // 않아도 꺼진다. 0이 아니라 0.01ms인 이유는 transitionend가 그대로 오게 하려는 것이다
+        // 않아도 꺼진다(간격도 0에 수렴해 카드가 한 번에 선다). 0이 아니라 0.01ms인 이유는
+        // transitionend가 그대로 오게 하려는 것이다
         // (퇴장이 끝나야 언마운트하는 시트 — Astryx Drawer와 같은 값). 무한 반복 애니메이션은
         // 0.01ms면 깜빡임이 되므로 시간이 아니라 애니메이션 자체를 끈다(아래 animations).
-        // **시간은 이 넷이 전부다** — preset-panda의 durations는 블로그 설정이 뺀다.
+        // **시간은 이 다섯이 전부다** — preset-panda의 durations는 블로그 설정이 뺀다.
         durations: {
           fast: { value: { base: '175ms', _motionReduce: '0.01ms' } },
           fastMax: { value: { base: '230ms', _motionReduce: '0.01ms' } },
           medium: { value: { base: '410ms', _motionReduce: '0.01ms' } },
           mediumMax: { value: { base: '550ms', _motionReduce: '0.01ms' } },
+          stagger: { value: { base: '40ms', _motionReduce: '0.01ms' } },
         },
         // 반복 애니메이션 — keyframes는 아래 keyframes에 함께 둔다. 움직임 줄이기에서는 `none`
         // (위 durations 주석의 깜빡임 이유). preset-panda의 animations(spin·ping·pulse·bounce)와
@@ -644,7 +664,7 @@ export const blogPreset = definePreset({
       }),
       keyframes: {
         // semanticTokens.animations.skeleton. Astryx는 쉬는 투명도가 .25인데, 자리표시 면
-        // (paper.100)이 지면과 거의 같은 밝기라 .25에서는 보이지 않는다 — 1 ↔ .5로 왕복한다.
+        // (paper.200)이 admin 바닥·카드와 가까운 밝기라 .25에서는 보이지 않는다 — 1 ↔ .5로 왕복한다.
         'skeleton-pulse': {
           from: { opacity: '1' },
           to: { opacity: '0.5' },

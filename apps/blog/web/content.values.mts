@@ -264,7 +264,7 @@ export const BUNDLE_GUARDS = [
     forbiddenIn: [PUBLIC_CHUNKS],
     requiredIn: [ADMIN_CHUNKS],
   },
-  // admin 대시보드의 차트 라이브러리 — 공개 페이지에는 차트가 없다.
+  // admin 차트 라이브러리(분석 화면은 첫 로드, 대시보드는 차트만 지연 로드) — 공개 페이지에는 차트가 없다.
   {
     label: 'admin 차트(Recharts)',
     marker: 'recharts',
@@ -366,6 +366,13 @@ export const BUNDLE_GUARDS = [
  * 2026-10-25 인터랙션 상태(누름 조건·프리셋)를 글 목록·글 상세(#578·#579)가 들어간 release 위에 얹은 빌드로
  * `/posts/`의 CSS만 올렸다: 30.1KB가 예산 30을 넘었다(누름·터치 hover 조건이 +0.2KB, 앞선 두 PR의 본문·상세
  * 스타일이 나머지). 새 최대 ×1.05로 32. 다른 그룹의 CSS(29.5)는 예산 안이라 그대로다.
+ * 2026-10-25 admin 재작성(관리자 바 셸·분석 화면·모션·테마 토글)을 글 목록·글 상세·인터랙션 상태가 들어간
+ * release에 합친 빌드로 갱신: CSS는 한 장을 모든 페이지가 받아 전 그룹 +0.9KB다(공개 29.5 → 30.4,
+ * `/posts/` 30.1 → 31.1 — admin의 원자 클래스·View Transition 규칙·keyframes). 공개 그룹의 CSS 예산 30을
+ * 넘어 새 최대 ×1.05로 32, `/posts/`는 33으로 올렸다. JS는 `/admin/` 최대 374.0 → 384.4KB(+10.4 — 분석
+ * 화면의 목록·패널·차트가 한 페이지에 모였다), 공개 그룹 +0.9KB(루트의 셸 고르기와 테마 토글의 className) —
+ * JS 예산은 그대로. 대시보드(`/admin/`) 자체는 일별 차트를 `next/dynamic`으로 나눠 Recharts(~110KB)가 첫
+ * 로드에서 빠진다 — 그룹 최대는 분석 화면이 정한다. (브랜치에서 단계마다 잰 값은 이 합본 측정으로 접었다.)
  * 그룹이 새로 생기면(새 라우트) 예산이 없어서, 라우트가
  * 사라지면 예산이 죽어서, 측정 최대가 상한의 80% 아래로 내려가면 예산이 느슨해서
  * (`budget-slack`) 빌드가 실패한다.
@@ -376,22 +383,22 @@ export const BUNDLE_GUARDS = [
  * 걸리면 같은 방식으로 내린다 — 여유가 크게 남으면 회귀가 그 안에 숨는다.
  */
 export const BUNDLE_BUDGETS = [
-  // 164.7 KB / 28.0 KB
-  { group: '/', jsGzipKB: 173, cssGzipKB: 30 },
-  // 188.5 KB / 30.1 KB — 목록과 글 상세 46쪽의 최대(글 상세. mermaid·Giscus는 지연 로드라 밖)
-  { group: '/posts/', jsGzipKB: 198, cssGzipKB: 32 },
-  // 163.9 KB / 28.0 KB
-  { group: '/about/', jsGzipKB: 173, cssGzipKB: 30 },
-  // 164.7 KB / 28.0 KB
-  { group: '/series/', jsGzipKB: 173, cssGzipKB: 30 },
-  // 163.9 KB / 28.0 KB
-  { group: '/privacy/', jsGzipKB: 173, cssGzipKB: 30 },
-  // 163.9 KB / 28.0 KB — 정적 404(`404-page` 처리)
-  { group: '/404/', jsGzipKB: 173, cssGzipKB: 30 },
-  // 163.9 KB / 28.0 KB — Next가 함께 내보내는 not-found 라우트
-  { group: '/_not-found/', jsGzipKB: 173, cssGzipKB: 30 },
-  // 374.0 KB / 28.0 KB — admin 48쪽의 최대(`/admin/analytics/`)
-  { group: '/admin/', jsGzipKB: 398, cssGzipKB: 30 },
+  // 165.8 KB / 30.4 KB
+  { group: '/', jsGzipKB: 173, cssGzipKB: 32 },
+  // 189.4 KB / 31.1 KB — 목록과 글 상세 46쪽의 최대(글 상세. mermaid·Giscus는 지연 로드라 밖)
+  { group: '/posts/', jsGzipKB: 198, cssGzipKB: 33 },
+  // 165.0 KB / 30.4 KB
+  { group: '/about/', jsGzipKB: 173, cssGzipKB: 32 },
+  // 165.8 KB / 30.4 KB
+  { group: '/series/', jsGzipKB: 173, cssGzipKB: 32 },
+  // 165.0 KB / 30.4 KB
+  { group: '/privacy/', jsGzipKB: 173, cssGzipKB: 32 },
+  // 165.0 KB / 30.4 KB — 정적 404(`404-page` 처리)
+  { group: '/404/', jsGzipKB: 173, cssGzipKB: 32 },
+  // 165.0 KB / 30.4 KB — Next가 함께 내보내는 not-found 라우트
+  { group: '/_not-found/', jsGzipKB: 173, cssGzipKB: 32 },
+  // 384.4 KB / 30.4 KB — admin 48쪽의 최대(분석 화면 — 목록 1 + 글별 45쪽이 같은 화면이라 무게가 같다)
+  { group: '/admin/', jsGzipKB: 398, cssGzipKB: 32 },
 ] as const satisfies BundleBudgetsConfig;
 
 /**

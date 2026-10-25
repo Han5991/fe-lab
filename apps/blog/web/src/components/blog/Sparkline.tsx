@@ -1,7 +1,7 @@
 import { token } from '@blog/styled-system/tokens';
 
 interface SparklineProps {
-  data: number[];
+  data: readonly number[];
   w?: number;
   h?: number;
   color?: string;

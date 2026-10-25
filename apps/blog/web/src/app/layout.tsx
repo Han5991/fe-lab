@@ -8,6 +8,7 @@ import { SITE_NAME } from '@/content.values.mts';
 import 'pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css';
 import '@/src/styles/globals.css';
 import { Layout } from '@/src/components/Layout';
+import { ShellSwitch } from '@/src/components/ShellSwitch';
 import { GoogleAnalytics, GoogleTagManager } from '@next/third-parties/google';
 import { ErrorReporter } from '@/src/components/ErrorReporter';
 import type { ReactNode } from 'react';
@@ -64,7 +65,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         />
       </head>
       <body>
-        <Layout>{children}</Layout>
+        {/* admin은 자기 셸(관리자 바)이 있어 사이트 헤더·푸터를 씌우지 않는다(ShellSwitch 주석). */}
+        <ShellSwitch site={<Layout>{children}</Layout>} bare={children} />
         {process.env.NODE_ENV === 'production' && (
           <>
             <GoogleAnalytics gaId="G-ZS9ENFSSQ0" />
