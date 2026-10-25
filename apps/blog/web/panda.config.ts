@@ -385,8 +385,8 @@ export default defineConfig({
       },
       // 같은 transition의 루트·헤더는 페이지가 바뀐 게 아니라 움직이지 않는다 — 위 크로스페이드 규칙을
       // 걷는다. 옛 스냅샷은 지우고 새 스냅샷만 그대로 둔다(둘을 겹친 채 애니메이션만 끄면 UA의
-      // plus-lighter 합성이 밝게 뜬다). 이름 붙은 목록만 움직이고, 그 밖의 바뀐 곳(편수·칩·적용된 필터)은
-      // 바로 바뀐다.
+      // plus-lighter 합성이 밝게 뜬다). 이름 붙은 목록만 움직이고, 그 밖의 바뀐 곳은 바로 바뀐다 — 칩·적용된
+      // 필터는 눌린 즉시, 편수는 목록과 같은 커밋에서.
       [`:root:active-view-transition-type(${ARCHIVE_FILTER_TRANSITION_TYPE})::view-transition-old(root), :root:active-view-transition-type(${ARCHIVE_FILTER_TRANSITION_TYPE})::view-transition-old(${VIEW_TRANSITION.siteHeader})`]:
         {
           display: 'none',

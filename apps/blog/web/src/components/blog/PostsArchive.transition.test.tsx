@@ -154,6 +154,41 @@ describe('글 목록의 교차 전환', () => {
     expect(types.added).toEqual([ARCHIVE_FILTER_TRANSITION_TYPE]);
   });
 
+  test('태그 해제 칩은 필터 type을 단다', () => {
+    nav.search = '?tag=vitest';
+    renderView();
+    fireEvent.click(screen.getByRole('button', { name: '#vitest 필터 해제' }));
+    expect(types.added).toEqual([ARCHIVE_FILTER_TRANSITION_TYPE]);
+  });
+
+  test('모두 지우기는 필터 type을 단다', () => {
+    nav.search = '?tag=vitest&q=b-post';
+    renderView();
+    fireEvent.click(screen.getByRole('button', { name: '모두 지우기' }));
+    expect(types.added).toEqual([ARCHIVE_FILTER_TRANSITION_TYPE]);
+  });
+
+  test('밖에서 바뀐 URL(뒤로·앞으로 가기)은 목록을 다시 읽고 type을 달지 않는다', () => {
+    const { rerender } = renderView();
+    const list = () => screen.getAllByRole('listitem').length;
+    expect(list()).toBe(2);
+    nav.search = '?series=s1';
+    rerender(
+      <PostsArchiveView
+        posts={POSTS}
+        series={SERIES}
+        viewCountsSource={createViewCountsSource(() => Promise.resolve([]))}
+      />,
+    );
+    // 컨트롤과 목록이 함께 URL을 따라가고, 쓰는 동작이 아니라 교차하지 않는다.
+    expect(
+      screen.getByRole<HTMLInputElement>('radio', { name: '픽스처 연재 (1)' })
+        .checked,
+    ).toBe(true);
+    expect(list()).toBe(1);
+    expect(types.added).toEqual([]);
+  });
+
   test('누른 컨트롤의 값은 목록 transition이 커밋되기 전에 이미 새 값이다', () => {
     renderView();
     types.hold = true;
