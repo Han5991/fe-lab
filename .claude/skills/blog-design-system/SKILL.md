@@ -768,7 +768,7 @@ Astryx BlogCard·BlogFeatureCard·BlogShowcase의 블로그 판. `src/components
 | 본문 아래  | 구분선 → 태그 배지(`archivePath({ tag })` 링크 — 태그 필터의 유일한 입구)와 공유 ghost 버튼 → 이전·다음 글(nav) → 댓글                                                                                                                                                                                     |
 | 이전·다음  | muted 면 카드(16:9 썸네일 96 + 라벨·제목 2줄), md부터 두 열, 아래는 한 열(375에서 글자 칸이 31px만 남는다)                                                                                                                                                                                                 |
 | 차례       | 깊이마다 8씩 옮겨 서는 1.5px 레일(단이 바뀌면 곡선, 곡선은 다음 항목 안에) + 같은 path를 `clip-path`로 잘라 보이는 절만 밝히는 강조 레일 + 진행 방향 끝의 5px 점(`offset-path`) — 셋 다 fast·standard. 활성은 색과 레일만 — 굵기를 올리면 항목이 접혀 들썩인다. Astryx 곧은 트랙에서 되돌렸다(사용자 결정) |
-| 진행 바    | 헤더 바로 아래 3px, scroll() 타임라인. **lg 이상에서만** — 스크롤 프레임마다 메인 스레드가 스타일을 다시 계산해 모바일 인앱 브라우저에서 버벅였다                                                                                                                                                          |
+| 진행 바    | 헤더 바로 아래 3px, scroll() 타임라인. **카카오톡 인앱 브라우저에서는 뺀다**(user-agent `KAKAOTALK`) — 스크롤 프레임마다 메인 스레드가 스타일을 다시 계산해 그 브라우저에서만 글 상세 스크롤이 버벅였다                                                                                                    |
 
 - **자기 썸네일** = frontmatter `thumbnail`이 있고 생성 OG 카드(`/og/…`)가 아니다(`hasAuthoredThumbnail`).
   커버는 이 판정이 아니라 **가로형인가**(`isWideThumbnail` — OG 카드는 언제나 가로형, 자기 썸네일은 가로/세로 ≥ 1.6,
