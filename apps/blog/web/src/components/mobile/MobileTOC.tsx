@@ -242,12 +242,18 @@ export const MobileTOC = () => {
           // 버튼이 푸터와 겹치는 순간에는 이미 없다. 시간이 아니라 스크롤에 묶인 CSS라 JS가 늘지 않는다.
           // 지원하지 않는 브라우저(Firefox)는 이 블록이 통째로 빠져 버튼이 그대로 남는다 — 이름만 주고
           // 타임라인이 없으면 0초 애니메이션이 끝 상태(사라짐)에 머물기 때문에 `@supports`로 감싼다.
+          //
+          // 키보드 초점이 버튼에 있는 동안(`:focus-visible`)은 애니메이션을 걸지 않는다 — 끝 상태의
+          // `visibility: hidden`은 초점을 든 요소도 초점 불가로 만들어 초점이 문서 맨 앞으로 떨어진다.
+          // 푸터와 겹쳐 보이더라도 초점이 있는 동안은 버튼이 남고, 초점이 떠나면 곧바로 이어서 사라진다.
+          // 마우스·터치로 누른 버튼은 `:focus-visible`이 아니라 그대로 사라진다.
           '@supports (animation-timeline: view())': {
             animationName: 'fab-away',
             animationTimingFunction: 'linear',
             animationFillMode: 'both',
             animationTimeline: '--site-footer',
             animationRange: `[entry 0px entry token(spacing.${FAB.bottom})]`,
+            '&:focus-visible': { animationName: 'none' },
           },
         })}
       >
