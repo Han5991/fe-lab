@@ -93,8 +93,8 @@ export default async function PostPage({ params }: Props) {
       }
     : null;
 
-  // PostHero가 쓰는 값 — 모든 글이 가진다(썸네일이 없으면 OG 카드가 그 자리다). 그림이 가로형인지(`wide`,
-  // `isWideThumbnail`)에 따라 틀을 채우는 방식과 카드 커버와의 짝이 갈린다(PostHero) — 카드도 같은 함수로 가른다. 화면에 띄우는
+  // PostHero가 쓰는 값 — 모든 글이 가진다(썸네일이 없으면 OG 카드가 그 자리다). `wide`는 카드와 같은
+  // `isWideThumbnail`로 가른다(`POST_SHARED_RESCALED`). 화면에 띄우는
   // 주소라 글 카드 커버와 같은 resolveThumbnailSrc(최적화본 webp)다 — 카드에서 넘어오면 이미 받은
   // 이미지라 공유 요소 전환이 이미지를 기다리지 않는다. OG·JSON-LD는 PNG 원본(resolveAbsoluteThumbnailUrl)을 쓴다.
   const thumbnail = {

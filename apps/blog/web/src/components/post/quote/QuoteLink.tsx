@@ -7,14 +7,13 @@ import { css } from '@blog/styled-system/css';
 import { pressButton } from '../../interaction';
 import { SITE_HEADER_HEIGHT } from '../../siteHeader';
 import { MorphSwap } from '../MorphSwap';
+import { POST_CONTENT_ID } from '../postContent';
 import {
   loadFragmentGenerator,
   type FragmentGenerator,
 } from './fragmentGenerator';
 import { headingBefore, quoteUrl, sectionUrl } from './textFragment';
 
-/** 본문 DOM 계약 — PostBody의 `#post-content`(TOC와 같다). */
-const CONTENT_ID = 'post-content';
 /** 버튼 높이(px). 아래 CSS의 h(9 / 11)와 같은 값이어야 위치가 맞는다. */
 const HEIGHT = { fine: 36, coarse: 44 } as const;
 /** 선택과 버튼 사이 간격 */
@@ -67,10 +66,10 @@ function sameRange(a: Range, b: Range): boolean {
   );
 }
 
-/** 선택이 `#post-content` 안에 있고 글자가 있을 때만 그 범위를 돌려준다. */
+/** 선택이 본문(`POST_CONTENT_ID`) 안에 있고 글자가 있을 때만 그 범위를 돌려준다. */
 function readSelection(): Range | null {
   const selection = document.getSelection();
-  const content = document.getElementById(CONTENT_ID);
+  const content = document.getElementById(POST_CONTENT_ID);
   if (!selection || selection.isCollapsed || selection.rangeCount === 0) {
     return null;
   }
@@ -366,7 +365,7 @@ export function QuoteLink({
 
   const copy = () => {
     const range = rangeRef.current;
-    const content = document.getElementById(CONTENT_ID);
+    const content = document.getElementById(POST_CONTENT_ID);
     if (!range || !content) return;
     copyStartedAtRef.current = performance.now();
 

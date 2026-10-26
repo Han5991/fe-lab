@@ -9,6 +9,7 @@ import {
 } from 'react';
 
 import { HEADER_OFFSET } from './post/headerOffset';
+import { POST_CONTENT_ID, TOC_HEADING_SELECTOR } from './post/postContent';
 
 /** 헤딩으로 옮긴다 — 헤더 여백은 헤딩의 `scroll-margin-top`이, 움직임은 CSS가 정한다. */
 export const scrollToId = ({
@@ -62,7 +63,7 @@ interface TocCache {
 const readToc = (content: Element | null): TOCItem[] => {
   if (!content) return EMPTY_TOC;
 
-  return Array.from(content.querySelectorAll('h1, h2, h3, h4'))
+  return Array.from(content.querySelectorAll(TOC_HEADING_SELECTOR))
     .map(header => ({
       id: header.id,
       text: header.textContent || '',
@@ -84,7 +85,7 @@ const isSameToc = (a: TOCItem[], b: TOCItem[]): boolean =>
   });
 
 const readSnapshot = (cache: TocCache): TOCItem[] => {
-  const content = document.getElementById('post-content');
+  const content = document.getElementById(POST_CONTENT_ID);
   // 다른 글에 오면 본문 노드가 갈린다. 그때 이전 글의 스냅샷이 남아 있는데
   // 구독의 무효화는 **커밋 뒤**에나 불려 첫 렌더에 늦는다 — 한 프레임 동안
   // 남의 차례가 보인다. 노드 동일성으로 여기서 먼저 잡는다(getElementById는
@@ -123,7 +124,7 @@ export const useTocHook = () => {
     // 무효화해 그 공백을 메운다.
     cache.current.stale = true;
 
-    const content = document.getElementById('post-content');
+    const content = document.getElementById(POST_CONTENT_ID);
     // 본문이 없으면 지켜볼 것도 없다(예전 effect의 `if (!content) return`과 같다).
     if (!content) return () => undefined;
 

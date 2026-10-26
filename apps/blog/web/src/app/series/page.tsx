@@ -24,8 +24,7 @@ import {
 
 export const metadata = buildSeriesMetadata();
 
-// 시리즈 배지는 글 상세 머리와 같은 모양이다. 여기서만 h2 안에 놓여 줄 높이를
-// snug로 고정한다(글 상세는 둘레 줄 높이를 따른다).
+// 시리즈 배지(`seriesBadgeRaw`)는 h2 안에 놓이므로 줄 높이를 snug로 고정한다.
 const seriesHeadingBadge = css(seriesBadgeRaw, { lineHeight: 'snug' });
 
 // 글 목록에 기대지 않는 JSON-LD라 한 번만 만든다.

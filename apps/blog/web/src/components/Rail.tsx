@@ -2,6 +2,8 @@ import { css, cva, cx } from '@blog/styled-system/css';
 import type { RecipeVariant } from '@blog/styled-system/css';
 import type { ReactNode } from 'react';
 
+import { POST_CONTENT_ID, TOC_HEADING_SELECTOR } from './post/postContent';
+
 /**
  * 레이아웃 그리드의 단일 출처.
  *
@@ -49,9 +51,10 @@ export const railColumn = cva({
  * lg(1024px) 미만은 한 열이고 차례는 `MobileTOC`가 맡는다 — 1024px에서도 차례 칸이 줄지 않고 본문
  * 칸이 줄어든다(`minmax(0, …)`).
  *
- * **본문에 헤딩(h1~h4)이 없는 글은 차례 칸을 잡지 않는다** — 차례(`TOC`)가 아무것도 그리지 않는데 268 + 32가
+ * **본문에 차례 헤딩(`TOC_HEADING_SELECTOR`)이 없는 글은 차례 칸을 잡지 않는다** — 차례(`TOC`)가 아무것도 그리지 않는데 268 + 32가
  * 비어 있으면 본문이 레일 중심에서 왼쪽으로 쏠린다. 판정은 CSS `:has()`가 **서버가 그린 본문 DOM**에서
- * 한다(`TOC`가 읽는 것과 같은 `#post-content` 안의 id 있는 h1~h4). 차례는 하이드레이션 뒤에야 그려지므로
+ * 한다(`TOC`가 읽는 것과 같은 본문 안의 id 있는 헤딩 — 본문 id와 헤딩 선택자는 `post/postContent.ts`의 같은
+ * 상수에서 온다). 차례는 하이드레이션 뒤에야 그려지므로
  * 그것을 보면 첫 페인트 뒤에 본문이 움직인다 — 헤딩은 HTML에 이미 있어 첫 페인트부터 맞다. `:has()`를
  * 모르는 브라우저는 이 규칙(선택자 하나가 틀리면 규칙 통째로)을 버리고 두 칸 그대로다: 헤딩 있는 글이
  * 대부분이라 그쪽이 안전한 쪽이다.
@@ -69,7 +72,7 @@ export const railWithAside = css({
   justifyContent: 'center',
   alignItems: 'start',
   lg: {
-    '&:not(:has(#post-content :is(h1, h2, h3, h4)[id]))': {
+    [`&:not(:has(#${POST_CONTENT_ID} :is(${TOC_HEADING_SELECTOR})[id]))`]: {
       gridTemplateColumns: '[minmax(0, token(sizes.railText))]',
       columnGap: '0',
     },
