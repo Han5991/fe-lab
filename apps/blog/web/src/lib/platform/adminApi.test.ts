@@ -48,8 +48,7 @@ const OVERVIEW = {
 };
 
 test('AdminApiClient: posts_overview — 요청 한 번으로 통계와 추이를 함께 받는다', async () => {
-  // 통계(페이징)와 추이는 Edge Function 안에서 병렬로 돈다. 예전엔 action 둘을 따로 불러
-  // 왕복·JWT 검증이 두 번이었다.
+  // 통계(페이징)와 추이는 Edge Function 안에서 병렬로 돈다 — 클라이언트 쪽은 요청 하나다.
   const { client, calls } = makeMockClient({
     data: { data: OVERVIEW },
     error: null,

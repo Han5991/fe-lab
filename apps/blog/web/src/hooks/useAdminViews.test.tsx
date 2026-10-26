@@ -9,25 +9,25 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 const { getAdminPostsIndex, getPostsOverview } = vi.hoisted(() => ({
   getAdminPostsIndex: vi.fn(() =>
-    Promise.resolve([
-      {
-        slug: 'a',
-        title: 'A',
+    Promise.resolve(
+      ['a', 'b', 'c'].map(slug => ({
+        slug,
+        title: slug.toUpperCase(),
         date: '2026-04-01',
         tags: ['x'],
         status: 'published',
         scheduledDate: null,
-      },
-    ]),
+      })),
+    ),
   ),
   getPostsOverview: vi.fn((slugs: readonly string[]) =>
     Promise.resolve({
       stats: slugs.map(slug => ({ slug, total_views: 10, today_views: 1 })),
+      // (slug, 날짜)당 한 행, slug·날짜 순 — 'c'는 기록이 없다.
       trends: [
         { slug: 'a', view_date: '2026-05-01', view_count: 3 },
-        // 페이지 경계에서 밀려 한 번 더 온 행 — 그 사이 조회가 늘었다.
-        { slug: 'a', view_date: '2026-05-01', view_count: 4 },
         { slug: 'a', view_date: '2026-05-02', view_count: 2 },
+        { slug: 'b', view_date: '2026-05-01', view_count: 7 },
       ],
     }),
   ),
@@ -55,16 +55,20 @@ describe('useAdminDashboardData', () => {
     const { result } = renderHook(() => useAdminDashboardData(), { wrapper });
 
     await waitFor(() => expect(result.current).not.toBeNull());
-    expect(getPostsOverview).toHaveBeenCalledWith(['a']);
+    expect(getPostsOverview).toHaveBeenCalledWith(['a', 'b', 'c']);
   });
 
-  test('같은 (slug, 날짜) 행이 두 번 와도 그날을 한 번만 싣는다 — 나중 값으로', async () => {
+  test('글마다 자기 추이만 받고, 기록이 없는 글은 빈 추이다', async () => {
     const { result } = renderHook(() => useAdminDashboardData(), { wrapper });
 
     await waitFor(() => expect(result.current).not.toBeNull());
-    expect(result.current.data[0]?.trends).toStrictEqual([
-      { view_date: '2026-05-01', view_count: 4 },
-      { view_date: '2026-05-02', view_count: 2 },
+    expect(result.current.data.map(post => post.trends)).toStrictEqual([
+      [
+        { view_date: '2026-05-01', view_count: 3 },
+        { view_date: '2026-05-02', view_count: 2 },
+      ],
+      [{ view_date: '2026-05-01', view_count: 7 }],
+      [],
     ]);
   });
 

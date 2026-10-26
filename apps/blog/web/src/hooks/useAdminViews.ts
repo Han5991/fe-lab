@@ -27,24 +27,18 @@ export const adminPostsIndexQuery = queryOptions({
 export const adminDashboardDataQuery = queryOptions({
   queryKey: [...ADMIN_QUERY_PREFIX, 'dashboard-data'],
   queryFn: async ({ client }): Promise<PostStatDetail[]> => {
-    // 조회수 읽기는 인덱스의 slug로 서버에서 거른다(가짜 slug가 1000행 cap을 채우지 않게).
+    // 조회수 읽기는 인덱스의 slug로 서버에서 거른다(이유는 `AdminSlugFilter`).
     const metadata = await client.ensureQueryData(adminPostsIndexQuery);
     const slugs = metadata.map(post => post.slug);
     const { stats, trends } = await getPostsOverview(slugs);
 
-    // 같은 (slug, 날짜)는 나중 값 하나만 남긴다 — 페이지 경계 행이 두 번 와도 두 번
-    // 합산하지 않게(서버도 거르지만 함수 배포는 수동이다).
-    const trendsMap = new Map<string, Map<string, number>>();
-    for (const t of trends) {
-      const byDate = trendsMap.get(t.slug) ?? new Map<string, number>();
-      byDate.set(t.view_date, t.view_count);
-      trendsMap.set(t.slug, byDate);
+    // 추이는 (slug, 날짜)당 한 행이고 slug·날짜 순이다(`get_posts_trends`) — 글별로 모으기만 한다.
+    const trendsBySlug = new Map<string, TrendPoint[]>();
+    for (const { slug, view_date, view_count } of trends) {
+      const points = trendsBySlug.get(slug) ?? [];
+      points.push({ view_date, view_count });
+      trendsBySlug.set(slug, points);
     }
-    const trendsOf = (slug: string): TrendPoint[] =>
-      Array.from(trendsMap.get(slug) ?? [], ([view_date, view_count]) => ({
-        view_date,
-        view_count,
-      }));
 
     const statsMap = new Map(stats.map(s => [s.slug, s]));
 
@@ -56,7 +50,7 @@ export const adminDashboardDataQuery = queryOptions({
         date: post.date,
         totalViews: postStats?.total_views ?? 0,
         todayViews: postStats?.today_views ?? 0,
-        trends: trendsOf(post.slug),
+        trends: trendsBySlug.get(post.slug) ?? [],
         // 모르는 값의 fail-closed 폴백은 경계(getAdminPostsIndex)가 이미 했다.
         status: post.status,
         scheduledDate: post.scheduledDate || null,
