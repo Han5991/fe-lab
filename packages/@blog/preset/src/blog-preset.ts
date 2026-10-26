@@ -98,7 +98,7 @@ const blogColors = defineSemanticTokens.colors({
   //   --accent  (폐기 — accent.*는 --fg에서 파생한다. accent.* 항목 주석 참고)
   //   --border  rgba(0,0,0,.10) / rgba(255,255,255,.12) → ink.border
   //
-  // `paper.200` 다크만 시안(`#060809`)을 따르지 않고 `#1B1F26`을 쓴다.
+  // `paper.200` 다크만 시안(`#060809`) 값을 따르지 않는다.
   // 시안의 `--page`는 목업 카드 **뒤쪽 바깥 배경**이라 다크에서 `--bg`
   // 보다 더 어둡다. 실제 사이트에는 그 바깥 배경이 없고, `paper.200`이
   // 맡은 역할은 인라인 코드·콜아웃처럼 지면에서 **한 단계 떠 있는**
@@ -127,12 +127,11 @@ const blogColors = defineSemanticTokens.colors({
   'ink.900': { value: { base: '#262626', _dark: '#d5d9de' } },
   'ink.800': { value: INK_800 },
   'ink.700': { value: { base: '#4b5563', _dark: '#a5acb5' } },
-  // 레퍼런스 --fg-sub. paper.50 위 4.77:1로 AA 통과.
+  // 레퍼런스 --fg-sub. paper.50 위에서 AA 통과.
   'ink.600': { value: { base: '#6b7280', _dark: '#8b919a' } },
-  // ink.500 — 12px 메타 텍스트(날짜/읽기시간/태그)용. --fg-sub를 그대로
-  // 쓰면 paper.100(#F7F7F5) 위에서 4.45:1로 AA(4.5:1)를 아슬하게
-  // 놓친다. 서브 서피스 위에서도 4.8:1이 나오도록 한 톤만 내렸다
-  // (육안 차이는 거의 없다). 다크는 5.7:1이라 --fg-sub 그대로.
+  // ink.500 — 12px 메타 텍스트(날짜/읽기시간/태그)용. 라이트는 --fg-sub를 그대로 쓰면
+  // paper.100 같은 서브 서피스 위에서 AA(4.5:1)에 여유가 없어 한 톤만 내렸다(육안 차이는
+  // 거의 없다). 다크는 --fg-sub 그대로.
   'ink.500': { value: { base: '#656c77', _dark: '#8b919a' } },
   'ink.400': { value: { base: '#9096a0', _dark: '#6d737c' } },
   'ink.300': { value: { base: '#b8bcc4', _dark: '#525860' } },
@@ -157,18 +156,14 @@ const blogColors = defineSemanticTokens.colors({
   // 값을 옮겨 온 Astryx docsite 테마(MIT)가 accent 토큰 전부를 그 테마의 primary 텍스트
   // 잉크로 돌리는 구조를 따랐다 — 잉크 값은 Astryx의 PRIMARY가 아니라 이 팔레트의 ink.950이다.
   // 링크·현재 위치가 본문과 색으로 갈리지 않으므로 밑줄·굵기·틴트로 가른다(blog-design-system
-  // 스킬). 대비는 라이트 / 다크.
+  // 스킬).
   //   solid      = ink.950. 링크·현재 위치 표식·주 버튼 면·다이어그램 핵심 경로.
-  //                paper.50 위 17.40 / 15.85.
-  //   muted      = ink.950 8% / 14%. 틴트 — 시리즈 배지·선택 행·검색어·tip 콜아웃·다이어그램 노드.
-  //                paper.50 위 합성 #ededed / #2a2c2f, 그 위 solid 14.87 / 11.41.
-  //                보조 글자(ink.500)는 다크에서 4.41로 AA를 놓쳐 ink.700 이상을 쓴다(6.46 / 6.11).
-  //   onSolid    = paper.50. solid 면 위 글자 17.40 / 15.85 — 다크 solid가 밝은 잉크라 흰 글자는
-  //                1.23이다.
+  //   muted      = ink.950의 알파 틴트 — 시리즈 배지·선택 행·검색어·tip 콜아웃·다이어그램 노드.
+  //                다크에서는 muted 위에 ink.500이 AA를 놓쳐, 보조 글자는 ink.700 이상을 쓴다.
+  //   onSolid    = paper.50. solid 면 위 글자 — 다크 solid가 밝은 잉크라 흰 글자는 읽히지 않는다.
   //   solidHover = ink.800. 주 버튼 hover 면. Astryx는 그라데이션 hover 레이어를 얹지만
-  //                그라데이션은 금지(AGENTS.md §9)라 면 색을 바꾼다. onSolid 대비 10.90 / 11.45.
-  // 2026-10까지는 cyan(#0891B2 / #67E8F9)을 용도별 여섯 단계(50·200·500·600·700·900)로 썼다.
-  // cyan은 OG 카드 렌더용 상수(아래 ogBrand)로만 남았다.
+  //                그라데이션은 금지(AGENTS.md §9)라 면 색을 바꾼다.
+  // cyan은 OG 카드 렌더용 상수(아래 ogBrand)로만 쓴다.
   'accent.solid': { value: INK_950 },
   'accent.muted': {
     value: alpha(INK_950, { base: 0.08, _dark: 0.14 }),
@@ -176,13 +171,9 @@ const blogColors = defineSemanticTokens.colors({
   'accent.onSolid': { value: PAPER_50 },
   'accent.solidHover': { value: INK_800 },
   // selection — 드래그 선택(::selection)과 문장 공유 링크 강조(::target-text)의 배경.
-  // 예전엔 ink.border(알파 10%)를 그대로 썼는데, 알파 색이라 흰 지면에서 1.25:1까지
-  // 묽어져 "선택했다"가 눈에 안 들어왔다. 여기 값은 잉크를 지면에 미리 합성한
-  // **불투명** 색이다 — 알파를 쓰면 표면이 다른 자리에서 결과 색을 예측할 수 없다.
-  //   base  = ink.950 18% on paper.50 → #d6d6d6
-  //   _dark = ink.950 22% on paper.50 → #3b3d40
-  // 지면 대비 1.45 / 1.79로 브라우저 기본 선택색(#B4D5FE, 1.51:1)과 비슷하고, cyan을 합성하던
-  // 때(1.44 / 1.80)의 세기를 그대로 잇는다. 본문 글자(ink.900)는 이 위에서 10.41 / 7.68.
+  // 값은 잉크를 지면에 미리 합성한 **불투명** 색이다(`mix`) — 알파 색은 표면마다 결과가 달라
+  // 흰 지면에서는 "선택했다"가 눈에 안 들어올 만큼 묽어진다. 세기는 브라우저 기본 선택색과
+  // 비슷한 지면 대비에 맞췄고, 본문 글자(ink.900)가 그 위에서 읽혀야 한다.
   'selection.bg': {
     value: mix(INK_950, { base: 0.18, _dark: 0.22 }, PAPER_50),
   },
@@ -191,7 +182,7 @@ const blogColors = defineSemanticTokens.colors({
   // 있는 그린이라는 성격은 그대로 둔다(경고색과도 구분돼야 한다).
   'moss.600': { value: { base: '#16a34a', _dark: '#97c459' } },
   // moss.700 — 옅은 초록 배경 위 텍스트 전용. 라이트에서 moss.600은
-  // 흰 배경 위 3.30:1, 초록 12% 배경 위 2.9:1로 AA 미달이다.
+  // 흰 배경 위에서도, 초록 틴트 배경 위에서도 AA 미달이다.
   // 다크는 --success가 이미 충분해 동일 값.
   'moss.700': { value: { base: '#0f7536', _dark: '#97c459' } },
   // spot — admin 대시보드 전용 보조 강조색. 채도 낮은 슬레이트 블루.
@@ -222,8 +213,8 @@ const blogColors = defineSemanticTokens.colors({
   },
   // callout — 마크다운 콜아웃 타입별 색 (danger는 danger.* 재사용).
   // info는 무채색(구조), warning은 warn.* 를 쓴다. tip은 전용 토큰 없이 잉크 틴트
-  // (accent.muted 면 + accent.solid 보더·글자)다 — info와는 면이 1.07 / 1.22로 거의
-  // 같아, 불투명 잉크 보더(info는 28% / 32% 알파)와 글리프(+ / i)가 가른다.
+  // (accent.muted 면 + accent.solid 보더·글자)다 — info와는 면이 거의 같아, 불투명 잉크
+  // 보더(info는 알파 보더)와 글리프(+ / i)가 가른다.
   'callout.info.bg': {
     value: {
       base: 'rgba(0,0,0,0.04)',
@@ -258,13 +249,12 @@ const blogColors = defineSemanticTokens.colors({
   // 스타일시트에 한 번만 있으므로 마크업은 오히려 가벼워진다.
   //
   // 다크 값은 vscDarkPlus 그대로다(표면과 주석만 예외 — 아래 각 토큰). 라이트 값은 fumadocs가 라이트 테마로 쓰는 github-light
-  // 계열에서 가져왔고, 표면(#F7F7F5) 위 대비를 전부 확인했다 —
-  // 주석만 원본 #6E7781이 4.24:1로 AA에 못 미쳐 한 톤 내렸다(5.67:1).
-  // 나머지는 4.70:1(function) ~ 13.66:1(기본 텍스트) 범위다.
+  // 계열에서 가져왔고, 구문 색은 전부 표면 위 AA를 넘어야 한다(codeTheme.test.ts가 잠근다) —
+  // 주석만 원본이 AA에 못 미쳐 한 톤 내렸다.
   // ─────────────────────────────────────────────────────────────
-  // 표면 — 라이트는 본문(paper.50)에서 한 단계 뜬 서브 서피스, 다크는 목업의 muted(#14171c)다.
-  // 다크 지면(paper.50)이 거의 검은색(#0b0d10)이라 예전 표면 값 #0b0d10은 지면과 같은 색이어서
-  // 코드 상자가 보더만 남고 면으로는 읽히지 않았다. 한 단계 띄운 값이 paper.100과 같지만 code.*는
+  // 표면 — 라이트는 본문(paper.50)에서 한 단계 뜬 서브 서피스, 다크는 목업의 muted다.
+  // 다크 표면이 지면(paper.50)과 같은 색이면 코드 상자가 보더만 남고 면으로는 읽히지 않아
+  // 둘을 가른다(codeTheme.test.ts가 잠근다). 한 단계 띄운 값이 paper.100과 같지만 code.*는
   // 본문 팔레트와 독립이라 값을 따로 적는다(아래 selection 주석의 규칙).
   'code.surface': { value: { base: '#f7f7f5', _dark: '#14171c' } },
   // 코드 탭 바(CodeTabsPanels)가 앉는 면. 표면보다 한 단계 더 진하다 — 코드 블록의 헤더 행은 이 면이
@@ -273,18 +263,17 @@ const blogColors = defineSemanticTokens.colors({
   // 드래그 선택 배경. 전역 selection.bg를 따라가지 않는다 — code.*는 본문 팔레트
   // (paper/ink)와 독립이어야 본문 톤을 손볼 때 코드 화면이 같이 흔들리지 않는다
   // (codeTheme.test.ts가 구문 색 매핑에 같은 규칙을 잠근다). 라이트는 표면 위 파란
-  // 계열 토큰(string #0A3069, number #0550AE)을 지우지 않게 고른 회청색이고, 다크는
-  // 전역 선택색이 cyan 합성이던 때의 값을 그대로 둔다.
+  // 계열 토큰(string·number)을 지우지 않게 고른 회청색이고, 다크는 청록 기운이 남은 선택색이다 —
+  // 잉크 팔레트와 독립인 code.* 값이라 accent 규칙(§9 따로 고른 포인트색 없음)의 대상이 아니다.
   'code.selection': { value: { base: '#d7dce3', _dark: '#214248' } },
   // 구문 강조 — 키는 "역할", 값은 (github-light, vscDarkPlus) 쌍.
   'code.fg': { value: { base: '#24292f', _dark: '#d4d4d4' } },
-  // 다크 주석은 vscDarkPlus 원본(#6a9955)보다 한 단계 올렸다 — 주석은 코드에서 가장 옅은 글자라
-  // 표면·탭 바 위에서 4.8 이상을 계획의 기준으로 두고 여유를 더했다. 새 값은 표면 6.43:1 ·
-  // 탭 바 5.91:1이다(codeTheme.test.ts가 4.8 이상을 잠근다).
+  // 다크 주석은 vscDarkPlus 원본보다 한 단계 올렸다 — 주석은 코드에서 가장 옅은 글자라
+  // 표면·탭 바 위에서 AA에 여유를 두고 4.8 이상이어야 한다(codeTheme.test.ts가 잠근다).
   'code.comment': { value: { base: '#5b636d', _dark: '#7ca668' } },
   'code.keyword': { value: { base: '#cf222e', _dark: '#569cd6' } },
   // import/return 처럼 흐름을 바꾸는 키워드만 따로 물들이는 건
-  // vscDarkPlus의 특징이다(#c586c0). 라이트에서도 keyword와 구분되게
+  // vscDarkPlus의 특징이다. 라이트에서도 keyword와 구분되게
   // 색상각을 옮긴 값을 쓴다.
   'code.keywordFlow': { value: { base: '#a428b4', _dark: '#c586c0' } },
   'code.string': { value: { base: '#0a3069', _dark: '#ce9178' } },
@@ -293,11 +282,10 @@ const blogColors = defineSemanticTokens.colors({
   'code.class': { value: { base: '#953800', _dark: '#4ec9b0' } },
   'code.property': { value: { base: '#0550ae', _dark: '#9cdcfe' } },
   'code.tag': { value: { base: '#116329', _dark: '#569cd6' } },
-  // diff의 +/− 줄. vscDarkPlus는 inserted를 숫자(#b5cea8)와, deleted를
-  // 문자열(#ce9178)과 같은 색으로 묶어 두는데, 그 둘의 라이트 짝이
-  // #0550ae·#0a3069라 라이트에서는 추가·삭제가 둘 다 파랑이 된다.
-  // github-light의 markup.inserted/deleted 값으로 갈라 둔다
-  // (표면 위 6.89:1 · 9.80:1). 다크는 원본 그대로.
+  // diff의 +/− 줄. vscDarkPlus는 inserted를 숫자와, deleted를 문자열과 같은 색으로 묶어 두는데,
+  // 그 둘의 라이트 짝이 둘 다 파랑이라 라이트에서는 추가·삭제가 갈리지 않는다.
+  // github-light의 markup.inserted/deleted 값으로 갈라 둔다(전용 토큰 —
+  // codeTheme.test.ts가 숫자·문자열과 갈린 토큰을 쓰는지 잠근다). 다크는 원본 그대로.
   'code.inserted': { value: { base: '#116329', _dark: '#b5cea8' } },
   'code.deleted': { value: { base: '#82071e', _dark: '#ce9178' } },
   'code.regex': { value: { base: '#a40e26', _dark: '#d16969' } },
@@ -344,9 +332,9 @@ const OG_BRAND = '#67e8f9';
  * 못한다). 카드는 다크 한 벌이라 라이트 값이 없다. 카드가 썸네일로 쓰이는 글은 홈·목록에서도
  * cyan이 보인다.
  *
- * 값은 2026-10까지의 `accent.500`·`accent.200` 다크 값 그대로다 — 카드 픽셀이 바뀌지 않는다.
+ * 값은 화면 포인트색이 cyan이던 때의 값이라 이미 만든 카드 픽셀이 바뀌지 않는다.
  *   color      — 브랜드 사각형·시리즈 pill 글자
- *   pillBorder — 시리즈 pill의 2px 보더(color 42%)
+ *   pillBorder — 시리즈 pill의 보더(color에 알파를 준 값)
  */
 export const ogBrand = {
   color: OG_BRAND,

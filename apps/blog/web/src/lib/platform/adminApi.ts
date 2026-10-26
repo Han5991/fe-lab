@@ -15,10 +15,12 @@
 
 import {
   isPostTrendRows,
+  isRows,
   type AdminAction,
   type AdminActionParams,
   type AdminActionRpc,
   type PostTrendRow,
+  type RowColumns,
 } from './adminActions';
 import type { Database } from './database.types';
 
@@ -58,32 +60,7 @@ interface AdminActionResults {
 
 export type AdminActionResult<A extends AdminAction> = AdminActionResults[A];
 
-/** 열의 런타임 검사 — 키가 곧 열 타입의 이름이다. */
-const COLUMN_CHECKS = {
-  string: (value: unknown) => typeof value === 'string',
-  number: (value: unknown) => typeof value === 'number',
-  'number|null': (value: unknown) =>
-    value === null || typeof value === 'number',
-};
-
-/** 열 타입 → 검사 이름. 여기 없는 열 타입이 생기면 `never`라 아래 표가 컴파일되지 않는다. */
-type ColumnTag<T> = [T] extends [string]
-  ? 'string'
-  : [T] extends [number]
-    ? 'number'
-    : [T] extends [number | null]
-      ? 'number|null'
-      : never;
-
-/** 행의 열 → 그 열의 검사 이름. 키 전부가 행 타입에서 온다. */
-type RowColumns<Row> = {
-  readonly [K in keyof Row]-?: ColumnTag<Row[K]>;
-};
-
-/**
- * 행마다 열의 표. 키와 열 타입이 행 타입(`Returns`)에 묶여(satisfies) 열이 늘거나 이름·타입이
- * 바뀌면 여기서 컴파일 에러가 난다 — 타입 사본이 아니라 그 타입의 런타임 그림자다.
- */
+/** 행마다 열의 표 — 행 타입(`Returns`)에 묶인다(`RowColumns`, `adminActions.ts`). */
 const STATS_COLUMNS = {
   slug: 'string',
   today_views: 'number',
@@ -97,23 +74,6 @@ const DOW_COLUMNS = {
   dow: 'number',
   view_count: 'number',
 } as const satisfies RowColumns<DowRow>;
-
-/** 값이 행 배열인지 — `columns`의 열마다 값의 타입까지 본다. 표가 행 타입에 묶이는 곳은 위 `satisfies`다. */
-function isRows(
-  value: unknown,
-  columns: Readonly<Record<string, keyof typeof COLUMN_CHECKS>>,
-): boolean {
-  if (!Array.isArray(value)) return false;
-  // Array.isArray는 any[]로 좁힌다 — 행은 unknown으로 다시 받는다.
-  const rows: readonly unknown[] = value;
-  return rows.every(row => {
-    if (typeof row !== 'object' || row === null) return false;
-    const values = new Map<string, unknown>(Object.entries(row));
-    return Object.entries(columns).every(([name, tag]) =>
-      COLUMN_CHECKS[tag](values.get(name)),
-    );
-  });
-}
 
 /** action마다 그 응답 모양을 좁히는 검사 — 키가 정확히 `AdminAction`이고 검사 대상이 `AdminActionResults`다. */
 type ResultGuards = {

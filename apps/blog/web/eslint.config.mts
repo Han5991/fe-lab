@@ -78,7 +78,7 @@ const NO_ESCAPED_TRANSITION = {
  * 막지 않는다 — 입력을 감싸는 상자의 보더가 그 자리다(`ArchiveSearchBox`).
  *
  * 쓸 수 있는 파일은 `INTERACTION_FILES`뿐이다. `no-restricted-syntax`는 블록마다 통째로 덮어써지므로(위
- * NO_ESCAPED_HEX 주석) 그 블록은 이 룰만 빼고 나머지를 다시 펼친다.
+ * NO_ESCAPED_HEX 주석) 그 블록은 이 룰만 빼고 나머지를 `APP_SYNTAX_EXCEPT_INTERACTION`에서 다시 펼친다.
  *
  * 재평가: 2027-04-25 — 그때까지 잡은 위반이 없으면 내린다(AGENTS.md §5).
  */
@@ -272,6 +272,17 @@ const APP_IMPORTS_EXCEPT_NEXT_LINK = {
   paths: [CONTENT_BARREL_VALUES, CONTENT_SEO_VALUES],
   patterns: [REPOSITORY_IMPORT_PATTERN],
 };
+
+/**
+ * app 레이어의 `no-restricted-syntax`에서 `NO_LOCAL_INTERACTION`만 뺀 것 — `INTERACTION_FILES` 블록이
+ * 그대로 쓰고, app 블록은 여기에 `NO_LOCAL_INTERACTION`을 더한다(위 `APP_IMPORTS_EXCEPT_NEXT_LINK`와 같은
+ * 짝). 룰을 더하거나 빼면 두 블록이 함께 따라간다.
+ */
+const APP_SYNTAX_EXCEPT_INTERACTION = [
+  NO_ESCAPED_HEX,
+  CONTENT_DYNAMIC_IMPORT,
+  NO_ESCAPED_TRANSITION,
+];
 
 /**
  * ESLint 10 구성 — `eslint-config-next`를 걷어내고 플러그인을 직접 조립한다.
@@ -506,24 +517,18 @@ export default defineConfig([
       ],
       'no-restricted-syntax': [
         'error',
-        NO_ESCAPED_HEX,
-        CONTENT_DYNAMIC_IMPORT,
-        NO_ESCAPED_TRANSITION,
+        ...APP_SYNTAX_EXCEPT_INTERACTION,
         NO_LOCAL_INTERACTION,
       ],
     },
   },
   {
-    // 누름·초점 조건을 쓰는 파일(INTERACTION_FILES) — 그 룰만 풀고 나머지는 위 app 블록과 같다.
+    // 누름·초점 조건을 쓰는 파일(INTERACTION_FILES) — 그 룰만 풀고 나머지는 위 app 블록과 같다
+    // (같은 `APP_SYNTAX_EXCEPT_INTERACTION`에서 다시 펼친다).
     files: INTERACTION_FILES,
     ignores: [UNIT_TESTS],
     rules: {
-      'no-restricted-syntax': [
-        'error',
-        NO_ESCAPED_HEX,
-        CONTENT_DYNAMIC_IMPORT,
-        NO_ESCAPED_TRANSITION,
-      ],
+      'no-restricted-syntax': ['error', ...APP_SYNTAX_EXCEPT_INTERACTION],
     },
   },
   {

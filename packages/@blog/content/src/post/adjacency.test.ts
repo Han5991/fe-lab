@@ -37,9 +37,14 @@ test('pickAdjacent: 중간 글 → prev=더 과거, next=더 최신', () => {
   expect(prev?.title).toBe('title-a');
 });
 
-test('pickAdjacent: 카드가 쓸 썸네일과 폴더를 함께 싣는다 — 썸네일이 없으면 키째 없다', () => {
+test('pickAdjacent: 카드가 쓸 썸네일과 폴더만 싣는다 — 썸네일이 없으면 키째 없고 비율은 싣지 않는다', () => {
   const withThumb = [
-    makePost({ slug: 'c', relativeDir: 'ci', thumbnail: 'c.png' }),
+    makePost({
+      slug: 'c',
+      relativeDir: 'ci',
+      thumbnail: 'c.png',
+      thumbnailAspect: 1200 / 630,
+    }),
     makePost({ slug: 'b', relativeDir: 'ci' }),
     makePost({ slug: 'a', relativeDir: '', thumbnail: 'a.png' }),
   ];

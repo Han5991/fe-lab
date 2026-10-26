@@ -15,19 +15,14 @@ const COVER_HEIGHT = 675;
 // container다.
 const frame = css(coverFrameRaw, { rounded: 'container' });
 
-// 이미지가 틀을 어떻게 채우는가는 그림이 가로형인지(`isWideThumbnail` — 가로/세로 1.6 이상)로 갈린다 — 판정은 카드와
-// 같은 함수이고 여기는 `wide`로 받는다.
+// 이미지가 틀을 어떻게 채우는가는 그림이 가로형인지(`isWideThumbnail` — 기준은 `WIDE_THUMBNAIL_MIN_ASPECT`)로
+// 갈린다 — 판정은 카드와 같은 함수이고 여기는 `wide`로 받는다. 카드 커버와의 짝이 갈리는 이유는
+// `POST_SHARED_RESCALED`(viewTransitions.ts).
 //
-// - 가로형(OG 카드, 그리고 1200×630 같은 자기 썸네일): cover다. 1.9:1이라 16:9 틀에 거의 차고(양옆 약 6%만
-//   잘린다), 카드 커버도 같은 16:9 cover라 두 스냅샷이 같은 그림을 같은 배율로 그린다 — 그래서 카드 커버와
-//   짝이다(`PostDetailShared`, panda.config.ts의 커버 규칙). 제목이 박힌 OG 카드가 h1 아래에 한 번 더 나오는 것은
-//   모핑을 위해 받아들였다(사용자 결정).
-// - 정사각 등 가로형이 아닌 자기 썸네일(8편): contain이다. cover로 채우면 정사각의 위아래가 44% 잘려 그림이 읽히지
-//   않는다. 남는 양옆은 틀의 면(paper.100)이다. 카드는 cover(크롭을 받아들인다)라 같은 그림이 다른 배율로
-//   그려지고, 그래서 카드 커버와 **겹쳐 모핑하지 않는다** — 겹치면 전환 중
-//   그림이 두 겹으로 보였다. 짝(같은 이름)은 그대로 두고 `rescaled`로 알려, 나가는 쪽이 먼저 걷히고 들어오는
-//   쪽이 그 뒤에 나타나게 한다(panda.config.ts의 커버 규칙). 짝으로 두는 이유는 제목이 그림 위를 지나지 않게
-//   쌓는 순서다.
+// - 가로형(OG 카드, 그리고 1200×630 같은 자기 썸네일): cover다. 1.9:1이라 16:9 틀에 양옆 약 6%만 잘린다.
+//   제목이 박힌 OG 카드가 h1 아래에 한 번 더 나오는 것은 모핑을 위해 받아들였다(사용자 결정).
+// - 정사각 등 가로형이 아닌 자기 썸네일: contain이다. cover로 채우면 정사각의 위아래가 44% 잘려 그림이 읽히지
+//   않는다. 남는 양옆은 틀의 면(paper.100)이다.
 const containImage = css({
   display: 'block',
   w: 'full',
@@ -38,7 +33,7 @@ const containImage = css({
 interface PostHeroThumbnail {
   /** 글 카드의 커버와 같은 주소(`resolveThumbnailSrc` — 최적화본이 있으면 webp)라, 카드에서 넘어오면 이미 받은 이미지다. */
   src: string;
-  /** `isWideThumbnail(post)` — 참(가로형·OG 카드)이면 cover·카드 커버와 모핑, 거짓(정사각 등)이면 contain·카드 커버와 겹치지 않고 차례로 바뀐다. */
+  /** `isWideThumbnail(post)` — 참(가로형·OG 카드)이면 cover, 거짓(정사각 등)이면 contain이다. */
   wide: boolean;
 }
 
@@ -61,7 +56,7 @@ interface PostHeroProps {
  * 등록되지 않은 `hero` 이름은 여기서 조용히 썸네일로 폴백한다 — 오타 하나로
  * 글 전체가 렌더 실패하는 것보다 낫다. 오타는 `lint:posts`가 빌드 전에 잡는다.
  *
- * 썸네일은 글 카드의 커버와 짝이고(가로형일 때만 모핑한다) — 다이어그램은 카드에 없는 그림이라 이어 붙이지 않는다.
+ * 썸네일은 글 카드의 커버와 짝이다(`PostDetailShared`) — 다이어그램은 카드에 없는 그림이라 이어 붙이지 않는다.
  *
  * 블록 사이 간격(40)은 쓰는 쪽(글 칼럼의 flex gap)이 준다.
  */

@@ -145,10 +145,8 @@ export default defineConfig({
       //   `:focus-within`이 아닌 이유는 마우스·터치로 누른 링크도 초점을 받아, 터치에서 탭 뒤에 카드
       //   틴트가 남기 때문이다(`_hover`를 터치에서 누르는 동안으로 바꾼 것과 같은 문제). 링크가 그룹 자신인
       //   카드(이전·다음)도 있어 `:has()`만으로는 모자라고 `:is()`로 자신을 더한다.
-      // `_press*`·`_groupKeyboardFocus`·`_active`·`_focus`·`_focusVisible`은 eslint의 허용 파일(`INTERACTION_FILES` —
-      // 프리셋인 `interaction.ts`·`cardParts.ts`, 두 셸이 함께 쓰는 건너뛰기 링크 `skipLink.ts`) 밖에서
-      // 쓰지 못한다(`NO_LOCAL_INTERACTION`). 버튼 레시피도 직접 쓰지 않고 프리셋을 펼친다. `_hover`는
-      // 컴포넌트가 쓴다.
+      // 컴포넌트가 직접 쓰지 못하는 조건과 허용 파일은 eslint.config.mts의 `NO_LOCAL_INTERACTION`·
+      // `INTERACTION_FILES`가 단일 출처다.
       hover: {
         '@media (hover: hover)': { '&:is(:hover, [data-hover])': '@slot' },
         '@media (hover: none)': { '&:is(:active, [data-active])': '@slot' },

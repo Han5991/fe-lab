@@ -19,7 +19,7 @@ import { css } from '@blog/styled-system/css';
 export const pressButton = css.raw({
   transition: 'common',
   _pressScale: { transform: 'scale(0.98)' },
-  // 조건이 hover·누름을 이미 뺐다 — 여기서는 비활성의 모양(흐림·커서)만 준다.
+  // `_pressScale`이 비활성의 누름 크기를 이미 뺐다 — 여기서는 비활성의 모양(흐림·커서)만 준다.
   _disabled: { opacity: '0.5', cursor: 'not-allowed' },
 });
 

@@ -33,6 +33,7 @@ import { inlineLink } from '@/src/components/inlineLink';
 import { HEADER_OFFSET } from '@/src/components/post/headerOffset';
 import { HEADING_COMPONENTS } from '@/src/components/post/markdownHeadings';
 import { isMarkdownTag } from '@/src/components/post/markdownTag';
+import { POST_CONTENT_ID } from '@/src/components/post/postContent';
 import { fencedCode, isBlockMarkdownChild } from './markdownBlocks';
 
 /**
@@ -43,8 +44,8 @@ import { fencedCode, isBlockMarkdownChild } from './markdownBlocks';
  * 컴포넌트가 각자 잎으로 진다. 테스트(`codeMeta.test.tsx` 등)는 여기서 export한
  * 실물 플러그인 배열·매핑 팩토리를 가져다 같은 경로를 검증한다.
  *
- * `#post-content`는 DOM 계약이다 — TOC·MobileTOC(`tocHooks.tsx`)가 이 id로
- * 헤딩을 스캔하므로, id와 헤딩 prose 스타일·rehype-slug는 언제나 함께 움직인다.
+ * 본문 id(`POST_CONTENT_ID`, `post/postContent.ts`)는 DOM 계약이다 — `tocHooks.tsx`·`Rail.tsx`의
+ * `railWithAside`·`QuoteLink`가 읽는다. id와 헤딩 prose 스타일·rehype-slug는 언제나 함께 움직인다.
  */
 
 export const POST_REMARK_PLUGINS = [remarkGfm];
@@ -373,7 +374,7 @@ const headingOffsetStyle: CSSProperties & Record<`--${string}`, string> = {
 export function PostBody({ content, relativeDir }: PostBodyProps) {
   return (
     <div
-      id="post-content"
+      id={POST_CONTENT_ID}
       style={headingOffsetStyle}
       className={css({
         // 서체는 sans다(세리프 정체성은 폐기했다 — serif 토큰도 sans로 매핑돼 있다).

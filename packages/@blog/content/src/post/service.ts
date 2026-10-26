@@ -26,13 +26,12 @@ function toPostSummary(post: PostData): PostSummary {
 
 /** 이전·다음 글 카드의 값. 없는 값은 키째 뺀다(`exactOptionalPropertyTypes`). */
 function toPostNavItem(post: PostData): PostNavItem {
-  const { slug, title, relativeDir, thumbnail, thumbnailAspect } = post;
+  const { slug, title, relativeDir, thumbnail } = post;
   return {
     slug,
     title,
     relativeDir,
     ...(thumbnail === undefined ? {} : { thumbnail }),
-    ...(thumbnailAspect === undefined ? {} : { thumbnailAspect }),
   };
 }
 

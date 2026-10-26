@@ -45,7 +45,8 @@ describe('SegmentedControl', () => {
     expect(screen.getByRole('radio', { name: '가' })).not.toBeChecked();
   });
 
-  // 값이 선택지 밖이면(주소의 오래된 값 등) 모든 칸이 -1이라 키보드가 묶음에 들어갈 길이 없었다.
+  // `options`가 `T`의 모든 값을 담는다는 타입 제약은 없어 선택지 밖 값이 올 수 있다(현재 호출자는 닿지 않는다).
+  // 그때도 모든 칸이 -1이면 키보드가 묶음에 들어갈 길이 없다.
   test('값이 선택지 밖이면 첫 칸이 탭 정지점이고 표식은 없다', () => {
     render(
       <SegmentedControl<string>

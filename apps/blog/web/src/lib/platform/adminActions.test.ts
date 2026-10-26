@@ -27,7 +27,7 @@ test('isAdminAction: 등록된 action만 통과한다', () => {
   expect(isAdminAction(null)).toBe(false);
   expect(isAdminAction(42)).toBe(false);
   expect(isAdminAction({ action: 'posts_overview' })).toBe(false);
-  // 통계·추이를 따로 부르던 옛 action 이름은 더는 등록돼 있지 않다.
+  // 통계·추이는 `posts_overview` 하나다 — 이 이름들은 action이 아니다.
   expect(isAdminAction('all_post_stats')).toBe(false);
   expect(isAdminAction('all_posts_trends')).toBe(false);
 });
