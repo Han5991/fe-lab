@@ -68,12 +68,12 @@ export interface PostData {
 export type PostSummary = Omit<PostData, 'content'>;
 
 /**
- * 이전·다음 글 카드가 그리는 값. 제목과 주소 외에 썸네일을 해석하는 값(`thumbnail`·`thumbnailAspect`·`relativeDir`)을
- * 함께 싣는다 — 카드가 글 상세의 히어로와 같은 판정(`isWideThumbnail`)과 같은 주소(`resolveThumbnailSrc`)를
- * 쓰게 하려는 것이다.
+ * 이전·다음 글 카드가 그리는 값 — 제목과 주소(`slug`), 썸네일 주소를 푸는 `thumbnail`·`relativeDir`
+ * (`resolveThumbnailSrc`). 카드는 다른 카드처럼 16:9 틀을 cover로 채우니 가로형 판정(`isWideThumbnail`)의 입력인
+ * `thumbnailAspect`는 싣지 않는다.
  */
 export type PostNavItem = Pick<PostData, 'slug' | 'title' | 'relativeDir'> &
-  Partial<Pick<PostData, 'thumbnail' | 'thumbnailAspect'>>;
+  Partial<Pick<PostData, 'thumbnail'>>;
 
 export interface AdjacentPostsOptions {
   filterTag?: string;
