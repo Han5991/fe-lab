@@ -9,7 +9,12 @@
 import { describe, expect, test } from 'vitest';
 import type { CSSProperties } from 'react';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/cjs/styles/prism';
-import { themeColor, type BlogColorName, type BlogTheme } from '@blog/preset';
+import {
+  blogPreset,
+  themeColor,
+  type BlogColorName,
+  type BlogTheme,
+} from '@blog/preset';
 import { CODE_COLOR_ROLES, swapColors, toDualTheme } from './codeTheme';
 
 const HEX = /#[0-9a-f]{3,8}/gi;
@@ -127,23 +132,26 @@ describe('코드 색의 대비', () => {
   // 코드 글자는 표면 위에, 주석·메타는 탭 바(chrome) 위에도 앉을 수 있다. 주석은 눈에 덜 띄게
   // 두는 색이라 AA(4.5)에 여유를 두고 4.8 이상으로 잠근다(표면이 밝아질 때 먼저 무너지는 자리).
   const THEMES: readonly BlogTheme[] = ['light', 'dark'];
-  const SYNTAX: readonly BlogColorName[] = [
-    'code.fg',
-    'code.comment',
-    'code.keyword',
-    'code.keywordFlow',
-    'code.string',
-    'code.number',
-    'code.function',
-    'code.class',
-    'code.property',
-    'code.tag',
-    'code.inserted',
-    'code.deleted',
-    'code.regex',
-    'code.selector',
-    'code.muted',
-  ];
+
+  // 구문 색은 팔레트의 code.* 중 글자색이다 — 목록을 손으로 적지 않고 팔레트에서 뽑으므로 새 code.*
+  // 토큰은 등록 없이 아래 AA 검사에 들어온다. 면(표면·탭 바·선택 배경)만 글자가 아니라 뺀다.
+  const PALETTE = blogPreset.theme.extend.semanticTokens.colors;
+  const CODE_FILLS = new Set<BlogColorName>([
+    'code.surface',
+    'code.chrome',
+    'code.selection',
+  ]);
+  const isColorName = (name: string): name is BlogColorName =>
+    Object.hasOwn(PALETTE, name);
+  const SYNTAX = Object.keys(PALETTE)
+    .filter(isColorName)
+    .filter(name => name.startsWith('code.') && !CODE_FILLS.has(name));
+
+  test('구문 색 목록은 글자 토큰을 담고 면 토큰을 뺀다', () => {
+    // 접두사나 필터가 어긋나 목록이 비면 아래 대비 검사는 아무것도 보지 않고 통과한다.
+    expect(SYNTAX).toContain('code.comment');
+    expect(SYNTAX).not.toContain('code.surface');
+  });
 
   for (const theme of THEMES) {
     const surface = themeColor(theme, 'code.surface');
