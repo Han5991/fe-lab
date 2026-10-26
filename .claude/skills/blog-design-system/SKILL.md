@@ -238,10 +238,8 @@ strictTokens에 걸린다.
 설정이 preset-panda의 그림자를 빼서 다른 이름은 strictTokens에, 대괄호 이스케이프는
 `prefer-token`에 걸린다.
 
-| 토큰           | 라이트                                                      | 다크                                                        |
-| :------------- | :---------------------------------------------------------- | :---------------------------------------------------------- |
-| `overlay.med`  | `0px 1px 2px rgba(0,0,0,0.1), 0px 2px 12px rgba(0,0,0,0.1)` | `0px 1px 2px rgba(0,0,0,0.2), 0px 2px 12px rgba(0,0,0,0.2)` |
-| `overlay.high` | `0px 2px 2px rgba(0,0,0,0.1), 0px 8px 24px rgba(0,0,0,0.1)` | `0px 2px 2px rgba(0,0,0,0.2), 0px 8px 24px rgba(0,0,0,0.3)` |
+값(라이트·다크 쌍)은 `packages/@blog/preset/src/blog-preset.ts`의 `shadows.overlay.med`·`shadows.overlay.high`가
+단일 출처다. 어느 면에 어느 단계를 쓰는지는 아래 표면 표가 정한다.
 
 **판정 — 넷을 모두 만족하는 면에만 그림자를 단다.**
 
@@ -640,13 +638,10 @@ type은 `src/shared/viewTransitions.ts`, 감싸개는 `src/components/shared/Pos
   보더를 함께 둘 수 있다(`ArchiveSearchBox`). 카드는 링이 제목 상자만 두르고, 키보드 초점이 오면 커버 틴트가 hover 때와
   같이 켜져(`_groupKeyboardFocus`) 어느 카드인지 면으로도 보인다 — 마우스·터치로 누른 링크는 `:focus-visible`이
   아니라 켜지지 않는다. 링을 카드 전체로 옮기려면 `FOCUS_RING`을 `panda.config.ts` 밖의 값 모듈로 빼야 한다
-- 누름·초점 조건은 허용 파일(`INTERACTION_FILES` — 프리셋인 `interaction.ts`·`cardParts.ts`, 두 셸이 함께 쓰는
-  건너뛰기 링크 `skipLink.ts`) 밖에서 쓰면 lint(`NO_LOCAL_INTERACTION`)가 막는다 — `_active`·`_groupActive`·
-  `_peerActive`, `_focus`·`_focusVisible`·`_groupFocus*`·`_peerFocus*`, `_press*`, `_groupKeyboardFocus`,
-  `_pointerCoarse`, 그리고 `:hover`·`:active`·`:focus`·`:focus-visible`을 선택자 문자열(템플릿 리터럴 키 포함)로
-  직접 적은 키다. `:hover`를 문자열로 적으면 Panda 조건을 거치지 않아 터치에서 탭 뒤에도 hover가 남는다(글 본문
-  표의 `'& tr:hover td'`가 그랬다). `_hover`·`_groupHover`·`_focusWithin`은 컴포넌트가 쓰는 조건이라 막지
-  않는다. 버튼 레시피 파일도 허용 파일이 아니라 프리셋(`pressButton`)을 펼친다.
+- 누름·초점 조건은 허용 파일 밖에서 쓰면 lint가 막는다 — 막는 조건 이름과 허용 파일은
+  `apps/blog/web/eslint.config.mts`의 `NO_LOCAL_INTERACTION`·`INTERACTION_FILES`가 단일 출처다. `:hover`를
+  선택자 문자열로 적는 키도 막는데, Panda 조건을 거치지 않아 터치에서 탭 뒤에도 hover가 남기 때문이다.
+  버튼 레시피 파일도 허용 파일이 아니라 프리셋(`pressButton`)을 펼친다.
   새 종류의 누름이 필요하면 `interaction.ts`에 프리셋으로 더한다
 
 ## 버튼
