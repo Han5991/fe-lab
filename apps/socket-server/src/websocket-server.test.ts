@@ -132,6 +132,9 @@ async function openClient(
   };
 
   socket.on('data', chunk => {
+    // setEncoding을 부르지 않으니 Buffer만 온다 — 문자열이면 프레임 파싱이 어긋나니 조용히 넘기지 않는다
+    if (typeof chunk === 'string')
+      throw new TypeError('소켓에 인코딩이 걸려 문자열 청크가 왔다');
     pending = Buffer.concat([pending, chunk]);
     if (!upgraded) {
       const end = pending.indexOf('\r\n\r\n');
