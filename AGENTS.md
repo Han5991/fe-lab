@@ -24,9 +24,10 @@ here or anywhere else (this repo once carried four diverging copies of that prom
 - **Versions**: Node / pnpm come from root `engines` · `.tool-versions` · `packageManager`; TypeScript from the
   `pnpm-workspace.yaml` catalog. Never copy version numbers into docs — Renovate bumps them.
 - **Claude Code cloud sessions** run `.claude/hooks/session-start.sh` (SessionStart): it puts the `.tool-versions`
-  pnpm (and Node, if the image lacks it) first on PATH and runs `pnpm install --frozen-lockfile`. Without it the
-  image's older pnpm switches itself to the pinned version, and turbo started through it dies with
-  `Exec format error` — `pnpm lint`/`check-types`/`test` and the pre-push hook all fail.
+  pnpm (and Node, if the image lacks it) first on PATH, sets the git author (§5) and runs
+  `pnpm install --frozen-lockfile`. Without it the image's older pnpm switches itself to the pinned version, and
+  turbo started through it dies with `Exec format error` — `pnpm lint`/`check-types`/`test` and the pre-push hook
+  all fail.
 - **TypeScript 6 semantics, not TS 5.x.** Before explaining or relying on compiler behavior (default `types`,
   `rootDir`, `peerDependencies` promotion vs restore, …) verify it against the actual tsconfig/source. Be precise
   about "add" vs "move" vs "promote" when describing dependency/catalog changes.
@@ -149,7 +150,10 @@ here or anywhere else (this repo once carried four diverging copies of that prom
   tightening step, `blog(scope)` for work whose point is the writing (the post plus whatever tooling it needed).
   Don't invent others. Blog scopes split by package: `blog` (posts/authoring), `blog-web`, `blog-content`.
 - **No AI attribution trailers** (`Co-Authored-By: Claude`, `Claude-Session:`, …). Nothing enforces this, and
-  squash merge is how it leaks in — strip it from every sub-commit before the PR is squashed.
+  squash merge is how it leaks in — strip it from every sub-commit before the PR is squashed. The commit **author**
+  leaks too: GitHub's squash adds `Co-authored-by` for every author other than the merger, and a cloud container's
+  global identity is Claude — the session hook sets the repo-local `author.*` only (the committer stays Claude so
+  the container's signature shows Verified), so check `git var GIT_AUTHOR_IDENT` wherever it didn't run.
 - **Hooks (lefthook)**: `pre-commit` runs prettier on staged files (`apps/blog/posts/**` excluded); `pre-push` runs
   lint / check-types / test. There is no `commit-msg` hook — message rules are held by hand.
 - **Before committing PR fixes**: (1) adversarial self-review of your own diff — hunt regressions, edge cases,
