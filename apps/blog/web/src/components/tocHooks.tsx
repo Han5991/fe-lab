@@ -68,6 +68,14 @@ const readParts = (heading: Element): TocPart[] => {
 const EMPTY_TOC: TOCItem[] = [];
 
 /**
+ * 활성 구간의 위 경계(HEADER_OFFSET)를 봐주는 폭(px). 헤딩으로 이동하면 헤딩은 scroll-margin-top(=
+ * HEADER_OFFSET) 자리에 서야 하는데, 스크롤 위치는 기기 픽셀로 반올림되고 헤딩 좌표는 소수라 94.97처럼
+ * 경계 바로 위에 떨어진다. 그러면 방금 누른 항목이 꺼지고 다음 항목만 켜졌다(실측: 글 하나에서 23항목 중
+ * 10개). 1px이면 반올림 오차(기기 픽셀 하나 이하)를 덮고, 헤더 밑으로 들어간 헤딩은 여전히 빠진다.
+ */
+const SUBPIXEL_SLACK = 1;
+
+/**
  * 훅 인스턴스 하나가 들고 있는 캐시.
  *
  * 모듈 전역에 두지 않는다 — 캐시가 훅의 수명(그 글 화면)과 함께 버려져야 다음 글이나
@@ -217,10 +225,14 @@ export const useTocHook = () => {
         if (!el) return;
         const { top, bottom } = el.getBoundingClientRect();
         if (top <= line) current = i;
-        // 헤더에 가려지는 구간(0 ~ HEADER_OFFSET)은 "보인다"로 치지 않는다.
-        // 거기 걸친 헤딩까지 세면 아직 눈에 안 들어온 절이 차례에서 먼저
-        // 켜진다.
-        if (top >= HEADER_OFFSET && bottom <= window.innerHeight) {
+        // 헤딩으로 이동했을 때 헤딩이 서는 자리(HEADER_OFFSET — 헤더 높이에
+        // 여유를 더한 값)보다 위는 "보인다"로 치지 않는다. 헤더 밑에 걸친
+        // 헤딩까지 세면 눈에 안 보이는 절이 차례에서 켜진다. 경계는
+        // SUBPIXEL_SLACK만큼 너그럽게 본다(상수 주석 참고).
+        if (
+          top >= HEADER_OFFSET - SUBPIXEL_SLACK &&
+          bottom <= window.innerHeight
+        ) {
           if (first === -1) first = i;
           last = i;
         }

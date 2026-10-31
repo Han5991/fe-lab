@@ -324,6 +324,17 @@ describe('useTocHook - 활성 구간', () => {
     expect(result.current.activeRange).toEqual([1, 2]);
   });
 
+  // 헤딩으로 이동하면 헤딩은 HEADER_OFFSET(95) 자리에 서야 하지만, 스크롤 위치가 기기 픽셀로
+  // 반올림돼 94.97처럼 경계 바로 위에 떨어진다. 그 헤딩이 빠지면 방금 누른 항목 대신 다음 항목이 켜진다.
+  test('이동 직후 경계보다 1px 안쪽으로 반올림된 헤딩도 구간에 든다', () => {
+    mountHeadings(DENSE);
+    const { result } = renderHook(() => useTocHook());
+    // 'b'(300)가 94.97에 선다 — 'a'는 헤더 밑, 'c'(294.97)는 화면 안이다.
+    scrollToY(205.03);
+
+    expect(result.current.activeRange).toEqual([1, 2]);
+  });
+
   test('아래끝이 화면을 넘는 헤딩은 구간에 넣지 않는다', () => {
     mountHeadings(DENSE);
     const { result } = renderHook(() => useTocHook());
