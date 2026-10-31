@@ -64,6 +64,7 @@ function renderPanel(
     <QueryClientProvider client={new QueryClient()}>
       <Suspense fallback={null}>
         <PostStatsPanel
+          placement="column"
           post={post}
           tags={tags}
           titleId="panel-title"

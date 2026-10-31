@@ -39,6 +39,7 @@ import {
   PanelSkeleton,
   PostNotFound,
   PostStatsPanel,
+  type PanelPlacement,
 } from '../components/PostStatsPanel';
 import { PostTable, SORT_OPTIONS, usePostSort } from '../components/PostTable';
 
@@ -293,7 +294,7 @@ function PostSheet({
 interface InspectorBodyProps {
   slug: string | null;
   /** 넓은 화면은 칼럼 안의 내용, 좁은 화면은 시트(고른 글이 있을 때만). */
-  mode: 'column' | 'sheet';
+  mode: PanelPlacement;
   onClose: () => void;
   /** 칼럼을 사용자가 목록에서 골라 열었는가 — 그때만 제목으로 초점을 옮긴다(`PostStatsPanel`). */
   focusTitle: boolean;
@@ -327,6 +328,7 @@ function InspectorBody({
     post !== undefined && tags !== undefined ? (
       <PostStatsPanel
         key={post.slug}
+        placement={mode}
         post={post}
         tags={tags}
         titleId={titleId}
@@ -472,8 +474,14 @@ export function AnalyticsScreen() {
     <div className={layout({ panel: isWide && selectedSlug !== null })}>
       {selectedSlug !== null && <PrefetchPostStats slug={selectedSlug} />}
       {/* 글 통계 칼럼이 열리고 닫히면 이 칼럼의 폭이 바뀐다 — 루트에 섞여 있으면 옛 폭의 목록이 새 폭 위에
-          크로스페이드로 겹쳤다(230ms, 칼럼은 410ms에 걸쳐 들어오는데). 따로 찍어 상자만 칼럼과 같이 움직인다. */}
-      <ViewTransition update={ADMIN_VIEW_TRANSITION.resize} default="none">
+          크로스페이드로 겹쳤다(230ms, 칼럼은 410ms에 걸쳐 들어오는데). 따로 찍어 상자만 칼럼과 같이 움직인다.
+          좁은 화면은 시트가 목록을 덮을 뿐 폭이 바뀌지 않으므로 이름을 받지 않는다. 받으면 React가 이 화면의
+          모든 transition·드러남 커밋에서 이 상자를 찍었다가(바뀌었을지 모르는 형제라서) 취소하는 View
+          Transition을 연다 — 시트가 떠 있는 동안 늦게 온 분포 하나에 전환이 세 번 열렸다(`distributionsSkeleton`). */}
+      <ViewTransition
+        update={isWide ? ADMIN_VIEW_TRANSITION.resize : 'none'}
+        default="none"
+      >
         <div className={cx(railGutter, css({ pb: '12', minW: '0' }))}>
           <div
             ref={listRef}
