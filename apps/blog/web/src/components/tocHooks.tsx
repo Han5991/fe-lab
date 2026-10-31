@@ -26,11 +26,35 @@ export const scrollToId = ({
   }
 };
 
-interface TOCItem {
-  id: string;
+/**
+ * 제목 글자의 한 조각 — 제목 안 인라인 코드(`` ### `paths`도 끝이 아니다 ``)는 차례에서도 코드 칩으로
+ * 그려야 해서, 글자를 통째 문자열이 아니라 조각으로 읽는다.
+ */
+export interface TocPart {
   text: string;
+  code: boolean;
+}
+
+export interface TOCItem {
+  id: string;
+  parts: TocPart[];
   level: number;
 }
+
+/** 제목의 글자 조각을 순서대로 모은다. 같은 종류가 이어지면 한 조각으로 합친다. */
+const readParts = (heading: Element): TocPart[] => {
+  const parts: TocPart[] = [];
+  const walker = document.createTreeWalker(heading, NodeFilter.SHOW_TEXT);
+  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+    const text = node.textContent ?? '';
+    if (text === '') continue;
+    const code = Boolean(node.parentElement?.closest('code'));
+    const last = parts.at(-1);
+    if (last?.code === code) last.text += text;
+    else parts.push({ text, code });
+  }
+  return parts;
+};
 
 /**
  * 헤딩 목록의 **원본은 DOM**이다 — 마크다운을 렌더한 결과라 이 훅이 소유한
@@ -66,7 +90,7 @@ const readToc = (content: Element | null): TOCItem[] => {
   return Array.from(content.querySelectorAll(TOC_HEADING_SELECTOR))
     .map(header => ({
       id: header.id,
-      text: header.textContent || '',
+      parts: readParts(header),
       level: parseInt(header.tagName.substring(1)),
     }))
     .filter(item => item.id);
@@ -79,8 +103,16 @@ const isSameToc = (a: TOCItem[], b: TOCItem[]): boolean =>
     return (
       other !== undefined &&
       item.id === other.id &&
-      item.text === other.text &&
-      item.level === other.level
+      item.level === other.level &&
+      item.parts.length === other.parts.length &&
+      item.parts.every((part, j) => {
+        const twin = other.parts[j];
+        return (
+          twin !== undefined &&
+          part.text === twin.text &&
+          part.code === twin.code
+        );
+      })
     );
   });
 
@@ -145,7 +177,7 @@ export const useTocHook = () => {
   );
   const [activeId, setActiveId] = useState('');
   // 지금 화면에 들어와 있는 헤딩들의 [첫, 마지막] 인덱스. 데스크톱 차례가
-  // 레일을 **구간**으로 비추는 데 쓴다(아래 두 번째 effect 참고).
+  // 이 **구간**을 틴트 면으로 덮는다(아래 effect 참고).
   const [activeRange, setActiveRange] = useState<[number, number] | null>(null);
 
   // 활성 항목은 **매번 스크롤 위치에서 처음부터 다시 계산**한다.
@@ -171,11 +203,11 @@ export const useTocHook = () => {
       raf = 0;
       const line = window.innerHeight * 0.2;
       // 기준선을 이미 지난 헤딩 중 마지막 것. 하나도 못 지났으면 첫 항목이
-      // 활성이다(글 첫머리에서도 레일이 비어 보이지 않는다).
+      // 활성이다(글 첫머리에서도 차례가 비어 보이지 않는다).
       let current = 0;
       // 동시에, 지금 화면 안에 **들어와 있는** 헤딩들의 범위도 잡는다.
       // 레퍼런스(fumadocs)는 IntersectionObserver로 같은 집합을 구해
-      // 레일을 그 구간만큼 비춘다 — 화면에 보이는 절이 셋이면 셋이 함께
+      // 그 구간만큼 면을 덮는다 — 화면에 헤딩이 셋이면 세 항목이 함께
       // 밝다. 여기서도 같은 걸 스크롤마다 다시 계산할 뿐이라, 예전
       // 누적 Set 방식이 앓던 잔상은 여전히 생길 수 없다.
       let first = -1;
@@ -186,7 +218,7 @@ export const useTocHook = () => {
         const { top, bottom } = el.getBoundingClientRect();
         if (top <= line) current = i;
         // 헤더에 가려지는 구간(0 ~ HEADER_OFFSET)은 "보인다"로 치지 않는다.
-        // 거기 걸친 헤딩까지 세면 아직 눈에 안 들어온 절이 레일에서 먼저
+        // 거기 걸친 헤딩까지 세면 아직 눈에 안 들어온 절이 차례에서 먼저
         // 켜진다.
         if (top >= HEADER_OFFSET && bottom <= window.innerHeight) {
           if (first === -1) first = i;

@@ -14,6 +14,7 @@ import rehypeSlug from 'rehype-slug';
 import { css, cx } from '@blog/styled-system/css';
 
 import { CodeBlock } from '@/src/components/post/CodeBlock';
+import { HEADING_CODE_FONT_SIZE } from '@/src/components/post/inlineCode';
 import { rehypeCodeMeta } from '@/src/components/post/codeMeta';
 import { rehypeDropUnsafe } from '@/src/components/post/rehypeDropUnsafe';
 import { CodeTabs } from '@/src/components/post/markdown/CodeTabs';
@@ -437,9 +438,9 @@ export function PostBody({ content, relativeDir }: PostBodyProps) {
         '& del': { color: 'ink.500' },
         // 제목 안 인라인 코드는 둘러싼 제목 글자를 따른다 — 고정 14px(CodeBlock의 인라인 분기)이면
         // 20px·17px 제목 안에서 코드만 작아진다. 본문 문단 안 코드는 14px 그대로다. 규칙의
-        // 명시도(클래스 + 요소 둘)가 CodeBlock의 단일 클래스를 이긴다. strictTokens 밖 값이라
-        // 대괄호로 적는다(`prefer-token`은 fontSizes를 검사하지 않는다).
-        '& :is(h2, h3, h4) code': { fontSize: '[0.9em]' },
+        // 명시도(클래스 + 요소 둘)가 CodeBlock의 단일 클래스를 이긴다. 비율은 차례 항목 속 코드와
+        // 같은 값이다(`inlineCode.ts`).
+        '& :is(h2, h3, h4) code': { fontSize: HEADING_CODE_FONT_SIZE },
         // 인라인 코드 스타일은 CodeBlock의 인라인 분기가 전담한다.
         // ReactMarkdown의 code 매퍼가 모든 <code>를 CodeBlock으로
         // 보내고 CodeBlock이 항상 클래스를 붙이므로, 여기에

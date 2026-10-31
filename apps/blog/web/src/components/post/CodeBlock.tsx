@@ -25,6 +25,7 @@ import {
   CODE_SURFACE,
 } from './codeChrome';
 import { CopyButton } from './CopyButton';
+import { inlineCodeChip } from './inlineCode';
 import { MermaidLazy } from './MermaidLazy';
 import {
   PRISM_LANGUAGES,
@@ -296,21 +297,11 @@ export function CodeBlock({
     <code
       className={cx(
         className,
-        css({
-          bg: 'paper.100',
+        css(inlineCodeChip, {
           // 본문 안에서도 줄지 않는 14px — 17px 본문 옆에서 mono가 작아 보이는 만큼을 보정한다.
-          // 색은 둘러싼 글(본문·인용·표)을 따른다.
-          color: 'inherit',
-          px: '1.5',
-          py: '0.5',
-          // 인라인 코드는 글줄 안의 작은 요소라 inner 자리다(Astryx Code·Kbd와 같다).
-          rounded: 'inner',
-          fontFamily: 'mono',
           fontSize: 'sm',
-          fontWeight: 'normal',
           whiteSpace: 'pre-wrap',
           wordBreak: 'break-word',
-          overflowWrap: 'anywhere',
         }),
       )}
       {...props}
