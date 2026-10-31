@@ -46,7 +46,9 @@ const NO_ESCAPED_HEX = {
  * 쌓였다 — 토큰이 있다는 것만으로는 막히지 않았다.
  *
  * 쓰는 쪽은 유틸리티 값(`transition: 'colors'`, 기본 시간·곡선은 globalCss가 토큰으로 준다)이나
- * longhand(`transitionProperty` + `transitionDuration`·`transitionTimingFunction` 토큰)다.
+ * longhand(`transitionProperty` + `transitionDuration`·`transitionTimingFunction` 토큰)다. 누름의
+ * 전환(`pressTransition`, panda.config의 상태 이름)도 같은 자리라 함께 본다 — 그 키는 프리셋 파일만 쓰고
+ * (`NO_LOCAL_INTERACTION`), 프리셋 파일 안에서도 이스케이프로 상태 이름을 건너뛰지 못한다.
  * `css()`를 쓰는 파일은 app element뿐이라(styled-system을 여는 레이어가 app뿐 — boundaries) app
  * 블록 하나에만 건다. 템플릿 리터럴도 본다 — Panda는 상수를 끼운 템플릿
  * (`` `[transform ${MS}ms]` ``)도 정적으로 풀어 추출한다.
@@ -55,9 +57,9 @@ const NO_ESCAPED_HEX = {
  */
 const NO_ESCAPED_TRANSITION = {
   selector:
-    'Property:matches([key.name="transition"], [key.value="transition"]) :matches(Literal[value=/^\\[/], TemplateLiteral > TemplateElement[value.raw=/^\\[/])',
+    'Property:matches([key.name=/^(transition|pressTransition)$/], [key.value=/^(transition|pressTransition)$/]) :matches(Literal[value=/^\\[/], TemplateLiteral > TemplateElement[value.raw=/^\\[/])',
   message:
-    "전환 시간·곡선은 토큰입니다. `transition: '[…]'` 대신 `transition: 'colors'` 같은 유틸리티 값이나 `transitionProperty` + `transitionDuration`·`transitionTimingFunction` 토큰을 쓰세요 — 이스케이프는 움직임 줄이기(토큰이 0.01ms로 바꾼다)를 건너뜁니다.",
+    "전환 시간·곡선은 토큰입니다. `transition: '[…]'` 대신 `transition: 'colors'` 같은 유틸리티 값이나 `transitionProperty` + `transitionDuration`·`transitionTimingFunction` 토큰을 쓰세요. `pressTransition`은 상태 이름(`rest`·`held` …)만 받습니다 — 새 모양이 필요하면 panda.config.ts의 `PRESS_TRANSITION`에 상태를 더하세요(누름 요소에 longhand를 겹치면 누름 시간을 덮습니다). 이스케이프는 움직임 줄이기(토큰이 0.01ms로 바꾼다)를 건너뜁니다.",
 } as const;
 
 /**
@@ -66,7 +68,8 @@ const NO_ESCAPED_TRANSITION = {
  * 컴포넌트는 `_hover`에 값만 적는다(터치에서는 그 값이 누르는 동안 켜진다). 막는 것은 같은 뜻의 조건
  * 이름 전부와 그 조건을 선택자로 풀어 적은 키다:
  * - 누름: `_active`·`_groupActive`·`_peerActive`(누름을 따로 적은 사본 — 검색 결과 행과 닫기 버튼이 하나씩
- *   갖고 있었다), `_press`·`_groupPress`·`_pressScale`(프리셋 몫).
+ *   갖고 있었다), `_press`·`_groupPress`·`_pressScale`·`_groupPressScale`(프리셋 몫), 누름의 전환
+ *   `pressTransition`(상태 이름은 프리셋이 짝지어 쓴다 — `'[…]'`·`var()`로 적으면 토큰을 건너뛴다).
  * - 초점: `_focus`·`_focusVisible`(초점 링은 globalCss `:focus-visible` 하나다 — `_focus: { outline: 'none' }`이
  *   그 링을 지웠다), `_groupFocus`·`_groupFocusVisible`·`_groupFocusWithin`·`_groupKeyboardFocus`와 `_peerFocus*`
  *   (그룹·형제의 초점 — 카드의 키보드 초점 틴트는 `cardParts.ts`가 `_groupKeyboardFocus`로 건다).
@@ -83,7 +86,7 @@ const NO_ESCAPED_TRANSITION = {
  * 재평가: 2027-04-25 — 그때까지 잡은 위반이 없으면 내린다(AGENTS.md §5).
  */
 const NO_LOCAL_INTERACTION_NAME =
-  '^_(active|groupActive|peerActive|focus|focusVisible|groupFocus|groupFocusVisible|groupFocusWithin|groupKeyboardFocus|peerFocus|peerFocusVisible|peerFocusWithin|press|groupPress|pressScale|pointerCoarse)$';
+  '^(_(active|groupActive|peerActive|focus|focusVisible|groupFocus|groupFocusVisible|groupFocusWithin|groupKeyboardFocus|peerFocus|peerFocusVisible|peerFocusWithin|press|groupPress|pressScale|groupPressScale|pointerCoarse)|pressTransition)$';
 const NO_LOCAL_INTERACTION_SELECTOR =
   ':(active|focus|focus-visible|hover)([^-\\w]|$)';
 const NO_LOCAL_INTERACTION = {
@@ -98,7 +101,8 @@ const NO_LOCAL_INTERACTION = {
 
 /**
  * NO_LOCAL_INTERACTION의 허용 파일 — 누름·초점 조건을 실제로 쓰는 곳이다.
- * - `interaction.ts`·`cardParts.ts`: 프리셋이 `_press`·`_groupPress`·`_pressScale`·`_groupKeyboardFocus`를 건다.
+ * - `interaction.ts`·`cardParts.ts`: 프리셋이 `_press`·`_groupPress`·`_pressScale`·`_groupPressScale`·
+ *   `_groupKeyboardFocus`와 `pressTransition`을 건다.
  * - `skipLink.ts`: 건너뛰기 링크가 초점을 받으면 화면 안으로 들어온다(`_focus: { transform: 'none' }`).
  *   사이트 셸과 admin 셸이 함께 쓰는 모듈 하나라 셸 파일 전체를 열지 않는다.
  */
