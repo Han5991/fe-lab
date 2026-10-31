@@ -3,7 +3,7 @@ import { css, cx } from '@blog/styled-system/css';
 import type { PostNavItem } from '@blog/content/client';
 import { postPath, resolveThumbnailSrc } from '@blog/content/client';
 import { coverFrameRaw, coverImage } from '@/src/components/blog/cardParts';
-import { pressCard } from '@/src/components/interaction';
+import { pressCardLink } from '@/src/components/interaction';
 import { TransitionLink } from '@/src/components/shared/TransitionLink';
 import { SERIES_PATH } from '@/src/shared/routes';
 import type { SiblingOrder } from '@/src/shared/viewTransitions';
@@ -37,9 +37,10 @@ const grid = css({
 
 // `muted` 면 위의 카드 — 보더 대신 면으로 갈린다(Astryx ClickableCard muted). 카드 전체가 링크 하나다.
 // 두 열에서 한 줄의 칸(li)은 grid가 같은 높이로 늘리니, 카드가 그 높이를 채워야 옆 카드와 면이 맞는다
-// (썸네일 없는 "시리즈 목록" 카드가 썸네일 카드보다 낮게 떠 있었다). 누르는 동안 카드째 99%로 줄고
-// (`pressCard`), hover 면과 같은 전환(common)이 색과 크기를 함께 맡는다.
-const card = css(pressCard, {
+// (썸네일 없는 "시리즈 목록" 카드가 썸네일 카드보다 낮게 떠 있었다). 카드 자신이 링크라 누름은
+// `pressCardLink`다 — 썸네일이 어두워지는 건 `cardParts.ts`의 커버 틀이 그룹(`group`)의 누름을 보고 맡는다.
+// 프리셋이 이 링크의 `::before`를 덮개로 쓰니 다른 `::before`는 달지 않는다.
+const card = css(pressCardLink, {
   display: 'flex',
   alignItems: 'center',
   gap: '3',

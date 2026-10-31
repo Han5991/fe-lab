@@ -9,6 +9,7 @@ import { css, cx } from '@blog/styled-system/css';
 import type { ReactNode } from 'react';
 
 import { headerIconButton, iconButton } from './iconButton';
+import { pressText } from './interaction';
 import { WORDMARK, wordmarkLink } from './wordmark';
 import { railGutter } from './Rail';
 import { SOCIAL_LINKS, ShellLink } from './shellLinks';
@@ -33,9 +34,8 @@ const FOOTER_LINKS = [
   { href: AUTHOR_LINKEDIN, kind: 'external', label: 'LinkedIn' },
 ] as const;
 
-const footerLink = css({
+const footerLink = css(pressText, {
   color: 'ink.700',
-  transition: 'colors',
   _hover: { color: 'ink.950', textDecorationLine: 'underline' },
 });
 

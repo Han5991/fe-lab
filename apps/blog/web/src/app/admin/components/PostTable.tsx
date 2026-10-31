@@ -21,7 +21,7 @@ import {
   truncate,
 } from '@/src/components/admin/adminStyles';
 import { isModifiedClick } from '@/src/components/events';
-import { pressButton } from '@/src/components/interaction';
+import { pressButton, pressText } from '@/src/components/interaction';
 import type { PostStatDetail } from '@/src/hooks/useAdminViews';
 import {
   ADMIN_TRANSITION_TYPE,
@@ -150,6 +150,7 @@ const SORT_SWAP = {
 
 const titleLink = cva({
   base: {
+    ...pressText,
     ...truncate,
     px: '3',
     py: '3',
@@ -165,7 +166,7 @@ const titleLink = cva({
   },
 });
 
-// 글자와 아이콘뿐인 버튼이라 면은 없고, 누르는 동안 98%로 줄어든다(`pressButton`).
+// 글자와 아이콘뿐인 버튼이라 면은 없어도 누름은 `pressButton`이다.
 const sortButton = css.raw({
   ...pressButton,
   display: 'inline-flex',

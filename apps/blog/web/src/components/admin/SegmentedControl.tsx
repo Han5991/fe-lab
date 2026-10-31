@@ -2,6 +2,7 @@
 
 import { useRef, type CSSProperties, type KeyboardEvent } from 'react';
 import { css, cva } from '@blog/styled-system/css';
+import { pressToggle } from '@/src/components/interaction';
 
 interface SegmentedOption<T extends string> {
   value: T;
@@ -49,8 +50,11 @@ const indicator = css({
   transition: 'transform',
 });
 
+// 누름은 토글의 `pressToggle`이다. 표식(`indicator`)은 칸의 자손이 아니라 형제 `span`이라 칸이 옅어져도
+// 그대로다.
 const segment = cva({
   base: {
+    ...pressToggle,
     // 표식 위에 글자를 그린다.
     pos: 'relative',
     display: 'inline-flex',
@@ -62,7 +66,6 @@ const segment = cva({
     textStyle: 'label',
     whiteSpace: 'nowrap',
     cursor: 'pointer',
-    transition: 'colors',
   },
   variants: {
     checked: {

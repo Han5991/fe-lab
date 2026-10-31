@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { css } from '@blog/styled-system/css';
 import { useTocHook, scrollToId } from '@/src/components/tocHooks';
 import { isModifiedClick } from '@/src/components/events';
+import { pressText } from '@/src/components/interaction';
 import { siteHeaderStyle } from '@/src/components/siteHeader';
 
 /**
@@ -384,19 +385,19 @@ export const TOC = () => {
                   // 밝힘은 data 속성으로 건다 — 색을 `isLit ? … : …`로 고르면 Panda가 그 값을
                   // 빌드 때 따라가지 못하고(useTocHook의 런타임 값) 한쪽 색만 추출한다.
                   data-lit={isLit || undefined}
-                  className={css({
+                  className={css(pressText, {
                     display: 'block',
                     py: '1',
                     pr: '2',
                     cursor: 'pointer',
                     textStyle: 'body',
                     color: 'ink.700',
-                    '&[data-lit]': { color: 'accent.solid' },
                     // 활성 표시는 **색과 레일만** 바꾼다. 굵기를 올리면 글자 폭이 늘어 항목이 한 줄에서
                     // 두 줄로 접히고, 그 아래 항목이 전부 20px씩 밀린다(실측: 목록 높이 917 → 937px).
                     // 스크롤할 때마다 차례가 들썩이는 데다, 레일 좌표가 clip-path 전환 도중에 바뀌어
-                    // 하이라이트가 엉뚱한 자리에 그려진다.
-                    transition: 'colors',
+                    // 하이라이트가 엉뚱한 자리에 그려진다. 글자 색의 전환은 `pressText`가 든다 — hover와
+                    // 같은 fast·standard라 위 레일·점과 한 박자다.
+                    '&[data-lit]': { color: 'accent.solid' },
                     _hover: { color: 'ink.950' },
                   })}
                   // 레일이 서는 자리(x)에서 한 칸 더 띄운다 — 깊을수록 레일과 함께 들어간다.

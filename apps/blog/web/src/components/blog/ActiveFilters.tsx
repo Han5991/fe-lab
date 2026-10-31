@@ -1,6 +1,7 @@
 'use client';
 
 import { css } from '@blog/styled-system/css';
+import { pressButton } from '@/src/components/interaction';
 import { tagBadge } from '@/src/components/tagBadge';
 
 interface ActiveFiltersProps {
@@ -25,8 +26,9 @@ const tagButton = css(tagBadge.raw({ interactive: true }), {
 
 const removeIcon = css({ fontSize: '2xs', color: 'ink.700' });
 
-// 독립 텍스트 버튼 — hover에 밑줄(색 표의 링크·버튼 hover 규칙).
-const clearAll = css({
+// 독립 텍스트 버튼 — hover에 밑줄(색 표의 링크·버튼 hover 규칙). 글자뿐이어도 버튼이라 누름은
+// `pressButton`이다.
+const clearAll = css(pressButton, {
   textStyle: 'supporting',
   fontWeight: 'medium',
   color: 'ink.950',
@@ -34,7 +36,6 @@ const clearAll = css({
   textDecorationLine: 'underline',
   textDecorationColor: 'transparent',
   textUnderlineOffset: '[2px]',
-  transition: 'colors',
   _hover: { textDecorationColor: 'currentColor' },
 });
 

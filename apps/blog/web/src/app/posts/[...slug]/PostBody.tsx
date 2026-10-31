@@ -30,6 +30,7 @@ import {
   DiagramEdgeTag,
 } from '@/src/components/diagram';
 import { inlineLink } from '@/src/components/inlineLink';
+import { pressToggle } from '@/src/components/interaction';
 import { HEADER_OFFSET } from '@/src/components/post/headerOffset';
 import { HEADING_COMPONENTS } from '@/src/components/post/markdownHeadings';
 import { isMarkdownTag } from '@/src/components/post/markdownTag';
@@ -467,6 +468,7 @@ export function PostBody({ content, relativeDir }: PostBodyProps) {
           px: '4',
         },
         '& details > summary': {
+          ...pressToggle,
           display: 'flex',
           alignItems: 'center',
           gap: '2',
@@ -477,7 +479,6 @@ export function PostBody({ content, relativeDir }: PostBodyProps) {
           color: 'ink.600',
           fontSize: 'sm',
           fontWeight: 'medium',
-          transition: 'colors',
           _hover: { color: 'ink.900' },
           // Safari의 기본 삼각형 마커 제거 — 아래 ::before로 대체한다
           '&::-webkit-details-marker': { display: 'none' },

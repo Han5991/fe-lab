@@ -83,6 +83,77 @@ const FOCUS_RING = {
   borderRadius: 'inner',
 } as const;
 
+// 누름의 전환 — 아래 `pressTransition` 유틸리티의 상태마다 속성별 시간을 나눠 적은 `transition` 한 벌이다
+// (blog-design-system 스킬 "인터랙션 상태"). Panda의 `transition: 'common'`은 시간·곡선이 요소에 하나라 색과 누름을
+// 가르지 못하고, `transition: '[…]'`는 lint가 막는다(eslint.config.mts `NO_ESCAPED_TRANSITION`).
+// - CSS 전환은 **도착 상태**의 `transition`을 쓴다 — 누름 조건의 규칙이 진입(`held` — press)을, 평상시 규칙이
+//   놓음(`rest` — release)을 든다. 그래서 놓은 뒤에도 눌린 모양이 release 동안 남는다.
+// - 색은 hover 박자 그대로다 — globalCss가 요소마다 정하는 `--transition-duration`·`--transition-easing`(fast·
+//   standard)을 읽으므로(`HOVER_TIMING`), 색의 박자를 정하는 곳은 여전히 그 한 곳이다. 큰 면(카드)이 들어가는
+//   크기·커버 밝기도 이 박자를 읽는다(`cardHeld`·`coverHeld`). 같은 요소에 `transitionDuration` 같은 longhand
+//   유틸리티를 겹치면 그 원자가 뒤에 와 누름 시간까지 덮는다 — 누름 요소에는 `transition*`을 적지 않는다.
+// - 속성은 Panda `transition: 'colors'`의 일곱에 투명도·크기를 더한 것이다. 누름이 바꾸는 속성만 고른 목록이라
+//   `common`의 나머지(그림자·필터·backdrop-filter)는 일부러 뺐다 — 누름 요소에는 그 hover가 없다. hover가 다른
+//   속성을 옮기는 요소는 그 속성을 더한 상태를 따로 둔다(`indent*` — 소개 페이지 목록 행의 `padding-left`). 모든
+//   목록에 넣지 않는 이유: 반응형 여백(헤더 내비의 `md` 여백)까지 창 크기를 바꿀 때 한쪽만 미끄러진다.
+// - 시간과 곡선은 같은 이름의 토큰 한 쌍이다(`durations.press` + `easings.press` …) — 한 움직임의 길이와 모양.
+// 상태 이름은 `interaction.ts`·`cardParts.ts`의 프리셋만 쓴다(eslint.config.mts `NO_LOCAL_INTERACTION`).
+const PRESS_COLOR_PROPERTIES = [
+  'color',
+  'background-color',
+  'border-color',
+  'outline-color',
+  'text-decoration-color',
+  'fill',
+  'stroke',
+];
+
+type PressMotion = 'press' | 'release' | 'spring';
+type PressTiming = (motion: PressMotion) => string;
+
+/** 색 hover와 같은 박자 — globalCss가 요소마다 정하는 변수를 읽는다(위 주석). */
+const HOVER_TIMING = 'var(--transition-duration) var(--transition-easing)';
+
+const pressList = (
+  opacity: string,
+  transform: string,
+  hoverProperties: readonly string[] = [],
+) =>
+  [
+    ...[...PRESS_COLOR_PROPERTIES, ...hoverProperties].map(
+      property => `${property} ${HOVER_TIMING}`,
+    ),
+    `opacity ${opacity}`,
+    `transform ${transform}`,
+  ].join(', ');
+
+const PRESS_TRANSITION = {
+  /** 평상시 — 놓으면 투명도·크기가 release로 돌아온다. */
+  rest: timing => pressList(timing('release'), timing('release')),
+  /** 누르는 동안 — 투명도·크기가 press로 바로 닿는다. */
+  held: timing => pressList(timing('press'), timing('press')),
+  /** 크기가 줄어드는 요소(버튼·칩·카드·상자 링크)의 평상시 — 투명도는 release, 크기는 spring으로 돌아온다. */
+  springRest: timing => pressList(timing('release'), timing('spring')),
+  /**
+   * 카드를 누르는 동안 — 큰 면의 크기는 색과 같은 hover 박자로 들어간다. press(40ms)로는 752px 카드가 한쪽
+   * 11px을 두 프레임에 움직여 뚝 떨어져 보였다(실측).
+   */
+  cardHeld: timing => pressList(timing('press'), HOVER_TIMING),
+  /** 카드 커버 이미지의 밝기 — 평상시(놓음)와 누르는 동안(카드 크기와 같은 hover 박자). */
+  coverRest: timing => `filter ${timing('release')}`,
+  coverHeld: () => `filter ${HOVER_TIMING}`,
+  /** hover가 왼쪽 여백을 옮기는 행 — `rest`·`held`에 그 여백을 색과 같은 hover 박자로 더한다. */
+  indentRest: timing =>
+    pressList(timing('release'), timing('release'), ['padding-left']),
+  indentHeld: timing =>
+    pressList(timing('press'), timing('press'), ['padding-left']),
+} satisfies Record<string, (timing: PressTiming) => string>;
+
+type PressTransitionState = keyof typeof PRESS_TRANSITION;
+
+const isPressTransitionState = (value: string): value is PressTransitionState =>
+  Object.hasOwn(PRESS_TRANSITION, value);
+
 export default defineConfig({
   // Panda 기본 프리셋 + 블로그 프리셋(@blog/preset — 블로그 소유, 컴포넌트 없는 설정 전용 패키지).
   // lab 디자인 시스템(@design-system/ui)은 걸지 않는다(lab 토큰·레시피가 실린다).
@@ -137,10 +208,12 @@ export default defineConfig({
       // - `_hover` · `_groupHover`: hover가 되는 기기에서는 마우스를 올린 동안, 안 되는 기기(터치)에서는
       //   누르는 동안이다. 터치는 탭 뒤에도 :hover가 남아(sticky hover) hover 면이 다음 탭까지 붙어 있었다.
       //   Panda preflight가 브라우저의 탭 하이라이트를 지우므로(`-webkit-tap-highlight-color`) 터치의 누름
-      //   피드백이 곧 이 hover 모양이다 — 면·색·밑줄은 `_hover`에 한 번만 적는다.
-      // - `_press` · `_groupPress`: 모든 포인터에서 누르는 동안. hover와 다른 모양이 필요한 자리만 쓴다.
-      // - `_pressScale`: 누르는 동안의 **크기**. 마우스류(hover·fine)에서만 — 터치의 :active는 스크롤을
-      //   시작하는 손가락에도 칠해진다(Astryx와 같은 판단). disabled는 뺀다.
+      //   피드백은 이 hover 모양과 누름 프리셋의 투명도·크기(`interaction.ts`)다 — 면·색·밑줄은 `_hover`에 한 번만 적는다.
+      // - `_press` · `_groupPress`: 모든 포인터에서 누르는 동안 — 누름의 투명도·크기·덮개와 진입 전환(press), hover와
+      //   다른 모양이 필요한 자리(카드 커버 hairline·밝기, 검색 결과 행)가 쓴다. `_press`는 disabled를 뺀다. 크기도
+      //   터치에 준다(2026-10-31 사용자 결정 — 예전엔 마우스류 전용 조건 `_pressScale`이 있었다). 터치의 :active는
+      //   스크롤을 시작하는 손가락에도 칠해질 수 있다 — Android Chrome은 실기기에서 움찔거리지 않았고 iOS Safari는
+      //   확인 전이다(스킬 "실기기 확인").
       // - `_groupKeyboardFocus`: 그룹(카드) 안이나 그룹 자신에 **키보드 초점**(`:focus-visible`)이 있는 동안.
       //   `:focus-within`이 아닌 이유는 마우스·터치로 누른 링크도 초점을 받아, 터치에서 탭 뒤에 카드
       //   틴트가 남기 때문이다(`_hover`를 터치에서 누르는 동안으로 바꾼 것과 같은 문제). 링크가 그룹 자신인
@@ -164,10 +237,33 @@ export default defineConfig({
       groupPress: '.group:is(:active, [data-active]) &',
       groupKeyboardFocus:
         '.group:is(:focus-visible, :has(:focus-visible), [data-focus-visible]) &',
-      pressScale: {
-        '@media (hover: hover) and (pointer: fine)': {
-          '&:is(:active, [data-active]):not(:disabled, [aria-disabled=true])':
-            '@slot',
+      // `linear()` 곡선을 아는 브라우저 — 블로그 프리셋의 `easings.spring`이 이 조건에서만 스프링이고, 그 밖에서는
+      // release 곡선이다(blog-preset.ts의 그 토큰 주석).
+      supportsLinearEasing:
+        '@supports (transition-timing-function: linear(0, 1))',
+    },
+  },
+  // 누름의 전환(위 `PRESS_TRANSITION`) — 값은 상태 이름이고, transform이 토큰 변수로 `transition` 한 벌을 쓴다.
+  // 상태 밖의 값(CSS 전역값 등)은 preset-base의 `transition`처럼 그대로 넘긴다.
+  utilities: {
+    extend: {
+      pressTransition: {
+        className: 'prs-trs',
+        group: 'Transition',
+        values: Object.keys(PRESS_TRANSITION),
+        transform: (value: string, { token }) => {
+          if (!isPressTransitionState(value)) return { transition: value };
+          const timing: PressTiming = motion => {
+            const duration = token(`durations.${motion}`);
+            const easing = token(`easings.${motion}`);
+            if (duration === undefined || easing === undefined) {
+              throw new Error(
+                `pressTransition: durations.${motion}·easings.${motion} 토큰이 없다`,
+              );
+            }
+            return `${duration} ${easing}`;
+          };
+          return { transition: PRESS_TRANSITION[value](timing) };
         },
       },
     },
