@@ -68,12 +68,12 @@ const NO_ESCAPED_TRANSITION = {
  * 컴포넌트는 `_hover`에 값만 적는다(터치에서는 그 값이 누르는 동안 켜진다). 막는 것은 같은 뜻의 조건
  * 이름 전부와 그 조건을 선택자로 풀어 적은 키다:
  * - 누름: `_active`·`_groupActive`·`_peerActive`(누름을 따로 적은 사본 — 검색 결과 행과 닫기 버튼이 하나씩
- *   갖고 있었다), `_press`·`_groupPress`·`_pressScale`·`_groupPressScale`(프리셋 몫), 누름의 전환
+ *   갖고 있었다), `_press`·`_groupPress`(프리셋 몫), 누름의 전환
  *   `pressTransition`(상태 이름은 프리셋이 짝지어 쓴다 — `'[…]'`·`var()`로 적으면 토큰을 건너뛴다).
  * - 초점: `_focus`·`_focusVisible`(초점 링은 globalCss `:focus-visible` 하나다 — `_focus: { outline: 'none' }`이
  *   그 링을 지웠다), `_groupFocus`·`_groupFocusVisible`·`_groupFocusWithin`·`_groupKeyboardFocus`와 `_peerFocus*`
  *   (그룹·형제의 초점 — 카드의 키보드 초점 틴트는 `cardParts.ts`가 `_groupKeyboardFocus`로 건다).
- * - 입력 종류: `_pointerCoarse`(누름 크기가 마우스류에서만 도는 것은 `_pressScale`이 정한다).
+ * - 입력 종류: `_pointerCoarse`(입력 종류로 누름을 가르는 것은 프리셋 몫이다).
  * - 선택자 키: `'&:active'`·`'&:focus'`·`'&:focus-visible'`·`'&:hover'`와 `` [`&:active`] `` 같은 템플릿 리터럴 키.
  *   `:hover`를 선택자 문자열에 직접 적으면 Panda 조건을 거치지 않아 터치에서 탭 뒤에도 hover가 남는다
  *   (글 본문 표의 `'& tr:hover td'`가 그랬다).
@@ -86,7 +86,7 @@ const NO_ESCAPED_TRANSITION = {
  * 재평가: 2027-04-25 — 그때까지 잡은 위반이 없으면 내린다(AGENTS.md §5).
  */
 const NO_LOCAL_INTERACTION_NAME =
-  '^(_(active|groupActive|peerActive|focus|focusVisible|groupFocus|groupFocusVisible|groupFocusWithin|groupKeyboardFocus|peerFocus|peerFocusVisible|peerFocusWithin|press|groupPress|pressScale|groupPressScale|pointerCoarse)|pressTransition)$';
+  '^(_(active|groupActive|peerActive|focus|focusVisible|groupFocus|groupFocusVisible|groupFocusWithin|groupKeyboardFocus|peerFocus|peerFocusVisible|peerFocusWithin|press|groupPress|pointerCoarse)|pressTransition)$';
 const NO_LOCAL_INTERACTION_SELECTOR =
   ':(active|focus|focus-visible|hover)([^-\\w]|$)';
 const NO_LOCAL_INTERACTION = {
@@ -101,8 +101,8 @@ const NO_LOCAL_INTERACTION = {
 
 /**
  * NO_LOCAL_INTERACTION의 허용 파일 — 누름·초점 조건을 실제로 쓰는 곳이다.
- * - `interaction.ts`·`cardParts.ts`: 프리셋이 `_press`·`_groupPress`·`_pressScale`·`_groupPressScale`·
- *   `_groupKeyboardFocus`와 `pressTransition`을 건다.
+ * - `interaction.ts`·`cardParts.ts`: 프리셋이 `_press`·`_groupPress`·`_groupKeyboardFocus`와
+ *   `pressTransition`을 건다.
  * - `skipLink.ts`: 건너뛰기 링크가 초점을 받으면 화면 안으로 들어온다(`_focus: { transform: 'none' }`).
  *   사이트 셸과 admin 셸이 함께 쓰는 모듈 하나라 셸 파일 전체를 열지 않는다.
  */

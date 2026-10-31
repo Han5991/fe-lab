@@ -2,20 +2,24 @@ import { css } from '@blog/styled-system/css';
 
 /**
  * 누르는 모양의 프리셋 — 인터랙션 상태의 단일 출처(blog-design-system 스킬 "인터랙션 상태").
- * 상태의 **때**는 panda.config의 조건(`_hover`·`_press`·`_pressScale`)이 정하고, 이 파일은 그 조건에
+ * 상태의 **때**는 panda.config의 조건(`_hover`·`_press`·`_groupPress`)이 정하고, 이 파일은 그 조건에
  * **무엇**을 걸지 정한다. 면·색처럼 요소마다 다른 값은 레시피·호출부가 `_hover`에 적는다 — 터치에서는
  * `_hover`가 누르는 동안이라, 그 한 줄이 마우스의 hover와 터치의 누름 면을 함께 맡는다. 누름의 투명도·크기는
  * 이 파일의 프리셋이 더한다(수치와 근거는 스킬 — iOS 하이라이트).
  *
  * - 누르면 투명도·크기가 바로 바뀌고 놓으면 천천히 돌아온다. 전환은 속성마다 시간을 나눠 적은 `pressTransition`이다 —
- *   색은 hover와 같은 fast·standard, 투명도·크기는 누를 때 `press`(40ms)·놓을 때 `release`(320ms), 카드
- *   크기의 놓음만 `spring`이다. 누름 조건의 규칙이 진입을, 평상시 규칙이 놓음을 든다(CSS는 도착 상태의
- *   `transition`을 쓴다 — panda.config의 `PRESS_TRANSITION`). 쓰는 쪽이 `transition`·`transitionDuration`
- *   같은 전환 유틸리티를 다시 적으면 목록이 통째로 바뀌거나 longhand가 누름 시간까지 덮는다.
+ *   색은 hover와 같은 fast·standard, 투명도·크기는 누를 때 `press`(40ms)·놓을 때 `release`(320ms)이고, 크기가
+ *   줄어드는 요소는 놓을 때 크기만 `spring`으로 살짝 튀었다 돌아온다. 누름 조건의 규칙이 진입을, 평상시 규칙이
+ *   놓음을 든다(CSS는 도착 상태의 `transition`을 쓴다 — panda.config의 `PRESS_TRANSITION`). 쓰는 쪽이
+ *   `transition`·`transitionDuration` 같은 전환 유틸리티를 다시 적으면 목록이 통째로 바뀌거나 longhand가 누름 시간까지 덮는다.
  * - 투명도는 종류로 가른다 — 링크는 0.3, 버튼과 토글은 0.5. 글자는 면이 없어 글자가 신호의 전부라 사라지지
- *   않는 선에서 깊게, 면은 옅어지면 지면색에 가까워져 얕게 잡았다. 투명도는 모든 포인터(`_press`)에서다.
- * - 크기는 마우스류 포인터(`_pressScale`)에서만 줄어든다 — 버튼 96%, 카드 97%. 토글 칸은 칸 뒤에서 미끄러지는
- *   표식 면과 어긋나고, 인라인 링크는 transform이 걸리지 않아(비대체 인라인 요소) 크기가 없다.
+ *   않는 선에서 깊게, 면은 옅어지면 지면색에 가까워져 얕게 잡았다.
+ * - 크기는 버튼 94%, 상자로 그린 링크(헤더 내비·워드마크)와 켜고 끄는 칩 96%, 카드 97%다. 보기 토글 칸·탭은 칸
+ *   뒤에서 미끄러지는 표식 면과 어긋나고, 인라인 링크는 transform이 걸리지 않아(비대체 인라인 요소) 크기가 없다.
+ * - 투명도·크기 모두 터치에도 준다(2026-10-31 사용자 결정). 터치의 `:active`는 스크롤을 시작하는 손가락에도
+ *   칠해질 수 있다 — 스킬 "실기기 확인 전인 것".
+ * - 줄어드는 요소는 누르는 동안 덮개(`::before`)를 넓혀 줄어든 가장자리를 덮는다(`BLEED_INSET`). 떠 있는 버튼(98%)과
+ *   켜고 끄는 칩은 예외다(각 프리셋 주석).
  * - 움직임 줄이기는 시간 토큰이 맡는다(fast·press·release·spring이 0.01ms가 된다) — 투명도·크기는 잔상 없이
  *   바로 바뀐다.
  *
@@ -28,12 +32,57 @@ import { css } from '@blog/styled-system/css';
 const PRESS_OPACITY = { link: '0.3', control: '0.5' } as const;
 
 /**
+ * 줄어든 요소의 가장자리를 덮는 덮개의 넓이 — 요소가 줄면 가장자리가 포인터 밑에서 빠지고, 거기서 떼면 click이
+ * 그 요소가 아니라 공통 조상으로 가서 아무 일도 일어나지 않는다. 누르는 동안만 덮개를 넓힌다 — 투명하고 절대
+ * 위치라 배치는 움직이지 않는다. 넓이는 크기마다 다르다: 줄어드는 몫을 줄어든 상자 기준으로 잰 값(94% → 3.19%,
+ * 96% → 2.08%, 97% → 1.55%)에 여유를 더하고, `inset`의 %는 보더 안쪽(padding box) 기준이라 1px 보더
+ * (`forcedColorsEdge`)를 가진 버튼은 1px을 더 뺀다. 값은 계산하지 않고 적는다 — Panda는 계산한 값을 정적으로
+ * 뽑지 못하고(`toFixed`는 CSS를 통째로 빠뜨린다), 소수 연산은 `-2.0000000000000013%` 같은 값을 낸다.
+ */
+const BLEED_INSET = {
+  button: '[calc(-3.5% - 1px)]',
+  box: '[-2.5%]',
+  card: '[-2%]',
+} as const;
+
+/** 덮개 상자 — 줄어드는 요소 자신의 `::before`. 누르는 동안 요소에 transform이 있어 요소가 덮개의 기준 상자가 된다. */
+const BUTTON_BLEED = css.raw({
+  content: '""',
+  pos: 'absolute',
+  inset: BLEED_INSET.button,
+});
+const BOX_BLEED = css.raw({
+  content: '""',
+  pos: 'absolute',
+  inset: BLEED_INSET.box,
+});
+
+/** 카드의 덮개 넓이 — 글 카드는 제목 링크의 덮개(`::after`, `cardParts.ts`)를, 카드 자신이 링크인 카드는 `::before`를 넓힌다. */
+export const pressCardBleed = css.raw({ inset: BLEED_INSET.card });
+const CARD_BLEED = css.raw({
+  content: '""',
+  pos: 'absolute',
+  ...pressCardBleed,
+});
+
+/**
  * 링크의 누름 — 누르는 동안 투명도 0.3이고 크기는 그대로다. 같은 요소의 투명도 hover(워드마크 0.7)도 이 전환을
  * 타서 들고 날 때 release다 — 놓음과 hover가 같은 상태(`:hover:not(:active)`)에 도착해 가를 선택자가 없다.
  */
 export const pressText = css.raw({
   pressTransition: 'rest',
   _press: { opacity: PRESS_OPACITY.link, pressTransition: 'held' },
+});
+
+/** 상자로 그린 링크(헤더 내비·워드마크)의 누름 — `pressText`에 96%를 더한다(크기는 놓을 때 spring). */
+export const pressTextBox = css.raw({
+  pressTransition: 'springRest',
+  _press: {
+    opacity: PRESS_OPACITY.link,
+    transform: 'scale(0.96)',
+    pressTransition: 'held',
+    _before: BOX_BLEED,
+  },
 });
 
 /**
@@ -67,17 +116,37 @@ export const pressToggle = css.raw({
   _press: { opacity: PRESS_OPACITY.control, pressTransition: 'held' },
 });
 
-/** 버튼의 누름 — 투명도 0.5에 마우스로는 96%까지 줄어든다. */
-export const pressButton = css.raw(pressToggle, {
-  _pressScale: { transform: 'scale(0.96)' },
-  // `_press`·`_pressScale`이 비활성의 누름을 이미 뺐다 — 여기서는 비활성의 모양(투명도 .5·커서)만 준다. 값은
-  // 누름 투명도와 같지만 뜻이 다르다(누를 수 없음). 비활성으로 바뀌는 투명도도 놓음(release)을 탄다.
+/**
+ * 켜고 끄는 칩의 누름 — 혼자 선 pill이라 `pressToggle`에 96%를 더한다(크기는 놓을 때 spring). 덮개는 두지 않는다 —
+ * 칩 면은 긴 이름을 말줄임하려고 `overflow: hidden`이라(`chip.ts`) 덮개가 면에서 잘린다. 그래서 마우스로 칩의 양
+ * 끝 2%를 누르고 움직이지 않고 떼면 켜지지 않는다(폭 82~255px 칩에서 1.6~5.1px 실측).
+ */
+export const pressToggleChip = css.raw({
+  pressTransition: 'springRest',
+  _press: {
+    opacity: PRESS_OPACITY.control,
+    transform: 'scale(0.96)',
+    pressTransition: 'held',
+  },
+});
+
+/** 버튼의 누름 — 투명도 0.5에 94%까지 줄고, 놓으면 크기가 spring으로 살짝 튀었다 돌아온다. */
+export const pressButton = css.raw({
+  pressTransition: 'springRest',
+  _press: {
+    opacity: PRESS_OPACITY.control,
+    transform: 'scale(0.94)',
+    pressTransition: 'held',
+    _before: BUTTON_BLEED,
+  },
+  // `_press`가 비활성의 누름을 이미 뺐다 — 여기서는 비활성의 모양(투명도 .5·커서)만 준다. 값은 누름 투명도와
+  // 같지만 뜻이 다르다(누를 수 없음). 비활성으로 바뀌는 투명도도 놓음(release)을 탄다.
   _disabled: { opacity: '0.5', cursor: 'not-allowed' },
 });
 
 /**
- * 떠 있는 버튼(FAB)의 누름 — 옛 누름(마우스 98%·fast, 투명도 없음)을 지킨다. 둘 다 누른 뒤의 모양이 버튼의 쉬는
- * 모양에 묶여 있다.
+ * 떠 있는 버튼(FAB)의 누름 — 옛 누름(98%·fast, 투명도 없음)을 지킨다. 둘 다 누른 뒤의 모양이 버튼의 쉬는 모양에
+ * 묶여 있다.
  * - 맨 위로: 등장(`@starting-style`)도 그 요소의 평상시 `transition`을 타서, `pressButton`을 주면 등장이 fast에서
  *   release(320ms, 느린 출발)로 바뀐다.
  * - 목차 열기: 누르면 바텀시트가 버튼 자리에서 펼쳐지는데, 시트의 첫 모양(`face`)은 쉬는 버튼의 사본(투명도 1·
@@ -85,38 +154,28 @@ export const pressButton = css.raw(pressToggle, {
  */
 export const pressFab = css.raw({
   transition: 'common',
-  _pressScale: { transform: 'scale(0.98)' },
+  _press: { transform: 'scale(0.98)' },
 });
 
 /**
- * 글 카드 뿌리의 누름 — 마우스로 누르는 동안 카드가 97%로 줄고, 놓으면 `spring`(520ms — 202ms에 100.5%까지
- * 갔다 가라앉는다)으로 돌아온다. 카드는 투명도를 바꾸지 않는다 — 커버 이미지가 어두워지는 것(`cardParts.ts`)이 대신한다.
- * 버튼(96%)보다 얕은 건 상자가 커서다(800px 카드면 한쪽 12px). 카드는 글 상세로 이어지는 공유 요소(View
+ * 글 카드 뿌리의 누름 — 누르는 동안 카드가 97%로 줄고, 놓으면 `spring`(520ms — 202ms에 100.5%까지 갔다
+ * 가라앉는다)으로 돌아온다. 카드는 투명도를 바꾸지 않는다 — 커버 이미지가 어두워지는 것(`cardParts.ts`)이 대신한다.
+ * 버튼(94%)보다 얕은 건 상자가 커서다(800px 카드면 한쪽 12px). 카드는 글 상세로 이어지는 공유 요소(View
  * Transition)라 클릭 순간에 줄어 있어도 전환을 해치지 않는다 — 전환 그룹은 조상의 transform을 그룹
  * transform으로 받아 눌린 모양에서 이어 모핑하고, 스냅샷의 크기(`old`의 width·height)는 레이아웃 크기
- * 그대로다(Chrome 실측은 99%에서 — 4초로 늘린 해제 전환을 걸어 99.7%인 채 전환을 시작해도 같았다). 커버
- * hairline·틴트·밝기와 덮개 넓히기는 `cardParts.ts`다.
+ * 그대로다(Chrome 실측 — 99%에서). 커버 hairline·틴트·밝기와 제목 링크 덮개는 `cardParts.ts`다.
  */
 export const pressCard = css.raw({
-  pressTransition: 'cardRest',
-  _pressScale: { transform: 'scale(0.97)', pressTransition: 'held' },
+  pressTransition: 'springRest',
+  _press: { transform: 'scale(0.97)', pressTransition: 'held' },
 });
-
-/**
- * 줄어든 카드의 가장자리를 덮는 덮개의 넓이 — 카드가 줄면(`pressCard` 97%) 가장자리 1.5%가 포인터 밑에서 빠지고,
- * 거기서 떼면 click이 링크가 아니라 공통 조상으로 가서 이동하지 않는다. 누르는 동안만 덮개를 사방 2%(1.5% + 여유
- * 0.5%p) 넓혀 줄어든 만큼 덮는다 — 투명하고 절대 위치라 배치는 움직이지 않는다. 값은 계산하지 않고 적는다 — Panda는
- * 계산한 값을 정적으로 뽑지 못하고(`toFixed`는 CSS를 통째로 빠뜨린다), 소수 연산은 `-2.0000000000000013%`를 낸다.
- * 카드 뿌리 안의 제목 링크 덮개(`cardParts.ts`)와 아래 `pressCardLink`가 쓴다.
- */
-export const pressBleed = css.raw({ inset: '[-2%]' });
 
 /**
  * 카드 자신이 링크인 카드(글 하단 이전·다음, admin 상세 분석 카드)의 누름 — `pressCard`에 링크 자신의 `::before`
- * 덮개(`pressBleed`)를 더한다. 누르는 동안 링크에 transform이 있어 링크가 덮개의 기준 상자가 된다.
+ * 덮개를 더한다.
  */
 export const pressCardLink = css.raw(pressCard, {
-  _pressScale: { _before: { content: '""', pos: 'absolute', ...pressBleed } },
+  _press: { _before: CARD_BLEED },
 });
 
 /**

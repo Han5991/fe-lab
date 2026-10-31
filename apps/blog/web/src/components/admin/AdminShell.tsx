@@ -14,7 +14,7 @@ import { ADMIN_VIEW_TRANSITION } from '@/src/shared/adminViewTransitions';
 import { useAdminLogout } from '@/src/hooks/useAdminLogout';
 import { actionButton } from '../actionButton';
 import { iconButton } from '../iconButton';
-import { pressText } from '../interaction';
+import { pressTextBox } from '../interaction';
 import { railGutter } from '../Rail';
 import { siteHeaderStyle } from '../siteHeader';
 import { MAIN_ID, skipLink } from '../skipLink';
@@ -48,7 +48,7 @@ function currentNavHref(pathname: string): string | undefined {
 
 // 내비 항목은 사이트 헤더 내비(NavLinks)와 같은 Astryx TopNavItem 모양이다 — 위아래 6 · 좌우 12
 // (md 미만 8), element 라운드, label. 현재 위치는 본문 잉크 + semibold.
-const navLink = css.raw(pressText, {
+const navLink = css.raw(pressTextBox, {
   display: 'inline-flex',
   alignItems: 'center',
   px: { base: '2', md: '3' },

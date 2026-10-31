@@ -129,8 +129,8 @@ const PRESS_TRANSITION = {
   rest: timing => pressList(timing('release'), timing('release')),
   /** 누르는 동안 — 투명도·크기가 press로 바로 닿는다. */
   held: timing => pressList(timing('press'), timing('press')),
-  /** 카드의 평상시 — 크기가 spring으로 돌아온다(카드는 투명도를 바꾸지 않는다). */
-  cardRest: timing => pressList(timing('release'), timing('spring')),
+  /** 크기가 줄어드는 요소(버튼·칩·카드·상자 링크)의 평상시 — 투명도는 release, 크기는 spring으로 돌아온다. */
+  springRest: timing => pressList(timing('release'), timing('spring')),
   /** 카드 커버 이미지의 밝기 — 평상시(놓음)와 누르는 동안(진입). */
   coverRest: timing => `filter ${timing('release')}`,
   coverHeld: timing => `filter ${timing('press')}`,
@@ -200,13 +200,11 @@ export default defineConfig({
       // - `_hover` · `_groupHover`: hover가 되는 기기에서는 마우스를 올린 동안, 안 되는 기기(터치)에서는
       //   누르는 동안이다. 터치는 탭 뒤에도 :hover가 남아(sticky hover) hover 면이 다음 탭까지 붙어 있었다.
       //   Panda preflight가 브라우저의 탭 하이라이트를 지우므로(`-webkit-tap-highlight-color`) 터치의 누름
-      //   피드백은 이 hover 모양과 누름 프리셋의 투명도(`interaction.ts`)다 — 면·색·밑줄은 `_hover`에 한 번만 적는다.
-      // - `_press` · `_groupPress`: 모든 포인터에서 누르는 동안. 누름의 투명도와 진입 전환(press), hover와 다른
-      //   모양이 필요한 자리(카드 커버 hairline·검색 결과 행)가 쓴다. `_press`는 disabled를 뺀다.
-      // - `_pressScale`: 누르는 동안의 **크기**. 마우스류(hover·fine)에서만 — 터치의 :active는 스크롤을
-      //   시작하는 손가락에도 칠해진다(Astryx와 같은 판단). 투명도는 그래도 터치에 준다(`_press`). disabled는 뺀다.
-      // - `_groupPressScale`: 그룹(카드)을 마우스류로 누르는 동안 — `_pressScale`의 그룹판. 카드 커버의 밝기와
-      //   줄어든 카드의 가장자리를 덮는 덮개 넓히기가 쓴다(`cardParts.ts`).
+      //   피드백은 이 hover 모양과 누름 프리셋의 투명도·크기(`interaction.ts`)다 — 면·색·밑줄은 `_hover`에 한 번만 적는다.
+      // - `_press` · `_groupPress`: 모든 포인터에서 누르는 동안 — 누름의 투명도·크기·덮개와 진입 전환(press), hover와
+      //   다른 모양이 필요한 자리(카드 커버 hairline·밝기, 검색 결과 행)가 쓴다. `_press`는 disabled를 뺀다. 크기도
+      //   터치에 준다(2026-10-31 사용자 결정 — 예전엔 마우스류 전용 조건 `_pressScale`이 있었다). 터치의 :active는
+      //   스크롤을 시작하는 손가락에도 칠해질 수 있어 실기기 확인이 남았다(스킬 "실기기 확인 전인 것").
       // - `_groupKeyboardFocus`: 그룹(카드) 안이나 그룹 자신에 **키보드 초점**(`:focus-visible`)이 있는 동안.
       //   `:focus-within`이 아닌 이유는 마우스·터치로 누른 링크도 초점을 받아, 터치에서 탭 뒤에 카드
       //   틴트가 남기 때문이다(`_hover`를 터치에서 누르는 동안으로 바꾼 것과 같은 문제). 링크가 그룹 자신인
@@ -230,17 +228,6 @@ export default defineConfig({
       groupPress: '.group:is(:active, [data-active]) &',
       groupKeyboardFocus:
         '.group:is(:focus-visible, :has(:focus-visible), [data-focus-visible]) &',
-      pressScale: {
-        '@media (hover: hover) and (pointer: fine)': {
-          '&:is(:active, [data-active]):not(:disabled, [aria-disabled=true])':
-            '@slot',
-        },
-      },
-      groupPressScale: {
-        '@media (hover: hover) and (pointer: fine)': {
-          '.group:is(:active, [data-active]) &': '@slot',
-        },
-      },
       // `linear()` 곡선을 아는 브라우저 — 블로그 프리셋의 `easings.spring`이 이 조건에서만 스프링이고, 그 밖에서는
       // release 곡선이다(blog-preset.ts의 그 토큰 주석).
       supportsLinearEasing:

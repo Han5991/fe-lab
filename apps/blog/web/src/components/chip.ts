@@ -1,6 +1,6 @@
 import { cva } from '@blog/styled-system/css';
 import { forcedColorsEdge } from './forcedColorsEdge';
-import { pressButton, pressToggle } from './interaction';
+import { pressButton, pressToggleChip } from './interaction';
 import { steadyLabel } from './steadyLabel';
 
 /**
@@ -12,7 +12,7 @@ import { steadyLabel } from './steadyLabel';
  * - tone `accent` — 잉크 면(accent.solid)에 지면색 글자, semibold. 줄에서 하나만 세우는 강조 칩이다
  *   (오픈소스 줄의 `58+ merged`). 누를 수 없는 표식이라 hover도 누름도 없다.
  * - tone `toggle` — 켜고 끄는 칩(글 목록의 시리즈 칩). 면 없이 본문 잉크, hover에 paper.100, 켜지면
- *   accent.muted 면에 semibold. 누름은 `pressToggle`이다.
+ *   accent.muted 면에 semibold. 누름은 `pressToggleChip`이다.
  *   상태는 칩이 아니라 바로 앞의 네이티브 radio가 든다 —
  *   `span > input.peer + label[for](이 칩) > span(글자)` 구조에서 형제 선택자(`_peerChecked`)로 받는다.
  *   `:has()`는 쓰지 않는다(Next 기본 대상의 Firefox 111~120에 없다). 초점 링은 globalCss가 같은 형제
@@ -52,7 +52,7 @@ export const chip = cva({
       },
       toggle: {
         ...steadyLabel,
-        ...pressToggle,
+        ...pressToggleChip,
         bg: 'transparent',
         color: 'ink.950',
         cursor: 'pointer',

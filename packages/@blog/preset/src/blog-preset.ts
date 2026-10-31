@@ -342,7 +342,7 @@ export const ogBrand = {
 } as const;
 
 /**
- * 카드 크기의 놓음 스프링이 잔차 1% 아래로 가라앉는 길이(ms). `durations.spring`의 값과 `easings.spring`의
+ * 크기가 줄어드는 요소(버튼·칩·카드·상자 링크)의 놓음 스프링이 잔차 1% 아래로 가라앉는 길이(ms). `durations.spring`의 값과 `easings.spring`의
  * 표본 구간이 이 값 하나에서 나온다 — 곡선은 이 길이에 맞춰 뽑은 점이라, 시간만 바꾸면 스프링이 잘리거나 늘어진다.
  */
 const SPRING_MS = 520;
@@ -519,8 +519,8 @@ export const blogPreset = definePreset({
         //                     늦게 출발한다(admin 대시보드 — `animation-delay`가 순서 × 이 값).
         //                     Astryx 스케일에 없는 블로그 것이다 — Astryx에는 엇갈린 진입이 없다
         //   press      40ms — 누름 진입(투명도·크기·커버 밝기). stagger와 값만 같다 — 길이와 간격
-        //   release   320ms — 놓음(투명도·버튼 크기·커버 밝기)
-        //   spring    520ms — 카드 크기의 놓음. easings.spring과 짝이다(`SPRING_MS`)
+        //   release   320ms — 놓음(투명도·커버 밝기 — 크기는 spring)
+        //   spring    520ms — 크기의 놓음(버튼·칩·카드·상자 링크). easings.spring과 짝이다(`SPRING_MS`)
         // press·release·spring도 Astryx가 아니라 블로그 것이다(위 easings 주석).
         // semantic token인 이유는 **움직임 줄이기를 여기 한 곳에서** 끄기 위해서다 — `_motionReduce`가
         // 변수 값을 0.01ms로 바꾸므로 토큰으로 쓴 전환·애니메이션은 컴포넌트가 따로 규칙을 두지
@@ -541,8 +541,9 @@ export const blogPreset = definePreset({
             value: { base: `${SPRING_MS}ms`, _motionReduce: '0.01ms' },
           },
         },
-        // 카드 크기의 놓음 곡선 — SwiftUI `spring(response: 0.35, dampingFraction: 0.5)`를 `SPRING_MS`에 맞춰
-        // 뽑은 `linear()`다(오버슈트 16% — 97%에서 놓으면 202ms에 100.5%까지 갔다 가라앉는다). 감쇠 0.5는 WWDC18
+        // 크기의 놓음 곡선 — SwiftUI `spring(response: 0.35, dampingFraction: 0.5)`를 `SPRING_MS`에 맞춰
+        // 뽑은 `linear()`다(오버슈트 16% — 202ms에 버튼은 94%에서 101.0%까지, 카드는 97%에서 100.5%까지 갔다
+        // 가라앉는다). 감쇠 0.5는 WWDC18
         // 803의 권장(100%·운동량이 있으면 80%)보다 낮다 — 놓음에는 제스처 운동량이 없어, 100%면 오버슈트가 없고 80%여도
         // 1.5%(97%에서 놓으면 0.05%p)라 스프링이 보이지 않는다. semantic token인 이유는 `linear()`를 모르는 브라우저(Next 기본 대상의
         // 옛 Safari)다 — 변수로 끼운 `linear()`가 무효면 그 요소의 `transition` 선언이 통째로 무효가 되어 색 전환까지

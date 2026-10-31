@@ -1,5 +1,5 @@
 import { css, cx } from '@blog/styled-system/css';
-import { pressBleed, pressCard } from '@/src/components/interaction';
+import { pressCard, pressCardBleed } from '@/src/components/interaction';
 
 // 글 카드(`PostCard`)와 썸네일 행(`PostThumbRow`)이 함께 쓰는 조각 — "카드 전체가 링크 하나"인 구조와
 // 커버 틀. 라운드처럼 자리마다 다른 값은 쓰는 쪽이 `css(조각, { … })`로 병합한다(`cx`는 충돌하는 원자
@@ -24,13 +24,13 @@ export const cardRoot = cx('group', css(pressCard, { pos: 'relative' }));
  * `overflow: hidden`이 그 초점 링을 자른다 — 링크 자신에 걸면 자기 outline은 잘리지 않는다. 덮개는 카드
  * 뿌리가 containing block이라 링크의 `overflow: hidden`에도 잘리지 않는다.
  *
- * 마우스로 누르는 동안에는 덮개를 넓혀 줄어든 카드의 가장자리를 덮는다(`pressBleed`). 카드 자신이 링크인 카드는
+ * 누르는 동안에는 덮개를 넓혀 줄어든 카드의 가장자리를 덮는다(`pressCardBleed`). 카드 자신이 링크인 카드는
  * `pressCardLink`다.
  */
 export const cardLinkRaw = css.raw({
   color: 'ink.950',
   _after: { content: '""', pos: 'absolute', inset: '0' },
-  _groupPressScale: { _after: pressBleed },
+  _groupPress: { _after: pressCardBleed },
 });
 
 /**
@@ -47,7 +47,7 @@ export const cardLinkRaw = css.raw({
  * (panda.config.ts globalCss의 커버 규칙). 진짜 보더는 이미지를 사방 1px 안으로 밀어 이미지 상자가
  * 16:9에서 벗어나고, 겹친 두 스냅샷이 최대 4px 어긋나 이미지 속 글자가 두 겹으로 보였다(실측).
  *
- * 마우스로 카드를 누르는 동안 이미지가 밝기 85%로 어두워진다 — 틀이 아니라 이미지에 걸어 틴트·hairline은
+ * 카드를 누르는 동안 이미지가 밝기 85%로 어두워진다 — 틀이 아니라 이미지에 걸어 틴트·hairline은
  * 그대로 위에 남는다. `filter`는 이미지를 쌓임 맥락으로 만들어 위치 지정된 hairline(`::before`)보다 뒤에
  * 그리므로, 틀을 쌓임 맥락으로 묶고(`isolation`) 이미지를 그 안의 맨 아래(`zIndex: -1`)에 둔다 — 틀의 면
  * 위, hairline·틴트 아래라 지금 순서 그대로다. 밝기는 Panda의 `brightness` 유틸리티가 아니라 값으로 적는다 —
@@ -61,9 +61,6 @@ export const coverFrameRaw = css.raw({
   aspectRatio: 'wide',
   bg: 'paper.100',
   '& img': { pos: 'relative', zIndex: '-1', pressTransition: 'coverRest' },
-  _groupPressScale: {
-    '& img': { filter: '[brightness(0.85)]', pressTransition: 'coverHeld' },
-  },
   _before: {
     content: '""',
     pos: 'absolute',
@@ -88,7 +85,10 @@ export const coverFrameRaw = css.raw({
   // 키보드 초점은 제목 링크가 든다 — 카드를 올린 것과 같은 틴트가 켜져 어느 카드인지 면으로도 보인다
   // (초점 링은 제목 상자만 두른다). 마우스·터치로 누른 링크는 켜지지 않는다(`:focus-visible`).
   _groupKeyboardFocus: { _after: { opacity: '1' } },
-  _groupPress: { _before: { borderColor: 'ink.borderStrong' } },
+  _groupPress: {
+    _before: { borderColor: 'ink.borderStrong' },
+    '& img': { filter: '[brightness(0.85)]', pressTransition: 'coverHeld' },
+  },
 });
 
 /**

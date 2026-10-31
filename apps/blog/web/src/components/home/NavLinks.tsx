@@ -3,7 +3,7 @@
 import { usePathname } from 'next/navigation';
 import { css } from '@blog/styled-system/css';
 import { POSTS_PATH } from '@blog/content/client';
-import { pressText } from '@/src/components/interaction';
+import { pressTextBox } from '@/src/components/interaction';
 import { TransitionLink } from '@/src/components/shared/TransitionLink';
 import { ABOUT_PATH, SERIES_PATH } from '@/src/shared/routes';
 
@@ -25,7 +25,7 @@ const NAV_ITEMS = [
 // md 미만은 좌우 8로 줄인다 — 360px 기기(거터를 빼면 320px)에서 워드마크·내비·아이콘 둘이 한 줄에
 // 들어가야 한다(Layout의 헤더 주석).
 //
-// 누름은 `pressText`다 — 투명도가 링크 상자 전체에 걸려, 아래 깔린 hover 면(paper.100)도 글자와
+// 누름은 `pressTextBox`다 — 투명도가 링크 상자 전체에 걸려, 아래 깔린 hover 면(paper.100)도 글자와
 // 함께 옅어진다.
 //
 // 스타일은 `css.raw`로 두고 합칠 때 `css(base, active)`를 쓴다. `cx`는 클래스
@@ -34,7 +34,7 @@ const NAV_ITEMS = [
 // 붙고, 승자는 클래스 순서가 아니라 스타일시트 순서가 정한다. 실제로 비활성
 // 색이 이겨서 활성 표시가 굵기로만 남아 있었다. `css()`는 객체 단계에서
 // 병합해 color 클래스를 하나만 낸다.
-const linkStyle = css.raw(pressText, {
+const linkStyle = css.raw(pressTextBox, {
   // 현재 위치 표식(아래 span)이 이 상자를 기준으로 선다.
   pos: 'relative',
   display: 'inline-flex',
