@@ -102,10 +102,10 @@ describe('useTocHook - 목차 추출', () => {
     const { result } = renderHook(() => useTocHook());
 
     expect(result.current.toc).toEqual([
-      { id: 'intro', text: '들어가며', level: 2 },
-      { id: 'setup', text: '환경 구성', level: 2 },
-      { id: 'deploy', text: '배포', level: 3 },
-      { id: 'wrap', text: '마치며', level: 2 },
+      { id: 'intro', parts: [{ text: '들어가며', code: false }], level: 2 },
+      { id: 'setup', parts: [{ text: '환경 구성', code: false }], level: 2 },
+      { id: 'deploy', parts: [{ text: '배포', code: false }], level: 3 },
+      { id: 'wrap', parts: [{ text: '마치며', code: false }], level: 2 },
     ]);
   });
 
@@ -229,7 +229,7 @@ describe('useTocHook - 활성 항목', () => {
   };
 
   // 회귀 방지의 핵심. 밴드 방식에서는 첫 화면(모든 헤딩이 기준선 아래)에서
-  // 활성 집합이 비어 목차 레일에 하이라이트가 아예 없었다.
+  // 활성 집합이 비어 차례에 하이라이트가 아예 없었다.
   test('아직 아무 헤딩도 기준선을 지나지 않았으면 첫 항목이 활성이다', () => {
     const { result } = renderToc();
     flushFrames();
@@ -287,7 +287,7 @@ describe('useTocHook - 활성 항목', () => {
 });
 
 /**
- * 활성 "구간" — 데스크톱 차례가 레일을 어디부터 어디까지 비출지.
+ * 활성 "구간" — 데스크톱 차례가 면으로 어디부터 어디까지 덮을지.
  *
  * `activeId`(한 항목)와 달리 이쪽은 **화면에 온전히 들어온 헤딩 전체**다.
  * 레퍼런스(fumadocs)가 IntersectionObserver로 구하는 집합과 같은 것을
@@ -315,11 +315,22 @@ describe('useTocHook - 활성 구간', () => {
   test('고정 헤더에 가린 헤딩은 구간에 넣지 않는다', () => {
     // 헤더는 sticky로 화면 맨 위를 덮고 있어서, 뷰포트 좌표가 0에 가까운
     // 헤딩은 화면 안에 있어도 눈에는 안 보인다. 그것까지 세면 아직 안
-    // 읽고 있는 절이 레일에서 먼저 켜진다.
+    // 읽고 있는 절이 차례에서 먼저 켜진다.
     mountHeadings(DENSE);
     const { result } = renderHook(() => useTocHook());
     // 'a'가 50까지 올라와 헤더(100) 아래로 들어간다.
     scrollToY(50);
+
+    expect(result.current.activeRange).toEqual([1, 2]);
+  });
+
+  // 헤딩으로 이동하면 헤딩은 HEADER_OFFSET(95) 자리에 서야 하지만, 스크롤 위치가 기기 픽셀로
+  // 반올림돼 94.97처럼 경계 바로 위에 떨어진다. 그 헤딩이 빠지면 방금 누른 항목 대신 다음 항목이 켜진다.
+  test('이동 직후 경계보다 1px 안쪽으로 반올림된 헤딩도 구간에 든다', () => {
+    mountHeadings(DENSE);
+    const { result } = renderHook(() => useTocHook());
+    // 'b'(300)가 94.97에 선다 — 'a'는 헤더 밑, 'c'(294.97)는 화면 안이다.
+    scrollToY(205.03);
 
     expect(result.current.activeRange).toEqual([1, 2]);
   });
@@ -336,7 +347,7 @@ describe('useTocHook - 활성 구간', () => {
 
   test('헤딩이 하나도 안 보이는 구간에서는 지나온 항목 한 줄만 비춘다', () => {
     // 긴 절의 한복판. 구간을 만들 수 없으니 폴백이 필요하다 — 여기서
-    // 빈 구간을 돌려주면 레일이 통째로 꺼져 차례가 죽은 것처럼 보인다.
+    // 빈 구간을 돌려주면 면이 통째로 꺼져 차례가 죽은 것처럼 보인다.
     mountHeadings([
       { id: 'head', tag: 'h2', text: '머리', top: 0 },
       { id: 'tail', tag: 'h2', text: '꼬리', top: 5000 },

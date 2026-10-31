@@ -5,6 +5,7 @@ import { List, X } from 'lucide-react';
 import { css, cva, sva } from '@blog/styled-system/css';
 import type { RecipeVariant } from '@blog/styled-system/css';
 import { useTocHook, scrollToId } from '@/src/components/tocHooks';
+import { TocTitle } from '@/src/components/TocTitle';
 import { isModifiedClick } from '@/src/components/events';
 import { Portal } from '@/src/components/Portal';
 import { iconButton } from '@/src/components/iconButton';
@@ -364,7 +365,7 @@ export const MobileTOC = () => {
                               active: activeId === item.id,
                             })}
                           >
-                            {item.text}
+                            <TocTitle parts={item.parts} />
                           </a>
                         </li>
                       ))}

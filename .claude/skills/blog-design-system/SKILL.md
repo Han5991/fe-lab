@@ -103,7 +103,7 @@ admin은 지면 한 장이 아니라 **바닥 위에 카드**를 놓는 앱 화�
 | 독립 링크 · 목록 제목                    | hover 밑줄                                                                                                                    |
 | 글 카드 · 썸네일 행(홈)                  | hover에 커버 위 `accent.muted` 틴트. 제목 밑줄은 없다(아래 "카드")                                                            |
 | 헤더 내비 현재 위치                      | `accent.solid` + semibold(비활성 `ink.700`과 2.30 / 1.87:1) + 라벨 아래 16×2 막대                                             |
-| 차례 현재 절 · 코드 탭                   | `accent.solid` 한 이름(아래 굵기 규칙)                                                                                        |
+| 차례 현재 절 · 코드 탭                   | `accent.solid` 글자(아래 굵기 규칙). 데스크톱 차례는 화면에 보이는 헤딩의 항목들을 `accent.muted` 면으로 덮는다               |
 | admin 세그먼트(집계 기간·정렬 기준)      | 선택 항목은 카드 면(`surface.raised`) + 진한 hairline(`ink.borderStrong`) + semibold. 면은 고른 칸으로 미끄러지는 표식 하나다 |
 | 시리즈 배지 · 대화 말풍선(나)            | `accent.muted` 면 + `accent.solid` 글자(`seriesBadge`)                                                                        |
 | 태그 배지(글 목록 카드 · 활성 필터)      | `paper.200` 면 + `ink.950` 글자(`tagBadge`, Astryx Badge neutral)                                                             |
@@ -297,8 +297,8 @@ preset-panda의 durations·easings·animations·keyframes를 빼서 `transitionD
 
 | 토큰                  | 값                                        | 쓰는 곳                                                                                                                                                                                |
 | :-------------------- | :---------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `durations.fast`      | 175ms                                     | hover·색(누르는 동안의 면 포함)·표식(차례 하이라이트·뷰 토글 면·admin 선택 표식)·떠 있는 버튼의 누름·카드가 들어가는 누름·나가는 페이지·자리를 넘기는 스냅샷(admin `out`·`slideOut`)   |
-| `durations.fastMax`   | 230ms                                     | 테마 크로스페이드 · `<details>` 펼침 · 옆에서 들어오는 페이지 · 교체로 들어오는 스냅샷(admin `rise`·`slideIn`, fast 뒤)                                                                |
+| `durations.fast`      | 175ms                                     | hover·색(누르는 동안의 면 포함)·표식(차례 글자색·뷰 토글 면·admin 선택 표식)·떠 있는 버튼의 누름·카드가 들어가는 누름·나가는 페이지·자리를 넘기는 스냅샷(admin `out`·`slideOut`)       |
+| `durations.fastMax`   | 230ms                                     | 테마 크로스페이드 · `<details>` 펼침 · 옆에서 들어오는 페이지 · 교체로 들어오는 스냅샷(admin `rise`·`slideIn`, fast 뒤) · 차례 면(fumadocs `block`의 300ms에 가장 가까운 단)           |
 | `durations.medium`    | 410ms                                     | 바텀시트·시트 스크림 · 들어오는 페이지 · admin 카드 진입                                                                                                                               |
 | `durations.mediumMax` | 550ms                                     | 검색 다이얼로그 등장 · 스켈레톤 왕복 · admin 차트·가로 막대 그리기                                                                                                                     |
 | `durations.stagger`   | 40ms                                      | 간격 — admin 카드 진입이 순서 × 이 값만큼 늦게 출발한다                                                                                                                                |
@@ -837,7 +837,7 @@ Astryx BlogCard·BlogFeatureCard·BlogShowcase의 블로그 판. `src/components
 | 커버       | 16:9 틀, `alt=""`, `fetchPriority=high`. 가로형(OG 카드·가로형 자기 썸네일)은 cover, 정사각 등은 contain(`paper.100` 바닥)(아래)                                                                                                                                                                           |
 | 본문 아래  | 구분선 → 태그 배지(`archivePath({ tag })` 링크 — 태그 필터의 유일한 입구)와 공유 ghost 버튼 → 이전·다음 글(nav) → 댓글                                                                                                                                                                                     |
 | 이전·다음  | muted 면 카드(16:9 썸네일 96 + 라벨·제목 2줄), md부터 두 열, 아래는 한 열(375에서 글자 칸이 31px만 남는다)                                                                                                                                                                                                 |
-| 차례       | 깊이마다 8씩 옮겨 서는 1.5px 레일(단이 바뀌면 곡선, 곡선은 다음 항목 안에) + 같은 path를 `clip-path`로 잘라 보이는 절만 밝히는 강조 레일 + 진행 방향 끝의 5px 점(`offset-path`) — 셋 다 fast·standard. 활성은 색과 레일만 — 굵기를 올리면 항목이 접혀 들썩인다. Astryx 곧은 트랙에서 되돌렸다(사용자 결정) |
+| 차례       | fumadocs `block` 차례(MIT) — 목록을 덮는 `accent.muted` 면을 `clip-path: inset(… round inner)`로 잘라 보이는 헤딩의 항목만 덮는다(fastMax·standard). 들여쓰기 8·20·32, 꺼진 글자 `ink.700`, 제목 안 코드는 칩. 활성은 색과 면만 — 굵기는 항목을 접는다. 꺾이는 레일+점에서 바꿨다(사용자 결정, 2026-10-31) |
 | 진행 바    | 헤더 바로 아래 3px, scroll() 타임라인. **카카오톡 인앱 브라우저에서는 뺀다**(user-agent `KAKAOTALK`) — 스크롤 프레임마다 메인 스레드가 스타일을 다시 계산해 그 브라우저에서만 글 상세 스크롤이 버벅였다                                                                                                    |
 
 - **자기 썸네일** = frontmatter `thumbnail`이 있고 생성 OG 카드(`/og/…`)가 아니다(`hasAuthoredThumbnail`).

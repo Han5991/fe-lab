@@ -1,10 +1,8 @@
 /**
- * 글 차례 — 깊이마다 꺾이는 레일 path, 보이는 절만 남기는 강조 레일, 들여쓰기, 클릭 처리.
+ * 글 차례 — 들여쓰기, 활성 구간을 덮는 면(clip-path), 제목 안 코드 칩, 클릭 처리.
  *
- * 레일 path는 화면으로는 "선이 조금 이상하다" 정도로만 보이고 어긋나도 아무것도 던지지 않는다. 특히
- * 단이 바뀌는 구간의 곡선은 **다음 항목 안쪽에 전부 들어가야** 하는데(경계에 걸치면 하이라이트가 한
- * 항목만 비출 때 곡선이 반토막 나 허공에 뜬다), 그 불변식은 눈으로 확인하기 어렵다. 여기서 좌표로
- * 고정한다. 항목의 실측(`getBoundingClientRect`)은 jsdom이 전부 0을 주므로 필요한 곳만 상자를 꾸민다.
+ * 면의 위치는 항목 실측(`getBoundingClientRect`)에서 나오는데 jsdom은 전부 0을 주므로 필요한 곳만
+ * 값을 꾸민다(`fakeLayout`).
  */
 import {
   afterEach,
@@ -15,87 +13,20 @@ import {
   vi,
   type Mock,
 } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
-import { TOC, buildPath, measureLengths, type Row } from './TOC';
-
-/** 한 줄짜리 항목 하나. 높이 20px로 촘촘히 쌓는다. */
-const row = (x: number, top: number, height = 20): Row => ({
-  x,
-  top,
-  bottom: top + height,
-});
-
-/** path에서 곡선 명령(C)만 뽑는다. */
-const curves = (d: string) => d.match(/C [^LC]+/g) ?? [];
-
-describe('buildPath', () => {
-  test('항목이 없으면 빈 문자열', () => {
-    expect(buildPath([])).toBe('');
-  });
-
-  test('단이 같으면 세로선만 그린다', () => {
-    const d = buildPath([row(8, 0), row(8, 20), row(8, 40)]);
-
-    expect(curves(d)).toEqual([]);
-    // 첫 항목의 머리(0)에서 마지막 항목의 바닥(60)까지 이어진다.
-    expect(d.startsWith('M 8 0')).toBe(true);
-    expect(d.endsWith('L 8 60')).toBe(true);
-  });
-
-  test('단이 바뀌면 곡선으로 갈아탄다', () => {
-    const d = buildPath([row(8, 0), row(16, 20)]);
-
-    expect(curves(d)).toHaveLength(1);
-    // 끝점은 다음 항목의 x, 그리고 그 항목 **안쪽**이다.
-    expect(d).toContain('16 28');
-  });
-
-  test('곡선은 전부 다음 항목 안에 들어간다', () => {
-    // 항목 높이(20)의 절반이 ELBOW(8)보다 크므로 8px만 내려간다.
-    const rows = [row(8, 0), row(16, 20)];
-    const d = buildPath(rows);
-
-    // 곡선의 세로 끝(C 명령의 마지막 좌표)이 다음 항목 구간 [20, 40) 안이다. 곡선이 없으면 빈 문자열
-    // → NaN이 되어 아래 단언이 실패한다.
-    const curve = curves(d)[0] ?? '';
-    const end = Number(curve.trim().split(/\s+/).pop());
-    expect(end).toBeGreaterThan(rows[1].top);
-    expect(end).toBeLessThan(rows[1].bottom);
-  });
-
-  test('항목이 낮으면 곡선도 그만큼 짧아진다', () => {
-    // 높이 10짜리 항목으로 갈아타면 절반인 5px만 쓴다(8px을 쓰면 그 항목을 넘어 다음 경계를 침범한다).
-    const d = buildPath([row(8, 0), row(16, 20, 10)]);
-
-    expect(d).toContain('16 25');
-  });
-
-  test('되돌아오는 단 변화도 곡선으로 잇는다', () => {
-    // h2 → h3 → h2 처럼 들어갔다 나오는 흔한 모양.
-    const d = buildPath([row(8, 0), row(16, 20), row(8, 40)]);
-
-    expect(curves(d)).toHaveLength(2);
-  });
-});
-
-describe('measureLengths', () => {
-  test('getTotalLength가 없는 환경에서는 빈 배열을 준다', () => {
-    // jsdom에는 SVG 기하 API가 없다. 여기서 던지면 차례 전체가 못 그려지고, 빈 배열이면 레일과
-    // 하이라이트는 그대로 두고 점만 빠진다.
-    expect(measureLengths('M 8 0 L 8 20', [row(8, 0)])).toEqual([]);
-  });
-});
+import { act, render, screen, waitFor } from '@testing-library/react';
+import { TOC } from './TOC';
 
 /** 차례가 읽어 가는 본문. 헤딩 하나당 (id, 레벨, 글)이다. */
 const mountContent = (
-  headings: { id: string; level: 2 | 3 | 4; text: string }[],
+  headings: { id: string; level: 2 | 3 | 4; text: string; html?: string }[],
 ) => {
   const content = document.createElement('div');
   content.id = 'post-content';
-  for (const { id, level, text } of headings) {
+  for (const { id, level, text, html } of headings) {
     const h = document.createElement(`h${level}`);
     h.id = id;
-    h.textContent = text;
+    if (html === undefined) h.textContent = text;
+    else h.innerHTML = html;
     content.appendChild(h);
   }
   document.body.appendChild(content);
@@ -138,52 +69,41 @@ describe('TOC 구조', () => {
     expect(nav.querySelectorAll('li')).toHaveLength(4);
   });
 
-  // 레일은 깊이마다 8씩 오른쪽(8 · 16 · 24)에 서고, 글자는 그 레일에서 한 칸(8) 더 띄운다.
-  test('들여쓰기는 가장 얕은 헤딩이 16이고 레일과 함께 한 단계마다 8씩이다', () => {
+  // fumadocs `block` 차례와 같은 값 — h2 8 · h3 20 · h4 32.
+  test('들여쓰기는 h2가 8, h3가 20, h4가 32다', () => {
     render(<TOC />);
 
     const padding = (name: string) =>
       screen.getByRole('link', { name }).style.paddingLeft;
-    expect(padding('첫 절')).toBe('16px');
-    expect(padding('하위 절')).toBe('24px');
+    expect(padding('첫 절')).toBe('8px');
+    expect(padding('하위 절')).toBe('20px');
     expect(padding('더 깊은 절')).toBe('32px');
-    expect(padding('둘째 절')).toBe('16px');
+    expect(padding('둘째 절')).toBe('8px');
   });
 
-  test('레일과 점은 장식이라 스크린리더에서 숨긴다', () => {
+  test('활성 구간을 덮는 면은 장식이라 스크린리더에서 숨긴다', () => {
     render(<TOC />);
 
     const nav = screen.getByRole('navigation', { name: '이 글의 차례' });
     const decor = nav.querySelectorAll(':scope > div > div[aria-hidden]');
-    expect(decor.length).toBeGreaterThanOrEqual(1);
-    for (const el of decor) expect(el).toHaveAttribute('aria-hidden', 'true');
+    expect(decor).toHaveLength(1);
+    expect(decor[0]).toHaveAttribute('aria-hidden', 'true');
   });
 
-  // 강조 레일은 같은 path를 clip-path로 잘라 보이는 절만 남긴다 — 위는 첫 항목의 머리, 아래는 마지막
-  // 항목의 바닥이다. 값은 항목의 실측이라 jsdom에서는 상자를 꾸며 줘야 나온다.
-  test('강조 레일은 보이는 절의 위·아래로 잘린다', async () => {
-    // 헤딩 상자가 전부 0이라 활성 구간은 마지막 항목(둘째 절) 하나다 — 그 항목의 위(60)에서 자른다.
-    const rect = vi
-      .spyOn(HTMLLIElement.prototype, 'getBoundingClientRect')
-      .mockImplementation(function (this: HTMLElement) {
-        const [top, bottom] =
-          this.textContent === '둘째 절' ? [60, 100] : [0, 20];
-        return new DOMRect(0, top, 100, bottom - top);
-      });
-    try {
-      render(<TOC />);
+  test('제목 안 인라인 코드는 차례에서도 코드로 그린다', () => {
+    document.body.replaceChildren();
+    mountContent([
+      {
+        id: 'paths',
+        level: 3,
+        text: '',
+        html: '<code>paths</code>도 끝이 아니다',
+      },
+    ]);
+    render(<TOC />);
 
-      const nav = screen.getByRole('navigation', { name: '이 글의 차례' });
-      // 두 번째 path가 강조 레일이다(첫째는 흐린 전체 레일).
-      const lit = () => nav.querySelectorAll<SVGPathElement>('path')[1];
-      await waitFor(() =>
-        expect(lit()?.style.clipPath).toMatch(/^inset\(60px 0px /),
-      );
-      // 첫째 path는 자르지 않는다 — 전체 레일이 늘 바닥에 깔린다.
-      expect(nav.querySelectorAll('path')[0]?.getAttribute('style')).toBeNull();
-    } finally {
-      rect.mockRestore();
-    }
+    const link = screen.getByRole('link', { name: 'paths도 끝이 아니다' });
+    expect(link.querySelector('code')).toHaveTextContent(/^paths$/);
   });
 
   test('헤딩이 없으면 아무것도 그리지 않는다', () => {
@@ -192,6 +112,201 @@ describe('TOC 구조', () => {
     const { container } = render(<TOC />);
 
     expect(container).toBeEmptyDOMElement();
+  });
+});
+
+/** 차례 상자의 꾸민 배치 — column 높이와 항목 글자별 [위, 아래](column 기준). 높이 0은 숨은 상태다. */
+interface FakeLayout {
+  height: number;
+  rows: Record<string, [number, number]>;
+}
+
+/**
+ * jsdom은 레이아웃이 없어 `getBoundingClientRect`가 전부 0이다. 차례의 column과 항목만 `state`대로 꾸민다
+ * (헤딩은 0 그대로 — 그래서 활성 구간은 마지막 항목 하나다). `state`를 고치고 크기 변화를 흘리면 다시 잰다.
+ */
+const fakeLayout = (state: FakeLayout) =>
+  vi
+    .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
+    .mockImplementation(function (this: HTMLElement) {
+      const nav = this.closest('nav[aria-label="이 글의 차례"]');
+      if (nav === null) return new DOMRect(0, 0, 0, 0);
+      if (this.parentElement === nav)
+        return new DOMRect(0, 0, 268, state.height);
+      if (this.tagName !== 'A' || state.height === 0)
+        return new DOMRect(0, 0, 0, 0);
+      const [top, bottom] = state.rows[this.textContent] ?? [0, 20];
+      return new DOMRect(0, top, 268, bottom - top);
+    });
+
+/** 크기 변화를 손으로 흘릴 수 있는 ResizeObserver — 콜백을 잡아 둔다. */
+const captureResizeObserver = () => {
+  const callbacks: (() => void)[] = [];
+  vi.stubGlobal(
+    'ResizeObserver',
+    class {
+      constructor(callback: () => void) {
+        callbacks.push(callback);
+      }
+      observe() {
+        // 관측은 테스트가 resize()로 대신한다
+      }
+      disconnect() {
+        // 잡아 둔 콜백만 있으니 해제할 것이 없다
+      }
+    },
+  );
+  return () =>
+    act(() => {
+      for (const callback of callbacks) callback();
+    });
+};
+
+/**
+ * 면 요소와, 그 위에서 일어난 속성 변화의 순서(clip-path를 쓴 `style` → 전환을 켠 `data-ready`).
+ * MutationObserver는 기록을 나중에 넘기므로 `changes()`가 쌓인 기록을 그 자리에서 거둬 읽는다.
+ */
+const watchBlock = () => {
+  const nav = screen.getByRole('navigation', { name: '이 글의 차례' });
+  const block = nav.querySelector<HTMLElement>('div[aria-hidden]');
+  if (block === null) throw new Error('면 요소가 없다');
+  const seen: (string | null)[] = [];
+  const observer = new MutationObserver(records => {
+    for (const record of records) seen.push(record.attributeName);
+  });
+  observer.observe(block, { attributes: true });
+  const changes = () => {
+    for (const record of observer.takeRecords())
+      seen.push(record.attributeName);
+    return [...seen];
+  };
+  const reset = () => {
+    changes();
+    seen.length = 0;
+  };
+  return { block, changes, reset };
+};
+
+describe('TOC 활성 구간 면', () => {
+  const ROWS: FakeLayout['rows'] = {
+    '첫 절': [0, 20],
+    '하위 절': [20, 40],
+    '둘째 절': [60, 80],
+  };
+
+  beforeEach(() => {
+    mountContent([
+      { id: 'a', level: 2, text: '첫 절' },
+      { id: 'b', level: 3, text: '하위 절' },
+      { id: 'd', level: 2, text: '둘째 절' },
+    ]);
+  });
+
+  // 면은 목록 전체를 덮고 clip-path로 활성 구간만 남긴다 — 위는 첫 항목의 머리, 아래는 마지막 항목의 바닥.
+  test('면은 활성 구간의 위·아래로 잘린다', async () => {
+    captureResizeObserver();
+    const rect = fakeLayout({ height: 100, rows: ROWS });
+    try {
+      render(<TOC />);
+      const { block } = watchBlock();
+
+      // 활성 구간은 마지막 항목(둘째 절) 하나 — 위 60, 아래는 목록 높이 100 - 항목 바닥 80 = 20.
+      await waitFor(() =>
+        expect(block.style.clipPath).toMatch(/^inset\(60px 0px 20px round /),
+      );
+    } finally {
+      rect.mockRestore();
+    }
+  });
+
+  // 전환을 켠 채 첫 값을 넣으면 접힌 상태에서 펼쳐지는 움직임이 하드 로드마다 재생된다. 그래서 첫 자리를
+  // 쓴 **뒤에** 전환(data-ready)을 켠다. 활성 구간이 오기 전에는 켜지 않는다.
+  test('첫 자리는 전환 없이 잡는다 — clip-path를 쓴 뒤에 data-ready가 선다', async () => {
+    captureResizeObserver();
+    const rect = fakeLayout({ height: 100, rows: ROWS });
+    try {
+      render(<TOC />);
+      const { block, changes } = watchBlock();
+      expect(block).not.toHaveAttribute('data-ready');
+
+      await waitFor(() => expect(block).toHaveAttribute('data-ready'));
+      expect(changes()).toEqual(['style', 'data-ready']);
+    } finally {
+      rect.mockRestore();
+    }
+  });
+
+  test('크기가 바뀌면 다시 재고 면을 옮긴다', async () => {
+    const resize = captureResizeObserver();
+    const state: FakeLayout = { height: 100, rows: { ...ROWS } };
+    const rect = fakeLayout(state);
+    try {
+      render(<TOC />);
+      const { block } = watchBlock();
+      await waitFor(() => expect(block).toHaveAttribute('data-ready'));
+
+      // 폭이 줄어 위 항목들이 두 줄로 접혔다 — 마지막 항목이 100~140으로 내려간다.
+      state.height = 200;
+      state.rows = { ...ROWS, '둘째 절': [100, 140] };
+      resize();
+
+      expect(block.style.clipPath).toMatch(/^inset\(100px 0px 60px round /);
+    } finally {
+      rect.mockRestore();
+    }
+  });
+
+  // lg 미만에서 차례는 display:none이라 전부 0으로 잰다. 그 값으로 그리면 면이 목록 전체를 덮은 채 남고,
+  // 다시 보일 때 거기서부터 쓸려 내려왔다(태블릿 회전·창 크기 조절).
+  test('숨은 동안은 그리지 않고, 다시 보이면 전환 없이 제자리를 잡는다', async () => {
+    const resize = captureResizeObserver();
+    const state: FakeLayout = { height: 100, rows: { ...ROWS } };
+    const rect = fakeLayout(state);
+    try {
+      render(<TOC />);
+      const { block, changes, reset } = watchBlock();
+      await waitFor(() => expect(block).toHaveAttribute('data-ready'));
+      const shown = block.style.clipPath;
+
+      state.height = 0;
+      resize();
+      expect(block).not.toHaveAttribute('data-ready');
+      // 숨은 동안 0 좌표로 다시 그리지 않는다(목록 전체를 덮는 inset(0px …)이 남지 않게).
+      expect(block.style.clipPath).toBe(shown);
+
+      // 숨은 사이 폭이 바뀌어 항목이 내려갔다. 다시 보이는 첫 측정은 전환이 꺼진 채 새 자리를 쓰고,
+      // 그다음에 전환을 켠다 — 숨기 전 자리에서 미끄러져 오지 않는다.
+      reset();
+      state.height = 200;
+      state.rows = { ...ROWS, '둘째 절': [100, 140] };
+      resize();
+
+      expect(block.style.clipPath).toMatch(/^inset\(100px 0px 60px round /);
+      expect(changes()).toEqual(['style', 'data-ready']);
+    } finally {
+      rect.mockRestore();
+    }
+  });
+
+  test('숨은 채로 열리면 면을 그리지 않는다', async () => {
+    captureResizeObserver();
+    const rect = fakeLayout({ height: 0, rows: ROWS });
+    try {
+      render(<TOC />);
+      const { block } = watchBlock();
+      // 활성 구간이 정해질 때까지 기다린다(현재 항목이 표시되면 계산이 끝난 것이다).
+      await waitFor(() =>
+        expect(screen.getByRole('link', { name: '둘째 절' })).toHaveAttribute(
+          'aria-current',
+          'true',
+        ),
+      );
+
+      expect(block.style.clipPath).toBe('');
+      expect(block).not.toHaveAttribute('data-ready');
+    } finally {
+      rect.mockRestore();
+    }
   });
 });
 

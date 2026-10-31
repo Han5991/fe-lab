@@ -1,157 +1,130 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { css } from '@blog/styled-system/css';
+import { token } from '@blog/styled-system/tokens';
 import { useTocHook, scrollToId } from '@/src/components/tocHooks';
+import { TocTitle } from '@/src/components/TocTitle';
 import { isModifiedClick } from '@/src/components/events';
 import { pressText } from '@/src/components/interaction';
 import { siteHeaderStyle } from '@/src/components/siteHeader';
 
 /**
- * 글 차례 — 항목들을 잇는 **레일 한 줄**을 그리고, 지금 화면에 들어와 있는 절들만 밝게 비춘다. 레일은
- * 헤딩 깊이마다 오른쪽으로 한 칸씩 옮겨 서고, 단이 바뀌는 자리는 곡선으로 갈아탄다(fumadocs 기본 스타일).
- * 화면에 보이는 절이 셋이면 셋이 함께 밝아, 목록을 읽지 않아도 현재 위치와 글 전체에서의 비중이 보인다.
+ * 글 차례 — 지금 화면에 들어와 있는 헤딩들의 항목을 **틴트 면 하나**로 덮어 비춘다(`useTocHook`의 활성
+ * 구간). 화면에 헤딩이 셋이면 세 항목이 한 면 안에 들어, 목록을 읽지 않아도 현재 위치와 글 전체에서의
+ * 비중이 보인다.
  *
- * 구현은 **같은 path를 두 번 그리는 것**이다. 아래는 흐린 전체 레일(`ink.border`), 위는 강조 레일
- * (`accent.solid`)을 `clip-path: inset()`으로 잘라 보이는 구간만 남긴다. 자를 값만 바뀌므로 전환 하나로
- * 미끄러진다(레일을 다시 그리지 않는다). 강조 구간의 진행 방향 끝에는 점이 레일을 따라 붙는다
- * (`offset-path`).
+ * 구조는 fumadocs(MIT)의 `block` 차례(`packages/radix-ui/src/components/toc/block.tsx`)를 옮겼다 — 목록
+ * 전체를 덮는 면을 하나 깔고 `clip-path: inset(… round …)`으로 활성 구간만 남긴다. 잘라 낼 값만 바뀌니 전환
+ * 하나로 늘고 줄며 미끄러진다. fumadocs와 다른 점:
+ * - 색과 모션은 블로그 토큰이다(fd-primary → `accent.*`, 300ms ease-out → fastMax·standard).
+ * - 첫 자리는 전환 없이 잡는다(`data-ready`, `paintBlock`). fumadocs는 첫 배치도 펼치며 그린다.
+ * - 항목 좌표는 목록 순서대로, 마운트할 때와 크기가 바뀔 때 잰다. 차례가 숨은 동안(lg 미만)은 재지 않는다.
  *
- * Astryx 개편(#587)에서 곧은 트랙 + 막대로 바꿨다가 되돌렸다(사용자 결정, 2026-10-25) — 깊이가 레일의
- * 꺾임으로도 읽히는 쪽을 택했다. 대가는 측정이다: 항목 높이에서 path를 만들고, 점의 자리를 path 위의
- * 길이로 옮기려고 `getTotalLength`로 잰다.
+ * 2026-10-25에는 깊이마다 꺾이는 SVG 레일 + 레일을 따라가는 점(fumadocs 옛 기본 스타일)을 택했지만,
+ * 2026-10-31 사용자 결정으로 이 면 방식으로 바꿨다 — 스크롤하면 레일의 꼬리가 사라지거나 깜빡이고 점이
+ * 부자연스럽게 움직였다. 레일 path·path 길이 실측·점의 방향 판정이 전부 빠졌다.
  */
 
-/** 레벨 한 단계당 레일이 오른쪽으로 밀리는 거리. */
-const RAIL_STEP = 8;
-/** 레일이 단을 옮길 때 쓰는 곡선의 세로 길이. 전부 다음 항목 안에 들어간다. */
-const ELBOW = 8;
+/** 헤딩 깊이별 왼쪽 여백 — fumadocs `getItemOffset`과 같은 값(h2 8 · h3 20 · h4 32). */
+const itemOffset = (level: number): number =>
+  level <= 2 ? 8 : level === 3 ? 20 : 32;
+
 /** 목록 위아래에서 스크롤 내용이 사라지는 페이드 구간. */
 const FADE = 16;
 
-// 활성 표시는 **셋**이 동시에 움직인다 — 글자 색, 강조 레일(clip-path), 점(offset-distance). 목표값은
-// 같은 순간에 바뀌므로 전환 시간이 다르면 따로 도착한다(레일이 늦으면 글자가 먼저 켜지고 줄이 따라붙어
-// 둘이 같은 사건을 가리킨다는 게 읽히지 않았다). 값을 바꿀 일이 있으면 **셋 다** 함께 바꿀 것.
+/** 활성 구간 면의 모서리 — 라운드 토큰을 그대로 `inset(… round …)`에 넣는다. */
+const BLOCK_RADIUS = token.var('radii.inner');
 
-/** 항목 하나가 차지하는 세로 구간(목록 맨 위 0 기준)과 레일이 서는 가로 위치. */
-export interface Row {
-  x: number;
-  top: number;
-  bottom: number;
-}
-
-interface Measured {
-  rows: Row[];
+/** 잰 항목 좌표 — 항목별 [위, 아래]와 목록 높이. */
+interface Layout {
+  positions: [number, number][];
   height: number;
-  width: number;
-  d: string;
-  /** 항목별 [세로선 시작, 끝]을 **path 위의 길이**로 표현한 것. */
-  lengths: [number, number][];
 }
 
-/**
- * 항목 위치로 레일 path를 만든다.
- *
- * 세로선은 각 항목의 높이만큼 내려가고, 앞뒤 항목의 단이 다르면 곡선으로 갈아탄다. 곡선은 **전부 다음
- * 항목 안쪽**에 들어간다 — 경계에 걸치면 하이라이트가 한 항목만 비출 때 곡선이 반토막 나 허공에 뜬
- * 조각처럼 남는다. 곡선의 세로 길이는 다음 항목 높이의 절반을 넘지 않게 묶어, 항목 높이가 들쭉날쭉해도
- * 다음 경계를 침범하지 않는다.
- */
-export function buildPath(rows: Row[]): string {
-  const head = rows[0];
-  if (head === undefined) return '';
-  let d = `M ${head.x} 0`;
+/** 아직 못 쟀거나 숨어 있어 잴 수 없는 상태 — `paintBlock`이 아무것도 그리지 않는다. */
+const EMPTY_LAYOUT: Layout = { positions: [], height: 0 };
 
-  rows.forEach((row, i) => {
-    const next = rows[i + 1];
-    const stepsHere = next !== undefined && next.x !== row.x;
-    // 자기 항목은 언제나 바닥(= 다음 항목의 머리)까지 그린다.
-    d += ` L ${row.x} ${stepsHere ? next.top : row.bottom}`;
-    if (stepsHere) {
-      const drop = Math.min(ELBOW, (next.bottom - next.top) / 2);
-      const mid = next.top + drop / 2;
-      d += ` C ${row.x} ${mid} ${next.x} ${mid} ${next.x} ${next.top + drop}`;
-    }
-  });
-
-  return d;
-}
-
-/**
- * 항목별 세로선이 path의 몇 번째 지점에서 시작하고 끝나는지 잰다.
- *
- * 점은 CSS motion path(`offset-path`)로 움직이는데 그 좌표계가 "path 위의 거리"라 픽셀 좌표를 길이로
- * 옮겨야 한다. 곡선 구간은 직선보다 길어서 산술로는 못 구하고 브라우저의 실측 API를 쓴다. jsdom에는 이
- * API가 없다 — 없으면 빈 배열을 돌려주고 점은 그리지 않는다(레일과 하이라이트는 그대로다).
- */
-export function measureLengths(d: string, rows: Row[]): [number, number][] {
-  const probe = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-  if (typeof probe.getTotalLength !== 'function') return [];
-  probe.setAttribute('d', d);
-
-  const total = probe.getTotalLength();
-  const out: [number, number][] = [];
-  rows.forEach((row, i) => {
-    // 직전 항목이 끝난 지점에서 출발해, path의 y가 이 항목의 머리에 닿을 때까지 1px씩 전진한다. 그
-    // 사이에 곡선이 있으면 자연히 더 걸린다. 첫 항목은 직전이 없으니 자기 머리에서 출발한다.
-    const prevSpan = out[i - 1];
-    const prevRow = rows[i - 1];
-    let at =
-      prevSpan && prevRow ? prevSpan[1] + (row.top - prevRow.bottom) : row.top;
-    while (at < total && probe.getPointAtLength(at).y < row.top) at += 1;
-    // 끝도 실측한다 — 단이 바뀌어 자기 구간 안에 곡선을 품은 항목은 세로 높이만 더하면 끝점이 위로 잡힌다.
-    let end = at + (row.bottom - row.top);
-    while (end < total && probe.getPointAtLength(end).y < row.bottom) end += 1;
-    out.push([at, end]);
-  });
-  return out;
-}
+/** 면을 활성 구간 [첫, 마지막] 항목의 위·아래로 자른다. */
+const paintBlock = (
+  block: HTMLElement,
+  { positions, height }: Layout,
+  range: [number, number] | null,
+) => {
+  if (!range) return;
+  const first = positions[range[0]];
+  const last = positions[range[1]];
+  // 아직 못 잰 항목이면 그리지 않는다 — 직전 면을 그대로 두는 편이 엉뚱한 자리로 튀는 것보다 낫다.
+  if (!first || !last) return;
+  block.style.clipPath = `inset(${first[0]}px 0px ${height - last[1]}px round ${BLOCK_RADIUS})`;
+  // 첫 자리는 전환 없이 잡는다. 전환을 켠 채 첫 값을 넣으면 접힌 상태(`inset(0 0 100%)`)에서 펼쳐지는
+  // 움직임이 하드 로드마다 재생된다. 새 값을 계산된 스타일에 먼저 반영(읽기로 강제)한 뒤 전환을 켜야
+  // 이번 값이 출발점이 된다 — 프레임 하나 미루는 것으로는 같은 스타일 계산에 둘이 함께 들어갈 수 있다.
+  if (!block.hasAttribute('data-ready')) {
+    getComputedStyle(block).getPropertyValue('clip-path');
+    block.setAttribute('data-ready', '');
+  }
+};
 
 export const TOC = () => {
   const { toc, activeId, activeRange } = useTocHook();
   const scrollRef = useRef<HTMLElement>(null);
-  const listRef = useRef<HTMLOListElement>(null);
-  const itemRefs = useRef(new Map<string, HTMLLIElement>());
-  const [measured, setMeasured] = useState<Measured | null>(null);
+  const columnRef = useRef<HTMLDivElement>(null);
+  const blockRef = useRef<HTMLDivElement>(null);
+  const itemRefs = useRef(new Map<string, HTMLAnchorElement>());
 
-  // 헤딩 목록이 정해진 뒤 한 번, 그리고 폭이 바뀔 때마다(줄바꿈이 달라져 항목 높이가 바뀐다) 다시 잰다.
+  // 항목 위치는 **크기가 바뀔 때만** 잰다(줄바꿈이 달라져 항목 높이가 바뀐다). 활성 구간이 바뀔 때는
+  // 잰 값으로 clip-path만 고쳐 쓰고 레이아웃을 읽지 않는다 — fumadocs와 같다. 값은 렌더와 무관해서
+  // 상태가 아니라 ref에 두고, 면의 style을 직접 고친다(렌더를 한 바퀴 돌면 그만큼 늦게 따라온다).
+  const layout = useRef<Layout>(EMPTY_LAYOUT);
+  const latestRange = useRef(activeRange);
+
   useEffect(() => {
-    const list = listRef.current;
-    if (!list || toc.length === 0) return;
+    const column = columnRef.current;
+    const block = blockRef.current;
+    if (!column || !block || toc.length === 0) return;
 
     const measure = () => {
-      const base = list.getBoundingClientRect().top;
-      const minLevel = Math.min(...toc.map(i => i.level));
-      const rows = toc.map(item => {
-        const r = itemRefs.current.get(item.id)?.getBoundingClientRect();
-        return {
-          x: RAIL_STEP + (item.level - minLevel) * RAIL_STEP,
-          top: r ? r.top - base : 0,
-          bottom: r ? r.bottom - base : 0,
-        };
-      });
-      const d = buildPath(rows);
-      setMeasured({
-        rows,
-        d,
-        lengths: measureLengths(d, rows),
-        height: list.scrollHeight,
-        width: RAIL_STEP * 2 + Math.max(...rows.map(r => r.x)),
-      });
+      const base = column.getBoundingClientRect();
+      // 숨은 동안(lg 미만 display:none)은 전부 0으로 잰다. 그 값으로 그리면 면이 목록 전체를 덮은 채
+      // 남았다가, 다시 보일 때 거기서부터 구간으로 쓸려 내려온다. 잰 값을 비우고 첫 자리 표시도
+      // 거둬, 다시 보이는 첫 측정이 전환 없이 제자리를 잡게 한다.
+      if (base.height === 0) {
+        layout.current = EMPTY_LAYOUT;
+        block.removeAttribute('data-ready');
+        return;
+      }
+      // column 기준 좌표(화면 좌표의 차)라 차례가 스크롤돼도 변하지 않는다. offsetTop은 정수로 잘려,
+      // 글자 크기를 키운 환경(항목 높이 31.5px 등)에서 면 끝이 이웃 항목으로 1px 넘어갔다.
+      layout.current = {
+        positions: toc.map(item => {
+          const rect = itemRefs.current.get(item.id)?.getBoundingClientRect();
+          return rect ? [rect.top - base.top, rect.bottom - base.top] : [0, 0];
+        }),
+        height: base.height,
+      };
+      paintBlock(block, layout.current, latestRange.current);
     };
 
     measure();
     const ro = new ResizeObserver(measure);
-    ro.observe(list);
+    ro.observe(column);
     return () => ro.disconnect();
   }, [toc]);
+
+  useEffect(() => {
+    latestRange.current = activeRange;
+    const block = blockRef.current;
+    if (block) paintBlock(block, layout.current, activeRange);
+  }, [activeRange]);
 
   // 활성 항목이 차례 바깥으로 밀려나면 차례를 스크롤해 다시 데려온다.
   //
   // 항목이 스물 몇 개인 글에서는 목록이 화면보다 길어 아래쪽 절반이 잘린다.
   // 그 상태로 본문을 읽어 내려가면 하이라이트가 잘린 구간으로 들어가 **차례가
   // 통째로 멈춰 보인다** — 실제로는 갱신되고 있는데 보이지 않을 뿐이다.
-  // fumadocs도 같은 이유로 활성 항목을 컨테이너 안으로 끌어온다.
+  // fumadocs는 활성 항목이 바뀔 때마다 가운데로 끌어오지만(scrollMode 'always'),
+  // 여기서는 상자 밖으로 나갈 때만 옮긴다 — 읽는 동안 목록이 매번 움직이지 않게.
   //
   // 다만 스크롤은 **차례 안에서만** 일어나야 한다. `el.scrollIntoView()`는
   // 조상 스크롤러를 전부 건드려서 본문(=페이지)까지 함께 움직이는데, 그러면
@@ -159,7 +132,10 @@ export const TOC = () => {
   // 그래서 컨테이너의 scrollTop만 직접 옮긴다.
   const isFirstSync = useRef(true);
   useEffect(() => {
-    // "첫 동기화"는 **마운트 직후 한 번**을 뜻한다. 아래 가드들 뒤에서
+    // 마운트 직후의 빈 값은 아직 활성 항목이 없다는 뜻이라 동기화가 아니다. 여기서 "첫
+    // 동기화"를 써 버리면 순간 이동 분기에 영영 닿지 못한다(중간에서 연 글도 미끄러졌다).
+    if (!activeId) return;
+    // "첫 동기화"는 **활성 항목이 처음 정해진 한 번**이다. 아래 가드들 뒤에서
     // 내리면, 글 맨 위에서 읽기 시작해 한동안 보정할 일이 없던 경우
     // (가장 흔한 경우다) 한참 뒤 처음 필요해진 보정이 "중간부터 연 것"으로
     // 오인돼 순간 이동으로 처리된다.
@@ -167,7 +143,7 @@ export const TOC = () => {
     isFirstSync.current = false;
 
     const box = scrollRef.current;
-    const el = activeId ? itemRefs.current.get(activeId) : undefined;
+    const el = itemRefs.current.get(activeId);
     if (!box || !el) return;
     if (box.scrollHeight <= box.clientHeight) return;
 
@@ -182,7 +158,7 @@ export const TOC = () => {
       bottom <= box.scrollTop + box.clientHeight - FADE;
     if (inView) return;
 
-    // 마운트 직후는 제자리만 잡고, 그 밖에는 페이지의 scroll-behavior를 따른다 —
+    // 첫 동기화는 제자리만 잡고, 그 밖에는 페이지의 scroll-behavior를 따른다 —
     // 차례 상자에 같은 CSS를 주면 키보드 초점 이동까지 미끄러진다.
     const smooth =
       !isFirst &&
@@ -193,44 +169,7 @@ export const TOC = () => {
     });
   }, [activeId]);
 
-  // 레일 위를 미끄러지는 점의 위치(path 길이).
-  //
-  // 점은 활성 구간의 **진행 방향 쪽 끝**에 붙는다 — 내려 읽으면 구간의 아래 끝, 거슬러 올라가면 위 끝.
-  // 그래야 점이 "읽고 있는 지점"을 가리키는 것처럼 보인다.
-  const [dotAt, setDotAt] = useState<number | null>(null);
-  const prevRange = useRef<[number, number] | null>(null);
-  const wasUp = useRef(false);
-  useEffect(() => {
-    if (!measured || !activeRange || measured.lengths.length === 0) return;
-    const [start, end] = activeRange;
-    const prev = prevRange.current;
-    const up = !prev
-      ? false
-      : prev[0] > start || prev[1] > end
-        ? true
-        : // 구간이 그대로면 마지막 방향을 유지한다(구간이 잠깐 멈춰도 점이 반대편으로 튀지 않는다).
-          prev[0] === start && prev[1] === end
-          ? wasUp.current
-          : false;
-    prevRange.current = [start, end];
-    wasUp.current = up;
-
-    const seg = up ? measured.lengths[start] : measured.lengths[end];
-    setDotAt(seg ? (up ? seg[0] : seg[1]) : null);
-  }, [activeRange, measured]);
-
   if (toc.length === 0) return null;
-
-  // 지금 화면에 보이는 절**들**만 남기고 잘라낸다. 구간은 스크롤마다 처음부터 다시 계산되므로(tocHooks),
-  // 판정이 한 번 어긋나도 다음 프레임에 스스로 제자리를 찾는다 — 예전 누적 Set 방식처럼 잔상이
-  // 남을 수가 없다.
-  const first = measured && activeRange ? measured.rows[activeRange[0]] : null;
-  const last = measured && activeRange ? measured.rows[activeRange[1]] : null;
-  const clip =
-    first && last && measured
-      ? `inset(${first.top}px 0px ${measured.height - last.bottom}px)`
-      : 'inset(0px 0px 100%)';
-  const minLevel = Math.min(...toc.map(x => x.level));
 
   return (
     <nav
@@ -255,116 +194,68 @@ export const TOC = () => {
         // 스크롤바를 아예 감추면 그 자리를 내내 비워둘 이유가 사라진다 — 폭은 여전히 고정이다.
         //
         // 대신 "여기서 잘렸다"는 신호가 없어지므로, fumadocs처럼 위아래
-        // 16px을 투명으로 흐린다. 아래 py도 같은 이유다(첫·마지막 항목이
-        // 페이드 구간에 앉아 흐릿하게 시작하지 않도록 여백을 준다).
+        // 16px을 투명으로 흐린다.
         scrollbarWidth: 'none',
         '&::-webkit-scrollbar': { display: 'none' },
         maskImage: `[linear-gradient(to bottom, transparent, black ${FADE}px, black calc(100% - ${FADE}px), transparent)]`,
-        // 페이드 구간과 정확히 같은 16px. 더 좁으면 첫·마지막 항목의 글자가
-        // 상시 반쯤 흐려 보인다.
+        // 페이드 구간과 같은 16px — 첫·마지막 항목의 상자(그 위의 면까지)가 통째로 페이드 밖에 앉는다.
+        // fumadocs는 12라 면의 끝 4px이 페이드에 걸린다(글자는 항목 안쪽 여백 4 덕에 걸리지 않는다).
         py: '4',
       })}
       // 눈에 보이는 "이 글의 차례" 라벨은 뺐다(좁은 사이드바가 지저분해진다).
       // 이 aria-label이 스크린리더용 이름을 계속 대므로 접근성은 그대로다.
       aria-label="이 글의 차례"
     >
-      <div className={css({ pos: 'relative' })}>
-        {measured && measured.d && (
-          // 레일·점은 장식이라 스크린리더에서 숨긴다. 움직임 줄이기는 시간 토큰이 끈다.
-          <div
-            aria-hidden
-            className={css({
-              pos: 'absolute',
-              left: '0',
-              top: '0',
-              pointerEvents: 'none',
-            })}
-            style={{ width: measured.width, height: measured.height }}
-          >
-            <svg
-              focusable="false"
-              width={measured.width}
-              height={measured.height}
-              viewBox={`0 0 ${measured.width} ${measured.height}`}
-              className={css({ overflow: 'visible' })}
-            >
-              <path
-                d={measured.d}
-                fill="none"
-                strokeWidth="1.5"
-                strokeLinecap="square"
-                className={css({ stroke: 'ink.border' })}
-              />
-              {/* 같은 path를 겹쳐 그리고 잘라 쓴다. clip-path만 바뀌므로 전환이 싸다. */}
-              <path
-                d={measured.d}
-                fill="none"
-                strokeWidth="1.5"
-                strokeLinecap="square"
-                style={{ clipPath: clip }}
-                className={css({
-                  stroke: 'accent.solid',
-                  // ↓ 글자 색·점과 같은 시간. 위 주석 참고.
-                  transitionProperty: 'clip-path',
-                  transitionDuration: 'fast',
-                  transitionTimingFunction: 'standard',
-                })}
-              />
-            </svg>
-            {/* 레일 위를 따라가는 점 — 구간이 길어져도 "지금 여기"를 끝점 하나로 요약한다. 좌표는
-                offset-path가 맡는다. */}
-            {dotAt !== null && (
-              <div
-                className={css({
-                  pos: 'absolute',
-                  left: '0',
-                  top: '0',
-                  boxSize: '[5px]',
-                  rounded: 'full',
-                  bg: 'accent.solid',
-                  transitionProperty: 'offset-distance',
-                  transitionDuration: 'fast',
-                  transitionTimingFunction: 'standard',
-                })}
-                style={{
-                  offsetPath: `path("${measured.d}")`,
-                  offsetDistance: `${dotAt}px`,
-                }}
-              />
-            )}
-          </div>
-        )}
-
+      {/* 면과 항목 좌표의 기준 상자다 — 면은 이 상자를 덮고, 항목은 이 상자의 위끝에서 잰다. */}
+      <div ref={columnRef} className={css({ pos: 'relative' })}>
+        {/* 목록 전체를 덮는 면 — clip-path로 활성 구간만 남긴다. 장식이라 스크린리더에서 숨긴다.
+            fumadocs는 `fd-primary/10`, 여기서는 같은 자리의 잉크 틴트(accent.muted)다. 움직임 줄이기는
+            시간 토큰이 끈다. */}
+        <div
+          ref={blockRef}
+          aria-hidden
+          className={css({
+            pos: 'absolute',
+            inset: '0',
+            bg: 'accent.muted',
+            pointerEvents: 'none',
+            clipPath: 'inset(0 0 100%)',
+            // fumadocs는 300ms ease-out — Astryx 시간 단(fast·fastMax·medium·mediumMax) 중 가장 가까운
+            // fastMax(230ms)에 감속 곡선 standard를 쓴다(release·spring은 누름 전용이다). 글자 색(`pressText`,
+            // fast)보다 늦게 도착하는 건 fumadocs도 같다(글자 150ms·면 300ms) — 면이 글자를 따라 미끄러진다.
+            // 첫 자리는 전환 없이 잡는다(data-ready, `paintBlock`).
+            '&[data-ready]': {
+              transitionProperty: 'clip-path',
+              transitionDuration: 'fastMax',
+              transitionTimingFunction: 'standard',
+            },
+          })}
+        />
         <ol
-          ref={listRef}
           className={css({
             listStyleType: 'none',
             m: '0',
             p: '0',
             display: 'flex',
             flexDir: 'column',
-            gap: '0.5',
           })}
         >
           {toc.map((item, i) => {
-            const depth = item.level - minLevel;
-            // 색은 구간 전체가 함께 밝아진다(강조 레일과 같은 범위).
+            // 색은 구간 전체가 함께 밝아진다(면과 같은 범위).
             // 반면 `aria-current`는 한 항목뿐이다 — 스크린리더에 "현재 위치"가
             // 여럿이면 어디를 읽고 있다는 건지 알 수 없다.
             const isLit = activeRange
               ? i >= activeRange[0] && i <= activeRange[1]
               : false;
             return (
-              <li
-                key={item.id}
-                ref={el => {
-                  if (el) itemRefs.current.set(item.id, el);
-                  else itemRefs.current.delete(item.id);
-                }}
-              >
+              <li key={item.id}>
                 {/* 앵커다 — 스크롤은 onClick이 가로채도 href가 있어야 새 탭으로 열기·주소
                     복사가 산다. */}
                 <a
+                  ref={el => {
+                    if (el) itemRefs.current.set(item.id, el);
+                    else itemRefs.current.delete(item.id);
+                  }}
                   href={`#${item.id}`}
                   onClick={e => {
                     // 수정자 키가 눌린 클릭은 **가로채지 않는다.** 여기서
@@ -386,26 +277,32 @@ export const TOC = () => {
                   // 빌드 때 따라가지 못하고(useTocHook의 런타임 값) 한쪽 색만 추출한다.
                   data-lit={isLit || undefined}
                   className={css(pressText, {
+                    // 면(absolute)보다 위에 그린다 — 정적 항목은 면 아래로 깔려 제목 속 코드 칩이 틴트에
+                    // 묻혔다. fumadocs 항목도 relative다.
+                    pos: 'relative',
                     display: 'block',
                     py: '1',
                     pr: '2',
+                    // 키보드 초점이 차례 상자를 스크롤할 때 항목이 페이드에 걸리지 않게(fumadocs scroll-m-4).
+                    scrollMarginBlock: `[${FADE}px]`,
                     cursor: 'pointer',
                     textStyle: 'body',
+                    // 꺼진 항목도 accent.muted 위 AA 하한인 ink.700이다(fumadocs muted-foreground보다 진하다).
+                    // 면은 clip-path로 잘려 있어도 상자는 목록 전체를 덮어, 접근성 검사(axe)는 clip-path를
+                    // 모른 채 모든 항목이 면 위에 있다고 본다 — ink.600이면 4.12:1로 걸렸다(라이트·다크
+                    // 모두). 면이 움직이는 동안 잠깐 그 위를 지나는 항목도 같다. 켜짐과 꺼짐은 면이 가른다.
                     color: 'ink.700',
-                    // 활성 표시는 **색과 레일만** 바꾼다. 굵기를 올리면 글자 폭이 늘어 항목이 한 줄에서
+                    overflowWrap: 'anywhere',
+                    // 활성 표시는 **색과 면만** 바꾼다. 굵기를 올리면 글자 폭이 늘어 항목이 한 줄에서
                     // 두 줄로 접히고, 그 아래 항목이 전부 20px씩 밀린다(실측: 목록 높이 917 → 937px).
-                    // 스크롤할 때마다 차례가 들썩이는 데다, 레일 좌표가 clip-path 전환 도중에 바뀌어
-                    // 하이라이트가 엉뚱한 자리에 그려진다. 글자 색의 전환은 `pressText`가 든다 — hover와
-                    // 같은 fast·standard라 위 레일·점과 한 박자다.
+                    // 스크롤할 때마다 차례가 들썩이는 데다, 잰 좌표가 어긋나 면이 엉뚱한 자리에
+                    // 그려진다. 글자 색의 전환은 `pressText`가 든다(hover와 같은 fast·standard).
                     '&[data-lit]': { color: 'accent.solid' },
                     _hover: { color: 'ink.950' },
                   })}
-                  // 레일이 서는 자리(x)에서 한 칸 더 띄운다 — 깊을수록 레일과 함께 들어간다.
-                  style={{
-                    paddingLeft: `${RAIL_STEP * 2 + depth * RAIL_STEP}px`,
-                  }}
+                  style={{ paddingLeft: `${itemOffset(item.level)}px` }}
                 >
-                  {item.text}
+                  <TocTitle parts={item.parts} />
                 </a>
               </li>
             );
