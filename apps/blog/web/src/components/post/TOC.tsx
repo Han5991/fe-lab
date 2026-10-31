@@ -287,10 +287,11 @@ export const TOC = () => {
                     scrollMarginBlock: `[${FADE}px]`,
                     cursor: 'pointer',
                     textStyle: 'body',
-                    // 꺼진 항목은 보조 잉크 — fumadocs의 muted-foreground 자리다. 켜진 항목(accent.solid)과
-                    // 색으로도 갈려야 면 밖으로 나온 글자가 어디까지 비춰졌는지 읽힌다. 꺼진 글자는 면
-                    // (accent.muted) 위에 앉지 않으니 다크 muted 위 AA 제약(ink.700 이상)은 해당하지 않는다.
-                    color: 'ink.600',
+                    // 꺼진 항목도 accent.muted 위 AA 하한인 ink.700이다(fumadocs muted-foreground보다 진하다).
+                    // 면은 clip-path로 잘려 있어도 상자는 목록 전체를 덮어, 접근성 검사(axe)는 clip-path를
+                    // 모른 채 모든 항목이 면 위에 있다고 본다 — ink.600이면 4.12:1로 걸렸다(라이트·다크
+                    // 모두). 면이 움직이는 동안 잠깐 그 위를 지나는 항목도 같다. 켜짐과 꺼짐은 면이 가른다.
+                    color: 'ink.700',
                     overflowWrap: 'anywhere',
                     // 활성 표시는 **색과 면만** 바꾼다. 굵기를 올리면 글자 폭이 늘어 항목이 한 줄에서
                     // 두 줄로 접히고, 그 아래 항목이 전부 20px씩 밀린다(실측: 목록 높이 917 → 937px).

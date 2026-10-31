@@ -837,7 +837,7 @@ Astryx BlogCard·BlogFeatureCard·BlogShowcase의 블로그 판. `src/components
 | 커버       | 16:9 틀, `alt=""`, `fetchPriority=high`. 가로형(OG 카드·가로형 자기 썸네일)은 cover, 정사각 등은 contain(`paper.100` 바닥)(아래)                                                                                                                                                                           |
 | 본문 아래  | 구분선 → 태그 배지(`archivePath({ tag })` 링크 — 태그 필터의 유일한 입구)와 공유 ghost 버튼 → 이전·다음 글(nav) → 댓글                                                                                                                                                                                     |
 | 이전·다음  | muted 면 카드(16:9 썸네일 96 + 라벨·제목 2줄), md부터 두 열, 아래는 한 열(375에서 글자 칸이 31px만 남는다)                                                                                                                                                                                                 |
-| 차례       | fumadocs `block` 차례(MIT) — 목록을 덮는 `accent.muted` 면을 `clip-path: inset(… round inner)`로 잘라 보이는 헤딩의 항목만 덮는다(fastMax·standard). 들여쓰기 8·20·32, 꺼진 글자 `ink.600`, 제목 안 코드는 칩. 활성은 색과 면만 — 굵기는 항목을 접는다. 꺾이는 레일+점에서 바꿨다(사용자 결정, 2026-10-31) |
+| 차례       | fumadocs `block` 차례(MIT) — 목록을 덮는 `accent.muted` 면을 `clip-path: inset(… round inner)`로 잘라 보이는 헤딩의 항목만 덮는다(fastMax·standard). 들여쓰기 8·20·32, 꺼진 글자 `ink.700`, 제목 안 코드는 칩. 활성은 색과 면만 — 굵기는 항목을 접는다. 꺾이는 레일+점에서 바꿨다(사용자 결정, 2026-10-31) |
 | 진행 바    | 헤더 바로 아래 3px, scroll() 타임라인. **카카오톡 인앱 브라우저에서는 뺀다**(user-agent `KAKAOTALK`) — 스크롤 프레임마다 메인 스레드가 스타일을 다시 계산해 그 브라우저에서만 글 상세 스크롤이 버벅였다                                                                                                    |
 
 - **자기 썸네일** = frontmatter `thumbnail`이 있고 생성 OG 카드(`/og/…`)가 아니다(`hasAuthoredThumbnail`).
