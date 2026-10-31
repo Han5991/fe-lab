@@ -7,6 +7,7 @@ import { ArrowRight, ExternalLink } from 'lucide-react';
 import { css, cx } from '@blog/styled-system/css';
 import { fmtNum, localeTag, resolvePostState } from '@blog/content/client';
 import { SITE_LOCALE, TIMEZONE } from '@/content.values.mts';
+import { pressCardLink } from '@/src/components/interaction';
 import { railColumn, railGutter } from '@/src/components/Rail';
 import { LoadingPlaceholder } from '@/src/components/shared/LoadingPlaceholder';
 import { AdminCard } from '@/src/components/admin/AdminCard';
@@ -330,16 +331,16 @@ function DashboardContent() {
             </>
           ) : undefined}
         </MetricCard>
+        {/* 카드 자신이 링크라 `pressCardLink`다. */}
         <Link
           href={ADMIN_ANALYTICS_PATH}
           style={enterOrderStyle(3)}
-          className={css(adminCard, enterMotion, {
+          className={css(adminCard, enterMotion, pressCardLink, {
             display: 'flex',
             flexDir: 'column',
             justifyContent: 'space-between',
             gap: '1',
             color: 'ink.950',
-            transition: 'colors',
             _hover: { borderColor: 'ink.borderStrong' },
           })}
         >

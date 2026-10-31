@@ -114,9 +114,9 @@ function placeFor(range: Range, coarse: boolean): Anchor | null {
  * 못 막는다 — translate의 %는 버튼 자신의 폭이라 브라우저가 실제 폭으로 계산한다.
  *
  * `transform`이 아니라 개별 속성 `translate`에 싣는다 — 인라인 `transform`은 클래스의 누름 크기
- * (`pressButton`의 `transform: scale(0.98)`)를 덮어 버튼이 눌리지 않고, 둘을 한 `transform`에 합치려면
+ * (`pressButton`이 거는 `transform`)를 덮어 크기가 줄지 않고, 둘을 한 `transform`에 합치려면
  * 누름 값을 이 파일이 복사해야 한다. `translate`는 `transform`과 겹쳐 적용되고 전환 대상도 아니라
- * (`common`에 없다) 위치가 스크롤·라벨 폭을 따라 바뀔 때 미끄러지지 않는다.
+ * (누름 프리셋의 전환 목록에 없다) 위치가 스크롤·라벨 폭을 따라 바뀔 때 미끄러지지 않는다.
  */
 const centerWithin = ({ left, viewport }: Anchor) =>
   `clamp(${MARGIN - left}px, -50%, calc(${viewport - MARGIN - left}px - 100%))`;
@@ -440,7 +440,7 @@ export function QuoteLink({
             left: anchor.left,
             translate: centerWithin(anchor),
           }}
-          // 누름은 버튼 프리셋이다 — 눌리는 동안 98%. 위치는 `translate`라 겨루지 않는다.
+          // 누름은 버튼 프리셋(`pressButton`)이다. 위치는 `translate`라 겨루지 않는다.
           className={css(pressButton, {
             pos: 'fixed',
             // 라벨 칸이 0fr까지 접히면 min-content가 0이라, left만 준 fixed 버튼이 shrink-to-fit에서

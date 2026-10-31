@@ -10,7 +10,8 @@ import { Portal } from '@/src/components/Portal';
 import { iconButton } from '@/src/components/iconButton';
 import {
   holdAnimationWhileFocused,
-  pressButton,
+  pressFab,
+  pressText,
 } from '@/src/components/interaction';
 import { useModalDialog } from '@/src/components/useModalDialog';
 import { usePresence } from '@/src/components/usePresence';
@@ -18,12 +19,12 @@ import { usePresence } from '@/src/components/usePresence';
 /** 목차 항목 한 줄 — level은 헤딩 깊이만큼 들여쓰고, active는 현재 절을 비춘다. */
 const tocItem = cva({
   base: {
+    ...pressText,
     // 앵커가 인라인이면 글자 폭만 눌리는 자리가 된다. li 한 줄 전체가
     // 탭 대상이었던 예전 동작을 유지하려면 블록이어야 한다.
     display: 'block',
     fontSize: 'md',
     cursor: 'pointer',
-    transition: 'colors',
     _hover: { color: 'accent.solid' },
   },
   variants: {
@@ -223,7 +224,8 @@ export const MobileTOC = () => {
         aria-label="목차 열기"
         aria-haspopup="dialog"
         aria-expanded={isOpen}
-        className={css(pressButton, {
+        // 누름은 떠 있는 버튼의 옛 누름이다(`pressFab` — 시트가 쉬는 버튼의 사본에서 펼쳐진다).
+        className={css(pressFab, {
           pos: 'fixed',
           bottom: FAB.bottom,
           right: FAB.right,

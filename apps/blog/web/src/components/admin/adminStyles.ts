@@ -2,6 +2,7 @@ import type { CSSProperties } from 'react';
 import { css, cva } from '@blog/styled-system/css';
 import { VIEW_TRANSITION } from '@/src/shared/viewTransitions';
 import { iconButton } from '../iconButton';
+import { pressText } from '../interaction';
 
 /**
  * admin 화면이 함께 쓰는 면·배지·표 모양 — 승인 admin 목업(Astryx Card·Badge·Table)의 블로그 판.
@@ -42,7 +43,10 @@ export const enterMotion = css.raw({
   animationName: VIEW_TRANSITION.pageEnter,
   animationDuration: 'medium',
   animationTimingFunction: 'standard',
-  animationFillMode: 'both',
+  // 끝 상태는 채우지 않는다(`backwards`) — keyframes가 `from`뿐이라 끝 모양은 요소 자신의 값이고, 끝난 애니메이션이
+  // `both`로 남아 있으면 그 요소의 transform·opacity 전환이 돌지 않는다(Chromium 실측 — 누름 프리셋을 가진 상세
+  // 분석 카드가 스프링 없이 눌린 크기로 튀었다). 출발 전(순서 지연 동안)은 `from`으로 숨겨 둔다.
+  animationFillMode: 'backwards',
   animationDelay: '[calc(var(--enter-order, 0) * token(durations.stagger))]',
 });
 
@@ -127,7 +131,7 @@ export const truncate = css.raw({
 });
 
 /** 독립 링크 — 목록 제목처럼 hover 밑줄로만 가른다(blog-design-system 스킬 "색으로 갈리지 않는 자리"). */
-export const rowLink = css.raw({
+export const rowLink = css.raw(pressText, {
   color: 'ink.950',
   _hover: { textDecorationLine: 'underline' },
 });

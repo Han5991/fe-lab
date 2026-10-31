@@ -3,6 +3,7 @@
 import type { CSSProperties } from 'react';
 import { css, cx } from '@blog/styled-system/css';
 
+import { pressToggle } from '@/src/components/interaction';
 import { steadyLabel } from '@/src/components/steadyLabel';
 import { VIEW_MODES, type ViewMode } from './archiveParams';
 
@@ -49,7 +50,11 @@ const face = css({
 });
 
 // 면보다 뒤에 그려 글자가 면 위에 온다(둘 다 위치 지정 요소라 문서 순서로 쌓인다).
-const cellLabel = css({ pos: 'relative', display: 'inline-flex' });
+//
+// 누름은 `pressToggle`이고 칸을 감싼 label이 받는다. 칸 글자(`span`)를 눌러도 그 상위 label이 함께
+// `:active`이고, 면은 label 밖의 형제라 칸의 글자만 옅어지고 면은 그대로다. 투명도가 걸려도 이미 위치
+// 지정 요소라 쌓임 순서(면 위)는 같다. 글자색 전환은 프리셋 밖의 `span`(`cell`)이 그대로 맡는다.
+const cellLabel = css(pressToggle, { pos: 'relative', display: 'inline-flex' });
 
 const radio = cx('peer', css({ srOnly: true }));
 

@@ -4,36 +4,119 @@ import { css } from '@blog/styled-system/css';
  * 누르는 모양의 프리셋 — 인터랙션 상태의 단일 출처(blog-design-system 스킬 "인터랙션 상태").
  * 상태의 **때**는 panda.config의 조건(`_hover`·`_press`·`_pressScale`)이 정하고, 이 파일은 그 조건에
  * **무엇**을 걸지 정한다. 면·색처럼 요소마다 다른 값은 레시피·호출부가 `_hover`에 적는다 — 터치에서는
- * `_hover`가 누르는 동안이라, 그 한 줄이 마우스의 hover와 터치의 누름을 함께 맡는다.
+ * `_hover`가 누르는 동안이라, 그 한 줄이 마우스의 hover와 터치의 누름 면을 함께 맡는다. 누름의 투명도·크기는
+ * 이 파일의 프리셋이 더한다(수치와 근거는 스킬 — iOS 하이라이트).
  *
- * - 전환은 `common`(색·투명도·transform)이라 hover 색과 누름 크기가 같은 시간(fast)을 탄다. 쓰는 쪽이
- *   `transition`을 다시 적으면 transform이 빠져 누름이 뚝 끊긴다.
- * - 크기는 마우스류 포인터(`_pressScale`)에서만 줄어든다. 움직임 줄이기는 시간 토큰이 맡는다(fast가
- *   0.01ms가 된다).
- * - 크기는 버튼·칩·카드에만 둔다. 세그먼트는 칸 뒤에서 미끄러지는 표식 면과 어긋나고, 인라인 링크는
- *   transform이 걸리지 않으며(비대체 인라인 요소), 면으로 깔린 행은 레일 정렬이 흔들린다.
+ * - 누르면 투명도·크기가 바로 바뀌고 놓으면 천천히 돌아온다. 전환은 속성마다 시간을 나눠 적은 `pressTransition`이다 —
+ *   색은 hover와 같은 fast·standard, 투명도·크기는 누를 때 `press`(40ms)·놓을 때 `release`(320ms), 카드
+ *   크기의 놓음만 `spring`이다. 누름 조건의 규칙이 진입을, 평상시 규칙이 놓음을 든다(CSS는 도착 상태의
+ *   `transition`을 쓴다 — panda.config의 `PRESS_TRANSITION`). 쓰는 쪽이 `transition`·`transitionDuration`
+ *   같은 전환 유틸리티를 다시 적으면 목록이 통째로 바뀌거나 longhand가 누름 시간까지 덮는다.
+ * - 투명도는 종류로 가른다 — 링크는 0.3, 버튼과 토글은 0.5. 글자는 면이 없어 글자가 신호의 전부라 사라지지
+ *   않는 선에서 깊게, 면은 옅어지면 지면색에 가까워져 얕게 잡았다. 투명도는 모든 포인터(`_press`)에서다.
+ * - 크기는 마우스류 포인터(`_pressScale`)에서만 줄어든다 — 버튼 96%, 카드 97%. 토글 칸은 칸 뒤에서 미끄러지는
+ *   표식 면과 어긋나고, 인라인 링크는 transform이 걸리지 않아(비대체 인라인 요소) 크기가 없다.
+ * - 움직임 줄이기는 시간 토큰이 맡는다(fast·press·release·spring이 0.01ms가 된다) — 투명도·크기는 잔상 없이
+ *   바로 바뀐다.
  *
- * 버튼 레시피(`actionButton`·`iconButton`·`chip`·`tagBadge`)는 cva `base`에 펼치고, 레시피 밖의 버튼
- * (맨 위로·목차 열기·코드 복사)은 `css(pressButton, { … })`로 합친다.
+ * 어느 요소가 어느 프리셋인지는 스킬 "인터랙션 상태"의 종류 표가 단일 출처다 — 여기 프리셋 설명은 종류만 적는다.
+ * 버튼 레시피(`actionButton`·`iconButton`·`chip`·`tagBadge`)는 프리셋을 cva에 펼치고, 레시피 밖의 요소는
+ * `css(프리셋, { … })`로 합친다.
  */
-export const pressButton = css.raw({
-  transition: 'common',
-  _pressScale: { transform: 'scale(0.98)' },
-  // `_pressScale`이 비활성의 누름 크기를 이미 뺐다 — 여기서는 비활성의 모양(흐림·커서)만 준다.
+
+/** 누르는 동안의 투명도 — 링크는 글자만 남아 깊게, 버튼·토글은 면이 지면에 묻히지 않게 얕게. */
+const PRESS_OPACITY = { link: '0.3', control: '0.5' } as const;
+
+/**
+ * 링크의 누름 — 누르는 동안 투명도 0.3이고 크기는 그대로다. 같은 요소의 투명도 hover(워드마크 0.7)도 이 전환을
+ * 타서 들고 날 때 release다 — 놓음과 hover가 같은 상태(`:hover:not(:active)`)에 도착해 가를 선택자가 없다.
+ */
+export const pressText = css.raw({
+  pressTransition: 'rest',
+  _press: { opacity: PRESS_OPACITY.link, pressTransition: 'held' },
+});
+
+/**
+ * 공유 요소를 안은 링크(목록 행 — 제목 h3가 글 상세 h1로 이어진다)의 누름 — 투명도를 링크가 아니라 링크의 자식에
+ * 준다. View Transition은 이름 붙은 요소의 스냅샷에 자기 투명도는 담고 조상의 투명도는 버려서, 링크를 흐리면 글을
+ * 여는 전환의 첫 프레임에 제목만 1로 튀었다(2026-10 실측 — 날짜는 페이지 스냅샷에 남아 흐린 채였다). 자식이
+ * 흐려지면 제목은 자기 투명도를 든 채 찍혀 그대로 걷힌다. 값과 시간은 `pressText`와 같다.
+ */
+export const pressTextShared = css.raw({
+  '& > *': { pressTransition: 'rest' },
+  _press: {
+    '& > *': { opacity: PRESS_OPACITY.link, pressTransition: 'held' },
+  },
+});
+
+/**
+ * hover가 왼쪽 여백을 옮기는 링크 행(소개 페이지 목록)의 누름 — `pressText`에 `padding-left` 전환을 더한다. 누름
+ * 전환이 `transition` 한 벌이라, 그 행이 hover에 옮기는 여백도 같은 목록에 있어야 hover 박자(fast·standard)로 옮는다.
+ */
+export const pressTextIndent = css.raw({
+  pressTransition: 'indentRest',
+  _press: { opacity: PRESS_OPACITY.link, pressTransition: 'indentHeld' },
+});
+
+/**
+ * 토글의 누름 — 누르는 동안 투명도 0.5이고 크기는 그대로다(보기 토글은 칸 뒤에서 미끄러지는 표식 면과 어긋난다 —
+ * 칸의 글자만 옅어지고 표식 면은 그대로다).
+ */
+export const pressToggle = css.raw({
+  pressTransition: 'rest',
+  _press: { opacity: PRESS_OPACITY.control, pressTransition: 'held' },
+});
+
+/** 버튼의 누름 — 투명도 0.5에 마우스로는 96%까지 줄어든다. */
+export const pressButton = css.raw(pressToggle, {
+  _pressScale: { transform: 'scale(0.96)' },
+  // `_press`·`_pressScale`이 비활성의 누름을 이미 뺐다 — 여기서는 비활성의 모양(투명도 .5·커서)만 준다. 값은
+  // 누름 투명도와 같지만 뜻이 다르다(누를 수 없음). 비활성으로 바뀌는 투명도도 놓음(release)을 탄다.
   _disabled: { opacity: '0.5', cursor: 'not-allowed' },
 });
 
 /**
- * 글 카드 뿌리의 누름 — 마우스로 누르는 동안 카드가 99%로 줄어든다. 버튼(98%)보다 얕은 건 상자가 커서
- * 1%도 가장자리가 4px 안팎 움직이기 때문이다. 카드는 글 상세로 이어지는 공유 요소(View Transition)라
- * 클릭 순간에 줄어 있어도 전환을 해치지 않는다 — 전환 그룹은 조상의 transform을 그룹 transform으로
- * 받아 눌린 모양에서 이어 모핑하고, 스냅샷의 크기(`old`의 width·height)는 레이아웃 크기 그대로다
- * (Chrome 실측, 4초로 늘린 해제 전환을 걸어 99.7%인 채 전환을 시작해도 같다). 커버 hairline·틴트는
- * `cardParts.ts`다.
+ * 떠 있는 버튼(FAB)의 누름 — 옛 누름(마우스 98%·fast, 투명도 없음)을 지킨다. 둘 다 누른 뒤의 모양이 버튼의 쉬는
+ * 모양에 묶여 있다.
+ * - 맨 위로: 등장(`@starting-style`)도 그 요소의 평상시 `transition`을 타서, `pressButton`을 주면 등장이 fast에서
+ *   release(320ms, 느린 출발)로 바뀐다.
+ * - 목차 열기: 누르면 바텀시트가 버튼 자리에서 펼쳐지는데, 시트의 첫 모양(`face`)은 쉬는 버튼의 사본(투명도 1·
+ *   100%)이다. 버튼을 옅게 하면 옅은 버튼 위에 진한 사본이 튀어 오른다. 펼침 자체가 누름의 피드백이다.
+ */
+export const pressFab = css.raw({
+  transition: 'common',
+  _pressScale: { transform: 'scale(0.98)' },
+});
+
+/**
+ * 글 카드 뿌리의 누름 — 마우스로 누르는 동안 카드가 97%로 줄고, 놓으면 `spring`(520ms — 202ms에 100.5%까지
+ * 갔다 가라앉는다)으로 돌아온다. 카드는 투명도를 바꾸지 않는다 — 커버 이미지가 어두워지는 것(`cardParts.ts`)이 대신한다.
+ * 버튼(96%)보다 얕은 건 상자가 커서다(800px 카드면 한쪽 12px). 카드는 글 상세로 이어지는 공유 요소(View
+ * Transition)라 클릭 순간에 줄어 있어도 전환을 해치지 않는다 — 전환 그룹은 조상의 transform을 그룹
+ * transform으로 받아 눌린 모양에서 이어 모핑하고, 스냅샷의 크기(`old`의 width·height)는 레이아웃 크기
+ * 그대로다(Chrome 실측은 99%에서 — 4초로 늘린 해제 전환을 걸어 99.7%인 채 전환을 시작해도 같았다). 커버
+ * hairline·틴트·밝기와 덮개 넓히기는 `cardParts.ts`다.
  */
 export const pressCard = css.raw({
-  transition: 'common',
-  _pressScale: { transform: 'scale(0.99)' },
+  pressTransition: 'cardRest',
+  _pressScale: { transform: 'scale(0.97)', pressTransition: 'held' },
+});
+
+/**
+ * 줄어든 카드의 가장자리를 덮는 덮개의 넓이 — 카드가 줄면(`pressCard` 97%) 가장자리 1.5%가 포인터 밑에서 빠지고,
+ * 거기서 떼면 click이 링크가 아니라 공통 조상으로 가서 이동하지 않는다. 누르는 동안만 덮개를 사방 2%(1.5% + 여유
+ * 0.5%p) 넓혀 줄어든 만큼 덮는다 — 투명하고 절대 위치라 배치는 움직이지 않는다. 값은 계산하지 않고 적는다 — Panda는
+ * 계산한 값을 정적으로 뽑지 못하고(`toFixed`는 CSS를 통째로 빠뜨린다), 소수 연산은 `-2.0000000000000013%`를 낸다.
+ * 카드 뿌리 안의 제목 링크 덮개(`cardParts.ts`)와 아래 `pressCardLink`가 쓴다.
+ */
+export const pressBleed = css.raw({ inset: '[-2%]' });
+
+/**
+ * 카드 자신이 링크인 카드(글 하단 이전·다음, admin 상세 분석 카드)의 누름 — `pressCard`에 링크 자신의 `::before`
+ * 덮개(`pressBleed`)를 더한다. 누르는 동안 링크에 transform이 있어 링크가 덮개의 기준 상자가 된다.
+ */
+export const pressCardLink = css.raw(pressCard, {
+  _pressScale: { _before: { content: '""', pos: 'absolute', ...pressBleed } },
 });
 
 /**

@@ -2,6 +2,7 @@
 
 import { useId, useRef, useState, type ReactNode } from 'react';
 import { css } from '@blog/styled-system/css';
+import { pressToggle } from '@/src/components/interaction';
 import { CopyButton } from '@/src/components/post/CopyButton';
 
 /** 탭 메타 — 파서(CodeTabs)가 자식 훑기를 마치고 넘겨주는 직렬화 가능한 값. */
@@ -112,7 +113,9 @@ export function CodeTabsPanels({
                 // 요소가 키를 처리한다"가 된다(jsx-a11y/interactive-supports-focus).
                 onKeyDown={onKeyDown}
                 onClick={() => setActive(i)}
-                className={css({
+                // 누름은 토글의 `pressToggle`이다. 선택 밑줄(`::after`)은
+                // 탭 자신의 일부라 탭과 함께 옅어진다.
+                className={css(pressToggle, {
                   pos: 'relative',
                   px: '2',
                   py: '2',
@@ -125,7 +128,6 @@ export function CodeTabsPanels({
                   // 세그먼트와 같은 "현재 선택" 이름(Astryx Tab의 선택 표식이
                   // accent). 굵기는 바꾸지 않는다 — 탭 폭이 늘어 크롬이 밀린다.
                   color: selected ? 'accent.solid' : 'ink.600',
-                  transition: 'colors',
                   _hover: { color: 'ink.950' },
                   // 활성 표시는 밑줄 1px. 배경을 칠하면 크롬 안에 또 다른
                   // 상자가 생겨 위계가 한 겹 늘어난다.

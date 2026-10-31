@@ -3,7 +3,7 @@ import { css } from '@blog/styled-system/css';
 import { actionButton } from '../actionButton';
 import { iconButton } from '../iconButton';
 
-// 받는 동안은 누를 수 없다 — 흐린 정도는 버튼 프리셋의 비활성(`pressButton`)과 같고, 기다리는 중이라는
+// 받는 동안은 누를 수 없다 — 투명도는 버튼 프리셋의 비활성(`pressButton`)과 같고, 기다리는 중이라는
 // 뜻의 커서만 더한다.
 const busy = css.raw({ _disabled: { cursor: 'wait' } });
 

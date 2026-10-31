@@ -8,6 +8,7 @@ import { css, cx } from '@blog/styled-system/css';
 import { railColumn, railGutter } from '@/src/components/Rail';
 import { actionButton } from '@/src/components/actionButton';
 import { adminCard, pillBadge } from '@/src/components/admin/adminStyles';
+import { pressText } from '@/src/components/interaction';
 import { WORDMARK } from '@/src/components/wordmark';
 import { AlertCircle, LogIn } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
@@ -174,7 +175,7 @@ function LoginForm() {
 
         <Link
           href={HOME_PATH}
-          className={css({
+          className={css(pressText, {
             alignSelf: 'center',
             textStyle: 'supporting',
             color: 'ink.700',

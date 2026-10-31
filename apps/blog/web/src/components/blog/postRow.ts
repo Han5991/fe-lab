@@ -1,4 +1,5 @@
 import { css } from '@blog/styled-system/css';
+import { pressTextShared } from '@/src/components/interaction';
 
 // 목록 행 스타일의 단일 출처 — hairline 보더로만 구분하고 제목 좌 / 날짜
 // 우(모노)에 놓는 문법. 행 마크업은 PostListRow 하나이고(/posts 목록 보기·/series
@@ -19,7 +20,9 @@ export const postRowItem = css({
 // 행 링크: 제목 좌 / 날짜 우, baseline 정렬. hover는 제목(h3)에 밑줄로만 반응한다 —
 // 제목이 이미 본문 잉크라 더 진한 색이 없다. 아카이브·/series가 같다.
 // 좌우 패딩 없음 — 행 제목이 페이지 제목과 같은 세로선에서 시작해야 한다.
-export const postRowLink = css({
+// 누름은 `pressTextShared`다 — 제목(h3)이 글 상세 h1로 이어지는 공유 요소(PostListRow)라 링크 대신 링크의
+// 자식(제목·날짜)이 흐려진다.
+export const postRowLink = css(pressTextShared, {
   display: 'flex',
   justifyContent: 'space-between',
   alignItems: 'baseline',

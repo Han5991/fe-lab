@@ -51,8 +51,8 @@ const input = cx(
   }),
 );
 
-// 늘 그리고, 입력이 비어 플레이스홀더가 보이는 동안은 CSS가 숨긴다. 글자만 있는 버튼이라 면은 없고
-// 누르는 동안 98%로 줄어든다(`pressButton`).
+// 늘 그리고, 입력이 비어 플레이스홀더가 보이는 동안은 CSS가 숨긴다. 글자만 있는 버튼이라 면은 없어도
+// 누름은 `pressButton`이다.
 const clear = css(pressButton, {
   textStyle: 'supporting',
   color: 'ink.700',

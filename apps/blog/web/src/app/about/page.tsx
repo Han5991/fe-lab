@@ -4,6 +4,7 @@ import { css, cx } from '@blog/styled-system/css';
 import { safeJsonLd } from '@blog/content/client';
 import { actionButton } from '@/src/components/actionButton';
 import { Label } from '@/src/components/blog/Label';
+import { pressText, pressTextIndent } from '@/src/components/interaction';
 import { PageBoundary } from '@/src/components/PageBoundary';
 import { railGutter, railColumn } from '@/src/components/Rail';
 import { OSS_CONTRIBUTIONS } from '@/src/components/ossContributions';
@@ -23,13 +24,9 @@ const jsonLd = buildAboutJsonLd();
 // box-shadow였는데, 그림자는 떠 있는 표면에만 쓴다(AGENTS.md §9). 굵기는 획이라 px로
 // 고정한다 — sizes 스케일의 `0.5`도 기본 글자 크기에선 2px지만 rem이라 루트 글자 크기를
 // 따라 굵기가 변한다. 세 목록이 같은 객체를 `css(hoverRow, …)`로 합친다 — 행마다
-// 레이아웃만 다르다.
-const hoverRow = css.raw({
+// 레이아웃만 다르다. 누름과 왼쪽 여백이 늘며 행이 밀려나는 hover의 전환은 `pressTextIndent`가 함께 맡는다.
+const hoverRow = css.raw(pressTextIndent, {
   pos: 'relative',
-  // 왼쪽 여백이 늘며 행이 밀려난다 — 단축 유틸리티 목록에 padding이 없어 속성을 직접 고른다.
-  transitionProperty: 'background-color, padding-left',
-  transitionDuration: 'fast',
-  transitionTimingFunction: 'standard',
   _hover: {
     bg: 'paper.100',
     pl: '4',
@@ -214,13 +211,12 @@ export default function AboutPage() {
                     예전엔 이 페이지의 글 링크 중 한 곳만 슬래시가 없었다. */}
                 <TransitionLink
                   href={postPath('2025-retrospect')}
-                  className={css({
+                  className={css(pressText, {
                     fontFamily: 'mono',
                     fontSize: 'xs',
                     color: 'ink.500',
                     letterSpacing: 'monoXl',
                     _hover: { color: 'ink.950' },
-                    transition: 'colors',
                   })}
                 >
                   2025 회고 전체 읽기 →

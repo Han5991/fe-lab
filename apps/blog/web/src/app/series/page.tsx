@@ -11,6 +11,7 @@ import { PostListRow } from '@/src/components/blog/PostListRow';
 import { postRowMeta, postRowMetaRaw } from '@/src/components/blog/postRow';
 import { PageBoundary } from '@/src/components/PageBoundary';
 import { inlineLink } from '@/src/components/inlineLink';
+import { pressText } from '@/src/components/interaction';
 import { railGutter, railColumn } from '@/src/components/Rail';
 import { seriesBadgeRaw } from '@/src/components/seriesBadge';
 import { TransitionLink } from '@/src/components/shared/TransitionLink';
@@ -126,7 +127,7 @@ export default function SeriesPage() {
                     <h2 className={css({ minW: '0' })}>
                       <TransitionLink
                         href={archivePath({ series: entry.id })}
-                        className={css({
+                        className={css(pressText, {
                           display: 'inline-block',
                           _hover: { textDecorationLine: 'underline' },
                         })}

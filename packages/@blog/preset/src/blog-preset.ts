@@ -341,6 +341,43 @@ export const ogBrand = {
   pillBorder: rgba(OG_BRAND, 0.42),
 } as const;
 
+/**
+ * 카드 크기의 놓음 스프링이 잔차 1% 아래로 가라앉는 길이(ms). `durations.spring`의 값과 `easings.spring`의
+ * 표본 구간이 이 값 하나에서 나온다 — 곡선은 이 길이에 맞춰 뽑은 점이라, 시간만 바꾸면 스프링이 잘리거나 늘어진다.
+ */
+const SPRING_MS = 520;
+
+/**
+ * SwiftUI `spring(response:dampingFraction:)`을 질량 1짜리 스프링으로 읽어 `linear()`로 적는다 — ω₀ = 2π / response,
+ * ζ = dampingFraction. 목표 1·초기 속도 0의 해석해를 `durationMs`를 `samples`등분한 점에서 뽑고 끝 값은 1로 맞춘다.
+ * 손으로 적은 점이 없다 — 감쇠·응답을 바꾸면 곡선이 다시 나온다.
+ */
+function springEasing(
+  response: number,
+  dampingFraction: number,
+  durationMs: number,
+  samples = 32,
+): string {
+  // 임계감쇠 이상에는 오버슈트가 없고 아래 해석해(부족감쇠)도 성립하지 않는다.
+  if (dampingFraction >= 1) {
+    throw new RangeError(`부족감쇠 스프링만 다룬다(ζ=${dampingFraction})`);
+  }
+  const omega = (2 * Math.PI) / response;
+  const decay = dampingFraction * omega;
+  const damped = omega * Math.sqrt(1 - dampingFraction * dampingFraction);
+  const position = (seconds: number) =>
+    1 -
+    Math.exp(-decay * seconds) *
+      (Math.cos(damped * seconds) +
+        (decay / damped) * Math.sin(damped * seconds));
+  const points = Array.from({ length: samples + 1 }, (_, i) =>
+    i === samples
+      ? 1
+      : Number(position((durationMs * i) / samples / 1000).toFixed(3)),
+  );
+  return `linear(${points.join(', ')})`;
+}
+
 export const blogPreset = definePreset({
   name: '@blog/preset',
   theme: {
@@ -452,42 +489,72 @@ export const blogPreset = definePreset({
            */
           inspector: { value: '400px' },
         },
-        // 모션 곡선 — 시간은 아래 semanticTokens.durations. **곡선은 이 셋이 전부다** — 블로그
-        // 설정이 preset-panda의 easings를 빼므로(apps/blog/web/panda.config.ts) 다른 이름은
-        // strictTokens에, 이스케이프는 prefer-token에 걸린다.
+        // 모션 곡선 — 시간은 아래 semanticTokens.durations. **곡선은 이 다섯과 아래 semanticTokens의
+        // spring이 전부다** — 블로그 설정이 preset-panda의 easings를 빼므로(apps/blog/web/panda.config.ts)
+        // 다른 이름은 strictTokens에, 이스케이프는 prefer-token에 걸린다.
         //   standard — Astryx 코어(MIT)의 --ease-standard. 감속 곡선이라 등장·hover·표식에 쓴다
         //   exit     — Astryx BottomSheet의 닫힘 곡선. 화면 밖으로 나가는 움직임은 가속한다
         //   linear   — 거리 없는 퇴장 페이드(시트 스크림)·스크롤에 묶인 진행 바
+        //   press    — 누름 진입. 감속이라 40ms 중 16ms에 거리의 75%를 간다
+        //   release  — 놓음. easeInOutQuad — 출발이 느려 놓은 뒤 80ms에도 13%만 돌아와, 짧은 클릭에도
+        //              눌린 모양이 남는다(React Native `TouchableOpacity`와 같은 곡선)
+        // press·release·spring은 Astryx가 아니라 블로그 것이다(iOS 하이라이트 — 스킬 "인터랙션 상태").
         easings: {
           standard: { value: 'cubic-bezier(0.24, 1, 0.4, 1)' },
           exit: { value: 'cubic-bezier(0.3, 0, 0.6, 0.6)' },
           linear: { value: 'linear' },
+          press: { value: 'cubic-bezier(0, 0, 0.2, 1)' },
+          release: { value: 'cubic-bezier(0.455, 0.03, 0.515, 0.955)' },
         },
       },
       semanticTokens: {
         // 모션 시간 — Astryx 코어(MIT) 모션 스케일 아홉 단 중 블로그가 쓰는 넷을 이름째 옮겼다
         // (docsite 테마는 motion을 덮어쓰지 않는다). 어느 움직임이 어느 단계인지는
         // blog-design-system 스킬의 모션 절.
-        //   fast      175ms — hover·색·누름·표식·나가는 페이지
+        //   fast      175ms — hover·색·표식·나가는 페이지(누름에서는 색, 떠 있는 버튼의 누름)
         //   fastMax   230ms — 테마 크로스페이드·<details> 펼침
         //   medium    410ms — 시트·스크림·들어오는 페이지
         //   mediumMax 550ms — 검색 다이얼로그 등장·스켈레톤
         //   stagger    40ms — 길이가 아니라 **간격**: 함께 들어오는 카드들이 진입 순서마다 이만큼씩
         //                     늦게 출발한다(admin 대시보드 — `animation-delay`가 순서 × 이 값).
         //                     Astryx 스케일에 없는 블로그 것이다 — Astryx에는 엇갈린 진입이 없다
+        //   press      40ms — 누름 진입(투명도·크기·커버 밝기). stagger와 값만 같다 — 길이와 간격
+        //   release   320ms — 놓음(투명도·버튼 크기·커버 밝기)
+        //   spring    520ms — 카드 크기의 놓음. easings.spring과 짝이다(`SPRING_MS`)
+        // press·release·spring도 Astryx가 아니라 블로그 것이다(위 easings 주석).
         // semantic token인 이유는 **움직임 줄이기를 여기 한 곳에서** 끄기 위해서다 — `_motionReduce`가
         // 변수 값을 0.01ms로 바꾸므로 토큰으로 쓴 전환·애니메이션은 컴포넌트가 따로 규칙을 두지
         // 않아도 꺼진다(간격도 0에 수렴해 카드가 한 번에 선다). 0이 아니라 0.01ms인 이유는
         // transitionend가 그대로 오게 하려는 것이다
         // (퇴장이 끝나야 언마운트하는 시트 — Astryx Drawer와 같은 값). 무한 반복 애니메이션은
         // 0.01ms면 깜빡임이 되므로 시간이 아니라 애니메이션 자체를 끈다(아래 animations).
-        // **시간은 이 다섯이 전부다** — preset-panda의 durations는 블로그 설정이 뺀다.
+        // **시간은 이 여덟이 전부다** — preset-panda의 durations는 블로그 설정이 뺀다.
         durations: {
           fast: { value: { base: '175ms', _motionReduce: '0.01ms' } },
           fastMax: { value: { base: '230ms', _motionReduce: '0.01ms' } },
           medium: { value: { base: '410ms', _motionReduce: '0.01ms' } },
           mediumMax: { value: { base: '550ms', _motionReduce: '0.01ms' } },
           stagger: { value: { base: '40ms', _motionReduce: '0.01ms' } },
+          press: { value: { base: '40ms', _motionReduce: '0.01ms' } },
+          release: { value: { base: '320ms', _motionReduce: '0.01ms' } },
+          spring: {
+            value: { base: `${SPRING_MS}ms`, _motionReduce: '0.01ms' },
+          },
+        },
+        // 카드 크기의 놓음 곡선 — SwiftUI `spring(response: 0.35, dampingFraction: 0.5)`를 `SPRING_MS`에 맞춰
+        // 뽑은 `linear()`다(오버슈트 16% — 97%에서 놓으면 202ms에 100.5%까지 갔다 가라앉는다). 감쇠 0.5는 WWDC18
+        // 803의 권장(100%·운동량이 있으면 80%)보다 낮다 — 놓음에는 제스처 운동량이 없어, 100%면 오버슈트가 없고 80%여도
+        // 1.5%(97%에서 놓으면 0.05%p)라 스프링이 보이지 않는다. semantic token인 이유는 `linear()`를 모르는 브라우저(Next 기본 대상의
+        // 옛 Safari)다 — 변수로 끼운 `linear()`가 무효면 그 요소의 `transition` 선언이 통째로 무효가 되어 색 전환까지
+        // 사라지므로, 기본값은 release 곡선이고 `linear()`는 지원할 때만 덮는다(조건은 panda.config의
+        // `supportsLinearEasing`).
+        easings: {
+          spring: {
+            value: {
+              base: '{easings.release}',
+              _supportsLinearEasing: springEasing(0.35, 0.5, SPRING_MS),
+            },
+          },
         },
         // 반복 애니메이션 — keyframes는 아래 keyframes에 함께 둔다. 움직임 줄이기에서는 `none`
         // (위 durations 주석의 깜빡임 이유). preset-panda의 animations(spin·ping·pulse·bounce)와

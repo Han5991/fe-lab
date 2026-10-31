@@ -1,5 +1,5 @@
 import { css, cx } from '@blog/styled-system/css';
-import { pressCard } from '@/src/components/interaction';
+import { pressBleed, pressCard } from '@/src/components/interaction';
 
 // 글 카드(`PostCard`)와 썸네일 행(`PostThumbRow`)이 함께 쓰는 조각 — "카드 전체가 링크 하나"인 구조와
 // 커버 틀. 라운드처럼 자리마다 다른 값은 쓰는 쪽이 `css(조각, { … })`로 병합한다(`cx`는 충돌하는 원자
@@ -11,7 +11,7 @@ import { pressCard } from '@/src/components/interaction';
 
 /**
  * 카드 뿌리에 다는 클래스. 제목 링크의 덮개가 이 상자를 기준으로 퍼지고(`position: relative`), 커버
- * hover 틴트가 이 상자의 hover를 본다(`group`). 마우스로 누르는 동안 카드가 99%로 줄어든다(`pressCard`).
+ * hover 틴트가 이 상자의 hover를 본다(`group`). 누름은 `pressCard`다.
  * 둘을 한 클래스로 묶어 둔다 — 틴트만 따로 빠뜨리면 조용히 꺼지지만, 이 클래스를 빠뜨리면 덮개가 카드 밖으로 퍼져 바로 드러난다. 배치(flex·gap)는 쓰는
  * 쪽이 `cx`로 더한다 — 겹치는 속성이 없어 원자 클래스가 겨루지 않는다.
  */
@@ -23,10 +23,14 @@ export const cardRoot = cx('group', css(pressCard, { pos: 'relative' }));
  * 링(globalCss `:focus-visible`)이 제목 상자를 두른다. 줄 수 제한을 부모 h3에 걸면 h3의
  * `overflow: hidden`이 그 초점 링을 자른다 — 링크 자신에 걸면 자기 outline은 잘리지 않는다. 덮개는 카드
  * 뿌리가 containing block이라 링크의 `overflow: hidden`에도 잘리지 않는다.
+ *
+ * 마우스로 누르는 동안에는 덮개를 넓혀 줄어든 카드의 가장자리를 덮는다(`pressBleed`). 카드 자신이 링크인 카드는
+ * `pressCardLink`다.
  */
 export const cardLinkRaw = css.raw({
   color: 'ink.950',
   _after: { content: '""', pos: 'absolute', inset: '0' },
+  _groupPressScale: { _after: pressBleed },
 });
 
 /**
@@ -42,13 +46,24 @@ export const cardLinkRaw = css.raw({
  * 스냅샷이 원본의 같은 부분을 같은 배율로 그리려면 둘 다 이미지가 스냅샷 끝까지 차 있어야 한다
  * (panda.config.ts globalCss의 커버 규칙). 진짜 보더는 이미지를 사방 1px 안으로 밀어 이미지 상자가
  * 16:9에서 벗어나고, 겹친 두 스냅샷이 최대 4px 어긋나 이미지 속 글자가 두 겹으로 보였다(실측).
+ *
+ * 마우스로 카드를 누르는 동안 이미지가 밝기 85%로 어두워진다 — 틀이 아니라 이미지에 걸어 틴트·hairline은
+ * 그대로 위에 남는다. `filter`는 이미지를 쌓임 맥락으로 만들어 위치 지정된 hairline(`::before`)보다 뒤에
+ * 그리므로, 틀을 쌓임 맥락으로 묶고(`isolation`) 이미지를 그 안의 맨 아래(`zIndex: -1`)에 둔다 — 틀의 면
+ * 위, hairline·틴트 아래라 지금 순서 그대로다. 밝기는 Panda의 `brightness` 유틸리티가 아니라 값으로 적는다 —
+ * 유틸리티는 `@property` 변수를 등록한다(panda.config.ts `propertyFallback` 주석의 조건).
  */
 export const coverFrameRaw = css.raw({
   pos: 'relative',
   flexShrink: '0',
   overflow: 'hidden',
+  isolation: 'isolate',
   aspectRatio: 'wide',
   bg: 'paper.100',
+  '& img': { pos: 'relative', zIndex: '-1', pressTransition: 'coverRest' },
+  _groupPressScale: {
+    '& img': { filter: '[brightness(0.85)]', pressTransition: 'coverHeld' },
+  },
   _before: {
     content: '""',
     pos: 'absolute',

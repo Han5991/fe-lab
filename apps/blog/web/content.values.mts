@@ -373,6 +373,10 @@ export const BUNDLE_GUARDS = [
  * 화면의 목록·패널·차트가 한 페이지에 모였다), 공개 그룹 +0.9KB(루트의 셸 고르기와 테마 토글의 className) —
  * JS 예산은 그대로. 대시보드(`/admin/`) 자체는 일별 차트를 `next/dynamic`으로 나눠 Recharts(~110KB)가 첫
  * 로드에서 빠진다 — 그룹 최대는 분석 화면이 정한다. (브랜치에서 단계마다 잰 값은 이 합본 측정으로 접었다.)
+ * 2026-10-31 누름(iOS 하이라이트 — press·release·spring 토큰, `pressTransition` 유틸리티, 링크·토글·버튼·카드
+ * 프리셋)을 얹은 빌드로 갱신: CSS는 한 장이라 전 그룹 +0.7~0.8KB다(공개 30.5 → 31.3, `/posts/` 31.2 → 31.9 —
+ * 상태별 전환 목록과 프리셋의 원자 클래스). JS는 +0.2~0.3KB(클라이언트 컴포넌트에 실리는 `css()` 객체). 기준은
+ * 직전 main(25d3f5b2) CI의 측정이다. 예산은 그대로 — 공개 그룹의 CSS 여유가 0.7KB로 줄었다.
  * 그룹이 새로 생기면(새 라우트) 예산이 없어서, 라우트가
  * 사라지면 예산이 죽어서, 측정 최대가 상한의 80% 아래로 내려가면 예산이 느슨해서
  * (`budget-slack`) 빌드가 실패한다.
@@ -383,21 +387,21 @@ export const BUNDLE_GUARDS = [
  * 걸리면 같은 방식으로 내린다 — 여유가 크게 남으면 회귀가 그 안에 숨는다.
  */
 export const BUNDLE_BUDGETS = [
-  // 165.8 KB / 30.4 KB
+  // 166.0 KB / 31.3 KB
   { group: '/', jsGzipKB: 173, cssGzipKB: 32 },
-  // 189.4 KB / 31.1 KB — 목록과 글 상세 46쪽의 최대(글 상세. mermaid·Giscus는 지연 로드라 밖)
+  // 190.7 KB / 31.9 KB — 목록과 글 상세 46쪽의 최대(글 상세. mermaid·Giscus는 지연 로드라 밖)
   { group: '/posts/', jsGzipKB: 198, cssGzipKB: 33 },
-  // 165.0 KB / 30.4 KB
+  // 165.2 KB / 31.3 KB
   { group: '/about/', jsGzipKB: 173, cssGzipKB: 32 },
-  // 165.8 KB / 30.4 KB
+  // 166.0 KB / 31.3 KB
   { group: '/series/', jsGzipKB: 173, cssGzipKB: 32 },
-  // 165.0 KB / 30.4 KB
+  // 165.2 KB / 31.3 KB
   { group: '/privacy/', jsGzipKB: 173, cssGzipKB: 32 },
-  // 165.0 KB / 30.4 KB — 정적 404(`404-page` 처리)
+  // 165.2 KB / 31.3 KB — 정적 404(`404-page` 처리)
   { group: '/404/', jsGzipKB: 173, cssGzipKB: 32 },
-  // 165.0 KB / 30.4 KB — Next가 함께 내보내는 not-found 라우트
+  // 165.2 KB / 31.3 KB — Next가 함께 내보내는 not-found 라우트
   { group: '/_not-found/', jsGzipKB: 173, cssGzipKB: 32 },
-  // 384.4 KB / 30.4 KB — admin 48쪽의 최대(분석 화면 — 목록 1 + 글별 45쪽이 같은 화면이라 무게가 같다)
+  // 384.5 KB / 31.3 KB — admin 48쪽의 최대(분석 화면 — 목록 1 + 글별 45쪽이 같은 화면이라 무게가 같다)
   { group: '/admin/', jsGzipKB: 398, cssGzipKB: 32 },
 ] as const satisfies BundleBudgetsConfig;
 

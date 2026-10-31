@@ -1,5 +1,6 @@
 import { css } from '@blog/styled-system/css';
 import { archivePath, POSTS_PATH } from '@blog/content/client';
+import { pressText } from '@/src/components/interaction';
 import { TransitionLink } from '@/src/components/shared/TransitionLink';
 
 interface BreadcrumbsProps {
@@ -20,14 +21,13 @@ const list = css({
 
 const item = css({ display: 'flex', alignItems: 'center', gap: '1' });
 
-const link = css({
+const link = css(pressText, {
   color: 'ink.700',
-  transition: 'colors',
   _hover: { color: 'ink.950' },
 });
 
 /** 마지막 칸 — 글이 속한 곳이라 본문 잉크에 굵게. 앞 칸(ink.700)과 굵기·색으로 갈린다. */
-const lastLink = css({
+const lastLink = css(pressText, {
   color: 'ink.950',
   fontWeight: 'semibold',
   _hover: { textDecorationLine: 'underline' },
