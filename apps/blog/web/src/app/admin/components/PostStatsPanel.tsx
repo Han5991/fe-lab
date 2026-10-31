@@ -142,8 +142,8 @@ const tileValue = css({
 
 /**
  * 시간대·요일 분포 — 글 하나의 Edge Function 두 번. 패널의 나머지보다 늦게 와서 따로 기다린다.
- * 드러날 때 스켈레톤이 걷히고 이 덩어리가 떠오른다. 시간대 차트는 다 그려진 채 투명도로 나타나고
- * (`chartReveal`), 요일 가로 막대(CSS)는 0에서 자란다.
+ * 드러날 때 스켈레톤이 걷히고(칼럼만 — `distributionsSkeleton`) 이 덩어리가 떠오른다. 시간대 차트는 다
+ * 그려진 채 투명도로 나타나고(`chartReveal`), 요일 가로 막대(CSS)는 0에서 자란다.
  */
 function PostDistributions({ post }: { post: PostStatDetail }) {
   const { hourly, dow } = usePostDetailStats(post);
@@ -245,7 +245,11 @@ function PostDistributions({ post }: { post: PostStatDetail }) {
   );
 }
 
+/** 패널이 놓이는 자리 — 넓은 화면은 목록 옆 칼럼, 좁은 화면은 목록을 덮는 시트(`AnalyticsScreen`). */
+export type PanelPlacement = 'column' | 'sheet';
+
 interface PostStatsPanelProps extends CloseProps {
+  placement: PanelPlacement;
   post: PostStatDetail;
   /** 글 인덱스의 태그 — 대시보드 데이터에는 없다(`useAdminPostsWithTags`). */
   tags: readonly string[];
@@ -267,6 +271,7 @@ interface PostStatsPanelProps extends CloseProps {
  * 글이 바뀌면 기간 선택이 처음으로 돌아가야 해서 부르는 쪽이 `key`를 slug로 준다.
  */
 export function PostStatsPanel({
+  placement,
   post,
   tags,
   titleId,
@@ -540,14 +545,13 @@ export function PostStatsPanel({
 
       <Suspense
         fallback={
-          <ViewTransition exit={ADMIN_VIEW_TRANSITION.out} default="none">
-            <div
-              className={css({ display: 'flex', flexDir: 'column', gap: '4' })}
-            >
-              <LoadingPlaceholder height="150px" />
-              <LoadingPlaceholder height="180px" />
-            </div>
-          </ViewTransition>
+          placement === 'column' ? (
+            <ViewTransition exit={ADMIN_VIEW_TRANSITION.out} default="none">
+              {distributionsSkeleton}
+            </ViewTransition>
+          ) : (
+            distributionsSkeleton
+          )
         }
       >
         <PostDistributions post={post} />
@@ -555,6 +559,20 @@ export function PostStatsPanel({
     </div>
   );
 }
+
+/**
+ * 분포를 기다리는 자리. 칼럼에서는 드러날 때 걷히는 퇴장(`out`)을 단다. 시트에서는 달지 않는다 — 시트·스크림은
+ * 들고 날 때만 이름이 붙어 그 사이의 전환에서는 루트 스냅샷 안에 있는데, 이름 붙은 것이 하나라도 있으면
+ * React가 그 드러남을 View Transition으로 돌리고, iPhone(WebKit)에서는 그동안 시트가 통째로 사라졌다
+ * 다시 섰다. 이름이 없으면 드러남은 전환 없이 커밋되고 분포는 `enterMotion`으로 떠오른다. 목록 칼럼의
+ * `resize`도 같은 이유로 좁은 화면에서는 이름을 받지 않는다(`AnalyticsScreen`).
+ */
+const distributionsSkeleton = (
+  <div className={css({ display: 'flex', flexDir: 'column', gap: '4' })}>
+    <LoadingPlaceholder height="150px" />
+    <LoadingPlaceholder height="180px" />
+  </div>
+);
 
 /** 붙는 순간 초점을 받는 ref 콜백 — 칼럼은 sticky라 스크롤은 막는다. */
 const focusOnMount = (el: HTMLElement | null) => {

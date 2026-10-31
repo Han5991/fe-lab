@@ -226,8 +226,8 @@ test.describe('로그인', () => {
       await expect(sheet.locator('.recharts-surface').first()).toBeVisible();
       await expectDistributions(sheet);
       await expect(sheet).toHaveAttribute('aria-modal', 'true');
-      // 시트가 떠 있는 동안 관리자 바는 따로 찍히지 않는다 — 찍히면 그 사이의 전환(분포 도착 등)에서
-      // 바가 루트 위로 올라와 시트 머리와 스크림을 덮는다(375·768 실측).
+      // 시트가 떠 있는 동안 관리자 바는 따로 찍히지 않는다 — 찍히면 그 사이에 전환이 열릴 때(예전의 분포
+      // 도착 — 아래 테스트) 바가 루트 위로 올라와 시트 머리와 스크림을 덮는다(375·768 실측).
       expect(await barTransitionName(), '시트가 열린 동안').toBe('none');
       expect(await axeViolations(page), 'axe 위반').toEqual([]);
 
@@ -237,6 +237,91 @@ test.describe('로그인', () => {
       expect(await barTransitionName(), '시트를 닫은 뒤').toBe(
         ADMIN_VIEW_TRANSITION.bar,
       );
+    });
+
+    // 시트가 떠 있는 동안의 커밋(늦게 온 분포가 스켈레톤을 걷는 것, 그 사이의 빈 커밋)은 View Transition을
+    // 열지 않아야 한다. 시트·스크림은 들고 날 때만 이름이 붙어 그 사이의 전환에서는 루트 스냅샷 안에 있고,
+    // 아무것도 움직이지 않는 전환은 React가 루트를 숨겨 취소한다 — iPhone(WebKit)에서는 그동안 시트가 통째로
+    // 사라졌다 다시 섰다(분포가 캐시에 없는 글만). Chromium에서는 화면에 드러나지 않아 전환이 열리는지를 센다.
+    // 재평가: 2027-04-30 — 그때까지 잡은 것이 없으면 내린다.
+    test('목록에서 고른 글의 분포가 늦게 와도 시트가 열린 뒤에는 전환이 열리지 않는다', async ({
+      page,
+    }) => {
+      await page.addInitScript(() => {
+        const counts = { sheetEnter: 0, whileOpen: 0, running: 0 };
+        (window as unknown as { __vt: typeof counts }).__vt = counts;
+        // React는 문서 인스턴스의 메서드를 부른다(`ownerDocument.startViewTransition`) — 인스턴스에서 감싼다.
+        const start = document.startViewTransition.bind(document);
+        document.startViewTransition = (
+          options?: Parameters<typeof start>[0],
+        ) => {
+          // 여는 전환은 시트를 커밋하기 전(이전 화면을 찍을 때)에 시작한다 — 이미 시트가 있으면 그 사이 전환이다.
+          if (document.querySelector('[role="dialog"]')) counts.whileOpen++;
+          const transition = start(options);
+          counts.running++;
+          // 건너뛴 전환은 ready가 거절된다 — 처리하지 않으면 픽스처가 잡히지 않은 예외로 센다.
+          const ignore = () => undefined;
+          transition.ready.then(() => {
+            const sheet = document.querySelector('[role="dialog"]');
+            if (sheet && getComputedStyle(sheet).viewTransitionName !== 'none')
+              counts.sheetEnter++;
+          }, ignore);
+          const done = () => {
+            counts.running--;
+          };
+          transition.finished.then(done, done);
+          return transition;
+        };
+      });
+      const counts = () =>
+        page.evaluate(
+          () =>
+            (
+              window as unknown as {
+                __vt: {
+                  sheetEnter: number;
+                  whileOpen: number;
+                  running: number;
+                };
+              }
+            ).__vt,
+        );
+
+      // 분포(시간대·요일)는 시트가 다 열린 뒤에 내보낸다 — 실제 네트워크에서 캐시에 없는 글.
+      let release: () => void = () => undefined;
+      const held = new Promise<void>(resolve => {
+        release = resolve;
+      });
+      await page.route('**/functions/v1/admin-analytics', async route => {
+        if (
+          /post_(hourly|dow)_distribution/.test(
+            route.request().postData() ?? '',
+          )
+        ) {
+          await held;
+        }
+        await route.fallback();
+      });
+
+      await renderAdmin(page, '/admin/analytics/');
+      await page
+        .getByRole('table', { name: '글 목록' })
+        .getByRole('link')
+        .first()
+        .click();
+      const sheet = page.getByRole('dialog');
+      await expect(sheet).toBeVisible();
+      // 양성 대조 — 여는 커밋은 전환이고 시트에 이름이 붙는다(감싼 startViewTransition이 불린다).
+      await expect
+        .poll(async () => {
+          const c = await counts();
+          return c.sheetEnter === 1 && c.running === 0;
+        }, '시트가 들어오는 전환이 끝난다')
+        .toBe(true);
+
+      release();
+      await expectDistributions(sheet);
+      expect((await counts()).whileOpen, '시트가 열린 뒤 시작된 전환').toBe(0);
     });
   });
 
