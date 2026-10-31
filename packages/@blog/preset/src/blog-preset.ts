@@ -511,14 +511,14 @@ export const blogPreset = definePreset({
         // 모션 시간 — Astryx 코어(MIT) 모션 스케일 아홉 단 중 블로그가 쓰는 넷을 이름째 옮겼다
         // (docsite 테마는 motion을 덮어쓰지 않는다). 어느 움직임이 어느 단계인지는
         // blog-design-system 스킬의 모션 절.
-        //   fast      175ms — hover·색·표식·나가는 페이지(누름에서는 색, 떠 있는 버튼의 누름)
+        //   fast      175ms — hover·색·표식·나가는 페이지(누름에서는 색, 떠 있는 버튼의 누름, 카드가 들어가는 크기·커버 밝기)
         //   fastMax   230ms — 테마 크로스페이드·<details> 펼침
         //   medium    410ms — 시트·스크림·들어오는 페이지
         //   mediumMax 550ms — 검색 다이얼로그 등장·스켈레톤
         //   stagger    40ms — 길이가 아니라 **간격**: 함께 들어오는 카드들이 진입 순서마다 이만큼씩
         //                     늦게 출발한다(admin 대시보드 — `animation-delay`가 순서 × 이 값).
         //                     Astryx 스케일에 없는 블로그 것이다 — Astryx에는 엇갈린 진입이 없다
-        //   press      40ms — 누름 진입(투명도·크기·커버 밝기). stagger와 값만 같다 — 길이와 간격
+        //   press      40ms — 누름 진입(투명도·크기 — 카드의 크기·커버 밝기는 fast). stagger와 값만 같다 — 길이와 간격
         //   release   320ms — 놓음(투명도·커버 밝기 — 크기는 spring)
         //   spring    520ms — 크기의 놓음(버튼·칩·카드·상자 링크). easings.spring과 짝이다(`SPRING_MS`)
         // press·release·spring도 Astryx가 아니라 블로그 것이다(위 easings 주석).

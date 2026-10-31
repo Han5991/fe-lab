@@ -89,8 +89,9 @@ const FOCUS_RING = {
 // - CSS 전환은 **도착 상태**의 `transition`을 쓴다 — 누름 조건의 규칙이 진입(`held` — press)을, 평상시 규칙이
 //   놓음(`rest` — release)을 든다. 그래서 놓은 뒤에도 눌린 모양이 release 동안 남는다.
 // - 색은 hover 박자 그대로다 — globalCss가 요소마다 정하는 `--transition-duration`·`--transition-easing`(fast·
-//   standard)을 읽으므로, 색의 박자를 정하는 곳은 여전히 그 한 곳이다. 같은 요소에 `transitionDuration` 같은
-//   longhand 유틸리티를 겹치면 그 원자가 뒤에 와 누름 시간까지 덮는다 — 누름 요소에는 `transition*`을 적지 않는다.
+//   standard)을 읽으므로(`HOVER_TIMING`), 색의 박자를 정하는 곳은 여전히 그 한 곳이다. 큰 면(카드)이 들어가는
+//   크기·커버 밝기도 이 박자를 읽는다(`cardHeld`·`coverHeld`). 같은 요소에 `transitionDuration` 같은 longhand
+//   유틸리티를 겹치면 그 원자가 뒤에 와 누름 시간까지 덮는다 — 누름 요소에는 `transition*`을 적지 않는다.
 // - 속성은 Panda `transition: 'colors'`의 일곱에 투명도·크기를 더한 것이다. 누름이 바꾸는 속성만 고른 목록이라
 //   `common`의 나머지(그림자·필터·backdrop-filter)는 일부러 뺐다 — 누름 요소에는 그 hover가 없다. hover가 다른
 //   속성을 옮기는 요소는 그 속성을 더한 상태를 따로 둔다(`indent*` — 소개 페이지 목록 행의 `padding-left`). 모든
@@ -110,6 +111,9 @@ const PRESS_COLOR_PROPERTIES = [
 type PressMotion = 'press' | 'release' | 'spring';
 type PressTiming = (motion: PressMotion) => string;
 
+/** 색 hover와 같은 박자 — globalCss가 요소마다 정하는 변수를 읽는다(위 주석). */
+const HOVER_TIMING = 'var(--transition-duration) var(--transition-easing)';
+
 const pressList = (
   opacity: string,
   transform: string,
@@ -117,8 +121,7 @@ const pressList = (
 ) =>
   [
     ...[...PRESS_COLOR_PROPERTIES, ...hoverProperties].map(
-      property =>
-        `${property} var(--transition-duration) var(--transition-easing)`,
+      property => `${property} ${HOVER_TIMING}`,
     ),
     `opacity ${opacity}`,
     `transform ${transform}`,
@@ -131,9 +134,14 @@ const PRESS_TRANSITION = {
   held: timing => pressList(timing('press'), timing('press')),
   /** 크기가 줄어드는 요소(버튼·칩·카드·상자 링크)의 평상시 — 투명도는 release, 크기는 spring으로 돌아온다. */
   springRest: timing => pressList(timing('release'), timing('spring')),
-  /** 카드 커버 이미지의 밝기 — 평상시(놓음)와 누르는 동안(진입). */
+  /**
+   * 카드를 누르는 동안 — 큰 면의 크기는 색과 같은 hover 박자로 들어간다. press(40ms)로는 752px 카드가 한쪽
+   * 11px을 두 프레임에 움직여 뚝 떨어져 보였다(실측).
+   */
+  cardHeld: timing => pressList(timing('press'), HOVER_TIMING),
+  /** 카드 커버 이미지의 밝기 — 평상시(놓음)와 누르는 동안(카드 크기와 같은 hover 박자). */
   coverRest: timing => `filter ${timing('release')}`,
-  coverHeld: timing => `filter ${timing('press')}`,
+  coverHeld: () => `filter ${HOVER_TIMING}`,
   /** hover가 왼쪽 여백을 옮기는 행 — `rest`·`held`에 그 여백을 색과 같은 hover 박자로 더한다. */
   indentRest: timing =>
     pressList(timing('release'), timing('release'), ['padding-left']),
@@ -204,7 +212,8 @@ export default defineConfig({
       // - `_press` · `_groupPress`: 모든 포인터에서 누르는 동안 — 누름의 투명도·크기·덮개와 진입 전환(press), hover와
       //   다른 모양이 필요한 자리(카드 커버 hairline·밝기, 검색 결과 행)가 쓴다. `_press`는 disabled를 뺀다. 크기도
       //   터치에 준다(2026-10-31 사용자 결정 — 예전엔 마우스류 전용 조건 `_pressScale`이 있었다). 터치의 :active는
-      //   스크롤을 시작하는 손가락에도 칠해질 수 있어 실기기 확인이 남았다(스킬 "실기기 확인 전인 것").
+      //   스크롤을 시작하는 손가락에도 칠해질 수 있다 — Android Chrome은 실기기에서 움찔거리지 않았고 iOS Safari는
+      //   확인 전이다(스킬 "실기기 확인").
       // - `_groupKeyboardFocus`: 그룹(카드) 안이나 그룹 자신에 **키보드 초점**(`:focus-visible`)이 있는 동안.
       //   `:focus-within`이 아닌 이유는 마우스·터치로 누른 링크도 초점을 받아, 터치에서 탭 뒤에 카드
       //   틴트가 남기 때문이다(`_hover`를 터치에서 누르는 동안으로 바꾼 것과 같은 문제). 링크가 그룹 자신인
