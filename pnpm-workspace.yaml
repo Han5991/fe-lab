@@ -23,14 +23,18 @@ overrides:
   # 같은 핀, 2026-10-24 확인). jsdom의 undici는 8.x(^8.10.2)라 전역 override로 묶으면
   # 메이저가 섞이므로 miniflare 아래만 고친다. 제거 조건: miniflare가 핀을 7.30.1+로 올리면 삭제.
   'miniflare>undici': 7.30.1
-  # eslint(경유 @eslint/config-array@0.23.5)는 minimatch를 ^10.2.4로, eslint-plugin-import·
-  # eslint-plugin-jsx-a11y·eslint-plugin-react는 각자 ^3.1.2로 묶어 GHSA-g3hv-75wg-m249
-  # (moderate, globparts 증폭으로 인한 DoS)를 report한다. 패치는 11.0.1+인데 두 의존자군 범위
-  # 모두 그 아래에서 막혀 있고(2026-11-02 확인, @eslint/config-array 최신 0.23.5도 동일),
-  # 전부 lint 전용 devDependency라 전역으로 묶어도 런타임에 영향이 없다. 최신 11.0.4는
-  # pnpm의 minimumReleaseAge 정책에 막혀 11.0.1로 고정. 제거 조건: 두 의존자군이 각각
-  # minimatch 11.x대로 범위를 올리면 삭제.
-  minimatch: 11.0.1
+  # minimatch GHSA-g3hv-75wg-m249(moderate, globparts 증폭으로 인한 DoS)는 11.0.1+에서만
+  # 고쳐졌고 10.x·3.x에는 패치가 없다(2026-11-02 확인, 각 최신 10.2.6·3.1.5). minimatch를 ^10으로
+  # 쓰는 eslint·@eslint/config-array·@typescript-eslint/typescript-estree는 10과 11이 같은
+  # named export(`{ minimatch }`)라 그 아래만 11로 올린다. ^3.1.2인 eslint-plugin-import·
+  # eslint-plugin-jsx-a11y·eslint-plugin-react는 3.x의 기본 export(모듈 자체가 함수)를 부르므로
+  # 전역 override로 11을 주면 lint가 `_minimatch.default is not a function`으로 죽는다 — 이
+  # 셋은 3.1.5에 두고 advisory가 남는 걸 감수한다. 최신 11.0.4는 pnpm의 minimumReleaseAge
+  # 정책에 막혀 11.0.1로 고정. 제거 조건: 세 ^10 의존자가 각각 minimatch 범위를 11.x로 올리면
+  # 그 줄을 삭제(3.x 셋은 플러그인이 11.x로 옮기기 전엔 여기서 고칠 수 없다).
+  'eslint>minimatch': 11.0.1
+  '@eslint/config-array>minimatch': 11.0.1
+  '@typescript-eslint/typescript-estree>minimatch': 11.0.1
 
 allowBuilds:
   esbuild: true
