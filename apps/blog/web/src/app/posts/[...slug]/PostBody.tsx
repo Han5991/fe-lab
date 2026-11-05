@@ -13,6 +13,7 @@ import rehypeRaw from 'rehype-raw';
 import rehypeSlug from 'rehype-slug';
 import { css, cx } from '@blog/styled-system/css';
 
+import { SITE_URL } from '@/content.values.mts';
 import { CodeBlock } from '@/src/components/post/CodeBlock';
 import { HEADING_CODE_FONT_SIZE } from '@/src/components/post/inlineCode';
 import { rehypeCodeMeta } from '@/src/components/post/codeMeta';
@@ -36,6 +37,8 @@ import { HEADER_OFFSET } from '@/src/components/post/headerOffset';
 import { HEADING_COMPONENTS } from '@/src/components/post/markdownHeadings';
 import { isMarkdownTag } from '@/src/components/post/markdownTag';
 import { POST_CONTENT_ID } from '@/src/components/post/postContent';
+import { TransitionLink } from '@/src/components/shared/TransitionLink';
+import { sitePagePath } from './bodyLink';
 import { fencedCode, isBlockMarkdownChild } from './markdownBlocks';
 
 /**
@@ -201,16 +204,45 @@ export function buildPostComponents(relativeDir: string): PostComponents {
     },
     // 링크로 감싼 이미지는 확대 없이 그린다 — 확대 래퍼(div·button)가 `<a>` 안이면
     // 무효 중첩에 대화형 요소 중첩이다. 링크 모양은 문장 속 링크의 단일 출처(inlineLink)다.
-    a({ node: _node, children, className, ...props }) {
+    //
+    // 이 사이트의 페이지로 가는 링크(`sitePagePath`)는 `TransitionLink`다 — 다른 사이트 안 링크처럼
+    // 새로고침 없이 이동하고 페이지 전환을 탄다. 맨 `<a>`면 문서를 통째로 다시 받고 전환도 없다.
+    // 미리 받기는 끈다: 원고 링크는 아직 공개 전인 글을 가리킬 수 있고(번들러 프롤로그는 날짜가 한 달
+    // 뒤인 예약 글 4편을 링크한다), 화면에 들어오는 순간 받으면 404가 콘솔 에러가 돼 런타임
+    // 게이트(`test:e2e` — 페이지를 끝까지 스크롤한다)가 그 글과 상관없는 배포까지 막는다.
+    a({ node: _node, children, className, href, ...props }) {
+      const content = Children.map(children, child =>
+        // `src`만 보면 `<video src>` 같은 raw HTML까지 이미지로 오인한다.
+        isMarkdownTag<ImageProps>(child, 'img')
+          ? image(child.props, false)
+          : child,
+      );
+      const linkClass = cx(className, inlineLink);
+      const pagePath = href === undefined ? null : sitePagePath(href, SITE_URL);
+      if (pagePath === null) {
+        return (
+          <a {...props} href={href} className={linkClass}>
+            {content}
+          </a>
+        );
+      }
+      // Link가 자기 prop으로 다시 정의하는 핸들러 셋은 넘기지 않는다. 원고에서 오는 값은 raw HTML의
+      // `onclick=` 같은 **문자열**뿐이고(타입만 함수다), 서버 HTML에는 실리지 않아 어차피 돌지 않는다.
+      const {
+        onClick: _onClick,
+        onMouseEnter: _onMouseEnter,
+        onTouchStart: _onTouchStart,
+        ...anchorProps
+      } = props;
       return (
-        <a {...props} className={cx(className, inlineLink)}>
-          {Children.map(children, child =>
-            // `src`만 보면 `<video src>` 같은 raw HTML까지 이미지로 오인한다.
-            isMarkdownTag<ImageProps>(child, 'img')
-              ? image(child.props, false)
-              : child,
-          )}
-        </a>
+        <TransitionLink
+          {...anchorProps}
+          href={pagePath}
+          prefetch={false}
+          className={linkClass}
+        >
+          {content}
+        </TransitionLink>
       );
     },
     table({ children, node, ...props }) {

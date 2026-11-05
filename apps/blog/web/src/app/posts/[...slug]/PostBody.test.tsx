@@ -6,16 +6,55 @@
  */
 import { describe, expect, test, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import type { ReactNode } from 'react';
+import type { LinkProps } from 'next/link';
 import { renderToStaticMarkup } from 'react-dom/server';
 import rehypeRaw from 'rehype-raw';
 import rehypeSlug from 'rehype-slug';
+import { SITE_URL } from '@/content.values.mts';
 import { rehypeCodeMeta } from '@/src/components/post/codeMeta';
 import { rehypeDropUnsafe } from '@/src/components/post/rehypeDropUnsafe';
+import { NAV_TRANSITION } from '@/src/shared/viewTransitions';
 import { PostBody, POST_REHYPE_PLUGINS, buildPostComponents } from './PostBody';
 import { BLOCK_MARKDOWN_COMPONENTS } from './markdownBlocks';
 import { HEADER_OFFSET } from '@/src/components/post/headerOffset';
 
 vi.mock('mermaid', () => ({ default: {} }));
+
+// 본문 링크 — 사이트 안 페이지는 `TransitionLink`(현재 경로를 `usePathname`으로 읽는다)가 `next/link`로
+// 그린다. jsdom에는 라우터가 없으므로 `next/link`를 받은 값을 data 속성으로 드러내는 상자로 바꿔 끼운다.
+vi.mock('next/navigation', () => ({
+  usePathname: () => '/posts/current/',
+}));
+
+vi.mock('next/link', () => ({
+  default: ({
+    href,
+    transitionTypes,
+    prefetch,
+    children,
+    className,
+    title,
+  }: LinkProps & {
+    children: ReactNode;
+    className?: string;
+    title?: string;
+  }) => {
+    if (typeof href !== 'string') throw new Error('href는 문자열이다');
+    return (
+      <a
+        href={href}
+        className={className}
+        title={title}
+        data-next-link=""
+        data-prefetch={String(prefetch)}
+        data-transition-types={JSON.stringify(transitionTypes ?? [])}
+      >
+        {children}
+      </a>
+    );
+  },
+}));
 
 /** 서버 HTML 원문 — DOM으로 보면 파서가 무효 중첩을 이미 고쳐 놓아 보이지 않는다. */
 const serverHtml = (content: string) =>
@@ -425,5 +464,50 @@ describe('본문 접근성 보정', () => {
     expect(rule).toContain(':is(h2,_h3,_h4)_code');
     // 문단에는 이 규칙이 닿지 않는다 — 선택자가 제목 안으로 한정돼 있다.
     expect(rule).not.toContain('_p_');
+  });
+});
+
+describe('본문 링크', () => {
+  const content = [
+    `[다른 글](${SITE_URL}/posts/other/ "제목")`,
+    `[글 목록](${SITE_URL}/posts/)`,
+    '[깃허브](https://github.com/)',
+    `[피드](${SITE_URL}/rss.xml)`,
+    '[위로](#top)',
+    '<a href="/series/" onclick="alert(1)">시리즈</a>',
+  ].join(' ');
+  const link = (name: string) => screen.getByRole('link', { name });
+
+  test('이 사이트의 페이지로 가는 링크는 TransitionLink다 — 상대 경로, 미리 받기 끔', () => {
+    render(<PostBody content={content} relativeDir="dir" />);
+
+    const post = link('다른 글');
+    expect(post.hasAttribute('data-next-link')).toBe(true);
+    // 절대 주소를 상대 경로로 — 로컬·프리뷰에서도 그 서버의 글을 연다.
+    expect(post.getAttribute('href')).toBe('/posts/other/');
+    expect(post.dataset['prefetch']).toBe('false');
+    expect(post.getAttribute('title')).toBe('제목');
+    // 방향은 TransitionLink가 현재 경로로 정한다 — 글 → 글 목록은 위로 돌아오는 이동이다.
+    expect(
+      JSON.parse(link('글 목록').dataset['transitionTypes'] ?? 'null'),
+    ).toEqual([NAV_TRANSITION.back]);
+    // raw HTML 링크도 같은 길이다.
+    expect(link('시리즈').hasAttribute('data-next-link')).toBe(true);
+  });
+
+  test('다른 사이트·파일·해시 링크는 원고의 href 그대로 맨 <a>이고, 모양은 같은 문장 링크다', () => {
+    render(<PostBody content={content} relativeDir="dir" />);
+    const post = link('다른 글');
+
+    for (const [name, href] of [
+      ['깃허브', 'https://github.com/'],
+      ['피드', `${SITE_URL}/rss.xml`],
+      ['위로', '#top'],
+    ] as const) {
+      const anchor = link(name);
+      expect(anchor.hasAttribute('data-next-link'), name).toBe(false);
+      expect(anchor.getAttribute('href'), name).toBe(href);
+      expect(anchor.className, name).toBe(post.className);
+    }
   });
 });
