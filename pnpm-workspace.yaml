@@ -23,6 +23,13 @@ overrides:
   # 같은 핀, 2026-10-24 확인). jsdom의 undici는 8.x(^8.10.2)라 전역 override로 묶으면
   # 메이저가 섞이므로 miniflare 아래만 고친다. 제거 조건: miniflare가 핀을 7.30.1+로 올리면 삭제.
   'miniflare>undici': 7.30.1
+  # GHSA-g3hv-75wg-m249(moderate, globparts 증폭 DoS)는 minimatch >=7 <11.0.1이 대상이고 10.x 백포트가
+  # 없다. eslint(^10.2.6)·@eslint/config-array(^10.2.4)·@typescript-eslint/typescript-estree가 10 라인을 쓴다.
+  # 셋이 쓰는 API(new Minimatch().match(path, partial)·minimatch(path, pattern))는 11에서 그대로이고,
+  # 11에서 없어진 makeRe·AST·debug는 쓰지 않는다. 10 라인만 고르는 건 3.x(eslint-plugin-import 등,
+  # 대상 아님)를 건드리지 않고, 이 호환을 확인하지 않은 7~9 소비자가 생기면 audit에 다시 드러나게 하려는 것이다.
+  # 제거 조건: 세 소비자가 모두 minimatch ^11로 올리면 삭제(eslint/eslint#21463, eslint/rewrite#535).
+  'minimatch@10': 11.0.4
 
 allowBuilds:
   esbuild: true
