@@ -24,6 +24,8 @@ type Topic = 'chat' | 'stocks';
 
 const TOPICS: readonly Topic[] = ['chat', 'stocks'];
 const DEFAULT_TOPICS: readonly Topic[] = ['chat'];
+/** 바깥 문자열을 고를 때 쓰는 TOPICS의 문자열 집합 — 단언 없이 좁히려고 둔다 */
+const TOPIC_NAMES: ReadonlySet<string> = new Set(TOPICS);
 
 function parseTopics(value: string | null): Set<Topic> {
   if (value === null) return new Set(DEFAULT_TOPICS);
@@ -31,7 +33,7 @@ function parseTopics(value: string | null): Set<Topic> {
     value
       .split(',')
       .map(topic => topic.trim())
-      .filter((topic): topic is Topic => TOPICS.includes(topic as Topic)),
+      .filter((topic): topic is Topic => TOPIC_NAMES.has(topic)),
   );
 }
 
@@ -546,7 +548,7 @@ export class WebSocketServer {
  */
 class WebSocketConnection {
   private socket: Duplex;
-  private readonly listeners: { [E in ClientEvent]?: ClientEventListener<E>[] };
+  private readonly listeners: { [E in ClientEvent]: ClientEventListener<E>[] };
   private fragmentedMessage: Buffer[];
   private fragmentedLength: number;
   private fragmentedOpcode: number | null;
@@ -563,7 +565,7 @@ class WebSocketConnection {
   constructor(socket: Duplex, topics: ReadonlySet<Topic>) {
     this.socket = socket;
     this.topics = topics;
-    this.listeners = {};
+    this.listeners = { message: [], binary: [], close: [] };
     this.fragmentedMessage = [];
     this.fragmentedLength = 0;
     this.fragmentedOpcode = null;
@@ -592,7 +594,7 @@ class WebSocketConnection {
         clearTimeout(this.closeTimer);
         this.closeTimer = null;
       }
-      this.emit('close');
+      this.emitClose();
     });
 
     // Close 없이 온 FIN — HTTP 서버 소켓은 allowHalfOpen이라 이쪽도 end()해야 닫힌다
@@ -916,9 +918,9 @@ class WebSocketConnection {
         );
       }
       const message = data.toString('utf-8');
-      this.emit('message', message);
+      this.emitMessage(message);
     } else if (opcode === WebSocketOpcode.Binary) {
-      this.emit('binary', data);
+      this.emitBinary(data);
     }
   }
 
@@ -992,21 +994,21 @@ class WebSocketConnection {
    * 이벤트 시스템
    */
   on<E extends ClientEvent>(event: E, callback: ClientEventListener<E>): void {
-    const bucket = (this.listeners[event] ??= []) as ClientEventListener<E>[];
-    bucket.push(callback);
+    this.listeners[event].push(callback);
   }
 
-  private emit<E extends ClientEvent>(
-    ...args: ClientEventPayloadMap[E] extends void
-      ? [event: E]
-      : [event: E, data: ClientEventPayloadMap[E]]
-  ): void {
-    const [event, data] = args as [E, ClientEventPayloadMap[E] | undefined];
-    const bucket = this.listeners[event];
-    if (!bucket) return;
-    for (const callback of bucket) {
-      (callback as (payload?: ClientEventPayloadMap[E]) => void)(data);
-    }
+  // 이벤트마다 내보내는 메서드를 따로 둔다 — 제네릭 하나로 묶으면 이벤트와 페이로드의 짝을
+  // 컴파일러가 따라가지 못해 단언이 필요해진다(이벤트는 셋뿐이다)
+  private emitMessage(message: string): void {
+    for (const callback of this.listeners.message) callback(message);
+  }
+
+  private emitBinary(data: Buffer): void {
+    for (const callback of this.listeners.binary) callback(data);
+  }
+
+  private emitClose(): void {
+    for (const callback of this.listeners.close) callback();
   }
 
   /**
