@@ -1,13 +1,9 @@
 import Link from 'next/link';
-
-export type Post = {
-  id: string;
-  title: string;
-};
+import { parsePosts } from './post';
 
 const Page = async () => {
   const data = await fetch('https://api.vercel.app/blog');
-  const posts = (await data.json()) as Post[];
+  const posts = parsePosts(await data.json());
   return (
     <ul className="list-disc pl-5 space-y-2 flex flex-col items-center">
       {posts.map(post => (

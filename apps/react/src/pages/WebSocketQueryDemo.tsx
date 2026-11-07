@@ -9,6 +9,7 @@ import {
   useWebSocketQuery,
   getWebSocketQueryOptions,
 } from '@/hooks/useWebSocketQuery';
+import { readPriceUpdate } from '@/types/stock';
 
 // 주식 데이터 타입
 interface Stock {
@@ -159,11 +160,11 @@ function QueryInvalidationExample() {
     url: 'ws://localhost:3001/?topics=stocks',
     onMessage: data => {
       try {
-        const message = JSON.parse(data as string);
+        const update = readPriceUpdate(JSON.parse(data));
 
         // PRICE_UPDATE 메시지 처리
-        if (message.type === 'PRICE_UPDATE') {
-          const { symbol, price, change, changePercent, volume } = message.data;
+        if (update) {
+          const { symbol, price, change, changePercent, volume } = update.data;
 
           // 기존 stocks 데이터 가져오기
           const currentStocks =
@@ -311,14 +312,11 @@ function PartialUpdatesExample() {
     url: 'ws://localhost:3001/?topics=stocks',
     onMessage: data => {
       try {
-        const message = JSON.parse(data as string);
+        const update = readPriceUpdate(JSON.parse(data));
 
         // PRICE_UPDATE 메시지로 호가창 생성
-        if (
-          message.type === 'PRICE_UPDATE' &&
-          message.data.symbol === selectedSymbol
-        ) {
-          const { price } = message.data;
+        if (update?.data.symbol === selectedSymbol) {
+          const { price } = update.data;
           const basePrice = Math.round(price);
 
           // 현재가 기준으로 호가창 생성

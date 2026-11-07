@@ -32,7 +32,8 @@ enableMocking()
     console.error('MSW를 시작하지 못해 목 없이 렌더링합니다.', error);
   })
   .then(() => {
-    ReactDOM.createRoot(root!).render(
+    if (!root) throw new Error('index.html에 #root 요소가 없습니다');
+    ReactDOM.createRoot(root).render(
       <ErrorBoundary>
         <QueryClientProvider client={queryClient}>
           <BrowserRouter>

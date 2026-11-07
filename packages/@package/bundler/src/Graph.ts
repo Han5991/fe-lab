@@ -34,8 +34,9 @@ export class Graph {
       return null;
     }
 
-    if (this.modules.has(filePath)) {
-      return this.modules.get(filePath)!;
+    const existing = this.modules.get(filePath);
+    if (existing) {
+      return existing;
     }
 
     console.log(`📂 Processing: ${filePath}`);
@@ -104,7 +105,7 @@ export class Graph {
       separator: '\n',
     });
 
-    const entryModule = this.modules.get(this.entryPath)!;
+    const entryModule = this.getEntryModule();
 
     // 번들 래퍼 시작 부분
     const wrapperStart = `
@@ -256,8 +257,19 @@ export class Graph {
     return undefined;
   }
 
+  /** build() 전이거나 엔트리가 external이면 엔트리 모듈이 없다 — undefined로 흘리지 않고 여기서 멈춘다 */
+  private getEntryModule(): Module {
+    const entryModule = this.modules.get(this.entryPath);
+    if (!entryModule) {
+      throw new Error(
+        `엔트리 모듈이 그래프에 없습니다: ${this.entryPath} (build()를 먼저 호출했는지 확인하세요)`,
+      );
+    }
+    return entryModule;
+  }
+
   private generateStandaloneESM(distDir: string, bundleContent: string) {
-    const entryModule = this.modules.get(this.entryPath)!;
+    const entryModule = this.getEntryModule();
     const allExports = this.getEntryExports(entryModule);
 
     // 1. 번들 코드를 변수에 할당 (IIFE 결과 캡처)

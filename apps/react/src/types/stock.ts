@@ -33,6 +33,40 @@ export interface StockPriceUpdate {
   };
 }
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+/**
+ * 소켓 메시지에서 시세 갱신을 꺼낸다. 다른 종류의 메시지면 null,
+ * PRICE_UPDATE인데 필드가 어긋나면 던진다 — 받는 쪽이 로그로 남긴다.
+ */
+export function readPriceUpdate(message: unknown): StockPriceUpdate | null {
+  if (!isRecord(message) || message.type !== 'PRICE_UPDATE') return null;
+  const { data } = message;
+  if (
+    isRecord(data) &&
+    typeof data.symbol === 'string' &&
+    typeof data.price === 'number' &&
+    typeof data.change === 'number' &&
+    typeof data.changePercent === 'number' &&
+    typeof data.volume === 'number' &&
+    typeof data.timestamp === 'number'
+  ) {
+    return {
+      type: 'PRICE_UPDATE',
+      data: {
+        symbol: data.symbol,
+        price: data.price,
+        change: data.change,
+        changePercent: data.changePercent,
+        volume: data.volume,
+        timestamp: data.timestamp,
+      },
+    };
+  }
+  throw new Error('PRICE_UPDATE 메시지의 data 필드가 계약과 다릅니다');
+}
+
 /**
  * 주식 체결 정보
  */

@@ -49,6 +49,6 @@ export class MockWebSocket {
 
   simulateClose(code: number) {
     this.readyState = MockWebSocket.CLOSED;
-    this.onclose?.({ code } as CloseEvent);
+    this.onclose?.(new CloseEvent('close', { code }));
   }
 }

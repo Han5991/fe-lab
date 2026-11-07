@@ -11,12 +11,22 @@ import { ToastData, ToastPosition } from './types';
 const EDGE_OFFSET = '1.5rem';
 const STACK_GAP = '0.75rem';
 
+/** 위치마다 붙는 세로 가장자리와 가로 정렬. ToastPosition에 위치가 늘면 여기서 컴파일이 멈춘다 */
+const PLACEMENT: Record<
+  ToastPosition,
+  readonly ['top' | 'bottom', 'left' | 'right' | 'center']
+> = {
+  'top-left': ['top', 'left'],
+  'top-right': ['top', 'right'],
+  'top-center': ['top', 'center'],
+  'bottom-left': ['bottom', 'left'],
+  'bottom-right': ['bottom', 'right'],
+  'bottom-center': ['bottom', 'center'],
+};
+
 /** 위치 하나의 토스트 스택. 이 래퍼만 fixed이고 토스트는 그 안에 쌓인다 */
 function stackStyle(position: ToastPosition): CSSProperties {
-  const [vertical, horizontal] = position.split('-') as [
-    'top' | 'bottom',
-    'left' | 'right' | 'center',
-  ];
+  const [vertical, horizontal] = PLACEMENT[position];
   return {
     position: 'fixed',
     pointerEvents: 'none',
@@ -84,27 +94,23 @@ const ToastItem = ({ toast, onClose }: ToastItemProps) => {
 export const ToastContainer = () => {
   const { toasts: activeToasts, defaultPosition } = useDistributedToasts();
 
-  // 위치별로 토스트를 그룹화
-  const toastsByPosition = activeToasts.reduce(
-    (acc: Record<string, ToastData[]>, toast: ToastData) => {
-      const position = toast.position || defaultPosition;
-      if (!acc[position]) {
-        acc[position] = [];
-      }
-      acc[position].push(toast);
-      return acc;
-    },
-    {} as Record<string, ToastData[]>,
-  );
+  // 위치별로 토스트를 그룹화 — Map은 키 타입(ToastPosition)과 넣은 순서를 그대로 지킨다
+  const toastsByPosition = new Map<ToastPosition, ToastData[]>();
+  for (const toast of activeToasts) {
+    const position = toast.position || defaultPosition;
+    const group = toastsByPosition.get(position);
+    if (group) group.push(toast);
+    else toastsByPosition.set(position, [toast]);
+  }
 
   return (
     <Portal>
       {/* 토스트가 없을 때도 마운트해 둔다 — 라이브 영역은 이미 있던 영역에 더해진 내용만 읽는다.
           status의 기본 aria-atomic은 true라 새 토스트마다 떠 있던 것까지 다시 읽으므로 끈다. */}
       <div role="status" aria-atomic="false">
-        {Object.entries(toastsByPosition).map(([position, positionToasts]) => (
-          <div key={position} style={stackStyle(position as ToastPosition)}>
-            {(positionToasts as ToastData[]).map((toast: ToastData) => (
+        {[...toastsByPosition].map(([position, positionToasts]) => (
+          <div key={position} style={stackStyle(position)}>
+            {positionToasts.map(toast => (
               <ToastItem key={toast.id} toast={toast} onClose={toasts.hide} />
             ))}
           </div>

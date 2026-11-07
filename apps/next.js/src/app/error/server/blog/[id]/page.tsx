@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import type { Post } from '../page';
+import { parsePost } from '../post';
 import Page1 from './Page1';
 import Page2 from './Page2';
 import { ErrorBoundary } from '@/components';
@@ -15,7 +15,7 @@ const Post = async ({ params }: PostProps) => {
     notFound();
   }
 
-  const data = (await res.json()) as Post;
+  const data = parsePost(await res.json());
 
   return (
     <>

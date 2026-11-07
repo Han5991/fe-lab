@@ -53,7 +53,8 @@ async function readBody(response: Response): Promise<unknown> {
 
 function readErrorFields(data: unknown): ErrorBodyFields {
   if (typeof data !== 'object' || data === null) return {};
-  const { error, message } = data as { error?: unknown; message?: unknown };
+  const error = 'error' in data ? data.error : undefined;
+  const message = 'message' in data ? data.message : undefined;
   return {
     code: typeof error === 'string' ? error : undefined,
     message:
