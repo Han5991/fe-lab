@@ -564,8 +564,7 @@ export function PostStatsPanel({
  * 분포를 기다리는 자리. 칼럼에서는 드러날 때 걷히는 퇴장(`out`)을 단다. 시트에서는 달지 않는다 — 시트·스크림은
  * 들고 날 때만 이름이 붙어 그 사이의 전환에서는 루트 스냅샷 안에 있는데, 이름 붙은 것이 하나라도 있으면
  * React가 그 드러남을 View Transition으로 돌리고, iPhone(WebKit)에서는 그동안 시트가 통째로 사라졌다
- * 다시 섰다. 이름이 없으면 드러남은 전환 없이 커밋되고 분포는 `enterMotion`으로 떠오른다. 목록 칼럼의
- * `resize`도 같은 이유로 좁은 화면에서는 이름을 받지 않는다(`AnalyticsScreen`).
+ * 다시 섰다. 이름이 없으면 드러남은 전환 없이 커밋되고 분포는 `enterMotion`으로 떠오른다.
  */
 const distributionsSkeleton = (
   <div className={css({ display: 'flex', flexDir: 'column', gap: '4' })}>

@@ -99,3 +99,66 @@ export function usePresence(
 
   return { state, open, close, closeNow };
 }
+
+/** `useHeldUntilExit`가 돌려주는 것. */
+export interface HeldValue<T> {
+  /** 그릴 값 — 값이 있으면 그 값이고, 값이 막 사라졌으면 퇴장 전환이 끝날 때까지 직전 값이다. */
+  value: T | null;
+  /**
+   * 이 값이 빈 자리에 생겼는가 — 열림(없음 → 값)과 교체(값 → 다른 값)를 가른다. 처음 그릴 때부터 있던
+   * 값은 생긴 것이 아니다.
+   */
+  appeared: boolean;
+  /** 값은 사라졌고, 퇴장 전환 동안 직전 값을 붙들고 있다. */
+  leaving: boolean;
+}
+
+/**
+ * 값이 사라져도(`null`) `elementRef` 요소의 `property` 전환이 끝날 때까지 직전 값을 붙든다 — 닫히며 빠져나가는
+ * 칼럼이 그동안 내용을 그리게. 전환은 값을 그리는 요소가 아니라 바깥 요소(트랙을 바꾸는 그리드)의 것이어도 된다.
+ *
+ * `usePresence`와 달리 열고 닫음을 이벤트 핸들러가 아니라 값이 정한다 — 주소에서 읽은 값이면 뒤로 가기처럼 쓰는
+ * 쪽이 부르지 않은 닫힘도 같은 길로 나간다.
+ *
+ * - 값이 생기거나 바뀌면 렌더 중에 바로 따른다(이전 렌더의 값을 상태로 들고 비교하는 React 패턴).
+ * - 붙드는 동안 `transitionend`(그 요소·그 속성)가 오면 놓는다. 오지 않아도 계산된 시간 + 여유 뒤의 백스톱이
+ *   놓는다 — 전환이 없는 환경(jsdom)에서는 여유만큼 뒤다. 놓는 갱신은 transition이 아니라 React가 View
+ *   Transition을 열지 않는다.
+ * - 붙드는 중에 같은 값이 다시 오면 그대로 이어 그리고(전환이 되돌아간다), 다른 값이 오면 교체다.
+ * - 움직임 줄이기에서는 시간 토큰이 0.01ms라 전환이 바로 끝나고 이벤트는 그대로 온다.
+ */
+export function useHeldUntilExit<T>(
+  value: T | null,
+  elementRef: RefObject<HTMLElement | null>,
+  property: string,
+): HeldValue<T> {
+  const [held, setHeld] = useState({ value, appeared: false });
+  if (value !== null && value !== held.value) {
+    setHeld({ value, appeared: held.value === null });
+  }
+  const leaving = value === null && held.value !== null;
+
+  useEffect(() => {
+    if (!leaving) return;
+    const element = elementRef.current;
+    const release = () => setHeld({ value: null, appeared: false });
+    const onEnd = (event: TransitionEvent) => {
+      if (event.target === element && event.propertyName === property) {
+        release();
+      }
+    };
+    // `transitioncancel`은 듣지 않는다 — 닫히는 중에 다시 열면 그 퇴장이 취소되며 오는 이벤트다.
+    element?.addEventListener('transitionend', onEnd);
+    const backstop = setTimeout(
+      release,
+      (element === null ? 0 : transitionMs(element, property)) +
+        BACKSTOP_BUFFER_MS,
+    );
+    return () => {
+      element?.removeEventListener('transitionend', onEnd);
+      clearTimeout(backstop);
+    };
+  }, [leaving, elementRef, property]);
+
+  return { value: held.value, appeared: held.appeared, leaving };
+}

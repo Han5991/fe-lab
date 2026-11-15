@@ -33,19 +33,11 @@ export const ADMIN_VIEW_TRANSITION = {
    * `slideIn`을 거꾸로 돈다.
    */
   slideOut: 'admin-slide-out',
-  /** 좁은 화면 글 통계 시트 — 열림·닫힘(sm 미만은 아래, 그 위는 오른쪽 화면 밖과 오간다). */
+  /**
+   * 좁은 화면 글 통계 시트 — 열림·닫힘(sm 미만은 아래, 그 위는 오른쪽 화면 밖과 오간다). 넓은 화면의 칼럼은
+   * 열고 닫는 움직임이 View Transition이 아니라 그리드 트랙의 CSS 전환이다(`AnalyticsScreen`의 `layout`).
+   */
   sheet: 'admin-sheet',
-  /**
-   * 넓은 화면 글 통계 칼럼 — 고른 글이 있을 때만 있고, 오른쪽 화면 밖과 오간다. 시트와 달리 열림·닫힘이 같은
-   * 곡선(standard)이다 — 옆 목록 칼럼(`resize`)의 상자가 한 그룹 애니메이션이라 방향마다 곡선을 바꿀 수 없어,
-   * 칼럼도 같은 곡선으로 맞춰야 둘이 함께 닿는다.
-   */
-  drawer: 'admin-drawer',
-  /**
-   * 넓은 화면 분석의 목록 칼럼 — 글 통계 칼럼이 열리고 닫히며 폭이 바뀔 때. 이전 스냅샷은 지우고 새
-   * 스냅샷을 늘이지 않은 채 왼쪽 위에 붙여, 칼럼 상자만 글 통계 칼럼(`drawer`)과 같은 시간·곡선으로 줄고 는다.
-   */
-  resize: 'admin-resize',
   /** 시트 뒤 스크림 — 나타남·사라짐. */
   scrim: 'admin-scrim',
 } as const;
