@@ -823,40 +823,6 @@ export default defineConfig({
       [`::view-transition-new(.${ADMIN_VIEW_TRANSITION.slideIn})`]: {
         animationName: 'admin-inspector-in',
       },
-      // drawer·resize — 넓은 화면 분석의 글 통계 칼럼과 옆 목록 칼럼. 칼럼이 오른쪽 화면 밖과 오가는 동안 목록
-      // 상자가 같은 시간·곡선(medium·standard)으로 줄고 는다 — 그룹 애니메이션은 방향마다 곡선을 바꿀 수 없어
-      // 칼럼의 닫힘도 시트(exit)가 아니라 standard다. exit로 두면 목록이 먼저 닿고 칼럼이 뒤늦게 빠졌다. 스냅샷은 늘이지 않는다 — 폭이 다른 두 목록(줄바꿈이 다르다)을 상자에 맞춰
-      // 늘이면 글자가 찌그러지고 겹친다. 새 스냅샷만 제 크기로 왼쪽 위에 두고 상자가 자른다: 열 때는 새(좁은)
-      // 목록이 바로 서고, 닫을 때는 넓어진 목록이 나가는 칼럼 뒤에서 드러난다.
-      [`::view-transition-group(.${ADMIN_VIEW_TRANSITION.drawer})`]: {
-        zIndex: '2',
-      },
-      [`::view-transition-new(.${ADMIN_VIEW_TRANSITION.drawer}), ::view-transition-old(.${ADMIN_VIEW_TRANSITION.drawer})`]:
-        {
-          '--admin-sheet-from': 'translateX(100%)',
-          animationDuration: 'medium',
-          animationTimingFunction: 'standard',
-          animationFillMode: 'both',
-        },
-      [`::view-transition-new(.${ADMIN_VIEW_TRANSITION.drawer})`]: {
-        animationName: 'admin-sheet-in',
-      },
-      [`::view-transition-old(.${ADMIN_VIEW_TRANSITION.drawer})`]: {
-        animationName: 'admin-sheet-out',
-      },
-      [`::view-transition-group(.${ADMIN_VIEW_TRANSITION.resize})`]: {
-        animationDuration: 'medium',
-        animationTimingFunction: 'standard',
-        overflow: 'clip',
-      },
-      [`::view-transition-old(.${ADMIN_VIEW_TRANSITION.resize})`]: {
-        display: 'none',
-      },
-      [`::view-transition-new(.${ADMIN_VIEW_TRANSITION.resize})`]: {
-        animationName: 'none',
-        w: 'auto',
-        h: 'auto',
-      },
       // sheet·scrim — 좁은 화면 시트와 그 뒤. 화면을 덮는 면이라 관리자 바(1)보다 위에 그린다. 시트는
       // 목차 바텀시트와 같은 박자다: 열릴 때 medium·standard, 닫힐 때 같은 시간에 exit로 되돌아 나가고,
       // 스크림은 열릴 때 medium, 닫힐 때 linear(거리 없는 퇴장). sm 미만은 시트가 화면 폭 전체라

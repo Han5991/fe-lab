@@ -26,6 +26,7 @@ import { SegmentedControl } from '@/src/components/admin/SegmentedControl';
 import { LoadingPlaceholder } from '@/src/components/shared/LoadingPlaceholder';
 import { siteHeaderStyle } from '@/src/components/siteHeader';
 import { useModalDialog } from '@/src/components/useModalDialog';
+import { useHeldUntilExit, type HeldValue } from '@/src/components/usePresence';
 import { useAdminPostsWithTags } from '@/src/hooks/useAdminPostTags';
 import { useAdminDashboardData } from '@/src/hooks/useAdminViews';
 import { usePrefetchPostDetailStats } from '@/src/hooks/usePostDetailStats';
@@ -74,7 +75,8 @@ function useIsWide(): boolean {
  * 늘리지 않는다.
  *
  * Next는 그 맞춤을 `startTransition`으로 넘긴다 — 그래서 고르기·닫기는 React transition이고, 패널
- * 내용·시트의 `<ViewTransition>`이 그 커밋에서 들어오고 나간다(Next 16 `restore`).
+ * 내용(다른 글로 바꿀 때)·시트의 `<ViewTransition>`이 그 커밋에서 들어오고 나간다(Next 16 `restore`).
+ * 넓은 화면 칼럼의 열고 닫음은 View Transition이 아니다(`layout`).
  */
 function navigateTo(href: string): void {
   if (window.location.pathname === href) return;
@@ -196,6 +198,9 @@ function PostListView({ selectedSlug, onSelect }: PostListViewProps) {
 const panelColumn = css({
   pos: 'sticky',
   top: '[var(--site-header-height)]',
+  // 폭은 트랙이 아니라 칼럼 자신의 것이다 — 열고 닫는 동안 트랙이 0 ↔ 400으로 바뀌어도 내용은 400 그대로 트랙
+  // 왼쪽 끝(= 목록의 오른쪽 끝)에 붙어 함께 밀려 오고 나간다. 트랙 밖으로 넘친 쪽은 `layout`이 자른다.
+  w: 'inspector',
   // 관리자 바(48) 아래를 화면 끝까지 채우고 안에서 스크롤한다 — 목록이 길어도 패널은 제자리다.
   h: '[calc(100dvh - var(--site-header-height))]',
   overflowY: 'auto',
@@ -204,11 +209,21 @@ const panelColumn = css({
   borderColor: 'ink.border',
 });
 
-/** lg 이상의 패널 칼럼 — 목록 옆 `글 통계` 영역. 높이를 관리자 바 변수에서 계산한다. */
-function PanelColumn({ children }: { children: ReactNode }) {
+/**
+ * lg 이상의 패널 칼럼 — 목록 옆 `글 통계` 영역. 높이를 관리자 바 변수에서 계산한다. 닫히며 빠져나가는
+ * 동안(`leaving`)은 inert다 — 곧 사라질 칼럼에 초점·포인터가 들어가지 않게.
+ */
+function PanelColumn({
+  leaving,
+  children,
+}: {
+  leaving: boolean;
+  children: ReactNode;
+}) {
   return (
     <section
       aria-label="글 통계"
+      inert={leaving}
       style={siteHeaderStyle}
       className={panelColumn}
     >
@@ -291,10 +306,21 @@ function PostSheet({
   );
 }
 
+/**
+ * 패널이 놓이는 자리. 넓은 화면의 칼럼은 열고 닫는 움직임을 그리드 트랙이 맡아(`layout`) 그 상태를 함께
+ * 받는다 — 좁은 화면의 시트는 들고 남을 `<ViewTransition>`이 맡는다(`PostSheet`).
+ */
+type InspectorPlacement =
+  | { mode: Extract<PanelPlacement, 'sheet'> }
+  | ({ mode: Extract<PanelPlacement, 'column'> } & Pick<
+      HeldValue<string>,
+      'appeared' | 'leaving'
+    >);
+
 interface InspectorBodyProps {
+  /** 넓은 화면은 칼럼이 그리는 글(닫히는 동안은 직전 글), 좁은 화면은 고른 글(있을 때만 시트). */
   slug: string | null;
-  /** 넓은 화면은 칼럼 안의 내용, 좁은 화면은 시트(고른 글이 있을 때만). */
-  mode: PanelPlacement;
+  placement: InspectorPlacement;
   onClose: () => void;
   /** 칼럼을 사용자가 목록에서 골라 열었는가 — 그때만 제목으로 초점을 옮긴다(`PostStatsPanel`). */
   focusTitle: boolean;
@@ -311,7 +337,7 @@ interface InspectorBodyProps {
  */
 function InspectorBody({
   slug,
-  mode,
+  placement,
   onClose,
   focusTitle,
 }: InspectorBodyProps) {
@@ -328,41 +354,36 @@ function InspectorBody({
     post !== undefined && tags !== undefined ? (
       <PostStatsPanel
         key={post.slug}
-        placement={mode}
+        placement={placement.mode}
         post={post}
         tags={tags}
         titleId={titleId}
         onClose={onClose}
-        focusTitle={mode === 'column' && focusTitle}
+        focusTitle={placement.mode === 'column' && focusTitle}
       />
     ) : (
       <PostNotFound slug={slug} titleId={titleId} onClose={onClose} />
     );
 
-  if (mode === 'column') {
-    // 칼럼은 고른 글이 있을 때만 있다 — 글을 고르면 칼럼째 오른쪽 화면 밖에서 밀려 들어오고, 닫으면 같은
-    // 길로 나간다(바깥 경계 `drawer` — 목록 칼럼의 폭과 같은 시간·곡선). 칼럼이 열린 채 다른 글로 바꾸면
-    // 내용 단위로 들고 난다 — slug가 key라 이전 내용은 오른쪽으로 밀려 나가고(fast·exit) 새 내용은 그 뒤
-    // 오른쪽 16px에서 밀려 온다(fastMax·standard). 고르기·닫기가 주소 변경 transition이라 React가 이
-    // 경계들을 움직인다(`navigateTo`). 같은 글 안의 갱신(기간 선택, 분포 도착)은 움직이지 않는다
-    // (`default="none"`).
+  if (placement.mode === 'column') {
+    // 칼럼은 그릴 글이 있을 때만 있다. 열고 닫는 움직임은 칼럼째 그리드 트랙이 맡는다(`layout`) — 닫히는 동안은
+    // 직전 글을 붙들고 있다(`useHeldUntilExit`). 칼럼이 열린 채 다른 글로 바꾸면 내용 단위로 들고 난다 — slug가
+    // key라 이전 내용은 오른쪽으로 밀려 나가고(fast·exit) 새 내용은 그 뒤 오른쪽 16px에서 밀려 온다
+    // (fastMax·standard). 바꾸기가 주소 변경 transition이라 React가 이 경계를 움직인다(`navigateTo`).
+    // 칼럼과 함께 생긴 내용(`appeared` — 열림)은 들어오지 않는다: 칼럼째 밀려 오는 중이고, 여기서 전환을 열면
+    // React가 화면을 스냅샷으로 바꿔 줄어드는 목록 위에 옛 폭의 목록이 겹친다. 같은 글 안의 갱신(기간 선택, 분포
+    // 도착)은 움직이지 않는다(`default="none"`).
     return (
-      <ViewTransition
-        enter={ADMIN_VIEW_TRANSITION.drawer}
-        exit={ADMIN_VIEW_TRANSITION.drawer}
-        default="none"
-      >
-        <PanelColumn>
-          <ViewTransition
-            key={slug}
-            enter={ADMIN_VIEW_TRANSITION.slideIn}
-            exit={ADMIN_VIEW_TRANSITION.slideOut}
-            default="none"
-          >
-            {content}
-          </ViewTransition>
-        </PanelColumn>
-      </ViewTransition>
+      <PanelColumn leaving={placement.leaving}>
+        <ViewTransition
+          key={slug}
+          enter={placement.appeared ? 'none' : ADMIN_VIEW_TRANSITION.slideIn}
+          exit={ADMIN_VIEW_TRANSITION.slideOut}
+          default="none"
+        >
+          {content}
+        </ViewTransition>
+      </PanelColumn>
     );
   }
   return (
@@ -373,7 +394,10 @@ function InspectorBody({
 }
 
 interface InspectorProps {
+  /** 고른 글 — 좁은 화면의 시트가 그린다. */
   slug: string | null;
+  /** 넓은 화면의 칼럼이 그리는 글 — 닫히는 동안은 직전 글을 붙든다(`AnalyticsScreen`). */
+  column: HeldValue<string>;
   isWide: boolean;
   onClose: () => void;
   focusTitle: boolean;
@@ -381,16 +405,22 @@ interface InspectorProps {
 
 /**
  * 고른 글의 통계를 넓은 화면은 목록 옆 칼럼에, 좁은 화면은 시트에 그린다. 고른 글이 없으면 칼럼도
- * 없다 — 목록이 화면 폭을 다 쓴다. 칼럼은 고른 글의 데이터를 기다리는 동안에도 자리를 지킨다(스켈레톤).
- * 데이터 구독(`InspectorBody`)은 고른 글이 없어도 아무것도 그리지 않고 남는다(그 주석).
+ * 없다(닫히며 빠져나간 뒤) — 목록이 화면 폭을 다 쓴다. 칼럼은 고른 글의 데이터를 기다리는 동안에도 자리를
+ * 지킨다(스켈레톤). 데이터 구독(`InspectorBody`)은 고른 글이 없어도 아무것도 그리지 않고 남는다(그 주석).
  */
-function Inspector({ slug, isWide, onClose, focusTitle }: InspectorProps) {
+function Inspector({
+  slug,
+  column,
+  isWide,
+  onClose,
+  focusTitle,
+}: InspectorProps) {
   if (isWide) {
     return (
       <Suspense
         fallback={
-          slug === null ? null : (
-            <PanelColumn>
+          column.value === null ? null : (
+            <PanelColumn leaving={column.leaving}>
               <ViewTransition exit={ADMIN_VIEW_TRANSITION.out} default="none">
                 <PanelSkeleton />
               </ViewTransition>
@@ -399,8 +429,12 @@ function Inspector({ slug, isWide, onClose, focusTitle }: InspectorProps) {
         }
       >
         <InspectorBody
-          slug={slug}
-          mode="column"
+          slug={column.value}
+          placement={{
+            mode: 'column',
+            appeared: column.appeared,
+            leaving: column.leaving,
+          }}
           onClose={onClose}
           focusTitle={focusTitle}
         />
@@ -411,7 +445,7 @@ function Inspector({ slug, isWide, onClose, focusTitle }: InspectorProps) {
     <Suspense fallback={null}>
       <InspectorBody
         slug={slug}
-        mode="sheet"
+        placement={{ mode: 'sheet' }}
         onClose={onClose}
         focusTitle={false}
       />
@@ -419,17 +453,35 @@ function Inspector({ slug, isWide, onClose, focusTitle }: InspectorProps) {
   );
 }
 
+/**
+ * 목록 | 글 통계 칼럼. 칼럼을 열고 닫는 움직임은 두 번째 트랙의 폭(0 ↔ 400) 하나다 — 목록의 오른쪽 끝과
+ * 칼럼의 왼쪽 끝이 같은 선이라 둘이 같은 시간·곡선(medium·standard)으로 함께 줄고 늘고, 목록은 매 프레임
+ * 그 폭에 다시 배치된다(작성일·조회수 칸이 칼럼 끝을 따라 밀린다). 제목 칸은 한 줄 말줄임이라 줄 높이는
+ * 흔들리지 않는다.
+ *
+ * View Transition으로 하지 않는 이유: 전환은 화면을 스냅샷으로 바꿔 그리므로 그 사이의 배치를 보여 줄 수
+ * 없다. 예전에는 목록이 첫 프레임에 새 폭으로 바뀌고(열 때 칸들이 400px 왼쪽으로 튀었다) 그 빈자리로
+ * 칼럼이 뒤따라 들어왔다. 그래서 열고 닫는 커밋은 전환을 열지 않는다 — 칼럼과 함께 생긴 내용은 들어오지
+ * 않고(`InspectorBody`), 닫힐 때 칼럼은 직전 글을 붙든 채 나간다(`useHeldUntilExit`). 브라우저 뒤로 가기로
+ * 닫혀도 같은 길이다.
+ */
 const layout = cva({
+  base: {
+    display: 'grid',
+    // 패널은 sticky라 칸이 자기 높이만 차지해야 한다.
+    alignItems: 'start',
+    transitionProperty: 'grid-template-columns',
+    transitionDuration: 'medium',
+    transitionTimingFunction: 'standard',
+    // 트랙보다 넓은 칼럼(열고 닫는 동안)이 화면 오른쪽 밖으로 넘친 쪽을 자른다. `clip`은 스크롤 상자를
+    // 만들지 않아 칼럼의 sticky가 그대로 문서 스크롤을 따른다(`hidden`이면 이 요소에 묶여 멈춘다).
+    overflowX: 'clip',
+  },
   variants: {
-    // 고른 글이 있는 넓은 화면만 두 칸이다 — 고른 글이 없으면 목록이 폭을 다 쓴다.
+    // 고른 글이 있는 넓은 화면만 칼럼 트랙이 열린다 — 고른 글이 없으면 목록이 폭을 다 쓴다.
     panel: {
-      // 목록 | 패널(400). 패널은 sticky라 칸이 자기 높이만 차지해야 한다(align-items start).
-      true: {
-        display: 'grid',
-        gridTemplateColumns: '[minmax(0, 1fr) token(sizes.inspector)]',
-        alignItems: 'start',
-      },
-      false: { display: 'block' },
+      true: { gridTemplateColumns: '[minmax(0, 1fr) token(sizes.inspector)]' },
+      false: { gridTemplateColumns: '[minmax(0, 1fr) 0px]' },
     },
   },
 });
@@ -445,6 +497,13 @@ const layout = cva({
 export function AnalyticsScreen() {
   const selectedSlug = adminAnalyticsSlugFromPath(usePathname());
   const isWide = useIsWide();
+  const layoutRef = useRef<HTMLDivElement>(null);
+  // 칼럼이 그리는 글 — 닫히면 트랙이 0으로 줄어드는 동안 직전 글을 붙든다(`layout`). 좁은 화면에는 칼럼이 없다.
+  const column = useHeldUntilExit(
+    isWide ? selectedSlug : null,
+    layoutRef,
+    'grid-template-columns',
+  );
 
   // 목록에서 고른 글일 때만 칼럼 제목으로 초점을 옮긴다 — 주소로 바로 연 화면이나 뒤로·앞으로 가기로
   // 바뀐 글은 그대로 둔다(고른 slug와 지금 주소의 slug가 같을 때만).
@@ -456,9 +515,9 @@ export function AnalyticsScreen() {
   };
   const close = () => {
     setFocusedSlug(null);
-    // 넓은 화면의 칼럼은 닫으면 통째로 빠져, 초점을 든 닫기 버튼과 함께 초점이 문서 처음으로 떨어진다.
-    // 칼럼이 빠지기 전에 고른 줄의 제목 링크로 돌려준다 — 목록의 어디까지 왔는지 잃지 않게. 좁은 화면
-    // 시트는 `useModalDialog`가 연 자리로 돌려준다.
+    // 넓은 화면의 칼럼은 닫으면 빠져나가는 동안 inert가 되고 곧 통째로 빠져, 초점을 든 닫기 버튼과 함께 초점이
+    // 문서 처음으로 떨어진다. 그 전에 고른 줄의 제목 링크로 돌려준다 — 목록의 어디까지 왔는지 잃지 않게. 좁은
+    // 화면 시트는 `useModalDialog`가 연 자리로 돌려준다.
     // 고른 줄이 검색으로 걸러져 목록에 없으면 검색 입력으로 돌려준다.
     if (isWide) {
       const list = listRef.current;
@@ -471,41 +530,35 @@ export function AnalyticsScreen() {
   };
 
   return (
-    <div className={layout({ panel: isWide && selectedSlug !== null })}>
+    <div
+      ref={layoutRef}
+      className={layout({ panel: isWide && selectedSlug !== null })}
+    >
       {selectedSlug !== null && <PrefetchPostStats slug={selectedSlug} />}
-      {/* 글 통계 칼럼이 열리고 닫히면 이 칼럼의 폭이 바뀐다 — 루트에 섞여 있으면 옛 폭의 목록이 새 폭 위에
-          크로스페이드로 겹쳤다(230ms, 칼럼은 410ms에 걸쳐 들어오는데). 따로 찍어 상자만 칼럼과 같이 움직인다.
-          좁은 화면은 시트가 목록을 덮을 뿐 폭이 바뀌지 않으므로 이름을 받지 않는다. 받으면 React가 이 화면의
-          모든 transition·드러남 커밋에서 이 상자를 찍었다가(바뀌었을지 모르는 형제라서) 취소하는 View
-          Transition을 연다 — 시트가 떠 있는 동안 늦게 온 분포 하나에 전환이 세 번 열렸다(`distributionsSkeleton`). */}
-      <ViewTransition
-        update={isWide ? ADMIN_VIEW_TRANSITION.resize : 'none'}
-        default="none"
-      >
-        <div className={cx(railGutter, css({ pb: '12', minW: '0' }))}>
-          <div
-            ref={listRef}
-            className={cx(
-              railColumn({ width: 'wide' }),
-              css({ display: 'flex', flexDir: 'column', gap: '4' }),
-            )}
+      <div className={cx(railGutter, css({ pb: '12', minW: '0' }))}>
+        <div
+          ref={listRef}
+          className={cx(
+            railColumn({ width: 'wide' }),
+            css({ display: 'flex', flexDir: 'column', gap: '4' }),
+          )}
+        >
+          {/* 드러날 때 스켈레톤은 걷히고(exit) 머리·목록이 차례로 떠오른다(`enterMotion`). */}
+          <Suspense
+            fallback={
+              <ViewTransition exit={ADMIN_VIEW_TRANSITION.out} default="none">
+                <LoadingPlaceholder height="96px" />
+                <LoadingPlaceholder height="480px" />
+              </ViewTransition>
+            }
           >
-            {/* 드러날 때 스켈레톤은 걷히고(exit) 머리·목록이 차례로 떠오른다(`enterMotion`). */}
-            <Suspense
-              fallback={
-                <ViewTransition exit={ADMIN_VIEW_TRANSITION.out} default="none">
-                  <LoadingPlaceholder height="96px" />
-                  <LoadingPlaceholder height="480px" />
-                </ViewTransition>
-              }
-            >
-              <PostListView selectedSlug={selectedSlug} onSelect={select} />
-            </Suspense>
-          </div>
+            <PostListView selectedSlug={selectedSlug} onSelect={select} />
+          </Suspense>
         </div>
-      </ViewTransition>
+      </div>
       <Inspector
         slug={selectedSlug}
+        column={column}
         isWide={isWide}
         onClose={close}
         focusTitle={selectedSlug !== null && focusedSlug === selectedSlug}

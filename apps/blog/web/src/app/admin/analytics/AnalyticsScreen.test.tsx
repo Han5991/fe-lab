@@ -241,6 +241,39 @@ describe('AnalyticsScreen — 고른 글', () => {
     expect(screen.getByRole('link', { name: '글 A' })).toHaveFocus();
   });
 
+  // 칼럼은 트랙이 0으로 줄어드는 동안 화면에 남아 직전 글을 그린다 — 닫히는 커밋에서 빠지면 칼럼이 나가는 대신
+  // 빈 트랙만 줄어든다. 뒤로 가기도 같은 길이라 닫기 버튼이 아니라 주소로 닫는다. jsdom에는 전환이 없어 백스톱이
+  // 여유(50ms) 뒤에 놓는다(`useHeldUntilExit`).
+  test('넓은 화면에서 주소가 고른 글을 놓으면 칼럼은 직전 글을 붙든 채(inert) 나간 뒤 빠진다', async () => {
+    nav.pathname = '/admin/analytics/a/';
+    const client = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    const view = renderScreen(client);
+    await screen.findByRole('heading', { name: '글 A', level: 2 });
+
+    nav.pathname = '/admin/analytics/';
+    view.rerender(
+      <QueryClientProvider client={client}>
+        <AnalyticsScreen />
+      </QueryClientProvider>,
+    );
+
+    const panel = screen.getByRole('region', { name: '글 통계' });
+    expect(panel).toHaveAttribute('inert');
+    expect(
+      within(panel).getByRole('heading', { name: '글 A', level: 2 }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: '글 A' })).not.toHaveAttribute(
+      'aria-current',
+    );
+    await waitFor(() =>
+      expect(
+        screen.queryByRole('region', { name: '글 통계' }),
+      ).not.toBeInTheDocument(),
+    );
+  });
+
   test('고른 줄이 검색으로 걸러진 채 칼럼을 닫으면 초점은 검색 입력으로 간다', async () => {
     nav.pathname = '/admin/analytics/a/';
     window.history.replaceState(null, '', nav.pathname);
