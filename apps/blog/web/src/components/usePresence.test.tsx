@@ -1,5 +1,5 @@
 /**
- * 퇴장 전환이 끝날 때까지 마운트를 유지하는 훅.
+ * 퇴장 전환이 끝날 때까지 마운트·값을 유지하는 훅.
  *
  * jsdom에는 Panda CSS가 없어 패널의 전환 시간이 0이다 — 그 경로(바로 닫힘)는 시트를 쓰는
  * 컴포넌트 테스트가 그대로 밟는다. 여기서는 패널에 인라인으로 전환을 줘서 브라우저 경로
@@ -8,7 +8,7 @@
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { useRef, type CSSProperties } from 'react';
-import { usePresence } from './usePresence';
+import { useHeldUntilExit, usePresence } from './usePresence';
 
 const SHEET_TRANSITION: CSSProperties = {
   transitionProperty: 'opacity, transform',
@@ -190,5 +190,138 @@ describe('usePresence', () => {
 
     expect(state()).toBe('closed');
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+});
+
+const TRACK_TRANSITION: CSSProperties = {
+  transitionProperty: 'opacity, grid-template-columns',
+  transitionDuration: '0.2s, 410ms',
+};
+
+/** 트랙(전환하는 바깥 요소)과 그 안에서 붙든 값을 그리는 칼럼. */
+function Column({
+  value,
+  trackStyle,
+}: {
+  value: string | null;
+  trackStyle?: CSSProperties;
+}) {
+  const trackRef = useRef<HTMLDivElement>(null);
+  const held = useHeldUntilExit(value, trackRef, 'grid-template-columns');
+  return (
+    <div ref={trackRef} role="group" aria-label="트랙" style={trackStyle}>
+      {held.value !== null && (
+        <section aria-label="칼럼">
+          <p>{held.value}</p>
+        </section>
+      )}
+      <output>
+        {[held.appeared ? '생김' : '', held.leaving ? '나가는 중' : ''].join(
+          ' ',
+        )}
+      </output>
+    </div>
+  );
+}
+
+const shown = () => screen.queryByRole('region', { name: '칼럼' })?.textContent;
+const flags = () => screen.getByRole('status').textContent.trim();
+
+describe('useHeldUntilExit', () => {
+  test('값이 사라져도 그 요소·그 속성의 전환이 끝날 때까지 직전 값을 붙든다', () => {
+    const view = render(<Column value="a" trackStyle={TRACK_TRANSITION} />);
+    view.rerender(<Column value={null} trackStyle={TRACK_TRANSITION} />);
+    expect(shown()).toBe('a');
+    expect(flags()).toBe('나가는 중');
+
+    const track = screen.getByRole('group', { name: '트랙' });
+    act(() => {
+      track.dispatchEvent(transitionEvent('transitionend', 'opacity'));
+      screen
+        .getByText('a')
+        .dispatchEvent(
+          transitionEvent('transitionend', 'grid-template-columns'),
+        );
+      track.dispatchEvent(
+        transitionEvent('transitioncancel', 'grid-template-columns'),
+      );
+    });
+    expect(shown()).toBe('a');
+
+    act(() => {
+      track.dispatchEvent(
+        transitionEvent('transitionend', 'grid-template-columns'),
+      );
+    });
+    expect(shown()).toBeUndefined();
+    expect(flags()).toBe('');
+  });
+
+  test('이벤트를 놓쳐도 계산된 시간 + 여유 뒤에 놓는다 — 전환이 없으면 여유만큼 뒤다', () => {
+    vi.useFakeTimers();
+    const view = render(<Column value="a" trackStyle={TRACK_TRANSITION} />);
+    view.rerender(<Column value={null} trackStyle={TRACK_TRANSITION} />);
+
+    // grid-template-columns의 410ms만 센다(opacity의 0.2s가 아니라).
+    act(() => {
+      vi.advanceTimersByTime(459);
+    });
+    expect(shown()).toBe('a');
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+    expect(shown()).toBeUndefined();
+
+    view.rerender(<Column value="b" />);
+    view.rerender(<Column value={null} />);
+    act(() => {
+      vi.advanceTimersByTime(49);
+    });
+    expect(shown()).toBe('b');
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+    expect(shown()).toBeUndefined();
+  });
+
+  test('빈 자리에 생긴 값만 생긴 것이다 — 처음 값·교체(닫히는 중의 교체 포함)는 아니다', () => {
+    const view = render(<Column value="a" trackStyle={TRACK_TRANSITION} />);
+    expect(flags()).toBe('');
+
+    view.rerender(<Column value="b" trackStyle={TRACK_TRANSITION} />);
+    expect(shown()).toBe('b');
+    expect(flags()).toBe('');
+
+    view.rerender(<Column value={null} trackStyle={TRACK_TRANSITION} />);
+    view.rerender(<Column value="c" trackStyle={TRACK_TRANSITION} />);
+    expect(shown()).toBe('c');
+    expect(flags()).toBe('');
+
+    view.rerender(<Column value={null} trackStyle={TRACK_TRANSITION} />);
+    act(() => {
+      screen
+        .getByRole('group', { name: '트랙' })
+        .dispatchEvent(
+          transitionEvent('transitionend', 'grid-template-columns'),
+        );
+    });
+    view.rerender(<Column value="d" trackStyle={TRACK_TRANSITION} />);
+    expect(shown()).toBe('d');
+    expect(flags()).toBe('생김');
+  });
+
+  test('닫히는 중에 같은 값이 다시 오면 그대로 이어 그리고, 퇴장의 백스톱이 놓지 않는다', () => {
+    vi.useFakeTimers();
+    const view = render(<Column value="a" trackStyle={TRACK_TRANSITION} />);
+    view.rerender(<Column value={null} trackStyle={TRACK_TRANSITION} />);
+    const column = screen.getByRole('region', { name: '칼럼' });
+
+    view.rerender(<Column value="a" trackStyle={TRACK_TRANSITION} />);
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+
+    expect(screen.getByRole('region', { name: '칼럼' })).toBe(column);
+    expect(flags()).toBe('');
   });
 });
