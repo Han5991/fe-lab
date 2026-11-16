@@ -77,7 +77,7 @@ catalog:
   # 풀려 다시 어긋나고, eslint-config-next가 고정한 플러그인과 두 벌이 된다. 어긋나도 아무 검사도
   # 실패하지 않는다 — 동반 패키지의 peer가 next를 ^13~^16으로 넓게 받는다. Renovate 보안 PR은
   # 취약한 next 하나만 올리고 자동 머지되므로(#523·#558) 동반 패키지가 한 마이너 뒤처진 채 남았었다.
-  'next': 16.4.1
+  'next': 16.4.5
   '@next/third-parties': 16.4.1
   typescript: 6.0.3
   react: 19.3.0
