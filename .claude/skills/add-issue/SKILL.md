@@ -11,7 +11,7 @@ Create one durable, implementation-ready GitHub record per independently impleme
 
 ## Non-Negotiable Boundaries
 
-- Follow all active system, developer, repository, and scoped instructions. Read the target repository's authoritative contracts, contribution guidance, issue templates, and applicable instruction files before investigating or drafting.
+- Read the target repository's authoritative contracts, contribution guidance, issue templates, and applicable instruction files before investigating or drafting.
 - Use `gh` for bounded GitHub reads and writes when possible. Resolve the target from an explicit repository or issue URL, otherwise from the current Git remote. Ask the user before any write when no unique target can be established.
 - Do not implement the recorded work, leave permanent repository changes, update dependencies, generate committed artifacts, commit, push, create a pull request, deploy, or mutate production.
 - A Plan Mode approval, Plan Mode exit, or generic instruction to execute or continue the approved plan authorizes only the audited GitHub-recording action below. It never authorizes implementation of the recorded work, regardless of the normal meaning of an approved plan.
@@ -34,13 +34,13 @@ Create one durable, implementation-ready GitHub record per independently impleme
 
 ## Subagent Orchestration
 
-- When subagent delegation is available, using it is required. Before drafting a handoff, delegate at least one bounded, read-only investigation and use all useful slots concurrently. Assign separate candidates to separate investigators when possible; for one candidate, split independent evidence boundaries such as repository contracts and source, runtime evidence, affected-versus-default-branch comparison, and duplicate history. The coordinating agent must continue complementary work instead of waiting idly.
+- Delegate investigation when it splits into independent parts. Assign separate candidates to separate investigators; for one candidate, split independent evidence boundaries such as repository contracts and source, runtime evidence, affected-versus-default-branch comparison, and duplicate history. Investigate a candidate with a single evidence boundary directly: each subagent rebuilds its context at its own token cost. The coordinating agent must continue complementary work instead of waiting idly.
 - Give each investigator the active instructions, exact candidate and revision or environment, bounded questions, allowed evidence sources, forbidden mutations, and required deliverable. Require sourced facts, commands or code references, separated inferences, supporting and contradicting evidence, unresolved questions, and any workspace artifacts or changes.
 - Investigation subagents must not create, update, type, or comment on GitHub issues or perform another persistent external mutation. Keep their work read-only by default. If temporary instrumentation or revision-specific execution is necessary and authorized, give each investigator its own isolated worktree or copy; never let concurrent investigators instrument the shared checkout. Require cleanup and a workspace-integrity report.
 - The coordinating agent owns the candidate and evidence ledgers, validates material claims, reconciles conflicts, requests targeted follow-up when needed, selects the classification and outcome, and approves the exact audited handoff payload. Agreement among subagents is not a substitute for causal or authoritative evidence.
 - After the workspace is restored and the handoff is audited, delegate all permitted GitHub writes to one dedicated recording subagent that did not investigate the candidates. Give it the exact repository, candidate outcome, title, complete body or comment, selected Issue Type and other required metadata, and the only permitted action. The recording subagent must serialize candidates, re-check write permission, duplicate state, and Issue Type immediately before each write, and return without improvising if those preconditions or the approved payload no longer match current state. After a write, it must re-fetch the record and return the verified URL, type, title, and action taken.
 - The recording subagent's scope is limited to the approved GitHub record and required verification reads. It must not modify the candidate repository, run implementation commands, or continue into implementation after recording succeeds or fails.
-- Do not dispatch the recording subagent for `already fixed`, `unconfirmed`, `failed`, or complete existing-issue outcomes, and never dispatch it to write while Plan Mode is active. Delegation never expands authorization. Temporary slot occupancy is not a fallback condition: finish or wait for current investigators, then obtain a distinct recording subagent. Only when subagent capability is absent or no usable subagent can be obtained after current delegated work completes may the coordinating agent perform a required phase locally, and it must report the exact fallback in the final outcome.
+- Do not dispatch the recording subagent for `already fixed`, `unconfirmed`, `failed`, or complete existing-issue outcomes, and never dispatch it to write while Plan Mode is active. Delegation never expands authorization. Temporary slot occupancy is not a fallback condition: finish or wait for current investigators, then obtain a distinct recording subagent. Only when subagent capability is absent or no usable subagent can be obtained after current delegated work completes may the coordinating agent perform the recording phase locally, and it must report the exact fallback in the final outcome.
 
 ## Classification and Partitioning
 
@@ -96,13 +96,13 @@ For `Task` candidates, resolve the current state, intended maintenance outcome, 
    - Identify the target repository, affected area, intended or expected behavior, current state, impact, environment, evidence, and requested outcome.
    - Read applicable repository instructions, authoritative docs, nearby source, tests, configuration, templates, and relevant issue history before asking discoverable questions.
    - Select `Bug`, `Feature`, or `Task` and partition independently implementable candidates.
-   - Build the subagent investigation map, dispatch the bounded research assignments, and record their sourced results in the candidate and evidence ledgers.
+   - Where the investigation splits into independent parts, build the subagent investigation map and dispatch the bounded research assignments. Record all sourced results in the candidate and evidence ledgers.
 
 2. Establish readiness.
    - For a `Bug`, reproduce and isolate the failure on the affected revision, inspect relevant authorized read-only runtime evidence, exclude competing explanations, and evaluate the confirmed cause on the freshly fetched default branch.
    - For a `Feature` or `Task`, establish current state and authoritative constraints, evaluate material alternatives, ask for undiscoverable intent, and resolve implementation, compatibility, rollout, operational, and verification decisions that apply.
    - Reduce inaccessible evidence to a portable sanitized representation and prepare exact test setups, actions, and assertions.
-   - Reconcile the subagent findings, independently verify every material claim used in the outcome, and resolve or explicitly fail any contradiction that could change classification, scope, or verification.
+   - Reconcile any subagent findings, independently verify every material claim used in the outcome, and resolve or explicitly fail any contradiction that could change classification, scope, or verification.
 
 3. Build and audit each handoff.
    - Draft one complete new issue or duplicate comment per ready candidate using only facts that can remain in the issue thread and repository.
