@@ -18,7 +18,6 @@ Read these files before asking PRD questions or writing the issue:
 
 ## Operating Rules
 
-- Follow all active system, developer, repository, and scoped instructions.
 - Read the target repository's authoritative docs, contracts, contribution guidance, issue templates, and metadata conventions for the affected area before finalizing decisions.
 - Resolve the GitHub target from an explicit repository or issue URL, otherwise from the current Git remote. Ask the user before filing when no unique target can be established.
 - Determine whether a feature flag applies from an explicit user decision or repository contract. Allow the user to mark feature flags not applicable with a stated reason unless a repository contract requires one.
