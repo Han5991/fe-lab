@@ -82,6 +82,10 @@ const post = (slug: string, title: string, date: string, tags: string[]) => ({
 });
 
 beforeEach(() => {
+  // `restoreAllMocks`는 vi.fn의 `…Once` 대기열을 비우지 않는다 — 앞 테스트가 쓰지 못한 실패 응답이 다음
+  // 테스트의 첫 요청으로 새어 화면 전체가 에러로 무너진다.
+  getAdminPostsIndex.mockReset();
+  getPostsOverview.mockReset();
   nav.pathname = '/admin/analytics/';
   wide.matches = true;
   window.history.replaceState(null, '', '/admin/analytics/');
@@ -103,12 +107,22 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-function renderScreen(
-  client = new QueryClient({
-    // 재시도가 끼면 실패가 늦게 드러난다.
-    defaultOptions: { queries: { retry: false } },
-  }),
-) {
+function testQueryClient() {
+  return new QueryClient({
+    defaultOptions: {
+      queries: {
+        // 재시도가 끼면 실패가 늦게 드러난다.
+        retry: false,
+        // 받은 데이터는 테스트 끝까지 신선하다 — 새로고침 버튼(`refetch`)만 다시 받는다. 기본값(0)이면
+        // suspense 하한 1초가 지난 뒤 늦게 구독하는 관찰자가 뒤에서 다시 받는다: 느린 CI에서 첫 렌더가
+        // 1초를 넘기면 새로고침 버튼이 그 사이 「새로고침 중…」이 되어 테스트가 이름으로 못 찾았다.
+        staleTime: Infinity,
+      },
+    },
+  });
+}
+
+function renderScreen(client = testQueryClient()) {
   return render(
     <QueryClientProvider client={client}>
       <AnalyticsScreen />
@@ -246,9 +260,7 @@ describe('AnalyticsScreen — 고른 글', () => {
   // 여유(50ms) 뒤에 놓는다(`useHeldUntilExit`).
   test('넓은 화면에서 주소가 고른 글을 놓으면 칼럼은 직전 글을 붙든 채(inert) 나간 뒤 빠진다', async () => {
     nav.pathname = '/admin/analytics/a/';
-    const client = new QueryClient({
-      defaultOptions: { queries: { retry: false } },
-    });
+    const client = testQueryClient();
     const view = renderScreen(client);
     await screen.findByRole('heading', { name: '글 A', level: 2 });
 
@@ -301,9 +313,7 @@ describe('AnalyticsScreen — 고른 글', () => {
     deepLink.unmount();
 
     nav.pathname = '/admin/analytics/';
-    const client = new QueryClient({
-      defaultOptions: { queries: { retry: false } },
-    });
+    const client = testQueryClient();
     const view = renderScreen(client);
     // jsdom의 pushState는 usePathname을 바꾸지 않는다 — 주소를 바꾸고 다시 그린다(파일 머리 주석).
     vi.spyOn(window.history, 'pushState').mockImplementation(() => {
@@ -377,9 +387,7 @@ describe('AnalyticsScreen — 고른 글', () => {
     nav.pathname = '/admin/analytics/a/';
     window.history.replaceState(null, '', nav.pathname);
     getPostsOverview.mockReturnValueOnce(new Promise(() => undefined));
-    const client = new QueryClient({
-      defaultOptions: { queries: { retry: false } },
-    });
+    const client = testQueryClient();
     renderScreen(client);
 
     await waitFor(() =>
