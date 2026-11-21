@@ -19,7 +19,7 @@ thumbnail: '/og/typescript-project-api-di-design.png'
 
 > **Type을 구조적으로 설계하면 이런 상황을 좀 더 쉽게 풀 수 있지 않을까?**
 
-[이전 글](https://velog.io/@rewq5991/typescript-project-design)에서는 Type-Driven-Development를 소개하면서 타입을
+[이전 글](https://blog.sangwook.dev/posts/typescript-project-design/)에서는 Type-Driven-Development를 소개하면서 타입을
 설계 도구로 활용하는 방법에 대해 이야기했습니다.  
 이번 글에서는 Type 설계의 첫 단계로, 서버 API Type을 설계하는 방법을 다루고자 합니다.
 
@@ -442,7 +442,7 @@ describe('UserServerImpl', () => {
 
 1. [당신의 Type, 어디까지 연결되어 있나요?](https://blog.sangwook.dev/posts/typescript-project-design/)
 2. [Type 설계의 시작: 견고한 서버 API Type 설계하기](https://blog.sangwook.dev/posts/typescript-project-api-design/)
-3. [Type 설계의 시작: 견고한 서버 API Type 설계하기 With Di](현재 글)
+3. **Type 설계의 시작: 견고한 서버 API Type 설계하기 With Di** (현재 글)
 4. ["원래 있던 기능이니 금방 하시죠?" 당하지 않는 Service Layer 설계 전략](https://blog.sangwook.dev/posts/typescript-project-service-design/)
 5. ["원래 있던 기능이니 금방 하시죠?" 당하지 않는 Service Layer 설계 전략 With Di](https://blog.sangwook.dev/posts/typescript-project-service-di-design/)
 6. ["같은 로직 또 복사했어요?" Domain 모델로 책임 분리하기](https://blog.sangwook.dev/posts/typescript-project-domain-design/)

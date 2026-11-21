@@ -294,7 +294,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({ userId }) => {
 
 ### 🔗 관련 시리즈
 
-1. [당신의 Type, 어디까지 연결되어 있나요?](현재 글)
+1. **당신의 Type, 어디까지 연결되어 있나요?** (현재 글)
 2. [Type 설계의 시작: 견고한 서버 API Type 설계하기](https://blog.sangwook.dev/posts/typescript-project-api-design/)
 3. [Type 설계의 시작: 견고한 서버 API Type 설계하기 With Di](https://blog.sangwook.dev/posts/typescript-project-api-di-design/)
 4. ["원래 있던 기능이니 금방 하시죠?" 당하지 않는 Service Layer 설계 전략](https://blog.sangwook.dev/posts/typescript-project-service-design/)

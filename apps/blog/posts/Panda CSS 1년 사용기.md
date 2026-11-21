@@ -324,7 +324,7 @@ const button = tv({
 
 예제 코드
 https://github.com/omnifed/cerberus
-https://github.com/cschroeter/park-ui
+https://github.com/chakra-ui/park-ui
 
 > Panda CSS는 다음과 같은 방식으로 모노레포 내 디자인 시스템 구성에 활용할 수 있습니다
 

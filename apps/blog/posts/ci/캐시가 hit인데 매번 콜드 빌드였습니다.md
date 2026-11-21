@@ -21,7 +21,7 @@ CI 로그의 캐시 복원 스텝은 초록불이었습니다. 캐시 hit, 67MB 
 
 캐시는 매번 내려왔고, 매번 통째로 버려지고 있었습니다. 저는 이 두 줄을 한참 그냥 지나쳤습니다.
 
-이 글은 그 원인을 좁혀 캐시 키 한 조각으로 고치기까지의 기록입니다(facebook/astryx [#3864](https://github.com/facebook/astryx/pull/3864)).
+이 글은 그 원인을 좁혀 캐시 키 한 조각으로 고치기까지의 기록입니다(meta/astryx [#3864](https://github.com/meta/astryx/pull/3864)).
 
 ## 제일 느린 job이 이미 캐시를 쓰고 있었습니다
 
@@ -35,9 +35,9 @@ CI 로그의 캐시 복원 스텝은 초록불이었습니다. 캐시 hit, 67MB 
 
 | 맥락                                                                       | 캐시                                | sandbox 컴파일 | 뜻                          |
 | :------------------------------------------------------------------------- | :---------------------------------- | :------------- | :-------------------------- |
-| [main Deploy](https://github.com/facebook/astryx/actions/runs/29181173652) | hit                                 | **64초**       | 복원된 캐시가 실제로 쓰였다 |
-| [PR build](https://github.com/facebook/astryx/actions/runs/29181246330)    | hit (main과 **같은 키**, 67MB 복원) | **4.0분**      | hit인데 콜드와 같다         |
-| [대조군](https://github.com/facebook/astryx/actions/runs/29180552092)      | miss (콜드)                         | 3.9분          | 캐시 없는 기준선            |
+| [main Deploy](https://github.com/meta/astryx/actions/runs/29181173652) | hit                                 | **64초**       | 복원된 캐시가 실제로 쓰였다 |
+| [PR build](https://github.com/meta/astryx/actions/runs/29181246330)    | hit (main과 **같은 키**, 67MB 복원) | **4.0분**      | hit인데 콜드와 같다         |
+| [대조군](https://github.com/meta/astryx/actions/runs/29180552092)      | miss (콜드)                         | 3.9분          | 캐시 없는 기준선            |
 
 같은 캐시 키에 같은 hit인데 main은 64초, PR은 4.0분입니다. 그리고 PR의 4.0분은 **캐시가 아예 없는 대조군 3.9분과 구분되지 않습니다**.
 
@@ -145,9 +145,9 @@ key: nextjs-sandbox-${{ hashFiles('pnpm-lock.yaml') }}-${{ hashFiles('packages/c
 
 이 수정이 제대로 됐다는 신호는 **miss**입니다. 각 PR의 첫 푸시는 이제 반드시 miss니까요. 그래서 테스트 플랜에 일부러 체크하지 않은 항목을 하나 남겼습니다 — "첫 푸시의 miss가 수정이 작동한다는 증거다. 재푸시에서 컴파일이 64초 수준으로 떨어지는지 확인할 것." 이걸 적어두지 않으면 다음 사람이 hit률 그래프만 보고 "캐시가 안 먹네" 하며 되돌려 놓습니다.
 
-그 항목은 이 PR 자신에서 닫혔습니다. 첫 푸시([run 29182165678](https://github.com/facebook/astryx/actions/runs/29182165678))는 `nextjs-sandbox-pr3864-…` 키로 miss가 나서 4.2분을 컴파일하고 캐시를 저장했고, 28분 뒤 재푸시([run 29182864149](https://github.com/facebook/astryx/actions/runs/29182864149))는 그 키를 복원해 **60초**에 컴파일했습니다 — main의 64초와 같은 수준입니다.
+그 항목은 이 PR 자신에서 닫혔습니다. 첫 푸시([run 29182165678](https://github.com/meta/astryx/actions/runs/29182165678))는 `nextjs-sandbox-pr3864-…` 키로 miss가 나서 4.2분을 컴파일하고 캐시를 저장했고, 28분 뒤 재푸시([run 29182864149](https://github.com/meta/astryx/actions/runs/29182864149))는 그 키를 복원해 **60초**에 컴파일했습니다 — main의 64초와 같은 수준입니다.
 
-머지 후, 캐시가 걸린 재푸시 기준으로 PR CI 전체 시간은 8분 56초에서 5분 10초가 됐습니다. 다만 23분 간격으로 머지된 병렬화 PR([#3811](https://github.com/facebook/astryx/pull/3811))의 효과가 섞여 있어, 캐시 수정만의 몫은 따로 떼어 말할 수 없습니다.
+머지 후, 캐시가 걸린 재푸시 기준으로 PR CI 전체 시간은 8분 56초에서 5분 10초가 됐습니다. 다만 23분 간격으로 머지된 병렬화 PR([#3811](https://github.com/meta/astryx/pull/3811))의 효과가 섞여 있어, 캐시 수정만의 몫은 따로 떼어 말할 수 없습니다.
 
 ### 남은 한계: 첫 푸시는 여전히 콜드입니다
 
@@ -174,5 +174,5 @@ SHA를 붙였더라도 달라지지 않는 것이 하나 있습니다. **basePat
 
 여러분의 CI에도 캐시 스텝이 있다면, 지금 가장 최근 run의 로그를 열어보세요. 확인은 5분이면 끝납니다. `Cache restored successfully` 다음 줄의 빌드 시간이 캐시가 없던 시절과 정말로 다른가요. 비슷하게 "hit인데 안 빨라지는" 캐시를 만나신 적 있다면 댓글로 공유해 주세요.
 
-- 근거 PR: [facebook/astryx#3864 — perf(ci): key sandbox next cache by PR to stop cross-basepath invalidation](https://github.com/facebook/astryx/pull/3864) · 배경이 된 병렬화 PR: [#3811 — perf(ci): build sandbox preview in parallel with storybook](https://github.com/facebook/astryx/pull/3811) (둘 다 2026-07-12 머지)
+- 근거 PR: [meta/astryx#3864 — perf(ci): key sandbox next cache by PR to stop cross-basepath invalidation](https://github.com/meta/astryx/pull/3864) · 배경이 된 병렬화 PR: [#3811 — perf(ci): build sandbox preview in parallel with storybook](https://github.com/meta/astryx/pull/3811) (둘 다 2026-07-12 머지)
 - 참고 문서: [webpack `cache.version` — 버전이 다르면 캐시를 재사용하지 않는다](https://webpack.js.org/configuration/cache/#cacheversion) · [Next.js가 config 값들로 캐시 버전 문자열을 만드는 곳 — `build/webpack-config.ts#L2380-L2423` (v16.3.1)](https://github.com/vercel/next.js/blob/v16.3.1/packages/next/src/build/webpack-config.ts#L2380-L2423)

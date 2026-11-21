@@ -425,7 +425,7 @@ types</code> 기본값 변경을 되돌리는 옵션이 아니다. 옛 동작이
 `pnpm build`가 디자인 시스템 패키지의 dts 빌드에 다다르자 **또 `TS5101`** 이 떴다. 그런데 `@design-system/ui`의 tsconfig엔
 `baseUrl`이 **없다.** #1에서 봤듯 TS5101은 범용 진단이니, 누군가 내 빌드에 baseUrl을 **주입**하고 있다는 뜻이다.
 
-범인은 dts 번들러로 쓰던 **tsup**이었다. [소스](https://github.com/egoist/tsup/blob/main/src/rollup.ts)의 dts 빌드 옵션
+범인은 dts 번들러로 쓰던 **tsup**이었다. [소스](https://github.com/egoist/tsup/blob/v8.5.1/src/rollup.ts#L115)의 dts 빌드 옵션
 구성부에 이 한 줄이 있다.
 
 ```ts

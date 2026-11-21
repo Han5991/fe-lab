@@ -417,13 +417,13 @@ const toastRecipe = sva({
 ## 실제 구현 코드
 
 **완전한 구현 코드를 확인하고 싶으시다면:**  
-📁 [전체 구현 코드 보기](https://github.com/Han5991/fe-lab/tree/1707765c3eb6249234463033335d08927ca25a13/apps/react/src/pages/toast-example/)
+📁 [전체 구현 코드 보기](https://github.com/Han5991/fe-lab/tree/1707765c3eb6249234463033335d08927ca25a13/packages/@design-system/ui/src/toast)
 
 주요 파일들:
 
 - `toast-store.ts` - useSyncExternalStore 기반 상태 관리
 - `toast.tsx` - UI 컴포넌트 및 애니메이션
-- `index.tsx` - 사용 예제 및 데모
+- [`index.tsx`](https://github.com/Han5991/fe-lab/blob/1707765c3eb6249234463033335d08927ca25a13/apps/react/src/pages/toast-example/index.tsx) - 사용 예제 및 데모
 
 ## 실제 사용법
 

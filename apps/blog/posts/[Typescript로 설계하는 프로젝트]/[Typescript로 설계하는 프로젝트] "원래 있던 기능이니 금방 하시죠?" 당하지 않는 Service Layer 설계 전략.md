@@ -518,6 +518,6 @@ export const Dashboard = ({ userId }: { userId: string }) => {
 1. [당신의 Type, 어디까지 연결되어 있나요?](https://blog.sangwook.dev/posts/typescript-project-design/)
 2. [Type 설계의 시작: 견고한 서버 API Type 설계하기](https://blog.sangwook.dev/posts/typescript-project-api-design/)
 3. [Type 설계의 시작: 견고한 서버 API Type 설계하기 With Di](https://blog.sangwook.dev/posts/typescript-project-api-di-design/)
-4. ["원래 있던 기능이니 금방 하시죠?" 당하지 않는 Service Layer 설계 전략](현재 글)
+4. **"원래 있던 기능이니 금방 하시죠?" 당하지 않는 Service Layer 설계 전략** (현재 글)
 5. ["원래 있던 기능이니 금방 하시죠?" 당하지 않는 Service Layer 설계 전략 With Di](https://blog.sangwook.dev/posts/typescript-project-service-di-design/)
 6. ["같은 로직 또 복사했어요?" Domain 모델로 책임 분리하기](https://blog.sangwook.dev/posts/typescript-project-domain-design/)

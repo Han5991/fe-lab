@@ -22,10 +22,10 @@ tags: ['testing-library', 'jsdom', 'performance', 'open-source']
 
 ### 1. 유독 느린 파일 하나
 
-Meta의 디자인 시스템 [astryx](https://github.com/facebook/astryx)에서 CI 최적화 작업을 하고 있었습니다.  
+Meta의 디자인 시스템 [astryx](https://github.com/meta/astryx)에서 CI 최적화 작업을 하고 있었습니다.  
 파이프라인이 오래 걸려서 이것저것 줄여보던 중이었습니다.
 
-> 이 글의 근거 PR은 [facebook/astryx#3816](https://github.com/facebook/astryx/pull/3816)이고, 2026년 7월 12일에 머지되었습니다.  
+> 이 글의 근거 PR은 [meta/astryx#3816](https://github.com/meta/astryx/pull/3816)이고, 2026년 7월 12일에 머지되었습니다.  
 > 아래 나오는 코드와 수치는 전부 그 PR에서 직접 확인하실 수 있습니다.
 
 그러다 테스트 파일별 실행 시간을 훑어보다가 이상한 걸 발견했습니다.  
@@ -460,7 +460,7 @@ astryx 환경에서 후보 버튼 하나를 처리하는 데 대략 **5ms**가 �
 
 다행히 `computeAccessibleName`은 `getComputedStyle` 구현을 **주입받을 수 있게** 열려 있었습니다.
 
-실제로 머지된 코드입니다. ([`6cfb542`에서 보기](https://github.com/facebook/astryx/blob/6cfb542/packages/core/src/__tests__/fastRoleQueries.ts))
+실제로 머지된 코드입니다. ([`6cfb542`에서 보기](https://github.com/meta/astryx/blob/6cfb542/packages/core/src/__tests__/fastRoleQueries.ts))
 
 ```ts
 // packages/core/src/__tests__/fastRoleQueries.ts — 핵심만 추린 것
@@ -508,7 +508,7 @@ export function getButton(name: string | RegExp): HTMLElement {
 + const trigger = getButton(/Range:/);
 ```
 
-날짜 컴포넌트 4개 파일에서 **41개 호출부**를 교체했습니다. 호출부가 짧아진 덕에 테스트 파일 자체는 64줄을 더하고 96줄을 덜어 **32줄 줄었지만**, 헬퍼 66줄이 새로 생겼으니 저장소 전체로는 늘었습니다(`+134 −96`). ([전체 diff](https://github.com/facebook/astryx/pull/3816/files))
+날짜 컴포넌트 4개 파일에서 **41개 호출부**를 교체했습니다. 호출부가 짧아진 덕에 테스트 파일 자체는 64줄을 더하고 96줄을 덜어 **32줄 줄었지만**, 헬퍼 66줄이 새로 생겼으니 저장소 전체로는 늘었습니다(`+134 −96`). ([전체 diff](https://github.com/meta/astryx/pull/3816/files))
 
 같은 파일의 `combobox`·`tooltip`·`grid` 쿼리는 **그대로 뒀습니다.** 후보가 몇 개 안 되거나 `name`을 안 쓰면 애초에 싸거든요. 비싼 곳만 바꿔야 팀이 표준 API 대신 사내 헬퍼를 익혀야 하는 부담이 줄어듭니다.
 
@@ -549,7 +549,7 @@ Trade-off vs getByRole: first match wins — no tree-wide uniqueness check.
 ### 9. 결과
 
 날짜 컴포넌트 4개 파일, 211개 테스트의 실행 시간입니다.  
-아래 수치는 [PR 본문](https://github.com/facebook/astryx/pull/3816)에 그대로 기록돼 있습니다.
+아래 수치는 [PR 본문](https://github.com/meta/astryx/pull/3816)에 그대로 기록돼 있습니다.
 
 | 파일 | 테스트 수 | before | after | 변화 |
 | :--- | ---: | ---: | ---: | ---: |
@@ -657,7 +657,7 @@ console.log('name 제외 :', (t2 - t1).toFixed(0), 'ms');
 
 **이 글의 근거**
 
-- PR: [facebook/astryx#3816](https://github.com/facebook/astryx/pull/3816) (2026-07-12 머지) · [전체 diff](https://github.com/facebook/astryx/pull/3816/files)
-- 머지된 헬퍼: [`fastRoleQueries.ts`](https://github.com/facebook/astryx/blob/6cfb542/packages/core/src/__tests__/fastRoleQueries.ts) (`6cfb542` — 이 글이 인용한 버전)
+- PR: [meta/astryx#3816](https://github.com/meta/astryx/pull/3816) (2026-07-12 머지) · [전체 diff](https://github.com/meta/astryx/pull/3816/files)
+- 머지된 헬퍼: [`fastRoleQueries.ts`](https://github.com/meta/astryx/blob/6cfb542/packages/core/src/__tests__/fastRoleQueries.ts) (`6cfb542` — 이 글이 인용한 버전)
 - 인용한 라이브러리 소스는 본문 각 코드블록 아래 출처에 버전과 줄 범위를 고정해 달아두었습니다.
 - 더 읽을거리: [Accessible Name and Description Computation (W3C)](https://www.w3.org/TR/accname/)

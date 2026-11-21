@@ -64,7 +64,7 @@ thumbnail: '/og/next-middleware.png'
     인증되지 않은 요청에 대해 Middleware에서 바로 적절한 페이지로 리다이렉션 처리
 
 - **참고 링크:**  
-  [Next.js Middleware Use Cases](https://nextjs.org/docs/app/building-your-application/routing/middleware)
+  [Next.js Middleware Use Cases](https://nextjs.org/docs/app/getting-started/proxy#use-cases) (Next.js 16부터 Middleware는 Proxy로 이름이 바뀌었습니다)
 
 ### 추가 보충 내용
 
@@ -76,7 +76,7 @@ thumbnail: '/og/next-middleware.png'
 
 - 쿠키에 민감한 정보를 저장할 경우, `httpOnly`, `secure`, `SameSite` 옵션을 반드시 설정하여 보안을 강화해야 합니다.
 - JWT와 같은 토큰 기반 인증 방식을 사용할 경우, 토큰의 만료 시간과 재발급 정책을 명확히 관리하는 것이 중요합니다.
-- 쿠키 세션과 같은 시크릿키로 암호화가 필요할 경우 추가 검토할 수 있습니다.[next.js Session Management](https://nextjs.org/docs/pages/building-your-application/authentication#session-management)
+- 쿠키 세션과 같은 시크릿키로 암호화가 필요할 경우 추가 검토할 수 있습니다.[next.js Session Management](https://nextjs.org/docs/pages/guides/authentication#session-management)
 
 3. **역할 기반 라우팅 강화**
 

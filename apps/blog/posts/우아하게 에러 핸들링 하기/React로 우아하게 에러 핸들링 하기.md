@@ -334,4 +334,4 @@ useTransition은 사용자와의 인터랙션 과정에서 발생하는 비동�
 이처럼 다양한 에러 처리 기법을 상황에 맞게 적절히 적용하여, 보다 견고하고 안정적인 애플리케이션을 구축해 보시길 바랍니다.
 
 다음은 next.js 에서 에러 바운더리를 어떻게 활용하는 방법에 대해 다루어 보겠습니다.
-[예제 코드 및 테스트 코드 확인](https://github.com/Han5991/fe-lab/blob/1707765c3eb6249234463033335d08927ca25a13/apps/react/src/pages/error-test/index.tsx)
+[예제 코드 및 테스트 코드 확인](https://github.com/Han5991/fe-lab/tree/1707765c3eb6249234463033335d08927ca25a13/apps/react/src/pages/error-test)
