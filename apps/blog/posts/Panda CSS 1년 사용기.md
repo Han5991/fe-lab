@@ -132,7 +132,7 @@ function App() {
 }
 ```
 
-- **Type safety** [참고 링크](https://panda-css.com/docs/concepts/writing-styles#type-safety)
+- **Type safety** [참고 링크](https://panda-css.com/docs/styling/writing-styles#type-safety)
   Panda CSS는 타입 안전성을 보장하며 코드를 작성할 수 있습니다.
   strictTokens 을 키게 되면
 

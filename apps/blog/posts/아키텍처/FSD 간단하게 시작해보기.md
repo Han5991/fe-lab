@@ -9,7 +9,7 @@ thumbnail: '/og/simple-fsd-start.png'
 
 ![Feature-Sliced Design 공식 문서의 소개 이미지](https://velog.velcdn.com/images/rewq5991/post/4710be4e-18f1-40dc-b7dd-dc5783900a0e/image.png)
 
-> [공식홈피](https://feature-sliced.design/kr/)를 기반 했지만 제 입맛에 따라 해석 했음을 알려드립니다.
+> [공식홈피](https://feature-sliced.design/kr)를 기반 했지만 제 입맛에 따라 해석 했음을 알려드립니다.
 
 ## 프롤로그
 
