@@ -7,7 +7,7 @@ excerpt: 'components, apis, utils로 나눈 폴더는 프로젝트가 커지면 
 thumbnail: '/og/simple-fsd-start.png'
 ---
 
-![Feature-Sliced Design 공식 문서의 소개 이미지](https://velog.velcdn.com/images/rewq5991/post/4710be4e-18f1-40dc-b7dd-dc5783900a0e/image.png)
+![Feature-Sliced Design 공식 문서의 소개 이미지](fsd.img.png)
 
 > [공식홈피](https://feature-sliced.design/kr)를 기반 했지만 제 입맛에 따라 해석 했음을 알려드립니다.
 
@@ -26,7 +26,7 @@ components, apis, utils, hooks, etc... 이런 구조는 초기 프로젝트에�
 
 이런 문제를 fsd는 기능이라는 이름으로 역할과 기능을 중심으로 코드를 구조화 하려고 합니다.
 
-![레이어·슬라이스·세그먼트로 코드를 나누는 FSD 구조 다이어그램](https://velog.velcdn.com/images/rewq5991/post/0a5e7910-45d2-4626-b7e9-c2b3933441d7/image.png)
+![레이어·슬라이스·세그먼트로 코드를 나누는 FSD 구조 다이어그램](fsd.img_1.png)
 (참조 : [FSD 관점으로 보는 코드 경계 찾기](https://velog.io/@teo/fsd)
 
 > 레이어(Layer): 프로젝트 기능적 역할에 따른 수직적 관심사 분리
