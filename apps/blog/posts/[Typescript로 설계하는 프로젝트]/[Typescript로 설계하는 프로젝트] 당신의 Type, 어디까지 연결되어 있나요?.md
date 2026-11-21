@@ -134,7 +134,7 @@ function processUser(user: { name: string }) {
 
 #### 📊 타입스크립트의 실질적 효과: 데이터로 입증된 가치
 
-> Microsoft 연구팀의 논문 **[To Type or Not to Type: Quantifying Detectable Bugs in JavaScript](https://github.com/amilajack/reading/blob/master/JavaScript/To%20Type%20or%20Not%20to%20Type%20-%20Quantifying%20Detectable%20Bugs%20in%20JavaScript.pdf)**에 따르면, 타입스크립트는 JavaScript 코드베이스에서 발생할 수 있는 버그의 15%를 사전에 방지할 수 있습니다.  
+> UCL과 Microsoft Research 연구팀의 논문 **[To Type or Not to Type: Quantifying Detectable Bugs in JavaScript](https://github.com/amilajack/reading/blob/master/JavaScript/To%20Type%20or%20Not%20to%20Type%20-%20Quantifying%20Detectable%20Bugs%20in%20JavaScript.pdf)**에 따르면, 타입스크립트는 JavaScript 코드베이스에서 발생할 수 있는 버그의 15%를 사전에 방지할 수 있습니다.  
 > 더 흥미로운 것은,[ Airbnb에서는 타입스크립트 도입으로 발생 가능한 버그의 38%를 사전에 차단](https://www.reddit.com/r/typescript/comments/aofcik/38_of_bugs_at_airbnb_could_have_been_prevented_by/)할 수 있었다고 보고했습니다.
 
 이러한 데이터는 단순히 타입스크립트를 도입하는 것만으로도 코드 품질이 크게 향상될 수 있음을 보여줍니다.

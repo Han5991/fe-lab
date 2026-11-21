@@ -1,6 +1,7 @@
 ---
 title: 'TypeScript 6 업그레이드인 줄 알았는데, 문제는 "설정"이었습니다'
 date: '2026-07-02'
+updatedAt: '2026-11-21'
 status: 'scheduled'
 slug: 'typescript-6-migration-troubleshooting'
 excerpt: 'TypeScript 6으로 올리자 baseUrl·rootDir·types 기본값이 차례로 빌드를 깨뜨렸다. 각 변경의 "왜"를 microsoft/TypeScript PR diff까지 추적해 보니, 버전을 올리는 이야기가 아니라 "올바른 설정"에 도달하는 이야기였다.'
@@ -116,11 +117,11 @@ TypeScript 6 릴리스 노트의 breaking change 목록을 여는데, 매일 tsc
      if (options.moduleResolution === ModuleResolutionKind.Node10) {
 -        createDeprecatedDiagnostic("moduleResolution", "node10");
 +        createDeprecatedDiagnostic("moduleResolution", "node10", /*useInstead*/ undefined,
-+            Diagnostics.Visit_https_aka_ms_ts6_for_migration_information);
++            Diagnostics.Visit_https_Colon_Slash_Slashaka_ms_Slashts6_for_migration_information);
 +    }
 +    if (options.baseUrl !== undefined) {
 +        createDeprecatedDiagnostic("baseUrl", /*value*/ undefined, /*useInstead*/ undefined,
-+            Diagnostics.Visit_https_aka_ms_ts6_for_migration_information);
++            Diagnostics.Visit_https_Colon_Slash_Slashaka_ms_Slashts6_for_migration_information);
      }
  });
 ```
@@ -442,6 +443,12 @@ baseUrl 주입은 내 코드가 아니라 도구의 문제이고, 그 도구가 
 갈아탔다. [Rolldown](https://rolldown.rs) 기반이라 **baseUrl을 주입하지 않고**, peer로
 `typescript: "^5.0.0 || ^6.0.0"`을 선언해 **TS6를 공식 지원**한다. 마이그레이션 도구(`npx tsdown-migrate`)로 config도 거의
 그대로 옮겨졌고, 전환 직후 `TS5101`은 사라졌다.
+
+<callout type="info" title="2026-11-21 추가">
+
+이 글을 쓴 뒤 2026-10-14에 나온 tsup v9.0.0에서 이 baseUrl 주입이 빠졌다([#1390](https://github.com/egoist/tsup/pull/1390)).
+
+</callout>
 
 ---
 
