@@ -18,7 +18,7 @@ thumbnail: '/og/first-open-source-contribution.png'
 ## 1. 상황 설명
 
 > 저희 팀은 작년부터 자체 디자인 시스템을 구축하여 사용하고 있습니다.
-> [Mantine + panda-css](https://velog.io/@rewq5991/%EB%94%94%EC%9E%90%EC%9D%B8-%EC%8B%9C%EC%8A%A4%ED%85%9C-%EC%8B%9C%EC%9E%91%ED%95%B4%EB%B3%B4%EA%B8%B0)
+> [Mantine + panda-css](https://blog.sangwook.dev/posts/design-system-start/)
 > 를 조합하여 사용 합니다.  
 > 따라서 디자인은 디자인 시스템의 컴포넌트를 활용하거나, mantine 공식 홈페이지를 참고하여 구현합니다.
 >

@@ -22,7 +22,7 @@ thumbnail: '/og/nextjs-error.png'
 1. Next.js의 기본 에러 처리 흐름
    1. 서버를 시작 하면 각 경계의 error.tsx를 찾아 AppRouter에 넣어줍니다. [next.js app-router](https://github.com/vercel/next.js/blob/v15.2.1-canary.5/packages/next/src/client/components/app-router.tsx#L690C1-L714C2)
       - ErrorBoundary next.js [참조](https://github.com/vercel/next.js/blob/v15.2.1-canary.5/packages/next/src/client/components/error-boundary.tsx#L66C1-L145C2)
-   2. 각 layout에서 사용할 provider를 설정해줍니다. [참조](https://github.com/vercel/next.js/blob/v15.2.1-canary.5/packages/next/src/client/components/app-router.tsx#L669)
+   2. 각 layout에서 사용할 provider를 설정해줍니다. [참조](https://github.com/vercel/next.js/blob/v15.2.1-canary.5/packages/next/src/client/components/app-router.tsx#L671-L685)
    3. 아래 그림과 같이 ErrorBoundary가 구성됩니다. ![img.png](img.png)
    4. 에러가 발생하면 ErrorBoundary의 까지 전파되어 처리됩니다.
 

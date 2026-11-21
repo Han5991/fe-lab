@@ -132,7 +132,7 @@ function App() {
 }
 ```
 
-- **Type safety** [참고 링크](https://panda-css.com/docs/concepts/writing-styles#type-safety)
+- **Type safety** [참고 링크](https://panda-css.com/docs/styling/writing-styles#type-safety)
   Panda CSS는 타입 안전성을 보장하며 코드를 작성할 수 있습니다.
   strictTokens 을 키게 되면
 
@@ -324,7 +324,7 @@ const button = tv({
 
 예제 코드
 https://github.com/omnifed/cerberus
-https://github.com/cschroeter/park-ui
+https://github.com/chakra-ui/park-ui
 
 > Panda CSS는 다음과 같은 방식으로 모노레포 내 디자인 시스템 구성에 활용할 수 있습니다
 
